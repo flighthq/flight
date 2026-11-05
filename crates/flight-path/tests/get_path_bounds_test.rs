@@ -1,5 +1,3 @@
-//! flight-compiler: target-native
-
 use flight_geometry::create_rectangle;
 use flight_path::contract::*;
 
@@ -12,6 +10,21 @@ fn ts_wire_path(commands: Vec<u8>, data: Vec<f64>) -> Path {
 
 mod get_path_bounds {
     use super::*;
+
+    // The cubic extremum parameter divides by the whole `2a` term; a non-unit leading coefficient
+    // places the interior minimum where the quadratic formula puts it.
+    #[test]
+    fn bounds_a_cubic_extremum_with_a_non_unit_leading_coefficient() {
+        let mut path = create_path(Some(PathWinding::NonZero));
+        append_path_move_to(&mut path, 0.0, 0.0);
+        append_path_cubic_curve_to(&mut path, 20.0, 100.0, 90.0, -40.0, 100.0, 0.0);
+        let mut out = create_rectangle(0.0, 0.0, 0.0, 0.0);
+        assert!(get_path_bounds(&path, &mut out));
+        assert_eq!(out.x, 0.0);
+        assert_eq!(out.width, 100.0);
+        assert!((out.y + 7.3972716).abs() < 0.0001);
+        assert!((out.height - 44.1823).abs() < 0.001);
+    }
 
     #[test]
     fn bounds_a_ts_serialized_stream_with_no_op_bytes() {

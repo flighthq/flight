@@ -1,5 +1,3 @@
-//! flight-compiler: target-native
-
 use flight_path::contract::*;
 
 fn count_commands(path: &Path, command: PathCommand) -> usize {
@@ -14,6 +12,19 @@ fn count_commands(path: &Path, command: PathCommand) -> usize {
 
 mod dash_path {
     use super::*;
+
+    // The offset skips whole dash entries first; the entry it lands in keeps only the length the
+    // offset has not consumed: `dash[i] - (offset - skipped)`.
+    #[test]
+    fn starts_inside_a_later_dash_entry_when_the_offset_passes_the_first() {
+        let mut source = create_path(Some(PathWinding::NonZero));
+        append_path_move_to(&mut source, 0.0, 0.0);
+        append_path_line_to(&mut source, 40.0, 0.0);
+        let mut out = create_path(Some(PathWinding::NonZero));
+        dash_path(&source, &[10.0, 10.0], 15.0, &mut out, Some(0.25));
+        assert_eq!(count_commands(&out, PathCommand::MOVE_TO), 2);
+        assert_eq!(out.data, vec![5.0, 0.0, 15.0, 0.0, 25.0, 0.0, 35.0, 0.0]);
+    }
 
     #[test]
     fn produces_dashed_segments_from_simple_line() {

@@ -1,9 +1,12 @@
+// Generated from crates/flight-path/tests/dash_path_test.rs by flight-compiler.
+// Rust is authoritative; run `npm run generate` after changing it.
+
 import { describe, expect, it } from 'vitest';
 
 import { PathCommand, appendPathClose, appendPathLineTo, appendPathMoveTo, createPath, dashPath } from './contract.ts';
-import type { PathRaw } from './contract.ts';
+import type { Path } from './contract.ts';
 
-function countCommands(path: Readonly<PathRaw>, command: PathCommand): number {
+function countCommands(path: Readonly<Path>, command: PathCommand): number {
   let count = 0;
   for (const candidate of path.commands) {
     if (candidate === (command & 0xff)) {
@@ -14,6 +17,15 @@ function countCommands(path: Readonly<PathRaw>, command: PathCommand): number {
 }
 
 describe('dashPath', () => {
+  it('starts inside a later dash entry when the offset passes the first', () => {
+    let source = createPath('nonZero');
+    appendPathMoveTo(source, 0.0, 0.0);
+    appendPathLineTo(source, 40.0, 0.0);
+    let out = createPath('nonZero');
+    dashPath(source, [10.0, 10.0], 15.0, out, 0.25);
+    expect(countCommands(out, PathCommand.MOVE_TO)).toEqual(2);
+    expect(out.data).toEqual([5.0, 0.0, 15.0, 0.0, 25.0, 0.0, 35.0, 0.0]);
+  });
   it('produces dashed segments from simple line', () => {
     let source = createPath('nonZero');
     appendPathMoveTo(source, 0.0, 0.0);

@@ -1,9 +1,12 @@
+// Generated from crates/flight-path/tests/fit_path_curves_test.rs by flight-compiler.
+// Rust is authoritative; run `npm run generate` after changing it.
+
 import { describe, expect, it } from 'vitest';
 
 import { PathCommand, appendPathLineTo, appendPathMoveTo, createPath, fitPathCurves } from './contract.ts';
-import type { PathRaw } from './contract.ts';
+import type { Path } from './contract.ts';
 
-function countCommands(path: Readonly<PathRaw>, command: PathCommand): number {
+function countCommands(path: Readonly<Path>, command: PathCommand): number {
   let count = 0;
   for (const candidate of path.commands) {
     if (candidate === (command & 0xff)) {
@@ -14,6 +17,32 @@ function countCommands(path: Readonly<PathRaw>, command: PathCommand): number {
 }
 
 describe('fitPathCurves', () => {
+  it('keeps a sharp bend between long segments as a corner', () => {
+    let source = createPath('nonZero');
+    appendPathMoveTo(source, 0.0, 0.0);
+    appendPathLineTo(source, 50.0, 0.0);
+    appendPathLineTo(source, 58.68240888334652, 49.2403876506104);
+    let out = createPath('nonZero');
+    fitPathCurves(source, 1.0, out, 0.25);
+    expect(out.commands).toEqual([PathCommand.MOVE_TO & 0xff, PathCommand.LINE_TO & 0xff, PathCommand.LINE_TO & 0xff]);
+    expect(out.data[2]).toEqual(50.0);
+    expect(out.data[3]).toEqual(0.0);
+  });
+  it('fits a sampled quarter arc with one least squares cubic', () => {
+    let source = createPath('nonZero');
+    appendPathMoveTo(source, 100.0, 0.0);
+    for (let i = 1; i <= 8; i += 1) {
+      const angle = (i / 8.0) * (Math.PI / 2);
+      appendPathLineTo(source, 100.0 * Math.cos(angle), 100.0 * Math.sin(angle));
+    }
+    let out = createPath('nonZero');
+    fitPathCurves(source, 2.0, out, 0.25);
+    expect(out.commands).toEqual([PathCommand.MOVE_TO & 0xff, PathCommand.CUBIC_CURVE_TO & 0xff]);
+    expect(Math.abs(out.data[2] - 94.00561852266638) < 1e-9).toBe(true);
+    expect(Math.abs(out.data[3] - 60.861976507694955) < 1e-9).toBe(true);
+    expect(Math.abs(out.data[4] - 60.86197650769494) < 1e-9).toBe(true);
+    expect(Math.abs(out.data[5] - 94.00561852266638) < 1e-9).toBe(true);
+  });
   it('keeps straight line as line', () => {
     let source = createPath('nonZero');
     appendPathMoveTo(source, 0.0, 0.0);

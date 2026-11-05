@@ -1,3 +1,6 @@
+// Generated from crates/flight-path/tests/get_path_bounds_test.rs by flight-compiler.
+// Rust is authoritative; run `npm run generate` after changing it.
+
 import { createRectangle } from '@flighthq/geometry/contract';
 import { describe, expect, it } from 'vitest';
 
@@ -10,9 +13,9 @@ import {
   createPath,
   getPathBounds,
 } from './contract.ts';
-import type { PathRaw } from './contract.ts';
+import type { Path } from './contract.ts';
 
-function tsWirePath(commands: number[], data: number[]): PathRaw {
+function tsWirePath(commands: number[], data: number[]): Path {
   let path = createPath('nonZero');
   path.commands = commands;
   path.data = data;
@@ -20,6 +23,17 @@ function tsWirePath(commands: number[], data: number[]): PathRaw {
 }
 
 describe('getPathBounds', () => {
+  it('bounds a cubic extremum with a non unit leading coefficient', () => {
+    let path = createPath('nonZero');
+    appendPathMoveTo(path, 0.0, 0.0);
+    appendPathCubicCurveTo(path, 20.0, 100.0, 90.0, -40.0, 100.0, 0.0);
+    let out = createRectangle(0.0, 0.0, 0.0, 0.0);
+    expect(getPathBounds(path, out)).toBe(true);
+    expect(out.x).toEqual(0.0);
+    expect(out.width).toEqual(100.0);
+    expect(Math.abs(out.y + 7.3972716) < 0.0001).toBe(true);
+    expect(Math.abs(out.height - 44.1823) < 0.001).toBe(true);
+  });
   it('bounds a ts serialized stream with no op bytes', () => {
     const path = tsWirePath([0, 1, 0, 2, 7], [1.0, 2.0, 11.0, 22.0]);
     let out = createRectangle(0.0, 0.0, 0.0, 0.0);
