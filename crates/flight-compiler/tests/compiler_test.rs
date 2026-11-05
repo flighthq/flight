@@ -27729,6 +27729,54 @@ mod shadowing_tuple_destructure {
     }
 
     #[test]
+    fn detects_integer_division_from_operand_types() {
+        let source = r#"
+pub fn div_params(n: u32, d: u32) -> u32 {
+    return n / d;
+}
+
+pub fn div_len_var(items: &[f64]) -> usize {
+    let len = items.len();
+    return len / 2;
+}
+
+pub fn div_cast(x: f64) -> u32 {
+    return (x as u32) / 4;
+}
+
+pub fn div_assign(mut n: u32) -> u32 {
+    n /= 2;
+    return n;
+}
+
+pub fn div_float(a: f64, b: f64) -> f64 {
+    return a / b;
+}
+"#;
+        let output = compile_typescript(source, None).unwrap();
+        assert!(
+            output.contains("Math.trunc(n / d)"),
+            "u32 / u32 should use Math.trunc: {output}"
+        );
+        assert!(
+            output.contains("Math.trunc(len / 2)"),
+            "usize / literal should use Math.trunc: {output}"
+        );
+        assert!(
+            output.contains("Math.trunc((x >>> 0) / 4)"),
+            "cast-to-u32 / literal should use Math.trunc with parens: {output}"
+        );
+        assert!(
+            output.contains("n = Math.trunc(n / 2)"),
+            "u32 /= should expand to Math.trunc assignment: {output}"
+        );
+        assert!(
+            !output.contains("Math.trunc(a / b)"),
+            "f64 / f64 should not use Math.trunc: {output}"
+        );
+    }
+
+    #[test]
     fn elides_integer_literal_casts_within_range() {
         let source = r#"
 pub fn constants() -> (u32, u8, i32, i8) {

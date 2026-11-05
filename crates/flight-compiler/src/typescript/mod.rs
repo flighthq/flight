@@ -3196,6 +3196,17 @@ fn expression_numeric_type(expression: &Expr, entities: &HashSet<String>) -> Opt
     }
 }
 
+fn is_integer_division(binary: &syn::ExprBinary, entities: &HashSet<String>) -> bool {
+    let left_type = expression_numeric_type(&binary.left, entities);
+    let right_type = expression_numeric_type(&binary.right, entities);
+    let is_float = |t: &str| matches!(t, "f32" | "f64");
+    let has_integer = left_type.as_deref().is_some_and(|t| !is_float(t))
+        || right_type.as_deref().is_some_and(|t| !is_float(t));
+    let has_float =
+        left_type.as_deref().is_some_and(is_float) || right_type.as_deref().is_some_and(is_float);
+    return has_integer && !has_float;
+}
+
 fn literal_numeric_suffix(literal: &syn::ExprLit) -> Option<String> {
     let suffix = match &literal.lit {
         Lit::Int(int_lit) => int_lit.suffix(),
@@ -11617,11 +11628,20 @@ fn emit_expression_value(
             {
                 return Ok(comparison);
             }
-            if matches!(binary.op, BinOp::Div(_)) && expression_is_method(&binary.left, "len") {
+            if matches!(binary.op, BinOp::Div(_)) && is_integer_division(binary, entities) {
+                let precedence = binary_precedence(&binary.op);
                 return Ok(format!(
                     "Math.trunc({} / {})",
-                    emit_expression(&binary.left, entities)?,
-                    emit_expression(&binary.right, entities)?
+                    emit_binary_operand(&binary.left, entities, precedence, false)?,
+                    emit_binary_operand(&binary.right, entities, precedence, true)?
+                ));
+            }
+            if matches!(binary.op, BinOp::DivAssign(_)) && is_integer_division(binary, entities) {
+                let left = emit_expression(&binary.left, entities)?;
+                let precedence = binary_precedence(&BinOp::Div(syn::token::Slash::default()));
+                return Ok(format!(
+                    "{left} = Math.trunc({left} / {})",
+                    emit_binary_operand(&binary.right, entities, precedence, true)?
                 ));
             }
             if matches!(binary.op, BinOp::BitXor(_)) {
@@ -27263,13 +27283,6 @@ pub(super) fn expression_is_associated_path(expression: &Expr, owner: &str, memb
         && segments
             .next()
             .is_some_and(|segment| segment.ident == owner);
-}
-
-fn expression_is_method(expression: &Expr, expected: &str) -> bool {
-    let Expr::MethodCall(call) = expression else {
-        return false;
-    };
-    return call.method == expected && call.args.is_empty();
 }
 
 fn expression_is_none(expression: &Expr) -> bool {
