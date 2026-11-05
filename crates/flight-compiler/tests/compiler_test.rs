@@ -21371,6 +21371,92 @@ mod sample {
     }
 
     #[test]
+    fn resolves_test_calls_through_super_glob_contract_reexports() {
+        let buffer = r#"
+pub struct Buffer {
+    pub capacity: u32,
+}
+
+pub fn create_buffer(capacity: u32) -> Buffer {
+    let mut out = Buffer { capacity: 0 };
+    initialize_buffer(&mut out, capacity);
+    return out;
+}
+
+pub fn initialize_buffer(out: &mut Buffer, capacity: u32) {
+    out.capacity = capacity;
+}
+"#;
+        let query = r#"
+pub fn create_query(capacity: u32) -> u32 {
+    return capacity;
+}
+"#;
+        let contract = "pub use super::buffer::*;\npub use super::query::*;\n";
+        // A call inside a test module of the same name, as the physics ABI buffer tests are written.
+        let source = r#"
+use crate::*;
+
+mod initialize_buffer {
+    use super::*;
+
+    #[test]
+    fn is_the_construction_initializer_of_create_buffer() {
+        let mut buffer = create_buffer(1);
+        initialize_buffer(&mut buffer, 2);
+        assert_eq!(buffer.capacity, 2);
+        assert_eq!(create_query(3), 3);
+    }
+}
+"#;
+        let output = compile_vitest_with_contract_alias_sources(
+            source,
+            "./contract.ts",
+            contract,
+            &[
+                VitestAliasSource {
+                    source: buffer,
+                    module: "src/buffer.rs",
+                },
+                VitestAliasSource {
+                    source: query,
+                    module: "src/query.rs",
+                },
+            ],
+        )
+        .unwrap();
+        assert!(output.contains("import {\n  createBuffer,\n  createQuery,\n  initializeBuffer,\n} from './contract.ts';"), "{output}");
+        assert!(output.contains("initializeBuffer(buffer, 2);"), "{output}");
+
+        // Two glob-exported modules declaring the same public function leave the call ambiguous: it
+        // fails closed instead of choosing an owner.
+        let duplicate =
+            "pub fn initialize_buffer(out: &mut u32, capacity: u32) {\n    *out = capacity;\n}\n";
+        let error = compile_vitest_with_contract_alias_sources(
+            source,
+            "./contract.ts",
+            contract,
+            &[
+                VitestAliasSource {
+                    source: buffer,
+                    module: "src/buffer.rs",
+                },
+                VitestAliasSource {
+                    source: &format!("{query}{duplicate}"),
+                    module: "src/query.rs",
+                },
+            ],
+        )
+        .unwrap_err()
+        .to_string();
+        assert!(error.contains("initialize_buffer"), "{error}");
+        assert!(
+            error.contains("src/buffer.rs") && error.contains("src/query.rs"),
+            "{error}"
+        );
+    }
+
+    #[test]
     fn resolves_chained_contract_and_test_aliases_to_canonical_provenance() {
         let production = r#"
 //! flight-compiler: nullable-options
