@@ -4443,6 +4443,125 @@ fn entity_allocation_of(
     ));
 }
 
+// Whether a shadow initializer of parameter `name` provably evaluates to the parameter's own
+// TypeScript type, so assigning it back to the parameter typechecks: a clone of the parameter,
+// numeric arithmetic, casts and numeric methods of a numeric parameter, string-producing methods
+// of a string parameter, and an `unwrap_or*` default of an `Option` parameter.
+fn shadow_preserves_parameter_type(name: &str, parameter_type: &Type, initializer: &Expr) -> bool {
+    const NUMERIC_TYPES: &[&str] = &[
+        "f32", "f64", "i8", "i16", "i32", "i64", "isize", "u8", "u16", "u32", "u64", "usize",
+    ];
+    const NUMERIC_METHODS: &[&str] = &[
+        "abs",
+        "ceil",
+        "clamp",
+        "floor",
+        "max",
+        "min",
+        "rem_euclid",
+        "round",
+        "saturating_add",
+        "saturating_sub",
+        "signum",
+        "sqrt",
+        "trunc",
+        "wrapping_add",
+        "wrapping_mul",
+        "wrapping_sub",
+    ];
+    const STRING_METHODS: &[&str] = &[
+        "to_ascii_lowercase",
+        "to_ascii_uppercase",
+        "to_lowercase",
+        "to_owned",
+        "to_string",
+        "to_uppercase",
+        "trim",
+        "trim_end",
+        "trim_start",
+    ];
+    fn strip(expression: &Expr) -> &Expr {
+        return match expression {
+            Expr::Group(group) => strip(&group.expr),
+            Expr::Paren(paren) => strip(&paren.expr),
+            Expr::Reference(reference) => strip(&reference.expr),
+            expression => expression,
+        };
+    }
+    fn type_name(rust_type: &Type) -> Option<String> {
+        return match rust_type {
+            Type::Reference(reference) => type_name(&reference.elem),
+            Type::Paren(paren) => type_name(&paren.elem),
+            Type::Path(path) if path.qself.is_none() => path
+                .path
+                .segments
+                .last()
+                .map(|segment| segment.ident.to_string()),
+            _ => None,
+        };
+    }
+    let is_parameter = |expression: &Expr| {
+        return matches!(strip(expression), Expr::Path(path) if path.qself.is_none() && path.path.is_ident(name));
+    };
+    let initializer = strip(initializer);
+    if let Expr::MethodCall(call) = initializer
+        && matches!(call.method.to_string().as_str(), "clone" | "to_owned")
+        && call.args.is_empty()
+        && is_parameter(&call.receiver)
+    {
+        return true;
+    }
+    if let Expr::Call(call) = initializer
+        && let Expr::Path(function) = call.func.as_ref()
+        && function.path.segments.len() == 2
+        && matches!(
+            function.path.segments[0].ident.to_string().as_str(),
+            "Arc" | "Rc"
+        )
+        && function.path.segments[1].ident == "clone"
+        && call.args.len() == 1
+        && is_parameter(&call.args[0])
+    {
+        return true;
+    }
+    let Some(parameter_type_name) = type_name(parameter_type) else {
+        return false;
+    };
+    if NUMERIC_TYPES.contains(&parameter_type_name.as_str()) {
+        return match initializer {
+            Expr::Binary(binary) => matches!(
+                binary.op,
+                BinOp::Add(_)
+                    | BinOp::Sub(_)
+                    | BinOp::Mul(_)
+                    | BinOp::Div(_)
+                    | BinOp::Rem(_)
+                    | BinOp::BitAnd(_)
+                    | BinOp::BitOr(_)
+                    | BinOp::BitXor(_)
+                    | BinOp::Shl(_)
+                    | BinOp::Shr(_)
+            ),
+            Expr::Unary(unary) => matches!(unary.op, UnOp::Neg(_)),
+            Expr::Cast(cast) => {
+                type_name(&cast.ty).is_some_and(|target| NUMERIC_TYPES.contains(&target.as_str()))
+            }
+            Expr::MethodCall(call) => NUMERIC_METHODS.contains(&call.method.to_string().as_str()),
+            _ => false,
+        };
+    }
+    if matches!(parameter_type_name.as_str(), "str" | "String") {
+        return matches!(initializer, Expr::MethodCall(call)
+            if STRING_METHODS.contains(&call.method.to_string().as_str()));
+    }
+    if parameter_type_name == "Option" {
+        return matches!(initializer, Expr::MethodCall(call)
+            if matches!(call.method.to_string().as_str(), "unwrap_or" | "unwrap_or_default" | "unwrap_or_else")
+                && is_parameter(&call.receiver));
+    }
+    return false;
+}
+
 // `rust_type_is_shared_identity` read in source `from` (or the bare context), expanding at most 16
 // wrapper or alias layers so an alias cycle fails closed.
 fn shared_identity_type_at_depth(
@@ -13491,7 +13610,12 @@ fn emit_function(
             if let Some(param_name) = local_pattern_name(&typed.pat) {
                 function_context.insert(format!("{SCOPE_DECLARED_MARKER}{param_name}"));
                 let camel = snake_to_lower_camel(&param_name);
-                function_context.insert(format!("{MUTABLE_PARAMETER_MARKER}{camel}"));
+                let marker = format!("{MUTABLE_PARAMETER_MARKER}{camel}");
+                if parameter_is_reassignable(&param_name, &typed.ty, &function.block) {
+                    function_context.insert(marker);
+                } else {
+                    function_context.remove(&marker);
+                }
                 if camel != param_name {
                     function_context.insert(format!("{SCOPE_DECLARED_MARKER}{camel}"));
                 }
@@ -13599,7 +13723,12 @@ fn emit_local_function(
             if let Some(param_name) = local_pattern_name(&typed.pat) {
                 function_context.insert(format!("{SCOPE_DECLARED_MARKER}{param_name}"));
                 let camel = snake_to_lower_camel(&param_name);
-                function_context.insert(format!("{MUTABLE_PARAMETER_MARKER}{camel}"));
+                let marker = format!("{MUTABLE_PARAMETER_MARKER}{camel}");
+                if parameter_is_reassignable(&param_name, &typed.ty, &function.block) {
+                    function_context.insert(marker);
+                } else {
+                    function_context.remove(&marker);
+                }
                 if camel != param_name {
                     function_context.insert(format!("{SCOPE_DECLARED_MARKER}{camel}"));
                 }
@@ -29013,6 +29142,100 @@ fn apply_acronym_casing(name: &mut String) {
         }
     }
     *name = String::from_utf8(result).expect("ASCII transform preserves UTF-8");
+}
+
+// Whether every shadow of parameter `name` may lower to a plain reassignment of the TypeScript
+// parameter instead of a fresh `name_N` binding. Reassignment overwrites the one JS binding, so it is
+// only sound when each shadowing `let` is a top-level statement of the body (a shadow inside a block,
+// branch, loop or closure would leak past its Rust scope), no closure or async block reads the
+// parameter (it would observe the later value), and each initializer provably keeps the parameter's
+// TypeScript type.
+fn parameter_is_reassignable(name: &str, parameter_type: &Type, body: &syn::Block) -> bool {
+    struct NestedUseFinder<'a> {
+        name: &'a str,
+        found: bool,
+    }
+    impl<'ast> Visit<'ast> for NestedUseFinder<'_> {
+        fn visit_local(&mut self, local: &'ast syn::Local) {
+            if pattern_binds_name(&local.pat, self.name) {
+                self.found = true;
+            }
+            syn::visit::visit_local(self, local);
+        }
+        fn visit_expr_closure(&mut self, closure: &'ast syn::ExprClosure) {
+            self.found |= expression_reads_name(&closure.body, self.name);
+            syn::visit::visit_expr_closure(self, closure);
+        }
+        fn visit_expr_async(&mut self, block: &'ast syn::ExprAsync) {
+            self.found |= block_reads_name(&block.block, self.name);
+            syn::visit::visit_expr_async(self, block);
+        }
+    }
+    fn pattern_binds_name(pattern: &Pat, name: &str) -> bool {
+        struct Binder<'a> {
+            name: &'a str,
+            found: bool,
+        }
+        impl<'ast> Visit<'ast> for Binder<'_> {
+            fn visit_pat_ident(&mut self, pattern: &'ast syn::PatIdent) {
+                self.found |= pattern.ident == self.name;
+                syn::visit::visit_pat_ident(self, pattern);
+            }
+        }
+        let mut binder = Binder { name, found: false };
+        binder.visit_pat(pattern);
+        return binder.found;
+    }
+    struct Reader<'a> {
+        name: &'a str,
+        found: bool,
+    }
+    impl<'ast> Visit<'ast> for Reader<'_> {
+        fn visit_expr_path(&mut self, path: &'ast syn::ExprPath) {
+            self.found |= path.qself.is_none() && path.path.is_ident(self.name);
+            syn::visit::visit_expr_path(self, path);
+        }
+    }
+    fn expression_reads_name(expression: &Expr, name: &str) -> bool {
+        let mut reader = Reader { name, found: false };
+        reader.visit_expr(expression);
+        return reader.found;
+    }
+    fn block_reads_name(block: &syn::Block, name: &str) -> bool {
+        let mut reader = Reader { name, found: false };
+        reader.visit_block(block);
+        return reader.found;
+    }
+    let mut finder = NestedUseFinder { name, found: false };
+    for statement in &body.stmts {
+        match statement {
+            Stmt::Local(local) if pattern_binds_name(&local.pat, name) => {
+                let pattern = match &local.pat {
+                    Pat::Type(typed) => typed.pat.as_ref(),
+                    pattern => pattern,
+                };
+                let Pat::Ident(identifier) = pattern else {
+                    return false;
+                };
+                let Some(initializer) = &local.init else {
+                    return false;
+                };
+                if identifier.subpat.is_some()
+                    || identifier.by_ref.is_some()
+                    || initializer.diverge.is_some()
+                    || !shadow_preserves_parameter_type(name, parameter_type, &initializer.expr)
+                {
+                    return false;
+                }
+                finder.visit_expr(&initializer.expr);
+            }
+            statement => finder.visit_stmt(statement),
+        }
+        if finder.found {
+            return false;
+        }
+    }
+    return true;
 }
 
 fn parenthesize_compound(expr: &str) -> std::borrow::Cow<'_, str> {

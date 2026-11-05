@@ -27298,8 +27298,8 @@ pub fn exit_tuple_block(seed: u32, limit: u32) -> u32 {
 "#;
     let output = compile_typescript(source, None).unwrap();
     assert!(
-        output.contains("seed = seed * 2"),
-        "scope-declared tuple element should reassign the parameter: {output}"
+        output.contains("const seed_2 = seed_1 * 2"),
+        "scope-declared tuple element should get a fresh name: {output}"
     );
     assert!(
         output.contains("const extra = 1"),
@@ -27310,9 +27310,67 @@ pub fn exit_tuple_block(seed: u32, limit: u32) -> u32 {
         "should not use destructuring that redeclares the parameter: {output}"
     );
     assert!(
-        output.contains("return (seed + extra)"),
-        "subsequent uses should resolve to the reassigned parameter: {output}"
+        output.contains("return (seed_2 + extra)"),
+        "subsequent uses should resolve to the fresh name: {output}"
     );
+}
+
+#[test]
+fn parameter_shadow_reassigns_only_at_top_level_with_its_own_type() {
+    // A top-level shadow that keeps the parameter's type reassigns it. A shadow a closure could
+    // observe, one inside a nested scope, or one that changes the type binds a fresh name, so the
+    // closure keeps the original value, the outer read after the scope sees the parameter, and the
+    // parameter's declared type still holds.
+    let source = r#"
+pub fn offset(delta: i32) -> i32 {
+    let delta = delta + 1;
+    return delta;
+}
+
+pub fn defaulted(value: Option<i32>) -> i32 {
+    let value = value.unwrap_or(0);
+    return value;
+}
+
+pub fn captured(delta: i32) -> i32 {
+    let get = move || delta;
+    let delta = delta + 1;
+    return get() + delta;
+}
+
+pub fn looped(values: &Vec<i32>, delta: i32) -> i32 {
+    let mut total = 0;
+    for value in values {
+        let delta = delta + *value;
+        total += delta;
+    }
+    return total + delta;
+}
+
+pub fn branched(delta: i32, flag: bool) -> i32 {
+    if flag {
+        let delta = delta * 2;
+        return delta;
+    }
+    return delta;
+}
+
+pub fn count(items: &Vec<i32>) -> usize {
+    let items = items.len();
+    return items;
+}
+"#;
+    let output = compile_typescript(source, None).unwrap();
+    for expected in [
+        "export function offset(delta: number): number {\n  delta = delta + 1;\n  return delta;\n}",
+        "export function defaulted(value?: number): number {\n  value = value ?? 0;\n  return value;\n}",
+        "  const get = () => delta;\n  const delta_1 = delta + 1;\n  return get() + delta_1;\n",
+        "    const delta_1 = delta + value;\n    total += delta_1;\n  }\n  return total + delta;\n",
+        "    const delta_1 = delta * 2;\n    return delta_1;\n  }\n  return delta;\n",
+        "  const items_1 = items.length;\n  return items_1;\n",
+    ] {
+        assert!(output.contains(expected), "{expected}\n---\n{output}");
+    }
 }
 
 #[test]
