@@ -1,4 +1,4 @@
-import type { SpatialIndex2D, SpatialIndexingExplanation, SpatialObjectId } from '@flighthq/types/contract';
+import type { SpatialIndex2D, SpatialIndexingExplanation, SpatialObjectId } from './types.ts';
 
 // Reports how the index is currently holding `id`, as plain data. Pure: reads only, indexes nothing,
 // never throws on an unknown id, and retains no reference to the backend. Import it to answer "why is

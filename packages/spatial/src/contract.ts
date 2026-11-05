@@ -7,3 +7,4 @@ export * from './spatialIndex3D.ts';
 export * from './spatialIndexingGuard.ts';
 export * from './uniformGrid.ts';
 export * from './uniformGrid3D.ts';
+export type * from './types.ts';

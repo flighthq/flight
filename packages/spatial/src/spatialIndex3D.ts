@@ -1,14 +1,14 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type { EntityConstruction } from '@flighthq/types/contract';
+
 import type {
-  EntityConstruction,
   SpatialAabb3D,
   SpatialFrustum3D,
   SpatialIndex3D,
   SpatialIndexBackend3D,
   SpatialObjectId,
   SpatialPair,
-} from '@flighthq/types/contract';
-
+} from './types.ts';
 import { createUniformGridSpatialBackend3D } from './uniformGrid3D.ts';
 
 // Empties the index of all objects while keeping it (and its backend) reusable.

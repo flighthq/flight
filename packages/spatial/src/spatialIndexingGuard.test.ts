@@ -1,7 +1,7 @@
-import type { SpatialIndexingNotice, SpatialObjectId } from '@flighthq/types/contract';
 import { afterEach, describe, expect, it } from 'vitest';
 
 import { reportSpatialIndexing, setSpatialIndexingGuard } from './spatialIndexingGuard.ts';
+import type { SpatialIndexingNotice, SpatialObjectId } from './types.ts';
 import { createUniformGridSpatialBackend2D } from './uniformGrid.ts';
 import { createUniformGridSpatialBackend3D } from './uniformGrid3D.ts';
 

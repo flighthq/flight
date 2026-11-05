@@ -1,4 +1,3 @@
-import type { SpatialObjectId } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { explainSpatialIndexing2D } from './explainSpatialIndexing2D.ts';
@@ -8,6 +7,7 @@ import {
   removeSpatialObject2D,
   updateSpatialObject2D,
 } from './spatialIndex.ts';
+import type { SpatialObjectId } from './types.ts';
 import { MAX_INDEXED_CELLS_PER_OBJECT, createUniformGridSpatialBackend2D } from './uniformGrid.ts';
 
 describe('explainSpatialIndexing2D', () => {

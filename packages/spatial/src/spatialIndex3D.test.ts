@@ -1,4 +1,3 @@
-import type { SpatialAabb3D, SpatialFrustum3D, SpatialObjectId, SpatialPair } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import {
@@ -15,6 +14,7 @@ import {
   removeSpatialObject3D,
   updateSpatialObject3D,
 } from './spatialIndex3D.ts';
+import type { SpatialAabb3D, SpatialFrustum3D, SpatialObjectId, SpatialPair } from './types.ts';
 import { createUniformGridSpatialBackend3D } from './uniformGrid3D.ts';
 
 function box(minX: number, minY: number, minZ: number, size: number): SpatialAabb3D {

@@ -1,5 +1,4 @@
-import type { SpatialIndexingNotice } from '@flighthq/types/contract';
-
+import type { SpatialIndexingNotice } from './types.ts';
 import { MAX_INDEXED_CELLS_PER_OBJECT } from './uniformGrid.ts';
 
 // Renders an indexing notice as a caller-facing sentence, and is the only place in this package that

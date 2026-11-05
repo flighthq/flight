@@ -1,9 +1,9 @@
-import type { SpatialAabb3D, SpatialIndexBackend3D, SpatialObjectId, SpatialPair } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { createBvhSpatialBackend3D, initializeBvhSpatialBackend3D } from './bvh3D.ts';
 import { setSpatialIndexingGuard } from './spatialIndexingGuard.ts';
+import type { SpatialAabb3D, SpatialIndexBackend3D, SpatialObjectId, SpatialPair } from './types.ts';
 import { createUniformGridSpatialBackend3D } from './uniformGrid3D.ts';
 
 // The BVH is tested against the UNIFORM GRID, not against itself. The grid is the proven incumbent and

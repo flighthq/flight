@@ -1,8 +1,8 @@
-import type { SpatialAabb3D } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { explainSpatialIndexing3D } from './explainSpatialIndexing3D.ts';
 import { createSpatialIndex3D, insertSpatialObject3D, removeSpatialObject3D } from './spatialIndex3D.ts';
+import type { SpatialAabb3D } from './types.ts';
 import { MAX_INDEXED_CELLS_PER_OBJECT } from './uniformGrid.ts';
 import { createUniformGridSpatialBackend3D } from './uniformGrid3D.ts';
 

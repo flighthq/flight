@@ -1,7 +1,8 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type { Entity, EntityConstruction } from '@flighthq/types/contract';
+
+import { reportSpatialIndexing } from './spatialIndexingGuard.ts';
 import type {
-  Entity,
-  EntityConstruction,
   SpatialAabb3D,
   SpatialIndexBackend3D,
   SpatialIndexingExplanation,
@@ -10,9 +11,7 @@ import type {
   SpatialIndexingReason,
   SpatialObjectId,
   SpatialPair,
-} from '@flighthq/types/contract';
-
-import { reportSpatialIndexing } from './spatialIndexingGuard.ts';
+} from './types.ts';
 
 // A dynamic bounding-volume hierarchy: the second 3D backend, beside the uniform grid.
 //

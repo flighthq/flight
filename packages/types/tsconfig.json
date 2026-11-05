@@ -17,6 +17,7 @@
       ".path-types",
       ".selection-types",
       ".shape-types",
+      ".spatial-types",
       ".statechart-types",
       ".text-types",
       ".textlayout-types",
@@ -92,6 +93,9 @@
     },
     {
       "path": "../signals"
+    },
+    {
+      "path": "../spatial/tsconfig.contract.json"
     },
     {
       "path": "../statechart/tsconfig.contract.json"

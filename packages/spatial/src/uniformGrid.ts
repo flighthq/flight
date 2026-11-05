@@ -1,7 +1,8 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type { Entity, EntityConstruction } from '@flighthq/types/contract';
+
+import { reportSpatialIndexing } from './spatialIndexingGuard.ts';
 import type {
-  Entity,
-  EntityConstruction,
   SpatialAabb2D,
   SpatialIndexBackend2D,
   SpatialDeclineReason,
@@ -11,9 +12,7 @@ import type {
   SpatialIndexingReason,
   SpatialObjectId,
   SpatialPair,
-} from '@flighthq/types/contract';
-
-import { reportSpatialIndexing } from './spatialIndexingGuard.ts';
+} from './types.ts';
 
 // The per-object cell budget. An object whose AABB covers more cells than this is held in the flat
 // overflow list instead of being written into every cell it spans.

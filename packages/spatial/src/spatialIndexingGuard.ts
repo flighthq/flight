@@ -1,4 +1,4 @@
-import type { SpatialIndexingGuard, SpatialIndexingNotice } from '@flighthq/types/contract';
+import type { SpatialIndexingGuard, SpatialIndexingNotice } from './types.ts';
 
 // Hands a notice to the installed guard, or does nothing when none is installed. The null check is
 // all production pays at a noteworthy site; the caller-facing text lives in the separately-importable

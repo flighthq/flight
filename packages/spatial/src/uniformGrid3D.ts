@@ -1,7 +1,8 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type { Entity, EntityConstruction } from '@flighthq/types/contract';
+
+import { reportSpatialIndexing } from './spatialIndexingGuard.ts';
 import type {
-  Entity,
-  EntityConstruction,
   SpatialAabb3D,
   SpatialDeclineReason,
   SpatialIndexBackend3D,
@@ -11,9 +12,7 @@ import type {
   SpatialIndexingReason,
   SpatialObjectId,
   SpatialPair,
-} from '@flighthq/types/contract';
-
-import { reportSpatialIndexing } from './spatialIndexingGuard.ts';
+} from './types.ts';
 import { MAX_INDEXED_CELLS_PER_OBJECT } from './uniformGrid.ts';
 
 export function createUniformGridSpatialBackend3D(cellSize: number): SpatialIndexBackend3D & Entity {

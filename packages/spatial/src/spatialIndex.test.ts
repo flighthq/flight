@@ -1,4 +1,3 @@
-import type { SpatialIndex2D, SpatialObjectId, SpatialPair } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import {
@@ -13,6 +12,7 @@ import {
   removeSpatialObject2D,
   updateSpatialObject2D,
 } from './spatialIndex.ts';
+import type { SpatialIndex2D, SpatialObjectId, SpatialPair } from './types.ts';
 import { createUniformGridSpatialBackend2D } from './uniformGrid.ts';
 
 function makeIndex(cellSize = 10): SpatialIndex2D {
