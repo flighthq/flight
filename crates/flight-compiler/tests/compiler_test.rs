@@ -16973,7 +16973,7 @@ pub fn empty_string() -> String {
             "return Array.from({ length: value.length }, (_, index) => value.charCodeAt(index)).length;"
         ));
         assert!(output.contains("return values.filter((value) => value % 2 === 0).length;"));
-        assert!(output.contains("return [...value.slice(start, end)];"));
+        assert!(output.contains("return value.slice(start, end);"));
         assert!(output.contains("return '';"));
     }
 
