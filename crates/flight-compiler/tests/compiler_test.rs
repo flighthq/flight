@@ -10,8 +10,10 @@ use flight_compiler::{
     compile_typescript_with_options_and_internal_type_exports_and_array_parameters,
     compile_typescript_with_visibility_sources, compile_vitest, compile_vitest_with_alias_sources,
     compile_vitest_with_contract_alias_sources, compile_vitest_with_external_alias_sources,
-    compile_vitest_with_module_alias_sources, compile_vitest_with_options,
-    compile_vitest_with_visibility_sources, root_only_names, source_mode,
+    compile_vitest_with_module_alias_sources,
+    compile_vitest_with_module_visibility_sources_and_array_parameters,
+    compile_vitest_with_options, compile_vitest_with_visibility_sources, root_only_names,
+    source_mode,
 };
 
 mod source_modes {
@@ -22743,7 +22745,7 @@ pub fn create_query(capacity: u32) -> u32 {
         let contract = "pub use super::buffer::*;\npub use super::query::*;\n";
         // A call inside a test module of the same name, as the physics ABI buffer tests are written.
         let source = r#"
-use crate::*;
+use flight_example::*;
 
 mod initialize_buffer {
     use super::*;
@@ -22751,7 +22753,7 @@ mod initialize_buffer {
     #[test]
     fn is_the_construction_initializer_of_create_buffer() {
         let mut buffer = create_buffer(1);
-        initialize_buffer(&mut buffer, 2);
+        super::initialize_buffer(&mut buffer, 2);
         assert_eq!(buffer.capacity, 2);
         assert_eq!(create_query(3), 3);
     }
@@ -22764,11 +22766,11 @@ mod initialize_buffer {
             &[
                 VitestAliasSource {
                     source: buffer,
-                    module: "src/buffer.rs",
+                    module: "crates/flight-example/src/buffer.rs",
                 },
                 VitestAliasSource {
                     source: query,
-                    module: "src/query.rs",
+                    module: "crates/flight-example/src/query.rs",
                 },
             ],
         )
@@ -22787,11 +22789,11 @@ mod initialize_buffer {
             &[
                 VitestAliasSource {
                     source: buffer,
-                    module: "src/buffer.rs",
+                    module: "crates/flight-example/src/buffer.rs",
                 },
                 VitestAliasSource {
                     source: &format!("{query}{duplicate}"),
-                    module: "src/query.rs",
+                    module: "crates/flight-example/src/query.rs",
                 },
             ],
         )
@@ -22802,6 +22804,67 @@ mod initialize_buffer {
             error.contains("src/buffer.rs") && error.contains("src/query.rs"),
             "{error}"
         );
+    }
+
+    #[test]
+    fn resolves_qualified_contract_calls_from_target_native_visibility_sources() {
+        let production = r#"
+//! flight-compiler: target-native
+
+pub fn enable_layout_guards(state: &mut u32) {
+    *state = 1;
+}
+"#;
+        let contract = "pub use super::enable_layout_guards::*;\n";
+        let source = r#"
+use flight_example::*;
+
+mod enable_layout_guards {
+    use super::*;
+
+    #[test]
+    fn enables_the_guard() {
+        let mut state = 0;
+        super::enable_layout_guards(&mut state);
+        assert_eq!(state, 1);
+    }
+}
+"#;
+        let visibility = [ModuleSource {
+            source: production,
+            path: "crates/flight-example/src/enable_layout_guards.rs",
+        }];
+        let compile = |contract_source| {
+            compile_vitest_with_module_visibility_sources_and_array_parameters(
+                source,
+                "@flighthq/example/contract",
+                Some(contract_source),
+                &[],
+                &[],
+                &[],
+                &visibility,
+                &[],
+                &[],
+                &[],
+                &[],
+                &[],
+                &[],
+                &[],
+            )
+        };
+
+        let output = compile(contract).unwrap();
+        assert!(
+            output.contains(
+                "import {\n  enableLayoutGuards,\n} from '@flighthq/example/contract';"
+            ),
+            "{output}"
+        );
+        assert!(output.contains("enableLayoutGuards(state);"), "{output}");
+
+        let error = compile("").unwrap_err().to_string();
+        assert!(error.contains("enable_layout_guards"), "{error}");
+        assert!(error.contains("contract.rs does not select"), "{error}");
     }
 
     #[test]

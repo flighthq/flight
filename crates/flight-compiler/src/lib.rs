@@ -861,7 +861,7 @@ fn compile_vitest_with_contract_alias_sources_internal(
     alias_sources: &[VitestAliasSource<'_>],
     external_alias_sources: &[ExternalAliasSource<'_>],
     type_script_string_unions: &[TypeScriptStringUnion<'_>],
-    visibility_sources: &[&str],
+    visibility_sources: &[ModuleSource<'_>],
     type_script_type_aliases: &[TypeScriptTypeAlias<'_>],
     type_script_array_parameters: &[TypeScriptArrayParameter<'_>],
     type_script_nullable_option_fields: &[TypeScriptNullableOptionField<'_>],
@@ -927,7 +927,7 @@ fn compile_vitest_with_contract_alias_sources_internal(
         parse_external_string_union_metadata(external_alias_sources)?;
     let visibility_programs = visibility_sources
         .iter()
-        .map(|source| model::parse_visibility_program(source))
+        .map(|source| model::parse_visibility_program(source.source))
         .collect::<Result<Vec<_>, _>>()?;
     let type_script_string_union_metadata = resolve_type_script_string_union_metadata(
         type_script_string_unions,
@@ -979,56 +979,56 @@ fn compile_vitest_with_contract_alias_sources_internal(
         &external_record_structs,
         &external_shared_identity_fields(external_alias_sources)?,
         contract_source,
+        &visibility_programs
+            .iter()
+            .zip(visibility_sources)
+            .map(|(program, source)| (source.path, program))
+            .collect::<Vec<_>>(),
     )?;
     typescript::insert_type_script_type_alias_context(&mut context, type_script_type_aliases);
     let visibility_program_refs = visibility_programs
         .iter()
-        .enumerate()
-        .map(|(index, program)| (format!("vitest-visibility/{index}"), program))
+        .zip(visibility_sources)
+        .map(|(program, source)| (source.path, program))
         .collect::<Vec<_>>();
     typescript::insert_type_script_array_parameter_context(
         &mut context,
-        alias_program_refs.iter().copied().chain(
-            visibility_program_refs
-                .iter()
-                .map(|(module, program)| (module.as_str(), *program)),
-        ),
+        alias_program_refs
+            .iter()
+            .copied()
+            .chain(visibility_program_refs.iter().copied()),
         type_script_array_parameters,
     )?;
     typescript::insert_type_script_nullable_option_field_context(
         &mut context,
-        alias_program_refs.iter().copied().chain(
-            visibility_program_refs
-                .iter()
-                .map(|(module, program)| (module.as_str(), *program)),
-        ),
+        alias_program_refs
+            .iter()
+            .copied()
+            .chain(visibility_program_refs.iter().copied()),
         type_script_nullable_option_fields,
     )?;
     typescript::insert_type_script_nullable_option_return_context(
         &mut context,
-        alias_program_refs.iter().copied().chain(
-            visibility_program_refs
-                .iter()
-                .map(|(module, program)| (module.as_str(), *program)),
-        ),
+        alias_program_refs
+            .iter()
+            .copied()
+            .chain(visibility_program_refs.iter().copied()),
         type_script_nullable_option_returns,
     )?;
     typescript::insert_type_script_nullable_option_parameter_context(
         &mut context,
-        alias_program_refs.iter().copied().chain(
-            visibility_program_refs
-                .iter()
-                .map(|(module, program)| (module.as_str(), *program)),
-        ),
+        alias_program_refs
+            .iter()
+            .copied()
+            .chain(visibility_program_refs.iter().copied()),
         type_script_nullable_option_parameters,
     )?;
     typescript::insert_type_script_default_null_option_parameter_context(
         &mut context,
-        alias_program_refs.iter().copied().chain(
-            visibility_program_refs
-                .iter()
-                .map(|(module, program)| (module.as_str(), *program)),
-        ),
+        alias_program_refs
+            .iter()
+            .copied()
+            .chain(visibility_program_refs.iter().copied()),
         type_script_default_null_option_parameters,
     )?;
     typescript::insert_vitest_own_public_context(
@@ -1057,10 +1057,10 @@ fn compile_vitest_with_contract_alias_sources_internal(
     // A target-native sibling's hand-written TypeScript twin takes `T | null` for the Option parameters
     // of a `nullable-options` module, so a `None` argument passed to its public functions lowers to `null`.
     for visibility_source in visibility_sources {
-        if !matches!(source_mode(visibility_source)?, SourceMode::TargetNative) {
+        if !matches!(source_mode(visibility_source.source)?, SourceMode::TargetNative) {
             continue;
         }
-        let visibility_program = model::parse_external_nullable_options(visibility_source)?;
+        let visibility_program = model::parse_external_nullable_options(visibility_source.source)?;
         if visibility_program.nullable_options {
             typescript::insert_vitest_nullable_call_context(
                 &mut context,
@@ -1246,8 +1246,8 @@ pub fn compile_vitest_with_module_alias_sources(
 }
 
 /// Compiles one Rust test module with production hints, dependency sources, and the crate's
-/// target-native sources, read only for the nullable Option parameters their `nullable-options`
-/// directive declares.
+/// target-native sources, read for their public declarations and established TypeScript
+/// representations without emitting their bodies.
 // flight-lint: allow(contract-vocabulary) compiler host tooling is not a transpilation contract
 pub fn compile_vitest_with_visibility_sources(
     source: &str,
@@ -1323,6 +1323,51 @@ pub fn compile_vitest_with_options_and_array_parameters(
     external_alias_sources: &[ExternalAliasSource<'_>],
     type_script_string_unions: &[TypeScriptStringUnion<'_>],
     visibility_sources: &[&str],
+    type_script_type_aliases: &[TypeScriptTypeAlias<'_>],
+    type_script_array_parameters: &[TypeScriptArrayParameter<'_>],
+    type_script_nullable_option_fields: &[TypeScriptNullableOptionField<'_>],
+    type_script_default_null_option_parameters: &[TypeScriptDefaultNullOptionParameter<'_>],
+    type_script_nullable_option_parameters: &[TypeScriptNullableOptionParameter<'_>],
+    type_script_nullable_option_returns: &[TypeScriptNullableOptionReturn<'_>],
+    support_sources: &[VitestSupportSource<'_>],
+) -> Result<String, CompileError> {
+    let visibility_paths = (0..visibility_sources.len())
+        .map(|index| format!("vitest-visibility/{index}.rs"))
+        .collect::<Vec<_>>();
+    let visibility_modules = visibility_sources
+        .iter()
+        .zip(&visibility_paths)
+        .map(|(source, path)| ModuleSource { source, path })
+        .collect::<Vec<_>>();
+    return compile_vitest_with_module_visibility_sources_and_array_parameters(
+        source,
+        contract_module,
+        contract_source,
+        alias_sources,
+        external_alias_sources,
+        type_script_string_unions,
+        &visibility_modules,
+        type_script_type_aliases,
+        type_script_array_parameters,
+        type_script_nullable_option_fields,
+        type_script_default_null_option_parameters,
+        type_script_nullable_option_parameters,
+        type_script_nullable_option_returns,
+        support_sources,
+    );
+}
+
+/// Compiles one Rust test module with path-qualified target-native visibility sources and explicit
+/// TypeScript representations. Source paths preserve ownership for strict contract provenance.
+// flight-lint: allow(contract-vocabulary) compiler host tooling is not a transpilation contract
+pub fn compile_vitest_with_module_visibility_sources_and_array_parameters(
+    source: &str,
+    contract_module: &str,
+    contract_source: Option<&str>,
+    alias_sources: &[VitestAliasSource<'_>],
+    external_alias_sources: &[ExternalAliasSource<'_>],
+    type_script_string_unions: &[TypeScriptStringUnion<'_>],
+    visibility_sources: &[ModuleSource<'_>],
     type_script_type_aliases: &[TypeScriptTypeAlias<'_>],
     type_script_array_parameters: &[TypeScriptArrayParameter<'_>],
     type_script_nullable_option_fields: &[TypeScriptNullableOptionField<'_>],

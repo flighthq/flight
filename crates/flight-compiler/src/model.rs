@@ -3013,8 +3013,8 @@ fn parse_test_suite(module: syn::ItemMod) -> Result<TestSuite, CompileError> {
 
 // A source the crate compiles but this compiler does not emit (a target-native module, the crate
 // root): parsed only for what the eager-initialization proof must see across the whole crate, its
-// implicit-dispatch facts and the declarations that resolve names in it. It is never validated as
-// portable Rust, and none of its items are walked or emitted.
+// implicit-dispatch facts, and the declarations and function signatures that resolve names in it.
+// It is never validated as portable Rust, and none of its bodies are lowered or emitted.
 pub(crate) fn parse_visibility_program(source: &str) -> Result<Program, CompileError> {
     let file = syn::parse_file(source)
         .map_err(|error| compile_error(format!("failed to parse Rust source: {error}")))?;
@@ -3045,6 +3045,7 @@ pub(crate) fn parse_visibility_program(source: &str) -> Result<Program, CompileE
                 program.enums.push(item.clone());
             }
             Item::ExternCrate(item) => program.extern_crates.push(item.clone()),
+            Item::Fn(item) => program.functions.push(item.clone()),
             Item::Macro(item_macro) => {
                 if item_macro
                     .mac

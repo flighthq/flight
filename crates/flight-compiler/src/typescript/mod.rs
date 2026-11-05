@@ -8502,6 +8502,7 @@ pub(crate) fn generation_context(
     external_record_structs: &[ItemStruct],
     external_shared_identity_facts: &BTreeSet<String>,
     contract_source: Option<&str>,
+    provenance_visibility_programs: &[(&str, &Program)],
 ) -> Result<HashSet<String>, CompileError> {
     return generation_context_with_types(
         programs,
@@ -8510,6 +8511,7 @@ pub(crate) fn generation_context(
         contract_source,
         true,
         &[],
+        provenance_visibility_programs,
     );
 }
 
@@ -8871,6 +8873,7 @@ fn generation_context_with_types(
     contract_source: Option<&str>,
     strict_vitest_provenance: bool,
     visibility_programs: &[Program],
+    provenance_visibility_programs: &[(&str, &Program)],
 ) -> Result<HashSet<String>, CompileError> {
     let mut context = type_context.clone();
     insert_export_name_context(&mut context, programs)?;
@@ -8940,9 +8943,14 @@ fn generation_context_with_types(
                 .map(|structure| structure.ident.to_string())
         })
         .collect::<HashSet<_>>();
+    let provenance_programs = programs
+        .iter()
+        .chain(provenance_visibility_programs)
+        .copied()
+        .collect::<Vec<_>>();
     let mut public_struct_owners = ProvenanceDeclarations::new();
     let mut public_function_owners = ProvenanceDeclarations::new();
-    for (module, program) in programs {
+    for (module, program) in &provenance_programs {
         for structure in &program.structs {
             if is_public(&structure.vis) {
                 public_struct_owners
@@ -8966,8 +8974,10 @@ fn generation_context_with_types(
             }
         }
     }
-    let public_struct_module_bindings = public_module_bindings(&public_struct_owners, programs);
-    let public_function_module_bindings = public_module_bindings(&public_function_owners, programs);
+    let public_struct_module_bindings =
+        public_module_bindings(&public_struct_owners, &provenance_programs);
+    let public_function_module_bindings =
+        public_module_bindings(&public_function_owners, &provenance_programs);
     if strict_vitest_provenance {
         for (declaration, identities) in &public_struct_owners {
             for identity in identities {
@@ -24429,6 +24439,7 @@ pub(crate) fn emit_program(input: &EmitProgramInput) -> Result<String, CompileEr
         None,
         false,
         visibility_programs,
+        &[],
     )?;
     insert_visibility_collection_context(
         &mut expression_context,
