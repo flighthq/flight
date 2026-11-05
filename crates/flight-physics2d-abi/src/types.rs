@@ -1,4 +1,5 @@
 //! flight-compiler: rust-only
+//! flight-compiler: string-union Physics2DAbiExecutionStatus=rust-variant
 
 // flight-lint: allow-file(f64) D1: the wire carries IEEE doubles (TS Float64Array readback rows) and the step dt is flight-physics2d's f64 timestep
 //! The Physics2D ABI records (TS `types/Physics2DAbi.ts`, final-owned here per D8): handles and

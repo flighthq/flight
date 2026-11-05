@@ -1,4 +1,5 @@
 //! flight-compiler: rust-only
+//! flight-compiler: string-union Physics3DAbiExecutionStatus=rust-variant
 
 // flight-lint: allow-file(f64) D1: the wire carries IEEE doubles (TS Float64Array readback rows)
 //! The Physics3D ABI records (TS `types/Physics3DAbi.ts`, final-owned here per D8): handles and
