@@ -14650,6 +14650,12 @@ fn emit_iter_mut_loop(
     chain: IterMutChain<'_>,
     entities: &HashSet<String>,
     indent: usize,
+    emit_body: fn(
+        &mut String,
+        &[Stmt],
+        &HashSet<String>,
+        usize,
+    ) -> Result<(), CompileError>,
 ) -> Result<(), CompileError> {
     let collection_expr = emit_expression(collection, entities)?;
     let index_var = "__i";
@@ -14696,8 +14702,10 @@ fn emit_iter_mut_loop(
         _ => mark_reference(&mut loop_context, &loop_expression.pat),
     }
 
-    let add_alias = |context: &mut HashSet<String>, name: &str, collection: &str, index: &str| {
-        if let Some(id) = lexical_binding(context, name) {
+    let add_alias = |context: &mut HashSet<String>, pattern: &Pat, collection: &str, index: &str| {
+        if let Some(name) = local_pattern_name(pattern)
+            && let Some(id) = lexical_binding(context, &name)
+        {
             context.insert(format!("{ITER_MUT_ALIAS_MARKER}{id}={collection}[{index}]"));
         }
     };
@@ -14714,9 +14722,13 @@ fn emit_iter_mut_loop(
                 "portable iter_mut().zip() requires a 2-element tuple pattern",
             ));
         }
-        let mut_name = emit_pattern(&tuple.elems[0])?;
         let zip_name = emit_pattern(&tuple.elems[1])?;
-        add_alias(&mut loop_context, &mut_name, &collection_expr, index_var);
+        add_alias(
+            &mut loop_context,
+            &tuple.elems[0],
+            &collection_expr,
+            index_var,
+        );
         write_indent(out, indent);
         writeln!(
             out,
@@ -14726,7 +14738,7 @@ fn emit_iter_mut_loop(
         write_indent(out, indent + 1);
         writeln!(out, "const {zip_name} = {zip_collection}[{index_var}];")
             .expect("writing to a String cannot fail");
-        emit_block(out, &loop_expression.body.stmts, &loop_context, indent + 1)?;
+        emit_body(out, &loop_expression.body.stmts, &loop_context, indent + 1)?;
         write_indent(out, indent);
         out.push_str("}\n");
         return Ok(());
@@ -14744,10 +14756,9 @@ fn emit_iter_mut_loop(
             ));
         }
         let index_name = emit_pattern(&tuple.elems[0])?;
-        let element_name = emit_pattern(&tuple.elems[1])?;
         add_alias(
             &mut loop_context,
-            &element_name,
+            tuple.elems.last().expect("two tuple elements were required"),
             &collection_expr,
             &index_name,
         );
@@ -14757,16 +14768,15 @@ fn emit_iter_mut_loop(
             "for (let {index_name} = 0; {index_name} < {limit}; {index_name}++) {{"
         )
         .expect("writing to a String cannot fail");
-        emit_block(out, &loop_expression.body.stmts, &loop_context, indent + 1)?;
+        emit_body(out, &loop_expression.body.stmts, &loop_context, indent + 1)?;
         write_indent(out, indent);
         out.push_str("}\n");
         return Ok(());
     }
 
-    let element_name = emit_pattern(&loop_expression.pat)?;
     add_alias(
         &mut loop_context,
-        &element_name,
+        &loop_expression.pat,
         &collection_expr,
         index_var,
     );
@@ -14776,10 +14786,40 @@ fn emit_iter_mut_loop(
         "for (let {index_var} = 0; {index_var} < {limit}; {index_var}++) {{"
     )
     .expect("writing to a String cannot fail");
-    emit_block(out, &loop_expression.body.stmts, &loop_context, indent + 1)?;
+    emit_body(out, &loop_expression.body.stmts, &loop_context, indent + 1)?;
     write_indent(out, indent);
     out.push_str("}\n");
     Ok(())
+}
+
+// Mutable sequence iteration is one shared aliasing rule for generated sources and portable tests.
+// The caller supplies its own statement emitter so Vitest assertions and production statements keep
+// their distinct lowering while both write directly through the indexed collection slot.
+pub(super) fn emit_iter_mut_loop_if_supported(
+    out: &mut String,
+    loop_expression: &syn::ExprForLoop,
+    entities: &HashSet<String>,
+    indent: usize,
+    emit_body: fn(
+        &mut String,
+        &[Stmt],
+        &HashSet<String>,
+        usize,
+    ) -> Result<(), CompileError>,
+) -> Result<bool, CompileError> {
+    let Some((collection, chain)) = iter_mut_chain(&loop_expression.expr) else {
+        return Ok(false);
+    };
+    emit_iter_mut_loop(
+        out,
+        loop_expression,
+        collection,
+        chain,
+        entities,
+        indent,
+        emit_body,
+    )?;
+    return Ok(true);
 }
 
 pub(crate) fn emit_for_header(
@@ -26595,9 +26635,13 @@ fn emit_statement(
             emit_swap_remove_statement(out, call, entities, indent)?;
         }
         Stmt::Expr(Expr::ForLoop(loop_expression), _) => {
-            if let Some((collection, chain)) = iter_mut_chain(&loop_expression.expr) {
-                emit_iter_mut_loop(out, loop_expression, collection, chain, entities, indent)?;
-            } else {
+            if !emit_iter_mut_loop_if_supported(
+                out,
+                loop_expression,
+                entities,
+                indent,
+                emit_block,
+            )? {
                 let mut loop_context = lexical_pattern_context(entities, &loop_expression.pat);
                 if let Some(loop_var) = local_pattern_name(&loop_expression.pat) {
                     loop_context.insert(format!("{SCOPE_DECLARED_MARKER}{loop_var}"));

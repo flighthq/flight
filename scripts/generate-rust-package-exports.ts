@@ -1542,6 +1542,28 @@ export function hasTypeScriptNullableOptionFunctionBoundary(typescript: string):
   );
 }
 
+// A target-native body may be intentionally untranspilable even though its public Rust signature is
+// available to the compiler. Seed its established `null` return positions from the handwritten
+// TypeScript surface; `--typescript-nullable-option-return` then makes the compiler prove that each
+// exact public Rust function or callable alias returns `Option` before the metadata can be retained.
+export function typeScriptTargetNativeNullableOptionReturnArguments(typescript: string): string[] {
+  const parsed = parseTypeScriptMetadataSurface('contract.ts', typescript);
+  if (parsed.errors.length > 0) {
+    throw new Error(
+      `could not parse TypeScript contract while resolving target-native nullable returns: ${parsed.errors[0]?.message}`,
+    );
+  }
+  const body = parsed.program.body as unknown as Record<string, unknown>[];
+  const names = new Set<string>();
+  for (const [name, function_] of exportedFunctionTypes(body)) {
+    if (typeUnionHasOnlyAbsence(function_.returnType, 'TSNullKeyword')) names.add(name);
+  }
+  for (const [name, returnType] of exportedCallableReturnTypes(body)) {
+    if (typeUnionHasOnlyAbsence(returnType, 'TSNullKeyword')) names.add(name);
+  }
+  return [...names].sort().flatMap((name) => ['--typescript-nullable-option-return', name]);
+}
+
 export function hasTypeScriptArrayParameterFunctionBoundary(typescript: string): boolean {
   const parsed = parseTypeScriptMetadataSurface('contract.ts', typescript);
   if (parsed.errors.length > 0) return false;

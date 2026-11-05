@@ -19,7 +19,7 @@ use crate::typescript::{
     ProvenanceImportRule, begin_option_if, begin_option_while, contract_typed_array_return_value,
     emit_block_with_tail_returns,
     emit_expression, emit_expression_for_type, emit_for_header, emit_format_template, emit_local,
-    emit_local_function, emit_local_with_shadow_and_else, emit_match_statement,
+    emit_iter_mut_loop_if_supported, emit_local_function, emit_local_with_shadow_and_else, emit_match_statement,
     emit_option_binding, emit_parameter, emit_type, emit_type_parameters,
     emit_vec_extend_statement, export_name, frozen_object_name, function_expression_context,
     function_returns_uint8_array, exact_mutable_scalar_reference, exact_portable_scalar_type,
@@ -4686,17 +4686,19 @@ fn emit_statement(
             }
         }
         Stmt::Expr(Expr::ForLoop(expression), _) => {
-            let loop_context = lexical_pattern_context(context, &expression.pat);
-            write_indent(out, indent);
-            writeln!(
-                out,
-                "for ({}) {{",
-                emit_for_header(&expression.pat, &expression.expr, context)?
-            )
-            .expect("writing to a String cannot fail");
-            emit_block(out, &expression.body.stmts, &loop_context, indent + 1)?;
-            write_indent(out, indent);
-            out.push_str("}\n");
+            if !emit_iter_mut_loop_if_supported(out, expression, context, indent, emit_block)? {
+                let loop_context = lexical_pattern_context(context, &expression.pat);
+                write_indent(out, indent);
+                writeln!(
+                    out,
+                    "for ({}) {{",
+                    emit_for_header(&expression.pat, &expression.expr, context)?
+                )
+                .expect("writing to a String cannot fail");
+                emit_block(out, &expression.body.stmts, &loop_context, indent + 1)?;
+                write_indent(out, indent);
+                out.push_str("}\n");
+            }
         }
         Stmt::Expr(Expr::While(expression), _) => {
             let loop_context = if let Expr::Let(binding) = expression.cond.as_ref() {
@@ -5516,10 +5518,11 @@ fn expression_contains_suffixed_f32(expression: &Expr) -> bool {
 }
 
 fn is_array_expression(expression: &Expr) -> bool {
-    return matches!(
-        unparenthesized(expression),
-        Expr::Array(_) | Expr::Repeat(_)
-    );
+    return match unparenthesized(expression) {
+        Expr::Array(_) | Expr::Repeat(_) => true,
+        Expr::Reference(reference) => is_array_expression(&reference.expr),
+        _ => false,
+    };
 }
 
 fn local_name(pattern: &Pat) -> Option<String> {

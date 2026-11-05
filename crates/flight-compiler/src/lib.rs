@@ -1014,6 +1014,18 @@ fn compile_vitest_with_contract_alias_sources_internal(
         .zip(&alias_programs)
         .map(|(source, program)| (source.module, program))
         .collect::<Vec<_>>();
+    let alias_semantic_identities = alias_sources
+        .iter()
+        .map(|source| {
+            module_identity_from_path(source.module, &[])
+                .unwrap_or_else(|| source.module.to_string())
+        })
+        .collect::<Vec<_>>();
+    let alias_semantic_program_refs = alias_semantic_identities
+        .iter()
+        .zip(&alias_programs)
+        .map(|(module, program)| (module.as_str(), program))
+        .collect::<Vec<_>>();
     let string_unions = model::parse_string_union_metadata(source)?;
     let contract_string_unions = contract_source
         .map(|source| model::parse_string_union_metadata(source))
@@ -1092,18 +1104,23 @@ fn compile_vitest_with_contract_alias_sources_internal(
         contract_source,
         &visibility_program_refs,
     )?;
-    typescript::insert_visibility_type_alias_context(
-        &mut context,
-        &visibility_semantic_program_refs,
-    );
+    let semantic_program_refs = alias_semantic_program_refs
+        .iter()
+        .chain(&visibility_semantic_program_refs)
+        .copied()
+        .collect::<Vec<_>>();
+    typescript::insert_visibility_type_alias_context(&mut context, &semantic_program_refs);
     typescript::insert_vitest_visibility_function_parameter_context(
         &mut context,
-        visibility_semantic_program_refs
+        alias_semantic_program_refs
+            .iter()
+            .map(|(module, program)| (*module, *program, true))
+            .chain(visibility_semantic_program_refs
             .iter()
             .zip(visibility_sources)
             .map(|((module, program), source)| {
                 (*module, *program, source.current_package)
-            }),
+            })),
     );
     typescript::insert_vitest_local_crate_context(
         &mut context,

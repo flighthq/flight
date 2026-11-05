@@ -53,6 +53,7 @@ import {
   typeScriptNullableOptionReturnMetadata,
   typeScriptStringUnionArguments,
   typeScriptStringUnionOwnerImports,
+  typeScriptTargetNativeNullableOptionReturnArguments,
   typeScriptTestContractTypeOwnerArguments,
   typeScriptTestTypeAliasArguments,
   typeScriptTypeAliasArguments,
@@ -1014,6 +1015,24 @@ function privateValue(): string | null { return null; }
 `),
     ).toBe(false);
     expect(hasTypeScriptNullableOptionFunctionBoundary(`export type Resolver = () => string | null;`)).toBe(true);
+  });
+
+  it('seeds only exact target-native null returns for compiler validation', () => {
+    expect(
+      typeScriptTargetNativeNullableOptionReturnArguments(`
+export function readAbcFile(source: Uint8Array): AbcFile | null { return null; }
+export function ordinary(): AbcFile | undefined { return undefined; }
+export function mixed(): AbcFile | null | undefined { return undefined; }
+function privateValue(): AbcFile | null { return null; }
+export type Resolver = () => AbcFile | null;
+export type OrdinaryResolver = () => AbcFile | undefined;
+`),
+    ).toEqual([
+      '--typescript-nullable-option-return',
+      'Resolver',
+      '--typescript-nullable-option-return',
+      'readAbcFile',
+    ]);
   });
 
   it('derives nullable parameter metadata only from exact exported function positions', () => {

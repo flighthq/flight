@@ -19707,6 +19707,37 @@ pub fn read_bytes(source: &Uint8Array) -> usize {
         );
         assert!(output.contains("readBytes(new Uint8Array([]))"), "{output}");
 
+        let alias_output = compile_vitest_with_named_visibility_sources_and_array_representations(
+            test,
+            "@flighthq/example/contract",
+            Some("pub use crate::value::read_bytes;\n"),
+            &[VitestAliasSource {
+                source: owner,
+                module: "crates/flight-example/src/value.rs",
+            }],
+            &[],
+            &[],
+            &visibility[1..],
+            &[],
+            &[],
+            &[],
+            &[],
+            &[],
+            &[],
+            &[],
+            &[],
+            &[],
+        )
+        .unwrap();
+        assert!(
+            alias_output.contains("readBytes(new Uint8Array(bytes))"),
+            "{alias_output}"
+        );
+        assert!(
+            alias_output.contains("readBytes(new Uint8Array([]))"),
+            "{alias_output}"
+        );
+
         let unrelated_owner = r#"
 //! flight-compiler: target-native
 
@@ -20703,6 +20734,37 @@ fn advances_one_seed_cell() {
         assert!(output.contains("expect(next(seed)).toEqual(4);"), "{output}");
         assert!(output.contains("expect(seed.value).toEqual(4);"), "{output}");
         assert!(output.contains("expect(next(seed)).toEqual(13);"), "{output}");
+    }
+
+    #[test]
+    fn keeps_mutable_sequence_elements_distinct_from_a_test_scalar_cell() {
+        let source = r#"
+#[test]
+fn fills_bytes_from_one_seed_cell() {
+    let mut seed = 1u32;
+
+    fn next(seed: &mut u32) -> u32 {
+        *seed = seed.wrapping_mul(3).wrapping_add(1);
+        return *seed;
+    }
+
+    let mut bytes = vec![0u8; 2];
+    for byte in &mut bytes {
+        *byte = (next(&mut seed) & 0xff) as u8;
+    }
+    assert_eq!(bytes, vec![4, 13]);
+}
+"#;
+
+        let output = compile_vitest(source, "./contract.ts").unwrap();
+
+        assert!(output.contains("const seed: { value: number } = { value: 1 };"), "{output}");
+        assert!(
+            output.contains("for (let __i = 0; __i < bytes.length; __i++) {"),
+            "{output}"
+        );
+        assert!(output.contains("bytes[__i] = next(seed) & 0xff;"), "{output}");
+        assert!(!output.contains("byte_.value"), "{output}");
     }
 
     #[test]
@@ -26849,9 +26911,9 @@ fn mutates_samples_by_reference() {
         )
         .unwrap();
 
-        assert!(output.contains("sample.previous = null;"), "{output}");
-        assert!(output.contains("sample.previous === null"), "{output}");
-        assert!(!output.contains("sample.previous = undefined;"), "{output}");
+        assert!(output.contains("samples[__i].previous = null;"), "{output}");
+        assert!(output.contains("samples[__i].previous === null"), "{output}");
+        assert!(!output.contains("samples[__i].previous = undefined;"), "{output}");
     }
 
     #[test]
@@ -27215,6 +27277,8 @@ mod write_vector2_to_float32_array {
             write_vector2_to_float32_array(&mut out, 0, &create_vector2(value[0], value[1]));
             assert_eq!(out[0] + out[1], expected);
             assert_eq!(out, [1.0, 2.0]);
+            assert_eq!(&*out, &[1.0, 2.0]);
+            assert_eq!(&expected, &expected);
             assert!((out[0] - 3.0_f32.sqrt() / 2.0).abs() < 5e-13);
             assert!(f32::NAN.is_nan());
         }
@@ -27230,6 +27294,9 @@ mod write_vector2_to_float32_array {
         assert!(output.contains("for (const [value, expected] of cases) {"));
         assert!(output.contains("let out = new Float32Array(2).fill(0);"));
         assert!(output.contains("expect(Array.from(out)).toEqual([1, 2]);"));
+        assert_eq!(output.matches("expect(Array.from(out)).toEqual([1, 2]);").count(), 2);
+        assert!(output.contains("expect(expected).toEqual(expected);"));
+        assert!(!output.contains("Array.from(expected)"));
         assert!(output.contains(
             "expect(Math.abs(out[0] - Math.fround(Math.sqrt(3) / 2)) < 5e-13).toBe(true);"
         ),);

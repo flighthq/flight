@@ -59,6 +59,7 @@ import {
   typeScriptNullableOptionReturnMetadata,
   typeScriptStringUnionArguments,
   typeScriptStringUnionOwnerImports,
+  typeScriptTargetNativeNullableOptionReturnArguments,
   typeScriptTestContractTypeOwnerArguments,
   typeScriptTestTypeAliasArguments,
   typeScriptTypeAliasArguments,
@@ -900,6 +901,12 @@ function probeNativeSource(
     knownTypeAliasArguments,
     internalTypeExports.typeAliasArguments,
   );
+  const targetNativeNullableOptionReturnArguments =
+    command === 'generate' ? typeScriptTargetNativeNullableOptionReturnArguments(existingTypescript) : [];
+  const initialNullableOptionReturnArguments = mergedTypeScriptNullableOptionReturnArguments(
+    knownNullableOptionReturnArguments,
+    targetNativeNullableOptionReturnArguments,
+  );
   const compilerArguments = (
     typeAliasArguments: string[],
     arrayParameterArguments: string[],
@@ -948,7 +955,7 @@ function probeNativeSource(
       knownNullableOptionFieldArguments,
       knownNullableOptionParameterArguments,
       knownDefaultNullOptionParameterArguments,
-      knownNullableOptionReturnArguments,
+      initialNullableOptionReturnArguments,
     ),
     {
       cwd: repositoryRoot,
@@ -962,8 +969,10 @@ function probeNativeSource(
   let nullableOptionFieldArguments: string[] = [];
   let nullableOptionParameterArguments: string[] = [];
   let defaultNullOptionParameterArguments: string[] = [];
-  let nullableOptionReturnArguments: string[] = [];
-  let nullableOptionReturnOwners = new Map<string, string | null>();
+  let nullableOptionReturnArguments: string[] = targetNativeNullableOptionReturnArguments;
+  let nullableOptionReturnOwners = new Map<string, string | null>(
+    targetNativeNullableOptionReturnArguments.filter((_, index) => index % 2 === 1).map((name) => [name, null]),
+  );
   if (result.status === 0 && command === 'generate-tests') {
     typeAliasArguments = typeScriptTestTypeAliasArguments(
       existingTypescript,
@@ -1119,8 +1128,11 @@ function probeNativeSource(
         loadImportedContractSymbols(existingTypescript),
         compilerVisibleRustTypeAliases(command, source),
       );
-      nullableOptionReturnArguments = nullableOptionReturnMetadata.arguments;
-      nullableOptionReturnOwners = new Map(nullableOptionReturnMetadata.owners);
+      nullableOptionReturnArguments = mergedTypeScriptNullableOptionReturnArguments(
+        targetNativeNullableOptionReturnArguments,
+        nullableOptionReturnMetadata.arguments,
+      );
+      nullableOptionReturnOwners = new Map([...nullableOptionReturnOwners, ...nullableOptionReturnMetadata.owners]);
       if (nullableOptionReturnArguments.length > 0) {
         const allTypeAliasArguments = mergedTypeScriptTypeAliasArguments(knownTypeAliasArguments, typeAliasArguments);
         const allNullableOptionFieldArguments = mergedTypeScriptNullableOptionFieldArguments(
