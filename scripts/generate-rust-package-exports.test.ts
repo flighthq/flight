@@ -433,11 +433,11 @@ export function unrelated(machine: AnimationStateMachine): void {
   });
 
   it('derives nullable return metadata only from exact exported function positions', () => {
-    const existing = `export function createSvgGeometryPath(): PathRaw | null { return null; }
+    const existing = `export function createSvgGeometryPath(channel: string | null = null): PathRaw | null { return null; }
 export function findOrdinaryPath(): PathRaw | undefined { return undefined; }
 export function findMixedPath(): PathRaw | null | undefined { return undefined; }
 `;
-    const generated = `export function createSvgGeometryPath(): Path | undefined { return undefined; }
+    const generated = `export function createSvgGeometryPath(channel?: string): Path | undefined { return undefined; }
 export function findOrdinaryPath(): Path | undefined { return undefined; }
 export function renamedPath(): Path | undefined { return undefined; }
 `;

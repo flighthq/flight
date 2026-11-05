@@ -861,6 +861,9 @@ function exportedFunctionTypes(body: readonly Record<string, unknown>[]): Map<st
     const identifier = declaration.id as Record<string, unknown> | null;
     if (identifier?.type !== 'Identifier' || typeof identifier.name !== 'string') continue;
     const parameters = (declaration.params as Record<string, unknown>[])
+      .map((parameter) =>
+        parameter.type === 'AssignmentPattern' ? (parameter.left as Record<string, unknown>) : parameter,
+      )
       .map((parameter) => parameter.typeAnnotation as Record<string, unknown> | null)
       .map((annotation) => annotation?.typeAnnotation as Record<string, unknown> | undefined);
     if (parameters.some((parameter) => parameter === undefined)) continue;
