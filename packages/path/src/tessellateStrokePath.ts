@@ -15,18 +15,18 @@ function appendRoundCap(
   end: Readonly<number[]>,
 ): void {
   const center = Math.trunc(mesh.vertices.length / 2);
-  mesh.vertices.push((start[0] + end[0]) / 2.0);
-  mesh.vertices.push((start[1] + end[1]) / 2.0);
+  mesh.vertices.push((start[0] + end[0]) / 2);
+  mesh.vertices.push((start[1] + end[1]) / 2);
   const arcBase = Math.trunc(mesh.vertices.length / 2);
   mesh.vertices.push(start[0]);
   mesh.vertices.push(start[1]);
-  for (let i = 0; i < interior.length; i += 1) {
+  for (let i = 0; i < interior.length; i++) {
     mesh.vertices.push(interior[i]);
   }
   mesh.vertices.push(end[0]);
   mesh.vertices.push(end[1]);
   const arcCount = Math.trunc(interior.length / 2) + 2;
-  for (let i = 0; i < arcCount - 1; i += 1) {
+  for (let i = 0; i < arcCount - 1; i++) {
     appendTriangle(mesh, center, arcBase + (i >>> 0), arcBase + (i >>> 0) + 1);
   }
 }
@@ -37,14 +37,14 @@ function appendStrokePieceMesh(mesh: PathMesh, piece: Readonly<StrokePathPieceGe
     return;
   }
   const base = Math.trunc(mesh.vertices.length / 2);
-  for (let i = 0; i < sectionCount; i += 1) {
+  for (let i = 0; i < sectionCount; i++) {
     mesh.vertices.push(piece.left[i * 2]);
     mesh.vertices.push(piece.left[i * 2 + 1]);
     mesh.vertices.push(piece.right[i * 2]);
     mesh.vertices.push(piece.right[i * 2 + 1]);
   }
   const connectionCount = piece.closed ? sectionCount : sectionCount - 1;
-  for (let i = 0; i < connectionCount; i += 1) {
+  for (let i = 0; i < connectionCount; i++) {
     const next = (i + 1) % sectionCount;
     const left = base + (i >>> 0) * 2;
     const right = left + 1;
@@ -90,13 +90,13 @@ export function tessellateStrokePath(
   style: Readonly<StrokeStyle>,
   tolerance?: number,
 ): PathMesh | null {
-  const tolerance_1 = tolerance ?? 0.25;
-  const geometry = buildStrokePathGeometry(path, style, tolerance_1);
+  tolerance = tolerance ?? 0.25;
+  const geometry = buildStrokePathGeometry(path, style, tolerance);
   if (geometry.issue !== 'ok') {
     return null;
   }
   let mesh: PathMesh = { vertices: [], indices: [] };
-  for (let i = 0; i < geometry.pieces.length; i += 1) {
+  for (let i = 0; i < geometry.pieces.length; i++) {
     appendStrokePieceMesh(mesh, geometry.pieces[i]);
   }
   if (mesh.vertices.length === 0) {

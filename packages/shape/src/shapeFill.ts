@@ -1,13 +1,8 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { CIRCLE_KAPPA } from '@flighthq/math/contract';
-import type {
-  EntityConstruction,
-  Path,
-  PathWinding,
-  ShapeCommandToken,
-  ShapeFillRegion,
-} from '@flighthq/types/contract';
-import { PathCommand } from '@flighthq/types/contract';
+import type { Path, PathWinding } from '@flighthq/path/contract';
+import { PathCommand } from '@flighthq/path/contract';
+import type { EntityConstruction, ShapeCommandToken, ShapeFillRegion } from '@flighthq/types/contract';
 
 // Appends one shape geometry command (moveTo/lineTo/quadraticCurveTo/cubicCurveTo, arcs, and the
 // circle/ellipse/rectangle/rounded-rectangle/path primitives) onto `path`, expanding primitives into MOVE/LINE/CURVE

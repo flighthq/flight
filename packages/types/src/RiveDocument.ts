@@ -1,3 +1,5 @@
+import type { PathWinding } from '@flighthq/path/contract';
+
 import type { AdvancedBlendMode } from './AdvancedBlendMode.ts';
 import type { AnimationClip } from './AnimationClip.ts';
 import type { DisplayObject } from './DisplayObject.ts';
@@ -5,7 +7,6 @@ import type { Entity } from './Entity.ts';
 import type { ImageResourceReference } from './ImageResourceReference.ts';
 import type { LayoutTree } from './Layout.ts';
 import type { Scene2DSlotReference } from './Scene2DDocument.ts';
-import type { PathWinding } from './ShapeCommand.ts';
 import type { Skeleton2D } from './Skeleton2D.ts';
 
 /**

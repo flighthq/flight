@@ -1,5 +1,5 @@
-import type { Path } from '@flighthq/types/contract';
-import { PathCommand } from '@flighthq/types/contract';
+import type { Path } from '@flighthq/path/contract';
+import { PathCommand } from '@flighthq/path/contract';
 
 // The Type 2 charstring interpreter: a stack machine whose operators emit path segments.
 //

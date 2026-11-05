@@ -66,7 +66,7 @@ function createArcInteriorPoints(
   if (points.length <= 4) {
     return [] as never[];
   }
-  return [...points.slice(2, points.length - 2)];
+  return points.slice(2, points.length - 2);
 }
 
 function createArcPoints(
@@ -77,11 +77,11 @@ function createArcPoints(
   sweep: number,
   tolerance: number,
 ): number[] {
-  const ratio = Math.min(Math.max(1.0 - tolerance / radius, -1.0), 1.0);
-  const maxStep = Math.max(Math.PI / 32.0, 2.0 * Math.acos(ratio));
+  const ratio = Math.min(Math.max(1 - tolerance / radius, -1), 1);
+  const maxStep = Math.max(Math.PI / 32, 2 * Math.acos(ratio));
   const steps = Math.max(1, Math.ceil(Math.abs(sweep) / maxStep) >>> 0);
-  let points: number[] = [] as never[];
-  for (let i = 0; i <= steps; i += 1) {
+  let points: number[] = [];
+  for (let i = 0; i <= steps; i++) {
     const angle = startAngle + (sweep * i) / steps;
     points.push(cx + Math.cos(angle) * radius);
     points.push(cy + Math.sin(angle) * radius);
@@ -91,8 +91,8 @@ function createArcPoints(
 
 function createStrokeSubpaths(path: Readonly<Path>, tolerance: number): StrokeSubpath[] {
   const contours = flattenPath(path, tolerance);
-  let result: StrokeSubpath[] = [] as never[];
-  for (let i = 0; i < contours.length; i += 1) {
+  let result: StrokeSubpath[] = [];
+  for (let i = 0; i < contours.length; i++) {
     const points = removeConsecutiveDuplicates(contours[i]);
     if (points.length < 4) {
       continue;
@@ -107,7 +107,7 @@ function createStrokeSubpaths(path: Readonly<Path>, tolerance: number): StrokeSu
       pts[last] = pts[0];
       pts[last + 1] = pts[1];
     }
-    result.push({ closed: closed, points: pts, sourceIndex: i });
+    result.push({ closed, points: pts, sourceIndex: i });
   }
   return result;
 }
@@ -122,7 +122,7 @@ function appendEndpointSection(
   start: boolean,
   tolerance: number,
 ): void {
-  const extension = cap === 'square' ? (start ? -halfWidth : halfWidth) : 0.0;
+  const extension = cap === 'square' ? (start ? -halfWidth : halfWidth) : 0;
   const cx = px + frame.tx * extension;
   const cy = py + frame.ty * extension;
   appendSection(
@@ -156,7 +156,7 @@ function appendJoinSections(
   const turn = cross(previous.tx, previous.ty, next.tx, next.ty);
   const direction = previous.tx * next.tx + previous.ty * next.ty;
   if (Math.abs(turn) <= GEOMETRY_EPSILON) {
-    if (direction < 0.0) {
+    if (direction < 0) {
       return 'reversing-join';
     }
     appendSection(
@@ -192,36 +192,34 @@ function appendJoinSections(
   }
   const leftInt = leftIntersection!;
   const rightInt = rightIntersection!;
-  const outerIntersection = turn > 0.0 ? rightInt : leftInt;
+  const outerIntersection = turn > 0 ? rightInt : leftInt;
   const outerDistance = Math.sqrt(Math.pow(outerIntersection[0] - px, 2) + Math.pow(outerIntersection[1] - py, 2));
-  if (join === 'miter' && Number.isFinite(miterLimit) && outerDistance <= halfWidth * Math.max(miterLimit, 0.0)) {
+  if (join === 'miter' && Number.isFinite(miterLimit) && outerDistance <= halfWidth * Math.max(miterLimit, 0)) {
     appendSection(piece, leftInt[0], leftInt[1], rightInt[0], rightInt[1]);
     return 'ok';
   }
-  const inner = turn > 0.0 ? leftInt : rightInt;
+  const inner = turn > 0 ? leftInt : rightInt;
   if (join === 'round') {
-    const outer0x = turn > 0.0 ? right0x : left0x;
-    const outer0y = turn > 0.0 ? right0y : left0y;
+    const outer0x = turn > 0 ? right0x : left0x;
+    const outer0y = turn > 0 ? right0y : left0y;
     const outerStartAngle = Math.atan2(outer0y - py, outer0x - px);
     const sweep = signedJoinSweep(previous, next, turn);
     const outer = createArcPoints(px, py, halfWidth, outerStartAngle, sweep, tolerance);
     let i = 0;
     while (i < outer.length) {
-      if (turn > 0.0) {
+      if (turn > 0) {
         appendSection(piece, inner[0], inner[1], outer[i], outer[i + 1]);
       } else {
         appendSection(piece, outer[i], outer[i + 1], inner[0], inner[1]);
       }
       i += 2;
     }
+  } else if (turn > 0) {
+    appendSection(piece, inner[0], inner[1], right0x, right0y);
+    appendSection(piece, inner[0], inner[1], right1x, right1y);
   } else {
-    if (turn > 0.0) {
-      appendSection(piece, inner[0], inner[1], right0x, right0y);
-      appendSection(piece, inner[0], inner[1], right1x, right1y);
-    } else {
-      appendSection(piece, left0x, left0y, inner[0], inner[1]);
-      appendSection(piece, left1x, left1y, inner[0], inner[1]);
-    }
+    appendSection(piece, left0x, left0y, inner[0], inner[1]);
+    appendSection(piece, left1x, left1y, inner[0], inner[1]);
   }
   return 'ok';
 }
@@ -258,11 +256,11 @@ function applyDash(subpath: Readonly<StrokeSubpath>, dash: Readonly<number[]>, d
   }
   let remaining = pattern[patternIndex] - consumedOffset;
   let on = patternIndex % 2 === 0;
-  let result: StrokeSubpath[] = [] as never[];
+  let result: StrokeSubpath[] = [];
   let current: number[] | undefined = undefined;
   const points = subpath.points;
   const segCount = Math.trunc(points.length / 2) - 1;
-  for (let segment = 0; segment < segCount; segment += 1) {
+  for (let segment = 0; segment < segCount; segment++) {
     const x0 = points[segment * 2];
     const y0 = points[segment * 2 + 1];
     const x1 = points[(segment + 1) * 2];
@@ -270,7 +268,7 @@ function applyDash(subpath: Readonly<StrokeSubpath>, dash: Readonly<number[]>, d
     const dx = x1 - x0;
     const dy = y1 - y0;
     const length = Math.sqrt(dx * dx + dy * dy);
-    let distance: number = 0.0;
+    let distance: number = 0;
     while (distance < length - GEOMETRY_EPSILON) {
       while (remaining <= GEOMETRY_EPSILON) {
         patternIndex = (patternIndex + 1) % pattern.length;
@@ -318,7 +316,7 @@ function approximatelyEqual(a: number, b: number): boolean {
 }
 
 function areFinitePoints(points: Readonly<number[]>): boolean {
-  for (let i = 0; i < points.length; i += 1) {
+  for (let i = 0; i < points.length; i++) {
     if (!Number.isFinite(points[i])) {
       return false;
     }
@@ -334,37 +332,38 @@ export function buildStrokePathGeometry(
   style: Readonly<StrokeStyle>,
   tolerance: number,
 ): StrokePathGeometry {
-  const width = style.width ?? 1.0;
-  const dashOffset = style.dashOffset ?? 0.0;
-  const miterLimit = style.miterLimit ?? 4.0;
+  const width = style.width ?? 1;
+  const dashOffset = style.dashOffset ?? 0;
+  const miterLimit = style.miterLimit ?? 4;
   if (
     !Number.isFinite(width) ||
-    width <= 0.0 ||
+    width <= 0 ||
     !Number.isFinite(tolerance) ||
-    tolerance <= 0.0 ||
+    tolerance <= 0 ||
     !Number.isFinite(dashOffset) ||
     !Number.isFinite(miterLimit) ||
-    miterLimit < 0.0
+    miterLimit < 0
   ) {
     return { issue: 'invalid-style', issueSubpath: undefined, pieces: [] };
   }
-  const dashPattern: number[] = (() => {
+  let dashPattern: number[];
+  {
     const matchValue = style.dash;
     if (matchValue !== undefined) {
       const pattern = matchValue;
-      return pattern.slice();
+      dashPattern = pattern.slice();
     } else {
-      return [] as never[];
+      dashPattern = [] as never[];
     }
-  })();
+  }
   const dash = dashPattern;
-  for (let i = 0; i < dash.length; i += 1) {
-    if (!Number.isFinite(dash[i]) || dash[i] < 0.0) {
+  for (let i = 0; i < dash.length; i++) {
+    if (!Number.isFinite(dash[i]) || dash[i] < 0) {
       return { issue: 'invalid-style', issueSubpath: undefined, pieces: [] };
     }
   }
   const source = createStrokeSubpaths(path, tolerance);
-  for (let i = 0; i < source.length; i += 1) {
+  for (let i = 0; i < source.length; i++) {
     if (!areFinitePoints(source[i].points)) {
       return { issue: 'invalid-path', issueSubpath: source[i].sourceIndex, pieces: [] };
     }
@@ -373,17 +372,17 @@ export function buildStrokePathGeometry(
   let issue: StrokePathTessellationReason =
     centerlineIntersection === undefined ? 'ok' : 'self-intersecting-centerline';
   let issueSubpath = centerlineIntersection;
-  let pieces: StrokePathPieceGeometry[] = [] as never[];
-  const halfWidth = width / 2.0;
+  let pieces: StrokePathPieceGeometry[] = [];
+  const halfWidth = width / 2;
   const cap = style.cap ?? 'butt';
   const join = style.join ?? 'miter';
-  for (let i = 0; i < source.length; i += 1) {
+  for (let i = 0; i < source.length; i++) {
     const subpath = source[i];
     const spans =
       dash.length !== 0
         ? applyDash(subpath, dash, dashOffset)
         : [{ closed: subpath.closed, points: subpath.points.slice(), sourceIndex: subpath.sourceIndex }];
-    for (let j = 0; j < spans.length; j += 1) {
+    for (let j = 0; j < spans.length; j++) {
       const built = buildStrokePiece(spans[j], halfWidth, join, cap, miterLimit, tolerance);
       if (built.piece !== undefined) {
         const piece = built.piece;
@@ -399,7 +398,7 @@ export function buildStrokePathGeometry(
       }
     }
   }
-  return { issue: issue, issueSubpath: issueSubpath, pieces: pieces };
+  return { issue, issueSubpath, pieces };
 }
 
 function buildStrokePiece(
@@ -416,8 +415,8 @@ function buildStrokePiece(
   if (segmentCount < 1) {
     return { issue: 'ok', piece: undefined };
   }
-  let frames: SegmentFrame[] = [] as never[];
-  for (let i = 0; i < segmentCount; i += 1) {
+  let frames: SegmentFrame[] = [];
+  for (let i = 0; i < segmentCount; i++) {
     const x0 = points[i * 2];
     const y0 = points[i * 2 + 1];
     const dx = points[(i + 1) * 2] - x0;
@@ -428,7 +427,7 @@ function buildStrokePiece(
     }
     const tx = dx / length;
     const ty = dy / length;
-    frames.push({ nx: -ty, ny: tx, tx: tx, ty: ty });
+    frames.push({ nx: -ty, ny: tx, tx, ty });
   }
   if (frames.length !== segmentCount) {
     return { issue: 'invalid-path', piece: undefined };
@@ -436,7 +435,7 @@ function buildStrokePiece(
   let piece: StrokePathPieceGeometry = { closed: subpath.closed, endCap: [], left: [], right: [], startCap: [] };
   if (!subpath.closed) {
     appendEndpointSection(piece, points[0], points[1], frames[0], halfWidth, cap, true, tolerance);
-    for (let i = 1; i < pointCount - 1; i += 1) {
+    for (let i = 1; i < pointCount - 1; i++) {
       const issue = appendJoinSections(
         piece,
         points[i * 2],
@@ -449,7 +448,7 @@ function buildStrokePiece(
         tolerance,
       );
       if (issue !== 'ok') {
-        return { issue: issue, piece: piece };
+        return { issue, piece };
       }
     }
     appendEndpointSection(
@@ -464,7 +463,7 @@ function buildStrokePiece(
     );
   } else {
     const uniquePointCount = pointCount - 1;
-    for (let i = 0; i < uniquePointCount; i += 1) {
+    for (let i = 0; i < uniquePointCount; i++) {
       const issue = appendJoinSections(
         piece,
         points[i * 2],
@@ -477,11 +476,11 @@ function buildStrokePiece(
         tolerance,
       );
       if (issue !== 'ok') {
-        return { issue: issue, piece: piece };
+        return { issue, piece };
       }
     }
   }
-  return { issue: 'ok', piece: piece };
+  return { issue: 'ok', piece };
 }
 
 function cross(ax: number, ay: number, bx: number, by: number): number {
@@ -498,12 +497,12 @@ function doPolylinesIntersect(
   const bCount = getPolylinePointCount(b, bClosed);
   const aSegments = aClosed ? aCount : aCount - 1;
   const bSegments = bClosed ? bCount : bCount - 1;
-  for (let i = 0; i < aSegments; i += 1) {
+  for (let i = 0; i < aSegments; i++) {
     const iNext = (i + 1) % aCount;
     if (samePoint(a, i, iNext)) {
       continue;
     }
-    for (let j = 0; j < bSegments; j += 1) {
+    for (let j = 0; j < bSegments; j++) {
       const jNext = (j + 1) % bCount;
       if (samePoint(b, j, jNext)) {
         continue;
@@ -517,11 +516,11 @@ function doPolylinesIntersect(
 }
 
 function findCenterlineIntersection(subpaths: Readonly<StrokeSubpath[]>): number | undefined {
-  for (let i = 0; i < subpaths.length; i += 1) {
+  for (let i = 0; i < subpaths.length; i++) {
     if (hasPolylineSelfIntersection(subpaths[i].points, subpaths[i].closed)) {
       return subpaths[i].sourceIndex;
     }
-    for (let j = 0; j < i; j += 1) {
+    for (let j = 0; j < i; j++) {
       if (doPolylinesIntersect(subpaths[i].points, subpaths[i].closed, subpaths[j].points, subpaths[j].closed)) {
         return subpaths[i].sourceIndex;
       }
@@ -566,12 +565,12 @@ function hasInvalidOutline(piece: Readonly<StrokePathPieceGeometry>): boolean {
 function hasPolylineSelfIntersection(points: Readonly<number[]>, closed: boolean): boolean {
   const count = getPolylinePointCount(points, closed);
   const segmentCount = closed ? count : count - 1;
-  for (let i = 0; i < segmentCount; i += 1) {
+  for (let i = 0; i < segmentCount; i++) {
     const iNext = (i + 1) % count;
     if (samePoint(points, i, iNext)) {
       continue;
     }
-    for (let j = i + 1; j < segmentCount; j += 1) {
+    for (let j = i + 1; j < segmentCount; j++) {
       const jNext = (j + 1) % count;
       if (samePoint(points, j, jNext) || segmentsAreAdjacent(i, j, segmentCount, closed)) {
         continue;
@@ -613,12 +612,12 @@ function pointOnSegment(px: number, py: number, ax: number, ay: number, bx: numb
 
 function pushDash(result: StrokeSubpath[], points: number[], sourceIndex: number): void {
   if (points.length >= 4) {
-    result.push({ closed: false, points: points, sourceIndex: sourceIndex });
+    result.push({ closed: false, points, sourceIndex });
   }
 }
 
 function removeConsecutiveDuplicates(source: Readonly<number[]>): number[] {
-  let result: number[] = [] as never[];
+  let result: number[] = [];
   let i = 0;
   while (i < source.length) {
     if (
@@ -637,8 +636,8 @@ function removeConsecutiveDuplicates(source: Readonly<number[]>): number[] {
 }
 
 function reversePoints(points: Readonly<number[]>): number[] {
-  let result: number[] = [] as never[];
-  let i = (points.length | 0) - 2;
+  let result: number[] = [];
+  let i = points.length - 2;
   while (i >= 0) {
     result.push(points[i >>> 0]);
     result.push(points[(i >>> 0) + 1]);
@@ -697,14 +696,14 @@ function segmentsIntersect(
 }
 
 function signedJoinSweep(previous: Readonly<SegmentFrame>, next: Readonly<SegmentFrame>, turn: number): number {
-  const start = turn > 0.0 ? Math.atan2(-previous.ny, -previous.nx) : Math.atan2(previous.ny, previous.nx);
-  const end = turn > 0.0 ? Math.atan2(-next.ny, -next.nx) : Math.atan2(next.ny, next.nx);
+  const start = turn > 0 ? Math.atan2(-previous.ny, -previous.nx) : Math.atan2(previous.ny, previous.nx);
+  const end = turn > 0 ? Math.atan2(-next.ny, -next.nx) : Math.atan2(next.ny, next.nx);
   let sweep = end - start;
-  if (turn > 0.0 && sweep < 0.0) {
-    sweep += Math.PI * 2.0;
+  if (turn > 0 && sweep < 0) {
+    sweep += Math.PI * 2;
   }
-  if (turn < 0.0 && sweep > 0.0) {
-    sweep -= Math.PI * 2.0;
+  if (turn < 0 && sweep > 0) {
+    sweep -= Math.PI * 2;
   }
   return sweep;
 }

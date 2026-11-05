@@ -1,3 +1,5 @@
+import type { Path } from '@flighthq/path/contract';
+
 import type { AdvancedBlendMode } from './AdvancedBlendMode.ts';
 import type { AnimationChannel } from './AnimationChannel.ts';
 import type { DisplayObject } from './DisplayObject.ts';
@@ -12,7 +14,6 @@ import type {
   LottieShapeItem,
 } from './LottieDocument.ts';
 import type { Node2D } from './Node2D.ts';
-import type { Path } from './Path.ts';
 import type { Shape } from './Shape.ts';
 
 export const LottieLayerKind = {

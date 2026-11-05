@@ -11,8 +11,8 @@ import type { Path } from './pathCompat.ts';
  * Alias-safe: `out` may be the same object as `source`.
  */
 export function decimatePath(source: Readonly<Path>, tolerance: number, out: Path, flattenTolerance?: number): void {
-  const flattenTolerance_1 = flattenTolerance ?? 0.25;
-  const contours = flattenPath(source, flattenTolerance_1);
+  flattenTolerance = flattenTolerance ?? 0.25;
+  const contours = flattenPath(source, flattenTolerance);
   const outCommands: number[] = out.commands;
   outCommands.length = 0;
   const outData: number[] = out.data;
@@ -30,7 +30,7 @@ export function decimatePath(source: Readonly<Path>, tolerance: number, out: Pat
     keep[last - 1] = 1;
     douglasPeucker(contour, 0, last - 1, tolerance * tolerance, keep);
     let first = true;
-    for (let i = 0; i < last; i += 1) {
+    for (let i = 0; i < last; i++) {
       if (keep[i] === 0) {
         continue;
       }
@@ -66,13 +66,13 @@ function douglasPeucker(
   const dx = x1 - x0;
   const dy = y1 - y0;
   const lenSq = dx * dx + dy * dy;
-  let maxDistSq: number = 0.0;
+  let maxDistSq: number = 0;
   let maxIdx = first;
-  for (let i = first + 1; i < last; i += 1) {
+  for (let i = first + 1; i < last; i++) {
     const px = pts[i * 2];
     const py = pts[i * 2 + 1];
     let distSq;
-    if (lenSq === 0.0) {
+    if (lenSq === 0) {
       const ax = px - x0;
       const ay = py - y0;
       distSq = ax * ax + ay * ay;

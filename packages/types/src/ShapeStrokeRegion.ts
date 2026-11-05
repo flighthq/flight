@@ -1,5 +1,6 @@
+import type { StrokeStyle } from '@flighthq/path/contract';
+
 import type { ShapeFillRegion } from './ShapeFillRegion.ts';
-import type { StrokeStyle } from './StrokeStyle.ts';
 
 // One solid-color stroke span resolved from Shape commands. The path remains the authored centerline;
 // GPU renderers pass it and style to tessellateStrokePath so open outlines and closed rings share one

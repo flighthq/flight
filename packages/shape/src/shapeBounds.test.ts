@@ -1,5 +1,5 @@
 import { createRectangle } from '@flighthq/geometry/contract';
-import { PathCommand } from '@flighthq/types/contract';
+import { PathCommand } from '@flighthq/path/contract';
 
 import { registerDefaultShapeBoundsCommands } from './registerDefaultShapeBoundsCommands.ts';
 import { createShape } from './shape.ts';

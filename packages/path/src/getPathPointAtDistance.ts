@@ -16,8 +16,8 @@ export function getPathPointAtDistance(
   out: Vector2Like,
   tolerance?: number,
 ): boolean {
-  const tolerance_1 = tolerance ?? 0.25;
-  const contours = flattenPath(path, tolerance_1);
+  tolerance = tolerance ?? 0.25;
+  const contours = flattenPath(path, tolerance);
   return samplePathPoint(contours, distance, out);
 }
 
@@ -31,8 +31,8 @@ export function getPathPositionAtDistance(
   tangentOut: Vector2Like,
   tolerance?: number,
 ): boolean {
-  const tolerance_1 = tolerance ?? 0.25;
-  const contours = flattenPath(path, tolerance_1);
+  tolerance = tolerance ?? 0.25;
+  const contours = flattenPath(path, tolerance);
   const hasPoint = samplePathPoint(contours, distance, pointOut);
   samplePathTangent(contours, distance, tangentOut);
   return hasPoint;
@@ -47,8 +47,8 @@ export function getPathTangentAtDistance(
   out: Vector2Like,
   tolerance?: number,
 ): boolean {
-  const tolerance_1 = tolerance ?? 0.25;
-  const contours = flattenPath(path, tolerance_1);
+  tolerance = tolerance ?? 0.25;
+  const contours = flattenPath(path, tolerance);
   return samplePathTangent(contours, distance, out);
 }
 
@@ -57,12 +57,12 @@ function samplePathPoint(contours: Readonly<number[][]>, distance: number, out: 
     return false;
   }
   let remaining = distance;
-  for (let ci = 0; ci < contours.length; ci += 1) {
+  for (let ci = 0; ci < contours.length; ci++) {
     const contour = contours[ci];
     if (contour.length < 2) {
       continue;
     }
-    if (remaining <= 0.0) {
+    if (remaining <= 0) {
       out.x = contour[0];
       out.y = contour[1];
       return true;
@@ -73,7 +73,7 @@ function samplePathPoint(contours: Readonly<number[][]>, distance: number, out: 
       const dy = contour[i + 1] - contour[i - 1];
       const segLen = Math.sqrt(dx * dx + dy * dy);
       if (remaining <= segLen) {
-        const t = segLen > 0.0 ? remaining / segLen : 0.0;
+        const t = segLen > 0 ? remaining / segLen : 0;
         out.x = contour[i - 2] + t * dx;
         out.y = contour[i - 1] + t * dy;
         return true;
@@ -90,14 +90,14 @@ function samplePathPoint(contours: Readonly<number[][]>, distance: number, out: 
 
 function samplePathTangent(contours: Readonly<number[][]>, distance: number, out: Vector2Like): boolean {
   if (contours.length === 0) {
-    out.x = 1.0;
-    out.y = 0.0;
+    out.x = 1;
+    out.y = 0;
     return false;
   }
   let remaining = distance;
-  let lastTx: number = 1.0;
-  let lastTy: number = 0.0;
-  for (let ci = 0; ci < contours.length; ci += 1) {
+  let lastTx: number = 1;
+  let lastTy: number = 0;
+  for (let ci = 0; ci < contours.length; ci++) {
     const contour = contours[ci];
     if (contour.length < 4) {
       continue;
@@ -107,8 +107,8 @@ function samplePathTangent(contours: Readonly<number[][]>, distance: number, out
       const dx = contour[i] - contour[i - 2];
       const dy = contour[i + 1] - contour[i - 1];
       const segLen = Math.sqrt(dx * dx + dy * dy);
-      if (segLen > 0.0) {
-        const invLen = 1.0 / segLen;
+      if (segLen > 0) {
+        const invLen = 1 / segLen;
         lastTx = dx * invLen;
         lastTy = dy * invLen;
       }

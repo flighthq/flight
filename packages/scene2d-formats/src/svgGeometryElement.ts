@@ -1,6 +1,7 @@
 import { createRectangle } from '@flighthq/geometry/contract';
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import { createPath, dashPath, getPathBounds } from '@flighthq/path/contract';
+import type { Path } from '@flighthq/path/contract';
 import {
   appendShapeBeginFill,
   appendShapeBeginGradientFill,
@@ -10,7 +11,7 @@ import {
   appendShapePath,
   createShape,
 } from '@flighthq/shape/contract';
-import type { Node2D, Path, Shape, SvgElementContext, SvgImportContext, SvgStyle } from '@flighthq/types/contract';
+import type { Node2D, Shape, SvgElementContext, SvgImportContext, SvgStyle } from '@flighthq/types/contract';
 import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 import type { XmlElement } from '@flighthq/xml/contract';
 

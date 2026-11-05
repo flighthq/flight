@@ -1,4 +1,5 @@
 import type { LogState as SharedLogState } from '@flighthq/log/contract';
+import type { PathWinding as SharedPathWinding } from '@flighthq/path/contract';
 import type {
   ClipRegion as SharedClipRegion,
   ClipRegionContoursExplanation as SharedClipRegionContoursExplanation,
@@ -6,7 +7,6 @@ import type {
   ClipRegionExplanation as SharedClipRegionExplanation,
   ClipRegionReleaseGuard as SharedClipRegionReleaseGuard,
   ClipRegionUseGuard as SharedClipRegionUseGuard,
-  PathWinding as SharedPathWinding,
 } from '@flighthq/types/contract';
 
 export type ClipRegion = SharedClipRegion;

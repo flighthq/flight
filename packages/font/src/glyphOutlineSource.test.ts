@@ -1,5 +1,6 @@
 import { appendPathClose, appendPathLineTo, appendPathMoveTo } from '@flighthq/path/contract';
-import type { GlyphOutlineSource, Path } from '@flighthq/types/contract';
+import type { Path } from '@flighthq/path/contract';
+import type { GlyphOutlineSource } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import {

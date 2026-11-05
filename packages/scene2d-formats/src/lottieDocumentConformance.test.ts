@@ -1,4 +1,5 @@
 import { getNodeChildAt, getNodeChildCount } from '@flighthq/node/contract';
+import { PathCommand } from '@flighthq/path/contract';
 import { TextLabelKind } from '@flighthq/text/contract';
 import type {
   Node2D,
@@ -8,7 +9,7 @@ import type {
   LottieShapePath,
   Shape,
 } from '@flighthq/types/contract';
-import { PathCommand, SpriteKind, ShapeKind } from '@flighthq/types/contract';
+import { SpriteKind, ShapeKind } from '@flighthq/types/contract';
 
 import { applyAnimationClipToLottieDocument } from './lottieDocument.ts';
 import { createScene2DFromLottieDocument } from './lottieImport.ts';

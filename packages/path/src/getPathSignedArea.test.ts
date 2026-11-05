@@ -20,14 +20,14 @@ describe('getPathContourOrientation', () => {
   });
   it('returns degenerate for straight line', () => {
     let path = createPath('nonZero');
-    appendPathMoveTo(path, 0.0, 0.0);
-    appendPathLineTo(path, 100.0, 0.0);
+    appendPathMoveTo(path, 0, 0);
+    appendPathLineTo(path, 100, 0);
     const orientation = getPathContourOrientation(path, 0.25);
     expect(orientation).toEqual('degenerate');
   });
   it('detects orientation for rectangle', () => {
     let path = createPath('nonZero');
-    appendPathRectangle(path, 0.0, 0.0, 100.0, 100.0);
+    appendPathRectangle(path, 0, 0, 100, 100);
     const orientation = getPathContourOrientation(path, 0.25);
     expect(orientation === 'ccw' || orientation === 'cw').toBe(true);
   });
@@ -37,18 +37,18 @@ describe('getPathSignedArea', () => {
   it('returns zero for empty path', () => {
     const path = createPath('nonZero');
     const area = getPathSignedArea(path, 0.25);
-    expect(area).toEqual(0.0);
+    expect(area).toEqual(0);
   });
   it('returns correct area magnitude for rectangle', () => {
     let path = createPath('nonZero');
-    appendPathRectangle(path, 0.0, 0.0, 100.0, 100.0);
+    appendPathRectangle(path, 0, 0, 100, 100);
     const area = getPathSignedArea(path, 0.25);
-    expect(Math.abs(Math.abs(area) - 10000.0) < 0.005).toBe(true);
+    expect(Math.abs(Math.abs(area) - 10000) < 0.005).toBe(true);
   });
   it('returns zero for straight line', () => {
     let path = createPath('nonZero');
-    appendPathMoveTo(path, 0.0, 0.0);
-    appendPathLineTo(path, 100.0, 0.0);
+    appendPathMoveTo(path, 0, 0);
+    appendPathLineTo(path, 100, 0);
     const area = getPathSignedArea(path, 0.25);
     expect(Math.abs(area) < 0.001).toBe(true);
   });

@@ -1,6 +1,7 @@
 import { createMatrix, inverseMatrix } from '@flighthq/geometry/contract';
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import { appendPathQuadraticCurveTo, appendPathLineTo, appendPathMoveTo, createPath } from '@flighthq/path/contract';
+import type { Path } from '@flighthq/path/contract';
 import {
   appendShapeBeginFill,
   appendShapeBeginGradientFill,
@@ -18,7 +19,6 @@ import type {
   GradientType,
   JointStyle,
   Matrix,
-  Path,
   Shape,
   SpreadMethod,
   Texture2D,

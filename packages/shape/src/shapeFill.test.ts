@@ -1,4 +1,5 @@
-import { EntityRuntimeKey, PathCommand } from '@flighthq/types/contract';
+import { PathCommand } from '@flighthq/path/contract';
+import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import { createShape } from './shape.ts';
 import {

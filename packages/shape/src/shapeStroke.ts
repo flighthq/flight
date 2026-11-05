@@ -1,12 +1,7 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type {
-  EntityConstruction,
-  Path,
-  ShapeCommandToken,
-  ShapeStrokeRegion,
-  StrokeStyle,
-} from '@flighthq/types/contract';
-import { PathCommand } from '@flighthq/types/contract';
+import type { Path, StrokeStyle } from '@flighthq/path/contract';
+import { PathCommand } from '@flighthq/path/contract';
+import type { EntityConstruction, ShapeCommandToken, ShapeStrokeRegion } from '@flighthq/types/contract';
 
 import { writeShapeGeometryCommandEnd } from './shapeCommandGeometry.ts';
 import { appendShapeGeometryCommand } from './shapeFill.ts';

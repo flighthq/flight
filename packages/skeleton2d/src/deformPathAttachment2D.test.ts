@@ -1,7 +1,9 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { createPath } from '@flighthq/path/contract';
-import type { Bone2D, Path, PathAttachment2D, Skeleton2DDeformLengthMismatch, Skin2D } from '@flighthq/types/contract';
-import { PathAttachment2DKind, PathCommand, TransformMode2D } from '@flighthq/types/contract';
+import type { Path } from '@flighthq/path/contract';
+import { PathCommand } from '@flighthq/path/contract';
+import type { Bone2D, PathAttachment2D, Skeleton2DDeformLengthMismatch, Skin2D } from '@flighthq/types/contract';
+import { PathAttachment2DKind, TransformMode2D } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { deformSkeleton2DPathAttachment } from './deformPathAttachment2D.ts';

@@ -1,5 +1,5 @@
 import { createPath, reversePath } from '@flighthq/path/contract';
-import type { Path } from '@flighthq/types/contract';
+import type { Path } from '@flighthq/path/contract';
 
 /**
  * Applies a Lottie shape item's direction flag, which is the one thing every geometry item does identically.

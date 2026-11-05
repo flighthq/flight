@@ -1,4 +1,5 @@
 import { addNodeChild } from '@flighthq/node/contract';
+import type { Path } from '@flighthq/path/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
 import { clearShapeCommands, createShape } from '@flighthq/shape/contract';
 import type {
@@ -10,7 +11,6 @@ import type {
   LottieShapeModifier,
   LottieShapePainter,
   LottieTransform,
-  Path,
   Shape,
 } from '@flighthq/types/contract';
 

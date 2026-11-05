@@ -4,6 +4,7 @@ import {
   unregisterTestImageDimensionResolver,
 } from '@flighthq/image/contract';
 import * as flightNode from '@flighthq/node/contract';
+import { PathCommand } from '@flighthq/path/contract';
 import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
 import {
   appendShapeBeginFill,
@@ -16,7 +17,7 @@ import {
   createShape,
 } from '@flighthq/shape/contract';
 import type { CanvasSurface, HostCanvasCapability, HostImageCapability, RenderProxy2D } from '@flighthq/types/contract';
-import { BatchFormat, PathCommand } from '@flighthq/types/contract';
+import { BatchFormat } from '@flighthq/types/contract';
 
 import { enableGlStrokePathTessellation } from './enableGlStrokePathTessellation.ts';
 import { flushGlQuadBatchWriter } from './glQuadBatchWriter.ts';

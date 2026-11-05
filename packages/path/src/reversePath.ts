@@ -24,50 +24,49 @@ interface Subpath {
 }
 
 function decodeSubpaths(path: Readonly<Path>): Subpath[] {
-  let segments: PathSegment[] = [] as never[];
+  let segments: PathSegment[] = [];
   forEachPathSegment(path, (segment) => segments.push(segment));
-  let subpaths: Subpath[] = [] as never[];
+  let subpaths: Subpath[] = [];
   let current: number | undefined = undefined;
   for (const segment of segments) {
     {
-      const matchValue = segment;
-      if (matchValue.kind === 'moveTo') {
-        const x = matchValue.x;
-        const y = matchValue.y;
-        subpaths.push({ closed: false, points: [{ x: x, y: y, kind: { kind: 'move' as const } }] });
+      if (segment.kind === 'moveTo') {
+        const x = segment.x;
+        const y = segment.y;
+        subpaths.push({ closed: false, points: [{ x, y, kind: { kind: 'move' as const } }] });
         current = subpaths.length - 1;
-      } else if (matchValue.kind === 'lineTo') {
-        const x = matchValue.x;
-        const y = matchValue.y;
+      } else if (segment.kind === 'lineTo') {
+        const x = segment.x;
+        const y = segment.y;
         if (current === undefined) {
-          subpaths.push({ closed: false, points: [{ x: 0.0, y: 0.0, kind: { kind: 'move' as const } }] });
+          subpaths.push({ closed: false, points: [{ x: 0, y: 0, kind: { kind: 'move' as const } }] });
           current = subpaths.length - 1;
         }
-        subpaths[current!].points.push({ x: x, y: y, kind: { kind: 'line' as const } });
-      } else if (matchValue.kind === 'quadraticCurveTo') {
-        const controlX = matchValue.controlX;
-        const controlY = matchValue.controlY;
-        const x = matchValue.x;
-        const y = matchValue.y;
+        subpaths[current!].points.push({ x, y, kind: { kind: 'line' as const } });
+      } else if (segment.kind === 'quadraticCurveTo') {
+        const controlX = segment.controlX;
+        const controlY = segment.controlY;
+        const x = segment.x;
+        const y = segment.y;
         if (current === undefined) {
-          subpaths.push({ closed: false, points: [{ x: 0.0, y: 0.0, kind: { kind: 'move' as const } }] });
+          subpaths.push({ closed: false, points: [{ x: 0, y: 0, kind: { kind: 'move' as const } }] });
           current = subpaths.length - 1;
         }
-        subpaths[current!].points.push({ x: x, y: y, kind: { kind: 'quad' as const, cx: controlX, cy: controlY } });
-      } else if (matchValue.kind === 'cubicCurveTo') {
-        const controlX1 = matchValue.controlX1;
-        const controlX2 = matchValue.controlX2;
-        const controlY1 = matchValue.controlY1;
-        const controlY2 = matchValue.controlY2;
-        const x = matchValue.x;
-        const y = matchValue.y;
+        subpaths[current!].points.push({ x, y, kind: { kind: 'quad' as const, cx: controlX, cy: controlY } });
+      } else if (segment.kind === 'cubicCurveTo') {
+        const controlX1 = segment.controlX1;
+        const controlX2 = segment.controlX2;
+        const controlY1 = segment.controlY1;
+        const controlY2 = segment.controlY2;
+        const x = segment.x;
+        const y = segment.y;
         if (current === undefined) {
-          subpaths.push({ closed: false, points: [{ x: 0.0, y: 0.0, kind: { kind: 'move' as const } }] });
+          subpaths.push({ closed: false, points: [{ x: 0, y: 0, kind: { kind: 'move' as const } }] });
           current = subpaths.length - 1;
         }
         subpaths[current!].points.push({
-          x: x,
-          y: y,
+          x,
+          y,
           kind: { kind: 'cubic' as const, c1x: controlX1, c1y: controlY1, c2x: controlX2, c2y: controlY2 },
         });
       } else {
@@ -90,7 +89,7 @@ function encodeReversedSubpath(subpath: Readonly<Subpath>, out: Path): void {
   out.commands.push(PathCommand.MOVE_TO & 0xff);
   out.data.push(last.x);
   out.data.push(last.y);
-  let i = (pts.length | 0) - 1;
+  let i = pts.length - 1;
   while (i >= 1) {
     const from = pts[i >>> 0];
     const to = pts[(i - 1) >>> 0];
@@ -122,7 +121,7 @@ function encodeReversedSubpath(subpath: Readonly<Subpath>, out: Path): void {
         out.data.push(to.y);
       }
     }
-    i -= 1;
+    i--;
   }
   if (subpath.closed) {
     out.commands.push(PathCommand.CLOSE & 0xff);

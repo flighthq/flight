@@ -1,5 +1,6 @@
 import { clipRegionContainsPoint } from '@flighthq/clip/contract';
 import { martinezPathBooleanKernel } from '@flighthq/path-boolean/contract';
+import { PathCommand } from '@flighthq/path/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
 import type {
   DisplayObject,
@@ -8,7 +9,7 @@ import type {
   RiveCoreObject,
   RivePathRecord,
 } from '@flighthq/types/contract';
-import { PathCommand, RiveFieldType } from '@flighthq/types/contract';
+import { RiveFieldType } from '@flighthq/types/contract';
 
 import { applyRiveClipping, registerRiveClippingHandlers } from './riveClipping.ts';
 import { createRiveImportRegistry, getRiveCoreObjectHandler } from './riveImportRegistry.ts';

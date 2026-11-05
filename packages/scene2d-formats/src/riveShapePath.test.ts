@@ -1,5 +1,6 @@
 import { collectImportDiagnostics } from '@flighthq/importdiagnostics/contract';
 import { CIRCLE_KAPPA } from '@flighthq/math/contract';
+import { PathCommand } from '@flighthq/path/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
 import type {
   ImportDiagnostic,
@@ -7,7 +8,7 @@ import type {
   RiveArtboardImportContext,
   RiveCoreObject,
 } from '@flighthq/types/contract';
-import { ImportDiagnosticSeverity, PathCommand, RiveFieldType } from '@flighthq/types/contract';
+import { ImportDiagnosticSeverity, RiveFieldType } from '@flighthq/types/contract';
 
 import {
   createRiveArtboardImportContext,

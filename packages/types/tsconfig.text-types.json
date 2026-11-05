@@ -45,7 +45,6 @@
     "src/NodeInteraction.ts",
     "src/NodeInteractionState.ts",
     "src/NodeSignals.ts",
-    "src/Path.ts",
     "src/PixelFormat.ts",
     "src/PointerEventData.ts",
     "src/Rectangle.ts",

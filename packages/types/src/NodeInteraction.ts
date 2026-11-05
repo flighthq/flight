@@ -1,5 +1,6 @@
+import type { Path } from '@flighthq/path/contract';
+
 import type { NodeAny } from './Node.ts';
-import type { Path } from './Path.ts';
 import type { Rectangle } from './Rectangle.ts';
 /**
  * The hit region a node presents in place of descending into its own geometry. Setting a `hitArea`

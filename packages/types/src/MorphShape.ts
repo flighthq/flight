@@ -1,6 +1,6 @@
+import type { Path, PathMorph } from '@flighthq/path/contract';
+
 import type { Matrix } from './Matrix.ts';
-import type { Path } from './Path.ts';
-import type { PathMorph } from './PathMorph.ts';
 import type { Shape, ShapeData, ShapeRuntime } from './Shape.ts';
 
 export interface MorphShapePathBinding {

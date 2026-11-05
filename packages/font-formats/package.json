@@ -44,10 +44,10 @@
     "@flighthq/compression": "*",
     "@flighthq/font": "*",
     "@flighthq/importdiagnostics": "*",
+    "@flighthq/path": "*",
     "@flighthq/types": "*"
   },
   "devDependencies": {
-    "@flighthq/path": "*",
     "typescript": "^7.0.2"
   },
   "description": "OpenType/TrueType codec neighbor of @flighthq/font — parse font bytes into a GlyphOutlineSource (outlines, advances, codepoint mapping)",

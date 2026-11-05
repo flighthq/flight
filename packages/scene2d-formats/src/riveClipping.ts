@@ -3,12 +3,12 @@ import { createMatrix, inverseMatrix, multiplyMatrix } from '@flighthq/geometry/
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import { intersectPaths, simplifyPath } from '@flighthq/path-boolean/contract';
 import { createPath } from '@flighthq/path/contract';
+import type { Path } from '@flighthq/path/contract';
 import type {
   DisplayObject,
   PathBooleanKernel,
   ImportDiagnostic,
   Matrix,
-  Path,
   RiveArtboardGraph,
   RiveCoreObject,
   RiveImportRegistry,

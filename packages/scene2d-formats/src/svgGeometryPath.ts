@@ -13,7 +13,7 @@ import {
   appendPathRoundedRectangle,
   createPath,
 } from '@flighthq/path/contract';
-import type { Path, PathWinding } from '@flighthq/types/contract';
+import type { Path, PathWinding } from '@flighthq/path/contract';
 import type { XmlElement } from '@flighthq/xml/contract';
 
 import { parseSvgNumberList, svgAttribute, svgLocalName, svgNumberAttribute } from './svgXml.ts';

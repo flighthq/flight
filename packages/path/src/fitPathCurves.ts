@@ -6,15 +6,15 @@ import { PathCommand } from './path.ts';
 import type { Path } from './pathCompat.ts';
 
 function chordLengthParameterize(pts: Readonly<number[]>, first: number, last: number): number[] {
-  let u = [0.0];
-  for (let i = first + 1; i <= last; i += 1) {
+  let u = [0];
+  for (let i = first + 1; i <= last; i++) {
     const dx = pts[i * 2] - pts[(i - 1) * 2];
     const dy = pts[i * 2 + 1] - pts[(i - 1) * 2 + 1];
     u.push(u[u.length - 1] + Math.sqrt(dx * dx + dy * dy));
   }
   const total = u[u.length - 1];
-  if (total > 0.0) {
-    for (let i = 1; i < u.length; i += 1) {
+  if (total > 0) {
+    for (let i = 1; i < u.length; i++) {
       u[i] /= total;
     }
   }
@@ -25,20 +25,20 @@ function computeCenterTangent(pts: Readonly<number[]>, idx: number): readonly [n
   const dx = pts[(idx - 1) * 2] - pts[(idx + 1) * 2];
   const dy = pts[(idx - 1) * 2 + 1] - pts[(idx + 1) * 2 + 1];
   const len = Math.sqrt(dx * dx + dy * dy);
-  if (len > 0.0) {
+  if (len > 0) {
     return [dx / len, dy / len];
   }
-  return [1.0, 0.0];
+  return [1, 0];
 }
 
 function computeLeftTangent(pts: Readonly<number[]>, idx: number): readonly [number, number] {
   const dx = pts[(idx + 1) * 2] - pts[idx * 2];
   const dy = pts[(idx + 1) * 2 + 1] - pts[idx * 2 + 1];
   const len = Math.sqrt(dx * dx + dy * dy);
-  if (len > 0.0) {
+  if (len > 0) {
     return [dx / len, dy / len];
   }
-  return [1.0, 0.0];
+  return [1, 0];
 }
 
 function computeMaxError(
@@ -48,15 +48,15 @@ function computeMaxError(
   bezier: Readonly<number[]>,
   u: Readonly<number[]>,
 ): readonly [number, number] {
-  let maxDist: number = 0.0;
-  let splitPoint = (last - first + 1) / 2;
-  for (let i = 1; i < last - first; i += 1) {
+  let maxDist: number = 0;
+  let splitPoint = Math.trunc((last - first + 1) / 2);
+  for (let i = 1; i < last - first; i++) {
     const t = u[i];
-    const mt = 1.0 - t;
+    const mt = 1 - t;
     const bx =
-      mt * mt * mt * bezier[0] + 3.0 * mt * mt * t * bezier[2] + 3.0 * mt * t * t * bezier[4] + t * t * t * bezier[6];
+      mt * mt * mt * bezier[0] + 3 * mt * mt * t * bezier[2] + 3 * mt * t * t * bezier[4] + t * t * t * bezier[6];
     const by =
-      mt * mt * mt * bezier[1] + 3.0 * mt * mt * t * bezier[3] + 3.0 * mt * t * t * bezier[5] + t * t * t * bezier[7];
+      mt * mt * mt * bezier[1] + 3 * mt * mt * t * bezier[3] + 3 * mt * t * t * bezier[5] + t * t * t * bezier[7];
     const dx = pts[(first + i) * 2] - bx;
     const dy = pts[(first + i) * 2 + 1] - by;
     const distSq = dx * dx + dy * dy;
@@ -72,22 +72,22 @@ function computeRightTangent(pts: Readonly<number[]>, idx: number): readonly [nu
   const dx = pts[(idx - 1) * 2] - pts[idx * 2];
   const dy = pts[(idx - 1) * 2 + 1] - pts[idx * 2 + 1];
   const len = Math.sqrt(dx * dx + dy * dy);
-  if (len > 0.0) {
+  if (len > 0) {
     return [dx / len, dy / len];
   }
-  return [-1.0, 0.0];
+  return [-1, 0];
 }
 
 function findCorners(pts: Readonly<number[]>, n: number): number[] {
   let corners = [0];
-  for (let i = 1; i < n - 1; i += 1) {
+  for (let i = 1; i < n - 1; i++) {
     const dx0 = pts[i * 2] - pts[(i - 1) * 2];
     const dy0 = pts[i * 2 + 1] - pts[(i - 1) * 2 + 1];
     const dx1 = pts[(i + 1) * 2] - pts[i * 2];
     const dy1 = pts[(i + 1) * 2 + 1] - pts[i * 2 + 1];
     const len0 = Math.sqrt(dx0 * dx0 + dy0 * dy0);
     const len1 = Math.sqrt(dx1 * dx1 + dy1 * dy1);
-    if (len0 === 0.0 || len1 === 0.0) {
+    if (len0 === 0 || len1 === 0) {
       continue;
     }
     const dot = (dx0 * dx1 + dy0 * dy1) / (len0 * len1);
@@ -113,7 +113,7 @@ function fitCubic(
     const dx = pts[last * 2] - pts[first * 2];
     const dy = pts[last * 2 + 1] - pts[first * 2 + 1];
     const dist = Math.sqrt(dx * dx + dy * dy);
-    const d = dist / 3.0;
+    const d = dist / 3;
     out.commands.push(PathCommand.CUBIC_CURVE_TO & 0xff);
     out.data.push(pts[first * 2] + tHat1[0] * d);
     out.data.push(pts[first * 2 + 1] + tHat1[1] * d);
@@ -125,7 +125,7 @@ function fitCubic(
   }
   let u = chordLengthParameterize(pts, first, last);
   const maxIterations = 4;
-  for (let iter = 0; iter <= maxIterations; iter += 1) {
+  for (let iter = 0; iter <= maxIterations; iter++) {
     const bezier = generateBezier(pts, first, last, u, tHat1, tHat2);
     const [maxErr, splitPoint] = computeMaxError(pts, first, last, bezier, u);
     if (maxErr < toleranceSq) {
@@ -153,8 +153,8 @@ function fitCubic(
  * Schneider's algorithm. Alias-safe.
  */
 export function fitPathCurves(source: Readonly<Path>, tolerance: number, out: Path, flattenTolerance?: number): void {
-  const flattenTolerance_1 = flattenTolerance ?? 0.25;
-  const contours = flattenPath(source, flattenTolerance_1);
+  flattenTolerance = flattenTolerance ?? 0.25;
+  const contours = flattenPath(source, flattenTolerance);
   const outCommands: number[] = out.commands;
   outCommands.length = 0;
   const outData: number[] = out.data;
@@ -167,7 +167,7 @@ export function fitPathCurves(source: Readonly<Path>, tolerance: number, out: Pa
       continue;
     }
     const closed = n >= 3 && contour[0] === contour[contour.length - 2] && contour[1] === contour[contour.length - 1];
-    const pts: number[] = closed ? [...contour.slice(0, (n - 1) * 2)] : contour.slice();
+    const pts: number[] = closed ? contour.slice(0, (n - 1) * 2) : contour.slice();
     const pn = Math.trunc(pts.length / 2);
     if (pn < 2) {
       continue;
@@ -188,7 +188,7 @@ export function fitPathCurves(source: Readonly<Path>, tolerance: number, out: Pa
     out.commands.push(PathCommand.MOVE_TO & 0xff);
     out.data.push(pts[0]);
     out.data.push(pts[1]);
-    for (let ci = 0; ci < corners.length - 1; ci += 1) {
+    for (let ci = 0; ci < corners.length - 1; ci++) {
       const first = corners[ci];
       const last = corners[ci + 1];
       if (last - first < 2) {
@@ -216,15 +216,15 @@ function generateBezier(
   tHat2: readonly [number, number],
 ): number[] {
   const nPts = last - first + 1;
-  let c00: number = 0.0;
-  let c01: number = 0.0;
-  let c11: number = 0.0;
-  let x0: number = 0.0;
-  let x1: number = 0.0;
-  for (let i = 0; i < nPts; i += 1) {
+  let c00: number = 0;
+  let c01: number = 0;
+  let c11: number = 0;
+  let x0: number = 0;
+  let x1: number = 0;
+  for (let i = 0; i < nPts; i++) {
     const t = u[i];
-    const b1 = 3.0 * t * (1.0 - t) * (1.0 - t);
-    const b2 = 3.0 * t * t * (1.0 - t);
+    const b1 = 3 * t * (1 - t) * (1 - t);
+    const b2 = 3 * t * t * (1 - t);
     const a1x = tHat1[0] * b1;
     const a1y = tHat1[1] * b1;
     const a2x = tHat2[0] * b2;
@@ -232,7 +232,7 @@ function generateBezier(
     c00 += a1x * a1x + a1y * a1y;
     c01 += a1x * a2x + a1y * a2y;
     c11 += a2x * a2x + a2y * a2y;
-    const b0 = (1.0 - t) * (1.0 - t) * (1.0 - t);
+    const b0 = (1 - t) * (1 - t) * (1 - t);
     const b3 = t * t * t;
     const tmpx =
       pts[(first + i) * 2] - (pts[first * 2] * b0 + pts[first * 2] * b1 + pts[last * 2] * b2 + pts[last * 2] * b3);
@@ -249,7 +249,7 @@ function generateBezier(
     const dx = pts[last * 2] - pts[first * 2];
     const dy = pts[last * 2 + 1] - pts[first * 2 + 1];
     const dist = Math.sqrt(dx * dx + dy * dy);
-    const a = dist / 3.0;
+    const a = dist / 3;
     alpha1 = a;
     alpha2 = a;
   } else {
@@ -263,7 +263,7 @@ function generateBezier(
   let a1 = alpha1;
   let a2 = alpha2;
   if (alpha1 < epsilon || alpha2 < epsilon) {
-    a1 = segLength / 3.0;
+    a1 = segLength / 3;
     a2 = a1;
   }
   return [
@@ -279,29 +279,23 @@ function generateBezier(
 }
 
 function newtonRaphsonRootFind(bezier: Readonly<number[]>, px: number, py: number, u: number): number {
-  const mt = 1.0 - u;
+  const mt = 1 - u;
   const qx =
-    mt * mt * mt * bezier[0] + 3.0 * mt * mt * u * bezier[2] + 3.0 * mt * u * u * bezier[4] + u * u * u * bezier[6];
+    mt * mt * mt * bezier[0] + 3 * mt * mt * u * bezier[2] + 3 * mt * u * u * bezier[4] + u * u * u * bezier[6];
   const qy =
-    mt * mt * mt * bezier[1] + 3.0 * mt * mt * u * bezier[3] + 3.0 * mt * u * u * bezier[5] + u * u * u * bezier[7];
+    mt * mt * mt * bezier[1] + 3 * mt * mt * u * bezier[3] + 3 * mt * u * u * bezier[5] + u * u * u * bezier[7];
   const q1x =
-    3.0 * mt * mt * (bezier[2] - bezier[0]) +
-    6.0 * mt * u * (bezier[4] - bezier[2]) +
-    3.0 * u * u * (bezier[6] - bezier[4]);
+    3 * mt * mt * (bezier[2] - bezier[0]) + 6 * mt * u * (bezier[4] - bezier[2]) + 3 * u * u * (bezier[6] - bezier[4]);
   const q1y =
-    3.0 * mt * mt * (bezier[3] - bezier[1]) +
-    6.0 * mt * u * (bezier[5] - bezier[3]) +
-    3.0 * u * u * (bezier[7] - bezier[5]);
+    3 * mt * mt * (bezier[3] - bezier[1]) + 6 * mt * u * (bezier[5] - bezier[3]) + 3 * u * u * (bezier[7] - bezier[5]);
   const num = (qx - px) * q1x + (qy - py) * q1y;
-  const q2x =
-    6.0 * mt * (bezier[4] - 2.0 * bezier[2] + bezier[0]) + 6.0 * u * (bezier[6] - 2.0 * bezier[4] + bezier[2]);
-  const q2y =
-    6.0 * mt * (bezier[5] - 2.0 * bezier[3] + bezier[1]) + 6.0 * u * (bezier[7] - 2.0 * bezier[5] + bezier[3]);
+  const q2x = 6 * mt * (bezier[4] - 2 * bezier[2] + bezier[0]) + 6 * u * (bezier[6] - 2 * bezier[4] + bezier[2]);
+  const q2y = 6 * mt * (bezier[5] - 2 * bezier[3] + bezier[1]) + 6 * u * (bezier[7] - 2 * bezier[5] + bezier[3]);
   const den = q1x * q1x + q1y * q1y + (qx - px) * q2x + (qy - py) * q2y;
   if (Math.abs(den) < 1e-12) {
     return u;
   }
-  return Math.min(Math.max(u - num / den, 0.0), 1.0);
+  return Math.min(Math.max(u - num / den, 0), 1);
 }
 
 function reparameterize(
@@ -311,8 +305,8 @@ function reparameterize(
   u: Readonly<number[]>,
   bezier: Readonly<number[]>,
 ): number[] {
-  let uPrime: number[] = [] as never[];
-  for (let i = 0; i <= last - first; i += 1) {
+  let uPrime: number[] = [];
+  for (let i = 0; i <= last - first; i++) {
     uPrime.push(newtonRaphsonRootFind(bezier, pts[(first + i) * 2], pts[(first + i) * 2 + 1], u[i]));
   }
   return uPrime;

@@ -5,7 +5,7 @@ import { flattenPath } from './flattenPath.ts';
 import type { Path } from './pathCompat.ts';
 
 function contourLength(contour: Readonly<number[]>): number {
-  let len: number = 0.0;
+  let len: number = 0;
   let i = 2;
   while (i < contour.length) {
     const dx = contour[i] - contour[i - 2];
@@ -20,10 +20,10 @@ function contourLength(contour: Readonly<number[]>): number {
  * Returns the total arc length of `path` by summing the Euclidean lengths of all flattened segments.
  */
 export function getPathLength(path: Readonly<Path>, tolerance?: number): number {
-  const tolerance_1 = tolerance ?? 0.25;
-  const contours = flattenPath(path, tolerance_1);
-  let total: number = 0.0;
-  for (let ci = 0; ci < contours.length; ci += 1) {
+  tolerance = tolerance ?? 0.25;
+  const contours = flattenPath(path, tolerance);
+  let total: number = 0;
+  for (let ci = 0; ci < contours.length; ci++) {
     total += contourLength(contours[ci]);
   }
   return total;

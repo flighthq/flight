@@ -1,9 +1,9 @@
 import { allocateEntity } from '@flighthq/entity/contract';
 import { RAD_TO_DEG } from '@flighthq/math/contract';
 import { getPathLength, getPathPositionAtDistance } from '@flighthq/path/contract';
+import type { Path } from '@flighthq/path/contract';
 import type {
   EntityConstruction,
-  Path,
   PathAttachment2D,
   Skeleton2D,
   Skeleton2DConstraint,

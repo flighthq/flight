@@ -1,5 +1,7 @@
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import { createPath, getPathBounds, transformPath } from '@flighthq/path/contract';
+import type { Path } from '@flighthq/path/contract';
+import { PathCommand } from '@flighthq/path/contract';
 import {
   appendShapeBeginFill,
   appendShapeQuadraticCurveTo,
@@ -9,8 +11,8 @@ import {
   createShape,
   getShapeFillRegions,
 } from '@flighthq/shape/contract';
-import type { GlyphOutlineSource, ImportDiagnostic, Path, RectangleLike, Shape } from '@flighthq/types/contract';
-import { ImportDiagnosticSeverity, PathCommand } from '@flighthq/types/contract';
+import type { GlyphOutlineSource, ImportDiagnostic, RectangleLike, Shape } from '@flighthq/types/contract';
+import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
 import { SwfReader } from './swfReader.ts';
 import { createSwfGlyphShape } from './swfShape.ts';

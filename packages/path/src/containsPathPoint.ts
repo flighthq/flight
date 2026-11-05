@@ -10,7 +10,7 @@ function chordDistSq(px: number, py: number, x0: number, y0: number, x1: number,
   const dx = x1 - x0;
   const dy = y1 - y0;
   const lenSq = dx * dx + dy * dy;
-  if (lenSq === 0.0) {
+  if (lenSq === 0) {
     const ax = px - x0;
     const ay = py - y0;
     return ax * ax + ay * ay;
@@ -24,13 +24,13 @@ function computePathWindingNumber(path: Readonly<Path>, px: number, py: number, 
   const data = path.data;
   const toleranceSq = tolerance * tolerance;
   let windingNumber: number = 0;
-  let contourStartX: number = 0.0;
-  let contourStartY: number = 0.0;
+  let contourStartX: number = 0;
+  let contourStartY: number = 0;
   let hasContour = false;
-  let lastX: number = 0.0;
-  let lastY: number = 0.0;
+  let lastX: number = 0;
+  let lastY: number = 0;
   let di: number = 0;
-  for (let ci = 0; ci < commands.length; ci += 1) {
+  for (let ci = 0; ci < commands.length; ci++) {
     const command = commands[ci];
     if (command === (PathCommand.MOVE_TO & 0xff)) {
       if (hasContour) {
@@ -42,89 +42,64 @@ function computePathWindingNumber(path: Readonly<Path>, px: number, py: number, 
       lastX = contourStartX;
       lastY = contourStartY;
       hasContour = true;
-    } else {
-      if (command === (PathCommand.WIDE_MOVE_TO & 0xff)) {
-        if (hasContour) {
-          windingNumber += countSegmentCrossings(px, py, lastX, lastY, contourStartX, contourStartY);
-        }
-        contourStartX = data[di + 2];
-        contourStartY = data[di + 3];
-        di += 4;
+    } else if (command === (PathCommand.WIDE_MOVE_TO & 0xff)) {
+      if (hasContour) {
+        windingNumber += countSegmentCrossings(px, py, lastX, lastY, contourStartX, contourStartY);
+      }
+      contourStartX = data[di + 2];
+      contourStartY = data[di + 3];
+      di += 4;
+      lastX = contourStartX;
+      lastY = contourStartY;
+      hasContour = true;
+    } else if (command === (PathCommand.LINE_TO & 0xff)) {
+      const nx = data[di];
+      const ny = data[di + 1];
+      di += 2;
+      if (hasContour) {
+        windingNumber += countSegmentCrossings(px, py, lastX, lastY, nx, ny);
+      }
+      lastX = nx;
+      lastY = ny;
+    } else if (command === (PathCommand.WIDE_LINE_TO & 0xff)) {
+      const nx = data[di + 2];
+      const ny = data[di + 3];
+      di += 4;
+      if (hasContour) {
+        windingNumber += countSegmentCrossings(px, py, lastX, lastY, nx, ny);
+      }
+      lastX = nx;
+      lastY = ny;
+    } else if (command === (PathCommand.QUADRATIC_CURVE_TO & 0xff)) {
+      const cx = data[di];
+      const cy = data[di + 1];
+      const ax = data[di + 2];
+      const ay = data[di + 3];
+      di += 4;
+      if (hasContour) {
+        windingNumber += flattenQuadraticWindingNumber(px, py, lastX, lastY, cx, cy, ax, ay, toleranceSq, 0);
+      }
+      lastX = ax;
+      lastY = ay;
+    } else if (command === (PathCommand.CUBIC_CURVE_TO & 0xff)) {
+      const c1x = data[di];
+      const c1y = data[di + 1];
+      const c2x = data[di + 2];
+      const c2y = data[di + 3];
+      const ax = data[di + 4];
+      const ay = data[di + 5];
+      di += 6;
+      if (hasContour) {
+        windingNumber += flattenCubicWindingNumber(px, py, lastX, lastY, c1x, c1y, c2x, c2y, ax, ay, toleranceSq, 0);
+      }
+      lastX = ax;
+      lastY = ay;
+    } else if (command === (PathCommand.CLOSE & 0xff)) {
+      if (hasContour) {
+        windingNumber += countSegmentCrossings(px, py, lastX, lastY, contourStartX, contourStartY);
         lastX = contourStartX;
         lastY = contourStartY;
-        hasContour = true;
-      } else {
-        if (command === (PathCommand.LINE_TO & 0xff)) {
-          const nx = data[di];
-          const ny = data[di + 1];
-          di += 2;
-          if (hasContour) {
-            windingNumber += countSegmentCrossings(px, py, lastX, lastY, nx, ny);
-          }
-          lastX = nx;
-          lastY = ny;
-        } else {
-          if (command === (PathCommand.WIDE_LINE_TO & 0xff)) {
-            const nx = data[di + 2];
-            const ny = data[di + 3];
-            di += 4;
-            if (hasContour) {
-              windingNumber += countSegmentCrossings(px, py, lastX, lastY, nx, ny);
-            }
-            lastX = nx;
-            lastY = ny;
-          } else {
-            if (command === (PathCommand.QUADRATIC_CURVE_TO & 0xff)) {
-              const cx = data[di];
-              const cy = data[di + 1];
-              const ax = data[di + 2];
-              const ay = data[di + 3];
-              di += 4;
-              if (hasContour) {
-                windingNumber += flattenQuadraticWindingNumber(px, py, lastX, lastY, cx, cy, ax, ay, toleranceSq, 0);
-              }
-              lastX = ax;
-              lastY = ay;
-            } else {
-              if (command === (PathCommand.CUBIC_CURVE_TO & 0xff)) {
-                const c1x = data[di];
-                const c1y = data[di + 1];
-                const c2x = data[di + 2];
-                const c2y = data[di + 3];
-                const ax = data[di + 4];
-                const ay = data[di + 5];
-                di += 6;
-                if (hasContour) {
-                  windingNumber += flattenCubicWindingNumber(
-                    px,
-                    py,
-                    lastX,
-                    lastY,
-                    c1x,
-                    c1y,
-                    c2x,
-                    c2y,
-                    ax,
-                    ay,
-                    toleranceSq,
-                    0,
-                  );
-                }
-                lastX = ax;
-                lastY = ay;
-              } else {
-                if (command === (PathCommand.CLOSE & 0xff)) {
-                  if (hasContour) {
-                    windingNumber += countSegmentCrossings(px, py, lastX, lastY, contourStartX, contourStartY);
-                    lastX = contourStartX;
-                    lastY = contourStartY;
-                    hasContour = false;
-                  }
-                }
-              }
-            }
-          }
-        }
+        hasContour = false;
       }
     }
   }
@@ -139,8 +114,8 @@ function computePathWindingNumber(path: Readonly<Path>, px: number, py: number, 
  * Curves are adaptively flattened before the winding number test.
  */
 export function containsPathPoint(path: Readonly<Path>, px: number, py: number, tolerance?: number): boolean {
-  const tolerance_1 = tolerance ?? 0.25;
-  const winding = computePathWindingNumber(path, px, py, tolerance_1);
+  tolerance = tolerance ?? 0.25;
+  const winding = computePathWindingNumber(path, px, py, tolerance);
   if (path.winding === 'evenOdd') {
     return (winding & 1) !== 0;
   }
@@ -176,18 +151,18 @@ function flattenCubicWindingNumber(
   if (depth >= MAX_SUBDIVISION_DEPTH || (d1 <= toleranceSq && d2 <= toleranceSq)) {
     return countSegmentCrossings(px, py, x0, y0, x1, y1);
   }
-  const x01 = (x0 + c1x) / 2.0;
-  const y01 = (y0 + c1y) / 2.0;
-  const x12 = (c1x + c2x) / 2.0;
-  const y12 = (c1y + c2y) / 2.0;
-  const x23 = (c2x + x1) / 2.0;
-  const y23 = (c2y + y1) / 2.0;
-  const x012 = (x01 + x12) / 2.0;
-  const y012 = (y01 + y12) / 2.0;
-  const x123 = (x12 + x23) / 2.0;
-  const y123 = (y12 + y23) / 2.0;
-  const xm = (x012 + x123) / 2.0;
-  const ym = (y012 + y123) / 2.0;
+  const x01 = (x0 + c1x) / 2;
+  const y01 = (y0 + c1y) / 2;
+  const x12 = (c1x + c2x) / 2;
+  const y12 = (c1y + c2y) / 2;
+  const x23 = (c2x + x1) / 2;
+  const y23 = (c2y + y1) / 2;
+  const x012 = (x01 + x12) / 2;
+  const y012 = (y01 + y12) / 2;
+  const x123 = (x12 + x23) / 2;
+  const y123 = (y12 + y23) / 2;
+  const xm = (x012 + x123) / 2;
+  const ym = (y012 + y123) / 2;
   return (
     flattenCubicWindingNumber(px, py, x0, y0, x01, y01, x012, y012, xm, ym, toleranceSq, depth + 1) +
     flattenCubicWindingNumber(px, py, xm, ym, x123, y123, x23, y23, x1, y1, toleranceSq, depth + 1)
@@ -209,12 +184,12 @@ function flattenQuadraticWindingNumber(
   if (depth >= MAX_SUBDIVISION_DEPTH || chordDistSq(cx, cy, x0, y0, x1, y1) <= toleranceSq) {
     return countSegmentCrossings(px, py, x0, y0, x1, y1);
   }
-  const mx01 = (x0 + cx) / 2.0;
-  const my01 = (y0 + cy) / 2.0;
-  const mx12 = (cx + x1) / 2.0;
-  const my12 = (cy + y1) / 2.0;
-  const mx = (mx01 + mx12) / 2.0;
-  const my = (my01 + my12) / 2.0;
+  const mx01 = (x0 + cx) / 2;
+  const my01 = (y0 + cy) / 2;
+  const mx12 = (cx + x1) / 2;
+  const my12 = (cy + y1) / 2;
+  const mx = (mx01 + mx12) / 2;
+  const my = (my01 + my12) / 2;
   return (
     flattenQuadraticWindingNumber(px, py, x0, y0, mx01, my01, mx, my, toleranceSq, depth + 1) +
     flattenQuadraticWindingNumber(px, py, mx, my, mx12, my12, x1, y1, toleranceSq, depth + 1)

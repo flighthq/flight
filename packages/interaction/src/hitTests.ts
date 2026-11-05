@@ -12,6 +12,7 @@ import {
   getNodeWorldMatrix,
 } from '@flighthq/node/contract';
 import { containsPathPoint } from '@flighthq/path/contract';
+import type { Path } from '@flighthq/path/contract';
 import type {
   Node2D,
   HitArea,
@@ -21,7 +22,6 @@ import type {
   Kind,
   Node,
   NodeAny,
-  Path,
   Rectangle,
 } from '@flighthq/types/contract';
 

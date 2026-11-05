@@ -18,12 +18,12 @@ export function getPathNearestPoint(
   out: Vector2Like,
   tolerance?: number,
 ): number {
-  const tolerance_1 = tolerance ?? 0.25;
-  const contours = flattenPath(path, tolerance_1);
+  tolerance = tolerance ?? 0.25;
+  const contours = flattenPath(path, tolerance);
   let bestDistSq = Number.POSITIVE_INFINITY;
-  let bestX: number = 0.0;
-  let bestY: number = 0.0;
-  for (let ci = 0; ci < contours.length; ci += 1) {
+  let bestX: number = 0;
+  let bestY: number = 0;
+  for (let ci = 0; ci < contours.length; ci++) {
     const contour = contours[ci];
     let i = 2;
     while (i < contour.length) {
@@ -35,11 +35,11 @@ export function getPathNearestPoint(
       const dy = by - ay;
       const lenSq = dx * dx + dy * dy;
       let t;
-      if (lenSq === 0.0) {
-        t = 0.0;
+      if (lenSq === 0) {
+        t = 0;
       } else {
         const raw = ((px - ax) * dx + (py - ay) * dy) / lenSq;
-        t = raw < 0.0 ? 0.0 : raw > 1.0 ? 1.0 : raw;
+        t = raw < 0 ? 0 : raw > 1 ? 1 : raw;
       }
       const cx = ax + t * dx;
       const cy = ay + t * dy;
@@ -53,7 +53,7 @@ export function getPathNearestPoint(
     }
   }
   if (bestDistSq === Number.POSITIVE_INFINITY) {
-    return -1.0;
+    return -1;
   }
   out.x = bestX;
   out.y = bestY;

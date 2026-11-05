@@ -1,5 +1,6 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { detectFontFormat } from '@flighthq/font/contract';
+import type { Path } from '@flighthq/path/contract';
 import type {
   HostDecompressDeflateCapability,
   CffTable,
@@ -9,7 +10,6 @@ import type {
   GlyphOutlineSource,
   ImportDiagnostic,
   OpenTypeFontExplanation,
-  Path,
   SfntTableDirectory,
 } from '@flighthq/types/contract';
 

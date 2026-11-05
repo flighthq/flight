@@ -24,25 +24,25 @@ export function samplePathMorph(out: Path, morph: Readonly<PathMorph>, progress:
   const commands = morph.commands;
   const outCommands: number[] = out.commands;
   outCommands.length = 0;
-  for (let i = 0; i < commands.length; i += 1) {
+  for (let i = 0; i < commands.length; i++) {
     out.commands.push(commands[i]);
   }
   const startData = morph.startData;
   const endData = morph.endData;
   const outData: number[] = out.data;
   outData.length = 0;
-  for (let _ = 0; _ < startData.length; _ += 1) {
-    out.data.push(0.0);
+  for (let _ = 0; _ < startData.length; _++) {
+    out.data.push(0);
   }
-  if (progress === 0.0 || progress === 1.0) {
-    const endpoint = progress === 0.0 ? startData : endData;
-    for (let i = 0; i < endpoint.length; i += 1) {
+  if (progress === 0 || progress === 1) {
+    const endpoint = progress === 0 ? startData : endData;
+    for (let i = 0; i < endpoint.length; i++) {
       out.data[i] = endpoint[i];
     }
     out.winding = morph.winding;
     return;
   }
-  for (let i = 0; i < startData.length; i += 1) {
+  for (let i = 0; i < startData.length; i++) {
     const s = startData[i];
     const e = endData[i];
     out.data[i] = s + (e - s) * progress;

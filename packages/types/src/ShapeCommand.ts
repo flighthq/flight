@@ -8,8 +8,6 @@ export type CapsStyle = 'none' | 'round' | 'square';
 
 export type GradientType = 'linear' | 'radial';
 
-export type { PathWinding };
-
 export type InterpolationMethod = 'linearRGB' | 'rgb';
 
 export type JointStyle = 'bevel' | 'miter' | 'round';

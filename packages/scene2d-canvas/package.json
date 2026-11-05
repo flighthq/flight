@@ -45,6 +45,7 @@
     "@flighthq/image": "*",
     "@flighthq/log": "*",
     "@flighthq/node": "*",
+    "@flighthq/path": "*",
     "@flighthq/registry": "*",
     "@flighthq/render": "*",
     "@flighthq/scene2d": "*",
@@ -62,7 +63,6 @@
   "devDependencies": {
     "@flighthq/bitmap": "*",
     "@flighthq/bitmaptext": "*",
-    "@flighthq/path": "*",
     "@flighthq/quadbatch": "*",
     "@flighthq/tilemap": "*",
     "typescript": "^7.0.2"

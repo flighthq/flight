@@ -1,5 +1,6 @@
 import { appendPathCubicCurveTo, appendPathLineTo, appendPathMoveTo, createPath } from '@flighthq/path/contract';
-import type { LottieShapePath, Path } from '@flighthq/types/contract';
+import type { Path } from '@flighthq/path/contract';
+import type { LottieShapePath } from '@flighthq/types/contract';
 /**
  * Lottie's bezier-path value: how to read one, how to build a Path from one, and how to flatten it for animation.
  *

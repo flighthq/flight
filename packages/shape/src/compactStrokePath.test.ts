@@ -1,5 +1,5 @@
 import { appendPathLineTo, appendPathMoveTo, createPath } from '@flighthq/path/contract';
-import { PathCommand } from '@flighthq/types/contract';
+import { PathCommand } from '@flighthq/path/contract';
 
 import { compactStrokePath } from './compactStrokePath.ts';
 

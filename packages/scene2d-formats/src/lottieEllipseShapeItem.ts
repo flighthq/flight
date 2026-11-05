@@ -1,5 +1,6 @@
 import { appendPathEllipse, createPath } from '@flighthq/path/contract';
-import type { LottieEllipseShapeItem, LottieShapeItemContext, Path } from '@flighthq/types/contract';
+import type { Path } from '@flighthq/path/contract';
+import type { LottieEllipseShapeItem, LottieShapeItemContext } from '@flighthq/types/contract';
 
 import { bindMutableLottieNumericProperty, initialLottieValue, lottieNumericValue } from './lottieDocument.ts';
 import { applyLottieShapeDirection } from './lottieShapeGeometry.ts';

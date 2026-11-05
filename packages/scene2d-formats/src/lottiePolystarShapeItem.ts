@@ -1,6 +1,6 @@
 import { appendPathCubicCurveTo, appendPathMoveTo, appendPathPolygon, createPath } from '@flighthq/path/contract';
+import type { Path } from '@flighthq/path/contract';
 import type { LottiePolystarShapeItem, LottieShapeItemContext } from '@flighthq/types/contract';
-import type { Path } from '@flighthq/types/contract';
 
 import { bindMutableLottieNumericProperty, initialLottieValue, lottieNumericValue } from './lottieDocument.ts';
 import { lottieDegreesToRadians } from './lottieDocument.ts';

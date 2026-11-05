@@ -11,8 +11,8 @@ import type { Path } from './pathCompat.ts';
  * Alias-safe: captures all input before writing to `out`.
  */
 export function cleanPath(source: Readonly<Path>, tolerance: number, out: Path, flattenTolerance?: number): void {
-  const flattenTolerance_1 = flattenTolerance ?? 0.25;
-  const contours = flattenPath(source, flattenTolerance_1);
+  flattenTolerance = flattenTolerance ?? 0.25;
+  const contours = flattenPath(source, flattenTolerance);
   const winding = source.winding;
   const toleranceSq = tolerance * tolerance;
   const outCommands: number[] = out.commands;
@@ -28,8 +28,8 @@ export function cleanPath(source: Readonly<Path>, tolerance: number, out: Path, 
     const closed =
       n >= 3 && withinTolerance(contour[0], contour[1], contour[n * 2 - 2], contour[n * 2 - 1], toleranceSq);
     const count = closed ? n - 1 : n;
-    let kept: number[] = [] as never[];
-    for (let i = 0; i < count; i += 1) {
+    let kept: number[] = [];
+    for (let i = 0; i < count; i++) {
       pushCleanVertex(kept, contour[i * 2], contour[i * 2 + 1], toleranceSq);
     }
     if (closed) {
@@ -48,7 +48,7 @@ export function cleanPath(source: Readonly<Path>, tolerance: number, out: Path, 
     out.commands.push(PathCommand.MOVE_TO & 0xff);
     out.data.push(kept[0]);
     out.data.push(kept[1]);
-    for (let i = 1; i < keptCount; i += 1) {
+    for (let i = 1; i < keptCount; i++) {
       out.commands.push(PathCommand.LINE_TO & 0xff);
       out.data.push(kept[i * 2]);
       out.data.push(kept[i * 2 + 1]);
@@ -65,7 +65,7 @@ function collapseClosedSeam(kept: number[], toleranceSq: number): void {
     changed = false;
     const last = Math.trunc(kept.length / 2);
     if (isMiddleRemovable(kept, last - 2, last - 1, 0, toleranceSq)) {
-      const prefix: number[] = [...kept.slice(0, kept.length - 2)];
+      const prefix: number[] = kept.slice(0, kept.length - 2);
       kept.length = 0;
       for (let index = 0, count = prefix.length; index < count; index++) {
         kept.push(prefix[index]);
@@ -74,7 +74,7 @@ function collapseClosedSeam(kept: number[], toleranceSq: number): void {
       continue;
     }
     if (isMiddleRemovable(kept, last - 1, 0, 1, toleranceSq)) {
-      const suffix: number[] = [...kept.slice(2, kept.length)];
+      const suffix: number[] = kept.slice(2, kept.length);
       kept.length = 0;
       for (let index = 0, count = suffix.length; index < count; index++) {
         kept.push(suffix[index]);
@@ -129,7 +129,7 @@ function pushCleanVertex(kept: number[], x: number, y: number, toleranceSq: numb
     if (!isRedundantMiddle(kept[m - 4], kept[m - 3], kept[m - 2], kept[m - 1], x, y, toleranceSq)) {
       break;
     }
-    const prefix: number[] = [...kept.slice(0, m - 2)];
+    const prefix: number[] = kept.slice(0, m - 2);
     kept.length = 0;
     for (let index = 0, count = prefix.length; index < count; index++) {
       kept.push(prefix[index]);

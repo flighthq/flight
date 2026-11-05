@@ -15,19 +15,19 @@ import {
 describe('reversePath', () => {
   it('reverses simple open polyline', () => {
     let source = createPath('nonZero');
-    appendPathMoveTo(source, 0.0, 0.0);
-    appendPathLineTo(source, 10.0, 0.0);
-    appendPathLineTo(source, 10.0, 10.0);
+    appendPathMoveTo(source, 0, 0);
+    appendPathLineTo(source, 10, 0);
+    appendPathLineTo(source, 10, 10);
     let out = createPath('nonZero');
     reversePath(source, out);
     expect(out.commands).toEqual([PathCommand.MOVE_TO & 0xff, PathCommand.LINE_TO & 0xff, PathCommand.LINE_TO & 0xff]);
-    expect(out.data).toEqual([10.0, 10.0, 10.0, 0.0, 0.0, 0.0]);
+    expect(out.data).toEqual([10, 10, 10, 0, 0, 0]);
   });
   it('preserves closed flag', () => {
     let source = createPath('nonZero');
-    appendPathMoveTo(source, 0.0, 0.0);
-    appendPathLineTo(source, 10.0, 0.0);
-    appendPathLineTo(source, 10.0, 10.0);
+    appendPathMoveTo(source, 0, 0);
+    appendPathLineTo(source, 10, 0);
+    appendPathLineTo(source, 10, 10);
     appendPathClose(source);
     let out = createPath('nonZero');
     reversePath(source, out);
@@ -36,8 +36,8 @@ describe('reversePath', () => {
   it('copies winding rule', () => {
     let source = createPath('nonZero');
     source.winding = 'evenOdd';
-    appendPathMoveTo(source, 0.0, 0.0);
-    appendPathLineTo(source, 1.0, 0.0);
+    appendPathMoveTo(source, 0, 0);
+    appendPathLineTo(source, 1, 0);
     let out = createPath('nonZero');
     reversePath(source, out);
     expect(out.winding).toEqual('evenOdd');
@@ -45,9 +45,9 @@ describe('reversePath', () => {
   it('is alias safe when out is same as source', () => {
     let path = createPath('nonZero');
     path.winding = 'evenOdd';
-    appendPathMoveTo(path, 0.0, 0.0);
-    appendPathLineTo(path, 10.0, 0.0);
-    appendPathLineTo(path, 20.0, 10.0);
+    appendPathMoveTo(path, 0, 0);
+    appendPathLineTo(path, 10, 0);
+    appendPathLineTo(path, 20, 10);
     appendPathClose(path);
     let expected = createPath('nonZero');
     reversePath(path, expected);

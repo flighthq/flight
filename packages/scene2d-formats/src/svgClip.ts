@@ -7,13 +7,12 @@ import {
 import { createMatrix } from '@flighthq/geometry/contract';
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import { createPath, transformPath } from '@flighthq/path/contract';
+import type { Path, PathWinding } from '@flighthq/path/contract';
 import type {
   ClipRegion,
   SvgClipContext,
   Matrix,
   Node2D,
-  Path,
-  PathWinding,
   Rectangle,
   SvgImportContext,
   SvgStyle,

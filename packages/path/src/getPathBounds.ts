@@ -21,44 +21,44 @@ interface BoundsAccumulator {
  * bounds pass visits them.
  */
 function cubicExtremumRoots(p0: number, p1: number, p2: number, p3: number): number[] {
-  let roots: number[] = [] as never[];
-  const a = -p0 + 3.0 * p1 - 3.0 * p2 + p3;
-  const b = 2.0 * (p0 - 2.0 * p1 + p2);
+  let roots: number[] = [];
+  const a = -p0 + 3 * p1 - 3 * p2 + p3;
+  const b = 2 * (p0 - 2 * p1 + p2);
   const c = p1 - p0;
   if (Math.abs(a) < 1e-12) {
     if (Math.abs(b) < 1e-12) {
       return roots;
     }
     const t = -c / b;
-    if (t > 0.0 && t < 1.0) {
+    if (t > 0 && t < 1) {
       roots.push(t);
     }
     return roots;
   }
-  const discriminant = b * b - 4.0 * a * c;
-  if (discriminant < 0.0) {
+  const discriminant = b * b - 4 * a * c;
+  if (discriminant < 0) {
     return roots;
   }
   const sqrtD = Math.sqrt(discriminant);
-  const t1 = (-b + sqrtD) / (2.0 * a);
-  const t2 = (-b - sqrtD) / (2.0 * a);
-  if (t1 > 0.0 && t1 < 1.0) {
+  const t1 = (-b + sqrtD) / (2 * a);
+  const t2 = (-b - sqrtD) / (2 * a);
+  if (t1 > 0 && t1 < 1) {
     roots.push(t1);
   }
-  if (t2 > 0.0 && t2 < 1.0 && Math.abs(t2 - t1) > 1e-12) {
+  if (t2 > 0 && t2 < 1 && Math.abs(t2 - t1) > 1e-12) {
     roots.push(t2);
   }
   return roots;
 }
 
 function evalCubic(p0: number, p1: number, p2: number, p3: number, t: number): number {
-  const mt = 1.0 - t;
-  return mt * mt * mt * p0 + 3.0 * mt * mt * t * p1 + 3.0 * mt * t * t * p2 + t * t * t * p3;
+  const mt = 1 - t;
+  return mt * mt * mt * p0 + 3 * mt * mt * t * p1 + 3 * mt * t * t * p2 + t * t * t * p3;
 }
 
 function evalQuadratic(p0: number, p1: number, p2: number, t: number): number {
-  const mt = 1.0 - t;
-  return mt * mt * p0 + 2.0 * mt * t * p1 + t * t * p2;
+  const mt = 1 - t;
+  return mt * mt * p0 + 2 * mt * t * p1 + t * t * p2;
 }
 
 function expandBounds(bounds: BoundsAccumulator, px: number, py: number): void {
@@ -134,10 +134,10 @@ export function getPathBounds(path: Readonly<Path>, out: RectangleLike): boolean
     maxX: Number.NEGATIVE_INFINITY,
     maxY: Number.NEGATIVE_INFINITY,
   };
-  let x: number = 0.0;
-  let y: number = 0.0;
+  let x: number = 0;
+  let y: number = 0;
   let di: number = 0;
-  for (let ci = 0; ci < commands.length; ci += 1) {
+  for (let ci = 0; ci < commands.length; ci++) {
     const command = commands[ci];
     if (command === (PathCommand.MOVE_TO & 0xff)) {
       const nx = data[di];
@@ -146,64 +146,54 @@ export function getPathBounds(path: Readonly<Path>, out: RectangleLike): boolean
       expandBounds(bounds, nx, ny);
       x = nx;
       y = ny;
-    } else {
-      if (command === (PathCommand.WIDE_MOVE_TO & 0xff)) {
-        const nx = data[di + 2];
-        const ny = data[di + 3];
-        di += 4;
-        expandBounds(bounds, nx, ny);
-        x = nx;
-        y = ny;
-      } else {
-        if (command === (PathCommand.LINE_TO & 0xff)) {
-          const nx = data[di];
-          const ny = data[di + 1];
-          di += 2;
-          expandBounds(bounds, nx, ny);
-          x = nx;
-          y = ny;
-        } else {
-          if (command === (PathCommand.WIDE_LINE_TO & 0xff)) {
-            const nx = data[di + 2];
-            const ny = data[di + 3];
-            di += 4;
-            expandBounds(bounds, nx, ny);
-            x = nx;
-            y = ny;
-          } else {
-            if (command === (PathCommand.QUADRATIC_CURVE_TO & 0xff)) {
-              const cx = data[di];
-              const cy = data[di + 1];
-              const ax = data[di + 2];
-              const ay = data[di + 3];
-              di += 4;
-              expandQuadraticBounds(x, y, cx, cy, ax, ay, bounds);
-              x = ax;
-              y = ay;
-            } else {
-              if (command === (PathCommand.CUBIC_CURVE_TO & 0xff)) {
-                const c1x = data[di];
-                const c1y = data[di + 1];
-                const c2x = data[di + 2];
-                const c2y = data[di + 3];
-                const ax = data[di + 4];
-                const ay = data[di + 5];
-                di += 6;
-                expandCubicBounds(x, y, c1x, c1y, c2x, c2y, ax, ay, bounds);
-                x = ax;
-                y = ay;
-              }
-            }
-          }
-        }
-      }
+    } else if (command === (PathCommand.WIDE_MOVE_TO & 0xff)) {
+      const nx = data[di + 2];
+      const ny = data[di + 3];
+      di += 4;
+      expandBounds(bounds, nx, ny);
+      x = nx;
+      y = ny;
+    } else if (command === (PathCommand.LINE_TO & 0xff)) {
+      const nx = data[di];
+      const ny = data[di + 1];
+      di += 2;
+      expandBounds(bounds, nx, ny);
+      x = nx;
+      y = ny;
+    } else if (command === (PathCommand.WIDE_LINE_TO & 0xff)) {
+      const nx = data[di + 2];
+      const ny = data[di + 3];
+      di += 4;
+      expandBounds(bounds, nx, ny);
+      x = nx;
+      y = ny;
+    } else if (command === (PathCommand.QUADRATIC_CURVE_TO & 0xff)) {
+      const cx = data[di];
+      const cy = data[di + 1];
+      const ax = data[di + 2];
+      const ay = data[di + 3];
+      di += 4;
+      expandQuadraticBounds(x, y, cx, cy, ax, ay, bounds);
+      x = ax;
+      y = ay;
+    } else if (command === (PathCommand.CUBIC_CURVE_TO & 0xff)) {
+      const c1x = data[di];
+      const c1y = data[di + 1];
+      const c2x = data[di + 2];
+      const c2y = data[di + 3];
+      const ax = data[di + 4];
+      const ay = data[di + 5];
+      di += 6;
+      expandCubicBounds(x, y, c1x, c1y, c2x, c2y, ax, ay, bounds);
+      x = ax;
+      y = ay;
     }
   }
   if (bounds.minX === Number.POSITIVE_INFINITY) {
-    out.x = 0.0;
-    out.y = 0.0;
-    out.width = 0.0;
-    out.height = 0.0;
+    out.x = 0;
+    out.y = 0;
+    out.width = 0;
+    out.height = 0;
     return false;
   }
   out.x = bounds.minX;
@@ -214,12 +204,12 @@ export function getPathBounds(path: Readonly<Path>, out: RectangleLike): boolean
 }
 
 function quadraticExtremumT(p0: number, p1: number, p2: number): number | undefined {
-  const denom = p0 - 2.0 * p1 + p2;
-  if (denom === 0.0) {
+  const denom = p0 - 2 * p1 + p2;
+  if (denom === 0) {
     return undefined;
   }
   const t = (p0 - p1) / denom;
-  if (t > 0.0 && t < 1.0) {
+  if (t > 0 && t < 1) {
     return t;
   }
   return undefined;

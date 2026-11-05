@@ -1,6 +1,8 @@
 import { createGradientTransformMatrix } from '@flighthq/geometry/contract';
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import { createPath, dashPath, flattenPath, getPathLength } from '@flighthq/path/contract';
+import type { Path, PathWinding } from '@flighthq/path/contract';
+import { PathCommand } from '@flighthq/path/contract';
 import {
   appendShapeBeginFill,
   appendShapeBeginGradientFill,
@@ -13,15 +15,13 @@ import type {
   CapsStyle,
   ImportDiagnostic,
   JointStyle,
-  Path,
-  PathWinding,
   RiveArtboardGraph,
   RiveCoreObject,
   RiveImportRegistry,
   RivePathRecord,
   Shape,
 } from '@flighthq/types/contract';
-import { ImportDiagnosticSeverity, PathCommand } from '@flighthq/types/contract';
+import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
 import { isRiveCoreTypeDerivedFrom } from './riveCoreTypes.ts';
 import { importRiveCoreObjectAsData, registerRiveCoreObjectHandler } from './riveImportRegistry.ts';

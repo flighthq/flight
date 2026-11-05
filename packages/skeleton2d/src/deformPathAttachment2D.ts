@@ -1,4 +1,5 @@
-import type { Path, PathAttachment2D, Skeleton2D } from '@flighthq/types/contract';
+import type { Path } from '@flighthq/path/contract';
+import type { PathAttachment2D, Skeleton2D } from '@flighthq/types/contract';
 
 import { skinSkeleton2DAttachmentPoints } from './skinAttachment2DPoints.ts';
 

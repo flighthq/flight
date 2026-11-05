@@ -29,7 +29,7 @@ function transformPathCoordinates(
   const commands = out.commands.slice();
   const data = out.data;
   let di: number = 0;
-  for (let ci = 0; ci < commands.length; ci += 1) {
+  for (let ci = 0; ci < commands.length; ci++) {
     const command = commands[ci];
     if (command === (PathCommand.MOVE_TO & 0xff) || command === (PathCommand.LINE_TO & 0xff)) {
       const x = data[di];
@@ -37,36 +37,30 @@ function transformPathCoordinates(
       data[di] = a * x + c * y + tx;
       data[di + 1] = b * x + d * y + ty;
       di += 2;
-    } else {
-      if (command === (PathCommand.QUADRATIC_CURVE_TO & 0xff)) {
-        for (let pair = 0; pair < 2; pair += 1) {
-          const k = pair * 2;
-          const x = data[di + k];
-          const y = data[di + k + 1];
-          data[di + k] = a * x + c * y + tx;
-          data[di + k + 1] = b * x + d * y + ty;
-        }
-        di += 4;
-      } else {
-        if (command === (PathCommand.CUBIC_CURVE_TO & 0xff)) {
-          for (let pair = 0; pair < 3; pair += 1) {
-            const k = pair * 2;
-            const x = data[di + k];
-            const y = data[di + k + 1];
-            data[di + k] = a * x + c * y + tx;
-            data[di + k + 1] = b * x + d * y + ty;
-          }
-          di += 6;
-        } else {
-          if (command === (PathCommand.WIDE_MOVE_TO & 0xff) || command === (PathCommand.WIDE_LINE_TO & 0xff)) {
-            const x = data[di + 2];
-            const y = data[di + 3];
-            data[di + 2] = a * x + c * y + tx;
-            data[di + 3] = b * x + d * y + ty;
-            di += 4;
-          }
-        }
+    } else if (command === (PathCommand.QUADRATIC_CURVE_TO & 0xff)) {
+      for (let pair = 0; pair < 2; pair++) {
+        const k = pair * 2;
+        const x = data[di + k];
+        const y = data[di + k + 1];
+        data[di + k] = a * x + c * y + tx;
+        data[di + k + 1] = b * x + d * y + ty;
       }
+      di += 4;
+    } else if (command === (PathCommand.CUBIC_CURVE_TO & 0xff)) {
+      for (let pair = 0; pair < 3; pair++) {
+        const k = pair * 2;
+        const x = data[di + k];
+        const y = data[di + k + 1];
+        data[di + k] = a * x + c * y + tx;
+        data[di + k + 1] = b * x + d * y + ty;
+      }
+      di += 6;
+    } else if (command === (PathCommand.WIDE_MOVE_TO & 0xff) || command === (PathCommand.WIDE_LINE_TO & 0xff)) {
+      const x = data[di + 2];
+      const y = data[di + 3];
+      data[di + 2] = a * x + c * y + tx;
+      data[di + 3] = b * x + d * y + ty;
+      di += 4;
     }
   }
 }
@@ -75,5 +69,5 @@ function transformPathCoordinates(
  * Translates all points in `source` by (dx, dy). Alias-safe.
  */
 export function translatePath(source: Readonly<Path>, dx: number, dy: number, out: Path): void {
-  transformPathCoordinates(source, 1.0, 0.0, 0.0, 1.0, dx, dy, out);
+  transformPathCoordinates(source, 1, 0, 0, 1, dx, dy, out);
 }

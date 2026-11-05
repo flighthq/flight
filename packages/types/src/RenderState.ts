@@ -1,3 +1,5 @@
+import type { Path, PathMesh, StrokeStyle } from '@flighthq/path/contract';
+
 import type { BlendMode } from './BlendMode.ts';
 import type { CanvasShapeCommand } from './CanvasShapeRegistry.ts';
 import type { EffectPaddingResolver } from './EffectPadding.ts';
@@ -6,14 +8,11 @@ import type { HostCanvasCapability } from './HostCanvas.ts';
 import type { HostImageCapability } from './ImageResource.ts';
 import type { NodeAny } from './Node.ts';
 import type { NodeRenderer } from './NodeRenderer.ts';
-import type { Path } from './Path.ts';
-import type { PathMesh } from './PathMesh.ts';
 import type { RenderProxy } from './RenderProxy.ts';
 import type { RenderProxy2D } from './RenderProxy2D.ts';
 import type { RenderProxyAdapter } from './RenderProxyAdapter.ts';
 import type { RenderRegistrySignals, RenderRegistryTable } from './RenderRegistrySignals.ts';
 import type { Scene2DClipHooks } from './Scene2DRenderer.ts';
-import type { StrokeStyle } from './StrokeStyle.ts';
 
 /**
  * Controls whether a subsystem refreshes derived scene graph state from raw

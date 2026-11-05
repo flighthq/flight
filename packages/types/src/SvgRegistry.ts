@@ -1,8 +1,10 @@
+import type { PathWinding } from '@flighthq/path/contract';
+
 import type { ImportDiagnostic } from './ImportDiagnostic.ts';
 import type { Matrix } from './Matrix.ts';
 import type { Node2D } from './Node2D.ts';
 import type { Rectangle } from './Rectangle.ts';
-import type { PathWinding, SpreadMethod } from './ShapeCommand.ts';
+import type { SpreadMethod } from './ShapeCommand.ts';
 import type { SvgDocumentImportOptions } from './SvgDocumentImport.ts';
 import type { XmlElement } from './XmlElement.ts';
 

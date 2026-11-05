@@ -1,5 +1,6 @@
-import type { Path, SfntTableDirectory } from '@flighthq/types/contract';
-import { PathCommand } from '@flighthq/types/contract';
+import type { Path } from '@flighthq/path/contract';
+import { PathCommand } from '@flighthq/path/contract';
+import type { SfntTableDirectory } from '@flighthq/types/contract';
 
 // TrueType outlines: `loca` gives each glyph's byte range inside `glyf`, and a glyph is a set of closed
 // contours of points, each point flagged on-curve or off-curve.

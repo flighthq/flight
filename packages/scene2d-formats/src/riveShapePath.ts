@@ -12,12 +12,12 @@ import {
   appendPathRoundedRectangle,
   createPath,
 } from '@flighthq/path/contract';
+import type { Path } from '@flighthq/path/contract';
 import type {
   DisplayObject,
   ImportDiagnostic,
   Matrix,
   NonEntityCreateResult,
-  Path,
   RiveArtboardGraph,
   RiveArtboardImportContext,
   RiveCoreObject,

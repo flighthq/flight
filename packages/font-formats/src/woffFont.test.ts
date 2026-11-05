@@ -1,8 +1,8 @@
 import { decompressDeflate, sdkHostDecompressDeflate } from '@flighthq/compression/contract';
 import { collectImportDiagnostics } from '@flighthq/importdiagnostics/contract';
 import { createPath } from '@flighthq/path/contract';
+import type { Path } from '@flighthq/path/contract';
 import { Compression, CompressionFraming, ImportDiagnosticSeverity } from '@flighthq/types/contract';
-import type { Path } from '@flighthq/types/contract';
 import { afterEach, describe, expect, it } from 'vitest';
 
 import { createGlyphOutlineSourceFromOpenTypeFont } from './openTypeGlyphOutlineSource.ts';

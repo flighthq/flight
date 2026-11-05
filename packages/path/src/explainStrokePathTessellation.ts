@@ -14,7 +14,7 @@ export function explainStrokePathTessellation(
   style: Readonly<StrokeStyle>,
   tolerance?: number,
 ): StrokePathTessellationExplanation {
-  const tolerance_1 = tolerance ?? 0.25;
-  const geometry = buildStrokePathGeometry(path, style, tolerance_1);
+  tolerance = tolerance ?? 0.25;
+  const geometry = buildStrokePathGeometry(path, style, tolerance);
   return { supported: geometry.issue === 'ok', reason: geometry.issue, subpath: geometry.issueSubpath ?? null };
 }

@@ -1,5 +1,6 @@
+import type { PathWinding } from '@flighthq/path/contract';
+
 import type { Attachment2D } from './Attachment2D.ts';
-import type { PathWinding } from './ShapeCommand.ts';
 import type { Skin2D } from './Skin2D.ts';
 
 // A deformable 2D vector PATH attached to a slot — the third member of the attachment family beside

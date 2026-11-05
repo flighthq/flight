@@ -1,6 +1,7 @@
 import { createMatrix } from '@flighthq/geometry/contract';
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import { createPathMorph } from '@flighthq/path/contract';
+import type { Path } from '@flighthq/path/contract';
 import {
   appendMorphShapeBeginFill,
   appendMorphShapeBeginGradientFill,
@@ -18,7 +19,6 @@ import type {
   Matrix,
   MorphShape,
   MorphShapeGradientEndpoint,
-  Path,
   SpreadMethod,
   Texture2D,
 } from '@flighthq/types/contract';

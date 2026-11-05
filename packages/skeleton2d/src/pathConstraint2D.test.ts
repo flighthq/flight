@@ -1,8 +1,8 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { PathCommand } from '@flighthq/path/contract';
 import type { Bone2D, PathAttachment2D, Skeleton2D, Skeleton2DPathConstraint, Slot2D } from '@flighthq/types/contract';
 import {
   PathAttachment2DKind,
-  PathCommand,
   Skeleton2DConstraintKind,
   Skeleton2DPathPositionMode,
   Skeleton2DPathRotateMode,

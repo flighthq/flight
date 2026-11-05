@@ -13,16 +13,16 @@ export type ContourOrientation = 'ccw' | 'cw' | 'degenerate';
  * Returns the orientation of the path's primary (first) contour.
  */
 export function getPathContourOrientation(path: Readonly<Path>, tolerance?: number): ContourOrientation {
-  const tolerance_1 = tolerance ?? 0.25;
-  const contours = flattenPath(path, tolerance_1);
+  tolerance = tolerance ?? 0.25;
+  const contours = flattenPath(path, tolerance);
   if (contours.length === 0) {
     return 'degenerate';
   }
   const area = shoelaceArea(contours[0]);
-  if (area > 0.0) {
+  if (area > 0) {
     return 'ccw';
   }
-  if (area < 0.0) {
+  if (area < 0) {
     return 'cw';
   }
   return 'degenerate';
@@ -33,10 +33,10 @@ export function getPathContourOrientation(path: Readonly<Path>, tolerance?: numb
  * formula to the flattened contours.
  */
 export function getPathSignedArea(path: Readonly<Path>, tolerance?: number): number {
-  const tolerance_1 = tolerance ?? 0.25;
-  const contours = flattenPath(path, tolerance_1);
-  let total: number = 0.0;
-  for (let ci = 0; ci < contours.length; ci += 1) {
+  tolerance = tolerance ?? 0.25;
+  const contours = flattenPath(path, tolerance);
+  let total: number = 0;
+  for (let ci = 0; ci < contours.length; ci++) {
     total += shoelaceArea(contours[ci]);
   }
   return total;
@@ -45,13 +45,13 @@ export function getPathSignedArea(path: Readonly<Path>, tolerance?: number): num
 function shoelaceArea(contour: Readonly<number[]>): number {
   const n = Math.trunc(contour.length / 2);
   if (n < 3) {
-    return 0.0;
+    return 0;
   }
-  let area: number = 0.0;
-  for (let i = 0; i < n; i += 1) {
+  let area: number = 0;
+  for (let i = 0; i < n; i++) {
     const j = (i + 1) % n;
     area += contour[i * 2] * contour[j * 2 + 1];
     area -= contour[j * 2] * contour[i * 2 + 1];
   }
-  return area / 2.0;
+  return area / 2;
 }

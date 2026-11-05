@@ -1,5 +1,6 @@
 import { CIRCLE_KAPPA } from '@flighthq/math/contract';
 import { invalidateContent } from '@flighthq/node/contract';
+import type { PathWinding } from '@flighthq/path/contract';
 import type {
   CapsStyle,
   GradientType,
@@ -7,7 +8,6 @@ import type {
   JointStyle,
   LineScaleMode,
   Matrix,
-  PathWinding,
   Shape,
   ShapeCommandToken,
   SpreadMethod,
@@ -17,7 +17,7 @@ import type {
 
 // Canonical definition now lives in @flighthq/types (shared with @flighthq/path); re-exported here so
 // shape authoring keeps a single import surface.
-export { PathCommand } from '@flighthq/types/contract';
+export { PathCommand } from '@flighthq/path/contract';
 
 // Appends an arc to the shape's command stream, expanding it into a moveTo followed by
 // cubicCurveTo commands using the standard cubic bezier circle approximation. The arc is drawn

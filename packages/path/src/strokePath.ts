@@ -17,7 +17,7 @@ function appendContour(
 ): void {
   if (reversePrimary) {
     appendPathMoveTo(path, primary[primary.length - 2], primary[primary.length - 1]);
-    let i = (primary.length | 0) - 4;
+    let i = primary.length - 4;
     while (i >= 0) {
       appendPathLineTo(path, primary[i >>> 0], primary[(i >>> 0) + 1]);
       i -= 2;
@@ -38,7 +38,7 @@ function appendPieceOutline(path: Path, piece: Readonly<StrokePathPieceGeometry>
   if (piece.left.length < 4 || piece.right.length < 4) {
     return;
   }
-  const empty: number[] = [] as never[];
+  const empty: number[] = [];
   appendContour(
     path,
     piece.left,
@@ -61,7 +61,7 @@ function appendPoints(path: Path, points: Readonly<number[]>, start: number, ste
 }
 
 function appendPointsReverse(path: Path, points: Readonly<number[]>): void {
-  let i = (points.length | 0) - 2;
+  let i = points.length - 2;
   while (i >= 0) {
     appendPathLineTo(path, points[i >>> 0], points[(i >>> 0) + 1]);
     i -= 2;
@@ -72,10 +72,10 @@ function appendPointsReverse(path: Path, points: Readonly<number[]>): void {
  * Converts a centerline Path into its fill outline.
  */
 export function strokePath(path: Readonly<Path>, style: Readonly<StrokeStyle>, tolerance?: number): Path {
-  const tolerance_1 = tolerance ?? 0.25;
+  tolerance = tolerance ?? 0.25;
   let result = createPath('nonZero');
-  const geometry = buildStrokePathGeometry(path, style, tolerance_1);
-  for (let i = 0; i < geometry.pieces.length; i += 1) {
+  const geometry = buildStrokePathGeometry(path, style, tolerance);
+  for (let i = 0; i < geometry.pieces.length; i++) {
     appendPieceOutline(result, geometry.pieces[i]);
   }
   return result;
