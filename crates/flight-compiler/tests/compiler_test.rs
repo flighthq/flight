@@ -17542,6 +17542,67 @@ pub fn collect(count: usize) -> Vec<i32> {
     }
 
     #[test]
+    fn annotates_empty_vec_locals_from_declared_receiver_and_result_provenance() {
+        let source = r#"
+pub fn declared() -> Vec<String> {
+    let mut values: Vec<String> = Vec::new();
+    values.push(String::from("declared"));
+    return values;
+}
+
+pub fn receiver(value: u8) -> usize {
+    let mut values = vec![];
+    values.push(value);
+    return values.len();
+}
+
+pub fn result() -> Vec<u8> {
+    let mut values = Vec::with_capacity(1);
+    values.push(1);
+    return values;
+}
+
+pub fn constructor() -> usize {
+    let values = Vec::<bool>::new();
+    return values.len();
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(output.contains("let values: string[] = [];"), "{output}");
+        assert!(output.contains("let values: number[] = [];"), "{output}");
+        assert!(output.contains("const values: boolean[] = [];"), "{output}");
+        assert!(!output.contains("never[]"), "{output}");
+    }
+
+    #[test]
+    fn refuses_unproven_generic_conflicting_and_custom_empty_vec_locals() {
+        for (source, expected) in [
+            (
+                "pub fn unknown() -> usize { let values = Vec::new(); return values.len(); }\n",
+                "fully known, representable element type",
+            ),
+            (
+                "pub fn generic<T>(value: T) -> Vec<T> { let mut values = Vec::new(); values.push(value); return values; }\n",
+                "fully known, representable element type",
+            ),
+            (
+                "pub fn conflicting() -> usize { let mut values = Vec::new(); values.push(1); values.push(\"x\"); return values.len(); }\n",
+                "conflicting element provenance",
+            ),
+            (
+                "pub struct Vec { pub length: usize }\npub fn custom() -> usize { let values = Vec::new(); return values.length; }\n",
+                "custom or unresolved collection owners",
+            ),
+        ] {
+            let error = compile_typescript(source, None).unwrap_err();
+            assert!(error.to_string().contains(expected), "{source}\n{error}");
+            assert!(!error.to_string().contains("any"), "{error}");
+        }
+    }
+
+    #[test]
     fn lowers_format_specifiers_debug_hex_precision_scientific() {
         let source = r#"
 pub fn debug_repr(items: &Vec<i32>) -> String {

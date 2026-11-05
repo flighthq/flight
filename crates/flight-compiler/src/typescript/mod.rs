@@ -436,6 +436,10 @@ const HASH_COLLECTION_FIELD_MARKER: &str = "@hash-collection-field:";
 
 const SEQUENCE_FIELD_MARKER: &str = "@sequence-field:";
 const SEQUENCE_FIELD_ELEMENT_MARKER: &str = "@sequence-field-element:";
+// `{BindingId} SEP {TypeScript element type}` for a local initialized by an empty standard `Vec`
+// construction. The element type is recorded only when declared, receiver and function-result
+// provenance agree on one fully representable non-generic type.
+const EMPTY_SEQUENCE_ELEMENT_TYPE_MARKER: &str = "@empty-sequence-element-type:";
 // `{function}:{index}:{kind}` for each typed parameter: `slice` (`&[f64]`) or `mut-slice` (`&mut [f64]`)
 // over a typed-array primitive, otherwise `other`. A fixed typed array (`Float64Array`) coerces to such a
 // slice in Rust but not to its `number[]` in TypeScript, so a call converts or rejects it.
@@ -4353,6 +4357,209 @@ fn sequence_inner_type(rust_type: &Type) -> Option<&Type> {
     };
 }
 
+fn standard_vec_inner_type<'a>(
+    rust_type: &'a Type,
+    entities: &HashSet<String>,
+) -> Option<&'a Type> {
+    return match rust_type {
+        Type::Group(group) => standard_vec_inner_type(&group.elem, entities),
+        Type::Paren(paren) => standard_vec_inner_type(&paren.elem, entities),
+        Type::Reference(reference) => standard_vec_inner_type(&reference.elem, entities),
+        Type::Path(path)
+            if path.qself.is_none() && type_path_is_standard_vec(&path.path, entities) =>
+        {
+            sequence_inner_type(rust_type)
+        }
+        _ => None,
+    };
+}
+
+fn type_path_is_standard_vec(path: &syn::Path, entities: &HashSet<String>) -> bool {
+    if resolve_type_path(path, entities).is_some_and(|path| is_standard_type_path(&path, "Vec")) {
+        return true;
+    }
+    // A bare `Vec` is supplied by the standard prelude unless this source explicitly declares or
+    // imports a type-namespace binding with that name. Vitest suites often have `use super::*`, whose
+    // wildcard prevents the general resolver from choosing a prelude fallback even when the selected
+    // production sources contribute no `Vec` declaration.
+    return path.leading_colon.is_none()
+        && path.segments.len() == 1
+        && path.segments[0].ident == "Vec"
+        && !entities.contains(&format!("{TYPE_LOCAL_MARKER}Vec"))
+        && !entities.contains(&format!("{TYPE_USE_MARKER}Vec"));
+}
+
+fn rust_type_contains_current_parameter(rust_type: &Type, entities: &HashSet<String>) -> bool {
+    struct TypeParameterFinder<'a> {
+        entities: &'a HashSet<String>,
+        found: bool,
+    }
+
+    impl<'ast> Visit<'ast> for TypeParameterFinder<'_> {
+        fn visit_type_path(&mut self, path: &'ast syn::TypePath) {
+            if path.qself.is_none()
+                && path.path.segments.iter().any(|segment| {
+                    self.entities
+                        .contains(&format!("{TYPE_PARAMETER_MARKER}{}", segment.ident))
+                })
+            {
+                self.found = true;
+                return;
+            }
+            syn::visit::visit_type_path(self, path);
+        }
+    }
+
+    let mut finder = TypeParameterFinder {
+        entities,
+        found: false,
+    };
+    finder.visit_type(rust_type);
+    return finder.found;
+}
+
+fn safe_collection_element_typescript_type(
+    rust_type: &Type,
+    entities: &HashSet<String>,
+) -> Option<String> {
+    if rust_type_contains_current_parameter(rust_type, entities) {
+        return None;
+    }
+    let typescript_type = emit_type(rust_type, entities).ok()?;
+    if typescript_type.split(|character: char| {
+        !(character.is_ascii_alphanumeric() || character == '_')
+    }).any(|part| matches!(part, "any" | "never" | "unknown"))
+    {
+        return None;
+    }
+    return Some(typescript_type);
+}
+
+fn binding_fact_typescript_type(
+    fact: &BindingFact,
+    entities: &HashSet<String>,
+) -> Option<String> {
+    return match fact {
+        BindingFact::Option(payload) => {
+            let payload = binding_fact_typescript_type(payload, entities)?;
+            Some(if entities.contains(NULLABLE_OPTIONS_MARKER) {
+                nullable_type(payload)
+            } else if payload.contains("=>") {
+                format!("({payload}) | undefined")
+            } else {
+                format!("{payload} | undefined")
+            })
+        }
+        BindingFact::Sequence(element) => {
+            binding_fact_typescript_type(element, entities).map(array_type)
+        }
+        BindingFact::Structure(identity)
+            if matches!(
+                identity.as_str(),
+                "bool"
+                    | "char"
+                    | "f32"
+                    | "f64"
+                    | "i8"
+                    | "i16"
+                    | "i32"
+                    | "i64"
+                    | "isize"
+                    | "str"
+                    | "String"
+                    | "u8"
+                    | "u16"
+                    | "u32"
+                    | "u64"
+                    | "usize"
+            ) =>
+        {
+            syn::parse_str::<Type>(identity)
+                .ok()
+                .and_then(|rust_type| safe_collection_element_typescript_type(&rust_type, entities))
+        }
+        BindingFact::Tuple(elements) => elements
+            .iter()
+            .map(|element| binding_fact_typescript_type(element, entities))
+            .collect::<Option<Vec<_>>>()
+            .map(|elements| format!("readonly [{}]", elements.join(", "))),
+        BindingFact::TypedArray(array_type) => Some(array_type.clone()),
+        BindingFact::HashMap
+        | BindingFact::HashSet
+        | BindingFact::Structure(_)
+        | BindingFact::Unknown
+        | BindingFact::UnresolvedPattern => None,
+    };
+}
+
+enum EmptyVecInitializer<'a> {
+    Standard(Option<&'a Type>),
+    UnprovenOwner,
+}
+
+fn empty_vec_initializer<'a>(
+    expression: &'a Expr,
+    entities: &HashSet<String>,
+) -> Option<EmptyVecInitializer<'a>> {
+    return match expression {
+        Expr::Call(call) => {
+            let Expr::Path(function) = call.func.as_ref() else {
+                return None;
+            };
+            if function.qself.is_some() {
+                return None;
+            }
+            let mut owner = function.path.clone();
+            let member = owner.segments.pop()?.into_value();
+            if !matches!(member.ident.to_string().as_str(), "new" | "with_capacity")
+                || (member.ident == "new" && !call.args.is_empty())
+                || (member.ident == "with_capacity" && call.args.len() != 1)
+            {
+                return None;
+            }
+            let owner_segment = function.path.segments.iter().rev().nth(1)?;
+            if owner_segment.ident != "Vec" {
+                let resolved = resolve_type_path(&owner, entities)?;
+                if !is_standard_type_path(&resolved, "Vec") {
+                    return None;
+                }
+            }
+            let element = match &owner_segment.arguments {
+                PathArguments::None => None,
+                PathArguments::AngleBracketed(arguments) => {
+                    let mut types = arguments.args.iter().filter_map(|argument| match argument {
+                        GenericArgument::Type(rust_type) => Some(rust_type),
+                        _ => None,
+                    });
+                    let element = types.next();
+                    if element.is_none() || types.next().is_some() {
+                        return Some(EmptyVecInitializer::UnprovenOwner);
+                    }
+                    element
+                }
+                PathArguments::Parenthesized(_) => {
+                    return Some(EmptyVecInitializer::UnprovenOwner);
+                }
+            };
+            Some(
+                if type_path_is_standard_vec(&owner, entities) {
+                    EmptyVecInitializer::Standard(element)
+                } else {
+                    EmptyVecInitializer::UnprovenOwner
+                },
+            )
+        }
+        Expr::Group(group) => empty_vec_initializer(&group.expr, entities),
+        Expr::Macro(invocation)
+            if invocation.mac.path.is_ident("vec") && invocation.mac.tokens.is_empty() =>
+        {
+            Some(EmptyVecInitializer::Standard(None))
+        }
+        Expr::Paren(paren) => empty_vec_initializer(&paren.expr, entities),
+        _ => None,
+    };
+}
+
 fn rust_type_is_string(rust_type: &Type) -> bool {
     return matches!(named_type(rust_type).as_deref(), Some("String" | "str"));
 }
@@ -5523,6 +5730,7 @@ fn is_standard_type_path(path: &[String], name: &str) -> bool {
         "Future" => ("future", &["std", "core"]),
         "Pin" => ("pin", &["std", "core"]),
         "Send" | "Sync" => ("marker", &["std", "core"]),
+        "Vec" => ("vec", &["std", "alloc"]),
         _ => return false,
     };
     return matches!(path, [root, path_module, path_name] if roots.contains(&root.as_str()) && path_module == module && path_name == name);
@@ -5602,6 +5810,8 @@ fn resolve_type_path(path: &syn::Path, context: &HashSet<String>) -> Option<Vec<
             "Sized" => "core::marker::Sized",
             "Sync" => "core::marker::Sync",
             "Unpin" => "core::marker::Unpin",
+            "Vec" if context.contains(TYPE_NO_STD_MARKER) => return None,
+            "Vec" => "std::vec::Vec",
             _ => return None,
         };
         return Some(prelude.split("::").map(str::to_string).collect());
@@ -6279,10 +6489,15 @@ fn insert_lexical_binding_context(function: &ItemFn, context: &mut HashSet<Strin
     }
 
     struct Resolver<'a> {
+        closure_depth: usize,
         context: &'a HashSet<String>,
         declaration_counts: HashMap<String, usize>,
         dereferenced: HashSet<String>,
         direct_guards: HashMap<String, Expr>,
+        empty_sequence_authoritative: BTreeSet<String>,
+        empty_sequence_bindings: BTreeSet<String>,
+        empty_sequence_candidates: BTreeMap<String, BTreeSet<String>>,
+        empty_sequence_unproven: BTreeSet<String>,
         erased_cells: HashSet<String>,
         facts: Vec<(String, BindingFact)>,
         function: String,
@@ -6299,6 +6514,8 @@ fn insert_lexical_binding_context(function: &ItemFn, context: &mut HashSet<Strin
         shared_identities: BTreeSet<String>,
         sites: Vec<(String, String)>,
         replaced_guards: HashSet<String>,
+        result_element_type: Option<String>,
+        result_is_standard_vec: bool,
         written_cell_names: HashSet<String>,
         written_cells: HashSet<String>,
     }
@@ -6635,6 +6852,54 @@ fn insert_lexical_binding_context(function: &ItemFn, context: &mut HashSet<Strin
                 .rev()
                 .find(|(fact_id, _)| *fact_id == id)
                 .map(|(_, fact)| fact.clone());
+        }
+
+        fn expression_typescript_type(&self, expression: &Expr) -> Option<String> {
+            if let Expr::Lit(literal) = peel_reference_and_paren(expression) {
+                return match literal.lit {
+                    Lit::Bool(_) => Some("boolean".to_string()),
+                    Lit::Byte(_) | Lit::Float(_) | Lit::Int(_) => Some("number".to_string()),
+                    Lit::ByteStr(_) => None,
+                    Lit::Char(_) | Lit::Str(_) => Some("string".to_string()),
+                    _ => None,
+                };
+            }
+            return binding_fact_typescript_type(
+                &self.initializer_fact(expression),
+                self.context,
+            );
+        }
+
+        fn record_empty_sequence_candidate(
+            &mut self,
+            id: &str,
+            candidate: Option<String>,
+            authoritative: bool,
+        ) {
+            if !self.empty_sequence_bindings.contains(id) {
+                return;
+            }
+            if authoritative {
+                if self.empty_sequence_authoritative.insert(id.to_string()) {
+                    // A declared or result type is authoritative Rust provenance. Receiver evidence
+                    // collected before it is only inference and cannot override that type.
+                    self.empty_sequence_candidates.remove(id);
+                    self.empty_sequence_unproven.remove(id);
+                }
+            } else if self.empty_sequence_authoritative.contains(id) {
+                return;
+            }
+            match candidate {
+                Some(candidate) => {
+                    self.empty_sequence_candidates
+                        .entry(id.to_string())
+                        .or_default()
+                        .insert(candidate);
+                }
+                None => {
+                    self.empty_sequence_unproven.insert(id.to_string());
+                }
+            }
         }
 
         fn fresh_ref_alias_receiver(&mut self, alias: &str) -> String {
@@ -7614,12 +7879,14 @@ fn insert_lexical_binding_context(function: &ItemFn, context: &mut HashSet<Strin
         }
 
         fn visit_expr_closure(&mut self, closure: &'ast syn::ExprClosure) {
+            self.closure_depth += 1;
             self.scopes.push(BTreeMap::new());
             for input in &closure.inputs {
                 self.bind_pattern(input, BindingFact::Unknown);
             }
             self.visit_expr(&closure.body);
             self.scopes.pop();
+            self.closure_depth -= 1;
         }
 
         fn visit_expr_method_call(&mut self, call: &'ast syn::ExprMethodCall) {
@@ -7680,6 +7947,34 @@ fn insert_lexical_binding_context(function: &ItemFn, context: &mut HashSet<Strin
             for arg in &call.args {
                 self.visit_expr(arg);
             }
+            if method == "push"
+                && call.args.len() == 1
+                && let Some(receiver) = single_path_identifier(peel_reference_and_paren(
+                    &call.receiver,
+                ))
+                && let Some(id) = self.binding_id(&receiver)
+                && self.empty_sequence_bindings.contains(&id)
+            {
+                let candidate = self.expression_typescript_type(&call.args[0]);
+                self.record_empty_sequence_candidate(&id, candidate, false);
+            }
+        }
+
+        fn visit_expr_return(&mut self, expression: &'ast syn::ExprReturn) {
+            if self.closure_depth == 0
+                && self.result_is_standard_vec
+                && let Some(returned) = &expression.expr
+                && let Some(name) = single_path_identifier(peel_reference_and_paren(returned))
+                && let Some(id) = self.binding_id(&name)
+                && self.empty_sequence_bindings.contains(&id)
+            {
+                self.record_empty_sequence_candidate(
+                    &id,
+                    self.result_element_type.clone(),
+                    true,
+                );
+            }
+            syn::visit::visit_expr_return(self, expression);
         }
 
         fn visit_expr_for_loop(&mut self, expression: &'ast syn::ExprForLoop) {
@@ -7867,6 +8162,38 @@ fn insert_lexical_binding_context(function: &ItemFn, context: &mut HashSet<Strin
                     .flatten()
             });
             self.bind_pattern(&local.pat, fact);
+            if let Some(initializer) = &local.init
+                && let Some(kind) = empty_vec_initializer(&initializer.expr, self.context)
+                && let Some(name) = local_pattern_name(&local.pat)
+                && let Some(id) = self.binding_id(&name)
+            {
+                self.empty_sequence_bindings.insert(id.clone());
+                match kind {
+                    EmptyVecInitializer::Standard(constructor_element) => {
+                        let declared_element = match &local.pat {
+                            Pat::Type(typed) => {
+                                let element = standard_vec_inner_type(&typed.ty, self.context);
+                                if element.is_none() {
+                                    self.record_empty_sequence_candidate(&id, None, true);
+                                }
+                                element
+                            }
+                            _ => None,
+                        };
+                        for element in [declared_element, constructor_element]
+                            .into_iter()
+                            .flatten()
+                        {
+                            let candidate =
+                                safe_collection_element_typescript_type(element, self.context);
+                            self.record_empty_sequence_candidate(&id, candidate, true);
+                        }
+                    }
+                    EmptyVecInitializer::UnprovenOwner => {
+                        self.record_empty_sequence_candidate(&id, None, true);
+                    }
+                }
+            }
             if nullable_callable_option
                 && let Some(name) = local_pattern_name(&local.pat)
                 && let Some(id) = self.binding_id(&name)
@@ -7946,11 +8273,23 @@ fn insert_lexical_binding_context(function: &ItemFn, context: &mut HashSet<Strin
         names: HashSet::new(),
     };
     guard_written_names.visit_item_fn(function);
+    let result_element = match &function.sig.output {
+        ReturnType::Type(_, rust_type) => standard_vec_inner_type(rust_type, context),
+        ReturnType::Default => None,
+    };
+    let result_is_standard_vec = result_element.is_some();
+    let result_element_type = result_element
+        .and_then(|element| safe_collection_element_typescript_type(element, context));
     let mut resolver = Resolver {
+        closure_depth: 0,
         context,
         declaration_counts: declaration_counter.counts,
         dereferenced: HashSet::new(),
         direct_guards: HashMap::new(),
+        empty_sequence_authoritative: BTreeSet::new(),
+        empty_sequence_bindings: BTreeSet::new(),
+        empty_sequence_candidates: BTreeMap::new(),
+        empty_sequence_unproven: BTreeSet::new(),
         erased_cells: HashSet::new(),
         facts: Vec::new(),
         function: match current_source(context) {
@@ -7970,6 +8309,8 @@ fn insert_lexical_binding_context(function: &ItemFn, context: &mut HashSet<Strin
         shared_identities: BTreeSet::new(),
         sites: Vec::new(),
         replaced_guards: HashSet::new(),
+        result_element_type,
+        result_is_standard_vec,
         written_cell_names: guard_written_names.names,
         written_cells: HashSet::new(),
     };
@@ -7997,6 +8338,19 @@ fn insert_lexical_binding_context(function: &ItemFn, context: &mut HashSet<Strin
     let parameters = resolver.scopes[0].clone();
     syn::visit::Visit::visit_block(&mut resolver, &function.block);
     let mut markers = Vec::new();
+    for id in &resolver.empty_sequence_bindings {
+        let candidates = resolver.empty_sequence_candidates.get(id);
+        if let Some(candidates) = candidates
+            && candidates.len() == 1
+            && (resolver.empty_sequence_authoritative.contains(id)
+                || !resolver.empty_sequence_unproven.contains(id))
+        {
+            markers.push(format!(
+                "{EMPTY_SEQUENCE_ELEMENT_TYPE_MARKER}{id}{PROVENANCE_SEPARATOR}{}",
+                candidates.first().expect("one candidate")
+            ));
+        }
+    }
     for (site, id) in resolver.sites {
         markers.push(format!("{BINDING_SITE_MARKER}{site}={id}"));
     }
@@ -12583,11 +12937,10 @@ fn emit_expression_value(
                 let bytes = emit_expression(&call.args[0], entities)?;
                 return Ok(format!("new TextDecoder().decode(new Uint8Array({bytes}))"));
             }
-            if expression_is_associated_path(&call.func, "Vec", "new") && call.args.is_empty() {
-                return Ok("[] as never[]".to_string());
-            }
-            if expression_is_associated_path(&call.func, "Vec", "with_capacity")
-                && call.args.len() == 1
+            if matches!(
+                empty_vec_initializer(expression, entities),
+                Some(EmptyVecInitializer::Standard(_))
+            )
             {
                 return Ok("[] as never[]".to_string());
             }
@@ -13294,7 +13647,7 @@ fn emit_expression_value(
                     .fields
                     .iter()
                     .map(|field| {
-                        let mut value = if expression_is_empty_vec(&field.expr) {
+                        let mut value = if expression_is_empty_vec(&field.expr, entities) {
                             "[]".to_string()
                         } else {
                             emit_expression(&field.expr, entities)?
@@ -13610,7 +13963,7 @@ fn emit_contextual_struct_literal_expression(
                     .fields
                     .iter()
                     .map(|field| {
-                        let value = if expression_is_empty_vec(&field.expr) {
+                        let value = if expression_is_empty_vec(&field.expr, entities) {
                             "[]".to_string()
                         } else {
                             let field_context = contextual_struct_field_context(
@@ -13759,14 +14112,14 @@ fn closure_parameter_identifier(pattern: &Pat) -> Option<String> {
     };
 }
 
-fn expression_is_empty_vec(expression: &Expr) -> bool {
+fn expression_is_empty_vec(expression: &Expr, entities: &HashSet<String>) -> bool {
     return match expression {
-        Expr::Call(call) => {
-            call.args.is_empty() && expression_is_associated_path(&call.func, "Vec", "new")
-        }
-        Expr::Group(group) => expression_is_empty_vec(&group.expr),
-        Expr::Paren(paren) => expression_is_empty_vec(&paren.expr),
-        _ => false,
+        Expr::Group(group) => expression_is_empty_vec(&group.expr, entities),
+        Expr::Paren(paren) => expression_is_empty_vec(&paren.expr, entities),
+        _ => matches!(
+            empty_vec_initializer(expression, entities),
+            Some(EmptyVecInitializer::Standard(_))
+        ),
     };
 }
 
@@ -14947,6 +15300,33 @@ pub(crate) fn emit_local_with_shadow_and_else(
     } else {
         None
     };
+    let empty_sequence_element_type = match empty_vec_initializer(&initializer.expr, entities) {
+        None => None,
+        Some(EmptyVecInitializer::UnprovenOwner) => {
+            return Err(compile_error(format!(
+                "portable empty collection local `{}` needs a standard Rust `Vec`; custom or unresolved collection owners are not supported",
+                local_name.as_deref().unwrap_or("_")
+            )));
+        }
+        Some(EmptyVecInitializer::Standard(_)) => {
+            let element = local_pattern_binding_id(entities, &local.pat)
+                .and_then(|id| {
+                    unique_marker_suffix(
+                        entities,
+                        &format!(
+                            "{EMPTY_SEQUENCE_ELEMENT_TYPE_MARKER}{id}{PROVENANCE_SEPARATOR}"
+                        ),
+                    )
+                })
+                .ok_or_else(|| {
+                    compile_error(format!(
+                        "portable empty `Vec` local `{}` needs one fully known, representable element type from its declared type, `.push()` receiver uses, or function result; unknown, generic, or conflicting element provenance is not supported",
+                        local_name.as_deref().unwrap_or("_")
+                    ))
+                })?;
+            Some(element)
+        }
+    };
     let rebound_struct_type = (rebound && !shadowed)
         .then(|| {
             unique_marker_suffix(
@@ -14968,7 +15348,8 @@ pub(crate) fn emit_local_with_shadow_and_else(
         })
         .or_else(|| inferred_struct_type.clone())
         .or_else(|| inferred_option_type.clone())
-        .or_else(|| rebound_struct_type.clone());
+        .or_else(|| rebound_struct_type.clone())
+        .or_else(|| empty_sequence_element_type.clone().map(array_type));
     // A mutable binding keeps its string-union type: TypeScript widens a `let` initialized from a
     // string literal to `string`, which a later write or a typed read would then reject.
     let string_union_type = match typescript_type {
@@ -15071,7 +15452,10 @@ pub(crate) fn emit_local_with_shadow_and_else(
     {
         return Ok(vec![]);
     }
-    if value == "[] as never[]" && !rebind && typescript_type.is_some() {
+    if (value == "[] as never[]" || empty_sequence_element_type.is_some())
+        && !rebind
+        && typescript_type.is_some()
+    {
         value = "[]".to_string();
     }
     let stripped = strip_value_position_parens(&value);
@@ -15111,7 +15495,8 @@ pub(crate) fn emit_local_with_shadow_and_else(
             || inferred_struct_type.is_some()
             || inferred_option_type.is_some()
             || rebound_struct_type.is_some()
-            || string_union_type.is_some())
+            || string_union_type.is_some()
+            || empty_sequence_element_type.is_some())
         && let Some(typescript_type) = typescript_type
     {
         write!(out, ": {typescript_type}").expect("writing to a String cannot fail");
