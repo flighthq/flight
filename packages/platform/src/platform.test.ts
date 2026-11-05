@@ -16,6 +16,16 @@ import {
   isPlatformTouch,
   isPlatformVersionAtLeast,
   isPlatformWeb,
+  getPlatformEndiannessString,
+  parsePlatformEndianness,
+  getPlatformEngineString,
+  parsePlatformEngine,
+  getPlatformKindString,
+  parsePlatformKind,
+  getPlatformNameString,
+  parsePlatformName,
+  getPlatformRuntimeString,
+  parsePlatformRuntime,
 } from './platform.ts';
 
 function fakeBackend(info: Partial<PlatformInfo>): HostPlatformCapability {
@@ -89,6 +99,14 @@ describe('createPlatformInfo', () => {
   });
 });
 
+describe('getPlatformEndiannessString', () => {
+  it('returns the exact string of every PlatformEndianness', () => {
+    for (const value of ['big', 'little', 'unknown'] as const) {
+      expect(getPlatformEndiannessString(value)).toBe(value);
+    }
+  });
+});
+
 describe('getPlatformEngine', () => {
   it('returns the engine from the host backend', () => {
     expect(getPlatformEngine(fakeHost({ engine: 'blink' }).system.platform)).toBe('blink');
@@ -107,11 +125,19 @@ describe('getPlatformEngine', () => {
   });
 });
 
+describe('getPlatformEngineString', () => {
+  it('returns the exact string of every PlatformEngine', () => {
+    for (const value of ['gecko', 'blink', 'webkit', 'unknown'] as const) {
+      expect(getPlatformEngineString(value)).toBe(value);
+    }
+  });
+});
+
 describe('getPlatformInfo', () => {
   it('fills the out parameter', () => {
     const host = fakeHost({ arch: 'arm64', kind: 'mobile', name: 'ios' });
     const out = createPlatformInfo();
-    getPlatformInfo(host.system.platform, out);
+    getPlatformInfo(out, host.system.platform);
     expect(out.name).toBe('ios');
     expect(out.arch).toBe('arm64');
   });
@@ -123,9 +149,25 @@ describe('getPlatformKind', () => {
   });
 });
 
+describe('getPlatformKindString', () => {
+  it('returns the exact string of every PlatformKind', () => {
+    for (const value of ['desktop', 'mobile', 'web', 'unknown'] as const) {
+      expect(getPlatformKindString(value)).toBe(value);
+    }
+  });
+});
+
 describe('getPlatformName', () => {
   it('returns the host backend name', () => {
     expect(getPlatformName(fakeHost({ name: 'macos' }).system.platform)).toBe('macos');
+  });
+});
+
+describe('getPlatformNameString', () => {
+  it('returns the exact string of every PlatformName', () => {
+    for (const value of ['web', 'windows', 'macos', 'linux', 'ios', 'android', 'unknown'] as const) {
+      expect(getPlatformNameString(value)).toBe(value);
+    }
   });
 });
 
@@ -151,6 +193,14 @@ describe('getPlatformRuntime', () => {
   });
 });
 
+describe('getPlatformRuntimeString', () => {
+  it('returns the exact string of every PlatformRuntime', () => {
+    for (const value of ['web', 'electron', 'tauri', 'capacitor', 'native', 'unknown'] as const) {
+      expect(getPlatformRuntimeString(value)).toBe(value);
+    }
+  });
+});
+
 describe('initializePlatformInfo', () => {
   it('is the construction initializer of createPlatformInfo', () => {
     expect(typeof initializePlatformInfo).toBe('function');
@@ -163,7 +213,6 @@ describe('isPlatformDesktop', () => {
     expect(isPlatformDesktop(fakeHost({ kind: 'web' }).system.platform)).toBe(false);
   });
 });
-
 describe('isPlatformMobile', () => {
   it('is true only for mobile kind', () => {
     expect(isPlatformMobile(fakeHost({ kind: 'mobile' }).system.platform)).toBe(true);
@@ -231,6 +280,52 @@ describe('isPlatformWeb', () => {
     expect(isPlatformWeb(fakeHost({ kind: 'web' }).system.platform)).toBe(true);
   });
 });
+
+describe('parsePlatformEndianness', () => {
+  it('parses every PlatformEndianness string and rejects anything else', () => {
+    for (const value of ['big', 'little', 'unknown'] as const) {
+      expect(parsePlatformEndianness(value)).toBe(value);
+    }
+    expect(parsePlatformEndianness('not-a-platform-value')).toBeUndefined();
+  });
+});
+
+describe('parsePlatformEngine', () => {
+  it('parses every PlatformEngine string and rejects anything else', () => {
+    for (const value of ['gecko', 'blink', 'webkit', 'unknown'] as const) {
+      expect(parsePlatformEngine(value)).toBe(value);
+    }
+    expect(parsePlatformEngine('not-a-platform-value')).toBeUndefined();
+  });
+});
+
+describe('parsePlatformKind', () => {
+  it('parses every PlatformKind string and rejects anything else', () => {
+    for (const value of ['desktop', 'mobile', 'web', 'unknown'] as const) {
+      expect(parsePlatformKind(value)).toBe(value);
+    }
+    expect(parsePlatformKind('not-a-platform-value')).toBeUndefined();
+  });
+});
+
+describe('parsePlatformName', () => {
+  it('parses every PlatformName string and rejects anything else', () => {
+    for (const value of ['web', 'windows', 'macos', 'linux', 'ios', 'android', 'unknown'] as const) {
+      expect(parsePlatformName(value)).toBe(value);
+    }
+    expect(parsePlatformName('not-a-platform-value')).toBeUndefined();
+  });
+});
+
+describe('parsePlatformRuntime', () => {
+  it('parses every PlatformRuntime string and rejects anything else', () => {
+    for (const value of ['web', 'electron', 'tauri', 'capacitor', 'native', 'unknown'] as const) {
+      expect(parsePlatformRuntime(value)).toBe(value);
+    }
+    expect(parsePlatformRuntime('not-a-platform-value')).toBeUndefined();
+  });
+});
+
 describe('R3 boundary', () => {
   it('exports no ambient-state API (setPlatformBackend, getPlatformBackend, etc.)', () => {
     const exports = Object.keys(platformContract);

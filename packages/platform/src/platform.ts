@@ -1,7 +1,10 @@
+// Generated from crates/flight-platform/src/platform.rs by flight-compiler.
+// Rust is authoritative; run `npm run generate` after changing it.
+
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
-  EntityConstruction,
   HostPlatformCapability,
+  PlatformEndianness,
   PlatformEngine,
   PlatformInfo,
   PlatformKind,
@@ -9,65 +12,146 @@ import type {
   PlatformRuntime,
 } from '@flighthq/types/contract';
 
-// Compares two dotted version strings numerically, segment by segment. Returns -1, 0, or 1.
-// Non-numeric trailing segments are ignored; '' sorts lowest. '' compared with '' returns 0.
-// Example: comparePlatformVersions('10.15.7', '10.15.6') === 1.
-export function comparePlatformVersions(a: string, b: string): -1 | 0 | 1 {
-  if (a === b) return 0;
-  const aParts = a === '' ? [] : a.split('.');
-  const bParts = b === '' ? [] : b.split('.');
+/**
+ * Compares two dotted version strings numerically, segment by segment: -1, 0 or 1. Each segment is
+ * read as JS `parseInt(segment, 10)` reads it (leading whitespace, optional sign, the leading digit
+ * run; trailing junk ignored), and a segment with no leading digits counts as 0, as does a missing
+ * trailing segment. "" has no segments, so it sorts lowest; "" against "" is 0.
+ */
+export function comparePlatformVersions(a: string, b: string): number {
+  if (a === b) {
+    return 0;
+  }
+  const aParts: string[] = a.length === 0 ? ([] as never[]) : a.split('.');
+  const bParts: string[] = b.length === 0 ? ([] as never[]) : b.split('.');
   const len = Math.max(aParts.length, bParts.length);
   for (let i = 0; i < len; i++) {
-    const aNum = i < aParts.length ? parseInt(aParts[i], 10) : 0;
-    const bNum = i < bParts.length ? parseInt(bParts[i], 10) : 0;
-    const aN = isNaN(aNum) ? 0 : aNum;
-    const bN = isNaN(bNum) ? 0 : bNum;
-    if (aN < bN) return -1;
-    if (aN > bN) return 1;
+    const aNum = i < aParts.length ? parseJsInt(aParts[i]) : 0;
+    const bNum = i < bParts.length ? parseJsInt(bParts[i]) : 0;
+    const aN = aNum ?? 0;
+    const bN = bNum ?? 0;
+    if (aN < bN) {
+      return -1;
+    }
+    if (aN > bN) {
+      return 1;
+    }
   }
   return 0;
 }
 
 export function createPlatformInfo(): PlatformInfo {
-  const out = allocateEntity<PlatformInfo>();
+  let out: PlatformInfo = allocateEntity<PlatformInfo>();
   initializePlatformInfo(out);
   return finishEntity(out);
 }
 
-// The browser rendering engine — 'blink' | 'gecko' | 'webkit' | 'unknown'. Convenience over
-// getPlatformInfo. 'unknown' on native hosts where no browser engine is present.
+export function getPlatformEndiannessString(value: PlatformEndianness): string {
+  switch (value) {
+    case 'big':
+      return 'big';
+    case 'little':
+      return 'little';
+    case 'unknown':
+      return 'unknown';
+  }
+}
+
+/**
+ * The browser rendering engine; `Unknown` on native hosts. A fresh read through the provider.
+ */
 export function getPlatformEngine(hostPlatform: Readonly<HostPlatformCapability>): PlatformEngine {
-  getPlatformInfo(hostPlatform, _scratch);
-  return _scratch.engine;
+  return readPlatformInfo(hostPlatform).engine;
 }
 
-// Fills `out` with the running platform's identity through the supplied provider.
-export function getPlatformInfo(hostPlatform: Readonly<HostPlatformCapability>, out: PlatformInfo): void {
+export function getPlatformEngineString(value: PlatformEngine): string {
+  switch (value) {
+    case 'gecko':
+      return 'gecko';
+    case 'blink':
+      return 'blink';
+    case 'webkit':
+      return 'webkit';
+    case 'unknown':
+      return 'unknown';
+  }
+}
+
+/**
+ * Fills `out` with the running platform's identity through the supplied provider.
+ */
+export function getPlatformInfo(out: PlatformInfo, hostPlatform: Readonly<HostPlatformCapability>): void {
   hostPlatform.getInfo(out);
-  return;
 }
 
-// The platform family — 'desktop' | 'mobile' | 'web' | 'unknown'. Convenience over getPlatformInfo.
 export function getPlatformKind(hostPlatform: Readonly<HostPlatformCapability>): PlatformKind {
-  getPlatformInfo(hostPlatform, _scratch);
-  return _scratch.kind;
+  return readPlatformInfo(hostPlatform).kind;
 }
 
-// The specific OS/runtime name — 'windows' | 'macos' | 'ios' | 'android' | 'linux' | 'web' | 'unknown'.
+export function getPlatformKindString(value: PlatformKind): string {
+  switch (value) {
+    case 'desktop':
+      return 'desktop';
+    case 'mobile':
+      return 'mobile';
+    case 'web':
+      return 'web';
+    case 'unknown':
+      return 'unknown';
+  }
+}
+
 export function getPlatformName(hostPlatform: Readonly<HostPlatformCapability>): PlatformName {
-  getPlatformInfo(hostPlatform, _scratch);
-  return _scratch.name;
+  return readPlatformInfo(hostPlatform).name;
 }
 
-// The host shell / runtime environment — 'web' | 'electron' | 'tauri' | 'capacitor' | 'native' |
-// 'unknown'. Convenience over getPlatformInfo. Distinguishes plain web from a host shell.
+export function getPlatformNameString(value: PlatformName): string {
+  switch (value) {
+    case 'web':
+      return 'web';
+    case 'windows':
+      return 'windows';
+    case 'macos':
+      return 'macos';
+    case 'linux':
+      return 'linux';
+    case 'ios':
+      return 'ios';
+    case 'android':
+      return 'android';
+    case 'unknown':
+      return 'unknown';
+  }
+}
+
+/**
+ * The host shell / runtime environment; distinguishes plain web from a host shell.
+ */
 export function getPlatformRuntime(hostPlatform: Readonly<HostPlatformCapability>): PlatformRuntime {
-  getPlatformInfo(hostPlatform, _scratch);
-  return _scratch.runtime;
+  return readPlatformInfo(hostPlatform).runtime;
 }
 
-// Allocates a zeroed PlatformInfo; use as the `out` for getPlatformInfo or when building a provider.
-export function initializePlatformInfo(out: EntityConstruction<PlatformInfo>): void {
+export function getPlatformRuntimeString(value: PlatformRuntime): string {
+  switch (value) {
+    case 'web':
+      return 'web';
+    case 'electron':
+      return 'electron';
+    case 'tauri':
+      return 'tauri';
+    case 'capacitor':
+      return 'capacitor';
+    case 'native':
+      return 'native';
+    case 'unknown':
+      return 'unknown';
+  }
+}
+
+/**
+ * The zeroed snapshot: empty strings, `Unknown` enums, not touch, pointer width -1.
+ */
+export function initializePlatformInfo(out: PlatformInfo): void {
   out.arch = '';
   out.distro = '';
   out.distroVersion = '';
@@ -84,44 +168,180 @@ export function initializePlatformInfo(out: EntityConstruction<PlatformInfo>): v
   out.version = '';
 }
 
-// True on a desktop host (Electron/Tauri/native window shell). False on mobile and plain web.
 export function isPlatformDesktop(hostPlatform: Readonly<HostPlatformCapability>): boolean {
   return getPlatformKind(hostPlatform) === 'desktop';
 }
 
-// True on a mobile host (iOS/Android via Capacitor or a native shell).
 export function isPlatformMobile(hostPlatform: Readonly<HostPlatformCapability>): boolean {
   return getPlatformKind(hostPlatform) === 'mobile';
 }
 
-// True when the app is running inside a host shell (Electron/Tauri/Capacitor/native), not a plain
-// browser page. Convenience over `getPlatformRuntime() !== 'web' && !== 'unknown'`.
+/**
+ * True inside a host shell (Electron, Tauri, Capacitor, native): any runtime other than `Web` and
+ * `Unknown`.
+ */
 export function isPlatformNative(hostPlatform: Readonly<HostPlatformCapability>): boolean {
   const runtime = getPlatformRuntime(hostPlatform);
   return runtime !== 'web' && runtime !== 'unknown';
 }
 
-// True on a touch-primary device, independent of desktop/mobile classification.
 export function isPlatformTouch(hostPlatform: Readonly<HostPlatformCapability>): boolean {
-  getPlatformInfo(hostPlatform, _scratch);
-  return _scratch.isTouch;
+  return readPlatformInfo(hostPlatform).isTouch;
 }
 
-// True when the running platform's OS version is at or above `minimum`. Reads the live version via
-// getPlatformInfo. Returns false when the version is '' (unknown). The comparison is numeric and
-// segment-wise (see comparePlatformVersions).
+/**
+ * True when the platform's OS version is at or above `minimum`; false when the version is ""
+ * (unknown). Numeric, segment-wise (see `comparePlatformVersions`).
+ */
 export function isPlatformVersionAtLeast(hostPlatform: Readonly<HostPlatformCapability>, minimum: string): boolean {
-  getPlatformInfo(hostPlatform, _scratch);
-  const version = _scratch.version;
-  if (version === '') return false;
+  const version = readPlatformInfo(hostPlatform).version;
+  if (version.length === 0) {
+    return false;
+  }
   return comparePlatformVersions(version, minimum) >= 0;
 }
 
-// True when running as a plain web page with no native host registered.
 export function isPlatformWeb(hostPlatform: Readonly<HostPlatformCapability>): boolean {
   return getPlatformKind(hostPlatform) === 'web';
 }
 
-// Single-threaded JS no-alloc scratch for scalar convenience reads (getPlatformKind, etc.).
-// Rust/native mirror uses a per-call local or thread-local instead.
-const _scratch: PlatformInfo = createPlatformInfo();
+/**
+ * JS `parseInt(segment, 10)`: skips leading whitespace, takes an optional sign and the leading run
+ * of ASCII digits (trailing junk is ignored), and returns None (NaN) when there are no digits. The
+ * digit run is converted as a correctly rounded f64, as JS converts it.
+ */
+function parseJsInt(segment: string): number | undefined {
+  const trimmed: string = ((text: string, matches: (character: string) => boolean): string => {
+    let offset = 0;
+    for (const character of text) {
+      if (!matches(character)) break;
+      offset += character.length;
+    }
+    return text.slice(offset);
+  })(segment, (c: string) => /^\s$/.test(c) || c === '﻿');
+  let negative;
+  let rest;
+  switch (new TextEncoder().encode(trimmed)[0]) {
+    case 45:
+      [negative, rest] = [true, trimmed.slice(1)];
+      break;
+    case 43:
+      [negative, rest] = [false, trimmed.slice(1)];
+      break;
+    default:
+      [negative, rest] = [false, trimmed];
+      break;
+  }
+  const digitsLen = (<T>(items: readonly T[], predicate: (item: T) => boolean): T[] => {
+    const result: T[] = [];
+    for (const item of items) {
+      if (!predicate(item)) break;
+      result.push(item);
+    }
+    return result;
+  })([...new TextEncoder().encode(rest)], (b) => b >= 48 && b <= 57).length;
+  if (digitsLen === 0) {
+    return undefined;
+  }
+  const value = ((s) => {
+    const v = Number(s);
+    return s.trim() !== '' && !Number.isNaN(v) ? v : undefined;
+  })(rest.slice(0, digitsLen));
+  if (value === undefined) {
+    return undefined;
+  }
+  return negative ? -value : value;
+}
+
+export function parsePlatformEndianness(value: string): PlatformEndianness | undefined {
+  switch (value) {
+    case 'big':
+      return 'big';
+    case 'little':
+      return 'little';
+    case 'unknown':
+      return 'unknown';
+    default:
+      return undefined;
+  }
+}
+
+export function parsePlatformEngine(value: string): PlatformEngine | undefined {
+  switch (value) {
+    case 'gecko':
+      return 'gecko';
+    case 'blink':
+      return 'blink';
+    case 'webkit':
+      return 'webkit';
+    case 'unknown':
+      return 'unknown';
+    default:
+      return undefined;
+  }
+}
+
+export function parsePlatformKind(value: string): PlatformKind | undefined {
+  switch (value) {
+    case 'desktop':
+      return 'desktop';
+    case 'mobile':
+      return 'mobile';
+    case 'web':
+      return 'web';
+    case 'unknown':
+      return 'unknown';
+    default:
+      return undefined;
+  }
+}
+
+export function parsePlatformName(value: string): PlatformName | undefined {
+  switch (value) {
+    case 'web':
+      return 'web';
+    case 'windows':
+      return 'windows';
+    case 'macos':
+      return 'macos';
+    case 'linux':
+      return 'linux';
+    case 'ios':
+      return 'ios';
+    case 'android':
+      return 'android';
+    case 'unknown':
+      return 'unknown';
+    default:
+      return undefined;
+  }
+}
+
+export function parsePlatformRuntime(value: string): PlatformRuntime | undefined {
+  switch (value) {
+    case 'web':
+      return 'web';
+    case 'electron':
+      return 'electron';
+    case 'tauri':
+      return 'tauri';
+    case 'capacitor':
+      return 'capacitor';
+    case 'native':
+      return 'native';
+    case 'unknown':
+      return 'unknown';
+    default:
+      return undefined;
+  }
+}
+
+/**
+ * One fresh snapshot read through the provider, replacing the source's module scratch object with
+ * per-call local state.
+ */
+function readPlatformInfo(hostPlatform: Readonly<HostPlatformCapability>): PlatformInfo {
+  let info = createPlatformInfo();
+  hostPlatform.getInfo(info);
+  return info;
+}
