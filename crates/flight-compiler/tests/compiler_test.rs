@@ -27755,8 +27755,8 @@ pub fn div_float(a: f64, b: f64) -> f64 {
 "#;
         let output = compile_typescript(source, None).unwrap();
         assert!(
-            output.contains("Math.trunc(n / d)"),
-            "u32 / u32 should use Math.trunc: {output}"
+            output.contains("return Math.trunc(n / d);"),
+            "u32 / u32 should use Math.trunc without redundant >>> 0: {output}"
         );
         assert!(
             output.contains("Math.trunc(len / 2)"),

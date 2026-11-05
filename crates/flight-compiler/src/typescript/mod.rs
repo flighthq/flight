@@ -26815,6 +26815,11 @@ fn expression_is_unsigned_result(expression: &Expr, entities: &HashSet<String>) 
             expression_numeric_type(expression, entities).as_deref(),
             Some("u8" | "u16" | "u32" | "usize")
         ),
+        Expr::Binary(binary)
+            if matches!(binary.op, BinOp::Div(_)) && is_integer_division(binary, entities) =>
+        {
+            true
+        }
         _ => false,
     };
 }
