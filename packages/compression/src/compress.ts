@@ -1,7 +1,6 @@
-import type { HostCompressDeflateCapability } from '@flighthq/types/contract';
-import { CompressionFraming } from '@flighthq/types/contract';
-
 import { computeAdler32, DISTANCE_BASE, DISTANCE_EXTRA, LENGTH_BASE, LENGTH_EXTRA } from './deflateFormat.ts';
+import type { HostCompressDeflateCapability } from './types.ts';
+import { CompressionFraming } from './types.ts';
 
 // Dependency-free, synchronous RFC 1951 (DEFLATE) and RFC 1950 (zlib) encoding, in its own module so a
 // bundle that only reads compressed bytes never carries an encoder and vice versa. Written from the

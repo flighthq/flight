@@ -39,9 +39,7 @@
     "prepack": "npm run clean && npm run clean:dist && npm run build",
     "clean:dist": "tsx ../../scripts/clean-package-dist.ts"
   },
-  "dependencies": {
-    "@flighthq/types": "*"
-  },
+  "dependencies": {},
   "devDependencies": {
     "typescript": "^7.0.2"
   },

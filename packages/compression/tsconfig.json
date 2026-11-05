@@ -9,6 +9,6 @@
     "sourceMap": true,
     "types": ["@testing-library/jest-dom", "vitest/globals", "@webgpu/types"]
   },
-  "references": [{ "path": "../types" }],
+  "references": [],
   "include": ["src"]
 }

@@ -1,5 +1,5 @@
-import type { Decompressor, HostDecompressLzmaCapability } from '@flighthq/types/contract';
-import { CompressionFraming } from '@flighthq/types/contract';
+import type { Decompressor, HostDecompressLzmaCapability } from './types.ts';
+import { CompressionFraming } from './types.ts';
 
 export const decompressLzma: Decompressor = (compressed, uncompressedLength, framing) => {
   if (framing !== CompressionFraming.Raw) return null;

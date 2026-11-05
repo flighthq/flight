@@ -1,6 +1,5 @@
-import { Compression, CompressionFraming } from '@flighthq/types/contract';
-
 import { decompressDeflate, sdkHostDecompressDeflate } from './deflate.ts';
+import { Compression, CompressionFraming } from './types.ts';
 
 // The compressed fixtures below are precomputed with Node's zlib and embedded as base64 rather than
 // generated at test time: `scene-formats` is a browser-clean package whose build carries no `@types/node`,

@@ -43,6 +43,9 @@
       "path": "../clock"
     },
     {
+      "path": "../compression"
+    },
+    {
       "path": "../entity"
     },
     {

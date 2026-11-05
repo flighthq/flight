@@ -1,7 +1,6 @@
-import { CompressionFraming } from '@flighthq/types/contract';
-
 import { decompressLzma } from './lzma.ts';
 import { compressLzma, sdkHostCompressLzma } from './lzmaCompress.ts';
+import { CompressionFraming } from './types.ts';
 
 describe('compressLzma', () => {
   it('round-trips empty input', () => {

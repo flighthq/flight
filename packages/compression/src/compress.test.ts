@@ -1,7 +1,6 @@
-import { CompressionFraming } from '@flighthq/types/contract';
-
 import { compressDeflate, compressDeflateZlib, sdkHostCompressDeflate } from './compress.ts';
 import { decompressDeflate } from './deflate.ts';
+import { CompressionFraming } from './types.ts';
 
 // Every round trip is checked through decompressDeflate, which was written independently of this encoder
 // and is already pinned by its own tests. A compressor checked against its own decoder would agree with

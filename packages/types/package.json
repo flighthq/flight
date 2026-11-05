@@ -40,6 +40,7 @@
     "@flighthq/binpack": "*",
     "@flighthq/buffer": "*",
     "@flighthq/clock": "*",
+    "@flighthq/compression": "*",
     "@flighthq/entity": "*",
     "@flighthq/flow": "*",
     "@flighthq/font": "*",

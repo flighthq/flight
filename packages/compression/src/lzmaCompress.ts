@@ -1,5 +1,5 @@
-import type { HostCompressLzmaCapability } from '@flighthq/types/contract';
-import { CompressionFraming } from '@flighthq/types/contract';
+import type { HostCompressLzmaCapability } from './types.ts';
+import { CompressionFraming } from './types.ts';
 
 export function compressLzma(bytes: Readonly<Uint8Array>): Uint8Array {
   return lzmaEncode(bytes as Uint8Array);

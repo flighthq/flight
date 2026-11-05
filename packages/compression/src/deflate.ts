@@ -1,7 +1,6 @@
-import type { Decompressor, HostDecompressDeflateCapability } from '@flighthq/types/contract';
-import { CompressionFraming } from '@flighthq/types/contract';
-
 import { computeAdler32, DISTANCE_BASE, DISTANCE_EXTRA, LENGTH_BASE, LENGTH_EXTRA } from './deflateFormat.ts';
+import type { Decompressor, HostDecompressDeflateCapability } from './types.ts';
+import { CompressionFraming } from './types.ts';
 
 // Dependency-free, synchronous RFC 1951 (DEFLATE) and RFC 1950 (zlib) decoding. Kept in its own module so
 // this stays tree-shakable: a bundle that never references `sdkHostDecompressDeflate` pays nothing for
