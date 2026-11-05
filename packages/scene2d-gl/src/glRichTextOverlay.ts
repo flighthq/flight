@@ -1,5 +1,5 @@
-import type { RichText } from './RichText.ts';
-import type { TextLayoutResult } from './TextLayout.ts';
+import type { RichText } from '@flighthq/text/contract';
+import type { TextLayoutResult } from '@flighthq/textlayout/contract';
 
 export type GlRichTextOverlay = (
   context: CanvasRenderingContext2D,

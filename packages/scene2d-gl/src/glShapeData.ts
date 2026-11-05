@@ -5,12 +5,13 @@ import type {
   CanvasSurface,
   EntityConstruction,
   GlRenderState,
-  GlShapeRendererData,
   HostCanvasCapability,
   HostImageCapability,
   NodeAny,
   RendererData,
 } from '@flighthq/types/contract';
+
+import type { GlShapeRendererData } from './glShapeRendererData.ts';
 
 export function acquireGlShapeRasterSurface(
   canvasHost: Readonly<HostCanvasCapability>,

@@ -1,4 +1,6 @@
 //! flight-compiler: target-native
+//! flight-compiler: companion glRichTextOverlay.ts
+//! flight-compiler: root GlRichTextOverlay
 
 // flight-lint: allow-file(contract-vocabulary) D17 node renderers are backend-typed dispatch tables over thread-bound render-gl state
 

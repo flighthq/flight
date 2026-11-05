@@ -1,4 +1,6 @@
 //! flight-compiler: target-native
+//! flight-compiler: companion glShapeRendererData.ts
+//! flight-compiler: root GlShapeRendererData
 
 // flight-lint: allow-file(contract-vocabulary) D17 shape renderer data retains opaque host surfaces and shared renderer-data handles
 

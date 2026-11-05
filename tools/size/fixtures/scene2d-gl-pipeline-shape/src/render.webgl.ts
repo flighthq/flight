@@ -12,8 +12,8 @@ import {
 import { createDisplayObject } from '@flighthq/scene2d';
 import { glMeshShapeRenderer, renderGlScene2D } from '@flighthq/scene2d-gl';
 import { appendShapeBeginFill, appendShapeEndFill, appendShapeRectangle, createShape } from '@flighthq/shape';
-import { createGlSurface } from '@flighthq/surface';
 import { ShapeKind } from '@flighthq/shape';
+import { createGlSurface } from '@flighthq/surface';
 
 const appWindow = createAppWindow();
 openWindow(webHostWindowLifecycle, webHostWindowGeometry, appWindow, {});

@@ -5,12 +5,7 @@ import {
   unregisterTestImageDimensionResolver,
 } from '@flighthq/image/contract';
 import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
-import type {
-  CanvasSurface,
-  GlShapeRendererData,
-  HostCanvasCapability,
-  HostImageCapability,
-} from '@flighthq/types/contract';
+import type { CanvasSurface, HostCanvasCapability, HostImageCapability } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import {
@@ -21,6 +16,7 @@ import {
   initializeGlShapeData,
   toGlShapeRendererData,
 } from './glShapeData.ts';
+import type { GlShapeRendererData } from './glShapeRendererData.ts';
 import { createGlState } from './glTestHelper.ts';
 
 // A test that wraps a host handle supplies the host: the resource measures through the registered

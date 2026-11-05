@@ -19,8 +19,8 @@ import {
   createMorphShape,
   setMorphShapeProgress,
 } from '@flighthq/shape';
-import { createGlSurface } from '@flighthq/surface';
 import { MorphShapeKind } from '@flighthq/shape';
+import { createGlSurface } from '@flighthq/surface';
 
 const appWindow = createAppWindow();
 openWindow(webHostWindowLifecycle, webHostWindowGeometry, appWindow, {});
