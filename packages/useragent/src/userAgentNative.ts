@@ -1,64 +1,66 @@
+// Generated from crates/flight-useragent/src/user_agent_native.rs by flight-compiler.
+// Rust is authoritative; run `npm run generate` after changing it.
+
 import { isTruthy } from './userAgentTruthy.ts';
 
-export type PlatformEndianness = 'big' | 'little' | 'unknown';
-export type PlatformEngine = 'gecko' | 'blink' | 'webkit' | 'unknown';
-export type PlatformKind = 'desktop' | 'mobile' | 'web' | 'unknown';
-export type PlatformName = 'web' | 'windows' | 'macos' | 'linux' | 'ios' | 'android' | 'unknown';
-export type PlatformRuntime = 'web' | 'electron' | 'tauri' | 'capacitor' | 'native' | 'unknown';
-export type UserAgentRuntimeWindow = Record<unknown> | null | undefined;
-export type Unknown = unknown;
+type PlatformEndianness = 'big' | 'little' | 'unknown';
 
-export interface Record<T> {
-  readonly [key: string]: T;
-}
+type PlatformEngine = 'gecko' | 'blink' | 'webkit' | 'unknown';
 
-export const PlatformEngine = {
-  Gecko: 'gecko',
-  Blink: 'blink',
-  Webkit: 'webkit',
-  Unknown: 'unknown',
-} as const;
+type PlatformKind = 'desktop' | 'mobile' | 'web' | 'unknown';
 
-export const PlatformKind = {
-  Desktop: 'desktop',
-  Mobile: 'mobile',
-  Web: 'web',
-  Unknown: 'unknown',
-} as const;
+type PlatformName = 'web' | 'windows' | 'macos' | 'linux' | 'ios' | 'android' | 'unknown';
 
-export const PlatformName = {
-  Web: 'web',
-  Windows: 'windows',
-  MacOs: 'macos',
-  Linux: 'linux',
-  Ios: 'ios',
-  Android: 'android',
-  Unknown: 'unknown',
-} as const;
+type PlatformRuntime = 'web' | 'electron' | 'tauri' | 'capacitor' | 'native' | 'unknown';
 
-export function detectEndiannessNative(): PlatformEndianness {
-  try {
-    const buffer = new ArrayBuffer(2);
-    new Uint16Array(buffer)[0] = 0x0102;
-    const bytes = new Uint8Array(buffer);
-    if (bytes[0] === 0x01) return 'big';
-    if (bytes[0] === 0x02) return 'little';
-  } catch {
-    // ArrayBuffer is unavailable.
+type Unknown = unknown;
+
+type UserAgentRuntimeWindow = Readonly<Record<string, Unknown>> | undefined;
+
+function detectEndiannessNative(): PlatformEndianness {
+  const bytes = new Uint8Array(new Uint16Array([0x0102]).buffer);
+  if (bytes[0] === 0x01) {
+    return 'big';
+  }
+  if (bytes[0] === 0x02) {
+    return 'little';
   }
   return 'unknown';
 }
 
-function getProperty(value: unknown, key: string): unknown {
-  if (value == null || typeof value !== 'object') return undefined;
-  return (value as Record<unknown>)[key];
+function getProperty(value: Unknown | undefined, key: string): Unknown | undefined {
+  const __try0 = value;
+  if (__try0 === undefined) {
+    return undefined;
+  }
+  const value_1 = __try0;
+  if (value_1 === undefined) {
+    return undefined;
+  }
+  const record = value_1 as Record<string, Unknown>;
+  if (record === undefined) {
+    return undefined;
+  }
+  return record[key];
 }
 
-export function parseUserAgentRuntimeNative(win: UserAgentRuntimeWindow): PlatformRuntime {
-  if (win == null) return 'unknown';
-  const versions = getProperty(win.process, 'versions');
-  if (isTruthy(versions) && isTruthy(getProperty(versions, 'electron'))) return 'electron';
-  if (isTruthy(win.__TAURI__)) return 'tauri';
-  if (isTruthy(win.Capacitor)) return 'capacitor';
+function parseUserAgentRuntimeNative(win: UserAgentRuntimeWindow): PlatformRuntime {
+  if (win === undefined) {
+    return 'unknown';
+  }
+  const versions = getProperty(win['process'], 'versions');
+  if (isTruthy(versions) && isTruthy(getProperty(versions, 'electron'))) {
+    return 'electron';
+  }
+  if (isTruthy(win['__TAURI__'])) {
+    return 'tauri';
+  }
+  if (isTruthy(win['Capacitor'])) {
+    return 'capacitor';
+  }
   return 'web';
 }
+
+export type { PlatformEndianness, PlatformEngine, PlatformKind, PlatformName, PlatformRuntime, Unknown };
+
+export { detectEndiannessNative, parseUserAgentRuntimeNative };
