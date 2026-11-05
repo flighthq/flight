@@ -191,22 +191,22 @@ function buildInputIngressSink(manager: InputManagerRaw): InputIngressSink {
     return () => isManagerEnabled(manager_1);
   })();
   return {
-    gamepadAxisMove: gamepadAxisMove,
-    gamepadButtonDown: gamepadButtonDown,
-    gamepadButtonUp: gamepadButtonUp,
-    gamepadConnect: gamepadConnect,
-    gamepadDisconnect: gamepadDisconnect,
-    isEnabled: isEnabled,
-    keyDown: keyDown,
-    keyUp: keyUp,
-    pointerCancel: pointerCancel,
-    pointerDown: pointerDown,
-    pointerMove: pointerMove,
-    pointerMoveRelative: pointerMoveRelative,
-    pointerUp: pointerUp,
-    textEdit: textEdit,
-    textInput: textInput,
-    wheel: wheel,
+    gamepadAxisMove,
+    gamepadButtonDown,
+    gamepadButtonUp,
+    gamepadConnect,
+    gamepadDisconnect,
+    isEnabled,
+    keyDown,
+    keyUp,
+    pointerCancel,
+    pointerDown,
+    pointerMove,
+    pointerMoveRelative,
+    pointerUp,
+    textEdit,
+    textInput,
+    wheel,
   };
 }
 
@@ -216,9 +216,8 @@ function clearInputBinding(
   kind: InputBindingKind,
 ): void {
   {
-    const $release = takeInputBindingRelease(manager, source, kind);
-    if ($release !== undefined) {
-      const release = $release;
+    const release = takeInputBindingRelease(manager, source, kind);
+    if (release !== undefined) {
       release();
     }
   }
@@ -421,15 +420,14 @@ function setInputBinding(
   release: InputIngressRelease,
 ): void {
   {
-    const $previous = takeInputBindingRelease(manager, source, kind);
-    if ($previous !== undefined) {
-      const previous = $previous;
+    const previous = takeInputBindingRelease(manager, source, kind);
+    if (previous !== undefined) {
       previous();
     }
   }
   let locked = manager!;
   const registry = getInputManagerRegistry(locked);
-  registry.bindings.push({ source: source, kind: kind, release: release });
+  registry.bindings.push({ source, kind, release });
 }
 
 function takeInputBindingRelease(
@@ -446,27 +444,28 @@ function takeInputBindingRelease(
       break;
     }
   }
-  (<T>(items: T[], keep: (item: T) => boolean): void => {
+  {
+    const keep: (item: (typeof registry.bindings)[number]) => boolean = (binding) => {
+      return !isInputBindingFor(binding, source, kind);
+    };
     let kept = 0;
-    let index = 0;
+    let retainIndex = 0;
     try {
-      for (; index < items.length; index += 1) {
-        const item = items[index];
+      for (; retainIndex < registry.bindings.length; retainIndex++) {
+        const item = registry.bindings[retainIndex];
         if (keep(item)) {
-          items[kept] = item;
-          kept += 1;
+          registry.bindings[kept] = item;
+          kept++;
         }
       }
     } finally {
-      const length = items.length;
-      for (let rest = index; rest < length; rest += 1) {
-        items[kept + rest - index] = items[rest];
+      const retainLength = registry.bindings.length;
+      for (let rest = retainIndex; rest < retainLength; rest++) {
+        registry.bindings[kept + rest - retainIndex] = registry.bindings[rest];
       }
-      items.length = kept + length - index;
+      registry.bindings.length = kept + retainLength - retainIndex;
     }
-  })(registry.bindings, (binding) => {
-    return !isInputBindingFor(binding, source, kind);
-  });
+  }
   return release;
 }
 

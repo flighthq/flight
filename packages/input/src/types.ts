@@ -398,293 +398,251 @@ interface InputKeyRepeatTimerState {
 }
 
 export function getGamepadAxisKindString(value: GamepadAxisKind): string {
-  return (() => {
-    const matchValue = value;
-    switch (matchValue) {
-      case 'StickLeftX':
-        return 'StickLeftX';
-      case 'StickLeftY':
-        return 'StickLeftY';
-      case 'StickRightX':
-        return 'StickRightX';
-      case 'StickRightY':
-        return 'StickRightY';
-    }
-  })();
+  switch (value) {
+    case 'StickLeftX':
+      return 'StickLeftX';
+    case 'StickLeftY':
+      return 'StickLeftY';
+    case 'StickRightX':
+      return 'StickRightX';
+    case 'StickRightY':
+      return 'StickRightY';
+  }
 }
 
 export function getGamepadButtonKindString(value: GamepadButtonKind): string {
-  return (() => {
-    const matchValue = value;
-    switch (matchValue) {
-      case 'ButtonEast':
-        return 'ButtonEast';
-      case 'ButtonNorth':
-        return 'ButtonNorth';
-      case 'ButtonSouth':
-        return 'ButtonSouth';
-      case 'ButtonWest':
-        return 'ButtonWest';
-      case 'DpadDown':
-        return 'DpadDown';
-      case 'DpadLeft':
-        return 'DpadLeft';
-      case 'DpadRight':
-        return 'DpadRight';
-      case 'DpadUp':
-        return 'DpadUp';
-      case 'Home':
-        return 'Home';
-      case 'Select':
-        return 'Select';
-      case 'ShoulderLeft':
-        return 'ShoulderLeft';
-      case 'ShoulderRight':
-        return 'ShoulderRight';
-      case 'Start':
-        return 'Start';
-      case 'StickLeft':
-        return 'StickLeft';
-      case 'StickRight':
-        return 'StickRight';
-      case 'Touchpad':
-        return 'Touchpad';
-      case 'TriggerLeft':
-        return 'TriggerLeft';
-      case 'TriggerRight':
-        return 'TriggerRight';
-    }
-  })();
+  switch (value) {
+    case 'ButtonEast':
+      return 'ButtonEast';
+    case 'ButtonNorth':
+      return 'ButtonNorth';
+    case 'ButtonSouth':
+      return 'ButtonSouth';
+    case 'ButtonWest':
+      return 'ButtonWest';
+    case 'DpadDown':
+      return 'DpadDown';
+    case 'DpadLeft':
+      return 'DpadLeft';
+    case 'DpadRight':
+      return 'DpadRight';
+    case 'DpadUp':
+      return 'DpadUp';
+    case 'Home':
+      return 'Home';
+    case 'Select':
+      return 'Select';
+    case 'ShoulderLeft':
+      return 'ShoulderLeft';
+    case 'ShoulderRight':
+      return 'ShoulderRight';
+    case 'Start':
+      return 'Start';
+    case 'StickLeft':
+      return 'StickLeft';
+    case 'StickRight':
+      return 'StickRight';
+    case 'Touchpad':
+      return 'Touchpad';
+    case 'TriggerLeft':
+      return 'TriggerLeft';
+    case 'TriggerRight':
+      return 'TriggerRight';
+  }
 }
 
 export function getGamepadMappingString(value: GamepadMapping): string {
-  return (() => {
-    const matchValue = value;
-    switch (matchValue) {
-      case 'standard':
-        return 'standard';
-      case 'raw':
-        return 'raw';
-      case '':
-        return '';
-    }
-  })();
+  switch (value) {
+    case 'standard':
+      return 'standard';
+    case 'raw':
+      return 'raw';
+    case '':
+      return '';
+  }
 }
 
 export function getInputPointerLockExitReasonString(value: InputPointerLockExitReason): string {
-  return (() => {
-    const matchValue = value;
-    switch (matchValue) {
-      case 'ok':
-        return 'ok';
-      case 'api-unavailable':
-        return 'api-unavailable';
-      case 'operation-failed':
-        return 'operation-failed';
-    }
-  })();
+  switch (value) {
+    case 'ok':
+      return 'ok';
+    case 'api-unavailable':
+      return 'api-unavailable';
+    case 'operation-failed':
+      return 'operation-failed';
+  }
 }
 
 export function getInputPointerLockRequestReasonString(value: InputPointerLockRequestReason): string {
-  return (() => {
-    const matchValue = value;
-    switch (matchValue) {
-      case 'ok':
-        return 'ok';
-      case 'api-unavailable':
-        return 'api-unavailable';
-      case 'denied':
-        return 'denied';
-      case 'operation-failed':
-        return 'operation-failed';
-      case 'target-not-found':
-        return 'target-not-found';
-    }
-  })();
+  switch (value) {
+    case 'ok':
+      return 'ok';
+    case 'api-unavailable':
+      return 'api-unavailable';
+    case 'denied':
+      return 'denied';
+    case 'operation-failed':
+      return 'operation-failed';
+    case 'target-not-found':
+      return 'target-not-found';
+  }
 }
 
 export function getMouseWheelModeString(value: MouseWheelMode): string {
-  return (() => {
-    const matchValue = value;
-    switch (matchValue) {
-      case 'lines':
-        return 'lines';
-      case 'pages':
-        return 'pages';
-      case 'pixels':
-        return 'pixels';
-      case 'unknown':
-        return 'unknown';
-    }
-  })();
+  switch (value) {
+    case 'lines':
+      return 'lines';
+    case 'pages':
+      return 'pages';
+    case 'pixels':
+      return 'pixels';
+    case 'unknown':
+      return 'unknown';
+  }
 }
 
 export function getPointerTypeString(value: PointerType): string {
-  return (() => {
-    const matchValue = value;
-    switch (matchValue) {
-      case 'mouse':
-        return 'mouse';
-      case 'pen':
-        return 'pen';
-      case 'touch':
-        return 'touch';
-      case 'unknown':
-        return 'unknown';
-    }
-  })();
+  switch (value) {
+    case 'mouse':
+      return 'mouse';
+    case 'pen':
+      return 'pen';
+    case 'touch':
+      return 'touch';
+    case 'unknown':
+      return 'unknown';
+  }
 }
 
 export function parseGamepadAxisKind(value: string): GamepadAxisKind | undefined {
-  return (() => {
-    const matchValue = value;
-    switch (matchValue) {
-      case 'StickLeftX':
-        return 'StickLeftX';
-      case 'StickLeftY':
-        return 'StickLeftY';
-      case 'StickRightX':
-        return 'StickRightX';
-      case 'StickRightY':
-        return 'StickRightY';
-      default:
-        return undefined;
-    }
-  })();
+  switch (value) {
+    case 'StickLeftX':
+      return 'StickLeftX';
+    case 'StickLeftY':
+      return 'StickLeftY';
+    case 'StickRightX':
+      return 'StickRightX';
+    case 'StickRightY':
+      return 'StickRightY';
+    default:
+      return undefined;
+  }
 }
 
 export function parseGamepadButtonKind(value: string): GamepadButtonKind | undefined {
-  return (() => {
-    const matchValue = value;
-    switch (matchValue) {
-      case 'ButtonEast':
-        return 'ButtonEast';
-      case 'ButtonNorth':
-        return 'ButtonNorth';
-      case 'ButtonSouth':
-        return 'ButtonSouth';
-      case 'ButtonWest':
-        return 'ButtonWest';
-      case 'DpadDown':
-        return 'DpadDown';
-      case 'DpadLeft':
-        return 'DpadLeft';
-      case 'DpadRight':
-        return 'DpadRight';
-      case 'DpadUp':
-        return 'DpadUp';
-      case 'Home':
-        return 'Home';
-      case 'Select':
-        return 'Select';
-      case 'ShoulderLeft':
-        return 'ShoulderLeft';
-      case 'ShoulderRight':
-        return 'ShoulderRight';
-      case 'Start':
-        return 'Start';
-      case 'StickLeft':
-        return 'StickLeft';
-      case 'StickRight':
-        return 'StickRight';
-      case 'Touchpad':
-        return 'Touchpad';
-      case 'TriggerLeft':
-        return 'TriggerLeft';
-      case 'TriggerRight':
-        return 'TriggerRight';
-      default:
-        return undefined;
-    }
-  })();
+  switch (value) {
+    case 'ButtonEast':
+      return 'ButtonEast';
+    case 'ButtonNorth':
+      return 'ButtonNorth';
+    case 'ButtonSouth':
+      return 'ButtonSouth';
+    case 'ButtonWest':
+      return 'ButtonWest';
+    case 'DpadDown':
+      return 'DpadDown';
+    case 'DpadLeft':
+      return 'DpadLeft';
+    case 'DpadRight':
+      return 'DpadRight';
+    case 'DpadUp':
+      return 'DpadUp';
+    case 'Home':
+      return 'Home';
+    case 'Select':
+      return 'Select';
+    case 'ShoulderLeft':
+      return 'ShoulderLeft';
+    case 'ShoulderRight':
+      return 'ShoulderRight';
+    case 'Start':
+      return 'Start';
+    case 'StickLeft':
+      return 'StickLeft';
+    case 'StickRight':
+      return 'StickRight';
+    case 'Touchpad':
+      return 'Touchpad';
+    case 'TriggerLeft':
+      return 'TriggerLeft';
+    case 'TriggerRight':
+      return 'TriggerRight';
+    default:
+      return undefined;
+  }
 }
 
 export function parseGamepadMapping(value: string): GamepadMapping | undefined {
-  return (() => {
-    const matchValue = value;
-    switch (matchValue) {
-      case 'standard':
-        return 'standard';
-      case 'raw':
-        return 'raw';
-      case '':
-        return '';
-      default:
-        return undefined;
-    }
-  })();
+  switch (value) {
+    case 'standard':
+      return 'standard';
+    case 'raw':
+      return 'raw';
+    case '':
+      return '';
+    default:
+      return undefined;
+  }
 }
 
 export function parseInputPointerLockExitReason(value: string): InputPointerLockExitReason | undefined {
-  return (() => {
-    const matchValue = value;
-    switch (matchValue) {
-      case 'ok':
-        return 'ok';
-      case 'api-unavailable':
-        return 'api-unavailable';
-      case 'operation-failed':
-        return 'operation-failed';
-      default:
-        return undefined;
-    }
-  })();
+  switch (value) {
+    case 'ok':
+      return 'ok';
+    case 'api-unavailable':
+      return 'api-unavailable';
+    case 'operation-failed':
+      return 'operation-failed';
+    default:
+      return undefined;
+  }
 }
 
 export function parseInputPointerLockRequestReason(value: string): InputPointerLockRequestReason | undefined {
-  return (() => {
-    const matchValue = value;
-    switch (matchValue) {
-      case 'ok':
-        return 'ok';
-      case 'api-unavailable':
-        return 'api-unavailable';
-      case 'denied':
-        return 'denied';
-      case 'operation-failed':
-        return 'operation-failed';
-      case 'target-not-found':
-        return 'target-not-found';
-      default:
-        return undefined;
-    }
-  })();
+  switch (value) {
+    case 'ok':
+      return 'ok';
+    case 'api-unavailable':
+      return 'api-unavailable';
+    case 'denied':
+      return 'denied';
+    case 'operation-failed':
+      return 'operation-failed';
+    case 'target-not-found':
+      return 'target-not-found';
+    default:
+      return undefined;
+  }
 }
 
 export function parseMouseWheelMode(value: string): MouseWheelMode | undefined {
-  return (() => {
-    const matchValue = value;
-    switch (matchValue) {
-      case 'lines':
-        return 'lines';
-      case 'pages':
-        return 'pages';
-      case 'pixels':
-        return 'pixels';
-      case 'unknown':
-        return 'unknown';
-      default:
-        return undefined;
-    }
-  })();
+  switch (value) {
+    case 'lines':
+      return 'lines';
+    case 'pages':
+      return 'pages';
+    case 'pixels':
+      return 'pixels';
+    case 'unknown':
+      return 'unknown';
+    default:
+      return undefined;
+  }
 }
 
 export function parsePointerType(value: string): PointerType | undefined {
-  return (() => {
-    const matchValue = value;
-    switch (matchValue) {
-      case 'mouse':
-        return 'mouse';
-      case 'pen':
-        return 'pen';
-      case 'touch':
-        return 'touch';
-      case 'unknown':
-        return 'unknown';
-      default:
-        return undefined;
-    }
-  })();
+  switch (value) {
+    case 'mouse':
+      return 'mouse';
+    case 'pen':
+      return 'pen';
+    case 'touch':
+      return 'touch';
+    case 'unknown':
+      return 'unknown';
+    default:
+      return undefined;
+  }
 }
 
 // Crate-private `InputKeyRepeatTimer.cycle`, keyed by entity identity and reachable only from this package's modules.

@@ -30,15 +30,15 @@ const STANDARD_AXIS_NAMES: (GamepadAxisKind | undefined)[] = ['StickLeftX', 'Sti
  * Filters one gamepad axis through a simple dead zone (TS `applyGamepadAxisDeadZone`).
  */
 export function applyGamepadAxisDeadZone(value: number, deadZone: number): number {
-  if (deadZone <= 0.0) {
+  if (deadZone <= 0) {
     return value;
   }
-  const abs = value < 0.0 ? -value : value;
+  const abs = value < 0 ? -value : value;
   if (abs <= deadZone) {
-    return 0.0;
+    return 0;
   }
-  const sign = value < 0.0 ? -1.0 : 1.0;
-  return sign * ((abs - deadZone) / (1.0 - deadZone));
+  const sign = value < 0 ? -1 : 1;
+  return sign * ((abs - deadZone) / (1 - deadZone));
 }
 
 /**
@@ -47,18 +47,18 @@ export function applyGamepadAxisDeadZone(value: number, deadZone: number): numbe
  * Alias-safe: the coordinates are captured before `out` is written.
  */
 export function applyGamepadStickDeadZone(out: GamepadStickOutput, x: number, y: number, deadZone: number): void {
-  if (deadZone <= 0.0) {
+  if (deadZone <= 0) {
     out.x = x;
     out.y = y;
     return;
   }
   const magnitude = Math.sqrt(x * x + y * y);
   if (magnitude <= deadZone) {
-    out.x = 0.0;
-    out.y = 0.0;
+    out.x = 0;
+    out.y = 0;
     return;
   }
-  const scale = (magnitude - deadZone) / ((1.0 - deadZone) * magnitude);
+  const scale = (magnitude - deadZone) / ((1 - deadZone) * magnitude);
   out.x = x * scale;
   out.y = y * scale;
 }

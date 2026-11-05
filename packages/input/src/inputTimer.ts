@@ -53,7 +53,7 @@ export function initializeInputKeyRepeatTimer(
     callback: undefined,
     delayMs: options.delay,
     intervalMs: options.interval,
-    nextFireMs: 0.0,
+    nextFireMs: 0,
     repeating: false,
     started: false,
   });
@@ -107,10 +107,10 @@ function takeDueInputKeyRepeatTick(
   const callback = cycle.callback;
   const interval = cycle.intervalMs;
   cycle.repeating = true;
-  if (interval <= 0.0) {
+  if (interval <= 0) {
     cycle.nextFireMs = nowMs;
   } else {
     cycle.nextFireMs += interval;
   }
-  return [callback, interval <= 0.0];
+  return [callback, interval <= 0];
 }
