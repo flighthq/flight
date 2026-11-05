@@ -26684,8 +26684,12 @@ fn emit_retain_statement(
         .split(|c: char| !(c.is_alphanumeric() || c == '_' || c == '$'))
         .map(str::to_string)
         .collect::<HashSet<_>>();
-    let bind_receiver = !expression_is_reusable(&call.receiver);
     let bind_predicate = !expression_is_reusable(&call.args[0]);
+    // A bound closure predicate loses the contextual parameter type the call site gave it, so it is
+    // annotated with the element type read through `typeof`, which accepts only an entity name: a
+    // receiver emitted as anything else is bound first.
+    let bind_receiver = !expression_is_reusable(&call.receiver)
+        || (bind_predicate && !is_typeof_entity_name(&receiver));
     let items = if bind_receiver {
         fresh_identifier("items", &mut used)
     } else {
@@ -26710,7 +26714,11 @@ fn emit_retain_statement(
     }
     if bind_predicate {
         write_indent(out, bi);
-        writeln!(out, "const {keep} = {predicate};").expect("writing to a String cannot fail");
+        writeln!(
+            out,
+            "const {keep}: ({item}: (typeof {items})[number]) => boolean = {predicate};"
+        )
+        .expect("writing to a String cannot fail");
     }
     write_indent(out, bi);
     writeln!(out, "let {kept} = 0;").expect("writing to a String cannot fail");
@@ -27627,6 +27635,18 @@ fn bitand_mask_type(expression: &Expr) -> Option<String> {
         0xffff => Some("u16".to_string()),
         _ => None,
     };
+}
+
+// Whether an emitted TypeScript expression is an entity name (`a` or `a.b.c`), the only operand
+// form a type-position `typeof` accepts.
+fn is_typeof_entity_name(expression: &str) -> bool {
+    return expression.split('.').all(|segment| {
+        let mut chars = segment.chars();
+        return chars
+            .next()
+            .is_some_and(|first| first.is_alphabetic() || first == '_' || first == '$')
+            && chars.all(|c| c.is_alphanumeric() || c == '_' || c == '$');
+    });
 }
 
 fn is_widening_integer_cast(source: &str, target: &str) -> bool {

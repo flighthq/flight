@@ -3724,7 +3724,7 @@ pub async fn spawn_later() -> i32 {
             let sp4 = "  ".repeat(indent + 4);
             format!(
                 "{sp}{{\n\
-                 {sp1}const keep = {predicate};\n\
+                 {sp1}const keep: (item: (typeof {receiver})[number]) => boolean = {predicate};\n\
                  {sp1}let kept = 0;\n\
                  {sp1}let retainIndex = 0;\n\
                  {sp1}try {{\n\
@@ -3777,6 +3777,20 @@ pub fn keep_even(values: &mut Vec<u32>) {
                 "export function keepEvenInValueBlock(values: number[]): number {{\n  return (() => {{\n    const items: number[] = values;\n{}    return 0;\n  }})() >>> 0;\n}}\n",
                 retain_block("items", "(value) => value % 2 === 0", 2),
             )
+        );
+
+        // A receiver that is not an entity name (`typeof` accepts no call) is bound before the
+        // predicate's element type is read through it.
+        let output = compile_typescript(
+            "pub struct Holder {\n    pub values: Vec<u32>,\n}\n\npub fn values_of(holder: &mut Holder) -> &mut Vec<u32> {\n    return &mut holder.values;\n}\n\npub fn keep_even_values(holder: &mut Holder) {\n    values_of(holder).retain(|value| *value % 2 == 0);\n}\n",
+            None,
+        )
+        .unwrap();
+        assert!(
+            output.contains(
+                "    const items = valuesOf(holder);\n    const keep: (item: (typeof items)[number]) => boolean = (value) => value % 2 === 0;\n"
+            ),
+            "{output}"
         );
 
         let tests = r#"
