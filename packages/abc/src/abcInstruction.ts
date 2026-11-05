@@ -1,5 +1,5 @@
-import type { AbcInstruction } from '@flighthq/types/contract';
-import { AbcOpcode } from '@flighthq/types/contract';
+import type { AbcInstruction } from './types.ts';
+import { AbcOpcode } from './types.ts';
 
 // Decodes a method body's instruction stream into a flat list, or null when it does not decode cleanly.
 //

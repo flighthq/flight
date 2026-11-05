@@ -1,11 +1,10 @@
 // Generated from crates/flight-abc/tests/abc_file_test.rs by flight-compiler.
 // Rust is authoritative; run `npm run generate` after changing it.
 
-import type { AbcNamespace, AbcOptionalValue } from '@flighthq/types/contract';
-import { AbcMultinameKind, AbcTraitKind } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { readAbcFile } from './contract.ts';
+import { AbcMultinameKind, AbcTraitKind, readAbcFile } from './contract.ts';
+import type { AbcNamespace, AbcOptionalValue } from './contract.ts';
 
 describe('readAbcFile', () => {
   function buildAbc(): Uint8Array {

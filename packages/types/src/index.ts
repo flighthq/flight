@@ -85,7 +85,6 @@ export * from './AreaLight.ts';
 export * from './AsepriteSchema.ts';
 export * from './Assets.ts';
 export * from './AttractorForce.ts';
-export * from './Abc.ts';
 export * from './AudioBus.ts';
 export * from './AudioDeviceHandle.ts';
 export * from './HostAudioMixer.ts';

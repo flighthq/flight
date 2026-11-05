@@ -1,4 +1,5 @@
-import { readAbcFile, readAbcInstructions } from '@flighthq/abc/contract';
+import type { AbcFile, AbcInstruction } from '@flighthq/abc/contract';
+import { AbcOpcode, AbcTraitKind, readAbcFile, readAbcInstructions } from '@flighthq/abc/contract';
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import {
   gotoAndPlayMovieClip,
@@ -7,15 +8,8 @@ import {
   prevFrameMovieClip,
   stopMovieClip,
 } from '@flighthq/movieclip/contract';
-import type {
-  AbcFile,
-  AbcInstruction,
-  FrameScript,
-  ImportDiagnostic,
-  MovieClip,
-  Node2D,
-} from '@flighthq/types/contract';
-import { AbcOpcode, AbcTraitKind, ImportDiagnosticSeverity } from '@flighthq/types/contract';
+import type { FrameScript, ImportDiagnostic, MovieClip, Node2D } from '@flighthq/types/contract';
+import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
 import type { SwfReader } from './swfReader.ts';
 

@@ -13,8 +13,8 @@ import type {
   AbcOptionalValue,
   AbcScript,
   AbcTrait,
-} from '@flighthq/types/contract';
-import { AbcMultinameKind, AbcTraitKind } from '@flighthq/types/contract';
+} from './types.ts';
+import { AbcMultinameKind, AbcTraitKind } from './types.ts';
 
 // Reads an ABC (AVM2 bytecode) container into plain data, or null when the bytes are not a readable one.
 // This parses; it never executes. What comes back is the file's own tables — constant pool, methods,
