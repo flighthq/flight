@@ -1,3 +1,5 @@
+import { isTruthy } from './userAgentTruthy.ts';
+
 export type PlatformEndianness = 'big' | 'little' | 'unknown';
 export type PlatformEngine = 'gecko' | 'blink' | 'webkit' | 'unknown';
 export type PlatformKind = 'desktop' | 'mobile' | 'web' | 'unknown';
@@ -47,11 +49,16 @@ export function detectEndiannessNative(): PlatformEndianness {
   return 'unknown';
 }
 
+function getProperty(value: unknown, key: string): unknown {
+  if (value == null || typeof value !== 'object') return undefined;
+  return (value as Record<unknown>)[key];
+}
+
 export function parseUserAgentRuntimeNative(win: UserAgentRuntimeWindow): PlatformRuntime {
   if (win == null) return 'unknown';
-  const process = win.process as Record<unknown> | undefined;
-  if (process?.versions && (process.versions as Record<unknown>).electron) return 'electron';
-  if (win.__TAURI__) return 'tauri';
-  if (win.Capacitor) return 'capacitor';
+  const versions = getProperty(win.process, 'versions');
+  if (isTruthy(versions) && isTruthy(getProperty(versions, 'electron'))) return 'electron';
+  if (isTruthy(win.__TAURI__)) return 'tauri';
+  if (isTruthy(win.Capacitor)) return 'capacitor';
   return 'web';
 }

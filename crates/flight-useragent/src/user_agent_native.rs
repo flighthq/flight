@@ -9,6 +9,8 @@ pub(crate) use flight_platform::{
     PlatformEndianness, PlatformEngine, PlatformKind, PlatformName, PlatformRuntime,
 };
 
+use crate::user_agent_truthy::is_truthy;
+
 pub(crate) type UserAgentRuntimeWindow<'a> = Option<&'a Record<Unknown>>;
 
 pub(crate) fn detect_endianness_native() -> PlatformEndianness {
@@ -28,53 +30,18 @@ fn get_property<'a>(value: Option<&'a Unknown>, key: &str) -> Option<&'a Unknown
     return get_record_value(record, key);
 }
 
-// flight-lint: allow(f64) TS `number` values in an `unknown` slot arrive as f64; NaN and 0 are falsy as in JS
-fn is_truthy(value: Option<&Unknown>) -> bool {
-    let Some(Some(value)) = value else {
-        return false;
-    };
-    if let Some(b) = value.downcast_ref::<bool>() {
-        return *b;
-    }
-    if let Some(s) = value.downcast_ref::<String>() {
-        return !s.is_empty();
-    }
-    if let Some(s) = value.downcast_ref::<&'static str>() {
-        return !s.is_empty();
-    }
-    if let Some(n) = value.downcast_ref::<f64>() {
-        return *n != 0.0 && !n.is_nan();
-    }
-    if let Some(n) = value.downcast_ref::<f32>() {
-        return *n != 0.0 && !n.is_nan();
-    }
-    if let Some(n) = value.downcast_ref::<i32>() {
-        return *n != 0;
-    }
-    if let Some(n) = value.downcast_ref::<i64>() {
-        return *n != 0;
-    }
-    if let Some(n) = value.downcast_ref::<u32>() {
-        return *n != 0;
-    }
-    if let Some(n) = value.downcast_ref::<u64>() {
-        return *n != 0;
-    }
-    return true;
-}
-
 pub(crate) fn parse_user_agent_runtime_native(win: UserAgentRuntimeWindow<'_>) -> PlatformRuntime {
     let Some(win) = win else {
         return PlatformRuntime::Unknown;
     };
     let versions = get_property(get_record_value(win, "process"), "versions");
-    if is_truthy(versions) && is_truthy(get_property(versions, "electron")) {
+    if is_truthy(versions.cloned()) && is_truthy(get_property(versions, "electron").cloned()) {
         return PlatformRuntime::Electron;
     }
-    if is_truthy(get_record_value(win, "__TAURI__")) {
+    if is_truthy(get_record_value(win, "__TAURI__").cloned()) {
         return PlatformRuntime::Tauri;
     }
-    if is_truthy(get_record_value(win, "Capacitor")) {
+    if is_truthy(get_record_value(win, "Capacitor").cloned()) {
         return PlatformRuntime::Capacitor;
     }
     return PlatformRuntime::Web;

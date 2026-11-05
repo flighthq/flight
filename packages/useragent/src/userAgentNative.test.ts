@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { detectEndianness, parseUserAgentRuntime } from './contract.ts';
 import { detectEndiannessNative, parseUserAgentRuntimeNative } from './userAgentNative.ts';
+import { isTruthy } from './userAgentTruthy.ts';
 
 describe('detectEndianness', () => {
   it('exposes the native byte-order probe through the public contract', () => {
@@ -12,6 +13,20 @@ describe('detectEndianness', () => {
 describe('detectEndiannessNative', () => {
   it('returns the byte order observed through typed-array views', () => {
     expect(['big', 'little', 'unknown']).toContain(detectEndiannessNative());
+  });
+});
+
+describe('isTruthy', () => {
+  it('returns canonical booleans for absent and falsy primitive values', () => {
+    for (const value of [undefined, null, false, '', 0, -0, Number.NaN]) {
+      expect(isTruthy(value)).toBe(false);
+    }
+  });
+
+  it('returns canonical booleans for truthy primitive and object values', () => {
+    for (const value of [true, 'value', 1, -1, {}, []]) {
+      expect(isTruthy(value)).toBe(true);
+    }
   });
 });
 

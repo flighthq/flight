@@ -5,6 +5,7 @@ mod js_pattern;
 mod user_agent;
 mod user_agent_native;
 mod user_agent_parse;
+mod user_agent_truthy;
 
 pub mod contract;
 
