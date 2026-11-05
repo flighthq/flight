@@ -99,19 +99,19 @@ interface BinPackAttempt {
  * The default width/height cap when `maxWidth`/`maxHeight` are unset -- large enough to be
  * effectively unbounded for typical inputs while keeping growth from running away.
  */
-export const BIN_PACK_DEFAULT_MAX_EXTENT: number = 16384.0;
+export const BIN_PACK_DEFAULT_MAX_EXTENT: number = 16384;
 
 /**
  * Rounds `value` up to the next power of two (>= 1). Used only for the final `powerOfTwo`
  * adjustment.
  */
 function ceilToPowerOfTwo(value: number): number {
-  if (value <= 1.0) {
-    return 1.0;
+  if (value <= 1) {
+    return 1;
   }
-  let result = 1.0;
+  let result = 1;
   while (result < value) {
-    result *= 2.0;
+    result *= 2;
   }
   return result;
 }
@@ -145,7 +145,7 @@ function compareRectangleId(a: Readonly<RectangleId>, b: Readonly<RectangleId>):
  * Applies the `powerOfTwo` rounding (if set) to a single extent value.
  */
 function finalizeExtent(value: number, powerOfTwo: boolean): number {
-  if (powerOfTwo && value > 0.0) {
+  if (powerOfTwo && value > 0) {
     return ceilToPowerOfTwo(value);
   }
   return value;
@@ -157,14 +157,14 @@ function finalizeExtent(value: number, powerOfTwo: boolean): number {
  * for `square` / `powerOfTwo`.
  */
 function finalizeResult(packed: BinPackAttempt, border: number, powerOfTwo: boolean, square: boolean): PackResult {
-  let contentRight = 0.0;
-  let contentBottom = 0.0;
+  let contentRight = 0;
+  let contentBottom = 0;
   for (const placement of packed.placements) {
     contentRight = Math.max(contentRight, placement.x + placement.width);
     contentBottom = Math.max(contentBottom, placement.y + placement.height);
   }
-  let width = packed.placements.length !== 0 ? contentRight + border : 0.0;
-  let height = packed.placements.length !== 0 ? contentBottom + border : 0.0;
+  let width = packed.placements.length !== 0 ? contentRight + border : 0;
+  let height = packed.placements.length !== 0 ? contentBottom + border : 0;
   if (square) {
     width = Math.max(width, height);
     height = width;
@@ -175,7 +175,7 @@ function finalizeResult(packed: BinPackAttempt, border: number, powerOfTwo: bool
     width = Math.max(width, height);
     height = width;
   }
-  return { placements: packed.placements, width: width, height: height, unpacked: packed.unpacked };
+  return { placements: packed.placements, width, height, unpacked: packed.unpacked };
 }
 
 /**
@@ -199,7 +199,7 @@ function findBestPlacement(
   let bestSecondary = Number.POSITIVE_INFINITY;
   for (const node of free) {
     const maxRotated: number = allowRotation ? 1 : 0;
-    for (let rotated = 0; rotated <= maxRotated; rotated += 1) {
+    for (let rotated = 0; rotated <= maxRotated; rotated++) {
       const width = rotated === 1 ? pieceHeight : pieceWidth;
       const height = rotated === 1 ? pieceWidth : pieceHeight;
       if (width > node.width || height > node.height) {
@@ -222,15 +222,12 @@ function findBestPlacement(
 }
 
 export function getBinPackHeuristicString(value: BinPackHeuristic): string {
-  return (() => {
-    const matchValue = value;
-    switch (matchValue) {
-      case 'bestShortSideFit':
-        return 'bestShortSideFit';
-      case 'bestAreaFit':
-        return 'bestAreaFit';
-    }
-  })();
+  switch (value) {
+    case 'bestShortSideFit':
+      return 'bestShortSideFit';
+    case 'bestAreaFit':
+      return 'bestAreaFit';
+  }
 }
 
 /**
@@ -243,10 +240,10 @@ export function getBinPackHeuristicString(value: BinPackHeuristic): string {
  */
 export function getPackResultOccupancy(result: Readonly<PackResult>): number {
   const area = result.width * result.height;
-  if (area <= 0.0) {
-    return 0.0;
+  if (area <= 0) {
+    return 0;
   }
-  let placed = 0.0;
+  let placed = 0;
   for (const placement of result.placements) {
     placed += placement.width * placement.height;
   }
@@ -291,17 +288,17 @@ function packIntoBin(
   allowRotation: boolean,
   heuristic: BinPackHeuristic,
 ): BinPackAttempt {
-  const usableWidth = binWidth - 2.0 * border + padding;
-  const usableHeight = binHeight - 2.0 * border + padding;
-  let placements: PackedRectangle[] = [] as never[];
-  let unpacked: RectangleId[] = [] as never[];
-  if (usableWidth <= 0.0 || usableHeight <= 0.0) {
+  const usableWidth = binWidth - 2 * border + padding;
+  const usableHeight = binHeight - 2 * border + padding;
+  let placements: PackedRectangle[] = [];
+  let unpacked: RectangleId[] = [];
+  if (usableWidth <= 0 || usableHeight <= 0) {
     for (const rect of sorted) {
       unpacked.push(rect.id);
     }
-    return { placements: placements, unpacked: unpacked };
+    return { placements, unpacked };
   }
-  let free: FreeRectangle[] = [{ x: 0.0, y: 0.0, width: usableWidth, height: usableHeight }];
+  let free: FreeRectangle[] = [{ x: 0, y: 0, width: usableWidth, height: usableHeight }];
   for (const rect of sorted) {
     const pieceWidth = rect.width + padding;
     const pieceHeight = rect.height + padding;
@@ -321,7 +318,7 @@ function packIntoBin(
     free = splitFreeRectangles(free, placement);
     free = pruneFreeRectangles(free);
   }
-  return { placements: placements, unpacked: unpacked };
+  return { placements, unpacked };
 }
 
 /**
@@ -342,8 +339,8 @@ function packIntoBin(
  * is the tight used extent, then adjusted for `square` and `powerOfTwo` when those are set.
  */
 export function packRectangles(rects: Readonly<PackableRectangle[]>, options?: Readonly<BinPackOptions>): PackResult {
-  const padding = options?.padding ?? 0.0;
-  const border = options?.border ?? 0.0;
+  const padding = options?.padding ?? 0;
+  const border = options?.border ?? 0;
   const allowRotation = options?.allowRotation ?? false;
   const heuristic: BinPackHeuristic = options?.heuristic ?? 'bestShortSideFit';
   const growable = options?.growable ?? true;
@@ -354,15 +351,15 @@ export function packRectangles(rects: Readonly<PackableRectangle[]>, options?: R
   if (rects.length === 0) {
     return {
       placements: [],
-      width: finalizeExtent(0.0, powerOfTwo),
-      height: finalizeExtent(0.0, powerOfTwo),
+      width: finalizeExtent(0, powerOfTwo),
+      height: finalizeExtent(0, powerOfTwo),
       unpacked: [],
     };
   }
-  let degenerate: RectangleId[] = [] as never[];
-  let placeable: PackableRectangle[] = [] as never[];
+  let degenerate: RectangleId[] = [];
+  let placeable: PackableRectangle[] = [];
   for (const rect of rects) {
-    if (rect.width > 0.0 && rect.height > 0.0) {
+    if (rect.width > 0 && rect.height > 0) {
       placeable.push({ id: rect.id, width: rect.width, height: rect.height });
     } else {
       degenerate.push(rect.id);
@@ -371,36 +368,34 @@ export function packRectangles(rects: Readonly<PackableRectangle[]>, options?: R
   if (placeable.length === 0) {
     return {
       placements: [],
-      width: finalizeExtent(0.0, powerOfTwo),
-      height: finalizeExtent(0.0, powerOfTwo),
+      width: finalizeExtent(0, powerOfTwo),
+      height: finalizeExtent(0, powerOfTwo),
       unpacked: degenerate,
     };
   }
   const sorted = sortRectanglesForPacking(placeable);
-  let needWidth = 2.0 * border;
-  let needHeight = 2.0 * border;
-  let totalArea = 0.0;
+  let needWidth = 2 * border;
+  let needHeight = 2 * border;
+  let totalArea = 0;
   for (const rect of sorted) {
     const shortSide = Math.min(rect.width, rect.height);
-    const requiredWidth = (allowRotation ? shortSide : rect.width) + 2.0 * border;
-    const requiredHeight = (allowRotation ? shortSide : rect.height) + 2.0 * border;
+    const requiredWidth = (allowRotation ? shortSide : rect.width) + 2 * border;
+    const requiredHeight = (allowRotation ? shortSide : rect.height) + 2 * border;
     needWidth = Math.max(needWidth, requiredWidth);
     needHeight = Math.max(needHeight, requiredHeight);
     totalArea += (rect.width + padding) * (rect.height + padding);
   }
-  const seed = Math.ceil(Math.sqrt(totalArea)) + 2.0 * border;
+  const seed = Math.ceil(Math.sqrt(totalArea)) + 2 * border;
   let binWidth = growable ? Math.min(Math.max(seed, needWidth), maxWidth) : maxWidth;
   let binHeight = growable ? Math.min(Math.max(seed, needHeight), maxHeight) : maxHeight;
   let attempt = packIntoBin(sorted, binWidth, binHeight, padding, border, allowRotation, heuristic);
   while (attempt.unpacked.length !== 0 && growable && (binWidth < maxWidth || binHeight < maxHeight)) {
     if (binWidth <= binHeight && binWidth < maxWidth) {
-      binWidth = Math.min(binWidth * 2.0, maxWidth);
+      binWidth = Math.min(binWidth * 2, maxWidth);
+    } else if (binHeight < maxHeight) {
+      binHeight = Math.min(binHeight * 2, maxHeight);
     } else {
-      if (binHeight < maxHeight) {
-        binHeight = Math.min(binHeight * 2.0, maxHeight);
-      } else {
-        binWidth = Math.min(binWidth * 2.0, maxWidth);
-      }
+      binWidth = Math.min(binWidth * 2, maxWidth);
     }
     attempt = packIntoBin(sorted, binWidth, binHeight, padding, border, allowRotation, heuristic);
   }
@@ -413,17 +408,14 @@ export function packRectangles(rects: Readonly<PackableRectangle[]>, options?: R
 }
 
 export function parseBinPackHeuristic(value: string): BinPackHeuristic | undefined {
-  return (() => {
-    const matchValue = value;
-    switch (matchValue) {
-      case 'bestShortSideFit':
-        return 'bestShortSideFit';
-      case 'bestAreaFit':
-        return 'bestAreaFit';
-      default:
-        return undefined;
-    }
-  })();
+  switch (value) {
+    case 'bestShortSideFit':
+      return 'bestShortSideFit';
+    case 'bestAreaFit':
+      return 'bestAreaFit';
+    default:
+      return undefined;
+  }
 }
 
 /**
@@ -436,14 +428,14 @@ function pruneFreeRectangles(free: Readonly<FreeRectangle[]>): FreeRectangle[] {
   let i: number = 0;
   while (i < free.length) {
     if (!active[i]) {
-      i += 1;
+      i++;
       continue;
     }
     let j = i + 1;
     let iRemoved = false;
     while (j < free.length) {
       if (!active[j]) {
-        j += 1;
+        j++;
         continue;
       }
       const fi = free[i];
@@ -456,14 +448,14 @@ function pruneFreeRectangles(free: Readonly<FreeRectangle[]>): FreeRectangle[] {
       if (isFreeRectangleContained(fj, fi)) {
         active[j] = false;
       }
-      j += 1;
+      j++;
     }
     if (!iRemoved) {
-      i += 1;
+      i++;
     }
   }
-  let pruned: FreeRectangle[] = [] as never[];
-  for (let index = 0; index < free.length; index += 1) {
+  let pruned: FreeRectangle[] = [];
+  for (let index = 0; index < free.length; index++) {
     if (active[index]) {
       pruned.push(free[index]);
     }
@@ -507,18 +499,18 @@ function splitFreeRectangles(free: Readonly<FreeRectangle[]>, placement: Readonl
   const usedRight = placement.x + placement.footprintWidth;
   const usedBottom = placement.y + placement.footprintHeight;
   const used = { x: usedX, y: usedY, width: placement.footprintWidth, height: placement.footprintHeight };
-  let split: FreeRectangle[] = [] as never[];
+  let split: FreeRectangle[] = [];
   for (const node of free) {
     if (!intersectsRectangle(node, used)) {
       split.push(node);
     }
   }
-  let i = (free.length | 0) - 1;
+  let i = free.length - 1;
   while (i >= 0) {
     const idx = i >>> 0;
     const node = free[idx];
     if (!intersectsRectangle(node, used)) {
-      i -= 1;
+      i--;
       continue;
     }
     const nodeRight = node.x + node.width;
@@ -535,7 +527,7 @@ function splitFreeRectangles(free: Readonly<FreeRectangle[]>, placement: Readonl
     if (usedBottom < nodeBottom) {
       split.push({ x: node.x, y: usedBottom, width: node.width, height: nodeBottom - usedBottom });
     }
-    i -= 1;
+    i--;
   }
   return split;
 }

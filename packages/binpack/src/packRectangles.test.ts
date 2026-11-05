@@ -55,7 +55,7 @@ function makeRandom(seed: number): Random {
 
 function nextRandom(rng: Random): number {
   rng.state = ((Math.imul(rng.state, 1664525) >>> 0) + 1013904223) >>> 0;
-  return rng.state / 4294967296.0;
+  return rng.state / 4294967296;
 }
 
 describe('getBinPackHeuristicString', () => {
@@ -67,11 +67,11 @@ describe('getBinPackHeuristicString', () => {
 
 describe('getPackResultOccupancy', () => {
   it('reports covered fraction of the reported extent so rounding waste is visible', () => {
-    const exact = packRectangles([{ id: 'a', width: 16.0, height: 16.0 }], undefined);
-    expect(getPackResultOccupancy(exact)).toEqual(1.0);
+    const exact = packRectangles([{ id: 'a', width: 16, height: 16 }], undefined);
+    expect(getPackResultOccupancy(exact)).toEqual(1);
     let options: BinPackOptions = {
-      padding: 0.0,
-      border: 0.0,
+      padding: 0,
+      border: 0,
       allowRotation: false,
       heuristic: 'bestShortSideFit',
       growable: true,
@@ -81,36 +81,36 @@ describe('getPackResultOccupancy', () => {
       maxHeight: BIN_PACK_DEFAULT_MAX_EXTENT,
     };
     options.powerOfTwo = true;
-    const rounded = packRectangles([{ id: 'a', width: 24.0, height: 24.0 }], options);
-    expect(rounded.width).toEqual(32.0);
-    const roundedArea = 32.0 * 32.0;
-    const expectedOccupancy = (24.0 * 24.0) / roundedArea;
+    const rounded = packRectangles([{ id: 'a', width: 24, height: 24 }], options);
+    expect(rounded.width).toEqual(32);
+    const roundedArea = 32 * 32;
+    const expectedOccupancy = (24 * 24) / roundedArea;
     const actualOccupancy = getPackResultOccupancy(rounded);
     const diff = Math.abs(actualOccupancy - expectedOccupancy);
     expect(diff < 0.5e-10, `expected ${expectedOccupancy}, got ${actualOccupancy} (diff: ${diff})`).toBe(true);
   });
   it('returns zero rather than nan for an empty result since nothing packed is expected', () => {
     const empty = packRectangles([], undefined);
-    expect(empty.width * empty.height).toEqual(0.0);
-    expect(getPackResultOccupancy(empty)).toEqual(0.0);
+    expect(empty.width * empty.height).toEqual(0);
+    expect(getPackResultOccupancy(empty)).toEqual(0);
   });
 });
 
 describe('packRectangles', () => {
   it('bin pack default max extent is the cap the packer actually applies when the caller names none', () => {
-    const over = packRectangles([{ id: 'over', width: BIN_PACK_DEFAULT_MAX_EXTENT + 1.0, height: 4.0 }], undefined);
+    const over = packRectangles([{ id: 'over', width: BIN_PACK_DEFAULT_MAX_EXTENT + 1, height: 4 }], undefined);
     expect(over.unpacked).toEqual(['over']);
-    const at = packRectangles([{ id: 'at', width: BIN_PACK_DEFAULT_MAX_EXTENT, height: 4.0 }], undefined);
+    const at = packRectangles([{ id: 'at', width: BIN_PACK_DEFAULT_MAX_EXTENT, height: 4 }], undefined);
     expect(at.unpacked.length === 0).toBe(true);
   });
   it('places varied rectangles with no pairwise overlap inside the bin at their input size', () => {
-    let rects: PackableRectangle[] = [] as never[];
-    for (let i = 0; i < 20; i += 1) {
-      rects.push({ id: i, width: 8.0 + ((i * 7) % 40), height: 6.0 + ((i * 13) % 34) });
+    let rects: PackableRectangle[] = [];
+    for (let i = 0; i < 20; i++) {
+      rects.push({ id: i, width: 8 + ((i * 7) % 40), height: 6 + ((i * 13) % 34) });
     }
     let options: BinPackOptions = {
-      padding: 0.0,
-      border: 0.0,
+      padding: 0,
+      border: 0,
       allowRotation: false,
       heuristic: 'bestShortSideFit',
       growable: true,
@@ -119,15 +119,15 @@ describe('packRectangles', () => {
       maxWidth: BIN_PACK_DEFAULT_MAX_EXTENT,
       maxHeight: BIN_PACK_DEFAULT_MAX_EXTENT,
     };
-    options.padding = 1.0;
-    options.border = 2.0;
+    options.padding = 1;
+    options.border = 2;
     const result = packRectangles(rects, options);
     expect(result.unpacked.length === 0).toBe(true);
     expect(result.placements.length).toEqual(20);
     const placements: Readonly<PackedRectangle[]> = result.placements;
     for (const placement of placements) {
-      let inputW = 0.0;
-      let inputH = 0.0;
+      let inputW = 0;
+      let inputH = 0;
       for (const rect of rects) {
         if (rect.id === placement.id) {
           inputW = rect.width;
@@ -138,13 +138,13 @@ describe('packRectangles', () => {
       const expectedHeight = placement.rotated ? inputW : inputH;
       expect(placement.width).toEqual(expectedWidth);
       expect(placement.height).toEqual(expectedHeight);
-      expect(placement.x >= 2.0).toBe(true);
-      expect(placement.y >= 2.0).toBe(true);
-      expect(placement.x + placement.width <= result.width - 2.0).toBe(true);
-      expect(placement.y + placement.height <= result.height - 2.0).toBe(true);
+      expect(placement.x >= 2).toBe(true);
+      expect(placement.y >= 2).toBe(true);
+      expect(placement.x + placement.width <= result.width - 2).toBe(true);
+      expect(placement.y + placement.height <= result.height - 2).toBe(true);
     }
-    for (let i = 0; i < result.placements.length; i += 1) {
-      for (let j = i + 1; j < result.placements.length; j += 1) {
+    for (let i = 0; i < result.placements.length; i++) {
+      for (let j = i + 1; j < result.placements.length; j++) {
         expect(!rectanglesOverlap(result.placements[i], result.placements[j]), `placements ${i} and ${j} overlap`).toBe(
           true,
         );
@@ -153,29 +153,29 @@ describe('packRectangles', () => {
   });
   it('leaves nothing unpacked when everything fits in a growable bin', () => {
     const rects = [
-      { id: 'a', width: 30.0, height: 20.0 },
-      { id: 'b', width: 40.0, height: 40.0 },
-      { id: 'c', width: 10.0, height: 60.0 },
-      { id: 'd', width: 25.0, height: 25.0 },
-      { id: 'e', width: 50.0, height: 15.0 },
+      { id: 'a', width: 30, height: 20 },
+      { id: 'b', width: 40, height: 40 },
+      { id: 'c', width: 10, height: 60 },
+      { id: 'd', width: 25, height: 25 },
+      { id: 'e', width: 50, height: 15 },
     ];
     const result = packRectangles(rects, undefined);
     expect(result.unpacked.length === 0).toBe(true);
     expect(result.placements.length).toEqual(5);
-    for (let i = 0; i < result.placements.length; i += 1) {
-      for (let j = i + 1; j < result.placements.length; j += 1) {
+    for (let i = 0; i < result.placements.length; i++) {
+      for (let j = i + 1; j < result.placements.length; j++) {
         expect(!rectanglesOverlap(result.placements[i], result.placements[j])).toBe(true);
       }
     }
   });
   it('reports overflow ids in a fixed bin and keeps the placed rectangles non overlapping', () => {
-    let rects: PackableRectangle[] = [] as never[];
-    for (let i = 0; i < 12; i += 1) {
-      rects.push({ id: i, width: 20.0, height: 20.0 });
+    let rects: PackableRectangle[] = [];
+    for (let i = 0; i < 12; i++) {
+      rects.push({ id: i, width: 20, height: 20 });
     }
     let options: BinPackOptions = {
-      padding: 0.0,
-      border: 0.0,
+      padding: 0,
+      border: 0,
       allowRotation: false,
       heuristic: 'bestShortSideFit',
       growable: true,
@@ -185,25 +185,25 @@ describe('packRectangles', () => {
       maxHeight: BIN_PACK_DEFAULT_MAX_EXTENT,
     };
     options.growable = false;
-    options.maxWidth = 44.0;
-    options.maxHeight = 44.0;
+    options.maxWidth = 44;
+    options.maxHeight = 44;
     const result = packRectangles(rects, options);
     expect(result.unpacked.length > 0).toBe(true);
     expect(result.placements.length + result.unpacked.length).toEqual(12);
-    for (let i = 0; i < result.placements.length; i += 1) {
-      for (let j = i + 1; j < result.placements.length; j += 1) {
+    for (let i = 0; i < result.placements.length; i++) {
+      for (let j = i + 1; j < result.placements.length; j++) {
         expect(!rectanglesOverlap(result.placements[i], result.placements[j])).toBe(true);
       }
     }
   });
   it('respects padding between neighbors and border at the bin edge', () => {
     const rects = [
-      { id: 'a', width: 10.0, height: 10.0 },
-      { id: 'b', width: 10.0, height: 10.0 },
+      { id: 'a', width: 10, height: 10 },
+      { id: 'b', width: 10, height: 10 },
     ];
     let options: BinPackOptions = {
-      padding: 0.0,
-      border: 0.0,
+      padding: 0,
+      border: 0,
       allowRotation: false,
       heuristic: 'bestShortSideFit',
       growable: true,
@@ -212,34 +212,34 @@ describe('packRectangles', () => {
       maxWidth: BIN_PACK_DEFAULT_MAX_EXTENT,
       maxHeight: BIN_PACK_DEFAULT_MAX_EXTENT,
     };
-    options.padding = 2.0;
-    options.border = 4.0;
+    options.padding = 2;
+    options.border = 4;
     const result = packRectangles(rects, options);
     expect(result.unpacked.length === 0).toBe(true);
     let placements: Readonly<PackedRectangle[]> = result.placements;
     const a = placements.find((p) => p.id === 'a')!;
     const b = placements.find((p) => p.id === 'b')!;
-    expect(a).toEqual({ id: 'a', x: 4.0, y: 4.0, width: 10.0, height: 10.0, rotated: false });
-    expect(b).toEqual({ id: 'b', x: 16.0, y: 4.0, width: 10.0, height: 10.0, rotated: false });
+    expect(a).toEqual({ id: 'a', x: 4, y: 4, width: 10, height: 10, rotated: false });
+    expect(b).toEqual({ id: 'b', x: 16, y: 4, width: 10, height: 10, rotated: false });
     const aRight = a.x + a.width;
-    expect(b.x - aRight).toEqual(2.0);
+    expect(b.x - aRight).toEqual(2);
     placements = result.placements;
     for (const placement of placements) {
-      expect(placement.x >= 4.0).toBe(true);
-      expect(placement.y >= 4.0).toBe(true);
-      expect(placement.x + placement.width <= result.width - 4.0).toBe(true);
-      expect(placement.y + placement.height <= result.height - 4.0).toBe(true);
+      expect(placement.x >= 4).toBe(true);
+      expect(placement.y >= 4).toBe(true);
+      expect(placement.x + placement.width <= result.width - 4).toBe(true);
+      expect(placement.y + placement.height <= result.height - 4).toBe(true);
     }
   });
   it('reports power of two and square extents that still contain every placement', () => {
     const rects = [
-      { id: 'a', width: 30.0, height: 20.0 },
-      { id: 'b', width: 17.0, height: 41.0 },
-      { id: 'c', width: 25.0, height: 9.0 },
+      { id: 'a', width: 30, height: 20 },
+      { id: 'b', width: 17, height: 41 },
+      { id: 'c', width: 25, height: 9 },
     ];
     let options: BinPackOptions = {
-      padding: 0.0,
-      border: 0.0,
+      padding: 0,
+      border: 0,
       allowRotation: false,
       heuristic: 'bestShortSideFit',
       growable: true,
@@ -261,10 +261,10 @@ describe('packRectangles', () => {
     }
   });
   it('rotates a rectangle when rotation is required to fit a fixed bin', () => {
-    const rects = [{ id: 'tall', width: 8.0, height: 20.0 }];
+    const rects = [{ id: 'tall', width: 8, height: 20 }];
     let optionsWith: BinPackOptions = {
-      padding: 0.0,
-      border: 0.0,
+      padding: 0,
+      border: 0,
       allowRotation: false,
       heuristic: 'bestShortSideFit',
       growable: true,
@@ -274,19 +274,19 @@ describe('packRectangles', () => {
       maxHeight: BIN_PACK_DEFAULT_MAX_EXTENT,
     };
     optionsWith.growable = false;
-    optionsWith.maxWidth = 20.0;
-    optionsWith.maxHeight = 8.0;
+    optionsWith.maxWidth = 20;
+    optionsWith.maxHeight = 8;
     optionsWith.allowRotation = true;
     const withRotation = packRectangles(rects, optionsWith);
     expect(withRotation.unpacked.length === 0).toBe(true);
     expect(withRotation.placements.length).toEqual(1);
     const placed = withRotation.placements[0];
     expect(placed.rotated).toEqual(true);
-    expect(placed.width).toEqual(20.0);
-    expect(placed.height).toEqual(8.0);
+    expect(placed.width).toEqual(20);
+    expect(placed.height).toEqual(8);
     let optionsWithout: BinPackOptions = {
-      padding: 0.0,
-      border: 0.0,
+      padding: 0,
+      border: 0,
       allowRotation: false,
       heuristic: 'bestShortSideFit',
       growable: true,
@@ -296,18 +296,18 @@ describe('packRectangles', () => {
       maxHeight: BIN_PACK_DEFAULT_MAX_EXTENT,
     };
     optionsWithout.growable = false;
-    optionsWithout.maxWidth = 20.0;
-    optionsWithout.maxHeight = 8.0;
+    optionsWithout.maxWidth = 20;
+    optionsWithout.maxHeight = 8;
     optionsWithout.allowRotation = false;
     const withoutRotation = packRectangles(rects, optionsWithout);
     expect(withoutRotation.placements.length === 0).toBe(true);
     expect(withoutRotation.unpacked).toEqual(['tall']);
   });
   it('grows to fit a rectangle that would need rotation in a fixed bin', () => {
-    const rects = [{ id: 'tall', width: 8.0, height: 20.0 }];
+    const rects = [{ id: 'tall', width: 8, height: 20 }];
     let options: BinPackOptions = {
-      padding: 0.0,
-      border: 0.0,
+      padding: 0,
+      border: 0,
       allowRotation: false,
       heuristic: 'bestShortSideFit',
       growable: true,
@@ -320,17 +320,17 @@ describe('packRectangles', () => {
     const result = packRectangles(rects, options);
     expect(result.unpacked.length === 0).toBe(true);
     expect(result.placements[0].rotated).toEqual(false);
-    expect(result.placements[0].width).toEqual(8.0);
-    expect(result.placements[0].height).toEqual(20.0);
+    expect(result.placements[0].width).toEqual(8);
+    expect(result.placements[0].height).toEqual(20);
   });
   it('produces a deep equal result for the same input packed twice', () => {
-    let rects: PackableRectangle[] = [] as never[];
-    for (let i = 0; i < 15; i += 1) {
-      rects.push({ id: `r${i}`, width: 5.0 + ((i * 11) % 30), height: 5.0 + ((i * 17) % 28) });
+    let rects: PackableRectangle[] = [];
+    for (let i = 0; i < 15; i++) {
+      rects.push({ id: `r${i}`, width: 5 + ((i * 11) % 30), height: 5 + ((i * 17) % 28) });
     }
     let options: BinPackOptions = {
-      padding: 0.0,
-      border: 0.0,
+      padding: 0,
+      border: 0,
       allowRotation: false,
       heuristic: 'bestShortSideFit',
       growable: true,
@@ -339,8 +339,8 @@ describe('packRectangles', () => {
       maxWidth: BIN_PACK_DEFAULT_MAX_EXTENT,
       maxHeight: BIN_PACK_DEFAULT_MAX_EXTENT,
     };
-    options.padding = 1.0;
-    options.border = 3.0;
+    options.padding = 1;
+    options.border = 3;
     options.allowRotation = true;
     const first = packRectangles(rects, options);
     const second = packRectangles(rects, options);
@@ -349,14 +349,14 @@ describe('packRectangles', () => {
   it('returns an empty result with a zero size bin for empty input', () => {
     const result = packRectangles([], undefined);
     expect(result.placements.length).toEqual(0);
-    expect(result.width).toEqual(0.0);
-    expect(result.height).toEqual(0.0);
+    expect(result.width).toEqual(0);
+    expect(result.height).toEqual(0);
     expect(result.unpacked.length).toEqual(0);
   });
   it('packs a single rectangle at the border corner', () => {
     let options: BinPackOptions = {
-      padding: 0.0,
-      border: 0.0,
+      padding: 0,
+      border: 0,
       allowRotation: false,
       heuristic: 'bestShortSideFit',
       growable: true,
@@ -365,18 +365,18 @@ describe('packRectangles', () => {
       maxWidth: BIN_PACK_DEFAULT_MAX_EXTENT,
       maxHeight: BIN_PACK_DEFAULT_MAX_EXTENT,
     };
-    options.border = 3.0;
-    const result = packRectangles([{ id: 'only', width: 12.0, height: 7.0 }], options);
+    options.border = 3;
+    const result = packRectangles([{ id: 'only', width: 12, height: 7 }], options);
     expect(result.unpacked.length === 0).toBe(true);
     expect(result.placements.length).toEqual(1);
-    expect(result.placements[0]).toEqual({ id: 'only', x: 3.0, y: 3.0, width: 12.0, height: 7.0, rotated: false });
-    expect(result.width).toEqual(18.0);
-    expect(result.height).toEqual(13.0);
+    expect(result.placements[0]).toEqual({ id: 'only', x: 3, y: 3, width: 12, height: 7, rotated: false });
+    expect(result.width).toEqual(18);
+    expect(result.height).toEqual(13);
   });
   it('reports a rectangle larger than a fixed bin as unpacked', () => {
     let options: BinPackOptions = {
-      padding: 0.0,
-      border: 0.0,
+      padding: 0,
+      border: 0,
       allowRotation: false,
       heuristic: 'bestShortSideFit',
       growable: true,
@@ -386,16 +386,16 @@ describe('packRectangles', () => {
       maxHeight: BIN_PACK_DEFAULT_MAX_EXTENT,
     };
     options.growable = false;
-    options.maxWidth = 64.0;
-    options.maxHeight = 64.0;
-    const result = packRectangles([{ id: 'big', width: 500.0, height: 500.0 }], options);
+    options.maxWidth = 64;
+    options.maxHeight = 64;
+    const result = packRectangles([{ id: 'big', width: 500, height: 500 }], options);
     expect(result.placements.length === 0).toBe(true);
     expect(result.unpacked).toEqual(['big']);
   });
   it('reports a rectangle larger than the growth cap as unpacked', () => {
     let options: BinPackOptions = {
-      padding: 0.0,
-      border: 0.0,
+      padding: 0,
+      border: 0,
       allowRotation: false,
       heuristic: 'bestShortSideFit',
       growable: true,
@@ -404,17 +404,17 @@ describe('packRectangles', () => {
       maxWidth: BIN_PACK_DEFAULT_MAX_EXTENT,
       maxHeight: BIN_PACK_DEFAULT_MAX_EXTENT,
     };
-    options.maxWidth = 64.0;
-    options.maxHeight = 64.0;
-    const result = packRectangles([{ id: 'huge', width: 200.0, height: 10.0 }], options);
+    options.maxWidth = 64;
+    options.maxHeight = 64;
+    const result = packRectangles([{ id: 'huge', width: 200, height: 10 }], options);
     expect(result.unpacked).toEqual(['huge']);
   });
   it('rejects zero and negative dimensions to unpacked rather than placing a degenerate rect', () => {
     const rects = [
-      { id: 'zeroW', width: 0.0, height: 10.0 },
-      { id: 'zeroH', width: 10.0, height: 0.0 },
-      { id: 'negative', width: -8.0, height: 10.0 },
-      { id: 'ok', width: 10.0, height: 10.0 },
+      { id: 'zeroW', width: 0, height: 10 },
+      { id: 'zeroH', width: 10, height: 0 },
+      { id: 'negative', width: -8, height: 10 },
+      { id: 'ok', width: 10, height: 10 },
     ];
     const result = packRectangles(rects, undefined);
     expect(result.placements.length).toEqual(1);
@@ -423,11 +423,11 @@ describe('packRectangles', () => {
   });
   it('round trips negative numeric ids through placements and unpacked', () => {
     const rects = [
-      { id: -7, width: 10.0, height: 10.0 },
-      { id: -2, width: 10.0, height: 10.0 },
+      { id: -7, width: 10, height: 10 },
+      { id: -2, width: 10, height: 10 },
     ];
     const result = packRectangles(rects, undefined);
-    let ids: number[] = [] as never[];
+    let ids: number[] = [];
     const placements: Readonly<PackedRectangle[]> = result.placements;
     for (const placement of placements) {
       {
@@ -442,8 +442,8 @@ describe('packRectangles', () => {
     ids.sort((a, b) => a - b);
     expect(ids).toEqual([-7, -2]);
     let options: BinPackOptions = {
-      padding: 0.0,
-      border: 0.0,
+      padding: 0,
+      border: 0,
       allowRotation: false,
       heuristic: 'bestShortSideFit',
       growable: true,
@@ -453,15 +453,15 @@ describe('packRectangles', () => {
       maxHeight: BIN_PACK_DEFAULT_MAX_EXTENT,
     };
     options.growable = false;
-    options.maxWidth = 5.0;
-    options.maxHeight = 5.0;
-    const fixed = packRectangles([{ id: -9, width: 20.0, height: 20.0 }], options);
+    options.maxWidth = 5;
+    options.maxHeight = 5;
+    const fixed = packRectangles([{ id: -9, width: 20, height: 20 }], options);
     expect(fixed.unpacked).toEqual([-9]);
   });
   it('treats duplicate ids as distinct rectangles placing both without overlap', () => {
     const rects = [
-      { id: 'same', width: 10.0, height: 10.0 },
-      { id: 'same', width: 10.0, height: 10.0 },
+      { id: 'same', width: 10, height: 10 },
+      { id: 'same', width: 10, height: 10 },
     ];
     const result = packRectangles(rects, undefined);
     expect(result.placements.length).toEqual(2);
@@ -476,8 +476,8 @@ describe('packRectangles', () => {
   });
   it('sends everything to unpacked when border collapses the usable region', () => {
     let options: BinPackOptions = {
-      padding: 0.0,
-      border: 0.0,
+      padding: 0,
+      border: 0,
       allowRotation: false,
       heuristic: 'bestShortSideFit',
       growable: true,
@@ -486,18 +486,18 @@ describe('packRectangles', () => {
       maxWidth: BIN_PACK_DEFAULT_MAX_EXTENT,
       maxHeight: BIN_PACK_DEFAULT_MAX_EXTENT,
     };
-    options.maxWidth = 10.0;
-    options.maxHeight = 10.0;
-    options.border = 6.0;
+    options.maxWidth = 10;
+    options.maxHeight = 10;
+    options.border = 6;
     options.growable = false;
-    const result = packRectangles([{ id: 'a', width: 4.0, height: 4.0 }], options);
+    const result = packRectangles([{ id: 'a', width: 4, height: 4 }], options);
     expect(result.placements.length === 0).toBe(true);
     expect(result.unpacked).toEqual(['a']);
   });
   it('keeps padding larger than the pieces from overlapping them', () => {
     let options: BinPackOptions = {
-      padding: 0.0,
-      border: 0.0,
+      padding: 0,
+      border: 0,
       allowRotation: false,
       heuristic: 'bestShortSideFit',
       growable: true,
@@ -506,39 +506,35 @@ describe('packRectangles', () => {
       maxWidth: BIN_PACK_DEFAULT_MAX_EXTENT,
       maxHeight: BIN_PACK_DEFAULT_MAX_EXTENT,
     };
-    options.padding = 20.0;
+    options.padding = 20;
     const rects = [
-      { id: 'a', width: 2.0, height: 2.0 },
-      { id: 'b', width: 2.0, height: 2.0 },
+      { id: 'a', width: 2, height: 2 },
+      { id: 'b', width: 2, height: 2 },
     ];
     const result = packRectangles(rects, options);
     expect(result.placements.length).toEqual(2);
     const a = result.placements[0];
     const b = result.placements[1];
-    const gapX = Math.abs(a.x - b.x) >= 2.0 + 20.0;
-    const gapY = Math.abs(a.y - b.y) >= 2.0 + 20.0;
+    const gapX = Math.abs(a.x - b.x) >= 2 + 20;
+    const gapY = Math.abs(a.y - b.y) >= 2 + 20;
     expect(gapX || gapY).toBe(true);
   });
   it('holds its invariants across 40 seeded inputs and both heuristics', () => {
-    for (let seed = 1; seed <= 40; seed += 1) {
+    for (let seed = 1; seed <= 40; seed++) {
       let rng = makeRandom(seed >>> 0);
-      const count = 1 + (Math.floor(nextRandom(rng) * 25.0) | 0);
-      let rects: PackableRectangle[] = [] as never[];
-      for (let i = 0; i < count; i += 1) {
+      const count = 1 + (Math.floor(nextRandom(rng) * 25) | 0);
+      let rects: PackableRectangle[] = [];
+      for (let i = 0; i < count; i++) {
         const id = seed % 5 === 0 ? i % 3 : i;
         let size = makeRandom((seed * 1000 + id) >>> 0);
-        rects.push({
-          id: id,
-          width: 1.0 + Math.floor(nextRandom(size) * 60.0),
-          height: 1.0 + Math.floor(nextRandom(size) * 60.0),
-        });
+        rects.push({ id, width: 1 + Math.floor(nextRandom(size) * 60), height: 1 + Math.floor(nextRandom(size) * 60) });
       }
-      const padding = Math.floor(nextRandom(rng) * 4.0);
-      const border = Math.floor(nextRandom(rng) * 4.0);
+      const padding = Math.floor(nextRandom(rng) * 4);
+      const border = Math.floor(nextRandom(rng) * 4);
       const heuristic = seed % 2 === 0 ? 'bestAreaFit' : 'bestShortSideFit';
       let options: BinPackOptions = {
-        padding: 0.0,
-        border: 0.0,
+        padding: 0,
+        border: 0,
         allowRotation: false,
         heuristic: 'bestShortSideFit',
         growable: true,
@@ -555,7 +551,7 @@ describe('packRectangles', () => {
       const label = `seed ${seed} (${getBinPackHeuristicString(heuristic)})`;
       expect(result.placements.length + result.unpacked.length, `${label}`).toEqual(rects.length);
       let placements: Readonly<PackedRectangle[]> = result.placements;
-      let resultIds: RectangleId[] = [] as never[];
+      let resultIds: RectangleId[] = [];
       for (const p of placements) {
         resultIds.push(p.id);
       }
@@ -574,8 +570,8 @@ describe('packRectangles', () => {
           } else if (typeof matchValue === 'string') {
           }
         }
-        let sourceWidth = 0.0;
-        let sourceHeight = 0.0;
+        let sourceWidth = 0;
+        let sourceHeight = 0;
         for (const rect of rects) {
           if (rect.id === placement.id) {
             sourceWidth = rect.width;
@@ -590,7 +586,7 @@ describe('packRectangles', () => {
       }
       const placedArea: number = placements.map((p) => p.width * p.height).reduce((sum, value) => sum + value, 0);
       const reportedArea = result.width * result.height;
-      const expectedOccupancy = reportedArea > 0.0 ? placedArea / reportedArea : 0.0;
+      const expectedOccupancy = reportedArea > 0 ? placedArea / reportedArea : 0;
       const actualOccupancy = getPackResultOccupancy(result);
       const diff = Math.abs(actualOccupancy - expectedOccupancy);
       expect(
@@ -610,8 +606,8 @@ describe('packRectangles', () => {
           `${label}: bottom ${placement.y + placement.height} > height - border ${result.height - border}`,
         ).toBe(true);
       }
-      for (let i = 0; i < result.placements.length; i += 1) {
-        for (let j = i + 1; j < result.placements.length; j += 1) {
+      for (let i = 0; i < result.placements.length; i++) {
+        for (let j = i + 1; j < result.placements.length; j++) {
           const a = result.placements[i];
           const b = result.placements[j];
           const apart =

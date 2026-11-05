@@ -38,26 +38,26 @@ export function explainUnpackedRectangles(
   options?: Readonly<BinPackOptions>,
 ): void {
   out.length = 0;
-  const border = options?.border ?? 0.0;
+  const border = options?.border ?? 0;
   const allowRotation = options?.allowRotation ?? false;
-  const usableWidth = (options?.maxWidth ?? BIN_PACK_DEFAULT_MAX_EXTENT) - 2.0 * border;
-  const usableHeight = (options?.maxHeight ?? BIN_PACK_DEFAULT_MAX_EXTENT) - 2.0 * border;
+  const usableWidth = (options?.maxWidth ?? BIN_PACK_DEFAULT_MAX_EXTENT) - 2 * border;
+  const usableHeight = (options?.maxHeight ?? BIN_PACK_DEFAULT_MAX_EXTENT) - 2 * border;
   const result = packRectangles(rectangles, options);
   if (result.unpacked.length === 0) {
     return;
   }
-  let explained: RectangleId[] = [] as never[];
+  let explained: RectangleId[] = [];
   for (const rectangle of rectangles) {
     let outstandingCount = 0;
     for (const id of result.unpacked) {
       if (id === rectangle.id) {
-        outstandingCount += 1;
+        outstandingCount++;
       }
     }
     let explainedCount = 0;
     for (const id of explained) {
       if (id === rectangle.id) {
-        explainedCount += 1;
+        explainedCount++;
       }
     }
     if (explainedCount >= outstandingCount) {
@@ -67,8 +67,8 @@ export function explainUnpackedRectangles(
     out.push({
       id: rectangle.id,
       reason: getUnpackedReason(rectangle, usableWidth, usableHeight, allowRotation),
-      usableWidth: usableWidth,
-      usableHeight: usableHeight,
+      usableWidth,
+      usableHeight,
     });
   }
 }
@@ -88,7 +88,7 @@ function getUnpackedReason(
   usableHeight: number,
   allowRotation: boolean,
 ): UnpackedRectangleReason {
-  if (usableWidth <= 0.0 || usableHeight <= 0.0) {
+  if (usableWidth <= 0 || usableHeight <= 0) {
     return 'regionCollapsed';
   }
   if (!fitsWithin(rectangle.width, rectangle.height, usableWidth, usableHeight)) {
@@ -103,31 +103,25 @@ function getUnpackedReason(
 }
 
 export function getUnpackedRectangleReasonString(value: UnpackedRectangleReason): string {
-  return (() => {
-    const matchValue = value;
-    switch (matchValue) {
-      case 'oversized':
-        return 'oversized';
-      case 'regionCollapsed':
-        return 'regionCollapsed';
-      case 'binExhausted':
-        return 'binExhausted';
-    }
-  })();
+  switch (value) {
+    case 'oversized':
+      return 'oversized';
+    case 'regionCollapsed':
+      return 'regionCollapsed';
+    case 'binExhausted':
+      return 'binExhausted';
+  }
 }
 
 export function parseUnpackedRectangleReason(value: string): UnpackedRectangleReason | undefined {
-  return (() => {
-    const matchValue = value;
-    switch (matchValue) {
-      case 'oversized':
-        return 'oversized';
-      case 'regionCollapsed':
-        return 'regionCollapsed';
-      case 'binExhausted':
-        return 'binExhausted';
-      default:
-        return undefined;
-    }
-  })();
+  switch (value) {
+    case 'oversized':
+      return 'oversized';
+    case 'regionCollapsed':
+      return 'regionCollapsed';
+    case 'binExhausted':
+      return 'binExhausted';
+    default:
+      return undefined;
+  }
 }
