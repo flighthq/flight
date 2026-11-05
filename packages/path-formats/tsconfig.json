@@ -8,6 +8,6 @@
     "declarationMap": true,
     "sourceMap": true
   },
-  "references": [{ "path": "../path/tsconfig.runtime.json" }, { "path": "../types" }],
+  "references": [{ "path": "../path/tsconfig.runtime.json" }],
   "include": ["src"]
 }

@@ -968,7 +968,6 @@ export * from './Skeleton2DDrawOrderTimeline.ts';
 export * from './Skeleton2DGuards.ts';
 export * from './Skeleton2DSlotAnimationTarget.ts';
 export * from './SvgDocumentImport.ts';
-export * from './SvgPathDataFormatOptions.ts';
 export * from './SvgRegistry.ts';
 export * from './Skeleton2DImport.ts';
 export * from './SpineBinaryVersion.ts';
