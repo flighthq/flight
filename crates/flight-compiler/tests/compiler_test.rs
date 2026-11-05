@@ -5971,6 +5971,66 @@ pub fn bytes_f64(value: f64) -> Vec<u8> {
     }
 
     #[test]
+    fn lowers_to_ne_bytes_through_runtime_native_integer_typed_arrays() {
+        let source = r#"
+pub fn bytes_u16() -> [u8; 2] {
+    return 0x0102_u16.to_ne_bytes();
+}
+
+pub fn bytes_i32(value: i32) -> [u8; 4] {
+    return value.to_ne_bytes();
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(
+            output.contains("new Uint8Array(new Uint16Array([0x0102]).buffer)"),
+            "u16 native byte order should come from runtime typed-array storage: {output}"
+        );
+        assert!(
+            output.contains("new Uint8Array(new Int32Array([value]).buffer)"),
+            "i32 native byte order should come from runtime typed-array storage: {output}"
+        );
+        assert!(
+            !output.contains("setUint16(0, 0x0102, true)"),
+            "native byte order must not be hard-coded little endian: {output}"
+        );
+    }
+
+    #[test]
+    fn rejects_native_byte_lowerings_without_proven_runtime_semantics() {
+        for (source, expected) in [
+            (
+                "pub fn bytes(value: f32) -> [u8; 4] { return value.to_ne_bytes(); }\n",
+                "portable `.to_ne_bytes()` supports only `i8`, `i16`, `i32`, `u8`, `u16`, and `u32`; `f32` has no proven runtime-native lowering",
+            ),
+            (
+                "pub fn bytes(value: u64) -> [u8; 8] { return value.to_ne_bytes(); }\n",
+                "portable `.to_ne_bytes()` supports only `i8`, `i16`, `i32`, `u8`, `u16`, and `u32`; `u64` has no proven runtime-native lowering",
+            ),
+            (
+                "pub fn bytes(value: usize) -> Vec<u8> { return value.to_ne_bytes().to_vec(); }\n",
+                "portable `.to_ne_bytes()` supports only `i8`, `i16`, `i32`, `u8`, `u16`, and `u32`; `usize` has no proven runtime-native lowering",
+            ),
+            (
+                "pub fn value(bytes: [u8; 2]) -> u16 { return u16::from_ne_bytes(bytes); }\n",
+                "portable `u16::from_ne_bytes()` has no runtime-native lowering",
+            ),
+        ] {
+            let error = compile_typescript(source, None).unwrap_err();
+            assert_eq!(error.to_string(), expected, "{source}");
+        }
+
+        let source = "pub trait Bytes { fn to_ne_bytes(&self) -> [u8; 2]; }\npub fn bytes<T: Bytes>(value: &T) -> [u8; 2] { return value.to_ne_bytes(); }\n";
+        let error = compile_typescript(source, None).unwrap_err();
+        assert_eq!(
+            error.to_string(),
+            "portable `.to_ne_bytes()` requires a receiver with known numeric type provenance (declare the variable with a Rust numeric type annotation)"
+        );
+    }
+
+    #[test]
     fn lowers_to_bytes_on_suffixed_literals() {
         let source = r#"
 pub fn f(bytes: &mut [u8]) {
@@ -14386,7 +14446,11 @@ pub enum AnimationLoopMode { PingPong, Repeat }
                 source: r#"pub(crate) use flight_entity::Unknown;
 pub(crate) use flight_platform::PlatformEndianness;
 
-pub(crate) fn inspect(value: Unknown) -> PlatformEndianness {
+pub(crate) fn inspect(value: &Unknown) -> &Unknown {
+    return value;
+}
+
+pub(crate) fn endianness() -> PlatformEndianness {
     return PlatformEndianness::Unknown;
 }
 "#,
@@ -14415,9 +14479,10 @@ pub(crate) fn inspect(value: Unknown) -> PlatformEndianness {
         );
         assert!(output.contains("type Unknown = unknown;"), "{output}");
         assert!(
-            output.contains("function inspect(value: Unknown): PlatformEndianness"),
+            output.contains("function inspect(value: Unknown): Unknown"),
             "{output}"
         );
+        assert!(!output.contains("Readonly<Unknown>"), "{output}");
         assert!(
             output.ends_with("export type { PlatformEndianness, Unknown };\n"),
             "{output}"

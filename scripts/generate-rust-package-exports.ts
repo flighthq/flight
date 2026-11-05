@@ -403,9 +403,10 @@ export interface TypeScriptInternalTypeExportArguments {
 
 // A target-native module may already own crate-internal TypeScript types that a generated sibling
 // imports. Preserve only the exact ownership edge Rust and TypeScript both establish: a restricted
-// foreign `use`, a direct exported TypeScript alias of the same name, and a sibling reference through
-// this Rust module. The structured representations below are revalidated by the compiler; no source
-// text, root export, or contract export is retained.
+// foreign `use`, a directly exported TypeScript alias of the same name (either at its declaration or
+// through an explicit local `export type` list), and a sibling reference through this Rust module.
+// The structured representations below are revalidated by the compiler; no source text, root export,
+// or contract export is retained.
 export function typeScriptInternalTypeExportArguments(
   existingTypescript: string,
   rust: string,
@@ -453,14 +454,40 @@ export function typeScriptInternalTypeExportArguments(
   }
   const inlineStringUnions = new Map<string, string[]>();
   const intrinsicAliases = new Map<string, string>();
+  const aliases = new Map<string, Record<string, unknown>>();
+  const exportedAliases = new Set<string>();
   for (const statement of parsed.program.body as unknown as Record<string, unknown>[]) {
-    if (statement.type !== 'ExportNamedDeclaration') continue;
-    const declaration = statement.declaration as Record<string, unknown> | null;
-    if (declaration?.type !== 'TSTypeAliasDeclaration') continue;
-    const identifier = declaration.id as Record<string, unknown>;
-    const name = identifier.type === 'Identifier' && typeof identifier.name === 'string' ? identifier.name : undefined;
-    if (name === undefined || !foreignReexports.has(name) || !siblingReferences.has(name)) continue;
-    const annotation = declaration.typeAnnotation as Record<string, unknown>;
+    const declaration =
+      statement.type === 'ExportNamedDeclaration'
+        ? (statement.declaration as Record<string, unknown> | null)
+        : statement;
+    if (declaration?.type === 'TSTypeAliasDeclaration') {
+      const identifier = declaration.id as Record<string, unknown>;
+      if (identifier.type === 'Identifier' && typeof identifier.name === 'string') {
+        aliases.set(identifier.name, declaration.typeAnnotation as Record<string, unknown>);
+        if (statement.type === 'ExportNamedDeclaration') exportedAliases.add(identifier.name);
+      }
+    }
+    if (statement.type !== 'ExportNamedDeclaration' || statement.source !== null || statement.exportKind !== 'type') {
+      continue;
+    }
+    for (const specifier of statement.specifiers as Record<string, unknown>[]) {
+      const local = specifier.local as Record<string, unknown>;
+      const exported = specifier.exported as Record<string, unknown>;
+      if (
+        local.type === 'Identifier' &&
+        exported.type === 'Identifier' &&
+        typeof local.name === 'string' &&
+        local.name === exported.name
+      ) {
+        exportedAliases.add(local.name);
+      }
+    }
+  }
+  for (const name of exportedAliases) {
+    if (!foreignReexports.has(name) || !siblingReferences.has(name)) continue;
+    const annotation = aliases.get(name);
+    if (annotation === undefined) continue;
     const values = stringLiteralUnionValues(annotation);
     if (values !== undefined) inlineStringUnions.set(name, values);
     else if (annotation.type === 'TSUnknownKeyword') intrinsicAliases.set(name, 'unknown');
@@ -478,17 +505,6 @@ export function typeScriptInternalTypeExportArguments(
       .flatMap(([name, target]) => ['--typescript-type-alias', `${name}=${target}`]),
     typeExportArguments: names.flatMap((name) => ['--typescript-internal-type-export', name]),
   };
-}
-
-// Native-endian byte conversion deliberately remains a target decision. The ordinary compiler may
-// continue to serve already-selected package implementations, but a target-native promotion audit
-// must not call such a source compiler-clean until that semantic choice is explicit.
-export function nativeEndianAuditDiagnostics(rust: string): string[] {
-  const code = rust.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '');
-  const methods = [...code.matchAll(/\b((?:to|from)_ne_bytes)\s*\(/g)].map((match) => match[1]);
-  return [...new Set(methods)]
-    .sort()
-    .map((method) => `native-endian \`${method}\` semantics are not selected for TypeScript generation`);
 }
 
 // Existing exported signatures are the authority for Rust aliases whose target-language

@@ -35,7 +35,6 @@ import {
   renderGeneratedImports,
   dependencyAliasArguments,
   mergeRustExportNames,
-  nativeEndianAuditDiagnostics,
   renderPublicExports,
   renderReferencedConstants,
   renderReferencedExports,
@@ -899,12 +898,9 @@ function probeNativeSource(
     }
   }
   const stderr = result.stderr.trim();
-  const semanticDiagnostics =
-    command === 'generate' ? nativeEndianAuditDiagnostics(readFileSync(reportedSource, 'utf8')) : [];
-  const diagnostics = [...(stderr === '' ? [] : stderr.split(/\r?\n/)), ...semanticDiagnostics];
+  const diagnostics = stderr === '' ? [] : stderr.split(/\r?\n/);
   const skipped = Number(/lenient: (\d+) items skipped/.exec(stderr)?.[1] ?? 0);
-  const status =
-    result.status !== 0 || semanticDiagnostics.length > 0 ? 'blocked' : skipped === 0 ? 'compiler-clean' : 'partial';
+  const status = result.status !== 0 ? 'blocked' : skipped === 0 ? 'compiler-clean' : 'partial';
   return {
     defaultNullOptionParameterArguments,
     entry: {

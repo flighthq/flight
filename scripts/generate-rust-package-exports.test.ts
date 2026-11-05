@@ -27,7 +27,6 @@ import {
   hasRustPublicTypeAlias,
   hasRustSiblingGenerationSemantics,
   mergeRustExportNames,
-  nativeEndianAuditDiagnostics,
   renderCompanionContractExports,
   renderGeneratedImports,
   renderPublicExports,
@@ -417,7 +416,7 @@ use crate::user_agent_native::PlatformEngine as Engine;
 `,
     ];
 
-    expect(typeScriptInternalTypeExportArguments(existing, rust, 'user_agent_native', siblings)).toEqual({
+    const expected = {
       inlineStringUnionArguments: [
         '--typescript-inline-string-union',
         'PlatformEndianness=["big","little","unknown"]',
@@ -433,19 +432,21 @@ use crate::user_agent_native::PlatformEngine as Engine;
         '--typescript-internal-type-export',
         'Unknown',
       ],
-    });
-  });
+    };
 
-  it('reports native-endian semantics without matching comments', () => {
+    expect(typeScriptInternalTypeExportArguments(existing, rust, 'user_agent_native', siblings)).toEqual(expected);
     expect(
-      nativeEndianAuditDiagnostics(`// value.to_ne_bytes()
-let bytes = value.to_ne_bytes();
-let value = u32::from_ne_bytes(bytes);
-`),
-    ).toEqual([
-      'native-endian `from_ne_bytes` semantics are not selected for TypeScript generation',
-      'native-endian `to_ne_bytes` semantics are not selected for TypeScript generation',
-    ]);
+      typeScriptInternalTypeExportArguments(
+        `type PlatformEndianness = 'big' | 'little' | 'unknown';
+type PlatformEngine = 'gecko' | 'blink' | 'webkit' | 'unknown';
+type Unknown = unknown;
+export type { PlatformEndianness, PlatformEngine, Unknown };
+`,
+        rust,
+        'user_agent_native',
+        siblings,
+      ),
+    ).toEqual(expected);
   });
 
   it('derives nullable field metadata from canonical owner positions used by generated functions', () => {

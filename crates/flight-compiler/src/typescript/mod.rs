@@ -11818,7 +11818,12 @@ fn emit_expression_value(
             }
             if let Some((numeric_type, method)) = associated_numeric_method(&call.func) {
                 match (method.as_str(), call.args.len()) {
-                    ("from_le_bytes" | "from_be_bytes" | "from_ne_bytes", 1) => {
+                    ("from_ne_bytes", 1) => {
+                        return Err(compile_error(format!(
+                            "portable `{numeric_type}::from_ne_bytes()` has no runtime-native lowering",
+                        )));
+                    }
+                    ("from_le_bytes" | "from_be_bytes", 1) => {
                         let Some((dv_type, byte_count)) = numeric_dataview_info(&numeric_type)
                         else {
                             return Err(compile_error(format!(
@@ -11826,7 +11831,7 @@ fn emit_expression_value(
                             )));
                         };
                         let bytes = emit_expression(&call.args[0], entities)?;
-                        let little_endian = method != "from_be_bytes";
+                        let little_endian = method == "from_le_bytes";
                         if byte_count == 1 {
                             return Ok(format!("({bytes})[0]"));
                         }
@@ -21279,18 +21284,14 @@ fn emit_method_call(
                     "portable `.to_ne_bytes()` requires a receiver with known numeric type provenance (declare the variable with a Rust numeric type annotation)",
                 ));
             };
-            let Some((dv_type, byte_count)) = numeric_dataview_info(&numeric_type) else {
+            let Some(typed_array) = numeric_native_integer_typed_array(&numeric_type) else {
                 return Err(compile_error(format!(
-                    "portable `.to_ne_bytes()` does not support `{numeric_type}`",
+                    "portable `.to_ne_bytes()` supports only `i8`, `i16`, `i32`, `u8`, `u16`, and `u32`; `{numeric_type}` has no proven runtime-native lowering",
                 )));
             };
-            if byte_count == 1 {
-                Ok(format!("new Uint8Array([{receiver}])"))
-            } else {
-                Ok(format!(
-                    "(() => {{ const __b = new Uint8Array({byte_count}); new DataView(__b.buffer).set{dv_type}(0, {receiver}, true); return __b; }})()"
-                ))
-            }
+            Ok(format!(
+                "new Uint8Array(new {typed_array}([{receiver}]).buffer)"
+            ))
         }
         "to_lowercase"
             if arguments.is_empty() && expression_is_known_string(&call.receiver, entities) =>
@@ -25357,6 +25358,8 @@ pub(crate) fn emit_type(
                 || rust_type_has_interior_mutability(&reference.elem, entities)
                 || named_type(&reference.elem).is_some_and(|name| {
                     entities.contains(&format!("{INTERIOR_MUTABLE_STRUCT_MARKER}{name}"))
+                        || type_script_type_alias(entities, &name)
+                            .is_some_and(|(target, _)| is_primitive_typescript_type(&target))
                 })
                 || type_is_current_parameter(&reference.elem, entities)
             {
@@ -26968,7 +26971,7 @@ fn float_constant_type(path: &syn::Path) -> Option<&'static str> {
 pub(super) fn is_primitive_typescript_type(typescript_type: &str) -> bool {
     return matches!(
         typescript_type,
-        "boolean" | "number" | "object" | "string" | "void"
+        "boolean" | "number" | "object" | "string" | "unknown" | "void"
     ) || typescript_type.contains("=>");
 }
 
@@ -27446,6 +27449,18 @@ fn numeric_dataview_info(rust_type: &str) -> Option<(&'static str, u8)> {
         "u16" => Some(("Uint16", 2)),
         "u32" | "usize" => Some(("Uint32", 4)),
         "u64" => Some(("BigUint64", 8)),
+        _ => None,
+    };
+}
+
+fn numeric_native_integer_typed_array(rust_type: &str) -> Option<&'static str> {
+    return match rust_type {
+        "i8" => Some("Int8Array"),
+        "i16" => Some("Int16Array"),
+        "i32" => Some("Int32Array"),
+        "u8" => Some("Uint8Array"),
+        "u16" => Some("Uint16Array"),
+        "u32" => Some("Uint32Array"),
         _ => None,
     };
 }
