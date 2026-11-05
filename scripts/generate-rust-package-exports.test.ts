@@ -421,6 +421,43 @@ export function getWindowBounds(out: WindowBounds, surface: Surface, win: AppWin
     expect(typeScriptTypeAliasArguments(existing, generated, symbols)).toEqual([]);
   });
 
+  it('reads ownership signatures through unparenthesized lenient-probe arrow invocations', () => {
+    const symbols = new Map([
+      ['@flighthq/types/contract', new Map([['AnimationPlayer', { hasType: true, hasValue: false }]])],
+    ]);
+    const existing = `import type { AnimationPlayer } from '@flighthq/types/contract';
+export function advance(player: AnimationPlayer): void {}
+`;
+    const generated = `export function advance(player: AnimationPlayerRef): void {
+  const result = (): void => {}();
+  return result;
+}
+`;
+
+    expect(typeScriptTypeAliasArguments(existing, generated, symbols)).toEqual([
+      '--typescript-type-alias',
+      'AnimationPlayerRef=@flighthq/types/contract#AnimationPlayer',
+    ]);
+  });
+
+  it('refuses ownership inference from malformed generated signatures', () => {
+    const existing = `export function advance(player: unknown): void {}`;
+    const generated = `export function advance(player AnimationPlayerRef): void {}`;
+
+    expect(() => typeScriptTypeAliasArguments(existing, generated, new Map())).toThrow(
+      /could not parse generated TypeScript contract while resolving type aliases/,
+    );
+  });
+
+  it('refuses ownership inference from unrelated malformed probe bodies', () => {
+    const existing = `export function advance(player: unknown): void {}`;
+    const generated = `export function advance(player: AnimationPlayerRef): void { const broken = ; }`;
+
+    expect(() => typeScriptTypeAliasArguments(existing, generated, new Map())).toThrow(
+      /could not parse generated TypeScript contract while resolving type aliases/,
+    );
+  });
+
   it('derives only established crate-internal type owners used through their Rust module', () => {
     const existing = `export type PlatformEndianness = 'big' | 'little' | 'unknown';
 export type PlatformEngine = 'gecko' | 'blink' | 'webkit' | 'unknown';

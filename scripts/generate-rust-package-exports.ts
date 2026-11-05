@@ -1,4 +1,5 @@
 import { parseSync } from 'oxc-parser';
+import ts from 'typescript5';
 
 export interface ExportModule {
   directPublicExports?: boolean;
@@ -24,6 +25,56 @@ interface ResolvedExports {
 interface ExportedFunctionTypes {
   parameters: Record<string, unknown>[];
   returnType?: Record<string, unknown>;
+}
+
+// A lenient target-native probe can preserve a Rust value block as an immediately invoked arrow
+// without the parentheses TypeScript requires around that arrow. The recovery output is metadata
+// input, not the package artifact, so repair only that exact body-local spelling in the parser view.
+// Every original diagnostic must point at one of those invocation boundaries and the repaired source
+// must parse cleanly; imports, types, signatures and every other malformed body remain fatal.
+function parseTypeScriptMetadataSurface(identity: string, source: string) {
+  const parsed = parseSync(identity, source, { lang: 'ts', sourceType: 'module' });
+  if (parsed.errors.length === 0) return parsed;
+
+  const sourceFile = ts.createSourceFile(identity, source, ts.ScriptTarget.Latest, true, ts.ScriptKind.TS);
+  const bodyRanges = sourceFile.statements.flatMap((statement) => {
+    if (!ts.isFunctionDeclaration(statement) || statement.body === undefined) return [];
+    return [{ end: statement.body.end, start: statement.body.getStart(sourceFile) }];
+  });
+  const recoveries: { end: number; invocationEnd: number; start: number }[] = [];
+  const visit = (node: ts.Node): void => {
+    if (ts.isArrowFunction(node)) {
+      const start = node.getStart(sourceFile);
+      const invocation = /^\s*\(\s*\)/.exec(source.slice(node.end));
+      if (invocation !== null && bodyRanges.some((body) => start >= body.start && node.end <= body.end)) {
+        recoveries.push({ end: node.end, invocationEnd: node.end + invocation[0].length, start });
+      }
+    }
+    ts.forEachChild(node, visit);
+  };
+  visit(sourceFile);
+  const errorPositions = parsed.errors.flatMap((error) =>
+    (error.labels ?? []).flatMap((label) => (typeof label.start === 'number' ? [label.start] : [])),
+  );
+  if (
+    recoveries.length === 0 ||
+    errorPositions.length === 0 ||
+    errorPositions.some(
+      (position) => !recoveries.some((recovery) => position >= recovery.end && position < recovery.invocationEnd),
+    )
+  ) {
+    return parsed;
+  }
+
+  let recoveredSource = source;
+  for (const recovery of recoveries.sort((left, right) => right.start - left.start)) {
+    recoveredSource = `${recoveredSource.slice(0, recovery.start)}(${recoveredSource.slice(
+      recovery.start,
+      recovery.end,
+    )})${recoveredSource.slice(recovery.end)}`;
+  }
+  const recovered = parseSync(identity, recoveredSource, { lang: 'ts', sourceType: 'module' });
+  return recovered.errors.length === 0 ? recovered : parsed;
 }
 
 export interface ExternalContract {
@@ -518,13 +569,13 @@ export function typeScriptTypeAliasArguments(
   generatedTypescript: string,
   importedContractSymbols: ReadonlyMap<string, ReadonlyMap<string, Omit<ExportSymbolOwner, 'fileName'>>>,
 ): string[] {
-  const existing = parseSync('existing.ts', existingTypescript, { lang: 'ts', sourceType: 'module' });
+  const existing = parseTypeScriptMetadataSurface('existing.ts', existingTypescript);
   if (existing.errors.length > 0) {
     throw new Error(
       `could not parse existing TypeScript contract while resolving type aliases: ${existing.errors[0]?.message}`,
     );
   }
-  const generated = parseSync('generated.ts', generatedTypescript, { lang: 'ts', sourceType: 'module' });
+  const generated = parseTypeScriptMetadataSurface('generated.ts', generatedTypescript);
   if (generated.errors.length > 0) {
     throw new Error(
       `could not parse generated TypeScript contract while resolving type aliases: ${generated.errors[0]?.message}`,
@@ -710,13 +761,13 @@ export function typeScriptNullableOptionFieldArguments(
   generatedTypescript: string,
   importedContractSymbols: ReadonlyMap<string, ReadonlyMap<string, Omit<ExportSymbolOwner, 'fileName'>>>,
 ): string[] {
-  const existing = parseSync('existing.ts', existingTypescript, { lang: 'ts', sourceType: 'module' });
+  const existing = parseTypeScriptMetadataSurface('existing.ts', existingTypescript);
   if (existing.errors.length > 0) {
     throw new Error(
       `could not parse existing TypeScript contract while resolving nullable fields: ${existing.errors[0]?.message}`,
     );
   }
-  const generated = parseSync('generated.ts', generatedTypescript, { lang: 'ts', sourceType: 'module' });
+  const generated = parseTypeScriptMetadataSurface('generated.ts', generatedTypescript);
   if (generated.errors.length > 0) {
     throw new Error(
       `could not parse generated TypeScript contract while resolving nullable fields: ${generated.errors[0]?.message}`,
@@ -804,13 +855,13 @@ export function typeScriptNullableOptionParameterArguments(
   existingTypescript: string,
   generatedTypescript: string,
 ): string[] {
-  const existing = parseSync('existing.ts', existingTypescript, { lang: 'ts', sourceType: 'module' });
+  const existing = parseTypeScriptMetadataSurface('existing.ts', existingTypescript);
   if (existing.errors.length > 0) {
     throw new Error(
       `could not parse existing TypeScript contract while resolving nullable parameters: ${existing.errors[0]?.message}`,
     );
   }
-  const generated = parseSync('generated.ts', generatedTypescript, { lang: 'ts', sourceType: 'module' });
+  const generated = parseTypeScriptMetadataSurface('generated.ts', generatedTypescript);
   if (generated.errors.length > 0) {
     throw new Error(
       `could not parse generated TypeScript contract while resolving nullable parameters: ${generated.errors[0]?.message}`,
@@ -855,13 +906,13 @@ export function typeScriptDefaultNullOptionParameterArguments(
   existingTypescript: string,
   generatedTypescript: string,
 ): string[] {
-  const existing = parseSync('existing.ts', existingTypescript, { lang: 'ts', sourceType: 'module' });
+  const existing = parseTypeScriptMetadataSurface('existing.ts', existingTypescript);
   if (existing.errors.length > 0) {
     throw new Error(
       `could not parse existing TypeScript contract while resolving default-null parameters: ${existing.errors[0]?.message}`,
     );
   }
-  const generated = parseSync('generated.ts', generatedTypescript, { lang: 'ts', sourceType: 'module' });
+  const generated = parseTypeScriptMetadataSurface('generated.ts', generatedTypescript);
   if (generated.errors.length > 0) {
     throw new Error(
       `could not parse generated TypeScript contract while resolving default-null parameters: ${generated.errors[0]?.message}`,
@@ -907,13 +958,13 @@ export function typeScriptNullableOptionReturnArguments(
   existingTypescript: string,
   generatedTypescript: string,
 ): string[] {
-  const existing = parseSync('existing.ts', existingTypescript, { lang: 'ts', sourceType: 'module' });
+  const existing = parseTypeScriptMetadataSurface('existing.ts', existingTypescript);
   if (existing.errors.length > 0) {
     throw new Error(
       `could not parse existing TypeScript contract while resolving nullable returns: ${existing.errors[0]?.message}`,
     );
   }
-  const generated = parseSync('generated.ts', generatedTypescript, { lang: 'ts', sourceType: 'module' });
+  const generated = parseTypeScriptMetadataSurface('generated.ts', generatedTypescript);
   if (generated.errors.length > 0) {
     throw new Error(
       `could not parse generated TypeScript contract while resolving nullable returns: ${generated.errors[0]?.message}`,
@@ -1078,7 +1129,7 @@ function bareTypeReferenceName(node: Record<string, unknown>): string | undefine
 }
 
 function exportedFunctionTypesFromSource(typescript: string, identity: string): Map<string, ExportedFunctionTypes> {
-  const parsed = parseSync('contract.ts', typescript, { lang: 'ts', sourceType: 'module' });
+  const parsed = parseTypeScriptMetadataSurface(identity, typescript);
   if (parsed.errors.length > 0) {
     throw new Error(`could not parse ${identity} while resolving inline string unions: ${parsed.errors[0]?.message}`);
   }
