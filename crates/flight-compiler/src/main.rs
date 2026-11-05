@@ -4,8 +4,8 @@ use std::path::{Path, PathBuf};
 use std::process::{self, Command};
 
 const USAGE: &str = "\
-Usage: flight-compile generate --source <rust-file> --out <typescript-file> [--entity-module <specifier>] [--alias-source <rust-file> ...] [--external-alias-source <rust-file> --external-alias-module <specifier> ...] [--typescript-string-union <module>#<name>=<json-string-array> ...] [--typescript-inline-string-union <name>=<json-string-array> ...] [--typescript-type-alias <rust-name>=<module>#<typescript-name>|boolean|number|string|unknown ...] [--typescript-internal-type-export <name> ...] [--typescript-array-parameter <function>.<parameter>=Float32Array|ArrayLike<number> ...] [--typescript-nullable-option-field <module>#<owner>.<field> ...] [--typescript-default-null-option-parameter <function>.<parameter> ...] [--typescript-nullable-option-parameter <function>.<parameter> ...] [--typescript-nullable-option-return <function-or-callable> ...] [--visibility-source <rust-file> ...] [--crate-root <crate-name>=<rust-file> ...] [--lenient] [--probe-target-native] [--check]
-       flight-compile generate-tests --source <rust-test-file> --out <vitest-file> --contract-module <specifier> [--contract-source <rust-file>] [--alias-source <rust-file> ...] [--test-support-source <rust-file> --test-support-module <crate-local-module> ...] [--external-alias-source <rust-file> --external-alias-module <specifier> ...] [--typescript-string-union <module>#<name>=<json-string-array> ...] [--typescript-type-alias <rust-name>=<module>#<typescript-name>|boolean|number|string|unknown ...] [--typescript-array-parameter <function>.<parameter>=Float32Array|ArrayLike<number> ...] [--typescript-nullable-option-field <module>#<owner>.<field> ...] [--typescript-default-null-option-parameter <function>.<parameter> ...] [--typescript-nullable-option-parameter <function>.<parameter> ...] [--typescript-nullable-option-return <function-or-callable> ...] [--visibility-source <rust-file> ...] [--probe-target-native] [--check]
+Usage: flight-compile generate --source <rust-file> --out <typescript-file> [--entity-module <specifier>] [--alias-source <rust-file> ...] [--external-alias-source <rust-file> --external-alias-module <specifier> ...] [--typescript-string-union <module>#<name>=<json-string-array> ...] [--typescript-inline-string-union <name>=<json-string-array> ...] [--typescript-type-alias <rust-name>=<module>#<typescript-name>|boolean|number|string|unknown ...] [--typescript-internal-type-export <name> ...] [--typescript-array-parameter <function>.<parameter>=Float32Array|ArrayLike<number>|Uint8Array ...] [--typescript-array-field <owner>.<field>=Uint8Array ...] [--typescript-array-return <function>=Uint8Array ...] [--typescript-nullable-option-field <module>#<owner>.<field> ...] [--typescript-default-null-option-parameter <function>.<parameter> ...] [--typescript-nullable-option-parameter <function>.<parameter> ...] [--typescript-nullable-option-return <function-or-callable> ...] [--visibility-source <rust-file> ...] [--crate-root <crate-name>=<rust-file> ...] [--lenient] [--probe-target-native] [--check]
+       flight-compile generate-tests --source <rust-test-file> --out <vitest-file> --contract-module <specifier> [--contract-source <rust-file>] [--alias-source <rust-file> ...] [--test-support-source <rust-file> --test-support-module <crate-local-module> ...] [--external-alias-source <rust-file> --external-alias-module <specifier> ...] [--typescript-string-union <module>#<name>=<json-string-array> ...] [--typescript-type-alias <rust-name>=<module>#<typescript-name>|boolean|number|string|unknown ...] [--typescript-array-parameter <function>.<parameter>=Float32Array|ArrayLike<number>|Uint8Array ...] [--typescript-array-field <owner>.<field>=Uint8Array ...] [--typescript-array-return <function>=Uint8Array ...] [--typescript-nullable-option-field <module>#<owner>.<field> ...] [--typescript-default-null-option-parameter <function>.<parameter> ...] [--typescript-nullable-option-parameter <function>.<parameter> ...] [--typescript-nullable-option-return <function-or-callable> ...] [--visibility-source <rust-file> ...] [--probe-target-native] [--check]
        flight-compile source-mode --source <rust-file>
        flight-compile root-only --source <rust-file>
 ";
@@ -38,7 +38,9 @@ struct GenerateOptions {
     source: PathBuf,
     test_support_modules: Vec<String>,
     test_support_sources: Vec<PathBuf>,
+    type_script_array_fields: Vec<OwnedTypeScriptArrayField>,
     type_script_array_parameters: Vec<OwnedTypeScriptArrayParameter>,
+    type_script_array_returns: Vec<String>,
     type_script_inline_string_unions: Vec<OwnedTypeScriptInlineStringUnion>,
     type_script_internal_type_exports: Vec<String>,
     type_script_default_null_option_parameters: Vec<OwnedTypeScriptNullableOptionParameter>,
@@ -82,6 +84,11 @@ struct OwnedTypeScriptArrayParameter {
     owner: String,
     parameter: String,
     representation: flight_compiler::TypeScriptArrayParameterRepresentation,
+}
+
+struct OwnedTypeScriptArrayField {
+    owner: String,
+    field: String,
 }
 
 struct ExplicitCrateRoot {
@@ -336,6 +343,19 @@ fn generate(options: &GenerateOptions, kind: GenerateKind) -> Result<(), String>
                     representation: parameter.representation,
                 })
                 .collect::<Vec<_>>();
+            let type_script_array_fields = options
+                .type_script_array_fields
+                .iter()
+                .map(|field| flight_compiler::TypeScriptArrayField {
+                    owner: &field.owner,
+                    field: &field.field,
+                })
+                .collect::<Vec<_>>();
+            let type_script_array_returns = options
+                .type_script_array_returns
+                .iter()
+                .map(|owner| flight_compiler::TypeScriptArrayReturn { owner })
+                .collect::<Vec<_>>();
             let type_script_nullable_option_fields = options
                 .type_script_nullable_option_fields
                 .iter()
@@ -375,7 +395,7 @@ fn generate(options: &GenerateOptions, kind: GenerateKind) -> Result<(), String>
                 .iter()
                 .map(String::as_str)
                 .collect::<Vec<_>>();
-            flight_compiler::compile_typescript_with_options_and_internal_type_exports_and_array_parameters(
+            flight_compiler::compile_typescript_with_options_and_internal_type_exports_and_array_representations(
                 flight_compiler::ModuleSource {
                     path: &source_path,
                     source: &source,
@@ -388,6 +408,8 @@ fn generate(options: &GenerateOptions, kind: GenerateKind) -> Result<(), String>
                 &type_script_type_aliases,
                 &type_script_internal_type_exports,
                 &type_script_array_parameters,
+                &type_script_array_fields,
+                &type_script_array_returns,
                 &type_script_nullable_option_fields,
                 &type_script_default_null_option_parameters,
                 &type_script_nullable_option_parameters,
@@ -506,6 +528,19 @@ fn generate(options: &GenerateOptions, kind: GenerateKind) -> Result<(), String>
                     representation: parameter.representation,
                 })
                 .collect::<Vec<_>>();
+            let type_script_array_fields = options
+                .type_script_array_fields
+                .iter()
+                .map(|field| flight_compiler::TypeScriptArrayField {
+                    owner: &field.owner,
+                    field: &field.field,
+                })
+                .collect::<Vec<_>>();
+            let type_script_array_returns = options
+                .type_script_array_returns
+                .iter()
+                .map(|owner| flight_compiler::TypeScriptArrayReturn { owner })
+                .collect::<Vec<_>>();
             let type_script_nullable_option_fields = options
                 .type_script_nullable_option_fields
                 .iter()
@@ -540,7 +575,7 @@ fn generate(options: &GenerateOptions, kind: GenerateKind) -> Result<(), String>
                 .iter()
                 .map(|name| flight_compiler::TypeScriptNullableOptionReturn { name })
                 .collect::<Vec<_>>();
-            flight_compiler::compile_vitest_with_named_visibility_sources_and_array_parameters(
+            flight_compiler::compile_vitest_with_named_visibility_sources_and_array_representations(
                 &source,
                 contract_module,
                 contract_source.as_deref(),
@@ -550,6 +585,8 @@ fn generate(options: &GenerateOptions, kind: GenerateKind) -> Result<(), String>
                 &visibility_source_refs,
                 &type_script_type_aliases,
                 &type_script_array_parameters,
+                &type_script_array_fields,
+                &type_script_array_returns,
                 &type_script_nullable_option_fields,
                 &type_script_default_null_option_parameters,
                 &type_script_nullable_option_parameters,
@@ -621,7 +658,9 @@ fn parse_generate_options(
     let mut source = None;
     let mut test_support_modules = Vec::new();
     let mut test_support_sources = Vec::new();
+    let mut type_script_array_fields = Vec::new();
     let mut type_script_array_parameters = Vec::new();
+    let mut type_script_array_returns = Vec::new();
     let mut type_script_inline_string_unions = Vec::new();
     let mut type_script_internal_type_exports = Vec::new();
     let mut type_script_default_null_option_parameters = Vec::new();
@@ -794,17 +833,17 @@ fn parse_generate_options(
                 index += 1;
                 let specification = arguments.get(index).ok_or_else(|| {
                     format!(
-                        "--typescript-array-parameter requires <function>.<parameter>=Float32Array|ArrayLike<number>\n\n{USAGE}"
+                        "--typescript-array-parameter requires <function>.<parameter>=Float32Array|ArrayLike<number>|Uint8Array\n\n{USAGE}"
                     )
                 })?;
                 let (position, representation) = specification.split_once('=').ok_or_else(|| {
                     format!(
-                        "invalid --typescript-array-parameter `{specification}`; expected <function>.<parameter>=Float32Array|ArrayLike<number>\n\n{USAGE}"
+                        "invalid --typescript-array-parameter `{specification}`; expected <function>.<parameter>=Float32Array|ArrayLike<number>|Uint8Array\n\n{USAGE}"
                     )
                 })?;
                 let (owner, parameter) = position.split_once('.').ok_or_else(|| {
                     format!(
-                        "invalid --typescript-array-parameter `{specification}`; expected <function>.<parameter>=Float32Array|ArrayLike<number>\n\n{USAGE}"
+                        "invalid --typescript-array-parameter `{specification}`; expected <function>.<parameter>=Float32Array|ArrayLike<number>|Uint8Array\n\n{USAGE}"
                     )
                 })?;
                 if !valid_type_script_identifier(owner)
@@ -812,7 +851,7 @@ fn parse_generate_options(
                     || parameter.contains('.')
                 {
                     return Err(format!(
-                        "invalid --typescript-array-parameter `{specification}`; expected <function>.<parameter>=Float32Array|ArrayLike<number>\n\n{USAGE}"
+                        "invalid --typescript-array-parameter `{specification}`; expected <function>.<parameter>=Float32Array|ArrayLike<number>|Uint8Array\n\n{USAGE}"
                     ));
                 }
                 let representation = match representation {
@@ -822,9 +861,12 @@ fn parse_generate_options(
                     "Float32Array" => {
                         flight_compiler::TypeScriptArrayParameterRepresentation::Float32Array
                     }
+                    "Uint8Array" => {
+                        flight_compiler::TypeScriptArrayParameterRepresentation::Uint8Array
+                    }
                     _ => {
                         return Err(format!(
-                            "invalid --typescript-array-parameter `{specification}`; expected <function>.<parameter>=Float32Array|ArrayLike<number>\n\n{USAGE}"
+                            "invalid --typescript-array-parameter `{specification}`; expected <function>.<parameter>=Float32Array|ArrayLike<number>|Uint8Array\n\n{USAGE}"
                         ));
                     }
                 };
@@ -833,6 +875,54 @@ fn parse_generate_options(
                     parameter: parameter.to_string(),
                     representation,
                 });
+            }
+            "--typescript-array-field" => {
+                index += 1;
+                let specification = arguments.get(index).ok_or_else(|| {
+                    format!(
+                        "--typescript-array-field requires <owner>.<field>=Uint8Array\n\n{USAGE}"
+                    )
+                })?;
+                let (position, representation) = specification.split_once('=').ok_or_else(|| {
+                    format!(
+                        "invalid --typescript-array-field `{specification}`; expected <owner>.<field>=Uint8Array\n\n{USAGE}"
+                    )
+                })?;
+                let (owner, field) = position.split_once('.').ok_or_else(|| {
+                    format!(
+                        "invalid --typescript-array-field `{specification}`; expected <owner>.<field>=Uint8Array\n\n{USAGE}"
+                    )
+                })?;
+                if !valid_type_script_identifier(owner)
+                    || !valid_type_script_identifier(field)
+                    || field.contains('.')
+                    || representation != "Uint8Array"
+                {
+                    return Err(format!(
+                        "invalid --typescript-array-field `{specification}`; expected <owner>.<field>=Uint8Array\n\n{USAGE}"
+                    ));
+                }
+                type_script_array_fields.push(OwnedTypeScriptArrayField {
+                    owner: owner.to_string(),
+                    field: field.to_string(),
+                });
+            }
+            "--typescript-array-return" => {
+                index += 1;
+                let specification = arguments.get(index).ok_or_else(|| {
+                    format!("--typescript-array-return requires <function>=Uint8Array\n\n{USAGE}")
+                })?;
+                let (owner, representation) = specification.split_once('=').ok_or_else(|| {
+                    format!(
+                        "invalid --typescript-array-return `{specification}`; expected <function>=Uint8Array\n\n{USAGE}"
+                    )
+                })?;
+                if !valid_type_script_identifier(owner) || representation != "Uint8Array" {
+                    return Err(format!(
+                        "invalid --typescript-array-return `{specification}`; expected <function>=Uint8Array\n\n{USAGE}"
+                    ));
+                }
+                type_script_array_returns.push(owner.to_string());
             }
             "--typescript-internal-type-export" => {
                 index += 1;
@@ -1017,7 +1107,9 @@ fn parse_generate_options(
         source: source.ok_or_else(|| format!("--source is required\n\n{USAGE}"))?,
         test_support_modules,
         test_support_sources,
+        type_script_array_fields,
         type_script_array_parameters,
+        type_script_array_returns,
         type_script_inline_string_unions,
         type_script_internal_type_exports,
         type_script_default_null_option_parameters,
@@ -1199,6 +1291,10 @@ mod tests {
                     "TargetRef=unknown",
                     "--typescript-array-parameter",
                     "resolveLayoutTree.out=Float32Array",
+                    "--typescript-array-field",
+                    "Packet.bytes=Uint8Array",
+                    "--typescript-array-return",
+                    "buildAbc=Uint8Array",
                     "--typescript-nullable-option-field",
                     "@flighthq/types/contract#AnimationStateMachine.transitionToStateIndex",
                     "--typescript-default-null-option-parameter",
@@ -1227,6 +1323,10 @@ mod tests {
                             "TargetRef=unknown",
                             "--typescript-array-parameter",
                             "resolveLayoutTree.out=Float32Array",
+                            "--typescript-array-field",
+                            "Packet.bytes=Uint8Array",
+                            "--typescript-array-return",
+                            "buildAbc=Uint8Array",
                             "--typescript-nullable-option-field",
                             "@flighthq/types/contract#AnimationStateMachine.transitionToStateIndex",
                             "--typescript-default-null-option-parameter",
@@ -1267,6 +1367,10 @@ mod tests {
                 array_parameter.representation,
                 flight_compiler::TypeScriptArrayParameterRepresentation::Float32Array
             );
+            assert_eq!(options.type_script_array_fields.len(), 1);
+            assert_eq!(options.type_script_array_fields[0].owner, "Packet");
+            assert_eq!(options.type_script_array_fields[0].field, "bytes");
+            assert_eq!(options.type_script_array_returns, ["buildAbc"]);
             assert_eq!(options.type_script_nullable_option_fields.len(), 1);
             let field = &options.type_script_nullable_option_fields[0];
             assert_eq!(field.module, "@flighthq/types/contract");

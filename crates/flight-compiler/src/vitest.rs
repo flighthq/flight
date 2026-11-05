@@ -13,13 +13,16 @@ use crate::model::{Program, TestCase, TestProgram, TestSuite};
 use crate::typescript::{
     ASYNC_FUNCTION_MARKER, ASYNC_RESULT_FUNCTION_MARKER, BLOCK_ON_HELPER_MARKER,
     FLIGHT_ERROR_HELPER_MARKER, PANIC_MESSAGE_HELPER_MARKER,
+    RETURNS_CONTRACT_TYPED_ARRAY_MARKER,
 };
 use crate::typescript::{
-    ProvenanceImportRule, begin_option_if, begin_option_while, emit_block_with_tail_returns,
+    ProvenanceImportRule, begin_option_if, begin_option_while, contract_typed_array_return_value,
+    emit_block_with_tail_returns,
     emit_expression, emit_expression_for_type, emit_for_header, emit_format_template, emit_local,
     emit_local_function, emit_local_with_shadow_and_else, emit_match_statement,
     emit_option_binding, emit_parameter, emit_type, emit_type_parameters,
     emit_vec_extend_statement, export_name, frozen_object_name, function_expression_context,
+    function_returns_uint8_array,
     insert_type_parameter_context, lexical_binding_names,
     insert_vitest_helper_return_context, insert_vitest_import_alias_context,
     insert_vitest_rebound_struct_context, is_data_union_variant, is_lowered_cross_crate_type,
@@ -2156,6 +2159,11 @@ fn emit_helper(
     }
     validate_vitest_function_provenance(function, context)?;
     let mut context = function_expression_context(function, context);
+    if function_returns_uint8_array(function, &context) {
+        context.insert(format!(
+            "{RETURNS_CONTRACT_TYPED_ARRAY_MARKER}Uint8Array"
+        ));
+    }
     insert_type_parameter_context(&mut context, &function.sig.generics);
     let parameters = function
         .sig
@@ -2165,6 +2173,9 @@ fn emit_helper(
         .collect::<Result<Vec<_>, _>>()?;
     let return_type = match &function.sig.output {
         ReturnType::Default => "void".to_string(),
+        ReturnType::Type(_, _) if function_returns_uint8_array(function, &context) => {
+            "Uint8Array".to_string()
+        }
         ReturnType::Type(_, rust_type) => emit_type(rust_type, &context)?,
     };
     write_indent(out, indent);
@@ -4262,7 +4273,12 @@ fn emit_statement(
         Stmt::Expr(Expr::Return(expression), _) => {
             write_indent(out, indent);
             if let Some(value) = &expression.expr {
-                writeln!(out, "return {};", emit_expression(value, context)?)
+                let emitted = contract_typed_array_return_value(
+                    value,
+                    emit_expression(value, context)?,
+                    context,
+                );
+                writeln!(out, "return {emitted};")
                     .expect("writing to a String cannot fail");
             } else {
                 out.push_str("return;\n");

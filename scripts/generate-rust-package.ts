@@ -35,7 +35,7 @@ import {
   hasRustExportNamingSemantics,
   hasRustSiblingGenerationSemantics,
   hasTypeScriptNullableOptionFunctionBoundary,
-  hasTypeScriptArrayParameterFunctionBoundary,
+  hasTypeScriptArrayContractBoundary,
   renderCompanionContractExports,
   resolveExternalContractExports,
   renderGeneratedImports,
@@ -49,7 +49,9 @@ import {
   resolveRustExportName,
   snakeToLowerCamel,
   typeScriptDefaultNullOptionParameterArguments,
+  typeScriptArrayFieldArguments,
   typeScriptArrayParameterArguments,
+  typeScriptArrayReturnArguments,
   typeScriptInlineStringUnionArguments,
   typeScriptInternalTypeExportArguments,
   typeScriptNullableOptionFieldArguments,
@@ -106,7 +108,9 @@ interface NativeAuditEntry {
 }
 
 interface NativeAuditProbe {
+  arrayFieldArguments: string[];
   arrayParameterArguments: string[];
+  arrayReturnArguments: string[];
   defaultNullOptionParameterArguments: string[];
   entry: NativeAuditEntry;
   nullableOptionFieldArguments: string[];
@@ -133,7 +137,9 @@ const compilerPath = join(
   process.platform === 'win32' ? 'flight-compile.exe' : 'flight-compile',
 );
 const lenientSkippedByOutput = new Map<string, number>();
+const packageTypeScriptArrayFields = new Map<string, { rustSource: string; specification: string }>();
 const packageTypeScriptArrayParameters = new Map<string, { rustSource: string; specification: string }>();
+const packageTypeScriptArrayReturns = new Map<string, { rustSource: string; specification: string }>();
 const packageTypeScriptNullableOptionFields = new Map<string, string>();
 const packageTypeScriptDefaultNullOptionParameters = new Map<string, string>();
 const packageTypeScriptNullableOptionParameters = new Map<string, string>();
@@ -181,6 +187,58 @@ function packageTypeScriptArrayParameterArguments(): string[] {
   return [...packageTypeScriptArrayParameters]
     .sort(([left], [right]) => left.localeCompare(right))
     .flatMap(([, { specification }]) => ['--typescript-array-parameter', specification]);
+}
+
+function mergedTypeScriptArrayPositionArguments(
+  flag: '--typescript-array-field' | '--typescript-array-return',
+  ...groups: readonly string[][]
+): string[] {
+  const positions = new Map<string, string>();
+  for (const group of groups) {
+    for (let index = 0; index < group.length; index += 2) {
+      if (group[index] !== flag || group[index + 1] === undefined) {
+        throw new Error(`invalid ${flag} compiler arguments`);
+      }
+      const specification = group[index + 1];
+      const position = specification.split('=', 1)[0];
+      const previous = positions.get(position);
+      if (previous !== undefined && previous !== specification) {
+        throw new Error(`${flag} ${position} has conflicting representations`);
+      }
+      positions.set(position, specification);
+    }
+  }
+  return [...positions]
+    .sort(([left], [right]) => left.localeCompare(right))
+    .flatMap(([, specification]) => [flag, specification]);
+}
+
+function rememberTypeScriptArrayPositionArguments(
+  flag: '--typescript-array-field' | '--typescript-array-return',
+  arguments_: string[],
+  rustSource: string,
+): void {
+  const positions = flag === '--typescript-array-field' ? packageTypeScriptArrayFields : packageTypeScriptArrayReturns;
+  const existing = packageTypeScriptArrayPositionArguments(flag);
+  mergedTypeScriptArrayPositionArguments(flag, existing, arguments_);
+  for (let index = 0; index < arguments_.length; index += 2) {
+    const specification = arguments_[index + 1];
+    const position = specification.split('=', 1)[0];
+    const previous = positions.get(position);
+    if (previous !== undefined && previous.rustSource !== rustSource) {
+      throw new Error(`${flag} ${position} has conflicting Rust owners`);
+    }
+    positions.set(position, { rustSource, specification });
+  }
+}
+
+function packageTypeScriptArrayPositionArguments(
+  flag: '--typescript-array-field' | '--typescript-array-return',
+): string[] {
+  const positions = flag === '--typescript-array-field' ? packageTypeScriptArrayFields : packageTypeScriptArrayReturns;
+  return [...positions]
+    .sort(([left], [right]) => left.localeCompare(right))
+    .flatMap(([, { specification }]) => [flag, specification]);
 }
 
 function mergedTypeScriptNullableOptionFieldArguments(...groups: readonly string[][]): string[] {
@@ -302,7 +360,9 @@ function packageTypeScriptPositionOwnerSources(): string[] {
       ...packageTypeScriptNullableOptionParameters.values(),
       ...packageTypeScriptDefaultNullOptionParameters.values(),
       ...[...packageTypeScriptNullableOptionReturns.values()].map(({ rustSource }) => rustSource),
+      ...[...packageTypeScriptArrayFields.values()].map(({ rustSource }) => rustSource),
       ...[...packageTypeScriptArrayParameters.values()].map(({ rustSource }) => rustSource),
+      ...[...packageTypeScriptArrayReturns.values()].map(({ rustSource }) => rustSource),
     ]),
   ].sort();
 }
@@ -589,7 +649,9 @@ try {
           ...testSupportArguments(rustPath),
           ...representationArguments,
           ...knownTypeAliasArguments,
+          ...packageTypeScriptArrayPositionArguments('--typescript-array-field'),
           ...packageTypeScriptArrayParameterArguments(),
+          ...packageTypeScriptArrayPositionArguments('--typescript-array-return'),
           ...packageTypeScriptNullableOptionFieldArguments(),
           ...packageTypeScriptNullableOptionParameterArguments(),
           ...packageTypeScriptDefaultNullOptionParameterArguments(),
@@ -614,7 +676,35 @@ try {
             ...testSupportArguments(rustPath),
             ...representationArguments,
             ...allTypeAliasArguments,
+            ...packageTypeScriptArrayPositionArguments('--typescript-array-field'),
             ...packageTypeScriptArrayParameterArguments(),
+            ...packageTypeScriptArrayPositionArguments('--typescript-array-return'),
+            ...packageTypeScriptNullableOptionFieldArguments(),
+            ...packageTypeScriptNullableOptionParameterArguments(),
+            ...packageTypeScriptDefaultNullOptionParameterArguments(),
+            ...packageTypeScriptNullableOptionReturnArguments(),
+          ],
+        );
+      }
+      const testArrayReturnArguments = typeScriptArrayReturnArguments(existingTypescript, typescript);
+      if (testArrayReturnArguments.length > 0) {
+        typescript = compile(
+          'generate-tests',
+          compilePath,
+          join(rawRoot, fileName),
+          ['./contract.ts', '--contract-source', join(crateRoot, 'src', 'contract.rs')],
+          [...new Set([...aliasSources, ...positionOwners, ...exportNamingSources])],
+          targetNativeSources.filter(
+            (candidate) => !positionOwners.includes(candidate) && !exportNamingSources.includes(candidate),
+          ),
+          [
+            ...testSupportArguments(rustPath),
+            ...representationArguments,
+            ...allTypeAliasArguments,
+            ...packageTypeScriptArrayPositionArguments('--typescript-array-field'),
+            ...packageTypeScriptArrayParameterArguments(),
+            ...packageTypeScriptArrayPositionArguments('--typescript-array-return'),
+            ...testArrayReturnArguments,
             ...packageTypeScriptNullableOptionFieldArguments(),
             ...packageTypeScriptNullableOptionParameterArguments(),
             ...packageTypeScriptDefaultNullOptionParameterArguments(),
@@ -693,7 +783,7 @@ function discoverTargetNativeMetadataForTests(
     const hasNullableBoundary =
       existsSync(existingPath) && hasTypeScriptNullableOptionFunctionBoundary(readFileSync(existingPath, 'utf8'));
     const hasArrayBoundary =
-      existsSync(existingPath) && hasTypeScriptArrayParameterFunctionBoundary(readFileSync(existingPath, 'utf8'));
+      existsSync(existingPath) && hasTypeScriptArrayContractBoundary(readFileSync(existingPath, 'utf8'));
     if (!requiresAliasMetadata && !hasNullableBoundary && !hasArrayBoundary) continue;
     const probe = probeNativeSource(
       'generate',
@@ -704,7 +794,9 @@ function discoverTargetNativeMetadataForTests(
       targetNativeSources.filter((candidate) => candidate !== rustPath),
     );
     if (requiresAliasMetadata) rememberTypeScriptTypeAliasArguments(probe.typeAliasArguments);
+    rememberTypeScriptArrayPositionArguments('--typescript-array-field', probe.arrayFieldArguments, rustPath);
     rememberTypeScriptArrayParameterArguments(probe.arrayParameterArguments, rustPath);
+    rememberTypeScriptArrayPositionArguments('--typescript-array-return', probe.arrayReturnArguments, rustPath);
     rememberTypeScriptNullableOptionFieldArguments(probe.nullableOptionFieldArguments);
     rememberTypeScriptNullableOptionParameterArguments(probe.nullableOptionParameterArguments, rustPath);
     rememberTypeScriptDefaultNullOptionParameterArguments(probe.defaultNullOptionParameterArguments, rustPath);
@@ -737,7 +829,9 @@ function auditNativeSources(
     );
     entries.push(probe.entry);
     rememberTypeScriptTypeAliasArguments(probe.typeAliasArguments);
+    rememberTypeScriptArrayPositionArguments('--typescript-array-field', probe.arrayFieldArguments, rustPath);
     rememberTypeScriptArrayParameterArguments(probe.arrayParameterArguments, rustPath);
+    rememberTypeScriptArrayPositionArguments('--typescript-array-return', probe.arrayReturnArguments, rustPath);
     rememberTypeScriptNullableOptionFieldArguments(probe.nullableOptionFieldArguments);
     rememberTypeScriptNullableOptionParameterArguments(probe.nullableOptionParameterArguments, rustPath);
     rememberTypeScriptDefaultNullOptionParameterArguments(probe.defaultNullOptionParameterArguments, rustPath);
@@ -836,6 +930,8 @@ function probeNativeSource(
     nullableOptionParameterArguments: string[],
     defaultNullOptionParameterArguments: string[],
     nullableOptionReturnArguments: string[],
+    arrayFieldArguments: string[] = [],
+    arrayReturnArguments: string[] = [],
   ): string[] => [
     command,
     '--source',
@@ -849,6 +945,8 @@ function probeNativeSource(
     ...(command === 'generate-tests' ? testSupportArguments(reportedSource) : []),
     ...typeAliasArguments,
     ...arrayParameterArguments,
+    ...arrayFieldArguments,
+    ...arrayReturnArguments,
     ...nullableOptionFieldArguments,
     ...nullableOptionParameterArguments,
     ...defaultNullOptionParameterArguments,
@@ -881,7 +979,9 @@ function probeNativeSource(
     },
   );
   let typeAliasArguments: string[] = internalTypeExports.typeAliasArguments;
+  let arrayFieldArguments: string[] = [];
   let arrayParameterArguments: string[] = [];
+  let arrayReturnArguments: string[] = [];
   let nullableOptionFieldArguments: string[] = [];
   let nullableOptionParameterArguments: string[] = [];
   let defaultNullOptionParameterArguments: string[] = [];
@@ -1081,7 +1181,9 @@ function probeNativeSource(
     }
     if (result.status === 0) {
       arrayParameterArguments = typeScriptArrayParameterArguments(existingTypescript, readFileSync(out, 'utf8'));
-      if (arrayParameterArguments.length > 0) {
+      arrayFieldArguments = typeScriptArrayFieldArguments(existingTypescript, readFileSync(out, 'utf8'));
+      arrayReturnArguments = typeScriptArrayReturnArguments(existingTypescript, readFileSync(out, 'utf8'));
+      if (arrayParameterArguments.length > 0 || arrayFieldArguments.length > 0 || arrayReturnArguments.length > 0) {
         result = spawnSync(
           compilerPath,
           compilerArguments(
@@ -1103,6 +1205,8 @@ function probeNativeSource(
               knownNullableOptionReturnArguments,
               nullableOptionReturnArguments,
             ),
+            arrayFieldArguments,
+            arrayReturnArguments,
           ),
           {
             cwd: repositoryRoot,
@@ -1112,12 +1216,33 @@ function probeNativeSource(
       }
     }
   }
+  if (result.status === 0 && command === 'generate-tests') {
+    arrayReturnArguments = typeScriptArrayReturnArguments(existingTypescript, readFileSync(out, 'utf8'));
+    if (arrayReturnArguments.length > 0) {
+      result = spawnSync(
+        compilerPath,
+        compilerArguments(
+          mergedTypeScriptTypeAliasArguments(knownTypeAliasArguments, typeAliasArguments),
+          knownArrayParameterArguments,
+          knownNullableOptionFieldArguments,
+          knownNullableOptionParameterArguments,
+          knownDefaultNullOptionParameterArguments,
+          knownNullableOptionReturnArguments,
+          [],
+          arrayReturnArguments,
+        ),
+        { cwd: repositoryRoot, encoding: 'utf8' },
+      );
+    }
+  }
   const stderr = result.stderr.trim();
   const diagnostics = stderr === '' ? [] : stderr.split(/\r?\n/);
   const skipped = Number(/lenient: (\d+) items skipped/.exec(stderr)?.[1] ?? 0);
   const status = result.status !== 0 ? 'blocked' : skipped === 0 ? 'compiler-clean' : 'partial';
   return {
+    arrayFieldArguments,
     arrayParameterArguments,
+    arrayReturnArguments,
     defaultNullOptionParameterArguments,
     entry: {
       diagnostics,
@@ -1584,11 +1709,20 @@ function loadModule(rustSource: string, aliasSources: string[], representationIm
     compiledTypescript = compile('generate', rustPath, outputPath, [], aliasSources, [], representationArguments);
   }
   rememberTypeScriptTypeAliasArguments(typeAliasArguments);
+  const arrayFieldArguments = typeScriptArrayFieldArguments(contractTypescript, compiledTypescript);
   const arrayParameterArguments = typeScriptArrayParameterArguments(contractTypescript, compiledTypescript);
-  const arrayRepresentationArguments = [...representationArguments, ...arrayParameterArguments];
-  if (arrayParameterArguments.length > 0) {
+  const arrayReturnArguments = typeScriptArrayReturnArguments(contractTypescript, compiledTypescript);
+  const arrayRepresentationArguments = [
+    ...representationArguments,
+    ...arrayFieldArguments,
+    ...arrayParameterArguments,
+    ...arrayReturnArguments,
+  ];
+  if (arrayFieldArguments.length > 0 || arrayParameterArguments.length > 0 || arrayReturnArguments.length > 0) {
     compiledTypescript = compile('generate', rustPath, outputPath, [], aliasSources, [], arrayRepresentationArguments);
+    rememberTypeScriptArrayPositionArguments('--typescript-array-field', arrayFieldArguments, rustPath);
     rememberTypeScriptArrayParameterArguments(arrayParameterArguments, rustPath);
+    rememberTypeScriptArrayPositionArguments('--typescript-array-return', arrayReturnArguments, rustPath);
   }
   const nullableOptionFieldArguments = typeScriptNullableOptionFieldArguments(
     contractTypescript,

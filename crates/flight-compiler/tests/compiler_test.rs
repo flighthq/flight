@@ -1,6 +1,6 @@
 use flight_compiler::{
-    ExternalAliasSource, ModuleSource, SourceMode, TypeScriptArrayParameter,
-    TypeScriptArrayParameterRepresentation, TypeScriptDefaultNullOptionParameter,
+    ExternalAliasSource, ModuleSource, SourceMode, TypeScriptArrayField, TypeScriptArrayParameter,
+    TypeScriptArrayParameterRepresentation, TypeScriptArrayReturn, TypeScriptDefaultNullOptionParameter,
     TypeScriptInlineStringUnion, TypeScriptNullableOptionField, TypeScriptNullableOptionParameter,
     TypeScriptNullableOptionReturn, TypeScriptStringUnion, TypeScriptTypeAlias, VitestAliasSource,
     VitestSupportSource, VitestVisibilitySource, compile_typescript, compile_typescript_lenient,
@@ -8,11 +8,13 @@ use flight_compiler::{
     compile_typescript_with_module_sources, compile_typescript_with_options,
     compile_typescript_with_options_and_internal_type_exports,
     compile_typescript_with_options_and_internal_type_exports_and_array_parameters,
+    compile_typescript_with_options_and_internal_type_exports_and_array_representations,
     compile_typescript_with_visibility_sources, compile_vitest, compile_vitest_with_alias_sources,
     compile_vitest_with_contract_alias_sources, compile_vitest_with_external_alias_sources,
     compile_vitest_with_module_alias_sources,
     compile_vitest_with_module_visibility_sources_and_array_parameters,
     compile_vitest_with_named_visibility_sources_and_array_parameters, compile_vitest_with_options,
+    compile_vitest_with_named_visibility_sources_and_array_representations,
     compile_vitest_with_visibility_sources, root_only_names, source_mode,
 };
 
@@ -13852,6 +13854,203 @@ pub fn forward(out: &mut [f32], values: &[f32], state: &State) {
     }
 
     #[test]
+    fn lowers_only_contract_proven_byte_array_positions_to_uint8array() {
+        fn compile(
+            source: ModuleSource<'_>,
+            aliases: &[ModuleSource<'_>],
+            parameters: &[TypeScriptArrayParameter<'_>],
+            fields: &[TypeScriptArrayField<'_>],
+            returns: &[TypeScriptArrayReturn<'_>],
+        ) -> Result<String, flight_compiler::CompileError> {
+            return compile_typescript_with_options_and_internal_type_exports_and_array_representations(
+                source,
+                None,
+                aliases,
+                &[],
+                &[],
+                &[],
+                &[],
+                &[],
+                parameters,
+                fields,
+                returns,
+                &[],
+                &[],
+                &[],
+                &[],
+                &[],
+                &[],
+                false,
+            );
+        }
+
+        let source = ModuleSource {
+            path: "crates/flight-abc/src/bytes.rs",
+            source: r#"
+pub struct Packet {
+    pub bytes: Vec<u8>,
+    pub ordinary: Vec<u8>,
+}
+
+pub fn consume(owned: Vec<u8>, borrowed: &[u8], mutable: &mut [u8]) -> Vec<u8> {
+    if !borrowed.is_empty() {
+        mutable[0] = borrowed[0];
+    }
+    return owned;
+}
+
+pub fn build() -> Vec<u8> {
+    let mut bytes: Vec<u8> = Vec::new();
+    bytes.push(1);
+    return bytes;
+}
+
+pub fn make_packet(bytes: Vec<u8>, ordinary: Vec<u8>) -> Packet {
+    return Packet { bytes, ordinary };
+}
+
+pub fn ordinary() -> Vec<u8> {
+    return Vec::new();
+}
+"#,
+        };
+        let parameters = [
+            TypeScriptArrayParameter {
+                owner: "consume",
+                parameter: "owned",
+                representation: TypeScriptArrayParameterRepresentation::Uint8Array,
+            },
+            TypeScriptArrayParameter {
+                owner: "consume",
+                parameter: "borrowed",
+                representation: TypeScriptArrayParameterRepresentation::Uint8Array,
+            },
+            TypeScriptArrayParameter {
+                owner: "consume",
+                parameter: "mutable",
+                representation: TypeScriptArrayParameterRepresentation::Uint8Array,
+            },
+        ];
+        let fields = [TypeScriptArrayField {
+            owner: "Packet",
+            field: "bytes",
+        }];
+        let returns = [
+            TypeScriptArrayReturn { owner: "consume" },
+            TypeScriptArrayReturn { owner: "build" },
+        ];
+
+        let output = compile(source, &[], &parameters, &fields, &returns).unwrap();
+        assert!(
+            output.contains(
+                "export function consume(owned: Uint8Array, borrowed: Uint8Array, mutable: Uint8Array): Uint8Array {"
+            ),
+            "{output}"
+        );
+        assert!(output.contains("  return owned;"), "{output}");
+        assert!(output.contains("export function build(): Uint8Array {"), "{output}");
+        assert!(output.contains("  return new Uint8Array(bytes);"), "{output}");
+        assert!(output.contains("  bytes: Uint8Array;"), "{output}");
+        assert!(output.contains("  ordinary: number[];"), "{output}");
+        assert!(
+            output.contains("return { bytes: new Uint8Array(bytes), ordinary };"),
+            "{output}"
+        );
+        assert!(output.contains("export function ordinary(): number[] {"), "{output}");
+
+        for rust_type in ["Vec<i8>", "Vec<u16>", "Vec<T>", "&Vec<u8>", "&mut Vec<u8>"] {
+            let generic = if rust_type.contains('T') { "<T>" } else { "" };
+            let source_text = format!(
+                "pub fn consume{generic}(bytes: {rust_type}) {{ let _ = bytes.len(); }}\n"
+            );
+            let metadata = [TypeScriptArrayParameter {
+                owner: "consume",
+                parameter: "bytes",
+                representation: TypeScriptArrayParameterRepresentation::Uint8Array,
+            }];
+            let error = compile(
+                ModuleSource {
+                    path: "crates/flight-abc/src/refusal.rs",
+                    source: &source_text,
+                },
+                &[],
+                &metadata,
+                &[],
+                &[],
+            )
+            .unwrap_err()
+            .to_string();
+            assert!(error.contains("exact standard Rust"), "{rust_type}: {error}");
+        }
+
+        let custom = ModuleSource {
+            path: "crates/flight-abc/src/custom.rs",
+            source: "pub struct Vec<T> { pub value: T }\npub fn consume(bytes: Vec<u8>) {}\n",
+        };
+        let metadata = [TypeScriptArrayParameter {
+            owner: "consume",
+            parameter: "bytes",
+            representation: TypeScriptArrayParameterRepresentation::Uint8Array,
+        }];
+        assert!(
+            compile(custom, &[], &metadata, &[], &[])
+                .unwrap_err()
+                .to_string()
+                .contains("exact standard Rust")
+        );
+
+        let wrong_positions = ModuleSource {
+            path: "crates/flight-abc/src/wrong.rs",
+            source: "pub struct Packet { pub bytes: Vec<i8> }\npub fn build() -> Vec<u16> { return Vec::new(); }\n",
+        };
+        assert!(
+            compile(
+                wrong_positions,
+                &[],
+                &[],
+                &[TypeScriptArrayField {
+                    owner: "Packet",
+                    field: "bytes",
+                }],
+                &[],
+            )
+            .unwrap_err()
+            .to_string()
+            .contains("public exact standard Rust `Vec<u8>` field")
+        );
+        assert!(
+            compile(
+                wrong_positions,
+                &[],
+                &[],
+                &[],
+                &[TypeScriptArrayReturn { owner: "build" }],
+            )
+            .unwrap_err()
+            .to_string()
+            .contains("exact standard Rust `Vec<u8>` return")
+        );
+
+        let duplicate = "pub fn build() -> Vec<u8> { return Vec::new(); }\n";
+        let error = compile(
+            ModuleSource {
+                path: "crates/flight-abc/src/one.rs",
+                source: duplicate,
+            },
+            &[ModuleSource {
+                path: "crates/flight-abc/src/two.rs",
+                source: duplicate,
+            }],
+            &[],
+            &[],
+            &[TypeScriptArrayReturn { owner: "build" }],
+        )
+        .unwrap_err()
+        .to_string();
+        assert!(error.contains("exactly one visible Rust function, found 2"), "{error}");
+    }
+
+    #[test]
     fn resolves_array_like_onward_calls_by_source_identity() {
         let module = |path, source| ModuleSource { path, source };
         let compile = |source: ModuleSource<'_>, aliases: &[ModuleSource<'_>]| {
@@ -19391,6 +19590,50 @@ pub fn get_scale() -> f64 {
 
 mod compile_vitest {
     use super::*;
+
+    #[test]
+    fn lowers_a_contract_proven_private_byte_helper_return_to_uint8array() {
+        let source = r#"
+mod byte_helpers {
+    fn build_bytes() -> Vec<u8> {
+        let mut bytes = Vec::new();
+        bytes.push(1);
+        return bytes;
+    }
+
+    #[test]
+    fn builds_bytes() {
+        assert_eq!(build_bytes()[0], 1);
+    }
+}
+"#;
+        let returns = [TypeScriptArrayReturn {
+            owner: "buildBytes",
+        }];
+        let output = compile_vitest_with_named_visibility_sources_and_array_representations(
+            source,
+            "@flighthq/example/contract",
+            None,
+            &[],
+            &[],
+            &[],
+            &[],
+            &[],
+            &[],
+            &[],
+            &returns,
+            &[],
+            &[],
+            &[],
+            &[],
+            &[],
+        )
+        .unwrap();
+
+        assert!(output.contains("function buildBytes(): Uint8Array {"), "{output}");
+        assert!(output.contains("return new Uint8Array(bytes);"), "{output}");
+        assert!(output.contains("buildBytes()[0]"), "{output}");
+    }
 
     #[test]
     fn lowers_flight_regexp_construction_without_a_nonexistent_contract_import() {

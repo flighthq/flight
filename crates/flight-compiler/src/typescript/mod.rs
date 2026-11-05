@@ -81,6 +81,8 @@ pub(crate) struct EmitProgramInput<'a> {
     pub internal_type_exports: &'a [&'a str],
     pub type_script_type_aliases: &'a [crate::TypeScriptTypeAlias<'a>],
     pub type_script_array_parameters: &'a [crate::TypeScriptArrayParameter<'a>],
+    pub type_script_array_fields: &'a [crate::TypeScriptArrayField<'a>],
+    pub type_script_array_returns: &'a [crate::TypeScriptArrayReturn<'a>],
     pub type_script_nullable_option_fields: &'a [crate::TypeScriptNullableOptionField<'a>],
     pub type_script_default_null_option_parameters:
         &'a [crate::TypeScriptDefaultNullOptionParameter<'a>],
@@ -378,6 +380,9 @@ const ARRAY_LIKE_PARAMETER_MARKER: &str = "@array-like-parameter:";
 // `{source}␟{function}␟{parameter}` for a contract-proven `&mut [f32]` parameter whose exact
 // TypeScript representation is `Float32Array`.
 const FLOAT32_ARRAY_PARAMETER_MARKER: &str = "@float32-array-parameter:";
+const UINT8_ARRAY_PARAMETER_MARKER: &str = "@uint8-array-parameter:";
+const UINT8_ARRAY_RETURN_MARKER: &str = "@uint8-array-return:";
+const TYPE_SCRIPT_ARRAY_FIELD_MARKER: &str = "@typescript-array-field:";
 
 // `{source}␟{Struct}␟{field}` for a `nullable-option` struct field, read where that struct is declared or
 // built by literal.
@@ -393,6 +398,7 @@ pub(super) const RETURNS_NULLABLE_MARKER: &str = "@returns-nullable";
 // A function returning a fixed array of a typed-array primitive (`[f64; 4]` is `Float64Array`): its
 // returned array literals construct that typed array.
 const RETURNS_TYPED_ARRAY_MARKER: &str = "@returns-typed-array:";
+pub(crate) const RETURNS_CONTRACT_TYPED_ARRAY_MARKER: &str = "@returns-contract-typed-array:";
 
 pub(super) const PROVENANCE_SEPARATOR: char = '\u{1f}';
 
@@ -893,6 +899,60 @@ fn float32_array_parameter(
         "{}: Float32Array",
         snake_to_lower_camel(&pattern.ident.to_string())
     ));
+}
+
+fn uint8_array_parameter(
+    function: &ItemFn,
+    argument: &FnArg,
+    entities: &HashSet<String>,
+) -> Option<String> {
+    let FnArg::Typed(typed) = argument else {
+        return None;
+    };
+    let Pat::Ident(pattern) = typed.pat.as_ref() else {
+        return None;
+    };
+    let current = current_source(entities)?;
+    if !entities.contains(&format!(
+        "{UINT8_ARRAY_PARAMETER_MARKER}{current}{PROVENANCE_SEPARATOR}{}{PROVENANCE_SEPARATOR}{}",
+        function.sig.ident, pattern.ident
+    )) {
+        return None;
+    }
+    return Some(format!(
+        "{}: Uint8Array",
+        snake_to_lower_camel(&pattern.ident.to_string())
+    ));
+}
+
+pub(crate) fn function_returns_uint8_array(
+    function: &ItemFn,
+    entities: &HashSet<String>,
+) -> bool {
+    return current_source(entities).map_or_else(
+        || entities.contains(&format!("{UINT8_ARRAY_RETURN_MARKER}{}", function.sig.ident)),
+        |current| {
+            entities.contains(&format!(
+                "{UINT8_ARRAY_RETURN_MARKER}{current}{PROVENANCE_SEPARATOR}{}",
+                function.sig.ident
+            ))
+        },
+    );
+}
+
+pub(crate) fn contract_typed_array_return_value(
+    expression: &Expr,
+    emitted: String,
+    entities: &HashSet<String>,
+) -> String {
+    let Some(array_type) = unique_marker_suffix(entities, RETURNS_CONTRACT_TYPED_ARRAY_MARKER)
+    else {
+        return emitted;
+    };
+    if expression_typed_array(expression, entities).as_deref() == Some(array_type.as_str()) {
+        return emitted;
+    }
+    return format!("new {array_type}({emitted})");
 }
 
 pub(super) fn argument_is_array_like_parameter(
@@ -1522,6 +1582,35 @@ fn expression_typed_array(expression: &Expr, entities: &HashSet<String>) -> Opti
         Expr::Reference(reference) => expression_typed_array(&reference.expr, entities),
         _ => None,
     };
+}
+
+fn type_script_array_field(
+    entities: &HashSet<String>,
+    identity: &str,
+    field: &syn::Ident,
+) -> Option<String> {
+    return unique_marker_suffix(
+        entities,
+        &format!(
+            "{TYPE_SCRIPT_ARRAY_FIELD_MARKER}{identity}{PROVENANCE_SEPARATOR}{field}{PROVENANCE_SEPARATOR}"
+        ),
+    );
+}
+
+fn contract_array_field_value(
+    expression: &Expr,
+    emitted: String,
+    entities: &HashSet<String>,
+    identity: &str,
+    field: &syn::Ident,
+) -> String {
+    let Some(array_type) = type_script_array_field(entities, identity, field) else {
+        return emitted;
+    };
+    if expression_typed_array(expression, entities).as_deref() == Some(array_type.as_str()) {
+        return emitted;
+    }
+    return format!("new {array_type}({emitted})");
 }
 
 // `SHARED_IDENTITY_EXTERNAL_TYPE_MARKER` and `SHARED_IDENTITY_EXTERNAL_FIELD_MARKER` facts for the
@@ -7072,6 +7161,9 @@ fn insert_lexical_binding_context(function: &ItemFn, context: &mut HashSet<Strin
         }
 
         fn initializer_fact(&self, expression: &Expr) -> BindingFact {
+            if let Some(array_type) = expression_typed_array(expression, self.context) {
+                return BindingFact::TypedArray(array_type);
+            }
             if let Some(kind) = hash_collection_construction(expression, self.context) {
                 return kind;
             }
@@ -8314,11 +8406,15 @@ fn insert_lexical_binding_context(function: &ItemFn, context: &mut HashSet<Strin
         written_cell_names: guard_written_names.names,
         written_cells: HashSet::new(),
     };
-    for argument in &function.sig.inputs {
-        let FnArg::Typed(argument) = argument else {
+    for fn_argument in &function.sig.inputs {
+        let FnArg::Typed(argument) = fn_argument else {
             continue;
         };
-        let fact = resolver.typed_fact(&argument.ty);
+        let fact = if uint8_array_parameter(function, fn_argument, context).is_some() {
+            BindingFact::TypedArray("Uint8Array".to_string())
+        } else {
+            resolver.typed_fact(&argument.ty)
+        };
         resolver.bind_pattern(&argument.pat, fact);
         let cell_type = match argument.ty.as_ref() {
             Type::Reference(reference) if reference.mutability.is_none() => reference.elem.as_ref(),
@@ -10626,6 +10722,23 @@ pub(crate) fn function_expression_context(
         },
         &function.block,
     );
+    for argument in &function.sig.inputs {
+        if uint8_array_parameter(function, argument, &context).is_none() {
+            continue;
+        }
+        let FnArg::Typed(argument) = argument else {
+            continue;
+        };
+        let Some(id) = local_pattern_binding_id(&context, &argument.pat) else {
+            continue;
+        };
+        let prefix = format!("{BINDING_FACT_MARKER}{id}=");
+        context.retain(|marker| !marker.starts_with(&prefix));
+        context.insert(format!(
+            "{prefix}{}",
+            binding_fact_marker(&BindingFact::TypedArray("Uint8Array".to_string()))
+        ));
+    }
     return context;
 }
 
@@ -11720,6 +11833,7 @@ fn emit_closure_with_parameter_types(
         .filter(|marker| {
             !marker.starts_with(RETURN_TYPE_MARKER)
                 && !marker.starts_with(RETURNS_TYPED_ARRAY_MARKER)
+                && !marker.starts_with(RETURNS_CONTRACT_TYPED_ARRAY_MARKER)
                 && !marker.starts_with(FINISH_ENTITY_RETURN_MARKER)
                 && marker.as_str() != RETURNS_U32_MARKER
                 && marker.as_str() != RETURNS_NULLABLE_MARKER
@@ -13213,13 +13327,30 @@ fn emit_expression_value(
                     let Some(function_name) = &function_name else {
                         return Ok(value);
                     };
-                    if expression_typed_array(argument, entities).is_none() {
-                        return Ok(value);
-                    }
                     let kinds = marker_suffixes(
                         entities,
                         &format!("{SLICE_ARGUMENT_MARKER}{function_name}:{index}:"),
                     );
+                    let uint8_kinds = kinds
+                        .iter()
+                        .filter(|kind| kind.starts_with("uint8-"))
+                        .collect::<Vec<_>>();
+                    if uint8_kinds.len() == 1 {
+                        if expression_typed_array(argument, entities).as_deref()
+                            == Some("Uint8Array")
+                        {
+                            return Ok(value);
+                        }
+                        if uint8_kinds[0].as_str() == "uint8-mut-slice" {
+                            return Err(compile_error(format!(
+                                "a number array cannot be passed to the mutable Uint8Array argument {index} of `{function_name}` without losing shared mutation"
+                            )));
+                        }
+                        return Ok(format!("new Uint8Array({value})"));
+                    }
+                    if expression_typed_array(argument, entities).is_none() {
+                        return Ok(value);
+                    }
                     if kinds.contains("fixed-buffer") {
                         return Ok(value);
                     }
@@ -13655,7 +13786,15 @@ fn emit_expression_value(
                         if let syn::Member::Named(field_name) = &field.member
                             && let Some(identity) = &structure_identity
                         {
-                            if is_nullable_literal_field(entities, identity, field_name) {
+                            if type_script_array_field(entities, identity, field_name).is_some() {
+                                value = contract_array_field_value(
+                                    &field.expr,
+                                    value,
+                                    entities,
+                                    identity,
+                                    field_name,
+                                );
+                            } else if is_nullable_literal_field(entities, identity, field_name) {
                                 value = nullable_option_value(&field.expr, value);
                             } else if is_ordinary_option_literal_field(
                                 entities, identity, field_name,
@@ -13984,6 +14123,18 @@ fn emit_contextual_struct_literal_expression(
                             }),
                         );
                         let value = match (&field.member, literal_identity) {
+                            (syn::Member::Named(field_name), Some(identity))
+                                if type_script_array_field(entities, &identity, field_name)
+                                    .is_some() =>
+                            {
+                                contract_array_field_value(
+                                    &field.expr,
+                                    value,
+                                    entities,
+                                    &identity,
+                                    field_name,
+                                )
+                            }
                             (syn::Member::Named(field_name), Some(identity))
                                 if is_nullable_literal_field(entities, &identity, field_name) =>
                             {
@@ -14480,6 +14631,9 @@ fn emit_function(
         .iter()
         .enumerate()
         .map(|(index, argument)| {
+            if let Some(parameter) = uint8_array_parameter(function, argument, entities) {
+                return Ok(parameter);
+            }
             if let Some(parameter) = float32_array_parameter(function, argument, entities) {
                 return Ok(parameter);
             }
@@ -14532,6 +14686,9 @@ fn emit_function(
             &signature_context,
             aliases,
         )?),
+        ReturnType::Type(_, _) if function_returns_uint8_array(function, entities) => {
+            "Uint8Array".to_string()
+        }
         ReturnType::Type(_, rust_type) => {
             emit_preferred_type(rust_type, &signature_context, aliases)?
         }
@@ -14635,6 +14792,11 @@ fn emit_function(
     if nullable_return {
         function_context.insert(RETURNS_NULLABLE_MARKER.to_string());
     }
+    if function_returns_uint8_array(function, entities) {
+        function_context.insert(format!(
+            "{RETURNS_CONTRACT_TYPED_ARRAY_MARKER}Uint8Array"
+        ));
+    }
     if let ReturnType::Type(_, rust_type) = &function.sig.output
         && let Type::Array(array) = rust_type.as_ref()
         && let Some(array_type) = typed_array_for_type(&array.elem)
@@ -14669,6 +14831,9 @@ pub(crate) fn emit_local_function(
         .collect::<Result<Vec<_>, _>>()?;
     let return_type = match &function.sig.output {
         ReturnType::Default => "void".to_string(),
+        ReturnType::Type(_, _) if function_returns_uint8_array(function, entities) => {
+            "Uint8Array".to_string()
+        }
         ReturnType::Type(_, rust_type) => emit_type(rust_type, &signature_context)?,
     };
     write_indent(out, indent);
@@ -14700,6 +14865,11 @@ pub(crate) fn emit_local_function(
     if matches!(&function.sig.output, ReturnType::Type(_, rust_type) if type_is_named(rust_type, "u32"))
     {
         function_context.insert(RETURNS_U32_MARKER.to_string());
+    }
+    if function_returns_uint8_array(function, entities) {
+        function_context.insert(format!(
+            "{RETURNS_CONTRACT_TYPED_ARRAY_MARKER}Uint8Array"
+        ));
     }
     if let ReturnType::Type(_, rust_type) = &function.sig.output
         && let Type::Array(array) = rust_type.as_ref()
@@ -24927,6 +25097,8 @@ pub(crate) fn emit_program(input: &EmitProgramInput) -> Result<String, CompileEr
     let internal_type_exports = input.internal_type_exports;
     let type_script_type_aliases = input.type_script_type_aliases;
     let type_script_array_parameters = input.type_script_array_parameters;
+    let type_script_array_fields = input.type_script_array_fields;
+    let type_script_array_returns = input.type_script_array_returns;
     let type_script_nullable_option_fields = input.type_script_nullable_option_fields;
     let type_script_default_null_option_parameters =
         input.type_script_default_null_option_parameters;
@@ -25004,6 +25176,13 @@ pub(crate) fn emit_program(input: &EmitProgramInput) -> Result<String, CompileEr
             .map(|(module, program)| (module.as_str(), *program))
             .collect::<Vec<_>>(),
     );
+    for (_, program) in program_sources.iter().copied().chain(
+        visibility_modules
+            .iter()
+            .map(|(module, program)| (module.as_str(), *program)),
+    ) {
+        insert_program_type_path_context(&mut expression_context, program);
+    }
     insert_type_script_array_parameter_context(
         &mut expression_context,
         program_sources.iter().copied().chain(
@@ -25012,6 +25191,24 @@ pub(crate) fn emit_program(input: &EmitProgramInput) -> Result<String, CompileEr
                 .map(|(module, program)| (module.as_str(), *program)),
         ),
         type_script_array_parameters,
+    )?;
+    insert_type_script_array_field_context(
+        &mut expression_context,
+        program_sources.iter().copied().chain(
+            visibility_modules
+                .iter()
+                .map(|(module, program)| (module.as_str(), *program)),
+        ),
+        type_script_array_fields,
+    )?;
+    insert_type_script_array_return_context(
+        &mut expression_context,
+        program_sources.iter().copied().chain(
+            visibility_modules
+                .iter()
+                .map(|(module, program)| (module.as_str(), *program)),
+        ),
+        type_script_array_returns,
     )?;
     insert_type_script_nullable_option_field_context(
         &mut expression_context,
@@ -26199,6 +26396,7 @@ fn emit_statement(
             if entities.contains(RETURNS_NULLABLE_MARKER) {
                 emitted = nullable_option_value(value, emitted);
             }
+            emitted = contract_typed_array_return_value(value, emitted, entities);
             let emitted = strip_value_position_parens(&emitted);
             let emitted = indent_continuation_lines(&emitted, indent);
             writeln!(out, "return {emitted};").expect("writing to a String cannot fail");
@@ -26240,6 +26438,7 @@ fn emit_statement(
                 if entities.contains(RETURNS_NULLABLE_MARKER) {
                     value = nullable_option_value(returned, value);
                 }
+                value = contract_typed_array_return_value(returned, value, entities);
                 let value = strip_value_position_parens(&value);
                 let value = indent_continuation_lines(&value, indent);
                 writeln!(out, "return {value};").expect("writing to a String cannot fail");
@@ -26590,6 +26789,15 @@ fn emit_struct(
         };
         let name = snake_to_lower_camel(&field_name.to_string());
         let prefix = if readonly { "readonly " } else { "" };
+        let structure_identity = current_source(entities)
+            .map(|module| format!("{module}{PROVENANCE_SEPARATOR}{}", structure.ident))
+            .unwrap_or_else(|| structure.ident.to_string());
+        if let Some(array_type) = type_script_array_field(entities, &structure_identity, field_name)
+        {
+            writeln!(out, "  {prefix}{name}: {array_type};")
+                .expect("writing to a String cannot fail");
+            continue;
+        }
         if let Some(inner) = option_inner_type(&field.ty)
             && let Some(current) = current_source(entities)
             && entities.contains(&format!(
@@ -26704,6 +26912,14 @@ pub(crate) fn insert_type_script_array_parameter_context<'a>(
                     )));
                 }
             }
+            crate::TypeScriptArrayParameterRepresentation::Uint8Array => {
+                if uint8_buffer_parameter_kind(&argument.ty, context).is_none() {
+                    return Err(compile_error(format!(
+                        "TypeScript array parameter `{}.{}` with representation `Uint8Array` must designate an exact standard Rust `Vec<u8>`, `&[u8]`, or `&mut [u8]` parameter",
+                        metadata.owner, metadata.parameter
+                    )));
+                }
+            }
         }
         let function_name = function.sig.ident.to_string();
         context.insert(owner_marker(
@@ -26734,6 +26950,194 @@ pub(crate) fn insert_type_script_array_parameter_context<'a>(
                     "{SLICE_ARGUMENT_MARKER}{function_name}:{index}:fixed-buffer"
                 ));
             }
+            crate::TypeScriptArrayParameterRepresentation::Uint8Array => {
+                context.insert(format!(
+                    "{UINT8_ARRAY_PARAMETER_MARKER}{module}{PROVENANCE_SEPARATOR}{function_name}{PROVENANCE_SEPARATOR}{}",
+                    pattern.ident
+                ));
+                let kind = uint8_buffer_parameter_kind(&argument.ty, context)
+                    .expect("the Uint8Array parameter shape was validated");
+                context.insert(format!(
+                    "{SLICE_ARGUMENT_MARKER}{function_name}:{index}:{kind}"
+                ));
+            }
+        }
+    }
+    return Ok(());
+}
+
+pub(crate) fn insert_type_script_array_field_context<'a>(
+    context: &mut HashSet<String>,
+    programs: impl IntoIterator<Item = (&'a str, &'a Program)>,
+    fields: &[crate::TypeScriptArrayField<'_>],
+) -> Result<(), CompileError> {
+    let programs = programs.into_iter().collect::<Vec<_>>();
+    for metadata in fields {
+        let mut matches = programs
+            .iter()
+            .flat_map(|(module, program)| {
+                program.structs.iter().flat_map(move |structure| {
+                    structure.fields.iter().filter_map(move |field| {
+                        let field_name = field.ident.as_ref()?;
+                        (structure.ident == metadata.owner
+                            && snake_to_lower_camel(&field_name.to_string()) == metadata.field)
+                            .then_some((*module, structure, field, field_name))
+                    })
+                })
+            })
+            .collect::<Vec<_>>();
+        if matches.len() != 1 {
+            return Err(compile_error(format!(
+                "TypeScript array field `{}.{}` must resolve to exactly one visible Rust field, found {}",
+                metadata.owner,
+                metadata.field,
+                matches.len()
+            )));
+        }
+        let (module, structure, field, field_name) = matches.pop().expect("one match was required");
+        if !is_public(&structure.vis)
+            || !is_public(&field.vis)
+            || !is_standard_u8_vec(&field.ty, context)
+        {
+            return Err(compile_error(format!(
+                "TypeScript array field `{}.{}` with representation `Uint8Array` must designate a public exact standard Rust `Vec<u8>` field",
+                metadata.owner, metadata.field
+            )));
+        }
+        context.insert(owner_marker(
+            STRUCT_OWNER_MARKER,
+            module,
+            &structure.ident.to_string(),
+            SourceAccess::Public,
+        ));
+        for identity in [
+            format!("{module}{PROVENANCE_SEPARATOR}{}", structure.ident),
+            structure.ident.to_string(),
+        ] {
+            context.insert(format!(
+                "{TYPED_ARRAY_FIELD_MARKER}{identity}{PROVENANCE_SEPARATOR}{field_name}{PROVENANCE_SEPARATOR}Uint8Array"
+            ));
+            context.insert(format!(
+                "{TYPE_SCRIPT_ARRAY_FIELD_MARKER}{identity}{PROVENANCE_SEPARATOR}{field_name}{PROVENANCE_SEPARATOR}Uint8Array"
+            ));
+        }
+    }
+    return Ok(());
+}
+
+pub(crate) fn insert_type_script_array_return_context<'a>(
+    context: &mut HashSet<String>,
+    programs: impl IntoIterator<Item = (&'a str, &'a Program)>,
+    returns: &[crate::TypeScriptArrayReturn<'_>],
+) -> Result<(), CompileError> {
+    let programs = programs.into_iter().collect::<Vec<_>>();
+    for metadata in returns {
+        let mut matches = programs
+            .iter()
+            .flat_map(|(module, program)| {
+                program.functions.iter().filter_map(move |function| {
+                    (snake_to_lower_camel(&function.sig.ident.to_string()) == metadata.owner)
+                        .then_some((*module, function))
+                })
+            })
+            .collect::<Vec<_>>();
+        if matches.len() != 1 {
+            return Err(compile_error(format!(
+                "TypeScript array return `{}` must resolve to exactly one visible Rust function, found {}",
+                metadata.owner,
+                matches.len()
+            )));
+        }
+        let (module, function) = matches.pop().expect("one match was required");
+        let ReturnType::Type(_, rust_type) = &function.sig.output else {
+            return Err(compile_error(format!(
+                "TypeScript array return `{}` with representation `Uint8Array` must designate an exact standard Rust `Vec<u8>` return",
+                metadata.owner
+            )));
+        };
+        if !is_standard_u8_vec(rust_type, context) {
+            return Err(compile_error(format!(
+                "TypeScript array return `{}` with representation `Uint8Array` must designate an exact standard Rust `Vec<u8>` return",
+                metadata.owner
+            )));
+        }
+        let function_name = function.sig.ident.to_string();
+        context.insert(format!(
+            "{UINT8_ARRAY_RETURN_MARKER}{module}{PROVENANCE_SEPARATOR}{function_name}"
+        ));
+        let prefix = format!(
+            "{RETURN_BINDING_FACT_MARKER}{module}{PROVENANCE_SEPARATOR}{function_name}{PROVENANCE_SEPARATOR}"
+        );
+        context.retain(|marker| !marker.starts_with(&prefix));
+        context.insert(format!(
+            "{prefix}{}",
+            binding_fact_marker(&BindingFact::TypedArray("Uint8Array".to_string()))
+        ));
+    }
+    return Ok(());
+}
+
+pub(crate) fn insert_type_script_vitest_array_return_context<'a>(
+    context: &mut HashSet<String>,
+    test_program: &'a TestProgram,
+    production_programs: impl IntoIterator<Item = (&'a str, &'a Program)>,
+    returns: &[crate::TypeScriptArrayReturn<'_>],
+) -> Result<(), CompileError> {
+    let production_programs = production_programs.into_iter().collect::<Vec<_>>();
+    let test_functions = test_program
+        .helpers
+        .iter()
+        .chain(test_program.suites.iter().flat_map(|suite| suite.helpers.iter()))
+        .collect::<Vec<_>>();
+    for metadata in returns {
+        let mut matches = test_functions
+            .iter()
+            .filter_map(|function| {
+                (snake_to_lower_camel(&function.sig.ident.to_string()) == metadata.owner)
+                    .then_some((None, *function))
+            })
+            .chain(production_programs.iter().flat_map(|(module, program)| {
+                program.functions.iter().filter_map(move |function| {
+                    (snake_to_lower_camel(&function.sig.ident.to_string()) == metadata.owner)
+                        .then_some((Some(*module), function))
+                })
+            }))
+            .collect::<Vec<_>>();
+        if matches.len() != 1 {
+            return Err(compile_error(format!(
+                "TypeScript array return `{}` must resolve to exactly one visible Rust function or test helper, found {}",
+                metadata.owner,
+                matches.len()
+            )));
+        }
+        let (module, function) = matches.pop().expect("one match was required");
+        let ReturnType::Type(_, rust_type) = &function.sig.output else {
+            return Err(compile_error(format!(
+                "TypeScript array return `{}` with representation `Uint8Array` must designate an exact standard Rust `Vec<u8>` return",
+                metadata.owner
+            )));
+        };
+        if !is_standard_u8_vec(rust_type, context) {
+            return Err(compile_error(format!(
+                "TypeScript array return `{}` with representation `Uint8Array` must designate an exact standard Rust `Vec<u8>` return",
+                metadata.owner
+            )));
+        }
+        let function_name = function.sig.ident.to_string();
+        if let Some(module) = module {
+            context.insert(format!(
+                "{UINT8_ARRAY_RETURN_MARKER}{module}{PROVENANCE_SEPARATOR}{function_name}"
+            ));
+            let prefix = format!(
+                "{RETURN_BINDING_FACT_MARKER}{module}{PROVENANCE_SEPARATOR}{function_name}{PROVENANCE_SEPARATOR}"
+            );
+            context.retain(|marker| !marker.starts_with(&prefix));
+            context.insert(format!(
+                "{prefix}{}",
+                binding_fact_marker(&BindingFact::TypedArray("Uint8Array".to_string()))
+            ));
+        } else {
+            context.insert(format!("{UINT8_ARRAY_RETURN_MARKER}{function_name}"));
         }
     }
     return Ok(());
@@ -26750,6 +27154,43 @@ fn is_f32_slice_reference(rust_type: &Type, mutable: bool) -> bool {
         return false;
     };
     return type_is_named(&slice.elem, "f32");
+}
+
+fn uint8_buffer_parameter_kind(
+    rust_type: &Type,
+    entities: &HashSet<String>,
+) -> Option<&'static str> {
+    let rust_type = match rust_type {
+        Type::Group(group) => return uint8_buffer_parameter_kind(&group.elem, entities),
+        Type::Paren(paren) => return uint8_buffer_parameter_kind(&paren.elem, entities),
+        rust_type => rust_type,
+    };
+    if is_standard_u8_vec(rust_type, entities) {
+        return Some("uint8-owned");
+    }
+    let Type::Reference(reference) = rust_type else {
+        return None;
+    };
+    let Type::Slice(slice) = reference.elem.as_ref() else {
+        return None;
+    };
+    if !type_is_named(&slice.elem, "u8") {
+        return None;
+    }
+    return Some(if reference.mutability.is_some() {
+        "uint8-mut-slice"
+    } else {
+        "uint8-slice"
+    });
+}
+
+fn is_standard_u8_vec(rust_type: &Type, entities: &HashSet<String>) -> bool {
+    let Type::Path(path) = rust_type else {
+        return false;
+    };
+    return path.qself.is_none()
+        && type_path_is_standard_vec(&path.path, entities)
+        && standard_vec_inner_type(rust_type, entities).is_some_and(|inner| type_is_named(inner, "u8"));
 }
 
 pub(crate) fn insert_type_script_nullable_option_field_context<'a>(

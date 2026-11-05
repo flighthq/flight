@@ -1383,6 +1383,70 @@ fn keeps_the_existing_target_representation() {
     );
   }, 120_000);
 
+  it('preserves contract-proven Uint8Array parameters, returns, and fields only', async () => {
+    writeFileSync(join(crateRoot, 'src', 'lib.rs'), 'pub mod contract;\nmod value;\npub use contract::*;\n');
+    writeFileSync(join(crateRoot, 'src', 'contract.rs'), 'pub use super::value::*;\n');
+    writeFileSync(
+      sourcePath,
+      `pub struct Packet {
+    pub bytes: Vec<u8>,
+    pub ordinary: Vec<u8>,
+}
+
+pub fn consume_bytes(bytes: &[u8]) -> Vec<u8> {
+    return bytes.to_vec();
+}
+
+pub fn make_packet(bytes: Vec<u8>, ordinary: Vec<u8>) -> Packet {
+    return Packet { bytes, ordinary };
+}
+
+pub fn ordinary_bytes() -> Vec<u8> {
+    return Vec::new();
+}
+`,
+    );
+    writeFileSync(
+      join(packageRoot, 'src', 'value.ts'),
+      `export interface Packet {
+  bytes: Uint8Array;
+  ordinary: number[];
+}
+
+export function consumeBytes(bytes: Uint8Array): Uint8Array {
+  return new Uint8Array(bytes);
+}
+
+export function makePacket(bytes: number[], ordinary: number[]): Packet {
+  return { bytes: new Uint8Array(bytes), ordinary };
+}
+
+export function ordinaryBytes(): number[] {
+  return [];
+}
+`,
+    );
+    writeFileSync(
+      join(packageRoot, 'src', 'contract.ts'),
+      "export { consumeBytes, makePacket, ordinaryBytes } from './value.ts';\nexport type { Packet } from './value.ts';\n",
+    );
+    writeFileSync(
+      join(packageRoot, 'src', 'index.ts'),
+      "export { consumeBytes, makePacket, ordinaryBytes } from './contract.ts';\nexport type { Packet } from './contract.ts';\n",
+    );
+
+    const run = await generateWhileScanning();
+
+    expect(run.code, run.stderr).toBe(0);
+    const value = readFileSync(join(packageRoot, 'src', 'value.ts'), 'utf8');
+    expect(value).toContain('bytes: Uint8Array;');
+    expect(value).toContain('ordinary: number[];');
+    expect(value).toContain('function consumeBytes(bytes: Uint8Array): Uint8Array');
+    expect(value).toContain('return new Uint8Array([...bytes]);');
+    expect(value).toContain('bytes: new Uint8Array(bytes)');
+    expect(value).toContain('function ordinaryBytes(): number[]');
+  }, 120_000);
+
   it('refuses an established fixed-buffer representation for a Rust Vec parameter', async () => {
     writeFileSync(join(crateRoot, 'src', 'lib.rs'), 'pub mod contract;\nmod value;\npub use contract::*;\n');
     writeFileSync(join(crateRoot, 'src', 'contract.rs'), 'pub use super::value::*;\n');

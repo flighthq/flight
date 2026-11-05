@@ -1125,8 +1125,8 @@ export function typeScriptNullableOptionParameterArguments(
 }
 
 // Exact exported function and parameter names prove an established numeric-array representation.
-// The compiler remains the Rust authority: this surface comparison may identify a syntactic
-// `number[]` candidate, but only an exact `&mut [f32]` / `&[f32]` parameter is accepted downstream.
+// The compiler remains the Rust authority: this surface comparison identifies only a syntactic
+// candidate, while the exact f32 slice or standard byte-buffer shape is accepted downstream.
 export function typeScriptArrayParameterArguments(existingTypescript: string, generatedTypescript: string): string[] {
   const existing = parseTypeScriptMetadataSurface('existing.ts', existingTypescript);
   if (existing.errors.length > 0) {
@@ -1198,6 +1198,7 @@ export function typeScriptArrayParameterArguments(existingTypescript: string, ge
 
 function exactArrayParameterRepresentation(type: Record<string, unknown>): string | undefined {
   if (bareTypeReferenceName(type) === 'Float32Array') return 'Float32Array';
+  if (bareTypeReferenceName(type) === 'Uint8Array') return 'Uint8Array';
   if (type.type !== 'TSTypeReference' || typeName(type) !== 'ArrayLike') return undefined;
   const parameters = typeParameters(type);
   return parameters.length === 1 && parameters[0].type === 'TSNumberKeyword' ? 'ArrayLike<number>' : undefined;
@@ -1205,11 +1206,94 @@ function exactArrayParameterRepresentation(type: Record<string, unknown>): strin
 
 function generatedArrayParameterCandidate(type: Record<string, unknown>, representation: string): boolean {
   if (representation === 'Float32Array') return isNumberArrayType(type);
+  if (representation === 'Uint8Array') return isNumberArrayType(type) || isReadonlyNumberArrayType(type);
   if (representation !== 'ArrayLike<number>' || type.type !== 'TSTypeReference' || typeName(type) !== 'Readonly') {
     return false;
   }
   const parameters = typeParameters(type);
   return parameters.length === 1 && isNumberArrayType(parameters[0]);
+}
+
+function isReadonlyNumberArrayType(type: Record<string, unknown>): boolean {
+  if (type.type !== 'TSTypeReference' || typeName(type) !== 'Readonly') return false;
+  const parameters = typeParameters(type);
+  return parameters.length === 1 && isNumberArrayType(parameters[0]);
+}
+
+// A return is allowed to be private because target-native test files have established private
+// helpers. Exact top-level declaration counts prevent an overload or duplicate owner from lending
+// its representation to another function of the same spelling.
+export function typeScriptArrayReturnArguments(existingTypescript: string, generatedTypescript: string): string[] {
+  const existing = parseTypeScriptMetadataSurface('existing.ts', existingTypescript);
+  if (existing.errors.length > 0) {
+    throw new Error(
+      `could not parse existing TypeScript contract while resolving array returns: ${existing.errors[0]?.message}`,
+    );
+  }
+  const generated = parseTypeScriptMetadataSurface('generated.ts', generatedTypescript);
+  if (generated.errors.length > 0) {
+    throw new Error(
+      `could not parse generated TypeScript contract while resolving array returns: ${generated.errors[0]?.message}`,
+    );
+  }
+  const existingBody = existing.program.body as unknown as Record<string, unknown>[];
+  const generatedBody = generated.program.body as unknown as Record<string, unknown>[];
+  const existingFunctions = nestedFunctionTypes(existingBody);
+  const generatedFunctions = nestedFunctionTypes(generatedBody);
+  const existingCounts = nestedFunctionDeclarationCounts(existingBody);
+  const generatedCounts = nestedFunctionDeclarationCounts(generatedBody);
+  const owners: string[] = [];
+  for (const [owner, existingFunction] of existingFunctions) {
+    const generatedFunction = generatedFunctions.get(owner);
+    if (
+      existingCounts.get(owner) !== 1 ||
+      generatedCounts.get(owner) !== 1 ||
+      existingFunction.returnType === undefined ||
+      bareTypeReferenceName(existingFunction.returnType) !== 'Uint8Array' ||
+      generatedFunction?.returnType === undefined ||
+      !(isNumberArrayType(generatedFunction.returnType) || isReadonlyNumberArrayType(generatedFunction.returnType))
+    ) {
+      continue;
+    }
+    owners.push(owner);
+  }
+  return owners.sort().flatMap((owner) => ['--typescript-array-return', `${owner}=Uint8Array`]);
+}
+
+export function typeScriptArrayFieldArguments(existingTypescript: string, generatedTypescript: string): string[] {
+  const existing = parseTypeScriptMetadataSurface('existing.ts', existingTypescript);
+  if (existing.errors.length > 0) {
+    throw new Error(
+      `could not parse existing TypeScript contract while resolving array fields: ${existing.errors[0]?.message}`,
+    );
+  }
+  const generated = parseTypeScriptMetadataSurface('generated.ts', generatedTypescript);
+  if (generated.errors.length > 0) {
+    throw new Error(
+      `could not parse generated TypeScript contract while resolving array fields: ${generated.errors[0]?.message}`,
+    );
+  }
+  const existingInterfaces = exportedInterfaceFieldTypes(existing.program.body as unknown as Record<string, unknown>[]);
+  const generatedInterfaces = exportedInterfaceFieldTypes(
+    generated.program.body as unknown as Record<string, unknown>[],
+  );
+  const positions: string[] = [];
+  for (const [owner, existingFields] of existingInterfaces) {
+    const generatedFields = generatedInterfaces.get(owner);
+    if (existingFields.owners !== 1 || generatedFields?.owners !== 1) continue;
+    for (const [field, existingField] of existingFields.fields) {
+      const generatedField = generatedFields.fields.get(field);
+      if (
+        existingField.count === 1 &&
+        generatedField?.count === 1 &&
+        bareTypeReferenceName(existingField.type) === 'Uint8Array' &&
+        (isNumberArrayType(generatedField.type) || isReadonlyNumberArrayType(generatedField.type))
+      ) {
+        positions.push(`${owner}.${field}`);
+      }
+    }
+  }
+  return positions.sort().flatMap((position) => ['--typescript-array-field', `${position}=Uint8Array`]);
 }
 
 function isNumberArrayType(type: Record<string, unknown>): boolean {
@@ -1433,6 +1517,23 @@ export function hasTypeScriptArrayParameterFunctionBoundary(typescript: string):
   );
 }
 
+export function hasTypeScriptArrayContractBoundary(typescript: string): boolean {
+  const parsed = parseTypeScriptMetadataSurface('contract.ts', typescript);
+  if (parsed.errors.length > 0) return false;
+  const body = parsed.program.body as unknown as Record<string, unknown>[];
+  if (hasTypeScriptArrayParameterFunctionBoundary(typescript)) return true;
+  if (
+    [...nestedFunctionTypes(body).values()].some(
+      (function_) => function_.returnType !== undefined && bareTypeReferenceName(function_.returnType) === 'Uint8Array',
+    )
+  ) {
+    return true;
+  }
+  return [...exportedInterfaceFieldTypes(body).values()].some((owner) =>
+    [...owner.fields.values()].some((field) => bareTypeReferenceName(field.type) === 'Uint8Array'),
+  );
+}
+
 function typeUnionHasOnlyAbsence(
   type: Record<string, unknown> | undefined,
   absence: 'TSNullKeyword' | 'TSUndefinedKeyword',
@@ -1500,6 +1601,82 @@ function exportedFunctionDeclarationCounts(body: readonly Record<string, unknown
     counts.set(identifier.name, (counts.get(identifier.name) ?? 0) + 1);
   }
   return counts;
+}
+
+function nestedFunctionDeclarations(
+  value: unknown,
+  declarations: Record<string, unknown>[] = [],
+): Record<string, unknown>[] {
+  if (Array.isArray(value)) {
+    for (const item of value) nestedFunctionDeclarations(item, declarations);
+    return declarations;
+  }
+  if (value === null || typeof value !== 'object') return declarations;
+  const node = value as Record<string, unknown>;
+  if (node.type === 'FunctionDeclaration') declarations.push(node);
+  for (const child of Object.values(node)) nestedFunctionDeclarations(child, declarations);
+  return declarations;
+}
+
+function nestedFunctionDeclarationCounts(body: readonly Record<string, unknown>[]): Map<string, number> {
+  const counts = new Map<string, number>();
+  for (const declaration of nestedFunctionDeclarations(body)) {
+    const identifier = declaration.id as Record<string, unknown> | null;
+    if (identifier?.type !== 'Identifier' || typeof identifier.name !== 'string') continue;
+    counts.set(identifier.name, (counts.get(identifier.name) ?? 0) + 1);
+  }
+  return counts;
+}
+
+function nestedFunctionTypes(body: readonly Record<string, unknown>[]): Map<string, ExportedFunctionTypes> {
+  const functions = new Map<string, ExportedFunctionTypes>();
+  for (const declaration of nestedFunctionDeclarations(body)) {
+    const identifier = declaration.id as Record<string, unknown> | null;
+    if (identifier?.type !== 'Identifier' || typeof identifier.name !== 'string') continue;
+    const returnAnnotation = declaration.returnType as Record<string, unknown> | null;
+    functions.set(identifier.name, {
+      parameters: [],
+      returnType: returnAnnotation?.typeAnnotation as Record<string, unknown> | undefined,
+    });
+  }
+  return functions;
+}
+
+function exportedInterfaceFieldTypes(body: readonly Record<string, unknown>[]): Map<
+  string,
+  {
+    fields: Map<string, { count: number; type: Record<string, unknown> }>;
+    owners: number;
+  }
+> {
+  const interfaces = new Map<
+    string,
+    {
+      fields: Map<string, { count: number; type: Record<string, unknown> }>;
+      owners: number;
+    }
+  >();
+  for (const statement of body) {
+    if (statement.type !== 'ExportNamedDeclaration') continue;
+    const declaration = statement.declaration as Record<string, unknown> | null;
+    if (declaration?.type !== 'TSInterfaceDeclaration') continue;
+    const identifier = declaration.id as Record<string, unknown> | null;
+    if (identifier?.type !== 'Identifier' || typeof identifier.name !== 'string') continue;
+    const result = interfaces.get(identifier.name) ?? { fields: new Map(), owners: 0 };
+    result.owners += 1;
+    const interfaceBody = declaration.body as Record<string, unknown>;
+    for (const member of interfaceBody.body as Record<string, unknown>[]) {
+      if (member.type !== 'TSPropertySignature' || member.optional === true || member.computed === true) continue;
+      const key = member.key as Record<string, unknown>;
+      const annotation = member.typeAnnotation as Record<string, unknown> | null;
+      const type = annotation?.typeAnnotation as Record<string, unknown> | undefined;
+      if (key.type !== 'Identifier' || typeof key.name !== 'string' || type === undefined) continue;
+      const existing = result.fields.get(key.name);
+      result.fields.set(key.name, { count: (existing?.count ?? 0) + 1, type });
+    }
+    interfaces.set(identifier.name, result);
+  }
+  return interfaces;
 }
 
 function exportedFunctionTypes(body: readonly Record<string, unknown>[]): Map<string, ExportedFunctionTypes> {

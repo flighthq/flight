@@ -42,7 +42,9 @@ import {
   resolveExternalContractExports,
   resolveRustExportName,
   typeScriptDefaultNullOptionParameterArguments,
+  typeScriptArrayFieldArguments,
   typeScriptArrayParameterArguments,
+  typeScriptArrayReturnArguments,
   typeScriptInlineStringUnionArguments,
   typeScriptInternalTypeExportArguments,
   typeScriptNullableOptionFieldArguments,
@@ -513,14 +515,16 @@ export function incompatible(value: RealAlias | undefined): void {}
   });
 
   it('derives exact numeric-array parameter representations by exported parameter identity', () => {
-    const existing = `export function resolveLayoutTree(out: Float32Array, nodeCount: number, intrinsicSizes: ArrayLike<number>): void {}
+    const existing = `export function resolveLayoutTree(out: Float32Array, nodeCount: number, intrinsicSizes: ArrayLike<number>, bytes: Uint8Array): void {}
 export function unchanged(values: number[]): void {}
 `;
-    const generated = `export function resolveLayoutTree(intrinsicSizes: Readonly<number[]>, nodeCount: number, out: number[]): void {}
+    const generated = `export function resolveLayoutTree(intrinsicSizes: Readonly<number[]>, nodeCount: number, out: number[], bytes: number[]): void {}
 export function unchanged(values: number[]): void {}
 `;
 
     expect(typeScriptArrayParameterArguments(existing, generated)).toEqual([
+      '--typescript-array-parameter',
+      'resolveLayoutTree.bytes=Uint8Array',
       '--typescript-array-parameter',
       'resolveLayoutTree.intrinsicSizes=ArrayLike<number>',
       '--typescript-array-parameter',
@@ -546,6 +550,54 @@ export function overloaded(out: number[]): void {}
 `;
 
     expect(typeScriptArrayParameterArguments(existing, generated)).toEqual([]);
+  });
+
+  it('derives exact Uint8Array field and private return positions', () => {
+    const existing = `export interface Packet {
+  bytes: Uint8Array;
+  ordinary: number[];
+}
+describe('abc', () => {
+  function buildAbc(): Uint8Array { return new Uint8Array(); }
+});
+`;
+    const generated = `export interface Packet {
+  bytes: number[];
+  ordinary: number[];
+}
+describe('abc', () => {
+  function buildAbc(): number[] { return []; }
+});
+`;
+
+    expect(typeScriptArrayFieldArguments(existing, generated)).toEqual([
+      '--typescript-array-field',
+      'Packet.bytes=Uint8Array',
+    ]);
+    expect(typeScriptArrayReturnArguments(existing, generated)).toEqual([
+      '--typescript-array-return',
+      'buildAbc=Uint8Array',
+    ]);
+  });
+
+  it('refuses ambiguous, wrapped, signed, generic, and conflicting byte-array positions', () => {
+    const existing = `export interface Packet { bytes: Uint8Array | null; }
+export interface Packet { bytes: Uint8Array; }
+function wrapped(): Readonly<Uint8Array> { throw new Error(); }
+function signed(): Int8Array { throw new Error(); }
+function generic<T>(): T[] { return []; }
+function overloaded(): Uint8Array { return new Uint8Array(); }
+function overloaded(value: number): Uint8Array { return new Uint8Array(); }
+`;
+    const generated = `export interface Packet { bytes: number[]; }
+function wrapped(): number[] { return []; }
+function signed(): number[] { return []; }
+function generic<T>(): T[] { return []; }
+function overloaded(): number[] { return []; }
+`;
+
+    expect(typeScriptArrayFieldArguments(existing, generated)).toEqual([]);
+    expect(typeScriptArrayReturnArguments(existing, generated)).toEqual([]);
   });
 
   it('does not infer type aliases from names or unmatched signatures', () => {

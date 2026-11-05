@@ -64,6 +64,7 @@ pub struct TypeScriptTypeAlias<'a> {
 pub enum TypeScriptArrayParameterRepresentation {
     ArrayLikeNumber,
     Float32Array,
+    Uint8Array,
 }
 
 /// An established TypeScript array representation at one public Rust function parameter.
@@ -77,6 +78,26 @@ pub struct TypeScriptArrayParameter<'a> {
     pub owner: &'a str,
     pub parameter: &'a str,
     pub representation: TypeScriptArrayParameterRepresentation,
+}
+
+/// An established `Uint8Array` representation at one Rust struct field.
+///
+/// The compiler accepts only one uniquely visible public `Vec<u8>` field. Ordinary byte vectors
+/// remain `number[]` unless their exact owner and field are designated by contract metadata.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct TypeScriptArrayField<'a> {
+    pub owner: &'a str,
+    pub field: &'a str,
+}
+
+/// An established `Uint8Array` representation at one Rust function return.
+///
+/// The compiler accepts only one uniquely visible function returning an exact standard
+/// `Vec<u8>`. Private functions are eligible because target-native test contracts contain private
+/// helpers whose signatures are nevertheless established TypeScript.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct TypeScriptArrayReturn<'a> {
+    pub owner: &'a str,
 }
 
 /// An established TypeScript contract field whose Rust `Option` uses `null` absence.
@@ -244,6 +265,8 @@ fn compile_typescript_sources(
         &[],
         &[],
         &[],
+        &[],
+        &[],
         module_identities,
         source_paths,
         visibility_sources,
@@ -262,6 +285,8 @@ fn compile_typescript_sources_with_options(
     type_script_type_aliases: &[TypeScriptTypeAlias<'_>],
     internal_type_exports: &[&str],
     type_script_array_parameters: &[TypeScriptArrayParameter<'_>],
+    type_script_array_fields: &[TypeScriptArrayField<'_>],
+    type_script_array_returns: &[TypeScriptArrayReturn<'_>],
     type_script_nullable_option_fields: &[TypeScriptNullableOptionField<'_>],
     type_script_default_null_option_parameters: &[TypeScriptDefaultNullOptionParameter<'_>],
     type_script_nullable_option_parameters: &[TypeScriptNullableOptionParameter<'_>],
@@ -274,6 +299,8 @@ fn compile_typescript_sources_with_options(
 ) -> Result<String, CompileError> {
     validate_type_script_type_aliases(type_script_type_aliases)?;
     validate_type_script_array_parameters(type_script_array_parameters)?;
+    validate_type_script_array_fields(type_script_array_fields)?;
+    validate_type_script_array_returns(type_script_array_returns)?;
     validate_type_script_nullable_option_fields(type_script_nullable_option_fields)?;
     validate_type_script_default_null_option_parameters(
         type_script_default_null_option_parameters,
@@ -477,6 +504,8 @@ fn compile_typescript_sources_with_options(
         internal_type_exports,
         type_script_type_aliases,
         type_script_array_parameters,
+        type_script_array_fields,
+        type_script_array_returns,
         type_script_nullable_option_fields,
         type_script_default_null_option_parameters,
         type_script_nullable_option_parameters,
@@ -743,6 +772,51 @@ pub fn compile_typescript_with_options_and_internal_type_exports_and_array_param
     crate_roots: &[CrateRootSource<'_>],
     lenient: bool,
 ) -> Result<String, CompileError> {
+    return compile_typescript_with_options_and_internal_type_exports_and_array_representations(
+        source,
+        entity_module,
+        alias_sources,
+        external_alias_sources,
+        type_script_string_unions,
+        type_script_inline_string_unions,
+        type_script_type_aliases,
+        internal_type_exports,
+        type_script_array_parameters,
+        &[],
+        &[],
+        type_script_nullable_option_fields,
+        type_script_default_null_option_parameters,
+        type_script_nullable_option_parameters,
+        type_script_nullable_option_returns,
+        visibility_sources,
+        crate_roots,
+        lenient,
+    );
+}
+
+/// Compiles one Rust module with established TypeScript array representations at exact parameter,
+/// field, and return positions.
+// flight-lint: allow(contract-vocabulary) compiler host tooling is not a transpilation contract
+pub fn compile_typescript_with_options_and_internal_type_exports_and_array_representations(
+    source: ModuleSource<'_>,
+    entity_module: Option<&str>,
+    alias_sources: &[ModuleSource<'_>],
+    external_alias_sources: &[ExternalAliasSource<'_>],
+    type_script_string_unions: &[TypeScriptStringUnion<'_>],
+    type_script_inline_string_unions: &[TypeScriptInlineStringUnion<'_>],
+    type_script_type_aliases: &[TypeScriptTypeAlias<'_>],
+    internal_type_exports: &[&str],
+    type_script_array_parameters: &[TypeScriptArrayParameter<'_>],
+    type_script_array_fields: &[TypeScriptArrayField<'_>],
+    type_script_array_returns: &[TypeScriptArrayReturn<'_>],
+    type_script_nullable_option_fields: &[TypeScriptNullableOptionField<'_>],
+    type_script_default_null_option_parameters: &[TypeScriptDefaultNullOptionParameter<'_>],
+    type_script_nullable_option_parameters: &[TypeScriptNullableOptionParameter<'_>],
+    type_script_nullable_option_returns: &[TypeScriptNullableOptionReturn<'_>],
+    visibility_sources: &[ModuleSource<'_>],
+    crate_roots: &[CrateRootSource<'_>],
+    lenient: bool,
+) -> Result<String, CompileError> {
     let identities = std::iter::once(&source)
         .chain(alias_sources)
         .map(|module| module_identity_from_path(module.path, crate_roots))
@@ -768,6 +842,8 @@ pub fn compile_typescript_with_options_and_internal_type_exports_and_array_param
         type_script_type_aliases,
         internal_type_exports,
         type_script_array_parameters,
+        type_script_array_fields,
+        type_script_array_returns,
         type_script_nullable_option_fields,
         type_script_default_null_option_parameters,
         type_script_nullable_option_parameters,
@@ -793,6 +869,8 @@ pub fn compile_typescript_lenient(
     return compile_typescript_sources_with_options(
         source,
         entity_module,
+        &[],
+        &[],
         &[],
         &[],
         &[],
@@ -862,6 +940,8 @@ pub fn compile_vitest_with_contract_alias_sources(
         &[],
         &[],
         &[],
+        &[],
+        &[],
     );
 }
 
@@ -875,6 +955,8 @@ fn compile_vitest_with_contract_alias_sources_internal(
     visibility_sources: &[VitestVisibilitySource<'_>],
     type_script_type_aliases: &[TypeScriptTypeAlias<'_>],
     type_script_array_parameters: &[TypeScriptArrayParameter<'_>],
+    type_script_array_fields: &[TypeScriptArrayField<'_>],
+    type_script_array_returns: &[TypeScriptArrayReturn<'_>],
     type_script_nullable_option_fields: &[TypeScriptNullableOptionField<'_>],
     type_script_default_null_option_parameters: &[TypeScriptDefaultNullOptionParameter<'_>],
     type_script_nullable_option_parameters: &[TypeScriptNullableOptionParameter<'_>],
@@ -883,6 +965,8 @@ fn compile_vitest_with_contract_alias_sources_internal(
 ) -> Result<String, CompileError> {
     validate_type_script_type_aliases(type_script_type_aliases)?;
     validate_type_script_array_parameters(type_script_array_parameters)?;
+    validate_type_script_array_fields(type_script_array_fields)?;
+    validate_type_script_array_returns(type_script_array_returns)?;
     validate_type_script_nullable_option_fields(type_script_nullable_option_fields)?;
     validate_type_script_default_null_option_parameters(
         type_script_default_null_option_parameters,
@@ -1031,6 +1115,13 @@ fn compile_vitest_with_contract_alias_sources_internal(
         visibility_function_programs.into_iter(),
         contract_source,
     )?;
+    for (_, program) in alias_program_refs
+        .iter()
+        .copied()
+        .chain(visibility_program_refs.iter().copied())
+    {
+        typescript::insert_program_type_path_context(&mut context, program);
+    }
     typescript::insert_type_script_type_alias_context(&mut context, type_script_type_aliases);
     typescript::insert_type_script_array_parameter_context(
         &mut context,
@@ -1039,6 +1130,23 @@ fn compile_vitest_with_contract_alias_sources_internal(
             .copied()
             .chain(visibility_program_refs.iter().copied()),
         type_script_array_parameters,
+    )?;
+    typescript::insert_type_script_array_field_context(
+        &mut context,
+        alias_program_refs
+            .iter()
+            .copied()
+            .chain(visibility_program_refs.iter().copied()),
+        type_script_array_fields,
+    )?;
+    typescript::insert_type_script_vitest_array_return_context(
+        &mut context,
+        &program,
+        alias_program_refs
+            .iter()
+            .copied()
+            .chain(visibility_program_refs.iter().copied()),
+        type_script_array_returns,
     )?;
     typescript::insert_type_script_nullable_option_field_context(
         &mut context,
@@ -1257,6 +1365,8 @@ pub fn compile_vitest_with_external_alias_sources(
         &[],
         &[],
         &[],
+        &[],
+        &[],
     );
 }
 
@@ -1272,6 +1382,8 @@ pub fn compile_vitest_with_module_alias_sources(
         contract_module,
         None,
         alias_sources,
+        &[],
+        &[],
         &[],
         &[],
         &[],
@@ -1461,6 +1573,47 @@ pub fn compile_vitest_with_named_visibility_sources_and_array_parameters(
     type_script_nullable_option_returns: &[TypeScriptNullableOptionReturn<'_>],
     support_sources: &[VitestSupportSource<'_>],
 ) -> Result<String, CompileError> {
+    return compile_vitest_with_named_visibility_sources_and_array_representations(
+        source,
+        contract_module,
+        contract_source,
+        alias_sources,
+        external_alias_sources,
+        type_script_string_unions,
+        visibility_sources,
+        type_script_type_aliases,
+        type_script_array_parameters,
+        &[],
+        &[],
+        type_script_nullable_option_fields,
+        type_script_default_null_option_parameters,
+        type_script_nullable_option_parameters,
+        type_script_nullable_option_returns,
+        support_sources,
+    );
+}
+
+/// Compiles one Rust test module with established TypeScript array representations at exact
+/// parameter, field, and return positions.
+// flight-lint: allow(contract-vocabulary) compiler host tooling is not a transpilation contract
+pub fn compile_vitest_with_named_visibility_sources_and_array_representations(
+    source: &str,
+    contract_module: &str,
+    contract_source: Option<&str>,
+    alias_sources: &[VitestAliasSource<'_>],
+    external_alias_sources: &[ExternalAliasSource<'_>],
+    type_script_string_unions: &[TypeScriptStringUnion<'_>],
+    visibility_sources: &[VitestVisibilitySource<'_>],
+    type_script_type_aliases: &[TypeScriptTypeAlias<'_>],
+    type_script_array_parameters: &[TypeScriptArrayParameter<'_>],
+    type_script_array_fields: &[TypeScriptArrayField<'_>],
+    type_script_array_returns: &[TypeScriptArrayReturn<'_>],
+    type_script_nullable_option_fields: &[TypeScriptNullableOptionField<'_>],
+    type_script_default_null_option_parameters: &[TypeScriptDefaultNullOptionParameter<'_>],
+    type_script_nullable_option_parameters: &[TypeScriptNullableOptionParameter<'_>],
+    type_script_nullable_option_returns: &[TypeScriptNullableOptionReturn<'_>],
+    support_sources: &[VitestSupportSource<'_>],
+) -> Result<String, CompileError> {
     return compile_vitest_with_contract_alias_sources_internal(
         source,
         contract_module,
@@ -1471,6 +1624,8 @@ pub fn compile_vitest_with_named_visibility_sources_and_array_parameters(
         visibility_sources,
         type_script_type_aliases,
         type_script_array_parameters,
+        type_script_array_fields,
+        type_script_array_returns,
         type_script_nullable_option_fields,
         type_script_default_null_option_parameters,
         type_script_nullable_option_parameters,
@@ -2985,6 +3140,46 @@ fn validate_type_script_array_parameters(
             return Err(compile_error(format!(
                 "duplicate TypeScript array parameter `{}.{}`",
                 parameter.owner, parameter.parameter
+            )));
+        }
+    }
+    return Ok(());
+}
+
+fn validate_type_script_array_fields(fields: &[TypeScriptArrayField<'_>]) -> Result<(), CompileError> {
+    let mut positions = std::collections::BTreeSet::new();
+    for field in fields {
+        if !valid_type_script_identifier(field.owner) || !valid_type_script_identifier(field.field) {
+            return Err(compile_error(format!(
+                "TypeScript array field has invalid position `{}.{}`",
+                field.owner, field.field
+            )));
+        }
+        if !positions.insert((field.owner, field.field)) {
+            return Err(compile_error(format!(
+                "duplicate TypeScript array field `{}.{}`",
+                field.owner, field.field
+            )));
+        }
+    }
+    return Ok(());
+}
+
+fn validate_type_script_array_returns(
+    returns: &[TypeScriptArrayReturn<'_>],
+) -> Result<(), CompileError> {
+    let mut owners = std::collections::BTreeSet::new();
+    for return_ in returns {
+        if !valid_type_script_identifier(return_.owner) {
+            return Err(compile_error(format!(
+                "TypeScript array return has invalid function `{}`",
+                return_.owner
+            )));
+        }
+        if !owners.insert(return_.owner) {
+            return Err(compile_error(format!(
+                "duplicate TypeScript array return `{}`",
+                return_.owner
             )));
         }
     }
