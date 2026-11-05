@@ -2,15 +2,14 @@ use flight_compiler::{
     ExternalAliasSource, ModuleSource, SourceMode, TypeScriptDefaultNullOptionParameter,
     TypeScriptInlineStringUnion, TypeScriptNullableOptionField, TypeScriptNullableOptionParameter,
     TypeScriptNullableOptionReturn, TypeScriptStringUnion, TypeScriptTypeAlias, VitestAliasSource,
-    VitestSupportSource,
-    compile_typescript, compile_typescript_lenient, compile_typescript_with_alias_sources,
-    compile_typescript_with_external_alias_sources, compile_typescript_with_module_sources,
-    compile_typescript_with_options, compile_typescript_with_options_and_internal_type_exports,
-    compile_typescript_with_visibility_sources, compile_vitest,
-    compile_vitest_with_alias_sources, compile_vitest_with_contract_alias_sources,
-    compile_vitest_with_external_alias_sources, compile_vitest_with_module_alias_sources,
-    compile_vitest_with_options, compile_vitest_with_visibility_sources, root_only_names,
-    source_mode,
+    VitestSupportSource, compile_typescript, compile_typescript_lenient,
+    compile_typescript_with_alias_sources, compile_typescript_with_external_alias_sources,
+    compile_typescript_with_module_sources, compile_typescript_with_options,
+    compile_typescript_with_options_and_internal_type_exports,
+    compile_typescript_with_visibility_sources, compile_vitest, compile_vitest_with_alias_sources,
+    compile_vitest_with_contract_alias_sources, compile_vitest_with_external_alias_sources,
+    compile_vitest_with_module_alias_sources, compile_vitest_with_options,
+    compile_vitest_with_visibility_sources, root_only_names, source_mode,
 };
 
 mod source_modes {
@@ -14474,7 +14473,11 @@ pub enum AnimationLoopMode { PingPong, Repeat }
 
     #[test]
     fn emits_explicit_internal_type_owners_without_contract_imports() {
-        let values = vec!["big".to_string(), "little".to_string(), "unknown".to_string()];
+        let values = vec![
+            "big".to_string(),
+            "little".to_string(),
+            "unknown".to_string(),
+        ];
         let unions = [TypeScriptInlineStringUnion {
             name: "PlatformEndianness",
             values: &values,
@@ -18940,11 +18943,12 @@ pub fn panic_message(payload: &str) -> String {
     return payload.to_string();
 }
 "#;
-        // A payload read again, a `FlightError` payload, a result reused after `expect_err`, and a
-        // payload inspected by a helper are not `toThrow(..)`; each refuses at its `catch_unwind`.
+        // A payload read again, a DOMException-kind `FlightError` (it lowers without its name), a
+        // result reused after `expect_err`, and a payload inspected by a helper are not `toThrow(..)`;
+        // each refuses at its `catch_unwind`.
         for body in [
             "let payload = std::panic::catch_unwind(|| fail()).expect_err(\"panics\");\n        assert!(payload.downcast_ref::<()>().is_some());",
-            "let payload = std::panic::catch_unwind(|| fail()).expect_err(\"panics\");\n        let error = payload.downcast_ref::<FlightError>().unwrap();\n        assert!(error.message.contains(\"boom\"));",
+            "let payload = std::panic::catch_unwind(|| fail()).expect_err(\"panics\");\n        let error = payload.downcast_ref::<FlightError>().unwrap();\n        assert_eq!(error.kind, FlightErrorKind::NotReadableError);",
             "let result = std::panic::catch_unwind(|| fail());\n        let err = result.expect_err(\"panics\");\n        assert!(result.is_err());",
             "let failure = std::panic::catch_unwind(|| fail()).expect_err(\"panics\");\n        assert_eq!(panic_message(failure), \"boom\");",
         ] {
@@ -19149,6 +19153,175 @@ pub fn fail() -> i32 {
     }
 
     #[test]
+    fn lowers_flight_error_panic_payload_checks_to_exact_to_throw() {
+        let production = r#"
+use flight_entity::{throw_error, throw_range_error, throw_type_error};
+
+pub struct Counter {
+    pub calls: i32,
+}
+
+pub fn read_offset(counter: &mut Counter, offset: i32) -> i32 {
+    counter.calls += 1;
+    if offset < 0 {
+        throw_range_error("offset is out of bounds");
+    }
+    return offset;
+}
+
+pub fn require_handle(handle: i32) -> i32 {
+    if handle == 0 {
+        throw_type_error("Downloaded update did not originate from a completed check");
+    }
+    return handle;
+}
+
+pub fn require_name(name: &str) -> usize {
+    if name.is_empty() {
+        throw_error("name (required) must be set [1/2]");
+    }
+    return name.len();
+}
+"#;
+        let source = r#"
+use crate::*;
+use flight_entity::{FlightError, FlightErrorKind};
+use std::panic::{AssertUnwindSafe, catch_unwind};
+
+mod flight_errors {
+    use super::*;
+
+    #[test]
+    fn checks_payloads() {
+        let mut counter = Counter { calls: 0 };
+        let error = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            read_offset(&mut counter, -1)
+        }))
+        .unwrap_err();
+        let error = error.downcast_ref::<flight_entity::FlightError>().unwrap();
+        assert_eq!(error.kind, flight_entity::FlightErrorKind::RangeError);
+        assert_eq!(error.message, "offset is out of bounds");
+
+        let thrown = catch_unwind(|| require_handle(0)).unwrap_err();
+        let error = thrown.downcast::<FlightError>().unwrap();
+        assert_eq!(error.kind, FlightErrorKind::TypeError);
+
+        let payload = catch_unwind(|| require_handle(0));
+        let error = payload
+            .expect_err("an unrecognized handle must throw")
+            .downcast::<FlightError>()
+            .expect("panic payload must be a FlightError");
+        assert_eq!(error.kind, FlightErrorKind::TypeError);
+        assert_eq!(
+            error.message,
+            "Downloaded update did not originate from a completed check"
+        );
+
+        let error = catch_unwind(|| require_name(""))
+            .unwrap_err()
+            .downcast::<FlightError>()
+            .unwrap();
+        assert_eq!(error.message, "name (required) must be set [1/2]");
+
+        let error = catch_unwind(|| require_name("")).expect_err("empty name throws");
+        let error = error.downcast_ref::<FlightError>().unwrap();
+        assert_eq!(FlightErrorKind::Error, error.kind);
+        assert_eq!("name (required) must be set [1/2]", error.message);
+
+        let unused = catch_unwind(AssertUnwindSafe(|| read_offset(&mut counter, -2)));
+        assert!(unused.is_err_and(|payload| {
+            return payload
+                .downcast_ref::<FlightError>()
+                .is_some_and(|error| error.kind == FlightErrorKind::RangeError);
+        }));
+
+        let error = catch_unwind(|| require_handle(0)).unwrap_err();
+        let error = error.downcast_ref::<FlightError>().unwrap();
+        assert!(error.message.contains("completed check"));
+        let thrown = catch_unwind(|| require_handle(0)).unwrap_err();
+        assert_eq!(
+            thrown
+                .downcast::<flight_entity::FlightError>()
+                .unwrap()
+                .kind,
+            flight_entity::FlightErrorKind::TypeError
+        );
+        assert_eq!(counter.calls, 2);
+    }
+}
+"#;
+
+        let output =
+            compile_vitest_with_alias_sources(source, "@flighthq/example/contract", &[production])
+                .unwrap();
+
+        // Both the bound-binding and the inline-downcast kind-only `TypeError` checks.
+        assert_eq!(
+            output
+                .matches("expect(() => requireHandle(0)).toThrow(TypeError);")
+                .count(),
+            2,
+            "{output}"
+        );
+        // Kind and message: the exact class and message (`toThrow(new K(m))`); a kind alone: the
+        // class by `instanceof`, exact for a class nothing extends; a message alone: an anchored,
+        // escaped pattern (any class); `contains`: a substring.
+        for expected in [
+            "}).toThrow(new RangeError('offset is out of bounds'));",
+            "expect(() => requireHandle(0), 'an unrecognized handle must throw').toThrow(new TypeError('Downloaded update did not originate from a completed check'));",
+            "expect(() => requireName('')).toThrow(/^name \\(required\\) must be set \\[1\\/2\\]$/);",
+            "expect(() => requireName(''), 'empty name throws').toThrow(new Error('name (required) must be set [1/2]'));",
+            "expect(() => readOffset(counter, -2)).toThrow(RangeError);",
+            "expect(() => requireHandle(0)).toThrow('completed check');",
+            "expect(counter.calls).toEqual(2);",
+        ] {
+            assert!(output.contains(expected), "{expected}: {output}");
+        }
+        for absent in [
+            "downcast",
+            "catchUnwind",
+            "FlightError",
+            "isErrAnd",
+            "const error",
+            "const payload",
+        ] {
+            assert!(!output.contains(absent), "{absent}: {output}");
+        }
+    }
+
+    #[test]
+    fn refuses_flight_error_checks_to_throw_cannot_express() {
+        let production = r#"
+pub fn fail() -> i32 {
+    flight_entity::throw_range_error("boom");
+}
+"#;
+        let bind = "let error = std::panic::catch_unwind(|| fail()).unwrap_err();\n        let error = error.downcast_ref::<FlightError>().unwrap();\n        ";
+        // A DOMException kind (it lowers without its name), a kind-only `Error` (every class passes
+        // `instanceof Error`), a kind with a substring (two `toThrow`s would run the closure twice),
+        // a payload never checked, a payload read again, a non-canonical error type, and an
+        // arbitrary `Any` payload each refuse at the `catch_unwind`.
+        for body in [
+            format!("{bind}assert_eq!(error.kind, FlightErrorKind::NotSupportedError);"),
+            format!("{bind}assert_eq!(error.kind, FlightErrorKind::Error);"),
+            format!("{bind}assert_eq!(error.kind, FlightErrorKind::RangeError);\n        assert!(error.message.contains(\"bo\"));"),
+            bind.trim_end().to_string(),
+            format!("{bind}assert_eq!(error.kind, FlightErrorKind::RangeError);\n        let kind = error.kind;\n        assert_eq!(kind, FlightErrorKind::RangeError);"),
+            "let error = std::panic::catch_unwind(|| fail()).unwrap_err();\n        let error = error.downcast_ref::<MyError>().unwrap();\n        assert_eq!(error.kind, FlightErrorKind::RangeError);".to_string(),
+            "let error = std::panic::catch_unwind(|| fail()).unwrap_err();\n        let code = error.downcast_ref::<u32>().unwrap();\n        assert_eq!(*code, 7);".to_string(),
+        ] {
+            let source = format!(
+                "use crate::*;\nuse flight_entity::{{FlightError, FlightErrorKind}};\n\nmod guard_panics {{\n    use super::*;\n\n    #[test]\n    fn checks() {{\n        {body}\n    }}\n}}\n"
+            );
+            let error =
+                compile_vitest_with_alias_sources(&source, "@flighthq/example/contract", &[production])
+                    .unwrap_err()
+                    .to_string();
+            assert!(error.contains("catch_unwind"), "{body}: {error}");
+        }
+    }
+
+    #[test]
     fn refuses_panic_assertions_it_cannot_express() {
         let production = r#"
 pub fn fail() {
@@ -19164,14 +19337,15 @@ mod guard_panics {
     #[test]
     fn checks_the_payload() {
 "#;
-        // A `FlightError` payload, a message read again later, and an exact-message comparison
-        // are not `toThrow(substring)`; each still refuses rather than dropping the assertion.
+        // A kind-only `Error` check (`toThrow(Error)` is `instanceof`, which every class passes), a
+        // message read again later, and an exact `&str` comparison are not expressible; each still
+        // refuses rather than dropping the assertion.
         for body in [
             r#"
         let result = std::panic::catch_unwind(|| fail());
         let err = result.unwrap_err();
         let error = err.downcast_ref::<FlightError>().unwrap();
-        assert!(error.message.contains("boom"));
+        assert_eq!(error.kind, FlightErrorKind::Error);
 "#,
             r#"
         let result = std::panic::catch_unwind(|| fail());
@@ -22497,8 +22671,14 @@ fn reads_an_ambiguous_helper() {
 
         let first = compile();
         assert_eq!(first, compile());
-        assert!(first.contains("test-support value `support_value`"), "{first}");
-        assert!(first.contains("foreign wildcard crates flight_geometry"), "{first}");
+        assert!(
+            first.contains("test-support value `support_value`"),
+            "{first}"
+        );
+        assert!(
+            first.contains("foreign wildcard crates flight_geometry"),
+            "{first}"
+        );
     }
 
     #[test]

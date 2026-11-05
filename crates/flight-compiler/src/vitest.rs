@@ -9,19 +9,19 @@ use syn::{BinOp, Expr, Fields, FnArg, ItemFn, ItemUse, Pat, ReturnType, Stmt, To
 use crate::model::{Program, TestCase, TestProgram, TestSuite};
 use crate::typescript::PANIC_MESSAGE_HELPER_MARKER;
 use crate::typescript::{
-    begin_option_if, begin_option_while, emit_expression, emit_expression_for_type,
-    emit_for_header, emit_format_template, emit_local, emit_local_with_shadow_and_else,
-    emit_match_statement, emit_option_binding, emit_parameter, emit_type, emit_type_parameters,
-    export_name, frozen_object_name, function_expression_context, insert_type_parameter_context,
-    insert_vitest_helper_return_context, insert_vitest_import_alias_context,
-    insert_vitest_rebound_struct_context, is_data_union_variant, is_lowered_cross_crate_type,
-    is_lowered_cross_crate_value, is_string_union, is_vitest_function, is_vitest_own_public,
-    is_vitest_struct, js_string_literal, lexical_pattern_context, numeric_literal_spelling,
-    option_scrutinee_is_rereadable, snake_to_lower_camel, type_script_type_aliases,
-    provenance_import_rules, ProvenanceImportRule,
+    ProvenanceImportRule, begin_option_if, begin_option_while, emit_expression,
+    emit_expression_for_type, emit_for_header, emit_format_template, emit_local,
+    emit_local_with_shadow_and_else, emit_match_statement, emit_option_binding, emit_parameter,
+    emit_type, emit_type_parameters, export_name, frozen_object_name, function_expression_context,
+    insert_type_parameter_context, insert_vitest_helper_return_context,
+    insert_vitest_import_alias_context, insert_vitest_rebound_struct_context,
+    is_data_union_variant, is_lowered_cross_crate_type, is_lowered_cross_crate_value,
+    is_string_union, is_vitest_function, is_vitest_own_public, is_vitest_struct, js_string_literal,
+    lexical_pattern_context, numeric_literal_spelling, option_scrutinee_is_rereadable,
+    provenance_import_rules, snake_to_lower_camel, type_script_type_aliases,
     update_vitest_local_function_context, update_vitest_struct_local_context,
-    validate_vitest_function_provenance, vitest_function_path_binding_name,
-    vitest_current_path_prefix, vitest_struct_path_binding_name, write_indent,
+    validate_vitest_function_provenance, vitest_current_path_prefix,
+    vitest_function_path_binding_name, vitest_struct_path_binding_name, write_indent,
 };
 use crate::{CompileError, compile_error};
 
@@ -466,13 +466,12 @@ fn crate_local_wildcard_module(item_use: &ItemUse) -> Option<String> {
                 path.pop();
                 module
             }
-            UseTree::Glob(_) if path.first().is_some_and(|root| root == "crate") && path.len() > 1 => {
+            UseTree::Glob(_)
+                if path.first().is_some_and(|root| root == "crate") && path.len() > 1 =>
+            {
                 Some(path[1..].join("::"))
             }
-            UseTree::Glob(_)
-            | UseTree::Group(_)
-            | UseTree::Name(_)
-            | UseTree::Rename(_) => None,
+            UseTree::Glob(_) | UseTree::Group(_) | UseTree::Name(_) | UseTree::Rename(_) => None,
         };
     }
 
@@ -594,7 +593,10 @@ pub(crate) fn resolve_test_support_wildcards(
                 type_items
                     .entry(structure.ident.to_string())
                     .or_default()
-                    .push((module.clone(), TestSupportType::Structure(structure.clone())));
+                    .push((
+                        module.clone(),
+                        TestSupportType::Structure(structure.clone()),
+                    ));
             }
         }
         for type_alias in &support.type_aliases {
@@ -641,7 +643,11 @@ pub(crate) fn resolve_test_support_wildcards(
             if !foreign_wildcards.is_empty() {
                 return Err(compile_error(format!(
                     "portable test-support value `{name}` is ambiguous with foreign wildcard crates {}; import the used items explicitly",
-                    foreign_wildcards.iter().cloned().collect::<Vec<_>>().join(", ")
+                    foreign_wildcards
+                        .iter()
+                        .cloned()
+                        .collect::<Vec<_>>()
+                        .join(", ")
                 )));
             }
             let (module, item) = &candidates[0];
@@ -673,7 +679,11 @@ pub(crate) fn resolve_test_support_wildcards(
             if !foreign_wildcards.is_empty() {
                 return Err(compile_error(format!(
                     "portable test-support type `{name}` is ambiguous with foreign wildcard crates {}; import the used items explicitly",
-                    foreign_wildcards.iter().cloned().collect::<Vec<_>>().join(", ")
+                    foreign_wildcards
+                        .iter()
+                        .cloned()
+                        .collect::<Vec<_>>()
+                        .join(", ")
                 )));
             }
             let (module, item) = &candidates[0];
@@ -696,8 +706,7 @@ pub(crate) fn resolve_test_support_wildcards(
     }
 
     program.uses.retain(|item_use| {
-        crate_local_wildcard_module(item_use)
-            .is_none_or(|module| !active_modules.contains(&module))
+        crate_local_wildcard_module(item_use).is_none_or(|module| !active_modules.contains(&module))
     });
     for suite in &mut program.suites {
         suite.uses.retain(|item_use| {
@@ -762,6 +771,7 @@ fn emit_assertion(
                 closure,
                 exact: false,
                 expect_message: None,
+                flight_error: None,
                 length: 1,
                 needle: None,
             },
@@ -877,7 +887,8 @@ fn emit_block(
     let mut skipped = HashSet::new();
     let mut index = 0;
     while index < statements.len() {
-        let assertion = caught_panic_assertion(statements, index, &block_context)
+        let assertion = flight_error_assertion(statements, index)
+            .or_else(|| caught_panic_assertion(statements, index, &block_context))
             .or_else(|| panic_is_err_assertion(statements, index));
         if let Some(assertion) = assertion {
             let length = assertion.length;
@@ -1047,8 +1058,20 @@ struct PanicAssertion<'a> {
     closure: &'a syn::ExprClosure,
     exact: bool,
     expect_message: Option<Expr>,
+    flight_error: Option<FlightErrorMatcher>,
     length: usize,
     needle: Option<Expr>,
+}
+
+// What a test checks of a caught `FlightError` payload, as one vitest `toThrow` argument. vitest's
+// `toThrow(new K(message))` requires the exact class and message; `toThrow(K)` is `instanceof`, so it
+// is exact only for a class nothing else extends (`RangeError`, `TypeError`, `SyntaxError`); a
+// string is a substring check, and an anchored regex an exact message of any class.
+enum FlightErrorMatcher {
+    Class(&'static str),
+    Contains(Expr),
+    ExactMessage(String),
+    Instance(&'static str, Expr),
 }
 
 // `expect(() => .., message).toThrow(needle)`. The closure runs once, where the Rust test runs it;
@@ -1071,6 +1094,15 @@ fn emit_panic_assertion(
     if assertion.exact {
         // `toThrow(error)` passes only when the thrown `Error`'s message equals this one.
         needle = format!("new Error({needle})");
+    }
+    match &assertion.flight_error {
+        Some(FlightErrorMatcher::Class(class)) => needle = (*class).to_string(),
+        Some(FlightErrorMatcher::Contains(text)) => needle = emit_expression(text, context)?,
+        Some(FlightErrorMatcher::ExactMessage(text)) => needle = anchored_message_pattern(text),
+        Some(FlightErrorMatcher::Instance(class, message)) => {
+            needle = format!("new {class}({})", emit_expression(message, context)?);
+        }
+        None => {}
     }
     let assert_message = match assertion.assertion {
         Some(assertion) => {
@@ -1130,6 +1162,7 @@ fn panic_is_err_assertion(statements: &[Stmt], start: usize) -> Option<PanicAsse
         closure,
         exact: false,
         expect_message: None,
+        flight_error: None,
         length: PANIC_IS_ERR_ASSERTION_LENGTH,
         needle: None,
     });
@@ -1179,6 +1212,7 @@ fn caught_panic_assertion<'a>(
             closure,
             exact,
             expect_message: expect_message.cloned(),
+            flight_error: None,
             length: 2,
             needle: Some(needle),
         });
@@ -1196,6 +1230,7 @@ fn caught_panic_assertion<'a>(
             closure,
             exact,
             expect_message: expect_message.cloned(),
+            flight_error: None,
             length: prefix + 1,
             needle: Some(needle),
         });
@@ -1219,6 +1254,7 @@ fn caught_panic_assertion<'a>(
             closure,
             exact: false,
             expect_message: expect_message.cloned(),
+            flight_error: None,
             length: prefix + 2,
             needle: Some(contains.args[0].clone()),
         });
@@ -1231,6 +1267,7 @@ fn caught_panic_assertion<'a>(
         closure,
         exact: false,
         expect_message: expect_message.cloned(),
+        flight_error: None,
         length: prefix,
         needle: None,
     });
@@ -1425,6 +1462,18 @@ fn statements_read_name(statements: &[Stmt], name: &str) -> bool {
     }
 
     impl<'ast> Visit<'ast> for NameReader<'_> {
+        // A closure parameter of the same name is a different binding: its body reads that one.
+        fn visit_expr_closure(&mut self, closure: &'ast syn::ExprClosure) {
+            if closure
+                .inputs
+                .iter()
+                .any(|input| pattern_names(input).contains(self.name))
+            {
+                return;
+            }
+            syn::visit::visit_expr_closure(self, closure);
+        }
+
         fn visit_expr_path(&mut self, path: &'ast syn::ExprPath) {
             if path.qself.is_none() && path.path.is_ident(self.name) {
                 self.found = true;
@@ -1864,6 +1913,397 @@ fn type_is_panic_payload(rust_type: &syn::Type) -> bool {
         }
         _ => false,
     };
+}
+
+// An exact message as a vitest `toThrow` pattern: anchored, with every regex metacharacter escaped.
+fn anchored_message_pattern(message: &str) -> String {
+    let mut pattern = String::from("/^");
+    for character in message.chars() {
+        match character {
+            '\\' | '^' | '$' | '.' | '|' | '?' | '*' | '+' | '(' | ')' | '[' | ']' | '{' | '}'
+            | '/' => {
+                pattern.push('\\');
+                pattern.push(character);
+            }
+            '\n' => pattern.push_str("\\n"),
+            '\r' => pattern.push_str("\\r"),
+            '\t' => pattern.push_str("\\t"),
+            character => pattern.push(character),
+        }
+    }
+    pattern.push_str("$/");
+    return pattern;
+}
+
+// A caught panic whose `FlightError` payload the test checks, at `statements[start]`:
+//
+//     let error = catch_unwind(|| ..).unwrap_err();                // or .expect_err(..), or via a result
+//     let error = error.downcast_ref::<FlightError>().unwrap();   // or downcast, or .expect(..)
+//     assert_eq!(error.kind, FlightErrorKind::RangeError);         // and/or
+//     assert_eq!(error.message, "offset is out of bounds");        // or assert!(error.message.contains(..))
+//
+// The downcast may also chain onto the unwrap (`catch_unwind(..).unwrap_err().downcast::<..>()`), and
+// a kind-only check may read `result.is_err_and(|p| p.downcast_ref::<FlightError>()
+// .is_some_and(|e| e.kind == K))`. The checked kind and message choose one `toThrow` argument (see
+// `FlightErrorMatcher`); a check vitest cannot express exactly does not match, and the
+// `catch_unwind` then refuses: a DOMException kind (it lowers without its name), a kind-only `Error`
+// (every class extends it), a kind with a substring, no check at all, or a payload read again later.
+fn flight_error_assertion(statements: &[Stmt], start: usize) -> Option<PanicAssertion<'_>> {
+    if let Some(assertion) = flight_error_is_err_and_assertion(statements, start) {
+        return Some(assertion);
+    }
+    // A bound `FlightError`, or assertions on an inline downcast of a bound payload:
+    // `assert_eq!(thrown.downcast::<FlightError>().unwrap().kind, K)`.
+    let (closure, error, expect_message, consumed) = match flight_error_binding(statements, start) {
+        Some((closure, error, expect_message, consumed)) => {
+            (closure, ErrorRef::Bound(error), expect_message, consumed)
+        }
+        None => {
+            let (closure, payload, expect_message, prefix) = caught_panic_error(statements, start)?;
+            (
+                closure,
+                ErrorRef::Inline(payload),
+                expect_message.cloned(),
+                prefix,
+            )
+        }
+    };
+    let mut kind = None;
+    let mut exact = None;
+    let mut contains = None;
+    let mut index = start + consumed;
+    while let Some(Stmt::Macro(assertion)) = statements.get(index) {
+        let Ok(arguments) = parse_macro_arguments(&assertion.mac) else {
+            break;
+        };
+        if assertion.mac.path.is_ident("assert_eq") && arguments.len() == 2 {
+            let pair = [
+                (&arguments[0], &arguments[1]),
+                (&arguments[1], &arguments[0]),
+            ];
+            if kind.is_none()
+                && let Some(found) = pair.iter().find_map(|(field, value)| {
+                    error_field_is(field, &error, "kind").then(|| flight_error_kind(value))?
+                })
+            {
+                kind = Some(found);
+            } else if exact.is_none()
+                && let Some(found) = pair.iter().find_map(|(field, value)| {
+                    error_field_is(field, &error, "message").then(|| string_literal_value(value))?
+                })
+            {
+                exact = Some(found);
+            } else {
+                break;
+            }
+        } else if assertion.mac.path.is_ident("assert")
+            && arguments.len() == 1
+            && contains.is_none()
+            && let Expr::MethodCall(call) = unparenthesized(&arguments[0])
+            && call.method == "contains"
+            && call.args.len() == 1
+            && error_field_is(&call.receiver, &error, "message")
+        {
+            contains = Some(call.args[0].clone());
+        } else {
+            break;
+        }
+        index += 1;
+    }
+    if statements_read_name(&statements[index..], error.name()) {
+        return None;
+    }
+    let matcher = match (kind, exact, contains) {
+        (Some(kind), Some(message), None) => {
+            let class = exact_error_class(kind)?;
+            FlightErrorMatcher::Instance(
+                class,
+                syn::parse_str::<Expr>(&format!("{message:?}")).ok()?,
+            )
+        }
+        (Some(kind), None, None) => FlightErrorMatcher::Class(instance_exact_error_class(kind)?),
+        (None, Some(message), None) => FlightErrorMatcher::ExactMessage(message),
+        (None, None, Some(text)) => FlightErrorMatcher::Contains(text),
+        _ => return None,
+    };
+    return Some(PanicAssertion {
+        assertion: None,
+        closure,
+        exact: false,
+        expect_message,
+        flight_error: Some(matcher),
+        length: index - start,
+        needle: None,
+    });
+}
+
+// The closure, the `FlightError` binding's name, the `expect_err` message, and how many statements
+// bind it (see `flight_error_assertion`). A binding through a result or payload name requires that
+// name be read nowhere after, unless the `FlightError` binding shadows it.
+fn flight_error_binding(
+    statements: &[Stmt],
+    start: usize,
+) -> Option<(&syn::ExprClosure, String, Option<Expr>, usize)> {
+    if let Some((closure, payload, expect_message, prefix)) = caught_panic_error(statements, start)
+        && let Some((error, downcast)) = statements.get(start + prefix).and_then(simple_local)
+        && let Some(receiver) = flight_error_downcast(downcast)
+        && expression_is_name(receiver, &payload)
+        && (error == payload || !statements_read_name(&statements[start + prefix + 1..], &payload))
+    {
+        return Some((closure, error, expect_message.cloned(), prefix + 1));
+    }
+    // `let error = catch_unwind(..).unwrap_err().downcast::<FlightError>().unwrap();`
+    if let Some((error, downcast)) = statements.get(start).and_then(simple_local)
+        && let Some(payload) = flight_error_downcast(downcast)
+        && let Some((caught, expect_message)) = unwrapped_panic_payload(payload)
+        && let Some(closure) = caught_panic_closure(caught)
+    {
+        return Some((closure, error, expect_message.cloned(), 1));
+    }
+    // `let result = catch_unwind(..);` then
+    // `let error = result.expect_err(..).downcast::<FlightError>().expect(..);`
+    let (result, caught) = statements.get(start).and_then(simple_local)?;
+    let closure = caught_panic_closure(caught)?;
+    let (error, downcast) = statements.get(start + 1).and_then(simple_local)?;
+    let payload = flight_error_downcast(downcast)?;
+    let (receiver, expect_message) = unwrapped_panic_payload(payload)?;
+    if !expression_is_name(receiver, &result)
+        || (error != result && statements_read_name(&statements[start + 2..], &result))
+    {
+        return None;
+    }
+    return Some((closure, error, expect_message.cloned(), 2));
+}
+
+// `payload.downcast_ref::<FlightError>()` or `payload.downcast::<FlightError>()`, then `.unwrap()` or
+// `.expect(..)`: the payload expression.
+fn flight_error_downcast(expression: &Expr) -> Option<&Expr> {
+    let Expr::MethodCall(unwrap) = unparenthesized(expression) else {
+        return None;
+    };
+    if !matches!(
+        (unwrap.method.to_string().as_str(), unwrap.args.len()),
+        ("unwrap", 0) | ("expect", 1)
+    ) {
+        return None;
+    }
+    let Expr::MethodCall(downcast) = unwrap.receiver.as_ref() else {
+        return None;
+    };
+    return (matches!(
+        downcast.method.to_string().as_str(),
+        "downcast_ref" | "downcast"
+    ) && downcast.args.is_empty()
+        && downcast_names_flight_error(downcast))
+    .then_some(downcast.receiver.as_ref());
+}
+
+// The turbofish names the canonical `FlightError`: `FlightError` or `flight_entity::FlightError`.
+fn downcast_names_flight_error(downcast: &syn::ExprMethodCall) -> bool {
+    let Some(turbofish) = &downcast.turbofish else {
+        return false;
+    };
+    let [syn::GenericArgument::Type(syn::Type::Path(path))] =
+        turbofish.args.iter().collect::<Vec<_>>()[..]
+    else {
+        return false;
+    };
+    let segments = path
+        .path
+        .segments
+        .iter()
+        .map(|segment| segment.ident.to_string())
+        .collect::<Vec<_>>();
+    return path.qself.is_none()
+        && (segments == ["FlightError"] || segments == ["flight_entity", "FlightError"]);
+}
+
+// `assert!(result.is_err_and(|payload| payload.downcast_ref::<FlightError>().is_some_and(|error|
+// error.kind == K)))` after `let result = catch_unwind(..);`, with `result` read nowhere after.
+fn flight_error_is_err_and_assertion(
+    statements: &[Stmt],
+    start: usize,
+) -> Option<PanicAssertion<'_>> {
+    let (result, caught) = statements.get(start).and_then(simple_local)?;
+    let closure = caught_panic_closure(caught)?;
+    let Some(Stmt::Macro(assertion)) = statements.get(start + 1) else {
+        return None;
+    };
+    if !assertion.mac.path.is_ident("assert") {
+        return None;
+    }
+    let arguments = parse_macro_arguments(&assertion.mac).ok()?;
+    let Expr::MethodCall(is_err_and) = unparenthesized(arguments.first()?) else {
+        return None;
+    };
+    if is_err_and.method != "is_err_and"
+        || is_err_and.args.len() != 1
+        || !expression_is_name(&is_err_and.receiver, &result)
+        || statements_read_name(&statements[start + 2..], &result)
+    {
+        return None;
+    }
+    let Expr::Closure(check) = &is_err_and.args[0] else {
+        return None;
+    };
+    let [Pat::Ident(payload)] = check.inputs.iter().collect::<Vec<_>>()[..] else {
+        return None;
+    };
+    let body = closure_result_expression(&check.body)?;
+    let Expr::MethodCall(is_some_and) = body else {
+        return None;
+    };
+    let Expr::MethodCall(downcast) = is_some_and.receiver.as_ref() else {
+        return None;
+    };
+    if is_some_and.method != "is_some_and"
+        || is_some_and.args.len() != 1
+        || downcast.method != "downcast_ref"
+        || !downcast_names_flight_error(downcast)
+        || !expression_is_name(&downcast.receiver, &payload.ident.to_string())
+    {
+        return None;
+    }
+    let Expr::Closure(kind_check) = &is_some_and.args[0] else {
+        return None;
+    };
+    let [Pat::Ident(error)] = kind_check.inputs.iter().collect::<Vec<_>>()[..] else {
+        return None;
+    };
+    let Expr::Binary(equals) = closure_result_expression(&kind_check.body)? else {
+        return None;
+    };
+    if !matches!(equals.op, BinOp::Eq(_)) {
+        return None;
+    }
+    let error = ErrorRef::Bound(error.ident.to_string());
+    let kind = if error_field_is(&equals.left, &error, "kind") {
+        flight_error_kind(&equals.right)?
+    } else if error_field_is(&equals.right, &error, "kind") {
+        flight_error_kind(&equals.left)?
+    } else {
+        return None;
+    };
+    return Some(PanicAssertion {
+        assertion: Some(&assertion.mac),
+        closure,
+        exact: false,
+        expect_message: None,
+        flight_error: Some(FlightErrorMatcher::Class(instance_exact_error_class(kind)?)),
+        length: 2,
+        needle: None,
+    });
+}
+
+// A closure body's value: the expression itself, `{ value }`, or `{ return value; }`.
+fn closure_result_expression(body: &Expr) -> Option<&Expr> {
+    let Expr::Block(block) = body else {
+        return Some(body);
+    };
+    return match block.block.stmts.as_slice() {
+        [Stmt::Expr(Expr::Return(returned), _)] => returned.expr.as_deref(),
+        [Stmt::Expr(value, None)] => Some(value),
+        _ => None,
+    };
+}
+
+// `error.field`, or `error.field.as_str()` / `&error.field`. `error` is a bound `FlightError`, or
+// (`ErrorRef::Inline`) the payload whose inline `.downcast::<FlightError>().unwrap()` is the base.
+fn error_field_is(expression: &Expr, error: &ErrorRef, field: &str) -> bool {
+    let mut expression = unparenthesized(expression);
+    if let Expr::Reference(reference) = expression {
+        expression = unparenthesized(&reference.expr);
+    }
+    if let Expr::MethodCall(as_str) = expression
+        && as_str.method == "as_str"
+        && as_str.args.is_empty()
+    {
+        expression = unparenthesized(&as_str.receiver);
+    }
+    let Expr::Field(access) = expression else {
+        return false;
+    };
+    let base_is_error = match error {
+        ErrorRef::Bound(name) => expression_is_name(&access.base, name),
+        ErrorRef::Inline(payload) => flight_error_downcast(&access.base)
+            .is_some_and(|receiver| expression_is_name(receiver, payload)),
+    };
+    return matches!(&access.member, syn::Member::Named(name) if name == field) && base_is_error;
+}
+
+// How an assertion names the checked `FlightError`: a binding, or an inline downcast of the payload.
+enum ErrorRef {
+    Bound(String),
+    Inline(String),
+}
+
+impl ErrorRef {
+    fn name(&self) -> &str {
+        return match self {
+            ErrorRef::Bound(name) | ErrorRef::Inline(name) => name,
+        };
+    }
+}
+
+// `FlightErrorKind::Variant` (optionally `flight_entity::`-qualified): the variant.
+fn flight_error_kind(expression: &Expr) -> Option<String> {
+    let Expr::Path(path) = unparenthesized(expression) else {
+        return None;
+    };
+    let segments = path
+        .path
+        .segments
+        .iter()
+        .map(|segment| segment.ident.to_string())
+        .collect::<Vec<_>>();
+    return match segments.as_slice() {
+        [owner, variant] | [_, owner, variant] if owner == "FlightErrorKind" => {
+            Some(variant.clone())
+        }
+        _ => None,
+    };
+}
+
+// The class a `FlightErrorKind` throws as (`throw new K(message)`). DOMException kinds lower without
+// their name, so a test cannot tell them apart in TypeScript: they have no class here.
+fn exact_error_class(kind: String) -> Option<&'static str> {
+    return match kind.as_str() {
+        "Error" => Some("Error"),
+        "RangeError" => Some("RangeError"),
+        "SyntaxError" => Some("SyntaxError"),
+        "TypeError" => Some("TypeError"),
+        _ => None,
+    };
+}
+
+// The class `toThrow(K)` checks exactly by `instanceof`: every kind but `Error`, which every class
+// extends.
+fn instance_exact_error_class(kind: String) -> Option<&'static str> {
+    return exact_error_class(kind).filter(|class| *class != "Error");
+}
+
+// A string literal, or `"..".to_string()` / `String::from("..")`: its value.
+fn string_literal_value(expression: &Expr) -> Option<String> {
+    let literal = match unparenthesized(expression) {
+        Expr::MethodCall(call)
+            if matches!(call.method.to_string().as_str(), "to_string" | "to_owned")
+                && call.args.is_empty() =>
+        {
+            call.receiver.as_ref()
+        }
+        Expr::Call(call) if path_is(&call.func, &["String", "from"]) && call.args.len() == 1 => {
+            &call.args[0]
+        }
+        expression => expression,
+    };
+    let Expr::Lit(syn::ExprLit {
+        lit: syn::Lit::Str(text),
+        ..
+    }) = unparenthesized(literal)
+    else {
+        return None;
+    };
+    return Some(text.value());
 }
 
 fn emit_statement(
