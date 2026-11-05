@@ -509,8 +509,10 @@ export function typeScriptInternalTypeExportArguments(
 
 // Existing exported signatures are the authority for Rust aliases whose target-language
 // representation is already owned elsewhere. The match is deliberately structural: only a bare
-// generated type at the same position in the same exported function can become a canonical imported
-// contract type (or the intrinsic `unknown`). Alias spelling never participates in the decision.
+// generated type on the same named parameter (or return) of the same exported function can become a
+// canonical imported contract type (or the intrinsic `unknown`). Alias spelling never participates
+// in the decision. Parameter identity matters because conforming target-native implementations may
+// intentionally move an out-parameter without changing the public TypeScript signature.
 export function typeScriptTypeAliasArguments(
   existingTypescript: string,
   generatedTypescript: string,
@@ -568,6 +570,12 @@ export function typeScriptTypeAliasArguments(
   const aliases = new Map<string, TypeScriptTypeAliasOwner>();
   const existingFunctions = exportedFunctionTypes(existing.program.body as unknown as Record<string, unknown>[]);
   const generatedFunctions = exportedFunctionTypes(generated.program.body as unknown as Record<string, unknown>[]);
+  const existingFunctionParameters = exportedFunctionParameterTypes(
+    existing.program.body as unknown as Record<string, unknown>[],
+  );
+  const generatedFunctionParameters = exportedFunctionParameterTypes(
+    generated.program.body as unknown as Record<string, unknown>[],
+  );
 
   function record(alias: string, owner: TypeScriptTypeAliasOwner): void {
     const previous = aliases.get(alias);
@@ -644,10 +652,30 @@ export function typeScriptTypeAliasArguments(
 
   for (const [name, generatedFunction] of generatedFunctions) {
     const existingFunction = existingFunctions.get(name);
-    if (existingFunction === undefined || existingFunction.parameters.length !== generatedFunction.parameters.length) {
+    const existingParameters = existingFunctionParameters.get(name);
+    const generatedParameters = generatedFunctionParameters.get(name);
+    if (
+      existingFunction === undefined ||
+      existingParameters === undefined ||
+      generatedParameters === undefined ||
+      existingParameters.length !== generatedParameters.length
+    ) {
       continue;
     }
-    alignTypeLists(existingFunction.parameters, generatedFunction.parameters);
+    const existingParametersByName = new Map(existingParameters.map((parameter) => [parameter.name, parameter]));
+    if (
+      existingParametersByName.size !== existingParameters.length ||
+      new Set(generatedParameters.map((parameter) => parameter.name)).size !== generatedParameters.length ||
+      generatedParameters.some((parameter) => !existingParametersByName.has(parameter.name))
+    ) {
+      continue;
+    }
+    for (const generatedParameter of generatedParameters) {
+      const existingParameter = existingParametersByName.get(generatedParameter.name);
+      if (existingParameter?.type !== undefined && generatedParameter.type !== undefined) {
+        align(existingParameter.type, generatedParameter.type);
+      }
+    }
     if (existingFunction.returnType !== undefined && generatedFunction.returnType !== undefined) {
       align(existingFunction.returnType, generatedFunction.returnType);
     }

@@ -399,6 +399,28 @@ export type AnimationPlayerRef = number;
     expect(typeScriptTypeAliasArguments(existing, generated, symbols)).toEqual([]);
   });
 
+  it('matches alias owners by parameter identity when target-native out-parameters are reordered', () => {
+    const symbols = new Map([
+      [
+        '@flighthq/types/contract',
+        new Map([
+          ['Matrix', { hasType: true, hasValue: false }],
+          ['Surface', { hasType: true, hasValue: false }],
+        ]),
+      ],
+    ]);
+    const existing = `import type { Matrix, Surface } from '@flighthq/types/contract';
+import type { AppWindow, WindowBounds } from './types/contract.ts';
+export function computeWindowDeviceTransform(win: Readonly<AppWindow>, out: Matrix): void {}
+export function getWindowBounds(surface: Surface, win: Readonly<AppWindow>, out: WindowBounds): void {}
+`;
+    const generated = `export function computeWindowDeviceTransform(out: Matrix, win: AppWindow): void {}
+export function getWindowBounds(out: WindowBounds, surface: Surface, win: AppWindow): void {}
+`;
+
+    expect(typeScriptTypeAliasArguments(existing, generated, symbols)).toEqual([]);
+  });
+
   it('derives only established crate-internal type owners used through their Rust module', () => {
     const existing = `export type PlatformEndianness = 'big' | 'little' | 'unknown';
 export type PlatformEngine = 'gecko' | 'blink' | 'webkit' | 'unknown';
