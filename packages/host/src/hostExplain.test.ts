@@ -1,4 +1,5 @@
-import type { EntityWithoutRuntime, Host } from '@flighthq/types/contract';
+import type { EntityWithoutRuntime } from '@flighthq/entity/contract';
+import type { Host } from '@flighthq/types/contract';
 
 import { createHost } from './host.ts';
 import {

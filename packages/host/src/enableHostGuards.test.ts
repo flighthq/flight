@@ -1,3 +1,4 @@
+import type { EntityWithoutRuntime } from '@flighthq/entity/contract';
 import type { LogState } from '@flighthq/log/contract';
 import {
   addLogSink,
@@ -6,8 +7,9 @@ import {
   getMemoryLogSinkEntries,
   removeLogSink,
 } from '@flighthq/log/contract';
-import type { EntityWithoutRuntime, Host, LogEntry, MemoryLogSink } from '@flighthq/types/contract';
-import { LogLevel } from '@flighthq/types/contract';
+import type { LogEntry, MemoryLogSink } from '@flighthq/log/contract';
+import { LogLevel } from '@flighthq/log/contract';
+import type { Host } from '@flighthq/types/contract';
 
 import { enableHostGuards } from './enableHostGuards.ts';
 import { createHost } from './host.ts';

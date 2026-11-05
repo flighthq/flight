@@ -41,6 +41,7 @@
   },
   "dependencies": {
     "@flighthq/entity": "*",
+    "@flighthq/geolocation": "*",
     "@flighthq/log": "*",
     "@flighthq/types": "*"
   },

@@ -10,10 +10,21 @@
     "tsBuildInfoFile": "dist/.tsbuildinfo.runtime"
   },
   "references": [
-    { "path": "../entity" },
-    { "path": "../log" },
-    { "path": "../types" },
-    { "path": "./tsconfig.contract.json" }
+    {
+      "path": "../entity"
+    },
+    {
+      "path": "../geolocation"
+    },
+    {
+      "path": "../log"
+    },
+    {
+      "path": "../types"
+    },
+    {
+      "path": "./tsconfig.contract.json"
+    }
   ],
   "include": ["src/**/*.ts"],
   "exclude": [
