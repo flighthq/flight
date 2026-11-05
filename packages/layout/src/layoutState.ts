@@ -1,5 +1,7 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { LayoutResolver, LayoutState, EntityConstruction } from '@flighthq/types/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
+
+import type { LayoutResolver, LayoutState } from './types.ts';
 
 export function createLayoutState(): LayoutState {
   const out = allocateEntity<LayoutState>();

@@ -1,10 +1,5 @@
-import type {
-  LayoutResolutionExplanation,
-  LayoutResolutionFailureKind,
-  LayoutState,
-  LayoutTree,
-} from '@flighthq/types/contract';
-import { LayoutResolutionFailureKind as Failure } from '@flighthq/types/contract';
+import type { LayoutResolutionExplanation, LayoutResolutionFailureKind, LayoutState, LayoutTree } from './types.ts';
+import { LayoutResolutionFailureKind as Failure } from './types.ts';
 
 // Returns a detached explanation for the latest matching sentinel, or diagnoses hierarchy/registration at
 // `nodeIndex` without mutating state. Expectedly valid nodes return null.

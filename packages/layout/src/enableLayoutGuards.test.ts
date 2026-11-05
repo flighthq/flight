@@ -1,8 +1,7 @@
-import type { LayoutNode } from '@flighthq/types/contract';
-
 import { enableLayoutGuards } from './enableLayoutGuards.ts';
 import { createLayoutState } from './layoutState.ts';
 import { resolveLayoutTree } from './resolveLayoutTree.ts';
+import type { LayoutNode } from './types.ts';
 
 describe('enableLayoutGuards', () => {
   it('warns with the structured explanation for a silent sentinel', () => {

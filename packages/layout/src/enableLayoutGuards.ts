@@ -1,4 +1,4 @@
-import type { LayoutResolutionGuard, LayoutState } from '@flighthq/types/contract';
+import type { LayoutResolutionGuard, LayoutState } from './types.ts';
 
 // Opts a state into caller-facing warnings without choosing a logging system for the caller. Passing a
 // sink keeps this types-only package portable; an application can adapt it to @flighthq/log or its host.

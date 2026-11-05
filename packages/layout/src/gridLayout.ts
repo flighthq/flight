@@ -1,3 +1,4 @@
+import { registerLayoutResolver } from './layoutState.ts';
 import type {
   GridLayoutContainerStyle,
   GridLayoutItemStyle,
@@ -5,10 +6,8 @@ import type {
   LayoutResolver,
   LayoutState,
   LayoutTree,
-} from '@flighthq/types/contract';
-import { GridLayoutKind, LayoutResolutionFailureKind } from '@flighthq/types/contract';
-
-import { registerLayoutResolver } from './layoutState.ts';
+} from './types.ts';
+import { GridLayoutKind, LayoutResolutionFailureKind } from './types.ts';
 
 export function registerGridLayoutResolver(state: Readonly<LayoutState>): void {
   registerLayoutResolver(state, GridLayoutKind, gridLayoutResolver);

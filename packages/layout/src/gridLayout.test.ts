@@ -1,9 +1,8 @@
-import type { GridLayoutContainerStyle, GridLayoutItemStyle, LayoutNode } from '@flighthq/types/contract';
-import { GridLayoutKind } from '@flighthq/types/contract';
-
 import { registerGridLayoutResolver } from './gridLayout.ts';
 import { createLayoutState } from './layoutState.ts';
 import { explainLayoutResolution, resolveLayoutTree } from './resolveLayoutTree.ts';
+import type { GridLayoutContainerStyle, GridLayoutItemStyle, LayoutNode } from './types.ts';
+import { GridLayoutKind } from './types.ts';
 
 function root(containerStyle: GridLayoutContainerStyle): LayoutNode {
   return { containerStyle, itemStyle: null, kind: GridLayoutKind, parentIndex: -1 };

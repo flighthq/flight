@@ -1,3 +1,4 @@
+import { registerLayoutResolver } from './layoutState.ts';
 import type {
   FlexLayoutAlign,
   FlexLayoutContainerStyle,
@@ -9,10 +10,8 @@ import type {
   LayoutResolver,
   LayoutState,
   LayoutTree,
-} from '@flighthq/types/contract';
-import { FlexLayoutKind, LayoutResolutionFailureKind } from '@flighthq/types/contract';
-
-import { registerLayoutResolver } from './layoutState.ts';
+} from './types.ts';
+import { FlexLayoutKind, LayoutResolutionFailureKind } from './types.ts';
 
 export function registerFlexLayoutResolver(state: Readonly<LayoutState>): void {
   registerLayoutResolver(state, FlexLayoutKind, flexLayoutResolver);

@@ -4,4 +4,5 @@ export * from './flexLayout.ts';
 export * from './gridLayout.ts';
 export * from './layoutState.ts';
 export * from './resolveLayoutTree.ts';
+export * from './types.ts';
 export { initializeLayoutState } from './layoutState.ts';

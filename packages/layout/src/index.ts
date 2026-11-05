@@ -1,4 +1,8 @@
 export {
+  AnchorLayoutKind,
+  FlexLayoutKind,
+  GridLayoutKind,
+  LayoutResolutionFailureKind,
   createLayoutState,
   enableLayoutGuards,
   explainLayoutResolution,
@@ -7,4 +11,24 @@ export {
   registerGridLayoutResolver,
   registerLayoutResolver,
   resolveLayoutTree,
+} from './contract.ts';
+
+export type {
+  AnchorLayoutItemStyle,
+  FlexLayoutAlign,
+  FlexLayoutContainerStyle,
+  FlexLayoutDirection,
+  FlexLayoutItemStyle,
+  FlexLayoutJustify,
+  FlexLayoutWrap,
+  GridLayoutContainerStyle,
+  GridLayoutItemStyle,
+  GridLayoutTrack,
+  LayoutNode,
+  LayoutResolutionExplanation,
+  LayoutResolutionGuard,
+  LayoutResolver,
+  LayoutState,
+  LayoutTree,
+  ViewportAlign,
 } from './contract.ts';

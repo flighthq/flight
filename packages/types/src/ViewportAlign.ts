@@ -1,1 +1,2 @@
-export type ViewportAlign = 'bottom' | 'bottomleft' | 'bottomright' | 'left' | 'right' | 'top' | 'topleft' | 'topright';
+/** @deprecated Import ViewportAlign from `@flighthq/layout/contract`. */
+export type { ViewportAlign } from '@flighthq/layout/contract';

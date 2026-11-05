@@ -1,7 +1,6 @@
-import type { FlightDocumentLayoutBinding, LayoutNode, LayoutTree, NodeAny } from '@flighthq/types/contract';
-
 import { createLayoutState, registerLayoutResolver } from './layoutState.ts';
 import { explainLayoutResolution, resolveLayoutTree } from './resolveLayoutTree.ts';
+import type { LayoutNode, LayoutTree } from './types.ts';
 
 function tree(nodes: LayoutNode[]): LayoutTree {
   return { nodes };
@@ -62,8 +61,8 @@ describe('explainLayoutResolution', () => {
 
 describe('resolveLayoutTree', () => {
   it('consumes an inert FlightDocument binding without moving kind ownership out of LayoutState', () => {
-    const binding: FlightDocumentLayoutBinding = {
-      targets: [{ name: 'root' } as NodeAny, { name: 'child' } as NodeAny],
+    const binding: { targets: Array<{ name: string }>; tree: LayoutTree } = {
+      targets: [{ name: 'root' }, { name: 'child' }],
       tree: {
         nodes: [
           { containerStyle: null, itemStyle: null, kind: 'acme.Root', parentIndex: -1 },

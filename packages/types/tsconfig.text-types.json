@@ -14,6 +14,7 @@
     { "path": "../entity" },
     { "path": "../geometry/tsconfig.contract.json" },
     { "path": "../input" },
+    { "path": "../layout" },
     { "path": "../path/tsconfig.contract.json" },
     { "path": "../signals" }
   ],

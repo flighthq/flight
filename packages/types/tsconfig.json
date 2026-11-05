@@ -57,6 +57,9 @@
       "path": "../input"
     },
     {
+      "path": "../layout"
+    },
+    {
       "path": "../math"
     },
     {

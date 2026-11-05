@@ -46,6 +46,7 @@
     "@flighthq/haptics": "*",
     "@flighthq/host": "*",
     "@flighthq/input": "*",
+    "@flighthq/layout": "*",
     "@flighthq/math": "*",
     "@flighthq/menu": "*",
     "@flighthq/path": "*",
