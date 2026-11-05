@@ -1,7 +1,7 @@
 use std::collections::{BTreeMap, BTreeSet, HashSet};
 
 use syn::visit::Visit;
-use syn::{Expr, FnArg, ItemFn, ItemStruct, ItemUse, Pat, ReturnType, Stmt, Type};
+use syn::{Expr, FnArg, ItemFn, ItemStruct, ItemUse, Pat, PathArguments, ReturnType, Stmt, Type};
 
 use crate::model::{Program, TestProgram};
 use crate::{CompileError, compile_error};
@@ -11,16 +11,17 @@ use super::{
     NULLABLE_CALL_MARKER, NULLABLE_OPTIONS_MARKER, PROVENANCE_SEPARATOR, ProvenanceIdentity,
     ProvenanceImportRule, RETURN_BINDING_FACT_MARKER, SHARED_IDENTITY_FIELD_MARKER,
     SHARED_IDENTITY_RETURN_MARKER, SLICE_ARGUMENT_MARKER, STRUCT_OWNER_MARKER, SourceAccess,
-    argument_is_option, bind_lexical_pattern, binding_fact_for_type, binding_fact_marker,
-    callable_parameter_rust_types, clear_provenance_binding, collect_cross_crate_use_tree,
-    direct_lock_guard_receiver, export_name, expression_is_associated_path, expression_is_path,
-    foreign_wildcard_modules, insert_dependency_export_name_context, insert_provenance_binding,
-    is_primitive_typescript_type, is_public, lexical_fact, local_pattern_name, marker_suffixes,
-    provenance_binding_table, provenance_import_rules, provenance_marker_values,
-    provenance_pattern_bindings, replace_provenance_binding_table, resolve_owner_inner,
-    resolved_provenance_binding, rust_type_is_shared_identity, snake_to_lower_camel,
-    source_module_name, typed_slice_parameter_kind, unique_marker_suffix, vec_clone_optional,
-    vitest_type_is_shared_identity,
+    TYPE_ALIAS_DEFINITION_MARKER, argument_is_option, bind_lexical_pattern, binding_fact_for_type,
+    binding_fact_marker, callable_parameter_rust_types, clear_provenance_binding,
+    collect_cross_crate_use_tree, direct_lock_guard_receiver, export_name,
+    expression_is_associated_path, expression_is_path, foreign_wildcard_modules,
+    insert_dependency_export_name_context, insert_provenance_binding, is_primitive_typescript_type,
+    is_public, lexical_fact, local_pattern_name, marker_suffixes, provenance_binding_table,
+    provenance_import_rules, provenance_marker_values, provenance_pattern_bindings,
+    replace_provenance_binding_table, resolve_owner_inner, resolved_provenance_binding,
+    rust_type_is_shared_identity, shared_identity_type_at_depth, snake_to_lower_camel,
+    source_module_name, typed_slice_parameter_kind, unique_alias_owner, unique_marker_suffix,
+    vec_clone_optional,
 };
 
 pub(super) const VITEST_FUNCTION_CANDIDATE_MARKER: &str = "@vitest-function-candidate:";
@@ -1366,4 +1367,40 @@ pub(crate) fn vitest_struct_path_binding_name(
         STRUCT_OWNER_MARKER,
         "struct/type",
     );
+}
+
+// `rust_type_is_shared_identity` for a test file's declared type: its own aliases stand for their
+// definitions, and a bare imported name may be the one loaded source alias so called.
+pub(super) fn vitest_type_is_shared_identity(
+    context: &HashSet<String>,
+    aliases: &BTreeMap<String, Type>,
+    rust_type: &Type,
+    depth: usize,
+) -> bool {
+    if depth > 16 {
+        return false;
+    }
+    if let Type::Path(path) = rust_type
+        && path.qself.is_none()
+        && path.path.leading_colon.is_none()
+        && path.path.segments.len() == 1
+        && matches!(path.path.segments[0].arguments, PathArguments::None)
+    {
+        let name = path.path.segments[0].ident.to_string();
+        if let Some(definition) = aliases.get(&name) {
+            return vitest_type_is_shared_identity(context, aliases, definition, depth + 1);
+        }
+        if let Some((owner, alias)) = unique_alias_owner(context, &name)
+            && let Some(definition) = unique_marker_suffix(
+                context,
+                &format!(
+                    "{TYPE_ALIAS_DEFINITION_MARKER}{owner}{PROVENANCE_SEPARATOR}{alias}{PROVENANCE_SEPARATOR}"
+                ),
+            )
+            .and_then(|definition| syn::parse_str::<Type>(&definition).ok())
+        {
+            return shared_identity_type_at_depth(context, Some(&owner), &definition, depth + 1);
+        }
+    }
+    return rust_type_is_shared_identity(context, rust_type);
 }

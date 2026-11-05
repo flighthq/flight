@@ -4,7 +4,7 @@ use std::fmt::Write;
 use syn::parse::Parser;
 use syn::punctuated::Punctuated;
 use syn::visit::Visit;
-use syn::{Expr, ItemUse, Pat, ReturnType, Token};
+use syn::{Expr, ItemStruct, ItemUse, Pat, ReturnType, Token};
 
 use crate::model::{Program, TestProgram};
 use crate::{CompileError, compile_error};
