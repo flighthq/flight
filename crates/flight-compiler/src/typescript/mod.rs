@@ -10000,7 +10000,17 @@ fn emit_binary_operand(
     right: bool,
 ) -> Result<String, CompileError> {
     let value = emit_expression(expression, entities)?;
-    let precedence = expression_precedence(expression);
+    let precedence = if let Expr::Cast(cast) = expression {
+        if is_integer_cast_elided(&cast.expr, &cast.ty, entities)
+            || integer_literal_fits_cast(&cast.expr, &cast.ty)
+        {
+            expression_precedence(&cast.expr)
+        } else {
+            expression_precedence(expression)
+        }
+    } else {
+        expression_precedence(expression)
+    };
     if precedence < parent_precedence
         || (right && precedence == parent_precedence)
         || !is_lowered_primary(expression, &value)
@@ -20961,7 +20971,7 @@ fn emit_method_call(
         "is_eq" if arguments.is_empty() => Ok(format!("({receiver} === 0)")),
         "is_ne" if arguments.is_empty() => Ok(format!("({receiver} !== 0)")),
         "insert" if arguments.len() == 2 => Ok(format!(
-            "(<T>(items: T[], index: number, value: T): void => {{ if (index > items.length) {{ throw new RangeError('Vec insertion index out of bounds'); }} items.splice(index, 0, value); }})({receiver}, {}, {})",
+            "{receiver}.splice({}, 0, {})",
             arguments[0], arguments[1]
         )),
         "into" if arguments.is_empty() => Ok(receiver),
@@ -21213,10 +21223,7 @@ fn emit_method_call(
         "push" if arguments.len() == 1 => Ok(format!("{receiver}.push({})", arguments[0])),
         "push_str" if arguments.len() == 1 => Ok(format!("{receiver} += {}", arguments[0])),
         "remove" if arguments.len() == 1 && expression_is_sequence(&call.receiver, entities) => {
-            Ok(format!(
-                "(<T>(items: T[], index: number): T => {{ if (index >= items.length) {{ throw new RangeError('Vec removal index out of bounds'); }} return items.splice(index, 1)[0]; }})({receiver}, {})",
-                arguments[0]
-            ))
+            Ok(format!("{receiver}.splice({}, 1)[0]", arguments[0]))
         }
         "remove"
             if arguments.len() == 1
@@ -21236,10 +21243,9 @@ fn emit_method_call(
                 arguments[0]
             ))
         }
-        "remove" if arguments.len() == 1 => Ok(format!(
-            "(<T>(items: T[], index: number): T => {{ if (index >= items.length) {{ throw new RangeError('Vec removal index out of bounds'); }} return items.splice(index, 1)[0]; }})({receiver}, {})",
-            arguments[0]
-        )),
+        "remove" if arguments.len() == 1 => {
+            Ok(format!("{receiver}.splice({}, 1)[0]", arguments[0]))
+        }
         "reverse" if arguments.is_empty() => Ok(format!("{receiver}.reverse()")),
         "replace" if arguments.len() == 2 => Ok(format!(
             "{receiver}.replaceAll({}, {})",
@@ -21619,7 +21625,7 @@ fn emit_method_call(
         "trunc" if arguments.is_empty() => Ok(format!("Math.trunc({receiver})")),
         "to_vec" if arguments.is_empty() => Ok(format!("[...{receiver}]")),
         "truncate" if arguments.len() == 1 => Ok(format!(
-            "(<T>(items: T[], length: number): void => {{ items.length = Math.min(items.length, length); }})({receiver}, {})",
+            "{receiver}.length = Math.min({receiver}.length, {})",
             arguments[0]
         )),
         "copy_from_slice" => Err(compile_error(
