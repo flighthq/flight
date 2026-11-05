@@ -1480,9 +1480,8 @@ function takeNext(counter: Counter): number | undefined {
 
 export function takeOnce(counter: Counter): number {
   {
-    const $value = takeNext(counter);
-    if ($value !== undefined) {
-      const value = $value;
+    const value = takeNext(counter);
+    if (value !== undefined) {
       return value;
     }
   }
@@ -3718,7 +3717,35 @@ pub async fn spawn_later() -> i32 {
 
     #[test]
     fn lowers_vec_retain_in_place_and_rejects_std_mem_moves() {
-        let retain = "(<T>(items: T[], keep: (item: T) => boolean): void => { let kept = 0; let index = 0; try { for (; index < items.length; index += 1) { const item = items[index]; if (keep(item)) { items[kept] = item; kept += 1; } } } finally { const length = items.length; for (let rest = index; rest < length; rest += 1) { items[kept + rest - index] = items[rest]; } items.length = kept + length - index; } })";
+        let retain_block = |receiver: &str, predicate: &str, indent: usize| -> String {
+            let sp = "  ".repeat(indent);
+            let sp1 = "  ".repeat(indent + 1);
+            let sp2 = "  ".repeat(indent + 2);
+            let sp3 = "  ".repeat(indent + 3);
+            let sp4 = "  ".repeat(indent + 4);
+            format!(
+                "{sp}{{\n\
+                 {sp1}const keep = {predicate};\n\
+                 {sp1}let kept = 0;\n\
+                 {sp1}let retainIndex = 0;\n\
+                 {sp1}try {{\n\
+                 {sp2}for (; retainIndex < {receiver}.length; retainIndex += 1) {{\n\
+                 {sp3}const item = {receiver}[retainIndex];\n\
+                 {sp3}if (keep(item)) {{\n\
+                 {sp4}{receiver}[kept] = item;\n\
+                 {sp4}kept += 1;\n\
+                 {sp3}}}\n\
+                 {sp2}}}\n\
+                 {sp1}}} finally {{\n\
+                 {sp2}const retainLength = {receiver}.length;\n\
+                 {sp2}for (let rest = retainIndex; rest < retainLength; rest += 1) {{\n\
+                 {sp3}{receiver}[kept + rest - retainIndex] = {receiver}[rest];\n\
+                 {sp2}}}\n\
+                 {sp2}{receiver}.length = kept + retainLength - retainIndex;\n\
+                 {sp1}}}\n\
+                 {sp}}}\n"
+            )
+        };
         let source = r#"
 pub struct Range {
     pub start: u32,
@@ -3736,7 +3763,9 @@ pub fn keep_even(values: &mut Vec<u32>) {
         assert_eq!(
             compile_typescript(source, None).unwrap(),
             format!(
-                "export interface Range {{\n  start: number;\n  end: number;\n}}\n\nexport function dropEmpty(ranges: Range[]): void {{\n  {retain}(ranges, (range) => range.start < range.end);\n}}\n\nexport function keepEven(values: number[]): void {{\n  {retain}(values, (value) => value % 2 === 0);\n}}\n"
+                "export interface Range {{\n  start: number;\n  end: number;\n}}\n\nexport function dropEmpty(ranges: Range[]): void {{\n{}}}\n\nexport function keepEven(values: number[]): void {{\n{}}}\n",
+                retain_block("ranges", "(range) => range.start < range.end", 1),
+                retain_block("values", "(value) => value % 2 === 0", 1),
             )
         );
         assert_eq!(
@@ -3746,7 +3775,8 @@ pub fn keep_even(values: &mut Vec<u32>) {
             )
             .unwrap(),
             format!(
-                "export function keepEvenInValueBlock(values: number[]): number {{\n  return (() => {{\n    const items: number[] = values;\n    {retain}(items, (value) => value % 2 === 0);\n    return 0;\n  }})() >>> 0;\n}}\n"
+                "export function keepEvenInValueBlock(values: number[]): number {{\n  return (() => {{\n    const items: number[] = values;\n{}    return 0;\n  }})() >>> 0;\n}}\n",
+                retain_block("items", "(value) => value % 2 === 0", 2),
             )
         );
 
@@ -3773,10 +3803,11 @@ mod retain {
     }
 }
 "#;
+        let retain_iife = "(<T>(items: T[], keep: (item: T) => boolean): void => { let kept = 0; let index = 0; try { for (; index < items.length; index += 1) { const item = items[index]; if (keep(item)) { items[kept] = item; kept += 1; } } } finally { const length = items.length; for (let rest = index; rest < length; rest += 1) { items[kept + rest - index] = items[rest]; } items.length = kept + length - index; } })";
         let output = compile_vitest(tests, "@flighthq/example/contract").unwrap();
         assert!(
             output.contains(&format!(
-                "  let out: number[] = [...values];\n  {retain}(out, (value) => value % 2 === 0);\n  return out;\n"
+                "  let out: number[] = [...values];\n  {retain_iife}(out, (value) => value % 2 === 0);\n  return out;\n"
             )),
             "{output}"
         );
@@ -7827,8 +7858,8 @@ import type { NodeRef } from '@flighthq/node/contract';
         ));
         assert!(transform_output.contains("sample.previousWorldTransform !== null"));
         assert!(transform_output.contains("sample.previousWorldTransform === null"));
-        assert!(transform_output.contains("const $child = getNodeChildAt(node, i | 0);"));
-        assert!(transform_output.contains("if ($child !== null) {"));
+        assert!(transform_output.contains("const child = getNodeChildAt(node, i | 0);"));
+        assert!(transform_output.contains("if (child !== null) {"));
         assert_eq!(transform_output.matches("getNodeChildAt(").count(), 1);
     }
 
@@ -25866,7 +25897,7 @@ pub fn process(key: &str) {
         "should not have const items (use let for rebind): {result}"
     );
     assert!(
-        result.contains("let items = $items"),
+        result.contains("let items = getValue(key)"),
         "if-let binding should use let when body rebinds: {result}"
     );
     assert!(

@@ -843,17 +843,15 @@ pub(crate) fn begin_option_if_with_rebind(
         write_indent(out, indent + 1);
         if is_destructure {
             writeln!(out, "const $opt = {value};").expect("writing to a String cannot fail");
-        } else {
+            (indent + 1, "$opt".to_string())
+        } else if value_references_name(name, value) {
             writeln!(out, "const ${name} = {value};").expect("writing to a String cannot fail");
+            (indent + 1, format!("${name}"))
+        } else {
+            let keyword = if body_rebinds { "let" } else { "const" };
+            writeln!(out, "{keyword} {name} = {value};").expect("writing to a String cannot fail");
+            (indent + 1, name.clone())
         }
-        (
-            indent + 1,
-            if is_destructure {
-                "$opt".to_string()
-            } else {
-                format!("${name}")
-            },
-        )
     };
     write_indent(out, if_indent);
     writeln!(out, "if ({test} !== {absent}) {{").expect("writing to a String cannot fail");
@@ -1122,6 +1120,24 @@ fn expression_is_rereadable(expression: &Expr) -> bool {
         Expr::Reference(reference) => expression_is_rereadable(&reference.expr),
         expression => expression_is_field_reference(expression),
     };
+}
+
+// True when the emitted JS `value` string contains `name` as a standalone identifier (word-boundary
+// check). Used to decide whether `const name = value` would cause a TDZ error because `value`
+// references the same `name` that the `const` declares.
+fn value_references_name(name: &str, value: &str) -> bool {
+    fn is_js_ident_char(b: u8) -> bool {
+        return b.is_ascii_alphanumeric() || b == b'_' || b == b'$';
+    }
+    for (start, _) in value.match_indices(name) {
+        let before_ok = start == 0 || !is_js_ident_char(value.as_bytes()[start - 1]);
+        let after_pos = start + name.len();
+        let after_ok = after_pos >= value.len() || !is_js_ident_char(value.as_bytes()[after_pos]);
+        if before_ok && after_ok {
+            return true;
+        }
+    }
+    return false;
 }
 
 // An `Arc::ptr_eq` operand proven to hold an identity-bearing TypeScript object, so `===` compares
@@ -24634,6 +24650,13 @@ fn emit_statement(
         Stmt::Expr(Expr::MethodCall(call), _) if call.method == "copy_from_slice" => {
             emit_copy_from_slice_statement(out, call, entities, indent)?;
         }
+        Stmt::Expr(Expr::MethodCall(call), _)
+            if call.method == "retain"
+                && call.args.len() == 1
+                && expression_is_sequence(&call.receiver, entities) =>
+        {
+            emit_retain_statement(out, call, entities, indent)?;
+        }
         Stmt::Expr(Expr::ForLoop(loop_expression), _) => {
             if let Some((collection, chain)) = iter_mut_chain(&loop_expression.expr) {
                 emit_iter_mut_loop(out, loop_expression, collection, chain, entities, indent)?;
@@ -26449,6 +26472,94 @@ fn emit_copy_from_slice_statement(
         "for (let __i = 0; __i < {source}.length; __i++) {{ {dest}[__i] = {source}[__i]; }}"
     )
     .expect("writing to a String cannot fail");
+    return Ok(());
+}
+
+fn emit_retain_statement(
+    out: &mut String,
+    call: &syn::ExprMethodCall,
+    entities: &HashSet<String>,
+    indent: usize,
+) -> Result<(), CompileError> {
+    let receiver = emit_expression(&call.receiver, entities)?;
+    let predicate = emit_expression(&call.args[0], entities)?;
+    let mut used = format!("{receiver} {predicate}")
+        .split(|c: char| !(c.is_alphanumeric() || c == '_' || c == '$'))
+        .map(str::to_string)
+        .collect::<HashSet<_>>();
+    let bind_receiver = !expression_is_reusable(&call.receiver);
+    let bind_predicate = !expression_is_reusable(&call.args[0]);
+    let items = if bind_receiver {
+        fresh_identifier("items", &mut used)
+    } else {
+        receiver.clone()
+    };
+    let keep = if bind_predicate {
+        fresh_identifier("keep", &mut used)
+    } else {
+        predicate.clone()
+    };
+    let kept = fresh_identifier("kept", &mut used);
+    let index = fresh_identifier("retainIndex", &mut used);
+    let item = fresh_identifier("item", &mut used);
+    let length = fresh_identifier("retainLength", &mut used);
+    let rest = fresh_identifier("rest", &mut used);
+    write_indent(out, indent);
+    out.push_str("{\n");
+    let bi = indent + 1;
+    if bind_receiver {
+        write_indent(out, bi);
+        writeln!(out, "const {items} = {receiver};").expect("writing to a String cannot fail");
+    }
+    if bind_predicate {
+        write_indent(out, bi);
+        writeln!(out, "const {keep} = {predicate};").expect("writing to a String cannot fail");
+    }
+    write_indent(out, bi);
+    writeln!(out, "let {kept} = 0;").expect("writing to a String cannot fail");
+    write_indent(out, bi);
+    writeln!(out, "let {index} = 0;").expect("writing to a String cannot fail");
+    write_indent(out, bi);
+    out.push_str("try {\n");
+    let ti = bi + 1;
+    write_indent(out, ti);
+    writeln!(out, "for (; {index} < {items}.length; {index} += 1) {{")
+        .expect("writing to a String cannot fail");
+    let fi = ti + 1;
+    write_indent(out, fi);
+    writeln!(out, "const {item} = {items}[{index}];").expect("writing to a String cannot fail");
+    write_indent(out, fi);
+    writeln!(out, "if ({keep}({item})) {{").expect("writing to a String cannot fail");
+    write_indent(out, fi + 1);
+    writeln!(out, "{items}[{kept}] = {item};").expect("writing to a String cannot fail");
+    write_indent(out, fi + 1);
+    writeln!(out, "{kept} += 1;").expect("writing to a String cannot fail");
+    write_indent(out, fi);
+    out.push_str("}\n");
+    write_indent(out, ti);
+    out.push_str("}\n");
+    write_indent(out, bi);
+    out.push_str("} finally {\n");
+    write_indent(out, ti);
+    writeln!(out, "const {length} = {items}.length;").expect("writing to a String cannot fail");
+    write_indent(out, ti);
+    writeln!(
+        out,
+        "for (let {rest} = {index}; {rest} < {length}; {rest} += 1) {{"
+    )
+    .expect("writing to a String cannot fail");
+    write_indent(out, ti + 1);
+    writeln!(out, "{items}[{kept} + {rest} - {index}] = {items}[{rest}];")
+        .expect("writing to a String cannot fail");
+    write_indent(out, ti);
+    out.push_str("}\n");
+    write_indent(out, ti);
+    writeln!(out, "{items}.length = {kept} + {length} - {index};")
+        .expect("writing to a String cannot fail");
+    write_indent(out, bi);
+    out.push_str("}\n");
+    write_indent(out, indent);
+    out.push_str("}\n");
     return Ok(());
 }
 
