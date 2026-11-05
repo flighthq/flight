@@ -10,9 +10,10 @@ import type {
   Scene3DLightsLike,
   Scene3DRenderList,
   WgpuRenderState,
-  WgpuScene3DForwardLightList,
 } from '@flighthq/types/contract';
 import { SCENE_LIGHT_BLOCK_FLOATS } from '@flighthq/types/contract';
+
+import type { WgpuScene3DForwardLightList } from './contract.scene3d-wgpu-types.ts';
 
 // WebGPU twin of prepareGlScene3DForwardLights: rank point and spot lights at each visible mesh's
 // world-space bounding sphere, pack the nearest/contributing four of each family, and deduplicate

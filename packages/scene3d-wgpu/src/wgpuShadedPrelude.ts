@@ -22,7 +22,6 @@ import type {
   Texture,
   ToonModifier,
   VertexDisplaceModifier,
-  WgpuMeshPipeline,
   WgpuColorAdjustmentMaterialFeature,
   WgpuModifierCompileContext,
   WgpuModifierContribution,
@@ -45,6 +44,7 @@ import {
 } from '@flighthq/types/contract';
 import type { WgpuSkinningAdapter } from '@flighthq/types/contract';
 
+import type { WgpuMeshPipeline } from './contract.scene3d-wgpu-types.ts';
 import { getWgpuClassicSharedSamplerModuleSourceForKey } from './wgpuClassicPrelude.ts';
 import {
   createWgpuMeshPipeline,

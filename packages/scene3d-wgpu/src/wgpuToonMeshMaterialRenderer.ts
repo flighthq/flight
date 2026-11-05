@@ -14,10 +14,10 @@ import type {
   ToonMaterial,
   WgpuMeshMaterialRenderer,
   WgpuRenderState,
-  WgpuToonDefineKey,
 } from '@flighthq/types/contract';
 import { ToonMaterialKind } from '@flighthq/types/contract';
 
+import type { WgpuToonDefineKey } from './contract.scene3d-wgpu-types.ts';
 import { registerWgpuMeshMaterialRenderer } from './wgpuMeshMaterialRegistry.ts';
 import { beginWgpuMeshDraw, drawWgpuMeshSubset, writeWgpuFrameUniform } from './wgpuMeshPipeline.ts';
 import { bindWgpuToonSurface, ensureWgpuToonPipeline } from './wgpuToonPrelude.ts';

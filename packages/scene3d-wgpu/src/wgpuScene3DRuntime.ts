@@ -1,11 +1,8 @@
-import type {
-  WgpuMeshUpload,
-  WgpuScene3DRuntime,
-  WgpuRenderState,
-  WgpuRenderStateRuntime,
-} from '@flighthq/types/contract';
+import type { WgpuRenderState, WgpuRenderStateRuntime } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 import type { WgpuSkinningAdapter } from '@flighthq/types/contract';
+
+import type { WgpuMeshUpload, WgpuScene3DRuntime } from './contract.scene3d-wgpu-types.ts';
 
 // Resolves scene-wgpu's private runtime for a WgpuRenderState, allocating it and wiring its device-tier
 // upload cache on first use. Mutable by design: the draw path writes the caches and shared bindings every

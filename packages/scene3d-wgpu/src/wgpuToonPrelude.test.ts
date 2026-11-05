@@ -1,7 +1,7 @@
 import type { LinearColorRaw } from '@flighthq/color/contract';
 import { allocateLinearColor } from '@flighthq/color/contract';
-import type { WgpuToonDefineKey } from '@flighthq/types/contract';
 
+import type { WgpuToonDefineKey } from './contract.scene3d-wgpu-types.ts';
 import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime.ts';
 import { makeWgpuScene3DState, makeWgpuSkinningAdapter } from './wgpuScene3DTestHelper.ts';
 import {

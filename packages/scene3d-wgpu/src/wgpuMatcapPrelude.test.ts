@@ -1,7 +1,7 @@
 import type { LinearColorRaw } from '@flighthq/color/contract';
 import { allocateLinearColor } from '@flighthq/color/contract';
-import type { WgpuMatcapDefineKey } from '@flighthq/types/contract';
 
+import type { WgpuMatcapDefineKey } from './contract.scene3d-wgpu-types.ts';
 import {
   bindWgpuMatcapSurface,
   buildWgpuMatcapDefineKey,

@@ -15,10 +15,10 @@ import type {
   UnlitMaterial,
   WgpuMeshMaterialRenderer,
   WgpuRenderState,
-  WgpuUnlitDefineKey,
 } from '@flighthq/types/contract';
 import { UnlitMaterialKind } from '@flighthq/types/contract';
 
+import type { WgpuUnlitDefineKey } from './contract.scene3d-wgpu-types.ts';
 import { registerWgpuMeshMaterialRenderer } from './wgpuMeshMaterialRegistry.ts';
 import {
   beginWgpuMeshDraw,

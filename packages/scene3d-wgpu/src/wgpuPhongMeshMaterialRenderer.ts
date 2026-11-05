@@ -14,10 +14,10 @@ import type {
   Scene3DRenderProxy,
   WgpuMeshMaterialRenderer,
   WgpuRenderState,
-  WgpuClassicDefineKey,
 } from '@flighthq/types/contract';
 import { PhongMaterialKind } from '@flighthq/types/contract';
 
+import type { WgpuClassicDefineKey } from './contract.scene3d-wgpu-types.ts';
 import { bindWgpuClassicSurface, ensureWgpuClassicPipeline } from './wgpuClassicPrelude.ts';
 import { registerWgpuMeshMaterialRenderer } from './wgpuMeshMaterialRegistry.ts';
 import {

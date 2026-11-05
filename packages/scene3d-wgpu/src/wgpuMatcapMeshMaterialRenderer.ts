@@ -14,10 +14,10 @@ import type {
   Scene3DRenderProxy,
   WgpuMeshMaterialRenderer,
   WgpuRenderState,
-  WgpuMatcapDefineKey,
 } from '@flighthq/types/contract';
 import { MatcapMaterialKind } from '@flighthq/types/contract';
 
+import type { WgpuMatcapDefineKey } from './contract.scene3d-wgpu-types.ts';
 import { bindWgpuMatcapSurface, ensureWgpuMatcapPipeline } from './wgpuMatcapPrelude.ts';
 import { registerWgpuMeshMaterialRenderer } from './wgpuMeshMaterialRegistry.ts';
 import { beginWgpuMeshDraw, drawWgpuMeshSubset, writeWgpuFrameUniform } from './wgpuMeshPipeline.ts';

@@ -31,12 +31,11 @@ import type {
   WgpuMeshMaterialRenderer,
   WgpuRenderPass,
   WgpuRenderState,
-  WgpuScene3DDrawEntry,
-  WgpuScene3DForwardLightList,
 } from '@flighthq/types/contract';
 import { BlendMode, StandardMaterialKind, MAX_FORWARD_LIGHTS } from '@flighthq/types/contract';
 import type { WgpuSkinningAdapter } from '@flighthq/types/contract';
 
+import type { WgpuScene3DDrawEntry, WgpuScene3DForwardLightList } from './contract.scene3d-wgpu-types.ts';
 import { resolveWgpuMeshMaterialRenderer } from './wgpuMeshMaterialRegistry.ts';
 import { INSTANCE_RECORD_FLOATS } from './wgpuMeshPipeline.ts';
 import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime.ts';

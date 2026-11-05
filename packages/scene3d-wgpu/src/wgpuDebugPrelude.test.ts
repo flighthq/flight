@@ -1,5 +1,4 @@
-import type { WgpuDebugDefineKey } from '@flighthq/types/contract';
-
+import type { WgpuDebugDefineKey } from './contract.scene3d-wgpu-types.ts';
 import {
   bindWgpuDebugSurface,
   buildWgpuDebugDefineKey,

@@ -20,12 +20,8 @@ import type {
   Texture,
   TextureLike,
   WgpuColorAdjustmentMaterialFeature,
-  WgpuMaterialBinding,
-  WgpuMeshPipeline,
   WgpuMeshInstanceBufferSlot,
   WgpuRenderState,
-  WgpuScene3DLayouts,
-  WgpuScene3DShadow,
 } from '@flighthq/types/contract';
 import {
   BlendMode,
@@ -40,6 +36,12 @@ import {
 } from '@flighthq/types/contract';
 import type { WgpuSkinningAdapter } from '@flighthq/types/contract';
 
+import type {
+  WgpuMaterialBinding,
+  WgpuMeshPipeline,
+  WgpuScene3DLayouts,
+  WgpuScene3DShadow,
+} from './contract.scene3d-wgpu-types.ts';
 import { ensureWgpuMeshUpload } from './wgpuMeshUpload.ts';
 import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime.ts';
 // Sets the family's pipeline active for the bind→draw handoff, binds it, and binds the shared Frame

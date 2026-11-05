@@ -2,13 +2,12 @@ import type { LinearColorRaw } from '@flighthq/color/contract';
 import { getWgpuColorAdjustmentMaterialFeature } from '@flighthq/render-wgpu/contract';
 import type {
   Texture,
-  WgpuClassicDefineKey,
-  WgpuClassicPipeline,
   WgpuColorAdjustmentMaterialFeature,
   WgpuRenderState,
   WgpuSkinningAdapter,
 } from '@flighthq/types/contract';
 
+import type { WgpuClassicDefineKey, WgpuClassicPipeline } from './contract.scene3d-wgpu-types.ts';
 import { WGPU_MESH_FRAGMENT_TAIL } from './wgpuMeshFragmentTail.ts';
 import {
   createWgpuMeshPipeline,

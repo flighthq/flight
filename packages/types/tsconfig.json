@@ -8,6 +8,7 @@
     "declarationMap": true,
     "sourceMap": true,
     "moduleSuffixes": [
+      ".scene3d-wgpu-types",
       ".render-wgpu-types",
       ".app-types",
       ".flow-types",
@@ -175,6 +176,9 @@
     },
     {
       "path": "../render-wgpu/tsconfig.contract.json"
+    },
+    {
+      "path": "../scene3d-wgpu/tsconfig.contract.json"
     }
   ],
   "include": ["src"]

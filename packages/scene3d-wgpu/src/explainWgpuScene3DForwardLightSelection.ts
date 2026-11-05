@@ -1,9 +1,7 @@
-import type {
-  Scene3DForwardLightSelectionExplanation,
-  Scene3DLightsLike,
-  WgpuScene3DForwardLightList,
-} from '@flighthq/types/contract';
+import type { Scene3DForwardLightSelectionExplanation, Scene3DLightsLike } from '@flighthq/types/contract';
 import { MAX_FORWARD_LIGHTS } from '@flighthq/types/contract';
+
+import type { WgpuScene3DForwardLightList } from './contract.scene3d-wgpu-types.ts';
 
 // Pure diagnostic twin of scene-gl's explanation API.
 export function explainWgpuScene3DForwardLightSelection(

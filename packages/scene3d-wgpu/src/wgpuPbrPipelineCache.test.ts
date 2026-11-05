@@ -1,5 +1,4 @@
-import type { WgpuPbrDefineKey } from '@flighthq/types/contract';
-
+import type { WgpuPbrDefineKey } from './contract.scene3d-wgpu-types.ts';
 import { compileWgpuPbrPipeline, ensureWgpuPbrPipeline } from './wgpuPbrPipelineCache.ts';
 import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime.ts';
 import { makeWgpuScene3DState } from './wgpuScene3DTestHelper.ts';

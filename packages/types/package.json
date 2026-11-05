@@ -81,7 +81,8 @@
     "@flighthq/useragent": "*",
     "@flighthq/velocity": "*",
     "@flighthq/xml": "*",
-    "@flighthq/render-wgpu": "*"
+    "@flighthq/render-wgpu": "*",
+    "@flighthq/scene3d-wgpu": "*"
   },
   "peerDependencies": {
     "@webgpu/types": "^0.1.70"

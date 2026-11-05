@@ -1,5 +1,6 @@
-import type { WgpuColorAdjustmentMaterialFeature, WgpuPbrDefineKey } from '@flighthq/types/contract';
+import type { WgpuColorAdjustmentMaterialFeature } from '@flighthq/types/contract';
 
+import type { WgpuPbrDefineKey } from './contract.scene3d-wgpu-types.ts';
 import {
   buildWgpuPbrDefineKey,
   buildWgpuPbrDefineSource,

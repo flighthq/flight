@@ -1,0 +1,86 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "composite": true,
+    "rootDir": "src",
+    "outDir": "dist",
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "types": ["@testing-library/jest-dom", "vitest/globals", "@webgpu/types"],
+    "tsBuildInfoFile": "dist/.tsbuildinfo.runtime"
+  },
+  "references": [
+    {
+      "path": "../camera"
+    },
+    {
+      "path": "../color"
+    },
+    {
+      "path": "../entity"
+    },
+    {
+      "path": "../geometry/tsconfig.runtime.json"
+    },
+    {
+      "path": "../image"
+    },
+    {
+      "path": "../lighting"
+    },
+    {
+      "path": "../log"
+    },
+    {
+      "path": "../materials"
+    },
+    {
+      "path": "../meshgeometry"
+    },
+    {
+      "path": "../node"
+    },
+    {
+      "path": "../particleemitter"
+    },
+    {
+      "path": "../registry"
+    },
+    {
+      "path": "../render"
+    },
+    {
+      "path": "../render-wgpu"
+    },
+    {
+      "path": "../scene2d-wgpu"
+    },
+    {
+      "path": "../scene3d"
+    },
+    {
+      "path": "../shading"
+    },
+    {
+      "path": "../shape"
+    },
+    {
+      "path": "../text/tsconfig.runtime.json"
+    },
+    {
+      "path": "../texture"
+    },
+    {
+      "path": "../types"
+    },
+    {
+      "path": "../video"
+    },
+    {
+      "path": "./tsconfig.contract.json"
+    }
+  ],
+  "include": ["src/**/*.ts"],
+  "exclude": ["src/contract.scene3d-wgpu-types.ts", "src/types/**/*.ts"]
+}

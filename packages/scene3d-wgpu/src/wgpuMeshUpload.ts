@@ -1,7 +1,8 @@
-import type { MeshGeometry, MeshGeometryRuntime, WgpuRenderState, WgpuMeshUpload } from '@flighthq/types/contract';
+import type { MeshGeometry, MeshGeometryRuntime, WgpuRenderState } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 import type { WgpuSkinningAdapter } from '@flighthq/types/contract';
 
+import type { WgpuMeshUpload } from './contract.scene3d-wgpu-types.ts';
 import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime.ts';
 
 // Lazily uploads a MeshGeometry's interleaved vertex buffer + index buffer into GPU buffers for this

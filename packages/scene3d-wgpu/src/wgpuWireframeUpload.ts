@@ -1,5 +1,6 @@
-import type { WgpuWireframeUpload, MeshGeometry, WgpuRenderState } from '@flighthq/types/contract';
+import type { MeshGeometry, WgpuRenderState } from '@flighthq/types/contract';
 
+import type { WgpuWireframeUpload } from './contract.scene3d-wgpu-types.ts';
 import { ensureWgpuMeshUpload } from './wgpuMeshUpload.ts';
 // Lazily derives + uploads the wireframe line-index buffer for a geometry on this state, caching it
 // keyed by the geometry entity. Reuses the geometry's vertex buffer (ensuring the triangle upload

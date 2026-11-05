@@ -1,3 +1,4 @@
+export * from './contract.scene3d-wgpu-types.ts';
 export * from './enableWgpuScene3DCustomShaderGuards.ts';
 export * from './enableWgpuScene3DForwardLightSelectionGuards.ts';
 export * from './explainWgpuScene3DCoverage.ts';

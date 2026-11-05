@@ -1,12 +1,7 @@
 import { getWgpuRenderStateDeviceResources } from '@flighthq/render-wgpu/contract';
-import type {
-  WgpuDebugDefineKey,
-  WgpuDebugPipeline,
-  WgpuRenderState,
-  WgpuMaterialBinding,
-  WgpuSkinningAdapter,
-} from '@flighthq/types/contract';
+import type { WgpuRenderState, WgpuSkinningAdapter } from '@flighthq/types/contract';
 
+import type { WgpuDebugDefineKey, WgpuDebugPipeline, WgpuMaterialBinding } from './contract.scene3d-wgpu-types.ts';
 import { WGPU_MESH_FRAGMENT_TAIL } from './wgpuMeshFragmentTail.ts';
 import {
   createWgpuMeshPipeline,

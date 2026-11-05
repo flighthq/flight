@@ -1,13 +1,8 @@
 import type { LinearColorRaw } from '@flighthq/color/contract';
-import type {
-  Texture,
-  WgpuMaterialBinding,
-  WgpuRenderState,
-  WgpuUnlitDefineKey,
-  WgpuUnlitPipeline,
-} from '@flighthq/types/contract';
+import type { Texture, WgpuRenderState } from '@flighthq/types/contract';
 import type { WgpuSkinningAdapter } from '@flighthq/types/contract';
 
+import type { WgpuMaterialBinding, WgpuUnlitDefineKey, WgpuUnlitPipeline } from './contract.scene3d-wgpu-types.ts';
 import { WGPU_MESH_FRAGMENT_TAIL } from './wgpuMeshFragmentTail.ts';
 import {
   createWgpuMeshPipeline,

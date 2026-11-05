@@ -12,7 +12,6 @@ import type {
   Scene3DRenderProxy,
   Texture,
   WgpuColorAdjustmentMaterialFeature,
-  WgpuMaterialBinding,
 } from '@flighthq/types/contract';
 import {
   BitmapTextureSourceKind,
@@ -21,6 +20,7 @@ import {
   SCENE_LIGHT_BLOCK_FLOATS,
 } from '@flighthq/types/contract';
 
+import type { WgpuMaterialBinding } from './contract.scene3d-wgpu-types.ts';
 import {
   WGPU_MESH_PRELUDE_WGSL,
   beginWgpuMeshDraw,

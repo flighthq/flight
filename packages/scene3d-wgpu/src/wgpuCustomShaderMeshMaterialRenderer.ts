@@ -13,11 +13,11 @@ import type {
   Scene3DRenderProxy,
   WgpuCustomMaterialShaderSource,
   WgpuMeshMaterialRenderer,
-  WgpuMeshPipeline,
   WgpuRenderState,
 } from '@flighthq/types/contract';
 import { CustomShaderMaterialKind } from '@flighthq/types/contract';
 
+import type { WgpuMeshPipeline } from './contract.scene3d-wgpu-types.ts';
 import { WGPU_CUSTOM_SHADER_TEXTURE_CAPACITY, WGPU_CUSTOM_SHADER_USER_VEC4_CAPACITY } from './wgpuCustomMaterialAbi.ts';
 import { registerWgpuMeshMaterialRenderer } from './wgpuMeshMaterialRegistry.ts';
 import {

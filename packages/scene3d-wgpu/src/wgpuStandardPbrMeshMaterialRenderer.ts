@@ -12,11 +12,9 @@ import type {
   Material3D,
   WgpuMeshMaterialRenderer,
   WgpuRenderState,
-  WgpuPbrPipeline,
-  WgpuPbrDefineKey,
-  WgpuMaterialBinding,
 } from '@flighthq/types/contract';
 
+import type { WgpuPbrPipeline, WgpuPbrDefineKey, WgpuMaterialBinding } from './contract.scene3d-wgpu-types.ts';
 import {
   beginWgpuMeshDraw,
   drawWgpuMeshSubset,
