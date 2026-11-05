@@ -11,20 +11,12 @@ import {
   getNodeWorldBoundsRectangle,
   getNodeWorldMatrix,
 } from '@flighthq/node/contract';
+import type { Node, NodeAny } from '@flighthq/node/contract';
 import { containsPathPoint } from '@flighthq/path/contract';
 import type { Path } from '@flighthq/path/contract';
-import type {
-  Node2D,
-  HitArea,
-  HitTestFunction,
-  HitTestPreciseFunction,
-  HitTestResult,
-  Kind,
-  Node,
-  NodeAny,
-  Rectangle,
-} from '@flighthq/types/contract';
+import type { Node2D, Kind, Rectangle } from '@flighthq/types/contract';
 
+import type { HitArea, HitTestFunction, HitTestPreciseFunction, HitTestResult } from './contract.interaction-types.ts';
 import { getNodeInteractionState } from './nodeInteractionState.ts';
 
 /**

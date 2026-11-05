@@ -1,11 +1,13 @@
 import { createClipRegionFromCircle, createClipRegionFromRectangle } from '@flighthq/clip/contract';
 import { createRectangle, setRectangle } from '@flighthq/geometry/contract';
 import { addNodeChild, getNodeLocalBoundsRectangle, invalidateNodeLocalTransform } from '@flighthq/node/contract';
+import type { NodeAny } from '@flighthq/node/contract';
 import { appendPathRectangle, createPath } from '@flighthq/path/contract';
 import { createDisplayObject, createNode2D, getNode2DRuntime, setNode2DClip } from '@flighthq/scene2d/contract';
-import type { Node2D, Node2DRuntime, HitTestResult, NodeAny } from '@flighthq/types/contract';
+import type { Node2D, Node2DRuntime } from '@flighthq/types/contract';
 import { DisplayObjectKind } from '@flighthq/types/contract';
 
+import type { HitTestResult } from './contract.interaction-types.ts';
 import {
   describeGraphHit,
   findGraphHitTarget,

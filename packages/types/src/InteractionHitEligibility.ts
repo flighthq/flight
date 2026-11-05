@@ -1,7 +1,2 @@
-/** Plain-data result of `explainInteractionHitEligibility`. */
-export interface InteractionHitEligibility {
-  // Whether the node itself has opted into hit testing.
-  eligible: boolean;
-  // Whether the node or any descendant is a hit candidate (so a bubbled listener on it can fire).
-  hasEligibleInSubtree: boolean;
-}
+/** @deprecated Import interaction contracts from `@flighthq/interaction/contract`. */
+export type { InteractionHitEligibility } from '@flighthq/interaction/contract';

@@ -1,8 +1,2 @@
-export interface KeyboardEventData {
-  altKey: boolean;
-  ctrlKey: boolean;
-  key: string;
-  keyCode: number;
-  metaKey: boolean;
-  shiftKey: boolean;
-}
+/** @deprecated Import interaction contracts from `@flighthq/interaction/contract`. */
+export type { KeyboardEventData } from '@flighthq/interaction/contract';

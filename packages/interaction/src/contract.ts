@@ -1,3 +1,4 @@
+export type * from './contract.interaction-types.ts';
 export * from './displayHitTests.ts';
 export * from './displayObjectOverlap.ts';
 export * from './enableInteractionGuards.ts';

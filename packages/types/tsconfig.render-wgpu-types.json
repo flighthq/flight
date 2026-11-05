@@ -8,6 +8,7 @@
     "declarationMap": true,
     "sourceMap": true,
     "moduleSuffixes": [
+      ".interaction-types",
       ".node-types",
       ".materials-types",
       ".scene3d-wgpu-types",
@@ -91,6 +92,9 @@
     },
     {
       "path": "../node/tsconfig.contract.json"
+    },
+    {
+      "path": "../interaction/tsconfig.contract.json"
     }
   ],
   "files": [
@@ -114,14 +118,14 @@
     "src/ColorScaleBias.ts",
     "src/CompressedImageData.ts",
     "src/CompressedImageResource.ts",
-    "src/Cursor.ts",
+    "src/Cursor.interaction-types.ts",
     "src/CustomShaderMaterial.materials-types.ts",
     "src/DirectionalLight.ts",
     "src/Effect.ts",
     "src/EffectPadding.ts",
     "src/Entity.ts",
     "src/ExternalTexture.ts",
-    "src/FocusEventData.ts",
+    "src/FocusEventData.interaction-types.ts",
     "src/GlColorAdjustmentResources.ts",
     "src/GlColorLutTextureCache.ts",
     "src/GlCompressedTextureDecoder.ts",
@@ -167,8 +171,8 @@
     "src/HostCanvas.ts",
     "src/HostImageSource.ts",
     "src/ImageResource.ts",
-    "src/InteractionSignals.ts",
-    "src/KeyboardEventData.ts",
+    "src/InteractionSignals.interaction-types.ts",
+    "src/KeyboardEventData.interaction-types.ts",
     "src/Light.ts",
     "src/LightUnit.ts",
     "src/Material.materials-types.ts",
@@ -189,8 +193,8 @@
     "src/Node.node-types.ts",
     "src/Node2D.ts",
     "src/Node3D.ts",
-    "src/NodeInteraction.ts",
-    "src/NodeInteractionState.ts",
+    "src/NodeInteraction.interaction-types.ts",
+    "src/NodeInteractionState.interaction-types.ts",
     "src/NodeRenderer.ts",
     "src/NodeSignals.node-types.ts",
     "src/PbrExtension.materials-types.ts",
@@ -198,7 +202,7 @@
     "src/Plane.ts",
     "src/Platform.ts",
     "src/PointLight.ts",
-    "src/PointerEventData.ts",
+    "src/PointerEventData.interaction-types.ts",
     "src/Quaternion.ts",
     "src/Rectangle.ts",
     "src/RenderProxy.ts",

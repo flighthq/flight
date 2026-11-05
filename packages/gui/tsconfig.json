@@ -10,7 +10,7 @@
   },
   "references": [
     {
-      "path": "../interaction"
+      "path": "../interaction/tsconfig.runtime.json"
     },
     {
       "path": "../node/tsconfig.runtime.json"

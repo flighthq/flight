@@ -1,6 +1,7 @@
 import { createMatrix, inverseMatrixTransformPointXY, setMatrixFromFloat32Array } from '@flighthq/geometry/contract';
 import { getNodeWorldMatrix } from '@flighthq/node/contract';
-import type { Matrix, Node2D, NodeAny, QuadBatch, TextureAtlasRegion } from '@flighthq/types/contract';
+import type { NodeAny } from '@flighthq/node/contract';
+import type { Matrix, Node2D, QuadBatch, TextureAtlasRegion } from '@flighthq/types/contract';
 import { QuadBatchKind, TextureAtlasRotation } from '@flighthq/types/contract';
 
 import { registerHitTestPrecise } from './hitTests.ts';

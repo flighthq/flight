@@ -1,4 +1,4 @@
-import type { NodeAny } from '@flighthq/types/contract';
+import type { NodeAny } from '@flighthq/node/contract';
 
 import { hitTestGraphLocalBounds } from './hitTests.ts';
 

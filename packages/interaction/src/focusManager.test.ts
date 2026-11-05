@@ -2,8 +2,9 @@ import { setRectangle } from '@flighthq/geometry/contract';
 import { addNodeChild, getNodeLocalBoundsRectangle, invalidateNodeLocalTransform } from '@flighthq/node/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
 import { connectSignal, createSignal, emitSignal } from '@flighthq/signals/contract';
-import type { Node2D, FocusEventData, InputKeyboardData } from '@flighthq/types/contract';
+import type { Node2D, InputKeyboardData } from '@flighthq/types/contract';
 
+import type { FocusEventData } from './contract.interaction-types.ts';
 import {
   clearFocus,
   connectFocusNavigation,

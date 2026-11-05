@@ -1,0 +1,107 @@
+import type { EntityRuntimeKey } from '@flighthq/entity/contract';
+import type { PointerType } from '@flighthq/input/contract';
+import type { InputSignalsRaw as InputSignals } from '@flighthq/input/contract';
+import type { Node, NodeAny, NodeFields } from '@flighthq/node/contract';
+import type { SlotId } from '@flighthq/signals/contract';
+import type { SpatialIndex2D } from '@flighthq/spatial/contract';
+
+import type { CursorBackend } from './Cursor.ts';
+import type { FocusEventData } from './FocusEventData.ts';
+import type { InteractionEntity as Entity } from './InteractionEntity.ts';
+import type { InteractionSignals } from './InteractionSignals.ts';
+import type { KeyboardEventData } from './KeyboardEventData.ts';
+import type { NodeInteractionState } from './NodeInteractionState.ts';
+import type { PointerEventData } from './PointerEventData.ts';
+
+// The signal names only. InteractionSignals is an Entity, so a bare `keyof` would also yield the
+// runtime slot's symbol — which is not a signal name, and widening this union to include it makes
+// every consumer accept a key it cannot dispatch.
+export type InteractionSignalName = Exclude<keyof InteractionSignals, typeof EntityRuntimeKey>;
+export type AnyInteractionSignalSlot = (value: PointerEventData | KeyboardEventData | FocusEventData) => void;
+export type InteractionDispatchLayer<N extends NodeAny = Node<NodeFields>> = (
+  target: N,
+  name: InteractionSignalName,
+  data: Readonly<PointerEventData | KeyboardEventData | FocusEventData>,
+) => boolean;
+
+export interface InteractionDispatchLayerOptions {
+  priority?: number;
+}
+
+export interface InteractionManager<N extends NodeAny = Node<NodeFields>> extends Entity {
+  // Active cursor backend for this manager's canvas; `null` disables cursor resolution. Per-manager
+  // (not a global) so each manager owns its own canvas's cursor zone. Rollover resolves the innermost
+  // ancestor's `NodeInteractionState.cursor` and applies it here.
+  cursorBackend: CursorBackend | null;
+  // Last rollover target that drove this manager's cursor. Kept separately from per-pointer state
+  // because one canvas has one cursor even when the manager tracks several pointer identities.
+  cursorTarget: N | null;
+  // Priority-descending dispatch middleware, allocated only when a consumer connects the first layer.
+  dispatchLayers: Array<{ layer: InteractionDispatchLayer<N>; priority: number }> | null;
+  // Inclusive maximum elapsed time, in input-timestamp units, between qualifying pointer clicks.
+  doubleClickDelay: number;
+  // Inclusive maximum distance, in dispatched pointer-coordinate units, between qualifying clicks.
+  doubleClickDistance: number;
+  enabled: boolean;
+  pointerCaptures: Map<number, N>;
+  pointerStates: Map<number, InteractionPointerState<N>>;
+  // When true, pointer dispatch resolves targets with the precise (exact geometry) hit walk instead of
+  // the coarse bbox walk — so a listener fires only on a real hit. `false` (default) uses coarse.
+  precise: boolean;
+  root: N;
+  // Opt-in broadphase. When set, pointer picking queries this index (populated by
+  // `refreshInteractionSpatialIndex`) instead of walking the whole tree — the 240 Hz acceleration for
+  // large scenes. `null` (default) uses the linear tree walk.
+  spatialIndex: SpatialIndex2D | null;
+  signalSubscriberCounts: Map<InteractionSignalName, number>;
+  // When true (the default), a `'touch'` pointer dispatches no rollover/over/out and applies no cursor.
+  // A finger has no hover: the browser's emulated hover leaves the last-tapped node permanently rolled
+  // over once the finger lifts, and a hover cursor applied for it never clears. Press, click, and up
+  // are unaffected — only the hover family is suppressed. Set `false` for a stylus-like device where
+  // the platform reports touch but a real hover position exists.
+  suppressTouchHover: boolean;
+  // The SlotId of each connection connectInteractionSignal made, by target, signal name and callback. Only
+  // these connections are managed; a slot connected directly on the signal is never tracked here.
+  trackedSignalSlots: Map<N, Map<InteractionSignalName, Map<AnyInteractionSignalSlot, SlotId>>>;
+  trackedSubscribersOnly: boolean;
+}
+
+export interface InteractionManagerOptions {
+  cursorBackend?: CursorBackend | null;
+  doubleClickDelay?: number;
+  doubleClickDistance?: number;
+  enabled?: boolean;
+  precise?: boolean;
+  spatialIndex?: SpatialIndex2D | null;
+  suppressTouchHover?: boolean;
+  trackedSubscribersOnly?: boolean;
+}
+
+export type InteractionInputSource = Pick<
+  InputSignals,
+  'onKeyDown' | 'onKeyUp' | 'onPointerCancel' | 'onPointerDown' | 'onPointerMove' | 'onPointerUp' | 'onWheel'
+>;
+
+export interface InteractionPointerOptions {
+  altKey?: boolean;
+  buttons?: number;
+  ctrlKey?: boolean;
+  metaKey?: boolean;
+  pointerId?: number;
+  pointerType?: PointerType;
+  shiftKey?: boolean;
+  timeStamp?: number;
+}
+
+export interface InteractionPointerState<N extends NodeAny = Node<NodeFields>> {
+  lastClickTarget: N | null;
+  lastClickTime: number;
+  lastPointerClickButton: number;
+  lastPointerClickInteractionState: NodeInteractionState | null;
+  lastPointerClickTarget: N | null;
+  lastPointerClickTime: number;
+  lastPointerClickX: number;
+  lastPointerClickY: number;
+  pointerDownTarget: N | null;
+  pointerOverTarget: N | null;
+}

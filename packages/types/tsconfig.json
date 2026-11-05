@@ -8,6 +8,7 @@
     "declarationMap": true,
     "sourceMap": true,
     "moduleSuffixes": [
+      ".interaction-types",
       ".node-types",
       ".image-types",
       ".materials-types",
@@ -213,6 +214,9 @@
     },
     {
       "path": "../node/tsconfig.contract.json"
+    },
+    {
+      "path": "../interaction/tsconfig.contract.json"
     }
   ],
   "include": ["src"]

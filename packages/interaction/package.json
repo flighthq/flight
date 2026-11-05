@@ -44,6 +44,7 @@
     "@flighthq/clip": "*",
     "@flighthq/entity": "*",
     "@flighthq/geometry": "*",
+    "@flighthq/input": "*",
     "@flighthq/log": "*",
     "@flighthq/node": "*",
     "@flighthq/path": "*",

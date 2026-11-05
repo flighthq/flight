@@ -9,18 +9,15 @@ import {
 import { createDisplayObject } from '@flighthq/scene2d/contract';
 import { connectSignal, createSignal, emitSignal, isSlotConnected } from '@flighthq/signals/contract';
 import type { Signal } from '@flighthq/signals/contract';
+import type { Cursor, InputKeyboardData, InputPointerData, InputSignals } from '@flighthq/types/contract';
+import { DisplayObjectKind } from '@flighthq/types/contract';
+
 import type {
-  Cursor,
   FocusEventData,
-  InputKeyboardData,
-  InputPointerData,
-  InputSignals,
   InteractionManagerOptions,
   KeyboardEventData,
   PointerEventData,
-} from '@flighthq/types/contract';
-import { DisplayObjectKind } from '@flighthq/types/contract';
-
+} from './contract.interaction-types.ts';
 import { hitTestGraphLocalBounds } from './hitTests.ts';
 import { registerHitTest } from './hitTests.ts';
 import {

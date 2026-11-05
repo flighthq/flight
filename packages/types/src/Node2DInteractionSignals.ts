@@ -1,3 +1,2 @@
-import type { InteractionSignals } from './InteractionSignals.ts';
-
-export type Node2DInteractionSignals = InteractionSignals;
+/** @deprecated Import interaction contracts from `@flighthq/interaction/contract`. */
+export type { Node2DInteractionSignals } from '@flighthq/interaction/contract';

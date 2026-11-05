@@ -16,7 +16,7 @@
       "path": "../geometry/tsconfig.runtime.json"
     },
     {
-      "path": "../interaction"
+      "path": "../interaction/tsconfig.runtime.json"
     },
     {
       "path": "../math"

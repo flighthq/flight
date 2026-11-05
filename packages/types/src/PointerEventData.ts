@@ -1,26 +1,3 @@
-import type { PointerType } from '@flighthq/input/contract';
-
-import type { NodeAny } from './Node.ts';
-
-export interface PointerEventData {
-  altKey: boolean;
-  button: number;
-  buttons: number;
-  ctrlKey: boolean;
-  currentTarget: NodeAny | null;
-  deltaX: number;
-  deltaY: number;
-  localX: number;
-  localY: number;
-  metaKey: boolean;
-  pointerId: number;
-  pointerType: PointerType;
-  shiftKey: boolean;
-  target: NodeAny | null;
-  worldX: number;
-  worldY: number;
-  x: number;
-  y: number;
-}
-
+/** @deprecated Import interaction contracts from `@flighthq/interaction/contract`. */
+export type { PointerEventData } from '@flighthq/interaction/contract';
 export type { PointerType } from '@flighthq/input/contract';

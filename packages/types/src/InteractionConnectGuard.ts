@@ -1,4 +1,2 @@
-import type { InteractionSignalName } from './InteractionManager.ts';
-import type { NodeAny } from './Node.ts';
-
-export type InteractionConnectGuard = (target: NodeAny, name: InteractionSignalName) => void;
+/** @deprecated Import interaction contracts from `@flighthq/interaction/contract`. */
+export type { InteractionConnectGuard } from '@flighthq/interaction/contract';

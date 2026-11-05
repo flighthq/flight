@@ -1,13 +1,9 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { getNodeRuntime } from '@flighthq/node/contract';
-import type {
-  Cursor,
-  EntityConstruction,
-  HitArea,
-  NodeAny,
-  NodeInteractionState,
-  NodeRuntime,
-} from '@flighthq/types/contract';
+import type { NodeAny, NodeRuntime } from '@flighthq/node/contract';
+import type { EntityConstruction } from '@flighthq/types/contract';
+
+import type { Cursor, HitArea, NodeInteractionState } from './contract.interaction-types.ts';
 
 /**
  * Whether the hit-test walk descends into this node's children. Default `true` — unlike
@@ -28,8 +24,8 @@ export function createNodeInteractionState(): NodeInteractionState {
  * field; readers should prefer the typed getters, which treat an absent cell as defaults.
  */
 export function enableNodeInteractionState(source: NodeAny): NodeInteractionState {
-  const runtime = getNodeRuntime(source) as NodeRuntime<NodeAny>;
-  return (runtime.interactionState ??= createNodeInteractionState()) as NodeInteractionState;
+  const runtime = getInteractionNodeRuntime(source);
+  return (runtime.interactionState ??= createNodeInteractionState());
 }
 
 /** Rollover cursor for this node, or `null` when unset (inherits nearest ancestor / backend default). */
@@ -44,7 +40,7 @@ export function getNodeHitArea(source: Readonly<NodeAny>): HitArea | null {
 
 /** Raw interaction-state cell, or `null` if the node has never had one enabled. */
 export function getNodeInteractionState(source: Readonly<NodeAny>): NodeInteractionState | null {
-  return (getNodeRuntime(source) as NodeRuntime<NodeAny>).interactionState as NodeInteractionState | null;
+  return getInteractionNodeRuntime(source).interactionState;
 }
 
 /** Focus-order key for this node; `-1` (the default) means natural order. */
@@ -127,3 +123,11 @@ export function setNodePointerDoubleClickEnabled(source: NodeAny, enabled: boole
 export function setNodeTabIndex(source: NodeAny, tabIndex: number): void {
   enableNodeInteractionState(source).tabIndex = tabIndex;
 }
+
+function getInteractionNodeRuntime(source: Readonly<NodeAny>): InteractionNodeRuntime {
+  return getNodeRuntime(source) as InteractionNodeRuntime;
+}
+
+type InteractionNodeRuntime = NodeRuntime<NodeAny> & {
+  interactionState: NodeInteractionState | null;
+};

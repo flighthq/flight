@@ -1,0 +1,34 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "composite": true,
+    "rootDir": "src",
+    "outDir": "dist",
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "tsBuildInfoFile": "dist/.tsbuildinfo.runtime"
+  },
+  "references": [
+    { "path": "../entity" },
+    { "path": "../geometry/tsconfig.runtime.json" },
+    { "path": "../node/tsconfig.runtime.json" },
+    { "path": "../registry" },
+    { "path": "../scene2d" },
+    { "path": "../log" },
+    { "path": "../path/tsconfig.runtime.json" },
+    { "path": "../shape/tsconfig.runtime.json" },
+    { "path": "../signals" },
+    { "path": "../spatial/tsconfig.runtime.json" },
+    { "path": "../quadbatch" },
+    { "path": "../tilemap" },
+    { "path": "../bitmap" },
+    { "path": "../clip/tsconfig.runtime.json" },
+    { "path": "../text/tsconfig.runtime.json" },
+    { "path": "../textlayout/tsconfig.runtime.json" },
+    { "path": "../types" },
+    { "path": "./tsconfig.contract.json" }
+  ],
+  "include": ["src/**/*.ts"],
+  "exclude": ["src/contract.interaction-types.ts", "src/types/**/*.ts"]
+}

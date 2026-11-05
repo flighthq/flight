@@ -181,7 +181,7 @@
       "path": "../input"
     },
     {
-      "path": "../interaction"
+      "path": "../interaction/tsconfig.runtime.json"
     },
     {
       "path": "../intl"

@@ -58,6 +58,7 @@
     "@flighthq/image": "*",
     "@flighthq/importdiagnostics": "*",
     "@flighthq/input": "*",
+    "@flighthq/interaction": "*",
     "@flighthq/layout": "*",
     "@flighthq/log": "*",
     "@flighthq/materials": "*",

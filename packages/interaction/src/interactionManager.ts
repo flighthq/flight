@@ -1,15 +1,19 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { inverseMatrixTransformPointXY } from '@flighthq/geometry/contract';
 import { getNodeParent, getNodeRuntime, getNodeWorldMatrix } from '@flighthq/node/contract';
+import type { HasTransform2DRuntime, NodeAny, NodeRuntime, Transform2DNode } from '@flighthq/node/contract';
 import { connectSignal, createSignal, disconnectSignal, emitSignal, isSlotConnected } from '@flighthq/signals/contract';
 import type { Signal, SignalConnectOptions, SlotId } from '@flighthq/signals/contract';
 import type {
   AnyInteractionSignalSlot,
-  Cursor,
-  FocusEventData,
-  HasTransform2DRuntime,
   InputKeyboardData,
   InputPointerData,
+  EntityConstruction,
+} from '@flighthq/types/contract';
+
+import type {
+  Cursor,
+  FocusEventData,
   InteractionConnectGuard,
   InteractionDispatchLayer,
   InteractionDispatchLayerOptions,
@@ -21,13 +25,8 @@ import type {
   InteractionSignalName,
   InteractionSignals,
   KeyboardEventData,
-  NodeAny,
-  NodeRuntime,
   PointerEventData,
-  Transform2DNode,
-  EntityConstruction,
-} from '@flighthq/types/contract';
-
+} from './contract.interaction-types.ts';
 import { findGraphHitTarget, findGraphHitTargetPrecise } from './hitTests.ts';
 import { findSpatialInteractionTarget } from './interactionSpatialIndex.ts';
 import { getNodeCursor, getNodeInteractionState } from './nodeInteractionState.ts';
@@ -380,12 +379,12 @@ export function dispatchInteractionWheel<N extends NodeAny>(
 }
 
 export function enableInteractionSignals<N extends NodeAny>(source: N): InteractionSignals {
-  const runtime = getNodeRuntime(source) as NodeRuntime<NodeAny>;
-  return (runtime.interactionSignals ??= createInteractionSignals()) as InteractionSignals;
+  const runtime = getInteractionSignalsRuntime(source);
+  return (runtime.interactionSignals ??= createInteractionSignals());
 }
 
 export function getInteractionSignals<N extends NodeAny>(source: N): InteractionSignals | null {
-  return (getNodeRuntime(source) as NodeRuntime<NodeAny>).interactionSignals as InteractionSignals | null;
+  return getInteractionSignalsRuntime(source).interactionSignals;
 }
 
 export function initializeInteractionManager<N extends NodeAny>(
@@ -770,7 +769,7 @@ function getInteractionSignal<N extends NodeAny, Name extends InteractionSignalN
   source: Readonly<N>,
   name: Name,
 ): InteractionSignals[Name] | null {
-  const signals = getNodeRuntime(source).interactionSignals as InteractionSignals | null;
+  const signals = getInteractionSignals(source);
   return signals !== null ? signals[name] : null;
 }
 
@@ -956,6 +955,10 @@ function hasTransform2DRuntime(
   return 'worldMatrix' in runtime;
 }
 
+function getInteractionSignalsRuntime(source: Readonly<NodeAny>): InteractionSignalsNodeRuntime {
+  return getNodeRuntime(source) as InteractionSignalsNodeRuntime;
+}
+
 type KeyboardSignalName = 'onKeyDown' | 'onKeyUp';
 type FocusSignalName = 'onFocusIn' | 'onFocusOut';
 type PointerSignalName = Exclude<InteractionSignalName, KeyboardSignalName | FocusSignalName>;
@@ -966,6 +969,9 @@ type InteractionSignalPayload<Name extends InteractionSignalName> = Name extends
     ? Readonly<FocusEventData>
     : Readonly<PointerEventData>;
 type InteractionSignalSlot<Name extends InteractionSignalName> = (value: InteractionSignalPayload<Name>) => void;
+type InteractionSignalsNodeRuntime = NodeRuntime<NodeAny> & {
+  interactionSignals: InteractionSignals | null;
+};
 
 let interactionConnectGuard: InteractionConnectGuard | null = null;
 

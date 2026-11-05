@@ -1,9 +1,11 @@
 import type { LogState } from '@flighthq/log/contract';
 import { logOnce } from '@flighthq/log/contract';
+import type { NodeAny } from '@flighthq/node/contract';
 import { getNodeRuntime } from '@flighthq/node/contract';
-import type { InteractionHitEligibility, InteractionSignalName, NodeAny } from '@flighthq/types/contract';
+import type { InteractionHitEligibility } from '@flighthq/types/contract';
 import { LogLevel } from '@flighthq/types/contract';
 
+import type { InteractionSignalName } from './contract.interaction-types.ts';
 import { setInteractionConnectGuard } from './interactionManager.ts';
 import { isNodeFocusable, isNodeHitTestEnabled } from './nodeInteractionState.ts';
 

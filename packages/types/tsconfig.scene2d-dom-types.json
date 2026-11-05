@@ -8,6 +8,7 @@
     "declarationMap": true,
     "sourceMap": true,
     "moduleSuffixes": [
+      ".interaction-types",
       ".node-types",
       ".adjustments-types",
       ".app-types",
@@ -56,6 +57,9 @@
     },
     {
       "path": "../node/tsconfig.contract.json"
+    },
+    {
+      "path": "../interaction/tsconfig.contract.json"
     }
   ],
   "files": [
@@ -72,11 +76,11 @@
     "src/ClipRegion.ts",
     "src/ColorAdjustmentRuntime.ts",
     "src/ColorScaleBias.ts",
-    "src/Cursor.ts",
+    "src/Cursor.interaction-types.ts",
     "src/Effect.ts",
     "src/EffectPadding.ts",
     "src/Entity.ts",
-    "src/FocusEventData.ts",
+    "src/FocusEventData.interaction-types.ts",
     "src/HasAppearance.node-types.ts",
     "src/HasBlendMode.node-types.ts",
     "src/HasBoundsRectangle.node-types.ts",
@@ -86,19 +90,19 @@
     "src/HostCanvas.ts",
     "src/HostImageSource.ts",
     "src/ImageResource.ts",
-    "src/InteractionSignals.ts",
-    "src/KeyboardEventData.ts",
+    "src/InteractionSignals.interaction-types.ts",
+    "src/KeyboardEventData.interaction-types.ts",
     "src/Material.materials-types.ts",
     "src/Material2D.materials-types.ts",
     "src/Matrix.ts",
     "src/Node.node-types.ts",
     "src/Node2D.ts",
-    "src/NodeInteraction.ts",
-    "src/NodeInteractionState.ts",
+    "src/NodeInteraction.interaction-types.ts",
+    "src/NodeInteractionState.interaction-types.ts",
     "src/NodeRenderer.ts",
     "src/NodeSignals.node-types.ts",
     "src/PixelFormat.ts",
-    "src/PointerEventData.ts",
+    "src/PointerEventData.interaction-types.ts",
     "src/Rectangle.ts",
     "src/RenderProxy.ts",
     "src/RenderProxy2D.ts",

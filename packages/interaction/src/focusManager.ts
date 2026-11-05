@@ -1,20 +1,18 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { getNodeParent, getNodeRuntime, getNodeWorldBoundsRectangle } from '@flighthq/node/contract';
+import type { NodeAny, Spatial2DNode } from '@flighthq/node/contract';
 import { connectSignal, disconnectSignal, emitSignal } from '@flighthq/signals/contract';
 import type { Signal } from '@flighthq/signals/contract';
+import type { EntityConstruction, InputKeyboardData } from '@flighthq/types/contract';
+
 import type {
-  EntityConstruction,
   FocusDirection,
   FocusEventData,
   FocusManager,
   FocusManagerOptions,
   FocusNavigationInput,
   FocusNavigationOptions,
-  InputKeyboardData,
-  NodeAny,
-  Spatial2DNode,
-} from '@flighthq/types/contract';
-
+} from './contract.interaction-types.ts';
 import { getInteractionSignals } from './interactionManager.ts';
 import { getNodeTabIndex, isNodeFocusable } from './nodeInteractionState.ts';
 

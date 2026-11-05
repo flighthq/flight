@@ -1,12 +1,12 @@
 import { captureBitmapFromImageResource, getBitmapPixelChannel } from '@flighthq/bitmap/contract';
 import { inverseMatrixTransformPointXY } from '@flighthq/geometry/contract';
 import { getNodeWorldMatrix } from '@flighthq/node/contract';
+import type { NodeAny } from '@flighthq/node/contract';
 import type {
   Bitmap,
   HostBitmapReadbackCapability,
   ImageResource,
   Node2D,
-  NodeAny,
   Sprite,
   TextureSource,
 } from '@flighthq/types/contract';

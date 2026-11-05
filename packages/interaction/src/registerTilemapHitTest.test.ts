@@ -1,6 +1,7 @@
 import { createTilemap, fillTilemapTiles, setTilemapTile } from '@flighthq/tilemap/contract';
-import type { HitTestResult, TextureAtlas, Tilemap } from '@flighthq/types/contract';
+import type { TextureAtlas, Tilemap } from '@flighthq/types/contract';
 
+import type { HitTestResult } from './contract.interaction-types.ts';
 import { describeGraphHit } from './hitTests.ts';
 import { registerTilemapHitTest } from './registerTilemapHitTest.ts';
 

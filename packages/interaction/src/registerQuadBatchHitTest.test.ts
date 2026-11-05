@@ -4,9 +4,10 @@ import {
   setQuadBatchInstanceMatrix,
   setQuadBatchTransformType,
 } from '@flighthq/quadbatch/contract';
-import type { HitTestResult, QuadBatch, TextureAtlas, TextureAtlasRegion } from '@flighthq/types/contract';
+import type { QuadBatch, TextureAtlas, TextureAtlasRegion } from '@flighthq/types/contract';
 import { TextureAtlasRotation } from '@flighthq/types/contract';
 
+import type { HitTestResult } from './contract.interaction-types.ts';
 import { describeGraphHit } from './hitTests.ts';
 import { registerQuadBatchHitTest } from './registerQuadBatchHitTest.ts';
 

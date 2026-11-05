@@ -1,11 +1,11 @@
 import { invalidateNodeAppearance, invalidateNodeLocalTransform } from '@flighthq/node/contract';
+import type { NodeAny } from '@flighthq/node/contract';
 import type {
   FlightDocumentFields,
   FlightDocumentInteractiveState,
   FlightDocumentInteractiveStates,
   FlightDocumentInteractiveStateTransitionDescriptor,
   FlightDocumentSchemaRegistry,
-  NodeAny,
   NodeInteractiveStateBinding,
   NodeInteractiveStateBindingRuntime,
   NodeInteractiveStateExplanation,
