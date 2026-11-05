@@ -27611,7 +27611,7 @@ fn is_widening_integer_cast(source: &str, target: &str) -> bool {
         return true;
     }
     return match (source, target) {
-        ("u32", "usize" | "i32" | "isize") | ("usize", "u32" | "i32" | "isize") => true,
+        ("u32", "usize") | ("usize", "u32" | "i32" | "isize") => true,
         ("i32", "isize") | ("isize", "i32") => true,
         ("u8", "u16" | "u32" | "usize" | "i16" | "i32" | "isize") => true,
         ("u16", "u32" | "usize" | "i32" | "isize") => true,
