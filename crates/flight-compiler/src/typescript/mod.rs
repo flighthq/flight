@@ -20753,10 +20753,14 @@ fn emit_method_call(
         }
         "filter_map" if arguments.len() == 1 => {
             let absent = option_absent_value(&call.receiver, entities);
-            Ok(format!(
-                "{receiver}.map({}).filter((value) => value !== {absent})",
-                arguments[0]
-            ))
+            if emitted_closure_is_identity(&arguments[0]) {
+                Ok(format!("{receiver}.filter((value) => value !== {absent})"))
+            } else {
+                Ok(format!(
+                    "{receiver}.map({}).filter((value) => value !== {absent})",
+                    arguments[0]
+                ))
+            }
         }
         "flat_map" if arguments.len() == 1 => Ok(format!("{receiver}.flatMap({})", arguments[0])),
         "flatten" if arguments.is_empty() => Ok(format!("{receiver}.flat()")),
@@ -21015,7 +21019,9 @@ fn emit_method_call(
         "log2" if arguments.is_empty() => Ok(format!("Math.log2({receiver})")),
         "log10" if arguments.is_empty() => Ok(format!("Math.log10({receiver})")),
         "map" if arguments.len() == 1 => {
-            if method_chain_includes(&call.receiver, "enumerate") {
+            if emitted_closure_is_identity(&arguments[0]) {
+                Ok(receiver)
+            } else if method_chain_includes(&call.receiver, "enumerate") {
                 Ok(format!("[...{receiver}].map({})", arguments[0]))
             } else {
                 Ok(format!("{receiver}.map({})", arguments[0]))
@@ -26826,6 +26832,21 @@ fn integer_literal_fits_cast(expr: &Expr, ty: &Type) -> bool {
         "i32" | "isize" => (-2147483648..=2147483647i128).contains(&value),
         _ => false,
     };
+}
+
+fn emitted_closure_is_identity(emitted: &str) -> bool {
+    let s = emitted.trim();
+    if let Some(rest) = s.strip_prefix('(') {
+        if let Some((param, body)) = rest.split_once(") => ") {
+            let param = param.trim();
+            let body = body.trim();
+            return !param.is_empty()
+                && !param.contains(',')
+                && !param.contains(':')
+                && param == body;
+        }
+    }
+    false
 }
 
 fn bitand_mask_type(expression: &Expr) -> Option<String> {

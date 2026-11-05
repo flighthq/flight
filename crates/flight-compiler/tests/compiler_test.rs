@@ -6682,8 +6682,8 @@ pub fn is_some_and_digit(byte: Option<u8>) -> bool {
             "numeric function references should not emit bare Type.method paths: {output}"
         );
         assert!(
-            output.contains(".map((v) => v)"),
-            "f64::from in iterator .map() should emit identity lambda: {output}"
+            !output.contains(".map((v) => v)"),
+            "identity map from f64::from should be elided: {output}"
         );
         assert!(
             output.contains(".every("),
@@ -17961,7 +17961,10 @@ pub fn append_value_kind(out: &mut Vec<String>, value: LogValue) {
 
         assert!(output.contains("return value;"));
         assert!(output.contains("return null;"));
-        assert!(output.contains("values.map((value) => value)"));
+        assert!(
+            output.contains("return values;"),
+            "transparent identity map should elide to bare receiver: {output}"
+        );
         assert!(
             output.contains("typeof value === 'function'"),
             "transparent union typeof: {output}"
@@ -24695,7 +24698,7 @@ mod easing_family {
         assert!(output.contains("const EPSILON: number = 1e-5;"));
         assert!(output.contains("function family(): Family"));
         assert!(output.contains(
-            "const values: number[] = Array.from({ length: 2 - 0 + 1 }, (_, index) => 0 + index).map((index) => index);"
+            "const values: number[] = Array.from({ length: 2 - 0 + 1 }, (_, index) => 0 + index);"
         ));
         assert!(output.contains("return values.map((value) => value / 2.0);"));
         assert!(output.contains("expect(value.name).toEqual('Linear');"));
@@ -27736,6 +27739,36 @@ pub fn constants() -> (u32, u8, i32, i8) {
         assert!(
             output.contains("[1, 255, -1, -128]"),
             "in-range integer literal casts should elide to bare values: {output}"
+        );
+    }
+
+    #[test]
+    fn elides_identity_map_closures() {
+        let output = compile_typescript(
+            "pub fn clone_strings(items: &[String]) -> Vec<String> {\n    return items.iter().map(|s| s.clone()).collect();\n}\n",
+            None,
+        )
+        .unwrap();
+        assert!(
+            !output.contains(".map("),
+            "identity map closure should be elided: {output}"
+        );
+    }
+
+    #[test]
+    fn elides_identity_map_in_filter_map() {
+        let output = compile_typescript(
+            "pub fn compact(items: &[Option<u32>]) -> Vec<u32> {\n    return items.iter().filter_map(|x| *x).collect();\n}\n",
+            None,
+        )
+        .unwrap();
+        assert!(
+            !output.contains(".map("),
+            "filter_map identity should elide redundant map: {output}"
+        );
+        assert!(
+            output.contains(".filter("),
+            "filter_map should keep the filter: {output}"
         );
     }
 }
