@@ -4426,12 +4426,202 @@ fn emit_test_constant(
     return Ok(());
 }
 
+// A string-union variant is a literal in TypeScript, so a test may only name it as `Owner::Variant`
+// and compare, assign or pass it. Uses that need the Rust enum as a value fail closed: calling through
+// the owner (`Owner::from_index(1)` is not a variant), casting or calling a method on a variant,
+// formatting one with `{:?}` (Rust prints the bare variant name), importing variants by `use`, and
+// reaching the owner through a test `type` alias, which TypeScript keeps as a type only.
+fn validate_string_union_test_uses(
+    program: &TestProgram,
+    context: &HashSet<String>,
+) -> Result<(), CompileError> {
+    struct StringUnionUseValidator<'a> {
+        aliases: HashMap<String, String>,
+        context: &'a HashSet<String>,
+        error: Option<CompileError>,
+    }
+
+    impl StringUnionUseValidator<'_> {
+        fn fail(&mut self, message: String) {
+            if self.error.is_none() {
+                self.error = Some(compile_error(message));
+            }
+        }
+
+        // The string-union owner and member a path names through its last two segments.
+        fn member(&self, path: &syn::Path) -> Option<(String, String)> {
+            let [.., owner, member] = path.segments.iter().collect::<Vec<_>>()[..] else {
+                return None;
+            };
+            let owner = owner.ident.to_string();
+            return is_string_union(self.context, &owner)
+                .then(|| (owner, member.ident.to_string()));
+        }
+
+        fn variant(&self, expression: &Expr) -> Option<(String, String)> {
+            return match expression {
+                Expr::Group(group) => self.variant(&group.expr),
+                Expr::Paren(paren) => self.variant(&paren.expr),
+                Expr::Reference(reference) => self.variant(&reference.expr),
+                Expr::Path(path) if path.qself.is_none() => self.member(&path.path),
+                _ => None,
+            };
+        }
+
+        fn check_use_tree(&mut self, tree: &UseTree) {
+            match tree {
+                UseTree::Path(path) => {
+                    let owner = path.ident.to_string();
+                    if is_string_union(self.context, &owner) {
+                        self.fail(format!(
+                            "importing variants of string union `{owner}` has no portable lowering; reference them as `{owner}::Variant`"
+                        ));
+                        return;
+                    }
+                    self.check_use_tree(&path.tree);
+                }
+                UseTree::Group(group) => {
+                    for item in &group.items {
+                        self.check_use_tree(item);
+                    }
+                }
+                UseTree::Glob(_) | UseTree::Name(_) | UseTree::Rename(_) => {}
+            }
+        }
+
+        fn check_format_macro(&mut self, mac: &syn::Macro) {
+            let Ok(arguments) =
+                Punctuated::<Expr, Token![,]>::parse_terminated.parse2(mac.tokens.clone())
+            else {
+                return;
+            };
+            let mut arguments = arguments.into_iter();
+            let has_debug = arguments.by_ref().any(|argument| {
+                matches!(&argument, Expr::Lit(syn::ExprLit { lit: syn::Lit::Str(template), .. }) if template.value().contains(":?"))
+            });
+            if !has_debug {
+                return;
+            }
+            for argument in arguments {
+                if let Some((owner, variant)) = self.variant(&argument) {
+                    self.fail(format!(
+                        "formatting string-union variant `{owner}::{variant}` with `{{:?}}` has no portable lowering; compare the variant instead"
+                    ));
+                }
+            }
+        }
+    }
+
+    impl<'ast> Visit<'ast> for StringUnionUseValidator<'_> {
+        fn visit_expr_call(&mut self, call: &'ast syn::ExprCall) {
+            if let Expr::Path(path) = call.func.as_ref()
+                && path.qself.is_none()
+                && let Some((owner, member)) = self.member(&path.path)
+            {
+                self.fail(format!(
+                    "`{owner}::{member}` is not a variant of string union `{owner}`; a computed member has no portable lowering"
+                ));
+            }
+            syn::visit::visit_expr_call(self, call);
+        }
+
+        fn visit_expr_cast(&mut self, cast: &'ast syn::ExprCast) {
+            if let Some((owner, variant)) = self.variant(&cast.expr) {
+                self.fail(format!(
+                    "casting string-union variant `{owner}::{variant}` needs a Rust enum value, which TypeScript does not have"
+                ));
+            }
+            syn::visit::visit_expr_cast(self, cast);
+        }
+
+        fn visit_expr_method_call(&mut self, call: &'ast syn::ExprMethodCall) {
+            if let Some((owner, variant)) = self.variant(&call.receiver) {
+                self.fail(format!(
+                    "calling `{}` on string-union variant `{owner}::{variant}` needs a Rust enum value, which TypeScript does not have",
+                    call.method
+                ));
+            }
+            syn::visit::visit_expr_method_call(self, call);
+        }
+
+        fn visit_expr_path(&mut self, path: &'ast syn::ExprPath) {
+            if path.qself.is_none()
+                && let [.., owner, member] = path.path.segments.iter().collect::<Vec<_>>()[..]
+                && let Some(target) = self.aliases.get(&owner.ident.to_string())
+            {
+                self.fail(format!(
+                    "`{}::{}` reaches string union `{target}` through a type alias, which TypeScript keeps as a type; use `{target}::{}`",
+                    owner.ident, member.ident, member.ident
+                ));
+            }
+            syn::visit::visit_expr_path(self, path);
+        }
+
+        fn visit_item_use(&mut self, item: &'ast ItemUse) {
+            self.check_use_tree(&item.tree);
+        }
+
+        // Macro arguments are tokens to `syn`; parse them as expressions so assertions are checked.
+        fn visit_macro(&mut self, mac: &'ast syn::Macro) {
+            self.check_format_macro(mac);
+            if let Ok(arguments) =
+                Punctuated::<Expr, Token![,]>::parse_terminated.parse2(mac.tokens.clone())
+            {
+                for argument in &arguments {
+                    self.visit_expr(argument);
+                }
+            }
+        }
+    }
+
+    let aliases = program
+        .type_aliases
+        .iter()
+        .filter_map(|alias| {
+            let Type::Path(target) = alias.ty.as_ref() else {
+                return None;
+            };
+            let target = target.path.segments.last()?.ident.to_string();
+            return is_string_union(context, &target).then(|| (alias.ident.to_string(), target));
+        })
+        .collect::<HashMap<_, _>>();
+    let mut validator = StringUnionUseValidator {
+        aliases,
+        context,
+        error: None,
+    };
+    for item_use in program
+        .uses
+        .iter()
+        .chain(program.suites.iter().flat_map(|suite| &suite.uses))
+    {
+        validator.visit_item_use(item_use);
+    }
+    for constant in &program.constants {
+        validator.visit_item_const(constant);
+    }
+    for function in program
+        .helpers
+        .iter()
+        .chain(program.suites.iter().flat_map(|suite| {
+            suite
+                .helpers
+                .iter()
+                .chain(suite.tests.iter().map(|test| &test.function))
+        }))
+    {
+        validator.visit_item_fn(function);
+    }
+    return validator.error.map_or(Ok(()), Err);
+}
+
 pub(crate) fn emit_test_program(
     program: &TestProgram,
     contract_module: &str,
     external_type_owners: &BTreeMap<String, &str>,
     context: &HashSet<String>,
 ) -> Result<String, CompileError> {
+    validate_string_union_test_uses(program, context)?;
     let mut panic_helper_context = context.clone();
     for helper in program
         .helpers

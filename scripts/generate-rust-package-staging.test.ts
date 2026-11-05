@@ -893,6 +893,111 @@ describe('ShellExternalReason', () => {
     expect(test).not.toContain('ShellExternalReason.BlockedScheme');
   }, 120_000);
 
+  it('finds a test-named string union owner in production imports and refuses an unproven Rust style', async () => {
+    const statusEnum = `pub enum Physics2DAbiExecutionStatus {
+    BusyWorld,
+    Complete,
+    InvalidBuffer,
+    InvalidCommand,
+    MissingBody,
+    MissingCollider,
+    MissingJoint,
+    RejectedMutation,
+    StaleWorld,
+    UnsupportedJoint,
+    UnsupportedShape,
+}
+`;
+    writeFileSync(
+      join(crateRoot, 'Cargo.toml'),
+      `[package]
+name = "${crateName}"
+version = "0.0.0"
+edition = "2024"
+`,
+    );
+    writeFileSync(
+      join(crateRoot, 'src', 'lib.rs'),
+      '//! flight-compiler: target-native\nmod types;\nmod value;\npub mod contract;\npub use contract::*;\n',
+    );
+    writeFileSync(
+      join(crateRoot, 'src', 'contract.rs'),
+      'pub use super::types::Physics2DAbiExecutionStatus;\npub use super::value::complete_status;\n',
+    );
+    writeFileSync(
+      sourcePath,
+      `//! flight-compiler: target-native
+
+use crate::types::Physics2DAbiExecutionStatus;
+
+pub fn complete_status() -> Physics2DAbiExecutionStatus {
+    return Physics2DAbiExecutionStatus::Complete;
+}
+`,
+    );
+    const testPath = join(crateRoot, 'tests', 'value_test.rs');
+    writeFileSync(
+      testPath,
+      `use crate::contract::*;
+
+mod complete_status {
+    use super::*;
+
+    #[test]
+    fn is_complete() {
+        assert_eq!(complete_status(), Physics2DAbiExecutionStatus::Complete);
+        assert_ne!(complete_status(), Physics2DAbiExecutionStatus::InvalidBuffer);
+    }
+}
+`,
+    );
+    // The production module names the canonical type-only owner; the handwritten test never did.
+    writeFileSync(
+      join(packageRoot, 'src', 'value.ts'),
+      `import type { Physics2DAbiExecutionStatus } from '@flighthq/types/contract';
+
+export function completeStatus(): Physics2DAbiExecutionStatus {
+  return 'Complete';
+}
+`,
+    );
+    const handwrittenTest = `import { completeStatus } from './value.ts';
+
+describe('completeStatus', () => {
+  it('is complete', () => {
+    expect(completeStatus()).toBe('Complete');
+  });
+});
+`;
+    writeFileSync(join(packageRoot, 'src', 'value.test.ts'), handwrittenTest);
+    writeFileSync(join(packageRoot, 'src', 'contract.ts'), "export { completeStatus } from './value.ts';\n");
+    writeFileSync(join(packageRoot, 'src', 'index.ts'), "export { completeStatus } from './contract.ts';\n");
+
+    try {
+      writeFileSync(join(crateRoot, 'src', 'types.rs'), `//! flight-compiler: rust-only\n\n${statusEnum}`);
+      const unproven = await generateWhileScanning();
+      expect(unproven.code).not.toBe(0);
+      expect(unproven.stderr).toContain(
+        'external TypeScript string union `Physics2DAbiExecutionStatus` does not match the literals of its Rust enum',
+      );
+
+      writeFileSync(
+        join(crateRoot, 'src', 'types.rs'),
+        `//! flight-compiler: rust-only\n//! flight-compiler: string-union Physics2DAbiExecutionStatus=rust-variant\n\n${statusEnum}`,
+      );
+      writeFileSync(join(packageRoot, 'src', 'value.test.ts'), handwrittenTest);
+      const run = await generateWhileScanning();
+      expect(run.code, run.stderr).toBe(0);
+      const test = readFileSync(join(packageRoot, 'src', 'value.test.ts'), 'utf8');
+      expect(test).toContain("expect(completeStatus()).toEqual('Complete');");
+      expect(test).toContain("expect(completeStatus()).not.toEqual('InvalidBuffer');");
+      expect(test).not.toContain('Physics2DAbiExecutionStatus');
+    } finally {
+      rmSync(testPath, { force: true });
+      rmSync(join(crateRoot, 'src', 'types.rs'), { force: true });
+    }
+  }, 240_000);
+
   it('propagates a target-native nullable return owner into generated tests', async () => {
     writeFileSync(
       join(crateRoot, 'Cargo.toml'),

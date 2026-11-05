@@ -23,6 +23,7 @@ import {
   collectExportSymbols,
   collectFlightDependencyCrates,
   collectRustExportNames,
+  collectRustPublicEnumNames,
   collectRustPublicTypeAliasNames,
   collectRustPublicUses,
   collectStaleGeneratedFileNames,
@@ -55,6 +56,7 @@ import {
   typeScriptNullableOptionParameterArguments,
   typeScriptNullableOptionReturnMetadata,
   typeScriptStringUnionArguments,
+  typeScriptStringUnionOwnerImports,
   typeScriptTestTypeAliasArguments,
   typeScriptTypeAliasArguments,
 } from './generate-rust-package-exports.ts';
@@ -546,6 +548,13 @@ try {
       targetNativeSources,
     );
 
+    const crateEnumNames = [
+      ...new Set(rustSourceModes.flatMap(({ rustPath }) => collectRustPublicEnumNames(readFileSync(rustPath, 'utf8')))),
+    ];
+    const productionTypescript = (existsSync(packageSourceRoot) ? readdirSync(packageSourceRoot) : [])
+      .filter((name) => name.endsWith('.ts') && !name.endsWith('.test.ts'))
+      .sort()
+      .map((name) => readFileSync(join(packageSourceRoot, name), 'utf8'));
     for (const rustTest of testFiles(crateRoot)) {
       const rustPath = join(crateRoot, 'tests', rustTest);
       const fileName = `${snakeToLowerCamel(rustTest.slice(0, -8))}.test.ts`;
@@ -557,9 +566,12 @@ try {
       }
       const existingPath = join(packageSourceRoot, fileName);
       const existingTypescript = existsSync(existingPath) ? readFileSync(existingPath, 'utf8') : '';
+      const rustTestSource = readFileSync(rustPath, 'utf8');
+      const testEnumNames = new Set(crateEnumNames.filter((name) => new RegExp(`\\b${name}::`).test(rustTestSource)));
+      const ownerTypescript = `${existingTypescript}\n${typeScriptStringUnionOwnerImports(productionTypescript, testEnumNames)}`;
       const representationArguments = typeScriptStringUnionArguments(
-        existingTypescript,
-        loadImportedContractSymbols(existingTypescript),
+        ownerTypescript,
+        loadImportedContractSymbols(ownerTypescript),
       );
       const compilePath = testSourceWithSupport(rustPath, join(rawRoot, `${rustTest}.source.rs`));
       const positionOwners = packageTypeScriptPositionOwnerSources();

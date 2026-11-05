@@ -481,7 +481,7 @@ export function typeScriptStringUnionArguments(
 ): string[] {
   const unions = new Map<string, { module: string; values: string[] }>();
   for (const match of existingTypescript.matchAll(
-    /^import\s+(?:type\s+)?\{([\s\S]*?)\}\s+from\s+['"](@flighthq\/[^/'"]+\/contract)['"];?/gm,
+    /^import\s+(?:type\s+)?\{([^}]*)\}\s+from\s+['"](@flighthq\/[^/'"]+\/contract)['"];?/gm,
   )) {
     const module = match[2];
     const symbols = importedContractSymbols.get(module);
@@ -509,6 +509,35 @@ export function typeScriptStringUnionArguments(
       '--typescript-string-union',
       `${union.module}#${name}=${JSON.stringify(union.values)}`,
     ]);
+}
+
+// The `@flighthq/*/contract` imports of `names` that a package's own production TypeScript makes,
+// as type-only import lines. A generated test may name a Rust enum that its handwritten predecessor
+// never imported; the package's production code still identifies that enum's canonical TypeScript
+// owner, and `typeScriptStringUnionArguments` refuses a name imported from two different owners.
+export function typeScriptStringUnionOwnerImports(
+  productionTypescript: readonly string[],
+  names: ReadonlySet<string>,
+): string {
+  const lines: string[] = [];
+  for (const typescript of productionTypescript) {
+    for (const match of typescript.matchAll(
+      /^import\s+(?:type\s+)?\{([^}]*)\}\s+from\s+['"](@flighthq\/[^/'"]+\/contract)['"];?/gm,
+    )) {
+      const imported = match[1]
+        .split(',')
+        .map((item) =>
+          item
+            .trim()
+            .replace(/^type\s+/, '')
+            .split(/\s+as\s+/)[0]
+            ?.trim(),
+        )
+        .filter((name): name is string => name !== undefined && names.has(name));
+      for (const name of new Set(imported)) lines.push(`import type { ${name} } from '${match[2]}';`);
+    }
+  }
+  return [...new Set(lines)].sort().join('\n');
 }
 
 interface TypeScriptTypeAliasOwner {
@@ -2197,6 +2226,11 @@ export function hasRustPublicRecordDeclaration(rust: string): boolean {
 // payload a consuming crate compares by allocation (`ProviderRef = Arc<dyn Any + Send + Sync>`).
 export function hasRustPublicTypeAlias(rust: string): boolean {
   return collectRustPublicTypeAliasNames(rust).length > 0;
+}
+
+// Public Rust enums a test can name as `Enum::Variant`.
+export function collectRustPublicEnumNames(rust: string): string[] {
+  return [...rust.matchAll(/^\s*pub\s+enum\s+([A-Za-z_][A-Za-z0-9_]*)\b/gm)].map((match) => match[1]);
 }
 
 export function collectRustPublicTypeAliasNames(rust: string): string[] {

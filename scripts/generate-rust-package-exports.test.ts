@@ -13,6 +13,7 @@ import {
   collectReferencedExportNames,
   collectPublicRootNames,
   collectRustExportNames,
+  collectRustPublicEnumNames,
   collectRustPublicTypeAliasNames,
   collectRustPublicUses,
   collectStaleGeneratedFileNames,
@@ -49,6 +50,7 @@ import {
   typeScriptNullableOptionReturnArguments,
   typeScriptNullableOptionReturnMetadata,
   typeScriptStringUnionArguments,
+  typeScriptStringUnionOwnerImports,
   typeScriptTestTypeAliasArguments,
   typeScriptTypeAliasArguments,
 } from './generate-rust-package-exports.ts';
@@ -404,6 +406,57 @@ import type { ViewportAlign } from '@flighthq/second/contract';`,
         symbols,
       ),
     ).toThrow(/ViewportAlign is imported from both/);
+  });
+
+  it('reads a contract import that follows an unrelated import', () => {
+    const symbols = new Map([
+      [
+        '@flighthq/types/contract',
+        new Map([
+          ['ExecutionStatus', { hasType: true, hasValue: false, stringUnionValues: ['Complete', 'InvalidBuffer'] }],
+        ]),
+      ],
+    ]);
+
+    expect(
+      typeScriptStringUnionArguments(
+        `import { describe, expect, it } from 'vitest';
+
+import { createResult } from './contract.ts';
+import type { ExecutionStatus } from '@flighthq/types/contract';`,
+        symbols,
+      ),
+    ).toEqual(['--typescript-string-union', '@flighthq/types/contract#ExecutionStatus=["Complete","InvalidBuffer"]']);
+  });
+
+  it('finds the canonical owner of a test-named enum in the package production imports', () => {
+    const production = [
+      `import { stepPhysics } from '@flighthq/physics2d/contract';
+import type {
+  ExecutionResult,
+  ExecutionStatus,
+  WorldStatus as World,
+} from '@flighthq/types/contract';
+import { helper } from './helper.ts';`,
+      `import type { ExecutionStatus } from '@flighthq/types/contract';`,
+    ];
+
+    expect(typeScriptStringUnionOwnerImports(production, new Set(['ExecutionStatus', 'WorldStatus', 'helper']))).toBe(
+      `import type { ExecutionStatus } from '@flighthq/types/contract';
+import type { WorldStatus } from '@flighthq/types/contract';`,
+    );
+    expect(typeScriptStringUnionOwnerImports(production, new Set(['Missing']))).toBe('');
+    const ambiguous = typeScriptStringUnionOwnerImports(
+      [...production, `import type { ExecutionStatus } from '@flighthq/other/contract';`],
+      new Set(['ExecutionStatus']),
+    );
+    const symbols = new Map(
+      ['@flighthq/types/contract', '@flighthq/other/contract'].map((module) => [
+        module,
+        new Map([['ExecutionStatus', { hasType: true, hasValue: false, stringUnionValues: ['Complete'] }]]),
+      ]),
+    );
+    expect(() => typeScriptStringUnionArguments(ambiguous, symbols)).toThrow(/ExecutionStatus is imported from both/);
   });
 
   it('derives inline string-union representations from matching exported signatures', () => {
@@ -980,6 +1033,16 @@ describe('collectRustExportNames', () => {
       ['encode_utf8', 'encodeUTF8'],
     ]);
     expect(collectRustExportNames('pub fn decode_utf8() {}\n').size).toBe(0);
+  });
+});
+
+describe('collectRustPublicEnumNames', () => {
+  it('lists public enums only', () => {
+    expect(
+      collectRustPublicEnumNames(
+        'pub enum ExecutionStatus {\n    Complete,\n}\nenum Private {}\npub(crate) enum Internal {}\n    pub enum Nested { A }\n',
+      ),
+    ).toEqual(['ExecutionStatus', 'Nested']);
   });
 });
 

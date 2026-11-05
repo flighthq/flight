@@ -19701,6 +19701,176 @@ mod blocked_reason {
         assert!(!output.contains("ShellExternalReason.BlockedScheme"));
     }
 
+    const RUST_ONLY_STATUS: &str = r#"//! flight-compiler: rust-only
+//! flight-compiler: string-union Status=rust-variant
+
+pub enum Status {
+    Complete,
+    InvalidBuffer,
+}
+
+impl Status {
+    pub fn from_index(index: u32) -> Status {
+        return if index == 0 {
+            Status::Complete
+        } else {
+            Status::InvalidBuffer
+        };
+    }
+}
+
+pub struct ExecutionResult {
+    pub status: Status,
+}
+
+pub fn create_execution_result() -> ExecutionResult {
+    return ExecutionResult {
+        status: Status::Complete,
+    };
+}
+"#;
+
+    fn compile_status_tests(
+        source: &str,
+        values: &[String],
+    ) -> Result<String, flight_compiler::CompileError> {
+        let metadata = [TypeScriptStringUnion {
+            name: "Status",
+            module: "@flighthq/types/contract",
+            values,
+        }];
+        let visibility = [ModuleSource {
+            source: RUST_ONLY_STATUS,
+            path: "crates/flight-example/src/types.rs",
+        }];
+        return compile_vitest_with_module_visibility_sources_and_array_parameters(
+            source,
+            "./contract.ts",
+            Some("pub use super::types::*;\n"),
+            &[],
+            &[],
+            if values.is_empty() { &[] } else { &metadata },
+            &visibility,
+            &[],
+            &[],
+            &[],
+            &[],
+            &[],
+            &[],
+            &[],
+        );
+    }
+
+    #[test]
+    fn lowers_rust_variant_string_unions_proven_by_a_type_only_owner_in_tests() {
+        let values = vec!["Complete".to_string(), "InvalidBuffer".to_string()];
+        let source = r#"
+use flight_example::contract::*;
+
+mod create_execution_result {
+    use super::*;
+
+    #[test]
+    fn starts_complete() {
+        let mut result = create_execution_result();
+        assert_eq!(result.status, Status::Complete);
+        assert_ne!(result.status, flight_example::contract::Status::InvalidBuffer);
+        result.status = Status::InvalidBuffer;
+        let expected: Status = Status::InvalidBuffer;
+        assert_eq!(result.status, expected);
+    }
+}
+"#;
+        let output = compile_status_tests(source, &values).unwrap();
+        assert!(
+            output.contains("import type { Status } from '@flighthq/types/contract';"),
+            "{output}"
+        );
+        assert!(
+            output.contains("expect(result.status).toEqual('Complete');"),
+            "{output}"
+        );
+        assert!(
+            output.contains("expect(result.status).not.toEqual('InvalidBuffer');"),
+            "{output}"
+        );
+        assert!(
+            output.contains("result.status = 'InvalidBuffer';"),
+            "{output}"
+        );
+        assert!(
+            output.contains("const expected: Status = 'InvalidBuffer';"),
+            "{output}"
+        );
+        assert!(!output.contains("Status."), "{output}");
+
+        // Without a type-only TypeScript owner (a runtime enum supplies no metadata), the variant
+        // stays a runtime member of its contract owner.
+        let unproven = compile_status_tests(source, &[]).unwrap();
+        assert!(
+            unproven.contains("expect(result.status).toEqual(Status.Complete);"),
+            "{unproven}"
+        );
+
+        // An owner whose literals do not represent the Rust enum exactly is refused.
+        let incomplete = vec!["Complete".to_string()];
+        assert_eq!(
+            compile_status_tests(source, &incomplete)
+                .unwrap_err()
+                .to_string(),
+            "external TypeScript string union `Status` does not match explicit Rust `rust-variant` style: expected [\"Complete\",\"InvalidBuffer\"], received [\"Complete\"]"
+        );
+    }
+
+    #[test]
+    fn rejects_string_union_test_uses_that_need_an_enum_value() {
+        let values = vec!["Complete".to_string(), "InvalidBuffer".to_string()];
+        for (body, expected) in [
+            (
+                "assert_eq!(Status::from_index(1), Status::InvalidBuffer);",
+                "`Status::from_index` is not a variant of string union `Status`; a computed member has no portable lowering",
+            ),
+            (
+                "assert_eq!(Status::Complete as u32, 0);",
+                "casting string-union variant `Status::Complete` needs a Rust enum value, which TypeScript does not have",
+            ),
+            (
+                "assert!(Status::Complete.clone() == Status::Complete);",
+                "calling `clone` on string-union variant `Status::Complete` needs a Rust enum value, which TypeScript does not have",
+            ),
+            (
+                "assert_eq!(format!(\"{:?}\", Status::Complete), \"Complete\");",
+                "formatting string-union variant `Status::Complete` with `{:?}` has no portable lowering; compare the variant instead",
+            ),
+            (
+                "use flight_example::contract::Status::*;\n        assert_eq!(create_execution_result().status, Complete);",
+                "importing variants of string union `Status` has no portable lowering; reference them as `Status::Variant`",
+            ),
+            (
+                "use flight_example::contract::Status::{Complete};\n        assert_eq!(create_execution_result().status, Complete);",
+                "importing variants of string union `Status` has no portable lowering; reference them as `Status::Variant`",
+            ),
+        ] {
+            let source = format!(
+                "use flight_example::contract::*;\n\n#[test]\nfn uses_status() {{\n        {body}\n}}\n"
+            );
+            assert_eq!(
+                compile_status_tests(&source, &values)
+                    .unwrap_err()
+                    .to_string(),
+                expected,
+                "{source}"
+            );
+        }
+        let aliased = "use flight_example::contract::*;\n\ntype S = Status;\n\n#[test]\nfn uses_status() {\n    assert_eq!(create_execution_result().status, S::Complete);\n}\n";
+        assert_eq!(
+            compile_status_tests(aliased, &values)
+                .unwrap_err()
+                .to_string(),
+            "`S::Complete` reaches string union `Status` through a type alias, which TypeScript keeps as a type; use `Status::Complete`"
+        );
+    }
+
     #[test]
     fn lowers_contract_source_string_union_variants_to_literals() {
         let contract = r#"
