@@ -3060,14 +3060,6 @@ pub(crate) fn emit_test_program(
         .entry("vitest".to_string())
         .or_default()
         .extend(["describe", "expect", "it"].into_iter().map(str::to_string));
-    for module in &external_modules {
-        if let Some(package) = module.strip_prefix("flight_") {
-            emitted_imports
-                .entry(format!("@flighthq/{}/contract", package.replace('_', "-")))
-                .or_default()
-                .insert(format!("* as {}", snake_to_lower_camel(module)));
-        }
-    }
     emitted_imports
         .entry(contract_module.to_string())
         .or_default()
@@ -3139,19 +3131,10 @@ pub(crate) fn emit_test_program(
         writeln!(out, "}} from {};", js_string_literal(contract_module))
             .expect("writing to a String cannot fail");
     }
-    for module in external_modules {
-        let Some(package) = module.strip_prefix("flight_") else {
-            continue;
-        };
-        let package = package.replace('_', "-");
-        writeln!(
-            out,
-            "\nimport * as {} from {};",
-            snake_to_lower_camel(&module),
-            js_string_literal(&format!("@flighthq/{package}/contract"))
-        )
-        .expect("writing to a String cannot fail");
-    }
+    // The body is emitted apart from the header so namespace imports are decided by the final
+    // output: canonical lowering (e.g. FlightError panic-payload downcasts) can erase every use of a
+    // qualified `flight_*` path, and an unread `import * as` would add an undeclared dependency.
+    let header_len = out.len();
     for type_alias in &program.type_aliases {
         out.push('\n');
         emit_test_type_alias(&mut out, type_alias, context)?;
@@ -3175,6 +3158,28 @@ pub(crate) fn emit_test_program(
         out.push('\n');
         emit_suite(&mut out, suite, &contract_symbols, context)?;
     }
+    let body = out.split_off(header_len);
+    for module in external_modules {
+        let Some(package) = module.strip_prefix("flight_") else {
+            continue;
+        };
+        let namespace = snake_to_lower_camel(&module);
+        if !references_namespace(&body, &namespace) {
+            continue;
+        }
+        let specifier = format!("@flighthq/{}/contract", package.replace('_', "-"));
+        writeln!(
+            out,
+            "\nimport * as {namespace} from {};",
+            js_string_literal(&specifier)
+        )
+        .expect("writing to a String cannot fail");
+        emitted_imports
+            .entry(specifier)
+            .or_default()
+            .insert(format!("* as {namespace}"));
+    }
+    out.push_str(&body);
     // The package generator injects `rustTestSupport as crate` exactly when the output reads `crate.`.
     if out.contains("crate.") {
         emitted_imports
@@ -3309,6 +3314,17 @@ fn pattern_names(pattern: &Pat) -> HashSet<String> {
     };
     collector.visit_pat(pattern);
     return collector.names;
+}
+
+/// Whether `body` reads `namespace.` as a standalone identifier, not as the tail of a longer
+/// identifier or member path (`otherFlightEntity.`, `x.flightEntity.`).
+fn references_namespace(body: &str, namespace: &str) -> bool {
+    let needle = format!("{namespace}.");
+    return body.match_indices(&needle).any(|(index, _)| {
+        return !body[..index].chars().next_back().is_some_and(|previous| {
+            previous.is_alphanumeric() || matches!(previous, '_' | '$' | '.')
+        });
+    });
 }
 
 fn resolve_suite_name<'a>(name: &'a str, contract_symbols: &'a [String]) -> &'a str {

@@ -19652,6 +19652,110 @@ pub fn fail() -> i32 {
     }
 
     #[test]
+    fn omits_external_namespace_imports_canonical_lowering_erases() {
+        let production = r#"
+use flight_entity::throw_range_error;
+
+pub fn read_offset(offset: i32) -> i32 {
+    if offset < 0 {
+        throw_range_error("offset is out of bounds");
+    }
+    return offset;
+}
+"#;
+        let erased = r#"
+use crate::*;
+
+mod flight_errors {
+    use super::*;
+
+    #[test]
+    fn checks_payload() {
+        let error = std::panic::catch_unwind(|| read_offset(-1)).unwrap_err();
+        let error = error.downcast_ref::<flight_entity::FlightError>().unwrap();
+        assert_eq!(error.kind, flight_entity::FlightErrorKind::RangeError);
+        assert_eq!(error.message, "offset is out of bounds");
+    }
+}
+"#;
+        let output =
+            compile_vitest_with_alias_sources(erased, "@flighthq/example/contract", &[production])
+                .unwrap();
+        assert!(
+            output.contains(
+                "expect(() => readOffset(-1)).toThrow(new RangeError('offset is out of bounds'));"
+            ),
+            "{output}"
+        );
+        assert!(!output.contains("flightEntity"), "{output}");
+        assert!(!output.contains("@flighthq/entity"), "{output}");
+
+        // A qualified path that survives lowering keeps its namespace import beside an erased one,
+        // and a longer identifier ending in the namespace name is not a read of it.
+        let retained = r#"
+use crate::*;
+
+mod flight_errors {
+    use super::*;
+
+    #[test]
+    fn checks_payload_and_reads_uid() {
+        let error = std::panic::catch_unwind(|| read_offset(-1)).unwrap_err();
+        let error = error.downcast_ref::<flight_entity::FlightError>().unwrap();
+        assert_eq!(error.kind, flight_entity::FlightErrorKind::RangeError);
+        let mut value = read_offset(1);
+        let uid = flight_entity::get_entity_uid(&mut value);
+        assert_eq!(flight_entity::get_entity_uid(&mut value), uid);
+    }
+}
+"#;
+        let output = compile_vitest_with_alias_sources(
+            retained,
+            "@flighthq/example/contract",
+            &[production],
+        )
+        .unwrap();
+        assert_eq!(
+            output
+                .matches("import * as flightEntity from '@flighthq/entity/contract';")
+                .count(),
+            1,
+            "{output}"
+        );
+        assert!(
+            output.contains("const uid = flightEntity.getEntityUid(value);"),
+            "{output}"
+        );
+        assert!(!output.contains("FlightError"), "{output}");
+
+        let near_miss = r#"
+use crate::*;
+
+mod flight_errors {
+    use super::*;
+
+    #[test]
+    fn reads_a_longer_local() {
+        let error = std::panic::catch_unwind(|| read_offset(-1)).unwrap_err();
+        let error = error.downcast_ref::<flight_entity::FlightError>().unwrap();
+        assert_eq!(error.kind, flight_entity::FlightErrorKind::RangeError);
+        let other_flight_entity = Point { x: 1 };
+        assert_eq!(other_flight_entity.x, 1);
+    }
+}
+"#;
+        let point = "pub struct Point {\n    pub x: i32,\n}\n";
+        let output = compile_vitest_with_alias_sources(
+            near_miss,
+            "@flighthq/example/contract",
+            &[production, point],
+        )
+        .unwrap();
+        assert!(output.contains("otherFlightEntity.x"), "{output}");
+        assert!(!output.contains("import * as flightEntity"), "{output}");
+    }
+
+    #[test]
     fn refuses_flight_error_checks_to_throw_cannot_express() {
         let production = r#"
 pub fn fail() -> i32 {
