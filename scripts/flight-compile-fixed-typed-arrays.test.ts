@@ -104,7 +104,7 @@ describe('flight-compile fixed typed arrays', () => {
   it('constructs typed arrays at push, constant and slice-argument sites', () => {
     const { stderr, typescript } = compileRust('fixed', FIXTURE);
     expect(String(stderr).trim()).toBe('');
-    expect(typescript).toContain('export const SQUARE: Float64Array = new Float64Array([0.0, 1.0, 2.0, 3.0]);');
+    expect(typescript).toContain('export const SQUARE: Float64Array = new Float64Array([0, 1, 2, 3]);');
     expect(typescript).toContain('  out.push(new Float64Array([a, b]));');
     expect(typescript).toContain('  holder.edges.push(new Float64Array([a, a]));');
     expect(typescript).toContain('  return sum(Array.from(SQUARE));');
@@ -137,6 +137,7 @@ describe('flight-compile fixed typed arrays', () => {
     const module = { exports: {} as Record<string, unknown> };
     new Function('exports', 'module', javascript)(module.exports, module);
     const exports = module.exports as {
+      SQUARE: Float64Array;
       collect: (a: number, b: number) => Float64Array[];
       hold: (a: number) => { edges: Float64Array[] };
       localSum: (a: number) => number;
@@ -150,6 +151,8 @@ describe('flight-compile fixed typed arrays', () => {
       [2, 1],
     ]);
     expect(exports.hold(3).edges[0]).toBeInstanceOf(Float64Array);
+    expect(exports.SQUARE).toBeInstanceOf(Float64Array);
+    expect([...exports.SQUARE]).toEqual([0, 1, 2, 3]);
     expect(exports.squareSum()).toBe(6);
     expect(exports.localSum(2)).toBe(6);
     expect(exports.vecSum(2)).toBe(4);

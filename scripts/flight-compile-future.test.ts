@@ -315,13 +315,19 @@ describe('flight-compile pinned future lowering', () => {
     }
   });
 
-  it('lowers an async fn to an async function returning a Promise', () => {
+  it('lowers an async fn to an async function returning a Promise', async () => {
     const lowered = compileRust('async', 'pub async fn f() -> u32 { return 1; }\n');
     expect(lowered).toEqual({
       error: '',
-      typescript: 'export async function f(): Promise<number> {\n  return 1 >>> 0;\n}\n',
+      typescript: 'export async function f(): Promise<number> {\n  return 1;\n}\n',
     });
     expect(strictDiagnostics('async', lowered.typescript)).toEqual([]);
+    const javascript = ts.transpileModule(lowered.typescript, {
+      compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
+    }).outputText;
+    const module = { exports: {} as { f: () => Promise<number> } };
+    new Function('exports', 'module', javascript)(module.exports, module);
+    await expect(module.exports.f()).resolves.toBe(1);
   });
 
   it('fails closed for await outside async and other Pin shapes', () => {

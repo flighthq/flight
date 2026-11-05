@@ -136,7 +136,7 @@ describe('flight-compile reserved-key structural unions', () => {
     expect(error).toBe('');
     expect(typescript).toContain('export type MarkupResult = MarkupEffect | TextFormat;');
     expect(typescript).toContain(
-      "Object.hasOwn(matchValue, 'breakBefore') || Object.hasOwn(matchValue, 'format') || Object.hasOwn(matchValue, 'text')",
+      "Object.hasOwn(result, 'breakBefore') || Object.hasOwn(result, 'format') || Object.hasOwn(result, 'text')",
     );
     expect(strictDiagnostics(typescript)).toEqual([]);
     expect(
@@ -178,7 +178,7 @@ classify(emptyFormat);
     expect(error).toBe('');
     expect(strictDiagnostics(typescript)).toEqual([]);
     for (const key of ['constructor', 'hasOwnProperty', 'toString', 'valueOf']) {
-      expect(typescript).toContain(`Object.hasOwn(matchValue, '${key}')`);
+      expect(typescript).toContain(`Object.hasOwn(result, '${key}')`);
     }
 
     const module = loadModule(typescript);
