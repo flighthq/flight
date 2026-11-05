@@ -168,7 +168,7 @@ describe('triggerHapticImpact', () => {
   it('forwards the style and defaults intensity to 1', () => {
     const [calls, host] = makeHost();
     triggerHapticImpact(host, 'heavy', undefined);
-    expect(calls.value.impacts).toEqual([['heavy', 1.0]]);
+    expect(calls.value.impacts).toEqual([['heavy', 1]]);
   });
   it('forwards an explicit intensity unchanged', () => {
     const [calls, host] = makeHost();
@@ -208,15 +208,15 @@ describe('triggerHapticSelection', () => {
 describe('vibrateDevice', () => {
   it('forwards the duration to the selected provider', () => {
     const [calls, host] = makeHost();
-    vibrateDevice(host, 42.0);
-    expect(calls.value.vibrations).toEqual([42.0]);
+    vibrateDevice(host, 42);
+    expect(calls.value.vibrations).toEqual([42]);
   });
 });
 
 describe('vibrateDevicePattern', () => {
   it('forwards a non empty pattern', () => {
     const [calls, host] = makeHost();
-    const pattern = [10.0, 20.0];
+    const pattern = [10, 20];
     vibrateDevicePattern(host, pattern);
     expect(calls.value.patterns).toEqual([pattern]);
   });
@@ -240,16 +240,16 @@ describe('vibrateDeviceWaveform', () => {
   it('uses vibrate waveform when the provider implements it', () => {
     let [calls, host] = makeHost();
     installWaveform(host, calls);
-    const timings = [10.0, 20.0];
-    const amplitudes = [255.0, 128.0];
+    const timings = [10, 20];
+    const amplitudes = [255, 128];
     expect(vibrateDeviceWaveform(host, timings, amplitudes, 1)).toBe(true);
     expect(calls.value.waveforms).toEqual([[timings, amplitudes, 1]]);
   });
   it('falls back to vibrate pattern with the timings when vibrate waveform is absent', () => {
     const [calls, host] = makeHost();
     expect(host.vibrateWaveform === undefined).toBe(true);
-    const timings = [10.0, 20.0];
-    const amplitudes = [255.0, 128.0];
+    const timings = [10, 20];
+    const amplitudes = [255, 128];
     expect(vibrateDeviceWaveform(host, timings, amplitudes, undefined)).toBe(true);
     expect(calls.value.patterns).toEqual([timings]);
   });
@@ -261,8 +261,8 @@ describe('vibrateDeviceWaveform', () => {
   it('defaults repeat to negative 1', () => {
     let [calls, host] = makeHost();
     installWaveform(host, calls);
-    const timings = [10.0];
-    const amplitudes = [255.0];
+    const timings = [10];
+    const amplitudes = [255];
     expect(vibrateDeviceWaveform(host, timings, amplitudes, undefined)).toBe(true);
     expect(calls.value.waveforms).toEqual([[timings, amplitudes, -1]]);
   });

@@ -87,127 +87,109 @@ export interface HostHapticsCapabilities {
 }
 
 export function getHapticImpactStyleString(value: HapticImpactStyle): string {
-  return (() => {
-    const matchValue = value;
-    switch (matchValue) {
-      case 'light':
-        return 'light';
-      case 'medium':
-        return 'medium';
-      case 'heavy':
-        return 'heavy';
-      case 'soft':
-        return 'soft';
-      case 'rigid':
-        return 'rigid';
-    }
-  })();
+  switch (value) {
+    case 'light':
+      return 'light';
+    case 'medium':
+      return 'medium';
+    case 'heavy':
+      return 'heavy';
+    case 'soft':
+      return 'soft';
+    case 'rigid':
+      return 'rigid';
+  }
 }
 
 export function getHapticNotificationTypeString(value: HapticNotificationType): string {
-  return (() => {
-    const matchValue = value;
-    switch (matchValue) {
-      case 'success':
-        return 'success';
-      case 'warning':
-        return 'warning';
-      case 'error':
-        return 'error';
-    }
-  })();
+  switch (value) {
+    case 'success':
+      return 'success';
+    case 'warning':
+      return 'warning';
+    case 'error':
+      return 'error';
+  }
 }
 
 export function getHapticsOperationString(value: HapticsOperation): string {
-  return (() => {
-    const matchValue = value;
-    switch (matchValue) {
-      case 'cancel':
-        return 'cancel';
-      case 'capabilities':
-        return 'capabilities';
-      case 'impact':
-        return 'impact';
-      case 'isSupported':
-        return 'isSupported';
-      case 'notification':
-        return 'notification';
-      case 'prepare':
-        return 'prepare';
-      case 'selection':
-        return 'selection';
-      case 'vibrate':
-        return 'vibrate';
-      case 'vibratePattern':
-        return 'vibratePattern';
-      case 'vibrateWaveform':
-        return 'vibrateWaveform';
-    }
-  })();
+  switch (value) {
+    case 'cancel':
+      return 'cancel';
+    case 'capabilities':
+      return 'capabilities';
+    case 'impact':
+      return 'impact';
+    case 'isSupported':
+      return 'isSupported';
+    case 'notification':
+      return 'notification';
+    case 'prepare':
+      return 'prepare';
+    case 'selection':
+      return 'selection';
+    case 'vibrate':
+      return 'vibrate';
+    case 'vibratePattern':
+      return 'vibratePattern';
+    case 'vibrateWaveform':
+      return 'vibrateWaveform';
+  }
 }
 
 export function parseHapticImpactStyle(value: string): HapticImpactStyle | undefined {
-  return (() => {
-    const matchValue = value;
-    switch (matchValue) {
-      case 'light':
-        return 'light';
-      case 'medium':
-        return 'medium';
-      case 'heavy':
-        return 'heavy';
-      case 'soft':
-        return 'soft';
-      case 'rigid':
-        return 'rigid';
-      default:
-        return undefined;
-    }
-  })();
+  switch (value) {
+    case 'light':
+      return 'light';
+    case 'medium':
+      return 'medium';
+    case 'heavy':
+      return 'heavy';
+    case 'soft':
+      return 'soft';
+    case 'rigid':
+      return 'rigid';
+    default:
+      return undefined;
+  }
 }
 
 export function parseHapticNotificationType(value: string): HapticNotificationType | undefined {
-  return (() => {
-    const matchValue = value;
-    switch (matchValue) {
-      case 'success':
-        return 'success';
-      case 'warning':
-        return 'warning';
-      case 'error':
-        return 'error';
-      default:
-        return undefined;
-    }
-  })();
+  switch (value) {
+    case 'success':
+      return 'success';
+    case 'warning':
+      return 'warning';
+    case 'error':
+      return 'error';
+    default:
+      return undefined;
+  }
 }
 
 export function parseHapticsOperation(value: string): HapticsOperation | undefined {
-  return (() => {
-    const matchValue = value;
-    switch (matchValue) {
-      case 'cancel':
-        return 'cancel';
-      case 'capabilities':
-        return 'capabilities';
-      case 'impact':
-        return 'impact';
-      case 'isSupported':
-        return 'isSupported';
-      case 'notification':
-        return 'notification';
-      case 'prepare':
-        return 'prepare';
-      case 'selection':
-        return 'selection';
-      case 'vibrate':
-        return 'vibrate';
-      case 'vibratePattern':
-        return 'vibratePattern';
-      case 'vibrateWaveform':
-        return 'vibrateWaveform';
-      default:
-        return undefined;
-    }
-  })();
+  switch (value) {
+    case 'cancel':
+      return 'cancel';
+    case 'capabilities':
+      return 'capabilities';
+    case 'impact':
+      return 'impact';
+    case 'isSupported':
+      return 'isSupported';
+    case 'notification':
+      return 'notification';
+    case 'prepare':
+      return 'prepare';
+    case 'selection':
+      return 'selection';
+    case 'vibrate':
+      return 'vibrate';
+    case 'vibratePattern':
+      return 'vibratePattern';
+    case 'vibrateWaveform':
+      return 'vibrateWaveform';
+    default:
+      return undefined;
+  }
 }

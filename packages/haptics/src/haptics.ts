@@ -24,7 +24,7 @@ export function triggerHapticImpact(
   style: HapticImpactStyle,
   intensity?: number,
 ): boolean {
-  return hostHaptics.impact(style, intensity ?? 1.0);
+  return hostHaptics.impact(style, intensity ?? 1);
 }
 
 export function triggerHapticNotification(
