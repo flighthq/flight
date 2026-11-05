@@ -1,3 +1,6 @@
+// Generated from crates/flight-input/tests/input_gamepad_test.rs by flight-compiler.
+// Rust is authoritative; run `npm run generate` after changing it.
+
 import { describe, expect, it } from 'vitest';
 
 import {
@@ -46,6 +49,12 @@ describe('applyGamepadStickDeadZone', () => {
     applyGamepadStickDeadZone(out, 0.8, 0.0, 0.2);
     expect(out.x > 0.0).toBe(true);
     close(out.y, 0.0);
+  });
+  it('rescales a partial deflection along its direction', () => {
+    let out: GamepadStickOutput = { x: 0.0, y: 0.0 };
+    applyGamepadStickDeadZone(out, 0.3, 0.4, 0.2);
+    close(out.x, 0.225);
+    close(out.y, 0.3);
   });
   it('passes through when the dead zone is zero', () => {
     let out: GamepadStickOutput = { x: 0.0, y: 0.0 };

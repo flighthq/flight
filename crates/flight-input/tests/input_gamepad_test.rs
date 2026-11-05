@@ -1,5 +1,3 @@
-//! flight-compiler: target-native
-
 use flight_input::contract::*;
 
 fn close(actual: f32, expected: f32) {
@@ -57,6 +55,16 @@ mod apply_gamepad_stick_dead_zone {
         apply_gamepad_stick_dead_zone(&mut out, 0.8, 0.0, 0.2);
         assert!(out.x > 0.0);
         close(out.y, 0.0);
+    }
+
+    // A partial deflection rescales its magnitude by `(m - dz) / ((1 - dz) * m)`: the direction is kept
+    // and the magnitude maps from (dz, 1] onto (0, 1].
+    #[test]
+    fn rescales_a_partial_deflection_along_its_direction() {
+        let mut out = GamepadStickOutput { x: 0.0, y: 0.0 };
+        apply_gamepad_stick_dead_zone(&mut out, 0.3, 0.4, 0.2);
+        close(out.x, 0.225);
+        close(out.y, 0.3);
     }
 
     #[test]
