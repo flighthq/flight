@@ -1,4 +1,6 @@
+import type { Rectangle } from '@flighthq/geometry/contract';
 import { getInteractionSignals } from '@flighthq/interaction/contract';
+import type { InteractionSignalName, KeyboardEventData, PointerEventData } from '@flighthq/interaction/contract';
 import {
   createNode,
   createNodeRuntime,
@@ -8,15 +10,8 @@ import {
   initTransform2DRuntimeTrait,
   initTransform2DTrait,
 } from '@flighthq/node/contract';
-import type {
-  InteractionSignalName,
-  KeyboardEventData,
-  Node2D,
-  Node2DRuntime,
-  PointerEventData,
-  Rectangle,
-} from '@flighthq/types/contract';
-import { DisplayObjectKind, Node2DFieldsKey } from '@flighthq/types/contract';
+import type { Node2D, Node2DRuntime } from '@flighthq/scene2d/contract';
+import { DisplayObjectKind, Node2DFieldsKey } from '@flighthq/scene2d/contract';
 
 export function createGuiTestNode(width = 100, height = 20): Node2D {
   const runtime = createNodeRuntime() as Node2DRuntime;

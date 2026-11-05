@@ -1,11 +1,11 @@
 import { createSignal, emitSignal } from '@flighthq/signals/contract';
+
 import type {
   RadioGroupController,
   RadioGroupControllerOptions,
   RadioGroupControllerSignals,
   ToggleController,
-} from '@flighthq/types/contract';
-
+} from './contract.gui-types.ts';
 import {
   connectGuiSignal,
   createGuiController,

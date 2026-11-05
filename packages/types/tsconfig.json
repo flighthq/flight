@@ -8,6 +8,7 @@
     "declarationMap": true,
     "sourceMap": true,
     "moduleSuffixes": [
+      ".gui-types",
       ".scene2d-types",
       ".interaction-types",
       ".texture-types",
@@ -241,6 +242,9 @@
     },
     {
       "path": "../scene2d/tsconfig.contract.json"
+    },
+    {
+      "path": "../gui/tsconfig.contract.json"
     }
   ],
   "include": ["src"]

@@ -1,3 +1,5 @@
+import type { EntityRuntime } from '@flighthq/entity/contract';
+import { EntityRuntimeKey } from '@flighthq/entity/contract';
 import {
   enableInteractionSignals,
   getNodeHitArea,
@@ -5,25 +7,24 @@ import {
   setNodeHitArea,
   setNodeHitTestEnabled,
 } from '@flighthq/interaction/contract';
+import type { InteractionSignals } from '@flighthq/interaction/contract';
 import {
   getNodeHeight,
   getNodeWidth,
   invalidateNodeAppearance,
   invalidateNodeLocalTransform,
 } from '@flighthq/node/contract';
+import type { Node2D } from '@flighthq/scene2d/contract';
 import { connectSignal, disconnectSignal } from '@flighthq/signals/contract';
 import type { Signal, SignalSlot } from '@flighthq/signals/contract';
+
 import type {
-  Entity,
-  EntityRuntime,
   GuiOrientation,
   GuiTransitionDescriptor,
   GuiTransitionProperty,
   GuiTransitionValue,
-  InteractionSignals,
-  Node2D,
-} from '@flighthq/types/contract';
-import { EntityRuntimeKey } from '@flighthq/types/contract';
+} from './contract.gui-types.ts';
+import type { GuiEntity as Entity } from './types/GuiEntity.ts';
 
 interface GuiControllerRuntime extends EntityRuntime {
   cleanups: Array<() => void>;

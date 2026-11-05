@@ -1,10 +1,6 @@
-import type {
-  GuiOrientation,
-  Node2D,
-  ProgressBarController,
-  ProgressBarControllerOptions,
-} from '@flighthq/types/contract';
+import type { Node2D } from '@flighthq/scene2d/contract';
 
+import type { GuiOrientation, ProgressBarController, ProgressBarControllerOptions } from './contract.gui-types.ts';
 import {
   clampGuiValue,
   createGuiController,

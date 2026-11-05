@@ -1,13 +1,8 @@
 import { applyNodeInteractiveStates, disposeNodeInteractiveStateBinding } from '@flighthq/interaction/contract';
+import type { Node2D } from '@flighthq/scene2d/contract';
 import { createSignal, emitSignal } from '@flighthq/signals/contract';
-import type {
-  ButtonController,
-  ButtonControllerOptions,
-  ButtonControllerSignals,
-  Node2D,
-  NodeInteractiveStateBinding,
-} from '@flighthq/types/contract';
 
+import type { ButtonController, ButtonControllerOptions, ButtonControllerSignals } from './contract.gui-types.ts';
 import {
   configureGuiHitArea,
   connectGuiInteraction,
@@ -21,7 +16,7 @@ import {
 interface ButtonControllerFields {
   disabled: boolean;
   downState: Node2D | null;
-  interactiveStateBinding: NodeInteractiveStateBinding | null;
+  interactiveStateBinding: Parameters<typeof applyNodeInteractiveStates>[0] | null;
   over: boolean;
   overState: Node2D | null;
   pressed: boolean;
@@ -34,7 +29,8 @@ export function createButtonController(options: Readonly<ButtonControllerOptions
     {
       disabled: options.disabled ?? false,
       downState: options.downState ?? null,
-      interactiveStateBinding: options.interactiveStateBinding ?? null,
+      interactiveStateBinding:
+        (options.interactiveStateBinding as Parameters<typeof applyNodeInteractiveStates>[0] | undefined) ?? null,
       over: false,
       overState: options.overState ?? null,
       pressed: false,

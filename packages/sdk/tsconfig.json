@@ -157,7 +157,7 @@
       "path": "../geometry/tsconfig.runtime.json"
     },
     {
-      "path": "../gui"
+      "path": "../gui/tsconfig.runtime.json"
     },
     {
       "path": "../gizmo"

@@ -1,8 +1,8 @@
 import { createFocusManager, getFocusedNode, setFocusedNode, setNodeFocusable } from '@flighthq/interaction/contract';
 import { getNodeParent } from '@flighthq/node/contract';
 import { connectSignal } from '@flighthq/signals/contract';
-import type { GuiDialogCloseResult } from '@flighthq/types/contract';
 
+import type { GuiDialogCloseResult } from './contract.gui-types.ts';
 import {
   closeGuiDialog,
   createGuiDialog,

@@ -1,6 +1,5 @@
 import { getNodeHitArea, isNodeHitTestEnabled } from '@flighthq/interaction/contract';
 import { connectSignal, createSignal, emitSignal } from '@flighthq/signals/contract';
-import type { Entity } from '@flighthq/types/contract';
 
 import {
   clampGuiValue,
@@ -20,6 +19,7 @@ import {
   snapGuiValue,
 } from './guiController.ts';
 import { createGuiTestNode, emitGuiPointer } from './guiTestHelper.ts';
+import type { GuiEntity as Entity } from './types/GuiEntity.ts';
 
 describe('clampGuiValue', () => {
   it('clamps finite values and normalizes reversed bounds', () => {

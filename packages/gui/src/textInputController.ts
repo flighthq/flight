@@ -1,3 +1,6 @@
+import type { InputKeyboardData } from '@flighthq/input/contract';
+import type { KeyboardEventData, PointerEventData } from '@flighthq/interaction/contract';
+import type { Node2D } from '@flighthq/scene2d/contract';
 import { createSignal, emitSignal } from '@flighthq/signals/contract';
 import { enableTextFieldSignals, getRichTextRuntime } from '@flighthq/text/contract';
 import type { RichText } from '@flighthq/text/contract';
@@ -16,16 +19,12 @@ import {
   hasTextInput,
 } from '@flighthq/textinput/contract';
 import type { TextInputManagerRaw } from '@flighthq/textinput/contract';
+
 import type {
-  InputKeyboardData,
-  KeyboardEventData,
-  Node2D,
-  PointerEventData,
   TextInputController,
   TextInputControllerOptions,
   TextInputControllerSignals,
-} from '@flighthq/types/contract';
-
+} from './contract.gui-types.ts';
 import {
   connectGuiInteraction,
   connectGuiSignal,

@@ -1,12 +1,12 @@
+import type { KeyboardEventData } from '@flighthq/interaction/contract';
 import { createSignal, emitSignal } from '@flighthq/signals/contract';
+
 import type {
-  KeyboardEventData,
   TreeViewController,
   TreeViewControllerItem,
   TreeViewControllerOptions,
   TreeViewControllerSignals,
-} from '@flighthq/types/contract';
-
+} from './contract.gui-types.ts';
 import {
   connectGuiInteraction,
   createGuiController,

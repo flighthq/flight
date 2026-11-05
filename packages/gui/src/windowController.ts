@@ -1,15 +1,15 @@
+import type { PointerEventData } from '@flighthq/interaction/contract';
 import { getNodeHeight, getNodeWidth } from '@flighthq/node/contract';
+import type { Node2D } from '@flighthq/scene2d/contract';
 import { createSignal, emitSignal } from '@flighthq/signals/contract';
+
+import { getButtonControllerSignals } from './buttonController.ts';
 import type {
   ButtonController,
-  Node2D,
-  PointerEventData,
   WindowController,
   WindowControllerOptions,
   WindowControllerSignals,
-} from '@flighthq/types/contract';
-
-import { getButtonControllerSignals } from './buttonController.ts';
+} from './contract.gui-types.ts';
 import {
   connectGuiInteraction,
   connectGuiSignal,

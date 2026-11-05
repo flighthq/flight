@@ -1,0 +1,29 @@
+import type { Node2D } from '@flighthq/scene2d/contract';
+import type { Signal } from '@flighthq/signals/contract';
+
+import type { GuiControllerOptions, GuiOrientation } from './GuiController.ts';
+import type { GuiEntity as Entity } from './GuiEntity.ts';
+
+declare const ScrollBarControllerTypeKey: unique symbol;
+
+export interface ScrollBarController extends Entity {
+  readonly [ScrollBarControllerTypeKey]?: void;
+}
+
+export interface ScrollBarControllerOptions extends GuiControllerOptions {
+  downButton?: Node2D;
+  lineSize?: number;
+  maximum?: number;
+  minimum?: number;
+  orientation?: GuiOrientation;
+  pageSize?: number;
+  repeatInterval?: number;
+  thumb: Node2D;
+  track: Node2D;
+  upButton?: Node2D;
+  value?: number;
+}
+
+export interface ScrollBarControllerSignals {
+  onChange: Signal<number>;
+}

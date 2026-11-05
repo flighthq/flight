@@ -1,5 +1,7 @@
-import type { Node2D, PointerEventData, TooltipController, TooltipControllerOptions } from '@flighthq/types/contract';
+import type { PointerEventData } from '@flighthq/interaction/contract';
+import type { Node2D } from '@flighthq/scene2d/contract';
 
+import type { TooltipController, TooltipControllerOptions } from './contract.gui-types.ts';
 import {
   connectGuiInteraction,
   createGuiController,

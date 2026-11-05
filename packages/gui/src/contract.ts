@@ -1,3 +1,4 @@
+export * from './contract.gui-types.ts';
 export * from './buttonController.ts';
 export * from './comboBoxController.ts';
 export * from './guiController.ts';

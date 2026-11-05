@@ -1,0 +1,30 @@
+import type { Node2D } from '@flighthq/scene2d/contract';
+import type { Signal } from '@flighthq/signals/contract';
+
+import type { ButtonController } from './ButtonController.ts';
+import type { GuiControllerOptions } from './GuiController.ts';
+import type { GuiEntity as Entity } from './GuiEntity.ts';
+
+declare const WindowControllerTypeKey: unique symbol;
+
+export interface WindowController extends Entity {
+  readonly [WindowControllerTypeKey]?: void;
+}
+
+export interface WindowControllerOptions extends GuiControllerOptions {
+  closeButton?: ButtonController;
+  content?: Node2D;
+  draggable?: boolean;
+  frame: Node2D;
+  minimumHeight?: number;
+  minimumWidth?: number;
+  resizable?: boolean;
+  resizeHandle?: Node2D;
+  titleBar?: Node2D;
+}
+
+export interface WindowControllerSignals {
+  onClose: Signal<void>;
+  onMove: Signal<readonly [x: number, y: number]>;
+  onResize: Signal<readonly [width: number, height: number]>;
+}

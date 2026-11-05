@@ -1,13 +1,13 @@
+import type { PointerEventData } from '@flighthq/interaction/contract';
+import type { Node2D } from '@flighthq/scene2d/contract';
 import { createSignal, emitSignal } from '@flighthq/signals/contract';
+
 import type {
   GuiOrientation,
-  Node2D,
-  PointerEventData,
   ScrollBarController,
   ScrollBarControllerOptions,
   ScrollBarControllerSignals,
-} from '@flighthq/types/contract';
-
+} from './contract.gui-types.ts';
 import {
   clampGuiValue,
   connectGuiInteraction,

@@ -1,15 +1,15 @@
 import { getFocusedNode, setFocusedNode } from '@flighthq/interaction/contract';
+import type { FocusManager } from '@flighthq/interaction/contract';
+import type { Node2D } from '@flighthq/scene2d/contract';
 import { createSignal, emitSignal } from '@flighthq/signals/contract';
+
 import type {
-  FocusManager,
   GuiDialog,
   GuiDialogCloseResult,
   GuiDialogEntry,
   GuiDialogOptions,
   GuiDialogSignals,
-  Node2D,
-} from '@flighthq/types/contract';
-
+} from './contract.gui-types.ts';
 import {
   connectGuiInteraction,
   createGuiController,

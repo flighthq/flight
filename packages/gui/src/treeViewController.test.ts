@@ -1,6 +1,6 @@
 import { connectSignal } from '@flighthq/signals/contract';
-import type { TreeViewControllerItem } from '@flighthq/types/contract';
 
+import type { TreeViewControllerItem } from './contract.gui-types.ts';
 import { createGuiTestNode, emitGuiKeyboard, emitGuiPointer } from './guiTestHelper.ts';
 import {
   createTreeViewController,

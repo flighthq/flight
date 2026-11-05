@@ -1,14 +1,14 @@
+import type { Node2D } from '@flighthq/scene2d/contract';
 import { createSignal, emitSignal } from '@flighthq/signals/contract';
+
+import { getButtonControllerSignals } from './buttonController.ts';
 import type {
   ButtonController,
   ComboBoxController,
   ComboBoxControllerOptions,
   ComboBoxControllerSignals,
   ListController,
-  Node2D,
-} from '@flighthq/types/contract';
-
-import { getButtonControllerSignals } from './buttonController.ts';
+} from './contract.gui-types.ts';
 import {
   connectGuiSignal,
   createGuiController,

@@ -40,8 +40,12 @@
     "clean:dist": "tsx ../../scripts/clean-package-dist.ts"
   },
   "dependencies": {
+    "@flighthq/entity": "*",
+    "@flighthq/geometry": "*",
+    "@flighthq/input": "*",
     "@flighthq/interaction": "*",
     "@flighthq/node": "*",
+    "@flighthq/scene2d": "*",
     "@flighthq/signals": "*",
     "@flighthq/text": "*",
     "@flighthq/textinput": "*",

@@ -1,11 +1,7 @@
+import type { Node2D } from '@flighthq/scene2d/contract';
 import { createSignal, emitSignal } from '@flighthq/signals/contract';
-import type {
-  Node2D,
-  ToggleController,
-  ToggleControllerOptions,
-  ToggleControllerSignals,
-} from '@flighthq/types/contract';
 
+import type { ToggleController, ToggleControllerOptions, ToggleControllerSignals } from './contract.gui-types.ts';
 import {
   connectGuiInteraction,
   createGuiController,
