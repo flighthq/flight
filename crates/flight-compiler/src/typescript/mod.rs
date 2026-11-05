@@ -27779,9 +27779,9 @@ pub(crate) fn insert_type_script_array_parameter_context<'a>(
         }
         match metadata.representation {
             crate::TypeScriptArrayParameterRepresentation::ArrayLikeNumber => {
-                if !is_f32_slice_reference(&argument.ty, false) {
+                if !is_typescript_number_slice_reference(&argument.ty) {
                     return Err(compile_error(format!(
-                        "TypeScript array parameter `{}.{}` with representation `ArrayLike<number>` must designate an exact Rust `&[f32]` parameter",
+                        "TypeScript array parameter `{}.{}` with representation `ArrayLike<number>` must designate an immutable slice of a standard Rust numeric primitive",
                         metadata.owner, metadata.parameter
                     )));
                 }
@@ -28036,6 +28036,39 @@ fn is_f32_slice_reference(rust_type: &Type, mutable: bool) -> bool {
         return false;
     };
     return type_is_named(&slice.elem, "f32");
+}
+
+fn is_typescript_number_slice_reference(rust_type: &Type) -> bool {
+    let Type::Reference(reference) = rust_type else {
+        return false;
+    };
+    if reference.mutability.is_some() {
+        return false;
+    }
+    let Type::Slice(slice) = reference.elem.as_ref() else {
+        return false;
+    };
+    let Type::Path(element) = slice.elem.as_ref() else {
+        return false;
+    };
+    if element.qself.is_some() || element.path.segments.len() != 1 {
+        return false;
+    }
+    return matches!(
+        element.path.segments[0].ident.to_string().as_str(),
+        "f32"
+            | "f64"
+            | "i8"
+            | "i16"
+            | "i32"
+            | "i64"
+            | "isize"
+            | "u8"
+            | "u16"
+            | "u32"
+            | "u64"
+            | "usize"
+    );
 }
 
 fn uint8_buffer_parameter_kind(

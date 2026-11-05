@@ -70,7 +70,8 @@ pub enum TypeScriptArrayParameterRepresentation {
 /// An established TypeScript array representation at one public Rust function parameter.
 ///
 /// The owner and parameter are their emitted TypeScript names. The compiler validates both the
-/// unique visible position and its exact Rust shape before using the representation: `&[f32]` for
+/// unique visible position and its exact Rust shape before using the representation: an immutable
+/// slice of a standard Rust numeric primitive for
 /// [`TypeScriptArrayParameterRepresentation::ArrayLikeNumber`] and `&mut [f32]` for
 /// [`TypeScriptArrayParameterRepresentation::Float32Array`].
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

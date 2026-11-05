@@ -13686,17 +13686,18 @@ pub fn sum_values(values: &[f64]) -> f64 {
     }
 
     #[test]
-    fn lowers_only_contract_proven_f32_slice_parameter_representations() {
+    fn lowers_only_contract_proven_numeric_slice_parameter_representations() {
         let source = ModuleSource {
             path: "crates/flight-layout/src/resolve.rs",
             source: r#"
 pub fn resolve_layout_tree(
     out: &mut [f32],
     intrinsic_sizes: &[f32],
+    node_ids: &[i16],
     owned: Vec<f32>,
     borrowed: &Vec<f32>,
 ) {
-    out[0] = intrinsic_sizes[0] + owned[0] + borrowed[0];
+    out[0] = intrinsic_sizes[0] + node_ids[0] as f32 + owned[0] + borrowed[0];
 }
 "#,
         };
@@ -13711,15 +13712,21 @@ pub fn resolve_layout_tree(
                 parameter: "intrinsicSizes",
                 representation: TypeScriptArrayParameterRepresentation::ArrayLikeNumber,
             },
+            TypeScriptArrayParameter {
+                owner: "resolveLayoutTree",
+                parameter: "nodeIds",
+                representation: TypeScriptArrayParameterRepresentation::ArrayLikeNumber,
+            },
         ];
-        fn compile(
+        fn compile_with_aliases(
             source: ModuleSource<'_>,
+            alias_sources: &[ModuleSource<'_>],
             parameters: &[TypeScriptArrayParameter<'_>],
         ) -> Result<String, flight_compiler::CompileError> {
             return compile_typescript_with_options_and_internal_type_exports_and_array_parameters(
                 source,
                 None,
-                &[],
+                alias_sources,
                 &[],
                 &[],
                 &[],
@@ -13735,6 +13742,12 @@ pub fn resolve_layout_tree(
                 false,
             );
         }
+        fn compile(
+            source: ModuleSource<'_>,
+            parameters: &[TypeScriptArrayParameter<'_>],
+        ) -> Result<String, flight_compiler::CompileError> {
+            return compile_with_aliases(source, &[], parameters);
+        }
 
         let output = compile(source, &parameters).unwrap();
         assert!(output.contains("out: Float32Array"), "{output}");
@@ -13742,6 +13755,7 @@ pub fn resolve_layout_tree(
             output.contains("intrinsicSizes: ArrayLike<number>"),
             "{output}"
         );
+        assert!(output.contains("nodeIds: ArrayLike<number>"), "{output}");
         assert!(output.contains("owned: number[]"), "{output}");
         assert!(output.contains("borrowed: Readonly<number[]>"), "{output}");
 
@@ -13759,12 +13773,12 @@ pub fn resolve_layout_tree(
             (
                 "&Vec<f32>",
                 TypeScriptArrayParameterRepresentation::ArrayLikeNumber,
-                "exact Rust `&[f32]`",
+                "immutable slice of a standard Rust numeric primitive",
             ),
             (
                 "&mut [f32]",
                 TypeScriptArrayParameterRepresentation::ArrayLikeNumber,
-                "exact Rust `&[f32]`",
+                "immutable slice of a standard Rust numeric primitive",
             ),
         ] {
             let source_text =
@@ -13785,6 +13799,61 @@ pub fn resolve_layout_tree(
             .to_string();
             assert!(error.contains(expected), "{rust_type}: {error}");
         }
+
+        for (rust_type, source_text) in [
+            (
+                "&[bool]",
+                "pub fn consume(values: &[bool]) { let _ = values.len(); }\n",
+            ),
+            (
+                "&[T]",
+                "pub fn consume<T>(values: &[T]) { let _ = values.len(); }\n",
+            ),
+            (
+                "&Values",
+                "pub struct Values { pub value: i16 }\npub fn consume(values: &Values) { let _ = values; }\n",
+            ),
+            (
+                "&[Value]",
+                "pub struct Value { pub value: i16 }\npub fn consume(values: &[Value]) { let _ = values.len(); }\n",
+            ),
+        ] {
+            let metadata = [TypeScriptArrayParameter {
+                owner: "consume",
+                parameter: "values",
+                representation: TypeScriptArrayParameterRepresentation::ArrayLikeNumber,
+            }];
+            let error = compile(
+                ModuleSource {
+                    path: "crates/flight-layout/src/consume.rs",
+                    source: source_text,
+                },
+                &metadata,
+            )
+            .unwrap_err()
+            .to_string();
+            assert!(
+                error.contains("immutable slice of a standard Rust numeric primitive"),
+                "{rust_type}: {error}"
+            );
+        }
+
+        let duplicate = ModuleSource {
+            path: "crates/flight-layout/src/duplicate.rs",
+            source: "pub fn consume(values: &[i16]) { let _ = values.len(); }\n",
+        };
+        let metadata = [TypeScriptArrayParameter {
+            owner: "consume",
+            parameter: "values",
+            representation: TypeScriptArrayParameterRepresentation::ArrayLikeNumber,
+        }];
+        let error = compile_with_aliases(duplicate, &[duplicate], &metadata)
+            .unwrap_err()
+            .to_string();
+        assert!(
+            error.contains("must resolve to exactly one visible Rust function parameter, found 2"),
+            "{error}"
+        );
 
         let unsafe_source = ModuleSource {
             path: "crates/flight-layout/src/consume.rs",

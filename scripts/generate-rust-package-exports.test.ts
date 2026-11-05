@@ -554,9 +554,11 @@ export function incompatible(value: RealAlias | undefined): void {}
 
   it('derives exact numeric-array parameter representations by exported parameter identity', () => {
     const existing = `export function resolveLayoutTree(out: Float32Array, nodeCount: number, intrinsicSizes: ArrayLike<number>, bytes: Uint8Array): void {}
+export function setTilemapTiles(ids: ArrayLike<number>, width: number): void {}
 export function unchanged(values: number[]): void {}
 `;
     const generated = `export function resolveLayoutTree(intrinsicSizes: Readonly<number[]>, nodeCount: number, out: number[], bytes: number[]): void {}
+export function setTilemapTiles(ids: Readonly<number[]>, width: number): void {}
 export function unchanged(values: number[]): void {}
 `;
 
@@ -567,6 +569,8 @@ export function unchanged(values: number[]): void {}
       'resolveLayoutTree.intrinsicSizes=ArrayLike<number>',
       '--typescript-array-parameter',
       'resolveLayoutTree.out=Float32Array',
+      '--typescript-array-parameter',
+      'setTilemapTiles.ids=ArrayLike<number>',
     ]);
   });
 
@@ -578,6 +582,9 @@ export function duplicate(values: Float32Array, values: Float32Array): void {}
 export function renamed(out: Float32Array): void {}
 export function overloaded(out: Float32Array): void {}
 export function overloaded(out: number, extra: number): void {}
+export function nonnumeric(values: ArrayLike<number>): void {}
+export function custom(values: ArrayLike<number>): void {}
+export function owned(values: ArrayLike<number>): void {}
 `;
     const generated = `export function wrapped(out: number[]): void {}
 export function union(values: Readonly<number[]>): void {}
@@ -585,6 +592,9 @@ export function generic(values: Readonly<number[]>): void {}
 export function duplicate(values: number[], values: number[]): void {}
 export function renamed(target: number[]): void {}
 export function overloaded(out: number[]): void {}
+export function nonnumeric(values: Readonly<string[]>): void {}
+export function custom(values: Readonly<NumericValue[]>): void {}
+export function owned(values: number[]): void {}
 `;
 
     expect(typeScriptArrayParameterArguments(existing, generated)).toEqual([]);

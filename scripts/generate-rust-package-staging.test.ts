@@ -1354,13 +1354,80 @@ fn keeps_the_existing_target_representation() {
     expect(test).not.toContain('TargetRef');
   }, 120_000);
 
-  it('preserves established mutable and immutable f32 slice parameter representations', async () => {
+  it('refuses conflicting target-native array parameter owners', async () => {
+    writeFileSync(
+      join(crateRoot, 'src', 'lib.rs'),
+      '//! flight-compiler: target-native\nmod shadow;\nmod value;\npub mod contract;\npub use contract::*;\n',
+    );
+    writeFileSync(join(crateRoot, 'src', 'contract.rs'), 'pub use super::value::*;\n');
+    writeFileSync(
+      sourcePath,
+      `//! flight-compiler: target-native
+
+pub fn read_ids(ids: &[i16]) -> i16 {
+    return ids[0];
+}
+`,
+    );
+    const shadowPath = join(crateRoot, 'src', 'shadow.rs');
+    writeFileSync(
+      shadowPath,
+      `//! flight-compiler: target-native
+
+pub fn read_ids(ids: &[i16]) -> i16 {
+    return ids[0];
+}
+`,
+    );
+    for (const name of ['value', 'shadow']) {
+      writeFileSync(
+        join(packageRoot, 'src', `${name}.ts`),
+        `export function readIds(ids: ArrayLike<number>): number {
+  return ids[0];
+}
+`,
+      );
+    }
+    const testPath = join(crateRoot, 'tests', 'value_test.rs');
+    writeFileSync(
+      testPath,
+      `use crate::*;
+
+#[test]
+fn reads_ids() {
+    let ids = vec![1_i16];
+    assert_eq!(read_ids(&ids), 1);
+}
+`,
+    );
+    writeFileSync(join(packageRoot, 'src', 'value.test.ts'), "import { readIds } from './value.ts';\n");
+    writeFileSync(join(packageRoot, 'src', 'contract.ts'), "export { readIds } from './value.ts';\n");
+    writeFileSync(join(packageRoot, 'src', 'index.ts'), "export { readIds } from './contract.ts';\n");
+
+    try {
+      const run = await generateWhileScanning();
+
+      expect(run.code).not.toBe(0);
+      expect(run.stderr).toContain('TypeScript array parameter readIds.ids has conflicting Rust owners');
+    } finally {
+      rmSync(shadowPath, { force: true });
+      rmSync(testPath, { force: true });
+      rmSync(join(packageRoot, 'src', 'shadow.ts'), { force: true });
+      rmSync(join(packageRoot, 'src', 'value.test.ts'), { force: true });
+    }
+  }, 120_000);
+
+  it('preserves established numeric slice and mutable f32 buffer parameter representations', async () => {
     writeFileSync(join(crateRoot, 'src', 'lib.rs'), 'pub mod contract;\nmod value;\npub use contract::*;\n');
     writeFileSync(join(crateRoot, 'src', 'contract.rs'), 'pub use super::value::*;\n');
     writeFileSync(
       sourcePath,
       `pub fn resolve_buffers(out: &mut [f32], intrinsic_sizes: &[f32], owned: Vec<f32>) {
     out[0] = intrinsic_sizes[0] + owned[0];
+}
+
+pub fn read_tile_ids(ids: &[i16], ordinary: &[i16]) -> i16 {
+    return ids[0] + ordinary[0];
 }
 `,
     );
@@ -1369,10 +1436,20 @@ fn keeps_the_existing_target_representation() {
       `export function resolveBuffers(out: Float32Array, intrinsicSizes: ArrayLike<number>, owned: number[]): void {
   out[0] = intrinsicSizes[0] + owned[0];
 }
+
+export function readTileIds(ids: ArrayLike<number>, ordinary: Readonly<number[]>): number {
+  return ids[0] + ordinary[0];
+}
 `,
     );
-    writeFileSync(join(packageRoot, 'src', 'contract.ts'), "export { resolveBuffers } from './value.ts';\n");
-    writeFileSync(join(packageRoot, 'src', 'index.ts'), "export { resolveBuffers } from './contract.ts';\n");
+    writeFileSync(
+      join(packageRoot, 'src', 'contract.ts'),
+      "export { readTileIds, resolveBuffers } from './value.ts';\n",
+    );
+    writeFileSync(
+      join(packageRoot, 'src', 'index.ts'),
+      "export { readTileIds, resolveBuffers } from './contract.ts';\n",
+    );
 
     const run = await generateWhileScanning();
 
@@ -1381,6 +1458,7 @@ fn keeps_the_existing_target_representation() {
     expect(value).toContain(
       'function resolveBuffers(out: Float32Array, intrinsicSizes: ArrayLike<number>, owned: number[]): void',
     );
+    expect(value).toContain('function readTileIds(ids: ArrayLike<number>, ordinary: Readonly<number[]>): number');
   }, 120_000);
 
   it('preserves contract-proven Uint8Array parameters, returns, and fields only', async () => {
