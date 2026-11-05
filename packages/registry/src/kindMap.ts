@@ -1,4 +1,4 @@
-import type { Kind } from '@flighthq/types/contract';
+import type { Kind } from '@flighthq/entity/contract';
 
 // The durable TypeScript twin of crates/flight-registry/src/kind_map.rs (target-native): these functions
 // operate on the JavaScript built-in Map, whose insertion order Rust's KindMap carrier reproduces.

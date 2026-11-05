@@ -1,4 +1,5 @@
 //! flight-compiler: target-native
+//! flight-compiler: contract OrdinalTable
 
 use flight_entity::{Kind, NonEntityCreateResult};
 
