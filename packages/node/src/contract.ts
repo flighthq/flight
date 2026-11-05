@@ -1,3 +1,4 @@
+export * from './contract.node-types.ts';
 export * from './boundsRectangle.ts';
 export * from './enableNodeGuards.ts';
 export * from './hasAppearance.ts';

@@ -1,4 +1,4 @@
-import type { HasAppearance, HasAppearanceRuntime } from '@flighthq/types/contract';
+import type { HasAppearance, HasAppearanceRuntime } from './contract.node-types.ts';
 
 // Resets the resolved-appearance cache for graph families that resolve appearance on the node (the 3D
 // scene graph — see ensureNode3DWorldAlpha). The `-1` stamps are sentinels no live revision takes, so

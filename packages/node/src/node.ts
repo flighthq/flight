@@ -1,8 +1,9 @@
 import { allocateEntity, createEntityRuntime, finishEntity, getEntityRuntime } from '@flighthq/entity/contract';
 import { clearSignal, createSignal } from '@flighthq/signals/contract';
+import type { EntityConstruction, Kind } from '@flighthq/types/contract';
+import { EntityRuntimeKey } from '@flighthq/types/contract';
+
 import type {
-  EntityConstruction,
-  Kind,
   MethodsOf,
   Node,
   NodeData,
@@ -11,9 +12,7 @@ import type {
   NodeRuntimeFactory,
   NodeSignals,
   NodeFields,
-} from '@flighthq/types/contract';
-import { EntityRuntimeKey } from '@flighthq/types/contract';
-
+} from './contract.node-types.ts';
 import { removeNodeChild } from './hierarchy.ts';
 import { invalidateNode } from './revision.ts';
 

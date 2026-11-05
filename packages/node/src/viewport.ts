@@ -1,5 +1,7 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { Viewport, ViewportLike, EntityConstruction } from '@flighthq/types/contract';
+import type { EntityConstruction } from '@flighthq/types/contract';
+
+import type { Viewport, ViewportLike } from './contract.node-types.ts';
 
 export function createViewport(obj?: Readonly<ViewportLike>): Viewport {
   const out = allocateEntity<Viewport>();

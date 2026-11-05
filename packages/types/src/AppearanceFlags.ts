@@ -1,3 +1,4 @@
+// Runtime compatibility facade; the canonical contract is owned by node.
 export enum AppearanceFlags {
   None = 0,
   Visible = 1 << 0,
@@ -9,16 +10,10 @@ export enum AppearanceFlags {
 }
 
 export namespace AppearanceFlags {
-  /**
-   * Returns true if any test flags are set
-   */
   export function any(flags: AppearanceFlags, test: AppearanceFlags): boolean {
     return (flags & test) !== 0;
   }
 
-  /**
-   * Returns true if all test flags are set
-   */
   export function has(flags: AppearanceFlags, test: AppearanceFlags): boolean {
     return (flags & test) === test;
   }

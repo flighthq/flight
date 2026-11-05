@@ -8,6 +8,7 @@
     "declarationMap": true,
     "sourceMap": true,
     "moduleSuffixes": [
+      ".node-types",
       ".adjustments-types",
       ".materials-types",
       ".audio-types",
@@ -147,6 +148,9 @@
     },
     {
       "path": "../materials/tsconfig.contract.json"
+    },
+    {
+      "path": "../node/tsconfig.contract.json"
     }
   ],
   "files": [
@@ -175,12 +179,12 @@
     "src/EasingFunction.ts",
     "src/Entity.ts",
     "src/FocusEventData.ts",
-    "src/HasAppearance.ts",
-    "src/HasBlendMode.ts",
-    "src/HasBoundsRectangle.ts",
+    "src/HasAppearance.node-types.ts",
+    "src/HasBlendMode.node-types.ts",
+    "src/HasBoundsRectangle.node-types.ts",
     "src/HasClip.ts",
-    "src/HasMaterial.ts",
-    "src/HasTransform2D.ts",
+    "src/HasMaterial.node-types.ts",
+    "src/HasTransform2D.node-types.ts",
     "src/HostImageDecode.ts",
     "src/HostImageSource.ts",
     "src/ImageBitmapComposition.ts",
@@ -194,11 +198,11 @@
     "src/Material.materials-types.ts",
     "src/Material2D.materials-types.ts",
     "src/Matrix.ts",
-    "src/Node.ts",
+    "src/Node.node-types.ts",
     "src/Node2D.ts",
     "src/NodeInteraction.ts",
     "src/NodeInteractionState.ts",
-    "src/NodeSignals.ts",
+    "src/NodeSignals.node-types.ts",
     "src/PathBooleanKernel.ts",
     "src/PixelFormat.ts",
     "src/PointerEventData.ts",
@@ -222,7 +226,7 @@
     "src/TransformInherit2D.ts",
     "src/Vector2.ts",
     "src/ViewportAlign.ts",
-    "src/ViewportScaleMode.ts",
+    "src/ViewportScaleMode.node-types.ts",
     "src/VoxelGrid.ts",
     "src/XmlElement.ts",
     "src/contract.scene2d-formats-types.ts"

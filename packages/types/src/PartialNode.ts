@@ -1,3 +1,2 @@
-export type PartialNode<T> = {
-  data?: Partial<T extends { data: infer U } ? U : never>;
-} & Partial<Omit<T, 'data'>>;
+// Compatibility facade: node owns these contracts.
+export type { PartialNode } from '@flighthq/node/contract';

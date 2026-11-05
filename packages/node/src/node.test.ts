@@ -1,8 +1,9 @@
 import { allocateEntity, attachEntityBinding, finishEntity, getEntityBinding } from '@flighthq/entity/contract';
 import { connectSignal } from '@flighthq/signals/contract';
-import type { InteractionSignals, Node, NodeData, NodeRuntime } from '@flighthq/types/contract';
-import { NodeKind } from '@flighthq/types/contract';
+import type { InteractionSignals } from '@flighthq/types/contract';
 
+import type { Node, NodeData, NodeRuntime } from './contract.node-types.ts';
+import { NodeKind } from './contract.node-types.ts';
 import { addNodeChild, getNodeChildCount, getNodeParent } from './hierarchy.ts';
 import {
   createNode,

@@ -7,7 +7,15 @@
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,
-    "moduleSuffixes": [".adjustments-types", ".clip-types", ".materials-types", ".geometry-types", ".path-types", ""],
+    "moduleSuffixes": [
+      ".node-types",
+      ".adjustments-types",
+      ".clip-types",
+      ".materials-types",
+      ".geometry-types",
+      ".path-types",
+      ""
+    ],
     "tsBuildInfoFile": "dist/.tsbuildinfo.shape-types"
   },
   "references": [
@@ -37,6 +45,9 @@
     },
     {
       "path": "../materials/tsconfig.contract.json"
+    },
+    {
+      "path": "../node/tsconfig.contract.json"
     }
   ],
   "files": [
@@ -50,22 +61,22 @@
     "src/Cursor.ts",
     "src/Entity.ts",
     "src/FocusEventData.ts",
-    "src/HasAppearance.ts",
-    "src/HasBlendMode.ts",
-    "src/HasBoundsRectangle.ts",
+    "src/HasAppearance.node-types.ts",
+    "src/HasBlendMode.node-types.ts",
+    "src/HasBoundsRectangle.node-types.ts",
     "src/HasClip.ts",
-    "src/HasMaterial.ts",
-    "src/HasTransform2D.ts",
+    "src/HasMaterial.node-types.ts",
+    "src/HasTransform2D.node-types.ts",
     "src/InteractionSignals.ts",
     "src/KeyboardEventData.ts",
     "src/Material.materials-types.ts",
     "src/Material2D.materials-types.ts",
     "src/Matrix.ts",
-    "src/Node.ts",
+    "src/Node.node-types.ts",
     "src/Node2D.ts",
     "src/NodeInteraction.ts",
     "src/NodeInteractionState.ts",
-    "src/NodeSignals.ts",
+    "src/NodeSignals.node-types.ts",
     "src/PixelFormat.ts",
     "src/PointerEventData.ts",
     "src/Rectangle.ts",
@@ -79,7 +90,7 @@
     "src/TextureUvTransform.ts",
     "src/Vector2.ts",
     "src/ViewportAlign.ts",
-    "src/ViewportScaleMode.ts",
+    "src/ViewportScaleMode.node-types.ts",
     "src/VoxelGrid.ts",
     "src/contract.shape-types.ts"
   ],

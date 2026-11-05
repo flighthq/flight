@@ -7,15 +7,10 @@ import {
   multiplyMatrix4,
   setQuaternionFromAxisAngle,
 } from '@flighthq/geometry/contract';
-import type {
-  HasTransform3D,
-  HasTransform3DRuntime,
-  NodeRuntime,
-  Transform3DNode,
-  Vector3Like,
-} from '@flighthq/types/contract';
+import type { Vector3Like } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
+import type { HasTransform3D, HasTransform3DRuntime, NodeRuntime, Transform3DNode } from './contract.node-types.ts';
 import { initTransform3DRuntimeTrait, initTransform3DTrait } from './hasTransform3d.ts';
 import { addNodeChild, removeNodeChild } from './hierarchy.ts';
 import { createNode, getNodeRuntime } from './node.ts';

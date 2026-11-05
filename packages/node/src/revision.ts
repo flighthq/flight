@@ -1,5 +1,4 @@
-import type { Node, NodeRuntime } from '@flighthq/types/contract';
-
+import type { Node, NodeRuntime } from './contract.node-types.ts';
 import { getNodeRuntime } from './node.ts';
 
 // Records that the node's world transform was just recomputed. `worldTransformId` must change on every

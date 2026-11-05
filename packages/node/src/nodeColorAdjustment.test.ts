@@ -1,6 +1,6 @@
 import { createColorMatrixAdjustment, createTintAdjustment } from '@flighthq/adjustments/contract';
-import { NodeKind } from '@flighthq/types/contract';
 
+import { NodeKind } from './contract.node-types.ts';
 import { createNode, getNodeRuntime } from './node.ts';
 import {
   addNodeColorAdjustment,

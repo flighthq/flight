@@ -1,3 +1,2 @@
-import type { Entity } from './Entity.ts';
-
-export interface RendererData extends Entity {}
+// Compatibility facade: node owns these contracts.
+export type { RendererData } from '@flighthq/node/contract';

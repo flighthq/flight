@@ -8,16 +8,9 @@ import {
   multiplyMatrix,
 } from '@flighthq/geometry/contract';
 import { DEG_TO_RAD } from '@flighthq/math/contract';
-import type {
-  HasTransform2DRuntime,
-  Matrix,
-  MatrixLike,
-  NodeRuntime,
-  Transform2DLike,
-  Transform2DNode,
-  Vector2Like,
-} from '@flighthq/types/contract';
+import type { Matrix, MatrixLike, Transform2DLike, Vector2Like } from '@flighthq/types/contract';
 
+import type { HasTransform2DRuntime, NodeRuntime, Transform2DNode } from './contract.node-types.ts';
 import { computeNodeWorldTransformRevision } from './revision.ts';
 import { invalidateNodeLocalTransform } from './revision.ts';
 

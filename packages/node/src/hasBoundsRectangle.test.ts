@@ -1,6 +1,6 @@
 import { createRectangle } from '@flighthq/geometry/contract';
-import type { HasBoundsRectangle, HasBoundsRectangleRuntime, Node, NodeRuntime } from '@flighthq/types/contract';
 
+import type { HasBoundsRectangle, HasBoundsRectangleRuntime, Node, NodeRuntime } from './contract.node-types.ts';
 import {
   defaultComputeLocalBoundsRectangle,
   initBoundsRectangleRuntimeTrait,

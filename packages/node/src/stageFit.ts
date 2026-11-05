@@ -1,14 +1,7 @@
 import { createRectangle } from '@flighthq/geometry/contract';
-import type {
-  BoundsNode,
-  HasBoundsRectangleRuntime,
-  MatrixLike,
-  NodeFields,
-  Rectangle,
-  Scene2DFitContext,
-  ViewportAlign,
-} from '@flighthq/types/contract';
+import type { MatrixLike, Rectangle, ViewportAlign } from '@flighthq/types/contract';
 
+import type { BoundsNode, HasBoundsRectangleRuntime, NodeFields, Scene2DFitContext } from './contract.node-types.ts';
 import { getNodeRuntime } from './node.ts';
 
 // The structural fit context these functions read: a root node plus how it maps into the view. `Scene2D`

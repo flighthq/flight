@@ -5,8 +5,9 @@ import {
   resolveColorAdjustmentsColorScaleBias,
 } from '@flighthq/adjustments/contract';
 import { createColorScaleBias } from '@flighthq/materials/contract';
-import type { Adjustment, ColorAdjustmentRuntime, Node, NodeRuntime } from '@flighthq/types/contract';
+import type { Adjustment, ColorAdjustmentRuntime } from '@flighthq/types/contract';
 
+import type { Node, NodeRuntime } from './contract.node-types.ts';
 import { getNodeRuntime } from './node.ts';
 import { invalidateNodeAppearance } from './revision.ts';
 

@@ -1,0 +1,31 @@
+import type { Entity, EntityRuntime } from '@flighthq/entity/contract';
+import type { Matrix } from '@flighthq/geometry/contract';
+
+import type { NodeOf, NodeFields } from './Node.ts';
+
+export interface HasTransform2D extends Entity {
+  /**
+   * Local pivot point that rotation and scale turn around and that aligns to (`x`, `y`). In local
+   * units, the same space as children. Defaults to 0,0 (top-left), which reproduces a pivot-free
+   * transform. A sprite built from a spritesheet frame sets this to the frame's registration point.
+   */
+  pivotX: number;
+  pivotY: number;
+  rotation: number;
+  scaleX: number;
+  scaleY: number;
+  skewX: number;
+  skewY: number;
+  x: number;
+  y: number;
+}
+
+export interface HasTransform2DRuntime extends EntityRuntime {
+  localMatrix: Matrix | null;
+  rotationAngle: number;
+  rotationCosine: number;
+  rotationSine: number;
+  worldMatrix: Matrix | null;
+}
+
+export type Transform2DNode<Fields extends object = NodeFields> = NodeOf<Fields> & HasTransform2D;

@@ -8,6 +8,7 @@
     "declarationMap": true,
     "sourceMap": true,
     "moduleSuffixes": [
+      ".node-types",
       ".adjustments-types",
       ".app-types",
       ".clip-types",
@@ -52,6 +53,9 @@
     },
     {
       "path": "../materials/tsconfig.contract.json"
+    },
+    {
+      "path": "../node/tsconfig.contract.json"
     }
   ],
   "files": [
@@ -73,12 +77,12 @@
     "src/EffectPadding.ts",
     "src/Entity.ts",
     "src/FocusEventData.ts",
-    "src/HasAppearance.ts",
-    "src/HasBlendMode.ts",
-    "src/HasBoundsRectangle.ts",
+    "src/HasAppearance.node-types.ts",
+    "src/HasBlendMode.node-types.ts",
+    "src/HasBoundsRectangle.node-types.ts",
     "src/HasClip.ts",
-    "src/HasMaterial.ts",
-    "src/HasTransform2D.ts",
+    "src/HasMaterial.node-types.ts",
+    "src/HasTransform2D.node-types.ts",
     "src/HostCanvas.ts",
     "src/HostImageSource.ts",
     "src/ImageResource.ts",
@@ -87,12 +91,12 @@
     "src/Material.materials-types.ts",
     "src/Material2D.materials-types.ts",
     "src/Matrix.ts",
-    "src/Node.ts",
+    "src/Node.node-types.ts",
     "src/Node2D.ts",
     "src/NodeInteraction.ts",
     "src/NodeInteractionState.ts",
     "src/NodeRenderer.ts",
-    "src/NodeSignals.ts",
+    "src/NodeSignals.node-types.ts",
     "src/PixelFormat.ts",
     "src/PointerEventData.ts",
     "src/Rectangle.ts",
@@ -101,7 +105,7 @@
     "src/RenderProxyAdapter.ts",
     "src/RenderRegistrySignals.ts",
     "src/RenderState.ts",
-    "src/RendererData.ts",
+    "src/RendererData.node-types.ts",
     "src/Sampler.ts",
     "src/Scene2D.ts",
     "src/Scene2DRenderer.ts",
@@ -117,7 +121,7 @@
     "src/TextureUvTransform.ts",
     "src/Vector2.ts",
     "src/ViewportAlign.ts",
-    "src/ViewportScaleMode.ts",
+    "src/ViewportScaleMode.node-types.ts",
     "src/VoxelGrid.ts",
     "src/contract.scene2d-dom-types.ts"
   ],

@@ -12,15 +12,9 @@ import {
   multiplyMatrix4,
   releaseMatrix4,
 } from '@flighthq/geometry/contract';
-import type {
-  HasTransform3DRuntime,
-  Matrix4Like,
-  NodeRuntime,
-  Transform3DLike,
-  Transform3DNode,
-  Vector3Like,
-} from '@flighthq/types/contract';
+import type { Matrix4Like, Transform3DLike, Vector3Like } from '@flighthq/types/contract';
 
+import type { HasTransform3DRuntime, NodeRuntime, Transform3DNode } from './contract.node-types.ts';
 import { computeNodeWorldTransformRevision, invalidateNodeLocalTransform } from './revision.ts';
 
 export function convertNodeVector3GlobalToLocal<Fields extends object>(

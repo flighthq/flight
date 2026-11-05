@@ -1,5 +1,4 @@
-import type { HasMaterial } from '@flighthq/types/contract';
-
+import type { HasMaterial } from './contract.node-types.ts';
 import { initMaterialTrait } from './hasMaterial.ts';
 import { createNode } from './node.ts';
 

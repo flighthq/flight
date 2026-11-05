@@ -1,6 +1,6 @@
 import { createNode, getNodeRuntime } from '@flighthq/node/contract';
-import type { Node, NodeRuntime } from '@flighthq/types/contract';
 
+import type { Node, NodeRuntime } from './contract.node-types.ts';
 import { addNodeChild } from './hierarchy.ts';
 import {
   computeNodeWorldTransformRevision,

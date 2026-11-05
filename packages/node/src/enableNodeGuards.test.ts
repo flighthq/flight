@@ -1,9 +1,10 @@
 import { getEntityRuntime as getRawEntityRuntime } from '@flighthq/entity/contract';
 import { createLogState, setLogSink } from '@flighthq/log/contract';
 import type { LogState } from '@flighthq/log/contract';
-import type { HasTransform2D, HasTransform2DRuntime, LogEntry, Node } from '@flighthq/types/contract';
+import type { LogEntry } from '@flighthq/types/contract';
 import { afterEach, beforeEach, describe, expect, test } from 'vitest';
 
+import type { HasTransform2D, HasTransform2DRuntime, Node } from './contract.node-types.ts';
 import { areNodeGuardsEnabled, disableNodeGuards, enableNodeGuards } from './enableNodeGuards.ts';
 import { initTransform2DRuntimeTrait, initTransform2DTrait } from './hasTransform2d.ts';
 import { reparentNode } from './hierarchy.ts';

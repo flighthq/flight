@@ -2,6 +2,7 @@ import { getEntityRuntime as getRawEntityRuntime } from '@flighthq/entity/contra
 import { cloneMatrix } from '@flighthq/geometry/contract';
 import { connectSignal, disconnectSignal } from '@flighthq/signals/contract';
 import type { Signal, SlotId } from '@flighthq/signals/contract';
+
 import type {
   HasTransform2D,
   HasTransform2DRuntime,
@@ -9,9 +10,8 @@ import type {
   NodeAny,
   NodeRuntime,
   NodeFields,
-} from '@flighthq/types/contract';
-import { NodeKind } from '@flighthq/types/contract';
-
+} from './contract.node-types.ts';
+import { NodeKind } from './contract.node-types.ts';
 import { initTransform2DRuntimeTrait, initTransform2DTrait } from './hasTransform2d.ts';
 import {
   addNodeChild,

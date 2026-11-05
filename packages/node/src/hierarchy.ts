@@ -7,8 +7,8 @@ import {
   releaseMatrix,
 } from '@flighthq/geometry/contract';
 import { emitSignal } from '@flighthq/signals/contract';
-import type { Node, NodeOf, NodeRuntime, Transform2DNode } from '@flighthq/types/contract';
 
+import type { Node, NodeOf, NodeRuntime, Transform2DNode } from './contract.node-types.ts';
 import { getNodeRuntime } from './node.ts';
 import { ensureNodeWorldMatrix, getNodeWorldMatrix } from './nodeTransform2d.ts';
 import { invalidateNodeLocalTransform, invalidateNodeParentReference, invalidateNodeWorldBounds } from './revision.ts';

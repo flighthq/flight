@@ -1,5 +1,4 @@
-import type { HasTransform2D, HasTransform2DRuntime, Node, NodeRuntime } from '@flighthq/types/contract';
-
+import type { HasTransform2D, HasTransform2DRuntime, Node, NodeRuntime } from './contract.node-types.ts';
 import { initTransform2DRuntimeTrait, initTransform2DTrait } from './hasTransform2d.ts';
 import { createNode, createNodeRuntime } from './node.ts';
 

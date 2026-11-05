@@ -1,11 +1,12 @@
+import type { Rectangle } from '@flighthq/types/contract';
+
 import type {
   BoundsNode,
   HasBoundsRectangle,
   HasBoundsRectangleRuntime,
   MethodsOf,
   NodeFields,
-  Rectangle,
-} from '@flighthq/types/contract';
+} from './contract.node-types.ts';
 
 export function defaultComputeLocalBoundsRectangle<Fields extends object = NodeFields>(
   _out: Rectangle,

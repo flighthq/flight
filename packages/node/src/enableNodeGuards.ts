@@ -1,8 +1,8 @@
 import { logOnce } from '@flighthq/log/contract';
 import type { LogState } from '@flighthq/log/contract';
-import type { Node } from '@flighthq/types/contract';
 import { LogLevel } from '@flighthq/types/contract';
 
+import type { Node } from './contract.node-types.ts';
 import { setReparentNodeGuard } from './hierarchy.ts';
 
 export function areNodeGuardsEnabled(): boolean {

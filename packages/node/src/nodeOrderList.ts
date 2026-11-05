@@ -1,7 +1,8 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { emitSignal } from '@flighthq/signals/contract';
+import type { EntityConstruction } from '@flighthq/types/contract';
+
 import type {
-  EntityConstruction,
   Node,
   NodeAny,
   NodeOf,
@@ -9,8 +10,7 @@ import type {
   NodeOrderListEntryVisitor,
   NodeRuntime,
   NodeFields,
-} from '@flighthq/types/contract';
-
+} from './contract.node-types.ts';
 import { getNodeRuntime } from './node.ts';
 
 /**

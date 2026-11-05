@@ -1,7 +1,7 @@
 import { connectSignal } from '@flighthq/signals/contract';
-import type { Node, NodeFields } from '@flighthq/types/contract';
-import { NodeKind } from '@flighthq/types/contract';
 
+import type { Node, NodeFields } from './contract.node-types.ts';
+import { NodeKind } from './contract.node-types.ts';
 import { addNodeChild, removeNodeChild } from './hierarchy.ts';
 import { createNode, enableNodeSignals, getNodeRuntime } from './node.ts';
 import {

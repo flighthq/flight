@@ -1,6 +1,6 @@
-import type { HasBlendMode } from '@flighthq/types/contract';
 import { BlendMode } from '@flighthq/types/contract';
 
+import type { HasBlendMode } from './contract.node-types.ts';
 import { initBlendModeTrait } from './hasBlendMode.ts';
 import { createNode } from './node.ts';
 

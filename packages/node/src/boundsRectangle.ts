@@ -11,17 +11,15 @@ import {
   releaseMatrix,
   setEmptyRectangle,
 } from '@flighthq/geometry/contract';
+import type { Matrix, Rectangle, RectangleLike } from '@flighthq/types/contract';
+
 import type {
   BoundsNode,
   HasBoundsRectangleRuntime,
   HasTransform2DRuntime,
-  Matrix,
   NodeRuntime,
-  Rectangle,
-  RectangleLike,
   Spatial2DNode,
-} from '@flighthq/types/contract';
-
+} from './contract.node-types.ts';
 import { getNodeChildCount, getNodeParent } from './hierarchy.ts';
 import { getNodeRuntime } from './node.ts';
 import { ensureNodeWorldMatrix, getNodeLocalMatrix, getNodeWorldMatrix } from './nodeTransform2d.ts';

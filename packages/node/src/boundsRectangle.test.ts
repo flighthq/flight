@@ -17,15 +17,7 @@ import {
   removeNodeChild,
   setNodeEnabled,
 } from '@flighthq/node/contract';
-import type {
-  HasBoundsRectangle,
-  HasBoundsRectangleRuntime,
-  HasTransform2D,
-  HasTransform2DRuntime,
-  Node,
-  NodeRuntime,
-  Rectangle,
-} from '@flighthq/types/contract';
+import type { Rectangle } from '@flighthq/types/contract';
 
 import {
   computeNodeBoundsRectangle,
@@ -41,6 +33,14 @@ import {
   setNodeHeight,
   setNodeWidth,
 } from './boundsRectangle.ts';
+import type {
+  HasBoundsRectangle,
+  HasBoundsRectangleRuntime,
+  HasTransform2D,
+  HasTransform2DRuntime,
+  Node,
+  NodeRuntime,
+} from './contract.node-types.ts';
 import { initBoundsRectangleRuntimeTrait, initBoundsRectangleTrait } from './hasBoundsRectangle.ts';
 
 function getEntityRuntime(

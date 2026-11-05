@@ -1,12 +1,2 @@
-import type { Signal } from '@flighthq/signals/contract';
-
-import type { Entity } from './Entity.ts';
-import type { NodeAny } from './Node.ts';
-
-export interface NodeSignals extends Entity {
-  onChildAdded: Signal<NodeAny>;
-  onChildRemoved: Signal<NodeAny>;
-  onChildrenChanged: Signal<void>;
-  onChildrenOrderChanged: Signal<void>;
-  onParentChanged: Signal<void>;
-}
+// Compatibility facade: node owns these contracts.
+export type { NodeSignals } from '@flighthq/node/contract';

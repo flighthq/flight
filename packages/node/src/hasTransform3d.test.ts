@@ -1,6 +1,6 @@
 import { createQuaternion, createVector3 } from '@flighthq/geometry/contract';
-import type { HasTransform3D, HasTransform3DRuntime, Node, NodeRuntime } from '@flighthq/types/contract';
 
+import type { HasTransform3D, HasTransform3DRuntime, Node, NodeRuntime } from './contract.node-types.ts';
 import { initTransform3DRuntimeTrait, initTransform3DTrait } from './hasTransform3d.ts';
 import { createNode, createNodeRuntime } from './node.ts';
 

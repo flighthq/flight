@@ -1,5 +1,4 @@
-import type { Node, NodeDescendantVisitor, NodeOf, NodeFields } from '@flighthq/types/contract';
-
+import type { Node, NodeDescendantVisitor, NodeOf, NodeFields } from './contract.node-types.ts';
 import { getNodeParent } from './hierarchy.ts';
 import { getNodeRuntime } from './node.ts';
 

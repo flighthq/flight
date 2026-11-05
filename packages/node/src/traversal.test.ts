@@ -1,6 +1,5 @@
-import type { Node, NodeRuntime, NodeFields } from '@flighthq/types/contract';
-import { NodeKind } from '@flighthq/types/contract';
-
+import type { Node, NodeRuntime, NodeFields } from './contract.node-types.ts';
+import { NodeKind } from './contract.node-types.ts';
 import { addNodeChild } from './hierarchy.ts';
 import { createNode, getNodeRuntime } from './node.ts';
 import {
