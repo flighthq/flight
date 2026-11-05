@@ -9,11 +9,21 @@
     "sourceMap": true
   },
   "references": [
-    { "path": "../entity" },
-    { "path": "../geometry/tsconfig.runtime.json" },
-    { "path": "../node" },
-    { "path": "../path/tsconfig.runtime.json" },
-    { "path": "../signals" }
+    {
+      "path": "../entity"
+    },
+    {
+      "path": "../geometry/tsconfig.runtime.json"
+    },
+    {
+      "path": "../node/tsconfig.runtime.json"
+    },
+    {
+      "path": "../path/tsconfig.runtime.json"
+    },
+    {
+      "path": "../signals"
+    }
   ],
   "include": ["src"]
 }

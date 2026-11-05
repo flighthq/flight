@@ -20,7 +20,7 @@
       "path": "../log"
     },
     {
-      "path": "../materials"
+      "path": "../materials/tsconfig.runtime.json"
     },
     {
       "path": "../math"

@@ -1,12 +1,14 @@
 import type { ColorAdjustmentRuntime } from '@flighthq/adjustments/contract';
-import type { Entity, EntityRuntime, EntityRuntimeKey, Kind } from '@flighthq/entity/contract';
+import type { EntityRaw, EntityRuntime, EntityRuntimeKey, Kind } from '@flighthq/entity/contract';
 
 import type { NodeSignals } from './NodeSignals.ts';
 declare const NodeFieldsKey: unique symbol;
 export type NodeFieldsKey<T extends object> = symbol & {
   readonly [NodeFieldsKey]?: T;
 };
-export interface NodeData extends Entity {}
+export interface NodeData extends EntityRaw {
+  [EntityRuntimeKey]: EntityRuntime | undefined;
+}
 export type NodeDataFactory<D extends NodeData> = () => D;
 export type NodeRuntimeFactory<R extends EntityRuntime> = () => R;
 export interface NodeFields {
@@ -15,7 +17,7 @@ export interface NodeFields {
   kind: Kind;
   name: string | null;
 }
-export interface Node<Fields extends object = NodeFields> extends NodeFields, Entity {
+export interface Node<Fields extends object = NodeFields> extends NodeFields, EntityRaw {
   [EntityRuntimeKey]: NodeRuntime<Fields> | undefined;
 }
 export type NodeOf<Fields extends object> = Node<Fields> & NoInfer<Fields>;

@@ -1,17 +1,41 @@
 {
-  "compilerOptions": { "composite": true },
+  "compilerOptions": {
+    "composite": true
+  },
   "files": [],
   "references": [
-    { "path": "../animation" },
-    { "path": "../entity" },
-    { "path": "../geometry/tsconfig.runtime.json" },
-    { "path": "../log" },
-    { "path": "../math" },
-    { "path": "../node" },
-    { "path": "../path/tsconfig.runtime.json" },
-    { "path": "../scene2d" },
-    { "path": "../types" },
-    { "path": "./tsconfig.contract.json" },
-    { "path": "./tsconfig.runtime.json" }
+    {
+      "path": "../animation"
+    },
+    {
+      "path": "../entity"
+    },
+    {
+      "path": "../geometry/tsconfig.runtime.json"
+    },
+    {
+      "path": "../log"
+    },
+    {
+      "path": "../math"
+    },
+    {
+      "path": "../node/tsconfig.runtime.json"
+    },
+    {
+      "path": "../path/tsconfig.runtime.json"
+    },
+    {
+      "path": "../scene2d"
+    },
+    {
+      "path": "../types"
+    },
+    {
+      "path": "./tsconfig.contract.json"
+    },
+    {
+      "path": "./tsconfig.runtime.json"
+    }
   ]
 }

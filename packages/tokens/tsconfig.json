@@ -9,12 +9,24 @@
     "sourceMap": true
   },
   "references": [
-    { "path": "../entity" },
-    { "path": "../node" },
-    { "path": "../registry" },
-    { "path": "../scene-document" },
-    { "path": "../scene2d" },
-    { "path": "../types" }
+    {
+      "path": "../entity"
+    },
+    {
+      "path": "../node/tsconfig.runtime.json"
+    },
+    {
+      "path": "../registry"
+    },
+    {
+      "path": "../scene-document"
+    },
+    {
+      "path": "../scene2d"
+    },
+    {
+      "path": "../types"
+    }
   ],
   "include": ["src"]
 }

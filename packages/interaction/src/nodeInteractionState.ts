@@ -29,7 +29,7 @@ export function createNodeInteractionState(): NodeInteractionState {
  */
 export function enableNodeInteractionState(source: NodeAny): NodeInteractionState {
   const runtime = getNodeRuntime(source) as NodeRuntime<NodeAny>;
-  return (runtime.interactionState ??= createNodeInteractionState());
+  return (runtime.interactionState ??= createNodeInteractionState()) as NodeInteractionState;
 }
 
 /** Rollover cursor for this node, or `null` when unset (inherits nearest ancestor / backend default). */
@@ -44,7 +44,7 @@ export function getNodeHitArea(source: Readonly<NodeAny>): HitArea | null {
 
 /** Raw interaction-state cell, or `null` if the node has never had one enabled. */
 export function getNodeInteractionState(source: Readonly<NodeAny>): NodeInteractionState | null {
-  return (getNodeRuntime(source) as NodeRuntime<NodeAny>).interactionState;
+  return (getNodeRuntime(source) as NodeRuntime<NodeAny>).interactionState as NodeInteractionState | null;
 }
 
 /** Focus-order key for this node; `-1` (the default) means natural order. */

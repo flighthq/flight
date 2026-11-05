@@ -33,7 +33,7 @@
       "path": "../menu/tsconfig.contract.json"
     },
     {
-      "path": "../notification"
+      "path": "../notification/tsconfig.runtime.json"
     },
     {
       "path": "../platform"

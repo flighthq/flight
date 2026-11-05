@@ -28,7 +28,7 @@
       "path": "../assets"
     },
     {
-      "path": "../audio"
+      "path": "../audio/tsconfig.runtime.json"
     },
     {
       "path": "../binpack"
@@ -55,7 +55,7 @@
       "path": "../capture"
     },
     {
-      "path": "../clip"
+      "path": "../clip/tsconfig.runtime.json"
     },
     {
       "path": "../clipboard"
@@ -94,7 +94,7 @@
       "path": "../host/tsconfig.runtime.json"
     },
     {
-      "path": "../preferences"
+      "path": "../preferences/tsconfig.runtime.json"
     },
     {
       "path": "../scene2d"
@@ -103,10 +103,10 @@
       "path": "../scene2d-canvas"
     },
     {
-      "path": "../scene2d-dom"
+      "path": "../scene2d-dom/tsconfig.runtime.json"
     },
     {
-      "path": "../scene2d-formats"
+      "path": "../scene2d-formats/tsconfig.runtime.json"
     },
     {
       "path": "../scene2d-resources"
@@ -115,7 +115,7 @@
       "path": "../scene2d-gl"
     },
     {
-      "path": "../scene2d-wgpu"
+      "path": "../scene2d-wgpu/tsconfig.runtime.json"
     },
     {
       "path": "../scene-document"
@@ -145,7 +145,7 @@
       "path": "../flow/tsconfig.runtime.json"
     },
     {
-      "path": "../font"
+      "path": "../font/tsconfig.runtime.json"
     },
     {
       "path": "../font-formats"
@@ -169,7 +169,7 @@
       "path": "../haptics"
     },
     {
-      "path": "../image"
+      "path": "../image/tsconfig.runtime.json"
     },
     {
       "path": "../image-codec"
@@ -208,7 +208,7 @@
       "path": "../log"
     },
     {
-      "path": "../materials"
+      "path": "../materials/tsconfig.runtime.json"
     },
     {
       "path": "../math"
@@ -223,7 +223,7 @@
       "path": "../menu/tsconfig.runtime.json"
     },
     {
-      "path": "../midi"
+      "path": "../midi/tsconfig.runtime.json"
     },
     {
       "path": "../meshgeometry"
@@ -238,10 +238,10 @@
       "path": "../net"
     },
     {
-      "path": "../node"
+      "path": "../node/tsconfig.runtime.json"
     },
     {
-      "path": "../notification"
+      "path": "../notification/tsconfig.runtime.json"
     },
     {
       "path": "../particleemitter"
@@ -262,7 +262,7 @@
       "path": "../path-formats"
     },
     {
-      "path": "../permissions"
+      "path": "../permissions/tsconfig.runtime.json"
     },
     {
       "path": "../picking"
@@ -283,7 +283,7 @@
       "path": "../render-gl"
     },
     {
-      "path": "../render-wgpu"
+      "path": "../render-wgpu/tsconfig.runtime.json"
     },
     {
       "path": "../resource"
@@ -313,7 +313,7 @@
       "path": "../scene3d-resources"
     },
     {
-      "path": "../scene3d-wgpu"
+      "path": "../scene3d-wgpu/tsconfig.runtime.json"
     },
     {
       "path": "../screen"
@@ -328,10 +328,10 @@
       "path": "../shading"
     },
     {
-      "path": "../shape"
+      "path": "../shape/tsconfig.runtime.json"
     },
     {
-      "path": "../shape-formats"
+      "path": "../shape-formats/tsconfig.runtime.json"
     },
     {
       "path": "../share"
@@ -373,7 +373,7 @@
       "path": "../physics3d-abi"
     },
     {
-      "path": "../spatial"
+      "path": "../spatial/tsconfig.runtime.json"
     },
     {
       "path": "../spring"

@@ -17,13 +17,13 @@
       "path": "../adjustments/tsconfig.runtime.json"
     },
     {
-      "path": "../audio"
+      "path": "../audio/tsconfig.runtime.json"
     },
     {
       "path": "../bitmap"
     },
     {
-      "path": "../clip"
+      "path": "../clip/tsconfig.runtime.json"
     },
     {
       "path": "../color"
@@ -38,7 +38,7 @@
       "path": "../entity"
     },
     {
-      "path": "../font"
+      "path": "../font/tsconfig.runtime.json"
     },
     {
       "path": "../geometry/tsconfig.runtime.json"
@@ -47,7 +47,7 @@
       "path": "../glyphatlas"
     },
     {
-      "path": "../image"
+      "path": "../image/tsconfig.runtime.json"
     },
     {
       "path": "../image-codec"
@@ -65,7 +65,7 @@
       "path": "../movieclip"
     },
     {
-      "path": "../node"
+      "path": "../node/tsconfig.runtime.json"
     },
     {
       "path": "../path/tsconfig.runtime.json"
@@ -80,7 +80,7 @@
       "path": "../scene2d-resources"
     },
     {
-      "path": "../shape"
+      "path": "../shape/tsconfig.runtime.json"
     },
     {
       "path": "../text/tsconfig.runtime.json"

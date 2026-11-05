@@ -12,7 +12,7 @@
   "references": [
     { "path": "../geometry/tsconfig.runtime.json" },
     { "path": "../registry" },
-    { "path": "../shape" },
+    { "path": "../shape/tsconfig.runtime.json" },
     { "path": "../types" },
     { "path": "./tsconfig.contract.json" }
   ],

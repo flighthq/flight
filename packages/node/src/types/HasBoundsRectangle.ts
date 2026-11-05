@@ -1,10 +1,10 @@
-import type { Entity, EntityRuntime } from '@flighthq/entity/contract';
+import type { EntityRaw, EntityRuntime } from '@flighthq/entity/contract';
 import type { Rectangle } from '@flighthq/geometry/contract';
 
 import type { HasTransform2D } from './HasTransform2D.ts';
 import type { NodeAny, NodeOf, NodeFields } from './Node.ts';
 
-export interface HasBoundsRectangle extends Entity {}
+export interface HasBoundsRectangle extends EntityRaw {}
 
 // Generic over the same Fields parameter NodeRuntime<Fields> carries, so a bounds callback receives
 // the node family it was registered for rather than a node erased to `any`. The C++ port has no way

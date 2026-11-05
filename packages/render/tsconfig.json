@@ -34,13 +34,13 @@
       "path": "../log"
     },
     {
-      "path": "../materials"
+      "path": "../materials/tsconfig.runtime.json"
     },
     {
       "path": "../meshgeometry"
     },
     {
-      "path": "../node"
+      "path": "../node/tsconfig.runtime.json"
     },
     {
       "path": "../scene3d"

@@ -22,7 +22,7 @@
       "path": "../log"
     },
     {
-      "path": "../node"
+      "path": "../node/tsconfig.runtime.json"
     },
     {
       "path": "../registry"

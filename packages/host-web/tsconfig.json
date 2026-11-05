@@ -11,46 +11,126 @@
     "types": ["node", "@testing-library/jest-dom", "vitest/globals", "@webgpu/types"]
   },
   "references": [
-    { "path": "../app/tsconfig.runtime.json" },
-    { "path": "../audio" },
-    { "path": "../bitmap" },
-    { "path": "../device" },
-    { "path": "../dialog" },
-    { "path": "../entity" },
-    { "path": "../filesystem" },
-    { "path": "../font" },
-    { "path": "../geolocation" },
-    { "path": "../glyphatlas" },
-    { "path": "../haptics" },
-    { "path": "../host/tsconfig.runtime.json" },
-    { "path": "../image" },
-    { "path": "../image-codec" },
-    { "path": "../input" },
-    { "path": "../lifecycle" },
-    { "path": "../media" },
-    { "path": "../menu/tsconfig.contract.json" },
-    { "path": "../midi" },
-    { "path": "../notification" },
-    { "path": "../platform" },
-    { "path": "../power" },
-    { "path": "../preferences" },
-    { "path": "../protocol" },
-    { "path": "../render" },
-    { "path": "../render-gl" },
-    { "path": "../render-wgpu" },
-    { "path": "../screen" },
-    { "path": "../sensors" },
-    { "path": "../share" },
-    { "path": "../signals" },
-    { "path": "../statusbar" },
-    { "path": "../text/tsconfig.runtime.json" },
-    { "path": "../textformat" },
-    { "path": "../texture" },
-    { "path": "../textureatlas" },
-    { "path": "../surface" },
-    { "path": "../types" },
-    { "path": "../useragent" },
-    { "path": "../video" }
+    {
+      "path": "../app/tsconfig.runtime.json"
+    },
+    {
+      "path": "../audio/tsconfig.runtime.json"
+    },
+    {
+      "path": "../bitmap"
+    },
+    {
+      "path": "../device"
+    },
+    {
+      "path": "../dialog"
+    },
+    {
+      "path": "../entity"
+    },
+    {
+      "path": "../filesystem"
+    },
+    {
+      "path": "../font/tsconfig.runtime.json"
+    },
+    {
+      "path": "../geolocation"
+    },
+    {
+      "path": "../glyphatlas"
+    },
+    {
+      "path": "../haptics"
+    },
+    {
+      "path": "../host/tsconfig.runtime.json"
+    },
+    {
+      "path": "../image/tsconfig.runtime.json"
+    },
+    {
+      "path": "../image-codec"
+    },
+    {
+      "path": "../input"
+    },
+    {
+      "path": "../lifecycle"
+    },
+    {
+      "path": "../media"
+    },
+    {
+      "path": "../menu/tsconfig.contract.json"
+    },
+    {
+      "path": "../midi/tsconfig.runtime.json"
+    },
+    {
+      "path": "../notification/tsconfig.runtime.json"
+    },
+    {
+      "path": "../platform"
+    },
+    {
+      "path": "../power"
+    },
+    {
+      "path": "../preferences/tsconfig.runtime.json"
+    },
+    {
+      "path": "../protocol"
+    },
+    {
+      "path": "../render"
+    },
+    {
+      "path": "../render-gl"
+    },
+    {
+      "path": "../render-wgpu/tsconfig.runtime.json"
+    },
+    {
+      "path": "../screen"
+    },
+    {
+      "path": "../sensors"
+    },
+    {
+      "path": "../share"
+    },
+    {
+      "path": "../signals"
+    },
+    {
+      "path": "../statusbar"
+    },
+    {
+      "path": "../text/tsconfig.runtime.json"
+    },
+    {
+      "path": "../textformat"
+    },
+    {
+      "path": "../texture"
+    },
+    {
+      "path": "../textureatlas"
+    },
+    {
+      "path": "../surface"
+    },
+    {
+      "path": "../types"
+    },
+    {
+      "path": "../useragent"
+    },
+    {
+      "path": "../video"
+    }
   ],
   "include": ["src"]
 }

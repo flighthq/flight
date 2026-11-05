@@ -9,15 +9,33 @@
     "sourceMap": true
   },
   "references": [
-    { "path": "../camera" },
-    { "path": "../entity" },
-    { "path": "../geometry/tsconfig.runtime.json" },
-    { "path": "../lighting" },
-    { "path": "../node" },
-    { "path": "../registry" },
-    { "path": "../scene2d" },
-    { "path": "../scene3d" },
-    { "path": "../types" }
+    {
+      "path": "../camera"
+    },
+    {
+      "path": "../entity"
+    },
+    {
+      "path": "../geometry/tsconfig.runtime.json"
+    },
+    {
+      "path": "../lighting"
+    },
+    {
+      "path": "../node/tsconfig.runtime.json"
+    },
+    {
+      "path": "../registry"
+    },
+    {
+      "path": "../scene2d"
+    },
+    {
+      "path": "../scene3d"
+    },
+    {
+      "path": "../types"
+    }
   ],
   "include": ["src"]
 }

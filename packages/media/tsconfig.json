@@ -10,7 +10,7 @@
   },
   "references": [
     {
-      "path": "../audio"
+      "path": "../audio/tsconfig.runtime.json"
     },
     {
       "path": "../entity"

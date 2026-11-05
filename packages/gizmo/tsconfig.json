@@ -9,16 +9,36 @@
     "sourceMap": true
   },
   "references": [
-    { "path": "../camera" },
-    { "path": "../geometry/tsconfig.runtime.json" },
-    { "path": "../interaction" },
-    { "path": "../math" },
-    { "path": "../node" },
-    { "path": "../scene2d" },
-    { "path": "../selection" },
-    { "path": "../shape" },
-    { "path": "../signals" },
-    { "path": "../types" }
+    {
+      "path": "../camera"
+    },
+    {
+      "path": "../geometry/tsconfig.runtime.json"
+    },
+    {
+      "path": "../interaction"
+    },
+    {
+      "path": "../math"
+    },
+    {
+      "path": "../node/tsconfig.runtime.json"
+    },
+    {
+      "path": "../scene2d"
+    },
+    {
+      "path": "../selection"
+    },
+    {
+      "path": "../shape/tsconfig.runtime.json"
+    },
+    {
+      "path": "../signals"
+    },
+    {
+      "path": "../types"
+    }
   ],
   "include": ["src"]
 }

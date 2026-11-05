@@ -9,23 +9,57 @@
     "sourceMap": true
   },
   "references": [
-    { "path": "../entity" },
-    { "path": "../geometry/tsconfig.runtime.json" },
-    { "path": "../node" },
-    { "path": "../registry" },
-    { "path": "../scene2d" },
-    { "path": "../log" },
-    { "path": "../path/tsconfig.runtime.json" },
-    { "path": "../shape" },
-    { "path": "../signals" },
-    { "path": "../spatial" },
-    { "path": "../quadbatch" },
-    { "path": "../tilemap" },
-    { "path": "../bitmap" },
-    { "path": "../clip" },
-    { "path": "../text/tsconfig.runtime.json" },
-    { "path": "../textlayout/tsconfig.runtime.json" },
-    { "path": "../types" }
+    {
+      "path": "../entity"
+    },
+    {
+      "path": "../geometry/tsconfig.runtime.json"
+    },
+    {
+      "path": "../node/tsconfig.runtime.json"
+    },
+    {
+      "path": "../registry"
+    },
+    {
+      "path": "../scene2d"
+    },
+    {
+      "path": "../log"
+    },
+    {
+      "path": "../path/tsconfig.runtime.json"
+    },
+    {
+      "path": "../shape/tsconfig.runtime.json"
+    },
+    {
+      "path": "../signals"
+    },
+    {
+      "path": "../spatial/tsconfig.runtime.json"
+    },
+    {
+      "path": "../quadbatch"
+    },
+    {
+      "path": "../tilemap"
+    },
+    {
+      "path": "../bitmap"
+    },
+    {
+      "path": "../clip/tsconfig.runtime.json"
+    },
+    {
+      "path": "../text/tsconfig.runtime.json"
+    },
+    {
+      "path": "../textlayout/tsconfig.runtime.json"
+    },
+    {
+      "path": "../types"
+    }
   ],
   "include": ["src"]
 }

@@ -13,7 +13,7 @@
       "path": "../entity"
     },
     {
-      "path": "../node"
+      "path": "../node/tsconfig.runtime.json"
     },
     {
       "path": "../registry"

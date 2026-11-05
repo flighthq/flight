@@ -29,13 +29,13 @@
       "path": "../geometry/tsconfig.runtime.json"
     },
     {
-      "path": "../image"
+      "path": "../image/tsconfig.runtime.json"
     },
     {
       "path": "../log"
     },
     {
-      "path": "../node"
+      "path": "../node/tsconfig.runtime.json"
     },
     {
       "path": "../path/tsconfig.runtime.json"
@@ -53,7 +53,7 @@
       "path": "../scene2d"
     },
     {
-      "path": "../shape"
+      "path": "../shape/tsconfig.runtime.json"
     },
     {
       "path": "../signals"

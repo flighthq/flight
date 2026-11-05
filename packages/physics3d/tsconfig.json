@@ -9,7 +9,9 @@
     "sourceMap": true
   },
   "references": [
-    { "path": "../entity" },
+    {
+      "path": "../entity"
+    },
     {
       "path": "../collision"
     },
@@ -26,13 +28,13 @@
       "path": "../math"
     },
     {
-      "path": "../node"
+      "path": "../node/tsconfig.runtime.json"
     },
     {
       "path": "../scene3d"
     },
     {
-      "path": "../spatial"
+      "path": "../spatial/tsconfig.runtime.json"
     },
     {
       "path": "../types"

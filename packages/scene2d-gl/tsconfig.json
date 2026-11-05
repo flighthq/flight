@@ -31,13 +31,13 @@
       "path": "../geometry/tsconfig.runtime.json"
     },
     {
-      "path": "../image"
+      "path": "../image/tsconfig.runtime.json"
     },
     {
       "path": "../log"
     },
     {
-      "path": "../node"
+      "path": "../node/tsconfig.runtime.json"
     },
     {
       "path": "../particleemitter"
@@ -55,7 +55,7 @@
       "path": "../render-gl"
     },
     {
-      "path": "../shape"
+      "path": "../shape/tsconfig.runtime.json"
     },
     {
       "path": "../quadbatch"

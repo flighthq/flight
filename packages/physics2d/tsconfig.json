@@ -22,13 +22,13 @@
       "path": "../math"
     },
     {
-      "path": "../node"
+      "path": "../node/tsconfig.runtime.json"
     },
     {
       "path": "../scene2d"
     },
     {
-      "path": "../spatial"
+      "path": "../spatial/tsconfig.runtime.json"
     },
     {
       "path": "../types"

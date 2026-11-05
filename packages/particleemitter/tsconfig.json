@@ -9,14 +9,30 @@
     "sourceMap": true
   },
   "references": [
-    { "path": "../entity" },
-    { "path": "../scene2d" },
-    { "path": "../geometry/tsconfig.runtime.json" },
-    { "path": "../math" },
-    { "path": "../node" },
-    { "path": "../particles" },
-    { "path": "../scene3d" },
-    { "path": "../types" }
+    {
+      "path": "../entity"
+    },
+    {
+      "path": "../scene2d"
+    },
+    {
+      "path": "../geometry/tsconfig.runtime.json"
+    },
+    {
+      "path": "../math"
+    },
+    {
+      "path": "../node/tsconfig.runtime.json"
+    },
+    {
+      "path": "../particles"
+    },
+    {
+      "path": "../scene3d"
+    },
+    {
+      "path": "../types"
+    }
   ],
   "include": ["src"]
 }

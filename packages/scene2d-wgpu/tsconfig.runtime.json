@@ -12,32 +12,84 @@
     "tsBuildInfoFile": "dist/.tsbuildinfo.runtime"
   },
   "references": [
-    { "path": "../bitmaptext" },
-    { "path": "../color" },
-    { "path": "../entity" },
-    { "path": "../scene2d" },
-    { "path": "../scene2d-canvas" },
-    { "path": "../geometry/tsconfig.runtime.json" },
-    { "path": "../image" },
-    { "path": "../log" },
-    { "path": "../node" },
-    { "path": "../particleemitter" },
-    { "path": "../path/tsconfig.runtime.json" },
-    { "path": "../registry" },
-    { "path": "../render" },
-    { "path": "../render-wgpu" },
-    { "path": "../shape" },
-    { "path": "../quadbatch" },
-    { "path": "../tilemap" },
-    { "path": "../text/tsconfig.runtime.json" },
-    { "path": "../textformat" },
-    { "path": "../textinput" },
-    { "path": "../textlayout/tsconfig.runtime.json" },
-    { "path": "../texture" },
-    { "path": "../textureatlas" },
-    { "path": "../types" },
-    { "path": "../velocity/tsconfig.runtime.json" },
-    { "path": "./tsconfig.contract.json" }
+    {
+      "path": "../bitmaptext"
+    },
+    {
+      "path": "../color"
+    },
+    {
+      "path": "../entity"
+    },
+    {
+      "path": "../scene2d"
+    },
+    {
+      "path": "../scene2d-canvas"
+    },
+    {
+      "path": "../geometry/tsconfig.runtime.json"
+    },
+    {
+      "path": "../image/tsconfig.runtime.json"
+    },
+    {
+      "path": "../log"
+    },
+    {
+      "path": "../node/tsconfig.runtime.json"
+    },
+    {
+      "path": "../particleemitter"
+    },
+    {
+      "path": "../path/tsconfig.runtime.json"
+    },
+    {
+      "path": "../registry"
+    },
+    {
+      "path": "../render"
+    },
+    {
+      "path": "../render-wgpu/tsconfig.runtime.json"
+    },
+    {
+      "path": "../shape/tsconfig.runtime.json"
+    },
+    {
+      "path": "../quadbatch"
+    },
+    {
+      "path": "../tilemap"
+    },
+    {
+      "path": "../text/tsconfig.runtime.json"
+    },
+    {
+      "path": "../textformat"
+    },
+    {
+      "path": "../textinput"
+    },
+    {
+      "path": "../textlayout/tsconfig.runtime.json"
+    },
+    {
+      "path": "../texture"
+    },
+    {
+      "path": "../textureatlas"
+    },
+    {
+      "path": "../types"
+    },
+    {
+      "path": "../velocity/tsconfig.runtime.json"
+    },
+    {
+      "path": "./tsconfig.contract.json"
+    }
   ],
   "include": ["src/**/*.ts"],
   "exclude": ["src/contract.scene2d-wgpu-types.ts", "src/types/**/*.ts"]

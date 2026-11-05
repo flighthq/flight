@@ -9,14 +9,30 @@
     "sourceMap": true
   },
   "references": [
-    { "path": "../entity" },
-    { "path": "../input" },
-    { "path": "../node" },
-    { "path": "../signals" },
-    { "path": "../text/tsconfig.runtime.json" },
-    { "path": "../textformat" },
-    { "path": "../textlayout/tsconfig.runtime.json" },
-    { "path": "../textsegment" }
+    {
+      "path": "../entity"
+    },
+    {
+      "path": "../input"
+    },
+    {
+      "path": "../node/tsconfig.runtime.json"
+    },
+    {
+      "path": "../signals"
+    },
+    {
+      "path": "../text/tsconfig.runtime.json"
+    },
+    {
+      "path": "../textformat"
+    },
+    {
+      "path": "../textlayout/tsconfig.runtime.json"
+    },
+    {
+      "path": "../textsegment"
+    }
   ],
   "include": ["src"]
 }

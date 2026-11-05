@@ -1,31 +1,83 @@
 {
-  "compilerOptions": { "composite": true },
+  "compilerOptions": {
+    "composite": true
+  },
   "files": [],
   "references": [
-    { "path": "../animation" },
-    { "path": "../clip" },
-    { "path": "../color" },
-    { "path": "../scene2d" },
-    { "path": "../easing" },
-    { "path": "../geometry/tsconfig.runtime.json" },
-    { "path": "../image" },
-    { "path": "../importdiagnostics" },
-    { "path": "../requirement" },
-    { "path": "../math" },
-    { "path": "../node" },
-    { "path": "../path/tsconfig.runtime.json" },
-    { "path": "../path-boolean/tsconfig.runtime.json" },
-    { "path": "../path-formats" },
-    { "path": "../shape" },
-    { "path": "../skeleton2d" },
-    { "path": "../text/tsconfig.runtime.json" },
-    { "path": "../textformat" },
-    { "path": "../textlayout/tsconfig.runtime.json" },
-    { "path": "../texture" },
-    { "path": "../entity" },
-    { "path": "../types" },
-    { "path": "../xml" },
-    { "path": "./tsconfig.contract.json" },
-    { "path": "./tsconfig.runtime.json" }
+    {
+      "path": "../animation"
+    },
+    {
+      "path": "../clip/tsconfig.runtime.json"
+    },
+    {
+      "path": "../color"
+    },
+    {
+      "path": "../scene2d"
+    },
+    {
+      "path": "../easing"
+    },
+    {
+      "path": "../geometry/tsconfig.runtime.json"
+    },
+    {
+      "path": "../image/tsconfig.runtime.json"
+    },
+    {
+      "path": "../importdiagnostics"
+    },
+    {
+      "path": "../requirement"
+    },
+    {
+      "path": "../math"
+    },
+    {
+      "path": "../node/tsconfig.runtime.json"
+    },
+    {
+      "path": "../path/tsconfig.runtime.json"
+    },
+    {
+      "path": "../path-boolean/tsconfig.runtime.json"
+    },
+    {
+      "path": "../path-formats"
+    },
+    {
+      "path": "../shape/tsconfig.runtime.json"
+    },
+    {
+      "path": "../skeleton2d"
+    },
+    {
+      "path": "../text/tsconfig.runtime.json"
+    },
+    {
+      "path": "../textformat"
+    },
+    {
+      "path": "../textlayout/tsconfig.runtime.json"
+    },
+    {
+      "path": "../texture"
+    },
+    {
+      "path": "../entity"
+    },
+    {
+      "path": "../types"
+    },
+    {
+      "path": "../xml"
+    },
+    {
+      "path": "./tsconfig.contract.json"
+    },
+    {
+      "path": "./tsconfig.runtime.json"
+    }
   ]
 }

@@ -9,14 +9,30 @@
     "sourceMap": true
   },
   "references": [
-    { "path": "../color" },
-    { "path": "../entity" },
-    { "path": "../geometry/tsconfig.runtime.json" },
-    { "path": "../node" },
-    { "path": "../registry" },
-    { "path": "../render" },
-    { "path": "../signals" },
-    { "path": "../types" }
+    {
+      "path": "../color"
+    },
+    {
+      "path": "../entity"
+    },
+    {
+      "path": "../geometry/tsconfig.runtime.json"
+    },
+    {
+      "path": "../node/tsconfig.runtime.json"
+    },
+    {
+      "path": "../registry"
+    },
+    {
+      "path": "../render"
+    },
+    {
+      "path": "../signals"
+    },
+    {
+      "path": "../types"
+    }
   ],
   "include": ["src"]
 }

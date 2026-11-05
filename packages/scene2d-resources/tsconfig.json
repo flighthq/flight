@@ -10,18 +10,42 @@
     "types": ["@testing-library/jest-dom", "vitest/globals", "@webgpu/types"]
   },
   "references": [
-    { "path": "../audio" },
-    { "path": "../entity" },
-    { "path": "../image" },
-    { "path": "../image-codec" },
-    { "path": "../log" },
-    { "path": "../node" },
-    { "path": "../path-boolean/tsconfig.runtime.json" },
-    { "path": "../scene2d" },
-    { "path": "../scene2d-formats" },
-    { "path": "../signals" },
-    { "path": "../texture" },
-    { "path": "../types" }
+    {
+      "path": "../audio/tsconfig.runtime.json"
+    },
+    {
+      "path": "../entity"
+    },
+    {
+      "path": "../image/tsconfig.runtime.json"
+    },
+    {
+      "path": "../image-codec"
+    },
+    {
+      "path": "../log"
+    },
+    {
+      "path": "../node/tsconfig.runtime.json"
+    },
+    {
+      "path": "../path-boolean/tsconfig.runtime.json"
+    },
+    {
+      "path": "../scene2d"
+    },
+    {
+      "path": "../scene2d-formats/tsconfig.runtime.json"
+    },
+    {
+      "path": "../signals"
+    },
+    {
+      "path": "../texture"
+    },
+    {
+      "path": "../types"
+    }
   ],
   "include": ["src"]
 }

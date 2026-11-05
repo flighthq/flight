@@ -37,10 +37,10 @@
       "path": "../requirement-codegen"
     },
     {
-      "path": "../scene2d-dom"
+      "path": "../scene2d-dom/tsconfig.runtime.json"
     },
     {
-      "path": "../scene2d-formats"
+      "path": "../scene2d-formats/tsconfig.runtime.json"
     },
     {
       "path": "../scene3d-formats"

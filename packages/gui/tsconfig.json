@@ -9,12 +9,24 @@
     "sourceMap": true
   },
   "references": [
-    { "path": "../interaction" },
-    { "path": "../node" },
-    { "path": "../signals" },
-    { "path": "../text/tsconfig.runtime.json" },
-    { "path": "../textinput" },
-    { "path": "../types" }
+    {
+      "path": "../interaction"
+    },
+    {
+      "path": "../node/tsconfig.runtime.json"
+    },
+    {
+      "path": "../signals"
+    },
+    {
+      "path": "../text/tsconfig.runtime.json"
+    },
+    {
+      "path": "../textinput"
+    },
+    {
+      "path": "../types"
+    }
   ],
   "include": ["src"]
 }

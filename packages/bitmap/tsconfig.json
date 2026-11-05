@@ -8,6 +8,16 @@
     "declarationMap": true,
     "sourceMap": true
   },
-  "references": [{ "path": "../image" }, { "path": "../entity" }, { "path": "../types" }],
+  "references": [
+    {
+      "path": "../image/tsconfig.runtime.json"
+    },
+    {
+      "path": "../entity"
+    },
+    {
+      "path": "../types"
+    }
+  ],
   "include": ["src"]
 }

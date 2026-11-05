@@ -9,13 +9,27 @@
     "sourceMap": true
   },
   "references": [
-    { "path": "../entity" },
-    { "path": "../geometry/tsconfig.runtime.json" },
-    { "path": "../log" },
-    { "path": "../meshgeometry" },
-    { "path": "../node" },
-    { "path": "../scene3d" },
-    { "path": "../types" }
+    {
+      "path": "../entity"
+    },
+    {
+      "path": "../geometry/tsconfig.runtime.json"
+    },
+    {
+      "path": "../log"
+    },
+    {
+      "path": "../meshgeometry"
+    },
+    {
+      "path": "../node/tsconfig.runtime.json"
+    },
+    {
+      "path": "../scene3d"
+    },
+    {
+      "path": "../types"
+    }
   ],
   "include": ["src"]
 }

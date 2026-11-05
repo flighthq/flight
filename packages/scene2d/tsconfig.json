@@ -9,15 +9,33 @@
     "sourceMap": true
   },
   "references": [
-    { "path": "../adjustments/tsconfig.runtime.json" },
-    { "path": "../animation" },
-    { "path": "../entity" },
-    { "path": "../geometry/tsconfig.runtime.json" },
-    { "path": "../materials" },
-    { "path": "../node" },
-    { "path": "../signals" },
-    { "path": "../texture" },
-    { "path": "../types" }
+    {
+      "path": "../adjustments/tsconfig.runtime.json"
+    },
+    {
+      "path": "../animation"
+    },
+    {
+      "path": "../entity"
+    },
+    {
+      "path": "../geometry/tsconfig.runtime.json"
+    },
+    {
+      "path": "../materials/tsconfig.runtime.json"
+    },
+    {
+      "path": "../node/tsconfig.runtime.json"
+    },
+    {
+      "path": "../signals"
+    },
+    {
+      "path": "../texture"
+    },
+    {
+      "path": "../types"
+    }
   ],
   "include": ["src"]
 }

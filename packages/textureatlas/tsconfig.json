@@ -9,12 +9,24 @@
     "sourceMap": true
   },
   "references": [
-    { "path": "../entity" },
-    { "path": "../geometry/tsconfig.runtime.json" },
-    { "path": "../image" },
-    { "path": "../log" },
-    { "path": "../texture" },
-    { "path": "../types" }
+    {
+      "path": "../entity"
+    },
+    {
+      "path": "../geometry/tsconfig.runtime.json"
+    },
+    {
+      "path": "../image/tsconfig.runtime.json"
+    },
+    {
+      "path": "../log"
+    },
+    {
+      "path": "../texture"
+    },
+    {
+      "path": "../types"
+    }
   ],
   "include": ["src"]
 }

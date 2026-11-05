@@ -15,7 +15,7 @@
     { "path": "../effects-wgpu" },
     { "path": "../host-web" },
     { "path": "../log" },
-    { "path": "../render-wgpu" },
+    { "path": "../render-wgpu/tsconfig.runtime.json" },
     { "path": "../bitmap" },
     { "path": "../types" }
   ]

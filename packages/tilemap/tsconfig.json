@@ -16,7 +16,7 @@
       "path": "../geometry/tsconfig.runtime.json"
     },
     {
-      "path": "../node"
+      "path": "../node/tsconfig.runtime.json"
     },
     {
       "path": "../quadbatch"

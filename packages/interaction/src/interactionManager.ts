@@ -381,11 +381,11 @@ export function dispatchInteractionWheel<N extends NodeAny>(
 
 export function enableInteractionSignals<N extends NodeAny>(source: N): InteractionSignals {
   const runtime = getNodeRuntime(source) as NodeRuntime<NodeAny>;
-  return (runtime.interactionSignals ??= createInteractionSignals());
+  return (runtime.interactionSignals ??= createInteractionSignals()) as InteractionSignals;
 }
 
 export function getInteractionSignals<N extends NodeAny>(source: N): InteractionSignals | null {
-  return (getNodeRuntime(source) as NodeRuntime<NodeAny>).interactionSignals;
+  return (getNodeRuntime(source) as NodeRuntime<NodeAny>).interactionSignals as InteractionSignals | null;
 }
 
 export function initializeInteractionManager<N extends NodeAny>(
@@ -770,7 +770,7 @@ function getInteractionSignal<N extends NodeAny, Name extends InteractionSignalN
   source: Readonly<N>,
   name: Name,
 ): InteractionSignals[Name] | null {
-  const signals = getNodeRuntime(source).interactionSignals;
+  const signals = getNodeRuntime(source).interactionSignals as InteractionSignals | null;
   return signals !== null ? signals[name] : null;
 }
 
