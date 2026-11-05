@@ -59,6 +59,9 @@
       "path": "../font/tsconfig.contract.json"
     },
     {
+      "path": "../geolocation"
+    },
+    {
       "path": "../geometry/tsconfig.contract.json"
     },
     {

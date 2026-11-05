@@ -1,12 +1,13 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
+
 import type {
   HostGeolocationCapability,
   GeolocationErrorReason,
   GeolocationPosition as FlightGeolocationPosition,
   GeolocationPositionResult,
   GeolocationRequestOptions,
-  EntityConstruction,
-} from '@flighthq/types/contract';
+} from './types.ts';
 
 export function clearGeolocationWatch(hostGeolocation: Readonly<HostGeolocationCapability>, id: number): void {
   hostGeolocation.clearWatch(id);

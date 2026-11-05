@@ -44,6 +44,7 @@
     "@flighthq/entity": "*",
     "@flighthq/flow": "*",
     "@flighthq/font": "*",
+    "@flighthq/geolocation": "*",
     "@flighthq/geometry": "*",
     "@flighthq/haptics": "*",
     "@flighthq/host": "*",

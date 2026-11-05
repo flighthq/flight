@@ -1,6 +1,5 @@
-import type { GeolocationAccessOutcome, HostGeolocationCapability } from '@flighthq/types/contract';
-
 import { promptForGeolocationAccess } from './geolocationAccess.ts';
+import type { GeolocationAccessOutcome, HostGeolocationCapability } from './types.ts';
 
 // A provider whose promptForAccess answer the test dictates. Only that member is exercised, so the
 // rest of HostGeolocationCapability stays absent on purpose — a probe needing the whole provider would be

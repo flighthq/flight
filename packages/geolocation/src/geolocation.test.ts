@@ -1,11 +1,5 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type {
-  Entity,
-  HostGeolocationCapability,
-  GeolocationErrorReason,
-  GeolocationPosition,
-} from '@flighthq/types/contract';
-import { EntityRuntimeKey } from '@flighthq/types/contract';
+import { EntityRuntimeKey } from '@flighthq/entity/contract';
 
 import {
   clearGeolocationWatch,
@@ -16,6 +10,7 @@ import {
   isGeolocationAvailable,
   watchGeolocationPosition,
 } from './geolocation.ts';
+import type { HostGeolocationCapability, GeolocationErrorReason, GeolocationPosition } from './types.ts';
 
 function fakeBackend(available: boolean = true): HostGeolocationCapability & { cleared: number[]; lastWatch: number } {
   const out = allocateEntity<any>();

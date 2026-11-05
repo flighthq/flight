@@ -1,4 +1,4 @@
-import type { GeolocationAccessOutcome, HostGeolocationCapability } from '@flighthq/types/contract';
+import type { GeolocationAccessOutcome, HostGeolocationCapability } from './types.ts';
 
 /**
  * Raises the platform's own location-access prompt through the host's geolocation provider.
