@@ -20735,11 +20735,17 @@ fn emit_method_call(
                     "portable `.drain()` requires one half-open range with a start and end",
                 ));
             }
-            Ok(format!(
-                "(<T>(items: T[], start: number, end: number): T[] => items.splice(start, end - start))({receiver}, {}, {})",
-                emit_expression(start, entities)?,
-                emit_expression(end, entities)?
-            ))
+            let start_expr = emit_expression(start, entities)?;
+            let end_expr = emit_expression(end, entities)?;
+            if expression_is_reusable(start) {
+                Ok(format!(
+                    "{receiver}.splice({start_expr}, {end_expr} - {start_expr})"
+                ))
+            } else {
+                Ok(format!(
+                    "(<T>(items: T[], start: number, end: number): T[] => items.splice(start, end - start))({receiver}, {start_expr}, {end_expr})"
+                ))
+            }
         }
         "drain" if arguments.len() == 1 => Err(compile_error(
             "portable `.drain()` requires a receiver declared as Rust `Vec`",
@@ -24659,6 +24665,49 @@ fn emit_statement(
                 && expression_is_sequence(&call.receiver, entities) =>
         {
             emit_retain_statement(out, call, entities, indent)?;
+        }
+        Stmt::Expr(Expr::MethodCall(call), _)
+            if call.method == "insert"
+                && call.args.len() == 1
+                && matches!(
+                    expression_hash_collection(&call.receiver, entities),
+                    Some(BindingFact::HashSet)
+                ) =>
+        {
+            let receiver = emit_expression(&call.receiver, entities)?;
+            let value = emit_expression(&call.args[0], entities)?;
+            write_indent(out, indent);
+            writeln!(out, "{receiver}.add({value});").expect("writing to a String cannot fail");
+        }
+        Stmt::Expr(Expr::MethodCall(call), _)
+            if call.method == "insert"
+                && call.args.len() == 2
+                && !is_record_map_local(&call.receiver, entities)
+                && matches!(
+                    expression_hash_collection(&call.receiver, entities),
+                    Some(BindingFact::HashMap)
+                ) =>
+        {
+            let receiver = emit_expression(&call.receiver, entities)?;
+            let key = emit_expression(&call.args[0], entities)?;
+            let value = emit_expression(&call.args[1], entities)?;
+            write_indent(out, indent);
+            writeln!(out, "{receiver}.set({key}, {value});")
+                .expect("writing to a String cannot fail");
+        }
+        Stmt::Expr(Expr::MethodCall(call), _)
+            if call.method == "remove"
+                && call.args.len() == 1
+                && !is_record_map_local(&call.receiver, entities)
+                && matches!(
+                    expression_hash_collection(&call.receiver, entities),
+                    Some(BindingFact::HashMap)
+                ) =>
+        {
+            let receiver = emit_expression(&call.receiver, entities)?;
+            let key = emit_expression(peel_reference_and_paren(&call.args[0]), entities)?;
+            write_indent(out, indent);
+            writeln!(out, "{receiver}.delete({key});").expect("writing to a String cannot fail");
         }
         Stmt::Expr(Expr::ForLoop(loop_expression), _) => {
             if let Some((collection, chain)) = iter_mut_chain(&loop_expression.expr) {

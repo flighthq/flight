@@ -938,7 +938,7 @@ export function createStore(): Store {
 
 export function fillStore(store: Store): boolean {
   const table = store.table;
-  (<K, V>(entries: Map<K, V>, key: K, value: V): V | undefined => { const previous = entries.get(key); entries.set(key, value); return previous; })(table, 1, 2.0);
+  table.set(1, 2.0);
   store.full.clear();
   const set = getSet(store);
   return set.has('a') && (getSet(store).size === 0) && (store.other.size === 0);
@@ -1028,7 +1028,7 @@ export function markTracker(tracker: Tracker, label: string): boolean {
 
 export function measureTracker(tracker: Readonly<Tracker>): number {
   let local: Set<number> = new Set();
-  (<T>(items: Set<T>, value: T): boolean => { if (items.has(value)) { return false; } items.add(value); return true; })(local, 1);
+  local.add(1);
   if (local.has(1) && !(tracker.seen.size === 0)) {
     return tracker.seen.size + tracker.counts.size;
   }
@@ -4085,7 +4085,7 @@ export function drainLocal(): number[] {
         let source = "pub fn remove_range(values: &mut Vec<u32>, start: usize, end: usize) -> Vec<u32> { return values.drain(start..end).collect(); }\n";
         assert_eq!(
             compile_typescript(source, None).unwrap(),
-            "export function removeRange(values: number[], start: number, end: number): number[] {\n  return (<T>(items: T[], start: number, end: number): T[] => items.splice(start, end - start))(values, start, end);\n}\n"
+            "export function removeRange(values: number[], start: number, end: number): number[] {\n  return values.splice(start, end - start);\n}\n"
         );
     }
 
@@ -27568,7 +27568,7 @@ export function message(text: string): void {
 
 export function ordinary(key: string): number {
   let counts: Map<string, number> = new Map();
-  (<K, V>(entries: Map<K, V>, key: K, value: V): V | undefined => { const previous = entries.get(key); entries.set(key, value); return previous; })(counts, key, 1);
+  counts.set(key, 1);
   return counts.size;
 }
 "#
