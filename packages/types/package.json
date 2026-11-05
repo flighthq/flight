@@ -41,6 +41,7 @@
     "@flighthq/app": "*",
     "@flighthq/audio": "*",
     "@flighthq/binpack": "*",
+    "@flighthq/bitmap": "*",
     "@flighthq/buffer": "*",
     "@flighthq/clip": "*",
     "@flighthq/clipboard": "*",
@@ -65,6 +66,7 @@
     "@flighthq/math": "*",
     "@flighthq/menu": "*",
     "@flighthq/midi": "*",
+    "@flighthq/node": "*",
     "@flighthq/notification": "*",
     "@flighthq/path": "*",
     "@flighthq/path-boolean": "*",
@@ -89,10 +91,10 @@
     "@flighthq/textformat": "*",
     "@flighthq/textlayout": "*",
     "@flighthq/textshaper": "*",
+    "@flighthq/texture": "*",
     "@flighthq/useragent": "*",
     "@flighthq/velocity": "*",
-    "@flighthq/xml": "*",
-    "@flighthq/node": "*"
+    "@flighthq/xml": "*"
   },
   "peerDependencies": {
     "@webgpu/types": "^0.1.70"

@@ -400,7 +400,7 @@
       "path": "../swf"
     },
     {
-      "path": "../bitmap"
+      "path": "../bitmap/tsconfig.runtime.json"
     },
     {
       "path": "../text/tsconfig.runtime.json"
@@ -427,7 +427,7 @@
       "path": "../textshaper/tsconfig.runtime.json"
     },
     {
-      "path": "../texture"
+      "path": "../texture/tsconfig.runtime.json"
     },
     {
       "path": "../texture-formats"

@@ -40,3 +40,4 @@ export * from './bitmapTone.ts';
 export * from './bitmapTransform.ts';
 export * from './bitmapWarp.ts';
 export * from './explainBitmapReadback.ts';
+export * from './types.ts';

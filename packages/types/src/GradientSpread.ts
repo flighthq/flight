@@ -1,9 +1,5 @@
-/**
- * Controls what happens when a gradient coordinate falls outside the defined
- * stop range (the span from the first stop to the last stop).
- *
- * - `'pad'`: extends the first or last stop color to the boundary.
- * - `'repeat'`: tiles the gradient pattern (wraps).
- * - `'reflect'`: alternately mirrors the gradient pattern.
- */
-export type GradientSpread = 'pad' | 'reflect' | 'repeat';
+// Owned by `@flighthq/bitmap`. These deprecated re-exports keep existing `@flighthq/types` imports
+// compiling until consumers import the owning package.
+
+/** @deprecated Import from `@flighthq/bitmap/contract`. */
+export type { GradientSpread } from '@flighthq/bitmap/contract';

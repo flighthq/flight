@@ -8,6 +8,8 @@
     "declarationMap": true,
     "sourceMap": true,
     "moduleSuffixes": [
+      ".texture-types",
+      ".bitmap-types",
       ".materials-types",
       ".scene3d-wgpu-types",
       ".render-wgpu-types",
@@ -40,6 +42,12 @@
     "tsBuildInfoFile": "dist/.tsbuildinfo.materials-types"
   },
   "references": [
+    {
+      "path": "../texture/tsconfig.contract.json"
+    },
+    {
+      "path": "../bitmap/tsconfig.contract.json"
+    },
     {
       "path": "../entity"
     },

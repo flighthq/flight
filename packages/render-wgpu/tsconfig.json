@@ -6,7 +6,7 @@
       "path": "../app/tsconfig.runtime.json"
     },
     {
-      "path": "../bitmap"
+      "path": "../bitmap/tsconfig.runtime.json"
     },
     {
       "path": "../color"
@@ -33,7 +33,7 @@
       "path": "../signals"
     },
     {
-      "path": "../texture"
+      "path": "../texture/tsconfig.runtime.json"
     },
     {
       "path": "../types"

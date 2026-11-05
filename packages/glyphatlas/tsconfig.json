@@ -16,7 +16,7 @@
       "path": "../geometry/tsconfig.runtime.json"
     },
     {
-      "path": "../bitmap"
+      "path": "../bitmap/tsconfig.runtime.json"
     },
     {
       "path": "../log"

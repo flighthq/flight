@@ -1,3 +1,5 @@
+// Owned by `@flighthq/bitmap` (its contract lane declares the same names). This deprecated structural
+// copy stays because a core package may cross into an owner only with type-only edges.
 // The complete vocabulary of ways surface combines a source pixel with its backdrop — a single umbrella
 // over both the color-blend functions (Multiply, Overlay, …) and the Porter-Duff coverage operators
 // (DestinationOut = erase, DestinationIn = alpha mask, …). surface has no fixed-function-vs-effect cost

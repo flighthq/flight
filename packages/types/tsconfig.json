@@ -9,6 +9,9 @@
     "sourceMap": true,
     "moduleSuffixes": [
       ".interaction-types",
+      ".texture-types",
+      ".bitmap-types",
+      ".image-types",
       ".node-types",
       ".image-types",
       ".materials-types",
@@ -47,6 +50,12 @@
     "types": ["@testing-library/jest-dom", "vitest/globals", "@webgpu/types"]
   },
   "references": [
+    {
+      "path": "../texture/tsconfig.contract.json"
+    },
+    {
+      "path": "../bitmap/tsconfig.contract.json"
+    },
     {
       "path": "../image/tsconfig.contract.json"
     },

@@ -1,15 +1,5 @@
-/**
- * How an `Image`'s pixels encode alpha. Orthogonal to channel layout (`PixelFormat`) and
- * color space (`TextureSource.gamut`): the same `rgba8unorm` data can be straight or premultiplied.
- * Modeled on Skia's `SkAlphaType`.
- *
- * - `straight`: RGB is independent of alpha (un-premultiplied). What browsers produce via
- *   `getImageData` and what the bitmap pixel API reads and writes. Flight's default.
- * - `premultiplied`: RGB has already been multiplied by alpha. What renderers store in GPU textures
- *   and what the premultiplied (`ONE, ONE_MINUS_SRC_ALPHA`) blend expects. Produced by
- *   `premultiplyBitmapPixels`.
- * - `opaque`: alpha is implicitly 1 everywhere; RGB is valid and the alpha channel can be ignored.
- *   A fast-path hint, never an obligation — `straight`/`premultiplied` data that happens to be fully
- *   opaque is still correct, just not flagged.
- */
-export type AlphaType = 'opaque' | 'premultiplied' | 'straight';
+// Owned by `@flighthq/texture`. These deprecated re-exports keep existing `@flighthq/types` imports
+// compiling until consumers import the owning package.
+
+/** @deprecated Import from `@flighthq/texture/contract`. */
+export type { AlphaType } from '@flighthq/texture/contract';

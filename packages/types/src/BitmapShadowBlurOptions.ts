@@ -1,5 +1,5 @@
-export interface BitmapShadowBlurOptions {
-  radiusX?: number;
-  radiusY?: number;
-  passes?: number;
-}
+// Owned by `@flighthq/bitmap`. These deprecated re-exports keep existing `@flighthq/types` imports
+// compiling until consumers import the owning package.
+
+/** @deprecated Import from `@flighthq/bitmap/contract`. */
+export type { BitmapShadowBlurOptions } from '@flighthq/bitmap/contract';

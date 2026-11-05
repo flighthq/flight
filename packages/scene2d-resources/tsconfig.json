@@ -41,7 +41,7 @@
       "path": "../signals"
     },
     {
-      "path": "../texture"
+      "path": "../texture/tsconfig.runtime.json"
     },
     {
       "path": "../types"

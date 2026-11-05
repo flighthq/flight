@@ -1,13 +1,5 @@
-import type { BitmapEdgeMode } from './BitmapEdgeMode.ts';
-import type { BitmapResizeMode } from './BitmapResizeMode.ts';
+// Owned by `@flighthq/bitmap`. These deprecated re-exports keep existing `@flighthq/types` imports
+// compiling until consumers import the owning package.
 
-export interface BitmapResizeOptions {
-  mode?: BitmapResizeMode;
-  edgeMode?: BitmapEdgeMode;
-  /**
-   * When true, pre-multiplies alpha before interpolation and unpremultiplies
-   * after. This prevents the dark-halo bleed that bilinear and bicubic sampling
-   * produce at semi-transparent edges when blending in straight-alpha space.
-   */
-  premultiplied?: boolean;
-}
+/** @deprecated Import from `@flighthq/bitmap/contract`. */
+export type { BitmapResizeOptions } from '@flighthq/bitmap/contract';

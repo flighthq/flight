@@ -1,9 +1,5 @@
-import type { Bitmap } from './Bitmap.ts';
+// Owned by `@flighthq/bitmap`. These deprecated re-exports keep existing `@flighthq/types` imports
+// compiling until consumers import the owning package.
 
-export interface BitmapRegion {
-  height: number;
-  bitmap: Bitmap;
-  width: number;
-  x: number;
-  y: number;
-}
+/** @deprecated Import from `@flighthq/bitmap/contract`. */
+export type { BitmapRegion } from '@flighthq/bitmap/contract';

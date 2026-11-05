@@ -1,11 +1,5 @@
-import type { Bitmap } from './Bitmap.ts';
-import type { ImageFormat } from './ImageFormat.ts';
+// Owned by `@flighthq/bitmap`. These deprecated re-exports keep existing `@flighthq/types` imports
+// compiling until consumers import the owning package.
 
-// Synchronous Bitmap encoding implemented by a host or native codec. `supportedFormats` is plain
-// capability data so callers can explain an unsupported-format sentinel without invoking the encoder.
-export interface HostBitmapEncodeCapability {
-  encodeBitmap(source: Readonly<Bitmap>, format: ImageFormat, quality: number): Uint8Array;
-  readonly supportedFormats: readonly ImageFormat[];
-}
-
-export type BitmapEncodeOperation = Exclude<keyof HostBitmapEncodeCapability, 'supportedFormats'>;
+/** @deprecated Import from `@flighthq/bitmap/contract`. */
+export type { HostBitmapEncodeCapability, BitmapEncodeOperation } from '@flighthq/bitmap/contract';

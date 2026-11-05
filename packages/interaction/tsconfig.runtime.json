@@ -22,7 +22,7 @@
     { "path": "../spatial/tsconfig.runtime.json" },
     { "path": "../quadbatch" },
     { "path": "../tilemap" },
-    { "path": "../bitmap" },
+    { "path": "../bitmap/tsconfig.runtime.json" },
     { "path": "../clip/tsconfig.runtime.json" },
     { "path": "../text/tsconfig.runtime.json" },
     { "path": "../textlayout/tsconfig.runtime.json" },

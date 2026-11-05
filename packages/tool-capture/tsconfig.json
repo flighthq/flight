@@ -16,7 +16,7 @@
     { "path": "../host-web" },
     { "path": "../log" },
     { "path": "../render-wgpu/tsconfig.runtime.json" },
-    { "path": "../bitmap" },
+    { "path": "../bitmap/tsconfig.runtime.json" },
     { "path": "../types" }
   ]
 }

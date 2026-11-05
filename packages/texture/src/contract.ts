@@ -10,3 +10,4 @@ export {
   shouldPremultiplyTextureOnUpload,
 } from './textureColorSpace.ts';
 export { initializeSampler } from './sampler.ts';
+export * from './types.ts';

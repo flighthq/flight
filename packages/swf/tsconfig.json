@@ -20,7 +20,7 @@
       "path": "../audio/tsconfig.runtime.json"
     },
     {
-      "path": "../bitmap"
+      "path": "../bitmap/tsconfig.runtime.json"
     },
     {
       "path": "../clip/tsconfig.runtime.json"
@@ -92,7 +92,7 @@
       "path": "../textformat"
     },
     {
-      "path": "../texture"
+      "path": "../texture/tsconfig.runtime.json"
     },
     {
       "path": "../types"

@@ -1,12 +1,5 @@
-import type { BitmapEdgeMode } from './BitmapEdgeMode.ts';
+// Owned by `@flighthq/bitmap`. These deprecated re-exports keep existing `@flighthq/types` imports
+// compiling until consumers import the owning package.
 
-export interface BitmapConvolutionOptions {
-  bias?: number;
-  /** How to handle kernel samples outside the surface. Default 'clamp'. */
-  edge?: BitmapEdgeMode;
-  divisor?: number;
-  matrix: ReadonlyArray<number>;
-  matrixX: number;
-  matrixY: number;
-  preserveAlpha?: boolean;
-}
+/** @deprecated Import from `@flighthq/bitmap/contract`. */
+export type { BitmapConvolutionOptions } from '@flighthq/bitmap/contract';

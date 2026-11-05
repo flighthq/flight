@@ -28,7 +28,7 @@
       "path": "../node/tsconfig.runtime.json"
     },
     {
-      "path": "../texture"
+      "path": "../texture/tsconfig.runtime.json"
     },
     {
       "path": "../textureatlas"

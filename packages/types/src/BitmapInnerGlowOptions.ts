@@ -1,9 +1,5 @@
-import type { BitmapShadowBlurOptions } from './BitmapShadowBlurOptions.ts';
+// Owned by `@flighthq/bitmap`. These deprecated re-exports keep existing `@flighthq/types` imports
+// compiling until consumers import the owning package.
 
-export interface BitmapInnerGlowOptions extends BitmapShadowBlurOptions {
-  /** Packed 0xRRGGBBAA inner glow color. Default 0xff0000ff (opaque red). */
-  // Packed sRGB RGBA (`0xRRGGBBAA`). Default 0xff0000ff.
-  color?: number;
-  /** Overall intensity multiplier applied to the glow alpha. Default 1. */
-  intensity?: number;
-}
+/** @deprecated Import from `@flighthq/bitmap/contract`. */
+export type { BitmapInnerGlowOptions } from '@flighthq/bitmap/contract';

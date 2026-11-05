@@ -1,15 +1,5 @@
-import type { BitmapBevelType } from './BitmapBevelType.ts';
+// Owned by `@flighthq/bitmap`. These deprecated re-exports keep existing `@flighthq/types` imports
+// compiling until consumers import the owning package.
 
-export interface BitmapGradientBevelOptions {
-  /** Light direction in radians, pointing toward the light source. Default π/4. */
-  angle?: number;
-  /** Sampling offset along the light axis, in pixels. Default 4. */
-  distance?: number;
-  radiusX?: number;
-  radiusY?: number;
-  passes?: number;
-  /** Overall opacity multiplier. Default 1. */
-  intensity?: number;
-  /** Where the bevel is drawn relative to the shape. Default 'inner'. */
-  type?: BitmapBevelType;
-}
+/** @deprecated Import from `@flighthq/bitmap/contract`. */
+export type { BitmapGradientBevelOptions } from '@flighthq/bitmap/contract';

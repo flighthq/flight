@@ -9,6 +9,8 @@
     "sourceMap": true,
     "moduleSuffixes": [
       ".interaction-types",
+      ".texture-types",
+      ".bitmap-types",
       ".node-types",
       ".adjustments-types",
       ".clip-types",
@@ -20,6 +22,12 @@
     "tsBuildInfoFile": "dist/.tsbuildinfo.shape-types"
   },
   "references": [
+    {
+      "path": "../texture/tsconfig.contract.json"
+    },
+    {
+      "path": "../bitmap/tsconfig.contract.json"
+    },
     {
       "path": "../adjustments/tsconfig.contract.json"
     },

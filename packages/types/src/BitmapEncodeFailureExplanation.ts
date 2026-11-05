@@ -1,6 +1,5 @@
-import type { ImageFormat } from './ImageFormat.ts';
+// Owned by `@flighthq/bitmap`. These deprecated re-exports keep existing `@flighthq/types` imports
+// compiling until consumers import the owning package.
 
-export interface BitmapEncodeFailureExplanation {
-  readonly format: ImageFormat;
-  readonly reason: 'backend-not-installed' | 'format-unsupported';
-}
+/** @deprecated Import from `@flighthq/bitmap/contract`. */
+export type { BitmapEncodeFailureExplanation } from '@flighthq/bitmap/contract';

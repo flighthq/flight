@@ -1,7 +1,5 @@
-export interface BitmapGradientGlowOptions {
-  radiusX?: number;
-  radiusY?: number;
-  passes?: number;
-  /** Overall opacity multiplier. Default 1. */
-  intensity?: number;
-}
+// Owned by `@flighthq/bitmap`. These deprecated re-exports keep existing `@flighthq/types` imports
+// compiling until consumers import the owning package.
+
+/** @deprecated Import from `@flighthq/bitmap/contract`. */
+export type { BitmapGradientGlowOptions } from '@flighthq/bitmap/contract';

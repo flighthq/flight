@@ -10,7 +10,7 @@
   },
   "references": [
     {
-      "path": "../bitmap"
+      "path": "../bitmap/tsconfig.runtime.json"
     },
     {
       "path": "../bitmaptext"
@@ -76,7 +76,7 @@
       "path": "../textlayout/tsconfig.runtime.json"
     },
     {
-      "path": "../texture"
+      "path": "../texture/tsconfig.runtime.json"
     },
     {
       "path": "../types"

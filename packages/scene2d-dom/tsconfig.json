@@ -5,7 +5,7 @@
   "files": [],
   "references": [
     {
-      "path": "../bitmap"
+      "path": "../bitmap/tsconfig.runtime.json"
     },
     {
       "path": "../color"
@@ -65,7 +65,7 @@
       "path": "../textlayout/tsconfig.runtime.json"
     },
     {
-      "path": "../texture"
+      "path": "../texture/tsconfig.runtime.json"
     },
     {
       "path": "../types"

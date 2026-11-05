@@ -8,6 +8,6 @@
     "declarationMap": true,
     "sourceMap": true
   },
-  "references": [{ "path": "../bitmap" }, { "path": "../types" }],
+  "references": [{ "path": "../bitmap/tsconfig.runtime.json" }, { "path": "../types" }],
   "include": ["src"]
 }
