@@ -400,7 +400,7 @@ pub fn left_associative(value: f64, divisor: f64, scale: f64) -> f64 {
 
         let output = compile_typescript(source, None).unwrap();
 
-        assert!(output.contains("return damping / (2.0 * Math.sqrt(stiffness * mass));"));
+        assert!(output.contains("return damping / (2 * Math.sqrt(stiffness * mass));"));
         assert!(output.contains("return value / (divisor / scale);"));
         assert!(output.contains("return value * (divisor / scale);"));
         assert!(output.contains("return value + (left - right);"));
@@ -938,7 +938,7 @@ export function createStore(): Store {
 
 export function fillStore(store: Store): boolean {
   const table = store.table;
-  table.set(1, 2.0);
+  table.set(1, 2);
   store.full.clear();
   const set = getSet(store);
   return set.has('a') && (getSet(store).size === 0) && (store.other.size === 0);
@@ -1017,9 +1017,9 @@ export function createTracker(): Tracker {
 
 export function countTracker(tracker: Readonly<Tracker>, id: number): number {
   if (!tracker.counts.has(id)) {
-    return -1.0;
+    return -1;
   }
-  return tracker.counts.get(id) ?? 0.0;
+  return tracker.counts.get(id) ?? 0;
 }
 
 export function markTracker(tracker: Tracker, label: string): boolean {
@@ -2541,13 +2541,13 @@ pub fn doubled_all(values: &Vec<f32>) -> Vec<f32> {
 
         let output = compile_typescript(source, None).unwrap();
 
-        assert!(output.contains("return options?.padding ?? 0.0;"));
+        assert!(output.contains("return options?.padding ?? 0;"));
         assert!(
             output.contains("return options?.growable ?? true;"),
             "{output}"
         );
         assert!(
-            output.contains("return (options?.maxWidth ?? 100.0) - 2.0 * border;"),
+            output.contains("return (options?.maxWidth ?? 100) - 2 * border;"),
             "{output}"
         );
         assert!(
@@ -2555,22 +2555,22 @@ pub fn doubled_all(values: &Vec<f32>) -> Vec<f32> {
             "{output}"
         );
         assert!(output.contains(
-            "return ((o) => o === undefined ? undefined : o.maxWidth === undefined ? undefined : o.maxWidth - 2.0)(options) ?? 0.0;"
+            "return ((o) => o === undefined ? undefined : o.maxWidth === undefined ? undefined : o.maxWidth - 2)(options) ?? 0;"
         ), "{output}");
         assert!(
-            output.contains("return pick(options, counter)?.padding ?? 0.0;"),
+            output.contains("return pick(options, counter)?.padding ?? 0;"),
             "{output}"
         );
         assert!(output.contains(
-            "return ((border) => border === undefined ? undefined : border.padding === undefined ? undefined : border.padding + extra)(border) ?? 0.0;"
+            "return ((border) => border === undefined ? undefined : border.padding === undefined ? undefined : border.padding + extra)(border) ?? 0;"
         ), "{output}");
         assert!(output.contains(
-            "return ((o) => o === undefined ? undefined : enabled ? o.padding : undefined)(options) ?? 7.0;"
+            "return ((o) => o === undefined ? undefined : enabled ? o.padding : undefined)(options) ?? 7;"
         ), "{output}");
         assert!(output.contains(
-            "const scaled: number | undefined = value === undefined ? undefined : value * 2.0;"
+            "const scaled: number | undefined = value === undefined ? undefined : value * 2;"
         ));
-        assert!(output.contains("return values.map((w) => w * 2.0);"));
+        assert!(output.contains("return values.map((w) => w * 2);"));
         assert!(!output.contains("||"));
 
         let source = r#"
@@ -2591,29 +2591,29 @@ pub fn widened(value: Option<f32>) -> f32 {
         let output = compile_typescript(source, None).unwrap();
 
         assert!(
-            output.contains("return (options === null ? null : options.padding) ?? 0.0;"),
+            output.contains("return (options === null ? null : options.padding) ?? 0;"),
             "{output}"
         );
         assert!(
-            output.contains("return (value === null ? null : value + 1.0) ?? 0.0;"),
+            output.contains("return (value === null ? null : value + 1) ?? 0;"),
             "{output}"
         );
 
         let source = "pub fn inferred(value: f32) -> f32 { let local = Some(value); return local.and_then(|v| Some(v)).unwrap_or(0.0); }\n";
         let output = compile_typescript(source, None).unwrap();
-        assert!(output.contains("(local === undefined ? undefined : local) ?? 0.0"));
+        assert!(output.contains("(local === undefined ? undefined : local) ?? 0"));
 
         let source = "pub fn typed_closure(value: Option<f32>) -> f32 { return value.map(|v: f32| v * 2.0).unwrap_or(0.0); }\n";
         let output = compile_typescript(source, None).unwrap();
         assert!(
-            output.contains("(value === undefined ? undefined : value * 2.0) ?? 0.0"),
+            output.contains("(value === undefined ? undefined : value * 2) ?? 0"),
             "typed closure parameter should compile: {output}"
         );
 
         let source = "pub fn discard(value: Option<f32>) -> f32 { return value.map(|_| 1.0).unwrap_or(0.0); }\n";
         let output = compile_typescript(source, None).unwrap();
         assert!(
-            output.contains("(value === undefined ? undefined : 1.0)"),
+            output.contains("(value === undefined ? undefined : 1)"),
             "wildcard closure parameter should compile: {output}"
         );
 
@@ -3565,7 +3565,7 @@ pub async fn spawn_later() -> i32 {
                 None
             )
             .unwrap(),
-            "export function outer(x: number): number {\n  function inner(y: number): number {\n    return y * 2.0;\n  }\n  return inner(x) + 1.0;\n}\n"
+            "export function outer(x: number): number {\n  function inner(y: number): number {\n    return y * 2;\n  }\n  return inner(x) + 1;\n}\n"
         );
     }
 
@@ -4747,7 +4747,7 @@ pub fn renamed(index: &mut Vec<i32>, count: &Vec<i32>) {
         )
         .unwrap();
         assert!(output.contains(
-            "return ((o) => o === undefined ? undefined : o.width === undefined ? undefined : o.width * 2.0)(options) ?? 0.0;"
+            "return ((o) => o === undefined ? undefined : o.width === undefined ? undefined : o.width * 2)(options) ?? 0;"
         ));
         let error = compile(
             module(current, option_source),
@@ -7781,7 +7781,7 @@ pub fn grow(values: &mut Vec<f32>, size: usize) {
 
         let output = compile_typescript(source, None).unwrap();
 
-        assert!(output.contains("values.push(0.0)"), "{output}");
+        assert!(output.contains("values.push(0)"), "{output}");
         assert!(output.contains("values.length = size"), "{output}");
         assert!(
             !output.contains("(<T>"),
@@ -8858,8 +8858,7 @@ pub fn is_lasso_selection_active(selection: &LassoSelection) -> bool {
             "/**\n * Opaque freeform gesture state.\n */\nexport interface LassoSelectionRaw extends EntityRaw {\n}\n"
         ));
         assert!(
-            output
-                .contains("  lassoSelectionStateStore.set(out, { active: false, count: 0.0 });\n")
+            output.contains("  lassoSelectionStateStore.set(out, { active: false, count: 0 });\n")
         );
         assert!(output.ends_with(
             "\n// Crate-private `LassoSelection.state`, keyed by entity identity and reachable only from this package's modules.\nconst lassoSelectionStateStore = /* @__PURE__ */ new WeakMap<Readonly<LassoSelectionRaw>, LassoSelectionRuntime>();\n\nexport { lassoSelectionStateStore };\n"
@@ -8867,7 +8866,7 @@ pub fn is_lasso_selection_active(selection: &LassoSelection) -> bool {
         assert!(!output.contains("EntityRuntimeKey"));
         assert!(!output.contains("export const"));
         assert!(output.contains(&format!("  {access}.active = true;\n")));
-        assert!(output.contains(&format!("  {access}.count += 1.0;\n")));
+        assert!(output.contains(&format!("  {access}.count += 1;\n")));
         assert!(output.contains(
             "export function isLassoSelectionActive(selection: Readonly<LassoSelectionRaw>): boolean {\n"
         ));
@@ -8921,9 +8920,7 @@ pub fn get_selection_count(state: &SelectionState) -> f64 {
             output.starts_with("import type { EntityRaw } from '@flighthq/entity/contract';\n")
         );
         assert!(output.contains("export interface SelectionStateRaw extends EntityRaw {\n}\n"));
-        assert!(
-            output.contains("  selectionStateStateStore.set(out, { count: 0.0, items: [] });\n")
-        );
+        assert!(output.contains("  selectionStateStateStore.set(out, { count: 0, items: [] });\n"));
         assert!(output.contains(
             "const selectionStateStateStore = /* @__PURE__ */ new WeakMap<Readonly<SelectionStateRaw>, SelectionStateRuntime>();\n\nexport { selectionStateStateStore };\n"
         ));
@@ -9922,7 +9919,7 @@ static STEPS_GUARD: Mutex<Option<EasingStepsGuard>> = Mutex::new(None);
         assert!(output.contains(
             "export function easeSteps(count: number, position?: StepPosition): Float32Array"
         ));
-        assert!(output.contains("return new Float32Array(2).fill(0.0);"));
+        assert!(output.contains("return new Float32Array(2).fill(0);"));
         assert!(
             output.contains(
                 "export function setEasingStepsGuard(guard: EasingStepsGuard | null): void"
@@ -10282,13 +10279,13 @@ pub fn get_kernel(kernel: Option<&Kernel>) -> &Kernel {
 
         let output = compile_typescript(source, Some("@flighthq/entity/contract")).unwrap();
 
-        assert!(output.contains("export const LIMIT: number = 2.0;\n"));
+        assert!(output.contains("export const LIMIT: number = 2;\n"));
         assert!(output.contains("\nconst DEFAULT_SCALE: KernelScale = (() => {\n"));
         assert!(output.contains(
             "/**\n * The kernel every caller shares unless it passes its own.\n */\nexport const sharedKernel: KernelRaw = createKernel();\n"
         ));
         assert!(
-            output.contains("export const DOUBLE_KERNEL: KernelRaw = createScaledKernel(2.0);\n")
+            output.contains("export const DOUBLE_KERNEL: KernelRaw = createScaledKernel(2);\n")
         );
         assert!(output.contains("  return createScaledKernel(DEFAULT_SCALE);\n"));
         assert!(output.contains("  return kernel ?? sharedKernel;\n"));
@@ -10435,7 +10432,7 @@ pub static PALETTE: LazyLock<Palette> = LazyLock::new(create_palette);
             "clone of strings, scalars and a reference to a string in a LazyLock: {output}"
         );
         // A cloned scalar keeps its proven type, so arithmetic on it is still proven.
-        assert!(output.contains("scale: scale * 2.0"), "{output}");
+        assert!(output.contains("scale: scale * 2"), "{output}");
     }
 
     #[test]
@@ -10674,7 +10671,7 @@ pub struct Kernel {
 pub static KERNEL: LazyLock<Kernel> = LazyLock::new(create_kernel);
 
 pub fn create_kernel() -> Kernel {
-    let seed = Seed { scale: 1.0 };
+    let seed = Seed { scale: 1 };
     let cloned = seed.clone();
     return Kernel { scale: cloned.scale };
 }
@@ -10699,7 +10696,7 @@ pub fn get_clones() -> u32 {
         let output = compile_typescript(&ordered, None).unwrap();
         assert!(output.contains("export const FIRST: Kernel = createKernel();\n"));
         assert!(output.contains(
-            "export const SECOND: Kernel = { scale: FIRST.scale * 1.0 + LIMIT * -0.5 };\n"
+            "export const SECOND: Kernel = { scale: FIRST.scale * 1 + LIMIT * -0.5 };\n"
         ));
         assert!(output.contains("export const THIRD: Kernel = (() => {\n"));
     }
@@ -10735,9 +10732,9 @@ pub fn scale_values(values: &[f64]) -> Vec<f64> {
         let output = compile_typescript(source, None).unwrap();
 
         assert!(output.contains("source.map((s) => ({ x: s.x, y: s.y }))"));
-        assert!(output.contains("return { x: 0.0, y: 0.0 };\n"));
-        assert!(!output.contains("(({ x: 0.0"));
-        assert!(output.contains("values.map((value) => value * 2.0)"));
+        assert!(output.contains("return { x: 0, y: 0 };\n"));
+        assert!(!output.contains("(({ x: 0"));
+        assert!(output.contains("values.map((value) => value * 2)"));
     }
 
     #[test]
@@ -10846,12 +10843,12 @@ pub fn literal_present(value: Option<f64>) -> bool {
 pub fn make_outer(value: Option<f64>) -> Outer {
     return Outer {
         inner: Inner { contour: value },
-        label: 1.0,
+        label: 1,
     };
 }
 
 pub fn nested_or(outer: &Outer) -> f64 {
-    return outer.inner.contour.unwrap_or(-1.0);
+    return outer.inner.contour.unwrap_or(-1);
 }
 
 pub fn nested_present(outer: &Outer) -> bool {
@@ -10924,8 +10921,8 @@ pub fn wide_present(wide: &Wide) -> bool {
         let outer = generate("outer");
         for expected in [
             "  return (({ contour: (value) ?? null }.contour) ?? undefined) !== undefined;\n",
-            "  return { inner: { contour: (value) ?? null }, label: 1.0 };\n",
-            "  return ((outer.inner.contour) ?? undefined) ?? -1.0;\n",
+            "  return { inner: { contour: (value) ?? null }, label: 1 };\n",
+            "  return ((outer.inner.contour) ?? undefined) ?? -1;\n",
             "  return ((outer.inner.contour) ?? undefined) !== undefined;\n",
             "  outer.inner.contour = (value) ?? null;\n",
         ] {
@@ -10979,7 +10976,7 @@ pub fn chained_present(outer: &Outer) -> bool {
 }
 
 pub fn shared_or(outer: &Outer) -> f64 {
-    return outer.shared.contour.unwrap_or(-1.0);
+    return outer.shared.contour.unwrap_or(-1);
 }
 
 pub fn alias_present(inner: &Chained) -> bool {
@@ -10998,7 +10995,7 @@ pub fn alias_present(inner: &Chained) -> bool {
             "{output}"
         );
         assert!(
-            output.contains("  return ((outer.shared.contour) ?? undefined) ?? -1.0;\n"),
+            output.contains("  return ((outer.shared.contour) ?? undefined) ?? -1;\n"),
             "{output}"
         );
         assert!(
@@ -11178,11 +11175,11 @@ pub fn listed(p: f64) -> Vec<f64> {
 "#;
         let output = compile_typescript(source, None).unwrap();
         assert!(
-            output.contains("  return new Float64Array([p, 3.0 * p, 1.0, 0.0]);\n"),
+            output.contains("  return new Float64Array([p, 3 * p, 1, 0]);\n"),
             "{output}"
         );
         assert!(
-            output.contains("  return new Float32Array(3).fill(0.0);\n"),
+            output.contains("  return new Float32Array(3).fill(0);\n"),
             "{output}"
         );
         assert!(output.contains("  return [true, false];\n"), "{output}");
@@ -11215,7 +11212,7 @@ pub fn absent_first(value: Option<f64>) -> f64 {
             "{output}"
         );
         assert!(
-            output.contains("if (value === undefined) {\n    resolved = -1.0;\n  } else"),
+            output.contains("if (value === undefined) {\n    resolved = -1;\n  } else"),
             "{output}"
         );
         assert!(!output.contains("(() => {"), "{output}");
@@ -11320,8 +11317,8 @@ pub fn plain() -> Plain {
 }
 
 pub fn mixed(flag: bool) -> f64 {
-    let mut count = if flag { 1.0 } else { 0.0 };
-    count += 1.0;
+    let mut count = if flag { 1 } else { 0 };
+    count += 1;
     return count;
 }
 "#;
@@ -11384,7 +11381,7 @@ pub fn make_holder(value: Option<f64>) -> Holder {
 }
 
 pub fn qualified_or(holder: &Holder) -> f64 {
-    return holder.qualified.contour.unwrap_or(-1.0);
+    return holder.qualified.contour.unwrap_or(-1);
 }
 
 pub fn shared_present(shared: &Arc<Inner>) -> bool {
@@ -11397,7 +11394,7 @@ pub fn shared_present(shared: &Arc<Inner>) -> bool {
             "{output}"
         );
         assert!(
-            output.contains("  return ((holder.qualified.contour) ?? undefined) ?? -1.0;\n"),
+            output.contains("  return ((holder.qualified.contour) ?? undefined) ?? -1;\n"),
             "{output}"
         );
         assert!(
@@ -11765,7 +11762,7 @@ pub fn has_scale(values: &[f64]) -> bool {
 
 pub fn contour_or_zero(values: &[f64]) -> f64 {
     let explanation = explain(values);
-    return explanation.contour.unwrap_or(0.0);
+    return explanation.contour.unwrap_or(0);
 }
 "#;
 
@@ -11789,7 +11786,7 @@ pub fn contour_or_zero(values: &[f64]) -> f64 {
         assert!(output.contains("  const scale = (findScale(values, undefined)) ?? undefined;\n"));
         assert!(output.contains("  if (scale !== undefined) {\n"));
         assert!(output.contains(
-            "return { supported: value > 0.0, contour: (found) ?? null, detail: undefined };"
+            "return { supported: value > 0, contour: (found) ?? null, detail: undefined };"
         ));
         assert!(output.contains("return { supported: false, contour: null, detail: found };"));
 
@@ -11808,7 +11805,7 @@ pub fn contour_or_zero(values: &[f64]) -> f64 {
         .unwrap();
         assert!(sibling.contains("  const scale = (findScale(values, 0.5)) ?? undefined;\n"));
         assert!(sibling.contains("  return scale !== undefined;\n"));
-        assert!(sibling.contains("  return ((explanation.contour) ?? undefined) ?? 0.0;\n"));
+        assert!(sibling.contains("  return ((explanation.contour) ?? undefined) ?? 0;\n"));
     }
 
     #[test]
@@ -11884,7 +11881,7 @@ pub fn create_checked_kernel(count: i32, flag: bool) -> Kernel {
 
         assert!(output.contains("export const CHECKED: Kernel = createCheckedKernel(3, true);\n"));
         assert!(output.contains("count > 0 && count <= 4 && flag === true"));
-        assert!(output.contains("  out.scale += 0.5 * (LIMIT - 1.0 / 4.0);\n"));
+        assert!(output.contains("  out.scale += 0.5 * (LIMIT - 1 / 4);\n"));
     }
 
     #[test]
@@ -12103,7 +12100,7 @@ impl Default for Kernel {
         DEFAULTS.fetch_add(1, Ordering::SeqCst);
         return Kernel {
             runtime: EntityRuntimeSlot::default(),
-            scale: 1.0,
+            scale: 1,
         };
     }
 }
@@ -12917,7 +12914,7 @@ pub static KERNEL: LazyLock<Kernel> = LazyLock::new(create_kernel);
 
 pub fn create_kernel() -> Kernel {
     return Kernel {
-        scale: 1.0 + Offset { value: 2.0 },
+        scale: 1 + Offset { value: 2 },
     };
 }
 
@@ -13174,7 +13171,7 @@ pub fn forward(points: &[f64]) -> f64 {
 }
 
 pub fn consume(values: &[f64]) -> f64 {
-    let mut total = 0.0;
+    let mut total = 0;
     for value in values {
         total += value;
     }
@@ -15080,13 +15077,13 @@ pub fn customized_spring_preset() -> SpringConfig {
         let output = compile_typescript(source, None).unwrap();
 
         assert!(output.contains(
-            "export const SpringPresetBouncy: Readonly<SpringConfig> = Object.freeze({ dampingRatio: 0.35, frequency: 2.0 });"
+            "export const SpringPresetBouncy: Readonly<SpringConfig> = Object.freeze({ dampingRatio: 0.35, frequency: 2 });"
         ));
         assert!(output.contains(
             "export const SpringPresetGentle: Readonly<SpringConfig> = Object.freeze({ dampingRatio: 0.8, frequency: 1.5 });"
         ));
         assert!(output.contains(
-            "export const SpringPresetStiff: Readonly<SpringConfig> = Object.freeze({ dampingRatio: 1.0, frequency: 4.0 });"
+            "export const SpringPresetStiff: Readonly<SpringConfig> = Object.freeze({ dampingRatio: 1, frequency: 4 });"
         ));
         assert_eq!(output.matches("Object.freeze(").count(), 3);
         assert!(output.contains("return SpringPresetBouncy;"));
@@ -15117,7 +15114,7 @@ pub fn create_spring_config() -> SpringConfig {
         let output = compile_typescript(source, None).unwrap();
 
         assert!(
-            output.contains("let out = { dampingRatio: 0, frequency: 0 };\n  out.frequency = 2.0;")
+            output.contains("let out = { dampingRatio: 0, frequency: 0 };\n  out.frequency = 2;")
         );
         assert!(!output.contains("SpringConfig.default_()"));
     }
@@ -15163,7 +15160,7 @@ pub fn config() -> Config { return Config::default(); }
                 r#"
 //! flight-compiler: default-object Config
 pub struct Config { pub value: f32 }
-impl Default for Config { fn default() -> Self { return Self { value: 4.0 }; } }
+impl Default for Config { fn default() -> Self { return Self { value: 4 }; } }
 pub fn config() -> Config { return Config::default(); }
 "#,
                 "requires the standard `#[derive(Default)]`; manual or runtime defaults are not structural",
@@ -15650,7 +15647,7 @@ pub fn scaled(r#override: Option<f32>) -> f32 {
         let output = compile_typescript(source, None).unwrap();
 
         assert!(output.contains("export function scaled(override?: number): number"));
-        assert!(output.contains("return (override ?? 12.0) * 0.185;"));
+        assert!(output.contains("return (override ?? 12) * 0.185;"));
         assert!(!output.contains("r#override"));
     }
 
@@ -15829,7 +15826,7 @@ pub fn hsv(out: &mut [f32; 4], i: i32, value: f32) {
         assert!(output.contains("case 0:"));
         assert!(output.contains("out[0] = value;"));
         assert!(output.contains("default:"));
-        assert!(output.contains("out[0] = 0.0;"));
+        assert!(output.contains("out[0] = 0;"));
     }
 
     #[test]
@@ -15938,7 +15935,7 @@ pub fn find_semicolon_after_first_character(value: &str) -> Option<usize> {
 
         let output = compile_typescript(source, None).unwrap();
 
-        assert!(output.contains("((g - b) / d + (g < b ? 6.0 : 0.0)) / 6.0"));
+        assert!(output.contains("((g - b) / d + (g < b ? 6 : 0)) / 6"));
         assert!(
             output.contains("return (ri << 24 | gi << 16 | bi << 8 | ai) >>> 0;"),
             "{output}"
@@ -16201,7 +16198,7 @@ pub fn has_zero(values: &[u32]) -> bool {
             "select_channel should use switch: {output}"
         );
         assert!(
-            output.contains("const value = 1.0;") && output.contains("return value;"),
+            output.contains("const value = 1;") && output.contains("return value;"),
             "select_channel block tail: {output}"
         );
         assert!(output.contains("const high = red << 24;\n    return high | alpha;"));
@@ -16356,7 +16353,7 @@ pub fn check_flag(ok: bool) {
         assert!(output.contains("if (value <= 0) {"));
         assert!(output.contains("throw new Error('assertion failed: value > 0');"));
         assert!(
-            output.contains("if (b === 0.0) {"),
+            output.contains("if (b === 0) {"),
             "assert!(x != y) should invert to ===: {output}"
         );
         assert!(
@@ -16808,7 +16805,7 @@ pub fn example() -> f32 {
             "void value block should emit as IIFE: {output}"
         );
         assert!(
-            output.contains("result = 1.0;"),
+            output.contains("result = 1;"),
             "void value block should emit the assignment: {output}"
         );
     }
@@ -17576,7 +17573,7 @@ pub fn append_terminal_y(out: &mut Vec<f64>, segment: PathSegment) {
             "terminal_x cubic: {output}"
         );
         assert!(
-            output.contains("return 0.0;"),
+            output.contains("return 0;"),
             "terminal_x Close arm: {output}"
         );
         assert!(
@@ -18763,31 +18760,31 @@ import {
 } from '@flighthq/geometry/contract';
 
 function assertPositive(value: number): void {
-  expect(value > 0.0).toBe(true);
+  expect(value > 0).toBe(true);
 }
 
 describe('addVector2', () => {
   it('adds two coordinates', () => {
-    const a = createVector2(2.0, 10.0);
-    const b = createVector2(4.0, 20.0);
-    let result = createVector2(0.0, 0.0);
+    const a = createVector2(2, 10);
+    const b = createVector2(4, 20);
+    let result = createVector2(0, 0);
     addVector2(result, a, b);
-    expect(result.x).toEqual(6.0);
+    expect(result.x).toEqual(6);
     assertPositive(result.y);
   });
 });
 
 describe('equalsVector2', () => {
   it('accepts optional borrows', () => {
-    const a = createVector2(1.0, 2.0);
+    const a = createVector2(1, 2);
     expect(equalsVector2(a, a)).toBe(true);
   });
 });
 
 describe('createVector2', () => {
   it('creates coordinates', () => {
-    const value = createVector2(1.0, 2.0);
-    expect(value.x).toEqual(1.0);
+    const value = createVector2(1, 2);
+    expect(value.x).toEqual(1);
   });
 });
 "#
@@ -22610,9 +22607,9 @@ function readMatrixA(matrix: Readonly<Matrix>): number {
 describe('portableTests', () => {
   it('keeps explicit owners', () => {
     const sample: Sample = createSample();
-    const matrix = createMatrix(1.0, 0.0, 0.0, 1.0, 2.0, 3.0);
+    const matrix = createMatrix(1, 0, 0, 1, 2, 3);
     expect(sample.previous === null).toBe(true);
-    expect(readMatrixA(matrix)).toEqual(1.0);
+    expect(readMatrixA(matrix)).toEqual(1);
   });
 });
 "#
@@ -22688,9 +22685,9 @@ describe('explicitGeometryAliases', () => {
   }
   it('keeps explicit alias owners', () => {
     const sample: Sample = createSample();
-    const matrix = makeMatrix(1.0, 0.0, 0.0, 1.0, 2.0, 3.0);
+    const matrix = makeMatrix(1, 0, 0, 1, 2, 3);
     expect(sample.previous === null).toBe(true);
-    expect(readMatrixA(matrix)).toEqual(1.0);
+    expect(readMatrixA(matrix)).toEqual(1);
   });
 });
 "#
@@ -23319,7 +23316,7 @@ mod read_sample {
                 .unwrap();
 
         assert!(output.contains("import type {\n  Sample,\n} from '@flighthq/example/contract';"));
-        assert!(output.contains("const sample: Sample = { x: 2.0 };"));
+        assert!(output.contains("const sample: Sample = { x: 2 };"));
 
         let velocity2d = include_str!("../../flight-velocity/src/velocity2d.rs");
         let velocity2d_tests = include_str!("../../flight-velocity/tests/velocity2d_test.rs");
@@ -23333,7 +23330,7 @@ mod read_sample {
             velocity_output
                 .contains("import type {\n  Velocity2D,\n} from '@flighthq/velocity/contract';")
         );
-        assert!(velocity_output.contains("const a: Velocity2D = { x: 1.0, y: 2.0 };"));
+        assert!(velocity_output.contains("const a: Velocity2D = { x: 1, y: 2 };"));
     }
 
     #[test]
@@ -23602,14 +23599,17 @@ mod write_vector2_to_float32_array {
         let output = compile_vitest(source, "@flighthq/geometry/contract").unwrap();
 
         assert!(output.contains(
-            "const cases: Readonly<Array<readonly [Float32Array, number]>> = [[new Float32Array([1.0, 2.0]), 3.0]];"
+            "const cases: Readonly<Array<readonly [Float32Array, number]>> = [[new Float32Array([1, 2]), 3]];"
         ));
         assert!(output.contains("for (const [value, expected] of cases) {"));
-        assert!(output.contains("let out = new Float32Array(2).fill(0.0);"));
-        assert!(output.contains("expect(Array.from(out)).toEqual([1.0, 2.0]);"));
-        assert!(output.contains(
-            "expect(Math.abs(out[0] - Math.fround(Math.sqrt(3.0) / 2.0)) < 5e-13).toBe(true);"
-        ));
+        assert!(output.contains("let out = new Float32Array(2).fill(0);"));
+        assert!(output.contains("expect(Array.from(out)).toEqual([1, 2]);"));
+        assert!(
+            output.contains(
+                "expect(Math.abs(out[0] - Math.fround(Math.sqrt(3) / 2)) < 5e-13).toBe(true);"
+            ),
+            "{output}"
+        );
         assert!(output.contains("expect(Number.isNaN(Number.NaN)).toBe(true);"));
     }
 
@@ -23900,10 +23900,10 @@ flight_entity::impl_entity!(Kernel);
 
 pub static SHARED_KERNEL: LazyLock<Kernel> = LazyLock::new(create_kernel);
 
-pub static DOUBLE_KERNEL: LazyLock<Kernel> = LazyLock::new(|| create_scaled_kernel(2.0));
+pub static DOUBLE_KERNEL: LazyLock<Kernel> = LazyLock::new(|| create_scaled_kernel(2));
 
 pub fn create_kernel() -> Kernel {
-    return create_scaled_kernel(1.0);
+    return create_scaled_kernel(1);
 }
 
 pub fn create_scaled_kernel(scale: f64) -> Kernel {
@@ -23949,9 +23949,9 @@ mod shared_kernel {
             "  DOUBLE_KERNEL,\n  createKernel,\n  getKernel,\n  sharedKernel,\n} from '@flighthq/kernel/contract';"
         ));
         assert!(output.contains("describe('sharedKernel', () => {"));
-        assert!(output.contains("    expect(sharedKernel.scale).toEqual(1.0);\n"));
-        assert!(output.contains("    expect(DOUBLE_KERNEL.scale).toEqual(2.0);\n"));
-        assert!(output.contains("    expect(getKernel(undefined).scale).toEqual(1.0);\n"));
+        assert!(output.contains("    expect(sharedKernel.scale).toEqual(1);\n"));
+        assert!(output.contains("    expect(DOUBLE_KERNEL.scale).toEqual(2);\n"));
+        assert!(output.contains("    expect(getKernel(undefined).scale).toEqual(1);\n"));
         assert!(!output.contains("SHARED_KERNEL"));
         assert!(!output.contains("LazyLock"));
     }
@@ -23976,13 +23976,13 @@ pub fn sum_pairs(points: &[f64], offset: f64) -> f64 {
 
 pub fn pair_total(values: &[f64]) -> f64 {
     if values.len() < 2 {
-        return 0.0;
+        return 0;
     }
     return values[0] + values[1];
 }
 
 pub fn sum_values(values: &[f64]) -> f64 {
-    let mut total = 0.0;
+    let mut total = 0;
     for value in values {
         total += value;
     }
@@ -24008,10 +24008,8 @@ mod sum_pairs {
             compile_vitest_with_alias_sources(source, "@flighthq/pairs/contract", &[production])
                 .unwrap();
 
-        assert!(output.contains("new Float64Array([1.0, 2.0, 3.0, 4.0])"));
-        assert!(
-            output.contains("    expect(sumPairs([1.0, 2.0, 3.0, 4.0], 0.5)).toEqual(17.5);\n")
-        );
+        assert!(output.contains("new Float64Array([1, 2, 3, 4])"));
+        assert!(output.contains("    expect(sumPairs([1, 2, 3, 4], 0.5)).toEqual(17.5);\n"));
         assert!(output.contains("    expect(sumPairs(typed, 0.5)).toEqual(17.5);\n"));
     }
 
@@ -24138,7 +24136,7 @@ pub fn guard_or(fallback: f64) -> f64 {
         let production = r#"
 pub type PairContour = Vec<f64>;
 
-pub const PAIR_LIMIT: f64 = 2.0;
+pub const PAIR_LIMIT: f64 = 2;
 
 pub fn pair_total(values: &PairContour) -> f64 {
     return values[0] + values[1];
@@ -24186,7 +24184,7 @@ mod pair_total {
     fn converts_fixed_typed_array_test_constants_and_pushes() {
         let production = r#"
 pub fn sum_values(values: &[f64]) -> f64 {
-    let mut total = 0.0;
+    let mut total = 0;
     for value in values {
         total += value;
     }
@@ -24227,21 +24225,19 @@ mod sum_values {
                 .unwrap();
 
         assert!(
-            output.contains(
-                "const UNIT_SQUARE: Float64Array = new Float64Array([0.0, 1.0, 1.0, 0.0]);\n"
-            ),
+            output.contains("const UNIT_SQUARE: Float64Array = new Float64Array([0, 1, 1, 0]);\n"),
             "{output}"
         );
         assert!(
-            output.contains("pairs.push(new Float64Array([index, 1.0]));"),
+            output.contains("pairs.push(new Float64Array([index, 1]));"),
             "{output}"
         );
         assert!(
-            output.contains("expect(sumValues(Array.from(typed))).toEqual(3.0);"),
+            output.contains("expect(sumValues(Array.from(typed))).toEqual(3);"),
             "{output}"
         );
         assert!(
-            output.contains("expect(helperTotal(Array.from(UNIT_SQUARE))).toEqual(2.0);"),
+            output.contains("expect(helperTotal(Array.from(UNIT_SQUARE))).toEqual(2);"),
             "{output}"
         );
     }
@@ -24279,7 +24275,7 @@ pub fn explain(values: &[f64]) -> Explanation {
     let found = lookup(values);
     let scale = find_scale(values, None);
     if let Some(value) = scale {
-        return Explanation { supported: value > 0.0, contour: found, detail: None };
+        return Explanation { supported: value > 0, contour: found, detail: None };
     }
     return Explanation { supported: false, contour: None, detail: found };
 }
@@ -24305,7 +24301,7 @@ mod find_scale {
                 .unwrap();
 
         assert!(output.contains("    expect(findScale([], undefined)).toEqual(null);\n"));
-        assert!(output.contains("    expect(findScale([1.0], undefined) !== null).toBe(true);\n"));
+        assert!(output.contains("    expect(findScale([1], undefined) !== null).toBe(true);\n"));
         assert!(output.contains("    expect(explain([]).contour).toEqual(null);\n"));
         assert!(output.contains("    expect(lookup([])).toEqual(undefined);\n"));
     }
@@ -24401,7 +24397,7 @@ pub struct SpringConfig {
 
 pub const SPRING_PRESET_BOUNCY: SpringConfig = SpringConfig {
     damping_ratio: 0.35,
-    frequency: 2.0,
+    frequency: 2,
 };
 "#;
         let source = r#"
@@ -24426,7 +24422,7 @@ mod spring_presets {
 
         assert!(output.contains("  SpringPresetBouncy,"));
         assert!(
-            output.contains("expect(SpringPresetBouncy.frequency).toEqual(2.0);"),
+            output.contains("expect(SpringPresetBouncy.frequency).toEqual(2);"),
             "{output}"
         );
         assert!(output.contains("let customized = { ...SpringPresetBouncy };"));
@@ -24554,10 +24550,10 @@ mod path_segments {
             compile_vitest_with_alias_sources(source, "@flighthq/path/contract", &[production])
                 .unwrap();
 
-        assert!(output.contains("const segment = { kind: 'moveTo' as const, x: 4.0, y: 5.0 };"));
+        assert!(output.contains("const segment = { kind: 'moveTo' as const, x: 4, y: 5 };"));
         assert!(output.contains("segment.kind === 'moveTo'"));
         assert!(output.contains("else {\n"));
-        assert!(output.contains("x = 0.0;"), "{output}");
+        assert!(output.contains("x = 0;"), "{output}");
         assert!(!output.contains("  PathSegment,"));
         assert!(!output.contains("PathSegment.MoveTo"));
     }
@@ -24595,10 +24591,10 @@ mod write_easing_samples {
             compile_vitest_with_alias_sources(source, "@flighthq/easing/contract", &[production])
                 .unwrap();
 
-        assert!(output.contains("let out = new Float32Array(4).fill(0.0);"));
+        assert!(output.contains("let out = new Float32Array(4).fill(0);"));
         assert!(output.contains("const ease = (t: number) => t * t;"));
         assert!(output.contains("writeEasingSamples(out, ease);"));
-        assert!(output.contains("const samples = [0.0, 0.5, 1.0];"));
+        assert!(output.contains("const samples = [0, 0.5, 1];"));
         assert!(output.contains("readEasingSamples(samples);"));
         assert!(output.contains("const measure = (text: string) => text.length;"));
         assert!(output.contains("measureText(measure);"));
@@ -24655,7 +24651,7 @@ mod ease_piecewise {
         let output = compile_vitest(source, "@flighthq/easing/contract").unwrap();
 
         assert!(!output.contains("  EasingSegment,"));
-        assert!(output.contains("const segment = { ease: easeLinear, weight: 1.0 };"));
+        assert!(output.contains("const segment = { ease: easeLinear, weight: 1 };"));
         assert!(output.contains("  easeLinear,"));
     }
 
@@ -24754,10 +24750,10 @@ mod easing_family {
         assert!(output.contains(
             "const values: number[] = Array.from({ length: 2 - 0 + 1 }, (_, index) => 0 + index);"
         ));
-        assert!(output.contains("return values.map((value) => value / 2.0);"));
+        assert!(output.contains("return values.map((value) => value / 2);"));
         assert!(output.contains("expect(value.name).toEqual('Linear');"));
-        assert!(output.contains("const positive = samples().filter((value) => value > 0.0);"));
-        assert!(output.contains("expect(positive.slice(1)).toEqual([1.0]);"));
+        assert!(output.contains("const positive = samples().filter((value) => value > 0);"));
+        assert!(output.contains("expect(positive.slice(1)).toEqual([1]);"));
         assert!(output.contains("expect(curves[0][0]).toEqual('Linear');"));
         assert!(output.contains(
             "const family = (() => { const value = curves.find((family) => family[0] === 'Linear');"
@@ -25599,7 +25595,7 @@ pub fn test_map(items: &[f32]) -> Vec<f32> {
 "#;
     let output = compile_typescript(source, None).unwrap();
     assert!(
-        output.contains("return doubled + 1.0;"),
+        output.contains("return doubled + 1;"),
         "block closure tail should get a return statement: {output}"
     );
 }
@@ -27229,11 +27225,11 @@ pub fn negate_sum(a: f64, b: f64) -> f64 {
 "#;
     let output = compile_typescript(source, None).unwrap();
     assert!(
-        output.contains("-(Math.cos(Math.PI * t) - 1.0) / 2.0"),
+        output.contains("-(Math.cos(Math.PI * t) - 1) / 2"),
         "negated paren group should keep parens when used in division: {output}"
     );
     assert!(
-        output.contains("-(a + b) * 2.0"),
+        output.contains("-(a + b) * 2"),
         "negated paren group should keep parens when used in multiplication: {output}"
     );
 }
@@ -27567,7 +27563,7 @@ pub fn ordinary(key: &str) -> usize {
             r#"import { logData } from '@flighthq/log/contract';
 
 export function inline(message: string): void {
-  logData({ message, 'max-count': 2.0 });
+  logData({ message, 'max-count': 2 });
 }
 
 export function built(key: string, enabled: boolean): boolean {
@@ -27930,7 +27926,7 @@ pub fn is_positive(value: Option<f64>) -> bool {
 "#;
         let output = compile_typescript(source, None).unwrap();
         assert!(
-            output.contains("value !== undefined && value > 0.0"),
+            output.contains("value !== undefined && value > 0"),
             "is_some_and closure should inline: {output}"
         );
         assert!(

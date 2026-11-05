@@ -13952,14 +13952,18 @@ fn emit_ordering_variant_comparison(
 }
 
 pub(crate) fn numeric_literal_spelling(spelling: &str, suffix: &str) -> String {
-    if suffix.is_empty() {
-        return spelling.to_string();
+    let base = if suffix.is_empty() {
+        spelling
+    } else {
+        spelling
+            .strip_suffix(suffix)
+            .unwrap_or(spelling)
+            .trim_end_matches('_')
+    };
+    if base.len() >= 3 && base.ends_with(".0") && base.as_bytes()[base.len() - 3].is_ascii_digit() {
+        return base[..base.len() - 2].to_string();
     }
-    return spelling
-        .strip_suffix(suffix)
-        .unwrap_or(spelling)
-        .trim_end_matches('_')
-        .to_string();
+    return base.to_string();
 }
 
 pub(crate) fn emit_local(
@@ -27607,7 +27611,7 @@ fn is_widening_integer_cast(source: &str, target: &str) -> bool {
         return true;
     }
     return match (source, target) {
-        ("u32", "usize") | ("usize", "u32") => true,
+        ("u32", "usize" | "i32" | "isize") | ("usize", "u32" | "i32" | "isize") => true,
         ("i32", "isize") | ("isize", "i32") => true,
         ("u8", "u16" | "u32" | "usize" | "i16" | "i32" | "isize") => true,
         ("u16", "u32" | "usize" | "i32" | "isize") => true,
