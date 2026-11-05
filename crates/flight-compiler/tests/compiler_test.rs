@@ -6055,7 +6055,10 @@ pub fn parse_and_discard(text: &str) {
 }
 "#;
         let error = compile_typescript(ambiguous, None).unwrap_err().to_string();
-        assert!(error.contains("requires a turbofish type annotation"), "{error}");
+        assert!(
+            error.contains("requires a turbofish type annotation"),
+            "{error}"
+        );
 
         let unsupported = r#"
 pub fn parse_bool(text: &str) -> bool {
@@ -18856,7 +18859,10 @@ mod parse_helpers {
         let output = compile_vitest(source, "@flighthq/example/contract").unwrap();
 
         assert!(output.contains("!Number.isNaN(v)"), "{output}");
-        assert!(output.contains("expect(readNumber('1.5')).toEqual(1.5)"), "{output}");
+        assert!(
+            output.contains("expect(readNumber('1.5')).toEqual(1.5)"),
+            "{output}"
+        );
         assert!(!output.contains(".parse("), "{output}");
     }
 
@@ -18882,9 +18888,16 @@ mod vectors {
 
         let output = compile_vitest(source, "@flighthq/example/contract").unwrap();
 
-        assert!(output.contains("const source = new Array(2).fill(0);"), "{output}");
+        assert!(
+            output.contains("const source = new Array(2).fill(0);"),
+            "{output}"
+        );
         assert!(output.contains("const source = [2, 3];"), "{output}");
-        assert_eq!(output.matches("values.push(source[index]);").count(), 2, "{output}");
+        assert_eq!(
+            output.matches("values.push(source[index]);").count(),
+            2,
+            "{output}"
+        );
         assert!(!output.contains("extendFromSlice"), "{output}");
     }
 

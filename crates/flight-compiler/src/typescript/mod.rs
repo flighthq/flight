@@ -330,8 +330,7 @@ pub(super) const NULLABLE_OPTION_RETURN_MARKER: &str = "@nullable-option-return:
 
 // A function whose exact TypeScript contract, rather than a source-wide Rust directive, proves
 // that its Option return retains `null` through internal expression paths.
-const TYPE_SCRIPT_NULLABLE_OPTION_RETURN_MARKER: &str =
-    "@typescript-nullable-option-return:";
+const TYPE_SCRIPT_NULLABLE_OPTION_RETURN_MARKER: &str = "@typescript-nullable-option-return:";
 
 // A public callable type alias whose exact Rust return is `Option` and whose established
 // TypeScript contract uses `null` absence: `{source} SEP {alias}`.
@@ -339,12 +338,10 @@ const NULLABLE_OPTION_CALLABLE_RETURN_MARKER: &str = "@nullable-option-callable-
 
 // A struct `HashMap`/`BTreeMap` field whose values use such a callable alias:
 // `{struct source} SEP {Struct} SEP {field}`.
-const NULLABLE_OPTION_CALLABLE_MAP_FIELD_MARKER: &str =
-    "@nullable-option-callable-map-field:";
+const NULLABLE_OPTION_CALLABLE_MAP_FIELD_MARKER: &str = "@nullable-option-callable-map-field:";
 
 // The BindingId of a local proven to hold a callable whose Option result uses `null`.
-const NULLABLE_OPTION_CALLABLE_BINDING_MARKER: &str =
-    "@nullable-option-callable-binding:";
+const NULLABLE_OPTION_CALLABLE_BINDING_MARKER: &str = "@nullable-option-callable-binding:";
 
 pub(super) const NULLABLE_OPTIONS_MARKER: &str = "@nullable-options";
 
@@ -7524,7 +7521,11 @@ fn insert_lexical_binding_context(function: &ItemFn, context: &mut HashSet<Strin
                 self.bind_pattern(&arm.pat, fact.clone());
                 if nullable_callable_option
                     && let Pat::TupleStruct(tuple) = &arm.pat
-                    && tuple.path.segments.last().is_some_and(|segment| segment.ident == "Some")
+                    && tuple
+                        .path
+                        .segments
+                        .last()
+                        .is_some_and(|segment| segment.ident == "Some")
                     && tuple.elems.len() == 1
                     && let Pat::Ident(binding) = tuple.elems.first().expect("one element")
                     && let Some(id) = self.binding_id(&binding.ident.to_string())
@@ -23061,10 +23062,7 @@ pub(crate) fn option_absent_value(expression: &Expr, entities: &HashSet<String>)
     return "undefined";
 }
 
-fn expression_is_nullable_callable_return(
-    expression: &Expr,
-    entities: &HashSet<String>,
-) -> bool {
+fn expression_is_nullable_callable_return(expression: &Expr, entities: &HashSet<String>) -> bool {
     let Expr::Call(call) = peel_reference_and_paren(expression) else {
         return false;
     };
@@ -26109,9 +26107,11 @@ pub(crate) fn insert_type_script_nullable_option_return_context<'a>(
                                     field_module,
                                     &value.path,
                                 )
-                                .is_some_and(|(owner, declaration)| {
-                                    owner == *module && declaration == alias_name
-                                })
+                                .is_some_and(
+                                    |(owner, declaration)| {
+                                        owner == *module && declaration == alias_name
+                                    },
+                                )
                             }) {
                                 for identity in [
                                     format!(
