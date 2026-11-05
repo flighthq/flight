@@ -1,8 +1,9 @@
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
-import type { Decompressor, ImportDiagnostic, WoffChecksumMismatch } from '@flighthq/types/contract';
+import type { Decompressor, ImportDiagnostic } from '@flighthq/types/contract';
 import { Compression, CompressionFraming, ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
 import { assembleSfntFont, computeSfntTableChecksum } from './sfntAssembly.ts';
+import type { WoffChecksumMismatch } from './types.ts';
 
 // WOFF is a wrapper, not a font format: the same sfnt tables, each optionally deflated, behind a header
 // that says where they went. So the whole job is to REBUILD THE SFNT and hand it to the reader that

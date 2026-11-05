@@ -10,6 +10,7 @@ export * from './openTypeMetrics.ts';
 export * from './openTypeTestHelper.ts';
 export * from './sfntAssembly.ts';
 export * from './sfntTableDirectory.ts';
+export * from './types.ts';
 export * from './woff2Font.ts';
 export * from './woff2GlyfTransform.ts';
 export * from './woffFont.ts';

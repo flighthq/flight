@@ -1,67 +1,63 @@
+// Generated from crates/flight-font-formats/tests/cff_dict_test.rs by flight-compiler.
+// Rust is authoritative; run `npm run generate` after changing it.
+
 import { describe, expect, it } from 'vitest';
 
-import { CFF_OPERATOR_CHARSTRINGS, CFF_OPERATOR_PRIVATE, CFF_OPERATOR_ROS, readCffDict } from './cffDict.ts';
-
-function dict(...bytes: number[]): Map<number, number[]> | null {
-  const buffer = new Uint8Array(bytes);
-  return readCffDict(buffer, 0, buffer.length);
-}
+import { CFF_OPERATOR_CHARSTRINGS, CFF_OPERATOR_PRIVATE, CFF_OPERATOR_ROS, readCffDict } from './contract.ts';
 
 describe('readCffDict', () => {
-  // Operands precede their operator, which is the reverse of most bytecode and the whole reading rule.
-  it('assigns the accumulated operands to the operator that follows them', () => {
-    expect(dict(139, 17)?.get(CFF_OPERATOR_CHARSTRINGS)).toEqual([0]);
-    expect(dict(140, 141, CFF_OPERATOR_PRIVATE)?.get(CFF_OPERATOR_PRIVATE)).toEqual([1, 2]);
+  it('assigns accumulated operands to the following operator', () => {
+    expect(readCffDict(new Uint8Array([139, 17]), 0, 2)!.get(CFF_OPERATOR_CHARSTRINGS)).toEqual([0]);
+    expect(readCffDict(new Uint8Array([140, 141, 18]), 0, 3)!.get(CFF_OPERATOR_PRIVATE)).toEqual([1, 2]);
   });
-
-  it('starts each operator with a fresh operand list rather than carrying leftovers forward', () => {
-    const parsed = dict(140, 17, 141, CFF_OPERATOR_PRIVATE)!;
+  it('starts each operator with a fresh operand list', () => {
+    const parsed = readCffDict(new Uint8Array([140, 17, 141, 18]), 0, 4)!;
     expect(parsed.get(CFF_OPERATOR_CHARSTRINGS)).toEqual([1]);
     expect(parsed.get(CFF_OPERATOR_PRIVATE)).toEqual([2]);
   });
-
-  it('reads the one-byte operand range around its zero point', () => {
-    expect(dict(32, 17)?.get(17)).toEqual([-107]);
-    expect(dict(246, 17)?.get(17)).toEqual([107]);
+  it('reads one byte operands around zero', () => {
+    expect(readCffDict(new Uint8Array([32, 17]), 0, 2)!.get(17)).toEqual([-107]);
+    expect(readCffDict(new Uint8Array([246, 17]), 0, 2)!.get(17)).toEqual([107]);
   });
-
-  it('reads the two-byte positive and negative operand encodings', () => {
-    expect(dict(247, 0, 17)?.get(17)).toEqual([108]);
-    expect(dict(251, 0, 17)?.get(17)).toEqual([-108]);
+  it('reads two byte positive and negative operands', () => {
+    expect(readCffDict(new Uint8Array([247, 0, 17]), 0, 3)!.get(17)).toEqual([108]);
+    expect(readCffDict(new Uint8Array([251, 0, 17]), 0, 3)!.get(17)).toEqual([-108]);
   });
-
-  it('reads the sized integer operands', () => {
-    expect(dict(28, 0x30, 0x39, 17)?.get(17)).toEqual([12345]);
-    expect(dict(29, 0, 1, 0, 0, 17)?.get(17)).toEqual([65536]);
+  it('reads sized integer operands', () => {
+    expect(readCffDict(new Uint8Array([28, 0x30, 0x39, 17]), 0, 4)!.get(17)).toEqual([12345]);
+    expect(readCffDict(new Uint8Array([29, 0, 1, 0, 0, 17]), 0, 6)!.get(17)).toEqual([65536]);
   });
-
-  it('reads a packed real operand, including its exponent form', () => {
-    // -2.25 then 0.140625e-3, in the nibble encoding, terminated by 0xf.
-    expect(dict(30, 0xe2, 0xa2, 0x5f, 17)?.get(17)).toEqual([-2.25]);
-    expect(dict(30, 0x0a, 0x14, 0x0c, 0x3f, 17)?.get(17)).toEqual([0.14e-3]);
+  it('reads packed reals and exponents', () => {
+    expect(readCffDict(new Uint8Array([30, 0xe2, 0xa2, 0x5f, 17]), 0, 5)!.get(17)).toEqual([-2.25]);
+    expect(readCffDict(new Uint8Array([30, 0x0a, 0x14, 0x0c, 0x3f, 17]), 0, 6)!.get(17)).toEqual([0.14e-3]);
   });
-
-  // Byte 12 introduces a second byte; keying escaped operators apart is what keeps a CID marker
-  // distinguishable from an ordinary operator with the same low number.
-  it('keys an escaped operator apart from the unescaped one', () => {
-    const parsed = dict(139, 12, 30)!;
+  it('keys escaped operators apart from unescaped ones', () => {
+    const parsed = readCffDict(new Uint8Array([139, 12, 30]), 0, 3)!;
     expect(parsed.has(CFF_OPERATOR_ROS)).toBe(true);
-    expect(parsed.has(30)).toBe(false);
+    expect(!parsed.has(30)).toBe(true);
   });
-
-  it('returns the sentinel for a reserved operand byte, which means this is not a DICT', () => {
-    expect(dict(22, 17)).toBeNull();
-    expect(dict(31, 17)).toBeNull();
+  it('returns null for reserved operands', () => {
+    expect(readCffDict(new Uint8Array([22, 17]), 0, 2)).toEqual(null);
+    expect(readCffDict(new Uint8Array([31, 17]), 0, 2)).toEqual(null);
   });
-
-  it('returns the sentinel when the stream ends mid-number rather than reading arbitrary bytes', () => {
-    expect(dict(28, 0x30)).toBeNull();
-    expect(dict(29, 0, 1)).toBeNull();
-    expect(dict(247)).toBeNull();
-    expect(dict(30, 0xe2)).toBeNull();
+  it('returns null for truncated numbers', () => {
+    for (const bytes of [[28, 0x30], [29, 0, 1], [247], [30, 0xe2]]) {
+      expect(readCffDict(new Uint8Array(bytes), 0, bytes.length)).toEqual(null);
+    }
   });
-
-  it('returns the sentinel when an escape byte ends the stream', () => {
-    expect(dict(139, 12)).toBeNull();
+  it('returns null when an escape ends the stream', () => {
+    expect(readCffDict(new Uint8Array([139, 12]), 0, 2)).toEqual(null);
+  });
+  it('retains last operator write and skips reserved real nibbles', () => {
+    const parsed = readCffDict(new Uint8Array([140, 17, 141, 17, 30, 0xdf, 18, 142]), 0, 8)!;
+    expect(parsed.get(17)).toEqual([2]);
+    expect(parsed.get(18)).toEqual([0]);
+  });
+  it('respects sliced input and explicit start and end', () => {
+    const backing = [22, 22, 140, 17, 141, 18, 22];
+    const view = backing.slice(1, 6);
+    const parsed = readCffDict(new Uint8Array(view), 1, 5)!;
+    expect(parsed.get(17)).toEqual([1]);
+    expect(parsed.get(18)).toEqual([2]);
   });
 });

@@ -1,5 +1,3 @@
-import type { CffIndexEntry, CffTable, SfntTableDirectory } from '@flighthq/types/contract';
-
 import {
   CFF_OPERATOR_CHARSTRINGS,
   CFF_OPERATOR_FD_ARRAY,
@@ -10,6 +8,7 @@ import {
 } from './cffDict.ts';
 import { readCffFdSelect } from './cffFdSelect.ts';
 import { readCffIndex } from './cffIndex.ts';
+import type { CffIndexEntry, CffTable, SfntTableDirectory } from './types.ts';
 
 // Assembles the parts of a `CFF ` table an outline reader needs: the charstrings, and the two subroutine
 // pools they call into.

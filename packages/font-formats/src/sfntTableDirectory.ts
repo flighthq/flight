@@ -1,4 +1,4 @@
-import type { SfntTableDirectory } from '@flighthq/types/contract';
+import type { SfntTableDirectory } from './types.ts';
 
 // The sfnt container's table directory: a fixed 12-byte header followed by one 16-byte record per
 // table, each record naming a four-character tag and the table's byte range within the file. Every

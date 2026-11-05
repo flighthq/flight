@@ -3,14 +3,11 @@ import { detectFontFormat } from '@flighthq/font/contract';
 import type { Path } from '@flighthq/path/contract';
 import type {
   HostDecompressDeflateCapability,
-  CffTable,
   Entity,
   EntityConstruction,
   GlyphOutlineMetrics,
   GlyphOutlineSource,
   ImportDiagnostic,
-  OpenTypeFontExplanation,
-  SfntTableDirectory,
 } from '@flighthq/types/contract';
 
 import { runCffCharstring } from './cffCharstring.ts';
@@ -24,6 +21,7 @@ import {
   readOpenTypeMetrics,
 } from './openTypeMetrics.ts';
 import { readSfntTableDirectory } from './sfntTableDirectory.ts';
+import type { CffTable, OpenTypeFontExplanation, SfntTableDirectory } from './types.ts';
 import { readWoffFont } from './woffFont.ts';
 
 /**

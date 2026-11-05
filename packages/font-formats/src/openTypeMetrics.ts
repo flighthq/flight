@@ -1,4 +1,6 @@
-import type { GlyphOutlineMetrics, SfntTableDirectory } from '@flighthq/types/contract';
+import type { GlyphOutlineMetrics } from '@flighthq/types/contract';
+
+import type { SfntTableDirectory } from './types.ts';
 
 // The tables every outline source needs regardless of which flavor carries the outlines: `head` for the
 // design-unit scale and the `loca` index width, `hhea` for the vertical metrics and the count of long

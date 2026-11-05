@@ -1,4 +1,4 @@
-import type { CffIndex, CffIndexEntry } from '@flighthq/types/contract';
+import type { CffIndex, CffIndexEntry } from './types.ts';
 
 // The CFF INDEX: the container every other CFF structure is stored in.
 //

@@ -1,4 +1,4 @@
-import type { SfntTableDirectory } from '@flighthq/types/contract';
+import type { SfntTableDirectory } from './types.ts';
 
 // The codepoint → glyph-index map. `cmap` is a table of sub-tables, each tagged with a platform and
 // encoding, because a font may carry several mappings for different systems. Only the Unicode ones are
