@@ -18,8 +18,6 @@ import {
   getRichTextSelectionRectangles,
 } from '@flighthq/textlayout/contract';
 import type {
-  DomRenderState,
-  DomTextInputOverlay,
   EntityConstruction,
   RenderProxy2D,
   RenderState,
@@ -28,6 +26,7 @@ import type {
   Scene2DRenderer,
 } from '@flighthq/types/contract';
 
+import type { DomRenderState, DomTextInputOverlay } from './contract.scene2d-dom-types.ts';
 import { getDomFontAscentCached, setDomFontAscentCached } from './domFontSource.ts';
 import { applyDomStyle, prepareDomElement, setDomRendererElement } from './domStyle.ts';
 import { escapeDomHtmlString } from './domTextHelpers.ts';

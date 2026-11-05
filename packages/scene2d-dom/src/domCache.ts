@@ -8,12 +8,12 @@ import type {
   CanvasTextureRenderTarget,
   HostCanvasCapability,
   Scene2DRenderer,
-  DomRenderState,
   RenderCache,
   RenderProxy2D,
   RenderState,
 } from '@flighthq/types/contract';
 
+import type { DomRenderState } from './contract.scene2d-dom-types.ts';
 import { prepareDomElement, setDomRendererElement } from './domStyle.ts';
 import { setDomTransformWithOffset } from './domTransform.ts';
 

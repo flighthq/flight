@@ -1,8 +1,8 @@
 import { createMatrix, createRectangle } from '@flighthq/geometry/contract';
 import { getOrCreateRenderProxy2D } from '@flighthq/render/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
-import type { DomRenderState, DomScene2DRectangle } from '@flighthq/types/contract';
 
+import type { DomRenderState, DomScene2DRectangle } from './contract.scene2d-dom-types.ts';
 import {
   applyDomClipRectangles,
   createDomScene2DRectangle,

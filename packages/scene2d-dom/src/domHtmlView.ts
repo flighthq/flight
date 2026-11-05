@@ -1,6 +1,7 @@
 ﻿import { noopRendererData } from '@flighthq/render/contract';
-import type { Scene2DRenderer, DomRenderState, HtmlView, RenderProxy2D } from '@flighthq/types/contract';
+import type { Scene2DRenderer, HtmlView, RenderProxy2D } from '@flighthq/types/contract';
 
+import type { DomRenderState } from './contract.scene2d-dom-types.ts';
 import { setDomRendererElement } from './domStyle.ts';
 import { setDomTransform } from './domTransform.ts';
 

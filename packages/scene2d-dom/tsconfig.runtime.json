@@ -1,0 +1,39 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "composite": true,
+    "rootDir": "src",
+    "outDir": "dist",
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "tsBuildInfoFile": "dist/.tsbuildinfo.runtime"
+  },
+  "references": [
+    { "path": "../bitmap" },
+    { "path": "../color" },
+    { "path": "../entity" },
+    { "path": "../font" },
+    { "path": "../geometry/tsconfig.runtime.json" },
+    { "path": "../image" },
+    { "path": "../log" },
+    { "path": "../node" },
+    { "path": "../path/tsconfig.contract.json" },
+    { "path": "../registry" },
+    { "path": "../render" },
+    { "path": "../scene2d" },
+    { "path": "../scene2d-canvas" },
+    { "path": "../shape" },
+    { "path": "../surface" },
+    { "path": "../signals" },
+    { "path": "../text/tsconfig.runtime.json" },
+    { "path": "../textformat" },
+    { "path": "../textinput" },
+    { "path": "../textlayout/tsconfig.runtime.json" },
+    { "path": "../texture" },
+    { "path": "../types" },
+    { "path": "./tsconfig.contract.json" }
+  ],
+  "include": ["src/**/*.ts"],
+  "exclude": ["src/contract.scene2d-dom-types.ts", "src/types/**/*.ts"]
+}

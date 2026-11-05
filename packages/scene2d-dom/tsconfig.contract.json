@@ -1,0 +1,25 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "composite": true,
+    "rootDir": "src",
+    "outDir": "dist",
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "moduleSuffixes": [".scene2d-dom-types", ".app-types", ".geometry-types", ".path-types", ".shape-types", ""],
+    "tsBuildInfoFile": "dist/.tsbuildinfo.contract"
+  },
+  "references": [
+    { "path": "../app/tsconfig.contract.json" },
+    { "path": "../entity" },
+    { "path": "../geometry/tsconfig.contract.json" },
+    { "path": "../input" },
+    { "path": "../layout" },
+    { "path": "../path/tsconfig.contract.json" },
+    { "path": "../shape/tsconfig.contract.json" },
+    { "path": "../signals" },
+    { "path": "../types/tsconfig.scene2d-dom-types.json" }
+  ],
+  "include": ["src/contract.scene2d-dom-types.ts", "src/types/**/*.ts"]
+}

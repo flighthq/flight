@@ -3,7 +3,6 @@ import { getNativeTextRuntime } from '@flighthq/text/contract';
 import type { NativeText, NativeTextRuntime, NativeTextStyle } from '@flighthq/text/contract';
 import type {
   Scene2DRenderer,
-  DomRenderState,
   NodeAny,
   RendererData,
   RenderProxy2D,
@@ -11,6 +10,7 @@ import type {
   TextVerticalAlign,
 } from '@flighthq/types/contract';
 
+import type { DomRenderState } from './contract.scene2d-dom-types.ts';
 import { applyDomStyle, prepareDomElement, setDomRendererElement } from './domStyle.ts';
 
 // DOM is the backend for which a native text element makes sense; other backends either no-op or

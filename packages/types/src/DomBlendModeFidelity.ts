@@ -1,1 +1,1 @@
-export type DomBlendModeFidelity = 'approximate' | 'exact' | 'unsupported';
+export type { DomBlendModeFidelity } from '@flighthq/scene2d-dom/contract';

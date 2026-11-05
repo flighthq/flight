@@ -1,4 +1,1 @@
-import type { DomRenderState } from './DomRenderState.ts';
-import type { Texture } from './Texture.ts';
-
-export type DomTextureResolver = (state: DomRenderState, texture: Readonly<Texture>) => CanvasImageSource | null;
+export type { DomTextureResolver } from '@flighthq/scene2d-dom/contract';

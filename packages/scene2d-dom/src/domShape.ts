@@ -3,7 +3,6 @@ import { getNodeLocalBoundsRectangle } from '@flighthq/node/contract';
 import type { Shape } from '@flighthq/shape/contract';
 import { ShapeKind } from '@flighthq/shape/contract';
 import type {
-  DomRenderState,
   EntityConstruction,
   RenderProxy2D,
   RenderState,
@@ -13,6 +12,7 @@ import type {
 } from '@flighthq/types/contract';
 import { RenderRegistryTable } from '@flighthq/types/contract';
 
+import type { DomRenderState } from './contract.scene2d-dom-types.ts';
 import { getDomRenderStateRuntime } from './domRenderState.ts';
 import { getDomShapeRasterizer } from './domShapeRasterizer.ts';
 import { prepareDomElement, setDomRendererElement } from './domStyle.ts';

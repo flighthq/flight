@@ -8,8 +8,9 @@ import {
   getTextInputSelectionRectangles,
   getTextInputState,
 } from '@flighthq/textinput/contract';
-import type { DomRenderState, RendererData, RenderProxy2D, TextSelectionRectangle } from '@flighthq/types/contract';
+import type { RendererData, RenderProxy2D, TextSelectionRectangle } from '@flighthq/types/contract';
 
+import type { DomRenderState } from './contract.scene2d-dom-types.ts';
 import { registerDomTextInputOverlay } from './domRichText.ts';
 
 let _keyframesInjected = false;

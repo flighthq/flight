@@ -6,7 +6,6 @@ import { createTextFormatRange } from '@flighthq/textformat/contract';
 import type { TextFormat } from '@flighthq/textformat/contract';
 import { computeTextLayout } from '@flighthq/textlayout/contract';
 import type {
-  DomRenderState,
   EntityConstruction,
   RenderProxy2D,
   RenderState,
@@ -15,6 +14,7 @@ import type {
   Scene2DRenderer,
 } from '@flighthq/types/contract';
 
+import type { DomRenderState } from './contract.scene2d-dom-types.ts';
 import { applyDomStyle, prepareDomElement, setDomRendererElement } from './domStyle.ts';
 import { escapeDomHtmlString } from './domTextHelpers.ts';
 

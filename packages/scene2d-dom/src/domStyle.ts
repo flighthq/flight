@@ -1,5 +1,6 @@
-﻿import type { DomRenderState, RenderProxy2D } from '@flighthq/types/contract';
+﻿import type { RenderProxy2D } from '@flighthq/types/contract';
 
+import type { DomRenderState } from './contract.scene2d-dom-types.ts';
 import { getDomRenderStateRuntime } from './domRenderState.ts';
 import { setDomTransform } from './domTransform.ts';
 

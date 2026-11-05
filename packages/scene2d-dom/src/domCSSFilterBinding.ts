@@ -1,5 +1,7 @@
 import { getOrCreateRenderProxy2D } from '@flighthq/render/contract';
-import type { Node2D, DomRenderState, RenderProxy2D } from '@flighthq/types/contract';
+import type { Node2D, RenderProxy2D } from '@flighthq/types/contract';
+
+import type { DomRenderState } from './contract.scene2d-dom-types.ts';
 
 /**
  * Enables CSS filter support for the render state by installing the resolver the

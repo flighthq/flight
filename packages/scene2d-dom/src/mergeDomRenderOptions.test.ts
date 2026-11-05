@@ -1,5 +1,4 @@
-import type { DomRenderOptions } from '@flighthq/types/contract';
-
+import type { DomRenderOptions } from './contract.scene2d-dom-types.ts';
 import { mergeDomRenderOptions } from './mergeDomRenderOptions.ts';
 
 // Every field DomRenderOptions declares. Adding one fails the exhaustiveness test until someone

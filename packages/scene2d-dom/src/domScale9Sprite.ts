@@ -2,7 +2,6 @@ import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { drawCanvasTextureView } from '@flighthq/scene2d-canvas/contract';
 import { getTextureViewSize } from '@flighthq/texture/contract';
 import type {
-  DomRenderState,
   EntityConstruction,
   RenderProxy2D,
   RenderState,
@@ -12,6 +11,7 @@ import type {
   Scene2DRenderer,
 } from '@flighthq/types/contract';
 
+import type { DomRenderState } from './contract.scene2d-dom-types.ts';
 import { applyDomStyle, prepareDomElement, setDomRendererElement } from './domStyle.ts';
 import { resolveDomTexture } from './domTextureResolver.ts';
 

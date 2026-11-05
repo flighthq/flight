@@ -1,6 +1,1 @@
-export interface DomScene2DRectangle {
-  bottom: number;
-  left: number;
-  right: number;
-  top: number;
-}
+export type { DomScene2DRectangle } from '@flighthq/scene2d-dom/contract';

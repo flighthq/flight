@@ -1,4 +1,4 @@
-import type { DomRenderOptions } from '@flighthq/types/contract';
+import type { DomRenderOptions } from './contract.scene2d-dom-types.ts';
 
 /**
  * Composes DOM render-option fragments into one, field by field.

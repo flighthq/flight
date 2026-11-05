@@ -1,5 +1,4 @@
-import type { DomRenderStateRuntime } from '@flighthq/types/contract';
-
+import type { DomRenderStateRuntime } from './contract.scene2d-dom-types.ts';
 import { hasDomStructureChanged, processDomNode, reconcileDomContainer, swapDomOrderLists } from './domReconcile.ts';
 import { createDomRenderState, getDomRenderStateRuntime } from './domRenderState.ts';
 

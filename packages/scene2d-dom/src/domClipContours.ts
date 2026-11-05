@@ -1,5 +1,7 @@
 import type { PathWinding } from '@flighthq/path/contract';
-import type { DomClipContourEntry, Matrix } from '@flighthq/types/contract';
+import type { Matrix } from '@flighthq/types/contract';
+
+import type { DomClipContourEntry } from './contract.scene2d-dom-types.ts';
 
 // DOM contour clip via CSS clip-path. Unlike Gl/Wgpu stencil, the DOM realizes a path clip as a
 // `clip-path` on the masked element(s). Crisp (vector), honors winding via `clip-rule`. Replaces the

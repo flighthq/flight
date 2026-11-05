@@ -1,17 +1,13 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type { Entity, EntityConstruction, MatrixLike, RectangleLike, RenderProxy2D } from '@flighthq/types/contract';
+
 import type {
   DomClipContourEntry,
   DomClipEntry,
   DomClipHooks,
   DomRenderState,
   DomScene2DRectangle,
-  Entity,
-  EntityConstruction,
-  MatrixLike,
-  RectangleLike,
-  RenderProxy2D,
-} from '@flighthq/types/contract';
-
+} from './contract.scene2d-dom-types.ts';
 import { buildDomContourClipPath } from './domClipContours.ts';
 import { getDomRenderStateRuntime } from './domRenderState.ts';
 

@@ -1,6 +1,6 @@
 import { createMatrix } from '@flighthq/geometry/contract';
-import type { DomClipContourEntry } from '@flighthq/types/contract';
 
+import type { DomClipContourEntry } from './contract.scene2d-dom-types.ts';
 import { buildDomContourClipPath, pushDomClipContours } from './domClipContours.ts';
 
 const identityMap = (x: number, y: number): readonly [number, number] => [x, y];

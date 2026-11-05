@@ -1,7 +1,8 @@
 import { getTextureSourceKind } from '@flighthq/texture/contract';
-import type { DomRenderState, DomTextureResolver, Texture, TextureSourceKind } from '@flighthq/types/contract';
+import type { Texture, TextureSourceKind } from '@flighthq/types/contract';
 import { RenderRegistryTable } from '@flighthq/types/contract';
 
+import type { DomRenderState, DomTextureResolver } from './contract.scene2d-dom-types.ts';
 import { getDomRenderStateRuntime } from './domRenderState.ts';
 
 export function registerDomTextureResolver(

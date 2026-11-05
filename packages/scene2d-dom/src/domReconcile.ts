@@ -1,4 +1,6 @@
-import type { DomRenderStateRuntime, RenderProxy2D } from '@flighthq/types/contract';
+import type { RenderProxy2D } from '@flighthq/types/contract';
+
+import type { DomRenderStateRuntime } from './contract.scene2d-dom-types.ts';
 
 export function hasDomStructureChanged(
   runtime: DomRenderStateRuntime,

@@ -1,6 +1,7 @@
 import { createRenderState as _createRenderState, createRenderStateRuntime } from '@flighthq/render/contract';
-import type { DomRenderOptions, DomRenderState, DomRenderStateRuntime } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
+
+import type { DomRenderOptions, DomRenderState, DomRenderStateRuntime } from './contract.scene2d-dom-types.ts';
 
 export function createDomRenderState(element: HTMLElement, options: Partial<DomRenderOptions> = {}): DomRenderState {
   const state = _createRenderState({

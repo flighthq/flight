@@ -1,3 +1,4 @@
+export * from './contract.scene2d-dom-types.ts';
 export * from './domBitmapTextureResolver.ts';
 export * from './domCSSFilterBinding.ts';
 export * from './domCache.ts';

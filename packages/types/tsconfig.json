@@ -19,6 +19,7 @@
       ".path-types",
       ".permissions-types",
       ".preferences-types",
+      ".scene2d-dom-types",
       ".scene2d-formats-types",
       ".selection-types",
       ".shape-formats-types",
@@ -108,6 +109,9 @@
     },
     {
       "path": "../resource"
+    },
+    {
+      "path": "../scene2d-dom/tsconfig.contract.json"
     },
     {
       "path": "../scene2d-formats/tsconfig.contract.json"

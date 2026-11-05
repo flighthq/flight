@@ -4,7 +4,6 @@ import { mapScale9ShapeCommands } from '@flighthq/shape/contract';
 import type { Scale9Shape, ShapeCommandToken } from '@flighthq/shape/contract';
 import { Scale9ShapeKind } from '@flighthq/shape/contract';
 import type {
-  DomRenderState,
   EntityConstruction,
   MatrixLike,
   RenderProxy2D,
@@ -15,6 +14,7 @@ import type {
 } from '@flighthq/types/contract';
 import { RenderRegistryTable } from '@flighthq/types/contract';
 
+import type { DomRenderState } from './contract.scene2d-dom-types.ts';
 import { getDomRenderStateRuntime } from './domRenderState.ts';
 import { buildDomScale9Mapper } from './domScale9Mapper.ts';
 import { drawDomShape } from './domShape.ts';

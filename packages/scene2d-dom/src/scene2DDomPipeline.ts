@@ -1,7 +1,7 @@
 import { withKindMapEntry } from '@flighthq/registry/contract';
 import { MorphShapeKind, Scale9ShapeKind, ShapeKind } from '@flighthq/shape/contract';
 import { NativeTextKind, RichTextKind, TextLabelKind } from '@flighthq/text/contract';
-import type { DomRenderOptions, Kind, NodeRenderer } from '@flighthq/types/contract';
+import type { Kind, NodeRenderer } from '@flighthq/types/contract';
 import {
   DisplayObjectKind,
   HtmlViewKind,
@@ -10,6 +10,7 @@ import {
   SpriteKind,
 } from '@flighthq/types/contract';
 
+import type { DomRenderOptions } from './contract.scene2d-dom-types.ts';
 import { domRenderCacheRenderer } from './domCache.ts';
 import { domHtmlViewRenderer } from './domHtmlView.ts';
 import { domNativeTextRenderer } from './domNativeText.ts';
