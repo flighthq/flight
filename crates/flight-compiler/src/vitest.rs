@@ -2503,8 +2503,9 @@ const FLIGHT_ERROR_HELPER_SEPARATOR: char = '\u{1f}';
 // A proven entity-id test binding, which holds its allocation (`proven_entity_id_bindings`).
 const ENTITY_ID_BINDING_MARKER: &str = "@entity-id-binding:";
 
-// A test helper proven to run its closure once under `catch_unwind`, require a canonical
-// `FlightError` payload of one kind, and (when it returns `String`) return its message:
+// A test helper proven to consume either a closure run once under `catch_unwind` or its canonical
+// `std::thread::Result`, require a canonical `FlightError` payload of one kind, and optionally
+// assert or return its message:
 //
 //     fn assert_range_error(run: impl FnOnce()) -> String {
 //         let payload = catch_unwind(AssertUnwindSafe(run)).expect_err("expected a RangeError");
@@ -2513,20 +2514,36 @@ const ENTITY_ID_BINDING_MARKER: &str = "@entity-id-binding:";
 //         return error.message.clone();
 //     }
 //
-// A call is then one `toThrow` on the closure it is given (`flight_error_helper_assertion`).
+// A call is then one `toThrow` on the closure it is given or the inline caught-result closure
+// (`flight_error_helper_assertion`).
 struct FlightErrorHelper {
+    input: FlightErrorHelperInput,
+    exact_message: Option<String>,
     expect_message: Option<String>,
     kind: String,
     returns_message: bool,
+}
+
+#[derive(Clone, Copy)]
+enum FlightErrorHelperInput {
+    Closure,
+    PanicResult,
 }
 
 impl FlightErrorHelper {
     fn marker(&self, name: &str) -> String {
         let separator = FLIGHT_ERROR_HELPER_SEPARATOR;
         return format!(
-            "{FLIGHT_ERROR_HELPER_MARKER}{name}{separator}{}{separator}{}{separator}{}",
+            "{FLIGHT_ERROR_HELPER_MARKER}{name}{separator}{}{separator}{}{separator}{}{separator}{}{separator}{}",
             self.kind,
             u8::from(self.returns_message),
+            match self.input {
+                FlightErrorHelperInput::Closure => "closure",
+                FlightErrorHelperInput::PanicResult => "panic-result",
+            },
+            self.exact_message
+                .as_deref()
+                .map_or(String::new(), |message| format!("{message:?}")),
             self.expect_message
                 .as_deref()
                 .map_or(String::new(), |message| format!("{message:?}")),
@@ -2538,15 +2555,27 @@ impl FlightErrorHelper {
         let marker = context
             .iter()
             .find_map(|marker| marker.strip_prefix(&prefix))?;
-        let mut fields = marker.splitn(3, FLIGHT_ERROR_HELPER_SEPARATOR);
+        let mut fields = marker.splitn(5, FLIGHT_ERROR_HELPER_SEPARATOR);
         let kind = fields.next()?.to_string();
         let returns_message = fields.next()? == "1";
+        let input = match fields.next()? {
+            "closure" => FlightErrorHelperInput::Closure,
+            "panic-result" => FlightErrorHelperInput::PanicResult,
+            _ => return None,
+        };
+        let exact_message = fields
+            .next()
+            .filter(|message| !message.is_empty())
+            .and_then(|message| syn::parse_str::<syn::LitStr>(message).ok())
+            .map(|literal| literal.value());
         let expect_message = fields
             .next()
             .filter(|message| !message.is_empty())
             .and_then(|message| syn::parse_str::<syn::LitStr>(message).ok())
             .map(|literal| literal.value());
         return Some(FlightErrorHelper {
+            input,
+            exact_message,
             expect_message,
             kind,
             returns_message,
@@ -2554,12 +2583,13 @@ impl FlightErrorHelper {
     }
 }
 
-// The proof for `function` (see `FlightErrorHelper`), or `None`. Its one parameter is
-// `impl FnOnce()`, it returns nothing or `String`, and its body is only: the caught panic of that
-// parameter (`catch_unwind(run)` or `catch_unwind(AssertUnwindSafe(run))`, with `.unwrap_err()`,
-// `.expect_err(..)` or `.err().expect(..)`, in one statement or through a result binding), its
-// canonical `FlightError` downcast, one `assert_eq!` of the error's kind, and, when it returns
-// `String`, `return error.message.clone()` (or `.to_string()`). The name plays no part.
+// The proof for `function` (see `FlightErrorHelper`), or `None`. Its one parameter is either
+// `impl FnOnce()` or the canonical panic result `std::thread::Result<T>`. A closure parameter is
+// caught inside the helper; a result parameter must be consumed immediately by `.unwrap_err()`.
+// Both shapes then downcast to canonical `FlightError` and assert its kind, optionally followed by
+// one exact message assertion. Closure helpers may instead return the message for one exact caller
+// assertion. No other statement or read is admitted, so the panic payload cannot escape or be
+// reused. The helper's name plays no part in the proof.
 fn proven_flight_error_helper(function: &ItemFn) -> Option<FlightErrorHelper> {
     let signature = &function.sig;
     if signature.asyncness.is_some()
@@ -2571,35 +2601,54 @@ fn proven_flight_error_helper(function: &ItemFn) -> Option<FlightErrorHelper> {
     let Some(FnArg::Typed(parameter)) = signature.inputs.first() else {
         return None;
     };
-    let Pat::Ident(run) = parameter.pat.as_ref() else {
+    let Pat::Ident(parameter_pattern) = parameter.pat.as_ref() else {
         return None;
     };
-    let run = run.ident.to_string();
-    if !type_is_unit_fn_once(&parameter.ty) {
+    let parameter_name = parameter_pattern.ident.to_string();
+    let input = if type_is_unit_fn_once(&parameter.ty) {
+        FlightErrorHelperInput::Closure
+    } else if type_is_thread_result(&parameter.ty) {
+        FlightErrorHelperInput::PanicResult
+    } else {
         return None;
-    }
+    };
     let returns_message = match &signature.output {
         ReturnType::Default => false,
-        ReturnType::Type(_, returned) if type_is_string(returned) => true,
+        ReturnType::Type(_, returned)
+            if matches!(input, FlightErrorHelperInput::Closure) && type_is_string(returned) =>
+        {
+            true
+        }
         ReturnType::Type(..) => return None,
     };
     let statements = function.block.stmts.as_slice();
-    // The caught payload, in one or two statements.
-    let (payload, expect_message, rest) = {
-        let (payload, initializer) = simple_local(statements.first()?)?;
-        if let Some((caught, message)) = unwrapped_panic_payload(initializer)
-            && catches_parameter(caught, &run)
-        {
-            (payload, message, &statements[1..])
-        } else if catches_parameter(initializer, &run) {
-            let (unwrapped, after) = simple_local(statements.get(1)?)?;
-            let (receiver, message) = unwrapped_panic_payload(after)?;
-            if !expression_is_name(receiver, &payload) {
+    // The panic payload, consumed in one or two statements for a closure input and exactly one for
+    // a result input.
+    let (payload, expect_message, rest) = match input {
+        FlightErrorHelperInput::Closure => {
+            let (payload, initializer) = simple_local(statements.first()?)?;
+            if let Some((caught, message)) = unwrapped_panic_payload(initializer)
+                && catches_parameter(caught, &parameter_name)
+            {
+                (payload, message, &statements[1..])
+            } else if catches_parameter(initializer, &parameter_name) {
+                let (unwrapped, after) = simple_local(statements.get(1)?)?;
+                let (receiver, message) = unwrapped_panic_payload(after)?;
+                if !expression_is_name(receiver, &payload) {
+                    return None;
+                }
+                (unwrapped, message, &statements[2..])
+            } else {
                 return None;
             }
-            (unwrapped, message, &statements[2..])
-        } else {
-            return None;
+        }
+        FlightErrorHelperInput::PanicResult => {
+            let (payload, initializer) = simple_local(statements.first()?)?;
+            let receiver = unwrap_err_receiver(initializer)?;
+            if !expression_is_name(receiver, &parameter_name) {
+                return None;
+            }
+            (payload, None, &statements[1..])
         }
     };
     let (error, downcast) = simple_local(rest.first()?)?;
@@ -2608,23 +2657,43 @@ fn proven_flight_error_helper(function: &ItemFn) -> Option<FlightErrorHelper> {
     {
         return None;
     }
-    let Some(Stmt::Macro(assertion)) = rest.get(1) else {
-        return None;
-    };
-    let arguments = parse_macro_arguments(&assertion.mac).ok()?;
-    if !assertion.mac.path.is_ident("assert_eq") || arguments.len() != 2 {
+    let error_ref = ErrorRef::Bound(error.clone());
+    let mut kind = None;
+    let mut exact_message = None;
+    let mut consumed = 1;
+    while let Some(Stmt::Macro(assertion)) = rest.get(consumed) {
+        let arguments = parse_macro_arguments(&assertion.mac).ok()?;
+        if !assertion.mac.path.is_ident("assert_eq") || arguments.len() != 2 {
+            break;
+        }
+        let pairs = [
+            (&arguments[0], &arguments[1]),
+            (&arguments[1], &arguments[0]),
+        ];
+        if kind.is_none()
+            && let Some(found) = pairs.iter().find_map(|(field, value)| {
+                error_field_is(field, &error_ref, "kind").then(|| flight_error_kind(value))?
+            })
+        {
+            kind = Some(found);
+        } else if exact_message.is_none()
+            && let Some(found) = pairs.iter().find_map(|(field, value)| {
+                error_field_is(field, &error_ref, "message")
+                    .then(|| string_literal_value(value))?
+            })
+        {
+            exact_message = Some(found);
+        } else {
+            break;
+        }
+        consumed += 1;
+    }
+    let kind = kind?;
+    exact_error_class(kind.clone())?;
+    if exact_message.is_some() && returns_message {
         return None;
     }
-    let error_ref = ErrorRef::Bound(error.clone());
-    let kind = if error_field_is(&arguments[0], &error_ref, "kind") {
-        flight_error_kind(&arguments[1])?
-    } else if error_field_is(&arguments[1], &error_ref, "kind") {
-        flight_error_kind(&arguments[0])?
-    } else {
-        return None;
-    };
-    exact_error_class(kind.clone())?;
-    match (&rest[2..], returns_message) {
+    match (&rest[consumed..], returns_message) {
         ([], false) => {}
         ([Stmt::Expr(Expr::Return(returned), _)], true)
             if returned
@@ -2638,10 +2707,44 @@ fn proven_flight_error_helper(function: &ItemFn) -> Option<FlightErrorHelper> {
         None => None,
     };
     return Some(FlightErrorHelper {
+        input,
+        exact_message,
         expect_message,
         kind,
         returns_message,
     });
+}
+
+// `std::thread::Result<T>`, whose error is the standard caught-panic payload. An ordinary
+// `Result<T, E>` is deliberately not inferred as throwable TypeScript error provenance.
+fn type_is_thread_result(rust_type: &syn::Type) -> bool {
+    let syn::Type::Path(path) = rust_type else {
+        return false;
+    };
+    let segments = path.path.segments.iter().collect::<Vec<_>>();
+    let [standard, thread, result] = segments.as_slice() else {
+        return false;
+    };
+    let syn::PathArguments::AngleBracketed(arguments) = &result.arguments else {
+        return false;
+    };
+    return path.qself.is_none()
+        && path.path.leading_colon.is_none()
+        && standard.ident == "std"
+        && thread.ident == "thread"
+        && result.ident == "Result"
+        && matches!(
+            arguments.args.iter().collect::<Vec<_>>()[..],
+            [syn::GenericArgument::Type(_)]
+        );
+}
+
+// The receiver of an exact `.unwrap_err()` call. Broader Result extraction remains unsupported.
+fn unwrap_err_receiver(expression: &Expr) -> Option<&Expr> {
+    let Expr::MethodCall(call) = unparenthesized(expression) else {
+        return None;
+    };
+    return (call.method == "unwrap_err" && call.args.is_empty()).then_some(call.receiver.as_ref());
 }
 
 // `impl FnOnce()`: a closure taking nothing and returning nothing.
@@ -2695,7 +2798,8 @@ fn message_clone_of(expression: &Expr, error: &ErrorRef) -> bool {
         && error_field_is(&call.receiver, error, "message");
 }
 
-// A call of a proven `FlightError` helper on a closure literal, at `statements[start]`:
+// A call of a proven `FlightError` helper on a closure literal or an inline `catch_unwind(..)`
+// result, at `statements[start]`:
 //
 //     assert_range_error(|| ..);                              // toThrow(K)
 //     let message = assert_range_error(|| ..);               // unread after: toThrow(K)
@@ -2716,18 +2820,33 @@ fn flight_error_helper_assertion<'a>(
             return None;
         };
         let helper = FlightErrorHelper::from_context(context, &path.path.get_ident()?.to_string())?;
-        let [Expr::Closure(closure)] = call.args.iter().collect::<Vec<_>>()[..] else {
+        let [argument] = call.args.iter().collect::<Vec<_>>()[..] else {
             return None;
+        };
+        let closure = match helper.input {
+            FlightErrorHelperInput::Closure => {
+                let Expr::Closure(closure) = argument else {
+                    return None;
+                };
+                closure
+            }
+            FlightErrorHelperInput::PanicResult => caught_panic_closure(argument)?,
         };
         return (closure.inputs.is_empty() && closure.asyncness.is_none())
             .then_some((closure, helper));
     };
     let assertion = |closure, helper: &FlightErrorHelper, message: Option<Expr>, length| {
-        let matcher = match message {
-            Some(message) => {
+        let matcher = match (message, helper.exact_message.as_deref()) {
+            (Some(message), _) => {
                 FlightErrorMatcher::Instance(exact_error_class(helper.kind.clone())?, message)
             }
-            None => FlightErrorMatcher::Class(instance_exact_error_class(helper.kind.clone())?),
+            (None, Some(message)) => FlightErrorMatcher::Instance(
+                exact_error_class(helper.kind.clone())?,
+                syn::parse_str::<Expr>(&format!("{message:?}")).ok()?,
+            ),
+            (None, None) => {
+                FlightErrorMatcher::Class(instance_exact_error_class(helper.kind.clone())?)
+            }
         };
         let expect_message = match &helper.expect_message {
             Some(message) => Some(syn::parse_str::<Expr>(&format!("{message:?}")).ok()?),

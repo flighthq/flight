@@ -20866,6 +20866,132 @@ mod helpers {
     }
 
     #[test]
+    fn lowers_proven_panic_result_helpers_to_one_exact_throw_assertion() {
+        let production = r#"
+use flight_entity::throw_range_error;
+
+pub struct Counter {
+    pub calls: i32,
+}
+
+pub fn read_offset(counter: &mut Counter, offset: i32) -> i32 {
+    counter.calls += 1;
+    if offset < 0 {
+        throw_range_error("offset is out of bounds");
+    }
+    return offset;
+}
+"#;
+        let source = r#"
+use crate::*;
+
+fn assert_range_error(result: std::thread::Result<i32>) {
+    let payload = result.unwrap_err();
+    let error = payload.downcast_ref::<flight_entity::FlightError>().unwrap();
+    assert_eq!(error.kind, flight_entity::FlightErrorKind::RangeError);
+    assert_eq!(error.message, "offset is out of bounds");
+}
+
+mod helpers {
+    use super::*;
+
+    #[test]
+    fn checks_a_caught_result_once() {
+        let mut counter = Counter { calls: 0 };
+        assert_range_error(std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            read_offset(&mut counter, -1)
+        })));
+        assert_eq!(counter.calls, 1);
+    }
+}
+"#;
+
+        let output =
+            compile_vitest_with_alias_sources(source, "@flighthq/example/contract", &[production])
+                .unwrap();
+
+        assert!(
+            output.contains(
+                "expect(() => {\n  return readOffset(counter, -1);\n}).toThrow(new RangeError('offset is out of bounds'));"
+            ),
+            "{output}"
+        );
+        assert_eq!(output.matches("readOffset(counter, -1)").count(), 1, "{output}");
+        assert!(output.contains("expect(counter.calls).toEqual(1);"), "{output}");
+        for absent in [
+            "assertRangeError",
+            "catchUnwind",
+            "unwrapErr",
+            "downcast",
+            "FlightError",
+        ] {
+            assert!(!output.contains(absent), "{absent}: {output}");
+        }
+    }
+
+    #[test]
+    fn refuses_unproven_panic_result_helpers_and_sources() {
+        let production = r#"
+pub fn fail() -> i32 {
+    flight_entity::throw_range_error("boom");
+}
+"#;
+        let canonical = |extra: &str, payload: &str| {
+            format!(
+                "fn assert_range_error(result: std::thread::Result<i32>) {{\n    let payload = result.unwrap_err();\n    let error = payload.downcast_ref::<{payload}>().unwrap();\n    assert_eq!(error.kind, flight_entity::FlightErrorKind::RangeError);\n    assert_eq!(error.message, \"boom\");\n    {extra}\n}}"
+            )
+        };
+        let call = "assert_range_error(std::panic::catch_unwind(|| fail()));";
+        for (helper, body) in [
+            (
+                "fn assert_range_error(result: Result<i32, flight_entity::FlightError>) {\n    let error = result.unwrap_err();\n    assert_eq!(error.kind, flight_entity::FlightErrorKind::RangeError);\n    assert_eq!(error.message, \"boom\");\n}".to_string(),
+                "assert_range_error(Err(flight_entity::FlightError { kind: flight_entity::FlightErrorKind::RangeError, message: \"boom\".to_string() }));".to_string(),
+            ),
+            (
+                "fn assert_range_error(result: std::thread::Result<i32>) {\n    let payload = result.unwrap_err();\n    let code = payload.downcast_ref::<u32>().unwrap();\n    assert_eq!(*code, 7);\n}".to_string(),
+                call.to_string(),
+            ),
+            (
+                canonical("let escaped = error.message.clone();\n    drop(escaped);", "flight_entity::FlightError"),
+                call.to_string(),
+            ),
+            (
+                canonical("", "flight_entity::FlightError"),
+                "let result = std::panic::catch_unwind(|| fail());\n        assert_range_error(result);".to_string(),
+            ),
+            (
+                canonical("", "flight_entity::FlightError"),
+                "assert_range_error(make_result());".to_string(),
+            ),
+        ] {
+            let source = format!(
+                "use crate::*;\n\nfn make_result() -> std::thread::Result<i32> {{\n    return std::panic::catch_unwind(|| fail());\n}}\n\n{helper}\n\nmod helpers {{\n    use super::*;\n\n    #[test]\n    fn checks() {{\n        {body}\n    }}\n}}"
+            );
+            let error = compile_vitest_with_alias_sources(
+                &source,
+                "@flighthq/example/contract",
+                &[production],
+            )
+            .unwrap_err()
+            .to_string();
+            assert!(
+                error.contains("unwrap_err")
+                    || error.contains("proven source")
+                    || error.contains("catch_unwind"),
+                "{helper}\n{body}\n{error}"
+            );
+        }
+
+        let production_error = compile_typescript(
+            "pub fn extract(result: Result<i32, String>) -> String {\n    return result.unwrap_err();\n}\n",
+            None,
+        )
+        .unwrap_err()
+        .to_string();
+        assert!(production_error.contains("unwrap_err"), "{production_error}");
+    }
+
+    #[test]
     fn refuses_flight_error_helpers_and_calls_it_cannot_prove() {
         let production = r#"
 pub fn fail() -> i32 {
@@ -22837,7 +22963,7 @@ mod enable_layout_guards {
         let compile = |contract_source| {
             compile_vitest_with_module_visibility_sources_and_array_parameters(
                 source,
-                "@flighthq/example/contract",
+                "./contract.ts",
                 Some(contract_source),
                 &[],
                 &[],
@@ -22856,7 +22982,7 @@ mod enable_layout_guards {
         let output = compile(contract).unwrap();
         assert!(
             output.contains(
-                "import {\n  enableLayoutGuards,\n} from '@flighthq/example/contract';"
+                "import {\n  enableLayoutGuards,\n} from './contract.ts';"
             ),
             "{output}"
         );

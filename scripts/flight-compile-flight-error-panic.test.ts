@@ -178,6 +178,29 @@ mod helpers {
 }
 `;
 
+const RESULT_HELPER_FIXTURE = `use crate::*;
+
+fn assert_range_error(result: std::thread::Result<i32>) {
+    let payload = result.unwrap_err();
+    let error = payload.downcast_ref::<flight_entity::FlightError>().unwrap();
+    assert_eq!(error.kind, flight_entity::FlightErrorKind::RangeError);
+    assert_eq!(error.message, "offset is out of bounds");
+}
+
+mod helpers {
+    use super::*;
+
+    #[test]
+    fn checks_result_helper() {
+        let mut counter = Counter { calls: 0 };
+        assert_range_error(std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            read_offset(&mut counter, -1)
+        })));
+        assert_eq!(counter.calls, 1);
+    }
+}
+`;
+
 let workDirectory = '';
 
 beforeAll(() => {
@@ -307,6 +330,33 @@ describe('flight-compile FlightError panic payloads', () => {
     );
     expect(mismatch.error).toBe('');
     expect(() => runGeneratedTests(mismatch.typescript)).toThrow();
+  });
+
+  it('lowers only inline caught results through proven Result helpers and runs the closure once', () => {
+    const { error, typescript } = compileTests('result_helpers', RESULT_HELPER_FIXTURE);
+    expect(error).toBe('');
+    expect(typescript).toContain("}).toThrow(new RangeError('offset is out of bounds'));");
+    expect(typescript.match(/readOffset\(counter, -1\)/g)).toHaveLength(1);
+    expect(typescript).not.toMatch(/assertRangeError|catchUnwind|unwrapErr|downcast|FlightError/);
+    expect(() => runGeneratedTests(typescript)).not.toThrow();
+
+    const escaped = compileTests(
+      'result_helpers_escaped',
+      RESULT_HELPER_FIXTURE.replace(
+        'assert_range_error(std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {\n            read_offset(&mut counter, -1)\n        })));',
+        'let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {\n            read_offset(&mut counter, -1)\n        }));\n        assert_range_error(result);',
+      ),
+    );
+    expect(escaped.error).toContain('catch_unwind');
+
+    const ordinary = compileTests(
+      'result_helpers_ordinary',
+      RESULT_HELPER_FIXTURE.replace('std::thread::Result<i32>', 'Result<i32, flight_entity::FlightError>').replace(
+        'assert_range_error(std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {\n            read_offset(&mut counter, -1)\n        })));',
+        'assert_range_error(Err(flight_entity::FlightError { kind: flight_entity::FlightErrorKind::RangeError, message: "offset is out of bounds".to_string() }));',
+      ),
+    );
+    expect(ordinary.error).toContain('unwrap_err');
   });
 
   it('refuses FlightError checks and payloads vitest cannot express exactly', () => {

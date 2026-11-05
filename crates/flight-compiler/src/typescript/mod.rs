@@ -12323,9 +12323,9 @@ fn emit_expression_value(
                 })
             {
                 return Err(compile_error(format!(
-                    "portable FlightError helper `{name}` is supported only called on a closure \
-                     literal as a statement, or bound and then unread or compared with `assert_eq!` \
-                     to a string literal"
+                    "portable FlightError helper `{name}` is supported only called on its proven \
+                     source (a closure literal or inline `catch_unwind` result) as a statement, or \
+                     bound and then unread or compared with `assert_eq!` to a string literal"
                 )));
             }
             if let Expr::Path(path) = call.func.as_ref()

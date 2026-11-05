@@ -1074,7 +1074,10 @@ fn compile_vitest_with_contract_alias_sources_internal(
     typescript::insert_vitest_local_crate_context(
         &mut context,
         contract_module,
-        alias_sources.iter().map(|source| source.module),
+        alias_sources
+            .iter()
+            .map(|source| source.module)
+            .chain(visibility_sources.iter().map(|source| source.path)),
     );
     vitest::resolve_test_support_wildcards(&mut program, &support_program_refs, &context)?;
     typescript::insert_string_union_context(&mut context, string_unions.styles.keys());
