@@ -7015,6 +7015,22 @@ pub fn fast_remove(items: &mut Vec<i32>, index: usize) -> i32 {
     }
 
     #[test]
+    fn lowers_swap_remove_statement_without_iife() {
+        let source = r#"
+pub fn fast_discard(items: &mut Vec<i32>, index: usize) {
+    items.swap_remove(index);
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(
+            output.contains("items.pop()") && !output.contains("(<T>"),
+            "void swap_remove should expand to statement block: {output}"
+        );
+    }
+
+    #[test]
     fn lowers_u8_and_i16_max_constants() {
         let source = r#"
 pub fn limits() -> (u8, i16) {
@@ -7770,8 +7786,12 @@ pub fn grow(values: &mut Vec<f32>, size: usize) {
 
         let output = compile_typescript(source, None).unwrap();
 
-        assert!(output.contains("items.push(value)"), "{output}");
-        assert!(output.contains("items.length = length"), "{output}");
+        assert!(output.contains("values.push(0.0)"), "{output}");
+        assert!(output.contains("values.length = size"), "{output}");
+        assert!(
+            !output.contains("(<T>"),
+            "resize should expand without IIFE: {output}"
+        );
     }
 
     #[test]
@@ -25384,8 +25404,12 @@ fn lowers_resize_with_to_push_loop() {
     let source = "pub fn f(data: &mut Vec<Option<i32>>) { data.resize_with(10, || None); }\n";
     let output = compile_typescript(source, None).unwrap();
     assert!(
-        output.contains("items.push(factory())") && output.contains("items.length = length"),
+        output.contains("data.push(undefined)") && output.contains("data.length = 10"),
         "resize_with should produce push-loop + truncate: {output}"
+    );
+    assert!(
+        !output.contains("(<T>"),
+        "resize_with should expand without IIFE: {output}"
     );
 }
 

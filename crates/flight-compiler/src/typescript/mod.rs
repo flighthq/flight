@@ -24754,6 +24754,27 @@ fn emit_statement(
             write_indent(out, indent);
             writeln!(out, "{receiver}.delete({key});").expect("writing to a String cannot fail");
         }
+        Stmt::Expr(Expr::MethodCall(call), _)
+            if call.method == "resize"
+                && call.args.len() == 2
+                && expression_is_sequence(&call.receiver, entities) =>
+        {
+            emit_resize_statement(out, call, entities, indent)?;
+        }
+        Stmt::Expr(Expr::MethodCall(call), _)
+            if call.method == "resize_with"
+                && call.args.len() == 2
+                && expression_is_sequence(&call.receiver, entities) =>
+        {
+            emit_resize_with_statement(out, call, entities, indent)?;
+        }
+        Stmt::Expr(Expr::MethodCall(call), _)
+            if call.method == "swap_remove"
+                && call.args.len() == 1
+                && expression_is_sequence(&call.receiver, entities) =>
+        {
+            emit_swap_remove_statement(out, call, entities, indent)?;
+        }
         Stmt::Expr(Expr::ForLoop(loop_expression), _) => {
             if let Some((collection, chain)) = iter_mut_chain(&loop_expression.expr) {
                 emit_iter_mut_loop(out, loop_expression, collection, chain, entities, indent)?;
@@ -26804,6 +26825,203 @@ fn emit_hashmap_retain_statement(
         write_indent(out, indent);
         writeln!(out, "{value};").expect("writing to a String cannot fail");
     }
+    return Ok(());
+}
+
+fn emit_resize_statement(
+    out: &mut String,
+    call: &syn::ExprMethodCall,
+    entities: &HashSet<String>,
+    indent: usize,
+) -> Result<(), CompileError> {
+    let receiver = emit_expression(&call.receiver, entities)?;
+    let length = emit_expression(&call.args[0], entities)?;
+    let value = emit_expression(&call.args[1], entities)?;
+    let bind_receiver = !expression_is_reusable(&call.receiver);
+    let bind_length = !expression_is_reusable(&call.args[0]);
+    let mut used = receiver
+        .split(|c: char| !(c.is_alphanumeric() || c == '_' || c == '$'))
+        .map(str::to_string)
+        .collect::<HashSet<_>>();
+    let items = if bind_receiver {
+        fresh_identifier("items", &mut used)
+    } else {
+        receiver.clone()
+    };
+    let len = if bind_length {
+        fresh_identifier("len", &mut used)
+    } else {
+        length.clone()
+    };
+    if bind_receiver || bind_length {
+        write_indent(out, indent);
+        out.push_str("{\n");
+        let bi = indent + 1;
+        if bind_receiver {
+            write_indent(out, bi);
+            writeln!(out, "const {items} = {receiver};").expect("writing to a String cannot fail");
+        }
+        if bind_length {
+            write_indent(out, bi);
+            writeln!(out, "const {len} = {length};").expect("writing to a String cannot fail");
+        }
+        write_indent(out, bi);
+        writeln!(out, "while ({items}.length < {len}) {{")
+            .expect("writing to a String cannot fail");
+        write_indent(out, bi + 1);
+        writeln!(out, "{items}.push({value});").expect("writing to a String cannot fail");
+        write_indent(out, bi);
+        out.push_str("}\n");
+        write_indent(out, bi);
+        writeln!(out, "{items}.length = {len};").expect("writing to a String cannot fail");
+        write_indent(out, indent);
+        out.push_str("}\n");
+    } else {
+        write_indent(out, indent);
+        writeln!(out, "while ({items}.length < {len}) {{")
+            .expect("writing to a String cannot fail");
+        write_indent(out, indent + 1);
+        writeln!(out, "{items}.push({value});").expect("writing to a String cannot fail");
+        write_indent(out, indent);
+        out.push_str("}\n");
+        write_indent(out, indent);
+        writeln!(out, "{items}.length = {len};").expect("writing to a String cannot fail");
+    }
+    return Ok(());
+}
+
+fn emit_resize_with_statement(
+    out: &mut String,
+    call: &syn::ExprMethodCall,
+    entities: &HashSet<String>,
+    indent: usize,
+) -> Result<(), CompileError> {
+    let receiver = emit_expression(&call.receiver, entities)?;
+    let length = emit_expression(&call.args[0], entities)?;
+    let bind_receiver = !expression_is_reusable(&call.receiver);
+    let bind_length = !expression_is_reusable(&call.args[0]);
+    let factory_is_closure = matches!(&call.args[1], Expr::Closure(_));
+    let factory_is_reusable = expression_is_reusable(&call.args[1]);
+    let factory = emit_expression(&call.args[1], entities)?;
+    let push_expr = if factory_is_closure {
+        if let Expr::Closure(closure) = &call.args[1] {
+            if closure.inputs.is_empty() {
+                emit_expression(&closure.body, entities)?
+            } else {
+                format!("({factory})()")
+            }
+        } else {
+            format!("({factory})()")
+        }
+    } else if factory_is_reusable {
+        format!("{factory}()")
+    } else {
+        format!("({factory})()")
+    };
+    let mut used = receiver
+        .split(|c: char| !(c.is_alphanumeric() || c == '_' || c == '$'))
+        .map(str::to_string)
+        .collect::<HashSet<_>>();
+    let items = if bind_receiver {
+        fresh_identifier("items", &mut used)
+    } else {
+        receiver.clone()
+    };
+    let len = if bind_length {
+        fresh_identifier("len", &mut used)
+    } else {
+        length.clone()
+    };
+    let needs_block = bind_receiver || bind_length;
+    if needs_block {
+        write_indent(out, indent);
+        out.push_str("{\n");
+        let bi = indent + 1;
+        if bind_receiver {
+            write_indent(out, bi);
+            writeln!(out, "const {items} = {receiver};").expect("writing to a String cannot fail");
+        }
+        if bind_length {
+            write_indent(out, bi);
+            writeln!(out, "const {len} = {length};").expect("writing to a String cannot fail");
+        }
+        write_indent(out, bi);
+        writeln!(out, "while ({items}.length < {len}) {{")
+            .expect("writing to a String cannot fail");
+        write_indent(out, bi + 1);
+        writeln!(out, "{items}.push({push_expr});").expect("writing to a String cannot fail");
+        write_indent(out, bi);
+        out.push_str("}\n");
+        write_indent(out, bi);
+        writeln!(out, "{items}.length = {len};").expect("writing to a String cannot fail");
+        write_indent(out, indent);
+        out.push_str("}\n");
+    } else {
+        write_indent(out, indent);
+        writeln!(out, "while ({items}.length < {len}) {{")
+            .expect("writing to a String cannot fail");
+        write_indent(out, indent + 1);
+        writeln!(out, "{items}.push({push_expr});").expect("writing to a String cannot fail");
+        write_indent(out, indent);
+        out.push_str("}\n");
+        write_indent(out, indent);
+        writeln!(out, "{items}.length = {len};").expect("writing to a String cannot fail");
+    }
+    return Ok(());
+}
+
+fn emit_swap_remove_statement(
+    out: &mut String,
+    call: &syn::ExprMethodCall,
+    entities: &HashSet<String>,
+    indent: usize,
+) -> Result<(), CompileError> {
+    let receiver = emit_expression(&call.receiver, entities)?;
+    let index = emit_expression(&call.args[0], entities)?;
+    let bind_receiver = !expression_is_reusable(&call.receiver);
+    let bind_index = !expression_is_reusable(&call.args[0]);
+    let mut used = receiver
+        .split(|c: char| !(c.is_alphanumeric() || c == '_' || c == '$'))
+        .map(str::to_string)
+        .collect::<HashSet<_>>();
+    let items = if bind_receiver {
+        fresh_identifier("items", &mut used)
+    } else {
+        receiver.clone()
+    };
+    let idx = if bind_index {
+        fresh_identifier("index", &mut used)
+    } else {
+        index.clone()
+    };
+    let last = fresh_identifier("last", &mut used);
+    write_indent(out, indent);
+    out.push_str("{\n");
+    let bi = indent + 1;
+    if bind_receiver {
+        write_indent(out, bi);
+        writeln!(out, "const {items} = {receiver};").expect("writing to a String cannot fail");
+    }
+    if bind_index {
+        write_indent(out, bi);
+        writeln!(out, "const {idx} = {index};").expect("writing to a String cannot fail");
+    }
+    write_indent(out, bi);
+    writeln!(out, "const {last} = {items}.length - 1;").expect("writing to a String cannot fail");
+    write_indent(out, bi);
+    writeln!(out, "if ({idx} !== {last}) {{").expect("writing to a String cannot fail");
+    write_indent(out, bi + 1);
+    writeln!(
+        out,
+        "[{items}[{idx}], {items}[{last}]] = [{items}[{last}], {items}[{idx}]];"
+    )
+    .expect("writing to a String cannot fail");
+    write_indent(out, bi);
+    out.push_str("}\n");
+    write_indent(out, bi);
+    writeln!(out, "{items}.pop();").expect("writing to a String cannot fail");
+    write_indent(out, indent);
+    out.push_str("}\n");
     return Ok(());
 }
 
