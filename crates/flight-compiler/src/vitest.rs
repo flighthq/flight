@@ -14,9 +14,10 @@ use crate::typescript::{FLIGHT_ERROR_HELPER_MARKER, PANIC_MESSAGE_HELPER_MARKER}
 use crate::typescript::{
     ProvenanceImportRule, begin_option_if, begin_option_while, emit_block_with_tail_returns,
     emit_expression, emit_expression_for_type, emit_for_header, emit_format_template, emit_local,
-    emit_local_with_shadow_and_else, emit_match_statement, emit_option_binding, emit_parameter,
-    emit_type, emit_type_parameters, emit_vec_extend_statement, export_name, frozen_object_name,
-    function_expression_context, insert_type_parameter_context,
+    emit_local_function, emit_local_with_shadow_and_else, emit_match_statement,
+    emit_option_binding, emit_parameter, emit_type, emit_type_parameters,
+    emit_vec_extend_statement, export_name, frozen_object_name, function_expression_context,
+    insert_type_parameter_context, lexical_binding_names,
     insert_vitest_helper_return_context, insert_vitest_import_alias_context,
     insert_vitest_rebound_struct_context, is_data_union_variant, is_lowered_cross_crate_type,
     is_lowered_cross_crate_value, is_string_union, is_vitest_function, is_vitest_own_public,
@@ -151,6 +152,15 @@ fn collect_contract_symbols(
     impl<'ast> Visit<'ast> for ContractSymbolCollector<'_> {
         fn visit_block(&mut self, block: &'ast syn::Block) {
             let outer = self.declared.clone();
+            // Rust function items are in scope throughout their block, including before the item.
+            // Record all of them before walking any expression so they are never mistaken for
+            // package-contract imports.
+            self.declared.extend(block.stmts.iter().filter_map(|statement| {
+                let Stmt::Item(syn::Item::Fn(function)) = statement else {
+                    return None;
+                };
+                Some(function.sig.ident.to_string())
+            }));
             for statement in &block.stmts {
                 if let Stmt::Local(local) = statement {
                     if let Some(initializer) = &local.init {
@@ -165,6 +175,26 @@ fn collect_contract_symbols(
                     self.visit_stmt(statement);
                 }
             }
+            self.declared = outer;
+        }
+
+        fn visit_item_fn(&mut self, function: &'ast ItemFn) {
+            let outer = self.declared.clone();
+            self.declared.insert(function.sig.ident.to_string());
+            self.declared.extend(
+                function
+                    .sig
+                    .generics
+                    .type_params()
+                    .map(|parameter| parameter.ident.to_string()),
+            );
+            for argument in &function.sig.inputs {
+                if let FnArg::Typed(argument) = argument {
+                    self.declared.extend(pattern_names(&argument.pat));
+                }
+            }
+            self.visit_signature(&function.sig);
+            self.visit_block(&function.block);
             self.declared = outer;
         }
 
@@ -1156,6 +1186,479 @@ fn emit_assertion_expression(
     return emit_expression(expression, context);
 }
 
+// Proves the local function items declared directly by one Rust block. A Rust function item is
+// block-scoped and hoisted, cannot capture its environment, and is a value that could otherwise
+// escape. TypeScript function declarations have the same block hoisting, but JavaScript would allow
+// captures and first-class uses, so every difference is rejected explicitly before emission.
+fn validate_vitest_local_functions(
+    statements: &[Stmt],
+    context: &HashSet<String>,
+) -> Result<(), CompileError> {
+    let functions = statements
+        .iter()
+        .filter_map(|statement| {
+            let Stmt::Item(syn::Item::Fn(function)) = statement else {
+                return None;
+            };
+            Some(function)
+        })
+        .collect::<Vec<_>>();
+    if functions.is_empty() {
+        return Ok(());
+    }
+
+    let names = functions
+        .iter()
+        .map(|function| function.sig.ident.to_string())
+        .collect::<BTreeSet<_>>();
+    if names.len() != functions.len() {
+        return Err(compile_error(
+            "portable nested function names must be unique within their Rust block",
+        ));
+    }
+    let mut emitted_names = BTreeMap::new();
+    for name in &names {
+        let emitted = snake_to_lower_camel(name);
+        if let Some(previous) = emitted_names.insert(emitted.clone(), name.clone()) {
+            return Err(compile_error(format!(
+                "portable nested functions `{previous}` and `{name}` both emit as `{emitted}`"
+            )));
+        }
+    }
+
+    struct OuterUseCollector<'a> {
+        emitted_names: &'a BTreeMap<String, String>,
+        escaped: BTreeSet<String>,
+        local_names: &'a BTreeSet<String>,
+        shadowed: BTreeSet<String>,
+    }
+
+    impl OuterUseCollector<'_> {
+        fn local_name(&self, path: &syn::Path) -> Option<String> {
+            let [segment] = path.segments.iter().collect::<Vec<_>>()[..] else {
+                return None;
+            };
+            let name = segment.ident.to_string();
+            return self.local_names.contains(&name).then_some(name);
+        }
+    }
+
+    impl<'ast> Visit<'ast> for OuterUseCollector<'_> {
+        fn visit_expr_call(&mut self, call: &'ast syn::ExprCall) {
+            if let Expr::Path(path) = call.func.as_ref()
+                && path.qself.is_none()
+                && self.local_name(&path.path).is_some()
+            {
+                for argument in &call.args {
+                    self.visit_expr(argument);
+                }
+                return;
+            }
+            syn::visit::visit_expr_call(self, call);
+        }
+
+        fn visit_expr_path(&mut self, path: &'ast syn::ExprPath) {
+            if path.qself.is_none()
+                && let Some(name) = self.local_name(&path.path)
+            {
+                self.escaped.insert(name);
+                return;
+            }
+            syn::visit::visit_expr_path(self, path);
+        }
+
+        fn visit_item_fn(&mut self, _function: &'ast ItemFn) {
+            // Its signature and body have their own proof below.
+        }
+
+        fn visit_macro(&mut self, rust_macro: &'ast syn::Macro) {
+            if let Ok(arguments) = parse_macro_arguments(rust_macro) {
+                for argument in &arguments {
+                    self.visit_expr(argument);
+                }
+            }
+        }
+
+        fn visit_pat_ident(&mut self, pattern: &'ast syn::PatIdent) {
+            let name = pattern.ident.to_string();
+            if self
+                .emitted_names
+                .contains_key(&snake_to_lower_camel(&name))
+            {
+                self.shadowed.insert(name);
+            }
+            syn::visit::visit_pat_ident(self, pattern);
+        }
+    }
+
+    let mut outer_uses = OuterUseCollector {
+        emitted_names: &emitted_names,
+        escaped: BTreeSet::new(),
+        local_names: &names,
+        shadowed: BTreeSet::new(),
+    };
+    for statement in statements {
+        outer_uses.visit_stmt(statement);
+    }
+    let outer_binding_collisions = lexical_binding_names(context)
+        .into_iter()
+        .filter(|name| {
+            emitted_names.contains_key(&snake_to_lower_camel(name)) && !names.contains(name)
+        })
+        .collect::<BTreeSet<_>>();
+    outer_uses.shadowed.extend(outer_binding_collisions);
+    if !outer_uses.shadowed.is_empty() {
+        return Err(compile_error(format!(
+            "portable nested function call provenance is shadow-ambiguous with binding(s) {}",
+            outer_uses
+                .shadowed
+                .into_iter()
+                .collect::<Vec<_>>()
+                .join(", ")
+        )));
+    }
+    if !outer_uses.escaped.is_empty() {
+        return Err(compile_error(format!(
+            "portable nested function value(s) {} escape direct call position",
+            outer_uses
+                .escaped
+                .into_iter()
+                .collect::<Vec<_>>()
+                .join(", ")
+        )));
+    }
+
+    struct BodyCollector<'a> {
+        calls: Vec<(syn::Path, bool)>,
+        captures: BTreeSet<String>,
+        escaped: BTreeSet<String>,
+        inner_bindings: BTreeSet<String>,
+        local_names: &'a BTreeSet<String>,
+        nested_items: BTreeSet<String>,
+        outer_bindings: &'a BTreeSet<String>,
+        scopes: Vec<BTreeSet<String>>,
+    }
+
+    impl BodyCollector<'_> {
+        fn is_bound(&self, name: &str) -> bool {
+            return self.scopes.iter().rev().any(|scope| scope.contains(name));
+        }
+
+        fn path_name(path: &syn::Path) -> Option<String> {
+            let [segment] = path.segments.iter().collect::<Vec<_>>()[..] else {
+                return None;
+            };
+            return Some(segment.ident.to_string());
+        }
+
+        fn record_reference(&mut self, name: &str) {
+            if self.outer_bindings.contains(name) && !self.is_bound(name) {
+                self.captures.insert(name.to_string());
+            }
+        }
+
+        fn push_pattern_scope(&mut self, pattern: &Pat) {
+            let bindings = pattern_names(pattern).into_iter().collect::<BTreeSet<_>>();
+            self.inner_bindings.extend(bindings.iter().cloned());
+            self.scopes.push(bindings);
+        }
+    }
+
+    impl<'ast> Visit<'ast> for BodyCollector<'_> {
+        fn visit_block(&mut self, block: &'ast syn::Block) {
+            self.scopes.push(BTreeSet::new());
+            for statement in &block.stmts {
+                if let Stmt::Local(local) = statement {
+                    if let Some(initializer) = &local.init {
+                        self.visit_expr(&initializer.expr);
+                        if let Some((_, diverge)) = &initializer.diverge {
+                            self.visit_expr(diverge);
+                        }
+                    }
+                    self.visit_pat(&local.pat);
+                    let bindings = pattern_names(&local.pat);
+                    self.inner_bindings.extend(bindings.iter().cloned());
+                    self.scopes
+                        .last_mut()
+                        .expect("a block scope exists")
+                        .extend(bindings);
+                } else {
+                    self.visit_stmt(statement);
+                }
+            }
+            self.scopes.pop();
+        }
+
+        fn visit_expr_call(&mut self, call: &'ast syn::ExprCall) {
+            if let Expr::Path(path) = call.func.as_ref()
+                && path.qself.is_none()
+            {
+                let name = Self::path_name(&path.path);
+                let bound = name.as_ref().is_some_and(|name| self.is_bound(name));
+                if let Some(name) = &name {
+                    self.record_reference(name);
+                }
+                self.calls.push((path.path.clone(), bound));
+                for argument in &call.args {
+                    self.visit_expr(argument);
+                }
+                return;
+            }
+            syn::visit::visit_expr_call(self, call);
+        }
+
+        fn visit_expr_closure(&mut self, closure: &'ast syn::ExprClosure) {
+            let bindings = closure
+                .inputs
+                .iter()
+                .flat_map(pattern_names)
+                .collect::<BTreeSet<_>>();
+            self.inner_bindings.extend(bindings.iter().cloned());
+            self.scopes.push(bindings);
+            self.visit_expr(&closure.body);
+            self.scopes.pop();
+        }
+
+        fn visit_expr_for_loop(&mut self, expression: &'ast syn::ExprForLoop) {
+            self.visit_expr(&expression.expr);
+            self.push_pattern_scope(&expression.pat);
+            self.visit_block(&expression.body);
+            self.scopes.pop();
+        }
+
+        fn visit_expr_if(&mut self, expression: &'ast syn::ExprIf) {
+            if let Expr::Let(binding) = expression.cond.as_ref() {
+                self.visit_expr(&binding.expr);
+                self.push_pattern_scope(&binding.pat);
+                self.visit_block(&expression.then_branch);
+                self.scopes.pop();
+            } else {
+                self.visit_expr(&expression.cond);
+                self.visit_block(&expression.then_branch);
+            }
+            if let Some((_, otherwise)) = &expression.else_branch {
+                self.visit_expr(otherwise);
+            }
+        }
+
+        fn visit_expr_match(&mut self, expression: &'ast syn::ExprMatch) {
+            self.visit_expr(&expression.expr);
+            for arm in &expression.arms {
+                self.push_pattern_scope(&arm.pat);
+                if let Some((_, guard)) = &arm.guard {
+                    self.visit_expr(guard);
+                }
+                self.visit_expr(&arm.body);
+                self.scopes.pop();
+            }
+        }
+
+        fn visit_expr_path(&mut self, path: &'ast syn::ExprPath) {
+            if path.qself.is_none()
+                && let Some(name) = Self::path_name(&path.path)
+            {
+                self.record_reference(&name);
+                if self.local_names.contains(&name) {
+                    self.escaped.insert(name);
+                }
+                return;
+            }
+            syn::visit::visit_expr_path(self, path);
+        }
+
+        fn visit_expr_while(&mut self, expression: &'ast syn::ExprWhile) {
+            if let Expr::Let(binding) = expression.cond.as_ref() {
+                self.visit_expr(&binding.expr);
+                self.push_pattern_scope(&binding.pat);
+                self.visit_block(&expression.body);
+                self.scopes.pop();
+            } else {
+                self.visit_expr(&expression.cond);
+                self.visit_block(&expression.body);
+            }
+        }
+
+        fn visit_item(&mut self, item: &'ast syn::Item) {
+            self.nested_items.insert(match item {
+                syn::Item::Fn(function) => function.sig.ident.to_string(),
+                syn::Item::Impl(_) => "impl".to_string(),
+                _ => "item".to_string(),
+            });
+        }
+
+        fn visit_macro(&mut self, rust_macro: &'ast syn::Macro) {
+            if let Ok(arguments) = parse_macro_arguments(rust_macro) {
+                for argument in &arguments {
+                    self.visit_expr(argument);
+                }
+            }
+        }
+
+        fn visit_pat_ident(&mut self, pattern: &'ast syn::PatIdent) {
+            self.inner_bindings.insert(pattern.ident.to_string());
+            syn::visit::visit_pat_ident(self, pattern);
+        }
+    }
+
+    let mut outer_bindings = lexical_binding_names(context);
+    // Validation runs before statement emission so every function item has Rust's block-wide
+    // hoisting. Collect the block's locals up front as well: even a binding written after an item
+    // is an enclosing value that the item must never acquire as a JavaScript closure capture.
+    outer_bindings.extend(statements.iter().filter_map(|statement| {
+        let Stmt::Local(local) = statement else {
+            return None;
+        };
+        Some(pattern_names(&local.pat))
+    }).flatten());
+    let mut call_graph = BTreeMap::<String, BTreeSet<String>>::new();
+    for function in functions {
+        if !function.attrs.is_empty()
+            || !matches!(function.vis, syn::Visibility::Inherited)
+            || function.sig.constness.is_some()
+            || function.sig.asyncness.is_some()
+            || function.sig.unsafety.is_some()
+            || function.sig.abi.is_some()
+            || function.sig.variadic.is_some()
+            || !function.sig.generics.params.is_empty()
+            || function.sig.generics.where_clause.is_some()
+            || function
+                .sig
+                .inputs
+                .iter()
+                .any(|argument| matches!(argument, FnArg::Receiver(_)))
+        {
+            return Err(compile_error(format!(
+                "portable nested function `{}` must be a plain non-async, non-generic free function",
+                function.sig.ident
+            )));
+        }
+        for argument in &function.sig.inputs {
+            emit_parameter(argument, context)?;
+        }
+        if let ReturnType::Type(_, rust_type) = &function.sig.output {
+            emit_type(rust_type, context)?;
+        }
+        validate_vitest_function_provenance(function, context)?;
+
+        let parameter_bindings = function
+            .sig
+            .inputs
+            .iter()
+            .filter_map(|argument| match argument {
+                FnArg::Typed(argument) => Some(pattern_names(&argument.pat)),
+                FnArg::Receiver(_) => None,
+            })
+            .flatten()
+            .collect::<BTreeSet<_>>();
+        let mut body = BodyCollector {
+            calls: Vec::new(),
+            captures: BTreeSet::new(),
+            escaped: BTreeSet::new(),
+            inner_bindings: parameter_bindings.clone(),
+            local_names: &names,
+            nested_items: BTreeSet::new(),
+            outer_bindings: &outer_bindings,
+            scopes: vec![parameter_bindings],
+        };
+        body.visit_block(&function.block);
+        if !body.nested_items.is_empty() {
+            return Err(compile_error(format!(
+                "portable nested function `{}` contains unsupported nested item(s) {}",
+                function.sig.ident,
+                body.nested_items.into_iter().collect::<Vec<_>>().join(", ")
+            )));
+        }
+        if !body.captures.is_empty() {
+            return Err(compile_error(format!(
+                "portable nested function `{}` captures outer binding(s) {}",
+                function.sig.ident,
+                body.captures.into_iter().collect::<Vec<_>>().join(", ")
+            )));
+        }
+        if !body.escaped.is_empty() {
+            return Err(compile_error(format!(
+                "portable nested function value(s) {} escape direct call position inside `{}`",
+                body.escaped.into_iter().collect::<Vec<_>>().join(", "),
+                function.sig.ident
+            )));
+        }
+        let shadowed_helpers = body
+            .inner_bindings
+            .iter()
+            .filter(|binding| {
+                emitted_names.contains_key(&snake_to_lower_camel(binding))
+            })
+            .cloned()
+            .collect::<BTreeSet<_>>();
+        if !shadowed_helpers.is_empty() {
+            return Err(compile_error(format!(
+                "portable nested function `{}` has shadow-ambiguous binding(s) {}",
+                function.sig.ident,
+                shadowed_helpers.into_iter().collect::<Vec<_>>().join(", ")
+            )));
+        }
+
+        let mut local_calls = BTreeSet::new();
+        for (called, shadowed) in body.calls {
+            let called_name = called
+                .segments
+                .iter()
+                .map(|segment| segment.ident.to_string())
+                .collect::<Vec<_>>()
+                .join("::");
+            if shadowed {
+                return Err(compile_error(format!(
+                    "portable nested function `{}` calls shadowed or unresolved local value `{called_name}`",
+                    function.sig.ident
+                )));
+            }
+            if called.segments.len() == 1 && names.contains(&called_name) {
+                local_calls.insert(called_name);
+                continue;
+            }
+            if vitest_function_path_binding_name(&called, context)?.is_none() {
+                return Err(compile_error(format!(
+                    "portable nested function `{}` calls unresolved function `{called_name}`",
+                    function.sig.ident
+                )));
+            }
+        }
+        call_graph.insert(function.sig.ident.to_string(), local_calls);
+    }
+
+    fn reaches_cycle(
+        name: &str,
+        graph: &BTreeMap<String, BTreeSet<String>>,
+        visiting: &mut BTreeSet<String>,
+        visited: &mut BTreeSet<String>,
+    ) -> bool {
+        if visiting.contains(name) {
+            return true;
+        }
+        if !visited.insert(name.to_string()) {
+            return false;
+        }
+        visiting.insert(name.to_string());
+        let cycle = graph.get(name).is_some_and(|called| {
+            called
+                .iter()
+                .any(|called| reaches_cycle(called, graph, visiting, visited))
+        });
+        visiting.remove(name);
+        return cycle;
+    }
+
+    let mut visited = BTreeSet::new();
+    for name in &names {
+        if reaches_cycle(name, &call_graph, &mut BTreeSet::new(), &mut visited) {
+            return Err(compile_error(format!(
+                "recursive portable nested function cycle reaches `{name}`"
+            )));
+        }
+    }
+    return Ok(());
+}
+
 fn emit_block(
     out: &mut String,
     statements: &[Stmt],
@@ -1164,6 +1667,7 @@ fn emit_block(
 ) -> Result<(), CompileError> {
     let mut block_context = context.clone();
     insert_vitest_rebound_struct_context(statements, &mut block_context);
+    validate_vitest_local_functions(statements, &block_context)?;
     // Panic assertions spanning several statements, by the index of their first statement. The
     // locals they replace are not emitted, so they do not count as declarations.
     let mut panic_assertions = HashMap::new();
@@ -1240,6 +1744,8 @@ fn emit_block(
         } else if let Stmt::Local(local) = statement {
             emit_statement(out, statement, &block_context, indent)?;
             update_vitest_local_function_context(local, &mut block_context);
+        } else if let Stmt::Item(syn::Item::Fn(function)) = statement {
+            emit_local_function(out, function, &block_context, indent)?;
         } else {
             emit_statement(out, statement, &block_context, indent)?;
         }

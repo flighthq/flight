@@ -20049,6 +20049,188 @@ fn wraps_values() {
     }
 
     #[test]
+    fn emits_proven_non_capturing_nested_test_functions_with_block_hoisting() {
+        let source = r#"
+#[test]
+fn uses_hoisted_helpers() {
+    let value = 3;
+    assert_eq!(twice(value), 8);
+
+    fn twice(value: i32) -> i32 {
+        return add_one(value) + add_one(value);
+    }
+
+    fn add_one(value: i32) -> i32 {
+        return value + 1;
+    }
+}
+"#;
+
+        let output = compile_vitest(source, "./contract.ts").unwrap();
+
+        let call = output.find("expect(twice(value)).toEqual(8);").unwrap();
+        let declaration = output
+            .find("function twice(value: number): number {")
+            .unwrap();
+        assert!(call < declaration, "Rust block hoisting changed:\n{output}");
+        assert!(
+            output.contains("return addOne(value) + addOne(value);"),
+            "{output}"
+        );
+        assert!(
+            output.contains("function addOne(value: number): number {"),
+            "{output}"
+        );
+        assert!(!output.contains("from './contract.ts'"), "{output}");
+    }
+
+    #[test]
+    fn refuses_unproven_nested_test_function_semantics() {
+        let cases = [
+            (
+                "capture",
+                r#"
+#[test]
+fn sample() {
+    let outer = 3;
+    fn helper() -> i32 { return outer; }
+    assert_eq!(helper(), 3);
+}
+"#,
+                "captures outer binding(s) outer",
+            ),
+            (
+                "recursion",
+                r#"
+#[test]
+fn sample() {
+    fn helper(value: i32) -> i32 {
+        if value == 0 { return 0; }
+        return helper(value - 1);
+    }
+    assert_eq!(helper(1), 0);
+}
+"#,
+                "recursive portable nested function cycle",
+            ),
+            (
+                "async",
+                r#"
+#[test]
+fn sample() {
+    async fn helper() -> i32 { return 1; }
+    assert_eq!(1, 1);
+}
+"#,
+                "must be a plain non-async, non-generic free function",
+            ),
+            (
+                "generic",
+                r#"
+#[test]
+fn sample() {
+    fn helper<T>(value: T) -> T { return value; }
+    assert_eq!(helper(1), 1);
+}
+"#,
+                "must be a plain non-async, non-generic free function",
+            ),
+            (
+                "nested item",
+                r#"
+#[test]
+fn sample() {
+    fn helper() -> i32 {
+        fn deeper() -> i32 { return 1; }
+        return deeper();
+    }
+    assert_eq!(helper(), 1);
+}
+"#,
+                "contains unsupported nested item(s) deeper",
+            ),
+            (
+                "shadow ambiguity",
+                r#"
+#[test]
+fn sample() {
+    fn helper() -> i32 { return 1; }
+    let helper = 2;
+    assert_eq!(helper, 2);
+}
+"#,
+                "shadow-ambiguous with binding(s) helper",
+            ),
+            (
+                "escaping function value",
+                r#"
+#[test]
+fn sample() {
+    fn helper() -> i32 { return 1; }
+    let callback = helper;
+    assert_eq!(callback(), 1);
+}
+"#,
+                "function value(s) helper escape direct call position",
+            ),
+            (
+                "unresolved qualified call",
+                r#"
+#[test]
+fn sample() {
+    fn helper() -> i32 { return crate::missing(); }
+    assert_eq!(helper(), 1);
+}
+"#,
+                "unresolved",
+            ),
+            (
+                "unrepresentable type",
+                r#"
+#[test]
+fn sample() {
+    fn helper(value: *const i32) -> i32 { return 1; }
+    assert_eq!(1, 1);
+}
+"#,
+                "unsupported Rust type",
+            ),
+            (
+                "emitted name collision",
+                r#"
+#[test]
+fn sample() {
+    fn foo_bar() -> i32 { return 1; }
+    fn fooBar() -> i32 { return 2; }
+    assert_eq!(foo_bar() + fooBar(), 3);
+}
+"#,
+                "both emit as `fooBar`",
+            ),
+            (
+                "impl item",
+                r#"
+#[test]
+fn sample() {
+    struct Local;
+    impl Local { fn value() -> i32 { return 1; } }
+    assert_eq!(Local::value(), 1);
+}
+"#,
+                "unsupported item declaration inside portable test function",
+            ),
+        ];
+
+        for (label, source, expected) in cases {
+            let error = compile_vitest(source, "./contract.ts").unwrap_err();
+            assert!(
+                error.to_string().contains(expected),
+                "{label} should contain {expected:?}, got {error}"
+            );
+        }
+    }
+
+    #[test]
     fn emits_free_function_contract_tests_and_helpers() {
         let source = r#"
 use flight_geometry::*;

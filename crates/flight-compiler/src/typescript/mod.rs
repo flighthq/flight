@@ -14277,7 +14277,7 @@ fn emit_function(
     return Ok(());
 }
 
-fn emit_local_function(
+pub(crate) fn emit_local_function(
     out: &mut String,
     function: &ItemFn,
     entities: &HashSet<String>,
@@ -14342,6 +14342,18 @@ fn emit_local_function(
     write_indent(out, indent);
     out.push_str("}\n");
     return Ok(());
+}
+
+// Rust value bindings already resolved for the enclosing function. Portable nested function items
+// use this to reject an apparent free identifier that would become a JavaScript closure capture.
+// Rust function items cannot capture their environment, so accepting such source would mean the
+// compiler had inferred semantics from Rust that does not type-check.
+pub(crate) fn lexical_binding_names(context: &HashSet<String>) -> BTreeSet<String> {
+    return context
+        .iter()
+        .filter_map(|marker| marker.strip_prefix(BINDING_MARKER))
+        .filter_map(|binding| binding.split_once('=').map(|(name, _)| name.to_string()))
+        .collect();
 }
 
 fn emit_function_trait_type(
