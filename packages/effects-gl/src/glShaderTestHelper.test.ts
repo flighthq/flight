@@ -5,15 +5,15 @@ import { evaluateGlslScalarExpression, extractGlslExpression } from '@flighthq/e
 import { describe, expect, it } from 'vitest';
 
 function assertClose(actual: number, expected: number, tsBound: number): void {
-  const roundoff = 4.0 * Math.pow(2, -23) * Math.max(Math.abs(expected), 1.0);
+  const roundoff = 4 * Math.pow(2, -23) * Math.max(Math.abs(expected), 1);
   const bound = Math.max(tsBound, roundoff);
   expect(Math.abs(actual - expected) <= bound, `expected ${actual} to be within ${bound} of ${expected}`).toBe(true);
 }
 
 function bindings(entries: Readonly<Array<readonly [string, number]>>): Record<string, number> {
-  let record = {};
+  let record: Record<string, number> = {};
   for (const [key, value] of entries) {
-    record[String(key)] = value;
+    record[key] = value;
   }
   return record;
 }
@@ -27,7 +27,7 @@ describe('evaluateGlslScalarExpression', () => {
         ['v_texCoord.y', 0.75],
       ]),
     );
-    assertClose(value, 0.0, 0.5e-10);
+    assertClose(value, 0, 0.5e-10);
   });
   it('gives a different answer for the two vertical origins', () => {
     const value = evaluateGlslScalarExpression(
@@ -43,11 +43,11 @@ describe('evaluateGlslScalarExpression', () => {
     const value = evaluateGlslScalarExpression(
       'u_scale + u_scaleFactor',
       bindings([
-        ['u_scale', 2.0],
-        ['u_scaleFactor', 30.0],
+        ['u_scale', 2],
+        ['u_scaleFactor', 30],
       ]),
     );
-    expect(value).toEqual(32.0);
+    expect(value).toEqual(32);
   });
   it('resolves the scalar builtins', () => {
     const value = evaluateGlslScalarExpression('clamp(mix(0.0, 4.0, t), 0.0, 1.0)', bindings([['t', 0.125]]));
@@ -55,12 +55,12 @@ describe('evaluateGlslScalarExpression', () => {
   });
   it('throws on an identifier it was given no binding for', () => {
     expect(() => {
-      evaluateGlslScalarExpression('u_center * u_density', bindings([['u_center', 1.0]]));
+      evaluateGlslScalarExpression('u_center * u_density', bindings([['u_center', 1]]));
     }).toThrow('no binding for');
   });
   it('throws rather than modelling an operator glsl and javascript disagree about', () => {
     expect(() => {
-      evaluateGlslScalarExpression('texture(u_texture0, uv).r', bindings([['uv', 0.0]]));
+      evaluateGlslScalarExpression('texture(u_texture0, uv).r', bindings([['uv', 0]]));
     }).toThrow('no binding for');
   });
 });

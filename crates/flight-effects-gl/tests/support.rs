@@ -12,7 +12,7 @@ pub fn assert_close(actual: f32, expected: f32, ts_bound: f32) {
 
 /// TS `Record<string, number>` bindings for the GLSL evaluator.
 pub fn bindings(entries: &[(&str, f32)]) -> Record<f32> {
-    let mut record = Record::default();
+    let mut record: Record<f32> = Record::default();
     for (key, value) in entries {
         set_record_value(&mut record, key.to_string(), *value);
     }
