@@ -511,6 +511,42 @@ export function typeScriptStringUnionArguments(
     ]);
 }
 
+// A generated test names a Rust contract type by its contract re-export, but the package's TypeScript
+// contract may not export it: its canonical TypeScript owner is the external contract the package's own
+// production code imports it from. Map each such type to that owner as a `--typescript-type-alias`
+// argument. A type the package contract exports, or that no production import names, is left alone; a
+// type production code imports from two owners is refused.
+export function typeScriptTestContractTypeOwnerArguments(
+  generatedTypescript: string,
+  packageContractSymbols: ReadonlyMap<string, Omit<ExportSymbolOwner, 'fileName'>>,
+  productionTypescript: readonly string[],
+  importedContractSymbols: ReadonlyMap<string, ReadonlyMap<string, Omit<ExportSymbolOwner, 'fileName'>>>,
+): string[] {
+  const unowned = new Set<string>();
+  for (const match of generatedTypescript.matchAll(/^import type \{([^}]*)\} from '\.\/contract\.ts';/gm)) {
+    for (const item of match[1].split(',')) {
+      const name = item.trim();
+      if (name !== '' && packageContractSymbols.get(name)?.hasType !== true) unowned.add(name);
+    }
+  }
+  const owners = new Map<string, Set<string>>();
+  for (const line of typeScriptStringUnionOwnerImports(productionTypescript, unowned).split('\n')) {
+    const match = /^import type \{ (\w+) \} from '([^']+)';$/.exec(line);
+    if (match === null) continue;
+    owners.set(match[1], (owners.get(match[1]) ?? new Set()).add(match[2]));
+  }
+  const argumentsList: string[] = [];
+  for (const [name, modules] of [...owners].sort(([left], [right]) => left.localeCompare(right))) {
+    if (modules.size > 1) {
+      throw new Error(`TypeScript type ${name} is imported from both ${[...modules].sort().join(' and ')}`);
+    }
+    const [module] = modules;
+    if (importedContractSymbols.get(module)?.get(name)?.hasType !== true) continue;
+    argumentsList.push('--typescript-type-alias', `${name}=${module}#${name}`);
+  }
+  return argumentsList;
+}
+
 // The `@flighthq/*/contract` imports of `names` that a package's own production TypeScript makes,
 // as type-only import lines. A generated test may name a Rust enum that its handwritten predecessor
 // never imported; the package's production code still identifies that enum's canonical TypeScript

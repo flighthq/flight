@@ -53,6 +53,7 @@ import {
   typeScriptNullableOptionReturnMetadata,
   typeScriptStringUnionArguments,
   typeScriptStringUnionOwnerImports,
+  typeScriptTestContractTypeOwnerArguments,
   typeScriptTestTypeAliasArguments,
   typeScriptTypeAliasArguments,
 } from './generate-rust-package-exports.ts';
@@ -429,6 +430,42 @@ import type { ExecutionStatus } from '@flighthq/types/contract';`,
         symbols,
       ),
     ).toEqual(['--typescript-string-union', '@flighthq/types/contract#ExecutionStatus=["Complete","InvalidBuffer"]']);
+  });
+
+  it('maps a test contract type the package contract does not export to its production owner', () => {
+    const generated = `import { describe, expect, it } from 'vitest';
+
+import { createBuffer } from './contract.ts';
+import type { Buffer, Exported, Unimported } from './contract.ts';
+`;
+    const packageContract = new Map([['Exported', { hasType: true, hasValue: false }]]);
+    const production = [
+      `import type { Buffer, Exported } from '@flighthq/types/contract';`,
+      `import type { Unimported as Renamed } from './local.ts';`,
+    ];
+    const symbols = new Map([
+      [
+        '@flighthq/types/contract',
+        new Map([
+          ['Buffer', { hasType: true, hasValue: false }],
+          ['Exported', { hasType: true, hasValue: false }],
+        ]),
+      ],
+    ]);
+
+    expect(typeScriptTestContractTypeOwnerArguments(generated, packageContract, production, symbols)).toEqual([
+      '--typescript-type-alias',
+      'Buffer=@flighthq/types/contract#Buffer',
+    ]);
+    expect(typeScriptTestContractTypeOwnerArguments(generated, packageContract, production, new Map())).toEqual([]);
+    expect(() =>
+      typeScriptTestContractTypeOwnerArguments(
+        generated,
+        packageContract,
+        [...production, `import type { Buffer } from '@flighthq/other/contract';`],
+        symbols,
+      ),
+    ).toThrow(/Buffer is imported from both @flighthq\/other\/contract and @flighthq\/types\/contract/);
   });
 
   it('finds the canonical owner of a test-named enum in the package production imports', () => {

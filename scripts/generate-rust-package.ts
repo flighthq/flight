@@ -59,6 +59,7 @@ import {
   typeScriptNullableOptionReturnMetadata,
   typeScriptStringUnionArguments,
   typeScriptStringUnionOwnerImports,
+  typeScriptTestContractTypeOwnerArguments,
   typeScriptTestTypeAliasArguments,
   typeScriptTypeAliasArguments,
 } from './generate-rust-package-exports.ts';
@@ -611,6 +612,10 @@ try {
     const crateEnumNames = [
       ...new Set(rustSourceModes.flatMap(({ rustPath }) => collectRustPublicEnumNames(readFileSync(rustPath, 'utf8')))),
     ];
+    const packageContractPath = join(packageSourceRoot, 'contract.ts');
+    const packageContractSymbols = existsSync(packageContractPath)
+      ? collectContractTypeScriptSymbols(packageContractPath)
+      : new Map<string, ContractSymbol>();
     const productionTypescript = (existsSync(packageSourceRoot) ? readdirSync(packageSourceRoot) : [])
       .filter((name) => name.endsWith('.ts') && !name.endsWith('.test.ts'))
       .sort()
@@ -636,59 +641,8 @@ try {
       const compilePath = testSourceWithSupport(rustPath, join(rawRoot, `${rustTest}.source.rs`));
       const positionOwners = packageTypeScriptPositionOwnerSources();
       const knownTypeAliasArguments = packageTypeScriptTypeAliasArguments();
-      let typescript = compile(
-        'generate-tests',
-        compilePath,
-        join(rawRoot, fileName),
-        ['./contract.ts', '--contract-source', join(crateRoot, 'src', 'contract.rs')],
-        [...new Set([...aliasSources, ...positionOwners, ...exportNamingSources])],
-        targetNativeSources.filter(
-          (candidate) => !positionOwners.includes(candidate) && !exportNamingSources.includes(candidate),
-        ),
-        [
-          ...testSupportArguments(rustPath),
-          ...representationArguments,
-          ...knownTypeAliasArguments,
-          ...packageTypeScriptArrayPositionArguments('--typescript-array-field'),
-          ...packageTypeScriptArrayParameterArguments(),
-          ...packageTypeScriptArrayPositionArguments('--typescript-array-return'),
-          ...packageTypeScriptNullableOptionFieldArguments(),
-          ...packageTypeScriptNullableOptionParameterArguments(),
-          ...packageTypeScriptDefaultNullOptionParameterArguments(),
-          ...packageTypeScriptNullableOptionReturnArguments(),
-        ],
-      );
-      const testTypeAliasArguments = typeScriptTestTypeAliasArguments(
-        existingTypescript,
-        typescript,
-        loadImportedContractSymbols(existingTypescript),
-      );
-      const allTypeAliasArguments = mergedTypeScriptTypeAliasArguments(knownTypeAliasArguments, testTypeAliasArguments);
-      if (allTypeAliasArguments.length > knownTypeAliasArguments.length) {
-        typescript = compile(
-          'generate-tests',
-          compilePath,
-          join(rawRoot, fileName),
-          ['./contract.ts', '--contract-source', join(crateRoot, 'src', 'contract.rs')],
-          [...new Set([...aliasSources, ...positionOwners])],
-          targetNativeSources.filter((candidate) => !positionOwners.includes(candidate)),
-          [
-            ...testSupportArguments(rustPath),
-            ...representationArguments,
-            ...allTypeAliasArguments,
-            ...packageTypeScriptArrayPositionArguments('--typescript-array-field'),
-            ...packageTypeScriptArrayParameterArguments(),
-            ...packageTypeScriptArrayPositionArguments('--typescript-array-return'),
-            ...packageTypeScriptNullableOptionFieldArguments(),
-            ...packageTypeScriptNullableOptionParameterArguments(),
-            ...packageTypeScriptDefaultNullOptionParameterArguments(),
-            ...packageTypeScriptNullableOptionReturnArguments(),
-          ],
-        );
-      }
-      const testArrayReturnArguments = typeScriptArrayReturnArguments(existingTypescript, typescript);
-      if (testArrayReturnArguments.length > 0) {
-        typescript = compile(
+      const compileTest = (typeAliasArguments: string[], arrayReturnArguments: string[] = []): string =>
+        compile(
           'generate-tests',
           compilePath,
           join(rawRoot, fileName),
@@ -700,17 +654,40 @@ try {
           [
             ...testSupportArguments(rustPath),
             ...representationArguments,
-            ...allTypeAliasArguments,
+            ...typeAliasArguments,
             ...packageTypeScriptArrayPositionArguments('--typescript-array-field'),
             ...packageTypeScriptArrayParameterArguments(),
             ...packageTypeScriptArrayPositionArguments('--typescript-array-return'),
-            ...testArrayReturnArguments,
+            ...arrayReturnArguments,
             ...packageTypeScriptNullableOptionFieldArguments(),
             ...packageTypeScriptNullableOptionParameterArguments(),
             ...packageTypeScriptDefaultNullOptionParameterArguments(),
             ...packageTypeScriptNullableOptionReturnArguments(),
           ],
         );
+      let typescript = compileTest(knownTypeAliasArguments);
+      const testTypeAliasArguments = typeScriptTestTypeAliasArguments(
+        existingTypescript,
+        typescript,
+        loadImportedContractSymbols(existingTypescript),
+      );
+      const contractTypeOwnerArguments = typeScriptTestContractTypeOwnerArguments(
+        typescript,
+        packageContractSymbols,
+        productionTypescript,
+        loadImportedContractSymbols(productionTypescript.join('\n')),
+      );
+      const allTypeAliasArguments = mergedTypeScriptTypeAliasArguments(
+        knownTypeAliasArguments,
+        testTypeAliasArguments,
+        contractTypeOwnerArguments,
+      );
+      if (allTypeAliasArguments.length > knownTypeAliasArguments.length) {
+        typescript = compileTest(allTypeAliasArguments);
+      }
+      const testArrayReturnArguments = typeScriptArrayReturnArguments(existingTypescript, typescript);
+      if (testArrayReturnArguments.length > 0) {
+        typescript = compileTest(allTypeAliasArguments, testArrayReturnArguments);
       }
       typescript = canonicalizeGeneratedContractImports(existingTypescript, typescript);
       if (typescript.includes('crate.')) {
