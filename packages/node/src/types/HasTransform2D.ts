@@ -1,9 +1,10 @@
-import type { Entity, EntityRuntime } from '@flighthq/entity/contract';
+import type { EntityRaw, EntityRuntime, EntityRuntimeKey } from '@flighthq/entity/contract';
 import type { Matrix } from '@flighthq/geometry/contract';
 
 import type { NodeOf, NodeFields } from './Node.ts';
 
-export interface HasTransform2D extends Entity {
+export interface HasTransform2D extends EntityRaw {
+  [EntityRuntimeKey]: EntityRuntime | undefined;
   /**
    * Local pivot point that rotation and scale turn around and that aligns to (`x`, `y`). In local
    * units, the same space as children. Defaults to 0,0 (top-left), which reproduces a pivot-free

@@ -1,3 +1,5 @@
-import type { Entity } from '@flighthq/entity/contract';
+import type { EntityRaw, EntityRuntime, EntityRuntimeKey } from '@flighthq/entity/contract';
 
-export interface RendererData extends Entity {}
+export interface RendererData extends EntityRaw {
+  [EntityRuntimeKey]: EntityRuntime | undefined;
+}

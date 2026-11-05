@@ -1,4 +1,4 @@
-import type { Entity } from '@flighthq/entity/contract';
+import type { EntityRaw, EntityRuntime, EntityRuntimeKey } from '@flighthq/entity/contract';
 
 // A Viewport is the bedrock drawable rectangle: the pixel region a scene is rendered into. It is passive
 // plain data — `x`/`y` and `width`/`height` are the rect in device pixels and `devicePixelRatio` the
@@ -6,7 +6,8 @@ import type { Entity } from '@flighthq/entity/contract';
 // RenderTarget; many Viewports may cover one target (split-screen, picture-in-picture). A 3D camera reads
 // its aspect from a Viewport (`getViewportAspect`); the 2D display tree layers its fit context (`Scene2D`) on
 // top. This is the shared rect both dimensions consume, not a scene-graph node.
-export interface Viewport extends Entity {
+export interface Viewport extends EntityRaw {
+  [EntityRuntimeKey]: EntityRuntime | undefined;
   devicePixelRatio: number;
   height: number;
   width: number;
