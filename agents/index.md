@@ -78,6 +78,7 @@ working in that area, but do not build on it as settled. New architecture record
 - [morph-target animation](morph-target-animation.md) — the blend-shape deformer and the GPU path.
 - [ownership erasure](ownership-erasure.md) — before adding `Arc<RwLock<T>>`, `Rc<T>`, or `Box<T>` to a Rust crate that generates TS. The SharedRef model and the full erasure family.
 - [platform type ownership](platform-type-ownership.md) — before adding a platform-provided type to a portable package's type surface. Flight-owned types for GL, WGPU, audio, and rasterization; the composable host rendering seam; the portable-renderer ruling.
+- [WGPU type spec](wgpu-type-spec.md) — before defining or modifying the Flight-owned WGPU type family. The structural picks, opaque handles, descriptors, and string unions derived from a production usage audit.
 - [read integrity](read-integrity.md) — the axes a format reader must hold.
 - [render architecture](render-architecture.md) — the render and scene architecture in full.
 - [render target & pass architecture](render-target-architecture.md) — **unratified.** before touching render targets, render passes, `render*Background`, or `backgroundColor` on RenderState. The screen render target, pooled pass handle, and target type hierarchy.
