@@ -1424,14 +1424,26 @@ function entityArguments(command: string, source: string): string[] {
   if (command !== 'generate' && command !== 'generate-tests') return [];
   const specifier = options.packageName === 'entity' ? './types.ts' : '@flighthq/entity/contract';
   const rust = readFileSync(source, 'utf8');
+  const entitySourceRoot = join(repositoryRoot, 'crates', 'flight-entity', 'src');
   const bindingSource = join(repositoryRoot, 'crates', 'flight-entity', 'src', 'binding.rs');
   const representationSources = /\bget_entity_binding(?:_as)?\b/.test(rust) ? [bindingSource] : [];
   // Tests take the entity source only as an alias source, so they read its identity aliases
   // (`NonEntityCreateResult<T>` is `T`) when resolving the record a factory returns. Sources that
   // call an entity binding query also take that canonical owner's explicit null representation.
   const entityModule = command === 'generate' ? ['--entity-module', specifier] : [];
+  // Consuming crates need the public re-export chain and IR alias definitions as visibility-only
+  // proof. This lets the compiler distinguish canonical typed-array vocabulary from an unrelated
+  // same-named alias without emitting or importing Entity's rust-only modules.
+  const entityVisibility =
+    options.packageName === 'entity'
+      ? []
+      : ['lib.rs', 'contract.rs', 'ir.rs'].flatMap((fileName) => [
+          '--visibility-source',
+          join(entitySourceRoot, fileName),
+        ]);
   return [
     ...entityModule,
+    ...entityVisibility,
     '--external-alias-source',
     join(repositoryRoot, 'crates', 'flight-entity', 'src', 'types.rs'),
     '--external-alias-module',

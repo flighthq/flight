@@ -19636,6 +19636,116 @@ mod byte_helpers {
     }
 
     #[test]
+    fn lowers_only_owner_proven_entity_ir_byte_alias_arguments_to_uint8array() {
+        let test = r#"
+use flight_example::contract::*;
+
+#[test]
+fn reads_bytes() {
+    let bytes = vec![1u8, 2u8];
+    assert_eq!(read_bytes(&bytes), 2);
+    assert_eq!(read_bytes(&[]), 0);
+}
+"#;
+        let owner = r#"
+//! flight-compiler: target-native
+
+use flight_entity::Uint8Array;
+
+pub fn read_bytes(source: &Uint8Array) -> usize {
+    return source.len();
+}
+"#;
+        let entity_root = "pub mod contract;\nmod ir;\npub use contract::*;\n";
+        let entity_contract = "pub use crate::ir::*;\n";
+        let entity_ir = "//! flight-compiler: rust-only\npub type Uint8Array = [u8];\n";
+        let visibility = [
+            VitestVisibilitySource {
+                source: owner,
+                path: "crates/flight-example/src/value.rs",
+                current_package: true,
+            },
+            VitestVisibilitySource {
+                source: entity_root,
+                path: "crates/flight-entity/src/lib.rs",
+                current_package: false,
+            },
+            VitestVisibilitySource {
+                source: entity_contract,
+                path: "crates/flight-entity/src/contract.rs",
+                current_package: false,
+            },
+            VitestVisibilitySource {
+                source: entity_ir,
+                path: "crates/flight-entity/src/ir.rs",
+                current_package: false,
+            },
+        ];
+        let output = compile_vitest_with_named_visibility_sources_and_array_representations(
+            test,
+            "@flighthq/example/contract",
+            Some("pub use crate::value::read_bytes;\n"),
+            &[],
+            &[],
+            &[],
+            &visibility,
+            &[],
+            &[],
+            &[],
+            &[],
+            &[],
+            &[],
+            &[],
+            &[],
+            &[],
+        )
+        .unwrap();
+
+        assert!(
+            output.contains("readBytes(new Uint8Array(bytes))"),
+            "{output}"
+        );
+        assert!(output.contains("readBytes(new Uint8Array([]))"), "{output}");
+
+        let unrelated_owner = r#"
+//! flight-compiler: target-native
+
+pub type Uint8Array = [u8];
+
+pub fn read_bytes(source: &Uint8Array) -> usize {
+    return source.len();
+}
+"#;
+        let unrelated_visibility = [VitestVisibilitySource {
+            source: unrelated_owner,
+            path: "crates/flight-example/src/value.rs",
+            current_package: true,
+        }];
+        let refusal = compile_vitest_with_named_visibility_sources_and_array_representations(
+            test,
+            "@flighthq/example/contract",
+            Some("pub use crate::value::read_bytes;\n"),
+            &[],
+            &[],
+            &[],
+            &unrelated_visibility,
+            &[],
+            &[],
+            &[],
+            &[],
+            &[],
+            &[],
+            &[],
+            &[],
+            &[],
+        )
+        .unwrap();
+
+        assert!(refusal.contains("readBytes(bytes)"), "{refusal}");
+        assert!(!refusal.contains("new Uint8Array"), "{refusal}");
+    }
+
+    #[test]
     fn lowers_flight_regexp_construction_without_a_nonexistent_contract_import() {
         let source = r#"
 use flight_regexp::create_reg_exp;

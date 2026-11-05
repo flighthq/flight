@@ -4111,6 +4111,26 @@ fn resolve_use_prefix(from: &[String], prefix: &[String]) -> Option<Vec<String>>
     return Some(module);
 }
 
+// Resolve a `use` prefix with the source's declared child modules in scope. In Rust 2018 a bare
+// `use child::...` can name `mod child;`; treating every bare first segment as an external crate
+// loses the ownership chain through crate-root re-export barrels.
+fn resolve_program_use_prefix(
+    from: &[String],
+    program: &Program,
+    prefix: &[String],
+) -> Option<Vec<String>> {
+    let first = prefix.first()?;
+    if !matches!(first.as_str(), "crate" | "self" | "super")
+        && program.facts.external_modules.iter().any(|module| {
+            module.inline_parents.is_empty()
+                && (module.name == *first || module.component == *first)
+        })
+    {
+        return Some(from.iter().cloned().chain(prefix.iter().cloned()).collect());
+    }
+    return resolve_use_prefix(from, prefix);
+}
+
 // The canonical identity (`module SEP Struct`) of the struct `rust_type` names, resolved from the
 // source `from`.
 fn resolved_type_identity(
@@ -5472,6 +5492,38 @@ fn typed_binding_name(pattern: &Pat) -> Option<String> {
     };
 }
 
+// A typed-array IR alias is target vocabulary only when the complete public Entity re-export chain
+// resolves it to the rust-only `flight_entity::ir` owner and that owner's declaration is an exact
+// primitive slice. An unrelated alias with the same spelling is not representation evidence.
+fn canonical_entity_ir_typed_array_alias(
+    rust_type: &Type,
+    entities: &HashSet<String>,
+    from: &str,
+) -> Option<&'static str> {
+    let rust_type = match rust_type {
+        Type::Group(group) => return canonical_entity_ir_typed_array_alias(&group.elem, entities, from),
+        Type::Paren(paren) => return canonical_entity_ir_typed_array_alias(&paren.elem, entities, from),
+        rust_type => rust_type,
+    };
+    let Type::Path(path) = rust_type else {
+        return None;
+    };
+    let (owner, alias) = resolve_path_owner(entities, TYPE_ALIAS_OWNER_MARKER, from, &path.path)?;
+    if owner != "flight_entity::ir" {
+        return None;
+    }
+    let definition = unique_marker_suffix(
+        entities,
+        &format!(
+            "{TYPE_ALIAS_DEFINITION_MARKER}{owner}{PROVENANCE_SEPARATOR}{alias}{PROVENANCE_SEPARATOR}"
+        ),
+    )?;
+    let Type::Slice(slice) = syn::parse_str::<Type>(&definition).ok()? else {
+        return None;
+    };
+    return typed_array_for_type(&slice.elem);
+}
+
 // `slice` or `mut-slice` for a reference to a slice of a typed-array primitive, otherwise `other`.
 pub(super) fn typed_slice_parameter_kind(rust_type: &Type) -> &'static str {
     return match rust_type {
@@ -5489,6 +5541,33 @@ pub(super) fn typed_slice_parameter_kind(rust_type: &Type) -> &'static str {
         },
         _ => "other",
     };
+}
+
+fn typed_slice_parameter_kind_with_provenance(
+    rust_type: &Type,
+    entities: &HashSet<String>,
+    from: &str,
+) -> &'static str {
+    let rust_type = match rust_type {
+        Type::Group(group) => {
+            return typed_slice_parameter_kind_with_provenance(&group.elem, entities, from);
+        }
+        Type::Paren(paren) => {
+            return typed_slice_parameter_kind_with_provenance(&paren.elem, entities, from);
+        }
+        rust_type => rust_type,
+    };
+    if let Type::Reference(reference) = rust_type
+        && canonical_entity_ir_typed_array_alias(&reference.elem, entities, from)
+            == Some("Uint8Array")
+    {
+        return if reference.mutability.is_some() {
+            "uint8-mut-slice"
+        } else {
+            "uint8-slice"
+        };
+    }
+    return typed_slice_parameter_kind(rust_type);
 }
 
 // The owner of the one loaded source alias named `name`, or nothing when none or several are loaded.
@@ -9128,6 +9207,35 @@ pub(crate) fn insert_vitest_visibility_function_context<'a>(
     return Ok(());
 }
 
+// Function provenance retains caller-facing source paths for contract selection. Parameter
+// representation proof instead needs canonical Rust module identities so `use` and re-export paths
+// can resolve across visibility-only dependency sources.
+pub(crate) fn insert_vitest_visibility_function_parameter_context<'a>(
+    context: &mut HashSet<String>,
+    programs: impl Iterator<Item = (&'a str, &'a Program, bool)>,
+) {
+    for (module, program, current_package) in programs {
+        if !current_package {
+            continue;
+        }
+        for function in &program.functions {
+            if !is_public(&function.vis) {
+                continue;
+            }
+            let declaration = function.sig.ident.to_string();
+            for (argument_index, argument) in function.sig.inputs.iter().enumerate() {
+                let FnArg::Typed(argument) = argument else {
+                    continue;
+                };
+                context.insert(format!(
+                    "{SLICE_ARGUMENT_MARKER}{declaration}:{argument_index}:{}",
+                    typed_slice_parameter_kind_with_provenance(&argument.ty, context, module)
+                ));
+            }
+        }
+    }
+}
+
 // Visibility-only siblings are not emitted or walked, but their declared struct owners and
 // collection-shaped fields are still type evidence for a generated source that imports them. Keep
 // this deliberately narrower than adding the siblings as alias programs: method dispatch may use
@@ -9169,6 +9277,79 @@ fn insert_visibility_collection_context(
                     ));
                 }
             }
+        }
+    }
+}
+
+// Visibility-only sources do not contribute bodies or emitted declarations, but their public type
+// alias graph is still semantic evidence for signatures owned by target-native modules. Record only
+// use edges, source type paths, and alias definitions so a caller can prove an alias through its
+// complete re-export chain without activating unrelated generation directives.
+pub(crate) fn insert_visibility_type_alias_context(
+    context: &mut HashSet<String>,
+    programs: &[(&str, &Program)],
+) {
+    for (module, program) in programs {
+        if let Some(segments) = module_identity_segments(module) {
+            for rust_use in &program.uses {
+                for path in use_tree_paths(std::iter::once(rust_use)) {
+                    let Some(target) = resolve_program_use_prefix(&segments, program, &path.prefix)
+                    else {
+                        continue;
+                    };
+                    let target = target.join("::");
+                    match path.item {
+                        Some((imported, exported)) => {
+                            context.insert(format!(
+                                "{USE_BINDING_MARKER}{module}{PROVENANCE_SEPARATOR}{exported}{PROVENANCE_SEPARATOR}{target}{PROVENANCE_SEPARATOR}{imported}"
+                            ));
+                            if is_crate_wide(&rust_use.vis) {
+                                context.insert(format!(
+                                    "{CRATE_USE_BINDING_MARKER}{module}{PROVENANCE_SEPARATOR}{exported}{PROVENANCE_SEPARATOR}{target}{PROVENANCE_SEPARATOR}{imported}"
+                                ));
+                            }
+                            if is_public(&rust_use.vis) {
+                                context.insert(format!(
+                                    "{PUBLIC_USE_BINDING_MARKER}{module}{PROVENANCE_SEPARATOR}{exported}{PROVENANCE_SEPARATOR}{target}{PROVENANCE_SEPARATOR}{imported}"
+                                ));
+                            }
+                        }
+                        None => {
+                            context.insert(format!(
+                                "{USE_GLOB_MARKER}{module}{PROVENANCE_SEPARATOR}{target}"
+                            ));
+                            if is_crate_wide(&rust_use.vis) {
+                                context.insert(format!(
+                                    "{CRATE_USE_GLOB_MARKER}{module}{PROVENANCE_SEPARATOR}{target}"
+                                ));
+                            }
+                            if is_public(&rust_use.vis) {
+                                context.insert(format!(
+                                    "{PUBLIC_USE_GLOB_MARKER}{module}{PROVENANCE_SEPARATOR}{target}"
+                                ));
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        let mut type_path_context = HashSet::new();
+        insert_program_type_path_context(&mut type_path_context, program);
+        context.extend(type_path_context.into_iter().map(|fact| {
+            format!("{SOURCE_TYPE_PATH_CONTEXT_MARKER}{module}{PROVENANCE_SEPARATOR}{fact}")
+        }));
+        for alias in &program.type_aliases {
+            context.insert(owner_marker(
+                TYPE_ALIAS_OWNER_MARKER,
+                module,
+                &alias.ident.to_string(),
+                source_access_for_visibility(&alias.vis),
+            ));
+            context.insert(format!(
+                "{TYPE_ALIAS_DEFINITION_MARKER}{module}{PROVENANCE_SEPARATOR}{}{PROVENANCE_SEPARATOR}{}",
+                alias.ident,
+                alias.ty.to_token_stream()
+            ));
         }
     }
 }
@@ -9561,6 +9742,7 @@ fn generation_context_with_types(
         .chain(provenance_visibility_programs)
         .copied()
         .collect::<Vec<_>>();
+    insert_visibility_type_alias_context(&mut context, provenance_visibility_programs);
     let mut public_struct_owners = ProvenanceDeclarations::new();
     let mut public_function_owners = ProvenanceDeclarations::new();
     for (module, program) in &provenance_programs {
@@ -9677,7 +9859,8 @@ fn generation_context_with_types(
         if let Some(segments) = module_identity_segments(module) {
             for rust_use in &program.uses {
                 for path in use_tree_paths(std::iter::once(rust_use)) {
-                    let Some(target) = resolve_use_prefix(&segments, &path.prefix) else {
+                    let Some(target) = resolve_program_use_prefix(&segments, program, &path.prefix)
+                    else {
                         continue;
                     };
                     let target = target.join("::");
@@ -10384,7 +10567,11 @@ fn generation_context_with_types(
                     if array_like {
                         "array-like"
                     } else {
-                        typed_slice_parameter_kind(&argument.ty)
+                        typed_slice_parameter_kind_with_provenance(
+                            &argument.ty,
+                            &context,
+                            module,
+                        )
                     }
                 ));
                 let Some(parameters) =
@@ -27057,7 +27244,7 @@ pub(crate) fn insert_type_script_array_parameter_context<'a>(
                 }
             }
             crate::TypeScriptArrayParameterRepresentation::Uint8Array => {
-                if uint8_buffer_parameter_kind(&argument.ty, context).is_none() {
+                if uint8_buffer_parameter_kind(&argument.ty, context, module).is_none() {
                     return Err(compile_error(format!(
                         "TypeScript array parameter `{}.{}` with representation `Uint8Array` must designate an exact standard Rust `Vec<u8>`, `&[u8]`, or `&mut [u8]` parameter",
                         metadata.owner, metadata.parameter
@@ -27099,7 +27286,7 @@ pub(crate) fn insert_type_script_array_parameter_context<'a>(
                     "{UINT8_ARRAY_PARAMETER_MARKER}{module}{PROVENANCE_SEPARATOR}{function_name}{PROVENANCE_SEPARATOR}{}",
                     pattern.ident
                 ));
-                let kind = uint8_buffer_parameter_kind(&argument.ty, context)
+                let kind = uint8_buffer_parameter_kind(&argument.ty, context, module)
                     .expect("the Uint8Array parameter shape was validated");
                 context.insert(format!(
                     "{SLICE_ARGUMENT_MARKER}{function_name}:{index}:{kind}"
@@ -27303,10 +27490,11 @@ fn is_f32_slice_reference(rust_type: &Type, mutable: bool) -> bool {
 fn uint8_buffer_parameter_kind(
     rust_type: &Type,
     entities: &HashSet<String>,
+    from: &str,
 ) -> Option<&'static str> {
     let rust_type = match rust_type {
-        Type::Group(group) => return uint8_buffer_parameter_kind(&group.elem, entities),
-        Type::Paren(paren) => return uint8_buffer_parameter_kind(&paren.elem, entities),
+        Type::Group(group) => return uint8_buffer_parameter_kind(&group.elem, entities, from),
+        Type::Paren(paren) => return uint8_buffer_parameter_kind(&paren.elem, entities, from),
         rust_type => rust_type,
     };
     if is_standard_u8_vec(rust_type, entities) {
@@ -27315,6 +27503,15 @@ fn uint8_buffer_parameter_kind(
     let Type::Reference(reference) = rust_type else {
         return None;
     };
+    if canonical_entity_ir_typed_array_alias(&reference.elem, entities, from)
+        == Some("Uint8Array")
+    {
+        return Some(if reference.mutability.is_some() {
+            "uint8-mut-slice"
+        } else {
+            "uint8-slice"
+        });
+    }
     let Type::Slice(slice) = reference.elem.as_ref() else {
         return None;
     };
