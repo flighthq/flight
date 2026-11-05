@@ -1,30 +1,5 @@
-import type { Signal } from '@flighthq/signals/contract';
+// Animation contracts are owned by `@flighthq/animation`. These deprecated re-exports keep existing
+// `@flighthq/types` imports compiling until consumers import the owning package.
 
-import type { AnimationClip } from './AnimationClip.ts';
-import type { AnimationClipEvent } from './AnimationClipEvent.ts';
-import type { AnimationLoopMode } from './AnimationLoopMode.ts';
-import type { Entity } from './Entity.ts';
-
-// The explicit time driver for an AnimationClip — the app advances it each frame
-// (advanceAnimationPlayer); nothing auto-runs. `time` is the playhead in seconds, `speed` scales the
-// advanced dt (negative plays backward), `loop` wraps at the clip duration (otherwise time clamps to
-// [0, duration] and `playing` is cleared at the end), and `playing` gates advancement.
-//
-// `loopMode` (undefined = 'Repeat') selects how looping wraps: 'Repeat' jumps end→start, 'PingPong'
-// reflects at each end and flips the sign of `speed`. `repeatCount` (undefined or negative = infinite)
-// is the remaining number of loop wraps/bounces permitted; each wrap decrements it and playback stops
-// once it reaches zero. `onFinished`/`onLooped` are opt-in signals allocated by
-// enableAnimationPlayerSignals; `onEvent` reports crossed clip markers through the same opt-in path.
-// All are null/undefined until enabled, so a bare player stays signal-free.
-export interface AnimationPlayer extends Entity {
-  clip: AnimationClip;
-  loop: boolean;
-  loopMode?: AnimationLoopMode;
-  onEvent?: Signal<Readonly<AnimationClipEvent>> | null;
-  onFinished?: Signal<void> | null;
-  onLooped?: Signal<void> | null;
-  playing: boolean;
-  repeatCount?: number;
-  speed: number;
-  time: number;
-}
+/** @deprecated Import from `@flighthq/animation/contract`. */
+export type { AnimationPlayer } from '@flighthq/animation/contract';

@@ -1,4 +1,4 @@
-import { EntityRuntimeKey } from '@flighthq/types/contract';
+import { EntityRuntimeKey } from '@flighthq/entity/contract';
 
 import { createAnimationChannel, createAnimationClip } from './animationClip.ts';
 import {

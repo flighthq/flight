@@ -1,8 +1,10 @@
-// How an AnimationPlayer repeats when `loop` is true. 'Repeat' wraps modulo the clip duration (the
-// playhead jumps from the end back to the start); 'PingPong' reflects at each end, reversing the
-// travel direction (the sign of `speed`) so the playhead bounces back and forth. Ignored when `loop`
-// is false. Undefined on a player is treated as 'Repeat', keeping the plain boolean `loop` behavior.
-export type AnimationLoopMode = 'PingPong' | 'Repeat';
+// Animation contracts are owned by `@flighthq/animation`. The type is a deprecated re-export; the string
+// values are structural copies because @flighthq/types may cross into the owner only with type-only edges.
 
+/** @deprecated Import from `@flighthq/animation/contract`. */
+export type { AnimationLoopMode } from '@flighthq/animation/contract';
+
+/** @deprecated Import from `@flighthq/animation/contract`. */
 export const AnimationLoopModePingPong = 'PingPong';
+/** @deprecated Import from `@flighthq/animation/contract`. */
 export const AnimationLoopModeRepeat = 'Repeat';

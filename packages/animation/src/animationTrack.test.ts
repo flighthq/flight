@@ -1,9 +1,4 @@
-import {
-  AnimationInterpolationCubic,
-  AnimationInterpolationLinear,
-  AnimationInterpolationStep,
-  EntityRuntimeKey,
-} from '@flighthq/types/contract';
+import { EntityRuntimeKey } from '@flighthq/entity/contract';
 
 import {
   cloneAnimationTrack,
@@ -13,6 +8,7 @@ import {
   trimAnimationTrack,
   validateAnimationTrack,
 } from './animationTrack.ts';
+import { AnimationInterpolationCubic, AnimationInterpolationLinear, AnimationInterpolationStep } from './types.ts';
 
 describe('cloneAnimationTrack', () => {
   it('deep-copies times and values so the clone shares no buffers', () => {

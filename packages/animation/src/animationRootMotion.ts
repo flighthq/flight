@@ -1,7 +1,8 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { AnimationClip, AnimationRootMotionExtractor, EntityConstruction } from '@flighthq/types/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
 
 import { sampleAnimationTrack } from './animationTrack.ts';
+import type { AnimationClip, AnimationRootMotionExtractor } from './types.ts';
 
 export function createAnimationRootMotionExtractor(
   clip: Readonly<AnimationClip>,

@@ -1,16 +1,16 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
+
+import { blendAnimationSamples } from './animationBlend.ts';
+import { advanceAnimationPlayer } from './animationPlayer.ts';
+import { sampleAnimationTrack } from './animationTrack.ts';
 import type {
   AnimationChannel,
   AnimationCrossfade,
   AnimationCrossfadeChannel,
   AnimationCrossfadeOptions,
   AnimationPlayer,
-  EntityConstruction,
-} from '@flighthq/types/contract';
-
-import { blendAnimationSamples } from './animationBlend.ts';
-import { advanceAnimationPlayer } from './animationPlayer.ts';
-import { sampleAnimationTrack } from './animationTrack.ts';
+} from './types.ts';
 
 // Advances both source players by the same delta and updates the transition weight. Nothing advances
 // implicitly; callers drive this alongside their other animation state.

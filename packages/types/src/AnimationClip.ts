@@ -1,12 +1,5 @@
-import type { AnimationChannel } from './AnimationChannel.ts';
-import type { AnimationClipEvent } from './AnimationClipEvent.ts';
-import type { Entity } from './Entity.ts';
+// Animation contracts are owned by `@flighthq/animation`. These deprecated re-exports keep existing
+// `@flighthq/types` imports compiling until consumers import the owning package.
 
-// A bundle of channels with a total `duration` in seconds. Sampling a clip means sampling each
-// channel's track at the playhead time (sampleAnimationTrack) and applying it to that channel's
-// `targetRef` — the apply step is the domain layer's, keeping the clip itself target-free.
-export interface AnimationClip extends Entity {
-  channels: AnimationChannel[];
-  duration: number;
-  events: AnimationClipEvent[];
-}
+/** @deprecated Import from `@flighthq/animation/contract`. */
+export type { AnimationClip } from '@flighthq/animation/contract';

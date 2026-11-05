@@ -1,13 +1,5 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type {
-  AnimationBlendTree,
-  AnimationBlendTreeChannel,
-  AnimationBlendTreeChannelSource,
-  AnimationBlendTreeInput,
-  AnimationChannel,
-  AnimationPlayer,
-  EntityConstruction,
-} from '@flighthq/types/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
 
 import {
   accumulateAnimationSample,
@@ -18,6 +10,14 @@ import {
 } from './animationBlend.ts';
 import { advanceAnimationPlayer } from './animationPlayer.ts';
 import { sampleAnimationTrack } from './animationTrack.ts';
+import type {
+  AnimationBlendTree,
+  AnimationBlendTreeChannel,
+  AnimationBlendTreeChannelSource,
+  AnimationBlendTreeInput,
+  AnimationChannel,
+  AnimationPlayer,
+} from './types.ts';
 
 // Advances each distinct player referenced by the tree exactly once. Leaves sharing a player can weight
 // it differently without multiplying playhead speed.

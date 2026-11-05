@@ -1,5 +1,4 @@
-import { EntityRuntimeKey } from '@flighthq/types/contract';
-import type { AnimationChannel, AnimationPlayer } from '@flighthq/types/contract';
+import { EntityRuntimeKey } from '@flighthq/entity/contract';
 
 import {
   advanceAnimationBlendTree,
@@ -14,6 +13,7 @@ import {
 import { createAnimationChannel, createAnimationClip } from './animationClip.ts';
 import { createAnimationPlayer } from './animationPlayer.ts';
 import { createAnimationTrack } from './animationTrack.ts';
+import type { AnimationChannel, AnimationPlayer } from './types.ts';
 
 function player(targetRef: unknown, value: number, duration = 0): AnimationPlayer {
   const times = duration > 0 ? [0, duration] : [0];

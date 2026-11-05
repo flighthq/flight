@@ -1,7 +1,9 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
 import { createSignal, emitSignal } from '@flighthq/signals/contract';
-import type { AnimationClip, AnimationLoopMode, AnimationPlayer, EntityConstruction } from '@flighthq/types/contract';
-import { AnimationLoopModePingPong, AnimationLoopModeRepeat } from '@flighthq/types/contract';
+
+import type { AnimationClip, AnimationLoopMode, AnimationPlayer } from './types.ts';
+import { AnimationLoopModePingPong, AnimationLoopModeRepeat } from './types.ts';
 
 // Advances the playhead by `dt` seconds (scaled by `speed`; negative plays backward). When `loop`,
 // time wraps at the clip duration per `loopMode` — 'Repeat' jumps end→start, 'PingPong' reflects and

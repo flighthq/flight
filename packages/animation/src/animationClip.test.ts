@@ -101,7 +101,7 @@ describe('initializeAnimationChannel', () => {
     expect(typeof initializeAnimationChannel).toBe('function');
   });
 });
-import { EntityRuntimeKey } from '@flighthq/types/contract';
+import { EntityRuntimeKey } from '@flighthq/entity/contract';
 describe('initializeAnimationClip', () => {
   it('is the construction initializer of createAnimationClip', () => {
     expect(typeof initializeAnimationClip).toBe('function');

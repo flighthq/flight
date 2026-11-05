@@ -1,10 +1,5 @@
-import type { AnimationTrack } from './AnimationTrack.ts';
-import type { Entity } from './Entity.ts';
+// Animation contracts are owned by `@flighthq/animation`. These deprecated re-exports keep existing
+// `@flighthq/types` imports compiling until consumers import the owning package.
 
-// One channel of an AnimationClip: a track plus an opaque `targetRef`. The animation core never
-// interprets `targetRef` — binding a sampled value to a Node3D TRS, a bone, or a tween target is
-// the domain layer's job (scene / skeleton / tween). This is what keeps the core target-free and 3D-free.
-export interface AnimationChannel extends Entity {
-  track: AnimationTrack;
-  targetRef: unknown;
-}
+/** @deprecated Import from `@flighthq/animation/contract`. */
+export type { AnimationChannel } from '@flighthq/animation/contract';

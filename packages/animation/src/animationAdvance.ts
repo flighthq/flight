@@ -1,6 +1,5 @@
-import type { AnimationPlayer } from '@flighthq/types/contract';
-
 import { advanceAnimationPlayer } from './animationPlayer.ts';
+import type { AnimationPlayer } from './types.ts';
 
 // Internal composition seam: advances a precomputed player list while recording identity in reusable
 // caller-owned scratch. Public controllers clear their scratch once at the outermost update boundary.

@@ -1,13 +1,8 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type {
-  AnimationChannel,
-  AnimationClip,
-  AnimationClipEvent,
-  AnimationTrack,
-  EntityConstruction,
-} from '@flighthq/types/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
 
 import { cloneAnimationTrack, sampleAnimationTrack } from './animationTrack.ts';
+import type { AnimationChannel, AnimationClip, AnimationClipEvent, AnimationTrack } from './types.ts';
 
 // Deep-copies a clip: each channel gets a freshly cloned track (buffers deep-copied) while its opaque
 // `targetRef` is carried by reference (the clip core never interprets it, so it cannot deep-copy it).

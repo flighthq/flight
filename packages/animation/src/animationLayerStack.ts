@@ -1,4 +1,11 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
+
+import { advanceAnimationPlayers } from './animationAdvance.ts';
+import { addAnimationSample, blendAnimationSamples } from './animationBlend.ts';
+import { sampleAnimationBlendTreeChannel } from './animationBlendTree.ts';
+import { sampleAnimationStateMachineChannel } from './animationStateMachine.ts';
+import { advanceAnimationStateMachineWithScratch } from './animationStateMachineAdvance.ts';
 import type {
   AnimationBlendTree,
   AnimationChannel,
@@ -8,14 +15,7 @@ import type {
   AnimationLayerStackChannel,
   AnimationLayerStackChannelSource,
   AnimationStateMachine,
-  EntityConstruction,
-} from '@flighthq/types/contract';
-
-import { advanceAnimationPlayers } from './animationAdvance.ts';
-import { addAnimationSample, blendAnimationSamples } from './animationBlend.ts';
-import { sampleAnimationBlendTreeChannel } from './animationBlendTree.ts';
-import { sampleAnimationStateMachineChannel } from './animationStateMachine.ts';
-import { advanceAnimationStateMachineWithScratch } from './animationStateMachineAdvance.ts';
+} from './types.ts';
 
 // Advances every layer source while de-duplicating shared player identity across the complete stack.
 export function advanceAnimationLayerStack(stack: AnimationLayerStack, dt: number): void {

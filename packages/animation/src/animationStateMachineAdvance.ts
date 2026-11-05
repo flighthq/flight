@@ -1,6 +1,5 @@
-import type { AnimationPlayer, AnimationStateMachine } from '@flighthq/types/contract';
-
 import { advanceAnimationPlayers } from './animationAdvance.ts';
+import type { AnimationPlayer, AnimationStateMachine } from './types.ts';
 
 // Internal state-machine update with outer-controller-owned player deduplication.
 export function advanceAnimationStateMachineWithScratch(

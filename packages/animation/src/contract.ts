@@ -9,3 +9,4 @@ export * from './animationRootMotion.ts';
 export * from './animationStateMachine.ts';
 export * from './animationStateMachineAdvance.ts';
 export * from './animationTrack.ts';
+export * from './types.ts';

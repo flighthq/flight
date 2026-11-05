@@ -37,6 +37,7 @@
   },
   "dependencies": {
     "@flighthq/adjustments": "*",
+    "@flighthq/animation": "*",
     "@flighthq/app": "*",
     "@flighthq/binpack": "*",
     "@flighthq/buffer": "*",

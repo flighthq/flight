@@ -1,9 +1,5 @@
-import type { Entity } from './Entity.ts';
+// Animation contracts are owned by `@flighthq/animation`. These deprecated re-exports keep existing
+// `@flighthq/types` imports compiling until consumers import the owning package.
 
-// One clip-owned marker. Payload remains opaque to the animation core; gameplay/audio/VFX consumers
-// interpret it when an AnimationPlayer reports the crossing through its opt-in onEvent signal.
-export interface AnimationClipEvent extends Entity {
-  name: string;
-  payload: unknown;
-  time: number;
-}
+/** @deprecated Import from `@flighthq/animation/contract`. */
+export type { AnimationClipEvent } from '@flighthq/animation/contract';

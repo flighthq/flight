@@ -1,17 +1,16 @@
-import type { EasingFunction } from '@flighthq/easing/contract';
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
+
+import { blendAnimationSamples } from './animationBlend.ts';
+import { sampleAnimationBlendTreeChannel } from './animationBlendTree.ts';
+import { advanceAnimationStateMachineWithScratch } from './animationStateMachineAdvance.ts';
 import type {
   AnimationBlendTree,
   AnimationChannel,
   AnimationStateMachine,
   AnimationStateMachineChannel,
   AnimationStateMachineState,
-  EntityConstruction,
-} from '@flighthq/types/contract';
-
-import { blendAnimationSamples } from './animationBlend.ts';
-import { sampleAnimationBlendTreeChannel } from './animationBlendTree.ts';
-import { advanceAnimationStateMachineWithScratch } from './animationStateMachineAdvance.ts';
+} from './types.ts';
 
 // Advances the current state, or both sides of an active transition, then advances transition time.
 // Shared player identity is advanced once. Completion selects the destination state by elapsed duration,
@@ -161,7 +160,7 @@ export function transitionAnimationStateMachine(
   machine: AnimationStateMachine,
   toState: string | number,
   duration: number,
-  curve: EasingFunction = linearAnimationStateMachineCurve,
+  curve: (t: number) => number = linearAnimationStateMachineCurve,
 ): boolean {
   if (machine.transitionToStateIndex !== null) return false;
   const toStateIndex = findAnimationStateMachineStateIndex(machine.states, toState);

@@ -40,10 +40,8 @@
     "clean:dist": "tsx ../../scripts/clean-package-dist.ts"
   },
   "dependencies": {
-    "@flighthq/easing": "*",
     "@flighthq/entity": "*",
-    "@flighthq/signals": "*",
-    "@flighthq/types": "*"
+    "@flighthq/signals": "*"
   },
   "devDependencies": {
     "typescript": "^7.0.2"

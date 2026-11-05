@@ -1,5 +1,5 @@
+import { EntityRuntimeKey } from '@flighthq/entity/contract';
 import { connectSignal } from '@flighthq/signals/contract';
-import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import { createAnimationClip, createAnimationClipEvent } from './animationClip.ts';
 import {

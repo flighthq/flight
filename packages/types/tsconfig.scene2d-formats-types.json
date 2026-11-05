@@ -37,6 +37,9 @@
       "path": "../adjustments/tsconfig.contract.json"
     },
     {
+      "path": "../animation"
+    },
+    {
       "path": "../app/tsconfig.contract.json"
     },
     {
