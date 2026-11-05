@@ -6,6 +6,8 @@ import { fileURLToPath } from 'node:url';
 
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
+import { collectTypeScriptExportSymbols } from './generate-rust-package-exports.ts';
+
 const repositoryRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const packagesRoot = join(repositoryRoot, 'packages');
 const crateName = 'flight-staging-fixture';
@@ -206,35 +208,52 @@ pub fn alpha_value() -> i32 { return 1; }
   it('forwards lenient production generation', async () => {
     writeFileSync(
       sourcePath,
-      `//! flight-compiler: root-only goodValue
+      `//! flight-compiler: root-only beginSpan
 
-pub fn good_value(value: i32) -> i32 {
-    return value + 1;
+pub fn begin_span(channel: Option<String>) -> bool {
+    return channel.is_none();
 }
 
-pub fn unsupported_value(value: &dyn std::any::Any) -> bool {
+pub fn measure_span(value: &dyn std::any::Any) -> bool {
     return value.type_id() == std::any::TypeId::of::<u32>();
 }
 `,
     );
-    writeFileSync(
-      join(packageRoot, 'src', 'value.ts'),
-      `export function goodValue(value: number): number { return value + 1; }
-export function unsupportedValue(_value: unknown): boolean { return true; }
-`,
+    const established = `export function beginSpan(channel: string | null = null): boolean {
+  return channel === null;
+}
+
+export function measureSpan(_value: unknown): boolean {
+  return true;
+}
+`;
+    writeFileSync(join(packageRoot, 'src', 'value.ts'), established);
+
+    const first = await generateWhileScanning(true);
+    const generatedPaths = ['contract.ts', 'index.ts', 'value.generated.ts', 'value.native.ts', 'value.ts'];
+    const firstSources = new Map(
+      generatedPaths.map((fileName) => [fileName, readFileSync(join(packageRoot, 'src', fileName), 'utf8')]),
     );
+    const second = await generateWhileScanning(true);
 
-    const run = await generateWhileScanning(true);
-
-    expect(run.code).toBe(0);
-    expect(run.stderr).toContain('lenient: 1 items skipped');
+    expect(first.code, first.stderr).toBe(0);
+    expect(second.code, second.stderr).toBe(0);
+    expect(first.stderr).toContain('lenient: 1 items skipped');
+    expect(second.stderr).toContain('lenient: 1 items skipped');
+    for (const [fileName, firstSource] of firstSources) {
+      expect(readFileSync(join(packageRoot, 'src', fileName), 'utf8')).toBe(firstSource);
+    }
     const value = readFileSync(join(packageRoot, 'src', 'value.ts'), 'utf8');
-    expect(value).toContain("export { goodValue } from './value.generated.ts';");
-    expect(value).toContain("export { unsupportedValue } from './value.native.ts';");
-    expect(readFileSync(join(packageRoot, 'src', 'value.generated.ts'), 'utf8')).toContain('export function goodValue');
-    expect(readFileSync(join(packageRoot, 'src', 'value.native.ts'), 'utf8')).toContain(
-      'export function unsupportedValue',
+    expect([...collectTypeScriptExportSymbols(value).keys()].sort()).toEqual(
+      [...collectTypeScriptExportSymbols(established).keys()].sort(),
     );
+    expect(value).toContain("export { beginSpan } from './value.generated.ts';");
+    expect(value).toContain("export { measureSpan } from './value.native.ts';");
+    expect(readFileSync(join(packageRoot, 'src', 'value.generated.ts'), 'utf8')).toContain(
+      'export function beginSpan(channel: string | null = null): boolean',
+    );
+    const native = readFileSync(join(packageRoot, 'src', 'value.native.ts'), 'utf8');
+    expect(native).toContain('export function measureSpan');
   }, 120_000);
 
   it('keeps a skipped private helper in the native overlay without publishing it', async () => {
