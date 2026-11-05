@@ -20741,7 +20741,13 @@ fn emit_method_call(
         "floor" if arguments.is_empty() => Ok(format!("Math.floor({receiver})")),
         "fract" if arguments.is_empty() => Ok(format!("({receiver} % 1)")),
         "fill" if arguments.len() == 1 => Ok(format!("{receiver}.fill({})", arguments[0])),
-        "filter" if arguments.len() == 1 => Ok(format!("{receiver}.filter({})", arguments[0])),
+        "filter" if arguments.len() == 1 => {
+            if method_chain_includes(&call.receiver, "enumerate") {
+                Ok(format!("[...{receiver}].filter({})", arguments[0]))
+            } else {
+                Ok(format!("{receiver}.filter({})", arguments[0]))
+            }
+        }
         "filter_map" if arguments.len() == 1 => {
             let absent = option_absent_value(&call.receiver, entities);
             Ok(format!(
@@ -21005,7 +21011,13 @@ fn emit_method_call(
         }
         "log2" if arguments.is_empty() => Ok(format!("Math.log2({receiver})")),
         "log10" if arguments.is_empty() => Ok(format!("Math.log10({receiver})")),
-        "map" if arguments.len() == 1 => Ok(format!("{receiver}.map({})", arguments[0])),
+        "map" if arguments.len() == 1 => {
+            if method_chain_includes(&call.receiver, "enumerate") {
+                Ok(format!("[...{receiver}].map({})", arguments[0]))
+            } else {
+                Ok(format!("{receiver}.map({})", arguments[0]))
+            }
+        }
         "map_or" if arguments.len() == 2 => {
             let absent = option_absent_value(&call.receiver, entities);
             if option_expression_payload(&call.receiver, entities).is_some() {
@@ -21227,7 +21239,13 @@ fn emit_method_call(
             "(<T>(items: T[], length: number, factory: () => T): void => {{ while (items.length < length) {{ items.push(factory()); }} items.length = length; }})({receiver}, {}, {})",
             arguments[0], arguments[1]
         )),
-        "reduce" if arguments.len() == 1 => Ok(format!("{receiver}.reduce({})", arguments[0])),
+        "reduce" if arguments.len() == 1 => {
+            if method_chain_includes(&call.receiver, "enumerate") {
+                Ok(format!("[...{receiver}].reduce({})", arguments[0]))
+            } else {
+                Ok(format!("{receiver}.reduce({})", arguments[0]))
+            }
+        }
         "rfind" if arguments.len() == 1 => {
             let absent = if entities.contains(NULLABLE_OPTIONS_MARKER) {
                 "null"

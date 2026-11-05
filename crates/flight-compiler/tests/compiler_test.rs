@@ -27709,4 +27709,17 @@ mod shadowing_tuple_destructure {
         );
         assert!(!output.contains("__dt"), "{output}");
     }
+
+    #[test]
+    fn spreads_enumerate_entries_before_array_map() {
+        let output = compile_typescript(
+            "pub fn label(items: &[String]) -> Vec<String> {\n    return items.iter().enumerate().map(|(i, s)| format!(\"{}: {}\", i, s)).collect();\n}\n",
+            None,
+        )
+        .unwrap();
+        assert!(
+            output.contains("[...items.entries()].map("),
+            "enumerate().map() must spread the entries iterator into an array: {output}"
+        );
+    }
 }
