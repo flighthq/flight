@@ -21390,10 +21390,22 @@ fn emit_method_call(
             "{receiver}.filter((_, index) => index % {} === 0)",
             arguments[0]
         )),
-        "sort_by_key" | "sort_unstable_by_key" if arguments.len() == 1 => Ok(format!(
-            "(<T>(items: T[], key: (item: T) => number): void => {{ items.sort((a, b) => key(a) - key(b)); }})({receiver}, {})",
-            arguments[0]
-        )),
+        "sort_by_key" | "sort_unstable_by_key" if arguments.len() == 1 => {
+            if let (Some(key_a), Some(key_b)) = (
+                inline_emitted_closure(&arguments[0], "a"),
+                inline_emitted_closure(&arguments[0], "b"),
+            ) {
+                Ok(format!("{receiver}.sort((a, b) => {key_a} - {key_b})"))
+            } else if expression_is_reusable(&call.args[0]) {
+                let key = &arguments[0];
+                Ok(format!("{receiver}.sort((a, b) => {key}(a) - {key}(b))"))
+            } else {
+                Ok(format!(
+                    "(<T>(items: T[], key: (item: T) => number): void => {{ items.sort((a, b) => key(a) - key(b)); }})({receiver}, {})",
+                    arguments[0]
+                ))
+            }
+        }
         "sort_unstable_by" if arguments.len() == 1 => {
             Ok(format!("{receiver}.sort({})", arguments[0]))
         }

@@ -5425,8 +5425,8 @@ pub fn sort_len(values: &mut Vec<String>) {
         let output = compile_typescript(source, None).unwrap();
 
         assert!(
-            output.contains("key(a) - key(b)"),
-            "sort_by_key should compare by key: {output}"
+            output.contains(".sort((a, b) => a.length - b.length)"),
+            "sort_by_key should inline the key into the comparator: {output}"
         );
     }
 
