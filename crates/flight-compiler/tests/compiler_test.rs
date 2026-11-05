@@ -20559,6 +20559,237 @@ fn uses_hoisted_helpers() {
     }
 
     #[test]
+    fn lowers_proven_test_local_mutable_scalar_references_to_one_shared_cell() {
+        let source = r#"
+#[test]
+fn advances_one_seed_cell() {
+    let mut seed = 1u32;
+
+    fn next(seed: &mut u32) -> u32 {
+        *seed = seed.wrapping_mul(3).wrapping_add(1);
+        return *seed;
+    }
+
+    assert_eq!(next(&mut seed), 4);
+    assert_eq!(seed, 4);
+    assert_eq!(next(&mut seed), 13);
+}
+"#;
+
+        let output = compile_vitest(source, "./contract.ts").unwrap();
+
+        assert!(
+            output.contains("const seed: { value: number } = { value: 1 };"),
+            "{output}"
+        );
+        assert!(
+            output.contains("function next(seed: { value: number }): number {"),
+            "{output}"
+        );
+        assert!(
+            output.contains("seed.value = (Math.imul(seed.value, 3) >>> 0) + 1 >>> 0;"),
+            "{output}"
+        );
+        assert!(output.contains("expect(next(seed)).toEqual(4);"), "{output}");
+        assert!(output.contains("expect(seed.value).toEqual(4);"), "{output}");
+        assert!(output.contains("expect(next(seed)).toEqual(13);"), "{output}");
+    }
+
+    #[test]
+    fn refuses_unproven_mutable_scalar_reference_cells() {
+        let cases = [
+            (
+                "multiple aliases",
+                r#"
+#[test]
+fn sample() {
+    let mut first = 1u32;
+    let mut second = 2u32;
+    fn exchange(first: &mut u32, second: &mut u32) { *first = *second; }
+    exchange(&mut first, &mut second);
+}
+"#,
+                "cannot lower multiple mutable-reference aliases",
+            ),
+            (
+                "stored reference",
+                r#"
+#[test]
+fn sample() {
+    let mut seed = 1u32;
+    fn next(seed: &mut u32) { *seed += 1; }
+    let alias = &mut seed;
+    next(alias);
+}
+"#,
+                "requires a direct `&mut local` argument",
+            ),
+            (
+                "borrowed field",
+                r#"
+struct Seed { value: u32 }
+#[test]
+fn sample() {
+    let mut seed = Seed { value: 1 };
+    fn next(seed: &mut u32) { *seed += 1; }
+    next(&mut seed.value);
+}
+"#,
+                "refuses borrowed fields or elements, reborrows, and non-local arguments",
+            ),
+            (
+                "borrowed element",
+                r#"
+#[test]
+fn sample() {
+    let mut seeds = vec![1u32];
+    fn next(seed: &mut u32) { *seed += 1; }
+    next(&mut seeds[0]);
+}
+"#,
+                "refuses borrowed fields or elements, reborrows, and non-local arguments",
+            ),
+            (
+                "reborrow",
+                r#"
+#[test]
+fn sample() {
+    let mut seed = 1u32;
+    fn next(seed: &mut u32) {
+        let alias = &mut *seed;
+        *alias += 1;
+    }
+    next(&mut seed);
+}
+"#,
+                "has unsupported reborrow",
+            ),
+            (
+                "helper closure capture",
+                r#"
+#[test]
+fn sample() {
+    let mut seed = 1u32;
+    fn next(seed: &mut u32) {
+        let read = || *seed;
+        *seed = read();
+    }
+    next(&mut seed);
+}
+"#,
+                "has unsupported closure capture",
+            ),
+            (
+                "escaping helper parameter",
+                r#"
+#[test]
+fn sample() {
+    let mut seed = 1u32;
+    fn next(seed: &mut u32) { drop(seed); }
+    next(&mut seed);
+}
+"#,
+                "has unsupported escaping or stored reference",
+            ),
+            (
+                "outer closure capture",
+                r#"
+#[test]
+fn sample() {
+    let mut seed = 1u32;
+    fn next(seed: &mut u32) { *seed += 1; }
+    let run = || next(&mut seed);
+    run();
+}
+"#,
+                "is captured by a closure or async block",
+            ),
+            (
+                "outer async capture",
+                r#"
+#[test]
+fn sample() {
+    let mut seed = 1u32;
+    fn next(seed: &mut u32) { *seed += 1; }
+    let future = async { next(&mut seed); };
+    drop(future);
+}
+"#,
+                "is captured by a closure or async block",
+            ),
+            (
+                "ambiguous alias type",
+                r#"
+type Seed = u32;
+#[test]
+fn sample() {
+    let mut seed: Seed = 1;
+    fn next(seed: &mut Seed) { *seed += 1; }
+    next(&mut seed);
+}
+"#,
+                "exact scalar type is ambiguous or custom",
+            ),
+            (
+                "custom deref type",
+                r#"
+struct Seed { value: u32 }
+#[test]
+fn sample() {
+    let mut seed = Seed { value: 1 };
+    fn next(seed: &mut Seed) { *seed; }
+    next(&mut seed);
+}
+"#,
+                "exact scalar type is ambiguous or custom",
+            ),
+            (
+                "conflicting scalar type",
+                r#"
+#[test]
+fn sample() {
+    let mut seed = 1i32;
+    fn next(seed: &mut u32) { *seed += 1; }
+    next(&mut seed);
+}
+"#,
+                "has conflicting scalar types `u32` and `i32`",
+            ),
+        ];
+
+        for (name, source, expected) in cases {
+            let error = compile_vitest(source, "./contract.ts")
+                .expect_err(name)
+                .to_string();
+            assert!(error.contains(expected), "{name}: {error}");
+        }
+    }
+
+    #[test]
+    fn refuses_mutable_scalar_cell_lowering_in_production_sources() {
+        let source = r#"
+fn next(seed: &mut u32) -> u32 {
+    *seed += 1;
+    return *seed;
+}
+
+pub fn run() -> u32 {
+    let mut seed = 1u32;
+    next(&mut seed);
+    return seed;
+}
+"#;
+
+        let error = compile_typescript(source, None).unwrap_err().to_string();
+        assert!(
+            error.contains(
+                "mutable scalar reference argument 0 of `next` is supported only for a proven non-escaping local in a portable test"
+            ),
+            "{error}"
+        );
+    }
+
+    #[test]
     fn refuses_unproven_nested_test_function_semantics() {
         let cases = [
             (

@@ -22,17 +22,20 @@ use crate::typescript::{
     emit_local_function, emit_local_with_shadow_and_else, emit_match_statement,
     emit_option_binding, emit_parameter, emit_type, emit_type_parameters,
     emit_vec_extend_statement, export_name, frozen_object_name, function_expression_context,
-    function_returns_uint8_array,
+    function_returns_uint8_array, exact_mutable_scalar_reference, exact_portable_scalar_type,
     insert_type_parameter_context, lexical_binding_names,
     insert_vitest_helper_return_context, insert_vitest_import_alias_context,
     insert_vitest_rebound_struct_context, is_data_union_variant, is_lowered_cross_crate_type,
     is_lowered_cross_crate_value, is_string_union, is_vitest_function, is_vitest_own_public,
-    is_vitest_struct, js_string_literal, lexical_pattern_context, numeric_literal_spelling,
+    is_vitest_struct, js_string_literal, lexical_pattern_context, local_pattern_binding_id,
+    numeric_literal_spelling,
     option_scrutinee_is_rereadable, provenance_import_rules, snake_to_lower_camel,
     type_script_type_aliases, update_vitest_local_function_context,
     update_vitest_struct_local_context, validate_vitest_function_provenance,
     vitest_current_path_prefix, vitest_function_path_binding_name, vitest_struct_path_binding_name,
-    write_indent,
+    write_indent, MUTABLE_SCALAR_REFERENCE_ARGUMENT_MARKER,
+    VITEST_MUTABLE_SCALAR_CELL_LOCAL_BINDING_MARKER,
+    VITEST_MUTABLE_SCALAR_CELL_PARAMETER_MARKER,
 };
 use crate::{CompileError, compile_error};
 
@@ -1543,6 +1546,464 @@ fn expression_is_as_ptr(expression: &Expr) -> bool {
         if call.method == "as_ptr" && call.args.is_empty());
 }
 
+// Proves the one mutable-reference shape whose aliasing TypeScript can reproduce for portable
+// tests: a nested helper's sole `&mut` parameter is an exact representable scalar, and every call
+// passes one directly named mutable local. The local becomes one `{ value: T }` cell; ordinary reads
+// and writes use `.value`, while the call passes the cell itself. Any shape that could create a
+// second live alias or let the reference escape fails before emission.
+fn insert_vitest_mutable_scalar_cell_context(
+    statements: &[Stmt],
+    context: &mut HashSet<String>,
+) -> Result<(), CompileError> {
+    #[derive(Clone)]
+    struct Candidate {
+        index: usize,
+        parameter: String,
+        scalar: &'static str,
+    }
+
+    fn direct_path_name(expression: &Expr) -> Option<String> {
+        let Expr::Path(path) = unparenthesized(expression) else {
+            return None;
+        };
+        if path.qself.is_some()
+            || path.path.leading_colon.is_some()
+            || path.path.segments.len() != 1
+        {
+            return None;
+        }
+        return path.path
+            .segments
+            .first()
+            .map(|segment| segment.ident.to_string());
+    }
+
+    fn expression_mentions(expression: &Expr, name: &str) -> bool {
+        struct Finder<'a> {
+            found: bool,
+            name: &'a str,
+        }
+        impl<'ast> Visit<'ast> for Finder<'_> {
+            fn visit_expr_path(&mut self, path: &'ast syn::ExprPath) {
+                if path.qself.is_none()
+                    && path.path.is_ident(self.name)
+                {
+                    self.found = true;
+                    return;
+                }
+                syn::visit::visit_expr_path(self, path);
+            }
+            fn visit_item(&mut self, _: &'ast syn::Item) {}
+        }
+        let mut finder = Finder { found: false, name };
+        finder.visit_expr(expression);
+        return finder.found;
+    }
+
+    fn local_scalar(local: &syn::Local) -> Option<(String, &'static str)> {
+        let (pattern, declared) = match &local.pat {
+            Pat::Ident(pattern) => (pattern, None),
+            Pat::Type(typed) => {
+                let Pat::Ident(pattern) = typed.pat.as_ref() else {
+                    return None;
+                };
+                (pattern, exact_portable_scalar_type(&typed.ty))
+            }
+            _ => return None,
+        };
+        pattern.mutability?;
+        if pattern.subpat.is_some() {
+            return None;
+        }
+        let initializer = local.init.as_ref()?;
+        if initializer.diverge.is_some() {
+            return None;
+        }
+        let inferred = match unparenthesized(&initializer.expr) {
+            Expr::Lit(literal) => match &literal.lit {
+                syn::Lit::Bool(_) => Some("bool"),
+                syn::Lit::Float(value) => {
+                    let suffix = value.suffix();
+                    (!suffix.is_empty())
+                        .then(|| syn::parse_str::<Type>(suffix).ok())
+                        .flatten()
+                        .and_then(|rust_type| exact_portable_scalar_type(&rust_type))
+                }
+                syn::Lit::Int(value) => {
+                    let suffix = value.suffix();
+                    (!suffix.is_empty())
+                        .then(|| syn::parse_str::<Type>(suffix).ok())
+                        .flatten()
+                        .and_then(|rust_type| exact_portable_scalar_type(&rust_type))
+                }
+                _ => None,
+            },
+            Expr::Cast(cast) => exact_portable_scalar_type(&cast.ty),
+            _ => None,
+        };
+        let scalar = match (declared, inferred) {
+            (Some(declared), Some(inferred)) if declared != inferred => return None,
+            (Some(declared), _) => declared,
+            (None, Some(inferred)) => inferred,
+            (None, None) => return None,
+        };
+        return Some((pattern.ident.to_string(), scalar));
+    }
+
+    fn parameter_use_error(function: &ItemFn, parameter: &str) -> Option<&'static str> {
+        struct Proof<'a> {
+            error: Option<&'static str>,
+            parameter: &'a str,
+        }
+        impl<'ast> Visit<'ast> for Proof<'_> {
+            fn visit_expr_async(&mut self, expression: &'ast syn::ExprAsync) {
+                if expression_mentions(&Expr::Async(expression.clone()), self.parameter) {
+                    self.error = Some("async block capture");
+                }
+            }
+
+            fn visit_expr_closure(&mut self, expression: &'ast syn::ExprClosure) {
+                if expression_mentions(&Expr::Closure(expression.clone()), self.parameter) {
+                    self.error = Some("closure capture");
+                }
+            }
+
+            fn visit_expr_method_call(&mut self, call: &'ast syn::ExprMethodCall) {
+                if direct_path_name(&call.receiver).as_deref() == Some(self.parameter) {
+                    for argument in &call.args {
+                        self.visit_expr(argument);
+                    }
+                    return;
+                }
+                syn::visit::visit_expr_method_call(self, call);
+            }
+
+            fn visit_expr_reference(&mut self, reference: &'ast syn::ExprReference) {
+                if expression_mentions(&reference.expr, self.parameter) {
+                    self.error = Some("reborrow");
+                    return;
+                }
+                syn::visit::visit_expr_reference(self, reference);
+            }
+
+            fn visit_expr_unary(&mut self, unary: &'ast syn::ExprUnary) {
+                if matches!(unary.op, syn::UnOp::Deref(_))
+                    && direct_path_name(&unary.expr).as_deref() == Some(self.parameter)
+                {
+                    return;
+                }
+                syn::visit::visit_expr_unary(self, unary);
+            }
+
+            fn visit_expr_path(&mut self, path: &'ast syn::ExprPath) {
+                if path.qself.is_none() && path.path.is_ident(self.parameter) {
+                    self.error = Some("escaping or stored reference");
+                    return;
+                }
+                syn::visit::visit_expr_path(self, path);
+            }
+
+            fn visit_item(&mut self, _: &'ast syn::Item) {}
+
+            fn visit_macro(&mut self, rust_macro: &'ast syn::Macro) {
+                if let Ok(arguments) = parse_macro_arguments(rust_macro) {
+                    for argument in &arguments {
+                        self.visit_expr(argument);
+                    }
+                }
+            }
+        }
+        let mut proof = Proof {
+            error: None,
+            parameter,
+        };
+        proof.visit_block(&function.block);
+        return proof.error;
+    }
+
+    fn dereferences_parameter(function: &ItemFn, parameter: &str) -> bool {
+        struct Finder<'a> {
+            found: bool,
+            parameter: &'a str,
+        }
+        impl<'ast> Visit<'ast> for Finder<'_> {
+            fn visit_expr_unary(&mut self, unary: &'ast syn::ExprUnary) {
+                if matches!(unary.op, syn::UnOp::Deref(_))
+                    && direct_path_name(&unary.expr).as_deref() == Some(self.parameter)
+                {
+                    self.found = true;
+                    return;
+                }
+                syn::visit::visit_expr_unary(self, unary);
+            }
+            fn visit_item(&mut self, _: &'ast syn::Item) {}
+        }
+        let mut finder = Finder {
+            found: false,
+            parameter,
+        };
+        finder.visit_block(&function.block);
+        return finder.found;
+    }
+
+    let functions = statements
+        .iter()
+        .filter_map(|statement| match statement {
+            Stmt::Item(syn::Item::Fn(function)) => Some(function),
+            _ => None,
+        })
+        .collect::<Vec<_>>();
+    let mut candidates = BTreeMap::<String, Candidate>::new();
+    for function in &functions {
+        let mutable_references = function
+            .sig
+            .inputs
+            .iter()
+            .enumerate()
+            .filter_map(|(index, argument)| {
+                let FnArg::Typed(argument) = argument else {
+                    return None;
+                };
+                let Type::Reference(reference) = argument.ty.as_ref() else {
+                    return None;
+                };
+                reference.mutability.map(|_| (index, argument, reference))
+            })
+            .collect::<Vec<_>>();
+        let scalar_references = mutable_references
+            .iter()
+            .filter_map(|(index, argument, _)| {
+                let scalar = exact_mutable_scalar_reference(&argument.ty)?;
+                let Pat::Ident(pattern) = argument.pat.as_ref() else {
+                    return None;
+                };
+                (pattern.subpat.is_none()).then(|| Candidate {
+                    index: *index,
+                    parameter: pattern.ident.to_string(),
+                    scalar,
+                })
+            })
+            .collect::<Vec<_>>();
+        if scalar_references.is_empty() {
+            for (_, argument, _) in mutable_references {
+                let Some(parameter) = pattern_names(&argument.pat).into_iter().next() else {
+                    continue;
+                };
+                if dereferences_parameter(function, &parameter) {
+                    return Err(compile_error(format!(
+                        "portable nested function `{}` dereferences mutable parameter `{parameter}` whose exact scalar type is ambiguous or custom",
+                        function.sig.ident
+                    )));
+                }
+            }
+            continue;
+        }
+        if mutable_references.len() != 1 || scalar_references.len() != 1 {
+            return Err(compile_error(format!(
+                "portable nested function `{}` cannot lower multiple mutable-reference aliases",
+                function.sig.ident
+            )));
+        }
+        let candidate = scalar_references.into_iter().next().expect("one candidate");
+        if let Some(reason) = parameter_use_error(function, &candidate.parameter) {
+            return Err(compile_error(format!(
+                "portable nested function `{}` mutable scalar parameter `{}` has unsupported {reason}",
+                function.sig.ident, candidate.parameter
+            )));
+        }
+        candidates.insert(function.sig.ident.to_string(), candidate);
+    }
+    if candidates.is_empty() {
+        return Ok(());
+    }
+
+    let locals = statements
+        .iter()
+        .filter_map(|statement| {
+            let Stmt::Local(local) = statement else {
+                return None;
+            };
+            let (name, scalar) = local_scalar(local)?;
+            let id = local_pattern_binding_id(context, &local.pat)?;
+            Some((name, (scalar, id)))
+        })
+        .collect::<BTreeMap<_, _>>();
+
+    struct CallProof<'a> {
+        calls: Vec<(String, String)>,
+        candidates: &'a BTreeMap<String, Candidate>,
+        closure_depth: usize,
+        errors: Vec<String>,
+        forbidden_borrows: BTreeSet<String>,
+        captured: BTreeSet<String>,
+        local_names: BTreeSet<String>,
+        shadow_counts: BTreeMap<String, usize>,
+    }
+    impl<'ast> Visit<'ast> for CallProof<'_> {
+        fn visit_expr_async(&mut self, expression: &'ast syn::ExprAsync) {
+            self.closure_depth += 1;
+            syn::visit::visit_expr_async(self, expression);
+            self.closure_depth -= 1;
+        }
+
+        fn visit_expr_call(&mut self, call: &'ast syn::ExprCall) {
+            let helper = direct_path_name(&call.func);
+            let candidate = helper
+                .as_ref()
+                .and_then(|helper| self.candidates.get(helper));
+            if let (Some(helper), Some(candidate)) = (helper, candidate) {
+                let Some(argument) = call.args.get(candidate.index) else {
+                    self.errors.push(format!(
+                        "portable mutable scalar cell call `{helper}` is missing argument {}",
+                        candidate.index
+                    ));
+                    return;
+                };
+                let Expr::Reference(reference) = unparenthesized(argument) else {
+                    self.errors.push(format!(
+                        "portable mutable scalar cell call `{helper}` requires a direct `&mut local` argument"
+                    ));
+                    return;
+                };
+                let Some(local) = reference
+                    .mutability
+                    .and_then(|_| direct_path_name(&reference.expr))
+                else {
+                    self.errors.push(format!(
+                        "portable mutable scalar cell call `{helper}` refuses borrowed fields or elements, reborrows, and non-local arguments"
+                    ));
+                    return;
+                };
+                if self.closure_depth > 0 {
+                    self.captured.insert(local.clone());
+                }
+                self.calls.push((helper, local));
+                for (index, argument) in call.args.iter().enumerate() {
+                    if index != candidate.index {
+                        self.visit_expr(argument);
+                    }
+                }
+                return;
+            }
+            syn::visit::visit_expr_call(self, call);
+        }
+
+        fn visit_expr_closure(&mut self, expression: &'ast syn::ExprClosure) {
+            self.closure_depth += 1;
+            syn::visit::visit_expr_closure(self, expression);
+            self.closure_depth -= 1;
+        }
+
+        fn visit_expr_path(&mut self, path: &'ast syn::ExprPath) {
+            if self.closure_depth > 0
+                && path.qself.is_none()
+                && let Some(name) = path.path.get_ident()
+                && self.local_names.contains(&name.to_string())
+            {
+                self.captured.insert(name.to_string());
+            }
+            syn::visit::visit_expr_path(self, path);
+        }
+
+        fn visit_expr_reference(&mut self, reference: &'ast syn::ExprReference) {
+            if reference.mutability.is_some()
+                && let Some(name) = direct_path_name(&reference.expr)
+                && self.local_names.contains(&name)
+            {
+                self.forbidden_borrows.insert(name);
+            }
+            syn::visit::visit_expr_reference(self, reference);
+        }
+
+        fn visit_item_fn(&mut self, _: &'ast ItemFn) {}
+
+        fn visit_macro(&mut self, rust_macro: &'ast syn::Macro) {
+            if let Ok(arguments) = parse_macro_arguments(rust_macro) {
+                for argument in &arguments {
+                    self.visit_expr(argument);
+                }
+            }
+        }
+
+        fn visit_pat_ident(&mut self, pattern: &'ast syn::PatIdent) {
+            let name = pattern.ident.to_string();
+            if self.local_names.contains(&name) {
+                *self.shadow_counts.entry(name).or_insert(0) += 1;
+            }
+            syn::visit::visit_pat_ident(self, pattern);
+        }
+    }
+
+    let mut proof = CallProof {
+        calls: Vec::new(),
+        candidates: &candidates,
+        closure_depth: 0,
+        errors: Vec::new(),
+        forbidden_borrows: BTreeSet::new(),
+        captured: BTreeSet::new(),
+        local_names: locals.keys().cloned().collect(),
+        shadow_counts: BTreeMap::new(),
+    };
+    for statement in statements {
+        proof.visit_stmt(statement);
+    }
+    if let Some(error) = proof.errors.into_iter().next() {
+        return Err(compile_error(error));
+    }
+
+    let mut used_helpers = BTreeSet::new();
+    let mut used_locals = BTreeSet::new();
+    for (helper, local) in proof.calls {
+        let candidate = candidates.get(&helper).expect("recorded candidate");
+        let Some((scalar, _)) = locals.get(&local) else {
+            return Err(compile_error(format!(
+                "portable mutable scalar cell call `{helper}` requires `{local}` to be one directly declared mutable local with an explicit or suffixed exact scalar type"
+            )));
+        };
+        if scalar != &candidate.scalar {
+            return Err(compile_error(format!(
+                "portable mutable scalar cell call `{helper}` has conflicting scalar types `{}` and `{scalar}` for `{local}`",
+                candidate.scalar
+            )));
+        }
+        used_helpers.insert(helper);
+        used_locals.insert(local);
+    }
+    for local in &used_locals {
+        if proof.forbidden_borrows.contains(local) {
+            return Err(compile_error(format!(
+                "portable mutable scalar cell local `{local}` has an escaping, stored, or additional mutable-reference alias"
+            )));
+        }
+        if proof.captured.contains(local) {
+            return Err(compile_error(format!(
+                "portable mutable scalar cell local `{local}` is captured by a closure or async block"
+            )));
+        }
+        if proof.shadow_counts.get(local).copied().unwrap_or(0) != 1 {
+            return Err(compile_error(format!(
+                "portable mutable scalar cell local `{local}` has ambiguous shadowed bindings"
+            )));
+        }
+        let (_, id) = locals.get(local).expect("used local was resolved");
+        context.insert(format!(
+            "{VITEST_MUTABLE_SCALAR_CELL_LOCAL_BINDING_MARKER}{id}"
+        ));
+    }
+    for helper in used_helpers {
+        let candidate = candidates.get(&helper).expect("used helper is a candidate");
+        context.insert(format!(
+            "{VITEST_MUTABLE_SCALAR_CELL_PARAMETER_MARKER}{helper}:{}",
+            candidate.parameter
+        ));
+        context.insert(format!(
+            "{MUTABLE_SCALAR_REFERENCE_ARGUMENT_MARKER}{helper}:{}",
+            candidate.index
+        ));
+    }
+    return Ok(());
+}
+
 fn emit_assertion_expression(
     expression: &Expr,
     context: &HashSet<String>,
@@ -2051,6 +2512,7 @@ fn emit_block(
 ) -> Result<(), CompileError> {
     let mut block_context = context.clone();
     insert_vitest_rebound_struct_context(statements, &mut block_context);
+    insert_vitest_mutable_scalar_cell_context(statements, &mut block_context)?;
     validate_vitest_local_functions(statements, &block_context)?;
     // Panic assertions spanning several statements, by the index of their first statement. The
     // locals they replace are not emitted, so they do not count as declarations.

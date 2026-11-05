@@ -295,6 +295,22 @@ const REF_ALIAS_TARGET_MARKER: &str = "@ref-alias-target:";
 const REF_ALIAS_RECEIVER_CAPTURE_MARKER: &str = "@ref-alias-receiver-capture:";
 
 const REFERENCE_PARAMETER_BINDING_MARKER: &str = "@reference-parameter-binding:";
+// A nested portable-test helper parameter approved by `vitest` as the sole non-escaping mutable
+// reference to an exact scalar (`function:parameter`). The name marker is translated to the
+// parameter's lexical BindingId inside `function_expression_context`.
+pub(super) const VITEST_MUTABLE_SCALAR_CELL_PARAMETER_MARKER: &str =
+    "@vitest-mutable-scalar-cell-parameter:";
+const MUTABLE_SCALAR_CELL_PARAMETER_NAME_MARKER: &str =
+    "@mutable-scalar-cell-parameter-name:";
+const MUTABLE_SCALAR_CELL_PARAMETER_BINDING_MARKER: &str =
+    "@mutable-scalar-cell-parameter-binding:";
+// The outer portable-test local whose identity is the cell passed to an approved helper.
+pub(super) const VITEST_MUTABLE_SCALAR_CELL_LOCAL_BINDING_MARKER: &str =
+    "@vitest-mutable-scalar-cell-local-binding:";
+// An exact mutable-scalar parameter position. Production calls at this boundary fail closed; only
+// the Vitest proof above may opt a local into the shared-cell representation.
+pub(super) const MUTABLE_SCALAR_REFERENCE_ARGUMENT_MARKER: &str =
+    "@mutable-scalar-reference-argument:";
 
 const ITER_MUT_ALIAS_MARKER: &str = "@iter-mut-alias:";
 
@@ -10327,6 +10343,11 @@ fn generation_context_with_types(
                 let FnArg::Typed(argument) = argument else {
                     continue;
                 };
+                if exact_mutable_scalar_reference(&argument.ty).is_some() {
+                    context.insert(format!(
+                        "{MUTABLE_SCALAR_REFERENCE_ARGUMENT_MARKER}{function_name}:{argument_index}"
+                    ));
+                }
                 if let Pat::Ident(pattern) = argument.pat.as_ref() {
                     let local = snake_to_lower_camel(&pattern.ident.to_string());
                     if let Some(record) = named_type(&argument.ty)
@@ -10677,10 +10698,26 @@ pub(crate) fn function_expression_context(
         let Pat::Ident(pattern) = argument.pat.as_ref() else {
             continue;
         };
+        // A nested function parameter shadows an outer test local even when both have the same
+        // spelling. The lexical resolver records the parameter's site independently; make that one
+        // binding authoritative before attaching parameter facts.
+        if let Some(id) = local_pattern_binding_id(&context, &argument.pat) {
+            let prefix = format!("{BINDING_MARKER}{}=", pattern.ident);
+            context.retain(|marker| !marker.starts_with(&prefix));
+            context.insert(format!("{prefix}{id}"));
+        }
         if matches!(argument.ty.as_ref(), Type::Reference(_))
             && let Some(id) = lexical_binding(&context, &pattern.ident.to_string())
         {
             context.insert(format!("{REFERENCE_PARAMETER_BINDING_MARKER}{id}"));
+            if context.contains(&format!(
+                "{MUTABLE_SCALAR_CELL_PARAMETER_NAME_MARKER}{}",
+                pattern.ident
+            )) {
+                context.insert(format!(
+                    "{MUTABLE_SCALAR_CELL_PARAMETER_BINDING_MARKER}{id}"
+                ));
+            }
         }
         if let Some(structure) = vitest_named_type(&argument.ty, &context)
             && let Some(identity) = vitest_struct_owner(&context, &structure)
@@ -13320,6 +13357,36 @@ fn emit_expression_value(
                             "undefined".to_string()
                         });
                     }
+                    if let Some(function_name) = &function_name
+                        && entities.contains(&format!(
+                            "{MUTABLE_SCALAR_REFERENCE_ARGUMENT_MARKER}{function_name}:{index}"
+                        ))
+                        && let Expr::Reference(reference) = argument
+                    {
+                        let Expr::Path(path) = reference.expr.as_ref() else {
+                            return Err(compile_error(format!(
+                                "mutable scalar reference argument {index} of `{function_name}` refuses borrowed fields or elements, reborrows, and non-local arguments"
+                            )));
+                        };
+                        let Some(local) = path.path.get_ident() else {
+                            return Err(compile_error(format!(
+                                "mutable scalar reference argument {index} of `{function_name}` requires one unambiguous local binding"
+                            )));
+                        };
+                        let local = local.to_string();
+                        let approved = reference.mutability.is_some()
+                            && lexical_binding(entities, &local).is_some_and(|id| {
+                                entities.contains(&format!(
+                                    "{VITEST_MUTABLE_SCALAR_CELL_LOCAL_BINDING_MARKER}{id}"
+                                ))
+                            });
+                        if approved {
+                            return Ok(emit_path_segment(&local));
+                        }
+                        return Err(compile_error(format!(
+                            "mutable scalar reference argument {index} of `{function_name}` is supported only for a proven non-escaping local in a portable test"
+                        )));
+                    }
                     let value = emit_expression(argument, entities)?;
                     if nullable {
                         return Ok(nullable_option_value(argument, value));
@@ -13480,6 +13547,13 @@ fn emit_expression_value(
                     let prefix = format!("{ITER_MUT_ALIAS_MARKER}{bound}=");
                     if let Some(marker) = entities.iter().find(|m| m.starts_with(&prefix)) {
                         return Ok(marker[prefix.len()..].to_string());
+                    }
+                    if entities.contains(&format!(
+                        "{VITEST_MUTABLE_SCALAR_CELL_LOCAL_BINDING_MARKER}{bound}"
+                    )) || entities.contains(&format!(
+                        "{MUTABLE_SCALAR_CELL_PARAMETER_BINDING_MARKER}{bound}"
+                    )) {
+                        return Ok(format!("{}.value", emit_path_segment(&name)));
                     }
                 }
             }
@@ -14823,6 +14897,23 @@ pub(crate) fn emit_local_function(
         .cloned()
         .collect::<HashSet<_>>();
     insert_type_parameter_context(&mut signature_context, &function.sig.generics);
+    for argument in &function.sig.inputs {
+        let FnArg::Typed(argument) = argument else {
+            continue;
+        };
+        let Pat::Ident(pattern) = argument.pat.as_ref() else {
+            continue;
+        };
+        if signature_context.contains(&format!(
+            "{VITEST_MUTABLE_SCALAR_CELL_PARAMETER_MARKER}{rust_name}:{}",
+            pattern.ident
+        )) {
+            signature_context.insert(format!(
+                "{MUTABLE_SCALAR_CELL_PARAMETER_NAME_MARKER}{}",
+                pattern.ident
+            ));
+        }
+    }
     let parameters = function
         .sig
         .inputs
@@ -15421,6 +15512,11 @@ pub(crate) fn emit_local_with_shadow_and_else(
     };
     let local_name = local_pattern_name(&local.pat);
     let local_binding_id = local_pattern_binding_id(entities, &local.pat);
+    let mutable_scalar_cell = local_binding_id.as_deref().is_some_and(|id| {
+        entities.contains(&format!(
+            "{VITEST_MUTABLE_SCALAR_CELL_LOCAL_BINDING_MARKER}{id}"
+        ))
+    });
     let ref_alias_receiver_capture = local_binding_id
         .as_deref()
         .map(|id| ref_alias_receiver_capture(entities, id))
@@ -15529,7 +15625,26 @@ pub(crate) fn emit_local_with_shadow_and_else(
             .transpose()?,
         _ => None,
     };
-    let typescript_type = typescript_type.or_else(|| string_union_type.clone());
+    let mut typescript_type = typescript_type.or_else(|| string_union_type.clone());
+    if mutable_scalar_cell
+        && typescript_type.is_none()
+        && let Some(id) = &local_binding_id
+        && let Some(fact) = unique_marker_suffix(entities, &format!("{BINDING_FACT_MARKER}{id}="))
+        && let BindingFact::Structure(scalar) = binding_fact_from_marker(&fact)
+        && let Ok(rust_type) = syn::parse_str::<Type>(&scalar)
+        && exact_portable_scalar_type(&rust_type).is_some()
+    {
+        typescript_type = Some(emit_type(&rust_type, entities)?);
+    }
+    if mutable_scalar_cell {
+        let inner = typescript_type.clone().ok_or_else(|| {
+            compile_error(format!(
+                "portable mutable scalar cell local `{}` lost its exact scalar type",
+                local_name.as_deref().unwrap_or("_")
+            ))
+        })?;
+        typescript_type = Some(format!("{{ value: {inner} }}"));
+    }
     let closure_parameter_types = local_name
         .as_deref()
         .map(|name| closure_parameter_types(entities, name))
@@ -15578,6 +15693,9 @@ pub(crate) fn emit_local_with_shadow_and_else(
     } else {
         emit_expression(&initializer.expr, entities)?
     };
+    if mutable_scalar_cell {
+        value = format!("{{ value: {value} }}");
+    }
     if !mutable
         && rust_type.is_none()
         && expression_requires_string_union_const_assertion(&initializer.expr, entities)
@@ -15650,18 +15768,31 @@ pub(crate) fn emit_local_with_shadow_and_else(
     }
     if scope_declared || (rebind && !(rebound && shadowed)) {
         let fresh = next_try_rename(entities, &pattern);
-        let keyword = if mutable || rebound { "let" } else { "const" };
+        let keyword = if mutable_scalar_cell {
+            "const"
+        } else if mutable || rebound {
+            "let"
+        } else {
+            "const"
+        };
         writeln!(out, "{keyword} {fresh} = {value};").expect("writing to a String cannot fail");
         return Ok(vec![(pattern, fresh)]);
     }
     if rebind {
         write!(out, "{pattern}").expect("writing to a String cannot fail");
     } else {
-        let declaration = if mutable || rebound { "let" } else { "const" };
+        let declaration = if mutable_scalar_cell {
+            "const"
+        } else if mutable || rebound {
+            "let"
+        } else {
+            "const"
+        };
         write!(out, "{declaration} {pattern}").expect("writing to a String cannot fail");
     }
     if !rebind
-        && (rust_type.is_some()
+        && (mutable_scalar_cell
+            || rust_type.is_some()
             || inferred_struct_type.is_some()
             || inferred_option_type.is_some()
             || rebound_struct_type.is_some()
@@ -24192,6 +24323,19 @@ fn emit_parameter_with_aliases(
             ));
         }
     };
+    if matches!(argument.pat.as_ref(), Pat::Ident(pattern)
+        if entities.contains(&format!(
+            "{MUTABLE_SCALAR_CELL_PARAMETER_NAME_MARKER}{}",
+            pattern.ident
+        )))
+        && let Type::Reference(reference) = argument.ty.as_ref()
+        && reference.mutability.is_some()
+    {
+        return Ok(format!(
+            "{name}: {{ value: {} }}",
+            emit_preferred_type(&reference.elem, entities, aliases)?
+        ));
+    }
     if entity_construction {
         return Ok(format!(
             "{name}: EntityConstruction<{}>",
@@ -30168,7 +30312,10 @@ fn statement_binds_name(pattern: &Pat, name: &str) -> bool {
     }
 }
 
-fn local_pattern_binding_id(entities: &HashSet<String>, pattern: &Pat) -> Option<String> {
+pub(super) fn local_pattern_binding_id(
+    entities: &HashSet<String>,
+    pattern: &Pat,
+) -> Option<String> {
     let identifier = match pattern {
         Pat::Ident(identifier) => &identifier.ident,
         Pat::Type(typed) => return local_pattern_binding_id(entities, &typed.pat),
@@ -30706,6 +30853,44 @@ fn type_is_unsigned_integer(rust_type: &Type) -> bool {
     return ["u8", "u16", "u32", "u64", "usize"]
         .iter()
         .any(|name| type_is_named(rust_type, name));
+}
+
+// Exact scalar types whose complete runtime representation is one TypeScript primitive. Aliases,
+// qualified paths, generics and 64/128-bit integers stay unproven: the mutable-reference cell
+// lowering must never infer their ownership or precision contract from a spelling alone.
+pub(super) fn exact_portable_scalar_type(rust_type: &Type) -> Option<&'static str> {
+    let Type::Path(path) = rust_type else {
+        return None;
+    };
+    if path.qself.is_some() || path.path.leading_colon.is_some() || path.path.segments.len() != 1 {
+        return None;
+    }
+    let segment = path.path.segments.first()?;
+    if !matches!(segment.arguments, PathArguments::None) {
+        return None;
+    }
+    return match segment.ident.to_string().as_str() {
+        "bool" => Some("bool"),
+        "f32" => Some("f32"),
+        "f64" => Some("f64"),
+        "i8" => Some("i8"),
+        "i16" => Some("i16"),
+        "i32" => Some("i32"),
+        "isize" => Some("isize"),
+        "u8" => Some("u8"),
+        "u16" => Some("u16"),
+        "u32" => Some("u32"),
+        "usize" => Some("usize"),
+        _ => None,
+    };
+}
+
+pub(super) fn exact_mutable_scalar_reference(rust_type: &Type) -> Option<&'static str> {
+    let Type::Reference(reference) = rust_type else {
+        return None;
+    };
+    reference.mutability?;
+    return exact_portable_scalar_type(&reference.elem);
 }
 
 fn referenced_path_identifier(expression: &Expr) -> Option<String> {
