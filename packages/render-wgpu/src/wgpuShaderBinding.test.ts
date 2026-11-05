@@ -1,7 +1,7 @@
 import { getOrCreateRenderProxy2D } from '@flighthq/render/contract';
 import { createSprite } from '@flighthq/scene2d/contract';
-import type { WgpuBitmapShader } from '@flighthq/types/contract';
 
+import type { WgpuBitmapShader } from './contract.render-wgpu-types.ts';
 import { getWgpuRenderStateRuntime } from './wgpuRenderState.ts';
 import { getWgpuShader, resolveWgpuShader, setWgpuShader } from './wgpuShaderBinding.ts';
 import { createWgpuRenderStateForTest, installWgpuMock } from './wgpuTestHelper.ts';

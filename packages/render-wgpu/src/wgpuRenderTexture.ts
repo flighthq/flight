@@ -1,16 +1,14 @@
 import { resolveRenderTargetDescriptor } from '@flighthq/render/contract';
+import type { RenderTargetClear, RenderTexture, RenderTargetFormat } from '@flighthq/types/contract';
+
 import type {
-  RenderTargetClear,
-  RenderTexture,
   WgpuRenderPass,
-  RenderTargetFormat,
   WgpuRenderState,
   WgpuRenderTextureEntry,
   WgpuRenderTextureExplanation,
   WgpuRenderTextureGuard,
   WgpuTextureEntry,
-} from '@flighthq/types/contract';
-
+} from './contract.render-wgpu-types.ts';
 import { beginWgpuRenderPass, endWgpuRenderPass } from './wgpuRenderPass.ts';
 import { getWgpuRenderStateRuntime } from './wgpuRenderState.ts';
 import {

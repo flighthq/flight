@@ -1,5 +1,4 @@
-import type { WgpuBitmapShader, WgpuRenderState } from '@flighthq/types/contract';
-
+import type { WgpuBitmapShader, WgpuRenderState } from './contract.render-wgpu-types.ts';
 import { getWgpuRenderStateRuntime } from './wgpuRenderState.ts';
 
 // Registers a custom bitmap shader as the state-wide default, replacing the built-in quad shader.

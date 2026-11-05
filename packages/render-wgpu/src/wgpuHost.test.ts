@@ -1,7 +1,7 @@
 import { allocateEntity } from '@flighthq/entity/contract';
-import type { WgpuHostAcquisition } from '@flighthq/types/contract';
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 
+import type { WgpuHostAcquisition } from './contract.render-wgpu-types.ts';
 import { createTestWgpuSurface, testWgpuHost } from './wgpuHost.ts';
 import {
   createWgpuAcquisition,

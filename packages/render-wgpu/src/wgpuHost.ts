@@ -1,13 +1,8 @@
 import { allocateEntity, createEntityRuntime, finishEntity } from '@flighthq/entity/contract';
-import type {
-  HostWgpuCapability,
-  NativeSurfaceHandle,
-  Surface,
-  SurfaceRuntime,
-  WgpuHostAcquisition,
-  WgpuSurfaceAttachResult,
-} from '@flighthq/types/contract';
+import type { NativeSurfaceHandle, Surface, SurfaceRuntime } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
+
+import type { HostWgpuCapability, WgpuHostAcquisition, WgpuSurfaceAttachResult } from './contract.render-wgpu-types.ts';
 
 // Builds a Surface around an existing canvas, the way a host's create lane would. Reads the runtime slot
 // directly rather than through @flighthq/surface so this test double adds no package dependency.

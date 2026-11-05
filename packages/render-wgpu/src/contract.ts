@@ -1,3 +1,4 @@
+export * from './contract.render-wgpu-types.ts';
 export * from './enableWgpuTextureResolverGuards.ts';
 export * from './explainWgpuTextureResolution.ts';
 export * from './explainWgpuUniformEndianness.ts';

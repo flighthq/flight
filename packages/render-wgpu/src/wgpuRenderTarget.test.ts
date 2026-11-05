@@ -1,5 +1,4 @@
-import type { WgpuRenderTarget, WgpuScreenRenderTarget } from '@flighthq/types/contract';
-
+import type { WgpuRenderTarget, WgpuScreenRenderTarget } from './contract.render-wgpu-types.ts';
 import { beginWgpuRenderPass, endWgpuRenderPass } from './wgpuRenderPass.ts';
 import { getWgpuRenderStateRuntime } from './wgpuRenderState.ts';
 import { declareWgpuRenderTargetColorSpace, getWgpuRenderTargetSupersampleScale } from './wgpuRenderTarget.ts';

@@ -1,4 +1,6 @@
-import type { PlatformEndianness, WgpuUniformEndiannessExplanation } from '@flighthq/types/contract';
+import type { PlatformEndianness } from '@flighthq/types/contract';
+
+import type { WgpuUniformEndiannessExplanation } from './contract.render-wgpu-types.ts';
 
 // WGPU uniform buffers use a Uint32Array/Int32Array view over a Float32Array's backing buffer to
 // write integer values (boolean flags, enum selects) alongside float uniforms. The two views share

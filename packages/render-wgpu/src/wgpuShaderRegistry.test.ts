@@ -1,5 +1,4 @@
-import type { WgpuBitmapShader } from '@flighthq/types/contract';
-
+import type { WgpuBitmapShader } from './contract.render-wgpu-types.ts';
 import { getWgpuRenderStateRuntime } from './wgpuRenderState.ts';
 import { registerWgpuBitmapShader } from './wgpuShaderRegistry.ts';
 import { createWgpuRenderStateForTest, installWgpuMock } from './wgpuTestHelper.ts';

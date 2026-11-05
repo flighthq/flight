@@ -1,6 +1,6 @@
-import type { WgpuScreenRenderTarget } from '@flighthq/types/contract';
 import { beforeAll, describe, expect, it } from 'vitest';
 
+import type { WgpuScreenRenderTarget } from './contract.render-wgpu-types.ts';
 import { beginWgpuRenderPass, endWgpuRenderPass } from './wgpuRenderPass.ts';
 import {
   createBitmapFromWgpuScreenRenderTarget,

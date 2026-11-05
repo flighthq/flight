@@ -80,7 +80,8 @@
     "@flighthq/textshaper": "*",
     "@flighthq/useragent": "*",
     "@flighthq/velocity": "*",
-    "@flighthq/xml": "*"
+    "@flighthq/xml": "*",
+    "@flighthq/render-wgpu": "*"
   },
   "peerDependencies": {
     "@webgpu/types": "^0.1.70"

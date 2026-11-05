@@ -1,5 +1,1 @@
-import type { Entity } from './Entity.ts';
-
-export interface WgpuDeviceState extends Entity {
-  readonly device: GPUDevice;
-}
+export type { WgpuDeviceState } from '@flighthq/render-wgpu/contract';

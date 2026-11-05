@@ -1,13 +1,7 @@
 import { getOrCreateRenderProxy2D, prepareScene2DRender } from '@flighthq/render/contract';
 import { createSprite } from '@flighthq/scene2d/contract';
 import { getTextureSource } from '@flighthq/texture/contract';
-import type {
-  Bitmap,
-  CompressedImageResource,
-  ImageResource,
-  Texture,
-  WgpuTextureEntry,
-} from '@flighthq/types/contract';
+import type { Bitmap, CompressedImageResource, ImageResource, Texture } from '@flighthq/types/contract';
 import {
   BitmapTextureSourceKind,
   BlendMode,
@@ -15,6 +9,7 @@ import {
   ImageTextureSourceKind,
 } from '@flighthq/types/contract';
 
+import type { WgpuTextureEntry } from './contract.render-wgpu-types.ts';
 import { registerWgpuCompressedTextureDecoder, registerWgpuCompressedTextureUpload } from './wgpuCompressedTexture.ts';
 import {
   applyWgpuBlendMode,

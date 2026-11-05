@@ -9,9 +9,6 @@ import type {
   TextureColorSpace,
   TextureSourceKind,
   TextureLike,
-  WgpuRenderState,
-  WgpuTextureEntry,
-  WgpuTextureResolver,
 } from '@flighthq/types/contract';
 import {
   BitmapTextureSourceKind,
@@ -21,6 +18,7 @@ import {
   RenderTargetTextureSourceKind,
 } from '@flighthq/types/contract';
 
+import type { WgpuRenderState, WgpuTextureEntry, WgpuTextureResolver } from './contract.render-wgpu-types.ts';
 import { bindWgpuBitmapTexture, bindWgpuCompressedImageTexture, bindWgpuImageResourceTexture } from './wgpuDraw.ts';
 import { getWgpuRenderStateRuntime } from './wgpuRenderState.ts';
 import { bindWgpuRenderTexture } from './wgpuRenderTexture.ts';

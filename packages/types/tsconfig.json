@@ -8,6 +8,7 @@
     "declarationMap": true,
     "sourceMap": true,
     "moduleSuffixes": [
+      ".render-wgpu-types",
       ".app-types",
       ".flow-types",
       ".geometry-types",
@@ -171,6 +172,9 @@
     },
     {
       "path": "../xml"
+    },
+    {
+      "path": "../render-wgpu/tsconfig.contract.json"
     }
   ],
   "include": ["src"]

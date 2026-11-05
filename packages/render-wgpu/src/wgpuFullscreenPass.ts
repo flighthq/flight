@@ -1,11 +1,7 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type {
-  EntityConstruction,
-  WgpuFullscreenPipeline,
-  WgpuRenderState,
-  WgpuTextureRenderTarget,
-} from '@flighthq/types/contract';
+import type { EntityConstruction } from '@flighthq/types/contract';
 
+import type { WgpuFullscreenPipeline, WgpuRenderState, WgpuTextureRenderTarget } from './contract.render-wgpu-types.ts';
 import { getWgpuRenderStateRuntime } from './wgpuRenderState.ts';
 
 export function createWgpuFullscreenPipeline(

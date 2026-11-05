@@ -1,0 +1,26 @@
+import type { Modifier, ModifierDefinition, Texture } from '@flighthq/types/contract';
+
+export interface WgpuModifierCompileContext {
+  acquireTexture(texture: Readonly<Texture>): number;
+  uniformBase: number;
+}
+
+export interface WgpuModifierContribution {
+  declarations?: string;
+  source: string;
+}
+
+// Backend-side WGSL compiler for one open ModifierKind. The slot and define signature come from the
+// substrate-neutral ModifierDefinition; contribution emits WGSL for that slot and bind writes the
+// descriptor's scalar data into its reserved three-vec4 uniform record.
+export interface WgpuModifierSnippet extends ModifierDefinition {
+  bind?(modifier: Readonly<Modifier>, out: Float32Array, offset: number): void;
+  contribution(
+    modifier: Readonly<Modifier>,
+    index: number,
+    context: Readonly<WgpuModifierCompileContext>,
+  ): WgpuModifierContribution;
+  // Writes the modifier's current texture references in the same order contribution acquired them.
+  // Called on each bind into backend-owned scratch; return the next free offset.
+  textures?(modifier: Readonly<Modifier>, out: (Readonly<Texture> | null)[], offset: number): number;
+}

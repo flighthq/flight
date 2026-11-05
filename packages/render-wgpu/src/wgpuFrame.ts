@@ -1,5 +1,4 @@
-import type { WgpuRenderState, WgpuRenderStateRuntime } from '@flighthq/types/contract';
-
+import type { WgpuRenderState, WgpuRenderStateRuntime } from './contract.render-wgpu-types.ts';
 import { getWgpuRenderStateRuntime } from './wgpuRenderState.ts';
 import { endWgpuScreenRenderTargetFrame } from './wgpuScreenRenderTarget.ts';
 

@@ -1,6 +1,1 @@
-export interface WgpuParticleResources {
-  instanceBindGroupLayout: GPUBindGroupLayout;
-  module: GPUShaderModule;
-  pipelineLayout: GPUPipelineLayout;
-  pipelines: Map<GPUTextureFormat, GPURenderPipeline>;
-}
+export type { WgpuParticleResources } from '@flighthq/render-wgpu/contract';

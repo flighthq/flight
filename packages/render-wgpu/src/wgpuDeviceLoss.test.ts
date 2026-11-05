@@ -1,7 +1,7 @@
 import { connectSignal, createSignal } from '@flighthq/signals/contract';
-import type { WgpuDeviceRuntime, WgpuRenderState } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
+import type { WgpuDeviceRuntime, WgpuRenderState } from './contract.render-wgpu-types.ts';
 import {
   disposeWgpuDeviceSignals,
   enableWgpuDeviceSignals,

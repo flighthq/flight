@@ -1,12 +1,12 @@
+import type { RenderTargetClear } from '@flighthq/types/contract';
+
 import type {
-  RenderTargetClear,
   WgpuRenderStateOptions,
   WgpuRenderPass,
   WgpuRenderState,
   WgpuScreenRenderTarget,
   WgpuScreenRenderTargetOptions,
-} from '@flighthq/types/contract';
-
+} from './contract.render-wgpu-types.ts';
 import { testWgpuHost, createTestWgpuSurface } from './wgpuHost.ts';
 
 export { testWgpuHost, createTestWgpuSurface };

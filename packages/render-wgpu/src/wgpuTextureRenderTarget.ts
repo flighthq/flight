@@ -1,14 +1,7 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type {
-  EntityConstruction,
-  Material,
-  Matrix,
-  RenderTargetColorSpace,
-  WgpuRenderState,
-  WgpuTextureEntry,
-  WgpuTextureRenderTarget,
-} from '@flighthq/types/contract';
+import type { EntityConstruction, Material, Matrix, RenderTargetColorSpace } from '@flighthq/types/contract';
 
+import type { WgpuRenderState, WgpuTextureEntry, WgpuTextureRenderTarget } from './contract.render-wgpu-types.ts';
 import { drawWgpuQuadWithTransform } from './wgpuDraw.ts';
 import { getWgpuRenderStateRuntime } from './wgpuRenderState.ts';
 

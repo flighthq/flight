@@ -1,6 +1,7 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type { RenderTargetClear } from '@flighthq/types/contract';
+
 import type {
-  RenderTargetClear,
   WgpuRenderPass,
   WgpuRenderPassViewport,
   WgpuRenderState,
@@ -8,8 +9,7 @@ import type {
   WgpuSavedPassState,
   WgpuScreenRenderTarget,
   WgpuTextureRenderTarget,
-} from '@flighthq/types/contract';
-
+} from './contract.render-wgpu-types.ts';
 import { beginWgpuFrame, submitWgpuFrame } from './wgpuFrame.ts';
 import { getWgpuRenderStateRuntime } from './wgpuRenderState.ts';
 import { getWgpuRenderTargetSupersampleScale } from './wgpuRenderTarget.ts';

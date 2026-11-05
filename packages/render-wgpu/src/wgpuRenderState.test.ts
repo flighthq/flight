@@ -16,13 +16,15 @@ import type {
   RenderState,
   WgpuColorAdjustmentMaterialFeature,
   WgpuColorAdjustmentMaterialFeatureGuard,
+} from '@flighthq/types/contract';
+import { EntityRuntimeKey } from '@flighthq/types/contract';
+
+import type {
   WgpuHostAcquisition,
   HostWgpuCapability,
   WgpuRenderOptions,
   WgpuRenderState,
-} from '@flighthq/types/contract';
-import { EntityRuntimeKey } from '@flighthq/types/contract';
-
+} from './contract.render-wgpu-types.ts';
 import { registerWgpuCompressedTextureDecoder, registerWgpuCompressedTextureUpload } from './wgpuCompressedTexture.ts';
 import { beginWgpuFrame, withWgpuFrameBorrow } from './wgpuFrame.ts';
 import { createTestWgpuSurface, testWgpuHost } from './wgpuHost.ts';

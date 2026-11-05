@@ -7,10 +7,14 @@ import {
 import type {
   EntityConstruction,
   Surface,
-  HostWgpuCapability,
   TextureWrap,
   WgpuColorAdjustmentMaterialFeature,
   WgpuColorAdjustmentMaterialFeatureGuard,
+} from '@flighthq/types/contract';
+import { EntityRuntimeKey } from '@flighthq/types/contract';
+
+import type {
+  HostWgpuCapability,
   WgpuDeviceRuntime,
   WgpuDeviceRuntimeResources,
   WgpuDeviceState,
@@ -21,9 +25,7 @@ import type {
   WgpuRenderState,
   WgpuRenderStateOptions,
   WgpuRenderStateRuntime,
-} from '@flighthq/types/contract';
-import { EntityRuntimeKey } from '@flighthq/types/contract';
-
+} from './contract.render-wgpu-types.ts';
 import { observeWgpuDeviceLoss } from './wgpuDeviceLoss.ts';
 import { warmWgpuPipelines } from './wgpuDraw.ts';
 import { createWgpuBindGroupLayouts, UNIFORM_BYTE_SIZE } from './wgpuShader.ts';

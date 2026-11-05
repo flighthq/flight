@@ -5,12 +5,14 @@ import type {
   TextureColorSpace,
   TextureContainer,
   TextureContainerFormat,
+} from '@flighthq/types/contract';
+
+import type {
   WgpuCompressedTextureDecoder,
   WgpuCompressedTextureSupport,
   WgpuRenderState,
   WgpuTextureEntry,
-} from '@flighthq/types/contract';
-
+} from './contract.render-wgpu-types.ts';
 import { getWgpuRenderStateDeviceResources, getWgpuRenderStateRuntime } from './wgpuRenderState.ts';
 
 interface WgpuCompressedFormatInfo {

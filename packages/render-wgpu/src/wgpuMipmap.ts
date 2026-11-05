@@ -1,5 +1,4 @@
-import type { WgpuRenderState } from '@flighthq/types/contract';
-
+import type { WgpuRenderState } from './contract.render-wgpu-types.ts';
 import { getWgpuRenderStateDeviceResources, getWgpuRenderStateRuntime } from './wgpuRenderState.ts';
 
 // Generates the mip chain for an already-uploaded texture by downsampling each level into the next

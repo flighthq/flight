@@ -1,5 +1,4 @@
-import type { WgpuRenderState, WgpuScissorRect } from '@flighthq/types/contract';
-
+import type { WgpuRenderState, WgpuScissorRect } from './contract.render-wgpu-types.ts';
 import { getWgpuRenderStateRuntime } from './wgpuRenderState.ts';
 import { getWgpuRenderTargetSupersampleScale } from './wgpuRenderTarget.ts';
 

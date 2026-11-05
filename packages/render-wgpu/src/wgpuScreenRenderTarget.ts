@@ -1,13 +1,13 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type { EntityConstruction, Surface } from '@flighthq/types/contract';
+
 import type {
-  EntityConstruction,
-  Surface,
   HostWgpuCapability,
   WgpuRenderState,
   WgpuRenderTarget,
   WgpuScreenRenderTarget,
   WgpuScreenRenderTargetOptions,
-} from '@flighthq/types/contract';
+} from './contract.render-wgpu-types.ts';
 
 // Acquires the color view a screen pass attaches to, sizing the target's storage to the surface first.
 // The returned view is the supersample texture when antialiasing is enabled and the presentation view

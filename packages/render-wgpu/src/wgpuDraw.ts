@@ -12,13 +12,15 @@ import type {
   Texture,
   TextureColorSpace,
   TextureSource,
+} from '@flighthq/types/contract';
+import { BlendMode } from '@flighthq/types/contract';
+
+import type {
   WgpuRenderState,
   WgpuTextureEntry,
   WgpuTextureSourceTextureEntry,
   WgpuVideoTextureEntry,
-} from '@flighthq/types/contract';
-import { BlendMode } from '@flighthq/types/contract';
-
+} from './contract.render-wgpu-types.ts';
 import { isWgpuExternalImageSourceReady, tryCopyWgpuExternalImageToTexture } from './wgpuExternalImageSource.ts';
 import { retireWgpuTexture } from './wgpuFrame.ts';
 import { getWgpuRenderStateDeviceResources, getWgpuRenderStateRuntime, getWgpuSampler } from './wgpuRenderState.ts';

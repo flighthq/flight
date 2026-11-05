@@ -6,11 +6,10 @@ import type {
   ExternalTexture,
   Texture,
   TextureLike,
-  WgpuRenderState,
-  WgpuTextureEntry,
 } from '@flighthq/types/contract';
 import { ExternalTextureSourceKind } from '@flighthq/types/contract';
 
+import type { WgpuRenderState, WgpuTextureEntry } from './contract.render-wgpu-types.ts';
 import { getWgpuRenderStateRuntime, getWgpuSampler } from './wgpuRenderState.ts';
 import { registerWgpuTextureResolver } from './wgpuTextureResolver.ts';
 

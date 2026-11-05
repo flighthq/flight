@@ -1,8 +1,6 @@
 import type { BlendMode } from './BlendMode.ts';
-import type { Camera3D } from './Camera3D.ts';
 import type { CustomShaderMaterial } from './CustomShaderMaterial.ts';
 import type { Matrix4 } from './Matrix4.ts';
-import type { Node3D } from './Node3D.ts';
 import type { Scene3DLightsLike } from './Scene3DLights.ts';
 import type { WgpuCustomMaterialShaderSource } from './WgpuCustomMaterialShaderSource.ts';
 import type { WgpuMeshPipeline } from './WgpuMeshPipeline.ts';
@@ -67,19 +65,6 @@ export interface WgpuScene3DDrawEntry {
   subset: object;
   worldMatrix: object;
 }
-
-// scene-wgpu's per-WgpuRenderState private state — the WGSL mirror of GlScene3DRuntime. Holds the 3D
-// mesh-material pipeline cache (keyed by family + define key + color-attachment format), a reference
-// to the device-owned geometry GPU-upload cache, the shared group(0)/group(1)
-// Frame + Draw bind-group layouts (every family pipeline targets these), and the shared GPU resources
-// the draw path reuses every frame (the Frame uniform buffer + its bind group, the dynamic-offset Draw
-// bind group, the 1x1 placeholder map texture, and a per-material bind-group cache). `activeMeshPipeline`
-export type WgpuScene3DPass = (
-  state: WgpuRenderState,
-  scene: Readonly<Node3D>,
-  camera: Readonly<Camera3D>,
-  lights: Readonly<Scene3DLightsLike>,
-) => void;
 
 // is the bind()→draw() handoff. All scene-wgpu-owned and distinct from the 2D renderer's
 // material-renderer table/texture cache — a material kind is either 2D or 3D, never both, and both
@@ -267,3 +252,5 @@ export interface WgpuMaterialBinding {
   sampler?: GPUSampler;
   views?: GPUTextureView[];
 }
+
+export type { WgpuScene3DPass } from '@flighthq/render-wgpu/contract';

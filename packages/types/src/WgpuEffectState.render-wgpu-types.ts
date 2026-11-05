@@ -1,0 +1,92 @@
+import type { ColorLutCache } from './ColorLutCache.ts';
+import type { Effect } from './Effect.ts';
+import type { EffectStateOptions } from './GlEffectState.ts';
+import type { WgpuColorLutTextureCache } from './WgpuColorLutTextureCache.ts';
+import type { WgpuRenderState } from './WgpuRenderState.ts';
+import type { WgpuRenderTargetPool, WgpuTextureRenderTarget } from './WgpuRenderTarget.ts';
+
+// What a Wgpu effect runner is handed: the state, the input it reads, the output it writes, the pool
+// it borrows intermediate targets from, and the scene G-buffer attachments. `source` and `dest` are
+// distinct targets the pipeline ping-pongs between stages. `sceneDepthTexture`/`sceneVelocityTexture`
+// are the scene's depth and per-pixel velocity attachments, or null when the scene did not produce
+// them — a depth/velocity-dependent recipe reads them when present and falls back to a color-only
+// path when null. The Wgpu mirror of GlEffectContext.
+export interface WgpuEffectContext {
+  readonly state: WgpuRenderState;
+  readonly source: Readonly<WgpuTextureRenderTarget>;
+  readonly dest: Readonly<WgpuTextureRenderTarget>;
+  readonly pool: WgpuRenderTargetPool;
+  readonly sceneDepthTexture: GPUTexture | null;
+  readonly sceneVelocityTexture: GPUTexture | null;
+}
+
+// The per-backend realization registered against an effect `type`. A single function over targets —
+// not a multi-method per-node renderer. The built-ins are exported as `default*` named constants
+// (e.g. through registerWgpuBloomEffect); register an alternative under the same key to swap algorithms.
+export type WgpuEffectRunner = (ctx: Readonly<WgpuEffectContext>, effect: Readonly<Effect>) => void;
+
+export type WgpuEffectResolver = (state: WgpuRenderState, effect: Readonly<Effect>) => boolean;
+
+export interface WgpuEffectRegistration {
+  readonly isResolvable?: WgpuEffectResolver;
+  readonly runner: WgpuEffectRunner;
+}
+
+// Retains the GPU resources an effect pass needs across frames: the scene target the pipeline renders
+// into and the intermediate-target pool. The per-frame effect list is data passed to
+// endWgpuEffectPass, not retained here. Mirrors GlEffectState; shares
+// EffectStateOptions with the Gl pipeline.
+export interface WgpuEffectState {
+  readonly options: Readonly<EffectStateOptions>;
+  sceneTarget: WgpuTextureRenderTarget | null;
+  readonly pool: WgpuRenderTargetPool;
+  // Bake and GPU-upload memos for the fused LUT-tier adjustment run, so a static grade neither re-bakes
+  // its size³ cells nor re-uploads its 3D texture every frame. `lutCache` is GC-managed; `lutTexture`
+  // owns a GPU texture destroyed by destroyWgpuEffectState.
+  readonly lutCache: ColorLutCache;
+  readonly lutTexture: WgpuColorLutTextureCache;
+  // Per-frame velocity G-buffer fed into ctx.sceneVelocityTexture for velocity-driven effects (motion
+  // blur, TAA); null when no velocity pass ran (velocity-driven effects then color-only-fall-back).
+  // Depth, by contrast, comes from the scene target directly.
+  velocityTexture: GPUTexture | null;
+}
+
+// Why an application of a WGPU effect chain to a render texture did not do what the caller asked. The
+// WGPU sibling of GlEffectApplicationExplanation. Registration and per-instance resolution are
+// separate axes: BitmapDisplacementEffect can have a registered runner while its map Texture2D is still
+// absent or unresolved. Such a stage copies through, and unresolvedIndexes makes that sentinel visible.
+export type WgpuEffectApplicationStatus =
+  | 'complete'
+  | 'no-effects'
+  | 'partial-registration'
+  | 'partial-resolution'
+  | 'source-unavailable'
+  | 'stale-destination'
+  | 'unregistered-effects'
+  | 'unresolved-effects';
+
+export interface WgpuEffectApplicationExplanation {
+  readonly registeredCount: number;
+  readonly requestedCount: number;
+  readonly status: WgpuEffectApplicationStatus;
+  readonly unregisteredKinds: readonly string[];
+  readonly unresolvedIndexes: readonly number[];
+}
+
+// Observed when a pipeline pass drops an effect because its kind has no registered runner. The kind is
+// the whole observation: the effect is skipped silently, produces no draw and no error, and nothing
+// downstream can tell a skipped effect from one that ran and had no visible result.
+export type WgpuEffectStateSkipGuard = (state: WgpuRenderState, kind: string) => void;
+
+// Observed when the WGPU effect pipeline substitutes its supported four-coverage-sample target for a
+// different requested count. Both values are explicit so diagnostics report the applied configuration.
+export type WgpuEffectStateSampleCountGuard = (
+  state: WgpuRenderState,
+  requestedSampleCount: number,
+  appliedSampleCount: number,
+) => void;
+
+export type WgpuEffectApplicationGuard = (
+  state: WgpuRenderState,
+  explanation: Readonly<WgpuEffectApplicationExplanation>,
+) => void;

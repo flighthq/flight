@@ -1,4 +1,4 @@
-import type { WgpuAdapterCapabilities } from '@flighthq/types/contract';
+import type { WgpuAdapterCapabilities } from './contract.render-wgpu-types.ts';
 
 // Queries a GPUAdapter for the capabilities that createWgpuRenderState uses to gate format and
 // feature paths. Call this after requestAdapter but before createWgpuRenderState and pass the

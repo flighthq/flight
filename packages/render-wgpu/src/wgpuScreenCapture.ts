@@ -1,5 +1,7 @@
 import { createBitmap } from '@flighthq/bitmap/contract';
-import type { Bitmap, WgpuScreenRenderTarget } from '@flighthq/types/contract';
+import type { Bitmap } from '@flighthq/types/contract';
+
+import type { WgpuScreenRenderTarget } from './contract.render-wgpu-types.ts';
 
 // Opt-in capture of a screen target's frame to a CPU Bitmap. Two environment facts drive the design:
 // (1) headless/software adapters never present the swap chain, and its texture reads back as zeros, so

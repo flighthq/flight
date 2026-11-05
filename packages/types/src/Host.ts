@@ -2,6 +2,7 @@ import type { HostAppCapabilities, HostFullscreenCapabilities, HostWindowCapabil
 import type { HostFontLoadingCapability, HostGlyphRasterizerCapability } from '@flighthq/font/contract';
 import type { HostInputCapabilities } from '@flighthq/input/contract';
 import type { HostMenuCapabilities } from '@flighthq/menu/contract';
+import type { HostWgpuCapabilities } from '@flighthq/render-wgpu/contract';
 
 import type { HostAccessibilityCapability } from './Accessibility.ts';
 import type {
@@ -157,7 +158,6 @@ import type {
   HostTrayTooltipCapability,
 } from './Tray.ts';
 import type { HostUpdaterCommandCapability } from './Updater.ts';
-import type { HostWgpuCapability } from './WgpuHost.ts';
 
 /** @deprecated Import `HostInputCapabilities` from `@flighthq/input/contract`. */
 export type { HostInputCapabilities } from '@flighthq/input/contract';
@@ -473,6 +473,4 @@ export interface HostVideoCapabilities {
   readonly playback?: HostVideoCapability;
 }
 
-export interface HostWgpuCapabilities {
-  readonly context?: HostWgpuCapability;
-}
+export type { HostWgpuCapabilities } from '@flighthq/render-wgpu/contract';
