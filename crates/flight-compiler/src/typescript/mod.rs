@@ -12166,6 +12166,10 @@ fn emit_expression_value(
             let operand = emit_binary_operand(&cast.expr, entities, 5, false)?;
             Ok(format!("{operand} | 0"))
         }
+        Expr::Cast(cast) if type_is_named(&cast.ty, "char") => {
+            let operand = emit_expression(&cast.expr, entities)?;
+            Ok(format!("String.fromCharCode({operand})"))
+        }
         Expr::Cast(cast) => emit_expression(&cast.expr, entities),
         Expr::Closure(closure) => emit_closure(closure, entities),
         Expr::Field(field) => {

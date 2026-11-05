@@ -7328,6 +7328,21 @@ pub fn convert(value: f64) -> (usize, isize) {
     }
 
     #[test]
+    fn lowers_as_char_cast_to_from_char_code() {
+        let source = r#"
+pub fn hex_digit(value: u8) -> char {
+    let digit = if value < 10 { b'0' + value } else { b'a' + value - 10 };
+    return digit as char;
+}
+"#;
+        let output = compile_typescript(source, None).unwrap();
+        assert!(
+            output.contains("String.fromCharCode(digit)"),
+            "as char should emit String.fromCharCode: {output}"
+        );
+    }
+
+    #[test]
     fn lowers_dedup_on_sorted_sequences() {
         let source = r#"
 pub fn unique_sorted(values: &mut Vec<i32>) {
