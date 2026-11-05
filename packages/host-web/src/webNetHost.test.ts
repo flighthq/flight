@@ -1,4 +1,4 @@
-import type { HostNetCapabilities } from '@flighthq/types/contract';
+import type { HostNetCapabilities } from '@flighthq/net/contract';
 
 import { webHostNet } from './webNet.ts';
 import { webHostNetGroup } from './webNetHost.ts';

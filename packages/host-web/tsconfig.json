@@ -69,6 +69,9 @@
       "path": "../midi/tsconfig.runtime.json"
     },
     {
+      "path": "../net/tsconfig.contract.json"
+    },
+    {
       "path": "../notification/tsconfig.runtime.json"
     },
     {

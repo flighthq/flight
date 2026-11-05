@@ -7,3 +7,20 @@ export {
   NetFormContentType,
   sendNetRequest,
 } from './contract.ts';
+export type {
+  HostNetCapabilities,
+  HostNetCapability,
+  NetBody,
+  NetCredentials,
+  NetGuard,
+  NetGuardNotice,
+  NetMethod,
+  NetProgress,
+  NetRedirect,
+  NetRequest,
+  NetRequestOptions,
+  NetResponse,
+  NetResponseBody,
+  NetResponseExplanation,
+  NetResponseType,
+} from './contract.ts';

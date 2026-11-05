@@ -1,6 +1,7 @@
 import * as netContract from '@flighthq/net/contract';
+import type { HostNetCapability, NetResponse } from '@flighthq/net/contract';
 import * as scene3dFormatsContract from '@flighthq/scene3d-formats/contract';
-import type { HostNetCapability, NetResponse, Scene3DDocument } from '@flighthq/types/contract';
+import type { Scene3DDocument } from '@flighthq/types/contract';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { loadScene3DDocumentFromMd2Url } from './md2Load.ts';

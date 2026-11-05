@@ -5,12 +5,12 @@ import {
   getMemoryLogSinkEntries,
   removeLogSink,
 } from '@flighthq/log/contract';
-import type { LogState } from '@flighthq/log/contract';
+import type { LogEntry, LogState, MemoryLogSink } from '@flighthq/log/contract';
 import { createSignal } from '@flighthq/signals/contract';
-import type { HostNetCapability, LogEntry, MemoryLogSink, NetProgress, NetResponse } from '@flighthq/types/contract';
 
 import { areNetGuardsEnabled, disableNetGuards, enableNetGuards } from './enableNetGuards.ts';
 import { sendNetRequest } from './net.ts';
+import type { HostNetCapability, NetProgress, NetResponse } from './types.ts';
 
 // Each test logs into a fresh caller-owned state, so logOnce keys never leak between tests.
 let logState: LogState;

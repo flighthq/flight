@@ -57,6 +57,7 @@
     "@flighthq/media": "*",
     "@flighthq/menu": "*",
     "@flighthq/midi": "*",
+    "@flighthq/net": "*",
     "@flighthq/notification": "*",
     "@flighthq/platform": "*",
     "@flighthq/power": "*",

@@ -69,6 +69,7 @@
     "@flighthq/math": "*",
     "@flighthq/menu": "*",
     "@flighthq/midi": "*",
+    "@flighthq/net": "*",
     "@flighthq/node": "*",
     "@flighthq/notification": "*",
     "@flighthq/path": "*",

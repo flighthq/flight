@@ -5,6 +5,7 @@ import type { HostDeviceCapabilities } from '@flighthq/device/contract';
 import type { HostFontLoadingCapability, HostGlyphRasterizerCapability } from '@flighthq/font/contract';
 import type { HostInputCapabilities } from '@flighthq/input/contract';
 import type { HostMenuCapabilities } from '@flighthq/menu/contract';
+import type { HostNetCapabilities } from '@flighthq/net/contract';
 import type { HostPreferencesCapabilities } from '@flighthq/preferences/contract';
 import type { HostCanvasCapabilities, HostSurfaceCapabilities } from '@flighthq/surface/contract';
 
@@ -63,7 +64,6 @@ import type {
 import type { HostLifecycleCapability } from './Lifecycle.ts';
 import type { HostMediaSessionActionCapability, HostMediaSessionCapability } from './MediaSession.ts';
 import type { HostMidiAccessCapability, HostMidiPermissionCapability } from './Midi.ts';
-import type { HostNetCapability } from './Net.ts';
 import type {
   HostNotificationActionCapability,
   HostNotificationActiveListCapability,
@@ -284,10 +284,6 @@ export interface HostMediaSessionCapabilities {
 export interface HostMidiCapabilities {
   readonly access?: HostMidiAccessCapability;
   readonly permission?: HostMidiPermissionCapability;
-}
-
-export interface HostNetCapabilities {
-  readonly http?: HostNetCapability;
 }
 
 export interface HostNotificationCapabilities {

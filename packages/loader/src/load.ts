@@ -1,6 +1,7 @@
 import { sendNetRequest } from '@flighthq/net/contract';
+import type { HostNetCapability, NetProgress } from '@flighthq/net/contract';
 import { connectSignal, createSignal, emitSignal } from '@flighthq/signals/contract';
-import type { HostNetCapability, LoadOptions, LoadProgress, NetProgress } from '@flighthq/types/contract';
+import type { LoadOptions, LoadProgress } from '@flighthq/types/contract';
 function requestOptions(url: string, input?: Readonly<LoadOptions>) {
   if (!input) return undefined;
   if (!input.progress) return { signal: input.signal };

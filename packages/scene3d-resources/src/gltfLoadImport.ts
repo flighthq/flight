@@ -1,14 +1,10 @@
+import type { HostNetCapability } from '@flighthq/net/contract';
 import {
   registerGltfAnimationHandlers,
   registerGltfCameraHandlers,
   registerGltfSkinHandlers,
 } from '@flighthq/scene3d-formats/contract';
-import type {
-  GltfCoreFeatureHandler,
-  GltfScene3DDocumentLoadOptions,
-  HostNetCapability,
-  Scene3DDocument,
-} from '@flighthq/types/contract';
+import type { GltfCoreFeatureHandler, GltfScene3DDocumentLoadOptions, Scene3DDocument } from '@flighthq/types/contract';
 
 import {
   loadScene3DDocumentFromGlbUrlWithCoreFeatureHandlers,

@@ -1,4 +1,5 @@
 import type { Signal } from '@flighthq/signals/contract';
+
 import type {
   HostNetCapability,
   NetGuard,
@@ -7,7 +8,7 @@ import type {
   NetRequestOptions,
   NetResponse,
   NetResponseExplanation,
-} from '@flighthq/types/contract';
+} from './types.ts';
 
 // Explains the sentinel encoded in a response without formatting or logging it. Status 0 takes
 // precedence because every transport failure also carries a null body.

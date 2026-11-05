@@ -1,5 +1,5 @@
 import { sendNetRequest } from '@flighthq/net/contract';
-import type { HostNetCapability } from '@flighthq/types/contract';
+import type { HostNetCapability } from '@flighthq/net/contract';
 
 import { canPlayAudioType, getAudioMimeTypeEssence, inferAudioMimeType } from './audioFormat.ts';
 import { createAudioResource } from './audioResource.ts';

@@ -1,5 +1,5 @@
+import type { NetProgress, NetRequest } from '@flighthq/net/contract';
 import { createSignal } from '@flighthq/signals/contract';
-import type { NetProgress, NetRequest } from '@flighthq/types/contract';
 
 import { webHostNet } from './webNet.ts';
 

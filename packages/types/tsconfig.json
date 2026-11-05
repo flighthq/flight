@@ -31,6 +31,7 @@
       ".host-types",
       ".menu-types",
       ".midi-types",
+      ".net-types",
       ".notification-types",
       ".path-boolean-types",
       ".path-types",
@@ -146,6 +147,9 @@
     },
     {
       "path": "../midi/tsconfig.contract.json"
+    },
+    {
+      "path": "../net/tsconfig.contract.json"
     },
     {
       "path": "../notification/tsconfig.contract.json"

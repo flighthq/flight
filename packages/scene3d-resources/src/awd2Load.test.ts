@@ -1,7 +1,8 @@
 import * as netContract from '@flighthq/net/contract';
+import type { HostNetCapability, NetResponse } from '@flighthq/net/contract';
 import { awd2AllBlockHandlers } from '@flighthq/scene3d-formats/contract';
 import * as scene3dFormatsContract from '@flighthq/scene3d-formats/contract';
-import type { HostNetCapability, NetResponse, Scene3DDocument } from '@flighthq/types/contract';
+import type { Scene3DDocument } from '@flighthq/types/contract';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { loadScene3DDocumentFromAwd2Url } from './awd2Load.ts';

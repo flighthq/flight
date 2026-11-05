@@ -1,5 +1,5 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { HostNetCapability } from '@flighthq/types/contract';
+import type { HostNetCapability } from '@flighthq/net/contract';
 
 import { createAudioResource } from './audioResource.ts';
 import {

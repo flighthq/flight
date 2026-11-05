@@ -1,9 +1,8 @@
-import { logOnce } from '@flighthq/log/contract';
+import { LogLevel, logOnce } from '@flighthq/log/contract';
 import type { LogState } from '@flighthq/log/contract';
-import type { NetGuardNotice } from '@flighthq/types/contract';
-import { LogLevel } from '@flighthq/types/contract';
 
 import { setNetGuard } from './net.ts';
+import type { NetGuardNotice } from './types.ts';
 
 export function areNetGuardsEnabled(): boolean {
   return _enabled;
