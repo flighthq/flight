@@ -5,7 +5,7 @@
  * Ease-in circular: slow start with a circular arc.
  */
 export function easeInCircular(t: number): number {
-  return 1.0 - Math.sqrt(1.0 - t * t);
+  return 1 - Math.sqrt(1 - t * t);
 }
 
 /**
@@ -13,14 +13,14 @@ export function easeInCircular(t: number): number {
  */
 export function easeInOutCircular(t: number): number {
   if (t < 0.5) {
-    return (1.0 - Math.sqrt(1.0 - 4.0 * t * t)) / 2.0;
+    return (1 - Math.sqrt(1 - 4 * t * t)) / 2;
   }
-  return (Math.sqrt(1.0 - Math.pow(-2.0 * t + 2.0, 2)) + 1.0) / 2.0;
+  return (Math.sqrt(1 - Math.pow(-2 * t + 2, 2)) + 1) / 2;
 }
 
 /**
  * Ease-out circular: fast start with a circular arc.
  */
 export function easeOutCircular(t: number): number {
-  return Math.sqrt(1.0 - (t - 1.0) * (t - 1.0));
+  return Math.sqrt(1 - (t - 1) * (t - 1));
 }

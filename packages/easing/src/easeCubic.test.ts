@@ -12,8 +12,8 @@ function assertApprox(actual: number, expected: number): void {
 
 describe('easeInCubic', () => {
   it('returns 0 at t 0 and 1 at t 1', () => {
-    expect(easeInCubic(0.0)).toEqual(0.0);
-    expect(easeInCubic(1.0)).toEqual(1.0);
+    expect(easeInCubic(0)).toEqual(0);
+    expect(easeInCubic(1)).toEqual(1);
   });
   it('is slow at start', () => {
     expect(easeInCubic(0.5) < 0.5).toBe(true);
@@ -22,8 +22,8 @@ describe('easeInCubic', () => {
 
 describe('easeInOutCubic', () => {
   it('returns 0 at t 0 and 1 at t 1', () => {
-    expect(easeInOutCubic(0.0)).toEqual(0.0);
-    expect(easeInOutCubic(1.0)).toEqual(1.0);
+    expect(easeInOutCubic(0)).toEqual(0);
+    expect(easeInOutCubic(1)).toEqual(1);
   });
   it('is symmetric at midpoint', () => {
     assertApprox(easeInOutCubic(0.5), 0.5);
@@ -32,8 +32,8 @@ describe('easeInOutCubic', () => {
 
 describe('easeOutCubic', () => {
   it('returns 0 at t 0 and 1 at t 1', () => {
-    expect(easeOutCubic(0.0)).toEqual(0.0);
-    expect(easeOutCubic(1.0)).toEqual(1.0);
+    expect(easeOutCubic(0)).toEqual(0);
+    expect(easeOutCubic(1)).toEqual(1);
   });
   it('is fast at start', () => {
     expect(easeOutCubic(0.5) > 0.5).toBe(true);

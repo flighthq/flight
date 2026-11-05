@@ -5,31 +5,31 @@
  * Ease-in exponential: very slow start, then rapid acceleration.
  */
 export function easeInExponential(t: number): number {
-  if (t === 0.0) {
-    return 0.0;
+  if (t === 0) {
+    return 0;
   }
-  return Math.pow(2.0, 10.0 * t - 10.0);
+  return Math.pow(2, 10 * t - 10);
 }
 
 /**
  * Ease-in-out exponential: exponential acceleration and deceleration.
  */
 export function easeInOutExponential(t: number): number {
-  if (t === 0.0 || t === 1.0) {
+  if (t === 0 || t === 1) {
     return t;
   }
   if (t < 0.5) {
-    return Math.pow(2.0, 20.0 * t - 10.0) / 2.0;
+    return Math.pow(2, 20 * t - 10) / 2;
   }
-  return (2.0 - Math.pow(2.0, -20.0 * t + 10.0)) / 2.0;
+  return (2 - Math.pow(2, -20 * t + 10)) / 2;
 }
 
 /**
  * Ease-out exponential: fast start, then rapid deceleration.
  */
 export function easeOutExponential(t: number): number {
-  if (t === 1.0) {
-    return 1.0;
+  if (t === 1) {
+    return 1;
   }
-  return 1.0 - Math.pow(2.0, -10.0 * t);
+  return 1 - Math.pow(2, -10 * t);
 }

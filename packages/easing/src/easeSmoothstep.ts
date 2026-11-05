@@ -8,14 +8,14 @@ import type { ScalarRemap } from './easingTypes.ts';
  * second-derivatives at both endpoints.
  */
 export function easeSmootherstep(t: number): number {
-  return t * t * t * (t * (t * 6.0 - 15.0) + 10.0);
+  return t * t * t * (t * (t * 6 - 15) + 10);
 }
 
 /**
  * Hermite smoothstep: a sigmoid-like ease with zero first-derivative at both endpoints.
  */
 export function easeSmoothstep(t: number): number {
-  return t * t * (3.0 - 2.0 * t);
+  return t * t * (3 - 2 * t);
 }
 
 /**
@@ -26,7 +26,7 @@ export function easeSmoothstep(t: number): number {
 export function easeSmoothstepRange(edge0: number, edge1: number): ScalarRemap {
   return (x: number): number => {
     const raw = (x - edge0) / (edge1 - edge0);
-    const t = raw < 0.0 ? 0.0 : raw > 1.0 ? 1.0 : raw;
-    return t * t * (3.0 - 2.0 * t);
+    const t = raw < 0 ? 0 : raw > 1 ? 1 : raw;
+    return t * t * (3 - 2 * t);
   };
 }

@@ -6,9 +6,9 @@
  */
 export function easeInOutQuintic(t: number): number {
   if (t < 0.5) {
-    return 16.0 * t * t * t * t * t;
+    return 16 * t * t * t * t * t;
   }
-  return 1.0 - Math.pow(-2.0 * t + 2.0, 5) / 2.0;
+  return 1 - Math.pow(-2 * t + 2, 5) / 2;
 }
 
 /**
@@ -22,5 +22,5 @@ export function easeInQuintic(t: number): number {
  * Ease-out quintic: fast start, decelerating.
  */
 export function easeOutQuintic(t: number): number {
-  return 1.0 - Math.pow(1.0 - t, 5);
+  return 1 - Math.pow(1 - t, 5);
 }

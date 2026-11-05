@@ -12,11 +12,11 @@ function assertApprox(actual: number, expected: number): void {
 }
 
 function constantZero(_t: number): number {
-  return 0.0;
+  return 0;
 }
 
 function constantOne(_t: number): number {
-  return 1.0;
+  return 1;
 }
 
 describe('easePiecewise', () => {
@@ -27,58 +27,58 @@ describe('easePiecewise', () => {
   });
   it('panics when total weight is zero', () => {
     expect(() => {
-      easePiecewise([{ ease: easeLinear, weight: 0.0 }]);
+      easePiecewise([{ ease: easeLinear, weight: 0 }]);
     }).toThrow();
   });
   it('single segment is equivalent to the wrapped function', () => {
-    const f = easePiecewise([{ ease: easeInCubic, weight: 1.0 }]);
-    assertApprox(f(0.0), easeInCubic(0.0));
+    const f = easePiecewise([{ ease: easeInCubic, weight: 1 }]);
+    assertApprox(f(0), easeInCubic(0));
     assertApprox(f(0.5), easeInCubic(0.5));
-    assertApprox(f(1.0), easeInCubic(1.0));
+    assertApprox(f(1), easeInCubic(1));
   });
   it('two equal weight segments split the range at t 0.5', () => {
     const f = easePiecewise([
-      { ease: easeLinear, weight: 1.0 },
-      { ease: constantZero, weight: 1.0 },
+      { ease: easeLinear, weight: 1 },
+      { ease: constantZero, weight: 1 },
     ]);
     assertApprox(f(0.25), 0.5);
-    assertApprox(f(0.75), 0.0);
+    assertApprox(f(0.75), 0);
   });
   it('respects weights', () => {
     const f = easePiecewise([
-      { ease: easeLinear, weight: 1.0 },
-      { ease: constantOne, weight: 2.0 },
+      { ease: easeLinear, weight: 1 },
+      { ease: constantOne, weight: 2 },
     ]);
-    assertApprox(f(1.0 / 6.0), 0.5);
-    assertApprox(f(2.0 / 3.0), 1.0);
+    assertApprox(f(1 / 6), 0.5);
+    assertApprox(f(2 / 3), 1);
   });
   it('returns 0 at t 0 and uses the last segment at t 1', () => {
     const f = easePiecewise([
-      { ease: easeLinear, weight: 1.0 },
-      { ease: easeInCubic, weight: 1.0 },
+      { ease: easeLinear, weight: 1 },
+      { ease: easeInCubic, weight: 1 },
     ]);
-    assertApprox(f(0.0), 0.0);
-    assertApprox(f(1.0), 1.0);
+    assertApprox(f(0), 0);
+    assertApprox(f(1), 1);
   });
   it('is boundary safe for t 0 and t 1', () => {
     const f = easePiecewise([
-      { ease: easeInCubic, weight: 1.0 },
-      { ease: easeLinear, weight: 1.0 },
+      { ease: easeInCubic, weight: 1 },
+      { ease: easeLinear, weight: 1 },
     ]);
-    assertApprox(f(0.0), 0.0);
-    assertApprox(f(1.0), 1.0);
+    assertApprox(f(0), 0);
+    assertApprox(f(1), 1);
   });
   it('default weight is treated as 1', () => {
     const explicit = easePiecewise([
-      { ease: easeLinear, weight: 1.0 },
-      { ease: easeInCubic, weight: 1.0 },
+      { ease: easeLinear, weight: 1 },
+      { ease: easeInCubic, weight: 1 },
     ]);
     const implicit = easePiecewise([
       { ease: easeLinear, weight: undefined },
       { ease: easeInCubic, weight: undefined },
     ]);
-    for (let i = 0; i <= 10; i += 1) {
-      assertApprox(implicit(i / 10.0), explicit(i / 10.0));
+    for (let i = 0; i <= 10; i++) {
+      assertApprox(implicit(i / 10), explicit(i / 10));
     }
   });
 });

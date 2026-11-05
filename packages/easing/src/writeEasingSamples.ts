@@ -17,12 +17,12 @@ export function writeEasingSamples(out: Float32Array, ease: EasingFunction): voi
     out[0] = ease(0.5);
     return;
   }
-  const step = 1.0 / (count - 1.0);
-  for (let i = 0; i < count; i += 1) {
+  const step = 1 / (count - 1);
+  for (let i = 0; i < count; i++) {
     const t = i * step;
-    const clampedT = t < 0.0 ? 0.0 : t > 1.0 ? 1.0 : t;
+    const clampedT = t < 0 ? 0 : t > 1 ? 1 : t;
     out[i] = ease(clampedT);
   }
-  out[0] = ease(0.0);
-  out[count - 1] = ease(1.0);
+  out[0] = ease(0);
+  out[count - 1] = ease(1);
 }

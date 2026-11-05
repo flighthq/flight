@@ -7,10 +7,10 @@ import { easeLinear } from './contract.ts';
 
 describe('easeLinear', () => {
   it('returns 0 at t 0', () => {
-    expect(easeLinear(0.0)).toEqual(0.0);
+    expect(easeLinear(0)).toEqual(0);
   });
   it('returns 1 at t 1', () => {
-    expect(easeLinear(1.0)).toEqual(1.0);
+    expect(easeLinear(1)).toEqual(1);
   });
   it('returns t unchanged', () => {
     expect(easeLinear(0.5)).toEqual(0.5);

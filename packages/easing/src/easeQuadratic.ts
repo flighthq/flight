@@ -6,9 +6,9 @@
  */
 export function easeInOutQuadratic(t: number): number {
   if (t < 0.5) {
-    return 2.0 * t * t;
+    return 2 * t * t;
   }
-  return 1.0 - Math.pow(-2.0 * t + 2.0, 2) / 2.0;
+  return 1 - Math.pow(-2 * t + 2, 2) / 2;
 }
 
 /**
@@ -22,5 +22,5 @@ export function easeInQuadratic(t: number): number {
  * Ease-out quadratic: fast start, decelerating.
  */
 export function easeOutQuadratic(t: number): number {
-  return t * (2.0 - t);
+  return t * (2 - t);
 }

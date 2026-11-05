@@ -8,7 +8,7 @@ import type { EasingFunction } from './easingTypes.ts';
  */
 export function easeClamp(ease: EasingFunction): EasingFunction {
   return (t: number): number => {
-    const clamped = t < 0.0 ? 0.0 : t > 1.0 ? 1.0 : t;
+    const clamped = t < 0 ? 0 : t > 1 ? 1 : t;
     return ease(clamped);
   };
 }
@@ -29,7 +29,7 @@ export function easeClampOutput(ease: EasingFunction, min: number, max: number):
  */
 export function easeInvert(ease: EasingFunction): EasingFunction {
   return (t: number): number => {
-    return 1.0 - ease(t);
+    return 1 - ease(t);
   };
 }
 
@@ -41,9 +41,9 @@ export function easeInvert(ease: EasingFunction): EasingFunction {
 export function easeMirror(easeIn: EasingFunction): EasingFunction {
   return (t: number): number => {
     if (t < 0.5) {
-      return easeIn(t * 2.0) * 0.5;
+      return easeIn(t * 2) * 0.5;
     }
-    return 1.0 - easeIn((1.0 - t) * 2.0) * 0.5;
+    return 1 - easeIn((1 - t) * 2) * 0.5;
   };
 }
 
@@ -52,7 +52,7 @@ export function easeMirror(easeIn: EasingFunction): EasingFunction {
  */
 export function easeReverse(easeIn: EasingFunction): EasingFunction {
   return (t: number): number => {
-    return 1.0 - easeIn(1.0 - t);
+    return 1 - easeIn(1 - t);
   };
 }
 

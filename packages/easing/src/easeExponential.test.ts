@@ -12,8 +12,8 @@ function assertApprox(actual: number, expected: number): void {
 
 describe('easeInExponential', () => {
   it('returns 0 at t 0 and 1 at t 1', () => {
-    expect(easeInExponential(0.0)).toEqual(0.0);
-    assertApprox(easeInExponential(1.0), 1.0);
+    expect(easeInExponential(0)).toEqual(0);
+    assertApprox(easeInExponential(1), 1);
   });
   it('is slow at start', () => {
     expect(easeInExponential(0.5) < 0.5).toBe(true);
@@ -22,8 +22,8 @@ describe('easeInExponential', () => {
 
 describe('easeInOutExponential', () => {
   it('returns 0 at t 0 and 1 at t 1', () => {
-    expect(easeInOutExponential(0.0)).toEqual(0.0);
-    expect(easeInOutExponential(1.0)).toEqual(1.0);
+    expect(easeInOutExponential(0)).toEqual(0);
+    expect(easeInOutExponential(1)).toEqual(1);
   });
   it('is symmetric at midpoint', () => {
     assertApprox(easeInOutExponential(0.5), 0.5);
@@ -32,8 +32,8 @@ describe('easeInOutExponential', () => {
 
 describe('easeOutExponential', () => {
   it('returns 0 at t 0 and 1 at t 1', () => {
-    assertApprox(easeOutExponential(0.0), 0.0);
-    expect(easeOutExponential(1.0)).toEqual(1.0);
+    assertApprox(easeOutExponential(0), 0);
+    expect(easeOutExponential(1)).toEqual(1);
   });
   it('is fast at start', () => {
     expect(easeOutExponential(0.5) > 0.5).toBe(true);

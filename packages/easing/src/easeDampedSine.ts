@@ -3,7 +3,7 @@
 
 import type { EasingFunction } from './easingTypes.ts';
 
-const TAU: number = 2.0 * Math.PI;
+const TAU: number = 2 * Math.PI;
 
 const DEFAULT_DAMPED_SINE_PERIOD: number = 0.4;
 
@@ -16,11 +16,11 @@ export function easeInDampedSine(amplitude: number, period: number): EasingFunct
   const overshoot = toDampedSineOvershoot(amplitude);
   const phase = toDampedSinePhase(overshoot, wavelength);
   return (t: number): number => {
-    if (t === 0.0 || t === 1.0) {
+    if (t === 0 || t === 1) {
       return t;
     }
-    const time = t - 1.0;
-    return -(overshoot * Math.pow(2.0, 10.0 * time) * Math.sin(((time - phase) * TAU) / wavelength));
+    const time = t - 1;
+    return -(overshoot * Math.pow(2, 10 * time) * Math.sin(((time - phase) * TAU) / wavelength));
   };
 }
 
@@ -34,14 +34,14 @@ export function easeInOutDampedSine(amplitude: number, period: number): EasingFu
   const overshoot = toDampedSineOvershoot(amplitude);
   const phase = toDampedSinePhase(overshoot, wavelength);
   return (t: number): number => {
-    if (t === 0.0 || t === 1.0) {
+    if (t === 0 || t === 1) {
       return t;
     }
-    const time = t * 2.0 - 1.0;
-    if (time < 0.0) {
-      return -0.5 * overshoot * Math.pow(2.0, 10.0 * time) * Math.sin(((time - phase) * TAU) / wavelength);
+    const time = t * 2 - 1;
+    if (time < 0) {
+      return -0.5 * overshoot * Math.pow(2, 10 * time) * Math.sin(((time - phase) * TAU) / wavelength);
     }
-    return 0.5 * overshoot * Math.pow(2.0, -10.0 * time) * Math.sin(((time - phase) * TAU) / wavelength) + 1.0;
+    return 0.5 * overshoot * Math.pow(2, -10 * time) * Math.sin(((time - phase) * TAU) / wavelength) + 1;
   };
 }
 
@@ -54,26 +54,26 @@ export function easeOutDampedSine(amplitude: number, period: number): EasingFunc
   const overshoot = toDampedSineOvershoot(amplitude);
   const phase = toDampedSinePhase(overshoot, wavelength);
   return (t: number): number => {
-    if (t === 0.0 || t === 1.0) {
+    if (t === 0 || t === 1) {
       return t;
     }
-    return overshoot * Math.pow(2.0, -10.0 * t) * Math.sin(((t - phase) * TAU) / wavelength) + 1.0;
+    return overshoot * Math.pow(2, -10 * t) * Math.sin(((t - phase) * TAU) / wavelength) + 1;
   };
 }
 
 function toDampedSineOvershoot(amplitude: number): number {
-  if (amplitude < 1.0) {
-    return 1.0;
+  if (amplitude < 1) {
+    return 1;
   }
   return amplitude;
 }
 
 function toDampedSinePhase(overshoot: number, wavelength: number): number {
-  return (wavelength / TAU) * Math.asin(1.0 / overshoot);
+  return (wavelength / TAU) * Math.asin(1 / overshoot);
 }
 
 function toDampedSineWavelength(period: number): number {
-  if (period > 0.0) {
+  if (period > 0) {
     return period;
   }
   return DEFAULT_DAMPED_SINE_PERIOD;

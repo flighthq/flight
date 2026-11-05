@@ -12,8 +12,8 @@ function assertApprox(actual: number, expected: number): void {
 
 describe('easeInBounce', () => {
   it('returns 0 at t 0 and 1 at t 1', () => {
-    assertApprox(easeInBounce(0.0), 0.0);
-    assertApprox(easeInBounce(1.0), 1.0);
+    assertApprox(easeInBounce(0), 0);
+    assertApprox(easeInBounce(1), 1);
   });
   it('is slow at start', () => {
     expect(easeInBounce(0.5) < 0.5).toBe(true);
@@ -22,15 +22,15 @@ describe('easeInBounce', () => {
 
 describe('easeInOutBounce', () => {
   it('returns 0 at t 0 and 1 at t 1', () => {
-    assertApprox(easeInOutBounce(0.0), 0.0);
-    assertApprox(easeInOutBounce(1.0), 1.0);
+    assertApprox(easeInOutBounce(0), 0);
+    assertApprox(easeInOutBounce(1), 1);
   });
 });
 
 describe('easeOutBounce', () => {
   it('returns 0 at t 0 and 1 at t 1', () => {
-    assertApprox(easeOutBounce(0.0), 0.0);
-    assertApprox(easeOutBounce(1.0), 1.0);
+    assertApprox(easeOutBounce(0), 0);
+    assertApprox(easeOutBounce(1), 1);
   });
   it('is fast at start', () => {
     expect(easeOutBounce(0.5) > 0.5).toBe(true);

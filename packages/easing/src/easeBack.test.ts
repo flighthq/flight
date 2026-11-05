@@ -12,27 +12,27 @@ function assertApprox(actual: number, expected: number): void {
 
 describe('easeInBack', () => {
   it('returns 0 at t 0 and 1 at t 1', () => {
-    assertApprox(easeInBack(0.0), 0.0);
-    assertApprox(easeInBack(1.0), 1.0);
+    assertApprox(easeInBack(0), 0);
+    assertApprox(easeInBack(1), 1);
   });
   it('undershoots below 0 before settling', () => {
-    expect(easeInBack(0.3) < 0.0).toBe(true);
+    expect(easeInBack(0.3) < 0).toBe(true);
   });
 });
 
 describe('easeInOutBack', () => {
   it('returns 0 at t 0 and 1 at t 1', () => {
-    assertApprox(easeInOutBack(0.0), 0.0);
-    assertApprox(easeInOutBack(1.0), 1.0);
+    assertApprox(easeInOutBack(0), 0);
+    assertApprox(easeInOutBack(1), 1);
   });
 });
 
 describe('easeOutBack', () => {
   it('returns 0 at t 0 and 1 at t 1', () => {
-    assertApprox(easeOutBack(0.0), 0.0);
-    assertApprox(easeOutBack(1.0), 1.0);
+    assertApprox(easeOutBack(0), 0);
+    assertApprox(easeOutBack(1), 1);
   });
   it('overshoots past 1 before settling', () => {
-    expect(easeOutBack(0.7) > 1.0).toBe(true);
+    expect(easeOutBack(0.7) > 1).toBe(true);
   });
 });

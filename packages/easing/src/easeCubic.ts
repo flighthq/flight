@@ -13,14 +13,14 @@ export function easeInCubic(t: number): number {
  */
 export function easeInOutCubic(t: number): number {
   if (t < 0.5) {
-    return 4.0 * t * t * t;
+    return 4 * t * t * t;
   }
-  return 1.0 - Math.pow(-2.0 * t + 2.0, 3) / 2.0;
+  return 1 - Math.pow(-2 * t + 2, 3) / 2;
 }
 
 /**
  * Ease-out cubic: fast start, decelerating.
  */
 export function easeOutCubic(t: number): number {
-  return 1.0 - Math.pow(1.0 - t, 3);
+  return 1 - Math.pow(1 - t, 3);
 }

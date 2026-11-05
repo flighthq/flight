@@ -15,55 +15,55 @@ function assertApprox(actual: number, expected: number): void {
 describe('easeSteps', () => {
   it('jump end holds at 0 first and reaches 1 only at t 1', () => {
     const ease: EasingFunction = easeSteps(4, 'jumpEnd');
-    expect(ease(0.0)).toEqual(0.0);
-    expect(ease(0.1)).toEqual(0.0);
+    expect(ease(0)).toEqual(0);
+    expect(ease(0.1)).toEqual(0);
     assertApprox(ease(0.25), 0.25);
     assertApprox(ease(0.6), 0.5);
     assertApprox(ease(0.99), 0.75);
-    expect(ease(1.0)).toEqual(1.0);
+    expect(ease(1)).toEqual(1);
   });
   it('jump end is the default position', () => {
     const explicit: EasingFunction = easeSteps(4, 'jumpEnd');
     const implicit: EasingFunction = easeSteps(4, undefined);
-    for (let i = 0; i <= 10; i += 1) {
-      expect(implicit(i / 10.0)).toEqual(explicit(i / 10.0));
+    for (let i = 0; i <= 10; i++) {
+      expect(implicit(i / 10)).toEqual(explicit(i / 10));
     }
   });
   it('jump start jumps immediately and reaches 1 before t 1', () => {
     const ease: EasingFunction = easeSteps(4, 'jumpStart');
-    assertApprox(ease(0.0), 0.25);
+    assertApprox(ease(0), 0.25);
     assertApprox(ease(0.1), 0.25);
     assertApprox(ease(0.5), 0.75);
-    expect(ease(0.99)).toEqual(1.0);
-    expect(ease(1.0)).toEqual(1.0);
+    expect(ease(0.99)).toEqual(1);
+    expect(ease(1)).toEqual(1);
   });
   it('jump none spans the closed range 0 to 1 with count minus 1 jumps', () => {
     const ease: EasingFunction = easeSteps(4, 'jumpNone');
-    expect(ease(0.0)).toEqual(0.0);
-    assertApprox(ease(0.25), 1.0 / 3.0);
-    assertApprox(ease(0.5), 2.0 / 3.0);
-    expect(ease(0.99)).toEqual(1.0);
-    expect(ease(1.0)).toEqual(1.0);
+    expect(ease(0)).toEqual(0);
+    assertApprox(ease(0.25), 1 / 3);
+    assertApprox(ease(0.5), 2 / 3);
+    expect(ease(0.99)).toEqual(1);
+    expect(ease(1)).toEqual(1);
   });
   it('jump none with count 1 yields nan', () => {
     const ease: EasingFunction = easeSteps(1, 'jumpNone');
-    expect(Number.isNaN(ease(0.0))).toBe(true);
+    expect(Number.isNaN(ease(0))).toBe(true);
     expect(Number.isNaN(ease(0.5))).toBe(true);
-    expect(Number.isNaN(ease(1.0))).toBe(true);
+    expect(Number.isNaN(ease(1))).toBe(true);
   });
   it('jump both never outputs 0 at the start', () => {
     const ease: EasingFunction = easeSteps(4, 'jumpBoth');
-    assertApprox(ease(0.0), 0.2);
+    assertApprox(ease(0), 0.2);
     assertApprox(ease(0.1), 0.2);
     assertApprox(ease(0.25), 0.4);
     assertApprox(ease(0.99), 0.8);
-    expect(ease(1.0)).toEqual(1.0);
+    expect(ease(1)).toEqual(1);
   });
   it('is monotonically non decreasing for jump end', () => {
     const ease: EasingFunction = easeSteps(5, 'jumpEnd');
-    let prev = ease(0.0);
-    for (let i = 1; i <= 50; i += 1) {
-      const value = ease(i / 50.0);
+    let prev = ease(0);
+    for (let i = 1; i <= 50; i++) {
+      const value = ease(i / 50);
       expect(value >= prev).toBe(true);
       prev = value;
     }

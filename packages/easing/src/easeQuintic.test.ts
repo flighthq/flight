@@ -12,8 +12,8 @@ function assertApprox(actual: number, expected: number): void {
 
 describe('easeInOutQuintic', () => {
   it('returns 0 at t 0 and 1 at t 1', () => {
-    expect(easeInOutQuintic(0.0)).toEqual(0.0);
-    expect(easeInOutQuintic(1.0)).toEqual(1.0);
+    expect(easeInOutQuintic(0)).toEqual(0);
+    expect(easeInOutQuintic(1)).toEqual(1);
   });
   it('is symmetric at midpoint', () => {
     assertApprox(easeInOutQuintic(0.5), 0.5);
@@ -22,8 +22,8 @@ describe('easeInOutQuintic', () => {
 
 describe('easeInQuintic', () => {
   it('returns 0 at t 0 and 1 at t 1', () => {
-    expect(easeInQuintic(0.0)).toEqual(0.0);
-    expect(easeInQuintic(1.0)).toEqual(1.0);
+    expect(easeInQuintic(0)).toEqual(0);
+    expect(easeInQuintic(1)).toEqual(1);
   });
   it('is slow at start', () => {
     expect(easeInQuintic(0.5) < 0.5).toBe(true);
@@ -32,8 +32,8 @@ describe('easeInQuintic', () => {
 
 describe('easeOutQuintic', () => {
   it('returns 0 at t 0 and 1 at t 1', () => {
-    expect(easeOutQuintic(0.0)).toEqual(0.0);
-    expect(easeOutQuintic(1.0)).toEqual(1.0);
+    expect(easeOutQuintic(0)).toEqual(0);
+    expect(easeOutQuintic(1)).toEqual(1);
   });
   it('is fast at start', () => {
     expect(easeOutQuintic(0.5) > 0.5).toBe(true);

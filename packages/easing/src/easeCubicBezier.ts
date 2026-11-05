@@ -10,25 +10,25 @@ import type { EasingFunction } from './easingTypes.ts';
  * curve's x) to the curve's y.
  */
 export function easeCubicBezier(x1: number, y1: number, x2: number, y2: number): EasingFunction {
-  const cx = 3.0 * x1;
-  const bx = 3.0 * (x2 - x1) - cx;
-  const ax = 1.0 - cx - bx;
-  const cy = 3.0 * y1;
-  const by = 3.0 * (y2 - y1) - cy;
-  const ay = 1.0 - cy - by;
+  const cx = 3 * x1;
+  const bx = 3 * (x2 - x1) - cx;
+  const ax = 1 - cx - bx;
+  const cy = 3 * y1;
+  const by = 3 * (y2 - y1) - cy;
+  const ay = 1 - cy - by;
   return (t: number): number => {
-    if (t <= 0.0) {
-      return 0.0;
+    if (t <= 0) {
+      return 0;
     }
-    if (t >= 1.0) {
-      return 1.0;
+    if (t >= 1) {
+      return 1;
     }
     return sampleY(ay, by, cy, solveParameterForX(ax, bx, cx, t, 1e-7));
   };
 }
 
 function sampleDerivativeX(ax: number, bx: number, cx: number, s: number): number {
-  return (3.0 * ax * s + 2.0 * bx) * s + cx;
+  return (3 * ax * s + 2 * bx) * s + cx;
 }
 
 function sampleX(ax: number, bx: number, cx: number, s: number): number {
@@ -41,7 +41,7 @@ function sampleY(ay: number, by: number, cy: number, s: number): number {
 
 function solveParameterForX(ax: number, bx: number, cx: number, x: number, epsilon: number): number {
   let s = x;
-  for (let _ = 0; _ < 8; _ += 1) {
+  for (let _ = 0; _ < 8; _++) {
     const xError = sampleX(ax, bx, cx, s) - x;
     if (Math.abs(xError) < epsilon) {
       return s;
@@ -52,8 +52,8 @@ function solveParameterForX(ax: number, bx: number, cx: number, x: number, epsil
     }
     s -= xError / derivative;
   }
-  let low = 0.0;
-  let high = 1.0;
+  let low = 0;
+  let high = 1;
   s = x;
   if (s < low) {
     return low;

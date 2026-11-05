@@ -20,41 +20,41 @@ function assertApprox(actual: number, expected: number): void {
 
 describe('easeInOutPower', () => {
   it('returns 0 at t 0 and 1 at t 1', () => {
-    const f = easeInOutPower(3.0);
-    assertApprox(f(0.0), 0.0);
-    assertApprox(f(1.0), 1.0);
+    const f = easeInOutPower(3);
+    assertApprox(f(0), 0);
+    assertApprox(f(1), 1);
   });
   it('passes through 0.5 at t 0.5', () => {
-    const f = easeInOutPower(3.0);
+    const f = easeInOutPower(3);
     assertApprox(f(0.5), 0.5);
   });
   it('matches ease in out cubic at exponent 3', () => {
-    const f = easeInOutPower(3.0);
+    const f = easeInOutPower(3);
     assertApprox(f(0.3), easeInOutCubic(0.3));
     assertApprox(f(0.7), easeInOutCubic(0.7));
   });
   it('is symmetric', () => {
-    const f = easeInOutPower(4.0);
-    assertApprox(f(0.3) + f(0.7), 1.0);
-    assertApprox(f(0.1) + f(0.9), 1.0);
+    const f = easeInOutPower(4);
+    assertApprox(f(0.3) + f(0.7), 1);
+    assertApprox(f(0.1) + f(0.9), 1);
   });
 });
 
 describe('easeInPower', () => {
   it('returns 0 at t 0 and 1 at t 1 for any exponent', () => {
-    for (const exp of [0.5, 1.0, 2.0, 3.0, 5.0]) {
+    for (const exp of [0.5, 1, 2, 3, 5]) {
       const f = easeInPower(exp);
-      assertApprox(f(0.0), 0.0);
-      assertApprox(f(1.0), 1.0);
+      assertApprox(f(0), 0);
+      assertApprox(f(1), 1);
     }
   });
   it('matches ease in quadratic at exponent 2', () => {
-    const f = easeInPower(2.0);
+    const f = easeInPower(2);
     assertApprox(f(0.5), easeInQuadratic(0.5));
     assertApprox(f(0.3), easeInQuadratic(0.3));
   });
   it('matches ease in quintic at exponent 5', () => {
-    const f = easeInPower(5.0);
+    const f = easeInPower(5);
     assertApprox(f(0.5), easeInQuintic(0.5));
     assertApprox(f(0.7), easeInQuintic(0.7));
   });
@@ -64,9 +64,9 @@ describe('easeInPower', () => {
   });
   it('is monotonically increasing', () => {
     const f = easeInPower(2.5);
-    let prev = f(0.0);
-    for (let i = 1; i <= 20; i += 1) {
-      const v = f(i / 20.0);
+    let prev = f(0);
+    for (let i = 1; i <= 20; i++) {
+      const v = f(i / 20);
       expect(v > prev).toBe(true);
       prev = v;
     }
@@ -75,20 +75,20 @@ describe('easeInPower', () => {
 
 describe('easeOutPower', () => {
   it('returns 0 at t 0 and 1 at t 1', () => {
-    const f = easeOutPower(2.0);
-    assertApprox(f(0.0), 0.0);
-    assertApprox(f(1.0), 1.0);
+    const f = easeOutPower(2);
+    assertApprox(f(0), 0);
+    assertApprox(f(1), 1);
   });
   it('matches ease out quadratic at exponent 2', () => {
-    const f = easeOutPower(2.0);
+    const f = easeOutPower(2);
     assertApprox(f(0.5), easeOutQuadratic(0.5));
     assertApprox(f(0.8), easeOutQuadratic(0.8));
   });
   it('is monotonically increasing', () => {
-    const f = easeOutPower(3.0);
-    let prev = f(0.0);
-    for (let i = 1; i <= 20; i += 1) {
-      const v = f(i / 20.0);
+    const f = easeOutPower(3);
+    let prev = f(0);
+    for (let i = 1; i <= 20; i++) {
+      const v = f(i / 20);
       expect(v > prev).toBe(true);
       prev = v;
     }

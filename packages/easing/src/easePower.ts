@@ -10,9 +10,9 @@ import type { EasingFunction } from './easingTypes.ts';
 export function easeInOutPower(exponent: number): EasingFunction {
   return (t: number): number => {
     if (t < 0.5) {
-      return Math.pow(t * 2.0, exponent) * 0.5;
+      return Math.pow(t * 2, exponent) * 0.5;
     }
-    return 1.0 - Math.pow((1.0 - t) * 2.0, exponent) * 0.5;
+    return 1 - Math.pow((1 - t) * 2, exponent) * 0.5;
   };
 }
 
@@ -30,6 +30,6 @@ export function easeInPower(exponent: number): EasingFunction {
  */
 export function easeOutPower(exponent: number): EasingFunction {
   return (t: number): number => {
-    return 1.0 - Math.pow(1.0 - t, exponent);
+    return 1 - Math.pow(1 - t, exponent);
   };
 }

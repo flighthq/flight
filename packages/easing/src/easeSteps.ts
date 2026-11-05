@@ -21,44 +21,45 @@ const STEPS_GUARD: { value: EasingStepsGuard | null } = { value: null };
  * returned function divides by zero and yields NaN for every input.
  */
 export function easeSteps(count: number, position?: StepPosition): EasingFunction {
-  const position_1 = position ?? 'jumpEnd';
-  if (position_1 === 'jumpNone' && count < 2) {
+  position = position ?? 'jumpEnd';
+  if (position === 'jumpNone' && count < 2) {
     const guard = STEPS_GUARD.value;
     if (guard !== null) {
       const g = guard;
-      g(count, position_1);
+      g(count, position);
     }
   }
-  const jumps: number = (() => {
-    const matchValue = position_1;
-    switch (matchValue) {
-      case 'jumpNone':
-        return count - 1;
-      case 'jumpBoth':
-        return count + 1;
-      default:
-        return count;
-    }
-  })();
-  const startOffset: number = (() => {
-    const matchValue = position_1;
-    switch (matchValue) {
-      case 'jumpStart':
-      case 'jumpBoth':
-        return 1;
-      default:
-        return 0;
-    }
-  })();
+  let jumps: number;
+  switch (position) {
+    case 'jumpNone':
+      jumps = count - 1;
+      break;
+    case 'jumpBoth':
+      jumps = count + 1;
+      break;
+    default:
+      jumps = count;
+      break;
+  }
+  let startOffset: number;
+  switch (position) {
+    case 'jumpStart':
+    case 'jumpBoth':
+      startOffset = 1;
+      break;
+    default:
+      startOffset = 0;
+      break;
+  }
   const countF = count;
   const jumpsF = jumps;
   return (t: number): number => {
     let step = Math.floor(t * countF) | 0;
     step += startOffset;
-    if (t >= 0.0 && step < 0) {
+    if (t >= 0 && step < 0) {
       step = 0;
     }
-    if (t <= 1.0 && step > jumps) {
+    if (t <= 1 && step > jumps) {
       step = jumps;
     }
     return step / jumpsF;
@@ -66,37 +67,31 @@ export function easeSteps(count: number, position?: StepPosition): EasingFunctio
 }
 
 export function getStepPositionString(value: StepPosition): string {
-  return (() => {
-    const matchValue = value;
-    switch (matchValue) {
-      case 'jumpStart':
-        return 'jumpStart';
-      case 'jumpEnd':
-        return 'jumpEnd';
-      case 'jumpNone':
-        return 'jumpNone';
-      case 'jumpBoth':
-        return 'jumpBoth';
-    }
-  })();
+  switch (value) {
+    case 'jumpStart':
+      return 'jumpStart';
+    case 'jumpEnd':
+      return 'jumpEnd';
+    case 'jumpNone':
+      return 'jumpNone';
+    case 'jumpBoth':
+      return 'jumpBoth';
+  }
 }
 
 export function parseStepPosition(value: string): StepPosition | undefined {
-  return (() => {
-    const matchValue = value;
-    switch (matchValue) {
-      case 'jumpStart':
-        return 'jumpStart';
-      case 'jumpEnd':
-        return 'jumpEnd';
-      case 'jumpNone':
-        return 'jumpNone';
-      case 'jumpBoth':
-        return 'jumpBoth';
-      default:
-        return undefined;
-    }
-  })();
+  switch (value) {
+    case 'jumpStart':
+      return 'jumpStart';
+    case 'jumpEnd':
+      return 'jumpEnd';
+    case 'jumpNone':
+      return 'jumpNone';
+    case 'jumpBoth':
+      return 'jumpBoth';
+    default:
+      return undefined;
+  }
 }
 
 /**

@@ -30,55 +30,55 @@ function constantOnePointFive(_t: number): number {
 describe('easeClamp', () => {
   it('passes through values already in 0 1', () => {
     const clamped = easeClamp(easeInCubic);
-    assertApprox(clamped(0.0), easeInCubic(0.0));
+    assertApprox(clamped(0), easeInCubic(0));
     assertApprox(clamped(0.5), easeInCubic(0.5));
-    assertApprox(clamped(1.0), easeInCubic(1.0));
+    assertApprox(clamped(1), easeInCubic(1));
   });
   it('clamps negative t to 0', () => {
     const clamped = easeClamp(easeInCubic);
-    assertApprox(clamped(-0.5), easeInCubic(0.0));
+    assertApprox(clamped(-0.5), easeInCubic(0));
   });
   it('clamps t above 1 to 1', () => {
     const clamped = easeClamp(easeInCubic);
-    assertApprox(clamped(1.5), easeInCubic(1.0));
+    assertApprox(clamped(1.5), easeInCubic(1));
   });
   it('is safe when composed', () => {
     const double_ = easeClamp(easeClamp(easeInCubic));
-    assertApprox(double_(-1.0), easeInCubic(0.0));
-    assertApprox(double_(2.0), easeInCubic(1.0));
+    assertApprox(double_(-1), easeInCubic(0));
+    assertApprox(double_(2), easeInCubic(1));
   });
 });
 
 describe('easeClampOutput', () => {
   it('does not clamp when output is within range', () => {
-    const f = easeClampOutput(easeInCubic, 0.0, 1.0);
+    const f = easeClampOutput(easeInCubic, 0, 1);
     assertApprox(f(0.5), easeInCubic(0.5));
   });
   it('clamps output below min', () => {
-    const below = easeClampOutput(constantNegHalf, 0.0, 1.0);
-    expect(below(0.5)).toEqual(0.0);
+    const below = easeClampOutput(constantNegHalf, 0, 1);
+    expect(below(0.5)).toEqual(0);
   });
   it('clamps output above max', () => {
-    const above = easeClampOutput(constantOnePointFive, 0.0, 1.0);
-    expect(above(0.5)).toEqual(1.0);
+    const above = easeClampOutput(constantOnePointFive, 0, 1);
+    expect(above(0.5)).toEqual(1);
   });
   it('respects custom range', () => {
     const f = easeClampOutput(easeInCubic, 0.2, 0.8);
-    expect(f(0.0)).toEqual(0.2);
-    expect(f(1.0)).toEqual(0.8);
+    expect(f(0)).toEqual(0.2);
+    expect(f(1)).toEqual(0.8);
   });
 });
 
 describe('easeInvert', () => {
   it('maps 0 to 1 and 1 to 0', () => {
     const inv = easeInvert(easeInCubic);
-    assertApprox(inv(0.0), 1.0);
-    assertApprox(inv(1.0), 0.0);
+    assertApprox(inv(0), 1);
+    assertApprox(inv(1), 0);
   });
   it('is the vertical mirror', () => {
     const inv = easeInvert(easeInCubic);
-    assertApprox(inv(0.5), 1.0 - easeInCubic(0.5));
-    assertApprox(inv(0.3), 1.0 - easeInCubic(0.3));
+    assertApprox(inv(0.5), 1 - easeInCubic(0.5));
+    assertApprox(inv(0.3), 1 - easeInCubic(0.3));
   });
   it('double inversion is the identity', () => {
     const id = easeInvert(easeInvert(easeInCubic));
@@ -89,8 +89,8 @@ describe('easeInvert', () => {
 describe('easeMirror', () => {
   it('returns 0 at t 0 and 1 at t 1', () => {
     const f = easeMirror(easeInCubic);
-    assertApprox(f(0.0), 0.0);
-    assertApprox(f(1.0), 1.0);
+    assertApprox(f(0), 0);
+    assertApprox(f(1), 1);
   });
   it('passes through 0.5 at t 0.5', () => {
     const f = easeMirror(easeInCubic);
@@ -98,21 +98,21 @@ describe('easeMirror', () => {
   });
   it('is symmetric', () => {
     const f = easeMirror(easeInCubic);
-    assertApprox(f(0.3) + f(0.7), 1.0);
-    assertApprox(f(0.1) + f(0.9), 1.0);
+    assertApprox(f(0.3) + f(0.7), 1);
+    assertApprox(f(0.1) + f(0.9), 1);
   });
 });
 
 describe('easeReverse', () => {
   it('converts an in curve to an out curve', () => {
     const reversed = easeReverse(easeInCubic);
-    assertApprox(reversed(0.3), 1.0 - easeInCubic(0.7));
-    assertApprox(reversed(0.7), 1.0 - easeInCubic(0.3));
+    assertApprox(reversed(0.3), 1 - easeInCubic(0.7));
+    assertApprox(reversed(0.7), 1 - easeInCubic(0.3));
   });
   it('returns 0 at t 0 and 1 at t 1', () => {
     const reversed = easeReverse(easeInCubic);
-    assertApprox(reversed(0.0), 0.0);
-    assertApprox(reversed(1.0), 1.0);
+    assertApprox(reversed(0), 0);
+    assertApprox(reversed(1), 1);
   });
   it('ease reverse of ease in cubic approximates ease out cubic', () => {
     const reversed = easeReverse(easeInCubic);
@@ -127,18 +127,18 @@ describe('easeReverse', () => {
 
 describe('easeScaleOutput', () => {
   it('maps 0 1 output to from value to value', () => {
-    const f = easeScaleOutput(easeInCubic, 100.0, 300.0);
-    assertApprox(f(0.0), 100.0);
-    assertApprox(f(1.0), 300.0);
-    assertApprox(f(0.5), 100.0 + easeInCubic(0.5) * 200.0);
+    const f = easeScaleOutput(easeInCubic, 100, 300);
+    assertApprox(f(0), 100);
+    assertApprox(f(1), 300);
+    assertApprox(f(0.5), 100 + easeInCubic(0.5) * 200);
   });
   it('handles inverted ranges', () => {
-    const f = easeScaleOutput(easeInCubic, 300.0, 100.0);
-    assertApprox(f(0.0), 300.0);
-    assertApprox(f(1.0), 100.0);
+    const f = easeScaleOutput(easeInCubic, 300, 100);
+    assertApprox(f(0), 300);
+    assertApprox(f(1), 100);
   });
   it('is identity when range is 0 to 1', () => {
-    const f = easeScaleOutput(easeInCubic, 0.0, 1.0);
+    const f = easeScaleOutput(easeInCubic, 0, 1);
     assertApprox(f(0.5), easeInCubic(0.5));
   });
 });
