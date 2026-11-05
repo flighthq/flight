@@ -38,15 +38,9 @@ export function createPhysics3DAbiBodyBuffer(capacity: number): Physics3DAbiBody
 }
 
 export function createPhysics3DAbiCommandBuffer(byteCapacity = 4096): Physics3DAbiCommandBuffer {
-  if (!Number.isSafeInteger(byteCapacity) || byteCapacity < Physics3DAbiCommandHeaderByteLength) {
-    throw new RangeError(`Physics3D ABI command capacity must be at least ${Physics3DAbiCommandHeaderByteLength}`);
-  }
   const out = allocateEntity<Physics3DAbiCommandBuffer>();
-  out.data = new Uint8Array(byteCapacity);
-  out.byteLength = 0;
-  out.commandCount = 0;
-  clearPhysics3DAbiCommandBuffer(out);
-  return out;
+  initializePhysics3DAbiCommandBuffer(out, byteCapacity);
+  return finishEntity(out);
 }
 
 export function createPhysics3DAbiContactBuffer(
@@ -90,6 +84,19 @@ export function initializePhysics3DAbiBodyBuffer(
   out.values = new Float64Array(capacity * Physics3DAbiBodyValueStride);
   out.count = 0;
   out.requiredCount = 0;
+}
+
+export function initializePhysics3DAbiCommandBuffer(
+  out: EntityConstruction<Physics3DAbiCommandBuffer>,
+  byteCapacity = 4096,
+): void {
+  if (!Number.isSafeInteger(byteCapacity) || byteCapacity < Physics3DAbiCommandHeaderByteLength) {
+    throw new RangeError(`Physics3D ABI command capacity must be at least ${Physics3DAbiCommandHeaderByteLength}`);
+  }
+  out.data = new Uint8Array(byteCapacity);
+  out.byteLength = 0;
+  out.commandCount = 0;
+  clearPhysics3DAbiCommandBuffer(out);
 }
 
 export function initializePhysics3DAbiContactBuffer(

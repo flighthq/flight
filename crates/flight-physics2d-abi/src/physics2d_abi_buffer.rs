@@ -76,9 +76,8 @@ pub fn initialize_physics2d_abi_body_buffer(out: &mut Physics2DAbiBodyBuffer, ca
     out.required_count = 0;
 }
 
-/// Allocates the stream bytes and writes an empty header (the construction initializer of
-/// `create_physics2d_abi_command_buffer`).
-// flight-lint: allow(conform-extra) D23 sweep (Principal 21f7557f): the construction initializer of the source create
+/// Allocates `byte_capacity` stream bytes, default 4096, and writes an empty header (TS
+/// `initializePhysics2DAbiCommandBuffer`). Throws `RangeError` below the header length.
 pub fn initialize_physics2d_abi_command_buffer(
     out: &mut Physics2DAbiCommandBuffer,
     byte_capacity: Option<usize>,

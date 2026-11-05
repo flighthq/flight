@@ -10,6 +10,7 @@ import {
   createPhysics2DAbiQueryBuffer,
   getPhysics2DAbiCommandBufferRemainingByteLength,
   initializePhysics2DAbiBodyBuffer,
+  initializePhysics2DAbiCommandBuffer,
   initializePhysics2DAbiContactBuffer,
   initializePhysics2DAbiExecutionResult,
   initializePhysics2DAbiJointBuffer,
@@ -127,6 +128,28 @@ describe('getPhysics2DAbiCommandBufferRemainingByteLength', () => {
 describe('initializePhysics2DAbiBodyBuffer', () => {
   it('is the construction initializer of createPhysics2DAbiBodyBuffer', () => {
     expect(typeof initializePhysics2DAbiBodyBuffer).toBe('function');
+  });
+});
+
+describe('initializePhysics2DAbiCommandBuffer', () => {
+  it('is the construction initializer of createPhysics2DAbiCommandBuffer', () => {
+    const buffer = createPhysics2DAbiCommandBuffer(64);
+    buffer.byteLength = 48;
+    buffer.commandCount = 2;
+
+    initializePhysics2DAbiCommandBuffer(buffer, 32);
+
+    expect(buffer.data.byteLength).toBe(32);
+    expect(buffer.byteLength).toBe(Physics2DAbiCommandHeaderByteLength);
+    expect(buffer.commandCount).toBe(0);
+    expect(new DataView(buffer.data.buffer).getUint32(0, true)).toBe(Physics2DAbiCommandMagic);
+  });
+
+  it('refuses a capacity too small to hold the header', () => {
+    const buffer = createPhysics2DAbiCommandBuffer(64);
+    expect(() => initializePhysics2DAbiCommandBuffer(buffer, Physics2DAbiCommandHeaderByteLength - 1)).toThrow(
+      RangeError,
+    );
   });
 });
 
