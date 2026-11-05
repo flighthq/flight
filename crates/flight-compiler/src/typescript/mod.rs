@@ -1539,6 +1539,14 @@ pub(crate) fn external_shared_identity_facts(
                         source.crate_name, structure.ident
                     ));
                 }
+                // A public `Vec` field is a sequence as a local struct's is, so the proven `Vec`
+                // lowerings (`.clear()` as `length = 0`, ...) apply through an external binding.
+                if is_public(&field.vis) && rust_type_is_sequence(&field.ty) {
+                    facts.insert(format!(
+                        "{SEQUENCE_FIELD_MARKER}{}::{}{PROVENANCE_SEPARATOR}{field_name}",
+                        source.crate_name, structure.ident
+                    ));
+                }
             }
         }
     }
@@ -9961,10 +9969,9 @@ fn caught_panic_transaction<'a>(
     if !result.path.is_ident(&result_pattern.ident) {
         return None;
     }
-    if remaining
-        .iter()
-        .any(|statement| statement_contains_identifier(statement, &result_pattern.ident.to_string()))
-    {
+    if remaining.iter().any(|statement| {
+        statement_contains_identifier(statement, &result_pattern.ident.to_string())
+    }) {
         return None;
     }
     let Stmt::Expr(Expr::Call(resume), _) = handler.then_branch.stmts.last()? else {
@@ -22036,7 +22043,15 @@ fn expression_is_sequence(expression: &Expr, entities: &HashSet<String>) -> bool
             let syn::Member::Named(field_name) = &field.member else {
                 return false;
             };
-            expression_struct_name(&field.base, entities).is_some_and(|identity| {
+            // A local struct's field, or a dependency struct's under its external identity
+            // (`crate::Struct`); a dependency entity has both, so either may carry the fact.
+            [
+                expression_struct_name(&field.base, entities),
+                expression_external_struct(&field.base, entities),
+            ]
+            .into_iter()
+            .flatten()
+            .any(|identity| {
                 entities.contains(&format!(
                     "{SEQUENCE_FIELD_MARKER}{identity}{PROVENANCE_SEPARATOR}{field_name}"
                 ))

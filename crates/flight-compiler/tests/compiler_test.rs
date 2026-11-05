@@ -628,6 +628,58 @@ pub fn same(a: &Arc<i32>, b: &Arc<i32>) -> bool {
     }
 
     #[test]
+    fn clears_dependency_struct_vec_fields_and_refuses_other_fields() {
+        let dependency = [ExternalAliasSource {
+            source: "pub struct Path {\n    pub commands: Vec<u8>,\n    pub data: Vec<f64>,\n    pub count: u32,\n    pub bounds: [f64; 4],\n    hidden: Vec<u8>,\n}\n",
+            module: "@flighthq/path/contract",
+        }];
+        // A dependency struct's public `Vec` field is a proven `Vec`: `.clear()` empties it in place.
+        let source = "use flight_path::Path;\n\npub fn clear_lasso_path(path: &mut Path) {\n    path.commands.clear();\n    path.data.clear();\n}\n";
+        assert_eq!(
+            compile_typescript_with_external_alias_sources(source, None, &[], &dependency).unwrap(),
+            "import type { Path } from '@flighthq/path/contract';\n\nexport function clearLassoPath(path: Path): void {\n  path.commands.length = 0;\n  path.data.length = 0;\n}\n"
+        );
+        // The real `flight_path::Path` entity is also named under its struct identity; the `Vec`
+        // fact holds for either (Selection's `clear_lasso_path`).
+        let entity_dependency = [
+            ExternalAliasSource {
+                source: include_str!("../../flight-entity/src/types.rs"),
+                module: "@flighthq/entity/contract",
+            },
+            ExternalAliasSource {
+                source: include_str!("../../flight-path/src/path.rs"),
+                module: "@flighthq/path/contract",
+            },
+        ];
+        let entity_source = "use flight_path::Path;\n\npub fn clear_lasso_path(path: &mut Path) {\n    path.commands.clear();\n    path.data.clear();\n}\n";
+        let output = compile_typescript_with_external_alias_sources(
+            entity_source,
+            Some("@flighthq/entity/contract"),
+            &[],
+            &entity_dependency,
+        )
+        .unwrap();
+        assert!(
+            output.contains("  path.commands.length = 0;\n  path.data.length = 0;\n"),
+            "{output}"
+        );
+        // A scalar or a private field (not part of the dependency's surface) is not proven `Vec`.
+        for field in ["count", "hidden"] {
+            let source = format!(
+                "use flight_path::Path;\n\npub fn clear_field(path: &mut Path) {{\n    path.{field}.clear();\n}}\n"
+            );
+            let error =
+                compile_typescript_with_external_alias_sources(&source, None, &[], &dependency)
+                    .unwrap_err()
+                    .to_string();
+            assert!(
+                error.contains("portable `.clear()` receiver"),
+                "{field}: {error}"
+            );
+        }
+    }
+
+    #[test]
     fn lowers_rc_ptr_eq_to_reference_equality() {
         let output = compile_typescript(
             r#"use std::rc::Rc;
