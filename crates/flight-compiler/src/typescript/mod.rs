@@ -12967,6 +12967,9 @@ pub(crate) fn emit_expression_for_type(
     {
         return emit_contextual_struct_literal_expression(expression, entities);
     }
+    if let Some(expression) = expression_with_contextual_parse_type(expression, rust_type) {
+        return emit_expression(&expression, entities);
+    }
     return match rust_type {
         Type::Array(array_type) => match expression {
             Expr::Array(array) => {
@@ -13030,6 +13033,41 @@ pub(crate) fn emit_expression_for_type(
         },
         _ => emit_expression(expression, entities),
     };
+}
+
+// Rust infers `str::parse`'s target from an explicitly typed local when the Result is consumed
+// directly. Preserve that proven context without extending it through arbitrary calls, whose
+// parameter type may differ from the surrounding local's type.
+fn expression_with_contextual_parse_type(expression: &Expr, rust_type: &Type) -> Option<Expr> {
+    fn peel_group_and_paren_mut(expression: &mut Expr) -> &mut Expr {
+        match expression {
+            Expr::Group(group) => peel_group_and_paren_mut(&mut group.expr),
+            Expr::Paren(paren) => peel_group_and_paren_mut(&mut paren.expr),
+            _ => expression,
+        }
+    }
+
+    let mut contextual = expression.clone();
+    let Expr::MethodCall(consumer) = peel_group_and_paren_mut(&mut contextual) else {
+        return None;
+    };
+    let direct_consumer = (consumer.method == "unwrap" && consumer.args.is_empty())
+        || (consumer.method == "expect" && consumer.args.len() == 1);
+    if !direct_consumer {
+        return None;
+    }
+    let Expr::MethodCall(parse) = peel_group_and_paren_mut(&mut consumer.receiver) else {
+        return None;
+    };
+    if parse.method != "parse"
+        || !parse.args.is_empty()
+        || parse.turbofish.is_some()
+        || !matches!(rust_type, Type::Path(_))
+    {
+        return None;
+    }
+    parse.turbofish = Some(syn::parse_quote!(::<#rust_type>));
+    return Some(contextual);
 }
 
 fn emit_contextual_struct_literal_expression(

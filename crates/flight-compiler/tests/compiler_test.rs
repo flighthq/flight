@@ -6023,6 +6023,56 @@ pub fn parse_int(text: &str) -> Option<i32> {
     }
 
     #[test]
+    fn infers_parse_type_from_an_explicit_local_before_a_direct_result_consumer() {
+        let source = r#"
+pub fn parse_float(text: &str) -> f32 {
+    let value: f32 = text.trim().parse().unwrap();
+    return value;
+}
+
+pub fn parse_int(text: &str) -> i32 {
+    let value: i32 = text.parse().expect("integer");
+    return value;
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(output.contains("!Number.isNaN(v)"), "f32 parse: {output}");
+        assert!(
+            output.contains("Number.isInteger(v)"),
+            "i32 parse: {output}"
+        );
+        assert!(!output.contains(".parse("), "{output}");
+    }
+
+    #[test]
+    fn refuses_unproven_or_unsupported_contextual_parse_targets() {
+        let ambiguous = r#"
+pub fn parse_and_discard(text: &str) {
+    let value = text.parse().unwrap();
+    drop(value);
+}
+"#;
+        let error = compile_typescript(ambiguous, None).unwrap_err().to_string();
+        assert!(error.contains("requires a turbofish type annotation"), "{error}");
+
+        let unsupported = r#"
+pub fn parse_bool(text: &str) -> bool {
+    let value: bool = text.parse().unwrap();
+    return value;
+}
+"#;
+        let error = compile_typescript(unsupported, None)
+            .unwrap_err()
+            .to_string();
+        assert!(
+            error.contains("portable `.parse::<bool>()` has no portable lowering"),
+            "{error}"
+        );
+    }
+
+    #[test]
     fn lowers_sort_unstable_to_sort() {
         let source = r#"
 pub fn ordered(values: &mut Vec<i32>) {
@@ -18433,6 +18483,31 @@ mod regexp_construction {
         );
         assert!(!output.contains("@flighthq/regexp"), "{output}");
         assert!(!output.contains("createRegExp"), "{output}");
+    }
+
+    #[test]
+    fn infers_an_explicit_helper_local_parse_type() {
+        let source = r#"
+fn read_number(text: &str) -> f32 {
+    let value: f32 = text.trim().parse().unwrap();
+    return value;
+}
+
+mod parse_helpers {
+    use super::*;
+
+    #[test]
+    fn parses_the_number() {
+        assert_eq!(read_number("1.5"), 1.5);
+    }
+}
+"#;
+
+        let output = compile_vitest(source, "@flighthq/example/contract").unwrap();
+
+        assert!(output.contains("!Number.isNaN(v)"), "{output}");
+        assert!(output.contains("expect(readNumber('1.5')).toEqual(1.5)"), "{output}");
+        assert!(!output.contains(".parse("), "{output}");
     }
 
     #[test]
