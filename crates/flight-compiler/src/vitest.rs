@@ -3002,6 +3002,13 @@ fn emit_statement(
                 .expect("writing to a String cannot fail");
         }
         Stmt::Macro(statement) => emit_assertion(out, &statement.mac, indent, context)?,
+        Stmt::Item(syn::Item::Use(item_use))
+            if portable_test_current_contract_use(&item_use.tree, context) => {}
+        Stmt::Item(syn::Item::Use(_)) => {
+            return Err(compile_error(
+                "portable test function-local `use` supports only unrenamed items from the current package `flight_*::contract` module",
+            ));
+        }
         Stmt::Item(_) => {
             return Err(compile_error(
                 "unsupported item declaration inside portable test function",
@@ -3009,6 +3016,38 @@ fn emit_statement(
         }
     }
     return Ok(());
+}
+
+// TypeScript imports are module-scoped, so a Rust block-local import is safe to erase only when its
+// unrenamed binding is already guaranteed to come from this generated test's contract module. The
+// ordinary symbol collector then emits the actual TypeScript import for every binding the block uses.
+fn portable_test_current_contract_use(tree: &UseTree, context: &HashSet<String>) -> bool {
+    fn validate(tree: &UseTree, prefix: &mut Vec<String>, context: &HashSet<String>) -> bool {
+        return match tree {
+            UseTree::Path(path) => {
+                prefix.push(path.ident.to_string());
+                let valid = validate(&path.tree, prefix, context);
+                prefix.pop();
+                valid
+            }
+            UseTree::Group(group) => {
+                !group.items.is_empty()
+                    && group
+                        .items
+                        .iter()
+                        .all(|item| validate(item, prefix, context))
+            }
+            UseTree::Name(name) => {
+                name.ident != "self"
+                    && prefix.len() == 2
+                    && prefix[1] == "contract"
+                    && vitest_current_path_prefix(context, &prefix[0]).is_some()
+            }
+            UseTree::Glob(_) | UseTree::Rename(_) => false,
+        };
+    }
+
+    return validate(tree, &mut Vec::new(), context);
 }
 
 fn emit_suite(

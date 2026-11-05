@@ -19112,6 +19112,58 @@ mod parse_helpers {
     }
 
     #[test]
+    fn lowers_unrenamed_function_local_imports_from_the_current_contract() {
+        let source = r#"
+mod local_imports {
+    #[test]
+    fn reads_current_contract_values() {
+        use flight_example::contract::{OTHER_VALUE, PUBLIC_VALUE};
+        assert_eq!(PUBLIC_VALUE + OTHER_VALUE, 7);
+    }
+}
+"#;
+
+        let output = compile_vitest(source, "@flighthq/example/contract").unwrap();
+
+        assert!(output.contains("  OTHER_VALUE,"), "{output}");
+        assert!(output.contains("  PUBLIC_VALUE,"), "{output}");
+        assert!(
+            output.contains("expect(PUBLIC_VALUE + OTHER_VALUE).toEqual(7)"),
+            "{output}"
+        );
+        assert!(!output.contains("flight_example"), "{output}");
+    }
+
+    #[test]
+    fn refuses_function_local_imports_that_cannot_be_safely_module_scoped() {
+        for item_use in [
+            "use flight_example::contract::PUBLIC_VALUE as VALUE;",
+            "use flight_example::contract::*;",
+            "use flight_other::contract::PUBLIC_VALUE;",
+        ] {
+            let source = format!(
+                r#"
+mod local_imports {{
+    #[test]
+    fn reads_a_value() {{
+        {item_use}
+        assert!(true);
+    }}
+}}
+"#
+            );
+
+            let error = compile_vitest(&source, "@flighthq/example/contract")
+                .unwrap_err()
+                .to_string();
+            assert_eq!(
+                error,
+                "portable test function-local `use` supports only unrenamed items from the current package `flight_*::contract` module"
+            );
+        }
+    }
+
+    #[test]
     fn lowers_statement_vec_extension_in_portable_tests_and_helpers() {
         let source = r#"
 fn append_zeros(values: &mut Vec<f32>) {
