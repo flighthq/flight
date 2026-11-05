@@ -1,5 +1,2 @@
-import type { CaptureVideoDialogOptions, VideoCaptureDialogResult } from './Dialog.ts';
-
-export interface HostVideoCaptureDialogCapability {
-  capture(options?: Readonly<CaptureVideoDialogOptions>): Promise<VideoCaptureDialogResult>;
-}
+/** @deprecated Import dialog contracts from `@flighthq/dialog/contract`. */
+export type { HostVideoCaptureDialogCapability } from '@flighthq/dialog/contract';

@@ -1,5 +1,4 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { HostMessageDialogCapability } from '@flighthq/types/contract';
 
 import {
   showConfirmDialog,
@@ -10,6 +9,7 @@ import {
   showPromptDialog,
   showWarningDialog,
 } from './dialog.ts';
+import type { HostMessageDialogCapability } from './types.ts';
 
 function fakeHost() {
   return {

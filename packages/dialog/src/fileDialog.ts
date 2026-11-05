@@ -1,4 +1,7 @@
 import { allocateEntity, createEntityRuntime, finishEntity } from '@flighthq/entity/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
+import { EntityRuntimeKey } from '@flighthq/entity/contract';
+
 import type {
   DirectoryOpenDialogResult,
   FileDialogHandle,
@@ -12,9 +15,7 @@ import type {
   OpenDirectoryDialogOptions,
   OpenFileDialogOptions,
   SaveFileDialogOptions,
-  EntityConstruction,
-} from '@flighthq/types/contract';
-import { EntityRuntimeKey } from '@flighthq/types/contract';
+} from './types.ts';
 
 export function createFileDialogHandle(
   kind: FileDialogHandle['kind'],

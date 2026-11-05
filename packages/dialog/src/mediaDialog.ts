@@ -8,7 +8,7 @@ import type {
   OpenImageDialogOptions,
   PhotoCaptureDialogResult,
   VideoCaptureDialogResult,
-} from '@flighthq/types/contract';
+} from './types.ts';
 
 export function showCapturePhotoDialog(
   hostPhotoCaptureDialog: Readonly<HostPhotoCaptureDialogCapability>,

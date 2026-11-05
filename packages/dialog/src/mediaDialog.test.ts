@@ -1,4 +1,6 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+
+import { showCapturePhotoDialog, showCaptureVideoDialog, showOpenImageDialog } from './mediaDialog.ts';
 import type {
   CapturePhotoDialogOptions,
   CaptureVideoDialogOptions,
@@ -6,9 +8,7 @@ import type {
   HostPhotoCaptureDialogCapability,
   HostVideoCaptureDialogCapability,
   OpenImageDialogOptions,
-} from '@flighthq/types/contract';
-
-import { showCapturePhotoDialog, showCaptureVideoDialog, showOpenImageDialog } from './mediaDialog.ts';
+} from './types.ts';
 
 describe('showCapturePhotoDialog', () => {
   it('routes capture through the explicit photo-capture slot and forwards options', async () => {

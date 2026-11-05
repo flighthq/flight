@@ -41,6 +41,7 @@
     "@flighthq/buffer": "*",
     "@flighthq/clock": "*",
     "@flighthq/compression": "*",
+    "@flighthq/dialog": "*",
     "@flighthq/entity": "*",
     "@flighthq/flow": "*",
     "@flighthq/font": "*",

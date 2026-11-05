@@ -4,7 +4,7 @@ import type {
   MessageDialogOptions,
   MessageDialogResult,
   PromptDialogOptions,
-} from '@flighthq/types/contract';
+} from './types.ts';
 
 export function showConfirmDialog(
   hostMessageDialog: Readonly<HostMessageDialogCapability>,

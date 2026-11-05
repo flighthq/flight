@@ -1,5 +1,2 @@
-import type { PromptDialogOptions } from './Dialog.ts';
-
-export interface HostPromptDialogCapability {
-  prompt(options: Readonly<PromptDialogOptions>): Promise<string | null>;
-}
+/** @deprecated Import dialog contracts from `@flighthq/dialog/contract`. */
+export type { HostPromptDialogCapability } from '@flighthq/dialog/contract';

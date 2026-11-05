@@ -1,6 +1,5 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { FileDialogHandle } from '@flighthq/types/contract';
-import { EntityRuntimeKey } from '@flighthq/types/contract';
+import { EntityRuntimeKey } from '@flighthq/entity/contract';
 
 import {
   createFileDialogHandle,
@@ -10,6 +9,7 @@ import {
   showOpenFileDialog,
   showSaveFileDialog,
 } from './fileDialog.ts';
+import type { FileDialogHandle } from './types.ts';
 
 function fakeHost() {
   const directory = createFileDialogHandle('Directory', 'mydir', '/tmp/mydir');

@@ -1,5 +1,2 @@
-import type { ImageOpenDialogResult, OpenImageDialogOptions } from './Dialog.ts';
-
-export interface HostImageOpenDialogCapability {
-  open(options?: Readonly<OpenImageDialogOptions>): Promise<ImageOpenDialogResult>;
-}
+/** @deprecated Import dialog contracts from `@flighthq/dialog/contract`. */
+export type { HostImageOpenDialogCapability } from '@flighthq/dialog/contract';
