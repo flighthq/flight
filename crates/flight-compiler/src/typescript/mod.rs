@@ -20408,6 +20408,22 @@ fn emit_method_call(
             };
         }
     }
+    if call.method == "contains"
+        && call.args.len() == 1
+        && let Expr::Range(range) = peel_reference_and_paren(&call.receiver)
+        && let Some(lo) = &range.start
+        && let Some(hi) = &range.end
+    {
+        let arg = emit_expression(peel_reference_and_paren(&call.args[0]), entities)?;
+        let lo = emit_expression(lo, entities)?;
+        let hi = emit_expression(hi, entities)?;
+        let hi_op = if matches!(range.limits, syn::RangeLimits::Closed(_)) {
+            "<="
+        } else {
+            "<"
+        };
+        return Ok(format!("({arg} >= {lo} && {arg} {hi_op} {hi})"));
+    }
     let receiver = emit_expression(&call.receiver, entities)?;
     if let Some(kind) = expression_hash_collection(&call.receiver, entities) {
         return emit_hash_collection_method(call, &kind, &receiver, entities);
@@ -21623,7 +21639,14 @@ fn emit_method_call(
         )),
         "try_into" if arguments.is_empty() => Ok(receiver),
         "trunc" if arguments.is_empty() => Ok(format!("Math.trunc({receiver})")),
-        "to_vec" if arguments.is_empty() => Ok(format!("[...{receiver}]")),
+        "to_vec" if arguments.is_empty() => {
+            if matches!(&*call.receiver, Expr::Index(index) if matches!(&*index.index, Expr::Range(_)))
+            {
+                Ok(receiver)
+            } else {
+                Ok(format!("[...{receiver}]"))
+            }
+        }
         "truncate" if arguments.len() == 1 => Ok(format!(
             "{receiver}.length = Math.min({receiver}.length, {})",
             arguments[0]

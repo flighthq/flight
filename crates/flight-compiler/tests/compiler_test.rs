@@ -27801,6 +27801,28 @@ pub fn constants() -> (u32, u8, i32, i8) {
     }
 
     #[test]
+    fn lowers_range_contains_as_bounds_check() {
+        let source = r#"
+pub fn in_ascii_upper(c: u16) -> bool {
+    return (0x0041..=0x005A).contains(&c);
+}
+
+pub fn in_half_open(x: usize, len: usize) -> bool {
+    return (0..len).contains(&x);
+}
+"#;
+        let output = compile_typescript(source, None).unwrap();
+        assert!(
+            output.contains("c >= 0x0041 && c <= 0x005A"),
+            "inclusive range contains should be bounds check: {output}"
+        );
+        assert!(
+            output.contains("x >= 0 && x < len"),
+            "half-open range contains should use <: {output}"
+        );
+    }
+
+    #[test]
     fn elides_identity_map_closures() {
         let output = compile_typescript(
             "pub fn clone_strings(items: &[String]) -> Vec<String> {\n    return items.iter().map(|s| s.clone()).collect();\n}\n",
