@@ -26,6 +26,7 @@ import {
   hasRustPublicRecordDeclaration,
   hasRustPublicTypeAlias,
   hasRustSiblingGenerationSemantics,
+  hasTypeScriptNullableOptionFunctionBoundary,
   mergeRustExportNames,
   renderCompanionContractExports,
   renderGeneratedImports,
@@ -559,6 +560,22 @@ export function renamedPath(): Path | undefined { return undefined; }
       '--typescript-nullable-option-return',
       'createSvgGeometryPath',
     ]);
+  });
+
+  it('discovers only exported null-represented function boundaries', () => {
+    expect(
+      hasTypeScriptNullableOptionFunctionBoundary(`export function findValue(): string | null { return null; }
+export function setValue(value: string | null): void {}
+`),
+    ).toBe(true);
+    expect(
+      hasTypeScriptNullableOptionFunctionBoundary(`export function findValue(): string | undefined { return undefined; }
+export function findMixed(): string | null | undefined { return undefined; }
+export function setOptional(value?: string | null): void {}
+export function setDefault(value: string | null = 'value'): void {}
+function privateValue(): string | null { return null; }
+`),
+    ).toBe(false);
   });
 
   it('derives nullable parameter metadata only from exact exported function positions', () => {

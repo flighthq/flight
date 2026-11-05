@@ -30,6 +30,7 @@ import {
   hasRustPublicRecordDeclaration,
   hasRustPublicTypeAlias,
   hasRustSiblingGenerationSemantics,
+  hasTypeScriptNullableOptionFunctionBoundary,
   renderCompanionContractExports,
   resolveExternalContractExports,
   renderGeneratedImports,
@@ -463,7 +464,7 @@ try {
       generatedFiles.push(module.fileName, generatedFileName, nativeFileName);
     }
 
-    discoverTargetNativeRepresentationsForTests(
+    discoverTargetNativeMetadataForTests(
       testFiles(crateRoot)
         .map((rustTest) => join(crateRoot, 'tests', rustTest))
         .filter((rustPath) => sourceMode(rustPath) === 'generate'),
@@ -552,7 +553,7 @@ try {
   rmSync(stagingRoot, { force: true, recursive: true });
 }
 
-function discoverTargetNativeRepresentationsForTests(
+function discoverTargetNativeMetadataForTests(
   generatedTests: string[],
   rustSources: string[],
   aliasSources: string[],
@@ -569,6 +570,13 @@ function discoverTargetNativeRepresentationsForTests(
   for (const known of packageTypeScriptTypeAliases.keys()) requiredAliases.delete(known);
   for (const rustPath of targetNativeSources) {
     const fileName = `${snakeToLowerCamel(basename(rustPath, '.rs'))}.ts`;
+    const declaresRequiredAlias = collectRustPublicTypeAliasNames(readFileSync(rustPath, 'utf8')).some((alias) =>
+      requiredAliases.has(alias),
+    );
+    const existingPath = join(packageSourceRoot, fileName);
+    const hasNullableBoundary =
+      existsSync(existingPath) && hasTypeScriptNullableOptionFunctionBoundary(readFileSync(existingPath, 'utf8'));
+    if (!declaresRequiredAlias && !hasNullableBoundary) continue;
     const probe = probeNativeSource(
       'generate',
       rustPath,

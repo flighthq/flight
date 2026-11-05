@@ -1,11 +1,13 @@
 mod gl_test_helper;
+mod support;
 
 use std::sync::{Arc, RwLock};
 
 use flight_effects::{EffectFields, EffectRef, EffectValue};
 use flight_effects_gl::contract::{GlEffectContext, GlEffectState};
-use flight_entity::{FlightError, Record, set_record_value};
 use flight_render_gl::GlRenderState;
+
+pub(crate) use support::{assert_close, bindings};
 
 /// A bare effect of an arbitrary kind, the Rust form of the TS tests' `allocateEntity` + `kind`.
 #[derive(Default)]
@@ -31,16 +33,6 @@ pub(crate) fn make_effect_with_field(kind: &str, key: &str, value: EffectValue) 
 
 pub(crate) fn make_effects(kinds: &[&str]) -> Vec<EffectRef> {
     return kinds.iter().map(|kind| make_effect(kind)).collect();
-}
-
-/// D1 f32 bound: `max(TS bound, 4·ε·max(1, |expected|))`.
-pub(crate) fn assert_close(actual: f32, expected: f32, ts_bound: f32) {
-    let roundoff = 4.0 * f32::EPSILON * expected.abs().max(1.0);
-    let bound = ts_bound.max(roundoff);
-    assert!(
-        (actual - expected).abs() <= bound,
-        "expected {actual} to be within {bound} of {expected}"
-    );
 }
 
 /// Builds the context the pipeline hands a runner (fresh source/dest targets of the given size and
@@ -93,26 +85,6 @@ pub(crate) fn publish_render_texture(
         Ok(())
     })
     .unwrap();
-}
-
-/// TS `Record<string, number>` bindings for the GLSL evaluator.
-pub(crate) fn bindings(entries: &[(&str, f32)]) -> Record<f32> {
-    let mut record = Record::default();
-    for (key, value) in entries {
-        set_record_value(&mut record, key.to_string(), *value);
-    }
-    return record;
-}
-
-/// Asserts that `run` throws a D10 `FlightError` whose message contains `needle`.
-pub(crate) fn expect_error(run: impl FnOnce() + std::panic::UnwindSafe, needle: &str) {
-    let error = std::panic::catch_unwind(run).unwrap_err();
-    let error = error.downcast_ref::<FlightError>().unwrap();
-    assert!(
-        error.message.contains(needle),
-        "expected {:?} to contain {needle:?}",
-        error.message
-    );
 }
 
 /// A new render state on `screen`'s context whose GL registries start as `screen`'s current

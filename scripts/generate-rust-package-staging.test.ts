@@ -473,6 +473,62 @@ export function recognizesBitmapFingerprint(text: string): boolean {
     expect(value).toContain('if (_fingerprint === undefined)');
   }, 120_000);
 
+  it('preserves target-native nullable return ownership through generated tests', async () => {
+    writeFileSync(
+      join(crateRoot, 'Cargo.toml'),
+      `[package]
+name = "${crateName}"
+version = "0.0.0"
+edition = "2024"
+`,
+    );
+    writeFileSync(
+      join(crateRoot, 'src', 'lib.rs'),
+      '//! flight-compiler: target-native\nmod value;\npub mod contract;\npub use contract::*;\n',
+    );
+    writeFileSync(join(crateRoot, 'src', 'contract.rs'), 'pub use value::*;\n');
+    writeFileSync(
+      sourcePath,
+      `//! flight-compiler: target-native
+
+pub fn find_value(present: bool) -> Option<i32> {
+    if present {
+        return Some(7);
+    }
+    return None;
+}
+`,
+    );
+    const testPath = join(crateRoot, 'tests', 'value_test.rs');
+    writeFileSync(
+      testPath,
+      `mod nullable_return_owner {
+    #[test]
+    fn keeps_the_owner_visible_to_test_generation() {
+        assert!(true);
+    }
+}
+`,
+    );
+    writeFileSync(
+      join(packageRoot, 'src', 'value.ts'),
+      `export function findValue(present: boolean): number | null {
+  return present ? 7 : null;
+}
+`,
+    );
+    writeFileSync(join(packageRoot, 'src', 'contract.ts'), "export { findValue } from './value.ts';\n");
+    writeFileSync(join(packageRoot, 'src', 'index.ts'), "export { findValue } from './contract.ts';\n");
+
+    const run = await generateWhileScanning();
+    rmSync(testPath, { force: true });
+
+    expect(run.code, run.stderr).toBe(0);
+    const test = readFileSync(join(packageRoot, 'src', 'value.test.ts'), 'utf8');
+    expect(test).toContain("describe('nullableReturnOwner'");
+    expect(test).toContain('expect(true).toBe(true);');
+  }, 120_000);
+
   it('passes canonical type-only string-union representation metadata to the compiler', async () => {
     writeFileSync(
       join(crateRoot, 'Cargo.toml'),

@@ -1,10 +1,11 @@
-//! flight-compiler: target-native
+use flight_entity::FlightError;
+
+use crate::support::*;
 
 mod evaluate_glsl_scalar_expression {
     use flight_effects_gl::contract::evaluate_glsl_scalar_expression;
 
-    use crate::assert_close;
-    use crate::{bindings, expect_error};
+    use super::*;
 
     #[test]
     fn substitutes_every_binding_and_evaluates_the_arithmetic() {
@@ -47,28 +48,28 @@ mod evaluate_glsl_scalar_expression {
 
     #[test]
     fn throws_on_an_identifier_it_was_given_no_binding_for() {
-        expect_error(
-            || {
-                evaluate_glsl_scalar_expression(
-                    "u_center * u_density",
-                    &bindings(&[("u_center", 1.0)]),
-                );
-            },
-            "no binding for",
-        );
+        let error = std::panic::catch_unwind(|| {
+            evaluate_glsl_scalar_expression(
+                "u_center * u_density",
+                &bindings(&[("u_center", 1.0)]),
+            );
+        })
+        .unwrap_err();
+        let error = error.downcast_ref::<FlightError>().unwrap();
+        assert!(error.message.contains("no binding for"));
     }
 
     #[test]
     fn throws_rather_than_modelling_an_operator_glsl_and_javascript_disagree_about() {
-        expect_error(
-            || {
-                evaluate_glsl_scalar_expression(
-                    "texture(u_texture0, uv).r",
-                    &bindings(&[("uv", 0.0)]),
-                );
-            },
-            "no binding for",
-        );
+        let error = std::panic::catch_unwind(|| {
+            evaluate_glsl_scalar_expression(
+                "texture(u_texture0, uv).r",
+                &bindings(&[("uv", 0.0)]),
+            );
+        })
+        .unwrap_err();
+        let error = error.downcast_ref::<FlightError>().unwrap();
+        assert!(error.message.contains("no binding for"));
     }
 }
 
@@ -76,7 +77,7 @@ mod extract_glsl_expression {
     use flight_effects_gl::contract::extract_glsl_expression;
     use flight_regexp::create_reg_exp;
 
-    use crate::expect_error;
+    use super::*;
 
     #[test]
     fn returns_the_captured_expression() {
@@ -89,12 +90,12 @@ mod extract_glsl_expression {
 
     #[test]
     fn throws_when_the_pattern_matches_nothing() {
-        expect_error(
-            || {
-                let pattern = create_reg_exp("float e = ([^;]+);", "");
-                extract_glsl_expression("float d = 1.0;", &pattern);
-            },
-            "matched no expression",
-        );
+        let error = std::panic::catch_unwind(|| {
+            let pattern = create_reg_exp("float e = ([^;]+);", "");
+            extract_glsl_expression("float d = 1.0;", &pattern);
+        })
+        .unwrap_err();
+        let error = error.downcast_ref::<FlightError>().unwrap();
+        assert!(error.message.contains("matched no expression"));
     }
 }

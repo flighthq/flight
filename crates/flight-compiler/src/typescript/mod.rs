@@ -11951,6 +11951,13 @@ fn emit_expression_value(
                     "(() => {{ try {{ return JSON.parse({input}); }} catch {{ return undefined; }} }})()"
                 ));
             }
+            if expression_path_ends_with(&call.func, "create_reg_exp") && call.args.len() == 2 {
+                return Ok(format!(
+                    "new RegExp({}, {})",
+                    emit_expression(&call.args[0], entities)?,
+                    emit_expression(&call.args[1], entities)?
+                ));
+            }
             if expression_is_associated_path(&call.func, "Mutex", "new") && call.args.len() == 1 {
                 return Ok(format!(
                     "{{ value: {} }}",
@@ -23357,6 +23364,7 @@ pub(crate) fn is_lowered_cross_crate_value(name: &str) -> bool {
         name,
         "allocate_entity"
             | "AtomicU32"
+            | "create_reg_exp"
             | "delete_record_value"
             | "entries"
             | "FlightError"

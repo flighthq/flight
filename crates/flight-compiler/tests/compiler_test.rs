@@ -7319,6 +7319,23 @@ pub fn decode_lossy(bytes: &[u8]) -> String {
     }
 
     #[test]
+    fn lowers_flight_regexp_construction_to_the_native_regexp() {
+        let source = r#"
+use flight_regexp::create_reg_exp;
+
+pub fn compile_pattern(source: &str) {
+    let _pattern = create_reg_exp(source, "iu");
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(output.contains("new RegExp(source, 'iu')"), "{output}");
+        assert!(!output.contains("@flighthq/regexp"), "{output}");
+        assert!(!output.contains("createRegExp"), "{output}");
+    }
+
+    #[test]
     fn lowers_into_owned_to_identity() {
         let source = r#"
 pub fn take_ownership(cow: &str) -> String {
@@ -18207,6 +18224,32 @@ pub fn get_scale() -> f64 {
 
 mod compile_vitest {
     use super::*;
+
+    #[test]
+    fn lowers_flight_regexp_construction_without_a_nonexistent_contract_import() {
+        let source = r#"
+use flight_regexp::create_reg_exp;
+
+mod regexp_construction {
+    use super::*;
+
+    #[test]
+    fn builds_the_native_pattern() {
+        let _pattern = create_reg_exp("float d = ([^;]+);", "u");
+        assert!(true);
+    }
+}
+"#;
+
+        let output = compile_vitest(source, "@flighthq/example/contract").unwrap();
+
+        assert!(
+            output.contains("new RegExp('float d = ([^;]+);', 'u')"),
+            "{output}"
+        );
+        assert!(!output.contains("@flighthq/regexp"), "{output}");
+        assert!(!output.contains("createRegExp"), "{output}");
+    }
 
     // A dependency factory result keeps its dependency struct owner, so identity-bearing public
     // fields can use pointer equality. Primitive fields still fail closed because `===` would compare

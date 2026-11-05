@@ -988,6 +988,35 @@ export function typeScriptNullableOptionReturnArguments(
   return positions.sort().flatMap((name) => ['--typescript-nullable-option-return', name]);
 }
 
+// Target-native modules are not ordinarily compiler alias inputs. Their established TypeScript
+// signatures still identify the small subset that must be probed before generated tests can preserve
+// a public `null` boundary rather than Rust Option's ordinary `undefined` representation.
+export function hasTypeScriptNullableOptionFunctionBoundary(typescript: string): boolean {
+  const parsed = parseTypeScriptMetadataSurface('contract.ts', typescript);
+  if (parsed.errors.length > 0) {
+    throw new Error(
+      `could not parse TypeScript contract while discovering nullable function boundaries: ${parsed.errors[0]?.message}`,
+    );
+  }
+
+  const body = parsed.program.body as unknown as Record<string, unknown>[];
+  if (
+    [...exportedFunctionTypes(body).values()].some((function_) =>
+      typeUnionHasOnlyAbsence(function_.returnType, 'TSNullKeyword'),
+    )
+  ) {
+    return true;
+  }
+  return [...exportedFunctionParameterTypes(body).values()].some((parameters) =>
+    parameters.some(
+      (parameter) =>
+        !parameter.optional &&
+        typeUnionHasOnlyAbsence(parameter.type, 'TSNullKeyword') &&
+        (!parameter.defaulted || parameter.defaultNull),
+    ),
+  );
+}
+
 function typeUnionHasOnlyAbsence(
   type: Record<string, unknown> | undefined,
   absence: 'TSNullKeyword' | 'TSUndefinedKeyword',

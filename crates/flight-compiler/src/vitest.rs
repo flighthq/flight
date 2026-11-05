@@ -109,6 +109,7 @@ fn collect_contract_symbols(
                     name.as_str(),
                     "None" | "Some" | "drop" | "AssertUnwindSafe" | "catch_unwind"
                 )
+                && !is_lowered_cross_crate_value(&name)
                 && !self.symbols.contains(&name)
             {
                 self.symbols.push(name);
