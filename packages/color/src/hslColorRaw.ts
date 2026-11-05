@@ -23,33 +23,33 @@ export function allocateHslColor(): HslColorRaw {
  * space, matching artist-facing color pickers.
  */
 export function hslToRgb(out: Float32Array, h: number, s: number, l: number): void {
-  if (s === 0.0) {
+  if (s === 0) {
     out[0] = l;
     out[1] = l;
     out[2] = l;
     return;
   }
-  const q = l < 0.5 ? l * (1.0 + s) : l + s - l * s;
-  const p = 2.0 * l - q;
-  const hn = h / 360.0;
-  out[0] = hueToRgbChannel(p, q, hn + 1.0 / 3.0);
+  const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+  const p = 2 * l - q;
+  const hn = h / 360;
+  out[0] = hueToRgbChannel(p, q, hn + 1 / 3);
   out[1] = hueToRgbChannel(p, q, hn);
-  out[2] = hueToRgbChannel(p, q, hn - 1.0 / 3.0);
+  out[2] = hueToRgbChannel(p, q, hn - 1 / 3);
 }
 
 /**
  * HSL helper: interpolates a single channel from hue position `t`.
  */
 function hueToRgbChannel(p: number, q: number, t: number): number {
-  const tn = ((t % 1.0) + 1.0) % 1.0;
-  if (tn < 1.0 / 6.0) {
-    return p + (q - p) * 6.0 * tn;
+  const tn = ((t % 1) + 1) % 1;
+  if (tn < 1 / 6) {
+    return p + (q - p) * 6 * tn;
   }
-  if (tn < 1.0 / 2.0) {
+  if (tn < 1 / 2) {
     return q;
   }
-  if (tn < 2.0 / 3.0) {
-    return p + (q - p) * (2.0 / 3.0 - tn) * 6.0;
+  if (tn < 2 / 3) {
+    return p + (q - p) * (2 / 3 - tn) * 6;
   }
   return p;
 }
@@ -61,31 +61,29 @@ function hueToRgbChannel(p: number, q: number, t: number): number {
  * artist-facing HSL color pickers.
  */
 export function rgbToHsl(out: HslColorRaw, color: number): void {
-  const r = ((color >>> 24) & 0xff) / 255.0;
-  const g = ((color >>> 16) & 0xff) / 255.0;
-  const b = ((color >>> 8) & 0xff) / 255.0;
+  const r = ((color >>> 24) & 0xff) / 255;
+  const g = ((color >>> 16) & 0xff) / 255;
+  const b = ((color >>> 8) & 0xff) / 255;
   const max = Math.max(Math.max(r, g), b);
   const min = Math.min(Math.min(r, g), b);
-  const l = (max + min) / 2.0;
+  const l = (max + min) / 2;
   if (max === min) {
-    out.h = 0.0;
-    out.s = 0.0;
+    out.h = 0;
+    out.s = 0;
     out.l = l;
     return;
   }
   const d = max - min;
-  const s = l > 0.5 ? d / (2.0 - max - min) : d / (max + min);
+  const s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
   let h;
   if (max === r) {
-    h = ((g - b) / d + (g < b ? 6.0 : 0.0)) / 6.0;
+    h = ((g - b) / d + (g < b ? 6 : 0)) / 6;
+  } else if (max === g) {
+    h = ((b - r) / d + 2) / 6;
   } else {
-    if (max === g) {
-      h = ((b - r) / d + 2.0) / 6.0;
-    } else {
-      h = ((r - g) / d + 4.0) / 6.0;
-    }
+    h = ((r - g) / d + 4) / 6;
   }
-  out.h = h * 360.0;
+  out.h = h * 360;
   out.s = s;
   out.l = l;
 }

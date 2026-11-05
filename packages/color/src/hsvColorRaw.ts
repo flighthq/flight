@@ -22,55 +22,49 @@ export function allocateHsvColor(): HsvColorRaw {
  * Alpha in out[3] is not modified.
  */
 export function hsvToRgb(out: Float32Array, h: number, s: number, v: number): void {
-  if (s === 0.0) {
+  if (s === 0) {
     out[0] = v;
     out[1] = v;
     out[2] = v;
     return;
   }
-  const hn = ((h % 360.0) + 360.0) % 360.0;
-  const i = (Math.floor(hn / 60.0) | 0) % 6;
-  const f = hn / 60.0 - Math.floor(hn / 60.0);
-  const p = v * (1.0 - s);
-  const q = v * (1.0 - f * s);
-  const t = v * (1.0 - (1.0 - f) * s);
+  const hn = ((h % 360) + 360) % 360;
+  const i = (Math.floor(hn / 60) | 0) % 6;
+  const f = hn / 60 - Math.floor(hn / 60);
+  const p = v * (1 - s);
+  const q = v * (1 - f * s);
+  const t = v * (1 - (1 - f) * s);
   switch (i) {
-    case 0: {
+    case 0:
       out[0] = v;
       out[1] = t;
       out[2] = p;
       break;
-    }
-    case 1: {
+    case 1:
       out[0] = q;
       out[1] = v;
       out[2] = p;
       break;
-    }
-    case 2: {
+    case 2:
       out[0] = p;
       out[1] = v;
       out[2] = t;
       break;
-    }
-    case 3: {
+    case 3:
       out[0] = p;
       out[1] = q;
       out[2] = v;
       break;
-    }
-    case 4: {
+    case 4:
       out[0] = t;
       out[1] = p;
       out[2] = v;
       break;
-    }
-    default: {
+    default:
       out[0] = v;
       out[1] = p;
       out[2] = q;
       break;
-    }
   }
 }
 
@@ -80,29 +74,25 @@ export function hsvToRgb(out: Float32Array, h: number, s: number, v: number): vo
  * Alpha is ignored. The conversion operates in sRGB (non-linear) space.
  */
 export function rgbToHsv(out: HsvColorRaw, color: number): void {
-  const r = ((color >>> 24) & 0xff) / 255.0;
-  const g = ((color >>> 16) & 0xff) / 255.0;
-  const b = ((color >>> 8) & 0xff) / 255.0;
+  const r = ((color >>> 24) & 0xff) / 255;
+  const g = ((color >>> 16) & 0xff) / 255;
+  const b = ((color >>> 8) & 0xff) / 255;
   const max = Math.max(Math.max(r, g), b);
   const min = Math.min(Math.min(r, g), b);
   const d = max - min;
   const v = max;
-  const s = max === 0.0 ? 0.0 : d / max;
+  const s = max === 0 ? 0 : d / max;
   let h;
-  if (d === 0.0) {
-    h = 0.0;
+  if (d === 0) {
+    h = 0;
+  } else if (max === r) {
+    h = ((g - b) / d + (g < b ? 6 : 0)) / 6;
+  } else if (max === g) {
+    h = ((b - r) / d + 2) / 6;
   } else {
-    if (max === r) {
-      h = ((g - b) / d + (g < b ? 6.0 : 0.0)) / 6.0;
-    } else {
-      if (max === g) {
-        h = ((b - r) / d + 2.0) / 6.0;
-      } else {
-        h = ((r - g) / d + 4.0) / 6.0;
-      }
-    }
+    h = ((r - g) / d + 4) / 6;
   }
-  out.h = h * 360.0;
+  out.h = h * 360;
   out.s = s;
   out.v = v;
 }

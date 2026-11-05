@@ -6,9 +6,9 @@
  * This is a channel clamp, not a perceptual gamut-mapping operation. Alias-safe.
  */
 export function clampLinearRgb(out: Float32Array, r: number, g: number, b: number): void {
-  out[0] = Math.min(Math.max(r, 0.0), 1.0);
-  out[1] = Math.min(Math.max(g, 0.0), 1.0);
-  out[2] = Math.min(Math.max(b, 0.0), 1.0);
+  out[0] = Math.min(Math.max(r, 0), 1);
+  out[1] = Math.min(Math.max(g, 0), 1);
+  out[2] = Math.min(Math.max(b, 0), 1);
 }
 
 /**
@@ -20,9 +20,9 @@ export function linearRgbToOklab(out: Float32Array, r: number, g: number, b: num
   const l = 0.4122214708 * r + 0.5363325363 * g + 0.0514459929 * b;
   const m = 0.2119034982 * r + 0.6806995451 * g + 0.1073969566 * b;
   const s = 0.0883024619 * r + 0.2817188376 * g + 0.6299787005 * b;
-  const lc = Math.cbrt(Math.max(l, 0.0));
-  const mc = Math.cbrt(Math.max(m, 0.0));
-  const sc = Math.cbrt(Math.max(s, 0.0));
+  const lc = Math.cbrt(Math.max(l, 0));
+  const mc = Math.cbrt(Math.max(m, 0));
+  const sc = Math.cbrt(Math.max(s, 0));
   out[0] = 0.2104542553 * lc + 0.793617785 * mc - 0.0040720468 * sc;
   out[1] = 1.9779984951 * lc - 2.428592205 * mc + 0.4505937099 * sc;
   out[2] = 0.0259040371 * lc + 0.7827717662 * mc - 0.808675766 * sc;

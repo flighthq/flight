@@ -17,10 +17,10 @@ function assertApproxTight(actual: number, expected: number): void {
 
 describe('linearChannelToSrgb', () => {
   it('maps zero to zero', () => {
-    expect(linearChannelToSrgb(0.0)).toEqual(0.0);
+    expect(linearChannelToSrgb(0)).toEqual(0);
   });
   it('maps one to one', () => {
-    assertApproxTight(linearChannelToSrgb(1.0), 1.0);
+    assertApproxTight(linearChannelToSrgb(1), 1);
   });
   it('is the inverse of the srgb decode for a round trip', () => {
     const linear = 0.5;
@@ -31,8 +31,8 @@ describe('linearChannelToSrgb', () => {
 
 describe('srgbChannelToLinear', () => {
   it('maps zero to zero and one to one', () => {
-    expect(srgbChannelToLinear(0.0)).toEqual(0.0);
-    assertApproxTight(srgbChannelToLinear(1.0), 1.0);
+    expect(srgbChannelToLinear(0)).toEqual(0);
+    assertApproxTight(srgbChannelToLinear(1), 1);
   });
   it('decodes mid srgb below the linear midpoint', () => {
     assertApprox(srgbChannelToLinear(0x80 / 0xff), 0.21586);

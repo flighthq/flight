@@ -29,7 +29,7 @@ export function computeRgbaCssString(color: number): string {
   const red = (packed >> 24) & 0xff;
   const green = (packed >> 16) & 0xff;
   const blue = (packed >> 8) & 0xff;
-  const alpha = (packed & 0xff) / 255.0;
+  const alpha = (packed & 0xff) / 255;
   return `rgba(${red},${green},${blue},${alpha})`;
 }
 
@@ -49,7 +49,7 @@ export function computeRgbHexString(color: number): string {
  * gamma decode (unlike `unpackColorToLinear`, which decodes the RGB channels).
  */
 export function getColorAlpha(color: number): number {
-  return (color & 0xff) / 255.0;
+  return (color & 0xff) / 255;
 }
 
 /**
@@ -67,22 +67,10 @@ export function getColorRgb(color: number): number {
  * Components are clamped to [0, 1] and rounded to 8-bit precision.
  */
 export function packColor(r: number, g: number, b: number, a: number): number {
-  const ri =
-    (Math.sign(Math.min(Math.max(r, 0.0), 1.0) * 255.0) *
-      Math.round(Math.abs(Math.min(Math.max(r, 0.0), 1.0) * 255.0))) >>>
-    0;
-  const gi =
-    (Math.sign(Math.min(Math.max(g, 0.0), 1.0) * 255.0) *
-      Math.round(Math.abs(Math.min(Math.max(g, 0.0), 1.0) * 255.0))) >>>
-    0;
-  const bi =
-    (Math.sign(Math.min(Math.max(b, 0.0), 1.0) * 255.0) *
-      Math.round(Math.abs(Math.min(Math.max(b, 0.0), 1.0) * 255.0))) >>>
-    0;
-  const ai =
-    (Math.sign(Math.min(Math.max(a, 0.0), 1.0) * 255.0) *
-      Math.round(Math.abs(Math.min(Math.max(a, 0.0), 1.0) * 255.0))) >>>
-    0;
+  const ri = ((n: number): number => Math.trunc(n + 0.5 * Math.sign(n)))(Math.min(Math.max(r, 0), 1) * 255) >>> 0;
+  const gi = ((n: number): number => Math.trunc(n + 0.5 * Math.sign(n)))(Math.min(Math.max(g, 0), 1) * 255) >>> 0;
+  const bi = ((n: number): number => Math.trunc(n + 0.5 * Math.sign(n)))(Math.min(Math.max(b, 0), 1) * 255) >>> 0;
+  const ai = ((n: number): number => Math.trunc(n + 0.5 * Math.sign(n)))(Math.min(Math.max(a, 0), 1) * 255) >>> 0;
   return ((ri << 24) | (gi << 16) | (bi << 8) | ai) >>> 0;
 }
 
@@ -92,21 +80,18 @@ export function packColor(r: number, g: number, b: number, a: number): number {
  */
 export function packLinearChannelsToColor(r: number, g: number, b: number, a: number): number {
   const ri =
-    (Math.sign(Math.min(Math.max(linearChannelToSrgb(r), 0.0), 1.0) * 255.0) *
-      Math.round(Math.abs(Math.min(Math.max(linearChannelToSrgb(r), 0.0), 1.0) * 255.0))) >>>
-    0;
+    ((n: number): number => Math.trunc(n + 0.5 * Math.sign(n)))(
+      Math.min(Math.max(linearChannelToSrgb(r), 0), 1) * 255,
+    ) >>> 0;
   const gi =
-    (Math.sign(Math.min(Math.max(linearChannelToSrgb(g), 0.0), 1.0) * 255.0) *
-      Math.round(Math.abs(Math.min(Math.max(linearChannelToSrgb(g), 0.0), 1.0) * 255.0))) >>>
-    0;
+    ((n: number): number => Math.trunc(n + 0.5 * Math.sign(n)))(
+      Math.min(Math.max(linearChannelToSrgb(g), 0), 1) * 255,
+    ) >>> 0;
   const bi =
-    (Math.sign(Math.min(Math.max(linearChannelToSrgb(b), 0.0), 1.0) * 255.0) *
-      Math.round(Math.abs(Math.min(Math.max(linearChannelToSrgb(b), 0.0), 1.0) * 255.0))) >>>
-    0;
-  const ai =
-    (Math.sign(Math.min(Math.max(a, 0.0), 1.0) * 255.0) *
-      Math.round(Math.abs(Math.min(Math.max(a, 0.0), 1.0) * 255.0))) >>>
-    0;
+    ((n: number): number => Math.trunc(n + 0.5 * Math.sign(n)))(
+      Math.min(Math.max(linearChannelToSrgb(b), 0), 1) * 255,
+    ) >>> 0;
+  const ai = ((n: number): number => Math.trunc(n + 0.5 * Math.sign(n)))(Math.min(Math.max(a, 0), 1) * 255) >>> 0;
   return ((ri << 24) | (gi << 16) | (bi << 8) | ai) >>> 0;
 }
 
@@ -135,10 +120,7 @@ export function packOpaqueColor(rgb: number): number {
  * the opacity of a fixed color without unpacking it.
  */
 export function setColorAlpha(color: number, alpha: number): number {
-  const a =
-    (Math.sign(Math.min(Math.max(alpha, 0.0), 1.0) * 255.0) *
-      Math.round(Math.abs(Math.min(Math.max(alpha, 0.0), 1.0) * 255.0))) >>>
-    0;
+  const a = ((n: number): number => Math.trunc(n + 0.5 * Math.sign(n)))(Math.min(Math.max(alpha, 0), 1) * 255) >>> 0;
   return ((color & 0xffffff00) | a) >>> 0;
 }
 
@@ -147,10 +129,10 @@ export function setColorAlpha(color: number, alpha: number): number {
  * writes them to `out`. Does NOT gamma-decode -- use `unpackColorToLinear` for linear space.
  */
 export function unpackColorRgba(out: Float32Array, color: number): void {
-  out[0] = ((color >>> 24) & 0xff) / 255.0;
-  out[1] = ((color >>> 16) & 0xff) / 255.0;
-  out[2] = ((color >>> 8) & 0xff) / 255.0;
-  out[3] = (color & 0xff) / 255.0;
+  out[0] = ((color >>> 24) & 0xff) / 255;
+  out[1] = ((color >>> 16) & 0xff) / 255;
+  out[2] = ((color >>> 8) & 0xff) / 255;
+  out[3] = (color & 0xff) / 255;
 }
 
 /**
@@ -162,8 +144,8 @@ export function unpackColorRgba(out: Float32Array, color: number): void {
  * Backends must not re-decode packed colors; they consume this output.
  */
 export function unpackColorToLinear(out: LinearColorRaw, color: number): void {
-  out.r = srgbChannelToLinear(((color >>> 24) & 0xff) / 255.0);
-  out.g = srgbChannelToLinear(((color >>> 16) & 0xff) / 255.0);
-  out.b = srgbChannelToLinear(((color >>> 8) & 0xff) / 255.0);
-  out.a = (color & 0xff) / 255.0;
+  out.r = srgbChannelToLinear(((color >>> 24) & 0xff) / 255);
+  out.g = srgbChannelToLinear(((color >>> 16) & 0xff) / 255);
+  out.b = srgbChannelToLinear(((color >>> 8) & 0xff) / 255);
+  out.a = (color & 0xff) / 255;
 }

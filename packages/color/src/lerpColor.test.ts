@@ -12,16 +12,16 @@ function assertApprox(actual: number, expected: number): void {
 
 describe('lerpColor', () => {
   it('returns start at t 0', () => {
-    expect(lerpColor(0xff0000ff, 0x0000ffff, 0.0)).toEqual(0xff0000ff);
+    expect(lerpColor(0xff0000ff, 0x0000ffff, 0)).toEqual(0xff0000ff);
   });
   it('returns end at t 1', () => {
-    expect(lerpColor(0xff0000ff, 0x0000ffff, 1.0)).toEqual(0x0000ffff);
+    expect(lerpColor(0xff0000ff, 0x0000ffff, 1)).toEqual(0x0000ffff);
   });
   it('clamps t below 0 to 0', () => {
-    expect(lerpColor(0xff0000ff, 0x0000ffff, -1.0)).toEqual(0xff0000ff);
+    expect(lerpColor(0xff0000ff, 0x0000ffff, -1)).toEqual(0xff0000ff);
   });
   it('clamps t above 1 to 1', () => {
-    expect(lerpColor(0xff0000ff, 0x0000ffff, 2.0)).toEqual(0x0000ffff);
+    expect(lerpColor(0xff0000ff, 0x0000ffff, 2)).toEqual(0x0000ffff);
   });
   it('midpoint between black and white is approximately mid gray', () => {
     const mid = lerpColor(0x000000ff, 0xffffffff, 0.5);
@@ -34,12 +34,12 @@ describe('lerpLinearColor', () => {
   it('returns start at t 0', () => {
     let out = allocateLinearColor();
     let start = allocateLinearColor();
-    start.r = 1.0;
-    start.a = 1.0;
+    start.r = 1;
+    start.a = 1;
     let end = allocateLinearColor();
-    end.b = 1.0;
-    end.a = 1.0;
-    lerpLinearColor(out, start, end, 0.0);
+    end.b = 1;
+    end.a = 1;
+    lerpLinearColor(out, start, end, 0);
     expect(out.r).toEqual(start.r);
     expect(out.g).toEqual(start.g);
     expect(out.b).toEqual(start.b);
@@ -48,12 +48,12 @@ describe('lerpLinearColor', () => {
   it('returns end at t 1', () => {
     let out = allocateLinearColor();
     let start = allocateLinearColor();
-    start.r = 1.0;
-    start.a = 1.0;
+    start.r = 1;
+    start.a = 1;
     let end = allocateLinearColor();
-    end.b = 1.0;
-    end.a = 1.0;
-    lerpLinearColor(out, start, end, 1.0);
+    end.b = 1;
+    end.a = 1;
+    lerpLinearColor(out, start, end, 1);
     expect(out.r).toEqual(end.r);
     expect(out.g).toEqual(end.g);
     expect(out.b).toEqual(end.b);
@@ -61,16 +61,16 @@ describe('lerpLinearColor', () => {
   });
   it('is alias safe when out is the same object as start', () => {
     let out = allocateLinearColor();
-    out.r = 1.0;
-    out.a = 1.0;
+    out.r = 1;
+    out.a = 1;
     let outCopy = allocateLinearColor();
     outCopy.r = out.r;
     outCopy.g = out.g;
     outCopy.b = out.b;
     outCopy.a = out.a;
     let end = allocateLinearColor();
-    end.b = 1.0;
-    end.a = 1.0;
+    end.b = 1;
+    end.a = 1;
     lerpLinearColor(out, outCopy, end, 0.5);
     assertApprox(out.r, 0.5);
     assertApprox(out.b, 0.5);

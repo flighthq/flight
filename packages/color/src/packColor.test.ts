@@ -31,10 +31,10 @@ function assertApproxTight(actual: number, expected: number): void {
 describe('allocateLinearColor', () => {
   it('allocates a zeroed four component color', () => {
     const c = allocateLinearColor();
-    expect(c.r).toEqual(0.0);
-    expect(c.g).toEqual(0.0);
-    expect(c.b).toEqual(0.0);
-    expect(c.a).toEqual(0.0);
+    expect(c.r).toEqual(0);
+    expect(c.g).toEqual(0);
+    expect(c.b).toEqual(0);
+    expect(c.a).toEqual(0);
   });
 });
 
@@ -60,8 +60,8 @@ describe('computeRgbHexString', () => {
 describe('getColorAlpha', () => {
   it('returns the alpha byte as a float in zero to one', () => {
     assertApprox(getColorAlpha(0x11223344), 0x44 / 0xff);
-    expect(getColorAlpha(0xffffffff)).toEqual(1.0);
-    expect(getColorAlpha(0xabcdef00)).toEqual(0.0);
+    expect(getColorAlpha(0xffffffff)).toEqual(1);
+    expect(getColorAlpha(0xabcdef00)).toEqual(0);
   });
 });
 
@@ -77,13 +77,13 @@ describe('getColorRgb', () => {
 
 describe('packColor', () => {
   it('packs white components to 0xffffffff', () => {
-    expect(packColor(1.0, 1.0, 1.0, 1.0)).toEqual(0xffffffff);
+    expect(packColor(1, 1, 1, 1)).toEqual(0xffffffff);
   });
   it('packs black components to 0x000000ff', () => {
-    expect(packColor(0.0, 0.0, 0.0, 1.0)).toEqual(0x000000ff);
+    expect(packColor(0, 0, 0, 1)).toEqual(0x000000ff);
   });
   it('clamps out of range values', () => {
-    expect(packColor(2.0, -1.0, 0.5, 1.0)).toEqual(packColor(1.0, 0.0, 0.5, 1.0));
+    expect(packColor(2, -1, 0.5, 1)).toEqual(packColor(1, 0, 0.5, 1));
   });
 });
 
@@ -151,11 +151,11 @@ describe('packOpaqueColor', () => {
 
 describe('setColorAlpha', () => {
   it('replaces the alpha byte from a float leaving rgb intact', () => {
-    expect(setColorAlpha(0xff8800ff, 0.0)).toEqual(0xff880000);
-    expect(setColorAlpha(0xff880000, 1.0)).toEqual(0xff8800ff);
+    expect(setColorAlpha(0xff8800ff, 0)).toEqual(0xff880000);
+    expect(setColorAlpha(0xff880000, 1)).toEqual(0xff8800ff);
   });
   it('clamps and rounds to 8 bits', () => {
-    expect(setColorAlpha(0x112233ff, 2.0)).toEqual(0x112233ff);
+    expect(setColorAlpha(0x112233ff, 2)).toEqual(0x112233ff);
     const alpha = getColorAlpha(setColorAlpha(0x112233ff, 0.5));
     const diff = Math.abs(alpha - 0.5);
     expect(diff < 0.005, `expected alpha near 0.5, got ${alpha} (diff: ${diff})`).toBe(true);
@@ -164,15 +164,15 @@ describe('setColorAlpha', () => {
 
 describe('unpackColorRgba', () => {
   it('extracts white as all ones', () => {
-    let out = new Float32Array(4).fill(0.0);
+    let out = new Float32Array(4).fill(0);
     unpackColorRgba(out, 0xffffffff);
-    assertApproxTight(out[0], 1.0);
-    assertApproxTight(out[1], 1.0);
-    assertApproxTight(out[2], 1.0);
-    assertApproxTight(out[3], 1.0);
+    assertApproxTight(out[0], 1);
+    assertApproxTight(out[1], 1);
+    assertApproxTight(out[2], 1);
+    assertApproxTight(out[3], 1);
   });
   it('does not gamma decode mid srgb stays above the linear midpoint', () => {
-    let out = new Float32Array(4).fill(0.0);
+    let out = new Float32Array(4).fill(0);
     unpackColorRgba(out, 0x808080ff);
     assertApprox(out[0], 0x80 / 0xff);
   });
@@ -182,15 +182,15 @@ describe('unpackColorToLinear', () => {
   it('decodes white and black exactly at the endpoints', () => {
     let out = allocateLinearColor();
     unpackColorToLinear(out, 0xffffffff);
-    expect(out.r).toEqual(1.0);
-    expect(out.g).toEqual(1.0);
-    expect(out.b).toEqual(1.0);
-    expect(out.a).toEqual(1.0);
+    expect(out.r).toEqual(1);
+    expect(out.g).toEqual(1);
+    expect(out.b).toEqual(1);
+    expect(out.a).toEqual(1);
     unpackColorToLinear(out, 0x000000ff);
-    expect(out.r).toEqual(0.0);
-    expect(out.g).toEqual(0.0);
-    expect(out.b).toEqual(0.0);
-    expect(out.a).toEqual(1.0);
+    expect(out.r).toEqual(0);
+    expect(out.g).toEqual(0);
+    expect(out.b).toEqual(0);
+    expect(out.a).toEqual(1);
   });
   it('passes alpha through linearly without gamma decode', () => {
     let out = allocateLinearColor();

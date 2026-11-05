@@ -17,51 +17,51 @@ function assertApproxTight(actual: number, expected: number): void {
 
 describe('clampLinearRgb', () => {
   it('explicitly clamps out of gamut channels to the displayable linear srgb range', () => {
-    let rgb = new Float32Array(3).fill(0.0);
+    let rgb = new Float32Array(3).fill(0);
     clampLinearRgb(rgb, 1.25, -0.2, 0.5);
-    expect(rgb[0]).toEqual(1.0);
-    expect(rgb[1]).toEqual(0.0);
+    expect(rgb[0]).toEqual(1);
+    expect(rgb[1]).toEqual(0);
     expect(rgb[2]).toEqual(0.5);
   });
 });
 
 describe('linearRgbToOklab', () => {
   it('maps linear white to l near 1 a near 0 b near 0', () => {
-    let out = new Float32Array(3).fill(0.0);
-    linearRgbToOklab(out, 1.0, 1.0, 1.0);
-    assertApprox(out[0], 1.0);
-    assertApproxTight(out[1], 0.0);
-    assertApproxTight(out[2], 0.0);
+    let out = new Float32Array(3).fill(0);
+    linearRgbToOklab(out, 1, 1, 1);
+    assertApprox(out[0], 1);
+    assertApproxTight(out[1], 0);
+    assertApproxTight(out[2], 0);
   });
   it('maps black to the origin', () => {
-    let out = new Float32Array(3).fill(0.0);
-    linearRgbToOklab(out, 0.0, 0.0, 0.0);
-    expect(out[0]).toEqual(0.0);
-    expect(out[1]).toEqual(0.0);
-    expect(out[2]).toEqual(0.0);
+    let out = new Float32Array(3).fill(0);
+    linearRgbToOklab(out, 0, 0, 0);
+    expect(out[0]).toEqual(0);
+    expect(out[1]).toEqual(0);
+    expect(out[2]).toEqual(0);
   });
 });
 
 describe('oklabToLinearRgb', () => {
   it('round trips linear rgb through oklab for a saturated color', () => {
-    let lab = new Float32Array(3).fill(0.0);
+    let lab = new Float32Array(3).fill(0);
     linearRgbToOklab(lab, 0.5, 0.1, 0.8);
-    let rgb = new Float32Array(3).fill(0.0);
+    let rgb = new Float32Array(3).fill(0);
     oklabToLinearRgb(rgb, lab[0], lab[1], lab[2]);
     assertApproxTight(rgb[0], 0.5);
     assertApproxTight(rgb[1], 0.1);
     assertApproxTight(rgb[2], 0.8);
   });
   it('preserves negative and greater than one channels for out of gamut oklab', () => {
-    let rgb = new Float32Array(3).fill(0.0);
-    oklabToLinearRgb(rgb, 0.5, 1.0, 0.0);
-    expect(rgb.some((c) => c < 0.0)).toBe(true);
-    expect(rgb.some((c) => c > 1.0)).toBe(true);
+    let rgb = new Float32Array(3).fill(0);
+    oklabToLinearRgb(rgb, 0.5, 1, 0);
+    expect(rgb.some((c) => c < 0)).toBe(true);
+    expect(rgb.some((c) => c > 1)).toBe(true);
   });
   it('round trips out of gamut linear rgb without silently clamping channels', () => {
-    let lab = new Float32Array(3).fill(0.0);
+    let lab = new Float32Array(3).fill(0);
     linearRgbToOklab(lab, 1.1, -0.05, 0.2);
-    let rgb = new Float32Array(3).fill(0.0);
+    let rgb = new Float32Array(3).fill(0);
     oklabToLinearRgb(rgb, lab[0], lab[1], lab[2]);
     assertApproxTight(rgb[0], 1.1);
     assertApproxTight(rgb[1], -0.05);

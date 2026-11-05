@@ -11,31 +11,29 @@
  * 6500 K = D65 white, 10000 K = overcast sky.
  */
 export function colorFromKelvin(kelvin: number): number {
-  const temp = Math.min(Math.max(kelvin, 1000.0), 40000.0) / 100.0;
+  const temp = Math.min(Math.max(kelvin, 1000), 40000) / 100;
   let r: number;
   let g: number;
   let b: number;
-  if (temp <= 66.0) {
-    r = 255.0;
+  if (temp <= 66) {
+    r = 255;
   } else {
-    r = 329.698727446 * Math.pow(temp - 60.0, -0.1332047592);
+    r = 329.698727446 * Math.pow(temp - 60, -0.1332047592);
   }
-  if (temp <= 66.0) {
+  if (temp <= 66) {
     g = 99.4708025861 * Math.log(temp) - 161.1195681661;
   } else {
-    g = 288.1221695283 * Math.pow(temp - 60.0, -0.0755148492);
+    g = 288.1221695283 * Math.pow(temp - 60, -0.0755148492);
   }
-  if (temp >= 66.0) {
-    b = 255.0;
+  if (temp >= 66) {
+    b = 255;
+  } else if (temp <= 19) {
+    b = 0;
   } else {
-    if (temp <= 19.0) {
-      b = 0.0;
-    } else {
-      b = 138.5177312231 * Math.log(temp - 10.0) - 305.0447927307;
-    }
+    b = 138.5177312231 * Math.log(temp - 10) - 305.0447927307;
   }
-  const ri = Math.min(Math.max(Math.sign(r) * Math.round(Math.abs(r)), 0.0), 255.0) >>> 0;
-  const gi = Math.min(Math.max(Math.sign(g) * Math.round(Math.abs(g)), 0.0), 255.0) >>> 0;
-  const bi = Math.min(Math.max(Math.sign(b) * Math.round(Math.abs(b)), 0.0), 255.0) >>> 0;
+  const ri = Math.min(Math.max(Math.trunc(r + 0.5 * Math.sign(r)), 0), 255) >>> 0;
+  const gi = Math.min(Math.max(Math.trunc(g + 0.5 * Math.sign(g)), 0), 255) >>> 0;
+  const bi = Math.min(Math.max(Math.trunc(b + 0.5 * Math.sign(b)), 0), 255) >>> 0;
   return ((ri << 24) | (gi << 16) | (bi << 8) | 0xff) >>> 0;
 }

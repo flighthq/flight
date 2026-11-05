@@ -39,18 +39,18 @@ import {
 
 describe('contractReExports', () => {
   it('exposes all color from kelvin functions', () => {
-    const _color = colorFromKelvin(6500.0);
+    const _color = colorFromKelvin(6500);
   });
   it('exposes all hsl functions and types', () => {
     let hsl = allocateHslColor();
     rgbToHsl(hsl, 0xff0000ff);
-    let out = new Float32Array(4).fill(0.0);
+    let out = new Float32Array(4).fill(0);
     hslToRgb(out, hsl.h, hsl.s, hsl.l);
   });
   it('exposes all hsv functions and types', () => {
     let hsv = allocateHsvColor();
     rgbToHsv(hsv, 0x00ff00ff);
-    let out = new Float32Array(4).fill(0.0);
+    let out = new Float32Array(4).fill(0);
     hsvToRgb(out, hsv.h, hsv.s, hsv.v);
   });
   it('exposes all lerp functions', () => {
@@ -63,15 +63,15 @@ describe('contractReExports', () => {
   it('exposes all luminance functions', () => {
     const _lum = getColorLuminance(0xffffffff);
     const _ratio = getColorContrastRatio(0xffffffff, 0x000000ff);
-    let w709 = new Float32Array(3).fill(0.0);
+    let w709 = new Float32Array(3).fill(0);
     getRec709LuminanceWeights(w709);
-    let w2020 = new Float32Array(3).fill(0.0);
+    let w2020 = new Float32Array(3).fill(0);
     getRec2020LuminanceWeights(w2020);
   });
   it('exposes all oklab functions', () => {
-    let lab = new Float32Array(3).fill(0.0);
-    linearRgbToOklab(lab, 1.0, 0.0, 0.0);
-    let rgb = new Float32Array(3).fill(0.0);
+    let lab = new Float32Array(3).fill(0);
+    linearRgbToOklab(lab, 1, 0, 0);
+    let rgb = new Float32Array(3).fill(0);
     oklabToLinearRgb(rgb, lab[0], lab[1], lab[2]);
     const [r, g, b] = [rgb[0], rgb[1], rgb[2]] as const;
     clampLinearRgb(rgb, r, g, b);
@@ -80,14 +80,14 @@ describe('contractReExports', () => {
     let linear = allocateLinearColor();
     unpackColorToLinear(linear, 0xff8800ff);
     const _packed = packLinearToColor(linear);
-    const _packed2 = packColor(1.0, 0.0, 0.0, 1.0);
+    const _packed2 = packColor(1, 0, 0, 1);
     const _opaque = packOpaqueColor(0xff8800);
     const _alpha = getColorAlpha(0xff8800ff);
     const _rgb = getColorRgb(0xff8800ff);
     const _withAlpha = setColorAlpha(0xff8800ff, 0.5);
     const _hex = computeRgbHexString(0xff8800);
     const _css = computeRgbaCssString(0xff8800ff);
-    let rgba = new Float32Array(4).fill(0.0);
+    let rgba = new Float32Array(4).fill(0);
     unpackColorRgba(rgba, 0xff8800ff);
   });
   it('exposes all premultiply functions', () => {

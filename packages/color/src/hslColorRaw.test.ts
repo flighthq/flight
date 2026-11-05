@@ -18,30 +18,30 @@ function assertApproxTight(actual: number, expected: number): void {
 describe('allocateHslColor', () => {
   it('allocates a zeroed three component hsl color', () => {
     const c = allocateHslColor();
-    expect(c.h).toEqual(0.0);
-    expect(c.s).toEqual(0.0);
-    expect(c.l).toEqual(0.0);
+    expect(c.h).toEqual(0);
+    expect(c.s).toEqual(0);
+    expect(c.l).toEqual(0);
   });
 });
 
 describe('hslToRgb', () => {
   it('produces achromatic rgb for saturation zero', () => {
-    let out = new Float32Array([0.0, 0.0, 0.0, 1.0]);
-    hslToRgb(out, 0.0, 0.0, 0.5);
+    let out = new Float32Array([0, 0, 0, 1]);
+    hslToRgb(out, 0, 0, 0.5);
     assertApprox(out[0], 0.5);
     assertApprox(out[1], 0.5);
     assertApprox(out[2], 0.5);
   });
   it('round trips with rgb to hsl for a primary color', () => {
-    let out = new Float32Array([0.0, 0.0, 0.0, 1.0]);
-    hslToRgb(out, 0.0, 1.0, 0.5);
-    assertApproxTight(out[0], 1.0);
-    assertApproxTight(out[1], 0.0);
-    assertApproxTight(out[2], 0.0);
+    let out = new Float32Array([0, 0, 0, 1]);
+    hslToRgb(out, 0, 1, 0.5);
+    assertApproxTight(out[0], 1);
+    assertApproxTight(out[1], 0);
+    assertApproxTight(out[2], 0);
   });
   it('does not modify out 3 alpha', () => {
-    let out = new Float32Array([0.0, 0.0, 0.0, 0.75]);
-    hslToRgb(out, 120.0, 1.0, 0.5);
+    let out = new Float32Array([0, 0, 0, 0.75]);
+    hslToRgb(out, 120, 1, 0.5);
     expect(out[3]).toEqual(0.75);
   });
 });
@@ -50,54 +50,54 @@ describe('rgbToHsl', () => {
   it('converts pure red to hue 0 s 1 l half', () => {
     let out = allocateHslColor();
     rgbToHsl(out, 0xff0000ff);
-    assertApprox(out.h, 0.0);
-    assertApproxTight(out.s, 1.0);
+    assertApprox(out.h, 0);
+    assertApproxTight(out.s, 1);
     assertApproxTight(out.l, 0.5);
   });
   it('converts white to hue 0 s 0 l 1', () => {
     let out = allocateHslColor();
     rgbToHsl(out, 0xffffffff);
-    expect(out.h).toEqual(0.0);
-    expect(out.s).toEqual(0.0);
-    assertApproxTight(out.l, 1.0);
+    expect(out.h).toEqual(0);
+    expect(out.s).toEqual(0);
+    assertApproxTight(out.l, 1);
   });
   it('converts black to hue 0 s 0 l 0', () => {
     let out = allocateHslColor();
     rgbToHsl(out, 0x000000ff);
-    expect(out.h).toEqual(0.0);
-    expect(out.s).toEqual(0.0);
-    assertApproxTight(out.l, 0.0);
+    expect(out.h).toEqual(0);
+    expect(out.s).toEqual(0);
+    assertApproxTight(out.l, 0);
   });
   it('converts a green dominant color', () => {
     let out = allocateHslColor();
     rgbToHsl(out, 0x00ff00ff);
-    assertApprox(out.h, 120.0);
-    assertApproxTight(out.s, 1.0);
+    assertApprox(out.h, 120);
+    assertApproxTight(out.s, 1);
     assertApproxTight(out.l, 0.5);
   });
   it('wraps a red dominant hue when blue exceeds green', () => {
     let out = allocateHslColor();
     rgbToHsl(out, 0xff00ffff);
-    assertApprox(out.h, 300.0);
-    assertApproxTight(out.s, 1.0);
+    assertApprox(out.h, 300);
+    assertApproxTight(out.s, 1);
     assertApproxTight(out.l, 0.5);
   });
   it('uses the high lightness saturation formula', () => {
     let out = allocateHslColor();
     rgbToHsl(out, 0xff8080ff);
-    assertApprox(out.h, 0.0);
-    assertApproxTight(out.s, 1.0);
+    assertApprox(out.h, 0);
+    assertApproxTight(out.s, 1);
     assertApproxTight(out.l, 0.75098);
   });
   it('round trips with hsl to rgb within 1 lsb', () => {
     let hsl = allocateHslColor();
     rgbToHsl(hsl, 0x3c8ab5ff);
-    let rgb = new Float32Array([0.0, 0.0, 0.0, 1.0]);
+    let rgb = new Float32Array([0, 0, 0, 1]);
     hslToRgb(rgb, hsl.h, hsl.s, hsl.l);
     const repacked =
-      (((Math.sign(rgb[0] * 255.0) * Math.round(Math.abs(rgb[0] * 255.0))) >>> 0) << 24) |
-      (((Math.sign(rgb[1] * 255.0) * Math.round(Math.abs(rgb[1] * 255.0))) >>> 0) << 16) |
-      (((Math.sign(rgb[2] * 255.0) * Math.round(Math.abs(rgb[2] * 255.0))) >>> 0) << 8) |
+      ((((n: number): number => Math.trunc(n + 0.5 * Math.sign(n)))(rgb[0] * 255) >>> 0) << 24) |
+      ((((n: number): number => Math.trunc(n + 0.5 * Math.sign(n)))(rgb[1] * 255) >>> 0) << 16) |
+      ((((n: number): number => Math.trunc(n + 0.5 * Math.sign(n)))(rgb[2] * 255) >>> 0) << 8) |
       0xff;
     const orig: number = 0x3c8ab5ff;
     const origR = (orig >>> 24) & 0xff;

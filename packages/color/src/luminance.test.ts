@@ -22,10 +22,10 @@ function assertApproxTight(actual: number, expected: number): void {
 
 describe('getColorContrastRatio', () => {
   it('returns 21 for black on white', () => {
-    assertApprox(getColorContrastRatio(0xffffffff, 0x000000ff), 21.0);
+    assertApprox(getColorContrastRatio(0xffffffff, 0x000000ff), 21);
   });
   it('returns 1 for identical colors', () => {
-    assertApprox(getColorContrastRatio(0x808080ff, 0x808080ff), 1.0);
+    assertApprox(getColorContrastRatio(0x808080ff, 0x808080ff), 1);
   });
   it('is symmetric order of arguments does not matter', () => {
     const ratio1 = getColorContrastRatio(0xffffffff, 0x808080ff);
@@ -36,10 +36,10 @@ describe('getColorContrastRatio', () => {
 
 describe('getColorLuminance', () => {
   it('returns 1 for white', () => {
-    assertApproxTight(getColorLuminance(0xffffffff), 1.0);
+    assertApproxTight(getColorLuminance(0xffffffff), 1);
   });
   it('returns 0 for black', () => {
-    assertApproxTight(getColorLuminance(0x000000ff), 0.0);
+    assertApproxTight(getColorLuminance(0x000000ff), 0);
   });
   it('ignores the alpha channel', () => {
     expect(getColorLuminance(0xffffffff)).toEqual(getColorLuminance(0xffffff00));
@@ -51,22 +51,22 @@ describe('getColorLuminance', () => {
 
 describe('getRec2020LuminanceWeights', () => {
   it('writes the itu r bt2020 weights that sum to 1', () => {
-    let out = new Float32Array(3).fill(0.0);
+    let out = new Float32Array(3).fill(0);
     getRec2020LuminanceWeights(out);
     assertApproxTight(out[0], 0.2627);
     assertApproxTight(out[1], 0.678);
     assertApproxTight(out[2], 0.0593);
-    assertApproxTight(out[0] + out[1] + out[2], 1.0);
+    assertApproxTight(out[0] + out[1] + out[2], 1);
   });
 });
 
 describe('getRec709LuminanceWeights', () => {
   it('writes the itu r bt709 weights that sum to 1', () => {
-    let out = new Float32Array(3).fill(0.0);
+    let out = new Float32Array(3).fill(0);
     getRec709LuminanceWeights(out);
     assertApproxTight(out[0], 0.2126);
     assertApproxTight(out[1], 0.7152);
     assertApproxTight(out[2], 0.0722);
-    assertApproxTight(out[0] + out[1] + out[2], 1.0);
+    assertApproxTight(out[0] + out[1] + out[2], 1);
   });
 });
