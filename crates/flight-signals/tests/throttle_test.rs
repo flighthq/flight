@@ -246,6 +246,33 @@ mod connect_signal_throttled {
         assert!(fired.lock().unwrap().contains(&2));
     }
 
+    // The cooldown left is the interval minus the time since the last firing,
+    // `interval - (now - last_fired_at)`, so a call shortly after a firing at a non-zero time waits out
+    // the rest of the interval instead of firing at once.
+    #[test]
+    fn defers_a_call_within_the_interval_after_a_firing_at_a_later_time() {
+        let source: Signal<i32> = create_signal();
+        let state = timer_state();
+        let fired: Arc<Mutex<Vec<i32>>> = Arc::new(Mutex::new(Vec::new()));
+        let out = fired.clone();
+        connect_signal_throttled(
+            &source,
+            100.0,
+            Arc::new(move |value: &i32| out.lock().unwrap().push(*value)),
+            None,
+            &state,
+        );
+        advance_signal_timers(&state, 1000.0);
+        emit_signal(&source, &1);
+        advance_signal_timers(&state, 1030.0);
+        emit_signal(&source, &2);
+        assert_eq!(*fired.lock().unwrap(), vec![1]);
+        advance_signal_timers(&state, 1099.0);
+        assert_eq!(*fired.lock().unwrap(), vec![1]);
+        advance_signal_timers(&state, 1100.0);
+        assert_eq!(*fired.lock().unwrap(), vec![1, 2]);
+    }
+
     #[test]
     fn preserves_the_original_payload() {
         let source: Signal<PairEvent> = create_signal();

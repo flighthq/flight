@@ -175,6 +175,22 @@ describe('connectSignalThrottled', () => {
     expect(fired.value.includes(1)).toBe(true);
     expect(fired.value.includes(2)).toBe(true);
   });
+  it('defers a call within the interval after a firing at a later time', () => {
+    const source: SignalRaw<number> = createSignal();
+    const state = timerState();
+    const fired: { value: number[] } = { value: [] as never[] };
+    const out = fired;
+    connectSignalThrottled(source, 100.0, (value: number) => out.value.push(value), undefined, state);
+    advanceSignalTimers(state, 1000.0);
+    emitSignal(source, 1);
+    advanceSignalTimers(state, 1030.0);
+    emitSignal(source, 2);
+    expect(fired.value).toEqual([1]);
+    advanceSignalTimers(state, 1099.0);
+    expect(fired.value).toEqual([1]);
+    advanceSignalTimers(state, 1100.0);
+    expect(fired.value).toEqual([1, 2]);
+  });
   it('preserves the original payload', () => {
     const source: SignalRaw<PairEvent> = createSignal();
     const state = timerState();
