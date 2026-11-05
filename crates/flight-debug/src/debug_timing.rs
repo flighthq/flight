@@ -77,16 +77,22 @@ pub fn measure_debug_span<T>(
     log_state: &LogStateRef,
     clock: &Arc<dyn Fn() -> f64 + Send + Sync>,
     name: &str,
-    run: impl FnOnce() -> T,
+    r#fn: impl FnOnce() -> T,
     channel: Option<String>,
 ) -> T {
     let timer = begin_debug_span(state, clock(), name, channel);
-    let result = catch_unwind(AssertUnwindSafe(run));
+    let mut value: Option<T> = None;
+    let completed = catch_unwind(AssertUnwindSafe(|| {
+        value = Some(r#fn());
+    }));
+    if let Err(error) = completed {
+        if timer.is_some() {
+            end_debug_span(log_state, clock(), timer.as_ref());
+        }
+        resume_unwind(error);
+    }
     if timer.is_some() {
         end_debug_span(log_state, clock(), timer.as_ref());
     }
-    return match result {
-        Ok(value) => value,
-        Err(error) => resume_unwind(error),
-    };
+    return value.unwrap();
 }

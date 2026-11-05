@@ -26,9 +26,15 @@ fn field(data: &LogData, key: &str) -> LogValue {
 }
 
 // A clock that advances 2.5 ms per read, so a measured span's elapsed time is exact.
-fn stepping_clock() -> Arc<dyn Fn() -> f64 + Send + Sync> {
+fn counted_clock() -> (Arc<dyn Fn() -> f64 + Send + Sync>, Arc<AtomicU32>) {
     let reads = Arc::new(AtomicU32::new(0));
-    return Arc::new(move || f64::from(reads.fetch_add(1, Ordering::SeqCst)) * 2.5);
+    let clock_reads = reads.clone();
+    let clock = Arc::new(move || f64::from(clock_reads.fetch_add(1, Ordering::SeqCst)) * 2.5);
+    return (clock, reads);
+}
+
+fn stepping_clock() -> Arc<dyn Fn() -> f64 + Send + Sync> {
+    return counted_clock().0;
 }
 
 mod begin_debug_span {
@@ -123,17 +129,24 @@ mod measure_debug_span {
     #[test]
     fn returns_the_wrapped_function_result() {
         let (state, log_state) = states();
+        let (clock, reads) = counted_clock();
+        let mut calls = 0;
         assert_eq!(
             measure_debug_span(
                 &state,
                 &log_state,
-                &stepping_clock(),
+                &clock,
                 "compute",
-                || 42,
+                || {
+                    calls += 1;
+                    42
+                },
                 None
             ),
             42
         );
+        assert_eq!(calls, 1);
+        assert_eq!(reads.load(Ordering::SeqCst), 1);
     }
 
     #[test]
@@ -159,8 +172,22 @@ mod measure_debug_span {
         let (state, log_state) = states();
         let memory = create_memory_log_sink(16);
         enable_debug(&state, &log_state, Some(&options(&memory.sink)));
-        measure_debug_span(&state, &log_state, &stepping_clock(), "compute", || 1, None);
+        let (clock, reads) = counted_clock();
+        let mut calls = 0;
+        measure_debug_span(
+            &state,
+            &log_state,
+            &clock,
+            "compute",
+            || {
+                calls += 1;
+                1
+            },
+            None,
+        );
         let data = entry_data(&memory);
+        assert_eq!(calls, 1);
+        assert_eq!(reads.load(Ordering::SeqCst), 2);
         assert_eq!(data.len(), 1);
         assert!(matches!(field(&data[0], "label"), LogValue::Str(label) if label == "compute"));
         assert!(matches!(field(&data[0], "elapsedMs"), LogValue::Number(ms) if ms == 2.5));
@@ -171,18 +198,34 @@ mod measure_debug_span {
         let (state, log_state) = states();
         let memory = create_memory_log_sink(16);
         enable_debug(&state, &log_state, Some(&options(&memory.sink)));
+        let (clock, reads) = counted_clock();
+        let mut calls = 0;
         let thrown = catch_unwind(AssertUnwindSafe(|| {
             measure_debug_span(
                 &state,
                 &log_state,
-                &stepping_clock(),
+                &clock,
                 "boom",
-                || -> i32 { panic!("nope") },
+                || -> i32 {
+                    calls += 1;
+                    panic!("nope")
+                },
                 None,
             )
         }))
         .unwrap_err();
         assert_eq!(thrown.downcast_ref::<&str>(), Some(&"nope"));
+        assert_eq!(calls, 1);
+        assert_eq!(reads.load(Ordering::SeqCst), 2);
         assert_eq!(entry_data(&memory).len(), 1);
+        assert!(is_debug_enabled(&state));
+
+        assert_eq!(
+            measure_debug_span(&state, &log_state, &clock, "after", || 7, None),
+            7
+        );
+        assert_eq!(reads.load(Ordering::SeqCst), 4);
+        assert_eq!(entry_data(&memory).len(), 2);
+        assert!(is_debug_enabled(&state));
     }
 }

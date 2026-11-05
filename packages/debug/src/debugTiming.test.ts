@@ -107,7 +107,15 @@ describe('markDebugFrame', () => {
 
 describe('measureDebugSpan', () => {
   it('returns the wrapped function result', () => {
-    expect(measureDebugSpan(debugState, logState, clock, 'compute', () => 42)).toBe(42);
+    let calls = 0;
+    expect(
+      measureDebugSpan(debugState, logState, clock, 'compute', () => {
+        calls++;
+        return 42;
+      }),
+    ).toBe(42);
+    expect(calls).toBe(1);
+    expect(clockMs).toBe(1);
   });
 
   it('runs the function but emits nothing when debug is disabled', () => {
@@ -124,21 +132,50 @@ describe('measureDebugSpan', () => {
   it('emits one timing entry named for the span when debug is enabled', () => {
     const memory = createMemoryLogSink(16);
     enableDebug(debugState, logState, { sink: memory.sink });
-    measureDebugSpan(debugState, logState, clock, 'compute', () => 1);
+    let calls = 0;
+    measureDebugSpan(debugState, logState, clock, 'compute', () => {
+      calls++;
+      return 1;
+    });
     const data = entryData(memory);
+    expect(calls).toBe(1);
+    expect(clockMs).toBe(2);
     expect(data).toHaveLength(1);
     expect(data[0].label).toBe('compute');
+  });
+
+  it('preserves the default null channel and an explicit channel', () => {
+    const memory = createMemoryLogSink(16);
+    enableDebug(debugState, logState, { sink: memory.sink });
+    measureDebugSpan(debugState, logState, clock, 'default-channel', () => undefined);
+    measureDebugSpan(debugState, logState, clock, 'named-channel', () => undefined, 'profile');
+    expect(readLogEntries(memory).map((entry) => entry.channel)).toEqual([null, 'profile']);
   });
 
   it('closes the span even when the function throws', () => {
     const memory = createMemoryLogSink(16);
     enableDebug(debugState, logState, { sink: memory.sink });
-    expect(() =>
+    const failure = new Error('nope');
+    let calls = 0;
+    let thrown: unknown;
+    try {
       measureDebugSpan(debugState, logState, clock, 'boom', () => {
-        throw new Error('nope');
-      }),
-    ).toThrow('nope');
+        calls++;
+        throw failure;
+      });
+    } catch (error) {
+      thrown = error;
+    }
+    expect(thrown).toBe(failure);
+    expect(calls).toBe(1);
+    expect(clockMs).toBe(2);
     expect(entryData(memory)).toHaveLength(1);
+    expect(isDebugEnabled(debugState)).toBe(true);
+
+    expect(measureDebugSpan(debugState, logState, clock, 'after', () => 7)).toBe(7);
+    expect(clockMs).toBe(4);
+    expect(entryData(memory)).toHaveLength(2);
+    expect(isDebugEnabled(debugState)).toBe(true);
   });
 });
 
