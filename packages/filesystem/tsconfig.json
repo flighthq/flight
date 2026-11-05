@@ -8,6 +8,10 @@
     "declarationMap": true,
     "sourceMap": true
   },
-  "references": [{ "path": "../dialog" }, { "path": "../types" }],
+  "references": [
+    {
+      "path": "../dialog"
+    }
+  ],
   "include": ["src"]
 }

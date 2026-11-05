@@ -1,6 +1,7 @@
 import { getFileDialogHandleOperations } from '@flighthq/dialog/contract';
+import type { FileDialogHandle } from '@flighthq/dialog/contract';
+
 import type {
-  FileDialogHandle,
   FileEntry,
   FilePermissions,
   FileStat,
@@ -9,7 +10,7 @@ import type {
   FileWalkOptions,
   FileWatchEvent,
   HostFileSystemCapability,
-} from '@flighthq/types/contract';
+} from './types.ts';
 
 export function appendTextFile(
   hostFileSystem: Readonly<HostFileSystemCapability>,

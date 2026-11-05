@@ -43,6 +43,7 @@
     "@flighthq/compression": "*",
     "@flighthq/dialog": "*",
     "@flighthq/entity": "*",
+    "@flighthq/filesystem": "*",
     "@flighthq/flow": "*",
     "@flighthq/font": "*",
     "@flighthq/geolocation": "*",

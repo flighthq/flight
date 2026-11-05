@@ -59,6 +59,9 @@
       "path": "../entity"
     },
     {
+      "path": "../filesystem"
+    },
+    {
       "path": "../flow/tsconfig.contract.json"
     },
     {
