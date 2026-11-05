@@ -7,8 +7,7 @@ import type { ResourceResolutionState } from './contract.ts';
 
 function getStateOrdinal(state: ResourceResolutionState): number {
   return (() => {
-    const matchValue = state;
-    switch (matchValue) {
+    switch (state) {
       case 'Failed':
         return 0;
       case 'Loading':
