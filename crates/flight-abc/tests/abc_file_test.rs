@@ -1,5 +1,3 @@
-//! flight-compiler: target-native
-
 use flight_abc::contract::*;
 
 mod read_abc_file {
