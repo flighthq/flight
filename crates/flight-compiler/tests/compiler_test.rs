@@ -2556,20 +2556,20 @@ pub fn doubled_all(values: &Vec<f32>) -> Vec<f32> {
             "{output}"
         );
         assert!(output.contains(
-            "return ((o) => o === undefined ? undefined : ((w) => w === undefined ? undefined : w - 2.0)(o.maxWidth))(options) ?? 0.0;"
+            "return ((o) => o === undefined ? undefined : o.maxWidth === undefined ? undefined : o.maxWidth - 2.0)(options) ?? 0.0;"
         ), "{output}");
         assert!(
             output.contains("return pick(options, counter)?.padding ?? 0.0;"),
             "{output}"
         );
         assert!(output.contains(
-            "return ((border) => border === undefined ? undefined : ((p) => p === undefined ? undefined : p + extra)(border.padding))(border) ?? 0.0;"
+            "return ((border) => border === undefined ? undefined : border.padding === undefined ? undefined : border.padding + extra)(border) ?? 0.0;"
         ), "{output}");
         assert!(output.contains(
             "return ((o) => o === undefined ? undefined : enabled ? o.padding : undefined)(options) ?? 7.0;"
         ), "{output}");
         assert!(output.contains(
-            "const scaled: number | undefined = ((w) => w === undefined ? undefined : w * 2.0)(value);"
+            "const scaled: number | undefined = value === undefined ? undefined : value * 2.0;"
         ));
         assert!(output.contains("return values.map((w) => w * 2.0);"));
         assert!(!output.contains("||"));
@@ -2591,24 +2591,30 @@ pub fn widened(value: Option<f32>) -> f32 {
 
         let output = compile_typescript(source, None).unwrap();
 
-        assert!(output.contains("return ((o) => o === null ? null : o.padding)(options) ?? 0.0;"));
-        assert!(output.contains("return ((w) => w === null ? null : w + 1.0)(value) ?? 0.0;"));
+        assert!(
+            output.contains("return (options === null ? null : options.padding) ?? 0.0;"),
+            "{output}"
+        );
+        assert!(
+            output.contains("return (value === null ? null : value + 1.0) ?? 0.0;"),
+            "{output}"
+        );
 
         let source = "pub fn inferred(value: f32) -> f32 { let local = Some(value); return local.and_then(|v| Some(v)).unwrap_or(0.0); }\n";
         let output = compile_typescript(source, None).unwrap();
-        assert!(output.contains("((v) => v === undefined ? undefined : v)(local) ?? 0.0"));
+        assert!(output.contains("(local === undefined ? undefined : local) ?? 0.0"));
 
         let source = "pub fn typed_closure(value: Option<f32>) -> f32 { return value.map(|v: f32| v * 2.0).unwrap_or(0.0); }\n";
         let output = compile_typescript(source, None).unwrap();
         assert!(
-            output.contains("((v) => v === undefined ? undefined : v * 2.0)(value) ?? 0.0"),
+            output.contains("(value === undefined ? undefined : value * 2.0) ?? 0.0"),
             "typed closure parameter should compile: {output}"
         );
 
         let source = "pub fn discard(value: Option<f32>) -> f32 { return value.map(|_| 1.0).unwrap_or(0.0); }\n";
         let output = compile_typescript(source, None).unwrap();
         assert!(
-            output.contains("((_unused0) => _unused0 === undefined ? undefined : 1.0)"),
+            output.contains("(value === undefined ? undefined : 1.0)"),
             "wildcard closure parameter should compile: {output}"
         );
 
@@ -4711,7 +4717,7 @@ pub fn renamed(index: &mut Vec<i32>, count: &Vec<i32>) {
         )
         .unwrap();
         assert!(output.contains(
-            "return ((o) => o === undefined ? undefined : ((w) => w === undefined ? undefined : w * 2.0)(o.width))(options) ?? 0.0;"
+            "return ((o) => o === undefined ? undefined : o.width === undefined ? undefined : o.width * 2.0)(options) ?? 0.0;"
         ));
         let error = compile(
             module(current, option_source),
@@ -4765,9 +4771,10 @@ pub fn values_are_missing() -> bool {
         )
         .unwrap();
 
-        assert!(output.contains(
-            "((value) => value === undefined ? undefined : value * 2)(bucket.previous) ?? 0"
-        ));
+        assert!(
+            output
+                .contains("(bucket.previous === undefined ? undefined : bucket.previous * 2) ?? 0")
+        );
         assert!(output.contains("crate.bucket.makeValues() === undefined"));
 
         let private_prelude = "use crate::bucket::Bucket;\n";
@@ -7139,7 +7146,10 @@ pub fn get_nested(data: &Value) -> Option<&str> {
 
         let output = compile_typescript(source, None).unwrap();
 
-        assert!(output.contains("v['name']"), "nested get: {output}");
+        assert!(
+            output.contains("data['user']['name']"),
+            "nested get: {output}"
+        );
         assert!(
             output.contains("typeof v === 'string' ? v : undefined"),
             "nested as_str: {output}"
@@ -20751,10 +20761,10 @@ mod sample {
         .unwrap();
 
         assert!(output.contains(
-            "  return (((value) => value === undefined ? undefined : value * 2)(sample.value) ?? 0);\n"
+            "  return ((sample.value === undefined ? undefined : sample.value * 2) ?? 0);\n"
         ));
         assert!(output.contains(
-            "  return (((value) => value === undefined ? undefined : value + 1)(sample.value) ?? 0);\n"
+            "  return ((sample.value === undefined ? undefined : sample.value + 1) ?? 0);\n"
         ));
     }
 

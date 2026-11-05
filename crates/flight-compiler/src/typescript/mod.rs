@@ -22104,6 +22104,13 @@ fn emit_option_combinator(
     } else {
         body.to_string()
     };
+    if !receiver.contains('(') && !body.contains('{') && !body.contains('(') && !body.contains('?')
+    {
+        let emitted_closure = format!("({binding}) => {body}");
+        if let Some(inlined) = inline_emitted_closure(&emitted_closure, receiver) {
+            return Ok(format!("({receiver} === {absent} ? {absent} : {inlined})"));
+        }
+    }
     return Ok(format!(
         "(({binding}) => {binding} === {absent} ? {absent} : {body})({receiver})"
     ));
