@@ -41,8 +41,7 @@
   },
   "dependencies": {
     "@flighthq/entity": "*",
-    "@flighthq/path": "*",
-    "@flighthq/types": "*"
+    "@flighthq/path": "*"
   },
   "devDependencies": {
     "typescript": "^7.0.2"

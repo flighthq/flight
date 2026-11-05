@@ -1,11 +1,10 @@
-import type { HostFontLoadingCapability, FontResource, FontUrl } from '@flighthq/types/contract';
-
 import {
   _loadFontFaceFromBytes,
   _loadFontFaceFromUrl,
   _loadFontFaceFromUrls,
   _loadFontFacesFromName,
 } from './_fontFaceLoad.ts';
+import type { HostFontLoadingCapability, FontResource, FontUrl } from './types.ts';
 
 export async function loadFontResourceFromBytes(
   hostFontLoading: Readonly<HostFontLoadingCapability>,

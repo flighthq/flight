@@ -1,12 +1,12 @@
 import { createPath, flattenPath, getPathBounds } from '@flighthq/path/contract';
+
 import type {
   GlyphMetrics,
   GlyphOutlineSource,
   GlyphRasterizeOptions,
   GlyphRasterizedBitmap,
   HostGlyphRasterizerCapability,
-  RectangleLike,
-} from '@flighthq/types/contract';
+} from './types.ts';
 
 export function allocateGlyphRasterizerBackendFromGlyphOutlineSource(
   source: GlyphOutlineSource,
@@ -57,7 +57,7 @@ function rasterizeGlyphOutlineSource(
   const advance = source.getGlyphOutlineAdvance(glyphIndex) * scale;
   if (!Number.isFinite(advance)) return null;
 
-  const bounds: RectangleLike = { height: 0, width: 0, x: 0, y: 0 };
+  const bounds = { height: 0, width: 0, x: 0, y: 0 };
   if (!getPathBounds(path, bounds) || bounds.width === 0 || bounds.height === 0) {
     return { advance, bearingX: 0, bearingY: 0, height: 0, pixels: new Uint8Array(), width: 0 };
   }

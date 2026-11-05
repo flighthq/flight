@@ -11,6 +11,7 @@
       ".app-types",
       ".flow-types",
       ".geometry-types",
+      ".font-types",
       ".host-types",
       ".menu-types",
       ".path-boolean-types",
@@ -46,6 +47,9 @@
     },
     {
       "path": "../flow/tsconfig.contract.json"
+    },
+    {
+      "path": "../font/tsconfig.contract.json"
     },
     {
       "path": "../geometry/tsconfig.contract.json"

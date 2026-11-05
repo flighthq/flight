@@ -1,4 +1,5 @@
 import type { HostAppCapabilities, HostFullscreenCapabilities, HostWindowCapabilities } from '@flighthq/app/contract';
+import type { HostFontLoadingCapability, HostGlyphRasterizerCapability } from '@flighthq/font/contract';
 import type { HostInputCapabilities } from '@flighthq/input/contract';
 import type { HostMenuCapabilities } from '@flighthq/menu/contract';
 
@@ -26,7 +27,6 @@ import type { HostDeviceCapability } from './Device.ts';
 import type { Entity } from './Entity.ts';
 import type { HostFileSystemCapability } from './FileSystem.ts';
 import type { HostGeolocationCapability } from './Geolocation.ts';
-import type { HostGlyphRasterizerCapability } from './GlyphSource.ts';
 import type { HostHapticsCapabilities } from './Haptics.ts';
 import type { HostAudioCodecCapability } from './HostAudioCodec.ts';
 import type { HostAudioDecodeCapabilities } from './HostAudioDecode.ts';
@@ -40,7 +40,6 @@ import type {
   HostFileOpenDialogCapability,
   HostFileSaveDialogCapability,
 } from './HostFileDialog.ts';
-import type { HostFontLoadingCapability } from './HostFontLoading.ts';
 import type { HostGlCapability } from './HostGl.ts';
 import type { HostImageDecodeCapabilities } from './HostImageDecode.ts';
 import type { HostImageEncodeCapabilities } from './HostImageEncode.ts';

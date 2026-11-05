@@ -1,10 +1,11 @@
+import type { GlyphOutlineSource } from '@flighthq/font/contract';
+
 import type { Adjustment } from './Adjustment.ts';
 import type { AdvancedBlendMode } from './AdvancedBlendMode.ts';
 import type { AudioResource } from './AudioResource.ts';
 import type { BlendMode } from './BlendMode.ts';
 import type { Effect } from './Effect.ts';
 import type { FrameScript } from './FrameScript.ts';
-import type { GlyphOutlineSource } from './GlyphOutlineSource.ts';
 import type { ImportDiagnostic } from './ImportDiagnostic.ts';
 import type { MorphShape } from './MorphShape.ts';
 import type { RichText } from './RichText.ts';

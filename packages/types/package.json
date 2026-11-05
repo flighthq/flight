@@ -42,6 +42,7 @@
     "@flighthq/clock": "*",
     "@flighthq/entity": "*",
     "@flighthq/flow": "*",
+    "@flighthq/font": "*",
     "@flighthq/geometry": "*",
     "@flighthq/haptics": "*",
     "@flighthq/host": "*",

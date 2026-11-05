@@ -1,5 +1,4 @@
-import type { HostFontLoadingCapability } from '@flighthq/types/contract';
-
+import type { HostFontLoadingCapability } from './contract.ts';
 import { createFontResource } from './fontResource.ts';
 import {
   loadFontResourceFromBytes,

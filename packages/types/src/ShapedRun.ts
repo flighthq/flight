@@ -1,4 +1,5 @@
-import type { FontResource } from './FontResource.ts';
+import type { FontResource } from '@flighthq/font/contract';
+
 import type { TextDirection } from './TextDirection.ts';
 
 export interface ShapedGlyph {

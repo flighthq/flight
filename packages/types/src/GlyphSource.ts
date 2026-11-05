@@ -1,3 +1,10 @@
+import type {
+  GlyphMetrics,
+  GlyphRasterizeOptions,
+  GlyphRasterizedBitmap,
+  HostGlyphRasterizerCapability,
+} from '@flighthq/font/contract';
+
 import type { Bitmap } from './Bitmap.ts';
 import type { Entity } from './Entity.ts';
 import type { TextureSource } from './TextureSource.ts';
@@ -57,49 +64,6 @@ export interface GlyphEntry {
   width: number;
   x: number;
   y: number;
-}
-
-// Shared vertical line metrics for a glyph source, in pixels at the source's size. `ascent` and
-// `descent` are both positive distances from the baseline; `lineGap` is the extra leading between
-// lines. The single line advance is `ascent + descent + lineGap`.
-export interface GlyphMetrics {
-  ascent: number;
-  descent: number;
-  lineGap: number;
-}
-
-// A rasterizer's output for one glyph: an RGBA (row-major, straight-alpha) pixel block plus the pen
-// advance and bearing. `pixels` is exactly `width * height * 4` bytes. This is the plain-data
-// hand-off from a `HostGlyphRasterizerCapability` to the atlas, which packs it, blits `pixels` into the
-// atlas bitmap, and records a `GlyphEntry`.
-export interface GlyphRasterizedBitmap {
-  advance: number;
-  bearingX: number;
-  bearingY: number;
-  height: number;
-  pixels: Uint8Array<ArrayBuffer>;
-  width: number;
-}
-
-// The knobs a rasterizer needs to render a glyph. Held per-atlas (from `GlyphAtlasOptions`) and
-// passed on every `rasterize` call. Weight/style are optional and provider-interpreted.
-export interface GlyphRasterizeOptions {
-  fontFamily: string;
-  fontSize: number;
-  fontStyle?: string;
-  fontWeight?: number | string;
-}
-
-// The swappable glyph-rasterization seam. The Web provider renders via an offscreen canvas; a native
-// host supplies a FreeType-style provider. `rasterize` returns null for an unrenderable codepoint
-// (or when no canvas is available), never throwing.
-export interface HostGlyphRasterizerCapability {
-  rasterize(codepoint: number, options: Readonly<GlyphRasterizeOptions>): GlyphRasterizedBitmap | null;
-  // Font-level line metrics, when the provider can measure them. Optional so existing providers stay
-  // valid: an atlas whose provider does not implement it, or which returns null, keeps the font-size
-  // heuristic from deriveGlyphMetricsFromFontSize. Measured once per atlas rather than per glyph,
-  // because these describe the font at a size, not any particular character.
-  measureMetrics?(options: Readonly<GlyphRasterizeOptions>): GlyphMetrics | null;
 }
 
 // Construction options for a dynamic glyph atlas. `width`/`height` size the atlas bitmap; the font
@@ -189,4 +153,3 @@ export interface GlyphAtlas extends Entity {
 // Every operation name on the provider, DERIVED from the interface rather than listed. A hand-written
 // roster would be a second source of truth that drifts the moment an operation is added or renamed;
 // `keyof` cannot.
-export type GlyphRasterizerOperation = keyof HostGlyphRasterizerCapability;

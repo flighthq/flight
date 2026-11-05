@@ -1,5 +1,7 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { FontResource, EntityConstruction } from '@flighthq/types/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
+
+import type { FontResource } from './types.ts';
 
 export function createFontResource(family: string): FontResource {
   const out = allocateEntity<FontResource>();
