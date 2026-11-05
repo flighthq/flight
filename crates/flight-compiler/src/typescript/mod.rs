@@ -24692,6 +24692,26 @@ fn emit_statement(
             emit_dedup_statement(out, call, entities, indent)?;
         }
         Stmt::Expr(Expr::MethodCall(call), _)
+            if call.method == "retain"
+                && call.args.len() == 1
+                && matches!(
+                    expression_hash_collection(&call.receiver, entities),
+                    Some(BindingFact::HashSet)
+                ) =>
+        {
+            emit_hashset_retain_statement(out, call, entities, indent)?;
+        }
+        Stmt::Expr(Expr::MethodCall(call), _)
+            if call.method == "retain"
+                && call.args.len() == 1
+                && matches!(
+                    expression_hash_collection(&call.receiver, entities),
+                    Some(BindingFact::HashMap)
+                ) =>
+        {
+            emit_hashmap_retain_statement(out, call, entities, indent)?;
+        }
+        Stmt::Expr(Expr::MethodCall(call), _)
             if call.method == "insert"
                 && call.args.len() == 1
                 && matches!(
@@ -26700,6 +26720,90 @@ fn emit_dedup_statement(
         .expect("writing to a String cannot fail");
     write_indent(out, indent);
     out.push_str("}\n");
+    return Ok(());
+}
+
+fn emit_hashset_retain_statement(
+    out: &mut String,
+    call: &syn::ExprMethodCall,
+    entities: &HashSet<String>,
+    indent: usize,
+) -> Result<(), CompileError> {
+    let receiver = emit_expression(&call.receiver, entities)?;
+    let predicate = emit_expression(&call.args[0], entities)?;
+    if let Some(inlined) = inline_emitted_closure(&predicate, "item") {
+        write_indent(out, indent);
+        writeln!(out, "for (const item of {receiver}) {{")
+            .expect("writing to a String cannot fail");
+        write_indent(out, indent + 1);
+        writeln!(out, "if (!({inlined})) {{").expect("writing to a String cannot fail");
+        write_indent(out, indent + 2);
+        writeln!(out, "{receiver}.delete(item);").expect("writing to a String cannot fail");
+        write_indent(out, indent + 1);
+        out.push_str("}\n");
+        write_indent(out, indent);
+        out.push_str("}\n");
+    } else {
+        let value = indent_continuation_lines(
+            &emit_expression(&Expr::MethodCall(call.clone()), entities)?,
+            indent,
+        );
+        write_indent(out, indent);
+        writeln!(out, "{value};").expect("writing to a String cannot fail");
+    }
+    return Ok(());
+}
+
+fn emit_hashmap_retain_statement(
+    out: &mut String,
+    call: &syn::ExprMethodCall,
+    entities: &HashSet<String>,
+    indent: usize,
+) -> Result<(), CompileError> {
+    let receiver = emit_expression(&call.receiver, entities)?;
+    let predicate = emit_expression(&call.args[0], entities)?;
+    let s = predicate.trim();
+    let inlined = if let Some(rest) = s.strip_prefix('(') {
+        if let Some((params, body)) = rest.split_once(") => ") {
+            let params = params.trim();
+            let body = body.trim();
+            if !body.contains('{') && params.contains(',') {
+                let parts: Vec<&str> = params.splitn(2, ',').map(str::trim).collect();
+                if parts.len() == 2 && !parts[0].contains(':') && !parts[1].contains(':') {
+                    let replaced = body.replace(parts[0], "key").replace(parts[1], "value");
+                    Some(replaced)
+                } else {
+                    None
+                }
+            } else {
+                None
+            }
+        } else {
+            None
+        }
+    } else {
+        None
+    };
+    if let Some(inlined) = inlined {
+        write_indent(out, indent);
+        writeln!(out, "for (const [key, value] of {receiver}) {{")
+            .expect("writing to a String cannot fail");
+        write_indent(out, indent + 1);
+        writeln!(out, "if (!({inlined})) {{").expect("writing to a String cannot fail");
+        write_indent(out, indent + 2);
+        writeln!(out, "{receiver}.delete(key);").expect("writing to a String cannot fail");
+        write_indent(out, indent + 1);
+        out.push_str("}\n");
+        write_indent(out, indent);
+        out.push_str("}\n");
+    } else {
+        let value = indent_continuation_lines(
+            &emit_expression(&Expr::MethodCall(call.clone()), entities)?,
+            indent,
+        );
+        write_indent(out, indent);
+        writeln!(out, "{value};").expect("writing to a String cannot fail");
+    }
     return Ok(());
 }
 

@@ -26259,7 +26259,7 @@ pub fn keep_positive(map: &mut HashMap<String, i32>) {
 "#;
     let output = compile_typescript(source, None).unwrap();
     assert!(
-        output.contains("entries.delete(key)"),
+        output.contains("map.delete(key)"),
         "should lower HashMap::retain to iteration with delete: {output}"
     );
 }
@@ -26275,7 +26275,7 @@ pub fn keep_even(set: &mut HashSet<u32>) {
 "#;
     let output = compile_typescript(source, None).unwrap();
     assert!(
-        output.contains("items.delete(item)"),
+        output.contains("set.delete(item)"),
         "should lower HashSet::retain to iteration with delete: {output}"
     );
 }
