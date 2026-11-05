@@ -5,11 +5,10 @@ import type {
   HostPermissionsCapability,
   HostPreferencesPersistenceQueryCapability,
   HostPreferencesPersistenceRequestCapability,
-  PermissionName,
-  PermissionQueryOutcome,
-  PermissionRequestOutcome,
   StoragePersistenceOutcome,
 } from '@flighthq/types/contract';
+
+import type { PermissionName, PermissionQueryOutcome, PermissionRequestOutcome } from './types.ts';
 
 // Queries are read-only: this function never escalates to a request that may prompt. Notification,
 // MIDI, and persistence keep their method-tight projections; every platform-native query is owned by
