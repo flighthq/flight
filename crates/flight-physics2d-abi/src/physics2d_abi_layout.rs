@@ -1,4 +1,3 @@
-//! flight-compiler: target-native
 //! flight-compiler: export-name PHYSICS2D_ABI_VERSION Physics2DAbiVersion
 //! flight-compiler: export-name PHYSICS2D_ABI_COMMAND_MAGIC Physics2DAbiCommandMagic
 //! flight-compiler: export-name PHYSICS2D_ABI_COMMAND_HEADER_BYTE_LENGTH Physics2DAbiCommandHeaderByteLength
