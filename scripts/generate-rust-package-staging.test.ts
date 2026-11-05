@@ -23,16 +23,18 @@ interface GenerationRun {
   readonly code: number | null;
   readonly sawStaging: boolean;
   readonly stderr: string;
+  readonly stdout: string;
   readonly transientPackageEntries: readonly string[];
 }
 
 // Runs the generator as a child while this process scans packages/ the way repository scanners do,
 // recording every entry that appears there and whether the child's private staging tree was observed.
-function generateWhileScanning(lenient = false): Promise<GenerationRun> {
+function generateWhileScanning(lenient = false, auditNative = false): Promise<GenerationRun> {
   const baseline = new Set(readdirSync(packagesRoot));
   const transient = new Set<string>();
   let sawStaging = false;
   let stderr = '';
+  let stdout = '';
   const child = spawn(
     generatorPath,
     [
@@ -46,13 +48,17 @@ function generateWhileScanning(lenient = false): Promise<GenerationRun> {
       '--package-root',
       packageRoot,
       ...(lenient ? ['--lenient'] : []),
+      ...(auditNative ? ['--audit-native'] : []),
     ],
     {
       cwd: repositoryRoot,
       env: { ...process.env, TEMP: stagingParent, TMP: stagingParent, TMPDIR: stagingParent },
-      stdio: ['ignore', 'ignore', 'pipe'],
+      stdio: ['ignore', 'pipe', 'pipe'],
     },
   );
+  child.stdout.on('data', (chunk: Buffer) => {
+    stdout += chunk.toString();
+  });
   child.stderr.on('data', (chunk: Buffer) => {
     stderr += chunk.toString();
   });
@@ -69,7 +75,7 @@ function generateWhileScanning(lenient = false): Promise<GenerationRun> {
   return new Promise((resolvePromise) => {
     child.on('close', (code) => {
       running = false;
-      resolvePromise({ code, sawStaging, stderr, transientPackageEntries: [...transient].sort() });
+      resolvePromise({ code, sawStaging, stderr, stdout, transientPackageEntries: [...transient].sort() });
     });
   });
 }
@@ -972,6 +978,64 @@ fn reports_absence_as_null() {
       rmSync(testPath, { force: true });
       rmSync(join(packageRoot, 'src', 'shadow.ts'), { force: true });
       rmSync(join(packageRoot, 'src', 'value.test.ts'), { force: true });
+    }
+  }, 120_000);
+
+  it('coalesces Effects-GL nullable return ownership across target-native audit modules', async () => {
+    const secondSourcePath = join(crateRoot, 'src', 'second.rs');
+    const renderGlCrateRoot = join(repositoryRoot, 'crates', 'flight-render-gl').replaceAll('\\', '/');
+    writeFileSync(
+      join(crateRoot, 'Cargo.toml'),
+      `[package]
+name = "${crateName}"
+version = "0.0.0"
+edition = "2024"
+
+[dependencies]
+flight-render-gl = { path = "${renderGlCrateRoot}" }
+`,
+    );
+    writeFileSync(
+      join(crateRoot, 'src', 'lib.rs'),
+      '//! flight-compiler: target-native\nmod second;\nmod value;\npub mod contract;\n',
+    );
+    writeFileSync(join(crateRoot, 'src', 'contract.rs'), 'pub use super::second::*;\npub use super::value::*;\n');
+    writeFileSync(sourcePath, '//! flight-compiler: target-native\npub fn first_value() -> i32 { return 1; }\n');
+    writeFileSync(secondSourcePath, '//! flight-compiler: target-native\npub fn second_value() -> i32 { return 2; }\n');
+    writeFileSync(
+      join(packageRoot, 'src', 'value.ts'),
+      `import type { GlRenderState } from '@flighthq/types/contract';
+
+export function firstValue(_state?: Readonly<GlRenderState>): number {
+  return 1;
+}
+`,
+    );
+    writeFileSync(
+      join(packageRoot, 'src', 'second.ts'),
+      `import type { GlRenderStateOptions } from '@flighthq/types/contract';
+
+export function secondValue(_options?: Readonly<GlRenderStateOptions>): number {
+  return 2;
+}
+`,
+    );
+    writeFileSync(
+      join(packageRoot, 'src', 'contract.ts'),
+      "export * from './second.ts';\nexport * from './value.ts';\n",
+    );
+    writeFileSync(join(packageRoot, 'src', 'index.ts'), "export * from './contract.ts';\n");
+
+    try {
+      const run = await generateWhileScanning(false, true);
+
+      expect(run.code, run.stderr).toBe(0);
+      expect(run.stderr).not.toContain('conflicting Rust owners');
+      expect(run.stdout).toContain('"compilerClean": 2');
+      expect(run.stdout).not.toContain('GlCompressedTextureDecoder');
+    } finally {
+      rmSync(secondSourcePath, { force: true });
+      rmSync(join(packageRoot, 'src', 'second.ts'), { force: true });
     }
   }, 120_000);
 

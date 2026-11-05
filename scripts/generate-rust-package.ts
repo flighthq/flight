@@ -52,7 +52,7 @@ import {
   typeScriptInternalTypeExportArguments,
   typeScriptNullableOptionFieldArguments,
   typeScriptNullableOptionParameterArguments,
-  typeScriptNullableOptionReturnArguments,
+  typeScriptNullableOptionReturnMetadata,
   typeScriptStringUnionArguments,
   typeScriptTypeAliasArguments,
 } from './generate-rust-package-exports.ts';
@@ -108,6 +108,7 @@ interface NativeAuditProbe {
   nullableOptionFieldArguments: string[];
   nullableOptionParameterArguments: string[];
   nullableOptionReturnArguments: string[];
+  nullableOptionReturnOwners: ReadonlyMap<string, string | null>;
   typeAliasArguments: string[];
 }
 
@@ -132,7 +133,7 @@ const packageTypeScriptArrayParameters = new Map<string, { rustSource: string; s
 const packageTypeScriptNullableOptionFields = new Map<string, string>();
 const packageTypeScriptDefaultNullOptionParameters = new Map<string, string>();
 const packageTypeScriptNullableOptionParameters = new Map<string, string>();
-const packageTypeScriptNullableOptionReturns = new Map<string, string>();
+const packageTypeScriptNullableOptionReturns = new Map<string, { owner: string; rustSource: string }>();
 const packageTypeScriptTypeAliases = new Map<string, string>();
 
 function mergedTypeScriptArrayParameterArguments(...groups: readonly string[][]): string[] {
@@ -296,7 +297,7 @@ function packageTypeScriptPositionOwnerSources(): string[] {
     ...new Set([
       ...packageTypeScriptNullableOptionParameters.values(),
       ...packageTypeScriptDefaultNullOptionParameters.values(),
-      ...packageTypeScriptNullableOptionReturns.values(),
+      ...[...packageTypeScriptNullableOptionReturns.values()].map(({ rustSource }) => rustSource),
       ...[...packageTypeScriptArrayParameters.values()].map(({ rustSource }) => rustSource),
     ]),
   ].sort();
@@ -315,7 +316,11 @@ function mergedTypeScriptNullableOptionReturnArguments(...groups: readonly strin
   return [...returns].sort().flatMap((name) => ['--typescript-nullable-option-return', name]);
 }
 
-function rememberTypeScriptNullableOptionReturnArguments(arguments_: string[], rustSource: string): void {
+function rememberTypeScriptNullableOptionReturnArguments(
+  arguments_: string[],
+  rustSource: string,
+  canonicalOwners: ReadonlyMap<string, string | null>,
+): void {
   const merged = mergedTypeScriptNullableOptionReturnArguments(
     packageTypeScriptNullableOptionReturnArguments(),
     arguments_,
@@ -328,12 +333,16 @@ function rememberTypeScriptNullableOptionReturnArguments(arguments_: string[], r
     if (aliasOwners.length > 1) {
       throw new Error(`TypeScript nullable Option return ${name} has conflicting Rust callable owners`);
     }
-    const ownerSource = aliasOwners[0] ?? rustSource;
+    const canonicalOwner = canonicalOwners.get(name);
+    if (!canonicalOwners.has(name)) {
+      throw new Error(`TypeScript nullable Option return ${name} lost its canonical owner`);
+    }
+    const owner = aliasOwners[0] ?? canonicalOwner ?? rustSource;
     const previous = packageTypeScriptNullableOptionReturns.get(name);
-    if (previous !== undefined && previous !== ownerSource) {
+    if (previous !== undefined && previous.owner !== owner) {
       throw new Error(`TypeScript nullable Option return ${name} has conflicting Rust owners`);
     }
-    packageTypeScriptNullableOptionReturns.set(name, ownerSource);
+    if (previous === undefined) packageTypeScriptNullableOptionReturns.set(name, { owner, rustSource });
   }
   if (merged.length / 2 !== packageTypeScriptNullableOptionReturns.size) {
     throw new Error('TypeScript nullable Option return metadata lost its Rust owner');
@@ -651,7 +660,11 @@ function discoverTargetNativeMetadataForTests(
     rememberTypeScriptNullableOptionFieldArguments(probe.nullableOptionFieldArguments);
     rememberTypeScriptNullableOptionParameterArguments(probe.nullableOptionParameterArguments, rustPath);
     rememberTypeScriptDefaultNullOptionParameterArguments(probe.defaultNullOptionParameterArguments, rustPath);
-    rememberTypeScriptNullableOptionReturnArguments(probe.nullableOptionReturnArguments, rustPath);
+    rememberTypeScriptNullableOptionReturnArguments(
+      probe.nullableOptionReturnArguments,
+      rustPath,
+      probe.nullableOptionReturnOwners,
+    );
     for (const known of packageTypeScriptTypeAliases.keys()) requiredAliases.delete(known);
   }
 }
@@ -680,7 +693,11 @@ function auditNativeSources(
     rememberTypeScriptNullableOptionFieldArguments(probe.nullableOptionFieldArguments);
     rememberTypeScriptNullableOptionParameterArguments(probe.nullableOptionParameterArguments, rustPath);
     rememberTypeScriptDefaultNullOptionParameterArguments(probe.defaultNullOptionParameterArguments, rustPath);
-    rememberTypeScriptNullableOptionReturnArguments(probe.nullableOptionReturnArguments, rustPath);
+    rememberTypeScriptNullableOptionReturnArguments(
+      probe.nullableOptionReturnArguments,
+      rustPath,
+      probe.nullableOptionReturnOwners,
+    );
   }
   for (const rustTest of testFiles(crateRoot)) {
     const rustPath = join(crateRoot, 'tests', rustTest);
@@ -821,6 +838,7 @@ function probeNativeSource(
   let nullableOptionParameterArguments: string[] = [];
   let defaultNullOptionParameterArguments: string[] = [];
   let nullableOptionReturnArguments: string[] = [];
+  let nullableOptionReturnOwners = new Map<string, string | null>();
   if (result.status === 0 && command === 'generate') {
     typeAliasArguments = mergedTypeScriptTypeAliasArguments(
       internalTypeExports.typeAliasArguments,
@@ -946,11 +964,14 @@ function probeNativeSource(
       }
     }
     if (result.status === 0) {
-      nullableOptionReturnArguments = typeScriptNullableOptionReturnArguments(
+      const nullableOptionReturnMetadata = typeScriptNullableOptionReturnMetadata(
         existingTypescript,
         readFileSync(out, 'utf8'),
         loadImportedContractSymbols(existingTypescript),
+        compilerVisibleRustTypeAliases(command, source),
       );
+      nullableOptionReturnArguments = nullableOptionReturnMetadata.arguments;
+      nullableOptionReturnOwners = new Map(nullableOptionReturnMetadata.owners);
       if (nullableOptionReturnArguments.length > 0) {
         const allTypeAliasArguments = mergedTypeScriptTypeAliasArguments(knownTypeAliasArguments, typeAliasArguments);
         const allNullableOptionFieldArguments = mergedTypeScriptNullableOptionFieldArguments(
@@ -1037,6 +1058,7 @@ function probeNativeSource(
     nullableOptionFieldArguments,
     nullableOptionParameterArguments,
     nullableOptionReturnArguments,
+    nullableOptionReturnOwners,
     typeAliasArguments,
   };
 }
@@ -1197,9 +1219,13 @@ function dependencySources(command: string): DependencySource[] {
 // dependency's `Ref<Vector3>`, a `.clear()` on a dependency struct's `Vec` field). Tests also see
 // dev-dependencies. The entity crate is already supplied by `entityArguments`.
 function dependencyVisibilityArguments(command: string): string[] {
+  return dependencyVisibilitySources(command).flatMap((path) => ['--visibility-source', path]);
+}
+
+function dependencyVisibilitySources(command: string): string[] {
   if (command !== 'generate' && command !== 'generate-tests') return [];
   const manifest = readFileSync(join(crateRoot, 'Cargo.toml'), 'utf8');
-  const arguments_: string[] = [];
+  const sources: string[] = [];
   for (const crateName of collectFlightDependencyCrates(manifest, command === 'generate-tests')) {
     if (crateName === options.crateName || crateName === 'flight-entity') continue;
     const sourceRoot = join(repositoryRoot, 'crates', crateName, 'src');
@@ -1207,10 +1233,17 @@ function dependencyVisibilityArguments(command: string): string[] {
     for (const path of crateSourcePaths(sourceRoot)) {
       if (['contract.rs', 'lib.rs', 'sugar.rs'].some((name) => path.endsWith(`/${name}`))) continue;
       if (/^\/\/!\s*flight-compiler:\s*rust-only\b/m.test(readFileSync(path, 'utf8'))) continue;
-      arguments_.push('--visibility-source', path);
+      sources.push(path);
     }
   }
-  return arguments_;
+  return sources;
+}
+
+function compilerVisibleRustTypeAliases(command: string, source: string): Set<string> {
+  const paths = new Set([source, ...crateSourcePaths(join(crateRoot, 'src')), ...dependencyVisibilitySources(command)]);
+  return new Set(
+    [...paths].flatMap((path) => (existsSync(path) ? collectRustPublicTypeAliasNames(readFileSync(path, 'utf8')) : [])),
+  );
 }
 
 function entityArguments(command: string, source: string): string[] {
@@ -1540,11 +1573,13 @@ function loadModule(rustSource: string, aliasSources: string[], representationIm
     );
     rememberTypeScriptDefaultNullOptionParameterArguments(defaultNullOptionParameterArguments, rustPath);
   }
-  const nullableOptionReturnArguments = typeScriptNullableOptionReturnArguments(
+  const nullableOptionReturnMetadata = typeScriptNullableOptionReturnMetadata(
     contractTypescript,
     compiledTypescript,
     importedContractSymbols,
+    compilerVisibleRustTypeAliases('generate', rustPath),
   );
+  const nullableOptionReturnArguments = nullableOptionReturnMetadata.arguments;
   const nullableRepresentationArguments = [
     ...defaultNullParameterRepresentationArguments,
     ...nullableOptionReturnArguments,
@@ -1559,7 +1594,11 @@ function loadModule(rustSource: string, aliasSources: string[], representationIm
       [],
       nullableRepresentationArguments,
     );
-    rememberTypeScriptNullableOptionReturnArguments(nullableOptionReturnArguments, rustPath);
+    rememberTypeScriptNullableOptionReturnArguments(
+      nullableOptionReturnArguments,
+      rustPath,
+      nullableOptionReturnMetadata.owners,
+    );
   }
   const inlineRepresentationArguments = typeScriptInlineStringUnionArguments(contractTypescript, compiledTypescript);
   if (inlineRepresentationArguments.length > 0) {

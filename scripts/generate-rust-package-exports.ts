@@ -19,6 +19,11 @@ export interface ExportSymbolOwner {
   stringUnionValues?: string[];
 }
 
+export interface TypeScriptNullableOptionReturnMetadata {
+  readonly arguments: string[];
+  readonly owners: ReadonlyMap<string, string | null>;
+}
+
 interface ResolvedExports {
   types: string[];
   values: string[];
@@ -1144,12 +1149,14 @@ export function typeScriptDefaultNullOptionParameterArguments(
 
 // The same exported function or callable-alias position in the established and generated modules
 // proves its Option absence representation. Canonical imported owner types also carry the callable
-// aliases reachable from their declared type graph. A spelling claimed by two owners is refused.
-export function typeScriptNullableOptionReturnArguments(
+// aliases reachable from their declared type graph when the compiler-visible Rust programs declare
+// that alias. A spelling claimed by two owners is refused.
+export function typeScriptNullableOptionReturnMetadata(
   existingTypescript: string,
   generatedTypescript: string,
   importedContractSymbols: ReadonlyMap<string, ReadonlyMap<string, Omit<ExportSymbolOwner, 'fileName'>>> = new Map(),
-): string[] {
+  visibleRustTypeAliases?: ReadonlySet<string>,
+): TypeScriptNullableOptionReturnMetadata {
   const existing = parseTypeScriptMetadataSurface('existing.ts', existingTypescript);
   if (existing.errors.length > 0) {
     throw new Error(
@@ -1165,11 +1172,12 @@ export function typeScriptNullableOptionReturnArguments(
 
   const existingFunctions = exportedFunctionTypes(existing.program.body as unknown as Record<string, unknown>[]);
   const generatedFunctions = exportedFunctionTypes(generated.program.body as unknown as Record<string, unknown>[]);
-  const positions = new Map<string, string>();
-  const remember = (name: string, owner: string): void => {
-    const previous = positions.get(name);
-    if (previous !== undefined && previous !== owner) {
-      throw new Error(`TypeScript nullable Option return ${name} has conflicting owners ${previous} and ${owner}`);
+  const positions = new Map<string, string | null>();
+  const remember = (name: string, owner: string | null): void => {
+    if (positions.has(name) && positions.get(name) !== owner) {
+      throw new Error(
+        `TypeScript nullable Option return ${name} has conflicting owners ${positions.get(name) ?? 'local declaration'} and ${owner ?? 'local declaration'}`,
+      );
     }
     positions.set(name, owner);
   };
@@ -1182,7 +1190,7 @@ export function typeScriptNullableOptionReturnArguments(
     ) {
       continue;
     }
-    remember(name, 'local function');
+    remember(name, null);
   }
 
   const existingCallables = exportedCallableReturnTypes(existing.program.body as unknown as Record<string, unknown>[]);
@@ -1196,7 +1204,7 @@ export function typeScriptNullableOptionReturnArguments(
       typeUnionHasOnlyAbsence(existingReturn, 'TSNullKeyword') &&
       typeUnionHasOnlyAbsence(generatedReturn, 'TSUndefinedKeyword')
     ) {
-      remember(name, 'local callable');
+      remember(name, null);
     }
   }
 
@@ -1222,7 +1230,12 @@ export function typeScriptNullableOptionReturnArguments(
         if (visited.has(name)) continue;
         visited.add(name);
         const owner = symbols.get(name);
-        if (owner?.nullableCallableReturn === true) remember(name, module);
+        if (
+          owner?.nullableCallableReturn === true &&
+          (visibleRustTypeAliases === undefined || visibleRustTypeAliases.has(name))
+        ) {
+          remember(name, module);
+        }
         for (const referenced of owner?.referencedTypes ?? []) {
           if (symbols.has(referenced)) pending.push(referenced);
         }
@@ -1230,7 +1243,24 @@ export function typeScriptNullableOptionReturnArguments(
     }
   }
 
-  return [...positions.keys()].sort().flatMap((name) => ['--typescript-nullable-option-return', name]);
+  return {
+    arguments: [...positions.keys()].sort().flatMap((name) => ['--typescript-nullable-option-return', name]),
+    owners: positions,
+  };
+}
+
+export function typeScriptNullableOptionReturnArguments(
+  existingTypescript: string,
+  generatedTypescript: string,
+  importedContractSymbols: ReadonlyMap<string, ReadonlyMap<string, Omit<ExportSymbolOwner, 'fileName'>>> = new Map(),
+  visibleRustTypeAliases?: ReadonlySet<string>,
+): string[] {
+  return typeScriptNullableOptionReturnMetadata(
+    existingTypescript,
+    generatedTypescript,
+    importedContractSymbols,
+    visibleRustTypeAliases,
+  ).arguments;
 }
 
 // Target-native modules are not ordinarily compiler alias inputs. Their established TypeScript

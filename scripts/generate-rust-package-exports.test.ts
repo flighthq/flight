@@ -46,6 +46,7 @@ import {
   typeScriptNullableOptionFieldArguments,
   typeScriptNullableOptionParameterArguments,
   typeScriptNullableOptionReturnArguments,
+  typeScriptNullableOptionReturnMetadata,
   typeScriptStringUnionArguments,
   typeScriptTypeAliasArguments,
 } from './generate-rust-package-exports.ts';
@@ -740,6 +741,37 @@ export type MixedResolver = () => Failure | undefined;
   failure: Failure | null;
 }`),
     ).toEqual(new Map([['LayoutState', ['Failure', 'LayoutResolver', 'Map']]]));
+  });
+
+  it('coalesces Effects-GL nullable callable paths at their canonical owner and isolates unrelated graphs', () => {
+    const existing = `import type { GlRenderState } from '@flighthq/types/contract';
+import type { GlRenderStateOptions } from '@flighthq/types/contract';`;
+    const symbols = new Map([
+      [
+        '@flighthq/types/contract',
+        new Map([
+          [
+            'GlRenderState',
+            { hasType: true, hasValue: false, referencedTypes: ['GlCompressedTextureDecoder', 'GlRenderStateOptions'] },
+          ],
+          ['GlRenderStateOptions', { hasType: true, hasValue: false, referencedTypes: ['GlCompressedTextureDecoder'] }],
+          ['GlCompressedTextureDecoder', { hasType: true, hasValue: false, nullableCallableReturn: true }],
+          ['IsolatedState', { hasType: true, hasValue: false, referencedTypes: ['IsolatedResolver'] }],
+          ['IsolatedResolver', { hasType: true, hasValue: false, nullableCallableReturn: true }],
+        ]),
+      ],
+    ]);
+
+    const metadata = typeScriptNullableOptionReturnMetadata(
+      existing,
+      '',
+      symbols,
+      new Set(['GlCompressedTextureDecoder']),
+    );
+
+    expect(metadata.arguments).toEqual(['--typescript-nullable-option-return', 'GlCompressedTextureDecoder']);
+    expect(metadata.owners).toEqual(new Map([['GlCompressedTextureDecoder', '@flighthq/types/contract']]));
+    expect(typeScriptNullableOptionReturnMetadata(existing, '', symbols, new Set()).arguments).toEqual([]);
   });
 
   it('refuses conflicting nullable callable return owners', () => {
