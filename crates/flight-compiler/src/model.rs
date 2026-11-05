@@ -2408,7 +2408,10 @@ fn parse_test_cfg_directives(
             ));
         })?;
         validate_test_cfg_replacement(&replacement)?;
-        if replacements.insert(predicate.clone(), replacement).is_some() {
+        if replacements
+            .insert(predicate.clone(), replacement)
+            .is_some()
+        {
             return Err(compile_error(format!(
                 "duplicate `flight-compiler: test-cfg` directive for `cfg!({predicate})`"
             )));
@@ -2423,8 +2426,10 @@ fn parse_test_cfg_predicate(source: &str) -> Result<String, CompileError> {
             "`flight-compiler: test-cfg` predicate `{source}` must use `cfg(predicate)`"
         )));
     };
-    let expression = syn::parse_str::<Expr>(&format!("cfg!{}", arguments.trim_start()))
-        .map_err(|error| compile_error(format!("invalid `test-cfg` predicate `{source}`: {error}")))?;
+    let expression =
+        syn::parse_str::<Expr>(&format!("cfg!{}", arguments.trim_start())).map_err(|error| {
+            compile_error(format!("invalid `test-cfg` predicate `{source}`: {error}"))
+        })?;
     let Expr::Macro(expression) = expression else {
         return Err(compile_error(format!(
             "`flight-compiler: test-cfg` predicate `{source}` must use `cfg(predicate)`"
@@ -2442,9 +2447,7 @@ fn canonical_test_cfg_predicate(rust_macro: &syn::Macro) -> Result<String, Compi
     return canonical_test_cfg_tokens(rust_macro.tokens.clone());
 }
 
-fn canonical_test_cfg_tokens(
-    tokens: proc_macro2::TokenStream,
-) -> Result<String, CompileError> {
+fn canonical_test_cfg_tokens(tokens: proc_macro2::TokenStream) -> Result<String, CompileError> {
     syn::parse2::<syn::Meta>(tokens.clone()).map_err(|error| {
         return compile_error(format!("invalid portable `cfg!` predicate: {error}"));
     })?;
@@ -2496,10 +2499,15 @@ fn rewrite_nested_test_cfg_tokens(
     let mut index = 0;
     while index < tokens.len() {
         let predicate_group = match tokens.get(index..index + 3) {
-            Some([TokenTree::Ident(name), TokenTree::Punct(bang), TokenTree::Group(group)])
-                if name == "cfg"
-                    && bang.as_char() == '!'
-                    && group.delimiter() == Delimiter::Parenthesis =>
+            Some(
+                [
+                    TokenTree::Ident(name),
+                    TokenTree::Punct(bang),
+                    TokenTree::Group(group),
+                ],
+            ) if name == "cfg"
+                && bang.as_char() == '!'
+                && group.delimiter() == Delimiter::Parenthesis =>
             {
                 Some(group)
             }

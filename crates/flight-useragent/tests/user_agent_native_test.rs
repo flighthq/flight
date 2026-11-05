@@ -101,10 +101,7 @@ mod parse_user_agent_runtime {
             PlatformRuntime::Web
         );
         assert_eq!(
-            parse_user_agent_runtime(Some(&crate::record(vec![(
-                "Capacitor",
-                crate::text(""),
-            )]))),
+            parse_user_agent_runtime(Some(&crate::record(vec![("Capacitor", crate::text(""),)]))),
             PlatformRuntime::Web
         );
         assert_eq!(
