@@ -220,6 +220,15 @@ const RECORD_MAP_LOCAL_MARKER: &str = "@record-map-local:";
 // initializer called on it in the very next statement definitely assigns it (`type:field`).
 const ENTITY_ALLOCATION_INITIALIZED_FIELD_MARKER: &str = "@entity-allocation-initialized-field:";
 
+// A field an `allocate_entity` local leaves out of its default object entirely (`type:field`): the
+// construction initializer called on it in the very next statement writes the field before anything
+// can read or capture the allocation, so the default would only be an overwritten placeholder.
+const ENTITY_ALLOCATION_OMITTED_FIELD_MARKER: &str = "@entity-allocation-omitted-field:";
+
+// A field an initializer writes in its leading run of plain `parameter.field = value;` statements,
+// whose values never mention the parameter (`function:type:field`): written before any read or escape.
+const ENTITY_INITIALIZER_PREFIX_FIELD_MARKER: &str = "@entity-initializer-prefix-field:";
+
 const ENTITY_DEFAULT_FIELD_MARKER: &str = "@entity-default-field:";
 
 // A field an initializer definitely assigns through its leading `&mut Entity` parameter on every
@@ -734,6 +743,22 @@ fn allocation_initialized_context(
             context.insert(format!(
                 "{ENTITY_ALLOCATION_INITIALIZED_FIELD_MARKER}{field}"
             ));
+        }
+    }
+    // Omitting a default outright needs the stronger proof: the exact `flight_entity` allocation
+    // intrinsic, and no other argument of the initializer call that could read the allocation
+    // before the initializer's leading writes run.
+    let other_arguments_observe = call
+        .args
+        .iter()
+        .skip(1)
+        .any(|argument| tokens_contain_identifier(argument.to_token_stream(), name));
+    if is_flight_entity_allocation(&initializer.expr, entities) && !other_arguments_observe {
+        let prefix = format!("{ENTITY_INITIALIZER_PREFIX_FIELD_MARKER}{function}:");
+        for marker in entities {
+            if let Some(field) = marker.strip_prefix(&prefix) {
+                context.insert(format!("{ENTITY_ALLOCATION_OMITTED_FIELD_MARKER}{field}"));
+            }
         }
     }
     return context;
@@ -2133,6 +2158,39 @@ fn collect_definitely_assigned_fields(
         }
     }
     return true;
+}
+
+// The fields an initializer writes before anything can read or capture `parameter`: its leading
+// run of top-level `parameter.field = value;` statements. The run ends at the first other
+// statement, a nested or compound target, a value that may leave the body early, or a value naming
+// `parameter` anywhere in its tokens (macros, closures and shadowing included, conservatively), so
+// a conditional, partial or late write never qualifies.
+fn initializer_prefix_fields(statements: &[Stmt], parameter: &str) -> BTreeSet<String> {
+    let mut fields = BTreeSet::new();
+    for statement in statements {
+        if statement_may_exit_early(statement) {
+            break;
+        }
+        let Stmt::Expr(Expr::Assign(assign), Some(_)) = statement else {
+            break;
+        };
+        let Expr::Field(field) = assign.left.as_ref() else {
+            break;
+        };
+        let Expr::Path(base) = field.base.as_ref() else {
+            break;
+        };
+        let syn::Member::Named(member) = &field.member else {
+            break;
+        };
+        if !base.path.is_ident(parameter)
+            || tokens_contain_identifier(assign.right.to_token_stream(), parameter)
+        {
+            break;
+        }
+        fields.insert(member.to_string());
+    }
+    return fields;
 }
 
 // Records a program's type-namespace provenance: its `use` items and local declarations (see
@@ -4623,6 +4681,11 @@ fn entity_allocation_of(
         .iter()
         .filter_map(|marker| marker.strip_prefix(&prefix))
         .filter_map(|field| field.split_once(':'))
+        .filter(|(field, _)| {
+            !entities.contains(&format!(
+                "{ENTITY_ALLOCATION_OMITTED_FIELD_MARKER}{typescript_type}:{field}"
+            ))
+        })
         .map(|(field, value)| format!("{field}: {value}"))
         .collect::<Vec<_>>();
     fields.sort();
@@ -5046,6 +5109,15 @@ fn swap_operand_is_place(operand: &Expr) -> bool {
         Expr::Reference(reference) => reference.mutability.is_some() && is_place(&reference.expr),
         _ => false,
     };
+}
+
+// Whether any identifier token in `tokens`, at any group depth, is `name`.
+fn tokens_contain_identifier(tokens: proc_macro2::TokenStream, name: &str) -> bool {
+    return tokens.into_iter().any(|token| match token {
+        proc_macro2::TokenTree::Ident(identifier) => identifier == name,
+        proc_macro2::TokenTree::Group(group) => tokens_contain_identifier(group.stream(), name),
+        _ => false,
+    });
 }
 
 // An array literal or repeat in a typed-array position (`Float64Array`), constructed as that array.
@@ -9650,6 +9722,15 @@ fn generation_context_with_types(
                     function.sig.ident,
                     snake_to_lower_camel(&field)
                 ));
+            }
+            if function.sig.asyncness.is_none() {
+                for field in initializer_prefix_fields(&function.block.stmts, &parameter) {
+                    context.insert(format!(
+                        "{ENTITY_INITIALIZER_PREFIX_FIELD_MARKER}{}:{entity}Raw:{}",
+                        function.sig.ident,
+                        snake_to_lower_camel(&field)
+                    ));
+                }
             }
         }
         for (record, fields) in &record_vec_fields {
@@ -21626,14 +21707,9 @@ fn emit_method_call(
         "is_ge" if arguments.is_empty() => Ok(format!("({receiver} >= 0)")),
         "is_eq" if arguments.is_empty() => Ok(format!("({receiver} === 0)")),
         "is_ne" if arguments.is_empty() => Ok(format!("({receiver} !== 0)")),
-        "insert"
-            if arguments.len() == 2 && expression_is_sequence(&call.receiver, entities) =>
-        {
-            Ok(format!(
-                "{receiver}.splice({}, 0, {})",
-                arguments[0], arguments[1]
-            ))
-        }
+        "insert" if arguments.len() == 2 && expression_is_sequence(&call.receiver, entities) => Ok(
+            format!("{receiver}.splice({}, 0, {})", arguments[0], arguments[1]),
+        ),
         "into" if arguments.is_empty() => Ok(receiver),
         "into_boxed_slice" if arguments.is_empty() => Ok(receiver),
         "into_inner" if arguments.is_empty() => Ok(receiver),

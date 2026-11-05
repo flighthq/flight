@@ -47,23 +47,7 @@ export function createInputManager(): InputManagerRaw {
  * Allocates the full event signal group (TS `createInputSignals`).
  */
 export function createInputSignals(): InputSignalsRaw {
-  let out: InputSignalsRaw = Object.assign(allocateEntity<InputSignalsRaw>(), {
-    onGamepadAxisMove: allocateEntity<SignalRaw<InputGamepadAxisData>>(),
-    onGamepadButtonDown: allocateEntity<SignalRaw<InputGamepadButtonData>>(),
-    onGamepadButtonUp: allocateEntity<SignalRaw<InputGamepadButtonData>>(),
-    onGamepadConnect: allocateEntity<SignalRaw<InputGamepadConnectData>>(),
-    onGamepadDisconnect: allocateEntity<SignalRaw<InputGamepadConnectData>>(),
-    onKeyDown: allocateEntity<SignalRaw<InputKeyboardData>>(),
-    onKeyUp: allocateEntity<SignalRaw<InputKeyboardData>>(),
-    onPointerCancel: allocateEntity<SignalRaw<InputPointerData>>(),
-    onPointerDown: allocateEntity<SignalRaw<InputPointerData>>(),
-    onPointerMove: allocateEntity<SignalRaw<InputPointerData>>(),
-    onPointerMoveRelative: allocateEntity<SignalRaw<InputPointerData>>(),
-    onPointerUp: allocateEntity<SignalRaw<InputPointerData>>(),
-    onTextEdit: allocateEntity<SignalRaw<InputTextData>>(),
-    onTextInput: allocateEntity<SignalRaw<InputTextData>>(),
-    onWheel: allocateEntity<SignalRaw<InputPointerData>>(),
-  });
+  let out: InputSignalsRaw = allocateEntity<InputSignalsRaw>();
   initializeInputSignals(out);
   return out;
 }

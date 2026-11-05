@@ -23,9 +23,7 @@ export function blurSelectableRichText(manager: SelectableRichTextManagerRaw): v
 }
 
 export function createSelectableRichTextManager(): SelectableRichTextManagerRaw {
-  let out: SelectableRichTextManagerRaw = Object.assign(allocateEntity<SelectableRichTextManagerRaw>(), {
-    focused: null,
-  });
+  let out: SelectableRichTextManagerRaw = allocateEntity<SelectableRichTextManagerRaw>();
   initializeSelectableRichTextManager(out);
   return out;
 }

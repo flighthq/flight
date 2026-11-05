@@ -223,7 +223,7 @@ export interface Vector2Raw extends EntityRaw {
 }
 
 export function createVector2(x: number, y: number): Vector2Raw {
-  let out: Vector2Raw = Object.assign(allocateEntity<Vector2Raw>(), { x: 0, y: 0 });
+  let out: Vector2Raw = allocateEntity<Vector2Raw>();
   initializeVector2(out, x, y);
   return finishEntity(out);
 }
@@ -344,6 +344,107 @@ pub fn initialize_marker(out: &mut Marker) {
             compile_typescript(shadowed_allocator, Some("@flighthq/entity/contract")).unwrap();
         assert!(output.contains("return out;"), "{output}");
         assert!(!output.contains("finishEntity"), "{output}");
+    }
+
+    #[test]
+    fn omits_allocation_defaults_only_the_initializer_writes_before_any_read() {
+        fn module(initializer_body: &str, factory_body: &str) -> String {
+            return format!(
+                r#"use flight_entity::{{EntityRuntimeSlot, Ref, allocate_entity}};
+
+pub struct Inner {{
+    runtime: EntityRuntimeSlot,
+    pub count: usize,
+}}
+
+flight_entity::impl_entity!(Inner);
+
+pub struct Outer {{
+    runtime: EntityRuntimeSlot,
+    pub count: usize,
+    pub inner: Ref<Inner>,
+}}
+
+flight_entity::impl_entity!(Outer);
+
+pub fn create_outer(inner: Ref<Inner>, count: usize, flag: bool) -> Outer {{
+{factory_body}
+}}
+
+pub fn initialize_outer(out: &mut Outer, inner: Ref<Inner>, count: usize, flag: bool) {{
+{initializer_body}
+}}
+"#
+            );
+        }
+        let canonical_factory = "    let mut out: Outer = allocate_entity();\n    initialize_outer(&mut out, inner, count, flag);\n    return out;";
+        let compile = |initializer_body: &str, factory_body: &str| {
+            return compile_typescript(
+                &module(initializer_body, factory_body),
+                Some("@flighthq/entity/contract"),
+            )
+            .unwrap();
+        };
+
+        let written = compile(
+            "    out.inner = inner;\n    out.count = count;\n    if flag {\n        out.count = 0;\n    }",
+            canonical_factory,
+        );
+        assert!(
+            written.contains("let out: OuterRaw = allocateEntity<OuterRaw>();"),
+            "{written}"
+        );
+        assert!(!written.contains("allocateEntity<InnerRaw>()"), "{written}");
+
+        let partial = compile("    out.count = count;", canonical_factory);
+        assert!(
+            partial.contains(
+                "let out: OuterRaw = Object.assign(allocateEntity<OuterRaw>(), { inner: Object.assign(allocateEntity<InnerRaw>(), { count: 0 }) });"
+            ),
+            "{partial}"
+        );
+
+        let conditional = compile(
+            "    if flag {\n        out.count = 1;\n    } else {\n        out.count = 2;\n    }\n    out.inner = inner;",
+            canonical_factory,
+        );
+        assert!(
+            conditional.contains(
+                "Object.assign(allocateEntity<OuterRaw>(), { count: 0, inner: Object.assign(allocateEntity<InnerRaw>(), { count: 0 }) })"
+            ),
+            "{conditional}"
+        );
+
+        let read_first = compile(
+            "    out.count = out.count + count;\n    out.inner = inner;",
+            canonical_factory,
+        );
+        assert!(
+            read_first.contains(
+                "Object.assign(allocateEntity<OuterRaw>(), { count: 0, inner: Object.assign(allocateEntity<InnerRaw>(), { count: 0 }) })"
+            ),
+            "{read_first}"
+        );
+
+        let captured = compile(
+            "    out.inner = inner;\n    out.count = [count].iter().map(|value| *value + out.inner.read().unwrap().count).sum();",
+            canonical_factory,
+        );
+        assert!(
+            captured.contains("Object.assign(allocateEntity<OuterRaw>(), { count: 0 })"),
+            "{captured}"
+        );
+
+        let uninitialized = compile(
+            "    out.inner = inner;\n    out.count = count;",
+            "    let out: Outer = allocate_entity();\n    return out;",
+        );
+        assert!(
+            uninitialized.contains(
+                "Object.assign(allocateEntity<OuterRaw>(), { count: 0, inner: Object.assign(allocateEntity<InnerRaw>(), { count: 0 }) })"
+            ),
+            "{uninitialized}"
+        );
     }
 
     #[test]
@@ -1096,23 +1197,17 @@ pub struct Queue {
 "#,
         }];
 
-        let output = compile_typescript_with_visibility_sources(
-            source,
-            None,
-            &[],
-            &[],
-            &visibility_sources,
-        )
-        .unwrap();
+        let output =
+            compile_typescript_with_visibility_sources(source, None, &[], &[], &visibility_sources)
+                .unwrap();
 
         assert!(output.contains("state.values.delete(key);"), "{output}");
-        assert!(
-            output.contains("state.values.set(key, value);"),
-            "{output}"
-        );
+        assert!(output.contains("state.values.set(key, value);"), "{output}");
         assert!(output.contains("return state.values.get(key);"), "{output}");
         assert!(
-            output.contains("const previous = entries.get(key); entries.delete(key); return previous;"),
+            output.contains(
+                "const previous = entries.get(key); entries.delete(key); return previous;"
+            ),
             "{output}"
         );
         assert!(
@@ -9140,7 +9235,7 @@ export interface RequirementSetRaw extends EntityRaw {
 }
 
 export function createRequirementSet(covers: RequirementFacet[], requirements: Requirement[]): RequirementSetRaw {
-  let out: RequirementSetRaw = Object.assign(allocateEntity<RequirementSetRaw>(), { covers: [], requirements: [] });
+  let out: RequirementSetRaw = allocateEntity<RequirementSetRaw>();
   initializeRequirementSet(out, covers, requirements);
   return finishEntity(out);
 }
