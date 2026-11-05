@@ -27,6 +27,7 @@ import {
   hasRustPublicTypeAlias,
   hasRustSiblingGenerationSemantics,
   mergeRustExportNames,
+  nativeEndianAuditDiagnostics,
   renderCompanionContractExports,
   renderGeneratedImports,
   renderPublicExports,
@@ -38,6 +39,7 @@ import {
   resolveRustExportName,
   typeScriptDefaultNullOptionParameterArguments,
   typeScriptInlineStringUnionArguments,
+  typeScriptInternalTypeExportArguments,
   typeScriptNullableOptionFieldArguments,
   typeScriptNullableOptionParameterArguments,
   typeScriptNullableOptionReturnArguments,
@@ -396,6 +398,54 @@ export type AnimationPlayerRef = number;
 `;
 
     expect(typeScriptTypeAliasArguments(existing, generated, symbols)).toEqual([]);
+  });
+
+  it('derives only established crate-internal type owners used through their Rust module', () => {
+    const existing = `export type PlatformEndianness = 'big' | 'little' | 'unknown';
+export type PlatformEngine = 'gecko' | 'blink' | 'webkit' | 'unknown';
+export type UserAgentRuntimeWindow = Record<unknown> | null | undefined;
+export type Unknown = unknown;
+export interface Record<T> { readonly [key: string]: T }
+`;
+    const rust = `pub(crate) use flight_entity::{Record, Unknown};
+pub(crate) use flight_platform::{PlatformEndianness, PlatformEngine};
+pub(crate) type UserAgentRuntimeWindow<'a> = Option<&'a Record<Unknown>>;
+`;
+    const siblings = [
+      `use crate::user_agent_native::{PlatformEndianness, Unknown};
+use crate::user_agent_native::PlatformEngine as Engine;
+`,
+    ];
+
+    expect(typeScriptInternalTypeExportArguments(existing, rust, 'user_agent_native', siblings)).toEqual({
+      inlineStringUnionArguments: [
+        '--typescript-inline-string-union',
+        'PlatformEndianness=["big","little","unknown"]',
+        '--typescript-inline-string-union',
+        'PlatformEngine=["gecko","blink","webkit","unknown"]',
+      ],
+      typeAliasArguments: ['--typescript-type-alias', 'Unknown=unknown'],
+      typeExportArguments: [
+        '--typescript-internal-type-export',
+        'PlatformEndianness',
+        '--typescript-internal-type-export',
+        'PlatformEngine',
+        '--typescript-internal-type-export',
+        'Unknown',
+      ],
+    });
+  });
+
+  it('reports native-endian semantics without matching comments', () => {
+    expect(
+      nativeEndianAuditDiagnostics(`// value.to_ne_bytes()
+let bytes = value.to_ne_bytes();
+let value = u32::from_ne_bytes(bytes);
+`),
+    ).toEqual([
+      'native-endian `from_ne_bytes` semantics are not selected for TypeScript generation',
+      'native-endian `to_ne_bytes` semantics are not selected for TypeScript generation',
+    ]);
   });
 
   it('derives nullable field metadata from canonical owner positions used by generated functions', () => {

@@ -78,6 +78,7 @@ pub(crate) struct EmitProgramInput<'a> {
     pub dependency_export_names: &'a [(BTreeMap<String, String>, &'a str)],
     pub external_string_unions: &'a BTreeSet<String>,
     pub inline_string_unions: &'a BTreeMap<String, Vec<String>>,
+    pub internal_type_exports: &'a [&'a str],
     pub type_script_type_aliases: &'a [crate::TypeScriptTypeAlias<'a>],
     pub type_script_nullable_option_fields: &'a [crate::TypeScriptNullableOptionField<'a>],
     pub type_script_default_null_option_parameters:
@@ -164,6 +165,11 @@ const TYPE_PARAMETER_MARKER: &str = "@type-parameter:";
 // Explicit Rust-name to established TypeScript representation metadata. The marker stores
 // `rust␟module␟target`; an empty module is the intrinsic `unknown` representation.
 const TYPE_SCRIPT_TYPE_ALIAS_MARKER: &str = "@typescript-type-alias:";
+
+// An established target-native module owns this type for generated siblings, but not for public
+// contract/root lanes. Its representation is supplied separately as an explicit alias or validated
+// string union; this marker keeps references named and suppresses a foreign contract import.
+const INTERNAL_TYPE_EXPORT_MARKER: &str = "@internal-type-export:";
 
 pub(super) const DEPENDENCY_EXPORT_NAME_TARGET_MARKER: &str = "@dependency-export-name-target:";
 
@@ -8093,6 +8099,38 @@ fn insert_inline_string_union_context(
             .join(" | ");
         return format!("{INLINE_STRING_UNION_MARKER}{name}{PROVENANCE_SEPARATOR}{union}");
     }));
+}
+
+fn insert_internal_type_export_context(context: &mut HashSet<String>, names: &[&str]) {
+    context.extend(
+        names
+            .iter()
+            .map(|name| format!("{INTERNAL_TYPE_EXPORT_MARKER}{name}")),
+    );
+}
+
+fn is_internal_type_export(context: &HashSet<String>, name: &str) -> bool {
+    return context.contains(&format!("{INTERNAL_TYPE_EXPORT_MARKER}{name}"));
+}
+
+fn emit_internal_type_export_declarations(
+    out: &mut String,
+    names: &[&str],
+    context: &HashSet<String>,
+) -> Result<(), CompileError> {
+    for name in names {
+        let representation = type_script_type_alias(context, name)
+            .map(|(target, _)| target)
+            .or_else(|| inline_string_union(context, name))
+            .ok_or_else(|| {
+                compile_error(format!(
+                    "internal TypeScript type export `{name}` has no explicit representation"
+                ))
+            })?;
+        writeln!(out, "type {name} = {representation};\n")
+            .expect("writing to a String cannot fail");
+    }
+    return Ok(());
 }
 
 fn inline_string_union(context: &HashSet<String>, name: &str) -> Option<String> {
@@ -23275,6 +23313,7 @@ pub(crate) fn emit_program(input: &EmitProgramInput) -> Result<String, CompileEr
     let dependency_export_names = input.dependency_export_names;
     let external_string_unions = input.external_string_unions;
     let inline_string_unions = input.inline_string_unions;
+    let internal_type_exports = input.internal_type_exports;
     let type_script_type_aliases = input.type_script_type_aliases;
     let type_script_nullable_option_fields = input.type_script_nullable_option_fields;
     let type_script_default_null_option_parameters =
@@ -23323,6 +23362,7 @@ pub(crate) fn emit_program(input: &EmitProgramInput) -> Result<String, CompileEr
     let mut type_context = identity_context.clone();
     type_context.extend(external_shared_identity_fields.iter().cloned());
     insert_type_script_type_alias_context(&mut type_context, type_script_type_aliases);
+    insert_internal_type_export_context(&mut type_context, internal_type_exports);
     let mut expression_context = generation_context_with_types(
         &program_sources,
         external_record_structs,
@@ -23542,6 +23582,7 @@ pub(crate) fn emit_program(input: &EmitProgramInput) -> Result<String, CompileEr
     // The body is emitted before the imports so the package-internal state stores it actually reads
     // or writes can be imported from their declaring sibling modules.
     let mut body = String::new();
+    emit_internal_type_export_declarations(&mut body, internal_type_exports, &source_context)?;
     for rust_enum in &program.enums {
         let enum_start = body.len();
         let result = emit_enum(
@@ -23718,6 +23759,13 @@ pub(crate) fn emit_program(input: &EmitProgramInput) -> Result<String, CompileEr
         }
     } else {
         emit_entity_runtime_state_stores(&mut body, program, &source_context)?;
+    }
+    if !internal_type_exports.is_empty() {
+        if !body.ends_with("\n\n") {
+            body.push('\n');
+        }
+        writeln!(body, "export type {{ {} }};", internal_type_exports.join(", "))
+            .expect("writing to a String cannot fail");
     }
     match entity_runtime_state_store_imports(&body, &programs, &program_modules) {
         Ok(imports) => {
@@ -25107,6 +25155,9 @@ pub(crate) fn emit_type(
             if matches!(segment.arguments, PathArguments::None)
                 && let Some((target, _)) = type_script_type_alias(entities, &name)
             {
+                if is_internal_type_export(entities, &name) {
+                    return Ok(name);
+                }
                 return Ok(target);
             }
             if path.path.segments.len() > 1
@@ -25175,6 +25226,9 @@ pub(crate) fn emit_type(
             if matches!(segment.arguments, PathArguments::None)
                 && let Some(union) = inline_string_union(entities, &name)
             {
+                if is_internal_type_export(entities, &name) {
+                    return Ok(name);
+                }
                 return Ok(union);
             }
             // A standard `Box` only transfers ownership, so a boxed typed-array alias is that typed
@@ -28018,7 +28072,10 @@ impl CrossCrateUsageCollector<'_> {
             return;
         };
         let name = segment.ident.to_string();
-        if self.symbols.contains_key(&name) && !is_lowered_cross_crate_type(&name) {
+        if self.symbols.contains_key(&name)
+            && !is_lowered_cross_crate_type(&name)
+            && !is_internal_type_export(self.context, &name)
+        {
             self.type_names.insert(name);
         }
     }

@@ -198,6 +198,7 @@ fn compile_typescript_sources(
         &[],
         &[],
         &[],
+        &[],
         module_identities,
         source_paths,
         visibility_sources,
@@ -214,6 +215,7 @@ fn compile_typescript_sources_with_options(
     type_script_string_unions: &[TypeScriptStringUnion<'_>],
     type_script_inline_string_unions: &[TypeScriptInlineStringUnion<'_>],
     type_script_type_aliases: &[TypeScriptTypeAlias<'_>],
+    internal_type_exports: &[&str],
     type_script_nullable_option_fields: &[TypeScriptNullableOptionField<'_>],
     type_script_default_null_option_parameters: &[TypeScriptDefaultNullOptionParameter<'_>],
     type_script_nullable_option_parameters: &[TypeScriptNullableOptionParameter<'_>],
@@ -238,6 +240,12 @@ fn compile_typescript_sources_with_options(
     } else {
         model::parse_program(source)?
     };
+    validate_internal_type_exports(
+        internal_type_exports,
+        &program,
+        type_script_inline_string_unions,
+        type_script_type_aliases,
+    )?;
     let alias_programs = alias_sources
         .iter()
         .map(|alias_source| model::parse_program_lenient(alias_source))
@@ -261,6 +269,10 @@ fn compile_typescript_sources_with_options(
                 external.module,
             ));
         })
+        .collect::<Result<Vec<_>, _>>()?;
+    let external_visibility_programs = external_alias_sources
+        .iter()
+        .map(|external| model::parse_visibility_program(external.source))
         .collect::<Result<Vec<_>, _>>()?;
     let external_nullable_programs = external_alias_sources
         .iter()
@@ -293,7 +305,8 @@ fn compile_typescript_sources_with_options(
         type_script_string_unions,
         std::iter::once(&program)
             .chain(&alias_programs)
-            .chain(&visibility_programs),
+            .chain(&visibility_programs)
+            .chain(&external_visibility_programs),
         "external TypeScript",
     )?;
     let inline_string_union_proxies = type_script_inline_string_unions
@@ -308,7 +321,8 @@ fn compile_typescript_sources_with_options(
         &inline_string_union_proxies,
         std::iter::once(&program)
             .chain(&alias_programs)
-            .chain(&visibility_programs),
+            .chain(&visibility_programs)
+            .chain(&external_visibility_programs),
         "inline TypeScript",
     )?;
     let named_type_script_string_unions = type_script_string_unions
@@ -413,6 +427,7 @@ fn compile_typescript_sources_with_options(
         dependency_export_names: &dependency_export_names,
         external_string_unions: &external_string_unions,
         inline_string_unions: &inline_string_unions,
+        internal_type_exports,
         type_script_type_aliases,
         type_script_nullable_option_fields,
         type_script_default_null_option_parameters,
@@ -599,6 +614,46 @@ pub fn compile_typescript_with_options(
     crate_roots: &[CrateRootSource<'_>],
     lenient: bool,
 ) -> Result<String, CompileError> {
+    return compile_typescript_with_options_and_internal_type_exports(
+        source,
+        entity_module,
+        alias_sources,
+        external_alias_sources,
+        type_script_string_unions,
+        type_script_inline_string_unions,
+        type_script_type_aliases,
+        &[],
+        type_script_nullable_option_fields,
+        type_script_default_null_option_parameters,
+        type_script_nullable_option_parameters,
+        type_script_nullable_option_returns,
+        visibility_sources,
+        crate_roots,
+        lenient,
+    );
+}
+
+/// Compiles one Rust module with explicit crate-internal TypeScript type owners. These names remain
+/// off the package contract and root lanes; callers must derive them from an established internal
+/// TypeScript module.
+// flight-lint: allow(contract-vocabulary) compiler host tooling is not a transpilation contract
+pub fn compile_typescript_with_options_and_internal_type_exports(
+    source: ModuleSource<'_>,
+    entity_module: Option<&str>,
+    alias_sources: &[ModuleSource<'_>],
+    external_alias_sources: &[ExternalAliasSource<'_>],
+    type_script_string_unions: &[TypeScriptStringUnion<'_>],
+    type_script_inline_string_unions: &[TypeScriptInlineStringUnion<'_>],
+    type_script_type_aliases: &[TypeScriptTypeAlias<'_>],
+    internal_type_exports: &[&str],
+    type_script_nullable_option_fields: &[TypeScriptNullableOptionField<'_>],
+    type_script_default_null_option_parameters: &[TypeScriptDefaultNullOptionParameter<'_>],
+    type_script_nullable_option_parameters: &[TypeScriptNullableOptionParameter<'_>],
+    type_script_nullable_option_returns: &[TypeScriptNullableOptionReturn<'_>],
+    visibility_sources: &[ModuleSource<'_>],
+    crate_roots: &[CrateRootSource<'_>],
+    lenient: bool,
+) -> Result<String, CompileError> {
     let identities = std::iter::once(&source)
         .chain(alias_sources)
         .map(|module| module_identity_from_path(module.path, crate_roots))
@@ -622,6 +677,7 @@ pub fn compile_typescript_with_options(
         type_script_string_unions,
         type_script_inline_string_unions,
         type_script_type_aliases,
+        internal_type_exports,
         type_script_nullable_option_fields,
         type_script_default_null_option_parameters,
         type_script_nullable_option_parameters,
@@ -647,6 +703,7 @@ pub fn compile_typescript_lenient(
     return compile_typescript_sources_with_options(
         source,
         entity_module,
+        &[],
         &[],
         &[],
         &[],
@@ -2428,6 +2485,63 @@ fn validate_type_script_type_aliases(
             return Err(compile_error(format!(
                 "TypeScript owner type `{}` is supplied by both `{previous}` and `{module}`",
                 alias.target
+            )));
+        }
+    }
+    return Ok(());
+}
+
+fn validate_internal_type_exports(
+    names: &[&str],
+    program: &model::Program,
+    inline_string_unions: &[TypeScriptInlineStringUnion<'_>],
+    type_aliases: &[TypeScriptTypeAlias<'_>],
+) -> Result<(), CompileError> {
+    let mut reexports = std::collections::BTreeSet::new();
+    for item_use in &program.uses {
+        if !matches!(item_use.vis, syn::Visibility::Restricted(_)) {
+            continue;
+        }
+        let mut symbols = std::collections::BTreeMap::new();
+        typescript::collect_cross_crate_use_tree(&item_use.tree, &mut Vec::new(), &mut symbols);
+        reexports.extend(symbols.into_keys());
+    }
+    let aliases = type_aliases
+        .iter()
+        .map(|alias| (alias.name, alias))
+        .collect::<std::collections::BTreeMap<_, _>>();
+    let union_names = inline_string_unions
+        .iter()
+        .map(|union| union.name)
+        .collect::<std::collections::BTreeSet<_>>();
+    let mut seen = std::collections::BTreeSet::new();
+    for name in names {
+        if syn::parse_str::<syn::Ident>(name).is_err() || !seen.insert(*name) {
+            return Err(compile_error(format!(
+                "invalid or duplicate internal TypeScript type export `{name}`"
+            )));
+        }
+        if !reexports.contains(*name) {
+            return Err(compile_error(format!(
+                "internal TypeScript type export `{name}` must name a crate-visible foreign Rust re-export"
+            )));
+        }
+        if aliases
+            .get(name)
+            .is_some_and(|alias| alias.module.is_some())
+        {
+            return Err(compile_error(format!(
+                "internal TypeScript type export `{name}` must use a local intrinsic or string-union representation"
+            )));
+        }
+        if aliases.contains_key(name) && union_names.contains(name) {
+            return Err(compile_error(format!(
+                "internal TypeScript type export `{name}` has conflicting alias and string-union representations"
+            )));
+        }
+        if !aliases.contains_key(name) && !union_names.contains(name) {
+            return Err(compile_error(format!(
+                "internal TypeScript type export `{name}` needs an explicit type-alias or string-union representation"
             )));
         }
     }

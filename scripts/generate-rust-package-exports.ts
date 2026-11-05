@@ -395,6 +395,102 @@ interface TypeScriptTypeAliasOwner {
   name: string;
 }
 
+export interface TypeScriptInternalTypeExportArguments {
+  inlineStringUnionArguments: string[];
+  typeAliasArguments: string[];
+  typeExportArguments: string[];
+}
+
+// A target-native module may already own crate-internal TypeScript types that a generated sibling
+// imports. Preserve only the exact ownership edge Rust and TypeScript both establish: a restricted
+// foreign `use`, a direct exported TypeScript alias of the same name, and a sibling reference through
+// this Rust module. The structured representations below are revalidated by the compiler; no source
+// text, root export, or contract export is retained.
+export function typeScriptInternalTypeExportArguments(
+  existingTypescript: string,
+  rust: string,
+  rustModule: string,
+  siblingRustSources: readonly string[],
+): TypeScriptInternalTypeExportArguments {
+  const foreignReexports = new Set<string>();
+  for (const match of rust.matchAll(/\bpub\s*\([^)]*\)\s+use\s+flight_[A-Za-z0-9_]+::([\s\S]*?);/g)) {
+    const tree = match[1].trim();
+    const items = tree.startsWith('{') && tree.endsWith('}') ? tree.slice(1, -1).split(',') : [tree];
+    for (const item of items) {
+      const fields = item.trim().split(/\s+as\s+/);
+      const local = fields.at(-1)?.trim();
+      if (local && /^[A-Za-z_][A-Za-z0-9_]*$/.test(local)) foreignReexports.add(local);
+    }
+  }
+
+  const siblingReferences = new Set<string>();
+  const escapedModule = rustModule.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const usePattern = new RegExp(
+    `\\buse\\s+(?:crate|super)::${escapedModule}::(\\{[\\s\\S]*?\\}|[A-Za-z_][A-Za-z0-9_]*(?:\\s+as\\s+[A-Za-z_][A-Za-z0-9_]*)?)\\s*;`,
+    'g',
+  );
+  const qualifiedPattern = new RegExp(`\\b(?:crate|super)::${escapedModule}::([A-Za-z_][A-Za-z0-9_]*)\\b`, 'g');
+  for (const sibling of siblingRustSources) {
+    for (const match of sibling.matchAll(usePattern)) {
+      const tree = match[1];
+      const items = tree.startsWith('{') && tree.endsWith('}') ? tree.slice(1, -1).split(',') : [tree];
+      for (const item of items) {
+        const original = item
+          .trim()
+          .split(/\s+as\s+/)[0]
+          ?.trim();
+        if (original && /^[A-Za-z_][A-Za-z0-9_]*$/.test(original)) siblingReferences.add(original);
+      }
+    }
+    for (const match of sibling.matchAll(qualifiedPattern)) siblingReferences.add(match[1]);
+  }
+
+  const parsed = parseSync('existing.ts', existingTypescript, { lang: 'ts', sourceType: 'module' });
+  if (parsed.errors.length > 0) {
+    throw new Error(
+      `could not parse existing TypeScript module while resolving internal type exports: ${parsed.errors[0]?.message}`,
+    );
+  }
+  const inlineStringUnions = new Map<string, string[]>();
+  const intrinsicAliases = new Map<string, string>();
+  for (const statement of parsed.program.body as unknown as Record<string, unknown>[]) {
+    if (statement.type !== 'ExportNamedDeclaration') continue;
+    const declaration = statement.declaration as Record<string, unknown> | null;
+    if (declaration?.type !== 'TSTypeAliasDeclaration') continue;
+    const identifier = declaration.id as Record<string, unknown>;
+    const name = identifier.type === 'Identifier' && typeof identifier.name === 'string' ? identifier.name : undefined;
+    if (name === undefined || !foreignReexports.has(name) || !siblingReferences.has(name)) continue;
+    const annotation = declaration.typeAnnotation as Record<string, unknown>;
+    const values = stringLiteralUnionValues(annotation);
+    if (values !== undefined) inlineStringUnions.set(name, values);
+    else if (annotation.type === 'TSUnknownKeyword') intrinsicAliases.set(name, 'unknown');
+  }
+
+  const names = [...inlineStringUnions.keys(), ...intrinsicAliases.keys()].sort((left, right) =>
+    left.localeCompare(right),
+  );
+  return {
+    inlineStringUnionArguments: [...inlineStringUnions]
+      .sort(([left], [right]) => left.localeCompare(right))
+      .flatMap(([name, values]) => ['--typescript-inline-string-union', `${name}=${JSON.stringify(values)}`]),
+    typeAliasArguments: [...intrinsicAliases]
+      .sort(([left], [right]) => left.localeCompare(right))
+      .flatMap(([name, target]) => ['--typescript-type-alias', `${name}=${target}`]),
+    typeExportArguments: names.flatMap((name) => ['--typescript-internal-type-export', name]),
+  };
+}
+
+// Native-endian byte conversion deliberately remains a target decision. The ordinary compiler may
+// continue to serve already-selected package implementations, but a target-native promotion audit
+// must not call such a source compiler-clean until that semantic choice is explicit.
+export function nativeEndianAuditDiagnostics(rust: string): string[] {
+  const code = rust.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '');
+  const methods = [...code.matchAll(/\b((?:to|from)_ne_bytes)\s*\(/g)].map((match) => match[1]);
+  return [...new Set(methods)]
+    .sort()
+    .map((method) => `native-endian \`${method}\` semantics are not selected for TypeScript generation`);
+}
+
 // Existing exported signatures are the authority for Rust aliases whose target-language
 // representation is already owned elsewhere. The match is deliberately structural: only a bare
 // generated type at the same position in the same exported function can become a canonical imported

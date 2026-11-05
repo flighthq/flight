@@ -4,7 +4,8 @@ use flight_compiler::{
     TypeScriptNullableOptionReturn, TypeScriptStringUnion, TypeScriptTypeAlias, VitestAliasSource,
     compile_typescript, compile_typescript_lenient, compile_typescript_with_alias_sources,
     compile_typescript_with_external_alias_sources, compile_typescript_with_module_sources,
-    compile_typescript_with_options, compile_typescript_with_visibility_sources, compile_vitest,
+    compile_typescript_with_options, compile_typescript_with_options_and_internal_type_exports,
+    compile_typescript_with_visibility_sources, compile_vitest,
     compile_vitest_with_alias_sources, compile_vitest_with_contract_alias_sources,
     compile_vitest_with_external_alias_sources, compile_vitest_with_module_alias_sources,
     compile_vitest_with_options, compile_vitest_with_visibility_sources, root_only_names,
@@ -14355,6 +14356,71 @@ pub enum AnimationLoopMode { PingPong, Repeat }
         assert!(
             !output.contains("AccessibilityTreeBlockReason"),
             "the inline representation must not invent a named TypeScript API: {output}"
+        );
+    }
+
+    #[test]
+    fn emits_explicit_internal_type_owners_without_contract_imports() {
+        let values = vec!["big".to_string(), "little".to_string(), "unknown".to_string()];
+        let unions = [TypeScriptInlineStringUnion {
+            name: "PlatformEndianness",
+            values: &values,
+        }];
+        let aliases = [TypeScriptTypeAlias {
+            name: "Unknown",
+            module: None,
+            target: "unknown",
+        }];
+        let siblings = [ModuleSource {
+            path: "crates/flight-useragent/src/user_agent.rs",
+            source: "use crate::user_agent_native::{PlatformEndianness, Unknown};\n",
+        }];
+        let visibility = [ModuleSource {
+            path: "crates/flight-platform/src/types.rs",
+            source: "pub enum PlatformEndianness { Big, Little, Unknown }\n",
+        }];
+
+        let output = compile_typescript_with_options_and_internal_type_exports(
+            ModuleSource {
+                path: "crates/flight-useragent/src/user_agent_native.rs",
+                source: r#"pub(crate) use flight_entity::Unknown;
+pub(crate) use flight_platform::PlatformEndianness;
+
+pub(crate) fn inspect(value: Unknown) -> PlatformEndianness {
+    return PlatformEndianness::Unknown;
+}
+"#,
+            },
+            None,
+            &siblings,
+            &[],
+            &[],
+            &unions,
+            &aliases,
+            &["PlatformEndianness", "Unknown"],
+            &[],
+            &[],
+            &[],
+            &[],
+            &visibility,
+            &[],
+            false,
+        )
+        .unwrap();
+
+        assert!(!output.contains("@flighthq/"), "{output}");
+        assert!(
+            output.contains("type PlatformEndianness = 'big' | 'little' | 'unknown';"),
+            "{output}"
+        );
+        assert!(output.contains("type Unknown = unknown;"), "{output}");
+        assert!(
+            output.contains("function inspect(value: Unknown): PlatformEndianness"),
+            "{output}"
+        );
+        assert!(
+            output.ends_with("export type { PlatformEndianness, Unknown };\n"),
+            "{output}"
         );
     }
 

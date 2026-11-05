@@ -4,7 +4,7 @@ use std::path::{Path, PathBuf};
 use std::process::{self, Command};
 
 const USAGE: &str = "\
-Usage: flight-compile generate --source <rust-file> --out <typescript-file> [--entity-module <specifier>] [--alias-source <rust-file> ...] [--external-alias-source <rust-file> --external-alias-module <specifier> ...] [--typescript-string-union <module>#<name>=<json-string-array> ...] [--typescript-inline-string-union <name>=<json-string-array> ...] [--typescript-type-alias <rust-name>=<module>#<typescript-name>|boolean|number|string|unknown ...] [--typescript-nullable-option-field <module>#<owner>.<field> ...] [--typescript-default-null-option-parameter <function>.<parameter> ...] [--typescript-nullable-option-parameter <function>.<parameter> ...] [--typescript-nullable-option-return <function> ...] [--visibility-source <rust-file> ...] [--crate-root <crate-name>=<rust-file> ...] [--lenient] [--probe-target-native] [--check]
+Usage: flight-compile generate --source <rust-file> --out <typescript-file> [--entity-module <specifier>] [--alias-source <rust-file> ...] [--external-alias-source <rust-file> --external-alias-module <specifier> ...] [--typescript-string-union <module>#<name>=<json-string-array> ...] [--typescript-inline-string-union <name>=<json-string-array> ...] [--typescript-type-alias <rust-name>=<module>#<typescript-name>|boolean|number|string|unknown ...] [--typescript-internal-type-export <name> ...] [--typescript-nullable-option-field <module>#<owner>.<field> ...] [--typescript-default-null-option-parameter <function>.<parameter> ...] [--typescript-nullable-option-parameter <function>.<parameter> ...] [--typescript-nullable-option-return <function> ...] [--visibility-source <rust-file> ...] [--crate-root <crate-name>=<rust-file> ...] [--lenient] [--probe-target-native] [--check]
        flight-compile generate-tests --source <rust-test-file> --out <vitest-file> --contract-module <specifier> [--contract-source <rust-file>] [--alias-source <rust-file> ...] [--external-alias-source <rust-file> --external-alias-module <specifier> ...] [--typescript-string-union <module>#<name>=<json-string-array> ...] [--typescript-type-alias <rust-name>=<module>#<typescript-name>|boolean|number|string|unknown ...] [--typescript-nullable-option-field <module>#<owner>.<field> ...] [--typescript-default-null-option-parameter <function>.<parameter> ...] [--typescript-nullable-option-parameter <function>.<parameter> ...] [--typescript-nullable-option-return <function> ...] [--visibility-source <rust-file> ...] [--probe-target-native] [--check]
        flight-compile source-mode --source <rust-file>
        flight-compile root-only --source <rust-file>
@@ -30,6 +30,7 @@ struct GenerateOptions {
     probe_target_native: bool,
     source: PathBuf,
     type_script_inline_string_unions: Vec<OwnedTypeScriptInlineStringUnion>,
+    type_script_internal_type_exports: Vec<String>,
     type_script_default_null_option_parameters: Vec<OwnedTypeScriptNullableOptionParameter>,
     type_script_nullable_option_fields: Vec<OwnedTypeScriptNullableOptionField>,
     type_script_nullable_option_parameters: Vec<OwnedTypeScriptNullableOptionParameter>,
@@ -344,7 +345,12 @@ fn generate(options: &GenerateOptions, kind: GenerateKind) -> Result<(), String>
                 .iter()
                 .map(|name| flight_compiler::TypeScriptNullableOptionReturn { name })
                 .collect::<Vec<_>>();
-            flight_compiler::compile_typescript_with_options(
+            let type_script_internal_type_exports = options
+                .type_script_internal_type_exports
+                .iter()
+                .map(String::as_str)
+                .collect::<Vec<_>>();
+            flight_compiler::compile_typescript_with_options_and_internal_type_exports(
                 flight_compiler::ModuleSource {
                     path: &source_path,
                     source: &source,
@@ -355,6 +361,7 @@ fn generate(options: &GenerateOptions, kind: GenerateKind) -> Result<(), String>
                 &type_script_string_unions,
                 &type_script_inline_string_unions,
                 &type_script_type_aliases,
+                &type_script_internal_type_exports,
                 &type_script_nullable_option_fields,
                 &type_script_default_null_option_parameters,
                 &type_script_nullable_option_parameters,
@@ -547,6 +554,7 @@ fn parse_generate_options(
     let mut out = None;
     let mut source = None;
     let mut type_script_inline_string_unions = Vec::new();
+    let mut type_script_internal_type_exports = Vec::new();
     let mut type_script_default_null_option_parameters = Vec::new();
     let mut type_script_nullable_option_fields = Vec::new();
     let mut type_script_nullable_option_parameters = Vec::new();
@@ -699,6 +707,18 @@ fn parse_generate_options(
                     target: target.to_string(),
                 });
             }
+            "--typescript-internal-type-export" => {
+                index += 1;
+                let name = arguments.get(index).ok_or_else(|| {
+                    format!("--typescript-internal-type-export requires <name>\n\n{USAGE}")
+                })?;
+                if !valid_type_script_identifier(name) {
+                    return Err(format!(
+                        "invalid --typescript-internal-type-export `{name}`; expected <name>\n\n{USAGE}"
+                    ));
+                }
+                type_script_internal_type_exports.push(name.to_string());
+            }
             "--typescript-nullable-option-field" => {
                 index += 1;
                 let specification = arguments.get(index).ok_or_else(|| {
@@ -829,6 +849,11 @@ fn parse_generate_options(
                 "--typescript-inline-string-union is only valid for generate\n\n{USAGE}"
             ));
         }
+        GenerateKind::Tests if !type_script_internal_type_exports.is_empty() => {
+            return Err(format!(
+                "--typescript-internal-type-export is only valid for generate\n\n{USAGE}"
+            ));
+        }
         GenerateKind::Source | GenerateKind::Tests => {}
     }
     if external_alias_sources.len() != external_alias_modules.len() {
@@ -850,6 +875,7 @@ fn parse_generate_options(
         probe_target_native,
         source: source.ok_or_else(|| format!("--source is required\n\n{USAGE}"))?,
         type_script_inline_string_unions,
+        type_script_internal_type_exports,
         type_script_default_null_option_parameters,
         type_script_nullable_option_fields,
         type_script_nullable_option_parameters,
@@ -977,6 +1003,41 @@ mod tests {
         let union = &options.type_script_inline_string_unions[0];
         assert_eq!(union.name, "AccessibilityTreeBlockReason");
         assert_eq!(union.values, ["destroyed", "no-dom"]);
+    }
+
+    #[test]
+    fn parses_internal_type_exports_only_for_source_generation() {
+        let options = parse_generate_options(
+            &arguments(&[
+                "--source",
+                "source.rs",
+                "--out",
+                "output.ts",
+                "--typescript-internal-type-export",
+                "Unknown",
+            ]),
+            GenerateKind::Source,
+        )
+        .unwrap();
+        assert_eq!(options.type_script_internal_type_exports, ["Unknown"]);
+
+        let error = parse_generate_options(
+            &arguments(&[
+                "--source",
+                "source.rs",
+                "--out",
+                "output.ts",
+                "--contract-module",
+                "./contract.ts",
+                "--typescript-internal-type-export",
+                "Unknown",
+            ]),
+            GenerateKind::Tests,
+        );
+        let Err(error) = error else {
+            panic!("internal exports must be source-only");
+        };
+        assert!(error.starts_with("--typescript-internal-type-export is only valid for generate"));
     }
 
     #[test]

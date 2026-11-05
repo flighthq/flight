@@ -35,6 +35,7 @@ import {
   renderGeneratedImports,
   dependencyAliasArguments,
   mergeRustExportNames,
+  nativeEndianAuditDiagnostics,
   renderPublicExports,
   renderReferencedConstants,
   renderReferencedExports,
@@ -44,6 +45,7 @@ import {
   snakeToLowerCamel,
   typeScriptDefaultNullOptionParameterArguments,
   typeScriptInlineStringUnionArguments,
+  typeScriptInternalTypeExportArguments,
   typeScriptNullableOptionFieldArguments,
   typeScriptNullableOptionParameterArguments,
   typeScriptNullableOptionReturnArguments,
@@ -664,9 +666,25 @@ function probeNativeSource(
   const out = join(rawRoot, `${fileName}.audit.ts`);
   const existingPath = join(packageSourceRoot, fileName);
   const existingTypescript = existsSync(existingPath) ? readFileSync(existingPath, 'utf8') : '';
-  const namedRepresentationArguments = typeScriptStringUnionArguments(
-    existingTypescript,
-    loadImportedContractSymbols(existingTypescript),
+  const internalTypeExports =
+    command === 'generate'
+      ? typeScriptInternalTypeExportArguments(
+          existingTypescript,
+          readFileSync(reportedSource, 'utf8'),
+          basename(reportedSource, '.rs'),
+          aliasSources
+            .filter((candidate) => candidate !== reportedSource)
+            .map((candidate) => readFileSync(candidate, 'utf8')),
+        )
+      : { inlineStringUnionArguments: [], typeAliasArguments: [], typeExportArguments: [] };
+  const namedRepresentationArguments = [
+    ...typeScriptStringUnionArguments(existingTypescript, loadImportedContractSymbols(existingTypescript)),
+    ...internalTypeExports.inlineStringUnionArguments,
+    ...internalTypeExports.typeExportArguments,
+  ];
+  const initialTypeAliasArguments = mergedTypeScriptTypeAliasArguments(
+    knownTypeAliasArguments,
+    internalTypeExports.typeAliasArguments,
   );
   const compilerArguments = (
     typeAliasArguments: string[],
@@ -704,7 +722,7 @@ function probeNativeSource(
   let result = spawnSync(
     compilerPath,
     compilerArguments(
-      knownTypeAliasArguments,
+      initialTypeAliasArguments,
       knownNullableOptionFieldArguments,
       knownNullableOptionParameterArguments,
       knownDefaultNullOptionParameterArguments,
@@ -715,18 +733,21 @@ function probeNativeSource(
       encoding: 'utf8',
     },
   );
-  let typeAliasArguments: string[] = [];
+  let typeAliasArguments: string[] = internalTypeExports.typeAliasArguments;
   let nullableOptionFieldArguments: string[] = [];
   let nullableOptionParameterArguments: string[] = [];
   let defaultNullOptionParameterArguments: string[] = [];
   let nullableOptionReturnArguments: string[] = [];
   if (result.status === 0 && command === 'generate') {
-    typeAliasArguments = typeScriptTypeAliasArguments(
-      existingTypescript,
-      readFileSync(out, 'utf8'),
-      loadImportedContractSymbols(existingTypescript),
+    typeAliasArguments = mergedTypeScriptTypeAliasArguments(
+      internalTypeExports.typeAliasArguments,
+      typeScriptTypeAliasArguments(
+        existingTypescript,
+        readFileSync(out, 'utf8'),
+        loadImportedContractSymbols(existingTypescript),
+      ),
     );
-    if (typeAliasArguments.length > 0) {
+    if (typeAliasArguments.length > internalTypeExports.typeAliasArguments.length) {
       const allTypeAliasArguments = mergedTypeScriptTypeAliasArguments(knownTypeAliasArguments, typeAliasArguments);
       result = spawnSync(
         compilerPath,
@@ -878,12 +899,16 @@ function probeNativeSource(
     }
   }
   const stderr = result.stderr.trim();
+  const semanticDiagnostics =
+    command === 'generate' ? nativeEndianAuditDiagnostics(readFileSync(reportedSource, 'utf8')) : [];
+  const diagnostics = [...(stderr === '' ? [] : stderr.split(/\r?\n/)), ...semanticDiagnostics];
   const skipped = Number(/lenient: (\d+) items skipped/.exec(stderr)?.[1] ?? 0);
-  const status = result.status === 0 ? (skipped === 0 ? 'compiler-clean' : 'partial') : 'blocked';
+  const status =
+    result.status !== 0 || semanticDiagnostics.length > 0 ? 'blocked' : skipped === 0 ? 'compiler-clean' : 'partial';
   return {
     defaultNullOptionParameterArguments,
     entry: {
-      diagnostics: stderr === '' ? [] : stderr.split(/\r?\n/),
+      diagnostics,
       kind: command === 'generate' ? 'source' : 'test',
       rustSource: relative(crateRoot, reportedSource),
       skipped,
@@ -1298,10 +1323,18 @@ function loadModule(rustSource: string, aliasSources: string[], representationIm
     existingIsGenerated && existingNativeTypescript !== undefined ? existingNativeTypescript : existingTypescript;
   const importedContractSymbols = loadImportedContractSymbols(contractTypescript);
   const representationTypescript = `${contractTypescript}\n${representationImports}`;
-  const namedRepresentationArguments = typeScriptStringUnionArguments(
-    representationTypescript,
-    loadImportedContractSymbols(representationTypescript),
+  const internalTypeExports = typeScriptInternalTypeExportArguments(
+    contractTypescript,
+    readFileSync(rustPath, 'utf8'),
+    basename(rustPath, '.rs'),
+    aliasSources.filter((candidate) => candidate !== rustPath).map((candidate) => readFileSync(candidate, 'utf8')),
   );
+  const namedRepresentationArguments = [
+    ...typeScriptStringUnionArguments(representationTypescript, loadImportedContractSymbols(representationTypescript)),
+    ...internalTypeExports.inlineStringUnionArguments,
+    ...internalTypeExports.typeExportArguments,
+  ];
+  const initialRepresentationArguments = [...namedRepresentationArguments, ...internalTypeExports.typeAliasArguments];
   let compiledTypescript = compile(
     'generate',
     rustPath,
@@ -1309,18 +1342,17 @@ function loadModule(rustSource: string, aliasSources: string[], representationIm
     [],
     aliasSources,
     [],
-    namedRepresentationArguments,
+    initialRepresentationArguments,
   );
-  const typeAliasArguments = typeScriptTypeAliasArguments(
-    contractTypescript,
-    compiledTypescript,
-    importedContractSymbols,
+  const typeAliasArguments = mergedTypeScriptTypeAliasArguments(
+    internalTypeExports.typeAliasArguments,
+    typeScriptTypeAliasArguments(contractTypescript, compiledTypescript, importedContractSymbols),
   );
   const representationArguments = [...namedRepresentationArguments, ...typeAliasArguments];
-  if (typeAliasArguments.length > 0) {
+  if (typeAliasArguments.length > internalTypeExports.typeAliasArguments.length) {
     compiledTypescript = compile('generate', rustPath, outputPath, [], aliasSources, [], representationArguments);
-    rememberTypeScriptTypeAliasArguments(typeAliasArguments);
   }
+  rememberTypeScriptTypeAliasArguments(typeAliasArguments);
   const nullableOptionFieldArguments = typeScriptNullableOptionFieldArguments(
     contractTypescript,
     compiledTypescript,
