@@ -1085,6 +1085,66 @@ fn keeps_the_existing_target_representation() {
     expect(test).not.toContain('TargetRef');
   }, 120_000);
 
+  it('preserves established mutable and immutable f32 slice parameter representations', async () => {
+    writeFileSync(join(crateRoot, 'src', 'lib.rs'), 'pub mod contract;\nmod value;\npub use contract::*;\n');
+    writeFileSync(join(crateRoot, 'src', 'contract.rs'), 'pub use super::value::*;\n');
+    writeFileSync(
+      sourcePath,
+      `pub fn resolve_buffers(out: &mut [f32], intrinsic_sizes: &[f32], owned: Vec<f32>) {
+    out[0] = intrinsic_sizes[0] + owned[0];
+}
+`,
+    );
+    writeFileSync(
+      join(packageRoot, 'src', 'value.ts'),
+      `export function resolveBuffers(out: Float32Array, intrinsicSizes: ArrayLike<number>, owned: number[]): void {
+  out[0] = intrinsicSizes[0] + owned[0];
+}
+`,
+    );
+    writeFileSync(join(packageRoot, 'src', 'contract.ts'), "export { resolveBuffers } from './value.ts';\n");
+    writeFileSync(join(packageRoot, 'src', 'index.ts'), "export { resolveBuffers } from './contract.ts';\n");
+
+    const run = await generateWhileScanning();
+
+    expect(run.code, run.stderr).toBe(0);
+    const value = readFileSync(join(packageRoot, 'src', 'value.ts'), 'utf8');
+    expect(value).toContain(
+      'function resolveBuffers(out: Float32Array, intrinsicSizes: ArrayLike<number>, owned: number[]): void',
+    );
+  }, 120_000);
+
+  it('refuses an established fixed-buffer representation for a Rust Vec parameter', async () => {
+    writeFileSync(join(crateRoot, 'src', 'lib.rs'), 'pub mod contract;\nmod value;\npub use contract::*;\n');
+    writeFileSync(join(crateRoot, 'src', 'contract.rs'), 'pub use super::value::*;\n');
+    writeFileSync(
+      sourcePath,
+      `pub fn consume_values(values: Vec<f32>) -> f32 {
+    return values[0];
+}
+`,
+    );
+    writeFileSync(
+      join(packageRoot, 'src', 'value.ts'),
+      `export function consumeValues(values: Float32Array): number {
+  return values[0];
+}
+`,
+    );
+    writeFileSync(join(packageRoot, 'src', 'contract.ts'), "export { consumeValues } from './value.ts';\n");
+    writeFileSync(join(packageRoot, 'src', 'index.ts'), "export { consumeValues } from './contract.ts';\n");
+
+    const run = await generateWhileScanning();
+
+    expect(run.code).not.toBe(0);
+    expect(run.stderr).toContain('must designate an exact Rust `&mut [f32]` parameter');
+    writeFileSync(
+      join(crateRoot, 'src', 'lib.rs'),
+      '//! flight-compiler: target-native\npub mod contract;\nmod native_target;\nmod types;\nmod value;\n',
+    );
+    writeFileSync(join(crateRoot, 'src', 'contract.rs'), 'pub use super::types::*;\npub use super::value::*;\n');
+  }, 120_000);
+
   it('preserves inline string-union representations from existing function signatures', async () => {
     writeFileSync(
       join(crateRoot, 'src', 'types.rs'),

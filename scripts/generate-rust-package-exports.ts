@@ -899,6 +899,100 @@ export function typeScriptNullableOptionParameterArguments(
   return positions.sort().flatMap((position) => ['--typescript-nullable-option-parameter', position]);
 }
 
+// Exact exported function and parameter names prove an established numeric-array representation.
+// The compiler remains the Rust authority: this surface comparison may identify a syntactic
+// `number[]` candidate, but only an exact `&mut [f32]` / `&[f32]` parameter is accepted downstream.
+export function typeScriptArrayParameterArguments(existingTypescript: string, generatedTypescript: string): string[] {
+  const existing = parseTypeScriptMetadataSurface('existing.ts', existingTypescript);
+  if (existing.errors.length > 0) {
+    throw new Error(
+      `could not parse existing TypeScript contract while resolving array parameters: ${existing.errors[0]?.message}`,
+    );
+  }
+  const generated = parseTypeScriptMetadataSurface('generated.ts', generatedTypescript);
+  if (generated.errors.length > 0) {
+    throw new Error(
+      `could not parse generated TypeScript contract while resolving array parameters: ${generated.errors[0]?.message}`,
+    );
+  }
+
+  const existingFunctions = exportedFunctionParameterTypes(
+    existing.program.body as unknown as Record<string, unknown>[],
+  );
+  const generatedFunctions = exportedFunctionParameterTypes(
+    generated.program.body as unknown as Record<string, unknown>[],
+  );
+  const existingFunctionCounts = exportedFunctionDeclarationCounts(
+    existing.program.body as unknown as Record<string, unknown>[],
+  );
+  const generatedFunctionCounts = exportedFunctionDeclarationCounts(
+    generated.program.body as unknown as Record<string, unknown>[],
+  );
+  const positions = new Map<string, string>();
+  for (const [owner, existingParameters] of existingFunctions) {
+    const generatedParameters = generatedFunctions.get(owner);
+    if (
+      existingFunctionCounts.get(owner) !== 1 ||
+      generatedFunctionCounts.get(owner) !== 1 ||
+      generatedParameters === undefined ||
+      existingParameters.length !== generatedParameters.length
+    ) {
+      continue;
+    }
+    if (
+      new Set(existingParameters.map((parameter) => parameter.name)).size !== existingParameters.length ||
+      new Set(generatedParameters.map((parameter) => parameter.name)).size !== generatedParameters.length
+    ) {
+      continue;
+    }
+    const generatedByName = new Map(generatedParameters.map((parameter) => [parameter.name, parameter]));
+    for (const existingParameter of existingParameters) {
+      const generatedParameter = generatedByName.get(existingParameter.name);
+      if (
+        generatedParameter === undefined ||
+        existingParameter.optional ||
+        existingParameter.defaulted ||
+        generatedParameter.optional ||
+        generatedParameter.defaulted ||
+        existingParameter.type === undefined ||
+        generatedParameter.type === undefined
+      ) {
+        continue;
+      }
+      const representation = exactArrayParameterRepresentation(existingParameter.type);
+      if (representation === undefined || !generatedArrayParameterCandidate(generatedParameter.type, representation)) {
+        continue;
+      }
+      positions.set(`${owner}.${existingParameter.name}`, representation);
+    }
+  }
+  return [...positions]
+    .sort(([left], [right]) => left.localeCompare(right))
+    .flatMap(([position, representation]) => ['--typescript-array-parameter', `${position}=${representation}`]);
+}
+
+function exactArrayParameterRepresentation(type: Record<string, unknown>): string | undefined {
+  if (bareTypeReferenceName(type) === 'Float32Array') return 'Float32Array';
+  if (type.type !== 'TSTypeReference' || typeName(type) !== 'ArrayLike') return undefined;
+  const parameters = typeParameters(type);
+  return parameters.length === 1 && parameters[0].type === 'TSNumberKeyword' ? 'ArrayLike<number>' : undefined;
+}
+
+function generatedArrayParameterCandidate(type: Record<string, unknown>, representation: string): boolean {
+  if (representation === 'Float32Array') return isNumberArrayType(type);
+  if (representation !== 'ArrayLike<number>' || type.type !== 'TSTypeReference' || typeName(type) !== 'Readonly') {
+    return false;
+  }
+  const parameters = typeParameters(type);
+  return parameters.length === 1 && isNumberArrayType(parameters[0]);
+}
+
+function isNumberArrayType(type: Record<string, unknown>): boolean {
+  return (
+    type.type === 'TSArrayType' && (type.elementType as Record<string, unknown> | undefined)?.type === 'TSNumberKeyword'
+  );
+}
+
 // A literal `null` default is a distinct established contract from both an optional parameter and a
 // required nullable parameter. Match the exact exported function position, require its type to admit
 // only `null`, and require the generated position to be an ordinary Option before preserving it.
@@ -1017,6 +1111,17 @@ export function hasTypeScriptNullableOptionFunctionBoundary(typescript: string):
   );
 }
 
+export function hasTypeScriptArrayParameterFunctionBoundary(typescript: string): boolean {
+  const parsed = parseTypeScriptMetadataSurface('contract.ts', typescript);
+  if (parsed.errors.length > 0) return false;
+  return [...exportedFunctionParameterTypes(parsed.program.body as unknown as Record<string, unknown>[]).values()].some(
+    (parameters) =>
+      parameters.some(
+        (parameter) => parameter.type !== undefined && exactArrayParameterRepresentation(parameter.type) !== undefined,
+      ),
+  );
+}
+
 function typeUnionHasOnlyAbsence(
   type: Record<string, unknown> | undefined,
   absence: 'TSNullKeyword' | 'TSUndefinedKeyword',
@@ -1071,6 +1176,19 @@ function exportedFunctionParameterTypes(
     functions.set(identifier.name, parameters);
   }
   return functions;
+}
+
+function exportedFunctionDeclarationCounts(body: readonly Record<string, unknown>[]): Map<string, number> {
+  const counts = new Map<string, number>();
+  for (const statement of body) {
+    if (statement.type !== 'ExportNamedDeclaration') continue;
+    const declaration = statement.declaration as Record<string, unknown> | null;
+    if (declaration?.type !== 'FunctionDeclaration') continue;
+    const identifier = declaration.id as Record<string, unknown> | null;
+    if (identifier?.type !== 'Identifier' || typeof identifier.name !== 'string') continue;
+    counts.set(identifier.name, (counts.get(identifier.name) ?? 0) + 1);
+  }
+  return counts;
 }
 
 function exportedFunctionTypes(body: readonly Record<string, unknown>[]): Map<string, ExportedFunctionTypes> {

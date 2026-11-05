@@ -1,11 +1,13 @@
 use flight_compiler::{
-    ExternalAliasSource, ModuleSource, SourceMode, TypeScriptDefaultNullOptionParameter,
+    ExternalAliasSource, ModuleSource, SourceMode, TypeScriptArrayParameter,
+    TypeScriptArrayParameterRepresentation, TypeScriptDefaultNullOptionParameter,
     TypeScriptInlineStringUnion, TypeScriptNullableOptionField, TypeScriptNullableOptionParameter,
     TypeScriptNullableOptionReturn, TypeScriptStringUnion, TypeScriptTypeAlias, VitestAliasSource,
     VitestSupportSource, compile_typescript, compile_typescript_lenient,
     compile_typescript_with_alias_sources, compile_typescript_with_external_alias_sources,
     compile_typescript_with_module_sources, compile_typescript_with_options,
     compile_typescript_with_options_and_internal_type_exports,
+    compile_typescript_with_options_and_internal_type_exports_and_array_parameters,
     compile_typescript_with_visibility_sources, compile_vitest, compile_vitest_with_alias_sources,
     compile_vitest_with_contract_alias_sources, compile_vitest_with_external_alias_sources,
     compile_vitest_with_module_alias_sources, compile_vitest_with_options,
@@ -13104,6 +13106,174 @@ pub fn sum_values(values: &[f64]) -> f64 {
         assert!(output.contains("  if (points.length === 0) {\n"));
         assert!(output.contains("    total += points[i] * points[i + 1];\n"));
         assert!(output.contains("  return total + pairTotal(points);\n"));
+    }
+
+    #[test]
+    fn lowers_only_contract_proven_f32_slice_parameter_representations() {
+        let source = ModuleSource {
+            path: "crates/flight-layout/src/resolve.rs",
+            source: r#"
+pub fn resolve_layout_tree(
+    out: &mut [f32],
+    intrinsic_sizes: &[f32],
+    owned: Vec<f32>,
+    borrowed: &Vec<f32>,
+) {
+    out[0] = intrinsic_sizes[0] + owned[0] + borrowed[0];
+}
+"#,
+        };
+        let parameters = [
+            TypeScriptArrayParameter {
+                owner: "resolveLayoutTree",
+                parameter: "out",
+                representation: TypeScriptArrayParameterRepresentation::Float32Array,
+            },
+            TypeScriptArrayParameter {
+                owner: "resolveLayoutTree",
+                parameter: "intrinsicSizes",
+                representation: TypeScriptArrayParameterRepresentation::ArrayLikeNumber,
+            },
+        ];
+        fn compile(
+            source: ModuleSource<'_>,
+            parameters: &[TypeScriptArrayParameter<'_>],
+        ) -> Result<String, flight_compiler::CompileError> {
+            return compile_typescript_with_options_and_internal_type_exports_and_array_parameters(
+                source,
+                None,
+                &[],
+                &[],
+                &[],
+                &[],
+                &[],
+                &[],
+                parameters,
+                &[],
+                &[],
+                &[],
+                &[],
+                &[],
+                &[],
+                false,
+            );
+        }
+
+        let output = compile(source, &parameters).unwrap();
+        assert!(output.contains("out: Float32Array"), "{output}");
+        assert!(
+            output.contains("intrinsicSizes: ArrayLike<number>"),
+            "{output}"
+        );
+        assert!(output.contains("owned: number[]"), "{output}");
+        assert!(output.contains("borrowed: Readonly<number[]>"), "{output}");
+
+        for (rust_type, representation, expected) in [
+            (
+                "Vec<f32>",
+                TypeScriptArrayParameterRepresentation::Float32Array,
+                "exact Rust `&mut [f32]`",
+            ),
+            (
+                "&[f32]",
+                TypeScriptArrayParameterRepresentation::Float32Array,
+                "exact Rust `&mut [f32]`",
+            ),
+            (
+                "&Vec<f32>",
+                TypeScriptArrayParameterRepresentation::ArrayLikeNumber,
+                "exact Rust `&[f32]`",
+            ),
+            (
+                "&mut [f32]",
+                TypeScriptArrayParameterRepresentation::ArrayLikeNumber,
+                "exact Rust `&[f32]`",
+            ),
+        ] {
+            let source_text =
+                format!("pub fn consume(values: {rust_type}) {{ let _ = values.len(); }}\n");
+            let metadata = [TypeScriptArrayParameter {
+                owner: "consume",
+                parameter: "values",
+                representation,
+            }];
+            let error = compile(
+                ModuleSource {
+                    path: "crates/flight-layout/src/consume.rs",
+                    source: &source_text,
+                },
+                &metadata,
+            )
+            .unwrap_err()
+            .to_string();
+            assert!(error.contains(expected), "{rust_type}: {error}");
+        }
+
+        let unsafe_source = ModuleSource {
+            path: "crates/flight-layout/src/consume.rs",
+            source: "pub fn consume(values: &[f32]) { for value in values { let _ = value; } }\n",
+        };
+        let metadata = [TypeScriptArrayParameter {
+            owner: "consume",
+            parameter: "values",
+            representation: TypeScriptArrayParameterRepresentation::ArrayLikeNumber,
+        }];
+        assert!(
+            compile(unsafe_source, &metadata)
+                .unwrap_err()
+                .to_string()
+                .contains("used in a way `ArrayLike` does not support")
+        );
+
+        let callback_source = ModuleSource {
+            path: "crates/flight-layout/src/resolve.rs",
+            source: r#"
+use std::collections::HashMap;
+
+pub type Resolver = fn(&mut [f32], &[f32]);
+
+pub struct State {
+    pub resolvers: HashMap<String, Resolver>,
+}
+
+pub fn forward(out: &mut [f32], values: &[f32], state: &State) {
+    let resolver = state.resolvers.get("layout").copied();
+    match resolver {
+        Some(resolver_fn) => resolver_fn(out, values),
+        None => {},
+    }
+}
+"#,
+        };
+        let callback_parameters = [
+            TypeScriptArrayParameter {
+                owner: "forward",
+                parameter: "out",
+                representation: TypeScriptArrayParameterRepresentation::Float32Array,
+            },
+            TypeScriptArrayParameter {
+                owner: "forward",
+                parameter: "values",
+                representation: TypeScriptArrayParameterRepresentation::ArrayLikeNumber,
+            },
+        ];
+        let output = compile(callback_source, &callback_parameters).unwrap();
+        assert!(output.contains("out: Float32Array"), "{output}");
+        assert!(output.contains("values: ArrayLike<number>"), "{output}");
+
+        let shadowed_callback = ModuleSource {
+            source: &callback_source.source.replace(
+                "Some(resolver_fn) => resolver_fn(out, values)",
+                "Some(resolver_fn) => { let resolver_fn = |_, _| {}; resolver_fn(out, values); }",
+            ),
+            ..callback_source
+        };
+        assert!(
+            compile(shadowed_callback, &callback_parameters)
+                .unwrap_err()
+                .to_string()
+                .contains("does not resolve to an `array-like` parameter")
+        );
     }
 
     #[test]

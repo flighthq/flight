@@ -80,6 +80,7 @@ pub(crate) struct EmitProgramInput<'a> {
     pub inline_string_unions: &'a BTreeMap<String, Vec<String>>,
     pub internal_type_exports: &'a [&'a str],
     pub type_script_type_aliases: &'a [crate::TypeScriptTypeAlias<'a>],
+    pub type_script_array_parameters: &'a [crate::TypeScriptArrayParameter<'a>],
     pub type_script_nullable_option_fields: &'a [crate::TypeScriptNullableOptionField<'a>],
     pub type_script_default_null_option_parameters:
         &'a [crate::TypeScriptDefaultNullOptionParameter<'a>],
@@ -336,6 +337,10 @@ pub(super) const ARRAY_LIKE_ARGUMENT_MARKER: &str = "@array-like-argument:";
 // `{source}␟{function}␟{parameter}` for each `array-like` slice parameter, typed `ArrayLike<T>`; the
 // source identity keeps a sibling's designation from applying to a same-named local function.
 const ARRAY_LIKE_PARAMETER_MARKER: &str = "@array-like-parameter:";
+
+// `{source}␟{function}␟{parameter}` for a contract-proven `&mut [f32]` parameter whose exact
+// TypeScript representation is `Float32Array`.
+const FLOAT32_ARRAY_PARAMETER_MARKER: &str = "@float32-array-parameter:";
 
 // `{source}␟{Struct}␟{field}` for a `nullable-option` struct field, read where that struct is declared or
 // built by literal.
@@ -803,6 +808,50 @@ fn array_like_parameter(
         snake_to_lower_camel(&pattern.ident.to_string()),
         emit_type(&slice.elem, entities)?
     )));
+}
+
+fn float32_array_parameter(
+    function: &ItemFn,
+    argument: &FnArg,
+    entities: &HashSet<String>,
+) -> Option<String> {
+    let FnArg::Typed(typed) = argument else {
+        return None;
+    };
+    let Pat::Ident(pattern) = typed.pat.as_ref() else {
+        return None;
+    };
+    let current = current_source(entities)?;
+    if !entities.contains(&format!(
+        "{FLOAT32_ARRAY_PARAMETER_MARKER}{current}{PROVENANCE_SEPARATOR}{}{PROVENANCE_SEPARATOR}{}",
+        function.sig.ident, pattern.ident
+    )) {
+        return None;
+    }
+    return Some(format!(
+        "{}: Float32Array",
+        snake_to_lower_camel(&pattern.ident.to_string())
+    ));
+}
+
+pub(super) fn argument_is_array_like_parameter(
+    function: &ItemFn,
+    argument: &FnArg,
+    entities: &HashSet<String>,
+) -> bool {
+    let FnArg::Typed(typed) = argument else {
+        return false;
+    };
+    let Pat::Ident(pattern) = typed.pat.as_ref() else {
+        return false;
+    };
+    let Some(current) = current_source(entities) else {
+        return false;
+    };
+    return entities.contains(&format!(
+        "{ARRAY_LIKE_PARAMETER_MARKER}{current}{PROVENANCE_SEPARATOR}{}{PROVENANCE_SEPARATOR}{}",
+        function.sig.ident, pattern.ident
+    ));
 }
 
 fn array_type(inner: String) -> String {
@@ -12322,6 +12371,9 @@ fn emit_expression_value(
                         entities,
                         &format!("{SLICE_ARGUMENT_MARKER}{function_name}:{index}:"),
                     );
+                    if kinds.contains("fixed-buffer") {
+                        return Ok(value);
+                    }
                     if kinds.len() == 1 && kinds.contains("slice") {
                         return Ok(format!("Array.from({value})"));
                     }
@@ -13540,6 +13592,9 @@ fn emit_function(
         .iter()
         .enumerate()
         .map(|(index, argument)| {
+            if let Some(parameter) = float32_array_parameter(function, argument, entities) {
+                return Ok(parameter);
+            }
             if let Some(parameter) = array_like_parameter(function, argument, entities)? {
                 return Ok(parameter);
             }
@@ -23875,6 +23930,7 @@ pub(crate) fn emit_program(input: &EmitProgramInput) -> Result<String, CompileEr
     let inline_string_unions = input.inline_string_unions;
     let internal_type_exports = input.internal_type_exports;
     let type_script_type_aliases = input.type_script_type_aliases;
+    let type_script_array_parameters = input.type_script_array_parameters;
     let type_script_nullable_option_fields = input.type_script_nullable_option_fields;
     let type_script_default_null_option_parameters =
         input.type_script_default_null_option_parameters;
@@ -23944,6 +24000,15 @@ pub(crate) fn emit_program(input: &EmitProgramInput) -> Result<String, CompileEr
             )
         })
         .collect::<Vec<_>>();
+    insert_type_script_array_parameter_context(
+        &mut expression_context,
+        program_sources.iter().copied().chain(
+            visibility_modules
+                .iter()
+                .map(|(module, program)| (module.as_str(), *program)),
+        ),
+        type_script_array_parameters,
+    )?;
     insert_type_script_nullable_option_field_context(
         &mut expression_context,
         program_sources.iter().copied().chain(
@@ -24135,8 +24200,24 @@ pub(crate) fn emit_program(input: &EmitProgramInput) -> Result<String, CompileEr
         lenient_diagnostics.push(error.to_string());
     }
     if !lenient {
-        reject_unsupported_array_like_uses(program, &expression_context)?;
-    } else if let Err(error) = reject_unsupported_array_like_uses(program, &expression_context) {
+        reject_unsupported_array_like_uses(
+            program,
+            &programs
+                .iter()
+                .copied()
+                .chain(visibility_programs)
+                .collect::<Vec<_>>(),
+            &expression_context,
+        )?;
+    } else if let Err(error) = reject_unsupported_array_like_uses(
+        program,
+        &programs
+            .iter()
+            .copied()
+            .chain(visibility_programs)
+            .collect::<Vec<_>>(),
+        &expression_context,
+    ) {
         lenient_diagnostics.push(error.to_string());
     }
     // The body is emitted before the imports so the package-internal state stores it actually reads
@@ -25529,6 +25610,117 @@ pub(crate) fn insert_type_script_type_alias_context(
             alias.target
         ));
     }
+}
+
+pub(crate) fn insert_type_script_array_parameter_context<'a>(
+    context: &mut HashSet<String>,
+    programs: impl IntoIterator<Item = (&'a str, &'a Program)>,
+    parameters: &[crate::TypeScriptArrayParameter<'_>],
+) -> Result<(), CompileError> {
+    let programs = programs.into_iter().collect::<Vec<_>>();
+    for metadata in parameters {
+        let mut matches =
+            programs
+                .iter()
+                .flat_map(|(module, program)| {
+                    program.functions.iter().flat_map(move |function| {
+                        function.sig.inputs.iter().enumerate().filter_map(
+                            move |(index, argument)| {
+                                let FnArg::Typed(argument) = argument else {
+                                    return None;
+                                };
+                                let Pat::Ident(pattern) = argument.pat.as_ref() else {
+                                    return None;
+                                };
+                                (snake_to_lower_camel(&function.sig.ident.to_string())
+                                    == metadata.owner
+                                    && snake_to_lower_camel(&pattern.ident.to_string())
+                                        == metadata.parameter)
+                                    .then_some((*module, function, argument, pattern, index))
+                            },
+                        )
+                    })
+                })
+                .collect::<Vec<_>>();
+        if matches.len() != 1 {
+            return Err(compile_error(format!(
+                "TypeScript array parameter `{}.{}` must resolve to exactly one visible Rust function parameter, found {}",
+                metadata.owner,
+                metadata.parameter,
+                matches.len()
+            )));
+        }
+        let (module, function, argument, pattern, index) =
+            matches.pop().expect("one match was required");
+        if !is_public(&function.vis) {
+            return Err(compile_error(format!(
+                "TypeScript array parameter `{}.{}` must designate a public Rust function parameter",
+                metadata.owner, metadata.parameter
+            )));
+        }
+        match metadata.representation {
+            crate::TypeScriptArrayParameterRepresentation::ArrayLikeNumber => {
+                if !is_f32_slice_reference(&argument.ty, false) {
+                    return Err(compile_error(format!(
+                        "TypeScript array parameter `{}.{}` with representation `ArrayLike<number>` must designate an exact Rust `&[f32]` parameter",
+                        metadata.owner, metadata.parameter
+                    )));
+                }
+            }
+            crate::TypeScriptArrayParameterRepresentation::Float32Array => {
+                if !is_f32_slice_reference(&argument.ty, true) {
+                    return Err(compile_error(format!(
+                        "TypeScript array parameter `{}.{}` with representation `Float32Array` must designate an exact Rust `&mut [f32]` parameter",
+                        metadata.owner, metadata.parameter
+                    )));
+                }
+            }
+        }
+        let function_name = function.sig.ident.to_string();
+        context.insert(owner_marker(
+            FUNCTION_OWNER_MARKER,
+            module,
+            &function_name,
+            SourceAccess::Public,
+        ));
+        match metadata.representation {
+            crate::TypeScriptArrayParameterRepresentation::ArrayLikeNumber => {
+                context.insert(format!(
+                    "{ARRAY_LIKE_PARAMETER_MARKER}{module}{PROVENANCE_SEPARATOR}{function_name}{PROVENANCE_SEPARATOR}{}",
+                    pattern.ident
+                ));
+                context.insert(format!(
+                    "{ARRAY_LIKE_ARGUMENT_MARKER}{module}{PROVENANCE_SEPARATOR}{function_name}{PROVENANCE_SEPARATOR}{index}"
+                ));
+                context.insert(format!(
+                    "{SLICE_ARGUMENT_MARKER}{function_name}:{index}:array-like"
+                ));
+            }
+            crate::TypeScriptArrayParameterRepresentation::Float32Array => {
+                context.insert(format!(
+                    "{FLOAT32_ARRAY_PARAMETER_MARKER}{module}{PROVENANCE_SEPARATOR}{function_name}{PROVENANCE_SEPARATOR}{}",
+                    pattern.ident
+                ));
+                context.insert(format!(
+                    "{SLICE_ARGUMENT_MARKER}{function_name}:{index}:fixed-buffer"
+                ));
+            }
+        }
+    }
+    return Ok(());
+}
+
+fn is_f32_slice_reference(rust_type: &Type, mutable: bool) -> bool {
+    let Type::Reference(reference) = rust_type else {
+        return false;
+    };
+    if reference.mutability.is_some() != mutable {
+        return false;
+    }
+    let Type::Slice(slice) = reference.elem.as_ref() else {
+        return false;
+    };
+    return type_is_named(&slice.elem, "f32");
 }
 
 pub(crate) fn insert_type_script_nullable_option_field_context<'a>(

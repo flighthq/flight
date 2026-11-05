@@ -14,11 +14,11 @@ use crate::{CompileError, compile_error};
 use super::{
     ARRAY_LIKE_ARGUMENT_MARKER, BindingFact, FUNCTION_OWNER_MARKER, PROVENANCE_SEPARATOR,
     TYPE_EXTERN_CRATE_MARKER, TYPE_LOCAL_MARKER, TYPE_NO_STD_MARKER, TYPE_USE_GLOB_MARKER,
-    TYPE_USE_MARKER, TYPE_USE_TARGET_MARKER, canonical_type_path_root, current_source,
-    entity_runtime_state_store, insert_program_type_path_context, lexical_fact, marker_suffixes,
-    named_type, option_inner_type, peel_reference_and_paren, resolve_path_owner,
-    rust_default_expression, rust_literal_to_typescript, rust_type_description,
-    snake_to_lower_camel,
+    TYPE_USE_MARKER, TYPE_USE_TARGET_MARKER, argument_is_array_like_parameter,
+    canonical_type_path_root, current_source, entity_runtime_state_store,
+    insert_program_type_path_context, lexical_fact, marker_suffixes, named_type, option_inner_type,
+    peel_reference_and_paren, resolve_path_owner, rust_default_expression,
+    rust_literal_to_typescript, rust_type_description, snake_to_lower_camel,
 };
 
 // Whether `op` is binary arithmetic (`+ - * / %`), which Rust dispatches through `Add` and its kin.
@@ -2485,8 +2485,104 @@ pub(super) fn reject_unsafe_lazy_lock_initializers(
 // nested item or `use`) shadows every item, and an unresolved or foreign callee is never designated.
 pub(super) fn reject_unsupported_array_like_uses(
     program: &Program,
+    programs: &[&Program],
     entities: &HashSet<String>,
 ) -> Result<(), CompileError> {
+    fn immutable_slice_element(rust_type: &Type) -> Option<String> {
+        let Type::Reference(reference) = rust_type else {
+            return None;
+        };
+        if reference.mutability.is_some() {
+            return None;
+        }
+        let Type::Slice(slice) = reference.elem.as_ref() else {
+            return None;
+        };
+        return Some(slice.elem.to_token_stream().to_string());
+    }
+
+    fn type_name(rust_type: &Type) -> Option<String> {
+        let Type::Path(path) = rust_type else {
+            return None;
+        };
+        return path
+            .path
+            .segments
+            .last()
+            .map(|segment| segment.ident.to_string());
+    }
+
+    let alias_counts = programs
+        .iter()
+        .flat_map(|program| &program.type_aliases)
+        .fold(BTreeMap::<String, usize>::new(), |mut counts, alias| {
+            *counts.entry(alias.ident.to_string()).or_default() += 1;
+            return counts;
+        });
+    let callable_aliases = programs
+        .iter()
+        .flat_map(|program| &program.type_aliases)
+        .filter_map(|alias| {
+            if alias_counts.get(&alias.ident.to_string()) != Some(&1) {
+                return None;
+            }
+            let Type::BareFn(function) = alias.ty.as_ref() else {
+                return None;
+            };
+            let parameters = function
+                .inputs
+                .iter()
+                .enumerate()
+                .filter_map(|(index, argument)| {
+                    immutable_slice_element(&argument.ty).map(|element| (index, element))
+                })
+                .collect::<BTreeMap<_, _>>();
+            (!parameters.is_empty()).then_some((alias.ident.to_string(), parameters))
+        })
+        .collect::<BTreeMap<_, _>>();
+    let structure_counts = programs.iter().flat_map(|program| &program.structs).fold(
+        BTreeMap::<String, usize>::new(),
+        |mut counts, structure| {
+            *counts.entry(structure.ident.to_string()).or_default() += 1;
+            return counts;
+        },
+    );
+    let callable_map_fields = programs
+        .iter()
+        .flat_map(|program| &program.structs)
+        .filter(|structure| structure_counts.get(&structure.ident.to_string()) == Some(&1))
+        .flat_map(|structure| {
+            structure.fields.iter().filter_map(|field| {
+                let (Some(field_name), Type::Path(path)) = (&field.ident, &field.ty) else {
+                    return None;
+                };
+                let segment = path.path.segments.last()?;
+                if !matches!(segment.ident.to_string().as_str(), "HashMap" | "BTreeMap") {
+                    return None;
+                }
+                let PathArguments::AngleBracketed(arguments) = &segment.arguments else {
+                    return None;
+                };
+                let value_type = arguments
+                    .args
+                    .iter()
+                    .filter_map(|argument| match argument {
+                        GenericArgument::Type(rust_type) => Some(rust_type),
+                        _ => None,
+                    })
+                    .nth(1);
+                let parameters = value_type
+                    .and_then(type_name)
+                    .and_then(|name| callable_aliases.get(&name))?
+                    .clone();
+                return Some((
+                    (structure.ident.to_string(), field_name.to_string()),
+                    parameters,
+                ));
+            })
+        })
+        .collect::<BTreeMap<_, _>>();
+
     // Every name a function binds in its own scope: parameters, pattern bindings (closure parameters
     // included), and nested `fn`, `const`, `static` and `use` items.
     struct LocalNames {
@@ -2526,11 +2622,13 @@ pub(super) fn reject_unsupported_array_like_uses(
         }
     }
     struct ArrayLikeUses<'a> {
+        callable_parameters: BTreeMap<String, BTreeMap<usize, String>>,
         entities: &'a HashSet<String>,
         error: Option<String>,
         function: String,
         locals: BTreeSet<String>,
         parameter: String,
+        parameter_element: String,
     }
     impl ArrayLikeUses<'_> {
         fn is_parameter(&self, expression: &Expr) -> bool {
@@ -2553,6 +2651,16 @@ pub(super) fn reject_unsupported_array_like_uses(
             let Expr::Path(path) = callee else {
                 return false;
             };
+            if path.qself.is_none()
+                && path.path.segments.len() == 1
+                && self
+                    .callable_parameters
+                    .get(&path.path.segments[0].ident.to_string())
+                    .and_then(|parameters| parameters.get(&position))
+                    == Some(&self.parameter_element)
+            {
+                return true;
+            }
             if path.qself.is_some()
                 || self.locals.contains("*")
                 || path
@@ -2631,6 +2739,144 @@ pub(super) fn reject_unsupported_array_like_uses(
         }
     }
     for function in &program.functions {
+        struct BindingCounts {
+            counts: BTreeMap<String, usize>,
+        }
+        impl<'ast> Visit<'ast> for BindingCounts {
+            fn visit_pat_ident(&mut self, ident: &'ast syn::PatIdent) {
+                *self.counts.entry(ident.ident.to_string()).or_default() += 1;
+                syn::visit::visit_pat_ident(self, ident);
+            }
+        }
+        struct CallableBindings<'a> {
+            bindings: BTreeMap<String, BTreeMap<usize, String>>,
+            fields: &'a BTreeMap<(String, String), BTreeMap<usize, String>>,
+            option_bindings: BTreeMap<String, BTreeMap<usize, String>>,
+            receivers: BTreeMap<String, String>,
+        }
+        impl CallableBindings<'_> {
+            fn field_parameters(&self, expression: &Expr) -> Option<BTreeMap<usize, String>> {
+                let expression = match expression {
+                    Expr::MethodCall(call)
+                        if call.args.is_empty()
+                            && matches!(call.method.to_string().as_str(), "cloned" | "copied") =>
+                    {
+                        call.receiver.as_ref()
+                    }
+                    expression => expression,
+                };
+                let Expr::MethodCall(get) = expression else {
+                    return None;
+                };
+                if get.method != "get" {
+                    return None;
+                }
+                let Expr::Field(field) = get.receiver.as_ref() else {
+                    return None;
+                };
+                let syn::Member::Named(field_name) = &field.member else {
+                    return None;
+                };
+                let Expr::Path(receiver) = field.base.as_ref() else {
+                    return None;
+                };
+                if receiver.qself.is_some() || receiver.path.segments.len() != 1 {
+                    return None;
+                }
+                let structure = self
+                    .receivers
+                    .get(&receiver.path.segments[0].ident.to_string())?;
+                return self
+                    .fields
+                    .get(&(structure.clone(), field_name.to_string()))
+                    .cloned();
+            }
+
+            fn some_binding(pattern: &Pat) -> Option<String> {
+                let Pat::TupleStruct(tuple) = pattern else {
+                    return None;
+                };
+                if !tuple
+                    .path
+                    .segments
+                    .last()
+                    .is_some_and(|segment| segment.ident == "Some")
+                    || tuple.elems.len() != 1
+                {
+                    return None;
+                }
+                let Pat::Ident(binding) = tuple.elems.first()? else {
+                    return None;
+                };
+                return Some(binding.ident.to_string());
+            }
+        }
+        impl<'ast> Visit<'ast> for CallableBindings<'_> {
+            fn visit_local(&mut self, local: &'ast syn::Local) {
+                if let Pat::Ident(binding) = &local.pat
+                    && let Some(initializer) = &local.init
+                    && let Some(parameters) = self.field_parameters(&initializer.expr)
+                {
+                    self.option_bindings
+                        .insert(binding.ident.to_string(), parameters);
+                }
+                syn::visit::visit_local(self, local);
+            }
+
+            fn visit_expr_match(&mut self, expression: &'ast syn::ExprMatch) {
+                if let Expr::Path(path) = expression.expr.as_ref()
+                    && path.qself.is_none()
+                    && path.path.segments.len() == 1
+                    && let Some(parameters) = self
+                        .option_bindings
+                        .get(&path.path.segments[0].ident.to_string())
+                        .cloned()
+                {
+                    for arm in &expression.arms {
+                        if let Some(binding) = Self::some_binding(&arm.pat) {
+                            self.bindings.insert(binding, parameters.clone());
+                        }
+                    }
+                }
+                syn::visit::visit_expr_match(self, expression);
+            }
+        }
+        let receivers = function
+            .sig
+            .inputs
+            .iter()
+            .filter_map(|argument| {
+                let FnArg::Typed(argument) = argument else {
+                    return None;
+                };
+                let Pat::Ident(binding) = argument.pat.as_ref() else {
+                    return None;
+                };
+                let mut rust_type = argument.ty.as_ref();
+                while let Type::Reference(reference) = rust_type {
+                    rust_type = &reference.elem;
+                }
+                return type_name(rust_type)
+                    .map(|structure| (binding.ident.to_string(), structure));
+            })
+            .collect::<BTreeMap<_, _>>();
+        let mut callable_bindings = CallableBindings {
+            bindings: BTreeMap::new(),
+            fields: &callable_map_fields,
+            option_bindings: BTreeMap::new(),
+            receivers,
+        };
+        callable_bindings.visit_block(&function.block);
+        let mut binding_counts = BindingCounts {
+            counts: BTreeMap::new(),
+        };
+        for input in &function.sig.inputs {
+            binding_counts.visit_fn_arg(input);
+        }
+        binding_counts.visit_block(&function.block);
+        callable_bindings
+            .bindings
+            .retain(|binding, _| binding_counts.counts.get(binding) == Some(&1));
         for argument in &function.sig.inputs {
             let FnArg::Typed(typed) = argument else {
                 continue;
@@ -2638,12 +2884,12 @@ pub(super) fn reject_unsupported_array_like_uses(
             let Pat::Ident(pattern) = typed.pat.as_ref() else {
                 continue;
             };
-            if !program
-                .array_like_parameters
-                .contains(&format!("{}.{}", function.sig.ident, pattern.ident))
-            {
+            if !argument_is_array_like_parameter(function, argument, entities) {
                 continue;
             }
+            let Some(parameter_element) = immutable_slice_element(&typed.ty) else {
+                continue;
+            };
             let mut locals = LocalNames {
                 names: BTreeSet::new(),
             };
@@ -2652,11 +2898,13 @@ pub(super) fn reject_unsupported_array_like_uses(
             }
             locals.visit_block(&function.block);
             let mut uses = ArrayLikeUses {
+                callable_parameters: callable_bindings.bindings.clone(),
                 entities,
                 error: None,
                 function: function.sig.ident.to_string(),
                 locals: locals.names,
                 parameter: pattern.ident.to_string(),
+                parameter_element,
             };
             uses.visit_block(&function.block);
             if let Some(error) = uses.error {

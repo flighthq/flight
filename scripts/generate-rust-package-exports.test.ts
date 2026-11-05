@@ -38,6 +38,7 @@ import {
   resolveExternalContractExports,
   resolveRustExportName,
   typeScriptDefaultNullOptionParameterArguments,
+  typeScriptArrayParameterArguments,
   typeScriptInlineStringUnionArguments,
   typeScriptInternalTypeExportArguments,
   typeScriptNullableOptionFieldArguments,
@@ -384,6 +385,42 @@ export function incompatible(value: RealAlias | undefined): void {}
       '--typescript-type-alias',
       'TargetRef=unknown',
     ]);
+  });
+
+  it('derives exact numeric-array parameter representations by exported parameter identity', () => {
+    const existing = `export function resolveLayoutTree(out: Float32Array, nodeCount: number, intrinsicSizes: ArrayLike<number>): void {}
+export function unchanged(values: number[]): void {}
+`;
+    const generated = `export function resolveLayoutTree(intrinsicSizes: Readonly<number[]>, nodeCount: number, out: number[]): void {}
+export function unchanged(values: number[]): void {}
+`;
+
+    expect(typeScriptArrayParameterArguments(existing, generated)).toEqual([
+      '--typescript-array-parameter',
+      'resolveLayoutTree.intrinsicSizes=ArrayLike<number>',
+      '--typescript-array-parameter',
+      'resolveLayoutTree.out=Float32Array',
+    ]);
+  });
+
+  it('refuses numeric-array parameter metadata from wrapped, ambiguous, or unmatched signatures', () => {
+    const existing = `export function wrapped(out: Readonly<Float32Array>): void {}
+export function union(values: ArrayLike<number> | null): void {}
+export function generic(values: ArrayLike<string>): void {}
+export function duplicate(values: Float32Array, values: Float32Array): void {}
+export function renamed(out: Float32Array): void {}
+export function overloaded(out: Float32Array): void {}
+export function overloaded(out: number, extra: number): void {}
+`;
+    const generated = `export function wrapped(out: number[]): void {}
+export function union(values: Readonly<number[]>): void {}
+export function generic(values: Readonly<number[]>): void {}
+export function duplicate(values: number[], values: number[]): void {}
+export function renamed(target: number[]): void {}
+export function overloaded(out: number[]): void {}
+`;
+
+    expect(typeScriptArrayParameterArguments(existing, generated)).toEqual([]);
   });
 
   it('does not infer type aliases from names or unmatched signatures', () => {
