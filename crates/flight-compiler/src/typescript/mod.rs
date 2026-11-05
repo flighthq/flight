@@ -12018,7 +12018,13 @@ fn emit_expression_value(
                     }
                     ("round", 1) if matches!(numeric_type.as_str(), "f32" | "f64") => {
                         let arg = emit_expression(&call.args[0], entities)?;
-                        return Ok(format!("Math.sign({arg}) * Math.round(Math.abs({arg}))"));
+                        if expression_is_reusable(&call.args[0]) {
+                            return Ok(format!("Math.trunc({arg} + 0.5 * Math.sign({arg}))"));
+                        } else {
+                            return Ok(format!(
+                                "((n: number): number => Math.trunc(n + 0.5 * Math.sign(n)))({arg})"
+                            ));
+                        }
                     }
                     ("from_str_radix", 2) => {
                         let digits = emit_expression(&call.args[0], entities)?;
@@ -21375,9 +21381,17 @@ fn emit_method_call(
             ))
         }
         "rev" if arguments.is_empty() => Ok(format!("[...{receiver}].reverse()")),
-        "round" if arguments.is_empty() => Ok(format!(
-            "Math.sign({receiver}) * Math.round(Math.abs({receiver}))"
-        )),
+        "round" if arguments.is_empty() => {
+            if expression_is_reusable(&call.receiver) {
+                Ok(format!(
+                    "Math.trunc({receiver} + 0.5 * Math.sign({receiver}))"
+                ))
+            } else {
+                Ok(format!(
+                    "((n: number): number => Math.trunc(n + 0.5 * Math.sign(n)))({receiver})"
+                ))
+            }
+        }
         "round_ties_even" if arguments.is_empty() => Ok(format!(
             "((n: number): number => {{ const r = Math.round(n); const f = n - Math.trunc(n); return (f === 0.5 || f === -0.5) && r % 2 !== 0 ? r - Math.sign(n) : r; }})({receiver})"
         )),
@@ -28483,7 +28497,7 @@ fn emit_numeric_function_reference(
         "min" => Ok("Math.min".to_string()),
         "max" => Ok("Math.max".to_string()),
         "round" if matches!(numeric_type, "f32" | "f64") => {
-            Ok("((v: number): number => Math.sign(v) * Math.round(Math.abs(v)))".to_string())
+            Ok("((n: number): number => Math.trunc(n + 0.5 * Math.sign(n)))".to_string())
         }
         "floor" if matches!(numeric_type, "f32" | "f64") => Ok("Math.floor".to_string()),
         "ceil" if matches!(numeric_type, "f32" | "f64") => Ok("Math.ceil".to_string()),

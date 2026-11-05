@@ -6807,12 +6807,8 @@ pub fn round_value(value: f32) -> f32 {
             "f32::round should not emit f32.round: {output}"
         );
         assert!(
-            output.contains("Math.sign"),
-            "f32::round should use Math.sign for half-away-from-zero: {output}"
-        );
-        assert!(
-            output.contains("Math.abs"),
-            "f32::round should use Math.abs for half-away-from-zero: {output}"
+            output.contains("Math.trunc(value + 0.5 * Math.sign(value))"),
+            "f32::round should use Math.trunc for half-away-from-zero: {output}"
         );
     }
 
