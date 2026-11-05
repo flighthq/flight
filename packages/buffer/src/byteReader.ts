@@ -85,7 +85,7 @@ export function readByteReaderU64(reader: ByteReader): number {
 
 export function readByteReaderU8(reader: ByteReader): number {
   const value = reader.view[reader.offset];
-  reader.offset += 1;
+  reader.offset++;
   return value;
 }
 

@@ -25,7 +25,7 @@ describe('createByteReader', () => {
   });
   it('views a subslice at its own start', () => {
     const backing: Uint8Array = new Uint8Array([9, 9, 0x01, 0x00]);
-    let reader = createByteReader(backing.slice(2), undefined);
+    let reader = createByteReader(new Uint8Array(backing.slice(2)), undefined);
     expect(readByteReaderU16(reader)).toEqual(1);
   });
 });
@@ -34,7 +34,7 @@ describe('hasByteReaderBytes', () => {
   // Rust-only: rejects a count that would overflow native pointer arithmetic
   it('reports whether count bytes remain from the current offset', () => {
     const bytes = new Uint8Array(8).fill(0);
-    const reader = createByteReader(bytes, 4);
+    const reader = createByteReader(new Uint8Array(bytes), 4);
     expect(hasByteReaderBytes(reader, 4)).toBe(true);
     expect(!hasByteReaderBytes(reader, 5)).toBe(true);
     expect(hasByteReaderBytes(reader, 0)).toBe(true);
@@ -127,7 +127,7 @@ describe('readByteReaderU8', () => {
 describe('skipByteReader', () => {
   it('advances the offset without reading', () => {
     const bytes = new Uint8Array(8).fill(0);
-    let reader = createByteReader(bytes, undefined);
+    let reader = createByteReader(new Uint8Array(bytes), undefined);
     skipByteReader(reader, 3);
     expect(reader.offset).toEqual(3);
   });
