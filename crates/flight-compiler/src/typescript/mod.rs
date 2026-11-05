@@ -1116,6 +1116,123 @@ fn expression_is_rereadable(expression: &Expr) -> bool {
 
 // An `Arc::ptr_eq` operand proven to hold an identity-bearing TypeScript object, so `===` compares
 // allocations as Rust does. A primitive or unit payload lowers to its value and never qualifies.
+fn expression_is_shared_identity(expression: &Expr, entities: &HashSet<String>) -> bool {
+    let expression = peel_shared_view(expression);
+    return match expression {
+        Expr::Call(call)
+            if (expression_is_associated_path(&call.func, "Arc", "new")
+                || expression_is_associated_path(&call.func, "Rc", "new"))
+                && call.args.len() == 1 =>
+        {
+            shared_payload_is_identity(&call.args[0], entities)
+        }
+        Expr::Call(call) => {
+            call_returns_shared_identity(entities, &call.func)
+                || expression_struct_identity(expression, entities).is_some()
+        }
+        Expr::Field(field) => {
+            if expression_struct_identity(expression, entities).is_some() {
+                return true;
+            }
+            let syn::Member::Named(member) = &field.member else {
+                return false;
+            };
+            let base = peel_shared_view(&field.base);
+            if expression_struct_identity(base, entities).is_some_and(|owner| {
+                entities.contains(&format!(
+                    "{SHARED_IDENTITY_FIELD_MARKER}{owner}{PROVENANCE_SEPARATOR}{member}"
+                ))
+            }) {
+                return true;
+            }
+            expression_external_struct(base, entities).is_some_and(|external| {
+                entities.contains(&format!(
+                    "{SHARED_IDENTITY_EXTERNAL_FIELD_MARKER}{external}{PROVENANCE_SEPARATOR}{member}"
+                ))
+            })
+        }
+        Expr::Index(index) => {
+            let Expr::Field(field) = peel_shared_view(&index.expr) else {
+                return false;
+            };
+            let syn::Member::Named(member) = &field.member else {
+                return false;
+            };
+            expression_struct_identity(peel_shared_view(&field.base), entities).is_some_and(
+                |owner| {
+                    entities.contains(&format!(
+                        "{SHARED_IDENTITY_ELEMENT_FIELD_MARKER}{owner}{PROVENANCE_SEPARATOR}{member}"
+                    ))
+                },
+            )
+        }
+        Expr::Path(path) if path.qself.is_none() && path.path.segments.len() == 1 => {
+            let name = path.path.segments[0].ident.to_string();
+            if matches!(
+                lexical_fact(entities, &name),
+                Some(BindingFact::Structure(_) | BindingFact::HashMap | BindingFact::HashSet)
+            ) {
+                return true;
+            }
+            lexical_binding(entities, &name).is_some_and(|id| {
+                entities.contains(&format!("{SHARED_IDENTITY_BINDING_MARKER}{id}"))
+            })
+        }
+        _ => expression_struct_identity(expression, entities).is_some(),
+    };
+}
+
+// The payload of `Arc::new` / `Rc::new` proven to lower to a fresh or existing object: a literal
+// allocation, an erased `RwLock` around one, or a struct value.
+fn shared_payload_is_identity(payload: &Expr, entities: &HashSet<String>) -> bool {
+    return match payload {
+        Expr::Group(group) => shared_payload_is_identity(&group.expr, entities),
+        Expr::Paren(paren) => shared_payload_is_identity(&paren.expr, entities),
+        Expr::Call(call)
+            if expression_is_associated_path(&call.func, "RwLock", "new")
+                && call.args.len() == 1 =>
+        {
+            shared_payload_is_identity(&call.args[0], entities)
+        }
+        payload => {
+            expression_is_identity_payload(payload)
+                || expression_struct_identity(payload, entities).is_some()
+        }
+    };
+}
+
+// The dependency-crate struct (`crate::Struct`) an expression holds: a parameter or local declared as
+// one, or a source struct field declared as one, seen through references and clones.
+fn expression_external_struct(expression: &Expr, entities: &HashSet<String>) -> Option<String> {
+    return match expression {
+        Expr::Group(group) => expression_external_struct(&group.expr, entities),
+        Expr::Paren(paren) => expression_external_struct(&paren.expr, entities),
+        Expr::Reference(reference) => expression_external_struct(&reference.expr, entities),
+        Expr::MethodCall(call) if call.method == "clone" && call.args.is_empty() => {
+            expression_external_struct(&call.receiver, entities)
+        }
+        Expr::Path(path) if path.qself.is_none() && path.path.segments.len() == 1 => {
+            let id = lexical_binding(entities, &path.path.segments[0].ident.to_string())?;
+            unique_marker_suffix(
+                entities,
+                &format!("{EXTERNAL_STRUCT_BINDING_MARKER}{id}{PROVENANCE_SEPARATOR}"),
+            )
+        }
+        Expr::Field(field) => {
+            let syn::Member::Named(member) = &field.member else {
+                return None;
+            };
+            let owner = expression_struct_identity(&field.base, entities)?;
+            unique_marker_suffix(
+                entities,
+                &format!(
+                    "{EXTERNAL_STRUCT_FIELD_MARKER}{owner}{PROVENANCE_SEPARATOR}{member}{PROVENANCE_SEPARATOR}"
+                ),
+            )
+        }
+        _ => None,
+    };
+}
 
 // The string union every value of `expression` is a variant of: a variant path, or a conditional,
 // match or block whose every result is a variant of that one union.
@@ -4230,7 +4347,25 @@ fn shared_identity_type_at_depth(
                 ),
                 None => trait_object_is_standard_any(&object.bounds, entities),
             };
+            // A trait object of a Flight-defined trait (this crate's or a `flight_*` crate's) is a
+            // Flight type behind the trait, which lowers to an object. A standard trait such as
+            // `dyn Display` can hold a primitive, so it proves nothing.
+            let flight_trait = object.bounds.iter().any(|bound| {
+                let syn::TypeParamBound::Trait(bound) = bound else {
+                    return false;
+                };
+                let resolved = match from {
+                    Some(from) => {
+                        resolve_type_path(&bound.path, &source_type_context(entities, from))
+                    }
+                    None => resolve_type_path(&bound.path, entities),
+                };
+                return resolved
+                    .and_then(|resolved| resolved.first().cloned())
+                    .is_some_and(|root| root == "crate" || root.starts_with("flight_"));
+            });
             return any
+                || flight_trait
                 || object.bounds.iter().any(|bound| {
                     matches!(bound, syn::TypeParamBound::Trait(bound) if bound.path.segments.last().is_some_and(|segment| matches!(segment.ident.to_string().as_str(), "Fn" | "FnMut" | "FnOnce")))
                 });
@@ -11514,6 +11649,23 @@ fn emit_expression_value(
                      `assert!(catch_unwind(..).is_err())` (or through an unread `let result`), or \
                      `.expect_err(..)`/`.unwrap_err()` whose payload is unread or checked with a \
                      `&str`/`String` message `contains`",
+                ));
+            }
+            if (expression_is_associated_path(&call.func, "Arc", "ptr_eq")
+                || expression_is_associated_path(&call.func, "Rc", "ptr_eq"))
+                && call.args.len() == 2
+                && !call
+                    .args
+                    .iter()
+                    .any(|argument| expression_is_shared_identity(argument, entities))
+            {
+                // `ptr_eq(&Arc<T>, &Arc<T>)` takes one `T` for both operands, so proving either
+                // payload proves both. `Arc<T>`/`Rc<T>` lowers to `T`. Only an identity-bearing `T` (an object, collection,
+                // callable or cell) keeps one allocation per `Arc::new`; a primitive or unit payload
+                // lowers to its value, where `===` compares values and would call two distinct
+                // allocations of equal values the same.
+                return Err(compile_error(
+                    "portable `Arc::ptr_eq` needs an operand proven to hold an identity-bearing payload (a struct, collection, callable, `Mutex` cell or `dyn Any`); a primitive or unit payload lowers to its value, so `===` would compare values instead of allocations",
                 ));
             }
             if (expression_is_associated_path(&call.func, "Arc", "ptr_eq")
@@ -24812,31 +24964,29 @@ pub(crate) fn insert_type_script_default_null_option_parameter_context<'a>(
 ) -> Result<(), CompileError> {
     let programs = programs.into_iter().collect::<Vec<_>>();
     for metadata in parameters {
-        let mut matches = programs
-            .iter()
-            .flat_map(|(module, program)| {
-                program.functions.iter().flat_map(move |function| {
-                    function
-                        .sig
-                        .inputs
-                        .iter()
-                        .enumerate()
-                        .filter_map(move |(index, argument)| {
-                            let FnArg::Typed(argument) = argument else {
-                                return None;
-                            };
-                            let Pat::Ident(pattern) = argument.pat.as_ref() else {
-                                return None;
-                            };
-                            (snake_to_lower_camel(&function.sig.ident.to_string())
-                                == metadata.owner
-                                && snake_to_lower_camel(&pattern.ident.to_string())
-                                    == metadata.parameter)
-                                .then_some((*module, function, argument, pattern, index))
-                        })
+        let mut matches =
+            programs
+                .iter()
+                .flat_map(|(module, program)| {
+                    program.functions.iter().flat_map(move |function| {
+                        function.sig.inputs.iter().enumerate().filter_map(
+                            move |(index, argument)| {
+                                let FnArg::Typed(argument) = argument else {
+                                    return None;
+                                };
+                                let Pat::Ident(pattern) = argument.pat.as_ref() else {
+                                    return None;
+                                };
+                                (snake_to_lower_camel(&function.sig.ident.to_string())
+                                    == metadata.owner
+                                    && snake_to_lower_camel(&pattern.ident.to_string())
+                                        == metadata.parameter)
+                                    .then_some((*module, function, argument, pattern, index))
+                            },
+                        )
+                    })
                 })
-            })
-            .collect::<Vec<_>>();
+                .collect::<Vec<_>>();
         if matches.len() != 1 {
             return Err(compile_error(format!(
                 "TypeScript default-null Option parameter `{}.{}` must resolve to exactly one visible Rust function parameter, found {}",

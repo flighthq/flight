@@ -1,7 +1,6 @@
 use flight_compiler::{
     ExternalAliasSource, ModuleSource, SourceMode, TypeScriptDefaultNullOptionParameter,
-    TypeScriptInlineStringUnion,
-    TypeScriptNullableOptionField, TypeScriptNullableOptionParameter,
+    TypeScriptInlineStringUnion, TypeScriptNullableOptionField, TypeScriptNullableOptionParameter,
     TypeScriptNullableOptionReturn, TypeScriptStringUnion, TypeScriptTypeAlias, VitestAliasSource,
     compile_typescript, compile_typescript_lenient, compile_typescript_with_alias_sources,
     compile_typescript_with_external_alias_sources, compile_typescript_with_module_sources,
@@ -566,6 +565,8 @@ export function freshDiffers(): boolean {
 }
 "#
         );
+        // An `Arc<i32>` lowers to `number`, where `===` compares values: two allocations of equal
+        // numbers would compare the same. It refuses rather than emitting value equality.
         assert_eq!(
             compile_typescript(
                 r#"use std::sync::Arc;
@@ -575,9 +576,53 @@ pub fn same(a: &Arc<i32>, b: &Arc<i32>) -> bool {
 "#,
                 None
             )
-            .unwrap(),
-            "export function same(a: number, b: number): boolean {\n  return a === b;\n}\n",
+            .unwrap_err()
+            .to_string(),
+            "portable `Arc::ptr_eq` needs an operand proven to hold an identity-bearing payload (a struct, collection, callable, `Mutex` cell or `dyn Any`); a primitive or unit payload lowers to its value, so `===` would compare values instead of allocations",
         );
+    }
+
+    #[test]
+    fn refuses_pointer_equality_over_primitive_and_unit_payloads() {
+        // Each payload lowers to its value, so `===` would report two distinct allocations of
+        // equal values as one: Rust's `!Arc::ptr_eq(&Arc::new(1), &Arc::new(1))` is true, while
+        // `!(1 === 1)` is false.
+        for source in [
+            "use std::sync::Arc;\npub fn fresh_numbers_differ() -> bool {\n    let first = Arc::new(1);\n    let second = Arc::new(1);\n    return !Arc::ptr_eq(&first, &second);\n}\n",
+            "use std::sync::Arc;\npub fn same(a: &Arc<()>, b: &Arc<()>) -> bool {\n    return Arc::ptr_eq(a, b);\n}\n",
+            "use std::rc::Rc;\npub fn same(a: &Rc<f64>, b: &Rc<f64>) -> bool {\n    return Rc::ptr_eq(a, b);\n}\n",
+            "use std::sync::Arc;\npub struct Holder {\n    pub name: Arc<String>,\n}\npub fn same(a: &Holder, b: &Holder) -> bool {\n    return Arc::ptr_eq(&a.name, &b.name);\n}\n",
+        ] {
+            assert_eq!(
+                compile_typescript(source, None).unwrap_err().to_string(),
+                "portable `Arc::ptr_eq` needs an operand proven to hold an identity-bearing payload (a struct, collection, callable, `Mutex` cell or `dyn Any`); a primitive or unit payload lowers to its value, so `===` would compare values instead of allocations",
+                "{source}"
+            );
+        }
+        // A standard trait object can hold a primitive (`impl Display for i32`), so it proves nothing.
+        assert_eq!(
+            compile_typescript(
+                "use std::fmt::Display;\nuse std::sync::Arc;\npub fn same(a: &Arc<dyn Display>, b: &Arc<dyn Display>) -> bool {\n    return Arc::ptr_eq(a, b);\n}\n",
+                None,
+            )
+            .unwrap_err()
+            .to_string(),
+            "portable `Arc::ptr_eq` needs an operand proven to hold an identity-bearing payload (a struct, collection, callable, `Mutex` cell or `dyn Any`); a primitive or unit payload lowers to its value, so `===` would compare values instead of allocations",
+        );
+        // A trait object of a crate-defined trait is a Flight type behind the trait: an object.
+        let output = compile_typescript(
+            "use std::sync::Arc;\npub trait Shape {\n    fn area(&self) -> f64;\n}\npub type ShapeRef = Arc<dyn Shape>;\npub fn same(a: &ShapeRef, b: &ShapeRef) -> bool {\n    return Arc::ptr_eq(a, b);\n}\n",
+            None,
+        )
+        .unwrap();
+        assert!(output.contains("return a === b;"), "{output}");
+        // One proven operand proves the comparison: both share `ptr_eq`'s single payload type.
+        let output = compile_typescript(
+            "use std::sync::Arc;\npub struct Node {\n    pub value: i32,\n}\npub fn same(a: &Arc<Node>, b: Arc<Node>) -> bool {\n    let fresh = b.clone();\n    return Arc::ptr_eq(a, &fresh);\n}\n",
+            None,
+        )
+        .unwrap();
+        assert!(output.contains("return a === fresh;"), "{output}");
     }
 
     #[test]
@@ -692,15 +737,12 @@ pub fn same_serial(a: &Source, b: &Source) -> bool {
     return Arc::ptr_eq(&a.serial, &b.serial);
 }
 "#;
+        // A dependency field typed `Arc<i32>` is a number in TypeScript, so it refuses too.
         assert_eq!(
             compile_typescript_with_external_alias_sources(primitive, None, &[], &dependency)
-                .unwrap(),
-            r#"import type { Source } from '@flighthq/dep/contract';
-
-export function sameSerial(a: Readonly<Source>, b: Readonly<Source>): boolean {
-  return a.serial === b.serial;
-}
-"#
+                .unwrap_err()
+                .to_string(),
+            "portable `Arc::ptr_eq` needs an operand proven to hold an identity-bearing payload (a struct, collection, callable, `Mutex` cell or `dyn Any`); a primitive or unit payload lowers to its value, so `===` would compare values instead of allocations"
         );
     }
 
