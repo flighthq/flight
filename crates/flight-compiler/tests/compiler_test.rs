@@ -17935,6 +17935,49 @@ fn compares_with_rust_only_support() {
     }
 
     #[test]
+    fn lowers_cfg_macros_only_through_exact_test_support_metadata() {
+        let source = r#"
+//! flight-compiler: test-cfg cfg(target_endian = "little") => crate::is_little_endian()
+
+#[test]
+fn compares_with_the_configured_test_environment() {
+    let expected = if cfg!(target_endian = "little") { 1 } else { 2 };
+    assert_eq!(expected, 1);
+}
+"#;
+
+        let output = compile_vitest(source, "./contract.ts").unwrap();
+
+        assert!(
+            output.contains("const expected = crate.isLittleEndian() ? 1 : 2;"),
+            "{output}"
+        );
+    }
+
+    #[test]
+    fn refuses_cfg_macros_without_an_exact_test_support_mapping() {
+        let source = r#"
+//! flight-compiler: test-cfg cfg(target_endian = "little") => crate::is_little_endian()
+
+#[test]
+fn does_not_infer_a_different_target_predicate() {
+    assert!(cfg!(target_endian = "big"));
+}
+"#;
+
+        let error = compile_vitest(source, "./contract.ts")
+            .unwrap_err()
+            .to_string();
+
+        assert!(
+            error.contains(
+                "portable `cfg!(target_endian = \"big\")` has no explicit `flight-compiler: test-cfg"
+            ),
+            "{error}"
+        );
+    }
+
+    #[test]
     fn honors_nullable_options_in_portable_tests() {
         let production = r#"
 pub fn optional_value() -> Option<i32> {

@@ -2,9 +2,10 @@ use std::collections::{BTreeMap, BTreeSet, HashSet};
 
 use syn::ext::IdentExt;
 use syn::parse::Parser;
+use syn::visit_mut::{self, VisitMut};
 use syn::{
-    Attribute, Fields, GenericArgument, Item, ItemConst, ItemEnum, ItemFn, ItemStatic, ItemStruct,
-    ItemType, ItemUse, PathArguments, Type, UseTree, Visibility,
+    Attribute, Expr, Fields, GenericArgument, Item, ItemConst, ItemEnum, ItemFn, ItemStatic,
+    ItemStruct, ItemType, ItemUse, PathArguments, Type, UseTree, Visibility,
 };
 
 use crate::{CompileError, SourceMode, compile_error};
@@ -2278,8 +2279,17 @@ fn parse_string_union_metadata_from_attributes(
 }
 
 pub(crate) fn parse_test_program(source: &str) -> Result<TestProgram, CompileError> {
-    let file = syn::parse_file(source)
+    let mut file = syn::parse_file(source)
         .map_err(|error| compile_error(format!("failed to parse Rust test source: {error}")))?;
+    let test_cfg = parse_test_cfg_directives(&file.attrs)?;
+    let mut test_cfg_rewriter = TestCfgRewriter {
+        error: None,
+        replacements: &test_cfg,
+    };
+    test_cfg_rewriter.visit_file_mut(&mut file);
+    if let Some(error) = test_cfg_rewriter.error {
+        return Err(error);
+    }
     let nullable_options = parse_flag_directive(&file.attrs, "nullable-options")?;
     let mut constants = Vec::new();
     let mut helpers = Vec::new();
@@ -2365,6 +2375,214 @@ pub(crate) fn parse_test_program(source: &str) -> Result<TestProgram, CompileErr
         type_aliases,
         uses,
     });
+}
+
+// A portable test may compare a target-selected Rust value with the JavaScript environment only
+// when the source explicitly maps the exact `cfg!` predicate to the established test-support lane:
+// `//! flight-compiler: test-cfg cfg(target_endian = "little") => crate::is_little_endian()`.
+// The replacement is deliberately restricted to a zero-argument `crate::` call. Vitest generation
+// maps that root to `rustTestSupport`; no compiler-host target facts enter the output.
+fn parse_test_cfg_directives(
+    attributes: &[Attribute],
+) -> Result<BTreeMap<String, Expr>, CompileError> {
+    let mut replacements = BTreeMap::new();
+    for attribute in attributes {
+        let Some(directive) = doc_directive(attribute) else {
+            continue;
+        };
+        let Some(mapping) = directive.strip_prefix("test-cfg") else {
+            continue;
+        };
+        if !mapping.is_empty() && !mapping.starts_with(char::is_whitespace) {
+            continue;
+        }
+        let Some((predicate, replacement)) = mapping.trim().split_once("=>") else {
+            return Err(compile_error(
+                "`flight-compiler: test-cfg` requires `cfg(predicate) => crate::support_function()`",
+            ));
+        };
+        let predicate = parse_test_cfg_predicate(predicate.trim())?;
+        let replacement = syn::parse_str::<Expr>(replacement.trim()).map_err(|error| {
+            return compile_error(format!(
+                "`flight-compiler: test-cfg` has an invalid support expression: {error}"
+            ));
+        })?;
+        validate_test_cfg_replacement(&replacement)?;
+        if replacements.insert(predicate.clone(), replacement).is_some() {
+            return Err(compile_error(format!(
+                "duplicate `flight-compiler: test-cfg` directive for `cfg!({predicate})`"
+            )));
+        }
+    }
+    return Ok(replacements);
+}
+
+fn parse_test_cfg_predicate(source: &str) -> Result<String, CompileError> {
+    let Some(arguments) = source.strip_prefix("cfg") else {
+        return Err(compile_error(format!(
+            "`flight-compiler: test-cfg` predicate `{source}` must use `cfg(predicate)`"
+        )));
+    };
+    let expression = syn::parse_str::<Expr>(&format!("cfg!{}", arguments.trim_start()))
+        .map_err(|error| compile_error(format!("invalid `test-cfg` predicate `{source}`: {error}")))?;
+    let Expr::Macro(expression) = expression else {
+        return Err(compile_error(format!(
+            "`flight-compiler: test-cfg` predicate `{source}` must use `cfg(predicate)`"
+        )));
+    };
+    if !expression.mac.path.is_ident("cfg") {
+        return Err(compile_error(format!(
+            "`flight-compiler: test-cfg` predicate `{source}` must use `cfg(predicate)`"
+        )));
+    }
+    return canonical_test_cfg_predicate(&expression.mac);
+}
+
+fn canonical_test_cfg_predicate(rust_macro: &syn::Macro) -> Result<String, CompileError> {
+    return canonical_test_cfg_tokens(rust_macro.tokens.clone());
+}
+
+fn canonical_test_cfg_tokens(
+    tokens: proc_macro2::TokenStream,
+) -> Result<String, CompileError> {
+    syn::parse2::<syn::Meta>(tokens.clone()).map_err(|error| {
+        return compile_error(format!("invalid portable `cfg!` predicate: {error}"));
+    })?;
+    return Ok(tokens.to_string());
+}
+
+fn validate_test_cfg_replacement(replacement: &Expr) -> Result<(), CompileError> {
+    let Expr::Call(call) = replacement else {
+        return Err(compile_error(
+            "`flight-compiler: test-cfg` support expression must be a zero-argument `crate::support_function()` call",
+        ));
+    };
+    let Expr::Path(function) = call.func.as_ref() else {
+        return Err(compile_error(
+            "`flight-compiler: test-cfg` support expression must be a zero-argument `crate::support_function()` call",
+        ));
+    };
+    let is_crate_support_call = call.args.is_empty()
+        && function.qself.is_none()
+        && function.path.leading_colon.is_none()
+        && function.path.segments.len() >= 2
+        && function
+            .path
+            .segments
+            .first()
+            .is_some_and(|segment| segment.ident == "crate")
+        && function
+            .path
+            .segments
+            .iter()
+            .all(|segment| matches!(segment.arguments, PathArguments::None));
+    if !is_crate_support_call {
+        return Err(compile_error(
+            "`flight-compiler: test-cfg` support expression must be a zero-argument `crate::support_function()` call",
+        ));
+    }
+    return Ok(());
+}
+
+fn rewrite_nested_test_cfg_tokens(
+    tokens: proc_macro2::TokenStream,
+    replacements: &BTreeMap<String, Expr>,
+) -> Result<proc_macro2::TokenStream, CompileError> {
+    use proc_macro2::{Delimiter, Group, TokenTree};
+    use quote::ToTokens;
+
+    let tokens = tokens.into_iter().collect::<Vec<_>>();
+    let mut rewritten = proc_macro2::TokenStream::new();
+    let mut index = 0;
+    while index < tokens.len() {
+        let predicate_group = match tokens.get(index..index + 3) {
+            Some([TokenTree::Ident(name), TokenTree::Punct(bang), TokenTree::Group(group)])
+                if name == "cfg"
+                    && bang.as_char() == '!'
+                    && group.delimiter() == Delimiter::Parenthesis =>
+            {
+                Some(group)
+            }
+            _ => None,
+        };
+        if let Some(group) = predicate_group {
+            let predicate = canonical_test_cfg_tokens(group.stream())?;
+            let Some(replacement) = replacements.get(&predicate) else {
+                return Err(missing_test_cfg_mapping(&predicate));
+            };
+            replacement.to_tokens(&mut rewritten);
+            index += 3;
+            continue;
+        }
+        let token = tokens[index].clone();
+        if let TokenTree::Group(group) = token {
+            let mut nested = Group::new(
+                group.delimiter(),
+                rewrite_nested_test_cfg_tokens(group.stream(), replacements)?,
+            );
+            nested.set_span(group.span());
+            rewritten.extend([TokenTree::Group(nested)]);
+        } else {
+            rewritten.extend([token]);
+        }
+        index += 1;
+    }
+    return Ok(rewritten);
+}
+
+fn missing_test_cfg_mapping(predicate: &str) -> CompileError {
+    return compile_error(format!(
+        "portable `cfg!({predicate})` has no explicit `flight-compiler: test-cfg cfg({predicate}) => crate::support_function()` mapping"
+    ));
+}
+
+struct TestCfgRewriter<'a> {
+    error: Option<CompileError>,
+    replacements: &'a BTreeMap<String, Expr>,
+}
+
+impl VisitMut for TestCfgRewriter<'_> {
+    fn visit_expr_mut(&mut self, expression: &mut Expr) {
+        if self.error.is_some() {
+            return;
+        }
+        let Expr::Macro(macro_expression) = expression else {
+            visit_mut::visit_expr_mut(self, expression);
+            return;
+        };
+        if !macro_expression.mac.path.is_ident("cfg") {
+            match rewrite_nested_test_cfg_tokens(
+                macro_expression.mac.tokens.clone(),
+                self.replacements,
+            ) {
+                Ok(tokens) => macro_expression.mac.tokens = tokens,
+                Err(error) => self.error = Some(error),
+            }
+            return;
+        }
+        let predicate = match canonical_test_cfg_predicate(&macro_expression.mac) {
+            Ok(predicate) => predicate,
+            Err(error) => {
+                self.error = Some(error);
+                return;
+            }
+        };
+        let Some(replacement) = self.replacements.get(&predicate) else {
+            self.error = Some(missing_test_cfg_mapping(&predicate));
+            return;
+        };
+        *expression = replacement.clone();
+    }
+
+    fn visit_macro_mut(&mut self, rust_macro: &mut syn::Macro) {
+        if self.error.is_some() || rust_macro.path.is_ident("cfg") {
+            return;
+        }
+        match rewrite_nested_test_cfg_tokens(rust_macro.tokens.clone(), self.replacements) {
+            Ok(tokens) => rust_macro.tokens = tokens,
+            Err(error) => self.error = Some(error),
+        }
+    }
 }
 
 fn parse_test_suite(module: syn::ItemMod) -> Result<TestSuite, CompileError> {
@@ -2532,7 +2750,8 @@ pub(crate) fn source_mode(source: &str) -> Result<SourceMode, CompileError> {
             | "root"
             | "root-only"
             | "string-union"
-            | "string-union-value" => {}
+            | "string-union-value"
+            | "test-cfg" => {}
             _ => {
                 return Err(compile_error(format!(
                     "unknown `flight-compiler` source directive `{name}`"
