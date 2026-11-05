@@ -5,6 +5,7 @@ mod binding_fact;
 mod block_emit;
 mod callable_type_analysis;
 mod context_insert;
+mod cross_crate;
 mod d15_emit;
 mod data_union_analysis;
 mod data_union_runtime;
@@ -41,6 +42,7 @@ mod parameter_emit;
 mod pattern_helpers;
 mod pinned_boxed_emit;
 mod program_emit;
+mod program_helpers;
 mod provenance_resolution;
 mod resolve_emit;
 mod rust_type_analysis;
@@ -75,6 +77,8 @@ pub(crate) use context_insert::{
     insert_program_type_path_context, insert_std_float_consts_context,
     insert_std_mem_import_context, insert_type_path_context, insert_typed_array_constant_context,
 };
+pub(crate) use cross_crate::CrossCrateSymbol;
+use cross_crate::*;
 use d15_emit::*;
 use data_union_analysis::*;
 use data_union_runtime::*;
@@ -153,6 +157,7 @@ pub(crate) use program_emit::{
     collect_cross_crate_use_tree, emit_program, is_lowered_cross_crate_type,
     is_lowered_cross_crate_value, test_cross_crate_imports, test_mixed_foreign_wildcard_roots,
 };
+use program_helpers::*;
 use provenance_resolution::*;
 pub(crate) use provenance_resolution::{ProvenanceImportRule, provenance_import_rules};
 use resolve_emit::*;
@@ -279,154 +284,6 @@ pub(crate) struct EmitProgramInput<'a> {
     pub lenient: bool,
 }
 
-pub(super) type PreferredAliases = HashMap<String, String>;
-
-#[derive(Clone)]
-pub(super) struct CrossCrateSymbol {
-    imported: String,
-    local: String,
-    module: String,
-}
-
-pub(super) struct CrossCrateUsageCollector<'a> {
-    context: &'a HashSet<String>,
-    symbols: &'a BTreeMap<String, CrossCrateSymbol>,
-    struct_literals_are_types: bool,
-    type_names: BTreeSet<String>,
-    value_names: BTreeSet<String>,
-}
-
-// Whether the function a call names declares an identity-bearing return type (see
-// `SHARED_IDENTITY_RETURN_MARKER`), as a source function or a Vitest helper.
-
-// `SHARED_IDENTITY_EXTERNAL_TYPE_MARKER` and `SHARED_IDENTITY_EXTERNAL_FIELD_MARKER` facts for the
-// dependency sources, each `(source, module)` of the crate the package `module`
-// (`@flighthq/<name>/contract`) is generated from. Every type is read in its own source's `use` items
-// and type aliases; an alias naming another source of its crate resolves once that alias is proven,
-// so the facts are a fixpoint over the crate's sources.
-
-// Records the `export-name` mappings of dependency packages (external alias sources) so imports of
-// their mapped items use the owner's TypeScript names. Each unrenamed import of a mapped item, and each
-// mapped item a wildcard import brings in, is referenced by that name too. It fails when a dependency
-// gives one item two names, when an imported name disagrees with a local mapping of the same Rust name,
-// collides with a local item or another import, or is shadowed by a local binding.
-// flight-lint: allow(hashmap-iteration) mappings are BTreeMaps and items retain Rust source order in Vecs
-
-// The name and entity type of a function's leading `name: &mut Entity` parameter.
-
-// Every function, constant, static, and export-name directive of `program` as text, which identifies
-// the source.
-// flight-lint: allow(hashmap-iteration) items retain Rust source order in Vecs and directives are a BTreeMap
-fn program_item_tokens(program: &Program) -> String {
-    return program
-        .functions
-        .iter()
-        .map(|function| function.to_token_stream().to_string())
-        .chain(
-            program
-                .constants
-                .iter()
-                .map(|constant| constant.to_token_stream().to_string()),
-        )
-        .chain(
-            program
-                .statics
-                .iter()
-                .map(|item| item.to_token_stream().to_string()),
-        )
-        .chain(
-            program
-                .export_names
-                .iter()
-                .map(|(item, target)| format!("export-name {item} {target}")),
-        )
-        .collect::<Vec<_>>()
-        .join("\n");
-}
-
-// Every local value binding a generated source declares: functions, constants and statics by their
-// emitted names, runtime enums, and the injected `PI`.
-// flight-lint: allow(hashmap-iteration) program items retain Rust source order in Vecs; the result is sorted
-fn program_value_bindings(program: &Program, context: &HashSet<String>) -> BTreeSet<String> {
-    let mut bindings = BTreeSet::new();
-    for function in &program.functions {
-        let name = function.sig.ident.to_string();
-        bindings.insert(
-            export_name(context, &name).map_or_else(|| snake_to_lower_camel(&name), str::to_string),
-        );
-    }
-    for constant in &program.constants {
-        let name = constant.ident.to_string();
-        bindings.insert(
-            frozen_object_name(context, &name)
-                .or_else(|| export_name(context, &name))
-                .unwrap_or(&name)
-                .to_string(),
-        );
-    }
-    for item in &program.statics {
-        bindings.insert(item.ident.to_string());
-    }
-    for rust_enum in &program.enums {
-        if enum_has_runtime_binding(program, rust_enum) {
-            bindings.insert(rust_enum.ident.to_string());
-        }
-    }
-    return bindings;
-}
-
-// `flight_*` crates imported with a wildcard anywhere in a use tree (`use flight_codec::*;`,
-// `use {flight_codec::*, ...};`, `use flight_codec::{*, Name};`), as contract modules.
-// A wildcard import of a dependency module that declares a `const-group` would bring its members in
-// under their Rust names, which have no portable TypeScript lowering; it fails closed.
-// flight-lint: allow(hashmap-iteration) each dependency's names are a BTreeMap
-fn reject_const_group_wildcard_imports(
-    dependencies: &[(BTreeMap<String, String>, &str)],
-    wildcard_modules: &[String],
-) -> Result<(), CompileError> {
-    for (names, module) in dependencies {
-        if !wildcard_modules.iter().any(|wildcard| wildcard == module) {
-            continue;
-        }
-        if let Some((item, target)) = names.iter().find(|(_, target)| target.contains('.')) {
-            return Err(compile_error(format!(
-                "a wildcard import of `{module}` would bring in `const-group` member `{item}` (`{target}` in TypeScript), which has no portable lowering"
-            )));
-        }
-    }
-    return Ok(());
-}
-
-// `rust_type_is_shared_identity` read in source `from` (or the bare context), expanding at most 16
-// wrapper or alias layers so an alias cycle fails closed.
-// The payload of `Arc::new` / `Rc::new` proven to lower to a fresh or existing object: a literal
-// allocation, an erased `RwLock` around one, or a struct value.
-
-// The type-namespace provenance (`use` items and local declarations) recorded for source `from`.
-
-fn preferred_aliases(
-    program: &Program,
-    alias_programs: &[Program],
-) -> Result<PreferredAliases, CompileError> {
-    let mut aliases = PreferredAliases::new();
-    for alias_program in std::iter::once(program).chain(alias_programs) {
-        for type_alias in &alias_program.type_aliases {
-            if !is_public(&type_alias.vis) || !type_alias.generics.params.is_empty() {
-                continue;
-            }
-            let mut context = alias_program.entities.clone();
-            insert_program_type_path_context(&mut context, alias_program);
-            let rendered = emit_type(&type_alias.ty, &context)?;
-            if rendered.contains("=>") {
-                aliases
-                    .entry(rendered)
-                    .or_insert_with(|| type_alias.ident.to_string());
-            }
-        }
-    }
-    return Ok(aliases);
-}
-
 // `rust_type_is_shared_identity` for a test file's declared type: its own aliases stand for their
 // definitions, and a bare imported name may be the one loaded source alias so called.
 fn vitest_type_is_shared_identity(
@@ -461,92 +318,4 @@ fn vitest_type_is_shared_identity(
         }
     }
     return rust_type_is_shared_identity(context, rust_type);
-}
-
-impl CrossCrateUsageCollector<'_> {
-    fn record_type_path(&mut self, path: &syn::Path) {
-        let Some(segment) = path.segments.first() else {
-            return;
-        };
-        let name = segment.ident.to_string();
-        if self.symbols.contains_key(&name)
-            && !is_lowered_cross_crate_type(&name)
-            && !is_internal_type_export(self.context, &name)
-        {
-            self.type_names.insert(name);
-        }
-    }
-
-    fn record_value_path(&mut self, path: &syn::Path) {
-        let Some(segment) = path.segments.first() else {
-            return;
-        };
-        let name = segment.ident.to_string();
-        if self.symbols.contains_key(&name) && !is_lowered_cross_crate_value(&name) {
-            self.value_names.insert(name);
-        }
-    }
-}
-
-impl<'ast> Visit<'ast> for CrossCrateUsageCollector<'_> {
-    fn visit_expr_path(&mut self, expression: &'ast syn::ExprPath) {
-        if expression.qself.is_none() {
-            if let Some((owner, member)) = path_owner_and_member(&expression.path)
-                && (is_string_union(self.context, &owner)
-                    || is_transparent_data_union_variant(self.context, &owner, &member))
-            {
-                // A transparent data-union variant erases to its payload, so its owner is never
-                // referenced as a value.
-                return;
-            }
-            self.record_value_path(&expression.path);
-        }
-        syn::visit::visit_expr_path(self, expression);
-    }
-
-    fn visit_expr_struct(&mut self, expression: &'ast syn::ExprStruct) {
-        if self.struct_literals_are_types && expression.qself.is_none() {
-            self.record_type_path(&expression.path);
-        }
-        syn::visit::visit_expr_struct(self, expression);
-    }
-
-    fn visit_macro(&mut self, mac: &'ast syn::Macro) {
-        visit_cross_crate_macro_arguments(self, mac);
-        syn::visit::visit_macro(self, mac);
-    }
-
-    fn visit_pat_struct(&mut self, pattern: &'ast syn::PatStruct) {
-        if pattern.qself.is_none() {
-            if let Some((owner, _)) = path_owner_and_member(&pattern.path)
-                && is_string_union(self.context, &owner)
-            {
-                self.record_type_path(&pattern.path);
-            } else {
-                self.record_value_path(&pattern.path);
-            }
-        }
-        syn::visit::visit_pat_struct(self, pattern);
-    }
-
-    fn visit_pat_tuple_struct(&mut self, pattern: &'ast syn::PatTupleStruct) {
-        if pattern.qself.is_none() {
-            if let Some((owner, member)) = path_owner_and_member(&pattern.path)
-                && (is_string_union(self.context, &owner)
-                    || is_transparent_data_union_variant(self.context, &owner, &member))
-            {
-                self.record_type_path(&pattern.path);
-            } else {
-                self.record_value_path(&pattern.path);
-            }
-        }
-        syn::visit::visit_pat_tuple_struct(self, pattern);
-    }
-
-    fn visit_type_path(&mut self, rust_type: &'ast syn::TypePath) {
-        if rust_type.qself.is_none() {
-            self.record_type_path(&rust_type.path);
-        }
-        syn::visit::visit_type_path(self, rust_type);
-    }
 }
