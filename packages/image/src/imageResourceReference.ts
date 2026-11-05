@@ -15,12 +15,9 @@ import type {
   TextureSource,
   EntityConstruction,
 } from '@flighthq/types/contract';
-import {
-  BitmapTextureSourceKind,
-  ImageResourceFailureKind,
-  ImageResourceReferenceKind,
-  ResourceResolutionState,
-} from '@flighthq/types/contract';
+import { BitmapTextureSourceKind, ResourceResolutionState } from '@flighthq/types/contract';
+
+import { ImageResourceFailureKind, ImageResourceReferenceKind } from './types.ts';
 
 export function createEmbeddedImageResourceReference(
   bytes: Uint8Array,

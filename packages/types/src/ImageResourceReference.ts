@@ -25,6 +25,7 @@ import type { Texture } from './Texture.ts';
 // A closed union for v1: a native host adds reach by swapping the resolver's fetch backend for
 // External, not by inventing a new ref kind. Opening the union later (a third member) is additive.
 
+/** @deprecated Import from `@flighthq/image/contract`; a structural copy kept for compatibility. */
 export const ImageResourceReferenceKind = {
   Embedded: 'Embedded',
   External: 'External',
@@ -32,6 +33,7 @@ export const ImageResourceReferenceKind = {
 
 export type ImageResourceReferenceKind = (typeof ImageResourceReferenceKind)[keyof typeof ImageResourceReferenceKind];
 
+/** @deprecated Import from `@flighthq/image/contract`; a structural copy kept for compatibility. */
 export const ImageResourceFailureKind = {
   Error: 'Error',
   Unavailable: 'Unavailable',

@@ -3,13 +3,13 @@ import type {
   CompressedImageData,
   CompressedImageResource,
   EntityConstruction,
-  HostImageDimensions,
   HostImageSource,
   ImageResource,
 } from '@flighthq/types/contract';
 import { CompressedImageTextureSourceKind, ImageTextureSourceKind } from '@flighthq/types/contract';
 
 import { getHostImageSourceDimensions } from './imageSourceDimensions.ts';
+import type { HostImageDimensions } from './types.ts';
 
 // Allocates a new resource identity over the same borrowed host image. The host handle is shared by
 // reference; the clone owns an independent version counter for renderer cache invalidation.

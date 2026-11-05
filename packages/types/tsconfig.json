@@ -9,6 +9,7 @@
     "sourceMap": true,
     "moduleSuffixes": [
       ".node-types",
+      ".image-types",
       ".materials-types",
       ".scene3d-wgpu-types",
       ".render-wgpu-types",
@@ -44,6 +45,9 @@
     "types": ["@testing-library/jest-dom", "vitest/globals", "@webgpu/types"]
   },
   "references": [
+    {
+      "path": "../image/tsconfig.contract.json"
+    },
     {
       "path": "../adjustments/tsconfig.contract.json"
     },

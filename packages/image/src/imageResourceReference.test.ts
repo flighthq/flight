@@ -5,12 +5,7 @@ import type {
   HostImageDecodeFormatCapability,
   ImageResource,
 } from '@flighthq/types/contract';
-import {
-  BitmapTextureSourceKind,
-  EntityRuntimeKey,
-  ImageResourceFailureKind,
-  ResourceResolutionState,
-} from '@flighthq/types/contract';
+import { BitmapTextureSourceKind, EntityRuntimeKey, ResourceResolutionState } from '@flighthq/types/contract';
 
 import {
   createEmbeddedImageResourceReference,
@@ -23,6 +18,7 @@ import {
   resetFailedImageResourceReference,
   resolveImageResourceReference,
 } from './imageResourceReference.ts';
+import { ImageResourceFailureKind } from './types.ts';
 
 const fakeSlot: HostImageDecodeFormatCapability = {
   decode: vi.fn().mockResolvedValue({
