@@ -50,6 +50,7 @@ mod type_classification;
 mod type_emit;
 mod type_resolution;
 mod value_emit;
+mod visibility_helpers;
 mod vitest_helpers;
 
 use argument_parameter_analysis::*;
@@ -156,6 +157,7 @@ pub(crate) use type_resolution::validate_dependency_export_name_bindings;
 use type_resolution::*;
 use value_emit::*;
 pub(crate) use value_emit::{js_string_literal, numeric_literal_spelling};
+use visibility_helpers::*;
 
 use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 use std::fmt::Write;
@@ -1065,13 +1067,6 @@ fn reject_const_group_wildcard_imports(
     return Ok(());
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
-pub(super) enum SourceAccess {
-    Local,
-    Crate,
-    Public,
-}
-
 // `rust_type_is_shared_identity` read in source `from` (or the bare context), expanding at most 16
 // wrapper or alias layers so an alias cycle fails closed.
 // The payload of `Arc::new` / `Rc::new` proven to lower to a fresh or existing object: a literal
@@ -1226,25 +1221,6 @@ fn emitted_closure_is_identity(emitted: &str) -> bool {
     false
 }
 
-pub(super) fn is_public(visibility: &Visibility) -> bool {
-    return matches!(visibility, Visibility::Public(_));
-}
-
-fn is_crate_wide(visibility: &Visibility) -> bool {
-    return is_public(visibility)
-        || matches!(visibility, Visibility::Restricted(restricted) if restricted.path.is_ident("crate"));
-}
-
-fn source_access_for_visibility(visibility: &Visibility) -> SourceAccess {
-    return if is_public(visibility) {
-        SourceAccess::Public
-    } else if is_crate_wide(visibility) {
-        SourceAccess::Crate
-    } else {
-        SourceAccess::Local
-    };
-}
-
 // Rust `pub(crate)`/`pub(super)` items can cross source modules. Generated TypeScript preserves
 // that package-internal reachability with a named module export; contract/index generation still
 // decides the actual package surface from Rust's public re-exports.
@@ -1393,17 +1369,6 @@ fn ordering_variant_value(path: &syn::Path) -> Option<&'static str> {
         "Greater" => Some("1"),
         _ => None,
     };
-}
-
-fn owner_marker(marker: &str, module: &str, name: &str, access: SourceAccess) -> String {
-    let visibility = match access {
-        SourceAccess::Local => "private",
-        SourceAccess::Crate => "crate",
-        SourceAccess::Public => "public",
-    };
-    return format!(
-        "{marker}{module}{PROVENANCE_SEPARATOR}{name}{PROVENANCE_SEPARATOR}{visibility}"
-    );
 }
 
 fn pattern_is_mutable(pattern: &Pat) -> bool {
