@@ -15037,7 +15037,32 @@ fn emit_let_else_local(
         && (pattern.path.is_ident("Some") || pattern.path.is_ident("Ok"))
         && pattern.elems.len() == 1
     {
-        if let Pat::Tuple(tuple) = &pattern.elems[0] {
+        // TypeScript erases each `Option`/`Result` success wrapper to its payload, so nested
+        // `Some`/`Ok` patterns test and bind the same single evaluated value. Keep the final
+        // payload on the established tuple/data-union/identifier paths so their scope and
+        // shadowing behavior stays identical to a single wrapper.
+        let mut payload_pattern = &pattern.elems[0];
+        let mut nested_wrapper = false;
+        while let Pat::TupleStruct(wrapper) = payload_pattern
+            && (wrapper.path.is_ident("Some") || wrapper.path.is_ident("Ok"))
+            && wrapper.elems.len() == 1
+        {
+            nested_wrapper = true;
+            payload_pattern = &wrapper.elems[0];
+        }
+        let absent_condition = |value: &str| {
+            let absent = option_absent_value(&initializer.expr, entities);
+            if nested_wrapper {
+                let nested_absent = if absent == "undefined" {
+                    "null"
+                } else {
+                    "undefined"
+                };
+                return format!("{value} === {absent} || {value} === {nested_absent}");
+            }
+            return format!("{value} === {absent}");
+        };
+        if let Pat::Tuple(tuple) = payload_pattern {
             let mut names = Vec::new();
             for elem in &tuple.elems {
                 match elem {
@@ -15064,11 +15089,11 @@ fn emit_let_else_local(
                 }
             }
             let value = emit_expression(&initializer.expr, entities)?;
-            let absent = option_absent_value(&initializer.expr, entities);
             write_indent(out, indent);
             writeln!(out, "const $opt = {value};").expect("writing to a String cannot fail");
             write_indent(out, indent);
-            writeln!(out, "if ($opt === {absent}) {{").expect("writing to a String cannot fail");
+            writeln!(out, "if ({}) {{", absent_condition("$opt"))
+                .expect("writing to a String cannot fail");
             emit_else_block(out, &otherwise.block.stmts, entities, indent + 1)?;
             write_indent(out, indent);
             out.push_str("}\n");
@@ -15077,18 +15102,18 @@ fn emit_let_else_local(
                 .expect("writing to a String cannot fail");
             return Ok(None);
         }
-        if let Pat::TupleStruct(_) | Pat::Struct(_) = &pattern.elems[0] {
+        if let Pat::TupleStruct(_) | Pat::Struct(_) = payload_pattern {
             let value = emit_expression(&initializer.expr, entities)?;
-            let absent = option_absent_value(&initializer.expr, entities);
             let temp = "$opt";
             write_indent(out, indent);
             writeln!(out, "const {temp} = {value};").expect("writing to a String cannot fail");
             write_indent(out, indent);
-            writeln!(out, "if ({temp} === {absent}) {{").expect("writing to a String cannot fail");
+            writeln!(out, "if ({}) {{", absent_condition(temp))
+                .expect("writing to a String cannot fail");
             emit_else_block(out, &otherwise.block.stmts, entities, indent + 1)?;
             write_indent(out, indent);
             out.push_str("}\n");
-            if let Some(test) = data_union_pattern_test(&pattern.elems[0], temp, entities)? {
+            if let Some(test) = data_union_pattern_test(payload_pattern, temp, entities)? {
                 if let Some(predicate) = &test.predicate {
                     write_indent(out, indent);
                     writeln!(out, "if (!({predicate})) {{")
@@ -15109,7 +15134,7 @@ fn emit_let_else_local(
                 "portable `let Some` binding needs an identifier, tuple, or data union variant",
             ));
         }
-        let Pat::Ident(identifier) = &pattern.elems[0] else {
+        let Pat::Ident(identifier) = payload_pattern else {
             return Err(compile_error(
                 "portable `let Some` binding needs an identifier or tuple",
             ));
@@ -15132,12 +15157,8 @@ fn emit_let_else_local(
                 writeln!(out, "{keyword} {fresh} = {value};")
                     .expect("writing to a String cannot fail");
                 write_indent(out, indent);
-                writeln!(
-                    out,
-                    "if ({fresh} === {}) {{",
-                    option_absent_value(&initializer.expr, entities)
-                )
-                .expect("writing to a String cannot fail");
+                writeln!(out, "if ({}) {{", absent_condition(&fresh))
+                    .expect("writing to a String cannot fail");
                 emit_else_block(out, &otherwise.block.stmts, entities, indent + 1)?;
                 write_indent(out, indent);
                 out.push_str("}\n");
@@ -15158,12 +15179,8 @@ fn emit_let_else_local(
             writeln!(out, " = {value};").expect("writing to a String cannot fail");
         }
         write_indent(out, indent);
-        writeln!(
-            out,
-            "if ({name} === {}) {{",
-            option_absent_value(&initializer.expr, entities)
-        )
-        .expect("writing to a String cannot fail");
+        writeln!(out, "if ({}) {{", absent_condition(&name))
+            .expect("writing to a String cannot fail");
         emit_else_block(out, &otherwise.block.stmts, entities, indent + 1)?;
         write_indent(out, indent);
         out.push_str("}\n");
@@ -19992,6 +20009,14 @@ fn emit_method_call(
                     .next()
             });
             match target_type {
+                Some(Ok(ts_type))
+                    if matches!(ts_type.as_str(), "boolean" | "number" | "string") =>
+                {
+                    Ok(format!(
+                        "(($downcast: unknown): {ts_type} | undefined => typeof $downcast === {} ? $downcast : undefined)({receiver})",
+                        js_string_literal(&ts_type)
+                    ))
+                }
                 Some(Ok(ts_type)) => Ok(format!("({receiver} as {ts_type})")),
                 Some(Err(error)) => Err(error),
                 None => Err(compile_error(

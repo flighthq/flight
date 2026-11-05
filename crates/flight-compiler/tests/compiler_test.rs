@@ -7676,6 +7676,94 @@ pub fn required(value: Option<i32>) -> i32 {
     }
 
     #[test]
+    fn lowers_nested_some_let_else_once_without_treating_false_as_absent() {
+        let source = r#"
+pub fn take_next(counter: &mut i32) -> Option<Option<bool>> {
+    *counter += 1;
+    return Some(Some(false));
+}
+
+pub fn read_next(counter: &mut i32) -> bool {
+    let Some(Some(value)) = take_next(counter) else {
+        return true;
+    };
+    return value;
+}
+
+pub fn read_same(value: Option<Option<bool>>) -> bool {
+    let Some(Some(value)) = value else {
+        return true;
+    };
+    return value;
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert_eq!(output.matches("takeNext(counter)").count(), 1, "{output}");
+        assert!(
+            output.contains(
+                "const value = takeNext(counter);\n  if (value === undefined || value === null) {\n    return true;\n  }\n  return value;"
+            ),
+            "{output}"
+        );
+        assert!(
+            output.contains(
+                "if (value === undefined || value === null) {\n    return true;\n  }\n  return value;"
+            ),
+            "{output}"
+        );
+        assert!(!output.contains("const value = value;"), "{output}");
+        assert!(!output.contains("if (!value)"), "{output}");
+    }
+
+    #[test]
+    fn lowers_primitive_any_downcasts_to_runtime_type_guards() {
+        let source = r#"
+use std::any::Any;
+
+pub fn read(value: &dyn Any) -> bool {
+    if let Some(value) = value.downcast_ref::<bool>() {
+        return *value;
+    }
+    if let Some(value) = value.downcast_ref::<String>() {
+        return !value.is_empty();
+    }
+    if let Some(value) = value.downcast_ref::<f64>() {
+        return *value != 0.0;
+    }
+    return false;
+}
+
+pub fn read_next() -> bool {
+    if let Some(value) = next_value().downcast_ref::<bool>() {
+        return *value;
+    }
+    return false;
+}
+
+fn next_value() -> Box<dyn Any> {
+    return Box::new(false);
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        for primitive in ["boolean", "string", "number"] {
+            assert!(
+                output.contains(&format!("typeof $downcast === '{primitive}'")),
+                "{output}"
+            );
+        }
+        assert_eq!(
+            output.matches("($downcast: unknown)").count(),
+            4,
+            "{output}"
+        );
+        assert_eq!(output.matches(")(nextValue())").count(), 1, "{output}");
+    }
+
+    #[test]
     fn lowers_let_else_ok_pattern() {
         let source = r#"
 pub fn required(value: Result<i32, i32>) -> i32 {
