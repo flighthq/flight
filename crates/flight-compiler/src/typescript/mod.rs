@@ -12142,6 +12142,9 @@ fn emit_expression_value(
         Expr::Cast(cast) if is_integer_cast_elided(&cast.expr, &cast.ty, entities) => {
             emit_expression(&cast.expr, entities)
         }
+        Expr::Cast(cast) if integer_literal_fits_cast(&cast.expr, &cast.ty) => {
+            emit_expression(&cast.expr, entities)
+        }
         Expr::Cast(cast) if type_is_named(&cast.ty, "u8") => {
             let operand = emit_binary_operand(&cast.expr, entities, 7, false)?;
             Ok(format!("{operand} & 0xff"))
@@ -26786,6 +26789,43 @@ fn is_integer_cast_elided(inner: &Expr, target: &Type, entities: &HashSet<String
         return false;
     };
     return is_widening_integer_cast(&source_name, &target_name);
+}
+
+fn integer_literal_fits_cast(expr: &Expr, ty: &Type) -> bool {
+    let Some(target) = named_type(ty) else {
+        return false;
+    };
+    let inner = peel_reference_and_paren(expr);
+    let value: Option<i128> = match inner {
+        Expr::Lit(lit) => match &lit.lit {
+            Lit::Int(int_lit) => int_lit.base10_parse::<u64>().ok().map(|v| v as i128),
+            _ => None,
+        },
+        Expr::Unary(unary) if matches!(unary.op, syn::UnOp::Neg(_)) => {
+            if let Expr::Lit(lit) = peel_reference_and_paren(&unary.expr) {
+                if let Lit::Int(int_lit) = &lit.lit {
+                    int_lit.base10_parse::<u64>().ok().map(|v| -(v as i128))
+                } else {
+                    None
+                }
+            } else {
+                None
+            }
+        }
+        _ => None,
+    };
+    let Some(value) = value else {
+        return false;
+    };
+    return match target.as_str() {
+        "u8" => (0..=255).contains(&value),
+        "u16" => (0..=65535).contains(&value),
+        "u32" | "usize" => (0..=4294967295i128).contains(&value),
+        "i8" => (-128..=127).contains(&value),
+        "i16" => (-32768..=32767).contains(&value),
+        "i32" | "isize" => (-2147483648..=2147483647i128).contains(&value),
+        _ => false,
+    };
 }
 
 fn bitand_mask_type(expression: &Expr) -> Option<String> {

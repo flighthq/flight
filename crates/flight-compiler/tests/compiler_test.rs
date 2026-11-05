@@ -7866,9 +7866,11 @@ pub fn required(value: Option<i32>) -> i32 {
         let requirement_collector =
             include_str!("../../flight-requirement/src/requirement_collector.rs");
         let requirement_output = compile_typescript(requirement_collector, None).unwrap();
-        assert!(requirement_output.contains(
-            "if (sink === undefined) {\n    return;\n  }\n  sink.push({ facet, key });"
-        ));
+        assert!(
+            requirement_output.contains(
+                "if (sink === undefined) {\n    return;\n  }\n  sink.push({ facet, key });"
+            )
+        );
         assert!(!requirement_output.contains("sink = sink;"));
     }
 
@@ -27720,6 +27722,20 @@ mod shadowing_tuple_destructure {
         assert!(
             output.contains("[...items.entries()].map("),
             "enumerate().map() must spread the entries iterator into an array: {output}"
+        );
+    }
+
+    #[test]
+    fn elides_integer_literal_casts_within_range() {
+        let source = r#"
+pub fn constants() -> (u32, u8, i32, i8) {
+    return (1 as u32, 255 as u8, -1 as i32, -128 as i8);
+}
+"#;
+        let output = compile_typescript(source, None).unwrap();
+        assert!(
+            output.contains("[1, 255, -1, -128]"),
+            "in-range integer literal casts should elide to bare values: {output}"
         );
     }
 }
