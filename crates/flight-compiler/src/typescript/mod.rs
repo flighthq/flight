@@ -10795,9 +10795,13 @@ fn emit_closure_with_parameter_types(
                     "portable expression closure cannot return without a value",
                 ));
             };
-            concise_arrow_body(emit_expression(value, &closure_context)?)
+            let body = emit_expression(value, &closure_context)?;
+            concise_arrow_body(strip_value_position_parens(&body).to_string())
         }
-        expression => concise_arrow_body(emit_expression(expression, &closure_context)?),
+        expression => {
+            let body = emit_expression(expression, &closure_context)?;
+            concise_arrow_body(strip_value_position_parens(&body).to_string())
+        }
     };
     return Ok(format!(
         "({}){return_type} => {body}",
