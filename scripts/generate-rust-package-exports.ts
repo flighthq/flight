@@ -423,22 +423,23 @@ export function typeScriptTypeAliasArguments(
     if (statement.type !== 'ImportDeclaration') continue;
     const source = statement.source as Record<string, unknown>;
     const module = typeof source.value === 'string' ? source.value : undefined;
-    if (module === undefined || !/^@flighthq\/[^/]+\/contract$/.test(module)) continue;
+    if (module === undefined) continue;
     const symbols = importedContractSymbols.get(module);
-    if (symbols === undefined) continue;
     for (const specifier of statement.specifiers as Record<string, unknown>[]) {
       if (specifier.type !== 'ImportSpecifier') continue;
       const imported = specifier.imported as Record<string, unknown>;
       const local = specifier.local as Record<string, unknown>;
       const importedName = typeof imported.name === 'string' ? imported.name : undefined;
       const localName = typeof local.name === 'string' ? local.name : undefined;
+      const relativeTypeImport =
+        /^\.{1,2}\//.test(module) && (statement.importKind === 'type' || specifier.importKind === 'type');
       // Keeping renamed imports would require a second target binding in the compiler metadata. The
       // direct-name lane covers established owners without inventing a new local public name.
       if (
         importedName === undefined ||
         localName !== importedName ||
         ambiguousCanonicalTypes.has(localName) ||
-        symbols.get(importedName)?.hasType !== true
+        (!relativeTypeImport && symbols?.get(importedName)?.hasType !== true)
       ) {
         continue;
       }

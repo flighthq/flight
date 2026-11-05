@@ -362,11 +362,12 @@ export function unrelated(): AccessibilityTreeBlockReason { throw 0; }
       ],
     ]);
     const existing = `import type { AnimationPlayer } from '@flighthq/types/contract';
-export function advance(players: readonly AnimationPlayer[], target: unknown): AnimationPlayer[] { return []; }
+import type { DebugState } from './debug.ts';
+export function advance(players: readonly AnimationPlayer[], target: unknown, state: Readonly<DebugState>): AnimationPlayer[] { return []; }
 export function isReady(): Promise<boolean> { throw 0; }
 export function incompatible(value: string | null): void {}
 `;
-    const generated = `export function advance(players: readonly AnimationPlayerRef[], target: TargetRef): AnimationPlayerRef[] { return []; }
+    const generated = `export function advance(players: readonly AnimationPlayerRef[], target: TargetRef, state: Readonly<DebugStateRef>): AnimationPlayerRef[] { return []; }
 export function isReady(): Promise<ReadyResult> { throw 0; }
 export function incompatible(value: RealAlias | undefined): void {}
 `;
@@ -374,6 +375,8 @@ export function incompatible(value: RealAlias | undefined): void {}
     expect(typeScriptTypeAliasArguments(existing, generated, symbols)).toEqual([
       '--typescript-type-alias',
       'AnimationPlayerRef=@flighthq/types/contract#AnimationPlayer',
+      '--typescript-type-alias',
+      'DebugStateRef=./debug.ts#DebugState',
       '--typescript-type-alias',
       'ReadyResult=boolean',
       '--typescript-type-alias',
