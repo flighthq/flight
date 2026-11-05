@@ -468,6 +468,9 @@ pub(super) const SHARED_IDENTITY_ENTITY_MARKER: &str = "@shared-identity-entity:
 pub(super) const SHARED_IDENTITY_EXTERNAL_FIELD_MARKER: &str = "@shared-identity-external-field:";
 // `{BindingId}␟{crate}::{Struct}` for a parameter or local declared as a dependency crate's struct.
 pub(super) const EXTERNAL_STRUCT_BINDING_MARKER: &str = "@external-struct-binding:";
+// `{crate}::{function}␟{crate}::{Struct}` for a public dependency function returning one of that
+// dependency's structs. Tests use this to retain the owner of an inferred factory result.
+const EXTERNAL_STRUCT_RETURN_MARKER: &str = "@external-struct-return:";
 // `{struct identity}␟{field}␟{crate}::{Struct}` for a source struct field declared as a dependency
 // crate's struct.
 pub(super) const EXTERNAL_STRUCT_FIELD_MARKER: &str = "@external-struct-field:";
@@ -1514,39 +1517,55 @@ pub(crate) fn external_shared_identity_facts(
     for source in &parsed {
         let context = dependency_source_context(source.context.clone(), &known, &source.crate_name);
         for item in &source.file.items {
-            let syn::Item::Struct(structure) = item else {
-                continue;
-            };
-            if !is_public(&structure.vis) {
-                continue;
-            }
-            for field in &structure.fields {
-                let Some(field_name) = &field.ident else {
-                    continue;
-                };
-                if is_public(&field.vis)
-                    && external_type_is_shared_identity(
+            match item {
+                syn::Item::Struct(structure) if is_public(&structure.vis) => {
+                    for field in &structure.fields {
+                        let Some(field_name) = &field.ident else {
+                            continue;
+                        };
+                        if is_public(&field.vis)
+                            && external_type_is_shared_identity(
+                                &context,
+                                &source.aliases,
+                                &source.generic_aliases,
+                                &source.structures,
+                                &field.ty,
+                                0,
+                            )
+                        {
+                            facts.insert(format!(
+                                "{SHARED_IDENTITY_EXTERNAL_FIELD_MARKER}{}::{}{PROVENANCE_SEPARATOR}{field_name}",
+                                source.crate_name, structure.ident
+                            ));
+                        }
+                        // A public `Vec` field is a sequence as a local struct's is, so the proven
+                        // `Vec` lowerings (`.clear()` as `length = 0`, ...) apply through an external
+                        // binding.
+                        if is_public(&field.vis) && rust_type_is_sequence(&field.ty) {
+                            facts.insert(format!(
+                                "{SEQUENCE_FIELD_MARKER}{}::{}{PROVENANCE_SEPARATOR}{field_name}",
+                                source.crate_name, structure.ident
+                            ));
+                        }
+                    }
+                }
+                syn::Item::Fn(function) if is_public(&function.vis) => {
+                    let ReturnType::Type(_, rust_type) = &function.sig.output else {
+                        continue;
+                    };
+                    if let Some(structure) = external_dependency_struct_type(
                         &context,
-                        &source.aliases,
-                        &source.generic_aliases,
-                        &source.structures,
-                        &field.ty,
-                        0,
-                    )
-                {
-                    facts.insert(format!(
-                        "{SHARED_IDENTITY_EXTERNAL_FIELD_MARKER}{}::{}{PROVENANCE_SEPARATOR}{field_name}",
-                        source.crate_name, structure.ident
-                    ));
+                        &source.crate_name,
+                        &known,
+                        rust_type,
+                    ) {
+                        facts.insert(format!(
+                            "{EXTERNAL_STRUCT_RETURN_MARKER}{}::{}{PROVENANCE_SEPARATOR}{structure}",
+                            source.crate_name, function.sig.ident
+                        ));
+                    }
                 }
-                // A public `Vec` field is a sequence as a local struct's is, so the proven `Vec`
-                // lowerings (`.clear()` as `length = 0`, ...) apply through an external binding.
-                if is_public(&field.vis) && rust_type_is_sequence(&field.ty) {
-                    facts.insert(format!(
-                        "{SEQUENCE_FIELD_MARKER}{}::{}{PROVENANCE_SEPARATOR}{field_name}",
-                        source.crate_name, structure.ident
-                    ));
-                }
+                _ => {}
             }
         }
     }
@@ -1589,6 +1608,70 @@ fn external_struct_type_with(context: &HashSet<String>, rust_type: &Type) -> Opt
         return None;
     }
     return Some(format!("{first}::{last}"));
+}
+
+// A dependency function's declared return struct, canonicalized from that dependency's own source
+// context. Local declarations resolve under `crate`; imported Flight structs keep their crate root.
+fn external_dependency_struct_type(
+    context: &HashSet<String>,
+    crate_name: &str,
+    known: &BTreeSet<String>,
+    rust_type: &Type,
+) -> Option<String> {
+    let path = match rust_type {
+        Type::Group(group) => {
+            return external_dependency_struct_type(context, crate_name, known, &group.elem);
+        }
+        Type::Paren(paren) => {
+            return external_dependency_struct_type(context, crate_name, known, &paren.elem);
+        }
+        Type::Reference(reference) => {
+            return external_dependency_struct_type(context, crate_name, known, &reference.elem);
+        }
+        Type::Path(path) if path.qself.is_none() => &path.path,
+        _ => return None,
+    };
+    if !matches!(path.segments.last()?.arguments, PathArguments::None) {
+        return None;
+    }
+    let resolved = resolve_type_path(path, context)?;
+    let (first, last) = (resolved.first()?, resolved.last()?);
+    let structure = if first == "crate" {
+        format!("{crate_name}::{last}")
+    } else if first.starts_with("flight_") {
+        format!("{first}::{last}")
+    } else {
+        return None;
+    };
+    return known.contains(&structure).then_some(structure);
+}
+
+// The dependency struct a public factory call returns. This is deliberately separate from source
+// struct provenance: it only licenses dependency field facts gathered from the dependency itself.
+fn external_struct_return(expression: &Expr, entities: &HashSet<String>) -> Option<String> {
+    let Expr::Call(call) = peel_reference_and_paren(expression) else {
+        return None;
+    };
+    let Expr::Path(path) = call.func.as_ref() else {
+        return None;
+    };
+    if path.qself.is_some() {
+        return None;
+    }
+    let context = current_source(entities)
+        .map(|source| source_type_context(entities, &source))
+        .unwrap_or_else(|| entities.clone());
+    let resolved = resolve_type_path(&path.path, &context)?;
+    let (first, function) = (resolved.first()?, resolved.last()?);
+    if resolved.len() < 2 || !first.starts_with("flight_") {
+        return None;
+    }
+    return unique_marker_suffix(
+        entities,
+        &format!(
+            "{EXTERNAL_STRUCT_RETURN_MARKER}{first}::{function}{PROVENANCE_SEPARATOR}"
+        ),
+    );
 }
 
 // `rust_type_is_shared_identity` for a dependency source read on its own: its source structs are
@@ -7259,10 +7342,22 @@ fn insert_lexical_binding_context(function: &ItemFn, context: &mut HashSet<Strin
                         && self.initializer_is_shared_identity(&initializer.expr)
                 }),
             };
+            let returned_external_struct = local.init.as_ref().and_then(|initializer| {
+                initializer
+                    .diverge
+                    .is_none()
+                    .then(|| external_struct_return(&initializer.expr, self.context))
+                    .flatten()
+            });
             self.bind_pattern(&local.pat, fact);
             self.mark_shared_identity(&local.pat, shared_identity);
             if let Pat::Type(typed) = &local.pat {
                 self.mark_external_struct(&typed.pat, &typed.ty);
+            } else if let Some(external) = returned_external_struct
+                && let Some(name) = local_pattern_name(&local.pat)
+                && let Some(id) = self.binding_id(&name)
+            {
+                self.external_structs.insert(id, external);
             }
             if retains_nullable_option
                 && let Some(name) = local_pattern_name(&local.pat)

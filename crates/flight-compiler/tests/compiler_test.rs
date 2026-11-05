@@ -18032,6 +18032,70 @@ pub fn get_scale() -> f64 {
 mod compile_vitest {
     use super::*;
 
+    // A dependency factory result keeps its dependency struct owner, so identity-bearing public
+    // fields can use pointer equality. Primitive fields still fail closed because `===` would compare
+    // their values rather than their Rust allocations.
+    #[test]
+    fn proves_pointer_equality_through_dependency_factory_results() {
+        let dependency = [ExternalAliasSource {
+            source: r#"use std::sync::Arc;
+
+pub struct LogEntry;
+pub type LogSink = Arc<dyn Fn(&LogEntry) + Send + Sync>;
+
+pub struct MemoryLogSink {
+    pub sink: LogSink,
+    pub serial: Arc<i32>,
+}
+
+pub fn create_memory_log_sink() -> MemoryLogSink {
+    unimplemented!()
+}
+"#,
+            module: "@flighthq/log/contract",
+        }];
+        let callable = r#"use std::sync::Arc;
+
+use flight_log::create_memory_log_sink;
+
+mod memory {
+    use super::*;
+
+    #[test]
+    fn preserves_sink_identity() {
+        let memory = create_memory_log_sink();
+        assert!(Arc::ptr_eq(&memory.sink, &memory.sink));
+    }
+}
+"#;
+        let output = compile_vitest_with_external_alias_sources(
+            callable,
+            "@flighthq/example/contract",
+            None,
+            &[],
+            &dependency,
+        )
+        .unwrap();
+        assert!(
+            output.contains("expect(memory.sink === memory.sink).toBe(true);"),
+            "{output}"
+        );
+
+        let primitive = callable.replace("memory.sink", "memory.serial");
+        assert_eq!(
+            compile_vitest_with_external_alias_sources(
+                &primitive,
+                "@flighthq/example/contract",
+                None,
+                &[],
+                &dependency,
+            )
+            .unwrap_err()
+            .to_string(),
+            "portable `Arc::ptr_eq` needs an operand proven to hold an identity-bearing payload (a struct, collection, callable, `Mutex` cell or `dyn Any`); a primitive or unit payload lowers to its value, so `===` would compare values instead of allocations"
+        );
+    }
+
     #[test]
     fn omits_suites_that_contain_only_rust_only_tests() {
         let source = r#"
