@@ -4,13 +4,13 @@ use std::fmt::Write;
 use syn::parse::Parser;
 use syn::punctuated::Punctuated;
 use syn::visit::Visit;
-use syn::{BinOp, Expr, Fields, FnArg, ItemFn, ItemUse, Pat, ReturnType, Stmt, Token, UseTree};
+use syn::{BinOp, Expr, Fields, FnArg, ItemFn, ItemUse, Pat, ReturnType, Stmt, Token, Type, UseTree};
 
 use crate::model::{Program, TestCase, TestProgram, TestSuite};
 use crate::typescript::{FLIGHT_ERROR_HELPER_MARKER, PANIC_MESSAGE_HELPER_MARKER};
 use crate::typescript::{
-    ProvenanceImportRule, begin_option_if, begin_option_while, emit_expression,
-    emit_expression_for_type, emit_for_header, emit_format_template, emit_local,
+    ProvenanceImportRule, begin_option_if, begin_option_while, emit_block_with_tail_returns,
+    emit_expression, emit_expression_for_type, emit_for_header, emit_format_template, emit_local,
     emit_local_with_shadow_and_else, emit_match_statement, emit_option_binding, emit_parameter,
     emit_type, emit_type_parameters, export_name, frozen_object_name, function_expression_context,
     insert_type_parameter_context, insert_vitest_helper_return_context,
@@ -985,10 +985,122 @@ fn emit_helper(
         parameters.join(", ")
     )
     .expect("writing to a String cannot fail");
-    emit_block(out, &function.block.stmts, &context, indent + 1)?;
+    if helper_has_proven_object_result(function, &context) {
+        emit_block_with_tail_returns(out, &function.block.stmts, &context, indent + 1)?;
+    } else {
+        emit_block(out, &function.block.stmts, &context, indent + 1)?;
+    }
     write_indent(out, indent);
     out.push_str("}\n");
     return Ok(());
+}
+
+// A helper's declared struct result plus a value-producing Rust tail (or explicit `return`) proves
+// that TypeScript must return an object. Keep unit helpers and statement blocks on the ordinary
+// statement emitter: a struct literal followed by `;` is an effect-free statement, not a result.
+fn helper_has_proven_object_result(function: &ItemFn, context: &HashSet<String>) -> bool {
+    let Some(last) = function.block.stmts.last() else {
+        return false;
+    };
+    if statement_proves_object_result(last) {
+        return true;
+    }
+    let ReturnType::Type(_, rust_type) = &function.sig.output else {
+        return false;
+    };
+    let Type::Path(path) = rust_type.as_ref() else {
+        return false;
+    };
+    let Some(name) = path.path.segments.last().map(|segment| segment.ident.to_string()) else {
+        return false;
+    };
+    if !is_vitest_struct(context, &name) {
+        return false;
+    }
+    return statement_proves_value_result(last);
+}
+
+fn statement_proves_object_result(statement: &Stmt) -> bool {
+    return match statement {
+        Stmt::Expr(Expr::Return(returned), _) => returned
+            .expr
+            .as_deref()
+            .is_some_and(expression_proves_object_result),
+        Stmt::Expr(expression, None) => expression_proves_object_result(expression),
+        _ => false,
+    };
+}
+
+fn expression_proves_object_result(expression: &Expr) -> bool {
+    return match expression {
+        Expr::Block(block) => block.block.stmts.last().is_some_and(statement_proves_object_result),
+        Expr::Group(group) => expression_proves_object_result(&group.expr),
+        Expr::If(branch) => {
+            branch
+                .then_branch
+                .stmts
+                .last()
+                .is_some_and(statement_proves_object_result)
+                && branch.else_branch.as_ref().is_some_and(|(_, otherwise)| {
+                    expression_proves_object_result(otherwise)
+                })
+        }
+        Expr::Match(branch) => {
+            !branch.arms.is_empty()
+                && branch
+                    .arms
+                    .iter()
+                    .all(|arm| expression_proves_object_result(&arm.body))
+        }
+        Expr::Paren(paren) => expression_proves_object_result(&paren.expr),
+        Expr::Return(returned) => returned
+            .expr
+            .as_deref()
+            .is_some_and(expression_proves_object_result),
+        Expr::Struct(_) => true,
+        Expr::Unsafe(block) => block.block.stmts.last().is_some_and(statement_proves_object_result),
+        _ => false,
+    };
+}
+
+fn statement_proves_value_result(statement: &Stmt) -> bool {
+    return match statement {
+        Stmt::Expr(Expr::Return(returned), _) => returned.expr.is_some(),
+        Stmt::Expr(expression, None) => expression_proves_value_result(expression),
+        _ => false,
+    };
+}
+
+fn expression_proves_value_result(expression: &Expr) -> bool {
+    return match expression {
+        Expr::Block(block) => block.block.stmts.last().is_some_and(statement_proves_value_result),
+        Expr::Group(group) => expression_proves_value_result(&group.expr),
+        Expr::If(branch) => {
+            branch
+                .then_branch
+                .stmts
+                .last()
+                .is_some_and(statement_proves_value_result)
+                && branch.else_branch.as_ref().is_some_and(|(_, otherwise)| {
+                    expression_proves_value_result(otherwise)
+                })
+        }
+        Expr::Match(branch) => {
+            !branch.arms.is_empty()
+                && branch
+                    .arms
+                    .iter()
+                    .all(|arm| expression_proves_value_result(&arm.body))
+        }
+        Expr::Paren(paren) => expression_proves_value_result(&paren.expr),
+        Expr::Return(returned) => returned.expr.is_some(),
+        Expr::Tuple(tuple) => !tuple.elems.is_empty(),
+        Expr::Unsafe(block) => block.block.stmts.last().is_some_and(statement_proves_value_result),
+        Expr::Break(_) | Expr::Continue(_) | Expr::ForLoop(_) | Expr::Loop(_) | Expr::While(_) => {
+            false
+        }
+        _ => true,
+    };
 }
 
 fn emit_path_name(name: &str, context: &HashSet<String>) -> String {

@@ -21817,6 +21817,110 @@ mod sample {
     }
 
     #[test]
+    fn returns_tail_and_explicit_object_values_from_test_helpers() {
+        let production = r#"
+pub struct Sample {
+    pub value: i32,
+}
+"#;
+        let source = r#"
+use flight_example::*;
+
+fn tail_sample() -> Sample {
+    Sample { value: 1 }
+}
+
+fn explicit_sample() -> Sample {
+    return Sample { value: 2 };
+}
+
+type SampleAlias = Sample;
+
+fn aliased_sample() -> SampleAlias {
+    Sample { value: 3 }
+}
+
+fn forwarded_sample() -> Sample {
+    tail_sample()
+}
+
+#[test]
+fn reads_helper_results() {
+    assert_eq!(tail_sample().value, 1);
+    assert_eq!(explicit_sample().value, 2);
+    assert_eq!(aliased_sample().value, 3);
+    assert_eq!(forwarded_sample().value, 1);
+}
+"#;
+
+        let output = compile_vitest_with_module_alias_sources(
+            source,
+            "@flighthq/example/contract",
+            &[VitestAliasSource {
+                source: production,
+                module: "src/sample.rs",
+            }],
+        )
+        .unwrap();
+
+        assert!(output.contains(
+            "function tailSample(): Sample {\n  return { value: 1 };\n}"
+        ));
+        assert!(output.contains(
+            "function explicitSample(): Sample {\n  return { value: 2 };\n}"
+        ));
+        assert!(output.contains(
+            "function aliasedSample(): SampleAlias {\n  return { value: 3 };\n}"
+        ));
+        assert!(output.contains(
+            "function forwardedSample(): Sample {\n  return tailSample();\n}"
+        ));
+    }
+
+    #[test]
+    fn does_not_return_object_statements_from_unit_test_helpers() {
+        let production = r#"
+pub struct Sample {
+    pub value: i32,
+}
+"#;
+        let source = r#"
+use flight_example::*;
+
+fn object_statement() {
+    Sample { value: 1 };
+}
+
+fn object_block_statement() {
+    {
+        Sample { value: 2 };
+    }
+}
+
+#[test]
+fn calls_unit_helpers() {
+    object_statement();
+    object_block_statement();
+}
+"#;
+
+        let output = compile_vitest_with_module_alias_sources(
+            source,
+            "@flighthq/example/contract",
+            &[VitestAliasSource {
+                source: production,
+                module: "src/sample.rs",
+            }],
+        )
+        .unwrap();
+
+        assert!(output.contains("function objectStatement(): void {"));
+        assert!(output.contains("function objectBlockStatement(): void {"));
+        assert!(!output.contains("function objectStatement(): void {\n  return"));
+        assert!(!output.contains("function objectBlockStatement(): void {\n  return"));
+    }
+
+    #[test]
     fn initializes_nullable_struct_literal_fields_with_null() {
         let production = r#"
 //! flight-compiler: nullable-options

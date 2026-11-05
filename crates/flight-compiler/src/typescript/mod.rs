@@ -10242,7 +10242,7 @@ fn tail_expression_needs_return(expression: &Expr) -> bool {
 // a `return` is rewritten (and so copied); see `emit_block_with_tail`. The copy's binding sites are
 // given the ids the resolver found for the parsed ones (`copy_binding_sites`), so a `let` nested in
 // the returned tail keeps everything proven for it.
-fn emit_block_with_tail_returns(
+pub(super) fn emit_block_with_tail_returns(
     out: &mut String,
     statements: &[Stmt],
     entities: &HashSet<String>,
