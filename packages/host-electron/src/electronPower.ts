@@ -1,5 +1,4 @@
 import type {
-  ElectronApi,
   ElectronPowerCapabilities,
   HostPowerBatteryHealthCapability,
   HostPowerChangeCapability,
@@ -16,7 +15,8 @@ import type {
   PowerKeepAwakeReleaseResult,
   PowerStatus,
   PowerThermalState,
-} from '@flighthq/types/contract';
+} from '@flighthq/power/contract';
+import type { ElectronApi } from '@flighthq/types/contract';
 
 function finishProvider<Provider>(populate: (out: Provider) => void): Provider {
   const out = {} as Provider;

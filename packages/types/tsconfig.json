@@ -38,6 +38,7 @@
       ".path-types",
       ".permissions-types",
       ".preferences-types",
+      ".power-types",
       ".surface-types",
       ".scene2d-dom-types",
       ".scene2d-formats-types",
@@ -169,6 +170,9 @@
     },
     {
       "path": "../preferences/tsconfig.contract.json"
+    },
+    {
+      "path": "../power/tsconfig.contract.json"
     },
     {
       "path": "../registry"

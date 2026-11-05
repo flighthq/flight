@@ -1,7 +1,8 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
 import { clearSignal, createSignal, emitSignal, hasSignalSlots } from '@flighthq/signals/contract';
+
 import type {
-  EntityConstruction,
   HostPowerBatteryHealthCapability,
   HostPowerChangeCapability,
   HostPowerIdleCapability,
@@ -18,7 +19,7 @@ import type {
   PowerKeepAwakeReleaseResult,
   PowerStatus,
   PowerThermalState,
-} from '@flighthq/types/contract';
+} from './types.ts';
 
 // AN ATTEMPT IS NEVER AN OUTCOME. The previous seam recorded that an operation had been STARTED and
 // reported that as availability: a denied Wake Lock request was observed as 'available' because the

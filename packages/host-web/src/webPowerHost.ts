@@ -1,4 +1,4 @@
-import type { HostPowerCapabilities } from '@flighthq/types/contract';
+import type { HostPowerCapabilities } from '@flighthq/power/contract';
 
 import { webHostPowerChange, webHostPowerKeepAwake, webHostPowerStatus, webHostPowerSuspension } from './webPower.ts';
 

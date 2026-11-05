@@ -1,5 +1,6 @@
+import type { HostPowerCapabilities } from '@flighthq/power/contract';
+
 import type { Entity } from './Entity.ts';
-import type { HostPowerCapabilities } from './Host.ts';
 import type {
   ElectronPowerCapabilities,
   HostPowerBatteryHealthCapability,

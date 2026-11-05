@@ -1,21 +1,7 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { EntityRuntimeKey } from '@flighthq/entity/contract';
+import type { EntityWithoutRuntime } from '@flighthq/entity/contract';
 import { connectSignal } from '@flighthq/signals/contract';
-import { EntityRuntimeKey } from '@flighthq/types/contract';
-import type {
-  EntityWithoutRuntime,
-  HostPowerCapabilities,
-  HostPowerBatteryHealthCapability,
-  HostPowerKeepAwakeCapability,
-  HostPowerChangeCapability,
-  PowerIdleState,
-  HostPowerIdleCapability,
-  HostPowerSessionLockCapability,
-  PowerStatus,
-  HostPowerStatusCapability,
-  HostPowerThermalCapability,
-  PowerBatteryHealth,
-  PowerThermalState,
-} from '@flighthq/types/contract';
 
 import {
   acquirePowerKeepAwake,
@@ -38,6 +24,20 @@ import {
   releasePowerKeepAwake,
   setPowerIdlePollingIntervalMs,
 } from './power.ts';
+import type {
+  HostPowerCapabilities,
+  HostPowerBatteryHealthCapability,
+  HostPowerKeepAwakeCapability,
+  HostPowerChangeCapability,
+  PowerIdleState,
+  HostPowerIdleCapability,
+  HostPowerSessionLockCapability,
+  PowerStatus,
+  HostPowerStatusCapability,
+  HostPowerThermalCapability,
+  PowerBatteryHealth,
+  PowerThermalState,
+} from './types.ts';
 
 // A host built from exactly the slots a test needs. Nothing installs anywhere, so two hosts can be live
 // at once — the property the ambient seam could not express.

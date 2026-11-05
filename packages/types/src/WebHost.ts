@@ -4,6 +4,7 @@ import type { HostDeviceCapabilities } from '@flighthq/device/contract';
 import type { HostLifecycleCapabilities } from '@flighthq/lifecycle/contract';
 import type { HostMenuCapabilities } from '@flighthq/menu/contract';
 import type { HostNetCapabilities } from '@flighthq/net/contract';
+import type { HostPowerCapabilities } from '@flighthq/power/contract';
 import type { HostPreferencesCapabilities } from '@flighthq/preferences/contract';
 import type { HostCanvasCapabilities, HostSurfaceCapabilities } from '@flighthq/surface/contract';
 
@@ -26,7 +27,6 @@ import type {
   HostNotificationCapabilities,
   HostPermissionsCapabilities,
   HostPlatformCapabilities,
-  HostPowerCapabilities,
   HostProtocolCapabilities,
   HostScreenCapabilities,
   HostSensorsCapabilities,

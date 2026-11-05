@@ -1,4 +1,5 @@
-import type { PowerStatus, ElectronApi } from '@flighthq/types/contract';
+import type { PowerStatus } from '@flighthq/power/contract';
+import type { ElectronApi } from '@flighthq/types/contract';
 
 import {
   electronHostPower,

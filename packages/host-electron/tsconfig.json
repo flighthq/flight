@@ -7,7 +7,7 @@
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,
-    "moduleSuffixes": [".menu-types", ""],
+    "moduleSuffixes": [".power-types", ".menu-types", ""],
     "types": ["node", "@testing-library/jest-dom", "vitest/globals", "@webgpu/types"]
   },
   "references": [
@@ -42,7 +42,7 @@
       "path": "../platform"
     },
     {
-      "path": "../power"
+      "path": "../power/tsconfig.contract.json"
     },
     {
       "path": "../preferences/tsconfig.runtime.json"

@@ -1,13 +1,13 @@
+import type { NonEntityCreateResult } from '@flighthq/entity/contract';
 import type {
   HostPowerKeepAwakeCapability,
   HostPowerSuspensionCapability,
-  NonEntityCreateResult,
   PowerKeepAwakeAcquireResult,
   PowerKeepAwakeMode,
   PowerKeepAwakeReleaseResult,
   PowerStatus,
   WebPowerReadingCapabilities,
-} from '@flighthq/types/contract';
+} from '@flighthq/power/contract';
 
 // The web power providers. Web offers status, change, keepAwake and suspension. It omits idle,
 // sessionLock, batteryHealth and thermal because it cannot observe them: an omitted slot is the honest

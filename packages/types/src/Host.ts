@@ -7,6 +7,7 @@ import type { HostInputCapabilities } from '@flighthq/input/contract';
 import type { HostLifecycleCapabilities } from '@flighthq/lifecycle/contract';
 import type { HostMenuCapabilities } from '@flighthq/menu/contract';
 import type { HostNetCapabilities } from '@flighthq/net/contract';
+import type { HostPowerCapabilities } from '@flighthq/power/contract';
 import type { HostPreferencesCapabilities } from '@flighthq/preferences/contract';
 import type { HostWgpuCapabilities } from '@flighthq/render-wgpu/contract';
 import type { HostCanvasCapabilities, HostSurfaceCapabilities } from '@flighthq/surface/contract';
@@ -80,16 +81,6 @@ import type {
 } from './Notification.ts';
 import type { HostPermissionsCapability } from './Permission.ts';
 import type { HostPlatformCapability } from './Platform.ts';
-import type {
-  HostPowerBatteryHealthCapability,
-  HostPowerChangeCapability,
-  HostPowerIdleCapability,
-  HostPowerKeepAwakeCapability,
-  HostPowerSessionLockCapability,
-  HostPowerStatusCapability,
-  HostPowerSuspensionCapability,
-  HostPowerThermalCapability,
-} from './Power.ts';
 import type {
   HostProtocolDefaultCapability,
   HostProtocolLaunchCapability,
@@ -302,17 +293,6 @@ export interface HostPermissionsCapabilities {
 
 export interface HostPlatformCapabilities {
   readonly info?: HostPlatformCapability;
-}
-
-export interface HostPowerCapabilities {
-  readonly batteryHealth?: HostPowerBatteryHealthCapability;
-  readonly change?: HostPowerChangeCapability;
-  readonly idle?: HostPowerIdleCapability;
-  readonly keepAwake?: HostPowerKeepAwakeCapability;
-  readonly sessionLock?: HostPowerSessionLockCapability;
-  readonly status?: HostPowerStatusCapability;
-  readonly suspension?: HostPowerSuspensionCapability;
-  readonly thermal?: HostPowerThermalCapability;
 }
 
 export interface HostProtocolCapabilities {

@@ -1,0 +1,27 @@
+// Acyclic build entry selected by contract-only projects through the `.power-types` module suffix.
+// The published @flighthq/power/contract entry remains contract.ts, which also exposes runtime helpers.
+export type {
+  ElectronPowerCapabilities,
+  HostPowerBatteryHealthCapability,
+  HostPowerCapabilities,
+  HostPowerChangeCapability,
+  HostPowerIdleCapability,
+  HostPowerKeepAwakeCapability,
+  HostPowerSessionLockCapability,
+  HostPowerStatusCapability,
+  HostPowerSuspensionCapability,
+  HostPowerThermalCapability,
+  Power,
+  PowerBatteryHealth,
+  PowerBatteryHealthState,
+  PowerIdleState,
+  PowerKeepAwakeAcquireReason,
+  PowerKeepAwakeAcquireResult,
+  PowerKeepAwakeMode,
+  PowerKeepAwakeReleaseReason,
+  PowerKeepAwakeReleaseResult,
+  PowerStatus,
+  PowerThermalState,
+  WebPowerCapabilities,
+  WebPowerReadingCapabilities,
+} from './types.ts';
