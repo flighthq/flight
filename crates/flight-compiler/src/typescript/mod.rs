@@ -31,6 +31,7 @@ mod lock_cell;
 mod macro_emit;
 mod markers;
 mod match_emit;
+mod match_types;
 mod method_call;
 mod naming;
 mod numeric_analysis;
@@ -129,6 +130,7 @@ pub(crate) use markers::{
 };
 pub(crate) use match_emit::emit_match_statement;
 use match_emit::*;
+use match_types::*;
 use method_call::*;
 use naming::*;
 pub(crate) use naming::{
@@ -278,137 +280,6 @@ pub(crate) struct EmitProgramInput<'a> {
 }
 
 pub(super) type PreferredAliases = HashMap<String, String>;
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
-pub(super) enum RuntimeCategory {
-    Null,
-    Boolean,
-    Number,
-    String,
-    Array,
-    Record,
-    Function,
-    Object,
-}
-
-pub(super) struct DataUnionPatternTest {
-    pub(super) bindings: Vec<(String, String)>,
-    pub(super) predicate: Option<String>,
-}
-
-struct TaggedDataUnionPattern {
-    bindings: BTreeMap<String, String>,
-    owner: String,
-    variant: String,
-}
-
-enum TaggedDataUnionPatternAnalysis {
-    CatchAll(Option<String>),
-    Ordinary,
-    Variants(Vec<TaggedDataUnionPattern>),
-}
-
-struct TaggedDataUnionMatchArm {
-    catch_all_binding: Option<String>,
-    otherwise: bool,
-    variants: Vec<TaggedDataUnionPattern>,
-}
-
-struct ReservedKeyDataUnionPattern {
-    binding: Option<String>,
-    fallback: bool,
-    keys: BTreeSet<String>,
-    owner: String,
-    payload_type: String,
-    variant: String,
-}
-
-enum ReservedKeyDataUnionPatternAnalysis {
-    CatchAll(Option<String>),
-    Ordinary,
-    Variants(Vec<ReservedKeyDataUnionPattern>),
-}
-
-struct DataUnionMatchArm {
-    binding: Option<String>,
-    binding_type: Option<String>,
-    categories: BTreeSet<RuntimeCategory>,
-    catch_all: bool,
-    reserved_key_variants: Vec<(BTreeSet<String>, bool)>,
-}
-
-struct DataUnionPattern {
-    binding: Option<String>,
-    categories: BTreeSet<RuntimeCategory>,
-    owner: String,
-    variant: String,
-}
-
-enum DataUnionPatternAnalysis {
-    CatchAll(Option<String>),
-    Ordinary,
-    Variants(Vec<DataUnionPattern>),
-}
-
-struct InferredTaggedDataUnionMatchArm {
-    binding: Option<String>,
-    catch_all: bool,
-    field_bindings: Vec<(String, String)>,
-    variants: Vec<String>,
-}
-
-pub(super) struct OptionMatchArm {
-    pub(super) binding: Option<String>,
-    pub(super) present: bool,
-}
-
-struct OptionWrappedInferredDataUnionMatchArm {
-    binding: Option<String>,
-    field_bindings: Vec<(String, String)>,
-    none_arm: bool,
-    variants: Vec<String>,
-}
-
-pub(super) enum TupleOptionElement {
-    SomeBinding(String),
-    SomeWild,
-    None,
-    Wild,
-}
-
-pub(super) struct TupleOptionMatchArm {
-    pub(super) elements: Vec<TupleOptionElement>,
-    pub(super) catch_all: bool,
-}
-
-pub(super) enum GeneralTupleElementCondition {
-    Literal(String),
-    EnumVariant(String),
-    DataUnionKind(String),
-    OptionSome(String),
-    OptionNone(String),
-    Wild,
-}
-
-pub(super) struct GeneralTupleElement {
-    pub(super) condition: GeneralTupleElementCondition,
-    pub(super) binding: Option<String>,
-    pub(super) field_bindings: Vec<(String, String)>,
-}
-
-pub(super) struct GeneralTupleAlternative {
-    pub(super) elements: Vec<GeneralTupleElement>,
-}
-
-pub(super) struct GeneralTupleMatchArm {
-    pub(super) catch_all: bool,
-    pub(super) alternatives: Vec<GeneralTupleAlternative>,
-}
-
-pub(super) struct ExternalIdentityAlias {
-    pub(super) module: String,
-    pub(super) tag: String,
-}
 
 #[derive(Clone)]
 pub(super) struct CrossCrateSymbol {
@@ -590,35 +461,6 @@ fn vitest_type_is_shared_identity(
         }
     }
     return rust_type_is_shared_identity(context, rust_type);
-}
-
-impl RuntimeCategory {
-    fn name(self) -> &'static str {
-        return match self {
-            Self::Null => "null",
-            Self::Boolean => "boolean",
-            Self::Number => "number",
-            Self::String => "string",
-            Self::Array => "array",
-            Self::Record => "record",
-            Self::Function => "function",
-            Self::Object => "object",
-        };
-    }
-
-    fn parse(name: &str) -> Option<Self> {
-        return match name {
-            "null" => Some(Self::Null),
-            "boolean" => Some(Self::Boolean),
-            "number" => Some(Self::Number),
-            "string" => Some(Self::String),
-            "array" => Some(Self::Array),
-            "record" => Some(Self::Record),
-            "function" => Some(Self::Function),
-            "object" => Some(Self::Object),
-            _ => None,
-        };
-    }
 }
 
 impl CrossCrateUsageCollector<'_> {
