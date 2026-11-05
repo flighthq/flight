@@ -336,6 +336,73 @@ import { RuntimeLiveness } from '@flighthq/types/contract';
     ).toEqual(['--typescript-string-union', '@flighthq/types/contract#Liveness=["polite","assertive"]']);
   });
 
+  it('carries exact Layout string-union owners without accepting runtime enums', () => {
+    const symbols = new Map([
+      [
+        '@flighthq/types/contract',
+        new Map([
+          [
+            'ViewportAlign',
+            {
+              hasType: true,
+              hasValue: false,
+              stringUnionValues: ['bottom', 'bottomleft', 'bottomright', 'left', 'right', 'top', 'topleft', 'topright'],
+            },
+          ],
+          [
+            'FlexLayoutWrap',
+            {
+              hasType: true,
+              hasValue: false,
+              stringUnionValues: ['nowrap', 'wrap', 'wrap-reverse'],
+            },
+          ],
+          [
+            'RuntimeWrap',
+            {
+              hasType: true,
+              hasValue: true,
+              stringUnionValues: ['nowrap', 'wrap'],
+            },
+          ],
+        ]),
+      ],
+    ]);
+
+    expect(
+      typeScriptStringUnionArguments(
+        `import type { FlexLayoutWrap, RuntimeWrap, ViewportAlign } from '@flighthq/types/contract';`,
+        symbols,
+      ),
+    ).toEqual([
+      '--typescript-string-union',
+      '@flighthq/types/contract#FlexLayoutWrap=["nowrap","wrap","wrap-reverse"]',
+      '--typescript-string-union',
+      '@flighthq/types/contract#ViewportAlign=["bottom","bottomleft","bottomright","left","right","top","topleft","topright"]',
+    ]);
+  });
+
+  it('refuses one string-union spelling claimed by multiple contract owners', () => {
+    const symbols = new Map([
+      [
+        '@flighthq/first/contract',
+        new Map([['ViewportAlign', { hasType: true, hasValue: false, stringUnionValues: ['left', 'right'] }]]),
+      ],
+      [
+        '@flighthq/second/contract',
+        new Map([['ViewportAlign', { hasType: true, hasValue: false, stringUnionValues: ['left', 'right'] }]]),
+      ],
+    ]);
+
+    expect(() =>
+      typeScriptStringUnionArguments(
+        `import type { ViewportAlign } from '@flighthq/first/contract';
+import type { ViewportAlign } from '@flighthq/second/contract';`,
+        symbols,
+      ),
+    ).toThrow(/ViewportAlign is imported from both/);
+  });
+
   it('derives inline string-union representations from matching exported signatures', () => {
     const existing = `export function clearAccessibilityTree(reason: 'detached' | 'hidden'): AccessibilityOperationOutcome<'destroyed' | 'no-dom'> { throw 0; }
 export function removeAccessibilityNode(): AccessibilityOperationOutcome<'destroyed' | 'no-dom' | 'node-not-found'> { throw 0; }

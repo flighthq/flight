@@ -2912,6 +2912,10 @@ pub(crate) fn parse_visibility_program(source: &str) -> Result<Program, CompileE
     let string_union_metadata = parse_string_union_metadata_from_attributes(&file.attrs)?;
     program.string_unions = string_union_metadata.styles;
     program.string_union_values = string_union_metadata.values;
+    program.numeric_unions = parse_numeric_unions(&file.attrs)?
+        .into_iter()
+        .map(|name| (name, Vec::new()))
+        .collect();
     program.no_std = file
         .attrs
         .iter()

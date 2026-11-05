@@ -26,9 +26,10 @@ pub struct ExternalAliasSource<'a> {
 
 /// A type-only string-literal union proven by an existing external TypeScript contract.
 ///
-/// The compiler still verifies that the literals exactly represent a visible unit Rust enum before
-/// it uses this metadata to lower variant expressions. TypeScript runtime enums must not be supplied
-/// through this lane.
+/// The compiler still verifies that the literals exactly represent one visible unit Rust enum before
+/// it uses this metadata to lower variant expressions. A contract without an explicit Rust style
+/// must have either a supported uniform style or a complete, unambiguous lowercase correspondence
+/// between variants and literals. TypeScript runtime enums must not be supplied through this lane.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct TypeScriptStringUnion<'a> {
     pub name: &'a str,
@@ -2023,6 +2024,12 @@ fn resolve_type_script_string_union_metadata<'a, 'program>(
     let programs = programs.into_iter().collect::<Vec<_>>();
     let mut declarations = std::collections::BTreeMap::<String, Vec<(String, bool)>>::new();
     let mut ambiguous = std::collections::BTreeSet::new();
+    let mut duplicate = std::collections::BTreeSet::new();
+    let mut non_string_enums = std::collections::BTreeSet::new();
+    for program in &programs {
+        non_string_enums.extend(program.numeric_unions.keys().cloned());
+        non_string_enums.extend(program.data_unions.iter().cloned());
+    }
     for enumeration in programs
         .iter()
         .copied()
@@ -2039,11 +2046,12 @@ fn resolve_type_script_string_union_metadata<'a, 'program>(
                 )
             })
             .collect::<Vec<_>>();
-        if declarations
-            .get(&name)
-            .is_some_and(|declared| declared != &variants)
-        {
-            ambiguous.insert(name);
+        if let Some(declared) = declarations.get(&name) {
+            if declared == &variants {
+                duplicate.insert(name);
+            } else {
+                ambiguous.insert(name);
+            }
         } else {
             declarations.insert(name, variants);
         }
@@ -2110,6 +2118,12 @@ fn resolve_type_script_string_union_metadata<'a, 'program>(
                     union.name
                 )));
             }
+            if duplicate.contains(union.name) {
+                return Err(compile_error(format!(
+                    "{representation} string union `{}` matches multiple Rust enum declarations",
+                    union.name
+                )));
+            }
             let Some(variants) = declarations.get(union.name) else {
                 return Err(compile_error(format!(
                     "{representation} string union `{}` has no visible Rust enum declaration",
@@ -2119,6 +2133,12 @@ fn resolve_type_script_string_union_metadata<'a, 'program>(
             if variants.is_empty() || variants.iter().any(|(_, unit)| !unit) {
                 return Err(compile_error(format!(
                     "{representation} string union `{}` must match a non-empty unit Rust enum",
+                    union.name
+                )));
+            }
+            if non_string_enums.contains(union.name) {
+                return Err(compile_error(format!(
+                    "{representation} string union `{}` matches a Rust enum with an explicit non-string representation",
                     union.name
                 )));
             }
@@ -2160,7 +2180,7 @@ fn resolve_type_script_string_union_metadata<'a, 'program>(
                 }
                 (*style, declared_values.clone())
             } else {
-                let style = [
+                let conventional_style = [
                     model::StringUnionStyle::LowerCamel,
                     model::StringUnionStyle::KebabCase,
                 ]
@@ -2171,14 +2191,25 @@ fn resolve_type_script_string_union_metadata<'a, 'program>(
                         .map(|(variant, _)| typescript::string_union_literal(variant, *style))
                         .collect::<std::collections::BTreeSet<_>>();
                     return literals.len() == variants.len() && literals == values;
-                })
-                .ok_or_else(|| {
-                    compile_error(format!(
-                        "{representation} string union `{}` does not match the literals of its Rust enum",
-                        union.name
-                    ))
-                })?;
-                (style, std::collections::BTreeMap::new())
+                });
+                if let Some(style) = conventional_style {
+                    (style, std::collections::BTreeMap::new())
+                } else {
+                    let exact = infer_lowercase_string_union_correspondence(variants, &values)
+                        .map_err(|()| {
+                            compile_error(format!(
+                                "{representation} string union `{}` has ambiguous lowercase literal correspondence with its Rust enum",
+                                union.name
+                            ))
+                        })?
+                        .ok_or_else(|| {
+                            compile_error(format!(
+                                "{representation} string union `{}` does not match the literals of its Rust enum",
+                                union.name
+                            ))
+                        })?;
+                    (model::StringUnionStyle::Exact, exact)
+                }
             };
             return Ok(ExternalStringUnionMetadata {
                 metadata: model::StringUnionMetadata {
@@ -2193,6 +2224,66 @@ fn resolve_type_script_string_union_metadata<'a, 'program>(
             });
         })
         .collect();
+}
+
+// A contract can prove a per-variant exact representation even when no one global style describes
+// it, but only through a complete one-to-one lowercase correspondence. Separators are insignificant
+// for the proof (`NoWrap` -> `nowrap`, `WrapReverse` -> `wrap-reverse`); uppercase literals remain
+// excluded because Rust-variant capitalization is not evidence of a type-only string union.
+fn infer_lowercase_string_union_correspondence(
+    variants: &[(String, bool)],
+    values: &std::collections::BTreeSet<String>,
+) -> Result<Option<std::collections::BTreeMap<String, String>>, ()> {
+    fn variant_key(value: &str) -> String {
+        return value
+            .chars()
+            .filter(|character| character.is_ascii_alphanumeric())
+            .map(|character| character.to_ascii_lowercase())
+            .collect();
+    }
+
+    fn literal_key(value: &str) -> Option<String> {
+        if !value.chars().all(|character| {
+            character.is_ascii_lowercase()
+                || character.is_ascii_digit()
+                || matches!(character, '-' | '_')
+        }) {
+            return None;
+        }
+        let key = value
+            .chars()
+            .filter(|character| character.is_ascii_alphanumeric())
+            .collect::<String>();
+        return (!key.is_empty()).then_some(key);
+    }
+
+    let mut variants_by_key = std::collections::BTreeMap::new();
+    for (variant, _) in variants {
+        if variants_by_key
+            .insert(variant_key(variant), variant)
+            .is_some()
+        {
+            return Err(());
+        }
+    }
+    let mut values_by_key = std::collections::BTreeMap::new();
+    for value in values {
+        let Some(key) = literal_key(value) else {
+            return Ok(None);
+        };
+        if values_by_key.insert(key, value).is_some() {
+            return Err(());
+        }
+    }
+    if variants_by_key.keys().ne(values_by_key.keys()) {
+        return Ok(None);
+    }
+    return Ok(Some(
+        variants_by_key
+            .into_iter()
+            .map(|(key, variant)| (variant.clone(), values_by_key[&key].clone()))
+            .collect(),
+    ));
 }
 
 // The names a binding pattern introduces: an identifier, or every name an array or object

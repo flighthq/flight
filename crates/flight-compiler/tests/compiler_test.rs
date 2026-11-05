@@ -14765,6 +14765,202 @@ pub fn blocked_outcome() -> ShellExternalOutcome {
     }
 
     #[test]
+    fn infers_exact_lowercase_string_union_correspondence_from_contract_literals() {
+        let viewport_values = vec![
+            "bottom".to_string(),
+            "bottomleft".to_string(),
+            "bottomright".to_string(),
+            "left".to_string(),
+            "right".to_string(),
+            "top".to_string(),
+            "topleft".to_string(),
+            "topright".to_string(),
+        ];
+        let wrap_values = vec![
+            "nowrap".to_string(),
+            "wrap".to_string(),
+            "wrap-reverse".to_string(),
+        ];
+        let metadata = [
+            TypeScriptStringUnion {
+                name: "ViewportAlign",
+                module: "@flighthq/types/contract",
+                values: &viewport_values,
+            },
+            TypeScriptStringUnion {
+                name: "FlexLayoutWrap",
+                module: "@flighthq/types/contract",
+                values: &wrap_values,
+            },
+        ];
+        let visibility_sources = [ModuleSource {
+            path: "crates/flight-layout/src/types.rs",
+            source: r#"
+pub enum ViewportAlign {
+    Bottom, BottomLeft, BottomRight, Left, Right, Top, TopLeft, TopRight,
+}
+pub enum FlexLayoutWrap { NoWrap, Wrap, WrapReverse }
+"#,
+        }];
+
+        let output = compile_typescript_with_options(
+            ModuleSource {
+                path: "crates/flight-layout/src/layout.rs",
+                source: r#"
+use crate::types::{FlexLayoutWrap, ViewportAlign};
+pub fn bottom_left() -> ViewportAlign { return ViewportAlign::BottomLeft; }
+pub fn no_wrap() -> FlexLayoutWrap { return FlexLayoutWrap::NoWrap; }
+pub fn wrap_reverse() -> FlexLayoutWrap { return FlexLayoutWrap::WrapReverse; }
+"#,
+            },
+            None,
+            &[],
+            &[],
+            &metadata,
+            &[],
+            &[],
+            &[],
+            &[],
+            &[],
+            &[],
+            &visibility_sources,
+            &[],
+            false,
+        )
+        .unwrap();
+
+        assert!(output.contains("return 'bottomleft';"), "{output}");
+        assert!(output.contains("return 'nowrap';"), "{output}");
+        assert!(output.contains("return 'wrap-reverse';"), "{output}");
+    }
+
+    #[test]
+    fn rejects_ambiguous_lowercase_string_union_correspondence() {
+        let values = vec!["nowrap".to_string(), "no_wrap".to_string()];
+        let metadata = [TypeScriptStringUnion {
+            name: "AmbiguousWrap",
+            module: "@flighthq/types/contract",
+            values: &values,
+        }];
+        let visibility_sources = [ModuleSource {
+            path: "crates/flight-layout/src/types.rs",
+            source: "pub enum AmbiguousWrap { NoWrap, Nowrap }\n",
+        }];
+
+        let error = compile_typescript_with_options(
+            ModuleSource {
+                path: "crates/flight-layout/src/layout.rs",
+                source: "use crate::types::AmbiguousWrap;\npub fn value() -> AmbiguousWrap { return AmbiguousWrap::NoWrap; }\n",
+            },
+            None,
+            &[],
+            &[],
+            &metadata,
+            &[],
+            &[],
+            &[],
+            &[],
+            &[],
+            &[],
+            &visibility_sources,
+            &[],
+            false,
+        )
+        .unwrap_err();
+
+        assert_eq!(
+            error.to_string(),
+            "external TypeScript string union `AmbiguousWrap` has ambiguous lowercase literal correspondence with its Rust enum"
+        );
+    }
+
+    #[test]
+    fn rejects_ambiguous_rust_owners_for_contract_string_unions() {
+        let values = vec!["ready".to_string()];
+        let metadata = [TypeScriptStringUnion {
+            name: "Status",
+            module: "@flighthq/types/contract",
+            values: &values,
+        }];
+        let visibility_sources = [
+            ModuleSource {
+                path: "crates/flight-alpha/src/types.rs",
+                source: "pub enum Status { Ready }\n",
+            },
+            ModuleSource {
+                path: "crates/flight-beta/src/types.rs",
+                source: "pub enum Status { Ready }\n",
+            },
+        ];
+
+        let error = compile_typescript_with_options(
+            ModuleSource {
+                path: "crates/flight-consumer/src/value.rs",
+                source: "pub fn value() -> bool { return true; }\n",
+            },
+            None,
+            &[],
+            &[],
+            &metadata,
+            &[],
+            &[],
+            &[],
+            &[],
+            &[],
+            &[],
+            &visibility_sources,
+            &[],
+            false,
+        )
+        .unwrap_err();
+
+        assert_eq!(
+            error.to_string(),
+            "external TypeScript string union `Status` matches multiple Rust enum declarations"
+        );
+    }
+
+    #[test]
+    fn rejects_contract_string_unions_for_explicit_non_string_enums() {
+        let values = vec!["forward".to_string()];
+        let metadata = [TypeScriptStringUnion {
+            name: "Direction",
+            module: "@flighthq/types/contract",
+            values: &values,
+        }];
+        let visibility_sources = [ModuleSource {
+            path: "crates/flight-geometry/src/types.rs",
+            source: "//! flight-compiler: numeric-union Direction\npub enum Direction { Forward = 1 }\n",
+        }];
+
+        let error = compile_typescript_with_options(
+            ModuleSource {
+                path: "crates/flight-geometry/src/value.rs",
+                source: "use crate::types::Direction;\npub fn value() -> Direction { return Direction::Forward; }\n",
+            },
+            None,
+            &[],
+            &[],
+            &metadata,
+            &[],
+            &[],
+            &[],
+            &[],
+            &[],
+            &[],
+            &visibility_sources,
+            &[],
+            false,
+        )
+        .unwrap_err();
+
+        assert_eq!(
+            error.to_string(),
+            "external TypeScript string union `Direction` matches a Rust enum with an explicit non-string representation"
+        );
+    }
+
+    #[test]
     fn honors_explicit_rust_variant_style_for_external_type_script_string_unions() {
         let values = vec!["PingPong".to_string(), "Repeat".to_string()];
         let metadata = [TypeScriptStringUnion {
