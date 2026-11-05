@@ -16,6 +16,7 @@ mod expression_emit;
 mod expression_identity;
 mod expression_predicate;
 mod flight_error_emit;
+mod formatting_helpers;
 mod function_emit;
 mod generation_context;
 mod hash_collection_emit;
@@ -84,6 +85,8 @@ pub(crate) use expression_predicate::option_absent_value;
 use expression_predicate::*;
 use flight_error_emit::*;
 pub(crate) use flight_error_emit::{flight_error_result_aliases, flight_error_result_type};
+pub(crate) use formatting_helpers::write_indent;
+use formatting_helpers::*;
 use function_emit::*;
 pub(crate) use function_emit::{emit_local_function, lexical_binding_names};
 use generation_context::*;
@@ -872,16 +875,6 @@ pub(super) struct CrossCrateUsageCollector<'a> {
     value_names: BTreeSet<String>,
 }
 
-fn array_type(inner: String) -> String {
-    if inner.starts_with("readonly [") {
-        return format!("Array<{inner}>");
-    }
-    if inner.contains(" | ") || inner.contains("=>") {
-        return format!("({inner})[]");
-    }
-    return format!("{inner}[]");
-}
-
 // Opens `if let Some(name) = value` on the absent value. A scrutinee that only reads a binding or a
 // field chain is re-read in the test and the binding (and a `name` that is that same binding needs no
 // redeclaration: the test narrows it); any other scrutinee is evaluated exactly once into a block
@@ -1233,13 +1226,6 @@ fn emitted_closure_is_identity(emitted: &str) -> bool {
     false
 }
 
-pub(super) fn is_primitive_typescript_type(typescript_type: &str) -> bool {
-    return matches!(
-        typescript_type,
-        "boolean" | "number" | "object" | "string" | "unknown" | "void"
-    ) || typescript_type.contains("=>");
-}
-
 pub(super) fn is_public(visibility: &Visibility) -> bool {
     return matches!(visibility, Visibility::Public(_));
 }
@@ -1550,35 +1536,6 @@ fn parameter_is_reassignable(name: &str, parameter_type: &Type, body: &syn::Bloc
     return true;
 }
 
-fn parenthesize_compound(expr: &str) -> std::borrow::Cow<'_, str> {
-    let trimmed = expr.trim();
-    if trimmed.starts_with('(') && trimmed.ends_with(')') {
-        return std::borrow::Cow::Borrowed(expr);
-    }
-    let bytes = trimmed.as_bytes();
-    let len = bytes.len();
-    let mut depth = 0i32;
-    let mut i = 0;
-    while i < len {
-        match bytes[i] {
-            b'(' | b'[' => depth += 1,
-            b')' | b']' => depth -= 1,
-            b'>' if depth == 0 && i + 1 < len && bytes[i + 1] == b'>' => {
-                return std::borrow::Cow::Owned(format!("({expr})"));
-            }
-            b'<' if depth == 0 && i + 1 < len && bytes[i + 1] == b'<' => {
-                return std::borrow::Cow::Owned(format!("({expr})"));
-            }
-            b'?' if depth == 0 => {
-                return std::borrow::Cow::Owned(format!("({expr})"));
-            }
-            _ => {}
-        }
-        i += 1;
-    }
-    return std::borrow::Cow::Borrowed(expr);
-}
-
 fn type_is_named(rust_type: &Type, expected: &str) -> bool {
     let Type::Path(path) = rust_type else {
         return false;
@@ -1634,40 +1591,6 @@ fn vitest_type_is_shared_identity(
         }
     }
     return rust_type_is_shared_identity(context, rust_type);
-}
-
-fn indent_continuation_lines(text: &str, indent: usize) -> String {
-    if indent == 0 || !text.contains('\n') {
-        return text.to_string();
-    }
-    let prefix = "  ".repeat(indent);
-    let mut result = String::with_capacity(text.len() + indent * 2 * text.matches('\n').count());
-    let mut first = true;
-    for line in text.split('\n') {
-        if !first {
-            result.push('\n');
-            if !line.is_empty() {
-                result.push_str(&prefix);
-            }
-        }
-        result.push_str(line);
-        first = false;
-    }
-    return result;
-}
-
-pub(crate) fn write_indent(out: &mut String, indent: usize) {
-    for _ in 0..indent {
-        out.push_str("  ");
-    }
-}
-
-fn join_closing_brace_with(out: &mut String, continuation: &str) {
-    if out.ends_with("}\n") {
-        out.pop();
-        out.push(' ');
-    }
-    out.push_str(continuation);
 }
 
 impl RuntimeCategory {
