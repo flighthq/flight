@@ -1,32 +1,42 @@
-// Wire version for the command stream and backend surface. Increment when an existing numeric
-// discriminant, field position, or meaning changes. Additive commands may retain the version because
-// every record is length-delimited and an older backend reports Unknown/InvalidCommand at that record.
-export const Physics3DAbiVersion = 1;
+// Generated from crates/flight-physics3d-abi/src/physics3d_abi_layout.rs by flight-compiler.
+// Rust is authoritative; run `npm run generate` after changing it.
 
-export const Physics3DAbiCommandMagic = 0x41443350;
-export const Physics3DAbiCommandHeaderByteLength = 16;
-export const Physics3DAbiCommandRecordHeaderByteLength = 16;
+/**
+ * Wire version for the command stream and backend surface (TS `Physics3DAbiVersion`). Increment
+ * when an existing numeric discriminant, field position, or meaning changes. Additive commands may
+ * retain the version because every record is length-delimited.
+ */
+export const Physics3DAbiVersion: number = 1;
+
+/**
+ * The bytes `P3DA`, read little-endian (TS `Physics3DAbiCommandMagic`).
+ */
+export const Physics3DAbiCommandMagic: number = 0x41443350;
+
+export const Physics3DAbiCommandHeaderByteLength: number = 16;
+
+export const Physics3DAbiCommandRecordHeaderByteLength: number = 16;
 
 export const Physics3DAbiCommandHeaderOffset = {
   Magic: 0,
   Version: 4,
   ByteLength: 8,
   CommandCount: 12,
-} as const;
+};
 
 export const Physics3DAbiCommandRecordOffset = {
   Kind: 0,
   ByteLength: 4,
   ObjectId: 8,
   RelatedId: 12,
-} as const;
+};
 
 export const Physics3DAbiCapability = {
   ContactHooks: 1 << 0,
   PersistentWorlds: 1 << 1,
   Queries: 1 << 2,
   SelectiveReadback: 1 << 3,
-} as const;
+};
 
 export const Physics3DAbiCommandKind = {
   SetGravity: 1,
@@ -43,7 +53,7 @@ export const Physics3DAbiCommandKind = {
   ApplyLinearImpulseAtPoint: 12,
   ApplyTorque: 13,
   WakeBody: 14,
-} as const;
+};
 
 export const Physics3DAbiShapeKind = {
   Sphere: 1,
@@ -55,7 +65,7 @@ export const Physics3DAbiShapeKind = {
   Convex: 7,
   TriangleMesh: 8,
   Heightfield: 9,
-} as const;
+};
 
 export const Physics3DAbiJointKind = {
   BallAndSocket: 1,
@@ -65,18 +75,25 @@ export const Physics3DAbiJointKind = {
   Slider: 5,
   ConeTwist: 6,
   Generic6Dof: 7,
-} as const;
+};
 
-export const Physics3DAbiBodyValueStride = 33;
-export const Physics3DAbiContactIdStride = 4;
-export const Physics3DAbiContactValueStride = 5;
-export const Physics3DAbiContactPointValueStride = 10;
-export const Physics3DAbiJointValueStride = 6;
-export const Physics3DAbiQueryValueStride = 7;
+export const Physics3DAbiBodyValueStride: number = 33;
 
-// A 3D face-face manifold can carry four points. Keep this ABI-owned constant explicit rather than
-// hiding the bound in hook code, so a collision-manifold expansion forces a reviewed contract update.
-export const Physics3DAbiMaxContactPoints = 4;
+export const Physics3DAbiContactIdStride: number = 4;
+
+export const Physics3DAbiContactValueStride: number = 5;
+
+export const Physics3DAbiContactPointValueStride: number = 10;
+
+export const Physics3DAbiJointValueStride: number = 6;
+
+export const Physics3DAbiQueryValueStride: number = 7;
+
+/**
+ * A 3D face-face manifold can carry four points (TS `Physics3DAbiMaxContactPoints`). The bound is
+ * an ABI-owned constant so a collision-manifold expansion forces a reviewed contract update.
+ */
+export const Physics3DAbiMaxContactPoints: number = 4;
 
 export const Physics3DAbiBodyValue = {
   X: 0,
@@ -112,14 +129,14 @@ export const Physics3DAbiBodyValue = {
   AngularDamping: 30,
   GravityScale: 31,
   SleepTimer: 32,
-} as const;
+};
 
 export const Physics3DAbiContactId = {
   BodyA: 0,
   BodyB: 1,
   ColliderA: 2,
   ColliderB: 3,
-} as const;
+};
 
 export const Physics3DAbiContactValue = {
   NormalX: 0,
@@ -127,7 +144,7 @@ export const Physics3DAbiContactValue = {
   NormalZ: 2,
   Friction: 3,
   Restitution: 4,
-} as const;
+};
 
 export const Physics3DAbiContactPointValue = {
   X: 0,
@@ -140,7 +157,7 @@ export const Physics3DAbiContactPointValue = {
   RelativeBX: 7,
   RelativeBY: 8,
   RelativeBZ: 9,
-} as const;
+};
 
 export const Physics3DAbiJointValue = {
   ForceX: 0,
@@ -149,7 +166,7 @@ export const Physics3DAbiJointValue = {
   TorqueX: 3,
   TorqueY: 4,
   TorqueZ: 5,
-} as const;
+};
 
 export const Physics3DAbiQueryValue = {
   Fraction: 0,
@@ -159,10 +176,8 @@ export const Physics3DAbiQueryValue = {
   NormalX: 4,
   NormalY: 5,
   NormalZ: 6,
-} as const;
+};
 
-// Command byte lengths include the 16-byte record header. Payload offsets are relative to the first
-// payload byte. Variable collider records end after their aligned shape block.
 export const Physics3DAbiCommandByteLength = {
   SetGravity: 40,
   SetSolverConfig: 96,
@@ -174,13 +189,13 @@ export const Physics3DAbiCommandByteLength = {
   DestroyJoint: 16,
   BodyAction: 64,
   WakeBody: 16,
-} as const;
+};
 
 export const Physics3DAbiSetBodyPayloadOffset = {
   Flags: 0,
   Reserved: 4,
   Values: 8,
-} as const;
+};
 
 export const Physics3DAbiSetColliderPayloadOffset = {
   Flags: 0,
@@ -191,7 +206,7 @@ export const Physics3DAbiSetColliderPayloadOffset = {
   Friction: 24,
   Restitution: 32,
   Shape: 40,
-} as const;
+};
 
 export const Physics3DAbiSetJointPayloadOffset = {
   Kind: 0,
@@ -200,7 +215,7 @@ export const Physics3DAbiSetJointPayloadOffset = {
   Flags: 12,
   CommonValues: 16,
   KindValues: 144,
-} as const;
+};
 
 export const Physics3DAbiSetSolverConfigPayloadOffset = {
   Flags: 0,
@@ -212,9 +227,9 @@ export const Physics3DAbiSetSolverConfigPayloadOffset = {
   Reserved0: 24,
   Reserved1: 28,
   Values: 32,
-} as const;
+};
 
-export const Physics3DAbiShapeHeaderByteLength = 16;
+export const Physics3DAbiShapeHeaderByteLength: number = 16;
 
 export const Physics3DAbiShapeHeaderOffset = {
   Kind: 0,
@@ -222,7 +237,7 @@ export const Physics3DAbiShapeHeaderOffset = {
   IntegerCount: 8,
   Version: 12,
   Scalars: 16,
-} as const;
+};
 
 export const Physics3DAbiBodyFlag = {
   TypeMask: 0b11,
@@ -230,21 +245,21 @@ export const Physics3DAbiBodyFlag = {
   Bullet: 1 << 3,
   Sleeping: 1 << 4,
   SleepEnabled: 1 << 5,
-} as const;
+};
 
 export const Physics3DAbiContactFlag = {
   Enabled: 1 << 0,
   Sensor: 1 << 1,
   Touching: 1 << 2,
-} as const;
+};
 
 export const Physics3DAbiJointFlag = {
   CollideConnected: 1 << 0,
   Broken: 1 << 1,
-} as const;
+};
 
 export const Physics3DAbiBodyType = {
   Dynamic: 0,
   Kinematic: 1,
   Static: 2,
-} as const;
+};
