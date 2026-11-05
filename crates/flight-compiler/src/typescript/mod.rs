@@ -24843,14 +24843,15 @@ fn emit_statement(
             if emit_entry_or_default_method(out, call, entities, indent)? => {}
         Stmt::Expr(expression, _) if expression_contains_unconditional_try(expression) => {
             let try_context = emit_try_pre_extractions(out, expression, entities, indent)?;
+            let value =
+                indent_continuation_lines(&emit_expression(expression, &try_context)?, indent);
             write_indent(out, indent);
-            writeln!(out, "{};", emit_expression(expression, &try_context)?)
-                .expect("writing to a String cannot fail");
+            writeln!(out, "{value};").expect("writing to a String cannot fail");
         }
         Stmt::Expr(expression, _) => {
+            let value = indent_continuation_lines(&emit_expression(expression, entities)?, indent);
             write_indent(out, indent);
-            writeln!(out, "{};", emit_expression(expression, entities)?)
-                .expect("writing to a String cannot fail");
+            writeln!(out, "{value};").expect("writing to a String cannot fail");
         }
         Stmt::Item(syn::Item::Use(_)) => {}
         Stmt::Item(syn::Item::Const(item_const)) => {
