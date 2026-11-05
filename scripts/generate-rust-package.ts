@@ -31,6 +31,7 @@ import {
   hasRustGenerationSemantics,
   hasRustPublicRecordDeclaration,
   hasRustPublicTypeAlias,
+  hasRustExportNamingSemantics,
   hasRustSiblingGenerationSemantics,
   hasTypeScriptNullableOptionFunctionBoundary,
   hasTypeScriptArrayParameterFunctionBoundary,
@@ -430,6 +431,11 @@ try {
   const targetNativeSources = rustSourceModes
     .filter(({ mode }) => mode === 'target-native')
     .map(({ rustPath }) => rustPath);
+  const exportNamingSources = rustSourceModes
+    .filter(
+      ({ mode, rustPath }) => mode !== 'rust-only' && hasRustExportNamingSemantics(readFileSync(rustPath, 'utf8')),
+    )
+    .map(({ rustPath }) => rustPath);
   if (options.auditNative) {
     auditNativeSources(rootMode, rustSourceModes, aliasSources, targetNativeSources);
   } else {
@@ -563,8 +569,10 @@ try {
         compilePath,
         join(rawRoot, fileName),
         ['./contract.ts', '--contract-source', join(crateRoot, 'src', 'contract.rs')],
-        [...new Set([...aliasSources, ...positionOwners])],
-        targetNativeSources.filter((candidate) => !positionOwners.includes(candidate)),
+        [...new Set([...aliasSources, ...positionOwners, ...exportNamingSources])],
+        targetNativeSources.filter(
+          (candidate) => !positionOwners.includes(candidate) && !exportNamingSources.includes(candidate),
+        ),
         [
           ...testSupportArguments(rustPath),
           ...representationArguments,

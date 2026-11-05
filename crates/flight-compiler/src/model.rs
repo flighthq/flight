@@ -10,13 +10,22 @@ use syn::{
 
 use crate::{CompileError, SourceMode, compile_error};
 
+// How a TypeScript const object takes its members: every public constant whose name starts with a
+// `const-group` prefix, keyed by the rest of the name, or the constants `const-member` directives name
+// one by one, keyed by their explicit member names.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub(crate) enum ConstGroup {
+    Members(BTreeMap<String, String>),
+    Prefix(String),
+}
+
 pub(crate) struct Program {
     pub(crate) callable_field_parameters: BTreeMap<(String, String), Vec<String>>,
     pub(crate) callable_parameters: BTreeMap<String, Vec<String>>,
     pub(crate) constants: Vec<ItemConst>,
-    // `const-group` directives: TypeScript const-object name to the Rust constant-name prefix whose
-    // public constants become its members, in source order (`KEY_CODE_A` -> `KeyCode.A`).
-    pub(crate) const_groups: BTreeMap<String, String>,
+    // `const-group` and `const-member` directives: TypeScript const-object name to the Rust
+    // constants that become its members, in source order (`KEY_CODE_A` -> `KeyCode.A`).
+    pub(crate) const_groups: BTreeMap<String, ConstGroup>,
     pub(crate) auto_data_unions: HashSet<String>,
     pub(crate) data_unions: HashSet<String>,
     // Public record structs whose standard derived `Default` construction TypeScript lowers to a
@@ -494,33 +503,69 @@ fn collect_standard_constant(
     }
 }
 
-// The members of each `const-group`, in source order: every constant whose name starts with the
-// group's prefix, as `(rust_name, owner, member)`. A group must match at least one constant, every
-// member must be public, share one type, leave a TypeScript identifier after the prefix, and be
+// The members of each const object, in source order, as `(rust_name, owner, member)`: every constant
+// whose name starts with a `const-group` prefix, keyed by the rest of its name, and every constant a
+// `const-member` directive names, keyed by its explicit member name. An object must have at least one
+// member and every named constant must exist; every member must be public, share one type with the
+// object's other members, have a TypeScript identifier key unique within the object, and be
 // initialized with an independent literal (a member computed from another would read the object it
-// is initializing), and no constant may belong to two groups.
-// flight-lint: allow(hashmap-iteration) constants are a Vec slice in Rust source order
+// is initializing); and no constant may belong to two objects.
+// flight-lint: allow(hashmap-iteration) constants are a Vec slice in Rust source order and groups are a BTreeMap
 pub(crate) fn const_group_members(
-    groups: &BTreeMap<String, String>,
+    groups: &BTreeMap<String, ConstGroup>,
     constants: &[ItemConst],
 ) -> Result<Vec<(String, String, String)>, CompileError> {
+    for (owner, group) in groups {
+        let ConstGroup::Members(named) = group else {
+            continue;
+        };
+        if let Some(rust_name) = named.keys().find(|rust_name| {
+            !constants
+                .iter()
+                .any(|constant| constant.ident == rust_name.as_str())
+        }) {
+            return Err(compile_error(format!(
+                "`const-member {rust_name}` of `{owner}` names no constant"
+            )));
+        }
+    }
     let mut members = Vec::new();
     for constant in constants {
         let rust_name = constant.ident.to_string();
         let owners = groups
             .iter()
-            .filter(|(_, prefix)| rust_name.starts_with(prefix.as_str()))
+            .filter_map(|(owner, group)| match group {
+                ConstGroup::Prefix(prefix) => rust_name
+                    .starts_with(prefix.as_str())
+                    .then(|| (owner, rust_name[prefix.len()..].to_string())),
+                ConstGroup::Members(named) => {
+                    named.get(&rust_name).map(|member| (owner, member.clone()))
+                }
+            })
             .collect::<Vec<_>>();
-        let [(owner, prefix)] = owners.as_slice() else {
-            if owners.len() > 1 {
+        let [(owner, member)] = owners.as_slice() else {
+            if owners.len() > 1
+                && owners
+                    .iter()
+                    .all(|(owner, _)| matches!(groups.get(*owner), Some(ConstGroup::Prefix(_))))
+            {
                 return Err(compile_error(format!(
                     "constant `{rust_name}` matches more than one `const-group` prefix"
                 )));
             }
+            if owners.len() > 1 {
+                return Err(compile_error(format!(
+                    "constant `{rust_name}` belongs to more than one const object: {}",
+                    owners
+                        .iter()
+                        .map(|(owner, _)| format!("`{owner}`"))
+                        .collect::<Vec<_>>()
+                        .join(", ")
+                )));
+            }
             continue;
         };
-        let member = rust_name[prefix.len()..].to_string();
-        if !is_typescript_identifier(&member) {
+        if !is_typescript_identifier(member) {
             return Err(compile_error(format!(
                 "`const-group {owner}` member `{rust_name}` leaves `{member}`, which is not a TypeScript identifier"
             )));
@@ -535,9 +580,18 @@ pub(crate) fn const_group_members(
                 "`const-group {owner}` member `{rust_name}` must be initialized with an independent literal"
             )));
         }
-        members.push((rust_name, (*owner).clone(), member, constant));
+        if let Some((previous, _, _, _)) = members.iter().find(
+            |(_, previous_owner, previous_member, _): &&(String, String, String, &ItemConst)| {
+                previous_owner == *owner && previous_member == member
+            },
+        ) {
+            return Err(compile_error(format!(
+                "`{owner}.{member}` is named by both `{previous}` and `{rust_name}`"
+            )));
+        }
+        members.push((rust_name, (*owner).clone(), member.clone(), constant));
     }
-    for (owner, prefix) in groups {
+    for (owner, group) in groups {
         let typed = members
             .iter()
             .filter(|(_, member_owner, _, _)| member_owner == owner)
@@ -546,6 +600,9 @@ pub(crate) fn const_group_members(
             })
             .collect::<BTreeSet<_>>();
         if typed.is_empty() {
+            let ConstGroup::Prefix(prefix) = group else {
+                unreachable!("every `const-member` names an existing constant");
+            };
             return Err(compile_error(format!(
                 "`const-group {owner}` prefix `{prefix}` matches no constant"
             )));
@@ -817,8 +874,23 @@ fn is_cfg_test(attributes: &[Attribute]) -> bool {
     });
 }
 
+// A literal, or a flag literal `bit << shift` over integer literals whose value stays below 2^31, where
+// JavaScript's signed 32-bit shift agrees with Rust. Neither reads another constant.
 fn is_independent_literal(expression: &syn::Expr) -> bool {
     return match expression {
+        syn::Expr::Binary(binary) if matches!(binary.op, syn::BinOp::Shl(_)) => {
+            let integer = |operand: &syn::Expr| match operand {
+                syn::Expr::Lit(syn::ExprLit {
+                    lit: syn::Lit::Int(literal),
+                    ..
+                }) => literal.base10_parse::<u64>().ok(),
+                _ => None,
+            };
+            return matches!(
+                (integer(&binary.left), integer(&binary.right)),
+                (Some(bit), Some(shift)) if shift < 31 && bit < (1 << 31) >> shift
+            );
+        }
         syn::Expr::Group(group) => is_independent_literal(&group.expr),
         syn::Expr::Lit(_) => true,
         syn::Expr::Paren(paren) => is_independent_literal(&paren.expr),
@@ -1150,43 +1222,89 @@ fn parse_callable_parameters(
     return Ok(directives);
 }
 
-fn parse_const_groups(attributes: &[Attribute]) -> Result<BTreeMap<String, String>, CompileError> {
+fn parse_const_groups(
+    attributes: &[Attribute],
+) -> Result<BTreeMap<String, ConstGroup>, CompileError> {
     let mut groups = BTreeMap::new();
+    let mut named_constants = HashSet::new();
     for attribute in attributes {
         let Some(directive) = doc_directive(attribute) else {
             continue;
         };
         let mut fields = directive.split_whitespace();
-        if fields.next() != Some("const-group") {
-            continue;
-        }
-        let (Some(owner), Some(prefix), None) = (fields.next(), fields.next(), fields.next())
-        else {
-            return Err(compile_error(
-                "`flight-compiler: const-group` requires exactly a TypeScript name and a constant prefix",
-            ));
-        };
-        if !is_typescript_identifier(owner) {
-            return Err(compile_error(format!(
-                "`flight-compiler: const-group` name `{owner}` is not a TypeScript identifier"
-            )));
-        }
-        if prefix.is_empty()
-            || !prefix
-                .chars()
-                .all(|character| character.is_ascii_alphanumeric() || character == '_')
-        {
-            return Err(compile_error(format!(
-                "`flight-compiler: const-group {owner}` prefix `{prefix}` is not a constant-name prefix"
-            )));
-        }
-        if groups
-            .insert(owner.to_string(), prefix.to_string())
-            .is_some()
-        {
-            return Err(compile_error(format!(
-                "`flight-compiler: const-group {owner}` is declared more than once"
-            )));
+        match fields.next() {
+            Some("const-group") => {
+                let (Some(owner), Some(prefix), None) =
+                    (fields.next(), fields.next(), fields.next())
+                else {
+                    return Err(compile_error(
+                        "`flight-compiler: const-group` requires exactly a TypeScript name and a constant prefix",
+                    ));
+                };
+                if !is_typescript_identifier(owner) {
+                    return Err(compile_error(format!(
+                        "`flight-compiler: const-group` name `{owner}` is not a TypeScript identifier"
+                    )));
+                }
+                if prefix.is_empty()
+                    || !prefix
+                        .chars()
+                        .all(|character| character.is_ascii_alphanumeric() || character == '_')
+                {
+                    return Err(compile_error(format!(
+                        "`flight-compiler: const-group {owner}` prefix `{prefix}` is not a constant-name prefix"
+                    )));
+                }
+                match groups.insert(owner.to_string(), ConstGroup::Prefix(prefix.to_string())) {
+                    None => {}
+                    Some(ConstGroup::Prefix(_)) => {
+                        return Err(compile_error(format!(
+                            "`flight-compiler: const-group {owner}` is declared more than once"
+                        )));
+                    }
+                    Some(ConstGroup::Members(_)) => {
+                        return Err(compile_error(format!(
+                            "`flight-compiler: const-group {owner}` cannot also take `const-member` members"
+                        )));
+                    }
+                }
+            }
+            Some("const-member") => {
+                let (Some(rust_name), Some(target), None) =
+                    (fields.next(), fields.next(), fields.next())
+                else {
+                    return Err(compile_error(
+                        "`flight-compiler: const-member` requires exactly a Rust constant name and a TypeScript `Owner.Member`",
+                    ));
+                };
+                if syn::parse_str::<syn::Ident>(rust_name).is_err() || rust_name.starts_with("r#") {
+                    return Err(compile_error(format!(
+                        "`flight-compiler: const-member` Rust constant name `{rust_name}` is not a valid identifier"
+                    )));
+                }
+                let Some((owner, member)) = target.split_once('.').filter(|(owner, member)| {
+                    is_typescript_identifier(owner) && is_typescript_identifier(member)
+                }) else {
+                    return Err(compile_error(format!(
+                        "`flight-compiler: const-member {rust_name}` target `{target}` is not a TypeScript `Owner.Member`"
+                    )));
+                };
+                if !named_constants.insert(rust_name.to_string()) {
+                    return Err(compile_error(format!(
+                        "duplicate `flight-compiler: const-member` directive for `{rust_name}`"
+                    )));
+                }
+                let group = groups
+                    .entry(owner.to_string())
+                    .or_insert_with(|| ConstGroup::Members(BTreeMap::new()));
+                let ConstGroup::Members(named) = group else {
+                    return Err(compile_error(format!(
+                        "`flight-compiler: const-group {owner}` cannot also take `const-member` members"
+                    )));
+                };
+                named.insert(rust_name.to_string(), member.to_string());
+            }
+            _ => {}
         }
     }
     return Ok(groups);
@@ -2993,6 +3111,7 @@ pub(crate) fn source_mode(source: &str) -> Result<SourceMode, CompileError> {
             | "callable-parameters"
             | "companion"
             | "const-group"
+            | "const-member"
             | "contract"
             | "data-union"
             | "default-object"
@@ -3250,7 +3369,7 @@ fn validate_callable_parameters(
 // static, or an `export-name` / `frozen-object` target.
 // flight-lint: allow(hashmap-iteration) items are Vecs in Rust source order and directives are BTreeMaps
 fn validate_const_group_owners(
-    groups: &BTreeMap<String, String>,
+    groups: &BTreeMap<String, ConstGroup>,
     members: &[(String, String, String)],
     enums: &[ItemEnum],
     functions: &[ItemFn],

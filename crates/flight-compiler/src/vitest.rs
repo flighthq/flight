@@ -1170,6 +1170,18 @@ fn expression_proves_value_result(expression: &Expr) -> bool {
     };
 }
 
+// The contract binding a referenced contract item is imported as: a frozen object's name, the owner of
+// a const-object member's `Owner.Member` name, or the item's own TypeScript name.
+fn contract_import_name(symbol: &str, context: &HashSet<String>) -> String {
+    if let Some(name) = frozen_object_name(context, symbol) {
+        return name.to_string();
+    }
+    let name = emit_path_name(symbol, context);
+    return name
+        .split_once('.')
+        .map_or(name.clone(), |(owner, _)| owner.to_string());
+}
+
 fn emit_path_name(name: &str, context: &HashSet<String>) -> String {
     if let Some(target) = export_name(context, name) {
         return target.to_string();
@@ -3325,10 +3337,7 @@ pub(crate) fn emit_test_program(
             contract_symbols
                 .iter()
                 .filter(|symbol| !dependency_items.contains(*symbol))
-                .map(|symbol| {
-                    frozen_object_name(context, symbol)
-                        .map_or_else(|| emit_path_name(symbol, context), str::to_string)
-                }),
+                .map(|symbol| contract_import_name(symbol, context)),
         );
     let local_values = program
         .helpers
@@ -3371,11 +3380,12 @@ pub(crate) fn emit_test_program(
     }
     if !contract_symbols.is_empty() {
         out.push_str("\nimport {\n");
+        let mut imported = HashSet::new();
         for symbol in &contract_symbols {
-            let name = frozen_object_name(context, symbol)
-                .map(str::to_string)
-                .unwrap_or_else(|| emit_path_name(symbol, context));
-            writeln!(out, "  {name},").expect("writing to a String cannot fail");
+            let name = contract_import_name(symbol, context);
+            if imported.insert(name.clone()) {
+                writeln!(out, "  {name},").expect("writing to a String cannot fail");
+            }
         }
         writeln!(out, "}} from {};", js_string_literal(contract_module))
             .expect("writing to a String cannot fail");

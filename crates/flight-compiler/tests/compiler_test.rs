@@ -1648,6 +1648,183 @@ export function isA(code: KeyCode): boolean {
     }
 
     #[test]
+    fn lowers_const_members_to_explicitly_named_const_object_members() {
+        let source = r#"
+//! flight-compiler: export-name ABI_VERSION AbiVersion
+//! flight-compiler: const-member ABI_COMMAND_KIND_SET_GRAVITY AbiCommandKind.SetGravity
+//! flight-compiler: const-member ABI_COMMAND_KIND_WAKE_BODY AbiCommandKind.WakeBody
+//! flight-compiler: const-member ABI_BODY_VALUE_INERTIA_XX AbiBodyValue.InertiaXX
+//! flight-compiler: const-member ABI_CAPABILITY_QUERIES AbiCapability.Queries
+//! flight-compiler: const-group KeyCode KEY_CODE_
+
+/// Wire version.
+pub const ABI_VERSION: u32 = 1;
+/// Sets gravity.
+pub const ABI_COMMAND_KIND_SET_GRAVITY: u32 = 1;
+pub const ABI_COMMAND_KIND_WAKE_BODY: u32 = 14;
+pub const ABI_BODY_VALUE_STRIDE: usize = 17;
+pub const ABI_BODY_VALUE_INERTIA_XX: usize = 3;
+pub const ABI_CAPABILITY_QUERIES: u32 = 1 << 2;
+pub const KEY_CODE_A: i32 = 0x61;
+
+pub fn is_wake(kind: u32) -> bool {
+    return kind == ABI_COMMAND_KIND_WAKE_BODY && ABI_BODY_VALUE_INERTIA_XX < ABI_BODY_VALUE_STRIDE;
+}
+"#;
+
+        assert_eq!(
+            compile_typescript(source, None).unwrap(),
+            r#"/**
+ * Wire version.
+ */
+export const AbiVersion: number = 1;
+
+export const AbiCommandKind = {
+  /**
+   * Sets gravity.
+   */
+  SetGravity: 1,
+  WakeBody: 14,
+};
+
+export const ABI_BODY_VALUE_STRIDE: number = 17;
+
+export const AbiBodyValue = {
+  InertiaXX: 3,
+};
+
+export const AbiCapability = {
+  Queries: 1 << 2,
+};
+
+export const KeyCode = {
+  A: 0x61,
+};
+
+export function isWake(kind: number): boolean {
+  return kind === AbiCommandKind.WakeBody && AbiBodyValue.InertiaXX < ABI_BODY_VALUE_STRIDE;
+}
+"#
+        );
+
+        let tests = "use flight_example::contract::*;\n\nmod is_wake {\n    use super::*;\n\n    #[test]\n    fn names_contract_items_by_their_typescript_names() {\n        assert!(is_wake(ABI_COMMAND_KIND_WAKE_BODY));\n        assert!(!is_wake(ABI_COMMAND_KIND_SET_GRAVITY));\n        assert_eq!(ABI_VERSION, 1);\n        assert_eq!(ABI_BODY_VALUE_INERTIA_XX, 3);\n        assert_eq!(ABI_BODY_VALUE_STRIDE, 17);\n        assert_eq!(KEY_CODE_A, 0x61);\n    }\n}\n";
+        assert_eq!(
+            compile_vitest_with_alias_sources(tests, "./contract.ts", &[source]).unwrap(),
+            "import { describe, expect, it } from 'vitest';\n\nimport {\n  ABI_BODY_VALUE_STRIDE,\n  AbiBodyValue,\n  AbiCommandKind,\n  AbiVersion,\n  KeyCode,\n  isWake,\n} from './contract.ts';\n\ndescribe('isWake', () => {\n  it('names contract items by their typescript names', () => {\n    expect(isWake(AbiCommandKind.WakeBody)).toBe(true);\n    expect(!isWake(AbiCommandKind.SetGravity)).toBe(true);\n    expect(AbiVersion).toEqual(1);\n    expect(AbiBodyValue.InertiaXX).toEqual(3);\n    expect(ABI_BODY_VALUE_STRIDE).toEqual(17);\n    expect(KeyCode.A).toEqual(0x61);\n  });\n});\n"
+        );
+    }
+
+    #[test]
+    fn rejects_const_members_that_collide_or_cannot_lower() {
+        for (source, expected) in [
+            (
+                "//! flight-compiler: const-member KIND_A\npub const KIND_A: i32 = 1;\n",
+                "`flight-compiler: const-member` requires exactly a Rust constant name and a TypeScript `Owner.Member`",
+            ),
+            (
+                "//! flight-compiler: const-member KIND_A Kind\npub const KIND_A: i32 = 1;\n",
+                "`flight-compiler: const-member KIND_A` target `Kind` is not a TypeScript `Owner.Member`",
+            ),
+            (
+                "//! flight-compiler: const-member KIND_A Kind.0\npub const KIND_A: i32 = 1;\n",
+                "`flight-compiler: const-member KIND_A` target `Kind.0` is not a TypeScript `Owner.Member`",
+            ),
+            (
+                "//! flight-compiler: const-member KIND-A Kind.A\npub const KIND_A: i32 = 1;\n",
+                "`flight-compiler: const-member` Rust constant name `KIND-A` is not a valid identifier",
+            ),
+            (
+                "//! flight-compiler: const-member KIND_A Kind.A\n//! flight-compiler: const-member KIND_A Kind.B\npub const KIND_A: i32 = 1;\n",
+                "duplicate `flight-compiler: const-member` directive for `KIND_A`",
+            ),
+            (
+                "//! flight-compiler: const-member KIND_A Kind.A\n//! flight-compiler: const-member KIND_B Kind.A\npub const KIND_A: i32 = 1;\npub const KIND_B: i32 = 2;\n",
+                "`Kind.A` is named by both `KIND_A` and `KIND_B`",
+            ),
+            (
+                "//! flight-compiler: const-group Kind KIND_\n//! flight-compiler: const-member OTHER Kind.Other\npub const KIND_A: i32 = 1;\npub const OTHER: i32 = 2;\n",
+                "`flight-compiler: const-group Kind` cannot also take `const-member` members",
+            ),
+            (
+                "//! flight-compiler: const-member OTHER Kind.Other\n//! flight-compiler: const-group Kind KIND_\npub const KIND_A: i32 = 1;\npub const OTHER: i32 = 2;\n",
+                "`flight-compiler: const-group Kind` cannot also take `const-member` members",
+            ),
+            (
+                "//! flight-compiler: const-member KIND_MISSING Kind.Missing\npub const KIND_A: i32 = 1;\n",
+                "`const-member KIND_MISSING` of `Kind` names no constant",
+            ),
+            (
+                "//! flight-compiler: const-group Code CODE_\n//! flight-compiler: const-member CODE_A Kind.A\npub const CODE_A: i32 = 1;\n",
+                "constant `CODE_A` belongs to more than one const object: `Code`, `Kind`",
+            ),
+            (
+                "//! flight-compiler: const-member KIND_A Kind.A\n//! flight-compiler: export-name KIND_A KindA\npub const KIND_A: i32 = 1;\n",
+                "`const-group Kind` member `KIND_A` is also named by another directive",
+            ),
+            (
+                "//! flight-compiler: const-member KIND_A Kind.A\nconst KIND_A: i32 = 1;\n",
+                "`const-group Kind` member `KIND_A` must be public",
+            ),
+            (
+                "//! flight-compiler: const-member KIND_A Kind.A\n//! flight-compiler: const-member KIND_B Kind.B\npub const KIND_A: i32 = 1;\npub const KIND_B: i32 = KIND_A + 1;\n",
+                "`const-group Kind` member `KIND_B` must be initialized with an independent literal",
+            ),
+            (
+                "//! flight-compiler: const-member FLAG_HIGH Flag.High\npub const FLAG_HIGH: u32 = 1 << 31;\n",
+                "`const-group Flag` member `FLAG_HIGH` must be initialized with an independent literal",
+            ),
+            (
+                "//! flight-compiler: const-member FLAG_SHIFTED Flag.Shifted\npub const SHIFT: u32 = 2;\npub const FLAG_SHIFTED: u32 = 1 << SHIFT;\n",
+                "`const-group Flag` member `FLAG_SHIFTED` must be initialized with an independent literal",
+            ),
+            (
+                "//! flight-compiler: const-member KIND_A Kind.A\n//! flight-compiler: const-member KIND_B Kind.B\npub const KIND_A: i32 = 1;\npub const KIND_B: u8 = 2;\n",
+                "`const-group Kind` members must share one type",
+            ),
+        ] {
+            let error = compile_typescript(source, None).unwrap_err();
+            assert_eq!(error.to_string(), expected, "{source}");
+        }
+        let error = compile_typescript(
+            "//! flight-compiler: const-member KIND_A Kind.A\n//! flight-compiler: export-name make_kind Kind\npub const KIND_A: i32 = 1;\npub fn make_kind() -> i32 {\n    return 1;\n}\n",
+            None,
+        )
+        .unwrap_err();
+        assert_eq!(
+            error.to_string(),
+            "`const-group Kind` collides with an emitted function named `Kind`"
+        );
+    }
+
+    #[test]
+    fn rejects_test_bindings_and_sources_that_conflict_with_own_contract_names() {
+        let source =
+            "//! flight-compiler: const-member KIND_A Kind.A\npub const KIND_A: i32 = 1;\n";
+        let shadowing = "use flight_example::contract::*;\n\nconst KIND_A: i32 = 2;\n\n#[test]\nfn reads_kind() {\n    assert_eq!(KIND_A, 2);\n}\n";
+        assert_eq!(
+            compile_vitest_with_alias_sources(shadowing, "./contract.ts", &[source])
+                .unwrap_err()
+                .to_string(),
+            "test declares `KIND_A`, which the crate names `Kind.A` in TypeScript; rename the test binding"
+        );
+        let binding = "use flight_example::contract::*;\n\n#[test]\nfn reads_kind() {\n    let KIND_A = 2;\n    assert_eq!(KIND_A, 2);\n}\n";
+        assert_eq!(
+            compile_vitest_with_alias_sources(binding, "./contract.ts", &[source])
+                .unwrap_err()
+                .to_string(),
+            "test declares `KIND_A`, which the crate names `Kind.A` in TypeScript; rename the test binding"
+        );
+        let renamed = "//! flight-compiler: export-name KIND_A KindA\npub const KIND_A: i32 = 1;\n";
+        let reads = "use flight_example::contract::*;\n\n#[test]\nfn reads_kind() {\n    assert_eq!(KIND_A, 1);\n}\n";
+        assert_eq!(
+            compile_vitest_with_alias_sources(reads, "./contract.ts", &[source, renamed])
+                .unwrap_err()
+                .to_string(),
+            "`flight-compiler: export-name` item `KIND_A` is declared by more than one source"
+        );
+    }
+
+    #[test]
     fn lowers_option_if_let_and_while_let_with_single_scrutinee_evaluation() {
         let source = r#"
 pub struct Counter {

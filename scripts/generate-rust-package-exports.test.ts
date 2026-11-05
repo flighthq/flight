@@ -24,6 +24,7 @@ import {
   dependencyAliasArguments,
   hasGeneratedProvenanceHeader,
   hasRustConstGroup,
+  hasRustExportNamingSemantics,
   hasRustGenerationSemantics,
   hasRustPublicRecordDeclaration,
   hasRustPublicTypeAlias,
@@ -1039,9 +1040,14 @@ describe('dependencyAliasArguments', () => {
 });
 
 describe('hasRustConstGroup', () => {
-  it('detects a const-group directive only', () => {
+  it('detects a const-group or const-member directive only', () => {
     expect(
       hasRustConstGroup('//! flight-compiler: const-group KeyCode KEY_CODE_\npub const KEY_CODE_A: i32 = 1;\n'),
+    ).toBe(true);
+    expect(
+      hasRustConstGroup(
+        '//! flight-compiler: const-member KIND_SET_GRAVITY Kind.SetGravity\npub const KIND_SET_GRAVITY: u32 = 1;\n',
+      ),
     ).toBe(true);
     expect(hasRustConstGroup('//! flight-compiler: export-name decode_utf8 decodeUTF8\n')).toBe(false);
     expect(hasRustConstGroup('// flight-compiler: const-group KeyCode KEY_CODE_\n')).toBe(false);
@@ -1067,6 +1073,21 @@ describe('hasRustPublicTypeAlias', () => {
         'pub type AnimationPlayerRef = Ref<AnimationPlayer>;\npub type TargetRef = Unknown;',
       ),
     ).toEqual(['AnimationPlayerRef', 'TargetRef']);
+  });
+});
+
+describe('hasRustExportNamingSemantics', () => {
+  it('selects sources that name their items for TypeScript', () => {
+    expect(hasRustExportNamingSemantics('//! flight-compiler: export-name ABI_VERSION AbiVersion\n')).toBe(true);
+    expect(hasRustExportNamingSemantics('//! flight-compiler: const-group KeyCode KEY_CODE_\n')).toBe(true);
+    expect(hasRustExportNamingSemantics('//! flight-compiler: const-member KIND_SET_GRAVITY Kind.SetGravity\n')).toBe(
+      true,
+    );
+    expect(
+      hasRustExportNamingSemantics('//! flight-compiler: target-native\n//! flight-compiler: export-name A B\n'),
+    ).toBe(true);
+    expect(hasRustExportNamingSemantics('//! flight-compiler: string-union-value Kind Ready "ready"\n')).toBe(false);
+    expect(hasRustExportNamingSemantics('// flight-compiler: export-name ABI_VERSION AbiVersion\n')).toBe(false);
   });
 });
 

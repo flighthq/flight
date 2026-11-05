@@ -7,19 +7,19 @@ use crate::model::{Program, TestProgram};
 use crate::{CompileError, compile_error};
 
 use super::{
-    BindingFact, FUNCTION_OWNER_MARKER, NULLABLE_CALL_MARKER, NULLABLE_OPTIONS_MARKER,
-    PROVENANCE_SEPARATOR, ProvenanceIdentity, ProvenanceImportRule, RETURN_BINDING_FACT_MARKER,
-    SHARED_IDENTITY_FIELD_MARKER, SHARED_IDENTITY_RETURN_MARKER, SLICE_ARGUMENT_MARKER,
-    STRUCT_OWNER_MARKER, SourceAccess, argument_is_option, bind_lexical_pattern,
-    binding_fact_for_type, binding_fact_marker, callable_parameter_rust_types,
-    clear_provenance_binding, collect_cross_crate_use_tree, direct_lock_guard_receiver,
-    export_name, expression_is_associated_path, expression_is_path, foreign_wildcard_modules,
-    insert_dependency_export_name_context, insert_provenance_binding, is_primitive_typescript_type,
-    is_public, lexical_fact, local_pattern_name, marker_suffixes, provenance_binding_table,
-    provenance_import_rules, provenance_marker_values, provenance_pattern_bindings,
-    replace_provenance_binding_table, resolve_owner_inner, resolved_provenance_binding,
-    rust_type_is_shared_identity, snake_to_lower_camel, source_module_name,
-    typed_slice_parameter_kind, unique_marker_suffix, vec_clone_optional,
+    BindingFact, EXPORT_NAME_MARKER, EXPORT_NAME_TARGET_MARKER, FUNCTION_OWNER_MARKER,
+    NULLABLE_CALL_MARKER, NULLABLE_OPTIONS_MARKER, PROVENANCE_SEPARATOR, ProvenanceIdentity,
+    ProvenanceImportRule, RETURN_BINDING_FACT_MARKER, SHARED_IDENTITY_FIELD_MARKER,
+    SHARED_IDENTITY_RETURN_MARKER, SLICE_ARGUMENT_MARKER, STRUCT_OWNER_MARKER, SourceAccess,
+    argument_is_option, bind_lexical_pattern, binding_fact_for_type, binding_fact_marker,
+    callable_parameter_rust_types, clear_provenance_binding, collect_cross_crate_use_tree,
+    direct_lock_guard_receiver, export_name, expression_is_associated_path, expression_is_path,
+    foreign_wildcard_modules, insert_dependency_export_name_context, insert_provenance_binding,
+    is_primitive_typescript_type, is_public, lexical_fact, local_pattern_name, marker_suffixes,
+    provenance_binding_table, provenance_import_rules, provenance_marker_values,
+    provenance_pattern_bindings, replace_provenance_binding_table, resolve_owner_inner,
+    resolved_provenance_binding, rust_type_is_shared_identity, snake_to_lower_camel,
+    source_module_name, typed_slice_parameter_kind, unique_marker_suffix, vec_clone_optional,
     vitest_type_is_shared_identity,
 };
 
@@ -215,6 +215,85 @@ pub(crate) fn insert_vitest_dependency_export_name_context(
         &program.constants.iter().collect::<Vec<_>>(),
         &[],
     );
+}
+
+// Records the `export-name` and `const-group` / `const-member` mappings of the crate's own sources, so
+// a test references each mapped contract item by its TypeScript name (`Owner.Member` for a const-object
+// member). It fails when two sources name one item differently, and when a test declares a constant,
+// helper or binding of a mapped item's Rust name, which would otherwise be renamed with the item.
+// flight-lint: allow(hashmap-iteration) mappings are BTreeMaps and items retain Rust source order in Vecs
+pub(crate) fn insert_vitest_own_export_name_context(
+    context: &mut HashSet<String>,
+    program: &TestProgram,
+    sources: &[Program],
+) -> Result<(), CompileError> {
+    let mut mappings = BTreeMap::<String, String>::new();
+    for source in sources {
+        let members = crate::model::const_group_members(&source.const_groups, &source.constants)?
+            .into_iter()
+            .map(|(rust_name, owner, member)| (rust_name, format!("{owner}.{member}")));
+        for (rust_name, target) in source.export_names.clone().into_iter().chain(members) {
+            if let Some(previous) = mappings.get(&rust_name)
+                && *previous != target
+            {
+                return Err(compile_error(format!(
+                    "contract item `{rust_name}` is given more than one TypeScript name: `{previous}` and `{target}`"
+                )));
+            }
+            mappings.insert(rust_name, target);
+        }
+    }
+    if mappings.is_empty() {
+        return Ok(());
+    }
+
+    #[derive(Default)]
+    struct DeclaredNameCollector {
+        names: HashSet<String>,
+    }
+
+    impl<'ast> Visit<'ast> for DeclaredNameCollector {
+        fn visit_pat_ident(&mut self, pattern: &'ast syn::PatIdent) {
+            self.names.insert(pattern.ident.to_string());
+            syn::visit::visit_pat_ident(self, pattern);
+        }
+    }
+
+    let mut declared = DeclaredNameCollector::default();
+    let functions = program
+        .helpers
+        .iter()
+        .chain(program.suites.iter().flat_map(|suite| {
+            suite
+                .helpers
+                .iter()
+                .chain(suite.tests.iter().map(|test| &test.function))
+        }));
+    for function in functions {
+        declared.names.insert(function.sig.ident.to_string());
+        declared.visit_item_fn(function);
+    }
+    for constant in &program.constants {
+        declared.names.insert(constant.ident.to_string());
+        declared.visit_item_const(constant);
+    }
+    for (rust_name, target) in &mappings {
+        if declared.names.contains(rust_name) {
+            return Err(compile_error(format!(
+                "test declares `{rust_name}`, which the crate names `{target}` in TypeScript; rename the test binding"
+            )));
+        }
+        if let Some(existing) = export_name(context, rust_name)
+            && existing != target
+        {
+            return Err(compile_error(format!(
+                "contract item `{rust_name}` named `{target}` collides with the mapping `{existing}`"
+            )));
+        }
+        context.insert(format!("{EXPORT_NAME_MARKER}{rust_name}"));
+        context.insert(format!("{EXPORT_NAME_TARGET_MARKER}{rust_name}:{target}"));
+    }
+    return Ok(());
 }
 
 pub(crate) fn insert_vitest_helper_return_context<'a>(

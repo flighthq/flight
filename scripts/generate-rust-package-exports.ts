@@ -2180,10 +2180,11 @@ export function dependencyAliasArguments(sources: readonly DependencySource[]): 
   ]);
 }
 
-// Whether a Rust source declares a `//! flight-compiler: const-group <Name> <PREFIX>` directive, whose
-// members a consuming package must learn about to fail closed on importing them.
+// Whether a Rust source declares a const object through `//! flight-compiler: const-group <Name> <PREFIX>`
+// or `//! flight-compiler: const-member <RUST_NAME> <Name>.<Member>`, whose members a consuming package
+// must learn about to fail closed on importing them.
 export function hasRustConstGroup(rust: string): boolean {
-  return /^\/\/!\s*flight-compiler:\s*const-group\s+\S+\s+\S+\s*$/m.test(rust);
+  return /^\/\/!\s*flight-compiler:\s*const-(?:group|member)\s+\S+\s+\S+\s*$/m.test(rust);
 }
 
 // Public record declarations are semantic inputs for declaration-derived compiler directives in a
@@ -2206,6 +2207,13 @@ export function collectRustPublicTypeAliasNames(rust: string): string[] {
 // and they use the ordinary alias lane because their full declarations participate in lowering.
 export function hasRustSiblingGenerationSemantics(rust: string): boolean {
   return /^\/\/!\s*flight-compiler:\s*(?:data-union|string-union(?:-value)?)\b/m.test(rust);
+}
+
+// A source that names its items for TypeScript (`export-name`, `const-group` or `const-member`). Test
+// generation reads these names from every such crate source, generated or target-native, so a test
+// references a mapped contract item by its TypeScript name.
+export function hasRustExportNamingSemantics(rust: string): boolean {
+  return /^\/\/!\s*flight-compiler:\s*(?:export-name|const-group|const-member)\b/m.test(rust);
 }
 
 // Dependency sources additionally contribute nullable Option boundary declarations. The compiler

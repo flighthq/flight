@@ -1085,6 +1085,7 @@ fn compile_vitest_with_contract_alias_sources_internal(
         typescript::insert_string_union_context(&mut context, alias_program.string_unions.keys());
     }
     typescript::insert_vitest_import_alias_context(&mut context, program.uses.iter());
+    typescript::insert_vitest_own_export_name_context(&mut context, &program, &alias_programs)?;
     typescript::insert_vitest_dependency_export_name_context(
         &mut context,
         &program,
@@ -2631,7 +2632,7 @@ fn valid_crate_name(name: &str) -> bool {
 // redeclare or shadow it, so it fails closed before the TypeScript is written.
 fn validate_const_group_bindings(
     output: &str,
-    groups: &std::collections::BTreeMap<String, String>,
+    groups: &std::collections::BTreeMap<String, model::ConstGroup>,
 ) -> Result<(), CompileError> {
     if groups.is_empty() {
         return Ok(());
