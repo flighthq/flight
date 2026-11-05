@@ -332,7 +332,7 @@ describe('flight-compile pinned future lowering', () => {
       ],
       [
         'use std::pin::Pin;\npub type P = Pin<Box<u32>>;\n',
-        'error: portable `Pin` is supported only as `Pin<Box<dyn Future<Output = T> + Send>>` in a type position',
+        'error: portable `Pin` is supported only as `Pin<Box<dyn Future<Output = T> + Send>>` or `Pin<Box<dyn Stream<Item = T> + Send>>` in a type position',
       ],
     ] as const) {
       expect(compileRust('rejected', rust).error).toBe(expected);

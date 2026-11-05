@@ -291,7 +291,8 @@ describe('flight-compile std::mem imports', () => {
       'use std::mem::*;\nfn take(v: u32) -> u32 { return v; }\npub fn f(v: u32) -> u32 { return take(v); }\n',
     );
     expect(error).toBe('');
-    expect(typescript).toContain('function take(v: number): number {');
-    expect(typescript).toContain('return (take(v)) >>> 0;');
+    // The local function keeps its own `u32` result coercion, so the call site returns it directly.
+    expect(typescript).toContain('function take(v: number): number {\n  return v >>> 0;\n}');
+    expect(typescript).toContain('return take(v);');
   });
 });
