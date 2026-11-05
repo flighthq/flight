@@ -14720,6 +14720,24 @@ fn match_expression_scrutinee(
     ));
 }
 
+fn match_needs_scrutinee_temp(
+    expression: &syn::ExprMatch,
+    entities: &HashSet<String>,
+) -> Result<bool, CompileError> {
+    let emitted = emit_expression(&expression.expr, entities)?;
+    if is_js_identifier(&emitted) {
+        let collides = expression.arms.iter().any(|arm| {
+            provenance_pattern_bindings(&arm.pat)
+                .iter()
+                .any(|rust_name| snake_to_lower_camel(rust_name) == emitted)
+        });
+        if !collides {
+            return Ok(false);
+        }
+    }
+    return Ok(true);
+}
+
 fn emit_match_scrutinee(
     out: &mut String,
     expression: &syn::ExprMatch,
@@ -14767,16 +14785,20 @@ fn emit_match_statement_with_action(
 ) -> Result<(), CompileError> {
     if let Some(arms) = analyze_option_match(&expression.arms) {
         let has_guards = expression.arms.iter().any(|arm| arm.guard.is_some());
-        write_indent(out, indent);
-        out.push_str("{\n");
-        let scrutinee = emit_match_scrutinee(out, expression, entities, indent + 1)?;
+        let needs_block = has_guards || match_needs_scrutinee_temp(expression, entities)?;
+        let inner = if needs_block { indent + 1 } else { indent };
+        if needs_block {
+            write_indent(out, indent);
+            out.push_str("{\n");
+        }
+        let scrutinee = emit_match_scrutinee(out, expression, entities, inner)?;
         if has_guards {
-            write_indent(out, indent + 1);
+            write_indent(out, inner);
             out.push_str("let $matched = false;\n");
         }
         let absent = option_absent_value(&expression.expr, entities);
         for (index, (arm, info)) in expression.arms.iter().zip(arms).enumerate() {
-            write_indent(out, indent + 1);
+            write_indent(out, inner);
             let operator = if info.present { "!==" } else { "===" };
             if has_guards {
                 writeln!(out, "if (!$matched && {scrutinee} {operator} {absent}) {{")
@@ -14794,13 +14816,13 @@ fn emit_match_statement_with_action(
                 && assign_target == Some(binding.as_str())
             {
                 let fresh = format!("${binding}");
-                write_indent(out, indent + 2);
+                write_indent(out, inner + 1);
                 writeln!(out, "const {fresh} = {scrutinee};")
                     .expect("writing to a String cannot fail");
                 Some((binding.clone(), fresh))
             } else {
                 if let Some(binding) = &info.binding {
-                    write_indent(out, indent + 2);
+                    write_indent(out, inner + 1);
                     writeln!(out, "const {binding} = {scrutinee};")
                         .expect("writing to a String cannot fail");
                 }
@@ -14812,41 +14834,47 @@ fn emit_match_statement_with_action(
             }
             let body_indent = if let Some((_, guard)) = &arm.guard {
                 let guard_expr = emit_expression(guard, &arm_context)?;
-                write_indent(out, indent + 2);
+                write_indent(out, inner + 1);
                 writeln!(out, "if ({guard_expr}) {{").expect("writing to a String cannot fail");
-                write_indent(out, indent + 3);
+                write_indent(out, inner + 2);
                 out.push_str("$matched = true;\n");
-                indent + 3
+                inner + 2
             } else {
                 if has_guards {
-                    write_indent(out, indent + 2);
+                    write_indent(out, inner + 1);
                     out.push_str("$matched = true;\n");
                 }
-                indent + 2
+                inner + 1
             };
             emit_hoisted_match_arm_body(out, &arm.body, action, &arm_context, body_indent)?;
             if arm.guard.is_some() {
-                write_indent(out, indent + 2);
+                write_indent(out, inner + 1);
                 out.push_str("}\n");
             }
-            write_indent(out, indent + 1);
+            write_indent(out, inner);
             out.push_str("}\n");
         }
-        write_indent(out, indent);
-        out.push_str("}\n");
+        if needs_block {
+            write_indent(out, indent);
+            out.push_str("}\n");
+        }
         return Ok(());
     }
     if let Some(arms) = analyze_tagged_data_union_match(&expression.arms, entities)? {
         let has_guards = expression.arms.iter().any(|arm| arm.guard.is_some());
-        write_indent(out, indent);
-        out.push_str("{\n");
-        let scrutinee = emit_match_scrutinee(out, expression, entities, indent + 1)?;
+        let needs_block = has_guards || match_needs_scrutinee_temp(expression, entities)?;
+        let inner = if needs_block { indent + 1 } else { indent };
+        if needs_block {
+            write_indent(out, indent);
+            out.push_str("{\n");
+        }
+        let scrutinee = emit_match_scrutinee(out, expression, entities, inner)?;
         if has_guards {
-            write_indent(out, indent + 1);
+            write_indent(out, inner);
             out.push_str("let $matched = false;\n");
         }
         for (index, (arm, info)) in expression.arms.iter().zip(arms).enumerate() {
-            write_indent(out, indent + 1);
+            write_indent(out, inner);
             if info.otherwise {
                 if has_guards {
                     out.push_str("if (!$matched) {\n");
@@ -14867,53 +14895,59 @@ fn emit_match_statement_with_action(
                 }
             }
             if let Some(binding) = info.catch_all_binding {
-                write_indent(out, indent + 2);
+                write_indent(out, inner + 1);
                 writeln!(out, "const {binding} = {scrutinee};")
                     .expect("writing to a String cannot fail");
             }
             for (binding, value) in tagged_data_union_bindings(&info.variants, &scrutinee) {
-                write_indent(out, indent + 2);
+                write_indent(out, inner + 1);
                 writeln!(out, "const {binding} = {value};")
                     .expect("writing to a String cannot fail");
             }
             let arm_context = lexical_pattern_context(entities, &arm.pat);
             let body_indent = if let Some((_, guard)) = &arm.guard {
                 let guard_expr = emit_expression(guard, &arm_context)?;
-                write_indent(out, indent + 2);
+                write_indent(out, inner + 1);
                 writeln!(out, "if ({guard_expr}) {{").expect("writing to a String cannot fail");
-                write_indent(out, indent + 3);
+                write_indent(out, inner + 2);
                 out.push_str("$matched = true;\n");
-                indent + 3
+                inner + 2
             } else {
                 if has_guards {
-                    write_indent(out, indent + 2);
+                    write_indent(out, inner + 1);
                     out.push_str("$matched = true;\n");
                 }
-                indent + 2
+                inner + 1
             };
             emit_hoisted_match_arm_body(out, &arm.body, action, &arm_context, body_indent)?;
             if arm.guard.is_some() {
-                write_indent(out, indent + 2);
+                write_indent(out, inner + 1);
                 out.push_str("}\n");
             }
-            write_indent(out, indent + 1);
+            write_indent(out, inner);
             out.push_str("}\n");
         }
-        write_indent(out, indent);
-        out.push_str("}\n");
+        if needs_block {
+            write_indent(out, indent);
+            out.push_str("}\n");
+        }
         return Ok(());
     }
     if let Some(arms) = analyze_data_union_match(&expression.arms, entities)? {
         let has_guards = expression.arms.iter().any(|arm| arm.guard.is_some());
-        write_indent(out, indent);
-        out.push_str("{\n");
-        let scrutinee = emit_match_scrutinee(out, expression, entities, indent + 1)?;
+        let needs_block = has_guards || match_needs_scrutinee_temp(expression, entities)?;
+        let inner = if needs_block { indent + 1 } else { indent };
+        if needs_block {
+            write_indent(out, indent);
+            out.push_str("{\n");
+        }
+        let scrutinee = emit_match_scrutinee(out, expression, entities, inner)?;
         if has_guards {
-            write_indent(out, indent + 1);
+            write_indent(out, inner);
             out.push_str("let $matched = false;\n");
         }
         for (index, (arm, info)) in expression.arms.iter().zip(arms).enumerate() {
-            write_indent(out, indent + 1);
+            write_indent(out, inner);
             if info.catch_all {
                 if has_guards {
                     out.push_str("if (!$matched) {\n");
@@ -14938,7 +14972,7 @@ fn emit_match_statement_with_action(
                 }
             }
             if let Some(binding) = info.binding {
-                write_indent(out, indent + 2);
+                write_indent(out, inner + 1);
                 let value = info.binding_type.map_or_else(
                     || scrutinee.to_string(),
                     |rust_type| format!("{scrutinee} as {rust_type}"),
@@ -14949,28 +14983,30 @@ fn emit_match_statement_with_action(
             let arm_context = lexical_pattern_context(entities, &arm.pat);
             let body_indent = if let Some((_, guard)) = &arm.guard {
                 let guard_expr = emit_expression(guard, &arm_context)?;
-                write_indent(out, indent + 2);
+                write_indent(out, inner + 1);
                 writeln!(out, "if ({guard_expr}) {{").expect("writing to a String cannot fail");
-                write_indent(out, indent + 3);
+                write_indent(out, inner + 2);
                 out.push_str("$matched = true;\n");
-                indent + 3
+                inner + 2
             } else {
                 if has_guards {
-                    write_indent(out, indent + 2);
+                    write_indent(out, inner + 1);
                     out.push_str("$matched = true;\n");
                 }
-                indent + 2
+                inner + 1
             };
             emit_hoisted_match_arm_body(out, &arm.body, action, &arm_context, body_indent)?;
             if arm.guard.is_some() {
-                write_indent(out, indent + 2);
+                write_indent(out, inner + 1);
                 out.push_str("}\n");
             }
-            write_indent(out, indent + 1);
+            write_indent(out, inner);
             out.push_str("}\n");
         }
-        write_indent(out, indent);
-        out.push_str("}\n");
+        if needs_block {
+            write_indent(out, indent);
+            out.push_str("}\n");
+        }
         return Ok(());
     }
     if let Expr::Tuple(scrutinee) = expression.expr.as_ref() {

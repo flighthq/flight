@@ -11137,11 +11137,11 @@ pub fn absent_first(value: Option<f64>) -> f64 {
         let output = compile_typescript(source, None).unwrap();
         assert!(output.contains("let pattern: number[];"), "{output}");
         assert!(
-            output.contains("if (dash !== undefined) {\n      const values = dash;\n      pattern = values;\n    }\n    else"),
+            output.contains("if (dash !== undefined) {\n    const values = dash;\n    pattern = values;\n  }\n  else"),
             "{output}"
         );
         assert!(
-            output.contains("if (value === undefined) {\n      resolved = -1.0;\n    }\n    else"),
+            output.contains("if (value === undefined) {\n    resolved = -1.0;\n  }\n  else"),
             "{output}"
         );
         assert!(!output.contains("(() => {"), "{output}");
@@ -24443,7 +24443,7 @@ mod markup_results {
         assert!(output.contains("const result = { text: 'replacement' };"));
         assert!(output.contains("if (Object.hasOwn(result, 'text'))"));
         assert!(
-            output.contains("else {\n        kind = 'format';"),
+            output.contains("else {\n      kind = 'format';"),
             "{output}"
         );
         assert!(!output.contains("MarkupResult.Effect"));
