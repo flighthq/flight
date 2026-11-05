@@ -24466,26 +24466,46 @@ fn emit_statement(
             }
             write_indent(out, indent);
             if let Some((_, otherwise)) = &if_expression.else_branch {
-                out.push_str("} else {");
-                out.push('\n');
                 match otherwise.as_ref() {
-                    Expr::Block(block) => {
-                        emit_block(out, &block.block.stmts, entities, indent + 1)?;
-                    }
-                    Expr::If(nested) => {
+                    Expr::If(nested)
+                        if split_let_chain(&nested.cond).is_none()
+                            && !expression_contains_unconditional_try(&nested.cond) =>
+                    {
+                        out.push_str("} else ");
+                        let pos = out.len();
                         emit_statement(
                             out,
                             &Stmt::Expr(Expr::If(nested.clone()), None),
                             entities,
-                            indent + 1,
+                            indent,
                         )?;
+                        let indent_len = indent * 2;
+                        if out.len() >= pos + indent_len {
+                            out.drain(pos..pos + indent_len);
+                        }
                     }
                     _ => {
-                        return Err(compile_error("unsupported non-block else expression"));
+                        out.push_str("} else {\n");
+                        match otherwise.as_ref() {
+                            Expr::Block(block) => {
+                                emit_block(out, &block.block.stmts, entities, indent + 1)?;
+                            }
+                            Expr::If(nested) => {
+                                emit_statement(
+                                    out,
+                                    &Stmt::Expr(Expr::If(nested.clone()), None),
+                                    entities,
+                                    indent + 1,
+                                )?;
+                            }
+                            _ => {
+                                return Err(compile_error("unsupported non-block else expression"));
+                            }
+                        }
+                        write_indent(out, indent);
+                        out.push_str("}\n");
                     }
                 }
-                write_indent(out, indent);
-                out.push_str("}\n");
             } else {
                 out.push_str("}\n");
             }
