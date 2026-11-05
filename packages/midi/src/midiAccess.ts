@@ -1,6 +1,10 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type { EntityConstruction } from '@flighthq/types/contract';
+
+import { disposeMidiPort } from './midiPort.ts';
+import { getMidiAccessResourceState, retainMidiAccessResourceState } from './midiResource.ts';
+import { disposeMidiAccessStateSubscription } from './midiSubscription.ts';
 import type {
-  EntityConstruction,
   HostMidiAccessCapability,
   MidiAccess,
   MidiAccessDisposeOutcome,
@@ -10,11 +14,7 @@ import type {
   MidiInputPort,
   MidiOutputPort,
   MidiPort,
-} from '@flighthq/types/contract';
-
-import { disposeMidiPort } from './midiPort.ts';
-import { getMidiAccessResourceState, retainMidiAccessResourceState } from './midiResource.ts';
-import { disposeMidiAccessStateSubscription } from './midiSubscription.ts';
+} from './types.ts';
 
 // Provider-contract constructor. Native MIDIAccess identity stays in provider-local state; this empty
 // public Entity is the only handle consumers retain.

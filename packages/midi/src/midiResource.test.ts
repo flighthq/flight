@@ -1,5 +1,4 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { MidiAccess, MidiInputPort, MidiOutputPort } from '@flighthq/types/contract';
 import { describe, expect, it, vi } from 'vitest';
 
 import {
@@ -9,6 +8,7 @@ import {
   retainMidiInputPortResourceState,
   retainMidiOutputPortResourceState,
 } from './midiResource.ts';
+import type { MidiAccess, MidiInputPort, MidiOutputPort } from './types.ts';
 
 describe('getMidiAccessResourceState', () => {
   it('returns only state retained for the exact access identity', () => {

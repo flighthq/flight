@@ -14,6 +14,7 @@
       ".font-types",
       ".host-types",
       ".menu-types",
+      ".midi-types",
       ".notification-types",
       ".path-boolean-types",
       ".path-types",
@@ -85,6 +86,9 @@
     },
     {
       "path": "../menu/tsconfig.contract.json"
+    },
+    {
+      "path": "../midi/tsconfig.contract.json"
     },
     {
       "path": "../notification/tsconfig.contract.json"

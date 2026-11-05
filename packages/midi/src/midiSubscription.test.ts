@@ -1,7 +1,6 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { connectSignal, disconnectSignal, hasSignalSlots } from '@flighthq/signals/contract';
 import type { Signal, SlotId } from '@flighthq/signals/contract';
-import type { MidiInputMessage, MidiInputPort, MidiPort } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 import { describe, expect, it, vi } from 'vitest';
 
@@ -11,6 +10,7 @@ import {
   initializeMidiInputMessageSubscription,
   initializeMidiPortStateSubscription,
 } from './midiSubscription.ts';
+import type { MidiInputMessage, MidiInputPort, MidiPort } from './types.ts';
 
 describe('attachMidiAccessStateSubscription', () => {
   it('pins the exact access origin and emits stable hotplug port entities', async () => {

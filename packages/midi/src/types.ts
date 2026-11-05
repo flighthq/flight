@@ -1,0 +1,176 @@
+import type { EntityRaw, EntityRuntime, EntityRuntimeKey } from '@flighthq/entity/contract';
+import type { PermissionQueryOutcome } from '@flighthq/permissions/contract';
+import type { Signal } from '@flighthq/signals/contract';
+
+// MIDI handles are origin-pinned Entities. IDs are immutable diagnostic metadata only; providers keep
+// native handles and all mutable state out of band, keyed by the exact Entity object.
+export interface MidiAccess extends EntityRaw {
+  [EntityRuntimeKey]: EntityRuntime | undefined;
+}
+
+export type MidiPortConnection = 'closed' | 'open' | 'pending';
+export type MidiPortState = 'connected' | 'disconnected';
+
+export interface MidiInputPort extends EntityRaw {
+  [EntityRuntimeKey]: EntityRuntime | undefined;
+  readonly id: string;
+  readonly manufacturer: string | null;
+  readonly name: string | null;
+  readonly type: 'input';
+  readonly version: string | null;
+}
+
+export interface MidiOutputPort extends EntityRaw {
+  [EntityRuntimeKey]: EntityRuntime | undefined;
+  readonly id: string;
+  readonly manufacturer: string | null;
+  readonly name: string | null;
+  readonly type: 'output';
+  readonly version: string | null;
+}
+
+export type MidiPort = MidiInputPort | MidiOutputPort;
+
+export interface MidiInputMessage {
+  readonly data: Uint8Array;
+  readonly timestamp: number;
+}
+
+export type MidiAccessRequestOutcome =
+  | { readonly access: MidiAccess; readonly reason: 'accepted' }
+  | { readonly reason: 'operation-failed' | 'permission-denied' | 'security-restricted' | 'unsupported' };
+
+export type MidiAccessPortsOutcome<Port extends MidiPort> =
+  | { readonly ports: ReadonlyArray<Port>; readonly reason: 'ok' }
+  | { readonly reason: 'disposed' | 'operation-failed' };
+
+export type MidiAccessLifecycleFailure =
+  | { readonly operation: 'state-subscription-release' }
+  | {
+      readonly id: string;
+      readonly operation: MidiPortLifecycleFailure['operation'];
+      readonly type: MidiPort['type'];
+    };
+
+export type MidiAccessDisposeOutcome =
+  | { readonly reason: 'already-disposed' | 'ok' }
+  | {
+      readonly failures: ReadonlyArray<Readonly<MidiAccessLifecycleFailure>>;
+      readonly reason: 'operation-failed';
+    };
+
+export type MidiPortCloseOutcome = {
+  readonly reason: 'already-closed' | 'closed' | 'disposed' | 'operation-failed';
+};
+
+export type MidiPortOpenOutcome = {
+  readonly reason: 'already-open' | 'disconnected' | 'disposed' | 'opened' | 'operation-failed';
+};
+
+export type MidiPortConnectionOutcome =
+  | { readonly connection: MidiPortConnection; readonly reason: 'ok' }
+  | { readonly reason: 'disposed' | 'operation-failed' };
+
+export type MidiPortStateOutcome =
+  | { readonly reason: 'ok'; readonly state: MidiPortState }
+  | { readonly reason: 'disposed' | 'operation-failed' };
+
+export interface MidiPortLifecycleFailure {
+  readonly operation: 'close' | 'message-subscription-release' | 'state-subscription-release';
+}
+
+export type MidiPortDisposeOutcome =
+  | { readonly reason: 'already-disposed' | 'ok' }
+  | {
+      readonly failures: ReadonlyArray<Readonly<MidiPortLifecycleFailure>>;
+      readonly reason: 'operation-failed';
+    };
+
+export type MidiMessageSendOutcome = {
+  readonly reason:
+    | 'disconnected'
+    | 'disposed'
+    | 'invalid-message'
+    | 'not-open'
+    | 'operation-failed'
+    | 'sent'
+    | 'system-exclusive-not-enabled';
+};
+
+export type MidiEventReleaseOutcome = {
+  readonly reason: 'ok' | 'operation-failed';
+};
+
+export interface MidiEventAttachment extends EntityRaw {
+  [EntityRuntimeKey]: EntityRuntime | undefined;
+  release(): Promise<MidiEventReleaseOutcome>;
+}
+
+export type MidiEventBackendAttachOutcome =
+  | { readonly attachment: MidiEventAttachment; readonly reason: 'ok' }
+  | { readonly reason: 'operation-failed'; readonly releaseFailed: boolean };
+
+export type MidiSubscriptionAttachOutcome =
+  | { readonly reason: 'ok' }
+  | {
+      readonly attachFailed: boolean;
+      readonly reason: 'operation-failed';
+      readonly releaseFailed: boolean;
+    };
+
+export type MidiSubscriptionDetachOutcome =
+  | { readonly reason: 'not-attached' | 'ok' }
+  | { readonly reason: 'operation-failed'; readonly releaseFailed: true };
+
+export type MidiSubscriptionDisposeOutcome =
+  | { readonly reason: 'already-disposed' | 'ok' }
+  | {
+      readonly attachFailed: boolean;
+      readonly reason: 'operation-failed';
+      readonly releaseFailed: boolean;
+    };
+
+export interface MidiAccessStateSubscription extends EntityRaw {
+  [EntityRuntimeKey]: EntityRuntime | undefined;
+  readonly onMidiAccessStateChange: Signal<Readonly<MidiPort>>;
+}
+
+export interface MidiInputMessageSubscription extends EntityRaw {
+  [EntityRuntimeKey]: EntityRuntime | undefined;
+  readonly onMidiInputMessage: Signal<Readonly<MidiInputMessage>>;
+}
+
+export interface MidiPortStateSubscription extends EntityRaw {
+  [EntityRuntimeKey]: EntityRuntime | undefined;
+  readonly onMidiPortStateChange: Signal<Readonly<MidiPort>>;
+}
+
+export interface HostMidiAccessCapability {
+  requestAccess(): Promise<MidiAccessRequestOutcome>;
+}
+
+export interface HostMidiPermissionCapability {
+  getPermission(): Promise<PermissionQueryOutcome>;
+}
+
+export interface MidiAccessResourceOperations {
+  attachStateChange(listener: (port: MidiPort) => void): Promise<MidiEventBackendAttachOutcome>;
+  getInputPorts(): readonly MidiInputPort[];
+  getOutputPorts(): readonly MidiOutputPort[];
+}
+
+export interface MidiPortResourceOperations {
+  attachStateChange(listener: () => void): Promise<MidiEventBackendAttachOutcome>;
+  close(): Promise<void>;
+  getConnection(): MidiPortConnection;
+  getState(): MidiPortState;
+  open(): Promise<void>;
+}
+
+export interface MidiInputPortResourceOperations extends MidiPortResourceOperations {
+  attachMessage(listener: (data: Uint8Array, timestamp: number) => void): Promise<MidiEventBackendAttachOutcome>;
+}
+
+export interface MidiOutputPortResourceOperations extends MidiPortResourceOperations {
+  send(data: readonly number[], timestamp?: number): void;
+}

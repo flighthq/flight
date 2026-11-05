@@ -1,9 +1,10 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { clearSignal, createSignal, emitSignal } from '@flighthq/signals/contract';
 import type { Signal } from '@flighthq/signals/contract';
+import type { Entity, EntityConstruction } from '@flighthq/types/contract';
+
+import { getMidiAccessResourceState, getMidiPortResourceState } from './midiResource.ts';
 import type {
-  Entity,
-  EntityConstruction,
   MidiAccess,
   MidiAccessStateSubscription,
   MidiEventAttachment,
@@ -15,9 +16,7 @@ import type {
   MidiSubscriptionAttachOutcome,
   MidiSubscriptionDetachOutcome,
   MidiSubscriptionDisposeOutcome,
-} from '@flighthq/types/contract';
-
-import { getMidiAccessResourceState, getMidiPortResourceState } from './midiResource.ts';
+} from './types.ts';
 
 export function attachMidiAccessStateSubscription(
   access: MidiAccess,

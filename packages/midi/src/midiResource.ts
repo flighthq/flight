@@ -11,7 +11,7 @@ import type {
   MidiPort,
   MidiPortDisposeOutcome,
   MidiPortStateSubscription,
-} from '@flighthq/types/contract';
+} from './types.ts';
 
 interface MidiAccessResourceState {
   disposeCompleted: boolean;

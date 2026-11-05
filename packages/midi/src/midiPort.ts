@@ -1,6 +1,13 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type { EntityConstruction } from '@flighthq/types/contract';
+
+import {
+  getMidiPortResourceState,
+  retainMidiInputPortResourceState,
+  retainMidiOutputPortResourceState,
+} from './midiResource.ts';
+import { disposeMidiInputMessageSubscription, disposeMidiPortStateSubscription } from './midiSubscription.ts';
 import type {
-  EntityConstruction,
   MidiInputPort,
   MidiInputPortResourceOperations,
   MidiMessageSendOutcome,
@@ -12,14 +19,7 @@ import type {
   MidiPortDisposeOutcome,
   MidiPortOpenOutcome,
   MidiPortStateOutcome,
-} from '@flighthq/types/contract';
-
-import {
-  getMidiPortResourceState,
-  retainMidiInputPortResourceState,
-  retainMidiOutputPortResourceState,
-} from './midiResource.ts';
-import { disposeMidiInputMessageSubscription, disposeMidiPortStateSubscription } from './midiSubscription.ts';
+} from './types.ts';
 
 interface MidiPortMetadata {
   readonly id: string;
