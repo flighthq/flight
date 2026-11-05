@@ -1,7 +1,8 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
 import { clearSignal, createSignal, emitSignal } from '@flighthq/signals/contract';
+
 import type {
-  EntityConstruction,
   HostShareContentCapability,
   HostShareFilesCapability,
   ShareContent,
@@ -9,7 +10,7 @@ import type {
   ShareFilesContent,
   ShareResult,
   ShareSignals,
-} from '@flighthq/types/contract';
+} from './types.ts';
 
 export function attachShareSignals(signals: ShareSignals): void {
   _attachedSignals.add(signals);

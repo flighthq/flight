@@ -140,6 +140,9 @@
       "path": "../shape/tsconfig.contract.json"
     },
     {
+      "path": "../share"
+    },
+    {
       "path": "../signals"
     },
     {

@@ -70,6 +70,7 @@
     "@flighthq/selection": "*",
     "@flighthq/shape-formats": "*",
     "@flighthq/shape": "*",
+    "@flighthq/share": "*",
     "@flighthq/signals": "*",
     "@flighthq/spatial": "*",
     "@flighthq/statechart": "*",

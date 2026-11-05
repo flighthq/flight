@@ -1,12 +1,6 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { EntityRuntimeKey } from '@flighthq/entity/contract';
 import { connectSignal } from '@flighthq/signals/contract';
-import { EntityRuntimeKey } from '@flighthq/types/contract';
-import type {
-  HostShareContentCapability,
-  HostShareFilesCapability,
-  ShareContent,
-  ShareResult,
-} from '@flighthq/types/contract';
 
 import * as shareContract from './contract.ts';
 import {
@@ -25,6 +19,7 @@ import {
   shareText,
   shareUrl,
 } from './share.ts';
+import type { HostShareContentCapability, HostShareFilesCapability, ShareContent, ShareResult } from './types.ts';
 
 function contentHost(overrides: Partial<HostShareContentCapability> = {}): {
   readonly share: { readonly content: HostShareContentCapability };
