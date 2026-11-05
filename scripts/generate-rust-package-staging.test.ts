@@ -738,6 +738,151 @@ describe('ShellExternalReason', () => {
     expect(test).not.toContain('ShellExternalReason.BlockedScheme');
   }, 120_000);
 
+  it('propagates a target-native nullable return owner into generated tests', async () => {
+    writeFileSync(
+      join(crateRoot, 'Cargo.toml'),
+      `[package]
+name = "${crateName}"
+version = "0.0.0"
+edition = "2024"
+`,
+    );
+    writeFileSync(
+      join(crateRoot, 'src', 'lib.rs'),
+      '//! flight-compiler: target-native\nmod value;\npub mod contract;\npub use contract::*;\n',
+    );
+    writeFileSync(join(crateRoot, 'src', 'contract.rs'), 'pub use super::value::*;\n');
+    writeFileSync(
+      sourcePath,
+      `//! flight-compiler: target-native
+
+pub fn get_optional(found: bool) -> Option<i32> {
+    if found { return Some(1); }
+    return None;
+}
+`,
+    );
+    const testPath = join(crateRoot, 'tests', 'value_test.rs');
+    writeFileSync(
+      testPath,
+      `use crate::*;
+
+mod get_optional {
+    use super::*;
+
+    #[test]
+    fn reports_absence_as_null() {
+        assert!(get_optional(false).is_none());
+    }
+}
+`,
+    );
+    writeFileSync(
+      join(packageRoot, 'src', 'value.ts'),
+      `export function getOptional(found: boolean): number | null {
+  return found ? 1 : null;
+}
+`,
+    );
+    writeFileSync(
+      join(packageRoot, 'src', 'value.test.ts'),
+      `import { getOptional } from './value.ts';
+
+describe('getOptional', () => {
+  it('reports absence as null', () => {
+    expect(getOptional(false)).toBeNull();
+  });
+});
+`,
+    );
+    writeFileSync(join(packageRoot, 'src', 'contract.ts'), "export { getOptional } from './value.ts';\n");
+    writeFileSync(join(packageRoot, 'src', 'index.ts'), "export { getOptional } from './contract.ts';\n");
+
+    try {
+      const run = await generateWhileScanning();
+
+      expect(run.code, run.stderr).toBe(0);
+      const test = readFileSync(join(packageRoot, 'src', 'value.test.ts'), 'utf8');
+      expect(test).toContain('expect(getOptional(false) === null).toBe(true);');
+      expect(test).not.toContain('getOptional(false) === undefined');
+    } finally {
+      rmSync(testPath, { force: true });
+      rmSync(join(packageRoot, 'src', 'value.test.ts'), { force: true });
+    }
+  }, 120_000);
+
+  it('refuses conflicting target-native nullable return owners', async () => {
+    writeFileSync(
+      join(crateRoot, 'Cargo.toml'),
+      `[package]
+name = "${crateName}"
+version = "0.0.0"
+edition = "2024"
+`,
+    );
+    writeFileSync(
+      join(crateRoot, 'src', 'lib.rs'),
+      '//! flight-compiler: target-native\nmod shadow;\nmod value;\npub mod contract;\npub use contract::*;\n',
+    );
+    writeFileSync(join(crateRoot, 'src', 'contract.rs'), 'pub use super::value::*;\n');
+    writeFileSync(
+      sourcePath,
+      `//! flight-compiler: target-native
+
+pub fn get_optional(found: bool) -> Option<i32> {
+    if found { return Some(1); }
+    return None;
+}
+`,
+    );
+    const shadowPath = join(crateRoot, 'src', 'shadow.rs');
+    writeFileSync(
+      shadowPath,
+      `//! flight-compiler: target-native
+
+pub fn get_optional(found: bool) -> Option<i32> {
+    if found { return Some(2); }
+    return None;
+}
+`,
+    );
+    const testPath = join(crateRoot, 'tests', 'value_test.rs');
+    writeFileSync(
+      testPath,
+      `use crate::*;
+
+#[test]
+fn reports_absence_as_null() {
+    assert!(get_optional(false).is_none());
+}
+`,
+    );
+    for (const name of ['value', 'shadow']) {
+      writeFileSync(
+        join(packageRoot, 'src', `${name}.ts`),
+        `export function getOptional(found: boolean): number | null {
+  return found ? 1 : null;
+}
+`,
+      );
+    }
+    writeFileSync(join(packageRoot, 'src', 'value.test.ts'), "import { getOptional } from './value.ts';\n");
+    writeFileSync(join(packageRoot, 'src', 'contract.ts'), "export { getOptional } from './value.ts';\n");
+    writeFileSync(join(packageRoot, 'src', 'index.ts'), "export { getOptional } from './contract.ts';\n");
+
+    try {
+      const run = await generateWhileScanning();
+
+      expect(run.code).not.toBe(0);
+      expect(run.stderr).toContain('TypeScript nullable Option return getOptional has conflicting Rust owners');
+    } finally {
+      rmSync(shadowPath, { force: true });
+      rmSync(testPath, { force: true });
+      rmSync(join(packageRoot, 'src', 'shadow.ts'), { force: true });
+      rmSync(join(packageRoot, 'src', 'value.test.ts'), { force: true });
+    }
+  }, 120_000);
+
   it('passes established TypeScript position representations through the compiler CLI', async () => {
     writeFileSync(
       join(crateRoot, 'Cargo.toml'),
