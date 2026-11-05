@@ -48,6 +48,7 @@ import {
   typeScriptNullableOptionReturnArguments,
   typeScriptNullableOptionReturnMetadata,
   typeScriptStringUnionArguments,
+  typeScriptTestTypeAliasArguments,
   typeScriptTypeAliasArguments,
 } from './generate-rust-package-exports.ts';
 
@@ -505,6 +506,62 @@ export type AnimationPlayerRef = number;
 `;
 
     expect(typeScriptTypeAliasArguments(existing, generated, symbols)).toEqual([]);
+  });
+
+  it('retains owner-proven canonical types for generated test-local records', () => {
+    const symbols = new Map([
+      [
+        '@flighthq/types/contract',
+        new Map([
+          ['FlightDocumentLayoutBinding', { hasType: true, hasValue: false }],
+          ['NodeAny', { hasType: true, hasValue: false }],
+        ]),
+      ],
+    ]);
+    const existing = `import type { FlightDocumentLayoutBinding, NodeAny } from '@flighthq/types/contract';
+const node = {} as NodeAny;
+const binding: FlightDocumentLayoutBinding = { targets: [node], tree: { nodes: [] } };
+`;
+    const generated = `interface NodeAny { name: string; }
+interface FlightDocumentLayoutBinding { targets: NodeAny[]; tree: LayoutTree; }
+`;
+
+    expect(typeScriptTestTypeAliasArguments(existing, generated, symbols)).toEqual([
+      '--typescript-type-alias',
+      'FlightDocumentLayoutBinding=@flighthq/types/contract#FlightDocumentLayoutBinding',
+      '--typescript-type-alias',
+      'NodeAny=@flighthq/types/contract#NodeAny',
+    ]);
+  });
+
+  it('refuses ambiguous, locally shadowed, unavailable, and unused test type owners', () => {
+    const symbols = new Map([
+      ['@flighthq/first/contract', new Map([['Ambiguous', { hasType: true, hasValue: false }]])],
+      ['@flighthq/second/contract', new Map([['Ambiguous', { hasType: true, hasValue: false }]])],
+      [
+        '@flighthq/types/contract',
+        new Map([
+          ['Shadowed', { hasType: true, hasValue: false }],
+          ['Unavailable', { hasType: false, hasValue: true }],
+          ['Unused', { hasType: true, hasValue: false }],
+        ]),
+      ],
+    ]);
+    const existing = `import type { Ambiguous } from '@flighthq/first/contract';
+import type { Ambiguous } from '@flighthq/second/contract';
+import type { Shadowed, Unavailable, Unused } from '@flighthq/types/contract';
+interface Shadowed { local: true; }
+const ambiguous: Ambiguous = {} as Ambiguous;
+const shadowed: Shadowed = { local: true };
+const unavailable: Unavailable = {} as Unavailable;
+`;
+    const generated = `interface Ambiguous { value: number; }
+interface Shadowed { value: number; }
+interface Unavailable { value: number; }
+interface Unused { value: number; }
+`;
+
+    expect(typeScriptTestTypeAliasArguments(existing, generated, symbols)).toEqual([]);
   });
 
   it('matches alias owners by parameter identity when target-native out-parameters are reordered', () => {

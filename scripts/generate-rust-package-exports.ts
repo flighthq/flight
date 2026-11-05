@@ -810,6 +810,100 @@ export function typeScriptTypeAliasArguments(
     ]);
 }
 
+// An established portable test may use a canonical contract type while its Rust source declares a
+// test-only record with the same name so native Rust can exercise the same data. Select that external
+// representation only from direct, used type imports whose contract really exports the type. The
+// generated declaration supplies the exact Rust name being replaced; neither its fields nor its name
+// alone are ownership evidence.
+export function typeScriptTestTypeAliasArguments(
+  existingTypescript: string,
+  generatedTypescript: string,
+  importedContractSymbols: ReadonlyMap<string, ReadonlyMap<string, Omit<ExportSymbolOwner, 'fileName'>>>,
+): string[] {
+  const existing = parseTypeScriptMetadataSurface('existing.test.ts', existingTypescript);
+  if (existing.errors.length > 0) {
+    throw new Error(
+      `could not parse existing TypeScript test while resolving external types: ${existing.errors[0]?.message}`,
+    );
+  }
+  const generated = parseTypeScriptMetadataSurface('generated.test.ts', generatedTypescript);
+  if (generated.errors.length > 0) {
+    throw new Error(
+      `could not parse generated TypeScript test while resolving external types: ${generated.errors[0]?.message}`,
+    );
+  }
+
+  const generatedLocalTypes = new Set<string>();
+  for (const statement of generated.program.body as unknown as Record<string, unknown>[]) {
+    const declaration =
+      statement.type === 'ExportNamedDeclaration'
+        ? (statement.declaration as Record<string, unknown> | null)
+        : statement;
+    if (declaration?.type !== 'TSInterfaceDeclaration' && declaration?.type !== 'TSTypeAliasDeclaration') continue;
+    const identifier = declaration.id as Record<string, unknown> | null;
+    if (identifier?.type === 'Identifier' && typeof identifier.name === 'string') {
+      generatedLocalTypes.add(identifier.name);
+    }
+  }
+
+  const referencedTypes = new Set<string>();
+  const visitTypeReferences = (value: unknown): void => {
+    if (Array.isArray(value)) {
+      for (const item of value) visitTypeReferences(item);
+      return;
+    }
+    if (value === null || typeof value !== 'object') return;
+    const node = value as Record<string, unknown>;
+    if (node.type === 'ImportDeclaration') return;
+    if (node.type === 'TSTypeReference') {
+      const name = node.typeName as Record<string, unknown> | null;
+      if (name?.type === 'Identifier' && typeof name.name === 'string') referencedTypes.add(name.name);
+    }
+    for (const child of Object.values(node)) visitTypeReferences(child);
+  };
+  visitTypeReferences(existing.program);
+
+  const localBindings = collectLocalBindingNames(existingTypescript);
+  const owners = new Map<string, string>();
+  const ambiguous = new Set<string>();
+  for (const statement of existing.program.body as unknown as Record<string, unknown>[]) {
+    if (statement.type !== 'ImportDeclaration') continue;
+    const source = statement.source as Record<string, unknown>;
+    const module = typeof source.value === 'string' ? source.value : undefined;
+    if (module === undefined) continue;
+    const symbols = importedContractSymbols.get(module);
+    for (const specifier of statement.specifiers as Record<string, unknown>[]) {
+      if (specifier.type !== 'ImportSpecifier') continue;
+      const imported = specifier.imported as Record<string, unknown>;
+      const local = specifier.local as Record<string, unknown>;
+      const name = typeof imported.name === 'string' ? imported.name : undefined;
+      if (
+        name === undefined ||
+        local.name !== name ||
+        symbols?.get(name)?.hasType !== true ||
+        !generatedLocalTypes.has(name) ||
+        !referencedTypes.has(name) ||
+        localBindings.has(name) ||
+        ambiguous.has(name)
+      ) {
+        continue;
+      }
+      const previous = owners.get(name);
+      if (previous !== undefined && previous !== module) {
+        owners.delete(name);
+        ambiguous.add(name);
+      } else {
+        owners.set(name, module);
+      }
+    }
+  }
+
+  return [...owners]
+    .filter(([name]) => !ambiguous.has(name))
+    .sort(([left], [right]) => left.localeCompare(right))
+    .flatMap(([name, module]) => ['--typescript-type-alias', `${name}=${module}#${name}`]);
+}
+
 function intrinsicTypeAliasOwner(type: Record<string, unknown>): TypeScriptTypeAliasOwner | undefined {
   switch (type.type) {
     case 'TSBooleanKeyword':

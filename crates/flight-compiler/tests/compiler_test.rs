@@ -19689,6 +19689,66 @@ fn aliases_are_external_representations() {
     }
 
     #[test]
+    fn replaces_test_local_records_with_explicit_external_type_representations() {
+        let aliases = [
+            TypeScriptTypeAlias {
+                name: "NodeAny",
+                module: Some("@flighthq/types/contract"),
+                target: "NodeAny",
+            },
+            TypeScriptTypeAlias {
+                name: "FlightDocumentLayoutBinding",
+                module: Some("@flighthq/types/contract"),
+                target: "FlightDocumentLayoutBinding",
+            },
+        ];
+        let source = r#"
+struct NodeAny {
+    name: String,
+}
+
+struct FlightDocumentLayoutBinding {
+    targets: Vec<NodeAny>,
+}
+
+#[test]
+fn consumes_the_canonical_binding() {
+    let binding = FlightDocumentLayoutBinding {
+        targets: vec![NodeAny { name: "root".to_string() }],
+    };
+    assert_eq!(binding.targets[0].name, "root");
+}
+"#;
+
+        let output = compile_vitest_with_visibility_sources(
+            source,
+            "./contract.ts",
+            None,
+            &[],
+            &[],
+            &[],
+            &aliases,
+        )
+        .unwrap();
+
+        assert!(
+            output.contains(
+                "import type { FlightDocumentLayoutBinding, NodeAny } from '@flighthq/types/contract';"
+            ),
+            "{output}"
+        );
+        assert!(!output.contains("interface NodeAny"), "{output}");
+        assert!(
+            !output.contains("interface FlightDocumentLayoutBinding"),
+            "{output}"
+        );
+        assert!(
+            output.contains("const binding: FlightDocumentLayoutBinding ="),
+            "{output}"
+        );
+    }
+
+    #[test]
     fn emits_generic_test_helpers_with_their_own_type_parameters() {
         let source = r#"
 use crate::*;

@@ -3176,7 +3176,26 @@ pub(crate) fn emit_test_program(
             .insert(name);
         return false;
     });
-    for (_, target, module) in type_script_type_aliases(context) {
+    let local_type_names = program
+        .structs
+        .iter()
+        .map(|structure| structure.ident.to_string())
+        .chain(
+            program
+                .type_aliases
+                .iter()
+                .map(|type_alias| type_alias.ident.to_string()),
+        )
+        .collect::<BTreeSet<_>>();
+    let mut represented_local_types = BTreeSet::new();
+    for (name, target, module) in type_script_type_aliases(context) {
+        if local_type_names.contains(&name) {
+            represented_local_types.insert(name);
+            if let Some(module) = module {
+                cross_crate_types.entry(module).or_default().insert(target);
+            }
+            continue;
+        }
         if !contract_type_symbols.contains(&target) {
             continue;
         }
@@ -3375,10 +3394,16 @@ pub(crate) fn emit_test_program(
     // qualified `flight_*` path, and an unread `import * as` would add an undeclared dependency.
     let header_len = out.len();
     for type_alias in &program.type_aliases {
+        if represented_local_types.contains(&type_alias.ident.to_string()) {
+            continue;
+        }
         out.push('\n');
         emit_test_type_alias(&mut out, type_alias, context)?;
     }
     for structure in &program.structs {
+        if represented_local_types.contains(&structure.ident.to_string()) {
+            continue;
+        }
         out.push('\n');
         emit_test_struct(&mut out, structure, context)?;
     }

@@ -430,6 +430,63 @@ export function echoExplanation(value: BackendOperationExplanation): BackendOper
     expect(value).not.toContain("from '@flighthq/host/contract'");
   }, 120_000);
 
+  it('replaces generated test-local records with their established external contract types', async () => {
+    writeFileSync(
+      join(crateRoot, 'Cargo.toml'),
+      `[package]
+name = "${crateName}"
+version = "0.0.0"
+edition = "2024"
+`,
+    );
+    writeFileSync(join(crateRoot, 'src', 'lib.rs'), 'mod value;\npub mod contract;\npub use contract::*;\n');
+    writeFileSync(join(crateRoot, 'src', 'contract.rs'), 'pub use super::value::*;\n');
+    writeFileSync(sourcePath, 'pub fn fixture_value() -> i32 { return 1; }\n');
+    const testPath = join(crateRoot, 'tests', 'value_test.rs');
+    writeFileSync(
+      testPath,
+      `struct NodeAny {
+    name: String,
+}
+
+struct FlightDocumentLayoutBinding {
+    targets: Vec<NodeAny>,
+}
+
+#[test]
+fn consumes_the_established_binding() {
+    let binding = FlightDocumentLayoutBinding {
+        targets: vec![NodeAny { name: "root".to_string() }],
+    };
+    assert_eq!(binding.targets[0].name, "root");
+}
+`,
+    );
+    writeFileSync(
+      join(packageRoot, 'src', 'value.test.ts'),
+      `import type { FlightDocumentLayoutBinding, NodeAny } from '@flighthq/types/contract';
+
+const target = { name: 'root' } as NodeAny;
+const binding: FlightDocumentLayoutBinding = { targets: [target], tree: { nodes: [] } };
+void binding;
+`,
+    );
+
+    try {
+      const run = await generateWhileScanning();
+
+      expect(run.code, run.stderr).toBe(0);
+      const test = readFileSync(join(packageRoot, 'src', 'value.test.ts'), 'utf8');
+      expect(test).toContain("import type { FlightDocumentLayoutBinding, NodeAny } from '@flighthq/types/contract';");
+      expect(test).toContain('const binding: FlightDocumentLayoutBinding =');
+      expect(test).not.toContain('interface FlightDocumentLayoutBinding');
+      expect(test).not.toContain('interface NodeAny');
+    } finally {
+      rmSync(testPath, { force: true });
+      rmSync(join(packageRoot, 'src', 'value.test.ts'), { force: true });
+    }
+  }, 120_000);
+
   it('applies dependency-owned nullable return metadata during package generation', async () => {
     writeFileSync(
       join(crateRoot, 'Cargo.toml'),

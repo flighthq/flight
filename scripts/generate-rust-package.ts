@@ -54,6 +54,7 @@ import {
   typeScriptNullableOptionParameterArguments,
   typeScriptNullableOptionReturnMetadata,
   typeScriptStringUnionArguments,
+  typeScriptTestTypeAliasArguments,
   typeScriptTypeAliasArguments,
 } from './generate-rust-package-exports.ts';
 import { collectPackageSourceFileNames } from './generate-rust-package-sources.ts';
@@ -556,6 +557,7 @@ try {
       );
       const compilePath = testSourceWithSupport(rustPath, join(rawRoot, `${rustTest}.source.rs`));
       const positionOwners = packageTypeScriptPositionOwnerSources();
+      const knownTypeAliasArguments = packageTypeScriptTypeAliasArguments();
       let typescript = compile(
         'generate-tests',
         compilePath,
@@ -566,7 +568,7 @@ try {
         [
           ...testSupportArguments(rustPath),
           ...representationArguments,
-          ...packageTypeScriptTypeAliasArguments(),
+          ...knownTypeAliasArguments,
           ...packageTypeScriptArrayParameterArguments(),
           ...packageTypeScriptNullableOptionFieldArguments(),
           ...packageTypeScriptNullableOptionParameterArguments(),
@@ -574,6 +576,32 @@ try {
           ...packageTypeScriptNullableOptionReturnArguments(),
         ],
       );
+      const testTypeAliasArguments = typeScriptTestTypeAliasArguments(
+        existingTypescript,
+        typescript,
+        loadImportedContractSymbols(existingTypescript),
+      );
+      const allTypeAliasArguments = mergedTypeScriptTypeAliasArguments(knownTypeAliasArguments, testTypeAliasArguments);
+      if (allTypeAliasArguments.length > knownTypeAliasArguments.length) {
+        typescript = compile(
+          'generate-tests',
+          compilePath,
+          join(rawRoot, fileName),
+          ['./contract.ts', '--contract-source', join(crateRoot, 'src', 'contract.rs')],
+          [...new Set([...aliasSources, ...positionOwners])],
+          targetNativeSources.filter((candidate) => !positionOwners.includes(candidate)),
+          [
+            ...testSupportArguments(rustPath),
+            ...representationArguments,
+            ...allTypeAliasArguments,
+            ...packageTypeScriptArrayParameterArguments(),
+            ...packageTypeScriptNullableOptionFieldArguments(),
+            ...packageTypeScriptNullableOptionParameterArguments(),
+            ...packageTypeScriptDefaultNullOptionParameterArguments(),
+            ...packageTypeScriptNullableOptionReturnArguments(),
+          ],
+        );
+      }
       typescript = canonicalizeGeneratedContractImports(existingTypescript, typescript);
       if (typescript.includes('crate.')) {
         typescript = addRustTestSupportImport(typescript);
@@ -839,6 +867,30 @@ function probeNativeSource(
   let defaultNullOptionParameterArguments: string[] = [];
   let nullableOptionReturnArguments: string[] = [];
   let nullableOptionReturnOwners = new Map<string, string | null>();
+  if (result.status === 0 && command === 'generate-tests') {
+    typeAliasArguments = typeScriptTestTypeAliasArguments(
+      existingTypescript,
+      readFileSync(out, 'utf8'),
+      loadImportedContractSymbols(existingTypescript),
+    );
+    if (typeAliasArguments.length > 0) {
+      result = spawnSync(
+        compilerPath,
+        compilerArguments(
+          mergedTypeScriptTypeAliasArguments(knownTypeAliasArguments, typeAliasArguments),
+          knownArrayParameterArguments,
+          knownNullableOptionFieldArguments,
+          knownNullableOptionParameterArguments,
+          knownDefaultNullOptionParameterArguments,
+          knownNullableOptionReturnArguments,
+        ),
+        {
+          cwd: repositoryRoot,
+          encoding: 'utf8',
+        },
+      );
+    }
+  }
   if (result.status === 0 && command === 'generate') {
     typeAliasArguments = mergedTypeScriptTypeAliasArguments(
       internalTypeExports.typeAliasArguments,
