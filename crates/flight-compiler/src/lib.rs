@@ -150,6 +150,17 @@ pub struct VitestAliasSource<'a> {
     pub module: &'a str,
 }
 
+/// A visibility-only production source with explicit current-package ownership.
+///
+/// Dependency sources still contribute type facts, but only current-package sources may satisfy
+/// the package contract's function exports.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct VitestVisibilitySource<'a> {
+    pub source: &'a str,
+    pub path: &'a str,
+    pub current_package: bool,
+}
+
 /// A crate-local test-support module whose public items may satisfy an explicit wildcard import.
 ///
 /// The module identity is caller-owned proof: unlike production aliases, test-support sources are
@@ -861,7 +872,7 @@ fn compile_vitest_with_contract_alias_sources_internal(
     alias_sources: &[VitestAliasSource<'_>],
     external_alias_sources: &[ExternalAliasSource<'_>],
     type_script_string_unions: &[TypeScriptStringUnion<'_>],
-    visibility_sources: &[ModuleSource<'_>],
+    visibility_sources: &[VitestVisibilitySource<'_>],
     type_script_type_aliases: &[TypeScriptTypeAlias<'_>],
     type_script_array_parameters: &[TypeScriptArrayParameter<'_>],
     type_script_nullable_option_fields: &[TypeScriptNullableOptionField<'_>],
@@ -929,6 +940,11 @@ fn compile_vitest_with_contract_alias_sources_internal(
         .iter()
         .map(|source| model::parse_visibility_program(source.source))
         .collect::<Result<Vec<_>, _>>()?;
+    let visibility_program_refs = visibility_sources
+        .iter()
+        .zip(&visibility_programs)
+        .map(|(source, program)| (source.path, program))
+        .collect::<Vec<_>>();
     let type_script_string_union_metadata = resolve_type_script_string_union_metadata(
         type_script_string_unions,
         alias_programs.iter().chain(&visibility_programs),
@@ -985,12 +1001,37 @@ fn compile_vitest_with_contract_alias_sources_internal(
             .map(|(program, source)| (source.path, program))
             .collect::<Vec<_>>(),
     )?;
-    typescript::insert_type_script_type_alias_context(&mut context, type_script_type_aliases);
-    let visibility_program_refs = visibility_programs
+    typescript::insert_vitest_local_crate_context(
+        &mut context,
+        contract_module,
+        alias_sources
+            .iter()
+            .map(|source| source.module)
+            .chain(
+                visibility_sources
+                    .iter()
+                    .filter(|source| source.current_package)
+                    .map(|source| source.path),
+            ),
+    );
+    let visibility_function_programs = alias_program_refs
         .iter()
-        .zip(visibility_sources)
-        .map(|(program, source)| (source.path, program))
+        .map(|(module, program)| (*module, *program, true))
+        .chain(
+            visibility_program_refs
+                .iter()
+                .zip(visibility_sources)
+                .map(|((module, program), source)| {
+                    (*module, *program, source.current_package)
+                }),
+        )
         .collect::<Vec<_>>();
+    typescript::insert_vitest_visibility_function_context(
+        &mut context,
+        visibility_function_programs.into_iter(),
+        contract_source,
+    )?;
+    typescript::insert_type_script_type_alias_context(&mut context, type_script_type_aliases);
     typescript::insert_type_script_array_parameter_context(
         &mut context,
         alias_program_refs
@@ -1071,14 +1112,6 @@ fn compile_vitest_with_contract_alias_sources_internal(
             );
         }
     }
-    typescript::insert_vitest_local_crate_context(
-        &mut context,
-        contract_module,
-        alias_sources
-            .iter()
-            .map(|source| source.module)
-            .chain(visibility_sources.iter().map(|source| source.path)),
-    );
     vitest::resolve_test_support_wildcards(&mut program, &support_program_refs, &context)?;
     typescript::insert_string_union_context(&mut context, string_unions.styles.keys());
     if let Some(ref contract_su) = contract_string_unions {
@@ -1361,7 +1394,8 @@ pub fn compile_vitest_with_options_and_array_parameters(
 }
 
 /// Compiles one Rust test module with path-qualified target-native visibility sources and explicit
-/// TypeScript representations. Source paths preserve ownership for strict contract provenance.
+/// TypeScript representations. Source paths preserve ownership for strict contract provenance, so
+/// qualified current-package calls can use only a uniquely selected public contract declaration.
 // flight-lint: allow(contract-vocabulary) compiler host tooling is not a transpilation contract
 pub fn compile_vitest_with_module_visibility_sources_and_array_parameters(
     source: &str,
@@ -1371,6 +1405,50 @@ pub fn compile_vitest_with_module_visibility_sources_and_array_parameters(
     external_alias_sources: &[ExternalAliasSource<'_>],
     type_script_string_unions: &[TypeScriptStringUnion<'_>],
     visibility_sources: &[ModuleSource<'_>],
+    type_script_type_aliases: &[TypeScriptTypeAlias<'_>],
+    type_script_array_parameters: &[TypeScriptArrayParameter<'_>],
+    type_script_nullable_option_fields: &[TypeScriptNullableOptionField<'_>],
+    type_script_default_null_option_parameters: &[TypeScriptDefaultNullOptionParameter<'_>],
+    type_script_nullable_option_parameters: &[TypeScriptNullableOptionParameter<'_>],
+    type_script_nullable_option_returns: &[TypeScriptNullableOptionReturn<'_>],
+    support_sources: &[VitestSupportSource<'_>],
+) -> Result<String, CompileError> {
+    let visibility_sources = visibility_sources
+        .iter()
+        .map(|source| VitestVisibilitySource {
+            source: source.source,
+            path: source.path,
+            current_package: true,
+        })
+        .collect::<Vec<_>>();
+    return compile_vitest_with_named_visibility_sources_and_array_parameters(
+        source,
+        contract_module,
+        contract_source,
+        alias_sources,
+        external_alias_sources,
+        type_script_string_unions,
+        &visibility_sources,
+        type_script_type_aliases,
+        type_script_array_parameters,
+        type_script_nullable_option_fields,
+        type_script_default_null_option_parameters,
+        type_script_nullable_option_parameters,
+        type_script_nullable_option_returns,
+        support_sources,
+    );
+}
+
+/// Compiles one Rust test module with explicit package ownership for every visibility-only source.
+// flight-lint: allow(contract-vocabulary) compiler host tooling is not a transpilation contract
+pub fn compile_vitest_with_named_visibility_sources_and_array_parameters(
+    source: &str,
+    contract_module: &str,
+    contract_source: Option<&str>,
+    alias_sources: &[VitestAliasSource<'_>],
+    external_alias_sources: &[ExternalAliasSource<'_>],
+    type_script_string_unions: &[TypeScriptStringUnion<'_>],
+    visibility_sources: &[VitestVisibilitySource<'_>],
     type_script_type_aliases: &[TypeScriptTypeAlias<'_>],
     type_script_array_parameters: &[TypeScriptArrayParameter<'_>],
     type_script_nullable_option_fields: &[TypeScriptNullableOptionField<'_>],

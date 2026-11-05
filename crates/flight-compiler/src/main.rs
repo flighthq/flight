@@ -16,6 +16,13 @@ enum GenerateKind {
     Tests,
 }
 
+fn cargo_package_root(path: &Path) -> Option<PathBuf> {
+    return path
+        .ancestors()
+        .find(|ancestor| ancestor.join("Cargo.toml").is_file())
+        .and_then(|root| fs::canonicalize(root).ok());
+}
+
 struct GenerateOptions {
     alias_sources: Vec<PathBuf>,
     check: bool,
@@ -456,10 +463,21 @@ fn generate(options: &GenerateOptions, kind: GenerateKind) -> Result<(), String>
                 .iter()
                 .map(|path| path.to_string_lossy())
                 .collect::<Vec<_>>();
+            let current_package_root = cargo_package_root(&options.source);
             let visibility_source_refs = visibility_paths
                 .iter()
-                .zip(&visibility_sources)
-                .map(|(path, source)| flight_compiler::ModuleSource { path, source })
+                .zip(options.visibility_sources.iter().zip(&visibility_sources))
+                .map(|(path, (source_path, source))| flight_compiler::VitestVisibilitySource {
+                    path,
+                    source,
+                    current_package: match (
+                        &current_package_root,
+                        cargo_package_root(source_path),
+                    ) {
+                        (Some(current), Some(owner)) => current == &owner,
+                        _ => false,
+                    },
+                })
                 .collect::<Vec<_>>();
             let type_script_string_unions = options
                 .type_script_string_unions
@@ -522,7 +540,7 @@ fn generate(options: &GenerateOptions, kind: GenerateKind) -> Result<(), String>
                 .iter()
                 .map(|name| flight_compiler::TypeScriptNullableOptionReturn { name })
                 .collect::<Vec<_>>();
-            flight_compiler::compile_vitest_with_module_visibility_sources_and_array_parameters(
+            flight_compiler::compile_vitest_with_named_visibility_sources_and_array_parameters(
                 &source,
                 contract_module,
                 contract_source.as_deref(),

@@ -8587,6 +8587,73 @@ pub(crate) fn generation_context(
     );
 }
 
+/// Rebuilds same-package Vitest function provenance from emitted aliases plus named visibility-only
+/// sources. Visibility sources contribute declarations and public `use` edges only; their bodies
+/// remain inert. Contract selection and ambiguity checks are therefore identical for generated and
+/// target-native owners without promoting a target-native file into the alias/emission lane.
+pub(crate) fn insert_vitest_visibility_function_context<'a>(
+    context: &mut HashSet<String>,
+    programs: impl Iterator<Item = (&'a str, &'a Program, bool)>,
+    contract_source: Option<&str>,
+) -> Result<(), CompileError> {
+    let programs = programs.collect::<Vec<_>>();
+    context.retain(|value| {
+        !value.starts_with(VITEST_FUNCTION_CANDIDATE_MARKER)
+            && !value.starts_with(VITEST_PUBLIC_FUNCTION_MARKER)
+    });
+    let mut owners = ProvenanceDeclarations::new();
+    for (module, program, current_package) in &programs {
+        if !current_package {
+            continue;
+        }
+        for function in &program.functions {
+            if !is_public(&function.vis) {
+                continue;
+            }
+            let declaration = function.sig.ident.to_string();
+            owners
+                .entry(declaration.clone())
+                .or_default()
+                .insert(ProvenanceIdentity {
+                    declaration,
+                    module: (*module).to_string(),
+                });
+        }
+    }
+    for (declaration, identities) in &owners {
+        for identity in identities {
+            insert_provenance_binding(
+                context,
+                VITEST_FUNCTION_CANDIDATE_MARKER,
+                declaration,
+                &identity.encoded(),
+            );
+        }
+    }
+    let current_package_programs = programs
+        .iter()
+        .filter(|(_, _, current_package)| *current_package)
+        .map(|(module, program, _)| (*module, *program))
+        .collect::<Vec<_>>();
+    let module_bindings = public_module_bindings(&owners, &current_package_programs);
+    let contract_rules = contract_source.map(contract_export_rules).transpose()?;
+    let bindings = provenance_bindings(
+        &owners,
+        &module_bindings,
+        contract_rules.as_deref(),
+        "function",
+    )?;
+    for (exported, identity) in bindings {
+        insert_provenance_binding(
+            context,
+            VITEST_PUBLIC_FUNCTION_MARKER,
+            &exported,
+            &identity.encoded(),
+        );
+    }
+    return Ok(());
+}
+
 // Visibility-only siblings are not emitted or walked, but their declared struct owners and
 // collection-shaped fields are still type evidence for a generated source that imports them. Keep
 // this deliberately narrower than adding the siblings as alias programs: method dispatch may use

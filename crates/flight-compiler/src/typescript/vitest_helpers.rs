@@ -930,6 +930,23 @@ fn resolved_vitest_path_binding(
         )
         .map(Some);
     }
+    if resolved_segments.len() == 3 && resolved_segments[1] == "contract" {
+        let Some(identity) =
+            resolved_provenance_binding(context, binding_marker, candidate_marker, &last, kind)?
+        else {
+            return Err(compile_error(format!(
+                "qualified current-package {kind} path `{first}::contract::{last}` is not selected by contract.rs"
+            )));
+        };
+        return selected_vitest_binding_for_identity(
+            context,
+            binding_marker,
+            &identity,
+            &last,
+            kind,
+        )
+        .map(Some);
+    }
     let identity = resolved_qualified_vitest_identity(
         context,
         &resolved_segments,

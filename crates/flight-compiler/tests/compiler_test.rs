@@ -3,7 +3,7 @@ use flight_compiler::{
     TypeScriptArrayParameterRepresentation, TypeScriptDefaultNullOptionParameter,
     TypeScriptInlineStringUnion, TypeScriptNullableOptionField, TypeScriptNullableOptionParameter,
     TypeScriptNullableOptionReturn, TypeScriptStringUnion, TypeScriptTypeAlias, VitestAliasSource,
-    VitestSupportSource, compile_typescript, compile_typescript_lenient,
+    VitestSupportSource, VitestVisibilitySource, compile_typescript, compile_typescript_lenient,
     compile_typescript_with_alias_sources, compile_typescript_with_external_alias_sources,
     compile_typescript_with_module_sources, compile_typescript_with_options,
     compile_typescript_with_options_and_internal_type_exports,
@@ -12,8 +12,8 @@ use flight_compiler::{
     compile_vitest_with_contract_alias_sources, compile_vitest_with_external_alias_sources,
     compile_vitest_with_module_alias_sources,
     compile_vitest_with_module_visibility_sources_and_array_parameters,
-    compile_vitest_with_options, compile_vitest_with_visibility_sources, root_only_names,
-    source_mode,
+    compile_vitest_with_named_visibility_sources_and_array_parameters, compile_vitest_with_options,
+    compile_vitest_with_visibility_sources, root_only_names, source_mode,
 };
 
 mod source_modes {
@@ -24353,6 +24353,147 @@ fn qualified_literal_uses_current_provenance() {
         assert!(output.contains("typed.previous = null;"));
         assert!(output.contains("expect(typed.previous === null).toBe(true);"));
         assert!(!output.contains("previous: undefined"));
+    }
+
+    #[test]
+    fn resolves_contract_qualified_functions_from_module_visibility_sources() {
+        let native = r#"
+//! flight-compiler: target-native
+
+pub fn apply_value(value: i32) -> i32 {
+    return value + 1;
+}
+"#;
+        let private_decoy = r#"
+//! flight-compiler: target-native
+
+fn apply_value(value: i32) -> i32 {
+    return value + 100;
+}
+"#;
+        let contract = "pub use crate::native::apply_value;\n";
+        let source = r#"
+#[test]
+fn calls_the_selected_target_native_function() {
+    assert_eq!(flight_example::contract::apply_value(2), 3);
+}
+"#;
+
+        let output = compile_vitest_with_named_visibility_sources_and_array_parameters(
+            source,
+            "@flighthq/example/contract",
+            Some(contract),
+            &[],
+            &[],
+            &[],
+            &[
+                VitestVisibilitySource {
+                    source: native,
+                    path: "crates/flight-example/src/native.rs",
+                    current_package: true,
+                },
+                VitestVisibilitySource {
+                    source: private_decoy,
+                    path: "crates/flight-example/src/private_decoy.rs",
+                    current_package: true,
+                },
+            ],
+            &[],
+            &[],
+            &[],
+            &[],
+            &[],
+            &[],
+            &[],
+        )
+        .unwrap();
+
+        assert!(output.contains("  applyValue,"), "{output}");
+        assert!(
+            output.contains("} from '@flighthq/example/contract';"),
+            "{output}"
+        );
+        assert!(output.contains("expect(applyValue(2)).toEqual(3);"), "{output}");
+        assert!(!output.contains("flightExample"), "{output}");
+    }
+
+    #[test]
+    fn refuses_unselected_private_foreign_and_ambiguous_visibility_functions() {
+        let source = r#"
+#[test]
+fn calls_a_function() {
+    assert_eq!(flight_example::contract::apply_value(2), 3);
+}
+"#;
+        let public = "//! flight-compiler: target-native\npub fn apply_value(value: i32) -> i32 { value }\n";
+        let private = "//! flight-compiler: target-native\nfn apply_value(value: i32) -> i32 { value }\n";
+        let cases = [
+            (
+                "pub use crate::private::apply_value;\n",
+                vec![VitestVisibilitySource {
+                    source: private,
+                    path: "crates/flight-example/src/private.rs",
+                    current_package: true,
+                }],
+                "qualified current-package function path `flight_example::contract::apply_value` is not selected by contract.rs",
+            ),
+            (
+                "",
+                vec![VitestVisibilitySource {
+                    source: public,
+                    path: "crates/flight-example/src/native.rs",
+                    current_package: true,
+                }],
+                "contract.rs does not select a unique public export",
+            ),
+            (
+                "pub use crate::native::apply_value;\n",
+                vec![VitestVisibilitySource {
+                    source: public,
+                    path: "crates/flight-other/src/native.rs",
+                    current_package: false,
+                }],
+                "qualified current-package function path `flight_example::contract::apply_value` is not selected by contract.rs",
+            ),
+            (
+                "pub use crate::first::*;\npub use crate::second::*;\n",
+                vec![
+                    VitestVisibilitySource {
+                        source: public,
+                        path: "crates/flight-example/src/first.rs",
+                        current_package: true,
+                    },
+                    VitestVisibilitySource {
+                        source: public,
+                        path: "crates/flight-example/src/second.rs",
+                        current_package: true,
+                    },
+                ],
+                "ambiguous public function export `apply_value` resolves to",
+            ),
+        ];
+
+        for (contract, visibility, expected) in cases {
+            let error = compile_vitest_with_named_visibility_sources_and_array_parameters(
+                source,
+                "@flighthq/example/contract",
+                Some(contract),
+                &[],
+                &[],
+                &[],
+                &visibility,
+                &[],
+                &[],
+                &[],
+                &[],
+                &[],
+                &[],
+                &[],
+            )
+            .unwrap_err()
+            .to_string();
+            assert!(error.contains(expected), "{error}");
+        }
     }
 
     #[test]
