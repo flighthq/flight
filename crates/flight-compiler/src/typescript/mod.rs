@@ -154,7 +154,7 @@ use pattern_helpers::*;
 use pinned_boxed_emit::*;
 use program_emit::*;
 pub(crate) use program_emit::{
-    collect_cross_crate_use_tree, emit_program, is_lowered_cross_crate_type,
+    EmitProgramInput, collect_cross_crate_use_tree, emit_program, is_lowered_cross_crate_type,
     is_lowered_cross_crate_value, test_cross_crate_imports, test_mixed_foreign_wildcard_roots,
 };
 use program_helpers::*;
@@ -253,69 +253,4 @@ mod tests {
             Some(outer_identity.to_string())
         );
     }
-}
-
-pub(crate) struct EmitProgramInput<'a> {
-    pub program: &'a Program,
-    pub entity_module: Option<&'a str>,
-    pub alias_programs: &'a [Program],
-    pub external_alias_programs: &'a [(BTreeMap<String, String>, &'a str)],
-    pub external_nullable_programs: &'a [(&'a str, &'a ExternalNullableOptionProgram)],
-    pub external_record_structs: &'a [ItemStruct],
-    pub dependency_export_names: &'a [(BTreeMap<String, String>, &'a str)],
-    pub external_string_unions: &'a BTreeSet<String>,
-    pub inline_string_unions: &'a BTreeMap<String, Vec<String>>,
-    pub internal_type_exports: &'a [&'a str],
-    pub type_script_type_aliases: &'a [crate::TypeScriptTypeAlias<'a>],
-    pub type_script_array_parameters: &'a [crate::TypeScriptArrayParameter<'a>],
-    pub type_script_array_fields: &'a [crate::TypeScriptArrayField<'a>],
-    pub type_script_array_returns: &'a [crate::TypeScriptArrayReturn<'a>],
-    pub type_script_nullable_option_fields: &'a [crate::TypeScriptNullableOptionField<'a>],
-    pub type_script_default_null_option_parameters:
-        &'a [crate::TypeScriptDefaultNullOptionParameter<'a>],
-    pub type_script_nullable_option_parameters:
-        &'a [crate::TypeScriptNullableOptionParameter<'a>],
-    pub type_script_nullable_option_returns: &'a [crate::TypeScriptNullableOptionReturn<'a>],
-    pub external_shared_identity_fields: &'a BTreeSet<String>,
-    pub module_identities: Option<&'a [String]>,
-    pub visibility_programs: &'a [Program],
-    pub visibility_identities: &'a [Option<String>],
-    pub source_paths: &'a [Option<String>],
-    pub lenient: bool,
-}
-
-// `rust_type_is_shared_identity` for a test file's declared type: its own aliases stand for their
-// definitions, and a bare imported name may be the one loaded source alias so called.
-fn vitest_type_is_shared_identity(
-    context: &HashSet<String>,
-    aliases: &BTreeMap<String, Type>,
-    rust_type: &Type,
-    depth: usize,
-) -> bool {
-    if depth > 16 {
-        return false;
-    }
-    if let Type::Path(path) = rust_type
-        && path.qself.is_none()
-        && path.path.leading_colon.is_none()
-        && path.path.segments.len() == 1
-        && matches!(path.path.segments[0].arguments, PathArguments::None)
-    {
-        let name = path.path.segments[0].ident.to_string();
-        if let Some(definition) = aliases.get(&name) {
-            return vitest_type_is_shared_identity(context, aliases, definition, depth + 1);
-        }
-        if let Some((owner, alias)) = unique_alias_owner(context, &name)
-            && let Some(definition) = unique_marker_suffix(
-                context,
-                &format!(
-                    "{TYPE_ALIAS_DEFINITION_MARKER}{owner}{PROVENANCE_SEPARATOR}{alias}{PROVENANCE_SEPARATOR}"
-                ),
-            )
-            .and_then(|definition| syn::parse_str::<Type>(&definition).ok())
-        {
-            return shared_identity_type_at_depth(context, Some(&owner), &definition, depth + 1);
-        }
-    }
-    return rust_type_is_shared_identity(context, rust_type);
 }

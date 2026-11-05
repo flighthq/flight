@@ -6,12 +6,12 @@ use syn::punctuated::Punctuated;
 use syn::visit::Visit;
 use syn::{Expr, ItemStruct, ItemUse, Pat, ReturnType, Token};
 
-use crate::model::{Program, TestProgram};
+use crate::model::{ExternalNullableOptionProgram, Program, TestProgram};
 use crate::{CompileError, compile_error};
 
 use super::{
     ASYNC_FLIGHT_ERROR_FUNCTION_MARKER, CURRENT_SOURCE_MARKER, CrossCrateSymbol,
-    CrossCrateUsageCollector, EmitProgramInput, NULLABLE_OPTIONS_MARKER, ProvenanceImportRule,
+    CrossCrateUsageCollector, NULLABLE_OPTIONS_MARKER, ProvenanceImportRule,
     VITEST_LOCAL_MODULE_ALIAS_MARKER, data_union_pattern_test, dependency_export_name,
     emit_const_group, emit_constant, emit_entity_runtime_state_stores, emit_enum, emit_expression,
     emit_function, emit_internal_type_export_declarations, emit_path_segment, emit_static,
@@ -39,6 +39,35 @@ use super::{
     type_script_type_aliases, used_identity_aliases, validate_dependency_export_name_bindings,
     vitest_current_path_prefix, write_indent,
 };
+pub(crate) struct EmitProgramInput<'a> {
+    pub program: &'a Program,
+    pub entity_module: Option<&'a str>,
+    pub alias_programs: &'a [Program],
+    pub external_alias_programs: &'a [(BTreeMap<String, String>, &'a str)],
+    pub external_nullable_programs: &'a [(&'a str, &'a ExternalNullableOptionProgram)],
+    pub external_record_structs: &'a [ItemStruct],
+    pub dependency_export_names: &'a [(BTreeMap<String, String>, &'a str)],
+    pub external_string_unions: &'a BTreeSet<String>,
+    pub inline_string_unions: &'a BTreeMap<String, Vec<String>>,
+    pub internal_type_exports: &'a [&'a str],
+    pub type_script_type_aliases: &'a [crate::TypeScriptTypeAlias<'a>],
+    pub type_script_array_parameters: &'a [crate::TypeScriptArrayParameter<'a>],
+    pub type_script_array_fields: &'a [crate::TypeScriptArrayField<'a>],
+    pub type_script_array_returns: &'a [crate::TypeScriptArrayReturn<'a>],
+    pub type_script_nullable_option_fields: &'a [crate::TypeScriptNullableOptionField<'a>],
+    pub type_script_default_null_option_parameters:
+        &'a [crate::TypeScriptDefaultNullOptionParameter<'a>],
+    pub type_script_nullable_option_parameters:
+        &'a [crate::TypeScriptNullableOptionParameter<'a>],
+    pub type_script_nullable_option_returns: &'a [crate::TypeScriptNullableOptionReturn<'a>],
+    pub external_shared_identity_fields: &'a BTreeSet<String>,
+    pub module_identities: Option<&'a [String]>,
+    pub visibility_programs: &'a [Program],
+    pub visibility_identities: &'a [Option<String>],
+    pub source_paths: &'a [Option<String>],
+    pub lenient: bool,
+}
+
 pub(crate) fn collect_cross_crate_use_tree(
     tree: &syn::UseTree,
     prefix: &mut Vec<String>,
