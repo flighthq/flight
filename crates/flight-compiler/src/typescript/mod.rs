@@ -20913,17 +20913,25 @@ fn emit_method_call(
         )),
         "is_some_and" if arguments.len() == 1 => {
             let absent = option_absent_value(&call.receiver, entities);
-            Ok(format!(
-                "({receiver} !== {absent} && ({})({receiver}))",
-                arguments[0]
-            ))
+            if let Some(inlined) = inline_emitted_closure(&arguments[0], &receiver) {
+                Ok(format!("({receiver} !== {absent} && {inlined})"))
+            } else {
+                Ok(format!(
+                    "({receiver} !== {absent} && ({})({receiver}))",
+                    arguments[0]
+                ))
+            }
         }
         "is_none_or" if arguments.len() == 1 => {
             let absent = option_absent_value(&call.receiver, entities);
-            Ok(format!(
-                "({receiver} === {absent} || ({})({receiver}))",
-                arguments[0]
-            ))
+            if let Some(inlined) = inline_emitted_closure(&arguments[0], &receiver) {
+                Ok(format!("({receiver} === {absent} || {inlined})"))
+            } else {
+                Ok(format!(
+                    "({receiver} === {absent} || ({})({receiver}))",
+                    arguments[0]
+                ))
+            }
         }
         "is_empty" if arguments.is_empty() => Ok(format!("{receiver}.length === 0")),
         "is_lt" if arguments.is_empty() => Ok(format!("({receiver} < 0)")),
@@ -26836,6 +26844,38 @@ fn integer_literal_fits_cast(expr: &Expr, ty: &Type) -> bool {
         "i32" | "isize" => (-2147483648..=2147483647i128).contains(&value),
         _ => false,
     };
+}
+
+fn inline_emitted_closure(emitted: &str, receiver: &str) -> Option<String> {
+    let s = emitted.trim();
+    let rest = s.strip_prefix('(')?;
+    let (param, body) = rest.split_once(") => ")?;
+    let param = param.trim();
+    if param.is_empty() || param.contains(',') || param.contains(':') {
+        return None;
+    }
+    let body = body.trim();
+    if body.contains('{') {
+        return None;
+    }
+    let mut result = String::new();
+    let mut remaining = body;
+    while let Some(pos) = remaining.find(param) {
+        let before = pos > 0 && remaining.as_bytes()[pos - 1].is_ascii_alphanumeric();
+        let after_end = pos + param.len();
+        let after =
+            after_end < remaining.len() && remaining.as_bytes()[after_end].is_ascii_alphanumeric();
+        if before || after {
+            result.push_str(&remaining[..after_end]);
+            remaining = &remaining[after_end..];
+        } else {
+            result.push_str(&remaining[..pos]);
+            result.push_str(receiver);
+            remaining = &remaining[after_end..];
+        }
+    }
+    result.push_str(remaining);
+    Some(result)
 }
 
 fn emitted_closure_is_identity(emitted: &str) -> bool {

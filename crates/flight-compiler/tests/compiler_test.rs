@@ -27792,4 +27792,22 @@ pub fn describe(value: Option<f64>) -> String {
             "two-arm option match should not produce else-if: {output}"
         );
     }
+
+    #[test]
+    fn inlines_is_some_and_closure_body() {
+        let source = r#"
+pub fn is_positive(value: Option<f64>) -> bool {
+    return value.is_some_and(|v| v > 0.0);
+}
+"#;
+        let output = compile_typescript(source, None).unwrap();
+        assert!(
+            output.contains("value !== undefined && value > 0.0"),
+            "is_some_and closure should inline: {output}"
+        );
+        assert!(
+            !output.contains("=>"),
+            "inlined is_some_and should not contain arrow function: {output}"
+        );
+    }
 }
