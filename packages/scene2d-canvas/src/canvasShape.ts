@@ -1,4 +1,5 @@
 ﻿import { getRenderStateRuntime, noopRendererData } from '@flighthq/render/contract';
+import type { Shape } from '@flighthq/shape/contract';
 import type {
   CanvasRenderState,
   CanvasShapeDrawState,
@@ -6,7 +7,6 @@ import type {
   RenderProxy2D,
   RenderState,
   Scene2DRenderer,
-  Shape,
 } from '@flighthq/types/contract';
 import { RenderRegistryTable } from '@flighthq/types/contract';
 

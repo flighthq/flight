@@ -21,6 +21,8 @@ import {
 } from '@flighthq/scene2d-resources/contract';
 import { setNode2DClip } from '@flighthq/scene2d/contract';
 import { getShapeFillRegions, setMorphShapeProgress } from '@flighthq/shape/contract';
+import type { MorphShape } from '@flighthq/shape/contract';
+import { MorphShapeKind } from '@flighthq/shape/contract';
 import type {
   ClipRegion,
   EntityConstruction,
@@ -29,7 +31,6 @@ import type {
   HostDecompressLzmaCapability,
   ImportDiagnostic,
   Adjustment,
-  MorphShape,
   MovieClip,
   Node2D,
   Node2DFields,
@@ -53,7 +54,7 @@ import type {
   TimelineLabel,
   TimelineSource,
 } from '@flighthq/types/contract';
-import { Compression, CompressionFraming, ImportDiagnosticSeverity, MorphShapeKind } from '@flighthq/types/contract';
+import { Compression, CompressionFraming, ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
 import { expandSwfTagHandlerDispatch } from './expandSwfTagHandlerDispatch.ts';
 import { applySwfMorphBounds, createSwfDisplayObject, createSwfMovieClip } from './swfNode.ts';

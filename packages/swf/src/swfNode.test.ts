@@ -2,8 +2,9 @@ import { createRectangle } from '@flighthq/geometry/contract';
 import { getNodeLocalBoundsRectangle } from '@flighthq/node/contract';
 import { appendPathLineTo, appendPathMoveTo, createPath, createPathMorph } from '@flighthq/path/contract';
 import { createMorphShape, setMorphShapeProgress } from '@flighthq/shape/contract';
+import type { MorphShape } from '@flighthq/shape/contract';
 import { createTexture } from '@flighthq/texture/contract';
-import type { MorphShape, Node2D, Rectangle } from '@flighthq/types/contract';
+import type { Node2D, Rectangle } from '@flighthq/types/contract';
 import { MovieClipKind, SpriteKind } from '@flighthq/types/contract';
 
 import {

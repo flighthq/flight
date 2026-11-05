@@ -1,9 +1,10 @@
 import { getNodeChildAt, getNodeChildCount } from '@flighthq/node/contract';
+import { ShapeKind } from '@flighthq/shape/contract';
 import { TextLabelKind } from '@flighthq/text/contract';
 import type { LottieShapeItemHandler, LottieShapeItemKind } from '@flighthq/types/contract';
 import { LottieShapeItemKind as Kind } from '@flighthq/types/contract';
 import type { LottieDocument, LottieLayer, LottieShapePath, Node2D } from '@flighthq/types/contract';
-import { ShapeKind, SpriteKind } from '@flighthq/types/contract';
+import { SpriteKind } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { lottieFillShapeItemHandler } from './lottieFillShapeItem.ts';

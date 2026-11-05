@@ -6,9 +6,10 @@ import {
   getNodeLocalMatrix,
 } from '@flighthq/node/contract';
 import { getShapeBounds } from '@flighthq/shape/contract';
+import type { Shape } from '@flighthq/shape/contract';
+import { ShapeKind } from '@flighthq/shape/contract';
 import { RichTextKind, TextLabelKind } from '@flighthq/text/contract';
-import type { Node2D, Rectangle, Shape, SvgImportContext } from '@flighthq/types/contract';
-import { ShapeKind } from '@flighthq/types/contract';
+import type { Node2D, Rectangle, SvgImportContext } from '@flighthq/types/contract';
 
 export function createSvgNode2DBounds(target: Node2D, context: SvgImportContext): Rectangle | null {
   if (target.kind === TextLabelKind || target.kind === RichTextKind) return null;

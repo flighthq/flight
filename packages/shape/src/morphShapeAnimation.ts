@@ -1,14 +1,9 @@
 import { sampleAnimationClip } from '@flighthq/animation/contract';
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type {
-  AnimationChannel,
-  AnimationClip,
-  EntityConstruction,
-  MorphShape,
-  MorphShapeAnimationTarget,
-} from '@flighthq/types/contract';
-import { MorphShapeKind } from '@flighthq/types/contract';
+import type { AnimationChannel, AnimationClip, EntityConstruction } from '@flighthq/types/contract';
 
+import type { MorphShape, MorphShapeAnimationTarget } from './contract.shape-types.ts';
+import { MorphShapeKind } from './contract.shape-types.ts';
 import { setMorphShapeProgress } from './morphShape.ts';
 
 // Samples every channel at `time` and applies the channels carrying MorphShapeAnimationTarget refs.

@@ -1,12 +1,13 @@
+import type { Shape } from '@flighthq/shape/contract';
+import { ShapeKind } from '@flighthq/shape/contract';
 import type {
   ImportDiagnostic,
   LottieLayer,
   LottieRegistry,
   LottieShapeItemHandler,
   LottieShapeItemKind,
-  Shape,
 } from '@flighthq/types/contract';
-import { LottieLayerKind, LottieShapeItemKind as Kind, ShapeKind } from '@flighthq/types/contract';
+import { LottieLayerKind, LottieShapeItemKind as Kind } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { createScene2DFromLottieDocumentWithRegistry } from './lottieDocument.ts';

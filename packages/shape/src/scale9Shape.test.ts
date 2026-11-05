@@ -1,6 +1,7 @@
-import type { ShapeCommandToken } from '@flighthq/types/contract';
-import { EntityRuntimeKey, Scale9ShapeKind } from '@flighthq/types/contract';
+import { EntityRuntimeKey } from '@flighthq/types/contract';
 
+import type { ShapeCommandToken } from './contract.shape-types.ts';
+import { Scale9ShapeKind } from './contract.shape-types.ts';
 import {
   createScale9Shape,
   createScale9ShapeData,

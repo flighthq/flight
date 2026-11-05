@@ -34,9 +34,10 @@ import {
   createShape,
   setMorphShapeProgress,
 } from '@flighthq/shape/contract';
+import { MorphShapeKind, ShapeKind } from '@flighthq/shape/contract';
 import { createTexture } from '@flighthq/texture/contract';
 import type { CanvasRenderState, HostImageCapability } from '@flighthq/types/contract';
-import { EntityRuntimeKey, MorphShapeKind, RenderRegistryTable, ShapeKind } from '@flighthq/types/contract';
+import { EntityRuntimeKey, RenderRegistryTable } from '@flighthq/types/contract';
 
 import { registerCanvasBitmapTextureResolver } from './canvasBitmapTextureResolver.ts';
 import { registerCanvasImageTextureResolver } from './canvasImageTextureResolver.ts';

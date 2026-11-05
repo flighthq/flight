@@ -3,15 +3,16 @@ import { collectImportDiagnostics } from '@flighthq/importdiagnostics/contract';
 import { getNodeChildAt, getNodeChildCount } from '@flighthq/node/contract';
 import { martinezPathBooleanKernel } from '@flighthq/path-boolean/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
+import type { Shape } from '@flighthq/shape/contract';
+import { ShapeKind } from '@flighthq/shape/contract';
 import type {
   DisplayObject,
   ImportDiagnostic,
   Node2D,
   RiveArtboardGraph,
   RiveCoreObject,
-  Shape,
 } from '@flighthq/types/contract';
-import { ImportDiagnosticSeverity, RiveFieldType, ShapeKind } from '@flighthq/types/contract';
+import { ImportDiagnosticSeverity, RiveFieldType } from '@flighthq/types/contract';
 
 import {
   applyAnimationClipToRiveDocument,

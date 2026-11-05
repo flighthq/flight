@@ -1,7 +1,7 @@
 ﻿import { registerNodeRenderer } from '@flighthq/render/contract';
 import { getOrCreateRenderProxy2D } from '@flighthq/render/contract';
 import { appendShapeBeginFill, appendShapeRectangle, createScale9Shape } from '@flighthq/shape/contract';
-import { Scale9ShapeKind } from '@flighthq/types/contract';
+import { Scale9ShapeKind } from '@flighthq/shape/contract';
 
 import { buildScale9Mapper } from './canvasScale9Mapper.ts';
 import { canvasScale9ShapeRenderer, drawCanvasScale9Shape } from './canvasScale9Shape.ts';

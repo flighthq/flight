@@ -1,3 +1,4 @@
+export * from './contract.shape-types.ts';
 export * from './compactStrokePath.ts';
 export * from './enableShapeBoundsGuards.ts';
 export * from './explainMorphShapeGradientEndpoints.ts';

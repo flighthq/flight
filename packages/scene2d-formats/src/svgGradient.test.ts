@@ -1,5 +1,5 @@
 import { getNodeChildAt } from '@flighthq/node/contract';
-import type { Shape } from '@flighthq/types/contract';
+import type { Shape } from '@flighthq/shape/contract';
 import { describe, expect, it } from 'vitest';
 
 import { createScene2DFromSvgDocument } from './svgImport.ts';

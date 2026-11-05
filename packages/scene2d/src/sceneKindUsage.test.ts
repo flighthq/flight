@@ -1,6 +1,7 @@
 import { createStandardMaterial } from '@flighthq/materials/contract';
 import { addNodeChild } from '@flighthq/node/contract';
-import type { Node2D, Node2DData, ShapeCommandToken } from '@flighthq/types/contract';
+import type { Node2D, Node2DData } from '@flighthq/types/contract';
+import type { ShapeCommandToken } from '@flighthq/types/contract';
 import { BlendMode, DisplayObjectKind, HtmlViewKind } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 

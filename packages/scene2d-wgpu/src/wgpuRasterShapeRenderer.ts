@@ -3,8 +3,10 @@ import { getNodeLocalBoundsRectangle, getNodeLocalContentRevision } from '@fligh
 import { bindWgpuImageResourceTexture, resolveWgpuQuadMaterialRenderer } from '@flighthq/render-wgpu/contract';
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
 import { createCanvasHostSurface, destroyCanvasHostSurface } from '@flighthq/render/contract';
-import type { RenderProxy2D, Scene2DRenderer, Shape, WgpuRenderState } from '@flighthq/types/contract';
-import { BatchFormat, RenderRegistryTable, ShapeKind } from '@flighthq/types/contract';
+import type { Shape } from '@flighthq/shape/contract';
+import { ShapeKind } from '@flighthq/shape/contract';
+import type { RenderProxy2D, Scene2DRenderer, WgpuRenderState } from '@flighthq/types/contract';
+import { BatchFormat, RenderRegistryTable } from '@flighthq/types/contract';
 
 import {
   QUAD_BATCH_INSTANCE_FLOATS,

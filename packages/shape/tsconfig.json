@@ -1,13 +1,6 @@
 {
-  "extends": "../../tsconfig.base.json",
-  "compilerOptions": {
-    "composite": true,
-    "rootDir": "src",
-    "outDir": "dist",
-    "declaration": true,
-    "declarationMap": true,
-    "sourceMap": true
-  },
+  "compilerOptions": { "composite": true },
+  "files": [],
   "references": [
     { "path": "../animation" },
     { "path": "../entity" },
@@ -17,7 +10,8 @@
     { "path": "../node" },
     { "path": "../path/tsconfig.runtime.json" },
     { "path": "../scene2d" },
-    { "path": "../types" }
-  ],
-  "include": ["src"]
+    { "path": "../types" },
+    { "path": "./tsconfig.contract.json" },
+    { "path": "./tsconfig.runtime.json" }
+  ]
 }

@@ -10,7 +10,7 @@ import {
   appendShapeRectangle,
   createShape,
 } from '@flighthq/shape/contract';
-import { ShapeKind } from '@flighthq/types/contract';
+import { ShapeKind } from '@flighthq/shape/contract';
 
 import { createDomRenderState, getDomRenderStateRuntime } from './domRenderState.ts';
 import { domMorphShapeRenderer, domShapeRenderer, drawDomShape, initializeDomShapeData } from './domShape.ts';

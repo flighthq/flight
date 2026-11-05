@@ -1,16 +1,14 @@
 import { withKindMapEntry } from '@flighthq/registry/contract';
+import { MorphShapeKind, Scale9ShapeKind, ShapeKind } from '@flighthq/shape/contract';
 import { RichTextKind, TextLabelKind } from '@flighthq/text/contract';
 import type { CanvasRenderRegistries, Kind, NodeRenderer } from '@flighthq/types/contract';
 import {
   BitmapTextKind,
   DisplayObjectKind,
-  MorphShapeKind,
   ParticleEmitter2DKind,
   QuadBatchKind,
   RenderCacheKind,
-  Scale9ShapeKind,
   Scale9SpriteKind,
-  ShapeKind,
   SpriteKind,
   TilemapKind,
 } from '@flighthq/types/contract';

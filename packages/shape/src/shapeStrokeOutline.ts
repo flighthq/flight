@@ -1,9 +1,10 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { Path, StrokeStyle } from '@flighthq/path/contract';
 import { PathCommand } from '@flighthq/path/contract';
-import type { EntityConstruction, ShapeCommandToken, ShapeFillRegion } from '@flighthq/types/contract';
+import type { EntityConstruction } from '@flighthq/types/contract';
 
 import { compactStrokePath } from './compactStrokePath.ts';
+import type { ShapeCommandToken, ShapeFillRegion } from './contract.shape-types.ts';
 import { writeShapeGeometryCommandEnd } from './shapeCommandGeometry.ts';
 import { appendShapeGeometryCommand, getPathCommandOperandCount } from './shapeFill.ts';
 

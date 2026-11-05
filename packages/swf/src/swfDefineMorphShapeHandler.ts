@@ -1,11 +1,6 @@
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
-import type {
-  ImportDiagnostic,
-  MorphShape,
-  SwfTagHandler,
-  SwfTagParseState,
-  SwfTagReader,
-} from '@flighthq/types/contract';
+import type { MorphShape } from '@flighthq/shape/contract';
+import type { ImportDiagnostic, SwfTagHandler, SwfTagParseState, SwfTagReader } from '@flighthq/types/contract';
 import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
 import { readSwfBoundedDefinitionHeader } from './swfBoundedDefinition.ts';

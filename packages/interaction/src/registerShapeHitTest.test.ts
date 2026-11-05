@@ -10,7 +10,8 @@ import {
   createShape,
   setMorphShapeProgress,
 } from '@flighthq/shape/contract';
-import { MorphShapeKind, ShapeKind } from '@flighthq/types/contract';
+import { MorphShapeKind } from '@flighthq/shape/contract';
+import { ShapeKind } from '@flighthq/shape/contract';
 
 import { findGraphHitTargetPrecise, hitTestGraphLocalBounds, hitTestGraphPoint, registerHitTest } from './hitTests.ts';
 import { setNodeHitTestEnabled } from './nodeInteractionState.ts';

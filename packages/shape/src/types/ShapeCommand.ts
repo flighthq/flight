@@ -1,0 +1,88 @@
+import type { Matrix } from '@flighthq/geometry/contract';
+import type { PathWinding } from '@flighthq/path/contract';
+import type { Texture } from '@flighthq/types/contract';
+
+import type { TriangleCulling } from './TriangleCulling.ts';
+
+export type CapsStyle = 'none' | 'round' | 'square';
+
+export type GradientType = 'linear' | 'radial';
+
+export type InterpolationMethod = 'linearRGB' | 'rgb';
+
+export type JointStyle = 'bevel' | 'miter' | 'round';
+
+export type LineScaleMode = 'horizontal' | 'none' | 'normal' | 'vertical';
+
+export type SpreadMethod = 'pad' | 'reflect' | 'repeat';
+
+// Maps command key strings to their argument tuples. May be extended via declaration merging.
+export interface ShapeCommandRegistry {
+  beginTextureFill: readonly [texture: Texture, matrix: Matrix | null];
+  beginFill: readonly [color: number, alpha: number];
+  beginGradientFill: readonly [
+    gradientType: GradientType,
+    colors: number[],
+    alphas: number[],
+    ratios: number[],
+    matrix: Matrix | null,
+    spreadMethod: SpreadMethod,
+    interpolationMethod: InterpolationMethod,
+    focalPointRatio: number,
+  ];
+  cubicCurveTo: readonly [
+    controlX1: number,
+    controlY1: number,
+    controlX2: number,
+    controlY2: number,
+    x: number,
+    y: number,
+  ];
+  quadraticCurveTo: readonly [controlX: number, controlY: number, x: number, y: number];
+  drawCircle: readonly [centerX: number, centerY: number, radius: number];
+  drawEllipse: readonly [centerX: number, centerY: number, radiusX: number, radiusY: number];
+  drawPath: readonly [commands: number[], data: number[], winding: PathWinding];
+  drawRectangle: readonly [x: number, y: number, width: number, height: number];
+  drawRoundedRectangle: readonly [x: number, y: number, width: number, height: number, radius: number];
+  drawTriangles: readonly [
+    vertices: number[],
+    indices: number[] | null,
+    uvtData: number[] | null,
+    culling: TriangleCulling,
+  ];
+  endFill: readonly [];
+  lineTextureStyle: readonly [texture: Texture, matrix: Matrix | null];
+  lineGradientStyle: readonly [
+    gradientType: GradientType,
+    colors: number[],
+    alphas: number[],
+    ratios: number[],
+    matrix: Matrix | null,
+    spreadMethod: SpreadMethod,
+    interpolationMethod: InterpolationMethod,
+    focalPointRatio: number,
+  ];
+  lineStyle: readonly [
+    thickness: number,
+    color: number,
+    alpha: number,
+    pixelHinting: boolean,
+    scaleMode: LineScaleMode,
+    caps: CapsStyle,
+    joints: JointStyle,
+    miterLimit: number,
+  ];
+  lineTo: readonly [x: number, y: number];
+  moveTo: readonly [x: number, y: number];
+}
+
+export type ShapeCommandKey = keyof ShapeCommandRegistry;
+
+// One slot of the flat, heterogeneous shape command buffer (`ShapeData.commands`). The buffer stores
+// each command inline as a key string, an argument count, then that many argument tokens:
+// `[key, argCount, ...args, key, argCount, ...args, …]`. Across all commands an argument slot may hold
+// a coordinate/color/count (number), a style keyword or command key (string), a flag (boolean), a
+// gradient/triangle/path buffer (number[]), a fill matrix (Matrix, or null when absent), or a bitmap
+// fill's live Texture. A reader advances by `argCount + 2` and casts each slot to the
+// type its command's `ShapeCommandRegistry` entry documents.
+export type ShapeCommandToken = Matrix | Texture | boolean | number | readonly number[] | string | null;

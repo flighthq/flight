@@ -1,8 +1,8 @@
 import { tessellateStrokePath } from '@flighthq/path/contract';
 import { PathCommand } from '@flighthq/path/contract';
-import type { ShapeCommandToken } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
+import type { ShapeCommandToken } from './contract.shape-types.ts';
 import { createShape } from './shape.ts';
 import {
   appendShapeEllipticalArcTo,

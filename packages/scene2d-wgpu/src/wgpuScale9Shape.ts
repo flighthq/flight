@@ -4,6 +4,8 @@ import { bindWgpuImageResourceTexture, drawWgpuQuadWithTransform } from '@flight
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
 import { createCanvasHostSurface, destroyCanvasHostSurface } from '@flighthq/render/contract';
 import { mapScale9ShapeCommands } from '@flighthq/shape/contract';
+import type { Scale9Shape, ShapeCommandToken } from '@flighthq/shape/contract';
+import { Scale9ShapeKind } from '@flighthq/shape/contract';
 import type {
   CanvasSurface,
   HostCanvasCapability,
@@ -13,12 +15,10 @@ import type {
   RendererData,
   RenderProxy2D,
   RenderState,
-  Scale9Shape,
   Scene2DRenderer,
-  ShapeCommandToken,
   WgpuRenderState,
 } from '@flighthq/types/contract';
-import { RenderRegistryTable, Scale9ShapeKind } from '@flighthq/types/contract';
+import { RenderRegistryTable } from '@flighthq/types/contract';
 
 import { flushWgpuQuadBatchWriter } from './wgpuQuadBatchWriter.ts';
 import { createWgpuRendererData, getWgpuRendererData } from './wgpuRendererData.ts';

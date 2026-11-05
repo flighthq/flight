@@ -2,6 +2,7 @@ import { addNodeChild } from '@flighthq/node/contract';
 import type { Path } from '@flighthq/path/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
 import { clearShapeCommands, createShape } from '@flighthq/shape/contract';
+import type { Shape } from '@flighthq/shape/contract';
 import type {
   DisplayObject,
   LottieImportContext,
@@ -11,7 +12,6 @@ import type {
   LottieShapeModifier,
   LottieShapePainter,
   LottieTransform,
-  Shape,
 } from '@flighthq/types/contract';
 
 import { applyLottieTransform, reportLottieExpression, reportLottieSkip } from './lottieDocument.ts';

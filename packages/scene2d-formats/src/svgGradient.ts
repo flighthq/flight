@@ -8,7 +8,8 @@ import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import { clamp } from '@flighthq/math/contract';
 import { getPathBounds } from '@flighthq/path/contract';
 import type { Path } from '@flighthq/path/contract';
-import type { Matrix, SpreadMethod, SvgGradient, SvgGradientStop, SvgImportContext } from '@flighthq/types/contract';
+import type { SpreadMethod } from '@flighthq/shape/contract';
+import type { Matrix, SvgGradient, SvgGradientStop, SvgImportContext } from '@flighthq/types/contract';
 import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 import type { XmlElement } from '@flighthq/xml/contract';
 

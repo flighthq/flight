@@ -11,15 +11,14 @@ import {
   appendShapeLineStyle,
   appendShapePath,
 } from '@flighthq/shape/contract';
+import type { CapsStyle } from '@flighthq/shape/contract';
+import type { JointStyle, Shape } from '@flighthq/shape/contract';
 import type {
-  CapsStyle,
   ImportDiagnostic,
-  JointStyle,
   RiveArtboardGraph,
   RiveCoreObject,
   RiveImportRegistry,
   RivePathRecord,
-  Shape,
 } from '@flighthq/types/contract';
 import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 

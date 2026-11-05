@@ -2,8 +2,9 @@ import { inverseMatrixTransformPointXY } from '@flighthq/geometry/contract';
 import { getNodeWorldMatrix } from '@flighthq/node/contract';
 import { containsPathPoint } from '@flighthq/path/contract';
 import { getShapeFillRegions } from '@flighthq/shape/contract';
-import type { Node2D, NodeAny, Shape } from '@flighthq/types/contract';
-import { MorphShapeKind, Scale9ShapeKind, ShapeKind } from '@flighthq/types/contract';
+import type { Shape } from '@flighthq/shape/contract';
+import { MorphShapeKind, Scale9ShapeKind, ShapeKind } from '@flighthq/shape/contract';
+import type { Node2D, NodeAny } from '@flighthq/types/contract';
 
 import { registerHitTestPrecise } from './hitTests.ts';
 

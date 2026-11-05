@@ -2,9 +2,12 @@ import type {
   MorphShapeGradientEndpoint,
   MorphShapeGradientEndpointExplanation,
   MorphShapeGradientEndpointReason,
-} from '@flighthq/types/contract';
+} from './contract.shape-types.ts';
 
-export type { MorphShapeGradientEndpointExplanation, MorphShapeGradientEndpointReason } from '@flighthq/types/contract';
+export type {
+  MorphShapeGradientEndpointExplanation,
+  MorphShapeGradientEndpointReason,
+} from './contract.shape-types.ts';
 
 // Pure diagnostic twin of the gradient paint appenders. Returns detached data and keeps diagnostic
 // reason strings outside the paint sampling module so applications can tree-shake them independently.

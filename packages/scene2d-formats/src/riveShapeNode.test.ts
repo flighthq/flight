@@ -1,11 +1,11 @@
 import { createDisplayObject } from '@flighthq/scene2d/contract';
+import type { Shape } from '@flighthq/shape/contract';
 import type {
   ImportDiagnostic,
   RiveArtboardGraph,
   RiveArtboardImportContext,
   RiveCoreObject,
   RiveProperty,
-  Shape,
 } from '@flighthq/types/contract';
 import { ImportDiagnosticSeverity, RiveFieldType } from '@flighthq/types/contract';
 

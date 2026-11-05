@@ -1,7 +1,8 @@
+import type { Rectangle } from '@flighthq/types/contract';
+
 import type {
   CapsStyle,
   JointStyle,
-  Rectangle,
   Shape,
   ShapeBoundsCommandHandler,
   ShapeBoundsContext,
@@ -10,8 +11,7 @@ import type {
   ShapeBoundsMode,
   ShapeCommandArgumentCursor,
   ShapeCommandToken,
-} from '@flighthq/types/contract';
-
+} from './contract.shape-types.ts';
 import { getShapeBoundsCommand } from './shapeBoundsRegistry.ts';
 
 export function computeShapeBoundsRectangle(

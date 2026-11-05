@@ -13,16 +13,9 @@ import {
   appendShapeMoveTo,
   createShape,
 } from '@flighthq/shape/contract';
+import type { CapsStyle, GradientType, JointStyle, Shape, SpreadMethod } from '@flighthq/shape/contract';
 import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
-import type {
-  CapsStyle,
-  GradientType,
-  JointStyle,
-  Matrix,
-  Shape,
-  SpreadMethod,
-  Texture2D,
-} from '@flighthq/types/contract';
+import type { Matrix, Texture2D } from '@flighthq/types/contract';
 import type { ImportDiagnostic, SwfMorphShapePaths } from '@flighthq/types/contract';
 
 import type { SwfReader } from './swfReader.ts';

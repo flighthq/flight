@@ -5,9 +5,10 @@ import {
   getNodeLocalTransformRevision,
 } from '@flighthq/node/contract';
 import { createPath, createPathMorph } from '@flighthq/path/contract';
-import type { ShapeCommandToken } from '@flighthq/types/contract';
-import { EntityRuntimeKey, ShapeKind } from '@flighthq/types/contract';
+import { EntityRuntimeKey } from '@flighthq/types/contract';
 
+import type { ShapeCommandToken } from './contract.shape-types.ts';
+import { ShapeKind } from './contract.shape-types.ts';
 import { createMorphShape, setMorphShapeProgress } from './morphShape.ts';
 import { appendMorphShapeBeginFill } from './morphShapePaint.ts';
 import { registerDefaultShapeBoundsCommands } from './registerDefaultShapeBoundsCommands.ts';

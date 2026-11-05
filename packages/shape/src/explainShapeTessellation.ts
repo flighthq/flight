@@ -1,5 +1,4 @@
-import type { ShapeCommandToken, ShapeTessellationExplanation } from '@flighthq/types/contract';
-
+import type { ShapeCommandToken, ShapeTessellationExplanation } from './contract.shape-types.ts';
 import { hasNonSolidShapeFill } from './shapeFill.ts';
 import { hasNonSolidShapeStroke } from './shapeStroke.ts';
 import { getShapeStrokeOutlineRegions } from './shapeStrokeOutline.ts';

@@ -1,6 +1,8 @@
 ﻿import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { getNodeLocalBoundsRectangle } from '@flighthq/node/contract';
 import { mapScale9ShapeCommands } from '@flighthq/shape/contract';
+import type { Scale9Shape, ShapeCommandToken } from '@flighthq/shape/contract';
+import { Scale9ShapeKind } from '@flighthq/shape/contract';
 import type {
   DomRenderState,
   EntityConstruction,
@@ -9,11 +11,9 @@ import type {
   RenderState,
   NodeAny,
   RendererData,
-  Scale9Shape,
   Scene2DRenderer,
-  ShapeCommandToken,
 } from '@flighthq/types/contract';
-import { RenderRegistryTable, Scale9ShapeKind } from '@flighthq/types/contract';
+import { RenderRegistryTable } from '@flighthq/types/contract';
 
 import { getDomRenderStateRuntime } from './domRenderState.ts';
 import { buildDomScale9Mapper } from './domScale9Mapper.ts';

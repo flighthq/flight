@@ -11,7 +11,8 @@ import {
   createShape,
   getShapeFillRegions,
 } from '@flighthq/shape/contract';
-import type { GlyphOutlineSource, ImportDiagnostic, RectangleLike, Shape } from '@flighthq/types/contract';
+import type { Shape } from '@flighthq/shape/contract';
+import type { GlyphOutlineSource, ImportDiagnostic, RectangleLike } from '@flighthq/types/contract';
 import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
 import { SwfReader } from './swfReader.ts';

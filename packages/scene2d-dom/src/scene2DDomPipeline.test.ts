@@ -1,4 +1,5 @@
-import { DisplayObjectKind, MorphShapeKind, ShapeKind } from '@flighthq/types/contract';
+import { MorphShapeKind, ShapeKind } from '@flighthq/shape/contract';
+import { DisplayObjectKind } from '@flighthq/types/contract';
 
 import * as domPackage from './contract.ts';
 import { domScene2DRenderPreset } from './scene2DDomPipeline.ts';

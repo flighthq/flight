@@ -1,5 +1,4 @@
-import type { ShapeCommandToken } from '@flighthq/types/contract';
-
+import type { ShapeCommandToken } from './contract.shape-types.ts';
 import { createShape } from './shape.ts';
 import {
   appendShapeEllipticalArcTo,

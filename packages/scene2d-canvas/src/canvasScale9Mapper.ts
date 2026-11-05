@@ -1,4 +1,5 @@
-import type { RectangleLike, Scale9Mapper } from '@flighthq/types/contract';
+import type { Scale9Mapper } from '@flighthq/shape/contract';
+import type { RectangleLike } from '@flighthq/types/contract';
 
 /**
  * Builds a coordinate mapper for 9-slice scaled rendering.

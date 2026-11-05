@@ -1,4 +1,4 @@
-import type { Scale9Mapper, ShapeCommandToken } from '@flighthq/types/contract';
+import type { Scale9Mapper, ShapeCommandToken } from './contract.shape-types.ts';
 
 // Rewrites a shape's command stream through a nine-slice mapper, so the corners of a scaled shape keep
 // their size while the edges and centre stretch. This is pure command geometry — no renderer, no

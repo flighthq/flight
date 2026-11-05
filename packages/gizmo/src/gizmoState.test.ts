@@ -5,6 +5,7 @@ import { createNode, getNodeChildByName, getNodeParent, removeNodeChild } from '
 import { createScene2D } from '@flighthq/scene2d/contract';
 import { createSelectionState, selectAllNodes } from '@flighthq/selection/contract';
 import { createShape } from '@flighthq/shape/contract';
+import type { Shape } from '@flighthq/shape/contract';
 import { connectSignal, emitSignal } from '@flighthq/signals/contract';
 import type { Signal } from '@flighthq/signals/contract';
 import type {
@@ -21,7 +22,6 @@ import type {
   Rectangle,
   Scene2D,
   SelectionState,
-  Shape,
   Vector2Like,
 } from '@flighthq/types/contract';
 

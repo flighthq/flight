@@ -19,8 +19,8 @@ import {
   appendShapeRoundedRectangle,
   createShape,
 } from '@flighthq/shape/contract';
+import type { Shape } from '@flighthq/shape/contract';
 import type {
-  Shape,
   ShapeCommandSchemaArgumentType,
   ShapeJsonFormatOptions,
   ShapeJsonParseOptions,

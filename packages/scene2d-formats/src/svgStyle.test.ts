@@ -1,5 +1,5 @@
 import { getNodeChildAt } from '@flighthq/node/contract';
-import type { Shape } from '@flighthq/types/contract';
+import type { Shape } from '@flighthq/shape/contract';
 import type { XmlElement } from '@flighthq/xml/contract';
 import { parseXmlDocument } from '@flighthq/xml/contract';
 import { describe, expect, it } from 'vitest';

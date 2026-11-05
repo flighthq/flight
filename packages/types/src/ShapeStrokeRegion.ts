@@ -1,10 +1,2 @@
-import type { StrokeStyle } from '@flighthq/path/contract';
-
-import type { ShapeFillRegion } from './ShapeFillRegion.ts';
-
-// One solid-color stroke span resolved from Shape commands. The path remains the authored centerline;
-// GPU renderers pass it and style to tessellateStrokePath so open outlines and closed rings share one
-// geometry contract. Extends ShapeFillRegion structurally for common color/alpha/path handling.
-export interface ShapeStrokeRegion extends ShapeFillRegion {
-  style: StrokeStyle;
-}
+/** @deprecated Import shape contracts from `@flighthq/shape/contract`. */
+export type { ShapeStrokeRegion } from '@flighthq/shape/contract';

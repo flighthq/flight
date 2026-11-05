@@ -1,13 +1,7 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { forEachNodeDescendant } from '@flighthq/node/contract';
-import type {
-  Entity,
-  EntityConstruction,
-  Node2D,
-  Scene2D,
-  Scene2DKindUsage,
-  ShapeCommandToken,
-} from '@flighthq/types/contract';
+import type { Entity, EntityConstruction, Node2D, Scene2D, Scene2DKindUsage } from '@flighthq/types/contract';
+import type { ShapeCommandToken } from '@flighthq/types/contract';
 import { BlendMode } from '@flighthq/types/contract';
 
 export function createScene2DKindUsage(): Scene2DKindUsage & Entity {

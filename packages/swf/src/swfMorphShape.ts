@@ -10,18 +10,17 @@ import {
   appendMorphShapePath,
   createMorphShape,
 } from '@flighthq/shape/contract';
-import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
-import type { ImportDiagnostic } from '@flighthq/types/contract';
 import type {
   CapsStyle,
   GradientType,
   JointStyle,
-  Matrix,
   MorphShape,
   MorphShapeGradientEndpoint,
   SpreadMethod,
-  Texture2D,
-} from '@flighthq/types/contract';
+} from '@flighthq/shape/contract';
+import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
+import type { ImportDiagnostic } from '@flighthq/types/contract';
+import type { Matrix, Texture2D } from '@flighthq/types/contract';
 
 import { SwfReader } from './swfReader.ts';
 import { readSwfMorphShapePaths } from './swfShape.ts';

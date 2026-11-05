@@ -28,6 +28,7 @@ import {
   clearShapeCommands,
   createShape,
 } from '@flighthq/shape/contract';
+import type { Shape } from '@flighthq/shape/contract';
 import { connectSignal, createSignal, disconnectSignal, emitSignal } from '@flighthq/signals/contract';
 import type {
   Camera2D,
@@ -47,7 +48,6 @@ import type {
   Rectangle,
   Scene2D,
   SelectionState,
-  Shape,
   Vector2Like,
 } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';

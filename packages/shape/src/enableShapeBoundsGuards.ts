@@ -1,8 +1,9 @@
 import type { LogState } from '@flighthq/log/contract';
 import { logOnce } from '@flighthq/log/contract';
-import type { Shape, ShapeBoundsMode } from '@flighthq/types/contract';
 import { LogLevel } from '@flighthq/types/contract';
 
+import type { Shape } from './contract.shape-types.ts';
+import type { ShapeBoundsMode } from './contract.shape-types.ts';
 import { setShapeBoundsGuard } from './shapeBounds.ts';
 
 export function areShapeBoundsGuardsEnabled(): boolean {

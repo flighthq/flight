@@ -1,7 +1,7 @@
 import { createPath, dashPath } from '@flighthq/path/contract';
 import type { Path } from '@flighthq/path/contract';
 import { appendShapePath } from '@flighthq/shape/contract';
-import type { Shape } from '@flighthq/types/contract';
+import type { Shape } from '@flighthq/shape/contract';
 
 /**
  * Appending a group's paths under one paint, dashed and undashed.

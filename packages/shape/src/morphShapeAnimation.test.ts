@@ -9,9 +9,10 @@ import {
 } from '@flighthq/animation/contract';
 import { getNodeLocalContentRevision } from '@flighthq/node/contract';
 import { appendPathLineTo, appendPathMoveTo, createPath, createPathMorph } from '@flighthq/path/contract';
-import type { MorphShape, MorphShapeAnimationTarget } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
+import type { MorphShape } from './contract.shape-types.ts';
+import type { MorphShapeAnimationTarget } from './contract.shape-types.ts';
 import { appendMorphShapePath, createMorphShape } from './morphShape.ts';
 import {
   applyAnimationClipToMorphShape,

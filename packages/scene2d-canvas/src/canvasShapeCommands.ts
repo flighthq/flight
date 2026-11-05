@@ -14,8 +14,9 @@ import {
   normalizeShapeStrokeMiterLimit,
   normalizeShapeStrokeWidth,
 } from '@flighthq/shape/contract';
+import type { LineScaleMode } from '@flighthq/shape/contract';
 import { getTextureViewSize } from '@flighthq/texture/contract';
-import type { CanvasShapeCommand, LineScaleMode, Matrix, Texture } from '@flighthq/types/contract';
+import type { CanvasShapeCommand, Matrix, Texture } from '@flighthq/types/contract';
 
 const _fillMatrixInverse: Matrix = createMatrix();
 

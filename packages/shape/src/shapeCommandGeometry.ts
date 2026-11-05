@@ -1,4 +1,4 @@
-import type { ShapeCommandToken } from '@flighthq/types/contract';
+import type { ShapeCommandToken } from './contract.shape-types.ts';
 
 export function writeShapeGeometryCommandEnd(
   out: { x: number; y: number },

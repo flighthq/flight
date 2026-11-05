@@ -1,6 +1,7 @@
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
 import { clearShapeCommands, createShape } from '@flighthq/shape/contract';
+import type { Shape } from '@flighthq/shape/contract';
 import type {
   DisplayObject,
   ImportDiagnostic,
@@ -8,7 +9,6 @@ import type {
   RiveCoreObject,
   RiveImportRegistry,
   RivePathRecord,
-  Shape,
 } from '@flighthq/types/contract';
 import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 

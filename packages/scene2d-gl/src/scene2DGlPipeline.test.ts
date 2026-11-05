@@ -4,6 +4,7 @@ import {
   standardGlBlendRealizations,
   standardGlTextureResolvers,
 } from '@flighthq/render-gl/contract';
+import { MorphShapeKind, Scale9ShapeKind, ShapeKind } from '@flighthq/shape/contract';
 import { RichTextKind, TextLabelKind } from '@flighthq/text/contract';
 import {
   BitmapTextKind,
@@ -11,14 +12,11 @@ import {
   BlendMode,
   DisplayObjectKind,
   ImageTextureSourceKind,
-  MorphShapeKind,
   ParticleEmitter2DKind,
   QuadBatchKind,
   RenderCacheKind,
   RenderTargetTextureSourceKind,
   Scale9SpriteKind,
-  Scale9ShapeKind,
-  ShapeKind,
   SpriteKind,
   StandardMaterialKind,
   TilemapKind,

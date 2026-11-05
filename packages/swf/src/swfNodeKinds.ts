@@ -1,6 +1,7 @@
+import { MorphShapeKind, Scale9ShapeKind, ShapeKind } from '@flighthq/shape/contract';
 import { RichTextKind } from '@flighthq/text/contract';
 import type { Kind } from '@flighthq/types/contract';
-import { DisplayObjectKind, MorphShapeKind, Scale9ShapeKind, ShapeKind, SpriteKind } from '@flighthq/types/contract';
+import { DisplayObjectKind, SpriteKind } from '@flighthq/types/contract';
 
 /**
  * Which scene node kinds a SWF tag becomes — the fact that turns a TAG requirement into a RENDERER

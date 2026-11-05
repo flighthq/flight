@@ -27,6 +27,8 @@ import {
   resolveScene2DResources,
 } from '@flighthq/scene2d-resources/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
+import type { MorphShape, Scale9Shape, Shape } from '@flighthq/shape/contract';
+import { MorphShapeKind, Scale9ShapeKind, ShapeKind } from '@flighthq/shape/contract';
 import type { RichText } from '@flighthq/text/contract';
 import { RichTextKind } from '@flighthq/text/contract';
 import { getTextureSource } from '@flighthq/texture/contract';
@@ -40,12 +42,9 @@ import type {
   EmbeddedImageResourceReference,
   ImportDiagnostic,
   TimelineAudioCue,
-  MorphShape,
   MovieClip,
   Node2D,
-  Scale9Shape,
   Scene2DDocument,
-  Shape,
   Sprite,
   Texture2D,
 } from '@flighthq/types/contract';
@@ -58,11 +57,8 @@ import {
   DisplayObjectKind,
   ImageResourceReferenceKind,
   ImportDiagnosticSeverity,
-  MorphShapeKind,
   MovieClipKind,
   ResourceResolutionState,
-  Scale9ShapeKind,
-  ShapeKind,
   SpriteKind,
 } from '@flighthq/types/contract';
 

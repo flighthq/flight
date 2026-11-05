@@ -1,1 +1,2 @@
-export type TriangleCulling = 'negative' | 'none' | 'positive';
+/** @deprecated Import shape contracts from `@flighthq/shape/contract`. */
+export type { TriangleCulling } from '@flighthq/shape/contract';

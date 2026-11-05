@@ -1,14 +1,7 @@
 import { createMatrix } from '@flighthq/geometry/contract';
+import type { GradientType, InterpolationMethod, SpreadMethod } from '@flighthq/shape/contract';
 import { getSurfaceHandle } from '@flighthq/surface/contract';
-import type {
-  CanvasTextureResolvers,
-  GradientType,
-  InterpolationMethod,
-  Matrix,
-  MatrixLike,
-  SpreadMethod,
-  Texture,
-} from '@flighthq/types/contract';
+import type { CanvasTextureResolvers, Matrix, MatrixLike, Texture } from '@flighthq/types/contract';
 
 import { acquireCanvasTextureResolverSurface } from './canvasTextureResolver.ts';
 import { resolveCanvasTextureWindowSource } from './canvasTextureWindowSource.ts';

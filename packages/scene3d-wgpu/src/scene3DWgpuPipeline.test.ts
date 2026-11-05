@@ -19,7 +19,6 @@ import {
   ImageTextureSourceKind,
   LambertMaterialKind,
   MatcapMaterialKind,
-  MorphShapeKind,
   NormalMaterialKind,
   ParticleEmitter2DKind,
   PhongMaterialKind,
@@ -27,10 +26,8 @@ import {
   RenderCacheKind,
   RenderTargetTextureSourceKind,
   RimModifierKind,
-  Scale9ShapeKind,
   Scale9SpriteKind,
   ShadedMaterialKind,
-  ShapeKind,
   SpecularGlossinessPbrMaterialKind,
   SpriteKind,
   StandardMaterialKind,
@@ -43,6 +40,7 @@ import {
   VertexDisplaceModifierKind,
   WireframeMaterialKind,
 } from '@flighthq/types/contract';
+import { MorphShapeKind, Scale9ShapeKind, ShapeKind } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { wgpuScene3DRenderPreset } from './scene3DWgpuPipeline.ts';

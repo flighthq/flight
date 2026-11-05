@@ -1,4 +1,4 @@
-import type { ShapeBoundsCommand, ShapeCommandKey } from '@flighthq/types/contract';
+import type { ShapeBoundsCommand, ShapeCommandKey } from './contract.shape-types.ts';
 
 export function clearShapeBoundsCommands(): void {
   _commands.clear();

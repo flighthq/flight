@@ -1,11 +1,12 @@
 import { cloneMatrix, createMatrix } from '@flighthq/geometry/contract';
+import type { Matrix, Texture } from '@flighthq/types/contract';
+
+import type { CapsStyle } from './contract.shape-types.ts';
 import type {
-  CapsStyle,
   GradientType,
   InterpolationMethod,
   JointStyle,
   LineScaleMode,
-  Matrix,
   MorphShape,
   MorphShapeColorEndpoint,
   MorphShapeData,
@@ -14,9 +15,7 @@ import type {
   MorphShapeLineEndpoint,
   MorphShapePaintBinding,
   SpreadMethod,
-  Texture,
-} from '@flighthq/types/contract';
-
+} from './contract.shape-types.ts';
 import { getMorphShapeGradientEndpointIssue } from './explainMorphShapeGradientEndpoints.ts';
 import {
   appendShapeBeginFill,

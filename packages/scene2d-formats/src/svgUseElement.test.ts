@@ -1,7 +1,8 @@
 import { getNodeChildAt, getNodeChildCount } from '@flighthq/node/contract';
+import { ShapeKind } from '@flighthq/shape/contract';
 import type { SvgElementHandler, SvgElementKind } from '@flighthq/types/contract';
 import { SvgElementKind as Kind } from '@flighthq/types/contract';
-import { DisplayObjectKind, ShapeKind } from '@flighthq/types/contract';
+import { DisplayObjectKind } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { registerSvgElementHandlers } from './svgElementHandlers.ts';

@@ -11,7 +11,8 @@ import {
   appendShapePath,
   createShape,
 } from '@flighthq/shape/contract';
-import type { Node2D, Shape, SvgElementContext, SvgImportContext, SvgStyle } from '@flighthq/types/contract';
+import type { Shape } from '@flighthq/shape/contract';
+import type { Node2D, SvgElementContext, SvgImportContext, SvgStyle } from '@flighthq/types/contract';
 import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 import type { XmlElement } from '@flighthq/xml/contract';
 

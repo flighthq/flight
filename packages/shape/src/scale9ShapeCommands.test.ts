@@ -1,5 +1,4 @@
-import type { ShapeCommandToken } from '@flighthq/types/contract';
-
+import type { ShapeCommandToken } from './contract.shape-types.ts';
 import { createScale9Shape } from './scale9Shape.ts';
 import { mapScale9ShapeCommands } from './scale9ShapeCommands.ts';
 import { appendShapeBeginFill, appendShapeRectangle } from './shapeCommands.ts';

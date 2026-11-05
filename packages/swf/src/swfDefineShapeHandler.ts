@@ -1,8 +1,8 @@
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import { copyShapeCommands, createScale9Shape, createShape } from '@flighthq/shape/contract';
+import type { Scale9Shape } from '@flighthq/shape/contract';
+import type { Shape } from '@flighthq/shape/contract';
 import type {
-  Scale9Shape,
-  Shape,
   SwfTagHandler,
   SwfTagParseResult,
   SwfTagParseState,
