@@ -1,6 +1,3 @@
-//! flight-compiler: target-native
-
-//! flight-compiler: target-native
 //! Exact JS-regex building blocks for the source's UA patterns, written out instead of using a Rust
 //! regex engine because the observable semantics differ:
 //! - JS `/i` without the `u` flag folds case only where both sides are ASCII (a non-ASCII character
@@ -115,7 +112,7 @@ pub(crate) fn contains_then_on_line(text: &[u16], first: &str, second: &str) -> 
 }
 
 /// The first position at or after `from` where `needle` matches.
-pub(crate) fn find_from(text: &[u16], from: usize, needle: &str) -> Option<usize> {
+fn find_from(text: &[u16], from: usize, needle: &str) -> Option<usize> {
     let len = utf16_len(needle);
     if len > text.len() {
         return None;
