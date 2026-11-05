@@ -248,6 +248,9 @@ const DIRECT_LOCK_GUARD_TARGET_MARKER: &str = "@direct-lock-guard-target:";
 // A test helper proven to compute a panic payload's `String`/`&str` message (else empty); its calls
 // lower into vitest `toThrow(..)` and it has no TypeScript body.
 pub(crate) const PANIC_MESSAGE_HELPER_MARKER: &str = "@panic-message-helper:";
+// A test helper proven to assert one canonical `FlightError` kind of its closure's panic (and to
+// return its message); its calls lower into vitest `toThrow(..)` and it has no TypeScript body.
+pub(crate) const FLIGHT_ERROR_HELPER_MARKER: &str = "@flight-error-helper:";
 // A binding holding an erased shared cell (`Arc<RwLock<T>>`, lowered to `T`) whose whole value a lock
 // guard replaces, so it must be declared assignable.
 const ERASED_CELL_WRITTEN_MARKER: &str = "@erased-cell-written:";
@@ -11812,6 +11815,18 @@ fn emit_expression_value(
             }
             if expression_is_associated_path(&call.func, "Arc", "clone") && call.args.len() == 1 {
                 return emit_expression(&call.args[0], entities);
+            }
+            if let Expr::Path(path) = call.func.as_ref()
+                && let Some(name) = path.path.get_ident()
+                && entities.iter().any(|marker| {
+                    marker.starts_with(&format!("{FLIGHT_ERROR_HELPER_MARKER}{name}\u{1f}"))
+                })
+            {
+                return Err(compile_error(format!(
+                    "portable FlightError helper `{name}` is supported only called on a closure \
+                     literal as a statement, or bound and then unread or compared with `assert_eq!` \
+                     to a string literal"
+                )));
             }
             if let Expr::Path(path) = call.func.as_ref()
                 && let Some(name) = path.path.get_ident()

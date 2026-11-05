@@ -7,7 +7,7 @@ use syn::visit::Visit;
 use syn::{BinOp, Expr, Fields, FnArg, ItemFn, ItemUse, Pat, ReturnType, Stmt, Token, UseTree};
 
 use crate::model::{Program, TestCase, TestProgram, TestSuite};
-use crate::typescript::PANIC_MESSAGE_HELPER_MARKER;
+use crate::typescript::{FLIGHT_ERROR_HELPER_MARKER, PANIC_MESSAGE_HELPER_MARKER};
 use crate::typescript::{
     ProvenanceImportRule, begin_option_if, begin_option_while, emit_expression,
     emit_expression_for_type, emit_for_header, emit_format_template, emit_local,
@@ -887,7 +887,8 @@ fn emit_block(
     let mut skipped = HashSet::new();
     let mut index = 0;
     while index < statements.len() {
-        let assertion = flight_error_assertion(statements, index)
+        let assertion = flight_error_helper_assertion(statements, index, &block_context)
+            .or_else(|| flight_error_assertion(statements, index))
             .or_else(|| caught_panic_assertion(statements, index, &block_context))
             .or_else(|| panic_is_err_assertion(statements, index));
         if let Some(assertion) = assertion {
@@ -953,7 +954,7 @@ fn emit_helper(
     indent: usize,
 ) -> Result<(), CompileError> {
     // A proven panic-message helper has no TypeScript body: its calls lower into `toThrow(..)`.
-    if proven_panic_message_helper(function) {
+    if proven_panic_message_helper(function) || proven_flight_error_helper(function).is_some() {
         return Ok(());
     }
     if function.sig.asyncness.is_some() {
@@ -2306,6 +2307,283 @@ fn string_literal_value(expression: &Expr) -> Option<String> {
     return Some(text.value());
 }
 
+const FLIGHT_ERROR_HELPER_SEPARATOR: char = '\u{1f}';
+
+// A test helper proven to run its closure once under `catch_unwind`, require a canonical
+// `FlightError` payload of one kind, and (when it returns `String`) return its message:
+//
+//     fn assert_range_error(run: impl FnOnce()) -> String {
+//         let payload = catch_unwind(AssertUnwindSafe(run)).expect_err("expected a RangeError");
+//         let error = payload.downcast_ref::<FlightError>().expect("a FlightError");
+//         assert_eq!(error.kind, FlightErrorKind::RangeError);
+//         return error.message.clone();
+//     }
+//
+// A call is then one `toThrow` on the closure it is given (`flight_error_helper_assertion`).
+struct FlightErrorHelper {
+    expect_message: Option<String>,
+    kind: String,
+    returns_message: bool,
+}
+
+impl FlightErrorHelper {
+    fn marker(&self, name: &str) -> String {
+        let separator = FLIGHT_ERROR_HELPER_SEPARATOR;
+        return format!(
+            "{FLIGHT_ERROR_HELPER_MARKER}{name}{separator}{}{separator}{}{separator}{}",
+            self.kind,
+            u8::from(self.returns_message),
+            self.expect_message
+                .as_deref()
+                .map_or(String::new(), |message| format!("{message:?}")),
+        );
+    }
+
+    fn from_context(context: &HashSet<String>, name: &str) -> Option<FlightErrorHelper> {
+        let prefix = format!("{FLIGHT_ERROR_HELPER_MARKER}{name}{FLIGHT_ERROR_HELPER_SEPARATOR}");
+        let marker = context
+            .iter()
+            .find_map(|marker| marker.strip_prefix(&prefix))?;
+        let mut fields = marker.splitn(3, FLIGHT_ERROR_HELPER_SEPARATOR);
+        let kind = fields.next()?.to_string();
+        let returns_message = fields.next()? == "1";
+        let expect_message = fields
+            .next()
+            .filter(|message| !message.is_empty())
+            .and_then(|message| syn::parse_str::<syn::LitStr>(message).ok())
+            .map(|literal| literal.value());
+        return Some(FlightErrorHelper {
+            expect_message,
+            kind,
+            returns_message,
+        });
+    }
+}
+
+// The proof for `function` (see `FlightErrorHelper`), or `None`. Its one parameter is
+// `impl FnOnce()`, it returns nothing or `String`, and its body is only: the caught panic of that
+// parameter (`catch_unwind(run)` or `catch_unwind(AssertUnwindSafe(run))`, with `.unwrap_err()`,
+// `.expect_err(..)` or `.err().expect(..)`, in one statement or through a result binding), its
+// canonical `FlightError` downcast, one `assert_eq!` of the error's kind, and, when it returns
+// `String`, `return error.message.clone()` (or `.to_string()`). The name plays no part.
+fn proven_flight_error_helper(function: &ItemFn) -> Option<FlightErrorHelper> {
+    let signature = &function.sig;
+    if signature.asyncness.is_some()
+        || !signature.generics.params.is_empty()
+        || signature.inputs.len() != 1
+    {
+        return None;
+    }
+    let Some(FnArg::Typed(parameter)) = signature.inputs.first() else {
+        return None;
+    };
+    let Pat::Ident(run) = parameter.pat.as_ref() else {
+        return None;
+    };
+    let run = run.ident.to_string();
+    if !type_is_unit_fn_once(&parameter.ty) {
+        return None;
+    }
+    let returns_message = match &signature.output {
+        ReturnType::Default => false,
+        ReturnType::Type(_, returned) if type_is_string(returned) => true,
+        ReturnType::Type(..) => return None,
+    };
+    let statements = function.block.stmts.as_slice();
+    // The caught payload, in one or two statements.
+    let (payload, expect_message, rest) = {
+        let (payload, initializer) = simple_local(statements.first()?)?;
+        if let Some((caught, message)) = unwrapped_panic_payload(initializer)
+            && catches_parameter(caught, &run)
+        {
+            (payload, message, &statements[1..])
+        } else if catches_parameter(initializer, &run) {
+            let (unwrapped, after) = simple_local(statements.get(1)?)?;
+            let (receiver, message) = unwrapped_panic_payload(after)?;
+            if !expression_is_name(receiver, &payload) {
+                return None;
+            }
+            (unwrapped, message, &statements[2..])
+        } else {
+            return None;
+        }
+    };
+    let (error, downcast) = simple_local(rest.first()?)?;
+    if !flight_error_downcast(downcast)
+        .is_some_and(|receiver| expression_is_name(receiver, &payload))
+    {
+        return None;
+    }
+    let Some(Stmt::Macro(assertion)) = rest.get(1) else {
+        return None;
+    };
+    let arguments = parse_macro_arguments(&assertion.mac).ok()?;
+    if !assertion.mac.path.is_ident("assert_eq") || arguments.len() != 2 {
+        return None;
+    }
+    let error_ref = ErrorRef::Bound(error.clone());
+    let kind = if error_field_is(&arguments[0], &error_ref, "kind") {
+        flight_error_kind(&arguments[1])?
+    } else if error_field_is(&arguments[1], &error_ref, "kind") {
+        flight_error_kind(&arguments[0])?
+    } else {
+        return None;
+    };
+    exact_error_class(kind.clone())?;
+    match (&rest[2..], returns_message) {
+        ([], false) => {}
+        ([Stmt::Expr(Expr::Return(returned), _)], true)
+            if returned
+                .expr
+                .as_deref()
+                .is_some_and(|value| message_clone_of(value, &error_ref)) => {}
+        _ => return None,
+    }
+    let expect_message = match expect_message {
+        Some(message) => Some(string_literal_value(message)?),
+        None => None,
+    };
+    return Some(FlightErrorHelper {
+        expect_message,
+        kind,
+        returns_message,
+    });
+}
+
+// `impl FnOnce()`: a closure taking nothing and returning nothing.
+fn type_is_unit_fn_once(rust_type: &syn::Type) -> bool {
+    let syn::Type::ImplTrait(implemented) = rust_type else {
+        return false;
+    };
+    let [syn::TypeParamBound::Trait(bound)] = implemented.bounds.iter().collect::<Vec<_>>()[..]
+    else {
+        return false;
+    };
+    let Some(segment) = bound.path.segments.last() else {
+        return false;
+    };
+    let syn::PathArguments::Parenthesized(arguments) = &segment.arguments else {
+        return false;
+    };
+    return bound.path.segments.len() == 1
+        && segment.ident == "FnOnce"
+        && arguments.inputs.is_empty()
+        && matches!(arguments.output, ReturnType::Default);
+}
+
+// `catch_unwind(run)` or `catch_unwind(AssertUnwindSafe(run))` for the parameter `run`.
+fn catches_parameter(expression: &Expr, run: &str) -> bool {
+    let Expr::Call(call) = unparenthesized(expression) else {
+        return false;
+    };
+    if !path_is_std_panic(&call.func, "catch_unwind") || call.args.len() != 1 {
+        return false;
+    }
+    let mut argument = &call.args[0];
+    if let Expr::Call(wrapper) = argument
+        && path_is_std_panic(&wrapper.func, "AssertUnwindSafe")
+        && wrapper.args.len() == 1
+    {
+        argument = &wrapper.args[0];
+    }
+    return expression_is_name(argument, run);
+}
+
+// `error.message.clone()` / `.to_string()` / `.to_owned()`.
+fn message_clone_of(expression: &Expr, error: &ErrorRef) -> bool {
+    let Expr::MethodCall(call) = unparenthesized(expression) else {
+        return false;
+    };
+    return matches!(
+        call.method.to_string().as_str(),
+        "clone" | "to_string" | "to_owned"
+    ) && call.args.is_empty()
+        && error_field_is(&call.receiver, error, "message");
+}
+
+// A call of a proven `FlightError` helper on a closure literal, at `statements[start]`:
+//
+//     assert_range_error(|| ..);                              // toThrow(K)
+//     let message = assert_range_error(|| ..);               // unread after: toThrow(K)
+//     let message = assert_range_error(|| ..);
+//     assert_eq!(message, "..");                              // toThrow(new K(".."))
+//
+// `toThrow(K)` requires a kind nothing else extends; an exact message pairs with any kind.
+fn flight_error_helper_assertion<'a>(
+    statements: &'a [Stmt],
+    start: usize,
+    context: &HashSet<String>,
+) -> Option<PanicAssertion<'a>> {
+    let helper_call = |expression: &'a Expr| -> Option<(&'a syn::ExprClosure, FlightErrorHelper)> {
+        let Expr::Call(call) = unparenthesized(expression) else {
+            return None;
+        };
+        let Expr::Path(path) = call.func.as_ref() else {
+            return None;
+        };
+        let helper = FlightErrorHelper::from_context(context, &path.path.get_ident()?.to_string())?;
+        let [Expr::Closure(closure)] = call.args.iter().collect::<Vec<_>>()[..] else {
+            return None;
+        };
+        return (closure.inputs.is_empty() && closure.asyncness.is_none())
+            .then_some((closure, helper));
+    };
+    let assertion = |closure, helper: &FlightErrorHelper, message: Option<Expr>, length| {
+        let matcher = match message {
+            Some(message) => {
+                FlightErrorMatcher::Instance(exact_error_class(helper.kind.clone())?, message)
+            }
+            None => FlightErrorMatcher::Class(instance_exact_error_class(helper.kind.clone())?),
+        };
+        let expect_message = match &helper.expect_message {
+            Some(message) => Some(syn::parse_str::<Expr>(&format!("{message:?}")).ok()?),
+            None => None,
+        };
+        return Some(PanicAssertion {
+            assertion: None,
+            closure,
+            exact: false,
+            expect_message,
+            flight_error: Some(matcher),
+            length,
+            needle: None,
+        });
+    };
+    let statement = statements.get(start)?;
+    // `assert_range_error(|| ..);`
+    if let Stmt::Expr(expression, Some(_)) = statement
+        && let Some((closure, helper)) = helper_call(expression)
+    {
+        return assertion(closure, &helper, None, 1);
+    }
+    // `let message = assert_range_error(|| ..);`, then optionally `assert_eq!(message, "..")`.
+    let (message, initializer) = simple_local(statement)?;
+    let (closure, helper) = helper_call(initializer)?;
+    if let Some(Stmt::Macro(check)) = statements.get(start + 1)
+        && check.mac.path.is_ident("assert_eq")
+        && let Ok(arguments) = parse_macro_arguments(&check.mac)
+        && arguments.len() == 2
+        && helper.returns_message
+    {
+        for (name, value) in [
+            (&arguments[0], &arguments[1]),
+            (&arguments[1], &arguments[0]),
+        ] {
+            if expression_is_name(name, &message)
+                && let Some(text) = string_literal_value(value)
+                && !statements_read_name(&statements[start + 2..], &message)
+            {
+                let text = syn::parse_str::<Expr>(&format!("{text:?}")).ok()?;
+                return assertion(closure, &helper, Some(text), 2);
+            }
+        }
+    }
+    if statements_read_name(&statements[start + 1..], &message) {
+        return None;
+    }
+    return assertion(closure, &helper, None, 1);
+}
+
 fn emit_statement(
     out: &mut String,
     statement: &Stmt,
@@ -2524,6 +2802,9 @@ pub(crate) fn emit_test_program(
         if proven_panic_message_helper(helper) {
             panic_helper_context
                 .insert(format!("{PANIC_MESSAGE_HELPER_MARKER}{}", helper.sig.ident));
+        }
+        if let Some(proof) = proven_flight_error_helper(helper) {
+            panic_helper_context.insert(proof.marker(&helper.sig.ident.to_string()));
         }
     }
     let context = &panic_helper_context;
@@ -2772,7 +3053,7 @@ pub(crate) fn emit_test_program(
         emit_test_constant(&mut out, constant, context)?;
     }
     for helper in &program.helpers {
-        if proven_panic_message_helper(helper) {
+        if proven_panic_message_helper(helper) || proven_flight_error_helper(helper).is_some() {
             continue;
         }
         out.push('\n');

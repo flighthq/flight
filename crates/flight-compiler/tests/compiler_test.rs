@@ -19502,6 +19502,156 @@ mod flight_errors {
     }
 
     #[test]
+    fn lowers_proven_flight_error_helper_calls_to_exact_to_throw() {
+        let production = r#"
+use flight_entity::{throw_error, throw_range_error, throw_type_error};
+
+pub struct Counter {
+    pub calls: i32,
+}
+
+pub fn read_offset(counter: &mut Counter, offset: i32) -> i32 {
+    counter.calls += 1;
+    if offset < 0 {
+        throw_range_error("offset is out of bounds");
+    }
+    return offset;
+}
+
+pub fn require_handle(handle: i32) -> i32 {
+    if handle == 0 {
+        throw_type_error("Downloaded update did not originate from a completed check");
+    }
+    return handle;
+}
+
+pub fn require_name(name: &str) -> usize {
+    if name.is_empty() {
+        throw_error("name (required) must be set [1/2]");
+    }
+    return name.len();
+}
+"#;
+        let source = r#"
+use crate::*;
+use flight_entity::{FlightError, FlightErrorKind};
+use std::panic::{AssertUnwindSafe, catch_unwind};
+
+fn assert_range_error(run: impl FnOnce()) -> String {
+    let payload = catch_unwind(AssertUnwindSafe(run)).expect_err("expected a RangeError");
+    let error = payload
+        .downcast_ref::<FlightError>()
+        .expect("a FlightError");
+    assert_eq!(error.kind, FlightErrorKind::RangeError);
+    return error.message.clone();
+}
+
+fn assert_type_error(run: impl FnOnce()) {
+    let error = std::panic::catch_unwind(std::panic::AssertUnwindSafe(run)).unwrap_err();
+    let error = error.downcast_ref::<FlightError>().unwrap();
+    assert_eq!(error.kind, FlightErrorKind::TypeError);
+}
+
+fn assert_plain_error(run: impl FnOnce()) -> String {
+    let result = catch_unwind(AssertUnwindSafe(run));
+    let payload = result.unwrap_err();
+    let error = payload.downcast::<FlightError>().unwrap();
+    assert_eq!(FlightErrorKind::Error, error.kind);
+    return error.message.to_string();
+}
+
+mod helpers {
+    use super::*;
+
+    #[test]
+    fn checks_helpers() {
+        let mut counter = Counter { calls: 0 };
+        let message = assert_range_error(|| {
+            read_offset(&mut counter, -1);
+        });
+        assert_eq!(message, "offset is out of bounds");
+        assert_type_error(|| {
+            require_handle(0);
+        });
+        let unread = assert_range_error(|| {
+            read_offset(&mut counter, -3);
+        });
+        let message = assert_plain_error(|| {
+            require_name("");
+        });
+        assert_eq!("name (required) must be set [1/2]", message);
+        assert_eq!(counter.calls, 2);
+    }
+}
+"#;
+
+        let output =
+            compile_vitest_with_alias_sources(source, "@flighthq/example/contract", &[production])
+                .unwrap();
+
+        // A proven helper's call is one `toThrow` on its closure: the exact class and message when
+        // the returned message is compared, the class alone (a class nothing extends) otherwise;
+        // its `expect_err` message becomes the vitest message.
+        for expected in [
+            "}, 'expected a RangeError').toThrow(new RangeError('offset is out of bounds'));",
+            "  requireHandle(0);\n}).toThrow(TypeError);",
+            "  readOffset(counter, -3);\n}, 'expected a RangeError').toThrow(RangeError);",
+            "  requireName('');\n}).toThrow(new Error('name (required) must be set [1/2]'));",
+            "expect(counter.calls).toEqual(2);",
+        ] {
+            assert!(output.contains(expected), "{expected}: {output}");
+        }
+        // Proven helpers have no TypeScript body, and nothing of the idiom remains.
+        for absent in [
+            "assertRangeError",
+            "assertTypeError",
+            "assertPlainError",
+            "catchUnwind",
+            "downcast",
+            "const message",
+            "const unread",
+        ] {
+            assert!(!output.contains(absent), "{absent}: {output}");
+        }
+    }
+
+    #[test]
+    fn refuses_flight_error_helpers_and_calls_it_cannot_prove() {
+        let production = r#"
+pub fn fail() -> i32 {
+    flight_entity::throw_range_error("boom");
+}
+"#;
+        let helper = |kind: &str, extra: &str, parameter: &str, payload: &str| {
+            format!(
+                "fn check(run: {parameter}) -> String {{\n    let payload = std::panic::catch_unwind(std::panic::AssertUnwindSafe(run)).unwrap_err();\n    let error = payload.downcast_ref::<{payload}>().unwrap();\n    {extra}assert_eq!(error.kind, FlightErrorKind::{kind});\n    return error.message.clone();\n}}\n"
+            )
+        };
+        let call = "let message = check(|| {\n            fail();\n        });\n        assert_eq!(message, \"boom\");";
+        // A DOMException kind (it lowers nameless), an extra statement, a non-`FnOnce()` parameter,
+        // and a non-`FlightError` payload leave the helper unproven; an unproven helper's body has
+        // no TypeScript lowering. A proven helper called on a function path, or whose returned
+        // message is read again, or a statement call of an `Error`-kind helper (`instanceof Error`
+        // passes every class) refuses at the call.
+        for (helper, body) in [
+            (helper("NotReadableError", "", "impl FnOnce()", "FlightError"), call.to_string()),
+            (helper("RangeError", "let _seen = 1;\n    ", "impl FnOnce()", "FlightError"), call.to_string()),
+            (helper("RangeError", "", "impl FnOnce() -> i32", "FlightError"), call.to_string()),
+            (helper("RangeError", "", "impl FnOnce()", "u32"), call.to_string()),
+            (helper("RangeError", "", "impl FnOnce()", "FlightError"), "let message = check(run_fail);\n        assert_eq!(message, \"boom\");".to_string()),
+            (helper("RangeError", "", "impl FnOnce()", "FlightError"), "let message = check(|| {\n            fail();\n        });\n        assert_eq!(message, \"boom\");\n        assert!(message.len() > 0);".to_string()),
+            (helper("Error", "", "impl FnOnce()", "FlightError"), "check(|| {\n            fail();\n        });".to_string()),
+        ] {
+            let source = format!(
+                "use crate::*;\nuse flight_entity::{{FlightError, FlightErrorKind}};\n\nfn run_fail() {{\n    fail();\n}}\n\n{helper}\nmod guard_panics {{\n    use super::*;\n\n    #[test]\n    fn checks() {{\n        {body}\n    }}\n}}\n"
+            );
+            let result =
+                compile_vitest_with_alias_sources(&source, "@flighthq/example/contract", &[production]);
+            assert!(result.is_err(), "{helper}{body}: {}", result.unwrap_or_default());
+        }
+    }
+
+    #[test]
     fn refuses_flight_error_checks_to_throw_cannot_express() {
         let production = r#"
 pub fn fail() -> i32 {

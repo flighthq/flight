@@ -126,6 +126,58 @@ mod flight_errors {
 }
 `;
 
+const HELPER_FIXTURE = `use crate::*;
+use flight_entity::{FlightError, FlightErrorKind};
+use std::panic::{AssertUnwindSafe, catch_unwind};
+
+fn assert_range_error(run: impl FnOnce()) -> String {
+    let payload = catch_unwind(AssertUnwindSafe(run)).expect_err("expected a RangeError");
+    let error = payload
+        .downcast_ref::<FlightError>()
+        .expect("a FlightError");
+    assert_eq!(error.kind, FlightErrorKind::RangeError);
+    return error.message.clone();
+}
+
+fn assert_type_error(run: impl FnOnce()) {
+    let error = std::panic::catch_unwind(std::panic::AssertUnwindSafe(run)).unwrap_err();
+    let error = error.downcast_ref::<FlightError>().unwrap();
+    assert_eq!(error.kind, FlightErrorKind::TypeError);
+}
+
+fn assert_plain_error(run: impl FnOnce()) -> String {
+    let result = catch_unwind(AssertUnwindSafe(run));
+    let payload = result.unwrap_err();
+    let error = payload.downcast::<FlightError>().unwrap();
+    assert_eq!(FlightErrorKind::Error, error.kind);
+    return error.message.to_string();
+}
+
+mod helpers {
+    use super::*;
+
+    #[test]
+    fn checks_helpers() {
+        let mut counter = Counter { calls: 0 };
+        let message = assert_range_error(|| {
+            read_offset(&mut counter, -1);
+        });
+        assert_eq!(message, "offset is out of bounds");
+        assert_type_error(|| {
+            require_handle(0);
+        });
+        let unread = assert_range_error(|| {
+            read_offset(&mut counter, -3);
+        });
+        let message = assert_plain_error(|| {
+            require_name("");
+        });
+        assert_eq!("name (required) must be set [1/2]", message);
+        assert_eq!(counter.calls, 2);
+    }
+}
+`;
+
 let workDirectory = '';
 
 beforeAll(() => {
@@ -237,6 +289,24 @@ describe('flight-compile FlightError panic payloads', () => {
       expect(error).toBe('');
       expect(() => runGeneratedTests(typescript)).toThrow();
     }
+  });
+
+  it('lowers calls of a proven FlightError helper to one exact toThrow and runs faithfully', () => {
+    const { error, typescript } = compileTests('helpers', HELPER_FIXTURE);
+    expect(error).toBe('');
+    expect(typescript).toContain("}, 'expected a RangeError').toThrow(new RangeError('offset is out of bounds'));");
+    expect(typescript).toContain("}).toThrow(new Error('name (required) must be set [1/2]'));");
+    expect(typescript).not.toMatch(/assertRangeError|assertTypeError|assertPlainError|catchUnwind|downcast/);
+    expect(() => runGeneratedTests(typescript)).not.toThrow();
+    const mismatch = compileTests(
+      'helpers_mismatch',
+      HELPER_FIXTURE.replace(
+        'assert_eq!(message, "offset is out of bounds");',
+        'assert_eq!(message, "offset is out");',
+      ),
+    );
+    expect(mismatch.error).toBe('');
+    expect(() => runGeneratedTests(mismatch.typescript)).toThrow();
   });
 
   it('refuses FlightError checks and payloads vitest cannot express exactly', () => {
