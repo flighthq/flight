@@ -16,6 +16,7 @@
       ".path-boolean-types",
       ".path-types",
       ".selection-types",
+      ".shape-formats-types",
       ".shape-types",
       ".spatial-types",
       ".statechart-types",
@@ -87,6 +88,9 @@
     },
     {
       "path": "../selection/tsconfig.contract.json"
+    },
+    {
+      "path": "../shape-formats/tsconfig.contract.json"
     },
     {
       "path": "../shape/tsconfig.contract.json"

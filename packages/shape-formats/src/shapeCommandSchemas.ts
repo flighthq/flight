@@ -1,6 +1,8 @@
 import { withKindMapEntry } from '@flighthq/registry/contract';
 import type { ShapeCommandKey } from '@flighthq/shape/contract';
-import type { Kind, ShapeCommandSchema, ShapeCommandSchemaArgument } from '@flighthq/types/contract';
+import type { Kind } from '@flighthq/types/contract';
+
+import type { ShapeCommandSchema, ShapeCommandSchemaArgument } from './types.ts';
 
 function createDefaultShapeCommandSchemas(): ReadonlyMap<Kind, ShapeCommandSchema> {
   let table: ReadonlyMap<Kind, ShapeCommandSchema> = new Map();

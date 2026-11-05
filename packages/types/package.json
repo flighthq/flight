@@ -56,6 +56,7 @@
     "@flighthq/requirement": "*",
     "@flighthq/resource": "*",
     "@flighthq/selection": "*",
+    "@flighthq/shape-formats": "*",
     "@flighthq/shape": "*",
     "@flighthq/signals": "*",
     "@flighthq/spatial": "*",
