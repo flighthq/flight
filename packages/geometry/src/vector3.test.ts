@@ -37,8 +37,8 @@ import {
   VECTOR3_Z_AXIS,
   writeVector3ToFloat32Array,
 } from '@flighthq/geometry/contract';
-import type { Vector3 } from '@flighthq/types/contract';
 
+import type { Vector3 } from './types.ts';
 import { initializeVector3 } from './vector3.ts';
 
 describe('addVector3', () => {

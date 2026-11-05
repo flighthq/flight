@@ -1,5 +1,7 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { EntityConstruction, Plane, PlaneLike, Vector3Like } from '@flighthq/types/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
+
+import type { Plane, PlaneLike, Vector3Like } from './types.ts';
 
 export function clonePlane(source: Readonly<PlaneLike>): Plane {
   return createPlane(source.a, source.b, source.c, source.d);

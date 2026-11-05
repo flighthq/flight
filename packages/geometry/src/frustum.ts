@@ -1,18 +1,18 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
+
+import { createPlane } from './plane.ts';
 import type {
   AabbLike,
   BoundingSphereLike,
-  EntityConstruction,
   Frustum,
   FrustumLike,
+  Matrix4Like,
   ObbLike,
   Plane,
   PlaneLike,
   Vector3Like,
-} from '@flighthq/types/contract';
-
-import { createPlane } from './plane.ts';
-import type { Matrix4Like } from './types.ts';
+} from './types.ts';
 
 /**
  * Creates a view frustum as six bounding planes, each with an inward-pointing normal. The

@@ -1,7 +1,7 @@
 import { detachEntityBinding } from '@flighthq/entity/contract';
-import type { Vector3 } from '@flighthq/types/contract';
 
 import { geometryPoolReleaseGuard } from './geometryPoolGuards.ts';
+import type { Vector3 } from './types.ts';
 import { createVector3 } from './vector3.ts';
 
 export function acquireEmptyVector3(): Vector3 {

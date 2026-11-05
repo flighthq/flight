@@ -1,6 +1,6 @@
 import { attachEntityBinding, getEntityBinding } from '@flighthq/entity/contract';
-import type { Vector4 } from '@flighthq/types/contract';
 
+import type { Vector4 } from './types.ts';
 import { acquireEmptyVector4, acquireVector4, clearVector4Pool, releaseVector4 } from './vector4Pool.ts';
 
 beforeEach(() => {

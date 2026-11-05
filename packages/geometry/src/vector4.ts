@@ -1,5 +1,7 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { EntityConstruction, Vector3Like, Vector4, Vector4Like } from '@flighthq/types/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
+
+import type { Vector3Like, Vector4, Vector4Like } from './types.ts';
 
 /**
  * Adds the x, y, z and w components of two vector objects

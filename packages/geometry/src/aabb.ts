@@ -1,14 +1,7 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type {
-  Aabb,
-  AabbLike,
-  BoundingSphereLike,
-  EntityConstruction,
-  Vector3,
-  Vector3Like,
-} from '@flighthq/types/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
 
-import type { Matrix4Like } from './types.ts';
+import type { Aabb, AabbLike, BoundingSphereLike, Matrix4Like, Vector3, Vector3Like } from './types.ts';
 import { createVector3 } from './vector3.ts';
 
 export function cloneAabb(source: Readonly<AabbLike>): Aabb {

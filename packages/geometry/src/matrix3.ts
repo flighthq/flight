@@ -1,9 +1,8 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
-import type { Vector3Like } from '@flighthq/types/contract';
 
 import { acquireMatrix3, releaseMatrix3 } from './matrix3Pool.ts';
-import type { Matrix3, Matrix3Like, Matrix4Like, MatrixLike } from './types.ts';
+import type { Matrix3, Matrix3Like, Matrix4Like, MatrixLike, Vector3Like } from './types.ts';
 
 export function cloneMatrix3(source: Readonly<Matrix3Like>): Matrix3 {
   const m = createMatrix3();

@@ -37,8 +37,7 @@ function warnOnDoubleRelease(
   releaseFunction: GeometryPoolReleaseFunction,
 ): void {
   const __dt0 = (() => {
-    const matchValue = releaseFunction;
-    switch (matchValue) {
+    switch (releaseFunction) {
       case 'releaseMatrix':
         return (() => {
           return ['releaseMatrix', 'acquireMatrix or acquireIdentityMatrix'];

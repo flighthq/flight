@@ -34,8 +34,8 @@ import {
   VECTOR4_Z_AXIS,
   writeVector4ToFloat32Array,
 } from '@flighthq/geometry/contract';
-import type { Vector4 } from '@flighthq/types/contract';
 
+import type { Vector4 } from './types.ts';
 import { initializeVector4 } from './vector4.ts';
 
 describe('addVector4', () => {
