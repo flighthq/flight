@@ -1,6 +1,7 @@
 // Generated from crates/flight-clip/src/lib.rs by flight-compiler.
 // Rust is authoritative; run `npm run generate` after changing it.
 
+export { ClipRegionContoursReason, ClipRegionStatus } from './contract.ts';
 export {
   acquireClipRegion,
   clipRegionContainsClipRegion,
@@ -32,4 +33,12 @@ export {
   setClipRegionToRectangle,
   transformClipRegion,
   unionClipRegions,
+} from './contract.ts';
+export type {
+  ClipRegion,
+  ClipRegionContoursExplanation,
+  ClipRegionContoursGuard,
+  ClipRegionExplanation,
+  ClipRegionReleaseGuard,
+  ClipRegionUseGuard,
 } from './contract.ts';

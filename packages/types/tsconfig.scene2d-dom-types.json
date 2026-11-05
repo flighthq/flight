@@ -7,7 +7,15 @@
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,
-    "moduleSuffixes": [".adjustments-types", ".app-types", ".geometry-types", ".path-types", ".shape-types", ""],
+    "moduleSuffixes": [
+      ".adjustments-types",
+      ".app-types",
+      ".clip-types",
+      ".geometry-types",
+      ".path-types",
+      ".shape-types",
+      ""
+    ],
     "tsBuildInfoFile": "dist/.tsbuildinfo.scene2d-dom-types"
   },
   "references": [
@@ -16,6 +24,9 @@
     },
     {
       "path": "../app/tsconfig.contract.json"
+    },
+    {
+      "path": "../clip/tsconfig.contract.json"
     },
     {
       "path": "../entity"

@@ -10,6 +10,7 @@
     "moduleSuffixes": [
       ".adjustments-types",
       ".app-types",
+      ".clip-types",
       ".flow-types",
       ".geometry-types",
       ".font-types",
@@ -45,6 +46,9 @@
     },
     {
       "path": "../clock"
+    },
+    {
+      "path": "../clip/tsconfig.contract.json"
     },
     {
       "path": "../entity"

@@ -13,6 +13,7 @@
       ".scene2d-wgpu-types",
       ".adjustments-types",
       ".app-types",
+      ".clip-types",
       ".geometry-types",
       ".path-types",
       ".shape-types",
@@ -31,6 +32,9 @@
     },
     {
       "path": "../app/tsconfig.contract.json"
+    },
+    {
+      "path": "../clip/tsconfig.contract.json"
     },
     {
       "path": "../entity"

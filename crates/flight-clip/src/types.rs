@@ -8,7 +8,8 @@
 //! flight-compiler: string-union-value ClipRegionContoursReason OddCoordinateCount "odd-coordinate-count"
 //! flight-compiler: string-union-value ClipRegionContoursReason TooFewPoints "too-few-points"
 //!
-//! Public TypeScript Clip types retain their established owner in `@flighthq/types`.
+//! Public TypeScript Clip types are owned by `@flighthq/clip/contract`; `@flighthq/types` keeps
+//! compatibility re-exports.
 
 use std::sync::Arc;
 

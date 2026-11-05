@@ -1,4 +1,5 @@
-import type { ClipRegion } from './ClipRegion.ts';
+import type { ClipRegion } from '@flighthq/clip/contract';
+
 import type { Entity } from './Entity.ts';
 import type { NodeOf, NodeFields } from './Node.ts';
 

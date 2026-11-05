@@ -12,6 +12,7 @@
       ".render-wgpu-types",
       ".adjustments-types",
       ".app-types",
+      ".clip-types",
       ".flow-types",
       ".geometry-types",
       ".font-types",
@@ -46,6 +47,9 @@
     },
     {
       "path": "../app/tsconfig.contract.json"
+    },
+    {
+      "path": "../clip/tsconfig.contract.json"
     },
     {
       "path": "../entity"

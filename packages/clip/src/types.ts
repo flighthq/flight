@@ -1,21 +1,34 @@
-import type { LogState as SharedLogState } from '@flighthq/log/contract';
+import type { EntityRaw } from '@flighthq/entity/contract';
+import type { Rectangle } from '@flighthq/geometry/contract';
 import type { PathWinding as SharedPathWinding } from '@flighthq/path/contract';
-import type {
-  ClipRegion as SharedClipRegion,
-  ClipRegionContoursExplanation as SharedClipRegionContoursExplanation,
-  ClipRegionContoursGuard as SharedClipRegionContoursGuard,
-  ClipRegionExplanation as SharedClipRegionExplanation,
-  ClipRegionReleaseGuard as SharedClipRegionReleaseGuard,
-  ClipRegionUseGuard as SharedClipRegionUseGuard,
-} from '@flighthq/types/contract';
 
-export type ClipRegion = SharedClipRegion;
-export type ClipRegionContoursExplanation = SharedClipRegionContoursExplanation;
-export type ClipRegionContoursGuard = SharedClipRegionContoursGuard;
-export type ClipRegionExplanation = SharedClipRegionExplanation;
-export type ClipRegionReleaseGuard = SharedClipRegionReleaseGuard;
-export type ClipRegionUseGuard = SharedClipRegionUseGuard;
-export type LogState = SharedLogState;
+/** A hard geometric clip region, represented as a rectangle or flattened contours. */
+export interface ClipRegion extends EntityRaw {
+  rect: Rectangle;
+  contours: number[][] | null;
+  winding: PathWinding;
+  version: number;
+}
+
+export interface ClipRegionExplanation {
+  conservative: boolean;
+  status: ClipRegionStatus;
+}
+
+export interface ClipRegionContoursExplanation {
+  contourIndex: number;
+  coordinateCount: number;
+  reason: ClipRegionContoursReason;
+}
+
+export type ClipRegionContoursGuard = (
+  explanation: Readonly<ClipRegionContoursExplanation>,
+  contours: Readonly<ReadonlyArray<ReadonlyArray<number>>>,
+) => void;
+
+export type ClipRegionReleaseGuard = (clip: Readonly<ClipRegion>) => void;
+
+export type ClipRegionUseGuard = (clip: Readonly<ClipRegion>) => void;
 
 export const PathWinding = {
   EvenOdd: 'evenOdd',

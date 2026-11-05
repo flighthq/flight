@@ -1,10 +1,11 @@
 // Generated from crates/flight-clip/src/enable_clip_guards.rs by flight-compiler.
 // Rust is authoritative; run `npm run generate` after changing it.
 
+import type { LogState } from '@flighthq/log/contract';
+
 import { logClipWarning } from './clipLog.ts';
 import { setClipRegionContoursGuard, setClipRegionReleaseGuard, setClipRegionUseGuard } from './clipRegion.ts';
 import { getClipRegionContoursReasonString } from './clipRegionStrings.ts';
-import type { LogState } from './types.ts';
 
 const DOUBLE_RELEASE_MESSAGE =
   'releaseClipRegion: this region is already in the pool, so it is being released twice. Two later acquireClipRegion calls will hand back the same object and the clips will alias each other. Every acquireClipRegion pairs with exactly one releaseClipRegion, and the region must not be used after release.' as const;
