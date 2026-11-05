@@ -12048,7 +12048,7 @@ fn emit_expression_value(
                             }
                         };
                         return Ok(format!(
-                            "((digits: string, radix: number): number | {absent} => {{ if (!Number.isInteger(radix) || radix < 2 || radix > 36 || digits.length === 0) return {absent}; let index = digits[0] === '+' ? 1 : 0; if (index === digits.length) return {absent}; let value = 0; for (; index < digits.length; index += 1) {{ const code = digits.charCodeAt(index); const digit = code >= 48 && code <= 57 ? code - 48 : code >= 65 && code <= 90 ? code - 55 : code >= 97 && code <= 122 ? code - 87 : radix; if (digit >= radix) return {absent}; value = value * radix + digit; if (value > {max}) return {absent}; }} return value; }})({digits}, {radix})"
+                            "((digits: string, radix: number): number | {absent} => {{ if (!Number.isInteger(radix) || radix < 2 || radix > 36 || digits.length === 0) return {absent}; let index = digits[0] === '+' ? 1 : 0; if (index === digits.length) return {absent}; let value = 0; for (; index < digits.length; index++) {{ const code = digits.charCodeAt(index); const digit = code >= 48 && code <= 57 ? code - 48 : code >= 65 && code <= 90 ? code - 55 : code >= 97 && code <= 122 ? code - 87 : radix; if (digit >= radix) return {absent}; value = value * radix + digit; if (value > {max}) return {absent}; }} return value; }})({digits}, {radix})"
                         ));
                     }
                     _ => {}
@@ -13326,8 +13326,13 @@ pub(crate) fn emit_for_header(
         } else {
             "1".to_string()
         };
+        let increment = if step == "1" {
+            format!("{pattern}++")
+        } else {
+            format!("{pattern} += {step}")
+        };
         return Ok(format!(
-            "let {pattern} = {start}; {pattern} {comparison} {end}; {pattern} += {step}"
+            "let {pattern} = {start}; {pattern} {comparison} {end}; {increment}"
         ));
     }
     let mut iterable = emit_expression(expression, entities)?;
@@ -20701,7 +20706,7 @@ fn emit_method_call(
         "contains" if arguments.len() == 1 => Ok(format!("{receiver}.includes({})", arguments[0])),
         "contains_key" if arguments.len() == 1 => Ok(format!("{receiver}.has({})", arguments[0])),
         "dedup" if arguments.is_empty() => Ok(format!(
-            "(<T>(items: T[]): void => {{ let write = 1; for (let read = 1; read < items.length; read += 1) {{ if (items[read] !== items[read - 1]) {{ items[write] = items[read]; write += 1; }} }} items.length = Math.min(write, items.length); }})({receiver})"
+            "(<T>(items: T[]): void => {{ let write = 1; for (let read = 1; read < items.length; read++) {{ if (items[read] !== items[read - 1]) {{ items[write] = items[read]; write++; }} }} items.length = Math.min(write, items.length); }})({receiver})"
         )),
         "downcast_ref" | "downcast_mut" if arguments.is_empty() => {
             let target_type = call.turbofish.as_ref().and_then(|arguments| {
@@ -21526,7 +21531,7 @@ fn emit_method_call(
             if arguments.len() == 1 && !expression_is_known_string(&call.receiver, entities) =>
         {
             Ok(format!(
-                "(<T>(items: T[], keep: (item: T) => boolean): void => {{ let kept = 0; let index = 0; try {{ for (; index < items.length; index += 1) {{ const item = items[index]; if (keep(item)) {{ items[kept] = item; kept += 1; }} }} }} finally {{ const length = items.length; for (let rest = index; rest < length; rest += 1) {{ items[kept + rest - index] = items[rest]; }} items.length = kept + length - index; }} }})({receiver}, {})",
+                "(<T>(items: T[], keep: (item: T) => boolean): void => {{ let kept = 0; let index = 0; try {{ for (; index < items.length; index++) {{ const item = items[index]; if (keep(item)) {{ items[kept] = item; kept++; }} }} }} finally {{ const length = items.length; for (let rest = index; rest < length; rest++) {{ items[kept + rest - index] = items[rest]; }} items.length = kept + length - index; }} }})({receiver}, {})",
                 arguments[0]
             ))
         }
@@ -25031,6 +25036,22 @@ fn emit_statement(
         Stmt::Expr(Expr::Binary(binary), _)
             if binary_is_assignment(&binary.op)
                 && emit_entry_or_default_assign(out, binary, entities, indent)? => {}
+        Stmt::Expr(Expr::Binary(binary), _)
+            if matches!(binary.op, BinOp::AddAssign(_))
+                && matches!(binary.right.as_ref(), Expr::Lit(lit) if matches!(&lit.lit, syn::Lit::Int(i) if i.base10_digits() == "1")) =>
+        {
+            let target = emit_expression(&binary.left, entities)?;
+            write_indent(out, indent);
+            writeln!(out, "{target}++;").expect("writing to a String cannot fail");
+        }
+        Stmt::Expr(Expr::Binary(binary), _)
+            if matches!(binary.op, BinOp::SubAssign(_))
+                && matches!(binary.right.as_ref(), Expr::Lit(lit) if matches!(&lit.lit, syn::Lit::Int(i) if i.base10_digits() == "1")) =>
+        {
+            let target = emit_expression(&binary.left, entities)?;
+            write_indent(out, indent);
+            writeln!(out, "{target}--;").expect("writing to a String cannot fail");
+        }
         Stmt::Expr(Expr::MethodCall(call), _)
             if emit_entry_or_default_method(out, call, entities, indent)? => {}
         Stmt::Expr(Expr::Call(call), _)
@@ -26672,7 +26693,7 @@ fn emit_retain_statement(
     out.push_str("try {\n");
     let ti = bi + 1;
     write_indent(out, ti);
-    writeln!(out, "for (; {index} < {items}.length; {index} += 1) {{")
+    writeln!(out, "for (; {index} < {items}.length; {index}++) {{")
         .expect("writing to a String cannot fail");
     let fi = ti + 1;
     write_indent(out, fi);
@@ -26682,7 +26703,7 @@ fn emit_retain_statement(
     write_indent(out, fi + 1);
     writeln!(out, "{items}[{kept}] = {item};").expect("writing to a String cannot fail");
     write_indent(out, fi + 1);
-    writeln!(out, "{kept} += 1;").expect("writing to a String cannot fail");
+    writeln!(out, "{kept}++;").expect("writing to a String cannot fail");
     write_indent(out, fi);
     out.push_str("}\n");
     write_indent(out, ti);
@@ -26694,7 +26715,7 @@ fn emit_retain_statement(
     write_indent(out, ti);
     writeln!(
         out,
-        "for (let {rest} = {index}; {rest} < {length}; {rest} += 1) {{"
+        "for (let {rest} = {index}; {rest} < {length}; {rest}++) {{"
     )
     .expect("writing to a String cannot fail");
     write_indent(out, ti + 1);
@@ -26743,7 +26764,7 @@ fn emit_dedup_statement(
     write_indent(out, bi);
     writeln!(
         out,
-        "for (let {read} = 1; {read} < {items}.length; {read} += 1) {{"
+        "for (let {read} = 1; {read} < {items}.length; {read}++) {{"
     )
     .expect("writing to a String cannot fail");
     let fi = bi + 1;
@@ -26753,7 +26774,7 @@ fn emit_dedup_statement(
     write_indent(out, fi + 1);
     writeln!(out, "{items}[{write}] = {items}[{read}];").expect("writing to a String cannot fail");
     write_indent(out, fi + 1);
-    writeln!(out, "{write} += 1;").expect("writing to a String cannot fail");
+    writeln!(out, "{write}++;").expect("writing to a String cannot fail");
     write_indent(out, fi);
     out.push_str("}\n");
     write_indent(out, bi);

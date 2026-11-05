@@ -440,7 +440,7 @@ pub fn read_renamed(state: &Arc<Lock<Counter>>) -> i32 {
 
 export function bump(state: Counter): number {
   const alias: Counter = state;
-  alias!.count += 1;
+  alias!.count++;
   return state!.count;
 }
 
@@ -1470,11 +1470,11 @@ export function createCounter(): Counter {
 }
 
 function takeNext(counter: Counter): number | undefined {
-  counter.calls += 1;
+  counter.calls++;
   if (counter.remaining === 0) {
     return undefined;
   }
-  counter.remaining -= 1;
+  counter.remaining--;
   return counter.remaining;
 }
 
@@ -3164,7 +3164,7 @@ pub fn bump_picked(picker: &mut Picker) -> i32 {
         );
         // The receiver is evaluated once, before the guard binds it.
         assert_eq!(output.matches("pick(picker)").count(), 1, "{output}");
-        assert!(output.contains("let guard = cell;\n    guard.value += 10;\n    if (guard.value > 15) {\n      guard.value -= 1;"), "{output}");
+        assert!(output.contains("let guard = cell;\n    guard.value += 10;\n    if (guard.value > 15) {\n      guard.value--;"), "{output}");
     }
 
     #[test]
@@ -3268,8 +3268,7 @@ pub fn alias_tail(holder: &Holder, take: bool) -> i32 {
         // A `return` injected into a tail `if` or block copies that statement; the `let`s nested in it
         // keep what the resolver proved. Guards bind the cell and dereference through `.value`.
         assert!(
-            output
-                .contains("let guard = aCell;\n      guard.value += 1;\n      return guard.value;"),
+            output.contains("let guard = aCell;\n      guard.value++;\n      return guard.value;"),
             "{output}"
         );
         assert!(
@@ -3290,8 +3289,8 @@ pub fn alias_tail(holder: &Holder, take: bool) -> i32 {
         assert!(output.contains("let seen = new Set();"), "{output}");
         assert!(output.contains("return seen.size;"), "{output}");
         // A ref alias of a shared-cell field writes through to the field.
-        assert!(output.contains("holder.shared += 1;"), "{output}");
-        assert!(!output.contains("alias += 1;"), "{output}");
+        assert!(output.contains("holder.shared!++;"), "{output}");
+        assert!(!output.contains("alias++;"), "{output}");
     }
 
     #[test]
@@ -3729,16 +3728,16 @@ pub async fn spawn_later() -> i32 {
                  {sp1}let kept = 0;\n\
                  {sp1}let retainIndex = 0;\n\
                  {sp1}try {{\n\
-                 {sp2}for (; retainIndex < {receiver}.length; retainIndex += 1) {{\n\
+                 {sp2}for (; retainIndex < {receiver}.length; retainIndex++) {{\n\
                  {sp3}const item = {receiver}[retainIndex];\n\
                  {sp3}if (keep(item)) {{\n\
                  {sp4}{receiver}[kept] = item;\n\
-                 {sp4}kept += 1;\n\
+                 {sp4}kept++;\n\
                  {sp3}}}\n\
                  {sp2}}}\n\
                  {sp1}}} finally {{\n\
                  {sp2}const retainLength = {receiver}.length;\n\
-                 {sp2}for (let rest = retainIndex; rest < retainLength; rest += 1) {{\n\
+                 {sp2}for (let rest = retainIndex; rest < retainLength; rest++) {{\n\
                  {sp3}{receiver}[kept + rest - retainIndex] = {receiver}[rest];\n\
                  {sp2}}}\n\
                  {sp2}{receiver}.length = kept + retainLength - retainIndex;\n\
@@ -3803,7 +3802,7 @@ mod retain {
     }
 }
 "#;
-        let retain_iife = "(<T>(items: T[], keep: (item: T) => boolean): void => { let kept = 0; let index = 0; try { for (; index < items.length; index += 1) { const item = items[index]; if (keep(item)) { items[kept] = item; kept += 1; } } } finally { const length = items.length; for (let rest = index; rest < length; rest += 1) { items[kept + rest - index] = items[rest]; } items.length = kept + length - index; } })";
+        let retain_iife = "(<T>(items: T[], keep: (item: T) => boolean): void => { let kept = 0; let index = 0; try { for (; index < items.length; index++) { const item = items[index]; if (keep(item)) { items[kept] = item; kept++; } } } finally { const length = items.length; for (let rest = index; rest < length; rest++) { items[kept + rest - index] = items[rest]; } items.length = kept + length - index; } })";
         let output = compile_vitest(tests, "@flighthq/example/contract").unwrap();
         assert!(
             output.contains(&format!(
@@ -8727,7 +8726,7 @@ pub fn advance_decoder(bytes: Vec<u8>) -> usize {
             output.contains("let state = { bytes, position: 0, limit: undefined };"),
             "{output}"
         );
-        assert!(output.contains("state.position += 1;"));
+        assert!(output.contains("state.position++;"));
     }
 
     #[test]
@@ -19697,7 +19696,7 @@ pub fn replace_shadowed(shared: Arc<RwLock<i32>>, target: &mut i32) {
 
         assert!(output.contains("shared = 2;"), "{output}");
         assert!(output.contains("shared = 3;"), "{output}");
-        assert!(output.contains("shared += 1;"), "{output}");
+        assert!(output.contains("shared++;"), "{output}");
         assert!(output.contains("fallback.value = 4;"), "{output}");
         assert!(output.contains("shared = 5;"), "{output}");
         assert!(output.contains("target = 6;"), "{output}");
@@ -19756,7 +19755,7 @@ pub fn replace_returned_owner_emit(owner: &Owner) {
 
         assert!(output.contains("const cell = signal.emit;"), "{output}");
         assert!(output.contains("signal.emit = 2;"), "{output}");
-        assert!(output.contains("signal.emit += 1;"), "{output}");
+        assert!(output.contains("signal.emit!++;"), "{output}");
         assert!(output.contains("signal.emit = 4;"), "{output}");
         assert!(
             output.contains("const cell = owner.state.signal.emit;"),
