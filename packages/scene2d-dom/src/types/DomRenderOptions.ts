@@ -1,7 +1,7 @@
+import type { Kind } from '@flighthq/entity/contract';
 import type {
   CanvasShapeCommand,
   EffectPaddingResolver,
-  Kind,
   NodeRenderer,
   Scene3DGraphSyncPolicy,
   ShapeRasterizer,

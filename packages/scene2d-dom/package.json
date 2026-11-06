@@ -38,11 +38,13 @@
     "clean:dist": "tsx ../../scripts/clean-package-dist.ts"
   },
   "dependencies": {
+    "@flighthq/bitmap": "*",
     "@flighthq/color": "*",
     "@flighthq/entity": "*",
     "@flighthq/geometry": "*",
     "@flighthq/image": "*",
     "@flighthq/log": "*",
+    "@flighthq/materials": "*",
     "@flighthq/node": "*",
     "@flighthq/path": "*",
     "@flighthq/registry": "*",
@@ -59,7 +61,6 @@
     "@flighthq/types": "*"
   },
   "devDependencies": {
-    "@flighthq/bitmap": "*",
     "@flighthq/font": "*",
     "@flighthq/image": "*",
     "@flighthq/surface": "*",

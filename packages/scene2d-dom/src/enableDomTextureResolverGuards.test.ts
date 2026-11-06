@@ -1,3 +1,4 @@
+import type { ImageResource } from '@flighthq/image/contract';
 import {
   addLogSink,
   createLogState,
@@ -6,8 +7,8 @@ import {
   removeLogSink,
 } from '@flighthq/log/contract';
 import type { LogState } from '@flighthq/log/contract';
+import type { LogEntry, MemoryLogSink } from '@flighthq/log/contract';
 import { createTexture } from '@flighthq/texture/contract';
-import type { ImageResource, LogEntry, MemoryLogSink } from '@flighthq/types/contract';
 
 import { createDomRenderState } from './domRenderState.ts';
 import { registerDomTextureResolver, resolveDomTexture } from './domTextureResolver.ts';

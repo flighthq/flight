@@ -1,7 +1,8 @@
+import type { Kind } from '@flighthq/entity/contract';
 import { withKindMapEntry } from '@flighthq/registry/contract';
 import { MorphShapeKind, Scale9ShapeKind, ShapeKind } from '@flighthq/shape/contract';
 import { NativeTextKind, RichTextKind, TextLabelKind } from '@flighthq/text/contract';
-import type { Kind, NodeRenderer } from '@flighthq/types/contract';
+import type { NodeRenderer } from '@flighthq/types/contract';
 import {
   DisplayObjectKind,
   HtmlViewKind,

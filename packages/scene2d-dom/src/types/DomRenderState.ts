@@ -1,8 +1,8 @@
+import type { Bitmap } from '@flighthq/bitmap/contract';
+import type { Kind } from '@flighthq/entity/contract';
+import type { BlendMode } from '@flighthq/materials/contract';
 import type { PathWinding } from '@flighthq/path/contract';
 import type {
-  Bitmap,
-  BlendMode,
-  Kind,
   RenderProxy2D,
   RenderRegistries,
   RenderState,

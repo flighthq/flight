@@ -1,6 +1,7 @@
 import { drawCanvasTextureView } from '@flighthq/scene2d-canvas/contract';
 import { createSpriteRendererData, isSpriteRendererDirty } from '@flighthq/scene2d/contract';
 import { getTextureHeight, getTextureViewSize, getTextureWidth } from '@flighthq/texture/contract';
+import type { Texture2D } from '@flighthq/texture/contract';
 import type {
   NodeAny,
   RenderProxy2D,
@@ -8,7 +9,6 @@ import type {
   Scene2DRenderer,
   Sprite,
   SpriteIdentityRendererData,
-  Texture2D,
 } from '@flighthq/types/contract';
 
 import type { DomRenderState } from './contract.scene2d-dom-types.ts';

@@ -1,6 +1,6 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { createTexture } from '@flighthq/texture/contract';
-import type { TextureSource } from '@flighthq/types/contract';
+import type { TextureSource } from '@flighthq/texture/contract';
 
 import { createDomRenderState } from './domRenderState.ts';
 import { registerDomTextureResolver } from './domTextureResolver.ts';

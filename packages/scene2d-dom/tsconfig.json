@@ -71,6 +71,9 @@
       "path": "../types"
     },
     {
+      "path": "../materials/tsconfig.contract.json"
+    },
+    {
       "path": "./tsconfig.contract.json"
     },
     {

@@ -1,9 +1,7 @@
-// Acyclic compatibility base used by @flighthq/scene2d-dom's contract-only build.
-export type { Bitmap } from './Bitmap.ts';
-export type { BlendMode } from './BlendMode.ts';
+// Acyclic compatibility base used by @flighthq/scene2d-dom's contract-only build: only the render seams
+// still declared here (Rust owner flight-render, no TS owner lane yet). Owned names come from their lanes.
 export type { CanvasShapeCommand } from './CanvasShapeRegistry.ts';
 export type { EffectPaddingResolver } from './EffectPadding.ts';
-export type { Kind } from './Entity.ts';
 export type { NodeRenderer } from './NodeRenderer.ts';
 export type { RenderProxy2D } from './RenderProxy2D.ts';
 export type {
@@ -14,4 +12,3 @@ export type {
   StrokeTessellator,
 } from './RenderState.ts';
 export type { ShapeRasterizer } from './ShapeRasterizer.ts';
-export type { Texture } from './Texture.ts';

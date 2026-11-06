@@ -1,5 +1,7 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { Entity, EntityConstruction, MatrixLike, RectangleLike, RenderProxy2D } from '@flighthq/types/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
+import type { MatrixLike, RectangleLike } from '@flighthq/geometry/contract';
+import type { Entity, RenderProxy2D } from '@flighthq/types/contract';
 
 import type {
   DomClipContourEntry,

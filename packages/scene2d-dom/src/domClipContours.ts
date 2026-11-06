@@ -1,5 +1,5 @@
+import type { Matrix } from '@flighthq/geometry/contract';
 import type { PathWinding } from '@flighthq/path/contract';
-import type { Matrix } from '@flighthq/types/contract';
 
 import type { DomClipContourEntry } from './contract.scene2d-dom-types.ts';
 

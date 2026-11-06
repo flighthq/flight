@@ -1,5 +1,5 @@
+import { EntityRuntimeKey } from '@flighthq/entity/contract';
 import { createRenderState as _createRenderState, createRenderStateRuntime } from '@flighthq/render/contract';
-import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import type { DomRenderOptions, DomRenderState, DomRenderStateRuntime } from './contract.scene2d-dom-types.ts';
 

@@ -1,8 +1,8 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
 import { drawCanvasTextureView } from '@flighthq/scene2d-canvas/contract';
 import { getTextureViewSize } from '@flighthq/texture/contract';
 import type {
-  EntityConstruction,
   RenderProxy2D,
   RenderState,
   NodeAny,

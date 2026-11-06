@@ -1,7 +1,9 @@
 import { createImageResourceFromBitmap } from '@flighthq/image/contract';
+import type { HostImageCapability } from '@flighthq/image/contract';
 import { getTextureSource } from '@flighthq/texture/contract';
-import type { Bitmap, HostImageCapability, Texture } from '@flighthq/types/contract';
-import { BitmapTextureSourceKind } from '@flighthq/types/contract';
+import type { Texture } from '@flighthq/texture/contract';
+import { BitmapTextureSourceKind } from '@flighthq/texture/contract';
+import type { Bitmap } from '@flighthq/types/contract';
 
 import type { DomRenderState } from './contract.scene2d-dom-types.ts';
 import { getDomRenderStateRuntime } from './domRenderState.ts';

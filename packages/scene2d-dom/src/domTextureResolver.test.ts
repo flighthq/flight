@@ -5,7 +5,7 @@ import {
   unregisterTestImageDimensionResolver,
 } from '@flighthq/image/contract';
 import { createTexture } from '@flighthq/texture/contract';
-import type { TextureSource } from '@flighthq/types/contract';
+import type { TextureSource } from '@flighthq/texture/contract';
 
 import { createDomRenderState, getDomRenderStateRuntime } from './domRenderState.ts';
 import { registerDomTextureResolver, resolveDomTexture } from './domTextureResolver.ts';
