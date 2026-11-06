@@ -1,4 +1,4 @@
-import type { RectangleLike } from '@flighthq/types/contract';
+import type { RectangleLike } from '@flighthq/geometry/contract';
 
 // Nine-slice blit geometry for a textured node, written as flat numbers rather than returned as objects
 // so a per-frame draw allocates nothing and the layout ports directly to a C array. Each slice occupies

@@ -1,12 +1,14 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { createMatrix, createRectangle } from '@flighthq/geometry/contract';
+import type { Matrix, Rectangle } from '@flighthq/geometry/contract';
 import { getOrCreateRenderProxy2D } from '@flighthq/render/contract';
 import type { RenderProxy2D } from '@flighthq/render/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
-import type { CanvasRenderState, Node2D, Matrix, Rectangle } from '@flighthq/types/contract';
+import type { Node2D } from '@flighthq/scene2d/contract';
 
 import { popCanvasClipRectangle, pushCanvasClipContours, pushCanvasClipRectangle } from './canvasClipRectangle.ts';
 import { createCanvasRenderState } from './canvasTestSupport.ts';
+import type { CanvasRenderState } from './types/CanvasRenderState.ts';
 
 describe('Clip Rectangle Functions', () => {
   let canvas: HTMLCanvasElement;

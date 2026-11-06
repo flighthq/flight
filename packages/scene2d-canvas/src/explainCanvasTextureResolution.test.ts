@@ -1,5 +1,5 @@
 import { createTexture } from '@flighthq/texture/contract';
-import type { TextureSource } from '@flighthq/types/contract';
+import type { TextureSource } from '@flighthq/texture/contract';
 
 import { getCanvasRenderStateTextureResolvers } from './canvasTestSupport.ts';
 import { createCanvasRenderState } from './canvasTestSupport.ts';

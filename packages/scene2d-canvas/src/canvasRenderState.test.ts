@@ -1,9 +1,9 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { EntityRuntimeKey } from '@flighthq/entity/contract';
 import { createMatrix } from '@flighthq/geometry/contract';
+import type { HostImageCapability } from '@flighthq/image/contract';
 import { prepareScene2DRender, registerNodeRenderer } from '@flighthq/render/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
-import type { HostImageCapability } from '@flighthq/types/contract';
-import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import { registerCanvasBitmapTextureResolver } from './canvasBitmapTextureResolver.ts';
 import { allocateEmptyCanvasRenderRegistries } from './canvasPipeline.ts';

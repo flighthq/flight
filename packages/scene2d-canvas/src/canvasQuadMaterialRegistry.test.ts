@@ -1,5 +1,5 @@
-import type { CanvasQuadMaterialRenderer, Material } from '@flighthq/types/contract';
-import { StandardMaterialKind } from '@flighthq/types/contract';
+import type { Material } from '@flighthq/materials/contract';
+import { StandardMaterialKind } from '@flighthq/materials/contract';
 
 import {
   applyCanvasMaterial,
@@ -8,6 +8,7 @@ import {
   resolveCanvasQuadMaterialRenderer,
 } from './canvasQuadMaterialRegistry.ts';
 import { createCanvasRenderState, getCanvasRenderStateRuntime } from './canvasTestSupport.ts';
+import type { CanvasQuadMaterialRenderer } from './types/CanvasMaterial.ts';
 
 const TestKind = 'TestMaterial';
 const testRenderer: CanvasQuadMaterialRenderer = { getState: () => ({ composite: 'lighter' }) };

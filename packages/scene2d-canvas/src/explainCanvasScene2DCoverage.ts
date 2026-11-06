@@ -1,10 +1,12 @@
+import type { Kind } from '@flighthq/entity/contract';
 import { explainScene2DCoverage, hasScene2DCoverage } from '@flighthq/render/contract';
 import type { CatalogRegistration, SceneCoverageCatalog, SceneCoverageEntry } from '@flighthq/render/contract';
 import { RenderRegistryTable, SceneCoverage } from '@flighthq/render/contract';
-import type { CanvasRenderState, Kind, Scene2DKindUsage } from '@flighthq/types/contract';
+import type { Scene2DKindUsage } from '@flighthq/scene2d/contract';
 import { RequirementFacet } from '@flighthq/types/contract';
 
 import { getCanvasQuadMaterialRenderer } from './canvasQuadMaterialRegistry.ts';
+import type { CanvasRenderState } from './types/CanvasRenderState.ts';
 
 // Clears `out`, then reports every requirement in `usage` with how well this Canvas state is wired for
 // it — satisfied entries included, so one call is a complete manifest.

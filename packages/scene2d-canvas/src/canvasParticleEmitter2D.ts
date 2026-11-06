@@ -2,7 +2,7 @@ import type { ParticleEmitter2D } from '@flighthq/particleemitter/contract';
 import { noopRendererData } from '@flighthq/render/contract';
 import type { RenderProxy2D } from '@flighthq/render/contract';
 import { TextureAtlasRotation } from '@flighthq/textureatlas/contract';
-import type { CanvasRenderState, SpriteRenderer } from '@flighthq/types/contract';
+import type { SpriteRenderer } from '@flighthq/types/contract';
 
 import { drawCanvasAtlasRegion } from './canvasAtlasRegion.ts';
 import {
@@ -11,6 +11,7 @@ import {
   setCanvasImageSmoothing,
 } from './canvasRenderState.ts';
 import { resolveCanvasTexture } from './canvasTextureResolver.ts';
+import type { CanvasRenderState } from './types/CanvasRenderState.ts';
 
 // Canvas 2D does not support per-pixel color multiplication, so only alpha
 // and transform (position, rotation, scale) are applied. Color tint values

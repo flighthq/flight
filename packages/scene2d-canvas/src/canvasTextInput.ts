@@ -11,10 +11,10 @@ import {
 } from '@flighthq/textinput/contract';
 import { computeTextBoundsHeight, computeTextBoundsWidth } from '@flighthq/textlayout/contract';
 import type { TextSelectionRectangle } from '@flighthq/textlayout/contract';
-import type { CanvasRenderState } from '@flighthq/types/contract';
 
 import { registerCanvasTextInputOverlay } from './canvasRichText.ts';
 import { setCanvasTransform } from './canvasTransform.ts';
+import type { CanvasRenderState } from './types/CanvasRenderState.ts';
 
 // Draws the editable-field overlay (selection highlight + blinking caret) over a RichText whose input
 // slot is present. Invoked by the Canvas RichText renderer after the field, keyed off the input slot.

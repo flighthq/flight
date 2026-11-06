@@ -2,7 +2,7 @@ import { noopRendererData } from '@flighthq/render/contract';
 import type { RenderProxy2D } from '@flighthq/render/contract';
 import { getNode2DRuntime } from '@flighthq/scene2d/contract';
 import { TextureAtlasRotation } from '@flighthq/textureatlas/contract';
-import type { CanvasRenderState, SpriteRenderer } from '@flighthq/types/contract';
+import type { SpriteRenderer } from '@flighthq/types/contract';
 
 import { drawCanvasAtlasRegion } from './canvasAtlasRegion.ts';
 import { applyCanvasMaterial } from './canvasQuadMaterialRegistry.ts';
@@ -12,6 +12,7 @@ import {
   setCanvasImageSmoothing,
 } from './canvasRenderState.ts';
 import { resolveCanvasTexture } from './canvasTextureResolver.ts';
+import type { CanvasRenderState } from './types/CanvasRenderState.ts';
 
 // Draws a BitmapText leaf on Canvas 2D: one `drawImage` per glyph, per glyph-atlas page. Canvas realizes
 // no color-adjustment fold, so a node tint is not applied here (honest — the missing

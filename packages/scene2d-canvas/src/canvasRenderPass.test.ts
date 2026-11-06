@@ -1,5 +1,5 @@
 import { createMatrix } from '@flighthq/geometry/contract';
-import { BlendMode } from '@flighthq/types/contract';
+import { BlendMode } from '@flighthq/materials/contract';
 
 import { getCanvasRenderStateRuntime } from './canvasRenderState.ts';
 import {

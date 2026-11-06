@@ -1,7 +1,8 @@
+import type { MatrixLike } from '@flighthq/geometry/contract';
 import type { RenderProxy2D, Scene2DRenderer } from '@flighthq/render/contract';
 import { createSpriteRendererData, isSpriteRendererDirty } from '@flighthq/scene2d/contract';
+import type { Scale9Sprite } from '@flighthq/scene2d/contract';
 import { getTextureViewSize } from '@flighthq/texture/contract';
-import type { CanvasRenderState, MatrixLike, Scale9Sprite } from '@flighthq/types/contract';
 
 import { drawCanvasScene2D } from './canvasNode2D.ts';
 import {
@@ -13,6 +14,7 @@ import {
 import { CANVAS_SCALE9_SPRITE_SLICE_STRIDE, writeCanvasScale9SpriteSlices } from './canvasScale9SpriteSlices.ts';
 import { resolveCanvasTextureWindowSource } from './canvasTextureWindowSource.ts';
 import { setCanvasTransform } from './canvasTransform.ts';
+import type { CanvasRenderState } from './types/CanvasRenderState.ts';
 
 // Draws a textured node in nine pieces so its border keeps its authored thickness at any size. This is
 // the sprite counterpart of drawCanvasScale9Shape and follows the same two rules: the node's own

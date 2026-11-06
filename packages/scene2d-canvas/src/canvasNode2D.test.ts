@@ -1,7 +1,7 @@
 ﻿import { addNodeChild } from '@flighthq/node/contract';
 import { getOrCreateRenderProxy2D, prepareScene2DRender, registerNodeRenderer } from '@flighthq/render/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
-import { DisplayObjectKind } from '@flighthq/types/contract';
+import { DisplayObjectKind } from '@flighthq/scene2d/contract';
 
 import { enableCanvasCssFilter, setCanvasCssFilter } from './canvasCSSFilterBinding.ts';
 import { canvasScene2DRenderer, drawCanvasScene2D, renderCanvasScene2D } from './canvasNode2D.ts';

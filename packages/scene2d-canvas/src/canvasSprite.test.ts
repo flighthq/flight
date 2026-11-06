@@ -5,13 +5,13 @@ import {
 } from '@flighthq/image/contract';
 import { getOrCreateRenderProxy2D, prepareScene2DRender, registerNodeRenderer } from '@flighthq/render/contract';
 import { createSprite } from '@flighthq/scene2d/contract';
+import { SpriteKind } from '@flighthq/scene2d/contract';
 import {
   createPixelArtSampler,
   createRenderTexture,
   createTexture,
   setTextureUvFromPixelRect,
 } from '@flighthq/texture/contract';
-import { SpriteKind } from '@flighthq/types/contract';
 
 import { registerCanvasImageTextureResolver } from './canvasImageTextureResolver.ts';
 import { renderIntoCanvasRenderTexture } from './canvasRenderTexture.ts';

@@ -1,11 +1,11 @@
+import { EntityRuntimeKey } from '@flighthq/entity/contract';
 import {
   createImageResource,
   registerTestImageDimensionResolver,
   unregisterTestImageDimensionResolver,
 } from '@flighthq/image/contract';
+import type { HostImageCapability } from '@flighthq/image/contract';
 import { createSampler, createTexture } from '@flighthq/texture/contract';
-import type { HostImageCapability } from '@flighthq/types/contract';
-import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import { registerCanvasBitmapTextureResolver } from './canvasBitmapTextureResolver.ts';
 import { createBitmapPattern, createGradientPattern } from './canvasFillPattern.ts';

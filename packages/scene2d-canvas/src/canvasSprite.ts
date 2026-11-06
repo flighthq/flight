@@ -1,7 +1,7 @@
 import type { RenderProxy2D, Scene2DRenderer } from '@flighthq/render/contract';
 import { createSpriteRendererData, isSpriteRendererDirty } from '@flighthq/scene2d/contract';
+import type { Sprite } from '@flighthq/scene2d/contract';
 import { getTextureViewSize } from '@flighthq/texture/contract';
-import type { CanvasRenderState, Sprite } from '@flighthq/types/contract';
 
 import { drawCanvasScene2D } from './canvasNode2D.ts';
 import {
@@ -13,6 +13,7 @@ import {
 import { resolveCanvasTexture } from './canvasTextureResolver.ts';
 import { drawCanvasTextureView } from './canvasTextureView.ts';
 import { setCanvasTransform } from './canvasTransform.ts';
+import type { CanvasRenderState } from './types/CanvasRenderState.ts';
 
 export function drawCanvasSprite(state: CanvasRenderState, sprite: RenderProxy2D): void {
   drawCanvasScene2D(state, sprite);

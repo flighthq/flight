@@ -1,6 +1,7 @@
 import type { LogState } from '@flighthq/log/contract';
 import { areRenderRegistriesGuardsEnabled, enableRenderRegistriesGuards } from '@flighthq/render/contract';
-import type { CanvasRenderState } from '@flighthq/types/contract';
+
+import type { CanvasRenderState } from './types/CanvasRenderState.ts';
 
 export function areCanvasTextureResolverGuardsEnabled(state: CanvasRenderState): boolean {
   return areRenderRegistriesGuardsEnabled(state);

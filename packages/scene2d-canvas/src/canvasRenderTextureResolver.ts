@@ -1,9 +1,10 @@
 import type { RenderTexture } from '@flighthq/render/contract';
 import { RenderTargetTextureSourceKind } from '@flighthq/texture/contract';
-import type { CanvasRenderState, Texture } from '@flighthq/types/contract';
+import type { Texture } from '@flighthq/texture/contract';
 
 import { bindCanvasRenderTexture } from './canvasRenderTexture.ts';
 import { registerCanvasTextureResolver } from './canvasTextureResolver.ts';
+import type { CanvasRenderState } from './types/CanvasRenderState.ts';
 import type { CanvasTextureResolvers } from './types/CanvasTextureResolver.ts';
 
 // The one resolver that needs a render state: a render-target texture is owned by the state that draws

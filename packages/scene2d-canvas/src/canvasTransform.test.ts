@@ -1,8 +1,9 @@
 import { createMatrix } from '@flighthq/geometry/contract';
-import type { CanvasRenderState, Matrix } from '@flighthq/types/contract';
+import type { Matrix } from '@flighthq/geometry/contract';
 
 import { createCanvasRenderState } from './canvasTestSupport.ts';
 import { setCanvasTransform } from './canvasTransform.ts';
+import type { CanvasRenderState } from './types/CanvasRenderState.ts';
 
 describe('setCanvasTransform', () => {
   let canvas: HTMLCanvasElement;

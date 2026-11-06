@@ -1,14 +1,15 @@
-﻿import { noopRendererData } from '@flighthq/render/contract';
+﻿import type { MatrixLike } from '@flighthq/geometry/contract';
+import { noopRendererData } from '@flighthq/render/contract';
 import type { RenderProxy2D, Scene2DRenderer } from '@flighthq/render/contract';
 import { mapScale9ShapeCommands } from '@flighthq/shape/contract';
 import type { Scale9Shape, ShapeCommandToken } from '@flighthq/shape/contract';
-import type { CanvasRenderState, MatrixLike } from '@flighthq/types/contract';
 
 import { drawCanvasScene2D } from './canvasNode2D.ts';
 import { getCanvasRenderStateTextureResolvers } from './canvasRenderState.ts';
 import { buildScale9Mapper } from './canvasScale9Mapper.ts';
 import { renderCanvasShapeCommands } from './canvasShape.ts';
 import { setCanvasTransform } from './canvasTransform.ts';
+import type { CanvasRenderState } from './types/CanvasRenderState.ts';
 
 const _remappedCommands: ShapeCommandToken[] = [];
 

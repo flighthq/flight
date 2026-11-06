@@ -1,4 +1,5 @@
 import { createMatrix, inverseMatrix } from '@flighthq/geometry/contract';
+import type { Matrix } from '@flighthq/geometry/contract';
 import {
   defaultShapeBoundsCubicCurveTo,
   defaultShapeBoundsDrawCircle,
@@ -16,7 +17,8 @@ import {
 } from '@flighthq/shape/contract';
 import type { LineScaleMode } from '@flighthq/shape/contract';
 import { getTextureViewSize } from '@flighthq/texture/contract';
-import type { CanvasShapeCommand, Matrix, Texture } from '@flighthq/types/contract';
+import type { Texture } from '@flighthq/texture/contract';
+import type { CanvasShapeCommand } from '@flighthq/types/contract';
 
 const _fillMatrixInverse: Matrix = createMatrix();
 

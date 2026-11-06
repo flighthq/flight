@@ -1,3 +1,4 @@
+import type { Kind } from '@flighthq/entity/contract';
 import { createRectangle } from '@flighthq/geometry/contract';
 import {
   createImageResource,
@@ -7,9 +8,8 @@ import {
 import { getOrCreateRenderProxy2D, prepareScene2DRender, registerNodeRenderer } from '@flighthq/render/contract';
 import type { NodeRenderer } from '@flighthq/render/contract';
 import { createScale9Sprite, createSprite } from '@flighthq/scene2d/contract';
+import { Scale9SpriteKind, SpriteKind } from '@flighthq/scene2d/contract';
 import { createTexture } from '@flighthq/texture/contract';
-import type { Kind } from '@flighthq/types/contract';
-import { Scale9SpriteKind, SpriteKind } from '@flighthq/types/contract';
 
 import { registerCanvasImageTextureResolver } from './canvasImageTextureResolver.ts';
 import {} from './canvasPipeline.ts';

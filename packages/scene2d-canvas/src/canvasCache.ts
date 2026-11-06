@@ -1,4 +1,5 @@
 import { createMatrix, createRectangle } from '@flighthq/geometry/contract';
+import type { Matrix } from '@flighthq/geometry/contract';
 import { computeNodeBoundsRectangle } from '@flighthq/node/contract';
 import {
   computeScene2DRenderTargetTransform,
@@ -10,7 +11,8 @@ import {
   registerRenderCacheNodeRenderer,
 } from '@flighthq/render/contract';
 import type { Scene2DRenderer, RenderProxy2D, RenderState } from '@flighthq/render/contract';
-import type { Node2D, Matrix, RenderCache, RenderCacheRefreshOptions } from '@flighthq/types/contract';
+import type { RenderCache, RenderCacheRefreshOptions } from '@flighthq/render/contract';
+import type { Node2D } from '@flighthq/scene2d/contract';
 
 import { renderCanvasScene2D } from './canvasNode2D.ts';
 import { beginCanvasRenderPass, endCanvasRenderPass } from './canvasRenderPass.ts';

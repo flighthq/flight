@@ -1,7 +1,8 @@
 import type { Scene2DClipHooks, RenderProxy2D, RenderState } from '@flighthq/render/contract';
-import type { CanvasRenderState, Node2D } from '@flighthq/types/contract';
+import type { Node2D } from '@flighthq/scene2d/contract';
 
 import { popCanvasClipRectangle, pushCanvasClipContours, pushCanvasClipRectangle } from './canvasClipRectangle.ts';
+import type { CanvasRenderState } from './types/CanvasRenderState.ts';
 
 // Masks RETIRED — a former mask is a path ClipRegion. Canvas realizes both clip forms with the native
 // context clip (rect path or contour path), so push/pop is a uniform ctx.save()/ctx.restore() bracket

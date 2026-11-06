@@ -1,4 +1,4 @@
-import type { CanvasSurface, HostCanvasCapability } from '@flighthq/types/contract';
+import type { CanvasSurface, HostCanvasCapability } from '@flighthq/surface/contract';
 
 import { createCanvasRenderState } from './canvasRenderState.ts';
 import {

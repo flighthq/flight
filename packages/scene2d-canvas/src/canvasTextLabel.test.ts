@@ -1,6 +1,6 @@
-﻿import { getOrCreateRenderProxy2D } from '@flighthq/render/contract';
+﻿import { EntityRuntimeKey } from '@flighthq/entity/contract';
+import { getOrCreateRenderProxy2D } from '@flighthq/render/contract';
 import { createTextLabel } from '@flighthq/text/contract';
-import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import { createCanvasRenderState } from './canvasTestSupport.ts';
 import { canvasTextLabelRenderer, drawCanvasTextLabel, initializeCanvasTextLabelData } from './canvasTextLabel.ts';

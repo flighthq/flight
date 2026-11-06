@@ -3,10 +3,11 @@ import { ParticleEmitter2DKind } from '@flighthq/particleemitter/contract';
 import { QuadBatchKind } from '@flighthq/quadbatch/contract';
 import { withKindMapEntry } from '@flighthq/registry/contract';
 import type { NodeRenderer } from '@flighthq/render/contract';
+import { RenderCacheKind } from '@flighthq/render/contract';
+import { DisplayObjectKind, Scale9SpriteKind, SpriteKind } from '@flighthq/scene2d/contract';
 import { MorphShapeKind, Scale9ShapeKind, ShapeKind } from '@flighthq/shape/contract';
 import { RichTextKind, TextLabelKind } from '@flighthq/text/contract';
 import { TilemapKind } from '@flighthq/tilemap/contract';
-import { DisplayObjectKind, RenderCacheKind, Scale9SpriteKind, SpriteKind } from '@flighthq/types/contract';
 
 import { canvasBitmapTextRenderer } from './canvasBitmapText.ts';
 import { canvasRenderCacheRenderer } from './canvasCache.ts';

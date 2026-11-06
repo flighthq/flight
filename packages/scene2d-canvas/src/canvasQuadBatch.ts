@@ -3,7 +3,7 @@ import type { QuadBatch } from '@flighthq/quadbatch/contract';
 import { noopRendererData } from '@flighthq/render/contract';
 import type { RenderProxy2D } from '@flighthq/render/contract';
 import { TextureAtlasRotation } from '@flighthq/textureatlas/contract';
-import type { CanvasRenderState, SpriteRenderer } from '@flighthq/types/contract';
+import type { SpriteRenderer } from '@flighthq/types/contract';
 
 import { drawCanvasAtlasRegion } from './canvasAtlasRegion.ts';
 import { applyCanvasMaterial } from './canvasQuadMaterialRegistry.ts';
@@ -14,6 +14,7 @@ import {
   setCanvasImageSmoothing,
 } from './canvasRenderState.ts';
 import { resolveCanvasTexture } from './canvasTextureResolver.ts';
+import type { CanvasRenderState } from './types/CanvasRenderState.ts';
 
 export function drawCanvasQuadBatch(state: CanvasRenderState, quadBatch: RenderProxy2D): void {
   const source = quadBatch.source as QuadBatch;

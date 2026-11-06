@@ -1,5 +1,6 @@
+import type { Kind } from '@flighthq/entity/contract';
 import { withKindMapEntry } from '@flighthq/registry/contract';
-import type { CanvasShapeCommand, Kind } from '@flighthq/types/contract';
+import type { CanvasShapeCommand } from '@flighthq/types/contract';
 
 import { canvasShapeCommands, canvasTextureShapeCommands } from './canvasShapeCommands.ts';
 

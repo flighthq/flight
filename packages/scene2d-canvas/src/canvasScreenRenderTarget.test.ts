@@ -1,5 +1,5 @@
 import { createCanvasSurfaceFromNativeHandle, getSurfaceHandle } from '@flighthq/surface/contract';
-import type { CanvasSurface } from '@flighthq/types/contract';
+import type { CanvasSurface } from '@flighthq/surface/contract';
 
 import { beginCanvasRenderPass, endCanvasRenderPass } from './canvasRenderPass.ts';
 import {

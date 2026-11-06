@@ -1,14 +1,16 @@
+import { BlendMode } from '@flighthq/materials/contract';
 import { registerNodeRenderer } from '@flighthq/render/contract';
 import type { SceneCoverageCatalog, SceneCoverageEntry } from '@flighthq/render/contract';
 import { RenderRegistryTable, SceneCoverage } from '@flighthq/render/contract';
 import type { NodeRenderer } from '@flighthq/render/contract';
-import type { CanvasQuadMaterialRenderer, Scene2DKindUsage } from '@flighthq/types/contract';
-import { BlendMode, RequirementFacet } from '@flighthq/types/contract';
+import type { Scene2DKindUsage } from '@flighthq/scene2d/contract';
+import { RequirementFacet } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { registerCanvasQuadMaterialRenderer } from './canvasQuadMaterialRegistry.ts';
 import { createCanvasRenderState } from './canvasTestSupport.ts';
 import { explainCanvasScene2DCoverage, hasCanvasScene2DCoverage } from './explainCanvasScene2DCoverage.ts';
+import type { CanvasQuadMaterialRenderer } from './types/CanvasMaterial.ts';
 
 const materialRenderer = { getState: () => ({}) } as unknown as CanvasQuadMaterialRenderer;
 const nodeRenderer: NodeRenderer = { createData: () => null, submit: () => {} } as unknown as NodeRenderer;

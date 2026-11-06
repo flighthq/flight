@@ -1,5 +1,5 @@
+import type { NonEntityCreateResult } from '@flighthq/entity/contract';
 import type { ShapeRasterizer } from '@flighthq/render/contract';
-import type { NonEntityCreateResult } from '@flighthq/types/contract';
 
 import { renderCanvasShapeCommands } from './canvasShape.ts';
 import type { CanvasTextureResolvers } from './types/CanvasTextureResolver.ts';

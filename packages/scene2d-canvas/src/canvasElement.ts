@@ -1,5 +1,5 @@
 import { getSurfaceHandle } from '@flighthq/surface/contract';
-import type { CanvasSurface, HostCanvasCapability } from '@flighthq/types/contract';
+import type { CanvasSurface, HostCanvasCapability } from '@flighthq/surface/contract';
 
 // Creates a properly sized offscreen CanvasSurface for presentation. The backing canvas is sized in device
 // pixels (width × pixelRatio), and its CSS display size is set to logical pixels. The caller attaches the

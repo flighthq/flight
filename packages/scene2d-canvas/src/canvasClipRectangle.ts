@@ -1,7 +1,8 @@
+import type { Matrix, RectangleLike } from '@flighthq/geometry/contract';
 import type { PathWinding } from '@flighthq/path/contract';
-import type { CanvasRenderState, Matrix, RectangleLike } from '@flighthq/types/contract';
 
 import { setCanvasTransform } from './canvasTransform.ts';
+import type { CanvasRenderState } from './types/CanvasRenderState.ts';
 
 export function popCanvasClipRectangle(state: CanvasRenderState): void {
   state.context.restore();

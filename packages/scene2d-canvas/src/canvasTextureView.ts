@@ -1,6 +1,6 @@
 import { createMatrix3 } from '@flighthq/geometry/contract';
 import { getTextureHeight, getTextureUvMatrix, getTextureWidth } from '@flighthq/texture/contract';
-import type { Texture2D } from '@flighthq/types/contract';
+import type { Texture2D } from '@flighthq/texture/contract';
 
 // Draws a Texture view into the current local coordinate system. The caller owns the local-to-target
 // transform and smoothing state. Ordinary positive, unrotated windows retain the single drawImage

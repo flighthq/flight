@@ -2,10 +2,10 @@ import type { Kind } from '@flighthq/entity/contract';
 import { StandardMaterialKind } from '@flighthq/materials/contract';
 import type { Material } from '@flighthq/materials/contract';
 import { withKindMapEntry } from '@flighthq/registry/contract';
-import type { CanvasRenderState } from '@flighthq/types/contract';
 
 import { getCanvasRenderStateRuntime } from './canvasRenderState.ts';
 import type { CanvasQuadMaterialRenderer } from './types/CanvasMaterial.ts';
+import type { CanvasRenderState } from './types/CanvasRenderState.ts';
 
 // Applies a node's material draw-state delta before a canvas draw, bracketed with ctx.save().
 // Returns true when it saved and the caller must ctx.restore() after drawing; false (no save) when
