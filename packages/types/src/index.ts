@@ -135,13 +135,6 @@ export type { CapacitorAppCapabilitiesFor } from './CapacitorAppCapabilitiesFor.
 export type { CapacitorHost } from './CapacitorHost.ts';
 export type { CapacitorProtocolCapabilities } from './CapacitorProtocolCapabilities.ts';
 export * from './Capsule.ts';
-export * from './CaptureBaseline.ts';
-export * from './CaptureBaselineField.ts';
-export * from './CaptureBaselineProvenance.ts';
-export * from './CaptureBaselineProvenanceField.ts';
-export * from './CaptureCheckResult.ts';
-export * from './CaptureCheckTier.ts';
-export * from './CaptureColumnBaseline.ts';
 export * from './CdlValues.ts';
 export * from './ChromaticAberrationEffect.ts';
 export * from './CircleCollider.ts';
