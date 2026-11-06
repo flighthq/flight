@@ -1,13 +1,12 @@
-import { createTextureAtlasRegion } from '@flighthq/textureatlas/contract';
+import { createTextureAtlasRegion, TextureAtlasRotation } from '@flighthq/textureatlas/contract';
 import type { TextureAtlas } from '@flighthq/textureatlas/contract';
-import { TextureAtlasRotation } from '@flighthq/types/contract';
+
+import { readTextureAtlasScale, resetTextureAtlasPageMeta } from './textureAtlasPageMeta.ts';
 import type {
   TextureAtlasAsepriteArrayFrame,
   TextureAtlasAsepriteBaseFrame,
   TextureAtlasAsepriteDocument,
-} from '@flighthq/types/contract';
-
-import { readTextureAtlasScale, resetTextureAtlasPageMeta } from './textureAtlasPageMeta.ts';
+} from './types.ts';
 
 // Convenience variant that accepts an already-parsed Aseprite document object.
 export function parseTextureAtlasAsepriteDocument(doc: TextureAtlasAsepriteDocument, atlas: TextureAtlas): void {

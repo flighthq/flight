@@ -1,11 +1,4 @@
 import { addTextureAtlasRegion, createTextureAtlas } from '@flighthq/textureatlas/contract';
-import type { TextureAtlasFormatKind } from '@flighthq/types/contract';
-import {
-  TextureAtlasFormatKindAseprite,
-  TextureAtlasFormatKindLibgdxAtlas,
-  TextureAtlasFormatKindStarling,
-  TextureAtlasFormatKindTexturePacker,
-} from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import {
@@ -19,6 +12,13 @@ import {
   textureAtlasAllFormats,
   unregisterTextureAtlasFormat,
 } from './textureAtlasDetect.ts';
+import {
+  TextureAtlasFormatKindAseprite,
+  TextureAtlasFormatKindLibgdxAtlas,
+  TextureAtlasFormatKindStarling,
+  TextureAtlasFormatKindTexturePacker,
+} from './textureAtlasFormatKind.ts';
+import type { TextureAtlasFormatKind } from './textureAtlasFormatKind.ts';
 
 const STARLING_XML = `<?xml version="1.0" encoding="UTF-8"?>
 <TextureAtlas imagePath="atlas.png">

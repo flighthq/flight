@@ -9,10 +9,10 @@
     "sourceMap": true
   },
   "references": [
+    { "path": "../entity" },
     { "path": "../registry" },
     { "path": "../textureatlas/tsconfig.runtime.json" },
     { "path": "../requirement" },
-    { "path": "../types" },
     { "path": "../xml" }
   ],
   "include": ["src"]

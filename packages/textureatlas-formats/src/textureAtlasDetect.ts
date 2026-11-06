@@ -1,24 +1,24 @@
+import type { Kind } from '@flighthq/entity/contract';
 import { getKindMapKeys, withKindMapEntry, withoutKindMapEntry } from '@flighthq/registry/contract';
 import type { TextureAtlas } from '@flighthq/textureatlas/contract';
-import type {
-  Kind,
-  TextureAtlasFormatDescriptor,
-  TextureAtlasFormatEntry,
-  TextureAtlasFormatKind,
-  TextureAtlasImportOptions,
-  TextureAtlasParseOptions,
-} from '@flighthq/types/contract';
+
+import { parseTextureAtlasAsepriteJson } from './textureAtlasAsepriteParse.ts';
 import {
   TextureAtlasFormatKindAseprite,
   TextureAtlasFormatKindLibgdxAtlas,
   TextureAtlasFormatKindStarling,
   TextureAtlasFormatKindTexturePacker,
-} from '@flighthq/types/contract';
-
-import { parseTextureAtlasAsepriteJson } from './textureAtlasAsepriteParse.ts';
+} from './textureAtlasFormatKind.ts';
+import type { TextureAtlasFormatKind } from './textureAtlasFormatKind.ts';
 import { parseTextureAtlasLibgdxAtlas } from './textureAtlasLibgdxParse.ts';
 import { parseTextureAtlasStarlingXml } from './textureAtlasStarlingParse.ts';
 import { parseTexturePackerAtlasJson } from './texturePackerAtlasParse.ts';
+import type {
+  TextureAtlasFormatDescriptor,
+  TextureAtlasFormatEntry,
+  TextureAtlasImportOptions,
+  TextureAtlasParseOptions,
+} from './types.ts';
 
 interface RegisteredFormatEntry {
   entry: TextureAtlasFormatEntry;

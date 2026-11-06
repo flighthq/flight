@@ -1,8 +1,7 @@
-import { createTextureAtlas } from '@flighthq/textureatlas/contract';
-import { TextureAtlasRotation } from '@flighthq/types/contract';
-import type { TexturePackerAtlasArrayDocument, TexturePackerAtlasHashDocument } from '@flighthq/types/contract';
+import { createTextureAtlas, TextureAtlasRotation } from '@flighthq/textureatlas/contract';
 
 import { parseTexturePackerAtlasDocument, parseTexturePackerAtlasJson } from './texturePackerAtlasParse.ts';
+import type { TexturePackerAtlasArrayDocument, TexturePackerAtlasHashDocument } from './types.ts';
 
 // Minimal TexturePacker JSON-Hash fixture
 const HASH_FIXTURE: TexturePackerAtlasHashDocument = {

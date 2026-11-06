@@ -1,5 +1,4 @@
-import { createTextureAtlas } from '@flighthq/textureatlas/contract';
-import { TextureAtlasRotation } from '@flighthq/types/contract';
+import { createTextureAtlas, TextureAtlasRotation } from '@flighthq/textureatlas/contract';
 
 import { parseTextureAtlasStarlingXml } from './textureAtlasStarlingParse.ts';
 

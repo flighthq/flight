@@ -1,6 +1,5 @@
-import { createTextureAtlasRegion } from '@flighthq/textureatlas/contract';
+import { createTextureAtlasRegion, TextureAtlasRotation } from '@flighthq/textureatlas/contract';
 import type { TextureAtlas } from '@flighthq/textureatlas/contract';
-import { TextureAtlasRotation } from '@flighthq/types/contract';
 import { parseXmlDocument } from '@flighthq/xml/contract';
 
 import { resetTextureAtlasPageMeta } from './textureAtlasPageMeta.ts';

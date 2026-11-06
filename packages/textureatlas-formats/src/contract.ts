@@ -1,3 +1,5 @@
+export * from './textureAtlasFormatKind.ts';
+export type * from './types.ts';
 export * from './textureAtlasAsepriteParse.ts';
 export * from './textureAtlasDetect.ts';
 export * from './textureAtlasLibgdxParse.ts';
