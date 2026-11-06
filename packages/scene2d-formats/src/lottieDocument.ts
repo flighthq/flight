@@ -5,6 +5,7 @@ import {
   createAnimationTrack,
   sampleAnimationTrack,
 } from '@flighthq/animation/contract';
+import type { AnimationClip, AnimationTrack } from '@flighthq/animation/contract';
 import type { EasingFunction } from '@flighthq/easing/contract';
 import { easeCubicBezier } from '@flighthq/easing/contract';
 import { AdvancedBlendMode } from '@flighthq/effects/contract';
@@ -13,8 +14,6 @@ import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import { addNodeChild, invalidateNodeLocalTransform } from '@flighthq/node/contract';
 import { applyAnimationClipToNode2D, createDisplayObject } from '@flighthq/scene2d/contract';
 import type {
-  AnimationClip,
-  AnimationTrack,
   DisplayObject,
   EntityConstruction,
   ImportDiagnostic,

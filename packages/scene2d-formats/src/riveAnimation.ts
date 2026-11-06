@@ -4,6 +4,7 @@ import {
   createAnimationTrack,
   sampleAnimationTrack,
 } from '@flighthq/animation/contract';
+import type { AnimationChannel, AnimationClip } from '@flighthq/animation/contract';
 import type { EasingFunction } from '@flighthq/easing/contract';
 import { easeCubicBezier, easeInDampedSine, easeInOutDampedSine, easeOutDampedSine } from '@flighthq/easing/contract';
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
@@ -14,8 +15,6 @@ import { Skeleton2DAnimationPath } from '@flighthq/skeleton2d/contract';
 import type { Bone2D } from '@flighthq/skeleton2d/contract';
 import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 import type {
-  AnimationChannel,
-  AnimationClip,
   ImportDiagnostic,
   DisplayObject,
   Node2DAnimationPath,

@@ -1,6 +1,6 @@
 import { sampleAnimationTrack } from '@flighthq/animation/contract';
+import type { AnimationClip } from '@flighthq/animation/contract';
 import { invalidateNodeAppearance, invalidateNodeLocalTransform } from '@flighthq/node/contract';
-import type { AnimationClip } from '@flighthq/types/contract';
 
 import type { Node2DAnimationTarget } from './contract.scene2d-types.ts';
 

@@ -1,16 +1,11 @@
 import { createAnimationChannel, createAnimationClip } from '@flighthq/animation/contract';
+import type { AnimationChannel } from '@flighthq/animation/contract';
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { setQuaternion, setVector3 } from '@flighthq/geometry/contract';
 import { createMaterial3D } from '@flighthq/materials/contract';
 import type { Mesh } from '@flighthq/meshgeometry/contract';
 import { addNodeChild, invalidateNodeLocalTransform } from '@flighthq/node/contract';
-import type {
-  AnimationChannel,
-  EntityConstruction,
-  Material3D,
-  MaterialLike,
-  Scene3DAnimationTarget,
-} from '@flighthq/types/contract';
+import type { EntityConstruction, Material3D, MaterialLike, Scene3DAnimationTarget } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import type { Scene3D, Scene3DDocument, Scene3DDocumentNode } from './contract.scene3d-types.ts';
