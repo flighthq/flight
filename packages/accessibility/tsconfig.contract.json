@@ -1,0 +1,19 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "composite": true,
+    "rootDir": "src",
+    "outDir": "dist",
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "tsBuildInfoFile": "dist/.tsbuildinfo.contract",
+    "moduleSuffixes": [".geometry-types", ""]
+  },
+  "references": [
+    {
+      "path": "../geometry/tsconfig.contract.json"
+    }
+  ],
+  "include": ["src/contract.accessibility-types.ts", "src/types.ts"]
+}

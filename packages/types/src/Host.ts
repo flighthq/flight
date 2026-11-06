@@ -53,7 +53,8 @@ export type { HostShortcutCapabilities } from '@flighthq/shortcut/contract';
 export type { HostStatusBarCapabilities } from '@flighthq/statusbar/contract';
 export type { HostPlatformCapabilities } from '@flighthq/platform/contract';
 
-import type { HostAccessibilityCapability } from './Accessibility.ts';
+import type { HostAccessibilityCapability } from '@flighthq/accessibility/contract';
+
 import type {
   HostConnectivityChangeCapability,
   HostConnectivityReachabilityCapability,

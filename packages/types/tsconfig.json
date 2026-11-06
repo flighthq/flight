@@ -9,6 +9,7 @@
     "sourceMap": true,
     "moduleSuffixes": [
       ".gui-types",
+      ".accessibility-types",
       ".keyboard-types",
       ".scene2d-types",
       ".interaction-types",
@@ -313,6 +314,9 @@
     },
     {
       "path": "../updater/tsconfig.contract.json"
+    },
+    {
+      "path": "../accessibility/tsconfig.contract.json"
     }
   ],
   "include": ["src"]

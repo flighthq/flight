@@ -1,4 +1,3 @@
-import type { HostAccessibilityCapability, AccessibilityNode } from '@flighthq/types/contract';
 import { vi } from 'vitest';
 
 import {
@@ -9,6 +8,7 @@ import {
   setAccessibilityFocus,
   setAccessibilityNode,
 } from './accessibility.ts';
+import type { HostAccessibilityCapability, AccessibilityNode } from './types.ts';
 
 describe('announceAccessibility', () => {
   it('returns the selected Host provider outcome and supplies the default liveness', () => {
