@@ -11,6 +11,11 @@ import type {
   HostDecompressLzmaCapability,
 } from '@flighthq/compression/contract';
 import type {
+  HostConnectivityChangeCapability,
+  HostConnectivityReachabilityCapability,
+  HostConnectivityStatusCapability,
+} from '@flighthq/connectivity/contract';
+import type {
   HostDirectoryOpenDialogCapability,
   HostFileOpenDialogCapability,
   HostFileSaveDialogCapability,
@@ -148,4 +153,10 @@ export interface HostUpdaterCapabilities {
 
 export interface HostPermissionsCapabilities {
   readonly query?: HostPermissionsCapability;
+}
+
+export interface HostConnectivityCapabilities {
+  readonly change?: HostConnectivityChangeCapability;
+  readonly reachability?: HostConnectivityReachabilityCapability;
+  readonly status?: HostConnectivityStatusCapability;
 }

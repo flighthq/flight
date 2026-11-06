@@ -40,6 +40,7 @@
       ".screen-types",
       ".protocol-types",
       ".updater-types",
+      ".connectivity-types",
       ""
     ],
     "types": ["@webgpu/types"],
@@ -165,6 +166,9 @@
     },
     {
       "path": "../updater/tsconfig.contract.json"
+    },
+    {
+      "path": "../connectivity/tsconfig.contract.json"
     }
   ],
   "files": [

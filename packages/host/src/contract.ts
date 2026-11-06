@@ -18,6 +18,7 @@ export { createHost, initializeHost } from './host.ts';
 export type {
   HostBitmapCapabilities,
   HostCompressCapabilities,
+  HostConnectivityCapabilities,
   HostDecompressCapabilities,
   HostDialogCapabilities,
   HostFileSystemCapabilities,
@@ -25,6 +26,7 @@ export type {
   HostGeolocationCapabilities,
   HostGlyphCapabilities,
   HostImageCapabilities,
+  HostImageSource,
   HostMidiCapabilities,
   HostNotificationCapabilities,
   HostPermissionsCapabilities,
@@ -32,7 +34,6 @@ export type {
   HostShareCapabilities,
   HostUpdaterCapabilities,
   WebScreenCapabilities,
-  HostImageSource,
 } from './hostCapabilities.ts';
 export {
   explainHost,

@@ -1,4 +1,4 @@
-import type { HostConnectivityCapabilities } from '@flighthq/types/contract';
+import type { HostConnectivityCapabilities } from '@flighthq/host/contract';
 
 import {
   webHostConnectivityChange,

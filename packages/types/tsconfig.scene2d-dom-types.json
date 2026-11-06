@@ -33,6 +33,7 @@
       ".texture-formats-types",
       ".protocol-types",
       ".updater-types",
+      ".connectivity-types",
       ""
     ],
     "tsBuildInfoFile": "dist/.tsbuildinfo.scene2d-dom-types"
@@ -145,6 +146,9 @@
     },
     {
       "path": "../updater/tsconfig.contract.json"
+    },
+    {
+      "path": "../connectivity/tsconfig.contract.json"
     }
   ],
   "files": [

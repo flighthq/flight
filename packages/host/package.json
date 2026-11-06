@@ -42,6 +42,7 @@
   "dependencies": {
     "@flighthq/bitmap": "*",
     "@flighthq/compression": "*",
+    "@flighthq/connectivity": "*",
     "@flighthq/dialog": "*",
     "@flighthq/entity": "*",
     "@flighthq/filesystem": "*",

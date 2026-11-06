@@ -1,9 +1,9 @@
+import type { HostConnectivityCapabilities } from '@flighthq/host/contract';
 import type {
   CapacitorApi,
   CapacitorConnectionStatus,
   CapacitorPluginListenerHandle,
   HostConnectivityChangeCapability,
-  HostConnectivityCapabilities,
   ConnectivityConnectionType,
   ConnectivityStatus,
   HostConnectivityStatusCapability,

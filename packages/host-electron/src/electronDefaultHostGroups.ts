@@ -6,6 +6,7 @@ import {
   webHostTextShaperGroup,
 } from '@flighthq/host-web/contract';
 import type { HostPermissionsCapabilities } from '@flighthq/host/contract';
+import type { HostConnectivityCapabilities } from '@flighthq/host/contract';
 import type { HostMediaSessionCapabilities } from '@flighthq/mediasession/contract';
 import type {
   ElectronApi,
@@ -14,7 +15,6 @@ import type {
   HostAudioDecodeCapabilities,
   HostBitmapCapabilities,
   HostCompressCapabilities,
-  HostConnectivityCapabilities,
   HostDeviceCapabilities,
   HostFileSystemCapabilities,
   HostFontCapabilities,

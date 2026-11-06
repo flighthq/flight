@@ -5,6 +5,7 @@ import type { HostDeviceCapabilities } from '@flighthq/device/contract';
 import type {
   HostBitmapCapabilities,
   HostCompressCapabilities,
+  HostConnectivityCapabilities,
   HostDecompressCapabilities,
   HostDialogCapabilities,
   HostFileSystemCapabilities,
@@ -55,11 +56,6 @@ export type { HostPlatformCapabilities } from '@flighthq/platform/contract';
 
 import type { HostAccessibilityCapability } from '@flighthq/accessibility/contract';
 
-import type {
-  HostConnectivityChangeCapability,
-  HostConnectivityReachabilityCapability,
-  HostConnectivityStatusCapability,
-} from './Connectivity.ts';
 import type { Entity } from './Entity.ts';
 import type { HostHapticsCapabilities } from './Haptics.ts';
 import type { HostAudioDeviceCapability } from './HostAudioDevice.ts';
@@ -140,12 +136,6 @@ export interface HostAudioCapabilities {
   readonly mixer?: HostAudioMixerCapability;
 }
 
-export interface HostConnectivityCapabilities {
-  readonly change?: HostConnectivityChangeCapability;
-  readonly reachability?: HostConnectivityReachabilityCapability;
-  readonly status?: HostConnectivityStatusCapability;
-}
-
 export interface HostGlCapabilities {
   readonly context?: HostGlCapability;
 }
@@ -176,6 +166,7 @@ export type { HostWgpuCapabilities } from '@flighthq/render-wgpu/contract';
 
 /** @deprecated Import from `@flighthq/host/contract`. */
 export type {
+  HostConnectivityCapabilities,
   HostPermissionsCapabilities,
   HostUpdaterCapabilities,
   HostProtocolCapabilities,

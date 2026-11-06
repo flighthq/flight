@@ -67,6 +67,7 @@
       ".protocol-types",
       ".tray-types",
       ".updater-types",
+      ".connectivity-types",
       ""
     ],
     "types": ["@testing-library/jest-dom", "vitest/globals", "@webgpu/types"]
@@ -317,6 +318,9 @@
     },
     {
       "path": "../accessibility/tsconfig.contract.json"
+    },
+    {
+      "path": "../connectivity/tsconfig.contract.json"
     }
   ],
   "include": ["src"]

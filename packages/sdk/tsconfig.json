@@ -79,7 +79,7 @@
       "path": "../encoding"
     },
     {
-      "path": "../connectivity"
+      "path": "../connectivity/tsconfig.runtime.json"
     },
     {
       "path": "../debug"

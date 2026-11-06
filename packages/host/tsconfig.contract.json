@@ -25,6 +25,7 @@
       ".texture-types",
       ".protocol-types",
       ".updater-types",
+      ".connectivity-types",
       ""
     ]
   },
@@ -37,6 +38,9 @@
     },
     {
       "path": "../compression"
+    },
+    {
+      "path": "../connectivity/tsconfig.contract.json"
     },
     {
       "path": "../dialog"

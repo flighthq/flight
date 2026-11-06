@@ -1,15 +1,16 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
 import { clearSignal, createSignal, emitSignal } from '@flighthq/signals/contract';
+
 import type {
   Connectivity,
   ConnectivityReachability,
   ConnectivityReachabilityOptions,
   ConnectivityStatus,
-  EntityConstruction,
   HostConnectivityChangeCapability,
   HostConnectivityReachabilityCapability,
   HostConnectivityStatusCapability,
-} from '@flighthq/types/contract';
+} from './types.ts';
 
 // Starts raw host-change delivery and turns it into the five core-owned diff signals. Status and
 // change are separate providers: a snapshot command cannot stand in for an event subscription.

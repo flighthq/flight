@@ -1,12 +1,6 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { EntityRuntimeKey } from '@flighthq/entity/contract';
 import { connectSignal, hasSignalSlots } from '@flighthq/signals/contract';
-import type {
-  HostConnectivityChangeCapability,
-  HostConnectivityReachabilityCapability,
-  ConnectivityStatus,
-  HostConnectivityStatusCapability,
-} from '@flighthq/types/contract';
-import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import {
   attachConnectivity,
@@ -22,6 +16,12 @@ import {
   isConnectivityMetered,
   isConnectivitySaveDataEnabled,
 } from './connectivity.ts';
+import type {
+  HostConnectivityChangeCapability,
+  HostConnectivityReachabilityCapability,
+  ConnectivityStatus,
+  HostConnectivityStatusCapability,
+} from './types.ts';
 
 interface FakeConnectivityProvider extends HostConnectivityStatusCapability, HostConnectivityChangeCapability {
   readonly activeSubscriptions: () => number;
