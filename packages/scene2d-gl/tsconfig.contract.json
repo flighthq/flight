@@ -1,0 +1,35 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "composite": true,
+    "rootDir": "src",
+    "outDir": "dist",
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "moduleSuffixes": [
+      ".render-wgpu-types",
+      ".image-types",
+      ".node-types",
+      ".surface-types",
+      ".text-types",
+      ".textlayout-types",
+      ""
+    ],
+    "tsBuildInfoFile": "dist/.tsbuildinfo.contract"
+  },
+  "references": [
+    { "path": "../image/tsconfig.contract.json" },
+    { "path": "../node/tsconfig.contract.json" },
+    { "path": "../surface/tsconfig.contract.json" },
+    { "path": "../text/tsconfig.contract.json" },
+    { "path": "../textlayout/tsconfig.contract.json" },
+    { "path": "../types/tsconfig.render-wgpu-types.json" }
+  ],
+  "include": [
+    "src/contract.scene2d-gl-types.ts",
+    "src/glRichTextOverlay.ts",
+    "src/glShapeRendererData.ts",
+    "src/types.ts"
+  ]
+}

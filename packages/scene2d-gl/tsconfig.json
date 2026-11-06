@@ -1,13 +1,6 @@
 {
-  "extends": "../../tsconfig.base.json",
-  "compilerOptions": {
-    "composite": true,
-    "rootDir": "src",
-    "outDir": "dist",
-    "declaration": true,
-    "declarationMap": true,
-    "sourceMap": true
-  },
+  "compilerOptions": { "composite": true },
+  "files": [],
   "references": [
     {
       "path": "../bitmap/tsconfig.runtime.json"
@@ -58,6 +51,9 @@
       "path": "../shape/tsconfig.runtime.json"
     },
     {
+      "path": "../surface/tsconfig.contract.json"
+    },
+    {
       "path": "../quadbatch"
     },
     {
@@ -83,7 +79,12 @@
     },
     {
       "path": "../velocity/tsconfig.runtime.json"
+    },
+    {
+      "path": "./tsconfig.contract.json"
+    },
+    {
+      "path": "./tsconfig.runtime.json"
     }
-  ],
-  "include": ["src"]
+  ]
 }

@@ -23,6 +23,7 @@
       ".screen-types",
       ".sensors-types",
       ".render-wgpu-types",
+      ".scene2d-gl-types",
       ".effects-gl-types",
       ".render-gl-types",
       ".adjustments-types",
@@ -220,6 +221,9 @@
     },
     {
       "path": "../scene2d-formats/tsconfig.contract.json"
+    },
+    {
+      "path": "../scene2d-gl/tsconfig.contract.json"
     },
     {
       "path": "../scene2d-wgpu/tsconfig.contract.json"

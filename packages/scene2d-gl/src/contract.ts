@@ -1,3 +1,4 @@
+export * from './contract.scene2d-gl-types.ts';
 export * from './enableGlColorAdjustmentGuards.ts';
 export * from './enableGlStrokePathTessellation.ts';
 export * from './explainGlScene2DCoverage.ts';
@@ -14,13 +15,11 @@ export * from './glQuadBatch.ts';
 export * from './glQuadBatchWriter.ts';
 export * from './glRasterShapeRenderer.ts';
 export * from './glRichText.ts';
-export type { GlRichTextOverlay } from './glRichTextOverlay.ts';
 export * from './glScale9Mapper.ts';
 export * from './glScale9Shape.ts';
 export * from './glScale9Sprite.ts';
 export * from './glShape.ts';
 export * from './glShapeData.ts';
-export type { GlShapeRendererData } from './glShapeRendererData.ts';
 export * from './glShapeMesh.ts';
 export * from './glShapeRasterizer.ts';
 export * from './glSprite.ts';

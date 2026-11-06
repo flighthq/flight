@@ -4,17 +4,14 @@ import { enableColorAdjustments } from '@flighthq/render/contract';
 import type {
   ColorScaleBias,
   GlColorAdjustmentMaterialFeature,
-  GlColorAdjustmentResources,
   GlColorScaleBiasInstancedShader,
   GlRenderState,
   GlRenderStateRuntime,
-  GlShapeMesh,
   GlShapeMeshColorScaleBiasShader,
   GlUniformColorScaleBiasShader,
   RenderProxy2D,
   TintMaterialData,
 } from '@flighthq/types/contract';
-import type { GlShapeMeshBinding } from '@flighthq/types/contract';
 
 import {
   bindGlQuadBatchBaseAttributes,
@@ -23,6 +20,7 @@ import {
   useGlQuadBatchProgram,
 } from './glQuadBatchWriter.ts';
 import { drawGlShapeMeshBatch, ensureGlShapeMeshProgram } from './glShapeMesh.ts';
+import type { GlColorAdjustmentResources, GlShapeMesh, GlShapeMeshBinding } from './types.ts';
 
 // Enables the opt-in color-adjustment accumulator and inline fold on a WebGL render state: the fused-color-matrix
 // scene2d the sprite/quad batch draws through so a color adjustment (and, later, other pointwise

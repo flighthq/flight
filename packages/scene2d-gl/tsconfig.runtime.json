@@ -1,0 +1,47 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "composite": true,
+    "rootDir": "src",
+    "outDir": "dist",
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "tsBuildInfoFile": "dist/.tsbuildinfo.runtime"
+  },
+  "references": [
+    { "path": "../bitmap/tsconfig.runtime.json" },
+    { "path": "../bitmaptext" },
+    { "path": "../color" },
+    { "path": "../entity" },
+    { "path": "../scene2d/tsconfig.runtime.json" },
+    { "path": "../scene2d-canvas" },
+    { "path": "../geometry/tsconfig.runtime.json" },
+    { "path": "../image/tsconfig.runtime.json" },
+    { "path": "../log" },
+    { "path": "../node/tsconfig.runtime.json" },
+    { "path": "../particleemitter" },
+    { "path": "../path/tsconfig.runtime.json" },
+    { "path": "../registry" },
+    { "path": "../render" },
+    { "path": "../render-gl" },
+    { "path": "../shape/tsconfig.runtime.json" },
+    { "path": "../quadbatch" },
+    { "path": "../tilemap" },
+    { "path": "../text/tsconfig.runtime.json" },
+    { "path": "../textformat/tsconfig.runtime.json" },
+    { "path": "../textinput/tsconfig.runtime.json" },
+    { "path": "../textlayout/tsconfig.runtime.json" },
+    { "path": "../texture/tsconfig.runtime.json" },
+    { "path": "../types" },
+    { "path": "../velocity/tsconfig.runtime.json" },
+    { "path": "./tsconfig.contract.json" }
+  ],
+  "include": ["src/**/*.ts"],
+  "exclude": [
+    "src/contract.scene2d-gl-types.ts",
+    "src/glRichTextOverlay.ts",
+    "src/glShapeRendererData.ts",
+    "src/types.ts"
+  ]
+}

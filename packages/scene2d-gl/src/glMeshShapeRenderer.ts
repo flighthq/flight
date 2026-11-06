@@ -4,11 +4,12 @@ import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
 import { getShapeFillRegions, getShapeStrokeOutlineRegions, getShapeStrokeRegions } from '@flighthq/shape/contract';
 import type { Shape, ShapeCommandToken, ShapeFillRegion, ShapeStrokeRegion } from '@flighthq/shape/contract';
 import { ShapeKind } from '@flighthq/shape/contract';
-import type { GlRenderState, GlShapeMesh, RenderProxy2D, Scene2DRenderer } from '@flighthq/types/contract';
+import type { GlRenderState, RenderProxy2D, Scene2DRenderer } from '@flighthq/types/contract';
 import { BatchFormat, RenderRegistryTable } from '@flighthq/types/contract';
 
 import { createGlShapeData, destroyGlShapeData, getGlShapeData } from './glShapeData.ts';
 import { drawGlShapeMeshes } from './glShapeMesh.ts';
+import type { GlShapeMesh } from './types.ts';
 
 // Draws the shape through the GPU mesh path alone, and reports whether it did. Returns false when any
 // fill or stroke has no tessellated form — a gradient, a texture fill, or a closed stroke the active

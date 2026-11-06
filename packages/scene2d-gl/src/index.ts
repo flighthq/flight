@@ -1,3 +1,13 @@
+export type {
+  GlColorAdjustmentResources,
+  GlParticleResources,
+  GlQuadBatchResources,
+  GlRichTextOverlay,
+  GlShapeMesh,
+  GlShapeMeshBinding,
+  GlShapeMeshResources,
+  GlShapeRendererData,
+} from './contract.ts';
 export * from './enableGlColorAdjustmentGuards.ts';
 export * from './enableGlStrokePathTessellation.ts';
 export * from './explainGlScene2DCoverage.ts';
@@ -11,11 +21,9 @@ export { glParticleEmitter2DRenderer } from './glParticleEmitter2D.ts';
 export * from './glQuadBatch.ts';
 export { glRasterShapeRenderer } from './glRasterShapeRenderer.ts';
 export { glRichTextRenderer } from './glRichText.ts';
-export type { GlRichTextOverlay } from './glRichTextOverlay.ts';
 export { glScale9ShapeRenderer } from './glScale9Shape.ts';
 export { glScale9SpriteRenderer } from './glScale9Sprite.ts';
 export { glShapeRenderer, glMorphShapeRenderer } from './glShape.ts';
-export type { GlShapeRendererData } from './glShapeRendererData.ts';
 export * from './glShapeRasterizer.ts';
 export { glSpriteRenderer } from './glSprite.ts';
 export * from './glStandardMaterial.ts';

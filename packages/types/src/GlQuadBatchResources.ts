@@ -1,9 +1,2 @@
-import type { GlQuadBatchShader } from './GlRenderState.ts';
-
-export interface GlQuadBatchResources {
-  cornerBuffer: WebGLBuffer;
-  shader: GlQuadBatchShader;
-  writerColorScaleBiasBuffer: WebGLBuffer | null;
-  writerInstanceBuffer: WebGLBuffer | null;
-  writerMaterialBuffer: WebGLBuffer | null;
-}
+// Compatibility facade: scene2d-gl owns this contract.
+export type { GlQuadBatchResources } from '@flighthq/scene2d-gl/contract';

@@ -53,6 +53,7 @@
     "@flighthq/render": "*",
     "@flighthq/render-gl": "*",
     "@flighthq/shape": "*",
+    "@flighthq/surface": "*",
     "@flighthq/text": "*",
     "@flighthq/textformat": "*",
     "@flighthq/textinput": "*",

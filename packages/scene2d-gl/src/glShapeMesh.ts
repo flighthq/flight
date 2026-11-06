@@ -1,15 +1,10 @@
 import { createGlProgram } from '@flighthq/render-gl/contract';
 import { getGlColorAdjustmentMaterialFeature } from '@flighthq/render-gl/contract';
 import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
-import type {
-  GlContext,
-  GlRenderState,
-  GlShapeMesh,
-  GlShapeMeshBinding,
-  RenderProxy2D,
-} from '@flighthq/types/contract';
+import type { GlContext, GlRenderState, RenderProxy2D } from '@flighthq/types/contract';
 
 import { flushGlQuadBatchWriter } from './glQuadBatchWriter.ts';
+import type { GlShapeMesh, GlShapeMeshBinding } from './types.ts';
 
 // GPU tessellated solid-fill path for Shape — the replacement for the canvas-raster-to-texture shortcut
 // (which is resolution-bound, so circles go jagged when scaled up). Each fill region is tessellated to a

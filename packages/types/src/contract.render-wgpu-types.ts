@@ -16,7 +16,14 @@ export type { EntityRuntime } from './Entity.ts';
 export type { ExternalTexture } from './ExternalTexture.ts';
 export type { HostCanvasCapability } from './HostCanvas.ts';
 export type { HostImageCapability } from './ImageResource.ts';
-export type { GlRenderState } from './GlRenderState.ts';
+export type {
+  GlColorScaleBiasInstancedShader,
+  GlParticleShader,
+  GlQuadBatchShader,
+  GlRenderState,
+  GlShapeMeshColorScaleBiasShader,
+  GlUniformColorScaleBiasShader,
+} from './GlRenderState.ts';
 export type { GlTextureRenderTarget, GlTextureRenderTargetPool } from './GlRenderTarget.ts';
 export type { Material, MaterialData } from './Material.ts';
 export type { Mesh } from './Mesh.ts';

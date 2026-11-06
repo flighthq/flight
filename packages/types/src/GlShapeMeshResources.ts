@@ -1,8 +1,2 @@
-import type { GlShapeMeshColorScaleBiasShader } from './GlRenderState.ts';
-import type { GlShapeMeshBinding } from './GlShapeMeshBinding.ts';
-
-export interface GlShapeMeshResources {
-  binding: GlShapeMeshBinding;
-  colorMatrixShader: GlShapeMeshColorScaleBiasShader | null;
-  colorScaleBiasShader: GlShapeMeshColorScaleBiasShader | null;
-}
+// Compatibility facade: scene2d-gl owns this contract.
+export type { GlShapeMeshResources } from '@flighthq/scene2d-gl/contract';

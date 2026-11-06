@@ -1,7 +1,2 @@
-import type { GlParticleShader } from './GlRenderState.ts';
-
-export interface GlParticleResources {
-  cornerBuffer: WebGLBuffer;
-  instanceBuffer: WebGLBuffer;
-  shader: GlParticleShader;
-}
+// Compatibility facade: scene2d-gl owns this contract.
+export type { GlParticleResources } from '@flighthq/scene2d-gl/contract';
