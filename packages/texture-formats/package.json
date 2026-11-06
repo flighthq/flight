@@ -40,8 +40,7 @@
     "clean:dist": "tsx ../../scripts/clean-package-dist.ts"
   },
   "dependencies": {
-    "@flighthq/buffer": "*",
-    "@flighthq/types": "*"
+    "@flighthq/buffer": "*"
   },
   "devDependencies": {
     "typescript": "^7.0.2"

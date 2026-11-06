@@ -1,11 +1,6 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type {
-  CompressedImageResource,
-  EntityConstruction,
-  TextureColorSpace,
-  TextureContainer,
-  TextureContainerFormat,
-} from '@flighthq/types/contract';
+import type { TextureContainer, TextureContainerFormat } from '@flighthq/texture-formats/contract';
+import type { CompressedImageResource, EntityConstruction, TextureColorSpace } from '@flighthq/types/contract';
 
 import type {
   WgpuCompressedTextureDecoder,

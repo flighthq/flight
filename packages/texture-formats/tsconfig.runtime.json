@@ -14,9 +14,6 @@
       "path": "../buffer"
     },
     {
-      "path": "../types"
-    },
-    {
       "path": "./tsconfig.contract.json"
     }
   ],

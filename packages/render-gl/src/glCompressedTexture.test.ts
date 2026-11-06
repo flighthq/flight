@@ -1,4 +1,5 @@
-import type { CompressedImageResource, GlCompressedTextureSupport, TextureContainer } from '@flighthq/types/contract';
+import type { TextureContainer } from '@flighthq/texture-formats/contract';
+import type { CompressedImageResource, GlCompressedTextureSupport } from '@flighthq/types/contract';
 import { CompressedImageTextureSourceKind } from '@flighthq/types/contract';
 
 import {

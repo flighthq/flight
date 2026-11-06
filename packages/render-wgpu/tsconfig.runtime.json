@@ -9,7 +9,7 @@
     "sourceMap": true,
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "types": ["@testing-library/jest-dom", "vitest/globals", "@webgpu/types"],
-    "moduleSuffixes": [".platform-types", ".surface-types", ""],
+    "moduleSuffixes": [".platform-types", ".surface-types", ".texture-formats-types", ""],
     "tsBuildInfoFile": "dist/.tsbuildinfo.runtime"
   },
   "references": [
@@ -48,6 +48,9 @@
     },
     {
       "path": "../texture/tsconfig.runtime.json"
+    },
+    {
+      "path": "../texture-formats/tsconfig.contract.json"
     },
     {
       "path": "../types"

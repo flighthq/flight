@@ -1,10 +1,5 @@
-import type {
-  CompressedImageResource,
-  GlCompressedTextureSupport,
-  TextureContainer,
-  TextureContainerFormat,
-  TextureColorSpace,
-} from '@flighthq/types/contract';
+import type { TextureContainer, TextureContainerFormat } from '@flighthq/texture-formats/contract';
+import type { CompressedImageResource, GlCompressedTextureSupport, TextureColorSpace } from '@flighthq/types/contract';
 
 import type { GlCompressedTextureDecoder, GlRenderState } from './contract.render-gl-types.ts';
 import { getGlRenderStateRuntime } from './glRenderState.ts';
