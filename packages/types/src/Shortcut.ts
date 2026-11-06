@@ -1,61 +1,14 @@
-import type { Signal } from '@flighthq/signals/contract';
-
-import type { Accelerator } from './Accelerator.ts';
-import type { AcceleratorParseError } from './AcceleratorParseError.ts';
-import type { Entity } from './Entity.ts';
-
-// One caller-owned global-hotkey registration. The normalized accelerator is durable value data; the
-// signal, native subscription token, provider origin, and attachment state are runtime-only.
-export interface GlobalShortcut extends Entity {
-  readonly accelerator: Accelerator;
-  readonly onTrigger: Signal<void>;
-}
-
-// Opaque handle returned by the native trigger provider after registration succeeds. Providers keep
-// their native accelerator/callback identity out of band and accept only the exact token at teardown.
-export interface ShortcutTriggerSubscription extends Entity {}
-
-export type CreateGlobalShortcutOutcome =
-  | Readonly<{ reason: 'created'; shortcut: GlobalShortcut }>
-  | Readonly<{ parseError: AcceleratorParseError; reason: 'unparseable' }>;
-
-export type GlobalShortcutAttachOutcome = Readonly<{
-  reason:
-    | 'already-attached'
-    | 'already-registered'
-    | 'attached'
-    | 'native-refused'
-    | 'registration-in-progress'
-    | 'trigger-provider-failed';
-}>;
-
-export type GlobalShortcutDetachOutcome = Readonly<{
-  reason: 'detached' | 'not-attached' | 'trigger-provider-failed';
-}>;
-
-export type GlobalShortcutQueryOutcome =
-  | Readonly<{ reason: 'not-registered' | 'query-provider-failed' | 'registered' }>
-  | Readonly<{ parseError: AcceleratorParseError; reason: 'unparseable' }>;
-
-export type ShortcutTriggerSubscribeOutcome =
-  | Readonly<{ reason: 'refused' }>
-  | Readonly<{ reason: 'subscribed'; subscription: ShortcutTriggerSubscription }>;
-
-export interface ShortcutTriggerUnsubscribeOutcome {
-  readonly reason: 'unknown-subscription' | 'unsubscribed';
-}
-
-// Native registration is the trigger event subscription. It is awaited uniformly: Electron lifts its
-// synchronous boolean into this shape, while Tauri awaits the plugin Promise. destroy owns any native
-// registrations whose exact tokens have not yet been successfully unsubscribed.
-export interface HostShortcutTriggerCapability {
-  destroy(): Promise<void>;
-  subscribe(accelerator: Accelerator, trigger: () => void): Promise<ShortcutTriggerSubscribeOutcome>;
-  unsubscribe(subscription: ShortcutTriggerSubscription): Promise<ShortcutTriggerUnsubscribeOutcome>;
-}
-
-// Kept separate from trigger despite identical E/T coverage because a query is a command/result shape,
-// not an event subscription. Provider absence is represented only by an omitted Host slot.
-export interface HostShortcutQueryCapability {
-  isRegistered(accelerator: Accelerator): Promise<boolean>;
-}
+/** @deprecated Import shortcut contracts from `@flighthq/shortcut/contract`. */
+export type {
+  CreateGlobalShortcutOutcome,
+  GlobalShortcut,
+  GlobalShortcutAttachOutcome,
+  GlobalShortcutDetachOutcome,
+  GlobalShortcutQueryOutcome,
+  HostShortcutCapabilities,
+  HostShortcutQueryCapability,
+  HostShortcutTriggerCapability,
+  ShortcutTriggerSubscribeOutcome,
+  ShortcutTriggerSubscription,
+  ShortcutTriggerUnsubscribeOutcome,
+} from '@flighthq/shortcut/contract';

@@ -96,6 +96,7 @@
     "@flighthq/shape-formats": "*",
     "@flighthq/share": "*",
     "@flighthq/shell": "*",
+    "@flighthq/shortcut": "*",
     "@flighthq/signals": "*",
     "@flighthq/socket": "*",
     "@flighthq/spatial": "*",

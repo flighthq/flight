@@ -2,10 +2,9 @@ import type {
   Accelerator,
   AcceleratorParseError,
   ParsedAccelerator,
-  PlatformName,
   ShortcutKeyName,
   ShortcutModifier,
-} from '@flighthq/types/contract';
+} from './contract.shortcut-types.ts';
 
 // True when two accelerator strings (in any accepted spelling) represent the same chord.
 // Returns false when either is unparseable.
@@ -37,7 +36,7 @@ export function findAcceleratorConflict(accelerator: string, candidates: readonl
 //   Windows/Linux: Ctrl+Shift+K  (text labels, '+' separator)
 // Returns '' when `accelerator` is unparseable.
 // Pass `platform` to override OS detection (e.g. 'macos', 'windows', 'linux') for testability.
-export function formatAcceleratorForDisplay(accelerator: string, platform: PlatformName): string {
+export function formatAcceleratorForDisplay(accelerator: string, platform: ShortcutPlatformName): string {
   const result = _parse(accelerator);
   if (result === null) return '';
   const isMac = _isMacOS(platform);
@@ -65,7 +64,7 @@ export function getAcceleratorKeyLabel(key: ShortcutKeyName): string {
 // Renders a modifier key label for the current OS (e.g. 'Meta' → '⌘' on macOS, 'Win' on Windows).
 // 'CommandOrControl' is resolved before formatting. Returns '' for unrecognized modifiers.
 // Pass `platform` to override OS detection (e.g. 'macos', 'windows', 'linux') for testability.
-export function getAcceleratorModifierLabel(modifier: ShortcutModifier, platform: PlatformName): string {
+export function getAcceleratorModifierLabel(modifier: ShortcutModifier, platform: ShortcutPlatformName): string {
   const resolved = modifier === 'CommandOrControl' ? resolveCommandOrControlModifier(platform) : modifier;
   return _getModifierLabel(resolved, _isMacOS(platform));
 }
@@ -126,7 +125,9 @@ export function parseAcceleratorDetailed(
 }
 
 // Resolves 'CommandOrControl' to 'Meta' on macOS and 'Control' on Windows/Linux.
-export function resolveCommandOrControlModifier(platform: PlatformName): Exclude<ShortcutModifier, 'CommandOrControl'> {
+export function resolveCommandOrControlModifier(
+  platform: ShortcutPlatformName,
+): Exclude<ShortcutModifier, 'CommandOrControl'> {
   return _isMacOS(platform) ? 'Meta' : 'Control';
 }
 
@@ -373,7 +374,7 @@ function _getModifierLabel(resolved: Exclude<ShortcutModifier, 'CommandOrControl
   }
 }
 
-function _isMacOS(platform: PlatformName): boolean {
+function _isMacOS(platform: ShortcutPlatformName): boolean {
   return platform === 'macos';
 }
 
@@ -381,6 +382,8 @@ interface _Parsed {
   key: ShortcutKeyName;
   modifiers: ShortcutModifier[];
 }
+
+type ShortcutPlatformName = 'web' | 'windows' | 'macos' | 'linux' | 'ios' | 'android' | 'unknown';
 
 // Copies a successful parse into a caller-owned ParsedAccelerator. `out.modifiers` is cleared and
 // refilled rather than reassigned, so the array the caller allocated with makeParsedAccelerator

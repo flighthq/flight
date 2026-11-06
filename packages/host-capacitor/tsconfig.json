@@ -7,7 +7,7 @@
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,
-    "moduleSuffixes": [".menu-types", ""],
+    "moduleSuffixes": [".menu-types", ".shortcut-types", ""],
     "types": ["node", "@testing-library/jest-dom", "vitest/globals", "@webgpu/types"]
   },
   "references": [
@@ -49,6 +49,9 @@
     },
     {
       "path": "../share"
+    },
+    {
+      "path": "../shortcut/tsconfig.contract.json"
     },
     {
       "path": "../statusbar"

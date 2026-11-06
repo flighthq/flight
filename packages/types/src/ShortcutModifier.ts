@@ -1,3 +1,2 @@
-// A modifier key in an accelerator chord. 'CommandOrControl' is a platform-relative alias that
-// resolves to 'Meta' on macOS and 'Control' on Windows/Linux.
-export type ShortcutModifier = 'Alt' | 'CommandOrControl' | 'Control' | 'Meta' | 'Shift' | 'Super';
+/** @deprecated Import shortcut contracts from `@flighthq/shortcut/contract`. */
+export type { ShortcutModifier } from '@flighthq/shortcut/contract';

@@ -1,20 +1,19 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type { EntityConstruction, NonEntityCreateResult } from '@flighthq/entity/contract';
 import { clearSignal, createSignal, emitSignal } from '@flighthq/signals/contract';
+
 import type {
   Accelerator,
   CreateGlobalShortcutOutcome,
-  EntityConstruction,
   GlobalShortcut,
   GlobalShortcutAttachOutcome,
   GlobalShortcutDetachOutcome,
   GlobalShortcutQueryOutcome,
   HostShortcutQueryCapability,
   HostShortcutTriggerCapability,
-  NonEntityCreateResult,
   ParsedAccelerator,
   ShortcutTriggerSubscription,
-} from '@flighthq/types/contract';
-
+} from './contract.shortcut-types.ts';
 import { makeParsedAccelerator, parseAcceleratorDetailed } from './shortcut.ts';
 
 interface GlobalShortcutAttachment {

@@ -6,6 +6,7 @@ import {
   webHostTextShaperGroup,
 } from '@flighthq/host-web/contract';
 import type { HostMenuCapabilities } from '@flighthq/menu/contract';
+import type { HostShortcutCapabilities } from '@flighthq/shortcut/contract';
 import type {
   HostAccessibilityCapabilities,
   HostAudioCapabilities,
@@ -30,7 +31,6 @@ import type {
   HostScreenCapabilities,
   HostSensorsCapabilities,
   HostShellCapabilities,
-  HostShortcutCapabilities,
   HostSocketCapabilities,
   HostCanvasCapabilities,
   HostSurfaceCapabilities,

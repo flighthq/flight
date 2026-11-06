@@ -50,6 +50,7 @@
       ".shape-formats-types",
       ".shape-types",
       ".shell-types",
+      ".shortcut-types",
       ".socket-types",
       ".statusbar-types",
       ".spatial-types",
@@ -214,6 +215,9 @@
     },
     {
       "path": "../shell/tsconfig.contract.json"
+    },
+    {
+      "path": "../shortcut/tsconfig.contract.json"
     },
     {
       "path": "../socket/tsconfig.contract.json"

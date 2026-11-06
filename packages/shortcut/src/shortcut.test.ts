@@ -1,5 +1,4 @@
-import type { ShortcutModifier } from '@flighthq/types/contract';
-
+import type { ShortcutModifier } from './contract.shortcut-types.ts';
 import {
   equalsAccelerator,
   findAcceleratorConflict,

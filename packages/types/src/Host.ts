@@ -36,12 +36,14 @@ import type { HostWgpuCapabilities } from '@flighthq/render-wgpu/contract';
 import type { HostScreenCapabilities } from '@flighthq/screen/contract';
 import type { HostSensorsCapabilities } from '@flighthq/sensors/contract';
 import type { HostShellCapabilities } from '@flighthq/shell/contract';
+import type { HostShortcutCapabilities } from '@flighthq/shortcut/contract';
 import type { HostSocketCapabilities } from '@flighthq/socket/contract';
 import type { HostStatusBarCapabilities } from '@flighthq/statusbar/contract';
 import type { HostCanvasCapabilities, HostSurfaceCapabilities } from '@flighthq/surface/contract';
 
 export type { HostScreenCapabilities } from '@flighthq/screen/contract';
 export type { HostSensorsCapabilities } from '@flighthq/sensors/contract';
+export type { HostShortcutCapabilities } from '@flighthq/shortcut/contract';
 export type { HostStatusBarCapabilities } from '@flighthq/statusbar/contract';
 
 import type { HostAccessibilityCapability } from './Accessibility.ts';
@@ -68,7 +70,6 @@ import type {
 import type { HostMediaSessionActionCapability, HostMediaSessionCapability } from './MediaSession.ts';
 import type { HostPermissionsCapability } from './Permission.ts';
 import type { HostPlatformCapability } from './Platform.ts';
-import type { HostShortcutQueryCapability, HostShortcutTriggerCapability } from './Shortcut.ts';
 import type { HostTextSegmenterCapability } from './TextSegment.ts';
 import type { HostTextShaperCapability } from './TextShaper.ts';
 import type {
@@ -186,11 +187,6 @@ export interface HostPermissionsCapabilities {
 
 export interface HostPlatformCapabilities {
   readonly info?: HostPlatformCapability;
-}
-
-export interface HostShortcutCapabilities {
-  readonly query?: HostShortcutQueryCapability;
-  readonly trigger?: HostShortcutTriggerCapability;
 }
 
 export interface HostSoftKeyboardCapabilities {

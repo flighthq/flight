@@ -1,13 +1,12 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   Accelerator,
-  ElectronApi,
-  Entity,
   HostShortcutCapabilities,
   HostShortcutQueryCapability,
   HostShortcutTriggerCapability,
   ShortcutTriggerSubscription,
-} from '@flighthq/types/contract';
+} from '@flighthq/shortcut/contract';
+import type { ElectronApi } from '@flighthq/types/contract';
 
 export function electronHostShortcut(
   electron: ElectronApi,
@@ -52,7 +51,7 @@ export function electronHostShortcutTrigger(electron: ElectronApi): HostShortcut
       if (firstError !== undefined) throw firstError;
     };
     out.subscribe = async (accelerator: Accelerator, trigger: () => void) => {
-      const subscription = finishEntity(allocateEntity<Entity>());
+      const subscription = finishEntity(allocateEntity<ShortcutTriggerSubscription>());
       const registered = globalShortcut.register(accelerator, trigger);
       if (!registered) return { reason: 'refused' as const };
       registrations.set(subscription, accelerator);

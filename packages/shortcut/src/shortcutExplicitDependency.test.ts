@@ -1,19 +1,24 @@
+import type { EntityRaw, EntityRuntime } from '@flighthq/entity/contract';
+import { EntityRuntimeKey } from '@flighthq/entity/contract';
 import { connectSignal } from '@flighthq/signals/contract';
 import type { Signal } from '@flighthq/signals/contract';
-import type { AcceleratorParseError, Entity } from '@flighthq/types/contract';
-import { EntityRuntimeKey } from '@flighthq/types/contract';
 
+import type { AcceleratorParseError } from './contract.shortcut-types.ts';
 import * as shortcutExports from './shortcutExplicitDependency.ts';
 import { initializeGlobalShortcut } from './shortcutExplicitDependency.ts';
 
-interface GlobalShortcutLike extends Entity {
+interface ShortcutEntityLike extends EntityRaw {
+  [EntityRuntimeKey]: EntityRuntime | undefined;
+}
+
+interface GlobalShortcutLike extends ShortcutEntityLike {
   readonly accelerator: string;
   readonly onTrigger: Signal<() => void>;
 }
 
-interface ShortcutSubscriptionLike extends Entity {}
+interface ShortcutSubscriptionLike extends ShortcutEntityLike {}
 
-interface TriggerProviderLike extends Entity {
+interface TriggerProviderLike extends ShortcutEntityLike {
   destroy(): Promise<void>;
   subscribe(
     accelerator: string,
@@ -26,7 +31,7 @@ interface TriggerProviderLike extends Entity {
   ): Promise<Readonly<{ reason: 'unsubscribed' | 'unknown-subscription' }>>;
 }
 
-interface QueryProviderLike extends Entity {
+interface QueryProviderLike extends ShortcutEntityLike {
   isRegistered(accelerator: string): Promise<boolean>;
 }
 

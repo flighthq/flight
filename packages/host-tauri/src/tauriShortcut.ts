@@ -1,13 +1,12 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   Accelerator,
-  Entity,
   HostShortcutCapabilities,
   HostShortcutQueryCapability,
   HostShortcutTriggerCapability,
   ShortcutTriggerSubscription,
-  TauriApi,
-} from '@flighthq/types/contract';
+} from '@flighthq/shortcut/contract';
+import type { TauriApi } from '@flighthq/types/contract';
 
 export function tauriHostShortcut(
   tauri: TauriApi,
@@ -55,7 +54,7 @@ export function tauriHostShortcutTrigger(tauri: TauriApi): HostShortcutTriggerCa
     if (firstError !== undefined) throw firstError;
   };
   provider.subscribe = async (accelerator: Accelerator, trigger: () => void) => {
-    const subscription = finishEntity(allocateEntity<Entity>());
+    const subscription = finishEntity(allocateEntity<ShortcutTriggerSubscription>());
     const registration = globalShortcut.register(accelerator, (event) => {
       if (event.state === 'Pressed' && registrations.has(subscription)) trigger();
     });

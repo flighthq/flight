@@ -51,6 +51,7 @@
     "@flighthq/menu": "*",
     "@flighthq/notification": "*",
     "@flighthq/share": "*",
+    "@flighthq/shortcut": "*",
     "@flighthq/statusbar": "*",
     "@flighthq/types": "*",
     "@flighthq/useragent": "*"

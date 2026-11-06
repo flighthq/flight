@@ -7,7 +7,15 @@
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,
-    "moduleSuffixes": [".lifecycle-types", ".power-types", ".shell-types", ".socket-types", ".menu-types", ""],
+    "moduleSuffixes": [
+      ".lifecycle-types",
+      ".power-types",
+      ".shell-types",
+      ".shortcut-types",
+      ".socket-types",
+      ".menu-types",
+      ""
+    ],
     "types": ["node", "@testing-library/jest-dom", "vitest/globals", "@webgpu/types"]
   },
   "references": [
@@ -106,6 +114,9 @@
     },
     {
       "path": "../shell/tsconfig.contract.json"
+    },
+    {
+      "path": "../shortcut/tsconfig.contract.json"
     },
     {
       "path": "../socket/tsconfig.contract.json"
