@@ -1,4 +1,6 @@
-import type { SpritesheetData, StarlingDocument, StarlingSubTexture } from '@flighthq/types/contract';
+import type { SpritesheetData } from '@flighthq/spritesheet/contract';
+
+import type { StarlingDocument, StarlingSubTexture } from './types.ts';
 
 function frameToSubTexture(frame: Readonly<SpritesheetData['frames'][0]>): StarlingSubTexture {
   const st: StarlingSubTexture = {

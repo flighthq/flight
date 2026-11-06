@@ -1,12 +1,5 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import {
-  SpritesheetFormatKindAseprite,
-  SpritesheetFormatKindCocosPlist,
-  SpritesheetFormatKindLibgdxAtlas,
-  SpritesheetFormatKindStarling,
-  SpritesheetFormatKindTexturePacker,
-} from '@flighthq/types/contract';
-import type { SpritesheetData, SpritesheetFormatKind, SpritesheetParseOptions } from '@flighthq/types/contract';
+import type { SpritesheetData } from '@flighthq/spritesheet/contract';
 
 import { parseCocosPlistSpritesheet } from './cocosPlistParse.ts';
 import { serializeCocosPlistSpritesheet } from './cocosPlistSerialize.ts';
@@ -21,6 +14,15 @@ import {
   starlingSpritesheetFormat,
   unregisterSpritesheetFormat,
 } from './spritesheetDetect.ts';
+import {
+  SpritesheetFormatKindAseprite,
+  SpritesheetFormatKindCocosPlist,
+  SpritesheetFormatKindLibgdxAtlas,
+  SpritesheetFormatKindStarling,
+  SpritesheetFormatKindTexturePacker,
+} from './spritesheetFormatKind.ts';
+import type { SpritesheetFormatKind } from './spritesheetFormatKind.ts';
+import type { SpritesheetParseOptions } from './types.ts';
 
 const TEXTURE_PACKER_JSON = JSON.stringify({
   frames: {},

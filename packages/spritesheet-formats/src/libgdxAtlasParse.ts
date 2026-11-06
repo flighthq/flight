@@ -1,4 +1,6 @@
-import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import type { ImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import { ImportDiagnosticSeverity, reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import type { SpritesheetAnimationData, SpritesheetData, SpritesheetFrameData } from '@flighthq/spritesheet/contract';
 import {
   createSpritesheetAnimationData,
   createSpritesheetData,
@@ -7,14 +9,8 @@ import {
 import { parseTextureAtlasLibgdxAtlas } from '@flighthq/textureatlas-formats/contract';
 import { createTextureAtlas } from '@flighthq/textureatlas/contract';
 import type { TextureAtlasRegion } from '@flighthq/textureatlas/contract';
-import type {
-  ImportDiagnostic,
-  LibgdxAtlasParseOptions,
-  SpritesheetAnimationData,
-  SpritesheetData,
-  SpritesheetFrameData,
-} from '@flighthq/types/contract';
-import { ImportDiagnosticSeverity, TextureAtlasRotation } from '@flighthq/types/contract';
+
+import type { LibgdxAtlasParseOptions } from './types.ts';
 
 interface LibgdxPage {
   filename: string;
@@ -169,7 +165,7 @@ function parseLibgdxAtlas(text: string): { pages: LibgdxPage[]; regions: LibgdxR
 // Maps an atlas region (geometry owned by @flighthq/textureatlas-formats — incl. libGDX rotate/orig/
 // offset handling and the `name_index` disambiguation for indexed regions) to a spritesheet frame.
 function frameFromRegion(region: Readonly<TextureAtlasRegion>): SpritesheetFrameData {
-  const rotated = region.rotation !== TextureAtlasRotation.None;
+  const rotated = region.rotation !== 0;
   const width = rotated ? region.height : region.width;
   const height = rotated ? region.width : region.height;
   return createSpritesheetFrameData({

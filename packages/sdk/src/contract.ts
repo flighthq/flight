@@ -223,6 +223,57 @@ export { Statechart, StatechartInstance } from '@flighthq/statechart';
 export type { StatechartInstanceRaw, StatechartRaw } from '@flighthq/statechart';
 export * from '@flighthq/spritesheet';
 export * from '@flighthq/spritesheet-formats';
+export type {
+  AsepriteArrayDocument,
+  AsepriteArrayFrame,
+  AsepriteBaseFrame,
+  AsepriteDocument,
+  AsepriteFrameTag,
+  AsepriteHashDocument,
+  AsepriteHashFrame,
+  AsepriteLayer,
+  AsepriteMeta,
+  AsepriteParsed,
+  AsepriteRect,
+  AsepriteSerializeOptions,
+  AsepriteSize,
+  CocosPlistDocument,
+  CocosPlistFrame,
+  CocosPlistMetadata,
+  CocosPlistParsed,
+  LibgdxAtlasDocument,
+  LibgdxAtlasPage,
+  LibgdxAtlasParseOptions,
+  LibgdxAtlasRegion,
+  SpritesheetFormatDescriptor,
+  SpritesheetFormatEntry,
+  SpritesheetFormatKind,
+  SpritesheetImportOptions,
+  SpritesheetParseOptions,
+  StarlingDocument,
+  StarlingParseOptions,
+  StarlingParsed,
+  StarlingSubTexture,
+  TexturePackerArrayDocument,
+  TexturePackerArrayFrame,
+  TexturePackerDocument,
+  TexturePackerFrameTag,
+  TexturePackerHashDocument,
+  TexturePackerHashFrame,
+  TexturePackerMeta,
+  TexturePackerParsed,
+  TexturePackerPivot,
+  TexturePackerRect,
+  TexturePackerSerializeOptions,
+  TexturePackerSize,
+} from '@flighthq/spritesheet-formats';
+export {
+  SpritesheetFormatKindAseprite,
+  SpritesheetFormatKindCocosPlist,
+  SpritesheetFormatKindLibgdxAtlas,
+  SpritesheetFormatKindStarling,
+  SpritesheetFormatKindTexturePacker,
+} from '@flighthq/spritesheet-formats';
 export * from '@flighthq/statusbar';
 export * from '@flighthq/preferences';
 export * from '@flighthq/bitmap';

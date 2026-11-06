@@ -1,4 +1,4 @@
-import type { ImportDiagnostic } from '@flighthq/types/contract';
+import type { ImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 
 import { parseStarlingSpritesheet, parseStarlingSpritesheetDocument } from './starlingParse.ts';
 

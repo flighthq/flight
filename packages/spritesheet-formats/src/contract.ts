@@ -1,3 +1,5 @@
+export * from './spritesheetFormatKind.ts';
+export type * from './types.ts';
 export * from './asepriteParse.ts';
 export * from './asepriteSerialize.ts';
 export * from './cocosPlistParse.ts';

@@ -1,4 +1,4 @@
-import type { SpritesheetData, SpritesheetFrameData } from '@flighthq/types/contract';
+import type { SpritesheetData, SpritesheetFrameData } from '@flighthq/spritesheet/contract';
 
 function appendLibgdxAtlasFrame(lines: string[], frame: Readonly<SpritesheetFrameData>): void {
   const packedWidth = frame.rotated ? frame.height : frame.width;

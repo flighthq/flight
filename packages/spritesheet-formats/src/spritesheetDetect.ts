@@ -1,25 +1,21 @@
+import type { Kind } from '@flighthq/entity/contract';
 import { getKindMapKeys, withKindMapEntry, withoutKindMapEntry } from '@flighthq/registry/contract';
-import type {
-  SpritesheetFormatDescriptor,
-  SpritesheetImportOptions,
-  Kind,
-  SpritesheetData,
-  SpritesheetFormatKind,
-  SpritesheetParseOptions,
-} from '@flighthq/types/contract';
+import type { SpritesheetData } from '@flighthq/spritesheet/contract';
+
+import { parseAsepriteSpritesheet } from './asepriteParse.ts';
+import { parseCocosPlistSpritesheet } from './cocosPlistParse.ts';
+import { parseLibgdxAtlasSpritesheet } from './libgdxAtlasParse.ts';
 import {
   SpritesheetFormatKindAseprite as ASEPRITE,
   SpritesheetFormatKindCocosPlist as COCOS_PLIST,
   SpritesheetFormatKindLibgdxAtlas as LIBGDX_ATLAS,
   SpritesheetFormatKindStarling as STARLING,
   SpritesheetFormatKindTexturePacker as TEXTURE_PACKER,
-} from '@flighthq/types/contract';
-
-import { parseAsepriteSpritesheet } from './asepriteParse.ts';
-import { parseCocosPlistSpritesheet } from './cocosPlistParse.ts';
-import { parseLibgdxAtlasSpritesheet } from './libgdxAtlasParse.ts';
+} from './spritesheetFormatKind.ts';
+import type { SpritesheetFormatKind } from './spritesheetFormatKind.ts';
 import { parseStarlingSpritesheet } from './starlingParse.ts';
 import { parseTexturePackerSpritesheet } from './texturePackerParse.ts';
+import type { SpritesheetFormatDescriptor, SpritesheetImportOptions, SpritesheetParseOptions } from './types.ts';
 
 interface FormatEntry {
   detect: (text: string) => boolean;

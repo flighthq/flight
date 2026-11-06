@@ -1,5 +1,6 @@
+import type { SpritesheetData } from '@flighthq/spritesheet/contract';
+
 import type {
-  SpritesheetData,
   TexturePackerArrayDocument,
   TexturePackerArrayFrame,
   TexturePackerDocument,
@@ -7,7 +8,7 @@ import type {
   TexturePackerHashFrame,
   TexturePackerMeta,
   TexturePackerSerializeOptions,
-} from '@flighthq/types/contract';
+} from './types.ts';
 
 function dataToMeta(data: Readonly<SpritesheetData>, existing: Partial<TexturePackerMeta>): TexturePackerMeta {
   return {

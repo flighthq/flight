@@ -1,4 +1,6 @@
-import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import type { ImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import { ImportDiagnosticSeverity, reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import type { SpritesheetAnimationData, SpritesheetData, SpritesheetFrameData } from '@flighthq/spritesheet/contract';
 import {
   createSpritesheetAnimationData,
   createSpritesheetData,
@@ -7,17 +9,8 @@ import {
 import { parseTextureAtlasStarlingXml } from '@flighthq/textureatlas-formats/contract';
 import { createTextureAtlas } from '@flighthq/textureatlas/contract';
 import type { TextureAtlasRegion } from '@flighthq/textureatlas/contract';
-import type {
-  ImportDiagnostic,
-  SpritesheetAnimationData,
-  SpritesheetData,
-  SpritesheetFrameData,
-  StarlingDocument,
-  StarlingParseOptions,
-  StarlingParsed,
-  StarlingSubTexture,
-} from '@flighthq/types/contract';
-import { ImportDiagnosticSeverity, TextureAtlasRotation } from '@flighthq/types/contract';
+
+import type { StarlingDocument, StarlingParseOptions, StarlingParsed, StarlingSubTexture } from './types.ts';
 
 function parseAttrs(attrs: string): Record<string, string> {
   const result: Record<string, string> = {};
@@ -66,7 +59,7 @@ function parseStarlingXml(xml: string): StarlingDocument {
 // pixels; the spritesheet layer normalizes them to the 0..1 range, so re-divide the atlas's raw pivot
 // by the source size here.
 function frameFromRegion(region: Readonly<TextureAtlasRegion>): SpritesheetFrameData {
-  const rotated = region.rotation !== TextureAtlasRotation.None;
+  const rotated = region.rotation !== 0;
   const width = rotated ? region.height : region.width;
   const height = rotated ? region.width : region.height;
   const sourceWidth = region.originalWidth ?? width;

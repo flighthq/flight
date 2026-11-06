@@ -1,4 +1,6 @@
-import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import type { ImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import { ImportDiagnosticSeverity, reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import type { SpritesheetAnimationData, SpritesheetData, SpritesheetFrameData } from '@flighthq/spritesheet/contract';
 import {
   createSpritesheetAnimationData,
   createSpritesheetData,
@@ -7,20 +9,10 @@ import {
 import { parseTextureAtlasAsepriteDocument } from '@flighthq/textureatlas-formats/contract';
 import { createTextureAtlas } from '@flighthq/textureatlas/contract';
 import type { TextureAtlasRegion } from '@flighthq/textureatlas/contract';
-import type {
-  AsepriteArrayFrame,
-  AsepriteDocument,
-  AsepriteFrameTag,
-  AsepriteMeta,
-  AsepriteParsed,
-  ImportDiagnostic,
-  SpritesheetAnimationData,
-  SpritesheetData,
-  SpritesheetFrameData,
-} from '@flighthq/types/contract';
-import { ImportDiagnosticSeverity, TextureAtlasRotation } from '@flighthq/types/contract';
+
+import type { AsepriteArrayFrame, AsepriteDocument, AsepriteFrameTag, AsepriteMeta, AsepriteParsed } from './types.ts';
 function frameFromRegion(region: Readonly<TextureAtlasRegion>): SpritesheetFrameData {
-  const rotated = region.rotation !== TextureAtlasRotation.None;
+  const rotated = region.rotation !== 0;
   const width = rotated ? region.height : region.width;
   const height = rotated ? region.width : region.height;
   return createSpritesheetFrameData({

@@ -1,3 +1,5 @@
+import type { SpritesheetData } from '@flighthq/spritesheet/contract';
+
 import type {
   AsepriteArrayDocument,
   AsepriteArrayFrame,
@@ -6,8 +8,7 @@ import type {
   AsepriteHashDocument,
   AsepriteMeta,
   AsepriteSerializeOptions,
-  SpritesheetData,
-} from '@flighthq/types/contract';
+} from './types.ts';
 
 function dataToMeta(data: Readonly<SpritesheetData>, existing: Partial<AsepriteMeta>): AsepriteMeta {
   const tags = data.animations.map((anim, i) => {

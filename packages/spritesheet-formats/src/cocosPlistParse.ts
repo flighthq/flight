@@ -1,17 +1,11 @@
-import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import type { ImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import { ImportDiagnosticSeverity, reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import type { SpritesheetData, SpritesheetFrameData } from '@flighthq/spritesheet/contract';
 import { createSpritesheetData, createSpritesheetFrameData } from '@flighthq/spritesheet/contract';
-import type {
-  CocosPlistDocument,
-  CocosPlistFrame,
-  CocosPlistMetadata,
-  CocosPlistParsed,
-  ImportDiagnostic,
-  SpritesheetData,
-  SpritesheetFrameData,
-} from '@flighthq/types/contract';
-import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 import type { XmlElement } from '@flighthq/xml/contract';
 import { parseXmlDocument } from '@flighthq/xml/contract';
+
+import type { CocosPlistDocument, CocosPlistFrame, CocosPlistMetadata, CocosPlistParsed } from './types.ts';
 function parsePlistPair(s: string): [number, number] {
   const m = s.match(/{?\s*([-\d.]+)\s*,\s*([-\d.]+)\s*}?/);
   return [parseFloat(m?.[1] ?? '0'), parseFloat(m?.[2] ?? '0')];

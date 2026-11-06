@@ -16,7 +16,6 @@
     { "path": "../textureatlas/tsconfig.runtime.json" },
     { "path": "../textureatlas-formats" },
     { "path": "../requirement" },
-    { "path": "../types" },
     { "path": "../xml" }
   ],
   "include": ["src"]

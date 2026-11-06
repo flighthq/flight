@@ -1,4 +1,4 @@
-import type { ImportDiagnostic } from '@flighthq/types/contract';
+import type { ImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 
 import { parseTexturePackerSpritesheet, parseTexturePackerSpritesheetDocument } from './texturePackerParse.ts';
 

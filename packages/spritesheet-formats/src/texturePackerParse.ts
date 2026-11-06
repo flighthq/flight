@@ -1,4 +1,6 @@
-import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import type { ImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import { ImportDiagnosticSeverity, reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import type { SpritesheetAnimationData, SpritesheetData, SpritesheetFrameData } from '@flighthq/spritesheet/contract';
 import {
   createSpritesheetAnimationData,
   createSpritesheetData,
@@ -7,19 +9,10 @@ import {
 import { parseTexturePackerAtlasDocument } from '@flighthq/textureatlas-formats/contract';
 import { createTextureAtlas } from '@flighthq/textureatlas/contract';
 import type { TextureAtlasRegion } from '@flighthq/textureatlas/contract';
-import type {
-  ImportDiagnostic,
-  SpritesheetAnimationData,
-  SpritesheetData,
-  SpritesheetFrameData,
-  TexturePackerDocument,
-  TexturePackerFrameTag,
-  TexturePackerMeta,
-  TexturePackerParsed,
-} from '@flighthq/types/contract';
-import { ImportDiagnosticSeverity, TextureAtlasRotation } from '@flighthq/types/contract';
+
+import type { TexturePackerDocument, TexturePackerFrameTag, TexturePackerMeta, TexturePackerParsed } from './types.ts';
 function frameFromRegion(region: Readonly<TextureAtlasRegion>): SpritesheetFrameData {
-  const rotated = region.rotation !== TextureAtlasRotation.None;
+  const rotated = region.rotation !== 0;
   const width = rotated ? region.height : region.width;
   const height = rotated ? region.width : region.height;
   return createSpritesheetFrameData({
