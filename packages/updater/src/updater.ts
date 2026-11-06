@@ -3,7 +3,7 @@ import type {
   AppUpdateInstallOutcome,
   DownloadedUpdate,
   HostUpdaterCommandCapability,
-} from '@flighthq/types/contract';
+} from './types.ts';
 
 const CHECK_IN_PROGRESS = Object.freeze({ reason: 'check-in-progress' }) as AppUpdateCheckOutcome;
 const NOT_AVAILABLE = Object.freeze({ reason: 'not-available' }) as AppUpdateCheckOutcome;

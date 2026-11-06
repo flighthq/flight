@@ -43,6 +43,7 @@
       ".screen-types",
       ".texture-formats-types",
       ".protocol-types",
+      ".updater-types",
       ""
     ],
     "tsBuildInfoFile": "dist/.tsbuildinfo.scene2d-formats-types"
@@ -221,6 +222,9 @@
     },
     {
       "path": "../protocol/tsconfig.contract.json"
+    },
+    {
+      "path": "../updater/tsconfig.contract.json"
     }
   ],
   "files": [

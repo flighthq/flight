@@ -75,7 +75,7 @@
       "path": "../types"
     },
     {
-      "path": "../updater"
+      "path": "../updater/tsconfig.runtime.json"
     }
   ],
   "include": ["src"]

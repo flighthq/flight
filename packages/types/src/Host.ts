@@ -16,6 +16,7 @@ import type {
   HostNotificationCapabilities,
   HostProtocolCapabilities,
   HostShareCapabilities,
+  HostUpdaterCapabilities,
 } from '@flighthq/host/contract';
 import type { HostInputCapabilities } from '@flighthq/input/contract';
 import type {
@@ -73,7 +74,6 @@ import type { HostPermissionsCapability } from './Permission.ts';
 import type { HostPlatformCapability } from './Platform.ts';
 import type { HostTextSegmenterCapability } from './TextSegment.ts';
 import type { HostTextShaperCapability } from './TextShaper.ts';
-import type { HostUpdaterCommandCapability } from './Updater.ts';
 
 /** @deprecated Import `HostInputCapabilities` from `@flighthq/input/contract`. */
 export type { HostInputCapabilities } from '@flighthq/input/contract';
@@ -187,10 +187,6 @@ export interface HostTextShaperCapabilities {
   readonly shaper?: HostTextShaperCapability;
 }
 
-export interface HostUpdaterCapabilities {
-  readonly command?: HostUpdaterCommandCapability;
-}
-
 export interface HostVideoCapabilities {
   readonly playback?: HostVideoCapability;
 }
@@ -199,6 +195,7 @@ export type { HostWgpuCapabilities } from '@flighthq/render-wgpu/contract';
 
 /** @deprecated Import from `@flighthq/host/contract`. */
 export type {
+  HostUpdaterCapabilities,
   HostProtocolCapabilities,
   HostBitmapCapabilities,
   HostCompressCapabilities,

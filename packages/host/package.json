@@ -54,7 +54,8 @@
     "@flighthq/protocol": "*",
     "@flighthq/screen": "*",
     "@flighthq/share": "*",
-    "@flighthq/types": "*"
+    "@flighthq/types": "*",
+    "@flighthq/updater": "*"
   },
   "devDependencies": {
     "typescript": "^7.0.2"

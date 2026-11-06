@@ -48,6 +48,7 @@
       ".texture-formats-types",
       ".screen-types",
       ".protocol-types",
+      ".updater-types",
       ""
     ],
     "types": ["@webgpu/types"],
@@ -167,6 +168,9 @@
     },
     {
       "path": "../protocol/tsconfig.contract.json"
+    },
+    {
+      "path": "../updater/tsconfig.contract.json"
     }
   ],
   "files": [

@@ -48,6 +48,7 @@ import type {
 } from '@flighthq/protocol/contract';
 import type { HostScreenCapabilities } from '@flighthq/screen/contract';
 import type { HostShareContentCapability, HostShareFilesCapability } from '@flighthq/share/contract';
+import type { HostUpdaterCommandCapability } from '@flighthq/updater/contract';
 
 // Opaque host-side image handle carried across the native seam. The web target aliases the
 // platform's drawable-source union; native ports replace this alias with their own borrowed handle.
@@ -138,4 +139,8 @@ export interface HostProtocolCapabilities {
   readonly registration?: HostProtocolRegistrationCapability;
   readonly registrationQuery?: HostProtocolRegistrationQueryCapability;
   readonly unregistration?: HostProtocolUnregistrationCapability;
+}
+
+export interface HostUpdaterCapabilities {
+  readonly command?: HostUpdaterCommandCapability;
 }

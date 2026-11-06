@@ -111,6 +111,7 @@
     "@flighthq/texture": "*",
     "@flighthq/texture-formats": "*",
     "@flighthq/tray": "*",
+    "@flighthq/updater": "*",
     "@flighthq/useragent": "*",
     "@flighthq/velocity": "*",
     "@flighthq/xml": "*"

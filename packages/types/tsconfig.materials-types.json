@@ -42,6 +42,7 @@
       ".screen-types",
       ".texture-formats-types",
       ".protocol-types",
+      ".updater-types",
       ""
     ],
     "tsBuildInfoFile": "dist/.tsbuildinfo.materials-types"
@@ -118,6 +119,9 @@
     },
     {
       "path": "../protocol/tsconfig.contract.json"
+    },
+    {
+      "path": "../updater/tsconfig.contract.json"
     }
   ],
   "files": [

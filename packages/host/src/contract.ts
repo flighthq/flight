@@ -29,6 +29,7 @@ export type {
   HostNotificationCapabilities,
   HostProtocolCapabilities,
   HostShareCapabilities,
+  HostUpdaterCapabilities,
   WebScreenCapabilities,
   HostImageSource,
 } from './hostCapabilities.ts';

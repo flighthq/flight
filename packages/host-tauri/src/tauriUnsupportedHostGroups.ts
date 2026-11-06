@@ -6,6 +6,7 @@ import {
   webHostTextShaperGroup,
 } from '@flighthq/host-web/contract';
 import type { HostProtocolCapabilities } from '@flighthq/host/contract';
+import type { HostUpdaterCapabilities } from '@flighthq/host/contract';
 import type { HostMediaSessionCapabilities } from '@flighthq/mediasession/contract';
 import type {
   HostAccessibilityCapabilities,
@@ -43,7 +44,6 @@ import type {
   HostCompressCapabilities,
   HostDecompressCapabilities,
   HostTextShaperCapabilities,
-  HostUpdaterCapabilities,
   HostVideoCapabilities,
   HostWgpuCapabilities,
 } from '@flighthq/types/contract';

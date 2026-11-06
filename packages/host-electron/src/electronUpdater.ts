@@ -1,13 +1,13 @@
 import { allocateEntity } from '@flighthq/entity/contract';
+import type { HostUpdaterCapabilities } from '@flighthq/host/contract';
+import type { ElectronApi } from '@flighthq/types/contract';
 import type {
   AppUpdateCheckOutcome,
   AppUpdateInstallOutcome,
   DownloadedUpdate,
-  ElectronApi,
   UpdateInfo,
   HostUpdaterCommandCapability,
-  HostUpdaterCapabilities,
-} from '@flighthq/types/contract';
+} from '@flighthq/updater/contract';
 
 type NativeListener = (...args: unknown[]) => void;
 type NativeCleanup = () => void;

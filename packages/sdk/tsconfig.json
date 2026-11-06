@@ -457,7 +457,7 @@
       "path": "../types"
     },
     {
-      "path": "../updater"
+      "path": "../updater/tsconfig.runtime.json"
     },
     {
       "path": "../useragent"

@@ -1,12 +1,11 @@
+import * as updaterContract from './contract.ts';
+import * as updaterPublic from './index.ts';
 import type {
   AppUpdateCheckOutcome,
   AppUpdateInstallOutcome,
   DownloadedUpdate,
   HostUpdaterCommandCapability,
-} from '@flighthq/types/contract';
-
-import * as updaterContract from './contract.ts';
-import * as updaterPublic from './index.ts';
+} from './types.ts';
 import { checkForAppUpdate, destroyUpdater, installDownloadedUpdate } from './updater.ts';
 
 interface FakeBackend extends HostUpdaterCommandCapability {
