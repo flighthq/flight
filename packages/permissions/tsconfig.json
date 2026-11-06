@@ -2,10 +2,19 @@
   "files": [],
   "references": [
     {
+      "path": "../entity"
+    },
+    {
+      "path": "../geolocation"
+    },
+    {
+      "path": "../midi/tsconfig.contract.json"
+    },
+    {
       "path": "../notification/tsconfig.contract.json"
     },
     {
-      "path": "../types"
+      "path": "../preferences/tsconfig.contract.json"
     },
     {
       "path": "./tsconfig.contract.json"

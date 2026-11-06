@@ -1,13 +1,11 @@
-import { EntityRuntimeKey } from '@flighthq/types/contract';
-import type {
-  HostMidiPermissionCapability,
-  HostNotificationPermissionCapability,
-  HostPermissionsCapability,
-  HostPreferencesPersistenceQueryCapability,
-} from '@flighthq/types/contract';
+import { EntityRuntimeKey } from '@flighthq/entity/contract';
+import type { HostMidiPermissionCapability } from '@flighthq/midi/contract';
+import type { HostNotificationPermissionCapability } from '@flighthq/notification/contract';
+import type { HostPreferencesPersistenceQueryCapability } from '@flighthq/preferences/contract';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { getPermissionState } from './permission.ts';
+import type { HostPermissionsCapability } from './types.ts';
 
 describe('getPermissionState', () => {
   afterEach(() => vi.unstubAllGlobals());

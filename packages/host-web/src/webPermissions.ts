@@ -4,7 +4,7 @@ import type {
   PermissionQueryOutcome,
   PermissionRequestOutcome,
   PermissionState,
-} from '@flighthq/types/contract';
+} from '@flighthq/permissions/contract';
 
 function createWebPermissionsBackend(): HostPermissionsCapability {
   const out = {} as HostPermissionsCapability;

@@ -53,12 +53,10 @@
       ".ipc-types",
       ".mediasession-types",
       ".menu-types",
-      ".midi-types",
       ".net-types",
       ".notification-types",
       ".path-boolean-types",
       ".path-types",
-      ".permissions-types",
       ".platform-types",
       ".preferences-types",
       ".power-types",
@@ -221,9 +219,6 @@
       "path": "../menu/tsconfig.contract.json"
     },
     {
-      "path": "../midi/tsconfig.contract.json"
-    },
-    {
       "path": "../net/tsconfig.contract.json"
     },
     {
@@ -234,9 +229,6 @@
     },
     {
       "path": "../path-boolean/tsconfig.contract.json"
-    },
-    {
-      "path": "../permissions/tsconfig.contract.json"
     },
     {
       "path": "../platform/tsconfig.contract.json"

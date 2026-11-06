@@ -1,10 +1,7 @@
-import type {
-  GeolocationAccessOutcome,
-  HostGeolocationCapability,
-  HostPermissionsCapability,
-} from '@flighthq/types/contract';
+import type { GeolocationAccessOutcome, HostGeolocationCapability } from '@flighthq/geolocation/contract';
 
 import { requestPermission } from './permission.ts';
+import type { HostPermissionsCapability } from './types.ts';
 
 function geolocationProvider(outcome: GeolocationAccessOutcome, calls?: { count: number }): HostGeolocationCapability {
   return {

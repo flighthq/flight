@@ -1,7 +1,7 @@
+import type { PermissionState } from '@flighthq/permissions/contract';
 import type {
   HostPreferencesPersistenceQueryCapability,
   NonEntityCreateResult,
-  PermissionState,
   StoragePersistenceOutcome,
   WebWindowStoragePersistenceApi,
   WebWindowStoragePersistenceCapabilities,

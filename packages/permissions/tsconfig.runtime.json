@@ -7,14 +7,24 @@
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,
+    "moduleSuffixes": [".midi-types", ".notification-types", ".preferences-types", ""],
     "tsBuildInfoFile": "dist/.tsbuildinfo.runtime"
   },
   "references": [
     {
-      "path": "../notification/tsconfig.runtime.json"
+      "path": "../entity"
     },
     {
-      "path": "../types"
+      "path": "../geolocation"
+    },
+    {
+      "path": "../midi/tsconfig.contract.json"
+    },
+    {
+      "path": "../notification/tsconfig.contract.json"
+    },
+    {
+      "path": "../preferences/tsconfig.contract.json"
     },
     {
       "path": "./tsconfig.contract.json"
