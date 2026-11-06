@@ -1,5 +1,6 @@
-import type { StatusBarInfo, CapacitorApi } from '@flighthq/types/contract';
-import { EntityRuntimeKey } from '@flighthq/types/contract';
+import { EntityRuntimeKey } from '@flighthq/entity/contract';
+import type { StatusBarInfo } from '@flighthq/statusbar/contract';
+import type { CapacitorApi } from '@flighthq/types/contract';
 
 import {
   capacitorHostStatusBarColor,

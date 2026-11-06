@@ -97,6 +97,7 @@
     "@flighthq/signals": "*",
     "@flighthq/spatial": "*",
     "@flighthq/statechart": "*",
+    "@flighthq/statusbar": "*",
     "@flighthq/surface": "*",
     "@flighthq/text": "*",
     "@flighthq/textformat": "*",

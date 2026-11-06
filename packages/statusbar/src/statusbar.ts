@@ -1,7 +1,8 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
 import { createSignal, emitSignal } from '@flighthq/signals/contract';
+
 import type {
-  EntityConstruction,
   HostStatusBarChangeCapability,
   HostStatusBarColorCapability,
   HostStatusBarInfoCapability,
@@ -14,7 +15,7 @@ import type {
   StatusBarStyle,
   StatusBarStyleEntry,
   StatusBarStyleEntryHandle,
-} from '@flighthq/types/contract';
+} from './contract.statusbar-types.ts';
 
 export function attachStatusBar(
   hostStatusBarChange: Readonly<HostStatusBarChangeCapability>,

@@ -1,4 +1,6 @@
 import { connectSignal } from '@flighthq/signals/contract';
+import { describe, expect, it, vi } from 'vitest';
+
 import type {
   HostStatusBarChangeCapability,
   HostStatusBarColorCapability,
@@ -8,9 +10,7 @@ import type {
   HostStatusBarVisibilityCapability,
   StatusBarInfo,
   StatusBarStyle,
-} from '@flighthq/types/contract';
-import { describe, expect, it, vi } from 'vitest';
-
+} from './contract.statusbar-types.ts';
 import * as statusbar from './statusbar.ts';
 import { initializeStatusBar, initializeStatusBarInfo } from './statusbar.ts';
 

@@ -1,5 +1,5 @@
 import { packedRgbaToHexColor } from '@flighthq/statusbar/contract';
-import type { HostStatusBarColorCapability } from '@flighthq/types/contract';
+import type { HostStatusBarColorCapability } from '@flighthq/statusbar/contract';
 
 // Web owns one honest status-bar-adjacent operation: writing the document theme-color hint. It does
 // not claim native status-bar snapshots, foreground style, visibility, overlays, or change events.

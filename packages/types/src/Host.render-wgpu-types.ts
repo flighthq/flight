@@ -12,10 +12,12 @@ import type { HostPreferencesCapabilities } from '@flighthq/preferences/contract
 import type { HostScreenCapabilities } from '@flighthq/screen/contract';
 import type { HostSensorsCapabilities } from '@flighthq/sensors/contract';
 import type { HostShellCapabilities } from '@flighthq/shell/contract';
+import type { HostStatusBarCapabilities } from '@flighthq/statusbar/contract';
 import type { HostCanvasCapabilities, HostSurfaceCapabilities } from '@flighthq/surface/contract';
 
 export type { HostScreenCapabilities } from '@flighthq/screen/contract';
 export type { HostSensorsCapabilities } from '@flighthq/sensors/contract';
+export type { HostStatusBarCapabilities } from '@flighthq/statusbar/contract';
 
 import type { HostAccessibilityCapability } from './Accessibility.ts';
 import type {
@@ -97,14 +99,6 @@ import type {
 import type { HostShareContentCapability, HostShareFilesCapability } from './Share.ts';
 import type { HostShortcutQueryCapability, HostShortcutTriggerCapability } from './Shortcut.ts';
 import type { HostSocketCapability } from './Socket.ts';
-import type {
-  HostStatusBarChangeCapability,
-  HostStatusBarColorCapability,
-  HostStatusBarInfoCapability,
-  HostStatusBarOverlaysCapability,
-  HostStatusBarStyleCapability,
-  HostStatusBarVisibilityCapability,
-} from './StatusBar.ts';
 import type { HostTextSegmenterCapability } from './TextSegment.ts';
 import type { HostTextShaperCapability } from './TextShaper.ts';
 import type {
@@ -318,15 +312,6 @@ export interface HostSoftKeyboardCapabilities {
   readonly scrollAssist?: HostSoftKeyboardScrollAssistCapability;
   readonly style?: HostSoftKeyboardStyleCapability;
   readonly visibility?: HostSoftKeyboardVisibilityCapability;
-}
-
-export interface HostStatusBarCapabilities {
-  readonly change?: HostStatusBarChangeCapability;
-  readonly color?: HostStatusBarColorCapability;
-  readonly info?: HostStatusBarInfoCapability;
-  readonly overlays?: HostStatusBarOverlaysCapability;
-  readonly style?: HostStatusBarStyleCapability;
-  readonly visibility?: HostStatusBarVisibilityCapability;
 }
 
 export interface HostTextSegmentCapabilities {

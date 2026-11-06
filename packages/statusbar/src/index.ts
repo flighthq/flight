@@ -14,3 +14,18 @@ export {
   setStatusBarStyle,
   setStatusBarVisible,
 } from './contract.ts';
+export type {
+  HostStatusBarCapabilities,
+  HostStatusBarChangeCapability,
+  HostStatusBarColorCapability,
+  HostStatusBarInfoCapability,
+  HostStatusBarOverlaysCapability,
+  HostStatusBarStyleCapability,
+  HostStatusBarVisibilityCapability,
+  StatusBar,
+  StatusBarAnimation,
+  StatusBarInfo,
+  StatusBarStyle,
+  StatusBarStyleEntry,
+  StatusBarStyleEntryHandle,
+} from './contract.ts';

@@ -1,6 +1,7 @@
 import type { MobileOsProfile } from '@flighthq/app/contract';
 import type { HostClipboardCapabilities } from '@flighthq/clipboard/contract';
 import type { HostDeviceCapabilities } from '@flighthq/device/contract';
+import type { HostStatusBarCapabilities } from '@flighthq/statusbar/contract';
 
 import type { CapacitorAppCapabilitiesFor } from './CapacitorAppCapabilitiesFor.ts';
 import type { CapacitorProtocolCapabilities } from './CapacitorProtocolCapabilities.ts';
@@ -13,7 +14,6 @@ import type {
   HostGeolocationCapabilities,
   HostShareCapabilities,
   HostSoftKeyboardCapabilities,
-  HostStatusBarCapabilities,
 } from './Host.ts';
 import type { CapacitorNotificationCapabilities } from './Notification.ts';
 import type { HostCapacitorShareContentCapability } from './Share.ts';

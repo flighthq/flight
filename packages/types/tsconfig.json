@@ -49,6 +49,7 @@
       ".shape-formats-types",
       ".shape-types",
       ".shell-types",
+      ".statusbar-types",
       ".spatial-types",
       ".statechart-types",
       ".text-types",
@@ -267,6 +268,9 @@
     },
     {
       "path": "../sensors/tsconfig.contract.json"
+    },
+    {
+      "path": "../statusbar/tsconfig.contract.json"
     },
     {
       "path": "../gui/tsconfig.contract.json"

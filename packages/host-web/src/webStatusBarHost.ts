@@ -1,4 +1,4 @@
-import type { HostStatusBarCapabilities } from '@flighthq/types/contract';
+import type { HostStatusBarCapabilities } from '@flighthq/statusbar/contract';
 
 import { webHostStatusBarColor } from './webStatusbar.ts';
 

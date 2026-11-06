@@ -1,15 +1,14 @@
 import type {
-  CapacitorApi,
-  CapacitorStatusBarInfoResult,
+  HostStatusBarCapabilities,
   HostStatusBarColorCapability,
-  StatusBarInfo,
   HostStatusBarInfoCapability,
   HostStatusBarOverlaysCapability,
-  StatusBarStyle,
   HostStatusBarStyleCapability,
   HostStatusBarVisibilityCapability,
-  HostStatusBarCapabilities,
-} from '@flighthq/types/contract';
+  StatusBarInfo,
+  StatusBarStyle,
+} from '@flighthq/statusbar/contract';
+import type { CapacitorApi, CapacitorStatusBarInfoResult } from '@flighthq/types/contract';
 
 type CapacitorStatusBarProvider = HostStatusBarColorCapability &
   HostStatusBarInfoCapability &
