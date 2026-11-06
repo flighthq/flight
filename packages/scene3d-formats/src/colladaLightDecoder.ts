@@ -7,6 +7,7 @@ import {
   createPointLight,
   createSpotLight,
 } from '@flighthq/lighting/contract';
+import type { Light } from '@flighthq/lighting/contract';
 import type { Scene3DDocument } from '@flighthq/scene3d/contract';
 import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 import type {
@@ -15,7 +16,6 @@ import type {
   ColladaLightDefinition,
   ColladaLightKind,
   ImportDiagnostic,
-  Light,
 } from '@flighthq/types/contract';
 import type { XmlElement } from '@flighthq/xml/contract';
 

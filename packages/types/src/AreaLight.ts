@@ -1,39 +1,9 @@
-import type { Light } from './Light.ts';
-import type { LightUnit } from './LightUnit.ts';
-import type { Vector3 } from './Vector3.ts';
+// Owned by `@flighthq/lighting`. These deprecated re-exports keep existing `@flighthq/types` imports
+// compiling until consumers import the owning package.
 
-// Rectangular area light (LTC-shaded). `position` is the rectangle center, `direction` its
-// facing normal, `right`/`up` its half-extent axes (length encodes half-width/half-height) in
-// world space.
-//
-// Shadow fields are reserved intent for a future area-shadow pass. Current scene3d-gl and
-// scene3d-wgpu render area lighting without shadows; setting them has no rendering effect.
-export interface AreaLight extends Light {
-  castsShadow: boolean;
-  // Packed sRGB RGBA (`0xRRGGBBAA`); radiance is unpackColorToLinear(color) x intensity.
-  color: number;
-  // Distance falloff exponent. The inverse-square default is 2.
-  decay: number;
-  direction: Vector3;
-  enabled: boolean;
-  intensity: number;
-  intensityUnit: LightUnit;
-  kind: 'AreaLight';
-  normalBias: number;
-  pcfRadius: number;
-  position: Vector3;
-  range: number;
-  right: Vector3;
-  shadowBias: number;
-  // Far clip distance, in world units, for the shadow camera.
-  shadowFar: number;
-  // Requested square shadow-map resolution.
-  shadowMapSize: number;
-  // Near clip distance, in world units, for the shadow camera.
-  shadowNear: number;
-  // Shadow opacity in [0, 1].
-  shadowStrength: number;
-  up: Vector3;
-}
+/** @deprecated Import from `@flighthq/lighting/contract`. */
+export type { AreaLight } from '@flighthq/lighting/contract';
 
+// Deprecated structural copies of lighting's literal constants (core may cross into an owner only
+// with type-only edges); the values are identical literals.
 export const AreaLightKind = 'AreaLight';

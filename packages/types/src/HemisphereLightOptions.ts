@@ -1,12 +1,5 @@
-import type { LightUnit } from './LightUnit.ts';
+// Owned by `@flighthq/lighting`. These deprecated re-exports keep existing `@flighthq/types` imports
+// compiling until consumers import the owning package.
 
-export interface HemisphereLightOptions {
-  enabled?: boolean;
-  // Packed sRGB RGBA (`0xRRGGBBAA`), seeding HemisphereLight.groundColor.
-  groundColor?: number;
-  intensity?: number;
-  // Unit tag for the stored intensity scalar. Defaults to Unitless.
-  intensityUnit?: LightUnit;
-  // Packed sRGB RGBA (`0xRRGGBBAA`), seeding HemisphereLight.skyColor.
-  skyColor?: number;
-}
+/** @deprecated Import from `@flighthq/lighting/contract`. */
+export type { HemisphereLightOptions } from '@flighthq/lighting/contract';

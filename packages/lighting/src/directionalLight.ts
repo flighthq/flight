@@ -1,7 +1,9 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
 import { cloneVector3, createVector3, setVector3 } from '@flighthq/geometry/contract';
-import type { DirectionalLight, DirectionalLightOptions, EntityConstruction } from '@flighthq/types/contract';
-import { DirectionalLightKind, UnitlessLightUnit } from '@flighthq/types/contract';
+
+import type { DirectionalLight, DirectionalLightOptions } from './types.ts';
+import { DirectionalLightKind, UnitlessLightUnit } from './types.ts';
 
 // Independent copy of a directional light's data, including a fresh `direction` vector.
 export function cloneDirectionalLight(source: Readonly<DirectionalLight>): DirectionalLight {

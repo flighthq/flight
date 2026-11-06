@@ -1,4 +1,4 @@
-import type { Environment } from '@flighthq/types/contract';
+import type { Environment } from '@flighthq/lighting/contract';
 import type { Node3D } from '@flighthq/types/contract';
 
 export interface GlEnvironmentCaptureOptions {

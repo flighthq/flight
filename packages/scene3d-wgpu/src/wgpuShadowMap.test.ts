@@ -7,6 +7,8 @@ import {
 } from '@flighthq/camera/contract';
 import { createAabb, createMatrix4, createVector3 } from '@flighthq/geometry/contract';
 import { createAmbientLight, createDirectionalLight } from '@flighthq/lighting/contract';
+import type { Scene3DLightsLike } from '@flighthq/lighting/contract';
+import { DIRECTIONAL_SHADOW_MAP_SIZE } from '@flighthq/lighting/contract';
 import { createStandardPbrMaterial } from '@flighthq/materials/contract';
 import {
   CANONICAL_SKINNED_MESH_GEOMETRY_LAYOUT,
@@ -23,8 +25,7 @@ import {
   setInstancedMeshInstanceCount,
   setInstancedMeshInstanceMatrix,
 } from '@flighthq/scene3d/contract';
-import type { Camera3D, Scene3DLightsLike, Node3D, Skeleton3D } from '@flighthq/types/contract';
-import { DIRECTIONAL_SHADOW_MAP_SIZE } from '@flighthq/types/contract';
+import type { Camera3D, Node3D, Skeleton3D } from '@flighthq/types/contract';
 
 import { registerWgpuStandardPbrMaterial } from './registerWgpuStandardPbrMaterial.ts';
 import { renderWgpuScene3D } from './renderWgpuScene3D.ts';

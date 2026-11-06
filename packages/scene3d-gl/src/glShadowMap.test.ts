@@ -7,6 +7,7 @@ import {
 } from '@flighthq/camera/contract';
 import { createMatrix4, createVector3 } from '@flighthq/geometry/contract';
 import { createDirectionalLight } from '@flighthq/lighting/contract';
+import { DIRECTIONAL_SHADOW_MAP_SIZE } from '@flighthq/lighting/contract';
 import { createBoxMeshGeometry, createMeshGeometry } from '@flighthq/meshgeometry/contract';
 import type { VertexAttributeLayout } from '@flighthq/meshgeometry/contract';
 import { addNodeChild } from '@flighthq/node/contract';
@@ -20,7 +21,7 @@ import {
   updateMeshMorph,
 } from '@flighthq/scene3d/contract';
 import type { Skin } from '@flighthq/types/contract';
-import { DIRECTIONAL_SHADOW_MAP_SIZE, EntityRuntimeKey } from '@flighthq/types/contract';
+import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import { registerGlMeshSkinning } from './glMeshSkinning.ts';
 import { getGlScene3DRuntime } from './glScene3DRuntime.ts';

@@ -43,7 +43,7 @@
     "@flighthq/color": "*",
     "@flighthq/entity": "*",
     "@flighthq/geometry": "*",
-    "@flighthq/types": "*"
+    "@flighthq/texture": "*"
   },
   "devDependencies": {
     "typescript": "^7.0.2"

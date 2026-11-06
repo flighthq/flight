@@ -1,3 +1,4 @@
+import type { Scene3DLightsLike } from '@flighthq/lighting/contract';
 import { getNodeRuntime, getNodeWorldMatrix4 } from '@flighthq/node/contract';
 import {
   createGlProgram,
@@ -17,7 +18,6 @@ import type {
   ParticleBlendMode,
   ParticleEmitter3D,
   ParticleEmitterData,
-  Scene3DLightsLike,
   Node3D,
 } from '@flighthq/types/contract';
 import { BlendMode, ParticleEmitter3DKind, TextureAtlasRotation } from '@flighthq/types/contract';

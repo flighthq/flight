@@ -1,5 +1,6 @@
 import type { LinearColorRaw } from '@flighthq/color/contract';
 import { allocateLinearColor, packLinearChannelsToColor, unpackColorToLinear } from '@flighthq/color/contract';
+import type { Scene3DLightBlock } from '@flighthq/lighting/contract';
 import type { MeshGeometry } from '@flighthq/meshgeometry/contract';
 import type { GlMeshMaterialRenderer } from '@flighthq/render-gl/contract';
 import type { Scene3DRenderProxy } from '@flighthq/render/contract';
@@ -7,7 +8,6 @@ import type {
   Camera3D,
   GlRenderState,
   Material,
-  Scene3DLightBlock,
   SpecularGlossinessPbrMaterial,
   StandardPbrMaterialProperties,
 } from '@flighthq/types/contract';

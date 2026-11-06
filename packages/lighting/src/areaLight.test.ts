@@ -1,7 +1,7 @@
 import { createVector3 } from '@flighthq/geometry/contract';
-import { AreaLightKind, LumenLightUnit, UnitlessLightUnit } from '@flighthq/types/contract';
 
 import { cloneAreaLight, createAreaLight, initializeAreaLight, setAreaLightOrientation } from './areaLight.ts';
+import { AreaLightKind, LumenLightUnit, UnitlessLightUnit } from './types.ts';
 
 describe('cloneAreaLight', () => {
   it('creates an independent copy with fresh position/direction/right/up vectors', () => {

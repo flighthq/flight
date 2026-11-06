@@ -1,5 +1,5 @@
-import type { LightUnit, PhotometricLightLike } from '@flighthq/types/contract';
-import { CandelaLightUnit, LumenLightUnit, LuxLightUnit, UnitlessLightUnit } from '@flighthq/types/contract';
+import type { LightUnit, PhotometricLightLike } from './types.ts';
+import { CandelaLightUnit, LumenLightUnit, LuxLightUnit, UnitlessLightUnit } from './types.ts';
 
 // Scales a light intensity by an exposure value in photographic stops: each +1 EV doubles the
 // intensity, each -1 halves it (`intensity * 2**ev`). This is the porting dial for the linear-HDR

@@ -1,12 +1,6 @@
+import type { Environment } from '@flighthq/lighting/contract';
 import { uploadWgpuTextureData, uploadWgpuTextureImageResource } from '@flighthq/render-wgpu/contract';
-import type {
-  Bitmap,
-  Environment,
-  TextureSource,
-  ImageResource,
-  Texture,
-  WgpuRenderState,
-} from '@flighthq/types/contract';
+import type { Bitmap, TextureSource, ImageResource, Texture, WgpuRenderState } from '@flighthq/types/contract';
 import { BitmapTextureSourceKind, ImageTextureSourceKind } from '@flighthq/types/contract';
 
 import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime.ts';

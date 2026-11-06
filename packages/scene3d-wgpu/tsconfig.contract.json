@@ -15,6 +15,8 @@
       ".materials-types",
       ".render-wgpu-types",
       ".geometry-types",
+      ".lighting-types",
+      ".texture-types",
       ""
     ],
     "tsBuildInfoFile": "dist/.tsbuildinfo.contract"
@@ -40,6 +42,12 @@
     },
     {
       "path": "../render/tsconfig.contract.json"
+    },
+    {
+      "path": "../lighting/tsconfig.contract.json"
+    },
+    {
+      "path": "../texture/tsconfig.contract.json"
     }
   ],
   "include": ["src/contract.scene3d-wgpu-types.ts", "src/types/**/*.ts"]

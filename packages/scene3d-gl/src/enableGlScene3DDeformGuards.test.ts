@@ -5,6 +5,7 @@ import {
 } from '@flighthq/camera/contract';
 import { createVector3 } from '@flighthq/geometry/contract';
 import { createAmbientLight, createDirectionalLight } from '@flighthq/lighting/contract';
+import type { Scene3DLightsLike } from '@flighthq/lighting/contract';
 import {
   addLogSink,
   createLogState,
@@ -27,7 +28,6 @@ import type {
   LogEntry,
   MemoryLogSink,
   MeshMorph,
-  Scene3DLightsLike,
 } from '@flighthq/types/contract';
 
 import { areGlScene3DDeformGuardsEnabled, enableGlScene3DDeformGuards } from './enableGlScene3DDeformGuards.ts';

@@ -1,5 +1,7 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { Scene3DLights, Scene3DLightsLike, EntityConstruction } from '@flighthq/types/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
+
+import type { Scene3DLights, Scene3DLightsLike } from './types.ts';
 
 export function createScene3DLights(options?: Readonly<Partial<Scene3DLightsLike>>): Scene3DLights {
   const out = allocateEntity<Scene3DLights>();

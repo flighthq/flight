@@ -4,6 +4,7 @@ import {
   setCamera3DViewMatrix4FromLookAt,
 } from '@flighthq/camera/contract';
 import { createPointLight } from '@flighthq/lighting/contract';
+import type { Scene3DLightsLike } from '@flighthq/lighting/contract';
 import {
   addLogSink,
   createLogState,
@@ -16,14 +17,7 @@ import { createBoxMeshGeometry } from '@flighthq/meshgeometry/contract';
 import { addNodeChild } from '@flighthq/node/contract';
 import { prepareScene3DRender } from '@flighthq/render/contract';
 import { createMesh, createNode3D, Node3DKind } from '@flighthq/scene3d/contract';
-import type {
-  Camera3D,
-  GlRenderPass,
-  GlRenderTarget,
-  LogEntry,
-  MemoryLogSink,
-  Scene3DLightsLike,
-} from '@flighthq/types/contract';
+import type { Camera3D, GlRenderPass, GlRenderTarget, LogEntry, MemoryLogSink } from '@flighthq/types/contract';
 
 import {
   areGlScene3DForwardLightSelectionGuardsEnabled,

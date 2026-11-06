@@ -1,6 +1,8 @@
 import type { LinearColorRaw } from '@flighthq/color/contract';
 import { allocateLinearColor, unpackColorToLinear } from '@flighthq/color/contract';
 import { createMatrix3, createMatrix4, setMatrix3NormalFromMatrix4 } from '@flighthq/geometry/contract';
+import type { Scene3DLightsLike, Scene3DLightBlock } from '@flighthq/lighting/contract';
+import { MAX_FORWARD_LIGHTS } from '@flighthq/lighting/contract';
 import { hasMeshGeometrySkin } from '@flighthq/meshgeometry/contract';
 import type { InstancedMesh, Mesh, MeshSubset } from '@flighthq/meshgeometry/contract';
 import { getNodeWorldMatrix4 } from '@flighthq/node/contract';
@@ -23,12 +25,10 @@ import type {
   Material,
   Matrix3,
   Matrix4,
-  Scene3DLightsLike,
-  Scene3DLightBlock,
   Node3D,
   Material3D,
 } from '@flighthq/types/contract';
-import { BlendMode, StandardMaterialKind, MAX_FORWARD_LIGHTS } from '@flighthq/types/contract';
+import { BlendMode, StandardMaterialKind } from '@flighthq/types/contract';
 
 import type { GlScene3DForwardLightList, GlScene3DDrawEntry } from './contract.scene3d-gl-types.ts';
 import { resolveGlMeshMaterialRenderer } from './glMeshMaterialRegistry.ts';

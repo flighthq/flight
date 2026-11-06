@@ -1,5 +1,4 @@
 import { createVector3 } from '@flighthq/geometry/contract';
-import { CandelaLightUnit, SpotLightKind, UnitlessLightUnit } from '@flighthq/types/contract';
 
 import {
   cloneSpotLight,
@@ -11,6 +10,7 @@ import {
   setSpotLightDirection,
   setSpotLightTarget,
 } from './spotLight.ts';
+import { CandelaLightUnit, SpotLightKind, UnitlessLightUnit } from './types.ts';
 
 describe('cloneSpotLight', () => {
   it('creates an independent copy with fresh position and direction vectors', () => {

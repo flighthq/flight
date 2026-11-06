@@ -1,6 +1,8 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { Environment, EnvironmentOptions, EntityConstruction } from '@flighthq/types/contract';
-import { EnvironmentKind } from '@flighthq/types/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
+
+import type { Environment, EnvironmentOptions } from './types.ts';
+import { EnvironmentKind } from './types.ts';
 
 // Independent copy of the environment's data. The `environment` cubemap reference is shared, not
 // deep-copied: a Texture is a GPU-backed resource, so the copy aliases the same source.

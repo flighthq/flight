@@ -199,7 +199,7 @@
       "path": "../lifecycle"
     },
     {
-      "path": "../lighting"
+      "path": "../lighting/tsconfig.runtime.json"
     },
     {
       "path": "../loader/tsconfig.runtime.json"

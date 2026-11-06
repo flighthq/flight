@@ -1,14 +1,15 @@
 import { getColorLuminance } from '@flighthq/color/contract';
+import type { BoundingSphereLike } from '@flighthq/geometry/contract';
+
 import type {
   AmbientLight,
   AreaLight,
-  BoundingSphereLike,
   DirectionalLight,
   HemisphereLight,
   Light,
   PointLight,
   SpotLight,
-} from '@flighthq/types/contract';
+} from './types.ts';
 import {
   AmbientLightKind,
   AreaLightKind,
@@ -17,7 +18,7 @@ import {
   HemisphereLightKind,
   PointLightKind,
   SpotLightKind,
-} from '@flighthq/types/contract';
+} from './types.ts';
 
 // Estimates the radiance contribution of one punctual light at a world-space bounding sphere.
 // Distance uses the nearest sphere surface (`centerDistance - radius`) so large objects receive

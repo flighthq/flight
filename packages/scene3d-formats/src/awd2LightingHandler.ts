@@ -6,13 +6,13 @@ import {
 } from '@flighthq/geometry/contract';
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import { createAmbientLight, createDirectionalLight, createPointLight } from '@flighthq/lighting/contract';
+import type { Light } from '@flighthq/lighting/contract';
 import type { Scene3DDocument } from '@flighthq/scene3d/contract';
 import type {
   Awd2BlockHandler,
   Awd2ParsedLight,
   Awd2ParsedLightPicker,
   ImportDiagnostic,
-  Light,
   Awd2ParseState,
   Transform3D,
 } from '@flighthq/types/contract';

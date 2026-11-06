@@ -1,7 +1,7 @@
 import { packLinearChannelsToColor } from '@flighthq/color/contract';
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import { createDirectionalLight, createPointLight, createSpotLight } from '@flighthq/lighting/contract';
-import type { Light } from '@flighthq/types/contract';
+import type { Light } from '@flighthq/lighting/contract';
 import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
 import type { GltfExtensionHandler, GltfPunctualLight } from './contract.scene3d-formats-types.ts';

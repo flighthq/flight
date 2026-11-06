@@ -1,10 +1,11 @@
 import { createCamera3D, createPerspectiveProjection } from '@flighthq/camera/contract';
 import { createMatrix3, createMatrix4 } from '@flighthq/geometry/contract';
+import type { Scene3DLightBlock } from '@flighthq/lighting/contract';
 import { createCustomShaderMaterial } from '@flighthq/materials/contract';
 import { createBoxMeshGeometry } from '@flighthq/meshgeometry/contract';
 import { buildGlRenderRegistries, getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
 import type { Scene3DRenderProxy } from '@flighthq/render/contract';
-import type { Camera3D, Scene3DLightBlock } from '@flighthq/types/contract';
+import type { Camera3D } from '@flighthq/types/contract';
 import { CustomShaderMaterialKind } from '@flighthq/types/contract';
 
 import {

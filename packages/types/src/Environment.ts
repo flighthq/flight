@@ -1,13 +1,9 @@
-import type { Light } from './Light.ts';
-import type { Texture } from './Texture.ts';
+// Owned by `@flighthq/lighting`. These deprecated re-exports keep existing `@flighthq/types` imports
+// compiling until consumers import the owning package.
 
-// Image-based environment lighting + skybox source. `environment` is the radiance cubemap used
-// for the skybox and as the IBL specular/irradiance source; `intensity` scales its contribution.
-export interface Environment extends Light {
-  enabled: boolean;
-  environment: Texture | null;
-  intensity: number;
-  kind: 'Environment';
-}
+/** @deprecated Import from `@flighthq/lighting/contract`. */
+export type { Environment } from '@flighthq/lighting/contract';
 
+// Deprecated structural copies of lighting's literal constants (core may cross into an owner only
+// with type-only edges); the values are identical literals.
 export const EnvironmentKind = 'Environment';

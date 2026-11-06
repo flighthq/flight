@@ -1,8 +1,8 @@
+import type { Environment } from '@flighthq/lighting/contract';
 import { uploadGlTextureData, uploadGlTextureImageResource } from '@flighthq/render-gl/contract';
 import type {
   Bitmap,
   CubeTexture,
-  Environment,
   GlContext,
   GlRenderState,
   ImageResource,

@@ -1,6 +1,7 @@
 import { updateCamera3DInverseViewProjection } from '@flighthq/camera/contract';
+import type { Environment } from '@flighthq/lighting/contract';
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
-import type { Camera3D, Environment, WgpuRenderPass, WgpuRenderState } from '@flighthq/types/contract';
+import type { Camera3D, WgpuRenderPass, WgpuRenderState } from '@flighthq/types/contract';
 
 import { ensureWgpuEnvironmentSourceCube } from './wgpuEnvironmentCube.ts';
 import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime.ts';

@@ -1,4 +1,5 @@
 import { createCamera3D, createPerspectiveProjection } from '@flighthq/camera/contract';
+import type { Scene3DLightBlock } from '@flighthq/lighting/contract';
 import {
   addLogSink,
   createLogState,
@@ -11,7 +12,7 @@ import {
   createClearcoatPbrExtension,
   createExtendedPbrMaterial,
 } from '@flighthq/materials/contract';
-import type { Camera3D, LogEntry, MemoryLogSink, Scene3DLightBlock } from '@flighthq/types/contract';
+import type { Camera3D, LogEntry, MemoryLogSink } from '@flighthq/types/contract';
 
 import { areGlPbrExtensionGuardsEnabled, enableGlPbrExtensionGuards } from './enableGlPbrExtensionGuards.ts';
 import { glExtendedPbrMeshMaterialRenderer } from './glExtendedPbrMeshMaterialRenderer.ts';

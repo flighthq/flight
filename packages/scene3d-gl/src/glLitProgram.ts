@@ -1,4 +1,4 @@
-import type { GlContext, GlRenderState, Scene3DLightBlock } from '@flighthq/types/contract';
+import type { Scene3DLightBlock } from '@flighthq/lighting/contract';
 import {
   MAX_DIRECTIONAL_SHADOW_PCF_RADIUS,
   MAX_FORWARD_LIGHTS,
@@ -8,7 +8,8 @@ import {
   SCENE_LIGHT_POINT_STRIDE,
   SCENE_LIGHT_SPOT_OFFSET,
   SCENE_LIGHT_SPOT_STRIDE,
-} from '@flighthq/types/contract';
+} from '@flighthq/lighting/contract';
+import type { GlContext, GlRenderState } from '@flighthq/types/contract';
 
 import type { GlLitProgram, GlMeshProgram } from './contract.scene3d-gl-types.ts';
 import { getGlScene3DRuntime } from './glScene3DRuntime.ts';

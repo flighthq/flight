@@ -4,12 +4,13 @@ import {
   setCamera3DViewMatrix4FromLookAt,
 } from '@flighthq/camera/contract';
 import { createPointLight, createSpotLight } from '@flighthq/lighting/contract';
+import type { Scene3DLightsLike } from '@flighthq/lighting/contract';
+import { SCENE_LIGHT_POINT_OFFSET } from '@flighthq/lighting/contract';
 import { createBoxMeshGeometry } from '@flighthq/meshgeometry/contract';
 import { addNodeChild } from '@flighthq/node/contract';
 import { prepareScene3DRender } from '@flighthq/render/contract';
 import { createMesh, createNode3D, Node3DKind } from '@flighthq/scene3d/contract';
-import type { Camera3D, Scene3DLightsLike } from '@flighthq/types/contract';
-import { SCENE_LIGHT_POINT_OFFSET } from '@flighthq/types/contract';
+import type { Camera3D } from '@flighthq/types/contract';
 
 import { makeGlScene3DState } from './glScene3DTestHelper.ts';
 import { prepareGlScene3DForwardLights } from './prepareGlScene3DForwardLights.ts';

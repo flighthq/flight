@@ -1,4 +1,5 @@
-import type { Environment, WgpuRenderState } from '@flighthq/types/contract';
+import type { Environment } from '@flighthq/lighting/contract';
+import type { WgpuRenderState } from '@flighthq/types/contract';
 
 import type { WgpuScene3DIbl } from './contract.scene3d-wgpu-types.ts';
 import { ensureWgpuEnvironmentSourceCube } from './wgpuEnvironmentCube.ts';

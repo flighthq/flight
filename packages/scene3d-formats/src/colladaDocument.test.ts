@@ -1,13 +1,7 @@
 import { packLinearChannelsToColor } from '@flighthq/color/contract';
-import type { DirectionalLight, PointLight, SpotLight } from '@flighthq/types/contract';
-import {
-  AmbientLightKind,
-  DirectionalLightKind,
-  ImportDiagnosticSeverity,
-  Node3DKind,
-  PointLightKind,
-  SpotLightKind,
-} from '@flighthq/types/contract';
+import type { DirectionalLight, PointLight, SpotLight } from '@flighthq/lighting/contract';
+import { AmbientLightKind, DirectionalLightKind, PointLightKind, SpotLightKind } from '@flighthq/lighting/contract';
+import { ImportDiagnosticSeverity, Node3DKind } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { decodeColladaAnimations } from './colladaAnimationDecoder.ts';

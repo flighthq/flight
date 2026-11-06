@@ -1,3 +1,4 @@
+import type { Scene3DLightsLike } from '@flighthq/lighting/contract';
 import { getNodeRuntime, getNodeWorldMatrix4 } from '@flighthq/node/contract';
 import {
   getWgpuBlendState,
@@ -15,7 +16,6 @@ import type {
   ParticleBlendMode,
   ParticleEmitter3D,
   ParticleEmitterData,
-  Scene3DLightsLike,
   Node3D,
   WgpuRenderState,
 } from '@flighthq/types/contract';

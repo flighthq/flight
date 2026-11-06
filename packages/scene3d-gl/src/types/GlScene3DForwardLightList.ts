@@ -1,4 +1,4 @@
-import type { Scene3DLightBlock } from '@flighthq/types/contract';
+import type { Scene3DLightBlock } from '@flighthq/lighting/contract';
 
 // The prepared, per-visible-mesh forward-light blocks produced by prepareGlScene3DForwardLights.
 // `meshLightBlocks[i]` belongs to Scene3DRenderList.visibleMeshes[i]. Identical selected-light tuples

@@ -1,6 +1,17 @@
 import { getCamera3DPosition, getCamera3DViewProjectionMatrix4 } from '@flighthq/camera/contract';
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { createMatrix3, createMatrix4 } from '@flighthq/geometry/contract';
+import type { Scene3DLightBlock } from '@flighthq/lighting/contract';
+import {
+  MAX_DIRECTIONAL_SHADOW_PCF_RADIUS,
+  MAX_FORWARD_LIGHTS,
+  SCENE_LIGHT_HEMISPHERE_OFFSET,
+  SCENE_LIGHT_HEMISPHERE_STRIDE,
+  SCENE_LIGHT_POINT_OFFSET,
+  SCENE_LIGHT_POINT_STRIDE,
+  SCENE_LIGHT_SPOT_OFFSET,
+  SCENE_LIGHT_SPOT_STRIDE,
+} from '@flighthq/lighting/contract';
 import type { MeshGeometry } from '@flighthq/meshgeometry/contract';
 import {
   getWgpuBlendState,
@@ -15,7 +26,6 @@ import type {
   Camera3D,
   EntityConstruction,
   Material,
-  Scene3DLightBlock,
   Material3D,
   Texture,
   TextureLike,
@@ -23,17 +33,7 @@ import type {
   WgpuMeshInstanceBufferSlot,
   WgpuRenderState,
 } from '@flighthq/types/contract';
-import {
-  BlendMode,
-  MAX_DIRECTIONAL_SHADOW_PCF_RADIUS,
-  MAX_FORWARD_LIGHTS,
-  SCENE_LIGHT_HEMISPHERE_OFFSET,
-  SCENE_LIGHT_HEMISPHERE_STRIDE,
-  SCENE_LIGHT_POINT_OFFSET,
-  SCENE_LIGHT_POINT_STRIDE,
-  SCENE_LIGHT_SPOT_OFFSET,
-  SCENE_LIGHT_SPOT_STRIDE,
-} from '@flighthq/types/contract';
+import { BlendMode } from '@flighthq/types/contract';
 import type { WgpuSkinningAdapter } from '@flighthq/types/contract';
 
 import type {

@@ -5,12 +5,13 @@ import {
   registerTestImageDimensionResolver,
   unregisterTestImageDimensionResolver,
 } from '@flighthq/image/contract';
+import type { Scene3DLightsLike } from '@flighthq/lighting/contract';
 import { addNodeChild, invalidateNodeLocalTransform } from '@flighthq/node/contract';
 import { createParticleEmitter3D, reserveParticleEmitter3D } from '@flighthq/particleemitter/contract';
 import { getGlRenderStateRuntime, registerGlImageTextureResolver } from '@flighthq/render-gl/contract';
 import { createNode3D, Node3DKind } from '@flighthq/scene3d/contract';
 import { createTexture } from '@flighthq/texture/contract';
-import type { ParticleEmitter3D, Scene3DLightsLike, TextureAtlas, TextureAtlasRegion } from '@flighthq/types/contract';
+import type { ParticleEmitter3D, TextureAtlas, TextureAtlasRegion } from '@flighthq/types/contract';
 import { TextureAtlasRotation } from '@flighthq/types/contract';
 
 import {

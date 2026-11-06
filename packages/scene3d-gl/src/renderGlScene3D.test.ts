@@ -6,6 +6,7 @@ import {
 } from '@flighthq/camera/contract';
 import { createMatrix4, createVector3 } from '@flighthq/geometry/contract';
 import { createAmbientLight, createDirectionalLight } from '@flighthq/lighting/contract';
+import type { Scene3DLightsLike } from '@flighthq/lighting/contract';
 import { createStandardPbrMaterial } from '@flighthq/materials/contract';
 import { createBoxMeshGeometry } from '@flighthq/meshgeometry/contract';
 import { addNodeChild, invalidateNodeLocalTransform } from '@flighthq/node/contract';
@@ -26,7 +27,6 @@ import type {
   GlRenderState,
   GlRenderTarget,
   GlTextureRenderTarget,
-  Scene3DLightsLike,
 } from '@flighthq/types/contract';
 import { BlendMode } from '@flighthq/types/contract';
 

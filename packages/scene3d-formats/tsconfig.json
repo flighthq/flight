@@ -14,7 +14,7 @@
     { "path": "../image/tsconfig.runtime.json" },
     { "path": "../image-codec" },
     { "path": "../importdiagnostics" },
-    { "path": "../lighting" },
+    { "path": "../lighting/tsconfig.runtime.json" },
     { "path": "../materials/tsconfig.runtime.json" },
     { "path": "../math" },
     { "path": "../meshgeometry/tsconfig.runtime.json" },

@@ -8,7 +8,7 @@
     { "path": "../entity" },
     { "path": "../geometry/tsconfig.runtime.json" },
     { "path": "../image/tsconfig.runtime.json" },
-    { "path": "../lighting" },
+    { "path": "../lighting/tsconfig.runtime.json" },
     { "path": "../log" },
     { "path": "../materials/tsconfig.runtime.json" },
     { "path": "../meshgeometry/tsconfig.runtime.json" },

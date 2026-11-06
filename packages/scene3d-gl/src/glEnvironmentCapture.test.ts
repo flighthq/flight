@@ -1,10 +1,10 @@
+import type { Scene3DLightsLike } from '@flighthq/lighting/contract';
 import { createMaterial3D } from '@flighthq/materials/contract';
 import { createBoxMeshGeometry } from '@flighthq/meshgeometry/contract';
 import { addNodeChild } from '@flighthq/node/contract';
 import { createGlCubeRenderTarget, destroyGlCubeRenderTarget } from '@flighthq/render-gl/contract';
 import type { GlMeshMaterialRenderer } from '@flighthq/render-gl/contract';
 import { createMesh, createNode3D, Node3DKind } from '@flighthq/scene3d/contract';
-import type { Scene3DLightsLike } from '@flighthq/types/contract';
 
 import { getGlEnvironmentCaptureTexture, renderGlEnvironmentCapture } from './glEnvironmentCapture.ts';
 import { registerGlMeshMaterialRenderer } from './glMeshMaterialRegistry.ts';

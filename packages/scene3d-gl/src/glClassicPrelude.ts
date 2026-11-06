@@ -1,6 +1,6 @@
+import { MAX_FORWARD_LIGHTS } from '@flighthq/lighting/contract';
 import { getGlColorAdjustmentMaterialFeature } from '@flighthq/render-gl/contract';
 import type { GlContext, GlColorAdjustmentMaterialFeature, GlRenderState } from '@flighthq/types/contract';
-import { MAX_FORWARD_LIGHTS } from '@flighthq/types/contract';
 
 import type { GlClassicDefineKey, GlClassicProgram } from './contract.scene3d-gl-types.ts';
 import { GL_MESH_LIGHT_BLOCK_GLSL, resolveGlLitLocations } from './glLitProgram.ts';

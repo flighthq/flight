@@ -6,6 +6,7 @@ import {
 } from '@flighthq/camera/contract';
 import { createMatrix4, createVector3 } from '@flighthq/geometry/contract';
 import { createAmbientLight, createDirectionalLight } from '@flighthq/lighting/contract';
+import type { Scene3DLightsLike } from '@flighthq/lighting/contract';
 import { createStandardPbrMaterial } from '@flighthq/materials/contract';
 import {
   CANONICAL_SKINNED_MESH_GEOMETRY_LAYOUT,
@@ -24,7 +25,7 @@ import {
   setInstancedMeshInstanceCount,
   setInstancedMeshInstanceMatrix,
 } from '@flighthq/scene3d/contract';
-import type { Camera3D, ParticleEmitter3D, Scene3DLightsLike, Skeleton3D } from '@flighthq/types/contract';
+import type { Camera3D, ParticleEmitter3D, Skeleton3D } from '@flighthq/types/contract';
 import { BlendMode } from '@flighthq/types/contract';
 
 import { registerWgpuStandardPbrMaterial } from './registerWgpuStandardPbrMaterial.ts';

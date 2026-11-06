@@ -23,7 +23,7 @@
       "path": "../image"
     },
     {
-      "path": "../lighting"
+      "path": "../lighting/tsconfig.runtime.json"
     },
     {
       "path": "../log"

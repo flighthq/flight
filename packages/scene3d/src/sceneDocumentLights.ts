@@ -14,16 +14,15 @@ import type {
   PointLight,
   Scene3DLights,
   SpotLight,
-  Transform3DLike,
-  Vector3Like,
-} from '@flighthq/types/contract';
+} from '@flighthq/lighting/contract';
 import {
   AmbientLightKind,
   DirectionalLightKind,
   HemisphereLightKind,
   PointLightKind,
   SpotLightKind,
-} from '@flighthq/types/contract';
+} from '@flighthq/lighting/contract';
+import type { Transform3DLike, Vector3Like } from '@flighthq/types/contract';
 
 import type { Scene3DDocument } from './contract.scene3d-types.ts';
 

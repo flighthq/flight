@@ -1,6 +1,7 @@
 import { createOrthographicProjection, createPerspectiveProjection } from '@flighthq/camera/contract';
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { createTransform3D } from '@flighthq/geometry/contract';
+import type { Light } from '@flighthq/lighting/contract';
 import type {
   EntityConstruction,
   FlightDocument,
@@ -21,7 +22,6 @@ import type {
   FlightDocumentToken,
   FlightDocumentTokenValues,
   FlightDocumentValue,
-  Light,
   Projection,
   Scene3DDocumentCamera,
   Scene3DDocumentLight,

@@ -1,4 +1,3 @@
-import type { GlColorAdjustmentMaterialFeature } from '@flighthq/types/contract';
 // The shared Gl PBR prelude: the GLSL 300 es vertex + fragment uber-shader for the StandardPbr
 // forward-lit path and every PBR-extension variant. One source string is specialized per material
 // at compile time by prepending a define block (see GlPbrDefineKey / buildGlPbrDefineSource), so
@@ -23,7 +22,8 @@ import type { GlColorAdjustmentMaterialFeature } from '@flighthq/types/contract'
 // colorSpace descriptor, so sampling color maps returns linear values while data maps remain raw.
 // Packed material colors are decoded to linear on the CPU with unpackColorToLinear before upload.
 
-import { MAX_FORWARD_LIGHTS } from '@flighthq/types/contract';
+import { MAX_FORWARD_LIGHTS } from '@flighthq/lighting/contract';
+import type { GlColorAdjustmentMaterialFeature } from '@flighthq/types/contract';
 
 import type { GlPbrDefineKey, GlPbrExtensionShaderContribution } from './contract.scene3d-gl-types.ts';
 import { GL_DIRECTIONAL_SHADOW_GLSL } from './glLitProgram.ts';

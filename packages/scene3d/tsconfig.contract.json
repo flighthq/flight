@@ -13,18 +13,40 @@
       ".geometry-types",
       ".image-types",
       ".materials-types",
+      ".lighting-types",
+      ".texture-types",
       ""
     ],
     "tsBuildInfoFile": "dist/.tsbuildinfo.contract"
   },
   "references": [
-    { "path": "../animation" },
-    { "path": "../entity" },
-    { "path": "../geometry/tsconfig.contract.json" },
-    { "path": "../image/tsconfig.contract.json" },
-    { "path": "../materials/tsconfig.contract.json" },
-    { "path": "../meshgeometry/tsconfig.contract.json" },
-    { "path": "../types/tsconfig.scene3d-types.json" }
+    {
+      "path": "../animation"
+    },
+    {
+      "path": "../entity"
+    },
+    {
+      "path": "../geometry/tsconfig.contract.json"
+    },
+    {
+      "path": "../image/tsconfig.contract.json"
+    },
+    {
+      "path": "../materials/tsconfig.contract.json"
+    },
+    {
+      "path": "../meshgeometry/tsconfig.contract.json"
+    },
+    {
+      "path": "../types/tsconfig.scene3d-types.json"
+    },
+    {
+      "path": "../lighting/tsconfig.contract.json"
+    },
+    {
+      "path": "../texture/tsconfig.contract.json"
+    }
   ],
   "include": ["src/contract.scene3d-types.ts", "src/types/**/*.ts"]
 }

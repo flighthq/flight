@@ -8,6 +8,7 @@ import {
   rotateVector3ByQuaternion,
   transposeMatrix4,
 } from '@flighthq/geometry/contract';
+import type { PointLight, SpotLight } from '@flighthq/lighting/contract';
 import {
   getMeshGeometryIndexCount,
   getMeshGeometryTriangleVertexIndices,
@@ -25,9 +26,7 @@ import type {
   ExternalImageResourceReference,
   ImportDiagnostic,
   Node3D,
-  PointLight,
   Quaternion,
-  SpotLight,
   Vector3,
 } from '@flighthq/types/contract';
 import { BlinnPhongMaterialKind, ImportDiagnosticSeverity } from '@flighthq/types/contract';

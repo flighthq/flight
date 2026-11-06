@@ -1,5 +1,6 @@
 import type { LinearColorRaw } from '@flighthq/color/contract';
 import { allocateLinearColor, unpackColorToLinear } from '@flighthq/color/contract';
+import type { Scene3DLightBlock } from '@flighthq/lighting/contract';
 import type { MeshGeometry } from '@flighthq/meshgeometry/contract';
 import {
   getWgpuRenderStateRuntime,
@@ -11,7 +12,6 @@ import type { Scene3DRenderProxy } from '@flighthq/render/contract';
 import type {
   Camera3D,
   Material,
-  Scene3DLightBlock,
   UnlitMaterial,
   WgpuMeshMaterialRenderer,
   WgpuRenderState,

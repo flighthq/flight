@@ -1,6 +1,8 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { AmbientLight, AmbientLightOptions, EntityConstruction } from '@flighthq/types/contract';
-import { AmbientLightKind, UnitlessLightUnit } from '@flighthq/types/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
+
+import type { AmbientLight, AmbientLightOptions } from './types.ts';
+import { AmbientLightKind, UnitlessLightUnit } from './types.ts';
 
 // Independent copy of an ambient light's data. The `kind` discriminant is carried over.
 export function cloneAmbientLight(source: Readonly<AmbientLight>): AmbientLight {

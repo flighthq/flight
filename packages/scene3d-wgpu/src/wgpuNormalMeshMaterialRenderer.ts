@@ -1,3 +1,4 @@
+import type { Scene3DLightBlock } from '@flighthq/lighting/contract';
 import type { MeshGeometry } from '@flighthq/meshgeometry/contract';
 import {
   getWgpuRenderStateRuntime,
@@ -9,7 +10,6 @@ import type {
   Camera3D,
   Material,
   NormalMaterial,
-  Scene3DLightBlock,
   WgpuMeshMaterialRenderer,
   WgpuRenderState,
 } from '@flighthq/types/contract';

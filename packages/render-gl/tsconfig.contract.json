@@ -15,6 +15,9 @@
       ".render-wgpu-types",
       ".app-types",
       ".surface-types",
+      ".lighting-types",
+      ".geometry-types",
+      ".texture-types",
       ""
     ],
     "tsBuildInfoFile": "dist/.tsbuildinfo.contract"
@@ -34,6 +37,15 @@
     },
     {
       "path": "../render/tsconfig.contract.json"
+    },
+    {
+      "path": "../lighting/tsconfig.contract.json"
+    },
+    {
+      "path": "../geometry/tsconfig.contract.json"
+    },
+    {
+      "path": "../texture/tsconfig.contract.json"
     }
   ],
   "include": [

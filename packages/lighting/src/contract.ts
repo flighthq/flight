@@ -17,3 +17,4 @@ export { initializeEnvironment } from './environment.ts';
 export { initializeAreaLight } from './areaLight.ts';
 export { initializeAmbientLight } from './ambientLight.ts';
 export { initializeLightProbe, initializeLightProbeGrid } from './lightProbe.ts';
+export * from './types.ts';

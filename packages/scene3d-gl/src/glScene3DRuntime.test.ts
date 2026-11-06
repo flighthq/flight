@@ -1,12 +1,6 @@
 import { createCamera3D, createPerspectiveProjection } from '@flighthq/camera/contract';
-import type {
-  Bitmap,
-  Environment,
-  GlRenderStateRuntime,
-  GlTextureRenderTarget,
-  Matrix4,
-  Texture,
-} from '@flighthq/types/contract';
+import type { Environment } from '@flighthq/lighting/contract';
+import type { Bitmap, GlRenderStateRuntime, GlTextureRenderTarget, Matrix4, Texture } from '@flighthq/types/contract';
 import { BitmapTextureSourceKind, EntityRuntimeKey } from '@flighthq/types/contract';
 
 import type { GlMeshProgram, GlScene3DIbl } from './contract.scene3d-gl-types.ts';

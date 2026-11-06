@@ -1,4 +1,5 @@
-import type { Environment, ImageResource, Texture } from '@flighthq/types/contract';
+import type { Environment } from '@flighthq/lighting/contract';
+import type { ImageResource, Texture } from '@flighthq/types/contract';
 import { ImageTextureSourceKind } from '@flighthq/types/contract';
 
 import { bakeWgpuEnvironmentIbl, destroyWgpuScene3DIbl } from './wgpuEnvironmentIblBake.ts';

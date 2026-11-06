@@ -1,4 +1,5 @@
-import type { Bitmap, CubeTexture, Environment } from '@flighthq/types/contract';
+import type { Environment } from '@flighthq/lighting/contract';
+import type { Bitmap, CubeTexture } from '@flighthq/types/contract';
 import { BitmapTextureSourceKind } from '@flighthq/types/contract';
 
 import {

@@ -1,7 +1,10 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
 import { createVector3 } from '@flighthq/geometry/contract';
-import type { AabbLike, EntityConstruction, LightProbe, LightProbeGrid, Vector3Like } from '@flighthq/types/contract';
-import { LIGHT_PROBE_SH_FLOATS } from '@flighthq/types/contract';
+import type { AabbLike, Vector3Like } from '@flighthq/geometry/contract';
+
+import type { LightProbe, LightProbeGrid } from './types.ts';
+import { LIGHT_PROBE_SH_FLOATS } from './types.ts';
 
 /**
  * Allocates a probe at `position`. `shCoefficients` defaults to all zeros — a probe that contributes

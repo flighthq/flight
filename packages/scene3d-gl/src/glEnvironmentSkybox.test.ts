@@ -1,5 +1,6 @@
 import { createCamera3D, createPerspectiveProjection } from '@flighthq/camera/contract';
-import type { Bitmap, Environment, Texture } from '@flighthq/types/contract';
+import type { Environment } from '@flighthq/lighting/contract';
+import type { Bitmap, Texture } from '@flighthq/types/contract';
 import { BitmapTextureSourceKind } from '@flighthq/types/contract';
 
 import { destroyGlEnvironmentSkybox, renderGlEnvironmentSkybox } from './glEnvironmentSkybox.ts';

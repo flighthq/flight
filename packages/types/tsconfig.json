@@ -91,6 +91,7 @@
       ".tween-types",
       ".scene3d-resources-types",
       ".scene3d-bridge-types",
+      ".lighting-types",
       ""
     ],
     "types": ["@testing-library/jest-dom", "vitest/globals", "@webgpu/types"]
@@ -413,6 +414,9 @@
     },
     {
       "path": "./tsconfig.scene3d-types.json"
+    },
+    {
+      "path": "../lighting/tsconfig.contract.json"
     }
   ],
   "include": ["src"]

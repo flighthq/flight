@@ -1,6 +1,7 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type { Environment } from '@flighthq/lighting/contract';
 import { initializeGlCubeRenderTarget } from '@flighthq/render-gl/contract';
-import type { Bitmap, CubeTexture, Environment, GlContext, GlCubeRenderTarget } from '@flighthq/types/contract';
+import type { Bitmap, CubeTexture, GlContext, GlCubeRenderTarget } from '@flighthq/types/contract';
 import { BitmapTextureSourceKind } from '@flighthq/types/contract';
 
 import { ensureGlEnvironmentSourceCube } from './glEnvironmentCube.ts';

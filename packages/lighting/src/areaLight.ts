@@ -1,7 +1,10 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
 import { cloneVector3, createVector3, normalizeVector3, setVector3 } from '@flighthq/geometry/contract';
-import type { AreaLight, AreaLightOptions, EntityConstruction, Vector3Like } from '@flighthq/types/contract';
-import { AreaLightKind, UnitlessLightUnit } from '@flighthq/types/contract';
+import type { Vector3Like } from '@flighthq/geometry/contract';
+
+import type { AreaLight, AreaLightOptions } from './types.ts';
+import { AreaLightKind, UnitlessLightUnit } from './types.ts';
 
 // Independent copy of an area light's data, including fresh position/direction/right/up vectors.
 export function cloneAreaLight(source: Readonly<AreaLight>): AreaLight {

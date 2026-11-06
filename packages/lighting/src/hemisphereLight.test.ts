@@ -1,6 +1,5 @@
-import { HemisphereLightKind, LuxLightUnit, UnitlessLightUnit } from '@flighthq/types/contract';
-
 import { cloneHemisphereLight, createHemisphereLight, initializeHemisphereLight } from './hemisphereLight.ts';
+import { HemisphereLightKind, LuxLightUnit, UnitlessLightUnit } from './types.ts';
 
 describe('cloneHemisphereLight', () => {
   it('creates an independent copy with the same fields', () => {

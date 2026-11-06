@@ -1,6 +1,5 @@
+import type { EntityConstruction } from '@flighthq/entity/contract';
 import { createVector3 } from '@flighthq/geometry/contract';
-import type { EntityConstruction, LightProbe, LightProbeGrid } from '@flighthq/types/contract';
-import { LIGHT_PROBE_SH_FLOATS } from '@flighthq/types/contract';
 
 import {
   createLightProbe,
@@ -11,6 +10,8 @@ import {
   sampleLightProbeGrid,
   setLightProbeShFromColors,
 } from './lightProbe.ts';
+import type { LightProbe, LightProbeGrid } from './types.ts';
+import { LIGHT_PROBE_SH_FLOATS } from './types.ts';
 
 // The six axis directions. Every SH band above l=0 sums to exactly zero over this set (the odd bands
 // cancel between opposite poles; 3z^2-1 sums to -1*4 + 2*2 = 0 and x^2-y^2 to 1+1-1-1 = 0), which is

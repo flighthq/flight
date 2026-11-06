@@ -1,30 +1,5 @@
-import type { LightUnit } from './LightUnit.ts';
-import type { Vector3Like } from './Vector3.ts';
+// Owned by `@flighthq/lighting`. These deprecated re-exports keep existing `@flighthq/types` imports
+// compiling until consumers import the owning package.
 
-// Shadow options are retained as future area-shadow intent only. Current scene3d-gl/scene3d-wgpu
-// area lights do not consume them.
-export interface AreaLightOptions {
-  castsShadow?: boolean;
-  // Packed sRGB RGBA (`0xRRGGBBAA`), seeding AreaLight.color. Default 0xffffffff.
-  color?: number;
-  // Distance falloff exponent. Defaults to the inverse-square value 2.
-  decay?: number;
-  direction?: Readonly<Vector3Like>;
-  enabled?: boolean;
-  intensity?: number;
-  // Unit tag for the stored intensity scalar. Defaults to Unitless.
-  intensityUnit?: LightUnit;
-  normalBias?: number;
-  pcfRadius?: number;
-  position?: Readonly<Vector3Like>;
-  range?: number;
-  // Half-extent axis along the rectangle's width; its length encodes the half-width.
-  right?: Readonly<Vector3Like>;
-  shadowBias?: number;
-  shadowFar?: number;
-  shadowMapSize?: number;
-  shadowNear?: number;
-  shadowStrength?: number;
-  // Half-extent axis along the rectangle's height; its length encodes the half-height.
-  up?: Readonly<Vector3Like>;
-}
+/** @deprecated Import from `@flighthq/lighting/contract`. */
+export type { AreaLightOptions } from '@flighthq/lighting/contract';

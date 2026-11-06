@@ -1,7 +1,5 @@
-import type { Texture } from './Texture.ts';
+// Owned by `@flighthq/lighting`. These deprecated re-exports keep existing `@flighthq/types` imports
+// compiling until consumers import the owning package.
 
-export interface EnvironmentOptions {
-  enabled?: boolean;
-  environment?: Texture | null;
-  intensity?: number;
-}
+/** @deprecated Import from `@flighthq/lighting/contract`. */
+export type { EnvironmentOptions } from '@flighthq/lighting/contract';

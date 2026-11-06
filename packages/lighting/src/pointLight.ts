@@ -1,7 +1,9 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
 import { cloneVector3, createVector3 } from '@flighthq/geometry/contract';
-import type { PointLight, PointLightOptions, EntityConstruction } from '@flighthq/types/contract';
-import { ALL_LIGHT_LAYERS, PointLightKind, UnitlessLightUnit } from '@flighthq/types/contract';
+
+import type { PointLight, PointLightOptions } from './types.ts';
+import { ALL_LIGHT_LAYERS, PointLightKind, UnitlessLightUnit } from './types.ts';
 
 // Independent copy of a point light's data, including a fresh `position` vector.
 export function clonePointLight(source: Readonly<PointLight>): PointLight {

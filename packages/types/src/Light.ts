@@ -1,24 +1,5 @@
-import type { Entity, Kind } from './Entity.ts';
+// Owned by `@flighthq/lighting`. These deprecated re-exports keep existing `@flighthq/types` imports
+// compiling until consumers import the owning package.
 
-// Light DATA descriptors for single-pass forward lighting. Pure data — enabled/color/intensity/
-// range/cone/shadow params only; placement comes from the owning scene node's transform in a later
-// pass, not from these structs. Each variant carries a `kind` discriminant (one of the exported
-// *Kind strings) so a packer can switch on light type. Concrete emitting-light descriptors tag the
-// stored intensity scalar with a LightUnit; Environment remains a unitless cubemap multiplier.
-//
-// Color is packed sRgb-albedo RGBA (0xrrggbbaa); a packed 8-bit integer cannot carry HDR, so a
-// light's linear radiance is unpackColorToLinear(color) × intensity (the single sRgb->linear
-// seam in @flighthq/materials). `range` is the falloff cutoff distance in world units, with -1
-// meaning infinite (no attenuation cutoff) for the punctual lights that support it.
-//
-// Shadow params, on lights that cast: `castsShadow` opts in; `shadowBias` is normalized depth-compare
-// bias; `normalBias` is a surface-normal offset whose units are defined by the concrete light;
-// `pcfRadius` is the percentage-closer-filtering kernel radius in shadow-map texels; map size,
-// clip range, and strength are authoring policy for render backends. Directional lights additionally
-// carry normalized cascade splits.
-
-// Open base contract for every light. The `kind` is the canonical PascalCase type name; concrete
-// lights extend this with a literal `kind` and their own descriptor fields — no central union here.
-export interface Light extends Entity {
-  kind: Kind;
-}
+/** @deprecated Import from `@flighthq/lighting/contract`. */
+export type { Light } from '@flighthq/lighting/contract';

@@ -1,11 +1,12 @@
 import { createCamera3D, createPerspectiveProjection } from '@flighthq/camera/contract';
 import { createMatrix3, createMatrix4 } from '@flighthq/geometry/contract';
+import type { Scene3DLightBlock } from '@flighthq/lighting/contract';
 import { createUnlitMaterial } from '@flighthq/materials/contract';
 import { createBoxMeshGeometry } from '@flighthq/meshgeometry/contract';
 import { registerWgpuImageTextureResolver } from '@flighthq/render-wgpu/contract';
 import type { Scene3DRenderProxy } from '@flighthq/render/contract';
 import { advanceVideoTexture, createVideoTexture } from '@flighthq/texture/contract';
-import type { Camera3D, HostVideoCapability, Scene3DLightBlock } from '@flighthq/types/contract';
+import type { Camera3D, HostVideoCapability } from '@flighthq/types/contract';
 import { UnlitMaterialKind } from '@flighthq/types/contract';
 import { createVideoResource } from '@flighthq/video/contract';
 

@@ -1,28 +1,11 @@
-// The packed, GPU-ready lighting environment for one drawScene3D call. prepareScene3DRender resolves
-// the scene's light DATA descriptors (DirectionalLight/AmbientLight/...) into this flat block once
-// per frame; every GlMeshMaterialRenderer/WgpuMeshMaterialRenderer then binds the same block as the
-// shared light uniform. Pure CPU-side data — no GPU handles — so it is backend-agnostic; each
-// backend uploads `data` into its own uniform/storage buffer.
-//
-// `data` is a tightly-packed float layout matching the shader's std140/std430 light block (radiance
-// is linear, premultiplied: unpackColorToLinear(color) * intensity, packed at pack time so the
-// shader never sees sRgb). It carries one directional + one ambient term at the head, then fixed-
-// stride arrays of up to MAX_FORWARD_LIGHTS point, spot, and hemisphere lights (see the SCENE_LIGHT_*
-// offset/stride constants below). `directionalCount`/`ambientCount` are 0 or 1; `pointCount`/
-// `spotCount`/`hemisphereCount` range 0..MAX_FORWARD_LIGHTS, so a shader can loop each array by count.
-//
-// `version` bumps whenever `data` or the counts change so a backend can skip re-uploading an
-// unchanged block across frames.
-export interface Scene3DLightBlock {
-  ambientCount: number;
-  data: Float32Array<ArrayBuffer>;
-  directionalCount: number;
-  hemisphereCount: number;
-  pointCount: number;
-  spotCount: number;
-  version: number;
-}
+// Owned by `@flighthq/lighting`. These deprecated re-exports keep existing `@flighthq/types` imports
+// compiling until consumers import the owning package.
 
+/** @deprecated Import from `@flighthq/lighting/contract`. */
+export type { Scene3DLightBlock } from '@flighthq/lighting/contract';
+
+// Deprecated structural copies of lighting's literal constants (core may cross into an owner only
+// with type-only edges); the values are identical literals.
 // The forward-lighting cap: the maximum number of each punctual light type (point/spot/hemisphere)
 // a single drawScene3D applies in one pass. A spec constant, NOT an inlined literal: it sizes both the
 // Scene3DLightBlock.data layout below (CPU packer) AND the shader's `#define MAX_FORWARD_LIGHTS` + fixed

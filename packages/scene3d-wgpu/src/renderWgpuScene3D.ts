@@ -6,6 +6,8 @@ import {
   getMatrix4Determinant,
   setMatrix3NormalFromMatrix4,
 } from '@flighthq/geometry/contract';
+import type { Scene3DLightBlock, Scene3DLightsLike } from '@flighthq/lighting/contract';
+import { MAX_FORWARD_LIGHTS } from '@flighthq/lighting/contract';
 import type { InstancedMesh, Mesh, MeshSubset } from '@flighthq/meshgeometry/contract';
 import { getNodeWorldMatrix4 } from '@flighthq/node/contract';
 import {
@@ -22,15 +24,13 @@ import type {
   Material,
   Matrix3,
   Matrix4,
-  Scene3DLightBlock,
-  Scene3DLightsLike,
   Node3D,
   Material3D,
   WgpuMeshMaterialRenderer,
   WgpuRenderPass,
   WgpuRenderState,
 } from '@flighthq/types/contract';
-import { BlendMode, StandardMaterialKind, MAX_FORWARD_LIGHTS } from '@flighthq/types/contract';
+import { BlendMode, StandardMaterialKind } from '@flighthq/types/contract';
 import type { WgpuSkinningAdapter } from '@flighthq/types/contract';
 
 import type { WgpuScene3DDrawEntry, WgpuScene3DForwardLightList } from './contract.scene3d-wgpu-types.ts';

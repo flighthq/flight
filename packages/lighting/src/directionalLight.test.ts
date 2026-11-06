@@ -1,5 +1,4 @@
 import { createVector3 } from '@flighthq/geometry/contract';
-import { DirectionalLightKind, LuxLightUnit, UnitlessLightUnit } from '@flighthq/types/contract';
 
 import {
   cloneDirectionalLight,
@@ -8,6 +7,7 @@ import {
   setDirectionalLightDirection,
   setDirectionalLightTarget,
 } from './directionalLight.ts';
+import { DirectionalLightKind, LuxLightUnit, UnitlessLightUnit } from './types.ts';
 
 describe('cloneDirectionalLight', () => {
   it('creates an independent copy with a fresh direction vector', () => {

@@ -21,6 +21,7 @@
       ".surface-types",
       ".texture-formats-types",
       ".texture-types",
+      ".lighting-types",
       ""
     ],
     "tsBuildInfoFile": "dist/.tsbuildinfo.contract"
@@ -88,6 +89,9 @@
     },
     {
       "path": "../types/tsconfig.scene3d-types.json"
+    },
+    {
+      "path": "../lighting/tsconfig.contract.json"
     }
   ],
   "include": ["src/contract.scene3d-resources-types.ts", "src/types.ts"]

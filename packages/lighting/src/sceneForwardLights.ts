@@ -1,13 +1,8 @@
-import type {
-  BoundingSphereLike,
-  PointLight,
-  Scene3DForwardLightSelection,
-  Scene3DLightsLike,
-  SpotLight,
-} from '@flighthq/types/contract';
-import { ALL_LIGHT_LAYERS, MAX_FORWARD_LIGHTS } from '@flighthq/types/contract';
+import type { BoundingSphereLike } from '@flighthq/geometry/contract';
 
 import { getLightContributionAtBoundingSphere } from './lightAnalysis.ts';
+import type { PointLight, Scene3DForwardLightSelection, Scene3DLightsLike, SpotLight } from './types.ts';
+import { ALL_LIGHT_LAYERS, MAX_FORWARD_LIGHTS } from './types.ts';
 
 // Selects the strongest point and spot contributors for one object's forward-light budget. Each
 // family has its own MAX_FORWARD_LIGHTS budget, matching the shader's separate fixed arrays and

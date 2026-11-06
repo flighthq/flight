@@ -1,4 +1,5 @@
-import type { Bitmap, Environment, ImageResource, Texture } from '@flighthq/types/contract';
+import type { Environment } from '@flighthq/lighting/contract';
+import type { Bitmap, ImageResource, Texture } from '@flighthq/types/contract';
 import { BitmapTextureSourceKind, ImageTextureSourceKind } from '@flighthq/types/contract';
 
 import { ensureWgpuEnvironmentSourceCube, updateWgpuEnvironmentCubeFace } from './wgpuEnvironmentCube.ts';

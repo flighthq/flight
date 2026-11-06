@@ -1,17 +1,9 @@
-import type { Light } from './Light.ts';
-import type { LightUnit } from './LightUnit.ts';
+// Owned by `@flighthq/lighting`. These deprecated re-exports keep existing `@flighthq/types` imports
+// compiling until consumers import the owning package.
 
-// Gradient ambient: `skyColor` from above, `groundColor` from below, blended by the surface
-// normal's vertical component. Does not cast shadows.
-export interface HemisphereLight extends Light {
-  enabled: boolean;
-  // Packed sRGB RGBA (`0xRRGGBBAA`), the lower hemisphere's radiance before intensity.
-  groundColor: number;
-  intensity: number;
-  intensityUnit: LightUnit;
-  kind: 'HemisphereLight';
-  // Packed sRGB RGBA (`0xRRGGBBAA`), the upper hemisphere's radiance before intensity.
-  skyColor: number;
-}
+/** @deprecated Import from `@flighthq/lighting/contract`. */
+export type { HemisphereLight } from '@flighthq/lighting/contract';
 
+// Deprecated structural copies of lighting's literal constants (core may cross into an owner only
+// with type-only edges); the values are identical literals.
 export const HemisphereLightKind = 'HemisphereLight';

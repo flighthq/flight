@@ -8,6 +8,8 @@ import {
   inverseMatrix4,
   releaseMatrix4,
 } from '@flighthq/geometry/contract';
+import type { Scene3DLights } from '@flighthq/lighting/contract';
+import { AmbientLightKind, DirectionalLightKind } from '@flighthq/lighting/contract';
 import { addNodeChild, getNodeChildren, getNodeWorldMatrix4 } from '@flighthq/node/contract';
 import { createScene3D, createScene3DLightsFromDocument } from '@flighthq/scene3d/contract';
 import type {
@@ -32,15 +34,9 @@ import type {
   Scene3DDocument,
   Scene3DDocumentCamera,
   Scene3DDocumentLight,
-  Scene3DLights,
   EntityConstruction,
 } from '@flighthq/types/contract';
-import {
-  AmbientLightKind,
-  DirectionalLightKind,
-  FlightDocumentRefusalReason,
-  Node3DFieldsKey,
-} from '@flighthq/types/contract';
+import { FlightDocumentRefusalReason, Node3DFieldsKey } from '@flighthq/types/contract';
 
 import { explainFlightDocumentText, parseFlightDocumentText } from './flightDocumentText.ts';
 import {

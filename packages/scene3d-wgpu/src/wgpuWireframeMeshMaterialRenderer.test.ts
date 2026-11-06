@@ -1,9 +1,10 @@
 import { createCamera3D, createPerspectiveProjection } from '@flighthq/camera/contract';
 import { createMatrix3, createMatrix4 } from '@flighthq/geometry/contract';
+import type { Scene3DLightBlock } from '@flighthq/lighting/contract';
 import { createWireframeMaterial } from '@flighthq/materials/contract';
 import { createBoxMeshGeometry } from '@flighthq/meshgeometry/contract';
 import type { Scene3DRenderProxy } from '@flighthq/render/contract';
-import type { Camera3D, Scene3DLightBlock, WgpuSkinningAdapter } from '@flighthq/types/contract';
+import type { Camera3D, WgpuSkinningAdapter } from '@flighthq/types/contract';
 import { WireframeMaterialKind } from '@flighthq/types/contract';
 
 import { getWgpuMeshMaterialRenderer } from './wgpuMeshMaterialRegistry.ts';

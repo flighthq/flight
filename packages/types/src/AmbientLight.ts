@@ -1,16 +1,9 @@
-import type { Light } from './Light.ts';
-import type { LightUnit } from './LightUnit.ts';
+// Owned by `@flighthq/lighting`. These deprecated re-exports keep existing `@flighthq/types` imports
+// compiling until consumers import the owning package.
 
-// Uniform omnidirectional fill. No position or direction; lights every surface equally. Does
-// not cast shadows.
-export interface AmbientLight extends Light {
-  // Packed sRGB RGBA (`0xRRGGBBAA`). Radiance is unpackColorToLinear(color) x intensity,
-  // so alpha plays no part in lighting — it is carried for uniformity with every other SDK color.
-  color: number;
-  enabled: boolean;
-  intensity: number;
-  intensityUnit: LightUnit;
-  kind: 'AmbientLight';
-}
+/** @deprecated Import from `@flighthq/lighting/contract`. */
+export type { AmbientLight } from '@flighthq/lighting/contract';
 
+// Deprecated structural copies of lighting's literal constants (core may cross into an owner only
+// with type-only edges); the values are identical literals.
 export const AmbientLightKind = 'AmbientLight';

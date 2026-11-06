@@ -1,6 +1,8 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { HemisphereLight, HemisphereLightOptions, EntityConstruction } from '@flighthq/types/contract';
-import { HemisphereLightKind, UnitlessLightUnit } from '@flighthq/types/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
+
+import type { HemisphereLight, HemisphereLightOptions } from './types.ts';
+import { HemisphereLightKind, UnitlessLightUnit } from './types.ts';
 
 // Independent copy of a hemisphere light's data. The `kind` discriminant is carried over.
 export function cloneHemisphereLight(source: Readonly<HemisphereLight>): HemisphereLight {

@@ -1,10 +1,5 @@
-import type { LightUnit } from './LightUnit.ts';
+// Owned by `@flighthq/lighting`. These deprecated re-exports keep existing `@flighthq/types` imports
+// compiling until consumers import the owning package.
 
-export interface AmbientLightOptions {
-  // Packed sRGB RGBA (`0xRRGGBBAA`), seeding AmbientLight.color. Default 0xffffffff.
-  color?: number;
-  enabled?: boolean;
-  intensity?: number;
-  // Unit tag for the stored intensity scalar. Defaults to Unitless.
-  intensityUnit?: LightUnit;
-}
+/** @deprecated Import from `@flighthq/lighting/contract`. */
+export type { AmbientLightOptions } from '@flighthq/lighting/contract';

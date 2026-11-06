@@ -7,14 +7,37 @@
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,
-    "moduleSuffixes": [".scene3d-bridge-types", ".node-types", ".entity-types", ".geometry-types", ".camera-types", ""],
+    "moduleSuffixes": [
+      ".scene3d-bridge-types",
+      ".node-types",
+      ".entity-types",
+      ".geometry-types",
+      ".camera-types",
+      ".lighting-types",
+      ".texture-types",
+      ""
+    ],
     "tsBuildInfoFile": "dist/.tsbuildinfo.scene3d-types"
   },
   "references": [
-    { "path": "../camera/tsconfig.contract.json" },
-    { "path": "../entity" },
-    { "path": "../geometry/tsconfig.contract.json" },
-    { "path": "../node/tsconfig.contract.json" }
+    {
+      "path": "../camera/tsconfig.contract.json"
+    },
+    {
+      "path": "../entity"
+    },
+    {
+      "path": "../geometry/tsconfig.contract.json"
+    },
+    {
+      "path": "../node/tsconfig.contract.json"
+    },
+    {
+      "path": "../lighting/tsconfig.contract.json"
+    },
+    {
+      "path": "../texture/tsconfig.contract.json"
+    }
   ],
   "include": [
     "src/Aabb.ts",

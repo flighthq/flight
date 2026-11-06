@@ -1,9 +1,9 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { createVector2 } from '@flighthq/geometry/contract';
-import type { Texture, Sampler } from '@flighthq/types/contract';
-import { EnvironmentKind } from '@flighthq/types/contract';
+import type { Texture, Sampler } from '@flighthq/texture/contract';
 
 import { cloneEnvironment, createEnvironment, initializeEnvironment } from './environment.ts';
+import { EnvironmentKind } from './types.ts';
 
 function createTestCubeTexture(): Texture {
   const sampler = allocateEntity<any>();

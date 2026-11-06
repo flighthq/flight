@@ -19,7 +19,7 @@
       "path": "../geometry/tsconfig.runtime.json"
     },
     {
-      "path": "../lighting"
+      "path": "../lighting/tsconfig.runtime.json"
     },
     {
       "path": "../node/tsconfig.runtime.json"

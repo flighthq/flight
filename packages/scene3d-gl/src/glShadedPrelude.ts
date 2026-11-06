@@ -1,3 +1,4 @@
+import { MAX_FORWARD_LIGHTS } from '@flighthq/lighting/contract';
 import { getGlColorAdjustmentMaterialFeature, getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
 import type { GlModifierSnippet } from '@flighthq/render-gl/contract';
 import { getModifierDefineKey, orderModifierStack, resolveModifier } from '@flighthq/shading/contract';
@@ -10,7 +11,7 @@ import type {
   ModifierKind,
   ModifierRegistry,
 } from '@flighthq/types/contract';
-import { MAX_FORWARD_LIGHTS, ModifierSlot } from '@flighthq/types/contract';
+import { ModifierSlot } from '@flighthq/types/contract';
 
 import type { GlShadedDefineKey, GlShadedProgram } from './contract.scene3d-gl-types.ts';
 import { GL_MESH_LIGHT_BLOCK_GLSL, resolveGlLitLocations } from './glLitProgram.ts';

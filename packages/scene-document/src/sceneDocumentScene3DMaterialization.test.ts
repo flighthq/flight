@@ -7,6 +7,8 @@ import {
   createPointLight,
   createSpotLight,
 } from '@flighthq/lighting/contract';
+import type { Light, Scene3DLightsLike } from '@flighthq/lighting/contract';
+import { AmbientLightKind, DirectionalLightKind } from '@flighthq/lighting/contract';
 import { getNodeChildren, invalidateNodeLocalTransform } from '@flighthq/node/contract';
 import { withKindMapEntry } from '@flighthq/registry/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
@@ -21,20 +23,11 @@ import type {
   FlightDocumentScene,
   FlightDocumentScene3DMaterialization,
   FlightDocumentSchemaRegistry,
-  Light,
   NodeAny,
-  Scene3DLightsLike,
   Scene3DDocumentCamera,
   Scene3DDocumentLight,
 } from '@flighthq/types/contract';
-import {
-  AmbientLightKind,
-  DirectionalLightKind,
-  DisplayObjectKind,
-  EntityRuntimeKey,
-  FlightDocumentRefusalReason,
-  Node3DKind,
-} from '@flighthq/types/contract';
+import { DisplayObjectKind, EntityRuntimeKey, FlightDocumentRefusalReason, Node3DKind } from '@flighthq/types/contract';
 import { describe, expect, expectTypeOf, it } from 'vitest';
 
 import { formatFlightDocumentText } from './flightDocumentText.ts';

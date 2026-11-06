@@ -1,4 +1,4 @@
-import type { Scene3DLightBlock } from '@flighthq/types/contract';
+import type { Scene3DLightBlock } from '@flighthq/lighting/contract';
 
 // State-owned per-visible-mesh light blocks produced by prepareWgpuScene3DForwardLights. The index
 // contract matches Scene3DRenderList.visibleMeshes; identical selected tuples share a block.

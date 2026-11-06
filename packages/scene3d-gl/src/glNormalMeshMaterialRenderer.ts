@@ -1,8 +1,9 @@
+import type { Scene3DLightBlock } from '@flighthq/lighting/contract';
 import type { MeshGeometry } from '@flighthq/meshgeometry/contract';
 import { resolveGlTexture } from '@flighthq/render-gl/contract';
 import type { GlMeshMaterialRenderer } from '@flighthq/render-gl/contract';
 import type { Scene3DRenderProxy } from '@flighthq/render/contract';
-import type { Camera3D, GlRenderState, Material, NormalMaterial, Scene3DLightBlock } from '@flighthq/types/contract';
+import type { Camera3D, GlRenderState, Material, NormalMaterial } from '@flighthq/types/contract';
 import { NormalMaterialKind } from '@flighthq/types/contract';
 
 import { bindGlDebugNormalMap, ensureGlDebugProgram } from './glDebugPrelude.ts';

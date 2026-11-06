@@ -1,6 +1,3 @@
-import type { LightUnit, PhotometricLightLike } from '@flighthq/types/contract';
-import { CandelaLightUnit, LumenLightUnit, LuxLightUnit, UnitlessLightUnit } from '@flighthq/types/contract';
-
 import {
   applyLightExposure,
   convertLightIntensity,
@@ -8,6 +5,8 @@ import {
   getLightPhotometricIntensity,
   setLightPhotometricIntensity,
 } from './lightIntensity.ts';
+import type { LightUnit, PhotometricLightLike } from './types.ts';
+import { CandelaLightUnit, LumenLightUnit, LuxLightUnit, UnitlessLightUnit } from './types.ts';
 
 describe('applyLightExposure', () => {
   it('returns the intensity unchanged at 0 EV', () => {

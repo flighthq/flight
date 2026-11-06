@@ -1,6 +1,6 @@
 import { createCamera3D, createPerspectiveProjection } from '@flighthq/camera/contract';
+import type { Scene3DLightBlock } from '@flighthq/lighting/contract';
 import { createShadedMaterial } from '@flighthq/shading/contract';
-import type { Scene3DLightBlock } from '@flighthq/types/contract';
 import { ShadedMaterialKind } from '@flighthq/types/contract';
 
 import {

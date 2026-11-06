@@ -75,6 +75,7 @@
     "@flighthq/keyboard": "*",
     "@flighthq/layout": "*",
     "@flighthq/lifecycle": "*",
+    "@flighthq/lighting": "*",
     "@flighthq/loader": "*",
     "@flighthq/log": "*",
     "@flighthq/materials": "*",

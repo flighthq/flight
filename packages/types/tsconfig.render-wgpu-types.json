@@ -62,6 +62,7 @@
       ".render-gl-types",
       ".accessibility-types",
       ".textsegment-types",
+      ".lighting-types",
       ""
     ],
     "types": ["@webgpu/types"],
@@ -217,6 +218,9 @@
     },
     {
       "path": "../render/tsconfig.contract.json"
+    },
+    {
+      "path": "../lighting/tsconfig.contract.json"
     }
   ],
   "files": [

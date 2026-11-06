@@ -1,3 +1,4 @@
+import type { Scene3DLightBlock } from '@flighthq/lighting/contract';
 import type { MeshGeometry } from '@flighthq/meshgeometry/contract';
 import { withKindMapEntry } from '@flighthq/registry/contract';
 import { getGlRenderStateRuntime, resolveGlTexture } from '@flighthq/render-gl/contract';
@@ -9,7 +10,6 @@ import type {
   CustomShaderMaterial,
   GlRenderState,
   Material,
-  Scene3DLightBlock,
   Texture,
 } from '@flighthq/types/contract';
 import { CustomShaderMaterialKind } from '@flighthq/types/contract';
