@@ -23,9 +23,6 @@
       "path": "../texture/tsconfig.runtime.json"
     },
     {
-      "path": "../types"
-    },
-    {
       "path": "../video"
     },
     {

@@ -8,7 +8,7 @@ import {
   removeLogSink,
 } from '@flighthq/log/contract';
 import type { LogState } from '@flighthq/log/contract';
-import type { LogEntry, MemoryLogSink } from '@flighthq/types/contract';
+import type { LogEntry, MemoryLogSink } from '@flighthq/log/contract';
 
 import { addAudioBusToMixer, createAudioBus, createAudioMixer, setAudioBusGain } from './audioMixer.ts';
 import { disableAudioMixerGuards, enableAudioMixerGuards } from './enableAudioMixerGuards.ts';

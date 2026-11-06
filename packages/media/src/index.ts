@@ -40,3 +40,14 @@ export {
 export * from './enableAudioMixerGuards.ts';
 export * from './mediaChannelSignals.ts';
 export * from './videoChannel.ts';
+export type {
+  AudioBus,
+  AudioBusMixerGuard,
+  AudioBusMixerOperation,
+  AudioBusOptions,
+  AudioChannel,
+  AudioMixer,
+  AudioMixerOptions,
+  MediaChannelSignals,
+  MediaReadyState,
+} from './types.ts';

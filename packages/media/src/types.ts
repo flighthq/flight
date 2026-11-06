@@ -1,7 +1,7 @@
-// The media-owned host audio capability contracts (crates/flight-media). They import nothing from
-// @flighthq/types, which re-exports them type-only for compatibility.
+// The media-owned contracts: host audio capabilities (crates/flight-media), audio channels, buses
+// and the mixer, and per-channel media signals. They import nothing from @flighthq/types.
 
-import type { HostAudioCodecCapability } from '@flighthq/audio/contract';
+import type { AudioChannelState, AudioResource, HostAudioCodecCapability } from '@flighthq/audio/contract';
 import type { EntityRaw, EntityRuntime } from '@flighthq/entity/contract';
 import type { EntityRuntimeKey } from '@flighthq/entity/contract';
 import type {
@@ -11,6 +11,7 @@ import type {
   AudioMixerGraphHandle,
   AudioSourceHandle,
 } from '@flighthq/host/contract';
+import type { Signal } from '@flighthq/signals/contract';
 
 interface MediaEntity extends EntityRaw {
   [EntityRuntimeKey]: EntityRuntime | undefined;
@@ -77,4 +78,78 @@ export interface HostAudioCapabilities {
   readonly codec?: HostAudioCodecCapability;
   readonly device?: HostAudioDeviceCapability;
   readonly mixer?: HostAudioMixerCapability;
+}
+
+export interface AudioChannel {
+  currentTime: number;
+  gain: number;
+  length: number;
+  // Sub-region of the buffer each pass plays, in milliseconds. `loopEnd` of 0 means no region: the
+  // pass runs to the end of the buffer. The region bounds each pass; `loops` still counts them.
+  loopEnd: number;
+  loops: number;
+  loopStart: number;
+  // Silences output without disturbing `gain`, so unmuting restores the level the caller set. A muted
+  // channel keeps playing and keeps advancing its time — this is not a pause.
+  muted: boolean;
+  // Stereo placement: -1 hard left, 0 centre, 1 hard right. Clamped to that range by
+  // setAudioChannelPan, the way currentTime is clamped to its own bounded domain.
+  pan: number;
+  playbackRate: number;
+  source: AudioResource;
+  state: AudioChannelState;
+  onComplete: Signal<void>;
+}
+
+export interface AudioBus extends MediaEntity {
+  gain: number;
+  muted: boolean;
+  name: string;
+  pan: number;
+}
+export interface AudioBusOptions {
+  gain?: number;
+  muted?: boolean;
+  name?: string;
+  pan?: number;
+}
+export interface AudioMixer extends MediaEntity {
+  masterGain: number;
+  masterMuted: boolean;
+}
+export interface AudioMixerOptions {
+  masterGain?: number;
+  masterMuted?: boolean;
+}
+
+// Which bus property a write targeted when it could not reach any audio node.
+export type AudioBusMixerOperation = 'gain' | 'mute' | 'pan';
+
+// Reports a bus-property write that reached no mixer, and therefore changed nothing audible. Installed by
+// `enableAudioMixerGuards` in @flighthq/media through that package's `setAudioBusMixerGuard` seam; a null
+// slot is the production default.
+export type AudioBusMixerGuard = (operation: AudioBusMixerOperation, bus: Readonly<AudioBus>) => void;
+
+export type MediaReadyState = 'buffering' | 'error' | 'idle' | 'ready';
+// Opt-in notification for one media channel, enabled per channel through enableAudioChannelSignals /
+// enableVideoChannelSignals so a caller that never asks pays nothing.
+//
+// The playback-lifecycle half — complete, loop, pause, play, stop — is produced by the channel's own
+// state machine. The readiness half — buffering, error, ready, seeked — describes transport state that
+// only a backend or a DOM element can report; those are declared here and are NOT yet produced for
+// audio, which has no such seam.
+export interface MediaChannelSignals {
+  onBuffering: Signal<void>;
+  // Fires when a channel finishes its last pass. The channel's own `onComplete` still fires too; this
+  // one exists so a caller that opted into signals reads every lifecycle event from one place.
+  onComplete: Signal<void>;
+  onError: Signal<string>;
+  // Fires once per loop iteration, after the count is spent and before the next pass starts.
+  onLoop: Signal<void>;
+  onPause: Signal<void>;
+  // Fires when a caller starts or resumes playback — not on a loop iteration or a seek restart.
+  onPlay: Signal<void>;
+  onReady: Signal<void>;
+  onSeeked: Signal<void>;
+  onStop: Signal<void>;
 }
