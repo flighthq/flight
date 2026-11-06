@@ -1,3 +1,4 @@
+import type { Effect } from '@flighthq/effects/contract';
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { createWebGlContext } from '@flighthq/host-web/contract';
 import {
@@ -10,7 +11,7 @@ import {
   isGlRenderTextureReady,
   writeGlRenderTextureTarget,
 } from '@flighthq/render-gl/contract';
-import type { GlEffectRunner, GlRenderState, Effect } from '@flighthq/types/contract';
+import type { GlRenderState, GlEffectRunner } from '@flighthq/render-gl/contract';
 
 import { applyGaussianBlurToGlRenderTextures } from './glBlurEffect.ts';
 import { getGlEffectRunner, registerGlEffect } from './glEffectRegistry.ts';

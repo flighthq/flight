@@ -1,6 +1,6 @@
 import { compileGlFullscreenProgram, drawGlFullscreenPass } from '@flighthq/render-gl/contract';
-import type { GlContext, GlTextureRenderTarget } from '@flighthq/types/contract';
-import type { GlFullscreenProgram, GlRenderState } from '@flighthq/types/contract';
+import type { GlContext, GlTextureRenderTarget } from '@flighthq/render-gl/contract';
+import type { GlFullscreenProgram, GlRenderState } from '@flighthq/render-gl/contract';
 
 // Blits a tinted texture at a UV offset. Out-of-bounds samples produce transparent output.
 const BLIT_OFFSET_FRAGMENT_SRC = `#version 300 es

@@ -1,3 +1,4 @@
+import type { BlurEffect } from '@flighthq/effects/contract';
 import {
   acquireGlTextureRenderTarget,
   drawGlFullscreenPass,
@@ -6,8 +7,8 @@ import {
   withGlRenderState,
   writeGlRenderTextureTarget,
 } from '@flighthq/render-gl/contract';
+import type { GlRenderState, GlTextureRenderTarget, GlEffectRunner } from '@flighthq/render-gl/contract';
 import type { RenderTexture } from '@flighthq/render/contract';
-import type { BlurEffect, GlEffectRunner, GlRenderState, GlTextureRenderTarget } from '@flighthq/types/contract';
 
 import { getGlEffectProgram, getGlEffectUniformLocation } from './glEffectProgramCache.ts';
 import { registerGlEffect } from './glEffectRegistry.ts';

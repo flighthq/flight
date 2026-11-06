@@ -1,14 +1,11 @@
 import { ImageChannel } from '@flighthq/bitmap/contract';
 import { createBitmapDisplacementEffect } from '@flighthq/effects/contract';
+import type { BitmapDisplacementEffect } from '@flighthq/effects/contract';
 import { createWebGlContext } from '@flighthq/host-web/contract';
 import { createGlRenderState } from '@flighthq/render-gl/contract';
 import * as renderGlContract from '@flighthq/render-gl/contract';
-import type {
-  BitmapDisplacementEffect,
-  GlRenderState,
-  GlTextureRenderTarget,
-  Texture2D,
-} from '@flighthq/types/contract';
+import type { GlRenderState, GlTextureRenderTarget } from '@flighthq/render-gl/contract';
+import type { Texture2D } from '@flighthq/texture/contract';
 
 import {
   applyBitmapDisplacementEffectToGl,

@@ -1,10 +1,6 @@
+import type { ChromaticAberrationEffect } from '@flighthq/effects/contract';
 import { drawGlFullscreenPass } from '@flighthq/render-gl/contract';
-import type {
-  ChromaticAberrationEffect,
-  GlEffectRunner,
-  GlRenderState,
-  GlTextureRenderTarget,
-} from '@flighthq/types/contract';
+import type { GlRenderState, GlTextureRenderTarget, GlEffectRunner } from '@flighthq/render-gl/contract';
 
 import { getGlEffectProgram } from './glEffectProgramCache.ts';
 import { registerGlEffect } from './glEffectRegistry.ts';

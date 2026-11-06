@@ -1,10 +1,6 @@
 import { createSsaoEffect } from '@flighthq/effects/contract';
-import type {
-  ContactShadowsEffect,
-  GlEffectRunner,
-  GlRenderState,
-  GlTextureRenderTarget,
-} from '@flighthq/types/contract';
+import type { ContactShadowsEffect } from '@flighthq/effects/contract';
+import type { GlRenderState, GlTextureRenderTarget, GlEffectRunner } from '@flighthq/render-gl/contract';
 
 import { registerGlEffect } from './glEffectRegistry.ts';
 import { applySsaoEffectToGl } from './glSsaoEffect.ts';

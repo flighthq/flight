@@ -1,5 +1,6 @@
+import type { GlitchEffect } from '@flighthq/effects/contract';
 import { drawGlFullscreenPass } from '@flighthq/render-gl/contract';
-import type { GlitchEffect, GlEffectRunner, GlRenderState, GlTextureRenderTarget } from '@flighthq/types/contract';
+import type { GlRenderState, GlTextureRenderTarget, GlEffectRunner } from '@flighthq/render-gl/contract';
 
 import { getGlEffectProgram } from './glEffectProgramCache.ts';
 import { registerGlEffect } from './glEffectRegistry.ts';

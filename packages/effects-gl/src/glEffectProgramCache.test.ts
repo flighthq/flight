@@ -1,5 +1,5 @@
 import * as renderGlContract from '@flighthq/render-gl/contract';
-import type { GlFullscreenProgram, GlRenderState } from '@flighthq/types/contract';
+import type { GlFullscreenProgram, GlRenderState } from '@flighthq/render-gl/contract';
 
 import { getGlEffectProgram, getGlEffectUniformLocation } from './glEffectProgramCache.ts';
 

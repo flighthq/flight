@@ -1,4 +1,4 @@
-import type { GlContext } from '@flighthq/types/contract';
+import type { GlContext } from '@flighthq/render-gl/contract';
 /**
  * Builds a 256-entry RGBA gradient ramp on the GPU. The caller owns the
  * returned texture and must delete it with `gl.deleteTexture` when done.

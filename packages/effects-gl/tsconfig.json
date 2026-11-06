@@ -13,7 +13,7 @@
     { "path": "../registry" },
     { "path": "../render/tsconfig.runtime.json" },
     { "path": "../render-gl" },
-    { "path": "../types" },
+    { "path": "../texture/tsconfig.runtime.json" },
     { "path": "./tsconfig.contract.json" },
     { "path": "./tsconfig.runtime.json" }
   ]

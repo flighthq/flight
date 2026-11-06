@@ -1,7 +1,7 @@
 import { unpackColorRgba } from '@flighthq/color/contract';
 import { compileGlFullscreenProgram, drawGlFullscreenPass } from '@flighthq/render-gl/contract';
-import type { GlContext, GlTextureRenderTarget } from '@flighthq/types/contract';
-import type { GlFullscreenProgram, GlRenderState } from '@flighthq/types/contract';
+import type { GlContext, GlTextureRenderTarget } from '@flighthq/render-gl/contract';
+import type { GlFullscreenProgram, GlRenderState } from '@flighthq/render-gl/contract';
 
 // Extracts the source alpha, tints it with a solid color, and outputs a
 // premultiplied RGBA texture.

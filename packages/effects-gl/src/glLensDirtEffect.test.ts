@@ -1,6 +1,6 @@
 import { createLensDirtEffect } from '@flighthq/effects/contract';
 import * as renderGlContract from '@flighthq/render-gl/contract';
-import type { GlTextureRenderTarget } from '@flighthq/types/contract';
+import type { GlTextureRenderTarget } from '@flighthq/render-gl/contract';
 
 import * as glBlurEffect from './glBlurEffect.ts';
 import * as glEffectProgramCache from './glEffectProgramCache.ts';

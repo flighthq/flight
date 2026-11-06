@@ -1,6 +1,6 @@
 import type { ColorLut } from '@flighthq/adjustments/contract';
 import { drawGlFullscreenPass } from '@flighthq/render-gl/contract';
-import type { GlContext, GlRenderState, GlTextureRenderTarget } from '@flighthq/types/contract';
+import type { GlContext, GlRenderState, GlTextureRenderTarget } from '@flighthq/render-gl/contract';
 
 import { getGlEffectProgram } from './glEffectProgramCache.ts';
 import type { GlColorLutTextureCache } from './types.ts';

@@ -1,15 +1,15 @@
+import type { LensDirtEffect } from '@flighthq/effects/contract';
 import {
   acquireGlTextureRenderTarget,
   drawGlFullscreenPass,
   releaseGlTextureRenderTarget,
 } from '@flighthq/render-gl/contract';
 import type {
-  GlEffectRunner,
   GlRenderState,
   GlTextureRenderTarget,
   GlTextureRenderTargetPool,
-  LensDirtEffect,
-} from '@flighthq/types/contract';
+  GlEffectRunner,
+} from '@flighthq/render-gl/contract';
 
 import { applyGaussianBlurToGl } from './glBlurEffect.ts';
 import { getGlEffectProgram } from './glEffectProgramCache.ts';

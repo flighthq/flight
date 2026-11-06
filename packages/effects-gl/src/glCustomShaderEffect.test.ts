@@ -1,11 +1,11 @@
 import { createCustomShaderEffect } from '@flighthq/effects/contract';
+import { EntityRuntimeKey } from '@flighthq/entity/contract';
 import {
   createGlContextState,
   createGlRenderStateRuntime,
   getGlRenderStateRuntime,
 } from '@flighthq/render-gl/contract';
-import type { GlRenderState, GlRenderStateOptions } from '@flighthq/types/contract';
-import { EntityRuntimeKey } from '@flighthq/types/contract';
+import type { GlRenderState, GlRenderStateOptions } from '@flighthq/render-gl/contract';
 
 import {
   applyCustomShaderEffectToGl,

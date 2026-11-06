@@ -1,10 +1,6 @@
+import type { BokehDepthOfFieldEffect } from '@flighthq/effects/contract';
 import { drawGlFullscreenPass } from '@flighthq/render-gl/contract';
-import type {
-  BokehDepthOfFieldEffect,
-  GlEffectRunner,
-  GlRenderState,
-  GlTextureRenderTarget,
-} from '@flighthq/types/contract';
+import type { GlRenderState, GlTextureRenderTarget, GlEffectRunner } from '@flighthq/render-gl/contract';
 
 import { getGlEffectProgram } from './glEffectProgramCache.ts';
 import { registerGlEffect } from './glEffectRegistry.ts';

@@ -1,3 +1,4 @@
+import type { Effect } from '@flighthq/effects/contract';
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { createWebGlContext } from '@flighthq/host-web/contract';
 import type { LogState } from '@flighthq/log/contract';
@@ -8,13 +9,14 @@ import {
   getMemoryLogSinkEntries,
   removeLogSink,
 } from '@flighthq/log/contract';
+import type { LogEntry, MemoryLogSink } from '@flighthq/log/contract';
 import {
   acquireGlRenderTexture,
   createGlRenderState,
   createGlRenderTexturePool,
   writeGlRenderTextureTarget,
 } from '@flighthq/render-gl/contract';
-import type { Effect, GlEffectRunner, GlRenderState, LogEntry, MemoryLogSink } from '@flighthq/types/contract';
+import type { GlRenderState, GlEffectRunner } from '@flighthq/render-gl/contract';
 
 import { areGlEffectGuardsEnabled, disableGlEffectGuards, enableGlEffectGuards } from './enableGlEffectGuards.ts';
 import { registerGlCustomShaderSource } from './glCustomShaderEffect.ts';

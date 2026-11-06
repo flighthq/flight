@@ -8,6 +8,7 @@ import {
 import type { Adjustment } from '@flighthq/adjustments/contract';
 import { srgbChannelToLinear } from '@flighthq/color/contract';
 import type { Effect, EffectStateOptions } from '@flighthq/effects/contract';
+import type { NonEntityCreateResult } from '@flighthq/entity/contract';
 import {
   acquireGlTextureRenderTarget,
   beginGlRenderPass,
@@ -21,14 +22,9 @@ import {
   releaseGlTextureRenderTarget,
   resizeGlTextureRenderTarget,
 } from '@flighthq/render-gl/contract';
+import type { GlRenderPass, GlRenderState, GlTextureRenderTarget } from '@flighthq/render-gl/contract';
 import type { RenderTargetColorSpace } from '@flighthq/render/contract';
-import type {
-  GlRenderPass,
-  GlRenderState,
-  GlTextureRenderTarget,
-  NonEntityCreateResult,
-  RenderTargetClear,
-} from '@flighthq/types/contract';
+import type { RenderTargetClear } from '@flighthq/render/contract';
 
 import { applyColorLutPassToGl } from './glColorLutPass.ts';
 import { applyColorMatrixPassToGl } from './glColorMatrixPass.ts';

@@ -1,8 +1,9 @@
 import { createDisplacementEffect } from '@flighthq/effects/contract';
+import type { DisplacementEffect } from '@flighthq/effects/contract';
 import { createWebGlContext } from '@flighthq/host-web/contract';
 import { createGlRenderState } from '@flighthq/render-gl/contract';
 import * as renderGlContract from '@flighthq/render-gl/contract';
-import type { DisplacementEffect, GlRenderState, GlTextureRenderTarget } from '@flighthq/types/contract';
+import type { GlRenderState, GlTextureRenderTarget } from '@flighthq/render-gl/contract';
 
 import {
   applyDisplacementEffectToGl,

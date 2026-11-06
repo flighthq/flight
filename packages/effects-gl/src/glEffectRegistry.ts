@@ -1,6 +1,7 @@
+import type { Effect } from '@flighthq/effects/contract';
 import { withKindMapEntry } from '@flighthq/registry/contract';
 import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
-import type { GlRenderState, Effect } from '@flighthq/types/contract';
+import type { GlRenderState } from '@flighthq/render-gl/contract';
 
 import type { GlEffectResolver, GlEffectRunner } from './types.ts';
 

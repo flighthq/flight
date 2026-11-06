@@ -1,15 +1,15 @@
+import type { OuterGlowEffect } from '@flighthq/effects/contract';
 import {
   acquireGlTextureRenderTarget,
   clearGlRenderTarget,
   releaseGlTextureRenderTarget,
 } from '@flighthq/render-gl/contract';
 import type {
-  OuterGlowEffect,
-  GlEffectRunner,
   GlRenderState,
   GlTextureRenderTarget,
   GlTextureRenderTargetPool,
-} from '@flighthq/types/contract';
+  GlEffectRunner,
+} from '@flighthq/render-gl/contract';
 
 import { applyGlEffectBlitPass, applyGlEffectErasePass } from './glEffectBlitShader.ts';
 import { applyGlEffectBoxBlur } from './glEffectBoxBlur.ts';

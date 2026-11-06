@@ -1,7 +1,7 @@
+import type { Effect } from '@flighthq/effects/contract';
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { createWebGlContext } from '@flighthq/host-web/contract';
 import { createGlRenderState, endGlRenderPass } from '@flighthq/render-gl/contract';
-import type { Effect } from '@flighthq/types/contract';
 
 import {
   beginGlEffectPass,

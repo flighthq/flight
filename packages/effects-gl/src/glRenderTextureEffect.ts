@@ -1,11 +1,12 @@
+import type { Effect } from '@flighthq/effects/contract';
 import {
   explainGlRenderTexture,
   getGlRenderTextureTarget,
   withGlRenderState,
   writeGlRenderTextureTarget,
 } from '@flighthq/render-gl/contract';
+import type { GlRenderState, GlRenderTexturePool } from '@flighthq/render-gl/contract';
 import type { RenderTexture } from '@flighthq/render/contract';
-import type { GlRenderState, GlRenderTexturePool, Effect } from '@flighthq/types/contract';
 
 import { getGlEffectRunner, isGlEffectResolvable } from './glEffectRegistry.ts';
 import type { GlEffectApplicationExplanation, GlEffectApplicationGuard } from './types.ts';

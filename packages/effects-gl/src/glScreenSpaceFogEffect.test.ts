@@ -1,8 +1,9 @@
 import { createScreenSpaceFogEffect } from '@flighthq/effects/contract';
+import type { ScreenSpaceFogEffect } from '@flighthq/effects/contract';
 import { createWebGlContext } from '@flighthq/host-web/contract';
 import { createGlRenderState } from '@flighthq/render-gl/contract';
 import * as renderGlContract from '@flighthq/render-gl/contract';
-import type { GlRenderState, GlTextureRenderTarget, ScreenSpaceFogEffect } from '@flighthq/types/contract';
+import type { GlRenderState, GlTextureRenderTarget } from '@flighthq/render-gl/contract';
 
 import * as glEffectProgramCache from './glEffectProgramCache.ts';
 import { getGlEffectRunner } from './glEffectRegistry.ts';

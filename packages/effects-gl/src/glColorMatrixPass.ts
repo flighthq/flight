@@ -1,5 +1,5 @@
 import { drawGlFullscreenPass } from '@flighthq/render-gl/contract';
-import type { GlRenderState, GlTextureRenderTarget } from '@flighthq/types/contract';
+import type { GlRenderState, GlTextureRenderTarget } from '@flighthq/render-gl/contract';
 
 import { getGlEffectProgram } from './glEffectProgramCache.ts';
 

@@ -1,10 +1,11 @@
 import type { ColorLut } from '@flighthq/adjustments/contract';
 import * as renderGlContract from '@flighthq/render-gl/contract';
-import type { GlColorLutTextureCache, GlRenderState, GlTextureRenderTarget } from '@flighthq/types/contract';
+import type { GlRenderState, GlTextureRenderTarget } from '@flighthq/render-gl/contract';
 
 import { applyColorLutPassToGl } from './glColorLutPass.ts';
 import * as glEffectProgramCache from './glEffectProgramCache.ts';
 import { evaluateGlslScalarExpression, extractGlslExpression } from './glShaderTestHelper.ts';
+import type { GlColorLutTextureCache } from './types.ts';
 
 const programMock = {
   getGlEffectProgram: vi.fn((_state: unknown, _key: string, _source: string) => ({ program: {} })),

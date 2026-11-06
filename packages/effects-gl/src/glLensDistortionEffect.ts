@@ -1,10 +1,6 @@
+import type { LensDistortionEffect } from '@flighthq/effects/contract';
 import { drawGlFullscreenPass } from '@flighthq/render-gl/contract';
-import type {
-  GlEffectRunner,
-  GlRenderState,
-  GlTextureRenderTarget,
-  LensDistortionEffect,
-} from '@flighthq/types/contract';
+import type { GlRenderState, GlTextureRenderTarget, GlEffectRunner } from '@flighthq/render-gl/contract';
 
 import { getGlEffectProgram } from './glEffectProgramCache.ts';
 import { registerGlEffect } from './glEffectRegistry.ts';

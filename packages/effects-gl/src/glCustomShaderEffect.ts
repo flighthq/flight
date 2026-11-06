@@ -1,6 +1,7 @@
+import type { CustomShaderEffect, Effect } from '@flighthq/effects/contract';
 import { withKindMapEntry } from '@flighthq/registry/contract';
 import { drawGlFullscreenPass, getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
-import type { CustomShaderEffect, GlRenderState, GlTextureRenderTarget, Effect } from '@flighthq/types/contract';
+import type { GlRenderState, GlTextureRenderTarget } from '@flighthq/render-gl/contract';
 
 import { getGlEffectProgram, getGlEffectUniformLocation } from './glEffectProgramCache.ts';
 import { registerGlEffect } from './glEffectRegistry.ts';

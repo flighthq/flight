@@ -1,6 +1,6 @@
 import { createMotionBlurEffect } from '@flighthq/effects/contract';
 import * as renderGlContract from '@flighthq/render-gl/contract';
-import type { GlRenderState, GlTextureRenderTarget } from '@flighthq/types/contract';
+import type { GlRenderState, GlTextureRenderTarget } from '@flighthq/render-gl/contract';
 
 import * as glEffectProgramCache from './glEffectProgramCache.ts';
 import {

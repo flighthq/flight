@@ -1,8 +1,9 @@
 import { createGlitchEffect } from '@flighthq/effects/contract';
+import type { GlitchEffect } from '@flighthq/effects/contract';
 import { createWebGlContext } from '@flighthq/host-web/contract';
 import { createGlRenderState } from '@flighthq/render-gl/contract';
 import * as renderGlContract from '@flighthq/render-gl/contract';
-import type { GlitchEffect, GlRenderState, GlTextureRenderTarget } from '@flighthq/types/contract';
+import type { GlRenderState, GlTextureRenderTarget } from '@flighthq/render-gl/contract';
 
 import * as glEffectProgramCache from './glEffectProgramCache.ts';
 import { getGlEffectRunner } from './glEffectRegistry.ts';

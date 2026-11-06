@@ -1,15 +1,15 @@
+import type { DropShadowEffect } from '@flighthq/effects/contract';
 import {
   acquireGlTextureRenderTarget,
   clearGlRenderTarget,
   releaseGlTextureRenderTarget,
 } from '@flighthq/render-gl/contract';
 import type {
-  DropShadowEffect,
-  GlEffectRunner,
   GlRenderState,
   GlTextureRenderTarget,
   GlTextureRenderTargetPool,
-} from '@flighthq/types/contract';
+  GlEffectRunner,
+} from '@flighthq/render-gl/contract';
 
 import { applyGlEffectBlitOffsetPass, applyGlEffectBlitPass, applyGlEffectErasePass } from './glEffectBlitShader.ts';
 import { applyGlEffectBoxBlur } from './glEffectBoxBlur.ts';

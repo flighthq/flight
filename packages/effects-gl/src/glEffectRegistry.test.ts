@@ -1,7 +1,8 @@
+import type { Effect } from '@flighthq/effects/contract';
 import { createWebGlContext } from '@flighthq/host-web/contract';
 import { createGlRenderState } from '@flighthq/render-gl/contract';
 import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
-import type { GlRenderState, Effect } from '@flighthq/types/contract';
+import type { GlRenderState } from '@flighthq/render-gl/contract';
 
 import { getGlEffectRunner, hasGlEffectRunner, isGlEffectResolvable, registerGlEffect } from './glEffectRegistry.ts';
 

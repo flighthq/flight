@@ -1,4 +1,5 @@
 import { getColorAlpha, getColorRgb } from '@flighthq/color/contract';
+import type { BevelEffect } from '@flighthq/effects/contract';
 import {
   acquireGlTextureRenderTarget,
   clearGlRenderTarget,
@@ -8,13 +9,12 @@ import {
 } from '@flighthq/render-gl/contract';
 import type {
   GlContext,
-  BevelEffect,
   GlFullscreenProgram,
-  GlEffectRunner,
   GlRenderState,
   GlTextureRenderTarget,
   GlTextureRenderTargetPool,
-} from '@flighthq/types/contract';
+  GlEffectRunner,
+} from '@flighthq/render-gl/contract';
 
 import { applyGlEffectBlitPass, applyGlEffectErasePass } from './glEffectBlitShader.ts';
 import { applyGlEffectBoxBlur } from './glEffectBoxBlur.ts';

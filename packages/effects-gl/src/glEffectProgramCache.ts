@@ -1,5 +1,5 @@
 import { compileGlFullscreenProgram } from '@flighthq/render-gl/contract';
-import type { GlContext, GlFullscreenProgram, GlRenderState } from '@flighthq/types/contract';
+import type { GlContext, GlFullscreenProgram, GlRenderState } from '@flighthq/render-gl/contract';
 
 // Per-context cache of compiled effect fragment programs, keyed by a stable string. Effect recipes call
 // getGlEffectProgram with their own key + fragment source so each program compiles once per context

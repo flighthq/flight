@@ -2,7 +2,7 @@ import type { AdvancedBlendMode } from '@flighthq/effects/contract';
 import { AdvancedBlendMode as AdvancedBlendModeValues } from '@flighthq/effects/contract';
 import type { BlendEffect } from '@flighthq/effects/contract';
 import { drawGlFullscreenPass } from '@flighthq/render-gl/contract';
-import type { GlEffectRunner, GlRenderState, GlTextureRenderTarget } from '@flighthq/types/contract';
+import type { GlRenderState, GlTextureRenderTarget, GlEffectRunner } from '@flighthq/render-gl/contract';
 
 import { getGlEffectProgram, getGlEffectUniformLocation } from './glEffectProgramCache.ts';
 import { registerGlEffect } from './glEffectRegistry.ts';

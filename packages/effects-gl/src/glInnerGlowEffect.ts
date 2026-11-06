@@ -1,4 +1,5 @@
 import { unpackColorRgba } from '@flighthq/color/contract';
+import type { InnerGlowEffect } from '@flighthq/effects/contract';
 import {
   acquireGlTextureRenderTarget,
   clearGlRenderTarget,
@@ -8,13 +9,12 @@ import {
 } from '@flighthq/render-gl/contract';
 import type {
   GlContext,
-  InnerGlowEffect,
   GlFullscreenProgram,
-  GlEffectRunner,
   GlRenderState,
   GlTextureRenderTarget,
   GlTextureRenderTargetPool,
-} from '@flighthq/types/contract';
+  GlEffectRunner,
+} from '@flighthq/render-gl/contract';
 
 import { applyGlEffectBlitPass } from './glEffectBlitShader.ts';
 import { applyGlEffectBoxBlur } from './glEffectBoxBlur.ts';
