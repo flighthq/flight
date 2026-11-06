@@ -1,6 +1,5 @@
-import type { LogState } from '@flighthq/log/contract';
+import type { LogEntry, LogState } from '@flighthq/log/contract';
 import { addLogSink, createLogState, createMemoryLogSink, getMemoryLogSinkEntries } from '@flighthq/log/contract';
-import type { LogEntry } from '@flighthq/types/contract';
 
 import {
   areStatechartGuardsEnabled,

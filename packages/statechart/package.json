@@ -45,7 +45,6 @@
     "@flighthq/signals": "*"
   },
   "devDependencies": {
-    "@flighthq/types": "*",
     "typescript": "^7.0.2"
   },
   "description": "Plain-data concurrent statecharts with typed inputs, guarded transitions, and reported blend progress",

@@ -1,11 +1,20 @@
 {
   "files": [],
   "references": [
-    { "path": "../entity" },
-    { "path": "../log" },
-    { "path": "../signals" },
-    { "path": "../types" },
-    { "path": "./tsconfig.contract.json" },
-    { "path": "./tsconfig.runtime.json" }
+    {
+      "path": "../entity"
+    },
+    {
+      "path": "../log"
+    },
+    {
+      "path": "../signals"
+    },
+    {
+      "path": "./tsconfig.contract.json"
+    },
+    {
+      "path": "./tsconfig.runtime.json"
+    }
   ]
 }
