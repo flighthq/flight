@@ -10,7 +10,6 @@ import { MorphShapeKind, Scale9ShapeKind, ShapeKind } from '@flighthq/shape/cont
 import { RichTextKind, TextLabelKind } from '@flighthq/text/contract';
 import type { GlRenderRegistries, Kind } from '@flighthq/types/contract';
 import {
-  BitmapTextKind,
   DisplayObjectKind,
   ParticleEmitter2DKind,
   QuadBatchKind,
@@ -74,3 +73,4 @@ export const glScene2DRenderPreset: Readonly<GlRenderRegistries> = Object.freeze
   ...glRenderInfrastructure,
   nodeRenderers: buildScene2DGlRenderers(),
 });
+import { BitmapTextKind } from '@flighthq/bitmaptext/contract';

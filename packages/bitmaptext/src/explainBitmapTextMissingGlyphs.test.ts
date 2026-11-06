@@ -1,5 +1,5 @@
-import type { GlyphEntry, GlyphSource } from '@flighthq/types/contract';
-import { EntityRuntimeKey } from '@flighthq/types/contract';
+import { EntityRuntimeKey } from '@flighthq/entity/contract';
+import type { GlyphEntry, GlyphSource } from '@flighthq/glyphatlas/contract';
 import { describe, expect, it } from 'vitest';
 
 import { explainBitmapTextMissingGlyphs } from './explainBitmapTextMissingGlyphs.ts';

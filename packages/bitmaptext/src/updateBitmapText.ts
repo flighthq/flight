@@ -1,19 +1,13 @@
 import { createRectangle, reserveFloat32Array, reserveUint16Array } from '@flighthq/geometry/contract';
+import type { Rectangle } from '@flighthq/geometry/contract';
+import type { GlyphEntry, GlyphSource } from '@flighthq/glyphatlas/contract';
 import { invalidateNodeLocalBounds } from '@flighthq/node/contract';
 import { getNode2DRuntime } from '@flighthq/scene2d/contract';
 import { createTexture, setTextureSource } from '@flighthq/texture/contract';
 import { addTextureAtlasRegion, createTextureAtlas } from '@flighthq/textureatlas/contract';
-import type {
-  BitmapText,
-  BitmapTextData,
-  BitmapTextPage,
-  BitmapTextRuntime,
-  GlyphEntry,
-  GlyphSource,
-  Rectangle,
-} from '@flighthq/types/contract';
 
 import { isBitmapTextGlyphLayoutStale } from './bitmapText.ts';
+import type { BitmapText, BitmapTextData, BitmapTextPage, BitmapTextRuntime } from './types.ts';
 
 // Re-lays-out `bitmapText` when, and only when, its glyph source has repacked since the last layout —
 // the pairing that keeps a dynamic atlas correct. Returns whether it re-laid-out, so a caller can count

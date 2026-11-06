@@ -1,7 +1,8 @@
+import { EntityRuntimeKey } from '@flighthq/entity/contract';
 import { createRectangle } from '@flighthq/geometry/contract';
+import type { GlyphEntry, GlyphSource } from '@flighthq/glyphatlas/contract';
+import type { ImageResource } from '@flighthq/image/contract';
 import { getNode2DRuntime } from '@flighthq/scene2d/contract';
-import type { BitmapTextRuntime, GlyphEntry, GlyphSource, ImageResource } from '@flighthq/types/contract';
-import { BitmapTextKind, EntityRuntimeKey } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import {
@@ -25,6 +26,8 @@ import {
   setBitmapTextText,
   setBitmapTextWrapWidth,
 } from './bitmapText.ts';
+import type { BitmapTextRuntime } from './types.ts';
+import { BitmapTextKind } from './types.ts';
 import { updateBitmapText } from './updateBitmapText.ts';
 
 // A single-page glyph source: A/B are 6x8, a space advances 5, and page 0 is a stub `ImageResource`.

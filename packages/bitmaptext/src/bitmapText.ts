@@ -1,7 +1,13 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
 import { copyRectangle, createRectangle, reserveFloat32Array, reserveUint16Array } from '@flighthq/geometry/contract';
+import type { Rectangle } from '@flighthq/geometry/contract';
+import type { GlyphSource } from '@flighthq/glyphatlas/contract';
+import type { BoundsNode, MethodsOf } from '@flighthq/node/contract';
 import { createNode2D, createNode2DRuntime, getNode2DRuntime } from '@flighthq/scene2d/contract';
+import type { Node2DFields } from '@flighthq/scene2d/contract';
 import { createTextureAtlas } from '@flighthq/textureatlas/contract';
+
 import type {
   BitmapText,
   BitmapTextAlign,
@@ -9,14 +15,8 @@ import type {
   BitmapTextOptions,
   BitmapTextPage,
   BitmapTextRuntime,
-  BoundsNode,
-  EntityConstruction,
-  GlyphSource,
-  MethodsOf,
-  Node2DFields,
-  Rectangle,
-} from '@flighthq/types/contract';
-import { BitmapTextKind } from '@flighthq/types/contract';
+} from './types.ts';
+import { BitmapTextKind } from './types.ts';
 
 // Two floats (x, y) per glyph quad — the vector2 (translation-only) transform stride the BitmapText
 // renderer reads. Kept internal so callers never hand-write i*2.

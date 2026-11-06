@@ -2,7 +2,7 @@ import { noopRendererData } from '@flighthq/render/contract';
 import type { RenderProxy2D } from '@flighthq/render/contract';
 import { getNode2DRuntime } from '@flighthq/scene2d/contract';
 import { TextureAtlasRotation } from '@flighthq/types/contract';
-import type { BitmapText, BitmapTextRuntime, CanvasRenderState, SpriteRenderer } from '@flighthq/types/contract';
+import type { CanvasRenderState, SpriteRenderer } from '@flighthq/types/contract';
 
 import { drawCanvasAtlasRegion } from './canvasAtlasRegion.ts';
 import { applyCanvasMaterial } from './canvasQuadMaterialRegistry.ts';
@@ -70,3 +70,4 @@ export const canvasBitmapTextRenderer: SpriteRenderer = {
   createData: noopRendererData,
   submit: drawCanvasSpriteText,
 };
+import type { BitmapText, BitmapTextRuntime } from '@flighthq/bitmaptext/contract';

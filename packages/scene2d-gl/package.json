@@ -40,6 +40,7 @@
     "clean:dist": "tsx ../../scripts/clean-package-dist.ts"
   },
   "dependencies": {
+    "@flighthq/bitmaptext": "*",
     "@flighthq/color": "*",
     "@flighthq/entity": "*",
     "@flighthq/scene2d": "*",
@@ -64,7 +65,7 @@
   },
   "devDependencies": {
     "@flighthq/bitmap": "*",
-    "@flighthq/bitmaptext": "*",
+    "@flighthq/glyphatlas": "*",
     "@flighthq/particleemitter": "*",
     "@flighthq/quadbatch": "*",
     "@flighthq/tilemap": "*",

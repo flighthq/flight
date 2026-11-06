@@ -18,4 +18,14 @@ export {
 } from './bitmapText.ts';
 export * from './enableBitmapTextGuards.ts';
 export * from './explainBitmapTextMissingGlyphs.ts';
+export type {
+  BitmapText,
+  BitmapTextAlign,
+  BitmapTextData,
+  BitmapTextMissingGlyphs,
+  BitmapTextOptions,
+  BitmapTextPage,
+  BitmapTextRuntime,
+} from './types.ts';
+export { BitmapTextKind } from './types.ts';
 export { refreshBitmapTextGlyphLayout, setBitmapTextMissingGlyphGuard, updateBitmapText } from './updateBitmapText.ts';

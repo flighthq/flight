@@ -1,4 +1,6 @@
-import type { BitmapTextMissingGlyphs, GlyphSource } from '@flighthq/types/contract';
+import type { GlyphSource } from '@flighthq/glyphatlas/contract';
+
+import type { BitmapTextMissingGlyphs } from './types.ts';
 
 export function explainBitmapTextMissingGlyphs(
   glyphSource: Readonly<GlyphSource>,

@@ -5,7 +5,7 @@ import type { RenderProxy2D } from '@flighthq/render/contract';
 import { getNode2DRuntime } from '@flighthq/scene2d/contract';
 import { getTextureHeight, getTextureWidth, hasTextureSource } from '@flighthq/texture/contract';
 import { TextureAtlasRotation } from '@flighthq/types/contract';
-import type { BitmapText, BitmapTextRuntime, GlRenderState, SpriteRenderer } from '@flighthq/types/contract';
+import type { GlRenderState, SpriteRenderer } from '@flighthq/types/contract';
 
 import {
   QUAD_BATCH_INSTANCE_FLOATS,
@@ -127,3 +127,4 @@ export const glBitmapTextRenderer: SpriteRenderer = {
 };
 
 const glyphTransform = { a: 1, b: 0, c: 0, d: 1, tx: 0, ty: 0 };
+import type { BitmapText, BitmapTextRuntime } from '@flighthq/bitmaptext/contract';

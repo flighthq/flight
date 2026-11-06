@@ -41,6 +41,7 @@
   },
   "dependencies": {
     "@flighthq/adjustments": "*",
+    "@flighthq/bitmaptext": "*",
     "@flighthq/color": "*",
     "@flighthq/entity": "*",
     "@flighthq/scene2d": "*",
@@ -68,7 +69,6 @@
     "@webgpu/types": "^0.1.70"
   },
   "devDependencies": {
-    "@flighthq/bitmaptext": "*",
     "@flighthq/particleemitter": "*",
     "@flighthq/quadbatch": "*",
     "@flighthq/textureatlas": "*",

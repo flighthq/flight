@@ -5,7 +5,6 @@ import { MorphShapeKind, Scale9ShapeKind, ShapeKind } from '@flighthq/shape/cont
 import { RichTextKind, TextLabelKind } from '@flighthq/text/contract';
 import {
   AnimatedNormalModifierKind,
-  BitmapTextKind,
   BitmapTextureSourceKind,
   BlinnPhongMaterialKind,
   CustomShaderMaterialKind,
@@ -135,3 +134,4 @@ describe('wgpuScene3DRenderPreset', () => {
     expect('pbrExtensions' in registries).toBe(false);
   });
 });
+import { BitmapTextKind } from '@flighthq/bitmaptext/contract';

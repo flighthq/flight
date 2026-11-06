@@ -20,6 +20,7 @@
       ".interaction-types",
       ".texture-types",
       ".bitmap-types",
+      ".bitmaptext-types",
       ".camera-types",
       ".image-types",
       ".node-types",
@@ -109,6 +110,9 @@
     },
     {
       "path": "../bitmap/tsconfig.contract.json"
+    },
+    {
+      "path": "../bitmaptext/tsconfig.contract.json"
     },
     {
       "path": "../image/tsconfig.contract.json"

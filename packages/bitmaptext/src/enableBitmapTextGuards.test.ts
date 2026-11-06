@@ -1,15 +1,10 @@
+import { EntityRuntimeKey } from '@flighthq/entity/contract';
+import type { HostGlyphRasterizerCapability } from '@flighthq/font/contract';
 import { createGlyphAtlas, createGlyphSourceFromGlyphAtlas } from '@flighthq/glyphatlas/contract';
+import type { GlyphAtlas, GlyphEntry, GlyphSource } from '@flighthq/glyphatlas/contract';
 import type { LogState } from '@flighthq/log/contract';
 import { createLogState, getMemoryLogSinkEntries, setLogSink } from '@flighthq/log/contract';
-import type {
-  GlyphAtlas,
-  GlyphEntry,
-  GlyphSource,
-  HostGlyphRasterizerCapability,
-  LogEntry,
-  MemoryLogSink,
-} from '@flighthq/types/contract';
-import { EntityRuntimeKey } from '@flighthq/types/contract';
+import type { LogEntry, MemoryLogSink } from '@flighthq/log/contract';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { createBitmapText } from './bitmapText.ts';

@@ -7,7 +7,6 @@ import {
 import { MorphShapeKind, Scale9ShapeKind, ShapeKind } from '@flighthq/shape/contract';
 import { RichTextKind, TextLabelKind } from '@flighthq/text/contract';
 import {
-  BitmapTextKind,
   BitmapTextureSourceKind,
   BlendMode,
   DisplayObjectKind,
@@ -109,3 +108,4 @@ describe('manual single-capability pipeline', () => {
     expect(registries.textureResolvers.size).toBe(0);
   });
 });
+import { BitmapTextKind } from '@flighthq/bitmaptext/contract';

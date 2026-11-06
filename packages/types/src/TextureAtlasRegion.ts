@@ -1,4 +1,4 @@
-import type { Entity, EntityWithoutRuntime } from './Entity.ts';
+import type { EntityRaw, EntityRuntime, EntityRuntimeKey, EntityWithoutRuntime } from '@flighthq/entity/contract';
 
 export enum TextureAtlasRotation {
   Counterclockwise90 = -1,
@@ -6,7 +6,8 @@ export enum TextureAtlasRotation {
   Clockwise90 = 1,
 }
 
-export interface TextureAtlasRegion extends Entity {
+export interface TextureAtlasRegion extends EntityRaw {
+  [EntityRuntimeKey]: EntityRuntime | undefined;
   // Packed page-rectangle extent. When rotation is not None, logical drawn width/height are
   // height/width.
   height: number;

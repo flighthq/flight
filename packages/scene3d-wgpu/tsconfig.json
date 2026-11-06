@@ -5,6 +5,9 @@
   "files": [],
   "references": [
     {
+      "path": "../bitmaptext/tsconfig.contract.json"
+    },
+    {
       "path": "../camera/tsconfig.runtime.json"
     },
     {

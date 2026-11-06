@@ -5,7 +5,6 @@ import { MorphShapeKind, Scale9ShapeKind, ShapeKind } from '@flighthq/shape/cont
 import { RichTextKind, TextLabelKind } from '@flighthq/text/contract';
 import type { Kind, WgpuRenderRegistries } from '@flighthq/types/contract';
 import {
-  BitmapTextKind,
   DisplayObjectKind,
   ParticleEmitter2DKind,
   QuadBatchKind,
@@ -66,3 +65,4 @@ export const wgpuScene2DRenderPreset: Readonly<WgpuRenderRegistries> = Object.fr
   ...wgpuRenderInfrastructure,
   nodeRenderers: buildScene2dWgpuRenderers(),
 });
+import { BitmapTextKind } from '@flighthq/bitmaptext/contract';

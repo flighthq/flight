@@ -21,6 +21,9 @@
       "path": "../geometry/tsconfig.runtime.json"
     },
     {
+      "path": "../glyphatlas/tsconfig.contract.json"
+    },
+    {
       "path": "../image/tsconfig.runtime.json"
     },
     {

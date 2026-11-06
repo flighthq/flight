@@ -17,6 +17,7 @@
     { "path": "../scene2d/tsconfig.runtime.json" },
     { "path": "../scene2d-canvas" },
     { "path": "../geometry/tsconfig.runtime.json" },
+    { "path": "../glyphatlas/tsconfig.contract.json" },
     { "path": "../image/tsconfig.runtime.json" },
     { "path": "../log" },
     { "path": "../node/tsconfig.runtime.json" },

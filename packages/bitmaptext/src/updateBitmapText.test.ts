@@ -4,16 +4,9 @@ import {
   allocateStubGlyphRasterizerBackend,
   getGlyphAtlasBitmap,
 } from '@flighthq/glyphatlas/contract';
+import type { GlyphAtlas, GlyphEntry, GlyphSource } from '@flighthq/glyphatlas/contract';
+import type { ImageResource } from '@flighthq/image/contract';
 import { getTextureSource } from '@flighthq/texture/contract';
-import type {
-  Bitmap,
-  GlyphAtlas,
-  GlyphEntry,
-  HostGlyphRasterizerCapability,
-  GlyphSource,
-  ImageResource,
-} from '@flighthq/types/contract';
-import { EntityRuntimeKey } from '@flighthq/types/contract';
 import { afterEach, describe, expect, it } from 'vitest';
 
 import {
@@ -577,3 +570,6 @@ describe('updateBitmapText', () => {
 // Where the mid-layout relocation moves 'A' to — distinct from every rect the source starts with, so
 // a region carrying it can only have come from a pass that ran AFTER the move.
 const RELOCATED_GLYPH_X = 17;
+import type { Bitmap } from '@flighthq/bitmap/contract';
+import { EntityRuntimeKey } from '@flighthq/entity/contract';
+import type { HostGlyphRasterizerCapability } from '@flighthq/font/contract';

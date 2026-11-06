@@ -1,12 +1,14 @@
+import type { BitmapText } from '@flighthq/bitmaptext/contract';
 import { createBitmapText, updateBitmapText } from '@flighthq/bitmaptext/contract';
+import { EntityRuntimeKey } from '@flighthq/entity/contract';
+import type { GlyphEntry, GlyphSource } from '@flighthq/glyphatlas/contract';
 import {
   createImageResource,
   registerTestImageDimensionResolver,
   unregisterTestImageDimensionResolver,
 } from '@flighthq/image/contract';
+import type { ImageResource } from '@flighthq/image/contract';
 import type { RenderProxy2D } from '@flighthq/render/contract';
-import type { BitmapText, GlyphEntry, GlyphSource, ImageResource } from '@flighthq/types/contract';
-import { EntityRuntimeKey } from '@flighthq/types/contract';
 import { vi } from 'vitest';
 
 import { canvasBitmapTextRenderer, drawCanvasSpriteText } from './canvasBitmapText.ts';

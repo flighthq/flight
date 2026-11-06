@@ -17,6 +17,7 @@
     { "path": "../color" },
     { "path": "../entity" },
     { "path": "../geometry/tsconfig.runtime.json" },
+    { "path": "../glyphatlas/tsconfig.contract.json" },
     { "path": "../image/tsconfig.runtime.json" },
     { "path": "../log" },
     { "path": "../node/tsconfig.runtime.json" },

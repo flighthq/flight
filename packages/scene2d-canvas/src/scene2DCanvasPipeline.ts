@@ -4,7 +4,6 @@ import { MorphShapeKind, Scale9ShapeKind, ShapeKind } from '@flighthq/shape/cont
 import { RichTextKind, TextLabelKind } from '@flighthq/text/contract';
 import type { CanvasRenderRegistries, Kind } from '@flighthq/types/contract';
 import {
-  BitmapTextKind,
   DisplayObjectKind,
   ParticleEmitter2DKind,
   QuadBatchKind,
@@ -71,3 +70,4 @@ export const canvasScene2DRenderPreset: Readonly<CanvasRenderRegistries> = Objec
   ...canvasRenderInfrastructure,
   nodeRenderers: buildScene2dCanvasRenderers(),
 });
+import { BitmapTextKind } from '@flighthq/bitmaptext/contract';

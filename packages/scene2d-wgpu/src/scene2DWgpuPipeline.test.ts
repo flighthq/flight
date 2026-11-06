@@ -2,7 +2,6 @@ import { buildWgpuRenderRegistries } from '@flighthq/render-wgpu/contract';
 import { MorphShapeKind, Scale9ShapeKind, ShapeKind } from '@flighthq/shape/contract';
 import { RichTextKind, TextLabelKind } from '@flighthq/text/contract';
 import {
-  BitmapTextKind,
   DisplayObjectKind,
   ParticleEmitter2DKind,
   QuadBatchKind,
@@ -55,3 +54,4 @@ describe('wgpuScene2DRenderPreset', () => {
     expect(Object.isFrozen(wgpuScene2DRenderPreset)).toBe(true);
   });
 });
+import { BitmapTextKind } from '@flighthq/bitmaptext/contract';

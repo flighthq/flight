@@ -1,8 +1,10 @@
-import type { Entity } from './Entity.ts';
-import type { Texture2D } from './Texture.ts';
+import type { EntityRaw, EntityRuntime, EntityRuntimeKey } from '@flighthq/entity/contract';
+import type { Texture2D } from '@flighthq/texture/contract';
+
 import type { TextureAtlasRegion } from './TextureAtlasRegion.ts';
 
-export interface TextureAtlas extends Entity {
+export interface TextureAtlas extends EntityRaw {
+  [EntityRuntimeKey]: EntityRuntime | undefined;
   // Page metadata the descriptor formats carry and a consumer needs after parsing: the image file to
   // fetch, and the dimensions getTextureAtlasRegionUv divides by. Zero width or height means the
   // document declared none — Starling XML carries no atlas metadata at all — and is deliberately not

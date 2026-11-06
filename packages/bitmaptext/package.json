@@ -42,6 +42,7 @@
   "dependencies": {
     "@flighthq/entity": "*",
     "@flighthq/geometry": "*",
+    "@flighthq/glyphatlas": "*",
     "@flighthq/log": "*",
     "@flighthq/node": "*",
     "@flighthq/scene2d": "*",
@@ -50,7 +51,9 @@
     "@flighthq/types": "*"
   },
   "devDependencies": {
-    "@flighthq/glyphatlas": "*",
+    "@flighthq/bitmap": "*",
+    "@flighthq/font": "*",
+    "@flighthq/image": "*",
     "typescript": "^7.0.2"
   },
   "description": "QuadBatch-backed bitmap text display node laying out glyphs from a GlyphSource",
