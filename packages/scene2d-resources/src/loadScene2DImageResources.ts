@@ -3,7 +3,7 @@ import { resolveImageResourceReference } from '@flighthq/image/contract';
 import type { ImageResourceFetch, ImageResourceReference } from '@flighthq/image/contract';
 import { emitSignal } from '@flighthq/signals/contract';
 import { setTextureSource } from '@flighthq/texture/contract';
-import type { TextureSource } from '@flighthq/types/contract';
+import type { TextureSource } from '@flighthq/texture/contract';
 
 import { reportScene2DResourceFailure } from './scene2DResourceDiagnostics.ts';
 import type { Scene2DDocument } from './types/Scene2DDocument.ts';

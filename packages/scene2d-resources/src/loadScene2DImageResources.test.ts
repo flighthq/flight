@@ -2,11 +2,12 @@ import type { HostImageDecodeCapabilities, HostImageDecodeFormatCapability } fro
 // @vitest-environment jsdom
 import { createEmbeddedImageResourceReference, createExternalImageResourceReference } from '@flighthq/image/contract';
 import type { ImageResourceReference } from '@flighthq/image/contract';
+import type { ImageResource } from '@flighthq/image/contract';
+import { ResourceResolutionState } from '@flighthq/resource/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
 import { connectSignal, createSignal } from '@flighthq/signals/contract';
 import { createTexture, getTextureSource } from '@flighthq/texture/contract';
-import type { ImageResource } from '@flighthq/types/contract';
-import { BitmapTextureSourceKind, ResourceResolutionState } from '@flighthq/types/contract';
+import { BitmapTextureSourceKind } from '@flighthq/texture/contract';
 
 import { loadScene2DImageResources } from './loadScene2DImageResources.ts';
 import { createScene2DDocument } from './scene2DDocument.ts';

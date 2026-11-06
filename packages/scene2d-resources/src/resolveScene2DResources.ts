@@ -1,4 +1,4 @@
-import type { Scene2DSlotReference } from '@flighthq/types/contract';
+import type { Scene2DSlotReference } from '@flighthq/scene2d/contract';
 
 import { reportScene2DResourceFailure } from './scene2DResourceDiagnostics.ts';
 import { setScene2DSlotReferenceContent } from './scene2DSlotReference.ts';

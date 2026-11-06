@@ -1,4 +1,4 @@
-import { ResourceResolutionState } from '@flighthq/types/contract';
+import { ResourceResolutionState } from '@flighthq/resource/contract';
 
 import type { Scene2DDocument } from './types/Scene2DDocument.ts';
 import type {

@@ -1,4 +1,4 @@
-import type { NonEntityCreateResult } from '@flighthq/types/contract';
+import type { NonEntityCreateResult } from '@flighthq/entity/contract';
 
 import { reportScene2DResourceFailure } from './scene2DResourceDiagnostics.ts';
 import type { Scene2DDocument } from './types/Scene2DDocument.ts';

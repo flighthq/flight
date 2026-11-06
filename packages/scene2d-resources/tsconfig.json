@@ -35,7 +35,10 @@
       "path": "../texture/tsconfig.runtime.json"
     },
     {
-      "path": "../types"
+      "path": "../importdiagnostics"
+    },
+    {
+      "path": "../resource"
     },
     {
       "path": "./tsconfig.contract.json"

@@ -1,7 +1,7 @@
 import { createEmbeddedAudioResourceReference } from '@flighthq/audio/contract';
+import { EntityRuntimeKey } from '@flighthq/entity/contract';
 import { createEmbeddedImageResourceReference } from '@flighthq/image/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
-import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import {
   createScene2DDocument,

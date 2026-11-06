@@ -1,6 +1,6 @@
 import type { LogState } from '@flighthq/log/contract';
 import { logOnce } from '@flighthq/log/contract';
-import { LogLevel } from '@flighthq/types/contract';
+import { LogLevel } from '@flighthq/log/contract';
 
 import { setScene2DResourceFailureGuard } from './scene2DResourceDiagnostics.ts';
 import type { Scene2DResourceFailureNotice } from './types/Scene2DResources.ts';

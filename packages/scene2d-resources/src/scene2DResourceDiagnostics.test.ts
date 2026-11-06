@@ -1,7 +1,7 @@
 import { createExternalAudioResourceReference } from '@flighthq/audio/contract';
 import { createExternalImageResourceReference } from '@flighthq/image/contract';
+import { ResourceResolutionState } from '@flighthq/resource/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
-import { ResourceResolutionState } from '@flighthq/types/contract';
 
 import { loadScene2DAudioResources } from './loadScene2DAudioResources.ts';
 import { loadScene2DImageResources } from './loadScene2DImageResources.ts';

@@ -44,13 +44,15 @@
     "@flighthq/entity": "*",
     "@flighthq/image": "*",
     "@flighthq/image-codec": "*",
+    "@flighthq/importdiagnostics": "*",
     "@flighthq/log": "*",
     "@flighthq/node": "*",
+    "@flighthq/path-boolean": "*",
+    "@flighthq/resource": "*",
     "@flighthq/scene2d": "*",
     "@flighthq/scene2d-formats": "*",
     "@flighthq/signals": "*",
-    "@flighthq/texture": "*",
-    "@flighthq/types": "*"
+    "@flighthq/texture": "*"
   },
   "devDependencies": {
     "@flighthq/path-boolean": "*",

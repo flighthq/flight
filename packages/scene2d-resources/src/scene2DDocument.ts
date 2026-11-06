@@ -1,7 +1,8 @@
 import type { AudioResourceReference } from '@flighthq/audio/contract';
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
 import type { ImageResourceReference } from '@flighthq/image/contract';
-import type { EntityConstruction, Node2D, Scene2DSlotReference } from '@flighthq/types/contract';
+import type { Node2D, Scene2DSlotReference } from '@flighthq/scene2d/contract';
 
 import type { Scene2DDocument } from './types/Scene2DDocument.ts';
 

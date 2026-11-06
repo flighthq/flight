@@ -4,10 +4,10 @@ import {
   createExternalAudioResourceReference,
 } from '@flighthq/audio/contract';
 import type { AudioResourceFetch } from '@flighthq/audio/contract';
+import type { HostAudioDecodeCapabilities } from '@flighthq/audio/contract';
+import { ResourceResolutionState } from '@flighthq/resource/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
 import { connectSignal, createSignal } from '@flighthq/signals/contract';
-import type { HostAudioDecodeCapabilities } from '@flighthq/types/contract';
-import { ResourceResolutionState } from '@flighthq/types/contract';
 
 import { loadScene2DAudioResources } from './loadScene2DAudioResources.ts';
 import { createScene2DDocument } from './scene2DDocument.ts';

@@ -1,10 +1,11 @@
+import type { ImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import { ImportDiagnosticSeverity } from '@flighthq/importdiagnostics/contract';
+import type { PathBooleanKernel } from '@flighthq/path-boolean/contract';
 import {
   createScene2DDocumentFromRiveDocument,
   createScene2DFromLottieDocument,
   createScene2DFromSvgDocument,
 } from '@flighthq/scene2d-formats/contract';
-import type { PathBooleanKernel, ImportDiagnostic } from '@flighthq/types/contract';
-import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
 import { createScene2DDocument } from './scene2DDocument.ts';
 import { registerScene2DDocumentImporter } from './scene2DDocumentImporterRegistry.ts';
