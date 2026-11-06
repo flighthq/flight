@@ -1,33 +1,30 @@
+import type { HostBitmapEncodeCapability, HostBitmapReadbackCapability } from '@flighthq/bitmap/contract';
+import type { HostClipboardFormatsCapability } from '@flighthq/clipboard/contract';
+import type { HostDeviceCapability } from '@flighthq/device/contract';
+import type { HostFileSystemCapability } from '@flighthq/filesystem/contract';
+import type { HostFontLoadingCapability, HostGlyphRasterizerCapability } from '@flighthq/font/contract';
 import type { HostGeolocationCapability } from '@flighthq/geolocation/contract';
+import type { HostHapticsCapability } from '@flighthq/haptics/contract';
+import type { HostImageCapability } from '@flighthq/image/contract';
+import type { HostInputIngressCapability } from '@flighthq/input/contract';
 import type { HostSoftKeyboardInfoCapability } from '@flighthq/keyboard/contract';
+import type { HostLifecycleCapability } from '@flighthq/lifecycle/contract';
+import type { HostAudioDeviceCapability, HostAudioMixerCapability } from '@flighthq/media/contract';
+import type { HostNetCapability } from '@flighthq/net/contract';
+import type { HostNotificationPermissionCapability } from '@flighthq/notification/contract';
 import type { HostPlatformCapability } from '@flighthq/platform/contract';
-import type { HostWgpuCapability } from '@flighthq/surface/contract';
-import type { HostTextShaperCapability } from '@flighthq/textshaper/contract';
+import type { HostPowerKeepAwakeCapability } from '@flighthq/power/contract';
 import type {
-  Host,
-  HostAudioDeviceCapability,
-  HostAudioMixerCapability,
-  HostBitmapEncodeCapability,
-  HostBitmapReadbackCapability,
-  HostClipboardFormatsCapability,
-  HostDeviceCapability,
-  HostFileSystemCapability,
-  HostFontLoadingCapability,
-  HostGlyphRasterizerCapability,
-  HostHapticsCapability,
-  HostImageCapability,
-  HostInputIngressCapability,
-  HostLifecycleCapability,
-  HostNetCapability,
-  HostNotificationPermissionCapability,
-  HostPowerKeepAwakeCapability,
   HostPreferencesCapability,
-  HostScreenQueryCapability,
-  HostSensorsCapability,
-  HostSocketCapability,
   HostPreferencesPersistenceQueryCapability,
-  HostTextSegmenterCapability,
-} from '@flighthq/types/contract';
+} from '@flighthq/preferences/contract';
+import type { HostScreenQueryCapability } from '@flighthq/screen/contract';
+import type { HostSensorsCapability } from '@flighthq/sensors/contract';
+import type { HostSocketCapability } from '@flighthq/socket/contract';
+import type { HostWgpuCapability } from '@flighthq/surface/contract';
+import type { HostTextSegmenterCapability } from '@flighthq/textsegment/contract';
+import type { HostTextShaperCapability } from '@flighthq/textshaper/contract';
+import type { Host } from '@flighthq/types/contract';
 import type { HostVideoCapability } from '@flighthq/video/contract';
 
 // Typed accessors for the capability slots a Flight package actually takes as a function parameter. Each

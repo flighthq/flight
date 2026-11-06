@@ -77,6 +77,39 @@
       "path": "../textsegment/tsconfig.contract.json"
     },
     {
+      "path": "../clipboard/tsconfig.contract.json"
+    },
+    {
+      "path": "../device/tsconfig.contract.json"
+    },
+    {
+      "path": "../haptics"
+    },
+    {
+      "path": "../input"
+    },
+    {
+      "path": "../lifecycle/tsconfig.contract.json"
+    },
+    {
+      "path": "../media/tsconfig.contract.json"
+    },
+    {
+      "path": "../net/tsconfig.contract.json"
+    },
+    {
+      "path": "../power/tsconfig.contract.json"
+    },
+    {
+      "path": "../preferences/tsconfig.contract.json"
+    },
+    {
+      "path": "../sensors/tsconfig.contract.json"
+    },
+    {
+      "path": "../socket/tsconfig.contract.json"
+    },
+    {
       "path": "./tsconfig.contract.json"
     },
     {

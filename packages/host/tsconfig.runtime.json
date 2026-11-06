@@ -7,7 +7,41 @@
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,
-    "moduleSuffixes": [".keyboard-types", ".platform-types", ".video-types", ".textshaper-types", ".surface-types", ""],
+    "moduleSuffixes": [
+      ".app-types",
+      ".audio-types",
+      ".bitmap-types",
+      ".clipboard-types",
+      ".connectivity-types",
+      ".device-types",
+      ".font-types",
+      ".geometry-types",
+      ".image-types",
+      ".keyboard-types",
+      ".lifecycle-types",
+      ".media-types",
+      ".menu-types",
+      ".midi-types",
+      ".net-types",
+      ".notification-types",
+      ".path-types",
+      ".permissions-types",
+      ".platform-types",
+      ".power-types",
+      ".preferences-types",
+      ".protocol-types",
+      ".screen-types",
+      ".sensors-types",
+      ".socket-types",
+      ".surface-types",
+      ".textsegment-types",
+      ".textshaper-types",
+      ".texture-formats-types",
+      ".texture-types",
+      ".updater-types",
+      ".video-types",
+      ""
+    ],
     "tsBuildInfoFile": "dist/.tsbuildinfo.runtime"
   },
   "references": [
@@ -37,6 +71,117 @@
     },
     {
       "path": "../video/tsconfig.contract.json"
+    },
+    {
+      "path": "../app/tsconfig.contract.json"
+    },
+    {
+      "path": "../audio/tsconfig.contract.json"
+    },
+    {
+      "path": "../bitmap/tsconfig.contract.json"
+    },
+    {
+      "path": "../clipboard/tsconfig.contract.json"
+    },
+    {
+      "path": "../compression"
+    },
+    {
+      "path": "../connectivity/tsconfig.contract.json"
+    },
+    {
+      "path": "../device/tsconfig.contract.json"
+    },
+    {
+      "path": "../dialog"
+    },
+    {
+      "path": "../filesystem"
+    },
+    {
+      "path": "../font/tsconfig.contract.json"
+    },
+    {
+      "path": "../geometry/tsconfig.contract.json"
+    },
+    {
+      "path": "../haptics"
+    },
+    {
+      "path": "../image-codec"
+    },
+    {
+      "path": "../image/tsconfig.contract.json"
+    },
+    {
+      "path": "../input"
+    },
+    {
+      "path": "../lifecycle/tsconfig.contract.json"
+    },
+    {
+      "path": "../media/tsconfig.contract.json"
+    },
+    {
+      "path": "../menu/tsconfig.contract.json"
+    },
+    {
+      "path": "../midi/tsconfig.contract.json"
+    },
+    {
+      "path": "../net/tsconfig.contract.json"
+    },
+    {
+      "path": "../notification/tsconfig.contract.json"
+    },
+    {
+      "path": "../path/tsconfig.contract.json"
+    },
+    {
+      "path": "../permissions/tsconfig.contract.json"
+    },
+    {
+      "path": "../power/tsconfig.contract.json"
+    },
+    {
+      "path": "../preferences/tsconfig.contract.json"
+    },
+    {
+      "path": "../protocol/tsconfig.contract.json"
+    },
+    {
+      "path": "../resource"
+    },
+    {
+      "path": "../screen/tsconfig.contract.json"
+    },
+    {
+      "path": "../sensors/tsconfig.contract.json"
+    },
+    {
+      "path": "../share"
+    },
+    {
+      "path": "../signals"
+    },
+    {
+      "path": "../socket/tsconfig.contract.json"
+    },
+    {
+      "path": "../textsegment/tsconfig.contract.json"
+    },
+    {
+      "path": "../texture-formats/tsconfig.contract.json"
+    },
+    {
+      "path": "../texture/tsconfig.contract.json"
+    },
+    {
+      "path": "../updater/tsconfig.contract.json"
+    },
+    {
+      "path": "../useragent"
     },
     {
       "path": "./tsconfig.contract.json"
