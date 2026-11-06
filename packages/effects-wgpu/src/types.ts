@@ -1,6 +1,18 @@
 import type { ColorLut, ColorLutCache } from '@flighthq/adjustments/contract';
 import type { EffectStateOptions } from '@flighthq/effects/contract';
+import type { Entity } from '@flighthq/entity/contract';
 import type { WgpuRenderState, WgpuRenderTargetPool, WgpuTextureRenderTarget } from '@flighthq/render-wgpu/contract';
+
+export type WgpuEffectBlendMode = 'premul' | 'replace' | 'erase';
+
+export type WgpuEffectPipeline = Entity & {
+  pipeline: GPURenderPipeline;
+  blendMode: WgpuEffectBlendMode;
+  compileForFormat?: (format: GPUTextureFormat) => GPURenderPipeline;
+  variants?: Map<GPUTextureFormat, GPURenderPipeline>;
+};
+
+export type WgpuDualSourceEffectPipeline = WgpuEffectPipeline;
 
 // GPU-upload memo for the fused color LUT on WebGPU: the uploaded `size³` 3D texture, the axis `size` it
 // was created at (the texture is recreated when size changes), and the ColorLut reference last written

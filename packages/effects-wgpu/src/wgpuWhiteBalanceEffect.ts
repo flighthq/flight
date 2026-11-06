@@ -1,9 +1,5 @@
-import type {
-  WgpuEffectRunner,
-  WgpuRenderState,
-  WgpuTextureRenderTarget,
-  WhiteBalanceEffect,
-} from '@flighthq/types/contract';
+import type { WhiteBalanceEffect } from '@flighthq/effects/contract';
+import type { WgpuEffectRunner, WgpuRenderState, WgpuTextureRenderTarget } from '@flighthq/render-wgpu/contract';
 
 import { drawWgpuEffectPass } from './wgpuEffectPass.ts';
 import { getWgpuEffectPipeline } from './wgpuEffectProgramCache.ts';

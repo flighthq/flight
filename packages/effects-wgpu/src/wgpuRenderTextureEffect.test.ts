@@ -1,4 +1,5 @@
 import { createBlurEffect } from '@flighthq/effects/contract';
+import type { Effect } from '@flighthq/effects/contract';
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import {
   acquireWgpuRenderTexture,
@@ -12,7 +13,7 @@ import {
   isWgpuRenderTextureReady,
   writeWgpuRenderTextureTarget,
 } from '@flighthq/render-wgpu/contract';
-import type { Effect, WgpuEffectRunner } from '@flighthq/types/contract';
+import type { WgpuEffectRunner } from '@flighthq/render-wgpu/contract';
 
 import { wgpuBlurEffectRunner } from './wgpuBlurEffect.ts';
 import { getWgpuEffectRunner, registerWgpuEffect } from './wgpuEffectRegistry.ts';

@@ -1,18 +1,12 @@
 import { ImageChannel } from '@flighthq/bitmap/contract';
+import type { BitmapDisplacementEffect, Effect } from '@flighthq/effects/contract';
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
 import { getWgpuSampler, resolveWgpuTexture } from '@flighthq/render-wgpu/contract';
-import type {
-  BitmapDisplacementEffect,
-  EntityConstruction,
-  Effect,
-  Sampler,
-  TextureFilter,
-  WgpuEffectPipeline,
-  WgpuEffectRunner,
-  WgpuRenderState,
-  WgpuTextureRenderTarget,
-} from '@flighthq/types/contract';
+import type { WgpuEffectRunner, WgpuRenderState, WgpuTextureRenderTarget } from '@flighthq/render-wgpu/contract';
+import type { Sampler, TextureFilter } from '@flighthq/texture/contract';
 
+import type { WgpuEffectPipeline } from './types.ts';
 import { drawWgpuEffectPass, EFFECT_VERTEX_WGSL, getWgpuEffectPassState } from './wgpuEffectPass.ts';
 import { getWgpuEffectPipeline } from './wgpuEffectProgramCache.ts';
 import { registerWgpuEffect } from './wgpuEffectRegistry.ts';

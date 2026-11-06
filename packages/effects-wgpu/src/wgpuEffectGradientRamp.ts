@@ -1,4 +1,4 @@
-import type { WgpuRenderState } from '@flighthq/types/contract';
+import type { WgpuRenderState } from '@flighthq/render-wgpu/contract';
 
 /**
  * Returns a cached 256-entry RGBA gradient ramp texture for the given stops,

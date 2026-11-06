@@ -1,3 +1,4 @@
+import type { Effect } from '@flighthq/effects/contract';
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { LogState } from '@flighthq/log/contract';
 import {
@@ -7,6 +8,7 @@ import {
   getMemoryLogSinkEntries,
   removeLogSink,
 } from '@flighthq/log/contract';
+import type { LogEntry, MemoryLogSink } from '@flighthq/log/contract';
 import {
   acquireWgpuRenderTexture,
   beginWgpuFrame,
@@ -17,7 +19,7 @@ import {
   installWgpuMock,
   writeWgpuRenderTextureTarget,
 } from '@flighthq/render-wgpu/contract';
-import type { Effect, LogEntry, MemoryLogSink, WgpuEffectRunner, WgpuRenderState } from '@flighthq/types/contract';
+import type { WgpuEffectRunner, WgpuRenderState } from '@flighthq/render-wgpu/contract';
 
 import {
   areWgpuEffectGuardsEnabled,

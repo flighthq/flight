@@ -1,1 +1,2 @@
-export type WgpuEffectBlendMode = 'premul' | 'replace' | 'erase';
+/** @deprecated Import `WgpuEffectBlendMode` from `@flighthq/effects-wgpu/contract`. */
+export type { WgpuEffectBlendMode } from '@flighthq/effects-wgpu/contract';

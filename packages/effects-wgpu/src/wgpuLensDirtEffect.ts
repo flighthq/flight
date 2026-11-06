@@ -1,13 +1,13 @@
+import type { LensDirtEffect } from '@flighthq/effects/contract';
 import { acquireWgpuTextureRenderTarget, releaseWgpuTextureRenderTarget } from '@flighthq/render-wgpu/contract';
 import type {
-  LensDirtEffect,
-  WgpuDualSourceEffectPipeline,
   WgpuEffectRunner,
   WgpuRenderState,
   WgpuTextureRenderTarget,
   WgpuRenderTargetPool,
-} from '@flighthq/types/contract';
+} from '@flighthq/render-wgpu/contract';
 
+import type { WgpuDualSourceEffectPipeline } from './types.ts';
 import { applyGaussianBlurToWgpu } from './wgpuBlurEffect.ts';
 import {
   createWgpuDualSourceEffectPipeline,

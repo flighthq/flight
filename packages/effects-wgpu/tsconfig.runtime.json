@@ -21,7 +21,7 @@
     { "path": "../render/tsconfig.runtime.json" },
     { "path": "../render-wgpu/tsconfig.runtime.json" },
     { "path": "../registry" },
-    { "path": "../types" },
+    { "path": "../texture/tsconfig.runtime.json" },
     { "path": "./tsconfig.contract.json" }
   ],
   "include": ["src/**/*.ts"],

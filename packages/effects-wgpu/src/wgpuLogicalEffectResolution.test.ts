@@ -13,8 +13,8 @@ import {
   createSsaoEffect,
   createTiltShiftEffect,
 } from '@flighthq/effects/contract';
-import type { WgpuRenderState, WgpuTextureRenderTarget } from '@flighthq/types/contract';
-import { EntityRuntimeKey } from '@flighthq/types/contract';
+import { EntityRuntimeKey } from '@flighthq/entity/contract';
+import type { WgpuRenderState, WgpuTextureRenderTarget } from '@flighthq/render-wgpu/contract';
 
 import * as wgpuEffectPassModule from './wgpuEffectPass.ts';
 import * as wgpuEffectProgramCacheModule from './wgpuEffectProgramCache.ts';

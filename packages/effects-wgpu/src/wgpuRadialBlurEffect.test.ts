@@ -1,6 +1,7 @@
 import { createRadialBlurEffect } from '@flighthq/effects/contract';
+import type { RadialBlurEffect } from '@flighthq/effects/contract';
 import { createWgpuRenderStateForTest, installWgpuMock } from '@flighthq/render-wgpu/contract';
-import type { RadialBlurEffect, WgpuRenderState, WgpuTextureRenderTarget } from '@flighthq/types/contract';
+import type { WgpuRenderState, WgpuTextureRenderTarget } from '@flighthq/render-wgpu/contract';
 
 import * as wgpuEffectPassModule from './wgpuEffectPass.ts';
 import * as wgpuEffectProgramCacheModule from './wgpuEffectProgramCache.ts';

@@ -1,11 +1,7 @@
-import type {
-  MotionBlurEffect,
-  WgpuEffectRunner,
-  WgpuRenderState,
-  WgpuTextureRenderTarget,
-} from '@flighthq/types/contract';
-import type { WgpuDualSourceEffectPipeline } from '@flighthq/types/contract';
+import type { MotionBlurEffect } from '@flighthq/effects/contract';
+import type { WgpuEffectRunner, WgpuRenderState, WgpuTextureRenderTarget } from '@flighthq/render-wgpu/contract';
 
+import type { WgpuDualSourceEffectPipeline } from './types.ts';
 import { createWgpuDualSourceEffectPipeline, drawWgpuDualSourceEffectPass } from './wgpuEffectPass.ts';
 import { registerWgpuEffect } from './wgpuEffectRegistry.ts';
 import { getWgpuEffectLogicalResolution } from './wgpuEffectTexelScale.ts';

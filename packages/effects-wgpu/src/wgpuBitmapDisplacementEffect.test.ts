@@ -1,13 +1,10 @@
 import { ImageChannel } from '@flighthq/bitmap/contract';
 import { createBitmapDisplacementEffect } from '@flighthq/effects/contract';
+import type { BitmapDisplacementEffect } from '@flighthq/effects/contract';
 import * as renderWgpuContract from '@flighthq/render-wgpu/contract';
 import { createWgpuRenderStateForTest, installWgpuMock } from '@flighthq/render-wgpu/contract';
-import type {
-  BitmapDisplacementEffect,
-  Texture2D,
-  WgpuRenderState,
-  WgpuTextureRenderTarget,
-} from '@flighthq/types/contract';
+import type { WgpuRenderState, WgpuTextureRenderTarget } from '@flighthq/render-wgpu/contract';
+import type { Texture2D } from '@flighthq/texture/contract';
 
 import {
   BITMAP_DISPLACEMENT_FRAGMENT_WGSL,

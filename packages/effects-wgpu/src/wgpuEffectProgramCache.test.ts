@@ -1,4 +1,4 @@
-import type { WgpuRenderState } from '@flighthq/types/contract';
+import type { WgpuRenderState } from '@flighthq/render-wgpu/contract';
 
 import * as wgpuEffectPassMod from './wgpuEffectPass.ts';
 import { getWgpuEffectPipeline } from './wgpuEffectProgramCache.ts';

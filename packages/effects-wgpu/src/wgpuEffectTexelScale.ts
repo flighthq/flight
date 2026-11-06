@@ -1,5 +1,5 @@
 import { getWgpuActiveRenderPass } from '@flighthq/render-wgpu/contract';
-import type { WgpuRenderState, WgpuTextureRenderTarget } from '@flighthq/types/contract';
+import type { WgpuRenderState, WgpuTextureRenderTarget } from '@flighthq/render-wgpu/contract';
 
 interface WgpuEffectLogicalResolution {
   readonly height: number;

@@ -1,14 +1,14 @@
+import type { GradientBevelEffect } from '@flighthq/effects/contract';
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { acquireWgpuTextureRenderTarget, releaseWgpuTextureRenderTarget } from '@flighthq/render-wgpu/contract';
 import type {
-  GradientBevelEffect,
   WgpuEffectRunner,
   WgpuRenderState,
   WgpuTextureRenderTarget,
   WgpuRenderTargetPool,
-} from '@flighthq/types/contract';
-import type { WgpuEffectPipeline } from '@flighthq/types/contract';
+} from '@flighthq/render-wgpu/contract';
 
+import type { WgpuEffectPipeline } from './types.ts';
 import { initializeWgpuEffectPipeline } from './wgpuBitmapDisplacementEffect.ts';
 import { applyWgpuEffectBlitPass, applyWgpuEffectErasePass } from './wgpuEffectBlitShader.ts';
 import { applyWgpuEffectBoxBlur } from './wgpuEffectBoxBlur.ts';

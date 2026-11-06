@@ -1,11 +1,11 @@
+import type { DropShadowEffect } from '@flighthq/effects/contract';
 import { acquireWgpuTextureRenderTarget, releaseWgpuTextureRenderTarget } from '@flighthq/render-wgpu/contract';
 import type {
-  DropShadowEffect,
   WgpuEffectRunner,
   WgpuRenderState,
   WgpuTextureRenderTarget,
   WgpuRenderTargetPool,
-} from '@flighthq/types/contract';
+} from '@flighthq/render-wgpu/contract';
 
 import {
   applyWgpuEffectBlitOffsetPass,

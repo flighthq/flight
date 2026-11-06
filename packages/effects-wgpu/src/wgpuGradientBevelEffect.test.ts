@@ -1,12 +1,8 @@
 import { createGradientBevelEffect } from '@flighthq/effects/contract';
+import type { GradientBevelEffect } from '@flighthq/effects/contract';
 import * as renderWgpuContractModule from '@flighthq/render-wgpu/contract';
 import { createWgpuRenderStateForTest, installWgpuMock } from '@flighthq/render-wgpu/contract';
-import type {
-  GradientBevelEffect,
-  WgpuRenderState,
-  WgpuTextureRenderTarget,
-  WgpuRenderTargetPool,
-} from '@flighthq/types/contract';
+import type { WgpuRenderState, WgpuTextureRenderTarget, WgpuRenderTargetPool } from '@flighthq/render-wgpu/contract';
 
 import * as wgpuEffectBlitShaderModule from './wgpuEffectBlitShader.ts';
 import * as wgpuEffectBoxBlurModule from './wgpuEffectBoxBlur.ts';

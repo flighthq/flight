@@ -1,6 +1,6 @@
+import { EntityRuntimeKey } from '@flighthq/entity/contract';
 import * as renderWgpuContract from '@flighthq/render-wgpu/contract';
-import type { WgpuRenderState, WgpuTextureRenderTarget } from '@flighthq/types/contract';
-import { EntityRuntimeKey } from '@flighthq/types/contract';
+import type { WgpuRenderState, WgpuTextureRenderTarget } from '@flighthq/render-wgpu/contract';
 
 import {
   EFFECT_VERTEX_WGSL,

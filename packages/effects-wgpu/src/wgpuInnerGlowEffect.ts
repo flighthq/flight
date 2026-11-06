@@ -1,12 +1,12 @@
 import { unpackColorRgba } from '@flighthq/color/contract';
+import type { InnerGlowEffect } from '@flighthq/effects/contract';
 import { acquireWgpuTextureRenderTarget, releaseWgpuTextureRenderTarget } from '@flighthq/render-wgpu/contract';
 import type {
-  InnerGlowEffect,
   WgpuEffectRunner,
   WgpuRenderState,
   WgpuTextureRenderTarget,
   WgpuRenderTargetPool,
-} from '@flighthq/types/contract';
+} from '@flighthq/render-wgpu/contract';
 
 import { applyWgpuEffectBlitPass } from './wgpuEffectBlitShader.ts';
 import { applyWgpuEffectBoxBlur } from './wgpuEffectBoxBlur.ts';

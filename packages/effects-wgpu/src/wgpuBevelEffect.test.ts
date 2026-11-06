@@ -1,12 +1,8 @@
 import { createBevelEffect } from '@flighthq/effects/contract';
+import type { BevelEffect } from '@flighthq/effects/contract';
 import * as renderWgpuContractModule from '@flighthq/render-wgpu/contract';
 import { createWgpuRenderStateForTest, installWgpuMock } from '@flighthq/render-wgpu/contract';
-import type {
-  BevelEffect,
-  WgpuRenderState,
-  WgpuTextureRenderTarget,
-  WgpuRenderTargetPool,
-} from '@flighthq/types/contract';
+import type { WgpuRenderState, WgpuTextureRenderTarget, WgpuRenderTargetPool } from '@flighthq/render-wgpu/contract';
 
 import { applyBevelEffectToWgpu, wgpuBevelEffectRunner, registerWgpuBevelEffect } from './wgpuBevelEffect.ts';
 import * as wgpuEffectBlitShaderModule from './wgpuEffectBlitShader.ts';

@@ -1,11 +1,11 @@
+import type { OuterGlowEffect } from '@flighthq/effects/contract';
 import { acquireWgpuTextureRenderTarget, releaseWgpuTextureRenderTarget } from '@flighthq/render-wgpu/contract';
 import type {
-  OuterGlowEffect,
   WgpuEffectRunner,
   WgpuRenderState,
   WgpuTextureRenderTarget,
   WgpuRenderTargetPool,
-} from '@flighthq/types/contract';
+} from '@flighthq/render-wgpu/contract';
 
 import { applyWgpuEffectBlitPass, applyWgpuEffectErasePass } from './wgpuEffectBlitShader.ts';
 import { applyWgpuEffectBoxBlur } from './wgpuEffectBoxBlur.ts';

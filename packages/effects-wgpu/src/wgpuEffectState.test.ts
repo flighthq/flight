@@ -1,4 +1,5 @@
 import { createColorLutCache } from '@flighthq/adjustments/contract';
+import type { Effect } from '@flighthq/effects/contract';
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import {
   beginWgpuScreenRenderPassForTest,
@@ -6,7 +7,6 @@ import {
   endWgpuRenderPass,
   installWgpuMock,
 } from '@flighthq/render-wgpu/contract';
-import type { Effect } from '@flighthq/types/contract';
 
 import { getWgpuEffectPipeline } from './wgpuEffectProgramCache.ts';
 import {

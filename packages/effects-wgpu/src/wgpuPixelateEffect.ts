@@ -1,9 +1,5 @@
-import type {
-  PixelateEffect,
-  WgpuEffectRunner,
-  WgpuRenderState,
-  WgpuTextureRenderTarget,
-} from '@flighthq/types/contract';
+import type { PixelateEffect } from '@flighthq/effects/contract';
+import type { WgpuEffectRunner, WgpuRenderState, WgpuTextureRenderTarget } from '@flighthq/render-wgpu/contract';
 
 import { drawWgpuEffectPass } from './wgpuEffectPass.ts';
 import { getWgpuEffectPipeline } from './wgpuEffectProgramCache.ts';

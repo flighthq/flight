@@ -1,10 +1,6 @@
 import { createSsaoEffect } from '@flighthq/effects/contract';
-import type {
-  ContactShadowsEffect,
-  WgpuEffectRunner,
-  WgpuRenderState,
-  WgpuTextureRenderTarget,
-} from '@flighthq/types/contract';
+import type { ContactShadowsEffect } from '@flighthq/effects/contract';
+import type { WgpuEffectRunner, WgpuRenderState, WgpuTextureRenderTarget } from '@flighthq/render-wgpu/contract';
 
 import { registerWgpuEffect } from './wgpuEffectRegistry.ts';
 import { applySsaoEffectToWgpu } from './wgpuSsaoEffect.ts';

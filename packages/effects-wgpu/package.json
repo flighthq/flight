@@ -50,7 +50,7 @@
     "@flighthq/registry": "*",
     "@flighthq/render": "*",
     "@flighthq/render-wgpu": "*",
-    "@flighthq/types": "*"
+    "@flighthq/texture": "*"
   },
   "peerDependencies": {
     "@webgpu/types": "^0.1.70"

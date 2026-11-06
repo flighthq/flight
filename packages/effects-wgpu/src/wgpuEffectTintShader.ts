@@ -1,7 +1,7 @@
 import { unpackColorRgba } from '@flighthq/color/contract';
-import type { WgpuRenderState, WgpuTextureRenderTarget } from '@flighthq/types/contract';
-import type { WgpuDualSourceEffectPipeline, WgpuEffectPipeline } from '@flighthq/types/contract';
+import type { WgpuRenderState, WgpuTextureRenderTarget } from '@flighthq/render-wgpu/contract';
 
+import type { WgpuDualSourceEffectPipeline, WgpuEffectPipeline } from './types.ts';
 import {
   createWgpuDualSourceEffectPipeline,
   createWgpuEffectPipeline,

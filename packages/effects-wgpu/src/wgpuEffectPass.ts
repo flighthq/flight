@@ -1,18 +1,14 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
 import {
   getWgpuActiveRenderPass,
   getWgpuRenderPassViewport,
   getWgpuRenderStateRuntime,
   suspendWgpuRenderPass,
 } from '@flighthq/render-wgpu/contract';
-import type {
-  EntityConstruction,
-  WgpuDualSourceEffectPipeline,
-  WgpuEffectBlendMode,
-  WgpuEffectPipeline,
-  WgpuRenderState,
-  WgpuTextureRenderTarget,
-} from '@flighthq/types/contract';
+import type { WgpuRenderState, WgpuTextureRenderTarget } from '@flighthq/render-wgpu/contract';
+
+import type { WgpuDualSourceEffectPipeline, WgpuEffectBlendMode, WgpuEffectPipeline } from './types.ts';
 
 // Shared vertex shader: full-screen quad via vertex_index, no vertex buffer needed.
 // UV convention: y=0 = texture top, y=1 = texture bottom (Wgpu top-left origin).

@@ -1,14 +1,14 @@
 import { getColorAlpha, getColorRgb } from '@flighthq/color/contract';
+import type { BevelEffect } from '@flighthq/effects/contract';
 import { acquireWgpuTextureRenderTarget, releaseWgpuTextureRenderTarget } from '@flighthq/render-wgpu/contract';
 import type {
-  BevelEffect,
   WgpuEffectRunner,
   WgpuRenderState,
   WgpuTextureRenderTarget,
   WgpuRenderTargetPool,
-} from '@flighthq/types/contract';
-import type { WgpuDualSourceEffectPipeline } from '@flighthq/types/contract';
+} from '@flighthq/render-wgpu/contract';
 
+import type { WgpuDualSourceEffectPipeline } from './types.ts';
 import { applyWgpuEffectBlitPass, applyWgpuEffectErasePass } from './wgpuEffectBlitShader.ts';
 import { applyWgpuEffectBoxBlur } from './wgpuEffectBoxBlur.ts';
 import {

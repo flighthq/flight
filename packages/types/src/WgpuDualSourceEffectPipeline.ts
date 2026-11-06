@@ -1,3 +1,2 @@
-import type { WgpuEffectPipeline } from './WgpuEffectPipeline.ts';
-
-export type WgpuDualSourceEffectPipeline = WgpuEffectPipeline;
+/** @deprecated Import `WgpuDualSourceEffectPipeline` from `@flighthq/effects-wgpu/contract`. */
+export type { WgpuDualSourceEffectPipeline } from '@flighthq/effects-wgpu/contract';
