@@ -439,7 +439,7 @@
       "path": "../textureatlas-formats"
     },
     {
-      "path": "../tilemap-formats"
+      "path": "../tilemap-formats/tsconfig.runtime.json"
     },
     {
       "path": "../tilemap/tsconfig.runtime.json"

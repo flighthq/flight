@@ -67,7 +67,7 @@
       "path": "../swf/tsconfig.runtime.json"
     },
     {
-      "path": "../tilemap-formats"
+      "path": "../tilemap-formats/tsconfig.runtime.json"
     },
     {
       "path": "../types"

@@ -1,6 +1,6 @@
 import type { Vector2Like } from '@flighthq/geometry/contract';
 import type { ImportDiagnostic } from '@flighthq/importdiagnostics/contract';
-import type { createTilemapData } from '@flighthq/tilemap/contract';
+import type { TilemapData } from '@flighthq/tilemap/contract';
 
 import type { TilemapFormatKind } from './tilemapFormatKind.ts';
 
@@ -164,8 +164,6 @@ export type TiledInflate = (bytes: Readonly<Uint8Array>, compression: TiledCompr
 export interface TiledParseOptions {
   inflate?: TiledInflate;
 }
-
-type TilemapData = ReturnType<typeof createTilemapData>;
 
 export type TiledTilesetResolver = (
   ref: Readonly<TiledTilesetRef>,
