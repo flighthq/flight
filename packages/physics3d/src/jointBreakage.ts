@@ -1,11 +1,10 @@
-import type { Physics3DJoint, Physics3DWorld } from '@flighthq/types/contract';
-
 import {
   createPhysics3DJointReaction,
   getPhysics3DJointReactionForce,
   getPhysics3DJointReactionTorque,
   writePhysics3DJointReaction,
 } from './jointReaction.ts';
+import type { Physics3DJoint, Physics3DWorld } from './types.ts';
 
 // Breaking a joint under load. A rope that parts, a hinge torn off its frame, a weld that fails.
 //

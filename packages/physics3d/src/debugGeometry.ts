@@ -5,15 +5,15 @@ import type {
   CollisionTriangleMesh3D,
 } from '@flighthq/collision/contract';
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
+
 import type {
-  EntityConstruction,
   Physics3DDebugFeature,
   Physics3DDebugGeometry,
   Physics3DDebugGeometryOptions,
   Physics3DWorld,
   RigidBody3D,
-} from '@flighthq/types/contract';
-
+} from './types.ts';
 import { writeRigidBody3DWorldCenter } from './world.ts';
 
 export function createPhysics3DDebugGeometry(): Physics3DDebugGeometry {

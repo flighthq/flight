@@ -1,4 +1,3 @@
-import type { Physics3DWorld } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { createPhysics3DContact, createPhysics3DContactPoint } from './contacts.ts';
@@ -17,6 +16,7 @@ import {
   isPhysics3DTimestepValid,
   isPhysics3DVelocityIterationsValid,
 } from './stepValidation.ts';
+import type { Physics3DWorld } from './types.ts';
 import {
   addPhysics3DBody,
   addPhysics3DCollider,

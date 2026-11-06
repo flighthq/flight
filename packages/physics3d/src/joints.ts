@@ -1,16 +1,3 @@
-import type {
-  Physics3DConeTwistJoint,
-  Physics3DDistanceJoint,
-  Physics3DFixedJoint,
-  Physics3DGeneric6DofJoint,
-  Physics3DHingeJoint,
-  Physics3DJoint,
-  Physics3DJointReaction,
-  Physics3DJointSolver,
-  Physics3DSliderJoint,
-  Physics3DWorld,
-} from '@flighthq/types/contract';
-
 import {
   swapPhysics3DJointFrames,
   writePhysics3DJointAnchors,
@@ -49,6 +36,18 @@ import {
   writeAngularRow,
   writeRow,
 } from './jointRows.ts';
+import type {
+  Physics3DConeTwistJoint,
+  Physics3DDistanceJoint,
+  Physics3DFixedJoint,
+  Physics3DGeneric6DofJoint,
+  Physics3DHingeJoint,
+  Physics3DJoint,
+  Physics3DJointReaction,
+  Physics3DJointSolver,
+  Physics3DSliderJoint,
+  Physics3DWorld,
+} from './types.ts';
 import { findPhysics3DBody } from './world.ts';
 
 // The built-in joint kinds. Bare names are reserved for these; a user's own joint takes a vendor prefix, and

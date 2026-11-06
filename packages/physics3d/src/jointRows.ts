@@ -1,5 +1,3 @@
-import type { Physics3DJoint, Physics3DJointFrames, RigidBody3D } from '@flighthq/types/contract';
-
 import {
   applyPhysics3DJointAngularImpulse,
   applyPhysics3DJointImpulse,
@@ -16,6 +14,7 @@ import {
   writePhysics3DJointSeparation,
 } from './jointMath.ts';
 import { applySymmetricTensor, inverseSymmetricTensor } from './symmetricTensor.ts';
+import type { Physics3DJoint, Physics3DJointFrames, RigidBody3D } from './types.ts';
 
 // The constraint FAMILIES every 3D joint kind is composed from. `jointMath` is the arithmetic; this is the
 // sequential-impulse pattern applied to it — prepare a block, warm-start it, solve it — so a kind reads as a

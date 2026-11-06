@@ -1,6 +1,6 @@
 import { writeCollisionConvexHullFaces3D } from '@flighthq/collision/contract';
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { EntityConstruction, Physics3DCollider, Physics3DMassData, RigidBody3D } from '@flighthq/types/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
 
 import {
   inverseSymmetricTensor,
@@ -12,6 +12,7 @@ import {
   TENSOR_YZ,
   TENSOR_ZZ,
 } from './symmetricTensor.ts';
+import type { Physics3DCollider, Physics3DMassData, RigidBody3D } from './types.ts';
 
 // Mass properties for 3D primitives, and the combination of several into one body's.
 //

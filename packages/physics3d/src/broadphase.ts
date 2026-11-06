@@ -1,4 +1,4 @@
-import type { Physics3DWorld, SpatialAabb3D } from '@flighthq/types/contract';
+import type { SpatialAabb3D } from '@flighthq/spatial/contract';
 
 import { updatePhysics3DColliderWorldShape, writePhysics3DColliderBounds } from './colliderTransform.ts';
 import {
@@ -7,6 +7,7 @@ import {
   withdrawPhysics3DBroadphaseBody,
 } from './physics3DBroadphasePublication.ts';
 import { reportPhysics3DSpatialIndexing } from './physics3DSpatialIndexingGuards.ts';
+import type { Physics3DWorld } from './types.ts';
 
 // Refreshes every collider's world shape and republishes its body's bounds to the broadphase index. The
 // step and the public world queries share this path, so a query observes the body's current authored

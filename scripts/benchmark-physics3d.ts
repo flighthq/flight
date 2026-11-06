@@ -13,8 +13,9 @@ import {
   addPhysics3DBody,
 } from '@flighthq/physics3d/contract';
 import { stepPhysics3D } from '@flighthq/physics3d/contract';
+import type { Physics3DWorld } from '@flighthq/physics3d/contract';
 import { createBvhSpatialBackend3D, createUniformGridSpatialBackend3D } from '@flighthq/spatial/contract';
-import type { Physics3DWorld, SpatialIndexBackend3D, SpatialIndexingMode, SpatialPair } from '@flighthq/types/contract';
+import type { SpatialIndexBackend3D, SpatialIndexingMode, SpatialPair } from '@flighthq/spatial/contract';
 
 type Physics3DBenchmarkBackend = 'bvh' | 'uniform-grid' | 'uniform-grid-tuned';
 type Physics3DBenchmarkScenario = 'contact-stack' | 'mixed-scale' | 'sparse-moving';

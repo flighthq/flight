@@ -1,21 +1,9 @@
 import { cloneCollisionColliderShape3D } from '@flighthq/collision/contract';
 import type { CollisionColliderShape3D } from '@flighthq/collision/contract';
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type { EntityConstruction, NonEntityCreateResult } from '@flighthq/entity/contract';
 import { createUniformGridSpatialBackend3D } from '@flighthq/spatial/contract';
-import type {
-  EntityConstruction,
-  NonEntityCreateResult,
-  Physics3DBodyType,
-  Physics3DCollider,
-  Physics3DCollisionFilter,
-  Physics3DContactConstraint,
-  Physics3DMaterial,
-  Physics3DSequentialImpulseConfig,
-  Physics3DSolverConfig,
-  Physics3DWorld,
-  RigidBody3D,
-  SpatialIndexBackend3D,
-} from '@flighthq/types/contract';
+import type { SpatialIndexBackend3D } from '@flighthq/spatial/contract';
 
 import { synchronizePhysics3DBroadphase } from './broadphase.ts';
 import { createPhysics3DColliderWorldShape } from './colliderTransform.ts';
@@ -39,6 +27,17 @@ import {
   TENSOR_YZ,
   TENSOR_ZZ,
 } from './symmetricTensor.ts';
+import type {
+  Physics3DBodyType,
+  Physics3DCollider,
+  Physics3DCollisionFilter,
+  Physics3DContactConstraint,
+  Physics3DMaterial,
+  Physics3DSequentialImpulseConfig,
+  Physics3DSolverConfig,
+  Physics3DWorld,
+  RigidBody3D,
+} from './types.ts';
 
 // World and body lifecycle: allocation, membership, and the mutations that have to run through a
 // function because something derived follows from them.

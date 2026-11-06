@@ -1,7 +1,6 @@
 import { logOnce } from '@flighthq/log/contract';
 import type { LogState } from '@flighthq/log/contract';
-import type { Physics3DJointExplanation, Physics3DStepExplanation, Physics3DWorld } from '@flighthq/types/contract';
-import { LogLevel } from '@flighthq/types/contract';
+import { LogLevel } from '@flighthq/log/contract';
 
 import { setPhysics3DContactIntakeGuard } from './contactIntake.ts';
 import { explainPhysics3DCollision } from './explainPhysics3DCollision.ts';
@@ -10,6 +9,7 @@ import { explainPhysics3DStep } from './explainPhysics3DStep.ts';
 import { setPhysics3DJointResolutionGuard } from './islands.ts';
 import { setPhysics3DSpatialIndexingGuard } from './physics3DSpatialIndexingGuards.ts';
 import { setPhysics3DStepGuard } from './step.ts';
+import type { Physics3DJointExplanation, Physics3DStepExplanation, Physics3DWorld } from './types.ts';
 
 export function arePhysics3DGuardsEnabled(): boolean {
   return physics3DGuardsEnabled;

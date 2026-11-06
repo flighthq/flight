@@ -1,12 +1,6 @@
 import { createCollisionContactManifold3D } from '@flighthq/collision/contract';
 import type { CollisionContactManifold3D } from '@flighthq/collision/contract';
-import type {
-  Physics3DCollider,
-  Physics3DContactIntakeGuard,
-  Physics3DContact,
-  Physics3DWorld,
-  SpatialPair,
-} from '@flighthq/types/contract';
+import type { SpatialPair } from '@flighthq/spatial/contract';
 
 import { synchronizePhysics3DBroadphase } from './broadphase.ts';
 import { collidePhysics3DColliderShapes } from './colliderCollision.ts';
@@ -14,6 +8,7 @@ import { createPhysics3DContact, createPhysics3DContactPoint } from './contacts.
 import { isPhysics3DPairJointSuppressed } from './jointCollisionSuppression.ts';
 import { isPhysics3DPairOrdered } from './jointRegistry.ts';
 import { mixPhysics3DFriction, mixPhysics3DRestitution } from './material.ts';
+import type { Physics3DCollider, Physics3DContactIntakeGuard, Physics3DContact, Physics3DWorld } from './types.ts';
 import { writeRigidBody3DWorldCenter } from './world.ts';
 
 // Rebuilds the world's persistent contact set from the current poses, and reports this step's begin and

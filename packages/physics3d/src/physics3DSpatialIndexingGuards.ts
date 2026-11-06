@@ -1,4 +1,4 @@
-import type { Physics3DWorld } from '@flighthq/types/contract';
+import type { Physics3DWorld } from './types.ts';
 
 // The core-side seam for physics3d's spatial outcome diagnostics. It is deliberately local rather than
 // installing spatial's global caller-composed guard: doing that would overwrite application policy and

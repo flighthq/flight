@@ -5,7 +5,6 @@ import {
   registerBuiltInCollisionSupports3D,
 } from '@flighthq/collision/contract';
 import type { CollisionBuiltInShape3D } from '@flighthq/collision/contract';
-import type { Physics3DWorld, RigidBody3D } from '@flighthq/types/contract';
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import { buildPhysics3DContacts } from './contactIntake.ts';
@@ -17,6 +16,7 @@ import {
 import { createPhysics3DBallAndSocketJoint } from './jointFactories.ts';
 import { addPhysics3DJoint } from './jointRegistry.ts';
 import { registerBuiltInPhysics3DJointSolvers } from './registerBuiltInPhysics3DJointSolvers.ts';
+import type { Physics3DWorld, RigidBody3D } from './types.ts';
 import {
   addPhysics3DBody,
   addPhysics3DCollider,

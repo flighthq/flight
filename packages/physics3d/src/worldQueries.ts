@@ -9,9 +9,13 @@ import type {
   CollisionTimeOfImpact3D,
 } from '@flighthq/collision/contract';
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type { EntityConstruction, NonEntityCreateResult } from '@flighthq/entity/contract';
+import type { SpatialAabb3D } from '@flighthq/spatial/contract';
+
+import { synchronizePhysics3DBroadphase } from './broadphase.ts';
+import { raycastPhysics3DColliderShape, sweepPhysics3DColliderShapes } from './colliderCollision.ts';
+import { writePhysics3DColliderBounds } from './colliderTransform.ts';
 import type {
-  EntityConstruction,
-  NonEntityCreateResult,
   Physics3DCollider,
   Physics3DQueryFilter,
   Physics3DQueryResult,
@@ -20,12 +24,7 @@ import type {
   Physics3DShapeCastResult,
   Physics3DWorld,
   RigidBody3D,
-  SpatialAabb3D,
-} from '@flighthq/types/contract';
-
-import { synchronizePhysics3DBroadphase } from './broadphase.ts';
-import { raycastPhysics3DColliderShape, sweepPhysics3DColliderShapes } from './colliderCollision.ts';
-import { writePhysics3DColliderBounds } from './colliderTransform.ts';
+} from './types.ts';
 
 // Queries against the world's CURRENT pose. Every one of them synchronizes the broadphase first, so a
 // query made between steps — or before the first step — observes where the caller just put a body

@@ -1,13 +1,3 @@
-import type {
-  Physics3DContact,
-  Physics3DContactCallback,
-  Physics3DJoint,
-  Physics3DJointSolver,
-  Physics3DStepGuard,
-  Physics3DWorld,
-  RigidBody3D,
-} from '@flighthq/types/contract';
-
 import { buildPhysics3DContacts, refreshPhysics3DContacts } from './contactIntake.ts';
 import { hasActivePhysics3DBullet, integratePhysics3DContinuous } from './continuous.ts';
 import {
@@ -38,6 +28,15 @@ import {
   isPhysics3DTimestepValid,
   isPhysics3DVelocityIterationsValid,
 } from './stepValidation.ts';
+import type {
+  Physics3DContact,
+  Physics3DContactCallback,
+  Physics3DJoint,
+  Physics3DJointSolver,
+  Physics3DStepGuard,
+  Physics3DWorld,
+  RigidBody3D,
+} from './types.ts';
 
 // Installs the optional diagnostics seam consulted when a step declines its preconditions. Null by
 // default and set only by `enablePhysics3DGuards`, so a build that never enables guards links neither the

@@ -1,5 +1,4 @@
 import type { CollisionBuiltInShape3D } from '@flighthq/collision/contract';
-import type { Physics3DCollider, RigidBody3D } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import {
@@ -16,6 +15,7 @@ import {
   setRigidBody3DMassData,
   updateRigidBody3DMassData,
 } from './massProperties.ts';
+import type { Physics3DCollider, RigidBody3D } from './types.ts';
 import { addPhysics3DBody, createPhysics3DCollider, createPhysics3DWorld, createRigidBody3D } from './world.ts';
 
 describe('combinePhysics3DMassData', () => {

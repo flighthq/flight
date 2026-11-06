@@ -1,13 +1,7 @@
 import { createCollisionContactManifold3D, createCollisionTimeOfImpact3D } from '@flighthq/collision/contract';
 import type { CollisionContactManifold3D, CollisionTimeOfImpact3D } from '@flighthq/collision/contract';
 import { DEG_TO_RAD } from '@flighthq/math/contract';
-import type {
-  Physics3DContact,
-  Physics3DRotationalCcdEnvelope,
-  Physics3DWorld,
-  RigidBody3D,
-  SpatialPair,
-} from '@flighthq/types/contract';
+import type { SpatialPair } from '@flighthq/spatial/contract';
 
 import { synchronizePhysics3DBroadphase, synchronizePhysics3DSweptBroadphase } from './broadphase.ts';
 import { collidePhysics3DColliderShapes, sweepPhysics3DColliderShapes } from './colliderCollision.ts';
@@ -28,6 +22,7 @@ import {
   TENSOR_YZ,
   TENSOR_ZZ,
 } from './symmetricTensor.ts';
+import type { Physics3DContact, Physics3DRotationalCcdEnvelope, Physics3DWorld, RigidBody3D } from './types.ts';
 import { writeRigidBody3DWorldCenter } from './world.ts';
 
 // Continuous collision: advancing poses in chronological order of impact rather than in one jump.

@@ -3,6 +3,7 @@ import {
   getCollisionShapeValidationStatus3D,
   getCollisionTriangleMeshValidationStatus3D,
 } from '@flighthq/collision/contract';
+
 import type {
   Physics3DCollider,
   Physics3DContact,
@@ -10,7 +11,7 @@ import type {
   Physics3DSolverConfig,
   Physics3DWorld,
   RigidBody3D,
-} from '@flighthq/types/contract';
+} from './types.ts';
 
 // The preconditions one explicit step needs to be meaningful, each asked as its own question.
 //

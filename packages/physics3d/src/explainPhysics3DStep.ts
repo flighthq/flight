@@ -1,5 +1,3 @@
-import type { Physics3DStepExplanation, Physics3DWorld } from '@flighthq/types/contract';
-
 import {
   isPhysics3DBodyStateValid,
   isPhysics3DColliderStateValid,
@@ -12,6 +10,7 @@ import {
   isPhysics3DTimestepValid,
   isPhysics3DVelocityIterationsValid,
 } from './stepValidation.ts';
+import type { Physics3DStepExplanation, Physics3DWorld } from './types.ts';
 
 // Why `stepPhysics3D(world, dt)` would advance nothing, as plain data.
 //

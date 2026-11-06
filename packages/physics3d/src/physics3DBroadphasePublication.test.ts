@@ -1,5 +1,5 @@
 import { createBvhSpatialBackend3D, setSpatialIndexingGuard } from '@flighthq/spatial/contract';
-import type { SpatialAabb3D, SpatialIndexingNotice } from '@flighthq/types/contract';
+import type { SpatialAabb3D, SpatialIndexingNotice } from '@flighthq/spatial/contract';
 import { afterEach, describe, expect, it } from 'vitest';
 
 import {

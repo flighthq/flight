@@ -1,13 +1,11 @@
 import { writeCollisionHeightfieldBounds3D, writeCollisionTriangleMeshBounds3D } from '@flighthq/collision/contract';
 import type { CollisionColliderShape3D } from '@flighthq/collision/contract';
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type {
-  Entity,
-  EntityConstruction,
-  Physics3DCollider,
-  RigidBody3D,
-  SpatialAabb3D,
-} from '@flighthq/types/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
+import type { SpatialAabb3D } from '@flighthq/spatial/contract';
+
+import type { Physics3DEntityCompatibility as Entity } from './entityCompatibility.ts';
+import type { Physics3DCollider, RigidBody3D } from './types.ts';
 
 // Allocates the world-space shape a collider needs for `local`, choosing the kind the transform can
 // actually express. Every field is filled at creation so the shape is never read half-initialised, and

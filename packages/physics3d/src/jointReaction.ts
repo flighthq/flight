@@ -1,10 +1,7 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type {
-  EntityConstruction,
-  Physics3DJoint,
-  Physics3DJointReaction,
-  Physics3DWorld,
-} from '@flighthq/types/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
+
+import type { Physics3DJoint, Physics3DJointReaction, Physics3DWorld } from './types.ts';
 
 // What a joint is CARRYING — the force and torque its constraint applied over the sub-interval just
 // solved. A stress readout, a break threshold, a gameplay trigger for a rope about to snap.

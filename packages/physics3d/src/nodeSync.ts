@@ -1,6 +1,7 @@
 import { invalidateNodeLocalTransform } from '@flighthq/node/contract';
 import type { Node3D } from '@flighthq/scene3d/contract';
-import type { RigidBody3D } from '@flighthq/types/contract';
+
+import type { RigidBody3D } from './types.ts';
 
 // Copies a rigid body's world pose (position + orientation quaternion) onto a node's local transform
 // fields and invalidates its matrix cache. Call once per frame after `stepPhysics3D` to drive a scene

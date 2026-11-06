@@ -1,4 +1,3 @@
-import type { Physics3DWorld } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import {
@@ -8,6 +7,7 @@ import {
 import { createPhysics3DBallAndSocketJoint } from './jointFactories.ts';
 import { addPhysics3DJoint, registerPhysics3DJointSolver, removePhysics3DJoint } from './jointRegistry.ts';
 import { physics3DBallAndSocketJointSolver, Physics3DBallAndSocketJointKind } from './joints.ts';
+import type { Physics3DWorld } from './types.ts';
 import { addPhysics3DBody, createPhysics3DWorld, createRigidBody3D } from './world.ts';
 
 describe('isPhysics3DPairJointSuppressed', () => {

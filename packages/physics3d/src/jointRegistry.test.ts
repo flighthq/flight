@@ -1,4 +1,3 @@
-import type { Physics3DJointSolver, Physics3DWorld, RigidBody3D } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { createPhysics3DBallAndSocketJoint, createPhysics3DHingeJoint } from './jointFactories.ts';
@@ -12,6 +11,7 @@ import {
 } from './jointRegistry.ts';
 import { physics3DBallAndSocketJointSolver, physics3DHingeJointSolver, Physics3DHingeJointKind } from './joints.ts';
 import { steppingPhysics3DWorlds } from './ownership.ts';
+import type { Physics3DJointSolver, Physics3DWorld, RigidBody3D } from './types.ts';
 import { addPhysics3DBody, createPhysics3DWorld, createRigidBody3D } from './world.ts';
 
 describe('addPhysics3DJoint', () => {

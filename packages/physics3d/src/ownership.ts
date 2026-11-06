@@ -1,4 +1,4 @@
-import type { Physics3DCollider, Physics3DJoint, Physics3DWorld, RigidBody3D } from '@flighthq/types/contract';
+import type { Physics3DCollider, Physics3DJoint, Physics3DWorld, RigidBody3D } from './types.ts';
 
 // Ownership is RUNTIME state rather than serialized entity data. Weak keys make membership follow the
 // explicit add/remove lifecycle without keeping a detached entity alive, and map directly to an owner

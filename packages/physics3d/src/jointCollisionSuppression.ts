@@ -1,4 +1,4 @@
-import type { Physics3DWorld } from '@flighthq/types/contract';
+import type { Physics3DWorld } from './types.ts';
 
 // Constant-time lookup for whether any active joint suppresses collision between a body pair. A broadphase
 // asks this once per candidate pair, so it has to be a lookup rather than a scan of the joint list.

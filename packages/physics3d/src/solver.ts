@@ -1,13 +1,7 @@
 import { createCollisionContactManifold3D } from '@flighthq/collision/contract';
 import type { CollisionContactManifold3D } from '@flighthq/collision/contract';
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type {
-  EntityConstruction,
-  Physics3DContactConstraint,
-  Physics3DContactConstraintPoint,
-  Physics3DWorld,
-  RigidBody3D,
-} from '@flighthq/types/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
 
 import { collidePhysics3DColliderShapes } from './colliderCollision.ts';
 import { updatePhysics3DColliderWorldShape } from './colliderTransform.ts';
@@ -20,6 +14,12 @@ import {
   TENSOR_YZ,
   TENSOR_ZZ,
 } from './symmetricTensor.ts';
+import type {
+  Physics3DContactConstraint,
+  Physics3DContactConstraintPoint,
+  Physics3DWorld,
+  RigidBody3D,
+} from './types.ts';
 import { writeRigidBody3DWorldCenter } from './world.ts';
 
 export function createPhysics3DContactConstraint(): Physics3DContactConstraint {

@@ -1,13 +1,3 @@
-import type {
-  Physics3DConeTwistJoint,
-  Physics3DGeneric6DofJoint,
-  Physics3DHingeJoint,
-  Physics3DJoint,
-  Physics3DJointSolver,
-  Physics3DSliderJoint,
-  Physics3DWorld,
-  RigidBody3D,
-} from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { integrateRigidBody3DPose, refreshRigidBody3DWorldInertia } from './integrate.ts';
@@ -37,6 +27,16 @@ import {
   Physics3DSliderJointKind,
 } from './joints.ts';
 import { createPhysics3DMassData, setRigidBody3DMassData } from './massProperties.ts';
+import type {
+  Physics3DConeTwistJoint,
+  Physics3DGeneric6DofJoint,
+  Physics3DHingeJoint,
+  Physics3DJoint,
+  Physics3DJointSolver,
+  Physics3DSliderJoint,
+  Physics3DWorld,
+  RigidBody3D,
+} from './types.ts';
 import { addPhysics3DBody, createPhysics3DWorld, createRigidBody3D, setPhysics3DBodyType } from './world.ts';
 
 describe('Physics3DBallAndSocketJointKind', () => {

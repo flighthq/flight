@@ -1,5 +1,3 @@
-import type { Physics3DJoint, Physics3DJointFrames, RigidBody3D } from '@flighthq/types/contract';
-
 import {
   applySymmetricTensor,
   TENSOR_XX,
@@ -9,6 +7,7 @@ import {
   TENSOR_YZ,
   TENSOR_ZZ,
 } from './symmetricTensor.ts';
+import type { Physics3DJoint, Physics3DJointFrames, RigidBody3D } from './types.ts';
 
 // The constraint arithmetic every 3D joint kind is assembled from: lever arms, effective-mass blocks,
 // frame extraction, and the two impulse appliers.

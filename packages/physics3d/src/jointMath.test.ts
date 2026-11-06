@@ -1,4 +1,3 @@
-import type { Physics3DJoint, Physics3DJointFrames, RigidBody3D } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { refreshRigidBody3DWorldInertia } from './integrate.ts';
@@ -21,6 +20,7 @@ import {
   writePhysics3DJointSeparation,
 } from './jointMath.ts';
 import { createPhysics3DMassData, setRigidBody3DMassData } from './massProperties.ts';
+import type { Physics3DJoint, Physics3DJointFrames, RigidBody3D } from './types.ts';
 import { createRigidBody3D } from './world.ts';
 
 describe('applyPhysics3DJointAngularImpulse', () => {

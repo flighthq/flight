@@ -1,4 +1,15 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
+
+import {
+  Physics3DBallAndSocketJointKind,
+  Physics3DConeTwistJointKind,
+  Physics3DDistanceJointKind,
+  Physics3DFixedJointKind,
+  Physics3DGeneric6DofJointKind,
+  Physics3DHingeJointKind,
+  Physics3DSliderJointKind,
+} from './joints.ts';
 import type {
   Physics3DBallAndSocketJoint,
   Physics3DBallAndSocketJointOptions,
@@ -18,18 +29,7 @@ import type {
   Physics3DJointOptions,
   Physics3DSliderJoint,
   Physics3DSliderJointOptions,
-  EntityConstruction,
-} from '@flighthq/types/contract';
-
-import {
-  Physics3DBallAndSocketJointKind,
-  Physics3DConeTwistJointKind,
-  Physics3DDistanceJointKind,
-  Physics3DFixedJointKind,
-  Physics3DGeneric6DofJointKind,
-  Physics3DHingeJointKind,
-  Physics3DSliderJointKind,
-} from './joints.ts';
+} from './types.ts';
 
 export function createPhysics3DBallAndSocketJoint(
   options: Readonly<Physics3DBallAndSocketJointOptions>,

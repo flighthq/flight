@@ -1,4 +1,3 @@
-import type { Physics3DFixedJoint, Physics3DJoint, RigidBody3D } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { refreshRigidBody3DWorldInertia } from './integrate.ts';
@@ -37,6 +36,7 @@ import {
   writePhysics3DSoftRowParameters,
 } from './jointRows.ts';
 import { createPhysics3DMassData, setRigidBody3DMassData } from './massProperties.ts';
+import type { Physics3DFixedJoint, Physics3DJoint, RigidBody3D } from './types.ts';
 import { createRigidBody3D } from './world.ts';
 
 describe('applyRow', () => {

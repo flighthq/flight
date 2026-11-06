@@ -6,7 +6,7 @@ import {
   removeLogSink,
 } from '@flighthq/log/contract';
 import type { LogState } from '@flighthq/log/contract';
-import type { LogEntry, MemoryLogSink, Physics3DWorld } from '@flighthq/types/contract';
+import type { LogEntry, MemoryLogSink } from '@flighthq/log/contract';
 
 import { synchronizePhysics3DBroadphase } from './broadphase.ts';
 import { arePhysics3DGuardsEnabled, disablePhysics3DGuards, enablePhysics3DGuards } from './enablePhysics3DGuards.ts';
@@ -14,6 +14,7 @@ import { createPhysics3DHingeJoint } from './jointFactories.ts';
 import { addPhysics3DJoint } from './jointRegistry.ts';
 import { registerBuiltInPhysics3DJointSolvers } from './registerBuiltInPhysics3DJointSolvers.ts';
 import { stepPhysics3D } from './step.ts';
+import type { Physics3DWorld } from './types.ts';
 import {
   addPhysics3DBody,
   addPhysics3DCollider,

@@ -1,7 +1,7 @@
-import type { Physics3DWorld } from '@flighthq/types/contract';
 import { afterEach, describe, expect, it } from 'vitest';
 
 import { reportPhysics3DSpatialIndexing, setPhysics3DSpatialIndexingGuard } from './physics3DSpatialIndexingGuards.ts';
+import type { Physics3DWorld } from './types.ts';
 import { createPhysics3DWorld } from './world.ts';
 
 afterEach(() => {

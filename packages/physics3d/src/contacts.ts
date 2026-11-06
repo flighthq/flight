@@ -1,5 +1,7 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { Physics3DContact, Physics3DContactPoint, EntityConstruction } from '@flighthq/types/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
+
+import type { Physics3DContact, Physics3DContactPoint } from './types.ts';
 
 // Constructors for the contact records the step consumes.
 //

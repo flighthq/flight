@@ -1,7 +1,10 @@
 import type { CollisionColliderShape3D } from '@flighthq/collision/contract';
+import type { EntityRaw, EntityRuntime, EntityRuntimeKey } from '@flighthq/entity/contract';
+import type { SpatialIndexBackend3D } from '@flighthq/spatial/contract';
 
-import type { Entity } from './Entity.ts';
-import type { SpatialIndexBackend3D } from './Spatial.ts';
+interface Entity extends EntityRaw {
+  [EntityRuntimeKey]: EntityRuntime | undefined;
+}
 
 // 3D rigid-body dynamics header. `@flighthq/physics3d` owns integration and constraint resolution in
 // three dimensions and owns no detection of its own. Everything here is plain data advanced by an

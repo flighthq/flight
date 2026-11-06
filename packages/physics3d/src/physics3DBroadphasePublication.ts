@@ -1,4 +1,6 @@
-import type { Physics3DWorld, SpatialAabb3D } from '@flighthq/types/contract';
+import type { SpatialAabb3D } from '@flighthq/spatial/contract';
+
+import type { Physics3DWorld } from './types.ts';
 
 export function getPhysics3DBroadphaseBodyIndices(world: Physics3DWorld): Set<number> {
   const existing = physics3DBroadphasePublicationByWorld.get(world);

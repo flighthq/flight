@@ -1,6 +1,6 @@
 import type { CollisionBuiltInShape3D } from '@flighthq/collision/contract';
-import { EntityRuntimeKey } from '@flighthq/types/contract';
-import type { Physics3DCollider, RigidBody3D, SpatialAabb3D } from '@flighthq/types/contract';
+import { EntityRuntimeKey } from '@flighthq/entity/contract';
+import type { SpatialAabb3D } from '@flighthq/spatial/contract';
 import { describe, expect, it } from 'vitest';
 
 import {
@@ -14,6 +14,7 @@ import {
   updatePhysics3DColliderWorldShape,
   writePhysics3DColliderBounds,
 } from './colliderTransform.ts';
+import type { Physics3DCollider, RigidBody3D } from './types.ts';
 import { createPhysics3DCollider, createRigidBody3D } from './world.ts';
 
 function bounds(): SpatialAabb3D {

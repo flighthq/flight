@@ -1,5 +1,3 @@
-import type { Physics3DWorld } from '@flighthq/types/contract';
-
 import { registerPhysics3DJointSolver } from './jointRegistry.ts';
 import {
   physics3DBallAndSocketJointSolver,
@@ -17,6 +15,7 @@ import {
   Physics3DHingeJointKind,
   Physics3DSliderJointKind,
 } from './joints.ts';
+import type { Physics3DWorld } from './types.ts';
 
 // Installs the complete built-in joint bank into one world. Kept as an explicit assembly rather than as part
 // of `createPhysics3DWorld`: importing or constructing a world still links no constraint math, and a caller

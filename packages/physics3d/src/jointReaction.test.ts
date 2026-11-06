@@ -1,4 +1,3 @@
-import type { Physics3DJointReaction, Physics3DWorld, RigidBody3D } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { createPhysics3DBallAndSocketJoint, createPhysics3DDistanceJoint } from './jointFactories.ts';
@@ -15,6 +14,7 @@ import { addPhysics3DJoint } from './jointRegistry.ts';
 import { createPhysics3DMassData, setRigidBody3DMassData } from './massProperties.ts';
 import { registerBuiltInPhysics3DJointSolvers } from './registerBuiltInPhysics3DJointSolvers.ts';
 import { stepPhysics3D } from './step.ts';
+import type { Physics3DJointReaction, Physics3DWorld, RigidBody3D } from './types.ts';
 import { addPhysics3DBody, createPhysics3DWorld, createRigidBody3D } from './world.ts';
 
 describe('accumulatePhysics3DJointRowReaction', () => {

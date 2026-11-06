@@ -1,5 +1,6 @@
 import { getCollisionSupport3D } from '@flighthq/collision/contract';
-import type { Physics3DCollisionExplanation, Physics3DWorld } from '@flighthq/types/contract';
+
+import type { Physics3DCollisionExplanation, Physics3DWorld } from './types.ts';
 
 // Reports which of a world's collider kinds the narrow phase cannot detect, as plain data.
 //

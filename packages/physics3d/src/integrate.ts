@@ -1,5 +1,3 @@
-import type { RigidBody3D } from '@flighthq/types/contract';
-
 import {
   applySymmetricTensor,
   rotateSymmetricTensor,
@@ -10,6 +8,7 @@ import {
   TENSOR_YZ,
   TENSOR_ZZ,
 } from './symmetricTensor.ts';
+import type { RigidBody3D } from './types.ts';
 
 // Integration: turning forces into velocities and velocities into poses.
 //

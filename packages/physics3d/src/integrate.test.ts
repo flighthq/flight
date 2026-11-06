@@ -1,5 +1,4 @@
 import { createQuaternion, createVector3, rotateVector3ByQuaternion } from '@flighthq/geometry/contract';
-import type { RigidBody3D } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import {
@@ -14,6 +13,7 @@ import {
   createPhysics3DMassData,
   setRigidBody3DMassData,
 } from './massProperties.ts';
+import type { RigidBody3D } from './types.ts';
 import { createRigidBody3D } from './world.ts';
 
 describe('clearRigidBody3DForces', () => {

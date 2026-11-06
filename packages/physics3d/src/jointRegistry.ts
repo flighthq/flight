@@ -1,12 +1,6 @@
-import type {
-  Physics3DJoint,
-  Physics3DJointKind,
-  Physics3DJointSolver,
-  Physics3DWorld,
-} from '@flighthq/types/contract';
-
 import { rebuildPhysics3DJointCollisionSuppressions } from './jointCollisionSuppression.ts';
 import { assertPhysics3DWorldNotStepping, physics3DJointOwners } from './ownership.ts';
+import type { Physics3DJoint, Physics3DJointKind, Physics3DJointSolver, Physics3DWorld } from './types.ts';
 import { findPhysics3DBody, wakePhysics3DBody } from './world.ts';
 
 // Adds `joint` to `world` under the same canonical body ordering contacts use, exchanging its two ends when
