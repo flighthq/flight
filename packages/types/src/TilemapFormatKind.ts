@@ -1,3 +1,6 @@
+// Exact value bridge for the runtime @flighthq/types -> @flighthq/tilemap-formats dependency cycle.
+// Keep aligned with @flighthq/tilemap-formats/contract until legacy value exports can be removed.
+
 /** Identifies a tilemap or tileset document format for detection and dispatch.
  *
  *  Open string alias: use a vendor-prefixed value (e.g. `'acme.MyTilemap'`) for a custom format so it

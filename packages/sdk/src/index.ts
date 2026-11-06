@@ -289,6 +289,13 @@ export * from '@flighthq/textureatlas';
 export * from '@flighthq/textureatlas-formats';
 export * from '@flighthq/tilemap';
 export * from '@flighthq/tilemap-formats';
+export {
+  type TilemapFormatKind,
+  TilemapFormatKindTiledTmj,
+  TilemapFormatKindTiledTmx,
+  TilemapFormatKindTiledTsj,
+  TilemapFormatKindTiledTsx,
+} from '@flighthq/tilemap-formats';
 export * from '@flighthq/tokens';
 export * from '@flighthq/timeline';
 export * from '@flighthq/tray';

@@ -7,20 +7,20 @@ import type {
   TiledTileset,
   TilemapFormatDescriptor,
   TilemapFormatEntry,
-  TilemapFormatKind,
   TilemapImportOptions,
   TilesetFormatDescriptor,
   TilesetFormatEntry,
 } from '@flighthq/types/contract';
+
+import { parseTiledTilesetJson, parseTiledTmj } from './tiledJsonParse.ts';
+import { parseTiledTileset, parseTiledTmx } from './tiledXmlParse.ts';
 import {
   TilemapFormatKindTiledTmj,
   TilemapFormatKindTiledTmx,
   TilemapFormatKindTiledTsj,
   TilemapFormatKindTiledTsx,
-} from '@flighthq/types/contract';
-
-import { parseTiledTilesetJson, parseTiledTmj } from './tiledJsonParse.ts';
-import { parseTiledTileset, parseTiledTmx } from './tiledXmlParse.ts';
+} from './tilemapFormatKind.ts';
+import type { TilemapFormatKind } from './tilemapFormatKind.ts';
 
 /**
  * Installs the formats named in `options` into the two registries.

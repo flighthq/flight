@@ -1,11 +1,3 @@
-import type { TilemapFormatKind } from '@flighthq/types/contract';
-import {
-  TilemapFormatKindTiledTmj,
-  TilemapFormatKindTiledTmx,
-  TilemapFormatKindTiledTsj,
-  TilemapFormatKindTiledTsx,
-} from '@flighthq/types/contract';
-
 import {
   applyTilemapImportOptions,
   detectTilemapFormat,
@@ -26,6 +18,13 @@ import {
   unregisterTilemapFormat,
   unregisterTilesetFormat,
 } from './tilemapDetect.ts';
+import {
+  TilemapFormatKindTiledTmj,
+  TilemapFormatKindTiledTmx,
+  TilemapFormatKindTiledTsj,
+  TilemapFormatKindTiledTsx,
+} from './tilemapFormatKind.ts';
+import type { TilemapFormatKind } from './tilemapFormatKind.ts';
 
 const TMX = `<?xml version="1.0" encoding="UTF-8"?>
 <!-- authored by hand -->

@@ -40,13 +40,13 @@ import {
   parseSpineJsonRequirements,
 } from '@flighthq/skeleton2d-formats/contract';
 import { parseSwfHeader, parseSwfRequirements } from '@flighthq/swf/contract';
-import { TILEMAP_REQUIREMENT_KEY_NAMESPACE } from '@flighthq/tilemap-formats/contract';
 import {
+  TILEMAP_REQUIREMENT_KEY_NAMESPACE,
   TilemapFormatKindTiledTmj,
   TilemapFormatKindTiledTmx,
   TilemapFormatKindTiledTsj,
   TilemapFormatKindTiledTsx,
-} from '@flighthq/types/contract';
+} from '@flighthq/tilemap-formats/contract';
 import { parseXmlDocument } from '@flighthq/xml/contract';
 
 import { composeContentAnalyzers } from './composeContentAnalyzers.ts';
