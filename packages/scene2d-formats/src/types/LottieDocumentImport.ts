@@ -1,4 +1,7 @@
-import type { AnimationClip, DisplayObject, Entity, ImageResource } from '@flighthq/types/contract';
+import type { AnimationClip } from '@flighthq/animation/contract';
+import type { Entity } from '@flighthq/entity/contract';
+import type { ImageResource } from '@flighthq/image/contract';
+import type { DisplayObject } from '@flighthq/scene2d/contract';
 
 import type { LottieImageAsset } from './LottieDocument.ts';
 import type {

@@ -29,6 +29,9 @@
       "path": "../importdiagnostics"
     },
     {
+      "path": "../layout"
+    },
+    {
       "path": "../requirement"
     },
     {

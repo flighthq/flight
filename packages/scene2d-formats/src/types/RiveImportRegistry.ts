@@ -1,4 +1,6 @@
-import type { DisplayObject, Entity, ImportDiagnostic } from '@flighthq/types/contract';
+import type { Entity } from '@flighthq/entity/contract';
+import type { ImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import type { DisplayObject } from '@flighthq/scene2d/contract';
 
 import type {
   RiveAdvancedBlend,

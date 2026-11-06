@@ -1,5 +1,9 @@
+import type { Matrix, Rectangle } from '@flighthq/geometry/contract';
+import type { ImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import type { PathWinding } from '@flighthq/path/contract';
-import type { ImportDiagnostic, Matrix, Node2D, Rectangle, SpreadMethod, XmlElement } from '@flighthq/types/contract';
+import type { Node2D } from '@flighthq/scene2d/contract';
+import type { SpreadMethod } from '@flighthq/shape/contract';
+import type { XmlElement } from '@flighthq/xml/contract';
 
 import type { SvgDocumentImportOptions } from './SvgDocumentImport.ts';
 

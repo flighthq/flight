@@ -8,6 +8,7 @@
     "declarationMap": true,
     "sourceMap": true,
     "moduleSuffixes": [
+      ".scene2d-formats-bridge-types",
       ".keyboard-types",
       ".scene2d-types",
       ".interaction-types",
@@ -320,7 +321,7 @@
     "src/ViewportScaleMode.node-types.ts",
     "src/VoxelGrid.ts",
     "src/XmlElement.ts",
-    "src/contract.scene2d-formats-types.ts"
+    "src/contract.scene2d-formats-bridge-types.ts"
   ],
   "include": []
 }

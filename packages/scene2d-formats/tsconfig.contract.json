@@ -8,7 +8,12 @@
     "declarationMap": true,
     "sourceMap": true,
     "moduleSuffixes": [
-      ".scene2d-formats-types",
+      ".scene2d-formats-bridge-types",
+      ".animation-types",
+      ".entity-types",
+      ".image-types",
+      ".scene2d-types",
+      ".shape-types",
       ".geometry-types",
       ".path-boolean-types",
       ".path-types",
@@ -18,8 +23,18 @@
     "tsBuildInfoFile": "dist/.tsbuildinfo.contract"
   },
   "references": [
+    { "path": "../animation" },
+    { "path": "../entity" },
+    { "path": "../geometry/tsconfig.contract.json" },
+    { "path": "../image/tsconfig.contract.json" },
+    { "path": "../importdiagnostics" },
+    { "path": "../layout" },
     { "path": "../path/tsconfig.contract.json" },
-    { "path": "../types/tsconfig.scene2d-formats-types.json" }
+    { "path": "../path-boolean/tsconfig.contract.json" },
+    { "path": "../scene2d/tsconfig.contract.json" },
+    { "path": "../shape/tsconfig.contract.json" },
+    { "path": "../types/tsconfig.scene2d-formats-types.json" },
+    { "path": "../xml" }
   ],
   "include": ["src/contract.scene2d-formats-types.ts", "src/types/**/*.ts"]
 }

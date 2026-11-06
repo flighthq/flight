@@ -1,4 +1,4 @@
-import type { ImageResource } from '@flighthq/types/contract';
+import type { ImageResource } from '@flighthq/image/contract';
 
 import type { SvgClipHandlerEntry, SvgElementHandlerEntry } from './SvgRegistry.ts';
 

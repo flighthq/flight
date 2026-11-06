@@ -1,4 +1,4 @@
-import type { PathBooleanKernel } from '@flighthq/types/contract';
+import type { PathBooleanKernel } from '@flighthq/path-boolean/contract';
 
 import type { RiveImportRegistry } from './RiveImportRegistry.ts';
 

@@ -1,13 +1,10 @@
+import type { AnimationChannel } from '@flighthq/animation/contract';
+import type { ImageResource } from '@flighthq/image/contract';
+import type { ImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import type { Path } from '@flighthq/path/contract';
-import type {
-  AdvancedBlendMode,
-  AnimationChannel,
-  DisplayObject,
-  ImageResource,
-  ImportDiagnostic,
-  Node2D,
-  Shape,
-} from '@flighthq/types/contract';
+import type { DisplayObject, Node2D } from '@flighthq/scene2d/contract';
+import type { Shape } from '@flighthq/shape/contract';
+import type { AdvancedBlendMode } from '@flighthq/types/contract';
 
 import type {
   LottieAsset,
