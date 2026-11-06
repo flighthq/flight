@@ -1,12 +1,29 @@
 {
-  "compilerOptions": { "composite": true },
+  "compilerOptions": {
+    "composite": true
+  },
   "files": [],
   "references": [
-    { "path": "../geometry/tsconfig.runtime.json" },
-    { "path": "../registry" },
-    { "path": "../shape/tsconfig.runtime.json" },
-    { "path": "../types" },
-    { "path": "./tsconfig.contract.json" },
-    { "path": "./tsconfig.runtime.json" }
+    {
+      "path": "../entity"
+    },
+    {
+      "path": "../geometry/tsconfig.runtime.json"
+    },
+    {
+      "path": "../registry"
+    },
+    {
+      "path": "../shape/tsconfig.runtime.json"
+    },
+    {
+      "path": "../texture/tsconfig.contract.json"
+    },
+    {
+      "path": "./tsconfig.contract.json"
+    },
+    {
+      "path": "./tsconfig.runtime.json"
+    }
   ]
 }

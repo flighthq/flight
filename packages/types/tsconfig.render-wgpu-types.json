@@ -370,8 +370,7 @@
     "src/WgpuVelocityWriter.render-wgpu-types.ts",
     "src/contract.render-wgpu-types.ts",
     "src/contract.scene2d-dom-types.ts",
-    "src/contract.scene2d-wgpu-types.ts",
-    "src/contract.shape-types.ts"
+    "src/contract.scene2d-wgpu-types.ts"
   ],
   "include": []
 }

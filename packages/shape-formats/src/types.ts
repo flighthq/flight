@@ -1,5 +1,5 @@
 import type { ShapeCommandKey } from '@flighthq/shape/contract';
-import type { Texture } from '@flighthq/types/contract';
+import type { Texture } from '@flighthq/texture/contract';
 
 // Runtime counterpart to ShapeCommandRegistry's compile-time labeled tuples. Argument names are
 // authoring-format field names, while types and requiredArgumentCount are the positional validation

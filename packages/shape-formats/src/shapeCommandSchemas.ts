@@ -1,6 +1,6 @@
+import type { Kind } from '@flighthq/entity/contract';
 import { withKindMapEntry } from '@flighthq/registry/contract';
 import type { ShapeCommandKey } from '@flighthq/shape/contract';
-import type { Kind } from '@flighthq/types/contract';
 
 import type { ShapeCommandSchema, ShapeCommandSchemaArgument } from './types.ts';
 

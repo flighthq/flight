@@ -10,7 +10,8 @@ export type {
   ShapeRasterizer,
 } from './contract.scene2d-dom-types.ts';
 export type { ColorScaleBias, ImageResource, RenderProxy2D, TintMaterialData } from './contract.scene2d-wgpu-types.ts';
-export type { Entity, Texture } from './contract.shape-types.ts';
+export type { Entity } from './Entity.ts';
+export type { Texture } from './Texture.ts';
 export type { Effect } from './Effect.ts';
 export type { EntityRuntime } from './Entity.ts';
 export type { ExternalTexture } from './ExternalTexture.ts';

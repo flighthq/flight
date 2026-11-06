@@ -10,11 +10,24 @@
     "tsBuildInfoFile": "dist/.tsbuildinfo.runtime"
   },
   "references": [
-    { "path": "../geometry/tsconfig.runtime.json" },
-    { "path": "../registry" },
-    { "path": "../shape/tsconfig.runtime.json" },
-    { "path": "../types" },
-    { "path": "./tsconfig.contract.json" }
+    {
+      "path": "../entity"
+    },
+    {
+      "path": "../geometry/tsconfig.runtime.json"
+    },
+    {
+      "path": "../registry"
+    },
+    {
+      "path": "../shape/tsconfig.runtime.json"
+    },
+    {
+      "path": "../texture/tsconfig.runtime.json"
+    },
+    {
+      "path": "./tsconfig.contract.json"
+    }
   ],
   "include": ["src/**/*.ts"],
   "exclude": ["src/contract.shape-formats-types.ts", "src/types.ts"]

@@ -20,7 +20,7 @@ import {
   createShape,
   getShapeCommandCount,
 } from '@flighthq/shape/contract';
-import type { Texture } from '@flighthq/types/contract';
+import type { Texture } from '@flighthq/texture/contract';
 
 import { formatShapeJson, parseShapeJson } from './shapeJson.ts';
 
