@@ -9,6 +9,7 @@
     "sourceMap": true,
     "moduleSuffixes": [
       ".scene2d-dom-types",
+      ".render-types",
       ".app-types",
       ".geometry-types",
       ".path-types",
@@ -21,6 +22,9 @@
     "tsBuildInfoFile": "dist/.tsbuildinfo.contract"
   },
   "references": [
+    {
+      "path": "../render/tsconfig.contract.json"
+    },
     {
       "path": "../app/tsconfig.contract.json"
     },
