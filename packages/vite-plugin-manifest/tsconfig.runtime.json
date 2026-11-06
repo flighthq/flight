@@ -22,7 +22,7 @@
     { "path": "../render-wgpu/tsconfig.runtime.json" },
     { "path": "../requirement" },
     { "path": "../requirement-catalog" },
-    { "path": "../requirement-codegen" },
+    { "path": "../requirement-codegen/tsconfig.runtime.json" },
     { "path": "../scene2d-dom/tsconfig.runtime.json" },
     { "path": "../scene2d-formats/tsconfig.runtime.json" },
     { "path": "../scene2d-canvas/tsconfig.contract.json" },

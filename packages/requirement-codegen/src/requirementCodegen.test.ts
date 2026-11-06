@@ -1,12 +1,12 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity, EntityRuntimeKey, finishEntity } from '@flighthq/entity/contract';
 import { createRequirementCatalog } from '@flighthq/requirement-catalog/contract';
 import type {
   RequirementCatalog,
   RequirementCatalogEntry,
   RequirementDisposition,
 } from '@flighthq/requirement-catalog/contract';
-import type { Requirement, RequirementSet } from '@flighthq/types/contract';
-import { EntityRuntimeKey, RequirementFacet } from '@flighthq/types/contract';
+import type { Requirement, RequirementSetRaw } from '@flighthq/requirement/contract';
+import { RequirementFacet } from '@flighthq/requirement/contract';
 
 import { createRequirementCodegenPlan, initializeRequirementCodegenPlan } from './requirementCodegen.ts';
 
@@ -30,7 +30,7 @@ describe('createRequirementCodegenPlan', () => {
   it('selects the matching backend rows in requirement and catalog order', () => {
     const catalog = createRequirementCatalog([shapeRenderer, shapeCommands, { ...shapeRenderer, backend: 'webgpu' }]);
     const requirements = (() => {
-      const out = allocateEntity<RequirementSet>();
+      const out = allocateEntity<RequirementSetRaw>();
       out.covers = [RequirementFacet.SceneNodeKind];
       out.requirements = [
         { facet: RequirementFacet.SceneNodeKind, key: 'Shape' },
@@ -52,7 +52,7 @@ describe('createRequirementCodegenPlan', () => {
     const catalog = createRequirementCatalog([shapeRenderer]);
     const requirement = { facet: RequirementFacet.SceneNodeKind, key: 'Shape' } as const;
     const requirements = (() => {
-      const out = allocateEntity<RequirementSet>();
+      const out = allocateEntity<RequirementSetRaw>();
       out.covers = [RequirementFacet.SceneNodeKind, RequirementFacet.SceneShapeCommand];
       out.requirements = [requirement, requirement];
       return finishEntity(out);
@@ -180,8 +180,8 @@ function disposedRequirement(kind: string): Requirement {
 
 // Built the way every other set in this file is built, so the test needs no dependency the package
 // does not already declare.
-function disposedSet(requirements: readonly Requirement[]): RequirementSet {
-  const out = allocateEntity<RequirementSet>();
+function disposedSet(requirements: readonly Requirement[]): RequirementSetRaw {
+  const out = allocateEntity<RequirementSetRaw>();
   out.covers = [RequirementFacet.SceneNodeKind];
   out.requirements = [...requirements];
   return finishEntity(out);

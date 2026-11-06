@@ -387,7 +387,6 @@ export * from './ScanlinesEffect.ts';
 export * from './Scene3D.ts';
 export * from './SceneCoverageCatalog.ts';
 export * from './RequirementCatalog.ts';
-export * from './RequirementCodegen.ts';
 export * from './SceneCoverageEntry.ts';
 export * from './Scene3DKindUsage.ts';
 export * from './Scene3DAnimationPath.ts';

@@ -1,18 +1,14 @@
+import type { Entity, EntityConstruction } from '@flighthq/entity/contract';
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { findRequirementCatalogEntries } from '@flighthq/requirement-catalog/contract';
 import type { RequirementCatalog, RequirementCatalogEntry } from '@flighthq/requirement-catalog/contract';
-import type {
-  Entity,
-  EntityConstruction,
-  RequirementCodegenPlan,
-  RequirementDeclination,
-  Requirement,
-  RequirementSet,
-} from '@flighthq/types/contract';
+import type { Requirement, RequirementSetRaw } from '@flighthq/requirement/contract';
+
+import type { RequirementCodegenPlan, RequirementDeclination } from './types.ts';
 
 export function createRequirementCodegenPlan(
   catalog: Readonly<RequirementCatalog>,
-  requirements: Readonly<RequirementSet>,
+  requirements: Readonly<RequirementSetRaw>,
   backend: string,
 ): RequirementCodegenPlan & Entity {
   const out = allocateEntity<RequirementCodegenPlan & Entity>();
@@ -25,7 +21,7 @@ export function createRequirementCodegenPlan(
 export function initializeRequirementCodegenPlan(
   out: EntityConstruction<RequirementCodegenPlan & Entity>,
   catalog: Readonly<RequirementCatalog>,
-  requirements: Readonly<RequirementSet>,
+  requirements: Readonly<RequirementSetRaw>,
   backend: string,
 ): void {
   const entries: RequirementCatalogEntry[] = [];

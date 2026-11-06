@@ -41,7 +41,7 @@
       "path": "../requirement-catalog"
     },
     {
-      "path": "../requirement-codegen"
+      "path": "../requirement-codegen/tsconfig.runtime.json"
     },
     {
       "path": "../scene2d-dom/tsconfig.runtime.json"
