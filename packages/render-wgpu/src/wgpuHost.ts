@@ -1,6 +1,6 @@
 import { allocateEntity, createEntityRuntime, finishEntity } from '@flighthq/entity/contract';
-import type { NativeSurfaceHandle, Surface, SurfaceRuntime } from '@flighthq/types/contract';
-import { EntityRuntimeKey } from '@flighthq/types/contract';
+import { EntityRuntimeKey } from '@flighthq/entity/contract';
+import type { NativeSurfaceHandle, Surface, SurfaceRuntime } from '@flighthq/surface/contract';
 
 import type { HostWgpuCapability, WgpuHostAcquisition, WgpuSurfaceAttachResult } from './contract.render-wgpu-types.ts';
 

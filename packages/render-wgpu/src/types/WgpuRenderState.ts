@@ -12,11 +12,11 @@ import type {
   ShapeRasterizer,
 } from '@flighthq/render/contract';
 import type { SamplerLike, TextureSource } from '@flighthq/texture/contract';
+
 import type {
   WgpuColorAdjustmentMaterialFeature,
   WgpuColorAdjustmentMaterialFeatureGuard,
-} from '@flighthq/types/contract';
-
+} from './WgpuColorAdjustmentMaterialFeature.ts';
 import type { WgpuCompressedTextureUploader } from './WgpuCompressedTextureUploader.ts';
 import type { WgpuCustomMaterialShaderSource } from './WgpuCustomMaterialShaderSource.ts';
 import type { WgpuDeviceRuntime } from './WgpuDeviceRuntime.ts';
@@ -89,8 +89,8 @@ export interface WgpuColorAdjustmentFlush {
 
 // Package-private GPU state for a WgpuRenderState entity. Lives in the runtime tier (not on the
 // entity) so the public WgpuRenderState surface stays minimal; the render path resolves it each
-// frame via getWgpuRenderStateRuntime. Defined in @flighthq/types — the header layer — so
-// out-of-package custom renderers can reach the same state.
+// frame via getWgpuRenderStateRuntime. Defined in the render-wgpu contract owner lane so
+// out-of-package custom renderers can reach the same state without the aggregate Types package.
 export interface WgpuBindGroupLayouts extends EntityRaw {
   [EntityRuntimeKey]: EntityRuntime | undefined;
   readonly textureBindGroupLayout: GPUBindGroupLayout;

@@ -1,8 +1,8 @@
 import type { ColorScaleBias } from '@flighthq/adjustments/contract';
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
+import { BlendMode } from '@flighthq/materials/contract';
 import type { RenderProxy } from '@flighthq/render/contract';
-import type { EntityConstruction } from '@flighthq/types/contract';
-import { BlendMode } from '@flighthq/types/contract';
 
 import type { WgpuBindGroupLayouts, WgpuRenderState } from './contract.render-wgpu-types.ts';
 import { getWgpuRenderPassViewport } from './wgpuRenderPass.ts';

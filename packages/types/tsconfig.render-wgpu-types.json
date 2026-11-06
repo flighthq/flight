@@ -92,6 +92,9 @@
       "path": "../render-wgpu/tsconfig.compressed-texture-decoder-contract.json"
     },
     {
+      "path": "../render-wgpu/tsconfig.contract.json"
+    },
+    {
       "path": "../platform/tsconfig.contract.json"
     },
     {

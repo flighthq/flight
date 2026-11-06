@@ -1,5 +1,5 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { RenderTargetClear } from '@flighthq/types/contract';
+import type { RenderTargetClear } from '@flighthq/render/contract';
 
 import type {
   WgpuRenderPass,

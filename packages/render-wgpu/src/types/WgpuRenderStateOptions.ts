@@ -1,11 +1,11 @@
 import type { Kind } from '@flighthq/entity/contract';
 import type { WgpuCompressedTextureDecoder } from '@flighthq/render-wgpu/compressed-texture-decoder-contract';
 import type { RenderStateOptions, ShapeRasterizer } from '@flighthq/render/contract';
+
 import type {
   WgpuColorAdjustmentMaterialFeature,
   WgpuColorAdjustmentMaterialFeatureGuard,
-} from '@flighthq/types/contract';
-
+} from './WgpuColorAdjustmentMaterialFeature.ts';
 import type { WgpuCompressedTextureUploader } from './WgpuCompressedTextureUploader.ts';
 import type { WgpuCustomMaterialShaderSource } from './WgpuCustomMaterialShaderSource.ts';
 import type { WgpuEffectRegistration } from './WgpuEffectState.ts';

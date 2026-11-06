@@ -57,23 +57,23 @@
     "@flighthq/log": "*",
     "@flighthq/materials": "*",
     "@flighthq/meshgeometry": "*",
+    "@flighthq/node": "*",
     "@flighthq/platform": "*",
     "@flighthq/registry": "*",
     "@flighthq/render": "*",
+    "@flighthq/scene2d": "*",
     "@flighthq/scene3d": "*",
     "@flighthq/shading": "*",
     "@flighthq/signals": "*",
     "@flighthq/surface": "*",
     "@flighthq/texture": "*",
     "@flighthq/texture-formats": "*",
-    "@flighthq/types": "*",
     "@flighthq/velocity": "*"
   },
   "peerDependencies": {
     "@webgpu/types": "^0.1.70"
   },
   "devDependencies": {
-    "@flighthq/scene2d": "*",
     "@webgpu/types": "*",
     "typescript": "^7.0.2"
   },

@@ -3,6 +3,8 @@ export type {
   WgpuBitmapShader,
   WgpuClipContourEntry,
   WgpuClipContourPipelines,
+  WgpuColorAdjustmentMaterialFeature,
+  WgpuColorAdjustmentMaterialFeatureGuard,
   WgpuColorAdjustmentFlush,
   WgpuMeshInstanceBufferSlot,
   WgpuOffscreenRenderStateResult,
@@ -19,8 +21,3 @@ export type {
   WgpuTextureSourceTextureEntry,
   WgpuVideoTextureEntry,
 } from '@flighthq/render-wgpu/contract';
-// The color-adjustment feature seam is owned by @flighthq/scene2d-wgpu; render-wgpu state only stores it.
-export type {
-  WgpuColorAdjustmentMaterialFeature,
-  WgpuColorAdjustmentMaterialFeatureGuard,
-} from '@flighthq/scene2d-wgpu/contract';

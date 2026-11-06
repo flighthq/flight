@@ -1,1 +1,1 @@
-export type { WgpuShapeMesh } from '@flighthq/scene2d-wgpu/contract';
+export type { WgpuShapeMesh } from '@flighthq/render-wgpu/contract';

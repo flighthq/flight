@@ -1,6 +1,6 @@
+import type { CompressedImageResource } from '@flighthq/image/contract';
 import type { TextureContainer } from '@flighthq/texture-formats/contract';
-import type { CompressedImageResource } from '@flighthq/types/contract';
-import { CompressedImageTextureSourceKind } from '@flighthq/types/contract';
+import { CompressedImageTextureSourceKind } from '@flighthq/texture/contract';
 
 import type { WgpuCompressedTextureSupport } from './contract.render-wgpu-types.ts';
 import {

@@ -7,11 +7,11 @@ import {
 } from '@flighthq/render/contract';
 import type { Surface } from '@flighthq/surface/contract';
 import type { TextureWrap } from '@flighthq/texture/contract';
+
 import type {
   WgpuColorAdjustmentMaterialFeature,
   WgpuColorAdjustmentMaterialFeatureGuard,
-} from '@flighthq/types/contract';
-
+} from './contract.render-wgpu-types.ts';
 import type {
   HostWgpuCapability,
   WgpuDeviceRuntime,

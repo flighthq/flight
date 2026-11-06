@@ -10,8 +10,9 @@ import type {
 } from './WgpuRenderState.ts';
 import type { WgpuShapeMesh } from './WgpuShapeMesh.ts';
 
-// Exact focused bridge for the Render-WGPU registry cycle. Render-WGPU stores this Scene2D-WGPU
-// feature, while the feature names Render-WGPU state and shape-buffer contracts.
+// The opt-in inline color-adjustment fold stored by a WebGPU render state. The implementation may
+// live in a higher-level renderer, but this capability contract belongs beside the registry that
+// stores it so the render-wgpu owner lane remains acyclic.
 export interface WgpuColorAdjustmentMaterialFeature {
   readonly fragmentShaderChunk: string;
   readonly matrixFragmentShaderChunk: string;

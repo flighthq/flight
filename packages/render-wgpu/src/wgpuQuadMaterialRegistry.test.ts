@@ -1,3 +1,4 @@
+import { EntityRuntimeKey } from '@flighthq/entity/contract';
 import {
   addLogSink,
   createLogState,
@@ -6,10 +7,11 @@ import {
   removeLogSink,
 } from '@flighthq/log/contract';
 import type { LogState } from '@flighthq/log/contract';
+import type { LogEntry, MemoryLogSink } from '@flighthq/log/contract';
+import type { Material } from '@flighthq/materials/contract';
+import { StandardMaterialKind } from '@flighthq/materials/contract';
 import { enableRenderRegistriesGuards, explainRenderRegistriesMisses } from '@flighthq/render/contract';
 import { RenderRegistryTable } from '@flighthq/render/contract';
-import type { LogEntry, Material, MemoryLogSink } from '@flighthq/types/contract';
-import { StandardMaterialKind, EntityRuntimeKey } from '@flighthq/types/contract';
 
 import type { WgpuQuadMaterialRenderer, WgpuRenderState } from './contract.render-wgpu-types.ts';
 import {

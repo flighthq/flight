@@ -1,6 +1,6 @@
 import type { RenderTexture, RenderTargetFormat } from '@flighthq/render/contract';
 import { resolveRenderTargetDescriptor } from '@flighthq/render/contract';
-import type { RenderTargetClear } from '@flighthq/types/contract';
+import type { RenderTargetClear } from '@flighthq/render/contract';
 
 import type {
   WgpuRenderPass,

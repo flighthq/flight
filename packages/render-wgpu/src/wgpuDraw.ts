@@ -1,18 +1,13 @@
 import type { ColorScaleBias } from '@flighthq/adjustments/contract';
 import type { Bitmap } from '@flighthq/bitmap/contract';
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
+import type { CompressedImageResource, ImageResource } from '@flighthq/image/contract';
+import { BlendMode } from '@flighthq/materials/contract';
+import type { HasColorScaleBias } from '@flighthq/node/contract';
 import type { RenderProxy, RenderProxy2D } from '@flighthq/render/contract';
 import { getTextureSource } from '@flighthq/texture/contract';
-import type {
-  CompressedImageResource,
-  EntityConstruction,
-  HasColorScaleBias,
-  ImageResource,
-  Texture,
-  TextureColorSpace,
-  TextureSource,
-} from '@flighthq/types/contract';
-import { BlendMode } from '@flighthq/types/contract';
+import type { Texture, TextureColorSpace, TextureSource } from '@flighthq/texture/contract';
 
 import type {
   WgpuRenderState,

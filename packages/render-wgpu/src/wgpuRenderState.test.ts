@@ -1,4 +1,6 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type { Entity } from '@flighthq/entity/contract';
+import { EntityRuntimeKey } from '@flighthq/entity/contract';
 import { withKindMapEntry } from '@flighthq/registry/contract';
 import {
   enableColorAdjustmentGuards,
@@ -10,13 +12,11 @@ import {
 } from '@flighthq/render/contract';
 import type { EffectPaddingResolver, RenderRootGuard, RenderState } from '@flighthq/render/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
+
 import type {
-  Entity,
   WgpuColorAdjustmentMaterialFeature,
   WgpuColorAdjustmentMaterialFeatureGuard,
-} from '@flighthq/types/contract';
-import { EntityRuntimeKey } from '@flighthq/types/contract';
-
+} from './contract.render-wgpu-types.ts';
 import type {
   WgpuHostAcquisition,
   HostWgpuCapability,

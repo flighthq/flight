@@ -1,7 +1,7 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
 import type { RenderTarget, RenderTargetDescriptor, RenderTexture } from '@flighthq/render/contract';
 import { createRenderTexture, resetTextureUvTransform } from '@flighthq/texture/contract';
-import type { EntityConstruction } from '@flighthq/types/contract';
 
 import type { WgpuRenderState, WgpuRenderTexturePool } from './contract.render-wgpu-types.ts';
 import { createWgpuRenderTargetPool, destroyWgpuRenderTargetPool } from './wgpuRenderTargetPool.ts';

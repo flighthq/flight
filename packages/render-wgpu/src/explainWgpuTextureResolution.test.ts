@@ -1,6 +1,6 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { createTexture } from '@flighthq/texture/contract';
-import type { TextureSource } from '@flighthq/types/contract';
+import type { TextureSource } from '@flighthq/texture/contract';
 
 import { explainWgpuTextureResolution } from './explainWgpuTextureResolution.ts';
 import { createWgpuRenderStateForTest, installWgpuMock } from './wgpuTestHelper.ts';

@@ -98,9 +98,6 @@
       "path": "../texture-formats/tsconfig.contract.json"
     },
     {
-      "path": "../types/tsconfig.render-wgpu-types.json"
-    },
-    {
       "path": "../velocity/tsconfig.contract.json"
     },
     {

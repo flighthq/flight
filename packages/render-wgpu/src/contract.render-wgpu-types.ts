@@ -3,6 +3,10 @@ export type { WgpuAdapterCapabilities } from './types/WgpuAdapterCapabilities.ts
 export type { WgpuCompressedTextureDecoder } from '@flighthq/render-wgpu/compressed-texture-decoder-contract';
 export type { WgpuCompressedTextureSupport } from './types/WgpuCompressedTextureSupport.ts';
 export type { WgpuCompressedTextureUploader } from './types/WgpuCompressedTextureUploader.ts';
+export type {
+  WgpuColorAdjustmentMaterialFeature,
+  WgpuColorAdjustmentMaterialFeatureGuard,
+} from './types/WgpuColorAdjustmentMaterialFeature.ts';
 export type { WgpuCustomMaterialShaderSource } from './types/WgpuCustomMaterialShaderSource.ts';
 export type { WgpuDeviceRuntime, WgpuDeviceRuntimeResources } from './types/WgpuDeviceRuntime.ts';
 export type { WgpuDeviceSignals } from './types/WgpuDeviceSignals.ts';
@@ -70,6 +74,7 @@ export type {
   WgpuRenderTextureStatus,
 } from './types/WgpuRenderTexture.ts';
 export type { WgpuScene3DPass } from './types/WgpuScene3DRuntime.ts';
+export type { WgpuShapeMesh } from './types/WgpuShapeMesh.ts';
 export type { WgpuSkinningAdapter } from './types/WgpuSkinningAdapter.ts';
 export type { WgpuSurface } from './types/WgpuSurface.ts';
 export type { WgpuTextureResolver } from './types/WgpuTextureResolver.ts';

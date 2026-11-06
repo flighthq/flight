@@ -1,14 +1,15 @@
 import type { Bitmap } from '@flighthq/bitmap/contract';
+import type { CompressedImageResource, ImageResource } from '@flighthq/image/contract';
+import { BlendMode } from '@flighthq/materials/contract';
 import { getOrCreateRenderProxy2D, prepareScene2DRender } from '@flighthq/render/contract';
 import { createSprite } from '@flighthq/scene2d/contract';
 import { getTextureSource } from '@flighthq/texture/contract';
-import type { CompressedImageResource, ImageResource, Texture } from '@flighthq/types/contract';
+import type { Texture } from '@flighthq/texture/contract';
 import {
   BitmapTextureSourceKind,
-  BlendMode,
   CompressedImageTextureSourceKind,
   ImageTextureSourceKind,
-} from '@flighthq/types/contract';
+} from '@flighthq/texture/contract';
 
 import type { WgpuTextureEntry } from './contract.render-wgpu-types.ts';
 import { registerWgpuCompressedTextureDecoder, registerWgpuCompressedTextureUpload } from './wgpuCompressedTexture.ts';

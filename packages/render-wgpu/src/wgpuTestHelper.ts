@@ -1,4 +1,4 @@
-import type { RenderTargetClear } from '@flighthq/types/contract';
+import type { RenderTargetClear } from '@flighthq/render/contract';
 
 import type {
   WgpuRenderStateOptions,

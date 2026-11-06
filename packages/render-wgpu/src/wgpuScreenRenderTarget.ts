@@ -1,5 +1,6 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { EntityConstruction, Surface } from '@flighthq/types/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
+import type { Surface } from '@flighthq/surface/contract';
 
 import type {
   HostWgpuCapability,

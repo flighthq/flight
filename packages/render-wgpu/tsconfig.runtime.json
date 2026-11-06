@@ -29,6 +29,9 @@
       "path": "../log"
     },
     {
+      "path": "../node/tsconfig.contract.json"
+    },
+    {
       "path": "../platform/tsconfig.contract.json"
     },
     {
@@ -51,9 +54,6 @@
     },
     {
       "path": "../texture-formats/tsconfig.contract.json"
-    },
-    {
-      "path": "../types"
     },
     {
       "path": "../effects/tsconfig.runtime.json"

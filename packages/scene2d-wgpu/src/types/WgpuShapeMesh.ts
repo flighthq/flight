@@ -1,7 +1,2 @@
-export interface WgpuShapeMesh {
-  vertices: Float32Array;
-  indices: Uint16Array;
-  // Packed RGBA (`0xRRGGBBAA`), carried straight from the shape fill region it was tessellated from.
-  color: number;
-  alpha: number;
-}
+// Compatibility owner route: the low-level GPU mesh payload belongs to render-wgpu.
+export type { WgpuShapeMesh } from '@flighthq/render-wgpu/contract';
