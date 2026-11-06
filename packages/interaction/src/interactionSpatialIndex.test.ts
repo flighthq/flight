@@ -1,8 +1,8 @@
 import { setRectangle } from '@flighthq/geometry/contract';
 import { addNodeChild, getNodeLocalBoundsRectangle, invalidateNodeLocalTransform } from '@flighthq/node/contract';
 import { createDisplayObject, createNode2D } from '@flighthq/scene2d/contract';
+import { DisplayObjectKind } from '@flighthq/scene2d/contract';
 import { createSpatialIndex2D, createUniformGridSpatialBackend2D } from '@flighthq/spatial/contract';
-import { DisplayObjectKind } from '@flighthq/types/contract';
 
 import { hitTestGraphLocalBounds, registerHitTest } from './hitTests.ts';
 import { createInteractionManager } from './interactionManager.ts';

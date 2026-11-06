@@ -6,9 +6,9 @@ import {
   getMemoryLogSinkEntries,
   removeLogSink,
 } from '@flighthq/log/contract';
+import type { LogEntry, MemoryLogSink } from '@flighthq/log/contract';
 import { addNodeChild } from '@flighthq/node/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
-import type { LogEntry, MemoryLogSink } from '@flighthq/types/contract';
 
 import {
   disableInteractionGuards,

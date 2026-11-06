@@ -11,27 +11,78 @@
     "tsBuildInfoFile": "dist/.tsbuildinfo.runtime"
   },
   "references": [
-    { "path": "../entity" },
-    { "path": "../geometry/tsconfig.runtime.json" },
-    { "path": "../movieclip/tsconfig.runtime.json" },
-    { "path": "../node/tsconfig.runtime.json" },
-    { "path": "../registry" },
-    { "path": "../scene-document/tsconfig.contract.json" },
-    { "path": "../scene2d/tsconfig.runtime.json" },
-    { "path": "../log" },
-    { "path": "../path/tsconfig.runtime.json" },
-    { "path": "../shape/tsconfig.runtime.json" },
-    { "path": "../signals" },
-    { "path": "../spatial/tsconfig.runtime.json" },
-    { "path": "../quadbatch" },
-    { "path": "../tilemap" },
-    { "path": "../bitmap/tsconfig.runtime.json" },
-    { "path": "../clip/tsconfig.runtime.json" },
-    { "path": "../text/tsconfig.runtime.json" },
-    { "path": "../textlayout/tsconfig.runtime.json" },
-    { "path": "../textureatlas/tsconfig.runtime.json" },
-    { "path": "../types" },
-    { "path": "./tsconfig.contract.json" }
+    {
+      "path": "../entity"
+    },
+    {
+      "path": "../geometry/tsconfig.runtime.json"
+    },
+    {
+      "path": "../movieclip/tsconfig.runtime.json"
+    },
+    {
+      "path": "../node/tsconfig.runtime.json"
+    },
+    {
+      "path": "../registry"
+    },
+    {
+      "path": "../scene-document/tsconfig.contract.json"
+    },
+    {
+      "path": "../scene2d/tsconfig.runtime.json"
+    },
+    {
+      "path": "../log"
+    },
+    {
+      "path": "../path/tsconfig.runtime.json"
+    },
+    {
+      "path": "../shape/tsconfig.runtime.json"
+    },
+    {
+      "path": "../signals"
+    },
+    {
+      "path": "../spatial/tsconfig.runtime.json"
+    },
+    {
+      "path": "../quadbatch"
+    },
+    {
+      "path": "../tilemap"
+    },
+    {
+      "path": "../bitmap/tsconfig.runtime.json"
+    },
+    {
+      "path": "../clip/tsconfig.runtime.json"
+    },
+    {
+      "path": "../text/tsconfig.runtime.json"
+    },
+    {
+      "path": "../textlayout/tsconfig.runtime.json"
+    },
+    {
+      "path": "../textureatlas/tsconfig.runtime.json"
+    },
+    {
+      "path": "../types"
+    },
+    {
+      "path": "../image/tsconfig.runtime.json"
+    },
+    {
+      "path": "../texture/tsconfig.runtime.json"
+    },
+    {
+      "path": "../input"
+    },
+    {
+      "path": "./tsconfig.contract.json"
+    }
   ],
   "include": ["src/**/*.ts"],
   "exclude": ["src/contract.interaction-types.ts", "src/types/**/*.ts"]

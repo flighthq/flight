@@ -1,4 +1,6 @@
 import { setRectangle } from '@flighthq/geometry/contract';
+import type { InputSignalsRaw as InputSignals } from '@flighthq/input/contract';
+import type { InputKeyboardData, InputPointerData } from '@flighthq/input/contract';
 import {
   addNodeChild,
   createNode,
@@ -7,10 +9,9 @@ import {
   invalidateNodeLocalTransform,
 } from '@flighthq/node/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
+import { DisplayObjectKind } from '@flighthq/scene2d/contract';
 import { connectSignal, createSignal, emitSignal, isSlotConnected } from '@flighthq/signals/contract';
 import type { Signal } from '@flighthq/signals/contract';
-import type { Cursor, InputKeyboardData, InputPointerData, InputSignals } from '@flighthq/types/contract';
-import { DisplayObjectKind } from '@flighthq/types/contract';
 
 import type {
   FocusEventData,
@@ -45,6 +46,7 @@ import {
   setInteractionConnectGuard,
 } from './interactionManager.ts';
 import { setNodeCursor, setNodeHitTestEnabled, setNodePointerDoubleClickEnabled } from './nodeInteractionState.ts';
+import type { Cursor } from './types/Cursor.ts';
 
 beforeAll(() => {
   registerHitTest(DisplayObjectKind, hitTestGraphLocalBounds);

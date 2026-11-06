@@ -1,9 +1,11 @@
 import { clipRegionContainsPoint } from '@flighthq/clip/contract';
+import type { Kind } from '@flighthq/entity/contract';
 import {
   containsRectanglePointXY,
   intersectsRectangle,
   inverseMatrixTransformPointXY,
 } from '@flighthq/geometry/contract';
+import type { Rectangle } from '@flighthq/geometry/contract';
 import {
   getNodeLocalBoundsRectangle,
   getNodeParent,
@@ -14,7 +16,7 @@ import {
 import type { Node, NodeAny } from '@flighthq/node/contract';
 import { containsPathPoint } from '@flighthq/path/contract';
 import type { Path } from '@flighthq/path/contract';
-import type { Node2D, Kind, Rectangle } from '@flighthq/types/contract';
+import type { Node2D } from '@flighthq/scene2d/contract';
 
 import type { HitArea, HitTestFunction, HitTestPreciseFunction, HitTestResult } from './contract.interaction-types.ts';
 import { getNodeInteractionState } from './nodeInteractionState.ts';

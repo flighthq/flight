@@ -1,7 +1,8 @@
 import { getNodeRuntime, getNodeWorldBoundsRectangle } from '@flighthq/node/contract';
 import type { NodeAny } from '@flighthq/node/contract';
+import type { Node2D } from '@flighthq/scene2d/contract';
 import { clearSpatialIndex2D, insertSpatialObject2D, querySpatialPoint2D } from '@flighthq/spatial/contract';
-import type { Node2D, SpatialAabb2D, SpatialObjectId } from '@flighthq/types/contract';
+import type { SpatialAabb2D, SpatialObjectId } from '@flighthq/spatial/contract';
 
 import type { InteractionManager } from './contract.interaction-types.ts';
 import { hitTestNodeRegion } from './hitTests.ts';

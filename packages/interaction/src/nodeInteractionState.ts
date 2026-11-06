@@ -1,7 +1,7 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
 import { getNodeRuntime } from '@flighthq/node/contract';
 import type { NodeAny, NodeRuntime } from '@flighthq/node/contract';
-import type { EntityConstruction } from '@flighthq/types/contract';
 
 import type { Cursor, HitArea, NodeInteractionState } from './contract.interaction-types.ts';
 

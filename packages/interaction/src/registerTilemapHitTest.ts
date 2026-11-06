@@ -1,8 +1,9 @@
 import { inverseMatrixTransformPointXY } from '@flighthq/geometry/contract';
 import { getNodeWorldMatrix } from '@flighthq/node/contract';
 import type { NodeAny } from '@flighthq/node/contract';
+import type { Node2D } from '@flighthq/scene2d/contract';
 import { getTilemapColumnAtX, getTilemapRowAtY, getTilemapTile } from '@flighthq/tilemap/contract';
-import type { Node2D, Tilemap } from '@flighthq/types/contract';
+import type { Tilemap } from '@flighthq/types/contract';
 import { TilemapKind } from '@flighthq/types/contract';
 
 import { registerHitTestPrecise } from './hitTests.ts';

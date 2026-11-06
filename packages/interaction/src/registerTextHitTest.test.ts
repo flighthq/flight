@@ -3,11 +3,11 @@ import { getNodeLocalBoundsRectangle } from '@flighthq/node/contract';
 import { createTextLabel, setTextLabelString, TextLabelKind } from '@flighthq/text/contract';
 import type { TextLabel } from '@flighthq/text/contract';
 import { setTextLayoutMeasureProvider } from '@flighthq/textlayout/contract';
-import type { HitTestResult } from '@flighthq/types/contract';
 
 import { describeGraphHit, findGraphHitTargetPrecise, hitTestGraphLocalBounds, registerHitTest } from './hitTests.ts';
 import { setNodeHitTestEnabled } from './nodeInteractionState.ts';
 import { registerTextHitTest } from './registerTextHitTest.ts';
+import type { HitTestResult } from './types/HitTestResult.ts';
 
 function hittableLabel(text: string): TextLabel {
   const label = createTextLabel();

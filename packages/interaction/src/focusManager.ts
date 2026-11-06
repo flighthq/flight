@@ -1,9 +1,10 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
+import type { InputKeyboardData } from '@flighthq/input/contract';
 import { getNodeParent, getNodeRuntime, getNodeWorldBoundsRectangle } from '@flighthq/node/contract';
 import type { NodeAny, Spatial2DNode } from '@flighthq/node/contract';
 import { connectSignal, disconnectSignal, emitSignal } from '@flighthq/signals/contract';
 import type { Signal } from '@flighthq/signals/contract';
-import type { EntityConstruction, InputKeyboardData } from '@flighthq/types/contract';
 
 import type {
   FocusDirection,

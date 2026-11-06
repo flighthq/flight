@@ -1,15 +1,11 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
 import { inverseMatrixTransformPointXY } from '@flighthq/geometry/contract';
+import type { InputKeyboardData, InputPointerData } from '@flighthq/input/contract';
 import { getNodeParent, getNodeRuntime, getNodeWorldMatrix } from '@flighthq/node/contract';
 import type { HasTransform2DRuntime, NodeAny, NodeRuntime, Transform2DNode } from '@flighthq/node/contract';
 import { connectSignal, createSignal, disconnectSignal, emitSignal, isSlotConnected } from '@flighthq/signals/contract';
 import type { Signal, SignalConnectOptions, SlotId } from '@flighthq/signals/contract';
-import type {
-  AnyInteractionSignalSlot,
-  InputKeyboardData,
-  InputPointerData,
-  EntityConstruction,
-} from '@flighthq/types/contract';
 
 import type {
   Cursor,
@@ -30,6 +26,7 @@ import type {
 import { findGraphHitTarget, findGraphHitTargetPrecise } from './hitTests.ts';
 import { findSpatialInteractionTarget } from './interactionSpatialIndex.ts';
 import { getNodeCursor, getNodeInteractionState } from './nodeInteractionState.ts';
+import type { AnyInteractionSignalSlot } from './types/InteractionManager.ts';
 
 export function captureInteractionPointer<N extends NodeAny>(
   manager: InteractionManager<N>,

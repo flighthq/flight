@@ -64,3 +64,33 @@ export * from './registerTextHitTest.ts';
 export * from './registerTilemapHitTest.ts';
 export * from './spatialQuery.ts';
 export * from './spriteHitTests.ts';
+export type {
+  AnyInteractionSignalSlot,
+  Cursor,
+  CursorBackend,
+  FocusDirection,
+  FocusEventData,
+  FocusManager,
+  FocusManagerOptions,
+  FocusNavigationInput,
+  FocusNavigationOptions,
+  HitArea,
+  HitTestFunction,
+  HitTestPreciseFunction,
+  HitTestResult,
+  InteractionConnectGuard,
+  InteractionDispatchLayer,
+  InteractionDispatchLayerOptions,
+  InteractionHitEligibility,
+  InteractionInputSource,
+  InteractionManager,
+  InteractionManagerOptions,
+  InteractionPointerOptions,
+  InteractionPointerState,
+  InteractionSignalName,
+  InteractionSignals,
+  KeyboardEventData,
+  Node2DInteractionSignals,
+  NodeInteractionState,
+  PointerEventData,
+} from './contract.interaction-types.ts';
