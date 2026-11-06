@@ -4,7 +4,6 @@
   "references": [
     { "path": "../app/tsconfig.contract.json" },
     { "path": "../entity" },
-    { "path": "../types" },
     { "path": "./tsconfig.contract.json" },
     { "path": "./tsconfig.runtime.json" }
   ]

@@ -3,12 +3,12 @@
 // complete versioned verification handshake only when tool-capture is driving the page.
 
 import type { Bitmap } from '@flighthq/bitmap/contract';
+import type { WgpuPresentationSurface } from '@flighthq/surface/contract';
 import type {
   CanvasRenderState,
   CanvasScreenRenderTarget,
   DomRenderState,
   GlRenderState,
-  WgpuPresentationSurface,
   WgpuRenderState,
   WgpuScreenRenderTarget,
 } from '@flighthq/types/contract';

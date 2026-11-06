@@ -1,15 +1,15 @@
 import type { AppWindow } from '@flighthq/app/contract';
 import { finishEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
+
+import { allocateSurface } from './surface.ts';
 import type {
   HostWgpuCapability,
+  NativeSurfaceHandle,
   WgpuHostAcquisition,
   WgpuHostAcquisitionOptions,
   WgpuSurface,
-} from '@flighthq/types/contract';
-
-import { allocateSurface } from './surface.ts';
-import type { NativeSurfaceHandle } from './types.ts';
+} from './types.ts';
 
 // Allocates a drawable in the given window, sized in device pixels, and acquires a WebGPU device and
 // presentation context for it. Returns null when the environment cannot provide WebGPU at all — no

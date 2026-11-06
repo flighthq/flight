@@ -1,5 +1,5 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { HostWgpuCapability, WgpuHostAcquisition, WgpuSurfaceAttachResult } from '@flighthq/types/contract';
+import type { HostWgpuCapability, WgpuHostAcquisition, WgpuSurfaceAttachResult } from '@flighthq/surface/contract';
 
 import { allocateWebSurfaceCanvas, getWebSurfaceCanvasHandle } from './webSurfaceHandle.ts';
 

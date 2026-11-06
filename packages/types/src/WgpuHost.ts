@@ -1,3 +1,4 @@
+// Owned by @flighthq/surface. These deprecated re-exports keep existing @flighthq/types imports compiling.
 export type {
   HostWgpuCapability,
   WgpuHostAcquisition,
@@ -5,4 +6,4 @@ export type {
   WgpuPresentationSurface,
   WgpuSurfaceAttachResult,
   WgpuSurfaceAttachment,
-} from '@flighthq/render-wgpu/contract';
+} from '@flighthq/surface/contract';

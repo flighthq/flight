@@ -7,13 +7,12 @@
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,
-    "moduleSuffixes": [".app-types", ".surface-bridge-types", ""],
+    "moduleSuffixes": [".app-types", ""],
     "tsBuildInfoFile": "dist/.tsbuildinfo.runtime"
   },
   "references": [
     { "path": "../app/tsconfig.contract.json" },
     { "path": "../entity" },
-    { "path": "../types/tsconfig.surface-bridge-types.json" },
     { "path": "./tsconfig.contract.json" }
   ],
   "include": ["src/**/*.ts"],

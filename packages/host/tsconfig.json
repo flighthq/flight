@@ -50,6 +50,9 @@
       "path": "../share"
     },
     {
+      "path": "../surface/tsconfig.contract.json"
+    },
+    {
       "path": "../protocol/tsconfig.contract.json"
     },
     {

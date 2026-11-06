@@ -1,7 +1,7 @@
 import type { RenderTargetColorSpace, RenderTargetDimensions } from '@flighthq/render/contract';
+import type { WgpuPresentationSurface } from '@flighthq/surface/contract';
 
 import type { Entity } from './Entity.ts';
-import type { WgpuPresentationSurface } from './WgpuHost.ts';
 import type { WgpuRenderState, WgpuTextureBindings } from './WgpuRenderState.ts';
 
 // What a Wgpu render pass needs in order to bind and clear a target, and nothing more. The two

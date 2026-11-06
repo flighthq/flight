@@ -59,6 +59,7 @@
     "@flighthq/protocol": "*",
     "@flighthq/screen": "*",
     "@flighthq/share": "*",
+    "@flighthq/surface": "*",
     "@flighthq/textsegment": "*",
     "@flighthq/textshaper": "*",
     "@flighthq/types": "*",

@@ -99,3 +99,64 @@ export interface HostSurfaceCapabilities {
   readonly display?: HostSurfaceDisplayCapability;
   readonly resize?: HostSurfaceResizeCapability;
 }
+
+/**
+ * The presentation surface's current size, which every WGPU consumer reads once per frame.
+ *
+ * The values are live, never a snapshot. A provider returns the size the surface has now; a native host
+ * may back these members with getters over its own swapchain. Keeping this contract to two readonly
+ * members avoids coupling portable rendering code to the DOM.
+ */
+export interface WgpuPresentationSurface {
+  readonly height: number;
+  readonly width: number;
+}
+
+/** The device, presentation context, and ownership state acquired for a WGPU surface. */
+export interface WgpuHostAcquisition extends EntityRaw {
+  [EntityRuntimeKey]: EntityRuntime | undefined;
+  readonly context: GPUCanvasContext;
+  readonly device: GPUDevice;
+  readonly format: GPUTextureFormat;
+  /** `flight` identifies handles created for Flight; `caller` identifies exact borrowed handles. */
+  readonly ownership: 'caller' | 'flight';
+  readonly surface: WgpuPresentationSurface;
+}
+
+export interface WgpuHostAcquisitionOptions {
+  readonly format?: GPUTextureFormat;
+  readonly powerPreference?: GPUPowerPreference;
+}
+
+/** A WGPU rendering surface with its host-acquired device and presentation context. */
+export interface WgpuSurface extends Surface {
+  readonly __brand: 'WgpuSurface';
+  readonly acquisition: WgpuHostAcquisition;
+}
+
+export interface WgpuSurfaceAttachResult {
+  readonly context: GPUCanvasContext;
+  readonly surface: WgpuPresentationSurface;
+}
+
+export interface WgpuSurfaceAttachment {
+  readonly alphaMode: GPUCanvasAlphaMode;
+  readonly device: GPUDevice;
+  readonly format: GPUTextureFormat;
+}
+
+/**
+ * Host lifecycle seam for allocating, acquiring, attaching, and releasing WGPU surfaces. It belongs in
+ * the surface contract lane because Surface's factories consume it and render-wgpu already depends on
+ * Surface; keeping it in a renderer would force an otherwise type-only dependency cycle.
+ */
+export interface HostWgpuCapability {
+  acquire(surface: Readonly<Surface>, options: Readonly<WgpuHostAcquisitionOptions>): Promise<WgpuHostAcquisition>;
+  create(window: Readonly<AppWindow>, width: number, height: number): NativeSurfaceHandle | null;
+  attachSurface(
+    surface: Readonly<Surface>,
+    attachment: Readonly<WgpuSurfaceAttachment>,
+  ): WgpuSurfaceAttachResult | null;
+  isSupported(): boolean;
+  release(acquisition: Readonly<WgpuHostAcquisition>): void;
+}
