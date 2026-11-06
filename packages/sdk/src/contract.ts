@@ -186,6 +186,7 @@ export * from '@flighthq/registry';
 export * from '@flighthq/requirement-catalog';
 export * from '@flighthq/requirement-codegen';
 export * from '@flighthq/scene-document';
+export { FlightDocumentRefusalReason } from '@flighthq/scene-document';
 export * from '@flighthq/scene3d';
 export { InstancedMeshKind, MeshKind } from '@flighthq/meshgeometry/contract';
 export * from '@flighthq/scene3d-formats';
