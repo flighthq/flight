@@ -1,8 +1,10 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
 import { inverseMatrix, multiplyMatrix } from '@flighthq/geometry/contract';
+import type { MatrixLike } from '@flighthq/geometry/contract';
 import { DEG_TO_RAD } from '@flighthq/math/contract';
-import type { AttachmentSkin2D, Bone2D, EntityConstruction, MatrixLike, Skeleton2D } from '@flighthq/types/contract';
 
+import type { AttachmentSkin2D, Bone2D, Skeleton2D } from './contract.skeleton2d-types.ts';
 import { SKELETON_2D_MATRIX_STRIDE as MATRIX_STRIDE } from './skeleton2dConstants.ts';
 
 // Deep-copies the bone array (each Bone2D cloned) and the transform buffers, producing an independently

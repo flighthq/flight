@@ -1,4 +1,5 @@
 import { createAnimationChannel, createAnimationTrack } from '@flighthq/animation/contract';
+import type { AnimationChannel, AnimationInterpolation } from '@flighthq/animation/contract';
 import {
   addNodeChild,
   applyNodeOrderList,
@@ -6,7 +7,7 @@ import {
   createNodeOrderList,
   getNodeChildAt,
 } from '@flighthq/node/contract';
-import type { AnimationChannel, AnimationInterpolation, Node, NodeOrderList } from '@flighthq/types/contract';
+import type { Node, NodeOrderList } from '@flighthq/node/contract';
 
 import { getSkeleton2DAnimationTargetBinder } from './skeleton2dAnimationTarget.ts';
 import {

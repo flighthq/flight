@@ -1,7 +1,7 @@
-import type { Bone2D, Skin2D } from '@flighthq/types/contract';
-import { TransformMode2D } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
+import type { Bone2D, Skin2D } from './contract.skeleton2d-types.ts';
+import { TransformMode2D } from './contract.skeleton2d-types.ts';
 import { computeSkeleton2DWorldTransforms, createSkeleton2D } from './skeleton2d.ts';
 import { setSkeleton2DDeformLengthGuard } from './skeleton2dGuards.ts';
 import { createSkin2D } from './skin2D.ts';

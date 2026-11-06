@@ -1,11 +1,9 @@
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import { createSkeleton2D } from '@flighthq/skeleton2d/contract';
+import type { AttachmentSkin2D, Skeleton2DDrawOrderTimeline, Slot2D } from '@flighthq/skeleton2d/contract';
 import type {
-  AttachmentSkin2D,
   ImportDiagnostic,
-  Skeleton2DDrawOrderTimeline,
   Skeleton2DImport,
-  Slot2D,
   SpineJsonRegistry,
   SpineJsonSectionContext,
 } from '@flighthq/types/contract';

@@ -1,10 +1,7 @@
 import type { ByteReader } from '@flighthq/buffer/contract';
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
-import type {
-  ImportDiagnostic,
-  Skeleton2DDrawOrderTimeline,
-  SpineBinaryTimelineContext,
-} from '@flighthq/types/contract';
+import type { Skeleton2DDrawOrderTimeline } from '@flighthq/skeleton2d/contract';
+import type { ImportDiagnostic, SpineBinaryTimelineContext } from '@flighthq/types/contract';
 import { ImportDiagnosticSeverity, SpineBinaryTimelineKind as TimelineKind } from '@flighthq/types/contract';
 
 import { tally } from './spineBinaryParseHelpers.ts';

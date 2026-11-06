@@ -47,8 +47,7 @@
     "@flighthq/node": "*",
     "@flighthq/math": "*",
     "@flighthq/path": "*",
-    "@flighthq/registry": "*",
-    "@flighthq/types": "*"
+    "@flighthq/registry": "*"
   },
   "devDependencies": {
     "typescript": "^7.0.2"

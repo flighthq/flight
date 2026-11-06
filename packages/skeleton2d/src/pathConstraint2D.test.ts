@@ -1,6 +1,14 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { PathCommand } from '@flighthq/path/contract';
-import type { Bone2D, PathAttachment2D, Skeleton2D, Skeleton2DPathConstraint, Slot2D } from '@flighthq/types/contract';
+import { afterEach, describe, expect, it } from 'vitest';
+
+import type {
+  Bone2D,
+  PathAttachment2D,
+  Skeleton2D,
+  Skeleton2DPathConstraint,
+  Slot2D,
+} from './contract.skeleton2d-types.ts';
 import {
   PathAttachment2DKind,
   Skeleton2DConstraintKind,
@@ -8,9 +16,7 @@ import {
   Skeleton2DPathRotateMode,
   Skeleton2DPathSpacingMode,
   TransformMode2D,
-} from '@flighthq/types/contract';
-import { afterEach, describe, expect, it } from 'vitest';
-
+} from './contract.skeleton2d-types.ts';
 import { registerSkeleton2DPathConstraintSolver, solveSkeleton2DPathConstraint } from './pathConstraint2D.ts';
 import { computeSkeleton2DWorldTransforms, createSkeleton2D } from './skeleton2d.ts';
 import {

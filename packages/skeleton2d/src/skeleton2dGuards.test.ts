@@ -1,5 +1,4 @@
-import type { Skeleton2DCoercedInterpolation, Skeleton2DDeformLengthMismatch } from '@flighthq/types/contract';
-
+import type { Skeleton2DCoercedInterpolation, Skeleton2DDeformLengthMismatch } from './contract.skeleton2d-types.ts';
 import {
   reportSkeleton2DCoercedInterpolation,
   reportSkeleton2DDeformLengthMismatch,

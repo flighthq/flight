@@ -1,12 +1,12 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { Bone2D, ClippingAttachment2D } from '@flighthq/types/contract';
-import { ClippingAttachment2DKind, TransformMode2D } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import {
   computeSkeleton2DClippingAttachmentVertices,
   getSkeleton2DClippingAttachmentSlotRange,
 } from './clippingAttachment2D.ts';
+import type { Bone2D, ClippingAttachment2D } from './contract.skeleton2d-types.ts';
+import { ClippingAttachment2DKind, TransformMode2D } from './contract.skeleton2d-types.ts';
 import { computeSkeleton2DWorldTransforms, createSkeleton2D } from './skeleton2d.ts';
 
 function makeBone(overrides: Partial<Bone2D> = {}): Bone2D {

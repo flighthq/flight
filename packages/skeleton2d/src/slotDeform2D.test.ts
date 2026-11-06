@@ -1,8 +1,8 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { Attachment2D, MeshAttachment2D, Skin2D, Slot2D } from '@flighthq/types/contract';
-import { MeshAttachment2DKind } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
+import type { Attachment2D, MeshAttachment2D, Skin2D, Slot2D } from './contract.skeleton2d-types.ts';
+import { MeshAttachment2DKind } from './contract.skeleton2d-types.ts';
 import { createSkin2D } from './skin2D.ts';
 import { getSkeleton2DSlotDeformOffsets, setSkeleton2DSlotDeform } from './slotDeform2D.ts';
 

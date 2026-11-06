@@ -1,5 +1,4 @@
-import type { ClippingAttachment2D, Skeleton2D } from '@flighthq/types/contract';
-
+import type { ClippingAttachment2D, Skeleton2D } from './contract.skeleton2d-types.ts';
 import { skinSkeleton2DAttachmentPoints } from './skinAttachment2DPoints.ts';
 
 // Produces a clipping polygon's world points as flat interleaved `[x0, y0, x1, y1, …]` in `out` (length

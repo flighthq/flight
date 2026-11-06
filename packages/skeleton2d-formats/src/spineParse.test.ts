@@ -7,14 +7,10 @@ import {
   getSkeleton2DSkin,
   setSkeleton2DSkin,
 } from '@flighthq/skeleton2d/contract';
-import type { ImportDiagnostic, MeshAttachment2D, RegionAttachment2D, Slot2D } from '@flighthq/types/contract';
-import {
-  AnimationInterpolationLinear,
-  ImportDiagnosticSeverity,
-  MeshAttachment2DKind,
-  RegionAttachment2DKind,
-  TransformMode2D,
-} from '@flighthq/types/contract';
+import type { MeshAttachment2D, RegionAttachment2D, Slot2D } from '@flighthq/skeleton2d/contract';
+import { MeshAttachment2DKind, RegionAttachment2DKind, TransformMode2D } from '@flighthq/skeleton2d/contract';
+import type { ImportDiagnostic } from '@flighthq/types/contract';
+import { AnimationInterpolationLinear, ImportDiagnosticSeverity } from '@flighthq/types/contract';
 import { SpineJsonSectionKind, SpineJsonTimelineKind } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 

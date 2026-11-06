@@ -346,7 +346,7 @@
       "path": "../signals"
     },
     {
-      "path": "../skeleton2d"
+      "path": "../skeleton2d/tsconfig.runtime.json"
     },
     {
       "path": "../skeleton2d-formats"

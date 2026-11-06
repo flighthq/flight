@@ -1,6 +1,8 @@
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
-import type { Bone2D, ImportDiagnostic, SpineJsonSectionContext, TransformInherit2D } from '@flighthq/types/contract';
-import { ImportDiagnosticSeverity, TransformMode2D } from '@flighthq/types/contract';
+import type { Bone2D, TransformInherit2D } from '@flighthq/skeleton2d/contract';
+import { TransformMode2D } from '@flighthq/skeleton2d/contract';
+import type { ImportDiagnostic, SpineJsonSectionContext } from '@flighthq/types/contract';
+import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
 import { numberOr } from './spineParseHelpers.ts';
 

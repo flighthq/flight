@@ -1,6 +1,7 @@
+import type { Entity } from '@flighthq/entity/contract';
+
 import type { AttachmentSkin2D } from './AttachmentSkin2D.ts';
 import type { Bone2D } from './Bone2D.ts';
-import type { Entity } from './Entity.ts';
 import type { Slot2D } from './Slot2D.ts';
 
 // A 2D skeleton: a flat, parent-before-child ordered bone array plus the transform buffers the deformer

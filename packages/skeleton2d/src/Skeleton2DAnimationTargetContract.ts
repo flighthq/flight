@@ -1,4 +1,5 @@
-import type { Entity } from './Entity.ts';
+import type { Entity } from '@flighthq/entity/contract';
+
 import type { Skeleton2DAnimationPath } from './Skeleton2DAnimationPath.ts';
 import type { Skeleton2DAnimationTargetKind } from './Skeleton2DAnimationTargetKind.ts';
 

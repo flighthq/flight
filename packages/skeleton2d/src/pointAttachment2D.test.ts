@@ -1,8 +1,8 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { Bone2D, PointAttachment2D } from '@flighthq/types/contract';
-import { PointAttachment2DKind, TransformMode2D } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
+import type { Bone2D, PointAttachment2D } from './contract.skeleton2d-types.ts';
+import { PointAttachment2DKind, TransformMode2D } from './contract.skeleton2d-types.ts';
 import {
   computeSkeleton2DPointAttachmentPosition,
   computeSkeleton2DPointAttachmentRotation,

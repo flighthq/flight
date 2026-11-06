@@ -1,4 +1,4 @@
-import type { Skeleton2DConstraint } from './Skeleton2DConstraint.ts';
+import type { Skeleton2DConstraint } from './Skeleton2DConstraintContract.ts';
 
 /**
  * Positions a chain of bones ALONG a vector path — a caterpillar track, a rope, a row of carriages

@@ -1,4 +1,6 @@
-import type { AnimationChannel, Skeleton2DCoercedInterpolation } from '@flighthq/types/contract';
+import type { AnimationChannel } from '@flighthq/animation/contract';
+
+import type { Skeleton2DCoercedInterpolation } from './contract.skeleton2d-types.ts';
 
 /**
  * Whether this channel's stated interpolation will be overridden, as plain data — the shakeable query

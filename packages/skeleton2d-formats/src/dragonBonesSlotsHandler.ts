@@ -1,5 +1,6 @@
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
-import type { Attachment2D, DragonBonesSectionContext, ImportDiagnostic, Slot2D } from '@flighthq/types/contract';
+import type { Attachment2D, Slot2D } from '@flighthq/skeleton2d/contract';
+import type { DragonBonesSectionContext, ImportDiagnostic } from '@flighthq/types/contract';
 import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
 import { numberOr } from './dragonBonesParseHelpers.ts';

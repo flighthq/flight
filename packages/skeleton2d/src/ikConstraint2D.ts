@@ -1,7 +1,7 @@
 import { RAD_TO_DEG } from '@flighthq/math/contract';
-import type { Skeleton2D, Skeleton2DConstraint, Skeleton2DIkConstraint } from '@flighthq/types/contract';
-import { Skeleton2DConstraintKind } from '@flighthq/types/contract';
 
+import type { Skeleton2D, Skeleton2DConstraint, Skeleton2DIkConstraint } from './contract.skeleton2d-types.ts';
+import { Skeleton2DConstraintKind } from './contract.skeleton2d-types.ts';
 import { computeSkeleton2DBoneWorldTransform } from './skeleton2d.ts';
 import { SKELETON_2D_MATRIX_STRIDE as MATRIX_STRIDE } from './skeleton2dConstants.ts';
 import { registerSkeleton2DConstraintSolver } from './skeleton2dConstraint.ts';

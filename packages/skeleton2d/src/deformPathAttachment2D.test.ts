@@ -2,10 +2,10 @@ import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { createPath } from '@flighthq/path/contract';
 import type { Path } from '@flighthq/path/contract';
 import { PathCommand } from '@flighthq/path/contract';
-import type { Bone2D, PathAttachment2D, Skeleton2DDeformLengthMismatch, Skin2D } from '@flighthq/types/contract';
-import { PathAttachment2DKind, TransformMode2D } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
+import type { Bone2D, PathAttachment2D, Skeleton2DDeformLengthMismatch, Skin2D } from './contract.skeleton2d-types.ts';
+import { PathAttachment2DKind, TransformMode2D } from './contract.skeleton2d-types.ts';
 import { deformSkeleton2DPathAttachment } from './deformPathAttachment2D.ts';
 import { computeSkeleton2DWorldTransforms, createSkeleton2D } from './skeleton2d.ts';
 import { setSkeleton2DDeformLengthGuard } from './skeleton2dGuards.ts';

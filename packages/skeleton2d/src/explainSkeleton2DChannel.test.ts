@@ -1,5 +1,5 @@
 import { createAnimationChannel, createAnimationTrack } from '@flighthq/animation/contract';
-import type { AnimationChannel, AnimationInterpolation } from '@flighthq/types/contract';
+import type { AnimationChannel, AnimationInterpolation } from '@flighthq/animation/contract';
 
 import {
   explainSkeleton2DChannelInterpolation,

@@ -4,14 +4,13 @@ import { createSkin2D } from '@flighthq/skeleton2d/contract';
 import type {
   Attachment2D,
   AttachmentSkin2D,
-  DragonBonesSectionContext,
-  EntityConstruction,
-  ImportDiagnostic,
   MeshAttachment2D,
   RegionAttachment2D,
   SkinAttachment2D,
-} from '@flighthq/types/contract';
-import { ImportDiagnosticSeverity, MeshAttachment2DKind, RegionAttachment2DKind } from '@flighthq/types/contract';
+} from '@flighthq/skeleton2d/contract';
+import { MeshAttachment2DKind, RegionAttachment2DKind } from '@flighthq/skeleton2d/contract';
+import type { DragonBonesSectionContext, EntityConstruction, ImportDiagnostic } from '@flighthq/types/contract';
+import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
 import { parseDragonBonesBoneTransform } from './dragonBonesParseHelpers.ts';
 

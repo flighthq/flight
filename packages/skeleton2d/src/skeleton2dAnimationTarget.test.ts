@@ -1,14 +1,14 @@
 import { createAnimationChannel, createAnimationClip, createAnimationTrack } from '@flighthq/animation/contract';
-import type { Bone2D, Skeleton2D } from '@flighthq/types/contract';
+import { describe, expect, it } from 'vitest';
+
+import { applyAnimationClipToSkeleton2D } from './applyAnimationClipToSkeleton2D.ts';
+import type { Bone2D, Skeleton2D } from './contract.skeleton2d-types.ts';
 import {
   Skeleton2DAnimationPath,
   Skeleton2DAnimationTargetKind,
   Skeleton2DSlotAnimationPath,
   TransformMode2D,
-} from '@flighthq/types/contract';
-import { describe, expect, it } from 'vitest';
-
-import { applyAnimationClipToSkeleton2D } from './applyAnimationClipToSkeleton2D.ts';
+} from './contract.skeleton2d-types.ts';
 import { cloneSkeleton2D, createSkeleton2D } from './skeleton2d.ts';
 import {
   createSkeleton2DBoneAnimationTarget,

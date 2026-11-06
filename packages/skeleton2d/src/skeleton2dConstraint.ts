@@ -3,7 +3,7 @@ import type {
   Skeleton2DConstraint,
   Skeleton2DConstraintKind,
   Skeleton2DConstraintSolver,
-} from '@flighthq/types/contract';
+} from './contract.skeleton2d-types.ts';
 
 // The solver registered for a constraint kind, or null when nothing claims it — the sentinel an unsolved
 // constraint is skipped on.

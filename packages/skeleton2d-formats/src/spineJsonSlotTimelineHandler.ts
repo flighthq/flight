@@ -1,18 +1,13 @@
 import { createAnimationChannel, createAnimationTrack } from '@flighthq/animation/contract';
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import { createSkeleton2DSlotAnimationTarget } from '@flighthq/skeleton2d/contract';
-import type {
-  Attachment2D,
-  AttachmentSkin2D,
-  ImportDiagnostic,
-  Slot2D,
-  SpineJsonTimelineContext,
-} from '@flighthq/types/contract';
+import type { Attachment2D, AttachmentSkin2D, Slot2D } from '@flighthq/skeleton2d/contract';
+import { Skeleton2DSlotAnimationPath } from '@flighthq/skeleton2d/contract';
+import type { ImportDiagnostic, SpineJsonTimelineContext } from '@flighthq/types/contract';
 import {
   AnimationInterpolationLinear,
   AnimationInterpolationStep,
   ImportDiagnosticSeverity,
-  Skeleton2DSlotAnimationPath,
 } from '@flighthq/types/contract';
 
 import {

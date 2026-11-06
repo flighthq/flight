@@ -1,4 +1,4 @@
-import type { Skeleton2DSlotDeform, Slot2D } from '@flighthq/types/contract';
+import type { Skeleton2DSlotDeform, Slot2D } from './contract.skeleton2d-types.ts';
 
 // The PULL SEAM for a slot's deform offsets: returns them only when they were authored for the attachment
 // the slot is currently showing, and null otherwise.

@@ -8,7 +8,7 @@
     "declarationMap": true,
     "sourceMap": true,
     "moduleSuffixes": [
-      ".scene2d-formats-bridge-types",
+      ".skeleton2d-types",
       ".animation-types",
       ".entity-types",
       ".image-types",
@@ -55,7 +55,7 @@
       "path": "../shape/tsconfig.contract.json"
     },
     {
-      "path": "../types/tsconfig.scene2d-formats-types.json"
+      "path": "../skeleton2d/tsconfig.contract.json"
     },
     {
       "path": "../xml"

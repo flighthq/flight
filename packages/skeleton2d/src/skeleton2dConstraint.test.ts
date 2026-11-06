@@ -1,8 +1,8 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { Bone2D, Skeleton2DConstraint } from '@flighthq/types/contract';
-import { Skeleton2DConstraintKind, TransformMode2D } from '@flighthq/types/contract';
 import { afterEach, describe, expect, it } from 'vitest';
 
+import type { Bone2D, Skeleton2DConstraint } from './contract.skeleton2d-types.ts';
+import { Skeleton2DConstraintKind, TransformMode2D } from './contract.skeleton2d-types.ts';
 import { computeSkeleton2DWorldTransforms, createSkeleton2D } from './skeleton2d.ts';
 import {
   getSkeleton2DConstraintSolver,

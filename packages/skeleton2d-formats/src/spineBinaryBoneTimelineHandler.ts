@@ -4,11 +4,11 @@ import type { EasingFunction } from '@flighthq/easing/contract';
 import { easeCubicBezier } from '@flighthq/easing/contract';
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import { createSkeleton2DBoneAnimationTarget } from '@flighthq/skeleton2d/contract';
+import { Skeleton2DAnimationPath } from '@flighthq/skeleton2d/contract';
 import type { AnimationChannel, ImportDiagnostic, SpineBinaryTimelineContext } from '@flighthq/types/contract';
 import {
   AnimationInterpolationLinear,
   ImportDiagnosticSeverity,
-  Skeleton2DAnimationPath,
   SpineBinaryTimelineKind as TimelineKind,
 } from '@flighthq/types/contract';
 

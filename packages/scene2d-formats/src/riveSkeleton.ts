@@ -1,8 +1,9 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { RAD_TO_DEG } from '@flighthq/math/contract';
 import { createSkeleton2D } from '@flighthq/skeleton2d/contract';
-import type { Bone2D, EntityConstruction, Skeleton2D } from '@flighthq/types/contract';
-import { TransformMode2D } from '@flighthq/types/contract';
+import type { Bone2D, Skeleton2D } from '@flighthq/skeleton2d/contract';
+import { TransformMode2D } from '@flighthq/skeleton2d/contract';
+import type { EntityConstruction } from '@flighthq/types/contract';
 
 import type {
   RiveArtboardGraph,

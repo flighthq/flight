@@ -1,6 +1,6 @@
-import type { Entity } from './Entity.ts';
-import type { Node, NodeFields } from './Node.ts';
-import type { NodeOrderList } from './NodeOrderList.ts';
+import type { Entity } from '@flighthq/entity/contract';
+import type { Node, NodeFields, NodeOrderList } from '@flighthq/node/contract';
+
 import type { Skeleton2DAnimationTargetKind } from './Skeleton2DAnimationTargetKind.ts';
 
 /**

@@ -1,6 +1,7 @@
+import type { Vector2Like } from '@flighthq/geometry/contract';
 import { DEG_TO_RAD, RAD_TO_DEG } from '@flighthq/math/contract';
-import type { PointAttachment2D, Skeleton2D, Vector2Like } from '@flighthq/types/contract';
 
+import type { PointAttachment2D, Skeleton2D } from './contract.skeleton2d-types.ts';
 import { SKELETON_2D_MATRIX_STRIDE as MATRIX_STRIDE } from './skeleton2dConstants.ts';
 
 // Writes a point attachment's world position into `out`. Requires `computeSkeleton2DWorldTransforms` to

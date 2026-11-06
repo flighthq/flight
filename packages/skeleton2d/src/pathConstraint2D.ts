@@ -1,22 +1,22 @@
 import { allocateEntity } from '@flighthq/entity/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
 import { RAD_TO_DEG } from '@flighthq/math/contract';
 import { getPathLength, getPathPositionAtDistance } from '@flighthq/path/contract';
 import type { Path } from '@flighthq/path/contract';
+
 import type {
-  EntityConstruction,
   PathAttachment2D,
   Skeleton2D,
   Skeleton2DConstraint,
   Skeleton2DPathConstraint,
-} from '@flighthq/types/contract';
+} from './contract.skeleton2d-types.ts';
 import {
   PathAttachment2DKind,
   Skeleton2DConstraintKind,
   Skeleton2DPathPositionMode,
   Skeleton2DPathRotateMode,
   Skeleton2DPathSpacingMode,
-} from '@flighthq/types/contract';
-
+} from './contract.skeleton2d-types.ts';
 import { deformSkeleton2DPathAttachment } from './deformPathAttachment2D.ts';
 import { computeSkeleton2DBoneWorldTransform } from './skeleton2d.ts';
 import { SKELETON_2D_MATRIX_STRIDE as MATRIX_STRIDE } from './skeleton2dConstants.ts';

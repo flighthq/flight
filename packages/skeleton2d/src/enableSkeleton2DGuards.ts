@@ -1,8 +1,8 @@
 import type { LogState } from '@flighthq/log/contract';
 import { logOnce } from '@flighthq/log/contract';
-import type { Skeleton2DCoercedInterpolation, Skeleton2DDeformLengthMismatch } from '@flighthq/types/contract';
-import { LogLevel } from '@flighthq/types/contract';
+import { LogLevel } from '@flighthq/log/contract';
 
+import type { Skeleton2DCoercedInterpolation, Skeleton2DDeformLengthMismatch } from './contract.skeleton2d-types.ts';
 import { setSkeleton2DCoercedInterpolationGuard, setSkeleton2DDeformLengthGuard } from './skeleton2dGuards.ts';
 
 // Uninstalls the guards installed by enableSkeleton2DGuards.

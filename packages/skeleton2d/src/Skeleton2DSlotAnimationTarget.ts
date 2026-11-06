@@ -1,5 +1,6 @@
+import type { Entity } from '@flighthq/entity/contract';
+
 import type { Attachment2D } from './Attachment2D.ts';
-import type { Entity } from './Entity.ts';
 import type { Skeleton2DAnimationTargetKind } from './Skeleton2DAnimationTargetKind.ts';
 
 // Which part of a `Slot2D`'s appearance an AnimationChannel drives — the slot-side counterpart of

@@ -1,5 +1,6 @@
-import type { AnimationChannel } from './AnimationChannel.ts';
-import type { Skeleton2D } from './Skeleton2D.ts';
+import type { AnimationChannel } from '@flighthq/animation/contract';
+
+import type { Skeleton2D } from './Skeleton2DContract.ts';
 
 /**
  * What one target kind does with a channel. `applyAnimationClipToSkeleton2D` looks the channel's target

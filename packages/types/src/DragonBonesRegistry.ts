@@ -1,10 +1,8 @@
+import type { Attachment2D, AttachmentSkin2D, Bone2D, Slot2D } from '@flighthq/skeleton2d/contract';
+
 import type { AnimationChannel } from './AnimationChannel.ts';
-import type { Attachment2D } from './Attachment2D.ts';
-import type { AttachmentSkin2D } from './AttachmentSkin2D.ts';
-import type { Bone2D } from './Bone2D.ts';
 import type { ImportDiagnostic } from './ImportDiagnostic.ts';
 import type { Skeleton2DImportAnimation } from './Skeleton2DImport.ts';
-import type { Slot2D } from './Slot2D.ts';
 
 export const DragonBonesSectionKind = {
   Animations: 'animations',

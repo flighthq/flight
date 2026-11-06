@@ -5,7 +5,7 @@ import type { ImageResourceReference } from '@flighthq/image/contract';
 import type { LayoutTree } from '@flighthq/layout/contract';
 import type { PathWinding } from '@flighthq/path/contract';
 import type { DisplayObject, Scene2DSlotReference } from '@flighthq/scene2d/contract';
-import type { Skeleton2D } from '@flighthq/types/contract';
+import type { Skeleton2D } from '@flighthq/skeleton2d/contract';
 
 /**
  * Rive `.riv` container types used by `@flighthq/scene2d-formats`.

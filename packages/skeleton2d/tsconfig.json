@@ -1,41 +1,15 @@
 {
-  "extends": "../../tsconfig.base.json",
-  "compilerOptions": {
-    "composite": true,
-    "rootDir": "src",
-    "outDir": "dist",
-    "declaration": true,
-    "declarationMap": true,
-    "sourceMap": true
-  },
+  "files": [],
   "references": [
-    {
-      "path": "../animation"
-    },
-    {
-      "path": "../entity"
-    },
-    {
-      "path": "../geometry/tsconfig.runtime.json"
-    },
-    {
-      "path": "../log"
-    },
-    {
-      "path": "../node/tsconfig.runtime.json"
-    },
-    {
-      "path": "../math"
-    },
-    {
-      "path": "../path/tsconfig.runtime.json"
-    },
-    {
-      "path": "../registry"
-    },
-    {
-      "path": "../types"
-    }
-  ],
-  "include": ["src"]
+    { "path": "../animation" },
+    { "path": "../entity" },
+    { "path": "../geometry/tsconfig.runtime.json" },
+    { "path": "../log" },
+    { "path": "../node/tsconfig.runtime.json" },
+    { "path": "../math" },
+    { "path": "../path/tsconfig.runtime.json" },
+    { "path": "../registry" },
+    { "path": "./tsconfig.contract.json" },
+    { "path": "./tsconfig.runtime.json" }
+  ]
 }

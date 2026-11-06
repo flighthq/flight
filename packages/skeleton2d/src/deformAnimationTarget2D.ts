@@ -1,7 +1,8 @@
 import { sampleAnimationTrack } from '@flighthq/animation/contract';
-import type { AnimationChannel, Skeleton2D, Skeleton2DDeformAnimationTarget } from '@flighthq/types/contract';
-import { Skeleton2DAnimationTargetKind } from '@flighthq/types/contract';
+import type { AnimationChannel } from '@flighthq/animation/contract';
 
+import type { Skeleton2D, Skeleton2DDeformAnimationTarget } from './contract.skeleton2d-types.ts';
+import { Skeleton2DAnimationTargetKind } from './contract.skeleton2d-types.ts';
 import { registerSkeleton2DAnimationTargetBinder } from './skeleton2dAnimationTarget.ts';
 import { setSkeleton2DSlotDeform } from './slotDeform2D.ts';
 

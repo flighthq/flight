@@ -1,6 +1,6 @@
-import type { Skin2D } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
+import type { Skin2D } from './contract.skeleton2d-types.ts';
 import { explainSkeleton2DDeformLength } from './explainSkeleton2DDeformLength.ts';
 import { createSkin2D } from './skin2D.ts';
 

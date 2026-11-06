@@ -1,8 +1,8 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { Bone2D, MeshAttachment2D, Skeleton2DDeformLengthMismatch, Skin2D } from '@flighthq/types/contract';
-import { MeshAttachment2DKind, TransformMode2D } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
+import type { Bone2D, MeshAttachment2D, Skeleton2DDeformLengthMismatch, Skin2D } from './contract.skeleton2d-types.ts';
+import { MeshAttachment2DKind, TransformMode2D } from './contract.skeleton2d-types.ts';
 import { deformSkeleton2DMeshAttachment } from './deformMeshAttachment2D.ts';
 import { computeSkeleton2DWorldTransforms, createSkeleton2D } from './skeleton2d.ts';
 import { setSkeleton2DDeformLengthGuard } from './skeleton2dGuards.ts';

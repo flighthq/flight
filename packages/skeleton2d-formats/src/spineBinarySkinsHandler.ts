@@ -5,15 +5,14 @@ import { createSkin2D } from '@flighthq/skeleton2d/contract';
 import type {
   Attachment2D,
   AttachmentSkin2D,
-  EntityConstruction,
-  ImportDiagnostic,
   MeshAttachment2D,
   RegionAttachment2D,
   Skin2D,
   SkinAttachment2D,
-  SpineBinarySectionContext,
-} from '@flighthq/types/contract';
-import { ImportDiagnosticSeverity, MeshAttachment2DKind, RegionAttachment2DKind } from '@flighthq/types/contract';
+} from '@flighthq/skeleton2d/contract';
+import { MeshAttachment2DKind, RegionAttachment2DKind } from '@flighthq/skeleton2d/contract';
+import type { EntityConstruction, ImportDiagnostic, SpineBinarySectionContext } from '@flighthq/types/contract';
+import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
 import {
   SPINE_BINARY_ATTACHMENT_TYPES,

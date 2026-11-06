@@ -1,9 +1,9 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { createMatrix } from '@flighthq/geometry/contract';
-import type { Bone2D, RegionAttachment2D, Slot2D } from '@flighthq/types/contract';
-import { RegionAttachment2DKind, TransformMode2D } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
+import type { Bone2D, RegionAttachment2D, Slot2D } from './contract.skeleton2d-types.ts';
+import { RegionAttachment2DKind, TransformMode2D } from './contract.skeleton2d-types.ts';
 import {
   cloneSkeleton2D,
   computeSkeleton2DBoneMatrices,

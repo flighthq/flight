@@ -1,4 +1,4 @@
-import type { Skeleton2DCoercedInterpolationGuard, Skeleton2DDeformLengthGuard } from '@flighthq/types/contract';
+import type { Skeleton2DCoercedInterpolationGuard, Skeleton2DDeformLengthGuard } from './contract.skeleton2d-types.ts';
 
 /**
  * The seams this package's silent behaviours report through.

@@ -125,6 +125,7 @@
     "@flighthq/screen": "*",
     "@flighthq/selection": "*",
     "@flighthq/sensors": "*",
+    "@flighthq/skeleton2d": "*",
     "@flighthq/shape": "*",
     "@flighthq/shape-formats": "*",
     "@flighthq/share": "*",

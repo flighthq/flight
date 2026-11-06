@@ -1,9 +1,9 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { Bone2D, BoundingBoxAttachment2D, Skin2D } from '@flighthq/types/contract';
-import { BoundingBoxAttachment2DKind, TransformMode2D } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { computeSkeleton2DBoundingBoxAttachmentVertices } from './boundingBoxAttachment2D.ts';
+import type { Bone2D, BoundingBoxAttachment2D, Skin2D } from './contract.skeleton2d-types.ts';
+import { BoundingBoxAttachment2DKind, TransformMode2D } from './contract.skeleton2d-types.ts';
 import { computeSkeleton2DWorldTransforms, createSkeleton2D } from './skeleton2d.ts';
 import { createSkin2D } from './skin2D.ts';
 

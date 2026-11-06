@@ -6,20 +6,15 @@ import {
   getSkeleton2DSkin,
   setSkeleton2DSkin,
 } from '@flighthq/skeleton2d/contract';
-import type {
-  AnimationChannel,
-  ImportDiagnostic,
-  MeshAttachment2D,
-  RegionAttachment2D,
-  Skeleton2DAnimationTarget,
-} from '@flighthq/types/contract';
+import type { MeshAttachment2D, RegionAttachment2D, Skeleton2DAnimationTarget } from '@flighthq/skeleton2d/contract';
 import {
-  ImportDiagnosticSeverity,
   MeshAttachment2DKind,
   RegionAttachment2DKind,
   Skeleton2DAnimationPath,
   TransformMode2D,
-} from '@flighthq/types/contract';
+} from '@flighthq/skeleton2d/contract';
+import type { AnimationChannel, ImportDiagnostic } from '@flighthq/types/contract';
+import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { dragonBonesAnimationsSectionReader } from './dragonBonesAnimationsHandler.ts';

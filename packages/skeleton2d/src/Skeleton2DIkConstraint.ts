@@ -1,4 +1,4 @@
-import type { Skeleton2DConstraint } from './Skeleton2DConstraint.ts';
+import type { Skeleton2DConstraint } from './Skeleton2DConstraintContract.ts';
 
 /**
  * Inverse kinematics over a one- or two-bone chain: rotate the chain so its tip reaches a target bone's

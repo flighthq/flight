@@ -1,10 +1,10 @@
 import { createAnimationChannel, createAnimationClip, createAnimationTrack } from '@flighthq/animation/contract';
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { Bone2D, MeshAttachment2D, Skin2D, Slot2D } from '@flighthq/types/contract';
-import { MeshAttachment2DKind, Skeleton2DAnimationTargetKind, TransformMode2D } from '@flighthq/types/contract';
 import { afterEach, describe, expect, it } from 'vitest';
 
 import { applyAnimationClipToSkeleton2D } from './applyAnimationClipToSkeleton2D.ts';
+import type { Bone2D, MeshAttachment2D, Skin2D, Slot2D } from './contract.skeleton2d-types.ts';
+import { MeshAttachment2DKind, Skeleton2DAnimationTargetKind, TransformMode2D } from './contract.skeleton2d-types.ts';
 import { registerSkeleton2DDeformAnimationTarget } from './deformAnimationTarget2D.ts';
 import { cloneSkeleton2D, createSkeleton2D } from './skeleton2d.ts';
 import {

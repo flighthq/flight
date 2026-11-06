@@ -1,11 +1,11 @@
 import { sampleAnimationTrack } from '@flighthq/animation/contract';
+import type { AnimationChannel } from '@flighthq/animation/contract';
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type { EntityConstruction, Kind } from '@flighthq/entity/contract';
 import { getKindMapKeys, withKindMapEntry, withoutKindMapEntry } from '@flighthq/registry/contract';
+
 import type {
-  AnimationChannel,
   Attachment2D,
-  EntityConstruction,
-  Kind,
   Skeleton2D,
   Skeleton2DAnimationPath,
   Skeleton2DAnimationTarget,
@@ -14,13 +14,12 @@ import type {
   Skeleton2DSlotAnimationPath,
   Skeleton2DSlotAnimationTarget,
   Slot2D,
-} from '@flighthq/types/contract';
+} from './contract.skeleton2d-types.ts';
 import {
   Skeleton2DAnimationPath as BonePath,
   Skeleton2DAnimationTargetKind as TargetKind,
   Skeleton2DSlotAnimationPath as SlotPath,
-} from '@flighthq/types/contract';
-
+} from './contract.skeleton2d-types.ts';
 import { reportSkeleton2DCoercedInterpolation } from './skeleton2dGuards.ts';
 
 export function createSkeleton2DBoneAnimationTarget(

@@ -1,5 +1,5 @@
 import type { Attachment2D } from './Attachment2D.ts';
-import type { Skin2D } from './Skin2D.ts';
+import type { Skin2D } from './Skin2DContract.ts';
 
 // A closed polygon that clips what other slots draw — a character seen through a porthole, a fill that
 // stops at a mask edge. Geometrically identical to a bounding box; what makes it a different type is

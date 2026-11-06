@@ -1,4 +1,4 @@
-import { EntityRuntimeKey } from '@flighthq/types/contract';
+import { EntityRuntimeKey } from '@flighthq/entity/contract';
 
 import { createSkin2D, initializeSkin2D } from './skin2D.ts';
 

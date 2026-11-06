@@ -1,5 +1,7 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { Skin2D, EntityConstruction } from '@flighthq/types/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
+
+import type { Skin2D } from './contract.skeleton2d-types.ts';
 
 export function createSkin2D(influenceCounts: Uint16Array, influences: Float32Array): Skin2D {
   const out = allocateEntity<Skin2D>();

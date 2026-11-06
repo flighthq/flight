@@ -1,17 +1,12 @@
 import { createAnimationChannel, createAnimationTrack } from '@flighthq/animation/contract';
+import type { AnimationChannel } from '@flighthq/animation/contract';
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
 import { addNodeOrderListEntry, clearNodeOrderList } from '@flighthq/node/contract';
-import type {
-  AnimationChannel,
-  EntityConstruction,
-  Node,
-  NodeOrderList,
-  NodeFields,
-  Skeleton2DDrawOrderAnimationTarget,
-  Skeleton2DDrawOrderTimeline,
-} from '@flighthq/types/contract';
-import { Skeleton2DAnimationTargetKind as TargetKind } from '@flighthq/types/contract';
+import type { Node, NodeOrderList, NodeFields } from '@flighthq/node/contract';
 
+import type { Skeleton2DDrawOrderAnimationTarget, Skeleton2DDrawOrderTimeline } from './contract.skeleton2d-types.ts';
+import { Skeleton2DAnimationTargetKind as TargetKind } from './contract.skeleton2d-types.ts';
 import {
   findSkeleton2DStepKeyframe,
   registerSkeleton2DAnimationTargetBinder,

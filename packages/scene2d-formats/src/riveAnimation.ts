@@ -10,11 +10,12 @@ import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import { RAD_TO_DEG } from '@flighthq/math/contract';
 import { applyAnimationClipToNode2D } from '@flighthq/scene2d/contract';
 import { createSkeleton2DBoneAnimationTarget } from '@flighthq/skeleton2d/contract';
-import { ImportDiagnosticSeverity, Skeleton2DAnimationPath } from '@flighthq/types/contract';
+import { Skeleton2DAnimationPath } from '@flighthq/skeleton2d/contract';
+import type { Bone2D } from '@flighthq/skeleton2d/contract';
+import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 import type {
   AnimationChannel,
   AnimationClip,
-  Bone2D,
   ImportDiagnostic,
   DisplayObject,
   Node2DAnimationPath,

@@ -1,5 +1,6 @@
-import type { AnimationClip, Skeleton2D, Skeleton2DAnimationTarget } from '@flighthq/types/contract';
+import type { AnimationClip } from '@flighthq/animation/contract';
 
+import type { Skeleton2D, Skeleton2DAnimationTarget } from './contract.skeleton2d-types.ts';
 import { getSkeleton2DAnimationTargetBinder } from './skeleton2dAnimationTarget.ts';
 
 // Poses `pose` from an AnimationClip at `time` by COMPOSING each channel's sampled value onto the

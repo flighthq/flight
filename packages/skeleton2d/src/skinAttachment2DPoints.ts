@@ -1,5 +1,4 @@
-import type { Skeleton2D, Skin2D } from '@flighthq/types/contract';
-
+import type { Skeleton2D, Skin2D } from './contract.skeleton2d-types.ts';
 import { SKELETON_2D_MATRIX_STRIDE as MATRIX_STRIDE } from './skeleton2dConstants.ts';
 import { reportSkeleton2DDeformLengthMismatch } from './skeleton2dGuards.ts';
 

@@ -65,6 +65,7 @@
       ".power-types",
       ".surface-types",
       ".scene2d-dom-types",
+      ".skeleton2d-types",
       ".scene2d-formats-types",
       ".scene2d-wgpu-types",
       ".selection-types",
@@ -264,6 +265,9 @@
     },
     {
       "path": "../scene2d-dom/tsconfig.contract.json"
+    },
+    {
+      "path": "../skeleton2d/tsconfig.contract.json"
     },
     {
       "path": "../scene2d-canvas/tsconfig.contract.json"

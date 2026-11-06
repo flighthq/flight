@@ -1,10 +1,8 @@
+import type { AttachmentSkin2D, Bone2D, Skeleton2DDrawOrderTimeline, Slot2D } from '@flighthq/skeleton2d/contract';
+
 import type { AnimationChannel } from './AnimationChannel.ts';
-import type { AttachmentSkin2D } from './AttachmentSkin2D.ts';
-import type { Bone2D } from './Bone2D.ts';
 import type { ImportDiagnostic } from './ImportDiagnostic.ts';
-import type { Skeleton2DDrawOrderTimeline } from './Skeleton2DDrawOrderTimeline.ts';
 import type { Skeleton2DImportAnimation } from './Skeleton2DImport.ts';
-import type { Slot2D } from './Slot2D.ts';
 
 export const SpineJsonSectionKind = {
   Animations: 'animations',

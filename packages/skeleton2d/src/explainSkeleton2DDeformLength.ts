@@ -1,4 +1,4 @@
-import type { Skeleton2DDeformLengthExplanation, Skin2D } from '@flighthq/types/contract';
+import type { Skeleton2DDeformLengthExplanation, Skin2D } from './contract.skeleton2d-types.ts';
 
 // Answers, as plain data, why a deform offset stream was applied or ignored — the shakeable query paired
 // with the silent sentinel in `skinSkeleton2DAttachmentPoints`. The guard reports THAT a mismatch happened;

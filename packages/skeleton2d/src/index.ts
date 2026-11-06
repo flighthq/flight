@@ -1,6 +1,7 @@
 export * from './applyAnimationClipToSkeleton2D.ts';
 export * from './boundingBoxAttachment2D.ts';
 export * from './clippingAttachment2D.ts';
+export * from './contract.skeleton2d-types.ts';
 export * from './deformAnimationTarget2D.ts';
 export * from './deformMeshAttachment2D.ts';
 export * from './deformPathAttachment2D.ts';
