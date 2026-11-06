@@ -1,4 +1,6 @@
-import type { GlyphAtlas, GlyphMetrics } from '@flighthq/types/contract';
+import type { GlyphMetrics } from '@flighthq/font/contract';
+
+import type { GlyphAtlas } from './types.ts';
 
 // The horizontal kerning adjustment (pixels) between an adjacent `left`/`right` glyph pair. The
 // dynamic canvas rasterizer exposes no pair kerning, so this is 0 in the first build; a native

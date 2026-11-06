@@ -1,5 +1,7 @@
 import { createRectangle } from '@flighthq/geometry/contract';
-import type { GlyphAtlas, Rectangle } from '@flighthq/types/contract';
+import type { Rectangle } from '@flighthq/geometry/contract';
+
+import type { GlyphAtlas } from './types.ts';
 
 // Resets the atlas's dirty region to empty. Call it right after uploading the current dirty rect to
 // the GPU texture so the next glyph addition starts a fresh region.

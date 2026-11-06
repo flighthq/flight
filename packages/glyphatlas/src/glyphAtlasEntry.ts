@@ -1,5 +1,7 @@
 import { createBitmapRegion, writeBitmapPixels } from '@flighthq/bitmap/contract';
-import type { GlyphAtlas, GlyphAtlasRuntime, GlyphEntry, GlyphRasterizedBitmap } from '@flighthq/types/contract';
+import type { GlyphRasterizedBitmap } from '@flighthq/font/contract';
+
+import type { GlyphAtlas, GlyphAtlasRuntime, GlyphEntry } from './types.ts';
 
 // Returns the cached entry for `codepoint`, or ensures it first on a miss: rasterize via the atlas's
 // bound backend, pack the bitmap into the atlas (incremental shelf placement; on exhaustion, evict the

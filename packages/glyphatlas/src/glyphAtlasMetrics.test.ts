@@ -1,4 +1,4 @@
-import type { GlyphMetrics, HostGlyphRasterizerCapability } from '@flighthq/types/contract';
+import type { GlyphMetrics, HostGlyphRasterizerCapability } from '@flighthq/font/contract';
 import { describe, expect, it } from 'vitest';
 
 import { createGlyphAtlas, deriveGlyphMetricsFromFontSize } from './glyphAtlas.ts';

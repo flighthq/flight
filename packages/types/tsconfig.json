@@ -95,6 +95,7 @@
       ".scene3d-bridge-types",
       ".lighting-types",
       ".swf-types",
+      ".glyphatlas-types",
       ""
     ],
     "types": ["@testing-library/jest-dom", "vitest/globals", "@webgpu/types"]
@@ -429,6 +430,9 @@
     },
     {
       "path": "../swf/tsconfig.contract.json"
+    },
+    {
+      "path": "../glyphatlas/tsconfig.contract.json"
     }
   ],
   "include": ["src"]

@@ -1,0 +1,34 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "composite": true,
+    "rootDir": "src",
+    "outDir": "dist",
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "moduleSuffixes": [".bitmap-types", ".font-types", ".geometry-types", ".path-types", ".texture-types", ""],
+    "tsBuildInfoFile": "dist/.tsbuildinfo.contract"
+  },
+  "references": [
+    {
+      "path": "../bitmap/tsconfig.contract.json"
+    },
+    {
+      "path": "../entity"
+    },
+    {
+      "path": "../font/tsconfig.contract.json"
+    },
+    {
+      "path": "../geometry/tsconfig.contract.json"
+    },
+    {
+      "path": "../path/tsconfig.contract.json"
+    },
+    {
+      "path": "../texture/tsconfig.contract.json"
+    }
+  ],
+  "include": ["src/contract.glyphatlas-types.ts", "src/types.ts"]
+}

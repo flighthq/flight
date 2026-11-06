@@ -40,11 +40,12 @@
     "clean:dist": "tsx ../../scripts/clean-package-dist.ts"
   },
   "dependencies": {
+    "@flighthq/bitmap": "*",
     "@flighthq/entity": "*",
+    "@flighthq/font": "*",
     "@flighthq/geometry": "*",
     "@flighthq/log": "*",
-    "@flighthq/bitmap": "*",
-    "@flighthq/types": "*"
+    "@flighthq/texture": "*"
   },
   "devDependencies": {
     "typescript": "^7.0.2"

@@ -1,6 +1,7 @@
+import type { HostGlyphRasterizerCapability } from '@flighthq/font/contract';
 import type { LogState } from '@flighthq/log/contract';
 import { clearLogOnceKeys, createLogState, getMemoryLogSinkEntries, setLogSink } from '@flighthq/log/contract';
-import type { HostGlyphRasterizerCapability, LogEntry, MemoryLogSink } from '@flighthq/types/contract';
+import type { LogEntry, MemoryLogSink } from '@flighthq/log/contract';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { disableGlyphAtlasGuards, enableGlyphAtlasGuards } from './enableGlyphAtlasGuards.ts';

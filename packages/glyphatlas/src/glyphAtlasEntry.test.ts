@@ -1,10 +1,11 @@
 import { getBitmapPixel } from '@flighthq/bitmap/contract';
-import type { GlyphEntry, GlyphRasterizedBitmap, HostGlyphRasterizerCapability } from '@flighthq/types/contract';
+import type { GlyphRasterizedBitmap, HostGlyphRasterizerCapability } from '@flighthq/font/contract';
 import { afterEach, describe, expect, it } from 'vitest';
 
 import { createGlyphAtlas, getGlyphAtlasBitmap } from './glyphAtlas.ts';
 import { getGlyphAtlasEntry, setGlyphAtlasEntryGuard } from './glyphAtlasEntry.ts';
 import { allocateStubGlyphRasterizerBackend } from './glyphRasterizerBackend.ts';
+import type { GlyphEntry } from './types.ts';
 
 describe('getGlyphAtlasEntry', () => {
   it('produces a non-blank glyph in a headless env with the stub backend (issue #8)', () => {

@@ -52,7 +52,7 @@
       "path": "../geolocation"
     },
     {
-      "path": "../glyphatlas"
+      "path": "../glyphatlas/tsconfig.runtime.json"
     },
     {
       "path": "../haptics"

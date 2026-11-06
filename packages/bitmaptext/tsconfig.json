@@ -19,7 +19,7 @@
       "path": "../geometry/tsconfig.runtime.json"
     },
     {
-      "path": "../glyphatlas"
+      "path": "../glyphatlas/tsconfig.runtime.json"
     },
     {
       "path": "../log"

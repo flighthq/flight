@@ -1,4 +1,4 @@
-import type { GlyphRasterizedBitmap, HostGlyphRasterizerCapability } from '@flighthq/types/contract';
+import type { GlyphRasterizedBitmap, HostGlyphRasterizerCapability } from '@flighthq/font/contract';
 
 export function allocateStubGlyphRasterizerBackend(): HostGlyphRasterizerCapability {
   const out = {} as HostGlyphRasterizerCapability;

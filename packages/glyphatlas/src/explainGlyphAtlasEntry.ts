@@ -1,4 +1,4 @@
-import type { GlyphAtlas, GlyphAtlasEntryExplanation } from '@flighthq/types/contract';
+import type { GlyphAtlas, GlyphAtlasEntryExplanation } from './types.ts';
 
 /** Reports why `getGlyphAtlasEntry` returns null for `codepoint`, as plain data.
  *

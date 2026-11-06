@@ -64,6 +64,7 @@
     "@flighthq/font": "*",
     "@flighthq/geolocation": "*",
     "@flighthq/geometry": "*",
+    "@flighthq/glyphatlas": "*",
     "@flighthq/gui": "*",
     "@flighthq/haptics": "*",
     "@flighthq/host": "*",

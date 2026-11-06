@@ -8,3 +8,4 @@ export * from './glyphRasterizerBackend.ts';
 export * from './glyphSource.ts';
 export { initializeGlyphAtlas } from './glyphAtlas.ts';
 export { initializeGlyphSourceFromGlyphAtlas } from './glyphSource.ts';
+export * from './types.ts';

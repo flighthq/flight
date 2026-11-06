@@ -1,4 +1,4 @@
-import type { GlyphRasterizeOptions, HostGlyphRasterizerCapability } from '@flighthq/types/contract';
+import type { GlyphRasterizeOptions, HostGlyphRasterizerCapability } from '@flighthq/font/contract';
 import { describe, expect, it } from 'vitest';
 
 import {

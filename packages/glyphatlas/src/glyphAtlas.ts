@@ -1,14 +1,10 @@
 import { createBitmap } from '@flighthq/bitmap/contract';
 import type { Bitmap } from '@flighthq/bitmap/contract';
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type {
-  EntityConstruction,
-  GlyphAtlas,
-  GlyphAtlasOptions,
-  GlyphMetrics,
-  GlyphRasterizeOptions,
-  HostGlyphRasterizerCapability,
-} from '@flighthq/types/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
+import type { GlyphMetrics, GlyphRasterizeOptions, HostGlyphRasterizerCapability } from '@flighthq/font/contract';
+
+import type { GlyphAtlas, GlyphAtlasOptions } from './types.ts';
 
 export function createGlyphAtlas(options: Readonly<GlyphAtlasOptions>): GlyphAtlas {
   const out = allocateEntity<GlyphAtlas>();

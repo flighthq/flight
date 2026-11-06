@@ -1,4 +1,4 @@
-import type { HostGlyphRasterizerCapability } from '@flighthq/types/contract';
+import type { HostGlyphRasterizerCapability } from '@flighthq/font/contract';
 import { describe, expect, it, vi } from 'vitest';
 
 import { explainGlyphAtlasEntry } from './explainGlyphAtlasEntry.ts';

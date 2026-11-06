@@ -163,7 +163,7 @@
       "path": "../gizmo"
     },
     {
-      "path": "../glyphatlas"
+      "path": "../glyphatlas/tsconfig.runtime.json"
     },
     {
       "path": "../haptics"
