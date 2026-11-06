@@ -1,6 +1,7 @@
 import { createBlendEffect } from '@flighthq/effects/contract';
+import type { BlendEffect } from '@flighthq/effects/contract';
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { BlendEffect, CanvasRenderState, CanvasTextureRenderTarget } from '@flighthq/types/contract';
+import type { CanvasRenderState, CanvasTextureRenderTarget } from '@flighthq/types/contract';
 
 import {
   applyBlendEffectToCanvas,

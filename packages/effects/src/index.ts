@@ -1,4 +1,4 @@
-export type { Effect, EffectStateOptions } from './contract.ts';
+export type { BlendEffect, Effect, EffectStateOptions } from './contract.ts';
 export {
   AdvancedBlendMode,
   blendNonSeparableRgb,

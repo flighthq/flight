@@ -1,8 +1,8 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { BlendEffect, EntityConstruction, EntityWithoutRuntime } from '@flighthq/types/contract';
+import type { EntityConstruction, EntityWithoutRuntime } from '@flighthq/types/contract';
 
 import { initializeEffect } from './effect.ts';
-import type { AdvancedBlendMode } from './types.ts';
+import type { AdvancedBlendMode, BlendEffect } from './types.ts';
 
 // Advanced-blend composite effect: blends the incoming pipeline layer over a registered backdrop using
 // a destination-reading / non-separable mode (the AdvancedBlendMode vocabulary the fixed-function

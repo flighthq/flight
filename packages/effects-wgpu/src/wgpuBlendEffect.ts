@@ -1,7 +1,6 @@
-import type { AdvancedBlendMode } from '@flighthq/effects/contract';
+import type { AdvancedBlendMode, BlendEffect } from '@flighthq/effects/contract';
 import { AdvancedBlendMode as AdvancedBlendModeValues } from '@flighthq/effects/contract';
 import type {
-  BlendEffect,
   WgpuDualSourceEffectPipeline,
   WgpuEffectRunner,
   WgpuRenderState,
