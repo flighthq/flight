@@ -1,4 +1,4 @@
-import type { PlatformEndianness } from '@flighthq/types/contract';
+import type { PlatformEndianness } from '@flighthq/platform/contract';
 
 import type { WgpuUniformEndiannessExplanation } from './contract.render-wgpu-types.ts';
 

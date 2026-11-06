@@ -1,4 +1,4 @@
-import type { HostPlatformCapability, PlatformInfo } from '@flighthq/types/contract';
+import type { HostPlatformCapability, PlatformInfo } from '@flighthq/platform/contract';
 import {
   detectEndianness,
   parseUserAgentArch,

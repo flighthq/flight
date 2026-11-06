@@ -8,6 +8,7 @@ import {
 import type { HostUpdaterCapabilities } from '@flighthq/host/contract';
 import type { HostMediaSessionCapabilities } from '@flighthq/mediasession/contract';
 import type { HostMenuCapabilities } from '@flighthq/menu/contract';
+import type { HostPlatformCapabilities } from '@flighthq/platform/contract';
 import type { HostShortcutCapabilities } from '@flighthq/shortcut/contract';
 import type { HostTrayCapabilities } from '@flighthq/tray/contract';
 import type {
@@ -27,7 +28,6 @@ import type {
   HostMidiCapabilities,
   HostNetCapabilities,
   HostPermissionsCapabilities,
-  HostPlatformCapabilities,
   HostPowerCapabilities,
   HostPreferencesCapabilities,
   HostScreenCapabilities,

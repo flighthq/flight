@@ -22,6 +22,7 @@
       ".path-boolean-types",
       ".path-types",
       ".permissions-types",
+      ".platform-types",
       ".preferences-types",
       ".scene2d-dom-types",
       ".scene2d-formats-types",
@@ -40,6 +41,9 @@
     "tsBuildInfoFile": "dist/.tsbuildinfo.contract"
   },
   "references": [
+    {
+      "path": "../platform/tsconfig.contract.json"
+    },
     {
       "path": "../types/tsconfig.render-wgpu-types.json"
     }

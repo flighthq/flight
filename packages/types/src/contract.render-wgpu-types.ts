@@ -22,7 +22,7 @@ export type { MeshGeometry } from './MeshGeometry.ts';
 export type { Modifier } from './Modifier.ts';
 export type { ModifierDefinition } from './ModifierDefinition.ts';
 export type { Node3D } from './Node3D.ts';
-export type { PlatformEndianness } from './Platform.ts';
+export type { PlatformEndianness } from '@flighthq/platform/contract';
 export type { RenderStateOptions } from './RenderStateOptions.ts';
 export type { RenderTargetColorSpace, RenderTargetDimensions } from './RenderTarget.ts';
 export type { RenderTexture } from './RenderTexture.ts';

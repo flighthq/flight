@@ -51,6 +51,7 @@
     "@flighthq/mediasession": "*",
     "@flighthq/menu": "*",
     "@flighthq/notification": "*",
+    "@flighthq/platform": "*",
     "@flighthq/share": "*",
     "@flighthq/shortcut": "*",
     "@flighthq/statusbar": "*",

@@ -2,6 +2,7 @@
 // Rust is authoritative; run `npm run generate` after changing it.
 
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+
 import type {
   HostPlatformCapability,
   PlatformEndianness,
@@ -10,7 +11,7 @@ import type {
   PlatformKind,
   PlatformName,
   PlatformRuntime,
-} from '@flighthq/types/contract';
+} from './types.ts';
 
 /**
  * Compares two dotted version strings numerically, segment by segment: -1, 0 or 1. Each segment is

@@ -17,6 +17,7 @@ import type { HostLifecycleCapabilities } from '@flighthq/lifecycle/contract';
 import type { HostMediaSessionCapabilities } from '@flighthq/mediasession/contract';
 import type { HostMenuCapabilities } from '@flighthq/menu/contract';
 import type { HostNetCapabilities } from '@flighthq/net/contract';
+import type { HostPlatformCapabilities } from '@flighthq/platform/contract';
 import type { HostPowerCapabilities } from '@flighthq/power/contract';
 import type { HostPreferencesCapabilities } from '@flighthq/preferences/contract';
 import type { HostScreenCapabilities } from '@flighthq/screen/contract';
@@ -32,6 +33,7 @@ export type { HostScreenCapabilities } from '@flighthq/screen/contract';
 export type { HostSensorsCapabilities } from '@flighthq/sensors/contract';
 export type { HostShortcutCapabilities } from '@flighthq/shortcut/contract';
 export type { HostStatusBarCapabilities } from '@flighthq/statusbar/contract';
+export type { HostPlatformCapabilities } from '@flighthq/platform/contract';
 
 import type { HostAccessibilityCapability } from './Accessibility.ts';
 import type {
@@ -91,7 +93,6 @@ import type {
   HostNotificationSchedulingCapability,
 } from './Notification.ts';
 import type { HostPermissionsCapability } from './Permission.ts';
-import type { HostPlatformCapability } from './Platform.ts';
 import type {
   HostProtocolDefaultCapability,
   HostProtocolLaunchCapability,
@@ -254,10 +255,6 @@ export interface HostNotificationCapabilities {
 
 export interface HostPermissionsCapabilities {
   readonly query?: HostPermissionsCapability;
-}
-
-export interface HostPlatformCapabilities {
-  readonly info?: HostPlatformCapability;
 }
 
 export interface HostProtocolCapabilities {

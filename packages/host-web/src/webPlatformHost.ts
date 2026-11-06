@@ -1,4 +1,4 @@
-import type { HostPlatformCapabilities } from '@flighthq/types/contract';
+import type { HostPlatformCapabilities } from '@flighthq/platform/contract';
 
 import { webHostPlatform } from './webPlatform.ts';
 

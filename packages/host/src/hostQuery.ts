@@ -1,4 +1,5 @@
 import type { HostGeolocationCapability } from '@flighthq/geolocation/contract';
+import type { HostPlatformCapability } from '@flighthq/platform/contract';
 import type {
   Host,
   HostAudioDeviceCapability,
@@ -16,7 +17,6 @@ import type {
   HostLifecycleCapability,
   HostNetCapability,
   HostNotificationPermissionCapability,
-  HostPlatformCapability,
   HostPowerKeepAwakeCapability,
   HostPreferencesCapability,
   HostScreenQueryCapability,

@@ -30,6 +30,7 @@
       ".path-boolean-types",
       ".path-types",
       ".permissions-types",
+      ".platform-types",
       ".preferences-types",
       ".surface-types",
       ".scene2d-dom-types",
@@ -159,6 +160,9 @@
     },
     {
       "path": "../permissions/tsconfig.contract.json"
+    },
+    {
+      "path": "../platform/tsconfig.contract.json"
     },
     {
       "path": "../screen/tsconfig.contract.json"

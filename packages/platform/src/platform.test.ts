@@ -1,5 +1,3 @@
-import type { HostPlatformCapability, PlatformInfo } from '@flighthq/types/contract';
-
 import * as platformContract from './platform.ts';
 import {
   comparePlatformVersions,
@@ -27,6 +25,7 @@ import {
   getPlatformRuntimeString,
   parsePlatformRuntime,
 } from './platform.ts';
+import type { HostPlatformCapability, PlatformInfo } from './types.ts';
 
 function fakeBackend(info: Partial<PlatformInfo>): HostPlatformCapability {
   return {

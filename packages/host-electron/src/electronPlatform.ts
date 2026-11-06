@@ -1,9 +1,5 @@
-import type {
-  ElectronApi,
-  HostPlatformCapabilities,
-  HostPlatformCapability,
-  PlatformName,
-} from '@flighthq/types/contract';
+import type { HostPlatformCapabilities, HostPlatformCapability, PlatformName } from '@flighthq/platform/contract';
+import type { ElectronApi } from '@flighthq/types/contract';
 
 export function electronHostPlatform(electron: ElectronApi): HostPlatformCapability {
   const out = {} as HostPlatformCapability;

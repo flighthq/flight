@@ -41,6 +41,7 @@
       ".path-boolean-types",
       ".path-types",
       ".permissions-types",
+      ".platform-types",
       ".preferences-types",
       ".power-types",
       ".surface-types",
@@ -182,6 +183,9 @@
     },
     {
       "path": "../permissions/tsconfig.contract.json"
+    },
+    {
+      "path": "../platform/tsconfig.contract.json"
     },
     {
       "path": "../preferences/tsconfig.contract.json"

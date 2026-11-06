@@ -45,6 +45,7 @@
     "@flighthq/entity": "*",
     "@flighthq/geometry": "*",
     "@flighthq/log": "*",
+    "@flighthq/platform": "*",
     "@flighthq/render": "*",
     "@flighthq/registry": "*",
     "@flighthq/signals": "*",

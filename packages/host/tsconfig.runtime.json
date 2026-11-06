@@ -7,6 +7,7 @@
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,
+    "moduleSuffixes": [".platform-types", ""],
     "tsBuildInfoFile": "dist/.tsbuildinfo.runtime"
   },
   "references": [
@@ -18,6 +19,9 @@
     },
     {
       "path": "../log"
+    },
+    {
+      "path": "../platform/tsconfig.contract.json"
     },
     {
       "path": "../types"

@@ -1,6 +1,7 @@
 import type { HostWindowCapabilities } from '@flighthq/app/contract';
 import type { HostClipboardCapabilities } from '@flighthq/clipboard/contract';
 import type { ElectronMenuCapabilities } from '@flighthq/menu/contract';
+import type { HostPlatformCapabilities } from '@flighthq/platform/contract';
 import type { ElectronPowerCapabilities } from '@flighthq/power/contract';
 import type { HostPreferencesCapabilities } from '@flighthq/preferences/contract';
 import type { HostShellCapabilities } from '@flighthq/shell/contract';
@@ -15,7 +16,6 @@ import type {
   Host,
   HostDialogCapabilities,
   HostIpcCapabilities,
-  HostPlatformCapabilities,
   HostScreenCapabilities,
   HostUpdaterCapabilities,
 } from './Host.ts';

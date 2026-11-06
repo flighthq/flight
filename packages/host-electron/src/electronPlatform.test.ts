@@ -1,4 +1,5 @@
-import type { PlatformInfo, ElectronApi } from '@flighthq/types/contract';
+import type { PlatformInfo } from '@flighthq/platform/contract';
+import type { ElectronApi } from '@flighthq/types/contract';
 
 import { electronHostPlatform, electronHostPlatformGroup, populateElectronHostPlatform } from './electronPlatform.ts';
 

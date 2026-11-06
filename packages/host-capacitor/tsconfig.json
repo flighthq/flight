@@ -7,7 +7,7 @@
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,
-    "moduleSuffixes": [".tray-types", ".mediasession-types", ".menu-types", ".shortcut-types", ""],
+    "moduleSuffixes": [".tray-types", ".mediasession-types", ".menu-types", ".platform-types", ".shortcut-types", ""],
     "types": ["node", "@testing-library/jest-dom", "vitest/globals", "@webgpu/types"]
   },
   "references": [
@@ -49,6 +49,9 @@
     },
     {
       "path": "../notification/tsconfig.runtime.json"
+    },
+    {
+      "path": "../platform/tsconfig.contract.json"
     },
     {
       "path": "../share"
