@@ -1,6 +1,18 @@
+import type { Vector2Like } from '@flighthq/geometry/contract';
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import type { ImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import { ImportDiagnosticSeverity } from '@flighthq/importdiagnostics/contract';
+import type { XmlElement } from '@flighthq/xml/contract';
+import {
+  getXmlElementAttribute,
+  getXmlElementChildByName,
+  getXmlElementChildrenByName,
+  parseXmlDocument,
+} from '@flighthq/xml/contract';
+
+import { parseTiledColor } from './tiledColor.ts';
+import { decodeTiledBase64Layer, decodeTiledCsvLayer } from './tiledLayerData.ts';
 import type {
-  ImportDiagnostic,
   TiledCompression,
   TiledLayer,
   TiledMap,
@@ -17,19 +29,7 @@ import type {
   TiledTilesetRef,
   TiledTilesetTile,
   TiledTilesetTileFrame,
-  Vector2Like,
-} from '@flighthq/types/contract';
-import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
-import type { XmlElement } from '@flighthq/xml/contract';
-import {
-  getXmlElementAttribute,
-  getXmlElementChildByName,
-  getXmlElementChildrenByName,
-  parseXmlDocument,
-} from '@flighthq/xml/contract';
-
-import { parseTiledColor } from './tiledColor.ts';
-import { decodeTiledBase64Layer, decodeTiledCsvLayer } from './tiledLayerData.ts';
+} from './types.ts';
 
 // XML front-end of the Tiled codec: TMX maps and standalone TSX tilesets. Both are the same XML tree
 // (`@flighthq/xml`), so they share the tileset/layer/object/property builders below. Numeric byte

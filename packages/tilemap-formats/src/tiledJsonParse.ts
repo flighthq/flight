@@ -1,6 +1,11 @@
+import type { Vector2Like } from '@flighthq/geometry/contract';
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import type { ImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import { ImportDiagnosticSeverity } from '@flighthq/importdiagnostics/contract';
+
+import { parseTiledColor } from './tiledColor.ts';
+import { decodeTiledBase64Layer, decodeTiledCsvLayer } from './tiledLayerData.ts';
 import type {
-  ImportDiagnostic,
   TiledCompression,
   TiledLayer,
   TiledMap,
@@ -17,12 +22,7 @@ import type {
   TiledTilesetRef,
   TiledTilesetTile,
   TiledTilesetTileFrame,
-  Vector2Like,
-} from '@flighthq/types/contract';
-import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
-
-import { parseTiledColor } from './tiledColor.ts';
-import { decodeTiledBase64Layer, decodeTiledCsvLayer } from './tiledLayerData.ts';
+} from './types.ts';
 
 // JSON front-end of the Tiled codec: TMJ maps and standalone TSJ tilesets. The same DTO builders as
 // the XML front-end, walking a parsed JSON tree instead of an XML one.

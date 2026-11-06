@@ -1,8 +1,9 @@
-import type { ImportDiagnostic, TiledParseOptions } from '@flighthq/types/contract';
-import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
+import type { ImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import { ImportDiagnosticSeverity } from '@flighthq/importdiagnostics/contract';
 import { describe, expect, it } from 'vitest';
 
 import { parseTiledTilesetJson, parseTiledTmj } from './tiledJsonParse.ts';
+import type { TiledParseOptions } from './types.ts';
 
 function base64Layer(gids: readonly number[]): string {
   const bytes = new Uint8Array(gids.length * 4);

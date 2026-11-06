@@ -1,8 +1,9 @@
-import type { ImportDiagnostic, TiledTilesetResolver } from '@flighthq/types/contract';
+import type { ImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import { describe, expect, it } from 'vitest';
 
 import { buildTilemapLayersFromTiled } from './tiledProject.ts';
 import { parseTiledTmx } from './tiledXmlParse.ts';
+import type { TiledTilesetResolver } from './types.ts';
 
 function mapWithLayerData(data: string): ReturnType<typeof parseTiledTmx> {
   return parseTiledTmx(

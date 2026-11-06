@@ -9,12 +9,13 @@
     "sourceMap": true
   },
   "references": [
+    { "path": "../entity" },
+    { "path": "../geometry/tsconfig.contract.json" },
     { "path": "../importdiagnostics" },
     { "path": "../log" },
     { "path": "../registry" },
     { "path": "../requirement" },
     { "path": "../tilemap" },
-    { "path": "../types" },
     { "path": "../xml" }
   ],
   "include": ["src"]

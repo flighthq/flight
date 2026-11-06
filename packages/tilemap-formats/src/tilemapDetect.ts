@@ -1,16 +1,6 @@
+import type { Kind } from '@flighthq/entity/contract';
+import type { ImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import { getKindMapKeys, withKindMapEntry, withoutKindMapEntry } from '@flighthq/registry/contract';
-import type {
-  ImportDiagnostic,
-  Kind,
-  TiledMap,
-  TiledParseOptions,
-  TiledTileset,
-  TilemapFormatDescriptor,
-  TilemapFormatEntry,
-  TilemapImportOptions,
-  TilesetFormatDescriptor,
-  TilesetFormatEntry,
-} from '@flighthq/types/contract';
 
 import { parseTiledTilesetJson, parseTiledTmj } from './tiledJsonParse.ts';
 import { parseTiledTileset, parseTiledTmx } from './tiledXmlParse.ts';
@@ -21,6 +11,16 @@ import {
   TilemapFormatKindTiledTsx,
 } from './tilemapFormatKind.ts';
 import type { TilemapFormatKind } from './tilemapFormatKind.ts';
+import type {
+  TiledMap,
+  TiledParseOptions,
+  TiledTileset,
+  TilemapFormatDescriptor,
+  TilemapFormatEntry,
+  TilemapImportOptions,
+  TilesetFormatDescriptor,
+  TilesetFormatEntry,
+} from './types.ts';
 
 /**
  * Installs the formats named in `options` into the two registries.

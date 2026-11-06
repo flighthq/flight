@@ -1,5 +1,6 @@
 export * from './tilemapFormatRequirements.ts';
 export * from './tilemapFormatKind.ts';
+export type * from './types.ts';
 export {
   applyTilemapImportOptions,
   buildTilemapLayersFromTiled,

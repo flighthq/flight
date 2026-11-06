@@ -1,3 +1,4 @@
+import { formatTiledColor } from './tiledColor.ts';
 import type {
   TiledLayer,
   TiledMap,
@@ -6,9 +7,7 @@ import type {
   TiledTileset,
   TiledTilesetRef,
   TiledTilesetTile,
-} from '@flighthq/types/contract';
-
-import { formatTiledColor } from './tiledColor.ts';
+} from './types.ts';
 
 // Re-emits a standalone tileset as a TSX document. Same writer as an embedded tileset, minus the
 // `firstgid` a standalone file has no map to be positioned in. Pairs with parseTiledTileset, so a TSX
