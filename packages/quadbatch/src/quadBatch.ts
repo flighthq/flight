@@ -1,24 +1,17 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
 import { copyRectangle, createRectangle, reserveFloat32Array, reserveUint16Array } from '@flighthq/geometry/contract';
+import type { Rectangle, Vector2Like } from '@flighthq/geometry/contract';
+import type { TintMaterialData } from '@flighthq/materials/contract';
 import { invalidateNodeLocalBounds } from '@flighthq/node/contract';
+import type { BoundsNode, MethodsOf } from '@flighthq/node/contract';
 import { createNode2D, createNode2DRuntime, getNode2DRuntime } from '@flighthq/scene2d/contract';
+import type { Node2DFields } from '@flighthq/scene2d/contract';
 import { createSignal } from '@flighthq/signals/contract';
 import { TextureAtlasRotation } from '@flighthq/textureatlas/contract';
-import type {
-  BoundsNode,
-  EntityConstruction,
-  MethodsOf,
-  Node2DFields,
-  QuadBatch,
-  QuadBatchData,
-  QuadBatchRuntime,
-  QuadBatchSignals,
-  QuadTransformType,
-  Rectangle,
-  TintMaterialData,
-  Vector2Like,
-} from '@flighthq/types/contract';
-import { QuadBatchKind } from '@flighthq/types/contract';
+
+import { QuadBatchKind } from './types.ts';
+import type { QuadBatch, QuadBatchData, QuadBatchRuntime, QuadBatchSignals, QuadTransformType } from './types.ts';
 
 // Per-instance stride constants. The stride layout is intentionally internal to this
 // module so callers never hand-write i*2 or i*6.

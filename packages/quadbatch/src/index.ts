@@ -26,3 +26,5 @@ export {
   setQuadBatchLocalBoundsRectangle,
   setQuadBatchTransformType,
 } from './contract.ts';
+export { QuadBatchKind } from './types.ts';
+export type { QuadBatch, QuadBatchData, QuadBatchRuntime, QuadBatchSignals, QuadTransformType } from './types.ts';

@@ -50,6 +50,7 @@
     "@flighthq/movieclip": "*",
     "@flighthq/node": "*",
     "@flighthq/path": "*",
+    "@flighthq/quadbatch": "*",
     "@flighthq/registry": "*",
     "@flighthq/scene-document": "*",
     "@flighthq/scene2d": "*",

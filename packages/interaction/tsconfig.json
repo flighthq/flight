@@ -44,7 +44,7 @@
       "path": "../spatial/tsconfig.runtime.json"
     },
     {
-      "path": "../quadbatch"
+      "path": "../quadbatch/tsconfig.runtime.json"
     },
     {
       "path": "../tilemap/tsconfig.runtime.json"

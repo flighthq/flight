@@ -14,7 +14,7 @@
       "path": "../node/tsconfig.contract.json"
     },
     {
-      "path": "../quadbatch"
+      "path": "../quadbatch/tsconfig.runtime.json"
     },
     {
       "path": "../scene2d/tsconfig.runtime.json"

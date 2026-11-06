@@ -53,7 +53,7 @@
       "path": "../signals"
     },
     {
-      "path": "../quadbatch"
+      "path": "../quadbatch/tsconfig.runtime.json"
     },
     {
       "path": "../registry"

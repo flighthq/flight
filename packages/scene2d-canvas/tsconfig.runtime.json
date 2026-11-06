@@ -45,7 +45,7 @@
       "path": "../path/tsconfig.runtime.json"
     },
     {
-      "path": "../quadbatch"
+      "path": "../quadbatch/tsconfig.runtime.json"
     },
     {
       "path": "../registry"

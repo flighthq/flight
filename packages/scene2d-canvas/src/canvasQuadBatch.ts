@@ -1,8 +1,9 @@
 ﻿import { acquireMatrix, multiplyMatrix, releaseMatrix, setMatrixFromFloat32Array } from '@flighthq/geometry/contract';
+import type { QuadBatch } from '@flighthq/quadbatch/contract';
 import { noopRendererData } from '@flighthq/render/contract';
 import type { RenderProxy2D } from '@flighthq/render/contract';
 import { TextureAtlasRotation } from '@flighthq/textureatlas/contract';
-import type { CanvasRenderState, QuadBatch, SpriteRenderer } from '@flighthq/types/contract';
+import type { CanvasRenderState, SpriteRenderer } from '@flighthq/types/contract';
 
 import { drawCanvasAtlasRegion } from './canvasAtlasRegion.ts';
 import { applyCanvasMaterial } from './canvasQuadMaterialRegistry.ts';

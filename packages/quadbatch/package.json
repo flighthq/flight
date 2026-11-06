@@ -41,12 +41,13 @@
   },
   "dependencies": {
     "@flighthq/entity": "*",
-    "@flighthq/scene2d": "*",
     "@flighthq/geometry": "*",
+    "@flighthq/materials": "*",
     "@flighthq/node": "*",
+    "@flighthq/scene2d": "*",
     "@flighthq/signals": "*",
-    "@flighthq/textureatlas": "*",
-    "@flighthq/types": "*"
+    "@flighthq/texture": "*",
+    "@flighthq/textureatlas": "*"
   },
   "devDependencies": {
     "typescript": "^7.0.2"

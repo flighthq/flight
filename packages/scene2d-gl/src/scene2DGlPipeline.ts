@@ -1,5 +1,6 @@
 import { ParticleEmitter2DKind } from '@flighthq/particleemitter/contract';
 import { tessellateStrokePath } from '@flighthq/path/contract';
+import { QuadBatchKind } from '@flighthq/quadbatch/contract';
 import { withKindMapEntry } from '@flighthq/registry/contract';
 import {
   buildGlRenderRegistries,
@@ -13,7 +14,6 @@ import { TilemapKind } from '@flighthq/tilemap/contract';
 import type { GlRenderRegistries, Kind } from '@flighthq/types/contract';
 import {
   DisplayObjectKind,
-  QuadBatchKind,
   RenderCacheKind,
   Scale9SpriteKind,
   SpriteKind,

@@ -1,8 +1,9 @@
-import type { MaterialData } from './Material.ts';
-import type { Node2D, Node2DData, Node2DRuntime } from './Node2D.ts';
-import type { QuadTransformType } from './QuadTransformType.ts';
-import type { Rectangle } from './Rectangle.ts';
-import type { TextureAtlas } from './TextureAtlas.ts';
+import type { Entity } from '@flighthq/entity/contract';
+import type { Rectangle } from '@flighthq/geometry/contract';
+import type { MaterialData } from '@flighthq/materials/contract';
+import type { Node2D, Node2DData, Node2DRuntime } from '@flighthq/scene2d/contract';
+import type { Signal } from '@flighthq/signals/contract';
+import type { TextureAtlas } from '@flighthq/textureatlas/contract';
 
 export interface QuadBatchData extends Node2DData {
   atlas: TextureAtlas | null;
@@ -33,3 +34,11 @@ export interface QuadBatch extends Node2D {
 }
 
 export const QuadBatchKind = 'QuadBatch';
+
+export interface QuadBatchSignals extends Entity {
+  onCleared: Signal<void>;
+  onInstanceAppended: Signal<number>;
+  onInstanceRemoved: Signal<readonly [index: number, swapSource: number]>;
+}
+
+export type QuadTransformType = 'vector2' | 'matrix3x2';

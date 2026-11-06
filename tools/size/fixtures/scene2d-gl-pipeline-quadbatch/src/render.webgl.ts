@@ -8,6 +8,7 @@ import {
 } from '@flighthq/host-web';
 import { addNodeChild } from '@flighthq/node';
 import { appendQuadBatchInstance, createQuadBatch } from '@flighthq/quadbatch';
+import { QuadBatchKind } from '@flighthq/quadbatch';
 import { withKindMapEntry } from '@flighthq/registry';
 import { prepareScene2DRender, registerNodeRenderer } from '@flighthq/render';
 import {
@@ -22,7 +23,6 @@ import { glQuadBatchRenderer, registerGlStandardMaterial, renderGlScene2D } from
 import { createGlSurface } from '@flighthq/surface';
 import { createTexture } from '@flighthq/texture';
 import { createTextureAtlas, createTextureAtlasRegion } from '@flighthq/textureatlas';
-import { QuadBatchKind } from '@flighthq/types';
 
 const appWindow = createAppWindow();
 openWindow(webHostWindowLifecycle, webHostWindowGeometry, appWindow, {});

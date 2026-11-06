@@ -1,5 +1,7 @@
 {
-  "compilerOptions": { "composite": true },
+  "compilerOptions": {
+    "composite": true
+  },
   "files": [],
   "references": [
     {
@@ -60,7 +62,7 @@
       "path": "../surface/tsconfig.contract.json"
     },
     {
-      "path": "../quadbatch"
+      "path": "../quadbatch/tsconfig.runtime.json"
     },
     {
       "path": "../tilemap/tsconfig.runtime.json"

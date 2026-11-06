@@ -1,20 +1,14 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { createRectangle, createVector2 } from '@flighthq/geometry/contract';
+import type { MaterialData, TintMaterialData } from '@flighthq/materials/contract';
 import { getNodeLocalBoundsRectangle, getNodeLocalBoundsRevision } from '@flighthq/node/contract';
 import { connectSignal } from '@flighthq/signals/contract';
+import type { Texture2D } from '@flighthq/texture/contract';
 import { TextureAtlasRotation } from '@flighthq/textureatlas/contract';
-import type {
-  Entity,
-  MaterialData,
-  QuadBatch,
-  QuadTransformType,
-  Texture2D,
-  TextureAtlas,
-  TextureAtlasRegion,
-  TintMaterialData,
-} from '@flighthq/types/contract';
-import { QuadBatchKind } from '@flighthq/types/contract';
+import type { TextureAtlas, TextureAtlasRegion } from '@flighthq/textureatlas/contract';
 
+import type { QuadBatch, QuadTransformType } from './contract.ts';
+import { QuadBatchKind } from './contract.ts';
 import {
   QUAD_BATCH_DELETED_ID,
   appendQuadBatchInstance,
@@ -138,7 +132,7 @@ describe('cloneQuadBatch', () => {
   it('copies materialData when present', () => {
     const source = createQuadBatch();
     appendQuadBatchInstance(source, 0, 0, 0);
-    source.data.materialData = [finishEntity(allocateEntity<Entity>()) as MaterialData];
+    source.data.materialData = [finishEntity(allocateEntity<MaterialData>())];
     const clone = cloneQuadBatch(source);
     expect(clone.data.materialData).not.toBe(source.data.materialData);
     expect(clone.data.materialData).toEqual(source.data.materialData);

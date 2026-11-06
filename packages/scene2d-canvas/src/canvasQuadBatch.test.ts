@@ -4,6 +4,7 @@
   unregisterTestImageDimensionResolver,
 } from '@flighthq/image/contract';
 import { createQuadBatch, reserveQuadBatch } from '@flighthq/quadbatch/contract';
+import { QuadBatchKind } from '@flighthq/quadbatch/contract';
 import { getOrCreateRenderProxy2D, prepareScene2DRender, registerNodeRenderer } from '@flighthq/render/contract';
 import {
   addTextureAtlasRegion,
@@ -11,7 +12,6 @@ import {
   createTextureAtlasFromImageResource,
 } from '@flighthq/textureatlas/contract';
 import { TextureAtlasRotation } from '@flighthq/textureatlas/contract';
-import { QuadBatchKind } from '@flighthq/types/contract';
 
 import { registerCanvasImageTextureResolver } from './canvasImageTextureResolver.ts';
 import { canvasQuadBatchRenderer, drawCanvasQuadBatch } from './canvasQuadBatch.ts';

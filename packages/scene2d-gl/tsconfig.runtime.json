@@ -10,35 +10,93 @@
     "tsBuildInfoFile": "dist/.tsbuildinfo.runtime"
   },
   "references": [
-    { "path": "../clip/tsconfig.runtime.json" },
-    { "path": "../bitmap/tsconfig.runtime.json" },
-    { "path": "../bitmaptext" },
-    { "path": "../color" },
-    { "path": "../entity" },
-    { "path": "../scene2d/tsconfig.runtime.json" },
-    { "path": "../scene2d-canvas" },
-    { "path": "../geometry/tsconfig.runtime.json" },
-    { "path": "../glyphatlas/tsconfig.contract.json" },
-    { "path": "../image/tsconfig.runtime.json" },
-    { "path": "../log" },
-    { "path": "../node/tsconfig.runtime.json" },
-    { "path": "../particleemitter/tsconfig.runtime.json" },
-    { "path": "../path/tsconfig.runtime.json" },
-    { "path": "../registry" },
-    { "path": "../render/tsconfig.runtime.json" },
-    { "path": "../render-gl" },
-    { "path": "../shape/tsconfig.runtime.json" },
-    { "path": "../quadbatch" },
-    { "path": "../tilemap/tsconfig.runtime.json" },
-    { "path": "../text/tsconfig.runtime.json" },
-    { "path": "../textformat/tsconfig.runtime.json" },
-    { "path": "../textinput/tsconfig.runtime.json" },
-    { "path": "../textlayout/tsconfig.runtime.json" },
-    { "path": "../texture/tsconfig.runtime.json" },
-    { "path": "../textureatlas/tsconfig.runtime.json" },
-    { "path": "../types" },
-    { "path": "../velocity/tsconfig.runtime.json" },
-    { "path": "./tsconfig.contract.json" }
+    {
+      "path": "../clip/tsconfig.runtime.json"
+    },
+    {
+      "path": "../bitmap/tsconfig.runtime.json"
+    },
+    {
+      "path": "../bitmaptext"
+    },
+    {
+      "path": "../color"
+    },
+    {
+      "path": "../entity"
+    },
+    {
+      "path": "../scene2d/tsconfig.runtime.json"
+    },
+    {
+      "path": "../scene2d-canvas"
+    },
+    {
+      "path": "../geometry/tsconfig.runtime.json"
+    },
+    {
+      "path": "../glyphatlas/tsconfig.contract.json"
+    },
+    {
+      "path": "../image/tsconfig.runtime.json"
+    },
+    {
+      "path": "../log"
+    },
+    {
+      "path": "../node/tsconfig.runtime.json"
+    },
+    {
+      "path": "../particleemitter/tsconfig.runtime.json"
+    },
+    {
+      "path": "../path/tsconfig.runtime.json"
+    },
+    {
+      "path": "../registry"
+    },
+    {
+      "path": "../render/tsconfig.runtime.json"
+    },
+    {
+      "path": "../render-gl"
+    },
+    {
+      "path": "../shape/tsconfig.runtime.json"
+    },
+    {
+      "path": "../quadbatch/tsconfig.runtime.json"
+    },
+    {
+      "path": "../tilemap/tsconfig.runtime.json"
+    },
+    {
+      "path": "../text/tsconfig.runtime.json"
+    },
+    {
+      "path": "../textformat/tsconfig.runtime.json"
+    },
+    {
+      "path": "../textinput/tsconfig.runtime.json"
+    },
+    {
+      "path": "../textlayout/tsconfig.runtime.json"
+    },
+    {
+      "path": "../texture/tsconfig.runtime.json"
+    },
+    {
+      "path": "../textureatlas/tsconfig.runtime.json"
+    },
+    {
+      "path": "../types"
+    },
+    {
+      "path": "../velocity/tsconfig.runtime.json"
+    },
+    {
+      "path": "./tsconfig.contract.json"
+    }
   ],
   "include": ["src/**/*.ts"],
   "exclude": [

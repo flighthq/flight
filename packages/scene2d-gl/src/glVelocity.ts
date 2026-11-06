@@ -7,6 +7,7 @@ import {
   getNodeWorldMatrix,
 } from '@flighthq/node/contract';
 import type { ParticleEmitter2D } from '@flighthq/particleemitter/contract';
+import type { QuadBatch, QuadBatchRuntime } from '@flighthq/quadbatch/contract';
 import { withKindMapEntry } from '@flighthq/registry/contract';
 import { createGlProgram } from '@flighthq/render-gl/contract';
 import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
@@ -19,8 +20,6 @@ import type {
   GlVelocityContext,
   GlVelocityWriter,
   Kind,
-  QuadBatch,
-  QuadBatchRuntime,
   Spatial2DNode,
   Transform2DNode,
   Velocity2D,

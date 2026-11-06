@@ -56,7 +56,7 @@
       "path": "../surface"
     },
     {
-      "path": "../quadbatch"
+      "path": "../quadbatch/tsconfig.runtime.json"
     },
     {
       "path": "../registry"

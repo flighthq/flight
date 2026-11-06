@@ -1,4 +1,5 @@
 import { ParticleEmitter2DKind } from '@flighthq/particleemitter/contract';
+import { QuadBatchKind } from '@flighthq/quadbatch/contract';
 import { withKindMapEntry } from '@flighthq/registry/contract';
 import { buildWgpuRenderRegistries } from '@flighthq/render-wgpu/contract';
 import type { NodeRenderer } from '@flighthq/render/contract';
@@ -8,7 +9,6 @@ import { TilemapKind } from '@flighthq/tilemap/contract';
 import type { Kind, WgpuRenderRegistries } from '@flighthq/types/contract';
 import {
   DisplayObjectKind,
-  QuadBatchKind,
   RenderCacheKind,
   Scale9SpriteKind,
   SpriteKind,

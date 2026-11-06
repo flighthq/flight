@@ -90,6 +90,9 @@
       "path": "../video"
     },
     {
+      "path": "../quadbatch/tsconfig.runtime.json"
+    },
+    {
       "path": "./tsconfig.contract.json"
     }
   ],

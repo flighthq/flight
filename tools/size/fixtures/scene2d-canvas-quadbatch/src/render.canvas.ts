@@ -1,6 +1,7 @@
 import { createWebImageResourceFromCanvas, webHostCanvas } from '@flighthq/host-web';
 import { addNodeChild } from '@flighthq/node';
 import { appendQuadBatchInstance, createQuadBatch } from '@flighthq/quadbatch';
+import { QuadBatchKind } from '@flighthq/quadbatch';
 import { withKindMapEntry } from '@flighthq/registry';
 import { prepareScene2DRender, registerNodeRenderer } from '@flighthq/render';
 import { createDisplayObject } from '@flighthq/scene2d';
@@ -18,7 +19,6 @@ import {
 import { createCanvasSurfaceFromNativeHandle } from '@flighthq/surface';
 import { createTexture } from '@flighthq/texture';
 import { addTextureAtlasRegion, createTextureAtlas } from '@flighthq/textureatlas';
-import { QuadBatchKind } from '@flighthq/types';
 
 // REQUIRED WIRING for one packed instanced-quad buffer, and nothing else:
 //   surface   webHostCanvas — the single Canvas surface provider, NOT the aggregate

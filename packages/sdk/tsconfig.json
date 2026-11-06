@@ -382,7 +382,7 @@
       "path": "../statechart/tsconfig.runtime.json"
     },
     {
-      "path": "../quadbatch"
+      "path": "../quadbatch/tsconfig.runtime.json"
     },
     {
       "path": "../spritesheet/tsconfig.runtime.json"

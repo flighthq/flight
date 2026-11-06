@@ -1,9 +1,10 @@
 import { createParticleEmitter2D, reserveParticleEmitter2D } from '@flighthq/particleemitter/contract';
 import { createQuadBatch, getQuadBatchRuntime } from '@flighthq/quadbatch/contract';
+import type { QuadBatchRuntime } from '@flighthq/quadbatch/contract';
+import { QuadBatchKind } from '@flighthq/quadbatch/contract';
 import { createGlRenderState, getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
-import type { QuadBatchRuntime, TextureAtlas, TextureAtlasRegion } from '@flighthq/types/contract';
-import { QuadBatchKind } from '@flighthq/types/contract';
+import type { TextureAtlas, TextureAtlasRegion } from '@flighthq/types/contract';
 import { beginVelocityFrame, contributeVelocity, createVelocityField } from '@flighthq/velocity/contract';
 
 import { createGlState } from './glTestHelper.ts';

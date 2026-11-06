@@ -1,4 +1,5 @@
 import { ParticleEmitter2DKind } from '@flighthq/particleemitter/contract';
+import { QuadBatchKind } from '@flighthq/quadbatch/contract';
 import { getKindMapKeys } from '@flighthq/registry/contract';
 import {} from '@flighthq/render-wgpu/contract';
 import { wgpuScene2DRenderPreset } from '@flighthq/scene2d-wgpu/contract';
@@ -29,7 +30,6 @@ import {
   MatcapMaterialKind,
   NormalMaterialKind,
   PhongMaterialKind,
-  QuadBatchKind,
   RenderCacheKind,
   RenderTargetTextureSourceKind,
   Scale9SpriteKind,
