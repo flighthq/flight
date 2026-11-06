@@ -1,7 +1,6 @@
 // Exact bridge for the Render-WGPU owner contract. Most dependencies now arrive from their owning
 // package contracts; only Types-owned scene/render headers and the two genuine backend cycles remain.
 export type { Camera3D } from './Camera3D.ts';
-export type { Effect } from './Effect.ts';
 export type { ExternalTexture } from './ExternalTexture.ts';
 export type { Mesh } from './Mesh.ts';
 export type { MeshGeometry } from './MeshGeometry.ts';

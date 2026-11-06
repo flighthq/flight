@@ -1,3 +1,4 @@
+export type { Effect, EffectStateOptions } from './contract.ts';
 export {
   blendNonSeparableRgb,
   canLerpEffects,

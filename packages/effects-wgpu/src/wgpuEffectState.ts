@@ -6,6 +6,7 @@ import {
   isColorLutAdjustment,
 } from '@flighthq/adjustments/contract';
 import { srgbChannelToLinear } from '@flighthq/color/contract';
+import type { Effect, EffectStateOptions } from '@flighthq/effects/contract';
 import {
   acquireWgpuTextureRenderTarget,
   beginWgpuRenderPass,
@@ -23,8 +24,6 @@ import {
 import type { WgpuRenderPass, WgpuRenderState, WgpuTextureRenderTarget } from '@flighthq/render-wgpu/contract';
 import type {
   Adjustment,
-  Effect,
-  EffectStateOptions,
   NonEntityCreateResult,
   RenderTargetClear,
   RenderTargetColorSpace,

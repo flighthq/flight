@@ -1,4 +1,4 @@
-import type { Effect } from '@flighthq/types/contract';
+import type { Effect } from './types.ts';
 
 // Per-kind default values for every built-in render effect. The table holds only the fields
 // that have documented non-zero defaults (fields that default to 0/false/undefined are omitted).

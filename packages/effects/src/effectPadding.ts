@@ -3,12 +3,13 @@ import { getRenderStateRuntime } from '@flighthq/render/contract';
 import { RenderRegistryTable } from '@flighthq/render/contract';
 import type {
   Kind,
-  Effect,
   EffectPadding,
   EffectPaddingExplanation,
   EffectPaddingResolver,
   RenderState,
 } from '@flighthq/types/contract';
+
+import type { Effect } from './types.ts';
 
 // Computes the footprint of one effect or a sequential effect chain. Spatial effects add their
 // directional footprints per side; pointwise effects register the zero resolver. An unregistered kind

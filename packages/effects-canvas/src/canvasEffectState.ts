@@ -5,6 +5,7 @@ import {
   getAdjustmentColorMatrix,
   isColorLutAdjustment,
 } from '@flighthq/adjustments/contract';
+import type { Effect, EffectStateOptions } from '@flighthq/effects/contract';
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import {
   beginCanvasRenderPass,
@@ -22,8 +23,6 @@ import type {
   CanvasTextureRenderTarget,
   CanvasRenderTargetPool,
   EntityConstruction,
-  Effect,
-  EffectStateOptions,
   HostCanvasCapability,
   NonEntityCreateResult,
   RenderTargetClear,

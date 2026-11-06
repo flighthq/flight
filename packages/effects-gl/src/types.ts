@@ -1,6 +1,6 @@
 import type { ColorLut, ColorLutCache } from '@flighthq/adjustments/contract';
+import type { Effect, EffectStateOptions } from '@flighthq/effects/contract';
 import type { GlRenderState, GlTextureRenderTarget, GlTextureRenderTargetPool } from '@flighthq/render-gl/contract';
-import type { Effect, RenderTargetDepth, RenderTargetFormat } from '@flighthq/types/contract';
 
 // GPU-upload memo for the fused color LUT on WebGL 2: the uploaded `size³` 3D texture and the ColorLut
 // reference last written into it. A stable LUT reference lets the effect pipeline skip re-uploading.
@@ -61,15 +61,6 @@ export type GlEffectApplicationGuard = (
   state: GlRenderState,
   explanation: Readonly<GlEffectApplicationExplanation>,
 ) => void;
-
-export interface EffectStateOptions {
-  // Depth attachment for depth-dependent effects (SSAO, DoF, fog). Default 'none'.
-  depth?: RenderTargetDepth;
-  // 'rgba16f' gives bloom/tone-mapping HDR headroom. Default 'rgba8'.
-  format?: RenderTargetFormat;
-  // MSAA on the scene target so going offscreen for effects keeps edge AA. Default 1.
-  sampleCount?: number;
-}
 
 // Retains the GPU resources an effect pass needs across frames. The effect list is per-frame data.
 export interface GlEffectState {

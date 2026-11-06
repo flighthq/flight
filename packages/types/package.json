@@ -51,6 +51,7 @@
     "@flighthq/connectivity": "*",
     "@flighthq/device": "*",
     "@flighthq/dialog": "*",
+    "@flighthq/effects": "*",
     "@flighthq/effects-gl": "*",
     "@flighthq/effects-wgpu": "*",
     "@flighthq/entity": "*",

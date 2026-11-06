@@ -1,4 +1,5 @@
-import type { Effect } from './Effect.ts';
+import type { Effect } from '@flighthq/effects/contract';
+
 import type { GlRenderState } from './GlRenderState.ts';
 import type { GlTextureRenderTarget, GlTextureRenderTargetPool } from './GlRenderTarget.ts';
 

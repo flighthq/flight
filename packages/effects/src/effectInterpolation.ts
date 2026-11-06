@@ -1,5 +1,7 @@
 import { lerpColor } from '@flighthq/color/contract';
-import type { Effect, EffectFieldRoles } from '@flighthq/types/contract';
+import type { EffectFieldRoles } from '@flighthq/types/contract';
+
+import type { Effect } from './types.ts';
 
 // Animation-friendly interpolation for render-effect intents. Allows tween/timeline to animate
 // effect parameters smoothly across keyframes. All functions are alias-safe.

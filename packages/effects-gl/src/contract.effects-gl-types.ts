@@ -1,7 +1,6 @@
 // Acyclic build entry selected by contract-only projects through the `.effects-gl-types` module suffix.
 // The published @flighthq/effects-gl/contract entry remains contract.ts, which also exposes runtime helpers.
 export type {
-  EffectStateOptions,
   GlCustomShaderSourceGuard,
   GlEffectApplicationExplanation,
   GlEffectApplicationGuard,
@@ -14,3 +13,4 @@ export type {
   GlEffectStateSkipGuard,
   GlColorLutTextureCache,
 } from './types.ts';
+export type { EffectStateOptions } from '@flighthq/effects/contract';

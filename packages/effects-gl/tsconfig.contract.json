@@ -7,12 +7,22 @@
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,
-    "moduleSuffixes": [".render-types", ".render-gl-types", ".render-wgpu-types", ".adjustments-types", ""],
+    "moduleSuffixes": [
+      ".effects-types",
+      ".render-types",
+      ".render-gl-types",
+      ".render-wgpu-types",
+      ".adjustments-types",
+      ""
+    ],
     "tsBuildInfoFile": "dist/.tsbuildinfo.contract"
   },
   "references": [
     {
       "path": "../adjustments/tsconfig.contract.json"
+    },
+    {
+      "path": "../effects/tsconfig.contract.json"
     },
     {
       "path": "../render-gl/tsconfig.contract.json"

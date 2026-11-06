@@ -10,6 +10,7 @@
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "types": ["@webgpu/types"],
     "moduleSuffixes": [
+      ".effects-types",
       ".render-types",
       ".render-wgpu-bridge-types",
       ".adjustments-types",
@@ -48,6 +49,9 @@
     "tsBuildInfoFile": "dist/.tsbuildinfo.contract"
   },
   "references": [
+    {
+      "path": "../effects/tsconfig.contract.json"
+    },
     {
       "path": "../adjustments/tsconfig.contract.json"
     },

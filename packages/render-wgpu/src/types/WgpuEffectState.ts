@@ -1,4 +1,4 @@
-import type { Effect } from '@flighthq/types/contract';
+import type { Effect } from '@flighthq/effects/contract';
 
 import type { WgpuRenderState } from './WgpuRenderState.ts';
 import type { WgpuRenderTargetPool, WgpuTextureRenderTarget } from './WgpuRenderTarget.ts';

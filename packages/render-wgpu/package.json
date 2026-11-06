@@ -43,6 +43,7 @@
     "@flighthq/adjustments": "*",
     "@flighthq/app": "*",
     "@flighthq/color": "*",
+    "@flighthq/effects": "*",
     "@flighthq/entity": "*",
     "@flighthq/geometry": "*",
     "@flighthq/image": "*",

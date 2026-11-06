@@ -20,6 +20,7 @@
       ".scene3d-gl-bridge-types",
       ".scene3d-wgpu-types",
       ".render-wgpu-types",
+      ".effects-types",
       ".adjustments-types",
       ".app-types",
       ".clip-types",
@@ -71,6 +72,9 @@
     },
     {
       "path": "../adjustments/tsconfig.contract.json"
+    },
+    {
+      "path": "../effects/tsconfig.contract.json"
     },
     {
       "path": "../app/tsconfig.contract.json"
@@ -225,7 +229,6 @@
     "src/DirectionalLight.ts",
     "src/Effect.ts",
     "src/EffectPadding.ts",
-    "src/EffectStateOptions.render-wgpu-types.ts",
     "src/Entity.ts",
     "src/ExternalTexture.ts",
     "src/FocusEventData.interaction-types.ts",

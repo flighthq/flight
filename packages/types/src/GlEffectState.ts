@@ -1,6 +1,5 @@
 /** @deprecated Import GL effect contracts from `@flighthq/effects-gl/contract`. */
 export type {
-  EffectStateOptions,
   GlCustomShaderSourceGuard,
   GlEffectApplicationExplanation,
   GlEffectApplicationGuard,
@@ -12,3 +11,6 @@ export type {
   GlEffectState,
   GlEffectStateSkipGuard,
 } from '@flighthq/effects-gl/contract';
+
+/** @deprecated Import generic effect contracts from `@flighthq/effects/contract`. */
+export type { EffectStateOptions } from '@flighthq/effects/contract';

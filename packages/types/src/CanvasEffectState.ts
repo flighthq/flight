@@ -1,9 +1,9 @@
+import type { Effect, EffectStateOptions } from '@flighthq/effects/contract';
+
 import type { CanvasRenderState } from './CanvasRenderState.ts';
 import type { CanvasTextureRenderTarget } from './CanvasRenderTarget.ts';
 import type { ColorLutCache } from './ColorLutCache.ts';
-import type { Effect } from './Effect.ts';
 import type { Entity } from './Entity.ts';
-import type { EffectStateOptions } from './GlEffectState.ts';
 import type { HostCanvasCapability } from './HostCanvas.ts';
 
 // What a Canvas 2D effect runner is handed: the state, the offscreen scene canvas it reads, the

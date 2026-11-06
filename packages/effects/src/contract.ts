@@ -1,3 +1,4 @@
+export * from './contract.effects-types.ts';
 export * from './autoExposureEffect.ts';
 export * from './barrelDistortionEffect.ts';
 export * from './bevelEffect.ts';

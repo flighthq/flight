@@ -26,6 +26,7 @@
       ".sensors-types",
       ".render-wgpu-types",
       ".scene2d-gl-types",
+      ".effects-types",
       ".effects-gl-types",
       ".effects-wgpu-types",
       ".render-gl-types",
@@ -345,6 +346,9 @@
     },
     {
       "path": "../scene3d-gl/tsconfig.contract.json"
+    },
+    {
+      "path": "../effects/tsconfig.contract.json"
     },
     {
       "path": "../effects-gl/tsconfig.contract.json"
