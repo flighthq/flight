@@ -1,5 +1,5 @@
-import type { SpecularPbrExtension } from '@flighthq/types/contract';
-import { SpecularPbrExtensionKind } from '@flighthq/types/contract';
+import type { SpecularPbrExtension } from '@flighthq/materials/contract';
+import { SpecularPbrExtensionKind } from '@flighthq/materials/contract';
 
 import { registerScene3DPbrExtensionTextures } from './sceneMaterialTextureRegistry.ts';
 import type { Scene3DMaterialTextureRegistry } from './types.ts';

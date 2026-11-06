@@ -1,9 +1,9 @@
+import type { ImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import * as netContract from '@flighthq/net/contract';
 import type { HostNetCapability, NetResponse } from '@flighthq/net/contract';
 import * as scene3dFormatsContract from '@flighthq/scene3d-formats/contract';
 import type { GltfExtensionHandler } from '@flighthq/scene3d-formats/contract';
 import type { Scene3DDocument } from '@flighthq/scene3d/contract';
-import type { ImportDiagnostic } from '@flighthq/types/contract';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { loadScene3DDocumentFromGlbUrl, loadScene3DDocumentFromGltfUrl } from './gltfLoadImport.ts';

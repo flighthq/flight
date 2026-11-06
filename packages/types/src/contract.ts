@@ -453,7 +453,6 @@ export * from './Scene3DMetadata.ts';
 export * from './Node3DVisitor.ts';
 export * from './Scene3DRenderList.ts';
 export * from './Scene3DRenderProxy.ts';
-export * from './Scene3DResources.ts';
 export * from './Screen.ts';
 export * from './ScreenChangeEvent.ts';
 export * from './ScreenColorSpace.ts';

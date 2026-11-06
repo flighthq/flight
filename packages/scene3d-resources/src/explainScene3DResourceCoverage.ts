@@ -1,11 +1,14 @@
 import type { Kind } from '@flighthq/entity/contract';
 import type { CatalogRegistration, SceneCoverageCatalog, SceneCoverageEntry } from '@flighthq/render/contract';
 import { RenderRegistryTable, SceneCoverage } from '@flighthq/render/contract';
-import type { Scene3DKindUsage } from '@flighthq/types/contract';
-import { RequirementFacet } from '@flighthq/types/contract';
+import { RequirementFacet } from '@flighthq/requirement/contract';
 
 import { hasScene3DMaterialTextureLister } from './sceneMaterialTextureRegistry.ts';
 import type { Scene3DResourceResolver } from './types.ts';
+
+interface Scene3DResourceKindUsage {
+  readonly materialKinds: readonly Kind[];
+}
 
 // Clears `out`, then reports EVERY material kind in `usage` with how well this resolver describes it —
 // satisfied ones included, so one call is a complete manifest rather than only a list of complaints. The resource
@@ -25,7 +28,7 @@ import type { Scene3DResourceResolver } from './types.ts';
 export function explainScene3DResourceCoverage(
   out: SceneCoverageEntry[],
   resolver: Readonly<Scene3DResourceResolver>,
-  usage: Readonly<Scene3DKindUsage>,
+  usage: Readonly<Scene3DResourceKindUsage>,
   catalog: SceneCoverageCatalog,
 ): void {
   out.length = 0;
@@ -36,7 +39,7 @@ export function explainScene3DResourceCoverage(
 // never allocates, so it is cheap enough to call per load. Use the explain form to find out WHICH kind.
 export function hasScene3DResourceCoverage(
   resolver: Readonly<Scene3DResourceResolver>,
-  usage: Readonly<Scene3DKindUsage>,
+  usage: Readonly<Scene3DResourceKindUsage>,
 ): boolean {
   return !collectScene3DResourceCoverageGaps(null, resolver, usage, true, null);
 }
@@ -46,7 +49,7 @@ export function hasScene3DResourceCoverage(
 function collectScene3DResourceCoverageGaps(
   out: SceneCoverageEntry[] | null,
   resolver: Readonly<Scene3DResourceResolver>,
-  usage: Readonly<Scene3DKindUsage>,
+  usage: Readonly<Scene3DResourceKindUsage>,
   stopAtFirst: boolean,
   catalog: SceneCoverageCatalog | null,
 ): boolean {

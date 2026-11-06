@@ -1,5 +1,5 @@
-import type { IridescencePbrExtension } from '@flighthq/types/contract';
-import { IridescencePbrExtensionKind } from '@flighthq/types/contract';
+import type { IridescencePbrExtension } from '@flighthq/materials/contract';
+import { IridescencePbrExtensionKind } from '@flighthq/materials/contract';
 
 import { registerScene3DPbrExtensionTextures } from './sceneMaterialTextureRegistry.ts';
 import type { Scene3DMaterialTextureRegistry } from './types.ts';

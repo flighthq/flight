@@ -1,19 +1,21 @@
 import { EntityRuntimeKey } from '@flighthq/entity/contract';
 import type { HostImageCapability } from '@flighthq/image/contract';
 import { createBlinnPhongMaterial, createUnlitMaterial } from '@flighthq/materials/contract';
+import type { Material3D } from '@flighthq/materials/contract';
 import { createBoxMeshGeometry } from '@flighthq/meshgeometry/contract';
 import { addNodeChild } from '@flighthq/node/contract';
 import type { SceneCoverageCatalog, SceneCoverageEntry } from '@flighthq/render/contract';
 import { RenderRegistryTable, SceneCoverage } from '@flighthq/render/contract';
+import { RequirementFacet } from '@flighthq/requirement/contract';
 import { createMesh, createScene3D, createScene3DKindUsage, getScene3DKindUsage } from '@flighthq/scene3d/contract';
 import { createShadedMaterial } from '@flighthq/shading/contract';
-import type { Material3D, Scene3DKindUsage } from '@flighthq/types/contract';
-import { RequirementFacet } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { explainScene3DResourceCoverage, hasScene3DResourceCoverage } from './explainScene3DResourceCoverage.ts';
 import { createBuiltInScene3DResourceResolver, createScene3DResourceResolver } from './sceneResourceResolver.ts';
 import { registerShadedScene3DMaterialTextures } from './shadedScene3DMaterialTextures.ts';
+
+type Scene3DKindUsage = ReturnType<typeof createScene3DKindUsage>;
 
 const host: { readonly graphics: { readonly image: HostImageCapability } } = {
   graphics: { image: { [EntityRuntimeKey]: undefined, loadImageFromUrl: vi.fn() } },

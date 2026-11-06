@@ -4,10 +4,10 @@ import { createImageResourceFailure, resolveImageResourceReference } from '@flig
 import type { ImageResourceFailure, ImageResourceReference } from '@flighthq/image/contract';
 import { ImageResourceFailureKind } from '@flighthq/image/contract';
 import { queueResourceLoad } from '@flighthq/loader/contract';
+import { ResourceResolutionState } from '@flighthq/resource/contract';
 import type { Scene3D } from '@flighthq/scene3d/contract';
 import { emitSignal } from '@flighthq/signals/contract';
 import type { Texture, TextureSource } from '@flighthq/texture/contract';
-import { ResourceResolutionState } from '@flighthq/types/contract';
 
 import { getScene3DResourceTextures, getScene3DTextureResourceReference } from './getScene3DResourceTextures.ts';
 import type {

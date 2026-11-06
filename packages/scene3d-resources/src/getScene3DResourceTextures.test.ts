@@ -4,10 +4,10 @@ import { ImageResourceReferenceKind } from '@flighthq/image/contract';
 import { createBlinnPhongMaterial, createStandardPbrMaterial, createUnlitMaterial } from '@flighthq/materials/contract';
 import { createBoxMeshGeometry } from '@flighthq/meshgeometry/contract';
 import { addNodeChild } from '@flighthq/node/contract';
+import { ResourceResolutionState } from '@flighthq/resource/contract';
 import { createMesh, createScene3D } from '@flighthq/scene3d/contract';
 import { createTexture } from '@flighthq/texture/contract';
 import type { Texture } from '@flighthq/texture/contract';
-import { ResourceResolutionState } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { getScene3DResourceTextures, getScene3DTextureResourceReference } from './getScene3DResourceTextures.ts';

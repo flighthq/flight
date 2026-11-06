@@ -51,13 +51,14 @@
     "@flighthq/net": "*",
     "@flighthq/node": "*",
     "@flighthq/render": "*",
+    "@flighthq/requirement": "*",
+    "@flighthq/resource": "*",
     "@flighthq/scene3d": "*",
     "@flighthq/scene3d-formats": "*",
     "@flighthq/shading": "*",
     "@flighthq/signals": "*",
     "@flighthq/texture": "*",
-    "@flighthq/tween": "*",
-    "@flighthq/types": "*"
+    "@flighthq/tween": "*"
   },
   "devDependencies": {
     "@flighthq/materials": "*",

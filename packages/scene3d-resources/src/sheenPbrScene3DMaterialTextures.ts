@@ -1,5 +1,5 @@
-import type { SheenPbrExtension } from '@flighthq/types/contract';
-import { SheenPbrExtensionKind } from '@flighthq/types/contract';
+import type { SheenPbrExtension } from '@flighthq/materials/contract';
+import { SheenPbrExtensionKind } from '@flighthq/materials/contract';
 
 import { registerScene3DPbrExtensionTextures } from './sceneMaterialTextureRegistry.ts';
 import type { Scene3DMaterialTextureRegistry } from './types.ts';

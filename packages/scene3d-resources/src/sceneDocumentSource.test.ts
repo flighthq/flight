@@ -1,9 +1,9 @@
 import { EntityRuntimeKey } from '@flighthq/entity/contract';
 import { ImageResourceReferenceKind } from '@flighthq/image/contract';
 import type { HostNetCapability, NetResponse } from '@flighthq/net/contract';
+import { ResourceResolutionState } from '@flighthq/resource/contract';
 import type { Scene3DDocument } from '@flighthq/scene3d/contract';
 import { connectSignal, createSignal, emitSignal } from '@flighthq/signals/contract';
-import { ResourceResolutionState } from '@flighthq/types/contract';
 import { afterEach, describe, expect, it } from 'vitest';
 
 import {

@@ -1,9 +1,9 @@
 import { EntityRuntimeKey } from '@flighthq/entity/contract';
 import type { HostImageCapability, ImageResourceReference } from '@flighthq/image/contract';
 import { ImageResourceReferenceKind } from '@flighthq/image/contract';
+import { ResourceResolutionState } from '@flighthq/resource/contract';
 import { connectSignal, emitSignal } from '@flighthq/signals/contract';
 import type { Texture } from '@flighthq/texture/contract';
-import { ResourceResolutionState } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { createScene3DResourceResolver, disposeScene3DResourceResolver } from './sceneResourceResolver.ts';

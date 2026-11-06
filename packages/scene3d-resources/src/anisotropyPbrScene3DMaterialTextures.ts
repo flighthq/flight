@@ -1,5 +1,5 @@
-import type { AnisotropyPbrExtension } from '@flighthq/types/contract';
-import { AnisotropyPbrExtensionKind } from '@flighthq/types/contract';
+import type { AnisotropyPbrExtension } from '@flighthq/materials/contract';
+import { AnisotropyPbrExtensionKind } from '@flighthq/materials/contract';
 
 import { registerScene3DPbrExtensionTextures } from './sceneMaterialTextureRegistry.ts';
 import type { Scene3DMaterialTextureRegistry } from './types.ts';

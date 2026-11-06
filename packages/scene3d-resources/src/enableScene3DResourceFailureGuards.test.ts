@@ -5,9 +5,9 @@ import type { LogState } from '@flighthq/log/contract';
 import { addLogSink, createLogState, createMemoryLogSink, getMemoryLogSinkEntries } from '@flighthq/log/contract';
 import type { LogEntry, MemoryLogSink } from '@flighthq/log/contract';
 import { LogLevel } from '@flighthq/log/contract';
+import { ResourceResolutionState } from '@flighthq/resource/contract';
 import { emitSignal, hasSignalSlots } from '@flighthq/signals/contract';
 import { createTexture } from '@flighthq/texture/contract';
-import { ResourceResolutionState } from '@flighthq/types/contract';
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import {

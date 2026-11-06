@@ -6,15 +6,15 @@ import {
   createStandardPbrMaterialProperties,
   createUnlitMaterial,
 } from '@flighthq/materials/contract';
-import { createTexture } from '@flighthq/texture/contract';
-import type { Texture } from '@flighthq/texture/contract';
-import type { Material } from '@flighthq/types/contract';
+import type { Material } from '@flighthq/materials/contract';
 import {
   AnisotropyPbrExtensionKind,
   ExtendedPbrMaterialKind,
   StandardPbrMaterialKind,
   UnlitMaterialKind,
-} from '@flighthq/types/contract';
+} from '@flighthq/materials/contract';
+import { createTexture } from '@flighthq/texture/contract';
+import type { Texture } from '@flighthq/texture/contract';
 import { describe, expect, it } from 'vitest';
 
 import {

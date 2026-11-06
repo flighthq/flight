@@ -1,5 +1,4 @@
-// The scene3d-resources-owned contracts. They import nothing from @flighthq/types, which re-exports
-// them type-only (with a registered-symbol copy of the runtime key) for compatibility.
+// The scene3d-resources-owned contracts. Their dependencies point directly to acyclic owner contracts.
 
 import type { EasingFunction } from '@flighthq/easing/contract';
 import type { EntityRaw, EntityRuntime, Kind } from '@flighthq/entity/contract';
@@ -68,7 +67,7 @@ export interface Scene3DResourceResolverRuntime {
   signals: Scene3DResourceSignals | null;
 }
 
-// Registered (Symbol.for) so @flighthq/types' deprecated compatibility copy is the same symbol.
+// Registered (Symbol.for) so independently loaded package copies share the same runtime key.
 export const Scene3DResourceResolverRuntimeKey: unique symbol = Symbol.for(
   '@flighthq/scene3d-resources/Scene3DResourceResolverRuntime',
 );

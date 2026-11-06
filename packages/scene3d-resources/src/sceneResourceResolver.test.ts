@@ -2,8 +2,9 @@ import { EntityRuntimeKey } from '@flighthq/entity/contract';
 import type { HostImageCapability } from '@flighthq/image/contract';
 import { ImageResourceReferenceKind } from '@flighthq/image/contract';
 import type { ImageResourceReference } from '@flighthq/image/contract';
+import { StandardPbrMaterialKind, UnlitMaterialKind } from '@flighthq/materials/contract';
+import { ResourceResolutionState } from '@flighthq/resource/contract';
 import { createTexture } from '@flighthq/texture/contract';
-import { ResourceResolutionState, StandardPbrMaterialKind, UnlitMaterialKind } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { createScene3DMaterialTextureRegistry } from './sceneMaterialTextureRegistry.ts';

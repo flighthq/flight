@@ -1,5 +1,5 @@
-import type { TransmissionVolumePbrExtension } from '@flighthq/types/contract';
-import { TransmissionVolumePbrExtensionKind } from '@flighthq/types/contract';
+import type { TransmissionVolumePbrExtension } from '@flighthq/materials/contract';
+import { TransmissionVolumePbrExtensionKind } from '@flighthq/materials/contract';
 
 import { registerScene3DPbrExtensionTextures } from './sceneMaterialTextureRegistry.ts';
 import type { Scene3DMaterialTextureRegistry } from './types.ts';

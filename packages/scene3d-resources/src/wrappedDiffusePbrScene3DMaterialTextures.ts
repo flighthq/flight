@@ -1,5 +1,5 @@
-import type { WrappedDiffusePbrExtension } from '@flighthq/types/contract';
-import { WrappedDiffusePbrExtensionKind } from '@flighthq/types/contract';
+import type { WrappedDiffusePbrExtension } from '@flighthq/materials/contract';
+import { WrappedDiffusePbrExtensionKind } from '@flighthq/materials/contract';
 
 import { registerScene3DPbrExtensionTextures } from './sceneMaterialTextureRegistry.ts';
 import type { Scene3DMaterialTextureRegistry } from './types.ts';

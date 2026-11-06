@@ -4,6 +4,7 @@ import type { EmbeddedImageResourceReference, ImageResource } from '@flighthq/im
 import { createStandardPbrMaterial } from '@flighthq/materials/contract';
 import { createBoxMeshGeometry } from '@flighthq/meshgeometry/contract';
 import { addNodeChild } from '@flighthq/node/contract';
+import { ResourceResolutionState } from '@flighthq/resource/contract';
 import { createMesh, createScene3D } from '@flighthq/scene3d/contract';
 import type { Scene3D } from '@flighthq/scene3d/contract';
 import type { Node3D } from '@flighthq/scene3d/contract';
@@ -13,7 +14,6 @@ import { createTexture } from '@flighthq/texture/contract';
 import type { Texture } from '@flighthq/texture/contract';
 import { ImageTextureSourceKind } from '@flighthq/texture/contract';
 import { createTweenManager, hasTweensOf, updateTweens } from '@flighthq/tween/contract';
-import { ResourceResolutionState } from '@flighthq/types/contract';
 
 import { revealScene3DResourcesOnResolve } from './revealScene3DResourcesOnResolve.ts';
 import { createBuiltInScene3DResourceResolver } from './sceneResourceResolver.ts';

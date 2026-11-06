@@ -53,10 +53,13 @@
       "path": "../tween/tsconfig.runtime.json"
     },
     {
-      "path": "../types"
+      "path": "../render/tsconfig.runtime.json"
     },
     {
-      "path": "../render/tsconfig.runtime.json"
+      "path": "../requirement"
+    },
+    {
+      "path": "../resource"
     },
     {
       "path": "./tsconfig.contract.json"

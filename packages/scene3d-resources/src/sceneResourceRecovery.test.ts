@@ -4,9 +4,9 @@ import { ImageResourceFailureKind, ImageResourceReferenceKind } from '@flighthq/
 import { createUnlitMaterial } from '@flighthq/materials/contract';
 import { createBoxMeshGeometry } from '@flighthq/meshgeometry/contract';
 import { addNodeChild } from '@flighthq/node/contract';
+import { ResourceResolutionState } from '@flighthq/resource/contract';
 import { createMesh, createScene3D } from '@flighthq/scene3d/contract';
 import { createTexture, getTextureSource } from '@flighthq/texture/contract';
-import { ResourceResolutionState } from '@flighthq/types/contract';
 import { describe, expect, it, vi } from 'vitest';
 
 import { loadScene3DResources, waitForScene3DResourceResolver } from './loadScene3DResources.ts';
