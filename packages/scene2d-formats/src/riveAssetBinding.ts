@@ -1,6 +1,7 @@
 import { createSprite } from '@flighthq/scene2d/contract';
+import type { DisplayObject, Node2D } from '@flighthq/scene2d/contract';
 import { createTexture } from '@flighthq/texture/contract';
-import type { DisplayObject, Node2D, Texture } from '@flighthq/types/contract';
+import type { Texture } from '@flighthq/texture/contract';
 
 /**
  * What an imported node is still waiting on from elsewhere in the file.

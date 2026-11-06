@@ -1,5 +1,9 @@
+import type { NonEntityCreateResult } from '@flighthq/entity/contract';
 import { createMatrix } from '@flighthq/geometry/contract';
+import type { Matrix } from '@flighthq/geometry/contract';
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import type { ImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import { ImportDiagnosticSeverity } from '@flighthq/importdiagnostics/contract';
 import { CIRCLE_KAPPA } from '@flighthq/math/contract';
 import {
   appendPathClose,
@@ -13,8 +17,7 @@ import {
   createPath,
 } from '@flighthq/path/contract';
 import type { Path } from '@flighthq/path/contract';
-import type { DisplayObject, ImportDiagnostic, Matrix, NonEntityCreateResult } from '@flighthq/types/contract';
-import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
+import type { DisplayObject } from '@flighthq/scene2d/contract';
 
 import type {
   RiveArtboardGraph,

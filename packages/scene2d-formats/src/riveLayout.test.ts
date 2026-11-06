@@ -1,6 +1,7 @@
+import type { ImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import { FlexLayoutKind, GridLayoutKind } from '@flighthq/layout/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
-import type { DisplayObject, ImportDiagnostic } from '@flighthq/types/contract';
-import { FlexLayoutKind, GridLayoutKind } from '@flighthq/types/contract';
+import type { DisplayObject } from '@flighthq/scene2d/contract';
 
 import type { RiveArtboardGraph, RiveCoreObject } from './contract.scene2d-formats-types.ts';
 import { RiveFieldType } from './contract.scene2d-formats-types.ts';

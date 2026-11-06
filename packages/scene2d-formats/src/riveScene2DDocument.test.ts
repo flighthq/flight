@@ -1,12 +1,12 @@
+import { EntityRuntimeKey } from '@flighthq/entity/contract';
+import type { ImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import { ImportDiagnosticSeverity } from '@flighthq/importdiagnostics/contract';
 import { getNodeChildAt, getNodeChildCount } from '@flighthq/node/contract';
 import { martinezPathBooleanKernel } from '@flighthq/path-boolean/contract';
-import type { ImportDiagnostic, Node2D, Sprite, Texture2D } from '@flighthq/types/contract';
-import {
-  EntityRuntimeKey,
-  ImportDiagnosticSeverity,
-  ResourceResolutionState,
-  SpriteKind,
-} from '@flighthq/types/contract';
+import { ResourceResolutionState } from '@flighthq/resource/contract';
+import type { Node2D, Sprite } from '@flighthq/scene2d/contract';
+import { SpriteKind } from '@flighthq/scene2d/contract';
+import type { Texture2D } from '@flighthq/texture/contract';
 
 import { createScene2DDocumentFromRiveDocument, initializeRiveScene2DDocumentResult } from './riveScene2DDocument.ts';
 

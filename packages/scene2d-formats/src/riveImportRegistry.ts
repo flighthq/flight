@@ -1,10 +1,7 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type {
-  DisplayObject,
-  EntityConstruction,
-  ImportDiagnostic,
-  NonEntityCreateResult,
-} from '@flighthq/types/contract';
+import type { EntityConstruction, NonEntityCreateResult } from '@flighthq/entity/contract';
+import type { ImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import type { DisplayObject } from '@flighthq/scene2d/contract';
 
 import type {
   RiveArtboardGraph,

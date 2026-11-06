@@ -1,4 +1,5 @@
-import type { NonEntityCreateResult, PathBooleanKernel } from '@flighthq/types/contract';
+import type { NonEntityCreateResult } from '@flighthq/entity/contract';
+import type { PathBooleanKernel } from '@flighthq/path-boolean/contract';
 
 import type {
   RiveImportOptions,

@@ -1,6 +1,6 @@
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
-import type { ImportDiagnostic } from '@flighthq/types/contract';
-import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
+import type { ImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import { ImportDiagnosticSeverity } from '@flighthq/importdiagnostics/contract';
 
 import type {
   RiveCoreObject,

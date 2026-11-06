@@ -1,5 +1,6 @@
+import type { Matrix } from '@flighthq/geometry/contract';
 import { getNodeChildAt } from '@flighthq/node/contract';
-import type { Matrix, Node2D } from '@flighthq/types/contract';
+import type { Node2D } from '@flighthq/scene2d/contract';
 import type { XmlElement } from '@flighthq/xml/contract';
 import { parseXmlDocument } from '@flighthq/xml/contract';
 import { describe, expect, it } from 'vitest';

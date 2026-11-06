@@ -1,12 +1,12 @@
 import { packColor } from '@flighthq/color/contract';
 import { createMatrix } from '@flighthq/geometry/contract';
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import { ImportDiagnosticSeverity } from '@flighthq/importdiagnostics/contract';
+import type { Node2D } from '@flighthq/scene2d/contract';
 import { createRichText, createTextLabel } from '@flighthq/text/contract';
 import { createTextFormatRange } from '@flighthq/textformat/contract';
 import type { TextFormatRangeRaw as TextFormatRange } from '@flighthq/textformat/contract';
 import type { TextFormat } from '@flighthq/textformat/contract';
-import type { Node2D } from '@flighthq/types/contract';
-import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 import type { XmlElement } from '@flighthq/xml/contract';
 
 import type { SvgElementContext, SvgImportContext, SvgStyle } from './contract.scene2d-formats-types.ts';

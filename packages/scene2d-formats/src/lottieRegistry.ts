@@ -1,4 +1,4 @@
-import type { NonEntityCreateResult } from '@flighthq/types/contract';
+import type { NonEntityCreateResult } from '@flighthq/entity/contract';
 
 import type {
   LottieLayerHandler,

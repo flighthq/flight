@@ -1,9 +1,10 @@
 import { createMatrix, inverseMatrixTransformPointXY, matrixTransformPointXY } from '@flighthq/geometry/contract';
+import type { Matrix } from '@flighthq/geometry/contract';
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import type { ImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import { ImportDiagnosticSeverity } from '@flighthq/importdiagnostics/contract';
 import { createSkin2D } from '@flighthq/skeleton2d/contract';
 import type { Skin2D } from '@flighthq/skeleton2d/contract';
-import type { ImportDiagnostic, Matrix } from '@flighthq/types/contract';
-import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
 import type { RiveArtboardGraph, RiveCoreObject, RiveWeightedPoint } from './contract.scene2d-formats-types.ts';
 import { RiveWeightedPointKind } from './contract.scene2d-formats-types.ts';

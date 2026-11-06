@@ -10,18 +10,14 @@ import type { EasingFunction } from '@flighthq/easing/contract';
 import { easeCubicBezier } from '@flighthq/easing/contract';
 import { AdvancedBlendMode } from '@flighthq/effects/contract';
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import type { ImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import { ImportDiagnosticSeverity } from '@flighthq/importdiagnostics/contract';
+import { BlendMode } from '@flighthq/materials/contract';
 import { addNodeChild, invalidateNodeLocalTransform } from '@flighthq/node/contract';
 import { applyAnimationClipToNode2D, createDisplayObject } from '@flighthq/scene2d/contract';
-import type {
-  DisplayObject,
-  EntityConstruction,
-  ImportDiagnostic,
-  Node2D,
-  Node2DAnimationPath,
-  Node2DAnimationTarget,
-} from '@flighthq/types/contract';
-import { BlendMode, ImportDiagnosticSeverity } from '@flighthq/types/contract';
+import type { DisplayObject, Node2D, Node2DAnimationPath, Node2DAnimationTarget } from '@flighthq/scene2d/contract';
 
 import type {
   LottieAdvancedBlend,

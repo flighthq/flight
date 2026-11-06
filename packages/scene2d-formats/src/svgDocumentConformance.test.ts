@@ -1,10 +1,11 @@
 import { createRectangle } from '@flighthq/geometry/contract';
+import type { ImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import { getNodeChildAt, getNodeChildCount } from '@flighthq/node/contract';
+import type { Node2D } from '@flighthq/scene2d/contract';
 import { getShapeBounds } from '@flighthq/shape/contract';
 import type { Shape } from '@flighthq/shape/contract';
 import { ShapeKind } from '@flighthq/shape/contract';
 import type { RichText } from '@flighthq/text/contract';
-import type { Node2D, ImportDiagnostic } from '@flighthq/types/contract';
 
 import { createScene2DFromSvgDocument } from './svgImport.ts';
 import { createReadyImageResourceForTest } from './testHelper.ts';

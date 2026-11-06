@@ -1,7 +1,7 @@
 import { addNodeChild } from '@flighthq/node/contract';
 import { createSprite } from '@flighthq/scene2d/contract';
+import type { DisplayObject } from '@flighthq/scene2d/contract';
 import { createTexture } from '@flighthq/texture/contract';
-import type { DisplayObject } from '@flighthq/types/contract';
 
 import type {
   LottieAsset,

@@ -1,12 +1,13 @@
 import { sampleAnimationTrack } from '@flighthq/animation/contract';
 import { collectImportDiagnostics } from '@flighthq/importdiagnostics/contract';
+import type { ImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import { ImportDiagnosticSeverity } from '@flighthq/importdiagnostics/contract';
 import { getNodeChildAt, getNodeChildCount } from '@flighthq/node/contract';
 import { martinezPathBooleanKernel } from '@flighthq/path-boolean/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
+import type { DisplayObject, Node2D } from '@flighthq/scene2d/contract';
 import type { Shape } from '@flighthq/shape/contract';
 import { ShapeKind } from '@flighthq/shape/contract';
-import type { DisplayObject, ImportDiagnostic, Node2D } from '@flighthq/types/contract';
-import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
 import type { RiveArtboardGraph, RiveCoreObject } from './contract.scene2d-formats-types.ts';
 import { RiveFieldType } from './contract.scene2d-formats-types.ts';

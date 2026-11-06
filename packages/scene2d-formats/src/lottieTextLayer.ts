@@ -1,7 +1,7 @@
 import { packColor } from '@flighthq/color/contract';
 import { addNodeChild } from '@flighthq/node/contract';
+import type { DisplayObject } from '@flighthq/scene2d/contract';
 import { createTextLabel } from '@flighthq/text/contract';
-import type { DisplayObject } from '@flighthq/types/contract';
 
 import type {
   LottieImportContext,

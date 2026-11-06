@@ -1,6 +1,6 @@
+import type { ImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import type { Shape } from '@flighthq/shape/contract';
 import { ShapeKind } from '@flighthq/shape/contract';
-import type { ImportDiagnostic } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import type {

@@ -1,4 +1,4 @@
-import { RequirementFacet } from '@flighthq/types/contract';
+import { RequirementFacet } from '@flighthq/requirement/contract';
 
 import { parseRiveRequirements, RIVE_REQUIREMENT_KEY_NAMESPACE } from './riveRequirements.ts';
 

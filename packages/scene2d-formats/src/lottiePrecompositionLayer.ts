@@ -1,4 +1,4 @@
-import type { DisplayObject } from '@flighthq/types/contract';
+import type { DisplayObject } from '@flighthq/scene2d/contract';
 
 import type {
   LottieAsset,

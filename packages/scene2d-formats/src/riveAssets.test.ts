@@ -1,5 +1,5 @@
+import type { ImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
-import type { ImportDiagnostic } from '@flighthq/types/contract';
 
 import type { RiveArtboardGraph, RiveArtboardImportContext, RiveCoreObject } from './contract.scene2d-formats-types.ts';
 import { RiveFieldType } from './contract.scene2d-formats-types.ts';

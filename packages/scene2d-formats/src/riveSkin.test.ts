@@ -1,4 +1,4 @@
-import type { ImportDiagnostic } from '@flighthq/types/contract';
+import type { ImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 
 import type { RiveArtboardGraph, RiveCoreObject, RiveWeightedPoint } from './contract.scene2d-formats-types.ts';
 import { RiveFieldType, RiveWeightedPointKind } from './contract.scene2d-formats-types.ts';

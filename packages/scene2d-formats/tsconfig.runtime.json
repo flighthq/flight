@@ -36,7 +36,16 @@
       "path": "../importdiagnostics"
     },
     {
+      "path": "../layout"
+    },
+    {
+      "path": "../materials/tsconfig.contract.json"
+    },
+    {
       "path": "../requirement"
+    },
+    {
+      "path": "../resource"
     },
     {
       "path": "../math"
@@ -73,9 +82,6 @@
     },
     {
       "path": "../entity"
-    },
-    {
-      "path": "../types"
     },
     {
       "path": "../xml"

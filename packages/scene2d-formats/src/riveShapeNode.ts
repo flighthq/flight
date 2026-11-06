@@ -1,9 +1,10 @@
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import type { ImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import { ImportDiagnosticSeverity } from '@flighthq/importdiagnostics/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
+import type { DisplayObject } from '@flighthq/scene2d/contract';
 import { clearShapeCommands, createShape } from '@flighthq/shape/contract';
 import type { Shape } from '@flighthq/shape/contract';
-import type { DisplayObject, ImportDiagnostic } from '@flighthq/types/contract';
-import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
 import type {
   RiveArtboardImportContext,

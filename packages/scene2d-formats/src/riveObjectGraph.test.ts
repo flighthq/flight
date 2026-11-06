@@ -1,4 +1,4 @@
-import type { ImportDiagnostic } from '@flighthq/types/contract';
+import type { ImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 
 import type { RiveCoreObject, RiveDocument } from './contract.scene2d-formats-types.ts';
 import { RiveFieldType } from './contract.scene2d-formats-types.ts';

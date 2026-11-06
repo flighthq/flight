@@ -1,7 +1,7 @@
 import { addNodeChild } from '@flighthq/node/contract';
 import { appendPathRectangle, createPath } from '@flighthq/path/contract';
+import type { DisplayObject } from '@flighthq/scene2d/contract';
 import { appendShapeBeginFill, appendShapeEndFill, appendShapePath, createShape } from '@flighthq/shape/contract';
-import type { DisplayObject } from '@flighthq/types/contract';
 
 import type { LottieLayer, LottieLayerContext } from './contract.scene2d-formats-types.ts';
 

@@ -1,4 +1,5 @@
-import type { DisplayObject, ImportDiagnostic } from '@flighthq/types/contract';
+import type { ImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import type { DisplayObject } from '@flighthq/scene2d/contract';
 
 import type {
   SvgClipHandlerEntry,

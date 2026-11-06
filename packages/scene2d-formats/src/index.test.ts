@@ -1,8 +1,8 @@
 import { getNodeChildAt } from '@flighthq/node/contract';
 import { martinezPathBooleanKernel } from '@flighthq/path-boolean/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
-import type { DisplayObject, Node2D } from '@flighthq/types/contract';
-import { DisplayObjectKind } from '@flighthq/types/contract';
+import type { DisplayObject, Node2D } from '@flighthq/scene2d/contract';
+import { DisplayObjectKind } from '@flighthq/scene2d/contract';
 
 import * as scene2DFormatsContract from './contract.ts';
 import {

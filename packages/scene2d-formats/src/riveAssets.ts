@@ -1,7 +1,8 @@
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import type { ImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import { ImportDiagnosticSeverity } from '@flighthq/importdiagnostics/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
-import type { DisplayObject, ImportDiagnostic } from '@flighthq/types/contract';
-import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
+import type { DisplayObject } from '@flighthq/scene2d/contract';
 
 import type {
   RiveArtboardImportContext,

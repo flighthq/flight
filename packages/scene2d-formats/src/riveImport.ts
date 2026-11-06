@@ -1,4 +1,5 @@
-import type { ImportDiagnostic, PathBooleanKernel } from '@flighthq/types/contract';
+import type { ImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import type { PathBooleanKernel } from '@flighthq/path-boolean/contract';
 
 import type { RiveDocumentImportResult } from './contract.scene2d-formats-types.ts';
 import { registerAllRiveHandlers } from './riveHandlers.ts';

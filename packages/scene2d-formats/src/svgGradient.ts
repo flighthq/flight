@@ -4,13 +4,13 @@ import {
   createRectangle,
   inverseMatrix,
 } from '@flighthq/geometry/contract';
+import type { Matrix } from '@flighthq/geometry/contract';
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import { ImportDiagnosticSeverity } from '@flighthq/importdiagnostics/contract';
 import { clamp } from '@flighthq/math/contract';
 import { getPathBounds } from '@flighthq/path/contract';
 import type { Path } from '@flighthq/path/contract';
 import type { SpreadMethod } from '@flighthq/shape/contract';
-import type { Matrix } from '@flighthq/types/contract';
-import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 import type { XmlElement } from '@flighthq/xml/contract';
 
 import type { SvgGradient, SvgGradientStop, SvgImportContext } from './contract.scene2d-formats-types.ts';

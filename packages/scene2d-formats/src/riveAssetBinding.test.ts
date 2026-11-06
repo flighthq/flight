@@ -1,5 +1,6 @@
 import { createDisplayObject } from '@flighthq/scene2d/contract';
-import type { Node2D, Sprite, Texture2D } from '@flighthq/types/contract';
+import type { Node2D, Sprite } from '@flighthq/scene2d/contract';
+import type { Texture2D } from '@flighthq/texture/contract';
 
 import {
   createRiveImageSprite,

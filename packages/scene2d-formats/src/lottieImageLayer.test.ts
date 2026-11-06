@@ -1,4 +1,4 @@
-import { SpriteKind } from '@flighthq/types/contract';
+import { SpriteKind } from '@flighthq/scene2d/contract';
 import { describe, expect, it } from 'vitest';
 
 import type { LottieLayerHandler, LottieLayerKind } from './contract.scene2d-formats-types.ts';

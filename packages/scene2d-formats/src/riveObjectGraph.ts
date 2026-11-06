@@ -1,7 +1,8 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
-import type { EntityConstruction, ImportDiagnostic } from '@flighthq/types/contract';
-import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
+import type { ImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import { ImportDiagnosticSeverity } from '@flighthq/importdiagnostics/contract';
 
 import type {
   RiveArtboardGraph,

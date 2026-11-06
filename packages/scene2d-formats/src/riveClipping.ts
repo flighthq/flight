@@ -1,11 +1,14 @@
 import { createClipRegionFromPath } from '@flighthq/clip/contract';
 import { createMatrix, inverseMatrix, multiplyMatrix } from '@flighthq/geometry/contract';
+import type { Matrix } from '@flighthq/geometry/contract';
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import type { ImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import { ImportDiagnosticSeverity } from '@flighthq/importdiagnostics/contract';
 import { intersectPaths, simplifyPath } from '@flighthq/path-boolean/contract';
+import type { PathBooleanKernel } from '@flighthq/path-boolean/contract';
 import { createPath } from '@flighthq/path/contract';
 import type { Path } from '@flighthq/path/contract';
-import type { DisplayObject, PathBooleanKernel, ImportDiagnostic, Matrix } from '@flighthq/types/contract';
-import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
+import type { DisplayObject } from '@flighthq/scene2d/contract';
 
 import type {
   RiveArtboardGraph,

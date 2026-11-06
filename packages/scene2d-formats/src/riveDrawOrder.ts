@@ -1,4 +1,6 @@
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import type { ImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import { ImportDiagnosticSeverity } from '@flighthq/importdiagnostics/contract';
 import {
   applyNodeOrderList,
   createNodeOrderList,
@@ -8,8 +10,8 @@ import {
   setNodeOrderListEntryBelow,
   setNodeOrderListFromNodeChildren,
 } from '@flighthq/node/contract';
-import type { DisplayObject, ImportDiagnostic, Node2D, Node2DFields, NodeOrderList } from '@flighthq/types/contract';
-import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
+import type { NodeOrderList } from '@flighthq/node/contract';
+import type { DisplayObject, Node2D, Node2DFields } from '@flighthq/scene2d/contract';
 
 import type {
   RiveArtboardGraph,

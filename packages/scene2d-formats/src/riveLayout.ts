@@ -1,7 +1,7 @@
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
-import { createDisplayObject } from '@flighthq/scene2d/contract';
+import type { ImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import { ImportDiagnosticSeverity } from '@flighthq/importdiagnostics/contract';
 import type {
-  DisplayObject,
   FlexLayoutAlign,
   FlexLayoutContainerStyle,
   FlexLayoutDirection,
@@ -10,10 +10,11 @@ import type {
   GridLayoutContainerStyle,
   GridLayoutItemStyle,
   GridLayoutTrack,
-  ImportDiagnostic,
   LayoutNode,
-} from '@flighthq/types/contract';
-import { FlexLayoutKind, GridLayoutKind, ImportDiagnosticSeverity } from '@flighthq/types/contract';
+} from '@flighthq/layout/contract';
+import { FlexLayoutKind, GridLayoutKind } from '@flighthq/layout/contract';
+import { createDisplayObject } from '@flighthq/scene2d/contract';
+import type { DisplayObject } from '@flighthq/scene2d/contract';
 
 import type {
   RiveArtboardGraph,

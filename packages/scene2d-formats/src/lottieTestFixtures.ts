@@ -1,5 +1,6 @@
+import type { NonEntityCreateResult } from '@flighthq/entity/contract';
 import { getNodeChildAt, getNodeChildCount } from '@flighthq/node/contract';
-import type { NonEntityCreateResult, Node2D } from '@flighthq/types/contract';
+import type { Node2D } from '@flighthq/scene2d/contract';
 
 import type { LottieDocument, LottieLayer, LottieShapePath } from './contract.scene2d-formats-types.ts';
 

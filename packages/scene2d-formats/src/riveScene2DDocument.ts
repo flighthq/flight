@@ -1,19 +1,15 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
 import { createEmbeddedImageResourceReference } from '@flighthq/image/contract';
 import type { ImageResourceReference } from '@flighthq/image/contract';
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import type { ImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import { ImportDiagnosticSeverity } from '@flighthq/importdiagnostics/contract';
 import { addNodeChild, getNodeChildAt, getNodeChildCount } from '@flighthq/node/contract';
+import type { PathBooleanKernel } from '@flighthq/path-boolean/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
-import type {
-  DisplayObject,
-  EntityConstruction,
-  PathBooleanKernel,
-  ImportDiagnostic,
-  Node2D,
-  Scene2DSlotReference,
-  Texture,
-} from '@flighthq/types/contract';
-import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
+import type { DisplayObject, Node2D, Scene2DSlotReference } from '@flighthq/scene2d/contract';
+import type { Texture } from '@flighthq/texture/contract';
 
 import type {
   RiveArtboardImport,

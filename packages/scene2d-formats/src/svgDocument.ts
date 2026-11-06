@@ -1,9 +1,11 @@
+import type { Matrix } from '@flighthq/geometry/contract';
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import type { ImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import { ImportDiagnosticSeverity } from '@flighthq/importdiagnostics/contract';
 import { addNodeChild } from '@flighthq/node/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
+import type { DisplayObject, Node2D } from '@flighthq/scene2d/contract';
 import { registerDefaultShapeBoundsCommands } from '@flighthq/shape/contract';
-import type { DisplayObject, Node2D, ImportDiagnostic, Matrix } from '@flighthq/types/contract';
-import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 import type { XmlElement } from '@flighthq/xml/contract';
 import { parseXmlDocument } from '@flighthq/xml/contract';
 

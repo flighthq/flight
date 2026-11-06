@@ -8,18 +8,14 @@ import type { AnimationChannel, AnimationClip } from '@flighthq/animation/contra
 import type { EasingFunction } from '@flighthq/easing/contract';
 import { easeCubicBezier, easeInDampedSine, easeInOutDampedSine, easeOutDampedSine } from '@flighthq/easing/contract';
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import { ImportDiagnosticSeverity } from '@flighthq/importdiagnostics/contract';
+import type { ImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import { RAD_TO_DEG } from '@flighthq/math/contract';
 import { applyAnimationClipToNode2D } from '@flighthq/scene2d/contract';
+import type { DisplayObject, Node2DAnimationPath, Node2DAnimationTarget } from '@flighthq/scene2d/contract';
 import { createSkeleton2DBoneAnimationTarget } from '@flighthq/skeleton2d/contract';
 import { Skeleton2DAnimationPath } from '@flighthq/skeleton2d/contract';
 import type { Bone2D } from '@flighthq/skeleton2d/contract';
-import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
-import type {
-  ImportDiagnostic,
-  DisplayObject,
-  Node2DAnimationPath,
-  Node2DAnimationTarget,
-} from '@flighthq/types/contract';
 
 import { RiveAnimationLoop as RiveAnimationLoopValue, RiveFieldType } from './contract.scene2d-formats-types.ts';
 import type {

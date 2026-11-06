@@ -1,10 +1,11 @@
+import type { ImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import { getNodeChildAt, getNodeChildCount } from '@flighthq/node/contract';
 import { PathCommand } from '@flighthq/path/contract';
+import type { Node2D } from '@flighthq/scene2d/contract';
+import { SpriteKind } from '@flighthq/scene2d/contract';
 import type { Shape } from '@flighthq/shape/contract';
 import { ShapeKind } from '@flighthq/shape/contract';
 import { TextLabelKind } from '@flighthq/text/contract';
-import type { Node2D, ImportDiagnostic } from '@flighthq/types/contract';
-import { SpriteKind } from '@flighthq/types/contract';
 
 import type { LottieDocument, LottieLayer, LottieShapePath } from './contract.scene2d-formats-types.ts';
 import { applyAnimationClipToLottieDocument } from './lottieDocument.ts';

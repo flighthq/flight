@@ -1,8 +1,8 @@
+import type { ImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import { ImportDiagnosticSeverity } from '@flighthq/importdiagnostics/contract';
 import { createPath, getPathLength } from '@flighthq/path/contract';
 import { PathCommand } from '@flighthq/path/contract';
 import { createShape } from '@flighthq/shape/contract';
-import type { ImportDiagnostic } from '@flighthq/types/contract';
-import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
 import type { RiveArtboardGraph, RiveCoreObject, RivePathRecord } from './contract.scene2d-formats-types.ts';
 import { RiveFieldType } from './contract.scene2d-formats-types.ts';

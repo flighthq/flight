@@ -1,5 +1,6 @@
-import type { ImageResource } from '@flighthq/types/contract';
-import { EntityRuntimeKey, ImageTextureSourceKind } from '@flighthq/types/contract';
+import { EntityRuntimeKey } from '@flighthq/entity/contract';
+import type { ImageResource } from '@flighthq/image/contract';
+import { ImageTextureSourceKind } from '@flighthq/texture/contract';
 
 // Node-safe fixture for format tests that inspect image dimensions but never rasterize the borrowed
 // source. Keep the structural host object local to this boundary; rendering tests need a real DOM or

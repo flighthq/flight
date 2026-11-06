@@ -1,6 +1,7 @@
+import type { ImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import { createRequirementSet } from '@flighthq/requirement/contract';
-import type { ImportDiagnostic, Requirement, RequirementSet } from '@flighthq/types/contract';
-import { RequirementFacet } from '@flighthq/types/contract';
+import type { Requirement, RequirementSetRaw as RequirementSet } from '@flighthq/requirement/contract';
+import { RequirementFacet } from '@flighthq/requirement/contract';
 
 import type { RiveImportRegistry } from './contract.scene2d-formats-types.ts';
 import { collectRiveCoreTypeCounts } from './riveCoreTypeCensus.ts';

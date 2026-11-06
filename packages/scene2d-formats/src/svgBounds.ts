@@ -1,15 +1,16 @@
 import { createRectangle, matrixTransformRectangle } from '@flighthq/geometry/contract';
+import type { Rectangle } from '@flighthq/geometry/contract';
 import {
   getNodeChildAt,
   getNodeChildCount,
   getNodeLocalBoundsRectangle,
   getNodeLocalMatrix,
 } from '@flighthq/node/contract';
+import type { Node2D } from '@flighthq/scene2d/contract';
 import { getShapeBounds } from '@flighthq/shape/contract';
 import type { Shape } from '@flighthq/shape/contract';
 import { ShapeKind } from '@flighthq/shape/contract';
 import { RichTextKind, TextLabelKind } from '@flighthq/text/contract';
-import type { Node2D, Rectangle } from '@flighthq/types/contract';
 
 import type { SvgImportContext } from './contract.scene2d-formats-types.ts';
 

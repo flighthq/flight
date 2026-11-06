@@ -1,13 +1,16 @@
 import { createRectangle } from '@flighthq/geometry/contract';
+import type { Matrix } from '@flighthq/geometry/contract';
+import type { ImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import { ImportDiagnosticSeverity } from '@flighthq/importdiagnostics/contract';
 import { getNodeChildAt, getNodeChildCount } from '@flighthq/node/contract';
+import type { Sprite, Node2D } from '@flighthq/scene2d/contract';
+import { SpriteKind, DisplayObjectKind } from '@flighthq/scene2d/contract';
 import { getShapeBounds, getShapeBoundsCommand, unregisterShapeBoundsCommand } from '@flighthq/shape/contract';
 import type { Shape } from '@flighthq/shape/contract';
 import { ShapeKind } from '@flighthq/shape/contract';
 import type { RichText, TextLabel } from '@flighthq/text/contract';
 import { RichTextKind, TextLabelKind } from '@flighthq/text/contract';
 import { getTextureSource } from '@flighthq/texture/contract';
-import type { Sprite, ImportDiagnostic, Matrix, Node2D } from '@flighthq/types/contract';
-import { SpriteKind, DisplayObjectKind, ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
 import { SvgElementKind } from './contract.scene2d-formats-types.ts';
 import { svgContainerElementHandler } from './svgContainerElement.ts';

@@ -1,5 +1,5 @@
 import { createDisplayObject } from '@flighthq/scene2d/contract';
-import type { Node2D } from '@flighthq/types/contract';
+import type { Node2D } from '@flighthq/scene2d/contract';
 
 import type { SvgElementContext } from './contract.scene2d-formats-types.ts';
 import { applySvgElementClipFamily } from './svgDocument.ts';

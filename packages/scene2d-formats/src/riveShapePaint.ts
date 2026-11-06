@@ -1,5 +1,7 @@
 import { createGradientTransformMatrix } from '@flighthq/geometry/contract';
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import type { ImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import { ImportDiagnosticSeverity } from '@flighthq/importdiagnostics/contract';
 import { createPath, dashPath, flattenPath, getPathLength } from '@flighthq/path/contract';
 import type { Path, PathWinding } from '@flighthq/path/contract';
 import { PathCommand } from '@flighthq/path/contract';
@@ -13,8 +15,6 @@ import {
 } from '@flighthq/shape/contract';
 import type { CapsStyle } from '@flighthq/shape/contract';
 import type { JointStyle, Shape } from '@flighthq/shape/contract';
-import type { ImportDiagnostic } from '@flighthq/types/contract';
-import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
 import type {
   RiveArtboardGraph,

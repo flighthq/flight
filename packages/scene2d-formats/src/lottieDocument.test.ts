@@ -1,8 +1,9 @@
+import type { ImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import { getNodeChildAt, getNodeChildCount } from '@flighthq/node/contract';
+import type { Node2D } from '@flighthq/scene2d/contract';
+import { SpriteKind } from '@flighthq/scene2d/contract';
 import { ShapeKind } from '@flighthq/shape/contract';
 import { TextLabelKind } from '@flighthq/text/contract';
-import type { ImportDiagnostic, Node2D } from '@flighthq/types/contract';
-import { SpriteKind } from '@flighthq/types/contract';
 
 import type {
   LottieAnimatable,

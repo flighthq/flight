@@ -6,11 +6,12 @@ import {
 } from '@flighthq/clip/contract';
 import type { ClipRegion } from '@flighthq/clip/contract';
 import { createMatrix } from '@flighthq/geometry/contract';
+import type { Matrix, Rectangle } from '@flighthq/geometry/contract';
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import { ImportDiagnosticSeverity } from '@flighthq/importdiagnostics/contract';
 import { createPath, transformPath } from '@flighthq/path/contract';
 import type { Path, PathWinding } from '@flighthq/path/contract';
-import type { Matrix, Node2D, Rectangle } from '@flighthq/types/contract';
-import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
+import type { Node2D } from '@flighthq/scene2d/contract';
 import type { XmlElement } from '@flighthq/xml/contract';
 
 import type { SvgClipContext, SvgImportContext, SvgStyle } from './contract.scene2d-formats-types.ts';
