@@ -9,6 +9,7 @@
     "sourceMap": true,
     "moduleSuffixes": [
       ".lifecycle-types",
+      ".ipc-types",
       ".mediasession-types",
       ".power-types",
       ".shell-types",
@@ -65,6 +66,9 @@
     },
     {
       "path": "../input"
+    },
+    {
+      "path": "../ipc/tsconfig.contract.json"
     },
     {
       "path": "../lifecycle/tsconfig.contract.json"

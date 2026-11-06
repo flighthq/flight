@@ -1,5 +1,6 @@
 import type { HostWindowCapabilities } from '@flighthq/app/contract';
 import type { HostClipboardCapabilities } from '@flighthq/clipboard/contract';
+import type { HostIpcCapabilities, HostIpcTargetedSendCapability } from '@flighthq/ipc/contract';
 import type { ElectronMenuCapabilities } from '@flighthq/menu/contract';
 import type { HostPlatformCapabilities } from '@flighthq/platform/contract';
 import type { ElectronPowerCapabilities } from '@flighthq/power/contract';
@@ -12,14 +13,7 @@ import type { ElectronIpcTarget } from './ElectronApi.ts';
 import type { ElectronAppCapabilitiesFor } from './ElectronAppCapabilitiesFor.ts';
 import type { ElectronProtocolCapabilities } from './ElectronProtocolCapabilities.ts';
 import type { ElectronTrayCapabilitiesFor } from './ElectronTrayCapabilitiesFor.ts';
-import type {
-  Host,
-  HostDialogCapabilities,
-  HostIpcCapabilities,
-  HostScreenCapabilities,
-  HostUpdaterCapabilities,
-} from './Host.ts';
-import type { HostIpcTargetedSendCapability } from './Ipc.ts';
+import type { Host, HostDialogCapabilities, HostScreenCapabilities, HostUpdaterCapabilities } from './Host.ts';
 import type { ElectronMacosNotificationCapabilities, ElectronNotificationCapabilities } from './Notification.ts';
 
 type ElectronNotificationCapabilitiesFor<Profile extends DesktopOsProfile> = Profile extends 'macos'

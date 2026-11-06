@@ -1,4 +1,4 @@
-import type { HostIpcCapabilities } from '@flighthq/types/contract';
+import type { HostIpcCapabilities } from '@flighthq/ipc/contract';
 
 // Web has no implementation for this group's slots: an empty group is the honest report, where a
 // stubbed capability would be indistinguishable from a real one.

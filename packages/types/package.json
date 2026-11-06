@@ -62,6 +62,7 @@
     "@flighthq/image-codec": "*",
     "@flighthq/importdiagnostics": "*",
     "@flighthq/input": "*",
+    "@flighthq/ipc": "*",
     "@flighthq/interaction": "*",
     "@flighthq/keyboard": "*",
     "@flighthq/layout": "*",

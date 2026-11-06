@@ -20,6 +20,7 @@ import type {
   HostUpdaterCapabilities,
 } from '@flighthq/host/contract';
 import type { HostInputCapabilities } from '@flighthq/input/contract';
+import type { HostIpcCapabilities } from '@flighthq/ipc/contract';
 import type {
   HostSoftKeyboardAccessoryBarCapability,
   HostSoftKeyboardChangeCapability,
@@ -66,19 +67,13 @@ import type { HostGlCapability } from './HostGl.ts';
 import type { HostImageDecodeCapabilities } from './HostImageDecode.ts';
 import type { HostImageEncodeCapabilities } from './HostImageEncode.ts';
 import type { HostVideoCapability } from './HostVideo.ts';
-import type {
-  HostIpcHandleCapability,
-  HostIpcInvokeCapability,
-  HostIpcMessageCapability,
-  HostIpcSendCapability,
-  HostIpcTargetedSendCapability,
-} from './Ipc.ts';
 import type { HostTextSegmenterCapability } from './TextSegment.ts';
 import type { HostTextShaperCapability } from './TextShaper.ts';
 
 /** @deprecated Import `HostInputCapabilities` from `@flighthq/input/contract`. */
 export type { HostInputCapabilities } from '@flighthq/input/contract';
 export type { HostMediaSessionCapabilities } from '@flighthq/mediasession/contract';
+export type { HostIpcCapabilities } from '@flighthq/ipc/contract';
 
 export interface Host extends Entity {
   readonly accessibility: HostAccessibilityCapabilities;
@@ -152,14 +147,6 @@ export interface HostConnectivityCapabilities {
 
 export interface HostGlCapabilities {
   readonly context?: HostGlCapability;
-}
-
-export interface HostIpcCapabilities {
-  readonly handle?: HostIpcHandleCapability;
-  readonly invoke?: HostIpcInvokeCapability;
-  readonly message?: HostIpcMessageCapability;
-  readonly send?: HostIpcSendCapability;
-  readonly targetedSend?: HostIpcTargetedSendCapability;
 }
 
 export interface HostSoftKeyboardCapabilities {

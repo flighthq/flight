@@ -33,6 +33,7 @@
       ".geometry-types",
       ".font-types",
       ".host-types",
+      ".ipc-types",
       ".mediasession-types",
       ".menu-types",
       ".midi-types",
@@ -153,6 +154,9 @@
     },
     {
       "path": "../input"
+    },
+    {
+      "path": "../ipc/tsconfig.contract.json"
     },
     {
       "path": "../layout"

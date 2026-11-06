@@ -4,7 +4,7 @@ import type {
   HostIpcMessageCapability,
   HostIpcSendCapability,
   HostIpcTargetedSendCapability,
-} from '@flighthq/types/contract';
+} from './contract.ipc-types.ts';
 
 // Inter-process messaging over explicitly supplied, operation-tight Host providers. Every operation
 // takes its own provider directly: there is no aggregate resolver, installed state, or runtime

@@ -4,8 +4,7 @@ import type {
   HostIpcMessageCapability,
   HostIpcSendCapability,
   HostIpcTargetedSendCapability,
-} from '@flighthq/types/contract';
-
+} from './contract.ipc-types.ts';
 import { invokeIpc, onIpcInvoke, onIpcMessage, onceIpcMessage, sendIpcMessage, sendIpcMessageTo } from './ipc.ts';
 
 // A host carrying a recording message provider. Nothing installs anywhere, so two hosts can be live at

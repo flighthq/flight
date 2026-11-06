@@ -1,28 +1,9 @@
-import type { Entity } from './Entity.ts';
-
-// Independent IPC capabilities. Provider coverage varies by process side: an Electron renderer can
-// send and invoke, while Electron main can receive messages, handle invokes, and send to a supplied
-// target. Keeping each operation in its own Entity-backed slot makes that coverage a construction fact.
-
-export interface HostIpcHandleCapability {
-  handle(channel: string, handler: (...args: readonly unknown[]) => unknown | Promise<unknown>): () => void;
-}
-
-export interface HostIpcInvokeCapability {
-  invoke(channel: string, args: readonly unknown[]): Promise<unknown>;
-}
-
-export interface HostIpcMessageCapability {
-  // Delivers messages arriving on `channel`, returning the unsubscribe for THAT subscription only.
-  subscribe(channel: string, listener: (args: readonly unknown[]) => void): () => void;
-}
-
-export interface HostIpcSendCapability {
-  send(channel: string, args: readonly unknown[]): void;
-}
-
-// Target identity belongs to the provider and caller, not to IPC core. Electron can use any target
-// satisfying its narrow send facade; another host may use an entirely different handle type.
-export interface HostIpcTargetedSendCapability<Target = never> extends Entity {
-  send(target: Target, channel: string, args: readonly unknown[]): void;
-}
+/** @deprecated Import IPC contracts from `@flighthq/ipc/contract`. */
+export type {
+  HostIpcCapabilities,
+  HostIpcHandleCapability,
+  HostIpcInvokeCapability,
+  HostIpcMessageCapability,
+  HostIpcSendCapability,
+  HostIpcTargetedSendCapability,
+} from '@flighthq/ipc/contract';

@@ -8,6 +8,7 @@ import {
 import type { HostProtocolCapabilities } from '@flighthq/host/contract';
 import type { HostUpdaterCapabilities } from '@flighthq/host/contract';
 import type { HostPermissionsCapabilities } from '@flighthq/host/contract';
+import type { HostIpcCapabilities } from '@flighthq/ipc/contract';
 import type { HostMediaSessionCapabilities } from '@flighthq/mediasession/contract';
 import type {
   HostAccessibilityCapabilities,
@@ -26,7 +27,6 @@ import type {
   HostImageDecodeCapabilities,
   HostImageEncodeCapabilities,
   HostInputCapabilities,
-  HostIpcCapabilities,
   HostLifecycleCapabilities,
   HostMidiCapabilities,
   HostNetCapabilities,

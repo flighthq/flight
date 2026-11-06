@@ -1,0 +1,40 @@
+import type { EntityRaw, EntityRuntime, EntityRuntimeKey } from '@flighthq/entity/contract';
+
+interface IpcEntity extends EntityRaw {
+  [EntityRuntimeKey]: EntityRuntime | undefined;
+}
+
+// Independent IPC capabilities. Provider coverage varies by process side: an Electron renderer can
+// send and invoke, while Electron main can receive messages, handle invokes, and send to a supplied
+// target. Keeping each operation in its own Entity-backed slot makes that coverage a construction fact.
+
+export interface HostIpcHandleCapability {
+  handle(channel: string, handler: (...args: readonly unknown[]) => unknown | Promise<unknown>): () => void;
+}
+
+export interface HostIpcInvokeCapability {
+  invoke(channel: string, args: readonly unknown[]): Promise<unknown>;
+}
+
+export interface HostIpcMessageCapability {
+  // Delivers messages arriving on `channel`, returning the unsubscribe for THAT subscription only.
+  subscribe(channel: string, listener: (args: readonly unknown[]) => void): () => void;
+}
+
+export interface HostIpcSendCapability {
+  send(channel: string, args: readonly unknown[]): void;
+}
+
+// Target identity belongs to the provider and caller, not to IPC core. Electron can use any target
+// satisfying its narrow send facade; another host may use an entirely different handle type.
+export interface HostIpcTargetedSendCapability<Target = never> extends IpcEntity {
+  send(target: Target, channel: string, args: readonly unknown[]): void;
+}
+
+export interface HostIpcCapabilities {
+  readonly handle?: HostIpcHandleCapability;
+  readonly invoke?: HostIpcInvokeCapability;
+  readonly message?: HostIpcMessageCapability;
+  readonly send?: HostIpcSendCapability;
+  readonly targetedSend?: HostIpcTargetedSendCapability;
+}

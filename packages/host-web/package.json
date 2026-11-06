@@ -53,6 +53,7 @@
     "@flighthq/image": "*",
     "@flighthq/image-codec": "*",
     "@flighthq/input": "*",
+    "@flighthq/ipc": "*",
     "@flighthq/lifecycle": "*",
     "@flighthq/media": "*",
     "@flighthq/mediasession": "*",

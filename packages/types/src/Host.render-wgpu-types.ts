@@ -4,6 +4,7 @@ import type { HostClipboardCapabilities } from '@flighthq/clipboard/contract';
 import type { HostDeviceCapabilities } from '@flighthq/device/contract';
 import type { HostFontLoadingCapability, HostGlyphRasterizerCapability } from '@flighthq/font/contract';
 import type { HostInputCapabilities } from '@flighthq/input/contract';
+import type { HostIpcCapabilities } from '@flighthq/ipc/contract';
 import type {
   HostSoftKeyboardAccessoryBarCapability,
   HostSoftKeyboardChangeCapability,
@@ -71,13 +72,6 @@ import type { HostPromptDialogCapability } from './HostPromptDialog.ts';
 import type { HostVideoCapability } from './HostVideo.ts';
 import type { HostVideoCaptureDialogCapability } from './HostVideoCaptureDialog.ts';
 import type { HostImageCapability } from './ImageResource.ts';
-import type {
-  HostIpcHandleCapability,
-  HostIpcInvokeCapability,
-  HostIpcMessageCapability,
-  HostIpcSendCapability,
-  HostIpcTargetedSendCapability,
-} from './Ipc.ts';
 import type { HostMidiAccessCapability, HostMidiPermissionCapability } from './Midi.ts';
 import type {
   HostNotificationActionCapability,
@@ -110,6 +104,7 @@ import type { HostWgpuCapability } from './WgpuHost.ts';
 /** @deprecated Import `HostInputCapabilities` from `@flighthq/input/contract`. */
 export type { HostInputCapabilities } from '@flighthq/input/contract';
 export type { HostMediaSessionCapabilities } from '@flighthq/mediasession/contract';
+export type { HostIpcCapabilities } from '@flighthq/ipc/contract';
 
 export interface Host extends Entity {
   readonly accessibility: HostAccessibilityCapabilities;
@@ -224,14 +219,6 @@ export interface HostGlyphCapabilities {
 
 export interface HostImageCapabilities {
   readonly loader?: HostImageCapability;
-}
-
-export interface HostIpcCapabilities {
-  readonly handle?: HostIpcHandleCapability;
-  readonly invoke?: HostIpcInvokeCapability;
-  readonly message?: HostIpcMessageCapability;
-  readonly send?: HostIpcSendCapability;
-  readonly targetedSend?: HostIpcTargetedSendCapability;
 }
 
 export interface HostMidiCapabilities {
