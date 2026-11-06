@@ -13,7 +13,7 @@
       "path": "../abc"
     },
     {
-      "path": "../accessibility"
+      "path": "../accessibility/tsconfig.runtime.json"
     },
     {
       "path": "../adjustments/tsconfig.runtime.json"
