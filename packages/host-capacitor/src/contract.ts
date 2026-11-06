@@ -16,3 +16,4 @@ export * from './capacitorShare.ts';
 export * from './capacitorStatusBar.ts';
 export * from './capacitorStorageHost.ts';
 export * from './capacitorSystemHost.ts';
+export type * from './types/index.ts';

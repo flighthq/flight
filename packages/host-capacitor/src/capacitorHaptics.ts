@@ -1,10 +1,11 @@
 import type {
-  CapacitorApi,
   HapticImpactStyle,
   HapticNotificationType,
   HostHapticsCapability,
   HapticsCapabilities,
-} from '@flighthq/types/contract';
+} from '@flighthq/haptics/contract';
+
+import type { CapacitorApi } from './types/index.ts';
 
 export function capacitorHostHaptics(capacitor: CapacitorApi): HostHapticsCapability {
   const out = {} as HostHapticsCapability;

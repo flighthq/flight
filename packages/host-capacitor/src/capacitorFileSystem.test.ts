@@ -1,7 +1,7 @@
-import type { CapacitorApi } from '@flighthq/types/contract';
-import { EntityRuntimeKey } from '@flighthq/types/contract';
+import { EntityRuntimeKey } from '@flighthq/entity/contract';
 
 import { capacitorHostFileSystem } from './capacitorFileSystem.ts';
+import type { CapacitorApi } from './types/index.ts';
 
 function fakeCapacitor() {
   const files = new Map<string, { data: string; type: string }>();

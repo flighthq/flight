@@ -1,13 +1,12 @@
-import type { HostConnectivityCapabilities } from '@flighthq/host/contract';
 import type {
-  CapacitorApi,
-  CapacitorConnectionStatus,
-  CapacitorPluginListenerHandle,
   HostConnectivityChangeCapability,
   ConnectivityConnectionType,
   ConnectivityStatus,
   HostConnectivityStatusCapability,
-} from '@flighthq/types/contract';
+} from '@flighthq/connectivity/contract';
+import type { HostConnectivityCapabilities } from '@flighthq/host/contract';
+
+import type { CapacitorApi, CapacitorConnectionStatus, CapacitorPluginListenerHandle } from './types/index.ts';
 
 type CapacitorConnectivityProvider = HostConnectivityStatusCapability & HostConnectivityChangeCapability;
 

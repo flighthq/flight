@@ -1,22 +1,22 @@
 import type { MobileOsProfile } from '@flighthq/app/contract';
 import type { HostClipboardCapabilities } from '@flighthq/clipboard/contract';
 import type { HostDeviceCapabilities } from '@flighthq/device/contract';
-import type { HostStatusBarCapabilities } from '@flighthq/statusbar/contract';
-
-import type { CapacitorAppCapabilitiesFor } from './CapacitorAppCapabilitiesFor.ts';
-import type { CapacitorProtocolCapabilities } from './CapacitorProtocolCapabilities.ts';
-import type { HostHapticsCapabilities } from './Haptics.ts';
+import type { HostHapticsCapabilities } from '@flighthq/haptics/contract';
 import type {
-  Host,
   HostConnectivityCapabilities,
   HostDialogCapabilities,
   HostFileSystemCapabilities,
   HostGeolocationCapabilities,
   HostShareCapabilities,
   HostSoftKeyboardCapabilities,
-} from './Host.ts';
-import type { CapacitorNotificationCapabilities } from './Notification.ts';
-import type { HostCapacitorShareContentCapability } from './Share.ts';
+} from '@flighthq/host/contract';
+import type { CapacitorNotificationCapabilities } from '@flighthq/notification/contract';
+import type { HostCapacitorShareContentCapability } from '@flighthq/share/contract';
+import type { HostStatusBarCapabilities } from '@flighthq/statusbar/contract';
+import type { Host } from '@flighthq/types/contract';
+
+import type { CapacitorAppCapabilitiesFor } from './CapacitorAppCapabilitiesFor.ts';
+import type { CapacitorProtocolCapabilities } from './CapacitorProtocolCapabilities.ts';
 
 export type CapacitorHost<Profile extends MobileOsProfile> = Host & {
   readonly app: CapacitorAppCapabilitiesFor<Profile>;

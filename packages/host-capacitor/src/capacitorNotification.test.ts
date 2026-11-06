@@ -1,10 +1,5 @@
+import { EntityRuntimeKey } from '@flighthq/entity/contract';
 import { cancelScheduledNotification } from '@flighthq/notification/contract';
-import { EntityRuntimeKey } from '@flighthq/types/contract';
-import type {
-  CapacitorApi,
-  CapacitorLocalNotificationAction,
-  CapacitorLocalNotificationSchema,
-} from '@flighthq/types/contract';
 
 import {
   capacitorHostNotification,
@@ -15,6 +10,11 @@ import {
   capacitorHostNotificationPermission,
   capacitorHostNotificationScheduling,
 } from './capacitorNotification.ts';
+import type {
+  CapacitorApi,
+  CapacitorLocalNotificationAction,
+  CapacitorLocalNotificationSchema,
+} from './types/index.ts';
 
 function fakeCapacitor(display = 'granted') {
   const scheduled: CapacitorLocalNotificationSchema[] = [];

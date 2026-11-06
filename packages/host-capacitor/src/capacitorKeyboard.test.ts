@@ -1,7 +1,6 @@
 import { EntityRuntimeKey } from '@flighthq/entity/contract';
 import { SoftKeyboardResizeBodyKind } from '@flighthq/keyboard/contract';
 import type { SoftKeyboardInfo } from '@flighthq/keyboard/contract';
-import type { CapacitorApi } from '@flighthq/types/contract';
 
 import {
   capacitorHostSoftKeyboardAccessoryBar,
@@ -12,6 +11,7 @@ import {
   capacitorHostSoftKeyboardStyle,
   capacitorHostSoftKeyboardVisibility,
 } from './capacitorKeyboard.ts';
+import type { CapacitorApi } from './types/index.ts';
 
 function fakeCapacitor() {
   const calls: Array<{ method: string; arg?: unknown }> = [];

@@ -8,7 +8,8 @@ import type {
   StatusBarInfo,
   StatusBarStyle,
 } from '@flighthq/statusbar/contract';
-import type { CapacitorApi, CapacitorStatusBarInfoResult } from '@flighthq/types/contract';
+
+import type { CapacitorApi, CapacitorStatusBarInfoResult } from './types/index.ts';
 
 type CapacitorStatusBarProvider = HostStatusBarColorCapability &
   HostStatusBarInfoCapability &

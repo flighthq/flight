@@ -18,7 +18,8 @@ import {
   SoftKeyboardResizeNoneKind,
   SoftKeyboardStyleDarkKind,
 } from '@flighthq/keyboard/contract';
-import type { CapacitorApi, CapacitorPluginListenerHandle } from '@flighthq/types/contract';
+
+import type { CapacitorApi, CapacitorPluginListenerHandle } from './types/index.ts';
 
 export function capacitorHostSoftKeyboardAccessoryBar(capacitor: CapacitorApi): HostSoftKeyboardAccessoryBarCapability {
   const out = {} as HostSoftKeyboardAccessoryBarCapability;

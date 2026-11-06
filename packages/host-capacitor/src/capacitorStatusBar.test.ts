@@ -1,6 +1,5 @@
 import { EntityRuntimeKey } from '@flighthq/entity/contract';
 import type { StatusBarInfo } from '@flighthq/statusbar/contract';
-import type { CapacitorApi } from '@flighthq/types/contract';
 
 import {
   capacitorHostStatusBarColor,
@@ -10,6 +9,7 @@ import {
   capacitorHostStatusBarVisibility,
   capacitorHostStatusBarGroup,
 } from './capacitorStatusBar.ts';
+import type { CapacitorApi } from './types/index.ts';
 
 const flush = async () => {
   await Promise.resolve();

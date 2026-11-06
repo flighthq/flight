@@ -21,11 +21,12 @@ import type {
   NotificationSchedule,
   ScheduledNotification,
 } from '@flighthq/notification/contract';
+
 import type {
   CapacitorApi,
   CapacitorLocalNotificationAction,
   CapacitorLocalNotificationSchema,
-} from '@flighthq/types/contract';
+} from './types/index.ts';
 
 export function capacitorHostNotification(capacitor: CapacitorApi): CapacitorNotificationCapabilities {
   return buildCapacitorHostNotification(capacitor);

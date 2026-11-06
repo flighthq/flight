@@ -1,10 +1,9 @@
-import type { CapacitorApi } from '@flighthq/types/contract';
-
 import {
   capacitorHostClipboard,
   capacitorHostClipboardImage,
   capacitorHostClipboardText,
 } from './capacitorClipboard.ts';
+import type { CapacitorApi } from './types/index.ts';
 
 function fakeCapacitor() {
   const store = { value: '', type: 'text/plain' };

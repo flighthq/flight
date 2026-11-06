@@ -1,4 +1,6 @@
-import type { CapacitorApi, FileEntry, FileStat, HostFileSystemCapability } from '@flighthq/types/contract';
+import type { FileEntry, FileStat, HostFileSystemCapability } from '@flighthq/filesystem/contract';
+
+import type { CapacitorApi } from './types/index.ts';
 
 export function capacitorHostFileSystem(capacitor: CapacitorApi): HostFileSystemCapability {
   const out = {} as HostFileSystemCapability;

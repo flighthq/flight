@@ -1,9 +1,10 @@
 import type {
-  CapacitorApi,
   HostClipboardCapabilities,
   HostClipboardImageCapability,
   HostClipboardTextCapability,
-} from '@flighthq/types/contract';
+} from '@flighthq/clipboard/contract';
+
+import type { CapacitorApi } from './types/index.ts';
 
 type CapacitorClipboardProvider = HostClipboardImageCapability & HostClipboardTextCapability;
 

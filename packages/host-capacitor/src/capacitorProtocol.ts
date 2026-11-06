@@ -1,9 +1,6 @@
-import type {
-  CapacitorApi,
-  CapacitorPluginListenerHandle,
-  CapacitorProtocolCapabilities,
-  HostProtocolOpenCapability,
-} from '@flighthq/types/contract';
+import type { HostProtocolOpenCapability } from '@flighthq/protocol/contract';
+
+import type { CapacitorApi, CapacitorPluginListenerHandle, CapacitorProtocolCapabilities } from './types/index.ts';
 
 export function capacitorHostProtocol(capacitor: CapacitorApi): CapacitorProtocolCapabilities {
   const openBackend = {} as HostProtocolOpenCapability;

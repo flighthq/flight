@@ -1,4 +1,5 @@
 import type { HostFullscreenCapabilities, HostWindowCapabilities } from '@flighthq/app/contract';
+import type { HostAudioDecodeCapabilities } from '@flighthq/audio/contract';
 import {
   webHostAudioDecode,
   webHostImageDecode,
@@ -7,39 +8,36 @@ import {
 } from '@flighthq/host-web/contract';
 import type { HostPermissionsCapabilities, HostUpdaterCapabilities } from '@flighthq/host/contract';
 import type { HostAccessibilityCapabilities, HostTextSegmentCapabilities } from '@flighthq/host/contract';
-import type { HostIpcCapabilities } from '@flighthq/ipc/contract';
-import type { HostMediaSessionCapabilities } from '@flighthq/mediasession/contract';
-import type { HostMenuCapabilities } from '@flighthq/menu/contract';
-import type { HostPlatformCapabilities } from '@flighthq/platform/contract';
-import type { HostShortcutCapabilities } from '@flighthq/shortcut/contract';
-import type { HostTextShaperCapabilities } from '@flighthq/textshaper/contract';
-import type { HostTrayCapabilities } from '@flighthq/tray/contract';
 import type {
-  HostAudioCapabilities,
-  HostAudioDecodeCapabilities,
   HostBitmapCapabilities,
   HostFontCapabilities,
-  HostGlCapabilities,
   HostGlyphCapabilities,
   HostImageCapabilities,
-  HostImageDecodeCapabilities,
-  HostImageEncodeCapabilities,
-  HostInputCapabilities,
-  HostLifecycleCapabilities,
   HostMidiCapabilities,
-  HostNetCapabilities,
-  HostPowerCapabilities,
-  HostPreferencesCapabilities,
-  HostScreenCapabilities,
-  HostSensorsCapabilities,
-  HostShellCapabilities,
-  HostSocketCapabilities,
-  HostCanvasCapabilities,
-  HostSurfaceCapabilities,
   HostCompressCapabilities,
   HostDecompressCapabilities,
-  HostWgpuCapabilities,
-} from '@flighthq/types/contract';
+} from '@flighthq/host/contract';
+import type { HostImageDecodeCapabilities, HostImageEncodeCapabilities } from '@flighthq/image-codec/contract';
+import type { HostInputCapabilities } from '@flighthq/input/contract';
+import type { HostIpcCapabilities } from '@flighthq/ipc/contract';
+import type { HostLifecycleCapabilities } from '@flighthq/lifecycle/contract';
+import type { HostAudioCapabilities } from '@flighthq/media/contract';
+import type { HostMediaSessionCapabilities } from '@flighthq/mediasession/contract';
+import type { HostMenuCapabilities } from '@flighthq/menu/contract';
+import type { HostNetCapabilities } from '@flighthq/net/contract';
+import type { HostPlatformCapabilities } from '@flighthq/platform/contract';
+import type { HostPowerCapabilities } from '@flighthq/power/contract';
+import type { HostPreferencesCapabilities } from '@flighthq/preferences/contract';
+import type { HostGlCapabilities } from '@flighthq/render-gl/contract';
+import type { HostWgpuCapabilities } from '@flighthq/render-wgpu/contract';
+import type { HostScreenCapabilities } from '@flighthq/screen/contract';
+import type { HostSensorsCapabilities } from '@flighthq/sensors/contract';
+import type { HostShellCapabilities } from '@flighthq/shell/contract';
+import type { HostShortcutCapabilities } from '@flighthq/shortcut/contract';
+import type { HostSocketCapabilities } from '@flighthq/socket/contract';
+import type { HostCanvasCapabilities, HostSurfaceCapabilities } from '@flighthq/surface/contract';
+import type { HostTextShaperCapabilities } from '@flighthq/textshaper/contract';
+import type { HostTrayCapabilities } from '@flighthq/tray/contract';
 import type { HostVideoCapabilities } from '@flighthq/video/contract';
 
 // Groups Capacitor does not cover. Returning an explicit empty group keeps capability absence

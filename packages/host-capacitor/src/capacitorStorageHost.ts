@@ -1,6 +1,7 @@
-import type { CapacitorApi, HostFileSystemCapabilities } from '@flighthq/types/contract';
+import type { HostFileSystemCapabilities } from '@flighthq/host/contract';
 
 import { capacitorHostFileSystem } from './capacitorFileSystem.ts';
+import type { CapacitorApi } from './types/index.ts';
 
 export function capacitorHostFileSystemGroup(
   capacitor: CapacitorApi,

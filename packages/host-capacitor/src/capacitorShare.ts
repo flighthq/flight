@@ -1,9 +1,7 @@
-import type {
-  CapacitorApi,
-  HostCapacitorShareContentCapability,
-  HostShareCapabilities,
-  ShareContent,
-} from '@flighthq/types/contract';
+import type { HostShareCapabilities } from '@flighthq/host/contract';
+import type { HostCapacitorShareContentCapability, ShareContent } from '@flighthq/share/contract';
+
+import type { CapacitorApi } from './types/index.ts';
 
 export function capacitorHostShare(
   capacitor: CapacitorApi,

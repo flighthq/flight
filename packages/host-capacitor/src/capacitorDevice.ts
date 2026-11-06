@@ -5,8 +5,9 @@ import type {
   HostDeviceCapability,
   SafeAreaInsets,
 } from '@flighthq/device/contract';
-import type { CapacitorApi, CapacitorDeviceInfo } from '@flighthq/types/contract';
 import { DeviceFormFactorPhone, DeviceFormFactorUnknown } from '@flighthq/useragent/contract';
+
+import type { CapacitorApi, CapacitorDeviceInfo } from './types/index.ts';
 
 export function capacitorHostDevice(capacitor: CapacitorApi): HostDeviceCapability {
   const out = {} as HostDeviceCapability;

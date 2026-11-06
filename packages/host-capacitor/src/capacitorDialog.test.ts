@@ -1,6 +1,5 @@
-import type { CapacitorApi } from '@flighthq/types/contract';
-
 import { capacitorHostDialog, capacitorHostMessageDialog, capacitorHostPromptDialog } from './capacitorDialog.ts';
+import type { CapacitorApi } from './types/index.ts';
 
 function fakeCapacitor(promptResult = { value: 'typed', cancelled: false }) {
   const calls: string[] = [];

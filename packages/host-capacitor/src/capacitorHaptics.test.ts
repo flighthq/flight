@@ -1,6 +1,7 @@
-import type { HapticsCapabilities, CapacitorApi } from '@flighthq/types/contract';
+import type { HapticsCapabilities } from '@flighthq/haptics/contract';
 
 import { capacitorHostHaptics } from './capacitorHaptics.ts';
+import type { CapacitorApi } from './types/index.ts';
 
 function fakeCapacitor() {
   const calls: Array<{ method: string; arg?: unknown }> = [];

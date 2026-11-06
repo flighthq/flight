@@ -3,9 +3,9 @@ import type {
   HostGeolocationCapability,
   GeolocationPosition,
   GeolocationPositionResult,
-  CapacitorApi,
-  CapacitorPosition,
-} from '@flighthq/types/contract';
+} from '@flighthq/geolocation/contract';
+
+import type { CapacitorApi, CapacitorPosition } from './types/index.ts';
 
 export function capacitorHostGeolocation(capacitor: CapacitorApi): HostGeolocationCapability {
   const out = {} as HostGeolocationCapability;

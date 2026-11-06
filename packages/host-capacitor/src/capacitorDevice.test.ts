@@ -1,7 +1,7 @@
 import type { DeviceCapabilities, DeviceDisplayMetrics, DeviceInfo, SafeAreaInsets } from '@flighthq/device/contract';
-import type { CapacitorApi } from '@flighthq/types/contract';
 
 import { capacitorHostDevice } from './capacitorDevice.ts';
+import type { CapacitorApi } from './types/index.ts';
 
 const flush = async () => {
   await Promise.resolve();

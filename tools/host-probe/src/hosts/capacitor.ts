@@ -14,7 +14,7 @@ import { StatusBar } from '@capacitor/status-bar';
 import { getAppName, getAppVersion } from '@flighthq/app';
 import type { MobileOsProfile } from '@flighthq/app/contract';
 import { capacitorHost } from '@flighthq/host-capacitor';
-import type { CapacitorApi } from '@flighthq/types/contract';
+import type { CapacitorApi } from '@flighthq/host-capacitor';
 
 import { captureHostProbeBackends, diffHostProbeBackends } from '#host-probe/capabilityBackends';
 import type { HostProbeBackendSnapshot } from '#host-probe/capabilityBackends';

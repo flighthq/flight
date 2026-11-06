@@ -1,9 +1,7 @@
-import type {
-  CapacitorApi,
-  HostDialogCapabilities,
-  HostMessageDialogCapability,
-  HostPromptDialogCapability,
-} from '@flighthq/types/contract';
+import type { HostMessageDialogCapability, HostPromptDialogCapability } from '@flighthq/dialog/contract';
+import type { HostDialogCapabilities } from '@flighthq/host/contract';
+
+import type { CapacitorApi } from './types/index.ts';
 
 export function capacitorHostDialog(
   capacitor: CapacitorApi,

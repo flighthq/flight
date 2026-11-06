@@ -1,10 +1,11 @@
-import type { CapacitorApi, CapacitorConnectionStatus, ConnectivityStatus } from '@flighthq/types/contract';
+import type { ConnectivityStatus } from '@flighthq/connectivity/contract';
 
 import {
   capacitorHostConnectivity,
   capacitorHostConnectivityChange,
   capacitorHostConnectivityStatus,
 } from './capacitorConnectivity.ts';
+import type { CapacitorApi, CapacitorConnectionStatus } from './types/index.ts';
 
 async function flush(): Promise<void> {
   await Promise.resolve();
