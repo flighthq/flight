@@ -8,7 +8,6 @@
     { "path": "../math" },
     { "path": "../particles" },
     { "path": "../requirement" },
-    { "path": "../types" },
     { "path": "./tsconfig.contract.json" },
     { "path": "./tsconfig.runtime.json" }
   ]

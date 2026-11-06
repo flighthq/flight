@@ -1,5 +1,5 @@
 import type { ImportDiagnostic } from '@flighthq/importdiagnostics/contract';
-import type { ParticleEmitterConfig } from '@flighthq/types/contract';
+import type { ParticleEmitterConfig } from '@flighthq/particles/contract';
 
 // Unity Shuriken particle system JSON schema.
 // Based on the Unity Particle System component's serialized field names as exported

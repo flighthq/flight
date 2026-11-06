@@ -1,3 +1,6 @@
+export type * from './types/ParticleCurve.ts';
+export type * from './types/ParticleEmitterConfig.ts';
+
 export {
   applyParticleCollisions,
   applyParticleForces,

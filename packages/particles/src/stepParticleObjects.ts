@@ -1,6 +1,5 @@
 import type {
   ParticleCollider,
-  ParticleEmitterConfig,
   ParticleForce,
   ParticleObject,
   ParticleObjectsState,
@@ -9,6 +8,7 @@ import type {
 
 import { applyParticleObjectCollisions } from './applyParticleCollisions.ts';
 import { applyParticleObjectForces } from './applyParticleForces.ts';
+import type { ParticleEmitterConfig } from './types/ParticleEmitterConfig.ts';
 import { updateParticleObjects } from './updateParticleObjects.ts';
 
 /**

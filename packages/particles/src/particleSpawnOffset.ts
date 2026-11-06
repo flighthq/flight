@@ -1,4 +1,6 @@
-import type { ParticleEmitterConfig, RandomSource } from '@flighthq/types/contract';
+import type { RandomSource } from '@flighthq/types/contract';
+
+import type { ParticleEmitterConfig } from './types/ParticleEmitterConfig.ts';
 
 const TWO_PI = Math.PI * 2;
 

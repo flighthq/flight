@@ -1,5 +1,5 @@
 import type { ImportDiagnostic } from '@flighthq/importdiagnostics/contract';
-import type { ParticleEmitterConfig } from '@flighthq/types/contract';
+import type { ParticleEmitterConfig } from '@flighthq/particles/contract';
 
 import type { LibgdxParseOptions } from './LibgdxParticleSchema.ts';
 import type { ParticleDesignerParseOptions } from './ParticleDesignerSchema.ts';

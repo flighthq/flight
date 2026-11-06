@@ -7,8 +7,8 @@
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,
-    "tsBuildInfoFile": "dist/.tsbuildinfo.particles-formats-bridge-types"
+    "tsBuildInfoFile": "dist/.tsbuildinfo.contract"
   },
   "references": [],
-  "include": ["src/contract.particles-formats-bridge-types.ts", "src/ParticleCurve.ts", "src/ParticleEmitterConfig.ts"]
+  "include": ["src/contract.particles-types.ts", "src/types/**/*.ts"]
 }

@@ -2,7 +2,7 @@ import { ImportDiagnosticSeverity, reportImportDiagnostic } from '@flighthq/impo
 import type { ImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import { DEG_TO_RAD } from '@flighthq/math/contract';
 import { createParticleEmitterConfig } from '@flighthq/particles/contract';
-import type { ParticleEmitterConfig } from '@flighthq/types/contract';
+import type { ParticleEmitterConfig } from '@flighthq/particles/contract';
 
 import type { LibgdxParseOptions, LibgdxParseResult, LibgdxParticleDocument, LibgdxRangeValue } from './types.ts';
 

@@ -1,5 +1,5 @@
 import type { ImportDiagnostic } from '@flighthq/importdiagnostics/contract';
-import type { ParticleEmitterConfig } from '@flighthq/types/contract';
+import type { ParticleEmitterConfig } from '@flighthq/particles/contract';
 
 // Particle Designer plist schema — field names as they appear in the XML file.
 // Reference: https://www.71squared.com/particledesigner (format documented in the tool's export)

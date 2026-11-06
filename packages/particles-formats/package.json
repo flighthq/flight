@@ -43,8 +43,7 @@
     "@flighthq/importdiagnostics": "*",
     "@flighthq/math": "*",
     "@flighthq/particles": "*",
-    "@flighthq/requirement": "*",
-    "@flighthq/types": "*"
+    "@flighthq/requirement": "*"
   },
   "devDependencies": {
     "typescript": "^7.0.2"

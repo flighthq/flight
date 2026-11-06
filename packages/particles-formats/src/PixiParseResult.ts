@@ -1,5 +1,5 @@
 import type { ImportDiagnostic } from '@flighthq/importdiagnostics/contract';
-import type { ParticleEmitterConfig } from '@flighthq/types/contract';
+import type { ParticleEmitterConfig } from '@flighthq/particles/contract';
 
 export interface PixiParseResult {
   config: ParticleEmitterConfig;

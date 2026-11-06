@@ -7,13 +7,10 @@
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,
-    "moduleSuffixes": [".particles-formats-bridge-types", ""],
+    "moduleSuffixes": [".particles-types", ""],
     "tsBuildInfoFile": "dist/.tsbuildinfo.contract"
   },
-  "references": [
-    { "path": "../importdiagnostics" },
-    { "path": "../types/tsconfig.particles-formats-bridge-types.json" }
-  ],
+  "references": [{ "path": "../importdiagnostics" }, { "path": "../particles/tsconfig.contract.json" }],
   "include": [
     "src/contract.particles-formats-types.ts",
     "src/types.ts",

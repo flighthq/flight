@@ -1,7 +1,7 @@
 import { ImportDiagnosticSeverity, reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import type { ImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import { createParticleEmitterConfig } from '@flighthq/particles/contract';
-import type { ParticleEmitterConfig } from '@flighthq/types/contract';
+import type { ParticleEmitterConfig } from '@flighthq/particles/contract';
 
 import { detectParticleFormat } from './detect.ts';
 import { getParticleFormatCodec } from './formatRegistry.ts';

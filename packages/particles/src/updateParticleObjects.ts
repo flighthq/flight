@@ -1,13 +1,9 @@
-import type {
-  ParticleEmitterConfig,
-  ParticleObject,
-  ParticleObjectsState,
-  ParticleObjectsUpdateOptions,
-} from '@flighthq/types/contract';
+import type { ParticleObject, ParticleObjectsState, ParticleObjectsUpdateOptions } from '@flighthq/types/contract';
 
 import { sampleParticleCurve } from './curve.ts';
 import { ensureParticleObjectsStateCapacity } from './particleObjectsState.ts';
 import { writeParticleSpawnOffset } from './particleSpawnOffset.ts';
+import type { ParticleEmitterConfig } from './types/ParticleEmitterConfig.ts';
 
 const PARTICLE_SPAWN_OFFSET = new Float32Array(2);
 

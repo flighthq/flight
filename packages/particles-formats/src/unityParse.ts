@@ -12,7 +12,7 @@ import type {
   ParticleBlendMode,
   ParticleCurve,
   ParticleEmitterConfig,
-} from '@flighthq/types/contract';
+} from '@flighthq/particles/contract';
 
 import type {
   UnityColor,

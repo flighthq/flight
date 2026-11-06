@@ -7,11 +7,11 @@ import {
   sampleParticleCurve,
   writeParticleSpawnOffset,
 } from '@flighthq/particles/contract';
+import type { ParticleEmitterConfig } from '@flighthq/particles/contract';
 import type {
   Node2D,
   ParticleEmitter2D,
   ParticleEmitterCallbacks,
-  ParticleEmitterConfig,
   ParticleEmitterState,
 } from '@flighthq/types/contract';
 

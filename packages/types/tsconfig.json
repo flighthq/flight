@@ -82,6 +82,7 @@
       ".textshaper-types",
       ".velocity-types",
       ".texture-formats-types",
+      ".particles-types",
       ".particles-formats-types",
       ".protocol-types",
       ".tray-types",
@@ -362,6 +363,9 @@
     },
     {
       "path": "../texture-formats/tsconfig.contract.json"
+    },
+    {
+      "path": "../particles/tsconfig.contract.json"
     },
     {
       "path": "../particles-formats/tsconfig.contract.json"

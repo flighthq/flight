@@ -1,4 +1,6 @@
-import type { NonEntityCreateResult, ParticleEmitterConfig } from '@flighthq/types/contract';
+import type { NonEntityCreateResult } from '@flighthq/types/contract';
+
+import type { ParticleEmitterConfig } from './types/ParticleEmitterConfig.ts';
 
 export function createParticleEmitterConfig(
   config?: Partial<ParticleEmitterConfig>,

@@ -1,5 +1,5 @@
 import { RAD_TO_DEG } from '@flighthq/math/contract';
-import type { ParticleEmitterConfig } from '@flighthq/types/contract';
+import type { ParticleEmitterConfig } from '@flighthq/particles/contract';
 
 import type {
   StarlingPexSerializeOptions,
