@@ -1,3 +1,4 @@
+export type { Scene3DHit, Scene3DPickOptions } from './contract.ts';
 export {
   createScene3DHit,
   getScene3DHitMaterial,

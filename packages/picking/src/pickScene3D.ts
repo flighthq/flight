@@ -1,6 +1,7 @@
 import { getCamera3DScreenToWorldRay } from '@flighthq/camera/contract';
 import type { Camera3D } from '@flighthq/camera/contract';
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
 import {
   createAabb,
   createMatrix4,
@@ -12,6 +13,7 @@ import {
   inverseMatrix4,
   transformAabbByMatrix4,
 } from '@flighthq/geometry/contract';
+import type { Ray3D, Vector3 } from '@flighthq/geometry/contract';
 import {
   getMeshGeometryTriangleCount,
   getMeshGeometryTriangleVertexIndices,
@@ -19,16 +21,11 @@ import {
 } from '@flighthq/meshgeometry/contract';
 import type { Mesh, MeshRuntime } from '@flighthq/meshgeometry/contract';
 import { ensureNodeWorldMatrix4, getNodeRuntime, getNodeWorldMatrix4 } from '@flighthq/node/contract';
+import type { NodeAny } from '@flighthq/node/contract';
 import { getNode3DWorldBounds, isMesh } from '@flighthq/scene3d/contract';
 import type { Node3D } from '@flighthq/scene3d/contract';
-import type {
-  EntityConstruction,
-  NodeAny,
-  Ray3D,
-  Scene3DHit,
-  Scene3DPickOptions,
-  Vector3,
-} from '@flighthq/types/contract';
+
+import type { Scene3DHit, Scene3DPickOptions } from './types.ts';
 
 export function createScene3DHit(): Scene3DHit {
   const out = allocateEntity<Scene3DHit>();

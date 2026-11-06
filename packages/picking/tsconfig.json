@@ -1,35 +1,14 @@
 {
-  "extends": "../../tsconfig.base.json",
-  "compilerOptions": {
-    "composite": true,
-    "rootDir": "src",
-    "outDir": "dist",
-    "declaration": true,
-    "declarationMap": true,
-    "sourceMap": true
-  },
+  "files": [],
   "references": [
-    {
-      "path": "../camera/tsconfig.runtime.json"
-    },
-    {
-      "path": "../entity"
-    },
-    {
-      "path": "../geometry/tsconfig.runtime.json"
-    },
-    {
-      "path": "../meshgeometry/tsconfig.runtime.json"
-    },
-    {
-      "path": "../node/tsconfig.runtime.json"
-    },
-    {
-      "path": "../scene3d"
-    },
-    {
-      "path": "../types"
-    }
-  ],
-  "include": ["src"]
+    { "path": "../camera/tsconfig.runtime.json" },
+    { "path": "../entity" },
+    { "path": "../geometry/tsconfig.runtime.json" },
+    { "path": "../materials/tsconfig.contract.json" },
+    { "path": "../meshgeometry/tsconfig.runtime.json" },
+    { "path": "../node/tsconfig.runtime.json" },
+    { "path": "../scene3d" },
+    { "path": "./tsconfig.contract.json" },
+    { "path": "./tsconfig.runtime.json" }
+  ]
 }

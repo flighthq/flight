@@ -1,5 +1,6 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { createRay3D, createVector3, setRay3D, setVector3 } from '@flighthq/geometry/contract';
+import type { Material3D } from '@flighthq/materials/contract';
 import {
   createMeshGeometry,
   createMeshGeometryFromAttributes,
@@ -8,7 +9,6 @@ import {
 import type { Mesh, VertexAttributeLayout } from '@flighthq/meshgeometry/contract';
 import { invalidateNodeLocalTransform } from '@flighthq/node/contract';
 import { createMesh } from '@flighthq/scene3d/contract';
-import type { Material3D, Scene3DHit } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { createScene3DHit } from './pickScene3D.ts';
@@ -20,6 +20,7 @@ import {
   getScene3DHitVertexTangent,
   isScene3DHitFrontFacing,
 } from './sceneHitAttributes.ts';
+import type { Scene3DHit } from './types.ts';
 
 function attributedHit(): Scene3DHit & { node: Mesh } {
   const geometry = createMeshGeometryFromAttributes({

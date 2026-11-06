@@ -1,4 +1,6 @@
 import { createMatrix4, createVector3, inverseMatrix4 } from '@flighthq/geometry/contract';
+import type { Ray3D, Vector2Like, Vector3Like } from '@flighthq/geometry/contract';
+import type { Material } from '@flighthq/materials/contract';
 import {
   getMeshGeometryTriangleSubsetIndex,
   getMeshGeometryTriangleVertexIndices,
@@ -7,7 +9,8 @@ import {
   getMeshGeometryVertexUv0,
 } from '@flighthq/meshgeometry/contract';
 import { ensureNodeWorldMatrix4, getNodeWorldMatrix4 } from '@flighthq/node/contract';
-import type { Material, Ray3D, Scene3DHit, Vector2Like, Vector3Like } from '@flighthq/types/contract';
+
+import type { Scene3DHit } from './types.ts';
 
 // Returns the authored material at the hit subset, or null for an absent/out-of-range/default slot.
 export function getScene3DHitMaterial(hit: Readonly<Scene3DHit>): Material | null {

@@ -5,6 +5,7 @@ import {
   setCamera3DViewMatrix4FromLookAt,
 } from '@flighthq/camera/contract';
 import type { Camera3D } from '@flighthq/camera/contract';
+import { EntityRuntimeKey } from '@flighthq/entity/contract';
 import {
   copyQuaternion,
   createAabb,
@@ -15,6 +16,7 @@ import {
   setRay3D,
   setVector3,
 } from '@flighthq/geometry/contract';
+import type { Ray3D } from '@flighthq/geometry/contract';
 import { createBoxMeshGeometry, createMeshGeometryFromAttributes } from '@flighthq/meshgeometry/contract';
 import { ensureMeshGeometryBounds } from '@flighthq/meshgeometry/contract';
 import type { Mesh, MeshRuntime } from '@flighthq/meshgeometry/contract';
@@ -22,8 +24,6 @@ import type { MeshMorph } from '@flighthq/meshgeometry/contract';
 import { addNodeChild, getNodeRuntime, invalidateNodeLocalTransform } from '@flighthq/node/contract';
 import { createMesh, createNode3D, Node3DKind, updateMeshMorph } from '@flighthq/scene3d/contract';
 import type { Node3D } from '@flighthq/scene3d/contract';
-import type { Ray3D, Scene3DHit } from '@flighthq/types/contract';
-import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import {
   createScene3DHit,
@@ -33,6 +33,7 @@ import {
   pickScene3DAllWithRay3D,
   pickScene3DWithRay3D,
 } from './pickScene3D.ts';
+import type { Scene3DHit } from './types.ts';
 
 function makeCamera(): Camera3D {
   const camera = createCamera3D({

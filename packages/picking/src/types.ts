@@ -1,6 +1,5 @@
+import type { EntityRaw, EntityRuntime, EntityRuntimeKey } from '@flighthq/entity/contract';
 import type { Mesh } from '@flighthq/meshgeometry/contract';
-
-import type { Entity } from './Entity.ts';
 
 // Result of a successful scene pick (a camera or world ray hitting a Mesh's geometry). `distance` is
 // the parametric `t` along the pick ray in world units (the world-space hit point is `point`).
@@ -10,7 +9,8 @@ import type { Entity } from './Entity.ts';
 // `normalX`/`normalY`/`normalZ` are the triangle's unit geometric face normal in world space (the
 // normalized cross product of two edges), matching the flat-scalar shape of `pointX/Y/Z`. `node` is
 // null on a freshly allocated hit and non-null after a successful pick fills the result.
-export interface Scene3DHit extends Entity {
+export interface Scene3DHit extends EntityRaw {
+  [EntityRuntimeKey]: EntityRuntime | undefined;
   node: Mesh | null;
   distance: number;
   triangleIndex: number;
@@ -23,4 +23,14 @@ export interface Scene3DHit extends Entity {
   normalX: number;
   normalY: number;
   normalZ: number;
+}
+
+// Options for a scene pick raycast. `predicate` is an include/exclude test per mesh (it does not prune
+// the mesh's descendants); `maxDistance` rejects hits whose ray-parametric distance `t` exceeds it (in
+// the ray's direction-length units — world distance for a unit-length camera ray); `cullBackfaces`
+// discards back-facing triangle hits (the default is double-sided).
+export interface Scene3DPickOptions {
+  cullBackfaces?: boolean;
+  maxDistance?: number;
+  predicate?: (mesh: Readonly<Mesh>) => boolean;
 }
