@@ -20,11 +20,11 @@ import {
 } from '@flighthq/render/contract';
 import type { Node2D, Node2DRuntime } from '@flighthq/scene2d/contract';
 import { Node2DFieldsKey } from '@flighthq/scene2d/contract';
-import type { EffectCaptureGeometry } from '@flighthq/types/contract';
 
 import { computeEffectCaptureGeometry } from './effectCaptureGeometry.ts';
 import { computeEffectPadding, registerEffectPaddingResolver } from './effectPadding.ts';
 import type { Effect } from './types.ts';
+import type { EffectCaptureGeometry } from './types/EffectCaptureGeometry.ts';
 
 function createCaptureNode(bounds: Readonly<Rectangle>): Node2D {
   const node = createNode('CaptureGeometryTest') as Node2D;

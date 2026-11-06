@@ -1,10 +1,6 @@
-import type {
-  CanvasRenderState,
-  CanvasTextureRenderTarget,
-  CompositeEffect,
-  CompositeOperator,
-} from '@flighthq/types/contract';
-import { CompositeOperator as CompositeOperatorValues } from '@flighthq/types/contract';
+import type { CompositeOperator } from '@flighthq/effects/contract';
+import { CompositeOperator as CompositeOperatorValues } from '@flighthq/effects/contract';
+import type { CanvasRenderState, CanvasTextureRenderTarget, CompositeEffect } from '@flighthq/types/contract';
 
 import { getCanvasBlendEffectBackdrop } from './canvasBlendEffect.ts';
 import { registerCanvasEffect } from './canvasEffectRegistry.ts';

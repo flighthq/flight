@@ -60,3 +60,6 @@ export type { VolumetricLightEffect } from './types/VolumetricLightEffect.ts';
 export type { WhiteBalanceEffect } from './types/WhiteBalanceEffect.ts';
 export type { BitmapDisplacementEffect, BitmapDisplacementEffectEdgeMode } from './types/BitmapDisplacementEffect.ts';
 export type { CompositeEffect } from './types/CompositeEffect.ts';
+export type { EffectCaptureGeometry } from './types/EffectCaptureGeometry.ts';
+export type { EffectPaddingExplanation, EffectPaddingStatus } from './types/EffectPaddingExplanation.ts';
+export { CompositeOperator } from './types/CompositeOperator.ts';

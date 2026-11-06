@@ -1,3 +1,4 @@
+import { ImageChannel } from '@flighthq/bitmap/contract';
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { getWgpuSampler, resolveWgpuTexture } from '@flighthq/render-wgpu/contract';
 import type {
@@ -11,7 +12,6 @@ import type {
   WgpuRenderState,
   WgpuTextureRenderTarget,
 } from '@flighthq/types/contract';
-import { ImageChannel } from '@flighthq/types/contract';
 
 import { drawWgpuEffectPass, EFFECT_VERTEX_WGSL, getWgpuEffectPassState } from './wgpuEffectPass.ts';
 import { getWgpuEffectPipeline } from './wgpuEffectProgramCache.ts';

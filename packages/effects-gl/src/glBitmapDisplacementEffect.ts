@@ -1,3 +1,4 @@
+import { ImageChannel } from '@flighthq/bitmap/contract';
 import { drawGlFullscreenPass, resolveGlTexture } from '@flighthq/render-gl/contract';
 import type {
   BitmapDisplacementEffect,
@@ -6,7 +7,7 @@ import type {
   GlTextureRenderTarget,
   Effect,
 } from '@flighthq/types/contract';
-import { ImageChannel, RenderTargetTextureSourceKind } from '@flighthq/types/contract';
+import { RenderTargetTextureSourceKind } from '@flighthq/types/contract';
 
 import { getGlEffectProgram, getGlEffectUniformLocation } from './glEffectProgramCache.ts';
 import { registerGlEffect } from './glEffectRegistry.ts';

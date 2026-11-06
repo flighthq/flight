@@ -3,6 +3,9 @@
   "files": [],
   "references": [
     {
+      "path": "../bitmap/tsconfig.runtime.json"
+    },
+    {
       "path": "../color"
     },
     {
@@ -31,9 +34,6 @@
     },
     {
       "path": "../texture/tsconfig.runtime.json"
-    },
-    {
-      "path": "../types"
     },
     {
       "path": "./tsconfig.contract.json"

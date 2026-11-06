@@ -1,8 +1,8 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction, EntityWithoutRuntime } from '@flighthq/entity/contract';
 import type { RenderState } from '@flighthq/render/contract';
+import type { EffectPadding } from '@flighthq/render/contract';
 import type { Texture2D } from '@flighthq/texture/contract';
-import type { EffectPadding } from '@flighthq/types/contract';
 
 import { initializeEffect } from './effect.ts';
 import { registerEffectPaddingResolver } from './effectPadding.ts';

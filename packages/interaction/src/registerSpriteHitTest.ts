@@ -1,10 +1,11 @@
 import { captureBitmapFromImageResource, getBitmapPixelChannel } from '@flighthq/bitmap/contract';
 import type { Bitmap, HostBitmapReadbackCapability } from '@flighthq/bitmap/contract';
+import { ImageChannel } from '@flighthq/bitmap/contract';
 import { inverseMatrixTransformPointXY } from '@flighthq/geometry/contract';
 import { getNodeWorldMatrix } from '@flighthq/node/contract';
 import type { NodeAny } from '@flighthq/node/contract';
 import type { ImageResource, Node2D, Sprite, TextureSource } from '@flighthq/types/contract';
-import { BitmapTextureSourceKind, ImageChannel, ImageTextureSourceKind, SpriteKind } from '@flighthq/types/contract';
+import { BitmapTextureSourceKind, ImageTextureSourceKind, SpriteKind } from '@flighthq/types/contract';
 
 import { hitTestGraphLocalBounds, registerHitTestPrecise } from './hitTests.ts';
 

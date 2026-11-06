@@ -1,5 +1,5 @@
+import type { ImageChannel } from '@flighthq/bitmap/contract';
 import type { Texture2D } from '@flighthq/texture/contract';
-import type { ImageChannel } from '@flighthq/types/contract';
 
 import type { Effect } from './Effect.ts';
 

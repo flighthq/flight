@@ -11,6 +11,7 @@
   },
   "references": [
     { "path": "../adjustments/tsconfig.runtime.json" },
+    { "path": "../bitmap/tsconfig.runtime.json" },
     { "path": "../color" },
     { "path": "../effects" },
     { "path": "../entity" },

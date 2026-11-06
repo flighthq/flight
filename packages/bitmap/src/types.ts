@@ -343,3 +343,14 @@ export interface BitmapDisplacementMapOptions {
   // Packed sRGB RGBA (`0xRRGGBBAA`), the color written where the displaced sample falls outside.
   fillColor?: number;
 }
+
+// Channel selector for per-channel bitmap operations (copyBitmapChannel, displacement maps). Values are
+// the byte offsets of each channel within an RGBA8 pixel.
+export const ImageChannel = {
+  Red: 0,
+  Green: 1,
+  Blue: 2,
+  Alpha: 3,
+};
+
+export type ImageChannel = (typeof ImageChannel)[keyof typeof ImageChannel];

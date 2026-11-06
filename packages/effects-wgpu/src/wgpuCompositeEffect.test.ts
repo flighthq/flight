@@ -1,4 +1,4 @@
-import { CompositeOperator } from '@flighthq/types/contract';
+import { CompositeOperator } from '@flighthq/effects/contract';
 
 import {
   applyCompositeEffectToWgpu,

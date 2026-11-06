@@ -1,6 +1,6 @@
+import { ImageChannel } from '@flighthq/bitmap/contract';
 import { createRenderState, getRenderStateRuntime } from '@flighthq/render/contract';
 import type { Texture2D } from '@flighthq/texture/contract';
-import { ImageChannel } from '@flighthq/types/contract';
 
 import {
   createBitmapDisplacementEffect,

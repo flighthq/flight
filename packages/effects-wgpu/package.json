@@ -41,14 +41,15 @@
   },
   "dependencies": {
     "@flighthq/adjustments": "*",
+    "@flighthq/bitmap": "*",
     "@flighthq/color": "*",
     "@flighthq/effects": "*",
     "@flighthq/entity": "*",
     "@flighthq/geometry": "*",
     "@flighthq/log": "*",
+    "@flighthq/registry": "*",
     "@flighthq/render": "*",
     "@flighthq/render-wgpu": "*",
-    "@flighthq/registry": "*",
     "@flighthq/types": "*"
   },
   "peerDependencies": {

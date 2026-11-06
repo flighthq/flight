@@ -3,6 +3,8 @@ import { BlendMode } from '@flighthq/materials/contract';
 
 import type { BlendEffect, Effect } from './types.ts';
 import { AdvancedBlendMode } from './types.ts';
+import type { CompositeEffect } from './types/CompositeEffect.ts';
+import { CompositeOperator } from './types/CompositeOperator.ts';
 
 describe('AdvancedBlendMode', () => {
   it('carries the full destination-reading / non-separable set', () => {
@@ -75,5 +77,61 @@ describe('BlendEffect', () => {
     const effect: BlendEffect = { [EntityRuntimeKey]: undefined, kind: 'BlendEffect', mode: AdvancedBlendMode.Hue };
     expect(effect.backdropKey).toBeUndefined();
     expect(effect.opacity).toBeUndefined();
+  });
+});
+
+describe('CompositeEffect', () => {
+  it('is assignable to the open Effect base with a CompositeEffect kind', () => {
+    const effect: CompositeEffect = {
+      [EntityRuntimeKey]: undefined,
+      kind: 'CompositeEffect',
+      operator: CompositeOperator.DestinationOut,
+      backdropKey: 'backdrop.scene',
+    };
+    const base: Effect = effect;
+    expect(base.kind).toBe('CompositeEffect');
+    expect(effect.operator).toBe('DestinationOut');
+    expect(effect.backdropKey).toBe('backdrop.scene');
+  });
+
+  it('leaves backdropKey optional', () => {
+    const effect: CompositeEffect = {
+      [EntityRuntimeKey]: undefined,
+      kind: 'CompositeEffect',
+      operator: CompositeOperator.DestinationIn,
+    };
+    expect(effect.backdropKey).toBeUndefined();
+  });
+});
+
+describe('CompositeOperator', () => {
+  it('carries canonical PascalCase values equal to their keys', () => {
+    expect(CompositeOperator.SourceOver).toBe('SourceOver');
+    expect(CompositeOperator.DestinationOut).toBe('DestinationOut');
+    expect(CompositeOperator.DestinationIn).toBe('DestinationIn');
+    expect(CompositeOperator.Xor).toBe('Xor');
+  });
+
+  it('covers the full Porter-Duff set', () => {
+    expect(Object.keys(CompositeOperator).sort()).toEqual(
+      [
+        'Clear',
+        'Copy',
+        'DestinationAtop',
+        'DestinationIn',
+        'DestinationOut',
+        'DestinationOver',
+        'SourceAtop',
+        'SourceIn',
+        'SourceOut',
+        'SourceOver',
+        'Xor',
+      ].sort(),
+    );
+  });
+
+  it('is a plain string a display node can hold as its composite intent', () => {
+    const operator: CompositeOperator = CompositeOperator.DestinationOut;
+    expect(operator).toBe('DestinationOut');
   });
 });

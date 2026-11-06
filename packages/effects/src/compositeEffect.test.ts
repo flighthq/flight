@@ -1,6 +1,5 @@
-import { CompositeOperator } from '@flighthq/types/contract';
-
 import { createCompositeEffect, initializeCompositeEffect } from './compositeEffect.ts';
+import { CompositeOperator } from './types/CompositeOperator.ts';
 
 describe('createCompositeEffect', () => {
   it('builds a CompositeEffect carrying the requested operator', () => {

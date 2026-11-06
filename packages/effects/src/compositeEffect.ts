@@ -1,9 +1,9 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction, EntityWithoutRuntime } from '@flighthq/entity/contract';
-import type { CompositeOperator } from '@flighthq/types/contract';
 
 import { initializeEffect } from './effect.ts';
 import type { CompositeEffect } from './types/CompositeEffect.ts';
+import type { CompositeOperator } from './types/CompositeOperator.ts';
 
 // Porter-Duff composite effect: merges the incoming pipeline layer over a registered backdrop with a
 // coverage operator (the CompositeOperator vocabulary — Erase = DestinationOut, Alpha = DestinationIn,

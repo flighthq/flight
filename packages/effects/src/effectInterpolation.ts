@@ -13,7 +13,7 @@ export function canLerpEffects(a: Readonly<Effect>, b: Readonly<Effect>): boolea
 }
 
 // Which numeric fields on each SDK effect kind are packed sRGB RGBA rather than scalars. Derived from
-// the field declarations in @flighthq/types, where every one of these carries a "Packed sRGB RGBA"
+// the field declarations in the effect descriptor types, where every one of these carries a "Packed sRGB RGBA"
 // comment. A caller with vendor effect kinds spreads its own entries over this table; a kind that is
 // absent is treated as all-scalar, which is the pre-existing behaviour rather than a new guess.
 export const EFFECT_FIELD_ROLES: EffectFieldRoles = {

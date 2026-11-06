@@ -1,12 +1,12 @@
+import type { CompositeOperator } from '@flighthq/effects/contract';
+import { CompositeOperator as CompositeOperatorValues } from '@flighthq/effects/contract';
 import type {
   CompositeEffect,
-  CompositeOperator,
   WgpuDualSourceEffectPipeline,
   WgpuEffectRunner,
   WgpuRenderState,
   WgpuTextureRenderTarget,
 } from '@flighthq/types/contract';
-import { CompositeOperator as CompositeOperatorValues } from '@flighthq/types/contract';
 
 import { getWgpuBlendEffectBackdrop } from './wgpuBlendEffect.ts';
 import { createWgpuDualSourceEffectPipeline, drawWgpuDualSourceEffectPass } from './wgpuEffectPass.ts';

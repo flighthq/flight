@@ -20,7 +20,7 @@ import type {
   TextureColorSpace,
   TextureSource,
 } from '@flighthq/texture/contract';
-import type { CanvasShapeCommand, EffectPaddingResolver } from '@flighthq/types/contract';
+import type { CanvasShapeCommand } from '@flighthq/types/contract';
 
 // Identifies which geometry accumulation pipeline a renderer submits into. This is the first
 // component of the flush key: (BatchFormat, texture, blend, material). Consecutive draws that
@@ -71,6 +71,19 @@ export interface CreateRenderTextureOptions {
  * A foreign GPU texture bound by one render backend. The backend borrows and never uploads or owns
  * the associated GPU handle.
  */
+// Per-side capture padding an effect needs beyond its source bounds, in local pixels. Render owns the
+// shape because offscreen target allocation consumes it; effect kinds register the resolver.
+export interface EffectPadding {
+  bottom: number;
+  left: number;
+  right: number;
+  top: number;
+}
+
+// Resolves the padding for one effect intent. The parameter is the structural effect base (an entity
+// with a kind) so Render, which `@flighthq/effects` depends on, never imports the effects contract.
+export type EffectPaddingResolver = (effect: Readonly<EffectPaddingSubject>) => Readonly<EffectPadding>;
+
 export interface ExternalTexture extends TextureSource {
   readonly kind: typeof ExternalTextureSourceKind;
 }
@@ -613,4 +626,9 @@ export interface Scene3DRenderList {
   viewProjection: Readonly<Matrix4>;
   visibleInstancedMeshes: InstancedMesh[];
   visibleMeshes: Mesh[];
+}
+
+interface EffectPaddingSubject extends EntityRaw {
+  [EntityRuntimeKey]: EntityRuntime | undefined;
+  kind: Kind;
 }

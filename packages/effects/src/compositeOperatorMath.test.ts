@@ -1,6 +1,5 @@
-import { CompositeOperator } from '@flighthq/types/contract';
-
 import { getCompositeOperatorFactors } from './compositeOperatorMath.ts';
+import { CompositeOperator } from './types/CompositeOperator.ts';
 
 function factors(operator: CompositeOperator, as: number, ab: number): [number, number] {
   const out: [number, number] = [0, 0];

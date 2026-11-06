@@ -40,6 +40,7 @@
     "clean:dist": "tsx ../../scripts/clean-package-dist.ts"
   },
   "dependencies": {
+    "@flighthq/bitmap": "*",
     "@flighthq/color": "*",
     "@flighthq/entity": "*",
     "@flighthq/geometry": "*",
@@ -49,8 +50,7 @@
     "@flighthq/render": "*",
     "@flighthq/scene2d": "*",
     "@flighthq/signals": "*",
-    "@flighthq/texture": "*",
-    "@flighthq/types": "*"
+    "@flighthq/texture": "*"
   },
   "devDependencies": {
     "typescript": "^7.0.2"

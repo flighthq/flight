@@ -7,14 +7,15 @@
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,
-    "moduleSuffixes": [".effects-bridge-types", ".render-types", ".texture-types", ".geometry-types", ""],
+    "moduleSuffixes": [".render-types", ".bitmap-types", ".texture-types", ".geometry-types", ""],
     "tsBuildInfoFile": "dist/.tsbuildinfo.contract"
   },
   "references": [
+    { "path": "../bitmap/tsconfig.contract.json" },
     { "path": "../entity" },
+    { "path": "../geometry/tsconfig.contract.json" },
     { "path": "../render/tsconfig.contract.json" },
-    { "path": "../texture/tsconfig.contract.json" },
-    { "path": "../types/tsconfig.effects-bridge-types.json" }
+    { "path": "../texture/tsconfig.contract.json" }
   ],
   "include": ["src/contract.effects-types.ts", "src/types.ts", "src/types/**/*.ts"],
   "exclude": ["src/**/*.test.ts"]

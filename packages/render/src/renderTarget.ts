@@ -1,8 +1,10 @@
 import { createMatrix, inverseMatrix, multiplyMatrix } from '@flighthq/geometry/contract';
+import type { MatrixLike, RectangleLike } from '@flighthq/geometry/contract';
 import { getNodeLocalMatrix } from '@flighthq/node/contract';
-import type { MatrixLike, Node2D, RectangleLike, EffectPadding } from '@flighthq/types/contract';
+import type { Node2D } from '@flighthq/scene2d/contract';
 
 import type {
+  EffectPadding,
   RenderTargetAxes,
   RenderTargetAxisDifference,
   RenderTargetDescriptor,

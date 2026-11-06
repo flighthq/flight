@@ -8,11 +8,12 @@ import {
 import { computeNodeRootLocalBoundsRectangle } from '@flighthq/node/contract';
 import { computeRenderTargetSize, computeScene2DRenderTargetTransform } from '@flighthq/render/contract';
 import type { RenderState } from '@flighthq/render/contract';
+import type { EffectPadding } from '@flighthq/render/contract';
 import type { Node2D } from '@flighthq/scene2d/contract';
-import type { EffectCaptureGeometry, EffectPadding } from '@flighthq/types/contract';
 
 import { computeEffectPadding } from './effectPadding.ts';
 import type { Effect } from './types.ts';
+import type { EffectCaptureGeometry } from './types/EffectCaptureGeometry.ts';
 
 export function computeEffectCaptureGeometry(
   out: EffectCaptureGeometry,

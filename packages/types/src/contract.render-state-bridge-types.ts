@@ -1,26 +1,12 @@
-// Exact dependency bridge for the two registries whose owners depend on Render. Keeping only their
-// structural callback contracts here breaks the genuine effects/canvas -> render cycle without
-// restoring the full Types barrel to Render's contract project.
+// Exact dependency bridge for the canvas shape registry, whose owner depends on Render. Keeping only its
+// structural callback contracts here breaks the genuine canvas -> render cycle without restoring the
+// full Types barrel to Render's contract project.
 import type { Bitmap } from '@flighthq/bitmap/contract';
 import type { EntityRaw, EntityRuntime, EntityRuntimeKey, Kind } from '@flighthq/entity/contract';
 import type { Matrix } from '@flighthq/geometry/contract';
 import type { LineScaleMode, ShapeBoundsCommand, ShapeCommandKey } from '@flighthq/shape/contract';
 import type { CanvasSurface, HostCanvasCapability } from '@flighthq/surface/contract';
 import type { Texture, TextureSourceKind } from '@flighthq/texture/contract';
-
-interface Effect extends EntityRaw {
-  [EntityRuntimeKey]: EntityRuntime | undefined;
-  kind: Kind;
-}
-
-export interface EffectPadding {
-  bottom: number;
-  left: number;
-  right: number;
-  top: number;
-}
-
-export type EffectPaddingResolver = (effect: Readonly<Effect>) => Readonly<EffectPadding>;
 
 type RenderRegistryTableBridge = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8;
 

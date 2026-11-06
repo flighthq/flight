@@ -1,5 +1,4 @@
-import type { CompositeOperator } from '@flighthq/types/contract';
-
+import type { CompositeOperator } from './CompositeOperator.ts';
 import type { Effect } from './Effect.ts';
 
 // Merge this node's isolated layer into its parent with a Porter-Duff coverage operator instead of the

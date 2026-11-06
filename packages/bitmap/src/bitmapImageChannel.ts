@@ -1,1 +1,1 @@
-export { ImageChannel } from '@flighthq/types/contract';
+export { ImageChannel } from './types.ts';
