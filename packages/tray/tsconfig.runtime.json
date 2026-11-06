@@ -7,15 +7,15 @@
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,
-    "moduleSuffixes": [".menu-types", ""],
+    "moduleSuffixes": [".geometry-types", ".menu-types", ""],
     "tsBuildInfoFile": "dist/.tsbuildinfo.runtime"
   },
   "references": [
     { "path": "../entity" },
+    { "path": "../geometry/tsconfig.contract.json" },
     { "path": "../log" },
     { "path": "../menu/tsconfig.contract.json" },
     { "path": "../signals" },
-    { "path": "../types" },
     { "path": "./tsconfig.contract.json" }
   ],
   "include": ["src/**/*.ts"],

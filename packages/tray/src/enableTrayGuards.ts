@@ -1,9 +1,8 @@
 import type { LogState } from '@flighthq/log/contract';
-import { logOnce } from '@flighthq/log/contract';
-import type { TrayIcon } from '@flighthq/types/contract';
-import { LogLevel } from '@flighthq/types/contract';
+import { LogLevel, logOnce } from '@flighthq/log/contract';
 
 import { setTrayAnimationGuard } from './tray.ts';
+import type { TrayIcon } from './types.ts';
 
 /** Uninstalls the guard installed by `enableTrayGuards`. */
 export function disableTrayGuards(): void {

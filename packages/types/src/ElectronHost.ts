@@ -5,6 +5,7 @@ import type { ElectronPowerCapabilities } from '@flighthq/power/contract';
 import type { HostPreferencesCapabilities } from '@flighthq/preferences/contract';
 import type { HostShellCapabilities } from '@flighthq/shell/contract';
 import type { HostShortcutCapabilities } from '@flighthq/shortcut/contract';
+import type { DesktopOsProfile } from '@flighthq/tray/contract';
 
 import type { ElectronIpcTarget } from './ElectronApi.ts';
 import type { ElectronAppCapabilitiesFor } from './ElectronAppCapabilitiesFor.ts';
@@ -20,7 +21,6 @@ import type {
 } from './Host.ts';
 import type { HostIpcTargetedSendCapability } from './Ipc.ts';
 import type { ElectronMacosNotificationCapabilities, ElectronNotificationCapabilities } from './Notification.ts';
-import type { DesktopOsProfile } from './Tray.ts';
 
 type ElectronNotificationCapabilitiesFor<Profile extends DesktopOsProfile> = Profile extends 'macos'
   ? ElectronMacosNotificationCapabilities

@@ -1,29 +1,7 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type { RectangleLike } from '@flighthq/geometry/contract';
 import { createSignal } from '@flighthq/signals/contract';
 import type { Signal } from '@flighthq/signals/contract';
-import type {
-  HostTrayBalloonCapability,
-  HostTrayBalloonEventsCapability,
-  HostTrayBoundsCapability,
-  HostTrayDoubleClickPolicyCapability,
-  HostTrayDropEventsCapability,
-  HostTrayImageCapability,
-  HostTrayInteractionEventsCapability,
-  HostTrayLifecycleCapability,
-  HostTrayMenuCapability,
-  HostTrayMenuSelectionEventsCapability,
-  HostTrayPopupMenuCapability,
-  HostTrayPressedImageCapability,
-  HostTrayTemplateImageCapability,
-  HostTrayTitleCapability,
-  HostTrayTooltipCapability,
-  RectangleLike,
-  TrayBalloonEvent,
-  TrayDropEvent,
-  TrayIcon,
-  TrayInteractionEvent,
-  TrayMenuSelectionEvent,
-} from '@flighthq/types/contract';
 import { describe, expect, it, vi } from 'vitest';
 
 import {
@@ -56,6 +34,28 @@ import {
   startTrayIconAnimation,
   stopTrayIconAnimation,
 } from './tray.ts';
+import type {
+  HostTrayBalloonCapability,
+  HostTrayBalloonEventsCapability,
+  HostTrayBoundsCapability,
+  HostTrayDoubleClickPolicyCapability,
+  HostTrayDropEventsCapability,
+  HostTrayImageCapability,
+  HostTrayInteractionEventsCapability,
+  HostTrayLifecycleCapability,
+  HostTrayMenuCapability,
+  HostTrayMenuSelectionEventsCapability,
+  HostTrayPopupMenuCapability,
+  HostTrayPressedImageCapability,
+  HostTrayTemplateImageCapability,
+  HostTrayTitleCapability,
+  HostTrayTooltipCapability,
+  TrayBalloonEvent,
+  TrayDropEvent,
+  TrayIcon,
+  TrayInteractionEvent,
+  TrayMenuSelectionEvent,
+} from './types.ts';
 
 type TestHost = { readonly tray: { readonly lifecycle: HostTrayLifecycleCapability } } & {
   readonly tray: { readonly image: HostTrayImageCapability };

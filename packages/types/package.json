@@ -109,6 +109,7 @@
     "@flighthq/textshaper": "*",
     "@flighthq/texture": "*",
     "@flighthq/texture-formats": "*",
+    "@flighthq/tray": "*",
     "@flighthq/useragent": "*",
     "@flighthq/velocity": "*",
     "@flighthq/xml": "*"

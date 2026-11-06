@@ -1,11 +1,11 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { LogState } from '@flighthq/log/contract';
+import type { LogEntry, LogState } from '@flighthq/log/contract';
 import { createLogState, setLogSink } from '@flighthq/log/contract';
-import type { LogEntry, TrayIcon } from '@flighthq/types/contract';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { disableTrayGuards, enableTrayGuards } from './enableTrayGuards.ts';
 import { createTrayIcon, destroyTrayIcon, startTrayIconAnimation } from './tray.ts';
+import type { TrayIcon } from './types.ts';
 
 let entries: LogEntry[];
 let logState: LogState;

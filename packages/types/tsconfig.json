@@ -61,6 +61,7 @@
       ".velocity-types",
       ".texture-formats-types",
       ".protocol-types",
+      ".tray-types",
       ""
     ],
     "types": ["@testing-library/jest-dom", "vitest/globals", "@webgpu/types"]
@@ -293,6 +294,9 @@
     },
     {
       "path": "../protocol/tsconfig.contract.json"
+    },
+    {
+      "path": "../tray/tsconfig.contract.json"
     }
   ],
   "include": ["src"]

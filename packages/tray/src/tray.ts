@@ -1,10 +1,11 @@
-import { allocateEntity, createEntityRuntime, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity, createEntityRuntime, EntityRuntimeKey, finishEntity } from '@flighthq/entity/contract';
+import type { EntityConstruction, EntityRaw, EntityRuntime } from '@flighthq/entity/contract';
+import type { Vector2Like } from '@flighthq/geometry/contract';
 import type { MenuItemTemplate } from '@flighthq/menu/contract';
 import { connectSignal, disconnectSignal } from '@flighthq/signals/contract';
 import type { Signal } from '@flighthq/signals/contract';
+
 import type {
-  Entity,
-  EntityConstruction,
   HostTrayBalloonEventsCapability,
   HostTrayBalloonCapability,
   HostTrayBoundsCapability,
@@ -49,9 +50,9 @@ import type {
   TrayTitleUpdateResult,
   TrayTooltipReadResult,
   TrayTooltipUpdateResult,
-  Vector2Like,
-} from '@flighthq/types/contract';
-import { EntityRuntimeKey } from '@flighthq/types/contract';
+} from './types.ts';
+
+type Entity = EntityRaw & { [EntityRuntimeKey]: EntityRuntime | undefined };
 
 interface TrayRuntime extends ReturnType<typeof createEntityRuntime> {
   animationGeneration: number;

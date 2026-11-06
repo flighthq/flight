@@ -25,6 +25,7 @@ import type { HostShortcutCapabilities } from '@flighthq/shortcut/contract';
 import type { HostSocketCapabilities } from '@flighthq/socket/contract';
 import type { HostStatusBarCapabilities } from '@flighthq/statusbar/contract';
 import type { HostCanvasCapabilities, HostSurfaceCapabilities } from '@flighthq/surface/contract';
+import type { HostTrayCapabilities } from '@flighthq/tray/contract';
 
 export type { HostScreenCapabilities } from '@flighthq/screen/contract';
 export type { HostSensorsCapabilities } from '@flighthq/sensors/contract';
@@ -102,23 +103,6 @@ import type {
 import type { HostShareContentCapability, HostShareFilesCapability } from './Share.ts';
 import type { HostTextSegmenterCapability } from './TextSegment.ts';
 import type { HostTextShaperCapability } from './TextShaper.ts';
-import type {
-  HostTrayBalloonCapability,
-  HostTrayBalloonEventsCapability,
-  HostTrayBoundsCapability,
-  HostTrayDoubleClickPolicyCapability,
-  HostTrayDropEventsCapability,
-  HostTrayImageCapability,
-  HostTrayInteractionEventsCapability,
-  HostTrayLifecycleCapability,
-  HostTrayMenuCapability,
-  HostTrayMenuSelectionEventsCapability,
-  HostTrayPopupMenuCapability,
-  HostTrayPressedImageCapability,
-  HostTrayTemplateImageCapability,
-  HostTrayTitleCapability,
-  HostTrayTooltipCapability,
-} from './Tray.ts';
 import type { HostUpdaterCommandCapability } from './Updater.ts';
 import type { HostWgpuCapability } from './WgpuHost.ts';
 
@@ -322,24 +306,6 @@ export interface HostDecompressCapabilities {
 
 export interface HostTextShaperCapabilities {
   readonly shaper?: HostTextShaperCapability;
-}
-
-export interface HostTrayCapabilities {
-  readonly balloon?: HostTrayBalloonCapability;
-  readonly balloonEvents?: HostTrayBalloonEventsCapability;
-  readonly bounds?: HostTrayBoundsCapability;
-  readonly doubleClickPolicy?: HostTrayDoubleClickPolicyCapability;
-  readonly dropEvents?: HostTrayDropEventsCapability;
-  readonly image?: HostTrayImageCapability;
-  readonly interactionEvents?: HostTrayInteractionEventsCapability;
-  readonly lifecycle?: HostTrayLifecycleCapability;
-  readonly menu?: HostTrayMenuCapability;
-  readonly menuSelectionEvents?: HostTrayMenuSelectionEventsCapability;
-  readonly popupMenu?: HostTrayPopupMenuCapability;
-  readonly pressedImage?: HostTrayPressedImageCapability;
-  readonly templateImage?: HostTrayTemplateImageCapability;
-  readonly title?: HostTrayTitleCapability;
-  readonly tooltip?: HostTrayTooltipCapability;
 }
 
 export interface HostUpdaterCapabilities {

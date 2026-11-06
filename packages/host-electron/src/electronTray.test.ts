@@ -7,13 +7,13 @@ import {
   setTrayIconContextMenu,
   setTrayIconTemplate,
 } from '@flighthq/tray/contract';
+import type { TrayIcon } from '@flighthq/tray/contract';
 import type {
   ElectronApi,
   ElectronMenu,
   ElectronMenuItemOptions,
   ElectronNativeImage,
   ElectronTray,
-  TrayIcon,
 } from '@flighthq/types/contract';
 import { describe, expect, it, vi } from 'vitest';
 

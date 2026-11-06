@@ -1,5 +1,4 @@
-import type { HostTrayCapabilities } from './Host.ts';
-import type { DesktopOsProfile } from './Tray.ts';
+import type { DesktopOsProfile, HostTrayCapabilities } from '@flighthq/tray/contract';
 
 type TauriCommonTrayCapabilities = Required<
   Pick<HostTrayCapabilities, 'image' | 'lifecycle' | 'menu' | 'menuSelectionEvents'>

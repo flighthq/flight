@@ -3,12 +3,12 @@ import type { HostClipboardCapabilities } from '@flighthq/clipboard/contract';
 import type { TauriMenuCapabilities } from '@flighthq/menu/contract';
 import type { HostShellCapabilities } from '@flighthq/shell/contract';
 import type { HostShortcutCapabilities } from '@flighthq/shortcut/contract';
+import type { DesktopOsProfile } from '@flighthq/tray/contract';
 
 import type { Host, HostDialogCapabilities, HostPlatformCapabilities } from './Host.ts';
 import type { TauriNotificationCapabilities } from './Notification.ts';
 import type { TauriAppCapabilities } from './TauriAppCapabilities.ts';
 import type { TauriTrayCapabilitiesFor } from './TauriTrayCapabilitiesFor.ts';
-import type { DesktopOsProfile } from './Tray.ts';
 
 export type TauriHost<Profile extends DesktopOsProfile> = Host & {
   readonly app: TauriAppCapabilities;

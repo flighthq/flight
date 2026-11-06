@@ -24,6 +24,9 @@
       "path": "../entity"
     },
     {
+      "path": "../geometry/tsconfig.contract.json"
+    },
+    {
       "path": "../host/tsconfig.runtime.json"
     },
     {

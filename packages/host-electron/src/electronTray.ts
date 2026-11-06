@@ -1,37 +1,39 @@
+import type { Vector2Like } from '@flighthq/geometry/contract';
 import type { MenuItemTemplate } from '@flighthq/menu/contract';
 import { createSignal, emitSignal } from '@flighthq/signals/contract';
 import type { Signal } from '@flighthq/signals/contract';
 import type {
   DesktopOsProfile,
-  ElectronApi,
-  ElectronMenu,
-  ElectronNativeImage,
-  ElectronRectangle,
-  ElectronTray,
-  ElectronTrayCapabilitiesFor,
-  HostTrayCapabilities,
   HostTrayBalloonCapability,
-  TrayBalloonEvent,
   HostTrayBalloonEventsCapability,
   HostTrayBoundsCapability,
+  HostTrayCapabilities,
   HostTrayDoubleClickPolicyCapability,
-  TrayDropEvent,
   HostTrayDropEventsCapability,
-  TrayIcon,
-  TrayIconOptions,
   HostTrayImageCapability,
-  TrayInteractionEvent,
   HostTrayInteractionEventsCapability,
   HostTrayLifecycleCapability,
   HostTrayMenuCapability,
-  TrayMenuSelectionEvent,
   HostTrayMenuSelectionEventsCapability,
   HostTrayPopupMenuCapability,
   HostTrayPressedImageCapability,
   HostTrayTemplateImageCapability,
   HostTrayTitleCapability,
   HostTrayTooltipCapability,
-  Vector2Like,
+  TrayBalloonEvent,
+  TrayDropEvent,
+  TrayIcon,
+  TrayIconOptions,
+  TrayInteractionEvent,
+  TrayMenuSelectionEvent,
+} from '@flighthq/tray/contract';
+import type {
+  ElectronApi,
+  ElectronMenu,
+  ElectronNativeImage,
+  ElectronRectangle,
+  ElectronTray,
+  ElectronTrayCapabilitiesFor,
 } from '@flighthq/types/contract';
 
 import { toElectronTemplate } from './electronMenuTemplate.ts';

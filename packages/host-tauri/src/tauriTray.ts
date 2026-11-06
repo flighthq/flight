@@ -11,6 +11,12 @@ import type {
   HostTrayTemplateImageCapability,
   HostTrayTitleCapability,
   HostTrayTooltipCapability,
+  TrayIcon,
+  TrayIconOptions,
+  TrayInteractionEvent,
+  TrayMenuSelectionEvent,
+} from '@flighthq/tray/contract';
+import type {
   TauriApi,
   TauriMenu,
   TauriMenuItemHandle,
@@ -18,10 +24,6 @@ import type {
   TauriTrayIcon,
   TauriTrayIconEvent,
   TauriTrayIconOptions,
-  TrayIcon,
-  TrayIconOptions,
-  TrayInteractionEvent,
-  TrayMenuSelectionEvent,
 } from '@flighthq/types/contract';
 
 interface TrayRecord {

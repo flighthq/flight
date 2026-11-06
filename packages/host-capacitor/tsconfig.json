@@ -7,7 +7,7 @@
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,
-    "moduleSuffixes": [".menu-types", ".shortcut-types", ""],
+    "moduleSuffixes": [".tray-types", ".menu-types", ".shortcut-types", ""],
     "types": ["node", "@testing-library/jest-dom", "vitest/globals", "@webgpu/types"]
   },
   "references": [
@@ -55,6 +55,9 @@
     },
     {
       "path": "../statusbar"
+    },
+    {
+      "path": "../tray/tsconfig.contract.json"
     },
     {
       "path": "../types"

@@ -7,6 +7,7 @@ import {
   setTrayIconContextMenu,
   setTrayIconTemplate,
 } from '@flighthq/tray/contract';
+import type { TrayIcon } from '@flighthq/tray/contract';
 import type {
   TauriApi,
   TauriMenu,
@@ -14,7 +15,6 @@ import type {
   TauriTrayIcon,
   TauriTrayIconEvent,
   TauriTrayIconOptions,
-  TrayIcon,
 } from '@flighthq/types/contract';
 import { describe, expect, it, vi } from 'vitest';
 

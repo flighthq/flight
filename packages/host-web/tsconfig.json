@@ -13,6 +13,7 @@
       ".shell-types",
       ".shortcut-types",
       ".socket-types",
+      ".tray-types",
       ".menu-types",
       ""
     ],
@@ -138,6 +139,9 @@
     },
     {
       "path": "../textureatlas"
+    },
+    {
+      "path": "../tray/tsconfig.contract.json"
     },
     {
       "path": "../surface/tsconfig.runtime.json"
