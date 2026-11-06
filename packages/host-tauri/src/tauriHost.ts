@@ -1,5 +1,6 @@
+import type { EntityRuntimeKey } from '@flighthq/entity/contract';
 import { createHost } from '@flighthq/host/contract';
-import type { DesktopOsProfile, EntityRuntimeKey, TauriApi, TauriHost } from '@flighthq/types/contract';
+import type { DesktopOsProfile } from '@flighthq/tray/contract';
 
 import { tauriHostApp } from './tauriApp.ts';
 import { tauriHostClipboard } from './tauriClipboard.ts';
@@ -54,6 +55,7 @@ import {
   tauriHostWgpu,
 } from './tauriUnsupportedHostGroups.ts';
 import { tauriHostWindow } from './tauriWindow.ts';
+import type { TauriApi, TauriHost } from './types.ts';
 
 // Builds the explicit Tauri host from an injected aggregate of the Tauri v2 JS API modules and
 // plugins. Unsupported groups are constructed explicitly so capability absence remains honest.

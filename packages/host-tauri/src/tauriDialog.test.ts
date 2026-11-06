@@ -1,5 +1,4 @@
-import type { TauriApi, TauriDialogOpenOptions, TauriDialogSaveOptions } from '@flighthq/types/contract';
-import { EntityRuntimeKey } from '@flighthq/types/contract';
+import { EntityRuntimeKey } from '@flighthq/entity/contract';
 
 import {
   tauriHostDialog,
@@ -8,6 +7,7 @@ import {
   tauriHostFileSaveDialog,
   tauriHostMessageDialog,
 } from './tauriDialog.ts';
+import type { TauriApi, TauriDialogOpenOptions, TauriDialogSaveOptions } from './types.ts';
 
 interface DialogCalls {
   open: TauriDialogOpenOptions[];

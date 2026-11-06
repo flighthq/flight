@@ -1,7 +1,7 @@
 import { getAppName, getAppVersion } from '@flighthq/app';
 import { tauriHost } from '@flighthq/host-tauri';
 import { getPlatformName } from '@flighthq/platform/contract';
-import type { DesktopOsProfile, TauriApi } from '@flighthq/types/contract';
+import type { DesktopOsProfile } from '@flighthq/types/contract';
 import * as app from '@tauri-apps/api/app';
 import * as menu from '@tauri-apps/api/menu';
 import * as tray from '@tauri-apps/api/tray';
@@ -72,3 +72,6 @@ async function waitFor(predicate: () => boolean): Promise<void> {
   const deadline = performance.now() + 3_000;
   while (!predicate() && performance.now() < deadline) await new Promise((resolve) => setTimeout(resolve, 25));
 }
+
+// host-tauri publishes only runtime values, so the API slice it accepts is read off its constructor.
+type TauriApi = Parameters<typeof tauriHost>[0];

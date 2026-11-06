@@ -1,4 +1,6 @@
-import type { HostClipboardCapabilities, HostClipboardTextCapability, TauriApi } from '@flighthq/types/contract';
+import type { HostClipboardCapabilities, HostClipboardTextCapability } from '@flighthq/clipboard/contract';
+
+import type { TauriApi } from './types.ts';
 
 export function tauriHostClipboard(
   tauri: TauriApi,

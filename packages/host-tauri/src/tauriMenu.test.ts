@@ -4,9 +4,9 @@ import type {
   HostMenuSelectCapability,
   MenuItemTemplate,
 } from '@flighthq/menu/contract';
-import type { TauriApi, TauriMenuItemOptions } from '@flighthq/types/contract';
 
 import { tauriHostMenu, tauriHostAppMenu, tauriHostMenuPopup, tauriHostMenuSelect } from './tauriMenu.ts';
+import type { TauriApi, TauriMenuItemOptions } from './types.ts';
 
 function fakeTauri() {
   const state = {

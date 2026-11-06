@@ -8,11 +8,11 @@ import type {
   HostFileSaveDialogCapability,
   FileSaveDialogResult,
   HostMessageDialogCapability,
-  HostDialogCapabilities,
   MessageDialogKind,
-  TauriApi,
-  TauriDialogFilter,
-} from '@flighthq/types/contract';
+} from '@flighthq/dialog/contract';
+import type { HostDialogCapabilities } from '@flighthq/host/contract';
+
+import type { TauriApi, TauriDialogFilter } from './types.ts';
 
 export function tauriHostDialog(
   tauri: TauriApi,

@@ -1,6 +1,5 @@
-import type { TauriApi, TauriShortcutEvent } from '@flighthq/types/contract';
-
 import { tauriHostShortcut, tauriHostShortcutQuery, tauriHostShortcutTrigger } from './tauriShortcut.ts';
+import type { TauriApi, TauriShortcutEvent } from './types.ts';
 
 interface Deferred {
   readonly promise: Promise<void>;

@@ -16,6 +16,7 @@ import type {
   TrayInteractionEvent,
   TrayMenuSelectionEvent,
 } from '@flighthq/tray/contract';
+
 import type {
   TauriApi,
   TauriMenu,
@@ -24,7 +25,7 @@ import type {
   TauriTrayIcon,
   TauriTrayIconEvent,
   TauriTrayIconOptions,
-} from '@flighthq/types/contract';
+} from './types.ts';
 
 interface TrayRecord {
   destroying: boolean;

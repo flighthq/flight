@@ -1,11 +1,10 @@
-import type { TauriApi } from '@flighthq/types/contract';
-
 import {
   tauriHostShell,
   tauriHostShellExternal,
   tauriHostShellPathOpen,
   tauriHostShellPathReveal,
 } from './tauriShell.ts';
+import type { TauriApi } from './types.ts';
 
 function fakeTauri(rejection: unknown = NO_REJECTION) {
   const calls: { openUrl: string[]; openPath: string[]; reveal: string[] } = {

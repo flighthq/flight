@@ -5,7 +5,8 @@ import type {
   HostMenuSelectCapability,
   TauriMenuCapabilities,
 } from '@flighthq/menu/contract';
-import type { TauriApi, TauriMenuItemHandle } from '@flighthq/types/contract';
+
+import type { TauriApi, TauriMenuItemHandle } from './types.ts';
 
 export function tauriHostAppMenu(tauri: TauriApi): HostAppMenuCapability {
   return createAppMenu(tauri, createMenuState());

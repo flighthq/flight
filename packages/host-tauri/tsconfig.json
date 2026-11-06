@@ -14,6 +14,11 @@
       ".menu-types",
       ".video-types",
       ".textshaper-types",
+      ".lifecycle-types",
+      ".net-types",
+      ".power-types",
+      ".render-gl-types",
+      ".socket-types",
       ""
     ],
     "types": ["node", "@testing-library/jest-dom", "vitest/globals", "@webgpu/types"]
@@ -23,7 +28,13 @@
       "path": "../app/tsconfig.runtime.json"
     },
     {
+      "path": "../audio/tsconfig.runtime.json"
+    },
+    {
       "path": "../clipboard/tsconfig.runtime.json"
+    },
+    {
+      "path": "../device/tsconfig.runtime.json"
     },
     {
       "path": "../dialog"
@@ -32,13 +43,28 @@
       "path": "../entity"
     },
     {
-      "path": "../host/tsconfig.runtime.json"
+      "path": "../haptics"
     },
     {
       "path": "../host-web"
     },
     {
+      "path": "../host/tsconfig.runtime.json"
+    },
+    {
+      "path": "../image-codec"
+    },
+    {
+      "path": "../input"
+    },
+    {
       "path": "../ipc/tsconfig.contract.json"
+    },
+    {
+      "path": "../lifecycle/tsconfig.contract.json"
+    },
+    {
+      "path": "../media/tsconfig.runtime.json"
     },
     {
       "path": "../mediasession/tsconfig.contract.json"
@@ -47,19 +73,49 @@
       "path": "../menu/tsconfig.contract.json"
     },
     {
+      "path": "../net/tsconfig.contract.json"
+    },
+    {
       "path": "../notification/tsconfig.runtime.json"
     },
     {
       "path": "../platform"
     },
     {
-      "path": "../shortcut"
+      "path": "../power/tsconfig.contract.json"
+    },
+    {
+      "path": "../preferences/tsconfig.runtime.json"
+    },
+    {
+      "path": "../render-gl/tsconfig.contract.json"
+    },
+    {
+      "path": "../render-wgpu/tsconfig.runtime.json"
+    },
+    {
+      "path": "../screen"
+    },
+    {
+      "path": "../sensors"
     },
     {
       "path": "../shell/tsconfig.contract.json"
     },
     {
+      "path": "../shortcut"
+    },
+    {
       "path": "../signals"
+    },
+    {
+      "path": "../socket/tsconfig.contract.json"
+    },
+    {
+      "path": "../statusbar"
+    },
+    {
+      "path": "../surface/tsconfig.runtime.json"
     },
     {
       "path": "../textshaper/tsconfig.contract.json"

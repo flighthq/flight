@@ -4,7 +4,8 @@ import type {
   HostShellPathOpenCapability,
   HostShellPathRevealCapability,
 } from '@flighthq/shell/contract';
-import type { TauriApi } from '@flighthq/types/contract';
+
+import type { TauriApi } from './types.ts';
 
 // Tauri's opener plugin provides exactly external URL, path-open, and path-reveal commands. Every
 // provider is an Entity; unsupported trash, shortcut-link, and beep slots are omitted by construction.

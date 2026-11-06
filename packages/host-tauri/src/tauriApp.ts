@@ -7,7 +7,8 @@ import type {
   HostAppShowCapability,
   HostAppVersionCapability,
 } from '@flighthq/app/contract';
-import type { TauriApi, TauriAppCapabilities } from '@flighthq/types/contract';
+
+import type { TauriApi, TauriAppCapabilities } from './types.ts';
 
 export function tauriHostApp(tauri: TauriApi): TauriAppCapabilities {
   return Object.freeze({

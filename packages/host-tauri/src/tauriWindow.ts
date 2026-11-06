@@ -21,7 +21,8 @@ import type {
   HostWindowZOrderCapability,
 } from '@flighthq/app/contract';
 import { emitSignal } from '@flighthq/signals/contract';
-import type { TauriApi, TauriUnlisten, TauriWindow } from '@flighthq/types/contract';
+
+import type { TauriApi, TauriUnlisten, TauriWindow } from './types.ts';
 
 // Maps Flight's window capability slots onto Tauri's `@tauri-apps/api/window`. Every Tauri window call
 // is async while the capability commands are synchronous (void), so the adapter fires each call and

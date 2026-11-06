@@ -1,13 +1,13 @@
 import { readClipboardText } from '@flighthq/clipboard/contract';
+import { EntityRuntimeKey } from '@flighthq/entity/contract';
 import { createHost } from '@flighthq/host/contract';
 import { getPlatformName } from '@flighthq/platform/contract';
-import { EntityRuntimeKey } from '@flighthq/types/contract';
-import type { TauriApi } from '@flighthq/types/contract';
 import { spawnSync } from 'child_process';
 import { resolve } from 'path';
 
 import * as contractApi from './contract.ts';
 import * as publicApi from './index.ts';
+import type { TauriApi } from './types.ts';
 
 const GROUPS = [
   ['accessibility', 'tauriHostAccessibility'],

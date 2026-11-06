@@ -1,7 +1,7 @@
 import type { PlatformInfo } from '@flighthq/platform/contract';
-import type { TauriApi } from '@flighthq/types/contract';
 
 import { tauriHostPlatform, tauriHostPlatformGroup } from './tauriPlatform.ts';
+import type { TauriApi } from './types.ts';
 
 function fakeTauri(platform: string): TauriApi {
   return {

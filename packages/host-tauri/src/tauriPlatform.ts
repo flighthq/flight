@@ -1,5 +1,6 @@
 import type { HostPlatformCapabilities, HostPlatformCapability, PlatformName } from '@flighthq/platform/contract';
-import type { TauriApi } from '@flighthq/types/contract';
+
+import type { TauriApi } from './types.ts';
 
 export function tauriHostPlatform(tauri: TauriApi): HostPlatformCapability {
   const out = {} as HostPlatformCapability;

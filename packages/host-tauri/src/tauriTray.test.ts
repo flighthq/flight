@@ -8,14 +8,6 @@ import {
   setTrayIconTemplate,
 } from '@flighthq/tray/contract';
 import type { TrayIcon } from '@flighthq/tray/contract';
-import type {
-  TauriApi,
-  TauriMenu,
-  TauriMenuItemOptions,
-  TauriTrayIcon,
-  TauriTrayIconEvent,
-  TauriTrayIconOptions,
-} from '@flighthq/types/contract';
 import { describe, expect, it, vi } from 'vitest';
 
 import {
@@ -29,6 +21,14 @@ import {
   tauriHostTrayTitle,
   tauriHostTrayTooltip,
 } from './tauriTray.ts';
+import type {
+  TauriApi,
+  TauriMenu,
+  TauriMenuItemOptions,
+  TauriTrayIcon,
+  TauriTrayIconEvent,
+  TauriTrayIconOptions,
+} from './types.ts';
 
 interface FakeIcon extends TauriTrayIcon {
   closeFailures: number;

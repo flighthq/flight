@@ -6,7 +6,8 @@ import type {
   HostShortcutTriggerCapability,
   ShortcutTriggerSubscription,
 } from '@flighthq/shortcut/contract';
-import type { TauriApi } from '@flighthq/types/contract';
+
+import type { TauriApi } from './types.ts';
 
 export function tauriHostShortcut(
   tauri: TauriApi,

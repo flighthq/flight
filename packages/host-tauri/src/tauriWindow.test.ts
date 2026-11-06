@@ -1,8 +1,8 @@
 import { createAppWindow, openWindow } from '@flighthq/app';
 import { connectSignal } from '@flighthq/signals/contract';
-import type { TauriApi, TauriLogicalSizeLike, TauriPhysicalPositionLike } from '@flighthq/types/contract';
 
 import { tauriHostWindow } from './tauriWindow.ts';
+import type { TauriApi, TauriLogicalSizeLike, TauriPhysicalPositionLike } from './types.ts';
 
 interface FakeWindowState {
   calls: { method: string; args: unknown[] }[];

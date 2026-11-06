@@ -1,6 +1,5 @@
-import type { TauriApi } from '@flighthq/types/contract';
-
 import { tauriHostClipboard, tauriHostClipboardText } from './tauriClipboard.ts';
+import type { TauriApi } from './types.ts';
 
 function fakeTauri() {
   const store = { text: '' };

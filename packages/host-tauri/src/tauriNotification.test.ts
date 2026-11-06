@@ -1,5 +1,4 @@
-import { EntityRuntimeKey } from '@flighthq/types/contract';
-import type { TauriApi, TauriNotificationOptions, TauriNotificationPermission } from '@flighthq/types/contract';
+import { EntityRuntimeKey } from '@flighthq/entity/contract';
 
 import {
   tauriHostNotification,
@@ -7,6 +6,7 @@ import {
   tauriHostNotificationLifecycle,
   tauriHostNotificationPermission,
 } from './tauriNotification.ts';
+import type { TauriApi, TauriNotificationOptions, TauriNotificationPermission } from './types.ts';
 
 function fakeTauri(granted = true, permission: TauriNotificationPermission = 'granted') {
   const sent: TauriNotificationOptions[] = [];

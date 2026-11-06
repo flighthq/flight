@@ -1,4 +1,3 @@
-import type { TauriApi } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import {
@@ -11,6 +10,7 @@ import {
   tauriHostAppShow,
   tauriHostAppVersion,
 } from './tauriApp.ts';
+import type { TauriApi } from './types.ts';
 
 const flush = async () => {
   await Promise.resolve();
