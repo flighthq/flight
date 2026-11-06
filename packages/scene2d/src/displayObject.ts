@@ -1,5 +1,6 @@
 import type { ClipRegion } from '@flighthq/clip/contract';
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type { Kind } from '@flighthq/entity/contract';
 import {
   createNodeRuntime,
   getNodeRuntime,
@@ -14,7 +15,7 @@ import {
   initTransform2DTrait,
   invalidateNodeAppearance,
 } from '@flighthq/node/contract';
-import type { Kind, MethodsOf, NodeAny, NodeRuntimeFactory } from '@flighthq/types/contract';
+import type { MethodsOf, NodeAny, NodeRuntimeFactory } from '@flighthq/node/contract';
 
 import type {
   DisplayObject,

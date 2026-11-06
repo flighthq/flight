@@ -1,10 +1,10 @@
 import { createStandardMaterial } from '@flighthq/materials/contract';
+import { BlendMode } from '@flighthq/materials/contract';
 import { addNodeChild } from '@flighthq/node/contract';
-import type { Node2D, Node2DData } from '@flighthq/types/contract';
-import type { ShapeCommandToken } from '@flighthq/types/contract';
-import { BlendMode, DisplayObjectKind, HtmlViewKind } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
+import type { Node2D, Node2DData } from './contract.scene2d-types.ts';
+import { DisplayObjectKind, HtmlViewKind } from './contract.scene2d-types.ts';
 import { createDisplayObject } from './displayObject.ts';
 import { createHtmlView } from './htmlView.ts';
 import { createScene2D } from './scene2d.ts';
@@ -13,7 +13,7 @@ import { createScene2DKindUsage, getScene2DKindUsage, initializeScene2DKindUsage
 // The walk detects a command stream structurally — any node whose `data` carries `commands` — rather
 // than by node kind, so the tests record streams directly. That also keeps @flighthq/shape out of this
 // package's dependencies, which it could not take anyway since shape depends on scene2d.
-function shapeLikeNode(...commands: ShapeCommandToken[]): Node2D {
+function shapeLikeNode(...commands: unknown[]): Node2D {
   const node = createDisplayObject();
   node.data = { commands } as unknown as Node2DData;
   return node;

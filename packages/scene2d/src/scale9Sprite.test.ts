@@ -1,9 +1,10 @@
 import { getEntityRuntime } from '@flighthq/entity/contract';
 import { getNodeLocalBoundsRectangle } from '@flighthq/node/contract';
 import { createTexture } from '@flighthq/texture/contract';
-import type { ImageResource, Scale9Sprite, SpriteRuntime } from '@flighthq/types/contract';
-import { Scale9SpriteKind } from '@flighthq/types/contract';
+import type { TextureSource } from '@flighthq/texture/contract';
 
+import type { Scale9Sprite, SpriteRuntime } from './contract.scene2d-types.ts';
+import { Scale9SpriteKind } from './contract.scene2d-types.ts';
 import {
   createScale9Sprite,
   createScale9SpriteData,
@@ -96,7 +97,7 @@ describe('initializeScale9SpriteData', () => {
 });
 
 function texture(width: number, height: number) {
-  return createTexture({ dimension: '2d', source: { height, width } as ImageResource });
+  return createTexture({ dimension: '2d', source: { height, width } as TextureSource });
 }
 describe('Scale9Sprite local bounds', () => {
   it('derives bounds from the texture like a plain Sprite', () => {

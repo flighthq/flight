@@ -1,7 +1,7 @@
 import { addNodeChild } from '@flighthq/node/contract';
 import { connectSignal } from '@flighthq/signals/contract';
-import type { Scene2D } from '@flighthq/types/contract';
 
+import type { Scene2D } from './contract.scene2d-types.ts';
 import { createDisplayObject } from './displayObject.ts';
 import {
   createScene2D,

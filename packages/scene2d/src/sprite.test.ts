@@ -1,10 +1,12 @@
 import { getEntityRuntime } from '@flighthq/entity/contract';
 import { createRectangle } from '@flighthq/geometry/contract';
 import { getNodeLocalBoundsRectangle } from '@flighthq/node/contract';
+import type { Node } from '@flighthq/node/contract';
 import { createTexture, setTextureUvFromPixelRect } from '@flighthq/texture/contract';
-import type { ImageResource, Node, Sprite, SpriteRuntime } from '@flighthq/types/contract';
-import { SpriteKind } from '@flighthq/types/contract';
+import type { TextureSource } from '@flighthq/texture/contract';
 
+import type { Sprite, SpriteRuntime } from './contract.scene2d-types.ts';
+import { SpriteKind } from './contract.scene2d-types.ts';
 import {
   cloneSprite,
   computeSpriteLocalBoundsRectangle,
@@ -158,7 +160,7 @@ describe('initializeSpriteRendererData', () => {
 });
 
 function texture(width: number, height: number) {
-  return createTexture({ dimension: '2d', source: { height, width } as ImageResource });
+  return createTexture({ dimension: '2d', source: { height, width } as TextureSource });
 }
 describe('isSpriteRendererDirty', () => {
   it('detects same-size bare texture assignment once without node invalidation', () => {

@@ -1,14 +1,9 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
+import type { Rectangle } from '@flighthq/geometry/contract';
+import type { BoundsNode, MethodsOf, NodeAny, RendererData } from '@flighthq/node/contract';
 import { getTextureViewSize } from '@flighthq/texture/contract';
-import type {
-  BoundsNode,
-  EntityConstruction,
-  MethodsOf,
-  Rectangle,
-  NodeAny,
-  RendererData,
-  RenderState,
-} from '@flighthq/types/contract';
+import type { RenderState } from '@flighthq/types/contract';
 
 import type {
   Node2DFields,

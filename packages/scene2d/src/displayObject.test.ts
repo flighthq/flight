@@ -1,15 +1,18 @@
 import { createColorMatrixAdjustment, createTintAdjustment } from '@flighthq/adjustments/contract';
 import type { ClipRegion } from '@flighthq/clip/contract';
 import { allocateEntity, finishEntity, getEntityRuntime } from '@flighthq/entity/contract';
+import type { Rectangle } from '@flighthq/geometry/contract';
+import { BlendMode } from '@flighthq/materials/contract';
 import {
   addNodeColorAdjustment,
   getNodeColorAdjustments,
   setNodeColorAdjustments,
   setNodeColorAdjustmentsTint,
 } from '@flighthq/node/contract';
-import type { BoundsNode, Node2D, Node2DData, Node2DRuntime, Rectangle } from '@flighthq/types/contract';
-import { BlendMode, DisplayObjectKind, Node2DFieldsKey } from '@flighthq/types/contract';
+import type { BoundsNode } from '@flighthq/node/contract';
 
+import type { Node2D, Node2DData, Node2DRuntime } from './contract.scene2d-types.ts';
+import { DisplayObjectKind, Node2DFieldsKey } from './contract.scene2d-types.ts';
 import {
   createDisplayObject,
   createDisplayObjectRuntime,

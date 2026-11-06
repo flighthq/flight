@@ -1,7 +1,8 @@
 import { createRectangle } from '@flighthq/geometry/contract';
-import type { HtmlView, Node } from '@flighthq/types/contract';
-import { HtmlViewKind } from '@flighthq/types/contract';
+import type { Node } from '@flighthq/node/contract';
 
+import type { HtmlView } from './contract.scene2d-types.ts';
+import { HtmlViewKind } from './contract.scene2d-types.ts';
 import {
   computeHtmlViewLocalBoundsRectangle,
   createHtmlView,

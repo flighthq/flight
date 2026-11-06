@@ -1,8 +1,8 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { EntityRuntimeKey } from '@flighthq/entity/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
 import { getNodeRoot, getNodeRuntime } from '@flighthq/node/contract';
 import { createSignal, emitSignal } from '@flighthq/signals/contract';
-import type { EntityConstruction } from '@flighthq/types/contract';
 
 import type { Node2D, Node2DRuntime, Scene2D, Scene2DRuntime, Scene2DSignals } from './contract.scene2d-types.ts';
 import { createDisplayObject } from './displayObject.ts';

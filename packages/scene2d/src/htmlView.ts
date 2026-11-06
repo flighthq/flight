@@ -1,6 +1,8 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
+import type { Rectangle } from '@flighthq/geometry/contract';
 import { invalidateNodeLocalBounds } from '@flighthq/node/contract';
-import type { BoundsNode, EntityConstruction, MethodsOf, Rectangle } from '@flighthq/types/contract';
+import type { BoundsNode, MethodsOf } from '@flighthq/node/contract';
 
 import type { HtmlView, HtmlViewData, HtmlViewRuntime, Node2DFields } from './contract.scene2d-types.ts';
 import { HtmlViewKind } from './contract.scene2d-types.ts';

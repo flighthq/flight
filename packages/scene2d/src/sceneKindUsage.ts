@@ -1,13 +1,12 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type { EntityConstruction, EntityRaw, EntityRuntime, EntityRuntimeKey } from '@flighthq/entity/contract';
+import { BlendMode } from '@flighthq/materials/contract';
 import { forEachNodeDescendant } from '@flighthq/node/contract';
-import type { Entity, EntityConstruction } from '@flighthq/types/contract';
-import type { ShapeCommandToken } from '@flighthq/types/contract';
-import { BlendMode } from '@flighthq/types/contract';
 
 import type { Node2D, Scene2D, Scene2DKindUsage } from './contract.scene2d-types.ts';
 
-export function createScene2DKindUsage(): Scene2DKindUsage & Entity {
-  const out = allocateEntity<Scene2DKindUsage & Entity>();
+export function createScene2DKindUsage(): Scene2DKindUsage & Scene2DKindUsageEntity {
+  const out = allocateEntity<Scene2DKindUsage & Scene2DKindUsageEntity>();
   initializeScene2DKindUsage(out);
   return finishEntity(out);
 }
@@ -37,7 +36,7 @@ export function getScene2DKindUsage(out: Scene2DKindUsage, scene: Readonly<Scene
     // Structural, like isMesh: any node family whose data carries a command stream is walked, including
     // a custom kind, without a per-kind table that would drift as families are added. Shape, MorphShape
     // and Scale9Shape all record into the same flat [key, argCount, ...args] buffer.
-    const commands = (node.data as Readonly<Partial<{ commands: readonly ShapeCommandToken[] }>> | null)?.commands;
+    const commands = (node.data as Readonly<Partial<{ commands: readonly unknown[] }>> | null)?.commands;
     if (commands === undefined) return;
     let i = 0;
     while (i < commands.length) {
@@ -58,7 +57,7 @@ export function getScene2DKindUsage(out: Scene2DKindUsage, scene: Readonly<Scene
 
 // Allocates an empty usage record. Separate from the walk so a caller can reuse one across scenes or
 // frames without reallocating four arrays.
-export function initializeScene2DKindUsage(out: EntityConstruction<Scene2DKindUsage & Entity>): void {
+export function initializeScene2DKindUsage(out: EntityConstruction<Scene2DKindUsage & Scene2DKindUsageEntity>): void {
   out.blendModes = [];
   out.materialKinds = [];
   out.nodeKinds = [];
@@ -74,3 +73,5 @@ function addScene2DUsedKind(kinds: string[], kind: string): void {
   }
   kinds.push(kind);
 }
+
+type Scene2DKindUsageEntity = EntityRaw & { [EntityRuntimeKey]: EntityRuntime | undefined };

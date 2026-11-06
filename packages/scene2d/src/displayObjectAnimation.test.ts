@@ -1,7 +1,7 @@
 import { createAnimationChannel, createAnimationClip, createAnimationTrack } from '@flighthq/animation/contract';
 import { getNodeLocalTransformRevision } from '@flighthq/node/contract';
-import type { Node2DAnimationPath, Node2DAnimationTarget } from '@flighthq/types/contract';
 
+import type { Node2DAnimationPath, Node2DAnimationTarget } from './contract.scene2d-types.ts';
 import { createDisplayObject } from './displayObject.ts';
 import { applyAnimationClipToNode2D } from './displayObjectAnimation.ts';
 

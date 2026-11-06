@@ -1,5 +1,6 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { EntityConstruction, RectangleLike } from '@flighthq/types/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
+import type { RectangleLike } from '@flighthq/geometry/contract';
 
 import type { Scale9Sprite, Scale9SpriteData, Scale9SpriteRuntime } from './contract.scene2d-types.ts';
 import { Scale9SpriteKind } from './contract.scene2d-types.ts';
