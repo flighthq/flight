@@ -1,4 +1,10 @@
-import { BITMAP_FONT_REQUIREMENT_KEY_NAMESPACE } from '@flighthq/bitmapfont-formats/contract';
+import {
+  BITMAP_FONT_REQUIREMENT_KEY_NAMESPACE,
+  BitmapFontFormatKindBmFontBinary,
+  BitmapFontFormatKindBmFontJson,
+  BitmapFontFormatKindBmFontText,
+  BitmapFontFormatKindBmFontXml,
+} from '@flighthq/bitmapfont-formats/contract';
 import { PARTICLES_REQUIREMENT_KEY_NAMESPACE } from '@flighthq/particles-formats/contract';
 import type { RequirementCatalogEntry } from '@flighthq/requirement-catalog/contract';
 import {
@@ -199,10 +205,6 @@ import type {
   ThreeDsChunkHandler,
 } from '@flighthq/types/contract';
 import {
-  BitmapFontFormatKindBmFontBinary,
-  BitmapFontFormatKindBmFontJson,
-  BitmapFontFormatKindBmFontText,
-  BitmapFontFormatKindBmFontXml,
   DragonBonesSectionKind,
   DragonBonesTimelineKind,
   RequirementFacet,
