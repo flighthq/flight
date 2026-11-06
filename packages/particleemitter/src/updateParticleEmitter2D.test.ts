@@ -7,7 +7,8 @@ import {
   createParticleObjectsState,
   updateParticleObjects,
 } from '@flighthq/particles/contract';
-import type { ParticleObject, TextureAtlas } from '@flighthq/types/contract';
+import type { ParticleObject } from '@flighthq/particles/contract';
+import type { TextureAtlas } from '@flighthq/textureatlas/contract';
 
 import { createParticleEmitter2D, reserveParticleEmitter2D } from './particleEmitter.ts';
 import { prewarmParticleEmitter2D } from './prewarmParticleEmitter2D.ts';

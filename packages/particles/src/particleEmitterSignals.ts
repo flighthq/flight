@@ -1,6 +1,8 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
 import { createSignal } from '@flighthq/signals/contract';
-import type { ParticleEmitterSignals, EntityConstruction } from '@flighthq/types/contract';
+
+import type { ParticleEmitterSignals } from './types/ParticleSimulation.ts';
 
 export function createParticleEmitterSignals(): ParticleEmitterSignals {
   const out = allocateEntity<ParticleEmitterSignals>();

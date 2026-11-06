@@ -48,7 +48,7 @@
       "path": "../particleemitter/tsconfig.runtime.json"
     },
     {
-      "path": "../particles"
+      "path": "../particles/tsconfig.runtime.json"
     },
     {
       "path": "../registry"

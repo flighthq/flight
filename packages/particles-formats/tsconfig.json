@@ -6,7 +6,7 @@
   "references": [
     { "path": "../importdiagnostics" },
     { "path": "../math" },
-    { "path": "../particles" },
+    { "path": "../particles/tsconfig.runtime.json" },
     { "path": "../requirement" },
     { "path": "./tsconfig.contract.json" },
     { "path": "./tsconfig.runtime.json" }

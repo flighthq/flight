@@ -1,12 +1,11 @@
+import { PARTICLE_VELOCITY_STRIDE } from './particleEmitterState.ts';
 import type {
   ForceFalloff,
   ParticleEmitterState,
   ParticleForce,
   ParticleObject,
   ParticleObjectsState,
-} from '@flighthq/types/contract';
-
-import { PARTICLE_VELOCITY_STRIDE } from './particleEmitterState.ts';
+} from './types/ParticleSimulation.ts';
 
 export interface ParticleEmitterLike {
   data: {

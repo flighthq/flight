@@ -1,4 +1,4 @@
-import type { RandomSource } from '@flighthq/types/contract';
+import type { RandomSource } from '@flighthq/math/contract';
 
 import type { ParticleEmitterConfig } from './types/ParticleEmitterConfig.ts';
 

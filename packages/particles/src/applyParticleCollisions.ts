@@ -1,3 +1,4 @@
+import { PARTICLE_VELOCITY_STRIDE } from './particleEmitterState.ts';
 import type {
   CircleCollider,
   ParticleCollider,
@@ -7,9 +8,7 @@ import type {
   PlaneCollider,
   RectangleCollider,
   SphereCollider,
-} from '@flighthq/types/contract';
-
-import { PARTICLE_VELOCITY_STRIDE } from './particleEmitterState.ts';
+} from './types/ParticleSimulation.ts';
 
 export interface ParticleEmitterCollisionTarget {
   data: {

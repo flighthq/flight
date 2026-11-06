@@ -1,14 +1,13 @@
+import { applyParticleObjectCollisions } from './applyParticleCollisions.ts';
+import { applyParticleObjectForces } from './applyParticleForces.ts';
+import type { ParticleEmitterConfig } from './types/ParticleEmitterConfig.ts';
 import type {
   ParticleCollider,
   ParticleForce,
   ParticleObject,
   ParticleObjectsState,
   ParticleObjectsUpdateOptions,
-} from '@flighthq/types/contract';
-
-import { applyParticleObjectCollisions } from './applyParticleCollisions.ts';
-import { applyParticleObjectForces } from './applyParticleForces.ts';
-import type { ParticleEmitterConfig } from './types/ParticleEmitterConfig.ts';
+} from './types/ParticleSimulation.ts';
 import { updateParticleObjects } from './updateParticleObjects.ts';
 
 /**

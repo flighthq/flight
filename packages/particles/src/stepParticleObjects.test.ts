@@ -1,8 +1,7 @@
-import type { ParticleObject } from '@flighthq/types/contract';
-
 import { createParticleEmitterConfig } from './particleEmitterConfig.ts';
 import { createParticleObjectsState } from './particleObjectsState.ts';
 import { stepParticleObjects } from './stepParticleObjects.ts';
+import type { ParticleObject } from './types/ParticleSimulation.ts';
 
 function makeObject(): ParticleObject {
   return {

@@ -7,7 +7,7 @@ import {
   enableParticleEmitterSignals,
   normalizeParticleEmitterConfig,
 } from '@flighthq/particles/contract';
-import type { TextureAtlas } from '@flighthq/types/contract';
+import type { TextureAtlas } from '@flighthq/textureatlas/contract';
 
 import { createParticleEmitter2D } from './particleEmitter.ts';
 import { updateParticleEmitter2D } from './updateParticleEmitter2D.ts';

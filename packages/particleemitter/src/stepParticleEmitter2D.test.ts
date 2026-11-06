@@ -1,5 +1,6 @@
 import { createParticleEmitterConfig, createParticleEmitterState } from '@flighthq/particles/contract';
-import type { ParticleCollider, ParticleForce, TextureAtlas } from '@flighthq/types/contract';
+import type { ParticleCollider, ParticleForce } from '@flighthq/particles/contract';
+import type { TextureAtlas } from '@flighthq/textureatlas/contract';
 
 import { createParticleEmitter2D } from './particleEmitter.ts';
 import { stepParticleEmitter2D } from './stepParticleEmitter2D.ts';

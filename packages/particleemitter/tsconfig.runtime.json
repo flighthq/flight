@@ -14,11 +14,10 @@
     { "path": "../geometry/tsconfig.runtime.json" },
     { "path": "../math" },
     { "path": "../node/tsconfig.runtime.json" },
-    { "path": "../particles" },
+    { "path": "../particles/tsconfig.runtime.json" },
     { "path": "../scene2d/tsconfig.runtime.json" },
     { "path": "../scene3d" },
     { "path": "../textureatlas/tsconfig.runtime.json" },
-    { "path": "../types" },
     { "path": "./tsconfig.contract.json" }
   ],
   "include": ["src"],

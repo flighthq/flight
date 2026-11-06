@@ -1,6 +1,9 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
 import { reserveFloat32Array } from '@flighthq/geometry/contract';
-import type { ParticleEmitterState, RandomSource, EntityConstruction } from '@flighthq/types/contract';
+import type { RandomSource } from '@flighthq/math/contract';
+
+import type { ParticleEmitterState } from './types/ParticleSimulation.ts';
 
 // Velocity stride: [vx, vy, vz] per particle.
 export const PARTICLE_VELOCITY_STRIDE = 3;

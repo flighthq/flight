@@ -1,11 +1,11 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { ParticleObject } from '@flighthq/types/contract';
 
 import { applyParticleForces, applyParticleObjectForces } from './applyParticleForces.ts';
 import type { ParticleEmitterLike } from './applyParticleForces.ts';
 import { createParticleEmitterConfig } from './particleEmitterConfig.ts';
 import { createParticleEmitterState, ensureParticleEmitterStateCapacity } from './particleEmitterState.ts';
 import { createParticleObjectsState } from './particleObjectsState.ts';
+import type { ParticleObject } from './types/ParticleSimulation.ts';
 import { updateParticleObjects } from './updateParticleObjects.ts';
 
 // Node-free SoA emitter fixture: applyParticleForces reads only `emitter.data`, so the display

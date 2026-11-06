@@ -46,8 +46,7 @@
     "@flighthq/particles": "*",
     "@flighthq/scene2d": "*",
     "@flighthq/scene3d": "*",
-    "@flighthq/textureatlas": "*",
-    "@flighthq/types": "*"
+    "@flighthq/textureatlas": "*"
   },
   "devDependencies": {
     "@flighthq/math": "*",
