@@ -21,6 +21,7 @@
       ".scene3d-gl-bridge-types",
       ".scene3d-wgpu-types",
       ".render-wgpu-types",
+      ".scene2d-canvas-types",
       ".effects-canvas-types",
       ".effects-types",
       ".adjustments-types",
@@ -66,6 +67,9 @@
     "tsBuildInfoFile": "dist/.tsbuildinfo.render-wgpu-types"
   },
   "references": [
+    {
+      "path": "../scene2d-canvas/tsconfig.contract.json"
+    },
     {
       "path": "../meshgeometry/tsconfig.contract.json"
     },

@@ -15,6 +15,7 @@
       ".texture-types",
       ".bitmap-types",
       ".node-types",
+      ".scene2d-canvas-types",
       ".effects-canvas-types",
       ".effects-types",
       ".adjustments-types",
@@ -45,6 +46,9 @@
     "tsBuildInfoFile": "dist/.tsbuildinfo.scene2d-dom-types"
   },
   "references": [
+    {
+      "path": "../scene2d-canvas/tsconfig.contract.json"
+    },
     {
       "path": "../texture/tsconfig.contract.json"
     },
