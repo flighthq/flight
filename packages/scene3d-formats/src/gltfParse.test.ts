@@ -1,5 +1,6 @@
 import { sampleAnimationTrack } from '@flighthq/animation/contract';
 import { linearChannelToSrgb } from '@flighthq/color/contract';
+import type { EmbeddedImageResourceReference, ExternalImageResourceReference } from '@flighthq/image/contract';
 import {
   getMeshGeometryIndexCount,
   getMeshGeometryVertexCount,
@@ -14,8 +15,6 @@ import { isMesh } from '@flighthq/scene3d/contract';
 import type { Node3D } from '@flighthq/scene3d/contract';
 import { getTextureSource } from '@flighthq/texture/contract';
 import type {
-  EmbeddedImageResourceReference,
-  ExternalImageResourceReference,
   GltfCoreFeatureHandler,
   ImportDiagnostic,
   Scene3DAnimationTarget,

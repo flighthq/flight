@@ -1,11 +1,9 @@
-import type { HostImageSource } from '@flighthq/types/contract';
-
 import type { HostImageDimensionResolver, HostImageDimensions } from './types.ts';
 
 // Reads the pixel size of a borrowed host handle through the registered host resolver, returning false
 // when no resolver is registered or the registered one does not recognize this handle. `out` is left
 // untouched in both cases, so a caller keeps whatever dimensions it already had.
-export function getHostImageSourceDimensions(source: HostImageSource, out: HostImageDimensions): boolean {
+export function getHostImageSourceDimensions(source: CanvasImageSource, out: HostImageDimensions): boolean {
   if (_resolver === null) return false;
   return _resolver(source, out);
 }

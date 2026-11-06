@@ -1,8 +1,11 @@
+import type { Bitmap } from '@flighthq/bitmap/contract';
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
 import { decodeImage, decodeImagePremultiplied } from '@flighthq/image-codec/contract';
 import type { HostImageDecodeCapabilities, ImageDecodeFallback } from '@flighthq/image-codec/contract';
-import type { AlphaType, Bitmap, TextureSource, EntityConstruction } from '@flighthq/types/contract';
-import { BitmapTextureSourceKind, ResourceResolutionState } from '@flighthq/types/contract';
+import { ResourceResolutionState } from '@flighthq/resource/contract';
+import type { AlphaType, TextureSource } from '@flighthq/texture/contract';
+import { BitmapTextureSourceKind } from '@flighthq/texture/contract';
 
 import type {
   EmbeddedImageResourceReference,

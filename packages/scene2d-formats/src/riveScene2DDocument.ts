@@ -1,5 +1,6 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { createEmbeddedImageResourceReference } from '@flighthq/image/contract';
+import type { ImageResourceReference } from '@flighthq/image/contract';
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import { addNodeChild, getNodeChildAt, getNodeChildCount } from '@flighthq/node/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
@@ -7,7 +8,6 @@ import type {
   DisplayObject,
   EntityConstruction,
   PathBooleanKernel,
-  ImageResourceReference,
   ImportDiagnostic,
   Node2D,
   Scene2DSlotReference,

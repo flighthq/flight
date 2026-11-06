@@ -1,4 +1,5 @@
 import { getMatrix4Position } from '@flighthq/geometry/contract';
+import type { ExternalImageResourceReference } from '@flighthq/image/contract';
 import {
   CANONICAL_MESH_GEOMETRY_LAYOUT,
   createMeshGeometry,
@@ -15,12 +16,7 @@ import { isMesh } from '@flighthq/scene3d/contract';
 import type { Scene3DDocument } from '@flighthq/scene3d/contract';
 import type { Node3D } from '@flighthq/scene3d/contract';
 import { getTextureSource } from '@flighthq/texture/contract';
-import type {
-  BlinnPhongMaterial,
-  ExternalImageResourceReference,
-  ImportDiagnostic,
-  Scene3DAnimationTarget,
-} from '@flighthq/types/contract';
+import type { BlinnPhongMaterial, ImportDiagnostic, Scene3DAnimationTarget } from '@flighthq/types/contract';
 import { BlinnPhongMaterialKind, ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
 import { parseMd5Anim } from './md5AnimParse.ts';

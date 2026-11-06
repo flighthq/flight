@@ -1,8 +1,9 @@
 import type { HostImageDecodeCapabilities } from '@flighthq/image-codec/contract';
 import { resolveImageResourceReference } from '@flighthq/image/contract';
+import type { ImageResourceFetch, ImageResourceReference } from '@flighthq/image/contract';
 import { emitSignal } from '@flighthq/signals/contract';
 import { setTextureSource } from '@flighthq/texture/contract';
-import type { ImageResourceFetch, ImageResourceReference, TextureSource } from '@flighthq/types/contract';
+import type { TextureSource } from '@flighthq/types/contract';
 
 import { reportScene2DResourceFailure } from './scene2DResourceDiagnostics.ts';
 import type { Scene2DDocument } from './types/Scene2DDocument.ts';

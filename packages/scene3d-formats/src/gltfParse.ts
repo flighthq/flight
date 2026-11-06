@@ -8,6 +8,7 @@ import {
 } from '@flighthq/geometry/contract';
 import { detectImageMimeType } from '@flighthq/image-codec/contract';
 import { createEmbeddedImageResourceReference, createExternalImageResourceReference } from '@flighthq/image/contract';
+import type { ImageResourceReference } from '@flighthq/image/contract';
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import { createStandardPbrMaterial } from '@flighthq/materials/contract';
 import {
@@ -28,7 +29,6 @@ import type { Scene3DDocument, Scene3DDocumentMesh, Scene3DDocumentNode } from '
 import { Node3DKind } from '@flighthq/scene3d/contract';
 import { createTexture } from '@flighthq/texture/contract';
 import type {
-  ImageResourceReference,
   ImportDiagnostic,
   Material,
   MaterialLike,

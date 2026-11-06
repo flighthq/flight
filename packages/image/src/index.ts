@@ -14,3 +14,12 @@ export {
   resetFailedImageResourceReference,
   resolveImageResourceReference,
 } from './imageResourceReference.ts';
+export { ImageResourceFailureKind, ImageResourceReferenceKind } from './types.ts';
+export type {
+  EmbeddedImageResourceReference,
+  ExternalImageResourceReference,
+  ImageResourceFailure,
+  ImageResourceFetch,
+  ImageResourceReference,
+  ImageResourceReferenceResolutionExplanation,
+} from './types.ts';

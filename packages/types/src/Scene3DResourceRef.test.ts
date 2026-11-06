@@ -1,10 +1,11 @@
-import { EntityRuntimeKey } from './Entity.ts';
 import type {
   EmbeddedImageResourceReference,
   ExternalImageResourceReference,
   ImageResourceReference,
-} from './ImageResourceReference.ts';
-import { ImageResourceReferenceKind } from './ImageResourceReference.ts';
+} from '@flighthq/image/contract';
+import { ImageResourceReferenceKind } from '@flighthq/image/contract';
+
+import { EntityRuntimeKey } from './Entity.ts';
 import { ResourceResolutionState } from './ResourceResolutionState.ts';
 
 describe('ImageResourceReference', () => {

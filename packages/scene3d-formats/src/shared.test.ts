@@ -1,10 +1,10 @@
 import { createEmbeddedImageResourceReference, createExternalImageResourceReference } from '@flighthq/image/contract';
-import { getTextureSource } from '@flighthq/texture/contract';
 import type {
   EmbeddedImageResourceReference,
   ExternalImageResourceReference,
   ImageResourceReference,
-} from '@flighthq/types/contract';
+} from '@flighthq/image/contract';
+import { getTextureSource } from '@flighthq/texture/contract';
 import { ResourceResolutionState } from '@flighthq/types/contract';
 
 import { getTestTextureResource } from './scene3DFormatsTestHelper.ts';

@@ -1,5 +1,5 @@
+import type { Bitmap } from '@flighthq/bitmap/contract';
 import { detectImageMimeType } from '@flighthq/image-codec/contract';
-import type { Bitmap } from '@flighthq/types/contract';
 
 import type { HostImageCapability, ImageResource } from './types.ts';
 

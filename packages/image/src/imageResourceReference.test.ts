@@ -1,7 +1,9 @@
+import type { Bitmap } from '@flighthq/bitmap/contract';
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { EntityRuntimeKey } from '@flighthq/entity/contract';
 import type { HostImageDecodeCapabilities, HostImageDecodeFormatCapability } from '@flighthq/image-codec/contract';
-import type { Bitmap } from '@flighthq/types/contract';
-import { BitmapTextureSourceKind, EntityRuntimeKey, ResourceResolutionState } from '@flighthq/types/contract';
+import { ResourceResolutionState } from '@flighthq/resource/contract';
+import { BitmapTextureSourceKind } from '@flighthq/texture/contract';
 
 import {
   createEmbeddedImageResourceReference,

@@ -8,9 +8,6 @@
       "path": "../image-codec"
     },
     {
-      "path": "../types"
-    },
-    {
       "path": "../bitmap/tsconfig.contract.json"
     },
     {

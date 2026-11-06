@@ -8,6 +8,7 @@ import {
   rotateVector3ByQuaternion,
   transposeMatrix4,
 } from '@flighthq/geometry/contract';
+import type { ExternalImageResourceReference } from '@flighthq/image/contract';
 import type { PointLight, SpotLight } from '@flighthq/lighting/contract';
 import {
   getMeshGeometryIndexCount,
@@ -22,13 +23,7 @@ import { getNodeChildren } from '@flighthq/node/contract';
 import { isMesh } from '@flighthq/scene3d/contract';
 import type { Node3D } from '@flighthq/scene3d/contract';
 import { getTextureSource } from '@flighthq/texture/contract';
-import type {
-  BlinnPhongMaterial,
-  ExternalImageResourceReference,
-  ImportDiagnostic,
-  Quaternion,
-  Vector3,
-} from '@flighthq/types/contract';
+import type { BlinnPhongMaterial, ImportDiagnostic, Quaternion, Vector3 } from '@flighthq/types/contract';
 import { BlinnPhongMaterialKind, ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
 import { getTestTextureResource } from './scene3DFormatsTestHelper.ts';

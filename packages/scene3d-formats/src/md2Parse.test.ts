@@ -1,3 +1,4 @@
+import type { ExternalImageResourceReference } from '@flighthq/image/contract';
 import {
   getMeshGeometryIndexCount,
   getMeshGeometryVertexCount,
@@ -10,12 +11,7 @@ import { getNodeChildren } from '@flighthq/node/contract';
 import { isMesh } from '@flighthq/scene3d/contract';
 import type { Node3D } from '@flighthq/scene3d/contract';
 import { getTextureSource } from '@flighthq/texture/contract';
-import type {
-  BlinnPhongMaterial,
-  ExternalImageResourceReference,
-  ImportDiagnostic,
-  Scene3DAnimationTarget,
-} from '@flighthq/types/contract';
+import type { BlinnPhongMaterial, ImportDiagnostic, Scene3DAnimationTarget } from '@flighthq/types/contract';
 import { BlinnPhongMaterialKind } from '@flighthq/types/contract';
 
 // parseMd2 and createScene3DFromMd2 live in md2Document.ts, which owns the default section-handler

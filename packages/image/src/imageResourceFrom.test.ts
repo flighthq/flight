@@ -1,6 +1,6 @@
+import type { Bitmap } from '@flighthq/bitmap/contract';
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { Bitmap } from '@flighthq/types/contract';
-import { BitmapTextureSourceKind } from '@flighthq/types/contract';
+import { BitmapTextureSourceKind } from '@flighthq/texture/contract';
 
 import { createImageResource } from './imageResource.ts';
 import {

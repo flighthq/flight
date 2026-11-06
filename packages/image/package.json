@@ -46,8 +46,7 @@
     "@flighthq/resource": "*",
     "@flighthq/surface": "*",
     "@flighthq/texture": "*",
-    "@flighthq/texture-formats": "*",
-    "@flighthq/types": "*"
+    "@flighthq/texture-formats": "*"
   },
   "devDependencies": {
     "typescript": "^7.0.2"

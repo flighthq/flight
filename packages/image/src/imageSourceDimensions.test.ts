@@ -1,5 +1,3 @@
-import type { HostImageSource } from '@flighthq/types/contract';
-
 import {
   getHostImageSourceDimensions,
   hasHostImageDimensionResolver,
@@ -13,7 +11,7 @@ afterEach(() => {
   unregisterHostImageDimensionResolver();
 });
 
-const sizedSource = { height: 4, width: 8 } as unknown as HostImageSource;
+const sizedSource = { height: 4, width: 8 } as unknown as CanvasImageSource;
 
 describe('getHostImageSourceDimensions', () => {
   it('measures through the registered resolver', () => {

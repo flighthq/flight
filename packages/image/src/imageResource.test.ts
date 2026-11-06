@@ -1,4 +1,4 @@
-import { CompressedImageTextureSourceKind, ImageTextureSourceKind } from '@flighthq/types/contract';
+import { CompressedImageTextureSourceKind, ImageTextureSourceKind } from '@flighthq/texture/contract';
 
 import {
   cloneImageResource,

@@ -1,9 +1,9 @@
 import type { LinearColorRaw } from '@flighthq/color/contract';
 import { allocateLinearColor, packLinearChannelsToColor } from '@flighthq/color/contract';
+import type { ImageResourceReference } from '@flighthq/image/contract';
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import { createStandardPbrMaterial, getPbrRoughnessFromPhongShininess } from '@flighthq/materials/contract';
 import type {
-  ImageResourceReference,
   ImportDiagnostic,
   MaterialLike,
   StandardPbrMaterial,

@@ -6,6 +6,8 @@ import { AdvancedBlendMode } from '@flighthq/effects/contract';
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { allocateGlyphRasterizerBackendFromGlyphOutlineSource } from '@flighthq/font/contract';
 import { createGlyphAtlas, getGlyphAtlasEntry } from '@flighthq/glyphatlas/contract';
+import type { EmbeddedImageResourceReference } from '@flighthq/image/contract';
+import { ImageResourceReferenceKind } from '@flighthq/image/contract';
 import { collectImportDiagnostics } from '@flighthq/importdiagnostics/contract';
 import { BlendMode } from '@flighthq/materials/contract';
 import {
@@ -44,7 +46,6 @@ import { setTextureSource } from '@flighthq/texture/contract';
 import type { TimelineAudioCue } from '@flighthq/timeline/contract';
 import type {
   HostDecompressDeflateCapability,
-  EmbeddedImageResourceReference,
   ImportDiagnostic,
   Node2D,
   Sprite,
@@ -55,7 +56,6 @@ import {
   Compression,
   CompressionFraming,
   DisplayObjectKind,
-  ImageResourceReferenceKind,
   ImportDiagnosticSeverity,
   ResourceResolutionState,
   SpriteKind,

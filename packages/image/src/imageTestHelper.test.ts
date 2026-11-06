@@ -1,5 +1,3 @@
-import type { HostImageSource } from '@flighthq/types/contract';
-
 import { getHostImageSourceDimensions, hasHostImageDimensionResolver } from './imageSourceDimensions.ts';
 import {
   registerTestImageDimensionResolver,
@@ -17,7 +15,7 @@ describe('registerTestImageDimensionResolver', () => {
     const out = { height: 0, width: 0 };
 
     expect(hasHostImageDimensionResolver()).toBe(true);
-    expect(getHostImageSourceDimensions({ height: 3, width: 9 } as unknown as HostImageSource, out)).toBe(true);
+    expect(getHostImageSourceDimensions({ height: 3, width: 9 } as unknown as CanvasImageSource, out)).toBe(true);
     expect(out).toStrictEqual({ height: 3, width: 9 });
   });
 });
@@ -26,7 +24,7 @@ describe('testImageDimensionResolver', () => {
   it('reads width and height off a sized handle', () => {
     const out = { height: 0, width: 0 };
 
-    expect(testImageDimensionResolver({ height: 6, width: 12 } as unknown as HostImageSource, out)).toBe(true);
+    expect(testImageDimensionResolver({ height: 6, width: 12 } as unknown as CanvasImageSource, out)).toBe(true);
     expect(out).toStrictEqual({ height: 6, width: 12 });
   });
 
@@ -35,7 +33,7 @@ describe('testImageDimensionResolver', () => {
   it('declines a handle carrying no numeric size and leaves out untouched', () => {
     const out = { height: 5, width: 7 };
 
-    expect(testImageDimensionResolver({} as unknown as HostImageSource, out)).toBe(false);
+    expect(testImageDimensionResolver({} as unknown as CanvasImageSource, out)).toBe(false);
     expect(out).toStrictEqual({ height: 5, width: 7 });
   });
 });

@@ -1,6 +1,6 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { EntityConstruction, HostImageSource } from '@flighthq/types/contract';
-import { CompressedImageTextureSourceKind, ImageTextureSourceKind } from '@flighthq/types/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
+import { CompressedImageTextureSourceKind, ImageTextureSourceKind } from '@flighthq/texture/contract';
 
 import { getHostImageSourceDimensions } from './imageSourceDimensions.ts';
 import type { CompressedImageData, CompressedImageResource } from './types.ts';
@@ -30,7 +30,7 @@ export function createCompressedImageResource(compressed: Readonly<CompressedIma
 // Wraps a borrowed host handle whose size is read through the registered host dimension resolver. A
 // caller that already holds the size — a host factory building from its own canvas or decoded bitmap —
 // sets width and height directly instead and needs no resolver.
-export function createImageResource(image: HostImageSource): ImageResource {
+export function createImageResource(image: CanvasImageSource): ImageResource {
   const resource = allocateEntity<ImageResource>();
   resource.alphaType = DECODED_ALPHA_TYPE;
   resource.gamut = DECODED_GAMUT;

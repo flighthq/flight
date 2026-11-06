@@ -1,3 +1,5 @@
+import type { ImageResourceReference } from '@flighthq/image/contract';
+import { ImageResourceReferenceKind } from '@flighthq/image/contract';
 import { createBoxMeshGeometry } from '@flighthq/meshgeometry/contract';
 import { addNodeChild } from '@flighthq/node/contract';
 import type { GlMeshMaterialRenderer } from '@flighthq/render-gl/contract';
@@ -6,10 +8,9 @@ import { RenderRegistryTable, SceneCoverage } from '@flighthq/render/contract';
 import { createMesh, createScene3D, createScene3DKindUsage, getScene3DKindUsage } from '@flighthq/scene3d/contract';
 import { createRimModifier, createShadedMaterial } from '@flighthq/shading/contract';
 import { createTexture } from '@flighthq/texture/contract';
-import type { GlRenderState, ImageResourceReference } from '@flighthq/types/contract';
+import type { GlRenderState } from '@flighthq/types/contract';
 import {
   EntityRuntimeKey,
-  ImageResourceReferenceKind,
   RequirementFacet,
   ResourceResolutionState,
   StandardMaterialKind,

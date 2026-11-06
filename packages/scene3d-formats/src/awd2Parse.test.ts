@@ -1,6 +1,7 @@
 import { sampleAnimationTrack } from '@flighthq/animation/contract';
 import { sdkHostDecompressDeflate } from '@flighthq/compression/contract';
 import { createVector3, rotateVector3ByQuaternion } from '@flighthq/geometry/contract';
+import type { EmbeddedImageResourceReference, ExternalImageResourceReference } from '@flighthq/image/contract';
 import type { AmbientLight, DirectionalLight, PointLight } from '@flighthq/lighting/contract';
 import { AmbientLightKind, DirectionalLightKind, PointLightKind } from '@flighthq/lighting/contract';
 import {
@@ -27,14 +28,7 @@ import type {
   HostDecompressLzmaCapability,
 } from '@flighthq/types/contract';
 import { Compression, CompressionFraming } from '@flighthq/types/contract';
-import type {
-  AnimationClip,
-  EmbeddedImageResourceReference,
-  ExternalImageResourceReference,
-  ImportDiagnostic,
-  Scene3DAnimationTarget,
-  ShadedMaterial,
-} from '@flighthq/types/contract';
+import type { AnimationClip, ImportDiagnostic, Scene3DAnimationTarget, ShadedMaterial } from '@flighthq/types/contract';
 import { ImportDiagnosticSeverity, ResourceResolutionState, ShadedMaterialKind } from '@flighthq/types/contract';
 
 import { awd2AllBlockHandlers, awd2SkeletonFamily } from './awd2BlockRegistry.ts';
