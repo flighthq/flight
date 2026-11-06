@@ -3,15 +3,11 @@
 // complete versioned verification handshake only when tool-capture is driving the page.
 
 import type { Bitmap } from '@flighthq/bitmap/contract';
+import type { GlRenderState } from '@flighthq/render-gl/contract';
+import type { WgpuRenderState, WgpuScreenRenderTarget } from '@flighthq/render-wgpu/contract';
+import type { CanvasRenderState, CanvasScreenRenderTarget } from '@flighthq/scene2d-canvas/contract';
+import type { DomRenderState } from '@flighthq/scene2d-dom/contract';
 import type { WgpuPresentationSurface } from '@flighthq/surface/contract';
-import type {
-  CanvasRenderState,
-  CanvasScreenRenderTarget,
-  DomRenderState,
-  GlRenderState,
-  WgpuRenderState,
-  WgpuScreenRenderTarget,
-} from '@flighthq/types/contract';
 
 import type { CaptureBenchmarkTarget, CaptureVerification } from './captureProtocol.ts';
 import { CAPTURE_PROTOCOL_VERSION } from './captureProtocol.ts';

@@ -7,6 +7,7 @@
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,
+    "moduleSuffixes": [".render-gl-types", ".scene2d-canvas-types", ".scene2d-dom-types", ".scene2d-types", ""],
     "types": ["node", "vitest/globals", "@webgpu/types"]
   },
   "include": ["src"],
@@ -24,16 +25,25 @@
       "path": "../log"
     },
     {
+      "path": "../render-gl/tsconfig.contract.json"
+    },
+    {
       "path": "../render-wgpu/tsconfig.runtime.json"
+    },
+    {
+      "path": "../scene2d/tsconfig.contract.json"
+    },
+    {
+      "path": "../scene2d-canvas/tsconfig.contract.json"
+    },
+    {
+      "path": "../scene2d-dom/tsconfig.contract.json"
     },
     {
       "path": "../surface/tsconfig.contract.json"
     },
     {
       "path": "../bitmap/tsconfig.runtime.json"
-    },
-    {
-      "path": "../types"
     },
     {
       "path": "../render/tsconfig.runtime.json"

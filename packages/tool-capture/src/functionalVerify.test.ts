@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 
 import { createBitmap, createBitmapFingerprint, formatBitmapFingerprint } from '@flighthq/bitmap/contract';
-import type { DomRenderState } from '@flighthq/types/contract';
+import type { DomRenderState } from '@flighthq/scene2d-dom/contract';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { FunctionalTarget } from './functionalVerify.ts';

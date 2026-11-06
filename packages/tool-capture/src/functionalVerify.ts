@@ -10,19 +10,15 @@ import { enableWgpuEffectGuards } from '@flighthq/effects-wgpu/contract';
 import { createWebBitmapFromCanvas } from '@flighthq/host-web/contract';
 import { createLogState } from '@flighthq/log/contract';
 import type { LogState } from '@flighthq/log/contract';
+import type { GlRenderState } from '@flighthq/render-gl/contract';
 import {
   createBitmapFromWgpuScreenRenderTarget,
   enableWgpuScreenRenderTargetCapture,
 } from '@flighthq/render-wgpu/contract';
-import type {
-  CanvasRenderState,
-  CanvasScreenRenderTarget,
-  Node2D,
-  DomRenderState,
-  GlRenderState,
-  WgpuRenderState,
-  WgpuScreenRenderTarget,
-} from '@flighthq/types/contract';
+import type { WgpuRenderState, WgpuScreenRenderTarget } from '@flighthq/render-wgpu/contract';
+import type { CanvasRenderState, CanvasScreenRenderTarget } from '@flighthq/scene2d-canvas/contract';
+import type { DomRenderState } from '@flighthq/scene2d-dom/contract';
+import type { Node2D } from '@flighthq/scene2d/contract';
 
 import { CAPTURE_PROTOCOL_VERSION } from './captureProtocol.ts';
 import type { CaptureBenchmarkTarget, CaptureVerification } from './captureProtocol.ts';
