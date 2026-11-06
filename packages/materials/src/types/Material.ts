@@ -1,4 +1,4 @@
-import type { Entity, EntityWithoutRuntime, Kind } from '@flighthq/types/contract';
+import type { EntityRaw, EntityRuntime, EntityRuntimeKey, EntityWithoutRuntime, Kind } from '@flighthq/entity/contract';
 
 // Serializable per-node rendering intent. Plain data only — named fields, no GPU
 // handles and no function references — so a material round-trips through scene
@@ -29,7 +29,8 @@ import type { Entity, EntityWithoutRuntime, Kind } from '@flighthq/types/contrac
 // SelectionState, GizmoState and the controller types.
 export declare const MaterialDimensionKey: unique symbol;
 
-export interface Material extends Entity {
+export interface Material extends EntityRaw {
+  [EntityRuntimeKey]: EntityRuntime | undefined;
   readonly kind: Kind;
   // The authored material name — an importer preserves the source file's material identity here
   // (an MTL `newmtl`, a glTF `material.name`, a 3DS material chunk), so a material stays
@@ -45,4 +46,6 @@ export type MaterialLike = EntityWithoutRuntime<Material>;
 // Per-node, material-specific data (the companion to HasMaterial.material). Plain serializable
 // data a material consumes per node. Its concrete shape is defined by the material kind that reads
 // it.
-export interface MaterialData extends Entity {}
+export interface MaterialData extends EntityRaw {
+  [EntityRuntimeKey]: EntityRuntime | undefined;
+}

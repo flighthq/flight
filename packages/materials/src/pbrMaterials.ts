@@ -1,5 +1,5 @@
 import { allocateLinearColor, packLinearChannelsToColor, unpackColorToLinear } from '@flighthq/color/contract';
-import type { NonEntityCreateResult } from '@flighthq/types/contract';
+import type { NonEntityCreateResult } from '@flighthq/entity/contract';
 
 import type {
   MaterialConversionExplanation,

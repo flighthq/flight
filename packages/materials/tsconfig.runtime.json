@@ -7,7 +7,7 @@
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,
-    "moduleSuffixes": [".adjustments-types", ""],
+    "moduleSuffixes": [".adjustments-types", ".texture-types", ""],
     "tsBuildInfoFile": "dist/.tsbuildinfo.runtime"
   },
   "references": [
@@ -24,7 +24,7 @@
       "path": "../log"
     },
     {
-      "path": "../types"
+      "path": "../texture/tsconfig.contract.json"
     },
     {
       "path": "./tsconfig.contract.json"

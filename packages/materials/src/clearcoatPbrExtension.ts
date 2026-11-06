@@ -1,5 +1,5 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { EntityConstruction } from '@flighthq/types/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
 
 import type { ClearcoatPbrExtension } from './contract.materials-types.ts';
 import { ClearcoatPbrExtensionKind } from './contract.materials-types.ts';

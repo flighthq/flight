@@ -1,6 +1,6 @@
 import { logOnce } from '@flighthq/log/contract';
 import type { LogState } from '@flighthq/log/contract';
-import { LogLevel } from '@flighthq/types/contract';
+import { LogLevel } from '@flighthq/log/contract';
 
 import type { MaterialConversionExplanation } from './contract.materials-types.ts';
 import { setMaterialConversionGuard } from './pbrMaterials.ts';

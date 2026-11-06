@@ -17,7 +17,7 @@
       "path": "../log"
     },
     {
-      "path": "../types"
+      "path": "../texture/tsconfig.contract.json"
     },
     {
       "path": "./tsconfig.contract.json"

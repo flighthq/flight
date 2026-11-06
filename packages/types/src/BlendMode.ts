@@ -10,4 +10,5 @@ export const BlendMode = {
   Screen: 'Screen',
 } as const;
 
+/** @deprecated Import material contracts from `@flighthq/materials/contract`. */
 export type BlendMode = MaterialsBlendMode;

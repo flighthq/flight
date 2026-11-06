@@ -1,4 +1,4 @@
-import type { Kind } from '@flighthq/types/contract';
+import type { Kind } from '@flighthq/entity/contract';
 
 import type { MaterialAlphaMode, Material3D, Material3DOptions } from './contract.materials-types.ts';
 import { BlendMode } from './contract.materials-types.ts';

@@ -7,42 +7,9 @@
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,
-    "moduleSuffixes": [
-      ".materials-types",
-      ".scene3d-wgpu-types",
-      ".render-wgpu-types",
-      ".app-types",
-      ".flow-types",
-      ".geometry-types",
-      ".font-types",
-      ".host-types",
-      ".menu-types",
-      ".midi-types",
-      ".notification-types",
-      ".path-boolean-types",
-      ".path-types",
-      ".permissions-types",
-      ".preferences-types",
-      ".scene2d-dom-types",
-      ".scene2d-formats-types",
-      ".scene2d-wgpu-types",
-      ".selection-types",
-      ".shape-formats-types",
-      ".shape-types",
-      ".spatial-types",
-      ".statechart-types",
-      ".text-types",
-      ".textlayout-types",
-      ".textshaper-types",
-      ".velocity-types",
-      ""
-    ],
+    "moduleSuffixes": [".texture-types", ""],
     "tsBuildInfoFile": "dist/.tsbuildinfo.contract"
   },
-  "references": [
-    {
-      "path": "../types/tsconfig.materials-types.json"
-    }
-  ],
+  "references": [{ "path": "../entity" }, { "path": "../texture/tsconfig.contract.json" }],
   "include": ["src/contract.materials-types.ts", "src/types/**/*.ts"]
 }

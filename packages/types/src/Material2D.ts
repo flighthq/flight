@@ -1,2 +1,2 @@
-// Compatibility facade: materials owns these contracts.
+/** @deprecated Import material contracts from `@flighthq/materials/contract`. */
 export type { Material2D } from '@flighthq/materials/contract';

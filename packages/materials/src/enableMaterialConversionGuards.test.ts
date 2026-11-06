@@ -1,6 +1,6 @@
 import { addLogSink, createLogState, createMemoryLogSink, getMemoryLogSinkEntries } from '@flighthq/log/contract';
 import type { LogState } from '@flighthq/log/contract';
-import type { LogEntry } from '@flighthq/types/contract';
+import type { LogEntry } from '@flighthq/log/contract';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { createPhongMaterial } from './classicMaterials.ts';

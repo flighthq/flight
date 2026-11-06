@@ -1,5 +1,5 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { EntityConstruction } from '@flighthq/types/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
 
 import type { SheenPbrExtension } from './contract.materials-types.ts';
 import { SheenPbrExtensionKind } from './contract.materials-types.ts';

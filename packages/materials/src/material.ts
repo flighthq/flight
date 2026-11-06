@@ -1,5 +1,5 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { Kind, EntityConstruction } from '@flighthq/types/contract';
+import type { EntityConstruction, Kind } from '@flighthq/entity/contract';
 
 import type { Material } from './contract.materials-types.ts';
 

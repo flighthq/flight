@@ -1,4 +1,4 @@
-import type { Texture } from '@flighthq/types/contract';
+import type { Texture } from '@flighthq/texture/contract';
 
 import { SpecularGlossinessPbrMaterialKind, StandardPbrMaterialKind } from './contract.materials-types.ts';
 import {
