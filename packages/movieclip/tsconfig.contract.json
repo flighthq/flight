@@ -1,0 +1,25 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "composite": true,
+    "rootDir": "src",
+    "outDir": "dist",
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "moduleSuffixes": [".scene2d-types", ".spritesheet-types", ".timeline-types", ""],
+    "tsBuildInfoFile": "dist/.tsbuildinfo.contract"
+  },
+  "references": [
+    {
+      "path": "../scene2d/tsconfig.contract.json"
+    },
+    {
+      "path": "../spritesheet/tsconfig.contract.json"
+    },
+    {
+      "path": "../timeline/tsconfig.contract.json"
+    }
+  ],
+  "include": ["src/contract.movieclip-types.ts", "src/types.ts"]
+}

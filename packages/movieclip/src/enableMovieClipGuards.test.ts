@@ -5,9 +5,8 @@ import {
   getMemoryLogSinkEntries,
   removeLogSink,
 } from '@flighthq/log/contract';
-import type { LogState } from '@flighthq/log/contract';
+import type { LogEntry, LogState, MemoryLogSink } from '@flighthq/log/contract';
 import { createSpritesheet, createSpritesheetAnimation } from '@flighthq/spritesheet/contract';
-import type { LogEntry, MemoryLogSink } from '@flighthq/types/contract';
 
 import { areMovieClipGuardsEnabled, disableMovieClipGuards, enableMovieClipGuards } from './enableMovieClipGuards.ts';
 import { createSpritesheetTimelineSource } from './spritesheetTimelineSource.ts';

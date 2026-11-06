@@ -1,11 +1,10 @@
 import { createMovieClip } from '@flighthq/movieclip/contract';
+import type { MovieClip, MovieClipData } from '@flighthq/movieclip/contract';
 import { getNodeRuntime, invalidateNodeLocalBounds } from '@flighthq/node/contract';
 import { createDisplayObject, createSprite } from '@flighthq/scene2d/contract';
 import type { MorphShape } from '@flighthq/shape/contract';
 import type {
   BoundsNode,
-  MovieClip,
-  MovieClipData,
   Node2D,
   Node2DData,
   Node2DRuntime,

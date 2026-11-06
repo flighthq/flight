@@ -46,11 +46,11 @@
     "@flighthq/node": "*",
     "@flighthq/timeline": "*",
     "@flighthq/spritesheet": "*",
-    "@flighthq/textureatlas": "*",
-    "@flighthq/types": "*"
+    "@flighthq/textureatlas": "*"
   },
   "devDependencies": {
     "@flighthq/image": "*",
+    "@flighthq/texture": "*",
     "@flighthq/textureatlas": "*",
     "typescript": "^7.0.2"
   },

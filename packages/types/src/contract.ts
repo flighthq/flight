@@ -452,8 +452,6 @@ export * from './MotionBlurEffect.ts';
 export * from './MotionPath.ts';
 export * from './MouseButton.ts';
 export * from './MouseWheelMode.ts';
-export * from './MovieClip.ts';
-export * from './MovieClipSignals.ts';
 export * from './NativeText.ts';
 export * from './MutableNumberArray.ts';
 export * from './Net.ts';

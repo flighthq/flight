@@ -232,7 +232,7 @@
       "path": "../motionpath"
     },
     {
-      "path": "../movieclip"
+      "path": "../movieclip/tsconfig.runtime.json"
     },
     {
       "path": "../net"

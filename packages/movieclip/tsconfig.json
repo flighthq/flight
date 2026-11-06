@@ -1,13 +1,5 @@
 {
-  "extends": "../../tsconfig.base.json",
-  "compilerOptions": {
-    "composite": true,
-    "rootDir": "src",
-    "outDir": "dist",
-    "declaration": true,
-    "declarationMap": true,
-    "sourceMap": true
-  },
+  "files": [],
   "references": [
     {
       "path": "../entity"
@@ -31,11 +23,16 @@
       "path": "../textureatlas/tsconfig.runtime.json"
     },
     {
+      "path": "../texture/tsconfig.runtime.json"
+    },
+    {
       "path": "../timeline/tsconfig.runtime.json"
     },
     {
-      "path": "../types"
+      "path": "./tsconfig.contract.json"
+    },
+    {
+      "path": "./tsconfig.runtime.json"
     }
-  ],
-  "include": ["src"]
+  ]
 }

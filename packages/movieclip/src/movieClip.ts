@@ -1,4 +1,6 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { EntityRuntimeKey } from '@flighthq/entity/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
 import { createNode2D, createNode2DRuntime, getNode2DRuntime } from '@flighthq/scene2d/contract';
 import {
   addTimelineFrameScript,
@@ -17,14 +19,9 @@ import {
   updateTimeline,
 } from '@flighthq/timeline/contract';
 import type { FrameScript, TimelineLabel, TimelineSource } from '@flighthq/timeline/contract';
-import type {
-  EntityConstruction,
-  MovieClip,
-  MovieClipData,
-  MovieClipRuntime,
-  MovieClipSignals,
-} from '@flighthq/types/contract';
-import { EntityRuntimeKey, MovieClipKind } from '@flighthq/types/contract';
+
+import type { MovieClip, MovieClipData, MovieClipRuntime, MovieClipSignals } from './types.ts';
+import { MovieClipKind } from './types.ts';
 
 // The MovieClip display node lives here, with its playback engine — a MovieClip is a Node2D whose
 // content is driven by a timeline, so the node and the engine that constructs its frames are one feature.

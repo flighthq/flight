@@ -4,6 +4,7 @@ import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { createMatrix, inverseMatrix, matrixTransformPointXY, multiplyMatrix } from '@flighthq/geometry/contract';
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import { addMovieClipFrameScript, setMovieClipSource } from '@flighthq/movieclip/contract';
+import type { MovieClip } from '@flighthq/movieclip/contract';
 import {
   addNodeChild,
   addNodeOrderListEntry,
@@ -37,7 +38,6 @@ import type {
   HostDecompressDeflateCapability,
   HostDecompressLzmaCapability,
   ImportDiagnostic,
-  MovieClip,
   Node2D,
   Node2DFields,
   Scene2DSlotReference,

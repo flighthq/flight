@@ -1,7 +1,5 @@
 import { createTimeline, createTimelineSource, playTimeline } from '@flighthq/timeline/contract';
 import type { Timeline } from '@flighthq/timeline/contract';
-import type { MovieClip } from '@flighthq/types/contract';
-import { MovieClipKind } from '@flighthq/types/contract';
 
 import {
   addMovieClipFrameScript,
@@ -28,6 +26,8 @@ import {
   stopMovieClip,
   updateMovieClip,
 } from './movieClip.ts';
+import type { MovieClip } from './types.ts';
+import { MovieClipKind } from './types.ts';
 
 describe('addMovieClipFrameScript', () => {
   it('does nothing when timeline is null', () => {

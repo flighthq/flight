@@ -21,8 +21,13 @@ export {
   updateMovieClip,
 } from './movieClip.ts';
 export { createSpritesheetTimelineSource, explainSpritesheetTimelineSource } from './spritesheetTimelineSource.ts';
+export { MovieClipKind } from './contract.ts';
 export type {
+  MovieClip,
+  MovieClipData,
+  MovieClipRuntime,
+  MovieClipSignals,
   SpritesheetTimelineSourceExplanation,
   SpritesheetTimelineSourceGuard,
   SpritesheetTimelineSourceUnsupportedField,
-} from './spritesheetTimelineSource.ts';
+} from './contract.ts';

@@ -6,7 +6,8 @@ import {
   playMovieClip,
   setMovieClipSource,
 } from '@flighthq/movieclip/contract';
-import type { MovieClip, Node2D } from '@flighthq/types/contract';
+import type { MovieClip } from '@flighthq/movieclip/contract';
+import type { Node2D } from '@flighthq/types/contract';
 import { EntityRuntimeKey, ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
 import { readSwfAbcFrameScripts, readSwfFrameActions } from './swfFrameAction.ts';

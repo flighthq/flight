@@ -13,6 +13,7 @@
   "references": [
     { "path": "../entity" },
     { "path": "../geometry/tsconfig.runtime.json" },
+    { "path": "../movieclip/tsconfig.runtime.json" },
     { "path": "../node/tsconfig.runtime.json" },
     { "path": "../registry" },
     { "path": "../scene-document/tsconfig.contract.json" },

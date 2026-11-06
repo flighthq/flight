@@ -1,9 +1,9 @@
+import { MovieClipKind } from '@flighthq/movieclip/contract';
 import { MorphShapeKind, Scale9ShapeKind, ShapeKind } from '@flighthq/shape/contract';
 import { RichTextKind, TextLabelKind } from '@flighthq/text/contract';
 import {
   DisplayObjectKind,
   HtmlViewKind,
-  MovieClipKind,
   QuadBatchKind,
   Scale9SpriteKind,
   SpriteKind,

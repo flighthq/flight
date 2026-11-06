@@ -1,6 +1,8 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
 import { addNodeChild, invalidateNodeLocalTransform } from '@flighthq/node/contract';
 import { createSprite } from '@flighthq/scene2d/contract';
+import type { Node2D, Sprite } from '@flighthq/scene2d/contract';
 import type { Spritesheet, SpritesheetAnimation } from '@flighthq/spritesheet/contract';
 import {
   getTextureAtlasRegionById,
@@ -8,30 +10,13 @@ import {
   getTextureAtlasRegionTexture,
 } from '@flighthq/textureatlas/contract';
 import type { TimelineSource } from '@flighthq/timeline/contract';
-import type { Entity, Node2D, Sprite, EntityConstruction } from '@flighthq/types/contract';
 
-// Authored SpritesheetAnimation fields that a TimelineSource cannot carry. Direction is absent because
-// createSpritesheetTimelineSource materializes it into the source's frame sequence without loss.
-export type SpritesheetTimelineSourceUnsupportedField = 'frameDurations' | 'repeatCount';
-
-// Plain-data answer to which animation semantics createSpritesheetTimelineSource cannot preserve. The
-// source still carries the animation's frame content, uniform frame duration, origin, and direction.
-export interface SpritesheetTimelineSourceExplanation {
-  readonly directionMaterialized: true;
-  readonly unsupportedFields: readonly SpritesheetTimelineSourceUnsupportedField[];
-}
-
-// Nullable diagnostics hook installed by enableMovieClipGuards. The production default is null, so the
-// message text and @flighthq/log remain outside the ordinary spritesheet-to-timeline import graph.
-export type SpritesheetTimelineSourceGuard = (
-  animation: Readonly<SpritesheetAnimation>,
-  explanation: Readonly<SpritesheetTimelineSourceExplanation>,
-) => void;
+import type { SpritesheetTimelineSourceExplanation, SpritesheetTimelineSourceGuard } from './types.ts';
 
 export function createSpritesheetTimelineSource(
   spritesheet: Readonly<Spritesheet>,
   animation: Readonly<SpritesheetAnimation>,
-): TimelineSource & Entity {
+): TimelineSource {
   const out = allocateEntity<TimelineSource>();
   initializeSpritesheetTimelineSource(out, spritesheet, animation);
   return finishEntity(out);

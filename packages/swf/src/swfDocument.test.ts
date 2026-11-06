@@ -17,6 +17,8 @@ import {
   playMovieClip,
   updateMovieClip,
 } from '@flighthq/movieclip/contract';
+import { MovieClipKind } from '@flighthq/movieclip/contract';
+import type { MovieClip } from '@flighthq/movieclip/contract';
 import {
   getNodeChildren,
   getNodeColorAdjustments,
@@ -44,7 +46,6 @@ import type {
   EmbeddedAudioResourceReference,
   EmbeddedImageResourceReference,
   ImportDiagnostic,
-  MovieClip,
   Node2D,
   Sprite,
   Texture2D,
@@ -56,7 +57,6 @@ import {
   DisplayObjectKind,
   ImageResourceReferenceKind,
   ImportDiagnosticSeverity,
-  MovieClipKind,
   ResourceResolutionState,
   SpriteKind,
 } from '@flighthq/types/contract';

@@ -1,0 +1,46 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "composite": true,
+    "rootDir": "src",
+    "outDir": "dist",
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "tsBuildInfoFile": "dist/.tsbuildinfo.runtime"
+  },
+  "references": [
+    {
+      "path": "../entity"
+    },
+    {
+      "path": "../image/tsconfig.runtime.json"
+    },
+    {
+      "path": "../log"
+    },
+    {
+      "path": "../node/tsconfig.runtime.json"
+    },
+    {
+      "path": "../scene2d/tsconfig.runtime.json"
+    },
+    {
+      "path": "../spritesheet/tsconfig.runtime.json"
+    },
+    {
+      "path": "../texture/tsconfig.runtime.json"
+    },
+    {
+      "path": "../textureatlas/tsconfig.runtime.json"
+    },
+    {
+      "path": "../timeline/tsconfig.runtime.json"
+    },
+    {
+      "path": "./tsconfig.contract.json"
+    }
+  ],
+  "include": ["src"],
+  "exclude": ["src/contract.movieclip-types.ts", "src/types.ts"]
+}

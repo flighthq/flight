@@ -56,7 +56,7 @@
       "path": "../materials/tsconfig.runtime.json"
     },
     {
-      "path": "../movieclip"
+      "path": "../movieclip/tsconfig.runtime.json"
     },
     {
       "path": "../node/tsconfig.runtime.json"
