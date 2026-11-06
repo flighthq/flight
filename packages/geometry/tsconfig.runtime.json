@@ -10,11 +10,18 @@
     "tsBuildInfoFile": "dist/.tsbuildinfo.runtime"
   },
   "references": [
-    { "path": "../entity" },
-    { "path": "../log" },
-    { "path": "../math" },
-    { "path": "../types" },
-    { "path": "./tsconfig.contract.json" }
+    {
+      "path": "../entity"
+    },
+    {
+      "path": "../log"
+    },
+    {
+      "path": "../math"
+    },
+    {
+      "path": "./tsconfig.contract.json"
+    }
   ],
   "include": ["src/**/*.ts"],
   "exclude": ["src/contract.geometry-types.ts", "src/types.ts"]

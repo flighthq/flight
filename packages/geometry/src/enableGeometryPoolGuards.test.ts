@@ -6,7 +6,7 @@ import {
   createMemoryLogSink,
   getMemoryLogSinkEntries,
 } from '@flighthq/log/contract';
-import type { LogEntry } from '@flighthq/types/contract';
+import type { LogEntry } from '@flighthq/log/contract';
 
 import {
   areGeometryPoolGuardsEnabled,

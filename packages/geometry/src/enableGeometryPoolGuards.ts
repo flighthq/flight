@@ -3,7 +3,7 @@
 
 import { logOnce } from '@flighthq/log/contract';
 import type { LogStateRef } from '@flighthq/log/contract';
-import { LogLevel } from '@flighthq/types/contract';
+import { LogLevel } from '@flighthq/log/contract';
 
 import type { GeometryPoolReleaseFunction, GeometryPoolReleaseGuard } from './geometryPoolGuards.ts';
 import { getGeometryPoolReleaseGuard, setGeometryPoolReleaseGuard } from './geometryPoolGuards.ts';

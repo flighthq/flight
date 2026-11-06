@@ -42,8 +42,7 @@
   "dependencies": {
     "@flighthq/entity": "*",
     "@flighthq/log": "*",
-    "@flighthq/math": "*",
-    "@flighthq/types": "*"
+    "@flighthq/math": "*"
   },
   "devDependencies": {
     "typescript": "^7.0.2"
