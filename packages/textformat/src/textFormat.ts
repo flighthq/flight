@@ -1,47 +1,9 @@
 // Generated from crates/flight-textformat/src/text_format.rs by flight-compiler.
 // Rust is authoritative; run `npm run generate` after changing it.
 
-import type { FontVariation } from './fontVariation.ts';
+import type { TextFormat, TextFormatAlign, TextFormatListMarker } from './types.ts';
 
-export type TextFormatAlign = 'center' | 'end' | 'justify' | 'left' | 'right' | 'start';
-
-export type TextFormatListMarker = 'circle' | 'decimal' | 'disc' | 'none' | 'square';
-
-/**
- * Source optional fields remain absent until a later layout consumer applies defaults.
- */
-export interface TextFormat {
-  align?: TextFormatAlign;
-  blockIndent?: number;
-  bold?: boolean;
-  bullet?: boolean;
-  /**
-   * Packed sRGB RGBA integer, 0xRRGGBBAA; alpha is linear coverage.
-   */
-  color?: number;
-  font?: string;
-  indent?: number;
-  italic?: boolean;
-  kerning?: boolean;
-  leading?: number;
-  leftMargin?: number;
-  letterSpacing?: number;
-  listMarker?: TextFormatListMarker;
-  rightMargin?: number;
-  size?: number;
-  strikethrough?: boolean;
-  /**
-   * Plain source number[], preserving its variable length and order.
-   */
-  tabStops?: number[];
-  target?: string;
-  underline?: boolean;
-  url?: string;
-  /**
-   * Readonly source record sequence, preserving order and repeated axis tags.
-   */
-  variations?: Readonly<FontVariation[]>;
-}
+export type { TextFormat, TextFormatAlign, TextFormatListMarker } from './types.ts';
 
 const DEFAULT_SIZE: number = 12.0;
 

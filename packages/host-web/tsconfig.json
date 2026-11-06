@@ -142,7 +142,7 @@
       "path": "../text/tsconfig.runtime.json"
     },
     {
-      "path": "../textformat"
+      "path": "../textformat/tsconfig.runtime.json"
     },
     {
       "path": "../textshaper/tsconfig.contract.json"

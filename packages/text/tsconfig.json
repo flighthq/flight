@@ -20,7 +20,7 @@
       "path": "../signals"
     },
     {
-      "path": "../textformat"
+      "path": "../textformat/tsconfig.runtime.json"
     },
     {
       "path": "../textlayout/tsconfig.runtime.json"

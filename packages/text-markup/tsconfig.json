@@ -12,7 +12,7 @@
     { "path": "../color" },
     { "path": "../entity" },
     { "path": "../log" },
-    { "path": "../textformat" },
+    { "path": "../textformat/tsconfig.runtime.json" },
     { "path": "../textlayout/tsconfig.runtime.json" },
     { "path": "../types" }
   ],

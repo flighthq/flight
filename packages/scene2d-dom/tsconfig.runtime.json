@@ -62,7 +62,7 @@
       "path": "../text/tsconfig.runtime.json"
     },
     {
-      "path": "../textformat"
+      "path": "../textformat/tsconfig.runtime.json"
     },
     {
       "path": "../textinput/tsconfig.runtime.json"

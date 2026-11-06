@@ -33,6 +33,7 @@
       ".statechart-types",
       ".surface-types",
       ".text-types",
+      ".textformat-types",
       ".textlayout-types",
       ".textshaper-types",
       ".velocity-types",
@@ -159,7 +160,7 @@
       "path": "../text/tsconfig.contract.json"
     },
     {
-      "path": "../textformat"
+      "path": "../textformat/tsconfig.contract.json"
     },
     {
       "path": "../textlayout/tsconfig.contract.json"

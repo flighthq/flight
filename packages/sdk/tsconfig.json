@@ -412,7 +412,7 @@
       "path": "../textbidi"
     },
     {
-      "path": "../textformat"
+      "path": "../textformat/tsconfig.runtime.json"
     },
     {
       "path": "../textinput/tsconfig.runtime.json"

@@ -5,7 +5,7 @@
     { "path": "../font/tsconfig.contract.json" },
     { "path": "../log" },
     { "path": "../signals" },
-    { "path": "../textformat" },
+    { "path": "../textformat/tsconfig.runtime.json" },
     { "path": "./tsconfig.contract.json" },
     { "path": "./tsconfig.runtime.json" }
   ]

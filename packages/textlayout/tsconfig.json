@@ -3,7 +3,7 @@
   "references": [
     { "path": "../entity" },
     { "path": "../geometry/tsconfig.runtime.json" },
-    { "path": "../textformat" },
+    { "path": "../textformat/tsconfig.runtime.json" },
     { "path": "../textshaper/tsconfig.runtime.json" },
     { "path": "./tsconfig.contract.json" },
     { "path": "./tsconfig.runtime.json" }

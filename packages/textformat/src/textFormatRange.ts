@@ -1,8 +1,7 @@
 import { Entity, attachEntityWrapper, getEntityWrapperAs } from '@flighthq/entity/contract';
 
-import type { TextFormat } from './textFormat.ts';
 import { createTextFormatRange } from './textFormatRangeRaw.ts';
-import type { TextFormatRangeRaw } from './textFormatRangeRaw.ts';
+import type { TextFormat, TextFormatRangeRaw } from './types.ts';
 
 export class TextFormatRange extends Entity {
   declare readonly raw: TextFormatRangeRaw;
