@@ -1,5 +1,5 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { EntityRuntimeKey } from '@flighthq/types/contract';
+import type { EntityRuntimeKey } from '@flighthq/entity/contract';
 import { vi } from 'vitest';
 
 import { explainTextSegmenterBackend, webTextSegmenterBackend } from './textSegmenterBackend.ts';
