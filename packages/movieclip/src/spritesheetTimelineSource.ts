@@ -1,22 +1,32 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { addNodeChild, invalidateNodeLocalTransform } from '@flighthq/node/contract';
 import { createSprite } from '@flighthq/scene2d/contract';
+import type { Spritesheet, SpritesheetAnimation } from '@flighthq/spritesheet/contract';
 import {
   getTextureAtlasRegionById,
   getTextureAtlasRegionFrame,
   getTextureAtlasRegionTexture,
 } from '@flighthq/textureatlas/contract';
 import type { TimelineSource } from '@flighthq/timeline/contract';
-import type {
-  Entity,
-  Node2D,
-  Sprite,
-  Spritesheet,
-  SpritesheetAnimation,
-  SpritesheetTimelineSourceExplanation,
-  SpritesheetTimelineSourceGuard,
-  EntityConstruction,
-} from '@flighthq/types/contract';
+import type { Entity, Node2D, Sprite, EntityConstruction } from '@flighthq/types/contract';
+
+// Authored SpritesheetAnimation fields that a TimelineSource cannot carry. Direction is absent because
+// createSpritesheetTimelineSource materializes it into the source's frame sequence without loss.
+export type SpritesheetTimelineSourceUnsupportedField = 'frameDurations' | 'repeatCount';
+
+// Plain-data answer to which animation semantics createSpritesheetTimelineSource cannot preserve. The
+// source still carries the animation's frame content, uniform frame duration, origin, and direction.
+export interface SpritesheetTimelineSourceExplanation {
+  readonly directionMaterialized: true;
+  readonly unsupportedFields: readonly SpritesheetTimelineSourceUnsupportedField[];
+}
+
+// Nullable diagnostics hook installed by enableMovieClipGuards. The production default is null, so the
+// message text and @flighthq/log remain outside the ordinary spritesheet-to-timeline import graph.
+export type SpritesheetTimelineSourceGuard = (
+  animation: Readonly<SpritesheetAnimation>,
+  explanation: Readonly<SpritesheetTimelineSourceExplanation>,
+) => void;
 
 export function createSpritesheetTimelineSource(
   spritesheet: Readonly<Spritesheet>,
@@ -41,7 +51,7 @@ export function explainSpritesheetTimelineSource(
 
 // Exposes a spritesheet animation as a TimelineSource so a MovieClip can play it (the spritesheet side of
 // the timeline frame-source contract — `@flighthq/timeline` consumes `TimelineSource`, this produces one,
-// and neither depends on the other beyond the shared interface in `@flighthq/types`). Each frame swaps
+// and neither owner depends on the other; this adapter alone imports both contracts). Each frame swaps
 // the displayed atlas region and offset on a bitmap the source lazily creates as a child of the target
 // the first time it constructs onto that target; tracking the bitmap per target keeps the source
 // shareable across many MovieClips.

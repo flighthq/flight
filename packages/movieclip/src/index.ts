@@ -21,3 +21,8 @@ export {
   updateMovieClip,
 } from './movieClip.ts';
 export { createSpritesheetTimelineSource, explainSpritesheetTimelineSource } from './spritesheetTimelineSource.ts';
+export type {
+  SpritesheetTimelineSourceExplanation,
+  SpritesheetTimelineSourceGuard,
+  SpritesheetTimelineSourceUnsupportedField,
+} from './spritesheetTimelineSource.ts';

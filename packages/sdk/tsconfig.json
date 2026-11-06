@@ -385,7 +385,7 @@
       "path": "../quadbatch"
     },
     {
-      "path": "../spritesheet"
+      "path": "../spritesheet/tsconfig.runtime.json"
     },
     {
       "path": "../spritesheet-formats"

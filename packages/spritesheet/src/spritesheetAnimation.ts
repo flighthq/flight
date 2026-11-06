@@ -1,5 +1,7 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { Spritesheet, SpritesheetAnimation, EntityConstruction } from '@flighthq/types/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
+
+import type { Spritesheet, SpritesheetAnimation } from './types.ts';
 
 export function createSpritesheetAnimation(obj?: Partial<SpritesheetAnimation>): SpritesheetAnimation {
   const out = allocateEntity<SpritesheetAnimation>();

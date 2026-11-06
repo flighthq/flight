@@ -5,12 +5,13 @@ import {
 } from '@flighthq/image/contract';
 import { createDisplayObject, getNode2DRuntime } from '@flighthq/scene2d/contract';
 import { createSpritesheet, createSpritesheetAnimation, createSpritesheetFrame } from '@flighthq/spritesheet/contract';
+import type { SpritesheetAnimationDirection } from '@flighthq/spritesheet/contract';
 import {
   addTextureAtlasRegion,
   createTextureAtlasFromImageResource,
   getTextureAtlasRegionTexture,
 } from '@flighthq/textureatlas/contract';
-import type { Node2D, Sprite, SpritesheetAnimationDirection, Texture } from '@flighthq/types/contract';
+import type { Node2D, Sprite, Texture } from '@flighthq/types/contract';
 
 import {
   createSpritesheetTimelineSource,

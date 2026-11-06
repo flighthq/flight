@@ -42,8 +42,7 @@
   "dependencies": {
     "@flighthq/entity": "*",
     "@flighthq/signals": "*",
-    "@flighthq/textureatlas": "*",
-    "@flighthq/types": "*"
+    "@flighthq/textureatlas": "*"
   },
   "devDependencies": {
     "typescript": "^7.0.2"

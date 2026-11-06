@@ -25,7 +25,7 @@
       "path": "../node/tsconfig.runtime.json"
     },
     {
-      "path": "../spritesheet"
+      "path": "../spritesheet/tsconfig.runtime.json"
     },
     {
       "path": "../textureatlas/tsconfig.runtime.json"

@@ -12,7 +12,7 @@
     { "path": "../entity" },
     { "path": "../importdiagnostics" },
     { "path": "../registry" },
-    { "path": "../spritesheet" },
+    { "path": "../spritesheet/tsconfig.runtime.json" },
     { "path": "../textureatlas/tsconfig.runtime.json" },
     { "path": "../textureatlas-formats" },
     { "path": "../requirement" },

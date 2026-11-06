@@ -1,12 +1,8 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
 import { clearSignal, createSignal, emitSignal } from '@flighthq/signals/contract';
-import type {
-  Spritesheet,
-  SpritesheetAnimation,
-  SpritesheetFrame,
-  SpritesheetPlayer,
-  EntityConstruction,
-} from '@flighthq/types/contract';
+
+import type { Spritesheet, SpritesheetAnimation, SpritesheetFrame, SpritesheetPlayer } from './types.ts';
 
 export function acquireSpritesheetPlayer(): SpritesheetPlayer {
   if (playerPool.length > 0) {

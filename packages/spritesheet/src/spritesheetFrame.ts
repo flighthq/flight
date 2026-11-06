@@ -1,5 +1,7 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { SpritesheetFrame, EntityConstruction } from '@flighthq/types/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
+
+import type { SpritesheetFrame } from './types.ts';
 
 export function createSpritesheetFrame(obj?: Partial<SpritesheetFrame>): SpritesheetFrame {
   const out = allocateEntity<SpritesheetFrame>();

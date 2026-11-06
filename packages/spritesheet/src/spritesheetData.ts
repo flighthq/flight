@@ -1,13 +1,10 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type {
-  EntityConstruction,
-  SpritesheetAnimationData,
-  SpritesheetData,
-  SpritesheetFrameData,
-} from '@flighthq/types/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
 
-// Canonical definitions now live in @flighthq/types (the shared header layer); re-exported here so
-// spritesheet authoring keeps a single import surface alongside the constructors below.
+import type { SpritesheetAnimationData, SpritesheetData, SpritesheetFrameData } from './types.ts';
+
+// Keep the authoring contracts beside their constructors while their canonical declarations stay in
+// this package's header-only types lane.
 export type { SpritesheetAnimationData, SpritesheetData, SpritesheetFrameData };
 
 export function createSpritesheetAnimationData(obj?: Partial<SpritesheetAnimationData>): SpritesheetAnimationData {

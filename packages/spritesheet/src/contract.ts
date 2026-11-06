@@ -5,6 +5,7 @@ export * from './spritesheetFrame.ts';
 export * from './spritesheetFrom.ts';
 export * from './spritesheetPlayer.ts';
 export * from './spritesheetValidation.ts';
+export * from './types.ts';
 export {
   initializeSpritesheetAnimationData,
   initializeSpritesheetData,

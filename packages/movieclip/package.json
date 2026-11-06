@@ -45,12 +45,12 @@
     "@flighthq/scene2d": "*",
     "@flighthq/node": "*",
     "@flighthq/timeline": "*",
+    "@flighthq/spritesheet": "*",
     "@flighthq/textureatlas": "*",
     "@flighthq/types": "*"
   },
   "devDependencies": {
     "@flighthq/image": "*",
-    "@flighthq/spritesheet": "*",
     "@flighthq/textureatlas": "*",
     "typescript": "^7.0.2"
   },
