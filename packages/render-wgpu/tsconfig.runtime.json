@@ -9,7 +9,7 @@
     "sourceMap": true,
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "types": ["@testing-library/jest-dom", "vitest/globals", "@webgpu/types"],
-    "moduleSuffixes": [".platform-types", ""],
+    "moduleSuffixes": [".platform-types", ".surface-types", ""],
     "tsBuildInfoFile": "dist/.tsbuildinfo.runtime"
   },
   "references": [
