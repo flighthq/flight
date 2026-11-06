@@ -18,6 +18,9 @@
       "path": "../geolocation"
     },
     {
+      "path": "../keyboard/tsconfig.contract.json"
+    },
+    {
       "path": "../log"
     },
     {
