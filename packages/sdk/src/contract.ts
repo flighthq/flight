@@ -133,6 +133,33 @@ export * from '@flighthq/protocol';
 export * from '@flighthq/quadbatch';
 export * from '@flighthq/render';
 export * from '@flighthq/render-gl';
+export type {
+  GlBlendEquation,
+  GlBlendFactor,
+  GlBlendRealization,
+  GlBlendSignature,
+  GlBoundShader,
+  GlColorAdjustmentMaterialFeature,
+  GlColorAdjustmentMaterialFeatureGuard,
+  GlColorScaleBiasInstancedShader,
+  GlContext,
+  GlContextOptions,
+  GlCubeRenderTarget,
+  GlCubeRenderTargetOptions,
+  GlParticleShader,
+  GlQuadBatchShader,
+  GlRenderRegistries,
+  GlRenderState,
+  GlRenderStateRuntime,
+  GlRenderTarget,
+  GlScissorRect,
+  GlScreenRenderTarget,
+  GlShapeMeshColorScaleBiasShader,
+  GlTextureRenderTarget,
+  GlTextureRenderTargetPool,
+  GlUniformColorScaleBiasShader,
+  GlViewportRect,
+} from '@flighthq/render-gl';
 export * from '@flighthq/render-wgpu';
 export * from '@flighthq/resource/contract';
 export * from '@flighthq/requirement';
