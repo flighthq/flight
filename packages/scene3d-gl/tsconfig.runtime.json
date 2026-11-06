@@ -35,7 +35,6 @@
     { "path": "../skeleton3d/tsconfig.runtime.json" },
     { "path": "../texture/tsconfig.runtime.json" },
     { "path": "../textureatlas/tsconfig.runtime.json" },
-    { "path": "../types" },
     { "path": "../video" },
     { "path": "./tsconfig.contract.json" }
   ],

@@ -78,9 +78,6 @@
       "path": "../textureatlas/tsconfig.runtime.json"
     },
     {
-      "path": "../types"
-    },
-    {
       "path": "../video"
     },
     {

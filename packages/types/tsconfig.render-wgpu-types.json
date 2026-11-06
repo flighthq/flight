@@ -10,6 +10,7 @@
     "moduleSuffixes": [
       ".shading-types",
       ".meshgeometry-types",
+      ".render-gl-types",
       ".render-wgpu-bridge-types",
       ".render-types",
       ".texture-types",
@@ -87,6 +88,9 @@
     },
     {
       "path": "../render-gl/tsconfig.compressed-texture-decoder-contract.json"
+    },
+    {
+      "path": "../render-gl/tsconfig.contract.json"
     },
     {
       "path": "../render-wgpu/tsconfig.compressed-texture-decoder-contract.json"

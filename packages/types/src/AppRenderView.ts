@@ -1,4 +1,5 @@
 import type { RenderTargetDescriptor } from '@flighthq/render/contract';
+export type { GlRenderViewResources } from '@flighthq/render-gl/contract';
 
 import type { Entity } from './Entity.ts';
 import type { GlContextOptions } from './GlContext.ts';
@@ -14,16 +15,6 @@ export interface GlAppRenderViewOptions {
 }
 
 export interface GlAppRenderView extends Entity {
-  readonly renderState: GlRenderState;
-  readonly renderTarget: GlTextureRenderTarget;
-  readonly viewport: Viewport;
-}
-
-// The render-layer half of a GL application view: the command state, its storage and the drawable
-// rectangle a backend allocates for one acquired context. The caller owns any window and the resize
-// wiring that reconciles the two; a render backend must not import @flighthq/app. A caller holding both
-// composes them explicitly rather than through an assembly package.
-export interface GlRenderViewResources extends Entity {
   readonly renderState: GlRenderState;
   readonly renderTarget: GlTextureRenderTarget;
   readonly viewport: Viewport;

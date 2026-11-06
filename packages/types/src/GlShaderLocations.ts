@@ -1,19 +1,2 @@
-import type { Entity } from './Entity.ts';
-import type { GlShader } from './GlShader.ts';
-
-export interface GlShaderLocations {
-  program: WebGLProgram;
-  locPosition: number;
-  locTexCoord: number;
-  locMatrix: WebGLUniformLocation;
-  locAlpha: WebGLUniformLocation;
-  locColorScale?: WebGLUniformLocation;
-  locColorBias?: WebGLUniformLocation;
-  locHasColorScaleBias?: WebGLUniformLocation;
-  locTexture: WebGLUniformLocation;
-}
-
-export type GlBitmapShader = Entity &
-  GlShader & {
-    readonly locations: GlShaderLocations;
-  };
+/** @deprecated Import from `@flighthq/render-gl/contract`. */
+export type { GlBitmapShader, GlShaderLocations } from '@flighthq/render-gl/contract';

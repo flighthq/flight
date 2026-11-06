@@ -6,10 +6,7 @@ export type * from './types/GlEnvironmentCaptureOptions.ts';
 export type * from './types/GlLitProgram.ts';
 export type * from './types/GlMatcapProgram.ts';
 export type * from './types/GlMeshProgram.ts';
-export type * from './types/GlPbrExtensionBindContext.ts';
 export type * from './types/GlPbrExtensionIssue.ts';
-export type * from './types/GlPbrExtensionShaderContext.ts';
-export type * from './types/GlPbrExtensionShaderContribution.ts';
 export type * from './types/GlPbrProgram.ts';
 export type * from './types/GlPbrTransmissionSceneColor.ts';
 export type * from './types/GlScene3DRuntime.ts';
@@ -18,3 +15,9 @@ export type * from './types/GlShadedProgram.ts';
 export type * from './types/GlToonProgram.ts';
 export type * from './types/GlUnlitProgram.ts';
 export type * from './types/GlWireframeProgram.ts';
+export type {
+  GlPbrExtensionBindContext,
+  GlPbrExtensionShaderContext,
+  GlPbrExtensionShaderContribution,
+  GlScene3DPass,
+} from '@flighthq/render-gl/contract';

@@ -1,17 +1,13 @@
-import type { Camera3D } from '@flighthq/camera/contract';
 import type { Matrix4 } from '@flighthq/geometry/contract';
 import type { Scene3DLightBlock } from '@flighthq/lighting/contract';
 import type { Scene3DLightsLike } from '@flighthq/lighting/contract';
 import type { PbrExtension } from '@flighthq/materials/contract';
 import type { Mesh } from '@flighthq/meshgeometry/contract';
 import type { MeshGeometry } from '@flighthq/meshgeometry/contract';
-import type { GlRenderState } from '@flighthq/render-gl/contract';
-import type { GlTextureRenderTarget } from '@flighthq/render-gl/contract';
+import type { GlRenderState, GlSkinPaletteTexture, GlTextureRenderTarget } from '@flighthq/render-gl/contract';
 import type { Scene3DRenderProxy } from '@flighthq/render/contract';
-import type { Node3D } from '@flighthq/scene3d/contract';
 import type { Texture } from '@flighthq/texture/contract';
 import type { TextureColorSpace } from '@flighthq/texture/contract';
-import type { GlSkinPaletteTexture } from '@flighthq/types/contract';
 
 import type { GlMeshProgram } from './GlMeshProgram.ts';
 import type { GlPbrTransmissionSceneColor } from './GlPbrTransmissionSceneColor.ts';
@@ -101,13 +97,6 @@ export interface GlMeshSkinFeature {
 // A draw pass run after the mesh passes, installed by a register* function (registerGlParticleEmitter3DPass
 // for the built-in particle pass). renderGlScene3D dispatches through this slot instead of importing a
 // pass module, so an unregistered pass is absent from the bundle rather than merely early-returning.
-export type GlScene3DPass = (
-  state: GlRenderState,
-  scene: Readonly<Node3D>,
-  camera: Readonly<Camera3D>,
-  lights: Readonly<Scene3DLightsLike>,
-) => void;
-
 export interface GlScene3DRuntime {
   // Whether the draw run currently being bound belongs to the blended pass. Every material-family
   // bind reads this through beginGlMeshDraw so depth writes stay disabled across run changes.
