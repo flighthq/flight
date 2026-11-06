@@ -1,7 +1,8 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { EntityConstruction, EntityWithoutRuntime, LensDistortionEffect } from '@flighthq/types/contract';
+import type { EntityConstruction, EntityWithoutRuntime } from '@flighthq/entity/contract';
 
 import { initializeEffect } from './effect.ts';
+import type { LensDistortionEffect } from './types/LensDistortionEffect.ts';
 
 export function createLensDistortionEffect(
   options: Readonly<Omit<EntityWithoutRuntime<LensDistortionEffect>, 'kind'>> = {},

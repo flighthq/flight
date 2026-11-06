@@ -1,6 +1,5 @@
-import type { EffectInput } from '@flighthq/types/contract';
-
 import type { Effect } from './types.ts';
+import type { EffectInput } from './types/EffectInput.ts';
 
 // Returns the required render-target inputs for the given effect. Effects with no requirements
 // (they only need the color buffer) return an empty array. This is the data form of the

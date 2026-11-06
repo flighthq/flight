@@ -1,6 +1,2 @@
-import type { Effect } from './Effect.ts';
-
-export interface SmaaEffect extends Effect {
-  kind: 'SmaaEffect';
-  threshold?: number;
-}
+/** @deprecated Import effect descriptors from `@flighthq/effects/contract`. */
+export type { SmaaEffect } from '@flighthq/effects/contract';

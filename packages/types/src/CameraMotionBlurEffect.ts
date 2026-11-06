@@ -1,7 +1,2 @@
-import type { Effect } from './Effect.ts';
-
-export interface CameraMotionBlurEffect extends Effect {
-  kind: 'CameraMotionBlurEffect'; // [MOTION]
-  intensity?: number;
-  samples?: number;
-}
+/** @deprecated Import effect descriptors from `@flighthq/effects/contract`. */
+export type { CameraMotionBlurEffect } from '@flighthq/effects/contract';

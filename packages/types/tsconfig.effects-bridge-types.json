@@ -9,5 +9,10 @@
     "sourceMap": true,
     "tsBuildInfoFile": "dist/.tsbuildinfo.effects-bridge-types"
   },
-  "include": ["src/contract.effects-bridge-types.ts", "src/RenderTargetOptions.effects-bridge-types.ts"]
+  "include": [
+    "src/CompositeOperator.ts",
+    "src/ImageChannel.ts",
+    "src/contract.effects-bridge-types.ts",
+    "src/RenderTargetOptions.effects-bridge-types.ts"
+  ]
 }

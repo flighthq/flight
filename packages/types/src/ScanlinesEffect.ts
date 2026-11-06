@@ -1,7 +1,2 @@
-import type { Effect } from './Effect.ts';
-
-export interface ScanlinesEffect extends Effect {
-  kind: 'ScanlinesEffect';
-  count?: number;
-  intensity?: number;
-}
+/** @deprecated Import effect descriptors from `@flighthq/effects/contract`. */
+export type { ScanlinesEffect } from '@flighthq/effects/contract';

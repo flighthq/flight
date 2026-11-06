@@ -1,7 +1,8 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { EntityConstruction, EntityWithoutRuntime, FilmGrainEffect } from '@flighthq/types/contract';
+import type { EntityConstruction, EntityWithoutRuntime } from '@flighthq/entity/contract';
 
 import { initializeEffect } from './effect.ts';
+import type { FilmGrainEffect } from './types/FilmGrainEffect.ts';
 
 export function createFilmGrainEffect(
   options: Readonly<Omit<EntityWithoutRuntime<FilmGrainEffect>, 'kind'>> = {},

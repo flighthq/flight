@@ -1,7 +1,6 @@
-import type { EffectInput } from '@flighthq/types/contract';
-
 import { getEffectInputs } from './effectInputs.ts';
 import type { Effect } from './types.ts';
+import type { EffectInput } from './types/EffectInput.ts';
 
 // Effect-stack validation and defaulting helpers. Pure data functions — no backend knowledge.
 

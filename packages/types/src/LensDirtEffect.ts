@@ -1,10 +1,2 @@
-import type { Effect } from './Effect.ts';
-
-// Lens dirt: smudges/dust on the lens that catch the light — procedural soft blobs brighten where the
-// scene is bright, a cheap bloom-dirt overlay. `seed` varies the smudge layout.
-export interface LensDirtEffect extends Effect {
-  kind: 'LensDirtEffect';
-  intensity?: number; // brightness added through the dirt. Default 1.
-  threshold?: number; // scene luminance above which dirt catches light. Default 0.55.
-  seed?: number; // smudge layout.
-}
+/** @deprecated Import effect descriptors from `@flighthq/effects/contract`. */
+export type { LensDirtEffect } from '@flighthq/effects/contract';

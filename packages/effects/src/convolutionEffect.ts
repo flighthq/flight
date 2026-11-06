@@ -1,15 +1,12 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type { EntityConstruction, EntityWithoutRuntime } from '@flighthq/entity/contract';
 import type { RenderState } from '@flighthq/render/contract';
-import type {
-  ConvolutionEffect,
-  EntityConstruction,
-  EntityWithoutRuntime,
-  Effect,
-  EffectPadding,
-} from '@flighthq/types/contract';
+import type { EffectPadding } from '@flighthq/types/contract';
 
 import { initializeEffect } from './effect.ts';
 import { registerEffectPaddingResolver } from './effectPadding.ts';
+import type { Effect } from './types.ts';
+import type { ConvolutionEffect } from './types/ConvolutionEffect.ts';
 
 export function createConvolutionEffect(
   options: Readonly<Omit<EntityWithoutRuntime<ConvolutionEffect>, 'kind'>>,

@@ -1,6 +1,2 @@
-import type { Effect } from './Effect.ts';
-
-export interface PixelateEffect extends Effect {
-  kind: 'PixelateEffect';
-  size?: number; // block size in pixels.
-}
+/** @deprecated Import effect descriptors from `@flighthq/effects/contract`. */
+export type { PixelateEffect } from '@flighthq/effects/contract';

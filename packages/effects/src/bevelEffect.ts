@@ -1,15 +1,12 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type { EntityConstruction, EntityWithoutRuntime } from '@flighthq/entity/contract';
 import type { RenderState } from '@flighthq/render/contract';
-import type {
-  BevelEffect,
-  EntityConstruction,
-  EntityWithoutRuntime,
-  Effect,
-  EffectPadding,
-} from '@flighthq/types/contract';
+import type { EffectPadding } from '@flighthq/types/contract';
 
 import { initializeEffect } from './effect.ts';
 import { getDirectionalEffectPadding, registerEffectPaddingResolver } from './effectPadding.ts';
+import type { Effect } from './types.ts';
+import type { BevelEffect } from './types/BevelEffect.ts';
 
 // Bevel composite effect: the directional gradient of the blurred silhouette drives a highlight/shadow edge band, clipped by bevelType, then applies sourceMode compositing.
 export function createBevelEffect(

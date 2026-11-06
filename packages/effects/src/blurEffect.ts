@@ -1,15 +1,12 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type { EntityConstruction, EntityWithoutRuntime } from '@flighthq/entity/contract';
 import type { RenderState } from '@flighthq/render/contract';
-import type {
-  BlurEffect,
-  EntityConstruction,
-  EntityWithoutRuntime,
-  Effect,
-  EffectPadding,
-} from '@flighthq/types/contract';
+import type { EffectPadding } from '@flighthq/types/contract';
 
 import { initializeEffect } from './effect.ts';
 import { getGaussianEffectPadding, registerEffectPaddingResolver } from './effectPadding.ts';
+import type { Effect } from './types.ts';
+import type { BlurEffect } from './types/BlurEffect.ts';
 
 // Plain separable Gaussian blur intent. `blurX`/`blurY` are the per-axis Gaussian standard deviations
 // in pixels; the backends realize them as a two-pass separable blur bouncing through an offscreen

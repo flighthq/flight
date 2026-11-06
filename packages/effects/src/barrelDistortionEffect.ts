@@ -1,7 +1,8 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { BarrelDistortionEffect, EntityConstruction, EntityWithoutRuntime } from '@flighthq/types/contract';
+import type { EntityConstruction, EntityWithoutRuntime } from '@flighthq/entity/contract';
 
 import { initializeEffect } from './effect.ts';
+import type { BarrelDistortionEffect } from './types/BarrelDistortionEffect.ts';
 
 export function createBarrelDistortionEffect(
   options: Readonly<Omit<EntityWithoutRuntime<BarrelDistortionEffect>, 'kind'>> = {},

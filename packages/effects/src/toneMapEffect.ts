@@ -1,7 +1,8 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { EntityConstruction, EntityWithoutRuntime, ToneMapEffect } from '@flighthq/types/contract';
+import type { EntityConstruction, EntityWithoutRuntime } from '@flighthq/entity/contract';
 
 import { initializeEffect } from './effect.ts';
+import type { ToneMapEffect } from './types/ToneMapEffect.ts';
 
 export function createToneMapEffect(
   options: Readonly<Omit<EntityWithoutRuntime<ToneMapEffect>, 'kind'>> = {},

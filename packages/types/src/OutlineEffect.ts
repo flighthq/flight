@@ -1,9 +1,2 @@
-import type { Effect } from './Effect.ts';
-
-export interface OutlineEffect extends Effect {
-  kind: 'OutlineEffect';
-  threshold?: number;
-  thickness?: number;
-  // Packed sRGB RGBA (`0xRRGGBBAA`); both backend runners read the alpha channel.
-  color?: number;
-}
+/** @deprecated Import effect descriptors from `@flighthq/effects/contract`. */
+export type { OutlineEffect } from '@flighthq/effects/contract';

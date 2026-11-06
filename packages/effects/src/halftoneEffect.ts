@@ -1,7 +1,8 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { EntityConstruction, EntityWithoutRuntime, HalftoneEffect } from '@flighthq/types/contract';
+import type { EntityConstruction, EntityWithoutRuntime } from '@flighthq/entity/contract';
 
 import { initializeEffect } from './effect.ts';
+import type { HalftoneEffect } from './types/HalftoneEffect.ts';
 
 export function createHalftoneEffect(
   options: Readonly<Omit<EntityWithoutRuntime<HalftoneEffect>, 'kind'>> = {},

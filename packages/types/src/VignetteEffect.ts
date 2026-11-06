@@ -1,9 +1,2 @@
-import type { Effect } from './Effect.ts';
-
-export interface VignetteEffect extends Effect {
-  kind: 'VignetteEffect';
-  intensity?: number;
-  radius?: number;
-  softness?: number;
-  color?: number; // packed RGBA. Default 0x000000ff.
-}
+/** @deprecated Import effect descriptors from `@flighthq/effects/contract`. */
+export type { VignetteEffect } from '@flighthq/effects/contract';

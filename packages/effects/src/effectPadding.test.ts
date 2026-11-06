@@ -3,7 +3,6 @@ import { createRenderState, enableRenderRegistrySignals, getRenderStateRuntime }
 import { RenderRegistryTable } from '@flighthq/render/contract';
 import type { RenderState } from '@flighthq/render/contract';
 import { connectSignal } from '@flighthq/signals/contract';
-import type { Effect } from '@flighthq/types/contract';
 
 import { createBlurEffect, registerBlurEffectPaddingResolver } from './blurEffect.ts';
 import {
@@ -13,6 +12,7 @@ import {
   getGaussianEffectPadding,
   registerEffectPaddingResolver,
 } from './effectPadding.ts';
+import type { Effect } from './types.ts';
 
 describe('computeEffectPadding', () => {
   let state: RenderState;

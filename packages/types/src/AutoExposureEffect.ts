@@ -1,8 +1,2 @@
-import type { Effect } from './Effect.ts';
-export interface AutoExposureEffect extends Effect {
-  kind: 'AutoExposureEffect';
-  adaptationSpeed?: number;
-  exposureCompensation?: number;
-  maxExposure?: number;
-  minExposure?: number;
-}
+/** @deprecated Import effect descriptors from `@flighthq/effects/contract`. */
+export type { AutoExposureEffect } from '@flighthq/effects/contract';

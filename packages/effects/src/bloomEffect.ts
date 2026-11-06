@@ -1,15 +1,12 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type { EntityConstruction, EntityWithoutRuntime } from '@flighthq/entity/contract';
 import type { RenderState } from '@flighthq/render/contract';
-import type {
-  BloomEffect,
-  EntityConstruction,
-  EntityWithoutRuntime,
-  Effect,
-  EffectPadding,
-} from '@flighthq/types/contract';
+import type { EffectPadding } from '@flighthq/types/contract';
 
 import { initializeEffect } from './effect.ts';
 import { getGaussianEffectPadding, registerEffectPaddingResolver } from './effectPadding.ts';
+import type { Effect } from './types.ts';
+import type { BloomEffect } from './types/BloomEffect.ts';
 
 // HDR bloom intent and its shared recipe math. The parameter math is substrate-agnostic so the Gl and
 // Wgpu bloom recipes derive identical bright-pass cutoff, additive strength, and blur radius from the

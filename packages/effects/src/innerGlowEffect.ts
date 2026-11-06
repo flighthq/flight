@@ -1,15 +1,12 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type { EntityConstruction, EntityWithoutRuntime } from '@flighthq/entity/contract';
 import type { RenderState } from '@flighthq/render/contract';
-import type {
-  EntityConstruction,
-  EntityWithoutRuntime,
-  InnerGlowEffect,
-  Effect,
-  EffectPadding,
-} from '@flighthq/types/contract';
+import type { EffectPadding } from '@flighthq/types/contract';
 
 import { initializeEffect } from './effect.ts';
 import { getGaussianEffectPadding, registerEffectPaddingResolver } from './effectPadding.ts';
+import type { Effect } from './types.ts';
+import type { InnerGlowEffect } from './types/InnerGlowEffect.ts';
 
 // Inner-glow composite effect: tint the inverted silhouette, blur inward, clip to the source alpha, then draw or hide the source.
 export function createInnerGlowEffect(

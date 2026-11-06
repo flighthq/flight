@@ -1,8 +1,2 @@
-import type { Effect } from './Effect.ts';
-
-export interface BokehDepthOfFieldEffect extends Effect {
-  kind: 'BokehDepthOfFieldEffect'; // [DEPTH]
-  focusDistance?: number;
-  focusRange?: number;
-  maxBlur?: number;
-}
+/** @deprecated Import effect descriptors from `@flighthq/effects/contract`. */
+export type { BokehDepthOfFieldEffect } from '@flighthq/effects/contract';

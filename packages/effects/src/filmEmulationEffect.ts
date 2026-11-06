@@ -1,7 +1,8 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { EntityConstruction, EntityWithoutRuntime, FilmEmulationEffect } from '@flighthq/types/contract';
+import type { EntityConstruction, EntityWithoutRuntime } from '@flighthq/entity/contract';
 
 import { initializeEffect } from './effect.ts';
+import type { FilmEmulationEffect } from './types/FilmEmulationEffect.ts';
 
 export function createFilmEmulationEffect(
   options: Readonly<Omit<EntityWithoutRuntime<FilmEmulationEffect>, 'kind'>> = {},

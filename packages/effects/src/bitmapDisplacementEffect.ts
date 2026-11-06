@@ -1,16 +1,13 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type { EntityConstruction, EntityWithoutRuntime } from '@flighthq/entity/contract';
 import type { RenderState } from '@flighthq/render/contract';
-import type {
-  BitmapDisplacementEffect,
-  EntityConstruction,
-  EntityWithoutRuntime,
-  Effect,
-  EffectPadding,
-  Texture2D,
-} from '@flighthq/types/contract';
+import type { Texture2D } from '@flighthq/texture/contract';
+import type { EffectPadding } from '@flighthq/types/contract';
 
 import { initializeEffect } from './effect.ts';
 import { registerEffectPaddingResolver } from './effectPadding.ts';
+import type { Effect } from './types.ts';
+import type { BitmapDisplacementEffect } from './types/BitmapDisplacementEffect.ts';
 
 export function createBitmapDisplacementEffect(
   map: Readonly<Texture2D> | null,

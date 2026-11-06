@@ -1,7 +1,2 @@
-import type { Effect } from './Effect.ts';
-
-export interface LensDistortionEffect extends Effect {
-  kind: 'LensDistortionEffect';
-  amount?: number; // + barrel, - pincushion.
-  scale?: number;
-}
+/** @deprecated Import effect descriptors from `@flighthq/effects/contract`. */
+export type { LensDistortionEffect } from '@flighthq/effects/contract';

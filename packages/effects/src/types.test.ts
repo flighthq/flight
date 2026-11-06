@@ -1,5 +1,5 @@
 import { EntityRuntimeKey } from '@flighthq/entity/contract';
-import { BlendMode } from '@flighthq/types/contract';
+import { BlendMode } from '@flighthq/materials/contract';
 
 import type { BlendEffect, Effect } from './types.ts';
 import { AdvancedBlendMode } from './types.ts';

@@ -1,7 +1,8 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { EntityConstruction, EntityWithoutRuntime, LensDirtEffect } from '@flighthq/types/contract';
+import type { EntityConstruction, EntityWithoutRuntime } from '@flighthq/entity/contract';
 
 import { initializeEffect } from './effect.ts';
+import type { LensDirtEffect } from './types/LensDirtEffect.ts';
 
 export function createLensDirtEffect(
   options: Readonly<Omit<EntityWithoutRuntime<LensDirtEffect>, 'kind'>> = {},

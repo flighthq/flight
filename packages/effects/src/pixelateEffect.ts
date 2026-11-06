@@ -1,7 +1,8 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { EntityConstruction, EntityWithoutRuntime, PixelateEffect } from '@flighthq/types/contract';
+import type { EntityConstruction, EntityWithoutRuntime } from '@flighthq/entity/contract';
 
 import { initializeEffect } from './effect.ts';
+import type { PixelateEffect } from './types/PixelateEffect.ts';
 
 export function createPixelateEffect(
   options: Readonly<Omit<EntityWithoutRuntime<PixelateEffect>, 'kind'>> = {},

@@ -1,5 +1,6 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { createMatrix, createRectangle, setRectangle } from '@flighthq/geometry/contract';
+import type { MatrixLike, Rectangle } from '@flighthq/geometry/contract';
 import {
   addNodeChild,
   createNode,
@@ -11,25 +12,19 @@ import {
   invalidateNodeLocalBounds,
 } from '@flighthq/node/contract';
 import { computeNodeRootLocalBoundsRectangle } from '@flighthq/node/contract';
+import type { HasBoundsRectangleRuntime, HasTransform2DRuntime } from '@flighthq/node/contract';
 import {
   computeRenderTargetSize,
   computeScene2DRenderTargetTransform,
   createRenderState,
 } from '@flighthq/render/contract';
-import type {
-  HasBoundsRectangleRuntime,
-  HasTransform2DRuntime,
-  Node2D,
-  Node2DRuntime,
-  MatrixLike,
-  Rectangle,
-  Effect,
-  EffectCaptureGeometry,
-} from '@flighthq/types/contract';
-import { Node2DFieldsKey } from '@flighthq/types/contract';
+import type { Node2D, Node2DRuntime } from '@flighthq/scene2d/contract';
+import { Node2DFieldsKey } from '@flighthq/scene2d/contract';
+import type { EffectCaptureGeometry } from '@flighthq/types/contract';
 
 import { computeEffectCaptureGeometry } from './effectCaptureGeometry.ts';
 import { computeEffectPadding, registerEffectPaddingResolver } from './effectPadding.ts';
+import type { Effect } from './types.ts';
 
 function createCaptureNode(bounds: Readonly<Rectangle>): Node2D {
   const node = createNode('CaptureGeometryTest') as Node2D;

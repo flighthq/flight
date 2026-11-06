@@ -1,8 +1,9 @@
+import type { Kind } from '@flighthq/entity/contract';
 import { withKindMapEntry, withoutKindMapEntry } from '@flighthq/registry/contract';
 import { getRenderStateRuntime } from '@flighthq/render/contract';
 import { RenderRegistryTable } from '@flighthq/render/contract';
 import type { RenderState } from '@flighthq/render/contract';
-import type { Kind, EffectPadding, EffectPaddingExplanation, EffectPaddingResolver } from '@flighthq/types/contract';
+import type { EffectPadding, EffectPaddingExplanation, EffectPaddingResolver } from '@flighthq/types/contract';
 
 import type { Effect } from './types.ts';
 

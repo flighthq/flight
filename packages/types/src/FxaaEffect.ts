@@ -1,8 +1,2 @@
-import type { Effect } from './Effect.ts';
-
-export interface FxaaEffect extends Effect {
-  kind: 'FxaaEffect';
-  // Edge contrast threshold; lower catches more edges. Default 0.0312.
-  edgeThreshold?: number;
-  subpixel?: number;
-}
+/** @deprecated Import effect descriptors from `@flighthq/effects/contract`. */
+export type { FxaaEffect } from '@flighthq/effects/contract';

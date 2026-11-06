@@ -1,6 +1,2 @@
-import type { Effect } from './Effect.ts';
-
-export interface SketchEffect extends Effect {
-  kind: 'SketchEffect';
-  strength?: number;
-}
+/** @deprecated Import effect descriptors from `@flighthq/effects/contract`. */
+export type { SketchEffect } from '@flighthq/effects/contract';

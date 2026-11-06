@@ -24,6 +24,15 @@
       "path": "../signals"
     },
     {
+      "path": "../materials/tsconfig.runtime.json"
+    },
+    {
+      "path": "../scene2d/tsconfig.runtime.json"
+    },
+    {
+      "path": "../texture/tsconfig.runtime.json"
+    },
+    {
       "path": "../types"
     },
     {

@@ -1,7 +1,8 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { EntityConstruction, EntityWithoutRuntime, SharpenEffect } from '@flighthq/types/contract';
+import type { EntityConstruction, EntityWithoutRuntime } from '@flighthq/entity/contract';
 
 import { initializeEffect } from './effect.ts';
+import type { SharpenEffect } from './types/SharpenEffect.ts';
 
 export function createSharpenEffect(
   options: Readonly<Omit<EntityWithoutRuntime<SharpenEffect>, 'kind'>> = {},

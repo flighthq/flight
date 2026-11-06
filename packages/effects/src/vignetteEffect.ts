@@ -1,7 +1,8 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { EntityConstruction, EntityWithoutRuntime, VignetteEffect } from '@flighthq/types/contract';
+import type { EntityConstruction, EntityWithoutRuntime } from '@flighthq/entity/contract';
 
 import { initializeEffect } from './effect.ts';
+import type { VignetteEffect } from './types/VignetteEffect.ts';
 
 export function createVignetteEffect(
   options: Readonly<Omit<EntityWithoutRuntime<VignetteEffect>, 'kind'>> = {},

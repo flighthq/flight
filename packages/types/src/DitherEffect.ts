@@ -1,6 +1,2 @@
-import type { Effect } from './Effect.ts';
-
-export interface DitherEffect extends Effect {
-  kind: 'DitherEffect';
-  levels?: number;
-}
+/** @deprecated Import effect descriptors from `@flighthq/effects/contract`. */
+export type { DitherEffect } from '@flighthq/effects/contract';

@@ -1,7 +1,2 @@
-import type { Effect } from './Effect.ts';
-
-export interface WhiteBalanceEffect extends Effect {
-  kind: 'WhiteBalanceEffect';
-  temperature?: number; // -1..1 warm/cool.
-  tint?: number; // -1..1 magenta/green.
-}
+/** @deprecated Import effect descriptors from `@flighthq/effects/contract`. */
+export type { WhiteBalanceEffect } from '@flighthq/effects/contract';

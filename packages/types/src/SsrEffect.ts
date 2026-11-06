@@ -1,8 +1,2 @@
-import type { Effect } from './Effect.ts';
-
-export interface SsrEffect extends Effect {
-  kind: 'SsrEffect'; // [DEPTH]
-  maxDistance?: number;
-  resolution?: number;
-  steps?: number;
-}
+/** @deprecated Import effect descriptors from `@flighthq/effects/contract`. */
+export type { SsrEffect } from '@flighthq/effects/contract';

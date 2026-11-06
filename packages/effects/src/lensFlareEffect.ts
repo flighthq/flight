@@ -1,7 +1,8 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { EntityConstruction, EntityWithoutRuntime, LensFlareEffect } from '@flighthq/types/contract';
+import type { EntityConstruction, EntityWithoutRuntime } from '@flighthq/entity/contract';
 
 import { initializeEffect } from './effect.ts';
+import type { LensFlareEffect } from './types/LensFlareEffect.ts';
 
 export function createLensFlareEffect(
   options: Readonly<Omit<EntityWithoutRuntime<LensFlareEffect>, 'kind'>> = {},

@@ -1,7 +1,8 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { EntityConstruction, EntityWithoutRuntime, SketchEffect } from '@flighthq/types/contract';
+import type { EntityConstruction, EntityWithoutRuntime } from '@flighthq/entity/contract';
 
 import { initializeEffect } from './effect.ts';
+import type { SketchEffect } from './types/SketchEffect.ts';
 
 export function createSketchEffect(
   options: Readonly<Omit<EntityWithoutRuntime<SketchEffect>, 'kind'>> = {},

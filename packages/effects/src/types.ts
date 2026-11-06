@@ -1,5 +1,8 @@
-import type { EntityRaw, EntityRuntime, EntityRuntimeKey, Kind } from '@flighthq/entity/contract';
 import type { RenderTargetDepth, RenderTargetFormat } from '@flighthq/render/contract';
+
+import type { Effect } from './types/Effect.ts';
+
+export type { Effect } from './types/Effect.ts';
 
 // Advanced blend modes are the destination-reading / non-separable set that the fixed-function
 // `BlendMode` enum deliberately excludes: they cannot be expressed as GL fixed-function blend state, so
@@ -59,13 +62,6 @@ export interface BlendEffect extends Effect {
   mode: AdvancedBlendMode;
   backdropKey?: string;
   opacity?: number;
-}
-
-// Open substrate-agnostic base contract for render-effect intents. The kind is both the serialized
-// discriminant and the per-backend registry key; concrete effect records remain open to third parties.
-export interface Effect extends EntityRaw {
-  [EntityRuntimeKey]: EntityRuntime | undefined;
-  kind: Kind;
 }
 
 // Shared offscreen target axes for Canvas, GL and WGPU effect pipelines.
