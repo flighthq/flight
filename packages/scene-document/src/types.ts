@@ -152,20 +152,6 @@ export interface FlightDocumentTokenValues {
   [mode: string]: FlightDocumentValue;
 }
 
-export interface FlightDocumentTokenResolution {
-  mode: string;
-  values: Readonly<Record<string, FlightDocumentValue>>;
-}
-
-export type FlightDocumentTokenResolver = (
-  value: FlightDocumentValue,
-  token: Readonly<FlightDocumentToken>,
-) => FlightDocumentValue | null;
-
-export interface FlightDocumentTokenResolverRegistry extends SceneDocumentEntity {
-  resolvers: ReadonlyMap<Kind, FlightDocumentTokenResolver>;
-}
-
 export interface FlightDocumentNode {
   children: FlightDocumentNode[];
   fields: FlightDocumentFields;

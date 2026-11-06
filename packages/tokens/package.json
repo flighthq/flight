@@ -42,8 +42,7 @@
   "dependencies": {
     "@flighthq/entity": "*",
     "@flighthq/registry": "*",
-    "@flighthq/scene-document": "*",
-    "@flighthq/types": "*"
+    "@flighthq/scene-document": "*"
   },
   "devDependencies": {
     "@flighthq/node": "*",

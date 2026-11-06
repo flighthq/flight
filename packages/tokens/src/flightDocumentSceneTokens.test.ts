@@ -1,10 +1,6 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { withKindMapEntry } from '@flighthq/registry/contract';
-import type {
-  FlightDocumentScene2D,
-  FlightDocumentToken,
-  FlightDocumentTokenResolverRegistry,
-} from '@flighthq/scene-document/contract';
+import type { FlightDocumentScene2D, FlightDocumentToken } from '@flighthq/scene-document/contract';
 import { FlightDocumentRefusalReason } from '@flighthq/scene-document/contract';
 
 import {
@@ -13,6 +9,7 @@ import {
   initializeFlightDocumentTokenResolverRegistry,
   resolveFlightDocumentSceneTokens,
 } from './flightDocumentSceneTokens.ts';
+import type { FlightDocumentTokenResolverRegistry } from './types.ts';
 
 describe('createFlightDocumentTokenResolverRegistry', () => {
   it('admits each built-in kind only for the values that kind describes', () => {

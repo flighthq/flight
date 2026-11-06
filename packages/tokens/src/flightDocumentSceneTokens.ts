@@ -1,16 +1,13 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type { EntityConstruction, Kind } from '@flighthq/entity/contract';
 import { withKindMapEntry } from '@flighthq/registry/contract';
 import type {
   FlightDocumentRefusalExplanation,
   FlightDocumentScene,
   FlightDocumentToken,
-  FlightDocumentTokenResolution,
-  FlightDocumentTokenResolver,
-  FlightDocumentTokenResolverRegistry,
   FlightDocumentValue,
 } from '@flighthq/scene-document/contract';
 import { FlightDocumentRefusalReason } from '@flighthq/scene-document/contract';
-import type { EntityConstruction, Kind } from '@flighthq/types/contract';
 
 import {
   INVALID_FLIGHT_DOCUMENT_TOKEN_VALUE,
@@ -18,6 +15,11 @@ import {
   readFlightDocumentTokenReferenceKey,
   substituteFlightDocumentTokenValue,
 } from './flightDocumentTokenReference.ts';
+import type {
+  FlightDocumentTokenResolution,
+  FlightDocumentTokenResolver,
+  FlightDocumentTokenResolverRegistry,
+} from './types.ts';
 
 export function createFlightDocumentTokenResolverRegistry(): FlightDocumentTokenResolverRegistry {
   const out = allocateEntity<FlightDocumentTokenResolverRegistry>();

@@ -5,7 +5,6 @@ import type {
   FlightDocumentNode,
   FlightDocumentRefusalExplanation,
   FlightDocumentScene,
-  FlightDocumentTokenResolution,
   FlightDocumentValue,
 } from '@flighthq/scene-document/contract';
 import { FlightDocumentRefusalReason } from '@flighthq/scene-document/contract';
@@ -14,6 +13,7 @@ import {
   INVALID_FLIGHT_DOCUMENT_TOKEN_VALUE,
   substituteFlightDocumentTokenValue,
 } from './flightDocumentTokenReference.ts';
+import type { FlightDocumentTokenResolution } from './types.ts';
 
 export function explainFlightDocumentSceneTokenSubstitution(
   scene: Readonly<FlightDocumentScene>,

@@ -18,7 +18,6 @@ export * from './FlightDocumentResource.ts';
 export * from './FlightDocumentResourceSchema.ts';
 export * from './FlightDocumentSchemaRegistry.ts';
 export * from './FlightDocumentText.ts';
-export * from './FlightDocumentToken.ts';
 export * from './NodeInteractiveStateBinding.ts';
 export * from './TextShaperCache.ts';
 export * from './XmlElement.ts';

@@ -4,7 +4,6 @@ import type {
   FlightDocumentScene2D,
   FlightDocumentScene3D,
   FlightDocumentToken,
-  FlightDocumentTokenResolution,
 } from '@flighthq/scene-document/contract';
 import { FlightDocumentRefusalReason } from '@flighthq/scene-document/contract';
 
@@ -16,6 +15,7 @@ import {
   explainFlightDocumentSceneTokenSubstitution,
   substituteFlightDocumentSceneTokens,
 } from './substituteFlightDocumentSceneTokens.ts';
+import type { FlightDocumentTokenResolution } from './types.ts';
 
 describe('explainFlightDocumentSceneTokenSubstitution', () => {
   it('names a reference no resolved token covers, with the field that carries it', () => {

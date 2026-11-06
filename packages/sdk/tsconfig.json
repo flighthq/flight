@@ -475,7 +475,7 @@
       "path": "../xml"
     },
     {
-      "path": "../tokens"
+      "path": "../tokens/tsconfig.runtime.json"
     }
   ],
   "include": ["src"]

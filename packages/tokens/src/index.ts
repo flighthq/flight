@@ -7,3 +7,8 @@ export {
   explainFlightDocumentSceneTokenSubstitution,
   substituteFlightDocumentSceneTokens,
 } from './substituteFlightDocumentSceneTokens.ts';
+export type {
+  FlightDocumentTokenResolution,
+  FlightDocumentTokenResolver,
+  FlightDocumentTokenResolverRegistry,
+} from './contract.ts';
