@@ -1,4 +1,5 @@
-import type { ClipRegion, HasClip } from '@flighthq/types/contract';
+import type { ClipRegion } from '@flighthq/clip/contract';
+import type { HasClip } from '@flighthq/types/contract';
 
 import { initClipTrait } from './hasClip.ts';
 import { createNode } from './node.ts';

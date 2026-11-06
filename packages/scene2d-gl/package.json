@@ -66,6 +66,7 @@
   },
   "devDependencies": {
     "@flighthq/bitmap": "*",
+    "@flighthq/clip": "*",
     "@flighthq/glyphatlas": "*",
     "@flighthq/particleemitter": "*",
     "@flighthq/quadbatch": "*",

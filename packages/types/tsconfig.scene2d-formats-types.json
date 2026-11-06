@@ -270,7 +270,6 @@
     "src/Bitmap.ts",
     "src/BlendMode.materials-types.ts",
     "src/Bone2D.ts",
-    "src/ClipRegion.ts",
     "src/ColorAdjustmentRuntime.ts",
     "src/ColorScaleBias.ts",
     "src/Cursor.interaction-types.ts",

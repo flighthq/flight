@@ -1,4 +1,5 @@
 import { createColorMatrixAdjustment, createTintAdjustment } from '@flighthq/adjustments/contract';
+import type { ClipRegion } from '@flighthq/clip/contract';
 import { allocateEntity, finishEntity, getEntityRuntime } from '@flighthq/entity/contract';
 import {
   addNodeColorAdjustment,
@@ -6,7 +7,7 @@ import {
   setNodeColorAdjustments,
   setNodeColorAdjustmentsTint,
 } from '@flighthq/node/contract';
-import type { BoundsNode, ClipRegion, Node2D, Node2DData, Node2DRuntime, Rectangle } from '@flighthq/types/contract';
+import type { BoundsNode, Node2D, Node2DData, Node2DRuntime, Rectangle } from '@flighthq/types/contract';
 import { BlendMode, DisplayObjectKind, Node2DFieldsKey } from '@flighthq/types/contract';
 
 import {

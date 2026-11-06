@@ -63,6 +63,7 @@
     "@flighthq/types": "*"
   },
   "devDependencies": {
+    "@flighthq/clip": "*",
     "@flighthq/lighting": "*",
     "@flighthq/scene3d": "*",
     "@flighthq/quadbatch": "*",

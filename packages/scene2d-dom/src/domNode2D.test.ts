@@ -1,10 +1,10 @@
+import type { ClipRegion } from '@flighthq/clip/contract';
 import { EntityRuntimeKey } from '@flighthq/entity/contract';
 import { createRectangle } from '@flighthq/geometry/contract';
 import type { Rectangle } from '@flighthq/geometry/contract';
 import { addNodeChild, invalidateNodeLocalTransform } from '@flighthq/node/contract';
 import { getOrCreateRenderProxy2D, prepareScene2DRender, registerNodeRenderer } from '@flighthq/render/contract';
 import { createDisplayObject, setNode2DClip } from '@flighthq/scene2d/contract';
-import type { ClipRegion } from '@flighthq/types/contract';
 import { DisplayObjectKind } from '@flighthq/types/contract';
 
 import { enableDomClipSupport } from './domClip.ts';

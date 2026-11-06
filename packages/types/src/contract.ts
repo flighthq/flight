@@ -145,7 +145,6 @@ export * from './CircleCollider.ts';
 export * from './Clipboard.ts';
 export * from './ClipboardFormat.ts';
 export * from './ClipboardWatch.ts';
-export * from './ClipRegion.ts';
 export * from './Clock.ts';
 export * from './Command.ts';
 export * from './ClockOptions.ts';

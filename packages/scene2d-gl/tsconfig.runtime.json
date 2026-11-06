@@ -10,6 +10,7 @@
     "tsBuildInfoFile": "dist/.tsbuildinfo.runtime"
   },
   "references": [
+    { "path": "../clip/tsconfig.runtime.json" },
     { "path": "../bitmap/tsconfig.runtime.json" },
     { "path": "../bitmaptext" },
     { "path": "../color" },

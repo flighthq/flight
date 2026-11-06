@@ -1,5 +1,5 @@
 import { createLogState, createMemoryLogSink, getMemoryLogSinkEntries, setLogSink } from '@flighthq/log/contract';
-import type { LogEntry } from '@flighthq/types/contract';
+import type { LogEntry } from '@flighthq/log/contract';
 import { describe, expect, it } from 'vitest';
 
 import { logClipWarning } from './clipLog.ts';

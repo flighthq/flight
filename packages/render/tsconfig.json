@@ -2,6 +2,9 @@
   "files": [],
   "references": [
     {
+      "path": "../clip/tsconfig.runtime.json"
+    },
+    {
       "path": "../adjustments/tsconfig.runtime.json"
     },
     {

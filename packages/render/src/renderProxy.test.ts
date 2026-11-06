@@ -1,3 +1,4 @@
+import type { ClipRegion } from '@flighthq/clip/contract';
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { createMatrix, createRectangle } from '@flighthq/geometry/contract';
 import {
@@ -14,7 +15,7 @@ import {
 } from '@flighthq/node/contract';
 import { createDisplayObject, setNode2DClip } from '@flighthq/scene2d/contract';
 import { createSprite } from '@flighthq/scene2d/contract';
-import type { ClipRegion, Node, Node2D } from '@flighthq/types/contract';
+import type { Node, Node2D } from '@flighthq/types/contract';
 
 import { registerNodeRenderer } from './renderer.ts';
 import {

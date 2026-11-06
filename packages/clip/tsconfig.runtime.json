@@ -15,7 +15,6 @@
     { "path": "../log" },
     { "path": "../math" },
     { "path": "../path/tsconfig.runtime.json" },
-    { "path": "../types" },
     { "path": "./tsconfig.contract.json" }
   ],
   "include": ["src/**/*.ts"],

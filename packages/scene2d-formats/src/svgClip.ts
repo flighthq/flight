@@ -4,11 +4,12 @@ import {
   transformClipRegion,
   unionClipRegions,
 } from '@flighthq/clip/contract';
+import type { ClipRegion } from '@flighthq/clip/contract';
 import { createMatrix } from '@flighthq/geometry/contract';
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import { createPath, transformPath } from '@flighthq/path/contract';
 import type { Path, PathWinding } from '@flighthq/path/contract';
-import type { ClipRegion, Matrix, Node2D, Rectangle } from '@flighthq/types/contract';
+import type { Matrix, Node2D, Rectangle } from '@flighthq/types/contract';
 import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 import type { XmlElement } from '@flighthq/xml/contract';
 

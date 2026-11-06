@@ -1,5 +1,6 @@
 import type { Adjustment } from '@flighthq/adjustments/contract';
 import { createClipRegionFromContours, createClipRegionFromPath } from '@flighthq/clip/contract';
+import type { ClipRegion } from '@flighthq/clip/contract';
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { createMatrix, inverseMatrix, matrixTransformPointXY, multiplyMatrix } from '@flighthq/geometry/contract';
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
@@ -32,7 +33,6 @@ import type { MorphShape } from '@flighthq/shape/contract';
 import { MorphShapeKind } from '@flighthq/shape/contract';
 import type { TimelineCue, TimelineLabel, TimelineSource } from '@flighthq/timeline/contract';
 import type {
-  ClipRegion,
   EntityConstruction,
   GlyphOutlineSource,
   HostDecompressDeflateCapability,

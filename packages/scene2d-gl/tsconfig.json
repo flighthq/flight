@@ -3,6 +3,9 @@
   "files": [],
   "references": [
     {
+      "path": "../clip/tsconfig.runtime.json"
+    },
+    {
       "path": "../bitmap/tsconfig.runtime.json"
     },
     {

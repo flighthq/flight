@@ -12,6 +12,7 @@
   "references": [
     { "path": "../adjustments/tsconfig.runtime.json" },
     { "path": "../animation" },
+    { "path": "../clip/tsconfig.runtime.json" },
     { "path": "../entity" },
     { "path": "../geometry/tsconfig.runtime.json" },
     { "path": "../materials/tsconfig.runtime.json" },

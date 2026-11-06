@@ -51,6 +51,7 @@
     "@flighthq/types": "*"
   },
   "devDependencies": {
+    "@flighthq/clip": "*",
     "typescript": "^7.0.2"
   },
   "description": "Base scene graph: transform hierarchy, bounds, appearance traits, child management",

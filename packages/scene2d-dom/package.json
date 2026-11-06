@@ -62,6 +62,7 @@
     "@flighthq/types": "*"
   },
   "devDependencies": {
+    "@flighthq/clip": "*",
     "@flighthq/font": "*",
     "@flighthq/image": "*",
     "@flighthq/surface": "*",
