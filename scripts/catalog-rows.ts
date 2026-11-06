@@ -1,5 +1,6 @@
 import { BITMAP_FONT_REQUIREMENT_KEY_NAMESPACE } from '@flighthq/bitmapfont-formats/contract';
 import { PARTICLES_REQUIREMENT_KEY_NAMESPACE } from '@flighthq/particles-formats/contract';
+import type { RequirementCatalogEntry } from '@flighthq/requirement-catalog/contract';
 import {
   createRiveImportRegistry,
   getRiveCoreTypeName,
@@ -184,7 +185,6 @@ import type {
   SvgElementHandler,
   Md5SectionHandler,
   ObjMaterialHandler,
-  RequirementCatalogEntry,
   SpineBinarySectionHandler,
   SpineBinaryTimelineHandler,
   SpineJsonSectionHandler,

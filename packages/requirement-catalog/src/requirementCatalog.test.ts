@@ -1,5 +1,4 @@
-import type { RequirementCatalogEntry, RequirementDisposition, RequirementTranslation } from '@flighthq/types/contract';
-import { RequirementFacet } from '@flighthq/types/contract';
+import { RequirementFacet } from '@flighthq/requirement/contract';
 
 import {
   createRequirementCatalog,
@@ -8,6 +7,7 @@ import {
   registerRequirementCatalogEntry,
   unregisterRequirementCatalogEntry,
 } from './requirementCatalog.ts';
+import type { RequirementCatalogEntry, RequirementDisposition, RequirementTranslation } from './types.ts';
 
 const first: RequirementCatalogEntry = {
   backend: 'webgl',

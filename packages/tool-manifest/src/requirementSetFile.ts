@@ -1,6 +1,6 @@
+import type { RequirementCatalog } from '@flighthq/requirement-catalog/contract';
 import { createRequirementSet } from '@flighthq/requirement/contract';
 import type { Requirement, RequirementFacet, RequirementSetRaw } from '@flighthq/requirement/contract';
-import type { RequirementCatalog } from '@flighthq/types/contract';
 
 /** What a read reports: the parsed value, or the reasons the text is not one. */
 export interface RequirementSetFileValidation {

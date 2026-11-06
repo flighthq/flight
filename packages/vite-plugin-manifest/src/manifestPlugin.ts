@@ -3,13 +3,13 @@ import { dirname, extname, isAbsolute, resolve } from 'node:path';
 
 import type { LogState } from '@flighthq/log/contract';
 import { logWarn } from '@flighthq/log/contract';
+import type { RequirementCatalog } from '@flighthq/requirement-catalog/contract';
 import { createRequirementCodegenPlan } from '@flighthq/requirement-codegen/contract';
 import type {
   HostDecompressDeflateCapability,
   HostDecompressLzmaCapability,
   NonEntityCreateResult,
   Requirement,
-  RequirementCatalog,
 } from '@flighthq/types/contract';
 
 import { DEFAULT_CONTENT_ANALYZERS } from './contentAnalyzers.ts';

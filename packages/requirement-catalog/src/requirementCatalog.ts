@@ -1,12 +1,12 @@
+import type { Kind, NonEntityCreateResult } from '@flighthq/entity/contract';
+import type { RequirementFacet } from '@flighthq/requirement/contract';
+
 import type {
-  Kind,
-  NonEntityCreateResult,
   RequirementCatalog,
   RequirementCatalogEntry,
   RequirementDisposition,
-  RequirementFacet,
   RequirementTranslation,
-} from '@flighthq/types/contract';
+} from './types.ts';
 
 /**
  * Builds a catalog from ownership rows and the format-to-render implications that go with them.

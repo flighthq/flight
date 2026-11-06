@@ -3,7 +3,7 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import type { RequirementCatalogEntry } from '@flighthq/types/contract';
+import type { RequirementCatalogEntry } from '@flighthq/requirement-catalog/contract';
 
 import { formatBuiltInRequirementCatalogSource, verifyRequirementCatalogEntries } from './catalog-core.ts';
 import { buildRequirementDispositions } from './catalog-dispositions.ts';

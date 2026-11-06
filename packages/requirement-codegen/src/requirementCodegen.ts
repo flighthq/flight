@@ -1,10 +1,9 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { findRequirementCatalogEntries } from '@flighthq/requirement-catalog/contract';
+import type { RequirementCatalog, RequirementCatalogEntry } from '@flighthq/requirement-catalog/contract';
 import type {
   Entity,
   EntityConstruction,
-  RequirementCatalog,
-  RequirementCatalogEntry,
   RequirementCodegenPlan,
   RequirementDeclination,
   Requirement,

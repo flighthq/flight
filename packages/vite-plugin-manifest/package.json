@@ -43,6 +43,7 @@
     "@flighthq/log": "*",
     "@flighthq/particles-formats": "*",
     "@flighthq/requirement": "*",
+    "@flighthq/requirement-catalog": "*",
     "@flighthq/requirement-codegen": "*",
     "@flighthq/scene2d-formats": "*",
     "@flighthq/scene3d-formats": "*",
@@ -55,7 +56,6 @@
   "devDependencies": {
     "@flighthq/compression": "*",
     "@flighthq/render": "*",
-    "@flighthq/requirement-catalog": "*",
     "@flighthq/requirement": "*",
     "@flighthq/scene2d-dom": "*",
     "esbuild": "*",

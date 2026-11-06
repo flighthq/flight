@@ -27,9 +27,6 @@
     },
     {
       "path": "../swf/tsconfig.runtime.json"
-    },
-    {
-      "path": "../types"
     }
   ],
   "include": ["src"]

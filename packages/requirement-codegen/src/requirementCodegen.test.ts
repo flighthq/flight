@@ -1,12 +1,11 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { createRequirementCatalog } from '@flighthq/requirement-catalog/contract';
 import type {
-  Requirement,
   RequirementCatalog,
   RequirementCatalogEntry,
   RequirementDisposition,
-  RequirementSet,
-} from '@flighthq/types/contract';
+} from '@flighthq/requirement-catalog/contract';
+import type { Requirement, RequirementSet } from '@flighthq/types/contract';
 import { EntityRuntimeKey, RequirementFacet } from '@flighthq/types/contract';
 
 import { createRequirementCodegenPlan, initializeRequirementCodegenPlan } from './requirementCodegen.ts';

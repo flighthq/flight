@@ -1,4 +1,4 @@
-import type { RequirementBackend, RequirementCatalogEntry } from '@flighthq/types/contract';
+import type { RequirementBackend, RequirementCatalogEntry } from '@flighthq/requirement-catalog/contract';
 
 import {
   BACKEND_OPTION_FIELD_OVERRIDES,

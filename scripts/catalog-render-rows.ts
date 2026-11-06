@@ -1,3 +1,8 @@
+import type {
+  RequirementBackend,
+  RequirementCatalogEntry,
+  RequirementTranslation,
+} from '@flighthq/requirement-catalog/contract';
 import {
   canvasScene2DRenderPreset,
   canvasShapeCommands,
@@ -31,15 +36,7 @@ import { wgpuScene3DRenderPreset } from '@flighthq/scene3d-wgpu';
 import * as scene3dWgpu from '@flighthq/scene3d-wgpu';
 import { SWF_DOCUMENT_NODE_KINDS, SWF_REQUIREMENT_KEY_NAMESPACE, SWF_TAG_NODE_KINDS } from '@flighthq/swf/contract';
 import { getSwfTagName } from '@flighthq/swf/contract';
-import type {
-  CanvasShapeCommand,
-  Kind,
-  NodeRenderer,
-  Requirement,
-  RequirementBackend,
-  RequirementCatalogEntry,
-  RequirementTranslation,
-} from '@flighthq/types/contract';
+import type { CanvasShapeCommand, Kind, NodeRenderer, Requirement } from '@flighthq/types/contract';
 import { RequirementFacet } from '@flighthq/types/contract';
 
 /**

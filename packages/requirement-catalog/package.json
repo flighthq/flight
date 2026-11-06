@@ -41,7 +41,7 @@
   },
   "dependencies": {
     "@flighthq/entity": "*",
-    "@flighthq/types": "*"
+    "@flighthq/requirement": "*"
   },
   "devDependencies": {
     "typescript": "^7.0.2"

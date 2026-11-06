@@ -1,4 +1,4 @@
-import type { RequirementCatalogEntry } from '@flighthq/types/contract';
+import type { RequirementCatalogEntry } from '@flighthq/requirement-catalog/contract';
 import { RequirementFacet } from '@flighthq/types/contract';
 
 import { formatBuiltInRequirementCatalogSource, verifyRequirementCatalogEntries } from './catalog-core.ts';

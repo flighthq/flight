@@ -55,7 +55,6 @@
     "@flighthq/requirement-catalog": "*",
     "@flighthq/requirement-codegen": "*",
     "@flighthq/scene3d-formats": "*",
-    "@flighthq/swf": "*",
-    "@flighthq/types": "*"
+    "@flighthq/swf": "*"
   }
 }

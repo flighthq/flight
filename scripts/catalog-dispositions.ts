@@ -1,5 +1,5 @@
+import type { RequirementDisposition } from '@flighthq/requirement-catalog/contract';
 import { RequirementFacet } from '@flighthq/types/contract';
-import type { RequirementDisposition } from '@flighthq/types/contract';
 
 import { CATALOG_PARSER_BACKEND } from './catalog-rows.ts';
 

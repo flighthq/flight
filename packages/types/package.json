@@ -103,6 +103,7 @@
     "@flighthq/render-gl": "*",
     "@flighthq/render-wgpu": "*",
     "@flighthq/requirement": "*",
+    "@flighthq/requirement-catalog": "*",
     "@flighthq/resource": "*",
     "@flighthq/scene-document": "*",
     "@flighthq/scene2d": "*",
