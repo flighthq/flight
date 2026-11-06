@@ -10,6 +10,7 @@ export { enableRenderRegistriesGuards, explainRenderRegistriesMisses } from './r
 export * from './renderRegistrySignals.ts';
 export { createRenderView, resizeRenderView } from './renderView.ts';
 export type { RenderView, RenderViewResize, RenderViewTargetOptions } from './renderView.ts';
+export type { EffectPadding, EffectPaddingResolver } from './types.ts';
 export { destroyRenderState } from './renderState.ts';
 export { registerNodeRenderer, registerNodeRenderers } from './renderer.ts';
 export * from './scene2dWorkingColorSpace.ts';

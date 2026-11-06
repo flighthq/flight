@@ -1,4 +1,11 @@
-export type { BlendEffect, Effect, EffectStateOptions } from './contract.ts';
+export type {
+  BlendEffect,
+  Effect,
+  EffectCaptureGeometry,
+  EffectPaddingExplanation,
+  EffectPaddingStatus,
+  EffectStateOptions,
+} from './contract.ts';
 export {
   AdvancedBlendMode,
   CompositeOperator,

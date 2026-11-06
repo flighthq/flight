@@ -16,10 +16,9 @@ import {
   prepareScene2DRender,
   registerNodeRenderer,
 } from '@flighthq/render/contract';
-import type { RenderState } from '@flighthq/render/contract';
+import type { EffectPaddingResolver, RenderState } from '@flighthq/render/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
 import type {
-  EffectPaddingResolver,
   GlBitmapShader,
   GlColorAdjustmentMaterialFeature,
   GlColorAdjustmentMaterialFeatureGuard,

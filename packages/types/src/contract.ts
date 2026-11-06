@@ -517,8 +517,6 @@ export * from './RenderCacheRefreshOptions.ts';
 export * from './RenderDrawContext.ts';
 export * from './Effect.ts';
 export * from './EffectFieldRole.ts';
-export * from './EffectCaptureGeometry.ts';
-export * from './EffectPadding.ts';
 export * from './EffectInput.ts';
 export * from './RenderRegistrySignals.ts';
 export * from './RequirementFacet.ts';
