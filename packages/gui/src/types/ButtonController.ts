@@ -1,9 +1,9 @@
+import type { NodeInteractiveStateBinding } from '@flighthq/interaction/contract';
 import type { Node2D } from '@flighthq/scene2d/contract';
 import type { Signal } from '@flighthq/signals/contract';
 
 import type { GuiControllerOptions } from './GuiController.ts';
 import type { GuiEntity as Entity } from './GuiEntity.ts';
-import type { NodeInteractiveStateBinding } from './GuiNodeInteractiveState.ts';
 
 declare const ButtonControllerTypeKey: unique symbol;
 

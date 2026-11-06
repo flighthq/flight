@@ -2,10 +2,10 @@ import type { InputKeyboardData } from '@flighthq/input/contract';
 import type { Node2D } from '@flighthq/scene2d/contract';
 import type { Signal } from '@flighthq/signals/contract';
 import type { RichText } from '@flighthq/text/contract';
+import type { TextInputManagerRaw, TextInputSource } from '@flighthq/textinput/contract';
 
 import type { GuiControllerOptions } from './GuiController.ts';
 import type { GuiEntity as Entity } from './GuiEntity.ts';
-import type { GuiTextInputManager, GuiTextInputSource } from './GuiTextInput.ts';
 
 declare const TextInputControllerTypeKey: unique symbol;
 
@@ -16,8 +16,8 @@ export interface TextInputController extends Entity {
 export interface TextInputControllerOptions extends GuiControllerOptions {
   background?: Node2D;
   caret?: Node2D;
-  input?: GuiTextInputSource;
-  manager?: GuiTextInputManager;
+  input?: TextInputSource;
+  manager?: TextInputManagerRaw;
   textField: RichText;
 }
 

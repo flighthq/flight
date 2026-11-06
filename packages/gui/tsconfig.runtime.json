@@ -17,7 +17,6 @@
     { "path": "../signals" },
     { "path": "../text/tsconfig.runtime.json" },
     { "path": "../textinput/tsconfig.runtime.json" },
-    { "path": "../types" },
     { "path": "./tsconfig.contract.json" }
   ],
   "include": ["src/**/*.ts"],

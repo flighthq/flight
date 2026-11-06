@@ -1,11 +1,10 @@
-import type { Node2D } from '@flighthq/scene2d/contract';
-
 import type {
   NodeInteractiveStateProperty,
   NodeInteractiveStateTransition,
   NodeInteractiveStateTransitionRequest,
   NodeInteractiveStateTransitionValue,
-} from './GuiNodeInteractiveState.ts';
+} from '@flighthq/interaction/contract';
+import type { Node2D } from '@flighthq/scene2d/contract';
 
 export type GuiOrientation = 'horizontal' | 'vertical';
 

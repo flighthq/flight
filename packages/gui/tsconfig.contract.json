@@ -7,7 +7,15 @@
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,
-    "moduleSuffixes": [".scene2d-types", ".interaction-types", ".node-types", ".geometry-types", ".text-types", ""],
+    "moduleSuffixes": [
+      ".scene2d-types",
+      ".interaction-types",
+      ".node-types",
+      ".geometry-types",
+      ".text-types",
+      ".textinput-types",
+      ""
+    ],
     "tsBuildInfoFile": "dist/.tsbuildinfo.contract"
   },
   "references": [
@@ -18,7 +26,8 @@
     { "path": "../node/tsconfig.contract.json" },
     { "path": "../scene2d/tsconfig.contract.json" },
     { "path": "../signals" },
-    { "path": "../text/tsconfig.contract.json" }
+    { "path": "../text/tsconfig.contract.json" },
+    { "path": "../textinput/tsconfig.contract.json" }
   ],
   "include": ["src/contract.gui-types.ts", "src/types/**/*.ts"]
 }
