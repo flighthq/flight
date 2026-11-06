@@ -4,8 +4,6 @@ import { ImageResourceReferenceKind } from '@flighthq/image/contract';
 import type { ImageResourceReference } from '@flighthq/image/contract';
 import { createTexture } from '@flighthq/texture/contract';
 import { ResourceResolutionState, StandardPbrMaterialKind, UnlitMaterialKind } from '@flighthq/types/contract';
-import { Scene3DResourceResolverRuntimeKey } from '@flighthq/types/contract';
-import type { Scene3DResourceInFlight } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { createScene3DMaterialTextureRegistry } from './sceneMaterialTextureRegistry.ts';
@@ -15,6 +13,8 @@ import {
   disposeScene3DResourceResolver,
   initializeScene3DResourceResolver,
 } from './sceneResourceResolver.ts';
+import { Scene3DResourceResolverRuntimeKey } from './types.ts';
+import type { Scene3DResourceInFlight } from './types.ts';
 
 const host: { readonly graphics: { readonly image: HostImageCapability } } = {
   graphics: { image: { [EntityRuntimeKey]: undefined, loadImageFromUrl: vi.fn() } },

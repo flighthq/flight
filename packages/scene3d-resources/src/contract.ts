@@ -27,3 +27,4 @@ export * from './anisotropyPbrScene3DMaterialTextures.ts';
 export * from './clearcoatPbrScene3DMaterialTextures.ts';
 export { initializeScene3DResourceResolver } from './sceneResourceResolver.ts';
 export { initializeScene3DResourceSignals } from './sceneResourceSignals.ts';
+export * from './types.ts';

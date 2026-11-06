@@ -1,7 +1,8 @@
-import type { Scene3DMaterialTextureRegistry, ShadedMaterial } from '@flighthq/types/contract';
+import type { ShadedMaterial } from '@flighthq/types/contract';
 import { ShadedMaterialKind } from '@flighthq/types/contract';
 
 import { registerScene3DMaterialTextures } from './sceneMaterialTextureRegistry.ts';
+import type { Scene3DMaterialTextureRegistry } from './types.ts';
 
 // Lists the ShadedMaterial base maps. Registered separately from the surface-material listers'
 // PBR/unlit set so an app that never uses the shaded base pays nothing for it.

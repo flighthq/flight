@@ -2,13 +2,10 @@ import { resetFailedImageResourceReference } from '@flighthq/image/contract';
 import type { ImageResourceReference } from '@flighthq/image/contract';
 import type { Scene3D } from '@flighthq/scene3d/contract';
 import type { Texture } from '@flighthq/texture/contract';
-import type {
-  Scene3DResourceResolverWithRuntime,
-  UpdateScene3DResourceStreamingOptions,
-} from '@flighthq/types/contract';
 
 import { getScene3DResourceTextures, getScene3DTextureResourceReference } from './getScene3DResourceTextures.ts';
 import { updateScene3DResourceStreaming } from './resolveScene3DResources.ts';
+import type { Scene3DResourceResolverWithRuntime, UpdateScene3DResourceStreamingOptions } from './types.ts';
 
 // Resets every selected failed identity once, then performs a streaming update under the same
 // selection/priority policy. The update remains authoritative for the working set, including cancellation

@@ -3,7 +3,6 @@ import { ImageResourceReferenceKind } from '@flighthq/image/contract';
 import type { HostNetCapability, NetResponse } from '@flighthq/net/contract';
 import type { Scene3DDocument } from '@flighthq/scene3d/contract';
 import { connectSignal, createSignal, emitSignal } from '@flighthq/signals/contract';
-import type { Scene3DDocumentLoadProgress } from '@flighthq/types/contract';
 import { ResourceResolutionState } from '@flighthq/types/contract';
 import { afterEach, describe, expect, it } from 'vitest';
 
@@ -13,6 +12,7 @@ import {
   loadScene3DDocumentTextFromUrl,
   setScene3DDocumentResourceBasePathFromUrl,
 } from './sceneDocumentSource.ts';
+import type { Scene3DDocumentLoadProgress } from './types.ts';
 
 function fakeNetHost(backend: HostNetCapability): {
   readonly net: { readonly http: HostNetCapability };

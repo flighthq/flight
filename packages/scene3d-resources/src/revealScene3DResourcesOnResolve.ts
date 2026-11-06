@@ -6,18 +6,17 @@ import { hasTextureSource } from '@flighthq/texture/contract';
 import type { Texture } from '@flighthq/texture/contract';
 import { createTween } from '@flighthq/tween/contract';
 import type { TweenManager } from '@flighthq/tween/contract';
-import type {
-  Material,
-  Node3D,
-  Scene3DResourceResolver,
-  Scene3DResourceResolverWithRuntime,
-  Scene3DResourceRevealOptions,
-} from '@flighthq/types/contract';
+import type { Material, Node3D } from '@flighthq/types/contract';
 import { ResourceResolutionState } from '@flighthq/types/contract';
 
 import { getScene3DTextureResourceReference } from './getScene3DResourceTextures.ts';
 import { getScene3DMaterialTextures } from './sceneMaterialTextureRegistry.ts';
 import { enableScene3DResourceSignals } from './sceneResourceSignals.ts';
+import type {
+  Scene3DResourceResolver,
+  Scene3DResourceResolverWithRuntime,
+  Scene3DResourceRevealOptions,
+} from './types.ts';
 
 // The standard streamed-texture fade-in, composed from node opacity (P1/P2) + @flighthq/tween: every
 // object carrying a still-pending texture is hidden to `from` up front, and only after every required

@@ -6,12 +6,12 @@ import {
 } from '@flighthq/scene3d-formats/contract';
 import type { GltfCoreFeatureHandler } from '@flighthq/scene3d-formats/contract';
 import type { Scene3DDocument } from '@flighthq/scene3d/contract';
-import type { GltfScene3DDocumentLoadOptions } from '@flighthq/types/contract';
 
 import {
   loadScene3DDocumentFromGlbUrlWithCoreFeatureHandlers,
   loadScene3DDocumentFromGltfUrlWithCoreFeatureHandlers,
 } from './gltfLoad.ts';
+import type { GltfScene3DDocumentLoadOptions } from './types.ts';
 
 export async function loadScene3DDocumentFromGlbUrl(
   hostNet: Readonly<HostNetCapability>,

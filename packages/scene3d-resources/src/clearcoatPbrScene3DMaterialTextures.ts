@@ -1,7 +1,8 @@
-import type { ClearcoatPbrExtension, Scene3DMaterialTextureRegistry } from '@flighthq/types/contract';
+import type { ClearcoatPbrExtension } from '@flighthq/types/contract';
 import { ClearcoatPbrExtensionKind } from '@flighthq/types/contract';
 
 import { registerScene3DPbrExtensionTextures } from './sceneMaterialTextureRegistry.ts';
+import type { Scene3DMaterialTextureRegistry } from './types.ts';
 
 export function registerClearcoatPbrScene3DMaterialTextures(registry: Scene3DMaterialTextureRegistry): void {
   registerScene3DPbrExtensionTextures(registry, ClearcoatPbrExtensionKind, (extension, out): void => {

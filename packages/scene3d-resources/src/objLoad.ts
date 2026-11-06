@@ -1,9 +1,10 @@
 import type { HostNetCapability } from '@flighthq/net/contract';
 import { parseObj } from '@flighthq/scene3d-formats/contract';
 import type { Scene3DDocument } from '@flighthq/scene3d/contract';
-import type { ObjMaterialLibrary, Scene3DDocumentLoadOptions } from '@flighthq/types/contract';
+import type { ObjMaterialLibrary } from '@flighthq/types/contract';
 
 import { loadScene3DDocumentTextFromUrl, setScene3DDocumentResourceBasePathFromUrl } from './sceneDocumentSource.ts';
+import type { Scene3DDocumentLoadOptions } from './types.ts';
 
 // Fetches a Wavefront OBJ file from a URL and parses it into a format-neutral Scene3DDocument, using an
 // optional already-parsed MTL library for its materials. Fetches only the OBJ FILE (the `.mtl` sidecar and

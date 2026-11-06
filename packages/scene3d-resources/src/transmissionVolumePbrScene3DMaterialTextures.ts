@@ -1,7 +1,8 @@
-import type { Scene3DMaterialTextureRegistry, TransmissionVolumePbrExtension } from '@flighthq/types/contract';
+import type { TransmissionVolumePbrExtension } from '@flighthq/types/contract';
 import { TransmissionVolumePbrExtensionKind } from '@flighthq/types/contract';
 
 import { registerScene3DPbrExtensionTextures } from './sceneMaterialTextureRegistry.ts';
+import type { Scene3DMaterialTextureRegistry } from './types.ts';
 
 export function registerTransmissionVolumePbrScene3DMaterialTextures(registry: Scene3DMaterialTextureRegistry): void {
   registerScene3DPbrExtensionTextures(registry, TransmissionVolumePbrExtensionKind, (extension, out): void => {

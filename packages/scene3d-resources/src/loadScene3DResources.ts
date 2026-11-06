@@ -1,11 +1,11 @@
 import type { ImageResourceReference } from '@flighthq/image/contract';
 import type { Scene3D } from '@flighthq/scene3d/contract';
 import { emitSignal } from '@flighthq/signals/contract';
-import type { LoadScene3DResourcesOptions, Scene3DResourceResolverWithRuntime } from '@flighthq/types/contract';
 import { ResourceResolutionState } from '@flighthq/types/contract';
-import { Scene3DResourceResolverRuntimeKey } from '@flighthq/types/contract';
 
 import { updateScene3DResourceStreaming } from './resolveScene3DResources.ts';
+import type { LoadScene3DResourcesOptions, Scene3DResourceResolverWithRuntime } from './types.ts';
+import { Scene3DResourceResolverRuntimeKey } from './types.ts';
 
 // Eager/deterministic asynchronous load: reconciles the selected working set, starts its acquisitions,
 // then awaits every in-flight load it started so each reference has settled to Resolved or Failed on

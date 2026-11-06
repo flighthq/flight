@@ -4,9 +4,9 @@ import { logOnce } from '@flighthq/log/contract';
 import { LogLevel } from '@flighthq/log/contract';
 import { connectSignal, disconnectSignal } from '@flighthq/signals/contract';
 import type { SlotId } from '@flighthq/signals/contract';
-import type { Scene3DResourceEvent, Scene3DResourceResolverWithRuntime } from '@flighthq/types/contract';
 
 import { enableScene3DResourceSignals } from './sceneResourceSignals.ts';
+import type { Scene3DResourceEvent, Scene3DResourceResolverWithRuntime } from './types.ts';
 
 // Returns whether the failure guard is installed on `resolver`.
 export function areScene3DResourceFailureGuardsEnabled(

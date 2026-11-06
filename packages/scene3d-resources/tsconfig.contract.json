@@ -1,0 +1,94 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "composite": true,
+    "rootDir": "src",
+    "outDir": "dist",
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "moduleSuffixes": [
+      ".app-types",
+      ".bitmap-types",
+      ".geometry-types",
+      ".image-types",
+      ".loader-types",
+      ".materials-types",
+      ".menu-types",
+      ".scene3d-bridge-types",
+      ".scene3d-formats-types",
+      ".scene3d-types",
+      ".surface-types",
+      ".texture-formats-types",
+      ".texture-types",
+      ""
+    ],
+    "tsBuildInfoFile": "dist/.tsbuildinfo.contract"
+  },
+  "references": [
+    {
+      "path": "../animation"
+    },
+    {
+      "path": "../app/tsconfig.contract.json"
+    },
+    {
+      "path": "../bitmap/tsconfig.contract.json"
+    },
+    {
+      "path": "../easing"
+    },
+    {
+      "path": "../entity"
+    },
+    {
+      "path": "../geometry/tsconfig.contract.json"
+    },
+    {
+      "path": "../image-codec"
+    },
+    {
+      "path": "../image/tsconfig.contract.json"
+    },
+    {
+      "path": "../importdiagnostics"
+    },
+    {
+      "path": "../loader/tsconfig.contract.json"
+    },
+    {
+      "path": "../log"
+    },
+    {
+      "path": "../materials/tsconfig.contract.json"
+    },
+    {
+      "path": "../menu/tsconfig.contract.json"
+    },
+    {
+      "path": "../resource"
+    },
+    {
+      "path": "../scene3d-formats/tsconfig.contract.json"
+    },
+    {
+      "path": "../scene3d/tsconfig.contract.json"
+    },
+    {
+      "path": "../signals"
+    },
+    {
+      "path": "../surface/tsconfig.contract.json"
+    },
+    {
+      "path": "../texture-formats/tsconfig.contract.json"
+    },
+    {
+      "path": "../texture/tsconfig.contract.json"
+    },
+    {
+      "path": "../types/tsconfig.scene3d-types.json"
+    }
+  ],
+  "include": ["src/contract.scene3d-resources-types.ts", "src/types.ts"]
+}

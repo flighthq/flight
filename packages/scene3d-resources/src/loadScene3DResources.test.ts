@@ -8,12 +8,12 @@ import { createMesh, createScene3D } from '@flighthq/scene3d/contract';
 import { connectSignal, createSignal } from '@flighthq/signals/contract';
 import { createTexture, getTextureSource } from '@flighthq/texture/contract';
 import type { Texture } from '@flighthq/texture/contract';
-import type { Scene3DResourceLoadProgress } from '@flighthq/types/contract';
 import { ResourceResolutionState } from '@flighthq/types/contract';
 import { describe, expect, it, vi } from 'vitest';
 
 import { loadScene3DResources, waitForScene3DResourceResolver } from './loadScene3DResources.ts';
 import { createBuiltInScene3DResourceResolver, disposeScene3DResourceResolver } from './sceneResourceResolver.ts';
+import type { Scene3DResourceLoadProgress } from './types.ts';
 
 const host: { readonly graphics: { readonly image: HostImageCapability } } = {
   graphics: { image: { [EntityRuntimeKey]: undefined, loadImageFromUrl: vi.fn() } },

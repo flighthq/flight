@@ -2,13 +2,13 @@ import type { HostNetCapability } from '@flighthq/net/contract';
 import type { GltfCoreFeatureHandler, GltfDocument } from '@flighthq/scene3d-formats/contract';
 import { parseGlbWithCoreFeatureHandlers, parseGltfWithCoreFeatureHandlers } from '@flighthq/scene3d-formats/contract';
 import type { Scene3DDocument } from '@flighthq/scene3d/contract';
-import type { GltfScene3DDocumentLoadOptions, Scene3DDocumentLoadOptions } from '@flighthq/types/contract';
 
 import {
   getScene3DDocumentBasePathFromUrl,
   loadScene3DDocumentBytesFromUrl,
   loadScene3DDocumentTextFromUrl,
 } from './sceneDocumentSource.ts';
+import type { GltfScene3DDocumentLoadOptions, Scene3DDocumentLoadOptions } from './types.ts';
 
 export async function loadScene3DDocumentFromGlbUrlWithCoreFeatureHandlers(
   hostNet: Readonly<HostNetCapability>,

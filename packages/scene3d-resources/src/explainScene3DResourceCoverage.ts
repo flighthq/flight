@@ -1,10 +1,11 @@
 import type { Kind } from '@flighthq/entity/contract';
 import type { CatalogRegistration, SceneCoverageCatalog, SceneCoverageEntry } from '@flighthq/render/contract';
 import { RenderRegistryTable, SceneCoverage } from '@flighthq/render/contract';
-import type { Scene3DKindUsage, Scene3DResourceResolver } from '@flighthq/types/contract';
+import type { Scene3DKindUsage } from '@flighthq/types/contract';
 import { RequirementFacet } from '@flighthq/types/contract';
 
 import { hasScene3DMaterialTextureLister } from './sceneMaterialTextureRegistry.ts';
+import type { Scene3DResourceResolver } from './types.ts';
 
 // Clears `out`, then reports EVERY material kind in `usage` with how well this resolver describes it —
 // satisfied ones included, so one call is a complete manifest rather than only a list of complaints. The resource

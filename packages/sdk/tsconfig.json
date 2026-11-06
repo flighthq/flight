@@ -310,7 +310,7 @@
       "path": "../scene3d-gl"
     },
     {
-      "path": "../scene3d-resources"
+      "path": "../scene3d-resources/tsconfig.runtime.json"
     },
     {
       "path": "../scene3d-wgpu/tsconfig.runtime.json"

@@ -7,9 +7,6 @@ import {
   disposeResourceLoader,
   startResourceLoad,
 } from '@flighthq/loader/contract';
-import type { Scene3DResourceResolverOptions } from '@flighthq/types/contract';
-import { Scene3DResourceResolverRuntimeKey } from '@flighthq/types/contract';
-import type { Scene3DResourceResolverWithRuntime } from '@flighthq/types/contract';
 
 import { createWebImageResourceFetch } from './imageResourceFetch.ts';
 import {
@@ -18,6 +15,9 @@ import {
   registerStandardPbrScene3DMaterialTextures,
   registerUnlitScene3DMaterialTextures,
 } from './sceneMaterialTextureRegistry.ts';
+import type { Scene3DResourceResolverOptions } from './types.ts';
+import { Scene3DResourceResolverRuntimeKey } from './types.ts';
+import type { Scene3DResourceResolverWithRuntime } from './types.ts';
 
 // Explicit preconfigured assembly for the common Standard PBR + Unlit path. The primitive constructor
 // above stays empty so importing/creating it cannot silently pull material families into a custom lane.

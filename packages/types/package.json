@@ -108,6 +108,7 @@
     "@flighthq/scene3d": "*",
     "@flighthq/scene3d-formats": "*",
     "@flighthq/scene3d-gl": "*",
+    "@flighthq/scene3d-resources": "*",
     "@flighthq/scene3d-wgpu": "*",
     "@flighthq/screen": "*",
     "@flighthq/selection": "*",

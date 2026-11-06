@@ -10,7 +10,6 @@ import { connectSignal } from '@flighthq/signals/contract';
 import { createTexture, getTextureSource } from '@flighthq/texture/contract';
 import type { Texture } from '@flighthq/texture/contract';
 import { ImageTextureSourceKind } from '@flighthq/texture/contract';
-import type { Scene3DResourceResolverWithRuntime } from '@flighthq/types/contract';
 import { ResourceResolutionState } from '@flighthq/types/contract';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -23,6 +22,7 @@ import {
 } from './resolveScene3DResources.ts';
 import { createBuiltInScene3DResourceResolver, disposeScene3DResourceResolver } from './sceneResourceResolver.ts';
 import { enableScene3DResourceSignals } from './sceneResourceSignals.ts';
+import type { Scene3DResourceResolverWithRuntime } from './types.ts';
 
 const host: { readonly graphics: { readonly image: HostImageCapability } } = {
   graphics: { image: { [EntityRuntimeKey]: undefined, loadImageFromUrl: vi.fn() } },

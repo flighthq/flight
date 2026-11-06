@@ -40,10 +40,14 @@
     "clean:dist": "tsx ../../scripts/clean-package-dist.ts"
   },
   "dependencies": {
+    "@flighthq/easing": "*",
     "@flighthq/entity": "*",
     "@flighthq/image": "*",
+    "@flighthq/image-codec": "*",
+    "@flighthq/importdiagnostics": "*",
     "@flighthq/loader": "*",
     "@flighthq/log": "*",
+    "@flighthq/materials": "*",
     "@flighthq/net": "*",
     "@flighthq/node": "*",
     "@flighthq/render": "*",

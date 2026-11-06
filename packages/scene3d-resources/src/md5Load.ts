@@ -1,9 +1,9 @@
 import type { HostNetCapability } from '@flighthq/net/contract';
 import { parseMd5Mesh } from '@flighthq/scene3d-formats/contract';
 import type { Scene3DDocument } from '@flighthq/scene3d/contract';
-import type { Scene3DDocumentLoadOptions } from '@flighthq/types/contract';
 
 import { loadScene3DDocumentTextFromUrl, setScene3DDocumentResourceBasePathFromUrl } from './sceneDocumentSource.ts';
+import type { Scene3DDocumentLoadOptions } from './types.ts';
 
 // Fetches an MD5 mesh file (`.md5mesh`) from a URL and parses it into a format-neutral Scene3DDocument (mesh +
 // skeleton). Fetches only the mesh FILE — a paired `.md5anim` is a separate file, and the document's shader

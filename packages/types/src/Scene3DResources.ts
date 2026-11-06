@@ -1,133 +1,36 @@
-import type { Signal } from '@flighthq/signals/contract';
+// Owned by `@flighthq/scene3d-resources`. These deprecated re-exports keep existing `@flighthq/types`
+// imports compiling until consumers import the owning package.
 
-import type { EasingFunction } from './EasingFunction.ts';
-import type { Entity, Kind } from './Entity.ts';
-import type { GltfCoreFeatureHandler, GltfExtensionHandler } from './GltfExtension.ts';
-import type { HostImageDecodeCapabilities } from './HostImageDecode.ts';
-import type { ImageResourceFetch, ImageResourceReference } from './ImageResourceReference.ts';
-import type { ImportDiagnostic } from './ImportDiagnostic.ts';
-import type { Material } from './Material.ts';
-import type { PbrExtension } from './PbrExtension.ts';
-import type { ResourceLoader } from './ResourceLoader.ts';
-import type { Scene3D } from './Scene3D.ts';
-import type { Texture } from './Texture.ts';
-import type { TextureSource } from './TextureSource.ts';
+import type { Scene3DResourceResolverRuntimeKey as OwnedScene3DResourceResolverRuntimeKey } from '@flighthq/scene3d-resources/contract';
 
-export type Scene3DMaterialTextureLister = (material: Readonly<Material>, out: Texture[]) => void;
+/** @deprecated Import from `@flighthq/scene3d-resources/contract`. */
+export type {
+  GltfScene3DDocumentLoadOptions,
+  LoadScene3DResourcesOptions,
+  ResolveScene3DResourcesOptions,
+  Scene3DDocumentLoadOptions,
+  Scene3DDocumentLoadProgress,
+  Scene3DMaterialTextureLister,
+  Scene3DMaterialTextureRegistry,
+  Scene3DPbrExtensionTextureLister,
+  Scene3DResourceEvent,
+  Scene3DResourceInFlight,
+  Scene3DResourceLoadProgress,
+  Scene3DResourceResolution,
+  Scene3DResourceResolver,
+  Scene3DResourceResolverOptions,
+  Scene3DResourceResolverRuntime,
+  Scene3DResourceResolverWithRuntime,
+  Scene3DResourceRevealOptions,
+  Scene3DResourceSignals,
+  Scene3DResourceWorkingSet,
+  Scene3DResources,
+  UpdateScene3DResourceStreamingOptions,
+} from '@flighthq/scene3d-resources/contract';
 
-export type Scene3DPbrExtensionTextureLister = (extension: Readonly<PbrExtension>, out: Texture[]) => void;
-
-export interface Scene3DMaterialTextureRegistry {
-  extensionListers: Map<Kind, Scene3DPbrExtensionTextureLister>;
-  listers: Map<Kind, Scene3DMaterialTextureLister>;
-}
-
-export interface Scene3DResourceEvent {
-  ref: ImageResourceReference;
-  texture: Texture;
-}
-
-export interface Scene3DResourceSignals extends Entity {
-  onResourceFailed: Signal<Readonly<Scene3DResourceEvent>>;
-  onResourceResolved: Signal<Readonly<Scene3DResourceEvent>>;
-}
-
-// The public, caller-composable resolver atom. Queueing, settled-source retention, subscribers, and
-// optional signals are package-private runtime state: callers select the fetch and texture-discovery
-// seams, then advance/query the resolver through named functions rather than mutating its machinery.
-export interface Scene3DResourceResolver extends Entity {
-  fetch: ImageResourceFetch;
-  imageDecode?: HostImageDecodeCapabilities;
-  registry: Scene3DMaterialTextureRegistry;
-}
-
-export interface Scene3DResourceResolverOptions {
-  fetch?: ImageResourceFetch;
-  imageDecode?: HostImageDecodeCapabilities;
-  maxConcurrent?: number;
-  registry?: Scene3DMaterialTextureRegistry;
-}
-
-// One resource identity's private in-flight resolution. Several sampled Texture entities may share
-// one image resource while retaining independent sampler/color/UV state.
-export interface Scene3DResourceInFlight {
-  controller: AbortController;
-  promise: Promise<void>;
-  subscribers: Set<Texture>;
-}
-
-export interface Scene3DResourceResolverRuntime {
-  inFlight: Map<ImageResourceReference, Scene3DResourceInFlight>;
-  loader: ResourceLoader;
-  resolved: Map<ImageResourceReference, TextureSource>;
-  signals: Scene3DResourceSignals | null;
-}
-
-export const Scene3DResourceResolverRuntimeKey: unique symbol = Symbol('Scene3DResourceResolverRuntime');
-
-export interface Scene3DResourceResolverWithRuntime extends Scene3DResourceResolver {
-  [Scene3DResourceResolverRuntimeKey]: Scene3DResourceResolverRuntime;
-}
-
-// One byte-progress tick for a source participating in asynchronous Scene3DDocument acquisition. The URL
-// identifies the main file or discovered dependency; totals are per source and may be zero when the
-// transport cannot determine Content-Length.
-export interface Scene3DDocumentLoadProgress {
-  loaded: number;
-  phase: 'download' | 'upload';
-  total: number;
-  url: string;
-}
-
-export interface Scene3DDocumentLoadOptions {
-  progress?: Signal<Readonly<Scene3DDocumentLoadProgress>>;
-  signal?: AbortSignal;
-}
-
-// glTF URL acquisition plus the caller-owned synchronous parser opt-ins. Diagnostics report unsupported
-// required extensions, while an unhandled extension named only in `extensionsUsed` remains silent.
-export interface GltfScene3DDocumentLoadOptions extends Scene3DDocumentLoadOptions {
-  coreFeatureHandlers?: readonly GltfCoreFeatureHandler[];
-  diagnostics?: ImportDiagnostic[];
-  extensionHandlers?: readonly GltfExtensionHandler[];
-}
-
-export interface Scene3DResourceLoadProgress {
-  loaded: number;
-  total: number;
-}
-
-export interface LoadScene3DResourcesOptions extends UpdateScene3DResourceStreamingOptions {
-  progress?: Signal<Readonly<Scene3DResourceLoadProgress>>;
-}
-
-export interface ResolveScene3DResourcesOptions {
-  select?: (texture: Readonly<Texture>, ref: Readonly<ImageResourceReference>) => boolean;
-}
-
-export interface Scene3DResourceResolution extends Scene3DResourceWorkingSet {
-  source: TextureSource;
-}
-
-// One synchronous selected-working-set snapshot. Resolved groups name the ready source and every Texture
-// subscriber it was bound to; unresolved groups remain directly usable by loading/streaming policy.
-export interface Scene3DResources {
-  resolved: Scene3DResourceResolution[];
-  scene: Scene3D;
-  unresolved: Scene3DResourceWorkingSet[];
-}
-
-export interface Scene3DResourceWorkingSet {
-  ref: ImageResourceReference;
-  textures: Texture[];
-}
-
-export interface UpdateScene3DResourceStreamingOptions extends ResolveScene3DResourcesOptions {
-  priority?: (texture: Readonly<Texture>, ref: Readonly<ImageResourceReference>) => number;
-}
-
-export interface Scene3DResourceRevealOptions {
-  ease?: EasingFunction;
-  fadeSeconds?: number;
-  from?: number;
-}
+// A structural copy (core may cross into an owner only with type-only edges). The registered symbol
+// makes it the very same value as the owner's key, and the cast gives it the owner's unique type.
+/** @deprecated Import from `@flighthq/scene3d-resources/contract`. */
+export const Scene3DResourceResolverRuntimeKey = Symbol.for(
+  '@flighthq/scene3d-resources/Scene3DResourceResolverRuntime',
+) as typeof OwnedScene3DResourceResolverRuntimeKey;

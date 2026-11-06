@@ -12,12 +12,13 @@ import { createTexture } from '@flighthq/texture/contract';
 import type { Texture } from '@flighthq/texture/contract';
 import { ImageTextureSourceKind } from '@flighthq/texture/contract';
 import { createTweenManager, hasTweensOf, updateTweens } from '@flighthq/tween/contract';
-import type { Node3D, Scene3DResourceEvent } from '@flighthq/types/contract';
+import type { Node3D } from '@flighthq/types/contract';
 import { ResourceResolutionState } from '@flighthq/types/contract';
 
 import { revealScene3DResourcesOnResolve } from './revealScene3DResourcesOnResolve.ts';
 import { createBuiltInScene3DResourceResolver } from './sceneResourceResolver.ts';
 import { enableScene3DResourceSignals } from './sceneResourceSignals.ts';
+import type { Scene3DResourceEvent } from './types.ts';
 
 const host: { readonly graphics: { readonly image: HostImageCapability } } = {
   graphics: { image: { [EntityRuntimeKey]: undefined, loadImageFromUrl: vi.fn() } },

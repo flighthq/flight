@@ -7,18 +7,18 @@ import { queueResourceLoad } from '@flighthq/loader/contract';
 import type { Scene3D } from '@flighthq/scene3d/contract';
 import { emitSignal } from '@flighthq/signals/contract';
 import type { Texture, TextureSource } from '@flighthq/texture/contract';
+import { ResourceResolutionState } from '@flighthq/types/contract';
+
+import { getScene3DResourceTextures, getScene3DTextureResourceReference } from './getScene3DResourceTextures.ts';
 import type {
   ResolveScene3DResourcesOptions,
   Scene3DResourceResolver,
   Scene3DResourceWorkingSet,
   Scene3DResources,
   UpdateScene3DResourceStreamingOptions,
-} from '@flighthq/types/contract';
-import { ResourceResolutionState } from '@flighthq/types/contract';
-import { Scene3DResourceResolverRuntimeKey } from '@flighthq/types/contract';
-import type { Scene3DResourceInFlight, Scene3DResourceResolverWithRuntime } from '@flighthq/types/contract';
-
-import { getScene3DResourceTextures, getScene3DTextureResourceReference } from './getScene3DResourceTextures.ts';
+} from './types.ts';
+import { Scene3DResourceResolverRuntimeKey } from './types.ts';
+import type { Scene3DResourceInFlight, Scene3DResourceResolverWithRuntime } from './types.ts';
 
 export function initializeImageResourceFailure(
   out: EntityConstruction<ImageResourceFailure>,

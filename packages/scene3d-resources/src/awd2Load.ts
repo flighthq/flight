@@ -1,9 +1,10 @@
 import type { HostNetCapability } from '@flighthq/net/contract';
 import { parseAwd2 } from '@flighthq/scene3d-formats/contract';
 import type { Scene3DDocument } from '@flighthq/scene3d/contract';
-import type { Awd2ParseOptions, Scene3DDocumentLoadOptions } from '@flighthq/types/contract';
+import type { Awd2ParseOptions } from '@flighthq/types/contract';
 
 import { loadScene3DDocumentBytesFromUrl, setScene3DDocumentResourceBasePathFromUrl } from './sceneDocumentSource.ts';
+import type { Scene3DDocumentLoadOptions } from './types.ts';
 
 // Fetches an Away3D AWD file from a URL and parses it into a format-neutral Scene3DDocument (geometry, skins,
 // and its skeleton animation). Fetches only the FILE — the document's texture refs stay unresolved; assemble

@@ -18,6 +18,9 @@ async function bundleScene3DResourceResolverExport(name: string): Promise<string
       sourcefile: `tree-shake-${name}.ts`,
     },
     treeShaking: true,
+    // The package root is a solution config; the runtime project carries the workspace path mapping
+    // that resolves @flighthq/* to source, which is the graph these assertions are about.
+    tsconfig: `${resolveDir}/../tsconfig.runtime.json`,
     write: false,
   });
   return result.outputFiles[0].text;

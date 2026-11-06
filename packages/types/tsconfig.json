@@ -88,6 +88,8 @@
       ".text-markup-types",
       ".loader-types",
       ".tween-types",
+      ".scene3d-resources-types",
+      ".scene3d-bridge-types",
       ""
     ],
     "types": ["@testing-library/jest-dom", "vitest/globals", "@webgpu/types"]
@@ -379,9 +381,6 @@
       "path": "../textsegment/tsconfig.contract.json"
     },
     {
-      "path": "../textsegment/tsconfig.contract.json"
-    },
-    {
       "path": "../text-markup/tsconfig.contract.json"
     },
     {
@@ -404,6 +403,12 @@
     },
     {
       "path": "../tween/tsconfig.contract.json"
+    },
+    {
+      "path": "../scene3d-resources/tsconfig.contract.json"
+    },
+    {
+      "path": "./tsconfig.scene3d-types.json"
     }
   ],
   "include": ["src"]

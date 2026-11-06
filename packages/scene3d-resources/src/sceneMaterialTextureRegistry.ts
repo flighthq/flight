@@ -3,14 +3,17 @@ import type { Texture } from '@flighthq/texture/contract';
 import type {
   ExtendedPbrMaterial,
   Material,
-  Scene3DMaterialTextureLister,
-  Scene3DMaterialTextureRegistry,
-  Scene3DPbrExtensionTextureLister,
   StandardPbrMaterial,
   StandardPbrMaterialProperties,
   UnlitMaterial,
 } from '@flighthq/types/contract';
 import { ExtendedPbrMaterialKind, StandardPbrMaterialKind, UnlitMaterialKind } from '@flighthq/types/contract';
+
+import type {
+  Scene3DMaterialTextureLister,
+  Scene3DMaterialTextureRegistry,
+  Scene3DPbrExtensionTextureLister,
+} from './types.ts';
 
 export function createScene3DMaterialTextureRegistry(): NonEntityCreateResult<
   Scene3DMaterialTextureRegistry,
