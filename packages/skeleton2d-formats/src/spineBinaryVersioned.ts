@@ -1,7 +1,8 @@
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
-import type { ImportDiagnostic, Skeleton2DImport, SpineBinaryParser } from '@flighthq/types/contract';
-import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
+import type { ImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import { ImportDiagnosticSeverity } from '@flighthq/importdiagnostics/contract';
 
+import type { Skeleton2DImport, SpineBinaryParser } from './contract.skeleton2d-formats-types.ts';
 import { getSpineBinaryVersion } from './spineBinaryVersion.ts';
 
 // The Spine `.skel` VERSION REGISTRY — layer 3 of the version-keyed import model

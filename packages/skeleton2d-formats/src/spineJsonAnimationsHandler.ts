@@ -1,8 +1,9 @@
 import { createAnimationClip } from '@flighthq/animation/contract';
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
-import type { SpineJsonSectionContext, SpineJsonTimelineContext } from '@flighthq/types/contract';
-import { ImportDiagnosticSeverity, SpineJsonTimelineKind } from '@flighthq/types/contract';
+import { ImportDiagnosticSeverity } from '@flighthq/importdiagnostics/contract';
 
+import type { SpineJsonSectionContext, SpineJsonTimelineContext } from './contract.skeleton2d-formats-types.ts';
+import { SpineJsonTimelineKind } from './contract.skeleton2d-formats-types.ts';
 import { getSpineJsonTimelineHandler } from './spineJsonRegistry.ts';
 
 export function spineJsonAnimationsSectionHandler(context: SpineJsonSectionContext): void {

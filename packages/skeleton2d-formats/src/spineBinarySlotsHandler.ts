@@ -1,9 +1,10 @@
 import type { ByteReader } from '@flighthq/buffer/contract';
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import type { ImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import { ImportDiagnosticSeverity } from '@flighthq/importdiagnostics/contract';
 import type { Slot2D } from '@flighthq/skeleton2d/contract';
-import type { ImportDiagnostic, SpineBinarySectionContext } from '@flighthq/types/contract';
-import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
+import type { SpineBinarySectionContext } from './contract.skeleton2d-formats-types.ts';
 import { SPINE_BINARY_NO_DARK_COLOR, readSpineBinaryStringReference } from './spineBinaryParseHelpers.ts';
 import {
   isSpineBinaryReaderOverrun,

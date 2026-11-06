@@ -1,7 +1,7 @@
-import type { DragonBonesTimelineHandler, DragonBonesTimelineKind } from '@flighthq/types/contract';
-import { DragonBonesTimelineKind as TimelineKind } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
+import type { DragonBonesTimelineHandler, DragonBonesTimelineKind } from './contract.skeleton2d-formats-types.ts';
+import { DragonBonesTimelineKind as TimelineKind } from './contract.skeleton2d-formats-types.ts';
 import { dragonBonesBoneTimelineHandler } from './dragonBonesBoneTimelineHandler.ts';
 import { createDragonBonesRegistry, getDragonBonesTimelineHandler } from './dragonBonesRegistry.ts';
 import { dragonBonesSlotTimelineHandler } from './dragonBonesSlotTimelineHandler.ts';

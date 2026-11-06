@@ -1,3 +1,4 @@
+export * from './contract.skeleton2d-formats-types.ts';
 export { dragonBonesAnimationsSectionHandler } from './dragonBonesAnimationsHandler.ts';
 export { dragonBonesBoneTimelineHandler } from './dragonBonesBoneTimelineHandler.ts';
 export { dragonBonesBonesSectionHandler } from './dragonBonesBonesHandler.ts';

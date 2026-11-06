@@ -1,7 +1,7 @@
-import type { SpineJsonSectionHandler, SpineJsonSectionKind } from '@flighthq/types/contract';
-import { SpineJsonSectionKind as SectionKind } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
+import type { SpineJsonSectionHandler, SpineJsonSectionKind } from './contract.skeleton2d-formats-types.ts';
+import { SpineJsonSectionKind as SectionKind } from './contract.skeleton2d-formats-types.ts';
 import { spineJsonAnimationsSectionHandler } from './spineJsonAnimationsHandler.ts';
 import { spineJsonBonesSectionHandler } from './spineJsonBonesHandler.ts';
 import { createSpineJsonRegistry, getSpineJsonSectionHandler } from './spineJsonRegistry.ts';

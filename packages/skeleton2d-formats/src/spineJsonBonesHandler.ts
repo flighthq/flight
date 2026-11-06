@@ -1,9 +1,10 @@
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import type { ImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import { ImportDiagnosticSeverity } from '@flighthq/importdiagnostics/contract';
 import type { Bone2D, TransformInherit2D } from '@flighthq/skeleton2d/contract';
 import { TransformMode2D } from '@flighthq/skeleton2d/contract';
-import type { ImportDiagnostic, SpineJsonSectionContext } from '@flighthq/types/contract';
-import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
+import type { SpineJsonSectionContext } from './contract.skeleton2d-formats-types.ts';
 import { numberOr } from './spineParseHelpers.ts';
 
 export function spineJsonBonesSectionHandler(context: SpineJsonSectionContext): void {

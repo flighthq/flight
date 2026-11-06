@@ -1,12 +1,13 @@
 import { easeCubicBezier } from '@flighthq/easing/contract';
 import { collectImportDiagnostics } from '@flighthq/importdiagnostics/contract';
+import type { ImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import { ImportDiagnosticSeverity } from '@flighthq/importdiagnostics/contract';
 import { applyAnimationClipToSkeleton2D, cloneSkeleton2D } from '@flighthq/skeleton2d/contract';
 import type { RegionAttachment2D } from '@flighthq/skeleton2d/contract';
 import { RegionAttachment2DKind, TransformMode2D } from '@flighthq/skeleton2d/contract';
-import type { ImportDiagnostic } from '@flighthq/types/contract';
-import { ImportDiagnosticSeverity, SpineBinarySectionKind, SpineBinaryTimelineKind } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
+import { SpineBinarySectionKind, SpineBinaryTimelineKind } from './contract.skeleton2d-formats-types.ts';
 import { parseSpineSkeletonBinary } from './spineBinaryFull.ts';
 import { registerAllSpineBinaryHandlers } from './spineBinaryHandlers.ts';
 import { parseSpineSkeletonBinaryWithRegistry } from './spineBinaryParse.ts';

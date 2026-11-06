@@ -1,14 +1,14 @@
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import type { ImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import { ImportDiagnosticSeverity } from '@flighthq/importdiagnostics/contract';
 import { createSkeleton2D } from '@flighthq/skeleton2d/contract';
 import type { AttachmentSkin2D, Skeleton2DDrawOrderTimeline, Slot2D } from '@flighthq/skeleton2d/contract';
+
 import type {
-  ImportDiagnostic,
   Skeleton2DImport,
   SpineJsonRegistry,
   SpineJsonSectionContext,
-} from '@flighthq/types/contract';
-import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
-
+} from './contract.skeleton2d-formats-types.ts';
 import { resolveSpineDrawOrdering } from './spineDrawOrder.ts';
 import { indexOfSpineSlot, numberOr, SPINE_DEFAULT_SKIN_NAME } from './spineParseHelpers.ts';
 

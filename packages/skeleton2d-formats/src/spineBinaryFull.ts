@@ -1,5 +1,6 @@
-import type { ImportDiagnostic, Skeleton2DImport } from '@flighthq/types/contract';
+import type { ImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 
+import type { Skeleton2DImport } from './contract.skeleton2d-formats-types.ts';
 import { registerAllSpineBinaryHandlers } from './spineBinaryHandlers.ts';
 import { parseSpineSkeletonBinaryWithRegistry } from './spineBinaryParse.ts';
 import { createSpineBinaryRegistry } from './spineBinaryRegistry.ts';

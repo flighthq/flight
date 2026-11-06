@@ -1,5 +1,8 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import type { ImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import { ImportDiagnosticSeverity } from '@flighthq/importdiagnostics/contract';
 import { createSkin2D } from '@flighthq/skeleton2d/contract';
 import type {
   Attachment2D,
@@ -9,9 +12,8 @@ import type {
   SkinAttachment2D,
 } from '@flighthq/skeleton2d/contract';
 import { MeshAttachment2DKind, RegionAttachment2DKind } from '@flighthq/skeleton2d/contract';
-import type { DragonBonesSectionContext, EntityConstruction, ImportDiagnostic } from '@flighthq/types/contract';
-import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
+import type { DragonBonesSectionContext } from './contract.skeleton2d-formats-types.ts';
 import { parseDragonBonesBoneTransform } from './dragonBonesParseHelpers.ts';
 
 type DragonBonesBoneRemap = (rawBoneIndex: number) => number;

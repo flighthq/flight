@@ -1,3 +1,4 @@
+export * from './contract.skeleton2d-formats-types.ts';
 export * from './dragonBonesHandlers.ts';
 export * from './dragonBonesFull.ts';
 export * from './dragonBonesParse.ts';

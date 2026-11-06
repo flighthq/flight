@@ -1,4 +1,4 @@
-import { RequirementFacet } from '@flighthq/types/contract';
+import { RequirementFacet } from '@flighthq/requirement/contract';
 import { describe, expect, it } from 'vitest';
 
 import {

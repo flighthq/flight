@@ -5,7 +5,7 @@ import {
   parseDragonBonesSkeletonWithRegistry,
   registerDragonBonesSectionHandler,
 } from '@flighthq/skeleton2d-formats/contract';
-import { DragonBonesSectionKind } from '@flighthq/types/contract';
+import { DragonBonesSectionKind } from '@flighthq/skeleton2d-formats/contract';
 
 const registry = createDragonBonesRegistry();
 registerDragonBonesSectionHandler(registry, DragonBonesSectionKind.Bones, dragonBonesBonesSectionHandler);

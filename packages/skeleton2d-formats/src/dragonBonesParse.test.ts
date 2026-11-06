@@ -1,5 +1,8 @@
+import type { AnimationChannel } from '@flighthq/animation/contract';
 import { easeCubicBezier } from '@flighthq/easing/contract';
 import { collectImportDiagnostics } from '@flighthq/importdiagnostics/contract';
+import type { ImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import { ImportDiagnosticSeverity } from '@flighthq/importdiagnostics/contract';
 import {
   applyAnimationClipToSkeleton2D,
   cloneSkeleton2D,
@@ -13,8 +16,6 @@ import {
   Skeleton2DAnimationPath,
   TransformMode2D,
 } from '@flighthq/skeleton2d/contract';
-import type { AnimationChannel, ImportDiagnostic } from '@flighthq/types/contract';
-import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { dragonBonesAnimationsSectionReader } from './dragonBonesAnimationsHandler.ts';

@@ -1,12 +1,10 @@
+import type { AnimationInterpolation } from '@flighthq/animation/contract';
+import { AnimationInterpolationLinear, AnimationInterpolationStep } from '@flighthq/animation/contract';
 import type { EasingFunction } from '@flighthq/easing/contract';
 import { easeCubicBezier } from '@flighthq/easing/contract';
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
-import type { AnimationInterpolation, ImportDiagnostic } from '@flighthq/types/contract';
-import {
-  AnimationInterpolationLinear,
-  AnimationInterpolationStep,
-  ImportDiagnosticSeverity,
-} from '@flighthq/types/contract';
+import type { ImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import { ImportDiagnosticSeverity } from '@flighthq/importdiagnostics/contract';
 
 export function buildDragonBonesSegmentEasings(
   frames: readonly Readonly<Record<string, unknown>>[],

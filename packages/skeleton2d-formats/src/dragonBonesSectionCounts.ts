@@ -1,4 +1,4 @@
-import { DragonBonesSectionKind, DragonBonesTimelineKind } from '@flighthq/types/contract';
+import { DragonBonesSectionKind, DragonBonesTimelineKind } from './contract.skeleton2d-formats-types.ts';
 
 export function collectDragonBonesSectionCounts(json: string): Map<string, number> | null {
   let doc: unknown;

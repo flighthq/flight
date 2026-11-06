@@ -1,8 +1,9 @@
 import { createAnimationClip } from '@flighthq/animation/contract';
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
-import type { DragonBonesSectionContext, DragonBonesTimelineContext } from '@flighthq/types/contract';
-import { DragonBonesTimelineKind, ImportDiagnosticSeverity } from '@flighthq/types/contract';
+import { ImportDiagnosticSeverity } from '@flighthq/importdiagnostics/contract';
 
+import type { DragonBonesSectionContext, DragonBonesTimelineContext } from './contract.skeleton2d-formats-types.ts';
+import { DragonBonesTimelineKind } from './contract.skeleton2d-formats-types.ts';
 import { numberOr } from './dragonBonesParseHelpers.ts';
 import { getDragonBonesTimelineHandler } from './dragonBonesRegistry.ts';
 

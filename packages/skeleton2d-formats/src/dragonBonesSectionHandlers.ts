@@ -1,6 +1,5 @@
-import type { DragonBonesRegistry, DragonBonesSectionHandler } from '@flighthq/types/contract';
-import { DragonBonesSectionKind } from '@flighthq/types/contract';
-
+import type { DragonBonesRegistry, DragonBonesSectionHandler } from './contract.skeleton2d-formats-types.ts';
+import { DragonBonesSectionKind } from './contract.skeleton2d-formats-types.ts';
 import { dragonBonesAnimationsSectionHandler } from './dragonBonesAnimationsHandler.ts';
 import { dragonBonesBonesSectionHandler } from './dragonBonesBonesHandler.ts';
 import { registerDragonBonesSectionHandler } from './dragonBonesRegistry.ts';

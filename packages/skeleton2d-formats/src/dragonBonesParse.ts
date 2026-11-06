@@ -1,8 +1,10 @@
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import type { ImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import { ImportDiagnosticSeverity } from '@flighthq/importdiagnostics/contract';
 import { createSkeleton2D } from '@flighthq/skeleton2d/contract';
-import type { DragonBonesRegistry, DragonBonesSectionContext, ImportDiagnostic } from '@flighthq/types/contract';
-import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
-import type { Skeleton2DImport } from '@flighthq/types/contract';
+
+import type { DragonBonesRegistry, DragonBonesSectionContext } from './contract.skeleton2d-formats-types.ts';
+import type { Skeleton2DImport } from './contract.skeleton2d-formats-types.ts';
 
 export function parseDragonBonesSkeletonWithRegistry(
   json: string,

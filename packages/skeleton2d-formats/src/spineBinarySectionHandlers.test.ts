@@ -1,7 +1,7 @@
-import type { SpineBinarySectionHandler, SpineBinarySectionKind } from '@flighthq/types/contract';
-import { SpineBinarySectionKind as SectionKind } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
+import type { SpineBinarySectionHandler, SpineBinarySectionKind } from './contract.skeleton2d-formats-types.ts';
+import { SpineBinarySectionKind as SectionKind } from './contract.skeleton2d-formats-types.ts';
 import { createSpineBinaryRegistry, getSpineBinarySectionHandler } from './spineBinaryRegistry.ts';
 import {
   registerSpineBinarySectionHandlers,

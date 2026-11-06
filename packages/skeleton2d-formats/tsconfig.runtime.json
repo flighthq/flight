@@ -1,0 +1,34 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "composite": true,
+    "rootDir": "src",
+    "outDir": "dist",
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "types": ["@testing-library/jest-dom", "vitest/globals", "@webgpu/types"],
+    "tsBuildInfoFile": "dist/.tsbuildinfo.runtime"
+  },
+  "references": [
+    { "path": "../animation" },
+    { "path": "../buffer" },
+    { "path": "../easing" },
+    { "path": "../entity" },
+    { "path": "../importdiagnostics" },
+    { "path": "../registry" },
+    { "path": "../requirement" },
+    { "path": "../skeleton2d/tsconfig.runtime.json" },
+    { "path": "./tsconfig.contract.json" }
+  ],
+  "include": ["src/**/*.ts"],
+  "exclude": [
+    "src/contract.skeleton2d-formats-types.ts",
+    "src/DragonBonesRegistryContract.ts",
+    "src/Skeleton2DImport.ts",
+    "src/Skeleton2DJsonAnalysis.ts",
+    "src/SpineBinaryRegistryContract.ts",
+    "src/SpineBinaryVersionContract.ts",
+    "src/SpineJsonRegistryContract.ts"
+  ]
+}

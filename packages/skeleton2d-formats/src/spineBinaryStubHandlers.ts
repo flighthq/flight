@@ -1,6 +1,7 @@
 import type { ByteReader } from '@flighthq/buffer/contract';
-import type { ImportDiagnostic, SpineBinarySectionContext } from '@flighthq/types/contract';
+import type { ImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 
+import type { SpineBinarySectionContext } from './contract.skeleton2d-formats-types.ts';
 import { reportSpineBinaryCrumb } from './spineBinaryParseHelpers.ts';
 import {
   isSpineBinaryReaderOverrun,

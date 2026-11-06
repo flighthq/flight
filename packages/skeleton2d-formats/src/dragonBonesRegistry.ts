@@ -1,11 +1,12 @@
+import type { NonEntityCreateResult } from '@flighthq/entity/contract';
+
 import type {
   DragonBonesRegistry,
   DragonBonesSectionHandler,
   DragonBonesSectionKind,
   DragonBonesTimelineHandler,
   DragonBonesTimelineKind,
-  NonEntityCreateResult,
-} from '@flighthq/types/contract';
+} from './contract.skeleton2d-formats-types.ts';
 
 export function createDragonBonesRegistry(): NonEntityCreateResult<DragonBonesRegistry, 'descriptor'> {
   return { sectionHandlers: [], timelineHandlers: [] };

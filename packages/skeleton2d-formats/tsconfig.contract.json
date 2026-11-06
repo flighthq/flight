@@ -1,0 +1,28 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "composite": true,
+    "rootDir": "src",
+    "outDir": "dist",
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "moduleSuffixes": [".skeleton2d-types", ""],
+    "tsBuildInfoFile": "dist/.tsbuildinfo.contract"
+  },
+  "references": [
+    { "path": "../animation" },
+    { "path": "../buffer" },
+    { "path": "../importdiagnostics" },
+    { "path": "../skeleton2d/tsconfig.contract.json" }
+  ],
+  "include": [
+    "src/contract.skeleton2d-formats-types.ts",
+    "src/DragonBonesRegistryContract.ts",
+    "src/Skeleton2DImport.ts",
+    "src/Skeleton2DJsonAnalysis.ts",
+    "src/SpineBinaryRegistryContract.ts",
+    "src/SpineBinaryVersionContract.ts",
+    "src/SpineJsonRegistryContract.ts"
+  ]
+}

@@ -1,5 +1,4 @@
-import type { DragonBonesSectionContext, DragonBonesTimelineContext } from '@flighthq/types/contract';
-
+import type { DragonBonesSectionContext, DragonBonesTimelineContext } from './contract.skeleton2d-formats-types.ts';
 import { skipCrumbDragonBonesGroup } from './dragonBonesParseHelpers.ts';
 
 export function dragonBonesDeformTimelineHandler(

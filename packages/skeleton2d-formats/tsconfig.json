@@ -1,41 +1,15 @@
 {
-  "extends": "../../tsconfig.base.json",
-  "compilerOptions": {
-    "composite": true,
-    "rootDir": "src",
-    "outDir": "dist",
-    "declaration": true,
-    "declarationMap": true,
-    "sourceMap": true
-  },
+  "files": [],
   "references": [
-    {
-      "path": "../animation"
-    },
-    {
-      "path": "../buffer"
-    },
-    {
-      "path": "../easing"
-    },
-    {
-      "path": "../entity"
-    },
-    {
-      "path": "../importdiagnostics"
-    },
-    {
-      "path": "../registry"
-    },
-    {
-      "path": "../requirement"
-    },
-    {
-      "path": "../skeleton2d/tsconfig.runtime.json"
-    },
-    {
-      "path": "../types"
-    }
-  ],
-  "include": ["src"]
+    { "path": "../animation" },
+    { "path": "../buffer" },
+    { "path": "../easing" },
+    { "path": "../entity" },
+    { "path": "../importdiagnostics" },
+    { "path": "../registry" },
+    { "path": "../requirement" },
+    { "path": "../skeleton2d/tsconfig.runtime.json" },
+    { "path": "./tsconfig.contract.json" },
+    { "path": "./tsconfig.runtime.json" }
+  ]
 }

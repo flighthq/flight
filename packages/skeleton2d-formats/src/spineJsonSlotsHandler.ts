@@ -1,6 +1,6 @@
 import type { Bone2D, Slot2D } from '@flighthq/skeleton2d/contract';
-import type { SpineJsonSectionContext } from '@flighthq/types/contract';
 
+import type { SpineJsonSectionContext } from './contract.skeleton2d-formats-types.ts';
 import { parseSpineColor } from './spineParseHelpers.ts';
 
 export function spineJsonSlotsSectionHandler(context: SpineJsonSectionContext): void {

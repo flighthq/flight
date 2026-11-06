@@ -1,6 +1,9 @@
 import type { ByteReader } from '@flighthq/buffer/contract';
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import type { ImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import { ImportDiagnosticSeverity } from '@flighthq/importdiagnostics/contract';
 import { createSkin2D } from '@flighthq/skeleton2d/contract';
 import type {
   Attachment2D,
@@ -11,9 +14,8 @@ import type {
   SkinAttachment2D,
 } from '@flighthq/skeleton2d/contract';
 import { MeshAttachment2DKind, RegionAttachment2DKind } from '@flighthq/skeleton2d/contract';
-import type { EntityConstruction, ImportDiagnostic, SpineBinarySectionContext } from '@flighthq/types/contract';
-import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
+import type { SpineBinarySectionContext } from './contract.skeleton2d-formats-types.ts';
 import {
   SPINE_BINARY_ATTACHMENT_TYPES,
   SPINE_BINARY_COLOR_BYTES,

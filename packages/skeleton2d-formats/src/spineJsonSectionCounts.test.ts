@@ -1,6 +1,6 @@
-import { SpineJsonSectionKind, SpineJsonTimelineKind } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
+import { SpineJsonSectionKind, SpineJsonTimelineKind } from './contract.skeleton2d-formats-types.ts';
 import { collectSpineJsonSectionCounts } from './spineJsonSectionCounts.ts';
 
 describe('collectSpineJsonSectionCounts', () => {

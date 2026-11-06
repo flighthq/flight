@@ -1,7 +1,7 @@
 import type { ByteReader } from '@flighthq/buffer/contract';
-import type { SpineBinaryTimelineContext } from '@flighthq/types/contract';
-import { SpineBinaryTimelineKind as TimelineKind } from '@flighthq/types/contract';
 
+import type { SpineBinaryTimelineContext } from './contract.skeleton2d-formats-types.ts';
+import { SpineBinaryTimelineKind as TimelineKind } from './contract.skeleton2d-formats-types.ts';
 import {
   SPINE_BINARY_ATTACHMENT_SEQUENCE,
   SPINE_BINARY_PATH_MIX,

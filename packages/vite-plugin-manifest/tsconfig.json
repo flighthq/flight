@@ -61,7 +61,7 @@
       "path": "../scene3d-formats"
     },
     {
-      "path": "../skeleton2d-formats"
+      "path": "../skeleton2d-formats/tsconfig.runtime.json"
     },
     {
       "path": "../swf/tsconfig.runtime.json"

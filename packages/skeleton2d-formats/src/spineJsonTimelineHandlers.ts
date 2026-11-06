@@ -1,6 +1,5 @@
-import type { SpineJsonRegistry, SpineJsonTimelineHandler } from '@flighthq/types/contract';
-import { SpineJsonTimelineKind } from '@flighthq/types/contract';
-
+import type { SpineJsonRegistry, SpineJsonTimelineHandler } from './contract.skeleton2d-formats-types.ts';
+import { SpineJsonTimelineKind } from './contract.skeleton2d-formats-types.ts';
 import { spineJsonBoneTimelineHandler } from './spineJsonBoneTimelineHandler.ts';
 import { spineJsonDrawOrderTimelineHandler } from './spineJsonDrawOrderTimelineHandler.ts';
 import { registerSpineJsonTimelineHandler } from './spineJsonRegistry.ts';

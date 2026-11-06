@@ -1,5 +1,4 @@
-import type { SpineJsonSectionContext, SpineJsonTimelineContext } from '@flighthq/types/contract';
-
+import type { SpineJsonSectionContext, SpineJsonTimelineContext } from './contract.skeleton2d-formats-types.ts';
 import { skipCrumbSpineTimelineGroup } from './spineParseHelpers.ts';
 
 export function spineJsonDeformTimelineHandler(

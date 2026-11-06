@@ -1,9 +1,9 @@
 import type { ByteReader } from '@flighthq/buffer/contract';
+
 import {
   SpineBinarySectionKind as SectionKind,
   SpineBinaryTimelineKind as TimelineKind,
-} from '@flighthq/types/contract';
-
+} from './contract.skeleton2d-formats-types.ts';
 import {
   createSpineBinaryReader,
   isSpineBinaryReaderOverrun,

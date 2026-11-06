@@ -1,6 +1,7 @@
-import type { ImportDiagnostic, Skeleton2DImport } from '@flighthq/types/contract';
+import type { ImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import { describe, expect, it } from 'vitest';
 
+import type { Skeleton2DImport } from './contract.skeleton2d-formats-types.ts';
 import {
   getSkeleton2DFormatKinds,
   parseSkeleton2D,

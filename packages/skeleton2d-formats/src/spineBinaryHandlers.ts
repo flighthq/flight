@@ -1,5 +1,4 @@
-import type { SpineBinaryRegistry } from '@flighthq/types/contract';
-
+import type { SpineBinaryRegistry } from './contract.skeleton2d-formats-types.ts';
 import { registerSpineBinarySectionHandlers } from './spineBinarySectionHandlers.ts';
 import { registerSpineBinaryTimelineHandlers } from './spineBinaryTimelineHandlers.ts';
 

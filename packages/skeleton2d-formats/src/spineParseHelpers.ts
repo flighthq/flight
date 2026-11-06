@@ -1,9 +1,9 @@
 import type { EasingFunction } from '@flighthq/easing/contract';
 import { easeCubicBezier } from '@flighthq/easing/contract';
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import type { ImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import { ImportDiagnosticSeverity } from '@flighthq/importdiagnostics/contract';
 import type { Bone2D, Slot2D } from '@flighthq/skeleton2d/contract';
-import type { ImportDiagnostic } from '@flighthq/types/contract';
-import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
 // Converts Spine's per-keyframe bezier `curve` arrays into one `EasingFunction` per INTERVAL, which is the
 // shape `AnimationTrack.segmentEasings` takes (entry i reshapes the alpha of the segment from key i to

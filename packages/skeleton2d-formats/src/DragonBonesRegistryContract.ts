@@ -1,7 +1,7 @@
+import type { AnimationChannel } from '@flighthq/animation/contract';
+import type { ImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import type { Attachment2D, AttachmentSkin2D, Bone2D, Slot2D } from '@flighthq/skeleton2d/contract';
 
-import type { AnimationChannel } from './AnimationChannel.ts';
-import type { ImportDiagnostic } from './ImportDiagnostic.ts';
 import type { Skeleton2DImportAnimation } from './Skeleton2DImport.ts';
 
 export const DragonBonesSectionKind = {

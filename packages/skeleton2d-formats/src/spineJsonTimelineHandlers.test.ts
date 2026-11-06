@@ -1,7 +1,7 @@
-import type { SpineJsonTimelineHandler, SpineJsonTimelineKind } from '@flighthq/types/contract';
-import { SpineJsonTimelineKind as TimelineKind } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
+import type { SpineJsonTimelineHandler, SpineJsonTimelineKind } from './contract.skeleton2d-formats-types.ts';
+import { SpineJsonTimelineKind as TimelineKind } from './contract.skeleton2d-formats-types.ts';
 import { spineJsonBoneTimelineHandler } from './spineJsonBoneTimelineHandler.ts';
 import { spineJsonDrawOrderTimelineHandler } from './spineJsonDrawOrderTimelineHandler.ts';
 import { createSpineJsonRegistry, getSpineJsonTimelineHandler } from './spineJsonRegistry.ts';

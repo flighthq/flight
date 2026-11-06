@@ -1,7 +1,7 @@
-import type { SpineBinaryTimelineHandler, SpineBinaryTimelineKind } from '@flighthq/types/contract';
-import { SpineBinaryTimelineKind as TimelineKind } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
+import type { SpineBinaryTimelineHandler, SpineBinaryTimelineKind } from './contract.skeleton2d-formats-types.ts';
+import { SpineBinaryTimelineKind as TimelineKind } from './contract.skeleton2d-formats-types.ts';
 import { createSpineBinaryRegistry, getSpineBinaryTimelineHandler } from './spineBinaryRegistry.ts';
 import {
   registerSpineBinaryTimelineHandlers,

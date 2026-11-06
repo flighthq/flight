@@ -1,9 +1,10 @@
 import { createAnimationChannel, createAnimationTrack } from '@flighthq/animation/contract';
+import { AnimationInterpolationLinear, AnimationInterpolationStep } from '@flighthq/animation/contract';
+import type { ImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import { createSkeleton2DBoneAnimationTarget } from '@flighthq/skeleton2d/contract';
 import { Skeleton2DAnimationPath } from '@flighthq/skeleton2d/contract';
-import type { ImportDiagnostic, SpineJsonTimelineContext } from '@flighthq/types/contract';
-import { AnimationInterpolationLinear, AnimationInterpolationStep } from '@flighthq/types/contract';
 
+import type { SpineJsonTimelineContext } from './contract.skeleton2d-formats-types.ts';
 import { buildSpineSegmentEasings, indexOfBone, numberOr } from './spineParseHelpers.ts';
 
 export function spineJsonBoneTimelineHandler(

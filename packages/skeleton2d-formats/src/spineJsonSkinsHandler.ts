@@ -1,5 +1,8 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import type { ImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import { ImportDiagnosticSeverity } from '@flighthq/importdiagnostics/contract';
 import { createSkin2D } from '@flighthq/skeleton2d/contract';
 import type {
   Attachment2D,
@@ -11,9 +14,8 @@ import type {
   Slot2D,
 } from '@flighthq/skeleton2d/contract';
 import { MeshAttachment2DKind, RegionAttachment2DKind } from '@flighthq/skeleton2d/contract';
-import type { EntityConstruction, ImportDiagnostic, SpineJsonSectionContext } from '@flighthq/types/contract';
-import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
+import type { SpineJsonSectionContext } from './contract.skeleton2d-formats-types.ts';
 import { indexOfSpineSlot, numberOr } from './spineParseHelpers.ts';
 
 export function spineJsonSkinsSectionHandler(context: SpineJsonSectionContext): void {

@@ -1,6 +1,6 @@
-import { DragonBonesSectionKind, DragonBonesTimelineKind } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
+import { DragonBonesSectionKind, DragonBonesTimelineKind } from './contract.skeleton2d-formats-types.ts';
 import { collectDragonBonesSectionCounts } from './dragonBonesSectionCounts.ts';
 
 describe('collectDragonBonesSectionCounts', () => {

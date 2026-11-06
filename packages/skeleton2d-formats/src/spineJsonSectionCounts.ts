@@ -1,4 +1,4 @@
-import { SpineJsonSectionKind, SpineJsonTimelineKind } from '@flighthq/types/contract';
+import { SpineJsonSectionKind, SpineJsonTimelineKind } from './contract.skeleton2d-formats-types.ts';
 
 export function collectSpineJsonSectionCounts(json: string): Map<string, number> | null {
   let doc: unknown;

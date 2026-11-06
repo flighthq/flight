@@ -1,11 +1,12 @@
+import type { NonEntityCreateResult } from '@flighthq/entity/contract';
+
 import type {
-  NonEntityCreateResult,
   SpineJsonRegistry,
   SpineJsonSectionHandler,
   SpineJsonSectionKind,
   SpineJsonTimelineHandler,
   SpineJsonTimelineKind,
-} from '@flighthq/types/contract';
+} from './contract.skeleton2d-formats-types.ts';
 
 export function createSpineJsonRegistry(): NonEntityCreateResult<SpineJsonRegistry, 'descriptor'> {
   return { sectionHandlers: [], timelineHandlers: [] };

@@ -1,6 +1,6 @@
-import { SpineBinarySectionKind } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
+import { SpineBinarySectionKind } from './contract.skeleton2d-formats-types.ts';
 import { collectSpineBinarySectionCounts } from './spineBinarySectionCounts.ts';
 
 describe('collectSpineBinarySectionCounts', () => {

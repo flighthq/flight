@@ -1,17 +1,17 @@
 import { createAnimationChannel, createAnimationTrack } from '@flighthq/animation/contract';
+import type { AnimationChannel } from '@flighthq/animation/contract';
+import { AnimationInterpolationLinear } from '@flighthq/animation/contract';
 import type { ByteReader } from '@flighthq/buffer/contract';
 import type { EasingFunction } from '@flighthq/easing/contract';
 import { easeCubicBezier } from '@flighthq/easing/contract';
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import type { ImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import { ImportDiagnosticSeverity } from '@flighthq/importdiagnostics/contract';
 import { createSkeleton2DBoneAnimationTarget } from '@flighthq/skeleton2d/contract';
 import { Skeleton2DAnimationPath } from '@flighthq/skeleton2d/contract';
-import type { AnimationChannel, ImportDiagnostic, SpineBinaryTimelineContext } from '@flighthq/types/contract';
-import {
-  AnimationInterpolationLinear,
-  ImportDiagnosticSeverity,
-  SpineBinaryTimelineKind as TimelineKind,
-} from '@flighthq/types/contract';
 
+import type { SpineBinaryTimelineContext } from './contract.skeleton2d-formats-types.ts';
+import { SpineBinaryTimelineKind as TimelineKind } from './contract.skeleton2d-formats-types.ts';
 import {
   SPINE_BINARY_CURVE_BEZIER,
   SPINE_BINARY_CURVE_EPSILON,

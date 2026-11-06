@@ -1,5 +1,6 @@
-import type { ImportDiagnostic, Skeleton2DImport } from '@flighthq/types/contract';
+import type { ImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 
+import type { Skeleton2DImport } from './contract.skeleton2d-formats-types.ts';
 import { registerAllDragonBonesHandlers } from './dragonBonesHandlers.ts';
 import { parseDragonBonesSkeletonWithRegistry } from './dragonBonesParse.ts';
 import { createDragonBonesRegistry } from './dragonBonesRegistry.ts';

@@ -1,5 +1,4 @@
-import type { SpineJsonTimelineContext } from '@flighthq/types/contract';
-
+import type { SpineJsonTimelineContext } from './contract.skeleton2d-formats-types.ts';
 import { parseSpineDrawOrderTimeline } from './spineParse.ts';
 
 export function spineJsonDrawOrderTimelineHandler(

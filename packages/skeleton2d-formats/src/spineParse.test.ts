@@ -1,6 +1,9 @@
 import { createAnimationChannel, createAnimationClip, createAnimationTrack } from '@flighthq/animation/contract';
+import { AnimationInterpolationLinear } from '@flighthq/animation/contract';
 import { easeCubicBezier } from '@flighthq/easing/contract';
 import { collectImportDiagnostics } from '@flighthq/importdiagnostics/contract';
+import type { ImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import { ImportDiagnosticSeverity } from '@flighthq/importdiagnostics/contract';
 import {
   applyAnimationClipToSkeleton2D,
   cloneSkeleton2D,
@@ -9,11 +12,9 @@ import {
 } from '@flighthq/skeleton2d/contract';
 import type { MeshAttachment2D, RegionAttachment2D, Slot2D } from '@flighthq/skeleton2d/contract';
 import { MeshAttachment2DKind, RegionAttachment2DKind, TransformMode2D } from '@flighthq/skeleton2d/contract';
-import type { ImportDiagnostic } from '@flighthq/types/contract';
-import { AnimationInterpolationLinear, ImportDiagnosticSeverity } from '@flighthq/types/contract';
-import { SpineJsonSectionKind, SpineJsonTimelineKind } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
+import { SpineJsonSectionKind, SpineJsonTimelineKind } from './contract.skeleton2d-formats-types.ts';
 import { spineJsonAnimationsSectionReader } from './spineJsonAnimationsHandler.ts';
 import { spineJsonBonesSectionReader } from './spineJsonBonesHandler.ts';
 import { spineJsonBoneTimelineReader } from './spineJsonBoneTimelineHandler.ts';

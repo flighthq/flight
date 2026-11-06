@@ -1,15 +1,16 @@
 import type { ByteReader } from '@flighthq/buffer/contract';
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import type { ImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import { ImportDiagnosticSeverity } from '@flighthq/importdiagnostics/contract';
 import { createSkeleton2D } from '@flighthq/skeleton2d/contract';
+
 import type {
-  ImportDiagnostic,
   Skeleton2DImport,
   SpineBinaryRegistry,
   SpineBinarySectionContext,
   SpineBinarySectionKind,
-} from '@flighthq/types/contract';
-import { ImportDiagnosticSeverity, SpineBinarySectionKind as SectionKind } from '@flighthq/types/contract';
-
+} from './contract.skeleton2d-formats-types.ts';
+import { SpineBinarySectionKind as SectionKind } from './contract.skeleton2d-formats-types.ts';
 import { skipSpineBinaryAnimationsSection } from './spineBinaryAnimationsHandler.ts';
 import { skipSpineBinaryBonesSection } from './spineBinaryBonesHandler.ts';
 import {

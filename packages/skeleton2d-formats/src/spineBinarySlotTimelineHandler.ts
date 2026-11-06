@@ -1,15 +1,13 @@
 import { createAnimationChannel, createAnimationTrack } from '@flighthq/animation/contract';
+import type { AnimationChannel } from '@flighthq/animation/contract';
+import { AnimationInterpolationLinear, AnimationInterpolationStep } from '@flighthq/animation/contract';
 import type { ByteReader } from '@flighthq/buffer/contract';
 import { createSkeleton2DSlotAnimationTarget } from '@flighthq/skeleton2d/contract';
 import type { Attachment2D, AttachmentSkin2D } from '@flighthq/skeleton2d/contract';
 import { Skeleton2DSlotAnimationPath } from '@flighthq/skeleton2d/contract';
-import type { AnimationChannel, SpineBinaryTimelineContext } from '@flighthq/types/contract';
-import {
-  AnimationInterpolationLinear,
-  AnimationInterpolationStep,
-  SpineBinaryTimelineKind as TimelineKind,
-} from '@flighthq/types/contract';
 
+import type { SpineBinaryTimelineContext } from './contract.skeleton2d-formats-types.ts';
+import { SpineBinaryTimelineKind as TimelineKind } from './contract.skeleton2d-formats-types.ts';
 import { buildSpineBinarySegmentEasings } from './spineBinaryBoneTimelineHandler.ts';
 import {
   SPINE_BINARY_CURVE_BEZIER,

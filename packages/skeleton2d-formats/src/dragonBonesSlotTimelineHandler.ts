@@ -1,10 +1,11 @@
 import { createAnimationChannel, createAnimationTrack } from '@flighthq/animation/contract';
+import type { AnimationChannel } from '@flighthq/animation/contract';
+import { AnimationInterpolationStep } from '@flighthq/animation/contract';
 import { createSkeleton2DSlotAnimationTarget } from '@flighthq/skeleton2d/contract';
 import type { Attachment2D } from '@flighthq/skeleton2d/contract';
 import { Skeleton2DSlotAnimationPath } from '@flighthq/skeleton2d/contract';
-import type { AnimationChannel, DragonBonesTimelineContext } from '@flighthq/types/contract';
-import { AnimationInterpolationStep } from '@flighthq/types/contract';
 
+import type { DragonBonesTimelineContext } from './contract.skeleton2d-formats-types.ts';
 import {
   buildDragonBonesSegmentEasings,
   dragonBonesFrameTimes,

@@ -1,9 +1,11 @@
 import type { ByteReader } from '@flighthq/buffer/contract';
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import type { ImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import { ImportDiagnosticSeverity } from '@flighthq/importdiagnostics/contract';
 import type { Skeleton2DDrawOrderTimeline } from '@flighthq/skeleton2d/contract';
-import type { ImportDiagnostic, SpineBinaryTimelineContext } from '@flighthq/types/contract';
-import { ImportDiagnosticSeverity, SpineBinaryTimelineKind as TimelineKind } from '@flighthq/types/contract';
 
+import type { SpineBinaryTimelineContext } from './contract.skeleton2d-formats-types.ts';
+import { SpineBinaryTimelineKind as TimelineKind } from './contract.skeleton2d-formats-types.ts';
 import { tally } from './spineBinaryParseHelpers.ts';
 import { isSpineBinaryReaderOverrun, readSpineBinaryFloat, readSpineBinaryVarint } from './spineBinaryReader.ts';
 import { resolveSpineDrawOrdering } from './spineDrawOrder.ts';

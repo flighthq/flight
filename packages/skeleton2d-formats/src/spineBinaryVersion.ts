@@ -1,5 +1,4 @@
-import type { SpineBinaryVersionFailure } from '@flighthq/types/contract';
-
+import type { SpineBinaryVersionFailure } from './contract.skeleton2d-formats-types.ts';
 import {
   createSpineBinaryReader,
   isSpineBinaryReaderOverrun,

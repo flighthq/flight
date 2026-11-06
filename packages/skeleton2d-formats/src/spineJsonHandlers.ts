@@ -1,5 +1,4 @@
-import type { SpineJsonRegistry } from '@flighthq/types/contract';
-
+import type { SpineJsonRegistry } from './contract.skeleton2d-formats-types.ts';
 import { registerSpineJsonSectionHandlers } from './spineJsonSectionHandlers.ts';
 import { registerSpineJsonTimelineHandlers } from './spineJsonTimelineHandlers.ts';
 

@@ -5,7 +5,7 @@ import {
   spineBinaryBonesSectionHandler,
   spineBinarySlotsSectionHandler,
 } from '@flighthq/skeleton2d-formats/contract';
-import { SpineBinarySectionKind } from '@flighthq/types/contract';
+import { SpineBinarySectionKind } from '@flighthq/skeleton2d-formats/contract';
 
 const registry = createSpineBinaryRegistry();
 registerSpineBinarySectionHandler(registry, SpineBinarySectionKind.Bones, spineBinaryBonesSectionHandler);

@@ -1,13 +1,14 @@
 import { createAnimationClip } from '@flighthq/animation/contract';
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import { ImportDiagnosticSeverity } from '@flighthq/importdiagnostics/contract';
+
 import type {
   Skeleton2DImportAnimation,
   SpineBinarySectionContext,
   SpineBinaryTimelineContext,
   SpineBinaryTimelineKind,
-} from '@flighthq/types/contract';
-import { ImportDiagnosticSeverity, SpineBinaryTimelineKind as TimelineKind } from '@flighthq/types/contract';
-
+} from './contract.skeleton2d-formats-types.ts';
+import { SpineBinaryTimelineKind as TimelineKind } from './contract.skeleton2d-formats-types.ts';
 import { skipSpineBinaryBoneTimelines } from './spineBinaryBoneTimelineHandler.ts';
 import { skipSpineBinaryDrawOrderTimeline } from './spineBinaryDrawOrderTimelineHandler.ts';
 import { isSpineBinaryReaderOverrun, readSpineBinaryString, readSpineBinaryVarint } from './spineBinaryReader.ts';

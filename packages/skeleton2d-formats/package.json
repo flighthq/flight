@@ -47,8 +47,7 @@
     "@flighthq/importdiagnostics": "*",
     "@flighthq/registry": "*",
     "@flighthq/requirement": "*",
-    "@flighthq/skeleton2d": "*",
-    "@flighthq/types": "*"
+    "@flighthq/skeleton2d": "*"
   },
   "devDependencies": {
     "typescript": "^7.0.2"

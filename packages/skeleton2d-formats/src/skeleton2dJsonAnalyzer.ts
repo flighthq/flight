@@ -1,4 +1,4 @@
-import type { Skeleton2DJsonAnalysis } from '@flighthq/types/contract';
+import type { Skeleton2DJsonAnalysis } from './contract.skeleton2d-formats-types.ts';
 
 interface Skeleton2DJsonAnalyzerEntry {
   census: (record: Readonly<Record<string, unknown>>) => Map<string, number>;

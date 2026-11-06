@@ -1,8 +1,8 @@
+import type { AnimationChannel } from '@flighthq/animation/contract';
+import type { ByteReader } from '@flighthq/buffer/contract';
+import type { ImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import type { AttachmentSkin2D, Bone2D, Skeleton2DDrawOrderTimeline, Slot2D } from '@flighthq/skeleton2d/contract';
 
-import type { AnimationChannel } from './AnimationChannel.ts';
-import type { ByteReader } from './ByteReader.ts';
-import type { ImportDiagnostic } from './ImportDiagnostic.ts';
 import type { Skeleton2DImportAnimation } from './Skeleton2DImport.ts';
 
 // The sections Spine writes after its header and shared string table. Their order on the wire is fixed,

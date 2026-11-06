@@ -1,4 +1,5 @@
-import type { ImportDiagnostic } from './ImportDiagnostic.ts';
+import type { ImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+
 import type { Skeleton2DImport } from './Skeleton2DImport.ts';
 
 /**

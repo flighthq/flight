@@ -7,7 +7,7 @@ import {
   spineJsonBonesSectionHandler,
   spineJsonSlotsSectionHandler,
 } from '@flighthq/skeleton2d-formats/contract';
-import { SpineJsonSectionKind } from '@flighthq/types/contract';
+import { SpineJsonSectionKind } from '@flighthq/skeleton2d-formats/contract';
 
 const registry = createSpineJsonRegistry();
 registerSpineJsonSectionHandler(registry, SpineJsonSectionKind.Bones, spineJsonBonesSectionHandler);

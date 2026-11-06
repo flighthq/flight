@@ -1,6 +1,8 @@
+import type { Kind } from '@flighthq/entity/contract';
+import type { ImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import { getKindMapKeys, withKindMapEntry, withoutKindMapEntry } from '@flighthq/registry/contract';
-import type { ImportDiagnostic, Kind, Skeleton2DImport } from '@flighthq/types/contract';
 
+import type { Skeleton2DImport } from './contract.skeleton2d-formats-types.ts';
 import { parseDragonBonesSkeleton } from './dragonBonesFull.ts';
 import { parseSpineSkeleton } from './spineJsonFull.ts';
 

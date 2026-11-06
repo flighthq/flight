@@ -157,6 +157,22 @@ import {
   spineJsonTransformConstraintsSectionHandler,
   spineJsonTransformTimelineHandler,
 } from '@flighthq/skeleton2d-formats/contract';
+import type {
+  DragonBonesSectionHandler,
+  DragonBonesTimelineHandler,
+  SpineBinarySectionHandler,
+  SpineBinaryTimelineHandler,
+  SpineJsonSectionHandler,
+  SpineJsonTimelineHandler,
+} from '@flighthq/skeleton2d-formats/contract';
+import {
+  DragonBonesSectionKind,
+  DragonBonesTimelineKind,
+  SpineBinarySectionKind,
+  SpineBinaryTimelineKind,
+  SpineJsonSectionKind,
+  SpineJsonTimelineKind,
+} from '@flighthq/skeleton2d-formats/contract';
 import {
   swfControlHandler,
   swfDefineMorphShapeHandler,
@@ -185,8 +201,6 @@ import type { PathBooleanKernel, RiveImportRegistry } from '@flighthq/types/cont
 import type {
   Awd2BlockHandler,
   ColladaElementDecoder,
-  DragonBonesSectionHandler,
-  DragonBonesTimelineHandler,
   GltfCoreFeatureHandler,
   GltfExtensionHandler,
   LottieLayerHandler,
@@ -197,24 +211,10 @@ import type {
   SvgElementHandler,
   Md5SectionHandler,
   ObjMaterialHandler,
-  SpineBinarySectionHandler,
-  SpineBinaryTimelineHandler,
-  SpineJsonSectionHandler,
-  SpineJsonTimelineHandler,
   SwfTagHandler,
   ThreeDsChunkHandler,
 } from '@flighthq/types/contract';
-import {
-  DragonBonesSectionKind,
-  DragonBonesTimelineKind,
-  RequirementFacet,
-  SpineBinarySectionKind,
-  SpineBinaryTimelineKind,
-  SpineJsonSectionKind,
-  SpineJsonTimelineKind,
-  StarlingPexFormatKind,
-  THREE_DS_MATERIAL_TEXTURE_MAP,
-} from '@flighthq/types/contract';
+import { RequirementFacet, StarlingPexFormatKind, THREE_DS_MATERIAL_TEXTURE_MAP } from '@flighthq/types/contract';
 
 /**
  * The built-in ownership rows, DERIVED from the handlers themselves rather than transcribed.

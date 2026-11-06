@@ -1,5 +1,6 @@
-import type { ImportDiagnostic, Skeleton2DImport } from '@flighthq/types/contract';
+import type { ImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 
+import type { Skeleton2DImport } from './contract.skeleton2d-formats-types.ts';
 import { registerAllSpineJsonHandlers } from './spineJsonHandlers.ts';
 import { createSpineJsonRegistry } from './spineJsonRegistry.ts';
 import { parseSpineSkeletonWithRegistry } from './spineParse.ts';
