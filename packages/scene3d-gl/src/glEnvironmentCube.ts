@@ -1,14 +1,10 @@
+import type { Bitmap } from '@flighthq/bitmap/contract';
+import type { ImageResource } from '@flighthq/image/contract';
 import type { Environment } from '@flighthq/lighting/contract';
 import { uploadGlTextureData, uploadGlTextureImageResource } from '@flighthq/render-gl/contract';
-import type {
-  Bitmap,
-  CubeTexture,
-  GlContext,
-  GlRenderState,
-  ImageResource,
-  TextureSource,
-} from '@flighthq/types/contract';
-import { BitmapTextureSourceKind, ImageTextureSourceKind } from '@flighthq/types/contract';
+import type { GlContext, GlRenderState } from '@flighthq/render-gl/contract';
+import type { CubeTexture, TextureSource } from '@flighthq/texture/contract';
+import { BitmapTextureSourceKind, ImageTextureSourceKind } from '@flighthq/texture/contract';
 
 import type { GlScene3DRuntime } from './contract.scene3d-gl-types.ts';
 import { getGlScene3DRuntime } from './glScene3DRuntime.ts';

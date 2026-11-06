@@ -8,8 +8,8 @@ import {
   getMemoryLogSinkEntries,
   removeLogSink,
 } from '@flighthq/log/contract';
+import type { LogEntry, MemoryLogSink } from '@flighthq/log/contract';
 import { createCustomShaderMaterial } from '@flighthq/materials/contract';
-import type { LogEntry, MemoryLogSink } from '@flighthq/types/contract';
 
 import {
   areGlScene3DCustomShaderGuardsEnabled,

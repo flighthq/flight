@@ -9,7 +9,7 @@ import {
   SCENE_LIGHT_SPOT_OFFSET,
   SCENE_LIGHT_SPOT_STRIDE,
 } from '@flighthq/lighting/contract';
-import type { GlContext, GlRenderState } from '@flighthq/types/contract';
+import type { GlContext, GlRenderState } from '@flighthq/render-gl/contract';
 
 import type { GlLitProgram, GlMeshProgram } from './contract.scene3d-gl-types.ts';
 import { getGlScene3DRuntime } from './glScene3DRuntime.ts';

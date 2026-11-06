@@ -1,6 +1,6 @@
+import type { PbrUvSet } from '@flighthq/materials/contract';
 import { createMeshGeometry } from '@flighthq/meshgeometry/contract';
 import type { VertexAttribute, VertexSemantic } from '@flighthq/meshgeometry/contract';
-import type { PbrUvSet } from '@flighthq/types/contract';
 
 import { explainGlMeshGeometryUvSets } from './explainGlMeshGeometryUvSets.ts';
 

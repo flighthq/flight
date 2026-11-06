@@ -3,9 +3,9 @@ import type { Camera3D } from '@flighthq/camera/contract';
 import { createMatrix3, createMatrix4 } from '@flighthq/geometry/contract';
 import type { Scene3DLightBlock } from '@flighthq/lighting/contract';
 import { createEmissiveMaterial } from '@flighthq/materials/contract';
+import { EmissiveMaterialKind } from '@flighthq/materials/contract';
 import { createBoxMeshGeometry } from '@flighthq/meshgeometry/contract';
 import type { Scene3DRenderProxy } from '@flighthq/render/contract';
-import { EmissiveMaterialKind } from '@flighthq/types/contract';
 
 import { glEmissiveMeshMaterialRenderer, registerGlEmissiveMaterial } from './glEmissiveMeshMaterialRenderer.ts';
 import { getGlMeshMaterialRenderer } from './glMeshMaterialRegistry.ts';

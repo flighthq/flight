@@ -1,6 +1,6 @@
 import type { Scene3DLightsLike } from '@flighthq/lighting/contract';
+import type { Scene3DForwardLightSelectionExplanation } from '@flighthq/lighting/contract';
 import { MAX_FORWARD_LIGHTS } from '@flighthq/lighting/contract';
-import type { Scene3DForwardLightSelectionExplanation } from '@flighthq/types/contract';
 
 import type { WgpuScene3DForwardLightList } from './contract.scene3d-wgpu-types.ts';
 

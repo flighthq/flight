@@ -1,5 +1,5 @@
 import { createAnisotropyPbrExtension } from '@flighthq/materials/contract';
-import { AnisotropyPbrExtensionKind } from '@flighthq/types/contract';
+import { AnisotropyPbrExtensionKind } from '@flighthq/materials/contract';
 
 import { anisotropyPbrGlExtension, registerGlAnisotropyPbrExtension } from './anisotropyPbrGlExtension.ts';
 import { getGlPbrExtensionRegistration } from './glPbrExtensionRegistry.ts';

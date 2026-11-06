@@ -14,11 +14,12 @@ import {
   getMemoryLogSinkEntries,
   removeLogSink,
 } from '@flighthq/log/contract';
+import type { LogEntry, MemoryLogSink } from '@flighthq/log/contract';
 import { createStandardPbrMaterial } from '@flighthq/materials/contract';
 import { createBoxMeshGeometry } from '@flighthq/meshgeometry/contract';
 import { addNodeChild } from '@flighthq/node/contract';
+import type { GlRenderPass, GlRenderTarget } from '@flighthq/render-gl/contract';
 import { createMesh, createNode3D, Node3DKind } from '@flighthq/scene3d/contract';
-import type { GlRenderPass, GlRenderTarget, LogEntry, MemoryLogSink } from '@flighthq/types/contract';
 
 import {
   areGlScene3DColorSpaceGuardsEnabled,

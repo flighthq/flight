@@ -1,5 +1,5 @@
 import { getGlColorAdjustmentMaterialFeature, getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
-import type { GlContext, GlColorAdjustmentMaterialFeature, GlRenderState } from '@flighthq/types/contract';
+import type { GlContext, GlColorAdjustmentMaterialFeature, GlRenderState } from '@flighthq/render-gl/contract';
 
 import type { GlPbrExtensionShaderContribution, GlPbrProgram, GlPbrDefineKey } from './contract.scene3d-gl-types.ts';
 import { resolveGlLitLocations } from './glLitProgram.ts';

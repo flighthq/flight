@@ -1,5 +1,5 @@
 import { createWrappedDiffusePbrExtension } from '@flighthq/materials/contract';
-import { WrappedDiffusePbrExtensionKind } from '@flighthq/types/contract';
+import { WrappedDiffusePbrExtensionKind } from '@flighthq/materials/contract';
 
 import { getGlPbrExtensionRegistration } from './glPbrExtensionRegistry.ts';
 import { makeGlScene3DState } from './glScene3DTestHelper.ts';

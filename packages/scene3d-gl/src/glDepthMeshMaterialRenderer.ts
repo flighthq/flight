@@ -1,10 +1,11 @@
 import type { Camera3D } from '@flighthq/camera/contract';
 import type { Scene3DLightBlock } from '@flighthq/lighting/contract';
+import type { DepthMaterial, Material } from '@flighthq/materials/contract';
+import { DepthMaterialKind } from '@flighthq/materials/contract';
 import type { MeshGeometry } from '@flighthq/meshgeometry/contract';
 import type { GlMeshMaterialRenderer } from '@flighthq/render-gl/contract';
+import type { GlRenderState } from '@flighthq/render-gl/contract';
 import type { Scene3DRenderProxy } from '@flighthq/render/contract';
-import type { DepthMaterial, GlRenderState, Material } from '@flighthq/types/contract';
-import { DepthMaterialKind } from '@flighthq/types/contract';
 
 import { bindGlDebugRange, ensureGlDebugProgram } from './glDebugPrelude.ts';
 import { registerGlMeshMaterialRenderer } from './glMeshMaterialRegistry.ts';

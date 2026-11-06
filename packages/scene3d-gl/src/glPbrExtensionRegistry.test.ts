@@ -6,8 +6,9 @@ import {
   registerGlTextureResolver,
 } from '@flighthq/render-gl/contract';
 import type { GlPbrExtensionRegistration } from '@flighthq/render-gl/contract';
+import type { GlTextureRenderTarget } from '@flighthq/render-gl/contract';
 import { createTexture, getTextureUvMatrix } from '@flighthq/texture/contract';
-import type { GlTextureRenderTarget, TextureSource } from '@flighthq/types/contract';
+import type { TextureSource } from '@flighthq/texture/contract';
 
 import {
   bindGlPbrExtensions,

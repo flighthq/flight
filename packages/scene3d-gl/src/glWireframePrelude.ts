@@ -1,4 +1,4 @@
-import type { GlContext, GlRenderState } from '@flighthq/types/contract';
+import type { GlContext, GlRenderState } from '@flighthq/render-gl/contract';
 
 import type { GlWireframeProgram } from './contract.scene3d-gl-types.ts';
 import { GL_MESH_FRAGMENT_TAIL, GL_MESH_FRAGMENT_TAIL_UNIFORMS } from './glMeshFragmentTail.ts';

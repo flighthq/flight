@@ -12,8 +12,8 @@ import { createStandardPbrMaterial } from '@flighthq/materials/contract';
 import { createBoxMeshGeometry } from '@flighthq/meshgeometry/contract';
 import { addNodeChild } from '@flighthq/node/contract';
 import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
+import type { GlTextureRenderTarget } from '@flighthq/render-gl/contract';
 import { createMesh, createNode3D, Node3DKind } from '@flighthq/scene3d/contract';
-import type { GlTextureRenderTarget } from '@flighthq/types/contract';
 
 import { makeGlScene3DState } from './glScene3DTestHelper.ts';
 import { presentGlScene3D } from './presentGlScene3D.ts';

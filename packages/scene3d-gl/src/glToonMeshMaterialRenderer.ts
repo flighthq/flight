@@ -2,12 +2,13 @@ import type { Camera3D } from '@flighthq/camera/contract';
 import type { LinearColorRaw } from '@flighthq/color/contract';
 import { allocateLinearColor, unpackColorToLinear } from '@flighthq/color/contract';
 import type { Scene3DLightBlock } from '@flighthq/lighting/contract';
+import type { Material, ToonMaterial } from '@flighthq/materials/contract';
+import { ToonMaterialKind } from '@flighthq/materials/contract';
 import type { MeshGeometry } from '@flighthq/meshgeometry/contract';
 import { resolveGlTexture } from '@flighthq/render-gl/contract';
 import type { GlMeshMaterialRenderer } from '@flighthq/render-gl/contract';
+import type { GlRenderState } from '@flighthq/render-gl/contract';
 import type { Scene3DRenderProxy } from '@flighthq/render/contract';
-import type { GlRenderState, Material, ToonMaterial } from '@flighthq/types/contract';
-import { ToonMaterialKind } from '@flighthq/types/contract';
 
 import type { GlToonDefineKey, GlToonProgram } from './contract.scene3d-gl-types.ts';
 import { bindGlMeshLightBlock } from './glLitProgram.ts';

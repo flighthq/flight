@@ -1,7 +1,11 @@
+import type { Bitmap } from '@flighthq/bitmap/contract';
 import { createCamera3D, createPerspectiveProjection } from '@flighthq/camera/contract';
+import { EntityRuntimeKey } from '@flighthq/entity/contract';
+import type { Matrix4 } from '@flighthq/geometry/contract';
 import type { Environment } from '@flighthq/lighting/contract';
-import type { Bitmap, GlRenderStateRuntime, GlTextureRenderTarget, Matrix4, Texture } from '@flighthq/types/contract';
-import { BitmapTextureSourceKind, EntityRuntimeKey } from '@flighthq/types/contract';
+import type { GlRenderStateRuntime, GlTextureRenderTarget } from '@flighthq/render-gl/contract';
+import type { Texture } from '@flighthq/texture/contract';
+import { BitmapTextureSourceKind } from '@flighthq/texture/contract';
 
 import type { GlMeshProgram, GlScene3DIbl } from './contract.scene3d-gl-types.ts';
 import { renderGlEnvironmentSkybox } from './glEnvironmentSkybox.ts';

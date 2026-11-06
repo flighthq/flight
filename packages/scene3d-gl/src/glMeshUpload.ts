@@ -5,7 +5,7 @@ import type {
   PrimitiveTopology,
   VertexAttribute,
 } from '@flighthq/meshgeometry/contract';
-import type { GlContext, GlRenderState } from '@flighthq/types/contract';
+import type { GlContext, GlRenderState } from '@flighthq/render-gl/contract';
 
 import type { GlMeshUpload } from './contract.scene3d-gl-types.ts';
 import { getGlScene3DRuntime } from './glScene3DRuntime.ts';

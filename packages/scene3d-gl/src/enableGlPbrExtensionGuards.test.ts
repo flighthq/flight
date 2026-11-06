@@ -8,12 +8,12 @@ import {
   getMemoryLogSinkEntries,
   removeLogSink,
 } from '@flighthq/log/contract';
+import type { LogEntry, MemoryLogSink } from '@flighthq/log/contract';
 import {
   createAnisotropyPbrExtension,
   createClearcoatPbrExtension,
   createExtendedPbrMaterial,
 } from '@flighthq/materials/contract';
-import type { LogEntry, MemoryLogSink } from '@flighthq/types/contract';
 
 import { areGlPbrExtensionGuardsEnabled, enableGlPbrExtensionGuards } from './enableGlPbrExtensionGuards.ts';
 import { glExtendedPbrMeshMaterialRenderer } from './glExtendedPbrMeshMaterialRenderer.ts';

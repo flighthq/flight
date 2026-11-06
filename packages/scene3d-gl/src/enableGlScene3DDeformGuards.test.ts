@@ -14,6 +14,7 @@ import {
   getMemoryLogSinkEntries,
   removeLogSink,
 } from '@flighthq/log/contract';
+import type { LogEntry, MemoryLogSink } from '@flighthq/log/contract';
 import {
   CANONICAL_SKINNED_MESH_GEOMETRY_LAYOUT,
   createMeshGeometry,
@@ -21,9 +22,9 @@ import {
 } from '@flighthq/meshgeometry/contract';
 import type { MeshMorph } from '@flighthq/meshgeometry/contract';
 import { addNodeChild } from '@flighthq/node/contract';
+import type { GlRenderPass, GlRenderTarget } from '@flighthq/render-gl/contract';
 import { createMesh, createNode3D, prepareScene3DMorph, Node3DKind } from '@flighthq/scene3d/contract';
 import { createSkeleton3D, prepareScene3DSkinning } from '@flighthq/skeleton3d/contract';
-import type { GlRenderPass, GlRenderTarget, LogEntry, MemoryLogSink } from '@flighthq/types/contract';
 
 import { areGlScene3DDeformGuardsEnabled, enableGlScene3DDeformGuards } from './enableGlScene3DDeformGuards.ts';
 import { makeGlScene3DState } from './glScene3DTestHelper.ts';

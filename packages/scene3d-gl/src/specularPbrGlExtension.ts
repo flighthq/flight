@@ -1,6 +1,7 @@
+import type { SpecularPbrExtension } from '@flighthq/materials/contract';
+import { SpecularPbrExtensionKind } from '@flighthq/materials/contract';
 import type { GlPbrExtensionRegistration } from '@flighthq/render-gl/contract';
-import type { GlRenderState, SpecularPbrExtension } from '@flighthq/types/contract';
-import { SpecularPbrExtensionKind } from '@flighthq/types/contract';
+import type { GlRenderState } from '@flighthq/render-gl/contract';
 
 import { registerGlPbrExtension } from './glPbrExtensionRegistry.ts';
 

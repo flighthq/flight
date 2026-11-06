@@ -6,7 +6,7 @@ import {
   createClearcoatPbrExtension,
   createExtendedPbrMaterial,
 } from '@flighthq/materials/contract';
-import { ExtendedPbrMaterialKind } from '@flighthq/types/contract';
+import { ExtendedPbrMaterialKind } from '@flighthq/materials/contract';
 
 import { registerGlAnisotropyPbrExtension } from './anisotropyPbrGlExtension.ts';
 import { registerGlClearcoatPbrExtension } from './clearcoatPbrGlExtension.ts';

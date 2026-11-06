@@ -3,9 +3,9 @@ import type { Camera3D } from '@flighthq/camera/contract';
 import { createMatrix3, createMatrix4 } from '@flighthq/geometry/contract';
 import type { Scene3DLightBlock } from '@flighthq/lighting/contract';
 import { createLambertMaterial } from '@flighthq/materials/contract';
+import { LambertMaterialKind } from '@flighthq/materials/contract';
 import { createBoxMeshGeometry } from '@flighthq/meshgeometry/contract';
 import type { Scene3DRenderProxy } from '@flighthq/render/contract';
-import { LambertMaterialKind } from '@flighthq/types/contract';
 
 import { glLambertMeshMaterialRenderer, registerGlLambertMaterial } from './glLambertMeshMaterialRenderer.ts';
 import { getGlMeshMaterialRenderer } from './glMeshMaterialRegistry.ts';

@@ -22,7 +22,7 @@ import {
   VertexDisplaceModifierKind,
   VertexDisplaceModifierSource,
 } from '@flighthq/shading/contract';
-import type { Texture } from '@flighthq/types/contract';
+import type { Texture } from '@flighthq/texture/contract';
 
 import type { FakeGl2 } from './glScene3DTestHelper.ts';
 import { makeGlScene3DState } from './glScene3DTestHelper.ts';

@@ -1,11 +1,14 @@
 import type { LinearColorRaw } from '@flighthq/color/contract';
 import { allocateLinearColor, unpackColorToLinear } from '@flighthq/color/contract';
+import type { Kind } from '@flighthq/entity/contract';
 import { createMatrix3 } from '@flighthq/geometry/contract';
+import type { Matrix3 } from '@flighthq/geometry/contract';
+import type { PbrExtension } from '@flighthq/materials/contract';
 import { withKindMapEntry } from '@flighthq/registry/contract';
 import { getGlRenderStateRuntime, resolveGlTexture } from '@flighthq/render-gl/contract';
 import type { GlPbrExtensionRegistration } from '@flighthq/render-gl/contract';
+import type { GlContext, GlRenderState } from '@flighthq/render-gl/contract';
 import { getTextureUvMatrix } from '@flighthq/texture/contract';
-import type { GlContext, GlRenderState, Kind, Matrix3, PbrExtension } from '@flighthq/types/contract';
 
 import type {
   GlPbrExtensionBindContext,

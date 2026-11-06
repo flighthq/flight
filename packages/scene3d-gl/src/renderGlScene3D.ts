@@ -1,9 +1,13 @@
+import type { ColorScaleBias } from '@flighthq/adjustments/contract';
 import type { Camera3D } from '@flighthq/camera/contract';
 import type { LinearColorRaw } from '@flighthq/color/contract';
 import { allocateLinearColor, unpackColorToLinear } from '@flighthq/color/contract';
 import { createMatrix3, createMatrix4, setMatrix3NormalFromMatrix4 } from '@flighthq/geometry/contract';
+import type { Matrix3, Matrix4 } from '@flighthq/geometry/contract';
 import type { Scene3DLightsLike, Scene3DLightBlock } from '@flighthq/lighting/contract';
 import { MAX_FORWARD_LIGHTS } from '@flighthq/lighting/contract';
+import type { Material, Material3D } from '@flighthq/materials/contract';
+import { BlendMode, StandardMaterialKind } from '@flighthq/materials/contract';
 import { hasMeshGeometrySkin } from '@flighthq/meshgeometry/contract';
 import type { InstancedMesh, Mesh, MeshSubset } from '@flighthq/meshgeometry/contract';
 import { getNodeWorldMatrix4 } from '@flighthq/node/contract';
@@ -15,20 +19,11 @@ import {
   invalidateGlRenderStateCache,
 } from '@flighthq/render-gl/contract';
 import type { GlMeshMaterialRenderer } from '@flighthq/render-gl/contract';
+import type { GlRenderPass, GlRenderState } from '@flighthq/render-gl/contract';
 import type { Scene3DRenderProxy } from '@flighthq/render/contract';
 import { prepareScene3DRender } from '@flighthq/render/contract';
 import { getNode3DRuntime, getNode3DWorldAlpha } from '@flighthq/scene3d/contract';
 import type { Node3D } from '@flighthq/scene3d/contract';
-import type {
-  ColorScaleBias,
-  GlRenderPass,
-  GlRenderState,
-  Material,
-  Matrix3,
-  Matrix4,
-  Material3D,
-} from '@flighthq/types/contract';
-import { BlendMode, StandardMaterialKind } from '@flighthq/types/contract';
 
 import type { GlScene3DForwardLightList, GlScene3DDrawEntry } from './contract.scene3d-gl-types.ts';
 import { resolveGlMeshMaterialRenderer } from './glMeshMaterialRegistry.ts';

@@ -1,4 +1,4 @@
-import type { GlColorAdjustmentMaterialFeature } from '@flighthq/types/contract';
+import type { GlColorAdjustmentMaterialFeature } from '@flighthq/render-gl/contract';
 
 import type { GlClassicDefineKey } from './contract.scene3d-gl-types.ts';
 import {

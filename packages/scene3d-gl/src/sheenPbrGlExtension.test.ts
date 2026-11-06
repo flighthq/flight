@@ -1,5 +1,5 @@
 import { createSheenPbrExtension } from '@flighthq/materials/contract';
-import { SheenPbrExtensionKind } from '@flighthq/types/contract';
+import { SheenPbrExtensionKind } from '@flighthq/materials/contract';
 
 import { getGlPbrExtensionRegistration } from './glPbrExtensionRegistry.ts';
 import { makeGlScene3DState } from './glScene3DTestHelper.ts';

@@ -1,6 +1,7 @@
+import type { Bitmap } from '@flighthq/bitmap/contract';
 import type { Environment } from '@flighthq/lighting/contract';
-import type { Bitmap, CubeTexture } from '@flighthq/types/contract';
-import { BitmapTextureSourceKind } from '@flighthq/types/contract';
+import type { CubeTexture } from '@flighthq/texture/contract';
+import { BitmapTextureSourceKind } from '@flighthq/texture/contract';
 
 import {
   destroyGlEnvironmentSourceCube,

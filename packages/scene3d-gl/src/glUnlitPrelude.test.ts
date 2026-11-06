@@ -16,7 +16,7 @@ import {
   createTexture,
   createVideoTexture,
 } from '@flighthq/texture/contract';
-import type { HostVideoCapability } from '@flighthq/types/contract';
+import type { HostVideoCapability } from '@flighthq/video/contract';
 import { createVideoResource } from '@flighthq/video/contract';
 
 import type { GlUnlitDefineKey } from './contract.scene3d-gl-types.ts';

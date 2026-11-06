@@ -23,7 +23,7 @@
 // Packed material colors are decoded to linear on the CPU with unpackColorToLinear before upload.
 
 import { MAX_FORWARD_LIGHTS } from '@flighthq/lighting/contract';
-import type { GlColorAdjustmentMaterialFeature } from '@flighthq/types/contract';
+import type { GlColorAdjustmentMaterialFeature } from '@flighthq/render-gl/contract';
 
 import type { GlPbrDefineKey, GlPbrExtensionShaderContribution } from './contract.scene3d-gl-types.ts';
 import { GL_DIRECTIONAL_SHADOW_GLSL } from './glLitProgram.ts';

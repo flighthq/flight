@@ -40,6 +40,8 @@
     "clean:dist": "tsx ../../scripts/clean-package-dist.ts"
   },
   "dependencies": {
+    "@flighthq/adjustments": "*",
+    "@flighthq/bitmap": "*",
     "@flighthq/camera": "*",
     "@flighthq/color": "*",
     "@flighthq/entity": "*",
@@ -55,6 +57,8 @@
     "@flighthq/registry": "*",
     "@flighthq/render": "*",
     "@flighthq/render-gl": "*",
+    "@flighthq/requirement": "*",
+    "@flighthq/resource": "*",
     "@flighthq/scene2d-gl": "*",
     "@flighthq/scene3d": "*",
     "@flighthq/shading": "*",

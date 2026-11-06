@@ -1,4 +1,4 @@
-import type { GlRenderState } from '@flighthq/types/contract';
+import type { GlRenderState } from '@flighthq/render-gl/contract';
 
 import type { GlPbrTransmissionSceneColor } from './contract.scene3d-gl-types.ts';
 import { getGlScene3DRuntime } from './glScene3DRuntime.ts';

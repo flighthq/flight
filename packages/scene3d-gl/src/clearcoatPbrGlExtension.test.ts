@@ -1,6 +1,6 @@
 import { createClearcoatPbrExtension } from '@flighthq/materials/contract';
-import type { Texture } from '@flighthq/types/contract';
-import { ClearcoatPbrExtensionKind } from '@flighthq/types/contract';
+import { ClearcoatPbrExtensionKind } from '@flighthq/materials/contract';
+import type { Texture } from '@flighthq/texture/contract';
 
 import { clearcoatPbrGlExtension, registerGlClearcoatPbrExtension } from './clearcoatPbrGlExtension.ts';
 import { getGlPbrExtensionRegistration } from './glPbrExtensionRegistry.ts';

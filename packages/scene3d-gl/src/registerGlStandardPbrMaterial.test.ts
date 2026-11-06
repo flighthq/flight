@@ -1,5 +1,5 @@
+import { StandardPbrMaterialKind } from '@flighthq/materials/contract';
 import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
-import { StandardPbrMaterialKind } from '@flighthq/types/contract';
 
 import { getGlMeshMaterialRenderer } from './glMeshMaterialRegistry.ts';
 import { makeGlScene3DState } from './glScene3DTestHelper.ts';

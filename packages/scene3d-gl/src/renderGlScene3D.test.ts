@@ -9,10 +9,12 @@ import { createMatrix4, createVector3 } from '@flighthq/geometry/contract';
 import { createAmbientLight, createDirectionalLight } from '@flighthq/lighting/contract';
 import type { Scene3DLightsLike } from '@flighthq/lighting/contract';
 import { createStandardPbrMaterial } from '@flighthq/materials/contract';
+import { BlendMode } from '@flighthq/materials/contract';
 import { createBoxMeshGeometry } from '@flighthq/meshgeometry/contract';
 import { addNodeChild, invalidateNodeLocalTransform } from '@flighthq/node/contract';
 import { createParticleEmitter3D, reserveParticleEmitter3D } from '@flighthq/particleemitter/contract';
 import { createGlRenderState, buildGlRenderRegistries, getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
+import type { GlRenderPass, GlRenderState, GlRenderTarget, GlTextureRenderTarget } from '@flighthq/render-gl/contract';
 import {
   createInstancedMesh,
   createMesh,
@@ -22,8 +24,6 @@ import {
   setInstancedMeshInstanceCount,
   setInstancedMeshInstanceMatrix,
 } from '@flighthq/scene3d/contract';
-import type { GlRenderPass, GlRenderState, GlRenderTarget, GlTextureRenderTarget } from '@flighthq/types/contract';
-import { BlendMode } from '@flighthq/types/contract';
 
 import { registerGlParticleEmitter3DPass } from './glParticleEmitter3D.ts';
 import { getGlScene3DRuntime } from './glScene3DRuntime.ts';

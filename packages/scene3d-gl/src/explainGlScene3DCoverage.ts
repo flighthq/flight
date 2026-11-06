@@ -1,8 +1,16 @@
+import type { Kind } from '@flighthq/entity/contract';
+import { StandardMaterialKind } from '@flighthq/materials/contract';
 import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
+import type { GlRenderState } from '@flighthq/render-gl/contract';
 import type { CatalogRegistration, SceneCoverageCatalog, SceneCoverageEntry } from '@flighthq/render/contract';
 import { RenderRegistryTable, SceneCoverage } from '@flighthq/render/contract';
-import type { GlRenderState, Kind, Scene3DKindUsage } from '@flighthq/types/contract';
-import { RequirementFacet, StandardMaterialKind } from '@flighthq/types/contract';
+import { RequirementFacet } from '@flighthq/requirement/contract';
+
+interface GlScene3DKindUsage {
+  readonly materialKinds: readonly Kind[];
+  readonly modifierKinds: readonly Kind[];
+  readonly textureSourceKinds: readonly Kind[];
+}
 
 // Clears `out`, then reports EVERY kind in `usage` with how well this state is wired for it — satisfied
 // ones included, so one call is a complete manifest rather than only a list of complaints. The answering half
@@ -19,7 +27,7 @@ import { RequirementFacet, StandardMaterialKind } from '@flighthq/types/contract
 export function explainGlScene3DCoverage(
   out: SceneCoverageEntry[],
   state: GlRenderState,
-  usage: Readonly<Scene3DKindUsage>,
+  usage: Readonly<GlScene3DKindUsage>,
   catalog: SceneCoverageCatalog,
 ): void {
   out.length = 0;
@@ -30,7 +38,7 @@ export function explainGlScene3DCoverage(
 // authored material is not what would appear. Stops at the first shortfall and never allocates, so it
 // is safe to call per load (or per frame) where explainGlScene3DCoverage would be too heavy. Use the
 // explain form to find out WHICH kind and how badly.
-export function hasGlScene3DCoverage(state: GlRenderState, usage: Readonly<Scene3DKindUsage>): boolean {
+export function hasGlScene3DCoverage(state: GlRenderState, usage: Readonly<GlScene3DKindUsage>): boolean {
   return !collectGlScene3DCoverageGaps(null, state, usage, true, null);
 }
 
@@ -41,7 +49,7 @@ export function hasGlScene3DCoverage(state: GlRenderState, usage: Readonly<Scene
 function collectGlScene3DCoverageGaps(
   out: SceneCoverageEntry[] | null,
   state: GlRenderState,
-  usage: Readonly<Scene3DKindUsage>,
+  usage: Readonly<GlScene3DKindUsage>,
   stopAtFirst: boolean,
   catalog: SceneCoverageCatalog | null,
 ): boolean {

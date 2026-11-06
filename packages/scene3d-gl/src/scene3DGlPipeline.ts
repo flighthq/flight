@@ -1,19 +1,4 @@
-import { withKindMapEntry } from '@flighthq/registry/contract';
-import type { GlMeshMaterialRenderer } from '@flighthq/render-gl/contract';
-import type { GlModifierSnippet, GlPbrExtensionRegistration } from '@flighthq/render-gl/contract';
-import { glScene2DRenderPreset } from '@flighthq/scene2d-gl/contract';
-import {
-  AnimatedNormalModifierKind,
-  DissolveModifierKind,
-  EmissiveModifierKind,
-  EnvReflectModifierKind,
-  FogModifierKind,
-  RimModifierKind,
-  ShadedMaterialKind,
-  ToonModifierKind,
-  VertexDisplaceModifierKind,
-} from '@flighthq/shading/contract';
-import type { GlQuadMaterialRenderer, GlRenderRegistries, Kind } from '@flighthq/types/contract';
+import type { Kind } from '@flighthq/entity/contract';
 import {
   AnisotropyPbrExtensionKind,
   BlinnPhongMaterialKind,
@@ -37,7 +22,23 @@ import {
   VertexColorMaterialKind,
   WireframeMaterialKind,
   WrappedDiffusePbrExtensionKind,
-} from '@flighthq/types/contract';
+} from '@flighthq/materials/contract';
+import { withKindMapEntry } from '@flighthq/registry/contract';
+import type { GlMeshMaterialRenderer } from '@flighthq/render-gl/contract';
+import type { GlModifierSnippet, GlPbrExtensionRegistration } from '@flighthq/render-gl/contract';
+import type { GlQuadMaterialRenderer, GlRenderRegistries } from '@flighthq/render-gl/contract';
+import { glScene2DRenderPreset } from '@flighthq/scene2d-gl/contract';
+import {
+  AnimatedNormalModifierKind,
+  DissolveModifierKind,
+  EmissiveModifierKind,
+  EnvReflectModifierKind,
+  FogModifierKind,
+  RimModifierKind,
+  ShadedMaterialKind,
+  ToonModifierKind,
+  VertexDisplaceModifierKind,
+} from '@flighthq/shading/contract';
 
 import { anisotropyPbrGlExtension } from './anisotropyPbrGlExtension.ts';
 import { clearcoatPbrGlExtension } from './clearcoatPbrGlExtension.ts';

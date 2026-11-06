@@ -1,13 +1,13 @@
 import { createCamera3D, createPerspectiveProjection } from '@flighthq/camera/contract';
 import type { Camera3D } from '@flighthq/camera/contract';
 import { createMatrix3, createMatrix4 } from '@flighthq/geometry/contract';
+import type { ImageResource } from '@flighthq/image/contract';
 import { createStandardPbrMaterial } from '@flighthq/materials/contract';
 import { createBoxMeshGeometry, createMeshGeometry } from '@flighthq/meshgeometry/contract';
 import type { PrimitiveTopology, VertexAttributeLayout } from '@flighthq/meshgeometry/contract';
 import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
 import { createTexture, setTextureUvOffset, setTextureUvScale } from '@flighthq/texture/contract';
-import type { ImageResource } from '@flighthq/types/contract';
-import { ImageTextureSourceKind } from '@flighthq/types/contract';
+import { ImageTextureSourceKind } from '@flighthq/texture/contract';
 
 import type { GlMeshProgram } from './contract.scene3d-gl-types.ts';
 import {

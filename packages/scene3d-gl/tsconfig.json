@@ -3,6 +3,12 @@
   "files": [],
   "references": [
     {
+      "path": "../adjustments/tsconfig.runtime.json"
+    },
+    {
+      "path": "../bitmap/tsconfig.runtime.json"
+    },
+    {
       "path": "../camera/tsconfig.runtime.json"
     },
     {
@@ -46,6 +52,12 @@
     },
     {
       "path": "../render-gl"
+    },
+    {
+      "path": "../requirement"
+    },
+    {
+      "path": "../resource"
     },
     {
       "path": "../scene2d-gl"

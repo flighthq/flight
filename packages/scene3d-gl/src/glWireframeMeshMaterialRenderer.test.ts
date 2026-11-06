@@ -3,9 +3,9 @@ import type { Camera3D } from '@flighthq/camera/contract';
 import { createMatrix3, createMatrix4 } from '@flighthq/geometry/contract';
 import type { Scene3DLightBlock } from '@flighthq/lighting/contract';
 import { createWireframeMaterial } from '@flighthq/materials/contract';
+import { WireframeMaterialKind } from '@flighthq/materials/contract';
 import { createBoxMeshGeometry } from '@flighthq/meshgeometry/contract';
 import type { Scene3DRenderProxy } from '@flighthq/render/contract';
-import { WireframeMaterialKind } from '@flighthq/types/contract';
 
 import { getGlMeshMaterialRenderer } from './glMeshMaterialRegistry.ts';
 import { SKIN_PALETTE_TEXTURE_UNIT } from './glMeshProgram.ts';

@@ -1,8 +1,10 @@
+import type { Kind } from '@flighthq/entity/contract';
+import type { Material } from '@flighthq/materials/contract';
+import { StandardMaterialKind } from '@flighthq/materials/contract';
 import { withKindMapEntry } from '@flighthq/registry/contract';
 import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
 import type { GlMeshMaterialRenderer } from '@flighthq/render-gl/contract';
-import type { GlRenderState, Kind, Material } from '@flighthq/types/contract';
-import { StandardMaterialKind } from '@flighthq/types/contract';
+import type { GlRenderState } from '@flighthq/render-gl/contract';
 
 // Returns the 3D mesh-material renderer registered for a kind on this state, or null. The 3D scene
 // analog of getGlQuadMaterialRenderer; reads the shared materialRenderers table (a material kind is

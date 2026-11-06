@@ -1,7 +1,8 @@
 import type { LogState } from '@flighthq/log/contract';
 import { logOnce } from '@flighthq/log/contract';
-import type { GlRenderState, PbrExtension } from '@flighthq/types/contract';
-import { LogLevel } from '@flighthq/types/contract';
+import { LogLevel } from '@flighthq/log/contract';
+import type { PbrExtension } from '@flighthq/materials/contract';
+import type { GlRenderState } from '@flighthq/render-gl/contract';
 
 import type { GlPbrExtensionIssue } from './contract.scene3d-gl-types.ts';
 import { explainGlPbrExtensions } from './glPbrExtensionRegistry.ts';

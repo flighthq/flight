@@ -1,9 +1,10 @@
 import type { Camera3D } from '@flighthq/camera/contract';
 import type { Scene3DLightBlock } from '@flighthq/lighting/contract';
+import type { Material, StandardPbrMaterial } from '@flighthq/materials/contract';
 import type { MeshGeometry } from '@flighthq/meshgeometry/contract';
 import type { GlMeshMaterialRenderer } from '@flighthq/render-gl/contract';
+import type { GlRenderState } from '@flighthq/render-gl/contract';
 import type { Scene3DRenderProxy } from '@flighthq/render/contract';
-import type { GlRenderState, Material, StandardPbrMaterial } from '@flighthq/types/contract';
 
 import { bindGlMeshLightBlock } from './glLitProgram.ts';
 import {

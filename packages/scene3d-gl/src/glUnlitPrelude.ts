@@ -1,6 +1,7 @@
 import type { LinearColorRaw } from '@flighthq/color/contract';
 import { resolveGlTexture } from '@flighthq/render-gl/contract';
-import type { GlContext, GlRenderState, Texture } from '@flighthq/types/contract';
+import type { GlContext, GlRenderState } from '@flighthq/render-gl/contract';
+import type { Texture } from '@flighthq/texture/contract';
 
 import type { GlUnlitDefineKey, GlUnlitProgram } from './contract.scene3d-gl-types.ts';
 import { GL_MESH_FRAGMENT_TAIL, GL_MESH_FRAGMENT_TAIL_UNIFORMS } from './glMeshFragmentTail.ts';

@@ -2,6 +2,7 @@ import type { LinearColorRaw } from '@flighthq/color/contract';
 import { allocateLinearColor, unpackColorToLinear } from '@flighthq/color/contract';
 import { resolveGlTexture } from '@flighthq/render-gl/contract';
 import type { GlModifierBindContext, GlModifierSnippet } from '@flighthq/render-gl/contract';
+import type { GlRenderState } from '@flighthq/render-gl/contract';
 import {
   animatedNormalModifierDefinition,
   dissolveModifierDefinition,
@@ -24,7 +25,7 @@ import type {
   VertexDisplaceModifier,
 } from '@flighthq/shading/contract';
 import { EmissiveModifierFacing, FogModifierMode, VertexDisplaceModifierSource } from '@flighthq/shading/contract';
-import type { GlRenderState, Texture } from '@flighthq/types/contract';
+import type { Texture } from '@flighthq/texture/contract';
 
 import { registerGlModifierSnippet } from './glShadedModifierSnippet.ts';
 

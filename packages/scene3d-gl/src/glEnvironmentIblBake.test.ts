@@ -1,8 +1,10 @@
+import type { Bitmap } from '@flighthq/bitmap/contract';
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { Environment } from '@flighthq/lighting/contract';
 import { initializeGlCubeRenderTarget } from '@flighthq/render-gl/contract';
-import type { Bitmap, CubeTexture, GlContext, GlCubeRenderTarget } from '@flighthq/types/contract';
-import { BitmapTextureSourceKind } from '@flighthq/types/contract';
+import type { GlContext, GlCubeRenderTarget } from '@flighthq/render-gl/contract';
+import type { CubeTexture } from '@flighthq/texture/contract';
+import { BitmapTextureSourceKind } from '@flighthq/texture/contract';
 
 import { ensureGlEnvironmentSourceCube } from './glEnvironmentCube.ts';
 import {

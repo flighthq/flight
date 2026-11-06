@@ -482,6 +482,16 @@ export interface Scene3DForwardLightSelection {
   spot: Readonly<SpotLight>[];
 }
 
+// Plain diagnostic data explaining whether a scene's punctual-light arrays need an explicit
+// per-object forward-light selection pass before a draw. Both 3D backends report the same lighting
+// fact, so the contract lives beside the selection it describes rather than in either backend.
+export interface Scene3DForwardLightSelectionExplanation {
+  pointLightCount: number;
+  reason: 'selection-prepared' | 'selection-required' | 'within-budget';
+  selectionPrepared: boolean;
+  spotLightCount: number;
+}
+
 // The set of light DATA descriptors passed to one drawScene3D call as a draw-argument (lights are
 // not scene members: `scene` = what exists, `camera`/`lights` = what we render now). It carries at
 // most one directional + one ambient term (either null when absent) plus arrays of point, spot, and

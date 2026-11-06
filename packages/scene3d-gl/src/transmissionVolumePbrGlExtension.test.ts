@@ -1,5 +1,5 @@
 import { createTransmissionVolumePbrExtension } from '@flighthq/materials/contract';
-import { TransmissionVolumePbrExtensionKind } from '@flighthq/types/contract';
+import { TransmissionVolumePbrExtensionKind } from '@flighthq/materials/contract';
 
 import { getGlPbrExtensionRegistration } from './glPbrExtensionRegistry.ts';
 import { makeGlScene3DState } from './glScene3DTestHelper.ts';

@@ -1,3 +1,29 @@
+import type { Kind } from '@flighthq/entity/contract';
+import {
+  AnisotropyPbrExtensionKind,
+  BlinnPhongMaterialKind,
+  ClearcoatPbrExtensionKind,
+  CustomShaderMaterialKind,
+  DepthMaterialKind,
+  EmissiveMaterialKind,
+  ExtendedPbrMaterialKind,
+  IridescencePbrExtensionKind,
+  LambertMaterialKind,
+  MatcapMaterialKind,
+  NormalMaterialKind,
+  PhongMaterialKind,
+  SheenPbrExtensionKind,
+  SpecularGlossinessPbrMaterialKind,
+  SpecularPbrExtensionKind,
+  StandardMaterialKind,
+  StandardPbrMaterialKind,
+  ToonMaterialKind,
+  TransmissionVolumePbrExtensionKind,
+  UnlitMaterialKind,
+  VertexColorMaterialKind,
+  WireframeMaterialKind,
+  WrappedDiffusePbrExtensionKind,
+} from '@flighthq/materials/contract';
 import { getKindMapKeys } from '@flighthq/registry/contract';
 import { glScene2DRenderPreset } from '@flighthq/scene2d-gl/contract';
 import {
@@ -11,35 +37,11 @@ import {
   ToonModifierKind,
   VertexDisplaceModifierKind,
 } from '@flighthq/shading/contract';
-import type { Kind } from '@flighthq/types/contract';
 import {
-  AnisotropyPbrExtensionKind,
   BitmapTextureSourceKind,
-  BlinnPhongMaterialKind,
-  ClearcoatPbrExtensionKind,
-  CustomShaderMaterialKind,
-  DepthMaterialKind,
-  EmissiveMaterialKind,
-  ExtendedPbrMaterialKind,
   ImageTextureSourceKind,
-  IridescencePbrExtensionKind,
-  LambertMaterialKind,
-  MatcapMaterialKind,
-  NormalMaterialKind,
-  PhongMaterialKind,
   RenderTargetTextureSourceKind,
-  SheenPbrExtensionKind,
-  SpecularGlossinessPbrMaterialKind,
-  SpecularPbrExtensionKind,
-  StandardMaterialKind,
-  StandardPbrMaterialKind,
-  ToonMaterialKind,
-  TransmissionVolumePbrExtensionKind,
-  UnlitMaterialKind,
-  VertexColorMaterialKind,
-  WireframeMaterialKind,
-  WrappedDiffusePbrExtensionKind,
-} from '@flighthq/types/contract';
+} from '@flighthq/texture/contract';
 
 import { glScene3DRenderPreset } from './scene3DGlPipeline.ts';
 

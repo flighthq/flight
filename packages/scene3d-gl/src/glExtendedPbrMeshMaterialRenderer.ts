@@ -1,6 +1,7 @@
+import type { ExtendedPbrMaterial } from '@flighthq/materials/contract';
+import { ExtendedPbrMaterialKind } from '@flighthq/materials/contract';
 import type { GlMeshMaterialRenderer } from '@flighthq/render-gl/contract';
-import type { ExtendedPbrMaterial, GlRenderState } from '@flighthq/types/contract';
-import { ExtendedPbrMaterialKind } from '@flighthq/types/contract';
+import type { GlRenderState } from '@flighthq/render-gl/contract';
 
 import { bindGlMeshLightBlock } from './glLitProgram.ts';
 import { registerGlMeshMaterialRenderer } from './glMeshMaterialRegistry.ts';

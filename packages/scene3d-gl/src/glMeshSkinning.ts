@@ -8,8 +8,8 @@
 // generic palette upload, not skin-specific, and instanced draws need it whether or not skinning is on.
 
 import { uploadGlSkinPaletteTexture } from '@flighthq/render-gl/contract';
+import type { GlRenderState } from '@flighthq/render-gl/contract';
 import type { Scene3DRenderProxy } from '@flighthq/render/contract';
-import type { GlRenderState } from '@flighthq/types/contract';
 
 import type { GlMeshProgram } from './contract.scene3d-gl-types.ts';
 import type { GlMeshSkinFeature } from './contract.scene3d-gl-types.ts';

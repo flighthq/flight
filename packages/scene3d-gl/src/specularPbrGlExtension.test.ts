@@ -1,5 +1,5 @@
 import { createSpecularPbrExtension } from '@flighthq/materials/contract';
-import { SpecularPbrExtensionKind } from '@flighthq/types/contract';
+import { SpecularPbrExtensionKind } from '@flighthq/materials/contract';
 
 import { getGlPbrExtensionRegistration } from './glPbrExtensionRegistry.ts';
 import { makeGlScene3DState } from './glScene3DTestHelper.ts';

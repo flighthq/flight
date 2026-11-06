@@ -7,8 +7,9 @@ import {
   createTransmissionVolumePbrExtension,
   createWrappedDiffusePbrExtension,
 } from '@flighthq/materials/contract';
+import type { PbrExtension, PbrUvSet } from '@flighthq/materials/contract';
 import type { GlPbrExtensionRegistration } from '@flighthq/render-gl/contract';
-import type { PbrExtension, PbrUvSet, Texture } from '@flighthq/types/contract';
+import type { Texture } from '@flighthq/texture/contract';
 
 import { anisotropyPbrGlExtension } from './anisotropyPbrGlExtension.ts';
 import { clearcoatPbrGlExtension } from './clearcoatPbrGlExtension.ts';
