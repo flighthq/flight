@@ -1,4 +1,4 @@
-import type { Entity } from '@flighthq/entity/contract';
+import type { EntityRaw, EntityRuntime, EntityRuntimeKey } from '@flighthq/entity/contract';
 import type { Signal } from '@flighthq/signals/contract';
 
 export type SensorAccuracy = 'high' | 'low' | 'medium' | 'unknown';
@@ -15,17 +15,20 @@ export interface SensorReading {
   timestamp: number;
 }
 
-export interface AmbientLightReading extends Entity, SensorReading {
+export interface AmbientLightReading extends EntityRaw, SensorReading {
+  [EntityRuntimeKey]: EntityRuntime | undefined;
   illuminance: number;
 }
 
-export interface MotionReading extends Entity, SensorReading {
+export interface MotionReading extends EntityRaw, SensorReading {
+  [EntityRuntimeKey]: EntityRuntime | undefined;
   x: number;
   y: number;
   z: number;
 }
 
-export interface OrientationReading extends Entity, SensorReading {
+export interface OrientationReading extends EntityRaw, SensorReading {
+  [EntityRuntimeKey]: EntityRuntime | undefined;
   alpha: number;
   beta: number;
   gamma: number;
@@ -33,25 +36,29 @@ export interface OrientationReading extends Entity, SensorReading {
   heading: number;
 }
 
-export interface PressureReading extends Entity, SensorReading {
+export interface PressureReading extends EntityRaw, SensorReading {
+  [EntityRuntimeKey]: EntityRuntime | undefined;
   altitude: number;
   pressure: number;
 }
 
-export interface ProximityReading extends Entity, SensorReading {
+export interface ProximityReading extends EntityRaw, SensorReading {
+  [EntityRuntimeKey]: EntityRuntime | undefined;
   distance: number;
   max: number;
   near: boolean;
 }
 
-export interface QuaternionReading extends Entity, SensorReading {
+export interface QuaternionReading extends EntityRaw, SensorReading {
+  [EntityRuntimeKey]: EntityRuntime | undefined;
   w: number;
   x: number;
   y: number;
   z: number;
 }
 
-export interface RotationRateReading extends Entity, SensorReading {
+export interface RotationRateReading extends EntityRaw, SensorReading {
+  [EntityRuntimeKey]: EntityRuntime | undefined;
   alpha: number;
   beta: number;
   gamma: number;
@@ -115,7 +122,8 @@ export interface HostSensorsCapabilities {
   readonly query?: HostSensorsCapability;
 }
 
-export interface Sensors extends Entity {
+export interface Sensors extends EntityRaw {
+  [EntityRuntimeKey]: EntityRuntime | undefined;
   onAbsoluteOrientation: Signal<Readonly<OrientationReading>>;
   onAccelerometer: Signal<Readonly<MotionReading>>;
   onAmbientLight: Signal<Readonly<AmbientLightReading>>;
