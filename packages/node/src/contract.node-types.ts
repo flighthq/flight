@@ -1,6 +1,7 @@
 export { AppearanceFlags } from './types/AppearanceFlags.ts';
 export type { AppearanceNode, HasAppearance, HasAppearanceRuntime } from './types/HasAppearance.ts';
 export type { BlendModeNode, HasBlendMode } from './types/HasBlendMode.ts';
+export type { ClipNode, HasClip } from './types/HasClip.ts';
 export type {
   BoundsNode,
   BoundsNodeAny,

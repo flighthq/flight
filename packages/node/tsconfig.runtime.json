@@ -35,9 +35,6 @@
       "path": "../signals"
     },
     {
-      "path": "../types"
-    },
-    {
       "path": "./tsconfig.contract.json"
     }
   ],

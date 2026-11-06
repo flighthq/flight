@@ -1,7 +1,7 @@
 import { allocateEntity, createEntityRuntime, finishEntity, getEntityRuntime } from '@flighthq/entity/contract';
+import type { EntityConstruction, Kind } from '@flighthq/entity/contract';
+import { EntityRuntimeKey } from '@flighthq/entity/contract';
 import { clearSignal, createSignal } from '@flighthq/signals/contract';
-import type { EntityConstruction, Kind } from '@flighthq/types/contract';
-import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import type {
   MethodsOf,

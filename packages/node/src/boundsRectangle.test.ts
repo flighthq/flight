@@ -6,6 +6,7 @@ import {
   setEmptyRectangle as setEmpty,
   setRectangle,
 } from '@flighthq/geometry/contract';
+import type { Rectangle } from '@flighthq/geometry/contract';
 import {
   addNodeChild,
   createNode,
@@ -17,7 +18,6 @@ import {
   removeNodeChild,
   setNodeEnabled,
 } from '@flighthq/node/contract';
-import type { Rectangle } from '@flighthq/types/contract';
 
 import {
   computeNodeBoundsRectangle,

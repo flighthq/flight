@@ -7,8 +7,8 @@ import {
   matrixTransformPointXY,
   multiplyMatrix,
 } from '@flighthq/geometry/contract';
+import type { Matrix, MatrixLike, Transform2DLike, Vector2Like } from '@flighthq/geometry/contract';
 import { DEG_TO_RAD } from '@flighthq/math/contract';
-import type { Matrix, MatrixLike, Transform2DLike, Vector2Like } from '@flighthq/types/contract';
 
 import type { HasTransform2DRuntime, NodeRuntime, Transform2DNode } from './contract.node-types.ts';
 import { computeNodeWorldTransformRevision } from './revision.ts';

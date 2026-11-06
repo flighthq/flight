@@ -1,6 +1,5 @@
 import { allocateEntity, attachEntityBinding, finishEntity, getEntityBinding } from '@flighthq/entity/contract';
 import { connectSignal } from '@flighthq/signals/contract';
-import type { InteractionSignals } from '@flighthq/types/contract';
 
 import type { Node, NodeData, NodeRuntime } from './contract.node-types.ts';
 import { NodeKind } from './contract.node-types.ts';
@@ -177,7 +176,7 @@ describe('disposeNode', () => {
   it('releases the interaction signal registry after disposal', () => {
     const node = createNode(NodeKind);
     const runtime = getNodeRuntime(node) as NodeRuntime;
-    runtime.interactionSignals = {} as InteractionSignals;
+    runtime.interactionSignals = {};
 
     disposeNode(node);
 

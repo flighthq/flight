@@ -7,7 +7,7 @@ import {
   multiplyMatrix4,
   setQuaternionFromAxisAngle,
 } from '@flighthq/geometry/contract';
-import type { Vector3Like } from '@flighthq/types/contract';
+import type { Vector3Like } from '@flighthq/geometry/contract';
 import { describe, expect, it } from 'vitest';
 
 import type { HasTransform3D, HasTransform3DRuntime, NodeRuntime, Transform3DNode } from './contract.node-types.ts';

@@ -1,5 +1,5 @@
 import { createMatrix } from '@flighthq/geometry/contract';
-import type { ViewportAlign } from '@flighthq/types/contract';
+import type { ViewportAlign } from '@flighthq/layout/contract';
 
 import type { HasBoundsRectangleRuntime, Node, NodeFields, ViewportScaleMode } from './contract.node-types.ts';
 import { createNode, getNodeRuntime } from './node.ts';

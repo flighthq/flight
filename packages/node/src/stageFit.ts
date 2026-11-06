@@ -1,5 +1,6 @@
 import { createRectangle } from '@flighthq/geometry/contract';
-import type { MatrixLike, Rectangle, ViewportAlign } from '@flighthq/types/contract';
+import type { MatrixLike, Rectangle } from '@flighthq/geometry/contract';
+import type { ViewportAlign } from '@flighthq/layout/contract';
 
 import type { BoundsNode, HasBoundsRectangleRuntime, NodeFields, Scene2DFitContext } from './contract.node-types.ts';
 import { getNodeRuntime } from './node.ts';

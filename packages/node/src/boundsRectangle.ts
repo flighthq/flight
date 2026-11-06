@@ -11,7 +11,7 @@ import {
   releaseMatrix,
   setEmptyRectangle,
 } from '@flighthq/geometry/contract';
-import type { Matrix, Rectangle, RectangleLike } from '@flighthq/types/contract';
+import type { Matrix, Rectangle, RectangleLike } from '@flighthq/geometry/contract';
 
 import type {
   BoundsNode,
