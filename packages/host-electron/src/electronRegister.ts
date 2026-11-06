@@ -1,7 +1,7 @@
 import type { EntityRuntimeKey } from '@flighthq/entity/contract';
 import { createHost } from '@flighthq/host/contract';
+import type { Host } from '@flighthq/host/contract';
 import type { DesktopOsProfile } from '@flighthq/tray/contract';
-import type { Host } from '@flighthq/types/contract';
 
 import { electronHostApp } from './electronApp.ts';
 import { electronHostClipboard } from './electronClipboard.ts';

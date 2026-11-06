@@ -15,6 +15,7 @@ export {
 export type { BackendOperationExplanation, BackendOperationExplanationLayer } from './backendOperationExplanation.ts';
 export { enableHostGuards } from './enableHostGuards.ts';
 export { createHost, initializeHost } from './host.ts';
+export type { Host } from '@flighthq/types/contract';
 export type {
   AudioBufferHandle,
   AudioBusNodeHandle,

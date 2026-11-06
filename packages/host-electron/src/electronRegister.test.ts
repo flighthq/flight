@@ -1,8 +1,8 @@
 import { getAppName } from '@flighthq/app';
 import { readClipboardText } from '@flighthq/clipboard/contract';
 import { EntityRuntimeKey } from '@flighthq/entity/contract';
+import type { EntityRaw, EntityRuntime } from '@flighthq/entity/contract';
 import { createHost } from '@flighthq/host/contract';
-import type { Entity } from '@flighthq/types/contract';
 
 import * as contractApi from './contract.ts';
 import { electronHost } from './electronRegister.ts';
@@ -172,9 +172,11 @@ const LEAVES = [
 
 const AUXILIARY_EXPORTS = ['getAppWindowForElectronId', 'getElectronBrowserWindow', 'getElectronWindowId'] as const;
 
+type EntityCompatibility = EntityRaw & { [EntityRuntimeKey]: EntityRuntime | undefined };
 type ElectronLeafResult = ReturnType<(typeof publicApi)[(typeof LEAVES)[number]]>;
-type ElectronLeafProvidersAreAllEntities = Exclude<ElectronLeafResult, undefined> extends Entity ? true : false;
-type ElectronFullHostIsEntity = ReturnType<typeof publicApi.electronHost> extends Entity ? true : false;
+type ElectronLeafProvidersAreAllEntities =
+  Exclude<ElectronLeafResult, undefined> extends EntityCompatibility ? true : false;
+type ElectronFullHostIsEntity = ReturnType<typeof publicApi.electronHost> extends EntityCompatibility ? true : false;
 
 // A fake Electron API broad enough that every host constructor can close over its injected dependency
 // without calling missing native operations during construction.
