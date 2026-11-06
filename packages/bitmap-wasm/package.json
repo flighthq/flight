@@ -29,7 +29,7 @@
   },
   "dependencies": {
     "@flighthq/bitmap": "*",
-    "@flighthq/types": "*"
+    "@flighthq/geometry": "*"
   },
   "devDependencies": {
     "typescript": "^7.0.2"

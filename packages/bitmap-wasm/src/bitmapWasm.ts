@@ -6,8 +6,8 @@ import type {
   BitmapHistogram,
   BitmapMismatch,
   BitmapRegion,
-  RectangleLike,
-} from '@flighthq/types';
+} from '@flighthq/bitmap/contract';
+import type { RectangleLike } from '@flighthq/geometry/contract';
 
 import {
   apply_bitmap_curve_wasm,
