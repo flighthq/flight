@@ -10,12 +10,15 @@
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "types": ["@webgpu/types"],
     "moduleSuffixes": [
-      ".render-wgpu-types",
+      ".render-wgpu-bridge-types",
+      ".adjustments-types",
       ".app-types",
       ".flow-types",
       ".geometry-types",
       ".font-types",
       ".host-types",
+      ".image-types",
+      ".materials-types",
       ".menu-types",
       ".midi-types",
       ".notification-types",
@@ -32,9 +35,12 @@
       ".shape-types",
       ".spatial-types",
       ".statechart-types",
+      ".surface-types",
       ".text-types",
       ".textlayout-types",
       ".textshaper-types",
+      ".texture-formats-types",
+      ".texture-types",
       ".velocity-types",
       ""
     ],
@@ -42,10 +48,40 @@
   },
   "references": [
     {
+      "path": "../adjustments/tsconfig.contract.json"
+    },
+    {
+      "path": "../app/tsconfig.contract.json"
+    },
+    {
+      "path": "../entity"
+    },
+    {
+      "path": "../image/tsconfig.contract.json"
+    },
+    {
+      "path": "../materials/tsconfig.contract.json"
+    },
+    {
       "path": "../platform/tsconfig.contract.json"
     },
     {
+      "path": "../signals"
+    },
+    {
+      "path": "../surface/tsconfig.contract.json"
+    },
+    {
+      "path": "../texture/tsconfig.contract.json"
+    },
+    {
+      "path": "../texture-formats/tsconfig.contract.json"
+    },
+    {
       "path": "../types/tsconfig.render-wgpu-types.json"
+    },
+    {
+      "path": "../velocity/tsconfig.contract.json"
     }
   ],
   "include": ["src/contract.render-wgpu-types.ts", "src/types/**/*.ts"]

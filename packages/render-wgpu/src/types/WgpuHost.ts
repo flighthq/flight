@@ -1,5 +1,6 @@
 import type { AppWindow } from '@flighthq/app/contract';
-import type { Entity, NativeSurfaceHandle, Surface } from '@flighthq/types/contract';
+import type { Entity } from '@flighthq/entity/contract';
+import type { NativeSurfaceHandle, Surface } from '@flighthq/surface/contract';
 
 /**
  * The presentation surface's current size, which every WGPU consumer reads once per frame.

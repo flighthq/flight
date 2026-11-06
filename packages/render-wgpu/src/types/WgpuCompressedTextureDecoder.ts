@@ -1,4 +1,4 @@
-import type { TextureContainerFormat } from '@flighthq/types/contract';
+import type { TextureContainerFormat } from '@flighthq/texture-formats/contract';
 
 // Optional CPU fallback for a block-compressed WebGPU texture whose family was not enabled on the
 // device. The returned bytes are tightly-packed RGBA8 pixels for one mip level, or null when the

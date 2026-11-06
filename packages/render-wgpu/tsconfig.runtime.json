@@ -41,6 +41,9 @@
       "path": "../signals"
     },
     {
+      "path": "../surface/tsconfig.contract.json"
+    },
+    {
       "path": "../bitmap/tsconfig.runtime.json"
     },
     {

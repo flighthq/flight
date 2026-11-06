@@ -3,6 +3,9 @@
   "files": [],
   "references": [
     {
+      "path": "../adjustments/tsconfig.contract.json"
+    },
+    {
       "path": "../app/tsconfig.runtime.json"
     },
     {
@@ -18,7 +21,13 @@
       "path": "../geometry/tsconfig.runtime.json"
     },
     {
+      "path": "../image/tsconfig.contract.json"
+    },
+    {
       "path": "../log"
+    },
+    {
+      "path": "../materials/tsconfig.contract.json"
     },
     {
       "path": "../platform/tsconfig.contract.json"
@@ -36,10 +45,19 @@
       "path": "../signals"
     },
     {
+      "path": "../surface/tsconfig.contract.json"
+    },
+    {
       "path": "../texture/tsconfig.runtime.json"
     },
     {
+      "path": "../texture-formats/tsconfig.contract.json"
+    },
+    {
       "path": "../types"
+    },
+    {
+      "path": "../velocity/tsconfig.contract.json"
     },
     {
       "path": "./tsconfig.contract.json"

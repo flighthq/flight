@@ -40,18 +40,24 @@
     "clean:dist": "tsx ../../scripts/clean-package-dist.ts"
   },
   "dependencies": {
+    "@flighthq/adjustments": "*",
     "@flighthq/app": "*",
     "@flighthq/color": "*",
     "@flighthq/entity": "*",
     "@flighthq/geometry": "*",
+    "@flighthq/image": "*",
     "@flighthq/log": "*",
+    "@flighthq/materials": "*",
     "@flighthq/platform": "*",
     "@flighthq/render": "*",
     "@flighthq/registry": "*",
     "@flighthq/signals": "*",
+    "@flighthq/surface": "*",
     "@flighthq/bitmap": "*",
     "@flighthq/texture": "*",
-    "@flighthq/types": "*"
+    "@flighthq/texture-formats": "*",
+    "@flighthq/types": "*",
+    "@flighthq/velocity": "*"
   },
   "peerDependencies": {
     "@webgpu/types": "^0.1.70"

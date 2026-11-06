@@ -1,4 +1,4 @@
-import type { VelocityField } from '@flighthq/types/contract';
+import type { VelocityField } from '@flighthq/velocity/contract';
 
 import type { WgpuRenderState } from './WgpuRenderState.ts';
 

@@ -1,4 +1,5 @@
-import type { Modifier, ModifierDefinition, Texture } from '@flighthq/types/contract';
+import type { Texture } from '@flighthq/texture/contract';
+import type { Modifier, ModifierDefinition } from '@flighthq/types/contract';
 
 export interface WgpuModifierCompileContext {
   acquireTexture(texture: Readonly<Texture>): number;

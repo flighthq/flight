@@ -1,4 +1,4 @@
-import type { Entity } from '@flighthq/types/contract';
+import type { Entity } from '@flighthq/entity/contract';
 
 import type { WgpuRenderState, WgpuScissorRect } from './WgpuRenderState.ts';
 import type { WgpuRenderTarget } from './WgpuRenderTarget.ts';

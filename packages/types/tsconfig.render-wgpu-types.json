@@ -8,6 +8,7 @@
     "declarationMap": true,
     "sourceMap": true,
     "moduleSuffixes": [
+      ".render-wgpu-bridge-types",
       ".keyboard-types",
       ".scene2d-types",
       ".interaction-types",
@@ -366,7 +367,7 @@
     "src/WgpuSkinningAdapter.render-wgpu-types.ts",
     "src/WgpuTextureResolver.render-wgpu-types.ts",
     "src/WgpuVelocityWriter.render-wgpu-types.ts",
-    "src/contract.render-wgpu-types.ts",
+    "src/contract.render-wgpu-bridge-types.ts",
     "src/contract.scene2d-dom-types.ts",
     "src/contract.scene2d-wgpu-bridge-types.ts"
   ],

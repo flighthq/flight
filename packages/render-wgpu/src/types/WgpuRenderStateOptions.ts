@@ -1,5 +1,5 @@
+import type { Kind } from '@flighthq/entity/contract';
 import type {
-  Kind,
   RenderStateOptions,
   ShapeRasterizer,
   WgpuColorAdjustmentMaterialFeature,

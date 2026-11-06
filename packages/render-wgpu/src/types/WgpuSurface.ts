@@ -1,4 +1,4 @@
-import type { Surface } from '@flighthq/types/contract';
+import type { Surface } from '@flighthq/surface/contract';
 
 import type { WgpuHostAcquisition } from './WgpuHost.ts';
 
