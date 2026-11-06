@@ -9,6 +9,7 @@
     "sourceMap": true,
     "moduleSuffixes": [
       ".accessibility-types",
+      ".keyboard-types",
       ".lifecycle-types",
       ".ipc-types",
       ".mediasession-types",

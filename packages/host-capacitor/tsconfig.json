@@ -8,6 +8,7 @@
     "declarationMap": true,
     "sourceMap": true,
     "moduleSuffixes": [
+      ".keyboard-types",
       ".tray-types",
       ".ipc-types",
       ".mediasession-types",
