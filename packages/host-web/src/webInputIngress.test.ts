@@ -16,8 +16,8 @@ import {
 import * as inputContract from '@flighthq/input/contract';
 import type { InputIngressSink, InputPointerData } from '@flighthq/input/contract';
 import { KeyCode } from '@flighthq/input/contract';
+import { KeyModifier } from '@flighthq/input/contract';
 import { connectSignal } from '@flighthq/signals/contract';
-import { KeyModifier } from '@flighthq/types/contract';
 
 import * as hostWebPublic from './index.ts';
 import { webHostInput } from './webInputHost.ts';

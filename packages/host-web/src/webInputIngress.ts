@@ -11,7 +11,7 @@ import type {
   MouseWheelMode,
 } from '@flighthq/input/contract';
 import { KeyCode } from '@flighthq/input/contract';
-import { KeyModifier } from '@flighthq/types/contract';
+import { KeyModifier } from '@flighthq/input/contract';
 
 /**
  * Wraps a Web event target as a host-neutral input source. The source carries the provider token of

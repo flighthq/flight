@@ -47,6 +47,7 @@ export {
   stopInputKeyRepeatTimer,
 } from './inputTimer.ts';
 export { KeyCode } from './keyCode.ts';
+export { KeyModifier } from './keyModifier.ts';
 export {
   GamepadAxisKind,
   GamepadButtonKind,

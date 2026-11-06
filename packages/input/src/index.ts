@@ -72,3 +72,5 @@ export type {
   MouseWheelMode,
   PointerType,
 } from './contract.ts';
+export { KeyCode } from './keyCode.ts';
+export { KeyModifier } from './keyModifier.ts';
