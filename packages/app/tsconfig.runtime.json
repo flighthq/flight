@@ -7,7 +7,7 @@
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,
-    "moduleSuffixes": [".lifecycle-types", ".menu-types", ""],
+    "moduleSuffixes": [".lifecycle-types", ".menu-types", ".render-types", ""],
     "tsBuildInfoFile": "dist/.tsbuildinfo.runtime"
   },
   "references": [
