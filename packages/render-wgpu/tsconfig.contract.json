@@ -10,6 +10,7 @@
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "types": ["@webgpu/types"],
     "moduleSuffixes": [
+      ".render-types",
       ".render-wgpu-bridge-types",
       ".adjustments-types",
       ".app-types",
@@ -82,6 +83,9 @@
     },
     {
       "path": "../velocity/tsconfig.contract.json"
+    },
+    {
+      "path": "../render/tsconfig.contract.json"
     }
   ],
   "include": ["src/contract.render-wgpu-types.ts", "src/types/**/*.ts"]

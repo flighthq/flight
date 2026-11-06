@@ -8,6 +8,7 @@
     "declarationMap": true,
     "sourceMap": true,
     "moduleSuffixes": [
+      ".render-types",
       ".scene3d-gl-bridge-types",
       ".scene3d-gl-types",
       ".materials-types",
@@ -21,11 +22,24 @@
     "tsBuildInfoFile": "dist/.tsbuildinfo.contract"
   },
   "references": [
-    { "path": "../geometry/tsconfig.contract.json" },
-    { "path": "../materials/tsconfig.contract.json" },
-    { "path": "../render-gl/tsconfig.contract.json" },
-    { "path": "../texture/tsconfig.contract.json" },
-    { "path": "../types/tsconfig.scene3d-wgpu-types.json" }
+    {
+      "path": "../geometry/tsconfig.contract.json"
+    },
+    {
+      "path": "../materials/tsconfig.contract.json"
+    },
+    {
+      "path": "../render-gl/tsconfig.contract.json"
+    },
+    {
+      "path": "../texture/tsconfig.contract.json"
+    },
+    {
+      "path": "../types/tsconfig.scene3d-wgpu-types.json"
+    },
+    {
+      "path": "../render/tsconfig.contract.json"
+    }
   ],
   "include": ["src/contract.scene3d-gl-types.ts", "src/types/**/*.ts"]
 }

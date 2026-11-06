@@ -1,13 +1,8 @@
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
-import type {
-  CatalogRegistration,
-  Kind,
-  Scene3DKindUsage,
-  SceneCoverageCatalog,
-  SceneCoverageEntry,
-  WgpuRenderState,
-} from '@flighthq/types/contract';
-import { RenderRegistryTable, RequirementFacet, SceneCoverage, StandardMaterialKind } from '@flighthq/types/contract';
+import type { CatalogRegistration, SceneCoverageCatalog, SceneCoverageEntry } from '@flighthq/render/contract';
+import { RenderRegistryTable, SceneCoverage } from '@flighthq/render/contract';
+import type { Kind, Scene3DKindUsage, WgpuRenderState } from '@flighthq/types/contract';
+import { RequirementFacet, StandardMaterialKind } from '@flighthq/types/contract';
 
 // Clears `out`, then reports every kind in `usage` with how well this state is wired for it — satisfied
 // ones included, so one call is a complete manifest. The WebGPU twin of explainGlScene3DCoverage, and

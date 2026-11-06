@@ -1,6 +1,7 @@
 import { withKindMapEntry } from '@flighthq/registry/contract';
+import { RenderRegistryTable } from '@flighthq/render/contract';
 import type { Kind, Material } from '@flighthq/types/contract';
-import { RenderRegistryTable, StandardMaterialKind } from '@flighthq/types/contract';
+import { StandardMaterialKind } from '@flighthq/types/contract';
 
 import type { WgpuQuadMaterialRenderer, WgpuRenderState } from './contract.render-wgpu-types.ts';
 import { getWgpuRenderStateRuntime } from './wgpuRenderState.ts';

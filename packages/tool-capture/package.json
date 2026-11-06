@@ -46,6 +46,7 @@
     "@flighthq/effects-wgpu": "*",
     "@flighthq/host-web": "*",
     "@flighthq/log": "*",
+    "@flighthq/render": "*",
     "@flighthq/render-wgpu": "*",
     "@flighthq/bitmap": "*",
     "@flighthq/types": "*",

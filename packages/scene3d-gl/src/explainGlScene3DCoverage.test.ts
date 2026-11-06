@@ -1,22 +1,17 @@
 import { createBoxMeshGeometry } from '@flighthq/meshgeometry/contract';
 import { addNodeChild } from '@flighthq/node/contract';
 import type { GlMeshMaterialRenderer } from '@flighthq/render-gl/contract';
+import type { SceneCoverageCatalog, SceneCoverageEntry } from '@flighthq/render/contract';
+import { RenderRegistryTable, SceneCoverage } from '@flighthq/render/contract';
 import { createMesh, createScene3D, createScene3DKindUsage, getScene3DKindUsage } from '@flighthq/scene3d/contract';
 import { createRimModifier, createShadedMaterial } from '@flighthq/shading/contract';
 import { createTexture } from '@flighthq/texture/contract';
-import type {
-  GlRenderState,
-  ImageResourceReference,
-  SceneCoverageCatalog,
-  SceneCoverageEntry,
-} from '@flighthq/types/contract';
+import type { GlRenderState, ImageResourceReference } from '@flighthq/types/contract';
 import {
   EntityRuntimeKey,
   ImageResourceReferenceKind,
-  RenderRegistryTable,
   RequirementFacet,
   ResourceResolutionState,
-  SceneCoverage,
   StandardMaterialKind,
 } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';

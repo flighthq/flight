@@ -1,10 +1,10 @@
 import { connectSignal } from '@flighthq/signals/contract';
 import type { Signal } from '@flighthq/signals/contract';
 import type { Kind } from '@flighthq/types/contract';
-import { RenderRegistryTable } from '@flighthq/types/contract';
 
 import { enableRenderRegistrySignals } from './renderRegistrySignals.ts';
 import { createRenderState, getRenderStateRuntime } from './renderState.ts';
+import { RenderRegistryTable } from './types.ts';
 
 describe('enableRenderRegistrySignals', () => {
   it('allocates one state-local registry-miss seam and reuses it', () => {

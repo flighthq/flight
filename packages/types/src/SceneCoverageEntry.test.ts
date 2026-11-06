@@ -1,4 +1,5 @@
-import { RenderRegistryTable } from './RenderRegistrySignals.ts';
+import { RenderRegistryTable } from '@flighthq/render/contract';
+
 import { RequirementFacet } from './RequirementFacet.ts';
 import type { SceneCoverageEntry } from './SceneCoverageEntry.ts';
 import { SceneCoverage } from './SceneCoverageEntry.ts';

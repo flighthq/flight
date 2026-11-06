@@ -2,11 +2,11 @@
 import type { EntityConstruction } from '@flighthq/entity/contract';
 import type { MatrixLike } from '@flighthq/geometry/contract';
 import { getNodeLocalBoundsRectangle } from '@flighthq/node/contract';
+import { RenderRegistryTable } from '@flighthq/render/contract';
 import { mapScale9ShapeCommands } from '@flighthq/shape/contract';
 import type { Scale9Shape, ShapeCommandToken } from '@flighthq/shape/contract';
 import { Scale9ShapeKind } from '@flighthq/shape/contract';
 import type { RenderProxy2D, RenderState, NodeAny, RendererData, Scene2DRenderer } from '@flighthq/types/contract';
-import { RenderRegistryTable } from '@flighthq/types/contract';
 
 import type { DomRenderState } from './contract.scene2d-dom-types.ts';
 import { getDomRenderStateRuntime } from './domRenderState.ts';

@@ -3,6 +3,7 @@ import { getNodeLocalBoundsRectangle, getNodeLocalContentRevision } from '@fligh
 import { bindWgpuImageResourceTexture, drawWgpuQuadWithTransform } from '@flighthq/render-wgpu/contract';
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
 import { createCanvasHostSurface, destroyCanvasHostSurface } from '@flighthq/render/contract';
+import { RenderRegistryTable } from '@flighthq/render/contract';
 import { mapScale9ShapeCommands } from '@flighthq/shape/contract';
 import type { Scale9Shape, ShapeCommandToken } from '@flighthq/shape/contract';
 import { Scale9ShapeKind } from '@flighthq/shape/contract';
@@ -18,7 +19,6 @@ import type {
   Scene2DRenderer,
   WgpuRenderState,
 } from '@flighthq/types/contract';
-import { RenderRegistryTable } from '@flighthq/types/contract';
 
 import { flushWgpuQuadBatchWriter } from './wgpuQuadBatchWriter.ts';
 import { createWgpuRendererData, getWgpuRendererData } from './wgpuRendererData.ts';

@@ -1,17 +1,13 @@
-import type {
-  CanvasShapeCommand,
-  NodeRenderer,
-  Scene2DKindUsage,
-  SceneCoverageCatalog,
-  SceneCoverageEntry,
-} from '@flighthq/types/contract';
-import { RenderRegistryTable, RequirementFacet, SceneCoverage } from '@flighthq/types/contract';
+import type { CanvasShapeCommand, NodeRenderer, Scene2DKindUsage } from '@flighthq/types/contract';
+import { RequirementFacet } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { explainScene2DCoverage, hasScene2DCoverage } from './explainScene2DCoverage.ts';
 import { registerNodeRenderer } from './renderer.ts';
 import { createRenderState } from './renderState.ts';
 import { getRenderStateRuntime } from './renderState.ts';
+import type { SceneCoverageCatalog, SceneCoverageEntry } from './types.ts';
+import { RenderRegistryTable, SceneCoverage } from './types.ts';
 
 const renderer: NodeRenderer = { createData: () => null, submit: () => {} } as unknown as NodeRenderer;
 const coverageCatalog: SceneCoverageCatalog = [

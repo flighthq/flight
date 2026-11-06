@@ -50,6 +50,7 @@
     "@flighthq/meshgeometry": "*",
     "@flighthq/node": "*",
     "@flighthq/registry": "*",
+    "@flighthq/requirement": "*",
     "@flighthq/signals": "*",
     "@flighthq/texture": "*",
     "@flighthq/types": "*"

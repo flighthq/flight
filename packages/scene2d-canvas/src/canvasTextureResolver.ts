@@ -1,5 +1,6 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { getRenderStateRuntime } from '@flighthq/render/contract';
+import { RenderRegistryTable } from '@flighthq/render/contract';
 import { getTextureSourceKind } from '@flighthq/texture/contract';
 import type {
   CanvasSurface,
@@ -11,7 +12,7 @@ import type {
   Texture,
   TextureSourceKind,
 } from '@flighthq/types/contract';
-import { EntityRuntimeKey, RenderRegistryTable } from '@flighthq/types/contract';
+import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import { acquireCanvasSurface, destroyCanvasSurfaceOwned } from './canvasRenderSurface.ts';
 

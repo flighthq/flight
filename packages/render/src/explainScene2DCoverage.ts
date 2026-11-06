@@ -1,14 +1,9 @@
-import type {
-  CatalogRegistration,
-  Kind,
-  RenderState,
-  Scene2DKindUsage,
-  SceneCoverageCatalog,
-  SceneCoverageEntry,
-} from '@flighthq/types/contract';
-import { RenderRegistryTable, RequirementFacet, SceneCoverage } from '@flighthq/types/contract';
+import type { Kind, RenderState, Scene2DKindUsage } from '@flighthq/types/contract';
+import { RequirementFacet } from '@flighthq/types/contract';
 
 import { getRenderStateRuntime } from './renderState.ts';
+import type { CatalogRegistration, SceneCoverageCatalog, SceneCoverageEntry } from './types.ts';
+import { RenderRegistryTable, SceneCoverage } from './types.ts';
 
 // Clears `out`, then reports every requirement in `usage` that any 2D backend answers the same way,
 // with how well this state is wired for it — satisfied entries included, so one call is a manifest.

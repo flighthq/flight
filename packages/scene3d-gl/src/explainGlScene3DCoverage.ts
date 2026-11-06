@@ -1,13 +1,8 @@
 import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
-import type {
-  CatalogRegistration,
-  GlRenderState,
-  Kind,
-  Scene3DKindUsage,
-  SceneCoverageCatalog,
-  SceneCoverageEntry,
-} from '@flighthq/types/contract';
-import { RenderRegistryTable, RequirementFacet, SceneCoverage, StandardMaterialKind } from '@flighthq/types/contract';
+import type { CatalogRegistration, SceneCoverageCatalog, SceneCoverageEntry } from '@flighthq/render/contract';
+import { RenderRegistryTable, SceneCoverage } from '@flighthq/render/contract';
+import type { GlRenderState, Kind, Scene3DKindUsage } from '@flighthq/types/contract';
+import { RequirementFacet, StandardMaterialKind } from '@flighthq/types/contract';
 
 // Clears `out`, then reports EVERY kind in `usage` with how well this state is wired for it — satisfied
 // ones included, so one call is a complete manifest rather than only a list of complaints. The answering half

@@ -7,8 +7,9 @@ import {
 } from '@flighthq/log/contract';
 import type { LogState } from '@flighthq/log/contract';
 import { enableRenderRegistriesGuards, explainRenderRegistriesMisses } from '@flighthq/render/contract';
+import { RenderRegistryTable } from '@flighthq/render/contract';
 import type { LogEntry, Material, MemoryLogSink } from '@flighthq/types/contract';
-import { StandardMaterialKind, EntityRuntimeKey, RenderRegistryTable } from '@flighthq/types/contract';
+import { StandardMaterialKind, EntityRuntimeKey } from '@flighthq/types/contract';
 
 import type { WgpuQuadMaterialRenderer, WgpuRenderState } from './contract.render-wgpu-types.ts';
 import {

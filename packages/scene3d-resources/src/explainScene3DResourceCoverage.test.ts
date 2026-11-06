@@ -1,16 +1,12 @@
 import { createBlinnPhongMaterial, createUnlitMaterial } from '@flighthq/materials/contract';
 import { createBoxMeshGeometry } from '@flighthq/meshgeometry/contract';
 import { addNodeChild } from '@flighthq/node/contract';
+import type { SceneCoverageCatalog, SceneCoverageEntry } from '@flighthq/render/contract';
+import { RenderRegistryTable, SceneCoverage } from '@flighthq/render/contract';
 import { createMesh, createScene3D, createScene3DKindUsage, getScene3DKindUsage } from '@flighthq/scene3d/contract';
 import { createShadedMaterial } from '@flighthq/shading/contract';
-import type {
-  HostImageCapability,
-  Material3D,
-  Scene3DKindUsage,
-  SceneCoverageCatalog,
-  SceneCoverageEntry,
-} from '@flighthq/types/contract';
-import { EntityRuntimeKey, RenderRegistryTable, RequirementFacet, SceneCoverage } from '@flighthq/types/contract';
+import type { HostImageCapability, Material3D, Scene3DKindUsage } from '@flighthq/types/contract';
+import { EntityRuntimeKey, RequirementFacet } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { explainScene3DResourceCoverage, hasScene3DResourceCoverage } from './explainScene3DResourceCoverage.ts';

@@ -1,8 +1,8 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { createRenderState, enableRenderRegistrySignals, getRenderStateRuntime } from '@flighthq/render/contract';
+import { RenderRegistryTable } from '@flighthq/render/contract';
 import { connectSignal } from '@flighthq/signals/contract';
 import type { Effect, RenderState } from '@flighthq/types/contract';
-import { RenderRegistryTable } from '@flighthq/types/contract';
 
 import { createBlurEffect, registerBlurEffectPaddingResolver } from './blurEffect.ts';
 import {

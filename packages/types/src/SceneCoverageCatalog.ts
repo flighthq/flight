@@ -1,21 +1,2 @@
-import type { Kind } from './Entity.ts';
-import type { RenderRegistryTable } from './RenderRegistrySignals.ts';
-
-// One public registration call that can satisfy a catalog entry. Registrations are ordered: the first
-// one is the primary remedy surfaced by SceneCoverageEntry, while diagnostics may show the full list.
-export interface CatalogRegistration {
-  readonly module: string;
-  readonly registrar: string;
-}
-
-// Consumer-shaped ownership data. Producers discover or generate these rows, but diagnostics define
-// their stable shape so a different inventory instrument does not change every explain* signature.
-export interface CatalogEntry {
-  readonly kind: Kind;
-  readonly registrations: readonly CatalogRegistration[];
-  readonly registry: RenderRegistryTable;
-}
-
-// A caller supplies the complete catalog for the backend being explained. It stays data rather than a
-// lookup object so generated, probed, and caller-authored inventories are interchangeable producers.
-export type SceneCoverageCatalog = readonly CatalogEntry[];
+/** @deprecated Import render contracts from `@flighthq/render/contract`. */
+export type { CatalogRegistration, CatalogEntry, SceneCoverageCatalog } from '@flighthq/render/contract';

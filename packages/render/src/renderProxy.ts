@@ -19,12 +19,13 @@ import type {
   RenderState,
   NodeAny,
 } from '@flighthq/types/contract';
-import { BlendMode, RenderRegistryTable } from '@flighthq/types/contract';
+import { BlendMode } from '@flighthq/types/contract';
 
 import { updateRenderProxyAppearance } from './renderAppearance.ts';
 import { updateRenderProxyMaterial } from './renderMaterial.ts';
 import { getRenderStateRuntime } from './renderState.ts';
 import { updateRenderProxy2DTransform } from './renderTransform2d.ts';
+import { RenderRegistryTable } from './types.ts';
 
 type AdaptHook = (state: RenderState, source: NodeAny, data: RenderProxy2D) => void;
 

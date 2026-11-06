@@ -1,4 +1,4 @@
-import { RenderRegistryTable } from '@flighthq/types/contract';
+import { RenderRegistryTable } from '@flighthq/render/contract';
 
 // Finds the registry misses a captured page reported that mean something did not draw.
 //

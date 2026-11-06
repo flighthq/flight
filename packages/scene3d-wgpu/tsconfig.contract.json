@@ -8,7 +8,14 @@
     "declarationMap": true,
     "sourceMap": true,
     "types": ["@webgpu/types"],
-    "moduleSuffixes": [".scene3d-wgpu-bridge-types", ".materials-types", ".render-wgpu-types", ".geometry-types", ""],
+    "moduleSuffixes": [
+      ".render-types",
+      ".scene3d-wgpu-bridge-types",
+      ".materials-types",
+      ".render-wgpu-types",
+      ".geometry-types",
+      ""
+    ],
     "tsBuildInfoFile": "dist/.tsbuildinfo.contract"
   },
   "references": [
@@ -26,6 +33,9 @@
     },
     {
       "path": "../types/tsconfig.scene3d-wgpu-types.json"
+    },
+    {
+      "path": "../render/tsconfig.contract.json"
     }
   ],
   "include": ["src/contract.scene3d-wgpu-types.ts", "src/types/**/*.ts"]

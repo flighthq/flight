@@ -53,6 +53,9 @@
     },
     {
       "path": "../types"
+    },
+    {
+      "path": "../render/tsconfig.runtime.json"
     }
   ],
   "include": ["src"]

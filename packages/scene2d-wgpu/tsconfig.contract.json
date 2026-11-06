@@ -10,6 +10,7 @@
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "types": ["@webgpu/types"],
     "moduleSuffixes": [
+      ".render-types",
       ".scene2d-wgpu-bridge-types",
       ".materials-types",
       ".render-wgpu-types",
@@ -46,6 +47,9 @@
     },
     {
       "path": "../types/tsconfig.scene2d-wgpu-types.json"
+    },
+    {
+      "path": "../render/tsconfig.contract.json"
     }
   ],
   "include": ["src/contract.scene2d-wgpu-types.ts", "src/types/**/*.ts"]

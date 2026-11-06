@@ -22,6 +22,9 @@
     },
     {
       "path": "../texture/tsconfig.contract.json"
+    },
+    {
+      "path": "../requirement"
     }
   ],
   "include": ["src/contract.render-types.ts", "src/types.ts"]

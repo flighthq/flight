@@ -9,6 +9,7 @@
     "sourceMap": true,
     "moduleSuffixes": [
       ".keyboard-types",
+      ".render-types",
       ".scene2d-types",
       ".interaction-types",
       ".texture-types",
@@ -161,6 +162,9 @@
     },
     {
       "path": "../textsegment/tsconfig.contract.json"
+    },
+    {
+      "path": "../render/tsconfig.contract.json"
     }
   ],
   "files": [

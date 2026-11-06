@@ -8,7 +8,6 @@ import {
 import type { LogState } from '@flighthq/log/contract';
 import { emitSignal } from '@flighthq/signals/contract';
 import type { LogEntry, MemoryLogSink } from '@flighthq/types/contract';
-import { RenderRegistryTable } from '@flighthq/types/contract';
 
 import { registerNodeRenderer } from './renderer.ts';
 import { createRenderProxy } from './renderProxy.ts';
@@ -19,6 +18,7 @@ import {
 } from './renderRegistryGuards.ts';
 import { enableRenderRegistrySignals } from './renderRegistrySignals.ts';
 import { createRenderState } from './renderState.ts';
+import { RenderRegistryTable } from './types.ts';
 
 // Each test logs into a fresh caller-owned state, so logOnce keys never leak between tests.
 let logState: LogState;

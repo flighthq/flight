@@ -1,4 +1,4 @@
-import { RenderRegistryTable } from '@flighthq/types/contract';
+import { RenderRegistryTable } from '@flighthq/render/contract';
 import { describe, expect, it } from 'vitest';
 
 import { findUndrawnRegistryMisses, formatUndrawnRegistryMisses } from './captureRegistryMiss.ts';

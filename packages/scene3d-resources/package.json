@@ -46,6 +46,7 @@
     "@flighthq/log": "*",
     "@flighthq/net": "*",
     "@flighthq/node": "*",
+    "@flighthq/render": "*",
     "@flighthq/scene3d": "*",
     "@flighthq/scene3d-formats": "*",
     "@flighthq/signals": "*",

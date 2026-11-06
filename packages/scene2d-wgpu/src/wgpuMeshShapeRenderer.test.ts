@@ -6,6 +6,7 @@ import {
   installWgpuMock,
 } from '@flighthq/render-wgpu/contract';
 import { enableRenderRegistriesGuards, explainRenderRegistriesMisses } from '@flighthq/render/contract';
+import { RenderRegistryTable } from '@flighthq/render/contract';
 import {
   appendShapeBeginFill,
   appendShapeBeginGradientFill,
@@ -14,7 +15,7 @@ import {
   createShape,
 } from '@flighthq/shape/contract';
 import type { RenderProxy2D } from '@flighthq/types/contract';
-import { BatchFormat, RenderRegistryTable } from '@flighthq/types/contract';
+import { BatchFormat } from '@flighthq/types/contract';
 
 import { wgpuMeshShapeRenderer, drawWgpuMeshShape } from './wgpuMeshShapeRenderer.ts';
 import { registerWgpuShapeRasterizer } from './wgpuShapeRasterizer.ts';

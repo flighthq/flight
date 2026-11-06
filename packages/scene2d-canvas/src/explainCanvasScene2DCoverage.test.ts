@@ -1,12 +1,8 @@
 import { registerNodeRenderer } from '@flighthq/render/contract';
-import type {
-  CanvasQuadMaterialRenderer,
-  NodeRenderer,
-  Scene2DKindUsage,
-  SceneCoverageCatalog,
-  SceneCoverageEntry,
-} from '@flighthq/types/contract';
-import { BlendMode, RenderRegistryTable, RequirementFacet, SceneCoverage } from '@flighthq/types/contract';
+import type { SceneCoverageCatalog, SceneCoverageEntry } from '@flighthq/render/contract';
+import { RenderRegistryTable, SceneCoverage } from '@flighthq/render/contract';
+import type { CanvasQuadMaterialRenderer, NodeRenderer, Scene2DKindUsage } from '@flighthq/types/contract';
+import { BlendMode, RequirementFacet } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { registerCanvasQuadMaterialRenderer } from './canvasQuadMaterialRegistry.ts';

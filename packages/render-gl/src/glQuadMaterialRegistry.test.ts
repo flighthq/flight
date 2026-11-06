@@ -1,6 +1,7 @@
 import { enableRenderRegistriesGuards, explainRenderRegistriesMisses } from '@flighthq/render/contract';
+import { RenderRegistryTable } from '@flighthq/render/contract';
 import type { GlQuadMaterialRenderer, Material } from '@flighthq/types/contract';
-import { RenderRegistryTable, StandardMaterialKind } from '@flighthq/types/contract';
+import { StandardMaterialKind } from '@flighthq/types/contract';
 
 import {
   getGlQuadMaterialRenderer,
