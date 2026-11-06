@@ -1,17 +1,11 @@
 import { acquireMatrix, multiplyMatrix, releaseMatrix } from '@flighthq/geometry/contract';
 import { getRenderProxy2D, isRenderProxyVisible, noopRendererData } from '@flighthq/render/contract';
 import { getNode2DRuntime } from '@flighthq/scene2d/contract';
-import type {
-  CanvasRenderPass,
-  CanvasRenderState,
-  Matrix,
-  Node2D,
-  RenderProxy2D,
-  Scene2DRenderer,
-} from '@flighthq/types/contract';
+import type { CanvasRenderState, Matrix, Node2D, RenderProxy2D, Scene2DRenderer } from '@flighthq/types/contract';
 
 import { resolveCanvasCssFilter } from './canvasCSSFilterBinding.ts';
 import { getCanvasRenderStateRuntime } from './canvasRenderState.ts';
+import type { CanvasRenderPass } from './types/CanvasRenderPass.ts';
 
 export function drawCanvasScene2D(_state: CanvasRenderState, _renderProxy: RenderProxy2D): void {
   // Plain display objects have no visual geometry of their own.

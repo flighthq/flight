@@ -1,21 +1,14 @@
 import type { CanvasRenderTargetPool } from './CanvasEffectState.ts';
 import type { CanvasRenderState } from './CanvasRenderState.ts';
-import type { CanvasTextureRenderTarget } from './CanvasRenderTarget.ts';
 import type { Entity } from './Entity.ts';
 import type { RenderTexture } from './RenderTexture.ts';
 
-export type CanvasRenderTextureStatus = 'ready' | 'released' | 'unrendered' | 'writing';
-
-export interface CanvasRenderTextureExplanation {
-  readonly height: number;
-  readonly status: CanvasRenderTextureStatus;
-  readonly width: number;
-}
-
-export interface CanvasRenderTextureEntry {
-  status: CanvasRenderTextureStatus;
-  target: CanvasTextureRenderTarget;
-}
+/** @deprecated Import Canvas render-texture contracts from `@flighthq/scene2d-canvas/contract`. */
+export type {
+  CanvasRenderTextureEntry,
+  CanvasRenderTextureExplanation,
+  CanvasRenderTextureStatus,
+} from '@flighthq/scene2d-canvas/contract';
 
 // App-level lease pool. Canvas render-texture realizations belong to one screen state; its derived
 // offscreen states resolve to the same owner. Effect recipes borrow raw targets internally.

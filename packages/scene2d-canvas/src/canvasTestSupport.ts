@@ -1,20 +1,12 @@
 import type { AppWindow } from '@flighthq/app/contract';
+import type { RenderTargetClear } from '@flighthq/render/contract';
 import {
   createCanvasSurfaceFromNativeHandle,
   destroyCanvasSurface,
   getSurfaceHandle,
 } from '@flighthq/surface/contract';
-import type {
-  CanvasRenderOptions,
-  CanvasRenderPass,
-  CanvasRenderState,
-  CanvasSurface,
-  CanvasTextureResolvers,
-  HostCanvasCapability,
-  NativeSurfaceHandle,
-  RenderTargetClear,
-  Surface,
-} from '@flighthq/types/contract';
+import type { CanvasSurface, HostCanvasCapability, NativeSurfaceHandle, Surface } from '@flighthq/surface/contract';
+import type { CanvasRenderOptions, CanvasRenderState } from '@flighthq/types/contract';
 
 import { beginCanvasRenderPass } from './canvasRenderPass.ts';
 import { createCanvasRenderState as createExplicitCanvasRenderState } from './canvasRenderState.ts';
@@ -22,7 +14,9 @@ import { createCanvasScreenRenderTarget as createExplicitCanvasScreenRenderTarge
 import { createCanvasTextureRenderTarget as createExplicitCanvasRenderTarget } from './canvasTextureRenderTarget.ts';
 import { createCanvasTextureResolvers as createExplicitCanvasTextureResolvers } from './canvasTextureResolver.ts';
 import { canvasScene2DRenderPreset } from './scene2DCanvasPipeline.ts';
+import type { CanvasRenderPass } from './types/CanvasRenderPass.ts';
 import type { CanvasScreenRenderTarget, CanvasTextureRenderTarget } from './types/CanvasRenderTarget.ts';
+import type { CanvasTextureResolvers } from './types/CanvasTextureResolver.ts';
 
 export * from './canvasRenderState.ts';
 export * from './canvasRenderPass.ts';

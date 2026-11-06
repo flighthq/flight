@@ -1,13 +1,10 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type {
-  CanvasRenderPass,
-  CanvasRenderState,
-  CanvasSavedPassState,
-  RenderTargetClear,
-} from '@flighthq/types/contract';
-import { BlendMode } from '@flighthq/types/contract';
+import { BlendMode } from '@flighthq/materials/contract';
+import type { RenderTargetClear } from '@flighthq/render/contract';
+import type { CanvasRenderState } from '@flighthq/types/contract';
 
 import { getCanvasRenderStateRuntime } from './canvasRenderState.ts';
+import type { CanvasRenderPass, CanvasSavedPassState } from './types/CanvasRenderPass.ts';
 import type { CanvasRenderTarget } from './types/CanvasRenderTarget.ts';
 
 // Opens a render pass into `target` and returns the handle to draw through. Binding a target on this

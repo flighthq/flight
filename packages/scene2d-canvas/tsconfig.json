@@ -27,6 +27,9 @@
       "path": "../log"
     },
     {
+      "path": "../materials/tsconfig.contract.json"
+    },
+    {
       "path": "../node/tsconfig.runtime.json"
     },
     {

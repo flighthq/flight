@@ -42,12 +42,25 @@ export * from './canvasTextureView.ts';
 export * from './canvasTextureWindowSource.ts';
 export * from './canvasTilemap.ts';
 export * from './canvasTransform.ts';
+export type { CanvasMaterialState, CanvasQuadMaterialRenderer } from './types/CanvasMaterial.ts';
+export type {
+  CanvasRenderPass,
+  CanvasRenderPassViewport,
+  CanvasSavedBlendMode,
+  CanvasSavedPassState,
+} from './types/CanvasRenderPass.ts';
 export type {
   CanvasRenderTarget,
   CanvasRenderTargetSurfaceOwnership,
   CanvasScreenRenderTarget,
   CanvasTextureRenderTarget,
 } from './types/CanvasRenderTarget.ts';
+export type {
+  CanvasRenderTextureEntry,
+  CanvasRenderTextureExplanation,
+  CanvasRenderTextureStatus,
+} from './types/CanvasRenderTexture.ts';
+export type { CanvasTextureResolver, CanvasTextureResolvers } from './types/CanvasTextureResolver.ts';
 export * from './enableCanvasTextureResolverGuards.ts';
 export * from './explainCanvasScene2DCoverage.ts';
 export * from './explainCanvasTextureResolution.ts';

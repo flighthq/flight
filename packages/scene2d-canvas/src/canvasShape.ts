@@ -4,7 +4,6 @@ import type { Shape } from '@flighthq/shape/contract';
 import type {
   CanvasRenderState,
   CanvasShapeDrawState,
-  CanvasTextureResolvers,
   RenderProxy2D,
   RenderState,
   Scene2DRenderer,
@@ -14,6 +13,7 @@ import { drawCanvasScene2D } from './canvasNode2D.ts';
 import { getCanvasRenderStateTextureResolvers, setCanvasGlobalAlpha } from './canvasRenderState.ts';
 import { getCanvasShapeCommand } from './canvasShapeRegistry.ts';
 import { setCanvasTransform } from './canvasTransform.ts';
+import type { CanvasTextureResolvers } from './types/CanvasTextureResolver.ts';
 
 export function drawCanvasShape(state: CanvasRenderState, renderProxy: RenderProxy2D): void {
   drawCanvasScene2D(state, renderProxy);

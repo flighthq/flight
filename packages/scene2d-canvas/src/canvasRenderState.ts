@@ -1,3 +1,4 @@
+import { EntityRuntimeKey } from '@flighthq/entity/contract';
 import {
   createRenderState as _createRenderState,
   createRenderStateRuntime,
@@ -8,11 +9,10 @@ import type {
   CanvasRenderState,
   CanvasRenderStateOptions,
   CanvasRenderStateRuntime,
-  CanvasTextureResolvers,
 } from '@flighthq/types/contract';
-import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import { createCanvasTextureResolvers, destroyCanvasTextureResolvers } from './canvasTextureResolver.ts';
+import type { CanvasTextureResolvers } from './types/CanvasTextureResolver.ts';
 
 // Takes no driver handle: a state is "how to draw" — the pipeline, the resolvers, the smoothing policy
 // — while "where" is a render target that flows in at beginCanvasRenderPass. On this backend that

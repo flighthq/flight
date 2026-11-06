@@ -1,10 +1,12 @@
 import { createMatrix } from '@flighthq/geometry/contract';
+import type { Matrix, MatrixLike } from '@flighthq/geometry/contract';
 import type { GradientType, InterpolationMethod, SpreadMethod } from '@flighthq/shape/contract';
 import { getSurfaceHandle } from '@flighthq/surface/contract';
-import type { CanvasTextureResolvers, Matrix, MatrixLike, Texture } from '@flighthq/types/contract';
+import type { Texture } from '@flighthq/texture/contract';
 
 import { acquireCanvasTextureResolverSurface } from './canvasTextureResolver.ts';
 import { resolveCanvasTextureWindowSource } from './canvasTextureWindowSource.ts';
+import type { CanvasTextureResolvers } from './types/CanvasTextureResolver.ts';
 
 // Flash's gradient box is normalized to ±819.2 units.
 const GRADIENT_HALF = 819.2;

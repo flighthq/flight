@@ -1,10 +1,4 @@
-import type {
-  CanvasRenderPass,
-  CanvasRenderState,
-  CanvasRenderTextureEntry,
-  CanvasRenderTextureExplanation,
-  RenderTexture,
-} from '@flighthq/types/contract';
+import type { CanvasRenderState, RenderTexture } from '@flighthq/types/contract';
 
 import { beginCanvasRenderPass, endCanvasRenderPass } from './canvasRenderPass.ts';
 import { registerCanvasRenderStateTeardown } from './canvasRenderState.ts';
@@ -14,7 +8,9 @@ import {
   destroyCanvasTextureRenderTarget,
   resizeCanvasTextureRenderTarget,
 } from './canvasTextureRenderTarget.ts';
+import type { CanvasRenderPass } from './types/CanvasRenderPass.ts';
 import type { CanvasTextureRenderTarget } from './types/CanvasRenderTarget.ts';
+import type { CanvasRenderTextureEntry, CanvasRenderTextureExplanation } from './types/CanvasRenderTexture.ts';
 
 // Returns a populated render texture's state-owned canvas without copying pixels.
 export function bindCanvasRenderTexture(

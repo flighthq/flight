@@ -13,7 +13,6 @@ import type {
   CanvasRenderOptions,
   CanvasRenderRegistries,
   CanvasRenderState,
-  CanvasTextureResolvers,
   Node2D,
   Scene2DRenderer,
   Matrix,
@@ -38,6 +37,7 @@ import {
 } from './canvasTextureRenderTarget.ts';
 import { setCanvasTransform } from './canvasTransform.ts';
 import type { CanvasTextureRenderTarget } from './types/CanvasRenderTarget.ts';
+import type { CanvasTextureResolvers } from './types/CanvasTextureResolver.ts';
 
 /**
  * Creates a dedicated offscreen render state for baking render caches consumed by
