@@ -36,6 +36,9 @@
       "path": "../particleemitter"
     },
     {
+      "path": "../particles"
+    },
+    {
       "path": "../registry"
     },
     {

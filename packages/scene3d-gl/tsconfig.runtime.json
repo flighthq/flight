@@ -21,6 +21,7 @@
     { "path": "../meshgeometry/tsconfig.runtime.json" },
     { "path": "../node/tsconfig.runtime.json" },
     { "path": "../particleemitter" },
+    { "path": "../particles" },
     { "path": "../registry" },
     { "path": "../render/tsconfig.runtime.json" },
     { "path": "../render-gl" },

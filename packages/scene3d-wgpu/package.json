@@ -50,6 +50,7 @@
     "@flighthq/materials": "*",
     "@flighthq/meshgeometry": "*",
     "@flighthq/node": "*",
+    "@flighthq/particles": "*",
     "@flighthq/registry": "*",
     "@flighthq/render": "*",
     "@flighthq/render-wgpu": "*",
