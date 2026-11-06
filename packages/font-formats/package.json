@@ -44,8 +44,7 @@
     "@flighthq/compression": "*",
     "@flighthq/font": "*",
     "@flighthq/importdiagnostics": "*",
-    "@flighthq/path": "*",
-    "@flighthq/types": "*"
+    "@flighthq/path": "*"
   },
   "devDependencies": {
     "typescript": "^7.0.2"

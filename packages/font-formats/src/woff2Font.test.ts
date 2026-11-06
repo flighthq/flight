@@ -1,5 +1,5 @@
-import type { Decompressor } from '@flighthq/types/contract';
-import { Compression, CompressionFraming } from '@flighthq/types/contract';
+import { Compression, CompressionFraming } from '@flighthq/compression/contract';
+import type { Decompressor } from '@flighthq/compression/contract';
 import { describe, expect, it } from 'vitest';
 
 import { createSyntheticFont, encodeSyntheticWoff2 } from './openTypeTestHelper.ts';

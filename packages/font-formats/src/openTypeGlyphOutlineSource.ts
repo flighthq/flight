@@ -1,14 +1,10 @@
+import type { HostDecompressDeflateCapability } from '@flighthq/compression/contract';
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type { EntityConstruction, EntityRaw } from '@flighthq/entity/contract';
 import { detectFontFormat } from '@flighthq/font/contract';
+import type { GlyphOutlineMetrics, GlyphOutlineSource } from '@flighthq/font/contract';
+import type { ImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import type { Path } from '@flighthq/path/contract';
-import type {
-  HostDecompressDeflateCapability,
-  Entity,
-  EntityConstruction,
-  GlyphOutlineMetrics,
-  GlyphOutlineSource,
-  ImportDiagnostic,
-} from '@flighthq/types/contract';
 
 import { runCffCharstring } from './cffCharstring.ts';
 import { readCffTable } from './cffTable.ts';
@@ -28,7 +24,7 @@ import { readWoffFont } from './woffFont.ts';
  * OPENTYPE/TRUETYPE BYTES → THE EXISTING `GlyphOutlineSource` SEAM.
  *
  * This package produces an interface it does not own. `GlyphOutlineSource` is declared in
- * `@flighthq/types`, `@flighthq/font` already turns one into a rasterizer backend, and `@flighthq/swf`
+ * `@flighthq/font`, which already turns one into a rasterizer backend, and `@flighthq/swf`
  * already produces one from its own edge-record encoding. What was missing was only a producer that
  * reads a font FILE, so the output shape here is determined rather than designed.
  *
@@ -65,11 +61,11 @@ export function createGlyphOutlineSourceFromOpenTypeFont(
   source: Readonly<Uint8Array>,
   deflate: Readonly<HostDecompressDeflateCapability>,
   diagnostics?: ImportDiagnostic[],
-): (GlyphOutlineSource & Entity) | null {
+): (GlyphOutlineSource & EntityRaw) | null {
   const parsed = readOpenTypeFontTables(source, deflate, diagnostics);
   if (parsed === null) return null;
 
-  const out = allocateEntity<GlyphOutlineSource & Entity>();
+  const out = allocateEntity<GlyphOutlineSource & EntityRaw>();
   initializeGlyphOutlineSourceFromOpenTypeFont(out, parsed);
   return finishEntity(out);
 }
@@ -134,7 +130,7 @@ export function explainOpenTypeFont(
 }
 
 export function initializeGlyphOutlineSourceFromOpenTypeFont(
-  out: EntityConstruction<GlyphOutlineSource & Entity>,
+  out: EntityConstruction<GlyphOutlineSource & EntityRaw>,
   tables: Readonly<OpenTypeFontTables>,
 ): void {
   const { advances, bytes, cff, codepoints, directory, glyphCount, metrics, ranges } = tables;

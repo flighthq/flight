@@ -1,5 +1,5 @@
-import type { Decompressor } from '@flighthq/types/contract';
-import { Compression, CompressionFraming } from '@flighthq/types/contract';
+import { Compression, CompressionFraming } from '@flighthq/compression/contract';
+import type { Decompressor } from '@flighthq/compression/contract';
 
 import { assembleSfntFont, packSfntTag } from './sfntAssembly.ts';
 import type { Woff2TableDirectory, Woff2TableEntry } from './types.ts';

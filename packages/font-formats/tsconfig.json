@@ -13,8 +13,7 @@
     { "path": "../compression" },
     { "path": "../font/tsconfig.runtime.json" },
     { "path": "../importdiagnostics" },
-    { "path": "../path/tsconfig.runtime.json" },
-    { "path": "../types" }
+    { "path": "../path/tsconfig.runtime.json" }
   ],
   "include": ["src"]
 }

@@ -1,4 +1,4 @@
-import type { GlyphOutlineMetrics } from '@flighthq/types/contract';
+import type { GlyphOutlineMetrics } from '@flighthq/font/contract';
 
 import type { SfntTableDirectory } from './types.ts';
 

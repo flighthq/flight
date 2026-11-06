@@ -1,6 +1,7 @@
-import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
-import type { Decompressor, ImportDiagnostic } from '@flighthq/types/contract';
-import { Compression, CompressionFraming, ImportDiagnosticSeverity } from '@flighthq/types/contract';
+import { Compression, CompressionFraming } from '@flighthq/compression/contract';
+import type { Decompressor } from '@flighthq/compression/contract';
+import { ImportDiagnosticSeverity, reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import type { ImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 
 import { assembleSfntFont, computeSfntTableChecksum } from './sfntAssembly.ts';
 import type { WoffChecksumMismatch } from './types.ts';
