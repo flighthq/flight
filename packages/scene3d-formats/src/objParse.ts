@@ -5,15 +5,13 @@ import {
   computeMeshGeometryTangents,
   createMeshGeometry,
 } from '@flighthq/meshgeometry/contract';
+import type { Scene3DDocument, Scene3DDocumentMesh, Scene3DDocumentNode } from '@flighthq/scene3d/contract';
 import type {
   ImportDiagnostic,
   Material,
   MaterialLike,
   MeshSubset,
   PrimitiveTopology,
-  Scene3DDocument,
-  Scene3DDocumentMesh,
-  Scene3DDocumentNode,
   ObjMaterialHandler,
   ObjMaterialLibrary,
 } from '@flighthq/types/contract';

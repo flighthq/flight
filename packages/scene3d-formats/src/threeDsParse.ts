@@ -1,7 +1,7 @@
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import type { Scene3DDocument } from '@flighthq/scene3d/contract';
 import type {
   ImportDiagnostic,
-  Scene3DDocument,
   ThreeDsChunkDispatch,
   ThreeDsChunkHandler,
   ThreeDsDropTally,

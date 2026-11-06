@@ -1,7 +1,7 @@
 import type { Transform3D } from '@flighthq/geometry/contract';
 import type { ImportDiagnostic, ImportDiagnosticSeverity } from '@flighthq/importdiagnostics/contract';
+import type { Scene3DDocument } from '@flighthq/scene3d/contract';
 import type { Texture, TextureColorSpace } from '@flighthq/texture/contract';
-import type { Scene3DDocument } from '@flighthq/types/contract';
 
 import type { GltfDocument, GltfTextureInfo } from './GltfSchema.ts';
 

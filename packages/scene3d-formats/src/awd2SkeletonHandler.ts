@@ -10,6 +10,17 @@ import {
 } from '@flighthq/geometry/contract';
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import type {
+  Scene3DDocument,
+  Scene3DDocumentAnimationChannel,
+  Scene3DDocumentAnimation,
+  Scene3DDocumentSkin,
+} from '@flighthq/scene3d/contract';
+import {
+  Scene3DAnimationPathRotation,
+  Scene3DAnimationPathScale,
+  Scene3DAnimationPathTranslation,
+} from '@flighthq/scene3d/contract';
+import type {
   Awd2BlockHandler,
   Awd2ParsedJoint,
   Awd2ParsedSkeleton,
@@ -18,18 +29,8 @@ import type {
   ImportDiagnostic,
   AnimationTrack,
   Matrix4,
-  Scene3DDocument,
-  Scene3DDocumentAnimationChannel,
-  Scene3DDocumentAnimation,
-  Scene3DDocumentSkin,
 } from '@flighthq/types/contract';
-import {
-  ImportDiagnosticSeverity,
-  Node3DKind,
-  Scene3DAnimationPathRotation,
-  Scene3DAnimationPathScale,
-  Scene3DAnimationPathTranslation,
-} from '@flighthq/types/contract';
+import { ImportDiagnosticSeverity, Node3DKind } from '@flighthq/types/contract';
 import type { Awd2ParseState } from '@flighthq/types/contract';
 
 import {

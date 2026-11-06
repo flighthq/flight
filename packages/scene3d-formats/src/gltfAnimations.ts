@@ -1,19 +1,19 @@
 import { createAnimationTrack } from '@flighthq/animation/contract';
 import type {
-  AnimationInterpolation,
   Scene3DAnimationPath,
   Scene3DDocumentAnimation,
   Scene3DDocumentAnimationChannel,
   Scene3DDocumentMesh,
   Scene3DDocumentNode,
-} from '@flighthq/types/contract';
+} from '@flighthq/scene3d/contract';
 import {
-  ImportDiagnosticSeverity,
   Scene3DAnimationPathRotation,
   Scene3DAnimationPathScale,
   Scene3DAnimationPathTranslation,
   Scene3DAnimationPathWeights,
-} from '@flighthq/types/contract';
+} from '@flighthq/scene3d/contract';
+import type { AnimationInterpolation } from '@flighthq/types/contract';
+import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
 import type { GltfCoreFeatureContext, GltfCoreFeatureHandler } from './contract.scene3d-formats-types.ts';
 

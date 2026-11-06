@@ -7,6 +7,7 @@ import {
   setMatrix4,
 } from '@flighthq/geometry/contract';
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import type { Scene3DDocument, Scene3DDocumentNode, Scene3DDocumentScene } from '@flighthq/scene3d/contract';
 import type {
   ColladaBuildContext,
   ColladaDeferredCameraBinding,
@@ -19,9 +20,6 @@ import type {
   ColladaUpAxis,
   ImportDiagnostic,
   Matrix4Like,
-  Scene3DDocument,
-  Scene3DDocumentNode,
-  Scene3DDocumentScene,
   Transform3D,
 } from '@flighthq/types/contract';
 import { ImportDiagnosticSeverity, Node3DKind } from '@flighthq/types/contract';

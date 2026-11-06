@@ -1,13 +1,12 @@
 import { createTransform3D } from '@flighthq/geometry/contract';
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import type { Scene3DDocumentMesh, Scene3DDocumentNode } from '@flighthq/scene3d/contract';
 import type {
   Awd2BlockHandler,
   Awd2ParsedContainer,
   Awd2ParsedMeshInstance,
   Awd2ParseState,
   ImportDiagnostic,
-  Scene3DDocumentMesh,
-  Scene3DDocumentNode,
 } from '@flighthq/types/contract';
 import { ImportDiagnosticSeverity, MeshKind, Node3DKind } from '@flighthq/types/contract';
 

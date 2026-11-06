@@ -1,0 +1,36 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "composite": true,
+    "rootDir": "src",
+    "outDir": "dist",
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "moduleSuffixes": [".scene3d-bridge-types", ".node-types", ".entity-types", ".geometry-types", ""],
+    "tsBuildInfoFile": "dist/.tsbuildinfo.scene3d-types"
+  },
+  "references": [
+    { "path": "../entity" },
+    { "path": "../geometry/tsconfig.contract.json" },
+    { "path": "../node/tsconfig.contract.json" }
+  ],
+  "include": [
+    "src/Aabb.ts",
+    "src/Camera3D.ts",
+    "src/contract.scene3d-bridge-types.ts",
+    "src/Entity.ts",
+    "src/HasAppearance.node-types.ts",
+    "src/HasTransform3D.node-types.ts",
+    "src/Light.ts",
+    "src/Matrix4.ts",
+    "src/MeshGeometry.ts",
+    "src/MeshMorphBindPose.ts",
+    "src/MeshSkinBindPose.ts",
+    "src/MorphTarget.ts",
+    "src/Node.node-types.ts",
+    "src/Node3D.ts",
+    "src/Plane.ts",
+    "src/Vector2.ts"
+  ]
+}

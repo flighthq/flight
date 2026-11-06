@@ -1,13 +1,8 @@
 import { createOrthographicProjection, createPerspectiveProjection } from '@flighthq/camera/contract';
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import { DEG_TO_RAD } from '@flighthq/math/contract';
-import type {
-  Awd2BlockHandler,
-  Awd2ParsedCamera,
-  ImportDiagnostic,
-  Projection,
-  Scene3DDocument,
-} from '@flighthq/types/contract';
+import type { Scene3DDocument } from '@flighthq/scene3d/contract';
+import type { Awd2BlockHandler, Awd2ParsedCamera, ImportDiagnostic, Projection } from '@flighthq/types/contract';
 import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
 import {

@@ -1,4 +1,4 @@
-import type { Scene3DDocument } from '@flighthq/types/contract';
+import type { Scene3DDocument } from '@flighthq/scene3d/contract';
 
 import { clampChannel, externalObjTexture, packObjColor } from './objMaterialHelpers.ts';
 

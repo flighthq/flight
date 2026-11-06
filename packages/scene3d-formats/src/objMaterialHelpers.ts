@@ -1,4 +1,5 @@
-import type { Scene3DDocument, Texture, TextureColorSpace } from '@flighthq/types/contract';
+import type { Scene3DDocument } from '@flighthq/scene3d/contract';
+import type { Texture, TextureColorSpace } from '@flighthq/types/contract';
 
 import { createExternalTextureRef } from './shared.ts';
 

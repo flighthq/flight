@@ -10,14 +10,8 @@ import {
   setQuaternion,
   setVector3,
 } from '@flighthq/geometry/contract';
-import type {
-  Matrix4,
-  Md5DropTally,
-  Md5Joint,
-  Md5SectionHandler,
-  Scene3DDocument,
-  Scene3DDocumentSkin,
-} from '@flighthq/types/contract';
+import type { Scene3DDocument, Scene3DDocumentSkin } from '@flighthq/scene3d/contract';
+import type { Matrix4, Md5DropTally, Md5Joint, Md5SectionHandler } from '@flighthq/types/contract';
 import { ImportDiagnosticSeverity, MD5_SKELETON_FEATURE, Node3DKind } from '@flighthq/types/contract';
 
 import { tallyMd5Drop } from './md5Parse.ts';

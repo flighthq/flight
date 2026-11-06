@@ -1,0 +1,33 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "composite": true,
+    "rootDir": "src",
+    "outDir": "dist",
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "tsBuildInfoFile": "dist/.tsbuildinfo.runtime"
+  },
+  "references": [
+    { "path": "../adjustments/tsconfig.runtime.json" },
+    { "path": "../animation" },
+    { "path": "../camera" },
+    { "path": "../entity" },
+    { "path": "../geometry/tsconfig.runtime.json" },
+    { "path": "../image/tsconfig.runtime.json" },
+    { "path": "../lighting" },
+    { "path": "../log" },
+    { "path": "../materials/tsconfig.runtime.json" },
+    { "path": "../meshgeometry" },
+    { "path": "../node/tsconfig.runtime.json" },
+    { "path": "../scene2d/tsconfig.runtime.json" },
+    { "path": "../shading" },
+    { "path": "../signals" },
+    { "path": "../texture/tsconfig.runtime.json" },
+    { "path": "../types" },
+    { "path": "./tsconfig.contract.json" }
+  ],
+  "include": ["src/**/*.ts"],
+  "exclude": ["src/contract.scene3d-types.ts", "src/types/**/*.ts"]
+}

@@ -5,7 +5,8 @@ import {
   registerGltfSkinHandlers,
 } from '@flighthq/scene3d-formats/contract';
 import type { GltfCoreFeatureHandler } from '@flighthq/scene3d-formats/contract';
-import type { GltfScene3DDocumentLoadOptions, Scene3DDocument } from '@flighthq/types/contract';
+import type { Scene3DDocument } from '@flighthq/scene3d/contract';
+import type { GltfScene3DDocumentLoadOptions } from '@flighthq/types/contract';
 
 import {
   loadScene3DDocumentFromGlbUrlWithCoreFeatureHandlers,

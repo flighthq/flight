@@ -1,8 +1,8 @@
 import { resetFailedImageResourceReference } from '@flighthq/image/contract';
 import type { ImageResourceReference } from '@flighthq/image/contract';
+import type { Scene3D } from '@flighthq/scene3d/contract';
 import type { Texture } from '@flighthq/texture/contract';
 import type {
-  Scene3D,
   Scene3DResourceResolverWithRuntime,
   UpdateScene3DResourceStreamingOptions,
 } from '@flighthq/types/contract';

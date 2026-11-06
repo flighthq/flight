@@ -1,4 +1,5 @@
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import type { Scene3DDocument, Scene3DDocumentSkin } from '@flighthq/scene3d/contract';
 import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 import type {
   ColladaDecodedMorph,
@@ -8,8 +9,6 @@ import type {
   ImportDiagnostic,
   MeshMorph,
   MorphTarget,
-  Scene3DDocument,
-  Scene3DDocumentSkin,
 } from '@flighthq/types/contract';
 import type { XmlElement } from '@flighthq/xml/contract';
 import { parseXmlDocument } from '@flighthq/xml/contract';

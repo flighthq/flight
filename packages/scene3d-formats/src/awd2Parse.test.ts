@@ -10,6 +10,12 @@ import {
 } from '@flighthq/meshgeometry/contract';
 import { getNodeChildren, getNodeLocalMatrix4, getNodeParent } from '@flighthq/node/contract';
 import { createNode3D, isMesh } from '@flighthq/scene3d/contract';
+import type {
+  Scene3DDocumentAnimation,
+  Scene3DDocumentAnimationChannel,
+  Scene3DDocument,
+  Scene3DDocumentLight,
+} from '@flighthq/scene3d/contract';
 import { getTextureSource } from '@flighthq/texture/contract';
 import type {
   Awd2ParseOptions,
@@ -28,10 +34,6 @@ import type {
   Mesh,
   PointLight,
   Scene3DAnimationTarget,
-  Scene3DDocumentAnimation,
-  Scene3DDocumentAnimationChannel,
-  Scene3DDocument,
-  Scene3DDocumentLight,
   Node3D,
   ShadedMaterial,
 } from '@flighthq/types/contract';

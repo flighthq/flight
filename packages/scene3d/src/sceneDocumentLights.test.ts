@@ -7,9 +7,9 @@ import {
   createPointLight,
   createSpotLight,
 } from '@flighthq/lighting/contract';
-import type { Scene3DDocument } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
+import type { Scene3DDocument } from './contract.scene3d-types.ts';
 import { createScene3DLightsFromDocument } from './sceneDocumentLights.ts';
 
 function emptyDocument(): Scene3DDocument {

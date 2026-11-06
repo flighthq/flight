@@ -1,4 +1,5 @@
-import type { Md2ParseContext, Scene3DDocument } from '@flighthq/types/contract';
+import type { Scene3DDocument } from '@flighthq/scene3d/contract';
+import type { Md2ParseContext } from '@flighthq/types/contract';
 import { BlinnPhongMaterialKind } from '@flighthq/types/contract';
 
 import { MD2_SKIN_SIZE } from './md2Schema.ts';

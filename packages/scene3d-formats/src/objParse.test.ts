@@ -8,6 +8,7 @@ import {
 } from '@flighthq/meshgeometry/contract';
 import { getNodeChildren } from '@flighthq/node/contract';
 import { isMesh } from '@flighthq/scene3d/contract';
+import type { Scene3DDocument } from '@flighthq/scene3d/contract';
 import { getTextureSource } from '@flighthq/texture/contract';
 import type {
   BlinnPhongMaterial,
@@ -17,7 +18,6 @@ import type {
   Mesh,
   Node3D,
   ObjMaterial,
-  Scene3DDocument,
   StandardPbrMaterial,
 } from '@flighthq/types/contract';
 import { BlinnPhongMaterialKind, ImportDiagnosticSeverity, StandardPbrMaterialKind } from '@flighthq/types/contract';

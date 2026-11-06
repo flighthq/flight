@@ -1,3 +1,4 @@
+export * from './contract.scene3d-types.ts';
 export * from './billboard.ts';
 export * from './billboardCamera.ts';
 export * from './cloneNode3DSubtree.ts';

@@ -2,13 +2,13 @@ import { createAnimationChannel, createAnimationClip, createAnimationTrack } fro
 import { copyQuaternion, copyVector3, createQuaternion, createVector3 } from '@flighthq/geometry/contract';
 import { createBoxMeshGeometry } from '@flighthq/meshgeometry/contract';
 import type { MeshMorph } from '@flighthq/types/contract';
+
 import {
   Scene3DAnimationPathRotation,
   Scene3DAnimationPathScale,
   Scene3DAnimationPathTranslation,
   Scene3DAnimationPathWeights,
-} from '@flighthq/types/contract';
-
+} from './contract.scene3d-types.ts';
 import { createMesh } from './mesh.ts';
 import { applyAnimationClipToScene3D } from './sceneAnimation.ts';
 import { createNode3D } from './sceneNode.ts';

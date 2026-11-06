@@ -1,4 +1,5 @@
-import type { Md5ParseContext, Scene3DDocument } from '@flighthq/types/contract';
+import type { Scene3DDocument } from '@flighthq/scene3d/contract';
+import type { Md5ParseContext } from '@flighthq/types/contract';
 import { BlinnPhongMaterialKind, MD5_MATERIAL_FEATURE } from '@flighthq/types/contract';
 
 import { md5MaterialFamily, md5MaterialHandler } from './md5MaterialHandler.ts';

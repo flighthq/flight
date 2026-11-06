@@ -1,5 +1,6 @@
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import { createScene3DFromDocument } from '@flighthq/scene3d/contract';
+import type { Scene3D, Scene3DDocument } from '@flighthq/scene3d/contract';
 import type {
   Awd2Block,
   Awd2BlockDispatch,
@@ -10,8 +11,6 @@ import type {
   HostDecompressDeflateCapability,
   HostDecompressLzmaCapability,
   ImportDiagnostic,
-  Scene3D,
-  Scene3DDocument,
 } from '@flighthq/types/contract';
 import { CompressionFraming, ImportDiagnosticSeverity } from '@flighthq/types/contract';
 

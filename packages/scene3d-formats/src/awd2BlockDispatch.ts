@@ -1,11 +1,11 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type { Scene3DDocument } from '@flighthq/scene3d/contract';
 import type {
   Awd2BlockDispatch,
   Awd2BlockHandler,
   Awd2ParseState,
   EntityConstruction,
   ImportDiagnostic,
-  Scene3DDocument,
 } from '@flighthq/types/contract';
 
 // Expanding a handler array into the table the block walk runs on. This module imports no handler,

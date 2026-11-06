@@ -1,10 +1,7 @@
 import type { ImageResourceReference } from '@flighthq/image/contract';
+import type { Scene3D } from '@flighthq/scene3d/contract';
 import { emitSignal } from '@flighthq/signals/contract';
-import type {
-  LoadScene3DResourcesOptions,
-  Scene3D,
-  Scene3DResourceResolverWithRuntime,
-} from '@flighthq/types/contract';
+import type { LoadScene3DResourcesOptions, Scene3DResourceResolverWithRuntime } from '@flighthq/types/contract';
 import { ResourceResolutionState } from '@flighthq/types/contract';
 import { Scene3DResourceResolverRuntimeKey } from '@flighthq/types/contract';
 

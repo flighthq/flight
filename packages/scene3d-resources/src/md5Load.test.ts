@@ -1,7 +1,7 @@
 import * as netModule from '@flighthq/net/contract';
 import type { HostNetCapability, NetResponse } from '@flighthq/net/contract';
 import * as scene3dFormatsModule from '@flighthq/scene3d-formats/contract';
-import type { Scene3DDocument } from '@flighthq/types/contract';
+import type { Scene3DDocument } from '@flighthq/scene3d/contract';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { loadScene3DDocumentFromMd5MeshUrl } from './md5Load.ts';

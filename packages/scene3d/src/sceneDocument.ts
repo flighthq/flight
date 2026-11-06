@@ -9,16 +9,14 @@ import type {
   Material3D,
   MaterialLike,
   Mesh,
-  Scene3D,
   Scene3DAnimationTarget,
-  Scene3DDocument,
-  Scene3DDocumentNode,
   Node3D,
   Skeleton3D,
   Skin,
 } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
+import type { Scene3D, Scene3DDocument, Scene3DDocumentNode } from './contract.scene3d-types.ts';
 import { createMesh } from './mesh.ts';
 import { createScene3D } from './scene.ts';
 import { createNode3D } from './sceneNode.ts';

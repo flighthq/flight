@@ -1,6 +1,7 @@
 import type { HostNetCapability } from '@flighthq/net/contract';
 import { parseMd2 } from '@flighthq/scene3d-formats/contract';
-import type { Scene3DDocument, Scene3DDocumentLoadOptions } from '@flighthq/types/contract';
+import type { Scene3DDocument } from '@flighthq/scene3d/contract';
+import type { Scene3DDocumentLoadOptions } from '@flighthq/types/contract';
 
 import { loadScene3DDocumentBytesFromUrl, setScene3DDocumentResourceBasePathFromUrl } from './sceneDocumentSource.ts';
 

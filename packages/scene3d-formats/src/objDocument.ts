@@ -1,11 +1,6 @@
 import { createScene3DFromDocument } from '@flighthq/scene3d/contract';
-import type {
-  ImportDiagnostic,
-  ObjImportOptions,
-  ObjMaterialLibrary,
-  Scene3D,
-  Scene3DDocument,
-} from '@flighthq/types/contract';
+import type { Scene3D, Scene3DDocument } from '@flighthq/scene3d/contract';
+import type { ImportDiagnostic, ObjImportOptions, ObjMaterialLibrary } from '@flighthq/types/contract';
 
 import { objAllMaterialHandlers } from './objMaterialRegistry.ts';
 import { parseObjWithMaterialHandlers } from './objParse.ts';

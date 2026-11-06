@@ -1,12 +1,7 @@
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import { createBlinnPhongMaterial } from '@flighthq/materials/contract';
-import type {
-  BlinnPhongMaterial,
-  ImportDiagnostic,
-  ObjMaterial,
-  ObjMaterialHandler,
-  Scene3DDocument,
-} from '@flighthq/types/contract';
+import type { Scene3DDocument } from '@flighthq/scene3d/contract';
+import type { BlinnPhongMaterial, ImportDiagnostic, ObjMaterial, ObjMaterialHandler } from '@flighthq/types/contract';
 import { ImportDiagnosticSeverity, OBJ_MATERIAL_BLINN_PHONG_FEATURE } from '@flighthq/types/contract';
 
 import { externalObjTexture, packObjColor } from './objMaterialHelpers.ts';

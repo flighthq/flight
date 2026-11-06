@@ -10,8 +10,8 @@ import {
   subtractVector3,
 } from '@flighthq/geometry/contract';
 import { DEG_TO_RAD } from '@flighthq/math/contract';
+import type { Scene3DDocument } from '@flighthq/scene3d/contract';
 import type {
-  Scene3DDocument,
   ThreeDsCamera,
   ThreeDsChunkHandler,
   ThreeDsDropTally,

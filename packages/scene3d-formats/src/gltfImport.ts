@@ -1,5 +1,6 @@
 import { createScene3DsFromDocument } from '@flighthq/scene3d/contract';
-import type { ImportDiagnostic, Scene3D, Scene3DDocument } from '@flighthq/types/contract';
+import type { Scene3D, Scene3DDocument } from '@flighthq/scene3d/contract';
+import type { ImportDiagnostic } from '@flighthq/types/contract';
 
 import type { GltfCoreFeatureHandler, GltfDocument, GltfImportOptions } from './contract.scene3d-formats-types.ts';
 import {

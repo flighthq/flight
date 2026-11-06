@@ -4,11 +4,11 @@ import { createImageResourceFailure, resolveImageResourceReference } from '@flig
 import type { ImageResourceFailure, ImageResourceReference } from '@flighthq/image/contract';
 import { ImageResourceFailureKind } from '@flighthq/image/contract';
 import { queueResourceLoad } from '@flighthq/loader/contract';
+import type { Scene3D } from '@flighthq/scene3d/contract';
 import { emitSignal } from '@flighthq/signals/contract';
 import type { Texture, TextureSource } from '@flighthq/texture/contract';
 import type {
   ResolveScene3DResourcesOptions,
-  Scene3D,
   Scene3DResourceResolver,
   Scene3DResourceWorkingSet,
   Scene3DResources,

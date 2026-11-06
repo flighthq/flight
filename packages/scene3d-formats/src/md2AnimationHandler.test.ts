@@ -1,5 +1,6 @@
-import type { Md2Frame, Md2ParseContext, MeshMorph, Scene3DDocument } from '@flighthq/types/contract';
-import { Scene3DAnimationPathWeights } from '@flighthq/types/contract';
+import type { Scene3DDocument } from '@flighthq/scene3d/contract';
+import { Scene3DAnimationPathWeights } from '@flighthq/scene3d/contract';
+import type { Md2Frame, Md2ParseContext, MeshMorph } from '@flighthq/types/contract';
 
 import { md2AnimationFamily, md2AnimationHandler } from './md2AnimationHandler.ts';
 

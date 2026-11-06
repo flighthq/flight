@@ -12,7 +12,6 @@ import type {
   DirectionalLight,
   HemisphereLight,
   PointLight,
-  Scene3DDocument,
   Scene3DLights,
   SpotLight,
   Transform3DLike,
@@ -25,6 +24,8 @@ import {
   PointLightKind,
   SpotLightKind,
 } from '@flighthq/types/contract';
+
+import type { Scene3DDocument } from './contract.scene3d-types.ts';
 
 // Constructs the renderer-ready light draw argument carried by a Scene3DDocument without attaching any
 // light to the assembled Scene3D. Document descriptors are cloned so resolving their local placement never

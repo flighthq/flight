@@ -1,5 +1,6 @@
 import { forEachNodeDescendant } from '@flighthq/node/contract';
 import { isMesh } from '@flighthq/scene3d/contract';
+import type { Scene3D } from '@flighthq/scene3d/contract';
 import { connectSignal, disconnectSignal } from '@flighthq/signals/contract';
 import { hasTextureSource } from '@flighthq/texture/contract';
 import type { Texture } from '@flighthq/texture/contract';
@@ -8,7 +9,6 @@ import type { TweenManager } from '@flighthq/tween/contract';
 import type {
   Material,
   Node3D,
-  Scene3D,
   Scene3DResourceResolver,
   Scene3DResourceResolverWithRuntime,
   Scene3DResourceRevealOptions,

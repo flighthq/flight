@@ -10,12 +10,11 @@ import {
   getMeshGeometryTriangleVertexIndices,
   getVertexAttributeFloatOffset,
 } from '@flighthq/meshgeometry/contract';
+import type { Scene3DDocument, Scene3DDocumentMesh } from '@flighthq/scene3d/contract';
 import type {
   ImportDiagnostic,
   MeshGeometry,
   MeshTriangleVertexIndices,
-  Scene3DDocument,
-  Scene3DDocumentMesh,
   Md5DropTally,
   Md5Joint,
   Md5Mesh,

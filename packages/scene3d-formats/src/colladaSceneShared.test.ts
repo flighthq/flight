@@ -1,5 +1,6 @@
 import { createTransform3D } from '@flighthq/geometry/contract';
-import type { Scene3DDocument, Scene3DDocumentNode } from '@flighthq/types/contract';
+import type { Scene3DDocument } from '@flighthq/scene3d/contract';
+import type { Scene3DDocumentNode } from '@flighthq/scene3d/contract';
 import { Node3DKind } from '@flighthq/types/contract';
 import { parseXmlDocument } from '@flighthq/xml/contract';
 import { describe, expect, it } from 'vitest';

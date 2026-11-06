@@ -6,9 +6,9 @@ import {
   subtractVector3,
 } from '@flighthq/geometry/contract';
 import { createPointLight, createSpotLight } from '@flighthq/lighting/contract';
+import type { Scene3DDocument } from '@flighthq/scene3d/contract';
 import type {
   Light,
-  Scene3DDocument,
   ThreeDsChunkHandler,
   ThreeDsDropTally,
   ThreeDsLight,

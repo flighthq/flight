@@ -1,15 +1,9 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { forEachNodeDescendant } from '@flighthq/node/contract';
-import type {
-  EntityConstruction,
-  Material,
-  Modifier,
-  Node3D,
-  Scene3D,
-  Scene3DKindUsage,
-} from '@flighthq/types/contract';
+import type { EntityConstruction, Material, Modifier, Node3D, Scene3DKindUsage } from '@flighthq/types/contract';
 import { ImageTextureSourceKind } from '@flighthq/types/contract';
 
+import type { Scene3D } from './contract.scene3d-types.ts';
 import { isMesh } from './mesh.ts';
 
 export function createScene3DKindUsage(): Scene3DKindUsage {

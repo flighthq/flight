@@ -11,6 +11,7 @@ import {
 } from '@flighthq/meshgeometry/contract';
 import { getNodeChildren, getNodeLocalMatrix4 } from '@flighthq/node/contract';
 import { isMesh } from '@flighthq/scene3d/contract';
+import type { Scene3DDocument } from '@flighthq/scene3d/contract';
 import { getTextureSource } from '@flighthq/texture/contract';
 import type {
   BlinnPhongMaterial,
@@ -19,7 +20,6 @@ import type {
   Md5DropTally,
   Mesh,
   Scene3DAnimationTarget,
-  Scene3DDocument,
   Node3D,
 } from '@flighthq/types/contract';
 import { BlinnPhongMaterialKind, ImportDiagnosticSeverity } from '@flighthq/types/contract';

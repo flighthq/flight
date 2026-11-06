@@ -6,15 +6,17 @@ import {
   setMatrix4,
 } from '@flighthq/geometry/contract';
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import type {
+  Scene3DAnimationPath,
+  Scene3DDocument,
+  Scene3DDocumentAnimationChannel,
+} from '@flighthq/scene3d/contract';
 import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 import type {
   AnimationInterpolation,
   ColladaDecodedAnimationChannel,
   ColladaElementDecoder,
   ImportDiagnostic,
-  Scene3DAnimationPath,
-  Scene3DDocument,
-  Scene3DDocumentAnimationChannel,
 } from '@flighthq/types/contract';
 import type { XmlElement } from '@flighthq/xml/contract';
 import { parseXmlDocument } from '@flighthq/xml/contract';

@@ -1,4 +1,5 @@
-import type { Md5Joint, Md5ParseContext, Scene3DDocument } from '@flighthq/types/contract';
+import type { Scene3DDocument } from '@flighthq/scene3d/contract';
+import type { Md5Joint, Md5ParseContext } from '@flighthq/types/contract';
 import { MD5_SKELETON_FEATURE } from '@flighthq/types/contract';
 
 import { buildMd5SkeletonDocument, md5SkeletonFamily, md5SkeletonHandler } from './md5SkeletonHandler.ts';

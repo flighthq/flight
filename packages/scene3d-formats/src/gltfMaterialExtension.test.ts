@@ -3,11 +3,11 @@ import {
   createSheenPbrExtension,
   createStandardPbrMaterial,
 } from '@flighthq/materials/contract';
+import type { Scene3DDocument } from '@flighthq/scene3d/contract';
 import type {
   ClearcoatPbrExtension,
   ExtendedPbrMaterial,
   MaterialLike,
-  Scene3DDocument,
   StandardPbrMaterial,
 } from '@flighthq/types/contract';
 import { ExtendedPbrMaterialKind, StandardPbrMaterialKind } from '@flighthq/types/contract';

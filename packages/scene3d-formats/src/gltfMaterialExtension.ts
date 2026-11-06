@@ -1,11 +1,6 @@
 import { createExtendedPbrMaterial, createStandardPbrMaterialProperties } from '@flighthq/materials/contract';
-import type {
-  ExtendedPbrMaterial,
-  MaterialLike,
-  PbrExtension,
-  Scene3DDocument,
-  StandardPbrMaterial,
-} from '@flighthq/types/contract';
+import type { Scene3DDocument } from '@flighthq/scene3d/contract';
+import type { ExtendedPbrMaterial, MaterialLike, PbrExtension, StandardPbrMaterial } from '@flighthq/types/contract';
 import { ExtendedPbrMaterialKind, StandardPbrMaterialKind } from '@flighthq/types/contract';
 
 // Attaches one PBR extension descriptor to the document material at `index`, promoting it from the

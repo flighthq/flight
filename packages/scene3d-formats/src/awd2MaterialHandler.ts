@@ -1,5 +1,6 @@
 import { detectImageMimeType } from '@flighthq/image-codec/contract';
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import type { Scene3DDocument } from '@flighthq/scene3d/contract';
 import { createShadedMaterial } from '@flighthq/shading/contract';
 import type {
   Awd2BlockHandler,
@@ -9,7 +10,6 @@ import type {
   Material,
   Material3D,
   MaterialLike,
-  Scene3DDocument,
   Texture,
 } from '@flighthq/types/contract';
 import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
