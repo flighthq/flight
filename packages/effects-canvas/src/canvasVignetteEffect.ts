@@ -1,4 +1,5 @@
-import type { CanvasRenderState, CanvasTextureRenderTarget, VignetteEffect } from '@flighthq/types/contract';
+import type { VignetteEffect } from '@flighthq/effects/contract';
+import type { CanvasRenderState, CanvasTextureRenderTarget } from '@flighthq/scene2d-canvas/contract';
 
 import { drawCanvasEffectPass } from './canvasEffectCompositing.ts';
 import { registerCanvasEffect } from './canvasEffectRegistry.ts';

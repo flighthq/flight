@@ -1,5 +1,5 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { CanvasTextureRenderTarget } from '@flighthq/types/contract';
+import type { CanvasTextureRenderTarget } from '@flighthq/scene2d-canvas/contract';
 
 import { applyColorMatrixPassToCanvas, applyColorMatrixToImageDataBytes } from './canvasColorMatrixPass.ts';
 

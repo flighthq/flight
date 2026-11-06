@@ -1,4 +1,5 @@
-import type { CanvasRenderState, CanvasTextureRenderTarget, PixelateEffect } from '@flighthq/types/contract';
+import type { PixelateEffect } from '@flighthq/effects/contract';
+import type { CanvasRenderState, CanvasTextureRenderTarget } from '@flighthq/scene2d-canvas/contract';
 
 import { registerCanvasEffect } from './canvasEffectRegistry.ts';
 import { acquireCanvasRenderTarget, releaseCanvasRenderTarget } from './canvasEffectState.ts';

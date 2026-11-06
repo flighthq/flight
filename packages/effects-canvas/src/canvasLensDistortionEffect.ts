@@ -1,4 +1,5 @@
-import type { CanvasRenderState, CanvasTextureRenderTarget, LensDistortionEffect } from '@flighthq/types/contract';
+import type { LensDistortionEffect } from '@flighthq/effects/contract';
+import type { CanvasRenderState, CanvasTextureRenderTarget } from '@flighthq/scene2d-canvas/contract';
 
 import { drawCanvasImageDataPass } from './canvasEffectCompositing.ts';
 import { registerCanvasEffect } from './canvasEffectRegistry.ts';

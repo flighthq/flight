@@ -1,6 +1,7 @@
 import { createGradientGlowEffect } from '@flighthq/effects/contract';
+import type { GradientGlowEffect } from '@flighthq/effects/contract';
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { CanvasTextureRenderTarget, GradientGlowEffect } from '@flighthq/types/contract';
+import type { CanvasTextureRenderTarget } from '@flighthq/scene2d-canvas/contract';
 
 import { getCanvasEffectRunner } from './canvasEffectRegistry.ts';
 import { canvasTestHost, createCanvasRenderState, createCanvasTextureRenderTarget } from './canvasEffectTestSupport.ts';

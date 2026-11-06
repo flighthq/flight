@@ -1,5 +1,6 @@
 import { computeBloomBlurRadius } from '@flighthq/effects/contract';
-import type { BloomEffect, CanvasRenderState, CanvasTextureRenderTarget } from '@flighthq/types/contract';
+import type { BloomEffect } from '@flighthq/effects/contract';
+import type { CanvasRenderState, CanvasTextureRenderTarget } from '@flighthq/scene2d-canvas/contract';
 
 import { drawCanvasEffectPass, drawCanvasImageDataPass } from './canvasEffectCompositing.ts';
 import { registerCanvasEffect } from './canvasEffectRegistry.ts';

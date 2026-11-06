@@ -1,4 +1,6 @@
-import type { CanvasEffectSourceMode, CanvasTextureRenderTarget } from '@flighthq/types/contract';
+import type { CanvasTextureRenderTarget } from '@flighthq/scene2d-canvas/contract';
+
+import type { CanvasEffectSourceMode } from './types.ts';
 
 export function clearCanvasTarget(dest: Readonly<CanvasTextureRenderTarget>): void {
   const ctx = dest.context;

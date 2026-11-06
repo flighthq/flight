@@ -8,6 +8,8 @@ export type {
   CanvasRenderTargetPool,
 } from '@flighthq/scene2d-canvas/contract';
 
+export type CanvasEffectSourceMode = 'draw' | 'hide' | 'knockout';
+
 // Retains the offscreen canvases an effect pass needs across frames. The per-frame effect list is data
 // passed to endCanvasEffectPass rather than retained here.
 export interface CanvasEffectState {

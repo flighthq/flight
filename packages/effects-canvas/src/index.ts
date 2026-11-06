@@ -34,4 +34,10 @@ export * from './canvasRenderTextureEffect.ts';
 export { canvasScanlinesEffectRunner, registerCanvasScanlinesEffect } from './canvasScanlinesEffect.ts';
 export { canvasTiltShiftEffectRunner, registerCanvasTiltShiftEffect } from './canvasTiltShiftEffect.ts';
 export { canvasVignetteEffectRunner, registerCanvasVignetteEffect } from './canvasVignetteEffect.ts';
-export type { CanvasEffectContext, CanvasEffectRunner, CanvasEffectState, CanvasRenderTargetPool } from './types.ts';
+export type {
+  CanvasEffectContext,
+  CanvasEffectRunner,
+  CanvasEffectSourceMode,
+  CanvasEffectState,
+  CanvasRenderTargetPool,
+} from './types.ts';

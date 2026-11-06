@@ -1,5 +1,6 @@
+import type { InnerGlowEffect } from '@flighthq/effects/contract';
 import { getCanvasSurfaceHost } from '@flighthq/scene2d-canvas/contract';
-import type { CanvasRenderState, CanvasTextureRenderTarget, InnerGlowEffect } from '@flighthq/types/contract';
+import type { CanvasRenderState, CanvasTextureRenderTarget } from '@flighthq/scene2d-canvas/contract';
 
 import { drawCanvasEffectPass } from './canvasEffectCompositing.ts';
 import { registerCanvasEffect } from './canvasEffectRegistry.ts';

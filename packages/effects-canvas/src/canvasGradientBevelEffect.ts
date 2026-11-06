@@ -1,5 +1,6 @@
+import type { GradientBevelEffect } from '@flighthq/effects/contract';
 import { getCanvasSurfaceHost } from '@flighthq/scene2d-canvas/contract';
-import type { CanvasRenderState, CanvasTextureRenderTarget, GradientBevelEffect } from '@flighthq/types/contract';
+import type { CanvasRenderState, CanvasTextureRenderTarget } from '@flighthq/scene2d-canvas/contract';
 
 import { clipCanvasBevelBand } from './canvasBevelEffect.ts';
 import { drawCanvasEffectPass } from './canvasEffectCompositing.ts';

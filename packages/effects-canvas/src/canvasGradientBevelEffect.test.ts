@@ -1,6 +1,7 @@
 import { createGradientBevelEffect } from '@flighthq/effects/contract';
+import type { GradientBevelEffect } from '@flighthq/effects/contract';
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { CanvasTextureRenderTarget, GradientBevelEffect } from '@flighthq/types/contract';
+import type { CanvasTextureRenderTarget } from '@flighthq/scene2d-canvas/contract';
 
 import { getCanvasEffectRunner } from './canvasEffectRegistry.ts';
 import { canvasTestHost, createCanvasRenderState, createCanvasTextureRenderTarget } from './canvasEffectTestSupport.ts';

@@ -1,4 +1,4 @@
-import type { CanvasTextureRenderTarget } from '@flighthq/types/contract';
+import type { CanvasTextureRenderTarget } from '@flighthq/scene2d-canvas/contract';
 
 // Shared Canvas 2D draw helpers for effect recipes. These keep every recipe's compositing boilerplate
 // — save/restore, transform reset, alpha/filter reset, clearing — in one place so each apply* function

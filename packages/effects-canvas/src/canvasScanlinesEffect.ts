@@ -1,4 +1,5 @@
-import type { CanvasRenderState, CanvasTextureRenderTarget, ScanlinesEffect } from '@flighthq/types/contract';
+import type { ScanlinesEffect } from '@flighthq/effects/contract';
+import type { CanvasRenderState, CanvasTextureRenderTarget } from '@flighthq/scene2d-canvas/contract';
 
 import { drawCanvasEffectPass } from './canvasEffectCompositing.ts';
 import { registerCanvasEffect } from './canvasEffectRegistry.ts';

@@ -1,5 +1,6 @@
+import type { OuterGlowEffect } from '@flighthq/effects/contract';
 import { getCanvasSurfaceHost } from '@flighthq/scene2d-canvas/contract';
-import type { CanvasRenderState, CanvasTextureRenderTarget, OuterGlowEffect } from '@flighthq/types/contract';
+import type { CanvasRenderState, CanvasTextureRenderTarget } from '@flighthq/scene2d-canvas/contract';
 
 import { drawCanvasEffectPass } from './canvasEffectCompositing.ts';
 import { computeOuterGlowEffectCss } from './canvasEffectDropShadowCss.ts';

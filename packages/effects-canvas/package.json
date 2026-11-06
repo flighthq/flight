@@ -46,7 +46,6 @@
     "@flighthq/geometry": "*",
     "@flighthq/registry": "*",
     "@flighthq/render": "*",
-    "@flighthq/types": "*",
     "@flighthq/surface": "*"
   },
   "devDependencies": {

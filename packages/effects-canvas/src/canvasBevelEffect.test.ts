@@ -1,6 +1,7 @@
 import { createBevelEffect } from '@flighthq/effects/contract';
+import type { BevelEffect } from '@flighthq/effects/contract';
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { BevelEffect, CanvasTextureRenderTarget } from '@flighthq/types/contract';
+import type { CanvasTextureRenderTarget } from '@flighthq/scene2d-canvas/contract';
 
 import {
   applyBevelEffectToCanvas,

@@ -5,18 +5,17 @@ import {
   createCanvasTextureRenderTarget as createExplicitCanvasRenderTarget,
   canvasScene2DRenderPreset,
 } from '@flighthq/scene2d-canvas/contract';
+import type {
+  CanvasRenderOptions,
+  CanvasRenderState,
+  CanvasTextureRenderTarget,
+} from '@flighthq/scene2d-canvas/contract';
 import {
   createCanvasSurfaceFromNativeHandle,
   destroyCanvasSurface,
   getSurfaceHandle,
 } from '@flighthq/surface/contract';
-import type {
-  CanvasRenderOptions,
-  CanvasRenderState,
-  CanvasSurface,
-  CanvasTextureRenderTarget,
-  HostCanvasCapability,
-} from '@flighthq/types/contract';
+import type { CanvasSurface, HostCanvasCapability } from '@flighthq/surface/contract';
 
 export const canvasTestHost: HostCanvasCapability = {
   acquire(surface, options) {

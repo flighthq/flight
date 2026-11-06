@@ -1,1 +1,7 @@
-export type { CanvasEffectContext, CanvasEffectRunner, CanvasEffectState, CanvasRenderTargetPool } from './types.ts';
+export type {
+  CanvasEffectContext,
+  CanvasEffectRunner,
+  CanvasEffectSourceMode,
+  CanvasEffectState,
+  CanvasRenderTargetPool,
+} from './types.ts';

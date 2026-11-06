@@ -19,8 +19,8 @@ import {
   resizeCanvasTextureRenderTarget,
 } from '@flighthq/scene2d-canvas/contract';
 import type { CanvasRenderPass, CanvasTextureRenderTarget } from '@flighthq/scene2d-canvas/contract';
+import type { CanvasRenderState } from '@flighthq/scene2d-canvas/contract';
 import type { HostCanvasCapability } from '@flighthq/surface/contract';
-import type { CanvasRenderState } from '@flighthq/types/contract';
 
 import { applyColorLutPassToCanvas } from './canvasColorLutPass.ts';
 import { applyColorMatrixPassToCanvas } from './canvasColorMatrixPass.ts';

@@ -19,7 +19,6 @@
     { "path": "../registry" },
     { "path": "../render/tsconfig.runtime.json" },
     { "path": "../surface/tsconfig.runtime.json" },
-    { "path": "../types" },
     { "path": "./tsconfig.contract.json" }
   ],
   "include": ["src/**/*.ts"],
