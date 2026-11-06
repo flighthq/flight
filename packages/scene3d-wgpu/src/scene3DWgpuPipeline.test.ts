@@ -1,3 +1,4 @@
+import { ParticleEmitter2DKind } from '@flighthq/particleemitter/contract';
 import { getKindMapKeys } from '@flighthq/registry/contract';
 import {} from '@flighthq/render-wgpu/contract';
 import { wgpuScene2DRenderPreset } from '@flighthq/scene2d-wgpu/contract';
@@ -20,7 +21,6 @@ import {
   LambertMaterialKind,
   MatcapMaterialKind,
   NormalMaterialKind,
-  ParticleEmitter2DKind,
   PhongMaterialKind,
   QuadBatchKind,
   RenderCacheKind,

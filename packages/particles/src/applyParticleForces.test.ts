@@ -1,8 +1,8 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { ParticleEmitter2D, ParticleEmitterData } from '@flighthq/types/contract';
 import type { ParticleObject } from '@flighthq/types/contract';
 
 import { applyParticleForces, applyParticleObjectForces } from './applyParticleForces.ts';
+import type { ParticleEmitterLike } from './applyParticleForces.ts';
 import { createParticleEmitterConfig } from './particleEmitterConfig.ts';
 import { createParticleEmitterState, ensureParticleEmitterStateCapacity } from './particleEmitterState.ts';
 import { createParticleObjectsState } from './particleObjectsState.ts';
@@ -11,7 +11,7 @@ import { updateParticleObjects } from './updateParticleObjects.ts';
 // Node-free SoA emitter fixture: applyParticleForces reads only `emitter.data`, so the display
 // node from @flighthq/particleemitter is not needed to unit-test the force pass. Keeping this
 // fixture local preserves particles as a pure sim leaf.
-function createEmitterFixture(capacity: number): ParticleEmitter2D {
+function createEmitterFixture(capacity: number): ParticleEmitterLike {
   const data = allocateEntity<any>();
   data.alphas = new Float32Array(capacity);
   data.atlas = null;
@@ -22,7 +22,7 @@ function createEmitterFixture(capacity: number): ParticleEmitter2D {
   data.transforms = new Float32Array(capacity * 4);
   data.velocities = new Float32Array(capacity * 2);
   data.worldSpace = false;
-  return { data, x: 0, y: 0 } as unknown as ParticleEmitter2D;
+  return { data } as unknown as ParticleEmitterLike;
 }
 
 // A single stationary particle at the origin with zeroed velocity state.

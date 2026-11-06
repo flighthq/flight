@@ -5,10 +5,10 @@ import {
   createParticleEmitterState,
   enableParticleEmitterSignals,
 } from '@flighthq/particles/contract';
-import type { ParticleEmitterCallbacks } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { createParticleEmitter3D } from './particleEmitter3D.ts';
+import type { ParticleEmitterCallbacks } from './types.ts';
 import { isParticleEmitter3DComplete, updateParticleEmitter3D } from './updateParticleEmitter3D.ts';
 
 function seededRandom(seed: number): () => number {

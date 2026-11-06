@@ -244,7 +244,7 @@
       "path": "../notification/tsconfig.runtime.json"
     },
     {
-      "path": "../particleemitter"
+      "path": "../particleemitter/tsconfig.runtime.json"
     },
     {
       "path": "../particles"

@@ -6,10 +6,10 @@ import {
   writeParticleSpawnOffset,
 } from '@flighthq/particles/contract';
 import type { ParticleEmitterConfig } from '@flighthq/particles/contract';
-import type { ParticleEmitter3D } from '@flighthq/types/contract';
 import type { ParticleEmitterState } from '@flighthq/types/contract';
 
 import { reserveParticleEmitter3D } from './particleEmitter3D.ts';
+import type { ParticleEmitter3D } from './types.ts';
 
 const PARTICLE_TRANSFORM_STRIDE = 4;
 const PARTICLE_SPAWN_OFFSET = new Float32Array(2);

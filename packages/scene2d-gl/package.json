@@ -50,6 +50,7 @@
     "@flighthq/log": "*",
     "@flighthq/node": "*",
     "@flighthq/path": "*",
+    "@flighthq/particleemitter": "*",
     "@flighthq/registry": "*",
     "@flighthq/render": "*",
     "@flighthq/render-gl": "*",
@@ -68,7 +69,6 @@
     "@flighthq/bitmap": "*",
     "@flighthq/clip": "*",
     "@flighthq/glyphatlas": "*",
-    "@flighthq/particleemitter": "*",
     "@flighthq/quadbatch": "*",
     "@flighthq/tilemap": "*",
     "typescript": "^7.0.2"

@@ -1,3 +1,4 @@
+import { ParticleEmitter2DKind } from '@flighthq/particleemitter/contract';
 import { withKindMapEntry } from '@flighthq/registry/contract';
 import { buildWgpuRenderRegistries } from '@flighthq/render-wgpu/contract';
 import type { NodeRenderer } from '@flighthq/render/contract';
@@ -6,7 +7,6 @@ import { RichTextKind, TextLabelKind } from '@flighthq/text/contract';
 import type { Kind, WgpuRenderRegistries } from '@flighthq/types/contract';
 import {
   DisplayObjectKind,
-  ParticleEmitter2DKind,
   QuadBatchKind,
   RenderCacheKind,
   Scale9SpriteKind,

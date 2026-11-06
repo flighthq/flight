@@ -1,21 +1,15 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
 import { copyRectangle, createRectangle, reserveFloat32Array, reserveUint16Array } from '@flighthq/geometry/contract';
+import type { Rectangle, Vector2Like } from '@flighthq/geometry/contract';
 import { invalidateNodeLocalBounds } from '@flighthq/node/contract';
+import type { BoundsNode, MethodsOf } from '@flighthq/node/contract';
 import { createNode2D, createNode2DRuntime, getNode2DRuntime } from '@flighthq/scene2d/contract';
+import type { Node2D, Node2DFields } from '@flighthq/scene2d/contract';
 import { TextureAtlasRotation } from '@flighthq/textureatlas/contract';
-import type {
-  BoundsNode,
-  EntityConstruction,
-  MethodsOf,
-  Node2D,
-  Node2DFields,
-  ParticleEmitter2D,
-  ParticleEmitter2DRuntime,
-  ParticleEmitterData,
-  Rectangle,
-  Vector2Like,
-} from '@flighthq/types/contract';
-import { ParticleEmitter2DKind } from '@flighthq/types/contract';
+
+import type { ParticleEmitter2D, ParticleEmitter2DRuntime, ParticleEmitterData } from './types.ts';
+import { ParticleEmitter2DKind } from './types.ts';
 
 // Internal stride constants. Hidden from callers so no raw array index math leaks out.
 const PARTICLE_TRANSFORM_STRIDE = 4; // [x, y, rotation, scale] per particle

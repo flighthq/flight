@@ -1,6 +1,5 @@
 import type {
   ForceFalloff,
-  ParticleEmitter2D,
   ParticleEmitterState,
   ParticleForce,
   ParticleObject,
@@ -8,6 +7,14 @@ import type {
 } from '@flighthq/types/contract';
 
 import { PARTICLE_VELOCITY_STRIDE } from './particleEmitterState.ts';
+
+export interface ParticleEmitterLike {
+  data: {
+    particleCount: number;
+    positionsZ: Float32Array;
+    transforms: Float32Array;
+  };
+}
 
 // Per-particle acceleration scratch, reused across the loop to avoid allocation.
 const accel: [number, number, number] = [0, 0, 0];
@@ -20,7 +27,7 @@ const accel: [number, number, number] = [0, 0, 0];
  *  This is a fully opt-in pass: import it only for emitters that need forces.
  *  The core update path is unaware of it. */
 export function applyParticleForces(
-  emitter: ParticleEmitter2D,
+  emitter: ParticleEmitterLike,
   state: ParticleEmitterState,
   forces: ReadonlyArray<ParticleForce>,
   deltaTime: number,

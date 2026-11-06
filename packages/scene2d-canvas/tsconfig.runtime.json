@@ -54,6 +54,9 @@
       "path": "../render/tsconfig.runtime.json"
     },
     {
+      "path": "../particleemitter/tsconfig.runtime.json"
+    },
+    {
       "path": "../scene2d/tsconfig.runtime.json"
     },
     {

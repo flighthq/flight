@@ -1,6 +1,5 @@
 import { createAabb, createMatrix4 } from '@flighthq/geometry/contract';
 import { getNodeLocalMatrix4 } from '@flighthq/node/contract';
-import { ParticleEmitter3DKind } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import {
@@ -25,6 +24,7 @@ import {
   setParticleEmitter3DParticleVelocity,
   sortParticleEmitter3DIndicesByViewDepth,
 } from './particleEmitter3D.ts';
+import { ParticleEmitter3DKind } from './types.ts';
 
 describe('appendParticleEmitter3DParticle', () => {
   it('appends a particle with z coordinate', () => {

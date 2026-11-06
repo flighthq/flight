@@ -1,8 +1,8 @@
+import { ParticleEmitter2DKind } from '@flighthq/particleemitter/contract';
 import { MorphShapeKind, Scale9ShapeKind, ShapeKind } from '@flighthq/shape/contract';
 import { RichTextKind, TextLabelKind } from '@flighthq/text/contract';
 import {
   DisplayObjectKind,
-  ParticleEmitter2DKind,
   QuadBatchKind,
   RenderCacheKind,
   Scale9SpriteKind,

@@ -1,3 +1,4 @@
+import { ParticleEmitter2DKind } from '@flighthq/particleemitter/contract';
 import { withKindMapEntry } from '@flighthq/registry/contract';
 import {
   buildGlRenderRegistries,
@@ -11,7 +12,6 @@ import {
   BlendMode,
   DisplayObjectKind,
   ImageTextureSourceKind,
-  ParticleEmitter2DKind,
   QuadBatchKind,
   RenderCacheKind,
   RenderTargetTextureSourceKind,

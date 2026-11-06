@@ -1,7 +1,8 @@
-import type { ParticleEmitterCallbacks } from './ParticleEmitterCallbacks.ts';
-
 export interface ParticleObjectsUpdateOptions {
-  callbacks?: ParticleEmitterCallbacks;
+  callbacks?: {
+    onDeath?: (x: number, y: number, z: number) => void;
+    onSpawn?: (x: number, y: number, z: number) => void;
+  };
   emitterX?: number;
   emitterY?: number;
 }

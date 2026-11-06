@@ -20,7 +20,7 @@
     { "path": "../materials/tsconfig.runtime.json" },
     { "path": "../meshgeometry/tsconfig.runtime.json" },
     { "path": "../node/tsconfig.runtime.json" },
-    { "path": "../particleemitter" },
+    { "path": "../particleemitter/tsconfig.runtime.json" },
     { "path": "../particles" },
     { "path": "../registry" },
     { "path": "../render/tsconfig.runtime.json" },

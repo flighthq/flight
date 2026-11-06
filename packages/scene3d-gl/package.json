@@ -51,6 +51,7 @@
     "@flighthq/meshgeometry": "*",
     "@flighthq/node": "*",
     "@flighthq/particles": "*",
+    "@flighthq/particleemitter": "*",
     "@flighthq/registry": "*",
     "@flighthq/render": "*",
     "@flighthq/render-gl": "*",
@@ -62,7 +63,6 @@
     "@flighthq/types": "*"
   },
   "devDependencies": {
-    "@flighthq/particleemitter": "*",
     "@flighthq/skeleton3d": "*",
     "@flighthq/video": "*",
     "typescript": "^7.0.2"

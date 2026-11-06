@@ -51,6 +51,7 @@
     "@flighthq/meshgeometry": "*",
     "@flighthq/node": "*",
     "@flighthq/particles": "*",
+    "@flighthq/particleemitter": "*",
     "@flighthq/registry": "*",
     "@flighthq/render": "*",
     "@flighthq/render-wgpu": "*",
@@ -66,7 +67,6 @@
   },
   "devDependencies": {
     "@flighthq/bitmaptext": "*",
-    "@flighthq/particleemitter": "*",
     "@flighthq/shape": "*",
     "@flighthq/text": "*",
     "@flighthq/video": "*",

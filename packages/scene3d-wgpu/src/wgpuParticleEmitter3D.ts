@@ -1,6 +1,8 @@
 import type { Camera3D } from '@flighthq/camera/contract';
 import type { Scene3DLightsLike } from '@flighthq/lighting/contract';
 import { getNodeRuntime, getNodeWorldMatrix4 } from '@flighthq/node/contract';
+import type { ParticleEmitter3D, ParticleEmitterData } from '@flighthq/particleemitter/contract';
+import { ParticleEmitter3DKind } from '@flighthq/particleemitter/contract';
 import type { ParticleBlendMode } from '@flighthq/particles/contract';
 import {
   getWgpuBlendState,
@@ -13,14 +15,8 @@ import { prepareScene3DRender } from '@flighthq/render/contract';
 import type { Node3D } from '@flighthq/scene3d/contract';
 import { getTextureHeight, getTextureWidth, hasTextureSource } from '@flighthq/texture/contract';
 import { TextureAtlasRotation } from '@flighthq/textureatlas/contract';
-import type {
-  Matrix4,
-  NodeAny,
-  ParticleEmitter3D,
-  ParticleEmitterData,
-  WgpuRenderState,
-} from '@flighthq/types/contract';
-import { BlendMode, ParticleEmitter3DKind } from '@flighthq/types/contract';
+import type { Matrix4, NodeAny, WgpuRenderState } from '@flighthq/types/contract';
+import { BlendMode } from '@flighthq/types/contract';
 
 // Per-instance layout (16 floats = 64 bytes), identical to scene-gl's glParticleEmitter3D:
 // [0..2] px/py/pz world position, [3] cos(rotation)*scale, [4] sin(rotation)*scale, [5..7] rgb,

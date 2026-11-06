@@ -8,14 +8,11 @@ import {
   writeParticleSpawnOffset,
 } from '@flighthq/particles/contract';
 import type { ParticleEmitterConfig } from '@flighthq/particles/contract';
-import type {
-  Node2D,
-  ParticleEmitter2D,
-  ParticleEmitterCallbacks,
-  ParticleEmitterState,
-} from '@flighthq/types/contract';
+import type { Node2D } from '@flighthq/scene2d/contract';
+import type { ParticleEmitterState } from '@flighthq/types/contract';
 
 import { reserveParticleEmitter2D } from './particleEmitter.ts';
+import type { ParticleEmitter2D, ParticleEmitterCallbacks } from './types.ts';
 
 export type { ParticleEmitterCallbacks };
 

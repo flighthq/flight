@@ -6,6 +6,7 @@ import {
   getNodeWorldBoundsRectangle,
   getNodeWorldMatrix,
 } from '@flighthq/node/contract';
+import type { ParticleEmitter2D } from '@flighthq/particleemitter/contract';
 import {
   createWgpuTextureRenderTarget,
   getWgpuActiveRenderPass,
@@ -16,7 +17,6 @@ import {
 import { TextureAtlasRotation } from '@flighthq/textureatlas/contract';
 import type {
   Kind,
-  ParticleEmitter2D,
   QuadBatch,
   QuadBatchRuntime,
   Spatial2DNode,

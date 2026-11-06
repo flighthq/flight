@@ -1,3 +1,4 @@
+import { ParticleEmitter2DKind } from '@flighthq/particleemitter/contract';
 import { tessellateStrokePath } from '@flighthq/path/contract';
 import { withKindMapEntry } from '@flighthq/registry/contract';
 import {
@@ -11,7 +12,6 @@ import { RichTextKind, TextLabelKind } from '@flighthq/text/contract';
 import type { GlRenderRegistries, Kind } from '@flighthq/types/contract';
 import {
   DisplayObjectKind,
-  ParticleEmitter2DKind,
   QuadBatchKind,
   RenderCacheKind,
   Scale9SpriteKind,

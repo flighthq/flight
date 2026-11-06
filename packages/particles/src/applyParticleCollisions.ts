@@ -1,7 +1,6 @@
 import type {
   CircleCollider,
   ParticleCollider,
-  ParticleEmitter2D,
   ParticleEmitterState,
   ParticleObject,
   ParticleObjectsState,
@@ -11,6 +10,14 @@ import type {
 } from '@flighthq/types/contract';
 
 import { PARTICLE_VELOCITY_STRIDE } from './particleEmitterState.ts';
+
+export interface ParticleEmitterCollisionTarget {
+  data: {
+    particleCount: number;
+    positionsZ: Float32Array;
+    transforms: Float32Array;
+  };
+}
 
 // [px, py, pz, vx, vy, vz] scratch reused across particles to avoid per-iteration allocation.
 const s: [number, number, number, number, number, number] = [0, 0, 0, 0, 0, 0];
@@ -22,7 +29,7 @@ const s: [number, number, number, number, number, number] = [0, 0, 0, 0, 0, 0];
  *  Fully opt-in: import it only for emitters that collide. The core update path
  *  is unaware of it. */
 export function applyParticleCollisions(
-  emitter: ParticleEmitter2D,
+  emitter: ParticleEmitterCollisionTarget,
   state: ParticleEmitterState,
   colliders: ReadonlyArray<ParticleCollider>,
 ): void {

@@ -49,4 +49,12 @@ export {
 // Types leave through their own `export type` line: a type named in the value block above
 // compiles away in `contract.ts` but survives as a real named re-export here, so a consumer loading
 // this module as untranspiled ESM asks for a binding that does not exist.
-export type { ParticleEmitterCallbacks } from './contract.ts';
+export type {
+  ParticleEmitter2D,
+  ParticleEmitter2DRuntime,
+  ParticleEmitter3D,
+  ParticleEmitter3DRuntime,
+  ParticleEmitterCallbacks,
+  ParticleEmitterData,
+} from './contract.ts';
+export { ParticleEmitter2DKind, ParticleEmitter3DKind } from './contract.ts';

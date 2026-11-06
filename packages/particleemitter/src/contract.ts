@@ -8,4 +8,5 @@ export * from './stepParticleEmitter2D.ts';
 export * from './stepParticleEmitter3D.ts';
 export * from './updateParticleEmitter2D.ts';
 export * from './updateParticleEmitter3D.ts';
+export * from './types.ts';
 export { initializeParticleEmitterData } from './particleEmitter.ts';

@@ -1,8 +1,7 @@
 import { createRectangle } from '@flighthq/geometry/contract';
 import { getNodeLocalBoundsRectangle, getNodeLocalBoundsRevision } from '@flighthq/node/contract';
 import { TextureAtlasRotation } from '@flighthq/textureatlas/contract';
-import type { ParticleEmitter2D, TextureAtlas, TextureAtlasRegion } from '@flighthq/types/contract';
-import { ParticleEmitter2DKind } from '@flighthq/types/contract';
+import type { TextureAtlas, TextureAtlasRegion } from '@flighthq/textureatlas/contract';
 
 import {
   PARTICLE_EMITTER_DELETED_ID,
@@ -28,6 +27,8 @@ import {
   setParticleEmitter2DParticleColor,
   setParticleEmitter2DParticleVelocity,
 } from './particleEmitter.ts';
+import type { ParticleEmitter2D } from './types.ts';
+import { ParticleEmitter2DKind } from './types.ts';
 
 function makeAtlasRegion(id = 0, x = 0, y = 0, width = 32, height = 32): TextureAtlasRegion {
   return {

@@ -1,3 +1,4 @@
+import type { ParticleEmitter2D } from '@flighthq/particleemitter/contract';
 import {
   getWgpuRenderStateRuntime,
   getWgpuRenderStateDeviceResources,
@@ -12,12 +13,7 @@ import { noopRendererData } from '@flighthq/render/contract';
 import type { RenderProxy2D } from '@flighthq/render/contract';
 import { getTextureHeight, getTextureWidth, hasTextureSource } from '@flighthq/texture/contract';
 import { TextureAtlasRotation } from '@flighthq/textureatlas/contract';
-import type {
-  ParticleEmitter2D,
-  SpriteRenderer,
-  WgpuParticleResources,
-  WgpuRenderState,
-} from '@flighthq/types/contract';
+import type { SpriteRenderer, WgpuParticleResources, WgpuRenderState } from '@flighthq/types/contract';
 
 import { flushWgpuQuadBatchWriter } from './wgpuQuadBatchWriter.ts';
 

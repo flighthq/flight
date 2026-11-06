@@ -1,6 +1,10 @@
 import { createWebImageResourceFromCanvas, webHostCanvas } from '@flighthq/host-web';
 import { addNodeChild } from '@flighthq/node';
-import { appendParticleEmitter2DParticle, createParticleEmitter2D } from '@flighthq/particleemitter';
+import {
+  appendParticleEmitter2DParticle,
+  createParticleEmitter2D,
+  ParticleEmitter2DKind,
+} from '@flighthq/particleemitter';
 import { withKindMapEntry } from '@flighthq/registry';
 import { prepareScene2DRender, registerNodeRenderer } from '@flighthq/render';
 import { createDisplayObject } from '@flighthq/scene2d';
@@ -18,7 +22,6 @@ import {
 import { createCanvasSurfaceFromNativeHandle } from '@flighthq/surface';
 import { createTexture } from '@flighthq/texture';
 import { addTextureAtlasRegion, createTextureAtlas } from '@flighthq/textureatlas';
-import { ParticleEmitter2DKind } from '@flighthq/types';
 
 // REQUIRED WIRING for one particle emitter node, and nothing else:
 //   surface   webHostCanvas — the single Canvas surface provider, NOT the aggregate

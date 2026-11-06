@@ -7,7 +7,7 @@ import {
   webHostWindowLifecycle,
 } from '@flighthq/host-web';
 import { addNodeChild } from '@flighthq/node';
-import { createParticleEmitter2D } from '@flighthq/particleemitter';
+import { createParticleEmitter2D, ParticleEmitter2DKind } from '@flighthq/particleemitter';
 import { withKindMapEntry } from '@flighthq/registry';
 import { prepareScene2DRender, registerNodeRenderer } from '@flighthq/render';
 import {
@@ -22,7 +22,6 @@ import { glParticleEmitter2DRenderer, renderGlScene2D } from '@flighthq/scene2d-
 import { createGlSurface } from '@flighthq/surface';
 import { createTexture } from '@flighthq/texture';
 import { createTextureAtlas, createTextureAtlasRegion } from '@flighthq/textureatlas';
-import { ParticleEmitter2DKind } from '@flighthq/types';
 
 const appWindow = createAppWindow();
 openWindow(webHostWindowLifecycle, webHostWindowGeometry, appWindow, {});

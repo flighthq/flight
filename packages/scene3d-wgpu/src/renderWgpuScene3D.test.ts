@@ -16,6 +16,7 @@ import {
 } from '@flighthq/meshgeometry/contract';
 import { addNodeChild, invalidateNodeLocalTransform } from '@flighthq/node/contract';
 import { createParticleEmitter3D, reserveParticleEmitter3D } from '@flighthq/particleemitter/contract';
+import type { ParticleEmitter3D } from '@flighthq/particleemitter/contract';
 import { createWgpuOffscreenRenderState, getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
 import {
   createInstancedMesh,
@@ -27,7 +28,6 @@ import {
   setInstancedMeshInstanceMatrix,
 } from '@flighthq/scene3d/contract';
 import type { Skeleton3D } from '@flighthq/scene3d/contract';
-import type { ParticleEmitter3D } from '@flighthq/types/contract';
 import { BlendMode } from '@flighthq/types/contract';
 
 import { registerWgpuStandardPbrMaterial } from './registerWgpuStandardPbrMaterial.ts';

@@ -52,6 +52,7 @@
     "@flighthq/materials": "*",
     "@flighthq/node": "*",
     "@flighthq/path": "*",
+    "@flighthq/particleemitter": "*",
     "@flighthq/registry": "*",
     "@flighthq/render": "*",
     "@flighthq/render-wgpu": "*",
@@ -70,7 +71,6 @@
     "@webgpu/types": "^0.1.70"
   },
   "devDependencies": {
-    "@flighthq/particleemitter": "*",
     "@flighthq/quadbatch": "*",
     "@flighthq/tilemap": "*",
     "@webgpu/types": "*",

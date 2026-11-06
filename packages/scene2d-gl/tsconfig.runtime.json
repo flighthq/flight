@@ -22,7 +22,7 @@
     { "path": "../image/tsconfig.runtime.json" },
     { "path": "../log" },
     { "path": "../node/tsconfig.runtime.json" },
-    { "path": "../particleemitter" },
+    { "path": "../particleemitter/tsconfig.runtime.json" },
     { "path": "../path/tsconfig.runtime.json" },
     { "path": "../registry" },
     { "path": "../render/tsconfig.runtime.json" },

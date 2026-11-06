@@ -1,13 +1,8 @@
 import { applyParticleCollisions, applyParticleForces } from '@flighthq/particles/contract';
 import type { ParticleEmitterConfig } from '@flighthq/particles/contract';
-import type {
-  ParticleCollider,
-  ParticleEmitter2D,
-  ParticleEmitterCallbacks,
-  ParticleEmitterState,
-  ParticleForce,
-} from '@flighthq/types/contract';
+import type { ParticleCollider, ParticleEmitterState, ParticleForce } from '@flighthq/types/contract';
 
+import type { ParticleEmitter2D, ParticleEmitterCallbacks } from './types.ts';
 import { updateParticleEmitter2D } from './updateParticleEmitter2D.ts';
 
 /**

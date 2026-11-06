@@ -1,16 +1,11 @@
 import { reserveFloat32Array, reserveUint16Array } from '@flighthq/geometry/contract';
+import type { AabbLike, Matrix4Like, Vector3Like } from '@flighthq/geometry/contract';
 import { createNode3D, getNode3DRuntime } from '@flighthq/scene3d/contract';
 import type { Node3D } from '@flighthq/scene3d/contract';
-import type {
-  AabbLike,
-  Matrix4Like,
-  ParticleEmitter3D,
-  ParticleEmitter3DRuntime,
-  Vector3Like,
-} from '@flighthq/types/contract';
-import { ParticleEmitter3DKind } from '@flighthq/types/contract';
 
 import { createParticleEmitterData } from './particleEmitter.ts';
+import type { ParticleEmitter3D, ParticleEmitter3DRuntime } from './types.ts';
+import { ParticleEmitter3DKind } from './types.ts';
 
 const PARTICLE_TRANSFORM_STRIDE = 4;
 const PARTICLE_COLOR_STRIDE = 3;
