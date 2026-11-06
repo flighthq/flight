@@ -9,9 +9,8 @@ import {
   getMemoryLogSinkEntries,
   setLogLevel,
 } from '@flighthq/log/contract';
-import type { LogStateRef } from '@flighthq/log/contract';
-import { LogLevel } from '@flighthq/types/contract';
-import type { LogEntry } from '@flighthq/types/contract';
+import { LogLevel } from '@flighthq/log/contract';
+import type { LogEntry, LogStateRef } from '@flighthq/log/contract';
 import { describe, expect, it } from 'vitest';
 
 import {

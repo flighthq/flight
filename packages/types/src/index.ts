@@ -160,7 +160,6 @@ export * from './CurlNoiseForce.ts';
 export * from './Cursor.ts';
 export * from './CustomShaderEffect.ts';
 export * from './CustomShaderMaterial.ts';
-export * from './Debug.ts';
 export * from './DecodedImage.ts';
 export * from './DepthMaterial.ts';
 export * from './Device.ts';

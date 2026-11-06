@@ -1,6 +1,6 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
-import type { LogState } from '@flighthq/log/contract';
+import type { LogSink, LogState } from '@flighthq/log/contract';
 import {
   addLogSink,
   clearLogChannelLevel,
@@ -11,22 +11,13 @@ import {
   setLogChannelLevel,
   setLogLevel,
 } from '@flighthq/log/contract';
+import { LogLevel } from '@flighthq/log/contract';
 import { enableColorAdjustmentGuards, enableRenderRegistriesGuards } from '@flighthq/render/contract';
 import type { RenderState } from '@flighthq/render/contract';
-import type { DebugOptions, DebugSubsystemHooks, DebugSubsystemName, Entity, LogSink } from '@flighthq/types/contract';
-import { LogLevel } from '@flighthq/types/contract';
 
-// The debug umbrella's state: the subsystem registry, the active session and the frame counter, held by
-// the caller instead of in module globals. Registration order is kept, as `subsystems` is a Map.
-export interface DebugState extends Entity {
-  enabled: boolean;
-  enabledSubsystems: Readonly<DebugSubsystemHooks>[];
-  frameNumber: number;
-  installedSink: LogSink | null;
-  savedChannelLevels: Map<string, LogLevel | null>;
-  savedGlobalLevel: LogLevel;
-  subsystems: Map<string, Readonly<DebugSubsystemHooks>>;
-}
+import type { DebugOptions, DebugState, DebugSubsystemHooks, DebugSubsystemName } from './types.ts';
+
+export type { DebugState } from './types.ts';
 
 // Creates an empty debug state: no registered subsystems and no active session.
 export function createDebugState(): DebugState {

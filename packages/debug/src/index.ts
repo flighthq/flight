@@ -11,4 +11,4 @@ export {
   registerDebugSubsystem,
   unregisterDebugSubsystem,
 } from './contract.ts';
-export type { DebugState } from './contract.ts';
+export type { DebugOptions, DebugState, DebugSubsystemHooks, DebugSubsystemName } from './contract.ts';

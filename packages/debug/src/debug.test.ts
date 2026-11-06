@@ -12,15 +12,13 @@ import {
   setLogChannelLevel,
   setLogLevel,
 } from '@flighthq/log/contract';
-import type { LogStateRef } from '@flighthq/log/contract';
+import type { LogEntry, LogStateRef, MemoryLogSink as MemoryLogSinkRaw } from '@flighthq/log/contract';
+import { LogLevel } from '@flighthq/log/contract';
 import {
   areColorAdjustmentGuardsEnabled,
   areRenderRegistriesGuardsEnabled,
   createRenderState,
 } from '@flighthq/render/contract';
-import { LogLevel } from '@flighthq/types/contract';
-import type { LogEntry, MemoryLogSink as MemoryLogSinkRaw } from '@flighthq/types/contract';
-import type { DebugOptions, DebugSubsystemHooks } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import {
@@ -33,6 +31,7 @@ import {
   registerDebugSubsystem,
   unregisterDebugSubsystem,
 } from './contract.ts';
+import type { DebugOptions, DebugSubsystemHooks } from './contract.ts';
 import type { DebugState } from './debug.ts';
 
 function calls(count: { value: number }): number {

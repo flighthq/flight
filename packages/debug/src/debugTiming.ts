@@ -2,8 +2,7 @@
 // Rust is authoritative; run `npm run generate` after changing it.
 
 import { endLogTimer, logDebug, startLogTimer } from '@flighthq/log/contract';
-import type { LogStateRef } from '@flighthq/log/contract';
-import type { LogTimer } from '@flighthq/types/contract';
+import type { LogStateRef, LogTimer } from '@flighthq/log/contract';
 
 import { isDebugEnabled } from './debug.ts';
 import type { DebugState } from './debug.ts';

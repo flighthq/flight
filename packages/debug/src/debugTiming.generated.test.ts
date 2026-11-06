@@ -1,6 +1,6 @@
 import { createLogState, createMemoryLogSink, getMemoryLogSinkEntries, setLogLevel } from '@flighthq/log/contract';
-import type { LogEntry } from '@flighthq/types/contract';
-import { LogLevel } from '@flighthq/types/contract';
+import type { LogEntry } from '@flighthq/log/contract';
+import { LogLevel } from '@flighthq/log/contract';
 
 import * as contract from './contract.ts';
 import * as timing from './debugTiming.ts';
