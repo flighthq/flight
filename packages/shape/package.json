@@ -48,7 +48,7 @@
     "@flighthq/node": "*",
     "@flighthq/path": "*",
     "@flighthq/scene2d": "*",
-    "@flighthq/types": "*"
+    "@flighthq/texture": "*"
   },
   "devDependencies": {
     "typescript": "^7.0.2"

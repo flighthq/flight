@@ -7,9 +7,9 @@ import {
   createAnimationTrack,
   sampleAnimationBlendTree,
 } from '@flighthq/animation/contract';
+import { EntityRuntimeKey } from '@flighthq/entity/contract';
 import { getNodeLocalContentRevision } from '@flighthq/node/contract';
 import { appendPathLineTo, appendPathMoveTo, createPath, createPathMorph } from '@flighthq/path/contract';
-import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import type { MorphShape } from './contract.shape-types.ts';
 import type { MorphShapeAnimationTarget } from './contract.shape-types.ts';

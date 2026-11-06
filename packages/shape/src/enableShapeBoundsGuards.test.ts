@@ -1,7 +1,7 @@
 import { createRectangle } from '@flighthq/geometry/contract';
 import type { LogState } from '@flighthq/log/contract';
 import { addLogSink, createLogState, createMemoryLogSink, getMemoryLogSinkEntries } from '@flighthq/log/contract';
-import type { LogEntry } from '@flighthq/types/contract';
+import type { LogEntry } from '@flighthq/log/contract';
 
 import {
   areShapeBoundsGuardsEnabled,

@@ -1,7 +1,8 @@
+import type { Matrix } from '@flighthq/geometry/contract';
 import { CIRCLE_KAPPA } from '@flighthq/math/contract';
 import { invalidateContent } from '@flighthq/node/contract';
 import type { PathWinding } from '@flighthq/path/contract';
-import type { Matrix, Texture } from '@flighthq/types/contract';
+import type { Texture } from '@flighthq/texture/contract';
 
 import type { CapsStyle } from './contract.shape-types.ts';
 import type {
@@ -15,7 +16,7 @@ import type {
   TriangleCulling,
 } from './contract.shape-types.ts';
 
-// Canonical definition now lives in @flighthq/types (shared with @flighthq/path); re-exported here so
+// Owned by @flighthq/path, which also consumes it; re-exported here so
 // shape authoring keeps a single import surface.
 export { PathCommand } from '@flighthq/path/contract';
 

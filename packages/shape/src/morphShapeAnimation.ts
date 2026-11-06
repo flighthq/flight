@@ -1,6 +1,7 @@
 import { sampleAnimationClip } from '@flighthq/animation/contract';
+import type { AnimationChannel, AnimationClip } from '@flighthq/animation/contract';
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { AnimationChannel, AnimationClip, EntityConstruction } from '@flighthq/types/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
 
 import type { MorphShape, MorphShapeAnimationTarget } from './contract.shape-types.ts';
 import { MorphShapeKind } from './contract.shape-types.ts';

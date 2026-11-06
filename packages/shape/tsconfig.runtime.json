@@ -11,6 +11,9 @@
   },
   "references": [
     {
+      "path": "../texture/tsconfig.runtime.json"
+    },
+    {
       "path": "../animation"
     },
     {
@@ -33,9 +36,6 @@
     },
     {
       "path": "../scene2d/tsconfig.runtime.json"
-    },
-    {
-      "path": "../types"
     },
     {
       "path": "./tsconfig.contract.json"

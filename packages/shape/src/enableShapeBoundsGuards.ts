@@ -1,6 +1,6 @@
 import type { LogState } from '@flighthq/log/contract';
 import { logOnce } from '@flighthq/log/contract';
-import { LogLevel } from '@flighthq/types/contract';
+import { LogLevel } from '@flighthq/log/contract';
 
 import type { Shape } from './contract.shape-types.ts';
 import type { ShapeBoundsMode } from './contract.shape-types.ts';

@@ -1,5 +1,6 @@
 import { cloneMatrix, createMatrix } from '@flighthq/geometry/contract';
-import type { Matrix, Texture } from '@flighthq/types/contract';
+import type { Matrix } from '@flighthq/geometry/contract';
+import type { Texture } from '@flighthq/texture/contract';
 
 import type { CapsStyle } from './contract.shape-types.ts';
 import type {

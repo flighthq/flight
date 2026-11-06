@@ -5,6 +5,9 @@
   "files": [],
   "references": [
     {
+      "path": "../texture/tsconfig.contract.json"
+    },
+    {
       "path": "../animation"
     },
     {
@@ -27,9 +30,6 @@
     },
     {
       "path": "../scene2d/tsconfig.runtime.json"
-    },
-    {
-      "path": "../types"
     },
     {
       "path": "./tsconfig.contract.json"

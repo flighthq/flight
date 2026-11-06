@@ -1,9 +1,9 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
 import { invalidateContent } from '@flighthq/node/contract';
 import { createPath, samplePathMorph } from '@flighthq/path/contract';
 import type { Path, PathMorph } from '@flighthq/path/contract';
 import { createNode2D, getNode2DRuntime } from '@flighthq/scene2d/contract';
-import type { EntityConstruction } from '@flighthq/types/contract';
 
 import type { MorphShape } from './contract.shape-types.ts';
 import type { MorphShapeData, MorphShapeRuntime } from './contract.shape-types.ts';

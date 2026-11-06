@@ -1,7 +1,10 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
+import type { Rectangle } from '@flighthq/geometry/contract';
 import { invalidateContent } from '@flighthq/node/contract';
+import type { BoundsNode, MethodsOf } from '@flighthq/node/contract';
 import { createNode2D, createNode2DRuntime, getNode2DRuntime } from '@flighthq/scene2d/contract';
-import type { BoundsNode, EntityConstruction, MethodsOf, Node2DFields, Rectangle } from '@flighthq/types/contract';
+import type { Node2DFields } from '@flighthq/scene2d/contract';
 
 import type { MorphShape, Shape, ShapeBoundsMode, ShapeData, ShapeRuntime } from './contract.shape-types.ts';
 import { MorphShapeKind, ShapeKind } from './contract.shape-types.ts';

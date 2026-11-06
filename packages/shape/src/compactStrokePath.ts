@@ -1,8 +1,8 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
 import { appendPathClose } from '@flighthq/path/contract';
 import type { Path, StrokeStyle } from '@flighthq/path/contract';
 import { PathCommand } from '@flighthq/path/contract';
-import type { EntityConstruction } from '@flighthq/types/contract';
 
 // Converts the centerline `path` into a fillable outline `Path` by offsetting both sides by
 // half the stroke width, joining corners per `style.join`, and capping open endpoints per

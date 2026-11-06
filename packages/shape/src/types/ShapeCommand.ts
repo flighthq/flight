@@ -1,6 +1,6 @@
 import type { Matrix } from '@flighthq/geometry/contract';
 import type { PathWinding } from '@flighthq/path/contract';
-import type { Texture } from '@flighthq/types/contract';
+import type { Texture } from '@flighthq/texture/contract';
 
 import type { TriangleCulling } from './TriangleCulling.ts';
 

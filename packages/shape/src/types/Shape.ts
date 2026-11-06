@@ -1,4 +1,4 @@
-import type { Node2D, Node2DData, Node2DRuntime } from '@flighthq/types/contract';
+import type { Node2D, Node2DData, Node2DRuntime } from '@flighthq/scene2d/contract';
 
 import type { ShapeCommandToken } from './ShapeCommand.ts';
 

@@ -1,4 +1,4 @@
-import type { Rectangle } from '@flighthq/types/contract';
+import type { Rectangle } from '@flighthq/geometry/contract';
 
 import type {
   CapsStyle,

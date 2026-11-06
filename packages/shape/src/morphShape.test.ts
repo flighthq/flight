@@ -1,8 +1,8 @@
+import { EntityRuntimeKey } from '@flighthq/entity/contract';
 import { createRectangle } from '@flighthq/geometry/contract';
 import { getNodeLocalContentRevision } from '@flighthq/node/contract';
 import { appendPathLineTo, appendPathMoveTo, createPath, createPathMorph } from '@flighthq/path/contract';
 import type { PathMorph } from '@flighthq/path/contract';
-import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import type { ShapeCommandToken } from './contract.shape-types.ts';
 import { MorphShapeKind } from './contract.shape-types.ts';
