@@ -7,7 +7,7 @@
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,
-    "moduleSuffixes": [".host-types", ""],
+    "moduleSuffixes": [".host-types", ".image-types", ".render-types", ""],
     "tsBuildInfoFile": "dist/.tsbuildinfo.runtime"
   },
   "references": [
@@ -19,6 +19,12 @@
     },
     {
       "path": "../host/tsconfig.contract.json"
+    },
+    {
+      "path": "../image/tsconfig.contract.json"
+    },
+    {
+      "path": "../render/tsconfig.contract.json"
     },
     {
       "path": "../types"

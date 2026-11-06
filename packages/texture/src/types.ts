@@ -48,6 +48,16 @@ export const ImageTextureSourceKind = 'image';
 export const RenderTargetTextureSourceKind = 'renderTarget';
 export const VoxelGridTextureSourceKind = 'voxelGrid';
 
+export const CubeFacePositiveX = 0;
+export const CubeFaceNegativeX = 1;
+export const CubeFacePositiveY = 2;
+export const CubeFaceNegativeY = 3;
+export const CubeFacePositiveZ = 4;
+export const CubeFaceNegativeZ = 5;
+
+export const SamplerKind = 'Sampler';
+export const TextureKind = 'Texture';
+
 /**
  * Shared identity, dimensions, and PIXEL FACTS for an open texture-source family. Concrete sources
  * declare their own `kind` and payload; consumers dispatch through the renderer's source registry
@@ -193,3 +203,40 @@ export type Texture =
 type TextureLikeFrom<Type extends Texture> = Type extends Texture ? EntityWithoutRuntime<Type> : never;
 
 export type TextureLike = TextureLikeFrom<Texture>;
+
+// Hardware sampling dimensionality. Custom sources may extend how a texture is filled, but not the
+// dimensions GPU texture units can sample.
+export type TextureDimension = Texture['dimension'];
+
+export type CubeTexture = Extract<Texture, { dimension: 'cube' }>;
+
+// Minimal attachment seam accepted by texture construction. ImageResourceReference satisfies this
+// shape, while the texture contract remains below the image contract in the dependency graph.
+export interface TextureResourceReference {
+  textures?: Texture[];
+}
+
+type CreateTextureVariantOptions<Type extends TextureLike> = Type extends TextureLike
+  ? Omit<Partial<Type>, 'dimension'> &
+      (Type['dimension'] extends '2d' ? { readonly dimension?: '2d' } : { readonly dimension: Type['dimension'] })
+  : never;
+
+export type CreateTextureOptions = CreateTextureVariantOptions<TextureLike> & {
+  readonly resource?: TextureResourceReference | null;
+};
+
+export type CreateTexture2DOptions = Extract<CreateTextureOptions, { dimension?: '2d' }>;
+
+export interface CreateCubeTextureOptions {
+  colorSpace?: TextureColorSpace;
+  sampler?: Readonly<SamplerLike>;
+  sources?: TextureSourceCubeFaces;
+}
+
+export type TextureResolutionStatus = 'missing-kind' | 'missing-resolver' | 'registered';
+
+/** Describes resolver availability without conflating it with source readiness. */
+export interface TextureResolutionExplanation {
+  readonly kind: TextureSourceKind | null;
+  readonly status: TextureResolutionStatus;
+}

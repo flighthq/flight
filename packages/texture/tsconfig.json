@@ -11,6 +11,12 @@
       "path": "../host/tsconfig.contract.json"
     },
     {
+      "path": "../image/tsconfig.contract.json"
+    },
+    {
+      "path": "../render/tsconfig.contract.json"
+    },
+    {
       "path": "../types"
     },
     {

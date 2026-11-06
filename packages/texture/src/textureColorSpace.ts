@@ -1,4 +1,6 @@
-import type { RenderTargetColorSpace, TextureColorSpace } from '@flighthq/types/contract';
+import type { RenderTargetColorSpace } from '@flighthq/render/contract';
+
+import type { TextureColorSpace } from './types.ts';
 
 // The colour space a GPU sample FORMAT should apply, derived from the pair. Unlike `Texture.colorSpace`
 // this is not a claim about the content — it is the transfer function the sampler applies, so 'linear'

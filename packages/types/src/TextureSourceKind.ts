@@ -1,9 +1,8 @@
-// Owned by `@flighthq/texture` (its contract lane declares the same names). This deprecated structural
-// copy stays because a core package may cross into an owner only with type-only edges.
-// Open registry key declared by a TextureSource. Built-in sources use these unprefixed names;
-// third-party source families use a vendor-prefixed value such as `acme.camera`.
-export type TextureSourceKind = string;
+/** @deprecated Import TextureSourceKind from @flighthq/texture/contract. */
+export type { TextureSourceKind } from '@flighthq/texture/contract';
 
+// Exact value bridge for the runtime @flighthq/types -> @flighthq/texture core-layer cycle.
+// Keep aligned with @flighthq/texture/contract until legacy value exports can be removed.
 export const BitmapTextureSourceKind = 'bitmap';
 export const CompressedImageTextureSourceKind = 'compressedImage';
 export const ExternalTextureSourceKind = 'external';

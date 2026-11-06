@@ -1,15 +1,15 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
 import type {
   CreateRenderTextureOptions,
-  EntityConstruction,
   RenderTarget,
   RenderTargetColorSpace,
   RenderTexture,
-} from '@flighthq/types/contract';
-import { RenderTargetTextureSourceKind } from '@flighthq/types/contract';
+} from '@flighthq/render/contract';
 
 import { copySampler } from './sampler.ts';
 import { createTexture } from './texture.ts';
+import { RenderTargetTextureSourceKind } from './types.ts';
 
 // Creates a universal Texture with a GPU-origin render-target source. Backend allocation stays lazy;
 // renderIntoGlRenderTexture realizes the target in one state and resolveGlTexture later returns its

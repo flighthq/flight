@@ -1,5 +1,7 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { Sampler, SamplerLike, EntityConstruction } from '@flighthq/types/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
+
+import type { Sampler, SamplerLike } from './types.ts';
 
 // Allocates an independent Sampler with the same sampling state. Sampler holds only plain values,
 // so the clone shares nothing mutable with its source.

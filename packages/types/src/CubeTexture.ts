@@ -1,3 +1,2 @@
-import type { Texture } from './Texture.ts';
-
-export type CubeTexture = Extract<Texture, { dimension: 'cube' }>;
+/** @deprecated Import CubeTexture from @flighthq/texture/contract. */
+export type { CubeTexture } from '@flighthq/texture/contract';

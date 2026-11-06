@@ -43,6 +43,8 @@
     "@flighthq/entity": "*",
     "@flighthq/geometry": "*",
     "@flighthq/host": "*",
+    "@flighthq/image": "*",
+    "@flighthq/render": "*",
     "@flighthq/types": "*",
     "@flighthq/video": "*"
   },

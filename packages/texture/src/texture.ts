@@ -1,22 +1,21 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
 import { cloneVector2, copyVector2, createVector2, inverseMatrix3 } from '@flighthq/geometry/contract';
+import type { Matrix3Like, Vector2Like } from '@flighthq/geometry/contract';
+
+import { cloneSampler, copySampler, createSampler, equalsSampler } from './sampler.ts';
 import type {
   CreateTexture2DOptions,
   CreateTextureOptions,
-  EntityConstruction,
-  ImageResourceReference,
-  Matrix3Like,
   Texture,
   Texture2D,
   TextureLike,
+  TextureResourceReference,
   TextureSource,
   TextureSourceCubeFaces,
   TextureSourceKind,
   TextureUvTransform,
-  Vector2Like,
-} from '@flighthq/types/contract';
-
-import { cloneSampler, copySampler, createSampler, equalsSampler } from './sampler.ts';
+} from './types.ts';
 
 const HALF_PI = Math.PI / 2;
 
@@ -482,6 +481,6 @@ function createCommonTextureFields(opts?: Readonly<CreateTextureOptions>) {
 
 // A texture built against a resource joins that resource's list, which is what lets the loader find
 // every texture it has to realize.
-function attachTextureToResource(texture: Texture, resource: ImageResourceReference | null | undefined): void {
+function attachTextureToResource(texture: Texture, resource: TextureResourceReference | null | undefined): void {
   if (resource != null) (resource.textures ??= []).push(texture);
 }
