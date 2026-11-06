@@ -10,8 +10,9 @@ import {
   initTransform3DRuntimeTrait,
   initTransform3DTrait,
 } from '@flighthq/node/contract';
-import type { Kind, NodeAny, NodeSignals, Node3D, Node3DRuntime, Node3DFields } from '@flighthq/types/contract';
+import type { Kind, NodeAny, NodeSignals } from '@flighthq/types/contract';
 
+import type { Node3D, Node3DRuntime, Node3DFields } from './types/Node3D.ts';
 import { Node3DFieldsKey, Node3DKind } from './types/Node3D.ts';
 
 export { Node3DKind } from './types/Node3D.ts';

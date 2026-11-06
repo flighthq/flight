@@ -13,13 +13,13 @@ import type { Mesh } from '@flighthq/meshgeometry/contract';
 import { getNodeChildren, getNodeLocalMatrix4 } from '@flighthq/node/contract';
 import { isMesh } from '@flighthq/scene3d/contract';
 import type { Scene3DDocument } from '@flighthq/scene3d/contract';
+import type { Node3D } from '@flighthq/scene3d/contract';
 import { getTextureSource } from '@flighthq/texture/contract';
 import type {
   BlinnPhongMaterial,
   ExternalImageResourceReference,
   ImportDiagnostic,
   Scene3DAnimationTarget,
-  Node3D,
 } from '@flighthq/types/contract';
 import { BlinnPhongMaterialKind, ImportDiagnosticSeverity } from '@flighthq/types/contract';
 

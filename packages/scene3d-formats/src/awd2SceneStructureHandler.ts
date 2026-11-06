@@ -2,8 +2,9 @@ import { createTransform3D } from '@flighthq/geometry/contract';
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import { MeshKind } from '@flighthq/meshgeometry/contract';
 import type { Scene3DDocumentMesh, Scene3DDocumentNode } from '@flighthq/scene3d/contract';
+import { Node3DKind } from '@flighthq/scene3d/contract';
 import type { ImportDiagnostic } from '@flighthq/types/contract';
-import { ImportDiagnosticSeverity, Node3DKind } from '@flighthq/types/contract';
+import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
 import { awdTransformToTransform3D, readAwdString, readAwdTransform, skipAwdAttrList } from './awd2Reader.ts';
 import { AWD2_BLOCK_CONTAINER, AWD2_BLOCK_MESH_INSTANCE, AWD2_BUILD_PHASE_SCENE_STRUCTURE } from './awd2Schema.ts';

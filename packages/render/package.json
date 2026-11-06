@@ -55,6 +55,7 @@
     "@flighthq/registry": "*",
     "@flighthq/requirement": "*",
     "@flighthq/scene2d": "*",
+    "@flighthq/scene3d": "*",
     "@flighthq/shape": "*",
     "@flighthq/signals": "*",
     "@flighthq/surface": "*",

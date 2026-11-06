@@ -20,8 +20,9 @@ import {
   Scene3DAnimationPathScale,
   Scene3DAnimationPathTranslation,
 } from '@flighthq/scene3d/contract';
+import { Node3DKind } from '@flighthq/scene3d/contract';
 import type { ImportDiagnostic, AnimationTrack, Matrix4 } from '@flighthq/types/contract';
-import { ImportDiagnosticSeverity, Node3DKind } from '@flighthq/types/contract';
+import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
 import {
   awdTransformToMatrix4,

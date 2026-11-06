@@ -1,5 +1,6 @@
 import type { MeshSkinBindPose } from '@flighthq/meshgeometry/contract';
-import type { AabbLike, Skeleton3D } from '@flighthq/types/contract';
+import type { Skeleton3D } from '@flighthq/scene3d/contract';
+import type { AabbLike } from '@flighthq/types/contract';
 
 import { skinVertices } from './skinVertices.ts';
 

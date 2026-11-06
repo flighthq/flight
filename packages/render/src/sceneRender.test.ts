@@ -34,14 +34,8 @@ import {
   setInstancedMeshInstanceCount,
   setInstancedMeshInstanceMatrix,
 } from '@flighthq/scene3d/contract';
-import type {
-  Matrix4,
-  Skin,
-  Camera3D,
-  Material3D,
-  Scene3DLightBlock,
-  Scene3DLightsLike,
-} from '@flighthq/types/contract';
+import type { Skin } from '@flighthq/scene3d/contract';
+import type { Matrix4, Camera3D, Material3D, Scene3DLightBlock, Scene3DLightsLike } from '@flighthq/types/contract';
 import {
   SCENE_LIGHT_BLOCK_FLOATS,
   SCENE_LIGHT_HEMISPHERE_OFFSET,

@@ -8,7 +8,6 @@ import {
   getNodeWorldMatrix4,
   invalidateNodeLocalTransform,
 } from '@flighthq/node/contract';
-import type { Skin } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import {
@@ -22,6 +21,7 @@ import {
   MeshKind,
 } from './mesh.ts';
 import { createNode3D } from './sceneNode.ts';
+import type { Skin } from './types/Skin.ts';
 import { updateMeshMorph } from './updateMeshMorph.ts';
 
 describe('cloneMesh', () => {

@@ -23,6 +23,7 @@ import {
   invalidateNodeLocalTransform,
   isNodeLocalMatrix4Detached,
 } from '@flighthq/node/contract';
+import type { Node3D } from '@flighthq/scene3d/contract';
 import type {
   Aabb,
   AmbientLight,
@@ -31,7 +32,6 @@ import type {
   Frustum,
   HemisphereLight,
   Matrix4,
-  Node3D,
   PointLight,
   Scene3DLightBlock,
   Scene3DLightsLike,

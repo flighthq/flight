@@ -1,11 +1,11 @@
 import { createFrustum, createMatrix4, setVector3 } from '@flighthq/geometry/contract';
 import { createMeshGeometry } from '@flighthq/meshgeometry/contract';
 import { addNodeChild, invalidateNodeLocalTransform } from '@flighthq/node/contract';
-import { Node3DKind } from '@flighthq/types/contract';
 
 import { createMesh } from './mesh.ts';
 import { createNode3D } from './sceneNode.ts';
 import { buildScene3DFrustum, cullNode3DByFrustum } from './sceneNodeCulling.ts';
+import { Node3DKind } from './types/Node3D.ts';
 
 // Builds a simple box geometry centered at origin with side 2 (bounds [-1,-1,-1] to [1,1,1]).
 function makeBoxGeometry() {

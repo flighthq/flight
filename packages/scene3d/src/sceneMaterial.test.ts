@@ -2,12 +2,12 @@ import { createBlinnPhongMaterial, createStandardPbrMaterial } from '@flighthq/m
 import { createBoxMeshGeometry } from '@flighthq/meshgeometry/contract';
 import { addNodeChild } from '@flighthq/node/contract';
 import type { Material } from '@flighthq/types/contract';
-import { Node3DKind } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { createMesh } from './mesh.ts';
 import { findScene3DMaterialByName, getScene3DMaterials } from './sceneMaterial.ts';
 import { createNode3D } from './sceneNode.ts';
+import { Node3DKind } from './types/Node3D.ts';
 
 describe('findScene3DMaterialByName', () => {
   it('finds a named material on a descendant mesh', () => {

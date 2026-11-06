@@ -10,9 +10,6 @@ import type {
   Material3D,
   MaterialLike,
   Scene3DAnimationTarget,
-  Node3D,
-  Skeleton3D,
-  Skin,
 } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
@@ -20,6 +17,9 @@ import type { Scene3D, Scene3DDocument, Scene3DDocumentNode } from './contract.s
 import { createMesh } from './mesh.ts';
 import { createScene3D } from './scene.ts';
 import { createNode3D } from './sceneNode.ts';
+import type { Node3D } from './types/Node3D.ts';
+import type { Skeleton3D } from './types/Skeleton3D.ts';
+import type { Skin } from './types/Skin.ts';
 
 // Assembles a Scene3DDocument's scene into a live Scene3D — the inverse of the scene-format parsers, which STOP
 // at the format-neutral Scene3DDocument decomposition rather than building entities inline. This is the single

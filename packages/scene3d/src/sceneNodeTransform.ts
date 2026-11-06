@@ -1,6 +1,8 @@
 import { createMatrix4 } from '@flighthq/geometry/contract';
 import { setNodeLocalMatrix4 } from '@flighthq/node/contract';
-import type { Node3D, Vector3Like } from '@flighthq/types/contract';
+import type { Vector3Like } from '@flighthq/types/contract';
+
+import type { Node3D } from './types/Node3D.ts';
 
 // Sets the node's local matrix directly to a model-space look-at transform that places the node at
 // `eye`, oriented so its local -Z axis points toward `target`, with the given `up` hint vector. The

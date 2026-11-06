@@ -1,9 +1,9 @@
 import { addNodeChild, getNodeChildCount, getNodeLocalMatrix4, getNodeRoot } from '@flighthq/node/contract';
-import { Node3DKind } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { createScene3D, initializeScene3D } from './scene.ts';
 import { createNode3D, getNode3DRuntime } from './sceneNode.ts';
+import { Node3DKind } from './types/Node3D.ts';
 
 describe('createScene3D', () => {
   it('owns a root Node3D with Node3DKind', () => {

@@ -1,6 +1,7 @@
 import type { Scene3DLightsLike } from '@flighthq/lighting/contract';
 import { beginGlRenderPass, endGlRenderPass, presentGlRenderTarget } from '@flighthq/render-gl/contract';
-import type { Camera3D, GlRenderState, GlTextureRenderTarget, Node3D } from '@flighthq/types/contract';
+import type { Node3D } from '@flighthq/scene3d/contract';
+import type { Camera3D, GlRenderState, GlTextureRenderTarget } from '@flighthq/types/contract';
 
 import { renderGlScene3D } from './renderGlScene3D.ts';
 

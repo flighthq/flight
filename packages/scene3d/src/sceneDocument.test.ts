@@ -5,14 +5,16 @@ import { CANONICAL_MESH_GEOMETRY_LAYOUT, createMeshGeometry } from '@flighthq/me
 import type { Mesh } from '@flighthq/meshgeometry/contract';
 import { MeshKind } from '@flighthq/meshgeometry/contract';
 import { getNodeChildren } from '@flighthq/node/contract';
-import type { MaterialLike, Node3D } from '@flighthq/types/contract';
-import { EntityRuntimeKey, Node3DKind } from '@flighthq/types/contract';
+import type { MaterialLike } from '@flighthq/types/contract';
+import { EntityRuntimeKey } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import type { Scene3DDocument } from './contract.scene3d-types.ts';
 import { Scene3DAnimationPathTranslation } from './contract.scene3d-types.ts';
 import { isMesh } from './mesh.ts';
 import { createScene3DFromDocument, createScene3DsFromDocument } from './sceneDocument.ts';
+import type { Node3D } from './types/Node3D.ts';
+import { Node3DKind } from './types/Node3D.ts';
 
 function emptyDocument(): Scene3DDocument {
   return {

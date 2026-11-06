@@ -3,8 +3,9 @@ import { createAmbientLight } from '@flighthq/lighting/contract';
 import { withKindMapEntry } from '@flighthq/registry/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
 import { createNode3D } from '@flighthq/scene3d/contract';
+import { Node3DKind } from '@flighthq/scene3d/contract';
 import type { NodeAny } from '@flighthq/types/contract';
-import { DisplayObjectKind, Node3DKind } from '@flighthq/types/contract';
+import { DisplayObjectKind } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { formatFlightDocumentText } from './flightDocumentText.ts';

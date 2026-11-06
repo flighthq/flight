@@ -6,9 +6,10 @@ import {
 } from '@flighthq/geometry/contract';
 import { computeMeshGeometryBounds } from '@flighthq/meshgeometry/contract';
 import { ensureNodeWorldMatrix4, getNodeRuntime, getNodeWorldMatrix4 } from '@flighthq/node/contract';
-import type { FrustumLike, Matrix4Like, Node3D } from '@flighthq/types/contract';
+import type { FrustumLike, Matrix4Like } from '@flighthq/types/contract';
 
 import { isMesh } from './mesh.ts';
+import type { Node3D } from './types/Node3D.ts';
 
 // Convenience: derives a camera frustum from a view-projection matrix and calls
 // `cullNode3DByFrustum`. `viewProjection` must be the combined view × projection matrix

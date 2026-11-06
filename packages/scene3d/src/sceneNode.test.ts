@@ -14,8 +14,7 @@ import {
   setNodeLocalMatrix4,
 } from '@flighthq/node/contract';
 import { createNode2D } from '@flighthq/scene2d/contract';
-import type { Matrix4, Node3D } from '@flighthq/types/contract';
-import type { Node3DRuntime } from '@flighthq/types/contract';
+import type { Matrix4 } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import {
@@ -27,6 +26,8 @@ import {
   isNode3D,
   Node3DKind,
 } from './sceneNode.ts';
+import type { Node3D } from './types/Node3D.ts';
+import type { Node3DRuntime } from './types/Node3D.ts';
 
 function createTransformNode(): Node3D {
   const node = createNode3D();

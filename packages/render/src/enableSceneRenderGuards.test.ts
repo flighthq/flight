@@ -11,7 +11,8 @@ import { computeMeshGeometryBounds, createBoxMeshGeometry } from '@flighthq/mesh
 import type { Mesh, MeshGeometry } from '@flighthq/meshgeometry/contract';
 import { addNodeChild } from '@flighthq/node/contract';
 import { createMesh, createNode3D, Node3DKind } from '@flighthq/scene3d/contract';
-import type { Camera3D, LogEntry, Skin } from '@flighthq/types/contract';
+import type { Skin } from '@flighthq/scene3d/contract';
+import type { Camera3D, LogEntry } from '@flighthq/types/contract';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { disableSceneRenderGuards, enableSceneRenderGuards } from './enableSceneRenderGuards.ts';

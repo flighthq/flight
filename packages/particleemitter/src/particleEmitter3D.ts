@@ -1,11 +1,11 @@
 import { reserveFloat32Array, reserveUint16Array } from '@flighthq/geometry/contract';
 import { createNode3D, getNode3DRuntime } from '@flighthq/scene3d/contract';
+import type { Node3D } from '@flighthq/scene3d/contract';
 import type {
   AabbLike,
   Matrix4Like,
   ParticleEmitter3D,
   ParticleEmitter3DRuntime,
-  Node3D,
   Vector3Like,
 } from '@flighthq/types/contract';
 import { ParticleEmitter3DKind } from '@flighthq/types/contract';

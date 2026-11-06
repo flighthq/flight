@@ -20,7 +20,7 @@ import {
   setInstancedMeshInstanceMatrix,
   updateMeshMorph,
 } from '@flighthq/scene3d/contract';
-import type { Skin } from '@flighthq/types/contract';
+import type { Skin } from '@flighthq/scene3d/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import { registerGlMeshSkinning } from './glMeshSkinning.ts';

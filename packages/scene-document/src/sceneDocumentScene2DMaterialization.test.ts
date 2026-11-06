@@ -2,7 +2,8 @@ import { addNodeChild, getNodeChildren, getNodeRuntime } from '@flighthq/node/co
 import { withKindMapEntry } from '@flighthq/registry/contract';
 import { createDisplayObject, createScene2D, createSprite } from '@flighthq/scene2d/contract';
 import { createNode3D } from '@flighthq/scene3d/contract';
-import { DisplayObjectKind, EntityRuntimeKey, Node3DKind, SpriteKind } from '@flighthq/types/contract';
+import { Node3DKind } from '@flighthq/scene3d/contract';
+import { DisplayObjectKind, EntityRuntimeKey, SpriteKind } from '@flighthq/types/contract';
 import type { Node2D, NodeAny } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 

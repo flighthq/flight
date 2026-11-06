@@ -9,6 +9,7 @@ import {
   resolveGlTexture,
 } from '@flighthq/render-gl/contract';
 import { prepareScene3DRender } from '@flighthq/render/contract';
+import type { Node3D } from '@flighthq/scene3d/contract';
 import { getTextureHeight, getTextureWidth, hasTextureSource } from '@flighthq/texture/contract';
 import { TextureAtlasRotation } from '@flighthq/textureatlas/contract';
 import type {
@@ -19,7 +20,6 @@ import type {
   NodeAny,
   ParticleEmitter3D,
   ParticleEmitterData,
-  Node3D,
 } from '@flighthq/types/contract';
 import { BlendMode, ParticleEmitter3DKind } from '@flighthq/types/contract';
 

@@ -1,7 +1,7 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { createAabb } from '@flighthq/geometry/contract';
 import type { MeshSkinBindPose } from '@flighthq/meshgeometry/contract';
-import type { Skeleton3D } from '@flighthq/types/contract';
+import type { Skeleton3D } from '@flighthq/scene3d/contract';
 
 import { getMeshSkinConservativeBounds, getMeshSkinExactBounds } from './getMeshSkinBounds.ts';
 

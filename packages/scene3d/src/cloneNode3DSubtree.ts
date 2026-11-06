@@ -6,10 +6,11 @@ import {
   setNodeLocalMatrix4,
   setNodeTransform3D,
 } from '@flighthq/node/contract';
-import type { Material3D, Node3D } from '@flighthq/types/contract';
+import type { Material3D } from '@flighthq/types/contract';
 
 import { cloneMesh, isMesh } from './mesh.ts';
 import { createNode3D } from './sceneNode.ts';
+import type { Node3D } from './types/Node3D.ts';
 
 export function cloneNode3DSubtree(
   source: Readonly<Node3D>,

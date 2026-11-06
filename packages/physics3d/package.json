@@ -45,6 +45,7 @@
     "@flighthq/log": "*",
     "@flighthq/math": "*",
     "@flighthq/node": "*",
+    "@flighthq/scene3d": "*",
     "@flighthq/spatial": "*",
     "@flighthq/types": "*"
   },

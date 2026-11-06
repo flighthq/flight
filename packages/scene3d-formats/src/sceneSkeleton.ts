@@ -1,7 +1,7 @@
 import type { Mesh } from '@flighthq/meshgeometry/contract';
 import { getNodeChildren } from '@flighthq/node/contract';
 import { isMesh } from '@flighthq/scene3d/contract';
-import type { Node3D } from '@flighthq/types/contract';
+import type { Node3D } from '@flighthq/scene3d/contract';
 
 // Walks a built scene for the first skinned mesh and returns its skeleton's joint nodes — the same node
 // handles the skin was bound to, so an animation clip bound to them deforms the mesh. Null when the scene

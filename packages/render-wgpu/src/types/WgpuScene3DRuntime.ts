@@ -1,6 +1,6 @@
 import type { Camera3D } from '@flighthq/camera/contract';
 import type { Scene3DLightsLike } from '@flighthq/lighting/contract';
-import type { Node3D } from '@flighthq/types/contract';
+import type { Node3D } from '@flighthq/scene3d/contract';
 
 import type { WgpuRenderState } from './WgpuRenderState.ts';
 

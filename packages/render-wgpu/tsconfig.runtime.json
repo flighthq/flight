@@ -9,7 +9,7 @@
     "sourceMap": true,
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "types": ["@testing-library/jest-dom", "vitest/globals", "@webgpu/types"],
-    "moduleSuffixes": [".platform-types", ".surface-types", ".texture-formats-types", ""],
+    "moduleSuffixes": [".platform-types", ".surface-types", ".texture-formats-types", ".scene3d-node-types", ""],
     "tsBuildInfoFile": "dist/.tsbuildinfo.runtime"
   },
   "references": [
@@ -57,6 +57,9 @@
     },
     {
       "path": "../effects/tsconfig.runtime.json"
+    },
+    {
+      "path": "../scene3d/tsconfig.node.json"
     },
     {
       "path": "./tsconfig.contract.json"

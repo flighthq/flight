@@ -25,6 +25,7 @@ import type { MeshMorph, MorphTarget } from '@flighthq/meshgeometry/contract';
 import { createScene3DFromDocument } from '@flighthq/scene3d/contract';
 import type { Scene3D } from '@flighthq/scene3d/contract';
 import type { Scene3DDocument, Scene3DDocumentMesh, Scene3DDocumentNode } from '@flighthq/scene3d/contract';
+import { Node3DKind } from '@flighthq/scene3d/contract';
 import { createTexture } from '@flighthq/texture/contract';
 import type {
   ImageResourceReference,
@@ -37,7 +38,7 @@ import type {
   TextureWrap,
   Transform3D,
 } from '@flighthq/types/contract';
-import { ImportDiagnosticSeverity, Node3DKind } from '@flighthq/types/contract';
+import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
 import type {
   GltfAccessor,

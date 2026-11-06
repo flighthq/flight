@@ -11,6 +11,7 @@ import {
 import type { Mesh } from '@flighthq/meshgeometry/contract';
 import { getNodeChildren, getNodeLocalMatrix4 } from '@flighthq/node/contract';
 import { isMesh } from '@flighthq/scene3d/contract';
+import type { Node3D } from '@flighthq/scene3d/contract';
 import { getTextureSource } from '@flighthq/texture/contract';
 import type {
   EmbeddedImageResourceReference,
@@ -18,7 +19,6 @@ import type {
   GltfCoreFeatureHandler,
   ImportDiagnostic,
   Scene3DAnimationTarget,
-  Node3D,
   StandardPbrMaterial,
   GltfDocument,
 } from '@flighthq/types/contract';

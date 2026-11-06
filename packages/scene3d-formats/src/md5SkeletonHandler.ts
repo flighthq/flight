@@ -11,8 +11,9 @@ import {
   setVector3,
 } from '@flighthq/geometry/contract';
 import type { Scene3DDocument, Scene3DDocumentSkin } from '@flighthq/scene3d/contract';
+import { Node3DKind } from '@flighthq/scene3d/contract';
 import type { Matrix4 } from '@flighthq/types/contract';
-import { ImportDiagnosticSeverity, Node3DKind } from '@flighthq/types/contract';
+import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
 import { tallyMd5Drop } from './md5Parse.ts';
 import { convertPositionsZUpToYUp, convertQuaternionsZUpToYUp } from './shared.ts';

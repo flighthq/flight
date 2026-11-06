@@ -8,12 +8,8 @@ import {
   writeParticleSpawnOffset,
 } from '@flighthq/particles/contract';
 import type { ParticleEmitterConfig } from '@flighthq/particles/contract';
-import type {
-  ParticleEmitter3D,
-  ParticleEmitterCallbacks,
-  ParticleEmitterState,
-  Node3D,
-} from '@flighthq/types/contract';
+import type { Node3D } from '@flighthq/scene3d/contract';
+import type { ParticleEmitter3D, ParticleEmitterCallbacks, ParticleEmitterState } from '@flighthq/types/contract';
 
 import { reserveParticleEmitter3D } from './particleEmitter3D.ts';
 

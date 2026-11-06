@@ -12,18 +12,18 @@ import type { Scene3DLights } from '@flighthq/lighting/contract';
 import { AmbientLightKind, DirectionalLightKind } from '@flighthq/lighting/contract';
 import { addNodeChild, getNodeChildren, getNodeWorldMatrix4 } from '@flighthq/node/contract';
 import { createScene3D, createScene3DLightsFromDocument } from '@flighthq/scene3d/contract';
+import type { Node3D } from '@flighthq/scene3d/contract';
+import { Node3DFieldsKey } from '@flighthq/scene3d/contract';
 import type {
   Camera3D,
   Entity,
   NodeAny,
-  Node3D,
   Scene3D,
   Scene3DDocument,
   Scene3DDocumentCamera,
   Scene3DDocumentLight,
   EntityConstruction,
 } from '@flighthq/types/contract';
-import { Node3DFieldsKey } from '@flighthq/types/contract';
 
 import { explainFlightDocumentText, parseFlightDocumentText } from './flightDocumentText.ts';
 import {

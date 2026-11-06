@@ -1,6 +1,8 @@
 import type { Mesh } from '@flighthq/meshgeometry/contract';
 import { findNode, forEachNodeDescendant } from '@flighthq/node/contract';
-import type { Material, Node3D } from '@flighthq/types/contract';
+import type { Material } from '@flighthq/types/contract';
+
+import type { Node3D } from './types/Node3D.ts';
 
 // Finds the first material named `name` in the scene subtree rooted at `root` (depth-first
 // pre-order, `root` included), scanning each mesh node's `materials` array. Returns `null` when no

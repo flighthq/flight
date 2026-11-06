@@ -13,8 +13,9 @@ import { getNodeChildren, invalidateNodeLocalTransform } from '@flighthq/node/co
 import { withKindMapEntry } from '@flighthq/registry/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
 import { createNode3D, createScene3D } from '@flighthq/scene3d/contract';
+import { Node3DKind } from '@flighthq/scene3d/contract';
 import type { NodeAny, Scene3DDocumentCamera, Scene3DDocumentLight } from '@flighthq/types/contract';
-import { DisplayObjectKind, EntityRuntimeKey, Node3DKind } from '@flighthq/types/contract';
+import { DisplayObjectKind, EntityRuntimeKey } from '@flighthq/types/contract';
 import { describe, expect, expectTypeOf, it } from 'vitest';
 
 import { formatFlightDocumentText } from './flightDocumentText.ts';

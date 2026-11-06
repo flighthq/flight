@@ -6,15 +6,8 @@ import type { InstancedMesh, Mesh } from '@flighthq/meshgeometry/contract';
 import { forEachNodeDescendant, getNodeWorldMatrix4 } from '@flighthq/node/contract';
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
 import type { Scene3DRenderProxy } from '@flighthq/render/contract';
-import type {
-  Camera3D,
-  Material3D,
-  Matrix3,
-  Matrix4,
-  Node3D,
-  Node3DFields,
-  WgpuRenderState,
-} from '@flighthq/types/contract';
+import type { Node3D, Node3DFields } from '@flighthq/scene3d/contract';
+import type { Camera3D, Material3D, Matrix3, Matrix4, WgpuRenderState } from '@flighthq/types/contract';
 import { BlendMode, StandardMaterialKind } from '@flighthq/types/contract';
 
 import {

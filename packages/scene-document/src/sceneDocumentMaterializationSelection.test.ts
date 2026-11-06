@@ -1,4 +1,5 @@
-import { DisplayObjectKind, Node3DKind } from '@flighthq/types/contract';
+import { Node3DKind } from '@flighthq/scene3d/contract';
+import { DisplayObjectKind } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { selectFlightDocumentScene } from './sceneDocumentMaterializationSelection.ts';

@@ -3,8 +3,9 @@ import { createBoxMeshGeometry } from '@flighthq/meshgeometry/contract';
 import { addNodeChild } from '@flighthq/node/contract';
 import { withKindMapEntry } from '@flighthq/registry/contract';
 import { createMesh, createNode3D } from '@flighthq/scene3d/contract';
+import { Node3DKind } from '@flighthq/scene3d/contract';
 import type { Kind } from '@flighthq/types/contract';
-import { Node3DKind, StandardMaterialKind } from '@flighthq/types/contract';
+import { StandardMaterialKind } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { explainScene3DPipelineCoverage } from './explainScene3DPipelineCoverage.ts';

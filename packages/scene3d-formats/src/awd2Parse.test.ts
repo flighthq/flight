@@ -19,6 +19,7 @@ import type {
   Scene3DDocument,
   Scene3DDocumentLight,
 } from '@flighthq/scene3d/contract';
+import type { Node3D } from '@flighthq/scene3d/contract';
 import { getTextureSource } from '@flighthq/texture/contract';
 import type {
   Decompressor,
@@ -32,7 +33,6 @@ import type {
   ExternalImageResourceReference,
   ImportDiagnostic,
   Scene3DAnimationTarget,
-  Node3D,
   ShadedMaterial,
 } from '@flighthq/types/contract';
 import { ImportDiagnosticSeverity, ResourceResolutionState, ShadedMaterialKind } from '@flighthq/types/contract';

@@ -17,6 +17,7 @@ import type { GlMeshMaterialRenderer } from '@flighthq/render-gl/contract';
 import type { Scene3DRenderProxy } from '@flighthq/render/contract';
 import { prepareScene3DRender } from '@flighthq/render/contract';
 import { getNode3DRuntime, getNode3DWorldAlpha } from '@flighthq/scene3d/contract';
+import type { Node3D } from '@flighthq/scene3d/contract';
 import type {
   Camera3D,
   ColorScaleBias,
@@ -25,7 +26,6 @@ import type {
   Material,
   Matrix3,
   Matrix4,
-  Node3D,
   Material3D,
 } from '@flighthq/types/contract';
 import { BlendMode, StandardMaterialKind } from '@flighthq/types/contract';

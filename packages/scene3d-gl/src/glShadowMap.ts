@@ -6,7 +6,8 @@ import { hasMeshGeometrySkin } from '@flighthq/meshgeometry/contract';
 import type { InstancedMesh, Mesh } from '@flighthq/meshgeometry/contract';
 import { forEachNodeDescendant, getNodeWorldMatrix4 } from '@flighthq/node/contract';
 import { createGlTextureRenderTarget } from '@flighthq/render-gl/contract';
-import type { GlContext, Camera3D, GlRenderState, Node3D, Node3DFields } from '@flighthq/types/contract';
+import type { Node3D, Node3DFields } from '@flighthq/scene3d/contract';
+import type { GlContext, Camera3D, GlRenderState } from '@flighthq/types/contract';
 
 import type { GlMeshProgram } from './contract.scene3d-gl-types.ts';
 import {

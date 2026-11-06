@@ -5,18 +5,14 @@ import { addNodeChild } from '@flighthq/node/contract';
 import { createRimModifier, createShadedMaterial } from '@flighthq/shading/contract';
 import { createTexture } from '@flighthq/texture/contract';
 import type { ImageResourceReference } from '@flighthq/types/contract';
-import {
-  EntityRuntimeKey,
-  ImageResourceReferenceKind,
-  Node3DKind,
-  ResourceResolutionState,
-} from '@flighthq/types/contract';
+import { EntityRuntimeKey, ImageResourceReferenceKind, ResourceResolutionState } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { createMesh } from './mesh.ts';
 import { createScene3D } from './scene.ts';
 import { createScene3DKindUsage, getScene3DKindUsage, initializeScene3DKindUsage } from './sceneKindUsage.ts';
 import { createNode3D } from './sceneNode.ts';
+import { Node3DKind } from './types/Node3D.ts';
 
 function embeddedRef(mimeType: string | null = 'image/png'): ImageResourceReference {
   return {

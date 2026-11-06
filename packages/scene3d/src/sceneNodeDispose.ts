@@ -1,5 +1,6 @@
 import { disposeNode } from '@flighthq/node/contract';
-import type { Node3D } from '@flighthq/types/contract';
+
+import type { Node3D } from './types/Node3D.ts';
 
 // Detaches `node` from its parent (if any), recursively disposes all descendants bottom-up,
 // clears signal/observer registries, and releases graph state so the subtree becomes eligible for

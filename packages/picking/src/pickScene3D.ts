@@ -19,10 +19,10 @@ import {
 import type { Mesh, MeshRuntime } from '@flighthq/meshgeometry/contract';
 import { ensureNodeWorldMatrix4, getNodeRuntime, getNodeWorldMatrix4 } from '@flighthq/node/contract';
 import { getNode3DWorldBounds, isMesh } from '@flighthq/scene3d/contract';
+import type { Node3D } from '@flighthq/scene3d/contract';
 import type {
   Camera3D,
   EntityConstruction,
-  Node3D,
   NodeAny,
   Ray3D,
   Scene3DHit,

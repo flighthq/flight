@@ -1,8 +1,8 @@
 import type { AnimationClip } from '@flighthq/animation/contract';
 import type { Entity, EntityRuntime } from '@flighthq/entity/contract';
 import type { ImageResourceReference } from '@flighthq/image/contract';
-import type { Node3D } from '@flighthq/types/contract';
 
+import type { Node3D } from './Node3D.ts';
 import type { Scene3DMetadata } from './Scene3DMetadata.ts';
 
 // A Scene3D is a 3D content document, not a node in the graph: it owns a `root` Node3D plus the sidecar data

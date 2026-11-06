@@ -25,7 +25,8 @@ import {
   setInstancedMeshInstanceCount,
   setInstancedMeshInstanceMatrix,
 } from '@flighthq/scene3d/contract';
-import type { Camera3D, Node3D, Skeleton3D } from '@flighthq/types/contract';
+import type { Node3D, Skeleton3D } from '@flighthq/scene3d/contract';
+import type { Camera3D } from '@flighthq/types/contract';
 
 import { registerWgpuStandardPbrMaterial } from './registerWgpuStandardPbrMaterial.ts';
 import { renderWgpuScene3D } from './renderWgpuScene3D.ts';

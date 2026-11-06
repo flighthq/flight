@@ -1,7 +1,8 @@
 import { createCamera3D, createPerspectiveProjection, getCubeCaptureFaceCamera3D } from '@flighthq/camera/contract';
 import type { Scene3DLightsLike } from '@flighthq/lighting/contract';
 import { beginGlCubeRenderFace, endGlCubeRenderFace } from '@flighthq/render-gl/contract';
-import type { Camera3D, GlCubeRenderTarget, GlRenderState, Node3D, Vector3Like } from '@flighthq/types/contract';
+import type { Node3D } from '@flighthq/scene3d/contract';
+import type { Camera3D, GlCubeRenderTarget, GlRenderState, Vector3Like } from '@flighthq/types/contract';
 
 import type { GlEnvironmentCaptureOptions } from './contract.scene3d-gl-types.ts';
 import { renderGlEnvironmentSkybox } from './glEnvironmentSkybox.ts';

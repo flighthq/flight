@@ -47,6 +47,8 @@
       ".texture-types",
       ".velocity-types",
       ".lighting-types",
+      ".scene3d-node-types",
+      ".node-types",
       ""
     ],
     "tsBuildInfoFile": "dist/.tsbuildinfo.contract"
@@ -108,6 +110,12 @@
     },
     {
       "path": "./tsconfig.compressed-texture-decoder-contract.json"
+    },
+    {
+      "path": "../scene3d/tsconfig.node.json"
+    },
+    {
+      "path": "../node/tsconfig.contract.json"
     }
   ],
   "include": ["src/contract.render-wgpu-types.ts", "src/types/**/*.ts"]
