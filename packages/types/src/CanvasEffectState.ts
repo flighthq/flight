@@ -1,7 +1,9 @@
-/** @deprecated Import Canvas effect contracts from `@flighthq/effects-canvas/contract`. */
+/** @deprecated Import Canvas renderer extension contracts from `@flighthq/scene2d-canvas/contract`. */
 export type {
   CanvasEffectContext,
   CanvasEffectRunner,
-  CanvasEffectState,
   CanvasRenderTargetPool,
-} from '@flighthq/effects-canvas/contract';
+} from '@flighthq/scene2d-canvas/contract';
+
+/** @deprecated Import Canvas effect state from `@flighthq/effects-canvas/contract`. */
+export type { CanvasEffectState } from '@flighthq/effects-canvas/contract';

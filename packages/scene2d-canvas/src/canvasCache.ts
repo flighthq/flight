@@ -10,15 +10,7 @@ import {
   registerRenderCacheNodeRenderer,
 } from '@flighthq/render/contract';
 import type { Scene2DRenderer, RenderProxy2D, RenderState } from '@flighthq/render/contract';
-import type {
-  CanvasRenderOptions,
-  CanvasRenderRegistries,
-  CanvasRenderState,
-  Node2D,
-  Matrix,
-  RenderCache,
-  RenderCacheRefreshOptions,
-} from '@flighthq/types/contract';
+import type { Node2D, Matrix, RenderCache, RenderCacheRefreshOptions } from '@flighthq/types/contract';
 
 import { renderCanvasScene2D } from './canvasNode2D.ts';
 import { beginCanvasRenderPass, endCanvasRenderPass } from './canvasRenderPass.ts';
@@ -34,6 +26,8 @@ import {
   resizeCanvasTextureRenderTarget,
 } from './canvasTextureRenderTarget.ts';
 import { setCanvasTransform } from './canvasTransform.ts';
+import type { CanvasRenderOptions } from './types/CanvasRenderOptions.ts';
+import type { CanvasRenderRegistries, CanvasRenderState } from './types/CanvasRenderState.ts';
 import type { CanvasTextureRenderTarget } from './types/CanvasRenderTarget.ts';
 import type { CanvasTextureResolvers } from './types/CanvasTextureResolver.ts';
 

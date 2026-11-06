@@ -55,6 +55,9 @@
       "path": "../scene2d-formats/tsconfig.runtime.json"
     },
     {
+      "path": "../scene2d-canvas/tsconfig.contract.json"
+    },
+    {
       "path": "../scene3d-formats"
     },
     {

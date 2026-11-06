@@ -1,16 +1,14 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
 import type { RenderTarget, RenderTargetDescriptor, RenderTexture } from '@flighthq/render/contract';
+import type { HostCanvasCapability } from '@flighthq/surface/contract';
 import { createRenderTexture, resetTextureUvTransform } from '@flighthq/texture/contract';
-import type {
-  CanvasRenderState,
-  CanvasRenderTargetPool,
-  CanvasRenderTexturePool,
-  EntityConstruction,
-  HostCanvasCapability,
-} from '@flighthq/types/contract';
 
 import { destroyCanvasRenderTexture, invalidateCanvasRenderTexture } from './canvasRenderTexture.ts';
 import { destroyCanvasTextureRenderTarget } from './canvasTextureRenderTarget.ts';
+import type { CanvasRenderTargetPool } from './types/CanvasEffect.ts';
+import type { CanvasRenderState } from './types/CanvasRenderState.ts';
+import type { CanvasRenderTexturePool } from './types/CanvasRenderTexture.ts';
 
 export function acquireCanvasRenderTexture(
   state: CanvasRenderState,

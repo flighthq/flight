@@ -8,8 +8,8 @@
     "declarationMap": true,
     "sourceMap": true,
     "moduleSuffixes": [
-      ".effects-canvas-bridge-types",
       ".bitmap-types",
+      ".effects-types",
       ".materials-types",
       ".render-types",
       ".surface-types",
@@ -20,12 +20,12 @@
   },
   "references": [
     { "path": "../bitmap/tsconfig.contract.json" },
+    { "path": "../effects/tsconfig.contract.json" },
     { "path": "../entity" },
     { "path": "../materials/tsconfig.contract.json" },
     { "path": "../render/tsconfig.contract.json" },
     { "path": "../surface/tsconfig.contract.json" },
-    { "path": "../texture/tsconfig.contract.json" },
-    { "path": "../types/tsconfig.effects-canvas-bridge-types.json" }
+    { "path": "../texture/tsconfig.contract.json" }
   ],
   "include": ["src/contract.scene2d-canvas-types.ts", "src/types/**/*.ts"]
 }

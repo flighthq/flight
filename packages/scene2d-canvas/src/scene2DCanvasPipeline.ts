@@ -1,8 +1,8 @@
+import type { Kind } from '@flighthq/entity/contract';
 import { withKindMapEntry } from '@flighthq/registry/contract';
 import type { NodeRenderer } from '@flighthq/render/contract';
 import { MorphShapeKind, Scale9ShapeKind, ShapeKind } from '@flighthq/shape/contract';
 import { RichTextKind, TextLabelKind } from '@flighthq/text/contract';
-import type { CanvasRenderRegistries, Kind } from '@flighthq/types/contract';
 import {
   DisplayObjectKind,
   ParticleEmitter2DKind,
@@ -28,6 +28,7 @@ import { canvasShapeCommandTable } from './canvasShapeCommandTable.ts';
 import { canvasSpriteRenderer } from './canvasSprite.ts';
 import { canvasTextLabelRenderer } from './canvasTextLabel.ts';
 import { canvasTilemapRenderer } from './canvasTilemap.ts';
+import type { CanvasRenderRegistries } from './types/CanvasRenderState.ts';
 
 function buildScene2dCanvasRenderers(): ReadonlyMap<Kind, NodeRenderer> {
   let table: ReadonlyMap<Kind, NodeRenderer> = new Map();

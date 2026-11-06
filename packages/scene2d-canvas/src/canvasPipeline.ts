@@ -1,4 +1,4 @@
-import type { CanvasRenderRegistries } from '@flighthq/types/contract';
+import type { CanvasRenderRegistries } from './types/CanvasRenderState.ts';
 
 export function allocateEmptyCanvasRenderRegistries(): CanvasRenderRegistries {
   const out = {} as CanvasRenderRegistries;

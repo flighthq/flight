@@ -7,14 +7,7 @@
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,
-    "moduleSuffixes": [
-      ".effects-canvas-bridge-types",
-      ".scene2d-canvas-types",
-      ".effects-types",
-      ".adjustments-types",
-      ".surface-types",
-      ""
-    ],
+    "moduleSuffixes": [".scene2d-canvas-types", ".effects-types", ".adjustments-types", ".surface-types", ""],
     "tsBuildInfoFile": "dist/.tsbuildinfo.contract"
   },
   "references": [
@@ -22,8 +15,7 @@
     { "path": "../effects/tsconfig.contract.json" },
     { "path": "../entity" },
     { "path": "../scene2d-canvas/tsconfig.contract.json" },
-    { "path": "../surface/tsconfig.contract.json" },
-    { "path": "../types/tsconfig.effects-canvas-bridge-types.json" }
+    { "path": "../surface/tsconfig.contract.json" }
   ],
   "include": ["src/contract.effects-canvas-types.ts", "src/types.ts"]
 }

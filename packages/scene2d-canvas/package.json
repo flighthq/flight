@@ -43,6 +43,7 @@
     "@flighthq/bitmaptext": "*",
     "@flighthq/color": "*",
     "@flighthq/entity": "*",
+    "@flighthq/effects": "*",
     "@flighthq/geometry": "*",
     "@flighthq/image": "*",
     "@flighthq/log": "*",

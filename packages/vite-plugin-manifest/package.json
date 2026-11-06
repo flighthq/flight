@@ -61,6 +61,7 @@
     "@flighthq/render-gl": "*",
     "@flighthq/render-wgpu": "*",
     "@flighthq/requirement": "*",
+    "@flighthq/scene2d-canvas": "*",
     "@flighthq/scene2d-dom": "*",
     "esbuild": "*",
     "typescript": "^7.0.2",

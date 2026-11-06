@@ -1,11 +1,10 @@
 import type { EntityRaw, EntityRuntime, EntityRuntimeKey } from '@flighthq/entity/contract';
 import type { BlendMode } from '@flighthq/materials/contract';
-import type { CanvasRenderState } from '@flighthq/types/contract';
 
+import type { CanvasRenderState } from './CanvasRenderState.ts';
 import type { CanvasRenderTarget } from './CanvasRenderTarget.ts';
 
-// The pooled drawing bracket for one Canvas target. CanvasRenderState is the sole identity-only
-// dependency selected while the contract projects close the genuine renderer/effects cycle.
+// The pooled drawing bracket for one Canvas target.
 export interface CanvasRenderPass extends EntityRaw {
   [EntityRuntimeKey]: EntityRuntime | undefined;
   context: CanvasRenderingContext2D;

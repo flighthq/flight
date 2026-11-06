@@ -1,5 +1,4 @@
 import type { RenderTexture } from '@flighthq/render/contract';
-import type { CanvasRenderState } from '@flighthq/types/contract';
 
 import { beginCanvasRenderPass, endCanvasRenderPass } from './canvasRenderPass.ts';
 import { registerCanvasRenderStateTeardown } from './canvasRenderState.ts';
@@ -10,6 +9,7 @@ import {
   resizeCanvasTextureRenderTarget,
 } from './canvasTextureRenderTarget.ts';
 import type { CanvasRenderPass } from './types/CanvasRenderPass.ts';
+import type { CanvasRenderState } from './types/CanvasRenderState.ts';
 import type { CanvasTextureRenderTarget } from './types/CanvasRenderTarget.ts';
 import type { CanvasRenderTextureEntry, CanvasRenderTextureExplanation } from './types/CanvasRenderTexture.ts';
 

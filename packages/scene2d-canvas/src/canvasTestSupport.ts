@@ -6,7 +6,6 @@ import {
   getSurfaceHandle,
 } from '@flighthq/surface/contract';
 import type { CanvasSurface, HostCanvasCapability, NativeSurfaceHandle, Surface } from '@flighthq/surface/contract';
-import type { CanvasRenderOptions, CanvasRenderState } from '@flighthq/types/contract';
 
 import { beginCanvasRenderPass } from './canvasRenderPass.ts';
 import { createCanvasRenderState as createExplicitCanvasRenderState } from './canvasRenderState.ts';
@@ -14,7 +13,9 @@ import { createCanvasScreenRenderTarget as createExplicitCanvasScreenRenderTarge
 import { createCanvasTextureRenderTarget as createExplicitCanvasRenderTarget } from './canvasTextureRenderTarget.ts';
 import { createCanvasTextureResolvers as createExplicitCanvasTextureResolvers } from './canvasTextureResolver.ts';
 import { canvasScene2DRenderPreset } from './scene2DCanvasPipeline.ts';
+import type { CanvasRenderOptions } from './types/CanvasRenderOptions.ts';
 import type { CanvasRenderPass } from './types/CanvasRenderPass.ts';
+import type { CanvasRenderState } from './types/CanvasRenderState.ts';
 import type { CanvasScreenRenderTarget, CanvasTextureRenderTarget } from './types/CanvasRenderTarget.ts';
 import type { CanvasTextureResolvers } from './types/CanvasTextureResolver.ts';
 

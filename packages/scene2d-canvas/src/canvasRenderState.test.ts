@@ -2,7 +2,7 @@ import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { createMatrix } from '@flighthq/geometry/contract';
 import { prepareScene2DRender, registerNodeRenderer } from '@flighthq/render/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
-import type { CanvasRenderOptions, HostImageCapability } from '@flighthq/types/contract';
+import type { HostImageCapability } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import { registerCanvasBitmapTextureResolver } from './canvasBitmapTextureResolver.ts';
@@ -22,6 +22,7 @@ import {
   setCanvasImageSmoothing,
 } from './canvasTestSupport.ts';
 import { canvasScene2DRenderPreset } from './scene2DCanvasPipeline.ts';
+import type { CanvasRenderOptions } from './types/CanvasRenderOptions.ts';
 
 describe('createCanvasRenderState', () => {
   it('creates state with a valid context and canvas', () => {

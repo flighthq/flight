@@ -1,6 +1,5 @@
 import { MorphShapeKind, Scale9ShapeKind, ShapeKind } from '@flighthq/shape/contract';
 import { RichTextKind, TextLabelKind } from '@flighthq/text/contract';
-import type { CanvasRenderRegistries } from '@flighthq/types/contract';
 import {
   DisplayObjectKind,
   ParticleEmitter2DKind,
@@ -15,6 +14,7 @@ import { applyCanvasBlendMode } from './canvasMaterials.ts';
 import {} from './canvasPipeline.ts';
 import { canvasShapeCommandTable } from './canvasShapeCommandTable.ts';
 import { canvasScene2DRenderPreset } from './scene2DCanvasPipeline.ts';
+import type { CanvasRenderRegistries } from './types/CanvasRenderState.ts';
 
 describe('canvasScene2DRenderPreset', () => {
   let registries: Readonly<CanvasRenderRegistries>;

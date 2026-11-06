@@ -4,14 +4,10 @@ import {
   createRenderStateRuntime,
   destroyRenderState,
 } from '@flighthq/render/contract';
-import type {
-  CanvasRenderRegistries,
-  CanvasRenderState,
-  CanvasRenderStateOptions,
-  CanvasRenderStateRuntime,
-} from '@flighthq/types/contract';
 
 import { createCanvasTextureResolvers, destroyCanvasTextureResolvers } from './canvasTextureResolver.ts';
+import type { CanvasRenderRegistries, CanvasRenderState, CanvasRenderStateRuntime } from './types/CanvasRenderState.ts';
+import type { CanvasRenderStateOptions } from './types/CanvasRenderStateOptions.ts';
 import type { CanvasTextureResolvers } from './types/CanvasTextureResolver.ts';
 
 // Takes no driver handle: a state is "how to draw" — the pipeline, the resolvers, the smoothing policy
