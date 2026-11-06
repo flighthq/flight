@@ -11,6 +11,9 @@ pub use super::enable_host_guards::*;
 pub use super::host::*;
 // TypeScript-only companion (H2/H3); the generator derives the contract lane from this re-export.
 #[allow(unused_imports)]
+pub use super::host_capabilities::*;
+// TypeScript-only companion (H2/H3); the generator derives the contract lane from this re-export.
+#[allow(unused_imports)]
 pub use super::host_explain::*;
 pub use super::host_explanation::*;
 // TypeScript-only companion (H2/H3); the generator derives the contract lane from this re-export.

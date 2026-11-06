@@ -12,6 +12,7 @@ mod backend_explanation;
 mod backend_operation_explanation;
 mod enable_host_guards;
 mod host;
+mod host_capabilities;
 mod host_explain;
 mod host_explanation;
 mod host_query;

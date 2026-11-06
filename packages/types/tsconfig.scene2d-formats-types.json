@@ -36,6 +36,11 @@
       ".textshaper-types",
       ".velocity-types",
       ".image-types",
+      ".midi-types",
+      ".notification-types",
+      ".permissions-types",
+      ".screen-types",
+      ".texture-formats-types",
       ""
     ],
     "tsBuildInfoFile": "dist/.tsbuildinfo.scene2d-formats-types"
@@ -178,6 +183,36 @@
     },
     {
       "path": "../image/tsconfig.contract.json"
+    },
+    {
+      "path": "../compression"
+    },
+    {
+      "path": "../dialog"
+    },
+    {
+      "path": "../filesystem"
+    },
+    {
+      "path": "../geolocation"
+    },
+    {
+      "path": "../midi/tsconfig.contract.json"
+    },
+    {
+      "path": "../notification/tsconfig.contract.json"
+    },
+    {
+      "path": "../permissions/tsconfig.contract.json"
+    },
+    {
+      "path": "../screen/tsconfig.contract.json"
+    },
+    {
+      "path": "../share"
+    },
+    {
+      "path": "../texture-formats/tsconfig.contract.json"
     }
   ],
   "files": [

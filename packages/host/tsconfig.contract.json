@@ -7,13 +7,101 @@
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,
-    "tsBuildInfoFile": "dist/.tsbuildinfo.contract"
+    "tsBuildInfoFile": "dist/.tsbuildinfo.contract",
+    "moduleSuffixes": [
+      ".app-types",
+      ".bitmap-types",
+      ".font-types",
+      ".geometry-types",
+      ".image-types",
+      ".menu-types",
+      ".midi-types",
+      ".notification-types",
+      ".path-types",
+      ".permissions-types",
+      ".screen-types",
+      ".surface-types",
+      ".texture-formats-types",
+      ".texture-types",
+      ""
+    ]
   },
-  "references": [],
+  "references": [
+    {
+      "path": "../app/tsconfig.contract.json"
+    },
+    {
+      "path": "../bitmap/tsconfig.contract.json"
+    },
+    {
+      "path": "../compression"
+    },
+    {
+      "path": "../dialog"
+    },
+    {
+      "path": "../entity"
+    },
+    {
+      "path": "../filesystem"
+    },
+    {
+      "path": "../font/tsconfig.contract.json"
+    },
+    {
+      "path": "../geolocation"
+    },
+    {
+      "path": "../geometry/tsconfig.contract.json"
+    },
+    {
+      "path": "../image-codec"
+    },
+    {
+      "path": "../image/tsconfig.contract.json"
+    },
+    {
+      "path": "../menu/tsconfig.contract.json"
+    },
+    {
+      "path": "../midi/tsconfig.contract.json"
+    },
+    {
+      "path": "../notification/tsconfig.contract.json"
+    },
+    {
+      "path": "../path/tsconfig.contract.json"
+    },
+    {
+      "path": "../permissions/tsconfig.contract.json"
+    },
+    {
+      "path": "../resource"
+    },
+    {
+      "path": "../screen/tsconfig.contract.json"
+    },
+    {
+      "path": "../share"
+    },
+    {
+      "path": "../signals"
+    },
+    {
+      "path": "../surface/tsconfig.contract.json"
+    },
+    {
+      "path": "../texture-formats/tsconfig.contract.json"
+    },
+    {
+      "path": "../texture/tsconfig.contract.json"
+    }
+  ],
   "include": [
     "src/backendExplanation.ts",
     "src/backendOperationExplanation.ts",
     "src/contract.host-types.ts",
+    "src/hostCapabilities.ts",
     "src/hostExplanation.ts",
     "src/inputIngressSource.ts",
     "src/providerRef.ts"

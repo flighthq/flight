@@ -31,6 +31,7 @@
     "src/backendExplanation.ts",
     "src/backendOperationExplanation.ts",
     "src/contract.host-types.ts",
+    "src/hostCapabilities.ts",
     "src/hostExplanation.ts",
     "src/inputIngressSource.ts",
     "src/providerRef.ts"

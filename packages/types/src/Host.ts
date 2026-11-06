@@ -2,7 +2,20 @@ import type { HostAppCapabilities, HostFullscreenCapabilities, HostWindowCapabil
 import type { HostAudioCodecCapability, HostAudioDecodeCapabilities } from '@flighthq/audio/contract';
 import type { HostClipboardCapabilities } from '@flighthq/clipboard/contract';
 import type { HostDeviceCapabilities } from '@flighthq/device/contract';
-import type { HostFontLoadingCapability, HostGlyphRasterizerCapability } from '@flighthq/font/contract';
+import type {
+  HostBitmapCapabilities,
+  HostCompressCapabilities,
+  HostDecompressCapabilities,
+  HostDialogCapabilities,
+  HostFileSystemCapabilities,
+  HostFontCapabilities,
+  HostGeolocationCapabilities,
+  HostGlyphCapabilities,
+  HostImageCapabilities,
+  HostMidiCapabilities,
+  HostNotificationCapabilities,
+  HostShareCapabilities,
+} from '@flighthq/host/contract';
 import type { HostInputCapabilities } from '@flighthq/input/contract';
 import type { HostLifecycleCapabilities } from '@flighthq/lifecycle/contract';
 import type { HostMenuCapabilities } from '@flighthq/menu/contract';
@@ -20,40 +33,18 @@ export type { HostSensorsCapabilities } from '@flighthq/sensors/contract';
 
 import type { HostAccessibilityCapability } from './Accessibility.ts';
 import type {
-  HostCompressDeflateCapability,
-  HostCompressLzmaCapability,
-  HostDecompressBrotliCapability,
-  HostDecompressDeflateCapability,
-  HostDecompressLzmaCapability,
-} from './Compression.ts';
-import type {
   HostConnectivityChangeCapability,
   HostConnectivityReachabilityCapability,
   HostConnectivityStatusCapability,
 } from './Connectivity.ts';
 import type { Entity } from './Entity.ts';
-import type { HostFileSystemCapability } from './FileSystem.ts';
-import type { HostGeolocationCapability } from './Geolocation.ts';
 import type { HostHapticsCapabilities } from './Haptics.ts';
 import type { HostAudioDeviceCapability } from './HostAudioDevice.ts';
 import type { HostAudioMixerCapability } from './HostAudioMixer.ts';
-import type { HostBitmapEncodeCapability } from './HostBitmapEncode.ts';
-import type { HostBitmapReadbackCapability } from './HostBitmapReadback.ts';
-import type {
-  HostDirectoryOpenDialogCapability,
-  HostFileOpenDialogCapability,
-  HostFileSaveDialogCapability,
-} from './HostFileDialog.ts';
 import type { HostGlCapability } from './HostGl.ts';
 import type { HostImageDecodeCapabilities } from './HostImageDecode.ts';
 import type { HostImageEncodeCapabilities } from './HostImageEncode.ts';
-import type { HostImageOpenDialogCapability } from './HostImageOpenDialog.ts';
-import type { HostMessageDialogCapability } from './HostMessageDialog.ts';
-import type { HostPhotoCaptureDialogCapability } from './HostPhotoCaptureDialog.ts';
-import type { HostPromptDialogCapability } from './HostPromptDialog.ts';
 import type { HostVideoCapability } from './HostVideo.ts';
-import type { HostVideoCaptureDialogCapability } from './HostVideoCaptureDialog.ts';
-import type { HostImageCapability } from './ImageResource.ts';
 import type {
   HostIpcHandleCapability,
   HostIpcInvokeCapability,
@@ -71,20 +62,6 @@ import type {
   HostSoftKeyboardVisibilityCapability,
 } from './Keyboard.ts';
 import type { HostMediaSessionActionCapability, HostMediaSessionCapability } from './MediaSession.ts';
-import type { HostMidiAccessCapability, HostMidiPermissionCapability } from './Midi.ts';
-import type {
-  HostNotificationActionCapability,
-  HostNotificationActiveListCapability,
-  HostNotificationClickCapability,
-  HostNotificationCloseCapability,
-  HostNotificationDeliveryCapability,
-  HostNotificationDismissCapability,
-  HostNotificationLifecycleCapability,
-  HostNotificationPermissionCapability,
-  HostNotificationReceivedCapability,
-  HostNotificationReplyCapability,
-  HostNotificationSchedulingCapability,
-} from './Notification.ts';
 import type { HostPermissionsCapability } from './Permission.ts';
 import type { HostPlatformCapability } from './Platform.ts';
 import type {
@@ -95,7 +72,6 @@ import type {
   HostProtocolRegistrationQueryCapability,
   HostProtocolUnregistrationCapability,
 } from './Protocol.ts';
-import type { HostShareContentCapability, HostShareFilesCapability } from './Share.ts';
 import type { HostShortcutQueryCapability, HostShortcutTriggerCapability } from './Shortcut.ts';
 import type { HostSocketCapability } from './Socket.ts';
 import type {
@@ -194,55 +170,14 @@ export interface HostAudioCapabilities {
   readonly mixer?: HostAudioMixerCapability;
 }
 
-export interface HostBitmapCapabilities {
-  readonly encode?: HostBitmapEncodeCapability;
-  readonly readback?: HostBitmapReadbackCapability;
-}
-
-export interface HostCompressCapabilities {
-  readonly deflate?: HostCompressDeflateCapability;
-  readonly lzma?: HostCompressLzmaCapability;
-}
-
 export interface HostConnectivityCapabilities {
   readonly change?: HostConnectivityChangeCapability;
   readonly reachability?: HostConnectivityReachabilityCapability;
   readonly status?: HostConnectivityStatusCapability;
 }
 
-export interface HostDialogCapabilities {
-  readonly directoryOpen?: HostDirectoryOpenDialogCapability;
-  readonly fileOpen?: HostFileOpenDialogCapability;
-  readonly fileSave?: HostFileSaveDialogCapability;
-  readonly imageOpen?: HostImageOpenDialogCapability;
-  readonly message?: HostMessageDialogCapability;
-  readonly photoCapture?: HostPhotoCaptureDialogCapability;
-  readonly prompt?: HostPromptDialogCapability;
-  readonly videoCapture?: HostVideoCaptureDialogCapability;
-}
-
-export interface HostFileSystemCapabilities {
-  readonly access?: HostFileSystemCapability;
-}
-
-export interface HostFontCapabilities {
-  readonly loader?: HostFontLoadingCapability;
-}
-
-export interface HostGeolocationCapabilities {
-  readonly position?: HostGeolocationCapability;
-}
-
 export interface HostGlCapabilities {
   readonly context?: HostGlCapability;
-}
-
-export interface HostGlyphCapabilities {
-  readonly rasterizer?: HostGlyphRasterizerCapability;
-}
-
-export interface HostImageCapabilities {
-  readonly loader?: HostImageCapability;
 }
 
 export interface HostIpcCapabilities {
@@ -256,25 +191,6 @@ export interface HostIpcCapabilities {
 export interface HostMediaSessionCapabilities {
   readonly action?: HostMediaSessionActionCapability;
   readonly control?: HostMediaSessionCapability;
-}
-
-export interface HostMidiCapabilities {
-  readonly access?: HostMidiAccessCapability;
-  readonly permission?: HostMidiPermissionCapability;
-}
-
-export interface HostNotificationCapabilities {
-  readonly action?: HostNotificationActionCapability;
-  readonly activeList?: HostNotificationActiveListCapability;
-  readonly click?: HostNotificationClickCapability;
-  readonly close?: HostNotificationCloseCapability;
-  readonly delivery?: HostNotificationDeliveryCapability;
-  readonly dismiss?: HostNotificationDismissCapability;
-  readonly lifecycle?: HostNotificationLifecycleCapability;
-  readonly permission?: HostNotificationPermissionCapability;
-  readonly received?: HostNotificationReceivedCapability;
-  readonly reply?: HostNotificationReplyCapability;
-  readonly scheduling?: HostNotificationSchedulingCapability;
 }
 
 export interface HostPermissionsCapabilities {
@@ -292,13 +208,6 @@ export interface HostProtocolCapabilities {
   readonly registration?: HostProtocolRegistrationCapability;
   readonly registrationQuery?: HostProtocolRegistrationQueryCapability;
   readonly unregistration?: HostProtocolUnregistrationCapability;
-}
-
-export type WebScreenCapabilities = Required<HostScreenCapabilities>;
-
-export interface HostShareCapabilities {
-  readonly content?: HostShareContentCapability;
-  readonly files?: HostShareFilesCapability;
 }
 
 export interface HostShortcutCapabilities {
@@ -333,16 +242,6 @@ export interface HostTextSegmentCapabilities {
   readonly segmenter?: HostTextSegmenterCapability;
 }
 
-// Decompression the host supplies, one slot per algorithm. Plain data with named slots, like every
-// other Host group: no registry, no ambient lookup, and no import-order dependence — a parser that
-// needs to inflate takes the slot (or this group, when the FILE's own bytes select the algorithm) as
-// an explicit argument, so what it needs is visible in its signature.
-export interface HostDecompressCapabilities {
-  readonly brotli?: HostDecompressBrotliCapability;
-  readonly deflate?: HostDecompressDeflateCapability;
-  readonly lzma?: HostDecompressLzmaCapability;
-}
-
 export interface HostTextShaperCapabilities {
   readonly shaper?: HostTextShaperCapability;
 }
@@ -374,3 +273,20 @@ export interface HostVideoCapabilities {
 }
 
 export type { HostWgpuCapabilities } from '@flighthq/render-wgpu/contract';
+
+/** @deprecated Import from `@flighthq/host/contract`. */
+export type {
+  HostBitmapCapabilities,
+  HostCompressCapabilities,
+  HostDecompressCapabilities,
+  HostDialogCapabilities,
+  HostFileSystemCapabilities,
+  HostFontCapabilities,
+  HostGeolocationCapabilities,
+  HostGlyphCapabilities,
+  HostImageCapabilities,
+  HostMidiCapabilities,
+  HostNotificationCapabilities,
+  HostShareCapabilities,
+  WebScreenCapabilities,
+} from '@flighthq/host/contract';

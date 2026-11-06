@@ -3,6 +3,7 @@
 // @flighthq/host/contract entry remains contract.ts, which adds the TypeScript companions.
 export * from './backendExplanation.ts';
 export * from './backendOperationExplanation.ts';
+export * from './hostCapabilities.ts';
 export * from './hostExplanation.ts';
 export * from './inputIngressSource.ts';
 export * from './providerRef.ts';

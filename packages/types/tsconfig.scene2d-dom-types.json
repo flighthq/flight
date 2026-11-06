@@ -22,6 +22,14 @@
       ".shape-types",
       ".surface-types",
       ".image-types",
+      ".host-types",
+      ".font-types",
+      ".menu-types",
+      ".midi-types",
+      ".notification-types",
+      ".permissions-types",
+      ".screen-types",
+      ".texture-formats-types",
       ""
     ],
     "tsBuildInfoFile": "dist/.tsbuildinfo.scene2d-dom-types"
@@ -86,6 +94,45 @@
     },
     {
       "path": "../image-codec"
+    },
+    {
+      "path": "../host/tsconfig.contract.json"
+    },
+    {
+      "path": "../compression"
+    },
+    {
+      "path": "../dialog"
+    },
+    {
+      "path": "../filesystem"
+    },
+    {
+      "path": "../font/tsconfig.contract.json"
+    },
+    {
+      "path": "../geolocation"
+    },
+    {
+      "path": "../menu/tsconfig.contract.json"
+    },
+    {
+      "path": "../midi/tsconfig.contract.json"
+    },
+    {
+      "path": "../notification/tsconfig.contract.json"
+    },
+    {
+      "path": "../permissions/tsconfig.contract.json"
+    },
+    {
+      "path": "../screen/tsconfig.contract.json"
+    },
+    {
+      "path": "../share"
+    },
+    {
+      "path": "../texture-formats/tsconfig.contract.json"
     }
   ],
   "files": [

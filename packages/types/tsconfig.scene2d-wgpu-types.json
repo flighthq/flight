@@ -30,6 +30,13 @@
       ".velocity-types",
       ".image-types",
       ".texture-formats-types",
+      ".host-types",
+      ".font-types",
+      ".menu-types",
+      ".midi-types",
+      ".notification-types",
+      ".permissions-types",
+      ".screen-types",
       ""
     ],
     "types": ["@webgpu/types"],
@@ -110,6 +117,42 @@
     },
     {
       "path": "../texture-formats/tsconfig.contract.json"
+    },
+    {
+      "path": "../host/tsconfig.contract.json"
+    },
+    {
+      "path": "../compression"
+    },
+    {
+      "path": "../dialog"
+    },
+    {
+      "path": "../filesystem"
+    },
+    {
+      "path": "../font/tsconfig.contract.json"
+    },
+    {
+      "path": "../geolocation"
+    },
+    {
+      "path": "../menu/tsconfig.contract.json"
+    },
+    {
+      "path": "../midi/tsconfig.contract.json"
+    },
+    {
+      "path": "../notification/tsconfig.contract.json"
+    },
+    {
+      "path": "../permissions/tsconfig.contract.json"
+    },
+    {
+      "path": "../screen/tsconfig.contract.json"
+    },
+    {
+      "path": "../share"
     }
   ],
   "files": [

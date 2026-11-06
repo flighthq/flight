@@ -15,6 +15,22 @@ export {
 export type { BackendOperationExplanation, BackendOperationExplanationLayer } from './backendOperationExplanation.ts';
 export { enableHostGuards } from './enableHostGuards.ts';
 export { createHost, initializeHost } from './host.ts';
+export type {
+  HostBitmapCapabilities,
+  HostCompressCapabilities,
+  HostDecompressCapabilities,
+  HostDialogCapabilities,
+  HostFileSystemCapabilities,
+  HostFontCapabilities,
+  HostGeolocationCapabilities,
+  HostGlyphCapabilities,
+  HostImageCapabilities,
+  HostMidiCapabilities,
+  HostNotificationCapabilities,
+  HostShareCapabilities,
+  WebScreenCapabilities,
+  HostImageSource,
+} from './hostCapabilities.ts';
 export {
   explainHost,
   explainHostAudioDevice,

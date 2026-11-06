@@ -14,6 +14,36 @@
       "path": "../types"
     },
     {
+      "path": "../bitmap/tsconfig.contract.json"
+    },
+    {
+      "path": "../compression"
+    },
+    {
+      "path": "../dialog"
+    },
+    {
+      "path": "../filesystem"
+    },
+    {
+      "path": "../font/tsconfig.contract.json"
+    },
+    {
+      "path": "../image/tsconfig.contract.json"
+    },
+    {
+      "path": "../midi/tsconfig.contract.json"
+    },
+    {
+      "path": "../notification/tsconfig.contract.json"
+    },
+    {
+      "path": "../screen/tsconfig.contract.json"
+    },
+    {
+      "path": "../share"
+    },
+    {
       "path": "./tsconfig.contract.json"
     },
     {

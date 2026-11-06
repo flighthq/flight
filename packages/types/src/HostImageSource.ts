@@ -1,4 +1,5 @@
-// Opaque host-side image handle carried across the native seam. The web target aliases the
-// platform's drawable-source union; native ports replace this alias with their own borrowed handle.
-// Resources never own or free the handle.
-export type HostImageSource = CanvasImageSource;
+// Owned by `@flighthq/host`. This deprecated re-export keeps existing `@flighthq/types` imports
+// compiling until consumers import the owning package.
+
+/** @deprecated Import from `@flighthq/host/contract`. */
+export type { HostImageSource } from '@flighthq/host/contract';
