@@ -1,8 +1,9 @@
 import { getNodeRuntime } from '@flighthq/node/contract';
 import { getKindMapKeys } from '@flighthq/registry/contract';
-import type { Kind, NodeAny, RenderState, Scene2DPipelineCoverageExplanation } from '@flighthq/types/contract';
+import type { Kind, NodeAny, RenderState } from '@flighthq/types/contract';
 
 import { getRenderStateRuntime } from './renderState.ts';
+import type { Scene2DPipelineCoverageExplanation } from './types.ts';
 
 export function explainScene2DPipelineCoverage(
   state: RenderState,

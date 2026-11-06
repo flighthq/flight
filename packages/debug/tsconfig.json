@@ -8,6 +8,11 @@
     "declarationMap": true,
     "sourceMap": true
   },
-  "references": [{ "path": "../entity" }, { "path": "../log" }, { "path": "../render" }, { "path": "../types" }],
+  "references": [
+    { "path": "../entity" },
+    { "path": "../log" },
+    { "path": "../render/tsconfig.runtime.json" },
+    { "path": "../types" }
+  ],
   "include": ["src"]
 }

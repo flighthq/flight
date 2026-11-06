@@ -1,5 +1,2 @@
-import type { Signal } from '@flighthq/signals/contract';
-
-export type RenderCacheAdapterSignals = {
-  onPrepare: Signal<void>;
-};
+/** @deprecated Import render contracts from `@flighthq/render/contract`. */
+export type { RenderCacheAdapterSignals } from '@flighthq/render/contract';

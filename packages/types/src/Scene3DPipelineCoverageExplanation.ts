@@ -1,12 +1,2 @@
-import type { Kind } from './Entity.ts';
-
-export interface Scene3DPipelineCoverageExplanation {
-  registeredKinds: readonly Kind[];
-  registeredMaterialKinds: readonly Kind[];
-  uncoveredKinds: readonly Kind[];
-  uncoveredMaterialKinds: readonly Kind[];
-  unusedMaterialRegistrations: readonly Kind[];
-  unusedRegistrations: readonly Kind[];
-  usedKinds: readonly Kind[];
-  usedMaterialKinds: readonly Kind[];
-}
+/** @deprecated Import render contracts from `@flighthq/render/contract`. */
+export type { Scene3DPipelineCoverageExplanation } from '@flighthq/render/contract';

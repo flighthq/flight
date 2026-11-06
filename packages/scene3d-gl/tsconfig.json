@@ -39,7 +39,7 @@
       "path": "../registry"
     },
     {
-      "path": "../render"
+      "path": "../render/tsconfig.runtime.json"
     },
     {
       "path": "../render-gl"

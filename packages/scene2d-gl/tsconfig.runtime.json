@@ -23,7 +23,7 @@
     { "path": "../particleemitter" },
     { "path": "../path/tsconfig.runtime.json" },
     { "path": "../registry" },
-    { "path": "../render" },
+    { "path": "../render/tsconfig.runtime.json" },
     { "path": "../render-gl" },
     { "path": "../shape/tsconfig.runtime.json" },
     { "path": "../quadbatch" },

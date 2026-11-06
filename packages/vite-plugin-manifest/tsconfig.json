@@ -25,7 +25,7 @@
       "path": "../particles-formats"
     },
     {
-      "path": "../render"
+      "path": "../render/tsconfig.runtime.json"
     },
     {
       "path": "../requirement"

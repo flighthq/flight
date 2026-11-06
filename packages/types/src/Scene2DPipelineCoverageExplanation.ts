@@ -1,8 +1,2 @@
-import type { Kind } from './Entity.ts';
-
-export interface Scene2DPipelineCoverageExplanation {
-  registeredKinds: readonly Kind[];
-  uncoveredKinds: readonly Kind[];
-  unusedRegistrations: readonly Kind[];
-  usedKinds: readonly Kind[];
-}
+/** @deprecated Import render contracts from `@flighthq/render/contract`. */
+export type { Scene2DPipelineCoverageExplanation } from '@flighthq/render/contract';

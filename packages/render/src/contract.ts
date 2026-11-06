@@ -23,3 +23,4 @@ export * from './renderView.ts';
 export * from './renderer.ts';
 export * from './scene2dWorkingColorSpace.ts';
 export * from './sceneRender.ts';
+export * from './types.ts';

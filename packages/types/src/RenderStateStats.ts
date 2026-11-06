@@ -1,5 +1,2 @@
-export interface RenderStateStats {
-  readonly drawCallCount: number;
-  readonly flushCount: number;
-  readonly proxyVisitedCount: number;
-}
+/** @deprecated Import render contracts from `@flighthq/render/contract`. */
+export type { RenderStateStats } from '@flighthq/render/contract';

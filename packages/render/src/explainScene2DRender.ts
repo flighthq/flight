@@ -1,13 +1,8 @@
-import type {
-  Scene2DRenderBlankReason,
-  Scene2DRenderExplanation,
-  HasAppearance,
-  NodeAny,
-  RenderState,
-} from '@flighthq/types/contract';
+import type { HasAppearance, NodeAny, RenderState } from '@flighthq/types/contract';
 
 import { getRenderProxy2D } from './renderProxy.ts';
 import { getRenderStateRuntime } from './renderState.ts';
+import type { Scene2DRenderBlankReason, Scene2DRenderExplanation } from './types.ts';
 
 // Recomputes why `source` would or would not draw against `state`, and returns it as plain data. Pure:
 // reads only, allocates only the returned record, never mutates state (in particular never creates a

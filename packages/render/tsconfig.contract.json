@@ -1,0 +1,28 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "composite": true,
+    "rootDir": "src",
+    "outDir": "dist",
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "tsBuildInfoFile": "dist/.tsbuildinfo.contract",
+    "moduleSuffixes": [".geometry-types", ".texture-types", ""]
+  },
+  "references": [
+    {
+      "path": "../entity"
+    },
+    {
+      "path": "../geometry/tsconfig.contract.json"
+    },
+    {
+      "path": "../signals"
+    },
+    {
+      "path": "../texture/tsconfig.contract.json"
+    }
+  ],
+  "include": ["src/contract.render-types.ts", "src/types.ts"]
+}

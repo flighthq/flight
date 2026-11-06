@@ -51,6 +51,7 @@
     "@flighthq/node": "*",
     "@flighthq/registry": "*",
     "@flighthq/signals": "*",
+    "@flighthq/texture": "*",
     "@flighthq/types": "*"
   },
   "devDependencies": {

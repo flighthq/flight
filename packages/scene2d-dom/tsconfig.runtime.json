@@ -41,7 +41,7 @@
       "path": "../registry"
     },
     {
-      "path": "../render"
+      "path": "../render/tsconfig.runtime.json"
     },
     {
       "path": "../scene2d/tsconfig.runtime.json"

@@ -22,7 +22,7 @@
     { "path": "../node/tsconfig.runtime.json" },
     { "path": "../particleemitter" },
     { "path": "../registry" },
-    { "path": "../render" },
+    { "path": "../render/tsconfig.runtime.json" },
     { "path": "../render-gl" },
     { "path": "../scene2d-gl" },
     { "path": "../scene3d" },

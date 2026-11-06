@@ -106,7 +106,7 @@
       "path": "../protocol/tsconfig.runtime.json"
     },
     {
-      "path": "../render"
+      "path": "../render/tsconfig.runtime.json"
     },
     {
       "path": "../render-gl/tsconfig.contract.json"

@@ -3,17 +3,17 @@ import { createMatrix, multiplyMatrix } from '@flighthq/geometry/contract';
 import { createSignal } from '@flighthq/signals/contract';
 import type {
   NodeAny,
-  RenderCache,
   RenderCacheAdapter,
   NodeRenderer,
   RenderProxy2D,
   RenderState,
   EntityConstruction,
 } from '@flighthq/types/contract';
-import { RenderCacheKind } from '@flighthq/types/contract';
 
 import { registerNodeRenderer } from './renderer.ts';
 import { getRenderProxyAdapter, setRenderProxyAdapter } from './renderProxyAdapter.ts';
+import type { RenderCache } from './types.ts';
+import { RenderCacheKind } from './types.ts';
 
 export { RenderCacheKind };
 

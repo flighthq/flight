@@ -88,6 +88,7 @@
     "@flighthq/preferences": "*",
     "@flighthq/protocol": "*",
     "@flighthq/registry": "*",
+    "@flighthq/render": "*",
     "@flighthq/render-gl": "*",
     "@flighthq/render-wgpu": "*",
     "@flighthq/requirement": "*",
