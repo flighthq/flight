@@ -9,3 +9,4 @@ export * from './types/MeshGeometryOptions.ts';
 export * from './types/MeshMorphBindPose.ts';
 export * from './types/MeshSkinBindPose.ts';
 export * from './types/MeshTriangleVertexIndices.ts';
+export * from './types/MorphTarget.ts';

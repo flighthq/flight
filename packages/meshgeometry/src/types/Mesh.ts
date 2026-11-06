@@ -1,8 +1,9 @@
 import type { Aabb } from '@flighthq/geometry/contract';
 import type { Material3D } from '@flighthq/materials/contract';
-import type { MeshMorph, Node3D, Node3DRuntime, Skin } from '@flighthq/types/contract';
+import type { Node3D, Node3DRuntime, Skin } from '@flighthq/types/contract';
 
 import type { MeshGeometry } from './MeshGeometry.ts';
+import type { MeshMorph } from './MorphTarget.ts';
 
 // A renderable 3D leaf node. A Mesh shares the Node3D trait family (so it lives in the same
 // hierarchy as group Node3Ds and other Meshes — addNodeChild accepts both) and adds the two

@@ -17,9 +17,10 @@ import {
 import { createBoxMeshGeometry, createMeshGeometryFromAttributes } from '@flighthq/meshgeometry/contract';
 import { ensureMeshGeometryBounds } from '@flighthq/meshgeometry/contract';
 import type { Mesh, MeshRuntime } from '@flighthq/meshgeometry/contract';
+import type { MeshMorph } from '@flighthq/meshgeometry/contract';
 import { addNodeChild, getNodeRuntime, invalidateNodeLocalTransform } from '@flighthq/node/contract';
 import { createMesh, createNode3D, Node3DKind, updateMeshMorph } from '@flighthq/scene3d/contract';
-import type { Camera3D, MeshMorph, Ray3D, Scene3DHit, Node3D } from '@flighthq/types/contract';
+import type { Camera3D, Ray3D, Scene3DHit, Node3D } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import {

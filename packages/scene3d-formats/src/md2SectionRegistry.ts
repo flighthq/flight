@@ -1,7 +1,6 @@
-import type { Md2SectionHandler } from '@flighthq/types/contract';
-
 import { md2AnimationFamily } from './md2AnimationHandler.ts';
 import { md2SkinFamily } from './md2SkinHandler.ts';
+import type { Md2SectionHandler } from './types/Md2SectionHandler.ts';
 
 /**
  * Every section handler Flight reads an MD2 file with — the full-support preset, which reproduces the

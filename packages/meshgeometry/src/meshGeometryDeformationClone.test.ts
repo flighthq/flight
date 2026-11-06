@@ -1,4 +1,3 @@
-import type { MeshMorph } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import {
@@ -11,6 +10,7 @@ import {
 import { cloneMeshGeometryForDeformation } from './meshGeometryDeformationClone.ts';
 import { CANONICAL_SKINNED_MESH_GEOMETRY_LAYOUT } from './meshGeometryLayout.ts';
 import { blendMeshGeometryMorph, captureMeshMorphBindPose } from './morphMeshGeometry.ts';
+import type { MeshMorph } from './types/MorphTarget.ts';
 
 describe('cloneMeshGeometryForDeformation', () => {
   it('restores captured morph base after the source has already deformed', () => {

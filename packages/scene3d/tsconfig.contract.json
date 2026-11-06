@@ -15,6 +15,7 @@
       ".materials-types",
       ".lighting-types",
       ".texture-types",
+      ".meshgeometry-bridge-types",
       ""
     ],
     "tsBuildInfoFile": "dist/.tsbuildinfo.contract"
@@ -46,6 +47,9 @@
     },
     {
       "path": "../texture/tsconfig.contract.json"
+    },
+    {
+      "path": "../types/tsconfig.meshgeometry-types.json"
     }
   ],
   "include": ["src/contract.scene3d-types.ts", "src/types/**/*.ts"]

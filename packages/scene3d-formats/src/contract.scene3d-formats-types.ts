@@ -17,3 +17,4 @@ export * from './types/StlFeatures.ts';
 export * from './types/StlImportOptions.ts';
 export * from './types/ThreeDsSchema.ts';
 export * from './types/ThreeDsChunkHandler.ts';
+export * from './types/Md2SectionHandler.ts';

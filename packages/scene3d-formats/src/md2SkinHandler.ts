@@ -1,10 +1,11 @@
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import { createBlinnPhongMaterial } from '@flighthq/materials/contract';
-import type { Material, MaterialLike, Md2SectionHandler } from '@flighthq/types/contract';
+import type { Material, MaterialLike } from '@flighthq/types/contract';
 import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
 import { MD2_SKIN_SIZE } from './md2Schema.ts';
 import { createExternalTextureRef } from './shared.ts';
+import type { Md2SectionHandler } from './types/Md2SectionHandler.ts';
 
 /**
  * Reads MD2's skin records into the document's material table.

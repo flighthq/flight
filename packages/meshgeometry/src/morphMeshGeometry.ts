@@ -1,7 +1,6 @@
-import type { MeshMorph } from '@flighthq/types/contract';
-
 import type { MeshGeometry, MeshMorphBindPose } from './contract.meshgeometry-types.ts';
 import { getVertexAttributeFloatOffset } from './meshGeometryAttributes.ts';
+import type { MeshMorph } from './types/MorphTarget.ts';
 
 // Blends a morphed MeshGeometry in place for the current weights: computes base + Σ wᵢ·targetᵢ
 // (an additive blend) for position, and — where the base carries them — normal and tangent, into the

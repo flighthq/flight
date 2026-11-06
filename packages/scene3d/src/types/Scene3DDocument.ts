@@ -5,7 +5,8 @@ import type { ImageResourceReference } from '@flighthq/image/contract';
 import type { Light } from '@flighthq/lighting/contract';
 import type { MaterialLike } from '@flighthq/materials/contract';
 import type { MeshGeometry } from '@flighthq/meshgeometry/contract';
-import type { MeshMorph, Projection } from '@flighthq/types/contract';
+import type { MeshMorph } from '@flighthq/meshgeometry/contract';
+import type { Projection } from '@flighthq/types/contract';
 
 import type { Scene3DAnimationPath } from './Scene3DAnimationPath.ts';
 import type { Scene3DMetadata } from './Scene3DMetadata.ts';

@@ -2,15 +2,9 @@ import { createTransform3D } from '@flighthq/geometry/contract';
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import { createMeshGeometry } from '@flighthq/meshgeometry/contract';
 import { MeshKind } from '@flighthq/meshgeometry/contract';
+import type { MeshMorph, MorphTarget } from '@flighthq/meshgeometry/contract';
 import type { Scene3DDocument, Scene3DDocumentMesh } from '@flighthq/scene3d/contract';
-import type {
-  ImportDiagnostic,
-  Md2Frame,
-  Md2ParseContext,
-  Md2SectionHandler,
-  MeshMorph,
-  MorphTarget,
-} from '@flighthq/types/contract';
+import type { ImportDiagnostic } from '@flighthq/types/contract';
 import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
 import {
@@ -26,6 +20,7 @@ import {
   MD2_VERSION,
 } from './md2Schema.ts';
 import { CANONICAL_FLOATS_PER_VERTEX, CANONICAL_LAYOUT, reverseTriangleWinding } from './shared.ts';
+import type { Md2Frame, Md2ParseContext, Md2SectionHandler } from './types/Md2SectionHandler.ts';
 
 // Parses an id Software MD2 (Quake 2) binary model into a format-neutral Scene3DDocument: one Mesh node
 // whose base pose is frame 0 and whose per-frame vertex animation is carried as a MeshMorph (each later

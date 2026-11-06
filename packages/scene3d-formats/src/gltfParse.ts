@@ -21,6 +21,7 @@ import {
 } from '@flighthq/meshgeometry/contract';
 import type { MeshGeometry, PrimitiveTopology } from '@flighthq/meshgeometry/contract';
 import { MeshKind } from '@flighthq/meshgeometry/contract';
+import type { MeshMorph, MorphTarget } from '@flighthq/meshgeometry/contract';
 import { createScene3DFromDocument } from '@flighthq/scene3d/contract';
 import type { Scene3D } from '@flighthq/scene3d/contract';
 import type { Scene3DDocument, Scene3DDocumentMesh, Scene3DDocumentNode } from '@flighthq/scene3d/contract';
@@ -30,8 +31,6 @@ import type {
   ImportDiagnostic,
   Material,
   MaterialLike,
-  MeshMorph,
-  MorphTarget,
   Texture,
   TextureColorSpace,
   TextureFilter,

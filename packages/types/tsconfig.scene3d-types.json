@@ -15,6 +15,8 @@
       ".camera-types",
       ".lighting-types",
       ".texture-types",
+      ".meshgeometry-types",
+      ".meshgeometry-bridge-types",
       ""
     ],
     "tsBuildInfoFile": "dist/.tsbuildinfo.scene3d-types"
@@ -37,6 +39,12 @@
     },
     {
       "path": "../texture/tsconfig.contract.json"
+    },
+    {
+      "path": "../meshgeometry/tsconfig.contract.json"
+    },
+    {
+      "path": "./tsconfig.meshgeometry-types.json"
     }
   ],
   "include": [

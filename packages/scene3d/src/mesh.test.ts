@@ -1,5 +1,6 @@
 import { createStandardPbrMaterial } from '@flighthq/materials/contract';
 import { createBoxMeshGeometry, getMeshGeometryVertexCount } from '@flighthq/meshgeometry/contract';
+import type { MeshMorph } from '@flighthq/meshgeometry/contract';
 import {
   addNodeChild,
   getNodeChildCount,
@@ -7,7 +8,7 @@ import {
   getNodeWorldMatrix4,
   invalidateNodeLocalTransform,
 } from '@flighthq/node/contract';
-import type { MeshMorph, Skin } from '@flighthq/types/contract';
+import type { Skin } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import {

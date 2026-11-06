@@ -1,9 +1,10 @@
 import { createAnimationTrack } from '@flighthq/animation/contract';
+import type { MeshMorph } from '@flighthq/meshgeometry/contract';
 import type { Scene3DDocumentAnimation } from '@flighthq/scene3d/contract';
 import { Scene3DAnimationPathWeights } from '@flighthq/scene3d/contract';
-import type { Md2Frame, Md2SectionHandler, MeshMorph } from '@flighthq/types/contract';
 
 import { MD2_FRAME_FPS } from './md2Schema.ts';
+import type { Md2Frame, Md2SectionHandler } from './types/Md2SectionHandler.ts';
 
 /**
  * Realizes MD2's per-frame vertex animation as weight-track channels on the generic morph substrate.
