@@ -265,7 +265,7 @@
       "path": "../permissions/tsconfig.runtime.json"
     },
     {
-      "path": "../picking"
+      "path": "../picking/tsconfig.runtime.json"
     },
     {
       "path": "../platform"
