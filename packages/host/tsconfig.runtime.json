@@ -7,7 +7,7 @@
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,
-    "moduleSuffixes": [".platform-types", ".video-types", ".textshaper-types", ".surface-types", ""],
+    "moduleSuffixes": [".keyboard-types", ".platform-types", ".video-types", ".textshaper-types", ".surface-types", ""],
     "tsBuildInfoFile": "dist/.tsbuildinfo.runtime"
   },
   "references": [
