@@ -10,7 +10,8 @@ import {
   createTextureAtlas,
   createTextureAtlasFromImageResource,
 } from '@flighthq/textureatlas/contract';
-import { QuadBatchKind, TextureAtlasRotation } from '@flighthq/types/contract';
+import { TextureAtlasRotation } from '@flighthq/textureatlas/contract';
+import { QuadBatchKind } from '@flighthq/types/contract';
 
 import { registerCanvasImageTextureResolver } from './canvasImageTextureResolver.ts';
 import { canvasQuadBatchRenderer, drawCanvasQuadBatch } from './canvasQuadBatch.ts';

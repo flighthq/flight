@@ -10,6 +10,7 @@ import {
 } from '@flighthq/render-gl/contract';
 import { prepareScene3DRender } from '@flighthq/render/contract';
 import { getTextureHeight, getTextureWidth, hasTextureSource } from '@flighthq/texture/contract';
+import { TextureAtlasRotation } from '@flighthq/textureatlas/contract';
 import type {
   GlContext,
   Camera3D,
@@ -20,7 +21,7 @@ import type {
   ParticleEmitterData,
   Node3D,
 } from '@flighthq/types/contract';
-import { BlendMode, ParticleEmitter3DKind, TextureAtlasRotation } from '@flighthq/types/contract';
+import { BlendMode, ParticleEmitter3DKind } from '@flighthq/types/contract';
 
 import { getGlScene3DViewportAspect } from './glViewportAspect.ts';
 

@@ -103,7 +103,6 @@
       ".scene2d-resources-types",
       ".bitmapfont-types",
       ".textureatlas-types",
-      ".textureatlas-bridge-types",
       ".meshgeometry-bridge-types",
       ""
     ],

@@ -13,7 +13,6 @@
       ".node-types",
       ".scene2d-types",
       ".texture-types",
-      ".textureatlas-bridge-types",
       ".textureatlas-types",
       ""
     ],
@@ -37,9 +36,6 @@
     },
     {
       "path": "../textureatlas/tsconfig.contract.json"
-    },
-    {
-      "path": "../types/tsconfig.textureatlas-bridge-types.json"
     }
   ],
   "include": ["src/contract.bitmaptext-types.ts", "src/types.ts"]

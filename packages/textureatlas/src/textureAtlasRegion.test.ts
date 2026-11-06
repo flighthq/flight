@@ -1,7 +1,6 @@
 import { createRectangle, createVector2 } from '@flighthq/geometry/contract';
 import type { ImageResource } from '@flighthq/image/contract';
 import { createTexture, getTextureSource, transformTextureUv } from '@flighthq/texture/contract';
-import { TextureAtlasRotation } from '@flighthq/types/contract';
 
 import { createTextureAtlas } from './textureAtlas.ts';
 import {
@@ -29,6 +28,7 @@ import {
   setTextureAtlasRegion,
   setTextureAtlasRegionTextureGuard,
 } from './textureAtlasRegion.ts';
+import { TextureAtlasRotation } from './types.ts';
 import type { TextureAtlasRegion } from './types.ts';
 
 describe('addTextureAtlasRegion', () => {

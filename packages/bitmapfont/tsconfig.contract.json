@@ -15,7 +15,6 @@
       ".path-types",
       ".texture-types",
       ".textureatlas-types",
-      ".textureatlas-bridge-types",
       ""
     ],
     "tsBuildInfoFile": "dist/.tsbuildinfo.contract"
@@ -44,9 +43,6 @@
     },
     {
       "path": "../textureatlas/tsconfig.contract.json"
-    },
-    {
-      "path": "../types/tsconfig.textureatlas-bridge-types.json"
     }
   ],
   "include": ["src/contract.bitmapfont-types.ts", "src/types.ts"]

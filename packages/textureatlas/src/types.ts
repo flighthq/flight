@@ -1,11 +1,16 @@
-// The textureatlas-owned contracts, re-exported type-only by @flighthq/types for compatibility. The only
-// @flighthq/types import is the nominal TextureAtlasRotation enum, resolved through the exact
-// `.textureatlas-bridge-types` bridge (the enum must stay declared in types; see TextureAtlasRotation.ts).
+// Texture-atlas contracts and their nominal runtime values are owned here. Keeping the rotation enum in
+// this contract project lets every consumer use the same value without a reverse dependency on
+// @flighthq/types.
 
 import type { EntityRaw, EntityRuntime, EntityWithoutRuntime } from '@flighthq/entity/contract';
 import type { EntityRuntimeKey } from '@flighthq/entity/contract';
 import type { Texture2D } from '@flighthq/texture/contract';
-import type { TextureAtlasRotation } from '@flighthq/types/contract';
+
+export enum TextureAtlasRotation {
+  Counterclockwise90 = -1,
+  None = 0,
+  Clockwise90 = 1,
+}
 
 interface TextureAtlasEntity extends EntityRaw {
   [EntityRuntimeKey]: EntityRuntime | undefined;

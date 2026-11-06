@@ -10,6 +10,7 @@ import {
 } from '@flighthq/render-wgpu/contract';
 import { prepareScene3DRender } from '@flighthq/render/contract';
 import { getTextureHeight, getTextureWidth, hasTextureSource } from '@flighthq/texture/contract';
+import { TextureAtlasRotation } from '@flighthq/textureatlas/contract';
 import type {
   Camera3D,
   Matrix4,
@@ -19,7 +20,7 @@ import type {
   Node3D,
   WgpuRenderState,
 } from '@flighthq/types/contract';
-import { BlendMode, ParticleEmitter3DKind, TextureAtlasRotation } from '@flighthq/types/contract';
+import { BlendMode, ParticleEmitter3DKind } from '@flighthq/types/contract';
 
 // Per-instance layout (16 floats = 64 bytes), identical to scene-gl's glParticleEmitter3D:
 // [0..2] px/py/pz world position, [3] cos(rotation)*scale, [4] sin(rotation)*scale, [5..7] rgb,

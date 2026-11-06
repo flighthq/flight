@@ -15,8 +15,8 @@ import {
 } from '@flighthq/render-wgpu/contract';
 import { createNode3D, Node3DKind } from '@flighthq/scene3d/contract';
 import { createTexture } from '@flighthq/texture/contract';
+import { TextureAtlasRotation } from '@flighthq/textureatlas/contract';
 import type { Camera3D, ParticleEmitter3D, TextureAtlas, TextureAtlasRegion } from '@flighthq/types/contract';
-import { TextureAtlasRotation } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import {

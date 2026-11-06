@@ -1,5 +1,5 @@
 import { createTextureAtlasRegion } from '@flighthq/textureatlas/contract';
-import { TextureAtlasRotation } from '@flighthq/types/contract';
+import { TextureAtlasRotation } from '@flighthq/textureatlas/contract';
 
 import { drawCanvasAtlasRegion } from './canvasAtlasRegion.ts';
 

@@ -60,6 +60,7 @@
     "@flighthq/textinput": "*",
     "@flighthq/textlayout": "*",
     "@flighthq/texture": "*",
+    "@flighthq/textureatlas": "*",
     "@flighthq/types": "*",
     "@flighthq/velocity": "*"
   },

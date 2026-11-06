@@ -1,7 +1,7 @@
 ﻿import { acquireMatrix, multiplyMatrix, releaseMatrix, setMatrixFromFloat32Array } from '@flighthq/geometry/contract';
 import { noopRendererData } from '@flighthq/render/contract';
 import type { RenderProxy2D } from '@flighthq/render/contract';
-import { TextureAtlasRotation } from '@flighthq/types/contract';
+import { TextureAtlasRotation } from '@flighthq/textureatlas/contract';
 import type { CanvasRenderState, QuadBatch, SpriteRenderer } from '@flighthq/types/contract';
 
 import { drawCanvasAtlasRegion } from './canvasAtlasRegion.ts';

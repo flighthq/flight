@@ -10,7 +10,7 @@ import { createWgpuRenderStateForTest, installWgpuMock } from '@flighthq/render-
 import { getOrCreateRenderProxy2D, getRenderProxy2D, prepareScene2DRender } from '@flighthq/render/contract';
 import { createRenderTexture } from '@flighthq/texture/contract';
 import { createTextureAtlas, createTextureAtlasRegion } from '@flighthq/textureatlas/contract';
-import { TextureAtlasRotation } from '@flighthq/types/contract';
+import { TextureAtlasRotation } from '@flighthq/textureatlas/contract';
 
 import { wgpuQuadBatchRenderer, ensureWgpuQuadBatchResources, getWgpuQuadBatchPipeline } from './wgpuQuadBatch.ts';
 import { flushWgpuQuadBatchWriter } from './wgpuQuadBatchWriter.ts';

@@ -1,7 +1,7 @@
 import { noopRendererData } from '@flighthq/render/contract';
 import type { RenderProxy2D } from '@flighthq/render/contract';
 import { getNode2DRuntime } from '@flighthq/scene2d/contract';
-import { TextureAtlasRotation } from '@flighthq/types/contract';
+import { TextureAtlasRotation } from '@flighthq/textureatlas/contract';
 import type { CanvasRenderState, SpriteRenderer } from '@flighthq/types/contract';
 
 import { drawCanvasAtlasRegion } from './canvasAtlasRegion.ts';

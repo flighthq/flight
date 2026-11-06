@@ -71,6 +71,9 @@
       "path": "../texture/tsconfig.runtime.json"
     },
     {
+      "path": "../textureatlas/tsconfig.runtime.json"
+    },
+    {
       "path": "../types"
     },
     {

@@ -58,6 +58,7 @@
     "@flighthq/scene3d": "*",
     "@flighthq/shading": "*",
     "@flighthq/texture": "*",
+    "@flighthq/textureatlas": "*",
     "@flighthq/types": "*"
   },
   "devDependencies": {

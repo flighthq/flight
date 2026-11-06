@@ -30,6 +30,7 @@
     { "path": "../shading" },
     { "path": "../skeleton3d" },
     { "path": "../texture/tsconfig.runtime.json" },
+    { "path": "../textureatlas/tsconfig.runtime.json" },
     { "path": "../types" },
     { "path": "../video" },
     { "path": "./tsconfig.contract.json" }

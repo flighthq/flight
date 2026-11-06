@@ -2,6 +2,7 @@ import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { createRectangle, createVector2 } from '@flighthq/geometry/contract';
 import { getNodeLocalBoundsRectangle, getNodeLocalBoundsRevision } from '@flighthq/node/contract';
 import { connectSignal } from '@flighthq/signals/contract';
+import { TextureAtlasRotation } from '@flighthq/textureatlas/contract';
 import type {
   Entity,
   MaterialData,
@@ -12,7 +13,7 @@ import type {
   TextureAtlasRegion,
   TintMaterialData,
 } from '@flighthq/types/contract';
-import { QuadBatchKind, TextureAtlasRotation } from '@flighthq/types/contract';
+import { QuadBatchKind } from '@flighthq/types/contract';
 
 import {
   QUAD_BATCH_DELETED_ID,

@@ -6,4 +6,3 @@ export * from './textureAtlasRegion.ts';
 export { initializeTextureAtlas } from './textureAtlas.ts';
 export { initializeTextureAtlasRegion } from './textureAtlasRegion.ts';
 export * from './types.ts';
-export { TextureAtlasRotation } from '@flighthq/types/contract';

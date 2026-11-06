@@ -28,6 +28,7 @@
     { "path": "../clip/tsconfig.runtime.json" },
     { "path": "../text/tsconfig.runtime.json" },
     { "path": "../textlayout/tsconfig.runtime.json" },
+    { "path": "../textureatlas/tsconfig.runtime.json" },
     { "path": "../types" },
     { "path": "./tsconfig.contract.json" }
   ],

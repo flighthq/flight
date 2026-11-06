@@ -34,6 +34,7 @@
     { "path": "../textinput/tsconfig.runtime.json" },
     { "path": "../textlayout/tsconfig.runtime.json" },
     { "path": "../texture/tsconfig.runtime.json" },
+    { "path": "../textureatlas/tsconfig.runtime.json" },
     { "path": "../types" },
     { "path": "../velocity/tsconfig.runtime.json" },
     { "path": "./tsconfig.contract.json" }

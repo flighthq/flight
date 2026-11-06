@@ -10,7 +10,7 @@ import { withKindMapEntry } from '@flighthq/registry/contract';
 import { createGlProgram } from '@flighthq/render-gl/contract';
 import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
 import { createGlTextureRenderTarget } from '@flighthq/render-gl/contract';
-import { TextureAtlasRotation } from '@flighthq/types/contract';
+import { TextureAtlasRotation } from '@flighthq/textureatlas/contract';
 import type {
   GlContext,
   GlRenderState,

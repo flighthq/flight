@@ -25,6 +25,9 @@
       "path": "../signals"
     },
     {
+      "path": "../textureatlas/tsconfig.runtime.json"
+    },
+    {
       "path": "../types"
     }
   ],

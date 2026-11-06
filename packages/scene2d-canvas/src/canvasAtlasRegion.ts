@@ -1,5 +1,5 @@
 import type { TextureAtlasRegion } from '@flighthq/textureatlas/contract';
-import { TextureAtlasRotation } from '@flighthq/types/contract';
+import { TextureAtlasRotation } from '@flighthq/textureatlas/contract';
 
 // Draws one packed atlas rectangle upright in the current local coordinate system. TexturePacker and
 // Starling store a rotated frame clockwise, while libGDX stores it counterclockwise. The matching

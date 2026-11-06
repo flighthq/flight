@@ -13,7 +13,7 @@ import {
   resumeWgpuRenderPass,
   suspendWgpuRenderPass,
 } from '@flighthq/render-wgpu/contract';
-import { TextureAtlasRotation } from '@flighthq/types/contract';
+import { TextureAtlasRotation } from '@flighthq/textureatlas/contract';
 import type {
   Kind,
   ParticleEmitter2D,

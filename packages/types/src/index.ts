@@ -734,7 +734,6 @@ export * from './TextVerticalAlign.ts';
 export * from './Texture.ts';
 export * from './TextureAtlas.ts';
 export * from './TextureAtlasRegion.ts';
-export * from './TextureAtlasRotation.ts';
 export * from './TextureAtlasRegionTextureExplanation.ts';
 export * from './TextureDimension.ts';
 export * from './TextureKind.ts';

@@ -3,7 +3,7 @@ import { copyRectangle, createRectangle, reserveFloat32Array, reserveUint16Array
 import { invalidateNodeLocalBounds } from '@flighthq/node/contract';
 import { createNode2D, createNode2DRuntime, getNode2DRuntime } from '@flighthq/scene2d/contract';
 import { createSignal } from '@flighthq/signals/contract';
-import { TextureAtlasRotation } from '@flighthq/types/contract';
+import { TextureAtlasRotation } from '@flighthq/textureatlas/contract';
 import type {
   BoundsNode,
   EntityConstruction,
