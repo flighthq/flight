@@ -61,6 +61,7 @@
     "@flighthq/node": "*",
     "@flighthq/path": "*",
     "@flighthq/requirement": "*",
+    "@flighthq/resource": "*",
     "@flighthq/scene2d": "*",
     "@flighthq/scene2d-resources": "*",
     "@flighthq/shape": "*",
@@ -68,8 +69,7 @@
     "@flighthq/text-markup": "*",
     "@flighthq/textformat": "*",
     "@flighthq/texture": "*",
-    "@flighthq/timeline": "*",
-    "@flighthq/types": "*"
+    "@flighthq/timeline": "*"
   },
   "devDependencies": {
     "@flighthq/font": "*",

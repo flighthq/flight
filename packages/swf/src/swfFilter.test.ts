@@ -1,18 +1,18 @@
 import type { Adjustment, ColorMatrixAdjustment } from '@flighthq/adjustments/contract';
-import { collectImportDiagnostics } from '@flighthq/importdiagnostics/contract';
 import type {
   BevelEffect,
   BlurEffect,
   ConvolutionEffect,
   DropShadowEffect,
   GradientGlowEffect,
-  ImportDiagnostic,
   InnerGlowEffect,
   InnerShadowEffect,
   OuterGlowEffect,
   Effect,
-} from '@flighthq/types/contract';
-import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
+} from '@flighthq/effects/contract';
+import { collectImportDiagnostics } from '@flighthq/importdiagnostics/contract';
+import type { ImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import { ImportDiagnosticSeverity } from '@flighthq/importdiagnostics/contract';
 
 import { readSwfFilterList, setSwfFilterListGuard } from './swfFilter.ts';
 import { SwfReader } from './swfReader.ts';

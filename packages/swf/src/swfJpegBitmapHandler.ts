@@ -1,7 +1,7 @@
 import { createEmbeddedImageResourceReference } from '@flighthq/image/contract';
 import type { EmbeddedImageResourceReference, ImageResourceReference } from '@flighthq/image/contract';
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
-import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
+import { ImportDiagnosticSeverity } from '@flighthq/importdiagnostics/contract';
 
 import { SWF_LOSSLESS_ALPHA_MIME_TYPE, SWF_LOSSLESS_MIME_TYPE } from './swfImageMimeType.ts';
 import { acquireSwfImageTexture } from './swfImageTexture.ts';

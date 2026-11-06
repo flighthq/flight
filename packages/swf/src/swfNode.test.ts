@@ -1,12 +1,13 @@
 import { createRectangle } from '@flighthq/geometry/contract';
+import type { Rectangle } from '@flighthq/geometry/contract';
 import { MovieClipKind } from '@flighthq/movieclip/contract';
 import { getNodeLocalBoundsRectangle } from '@flighthq/node/contract';
 import { appendPathLineTo, appendPathMoveTo, createPath, createPathMorph } from '@flighthq/path/contract';
+import type { Node2D } from '@flighthq/scene2d/contract';
+import { SpriteKind } from '@flighthq/scene2d/contract';
 import { createMorphShape, setMorphShapeProgress } from '@flighthq/shape/contract';
 import type { MorphShape } from '@flighthq/shape/contract';
 import { createTexture } from '@flighthq/texture/contract';
-import type { Node2D, Rectangle } from '@flighthq/types/contract';
-import { SpriteKind } from '@flighthq/types/contract';
 
 import {
   applySwfAuthoredBounds,

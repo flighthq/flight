@@ -1,7 +1,10 @@
 import { createAudioResource, createEmbeddedAudioResourceReference } from '@flighthq/audio/contract';
 import type { AudioResourceReference } from '@flighthq/audio/contract';
+import type { AudioResource } from '@flighthq/audio/contract';
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import { ImportDiagnosticSeverity } from '@flighthq/importdiagnostics/contract';
 import type {
   TimelineAudioCue,
   TimelineAudioEnvelopePoint,
@@ -9,8 +12,6 @@ import type {
   TimelineStreamAudioCue,
 } from '@flighthq/timeline/contract';
 import { TimelineAudioCueKind, TimelineStreamAudioCueKind } from '@flighthq/timeline/contract';
-import type { AudioResource, EntityConstruction } from '@flighthq/types/contract';
-import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
 import type { SwfTagHandler } from './types/SwfTagHandler.ts';
 import type {

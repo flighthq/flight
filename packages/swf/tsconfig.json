@@ -89,10 +89,10 @@
       "path": "../texture/tsconfig.runtime.json"
     },
     {
-      "path": "../types"
+      "path": "../timeline/tsconfig.runtime.json"
     },
     {
-      "path": "../timeline/tsconfig.runtime.json"
+      "path": "../resource"
     },
     {
       "path": "./tsconfig.contract.json"

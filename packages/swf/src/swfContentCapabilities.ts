@@ -1,4 +1,4 @@
-import type { HostDecompressDeflateCapability, HostDecompressLzmaCapability } from '@flighthq/types/contract';
+import type { HostDecompressDeflateCapability, HostDecompressLzmaCapability } from '@flighthq/compression/contract';
 
 import { uncompressSwfSource } from './swfDocument.ts';
 import { parseSwfHeader } from './swfHeader.ts';

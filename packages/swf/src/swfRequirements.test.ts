@@ -1,5 +1,5 @@
 import { sdkHostDecompressDeflate } from '@flighthq/compression/contract';
-import { RequirementFacet } from '@flighthq/types/contract';
+import { RequirementFacet } from '@flighthq/requirement/contract';
 
 import { parseSwfRequirements } from './swfRequirements.ts';
 

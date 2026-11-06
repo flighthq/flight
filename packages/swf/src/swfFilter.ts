@@ -11,10 +11,11 @@ import {
   createInnerShadowEffect,
   createOuterGlowEffect,
 } from '@flighthq/effects/contract';
+import type { Effect } from '@flighthq/effects/contract';
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import type { ImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import { ImportDiagnosticSeverity } from '@flighthq/importdiagnostics/contract';
 import { RAD_TO_DEG } from '@flighthq/math/contract';
-import type { ImportDiagnostic, Effect } from '@flighthq/types/contract';
-import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
 import type { SwfReader } from './swfReader.ts';
 import type { SwfFilterListGuard } from './types/SwfFilterListGuard.ts';

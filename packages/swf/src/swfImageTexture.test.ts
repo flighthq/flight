@@ -1,4 +1,4 @@
-import type { Texture2D } from '@flighthq/types/contract';
+import type { Texture2D } from '@flighthq/texture/contract';
 
 import { acquireSwfImageTexture } from './swfImageTexture.ts';
 

@@ -1,5 +1,8 @@
 import { createMatrix } from '@flighthq/geometry/contract';
+import type { Matrix } from '@flighthq/geometry/contract';
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import { ImportDiagnosticSeverity } from '@flighthq/importdiagnostics/contract';
+import type { ImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import { createPathMorph } from '@flighthq/path/contract';
 import type { Path } from '@flighthq/path/contract';
 import {
@@ -18,9 +21,7 @@ import type {
   MorphShapeGradientEndpoint,
   SpreadMethod,
 } from '@flighthq/shape/contract';
-import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
-import type { ImportDiagnostic } from '@flighthq/types/contract';
-import type { Matrix, Texture2D } from '@flighthq/types/contract';
+import type { Texture2D } from '@flighthq/texture/contract';
 
 import { SwfReader } from './swfReader.ts';
 import { readSwfMorphShapePaths } from './swfShape.ts';

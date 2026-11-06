@@ -1,7 +1,7 @@
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import type { ImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import { ImportDiagnosticSeverity } from '@flighthq/importdiagnostics/contract';
 import type { FrameScript, TimelineLabel } from '@flighthq/timeline/contract';
-import type { ImportDiagnostic } from '@flighthq/types/contract';
-import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
 import { isKnownSwfTag } from './swfKnownTags.ts';
 import { SwfReader } from './swfReader.ts';

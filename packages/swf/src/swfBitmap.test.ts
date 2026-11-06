@@ -1,8 +1,9 @@
 import { sdkHostDecompressDeflate } from '@flighthq/compression/contract';
+import type { HostDecompressDeflateCapability } from '@flighthq/compression/contract';
+import { Compression, CompressionFraming } from '@flighthq/compression/contract';
 import type { DecodedImage } from '@flighthq/image-codec/contract';
 import { createEmbeddedImageResourceReference } from '@flighthq/image/contract';
-import type { HostDecompressDeflateCapability } from '@flighthq/types/contract';
-import { BitmapTextureSourceKind, Compression, CompressionFraming } from '@flighthq/types/contract';
+import { BitmapTextureSourceKind } from '@flighthq/texture/contract';
 
 import { createSwfJpegAlphaBitmap, createSwfLosslessBitmap } from './swfBitmap.ts';
 import type { SwfJpegAlphaPayload } from './types/SwfDocumentImport.ts';

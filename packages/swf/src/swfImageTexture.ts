@@ -1,5 +1,5 @@
 import { createSampler, createTexture } from '@flighthq/texture/contract';
-import type { Texture2D } from '@flighthq/types/contract';
+import type { Texture2D } from '@flighthq/texture/contract';
 
 // The Texture identity a bitmap character's samplings share. A shape's bitmap fill and a placement of the
 // same character ask for it by the sampling they need rather than by allocating their own, so one

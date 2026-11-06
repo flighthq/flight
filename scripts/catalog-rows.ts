@@ -201,6 +201,7 @@ import {
   swfVideoHandler,
 } from '@flighthq/swf';
 import { getSwfTagName, SWF_REQUIREMENT_KEY_NAMESPACE } from '@flighthq/swf/contract';
+import type { SwfTagHandler } from '@flighthq/swf/contract';
 import {
   TilemapFormatKindTiledTmj,
   TilemapFormatKindTiledTmx,
@@ -215,7 +216,6 @@ import type {
   LottieShapeItemHandler,
   SvgClipHandler,
   SvgElementHandler,
-  SwfTagHandler,
 } from '@flighthq/types/contract';
 import { RequirementFacet } from '@flighthq/types/contract';
 

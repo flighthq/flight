@@ -1,7 +1,7 @@
 import { collectImportDiagnostics } from '@flighthq/importdiagnostics/contract';
+import type { ImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import { ImportDiagnosticSeverity } from '@flighthq/importdiagnostics/contract';
 import type { TimelineLabel } from '@flighthq/timeline/contract';
-import type { ImportDiagnostic } from '@flighthq/types/contract';
-import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
 import { expandSwfTagHandlerDispatch } from './expandSwfTagHandlerDispatch.ts';
 import { swfControlTagFamily } from './swfControlTagFamily.ts';

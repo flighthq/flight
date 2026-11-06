@@ -1,5 +1,5 @@
 import { sdkHostDecompressDeflate } from '@flighthq/compression/contract';
-import { CompressionFraming } from '@flighthq/types/contract';
+import { CompressionFraming } from '@flighthq/compression/contract';
 
 import { parseSwfHeader } from './swfHeader.ts';
 

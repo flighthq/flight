@@ -450,7 +450,6 @@ export * from './Shape.ts';
 export * from './ShapeCommand.ts';
 export * from './ShapeRasterizer.ts';
 export * from './ShapeTessellationExplanation.ts';
-export * from './Swf.ts';
 export * from './ShapedRun.ts';
 export * from './ShapeFillRegion.ts';
 export * from './ShapeStrokeRegion.ts';

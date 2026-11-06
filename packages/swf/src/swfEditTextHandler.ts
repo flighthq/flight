@@ -1,7 +1,8 @@
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import type { ImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import { ImportDiagnosticSeverity } from '@flighthq/importdiagnostics/contract';
+import type { Node2D } from '@flighthq/scene2d/contract';
 import type { RichText } from '@flighthq/text/contract';
-import type { ImportDiagnostic, Node2D } from '@flighthq/types/contract';
-import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
 import { readSwfBoundedDefinitionHeader } from './swfBoundedDefinition.ts';
 import { readSwfEditTextFactory } from './swfEditText.ts';

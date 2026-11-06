@@ -1,8 +1,8 @@
 import { collectImportDiagnostics } from '@flighthq/importdiagnostics/contract';
+import { ImportDiagnosticSeverity } from '@flighthq/importdiagnostics/contract';
 import { setMorphShapeProgress } from '@flighthq/shape/contract';
 import { createTexture } from '@flighthq/texture/contract';
-import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
-import type { Texture2D } from '@flighthq/types/contract';
+import type { Texture2D } from '@flighthq/texture/contract';
 
 import { createSwfMorphShape } from './swfMorphShape.ts';
 import { SwfReader } from './swfReader.ts';

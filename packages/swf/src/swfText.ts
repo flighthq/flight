@@ -1,4 +1,8 @@
+import type { GlyphOutlineSource } from '@flighthq/font/contract';
+import type { RectangleLike } from '@flighthq/geometry/contract';
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import type { ImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import { ImportDiagnosticSeverity } from '@flighthq/importdiagnostics/contract';
 import { createPath, getPathBounds, transformPath } from '@flighthq/path/contract';
 import type { Path } from '@flighthq/path/contract';
 import { PathCommand } from '@flighthq/path/contract';
@@ -12,8 +16,6 @@ import {
   getShapeFillRegions,
 } from '@flighthq/shape/contract';
 import type { Shape } from '@flighthq/shape/contract';
-import type { GlyphOutlineSource, ImportDiagnostic, RectangleLike } from '@flighthq/types/contract';
-import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
 import { SwfReader } from './swfReader.ts';
 import { createSwfGlyphShape } from './swfShape.ts';

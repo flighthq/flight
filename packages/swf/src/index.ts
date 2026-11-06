@@ -47,3 +47,25 @@ export * from './swfText.ts';
 export * from './swfTextTagFamily.ts';
 export * from './swfVideoHandler.ts';
 export * from './swfVideoTagFamily.ts';
+export type {
+  SwfContentCapabilities,
+  SwfDocumentImport,
+  SwfFilterListGuard,
+  SwfHeader,
+  SwfJpegAlphaPayload,
+  SwfMorphShapePaths,
+  SwfNodeAppearance,
+  SwfParseOptions,
+  SwfTagHandler,
+  SwfTagHandlerDispatch,
+  SwfTagHandlerInstantiation,
+  SwfTagHandlerResources,
+  SwfTagMatrix,
+  SwfTagParseResult,
+  SwfTagParseState,
+  SwfTagPlacement,
+  SwfTagReader,
+  SwfTagRectangle,
+  SwfTagTimelineState,
+  SwfTimeline,
+} from './contract.swf-types.ts';

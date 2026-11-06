@@ -4,12 +4,13 @@ import { sdkHostDecompressDeflate } from '@flighthq/compression/contract';
 import type { HostImageDecodeCapabilities, HostImageDecodeFormatCapability } from '@flighthq/image-codec/contract';
 import { ImageResourceReferenceKind } from '@flighthq/image/contract';
 import { getNodeChildren } from '@flighthq/node/contract';
+import { ResourceResolutionState } from '@flighthq/resource/contract';
 import { loadScene2DImageResources } from '@flighthq/scene2d-resources/contract';
 import type { Shape } from '@flighthq/shape/contract';
 import { ShapeKind } from '@flighthq/shape/contract';
 import { getTextureSource } from '@flighthq/texture/contract';
-import type { Texture2D, TextureSource } from '@flighthq/types/contract';
-import { BitmapTextureSourceKind, ResourceResolutionState } from '@flighthq/types/contract';
+import type { Texture2D, TextureSource } from '@flighthq/texture/contract';
+import { BitmapTextureSourceKind } from '@flighthq/texture/contract';
 
 import { swfAllTagHandlers } from './swfAllTagHandlers.ts';
 import { createScene2DFromSwf } from './swfDocument.ts';

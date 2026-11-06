@@ -1,6 +1,6 @@
+import type { GlyphOutlineSource } from '@flighthq/font/contract';
 import { createPath } from '@flighthq/path/contract';
 import { Shape } from '@flighthq/shape/contract';
-import type { GlyphOutlineSource } from '@flighthq/types/contract';
 
 import { SwfReader } from './swfReader.ts';
 import { ShapeWriter } from './swfShapeTestHelper.ts';

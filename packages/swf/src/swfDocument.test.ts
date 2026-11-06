@@ -2,6 +2,8 @@ import type { ColorScaleBiasAdjustment } from '@flighthq/adjustments/contract';
 import type { EmbeddedAudioResourceReference } from '@flighthq/audio/contract';
 import type { Bitmap } from '@flighthq/bitmap/contract';
 import { sdkHostDecompressDeflate } from '@flighthq/compression/contract';
+import type { HostDecompressDeflateCapability } from '@flighthq/compression/contract';
+import { Compression, CompressionFraming } from '@flighthq/compression/contract';
 import { AdvancedBlendMode } from '@flighthq/effects/contract';
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { allocateGlyphRasterizerBackendFromGlyphOutlineSource } from '@flighthq/font/contract';
@@ -9,6 +11,8 @@ import { createGlyphAtlas, getGlyphAtlasEntry } from '@flighthq/glyphatlas/contr
 import type { EmbeddedImageResourceReference } from '@flighthq/image/contract';
 import { ImageResourceReferenceKind } from '@flighthq/image/contract';
 import { collectImportDiagnostics } from '@flighthq/importdiagnostics/contract';
+import type { ImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import { ImportDiagnosticSeverity } from '@flighthq/importdiagnostics/contract';
 import { BlendMode } from '@flighthq/materials/contract';
 import {
   getMovieClipCurrentFrame,
@@ -30,6 +34,7 @@ import {
   getNodeParent,
   getNodeWorldMatrix,
 } from '@flighthq/node/contract';
+import { ResourceResolutionState } from '@flighthq/resource/contract';
 import {
   createScene2DDocumentFromBytes,
   createScene2DDocumentImporterRegistry,
@@ -37,29 +42,17 @@ import {
 } from '@flighthq/scene2d-resources/contract';
 import type { Scene2DDocument } from '@flighthq/scene2d-resources/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
+import type { Node2D, Sprite } from '@flighthq/scene2d/contract';
+import { DisplayObjectKind, SpriteKind } from '@flighthq/scene2d/contract';
 import type { MorphShape, Scale9Shape, Shape } from '@flighthq/shape/contract';
 import { MorphShapeKind, Scale9ShapeKind, ShapeKind } from '@flighthq/shape/contract';
 import type { RichText } from '@flighthq/text/contract';
 import { RichTextKind } from '@flighthq/text/contract';
 import { getTextureSource } from '@flighthq/texture/contract';
 import { setTextureSource } from '@flighthq/texture/contract';
+import type { Texture2D } from '@flighthq/texture/contract';
+import { BitmapTextureSourceKind } from '@flighthq/texture/contract';
 import type { TimelineAudioCue } from '@flighthq/timeline/contract';
-import type {
-  HostDecompressDeflateCapability,
-  ImportDiagnostic,
-  Node2D,
-  Sprite,
-  Texture2D,
-} from '@flighthq/types/contract';
-import {
-  BitmapTextureSourceKind,
-  Compression,
-  CompressionFraming,
-  DisplayObjectKind,
-  ImportDiagnosticSeverity,
-  ResourceResolutionState,
-  SpriteKind,
-} from '@flighthq/types/contract';
 
 import { swfAllTagHandlers } from './swfAllTagHandlers.ts';
 import {

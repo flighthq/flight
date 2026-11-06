@@ -1,5 +1,5 @@
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
-import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
+import { ImportDiagnosticSeverity } from '@flighthq/importdiagnostics/contract';
 
 import { SwfReader } from './swfReader.ts';
 import { readSwfFontGlyphOutlineSource } from './swfText.ts';

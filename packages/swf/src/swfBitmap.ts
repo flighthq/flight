@@ -1,8 +1,8 @@
 import { createBitmap } from '@flighthq/bitmap/contract';
 import type { Bitmap } from '@flighthq/bitmap/contract';
+import type { HostDecompressDeflateCapability } from '@flighthq/compression/contract';
+import { CompressionFraming } from '@flighthq/compression/contract';
 import type { DecodedImage } from '@flighthq/image-codec/contract';
-import type { HostDecompressDeflateCapability } from '@flighthq/types/contract';
-import { CompressionFraming } from '@flighthq/types/contract';
 
 import type { SwfJpegAlphaPayload } from './types/SwfDocumentImport.ts';
 

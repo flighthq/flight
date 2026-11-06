@@ -1,5 +1,5 @@
 import { createSampler, createTexture } from '@flighthq/texture/contract';
-import type { Texture2D } from '@flighthq/types/contract';
+import type { Texture2D } from '@flighthq/texture/contract';
 
 import { createSwfTexturedSprite } from './swfNode.ts';
 import type { SwfTagHandler } from './types/SwfTagHandler.ts';

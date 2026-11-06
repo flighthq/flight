@@ -1,9 +1,15 @@
 import type { Adjustment } from '@flighthq/adjustments/contract';
 import { createClipRegionFromContours, createClipRegionFromPath } from '@flighthq/clip/contract';
 import type { ClipRegion } from '@flighthq/clip/contract';
+import type { HostDecompressDeflateCapability, HostDecompressLzmaCapability } from '@flighthq/compression/contract';
+import { Compression, CompressionFraming } from '@flighthq/compression/contract';
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
+import type { GlyphOutlineSource } from '@flighthq/font/contract';
 import { createMatrix, inverseMatrix, matrixTransformPointXY, multiplyMatrix } from '@flighthq/geometry/contract';
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import type { ImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import { ImportDiagnosticSeverity } from '@flighthq/importdiagnostics/contract';
 import { addMovieClipFrameScript, setMovieClipSource } from '@flighthq/movieclip/contract';
 import type { MovieClip } from '@flighthq/movieclip/contract';
 import {
@@ -28,21 +34,11 @@ import type {
   Scene2DDocumentImporterRegistry,
 } from '@flighthq/scene2d-resources/contract';
 import { setNode2DClip } from '@flighthq/scene2d/contract';
+import type { Node2D, Node2DFields, Scene2DSlotReference } from '@flighthq/scene2d/contract';
 import { getShapeFillRegions, setMorphShapeProgress } from '@flighthq/shape/contract';
 import type { MorphShape } from '@flighthq/shape/contract';
 import { MorphShapeKind } from '@flighthq/shape/contract';
 import type { TimelineCue, TimelineLabel, TimelineSource } from '@flighthq/timeline/contract';
-import type {
-  EntityConstruction,
-  GlyphOutlineSource,
-  HostDecompressDeflateCapability,
-  HostDecompressLzmaCapability,
-  ImportDiagnostic,
-  Node2D,
-  Node2DFields,
-  Scene2DSlotReference,
-} from '@flighthq/types/contract';
-import { Compression, CompressionFraming, ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
 import { expandSwfTagHandlerDispatch } from './expandSwfTagHandlerDispatch.ts';
 import { applySwfMorphBounds, createSwfDisplayObject, createSwfMovieClip } from './swfNode.ts';

@@ -1,5 +1,5 @@
+import type { ImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import { createTexture } from '@flighthq/texture/contract';
-import type { ImportDiagnostic } from '@flighthq/types/contract';
 
 import { SwfReader } from './swfReader.ts';
 import { createSwfGlyphShape, createSwfShape, readSwfMorphShapePaths } from './swfShape.ts';

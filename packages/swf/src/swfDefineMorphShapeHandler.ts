@@ -1,7 +1,7 @@
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import type { ImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import { ImportDiagnosticSeverity } from '@flighthq/importdiagnostics/contract';
 import type { MorphShape } from '@flighthq/shape/contract';
-import type { ImportDiagnostic } from '@flighthq/types/contract';
-import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
 import { readSwfBoundedDefinitionHeader } from './swfBoundedDefinition.ts';
 import { acquireSwfImageTexture } from './swfImageTexture.ts';

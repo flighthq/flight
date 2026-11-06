@@ -1,4 +1,6 @@
+import { EntityRuntimeKey } from '@flighthq/entity/contract';
 import { collectImportDiagnostics } from '@flighthq/importdiagnostics/contract';
+import { ImportDiagnosticSeverity } from '@flighthq/importdiagnostics/contract';
 import {
   createMovieClip,
   getMovieClipCurrentFrame,
@@ -7,8 +9,7 @@ import {
   setMovieClipSource,
 } from '@flighthq/movieclip/contract';
 import type { MovieClip } from '@flighthq/movieclip/contract';
-import type { Node2D } from '@flighthq/types/contract';
-import { EntityRuntimeKey, ImportDiagnosticSeverity } from '@flighthq/types/contract';
+import type { Node2D } from '@flighthq/scene2d/contract';
 
 import { readSwfAbcFrameScripts, readSwfFrameActions } from './swfFrameAction.ts';
 import { buildFrameScriptAbc } from './swfFrameActionTestHelper.ts';
