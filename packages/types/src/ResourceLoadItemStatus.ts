@@ -1,1 +1,5 @@
-export type ResourceLoadItemStatus = 'cancelled' | 'failed' | 'loaded' | 'pending' | 'running' | 'skipped';
+// Owned by `@flighthq/loader`. These deprecated re-exports keep existing `@flighthq/types` imports
+// compiling until consumers import the owning package.
+
+/** @deprecated Import from `@flighthq/loader/contract`. */
+export type { ResourceLoadItemStatus } from '@flighthq/loader/contract';

@@ -1,10 +1,5 @@
-export interface ResourceLoadReport {
-  attempts: number;
-  bytes: number;
-  elapsedMs: number;
-  group: string | undefined;
-  key: string;
-  status: ResourceLoadReportStatus;
-}
+// Owned by `@flighthq/loader`. These deprecated re-exports keep existing `@flighthq/types` imports
+// compiling until consumers import the owning package.
 
-export type ResourceLoadReportStatus = 'cancelled' | 'failed' | 'loaded' | 'skipped';
+/** @deprecated Import from `@flighthq/loader/contract`. */
+export type { ResourceLoadReport, ResourceLoadReportStatus } from '@flighthq/loader/contract';

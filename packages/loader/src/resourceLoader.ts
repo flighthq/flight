@@ -1,5 +1,7 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
 import { clearSignal, createSignal, emitSignal } from '@flighthq/signals/contract';
+
 import type {
   ResourceLoadBytes,
   ResourceLoadBytesReporter,
@@ -11,8 +13,7 @@ import type {
   ResourceLoader,
   ResourceLoaderItemSignals,
   ResourceLoaderOptions,
-  EntityConstruction,
-} from '@flighthq/types/contract';
+} from './types.ts';
 
 // Internal key prefix for auto-assigned keys
 const AUTO_KEY_PREFIX = '__item_';

@@ -1,11 +1,5 @@
-import type { Signal } from '@flighthq/signals/contract';
-export interface LoadProgress {
-  readonly url: string;
-  readonly loaded: number;
-  readonly total: number;
-  readonly phase: 'download' | 'upload';
-}
-export interface LoadOptions {
-  readonly signal?: AbortSignal;
-  readonly progress?: Signal<Readonly<LoadProgress>>;
-}
+// Owned by `@flighthq/loader`. These deprecated re-exports keep existing `@flighthq/types` imports
+// compiling until consumers import the owning package.
+
+/** @deprecated Import from `@flighthq/loader/contract`. */
+export type { LoadProgress, LoadOptions } from '@flighthq/loader/contract';

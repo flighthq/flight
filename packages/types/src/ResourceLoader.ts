@@ -1,18 +1,5 @@
-import type { Signal } from '@flighthq/signals/contract';
+// Owned by `@flighthq/loader`. These deprecated re-exports keep existing `@flighthq/types` imports
+// compiling until consumers import the owning package.
 
-import type { Entity } from './Entity.ts';
-import type { ResourceLoadReport } from './ResourceLoadReport.ts';
-
-export interface ResourceLoader extends Entity {
-  onCancel: Signal<void>;
-  onComplete: Signal<readonly ResourceLoadReport[]>;
-  onError: Signal<readonly [unknown, string]>;
-  onPause: Signal<void>;
-  // The 0..1 weighted fraction — the same number `getResourceLoadProgress` returns, so the signal and
-  // the accessor can never disagree. It used to emit (loaded, total) item counts while the accessor
-  // returned the weighted fraction, so a weighted batch had two live answers to one question and the
-  // caller's choice of API silently decided which. Item counts are still available, by name, from
-  // `getResourceLoadCounts`.
-  onProgress: Signal<number>;
-  onResume: Signal<void>;
-}
+/** @deprecated Import from `@flighthq/loader/contract`. */
+export type { ResourceLoader } from '@flighthq/loader/contract';

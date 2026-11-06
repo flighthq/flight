@@ -1,12 +1,5 @@
-export interface ResourceLoaderOptions {
-  dedupe?: boolean;
-  errorPolicy?: 'continue' | 'fail-fast';
-  maxBytesPerSecond?: number;
-  maxConcurrent?: number;
-  retries?: number;
-  retryBackoff?: 'exponential' | 'linear' | 'none';
-  retryBaseDelayMs?: number;
-  retryMaxDelayMs?: number;
-  streaming?: boolean;
-  timeoutMs?: number;
-}
+// Owned by `@flighthq/loader`. These deprecated re-exports keep existing `@flighthq/types` imports
+// compiling until consumers import the owning package.
+
+/** @deprecated Import from `@flighthq/loader/contract`. */
+export type { ResourceLoaderOptions } from '@flighthq/loader/contract';

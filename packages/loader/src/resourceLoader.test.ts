@@ -1,6 +1,5 @@
 import { connectSignal } from '@flighthq/signals/contract';
 import type { Signal } from '@flighthq/signals/contract';
-import type { ResourceLoadHandle, ResourceLoadReport } from '@flighthq/types/contract';
 
 import {
   cancelResourceLoad,
@@ -20,6 +19,7 @@ import {
   setResourceLoaderConcurrency,
   startResourceLoad,
 } from './resourceLoader.ts';
+import type { ResourceLoadHandle, ResourceLoadReport } from './types.ts';
 
 // Helper: wait for onComplete signal
 function waitForComplete(loader: ReturnType<typeof createResourceLoader>): Promise<readonly ResourceLoadReport[]> {

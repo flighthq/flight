@@ -1,10 +1,5 @@
-import type { Signal } from '@flighthq/signals/contract';
+// Owned by `@flighthq/loader`. These deprecated re-exports keep existing `@flighthq/types` imports
+// compiling until consumers import the owning package.
 
-import type { Entity } from './Entity.ts';
-
-export interface ResourceLoaderItemSignals extends Entity {
-  onItemComplete: Signal<readonly [string, unknown]>;
-  onItemError: Signal<readonly [string, unknown, number]>;
-  onItemRetry: Signal<readonly [string, number, number]>;
-  onItemStart: Signal<string>;
-}
+/** @deprecated Import from `@flighthq/loader/contract`. */
+export type { ResourceLoaderItemSignals } from '@flighthq/loader/contract';

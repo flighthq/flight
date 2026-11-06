@@ -1,4 +1,5 @@
-export interface ResourceLoadHandle<T> {
-  key: string;
-  promise: Promise<T>;
-}
+// Owned by `@flighthq/loader`. These deprecated re-exports keep existing `@flighthq/types` imports
+// compiling until consumers import the owning package.
+
+/** @deprecated Import from `@flighthq/loader/contract`. */
+export type { ResourceLoadHandle } from '@flighthq/loader/contract';
