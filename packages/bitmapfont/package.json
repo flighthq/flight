@@ -45,8 +45,7 @@
     "@flighthq/glyphatlas": "*",
     "@flighthq/log": "*",
     "@flighthq/texture": "*",
-    "@flighthq/textureatlas": "*",
-    "@flighthq/types": "*"
+    "@flighthq/textureatlas": "*"
   },
   "devDependencies": {
     "@flighthq/glyphatlas": "*",

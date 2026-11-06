@@ -1,5 +1,4 @@
 import { createTextureAtlas, createTextureAtlasFromImageResource } from '@flighthq/textureatlas/contract';
-import type { ImageResource } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { createBitmapFont, getBitmapFontGlyph } from './bitmapFont.ts';
@@ -33,7 +32,7 @@ describe('createGlyphSourceFromBitmapFont', () => {
   });
 
   it('pairs page 0 with the font atlas image and has no other page', () => {
-    const image = {} as ImageResource;
+    const image = {} as Parameters<typeof createTextureAtlasFromImageResource>[0];
     const font = createBitmapFont({ ...sampleFontData(), pages: [createTextureAtlasFromImageResource(image)] });
     const source = createGlyphSourceFromBitmapFont(font);
 
@@ -43,8 +42,8 @@ describe('createGlyphSourceFromBitmapFont', () => {
   });
 
   it('resolves each page image of a multi-page font', () => {
-    const image0 = {} as ImageResource;
-    const image1 = {} as ImageResource;
+    const image0 = {} as Parameters<typeof createTextureAtlasFromImageResource>[0];
+    const image1 = {} as Parameters<typeof createTextureAtlasFromImageResource>[0];
     const font = createBitmapFont({
       ...sampleFontData(),
       pages: [createTextureAtlasFromImageResource(image0), createTextureAtlasFromImageResource(image1)],

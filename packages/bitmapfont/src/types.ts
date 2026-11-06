@@ -1,5 +1,4 @@
-// The bitmapfont-owned contracts. They import nothing from @flighthq/types, which re-exports them
-// type-only for compatibility.
+// The bitmapfont-owned contracts. They import their dependencies directly from the owning packages.
 
 import type { EntityRaw, EntityRuntime } from '@flighthq/entity/contract';
 import type { EntityRuntimeKey } from '@flighthq/entity/contract';

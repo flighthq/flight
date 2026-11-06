@@ -44,7 +44,6 @@
     "@flighthq/audio": "*",
     "@flighthq/binpack": "*",
     "@flighthq/bitmap": "*",
-    "@flighthq/bitmapfont": "*",
     "@flighthq/bitmaptext": "*",
     "@flighthq/buffer": "*",
     "@flighthq/camera": "*",

@@ -1,8 +1,8 @@
 import { createTexture } from '@flighthq/texture/contract';
 import { BitmapTextureSourceKind } from '@flighthq/texture/contract';
+import type { TextureSource } from '@flighthq/texture/contract';
 import { createTextureAtlas } from '@flighthq/textureatlas/contract';
 import type { TextureAtlas } from '@flighthq/textureatlas/contract';
-import type { Bitmap } from '@flighthq/types/contract';
 
 import { createBitmapFont } from './bitmapFont.ts';
 import { summarizeBitmapFont } from './summarizeBitmapFont.ts';
@@ -20,7 +20,7 @@ function pageOfBytes(bytes: number): TextureAtlas {
     kind: BitmapTextureSourceKind,
     version: 0,
     width: bytes / 4,
-  } as unknown as Bitmap;
+  } as unknown as TextureSource;
   return createTextureAtlas({ texture: createTexture({ dimension: '2d', source: image }) });
 }
 

@@ -11,8 +11,8 @@ import type { BitmapFont, BitmapFontGlyphData } from './types.ts';
  *
  *  This lives in `@flighthq/bitmapfont` rather than in `@flighthq/glyphatlas` because a conversion
  *  constructor belongs to the package that owns the PRODUCT, the same way `createImageResourceFromBitmap`
- *  lives in `@flighthq/image`. Every type is in `@flighthq/types`, so reading a `GlyphAtlas` here costs
- *  no dependency on the atlas package, and `glyphatlas` gains no edge to `textureatlas` or `texture`.
+ *  lives in `@flighthq/image`. Each contract comes directly from its owning package, preserving the
+ *  dependency direction from bitmapfont to glyphatlas, textureatlas, and texture without a Types facade.
  *
  *  The page is CPU-only: the atlas's own bitmap is already a valid `TextureSource` under the flat
  *  texture model, so the font's page is a `TextureAtlas` over a bitmap-sourced `Texture` with no GPU

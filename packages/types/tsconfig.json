@@ -97,7 +97,6 @@
       ".glyphatlas-types",
       ".timeline-types",
       ".scene2d-resources-types",
-      ".bitmapfont-types",
       ".textureatlas-types",
       ".scene3d-node-types",
       ""
@@ -446,9 +445,6 @@
     },
     {
       "path": "../scene2d-resources/tsconfig.contract.json"
-    },
-    {
-      "path": "../bitmapfont/tsconfig.contract.json"
     },
     {
       "path": "../textureatlas/tsconfig.contract.json"

@@ -1,12 +1,11 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 import type { GlyphSource } from '@flighthq/glyphatlas/contract';
-import type { Entity } from '@flighthq/types/contract';
 
 import { getBitmapFontGlyph, getBitmapFontKerning, getBitmapFontMetrics } from './bitmapFont.ts';
 import type { BitmapFont } from './types.ts';
 
-export function createGlyphSourceFromBitmapFont(font: Readonly<BitmapFont>): GlyphSource & Entity {
+export function createGlyphSourceFromBitmapFont(font: Readonly<BitmapFont>): GlyphSource {
   const out = allocateEntity<GlyphSource>();
   initializeGlyphSourceFromBitmapFont(out, font);
   return finishEntity(out);
