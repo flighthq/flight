@@ -35,12 +35,12 @@ import type { RichText } from '@flighthq/text/contract';
 import { RichTextKind } from '@flighthq/text/contract';
 import { getTextureSource } from '@flighthq/texture/contract';
 import { setTextureSource } from '@flighthq/texture/contract';
+import type { TimelineAudioCue } from '@flighthq/timeline/contract';
 import type {
   HostDecompressDeflateCapability,
   EmbeddedAudioResourceReference,
   EmbeddedImageResourceReference,
   ImportDiagnostic,
-  TimelineAudioCue,
   MovieClip,
   Node2D,
   Scene2DDocument,

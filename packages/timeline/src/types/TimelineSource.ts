@@ -1,5 +1,6 @@
-import type { Entity } from './Entity.ts';
-import type { Node2D } from './Node2D.ts';
+import type { EntityRaw, EntityRuntime, EntityRuntimeKey } from '@flighthq/entity/contract';
+import type { Node2D } from '@flighthq/scene2d/contract';
+
 import type { TimelineCue } from './TimelineCue.ts';
 import type { TimelineLabel } from './TimelineLabel.ts';
 
@@ -8,7 +9,8 @@ import type { TimelineLabel } from './TimelineLabel.ts';
 // imported SWF/Animate document. The Timeline engine owns *playback* (currentFrame, play/stop, looping,
 // labels lookup); the source owns what a frame *is*. Splitting the two lets any format drive a MovieClip
 // without the engine and the format depending on each other — both depend only on this contract.
-export interface TimelineSource extends Entity {
+export interface TimelineSource extends EntityRaw {
+  [EntityRuntimeKey]: EntityRuntime | undefined;
   readonly totalFrames: number;
   readonly labels: readonly TimelineLabel[];
   // Edge-triggered cues the format authored onto frames — sounds, playhead commands, user-defined kinds.

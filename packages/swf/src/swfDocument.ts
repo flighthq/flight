@@ -24,6 +24,7 @@ import { setNode2DClip } from '@flighthq/scene2d/contract';
 import { getShapeFillRegions, setMorphShapeProgress } from '@flighthq/shape/contract';
 import type { MorphShape } from '@flighthq/shape/contract';
 import { MorphShapeKind } from '@flighthq/shape/contract';
+import type { TimelineCue, TimelineLabel, TimelineSource } from '@flighthq/timeline/contract';
 import type {
   ClipRegion,
   EntityConstruction,
@@ -38,9 +39,6 @@ import type {
   Scene2DDocumentImportContext,
   Scene2DDocumentImporterRegistry,
   Scene2DSlotReference,
-  TimelineCue,
-  TimelineLabel,
-  TimelineSource,
 } from '@flighthq/types/contract';
 import { Compression, CompressionFraming, ImportDiagnosticSeverity } from '@flighthq/types/contract';
 

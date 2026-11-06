@@ -1,7 +1,7 @@
 import { createAudioResource } from '@flighthq/audio/contract';
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { TimelineAudioCue, TimelineStreamAudioCue } from '@flighthq/types/contract';
-import { TimelineAudioCueKind, TimelineStreamAudioCueKind } from '@flighthq/types/contract';
+import type { TimelineAudioCue, TimelineStreamAudioCue } from '@flighthq/timeline/contract';
+import { TimelineAudioCueKind, TimelineStreamAudioCueKind } from '@flighthq/timeline/contract';
 
 import { initializeTimelineAudioCue, initializeTimelineStreamAudioCue, swfSoundHandler } from './swfSoundHandler.ts';
 

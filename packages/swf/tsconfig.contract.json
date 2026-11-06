@@ -19,6 +19,7 @@
       ".swf-bridge-types",
       ".text-types",
       ".texture-types",
+      ".timeline-types",
       ""
     ],
     "tsBuildInfoFile": "dist/.tsbuildinfo.contract"
@@ -62,6 +63,9 @@
     },
     {
       "path": "../texture/tsconfig.contract.json"
+    },
+    {
+      "path": "../timeline/tsconfig.contract.json"
     },
     {
       "path": "../types/tsconfig.swf-bridge-types.json"

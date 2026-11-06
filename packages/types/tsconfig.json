@@ -97,6 +97,7 @@
       ".lighting-types",
       ".swf-types",
       ".glyphatlas-types",
+      ".timeline-types",
       ""
     ],
     "types": ["@testing-library/jest-dom", "vitest/globals", "@webgpu/types"]
@@ -437,6 +438,9 @@
     },
     {
       "path": "../glyphatlas/tsconfig.contract.json"
+    },
+    {
+      "path": "../timeline/tsconfig.contract.json"
     }
   ],
   "include": ["src"]

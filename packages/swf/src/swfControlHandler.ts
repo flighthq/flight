@@ -1,5 +1,6 @@
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
-import type { FrameScript, ImportDiagnostic, TimelineLabel } from '@flighthq/types/contract';
+import type { FrameScript, TimelineLabel } from '@flighthq/timeline/contract';
+import type { ImportDiagnostic } from '@flighthq/types/contract';
 import { BlendMode, ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
 import { EMPTY_ADJUSTMENTS, EMPTY_EFFECTS, readSwfColorTransform } from './swfAppearance.ts';

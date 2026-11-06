@@ -67,6 +67,7 @@
     "@flighthq/text-markup": "*",
     "@flighthq/textformat": "*",
     "@flighthq/texture": "*",
+    "@flighthq/timeline": "*",
     "@flighthq/types": "*"
   },
   "devDependencies": {

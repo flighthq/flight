@@ -2,15 +2,14 @@ import { createAudioResource, createEmbeddedAudioResourceReference } from '@flig
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import type {
-  AudioResource,
-  AudioResourceReference,
-  EntityConstruction,
   TimelineAudioCue,
   TimelineAudioEnvelopePoint,
   TimelineCue,
   TimelineStreamAudioCue,
-} from '@flighthq/types/contract';
-import { ImportDiagnosticSeverity, TimelineAudioCueKind, TimelineStreamAudioCueKind } from '@flighthq/types/contract';
+} from '@flighthq/timeline/contract';
+import { TimelineAudioCueKind, TimelineStreamAudioCueKind } from '@flighthq/timeline/contract';
+import type { AudioResource, AudioResourceReference, EntityConstruction } from '@flighthq/types/contract';
+import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
 import type { SwfTagHandler } from './types/SwfTagHandler.ts';
 import type {

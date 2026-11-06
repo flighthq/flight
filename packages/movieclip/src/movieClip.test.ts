@@ -1,5 +1,6 @@
 import { createTimeline, createTimelineSource, playTimeline } from '@flighthq/timeline/contract';
-import type { MovieClip, Timeline } from '@flighthq/types/contract';
+import type { Timeline } from '@flighthq/timeline/contract';
+import type { MovieClip } from '@flighthq/types/contract';
 import { MovieClipKind } from '@flighthq/types/contract';
 
 import {

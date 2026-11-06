@@ -8,7 +8,8 @@ import {
   prevFrameMovieClip,
   stopMovieClip,
 } from '@flighthq/movieclip/contract';
-import type { FrameScript, ImportDiagnostic, MovieClip, Node2D } from '@flighthq/types/contract';
+import type { FrameScript } from '@flighthq/timeline/contract';
+import type { ImportDiagnostic, MovieClip, Node2D } from '@flighthq/types/contract';
 import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
 import type { SwfReader } from './swfReader.ts';

@@ -1,6 +1,6 @@
 import { connectSignal, disconnectSignal } from '@flighthq/signals/contract';
 import type { Signal, SlotId } from '@flighthq/signals/contract';
-import type { Node2D, Timeline, TimelineFrameEvent } from '@flighthq/types/contract';
+import type { Node2D } from '@flighthq/types/contract';
 
 import {
   addTimelineFrameScript,
@@ -25,6 +25,8 @@ import {
   stopTimeline,
   updateTimeline,
 } from './timeline.ts';
+import type { Timeline } from './types/Timeline.ts';
+import type { TimelineFrameEvent } from './types/TimelineFrameEvent.ts';
 
 interface MakeOptions {
   totalFrames?: number;

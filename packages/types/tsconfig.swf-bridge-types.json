@@ -25,26 +25,15 @@
     },
     {
       "path": "../scene2d/tsconfig.contract.json"
-    },
-    {
-      "path": "../signals"
     }
   ],
   "files": [
     "src/AdvancedBlendMode.ts",
     "src/BlendMode.materials-types.ts",
     "src/Entity.ts",
-    "src/FrameScript.ts",
     "src/ImageResourceReference.ts",
     "src/Node2D.scene2d-types.ts",
     "src/Scene2DDocument.ts",
-    "src/Timeline.ts",
-    "src/TimelineCue.ts",
-    "src/TimelineFrameEvent.ts",
-    "src/TimelineLabel.ts",
-    "src/TimelinePlayMode.ts",
-    "src/TimelineSignals.ts",
-    "src/TimelineSource.ts",
     "src/contract.swf-bridge-types.ts"
   ],
   "include": []

@@ -1,6 +1,6 @@
 import type { AudioResource } from '@flighthq/audio/contract';
+import type { EntityRaw, EntityRuntime, EntityRuntimeKey } from '@flighthq/entity/contract';
 
-import type { Entity } from './Entity.ts';
 import type { Timeline } from './Timeline.ts';
 
 // An edge-triggered cue authored onto a timeline frame: a sound to start, a playhead command, anything a
@@ -49,7 +49,8 @@ export type TimelineFrameEntryCause = (typeof TimelineFrameEntryCause)[keyof typ
 
 // The base every cue shares. `kind` is an open plain string, not a closed union: it is the registry key,
 // the serialized form, and the user-facing vocabulary at once.
-export interface TimelineCue extends Entity {
+export interface TimelineCue extends EntityRaw {
+  [EntityRuntimeKey]: EntityRuntime | undefined;
   // 1-based, matching Timeline.currentFrame and TimelineLabel.
   frame: number;
   kind: string;
@@ -140,6 +141,7 @@ export interface TimelineCueHandlerEntry {
 
 // Registered handlers, held on an entity rather than in module state so two timelines can dispatch
 // different kind sets and nothing is global. Last-write-wins per kind, matching renderer registration.
-export interface TimelineCueRegistry extends Entity {
+export interface TimelineCueRegistry extends EntityRaw {
+  [EntityRuntimeKey]: EntityRuntime | undefined;
   entries: TimelineCueHandlerEntry[];
 }

@@ -2,7 +2,4 @@
 // re-exports swf, so the swf lane selects this entry through the `.swf-bridge-types` module suffix.
 export type { AdvancedBlendMode } from './AdvancedBlendMode.ts';
 export type { BlendMode } from './BlendMode.ts';
-export type { FrameScript } from './FrameScript.ts';
 export type { Scene2DDocument } from './Scene2DDocument.ts';
-export type { TimelineAudioCue, TimelineCue } from './TimelineCue.ts';
-export type { TimelineLabel } from './TimelineLabel.ts';

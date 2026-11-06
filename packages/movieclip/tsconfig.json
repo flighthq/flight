@@ -31,7 +31,7 @@
       "path": "../textureatlas"
     },
     {
-      "path": "../timeline"
+      "path": "../timeline/tsconfig.runtime.json"
     },
     {
       "path": "../types"

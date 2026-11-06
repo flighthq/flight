@@ -89,6 +89,9 @@
       "path": "../types"
     },
     {
+      "path": "../timeline/tsconfig.runtime.json"
+    },
+    {
       "path": "./tsconfig.contract.json"
     },
     {

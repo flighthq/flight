@@ -16,15 +16,13 @@ import {
   stopTimeline,
   updateTimeline,
 } from '@flighthq/timeline/contract';
+import type { FrameScript, TimelineLabel, TimelineSource } from '@flighthq/timeline/contract';
 import type {
   EntityConstruction,
-  FrameScript,
   MovieClip,
   MovieClipData,
   MovieClipRuntime,
   MovieClipSignals,
-  TimelineLabel,
-  TimelineSource,
 } from '@flighthq/types/contract';
 import { EntityRuntimeKey, MovieClipKind } from '@flighthq/types/contract';
 

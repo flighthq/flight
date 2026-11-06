@@ -1,16 +1,14 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { createSignal, emitSignal } from '@flighthq/signals/contract';
-import type {
-  EntityConstruction,
-  FrameScript,
-  Node2D,
-  Timeline,
-  TimelineCue,
-  TimelineFrameEvent,
-  TimelineLabel,
-  TimelineSignals,
-  TimelineSource,
-} from '@flighthq/types/contract';
+import type { EntityConstruction, Node2D } from '@flighthq/types/contract';
+
+import type { FrameScript } from './types/FrameScript.ts';
+import type { Timeline } from './types/Timeline.ts';
+import type { TimelineCue } from './types/TimelineCue.ts';
+import type { TimelineFrameEvent } from './types/TimelineFrameEvent.ts';
+import type { TimelineLabel } from './types/TimelineLabel.ts';
+import type { TimelineSignals } from './types/TimelineSignals.ts';
+import type { TimelineSource } from './types/TimelineSource.ts';
 
 export function addTimelineFrameScript(timeline: Timeline, frame: number | string, script: FrameScript): void {
   const resolved = resolveFrame(timeline, frame);

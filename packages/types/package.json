@@ -140,6 +140,7 @@
     "@flighthq/textshaper": "*",
     "@flighthq/texture": "*",
     "@flighthq/texture-formats": "*",
+    "@flighthq/timeline": "*",
     "@flighthq/tray": "*",
     "@flighthq/tween": "*",
     "@flighthq/updater": "*",

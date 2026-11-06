@@ -445,7 +445,7 @@
       "path": "../tilemap"
     },
     {
-      "path": "../timeline"
+      "path": "../timeline/tsconfig.runtime.json"
     },
     {
       "path": "../tray/tsconfig.runtime.json"

@@ -1,0 +1,35 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "composite": true,
+    "rootDir": "src",
+    "outDir": "dist",
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "tsBuildInfoFile": "dist/.tsbuildinfo.runtime",
+    "moduleSuffixes": [".audio-types", ".scene2d-types", ""]
+  },
+  "references": [
+    {
+      "path": "../audio/tsconfig.contract.json"
+    },
+    {
+      "path": "../scene2d/tsconfig.contract.json"
+    },
+    {
+      "path": "../entity"
+    },
+    {
+      "path": "../signals"
+    },
+    {
+      "path": "../types"
+    },
+    {
+      "path": "./tsconfig.contract.json"
+    }
+  ],
+  "include": ["src/**/*.ts"],
+  "exclude": ["src/contract.timeline-types.ts", "src/types/**/*.ts"]
+}

@@ -6,6 +6,7 @@ import {
   getTextureAtlasRegionFrame,
   getTextureAtlasRegionTexture,
 } from '@flighthq/textureatlas/contract';
+import type { TimelineSource } from '@flighthq/timeline/contract';
 import type {
   Entity,
   Node2D,
@@ -14,7 +15,6 @@ import type {
   SpritesheetAnimation,
   SpritesheetTimelineSourceExplanation,
   SpritesheetTimelineSourceGuard,
-  TimelineSource,
   EntityConstruction,
 } from '@flighthq/types/contract';
 

@@ -7,12 +7,12 @@ import type { MorphShape } from '@flighthq/shape/contract';
 import type { Shape } from '@flighthq/shape/contract';
 import type { RichText } from '@flighthq/text/contract';
 import type { Texture2D } from '@flighthq/texture/contract';
+import type { FrameScript } from '@flighthq/timeline/contract';
+import type { TimelineAudioCue } from '@flighthq/timeline/contract';
+import type { TimelineCue } from '@flighthq/timeline/contract';
+import type { TimelineLabel } from '@flighthq/timeline/contract';
 import type { AdvancedBlendMode } from '@flighthq/types/contract';
 import type { BlendMode } from '@flighthq/types/contract';
-import type { FrameScript } from '@flighthq/types/contract';
-import type { TimelineAudioCue } from '@flighthq/types/contract';
-import type { TimelineCue } from '@flighthq/types/contract';
-import type { TimelineLabel } from '@flighthq/types/contract';
 
 import type { SwfTagHandlerDispatch } from './SwfTagHandler.ts';
 
