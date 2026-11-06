@@ -168,7 +168,13 @@ import {
   swfVideoHandler,
 } from '@flighthq/swf';
 import { getSwfTagName, SWF_REQUIREMENT_KEY_NAMESPACE } from '@flighthq/swf/contract';
-import { TILEMAP_REQUIREMENT_KEY_NAMESPACE } from '@flighthq/tilemap-formats/contract';
+import {
+  TilemapFormatKindTiledTmj,
+  TilemapFormatKindTiledTmx,
+  TilemapFormatKindTiledTsj,
+  TilemapFormatKindTiledTsx,
+  TILEMAP_REQUIREMENT_KEY_NAMESPACE,
+} from '@flighthq/tilemap-formats/contract';
 import type { PathBooleanKernel, RiveImportRegistry } from '@flighthq/types/contract';
 import type {
   Awd2BlockHandler,
@@ -206,10 +212,6 @@ import {
   SpineJsonTimelineKind,
   StarlingPexFormatKind,
   THREE_DS_MATERIAL_TEXTURE_MAP,
-  TilemapFormatKindTiledTmj,
-  TilemapFormatKindTiledTmx,
-  TilemapFormatKindTiledTsj,
-  TilemapFormatKindTiledTsx,
 } from '@flighthq/types/contract';
 
 /**
