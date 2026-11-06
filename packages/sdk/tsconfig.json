@@ -160,7 +160,7 @@
       "path": "../gui/tsconfig.runtime.json"
     },
     {
-      "path": "../gizmo"
+      "path": "../gizmo/tsconfig.runtime.json"
     },
     {
       "path": "../glyphatlas/tsconfig.runtime.json"
