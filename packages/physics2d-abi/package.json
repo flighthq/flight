@@ -43,7 +43,7 @@
     "@flighthq/collision": "*",
     "@flighthq/entity": "*",
     "@flighthq/physics2d": "*",
-    "@flighthq/types": "*"
+    "@flighthq/spatial": "*"
   },
   "devDependencies": {
     "typescript": "^7.0.2"

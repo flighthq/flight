@@ -1,5 +1,4 @@
 import { createPhysics2DCollider, createPhysics2DRevoluteJoint, createRigidBody2D } from '@flighthq/physics2d/contract';
-import type { Physics2DAbi, Physics2DAbiCommandBuffer } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import {
@@ -34,6 +33,7 @@ import {
   Physics2DAbiContactFlag,
   Physics2DAbiVersion,
 } from './physics2DAbiLayout.ts';
+import type { Physics2DAbi, Physics2DAbiCommandBuffer } from './types.ts';
 
 const MATERIAL = { density: 1, friction: 0.3, restitution: 0 };
 

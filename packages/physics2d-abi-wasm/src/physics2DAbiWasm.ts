@@ -1,4 +1,3 @@
-import { EntityRuntimeKey } from '@flighthq/types';
 import type {
   Physics2DAbi,
   Physics2DAbiBodyBuffer,
@@ -7,7 +6,8 @@ import type {
   Physics2DAbiQueryBuffer,
   Physics2DAbiStepStatus,
   Physics2DAbiWorldStatus,
-} from '@flighthq/types';
+} from '@flighthq/physics2d-abi/contract';
+import { EntityRuntimeKey } from '@flighthq/types';
 
 import {
   abi_capabilities,

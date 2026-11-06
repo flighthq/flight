@@ -13,7 +13,7 @@ import {
   createPhysics2DWheelJoint,
   createRigidBody2D,
 } from '@flighthq/physics2d/contract';
-import type { Physics2DJoint } from '@flighthq/types/contract';
+import type { Physics2DJoint } from '@flighthq/physics2d/contract';
 import { describe, expect, it } from 'vitest';
 
 import { createPhysics2DAbiCommandBuffer } from './physics2DAbiBuffer.ts';

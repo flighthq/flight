@@ -1,11 +1,8 @@
 import type { CollisionBuiltInShape2D } from '@flighthq/collision/contract';
-import type {
-  Physics2DAbi,
-  Physics2DAbiQueryBuffer,
-  Physics2DAbiWorldHandle,
-  Physics2DQueryFilter,
-  SpatialAabb2D,
-} from '@flighthq/types/contract';
+import type { Physics2DQueryFilter } from '@flighthq/physics2d/contract';
+import type { SpatialAabb2D } from '@flighthq/spatial/contract';
+
+import type { Physics2DAbi, Physics2DAbiQueryBuffer, Physics2DAbiWorldHandle } from './types.ts';
 
 export function queryPhysics2DAbiPoint(
   abi: Readonly<Physics2DAbi>,

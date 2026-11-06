@@ -1,5 +1,6 @@
 import type { CollisionBuiltInShape2D } from '@flighthq/collision/contract';
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
 import {
   addPhysics2DBody,
   addPhysics2DCollider,
@@ -51,19 +52,6 @@ import {
   writePhysics2DJointReaction,
 } from '@flighthq/physics2d/contract';
 import type {
-  Physics2DAbi,
-  Physics2DAbiBodyBuffer,
-  Physics2DAbiCommandBuffer,
-  Physics2DAbiContactBuffer,
-  Physics2DAbiContactHooks,
-  Physics2DAbiContactSelection,
-  Physics2DAbiExecutionResult,
-  Physics2DAbiExecutionStatus,
-  Physics2DAbiJointBuffer,
-  Physics2DAbiQueryBuffer,
-  Physics2DAbiStepStatus,
-  Physics2DAbiWorldHandle,
-  Physics2DAbiWorldStatus,
   Physics2DCollider,
   Physics2DContact,
   Physics2DContactCallback,
@@ -72,8 +60,7 @@ import type {
   Physics2DSolverConfig,
   Physics2DWorld,
   RigidBody2D,
-  EntityConstruction,
-} from '@flighthq/types/contract';
+} from '@flighthq/physics2d/contract';
 
 import {
   Physics2DAbiBodyFlag,
@@ -102,6 +89,21 @@ import {
   Physics2DAbiShapeKind,
   Physics2DAbiVersion,
 } from './physics2DAbiLayout.ts';
+import type {
+  Physics2DAbi,
+  Physics2DAbiBodyBuffer,
+  Physics2DAbiCommandBuffer,
+  Physics2DAbiContactBuffer,
+  Physics2DAbiContactHooks,
+  Physics2DAbiContactSelection,
+  Physics2DAbiExecutionResult,
+  Physics2DAbiExecutionStatus,
+  Physics2DAbiJointBuffer,
+  Physics2DAbiQueryBuffer,
+  Physics2DAbiStepStatus,
+  Physics2DAbiWorldHandle,
+  Physics2DAbiWorldStatus,
+} from './types.ts';
 
 export function createReferencePhysics2DAbi(): Physics2DAbi {
   const out = allocateEntity<Physics2DAbi>();

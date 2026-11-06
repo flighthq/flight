@@ -11,8 +11,6 @@ import {
   Physics2DWheelJointKind,
 } from '@flighthq/physics2d/contract';
 import type {
-  Physics2DAbiCommandBuffer,
-  Physics2DAbiObjectId,
   Physics2DCollider,
   Physics2DDistanceJoint,
   Physics2DGearJoint,
@@ -26,7 +24,7 @@ import type {
   Physics2DWeldJoint,
   Physics2DWheelJoint,
   RigidBody2D,
-} from '@flighthq/types/contract';
+} from '@flighthq/physics2d/contract';
 
 import {
   Physics2DAbiBodyFlag,
@@ -46,6 +44,7 @@ import {
   Physics2DAbiSolverConfigFlag,
   Physics2DAbiVersion,
 } from './physics2DAbiLayout.ts';
+import type { Physics2DAbiCommandBuffer, Physics2DAbiObjectId } from './types.ts';
 
 export function getPhysics2DAbiSetColliderCommandByteLength(collider: Readonly<Physics2DCollider>): number {
   const shapeByteLength = getShapeByteLength(collider.local);

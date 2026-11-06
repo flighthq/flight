@@ -1,7 +1,6 @@
 // Generated from crates/flight-physics2d-abi/tests/physics2d_abi_buffer_test.rs by flight-compiler.
 // Rust is authoritative; run `npm run generate` after changing it.
 
-import type { Physics2DAbiCommandBuffer } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import {
@@ -30,6 +29,7 @@ import {
   initializePhysics2DAbiQueryBuffer,
   writePhysics2DAbiSetGravityCommand,
 } from './contract.ts';
+import type { Physics2DAbiCommandBuffer } from './types.ts';
 
 const UNSAFE_CAPACITY: number = 1 * 2 ** 53;
 

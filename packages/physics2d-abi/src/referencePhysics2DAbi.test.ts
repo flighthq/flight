@@ -9,7 +9,7 @@ import {
   addPhysics2DJoint,
   stepPhysics2D,
 } from '@flighthq/physics2d/contract';
-import type { Physics2DAbiCommandBuffer, RigidBody2D } from '@flighthq/types/contract';
+import type { RigidBody2D } from '@flighthq/physics2d/contract';
 import { describe, expect, it } from 'vitest';
 
 import { createPhysics2DAbi, readPhysics2DAbiBodies, stepPhysics2DAbiWorld } from './physics2DAbi.ts';
@@ -28,6 +28,7 @@ import {
 } from './physics2DAbiCommand.ts';
 import { Physics2DAbiBodyValue, Physics2DAbiJointFlag } from './physics2DAbiLayout.ts';
 import { initializeReferencePhysics2DAbi } from './referencePhysics2DAbi.ts';
+import type { Physics2DAbiCommandBuffer } from './types.ts';
 
 const MATERIAL = { density: 1, friction: 0.3, restitution: 0 };
 

@@ -1,3 +1,4 @@
+export * from './contract.physics2d-abi-types.ts';
 export * from './broadphase.ts';
 export * from './colliderTransform.ts';
 export * from './debugGeometry.ts';

@@ -1,26 +1,12 @@
 {
-  "extends": "../../tsconfig.base.json",
-  "compilerOptions": {
-    "composite": true,
-    "rootDir": "src",
-    "outDir": "dist",
-    "declaration": true,
-    "declarationMap": true,
-    "sourceMap": true
-  },
+  "compilerOptions": { "composite": true },
+  "files": [],
   "references": [
-    {
-      "path": "../collision"
-    },
-    {
-      "path": "../entity"
-    },
-    {
-      "path": "../physics2d"
-    },
-    {
-      "path": "../types"
-    }
-  ],
-  "include": ["src"]
+    { "path": "../collision" },
+    { "path": "../entity" },
+    { "path": "../physics2d" },
+    { "path": "../spatial/tsconfig.contract.json" },
+    { "path": "./tsconfig.contract.json" },
+    { "path": "./tsconfig.runtime.json" }
+  ]
 }

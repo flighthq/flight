@@ -1,3 +1,4 @@
+export * from './contract.physics2d-abi-types.ts';
 export * from './physics2DAbi.ts';
 export * from './physics2DAbiBuffer.ts';
 export * from './physics2DAbiCommand.ts';
