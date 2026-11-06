@@ -1,7 +1,8 @@
 import { getNodeChildren, getNodeWorldMatrix4 } from '@flighthq/node/contract';
 import { applyAnimationClipToScene3D, isMesh } from '@flighthq/scene3d/contract';
+import type { Skeleton3D } from '@flighthq/scene3d/contract';
 import { captureMeshSkinBindPose, computeSkeleton3DJointMatrices, skinVertices } from '@flighthq/skeleton3d/contract';
-import type { AabbLike, AnimationClip, Mesh, MeshSkinBindPose, Scene3D, Skeleton3D } from '@flighthq/types/contract';
+import type { AabbLike, AnimationClip, Mesh, MeshSkinBindPose, Scene3D } from '@flighthq/types/contract';
 
 export const MD5_ANIMATION_BOUNDS_ORACLE_ID = 'md5.animation-bounds';
 

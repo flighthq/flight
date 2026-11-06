@@ -1,6 +1,6 @@
 import type { ParticleBlendMode } from '@flighthq/particles/contract';
+import type { Node3D, Node3DRuntime } from '@flighthq/scene3d/contract';
 
-import type { Node3D, Node3DRuntime } from './Node3D.ts';
 import type { ParticleEmitterData } from './ParticleEmitter2D.ts';
 
 export interface ParticleEmitter3D extends Node3D {

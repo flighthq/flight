@@ -3,4 +3,4 @@
 export type { Projection } from './Camera3D.ts';
 export type { Light } from './Light.ts';
 export type { MeshMorph } from './MorphTarget.ts';
-export type { Node3D } from './Node3D.ts';
+export type { Node3D } from '@flighthq/scene3d/contract';

@@ -58,7 +58,6 @@
     "src/Matrix4.ts",
     "src/MorphTarget.ts",
     "src/Node.node-types.ts",
-    "src/Node3D.ts",
     "src/Plane.ts",
     "src/Vector2.ts"
   ]

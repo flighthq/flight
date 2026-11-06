@@ -7,8 +7,19 @@
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,
-    "tsBuildInfoFile": "dist/.tsbuildinfo.scene3d-gl-bridge-types"
+    "tsBuildInfoFile": "dist/.tsbuildinfo.scene3d-gl-bridge-types",
+    "moduleSuffixes": [".scene3d-node-types", ".node-types", ""]
   },
-  "references": [{ "path": "./tsconfig.scene3d-types.json" }],
+  "references": [
+    {
+      "path": "./tsconfig.scene3d-types.json"
+    },
+    {
+      "path": "../scene3d/tsconfig.node.json"
+    },
+    {
+      "path": "../node/tsconfig.contract.json"
+    }
+  ],
   "include": ["src/contract.scene3d-gl-bridge-types.ts", "src/GlSkinPaletteTexture.ts"]
 }

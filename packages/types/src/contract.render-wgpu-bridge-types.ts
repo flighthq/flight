@@ -2,7 +2,7 @@
 // Scene2D-WGPU registry cycle remain; all acyclic dependencies arrive from their package owners.
 export type { Modifier } from './Modifier.ts';
 export type { ModifierDefinition } from './ModifierDefinition.ts';
-export type { Node3D } from './Node3D.ts';
+export type { Node3D } from '@flighthq/scene3d/contract';
 export type {
   WgpuColorAdjustmentMaterialFeature,
   WgpuColorAdjustmentMaterialFeatureGuard,

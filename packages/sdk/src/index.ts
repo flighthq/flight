@@ -202,7 +202,6 @@ export * from '@flighthq/requirement-codegen';
 export * from '@flighthq/scene-document';
 export { FlightDocumentRefusalReason } from '@flighthq/scene-document';
 export * from '@flighthq/scene3d';
-export { Node3DKind } from '@flighthq/scene3d';
 export { InstancedMeshKind, MeshKind } from '@flighthq/scene3d';
 export * from '@flighthq/scene3d-formats';
 export * from '@flighthq/scene3d-gl';

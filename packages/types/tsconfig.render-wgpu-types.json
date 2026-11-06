@@ -117,7 +117,6 @@
     "src/Modifier.ts",
     "src/ModifierDefinition.ts",
     "src/ModifierKind.ts",
-    "src/ModifierSlot.ts",
-    "src/Node3D.ts"
+    "src/ModifierSlot.ts"
   ]
 }

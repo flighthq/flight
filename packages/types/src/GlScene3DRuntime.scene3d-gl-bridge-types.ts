@@ -4,6 +4,7 @@ import type { Scene3DLightBlock, Scene3DLightsLike } from '@flighthq/lighting/co
 import type { PbrExtension } from '@flighthq/materials/contract';
 import type { Mesh, MeshGeometry } from '@flighthq/meshgeometry/contract';
 import type { Scene3DRenderProxy } from '@flighthq/render/contract';
+import type { Node3D } from '@flighthq/scene3d/contract';
 import type { Texture, TextureColorSpace } from '@flighthq/texture/contract';
 
 import type { GlMeshProgram } from './GlMeshProgram.ts';
@@ -11,7 +12,6 @@ import type { GlPbrTransmissionSceneColor } from './GlPbrTransmissionSceneColor.
 import type { GlRenderState } from './GlRenderState.ts';
 import type { GlTextureRenderTarget } from './GlRenderTarget.ts';
 import type { GlSkinPaletteTexture } from './GlSkinPaletteTexture.ts';
-import type { Node3D } from './Node3D.ts';
 
 // The directional shadow resource for this state, set by renderGlScene3DShadowMap and read by the lit bind
 // (bindGlMeshLightBlock) so every lit family samples the same shadow map. `enabled` is the per-frame gate;

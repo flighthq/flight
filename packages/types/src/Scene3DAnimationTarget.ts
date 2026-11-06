@@ -1,4 +1,5 @@
-import type { Node3D } from './Node3D.ts';
+import type { Node3D } from '@flighthq/scene3d/contract';
+
 import type { Scene3DAnimationPath } from './Scene3DAnimationPath.ts';
 
 // The `targetRef` an AnimationChannel carries when it is bound to a 3D Node3D: which node and which
