@@ -1,13 +1,8 @@
+import type { EntityConstruction } from '@flighthq/entity/contract';
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type {
-  BidiClass,
-  BidiClassKernel,
-  BidiClassKernelExplanation,
-  BidiCodePointRange,
-  EntityConstruction,
-} from '@flighthq/types/contract';
 
 import { reportTextBidiCompactTableMiss } from './textBidiGuards.ts';
+import type { BidiClass, BidiClassKernel, BidiClassKernelExplanation, BidiCodePointRange } from './types.ts';
 
 // The compact bundled bidi-class kernel: a from-scratch UAX #9 class lookup over a sorted
 // range table (binary search), covering the COMMON scripts — Basic Latin + Latin-1, the combining

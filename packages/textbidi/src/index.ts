@@ -10,3 +10,13 @@ export {
   reorderBidiLine,
   resolveBidiLevels,
 } from './contract.ts';
+export type {
+  BidiClass,
+  BidiClassKernel,
+  BidiClassKernelExplanation,
+  BidiClassKernelKind,
+  BidiCodePointRange,
+  BidiDirection,
+  BidiRun,
+  TextBidiGuard,
+} from './types.ts';

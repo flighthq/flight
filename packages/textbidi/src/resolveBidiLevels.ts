@@ -1,4 +1,4 @@
-import type { BidiClass, BidiClassKernel, BidiDirection } from '@flighthq/types/contract';
+import type { BidiClass, BidiClassKernel, BidiDirection } from './types.ts';
 
 export function resolveBidiLevels(
   bidiClassKernel: Readonly<BidiClassKernel>,

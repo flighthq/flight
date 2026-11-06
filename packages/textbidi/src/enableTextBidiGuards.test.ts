@@ -1,11 +1,11 @@
-import type { LogState } from '@flighthq/log/contract';
+import { EntityRuntimeKey } from '@flighthq/entity/contract';
+import type { LogEntry, LogState } from '@flighthq/log/contract';
 import { createLogState, setLogSink } from '@flighthq/log/contract';
-import type { BidiClassKernel, LogEntry } from '@flighthq/types/contract';
-import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import { compactBidiClassKernel } from './bidiClassKernel.ts';
 import { disableTextBidiGuards, enableTextBidiGuards } from './enableTextBidiGuards.ts';
 import { resolveBidiLevels } from './resolveBidiLevels.ts';
+import type { BidiClassKernel } from './types.ts';
 
 const kernel = compactBidiClassKernel;
 

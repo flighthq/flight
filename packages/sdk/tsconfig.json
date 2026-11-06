@@ -409,7 +409,7 @@
       "path": "../text-markup/tsconfig.runtime.json"
     },
     {
-      "path": "../textbidi"
+      "path": "../textbidi/tsconfig.runtime.json"
     },
     {
       "path": "../textformat/tsconfig.runtime.json"

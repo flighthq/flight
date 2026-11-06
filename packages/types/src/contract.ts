@@ -88,7 +88,6 @@ export * from './ColladaDecoding.ts';
 export * from './Awd2ParseOptions.ts';
 export * from './BatchFormat.ts';
 export * from './BevelEffect.ts';
-export * from './Bidi.ts';
 export * from './Billboard.ts';
 export * from './BinPack.ts';
 export * from './BitmapDisplacementEffect.ts';

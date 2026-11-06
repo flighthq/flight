@@ -1,5 +1,4 @@
-import type { BidiClassKernel } from '@flighthq/types/contract';
-import { EntityRuntimeKey } from '@flighthq/types/contract';
+import { EntityRuntimeKey } from '@flighthq/entity/contract';
 import { describe, expect, it } from 'vitest';
 
 import {
@@ -8,6 +7,7 @@ import {
   explainBidiClassKernel,
   initializeCompactBidiClassKernel,
 } from './bidiClassKernel.ts';
+import type { BidiClassKernel } from './types.ts';
 
 describe('compactBidiClassKernel', () => {
   it('is the shared kernel the bidi operations are handed', () => {
