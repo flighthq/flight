@@ -43,6 +43,7 @@
     "@flighthq/entity": "*",
     "@flighthq/geometry": "*",
     "@flighthq/materials": "*",
+    "@flighthq/scene3d": "*",
     "@flighthq/signals": "*",
     "@flighthq/types": "*"
   },

@@ -10,7 +10,6 @@
     "moduleSuffixes": [
       ".geometry-types",
       ".materials-types",
-      ".meshgeometry-bridge-types",
       ".meshgeometry-types",
       ".scene3d-types",
       ".texture-types",
@@ -45,9 +44,6 @@
     },
     {
       "path": "../texture/tsconfig.contract.json"
-    },
-    {
-      "path": "../types/tsconfig.meshgeometry-types.json"
     },
     {
       "path": "../xml"

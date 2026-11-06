@@ -30,32 +30,76 @@
       ".texture-formats-types",
       ".platform-types",
       ".lighting-types",
+      ".scene3d-node-types",
       ""
     ],
     "types": ["@webgpu/types"],
     "tsBuildInfoFile": "dist/.tsbuildinfo.render-wgpu-types"
   },
   "references": [
-    { "path": "../meshgeometry/tsconfig.contract.json" },
-    { "path": "../texture/tsconfig.contract.json" },
-    { "path": "../bitmap/tsconfig.contract.json" },
-    { "path": "../camera/tsconfig.contract.json" },
-    { "path": "../adjustments/tsconfig.contract.json" },
-    { "path": "../effects/tsconfig.contract.json" },
-    { "path": "../app/tsconfig.contract.json" },
-    { "path": "../entity" },
-    { "path": "../geometry/tsconfig.contract.json" },
-    { "path": "../shape/tsconfig.contract.json" },
-    { "path": "../signals" },
-    { "path": "../surface/tsconfig.contract.json" },
-    { "path": "../velocity/tsconfig.contract.json" },
-    { "path": "../materials/tsconfig.contract.json" },
-    { "path": "../node/tsconfig.contract.json" },
-    { "path": "../image/tsconfig.contract.json" },
-    { "path": "../texture-formats/tsconfig.contract.json" },
-    { "path": "../platform/tsconfig.contract.json" },
-    { "path": "../render/tsconfig.contract.json" },
-    { "path": "../lighting/tsconfig.contract.json" }
+    {
+      "path": "../meshgeometry/tsconfig.contract.json"
+    },
+    {
+      "path": "../texture/tsconfig.contract.json"
+    },
+    {
+      "path": "../bitmap/tsconfig.contract.json"
+    },
+    {
+      "path": "../camera/tsconfig.contract.json"
+    },
+    {
+      "path": "../adjustments/tsconfig.contract.json"
+    },
+    {
+      "path": "../effects/tsconfig.contract.json"
+    },
+    {
+      "path": "../app/tsconfig.contract.json"
+    },
+    {
+      "path": "../entity"
+    },
+    {
+      "path": "../geometry/tsconfig.contract.json"
+    },
+    {
+      "path": "../shape/tsconfig.contract.json"
+    },
+    {
+      "path": "../signals"
+    },
+    {
+      "path": "../surface/tsconfig.contract.json"
+    },
+    {
+      "path": "../velocity/tsconfig.contract.json"
+    },
+    {
+      "path": "../materials/tsconfig.contract.json"
+    },
+    {
+      "path": "../node/tsconfig.contract.json"
+    },
+    {
+      "path": "../image/tsconfig.contract.json"
+    },
+    {
+      "path": "../texture-formats/tsconfig.contract.json"
+    },
+    {
+      "path": "../platform/tsconfig.contract.json"
+    },
+    {
+      "path": "../render/tsconfig.contract.json"
+    },
+    {
+      "path": "../lighting/tsconfig.contract.json"
+    },
+    {
+      "path": "../scene3d/tsconfig.node.json"
+    }
   ],
   "include": [
     "src/contract.render-wgpu-bridge-types.ts",

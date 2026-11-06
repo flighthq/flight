@@ -1,6 +1,6 @@
 import type { Aabb, Matrix4 } from '@flighthq/geometry/contract';
 import type { Material3D } from '@flighthq/materials/contract';
-import type { Node3D, Node3DRuntime } from '@flighthq/types/contract';
+import type { Node3D, Node3DRuntime } from '@flighthq/scene3d/contract';
 
 import type { InstancedMeshSignals } from './InstancedMeshSignals.ts';
 import type { MeshGeometry } from './MeshGeometry.ts';

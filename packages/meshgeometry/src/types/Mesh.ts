@@ -1,6 +1,6 @@
 import type { Aabb } from '@flighthq/geometry/contract';
 import type { Material3D } from '@flighthq/materials/contract';
-import type { Node3D, Node3DRuntime, Skin } from '@flighthq/types/contract';
+import type { Node3D, Node3DRuntime, Skin } from '@flighthq/scene3d/contract';
 
 import type { MeshGeometry } from './MeshGeometry.ts';
 import type { MeshMorph } from './MorphTarget.ts';

@@ -15,7 +15,9 @@
       ".materials-types",
       ".lighting-types",
       ".texture-types",
-      ".meshgeometry-bridge-types",
+      ".scene3d-node-types",
+      ".adjustments-types",
+      ".node-types",
       ""
     ],
     "tsBuildInfoFile": "dist/.tsbuildinfo.contract"
@@ -49,8 +51,14 @@
       "path": "../texture/tsconfig.contract.json"
     },
     {
-      "path": "../types/tsconfig.meshgeometry-types.json"
+      "path": "./tsconfig.node.json"
     }
   ],
-  "include": ["src/contract.scene3d-types.ts", "src/types/**/*.ts"]
+  "include": ["src/contract.scene3d-types.ts", "src/types/**/*.ts"],
+  "exclude": [
+    "src/contract.scene3d-node-types.ts",
+    "src/types/Node3D.ts",
+    "src/types/Skeleton3D.ts",
+    "src/types/Skin.ts"
+  ]
 }

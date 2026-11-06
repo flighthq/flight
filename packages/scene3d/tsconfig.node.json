@@ -1,0 +1,42 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "composite": true,
+    "rootDir": "src",
+    "outDir": "dist",
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "moduleSuffixes": [".adjustments-types", ".geometry-types", ".materials-types", ".node-types", ""],
+    "tsBuildInfoFile": "dist/.tsbuildinfo.node"
+  },
+  "references": [
+    {
+      "path": "../adjustments/tsconfig.contract.json"
+    },
+    {
+      "path": "../entity"
+    },
+    {
+      "path": "../geometry/tsconfig.contract.json"
+    },
+    {
+      "path": "../layout"
+    },
+    {
+      "path": "../materials/tsconfig.contract.json"
+    },
+    {
+      "path": "../node/tsconfig.contract.json"
+    },
+    {
+      "path": "../signals"
+    }
+  ],
+  "include": [
+    "src/contract.scene3d-node-types.ts",
+    "src/types/Node3D.ts",
+    "src/types/Skeleton3D.ts",
+    "src/types/Skin.ts"
+  ]
+}

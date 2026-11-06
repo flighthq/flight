@@ -1,24 +1,65 @@
 {
-  "compilerOptions": { "composite": true },
+  "compilerOptions": {
+    "composite": true
+  },
   "files": [],
   "references": [
-    { "path": "../adjustments/tsconfig.runtime.json" },
-    { "path": "../animation" },
-    { "path": "../camera/tsconfig.runtime.json" },
-    { "path": "../entity" },
-    { "path": "../geometry/tsconfig.runtime.json" },
-    { "path": "../image/tsconfig.runtime.json" },
-    { "path": "../lighting/tsconfig.runtime.json" },
-    { "path": "../log" },
-    { "path": "../materials/tsconfig.runtime.json" },
-    { "path": "../meshgeometry/tsconfig.runtime.json" },
-    { "path": "../node/tsconfig.runtime.json" },
-    { "path": "../scene2d/tsconfig.runtime.json" },
-    { "path": "../shading" },
-    { "path": "../signals" },
-    { "path": "../texture/tsconfig.runtime.json" },
-    { "path": "../types" },
-    { "path": "./tsconfig.contract.json" },
-    { "path": "./tsconfig.runtime.json" }
+    {
+      "path": "../adjustments/tsconfig.runtime.json"
+    },
+    {
+      "path": "../animation"
+    },
+    {
+      "path": "../camera/tsconfig.runtime.json"
+    },
+    {
+      "path": "../entity"
+    },
+    {
+      "path": "../geometry/tsconfig.runtime.json"
+    },
+    {
+      "path": "../image/tsconfig.runtime.json"
+    },
+    {
+      "path": "../lighting/tsconfig.runtime.json"
+    },
+    {
+      "path": "../log"
+    },
+    {
+      "path": "../materials/tsconfig.runtime.json"
+    },
+    {
+      "path": "../meshgeometry/tsconfig.runtime.json"
+    },
+    {
+      "path": "../node/tsconfig.runtime.json"
+    },
+    {
+      "path": "../scene2d/tsconfig.runtime.json"
+    },
+    {
+      "path": "../shading"
+    },
+    {
+      "path": "../signals"
+    },
+    {
+      "path": "../texture/tsconfig.runtime.json"
+    },
+    {
+      "path": "../types"
+    },
+    {
+      "path": "./tsconfig.contract.json"
+    },
+    {
+      "path": "./tsconfig.runtime.json"
+    },
+    {
+      "path": "./tsconfig.node.json"
+    }
   ]
 }

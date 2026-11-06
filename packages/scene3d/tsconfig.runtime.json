@@ -10,24 +10,68 @@
     "tsBuildInfoFile": "dist/.tsbuildinfo.runtime"
   },
   "references": [
-    { "path": "../adjustments/tsconfig.runtime.json" },
-    { "path": "../animation" },
-    { "path": "../camera/tsconfig.runtime.json" },
-    { "path": "../entity" },
-    { "path": "../geometry/tsconfig.runtime.json" },
-    { "path": "../image/tsconfig.runtime.json" },
-    { "path": "../lighting/tsconfig.runtime.json" },
-    { "path": "../log" },
-    { "path": "../materials/tsconfig.runtime.json" },
-    { "path": "../meshgeometry/tsconfig.runtime.json" },
-    { "path": "../node/tsconfig.runtime.json" },
-    { "path": "../scene2d/tsconfig.runtime.json" },
-    { "path": "../shading" },
-    { "path": "../signals" },
-    { "path": "../texture/tsconfig.runtime.json" },
-    { "path": "../types" },
-    { "path": "./tsconfig.contract.json" }
+    {
+      "path": "../adjustments/tsconfig.runtime.json"
+    },
+    {
+      "path": "../animation"
+    },
+    {
+      "path": "../camera/tsconfig.runtime.json"
+    },
+    {
+      "path": "../entity"
+    },
+    {
+      "path": "../geometry/tsconfig.runtime.json"
+    },
+    {
+      "path": "../image/tsconfig.runtime.json"
+    },
+    {
+      "path": "../lighting/tsconfig.runtime.json"
+    },
+    {
+      "path": "../log"
+    },
+    {
+      "path": "../materials/tsconfig.runtime.json"
+    },
+    {
+      "path": "../meshgeometry/tsconfig.runtime.json"
+    },
+    {
+      "path": "../node/tsconfig.runtime.json"
+    },
+    {
+      "path": "../scene2d/tsconfig.runtime.json"
+    },
+    {
+      "path": "../shading"
+    },
+    {
+      "path": "../signals"
+    },
+    {
+      "path": "../texture/tsconfig.runtime.json"
+    },
+    {
+      "path": "../types"
+    },
+    {
+      "path": "./tsconfig.contract.json"
+    },
+    {
+      "path": "./tsconfig.node.json"
+    }
   ],
   "include": ["src/**/*.ts"],
-  "exclude": ["src/contract.scene3d-types.ts", "src/types/**/*.ts"]
+  "exclude": [
+    "src/contract.scene3d-node-types.ts",
+    "src/contract.scene3d-types.ts",
+    "src/types/**/*.ts",
+    "src/types/Node3D.ts",
+    "src/types/Skeleton3D.ts",
+    "src/types/Skin.ts"
+  ]
 }

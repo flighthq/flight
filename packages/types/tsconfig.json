@@ -103,7 +103,7 @@
       ".scene2d-resources-types",
       ".bitmapfont-types",
       ".textureatlas-types",
-      ".meshgeometry-bridge-types",
+      ".scene3d-node-types",
       ""
     ],
     "types": ["@testing-library/jest-dom", "vitest/globals", "@webgpu/types"]
@@ -465,6 +465,9 @@
     },
     {
       "path": "../textureatlas/tsconfig.contract.json"
+    },
+    {
+      "path": "../scene3d/tsconfig.node.json"
     }
   ],
   "include": ["src"]

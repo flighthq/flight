@@ -11,9 +11,10 @@ import {
   initTransform3DTrait,
 } from '@flighthq/node/contract';
 import type { Kind, NodeAny, NodeSignals, Node3D, Node3DRuntime, Node3DFields } from '@flighthq/types/contract';
-import { Node3DKind, Node3DFieldsKey } from '@flighthq/types/contract';
 
-export { Node3DKind } from '@flighthq/types/contract';
+import { Node3DFieldsKey, Node3DKind } from './types/Node3D.ts';
+
+export { Node3DKind } from './types/Node3D.ts';
 
 export function createNode3D(kind: Kind = Node3DKind): Node3D {
   const out = allocateEntity<Node3D>();
