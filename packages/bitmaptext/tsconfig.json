@@ -13,7 +13,6 @@
     { "path": "../scene2d/tsconfig.runtime.json" },
     { "path": "../texture/tsconfig.runtime.json" },
     { "path": "../textureatlas/tsconfig.runtime.json" },
-    { "path": "../types" },
     { "path": "./tsconfig.contract.json" },
     { "path": "./tsconfig.runtime.json" }
   ]

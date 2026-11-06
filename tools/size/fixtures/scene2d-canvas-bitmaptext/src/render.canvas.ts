@@ -1,5 +1,5 @@
 import { createBitmapFont, createGlyphSourceFromBitmapFont } from '@flighthq/bitmapfont';
-import { createBitmapText, setBitmapTextText, updateBitmapText } from '@flighthq/bitmaptext';
+import { BitmapTextKind, createBitmapText, setBitmapTextText, updateBitmapText } from '@flighthq/bitmaptext';
 import { createWebImageResourceFromCanvas, webHostCanvas } from '@flighthq/host-web';
 import { addNodeChild } from '@flighthq/node';
 import { withKindMapEntry } from '@flighthq/registry';
@@ -19,7 +19,6 @@ import {
 import { createCanvasSurfaceFromNativeHandle } from '@flighthq/surface';
 import { createTexture } from '@flighthq/texture';
 import { addTextureAtlasRegion, createTextureAtlas } from '@flighthq/textureatlas';
-import { BitmapTextKind } from '@flighthq/types';
 
 // REQUIRED WIRING for one static bitmap-font text run, and nothing else:
 //   surface   webHostCanvas — the single Canvas surface provider, NOT the aggregate

@@ -1,5 +1,5 @@
 import { createAppWindow, openWindow } from '@flighthq/app';
-import { createBitmapText, updateBitmapText } from '@flighthq/bitmaptext';
+import { BitmapTextKind, createBitmapText, updateBitmapText } from '@flighthq/bitmaptext';
 import { createGlyphAtlas, createGlyphSourceFromGlyphAtlas } from '@flighthq/glyphatlas';
 import {
   webHostWgpuContext,
@@ -22,7 +22,7 @@ import { createDisplayObject } from '@flighthq/scene2d';
 import { wgpuBitmapTextRenderer, renderWgpuScene2D } from '@flighthq/scene2d-wgpu';
 import { standardWgpuQuadMaterialRenderer } from '@flighthq/scene2d-wgpu/contract';
 import { createWgpuSurface } from '@flighthq/surface';
-import { BitmapTextKind, StandardMaterialKind } from '@flighthq/types';
+import { StandardMaterialKind } from '@flighthq/types';
 
 const appWindow = createAppWindow();
 openWindow(webHostWindowLifecycle, webHostWindowGeometry, appWindow, {});

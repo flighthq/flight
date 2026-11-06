@@ -1,6 +1,6 @@
 import { createAppWindow, openWindow } from '@flighthq/app';
 import { createBitmapFont, createGlyphSourceFromBitmapFont } from '@flighthq/bitmapfont';
-import { createBitmapText, updateBitmapText } from '@flighthq/bitmaptext';
+import { BitmapTextKind, createBitmapText, updateBitmapText } from '@flighthq/bitmaptext';
 import {
   webHostGl,
   createWebImageResourceFromCanvas,
@@ -23,7 +23,6 @@ import { glBitmapTextRenderer, registerGlStandardMaterial, renderGlScene2D } fro
 import { createGlSurface } from '@flighthq/surface';
 import { createTexture } from '@flighthq/texture';
 import { createTextureAtlas } from '@flighthq/textureatlas';
-import { BitmapTextKind } from '@flighthq/types';
 
 const appWindow = createAppWindow();
 openWindow(webHostWindowLifecycle, webHostWindowGeometry, appWindow, {});

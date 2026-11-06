@@ -87,8 +87,6 @@ export * from './BevelEffect.ts';
 export * from './Billboard.ts';
 export * from './BinPack.ts';
 export * from './BitmapDisplacementEffect.ts';
-export * from './BitmapText.ts';
-export * from './BitmapTextMissingGlyphs.ts';
 export * from './BlendMode.ts';
 export * from './BlinnPhongMaterial.ts';
 export * from './BloomEffect.ts';
