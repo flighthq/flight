@@ -1,7 +1,7 @@
 import type { TextFormat } from '@flighthq/textformat/contract';
-import type { HostTextShaperCapability, ShapedRun, TextItem, TextShaperOptions } from '@flighthq/types/contract';
 
 import { shapeTextRun } from './textShaperRun.ts';
+import type { HostTextShaperCapability, ShapedRun, TextItem, TextShaperOptions } from './textShaperTypes.ts';
 
 // Splits `text` into contiguous runs that share a single script and direction. Each item carries
 // start/end UTF-16 code-unit offsets into the original string, the inferred ISO 15924 script tag,

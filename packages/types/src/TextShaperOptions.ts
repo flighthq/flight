@@ -1,11 +1,2 @@
-import type { FontVariation } from '@flighthq/textformat/contract';
-
-import type { TextDirection } from './TextDirection.ts';
-import type { TextFeature } from './TextFeature.ts';
-export interface TextShaperOptions {
-  readonly direction?: TextDirection;
-  readonly features?: readonly TextFeature[];
-  readonly language?: string;
-  readonly script?: string;
-  readonly variations?: readonly FontVariation[];
-}
+/** @deprecated Import from `@flighthq/textshaper/contract`. */
+export type { TextShaperOptions } from '@flighthq/textshaper/contract';

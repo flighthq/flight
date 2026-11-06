@@ -1,6 +1,8 @@
+import type { EntityConstruction } from '@flighthq/entity/contract';
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { clearSignal, createSignal } from '@flighthq/signals/contract';
-import type { EntityConstruction, HostTextShaperCapability, TextShaperSignals } from '@flighthq/types/contract';
+
+import type { HostTextShaperCapability, TextShaperSignals } from './textShaperTypes.ts';
 
 export function disposeTextShaperSignals(): void {
   if (_signals === null) return;

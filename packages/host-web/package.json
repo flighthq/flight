@@ -79,6 +79,7 @@
     "@flighthq/surface": "*",
     "@flighthq/text": "*",
     "@flighthq/textformat": "*",
+    "@flighthq/textshaper": "*",
     "@flighthq/texture": "*",
     "@flighthq/textureatlas": "*",
     "@flighthq/tray": "*",

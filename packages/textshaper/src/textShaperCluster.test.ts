@@ -1,6 +1,5 @@
-import type { ShapedRun } from '@flighthq/types/contract';
-
 import { getCaretPositionsForRun, getClusterForIndex, getIndexRangeForCluster } from './textShaperCluster.ts';
+import type { ShapedRun } from './textShaperTypes.ts';
 
 function _makeRun(glyphs: ReadonlyArray<{ cluster: number; xAdvance: number; xOffset?: number }>): ShapedRun {
   return {

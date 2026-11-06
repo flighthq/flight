@@ -1,4 +1,4 @@
-import type { ShapedRun } from '@flighthq/types/contract';
+import type { ShapedRun } from './textShaperTypes.ts';
 
 // Returns the per-glyph caret x-positions for the run, in visual order. Each position is the
 // x-coordinate of the text pen before the corresponding glyph, measured in pixels from the left

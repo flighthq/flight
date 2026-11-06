@@ -46,6 +46,7 @@ import type { HostShortcutCapabilities } from '@flighthq/shortcut/contract';
 import type { HostSocketCapabilities } from '@flighthq/socket/contract';
 import type { HostStatusBarCapabilities } from '@flighthq/statusbar/contract';
 import type { HostCanvasCapabilities, HostSurfaceCapabilities } from '@flighthq/surface/contract';
+import type { HostTextShaperCapabilities } from '@flighthq/textshaper/contract';
 import type { HostTrayCapabilities } from '@flighthq/tray/contract';
 import type { HostVideoCapabilities } from '@flighthq/video/contract';
 
@@ -65,12 +66,12 @@ import type { HostGlCapability } from './HostGl.ts';
 import type { HostImageDecodeCapabilities } from './HostImageDecode.ts';
 import type { HostImageEncodeCapabilities } from './HostImageEncode.ts';
 import type { HostTextSegmenterCapability } from './TextSegment.ts';
-import type { HostTextShaperCapability } from './TextShaper.ts';
 
 /** @deprecated Import `HostInputCapabilities` from `@flighthq/input/contract`. */
 export type { HostInputCapabilities } from '@flighthq/input/contract';
 export type { HostMediaSessionCapabilities } from '@flighthq/mediasession/contract';
 export type { HostIpcCapabilities } from '@flighthq/ipc/contract';
+export type { HostTextShaperCapabilities } from '@flighthq/textshaper/contract';
 
 export interface Host extends Entity {
   readonly accessibility: HostAccessibilityCapabilities;
@@ -152,10 +153,6 @@ export interface HostSoftKeyboardCapabilities {
 
 export interface HostTextSegmentCapabilities {
   readonly segmenter?: HostTextSegmenterCapability;
-}
-
-export interface HostTextShaperCapabilities {
-  readonly shaper?: HostTextShaperCapability;
 }
 
 export type { HostWgpuCapabilities } from '@flighthq/render-wgpu/contract';

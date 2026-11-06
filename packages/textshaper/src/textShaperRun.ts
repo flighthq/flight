@@ -1,14 +1,18 @@
+import type { EntityConstruction, EntityRuntime, EntityRuntimeKey } from '@flighthq/entity/contract';
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { TextFormat } from '@flighthq/textformat/contract';
+
 import type {
-  Entity,
-  EntityConstruction,
   FontMetrics,
   GlyphExtents,
   HostTextShaperCapability,
   ShapeRunOptions,
   ShapedRun,
-} from '@flighthq/types/contract';
+} from './textShaperTypes.ts';
+
+interface ShapedRunEntity extends ShapedRun {
+  [EntityRuntimeKey]: EntityRuntime | undefined;
+}
 
 export function clearShapedRun(run: ShapedRun): void {
   run.advanceWidth = 0;
@@ -19,8 +23,8 @@ export function clearShapedRun(run: ShapedRun): void {
   run.script = '';
 }
 
-export function createShapedRun(): ShapedRun & Entity {
-  const out = allocateEntity<ShapedRun & Entity>();
+export function createShapedRun(): ShapedRunEntity {
+  const out = allocateEntity<ShapedRunEntity>();
   initializeShapedRun(out);
   return finishEntity(out);
 }
@@ -132,7 +136,7 @@ export function getGlyphName(
   return hostTextShaper.getGlyphName(glyphId);
 }
 
-export function initializeShapedRun(out: EntityConstruction<ShapedRun & Entity>): void {
+export function initializeShapedRun(out: EntityConstruction<ShapedRunEntity>): void {
   out.advanceWidth = 0;
   out.direction = 'LeftToRight';
   out.font = null;

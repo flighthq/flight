@@ -41,10 +41,10 @@
   },
   "dependencies": {
     "@flighthq/entity": "*",
+    "@flighthq/font": "*",
     "@flighthq/log": "*",
     "@flighthq/signals": "*",
-    "@flighthq/textformat": "*",
-    "@flighthq/types": "*"
+    "@flighthq/textformat": "*"
   },
   "devDependencies": {
     "typescript": "^7.0.2"

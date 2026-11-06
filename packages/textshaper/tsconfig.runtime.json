@@ -14,7 +14,6 @@
     { "path": "../log" },
     { "path": "../signals" },
     { "path": "../textformat" },
-    { "path": "../types" },
     { "path": "./tsconfig.contract.json" }
   ],
   "include": ["src/**/*.ts"],

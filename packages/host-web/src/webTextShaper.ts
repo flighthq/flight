@@ -1,6 +1,7 @@
+import type { NonEntityCreateResult } from '@flighthq/entity/contract';
 import { computeTextFormatFontString } from '@flighthq/text/contract';
 import type { TextFormat } from '@flighthq/textformat/contract';
-import type { CanvasTextShaperBackend, FontMetrics, NonEntityCreateResult } from '@flighthq/types/contract';
+import type { CanvasTextShaperBackend, FontMetrics } from '@flighthq/textshaper/contract';
 
 // Clears the advance cache on a backend returned by createCanvasTextShaperBackend. Call this after
 // a webfont finishes loading — document.fonts.ready resolves, FontFaceObserver fires, etc. — so

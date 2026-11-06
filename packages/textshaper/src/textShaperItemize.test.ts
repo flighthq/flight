@@ -1,7 +1,7 @@
 import type { TextFormat } from '@flighthq/textformat/contract';
-import type { HostTextShaperCapability, ShapedRun, ShapeRunOptions } from '@flighthq/types/contract';
 
 import { itemizeText, shapeTextRuns } from './textShaperItemize.ts';
+import type { HostTextShaperCapability, ShapedRun, ShapeRunOptions } from './textShaperTypes.ts';
 
 const _emptyRun: ShapedRun = {
   advanceWidth: 0,

@@ -1,6 +1,5 @@
-import type { HostTextShaperCapability, TextShaperOperation } from '@flighthq/types/contract';
-
 import { explainTextShaperOperation, hasTextShaperOperation, measureText } from './textShaper.ts';
+import type { HostTextShaperCapability, TextShaperOperation } from './textShaperTypes.ts';
 
 describe('explainTextShaperOperation', () => {
   it('reports an operation the backend provides', () => {

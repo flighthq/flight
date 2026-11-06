@@ -14,6 +14,9 @@
       "path": "../platform/tsconfig.contract.json"
     },
     {
+      "path": "../textshaper/tsconfig.contract.json"
+    },
+    {
       "path": "../types"
     },
     {

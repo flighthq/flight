@@ -8,6 +8,7 @@ import {
 import type { HostPermissionsCapabilities } from '@flighthq/host/contract';
 import type { HostConnectivityCapabilities } from '@flighthq/host/contract';
 import type { HostMediaSessionCapabilities } from '@flighthq/mediasession/contract';
+import type { HostTextShaperCapabilities } from '@flighthq/textshaper/contract';
 import type {
   ElectronApi,
   HostAccessibilityCapabilities,
@@ -38,7 +39,6 @@ import type {
   HostSurfaceCapabilities,
   HostTextSegmentCapabilities,
   HostDecompressCapabilities,
-  HostTextShaperCapabilities,
   HostWgpuCapabilities,
 } from '@flighthq/types/contract';
 import type { HostVideoCapabilities } from '@flighthq/video/contract';

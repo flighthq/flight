@@ -28,6 +28,7 @@ import type { HostShortcutCapabilities } from '@flighthq/shortcut/contract';
 import type { HostSocketCapabilities } from '@flighthq/socket/contract';
 import type { HostStatusBarCapabilities } from '@flighthq/statusbar/contract';
 import type { HostCanvasCapabilities, HostSurfaceCapabilities } from '@flighthq/surface/contract';
+import type { HostTextShaperCapabilities } from '@flighthq/textshaper/contract';
 import type { HostTrayCapabilities } from '@flighthq/tray/contract';
 import type { HostVideoCapabilities } from '@flighthq/video/contract';
 
@@ -98,7 +99,6 @@ import type {
 } from './Protocol.ts';
 import type { HostShareContentCapability, HostShareFilesCapability } from './Share.ts';
 import type { HostTextSegmenterCapability } from './TextSegment.ts';
-import type { HostTextShaperCapability } from './TextShaper.ts';
 import type { HostUpdaterCommandCapability } from './Updater.ts';
 import type { HostWgpuCapability } from './WgpuHost.ts';
 
@@ -106,6 +106,7 @@ import type { HostWgpuCapability } from './WgpuHost.ts';
 export type { HostInputCapabilities } from '@flighthq/input/contract';
 export type { HostMediaSessionCapabilities } from '@flighthq/mediasession/contract';
 export type { HostIpcCapabilities } from '@flighthq/ipc/contract';
+export type { HostTextShaperCapabilities } from '@flighthq/textshaper/contract';
 
 export interface Host extends Entity {
   readonly accessibility: HostAccessibilityCapabilities;
@@ -283,10 +284,6 @@ export interface HostDecompressCapabilities {
   readonly brotli?: HostDecompressBrotliCapability;
   readonly deflate?: HostDecompressDeflateCapability;
   readonly lzma?: HostDecompressLzmaCapability;
-}
-
-export interface HostTextShaperCapabilities {
-  readonly shaper?: HostTextShaperCapability;
 }
 
 export interface HostUpdaterCapabilities {

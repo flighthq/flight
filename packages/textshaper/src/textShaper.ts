@@ -1,14 +1,11 @@
 import type { TextFormat } from '@flighthq/textformat/contract';
-import type {
-  BackendOperationExplanation,
-  HostTextShaperCapability,
-  TextShaperOperation,
-} from '@flighthq/types/contract';
+
+import type { HostTextShaperCapability, TextShaperOperation } from './textShaperTypes.ts';
 
 export function explainTextShaperOperation(
   hostTextShaper: Readonly<HostTextShaperCapability>,
   operation: TextShaperOperation,
-): BackendOperationExplanation {
+): { implemented: boolean; layer: 'custom' | 'host' | 'none' | 'sentinel'; operation: string } {
   if (typeof hostTextShaper[operation] === 'function') {
     return { implemented: true, layer: 'host', operation };
   }

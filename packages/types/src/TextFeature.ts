@@ -1,9 +1,7 @@
-export interface TextFeature {
-  readonly end?: number;
-  readonly start?: number;
-  readonly tag: string;
-  readonly value: number;
-}
+/** @deprecated Import from `@flighthq/textshaper/contract`. */
+export type { TextFeature } from '@flighthq/textshaper/contract';
+
+// Keep legacy value exports local: Types has a type-only edge to the owner contract.
 export const TextFeatureCapitals = 'c2sc';
 export const TextFeatureContextualAlternates = 'calt';
 export const TextFeatureDiscretionaryLigatures = 'dlig';

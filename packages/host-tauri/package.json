@@ -52,6 +52,7 @@
     "@flighthq/shortcut": "*",
     "@flighthq/shell": "*",
     "@flighthq/signals": "*",
+    "@flighthq/textshaper": "*",
     "@flighthq/tray": "*",
     "@flighthq/types": "*",
     "@flighthq/video": "*"

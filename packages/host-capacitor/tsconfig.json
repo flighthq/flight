@@ -15,6 +15,7 @@
       ".platform-types",
       ".shortcut-types",
       ".video-types",
+      ".textshaper-types",
       ""
     ],
     "types": ["node", "@testing-library/jest-dom", "vitest/globals", "@webgpu/types"]
@@ -73,6 +74,9 @@
     },
     {
       "path": "../statusbar"
+    },
+    {
+      "path": "../textshaper/tsconfig.contract.json"
     },
     {
       "path": "../tray/tsconfig.contract.json"

@@ -17,6 +17,7 @@
       ".socket-types",
       ".tray-types",
       ".menu-types",
+      ".textshaper-types",
       ""
     ],
     "types": ["node", "@testing-library/jest-dom", "vitest/globals", "@webgpu/types"]
@@ -141,6 +142,9 @@
     },
     {
       "path": "../textformat"
+    },
+    {
+      "path": "../textshaper/tsconfig.contract.json"
     },
     {
       "path": "../texture/tsconfig.runtime.json"

@@ -1,5 +1,3 @@
-import type { HostTextShaperCapability, ShapedRun } from '@flighthq/types/contract';
-
 import {
   clearTextShaperCache,
   createTextShaperCache,
@@ -7,6 +5,7 @@ import {
   initializeTextShaperCache,
   shapeTextRunCached,
 } from './textShaperCache.ts';
+import type { HostTextShaperCapability, ShapedRun } from './textShaperTypes.ts';
 
 const _stubRun: ShapedRun = {
   advanceWidth: 15,

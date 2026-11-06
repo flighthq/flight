@@ -1,4 +1,4 @@
-import type { CanvasTextShaperBackend } from '@flighthq/types/contract';
+import type { CanvasTextShaperBackend } from '@flighthq/textshaper/contract';
 
 import { clearCanvasTextShaperBackendCache, createCanvasTextShaperBackend } from './webTextShaper.ts';
 

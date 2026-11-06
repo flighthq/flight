@@ -57,6 +57,7 @@
     "@flighthq/protocol": "*",
     "@flighthq/screen": "*",
     "@flighthq/share": "*",
+    "@flighthq/textshaper": "*",
     "@flighthq/types": "*",
     "@flighthq/updater": "*",
     "@flighthq/video": "*"

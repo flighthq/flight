@@ -6,4 +6,4 @@ export * from './textShaperItemize.ts';
 export * from './textShaperPool.ts';
 export * from './textShaperRun.ts';
 export * from './textShaperSignals.ts';
-export type { HostTextShaperCapability } from '@flighthq/types/contract';
+export type { HostTextShaperCapability } from './textShaperTypes.ts';

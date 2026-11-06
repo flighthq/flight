@@ -1,5 +1,6 @@
 import type { HostGeolocationCapability } from '@flighthq/geolocation/contract';
 import type { HostPlatformCapability } from '@flighthq/platform/contract';
+import type { HostTextShaperCapability } from '@flighthq/textshaper/contract';
 import type {
   Host,
   HostAudioDeviceCapability,
@@ -25,7 +26,6 @@ import type {
   HostSoftKeyboardInfoCapability,
   HostPreferencesPersistenceQueryCapability,
   HostTextSegmenterCapability,
-  HostTextShaperCapability,
   HostWgpuCapability,
 } from '@flighthq/types/contract';
 import type { HostVideoCapability } from '@flighthq/video/contract';

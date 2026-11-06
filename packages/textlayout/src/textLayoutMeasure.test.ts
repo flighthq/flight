@@ -1,4 +1,4 @@
-import type { HostTextShaperCapability } from '@flighthq/types/contract';
+import type { HostTextShaperCapability } from '@flighthq/textshaper/contract';
 
 import { getTextLayoutMeasureProvider, setTextLayoutMeasureProvider } from './textLayoutMeasure.ts';
 

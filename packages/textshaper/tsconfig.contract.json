@@ -7,8 +7,14 @@
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,
+    "moduleSuffixes": [".font-types", ""],
     "tsBuildInfoFile": "dist/.tsbuildinfo.contract"
   },
-  "references": [{ "path": "../textformat" }],
+  "references": [
+    { "path": "../entity" },
+    { "path": "../font/tsconfig.contract.json" },
+    { "path": "../signals" },
+    { "path": "../textformat" }
+  ],
   "include": ["src/contract.textshaper-types.ts", "src/textShaperTypes.ts"]
 }

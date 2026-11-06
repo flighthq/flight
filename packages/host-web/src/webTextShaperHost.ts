@@ -1,4 +1,4 @@
-import type { HostTextShaperCapabilities } from '@flighthq/types/contract';
+import type { HostTextShaperCapabilities } from '@flighthq/textshaper/contract';
 
 import { webHostTextShaper as shaper } from './webTextShaper.ts';
 

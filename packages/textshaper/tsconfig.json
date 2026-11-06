@@ -2,10 +2,10 @@
   "files": [],
   "references": [
     { "path": "../entity" },
+    { "path": "../font/tsconfig.contract.json" },
     { "path": "../log" },
     { "path": "../signals" },
     { "path": "../textformat" },
-    { "path": "../types" },
     { "path": "./tsconfig.contract.json" },
     { "path": "./tsconfig.runtime.json" }
   ]

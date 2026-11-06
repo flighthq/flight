@@ -1,7 +1,2 @@
-import type { TextDirection } from './TextDirection.ts';
-export interface TextItem {
-  readonly direction: TextDirection;
-  readonly end: number;
-  readonly script: string;
-  readonly start: number;
-}
+/** @deprecated Import from `@flighthq/textshaper/contract`. */
+export type { TextItem } from '@flighthq/textshaper/contract';

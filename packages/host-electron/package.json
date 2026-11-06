@@ -56,6 +56,7 @@
     "@flighthq/screen": "*",
     "@flighthq/shortcut": "*",
     "@flighthq/signals": "*",
+    "@flighthq/textshaper": "*",
     "@flighthq/preferences": "*",
     "@flighthq/tray": "*",
     "@flighthq/types": "*",

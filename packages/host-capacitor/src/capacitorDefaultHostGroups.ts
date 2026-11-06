@@ -11,6 +11,7 @@ import type { HostMediaSessionCapabilities } from '@flighthq/mediasession/contra
 import type { HostMenuCapabilities } from '@flighthq/menu/contract';
 import type { HostPlatformCapabilities } from '@flighthq/platform/contract';
 import type { HostShortcutCapabilities } from '@flighthq/shortcut/contract';
+import type { HostTextShaperCapabilities } from '@flighthq/textshaper/contract';
 import type { HostTrayCapabilities } from '@flighthq/tray/contract';
 import type {
   HostAccessibilityCapabilities,
@@ -38,7 +39,6 @@ import type {
   HostTextSegmentCapabilities,
   HostCompressCapabilities,
   HostDecompressCapabilities,
-  HostTextShaperCapabilities,
   HostWgpuCapabilities,
 } from '@flighthq/types/contract';
 import type { HostVideoCapabilities } from '@flighthq/video/contract';

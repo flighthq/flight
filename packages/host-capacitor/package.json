@@ -56,6 +56,7 @@
     "@flighthq/share": "*",
     "@flighthq/shortcut": "*",
     "@flighthq/statusbar": "*",
+    "@flighthq/textshaper": "*",
     "@flighthq/tray": "*",
     "@flighthq/types": "*",
     "@flighthq/useragent": "*",
