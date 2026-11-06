@@ -6,3 +6,4 @@ export * from './parseDds.ts';
 export * from './parseKtx2.ts';
 export * from './selectTextureContainer.ts';
 export * from './textureLevelLayout.ts';
+export * from './types.ts';

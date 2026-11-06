@@ -1,8 +1,8 @@
-import type { TextureContainer } from '@flighthq/types/contract';
-import type { TextureContainerFormat } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { selectTextureContainer } from './selectTextureContainer.ts';
+import type { TextureContainer } from './types.ts';
+import type { TextureContainerFormat } from './types.ts';
 
 function container(format: TextureContainerFormat): TextureContainer {
   return {

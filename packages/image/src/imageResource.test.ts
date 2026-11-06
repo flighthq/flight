@@ -1,4 +1,3 @@
-import type { CompressedImageData } from '@flighthq/types/contract';
 import { CompressedImageTextureSourceKind, ImageTextureSourceKind } from '@flighthq/types/contract';
 
 import {
@@ -10,6 +9,7 @@ import {
   isImageResourceEmpty,
 } from './imageResource.ts';
 import { registerTestImageDimensionResolver, unregisterTestImageDimensionResolver } from './imageTestHelper.ts';
+import type { CompressedImageData } from './types.ts';
 
 // Measuring a borrowed handle is the host's job, so these tests install the portable stand-in. Without
 // one a resource keeps whatever size it was constructed with, which is the behavior

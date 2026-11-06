@@ -1,7 +1,7 @@
-import type { TextureContainer } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { getBasisParseFailureReason, parseBasis } from './parseBasis.ts';
+import type { TextureContainer } from './types.ts';
 
 interface BasisSlice {
   imageIndex: number;

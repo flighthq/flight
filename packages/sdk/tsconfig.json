@@ -430,7 +430,7 @@
       "path": "../texture/tsconfig.runtime.json"
     },
     {
-      "path": "../texture-formats"
+      "path": "../texture-formats/tsconfig.runtime.json"
     },
     {
       "path": "../textureatlas"

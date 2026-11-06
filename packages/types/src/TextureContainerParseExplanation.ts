@@ -1,7 +1,5 @@
-import type { TextureContainerKind } from './TextureContainerKind.ts';
-import type { TextureContainerParseFailureReason } from './TextureContainerParseFailureReason.ts';
+// Owned by `@flighthq/texture-formats`. These deprecated re-exports keep existing `@flighthq/types` imports
+// compiling until consumers import the owning package.
 
-export interface TextureContainerParseExplanation {
-  readonly container: TextureContainerKind | null;
-  readonly reason: TextureContainerParseFailureReason;
-}
+/** @deprecated Import from `@flighthq/texture-formats/contract`. */
+export type { TextureContainerParseExplanation } from '@flighthq/texture-formats/contract';

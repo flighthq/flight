@@ -100,6 +100,7 @@
     "@flighthq/textlayout": "*",
     "@flighthq/textshaper": "*",
     "@flighthq/texture": "*",
+    "@flighthq/texture-formats": "*",
     "@flighthq/useragent": "*",
     "@flighthq/velocity": "*",
     "@flighthq/xml": "*"

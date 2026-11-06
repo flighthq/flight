@@ -1,13 +1,17 @@
 {
-  "extends": "../../tsconfig.base.json",
-  "compilerOptions": {
-    "composite": true,
-    "rootDir": "src",
-    "outDir": "dist",
-    "declaration": true,
-    "declarationMap": true,
-    "sourceMap": true
-  },
-  "references": [{ "path": "../buffer" }, { "path": "../types" }],
-  "include": ["src"]
+  "files": [],
+  "references": [
+    {
+      "path": "../buffer"
+    },
+    {
+      "path": "../types"
+    },
+    {
+      "path": "./tsconfig.contract.json"
+    },
+    {
+      "path": "./tsconfig.runtime.json"
+    }
+  ]
 }

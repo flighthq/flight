@@ -8,7 +8,15 @@
     "declarationMap": true,
     "sourceMap": true,
     "tsBuildInfoFile": "dist/.tsbuildinfo.contract",
-    "moduleSuffixes": [".app-types", ".bitmap-types", ".geometry-types", ".surface-types", ".texture-types", ""]
+    "moduleSuffixes": [
+      ".app-types",
+      ".bitmap-types",
+      ".geometry-types",
+      ".surface-types",
+      ".texture-types",
+      ".texture-formats-types",
+      ""
+    ]
   },
   "references": [
     {
@@ -34,6 +42,9 @@
     },
     {
       "path": "../texture/tsconfig.contract.json"
+    },
+    {
+      "path": "../texture-formats/tsconfig.contract.json"
     }
   ],
   "include": ["src/contract.image-types.ts", "src/types.ts"]

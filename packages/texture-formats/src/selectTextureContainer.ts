@@ -1,5 +1,5 @@
-import type { TextureContainer } from '@flighthq/types/contract';
-import type { TextureContainerFormat } from '@flighthq/types/contract';
+import type { TextureContainer } from './types.ts';
+import type { TextureContainerFormat } from './types.ts';
 
 // Picks the first container whose `format` a GPU supports from a set of peer `TextureContainer`s,
 // returning `null` when none match. This is the consumer side of `parseAtf`'s peer array: an ATF holds

@@ -6,10 +6,11 @@ import {
   readByteReaderU32,
   readByteReaderU8,
 } from '@flighthq/buffer/contract';
-import type { TextureContainer } from '@flighthq/types/contract';
-import type { TextureContainerFormat } from '@flighthq/types/contract';
-import type { TextureContainerLevel } from '@flighthq/types/contract';
-import type { TextureContainerParseFailureReason } from '@flighthq/types/contract';
+
+import type { TextureContainer } from './types.ts';
+import type { TextureContainerFormat } from './types.ts';
+import type { TextureContainerLevel } from './types.ts';
+import type { TextureContainerParseFailureReason } from './types.ts';
 
 export function getBasisParseFailureReason(bytes: Readonly<Uint8Array>): TextureContainerParseFailureReason | null {
   const failure: ParseFailure = { reason: null };

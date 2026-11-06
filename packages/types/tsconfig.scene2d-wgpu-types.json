@@ -29,6 +29,7 @@
       ".textshaper-types",
       ".velocity-types",
       ".image-types",
+      ".texture-formats-types",
       ""
     ],
     "types": ["@webgpu/types"],
@@ -106,6 +107,9 @@
     },
     {
       "path": "../image-codec"
+    },
+    {
+      "path": "../texture-formats/tsconfig.contract.json"
     }
   ],
   "files": [

@@ -1,8 +1,8 @@
-import type { TextureContainer } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { getAtfParseFailureReason, parseAtf } from './parseAtf.ts';
 import { selectTextureContainer } from './selectTextureContainer.ts';
+import type { TextureContainer } from './types.ts';
 
 interface AtfOptions {
   version: number;

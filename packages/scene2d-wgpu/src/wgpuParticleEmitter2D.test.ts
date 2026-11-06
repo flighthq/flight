@@ -3,6 +3,7 @@ import {
   registerTestImageDimensionResolver,
   unregisterTestImageDimensionResolver,
 } from '@flighthq/image/contract';
+import type { CompressedImageResource } from '@flighthq/image/contract';
 import { createParticleEmitter2D } from '@flighthq/particleemitter/contract';
 import {
   beginWgpuScreenRenderPassForTest,
@@ -14,7 +15,7 @@ import {
 import { createWgpuRenderStateForTest, installWgpuMock } from '@flighthq/render-wgpu/contract';
 import { getRenderProxy2D, prepareScene2DRender } from '@flighthq/render/contract';
 import { createTexture } from '@flighthq/texture/contract';
-import type { CompressedImageResource, RenderProxy2D } from '@flighthq/types/contract';
+import type { RenderProxy2D } from '@flighthq/types/contract';
 import { CompressedImageTextureSourceKind, EntityRuntimeKey, TextureAtlasRotation } from '@flighthq/types/contract';
 
 import { wgpuParticleEmitter2DRenderer, drawWgpuParticleEmitter2D } from './wgpuParticleEmitter2D.ts';

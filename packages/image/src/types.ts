@@ -4,7 +4,14 @@ import type { EntityRuntimeKey } from '@flighthq/entity/contract';
 import type { DecodedImage, HostImageDecodeCapabilities } from '@flighthq/image-codec/contract';
 import type { ResourceResolutionState } from '@flighthq/resource/contract';
 import type { Surface } from '@flighthq/surface/contract';
-import type { AlphaType, ImageTextureSourceKind, Texture, TextureSource } from '@flighthq/texture/contract';
+import type { TextureContainer } from '@flighthq/texture-formats/contract';
+import type {
+  AlphaType,
+  CompressedImageTextureSourceKind,
+  ImageTextureSourceKind,
+  Texture,
+  TextureSource,
+} from '@flighthq/texture/contract';
 
 interface ImageEntity extends EntityRaw {
   [EntityRuntimeKey]: EntityRuntime | undefined;
@@ -163,3 +170,20 @@ export type ImageBitmapCompositionResolver = (
   ref: Readonly<EmbeddedImageResourceReference>,
   signal: AbortSignal,
 ) => Promise<Bitmap | null>;
+
+// Container metadata and encoded bytes owned by a CompressedImage. A parser fills the container
+// descriptor and hands back the raw payload indexed by its per-level byte ranges; GPU backends upload
+// it directly or use an explicitly registered decode fallback.
+export interface CompressedImageData {
+  readonly container: TextureContainer;
+  readonly payload: Readonly<Uint8Array>;
+}
+
+/**
+ * GPU-only block-compressed image source. The payload remains in its container-native format; it is
+ * neither directly drawable by Canvas/DOM nor readable through the Bitmap pixel API.
+ */
+export interface CompressedImageResource extends TextureSource {
+  readonly compressed: CompressedImageData;
+  readonly kind: typeof CompressedImageTextureSourceKind;
+}

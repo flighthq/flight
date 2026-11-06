@@ -1,13 +1,9 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type {
-  CompressedImageData,
-  CompressedImageResource,
-  EntityConstruction,
-  HostImageSource,
-} from '@flighthq/types/contract';
+import type { EntityConstruction, HostImageSource } from '@flighthq/types/contract';
 import { CompressedImageTextureSourceKind, ImageTextureSourceKind } from '@flighthq/types/contract';
 
 import { getHostImageSourceDimensions } from './imageSourceDimensions.ts';
+import type { CompressedImageData, CompressedImageResource } from './types.ts';
 import type { ImageResource } from './types.ts';
 import type { HostImageDimensions } from './types.ts';
 

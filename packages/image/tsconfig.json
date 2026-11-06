@@ -23,6 +23,9 @@
       "path": "../texture/tsconfig.contract.json"
     },
     {
+      "path": "../texture-formats/tsconfig.contract.json"
+    },
+    {
       "path": "./tsconfig.contract.json"
     },
     {

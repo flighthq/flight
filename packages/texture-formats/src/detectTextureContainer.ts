@@ -4,7 +4,7 @@
 // parsing, and the single point of container identification in the SDK. `'atf'` alone maps to the
 // array-returning `parseAtf` (an ATF holds one-or-more peer encodings); the others map to a single
 // `parse*` returning one `TextureContainer`.
-import type { TextureContainerKind } from '@flighthq/types/contract';
+import type { TextureContainerKind } from './types.ts';
 
 export function detectTextureContainer(bytes: Readonly<Uint8Array>): TextureContainerKind | null {
   if (bytes.byteLength >= 12 && isKtx2Magic(bytes)) return 'ktx2';

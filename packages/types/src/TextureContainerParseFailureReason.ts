@@ -1,6 +1,5 @@
-export type TextureContainerParseFailureReason =
-  | 'container-unrecognized'
-  | 'format-unsupported'
-  | 'header-truncated'
-  | 'level-range-out-of-bounds'
-  | 'structure-invalid';
+// Owned by `@flighthq/texture-formats`. These deprecated re-exports keep existing `@flighthq/types` imports
+// compiling until consumers import the owning package.
+
+/** @deprecated Import from `@flighthq/texture-formats/contract`. */
+export type { TextureContainerParseFailureReason } from '@flighthq/texture-formats/contract';
