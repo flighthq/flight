@@ -1,5 +1,4 @@
-import type { GlContextRuntime, GlRenderState, GlRenderStateRuntime } from '@flighthq/types/contract';
-
+import type { GlContextRuntime, GlRenderState, GlRenderStateRuntime } from './contract.render-gl-types.ts';
 import { getGlRenderStateRuntime } from './glRenderState.ts';
 import type { GlContext } from './types.ts';
 

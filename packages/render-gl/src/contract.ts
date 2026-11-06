@@ -1,3 +1,4 @@
+export * from './contract.render-gl-types.ts';
 export * from './enableGlRenderStateGuards.ts';
 export * from './enableGlRenderTextureGuards.ts';
 export * from './enableGlTextureResolverGuards.ts';
@@ -27,11 +28,3 @@ export * from './glSkinPaletteTexture.ts';
 export * from './glTextureResolver.ts';
 export * from './glTextureUpload.ts';
 export * from './glTextureVideoUpload.ts';
-export type {
-  GlCapabilities,
-  GlContext,
-  GlContextOptions,
-  GlSurface,
-  HostGlCapabilities,
-  HostGlCapability,
-} from './types.ts';

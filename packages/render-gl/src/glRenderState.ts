@@ -4,6 +4,9 @@ import {
   createRenderStateRuntime,
   destroyRenderState,
 } from '@flighthq/render/contract';
+import type { EntityConstruction } from '@flighthq/types/contract';
+import { EntityRuntimeKey } from '@flighthq/types/contract';
+
 import type {
   GlColorAdjustmentMaterialFeature,
   GlColorAdjustmentMaterialFeatureGuard,
@@ -13,10 +16,7 @@ import type {
   GlRenderState,
   GlRenderStateOptions,
   GlRenderStateRuntime,
-  EntityConstruction,
-} from '@flighthq/types/contract';
-import { EntityRuntimeKey } from '@flighthq/types/contract';
-
+} from './contract.render-gl-types.ts';
 import type { GlContext } from './types.ts';
 
 export function buildGlRenderRegistries(options: Readonly<GlRenderStateOptions>): GlRenderRegistries {

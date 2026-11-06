@@ -1,15 +1,14 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type { EntityConstruction, GlRenderPass } from '@flighthq/types/contract';
+
 import type {
-  EntityConstruction,
   GlCubeRenderTarget,
   GlCubeRenderTargetOptions,
-  GlRenderPass,
   GlRenderState,
   GlRenderStateRuntime,
   GlRenderTarget,
   GlViewportRect,
-} from '@flighthq/types/contract';
-
+} from './contract.render-gl-types.ts';
 import { acquireGlRenderPassHandle, releaseGlRenderPassHandle } from './glRenderPass.ts';
 import { getGlRenderStateRuntime } from './glRenderState.ts';
 

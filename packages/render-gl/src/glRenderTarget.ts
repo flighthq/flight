@@ -4,9 +4,6 @@ import { explainRenderTargetAxes, resolveRenderTargetDescriptor } from '@flighth
 import type {
   EntityConstruction,
   GlRenderPass,
-  GlRenderState,
-  GlScreenRenderTarget,
-  GlTextureRenderTarget,
   Matrix,
   RenderProxy2D,
   RenderTargetAxes,
@@ -18,6 +15,7 @@ import type {
   ResolvedRenderTargetDescriptor,
 } from '@flighthq/types/contract';
 
+import type { GlRenderState, GlScreenRenderTarget, GlTextureRenderTarget } from './contract.render-gl-types.ts';
 import { bindGlTextureRealization, drawGlQuad, useGlProgram } from './glDraw.ts';
 import { getGlRenderStateRuntime } from './glRenderState.ts';
 import { setGlAttributes, setGlBaseUniforms, setGlMatrixFromTransform } from './glShader.ts';

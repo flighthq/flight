@@ -16,6 +16,18 @@ export type { EntityRuntime } from './Entity.ts';
 export type { ExternalTexture } from './ExternalTexture.ts';
 export type { HostCanvasCapability } from './HostCanvas.ts';
 export type { HostImageCapability } from './ImageResource.ts';
+export type { GlColorAdjustmentResources } from './GlColorAdjustmentResources.render-wgpu-types.ts';
+export type { GlCompressedTextureDecoder } from './GlCompressedTextureDecoder.ts';
+export type { GlCompressedTextureUploader } from './GlCompressedTextureUploader.ts';
+export type { GlCustomMaterialShaderSource } from './GlCustomMaterialShaderSource.ts';
+export type { GlEffectRegistration } from './GlEffectState.render-wgpu-types.ts';
+export type { GlMeshMaterialRenderer } from './GlMeshMaterialRenderer.ts';
+export type { GlModifierSnippet } from './GlModifierSnippet.ts';
+export type { GlParticleResources } from './GlParticleResources.render-wgpu-types.ts';
+export type { GlPbrExtensionRegistration } from './GlPbrExtensionRegistration.ts';
+export type { GlQuadBatchResources } from './GlQuadBatchResources.render-wgpu-types.ts';
+export type { GlQuadMaterialRenderer } from './GlQuadMaterialRenderer.ts';
+export type { GlRenderPass } from './GlRenderPass.ts';
 export type {
   GlColorScaleBiasInstancedShader,
   GlParticleShader,
@@ -24,7 +36,14 @@ export type {
   GlShapeMeshColorScaleBiasShader,
   GlUniformColorScaleBiasShader,
 } from './GlRenderState.ts';
+export type { GlRenderTextureEntry, GlRenderTextureGuard } from './GlRenderTexture.ts';
+export type { GlScene3DPass } from './GlScene3DRuntime.ts';
+export type { GlBitmapShader, GlShaderLocations } from './GlShaderLocations.ts';
+export type { GlShapeMesh } from './GlShapeMesh.render-wgpu-types.ts';
+export type { GlShapeMeshResources } from './GlShapeMeshResources.render-wgpu-types.ts';
+export type { GlTextureRealization, GlTextureResolver } from './GlTextureResolver.ts';
 export type { GlTextureRenderTarget, GlTextureRenderTargetPool } from './GlRenderTarget.ts';
+export type { GlVelocityWriter } from './GlVelocityWriter.ts';
 export type { Material, MaterialData } from './Material.ts';
 export type { Mesh } from './Mesh.ts';
 export type { MeshGeometry } from './MeshGeometry.ts';
@@ -34,6 +53,7 @@ export type { Node3D } from './Node3D.ts';
 export type { PlatformEndianness } from '@flighthq/platform/contract';
 export type { RenderStateOptions } from './RenderStateOptions.ts';
 export type {
+  RenderTargetAxes,
   RenderTargetColorSpace,
   RenderTargetDepth,
   RenderTargetDimensions,

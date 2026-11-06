@@ -174,9 +174,6 @@
       "path": "../connectivity/tsconfig.contract.json"
     },
     {
-      "path": "../render-gl/tsconfig.contract.json"
-    },
-    {
       "path": "../accessibility/tsconfig.contract.json"
     },
     {
@@ -219,10 +216,10 @@
     "src/GlColorLutTextureCache.render-wgpu-types.ts",
     "src/GlCompressedTextureDecoder.ts",
     "src/GlCompressedTextureUploader.ts",
-    "src/GlContext.ts",
-    "src/GlContextRuntime.ts",
-    "src/GlContextState.ts",
-    "src/GlCubeRenderTarget.ts",
+    "src/GlContext.render-wgpu-types.ts",
+    "src/GlContextRuntime.render-wgpu-types.ts",
+    "src/GlContextState.render-wgpu-types.ts",
+    "src/GlCubeRenderTarget.render-wgpu-types.ts",
     "src/GlCustomMaterialShaderSource.ts",
     "src/GlEffectState.render-wgpu-types.ts",
     "src/GlMeshMaterialRenderer.ts",
@@ -237,8 +234,8 @@
     "src/GlQuadBatchResources.render-wgpu-types.ts",
     "src/GlQuadMaterialRenderer.ts",
     "src/GlRenderPass.ts",
-    "src/GlRenderState.ts",
-    "src/GlRenderTarget.ts",
+    "src/GlRenderState.render-wgpu-types.ts",
+    "src/GlRenderTarget.render-wgpu-types.ts",
     "src/GlRenderTexture.ts",
     "src/GlScene3DRuntime.ts",
     "src/GlShader.ts",

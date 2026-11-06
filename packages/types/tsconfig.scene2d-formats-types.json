@@ -235,9 +235,6 @@
       "path": "../connectivity/tsconfig.contract.json"
     },
     {
-      "path": "../render-gl/tsconfig.contract.json"
-    },
-    {
       "path": "../accessibility/tsconfig.contract.json"
     },
     {
