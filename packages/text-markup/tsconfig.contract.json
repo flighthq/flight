@@ -1,0 +1,22 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "composite": true,
+    "rootDir": "src",
+    "outDir": "dist",
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "tsBuildInfoFile": "dist/.tsbuildinfo.contract",
+    "moduleSuffixes": [".textformat-types", ""]
+  },
+  "references": [
+    {
+      "path": "../entity"
+    },
+    {
+      "path": "../textformat/tsconfig.contract.json"
+    }
+  ],
+  "include": ["src/contract.text-markup-types.ts", "src/types.ts"]
+}

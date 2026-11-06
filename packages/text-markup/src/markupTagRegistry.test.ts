@@ -1,6 +1,5 @@
 import type { TextFormat } from '@flighthq/textformat/contract';
 import type { RichTextContent } from '@flighthq/textlayout/contract';
-import type { MarkupTagRegistry } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import {
@@ -10,6 +9,7 @@ import {
   resolveMarkupHexColor,
 } from './markupTagRegistry.ts';
 import { parseTextMarkup } from './textMarkup.ts';
+import type { MarkupTagRegistry } from './types.ts';
 
 function formatAt(content: RichTextContent, index: number): TextFormat {
   for (const range of content.formatRanges) {

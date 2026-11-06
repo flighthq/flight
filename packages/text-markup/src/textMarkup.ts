@@ -4,17 +4,17 @@ import type { TextFormatRangeRaw as TextFormatRange } from '@flighthq/textformat
 import type { TextFormat } from '@flighthq/textformat/contract';
 import { createRichTextContent } from '@flighthq/textlayout/contract';
 import type { RichTextContent } from '@flighthq/textlayout/contract';
+
+import { createMarkupTagRegistry, registerStandardMarkupTags } from './markupTagRegistry.ts';
+import { normalizeMarkupTagResult } from './normalizeMarkupTagResult.ts';
+import { reportTextMarkupIssue } from './textMarkupGuards.ts';
 import type {
   MarkupTagHandler,
   MarkupTagRegistry,
   TextMarkupExplanation,
   TextMarkupGuard,
   TextMarkupIssue,
-} from '@flighthq/types/contract';
-
-import { createMarkupTagRegistry, registerStandardMarkupTags } from './markupTagRegistry.ts';
-import { normalizeMarkupTagResult } from './normalizeMarkupTagResult.ts';
-import { reportTextMarkupIssue } from './textMarkupGuards.ts';
+} from './types.ts';
 
 /**
  * Serializes a `RichTextContent` back into `htmlText`-subset markup — the inverse of

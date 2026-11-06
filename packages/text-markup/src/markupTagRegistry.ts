@@ -1,12 +1,8 @@
 import { packOpaqueColor } from '@flighthq/color/contract';
 import type { TextFormat, TextFormatAlign, TextFormatListMarker } from '@flighthq/textformat/contract';
-import type {
-  MarkupClassResolver,
-  MarkupColorResolver,
-  MarkupTagHandler,
-  MarkupTagRegistry,
-  NonEntityCreateResult,
-} from '@flighthq/types/contract';
+import type { NonEntityCreateResult } from '@flighthq/types/contract';
+
+import type { MarkupClassResolver, MarkupColorResolver, MarkupTagHandler, MarkupTagRegistry } from './types.ts';
 
 /**
  * Creates an empty markup tag registry — the meaning layer `parseTextMarkup` composes over the parse

@@ -86,7 +86,7 @@
       "path": "../text/tsconfig.runtime.json"
     },
     {
-      "path": "../text-markup"
+      "path": "../text-markup/tsconfig.runtime.json"
     },
     {
       "path": "../textformat/tsconfig.runtime.json"

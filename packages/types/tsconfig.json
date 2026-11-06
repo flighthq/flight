@@ -76,6 +76,7 @@
       ".video-types",
       ".media-types",
       ".textsegment-types",
+      ".text-markup-types",
       ""
     ],
     "types": ["@testing-library/jest-dom", "vitest/globals", "@webgpu/types"]
@@ -353,6 +354,9 @@
     },
     {
       "path": "../textsegment/tsconfig.contract.json"
+    },
+    {
+      "path": "../text-markup/tsconfig.contract.json"
     }
   ],
   "include": ["src"]

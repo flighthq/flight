@@ -1,4 +1,4 @@
-import type { TextMarkupGuard, TextMarkupIssue } from '@flighthq/types/contract';
+import type { TextMarkupGuard, TextMarkupIssue } from './types.ts';
 
 export function reportTextMarkupIssue(issue: Readonly<TextMarkupIssue>): void {
   _guard?.(issue);
