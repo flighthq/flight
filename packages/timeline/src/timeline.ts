@@ -1,6 +1,7 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
+import type { Node2D } from '@flighthq/scene2d/contract';
 import { createSignal, emitSignal } from '@flighthq/signals/contract';
-import type { EntityConstruction, Node2D } from '@flighthq/types/contract';
 
 import type { FrameScript } from './types/FrameScript.ts';
 import type { Timeline } from './types/Timeline.ts';

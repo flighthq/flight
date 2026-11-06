@@ -1,6 +1,6 @@
+import type { Node2D } from '@flighthq/scene2d/contract';
 import { connectSignal, disconnectSignal } from '@flighthq/signals/contract';
 import type { Signal, SlotId } from '@flighthq/signals/contract';
-import type { Node2D } from '@flighthq/types/contract';
 
 import {
   addTimelineFrameScript,

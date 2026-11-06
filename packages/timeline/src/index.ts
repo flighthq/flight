@@ -19,3 +19,31 @@ export {
   stopTimeline,
   updateTimeline,
 } from './contract.ts';
+export {
+  TimelineAudioCueKind,
+  TimelineFrameEntryCause,
+  TimelineGotoCueKind,
+  TimelineNextFrameCueKind,
+  TimelinePlayCueKind,
+  TimelinePreviousFrameCueKind,
+  TimelineStopCueKind,
+  TimelineStreamAudioCueKind,
+} from './contract.ts';
+export type {
+  FrameScript,
+  Timeline,
+  TimelineAudioCue,
+  TimelineAudioEnvelopePoint,
+  TimelineCue,
+  TimelineCueHandler,
+  TimelineCueHandlerEntry,
+  TimelineCueRegistry,
+  TimelineFrameEvent,
+  TimelineGotoCue,
+  TimelineLabel,
+  TimelinePlayMode,
+  TimelinePlaybackCue,
+  TimelineSignals,
+  TimelineSource,
+  TimelineStreamAudioCue,
+} from './contract.ts';

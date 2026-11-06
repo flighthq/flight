@@ -528,7 +528,6 @@ export * from './TextureUvTransform.ts';
 export * from './VoxelGrid.ts';
 export * from './ThresholdOperation.ts';
 export * from './TiltShiftEffect.ts';
-export * from './Timeline.ts';
 export * from './TintAdjustment.ts';
 export * from './ToneMapEffect.ts';
 export * from './ToonMaterial.ts';
