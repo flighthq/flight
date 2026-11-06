@@ -1,3 +1,4 @@
+import { createReferencePhysics3DAbi } from './referencePhysics3DAbi.ts';
 import type {
   Physics3DAbi,
   Physics3DAbiBodyBuffer,
@@ -10,9 +11,7 @@ import type {
   Physics3DAbiStepStatus,
   Physics3DAbiWorldHandle,
   Physics3DAbiWorldStatus,
-} from '@flighthq/types/contract';
-
-import { createReferencePhysics3DAbi } from './referencePhysics3DAbi.ts';
+} from './types.ts';
 
 // Creates the executable TypeScript reference ABI. A drop-in package shadows this one constructor and
 // returns the same interface backed by its own persistent storage; every codec and wrapper remains

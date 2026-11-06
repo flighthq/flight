@@ -643,7 +643,6 @@ export * from './SmaaEffect.ts';
 export * from './Socket.ts';
 export * from './SphereCollider.ts';
 export * from './Physics3D.ts';
-export * from './Physics3DAbi.ts';
 export * from './Spatial.ts';
 export * from './SpatialIndexing.ts';
 export * from './SpecularGlossinessPbrMaterial.ts';

@@ -9,8 +9,6 @@ import {
   Physics3DSliderJointKind,
 } from '@flighthq/physics3d/contract';
 import type {
-  Physics3DAbiCommandBuffer,
-  Physics3DAbiObjectId,
   Physics3DCollider,
   Physics3DConeTwistJoint,
   Physics3DDistanceJoint,
@@ -21,7 +19,7 @@ import type {
   Physics3DSliderJoint,
   Physics3DSolverConfig,
   RigidBody3D,
-} from '@flighthq/types/contract';
+} from '@flighthq/physics3d/contract';
 
 import {
   Physics3DAbiBodyFlag,
@@ -37,6 +35,7 @@ import {
   Physics3DAbiShapeKind,
   Physics3DAbiVersion,
 } from './physics3DAbiLayout.ts';
+import type { Physics3DAbiCommandBuffer, Physics3DAbiObjectId } from './types.ts';
 
 export function getPhysics3DAbiSetColliderCommandByteLength(collider: Readonly<Physics3DCollider>): number {
   const shapeByteLength = getShapeByteLength(collider.local);

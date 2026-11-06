@@ -1,0 +1,20 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "composite": true,
+    "rootDir": "src",
+    "outDir": "dist",
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "moduleSuffixes": [".collision-types", ".physics3d-abi-types", ".spatial-types", ""],
+    "tsBuildInfoFile": "dist/.tsbuildinfo.contract"
+  },
+  "references": [
+    { "path": "../collision/tsconfig.contract.json" },
+    { "path": "../entity" },
+    { "path": "../physics3d" },
+    { "path": "../spatial/tsconfig.contract.json" }
+  ],
+  "include": ["src/contract.physics3d-abi-types.ts", "src/types.ts"]
+}

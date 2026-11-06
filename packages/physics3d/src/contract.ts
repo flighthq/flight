@@ -1,3 +1,4 @@
+export * from './contract.physics3d-abi-types.ts';
 export * from './broadphase.ts';
 export * from './colliderCollision.ts';
 export * from './colliderTransform.ts';

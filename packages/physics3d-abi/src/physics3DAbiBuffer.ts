@@ -1,13 +1,5 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type {
-  EntityConstruction,
-  Physics3DAbiBodyBuffer,
-  Physics3DAbiCommandBuffer,
-  Physics3DAbiContactBuffer,
-  Physics3DAbiExecutionResult,
-  Physics3DAbiJointBuffer,
-  Physics3DAbiQueryBuffer,
-} from '@flighthq/types/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
 
 import {
   Physics3DAbiBodyValueStride,
@@ -20,6 +12,14 @@ import {
   Physics3DAbiQueryValueStride,
   Physics3DAbiVersion,
 } from './physics3DAbiLayout.ts';
+import type {
+  Physics3DAbiBodyBuffer,
+  Physics3DAbiCommandBuffer,
+  Physics3DAbiContactBuffer,
+  Physics3DAbiExecutionResult,
+  Physics3DAbiJointBuffer,
+  Physics3DAbiQueryBuffer,
+} from './types.ts';
 
 export function clearPhysics3DAbiCommandBuffer(out: Physics3DAbiCommandBuffer): void {
   out.byteLength = Physics3DAbiCommandHeaderByteLength;

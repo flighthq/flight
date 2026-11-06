@@ -10,6 +10,7 @@ import {
 } from '@flighthq/collision/contract';
 import type { CollisionColliderShape3D } from '@flighthq/collision/contract';
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
 import {
   addPhysics3DBody,
   addPhysics3DCollider,
@@ -63,21 +64,7 @@ import {
   wakePhysics3DBody,
   writePhysics3DJointReaction,
 } from '@flighthq/physics3d/contract';
-import type { EntityConstruction } from '@flighthq/types/contract';
 import type {
-  Physics3DAbi,
-  Physics3DAbiBodyBuffer,
-  Physics3DAbiCommandBuffer,
-  Physics3DAbiContactBuffer,
-  Physics3DAbiContactHooks,
-  Physics3DAbiContactSelection,
-  Physics3DAbiExecutionResult,
-  Physics3DAbiExecutionStatus,
-  Physics3DAbiJointBuffer,
-  Physics3DAbiQueryBuffer,
-  Physics3DAbiStepStatus,
-  Physics3DAbiWorldHandle,
-  Physics3DAbiWorldStatus,
   Physics3DCollider,
   Physics3DContact,
   Physics3DContactCallback,
@@ -85,7 +72,7 @@ import type {
   Physics3DMassData,
   Physics3DWorld,
   RigidBody3D,
-} from '@flighthq/types/contract';
+} from '@flighthq/physics3d/contract';
 
 import {
   Physics3DAbiBodyFlag,
@@ -111,6 +98,21 @@ import {
   Physics3DAbiShapeKind,
   Physics3DAbiVersion,
 } from './physics3DAbiLayout.ts';
+import type {
+  Physics3DAbi,
+  Physics3DAbiBodyBuffer,
+  Physics3DAbiCommandBuffer,
+  Physics3DAbiContactBuffer,
+  Physics3DAbiContactHooks,
+  Physics3DAbiContactSelection,
+  Physics3DAbiExecutionResult,
+  Physics3DAbiExecutionStatus,
+  Physics3DAbiJointBuffer,
+  Physics3DAbiQueryBuffer,
+  Physics3DAbiStepStatus,
+  Physics3DAbiWorldHandle,
+  Physics3DAbiWorldStatus,
+} from './types.ts';
 
 export function createReferencePhysics3DAbi(): Physics3DAbi {
   const out = allocateEntity<Physics3DAbi>();

@@ -1,8 +1,11 @@
 import type { CollisionBuiltInShape3D } from '@flighthq/collision/contract';
+import type { EntityRaw, EntityRuntime, EntityRuntimeKey } from '@flighthq/entity/contract';
+import type { Physics3DQueryFilter } from '@flighthq/physics3d/contract';
+import type { SpatialAabb3D } from '@flighthq/spatial/contract';
 
-import type { Entity } from './Entity.ts';
-import type { Physics3DQueryFilter } from './Physics3D.ts';
-import type { SpatialAabb3D } from './Spatial.ts';
+interface Entity extends EntityRaw {
+  [EntityRuntimeKey]: EntityRuntime | undefined;
+}
 
 // The target-neutral execution boundary beneath a native or otherwise separately-owned Physics3D
 // world. `@flighthq/physics3d-abi` supplies the executable TypeScript reference; another package may

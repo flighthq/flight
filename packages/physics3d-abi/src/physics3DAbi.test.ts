@@ -20,13 +20,7 @@ import {
   createRigidBody3D,
   stepPhysics3D,
 } from '@flighthq/physics3d/contract';
-import type {
-  Physics3DAbi,
-  Physics3DAbiBodyBuffer,
-  Physics3DAbiCommandBuffer,
-  Physics3DJoint,
-  RigidBody3D,
-} from '@flighthq/types/contract';
+import type { Physics3DJoint, RigidBody3D } from '@flighthq/physics3d/contract';
 import { describe, expect, it } from 'vitest';
 
 import {
@@ -74,6 +68,7 @@ import {
   Physics3DAbiVersion,
 } from './physics3DAbiLayout.ts';
 import { queryPhysics3DAbiPoint } from './physics3DAbiQuery.ts';
+import type { Physics3DAbi, Physics3DAbiBodyBuffer, Physics3DAbiCommandBuffer } from './types.ts';
 
 describe('createPhysics3DAbi', () => {
   it('publishes the reference version and required baseline capabilities', () => {

@@ -12,7 +12,7 @@ import {
   createPhysics3DSolverConfig,
   createRigidBody3D,
 } from '@flighthq/physics3d/contract';
-import type { Physics3DAbiCommandBuffer, Physics3DJoint } from '@flighthq/types/contract';
+import type { Physics3DJoint } from '@flighthq/physics3d/contract';
 import { describe, expect, it } from 'vitest';
 
 import { clearPhysics3DAbiCommandBuffer, createPhysics3DAbiCommandBuffer } from './physics3DAbiBuffer.ts';
@@ -43,6 +43,7 @@ import {
   Physics3DAbiSetColliderPayloadOffset,
   Physics3DAbiShapeKind,
 } from './physics3DAbiLayout.ts';
+import type { Physics3DAbiCommandBuffer } from './types.ts';
 
 describe('getPhysics3DAbiSetColliderCommandByteLength', () => {
   it('matches exactly the number of bytes the collider writer publishes', () => {

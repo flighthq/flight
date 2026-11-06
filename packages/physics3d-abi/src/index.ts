@@ -1,3 +1,4 @@
+export * from './contract.physics3d-abi-types.ts';
 export * from './physics3DAbi.ts';
 export {
   clearPhysics3DAbiCommandBuffer,

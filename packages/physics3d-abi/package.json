@@ -43,10 +43,9 @@
     "@flighthq/collision": "*",
     "@flighthq/entity": "*",
     "@flighthq/physics3d": "*",
-    "@flighthq/types": "*"
+    "@flighthq/spatial": "*"
   },
   "devDependencies": {
-    "@flighthq/entity": "*",
     "typescript": "^7.0.2"
   },
   "description": "Persistent handle and packed-buffer execution ABI for Physics3D, with an executable TypeScript reference backend",

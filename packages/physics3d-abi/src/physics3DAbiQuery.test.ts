@@ -1,5 +1,5 @@
 import { createPhysics3DCollider, createPhysics3DQueryFilter, createRigidBody3D } from '@flighthq/physics3d/contract';
-import type { Physics3DAbi, Physics3DAbiCommandBuffer, SpatialAabb3D } from '@flighthq/types/contract';
+import type { SpatialAabb3D } from '@flighthq/spatial/contract';
 import { describe, expect, it } from 'vitest';
 
 import { createPhysics3DAbi, createPhysics3DAbiWorld, executePhysics3DAbiCommands } from './physics3DAbi.ts';
@@ -17,6 +17,7 @@ import {
   queryPhysics3DAbiRegion,
   queryPhysics3DAbiShapeCast,
 } from './physics3DAbiQuery.ts';
+import type { Physics3DAbi, Physics3DAbiCommandBuffer } from './types.ts';
 
 describe('queryPhysics3DAbiPoint', () => {
   it('reports all hits and the complete count when output capacity truncates them', () => {
