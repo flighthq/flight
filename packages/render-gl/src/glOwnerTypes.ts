@@ -1,6 +1,6 @@
 import type { Camera3D } from '@flighthq/camera/contract';
 import type { Effect } from '@flighthq/effects/contract';
-import type { Entity } from '@flighthq/entity/contract';
+import type { EntityRaw, EntityRuntime, EntityRuntimeKey } from '@flighthq/entity/contract';
 import type { Scene3DLightsLike } from '@flighthq/lighting/contract';
 import type { PbrExtension, PbrUvSet } from '@flighthq/materials/contract';
 import type { Viewport } from '@flighthq/node/contract';
@@ -19,6 +19,10 @@ import type {
 } from './glRenderStateTypes.ts';
 import type { GlTextureRenderTarget, GlTextureRenderTargetPool } from './glRenderTargetTypes.ts';
 import type { GlContext } from './types.ts';
+
+interface GlOwnerEntity extends EntityRaw {
+  [EntityRuntimeKey]: EntityRuntime | undefined;
+}
 
 export interface GlCompressedTextureSupport {
   readonly astc: boolean;
@@ -78,7 +82,7 @@ export interface GlShaderLocations {
   locTexture: WebGLUniformLocation;
 }
 
-export type GlBitmapShader = Entity & GlShader & { readonly locations: GlShaderLocations };
+export type GlBitmapShader = GlOwnerEntity & GlShader & { readonly locations: GlShaderLocations };
 
 export interface GlShapeMesh {
   vertices: Float32Array;
@@ -96,12 +100,12 @@ export interface GlShapeMeshBinding {
   colorLocation: WebGLUniformLocation | null;
 }
 
-export interface GlSkinPaletteTexture extends Entity {
+export interface GlSkinPaletteTexture extends GlOwnerEntity {
   jointCapacity: number;
   texture: WebGLTexture;
 }
 
-export interface GlRenderViewResources extends Entity {
+export interface GlRenderViewResources extends GlOwnerEntity {
   readonly renderState: GlRenderState;
   readonly renderTarget: GlTextureRenderTarget;
   readonly viewport: Viewport;
