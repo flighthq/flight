@@ -1,6 +1,6 @@
 import { logOnce } from '@flighthq/log/contract';
 import type { LogState } from '@flighthq/log/contract';
-import type { Mesh } from '@flighthq/types/contract';
+import type { Mesh } from '@flighthq/meshgeometry/contract';
 import { LogLevel } from '@flighthq/types/contract';
 
 import { setSkinnedMeshBoundsGuard } from './sceneRender.ts';

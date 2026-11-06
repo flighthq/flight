@@ -1,4 +1,5 @@
-import type { GlRenderState, MeshGeometry } from '@flighthq/types/contract';
+import type { MeshGeometry } from '@flighthq/meshgeometry/contract';
+import type { GlRenderState } from '@flighthq/types/contract';
 
 import type { GlWireframeUpload } from './contract.scene3d-gl-types.ts';
 import { bindGlVertexAttribute, ensureGlMeshUpload } from './glMeshUpload.ts';

@@ -1,3 +1,4 @@
+import type { MeshGeometry } from '@flighthq/meshgeometry/contract';
 import {
   getWgpuRenderStateRuntime,
   registerWgpuBitmapTextureResolver,
@@ -6,7 +7,6 @@ import {
 import type {
   Camera3D,
   Material,
-  MeshGeometry,
   NormalMaterial,
   Scene3DLightBlock,
   Scene3DRenderProxy,

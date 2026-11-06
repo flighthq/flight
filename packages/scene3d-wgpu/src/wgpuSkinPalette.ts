@@ -1,11 +1,6 @@
+import type { Mesh, MeshGeometry, MeshGeometryRuntime, MeshSkinBindPose } from '@flighthq/meshgeometry/contract';
 import { getWgpuRenderStateRuntime, retireWgpuTexture } from '@flighthq/render-wgpu/contract';
-import type {
-  Mesh,
-  MeshGeometry,
-  MeshGeometryRuntime,
-  MeshSkinBindPose,
-  WgpuRenderState,
-} from '@flighthq/types/contract';
+import type { WgpuRenderState } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 import type { WgpuSkinningAdapter } from '@flighthq/types/contract';
 

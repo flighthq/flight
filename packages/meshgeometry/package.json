@@ -42,6 +42,8 @@
   "dependencies": {
     "@flighthq/entity": "*",
     "@flighthq/geometry": "*",
+    "@flighthq/materials": "*",
+    "@flighthq/signals": "*",
     "@flighthq/types": "*"
   },
   "devDependencies": {

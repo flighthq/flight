@@ -1,6 +1,6 @@
-import type { InstancedMesh } from './InstancedMesh.ts';
+import type { InstancedMesh, Mesh } from '@flighthq/meshgeometry/contract';
+
 import type { Matrix4 } from './Matrix4.ts';
-import type { Mesh } from './Mesh.ts';
 import type { Scene3DLightBlock } from './Scene3DLightBlock.ts';
 
 // The prepared, render-ready frame produced by prepareScene3DRender and consumed by the backend

@@ -10,11 +10,12 @@ import {
 } from '@flighthq/geometry/contract';
 import { createBlinnPhongMaterial } from '@flighthq/materials/contract';
 import { createMeshGeometry } from '@flighthq/meshgeometry/contract';
+import type { MeshSubset } from '@flighthq/meshgeometry/contract';
+import { MeshKind } from '@flighthq/meshgeometry/contract';
 import type { Scene3DDocument, Scene3DDocumentMesh, Scene3DDocumentNode } from '@flighthq/scene3d/contract';
 import type {
   Material,
   MaterialLike,
-  MeshSubset,
   ThreeDsChunkHandler,
   ThreeDsDropTally,
   ThreeDsMaterial,
@@ -25,7 +26,6 @@ import type {
 } from '@flighthq/types/contract';
 import {
   ImportDiagnosticSeverity,
-  MeshKind,
   THREE_DS_CHUNK_HEADER_BYTES,
   THREE_DS_FACE_MATERIAL,
   THREE_DS_FACES,

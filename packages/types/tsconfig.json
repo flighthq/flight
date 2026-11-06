@@ -8,6 +8,7 @@
     "declarationMap": true,
     "sourceMap": true,
     "moduleSuffixes": [
+      ".meshgeometry-types",
       ".scene3d-types",
       ".scene3d-formats-types",
       ".gui-types",
@@ -388,6 +389,9 @@
     },
     {
       "path": "../loader/tsconfig.contract.json"
+    },
+    {
+      "path": "../meshgeometry/tsconfig.contract.json"
     },
     {
       "path": "../scene3d/tsconfig.contract.json"

@@ -9,6 +9,7 @@
     "sourceMap": true,
     "types": ["@webgpu/types"],
     "moduleSuffixes": [
+      ".meshgeometry-types",
       ".render-types",
       ".scene3d-wgpu-bridge-types",
       ".materials-types",
@@ -27,6 +28,9 @@
     },
     {
       "path": "../materials/tsconfig.contract.json"
+    },
+    {
+      "path": "../meshgeometry/tsconfig.contract.json"
     },
     {
       "path": "../render-wgpu/tsconfig.contract.json"

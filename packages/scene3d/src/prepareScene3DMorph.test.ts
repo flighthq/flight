@@ -1,6 +1,7 @@
 import { createMeshGeometry } from '@flighthq/meshgeometry/contract';
+import type { VertexAttributeLayout } from '@flighthq/meshgeometry/contract';
 import { addNodeChild } from '@flighthq/node/contract';
-import type { MeshMorph, VertexAttributeLayout } from '@flighthq/types/contract';
+import type { MeshMorph } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { createMesh } from './mesh.ts';

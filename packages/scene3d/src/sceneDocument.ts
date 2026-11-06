@@ -2,13 +2,13 @@ import { createAnimationChannel, createAnimationClip } from '@flighthq/animation
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { setQuaternion, setVector3 } from '@flighthq/geometry/contract';
 import { createMaterial3D } from '@flighthq/materials/contract';
+import type { Mesh } from '@flighthq/meshgeometry/contract';
 import { addNodeChild, invalidateNodeLocalTransform } from '@flighthq/node/contract';
 import type {
   AnimationChannel,
   EntityConstruction,
   Material3D,
   MaterialLike,
-  Mesh,
   Scene3DAnimationTarget,
   Node3D,
   Skeleton3D,

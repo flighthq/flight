@@ -1,5 +1,5 @@
 import { getMeshGeometrySkinBindPose, setMeshGeometrySkinBindPose } from '@flighthq/meshgeometry/contract';
-import type { Mesh } from '@flighthq/types/contract';
+import type { Mesh } from '@flighthq/meshgeometry/contract';
 
 import { computeSkeleton3DJointMatrices } from './skeleton3d.ts';
 import { captureMeshSkinBindPose, skinMeshGeometry, updateMeshSkinBindPoseDeformInput } from './skinMeshGeometry.ts';

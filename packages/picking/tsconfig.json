@@ -19,7 +19,7 @@
       "path": "../geometry/tsconfig.runtime.json"
     },
     {
-      "path": "../meshgeometry"
+      "path": "../meshgeometry/tsconfig.runtime.json"
     },
     {
       "path": "../node/tsconfig.runtime.json"

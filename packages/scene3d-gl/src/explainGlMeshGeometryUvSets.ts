@@ -1,4 +1,5 @@
-import type { MeshGeometry, MeshGeometryUvSetExplanation, PbrUvSet } from '@flighthq/types/contract';
+import type { MeshGeometry } from '@flighthq/meshgeometry/contract';
+import type { MeshGeometryUvSetExplanation, PbrUvSet } from '@flighthq/types/contract';
 
 // Explains whether a geometry's vertex layout can serve the UV sets a material's maps ask for. Pure and
 // separately importable; retains and mutates nothing.

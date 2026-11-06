@@ -1,4 +1,5 @@
-import type { Mesh } from './Mesh.ts';
+import type { Mesh } from '@flighthq/meshgeometry/contract';
+
 import type { Node3D, Node3DRuntime } from './Node3D.ts';
 export interface LodLevel {
   mesh: Mesh;

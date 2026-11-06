@@ -1,5 +1,6 @@
+import type { Mesh } from '@flighthq/meshgeometry/contract';
+
 import type { Entity } from './Entity.ts';
-import type { Mesh } from './Mesh.ts';
 
 // Result of a successful scene pick (a camera or world ray hitting a Mesh's geometry). `distance` is
 // the parametric `t` along the pick ray in world units (the world-space hit point is `point`).

@@ -1,4 +1,4 @@
-import type { Mesh, MeshGeometry } from '@flighthq/types/contract';
+import type { Mesh, MeshGeometry } from '@flighthq/meshgeometry/contract';
 
 import type { WgpuRenderState } from './WgpuRenderState.ts';
 

@@ -11,7 +11,7 @@
     { "path": "../lighting" },
     { "path": "../log" },
     { "path": "../materials/tsconfig.runtime.json" },
-    { "path": "../meshgeometry" },
+    { "path": "../meshgeometry/tsconfig.runtime.json" },
     { "path": "../node/tsconfig.runtime.json" },
     { "path": "../scene2d/tsconfig.runtime.json" },
     { "path": "../shading" },

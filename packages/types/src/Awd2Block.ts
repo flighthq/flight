@@ -1,6 +1,7 @@
+import type { MeshGeometry } from '@flighthq/meshgeometry/contract';
+
 import type { Entity } from './Entity.ts';
 import type { ImportDiagnostic } from './ImportDiagnostic.ts';
-import type { MeshGeometry } from './MeshGeometry.ts';
 import type { Scene3DDocument } from './Scene3DDocument.ts';
 
 /**

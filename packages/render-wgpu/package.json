@@ -49,6 +49,7 @@
     "@flighthq/image": "*",
     "@flighthq/log": "*",
     "@flighthq/materials": "*",
+    "@flighthq/meshgeometry": "*",
     "@flighthq/platform": "*",
     "@flighthq/render": "*",
     "@flighthq/registry": "*",

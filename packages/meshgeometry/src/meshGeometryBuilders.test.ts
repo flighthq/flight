@@ -1,5 +1,4 @@
-import type { MeshGeometry, MeshTriangleVertexIndices } from '@flighthq/types/contract';
-
+import type { MeshGeometry, MeshTriangleVertexIndices } from './contract.meshgeometry-types.ts';
 import { getMeshGeometryIndexCount, getMeshGeometryVertexCount } from './meshGeometry.ts';
 import {
   createBoxMeshGeometry,

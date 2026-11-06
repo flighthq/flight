@@ -8,7 +8,7 @@
     "declarationMap": true,
     "sourceMap": true,
     "tsBuildInfoFile": "dist/.tsbuildinfo.contract",
-    "moduleSuffixes": [".geometry-types", ".texture-types", ""]
+    "moduleSuffixes": [".meshgeometry-types", ".geometry-types", ".texture-types", ""]
   },
   "references": [
     {
@@ -16,6 +16,9 @@
     },
     {
       "path": "../geometry/tsconfig.contract.json"
+    },
+    {
+      "path": "../meshgeometry/tsconfig.contract.json"
     },
     {
       "path": "../signals"

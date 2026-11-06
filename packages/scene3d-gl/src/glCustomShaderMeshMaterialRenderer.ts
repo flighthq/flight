@@ -1,3 +1,4 @@
+import type { MeshGeometry } from '@flighthq/meshgeometry/contract';
 import { withKindMapEntry } from '@flighthq/registry/contract';
 import { getGlRenderStateRuntime, resolveGlTexture } from '@flighthq/render-gl/contract';
 import type { GlCustomMaterialShaderSource, GlMeshMaterialRenderer } from '@flighthq/render-gl/contract';
@@ -7,7 +8,6 @@ import type {
   CustomShaderMaterial,
   GlRenderState,
   Material,
-  MeshGeometry,
   Scene3DLightBlock,
   Scene3DRenderProxy,
   Texture,

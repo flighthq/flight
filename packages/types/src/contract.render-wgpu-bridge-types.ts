@@ -2,8 +2,7 @@
 // package contracts; only Types-owned scene/render headers and the two genuine backend cycles remain.
 export type { Camera3D } from './Camera3D.ts';
 export type { ExternalTexture } from './ExternalTexture.ts';
-export type { Mesh } from './Mesh.ts';
-export type { MeshGeometry } from './MeshGeometry.ts';
+export type { Mesh, MeshGeometry } from '@flighthq/meshgeometry/contract';
 export type { Modifier } from './Modifier.ts';
 export type { ModifierDefinition } from './ModifierDefinition.ts';
 export type { Node3D } from './Node3D.ts';

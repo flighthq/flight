@@ -4,9 +4,9 @@ import {
   createMeshGeometry,
   getMeshGeometrySkinBindPose,
 } from '@flighthq/meshgeometry/contract';
+import type { MeshRuntime } from '@flighthq/meshgeometry/contract';
 import { addNodeChild, getNodeRuntime, invalidateNodeLocalTransform } from '@flighthq/node/contract';
 import { createMesh, createNode3D } from '@flighthq/scene3d/contract';
-import type { MeshRuntime } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { prepareMeshSkinning, prepareScene3DSkinning } from './prepareScene3DSkinning.ts';

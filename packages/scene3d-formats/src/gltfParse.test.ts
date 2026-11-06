@@ -8,6 +8,7 @@ import {
   getMeshGeometryVertexTangent,
   getMeshGeometryVertexUv0,
 } from '@flighthq/meshgeometry/contract';
+import type { Mesh } from '@flighthq/meshgeometry/contract';
 import { getNodeChildren, getNodeLocalMatrix4 } from '@flighthq/node/contract';
 import { isMesh } from '@flighthq/scene3d/contract';
 import { getTextureSource } from '@flighthq/texture/contract';
@@ -16,7 +17,6 @@ import type {
   ExternalImageResourceReference,
   GltfCoreFeatureHandler,
   ImportDiagnostic,
-  Mesh,
   Scene3DAnimationTarget,
   Node3D,
   StandardPbrMaterial,

@@ -1,5 +1,6 @@
 import type { LinearColorRaw } from '@flighthq/color/contract';
 import { allocateLinearColor, unpackColorToLinear } from '@flighthq/color/contract';
+import type { MeshGeometry } from '@flighthq/meshgeometry/contract';
 import { getGlRenderStateRuntime, resolveGlTexture } from '@flighthq/render-gl/contract';
 import type { GlModifierBindContext, GlMeshMaterialRenderer } from '@flighthq/render-gl/contract';
 import { orderModifierStack } from '@flighthq/shading/contract';
@@ -7,7 +8,6 @@ import type {
   Camera3D,
   GlRenderState,
   Material,
-  MeshGeometry,
   Modifier,
   Scene3DLightBlock,
   Scene3DRenderProxy,

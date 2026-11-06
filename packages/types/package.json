@@ -81,6 +81,7 @@
     "@flighthq/media": "*",
     "@flighthq/mediasession": "*",
     "@flighthq/menu": "*",
+    "@flighthq/meshgeometry": "*",
     "@flighthq/midi": "*",
     "@flighthq/net": "*",
     "@flighthq/node": "*",

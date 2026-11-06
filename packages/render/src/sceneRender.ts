@@ -16,6 +16,7 @@ import {
   unionAabb,
 } from '@flighthq/geometry/contract';
 import { ensureMeshGeometryBounds } from '@flighthq/meshgeometry/contract';
+import type { InstancedMesh, InstancedMeshRuntime, Mesh, MeshRuntime } from '@flighthq/meshgeometry/contract';
 import {
   getNodeRuntime,
   getNodeWorldMatrix4,
@@ -29,11 +30,7 @@ import type {
   DirectionalLight,
   Frustum,
   HemisphereLight,
-  InstancedMesh,
-  InstancedMeshRuntime,
   Matrix4,
-  Mesh,
-  MeshRuntime,
   Node3D,
   PointLight,
   RenderState,

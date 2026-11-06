@@ -4,8 +4,9 @@ import {
   invalidateMeshGeometry,
   setMeshGeometrySkinBindPose,
 } from '@flighthq/meshgeometry/contract';
+import type { Mesh, MeshSkinBindPose, VertexAttributeLayout } from '@flighthq/meshgeometry/contract';
 import { createMesh, updateMeshMorph } from '@flighthq/scene3d/contract';
-import type { Mesh, MeshMorph, MeshSkinBindPose, VertexAttributeLayout } from '@flighthq/types/contract';
+import type { MeshMorph } from '@flighthq/types/contract';
 
 import type { GlMeshUpload } from './contract.scene3d-gl-types.ts';
 import { bindGlVertexAttribute, destroyGlMeshUpload, ensureGlMeshUpload } from './glMeshUpload.ts';

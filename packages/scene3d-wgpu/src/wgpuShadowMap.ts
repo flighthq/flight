@@ -1,15 +1,14 @@
 import { getCamera3DViewProjectionMatrix4, getOrthographicProjectionTexelSize } from '@flighthq/camera/contract';
 import { createMatrix3, createMatrix4, multiplyMatrix4 } from '@flighthq/geometry/contract';
+import type { InstancedMesh, Mesh } from '@flighthq/meshgeometry/contract';
 import { forEachNodeDescendant, getNodeWorldMatrix4 } from '@flighthq/node/contract';
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
 import type {
   Camera3D,
   DirectionalLight,
-  InstancedMesh,
   Material3D,
   Matrix3,
   Matrix4,
-  Mesh,
   Node3D,
   Node3DFields,
   Scene3DRenderProxy,

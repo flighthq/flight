@@ -8,6 +8,7 @@
     "declarationMap": true,
     "sourceMap": true,
     "moduleSuffixes": [
+      ".meshgeometry-types",
       ".render-types",
       ".render-backend-bridge-types",
       ".render-wgpu-bridge-types",
@@ -21,6 +22,9 @@
   "references": [
     {
       "path": "../app/tsconfig.contract.json"
+    },
+    {
+      "path": "../meshgeometry/tsconfig.contract.json"
     },
     {
       "path": "../surface/tsconfig.contract.json"

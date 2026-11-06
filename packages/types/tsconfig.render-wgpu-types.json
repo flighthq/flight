@@ -8,6 +8,7 @@
     "declarationMap": true,
     "sourceMap": true,
     "moduleSuffixes": [
+      ".meshgeometry-types",
       ".render-wgpu-bridge-types",
       ".keyboard-types",
       ".render-types",
@@ -65,6 +66,9 @@
     "tsBuildInfoFile": "dist/.tsbuildinfo.render-wgpu-types"
   },
   "references": [
+    {
+      "path": "../meshgeometry/tsconfig.contract.json"
+    },
     {
       "path": "../texture/tsconfig.contract.json"
     },
@@ -290,10 +294,6 @@
     "src/Matrix.ts",
     "src/Matrix3.ts",
     "src/Matrix4.ts",
-    "src/Mesh.ts",
-    "src/MeshGeometry.ts",
-    "src/MeshMorphBindPose.ts",
-    "src/MeshSkinBindPose.ts",
     "src/Modifier.ts",
     "src/ModifierDefinition.ts",
     "src/ModifierKind.ts",

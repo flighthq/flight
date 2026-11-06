@@ -1,12 +1,11 @@
 import { getMeshGeometryMorphBindPose, getMeshGeometrySkinBindPose } from '@flighthq/meshgeometry/contract';
 import type {
-  GlContext,
-  GlRenderState,
   MeshGeometry,
   MeshSkinBindPose,
   PrimitiveTopology,
   VertexAttribute,
-} from '@flighthq/types/contract';
+} from '@flighthq/meshgeometry/contract';
+import type { GlContext, GlRenderState } from '@flighthq/types/contract';
 
 import type { GlMeshUpload } from './contract.scene3d-gl-types.ts';
 import { getGlScene3DRuntime } from './glScene3DRuntime.ts';

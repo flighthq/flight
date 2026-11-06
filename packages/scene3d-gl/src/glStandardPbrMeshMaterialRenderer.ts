@@ -1,9 +1,9 @@
+import type { MeshGeometry } from '@flighthq/meshgeometry/contract';
 import type { GlMeshMaterialRenderer } from '@flighthq/render-gl/contract';
 import type {
   Camera3D,
   GlRenderState,
   Material,
-  MeshGeometry,
   Scene3DLightBlock,
   Scene3DRenderProxy,
   StandardPbrMaterial,

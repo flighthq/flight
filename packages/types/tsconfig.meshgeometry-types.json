@@ -1,0 +1,29 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "composite": true,
+    "rootDir": "src",
+    "outDir": "dist",
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "moduleSuffixes": [".meshgeometry-bridge-types", ".node-types", ".entity-types", ".geometry-types", ""],
+    "tsBuildInfoFile": "dist/.tsbuildinfo.meshgeometry-types"
+  },
+  "references": [
+    { "path": "../entity" },
+    { "path": "../geometry/tsconfig.contract.json" },
+    { "path": "../node/tsconfig.contract.json" }
+  ],
+  "include": [
+    "src/contract.meshgeometry-bridge-types.ts",
+    "src/Entity.ts",
+    "src/HasAppearance.node-types.ts",
+    "src/HasTransform3D.node-types.ts",
+    "src/MorphTarget.ts",
+    "src/Node.node-types.ts",
+    "src/Node3D.ts",
+    "src/Skeleton3D.ts",
+    "src/Skin.ts"
+  ]
+}

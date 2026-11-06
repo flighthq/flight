@@ -1,6 +1,6 @@
 import { createAabb, createBoundingSphere } from '@flighthq/geometry/contract';
-import type { MeshGeometry, VertexAttributeLayout } from '@flighthq/types/contract';
 
+import type { MeshGeometry, VertexAttributeLayout } from './contract.meshgeometry-types.ts';
 import { createMeshGeometry, invalidateMeshGeometry } from './meshGeometry.ts';
 import {
   computeMeshGeometryBoundingSphere,

@@ -1,14 +1,8 @@
 import { createAabb } from '@flighthq/geometry/contract';
-import type {
-  Aabb,
-  AabbLike,
-  BoundingSphereLike,
-  MeshGeometry,
-  MeshGeometryRuntime,
-  MeshTriangleVertexIndices,
-} from '@flighthq/types/contract';
+import type { Aabb, AabbLike, BoundingSphereLike } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
+import type { MeshGeometry, MeshGeometryRuntime, MeshTriangleVertexIndices } from './contract.meshgeometry-types.ts';
 import { getMeshGeometryTriangleCount, getMeshGeometryTriangleVertexIndices } from './meshGeometryOperations.ts';
 
 // Per-vertex compute over the canonical interleaved PBR record: position(3) + normal(3) +

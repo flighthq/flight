@@ -1,5 +1,4 @@
-import type { VertexAttributeLayout } from '@flighthq/types/contract';
-
+import type { VertexAttributeLayout } from './contract.meshgeometry-types.ts';
 import { createMeshGeometry, getMeshGeometryIndexCount, getMeshGeometryVertexCount } from './meshGeometry.ts';
 import { createBoxMeshGeometry, createQuadMeshGeometry } from './meshGeometryBuilders.ts';
 import {

@@ -1,6 +1,7 @@
 import { createTransform3D } from '@flighthq/geometry/contract';
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import { createMeshGeometry } from '@flighthq/meshgeometry/contract';
+import { MeshKind } from '@flighthq/meshgeometry/contract';
 import type { Scene3DDocument, Scene3DDocumentMesh } from '@flighthq/scene3d/contract';
 import type {
   ImportDiagnostic,
@@ -10,7 +11,7 @@ import type {
   MeshMorph,
   MorphTarget,
 } from '@flighthq/types/contract';
-import { ImportDiagnosticSeverity, MeshKind } from '@flighthq/types/contract';
+import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
 import {
   MD2_ANORMS,

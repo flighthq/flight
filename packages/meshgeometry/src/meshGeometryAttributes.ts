@@ -1,12 +1,12 @@
 import { getEntityRuntime } from '@flighthq/entity/contract';
+
 import type {
   MeshGeometry,
   VertexAttribute,
   VertexAttributeLayout,
   VertexSemantic,
   MeshGeometryRuntime,
-} from '@flighthq/types/contract';
-
+} from './contract.meshgeometry-types.ts';
 import {
   getVertexFormatByteLength,
   getVertexFormatComponentCount,

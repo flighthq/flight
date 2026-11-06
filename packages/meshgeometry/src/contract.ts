@@ -1,3 +1,4 @@
+export * from './contract.meshgeometry-types.ts';
 export * from './meshGeometry.ts';
 export * from './meshGeometryAttributes.ts';
 export * from './meshGeometryBuilders.ts';

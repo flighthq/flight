@@ -1,6 +1,7 @@
 import { getCamera3DPosition, getCamera3DViewProjectionMatrix4 } from '@flighthq/camera/contract';
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { createMatrix3, createMatrix4 } from '@flighthq/geometry/contract';
+import type { MeshGeometry } from '@flighthq/meshgeometry/contract';
 import {
   getWgpuBlendState,
   getWgpuRenderStateDeviceResources,
@@ -13,7 +14,6 @@ import type {
   Camera3D,
   EntityConstruction,
   Material,
-  MeshGeometry,
   Scene3DLightBlock,
   Scene3DRenderProxy,
   Material3D,

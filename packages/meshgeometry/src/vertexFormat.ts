@@ -1,4 +1,4 @@
-import type { VertexFormat } from '@flighthq/types/contract';
+import type { VertexFormat } from './contract.meshgeometry-types.ts';
 
 export function getVertexFormatByteLength(format: VertexFormat): number {
   switch (format) {

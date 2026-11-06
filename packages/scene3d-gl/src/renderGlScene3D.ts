@@ -2,6 +2,7 @@ import type { LinearColorRaw } from '@flighthq/color/contract';
 import { allocateLinearColor, unpackColorToLinear } from '@flighthq/color/contract';
 import { createMatrix3, createMatrix4, setMatrix3NormalFromMatrix4 } from '@flighthq/geometry/contract';
 import { hasMeshGeometrySkin } from '@flighthq/meshgeometry/contract';
+import type { InstancedMesh, Mesh, MeshSubset } from '@flighthq/meshgeometry/contract';
 import { getNodeWorldMatrix4 } from '@flighthq/node/contract';
 import {
   declareGlRenderTargetColorSpace,
@@ -18,12 +19,9 @@ import type {
   ColorScaleBias,
   GlRenderPass,
   GlRenderState,
-  InstancedMesh,
   Material,
   Matrix3,
   Matrix4,
-  Mesh,
-  MeshSubset,
   Scene3DLightsLike,
   Scene3DLightBlock,
   Node3D,

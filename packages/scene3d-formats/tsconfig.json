@@ -17,7 +17,7 @@
     { "path": "../lighting" },
     { "path": "../materials/tsconfig.runtime.json" },
     { "path": "../math" },
-    { "path": "../meshgeometry" },
+    { "path": "../meshgeometry/tsconfig.runtime.json" },
     { "path": "../node/tsconfig.runtime.json" },
     { "path": "../requirement" },
     { "path": "../scene3d" },

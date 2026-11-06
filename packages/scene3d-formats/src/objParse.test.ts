@@ -6,6 +6,7 @@ import {
   getMeshGeometryVertexPosition,
   getMeshGeometryVertexUv0,
 } from '@flighthq/meshgeometry/contract';
+import type { Mesh } from '@flighthq/meshgeometry/contract';
 import { getNodeChildren } from '@flighthq/node/contract';
 import { isMesh } from '@flighthq/scene3d/contract';
 import type { Scene3DDocument } from '@flighthq/scene3d/contract';
@@ -15,7 +16,6 @@ import type {
   ExternalImageResourceReference,
   ImportDiagnostic,
   MaterialLike,
-  Mesh,
   Node3D,
   ObjMaterial,
   StandardPbrMaterial,

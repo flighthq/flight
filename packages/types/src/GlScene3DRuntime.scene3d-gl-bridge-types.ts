@@ -1,3 +1,5 @@
+import type { Mesh, MeshGeometry } from '@flighthq/meshgeometry/contract';
+
 import type { Camera3D } from './Camera3D.ts';
 import type { GlMeshProgram } from './GlMeshProgram.ts';
 import type { GlPbrTransmissionSceneColor } from './GlPbrTransmissionSceneColor.ts';
@@ -5,8 +7,6 @@ import type { GlRenderState } from './GlRenderState.ts';
 import type { GlTextureRenderTarget } from './GlRenderTarget.ts';
 import type { GlSkinPaletteTexture } from './GlSkinPaletteTexture.ts';
 import type { Matrix4 } from './Matrix4.ts';
-import type { Mesh } from './Mesh.ts';
-import type { MeshGeometry } from './MeshGeometry.ts';
 import type { Node3D } from './Node3D.ts';
 import type { PbrExtension } from './PbrExtension.ts';
 import type { Scene3DLightBlock } from './Scene3DLightBlock.ts';

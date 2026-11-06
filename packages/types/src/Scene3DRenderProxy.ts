@@ -1,8 +1,9 @@
+import type { MeshSubset } from '@flighthq/meshgeometry/contract';
+
 import type { ColorScaleBias } from './ColorScaleBias.ts';
 import type { Material3D } from './Material3D.ts';
 import type { Matrix3 } from './Matrix3.ts';
 import type { Matrix4 } from './Matrix4.ts';
-import type { MeshSubset } from './MeshGeometry.ts';
 
 // The per-draw resolved record drawScene3D hands one mesh-material renderer for a single Mesh subset.
 // drawScene3D walks the scene, and for each Mesh — for each of its subsets paired with its resolved

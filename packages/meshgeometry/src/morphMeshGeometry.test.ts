@@ -1,5 +1,6 @@
-import type { MeshMorph, VertexAttributeLayout } from '@flighthq/types/contract';
+import type { MeshMorph } from '@flighthq/types/contract';
 
+import type { VertexAttributeLayout } from './contract.meshgeometry-types.ts';
 import { createMeshGeometry } from './meshGeometry.ts';
 import { blendMeshGeometryMorph, captureMeshMorphBindPose } from './morphMeshGeometry.ts';
 

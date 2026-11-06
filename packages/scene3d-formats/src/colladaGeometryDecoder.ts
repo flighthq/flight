@@ -1,7 +1,8 @@
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import { createMeshGeometry } from '@flighthq/meshgeometry/contract';
+import type { MeshSubset } from '@flighthq/meshgeometry/contract';
 import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
-import type { ColladaElementDecoder, MeshSubset } from '@flighthq/types/contract';
+import type { ColladaElementDecoder } from '@flighthq/types/contract';
 
 import { colladaChild, colladaDescendants, colladaIdOf, colladaNumbers } from './colladaXml.ts';
 import { CANONICAL_FLOATS_PER_VERTEX, CANONICAL_LAYOUT } from './shared.ts';

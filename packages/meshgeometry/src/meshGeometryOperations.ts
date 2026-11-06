@@ -5,8 +5,7 @@ import type {
   MeshTriangleVertexIndices,
   PrimitiveTopology,
   VertexAttributeLayout,
-} from '@flighthq/types/contract';
-
+} from './contract.meshgeometry-types.ts';
 import { createMeshGeometry, getMeshGeometryVertexCount } from './meshGeometry.ts';
 import {
   computeMeshGeometryNormals,

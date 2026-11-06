@@ -4,7 +4,8 @@ import {
   getMeshGeometryMorphBindPose,
   setMeshGeometryMorphBindPose,
 } from '@flighthq/meshgeometry/contract';
-import type { Mesh, MeshGeometry, MeshGeometryRuntime, MeshMorph } from '@flighthq/types/contract';
+import type { Mesh, MeshGeometry, MeshGeometryRuntime } from '@flighthq/meshgeometry/contract';
+import type { MeshMorph } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 // Blends a morphed mesh into its geometry for the current weights — the explicit per-frame morph call,

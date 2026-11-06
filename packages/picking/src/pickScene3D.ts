@@ -16,13 +16,12 @@ import {
   getMeshGeometryTriangleVertexIndices,
   getMeshGeometryVertexPosition,
 } from '@flighthq/meshgeometry/contract';
+import type { Mesh, MeshRuntime } from '@flighthq/meshgeometry/contract';
 import { ensureNodeWorldMatrix4, getNodeRuntime, getNodeWorldMatrix4 } from '@flighthq/node/contract';
 import { getNode3DWorldBounds, isMesh } from '@flighthq/scene3d/contract';
 import type {
   Camera3D,
   EntityConstruction,
-  Mesh,
-  MeshRuntime,
   Node3D,
   NodeAny,
   Ray3D,

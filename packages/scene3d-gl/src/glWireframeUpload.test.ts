@@ -1,5 +1,5 @@
 import { createBoxMeshGeometry, createMeshGeometry } from '@flighthq/meshgeometry/contract';
-import type { VertexAttributeLayout } from '@flighthq/types/contract';
+import type { VertexAttributeLayout } from '@flighthq/meshgeometry/contract';
 
 import { makeGlScene3DState } from './glScene3DTestHelper.ts';
 import { destroyGlWireframeUpload, ensureGlWireframeUpload } from './glWireframeUpload.ts';

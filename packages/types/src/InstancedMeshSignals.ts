@@ -1,24 +1,2 @@
-import type { Signal } from '@flighthq/signals/contract';
-
-import type { Entity } from './Entity.ts';
-
-// Opt-in observation of an InstancedMesh's instance list, enabled per node by
-// enableInstancedMeshSignals and costing nothing until it is.
-//
-// This is a DIFFERENT channel from the `version` counter, and the two answer different questions.
-// `version` says "the instance payload changed" and is what a cache (the cull's bounds union, a
-// backend's upload) keys on — it fires for a matrix edit as readily as for an append. These signals
-// say WHICH structural edit happened and WHERE, which is what a consumer maintaining an array
-// parallel to the instances needs: `onInstanceRemoved` carries the swap source precisely because a
-// removal is a swap with the last instance, so a parallel array must move the same element.
-export interface InstancedMeshInstanceRemoved {
-  index: number;
-  // The former last index moved into `index`, or -1 when the removed instance was the last one.
-  swapSource: number;
-}
-
-export interface InstancedMeshSignals extends Entity {
-  onCleared: Signal<void>;
-  onInstanceAppended: Signal<number>;
-  onInstanceRemoved: Signal<Readonly<InstancedMeshInstanceRemoved>>;
-}
+/** @deprecated Import instanced-mesh signal contracts from `@flighthq/meshgeometry/contract`. */
+export type { InstancedMeshInstanceRemoved, InstancedMeshSignals } from '@flighthq/meshgeometry/contract';

@@ -5,9 +5,10 @@ import {
   createMeshGeometryFromAttributes,
   setMeshGeometrySubsets,
 } from '@flighthq/meshgeometry/contract';
+import type { Mesh, VertexAttributeLayout } from '@flighthq/meshgeometry/contract';
 import { invalidateNodeLocalTransform } from '@flighthq/node/contract';
 import { createMesh } from '@flighthq/scene3d/contract';
-import type { Material3D, Mesh, Scene3DHit, VertexAttributeLayout } from '@flighthq/types/contract';
+import type { Material3D, Scene3DHit } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { createScene3DHit } from './pickScene3D.ts';

@@ -1,4 +1,6 @@
 import { cloneMeshGeometryForDeformation } from '@flighthq/meshgeometry/contract';
+import type { Mesh, MeshGeometry, MeshRuntime } from '@flighthq/meshgeometry/contract';
+import { MeshKind } from '@flighthq/meshgeometry/contract';
 import {
   enableNodeSignals,
   getNodeLocalMatrix4,
@@ -7,12 +9,12 @@ import {
   setNodeLocalMatrix4,
   setNodeTransform3D,
 } from '@flighthq/node/contract';
-import type { Material3D, Mesh, MeshDeformer, MeshGeometry, MeshRuntime, NodeSignals } from '@flighthq/types/contract';
-import { MeshDeformerMorph, MeshDeformerNone, MeshDeformerSkeletal, MeshKind } from '@flighthq/types/contract';
+import type { Material3D, MeshDeformer, NodeSignals } from '@flighthq/types/contract';
+import { MeshDeformerMorph, MeshDeformerNone, MeshDeformerSkeletal } from '@flighthq/types/contract';
 
 import { createNode3D, getNode3DRuntime } from './sceneNode.ts';
 
-export { MeshKind } from '@flighthq/types/contract';
+export { MeshKind } from '@flighthq/meshgeometry/contract';
 
 // Clones a Mesh node: a new node carrying a COPY of the source's transform. Rigid clones share their
 // geometry; a mesh carrying morph or skin gets a restored, runtime-independent geometry because CPU

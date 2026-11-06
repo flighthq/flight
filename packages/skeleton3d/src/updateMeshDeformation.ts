@@ -1,5 +1,5 @@
+import type { Mesh } from '@flighthq/meshgeometry/contract';
 import { updateMeshMorph } from '@flighthq/scene3d/contract';
-import type { Mesh } from '@flighthq/types/contract';
 
 import { updateMeshSkin } from './updateMeshSkin.ts';
 

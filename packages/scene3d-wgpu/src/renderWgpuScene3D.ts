@@ -6,6 +6,7 @@ import {
   getMatrix4Determinant,
   setMatrix3NormalFromMatrix4,
 } from '@flighthq/geometry/contract';
+import type { InstancedMesh, Mesh, MeshSubset } from '@flighthq/meshgeometry/contract';
 import { getNodeWorldMatrix4 } from '@flighthq/node/contract';
 import {
   declareWgpuRenderTargetColorSpace,
@@ -18,11 +19,8 @@ import type {
   Camera3D,
   ColorScaleBias,
   Material,
-  InstancedMesh,
   Matrix3,
   Matrix4,
-  Mesh,
-  MeshSubset,
   Scene3DLightBlock,
   Scene3DLightsLike,
   Node3D,

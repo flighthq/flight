@@ -33,6 +33,9 @@
       "path": "../materials/tsconfig.contract.json"
     },
     {
+      "path": "../meshgeometry/tsconfig.runtime.json"
+    },
+    {
       "path": "../platform/tsconfig.contract.json"
     },
     {

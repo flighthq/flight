@@ -1,5 +1,6 @@
 import { createBlinnPhongMaterial, createUnlitMaterial } from '@flighthq/materials/contract';
 import { createBoxMeshGeometry } from '@flighthq/meshgeometry/contract';
+import { MeshKind } from '@flighthq/meshgeometry/contract';
 import { addNodeChild } from '@flighthq/node/contract';
 import { createRimModifier, createShadedMaterial } from '@flighthq/shading/contract';
 import { createTexture } from '@flighthq/texture/contract';
@@ -7,7 +8,6 @@ import type { ImageResourceReference } from '@flighthq/types/contract';
 import {
   EntityRuntimeKey,
   ImageResourceReferenceKind,
-  MeshKind,
   Node3DKind,
   ResourceResolutionState,
 } from '@flighthq/types/contract';

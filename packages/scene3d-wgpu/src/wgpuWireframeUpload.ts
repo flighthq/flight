@@ -1,4 +1,5 @@
-import type { MeshGeometry, WgpuRenderState } from '@flighthq/types/contract';
+import type { MeshGeometry } from '@flighthq/meshgeometry/contract';
+import type { WgpuRenderState } from '@flighthq/types/contract';
 
 import type { WgpuWireframeUpload } from './contract.scene3d-wgpu-types.ts';
 import { ensureWgpuMeshUpload } from './wgpuMeshUpload.ts';

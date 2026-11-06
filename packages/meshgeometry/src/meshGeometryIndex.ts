@@ -1,5 +1,4 @@
-import type { MeshGeometry } from '@flighthq/types/contract';
-
+import type { MeshGeometry } from './contract.meshgeometry-types.ts';
 import { cloneMeshGeometry, cloneMeshGeometryMetadata, getMeshGeometryVertexCount } from './meshGeometry.ts';
 
 // Index-buffer pipeline over a MeshGeometry: de-index a welded stream to a flat non-indexed one,

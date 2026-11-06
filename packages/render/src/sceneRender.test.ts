@@ -18,6 +18,7 @@ import {
   createBoxMeshGeometry,
   createMeshGeometry,
 } from '@flighthq/meshgeometry/contract';
+import type { Mesh, MeshGeometry } from '@flighthq/meshgeometry/contract';
 import {
   addNodeChild,
   getNodeWorldMatrix4,
@@ -34,12 +35,10 @@ import {
   setInstancedMeshInstanceMatrix,
 } from '@flighthq/scene3d/contract';
 import type {
-  Mesh,
   Matrix4,
   Skin,
   Camera3D,
   Material3D,
-  MeshGeometry,
   Scene3DLightBlock,
   Scene3DLightsLike,
 } from '@flighthq/types/contract';

@@ -16,6 +16,7 @@ import {
   getMeshGeometryVertexPosition,
   getMeshGeometryVertexUv0,
 } from '@flighthq/meshgeometry/contract';
+import type { Mesh, MeshGeometry } from '@flighthq/meshgeometry/contract';
 import { getNodeChildren } from '@flighthq/node/contract';
 import { isMesh } from '@flighthq/scene3d/contract';
 import { getTextureSource } from '@flighthq/texture/contract';
@@ -23,8 +24,6 @@ import type {
   BlinnPhongMaterial,
   ExternalImageResourceReference,
   ImportDiagnostic,
-  Mesh,
-  MeshGeometry,
   Node3D,
   PointLight,
   Quaternion,

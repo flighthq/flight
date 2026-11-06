@@ -1,6 +1,7 @@
 import { createAabb } from '@flighthq/geometry/contract';
-import type { Matrix4Like, MeshGeometry } from '@flighthq/types/contract';
+import type { Matrix4Like } from '@flighthq/types/contract';
 
+import type { MeshGeometry } from './contract.meshgeometry-types.ts';
 import { getVertexAttributeFloatOffset } from './meshGeometryAttributes.ts';
 import { computeMeshGeometryBounds } from './meshGeometryCompute.ts';
 

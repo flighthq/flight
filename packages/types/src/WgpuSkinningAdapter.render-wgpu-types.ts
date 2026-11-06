@@ -1,5 +1,5 @@
-import type { Mesh } from './Mesh.ts';
-import type { MeshGeometry } from './MeshGeometry.ts';
+import type { Mesh, MeshGeometry } from '@flighthq/meshgeometry/contract';
+
 import type { WgpuRenderState } from './WgpuRenderState.ts';
 
 export interface WgpuSkinningAdapter {

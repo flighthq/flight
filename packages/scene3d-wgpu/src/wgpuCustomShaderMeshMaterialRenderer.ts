@@ -1,3 +1,4 @@
+import type { MeshGeometry } from '@flighthq/meshgeometry/contract';
 import { withKindMapEntry } from '@flighthq/registry/contract';
 import {
   getWgpuRenderStateRuntime,
@@ -8,7 +9,6 @@ import type {
   Camera3D,
   CustomShaderMaterial,
   Material,
-  MeshGeometry,
   Scene3DLightBlock,
   Scene3DRenderProxy,
   WgpuCustomMaterialShaderSource,

@@ -1,12 +1,6 @@
+import type { MeshGeometry } from '@flighthq/meshgeometry/contract';
 import { enableNodeSignals, getNodeSignals } from '@flighthq/node/contract';
-import type {
-  Billboard,
-  BillboardRuntime,
-  Material3D,
-  MeshGeometry,
-  NodeSignals,
-  Node3D,
-} from '@flighthq/types/contract';
+import type { Billboard, BillboardRuntime, Material3D, NodeSignals, Node3D } from '@flighthq/types/contract';
 import { BillboardKind } from '@flighthq/types/contract';
 
 import { createNode3D, getNode3DRuntime } from './sceneNode.ts';

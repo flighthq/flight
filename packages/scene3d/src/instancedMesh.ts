@@ -1,20 +1,16 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { copyMatrix4, createAabb, createMatrix4, transformAabbByMatrix4, unionAabb } from '@flighthq/geometry/contract';
 import { ensureMeshGeometryBounds } from '@flighthq/meshgeometry/contract';
-import { getNodeRuntime } from '@flighthq/node/contract';
-import { createSignal } from '@flighthq/signals/contract';
 import type {
-  Aabb,
-  EntityConstruction,
   InstancedMesh,
   InstancedMeshRuntime,
   InstancedMeshSignals,
-  Kind,
-  Material3D,
-  Matrix4,
   MeshGeometry,
-} from '@flighthq/types/contract';
-import { InstancedMeshKind } from '@flighthq/types/contract';
+} from '@flighthq/meshgeometry/contract';
+import { InstancedMeshKind } from '@flighthq/meshgeometry/contract';
+import { getNodeRuntime } from '@flighthq/node/contract';
+import { createSignal } from '@flighthq/signals/contract';
+import type { Aabb, EntityConstruction, Kind, Material3D, Matrix4 } from '@flighthq/types/contract';
 
 export { InstancedMeshKind };
 

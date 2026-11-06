@@ -1,5 +1,5 @@
 import { encodeUTF8 } from '@flighthq/encoding/contract';
-import type { MeshGeometry } from '@flighthq/types/contract';
+import type { MeshGeometry } from '@flighthq/meshgeometry/contract';
 
 import { CANONICAL_FLOATS_PER_VERTEX, CANONICAL_LAYOUT } from './shared.ts';
 import { parseStl, stlFullImportOptions } from './stlParse.ts';

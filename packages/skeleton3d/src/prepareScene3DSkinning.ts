@@ -1,7 +1,8 @@
 import { createAabb } from '@flighthq/geometry/contract';
 import { getMeshGeometrySkinBindPose, setMeshGeometrySkinBindPose } from '@flighthq/meshgeometry/contract';
+import type { Mesh, MeshRuntime } from '@flighthq/meshgeometry/contract';
 import { getNodeRuntime } from '@flighthq/node/contract';
-import type { Mesh, MeshRuntime, NodeAny } from '@flighthq/types/contract';
+import type { NodeAny } from '@flighthq/types/contract';
 
 import { getMeshSkinConservativeBounds } from './getMeshSkinBounds.ts';
 import { computeSkeleton3DJointMatrices } from './skeleton3d.ts';

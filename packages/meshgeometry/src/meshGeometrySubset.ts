@@ -1,4 +1,4 @@
-import type { MeshGeometry, MeshSubset } from '@flighthq/types/contract';
+import type { MeshGeometry, MeshSubset } from './contract.meshgeometry-types.ts';
 
 // Subset range management over a MeshGeometry's index buffer. A subset is a contiguous draw range
 // (indexOffset + indexCount) addressing one material binding; a single-material geometry is one

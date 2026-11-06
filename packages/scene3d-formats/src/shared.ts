@@ -1,5 +1,6 @@
 import { createEmbeddedImageResourceReference, createExternalImageResourceReference } from '@flighthq/image/contract';
 import { CANONICAL_SKINNED_MESH_GEOMETRY_LAYOUT } from '@flighthq/meshgeometry/contract';
+import type { VertexAttributeLayout } from '@flighthq/meshgeometry/contract';
 import { createTexture } from '@flighthq/texture/contract';
 import type {
   EmbeddedImageResourceReference,
@@ -8,7 +9,6 @@ import type {
   MutableNumberArray,
   SkinInfluence,
   Texture,
-  VertexAttributeLayout,
 } from '@flighthq/types/contract';
 import { ImageResourceReferenceKind } from '@flighthq/types/contract';
 

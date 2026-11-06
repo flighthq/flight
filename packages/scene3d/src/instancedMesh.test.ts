@@ -1,7 +1,8 @@
 import { createAabb, createMatrix4 } from '@flighthq/geometry/contract';
 import { computeMeshGeometryBounds, createBoxMeshGeometry } from '@flighthq/meshgeometry/contract';
+import type { InstancedMesh, MeshGeometry } from '@flighthq/meshgeometry/contract';
 import { connectSignal } from '@flighthq/signals/contract';
-import type { InstancedMesh, Matrix4, MeshGeometry } from '@flighthq/types/contract';
+import type { Matrix4 } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import {

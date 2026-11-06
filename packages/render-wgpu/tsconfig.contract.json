@@ -10,6 +10,7 @@
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "types": ["@webgpu/types"],
     "moduleSuffixes": [
+      ".meshgeometry-types",
       ".effects-types",
       ".render-types",
       ".render-wgpu-bridge-types",
@@ -66,6 +67,9 @@
     },
     {
       "path": "../materials/tsconfig.contract.json"
+    },
+    {
+      "path": "../meshgeometry/tsconfig.contract.json"
     },
     {
       "path": "../platform/tsconfig.contract.json"

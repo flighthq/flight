@@ -1,5 +1,6 @@
 import { getMeshGeometryVertexJoints0, getMeshGeometryVertexWeights0 } from '@flighthq/meshgeometry/contract';
-import type { MeshGeometry, MeshSkinBindPose, Skeleton3D, VertexAttributeLayout } from '@flighthq/types/contract';
+import type { MeshGeometry, MeshSkinBindPose, VertexAttributeLayout } from '@flighthq/meshgeometry/contract';
+import type { Skeleton3D } from '@flighthq/types/contract';
 
 import { skinTangents, skinVertices } from './skinVertices.ts';
 

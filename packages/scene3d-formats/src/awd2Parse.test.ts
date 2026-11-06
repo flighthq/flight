@@ -8,6 +8,7 @@ import {
   getMeshGeometryVertexPosition,
   getMeshGeometryVertexUv0,
 } from '@flighthq/meshgeometry/contract';
+import type { Mesh } from '@flighthq/meshgeometry/contract';
 import { getNodeChildren, getNodeLocalMatrix4, getNodeParent } from '@flighthq/node/contract';
 import { createNode3D, isMesh } from '@flighthq/scene3d/contract';
 import type {
@@ -31,7 +32,6 @@ import type {
   EmbeddedImageResourceReference,
   ExternalImageResourceReference,
   ImportDiagnostic,
-  Mesh,
   PointLight,
   Scene3DAnimationTarget,
   Node3D,

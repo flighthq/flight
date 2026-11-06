@@ -1,9 +1,10 @@
+import type { MeshGeometry } from '@flighthq/meshgeometry/contract';
 import {
   createGlSkinPaletteTexture,
   destroyGlTextureRenderTarget,
   destroyGlSkinPaletteTexture,
 } from '@flighthq/render-gl/contract';
-import type { GlRenderState, GlRenderStateRuntime, GlSkinPaletteTexture, MeshGeometry } from '@flighthq/types/contract';
+import type { GlRenderState, GlRenderStateRuntime, GlSkinPaletteTexture } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import type { GlScene3DRuntime } from './contract.scene3d-gl-types.ts';

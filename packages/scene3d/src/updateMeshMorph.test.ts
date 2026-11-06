@@ -3,7 +3,8 @@ import {
   ensureMeshGeometryBounds,
   getMeshGeometryMorphBindPose,
 } from '@flighthq/meshgeometry/contract';
-import type { Mesh, MeshMorph, VertexAttributeLayout } from '@flighthq/types/contract';
+import type { Mesh, VertexAttributeLayout } from '@flighthq/meshgeometry/contract';
+import type { MeshMorph } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { createMesh } from './mesh.ts';

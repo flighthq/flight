@@ -1,6 +1,6 @@
 import { createAabb } from '@flighthq/geometry/contract';
-import type { MeshGeometry, MeshMorphBindPose, MeshSkinBindPose } from '@flighthq/types/contract';
 
+import type { MeshGeometry, MeshMorphBindPose, MeshSkinBindPose } from './contract.meshgeometry-types.ts';
 import { cloneMeshGeometry, getMeshGeometryMorphBindPose, getMeshGeometrySkinBindPose } from './meshGeometry.ts';
 import { getVertexAttributeFloatOffset } from './meshGeometryAttributes.ts';
 import { computeMeshGeometryBounds } from './meshGeometryCompute.ts';

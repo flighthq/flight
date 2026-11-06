@@ -19,6 +19,8 @@ import {
   getMeshGeometryVertexCount,
   indexMeshGeometryVertices,
 } from '@flighthq/meshgeometry/contract';
+import type { MeshGeometry, PrimitiveTopology } from '@flighthq/meshgeometry/contract';
+import { MeshKind } from '@flighthq/meshgeometry/contract';
 import { createScene3DFromDocument } from '@flighthq/scene3d/contract';
 import type { Scene3D } from '@flighthq/scene3d/contract';
 import type { Scene3DDocument, Scene3DDocumentMesh, Scene3DDocumentNode } from '@flighthq/scene3d/contract';
@@ -28,17 +30,15 @@ import type {
   ImportDiagnostic,
   Material,
   MaterialLike,
-  MeshGeometry,
   MeshMorph,
   MorphTarget,
-  PrimitiveTopology,
   Texture,
   TextureColorSpace,
   TextureFilter,
   TextureWrap,
   Transform3D,
 } from '@flighthq/types/contract';
-import { ImportDiagnosticSeverity, MeshKind, Node3DKind } from '@flighthq/types/contract';
+import { ImportDiagnosticSeverity, Node3DKind } from '@flighthq/types/contract';
 
 import type {
   GltfAccessor,

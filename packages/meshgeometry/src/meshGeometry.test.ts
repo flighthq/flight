@@ -1,11 +1,11 @@
+import { EntityRuntimeKey } from '@flighthq/types/contract';
+
 import type {
   MeshGeometryRuntime,
   MeshMorphBindPose,
   MeshSkinBindPose,
   VertexAttributeLayout,
-} from '@flighthq/types/contract';
-import { EntityRuntimeKey } from '@flighthq/types/contract';
-
+} from './contract.meshgeometry-types.ts';
 import {
   cloneMeshGeometry,
   cloneMeshGeometryMetadata,

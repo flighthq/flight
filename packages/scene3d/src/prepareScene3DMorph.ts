@@ -1,5 +1,6 @@
+import type { Mesh } from '@flighthq/meshgeometry/contract';
 import { getNodeRuntime } from '@flighthq/node/contract';
-import type { Mesh, NodeAny } from '@flighthq/types/contract';
+import type { NodeAny } from '@flighthq/types/contract';
 
 import { updateMeshMorph } from './updateMeshMorph.ts';
 

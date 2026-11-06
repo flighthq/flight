@@ -10,11 +10,11 @@ import {
   getMeshGeometryTriangleVertexIndices,
   getVertexAttributeFloatOffset,
 } from '@flighthq/meshgeometry/contract';
+import type { MeshGeometry, MeshTriangleVertexIndices } from '@flighthq/meshgeometry/contract';
+import { MeshKind } from '@flighthq/meshgeometry/contract';
 import type { Scene3DDocument, Scene3DDocumentMesh } from '@flighthq/scene3d/contract';
 import type {
   ImportDiagnostic,
-  MeshGeometry,
-  MeshTriangleVertexIndices,
   Md5DropTally,
   Md5Joint,
   Md5Mesh,
@@ -25,12 +25,7 @@ import type {
   Md5Weight,
   SkinInfluence,
 } from '@flighthq/types/contract';
-import {
-  ImportDiagnosticSeverity,
-  MD5_MATERIAL_FEATURE,
-  MD5_SKELETON_FEATURE,
-  MeshKind,
-} from '@flighthq/types/contract';
+import { ImportDiagnosticSeverity, MD5_MATERIAL_FEATURE, MD5_SKELETON_FEATURE } from '@flighthq/types/contract';
 
 import {
   convertPositionsZUpToYUp,

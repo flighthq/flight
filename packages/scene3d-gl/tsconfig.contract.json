@@ -8,6 +8,7 @@
     "declarationMap": true,
     "sourceMap": true,
     "moduleSuffixes": [
+      ".meshgeometry-types",
       ".render-types",
       ".scene3d-gl-bridge-types",
       ".scene3d-gl-types",
@@ -27,6 +28,9 @@
     },
     {
       "path": "../materials/tsconfig.contract.json"
+    },
+    {
+      "path": "../meshgeometry/tsconfig.contract.json"
     },
     {
       "path": "../render-gl/tsconfig.contract.json"

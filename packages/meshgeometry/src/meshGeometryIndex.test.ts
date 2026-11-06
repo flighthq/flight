@@ -1,6 +1,6 @@
 import { createAabb } from '@flighthq/geometry/contract';
-import type { VertexAttributeLayout } from '@flighthq/types/contract';
 
+import type { VertexAttributeLayout } from './contract.meshgeometry-types.ts';
 import { createMeshGeometry } from './meshGeometry.ts';
 import {
   compactMeshGeometryVertices,

@@ -48,6 +48,7 @@
     "@flighthq/lighting": "*",
     "@flighthq/log": "*",
     "@flighthq/materials": "*",
+    "@flighthq/meshgeometry": "*",
     "@flighthq/node": "*",
     "@flighthq/registry": "*",
     "@flighthq/render": "*",
@@ -62,7 +63,6 @@
     "@webgpu/types": "^0.1.70"
   },
   "devDependencies": {
-    "@flighthq/meshgeometry": "*",
     "@flighthq/particleemitter": "*",
     "@flighthq/shape": "*",
     "@flighthq/text": "*",

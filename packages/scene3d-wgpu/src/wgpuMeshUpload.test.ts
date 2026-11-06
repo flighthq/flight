@@ -5,8 +5,9 @@ import {
   invalidateMeshGeometry,
   setMeshGeometrySkinBindPose,
 } from '@flighthq/meshgeometry/contract';
+import type { MeshGeometryRuntime, VertexAttributeLayout } from '@flighthq/meshgeometry/contract';
 import { createMesh, updateMeshMorph } from '@flighthq/scene3d/contract';
-import type { MeshGeometryRuntime, MeshMorph, VertexAttributeLayout } from '@flighthq/types/contract';
+import type { MeshMorph } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import { ensureWgpuMeshUpload } from './wgpuMeshUpload.ts';

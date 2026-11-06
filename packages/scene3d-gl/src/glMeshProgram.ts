@@ -1,5 +1,6 @@
 import { getCamera3DPosition, getCamera3DViewProjectionMatrix4 } from '@flighthq/camera/contract';
 import { createMatrix3, createMatrix4 } from '@flighthq/geometry/contract';
+import type { MeshGeometry } from '@flighthq/meshgeometry/contract';
 import { createGlProgram, uploadGlSkinPaletteTexture } from '@flighthq/render-gl/contract';
 import { getTextureUvMatrix, hasTextureSource, hasTextureUvTransform } from '@flighthq/texture/contract';
 import type {
@@ -7,7 +8,6 @@ import type {
   Camera3D,
   GlRenderState,
   Material,
-  MeshGeometry,
   Scene3DRenderProxy,
   Material3D,
   TextureLike,

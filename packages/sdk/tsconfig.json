@@ -226,7 +226,7 @@
       "path": "../midi/tsconfig.runtime.json"
     },
     {
-      "path": "../meshgeometry"
+      "path": "../meshgeometry/tsconfig.runtime.json"
     },
     {
       "path": "../motionpath"
