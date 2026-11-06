@@ -1,4 +1,5 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
 import {
   copyMatrix4,
   createMatrix3,
@@ -8,9 +9,11 @@ import {
   setMatrix3NormalFromMatrix4,
   setMatrix4Identity,
 } from '@flighthq/geometry/contract';
+import type { Matrix4Like } from '@flighthq/geometry/contract';
 import { addNodeChild, getNodeParent, getNodeWorldMatrix4 } from '@flighthq/node/contract';
 import type { Node3D, Skeleton3D } from '@flighthq/scene3d/contract';
-import type { EntityConstruction, Matrix4Like, Skeleton3DValidationDiagnostic } from '@flighthq/types/contract';
+
+import type { Skeleton3DValidationDiagnostic } from './contract.skeleton3d-types.ts';
 
 export function cloneSkeleton3D(skeleton: Readonly<Skeleton3D>): Skeleton3D {
   const clone = allocateEntity<Skeleton3D>();

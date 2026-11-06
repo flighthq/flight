@@ -352,7 +352,7 @@
       "path": "../skeleton2d-formats/tsconfig.runtime.json"
     },
     {
-      "path": "../skeleton3d"
+      "path": "../skeleton3d/tsconfig.runtime.json"
     },
     {
       "path": "../snapshot"

@@ -611,7 +611,6 @@ export * from './SignalConnection.ts';
 export * from './SignalConnectOptions.ts';
 export * from './SignalScope.ts';
 export * from './SignalTrackedConnectOptions.ts';
-export * from './Skeleton3DValidationDiagnostic.ts';
 export * from './SkinInfluence.ts';
 export * from './SketchEffect.ts';
 export * from './SmaaEffect.ts';

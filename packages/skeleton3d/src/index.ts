@@ -1,3 +1,4 @@
+export * from './contract.skeleton3d-types.ts';
 export * from './enableSkeleton3DGuards.ts';
 export * from './getMeshSkinBounds.ts';
 export * from './prepareScene3DSkinning.ts';

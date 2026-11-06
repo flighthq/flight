@@ -57,7 +57,7 @@
       "path": "../shading"
     },
     {
-      "path": "../skeleton3d"
+      "path": "../skeleton3d/tsconfig.runtime.json"
     },
     {
       "path": "../texture/tsconfig.runtime.json"

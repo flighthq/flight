@@ -1,35 +1,13 @@
 {
-  "extends": "../../tsconfig.base.json",
-  "compilerOptions": {
-    "composite": true,
-    "rootDir": "src",
-    "outDir": "dist",
-    "declaration": true,
-    "declarationMap": true,
-    "sourceMap": true
-  },
+  "files": [],
   "references": [
-    {
-      "path": "../entity"
-    },
-    {
-      "path": "../geometry/tsconfig.runtime.json"
-    },
-    {
-      "path": "../log"
-    },
-    {
-      "path": "../meshgeometry/tsconfig.runtime.json"
-    },
-    {
-      "path": "../node/tsconfig.runtime.json"
-    },
-    {
-      "path": "../scene3d"
-    },
-    {
-      "path": "../types"
-    }
-  ],
-  "include": ["src"]
+    { "path": "../entity" },
+    { "path": "../geometry/tsconfig.runtime.json" },
+    { "path": "../log" },
+    { "path": "../meshgeometry/tsconfig.runtime.json" },
+    { "path": "../node/tsconfig.runtime.json" },
+    { "path": "../scene3d/tsconfig.runtime.json" },
+    { "path": "./tsconfig.contract.json" },
+    { "path": "./tsconfig.runtime.json" }
+  ]
 }

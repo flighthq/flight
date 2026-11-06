@@ -28,7 +28,7 @@
     { "path": "../scene2d-gl" },
     { "path": "../scene3d" },
     { "path": "../shading" },
-    { "path": "../skeleton3d" },
+    { "path": "../skeleton3d/tsconfig.runtime.json" },
     { "path": "../texture/tsconfig.runtime.json" },
     { "path": "../textureatlas/tsconfig.runtime.json" },
     { "path": "../types" },

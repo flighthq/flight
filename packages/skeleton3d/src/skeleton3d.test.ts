@@ -1,7 +1,7 @@
+import { EntityRuntimeKey } from '@flighthq/entity/contract';
 import { createMatrix4, getMatrix4Element, setVector3 } from '@flighthq/geometry/contract';
 import { addNodeChild, getNodeParent, invalidateNodeLocalTransform, setNodeTransform3D } from '@flighthq/node/contract';
 import { createNode3D } from '@flighthq/scene3d/contract';
-import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import {
   cloneSkeleton3D,

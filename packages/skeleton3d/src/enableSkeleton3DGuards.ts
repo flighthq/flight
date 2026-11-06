@@ -1,7 +1,6 @@
 import type { LogState } from '@flighthq/log/contract';
-import { logOnce } from '@flighthq/log/contract';
+import { LogLevel, logOnce } from '@flighthq/log/contract';
 import type { Skeleton3D } from '@flighthq/scene3d/contract';
-import { LogLevel } from '@flighthq/types/contract';
 
 import { setSkeleton3DBindPoseGuard } from './skeleton3d.ts';
 

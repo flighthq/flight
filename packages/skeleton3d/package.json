@@ -45,8 +45,7 @@
     "@flighthq/log": "*",
     "@flighthq/meshgeometry": "*",
     "@flighthq/node": "*",
-    "@flighthq/scene3d": "*",
-    "@flighthq/types": "*"
+    "@flighthq/scene3d": "*"
   },
   "devDependencies": {
     "typescript": "^7.0.2"

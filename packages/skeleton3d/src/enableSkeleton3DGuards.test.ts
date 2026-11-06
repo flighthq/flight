@@ -1,9 +1,8 @@
 import { setVector3 } from '@flighthq/geometry/contract';
-import type { LogState } from '@flighthq/log/contract';
+import type { LogEntry, LogState } from '@flighthq/log/contract';
 import { createLogState, setLogSink } from '@flighthq/log/contract';
 import { invalidateNodeLocalTransform } from '@flighthq/node/contract';
 import { createNode3D } from '@flighthq/scene3d/contract';
-import type { LogEntry } from '@flighthq/types/contract';
 import { afterEach, describe, expect, test } from 'vitest';
 
 import {
