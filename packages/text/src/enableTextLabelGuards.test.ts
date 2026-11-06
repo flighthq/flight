@@ -1,7 +1,7 @@
 import type { LogState } from '@flighthq/log/contract';
 import { createLogState, setLogSink } from '@flighthq/log/contract';
+import type { LogEntry } from '@flighthq/log/contract';
 import { setTextLayoutMeasureProvider } from '@flighthq/textlayout/contract';
-import type { LogEntry } from '@flighthq/types/contract';
 
 import { disableTextLabelGuards, enableTextLabelGuards } from './enableTextLabelGuards.ts';
 import { createTextLabel, setTextLabelString } from './textLabel.ts';

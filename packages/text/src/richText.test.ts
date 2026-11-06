@@ -1,16 +1,16 @@
 import { getEntityRuntime } from '@flighthq/entity/contract';
+import { EntityRuntimeKey } from '@flighthq/entity/contract';
 import { createRectangle } from '@flighthq/geometry/contract';
 import {
   getNodeLocalBoundsRevision,
   getNodeLocalContentRevision,
   getNodeLocalTransformRevision,
 } from '@flighthq/node/contract';
+import type { Node } from '@flighthq/node/contract';
 import { connectSignal } from '@flighthq/signals/contract';
 import { createTextFormatRange } from '@flighthq/textformat/contract';
 import type { TextFormatRangeRaw as TextFormatRange } from '@flighthq/textformat/contract';
 import { setTextLayoutMeasureProvider } from '@flighthq/textlayout/contract';
-import type { Node } from '@flighthq/types/contract';
-import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import {
   appendRichTextString,

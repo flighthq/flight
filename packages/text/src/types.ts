@@ -1,4 +1,5 @@
 import type { EntityRaw } from '@flighthq/entity/contract';
+import type { Node2D, Node2DData, Node2DRuntime } from '@flighthq/scene2d/contract';
 import type { Signal } from '@flighthq/signals/contract';
 import type { TextFormat, TextFormatAlign, TextFormatRangeRaw as TextFormatRange } from '@flighthq/textformat/contract';
 import type {
@@ -9,7 +10,6 @@ import type {
   TextMeasureFunction,
   TextVerticalAlign,
 } from '@flighthq/textlayout/contract';
-import type { Node2D, Node2DData, Node2DRuntime } from '@flighthq/types/contract';
 
 export interface TextLabelData extends Node2DData {
   autoSize: TextAutoSize;

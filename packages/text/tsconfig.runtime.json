@@ -35,9 +35,6 @@
       "path": "../textlayout/tsconfig.runtime.json"
     },
     {
-      "path": "../types"
-    },
-    {
       "path": "./tsconfig.contract.json"
     }
   ],

@@ -47,8 +47,7 @@
     "@flighthq/node": "*",
     "@flighthq/signals": "*",
     "@flighthq/textformat": "*",
-    "@flighthq/textlayout": "*",
-    "@flighthq/types": "*"
+    "@flighthq/textlayout": "*"
   },
   "devDependencies": {
     "typescript": "^7.0.2"

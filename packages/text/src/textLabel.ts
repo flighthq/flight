@@ -2,7 +2,9 @@ import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 import type { Rectangle } from '@flighthq/geometry/contract';
 import { invalidateNodeLocalBounds, invalidateNodeLocalContent } from '@flighthq/node/contract';
+import type { BoundsNode, MethodsOf } from '@flighthq/node/contract';
 import { createNode2D, createNode2DRuntime, getNode2DRuntime } from '@flighthq/scene2d/contract';
+import type { Node2DFields } from '@flighthq/scene2d/contract';
 import { createTextFormatRange } from '@flighthq/textformat/contract';
 import type { TextFormat } from '@flighthq/textformat/contract';
 import { computeTextBoundsRectangle } from '@flighthq/textlayout/contract';
@@ -12,7 +14,6 @@ import type {
   TextMeasureFunction,
   TextVerticalAlign,
 } from '@flighthq/textlayout/contract';
-import type { BoundsNode, MethodsOf, Node2DFields } from '@flighthq/types/contract';
 
 import { ensureTextLayout, getTextLayout } from './textLabelLayout.ts';
 import type { TextLabel, TextLabelData, TextLabelRuntime } from './types.ts';

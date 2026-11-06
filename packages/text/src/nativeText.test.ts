@@ -4,7 +4,7 @@ import {
   getNodeLocalContentRevision,
   getNodeLocalTransformRevision,
 } from '@flighthq/node/contract';
-import type { Node, PartialNode } from '@flighthq/types/contract';
+import type { Node, PartialNode } from '@flighthq/node/contract';
 
 import {
   computeNativeTextLocalBoundsRectangle,
