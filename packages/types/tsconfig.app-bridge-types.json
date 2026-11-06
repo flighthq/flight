@@ -10,10 +10,6 @@
     "moduleSuffixes": [".render-gl-types", ".surface-types", ""],
     "tsBuildInfoFile": "dist/.tsbuildinfo.app-bridge-types"
   },
-  "references": [
-    { "path": "../input" },
-    { "path": "../render-gl/tsconfig.contract.json" },
-    { "path": "../surface/tsconfig.contract.json" }
-  ],
+  "references": [{ "path": "../render-gl/tsconfig.contract.json" }, { "path": "../surface/tsconfig.contract.json" }],
   "include": ["src/contract.app-bridge-types.ts"]
 }

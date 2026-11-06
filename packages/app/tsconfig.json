@@ -3,6 +3,7 @@
   "references": [
     { "path": "../entity" },
     { "path": "../geometry/tsconfig.contract.json" },
+    { "path": "../input" },
     { "path": "../lifecycle/tsconfig.contract.json" },
     { "path": "../menu/tsconfig.contract.json" },
     { "path": "../render/tsconfig.contract.json" },
