@@ -1,5 +1,4 @@
-import type { GlDebugDefineKey } from '@flighthq/types/contract';
-
+import type { GlDebugDefineKey } from './contract.scene3d-gl-types.ts';
 import {
   bindGlDebugNormalMap,
   bindGlDebugRange,

@@ -1,8 +1,5 @@
-import type {
-  GlPbrExtensionRegistration,
-  GlRenderState,
-  TransmissionVolumePbrExtension,
-} from '@flighthq/types/contract';
+import type { GlPbrExtensionRegistration } from '@flighthq/render-gl/contract';
+import type { GlRenderState, TransmissionVolumePbrExtension } from '@flighthq/types/contract';
 import { TransmissionVolumePbrExtensionKind } from '@flighthq/types/contract';
 
 import { registerGlPbrExtension } from './glPbrExtensionRegistry.ts';

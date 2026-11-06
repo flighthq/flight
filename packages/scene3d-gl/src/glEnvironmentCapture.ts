@@ -3,13 +3,13 @@ import { beginGlCubeRenderFace, endGlCubeRenderFace } from '@flighthq/render-gl/
 import type {
   Camera3D,
   GlCubeRenderTarget,
-  GlEnvironmentCaptureOptions,
   GlRenderState,
   Node3D,
   Scene3DLightsLike,
   Vector3Like,
 } from '@flighthq/types/contract';
 
+import type { GlEnvironmentCaptureOptions } from './contract.scene3d-gl-types.ts';
 import { renderGlEnvironmentSkybox } from './glEnvironmentSkybox.ts';
 import { renderGlScene3D } from './renderGlScene3D.ts';
 

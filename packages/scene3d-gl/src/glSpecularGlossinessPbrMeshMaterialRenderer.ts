@@ -1,8 +1,8 @@
 import type { LinearColorRaw } from '@flighthq/color/contract';
 import { allocateLinearColor, packLinearChannelsToColor, unpackColorToLinear } from '@flighthq/color/contract';
+import type { GlMeshMaterialRenderer } from '@flighthq/render-gl/contract';
 import type {
   Camera3D,
-  GlMeshMaterialRenderer,
   GlRenderState,
   Material,
   MeshGeometry,

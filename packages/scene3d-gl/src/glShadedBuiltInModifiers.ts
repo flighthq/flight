@@ -1,6 +1,7 @@
 import type { LinearColorRaw } from '@flighthq/color/contract';
 import { allocateLinearColor, unpackColorToLinear } from '@flighthq/color/contract';
 import { resolveGlTexture } from '@flighthq/render-gl/contract';
+import type { GlModifierBindContext, GlModifierSnippet } from '@flighthq/render-gl/contract';
 import {
   animatedNormalModifierDefinition,
   dissolveModifierDefinition,
@@ -23,8 +24,6 @@ import type {
   Texture,
   ToonModifier,
   VertexDisplaceModifier,
-  GlModifierBindContext,
-  GlModifierSnippet,
 } from '@flighthq/types/contract';
 import { EmissiveModifierFacing, FogModifierMode, VertexDisplaceModifierSource } from '@flighthq/types/contract';
 

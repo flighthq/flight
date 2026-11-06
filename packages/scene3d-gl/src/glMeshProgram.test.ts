@@ -4,15 +4,10 @@ import { createStandardPbrMaterial } from '@flighthq/materials/contract';
 import { createBoxMeshGeometry, createMeshGeometry } from '@flighthq/meshgeometry/contract';
 import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
 import { createTexture, setTextureUvOffset, setTextureUvScale } from '@flighthq/texture/contract';
-import type {
-  Camera3D,
-  ImageResource,
-  PrimitiveTopology,
-  VertexAttributeLayout,
-  GlMeshProgram,
-} from '@flighthq/types/contract';
+import type { Camera3D, ImageResource, PrimitiveTopology, VertexAttributeLayout } from '@flighthq/types/contract';
 import { ImageTextureSourceKind } from '@flighthq/types/contract';
 
+import type { GlMeshProgram } from './contract.scene3d-gl-types.ts';
 import {
   SKIN_PALETTE_TEXTURE_UNIT,
   beginGlMeshDraw,

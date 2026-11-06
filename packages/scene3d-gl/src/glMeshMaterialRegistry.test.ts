@@ -4,7 +4,8 @@ import {
   registerGlQuadMaterialRenderer,
   resolveGlQuadMaterialRenderer,
 } from '@flighthq/render-gl/contract';
-import type { GlMeshMaterialRenderer, GlQuadMaterialRenderer, Material } from '@flighthq/types/contract';
+import type { GlMeshMaterialRenderer } from '@flighthq/render-gl/contract';
+import type { GlQuadMaterialRenderer, Material } from '@flighthq/types/contract';
 import { StandardMaterialKind } from '@flighthq/types/contract';
 
 import {

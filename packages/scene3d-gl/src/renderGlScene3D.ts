@@ -10,13 +10,12 @@ import {
   getGlRenderStateRuntime,
   invalidateGlRenderStateCache,
 } from '@flighthq/render-gl/contract';
+import type { GlMeshMaterialRenderer } from '@flighthq/render-gl/contract';
 import { prepareScene3DRender } from '@flighthq/render/contract';
 import { getNode3DRuntime, getNode3DWorldAlpha } from '@flighthq/scene3d/contract';
 import type {
   Camera3D,
   ColorScaleBias,
-  GlScene3DForwardLightList,
-  GlMeshMaterialRenderer,
   GlRenderPass,
   GlRenderState,
   InstancedMesh,
@@ -30,10 +29,10 @@ import type {
   Node3D,
   Scene3DRenderProxy,
   Material3D,
-  GlScene3DDrawEntry,
 } from '@flighthq/types/contract';
 import { BlendMode, StandardMaterialKind, MAX_FORWARD_LIGHTS } from '@flighthq/types/contract';
 
+import type { GlScene3DForwardLightList, GlScene3DDrawEntry } from './contract.scene3d-gl-types.ts';
 import { resolveGlMeshMaterialRenderer } from './glMeshMaterialRegistry.ts';
 import { getGlScene3DRuntime } from './glScene3DRuntime.ts';
 import { getGlScene3DViewportAspect } from './glViewportAspect.ts';

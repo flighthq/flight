@@ -1,18 +1,18 @@
 import type { LinearColorRaw } from '@flighthq/color/contract';
 import { allocateLinearColor, unpackColorToLinear } from '@flighthq/color/contract';
+import type { GlMeshMaterialRenderer } from '@flighthq/render-gl/contract';
 import type {
   Camera3D,
-  GlMeshMaterialRenderer,
   GlRenderState,
   Material,
   MeshGeometry,
   Scene3DLightBlock,
   Scene3DRenderProxy,
   VertexColorMaterial,
-  GlUnlitDefineKey,
 } from '@flighthq/types/contract';
 import { VertexColorMaterialKind } from '@flighthq/types/contract';
 
+import type { GlUnlitDefineKey } from './contract.scene3d-gl-types.ts';
 import { registerGlMeshMaterialRenderer } from './glMeshMaterialRegistry.ts';
 import { beginGlMeshDraw, drawGlMeshSubset, setGlMeshViewProjection } from './glMeshProgram.ts';
 import { getGlScene3DRuntime } from './glScene3DRuntime.ts';

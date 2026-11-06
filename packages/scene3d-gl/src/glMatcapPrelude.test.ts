@@ -1,7 +1,7 @@
 import type { LinearColorRaw } from '@flighthq/color/contract';
 import { allocateLinearColor } from '@flighthq/color/contract';
-import type { GlMatcapDefineKey } from '@flighthq/types/contract';
 
+import type { GlMatcapDefineKey } from './contract.scene3d-gl-types.ts';
 import {
   bindGlMatcapSurface,
   buildGlMatcapDefineKey,

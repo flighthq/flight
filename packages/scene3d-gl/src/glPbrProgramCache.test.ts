@@ -1,9 +1,6 @@
-import type {
-  GlPbrDefineKey,
-  GlPbrExtensionRegistration,
-  GlPbrExtensionShaderContribution,
-} from '@flighthq/types/contract';
+import type { GlPbrExtensionRegistration } from '@flighthq/render-gl/contract';
 
+import type { GlPbrDefineKey, GlPbrExtensionShaderContribution } from './contract.scene3d-gl-types.ts';
 import { registerGlPbrExtension } from './glPbrExtensionRegistry.ts';
 import { compileGlPbrProgram, ensureGlPbrProgram } from './glPbrProgramCache.ts';
 import { getGlScene3DRuntime } from './glScene3DRuntime.ts';

@@ -5,12 +5,12 @@ import type {
   Environment,
   GlContext,
   GlRenderState,
-  GlScene3DRuntime,
   ImageResource,
   TextureSource,
 } from '@flighthq/types/contract';
 import { BitmapTextureSourceKind, ImageTextureSourceKind } from '@flighthq/types/contract';
 
+import type { GlScene3DRuntime } from './contract.scene3d-gl-types.ts';
 import { getGlScene3DRuntime } from './glScene3DRuntime.ts';
 
 // Frees the cached source radiance cubemap for `state` and clears its identity/version stamps, so the

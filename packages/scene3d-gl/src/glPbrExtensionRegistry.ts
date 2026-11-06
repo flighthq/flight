@@ -3,20 +3,16 @@ import { allocateLinearColor, unpackColorToLinear } from '@flighthq/color/contra
 import { createMatrix3 } from '@flighthq/geometry/contract';
 import { withKindMapEntry } from '@flighthq/registry/contract';
 import { getGlRenderStateRuntime, resolveGlTexture } from '@flighthq/render-gl/contract';
+import type { GlPbrExtensionRegistration } from '@flighthq/render-gl/contract';
 import { getTextureUvMatrix } from '@flighthq/texture/contract';
+import type { GlContext, GlRenderState, Kind, Matrix3, PbrExtension } from '@flighthq/types/contract';
+
 import type {
-  GlContext,
   GlPbrExtensionBindContext,
   GlPbrExtensionIssue,
-  GlPbrExtensionRegistration,
   GlPbrExtensionShaderContext,
   GlPbrExtensionShaderContribution,
-  GlRenderState,
-  Kind,
-  Matrix3,
-  PbrExtension,
-} from '@flighthq/types/contract';
-
+} from './contract.scene3d-gl-types.ts';
 import { isGlTextureReady } from './glPbrStandardBlock.ts';
 import { getGlScene3DRuntime } from './glScene3DRuntime.ts';
 

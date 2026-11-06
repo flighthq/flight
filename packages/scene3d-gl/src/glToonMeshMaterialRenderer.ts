@@ -1,20 +1,19 @@
 import type { LinearColorRaw } from '@flighthq/color/contract';
 import { allocateLinearColor, unpackColorToLinear } from '@flighthq/color/contract';
 import { resolveGlTexture } from '@flighthq/render-gl/contract';
+import type { GlMeshMaterialRenderer } from '@flighthq/render-gl/contract';
 import type {
   Camera3D,
-  GlMeshMaterialRenderer,
   GlRenderState,
   Material,
   MeshGeometry,
   Scene3DLightBlock,
   Scene3DRenderProxy,
   ToonMaterial,
-  GlToonDefineKey,
-  GlToonProgram,
 } from '@flighthq/types/contract';
 import { ToonMaterialKind } from '@flighthq/types/contract';
 
+import type { GlToonDefineKey, GlToonProgram } from './contract.scene3d-gl-types.ts';
 import { bindGlMeshLightBlock } from './glLitProgram.ts';
 import { registerGlMeshMaterialRenderer } from './glMeshMaterialRegistry.ts';
 import {

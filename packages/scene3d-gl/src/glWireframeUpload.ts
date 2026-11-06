@@ -1,5 +1,6 @@
-import type { GlWireframeUpload, GlRenderState, MeshGeometry } from '@flighthq/types/contract';
+import type { GlRenderState, MeshGeometry } from '@flighthq/types/contract';
 
+import type { GlWireframeUpload } from './contract.scene3d-gl-types.ts';
 import { bindGlVertexAttribute, ensureGlMeshUpload } from './glMeshUpload.ts';
 // Lazily derives and uploads the wireframe line-index VAO for a geometry on this state, caching it
 // keyed by the geometry entity. Reuses the geometry's interleaved vertex buffer (ensuring the

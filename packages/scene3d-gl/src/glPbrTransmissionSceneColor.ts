@@ -1,5 +1,6 @@
-import type { GlPbrTransmissionSceneColor, GlRenderState } from '@flighthq/types/contract';
+import type { GlRenderState } from '@flighthq/types/contract';
 
+import type { GlPbrTransmissionSceneColor } from './contract.scene3d-gl-types.ts';
 import { getGlScene3DRuntime } from './glScene3DRuntime.ts';
 
 // Selects the caller-owned, resolved opaque-scene texture sampled by later transmission draws.

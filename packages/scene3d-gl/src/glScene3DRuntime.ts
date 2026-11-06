@@ -3,15 +3,11 @@ import {
   destroyGlTextureRenderTarget,
   destroyGlSkinPaletteTexture,
 } from '@flighthq/render-gl/contract';
-import type {
-  GlScene3DRuntime,
-  GlMeshUpload,
-  GlRenderState,
-  GlRenderStateRuntime,
-  GlSkinPaletteTexture,
-  MeshGeometry,
-} from '@flighthq/types/contract';
+import type { GlRenderState, GlRenderStateRuntime, GlSkinPaletteTexture, MeshGeometry } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
+
+import type { GlScene3DRuntime } from './contract.scene3d-gl-types.ts';
+import type { GlMeshUpload } from './contract.scene3d-gl-types.ts';
 
 // Registers a teardown callback for a lazily-created optional resource, so destroyGlScene3DRuntime can
 // free it without importing the module that owns it. Idempotent by function identity: pass a stable

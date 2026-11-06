@@ -1,7 +1,7 @@
 import { resolveGlTexture } from '@flighthq/render-gl/contract';
+import type { GlMeshMaterialRenderer } from '@flighthq/render-gl/contract';
 import type {
   Camera3D,
-  GlMeshMaterialRenderer,
   GlRenderState,
   Material,
   MeshGeometry,

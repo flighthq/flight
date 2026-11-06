@@ -1,4 +1,5 @@
-import type { GlPbrExtensionRegistration, GlRenderState, WrappedDiffusePbrExtension } from '@flighthq/types/contract';
+import type { GlPbrExtensionRegistration } from '@flighthq/render-gl/contract';
+import type { GlRenderState, WrappedDiffusePbrExtension } from '@flighthq/types/contract';
 import { WrappedDiffusePbrExtensionKind } from '@flighthq/types/contract';
 
 import { registerGlPbrExtension } from './glPbrExtensionRegistry.ts';

@@ -1,21 +1,20 @@
 import { withKindMapEntry } from '@flighthq/registry/contract';
 import { getGlRenderStateRuntime, resolveGlTexture } from '@flighthq/render-gl/contract';
+import type { GlCustomMaterialShaderSource, GlMeshMaterialRenderer } from '@flighthq/render-gl/contract';
 import type {
   GlContext,
-  GlCustomMaterialShaderSource,
   Camera3D,
   CustomShaderMaterial,
-  GlMeshMaterialRenderer,
   GlRenderState,
   Material,
   MeshGeometry,
   Scene3DLightBlock,
   Scene3DRenderProxy,
   Texture,
-  GlMeshProgram,
 } from '@flighthq/types/contract';
 import { CustomShaderMaterialKind } from '@flighthq/types/contract';
 
+import type { GlMeshProgram } from './contract.scene3d-gl-types.ts';
 import { registerGlMeshMaterialRenderer } from './glMeshMaterialRegistry.ts';
 import {
   beginGlMeshDraw,

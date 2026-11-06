@@ -1,4 +1,5 @@
-import type { AnisotropyPbrExtension, GlPbrExtensionRegistration, GlRenderState } from '@flighthq/types/contract';
+import type { GlPbrExtensionRegistration } from '@flighthq/render-gl/contract';
+import type { AnisotropyPbrExtension, GlRenderState } from '@flighthq/types/contract';
 import { AnisotropyPbrExtensionKind } from '@flighthq/types/contract';
 
 import { registerGlPbrExtension } from './glPbrExtensionRegistry.ts';

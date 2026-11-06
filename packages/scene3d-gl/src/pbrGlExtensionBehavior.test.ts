@@ -7,16 +7,12 @@ import {
   createTransmissionVolumePbrExtension,
   createWrappedDiffusePbrExtension,
 } from '@flighthq/materials/contract';
-import type {
-  GlPbrExtensionBindContext,
-  GlPbrExtensionRegistration,
-  PbrExtension,
-  PbrUvSet,
-  Texture,
-} from '@flighthq/types/contract';
+import type { GlPbrExtensionRegistration } from '@flighthq/render-gl/contract';
+import type { PbrExtension, PbrUvSet, Texture } from '@flighthq/types/contract';
 
 import { anisotropyPbrGlExtension } from './anisotropyPbrGlExtension.ts';
 import { clearcoatPbrGlExtension } from './clearcoatPbrGlExtension.ts';
+import type { GlPbrExtensionBindContext } from './contract.scene3d-gl-types.ts';
 import { iridescencePbrGlExtension } from './iridescencePbrGlExtension.ts';
 import { sheenPbrGlExtension } from './sheenPbrGlExtension.ts';
 import { specularPbrGlExtension } from './specularPbrGlExtension.ts';

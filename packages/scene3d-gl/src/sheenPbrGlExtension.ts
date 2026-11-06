@@ -1,4 +1,5 @@
-import type { GlPbrExtensionRegistration, GlRenderState, SheenPbrExtension } from '@flighthq/types/contract';
+import type { GlPbrExtensionRegistration } from '@flighthq/render-gl/contract';
+import type { GlRenderState, SheenPbrExtension } from '@flighthq/types/contract';
 import { SheenPbrExtensionKind } from '@flighthq/types/contract';
 
 import { registerGlPbrExtension } from './glPbrExtensionRegistry.ts';

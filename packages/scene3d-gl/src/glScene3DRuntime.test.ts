@@ -5,12 +5,11 @@ import type {
   GlRenderStateRuntime,
   GlTextureRenderTarget,
   Matrix4,
-  GlMeshProgram,
-  GlScene3DIbl,
   Texture,
 } from '@flighthq/types/contract';
 import { BitmapTextureSourceKind, EntityRuntimeKey } from '@flighthq/types/contract';
 
+import type { GlMeshProgram, GlScene3DIbl } from './contract.scene3d-gl-types.ts';
 import { renderGlEnvironmentSkybox } from './glEnvironmentSkybox.ts';
 import {
   addGlScene3DResourceCleanup,

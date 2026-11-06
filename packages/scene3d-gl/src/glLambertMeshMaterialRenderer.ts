@@ -1,20 +1,19 @@
 import type { LinearColorRaw } from '@flighthq/color/contract';
 import { allocateLinearColor, unpackColorToLinear } from '@flighthq/color/contract';
 import { resolveGlTexture } from '@flighthq/render-gl/contract';
+import type { GlMeshMaterialRenderer } from '@flighthq/render-gl/contract';
 import type {
   Camera3D,
-  GlMeshMaterialRenderer,
   GlRenderState,
   LambertMaterial,
   Material,
   MeshGeometry,
   Scene3DLightBlock,
   Scene3DRenderProxy,
-  GlClassicDefineKey,
-  GlClassicProgram,
 } from '@flighthq/types/contract';
 import { LambertMaterialKind } from '@flighthq/types/contract';
 
+import type { GlClassicDefineKey, GlClassicProgram } from './contract.scene3d-gl-types.ts';
 import { ensureGlClassicProgram } from './glClassicPrelude.ts';
 import { bindGlMeshLightBlock } from './glLitProgram.ts';
 import { registerGlMeshMaterialRenderer } from './glMeshMaterialRegistry.ts';

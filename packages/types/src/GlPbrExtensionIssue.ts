@@ -1,14 +1,2 @@
-import type { Kind } from './Entity.ts';
-
-export type GlPbrExtensionIssueCode =
-  | 'duplicate-kind'
-  | 'framebuffer-feedback'
-  | 'missing-registration'
-  | 'texture-unit-exhaustion'
-  | 'unsupported-extension';
-
-// Plain-data explanation for a silent Extended PBR skip. Messages live in the opt-in guard module.
-export interface GlPbrExtensionIssue {
-  code: GlPbrExtensionIssueCode;
-  kind: Kind;
-}
+/** @deprecated Import from `@flighthq/scene3d-gl/contract`. */
+export type { GlPbrExtensionIssueCode, GlPbrExtensionIssue } from '@flighthq/scene3d-gl/contract';

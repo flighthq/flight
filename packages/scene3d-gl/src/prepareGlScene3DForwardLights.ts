@@ -5,7 +5,6 @@ import { packScene3DLightBlock } from '@flighthq/render/contract';
 import { getNode3DWorldBounds } from '@flighthq/scene3d/contract';
 import type {
   GlRenderState,
-  GlScene3DForwardLightList,
   Mesh,
   Scene3DForwardLightSelection,
   Scene3DLightBlock,
@@ -13,6 +12,8 @@ import type {
   Scene3DRenderList,
 } from '@flighthq/types/contract';
 import { SCENE_LIGHT_BLOCK_FLOATS } from '@flighthq/types/contract';
+
+import type { GlScene3DForwardLightList } from './contract.scene3d-gl-types.ts';
 
 // Prepares one punctual-light block for each visible mesh after prepareScene3DRender. The selection is
 // opt-in and explicit: scenes within each family's forward budget need not import or run it. Point

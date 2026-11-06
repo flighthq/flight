@@ -12,10 +12,10 @@ import type {
   Mesh,
   Node3D,
   Node3DFields,
-  GlMeshProgram,
 } from '@flighthq/types/contract';
 import { DIRECTIONAL_SHADOW_MAP_SIZE, MAX_DIRECTIONAL_SHADOW_PCF_RADIUS } from '@flighthq/types/contract';
 
+import type { GlMeshProgram } from './contract.scene3d-gl-types.ts';
 import {
   bindGlInstancePalette,
   compileGlProgram,

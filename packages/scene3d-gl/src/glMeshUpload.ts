@@ -6,9 +6,9 @@ import type {
   MeshSkinBindPose,
   PrimitiveTopology,
   VertexAttribute,
-  GlMeshUpload,
 } from '@flighthq/types/contract';
 
+import type { GlMeshUpload } from './contract.scene3d-gl-types.ts';
 import { getGlScene3DRuntime } from './glScene3DRuntime.ts';
 
 export function bindGlVertexAttribute(gl: GlContext, attribute: Readonly<VertexAttribute>, stride: number): void {

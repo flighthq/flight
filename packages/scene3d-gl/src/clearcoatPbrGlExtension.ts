@@ -1,13 +1,8 @@
-import type {
-  ClearcoatPbrExtension,
-  GlPbrExtensionBindContext,
-  GlPbrExtensionRegistration,
-  GlRenderState,
-  PbrUvSet,
-  Texture,
-} from '@flighthq/types/contract';
+import type { GlPbrExtensionRegistration } from '@flighthq/render-gl/contract';
+import type { ClearcoatPbrExtension, GlRenderState, PbrUvSet, Texture } from '@flighthq/types/contract';
 import { ClearcoatPbrExtensionKind } from '@flighthq/types/contract';
 
+import type { GlPbrExtensionBindContext } from './contract.scene3d-gl-types.ts';
 import { registerGlPbrExtension } from './glPbrExtensionRegistry.ts';
 
 export const clearcoatPbrGlExtension: GlPbrExtensionRegistration = {

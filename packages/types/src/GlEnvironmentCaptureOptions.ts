@@ -1,9 +1,2 @@
-import type { Environment } from './Environment.ts';
-import type { Node3D } from './Node3D.ts';
-
-export interface GlEnvironmentCaptureOptions {
-  environment?: Environment;
-  excludeNode?: Node3D;
-  far?: number;
-  near?: number;
-}
+/** @deprecated Import from `@flighthq/scene3d-gl/contract`. */
+export type { GlEnvironmentCaptureOptions } from '@flighthq/scene3d-gl/contract';

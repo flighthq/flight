@@ -1,4 +1,5 @@
-import type { GlPbrExtensionRegistration, GlRenderState, SpecularPbrExtension } from '@flighthq/types/contract';
+import type { GlPbrExtensionRegistration } from '@flighthq/render-gl/contract';
+import type { GlRenderState, SpecularPbrExtension } from '@flighthq/types/contract';
 import { SpecularPbrExtensionKind } from '@flighthq/types/contract';
 
 import { registerGlPbrExtension } from './glPbrExtensionRegistry.ts';

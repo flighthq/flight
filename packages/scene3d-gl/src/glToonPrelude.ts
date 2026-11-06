@@ -1,6 +1,7 @@
-import type { GlContext, GlToonDefineKey, GlToonProgram, GlRenderState } from '@flighthq/types/contract';
+import type { GlContext, GlRenderState } from '@flighthq/types/contract';
 import { MAX_FORWARD_LIGHTS } from '@flighthq/types/contract';
 
+import type { GlToonDefineKey, GlToonProgram } from './contract.scene3d-gl-types.ts';
 import { GL_MESH_LIGHT_BLOCK_GLSL, resolveGlLitLocations } from './glLitProgram.ts';
 import { GL_MESH_FRAGMENT_TAIL, GL_MESH_FRAGMENT_TAIL_UNIFORMS } from './glMeshFragmentTail.ts';
 import {

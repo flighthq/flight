@@ -1,3 +1,4 @@
+export type * from './contract.scene3d-gl-types.ts';
 export * from './anisotropyPbrGlExtension.ts';
 export * from './glBlinnPhongMeshMaterialRenderer.ts';
 export * from './clearcoatPbrGlExtension.ts';

@@ -1,6 +1,7 @@
 import { resolveGlTexture } from '@flighthq/render-gl/contract';
-import type { GlContext, GlDebugProgram, GlDebugDefineKey, GlRenderState, Texture } from '@flighthq/types/contract';
+import type { GlContext, GlRenderState, Texture } from '@flighthq/types/contract';
 
+import type { GlDebugProgram, GlDebugDefineKey } from './contract.scene3d-gl-types.ts';
 import { GL_MESH_FRAGMENT_TAIL, GL_MESH_FRAGMENT_TAIL_UNIFORMS } from './glMeshFragmentTail.ts';
 import { compileGlProgram, ensureGlScene3DProgram, GL_INSTANCE_VERTEX_DECLARATIONS_GLSL } from './glMeshProgram.ts';
 import { getGlScene3DRuntime } from './glScene3DRuntime.ts';

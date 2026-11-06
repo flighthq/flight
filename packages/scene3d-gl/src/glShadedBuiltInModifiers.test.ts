@@ -1,3 +1,4 @@
+import type { GlModifierBindContext } from '@flighthq/render-gl/contract';
 import {
   createAnimatedNormalModifier,
   createDissolveModifier,
@@ -8,7 +9,7 @@ import {
   createToonModifier,
   createVertexDisplaceModifier,
 } from '@flighthq/shading/contract';
-import type { Texture, GlModifierBindContext } from '@flighthq/types/contract';
+import type { Texture } from '@flighthq/types/contract';
 import {
   AnimatedNormalModifierKind,
   DissolveModifierKind,

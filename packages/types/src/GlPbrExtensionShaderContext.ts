@@ -1,7 +1,2 @@
-import type { Texture } from './Texture.ts';
-
-// Read-only facts available while a registered extension selects its shader contribution.
-export interface GlPbrExtensionShaderContext {
-  hasTransmissionSceneColor(): boolean;
-  isTextureReady(texture: Readonly<Texture> | null): boolean;
-}
+/** @deprecated Import from `@flighthq/scene3d-gl/contract`. */
+export type { GlPbrExtensionShaderContext } from '@flighthq/scene3d-gl/contract';

@@ -1,5 +1,4 @@
-import type { GlToonDefineKey } from '@flighthq/types/contract';
-
+import type { GlToonDefineKey } from './contract.scene3d-gl-types.ts';
 import { GL_SKIN_VERTEX_DECLARATIONS_GLSL } from './glMeshSkinning.ts';
 import { getGlScene3DRuntime } from './glScene3DRuntime.ts';
 import { makeFakeGl2, makeGlScene3DState } from './glScene3DTestHelper.ts';

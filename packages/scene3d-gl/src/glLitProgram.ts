@@ -1,10 +1,4 @@
-import type {
-  GlContext,
-  GlLitProgram,
-  GlRenderState,
-  Scene3DLightBlock,
-  GlMeshProgram,
-} from '@flighthq/types/contract';
+import type { GlContext, GlRenderState, Scene3DLightBlock } from '@flighthq/types/contract';
 import {
   MAX_DIRECTIONAL_SHADOW_PCF_RADIUS,
   MAX_FORWARD_LIGHTS,
@@ -16,6 +10,7 @@ import {
   SCENE_LIGHT_SPOT_STRIDE,
 } from '@flighthq/types/contract';
 
+import type { GlLitProgram, GlMeshProgram } from './contract.scene3d-gl-types.ts';
 import { getGlScene3DRuntime } from './glScene3DRuntime.ts';
 // The texture unit the directional shadow map binds to — above the material texture units (a material
 // uses at most baseColor/normal/metallicRoughness/occlusion/emissive ⇒ units 0–4). The IBL set sits

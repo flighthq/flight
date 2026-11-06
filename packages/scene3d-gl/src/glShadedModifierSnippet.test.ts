@@ -1,6 +1,6 @@
 import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
+import type { GlModifierSnippet } from '@flighthq/render-gl/contract';
 import { ModifierSlot } from '@flighthq/types/contract';
-import type { GlModifierSnippet } from '@flighthq/types/contract';
 
 import { getGlScene3DRuntime } from './glScene3DRuntime.ts';
 import { makeGlScene3DState } from './glScene3DTestHelper.ts';

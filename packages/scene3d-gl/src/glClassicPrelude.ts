@@ -1,13 +1,8 @@
 import { getGlColorAdjustmentMaterialFeature } from '@flighthq/render-gl/contract';
-import type {
-  GlContext,
-  GlClassicDefineKey,
-  GlClassicProgram,
-  GlColorAdjustmentMaterialFeature,
-  GlRenderState,
-} from '@flighthq/types/contract';
+import type { GlContext, GlColorAdjustmentMaterialFeature, GlRenderState } from '@flighthq/types/contract';
 import { MAX_FORWARD_LIGHTS } from '@flighthq/types/contract';
 
+import type { GlClassicDefineKey, GlClassicProgram } from './contract.scene3d-gl-types.ts';
 import { GL_MESH_LIGHT_BLOCK_GLSL, resolveGlLitLocations } from './glLitProgram.ts';
 import { GL_MESH_FRAGMENT_TAIL, GL_MESH_FRAGMENT_TAIL_UNIFORMS } from './glMeshFragmentTail.ts';
 import {

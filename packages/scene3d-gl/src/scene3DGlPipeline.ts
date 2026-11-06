@@ -1,13 +1,8 @@
 import { withKindMapEntry } from '@flighthq/registry/contract';
+import type { GlMeshMaterialRenderer } from '@flighthq/render-gl/contract';
+import type { GlModifierSnippet, GlPbrExtensionRegistration } from '@flighthq/render-gl/contract';
 import { glScene2DRenderPreset } from '@flighthq/scene2d-gl/contract';
-import type {
-  GlMeshMaterialRenderer,
-  GlModifierSnippet,
-  GlPbrExtensionRegistration,
-  GlQuadMaterialRenderer,
-  GlRenderRegistries,
-  Kind,
-} from '@flighthq/types/contract';
+import type { GlQuadMaterialRenderer, GlRenderRegistries, Kind } from '@flighthq/types/contract';
 import {
   AnimatedNormalModifierKind,
   AnisotropyPbrExtensionKind,

@@ -1,7 +1,7 @@
 import { createMatrix4 } from '@flighthq/geometry/contract';
-import type { GlLitProgram } from '@flighthq/types/contract';
 import { SCENE_LIGHT_BLOCK_FLOATS } from '@flighthq/types/contract';
 
+import type { GlLitProgram } from './contract.scene3d-gl-types.ts';
 import { bindGlMeshLightBlock, GL_MESH_LIGHT_BLOCK_GLSL, resolveGlLitLocations } from './glLitProgram.ts';
 import { getGlScene3DRuntime } from './glScene3DRuntime.ts';
 import { makeFakeGl2, makeGlScene3DState } from './glScene3DTestHelper.ts';

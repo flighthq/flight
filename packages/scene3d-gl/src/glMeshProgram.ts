@@ -4,7 +4,6 @@ import { createGlProgram, uploadGlSkinPaletteTexture } from '@flighthq/render-gl
 import { getTextureUvMatrix, hasTextureSource, hasTextureUvTransform } from '@flighthq/texture/contract';
 import type {
   GlContext,
-  GlMeshProgram,
   Camera3D,
   GlRenderState,
   Material,
@@ -14,6 +13,7 @@ import type {
   TextureLike,
 } from '@flighthq/types/contract';
 
+import type { GlMeshProgram } from './contract.scene3d-gl-types.ts';
 import { ensureGlMeshUpload } from './glMeshUpload.ts';
 import { ensureGlInstanceColorPalette, ensureGlInstancePalette, getGlScene3DRuntime } from './glScene3DRuntime.ts';
 import { getGlScene3DViewportAspect } from './glViewportAspect.ts';

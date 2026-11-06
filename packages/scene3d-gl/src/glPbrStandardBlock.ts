@@ -2,15 +2,9 @@ import type { LinearColorRaw } from '@flighthq/color/contract';
 import { allocateLinearColor, unpackColorToLinear } from '@flighthq/color/contract';
 import { resolveGlTexture } from '@flighthq/render-gl/contract';
 import { hasTextureUvTransform } from '@flighthq/texture/contract';
-import type {
-  GlRenderState,
-  StandardPbrMaterialProperties,
-  Material3D,
-  Texture,
-  GlPbrDefineKey,
-  GlPbrProgram,
-} from '@flighthq/types/contract';
+import type { GlRenderState, StandardPbrMaterialProperties, Material3D, Texture } from '@flighthq/types/contract';
 
+import type { GlPbrDefineKey, GlPbrProgram } from './contract.scene3d-gl-types.ts';
 import { bindGlUvTransform } from './glMeshProgram.ts';
 
 // The texture-unit assignment for the StandardPbrMaterialProperties block. Units 0–5 are reserved

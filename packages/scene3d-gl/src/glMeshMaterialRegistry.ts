@@ -1,6 +1,7 @@
 import { withKindMapEntry } from '@flighthq/registry/contract';
 import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
-import type { GlMeshMaterialRenderer, GlRenderState, Kind, Material } from '@flighthq/types/contract';
+import type { GlMeshMaterialRenderer } from '@flighthq/render-gl/contract';
+import type { GlRenderState, Kind, Material } from '@flighthq/types/contract';
 import { StandardMaterialKind } from '@flighthq/types/contract';
 
 // Returns the 3D mesh-material renderer registered for a kind on this state, or null. The 3D scene

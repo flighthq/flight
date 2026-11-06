@@ -1,25 +1,2 @@
-import type { GlMeshProgram } from './GlMeshProgram.ts';
-
-// A compiled debug variant plus its resolved uniform locations. Extends GlMeshProgram (it carries the
-// model + normal matrix + view-projection the vertex scene2d needs) with the debug fragment uniforms.
-// `locNear`/`locFar` drive the depth linearization; `locNormalMap`/`locNormalScale` drive the optional
-// normal-map perturbation; `locView` transforms depth-mode vertices to projection-independent view
-// depth. A given location is null in the mode/variant that does not declare it. One exists per distinct
-// GlDebugDefineKey, cached on the GlRenderState under the `debug:` namespace.
-export interface GlDebugProgram extends GlMeshProgram {
-  locFar: WebGLUniformLocation | null;
-  locNear: WebGLUniformLocation | null;
-  locNormalMap: WebGLUniformLocation | null;
-  locNormalScale: WebGLUniformLocation | null;
-  locView: WebGLUniformLocation | null;
-}
-
-// The feature flags that select a debug variant. `mode` picks the depth vs normal fragment branch;
-// `hasNormalMap` enables the sampled tangent-space normal-map perturbation (normal mode only — depth
-// ignores it). Distinct keys compile and cache as distinct programs.
-export interface GlDebugDefineKey {
-  hasInstances?: boolean;
-  hasNormalMap: boolean;
-  hasSkin?: boolean;
-  mode: 'depth' | 'normal';
-}
+/** @deprecated Import from `@flighthq/scene3d-gl/contract`. */
+export type { GlDebugProgram, GlDebugDefineKey } from '@flighthq/scene3d-gl/contract';

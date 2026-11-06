@@ -1,5 +1,6 @@
-import type { GlColorAdjustmentMaterialFeature, GlPbrDefineKey } from '@flighthq/types/contract';
+import type { GlColorAdjustmentMaterialFeature } from '@flighthq/types/contract';
 
+import type { GlPbrDefineKey } from './contract.scene3d-gl-types.ts';
 import { GL_SKIN_VERTEX_DECLARATIONS_GLSL } from './glMeshSkinning.ts';
 import {
   buildGlPbrDefineKey,
