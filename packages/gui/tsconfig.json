@@ -20,6 +20,9 @@
       "path": "../node/tsconfig.runtime.json"
     },
     {
+      "path": "../scene-document/tsconfig.contract.json"
+    },
+    {
       "path": "../scene2d/tsconfig.runtime.json"
     },
     {

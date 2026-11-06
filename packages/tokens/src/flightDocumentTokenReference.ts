@@ -1,4 +1,4 @@
-import type { FlightDocumentValue } from '@flighthq/types/contract';
+import type { FlightDocumentValue } from '@flighthq/scene-document/contract';
 
 // One statement of what a reference IS, shared by token-value resolution and node-field substitution.
 // Two copies would drift, and the copy that drifted would be whichever a later change forgot — the

@@ -14,19 +14,6 @@ import { addNodeChild, getNodeChildren, getNodeWorldMatrix4 } from '@flighthq/no
 import { createScene3D, createScene3DLightsFromDocument } from '@flighthq/scene3d/contract';
 import type {
   Camera3D,
-  FlightDocument,
-  FlightDocumentFields,
-  FlightDocumentInteractiveStateBinding,
-  FlightDocumentLayoutBinding,
-  FlightDocumentNode,
-  FlightDocumentNodeSchema,
-  FlightDocumentRefusalExplanation,
-  FlightDocumentResourceDescriptor,
-  FlightDocumentResourceLookup,
-  FlightDocumentResourceResolverRegistry,
-  FlightDocumentScene3D,
-  FlightDocumentScene3DMaterialization,
-  FlightDocumentSchemaRegistry,
   Entity,
   NodeAny,
   Node3D,
@@ -36,7 +23,7 @@ import type {
   Scene3DDocumentLight,
   EntityConstruction,
 } from '@flighthq/types/contract';
-import { FlightDocumentRefusalReason, Node3DFieldsKey } from '@flighthq/types/contract';
+import { Node3DFieldsKey } from '@flighthq/types/contract';
 
 import { explainFlightDocumentText, parseFlightDocumentText } from './flightDocumentText.ts';
 import {
@@ -57,6 +44,22 @@ import {
   checkUnregisteredNodeKinds,
   createSceneRefusal,
 } from './sceneDocumentRefusal.ts';
+import type {
+  FlightDocument,
+  FlightDocumentFields,
+  FlightDocumentInteractiveStateBinding,
+  FlightDocumentLayoutBinding,
+  FlightDocumentNode,
+  FlightDocumentNodeSchema,
+  FlightDocumentRefusalExplanation,
+  FlightDocumentResourceDescriptor,
+  FlightDocumentResourceLookup,
+  FlightDocumentResourceResolverRegistry,
+  FlightDocumentScene3D,
+  FlightDocumentScene3DMaterialization,
+  FlightDocumentSchemaRegistry,
+} from './types.ts';
+import { FlightDocumentRefusalReason } from './types.ts';
 
 export function createFlightDocumentFromScene3D(
   source: Readonly<Scene3D>,

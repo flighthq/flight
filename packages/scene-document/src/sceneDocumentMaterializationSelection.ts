@@ -1,7 +1,6 @@
-import type { FlightDocument, FlightDocumentRefusalExplanation, FlightDocumentScene } from '@flighthq/types/contract';
-import { FlightDocumentRefusalReason } from '@flighthq/types/contract';
-
 import { createDocumentRefusal, createSceneRefusal } from './sceneDocumentRefusal.ts';
+import type { FlightDocument, FlightDocumentRefusalExplanation, FlightDocumentScene } from './types.ts';
+import { FlightDocumentRefusalReason } from './types.ts';
 
 type FlightDocumentSceneSelection =
   | {

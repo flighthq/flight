@@ -5,8 +5,8 @@ import type {
   FlightDocumentScene3D,
   FlightDocumentToken,
   FlightDocumentTokenResolution,
-} from '@flighthq/types/contract';
-import { FlightDocumentRefusalReason } from '@flighthq/types/contract';
+} from '@flighthq/scene-document/contract';
+import { FlightDocumentRefusalReason } from '@flighthq/scene-document/contract';
 
 import {
   createFlightDocumentTokenResolverRegistry,

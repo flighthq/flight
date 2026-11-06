@@ -1,8 +1,6 @@
 import { createPerspectiveProjection } from '@flighthq/camera/contract';
 import { createTransform3D } from '@flighthq/geometry/contract';
 import { createAmbientLight } from '@flighthq/lighting/contract';
-import type { FlightDocument } from '@flighthq/types/contract';
-import { FlightDocumentRefusalReason } from '@flighthq/types/contract';
 
 import {
   explainFlightDocumentText,
@@ -11,6 +9,8 @@ import {
   parseFlightDocumentText,
 } from './flightDocumentText.ts';
 import { parseSceneDocumentYamlSubset } from './sceneDocumentYamlSubset.ts';
+import type { FlightDocument } from './types.ts';
+import { FlightDocumentRefusalReason } from './types.ts';
 
 describe('explainFlightDocumentText', () => {
   it('names an empty scenes collection independently', () => {

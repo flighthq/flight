@@ -1,9 +1,15 @@
 import { createOrthographicProjection, createPerspectiveProjection } from '@flighthq/camera/contract';
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type { Projection } from '@flighthq/camera/contract';
+import { allocateEntity, EntityRuntimeKey, finishEntity } from '@flighthq/entity/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
 import { createTransform3D } from '@flighthq/geometry/contract';
+import type { Transform3D } from '@flighthq/geometry/contract';
 import type { Light } from '@flighthq/lighting/contract';
+import type { Scene3DDocumentCamera, Scene3DDocumentLight } from '@flighthq/scene3d/contract';
+
+import { createDocumentRefusal } from './sceneDocumentRefusal.ts';
+import { parseSceneDocumentYamlSubset } from './sceneDocumentYamlSubset.ts';
 import type {
-  EntityConstruction,
   FlightDocument,
   FlightDocumentFields,
   FlightDocumentInteractiveState,
@@ -22,15 +28,8 @@ import type {
   FlightDocumentToken,
   FlightDocumentTokenValues,
   FlightDocumentValue,
-  Projection,
-  Scene3DDocumentCamera,
-  Scene3DDocumentLight,
-  Transform3D,
-} from '@flighthq/types/contract';
-import { EntityRuntimeKey, FlightDocumentRefusalReason } from '@flighthq/types/contract';
-
-import { createDocumentRefusal } from './sceneDocumentRefusal.ts';
-import { parseSceneDocumentYamlSubset } from './sceneDocumentYamlSubset.ts';
+} from './types.ts';
+import { FlightDocumentRefusalReason } from './types.ts';
 
 export function explainFlightDocumentText(text: FlightDocumentText): FlightDocumentRefusalExplanation | null {
   return readFlightDocumentText(text).refusal;

@@ -1,13 +1,13 @@
 import { withKindMapEntry } from '@flighthq/registry/contract';
+import { DisplayObjectKind } from '@flighthq/types/contract';
+
+import { getFlightDocumentResourceDependencies } from './flightDocumentResourceDependencies.ts';
 import type {
   FlightDocument,
   FlightDocumentResourceDescriptor,
   FlightDocumentResourceSchema,
   FlightDocumentSchemaRegistry,
-} from '@flighthq/types/contract';
-import { DisplayObjectKind } from '@flighthq/types/contract';
-
-import { getFlightDocumentResourceDependencies } from './flightDocumentResourceDependencies.ts';
+} from './types.ts';
 
 describe('getFlightDocumentResourceDependencies', () => {
   it('returns every directly declared resource in document order', () => {

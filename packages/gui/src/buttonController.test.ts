@@ -1,6 +1,6 @@
 import { createNodeInteractiveStateBinding } from '@flighthq/interaction/contract';
+import type { FlightDocumentSchemaRegistry } from '@flighthq/scene-document/contract';
 import { connectSignal } from '@flighthq/signals/contract';
-import type { FlightDocumentSchemaRegistry } from '@flighthq/types/contract';
 
 import {
   createButtonController,

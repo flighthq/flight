@@ -1,3 +1,4 @@
+export * from './contract.scene-document-types.ts';
 export * from './flightDocumentResourceDependencies.ts';
 export { explainFlightDocumentText, formatFlightDocumentText, parseFlightDocumentText } from './flightDocumentText.ts';
 export * from './sceneDocumentInteractiveStateBindings.ts';

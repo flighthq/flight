@@ -1,11 +1,8 @@
 import { getNodeAppearanceRevision, getNodeLocalTransformRevision, getNodeRuntime } from '@flighthq/node/contract';
 import { withKindMapEntry } from '@flighthq/registry/contract';
+import type { FlightDocumentInteractiveStates, FlightDocumentSchemaRegistry } from '@flighthq/scene-document/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
-import type {
-  FlightDocumentInteractiveStates,
-  FlightDocumentSchemaRegistry,
-  NodeInteractiveStateTransitionRequest,
-} from '@flighthq/types/contract';
+import type { NodeInteractiveStateTransitionRequest } from '@flighthq/types/contract';
 import { NodeInteractiveStateRefusalReason } from '@flighthq/types/contract';
 
 import {

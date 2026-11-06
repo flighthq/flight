@@ -2,26 +2,8 @@ import { addNodeChild, getNodeChildren, getNodeRuntime } from '@flighthq/node/co
 import { withKindMapEntry } from '@flighthq/registry/contract';
 import { createDisplayObject, createScene2D, createSprite } from '@flighthq/scene2d/contract';
 import { createNode3D } from '@flighthq/scene3d/contract';
-import {
-  DisplayObjectKind,
-  EntityRuntimeKey,
-  FlightDocumentRefusalReason,
-  Node3DKind,
-  SpriteKind,
-} from '@flighthq/types/contract';
-import type {
-  FlightDocument,
-  FlightDocumentFields,
-  FlightDocumentInteractiveStates,
-  FlightDocumentNodeSchema,
-  FlightDocumentResourceDescriptor,
-  FlightDocumentResourceLookup,
-  FlightDocumentScene,
-  FlightDocumentScene2DMaterialization,
-  FlightDocumentSchemaRegistry,
-  Node2D,
-  NodeAny,
-} from '@flighthq/types/contract';
+import { DisplayObjectKind, EntityRuntimeKey, Node3DKind, SpriteKind } from '@flighthq/types/contract';
+import type { Node2D, NodeAny } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { formatFlightDocumentText } from './flightDocumentText.ts';
@@ -34,6 +16,18 @@ import {
   initializeFlightDocumentFromScene2D,
   initializeFlightDocumentScene2DMaterialization,
 } from './sceneDocumentScene2DMaterialization.ts';
+import { FlightDocumentRefusalReason } from './types.ts';
+import type {
+  FlightDocument,
+  FlightDocumentFields,
+  FlightDocumentInteractiveStates,
+  FlightDocumentNodeSchema,
+  FlightDocumentResourceDescriptor,
+  FlightDocumentResourceLookup,
+  FlightDocumentScene,
+  FlightDocumentScene2DMaterialization,
+  FlightDocumentSchemaRegistry,
+} from './types.ts';
 
 describe('createFlightDocumentFromScene2D', () => {
   it('creates a model from an empty Scene2D', () => {

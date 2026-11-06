@@ -7,6 +7,7 @@
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,
+    "moduleSuffixes": [".scene-document-types", ""],
     "tsBuildInfoFile": "dist/.tsbuildinfo.runtime"
   },
   "references": [
@@ -14,6 +15,7 @@
     { "path": "../geometry/tsconfig.runtime.json" },
     { "path": "../node/tsconfig.runtime.json" },
     { "path": "../registry" },
+    { "path": "../scene-document/tsconfig.contract.json" },
     { "path": "../scene2d/tsconfig.runtime.json" },
     { "path": "../log" },
     { "path": "../path/tsconfig.runtime.json" },

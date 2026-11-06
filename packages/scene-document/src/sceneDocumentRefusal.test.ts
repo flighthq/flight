@@ -1,13 +1,5 @@
 import { withKindMapEntry } from '@flighthq/registry/contract';
-import type {
-  FlightDocumentFields,
-  FlightDocumentNode,
-  FlightDocumentNodeSchema,
-  FlightDocumentResourceLookup,
-  FlightDocumentSchemaRegistry,
-  NodeAny,
-} from '@flighthq/types/contract';
-import { FlightDocumentRefusalReason } from '@flighthq/types/contract';
+import type { NodeAny } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import {
@@ -20,6 +12,14 @@ import {
   createSceneRefusal,
   initializeDocumentRefusal,
 } from './sceneDocumentRefusal.ts';
+import type {
+  FlightDocumentFields,
+  FlightDocumentNode,
+  FlightDocumentNodeSchema,
+  FlightDocumentResourceLookup,
+  FlightDocumentSchemaRegistry,
+} from './types.ts';
+import { FlightDocumentRefusalReason } from './types.ts';
 
 describe('checkFlightDocumentFields', () => {
   it('uses registered validators and rejects unknown fields', () => {

@@ -1,9 +1,2 @@
-import type { Kind } from './Entity.ts';
-import type { FlightDocumentFieldSchema, FlightDocumentFields } from './FlightDocumentFieldSchema.ts';
-import type { NodeInteractiveStateTransition } from './NodeInteractiveStateBinding.ts';
-
-export interface FlightDocumentInteractiveStateTransitionSchema {
-  createTransition: (fields: Readonly<FlightDocumentFields>) => NodeInteractiveStateTransition | null;
-  fields: readonly Readonly<FlightDocumentFieldSchema>[];
-  kind: Kind;
-}
+/** @deprecated Import scene-document contracts from `@flighthq/scene-document/contract`. */
+export type { FlightDocumentInteractiveStateTransitionSchema } from '@flighthq/scene-document/contract';

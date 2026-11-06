@@ -9,6 +9,7 @@
     { "path": "../input" },
     { "path": "../node/tsconfig.runtime.json" },
     { "path": "../registry" },
+    { "path": "../scene-document/tsconfig.contract.json" },
     { "path": "../scene2d/tsconfig.runtime.json" },
     { "path": "../log" },
     { "path": "../path/tsconfig.runtime.json" },

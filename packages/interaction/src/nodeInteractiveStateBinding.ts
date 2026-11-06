@@ -6,6 +6,8 @@ import type {
   FlightDocumentInteractiveStates,
   FlightDocumentInteractiveStateTransitionDescriptor,
   FlightDocumentSchemaRegistry,
+} from '@flighthq/scene-document/contract';
+import type {
   NodeInteractiveStateBinding,
   NodeInteractiveStateBindingRuntime,
   NodeInteractiveStateExplanation,

@@ -1,0 +1,34 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "composite": true,
+    "rootDir": "src",
+    "outDir": "dist",
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "moduleSuffixes": [
+      ".camera-types",
+      ".lighting-types",
+      ".node-types",
+      ".scene2d-types",
+      ".scene3d-types",
+      ".shape-formats-types",
+      ".scene-document-bridge-types",
+      ""
+    ],
+    "tsBuildInfoFile": "dist/.tsbuildinfo.contract"
+  },
+  "references": [
+    { "path": "../camera/tsconfig.contract.json" },
+    { "path": "../entity" },
+    { "path": "../layout" },
+    { "path": "../lighting/tsconfig.contract.json" },
+    { "path": "../node/tsconfig.contract.json" },
+    { "path": "../scene2d/tsconfig.contract.json" },
+    { "path": "../scene3d/tsconfig.contract.json" },
+    { "path": "../shape-formats/tsconfig.contract.json" },
+    { "path": "../types/tsconfig.scene-document-bridge-types.json" }
+  ],
+  "include": ["src/contract.scene-document-types.ts", "src/types.ts"]
+}

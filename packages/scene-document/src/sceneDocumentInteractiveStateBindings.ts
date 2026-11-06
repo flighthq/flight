@@ -1,3 +1,5 @@
+import type { NodeAny } from '@flighthq/types/contract';
+
 import type {
   FlightDocumentFields,
   FlightDocumentInteractiveState,
@@ -7,8 +9,7 @@ import type {
   FlightDocumentNode,
   FlightDocumentSchemaRegistry,
   FlightDocumentValue,
-  NodeAny,
-} from '@flighthq/types/contract';
+} from './types.ts';
 
 interface FlightDocumentInteractiveStateMetadata {
   interactiveStates: FlightDocumentInteractiveStates | null;

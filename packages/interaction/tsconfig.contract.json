@@ -16,6 +16,7 @@
     { "path": "../input" },
     { "path": "../node/tsconfig.contract.json" },
     { "path": "../path/tsconfig.contract.json" },
+    { "path": "../scene-document/tsconfig.contract.json" },
     { "path": "../signals" },
     { "path": "../spatial/tsconfig.contract.json" }
   ],

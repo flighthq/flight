@@ -7,8 +7,8 @@ import type {
   FlightDocumentScene,
   FlightDocumentTokenResolution,
   FlightDocumentValue,
-} from '@flighthq/types/contract';
-import { FlightDocumentRefusalReason } from '@flighthq/types/contract';
+} from '@flighthq/scene-document/contract';
+import { FlightDocumentRefusalReason } from '@flighthq/scene-document/contract';
 
 import {
   INVALID_FLIGHT_DOCUMENT_TOKEN_VALUE,

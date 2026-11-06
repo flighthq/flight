@@ -49,6 +49,7 @@
     "@flighthq/node": "*",
     "@flighthq/path": "*",
     "@flighthq/registry": "*",
+    "@flighthq/scene-document": "*",
     "@flighthq/shape": "*",
     "@flighthq/signals": "*",
     "@flighthq/spatial": "*",

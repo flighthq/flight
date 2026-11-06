@@ -1,13 +1,14 @@
 import { addNodeChild } from '@flighthq/node/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
-import type { FlightDocumentLayoutDescriptor, FlightDocumentNode, Node2D, NodeAny } from '@flighthq/types/contract';
-import { FlightDocumentRefusalReason } from '@flighthq/types/contract';
+import type { Node2D, NodeAny } from '@flighthq/types/contract';
 
 import {
   checkFlightDocumentLayoutTargets,
   createFlightDocumentLayoutBindings,
   writeFlightDocumentLayoutBindings,
 } from './sceneDocumentLayoutBindings.ts';
+import type { FlightDocumentLayoutDescriptor, FlightDocumentNode } from './types.ts';
+import { FlightDocumentRefusalReason } from './types.ts';
 
 describe('checkFlightDocumentLayoutTargets', () => {
   it('distinguishes missing and multiply-authored names', () => {

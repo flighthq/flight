@@ -1,8 +1,4 @@
-import type { Entity, Kind } from './Entity.ts';
-
-// Stable identities shared by text parsing, logical validation, resource resolution, and scene
-// materialization. Limit values are intentionally not caller-configurable; the six limit identities
-// below name the fixed parser bounds without making those numeric bounds public configuration.
+// Runtime compatibility mirror: Types cannot carry a value edge to the higher scene-document layer.
 export const FlightDocumentRefusalReason = {
   AliasUnsupported: 'flight-document.unsupported.alias',
   AnchorUnsupported: 'flight-document.unsupported.anchor',
@@ -70,22 +66,5 @@ export const FlightDocumentRefusalReason = {
 export type FlightDocumentRefusalReason =
   (typeof FlightDocumentRefusalReason)[keyof typeof FlightDocumentRefusalReason];
 
-// One diagnostic shape spans every null-returning document seam. A field is null when that refusal
-// has no corresponding context; path is empty when the failure cannot be localized structurally.
-export interface FlightDocumentRefusalExplanation extends Entity {
-  actual: number | null;
-  column: number | null;
-  kind: Kind | null;
-  limit: number | null;
-  line: number | null;
-  // The token mode being resolved, and the token row a refusal concerns. Both are null outside the
-  // token seams, exactly as resourceKey is null outside resource resolution; the shared kind field
-  // carries a token's kind, so a refusal never needs a third identity slot.
-  mode: string | null;
-  offset: number | null;
-  path: string;
-  reason: FlightDocumentRefusalReason;
-  resourceKey: string | null;
-  tokenKey: string | null;
-  version: number | null;
-}
+/** @deprecated Import scene-document contracts from `@flighthq/scene-document/contract`. */
+export type { FlightDocumentRefusalExplanation } from '@flighthq/scene-document/contract';

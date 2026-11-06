@@ -13,21 +13,8 @@ import { getNodeChildren, invalidateNodeLocalTransform } from '@flighthq/node/co
 import { withKindMapEntry } from '@flighthq/registry/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
 import { createNode3D, createScene3D } from '@flighthq/scene3d/contract';
-import type {
-  FlightDocument,
-  FlightDocumentFields,
-  FlightDocumentInteractiveStates,
-  FlightDocumentNodeSchema,
-  FlightDocumentResourceDescriptor,
-  FlightDocumentResourceLookup,
-  FlightDocumentScene,
-  FlightDocumentScene3DMaterialization,
-  FlightDocumentSchemaRegistry,
-  NodeAny,
-  Scene3DDocumentCamera,
-  Scene3DDocumentLight,
-} from '@flighthq/types/contract';
-import { DisplayObjectKind, EntityRuntimeKey, FlightDocumentRefusalReason, Node3DKind } from '@flighthq/types/contract';
+import type { NodeAny, Scene3DDocumentCamera, Scene3DDocumentLight } from '@flighthq/types/contract';
+import { DisplayObjectKind, EntityRuntimeKey, Node3DKind } from '@flighthq/types/contract';
 import { describe, expect, expectTypeOf, it } from 'vitest';
 
 import { formatFlightDocumentText } from './flightDocumentText.ts';
@@ -40,6 +27,18 @@ import {
   initializeFlightDocumentFromScene3D,
   initializeFlightDocumentScene3DMaterialization,
 } from './sceneDocumentScene3DMaterialization.ts';
+import type {
+  FlightDocument,
+  FlightDocumentFields,
+  FlightDocumentInteractiveStates,
+  FlightDocumentNodeSchema,
+  FlightDocumentResourceDescriptor,
+  FlightDocumentResourceLookup,
+  FlightDocumentScene,
+  FlightDocumentScene3DMaterialization,
+  FlightDocumentSchemaRegistry,
+} from './types.ts';
+import { FlightDocumentRefusalReason } from './types.ts';
 
 describe('createFlightDocumentFromScene3D', () => {
   it('creates a model from an empty Scene3D', () => {

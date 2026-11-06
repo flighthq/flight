@@ -1,4 +1,4 @@
-import type { FlightDocumentRefusalReason } from '@flighthq/types/contract';
+import type { FlightDocumentRefusalReason } from './types.ts';
 
 type SceneDocumentYamlSubsetValue =
   | null

@@ -1,4 +1,7 @@
 import { getNodeChildren } from '@flighthq/node/contract';
+import type { NodeAny } from '@flighthq/types/contract';
+
+import { createSceneRefusal } from './sceneDocumentRefusal.ts';
 import type {
   FlightDocumentFields,
   FlightDocumentLayoutBinding,
@@ -7,11 +10,8 @@ import type {
   FlightDocumentNode,
   FlightDocumentRefusalExplanation,
   FlightDocumentValue,
-  NodeAny,
-} from '@flighthq/types/contract';
-import { FlightDocumentRefusalReason } from '@flighthq/types/contract';
-
-import { createSceneRefusal } from './sceneDocumentRefusal.ts';
+} from './types.ts';
+import { FlightDocumentRefusalReason } from './types.ts';
 
 export function checkFlightDocumentLayoutTargets(
   layouts: readonly Readonly<FlightDocumentLayoutDescriptor>[],

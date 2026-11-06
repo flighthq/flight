@@ -43,11 +43,13 @@
     "@flighthq/camera": "*",
     "@flighthq/entity": "*",
     "@flighthq/geometry": "*",
+    "@flighthq/layout": "*",
     "@flighthq/lighting": "*",
     "@flighthq/node": "*",
     "@flighthq/registry": "*",
     "@flighthq/scene2d": "*",
     "@flighthq/scene3d": "*",
+    "@flighthq/shape-formats": "*",
     "@flighthq/types": "*"
   },
   "devDependencies": {

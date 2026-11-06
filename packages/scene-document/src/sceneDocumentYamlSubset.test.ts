@@ -1,7 +1,7 @@
-import type { FlightDocumentRefusalReason } from '@flighthq/types/contract';
 import { expectTypeOf } from 'vitest';
 
 import { parseSceneDocumentYamlSubset } from './sceneDocumentYamlSubset.ts';
+import type { FlightDocumentRefusalReason } from './types.ts';
 
 describe('parseSceneDocumentYamlSubset', () => {
   it('types every emitted refusal as a subset of the public taxonomy', () => {

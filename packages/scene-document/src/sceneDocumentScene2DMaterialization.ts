@@ -2,28 +2,8 @@ import { allocateEntity, finishEntity, getEntityRuntime } from '@flighthq/entity
 import { getNodeRuntime } from '@flighthq/node/contract';
 import { addNodeChild, getNodeChildren } from '@flighthq/node/contract';
 import { createScene2D } from '@flighthq/scene2d/contract';
-import { FlightDocumentRefusalReason, Node2DFieldsKey, Node3DFieldsKey } from '@flighthq/types/contract';
-import type {
-  FlightDocument,
-  FlightDocumentFields,
-  FlightDocumentInteractiveStateBinding,
-  FlightDocumentLayoutBinding,
-  FlightDocumentNode,
-  FlightDocumentNodeSchema,
-  FlightDocumentRefusalExplanation,
-  FlightDocumentResourceDescriptor,
-  FlightDocumentResourceLookup,
-  FlightDocumentResourceResolverRegistry,
-  FlightDocumentScene2D,
-  FlightDocumentScene2DMaterialization,
-  FlightDocumentSchemaRegistry,
-  EntityConstruction,
-  Entity,
-  Node2D,
-  Node2DRuntime,
-  NodeAny,
-  Scene2D,
-} from '@flighthq/types/contract';
+import { Node2DFieldsKey, Node3DFieldsKey } from '@flighthq/types/contract';
+import type { EntityConstruction, Entity, Node2D, Node2DRuntime, NodeAny, Scene2D } from '@flighthq/types/contract';
 
 import { explainFlightDocumentText, parseFlightDocumentText } from './flightDocumentText.ts';
 import {
@@ -44,6 +24,22 @@ import {
   checkUnregisteredNodeKinds,
   createSceneRefusal,
 } from './sceneDocumentRefusal.ts';
+import { FlightDocumentRefusalReason } from './types.ts';
+import type {
+  FlightDocument,
+  FlightDocumentFields,
+  FlightDocumentInteractiveStateBinding,
+  FlightDocumentLayoutBinding,
+  FlightDocumentNode,
+  FlightDocumentNodeSchema,
+  FlightDocumentRefusalExplanation,
+  FlightDocumentResourceDescriptor,
+  FlightDocumentResourceLookup,
+  FlightDocumentResourceResolverRegistry,
+  FlightDocumentScene2D,
+  FlightDocumentScene2DMaterialization,
+  FlightDocumentSchemaRegistry,
+} from './types.ts';
 
 export function createFlightDocumentFromScene2D(
   source: Readonly<Scene2D>,

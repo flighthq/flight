@@ -1,6 +1,7 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type { EntityConstruction, NodeAny } from '@flighthq/types/contract';
+
 import type {
-  EntityConstruction,
   FlightDocumentFieldSchema,
   FlightDocumentFields,
   FlightDocumentInteractiveState,
@@ -8,9 +9,8 @@ import type {
   FlightDocumentRefusalExplanation,
   FlightDocumentRefusalReason as FlightDocumentRefusalReasonType,
   FlightDocumentSchemaRegistry,
-  NodeAny,
-} from '@flighthq/types/contract';
-import { FlightDocumentRefusalReason } from '@flighthq/types/contract';
+} from './types.ts';
+import { FlightDocumentRefusalReason } from './types.ts';
 
 export function checkFlightDocumentFields(
   fields: Readonly<FlightDocumentFields>,

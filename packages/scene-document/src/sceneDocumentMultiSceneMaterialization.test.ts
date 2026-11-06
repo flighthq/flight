@@ -3,17 +3,8 @@ import { createAmbientLight } from '@flighthq/lighting/contract';
 import { withKindMapEntry } from '@flighthq/registry/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
 import { createNode3D } from '@flighthq/scene3d/contract';
-import type {
-  FlightDocument,
-  FlightDocumentFields,
-  FlightDocumentNodeSchema,
-  FlightDocumentResourceLookup,
-  FlightDocumentResourceResolver,
-  FlightDocumentResourceResolverRegistry,
-  FlightDocumentSchemaRegistry,
-  NodeAny,
-} from '@flighthq/types/contract';
-import { DisplayObjectKind, FlightDocumentRefusalReason, Node3DKind } from '@flighthq/types/contract';
+import type { NodeAny } from '@flighthq/types/contract';
+import { DisplayObjectKind, Node3DKind } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { formatFlightDocumentText } from './flightDocumentText.ts';
@@ -28,6 +19,16 @@ import {
   createFlightDocumentScene3DMaterializationFromText,
   explainFlightDocumentScene3DRefusal,
 } from './sceneDocumentScene3DMaterialization.ts';
+import type {
+  FlightDocument,
+  FlightDocumentFields,
+  FlightDocumentNodeSchema,
+  FlightDocumentResourceLookup,
+  FlightDocumentResourceResolver,
+  FlightDocumentResourceResolverRegistry,
+  FlightDocumentSchemaRegistry,
+} from './types.ts';
+import { FlightDocumentRefusalReason } from './types.ts';
 
 const TestScene2DNodeKind = 'TestScene2DNode';
 const TestScene3DNodeKind = 'TestScene3DNode';

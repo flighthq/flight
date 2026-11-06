@@ -1,7 +1,6 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { withKindMapEntry } from '@flighthq/registry/contract';
 import type {
-  EntityConstruction,
   FlightDocumentRefusalExplanation,
   FlightDocumentScene,
   FlightDocumentToken,
@@ -9,9 +8,9 @@ import type {
   FlightDocumentTokenResolver,
   FlightDocumentTokenResolverRegistry,
   FlightDocumentValue,
-  Kind,
-} from '@flighthq/types/contract';
-import { FlightDocumentRefusalReason } from '@flighthq/types/contract';
+} from '@flighthq/scene-document/contract';
+import { FlightDocumentRefusalReason } from '@flighthq/scene-document/contract';
+import type { EntityConstruction, Kind } from '@flighthq/types/contract';
 
 import {
   INVALID_FLIGHT_DOCUMENT_TOKEN_VALUE,

@@ -1,8 +1,4 @@
-import type {
-  FlightDocument,
-  FlightDocumentResourceDescriptor,
-  FlightDocumentSchemaRegistry,
-} from '@flighthq/types/contract';
+import type { FlightDocument, FlightDocumentResourceDescriptor, FlightDocumentSchemaRegistry } from './types.ts';
 
 // The resource table is the document's direct dependency list. This query verifies that every declared
 // kind has an authored schema, but deliberately does not interpret fields as graph edges or resolve any

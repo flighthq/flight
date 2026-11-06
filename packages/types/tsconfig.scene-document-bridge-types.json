@@ -1,0 +1,15 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "composite": true,
+    "rootDir": "src",
+    "outDir": "dist",
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "moduleSuffixes": [".node-types", ""],
+    "tsBuildInfoFile": "dist/.tsbuildinfo.scene-document-bridge-types"
+  },
+  "references": [{ "path": "../node/tsconfig.contract.json" }],
+  "include": ["src/contract.scene-document-bridge-types.ts"]
+}

@@ -1,16 +1,15 @@
 import { getNodeChildren } from '@flighthq/node/contract';
 import { withKindMapEntry } from '@flighthq/registry/contract';
 import { createFlightDocumentScene2DMaterialization, parseFlightDocumentText } from '@flighthq/scene-document/contract';
-import { createDisplayObject, createSprite } from '@flighthq/scene2d/contract';
 import type {
   FlightDocument,
   FlightDocumentFields,
   FlightDocumentNodeSchema,
   FlightDocumentScene2D,
   FlightDocumentSchemaRegistry,
-  Node2D,
-  NodeAny,
-} from '@flighthq/types/contract';
+} from '@flighthq/scene-document/contract';
+import { createDisplayObject, createSprite } from '@flighthq/scene2d/contract';
+import type { Node2D, NodeAny } from '@flighthq/types/contract';
 import { DisplayObjectKind, SpriteKind } from '@flighthq/types/contract';
 
 import {

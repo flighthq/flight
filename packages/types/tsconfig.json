@@ -9,6 +9,7 @@
     "sourceMap": true,
     "moduleSuffixes": [
       ".meshgeometry-types",
+      ".scene-document-types",
       ".scene3d-types",
       ".scene3d-formats-types",
       ".gui-types",
@@ -234,6 +235,9 @@
     },
     {
       "path": "../resource"
+    },
+    {
+      "path": "../scene-document/tsconfig.contract.json"
     },
     {
       "path": "../scene2d-dom/tsconfig.contract.json"

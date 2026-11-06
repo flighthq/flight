@@ -1,11 +1,6 @@
 import { withKindMapEntry } from '@flighthq/registry/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
-import type {
-  FlightDocumentInteractiveStateBinding,
-  FlightDocumentNode,
-  FlightDocumentSchemaRegistry,
-  NodeAny,
-} from '@flighthq/types/contract';
+import type { NodeAny } from '@flighthq/types/contract';
 
 import {
   assertAllInteractiveStateBindingsUsed,
@@ -13,6 +8,11 @@ import {
   isInteractiveStateBindingTargetSupported,
   readInteractiveStateBindingMetadata,
 } from './sceneDocumentInteractiveStateBindings.ts';
+import type {
+  FlightDocumentInteractiveStateBinding,
+  FlightDocumentNode,
+  FlightDocumentSchemaRegistry,
+} from './types.ts';
 
 describe('assertAllInteractiveStateBindingsUsed', () => {
   it('rejects a lookup containing a foreign scene node', () => {

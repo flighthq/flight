@@ -7,11 +7,13 @@
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,
+    "moduleSuffixes": [".scene-document-types", ""],
     "tsBuildInfoFile": "dist/.tsbuildinfo.runtime"
   },
   "references": [
     { "path": "../interaction/tsconfig.runtime.json" },
     { "path": "../node/tsconfig.runtime.json" },
+    { "path": "../scene-document/tsconfig.contract.json" },
     { "path": "../signals" },
     { "path": "../text/tsconfig.runtime.json" },
     { "path": "../textinput/tsconfig.runtime.json" },

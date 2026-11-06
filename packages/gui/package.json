@@ -52,6 +52,7 @@
     "@flighthq/types": "*"
   },
   "devDependencies": {
+    "@flighthq/scene-document": "*",
     "typescript": "^7.0.2"
   },
   "description": "Controller-only behavior for caller-authored 2D interface visuals",
