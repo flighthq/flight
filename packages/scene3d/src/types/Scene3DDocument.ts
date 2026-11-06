@@ -1,4 +1,5 @@
 import type { AnimationTrack } from '@flighthq/animation/contract';
+import type { Projection } from '@flighthq/camera/contract';
 import type { Kind } from '@flighthq/entity/contract';
 import type { Matrix4Like, Transform3D } from '@flighthq/geometry/contract';
 import type { ImageResourceReference } from '@flighthq/image/contract';
@@ -6,7 +7,6 @@ import type { Light } from '@flighthq/lighting/contract';
 import type { MaterialLike } from '@flighthq/materials/contract';
 import type { MeshGeometry } from '@flighthq/meshgeometry/contract';
 import type { MeshMorph } from '@flighthq/meshgeometry/contract';
-import type { Projection } from '@flighthq/types/contract';
 
 import type { Scene3DAnimationPath } from './Scene3DAnimationPath.ts';
 import type { Scene3DMetadata } from './Scene3DMetadata.ts';

@@ -1,6 +1,7 @@
 import { createCamera3D, createPerspectiveProjection } from '@flighthq/camera/contract';
+import type { Camera3D } from '@flighthq/camera/contract';
 import type { Environment } from '@flighthq/lighting/contract';
-import type { Camera3D, ImageResource, Texture } from '@flighthq/types/contract';
+import type { ImageResource, Texture } from '@flighthq/types/contract';
 import { ImageTextureSourceKind } from '@flighthq/types/contract';
 
 import { renderWgpuEnvironmentSkybox } from './wgpuEnvironmentSkybox.ts';

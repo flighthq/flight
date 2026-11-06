@@ -1,5 +1,5 @@
 import { createMatrix4, createPlane } from '@flighthq/geometry/contract';
-import type { Vector3Like } from '@flighthq/types/contract';
+import type { Vector3Like } from '@flighthq/geometry/contract';
 import { describe, expect, it } from 'vitest';
 
 import { getCamera3DForward, getCamera3DPosition } from './basis.ts';

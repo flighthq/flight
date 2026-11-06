@@ -1,3 +1,4 @@
+import type { Camera3D } from '@flighthq/camera/contract';
 import type { LinearColorRaw } from '@flighthq/color/contract';
 import { allocateLinearColor, packLinearChannelsToColor, unpackColorToLinear } from '@flighthq/color/contract';
 import type { Scene3DLightBlock } from '@flighthq/lighting/contract';
@@ -9,7 +10,6 @@ import {
 } from '@flighthq/render-wgpu/contract';
 import type { Scene3DRenderProxy } from '@flighthq/render/contract';
 import type {
-  Camera3D,
   Material,
   SpecularGlossinessPbrMaterial,
   StandardPbrMaterialProperties,

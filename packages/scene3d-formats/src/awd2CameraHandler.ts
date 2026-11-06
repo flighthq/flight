@@ -1,8 +1,9 @@
 import { createOrthographicProjection, createPerspectiveProjection } from '@flighthq/camera/contract';
+import type { Projection } from '@flighthq/camera/contract';
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import { DEG_TO_RAD } from '@flighthq/math/contract';
 import type { Scene3DDocument } from '@flighthq/scene3d/contract';
-import type { ImportDiagnostic, Projection } from '@flighthq/types/contract';
+import type { ImportDiagnostic } from '@flighthq/types/contract';
 import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
 import {

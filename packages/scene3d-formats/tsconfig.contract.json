@@ -8,6 +8,7 @@
     "declarationMap": true,
     "sourceMap": true,
     "moduleSuffixes": [
+      ".camera-types",
       ".geometry-types",
       ".materials-types",
       ".meshgeometry-types",
@@ -18,6 +19,9 @@
     "tsBuildInfoFile": "dist/.tsbuildinfo.contract"
   },
   "references": [
+    {
+      "path": "../camera/tsconfig.contract.json"
+    },
     {
       "path": "../compression"
     },

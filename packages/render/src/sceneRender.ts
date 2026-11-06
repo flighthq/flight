@@ -1,4 +1,5 @@
 import { applyObliqueNearClipPlane } from '@flighthq/camera/contract';
+import type { Camera3D } from '@flighthq/camera/contract';
 import type { LinearColorRaw } from '@flighthq/color/contract';
 import { allocateLinearColor, unpackColorToLinear } from '@flighthq/color/contract';
 import {
@@ -27,7 +28,6 @@ import type { Node3D } from '@flighthq/scene3d/contract';
 import type {
   Aabb,
   AmbientLight,
-  Camera3D,
   DirectionalLight,
   Frustum,
   HemisphereLight,

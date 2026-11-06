@@ -3,11 +3,12 @@ import {
   createPerspectiveProjection,
   setCamera3DViewMatrix4FromMatrix4,
 } from '@flighthq/camera/contract';
+import type { Camera3D } from '@flighthq/camera/contract';
 import { createMatrix4, createMatrix4FromValues } from '@flighthq/geometry/contract';
 import type { LogState } from '@flighthq/log/contract';
 import { createLogState, setLogSink } from '@flighthq/log/contract';
 import { createPlaneMeshGeometry } from '@flighthq/meshgeometry/contract';
-import type { Camera3D, LogEntry } from '@flighthq/types/contract';
+import type { LogEntry } from '@flighthq/types/contract';
 import { afterEach, describe, expect, test } from 'vitest';
 
 import { createBillboard } from './billboard.ts';

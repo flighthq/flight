@@ -1,4 +1,5 @@
 import { createCamera3D, setCamera3DViewMatrix4FromMatrix4 } from '@flighthq/camera/contract';
+import type { Camera3D } from '@flighthq/camera/contract';
 import { allocateEntity, finishEntity, getEntityRuntime } from '@flighthq/entity/contract';
 import {
   acquireMatrix4,
@@ -15,7 +16,6 @@ import { createScene3D, createScene3DLightsFromDocument } from '@flighthq/scene3
 import type { Node3D } from '@flighthq/scene3d/contract';
 import { Node3DFieldsKey } from '@flighthq/scene3d/contract';
 import type {
-  Camera3D,
   Entity,
   NodeAny,
   Scene3D,

@@ -42,6 +42,7 @@
   "dependencies": {
     "@flighthq/adjustments": "*",
     "@flighthq/animation": "*",
+    "@flighthq/camera": "*",
     "@flighthq/entity": "*",
     "@flighthq/geometry": "*",
     "@flighthq/image": "*",
@@ -54,7 +55,6 @@
     "@flighthq/types": "*"
   },
   "devDependencies": {
-    "@flighthq/camera": "*",
     "@flighthq/scene2d": "*",
     "@flighthq/shading": "*",
     "@flighthq/texture": "*",

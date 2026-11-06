@@ -1,4 +1,5 @@
 import { getCamera3DScreenToWorldRay } from '@flighthq/camera/contract';
+import type { Camera3D } from '@flighthq/camera/contract';
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import {
   createAabb,
@@ -21,7 +22,6 @@ import { ensureNodeWorldMatrix4, getNodeRuntime, getNodeWorldMatrix4 } from '@fl
 import { getNode3DWorldBounds, isMesh } from '@flighthq/scene3d/contract';
 import type { Node3D } from '@flighthq/scene3d/contract';
 import type {
-  Camera3D,
   EntityConstruction,
   NodeAny,
   Ray3D,

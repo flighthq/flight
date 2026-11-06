@@ -8,6 +8,7 @@
     "declarationMap": true,
     "sourceMap": true,
     "moduleSuffixes": [
+      ".camera-types",
       ".meshgeometry-types",
       ".scene3d-bridge-types",
       ".geometry-types",
@@ -23,6 +24,9 @@
     "tsBuildInfoFile": "dist/.tsbuildinfo.contract"
   },
   "references": [
+    {
+      "path": "../camera/tsconfig.contract.json"
+    },
     {
       "path": "../animation"
     },

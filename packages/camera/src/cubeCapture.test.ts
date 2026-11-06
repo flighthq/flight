@@ -1,4 +1,4 @@
-import type { Vector3Like } from '@flighthq/types/contract';
+import type { Vector3Like } from '@flighthq/geometry/contract';
 import {
   CubeFaceNegativeX,
   CubeFaceNegativeY,
@@ -6,7 +6,7 @@ import {
   CubeFacePositiveX,
   CubeFacePositiveY,
   CubeFacePositiveZ,
-} from '@flighthq/types/contract';
+} from '@flighthq/texture/contract';
 import { describe, expect, it } from 'vitest';
 
 import { getCamera3DPosition } from './basis.ts';

@@ -1,4 +1,5 @@
 import { getCamera3DViewProjectionMatrix4, getOrthographicProjectionTexelSize } from '@flighthq/camera/contract';
+import type { Camera3D } from '@flighthq/camera/contract';
 import { createMatrix4 } from '@flighthq/geometry/contract';
 import type { DirectionalLight } from '@flighthq/lighting/contract';
 import { DIRECTIONAL_SHADOW_MAP_SIZE, MAX_DIRECTIONAL_SHADOW_PCF_RADIUS } from '@flighthq/lighting/contract';
@@ -7,7 +8,7 @@ import type { InstancedMesh, Mesh } from '@flighthq/meshgeometry/contract';
 import { forEachNodeDescendant, getNodeWorldMatrix4 } from '@flighthq/node/contract';
 import { createGlTextureRenderTarget } from '@flighthq/render-gl/contract';
 import type { Node3D, Node3DFields } from '@flighthq/scene3d/contract';
-import type { GlContext, Camera3D, GlRenderState } from '@flighthq/types/contract';
+import type { GlContext, GlRenderState } from '@flighthq/types/contract';
 
 import type { GlMeshProgram } from './contract.scene3d-gl-types.ts';
 import {

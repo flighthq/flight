@@ -1,4 +1,5 @@
 import { getCamera3DViewProjectionMatrix4, getOrthographicProjectionTexelSize } from '@flighthq/camera/contract';
+import type { Camera3D } from '@flighthq/camera/contract';
 import { createMatrix3, createMatrix4, multiplyMatrix4 } from '@flighthq/geometry/contract';
 import type { DirectionalLight } from '@flighthq/lighting/contract';
 import { DIRECTIONAL_SHADOW_MAP_SIZE, MAX_DIRECTIONAL_SHADOW_PCF_RADIUS } from '@flighthq/lighting/contract';
@@ -7,7 +8,7 @@ import { forEachNodeDescendant, getNodeWorldMatrix4 } from '@flighthq/node/contr
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
 import type { Scene3DRenderProxy } from '@flighthq/render/contract';
 import type { Node3D, Node3DFields } from '@flighthq/scene3d/contract';
-import type { Camera3D, Material3D, Matrix3, Matrix4, WgpuRenderState } from '@flighthq/types/contract';
+import type { Material3D, Matrix3, Matrix4, WgpuRenderState } from '@flighthq/types/contract';
 import { BlendMode, StandardMaterialKind } from '@flighthq/types/contract';
 
 import {

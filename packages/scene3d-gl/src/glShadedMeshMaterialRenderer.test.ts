@@ -1,10 +1,10 @@
 import { createCamera3D, createPerspectiveProjection } from '@flighthq/camera/contract';
+import type { Camera3D } from '@flighthq/camera/contract';
 import { createMatrix3, createMatrix4 } from '@flighthq/geometry/contract';
 import type { Scene3DLightBlock } from '@flighthq/lighting/contract';
 import { createBoxMeshGeometry } from '@flighthq/meshgeometry/contract';
 import type { Scene3DRenderProxy } from '@flighthq/render/contract';
 import { createEmissiveModifier, createRimModifier, createShadedMaterial } from '@flighthq/shading/contract';
-import type { Camera3D } from '@flighthq/types/contract';
 import { ShadedMaterialKind } from '@flighthq/types/contract';
 
 import { getGlMeshMaterialRenderer } from './glMeshMaterialRegistry.ts';

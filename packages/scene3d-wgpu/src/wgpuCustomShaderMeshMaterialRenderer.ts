@@ -1,3 +1,4 @@
+import type { Camera3D } from '@flighthq/camera/contract';
 import type { Scene3DLightBlock } from '@flighthq/lighting/contract';
 import type { MeshGeometry } from '@flighthq/meshgeometry/contract';
 import { withKindMapEntry } from '@flighthq/registry/contract';
@@ -8,7 +9,6 @@ import {
 } from '@flighthq/render-wgpu/contract';
 import type { Scene3DRenderProxy } from '@flighthq/render/contract';
 import type {
-  Camera3D,
   CustomShaderMaterial,
   Material,
   WgpuCustomMaterialShaderSource,

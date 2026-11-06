@@ -1,3 +1,4 @@
+import type { Camera3D } from '@flighthq/camera/contract';
 import type { Scene3DLightsLike } from '@flighthq/lighting/contract';
 import { getNodeRuntime, getNodeWorldMatrix4 } from '@flighthq/node/contract';
 import type { ParticleBlendMode } from '@flighthq/particles/contract';
@@ -14,7 +15,6 @@ import { getTextureHeight, getTextureWidth, hasTextureSource } from '@flighthq/t
 import { TextureAtlasRotation } from '@flighthq/textureatlas/contract';
 import type {
   GlContext,
-  Camera3D,
   GlRenderState,
   Matrix4,
   NodeAny,

@@ -1,7 +1,8 @@
 import { updateCamera3DInverseViewProjection } from '@flighthq/camera/contract';
+import type { Camera3D } from '@flighthq/camera/contract';
 import type { Environment } from '@flighthq/lighting/contract';
 import { createGlProgram } from '@flighthq/render-gl/contract';
-import type { GlContext, Camera3D, GlRenderState } from '@flighthq/types/contract';
+import type { GlContext, GlRenderState } from '@flighthq/types/contract';
 
 import { ensureGlEnvironmentSourceCube } from './glEnvironmentCube.ts';
 import { addGlScene3DResourceCleanup } from './glScene3DRuntime.ts';

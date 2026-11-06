@@ -1,3 +1,4 @@
+import type { Camera3D } from '@flighthq/camera/contract';
 import {
   copyMatrix4,
   createMatrix4,
@@ -8,7 +9,7 @@ import {
   multiplyMatrix4,
 } from '@flighthq/geometry/contract';
 import { getNodeParent, getNodeWorldMatrix4, setNodeLocalMatrix4 } from '@flighthq/node/contract';
-import type { Billboard, BillboardMode, Camera3D, Matrix4 } from '@flighthq/types/contract';
+import type { Billboard, BillboardMode, Matrix4 } from '@flighthq/types/contract';
 
 import { isBillboard } from './billboard.ts';
 import { getNode3DRuntime } from './sceneNode.ts';

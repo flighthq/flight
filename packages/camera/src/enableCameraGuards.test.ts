@@ -1,7 +1,8 @@
+import type { Camera2D } from '@flighthq/camera/contract';
 import { createMatrix4, createMatrix4FromValues, createRectangle } from '@flighthq/geometry/contract';
 import type { LogState } from '@flighthq/log/contract';
 import { clearLogOnceKeys, createLogState, getMemoryLogSinkEntries, setLogSink } from '@flighthq/log/contract';
-import type { Camera2D, LogEntry, MemoryLogSink } from '@flighthq/types/contract';
+import type { LogEntry, MemoryLogSink } from '@flighthq/log/contract';
 import { afterEach, beforeEach, describe, expect, test } from 'vitest';
 
 import { createCamera3D, setCamera3DViewMatrix4FromMatrix4 } from './camera.ts';

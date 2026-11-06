@@ -4,7 +4,7 @@
     { "path": "../entity" },
     { "path": "../geometry/tsconfig.runtime.json" },
     { "path": "../log" },
-    { "path": "../types" },
+    { "path": "../texture/tsconfig.contract.json" },
     { "path": "./tsconfig.contract.json" },
     { "path": "./tsconfig.runtime.json" }
   ]

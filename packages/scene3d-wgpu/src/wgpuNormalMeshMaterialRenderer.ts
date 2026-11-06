@@ -1,3 +1,4 @@
+import type { Camera3D } from '@flighthq/camera/contract';
 import type { Scene3DLightBlock } from '@flighthq/lighting/contract';
 import type { MeshGeometry } from '@flighthq/meshgeometry/contract';
 import {
@@ -6,13 +7,7 @@ import {
   registerWgpuImageTextureResolver,
 } from '@flighthq/render-wgpu/contract';
 import type { Scene3DRenderProxy } from '@flighthq/render/contract';
-import type {
-  Camera3D,
-  Material,
-  NormalMaterial,
-  WgpuMeshMaterialRenderer,
-  WgpuRenderState,
-} from '@flighthq/types/contract';
+import type { Material, NormalMaterial, WgpuMeshMaterialRenderer, WgpuRenderState } from '@flighthq/types/contract';
 import { NormalMaterialKind } from '@flighthq/types/contract';
 
 import { bindWgpuDebugSurface, ensureWgpuDebugPipeline } from './wgpuDebugPrelude.ts';

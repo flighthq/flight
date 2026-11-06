@@ -1,4 +1,5 @@
 import { projectCamera2DPoint, unprojectCamera2DPoint } from '@flighthq/camera/contract';
+import type { Camera2D } from '@flighthq/camera/contract';
 import { createRectangle, createVector2 } from '@flighthq/geometry/contract';
 import {
   enableInteractionSignals,
@@ -31,7 +32,6 @@ import {
 import type { Shape } from '@flighthq/shape/contract';
 import { connectSignal, createSignal, disconnectSignal, emitSignal } from '@flighthq/signals/contract';
 import type {
-  Camera2D,
   EntityRuntime,
   GizmoCreateOptions,
   GizmoHandleKind,

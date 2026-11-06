@@ -1,17 +1,11 @@
+import type { Camera3D } from '@flighthq/camera/contract';
 import type { Scene3DLightBlock } from '@flighthq/lighting/contract';
 import type { MeshGeometry } from '@flighthq/meshgeometry/contract';
 import { withKindMapEntry } from '@flighthq/registry/contract';
 import { getGlRenderStateRuntime, resolveGlTexture } from '@flighthq/render-gl/contract';
 import type { GlCustomMaterialShaderSource, GlMeshMaterialRenderer } from '@flighthq/render-gl/contract';
 import type { Scene3DRenderProxy } from '@flighthq/render/contract';
-import type {
-  GlContext,
-  Camera3D,
-  CustomShaderMaterial,
-  GlRenderState,
-  Material,
-  Texture,
-} from '@flighthq/types/contract';
+import type { GlContext, CustomShaderMaterial, GlRenderState, Material, Texture } from '@flighthq/types/contract';
 import { CustomShaderMaterialKind } from '@flighthq/types/contract';
 
 import type { GlMeshProgram } from './contract.scene3d-gl-types.ts';

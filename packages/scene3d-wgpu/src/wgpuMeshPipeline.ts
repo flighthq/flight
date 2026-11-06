@@ -1,4 +1,5 @@
 import { getCamera3DPosition, getCamera3DViewProjectionMatrix4 } from '@flighthq/camera/contract';
+import type { Camera3D } from '@flighthq/camera/contract';
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { createMatrix3, createMatrix4 } from '@flighthq/geometry/contract';
 import type { Scene3DLightBlock } from '@flighthq/lighting/contract';
@@ -23,7 +24,6 @@ import {
 import type { Scene3DRenderProxy } from '@flighthq/render/contract';
 import { getTextureUvMatrix, hasTextureSource, hasTextureUvTransform } from '@flighthq/texture/contract';
 import type {
-  Camera3D,
   EntityConstruction,
   Material,
   Material3D,

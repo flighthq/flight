@@ -1,11 +1,11 @@
 import { createCamera3D, createPerspectiveProjection } from '@flighthq/camera/contract';
+import type { Camera3D } from '@flighthq/camera/contract';
 import type { Scene3DLightBlock } from '@flighthq/lighting/contract';
 import {
   createAnisotropyPbrExtension,
   createClearcoatPbrExtension,
   createExtendedPbrMaterial,
 } from '@flighthq/materials/contract';
-import type { Camera3D } from '@flighthq/types/contract';
 import { ExtendedPbrMaterialKind } from '@flighthq/types/contract';
 
 import { registerGlAnisotropyPbrExtension } from './anisotropyPbrGlExtension.ts';

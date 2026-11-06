@@ -1,4 +1,5 @@
 import { createCamera3D, createPerspectiveProjection } from '@flighthq/camera/contract';
+import type { Camera3D } from '@flighthq/camera/contract';
 import type { Scene3DLightBlock } from '@flighthq/lighting/contract';
 import {
   addLogSink,
@@ -8,7 +9,7 @@ import {
   removeLogSink,
 } from '@flighthq/log/contract';
 import { createCustomShaderMaterial } from '@flighthq/materials/contract';
-import type { Camera3D, LogEntry, MemoryLogSink } from '@flighthq/types/contract';
+import type { LogEntry, MemoryLogSink } from '@flighthq/types/contract';
 
 import {
   areGlScene3DCustomShaderGuardsEnabled,

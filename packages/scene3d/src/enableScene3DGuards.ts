@@ -1,6 +1,6 @@
+import type { Camera3D } from '@flighthq/camera/contract';
 import type { LogState } from '@flighthq/log/contract';
 import { logOnce } from '@flighthq/log/contract';
-import type { Camera3D } from '@flighthq/types/contract';
 import { LogLevel } from '@flighthq/types/contract';
 
 import { setBillboardCameraBasisGuard } from './billboardCamera.ts';

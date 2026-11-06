@@ -4,6 +4,7 @@ import {
   createPerspectiveProjection,
   setCamera3DViewMatrix4FromLookAt,
 } from '@flighthq/camera/contract';
+import type { Camera3D } from '@flighthq/camera/contract';
 import {
   copyQuaternion,
   createMatrix4,
@@ -14,7 +15,6 @@ import {
 } from '@flighthq/geometry/contract';
 import { createPlaneMeshGeometry } from '@flighthq/meshgeometry/contract';
 import { addNodeChild, getNodeWorldMatrix4, invalidateNodeLocalTransform } from '@flighthq/node/contract';
-import type { Camera3D } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { createBillboard } from './billboard.ts';

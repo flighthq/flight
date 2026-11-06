@@ -3,6 +3,7 @@ import {
   createPerspectiveProjection,
   setCamera3DViewMatrix4FromLookAt,
 } from '@flighthq/camera/contract';
+import type { Camera3D } from '@flighthq/camera/contract';
 import { allocateLinearColor, unpackColorToLinear } from '@flighthq/color/contract';
 import { createAabb, createMatrix4 } from '@flighthq/geometry/contract';
 import {
@@ -35,7 +36,7 @@ import {
   setInstancedMeshInstanceMatrix,
 } from '@flighthq/scene3d/contract';
 import type { Skin } from '@flighthq/scene3d/contract';
-import type { Matrix4, Camera3D, Material3D, Scene3DLightBlock, Scene3DLightsLike } from '@flighthq/types/contract';
+import type { Matrix4, Material3D, Scene3DLightBlock, Scene3DLightsLike } from '@flighthq/types/contract';
 import {
   SCENE_LIGHT_BLOCK_FLOATS,
   SCENE_LIGHT_HEMISPHERE_OFFSET,

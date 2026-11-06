@@ -1,6 +1,6 @@
+import type { Camera2D } from '@flighthq/camera/contract';
 import type { Signal } from '@flighthq/signals/contract';
 
-import type { Camera2D } from './Camera2D.ts';
 import type { Entity } from './Entity.ts';
 import type { HierarchyNodeAny } from './HierarchyNode.ts';
 import type { Rectangle } from './Rectangle.ts';

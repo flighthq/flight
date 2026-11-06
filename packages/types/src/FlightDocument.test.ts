@@ -1,6 +1,6 @@
+import type { Camera3D, Projection } from '@flighthq/camera/contract';
 import type { Node3D } from '@flighthq/scene3d/contract';
 
-import type { Camera3D, Projection } from './Camera3D.ts';
 import type { Entity } from './Entity.ts';
 import type {
   FlightDocument,

@@ -1,4 +1,5 @@
 import { createCamera3D, createPerspectiveProjection } from '@flighthq/camera/contract';
+import type { Camera3D } from '@flighthq/camera/contract';
 import { createMatrix4, setVector3 } from '@flighthq/geometry/contract';
 import {
   createImageResource,
@@ -16,7 +17,7 @@ import {
 import { createNode3D, Node3DKind } from '@flighthq/scene3d/contract';
 import { createTexture } from '@flighthq/texture/contract';
 import { TextureAtlasRotation } from '@flighthq/textureatlas/contract';
-import type { Camera3D, ParticleEmitter3D, TextureAtlas, TextureAtlasRegion } from '@flighthq/types/contract';
+import type { ParticleEmitter3D, TextureAtlas, TextureAtlasRegion } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import {
