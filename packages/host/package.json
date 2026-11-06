@@ -51,6 +51,7 @@
     "@flighthq/log": "*",
     "@flighthq/midi": "*",
     "@flighthq/notification": "*",
+    "@flighthq/protocol": "*",
     "@flighthq/screen": "*",
     "@flighthq/share": "*",
     "@flighthq/types": "*"

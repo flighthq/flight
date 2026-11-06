@@ -59,6 +59,7 @@
       ".textshaper-types",
       ".velocity-types",
       ".texture-formats-types",
+      ".protocol-types",
       ""
     ],
     "types": ["@testing-library/jest-dom", "vitest/globals", "@webgpu/types"]
@@ -285,6 +286,9 @@
     },
     {
       "path": "../keyboard/tsconfig.contract.json"
+    },
+    {
+      "path": "../protocol/tsconfig.contract.json"
     }
   ],
   "include": ["src"]

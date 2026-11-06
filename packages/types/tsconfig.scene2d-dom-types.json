@@ -31,6 +31,7 @@
       ".permissions-types",
       ".screen-types",
       ".texture-formats-types",
+      ".protocol-types",
       ""
     ],
     "tsBuildInfoFile": "dist/.tsbuildinfo.scene2d-dom-types"
@@ -137,6 +138,9 @@
     },
     {
       "path": "../texture-formats/tsconfig.contract.json"
+    },
+    {
+      "path": "../protocol/tsconfig.contract.json"
     }
   ],
   "files": [

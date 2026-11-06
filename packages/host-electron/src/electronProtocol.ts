@@ -1,12 +1,11 @@
 import type {
-  ElectronApi,
-  ElectronProtocolCapabilities,
   HostProtocolDefaultCapability,
   HostProtocolOpenCapability,
   HostProtocolRegistrationCapability,
   HostProtocolRegistrationQueryCapability,
   HostProtocolUnregistrationCapability,
-} from '@flighthq/types/contract';
+} from '@flighthq/protocol/contract';
+import type { ElectronApi, ElectronProtocolCapabilities } from '@flighthq/types/contract';
 
 function protocolDefault(electron: ElectronApi, registered: Set<string>): HostProtocolDefaultCapability {
   const out = {} as HostProtocolDefaultCapability;

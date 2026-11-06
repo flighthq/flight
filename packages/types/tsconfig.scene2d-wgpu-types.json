@@ -38,6 +38,7 @@
       ".notification-types",
       ".permissions-types",
       ".screen-types",
+      ".protocol-types",
       ""
     ],
     "types": ["@webgpu/types"],
@@ -157,6 +158,9 @@
     },
     {
       "path": "../share"
+    },
+    {
+      "path": "../protocol/tsconfig.contract.json"
     }
   ],
   "files": [

@@ -1,9 +1,6 @@
-import type {
-  HostProtocolCapabilities,
-  HostProtocolLaunchCapability,
-  HostProtocolRegistrationCapability,
-  NonEntityCreateResult,
-} from '@flighthq/types/contract';
+import type { HostProtocolCapabilities } from '@flighthq/host/contract';
+import type { HostProtocolLaunchCapability, HostProtocolRegistrationCapability } from '@flighthq/protocol/contract';
+import type { NonEntityCreateResult } from '@flighthq/types/contract';
 
 // A capability GROUP: host dispatch infrastructure, not a domain object Flight defines and allocates,
 // so it is plain data formed as a literal — no Entity, no runtime tier, no allocate/finish bracket.

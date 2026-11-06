@@ -84,7 +84,7 @@
       "path": "../preferences/tsconfig.runtime.json"
     },
     {
-      "path": "../protocol"
+      "path": "../protocol/tsconfig.runtime.json"
     },
     {
       "path": "../render"

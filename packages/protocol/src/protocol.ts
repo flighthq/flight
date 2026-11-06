@@ -1,7 +1,8 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
 import { clearSignal, createSignal, emitSignal } from '@flighthq/signals/contract';
+
 import type {
-  EntityConstruction,
   HostProtocolDefaultCapability,
   HostProtocolLaunchCapability,
   HostProtocolOpenCapability,
@@ -10,7 +11,7 @@ import type {
   HostProtocolUnregistrationCapability,
   ParsedProtocolUrl,
   ProtocolHandler,
-} from '@flighthq/types/contract';
+} from './types.ts';
 
 export function attachProtocolHandler(
   hostProtocolOpen: Readonly<HostProtocolOpenCapability>,

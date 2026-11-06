@@ -27,6 +27,7 @@ export type {
   HostImageCapabilities,
   HostMidiCapabilities,
   HostNotificationCapabilities,
+  HostProtocolCapabilities,
   HostShareCapabilities,
   WebScreenCapabilities,
   HostImageSource,

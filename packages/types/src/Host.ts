@@ -14,6 +14,7 @@ import type {
   HostImageCapabilities,
   HostMidiCapabilities,
   HostNotificationCapabilities,
+  HostProtocolCapabilities,
   HostShareCapabilities,
 } from '@flighthq/host/contract';
 import type { HostInputCapabilities } from '@flighthq/input/contract';
@@ -67,14 +68,6 @@ import type {
 import type { HostMediaSessionActionCapability, HostMediaSessionCapability } from './MediaSession.ts';
 import type { HostPermissionsCapability } from './Permission.ts';
 import type { HostPlatformCapability } from './Platform.ts';
-import type {
-  HostProtocolDefaultCapability,
-  HostProtocolLaunchCapability,
-  HostProtocolOpenCapability,
-  HostProtocolRegistrationCapability,
-  HostProtocolRegistrationQueryCapability,
-  HostProtocolUnregistrationCapability,
-} from './Protocol.ts';
 import type { HostShortcutQueryCapability, HostShortcutTriggerCapability } from './Shortcut.ts';
 import type { HostTextSegmenterCapability } from './TextSegment.ts';
 import type { HostTextShaperCapability } from './TextShaper.ts';
@@ -195,15 +188,6 @@ export interface HostPlatformCapabilities {
   readonly info?: HostPlatformCapability;
 }
 
-export interface HostProtocolCapabilities {
-  readonly default?: HostProtocolDefaultCapability;
-  readonly launch?: HostProtocolLaunchCapability;
-  readonly open?: HostProtocolOpenCapability;
-  readonly registration?: HostProtocolRegistrationCapability;
-  readonly registrationQuery?: HostProtocolRegistrationQueryCapability;
-  readonly unregistration?: HostProtocolUnregistrationCapability;
-}
-
 export interface HostShortcutCapabilities {
   readonly query?: HostShortcutQueryCapability;
   readonly trigger?: HostShortcutTriggerCapability;
@@ -257,6 +241,7 @@ export type { HostWgpuCapabilities } from '@flighthq/render-wgpu/contract';
 
 /** @deprecated Import from `@flighthq/host/contract`. */
 export type {
+  HostProtocolCapabilities,
   HostBitmapCapabilities,
   HostCompressCapabilities,
   HostDecompressCapabilities,

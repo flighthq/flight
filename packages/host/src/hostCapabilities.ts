@@ -38,6 +38,14 @@ import type {
   HostNotificationReplyCapability,
   HostNotificationSchedulingCapability,
 } from '@flighthq/notification/contract';
+import type {
+  HostProtocolDefaultCapability,
+  HostProtocolLaunchCapability,
+  HostProtocolOpenCapability,
+  HostProtocolRegistrationCapability,
+  HostProtocolRegistrationQueryCapability,
+  HostProtocolUnregistrationCapability,
+} from '@flighthq/protocol/contract';
 import type { HostScreenCapabilities } from '@flighthq/screen/contract';
 import type { HostShareContentCapability, HostShareFilesCapability } from '@flighthq/share/contract';
 
@@ -122,3 +130,12 @@ export interface HostShareCapabilities {
 }
 
 export type WebScreenCapabilities = Required<HostScreenCapabilities>;
+
+export interface HostProtocolCapabilities {
+  readonly default?: HostProtocolDefaultCapability;
+  readonly launch?: HostProtocolLaunchCapability;
+  readonly open?: HostProtocolOpenCapability;
+  readonly registration?: HostProtocolRegistrationCapability;
+  readonly registrationQuery?: HostProtocolRegistrationQueryCapability;
+  readonly unregistration?: HostProtocolUnregistrationCapability;
+}

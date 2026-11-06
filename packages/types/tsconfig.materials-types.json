@@ -41,6 +41,7 @@
       ".image-types",
       ".screen-types",
       ".texture-formats-types",
+      ".protocol-types",
       ""
     ],
     "tsBuildInfoFile": "dist/.tsbuildinfo.materials-types"
@@ -114,6 +115,9 @@
     },
     {
       "path": "../texture-formats/tsconfig.contract.json"
+    },
+    {
+      "path": "../protocol/tsconfig.contract.json"
     }
   ],
   "files": [

@@ -23,6 +23,7 @@
       ".surface-types",
       ".texture-formats-types",
       ".texture-types",
+      ".protocol-types",
       ""
     ]
   },
@@ -74,6 +75,9 @@
     },
     {
       "path": "../permissions/tsconfig.contract.json"
+    },
+    {
+      "path": "../protocol/tsconfig.contract.json"
     },
     {
       "path": "../resource"

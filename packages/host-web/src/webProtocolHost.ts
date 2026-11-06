@@ -1,4 +1,4 @@
-import type { HostProtocolCapabilities } from '@flighthq/types/contract';
+import type { HostProtocolCapabilities } from '@flighthq/host/contract';
 
 import { webHostProtocolLaunch, webHostProtocolRegistration } from './webProtocol.ts';
 

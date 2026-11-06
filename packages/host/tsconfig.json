@@ -44,6 +44,9 @@
       "path": "../share"
     },
     {
+      "path": "../protocol/tsconfig.contract.json"
+    },
+    {
       "path": "./tsconfig.contract.json"
     },
     {

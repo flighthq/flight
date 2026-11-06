@@ -190,7 +190,7 @@
       "path": "../ipc"
     },
     {
-      "path": "../keyboard"
+      "path": "../keyboard/tsconfig.runtime.json"
     },
     {
       "path": "../layout"
@@ -274,7 +274,7 @@
       "path": "../power"
     },
     {
-      "path": "../protocol"
+      "path": "../protocol/tsconfig.runtime.json"
     },
     {
       "path": "../render"
