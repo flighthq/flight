@@ -20,7 +20,7 @@ import {
   openWindow,
   readClipboardText,
   setAppBadgeCount,
-  setApplicationMenu,
+  setAppMenu,
   setTrayIconTooltip,
   showNotification,
   showOpenFileDialog,
@@ -105,7 +105,7 @@ async function runOsIntegrationDemo(host: ReturnType<typeof electronHost>): Prom
       ],
     }),
   ];
-  setApplicationMenu(host.menu.application, menu);
+  setAppMenu(host.menu.application, menu);
   const menuSelect = createMenuSelect();
   connectSignal(menuSelect.onMenuItemSelect, (id) => console.log('[harness] menu select:', id)); // eslint-disable-line
   attachMenuSelect(host.menu.select, menuSelect);
