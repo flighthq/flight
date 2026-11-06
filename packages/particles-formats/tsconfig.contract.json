@@ -1,0 +1,34 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "composite": true,
+    "rootDir": "src",
+    "outDir": "dist",
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "moduleSuffixes": [".particles-formats-bridge-types", ""],
+    "tsBuildInfoFile": "dist/.tsbuildinfo.contract"
+  },
+  "references": [
+    { "path": "../importdiagnostics" },
+    { "path": "../types/tsconfig.particles-formats-bridge-types.json" }
+  ],
+  "include": [
+    "src/contract.particles-formats-types.ts",
+    "src/types.ts",
+    "src/LibgdxParticleSchema.ts",
+    "src/ParticleConfigIssue.ts",
+    "src/ParticleConfigParse.ts",
+    "src/ParticleDesignerSchema.ts",
+    "src/ParticleFormatCodec.ts",
+    "src/ParticleFormatDescriptor.ts",
+    "src/ParticleFormatKind.ts",
+    "src/ParticleFormatWarning.ts",
+    "src/ParticleSerializeResult.ts",
+    "src/PixiParseResult.ts",
+    "src/SpineParticleSchema.ts",
+    "src/StarlingPexSchema.ts",
+    "src/UnitySchema.ts"
+  ]
+}

@@ -1,4 +1,7 @@
-import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
+import { ImportDiagnosticSeverity } from '@flighthq/importdiagnostics/contract';
+
+import { parseParticleConfig, parseParticleConfigDocument } from './parseParticleConfig.ts';
+import { registerBuiltInParticleFormats } from './registerBuiltInParticleFormats.ts';
 import {
   LibgdxParticleFormatKind,
   ParticleDesignerFormatKind,
@@ -6,10 +9,7 @@ import {
   SpineParticleFormatKind,
   StarlingPexFormatKind,
   UnityParticleFormatKind,
-} from '@flighthq/types/contract';
-
-import { parseParticleConfig, parseParticleConfigDocument } from './parseParticleConfig.ts';
-import { registerBuiltInParticleFormats } from './registerBuiltInParticleFormats.ts';
+} from './types.ts';
 
 beforeAll(() => registerBuiltInParticleFormats());
 

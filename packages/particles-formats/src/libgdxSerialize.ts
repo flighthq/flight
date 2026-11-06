@@ -1,11 +1,12 @@
 import { RAD_TO_DEG } from '@flighthq/math/contract';
+import type { ParticleEmitterConfig } from '@flighthq/types/contract';
+
 import type {
   LibgdxSerializeOptions,
-  ParticleEmitterConfig,
   LibgdxParticleDocument,
   LibgdxRangeValue,
   ParticleSerializeResult,
-} from '@flighthq/types/contract';
+} from './types.ts';
 
 /** Serialise a ParticleEmitterConfig to a libGDX 2D Particle Editor `.p` file string.
  *

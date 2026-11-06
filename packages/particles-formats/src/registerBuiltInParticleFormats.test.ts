@@ -1,12 +1,3 @@
-import {
-  LibgdxParticleFormatKind,
-  ParticleDesignerFormatKind,
-  PixiParticleFormatKind,
-  SpineParticleFormatKind,
-  StarlingPexFormatKind,
-  UnityParticleFormatKind,
-} from '@flighthq/types/contract';
-
 import { detectParticleFormat } from './detect.ts';
 import { getParticleFormatCodec, getRegisteredParticleFormats, unregisterParticleFormat } from './formatRegistry.ts';
 import {
@@ -17,6 +8,14 @@ import {
   spineParticleFormat,
   unityParticleFormat,
 } from './registerBuiltInParticleFormats.ts';
+import {
+  LibgdxParticleFormatKind,
+  ParticleDesignerFormatKind,
+  PixiParticleFormatKind,
+  SpineParticleFormatKind,
+  StarlingPexFormatKind,
+  UnityParticleFormatKind,
+} from './types.ts';
 
 const BUILT_IN_KINDS = [
   LibgdxParticleFormatKind,

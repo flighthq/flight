@@ -1,11 +1,12 @@
 import { RAD_TO_DEG } from '@flighthq/math/contract';
+import type { ParticleEmitterConfig } from '@flighthq/types/contract';
+
 import type {
   StarlingPexSerializeOptions,
-  ParticleEmitterConfig,
   ParticleSerializeResult,
   StarlingPexColor,
   StarlingPexDocument,
-} from '@flighthq/types/contract';
+} from './types.ts';
 
 /** Serialise a ParticleEmitterConfig to a Starling / Sparrow PEX XML string
  *  (attribute style).

@@ -1,88 +1,10 @@
-import type { ImportDiagnostic } from './ImportDiagnostic.ts';
-import type { ParticleEmitterConfig } from './ParticleEmitterConfig.ts';
-
-// libGDX 2D Particle Editor (.p) format schema.
-// Targets the libGDX particle effect format as produced by the libGDX 2D Particle Editor
-// (Badlogic Games). The format is a hierarchical key-value text file where property groups
-// are introduced by a bare name line and contain `key: value` pairs.
-//
-// The "Particle Effect" header introduces the whole file; "- Emitter -" marks each emitter.
-// Value groups (Emission, Life, etc.) use lowMin/lowMax for the constant-range lower bound
-// and highMin/highMax for the high end of the range.
-// Curve values use scalingCount + scaling0..N and timelineCount + timeline0..N.
-// Units: time in milliseconds, sizes in pixels, angles in degrees.
-
-/** A scalar range value (low..high constant pair). */
-export interface LibgdxRangeValue {
-  lowMin: number;
-  lowMax: number;
-  highMin: number;
-  highMax: number;
-  relative: boolean;
-  /** Scaling curve values (parallel to timeline). */
-  scaling: number[];
-  /** Timeline positions (0–1 normalized). */
-  timeline: number[];
-}
-
-export interface LibgdxActiveRangeValue extends LibgdxRangeValue {
-  active: boolean;
-}
-
-/** Full libGDX particle emitter document. */
-export interface LibgdxParticleDocument {
-  /** Emitter name (the string after "- Emitter -"). */
-  name: string;
-  minParticleCount: number;
-  maxParticleCount: number;
-  /** Blend mode: true = additive, false = normal (alpha). */
-  additive: boolean;
-  premultipliedAlpha: boolean;
-  delay: LibgdxActiveRangeValue;
-  duration: LibgdxRangeValue;
-  emission: LibgdxRangeValue;
-  life: LibgdxRangeValue;
-  lifeOffset: LibgdxActiveRangeValue;
-  xOffset: LibgdxActiveRangeValue;
-  yOffset: LibgdxActiveRangeValue;
-  spawnShape: {
-    shape: 'point' | 'line' | 'square' | 'ellipse';
-    edges: boolean;
-    side: 'both' | 'top' | 'bottom';
-  };
-  spawnWidth: LibgdxRangeValue;
-  spawnHeight: LibgdxRangeValue;
-  scale: LibgdxRangeValue;
-  velocity: LibgdxActiveRangeValue;
-  angle: LibgdxActiveRangeValue;
-  rotation: LibgdxActiveRangeValue;
-  wind: LibgdxActiveRangeValue;
-  gravity: LibgdxActiveRangeValue;
-  tint: {
-    colors: string[];
-    timeline: number[];
-  };
-  transparency: LibgdxRangeValue;
-  imageCount: number;
-  imagePath: string;
-}
-
-export interface LibgdxParseOptions {
-  /** Side length of the particle texture in pixels, used to normalise pixel sizes
-   *  to dimensionless scale multipliers. Defaults to 1 (no normalisation). */
-  textureSize?: number;
-}
-
-export interface LibgdxParseResult {
-  config: ParticleEmitterConfig;
-  document: LibgdxParticleDocument;
-  /** Structured import diagnostics: features the source carries that the common-subset importer dropped,
-   *  skipped, or recovered — surface these in your asset pipeline to audit import fidelity. */
-  diagnostics: ImportDiagnostic[];
-}
-
-export interface LibgdxSerializeOptions {
-  /** Side length of the particle texture in pixels — reverses the normalisation
-   *  applied during parsing. Defaults to 1. */
-  textureSize?: number;
-}
+// Owned by `@flighthq/particles-formats`.
+/** @deprecated Import from `@flighthq/particles-formats/contract`. */
+export type {
+  LibgdxActiveRangeValue,
+  LibgdxParseOptions,
+  LibgdxParseResult,
+  LibgdxParticleDocument,
+  LibgdxRangeValue,
+  LibgdxSerializeOptions,
+} from '@flighthq/particles-formats/contract';

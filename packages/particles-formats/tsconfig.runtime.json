@@ -1,0 +1,38 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "composite": true,
+    "rootDir": "src",
+    "outDir": "dist",
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "tsBuildInfoFile": "dist/.tsbuildinfo.runtime"
+  },
+  "references": [
+    { "path": "../importdiagnostics" },
+    { "path": "../math" },
+    { "path": "../particles" },
+    { "path": "../requirement" },
+    { "path": "../types" },
+    { "path": "./tsconfig.contract.json" }
+  ],
+  "include": ["src/**/*.ts"],
+  "exclude": [
+    "src/contract.particles-formats-types.ts",
+    "src/types.ts",
+    "src/LibgdxParticleSchema.ts",
+    "src/ParticleConfigIssue.ts",
+    "src/ParticleConfigParse.ts",
+    "src/ParticleDesignerSchema.ts",
+    "src/ParticleFormatCodec.ts",
+    "src/ParticleFormatDescriptor.ts",
+    "src/ParticleFormatKind.ts",
+    "src/ParticleFormatWarning.ts",
+    "src/ParticleSerializeResult.ts",
+    "src/PixiParseResult.ts",
+    "src/SpineParticleSchema.ts",
+    "src/StarlingPexSchema.ts",
+    "src/UnitySchema.ts"
+  ]
+}

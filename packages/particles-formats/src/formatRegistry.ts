@@ -1,13 +1,13 @@
-import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import { ImportDiagnosticSeverity, reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import type { ImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import { createParticleEmitterConfig } from '@flighthq/particles/contract';
+
 import type {
-  ImportDiagnostic,
   ParseParticleConfigOptions,
   ParticleConfigParseResult,
   ParticleFormatCodec,
   ParticleFormatKind,
-} from '@flighthq/types/contract';
-import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
+} from './types.ts';
 
 /** Detect the format of `text` by consulting all registered codecs in registration order.
  *

@@ -1,4 +1,13 @@
 export * from './particlesFormatRequirements.ts';
+export type * from './types.ts';
+export {
+  LibgdxParticleFormatKind,
+  ParticleDesignerFormatKind,
+  PixiParticleFormatKind,
+  SpineParticleFormatKind,
+  StarlingPexFormatKind,
+  UnityParticleFormatKind,
+} from './types.ts';
 export {
   applyParticleImportOptions,
   detectParticleFormat,

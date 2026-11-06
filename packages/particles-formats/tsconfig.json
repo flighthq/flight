@@ -1,19 +1,15 @@
 {
-  "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "composite": true,
-    "rootDir": "src",
-    "outDir": "dist",
-    "declaration": true,
-    "declarationMap": true,
-    "sourceMap": true
+    "composite": true
   },
+  "files": [],
   "references": [
     { "path": "../importdiagnostics" },
     { "path": "../math" },
     { "path": "../particles" },
     { "path": "../requirement" },
-    { "path": "../types" }
-  ],
-  "include": ["src"]
+    { "path": "../types" },
+    { "path": "./tsconfig.contract.json" },
+    { "path": "./tsconfig.runtime.json" }
+  ]
 }

@@ -1,13 +1,10 @@
-import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import { ImportDiagnosticSeverity, reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import type { ImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import { DEG_TO_RAD } from '@flighthq/math/contract';
 import { createParticleEmitterConfig } from '@flighthq/particles/contract';
-import type {
-  ImportDiagnostic,
-  PixiParseResult,
-  ParticleBlendMode,
-  ParticleEmitterConfig,
-} from '@flighthq/types/contract';
-import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
+import type { ParticleBlendMode, ParticleEmitterConfig } from '@flighthq/types/contract';
+
+import type { PixiParseResult } from './types.ts';
 /** Parse a Pixi.js / pixi-particle-emitter JSON config string directly to a ParticleEmitterConfig.
  *
  *  Supports the pixi-particle-emitter v3/v4/v5 config shape.

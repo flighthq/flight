@@ -1,15 +1,16 @@
 import { RAD_TO_DEG } from '@flighthq/math/contract';
 import { particleColorCurveToKeyframes, particleCurveToKeyframes } from '@flighthq/particles/contract';
+import type { ParticleEmitterConfig } from '@flighthq/types/contract';
+
 import type {
   UnitySerializeOptions,
-  ParticleEmitterConfig,
   ParticleSerializeResult,
   UnityAnimationCurve,
   UnityColor,
   UnityGradient,
   UnityMinMaxValue,
   UnityParticleDocument,
-} from '@flighthq/types/contract';
+} from './types.ts';
 
 const DEFAULT_PPU = 100;
 

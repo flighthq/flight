@@ -1,4 +1,5 @@
-import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import { ImportDiagnosticSeverity, reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import type { ImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import { DEG_TO_RAD } from '@flighthq/math/contract';
 import {
   createParticleEmitterConfig,
@@ -6,24 +7,25 @@ import {
   particleCurveFromKeyframes,
 } from '@flighthq/particles/contract';
 import type {
-  ImportDiagnostic,
-  UnityParseOptions,
-  UnityParseResult,
   ColorKeyframe,
   CurveKeyframe,
   ParticleBlendMode,
   ParticleCurve,
   ParticleEmitterConfig,
+} from '@flighthq/types/contract';
+
+import type {
   UnityColor,
   UnityColorOverLifetime,
   UnityEmission,
   UnityMinMaxValue,
+  UnityParseOptions,
+  UnityParseResult,
   UnityParticleDocument,
   UnityRotationOverLifetime,
   UnityShape,
   UnitySizeOverLifetime,
-} from '@flighthq/types/contract';
-import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
+} from './types.ts';
 
 const DEFAULT_PPU = 100;
 const DEFAULT_GRAVITY = 9.81;

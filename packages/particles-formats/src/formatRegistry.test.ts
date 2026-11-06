@@ -1,6 +1,5 @@
+import { ImportDiagnosticSeverity } from '@flighthq/importdiagnostics/contract';
 import { createParticleEmitterConfig } from '@flighthq/particles/contract';
-import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
-import type { ParticleFormatCodec } from '@flighthq/types/contract';
 
 import {
   detectRegisteredParticleFormat,
@@ -11,6 +10,7 @@ import {
   unregisterParticleFormat,
 } from './formatRegistry.ts';
 import { parseParticleConfig, parseParticleConfigDocument } from './parseParticleConfig.ts';
+import type { ParticleFormatCodec } from './types.ts';
 
 // A minimal test codec for use across all tests
 const TEST_KIND = 'test.MyFormat';

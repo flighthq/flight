@@ -1,7 +1,3 @@
-import type { ParticleEmitterConfig } from './ParticleEmitterConfig.ts';
-
-export interface ParticleConfigIssue {
-  field: keyof ParticleEmitterConfig;
-  message: string;
-  severity: 'error' | 'warning';
-}
+// Owned by `@flighthq/particles-formats`.
+/** @deprecated Import from `@flighthq/particles-formats/contract`. */
+export type { ParticleConfigIssue } from '@flighthq/particles-formats/contract';

@@ -1,3 +1,6 @@
+import { detectParticleFormat } from './detect.ts';
+import { unregisterParticleFormat } from './formatRegistry.ts';
+import { registerBuiltInParticleFormats } from './registerBuiltInParticleFormats.ts';
 import {
   LibgdxParticleFormatKind,
   ParticleDesignerFormatKind,
@@ -5,11 +8,7 @@ import {
   SpineParticleFormatKind,
   StarlingPexFormatKind,
   UnityParticleFormatKind,
-} from '@flighthq/types/contract';
-
-import { detectParticleFormat } from './detect.ts';
-import { unregisterParticleFormat } from './formatRegistry.ts';
-import { registerBuiltInParticleFormats } from './registerBuiltInParticleFormats.ts';
+} from './types.ts';
 
 beforeEach(() => registerBuiltInParticleFormats());
 

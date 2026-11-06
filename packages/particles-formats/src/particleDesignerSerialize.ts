@@ -1,10 +1,7 @@
 import { RAD_TO_DEG } from '@flighthq/math/contract';
-import type {
-  ParticleDesignerSerializeOptions,
-  ParticleEmitterConfig,
-  ParticleDesignerDocument,
-  ParticleSerializeResult,
-} from '@flighthq/types/contract';
+import type { ParticleEmitterConfig } from '@flighthq/types/contract';
+
+import type { ParticleDesignerSerializeOptions, ParticleDesignerDocument, ParticleSerializeResult } from './types.ts';
 
 function configToDocument(
   config: Readonly<ParticleEmitterConfig>,

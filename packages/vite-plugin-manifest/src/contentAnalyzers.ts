@@ -1,7 +1,7 @@
 import { BITMAP_FONT_REQUIREMENT_KEY_NAMESPACE, readBitmapFontFormatKind } from '@flighthq/bitmapfont-formats/contract';
 import type { HostDecompressDeflateCapability, HostDecompressLzmaCapability } from '@flighthq/compression/contract';
 import { decodeUTF8 } from '@flighthq/encoding/contract';
-import { PARTICLES_REQUIREMENT_KEY_NAMESPACE } from '@flighthq/particles-formats/contract';
+import { PARTICLES_REQUIREMENT_KEY_NAMESPACE, StarlingPexFormatKind } from '@flighthq/particles-formats/contract';
 import type { RequirementSetRaw } from '@flighthq/requirement/contract';
 import { createRequirementSet, RequirementFacet } from '@flighthq/requirement/contract';
 import {
@@ -42,7 +42,6 @@ import {
 import { parseSwfHeader, parseSwfRequirements } from '@flighthq/swf/contract';
 import { TILEMAP_REQUIREMENT_KEY_NAMESPACE } from '@flighthq/tilemap-formats/contract';
 import {
-  StarlingPexFormatKind,
   TilemapFormatKindTiledTmj,
   TilemapFormatKindTiledTmx,
   TilemapFormatKindTiledTsj,

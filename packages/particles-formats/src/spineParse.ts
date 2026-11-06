@@ -1,4 +1,5 @@
-import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import { ImportDiagnosticSeverity, reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import type { ImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import { DEG_TO_RAD } from '@flighthq/math/contract';
 import {
   createParticleEmitterConfig,
@@ -6,18 +7,14 @@ import {
   particleCurveFromKeyframes,
 } from '@flighthq/particles/contract';
 import type {
-  ImportDiagnostic,
-  SpineParseResult,
   ColorKeyframe,
   CurveKeyframe,
   ParticleBlendMode,
   ParticleCurve,
   ParticleEmitterConfig,
-  SpineAlphaKeyframe,
-  SpineParticleDocument,
-  SpineTintKeyframe,
 } from '@flighthq/types/contract';
-import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
+
+import type { SpineAlphaKeyframe, SpineParseResult, SpineParticleDocument, SpineTintKeyframe } from './types.ts';
 
 /** Parse a JSON string and assert the root is a plain object, throwing a clear,
  *  format-tagged error otherwise. Particle assets are frequently hand-edited or

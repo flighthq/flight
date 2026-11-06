@@ -127,6 +127,14 @@ export * from '@flighthq/notification';
 export * from '@flighthq/particleemitter';
 export * from '@flighthq/particles';
 export * from '@flighthq/particles-formats';
+export {
+  LibgdxParticleFormatKind,
+  ParticleDesignerFormatKind,
+  PixiParticleFormatKind,
+  SpineParticleFormatKind,
+  StarlingPexFormatKind,
+  UnityParticleFormatKind,
+} from '@flighthq/particles-formats';
 export * from '@flighthq/path';
 export * from '@flighthq/path-boolean';
 export * from '@flighthq/path-formats';

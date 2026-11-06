@@ -1,13 +1,3 @@
-import type { ParticleFormatDescriptor, ParticleImportOptions } from '@flighthq/types/contract';
-import {
-  LibgdxParticleFormatKind,
-  ParticleDesignerFormatKind,
-  PixiParticleFormatKind,
-  SpineParticleFormatKind,
-  StarlingPexFormatKind,
-  UnityParticleFormatKind,
-} from '@flighthq/types/contract';
-
 import { registerParticleFormat } from './formatRegistry.ts';
 import { parseLibgdxParticle, parseLibgdxParticleDocument } from './libgdxParse.ts';
 import { serializeLibgdxParticleDocument } from './libgdxSerialize.ts';
@@ -18,6 +8,15 @@ import { parseSpineParticle, parseSpineParticleDocument } from './spineParse.ts'
 import { serializeSpineParticleDocument } from './spineSerialize.ts';
 import { parseStarlingPex, parseStarlingPexDocument } from './starlingPexParse.ts';
 import { serializeStarlingPexDocument } from './starlingPexSerialize.ts';
+import {
+  LibgdxParticleFormatKind,
+  ParticleDesignerFormatKind,
+  PixiParticleFormatKind,
+  SpineParticleFormatKind,
+  StarlingPexFormatKind,
+  UnityParticleFormatKind,
+} from './types.ts';
+import type { ParticleFormatDescriptor, ParticleImportOptions } from './types.ts';
 import { parseUnityParticle, parseUnityParticleDocument } from './unityParse.ts';
 import { serializeUnityParticleDocument } from './unitySerialize.ts';
 

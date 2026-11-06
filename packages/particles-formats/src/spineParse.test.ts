@@ -1,3 +1,4 @@
+import { ImportDiagnosticSeverity } from '@flighthq/importdiagnostics/contract';
 import {
   createParticleEmitterConfig,
   particleColorCurveFromKeyframes,
@@ -5,7 +6,6 @@ import {
   sampleParticleColorCurve,
   sampleParticleCurve,
 } from '@flighthq/particles/contract';
-import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
 import { parseSpineParticle, parseSpineParticleDocument } from './spineParse.ts';
 import { serializeSpineParticle } from './spineSerialize.ts';

@@ -1,15 +1,11 @@
-import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import { ImportDiagnosticSeverity, reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import type { ImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import { createParticleEmitterConfig } from '@flighthq/particles/contract';
-import type {
-  ImportDiagnostic,
-  ParseParticleConfigOptions,
-  ParticleConfigParseResult,
-  ParticleEmitterConfig,
-} from '@flighthq/types/contract';
-import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
+import type { ParticleEmitterConfig } from '@flighthq/types/contract';
 
 import { detectParticleFormat } from './detect.ts';
 import { getParticleFormatCodec } from './formatRegistry.ts';
+import type { ParseParticleConfigOptions, ParticleConfigParseResult } from './types.ts';
 /** Parse any supported particle format string to a ParticleEmitterConfig.
  *
  *  Calls `detectParticleFormat` internally and routes to the format-specific

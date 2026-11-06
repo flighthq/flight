@@ -93,6 +93,7 @@
     "@flighthq/notification": "*",
     "@flighthq/path": "*",
     "@flighthq/path-boolean": "*",
+    "@flighthq/particles-formats": "*",
     "@flighthq/permissions": "*",
     "@flighthq/platform": "*",
     "@flighthq/power": "*",

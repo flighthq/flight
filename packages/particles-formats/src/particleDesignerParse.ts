@@ -1,16 +1,15 @@
-import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import { ImportDiagnosticSeverity, reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import type { ImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import { DEG_TO_RAD } from '@flighthq/math/contract';
 import { createParticleEmitterConfig } from '@flighthq/particles/contract';
+import type { ParticleBlendMode, ParticleEmitterConfig } from '@flighthq/types/contract';
+
 import type {
-  ImportDiagnostic,
+  ParticleDesignerDocument,
   ParticleDesignerParseOptions,
   ParticleDesignerParseResult,
-  ParticleBlendMode,
-  ParticleEmitterConfig,
-  ParticleDesignerDocument,
   ParticleDesignerRawDict,
-} from '@flighthq/types/contract';
-import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
+} from './types.ts';
 
 function parsePlistRawDict(xml: string): ParticleDesignerRawDict {
   const result: ParticleDesignerRawDict = {};

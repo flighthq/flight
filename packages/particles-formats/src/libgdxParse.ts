@@ -1,15 +1,10 @@
-import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import { ImportDiagnosticSeverity, reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import type { ImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import { DEG_TO_RAD } from '@flighthq/math/contract';
 import { createParticleEmitterConfig } from '@flighthq/particles/contract';
-import type {
-  ImportDiagnostic,
-  LibgdxParseOptions,
-  LibgdxParseResult,
-  ParticleEmitterConfig,
-  LibgdxParticleDocument,
-  LibgdxRangeValue,
-} from '@flighthq/types/contract';
-import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
+import type { ParticleEmitterConfig } from '@flighthq/types/contract';
+
+import type { LibgdxParseOptions, LibgdxParseResult, LibgdxParticleDocument, LibgdxRangeValue } from './types.ts';
 
 /** Parse a libGDX 2D Particle Editor `.p` file string directly to a ParticleEmitterConfig.
  *

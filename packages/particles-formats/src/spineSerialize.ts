@@ -1,13 +1,8 @@
 import { RAD_TO_DEG } from '@flighthq/math/contract';
 import { particleColorCurveToKeyframes, particleCurveToKeyframes } from '@flighthq/particles/contract';
-import type {
-  ParticleBlendMode,
-  ParticleEmitterConfig,
-  ParticleSerializeResult,
-  SpineAlphaKeyframe,
-  SpineParticleDocument,
-  SpineTintKeyframe,
-} from '@flighthq/types/contract';
+import type { ParticleBlendMode, ParticleEmitterConfig } from '@flighthq/types/contract';
+
+import type { ParticleSerializeResult, SpineAlphaKeyframe, SpineParticleDocument, SpineTintKeyframe } from './types.ts';
 
 function rgbToHex(r: number, g: number, b: number): string {
   const byte = (v: number) =>
