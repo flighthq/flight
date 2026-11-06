@@ -1,8 +1,8 @@
+import type { PbrExtension } from '@flighthq/materials/contract';
 import type {
   GlPbrExtensionBindContext,
   GlPbrExtensionShaderContext,
   GlPbrExtensionShaderContribution,
-  PbrExtension,
 } from '@flighthq/types/contract';
 
 // GL realization for one open PbrExtension kind. Registrations are installed explicitly per render

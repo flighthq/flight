@@ -1,5 +1,6 @@
+import type { VelocityField } from '@flighthq/velocity/contract';
+
 import type { GlRenderState } from './GlRenderState.ts';
-import type { VelocityField } from './Velocity.ts';
 
 // Per-draw velocity production. Velocity is tied to the draw: only the thing that draws a renderable knows
 // its coverage and per-instance breakdown (a QuadBatch's per-instance velocities live nowhere else). A

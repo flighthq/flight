@@ -1,3 +1,6 @@
+import type { ColorScaleBias } from '@flighthq/adjustments/contract';
+import type { Kind } from '@flighthq/entity/contract';
+import type { BlendMode, Material, TintMaterialData } from '@flighthq/materials/contract';
 import type {
   RenderProxy2D,
   RenderRegistries,
@@ -5,19 +8,14 @@ import type {
   RenderStateRuntime,
   ShapeRasterizer,
 } from '@flighthq/render/contract';
+import type { SamplerLike } from '@flighthq/texture/contract';
 import type {
-  BlendMode,
-  ColorScaleBias,
   GlBitmapShader,
   GlEffectRegistration,
   GlScene3DPass,
   GlShaderLocations,
   GlShapeMesh,
   GlVelocityWriter,
-  Kind,
-  Material,
-  SamplerLike,
-  TintMaterialData,
 } from '@flighthq/types/contract';
 
 import type { GlCompressedTextureDecoder } from './glCompressedTextureDecoderTypes.ts';

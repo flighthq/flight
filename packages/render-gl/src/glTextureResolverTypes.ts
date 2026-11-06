@@ -1,4 +1,4 @@
-import type { TextureColorSpace, TextureLike } from '@flighthq/types/contract';
+import type { TextureColorSpace, TextureLike } from '@flighthq/texture/contract';
 
 import type { GlRenderState } from './glRenderStateTypes.ts';
 

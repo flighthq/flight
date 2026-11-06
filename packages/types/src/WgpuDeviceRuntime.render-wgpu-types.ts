@@ -1,9 +1,9 @@
+import type { ImageResource } from '@flighthq/image/contract';
 import type { ExternalTexture } from '@flighthq/render/contract';
 import type { RenderTexture } from '@flighthq/render/contract';
+import type { TextureSource } from '@flighthq/texture/contract';
 
 import type { EntityRuntime } from './Entity.ts';
-import type { ImageResource } from './ImageResource.ts';
-import type { TextureSource } from './TextureSource.ts';
 import type { WgpuDeviceSignals } from './WgpuDeviceSignals.ts';
 import type { WgpuParticleResources } from './WgpuParticleResources.ts';
 import type { WgpuQuadBatchResources } from './WgpuQuadBatchResources.ts';

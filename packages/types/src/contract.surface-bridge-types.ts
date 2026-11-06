@@ -1,6 +1,5 @@
 // Exact bridge for @flighthq/surface runtime: render-wgpu owns these WGPU contracts but depends on surface,
 // so surface selects this entry through the `.surface-bridge-types` module suffix.
-export type { Entity } from './Entity.ts';
 export type {
   HostWgpuCapability,
   WgpuHostAcquisition,

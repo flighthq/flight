@@ -1,4 +1,5 @@
-import type { CompressedImageResource, TextureColorSpace } from '@flighthq/types/contract';
+import type { CompressedImageResource } from '@flighthq/image/contract';
+import type { TextureColorSpace } from '@flighthq/texture/contract';
 
 import type { GlCompressedTextureDecoder } from './glCompressedTextureDecoderTypes.ts';
 import type { GlContext } from './types.ts';

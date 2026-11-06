@@ -1,6 +1,7 @@
+import type { Texture } from '@flighthq/texture/contract';
+
 import type { Modifier } from './Modifier.ts';
 import type { ModifierDefinition } from './ModifierDefinition.ts';
-import type { Texture } from './Texture.ts';
 
 export interface WgpuModifierCompileContext {
   acquireTexture(texture: Readonly<Texture>): number;

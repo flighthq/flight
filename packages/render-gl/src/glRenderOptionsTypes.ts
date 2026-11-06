@@ -1,5 +1,6 @@
+import type { HostImageCapability } from '@flighthq/image/contract';
 import type { Scene3DGraphSyncPolicy } from '@flighthq/render/contract';
-import type { HostCanvasCapability, HostImageCapability } from '@flighthq/types/contract';
+import type { HostCanvasCapability } from '@flighthq/surface/contract';
 
 export interface GlRenderOptions {
   allowSmoothing?: boolean;

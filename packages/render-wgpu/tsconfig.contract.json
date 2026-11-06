@@ -14,6 +14,7 @@
       ".effects-types",
       ".render-types",
       ".render-wgpu-bridge-types",
+      ".camera-types",
       ".adjustments-types",
       ".app-types",
       ".flow-types",
@@ -51,6 +52,9 @@
     "tsBuildInfoFile": "dist/.tsbuildinfo.contract"
   },
   "references": [
+    {
+      "path": "../camera/tsconfig.contract.json"
+    },
     {
       "path": "../effects/tsconfig.contract.json"
     },

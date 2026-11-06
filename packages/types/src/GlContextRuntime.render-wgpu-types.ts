@@ -1,5 +1,7 @@
+import type { ImageResource } from '@flighthq/image/contract';
 import type { ExternalTexture } from '@flighthq/render/contract';
 import type { RenderTexture } from '@flighthq/render/contract';
+import type { TextureSource } from '@flighthq/texture/contract';
 
 import type { EntityRuntime } from './Entity.ts';
 import type { GlColorAdjustmentResources } from './GlColorAdjustmentResources.ts';
@@ -10,8 +12,6 @@ import type { GlBlendSignature, GlBoundShader } from './GlRenderState.ts';
 import type { GlRenderTextureEntry } from './GlRenderTexture.ts';
 import type { GlShapeMeshResources } from './GlShapeMeshResources.ts';
 import type { GlTextureRealization } from './GlTextureResolver.ts';
-import type { ImageResource } from './ImageResource.ts';
-import type { TextureSource } from './TextureSource.ts';
 
 // Shared GPU state for one WebGL context, stored as the Entity runtime of a GlContextState. Wraps
 // the acquired GlContext and owns the binding shadow, compiled shader programs, texture upload

@@ -1,4 +1,5 @@
-import type { Material, MaterialData } from './Material.ts';
+import type { Material, MaterialData } from '@flighthq/materials/contract';
+
 import type { WgpuRenderState } from './WgpuRenderState.ts';
 
 // Per-backend behavior for a material kind on Wgpu, registered against the kind on the render

@@ -1,6 +1,7 @@
-import type { Camera3D } from './Camera3D.ts';
+import type { Camera3D } from '@flighthq/camera/contract';
+import type { Scene3DLightsLike } from '@flighthq/lighting/contract';
+
 import type { Node3D } from './Node3D.ts';
-import type { Scene3DLightsLike } from './Scene3DLights.ts';
 import type { WgpuRenderState } from './WgpuRenderState.ts';
 
 // Exact narrow bridge retained for the Render-WGPU contract cycle. The backend state owns the pass

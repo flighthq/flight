@@ -40,11 +40,16 @@
     "clean:dist": "tsx ../../scripts/clean-package-dist.ts"
   },
   "dependencies": {
+    "@flighthq/adjustments": "*",
     "@flighthq/app": "*",
+    "@flighthq/camera": "*",
     "@flighthq/color": "*",
     "@flighthq/entity": "*",
     "@flighthq/geometry": "*",
+    "@flighthq/image": "*",
+    "@flighthq/lighting": "*",
     "@flighthq/log": "*",
+    "@flighthq/materials": "*",
     "@flighthq/meshgeometry": "*",
     "@flighthq/node": "*",
     "@flighthq/registry": "*",
@@ -53,6 +58,7 @@
     "@flighthq/signals": "*",
     "@flighthq/surface": "*",
     "@flighthq/texture": "*",
+    "@flighthq/texture-formats": "*",
     "@flighthq/types": "*"
   },
   "devDependencies": {

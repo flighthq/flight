@@ -1,4 +1,4 @@
-import type { Material, MaterialData } from '@flighthq/types/contract';
+import type { Material, MaterialData } from '@flighthq/materials/contract';
 
 import type { GlRenderState } from './glRenderStateTypes.ts';
 

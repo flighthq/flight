@@ -8,23 +8,43 @@
     "declarationMap": true,
     "sourceMap": true,
     "moduleSuffixes": [
+      ".adjustments-types",
+      ".camera-types",
       ".meshgeometry-types",
       ".render-types",
       ".render-backend-bridge-types",
       ".render-wgpu-bridge-types",
       ".render-wgpu-types",
       ".app-types",
+      ".image-types",
+      ".materials-types",
       ".surface-types",
       ".lighting-types",
       ".geometry-types",
       ".texture-types",
+      ".texture-formats-types",
       ""
     ],
     "tsBuildInfoFile": "dist/.tsbuildinfo.contract"
   },
   "references": [
     {
+      "path": "../adjustments/tsconfig.contract.json"
+    },
+    {
       "path": "../app/tsconfig.contract.json"
+    },
+    {
+      "path": "../camera/tsconfig.contract.json"
+    },
+    {
+      "path": "../entity"
+    },
+    {
+      "path": "../image/tsconfig.contract.json"
+    },
+    {
+      "path": "../materials/tsconfig.contract.json"
     },
     {
       "path": "../meshgeometry/tsconfig.contract.json"
@@ -46,6 +66,9 @@
     },
     {
       "path": "../texture/tsconfig.contract.json"
+    },
+    {
+      "path": "../texture-formats/tsconfig.contract.json"
     }
   ],
   "include": [

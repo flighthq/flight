@@ -1,17 +1,14 @@
+import type { ColorScaleBias } from '@flighthq/adjustments/contract';
+import type { ImageResource } from '@flighthq/image/contract';
+import type { BlendMode, Material, TintMaterialData } from '@flighthq/materials/contract';
 import type { ExternalTexture } from '@flighthq/render/contract';
 import type { RenderTexture } from '@flighthq/render/contract';
 import type { RenderProxy2D } from '@flighthq/render/contract';
 import type { RenderRegistries, RenderState, RenderStateRuntime } from '@flighthq/render/contract';
 import type { ShapeRasterizer } from '@flighthq/render/contract';
+import type { SamplerLike, TextureSource } from '@flighthq/texture/contract';
 
-import type { BlendMode } from './BlendMode.ts';
-import type { ColorScaleBias } from './ColorScaleBias.ts';
 import type { Entity, Kind } from './Entity.ts';
-import type { ImageResource } from './ImageResource.ts';
-import type { Material } from './Material.ts';
-import type { SamplerLike } from './Sampler.ts';
-import type { TextureSource } from './TextureSource.ts';
-import type { TintMaterialData } from './TintMaterialData.ts';
 import type { WgpuCompressedTextureDecoder } from './WgpuCompressedTextureDecoder.ts';
 import type { WgpuCompressedTextureUploader } from './WgpuCompressedTextureUploader.ts';
 import type { WgpuCustomMaterialShaderSource } from './WgpuCustomMaterialShaderSource.ts';

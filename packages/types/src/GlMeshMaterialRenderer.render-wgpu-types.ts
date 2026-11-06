@@ -1,10 +1,10 @@
+import type { Camera3D } from '@flighthq/camera/contract';
+import type { Scene3DLightBlock } from '@flighthq/lighting/contract';
+import type { Material } from '@flighthq/materials/contract';
 import type { MeshGeometry } from '@flighthq/meshgeometry/contract';
 import type { Scene3DRenderProxy } from '@flighthq/render/contract';
 
-import type { Camera3D } from './Camera3D.ts';
 import type { GlRenderState } from './GlRenderState.ts';
-import type { Material } from './Material.ts';
-import type { Scene3DLightBlock } from './Scene3DLightBlock.ts';
 
 // Per-backend 3D draw behavior for a material kind on Gl, registered against the kind via
 // registerGlMeshMaterialRenderer. This is the scene (3D) analog of GlQuadMaterialRenderer (the 2D

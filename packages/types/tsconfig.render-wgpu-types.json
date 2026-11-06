@@ -10,58 +10,25 @@
     "moduleSuffixes": [
       ".meshgeometry-types",
       ".render-wgpu-bridge-types",
-      ".keyboard-types",
       ".render-types",
-      ".scene2d-types",
-      ".interaction-types",
       ".texture-types",
       ".bitmap-types",
       ".camera-types",
       ".node-types",
       ".materials-types",
       ".scene3d-gl-bridge-types",
-      ".scene3d-wgpu-types",
       ".render-wgpu-types",
-      ".scene2d-canvas-types",
-      ".effects-canvas-types",
       ".effects-types",
       ".adjustments-types",
       ".app-types",
-      ".clip-types",
-      ".flow-types",
       ".geometry-types",
-      ".font-types",
-      ".host-types",
-      ".menu-types",
-      ".midi-types",
-      ".notification-types",
-      ".path-boolean-types",
-      ".path-types",
-      ".permissions-types",
-      ".platform-types",
-      ".preferences-types",
       ".surface-types",
-      ".scene2d-dom-types",
-      ".scene2d-formats-types",
       ".scene2d-wgpu-bridge-types",
-      ".selection-types",
-      ".shape-formats-types",
       ".shape-types",
-      ".spatial-types",
-      ".statechart-types",
-      ".text-types",
-      ".textlayout-types",
-      ".textshaper-types",
       ".velocity-types",
       ".image-types",
       ".texture-formats-types",
-      ".screen-types",
-      ".protocol-types",
-      ".updater-types",
-      ".connectivity-types",
-      ".render-gl-types",
-      ".accessibility-types",
-      ".textsegment-types",
+      ".platform-types",
       ".lighting-types",
       ""
     ],
@@ -69,319 +36,42 @@
     "tsBuildInfoFile": "dist/.tsbuildinfo.render-wgpu-types"
   },
   "references": [
-    {
-      "path": "../scene2d-canvas/tsconfig.contract.json"
-    },
-    {
-      "path": "../meshgeometry/tsconfig.contract.json"
-    },
-    {
-      "path": "../texture/tsconfig.contract.json"
-    },
-    {
-      "path": "../bitmap/tsconfig.contract.json"
-    },
-    {
-      "path": "../camera/tsconfig.contract.json"
-    },
-    {
-      "path": "../adjustments/tsconfig.contract.json"
-    },
-    {
-      "path": "../effects-canvas/tsconfig.contract.json"
-    },
-    {
-      "path": "../effects/tsconfig.contract.json"
-    },
-    {
-      "path": "../app/tsconfig.contract.json"
-    },
-    {
-      "path": "../clip/tsconfig.contract.json"
-    },
-    {
-      "path": "../entity"
-    },
-    {
-      "path": "../geometry/tsconfig.contract.json"
-    },
-    {
-      "path": "../input"
-    },
-    {
-      "path": "../layout"
-    },
-    {
-      "path": "../path/tsconfig.contract.json"
-    },
-    {
-      "path": "../shape/tsconfig.contract.json"
-    },
-    {
-      "path": "../signals"
-    },
-    {
-      "path": "../surface/tsconfig.contract.json"
-    },
-    {
-      "path": "../text/tsconfig.contract.json"
-    },
-    {
-      "path": "../textlayout/tsconfig.contract.json"
-    },
-    {
-      "path": "../textshaper/tsconfig.contract.json"
-    },
-    {
-      "path": "../velocity/tsconfig.contract.json"
-    },
-    {
-      "path": "../materials/tsconfig.contract.json"
-    },
-    {
-      "path": "../node/tsconfig.contract.json"
-    },
-    {
-      "path": "../interaction/tsconfig.contract.json"
-    },
-    {
-      "path": "../keyboard/tsconfig.contract.json"
-    },
-    {
-      "path": "../scene2d/tsconfig.contract.json"
-    },
-    {
-      "path": "../image/tsconfig.contract.json"
-    },
-    {
-      "path": "../resource"
-    },
-    {
-      "path": "../image-codec"
-    },
-    {
-      "path": "../texture-formats/tsconfig.contract.json"
-    },
-    {
-      "path": "../compression"
-    },
-    {
-      "path": "../dialog"
-    },
-    {
-      "path": "../filesystem"
-    },
-    {
-      "path": "../font/tsconfig.contract.json"
-    },
-    {
-      "path": "../geolocation"
-    },
-    {
-      "path": "../menu/tsconfig.contract.json"
-    },
-    {
-      "path": "../midi/tsconfig.contract.json"
-    },
-    {
-      "path": "../notification/tsconfig.contract.json"
-    },
-    {
-      "path": "../permissions/tsconfig.contract.json"
-    },
-    {
-      "path": "../platform/tsconfig.contract.json"
-    },
-    {
-      "path": "../screen/tsconfig.contract.json"
-    },
-    {
-      "path": "../share"
-    },
-    {
-      "path": "../protocol/tsconfig.contract.json"
-    },
-    {
-      "path": "../updater/tsconfig.contract.json"
-    },
-    {
-      "path": "../connectivity/tsconfig.contract.json"
-    },
-    {
-      "path": "../accessibility/tsconfig.contract.json"
-    },
-    {
-      "path": "../textsegment/tsconfig.contract.json"
-    },
-    {
-      "path": "../textsegment/tsconfig.contract.json"
-    },
-    {
-      "path": "../render/tsconfig.contract.json"
-    },
-    {
-      "path": "../lighting/tsconfig.contract.json"
-    }
+    { "path": "../meshgeometry/tsconfig.contract.json" },
+    { "path": "../texture/tsconfig.contract.json" },
+    { "path": "../bitmap/tsconfig.contract.json" },
+    { "path": "../camera/tsconfig.contract.json" },
+    { "path": "../adjustments/tsconfig.contract.json" },
+    { "path": "../effects/tsconfig.contract.json" },
+    { "path": "../app/tsconfig.contract.json" },
+    { "path": "../entity" },
+    { "path": "../geometry/tsconfig.contract.json" },
+    { "path": "../shape/tsconfig.contract.json" },
+    { "path": "../signals" },
+    { "path": "../surface/tsconfig.contract.json" },
+    { "path": "../velocity/tsconfig.contract.json" },
+    { "path": "../materials/tsconfig.contract.json" },
+    { "path": "../node/tsconfig.contract.json" },
+    { "path": "../image/tsconfig.contract.json" },
+    { "path": "../texture-formats/tsconfig.contract.json" },
+    { "path": "../platform/tsconfig.contract.json" },
+    { "path": "../render/tsconfig.contract.json" },
+    { "path": "../lighting/tsconfig.contract.json" }
   ],
-  "files": [
-    "src/Aabb.ts",
-    "src/Adjustment.ts",
-    "src/AdjustmentKind.ts",
-    "src/AlphaType.ts",
-    "src/AmbientLight.ts",
-    "src/Bitmap.ts",
-    "src/BlendMode.materials-types.ts",
-    "src/Camera3D.ts",
-    "src/CanvasShapeDrawState.ts",
-    "src/CanvasShapeRegistry.ts",
-    "src/CanvasSurface.ts",
-    "src/CanvasTextureResolver.ts",
-    "src/ClipRegion.ts",
-    "src/ColorAdjustmentRuntime.ts",
-    "src/ColorLut.ts",
-    "src/ColorLutCache.ts",
-    "src/ColorScaleBias.ts",
-    "src/CompressedImageData.ts",
-    "src/CompressedImageResource.ts",
-    "src/Cursor.interaction-types.ts",
-    "src/CustomShaderMaterial.materials-types.ts",
-    "src/DirectionalLight.ts",
-    "src/Effect.ts",
-    "src/EffectPadding.ts",
+  "include": [
+    "src/contract.render-wgpu-bridge-types.ts",
+    "src/contract.render-backend-bridge-types.ts",
+    "src/*.render-wgpu-types.ts",
+    "src/*.scene2d-wgpu-bridge-types.ts",
+    "src/*.scene3d-gl-bridge-types.ts",
     "src/Entity.ts",
-    "src/FocusEventData.interaction-types.ts",
-    "src/GlColorAdjustmentResources.render-wgpu-types.ts",
-    "src/GlCompressedTextureDecoder.render-wgpu-types.ts",
-    "src/GlCompressedTextureUploader.render-wgpu-types.ts",
-    "src/GlContext.render-wgpu-types.ts",
-    "src/GlContextRuntime.render-wgpu-types.ts",
-    "src/GlContextState.render-wgpu-types.ts",
-    "src/GlCubeRenderTarget.render-wgpu-types.ts",
-    "src/GlCustomMaterialShaderSource.render-wgpu-types.ts",
-    "src/GlEffectRegistration.render-wgpu-types.ts",
-    "src/GlMeshMaterialRenderer.render-wgpu-types.ts",
-    "src/GlMeshProgram.scene3d-gl-bridge-types.ts",
-    "src/GlModifierSnippet.render-wgpu-types.ts",
-    "src/GlParticleResources.render-wgpu-types.ts",
-    "src/GlPbrExtensionBindContext.scene3d-gl-bridge-types.ts",
-    "src/GlPbrExtensionRegistration.render-wgpu-types.ts",
-    "src/GlPbrExtensionShaderContext.scene3d-gl-bridge-types.ts",
-    "src/GlPbrExtensionShaderContribution.scene3d-gl-bridge-types.ts",
-    "src/GlPbrTransmissionSceneColor.scene3d-gl-bridge-types.ts",
-    "src/GlQuadBatchResources.render-wgpu-types.ts",
-    "src/GlQuadMaterialRenderer.render-wgpu-types.ts",
-    "src/GlRenderPass.render-wgpu-types.ts",
-    "src/GlRenderState.render-wgpu-types.ts",
-    "src/GlRenderTarget.render-wgpu-types.ts",
-    "src/GlRenderTexture.render-wgpu-types.ts",
-    "src/GlScene3DRuntime.scene3d-gl-bridge-types.ts",
     "src/GlShader.ts",
     "src/GlShaderLocations.ts",
-    "src/GlShapeMesh.render-wgpu-types.ts",
-    "src/GlShapeMeshBinding.render-wgpu-types.ts",
-    "src/GlShapeMeshResources.render-wgpu-types.ts",
     "src/GlSkinPaletteTexture.ts",
-    "src/GlTextureResolver.render-wgpu-types.ts",
     "src/GlVelocityWriter.ts",
-    "src/HasAppearance.node-types.ts",
-    "src/HasBlendMode.node-types.ts",
-    "src/HasBoundsRectangle.node-types.ts",
-    "src/HasClip.ts",
-    "src/HasMaterial.node-types.ts",
-    "src/HasTransform2D.node-types.ts",
-    "src/HasTransform3D.node-types.ts",
-    "src/HemisphereLight.ts",
-    "src/HostCanvas.ts",
-    "src/HostImageSource.ts",
-    "src/ImageResource.ts",
-    "src/InteractionSignals.interaction-types.ts",
-    "src/KeyboardEventData.interaction-types.ts",
-    "src/Light.ts",
-    "src/LightUnit.ts",
-    "src/Material.materials-types.ts",
-    "src/Material2D.materials-types.ts",
-    "src/Material3D.materials-types.ts",
-    "src/Matrix.ts",
-    "src/Matrix3.ts",
-    "src/Matrix4.ts",
     "src/Modifier.ts",
     "src/ModifierDefinition.ts",
     "src/ModifierKind.ts",
     "src/ModifierSlot.ts",
-    "src/MorphTarget.ts",
-    "src/Node.node-types.ts",
-    "src/Node2D.scene2d-types.ts",
-    "src/Node3D.ts",
-    "src/NodeInteraction.interaction-types.ts",
-    "src/NodeInteractionState.interaction-types.ts",
-    "src/NodeSignals.node-types.ts",
-    "src/PbrExtension.materials-types.ts",
-    "src/PixelFormat.ts",
-    "src/Plane.ts",
-    "src/Platform.ts",
-    "src/PointLight.ts",
-    "src/PointerEventData.interaction-types.ts",
-    "src/Quaternion.ts",
-    "src/Rectangle.ts",
-    "src/RenderRegistrySignals.ts",
-    "src/RendererData.node-types.ts",
-    "src/RichText.ts",
-    "src/Sampler.ts",
-    "src/Scene2D.scene2d-types.ts",
-    "src/Scene2DSignals.scene2d-types.ts",
-    "src/Scene3DLightBlock.ts",
-    "src/Scene3DLights.ts",
-    "src/ShapeBounds.ts",
-    "src/ShapeCommand.ts",
-    "src/Signal.ts",
-    "src/Skeleton3D.ts",
-    "src/Skin.ts",
-    "src/SpotLight.ts",
-    "src/Surface.ts",
-    "src/TextLayout.ts",
-    "src/Texture.ts",
-    "src/TextureContainer.ts",
-    "src/TextureContainerFormat.ts",
-    "src/TextureContainerLevel.ts",
-    "src/TextureContainerSupercompression.ts",
-    "src/TextureSource.ts",
-    "src/TextureSourceKind.ts",
-    "src/TextureUvTransform.ts",
-    "src/TintMaterialData.materials-types.ts",
-    "src/Vector2.ts",
-    "src/Vector3.ts",
-    "src/Velocity.ts",
-    "src/ViewportAlign.ts",
-    "src/ViewportScaleMode.node-types.ts",
-    "src/VoxelGrid.ts",
-    "src/WgpuCompressedTextureDecoder.render-wgpu-types.ts",
-    "src/WgpuCompressedTextureUploader.render-wgpu-types.ts",
-    "src/WgpuCustomMaterialShaderSource.render-wgpu-types.ts",
-    "src/WgpuDeviceRuntime.render-wgpu-types.ts",
-    "src/WgpuDeviceSignals.render-wgpu-types.ts",
-    "src/WgpuDeviceState.render-wgpu-types.ts",
-    "src/WgpuEffectRegistration.render-wgpu-types.ts",
-    "src/WgpuHost.render-wgpu-types.ts",
-    "src/WgpuMeshMaterialRenderer.render-wgpu-types.ts",
-    "src/WgpuModifierSnippet.render-wgpu-types.ts",
-    "src/WgpuParticleResources.render-wgpu-types.ts",
-    "src/WgpuQuadBatchResources.render-wgpu-types.ts",
-    "src/WgpuQuadMaterialRenderer.render-wgpu-types.ts",
-    "src/WgpuRenderPass.render-wgpu-types.ts",
-    "src/WgpuRenderState.render-wgpu-types.ts",
-    "src/WgpuScene3DRuntime.render-wgpu-types.ts",
-    "src/WgpuRenderTarget.render-wgpu-types.ts",
-    "src/WgpuRenderTexture.render-wgpu-types.ts",
-    "src/WgpuColorAdjustmentMaterialFeature.scene2d-wgpu-bridge-types.ts",
-    "src/WgpuShapeMesh.scene2d-wgpu-bridge-types.ts",
-    "src/WgpuSkinningAdapter.render-wgpu-types.ts",
-    "src/WgpuTextureResolver.render-wgpu-types.ts",
-    "src/WgpuVelocityWriter.render-wgpu-types.ts",
-    "src/contract.render-wgpu-bridge-types.ts",
-    "src/contract.render-backend-bridge-types.ts",
-    "src/BlendMode.ts",
-    "src/WgpuSurface.surface-bridge-types.ts",
-    "src/contract.surface-bridge-types.ts"
-  ],
-  "include": []
+    "src/Node3D.ts"
+  ]
 }

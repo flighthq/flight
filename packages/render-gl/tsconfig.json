@@ -3,7 +3,13 @@
   "files": [],
   "references": [
     {
+      "path": "../adjustments/tsconfig.contract.json"
+    },
+    {
       "path": "../app/tsconfig.contract.json"
+    },
+    {
+      "path": "../camera/tsconfig.contract.json"
     },
     {
       "path": "../color"
@@ -15,7 +21,16 @@
       "path": "../geometry/tsconfig.runtime.json"
     },
     {
+      "path": "../image/tsconfig.contract.json"
+    },
+    {
+      "path": "../lighting/tsconfig.contract.json"
+    },
+    {
       "path": "../log"
+    },
+    {
+      "path": "../materials/tsconfig.contract.json"
     },
     {
       "path": "../meshgeometry/tsconfig.runtime.json"
@@ -40,6 +55,9 @@
     },
     {
       "path": "../texture/tsconfig.runtime.json"
+    },
+    {
+      "path": "../texture-formats/tsconfig.contract.json"
     },
     {
       "path": "../types"

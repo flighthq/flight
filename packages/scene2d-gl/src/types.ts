@@ -4,7 +4,7 @@ import type {
   GlQuadBatchShader,
   GlShapeMeshColorScaleBiasShader,
   GlUniformColorScaleBiasShader,
-} from '@flighthq/types/contract';
+} from '@flighthq/render-gl/contract';
 
 export interface GlColorAdjustmentResources {
   matrixInstancedShader: GlColorScaleBiasInstancedShader;

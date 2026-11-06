@@ -1,4 +1,5 @@
-import type { TextureColorSpace, TextureLike } from './Texture.ts';
+import type { TextureColorSpace, TextureLike } from '@flighthq/texture/contract';
+
 import type { WgpuRenderState, WgpuTextureEntry } from './WgpuRenderState.ts';
 
 // Synchronously realizes a Texture for one render state. GPU handles stay in state-owned caches;

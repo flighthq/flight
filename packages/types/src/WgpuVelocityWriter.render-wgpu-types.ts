@@ -1,4 +1,5 @@
-import type { VelocityField } from './Velocity.ts';
+import type { VelocityField } from '@flighthq/velocity/contract';
+
 import type { WgpuRenderState } from './WgpuRenderState.ts';
 
 // Per-draw velocity production, the Wgpu mirror of GlVelocityWriter. Velocity is tied to the draw:

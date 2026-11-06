@@ -1,3 +1,5 @@
+import type { EntityRaw, EntityRuntime } from '@flighthq/entity/contract';
+import type { EntityRuntimeKey } from '@flighthq/entity/contract';
 import type {
   RenderTargetAxes,
   RenderTargetColorSpace,
@@ -5,7 +7,6 @@ import type {
   RenderTargetDimensions,
   RenderTargetFormat,
 } from '@flighthq/render/contract';
-import type { Entity } from '@flighthq/types/contract';
 
 import type { GlContext } from './types.ts';
 
@@ -13,7 +14,8 @@ import type { GlContext } from './types.ts';
 // `framebuffer` is null for the screen (default framebuffer) and a WebGLFramebuffer for offscreen
 // texture targets. Pass functions accept this base; sampling/present functions accept only
 // GlTextureRenderTarget — the type split makes sampling a compile-time constraint.
-export interface GlRenderTarget extends Entity, RenderTargetDimensions {
+export interface GlRenderTarget extends EntityRaw, RenderTargetDimensions {
+  [EntityRuntimeKey]: EntityRuntime | undefined;
   readonly gl: GlContext;
   framebuffer: WebGLFramebuffer | null;
   width: number;
@@ -58,6 +60,7 @@ export interface GlTextureRenderTarget extends GlRenderTarget {
 
 // A free-list of reusable texture targets. The effect pipeline owns one and lends intermediate
 // targets to multi-pass recipes via acquireGlRenderTarget / releaseGlRenderTarget.
-export interface GlTextureRenderTargetPool extends Entity {
+export interface GlTextureRenderTargetPool extends EntityRaw {
+  [EntityRuntimeKey]: EntityRuntime | undefined;
   free: GlTextureRenderTarget[];
 }

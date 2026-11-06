@@ -17,7 +17,8 @@ export interface WgpuPresentationSurface {
   readonly width: number;
 }
 
-export interface WgpuHostAcquisition extends Entity {
+export interface WgpuHostAcquisition extends EntityRaw {
+  [EntityRuntimeKey]: EntityRuntime | undefined;
   readonly context: GPUCanvasContext;
   readonly device: GPUDevice;
   readonly format: GPUTextureFormat;
@@ -68,6 +69,5 @@ export interface WgpuSurfaceAttachment {
   readonly format: GPUTextureFormat;
 }
 import type { AppWindow } from '@flighthq/app/contract';
+import type { EntityRaw, EntityRuntime, EntityRuntimeKey } from '@flighthq/entity/contract';
 import type { NativeSurfaceHandle, Surface } from '@flighthq/surface/contract';
-
-import type { Entity } from './Entity.ts';

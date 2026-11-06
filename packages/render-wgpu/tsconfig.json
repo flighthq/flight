@@ -12,6 +12,9 @@
       "path": "../bitmap/tsconfig.runtime.json"
     },
     {
+      "path": "../camera/tsconfig.contract.json"
+    },
+    {
       "path": "../color"
     },
     {
@@ -25,6 +28,9 @@
     },
     {
       "path": "../image/tsconfig.contract.json"
+    },
+    {
+      "path": "../lighting/tsconfig.contract.json"
     },
     {
       "path": "../log"

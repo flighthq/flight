@@ -1,5 +1,6 @@
+import type { TextureColorSpace, TextureLike } from '@flighthq/texture/contract';
+
 import type { GlRenderState } from './GlRenderState.ts';
-import type { TextureColorSpace, TextureLike } from './Texture.ts';
 
 // The backend handle and the sample interpretation that must travel with it. Keeping both facts in
 // one value prevents a newly bound handle from inheriting the previous texture's alpha treatment.

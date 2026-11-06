@@ -1,9 +1,10 @@
+import type { ColorScaleBias } from '@flighthq/adjustments/contract';
+import type { BlendMode, Material, TintMaterialData } from '@flighthq/materials/contract';
 import type { RenderProxy2D } from '@flighthq/render/contract';
 import type { RenderRegistries, RenderState, RenderStateRuntime } from '@flighthq/render/contract';
 import type { ShapeRasterizer } from '@flighthq/render/contract';
+import type { SamplerLike } from '@flighthq/texture/contract';
 
-import type { BlendMode } from './BlendMode.ts';
-import type { ColorScaleBias } from './ColorScaleBias.ts';
 import type { Kind } from './Entity.ts';
 import type { GlCompressedTextureDecoder } from './GlCompressedTextureDecoder.ts';
 import type { GlCompressedTextureUploader } from './GlCompressedTextureUploader.ts';
@@ -25,9 +26,6 @@ import type { GlBitmapShader, GlShaderLocations } from './GlShaderLocations.ts';
 import type { GlShapeMesh } from './GlShapeMesh.ts';
 import type { GlTextureResolver } from './GlTextureResolver.ts';
 import type { GlVelocityWriter } from './GlVelocityWriter.ts';
-import type { Material } from './Material.ts';
-import type { SamplerLike } from './Sampler.ts';
-import type { TintMaterialData } from './TintMaterialData.ts';
 
 export interface GlRenderState extends RenderState {
   applyBlendMode: ((state: GlRenderState, blendMode: BlendMode | null) => void) | null;

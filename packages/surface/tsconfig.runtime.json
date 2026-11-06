@@ -13,7 +13,7 @@
   "references": [
     { "path": "../app/tsconfig.contract.json" },
     { "path": "../entity" },
-    { "path": "../types/tsconfig.render-wgpu-types.json" },
+    { "path": "../types/tsconfig.surface-bridge-types.json" },
     { "path": "./tsconfig.contract.json" }
   ],
   "include": ["src/**/*.ts"],

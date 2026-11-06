@@ -1,26 +1,8 @@
-// Exact bridge for the Render-WGPU owner contract. Most dependencies now arrive from their owning
-// package contracts; only Types-owned scene/render headers and the two genuine backend cycles remain.
-export type { Camera3D } from './Camera3D.ts';
-export type { ExternalTexture } from '@flighthq/render/contract';
-export type { Mesh, MeshGeometry } from '@flighthq/meshgeometry/contract';
+// Exact bridge for the Render-WGPU owner contract. Only Types-owned modifier/scene headers and the
+// Scene2D-WGPU registry cycle remain; all acyclic dependencies arrive from their package owners.
 export type { Modifier } from './Modifier.ts';
 export type { ModifierDefinition } from './ModifierDefinition.ts';
 export type { Node3D } from './Node3D.ts';
-export type {
-  RenderProxy2D,
-  RenderRegistries,
-  RenderState,
-  RenderStateOptions,
-  RenderStateRuntime,
-  RenderTargetColorSpace,
-  RenderTargetDimensions,
-  Scene3DGraphSyncPolicy,
-  ShapeRasterizer,
-} from '@flighthq/render/contract';
-export type { RenderTexture } from '@flighthq/render/contract';
-export type { Scene3DLightBlock } from './Scene3DLightBlock.ts';
-export type { Scene3DLightsLike } from './Scene3DLights.ts';
-export type { Scene3DRenderProxy } from '@flighthq/render/contract';
 export type {
   WgpuColorAdjustmentMaterialFeature,
   WgpuColorAdjustmentMaterialFeatureGuard,

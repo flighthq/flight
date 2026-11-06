@@ -1,5 +1,6 @@
+import type { EntityRaw, EntityRuntime } from '@flighthq/entity/contract';
+import type { EntityRuntimeKey } from '@flighthq/entity/contract';
 import type { RenderTexture } from '@flighthq/render/contract';
-import type { Entity } from '@flighthq/types/contract';
 
 import type { GlRenderState } from './glRenderStateTypes.ts';
 import type { GlTextureRenderTarget, GlTextureRenderTargetPool } from './glRenderTargetTypes.ts';
@@ -20,7 +21,8 @@ export interface GlRenderTextureEntry {
 
 // App-level lease pool. Its currency is RenderTexture; the raw target pool is an implementation
 // detail used by multi-pass effect runners.
-export interface GlRenderTexturePool extends Entity {
+export interface GlRenderTexturePool extends EntityRaw {
+  [EntityRuntimeKey]: EntityRuntime | undefined;
   context: GlContext | null;
   destroyed: boolean;
   readonly effectTargets: GlTextureRenderTargetPool;

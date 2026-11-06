@@ -1,4 +1,4 @@
-import type { Texture } from './Texture.ts';
+import type { Texture } from '@flighthq/texture/contract';
 
 // Read-only facts available while a registered extension selects its shader contribution.
 export interface GlPbrExtensionShaderContext {

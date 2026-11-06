@@ -42,11 +42,13 @@
   "dependencies": {
     "@flighthq/adjustments": "*",
     "@flighthq/app": "*",
+    "@flighthq/camera": "*",
     "@flighthq/color": "*",
     "@flighthq/effects": "*",
     "@flighthq/entity": "*",
     "@flighthq/geometry": "*",
     "@flighthq/image": "*",
+    "@flighthq/lighting": "*",
     "@flighthq/log": "*",
     "@flighthq/materials": "*",
     "@flighthq/meshgeometry": "*",

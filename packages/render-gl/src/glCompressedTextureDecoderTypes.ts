@@ -1,4 +1,4 @@
-import type { TextureContainerFormat } from '@flighthq/types/contract';
+import type { TextureContainerFormat } from '@flighthq/texture-formats/contract';
 
 // A caller-supplied RGBA fallback for a block-compressed texture level: decode the block bytes and
 // their pixel dimensions into a straight-alpha rgba8 buffer the portable `texImage2D` path uploads,
