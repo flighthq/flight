@@ -21,13 +21,10 @@ import {
 } from '@flighthq/render-gl/contract';
 import type {
   Adjustment,
-  GlEffectState,
-  GlEffectStateSkipGuard,
   GlRenderPass,
   GlRenderState,
   GlTextureRenderTarget,
   Effect,
-  EffectStateOptions,
   NonEntityCreateResult,
   RenderTargetClear,
   RenderTargetColorSpace,
@@ -36,6 +33,7 @@ import type {
 import { applyColorLutPassToGl } from './glColorLutPass.ts';
 import { applyColorMatrixPassToGl } from './glColorMatrixPass.ts';
 import { getGlEffectRunner } from './glEffectRegistry.ts';
+import type { EffectStateOptions, GlEffectState, GlEffectStateSkipGuard } from './types.ts';
 
 // Opt-in post-process pipeline. The scene renders into the pipeline's (optionally MSAA / HDR) target
 // between begin/end; end resolves MSAA, runs the agnostic effect list through the per-state registry

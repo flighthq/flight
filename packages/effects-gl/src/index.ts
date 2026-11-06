@@ -1,3 +1,17 @@
+export type {
+  EffectStateOptions,
+  GlColorLutTextureCache,
+  GlCustomShaderSourceGuard,
+  GlEffectApplicationExplanation,
+  GlEffectApplicationGuard,
+  GlEffectApplicationStatus,
+  GlEffectContext,
+  GlEffectRegistration,
+  GlEffectResolver,
+  GlEffectRunner,
+  GlEffectState,
+  GlEffectStateSkipGuard,
+} from './contract.ts';
 export * from './enableGlEffectGuards.ts';
 export { glBevelEffectRunner, registerGlBevelEffect } from './glBevelEffect.ts';
 export {

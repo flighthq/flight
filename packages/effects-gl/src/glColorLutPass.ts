@@ -1,13 +1,8 @@
 import { drawGlFullscreenPass } from '@flighthq/render-gl/contract';
-import type {
-  GlContext,
-  ColorLut,
-  GlColorLutTextureCache,
-  GlRenderState,
-  GlTextureRenderTarget,
-} from '@flighthq/types/contract';
+import type { GlContext, ColorLut, GlRenderState, GlTextureRenderTarget } from '@flighthq/types/contract';
 
 import { getGlEffectProgram } from './glEffectProgramCache.ts';
+import type { GlColorLutTextureCache } from './types.ts';
 
 // Generic pointwise color-LUT pass — the single fold-in realization for the whole LUT-tier Adjustment
 // family on WebGL 2. A run of consecutive pointwise adjustments containing any nonlinear (LUT-tier)

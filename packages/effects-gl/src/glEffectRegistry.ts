@@ -1,6 +1,8 @@
 import { withKindMapEntry } from '@flighthq/registry/contract';
 import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
-import type { GlEffectResolver, GlEffectRunner, GlRenderState, Effect } from '@flighthq/types/contract';
+import type { GlRenderState, Effect } from '@flighthq/types/contract';
+
+import type { GlEffectResolver, GlEffectRunner } from './types.ts';
 
 // Per-state registry mapping an effect `kind` string to its Gl runner — the material-renderer
 // pattern one tier up. Registration is opt-in (import a runner only to register it) and dispatch is a

@@ -1,11 +1,12 @@
 import type { LogState } from '@flighthq/log/contract';
 import { logOnce } from '@flighthq/log/contract';
-import type { GlEffectApplicationExplanation, GlRenderState } from '@flighthq/types/contract';
+import type { GlRenderState } from '@flighthq/types/contract';
 import { LogLevel } from '@flighthq/types/contract';
 
 import { setGlCustomShaderSourceGuard } from './glCustomShaderEffect.ts';
 import { setGlEffectStateSkipGuard } from './glEffectState.ts';
 import { setGlEffectApplicationGuard } from './glRenderTextureEffect.ts';
+import type { GlEffectApplicationExplanation } from './types.ts';
 
 export function areGlEffectGuardsEnabled(state: GlRenderState): boolean {
   return _guardedStates.has(state);

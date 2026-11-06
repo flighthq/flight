@@ -16,6 +16,8 @@ export type { EntityRuntime } from './Entity.ts';
 export type { ExternalTexture } from './ExternalTexture.ts';
 export type { HostCanvasCapability } from './HostCanvas.ts';
 export type { HostImageCapability } from './ImageResource.ts';
+export type { GlRenderState } from './GlRenderState.ts';
+export type { GlTextureRenderTarget, GlTextureRenderTargetPool } from './GlRenderTarget.ts';
 export type { Material, MaterialData } from './Material.ts';
 export type { Mesh } from './Mesh.ts';
 export type { MeshGeometry } from './MeshGeometry.ts';
@@ -24,7 +26,12 @@ export type { ModifierDefinition } from './ModifierDefinition.ts';
 export type { Node3D } from './Node3D.ts';
 export type { PlatformEndianness } from '@flighthq/platform/contract';
 export type { RenderStateOptions } from './RenderStateOptions.ts';
-export type { RenderTargetColorSpace, RenderTargetDimensions } from './RenderTarget.ts';
+export type {
+  RenderTargetColorSpace,
+  RenderTargetDepth,
+  RenderTargetDimensions,
+  RenderTargetFormat,
+} from './RenderTarget.ts';
 export type { RenderTexture } from './RenderTexture.ts';
 export type { SamplerLike } from './Sampler.ts';
 export type { Scene3DLightBlock } from './Scene3DLightBlock.ts';

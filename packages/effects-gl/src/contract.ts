@@ -1,3 +1,4 @@
+export * from './contract.effects-gl-types.ts';
 export * from './enableGlEffectGuards.ts';
 export * from './glBevelEffect.ts';
 export * from './glBitmapDisplacementEffect.ts';

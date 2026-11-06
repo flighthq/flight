@@ -52,6 +52,7 @@
     "@flighthq/device": "*",
     "@flighthq/dialog": "*",
     "@flighthq/entity": "*",
+    "@flighthq/effects-gl": "*",
     "@flighthq/filesystem": "*",
     "@flighthq/flow": "*",
     "@flighthq/font": "*",

@@ -1,44 +1,18 @@
 {
-  "extends": "../../tsconfig.base.json",
-  "compilerOptions": {
-    "composite": true,
-    "rootDir": "src",
-    "outDir": "dist",
-    "declaration": true,
-    "declarationMap": true,
-    "sourceMap": true
-  },
+  "compilerOptions": { "composite": true },
+  "files": [],
   "references": [
-    {
-      "path": "../adjustments/tsconfig.runtime.json"
-    },
-    {
-      "path": "../color"
-    },
-    {
-      "path": "../effects"
-    },
-    {
-      "path": "../entity"
-    },
-    {
-      "path": "../geometry/tsconfig.runtime.json"
-    },
-    {
-      "path": "../host-web"
-    },
-    {
-      "path": "../log"
-    },
-    {
-      "path": "../registry"
-    },
-    {
-      "path": "../render-gl"
-    },
-    {
-      "path": "../types"
-    }
-  ],
-  "include": ["src"]
+    { "path": "../adjustments/tsconfig.runtime.json" },
+    { "path": "../color" },
+    { "path": "../effects" },
+    { "path": "../entity" },
+    { "path": "../geometry/tsconfig.runtime.json" },
+    { "path": "../host-web" },
+    { "path": "../log" },
+    { "path": "../registry" },
+    { "path": "../render-gl" },
+    { "path": "../types" },
+    { "path": "./tsconfig.contract.json" },
+    { "path": "./tsconfig.runtime.json" }
+  ]
 }

@@ -4,16 +4,10 @@ import {
   withGlRenderState,
   writeGlRenderTextureTarget,
 } from '@flighthq/render-gl/contract';
-import type {
-  GlEffectApplicationExplanation,
-  GlEffectApplicationGuard,
-  GlRenderState,
-  GlRenderTexturePool,
-  Effect,
-  RenderTexture,
-} from '@flighthq/types/contract';
+import type { GlRenderState, GlRenderTexturePool, Effect, RenderTexture } from '@flighthq/types/contract';
 
 import { getGlEffectRunner, isGlEffectResolvable } from './glEffectRegistry.ts';
+import type { GlEffectApplicationExplanation, GlEffectApplicationGuard } from './types.ts';
 
 // Applies the registered members of a chain from one RenderTexture to another. Each effect composites
 // into its destination and this function never clears `dest` or `scratch`; callers reusing either

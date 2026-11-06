@@ -1,16 +1,10 @@
 import { withKindMapEntry } from '@flighthq/registry/contract';
 import { drawGlFullscreenPass, getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
-import type {
-  CustomShaderEffect,
-  GlCustomShaderSourceGuard,
-  GlEffectRunner,
-  GlRenderState,
-  GlTextureRenderTarget,
-  Effect,
-} from '@flighthq/types/contract';
+import type { CustomShaderEffect, GlRenderState, GlTextureRenderTarget, Effect } from '@flighthq/types/contract';
 
 import { getGlEffectProgram, getGlEffectUniformLocation } from './glEffectProgramCache.ts';
 import { registerGlEffect } from './glEffectRegistry.ts';
+import type { GlCustomShaderSourceGuard, GlEffectRunner } from './types.ts';
 
 // Runs a user-authored fragment shader as a fullscreen post-process pass. The descriptor carries a
 // `shaderKey` — a reference into the per-state custom-shader registry populated by
