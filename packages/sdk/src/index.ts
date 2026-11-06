@@ -139,6 +139,22 @@ export * from '@flighthq/quadbatch';
 export * from '@flighthq/render';
 export * from '@flighthq/render-gl';
 export type {
+  GlCompressedTextureDecoder,
+  GlCompressedTextureUploader,
+  GlCustomMaterialShaderSource,
+  GlMeshMaterialRenderer,
+  GlModifierBindContext,
+  GlModifierSnippet,
+  GlPbrExtensionRegistration,
+  GlQuadMaterialRenderer,
+  GlRenderPass,
+  GlRenderTextureEntry,
+  GlRenderTextureExplanation,
+  GlRenderTextureGuard,
+  GlRenderTexturePool,
+  GlRenderTextureStatus,
+  GlTextureRealization,
+  GlTextureResolver,
   GlBlendEquation,
   GlBlendFactor,
   GlBlendRealization,
