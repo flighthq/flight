@@ -76,7 +76,6 @@
     "@flighthq/surface": "*",
     "@flighthq/textshaper": "*",
     "@flighthq/tray": "*",
-    "@flighthq/types": "*",
     "@flighthq/useragent": "*",
     "@flighthq/video": "*"
   },
