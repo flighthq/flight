@@ -9,7 +9,6 @@
     "sourceMap": true,
     "moduleSuffixes": [
       ".render-types",
-      ".render-wgpu-types",
       ".render-gl-types",
       ".image-types",
       ".node-types",
@@ -41,9 +40,6 @@
     },
     {
       "path": "../textlayout/tsconfig.contract.json"
-    },
-    {
-      "path": "../types/tsconfig.render-wgpu-types.json"
     },
     {
       "path": "../render/tsconfig.contract.json"

@@ -1,9 +1,9 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { createMatrix } from '@flighthq/geometry/contract';
 import * as renderGl from '@flighthq/render-gl/contract';
+import type { GlRenderState, GlTextureRenderTarget } from '@flighthq/render-gl/contract';
 import { createRenderCache, RenderCacheKind, useRenderCache } from '@flighthq/render/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
-import type { GlRenderState, GlTextureRenderTarget } from '@flighthq/types/contract';
 
 import {
   createGlCacheState,

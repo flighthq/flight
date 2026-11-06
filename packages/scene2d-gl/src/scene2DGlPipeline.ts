@@ -1,3 +1,5 @@
+import type { Kind } from '@flighthq/entity/contract';
+import { StandardMaterialKind } from '@flighthq/materials/contract';
 import { ParticleEmitter2DKind } from '@flighthq/particleemitter/contract';
 import { tessellateStrokePath } from '@flighthq/path/contract';
 import { QuadBatchKind } from '@flighthq/quadbatch/contract';
@@ -7,18 +9,13 @@ import {
   standardGlBlendRealizations,
   standardGlTextureResolvers,
 } from '@flighthq/render-gl/contract';
+import type { GlRenderRegistries } from '@flighthq/render-gl/contract';
 import type { NodeRenderer } from '@flighthq/render/contract';
+import { RenderCacheKind } from '@flighthq/render/contract';
+import { DisplayObjectKind, Scale9SpriteKind, SpriteKind } from '@flighthq/scene2d/contract';
 import { MorphShapeKind, Scale9ShapeKind, ShapeKind } from '@flighthq/shape/contract';
 import { RichTextKind, TextLabelKind } from '@flighthq/text/contract';
 import { TilemapKind } from '@flighthq/tilemap/contract';
-import type { GlRenderRegistries, Kind } from '@flighthq/types/contract';
-import {
-  DisplayObjectKind,
-  RenderCacheKind,
-  Scale9SpriteKind,
-  SpriteKind,
-  StandardMaterialKind,
-} from '@flighthq/types/contract';
 
 import { glBitmapTextRenderer } from './glBitmapText.ts';
 import { glRenderCacheRenderer } from './glCache.ts';

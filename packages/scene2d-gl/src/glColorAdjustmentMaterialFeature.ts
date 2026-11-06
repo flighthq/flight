@@ -1,17 +1,17 @@
+import type { ColorScaleBias } from '@flighthq/adjustments/contract';
+import type { TintMaterialData } from '@flighthq/materials/contract';
 import { createGlProgram } from '@flighthq/render-gl/contract';
 import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
-import { enableColorAdjustments } from '@flighthq/render/contract';
-import type { RenderProxy2D } from '@flighthq/render/contract';
 import type {
-  ColorScaleBias,
   GlColorAdjustmentMaterialFeature,
   GlColorScaleBiasInstancedShader,
   GlRenderState,
   GlRenderStateRuntime,
   GlShapeMeshColorScaleBiasShader,
   GlUniformColorScaleBiasShader,
-  TintMaterialData,
-} from '@flighthq/types/contract';
+} from '@flighthq/render-gl/contract';
+import { enableColorAdjustments } from '@flighthq/render/contract';
+import type { RenderProxy2D } from '@flighthq/render/contract';
 
 import {
   bindGlQuadBatchBaseAttributes,

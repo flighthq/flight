@@ -1,7 +1,7 @@
+import type { ColorScaleBias } from '@flighthq/adjustments/contract';
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { getGlColorAdjustmentMaterialFeature, getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
 import { areColorAdjustmentsEnabled } from '@flighthq/render/contract';
-import type { ColorScaleBias } from '@flighthq/types/contract';
 
 import { registerGlColorAdjustmentMaterialFeature } from './glColorAdjustmentMaterialFeature.ts';
 import {

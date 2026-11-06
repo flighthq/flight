@@ -1,3 +1,5 @@
+import type { Kind } from '@flighthq/entity/contract';
+import { EntityRuntimeKey } from '@flighthq/entity/contract';
 import {
   ensureNodeWorldBoundsRectangle,
   ensureNodeWorldMatrix,
@@ -6,26 +8,22 @@ import {
   getNodeWorldBoundsRectangle,
   getNodeWorldMatrix,
 } from '@flighthq/node/contract';
+import type { Spatial2DNode, Transform2DNode } from '@flighthq/node/contract';
 import type { ParticleEmitter2D } from '@flighthq/particleemitter/contract';
 import type { QuadBatch, QuadBatchRuntime } from '@flighthq/quadbatch/contract';
 import { withKindMapEntry } from '@flighthq/registry/contract';
 import { createGlProgram } from '@flighthq/render-gl/contract';
 import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
 import { createGlTextureRenderTarget } from '@flighthq/render-gl/contract';
-import { TextureAtlasRotation } from '@flighthq/textureatlas/contract';
 import type {
   GlContext,
   GlRenderState,
   GlTextureRenderTarget,
   GlVelocityContext,
   GlVelocityWriter,
-  Kind,
-  Spatial2DNode,
-  Transform2DNode,
-  Velocity2D,
-  VelocityField,
-} from '@flighthq/types/contract';
-import { EntityRuntimeKey } from '@flighthq/types/contract';
+} from '@flighthq/render-gl/contract';
+import { TextureAtlasRotation } from '@flighthq/textureatlas/contract';
+import type { Velocity2D, VelocityField } from '@flighthq/velocity/contract';
 import { getVelocity } from '@flighthq/velocity/contract';
 
 // Gl velocity-buffer production. Velocity is tied to the draw, so production is per-kind: the velocity

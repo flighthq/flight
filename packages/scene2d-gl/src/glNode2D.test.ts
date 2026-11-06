@@ -1,9 +1,9 @@
 ﻿import { addNodeChild } from '@flighthq/node/contract';
 import { createGlRenderState } from '@flighthq/render-gl/contract';
+import type { GlRenderPass, GlRenderState, GlRenderTarget } from '@flighthq/render-gl/contract';
 import { getOrCreateRenderProxy2D, prepareScene2DRender, registerNodeRenderer } from '@flighthq/render/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
-import type { GlRenderPass, GlRenderState, GlRenderTarget } from '@flighthq/types/contract';
-import { DisplayObjectKind } from '@flighthq/types/contract';
+import { DisplayObjectKind } from '@flighthq/scene2d/contract';
 
 import { glScene2DRenderer, drawGlScene2D, renderGlScene2D } from './glNode2D.ts';
 

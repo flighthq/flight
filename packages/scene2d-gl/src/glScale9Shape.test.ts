@@ -1,14 +1,15 @@
-﻿import {
+import { EntityRuntimeKey } from '@flighthq/entity/contract';
+import {
   createImageResource,
   invalidateImageResource,
   registerTestImageDimensionResolver,
   unregisterTestImageDimensionResolver,
 } from '@flighthq/image/contract';
+import type { HostImageCapability } from '@flighthq/image/contract';
 import { bindGlImageResourceTexture, getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
 import { getOrCreateRenderProxy2D } from '@flighthq/render/contract';
 import { appendShapeBeginFill, appendShapeRectangle, createScale9Shape } from '@flighthq/shape/contract';
-import type { CanvasSurface, HostCanvasCapability, HostImageCapability } from '@flighthq/types/contract';
-import { EntityRuntimeKey } from '@flighthq/types/contract';
+import type { CanvasSurface, HostCanvasCapability } from '@flighthq/surface/contract';
 
 import {
   acquireGlScale9ShapeRasterSurface,

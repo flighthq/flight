@@ -1,27 +1,21 @@
 ﻿import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
+import type { MatrixLike } from '@flighthq/geometry/contract';
 import { invalidateImageResource } from '@flighthq/image/contract';
+import type { HostImageCapability, ImageResource } from '@flighthq/image/contract';
 import { getNodeLocalBoundsRectangle, getNodeLocalContentRevision } from '@flighthq/node/contract';
+import type { NodeAny, RendererData } from '@flighthq/node/contract';
 import { bindGlImageResourceTexture, drawGlQuad, useGlProgram } from '@flighthq/render-gl/contract';
 import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
 import { setGlBaseUniforms, setGlMatrixFromValues } from '@flighthq/render-gl/contract';
+import type { GlContext, GlRenderState } from '@flighthq/render-gl/contract';
 import { createCanvasHostSurface, destroyCanvasHostSurface } from '@flighthq/render/contract';
 import { RenderRegistryTable } from '@flighthq/render/contract';
 import type { RenderProxy2D, Scene2DRenderer } from '@flighthq/render/contract';
 import { mapScale9ShapeCommands } from '@flighthq/shape/contract';
 import type { Scale9Shape, ShapeCommandToken } from '@flighthq/shape/contract';
 import { Scale9ShapeKind } from '@flighthq/shape/contract';
-import type {
-  CanvasSurface,
-  EntityConstruction,
-  GlContext,
-  GlRenderState,
-  HostCanvasCapability,
-  HostImageCapability,
-  ImageResource,
-  MatrixLike,
-  NodeAny,
-  RendererData,
-} from '@flighthq/types/contract';
+import type { CanvasSurface, HostCanvasCapability } from '@flighthq/surface/contract';
 
 import { flushGlQuadBatchWriter } from './glQuadBatchWriter.ts';
 import { buildGlScale9Mapper } from './glScale9Mapper.ts';

@@ -1,16 +1,17 @@
 import { createMatrix3 } from '@flighthq/geometry/contract';
 import { getGlRenderStateRuntime, resolveGlQuadMaterialRenderer, resolveGlTexture } from '@flighthq/render-gl/contract';
+import type { GlRenderState } from '@flighthq/render-gl/contract';
 import { SCENE2D_WORKING_COLOR_SPACE, BatchFormat } from '@flighthq/render/contract';
 import type { RenderProxy2D, Scene2DRenderer } from '@flighthq/render/contract';
 import { createSpriteRendererData, isSpriteRendererDirty } from '@flighthq/scene2d/contract';
+import type { Scale9Sprite } from '@flighthq/scene2d/contract';
 import {
   getTextureSourceKind,
   getTextureUvMatrix,
   getTextureViewSize,
   hasTextureSource,
 } from '@flighthq/texture/contract';
-import type { GlRenderState, Scale9Sprite } from '@flighthq/types/contract';
-import { RenderTargetTextureSourceKind } from '@flighthq/types/contract';
+import { RenderTargetTextureSourceKind } from '@flighthq/texture/contract';
 
 import {
   ensureGlQuadBatchShader,

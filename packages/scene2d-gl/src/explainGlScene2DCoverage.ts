@@ -1,9 +1,12 @@
+import type { Kind } from '@flighthq/entity/contract';
+import { StandardMaterialKind } from '@flighthq/materials/contract';
 import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
+import type { GlRenderState } from '@flighthq/render-gl/contract';
 import { explainScene2DCoverage, hasScene2DCoverage } from '@flighthq/render/contract';
 import type { CatalogRegistration, SceneCoverageCatalog, SceneCoverageEntry } from '@flighthq/render/contract';
 import { RenderRegistryTable, SceneCoverage } from '@flighthq/render/contract';
-import type { GlRenderState, Kind, Scene2DKindUsage } from '@flighthq/types/contract';
-import { RequirementFacet, StandardMaterialKind } from '@flighthq/types/contract';
+import { RequirementFacet } from '@flighthq/requirement/contract';
+import type { Scene2DKindUsage } from '@flighthq/scene2d/contract';
 
 // Clears `out`, then reports every requirement in `usage` with how well this GL state is wired for it —
 // satisfied entries included, so one call is a complete manifest.

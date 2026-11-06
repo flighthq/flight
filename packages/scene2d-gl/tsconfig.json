@@ -5,6 +5,9 @@
   "files": [],
   "references": [
     {
+      "path": "../adjustments/tsconfig.runtime.json"
+    },
+    {
       "path": "../clip/tsconfig.runtime.json"
     },
     {
@@ -38,6 +41,9 @@
       "path": "../log"
     },
     {
+      "path": "../materials/tsconfig.runtime.json"
+    },
+    {
       "path": "../node/tsconfig.runtime.json"
     },
     {
@@ -48,6 +54,9 @@
     },
     {
       "path": "../registry"
+    },
+    {
+      "path": "../requirement"
     },
     {
       "path": "../render/tsconfig.runtime.json"
@@ -86,7 +95,7 @@
       "path": "../textureatlas/tsconfig.runtime.json"
     },
     {
-      "path": "../types"
+      "path": "../types/tsconfig.scene2d-gl-bridge-types.json"
     },
     {
       "path": "../velocity/tsconfig.runtime.json"

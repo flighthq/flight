@@ -3,19 +3,15 @@
   registerTestImageDimensionResolver,
   unregisterTestImageDimensionResolver,
 } from '@flighthq/image/contract';
+import type { HostImageCapability, ImageResource } from '@flighthq/image/contract';
+import type { RendererData } from '@flighthq/node/contract';
 import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
 import type { RenderProxy2D } from '@flighthq/render/contract';
+import type { CanvasSurface, HostCanvasCapability } from '@flighthq/surface/contract';
 import { createRichText } from '@flighthq/text/contract';
 import type { RichText } from '@flighthq/text/contract';
 import { createTextFormatRange } from '@flighthq/textformat/contract';
 import { enableTextInput } from '@flighthq/textinput/contract';
-import type {
-  CanvasSurface,
-  HostCanvasCapability,
-  HostImageCapability,
-  ImageResource,
-  RendererData,
-} from '@flighthq/types/contract';
 
 import {
   createGlRichTextData,

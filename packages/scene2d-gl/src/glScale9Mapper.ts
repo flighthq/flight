@@ -1,5 +1,5 @@
+import type { RectangleLike } from '@flighthq/geometry/contract';
 import type { Scale9Mapper } from '@flighthq/shape/contract';
-import type { RectangleLike } from '@flighthq/types/contract';
 
 export function buildGlScale9Mapper(
   bounds: Readonly<RectangleLike>,

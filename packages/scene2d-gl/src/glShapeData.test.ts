@@ -1,12 +1,13 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { EntityRuntimeKey } from '@flighthq/entity/contract';
 import {
   createImageResource,
   registerTestImageDimensionResolver,
   unregisterTestImageDimensionResolver,
 } from '@flighthq/image/contract';
+import type { HostImageCapability } from '@flighthq/image/contract';
 import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
-import type { CanvasSurface, HostCanvasCapability, HostImageCapability } from '@flighthq/types/contract';
-import { EntityRuntimeKey } from '@flighthq/types/contract';
+import type { CanvasSurface, HostCanvasCapability } from '@flighthq/surface/contract';
 
 import {
   acquireGlShapeRasterSurface,

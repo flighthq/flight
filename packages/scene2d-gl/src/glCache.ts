@@ -1,4 +1,5 @@
 import { createMatrix, createRectangle } from '@flighthq/geometry/contract';
+import type { Matrix } from '@flighthq/geometry/contract';
 import { computeNodeRootLocalBoundsRectangle } from '@flighthq/node/contract';
 import {
   beginGlRenderPass,
@@ -12,6 +13,7 @@ import {
   resizeGlTextureRenderTarget,
   registerGlRenderStateTeardown,
 } from '@flighthq/render-gl/contract';
+import type { GlRenderState, GlRenderStateOptions, GlTextureRenderTarget } from '@flighthq/render-gl/contract';
 import {
   computeScene2DRenderTargetTransform,
   computeRenderCacheTransform,
@@ -22,15 +24,8 @@ import {
   registerRenderCacheNodeRenderer,
 } from '@flighthq/render/contract';
 import type { Scene2DRenderer, RenderProxy2D } from '@flighthq/render/contract';
-import type {
-  Node2D,
-  GlRenderState,
-  GlRenderStateOptions,
-  GlTextureRenderTarget,
-  Matrix,
-  RenderCache,
-  RenderCacheRefreshOptions,
-} from '@flighthq/types/contract';
+import type { RenderCache, RenderCacheRefreshOptions } from '@flighthq/render/contract';
+import type { Node2D } from '@flighthq/scene2d/contract';
 
 import { renderGlScene2D } from './glNode2D.ts';
 import { flushGlQuadBatchWriter } from './glQuadBatchWriter.ts';

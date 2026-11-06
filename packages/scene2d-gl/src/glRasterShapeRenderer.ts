@@ -2,12 +2,12 @@ import { invalidateImageResource } from '@flighthq/image/contract';
 import { getNodeLocalBoundsRectangle, getNodeLocalContentRevision } from '@flighthq/node/contract';
 import { bindGlImageResourceTexture, resolveGlQuadMaterialRenderer } from '@flighthq/render-gl/contract';
 import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
+import type { GlRenderState } from '@flighthq/render-gl/contract';
 import { createCanvasHostSurface, destroyCanvasHostSurface, BatchFormat } from '@flighthq/render/contract';
 import { RenderRegistryTable } from '@flighthq/render/contract';
 import type { RenderProxy2D, Scene2DRenderer } from '@flighthq/render/contract';
 import type { Shape } from '@flighthq/shape/contract';
 import { ShapeKind } from '@flighthq/shape/contract';
-import type { GlRenderState } from '@flighthq/types/contract';
 
 import {
   QUAD_BATCH_INSTANCE_FLOATS,

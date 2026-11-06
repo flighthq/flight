@@ -1,22 +1,14 @@
+import type { ColorScaleBias } from '@flighthq/adjustments/contract';
+import type { MatrixLike } from '@flighthq/geometry/contract';
+import type { BlendMode, TintMaterialData, Material, MaterialData } from '@flighthq/materials/contract';
 import { applyGlSamplerState } from '@flighthq/render-gl/contract';
 import { bindGlTextureRealization } from '@flighthq/render-gl/contract';
 import { createGlProgram } from '@flighthq/render-gl/contract';
 import { getGlColorAdjustmentMaterialFeature } from '@flighthq/render-gl/contract';
 import { getGlColorAdjustmentMaterialFeatureGuard } from '@flighthq/render-gl/contract';
 import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
-import type {
-  GlContext,
-  BlendMode,
-  ColorScaleBias,
-  TintMaterialData,
-  GlQuadMaterialRenderer,
-  GlQuadBatchShader,
-  GlRenderState,
-  Material,
-  MaterialData,
-  MatrixLike,
-  SamplerLike,
-} from '@flighthq/types/contract';
+import type { GlContext, GlQuadMaterialRenderer, GlQuadBatchShader, GlRenderState } from '@flighthq/render-gl/contract';
+import type { SamplerLike } from '@flighthq/texture/contract';
 
 // Base per-instance layout (13 floats = 52 bytes, world-space axes + affine UVs + alpha):
 // [0-1]  axisUX/Y     — world-space horizontal quad axis, already multiplied by width

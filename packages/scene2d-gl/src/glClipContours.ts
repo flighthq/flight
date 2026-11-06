@@ -1,7 +1,8 @@
+import type { Matrix } from '@flighthq/geometry/contract';
 import type { PathWinding } from '@flighthq/path/contract';
 import { createGlProgram } from '@flighthq/render-gl/contract';
 import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
-import type { GlContext, GlRenderState, Matrix } from '@flighthq/types/contract';
+import type { GlContext, GlRenderState } from '@flighthq/render-gl/contract';
 
 import { flushGlQuadBatchWriter } from './glQuadBatchWriter.ts';
 

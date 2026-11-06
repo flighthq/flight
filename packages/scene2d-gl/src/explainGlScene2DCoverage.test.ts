@@ -1,10 +1,12 @@
+import { BlendMode, StandardMaterialKind } from '@flighthq/materials/contract';
 import { registerGlBlendMode, registerGlQuadMaterialRenderer } from '@flighthq/render-gl/contract';
+import type { GlQuadMaterialRenderer } from '@flighthq/render-gl/contract';
 import { registerNodeRenderer } from '@flighthq/render/contract';
 import type { SceneCoverageCatalog, SceneCoverageEntry } from '@flighthq/render/contract';
 import { RenderRegistryTable, SceneCoverage } from '@flighthq/render/contract';
 import type { NodeRenderer } from '@flighthq/render/contract';
-import type { GlQuadMaterialRenderer, Scene2DKindUsage } from '@flighthq/types/contract';
-import { BlendMode, RequirementFacet, StandardMaterialKind } from '@flighthq/types/contract';
+import { RequirementFacet } from '@flighthq/requirement/contract';
+import type { Scene2DKindUsage } from '@flighthq/scene2d/contract';
 import { describe, expect, it } from 'vitest';
 
 import { explainGlScene2DCoverage, hasGlScene2DCoverage } from './explainGlScene2DCoverage.ts';

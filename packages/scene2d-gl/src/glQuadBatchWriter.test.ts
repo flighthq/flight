@@ -1,11 +1,7 @@
+import type { ColorScaleBias } from '@flighthq/adjustments/contract';
+import type { BlendMode, Material } from '@flighthq/materials/contract';
 import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
-import type {
-  BlendMode,
-  ColorScaleBias,
-  GlQuadMaterialRenderer,
-  GlRenderState,
-  Material,
-} from '@flighthq/types/contract';
+import type { GlQuadMaterialRenderer, GlRenderState } from '@flighthq/render-gl/contract';
 
 import { registerGlColorAdjustmentMaterialFeature } from './glColorAdjustmentMaterialFeature.ts';
 import {

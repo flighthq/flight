@@ -1,22 +1,18 @@
+import { EntityRuntimeKey } from '@flighthq/entity/contract';
 import {
   createImageResource,
   registerTestImageDimensionResolver,
   unregisterTestImageDimensionResolver,
 } from '@flighthq/image/contract';
+import type { HostImageCapability, ImageResource } from '@flighthq/image/contract';
+import type { RendererData } from '@flighthq/node/contract';
 import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
 import { BatchFormat } from '@flighthq/render/contract';
 import type { RenderProxy2D } from '@flighthq/render/contract';
+import type { CanvasSurface, HostCanvasCapability } from '@flighthq/surface/contract';
 import { createTextLabel, setTextLabelString } from '@flighthq/text/contract';
 import type { TextLabel } from '@flighthq/text/contract';
 import * as textlayout from '@flighthq/textlayout/contract';
-import type {
-  CanvasSurface,
-  HostCanvasCapability,
-  HostImageCapability,
-  ImageResource,
-  RendererData,
-} from '@flighthq/types/contract';
-import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import { flushGlQuadBatchWriter } from './glQuadBatchWriter.ts';
 import { registerGlStandardMaterial } from './glStandardMaterial.ts';

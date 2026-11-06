@@ -1,3 +1,4 @@
+import type { ColorScaleBias } from '@flighthq/adjustments/contract';
 import {
   addLogSink,
   createLogState,
@@ -6,8 +7,8 @@ import {
   removeLogSink,
 } from '@flighthq/log/contract';
 import type { LogState } from '@flighthq/log/contract';
+import type { LogEntry, MemoryLogSink } from '@flighthq/log/contract';
 import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
-import type { ColorScaleBias, LogEntry, MemoryLogSink } from '@flighthq/types/contract';
 
 import { areGlColorAdjustmentGuardsEnabled, enableGlColorAdjustmentGuards } from './enableGlColorAdjustmentGuards.ts';
 import { registerGlColorAdjustmentMaterialFeature } from './glColorAdjustmentMaterialFeature.ts';

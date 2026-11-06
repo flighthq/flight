@@ -1,5 +1,5 @@
 import { createGlRenderState } from '@flighthq/render-gl/contract';
-import type { GlContext, GlRenderState } from '@flighthq/types/contract';
+import type { GlContext, GlRenderState } from '@flighthq/render-gl/contract';
 
 export function createGlState(options?: { allowSmoothing?: boolean; pixelRatio?: number }): {
   state: GlRenderState;

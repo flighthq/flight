@@ -3,11 +3,12 @@ import {
   registerTestImageDimensionResolver,
   unregisterTestImageDimensionResolver,
 } from '@flighthq/image/contract';
+import type { HostImageCapability } from '@flighthq/image/contract';
 import type { RenderProxy2D } from '@flighthq/render/contract';
+import type { CanvasSurface, HostCanvasCapability } from '@flighthq/surface/contract';
 import { createRichText } from '@flighthq/text/contract';
 import type { RichText } from '@flighthq/text/contract';
 import { enableTextInput, setTextInputSelection } from '@flighthq/textinput/contract';
-import type { CanvasSurface, HostCanvasCapability, HostImageCapability } from '@flighthq/types/contract';
 
 import { createGlRichTextData, drawGlRichText } from './glRichText.ts';
 import { createGlState } from './glTestHelper.ts';

@@ -1,10 +1,15 @@
 import { computeRgbaCssString } from '@flighthq/color/contract';
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
 import { invalidateImageResource } from '@flighthq/image/contract';
+import type { ImageResource } from '@flighthq/image/contract';
+import type { NodeAny, RendererData } from '@flighthq/node/contract';
 import { bindGlImageResourceTexture, drawGlQuad, useGlProgram } from '@flighthq/render-gl/contract';
 import { getGlRenderStateRuntime, resolveGlShader } from '@flighthq/render-gl/contract';
+import type { GlRenderState } from '@flighthq/render-gl/contract';
 import { createCanvasHostSurface, destroyCanvasHostSurface } from '@flighthq/render/contract';
 import type { RenderProxy2D, Scene2DRenderer } from '@flighthq/render/contract';
+import type { CanvasSurface } from '@flighthq/surface/contract';
 import {
   computeRichTextContent,
   computeTextFormatFontString,
@@ -22,14 +27,6 @@ import {
   computeTextBoundsWidth,
   computeTextLayout,
 } from '@flighthq/textlayout/contract';
-import type {
-  CanvasSurface,
-  EntityConstruction,
-  GlRenderState,
-  ImageResource,
-  NodeAny,
-  RendererData,
-} from '@flighthq/types/contract';
 
 import { flushGlQuadBatchWriter } from './glQuadBatchWriter.ts';
 import type { GlRichTextOverlay } from './glRichTextOverlay.ts';

@@ -1,6 +1,7 @@
+import type { MatrixLike, RectangleLike } from '@flighthq/geometry/contract';
 import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
-import type { GlRenderState, MatrixLike, RectangleLike } from '@flighthq/types/contract';
-import type { GlScissorRect } from '@flighthq/types/contract';
+import type { GlRenderState } from '@flighthq/render-gl/contract';
+import type { GlScissorRect } from '@flighthq/render-gl/contract';
 
 import { flushGlQuadBatchWriter } from './glQuadBatchWriter.ts';
 

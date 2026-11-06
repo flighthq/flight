@@ -1,6 +1,7 @@
 import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
+import type { GlRenderState } from '@flighthq/render-gl/contract';
 import type { Scene2DClipHooks, RenderProxy2D } from '@flighthq/render/contract';
-import type { Node2D, GlRenderState } from '@flighthq/types/contract';
+import type { Node2D } from '@flighthq/scene2d/contract';
 
 import { popGlClipContours, pushGlClipContours } from './glClipContours.ts';
 import { popGlClipRectangle, pushGlClipRectangle } from './glClipRectangle.ts';

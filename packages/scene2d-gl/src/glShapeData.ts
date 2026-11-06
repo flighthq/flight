@@ -1,15 +1,11 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
+import type { HostImageCapability } from '@flighthq/image/contract';
+import type { NodeAny, RendererData } from '@flighthq/node/contract';
 import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
+import type { GlRenderState } from '@flighthq/render-gl/contract';
 import { createCanvasHostSurface, destroyCanvasHostSurface } from '@flighthq/render/contract';
-import type {
-  CanvasSurface,
-  EntityConstruction,
-  GlRenderState,
-  HostCanvasCapability,
-  HostImageCapability,
-  NodeAny,
-  RendererData,
-} from '@flighthq/types/contract';
+import type { CanvasSurface, HostCanvasCapability } from '@flighthq/surface/contract';
 
 import type { GlShapeRendererData } from './glShapeRendererData.ts';
 

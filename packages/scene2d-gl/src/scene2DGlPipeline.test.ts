@@ -1,3 +1,4 @@
+import { BlendMode, StandardMaterialKind } from '@flighthq/materials/contract';
 import { ParticleEmitter2DKind } from '@flighthq/particleemitter/contract';
 import { QuadBatchKind } from '@flighthq/quadbatch/contract';
 import { withKindMapEntry } from '@flighthq/registry/contract';
@@ -6,20 +7,16 @@ import {
   standardGlBlendRealizations,
   standardGlTextureResolvers,
 } from '@flighthq/render-gl/contract';
+import { RenderCacheKind } from '@flighthq/render/contract';
+import { DisplayObjectKind, Scale9SpriteKind, SpriteKind } from '@flighthq/scene2d/contract';
 import { MorphShapeKind, Scale9ShapeKind, ShapeKind } from '@flighthq/shape/contract';
 import { RichTextKind, TextLabelKind } from '@flighthq/text/contract';
-import { TilemapKind } from '@flighthq/tilemap/contract';
 import {
   BitmapTextureSourceKind,
-  BlendMode,
-  DisplayObjectKind,
   ImageTextureSourceKind,
-  RenderCacheKind,
   RenderTargetTextureSourceKind,
-  Scale9SpriteKind,
-  SpriteKind,
-  StandardMaterialKind,
-} from '@flighthq/types/contract';
+} from '@flighthq/texture/contract';
+import { TilemapKind } from '@flighthq/tilemap/contract';
 
 import { glSpriteRenderer } from './glSprite.ts';
 import { glScene2DRenderPreset } from './scene2DGlPipeline.ts';

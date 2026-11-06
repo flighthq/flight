@@ -4,7 +4,7 @@ import type { QuadBatchRuntime } from '@flighthq/quadbatch/contract';
 import { QuadBatchKind } from '@flighthq/quadbatch/contract';
 import { createGlRenderState, getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
-import type { TextureAtlas, TextureAtlasRegion } from '@flighthq/types/contract';
+import type { TextureAtlas, TextureAtlasRegion } from '@flighthq/textureatlas/contract';
 import { beginVelocityFrame, contributeVelocity, createVelocityField } from '@flighthq/velocity/contract';
 
 import { createGlState } from './glTestHelper.ts';

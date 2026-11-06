@@ -1,9 +1,15 @@
 import { createBitmap } from '@flighthq/bitmap/contract';
 import { createRectangle } from '@flighthq/geometry/contract';
+import type { Material } from '@flighthq/materials/contract';
 import {
   getGlRenderStateRuntime,
   registerGlBitmapTextureResolver,
   registerGlQuadMaterialRenderer,
+} from '@flighthq/render-gl/contract';
+import type {
+  GlColorAdjustmentMaterialFeature,
+  GlQuadMaterialRenderer,
+  GlRenderState,
 } from '@flighthq/render-gl/contract';
 import {
   getOrCreateRenderProxy2D,
@@ -13,15 +19,9 @@ import {
 } from '@flighthq/render/contract';
 import type { RenderProxy2D } from '@flighthq/render/contract';
 import { createScale9Sprite } from '@flighthq/scene2d/contract';
+import type { Scale9Sprite } from '@flighthq/scene2d/contract';
+import { Scale9SpriteKind } from '@flighthq/scene2d/contract';
 import { createTexture } from '@flighthq/texture/contract';
-import type {
-  GlColorAdjustmentMaterialFeature,
-  GlQuadMaterialRenderer,
-  GlRenderState,
-  Material,
-  Scale9Sprite,
-} from '@flighthq/types/contract';
-import { Scale9SpriteKind } from '@flighthq/types/contract';
 
 import { glScale9SpriteRenderer, drawGlScale9Sprite } from './glScale9Sprite.ts';
 import { registerGlStandardMaterial } from './glStandardMaterial.ts';

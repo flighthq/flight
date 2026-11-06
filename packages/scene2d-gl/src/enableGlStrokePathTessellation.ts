@@ -1,6 +1,6 @@
 import { tessellateStrokePath } from '@flighthq/path/contract';
 import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
-import type { GlRenderState } from '@flighthq/types/contract';
+import type { GlRenderState } from '@flighthq/render-gl/contract';
 
 // Installs the closed-ring/pathology-aware stroke kernel only for states that need it. Ordinary shape
 // bundles keep the compact open-outline mesh lane and rasterize closed strokes.
