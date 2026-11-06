@@ -1,11 +1,6 @@
 import { createBlendEffect } from '@flighthq/effects/contract';
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type {
-  BlendEffect,
-  CanvasRenderState,
-  CanvasTextureRenderTarget,
-  CanvasRenderTargetPool,
-} from '@flighthq/types/contract';
+import type { BlendEffect, CanvasRenderState, CanvasTextureRenderTarget } from '@flighthq/types/contract';
 
 import {
   applyBlendEffectToCanvas,
@@ -18,6 +13,7 @@ import {
 } from './canvasBlendEffect.ts';
 import { getCanvasEffectRunner } from './canvasEffectRegistry.ts';
 import { canvasTestHost, createCanvasRenderState, createCanvasTextureRenderTarget } from './canvasEffectTestSupport.ts';
+import type { CanvasRenderTargetPool } from './types.ts';
 
 // These tests assert the DRAW CONTRACT, not pixels, and that is deliberate rather than a shortcut.
 // jsdom's 2D context accepts every call and every globalCompositeOperation but rasterizes nothing — a

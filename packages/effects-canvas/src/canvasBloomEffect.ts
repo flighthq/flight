@@ -1,15 +1,10 @@
 import { computeBloomBlurRadius } from '@flighthq/effects/contract';
-import type {
-  BloomEffect,
-  CanvasEffectRunner,
-  CanvasRenderState,
-  CanvasTextureRenderTarget,
-  CanvasRenderTargetPool,
-} from '@flighthq/types/contract';
+import type { BloomEffect, CanvasRenderState, CanvasTextureRenderTarget } from '@flighthq/types/contract';
 
 import { drawCanvasEffectPass, drawCanvasImageDataPass } from './canvasEffectCompositing.ts';
 import { registerCanvasEffect } from './canvasEffectRegistry.ts';
 import { acquireCanvasRenderTarget, releaseCanvasRenderTarget } from './canvasEffectState.ts';
+import type { CanvasEffectRunner, CanvasRenderTargetPool } from './types.ts';
 
 // Bloom (REAL): bright-pass → blur the bright branch → additively composite back, matching the Gl/Wgpu
 // recipe term for term — a LUMINANCE GATE `step(threshold, dot(rgb, (0.2126, 0.7152, 0.0722)))` on the

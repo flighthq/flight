@@ -19,6 +19,7 @@
       ".scene3d-gl-bridge-types",
       ".scene3d-wgpu-types",
       ".render-wgpu-types",
+      ".effects-canvas-types",
       ".effects-types",
       ".scene2d-wgpu-bridge-types",
       ".adjustments-types",
@@ -61,6 +62,9 @@
     },
     {
       "path": "../adjustments/tsconfig.contract.json"
+    },
+    {
+      "path": "../effects-canvas/tsconfig.contract.json"
     },
     {
       "path": "../effects/tsconfig.contract.json"

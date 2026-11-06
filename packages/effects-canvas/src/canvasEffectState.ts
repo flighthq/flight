@@ -5,8 +5,11 @@ import {
   getAdjustmentColorMatrix,
   isColorLutAdjustment,
 } from '@flighthq/adjustments/contract';
+import type { Adjustment } from '@flighthq/adjustments/contract';
 import type { Effect, EffectStateOptions } from '@flighthq/effects/contract';
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type { EntityConstruction, NonEntityCreateResult } from '@flighthq/entity/contract';
+import type { RenderTargetClear } from '@flighthq/render/contract';
 import {
   beginCanvasRenderPass,
   createCanvasTextureRenderTarget,
@@ -15,23 +18,14 @@ import {
   getCanvasHost,
   resizeCanvasTextureRenderTarget,
 } from '@flighthq/scene2d-canvas/contract';
-import type {
-  Adjustment,
-  CanvasEffectState,
-  CanvasRenderPass,
-  CanvasRenderState,
-  CanvasTextureRenderTarget,
-  CanvasRenderTargetPool,
-  EntityConstruction,
-  HostCanvasCapability,
-  NonEntityCreateResult,
-  RenderTargetClear,
-} from '@flighthq/types/contract';
+import type { HostCanvasCapability } from '@flighthq/surface/contract';
+import type { CanvasRenderPass, CanvasRenderState, CanvasTextureRenderTarget } from '@flighthq/types/contract';
 
 import { applyColorLutPassToCanvas } from './canvasColorLutPass.ts';
 import { applyColorMatrixPassToCanvas } from './canvasColorMatrixPass.ts';
 import { drawCanvasEffectPass } from './canvasEffectCompositing.ts';
 import { getCanvasEffectRunner } from './canvasEffectRegistry.ts';
+import type { CanvasEffectState, CanvasRenderTargetPool } from './types.ts';
 
 // Opt-in Canvas 2D post-process pipeline — the parallel of the Gl effect pipeline. The scene renders
 // into the pipeline's offscreen canvas between begin/end; end runs the agnostic effect list through the

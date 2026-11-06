@@ -1,6 +1,8 @@
 import { withKindMapEntry } from '@flighthq/registry/contract';
 import { getCanvasRenderStateRuntime } from '@flighthq/scene2d-canvas/contract';
-import type { CanvasEffectRunner, CanvasRenderState } from '@flighthq/types/contract';
+import type { CanvasRenderState } from '@flighthq/types/contract';
+
+import type { CanvasEffectRunner } from './types.ts';
 
 // Per-state registry mapping an effect `kind` string to its Canvas 2D runner — the material-renderer
 // pattern one tier up, and the Canvas parallel of registerGlEffect. Registration is opt-in

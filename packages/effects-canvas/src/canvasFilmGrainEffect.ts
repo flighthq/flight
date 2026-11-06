@@ -1,14 +1,9 @@
-import type {
-  CanvasEffectRunner,
-  CanvasRenderState,
-  CanvasTextureRenderTarget,
-  CanvasRenderTargetPool,
-  FilmGrainEffect,
-} from '@flighthq/types/contract';
+import type { CanvasRenderState, CanvasTextureRenderTarget, FilmGrainEffect } from '@flighthq/types/contract';
 
 import { drawCanvasEffectPass } from './canvasEffectCompositing.ts';
 import { registerCanvasEffect } from './canvasEffectRegistry.ts';
 import { acquireCanvasRenderTarget, releaseCanvasRenderTarget } from './canvasEffectState.ts';
+import type { CanvasEffectRunner, CanvasRenderTargetPool } from './types.ts';
 
 // Film grain (REAL): draw the scene, then overlay a tiled noise pattern at `intensity` via the
 // 'overlay' composite op. The noise is generated once into a small scratch canvas (cell size from

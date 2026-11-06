@@ -25,3 +25,4 @@ export * from './canvasScanlinesEffect.ts';
 export * from './canvasSourceModeCompositing.ts';
 export * from './canvasTiltShiftEffect.ts';
 export * from './canvasVignetteEffect.ts';
+export type { CanvasEffectContext, CanvasEffectRunner, CanvasEffectState, CanvasRenderTargetPool } from './types.ts';

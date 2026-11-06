@@ -1,6 +1,6 @@
 import { createPosterizeEffect } from '@flighthq/effects/contract';
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { CanvasTextureRenderTarget, CanvasRenderTargetPool } from '@flighthq/types/contract';
+import type { CanvasTextureRenderTarget } from '@flighthq/types/contract';
 
 import { getCanvasEffectRunner } from './canvasEffectRegistry.ts';
 import { canvasTestHost, createCanvasRenderStateWithoutPass } from './canvasEffectTestSupport.ts';
@@ -9,6 +9,7 @@ import {
   canvasPosterizeEffectRunner,
   registerCanvasPosterizeEffect,
 } from './canvasPosterizeEffect.ts';
+import type { CanvasRenderTargetPool } from './types.ts';
 
 // Stand-ins for the two contexts drawCanvasImageDataPass touches, matching the shape
 // canvasColorMatrixPass.test.ts uses for the same reason: it keeps the assertion independent of module

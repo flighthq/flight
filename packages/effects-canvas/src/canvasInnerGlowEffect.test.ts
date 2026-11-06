@@ -1,6 +1,6 @@
 import { createInnerGlowEffect } from '@flighthq/effects/contract';
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { CanvasTextureRenderTarget, CanvasRenderTargetPool, InnerGlowEffect } from '@flighthq/types/contract';
+import type { CanvasTextureRenderTarget, InnerGlowEffect } from '@flighthq/types/contract';
 
 import { getCanvasEffectRunner } from './canvasEffectRegistry.ts';
 import { canvasTestHost, createCanvasRenderState, createCanvasTextureRenderTarget } from './canvasEffectTestSupport.ts';
@@ -9,6 +9,7 @@ import {
   canvasInnerGlowEffectRunner,
   registerCanvasInnerGlowEffect,
 } from './canvasInnerGlowEffect.ts';
+import type { CanvasRenderTargetPool } from './types.ts';
 
 // Recipe assertions rather than pixels, for the reason in canvasBlendEffect.test.ts: jsdom's 2D context
 // rasterizes nothing. The scratch targets are pre-seeded into the pool so each one is identifiable by id,

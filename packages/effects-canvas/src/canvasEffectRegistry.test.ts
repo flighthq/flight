@@ -1,8 +1,8 @@
 import { getCanvasRenderStateRuntime } from '@flighthq/scene2d-canvas/contract';
-import type { CanvasEffectRunner } from '@flighthq/types/contract';
 
 import { getCanvasEffectRunner, hasCanvasEffectRunner, registerCanvasEffect } from './canvasEffectRegistry.ts';
 import { createCanvasRenderState } from './canvasEffectTestSupport.ts';
+import type { CanvasEffectRunner } from './types.ts';
 
 describe('getCanvasEffectRunner', () => {
   it('is a function', () => {

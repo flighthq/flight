@@ -1,11 +1,5 @@
 import { getCanvasSurfaceHost } from '@flighthq/scene2d-canvas/contract';
-import type {
-  CanvasEffectRunner,
-  CanvasRenderState,
-  CanvasTextureRenderTarget,
-  CanvasRenderTargetPool,
-  InnerGlowEffect,
-} from '@flighthq/types/contract';
+import type { CanvasRenderState, CanvasTextureRenderTarget, InnerGlowEffect } from '@flighthq/types/contract';
 
 import { drawCanvasEffectPass } from './canvasEffectCompositing.ts';
 import { registerCanvasEffect } from './canvasEffectRegistry.ts';
@@ -19,6 +13,7 @@ import {
   compositeCanvasImage,
   drawCanvasInvertedTintedAlphaMask,
 } from './canvasSourceModeCompositing.ts';
+import type { CanvasEffectRunner, CanvasRenderTargetPool } from './types.ts';
 
 // Inner-glow composite effect: tint the INVERTED silhouette, blur it inward across the boundary, clip it
 // back to the source alpha, then draw it over the source.

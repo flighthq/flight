@@ -1,6 +1,6 @@
 import { createInnerShadowEffect } from '@flighthq/effects/contract';
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { CanvasTextureRenderTarget, CanvasRenderTargetPool, InnerShadowEffect } from '@flighthq/types/contract';
+import type { CanvasTextureRenderTarget, InnerShadowEffect } from '@flighthq/types/contract';
 
 import { getCanvasEffectRunner } from './canvasEffectRegistry.ts';
 import { canvasTestHost, createCanvasRenderState, createCanvasTextureRenderTarget } from './canvasEffectTestSupport.ts';
@@ -9,6 +9,7 @@ import {
   canvasInnerShadowEffectRunner,
   registerCanvasInnerShadowEffect,
 } from './canvasInnerShadowEffect.ts';
+import type { CanvasRenderTargetPool } from './types.ts';
 
 // Recipe assertions rather than pixels — see canvasBlendEffect.test.ts for why jsdom forces that. Scratch
 // targets are pre-seeded into the pool so each pass is identifiable; acquisition pops from the end, so the

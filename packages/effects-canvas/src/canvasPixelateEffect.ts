@@ -1,13 +1,8 @@
-import type {
-  CanvasEffectRunner,
-  CanvasRenderState,
-  CanvasTextureRenderTarget,
-  CanvasRenderTargetPool,
-  PixelateEffect,
-} from '@flighthq/types/contract';
+import type { CanvasRenderState, CanvasTextureRenderTarget, PixelateEffect } from '@flighthq/types/contract';
 
 import { registerCanvasEffect } from './canvasEffectRegistry.ts';
 import { acquireCanvasRenderTarget, releaseCanvasRenderTarget } from './canvasEffectState.ts';
+import type { CanvasEffectRunner, CanvasRenderTargetPool } from './types.ts';
 
 // Pixelate (REAL): downscale the scene to (width/size, height/size) on a scratch canvas, then upscale
 // back to full size with imageSmoothingEnabled=false so the blocks stay hard-edged — the canonical 2D

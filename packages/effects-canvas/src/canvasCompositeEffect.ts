@@ -1,5 +1,4 @@
 import type {
-  CanvasEffectRunner,
   CanvasRenderState,
   CanvasTextureRenderTarget,
   CompositeEffect,
@@ -9,6 +8,7 @@ import { CompositeOperator as CompositeOperatorValues } from '@flighthq/types/co
 
 import { getCanvasBlendEffectBackdrop } from './canvasBlendEffect.ts';
 import { registerCanvasEffect } from './canvasEffectRegistry.ts';
+import type { CanvasEffectRunner } from './types.ts';
 
 // Porter-Duff composite pass: lay down a registered backdrop, then draw the incoming layer over it under
 // the Canvas 2D operation named by the effect's `operator`. This is the Canvas realization of the
@@ -55,7 +55,8 @@ export function applyCompositeEffectToCanvas(
 }
 
 export const canvasCompositeEffectRunner: CanvasEffectRunner = (ctx, effect) => {
-  applyCompositeEffectToCanvas(ctx.state, ctx.source, ctx.dest, effect as CompositeEffect);
+  // The declaration-only cycle bridge carries state identity; runtime contexts always carry the full state.
+  applyCompositeEffectToCanvas(ctx.state as CanvasRenderState, ctx.source, ctx.dest, effect as CompositeEffect);
 };
 
 // Maps a CompositeOperator to the Canvas 2D globalCompositeOperation that realizes it. An unrecognized

@@ -1,12 +1,8 @@
-import type {
-  CanvasEffectRunner,
-  CanvasRenderState,
-  CanvasTextureRenderTarget,
-  LensDistortionEffect,
-} from '@flighthq/types/contract';
+import type { CanvasRenderState, CanvasTextureRenderTarget, LensDistortionEffect } from '@flighthq/types/contract';
 
 import { drawCanvasImageDataPass } from './canvasEffectCompositing.ts';
 import { registerCanvasEffect } from './canvasEffectRegistry.ts';
+import type { CanvasEffectRunner } from './types.ts';
 
 // Lens distortion (REAL): remap uv by the same radial polynomial the Gl/Wgpu recipe uses —
 // `centered = (uv - 0.5) / scale; distorted = centered * (1 + amount * dot(centered, centered)) + 0.5` —

@@ -1,12 +1,8 @@
-import type {
-  CanvasEffectRunner,
-  CanvasRenderState,
-  CanvasTextureRenderTarget,
-  TiltShiftEffect,
-} from '@flighthq/types/contract';
+import type { CanvasRenderState, CanvasTextureRenderTarget, TiltShiftEffect } from '@flighthq/types/contract';
 
 import { drawCanvasImageDataPass } from './canvasEffectCompositing.ts';
 import { registerCanvasEffect } from './canvasEffectRegistry.ts';
+import type { CanvasEffectRunner } from './types.ts';
 
 // Tilt shift (REAL): keep a horizontal focus band sharp and blur above and below it, matching the
 // Gl/Wgpu recipe tap for tap — seven uniformly weighted vertical samples spaced `radius` pixels apart,

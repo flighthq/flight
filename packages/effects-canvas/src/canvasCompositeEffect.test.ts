@@ -1,11 +1,6 @@
 import { createCompositeEffect } from '@flighthq/effects/contract';
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type {
-  CanvasRenderState,
-  CanvasTextureRenderTarget,
-  CanvasRenderTargetPool,
-  CompositeEffect,
-} from '@flighthq/types/contract';
+import type { CanvasRenderState, CanvasTextureRenderTarget, CompositeEffect } from '@flighthq/types/contract';
 
 import { registerCanvasBlendEffectBackdrop } from './canvasBlendEffect.ts';
 import {
@@ -16,6 +11,7 @@ import {
 } from './canvasCompositeEffect.ts';
 import { getCanvasEffectRunner } from './canvasEffectRegistry.ts';
 import { canvasTestHost, createCanvasRenderState, createCanvasTextureRenderTarget } from './canvasEffectTestSupport.ts';
+import type { CanvasRenderTargetPool } from './types.ts';
 
 // Draw-contract assertions rather than pixels, for the reason spelled out in canvasBlendEffect.test.ts:
 // jsdom's 2D context accepts every call and rasterizes nothing, so a pixel assertion would pass

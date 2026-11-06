@@ -15,6 +15,7 @@
       ".texture-types",
       ".bitmap-types",
       ".node-types",
+      ".effects-canvas-types",
       ".effects-types",
       ".adjustments-types",
       ".app-types",
@@ -52,6 +53,9 @@
     },
     {
       "path": "../adjustments/tsconfig.contract.json"
+    },
+    {
+      "path": "../effects-canvas/tsconfig.contract.json"
     },
     {
       "path": "../effects/tsconfig.contract.json"

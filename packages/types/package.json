@@ -53,6 +53,7 @@
     "@flighthq/dialog": "*",
     "@flighthq/easing": "*",
     "@flighthq/effects": "*",
+    "@flighthq/effects-canvas": "*",
     "@flighthq/effects-gl": "*",
     "@flighthq/effects-wgpu": "*",
     "@flighthq/entity": "*",

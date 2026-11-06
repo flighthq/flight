@@ -1,12 +1,6 @@
 import { getColorAlpha, getColorRgb } from '@flighthq/color/contract';
 import { getCanvasSurfaceHost } from '@flighthq/scene2d-canvas/contract';
-import type {
-  BevelEffect,
-  CanvasEffectRunner,
-  CanvasRenderState,
-  CanvasTextureRenderTarget,
-  CanvasRenderTargetPool,
-} from '@flighthq/types/contract';
+import type { BevelEffect, CanvasRenderState, CanvasTextureRenderTarget } from '@flighthq/types/contract';
 
 import { drawCanvasEffectPass } from './canvasEffectCompositing.ts';
 import { registerCanvasEffect } from './canvasEffectRegistry.ts';
@@ -16,6 +10,7 @@ import {
   releaseCanvasRenderTarget,
 } from './canvasEffectState.ts';
 import { clearCanvasTarget, compositeCanvasImage, drawCanvasTintedAlphaMask } from './canvasSourceModeCompositing.ts';
+import type { CanvasEffectRunner, CanvasRenderTargetPool } from './types.ts';
 
 // Bevel composite effect: light the edge from one direction by differencing two offset copies of the
 // blurred silhouette, tint the lit side with the highlight colour and the unlit side with the shadow

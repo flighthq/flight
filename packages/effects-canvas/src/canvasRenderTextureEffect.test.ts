@@ -8,11 +8,11 @@ import {
   isCanvasRenderTextureReady,
   writeCanvasRenderTextureTarget,
 } from '@flighthq/scene2d-canvas/contract';
-import type { CanvasEffectRunner } from '@flighthq/types/contract';
 
 import { getCanvasEffectRunner, registerCanvasEffect } from './canvasEffectRegistry.ts';
 import { canvasTestHost, createCanvasRenderState } from './canvasEffectTestSupport.ts';
 import { applyCanvasEffectsToRenderTexture } from './canvasRenderTextureEffect.ts';
+import type { CanvasEffectRunner } from './types.ts';
 
 describe('applyCanvasEffectsToRenderTexture', () => {
   it('ping-pongs an even registered chain so the last operation publishes destination', () => {

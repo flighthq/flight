@@ -1,12 +1,8 @@
-import type {
-  CanvasEffectRunner,
-  CanvasRenderState,
-  CanvasTextureRenderTarget,
-  PosterizeEffect,
-} from '@flighthq/types/contract';
+import type { CanvasRenderState, CanvasTextureRenderTarget, PosterizeEffect } from '@flighthq/types/contract';
 
 import { drawCanvasImageDataPass } from './canvasEffectCompositing.ts';
 import { registerCanvasEffect } from './canvasEffectRegistry.ts';
+import type { CanvasEffectRunner } from './types.ts';
 
 // Posterize (REAL): floor each channel to `levels` discrete steps, matching the Gl/Wgpu recipe
 // `floor(c * levels) / (levels - 1)` exactly rather than approximating it.

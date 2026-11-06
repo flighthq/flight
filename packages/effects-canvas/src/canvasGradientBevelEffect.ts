@@ -1,11 +1,5 @@
 import { getCanvasSurfaceHost } from '@flighthq/scene2d-canvas/contract';
-import type {
-  CanvasEffectRunner,
-  CanvasRenderState,
-  CanvasTextureRenderTarget,
-  CanvasRenderTargetPool,
-  GradientBevelEffect,
-} from '@flighthq/types/contract';
+import type { CanvasRenderState, CanvasTextureRenderTarget, GradientBevelEffect } from '@flighthq/types/contract';
 
 import { clipCanvasBevelBand } from './canvasBevelEffect.ts';
 import { drawCanvasEffectPass } from './canvasEffectCompositing.ts';
@@ -17,6 +11,7 @@ import {
 } from './canvasEffectState.ts';
 import { applyCanvasGradientRampLookup, buildCanvasGradientRamp } from './canvasGradientRamp.ts';
 import { clearCanvasTarget, compositeCanvasImage } from './canvasSourceModeCompositing.ts';
+import type { CanvasEffectRunner, CanvasRenderTargetPool } from './types.ts';
 
 // Gradient-bevel composite effect: the same lit/unlit edge band the plain bevel builds, coloured from a
 // colours/alphas/ratios ramp instead of from two flat colours.

@@ -1,6 +1,6 @@
 import { createGradientGlowEffect } from '@flighthq/effects/contract';
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { CanvasTextureRenderTarget, CanvasRenderTargetPool, GradientGlowEffect } from '@flighthq/types/contract';
+import type { CanvasTextureRenderTarget, GradientGlowEffect } from '@flighthq/types/contract';
 
 import { getCanvasEffectRunner } from './canvasEffectRegistry.ts';
 import { canvasTestHost, createCanvasRenderState, createCanvasTextureRenderTarget } from './canvasEffectTestSupport.ts';
@@ -9,6 +9,7 @@ import {
   canvasGradientGlowEffectRunner,
   registerCanvasGradientGlowEffect,
 } from './canvasGradientGlowEffect.ts';
+import type { CanvasRenderTargetPool } from './types.ts';
 
 // Recipe assertions rather than pixels — see canvasBlendEffect.test.ts. Scratch targets are pre-seeded so
 // each pass is identifiable; the pool pops from the end, so the seed order reverses the acquire order.

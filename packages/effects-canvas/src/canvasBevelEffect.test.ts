@@ -1,6 +1,6 @@
 import { createBevelEffect } from '@flighthq/effects/contract';
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { BevelEffect, CanvasTextureRenderTarget, CanvasRenderTargetPool } from '@flighthq/types/contract';
+import type { BevelEffect, CanvasTextureRenderTarget } from '@flighthq/types/contract';
 
 import {
   applyBevelEffectToCanvas,
@@ -10,6 +10,7 @@ import {
 } from './canvasBevelEffect.ts';
 import { getCanvasEffectRunner } from './canvasEffectRegistry.ts';
 import { canvasTestHost, createCanvasRenderState, createCanvasTextureRenderTarget } from './canvasEffectTestSupport.ts';
+import type { CanvasRenderTargetPool } from './types.ts';
 
 // Recipe assertions rather than pixels — see canvasBlendEffect.test.ts. Scratch targets are pre-seeded so
 // every pass is identifiable; the pool pops from the end, so the seed order reverses the acquire order.

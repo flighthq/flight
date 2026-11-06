@@ -1,0 +1,19 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "composite": true,
+    "rootDir": "src",
+    "outDir": "dist",
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "moduleSuffixes": [".surface-types", ""],
+    "tsBuildInfoFile": "dist/.tsbuildinfo.effects-canvas-bridge-types"
+  },
+  "references": [{ "path": "../entity" }, { "path": "../surface/tsconfig.contract.json" }],
+  "include": [
+    "src/contract.effects-canvas-bridge-types.ts",
+    "src/CanvasRenderState.effects-canvas-bridge-types.ts",
+    "src/CanvasRenderTarget.effects-canvas-bridge-types.ts"
+  ]
+}

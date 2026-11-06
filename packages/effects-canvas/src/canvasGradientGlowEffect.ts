@@ -1,11 +1,5 @@
 import { getCanvasSurfaceHost } from '@flighthq/scene2d-canvas/contract';
-import type {
-  CanvasEffectRunner,
-  CanvasRenderState,
-  CanvasTextureRenderTarget,
-  CanvasRenderTargetPool,
-  GradientGlowEffect,
-} from '@flighthq/types/contract';
+import type { CanvasRenderState, CanvasTextureRenderTarget, GradientGlowEffect } from '@flighthq/types/contract';
 
 import { drawCanvasEffectPass } from './canvasEffectCompositing.ts';
 import { registerCanvasEffect } from './canvasEffectRegistry.ts';
@@ -16,6 +10,7 @@ import {
 } from './canvasEffectState.ts';
 import { applyCanvasGradientRampLookup, buildCanvasGradientRamp } from './canvasGradientRamp.ts';
 import { clearCanvasTarget, compositeCanvasImage } from './canvasSourceModeCompositing.ts';
+import type { CanvasEffectRunner, CanvasRenderTargetPool } from './types.ts';
 
 // Gradient-glow composite effect: blur the silhouette, then colour every pixel by looking its blurred
 // alpha up in a colours/alphas/ratios ramp, and composite the result under the source.
