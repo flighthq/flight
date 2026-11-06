@@ -66,7 +66,9 @@ export function beginCanvasRenderPass(
 // Ending a pass twice, or out of order, throws — an unbalanced bracket is a programmer error, and
 // accepting it silently leaves later draws going to whichever canvas happened to be installed.
 export function endCanvasRenderPass(pass: CanvasRenderPass): void {
-  const state = pass.state;
+  // CanvasRenderPass stores only state identity in the contract project to close the genuine
+  // effects-canvas cycle; this runtime owns and restores the full Canvas state view.
+  const state = pass.state as CanvasRenderState;
   const runtime = getCanvasRenderStateRuntime(state);
   if (runtime.passStack.at(-1) !== pass) {
     throw new Error('endCanvasRenderPass: this pass is not the innermost open pass');

@@ -26,7 +26,9 @@ export function renderCanvasScene2D(
   source: Node2D,
   renderTransform?: Readonly<Matrix> | null,
 ): void {
-  const state = pass.state;
+  // CanvasRenderPass stores only state identity in the contract project to close the genuine
+  // effects-canvas cycle; this runtime owns and restores the full Canvas state view.
+  const state = pass.state as CanvasRenderState;
   const tempStack = getCanvasRenderStateRuntime(state).tempStack;
   const clipHooks = state.displayObjectClipHooks;
   const hasRenderTransform = renderTransform != null;
