@@ -4,9 +4,9 @@ import type {
   HostMenuPopupCapability,
   HostMenuSelectCapability,
 } from '@flighthq/menu/contract';
-import type { ElectronApi } from '@flighthq/types/contract';
 
 import { toElectronTemplate } from './electronMenuTemplate.ts';
+import type { ElectronApi } from './types/index.ts';
 
 interface ElectronMenuState {
   destroyed: boolean;

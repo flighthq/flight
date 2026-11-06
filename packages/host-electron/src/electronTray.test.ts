@@ -8,13 +8,6 @@ import {
   setTrayIconTemplate,
 } from '@flighthq/tray/contract';
 import type { TrayIcon } from '@flighthq/tray/contract';
-import type {
-  ElectronApi,
-  ElectronMenu,
-  ElectronMenuItemOptions,
-  ElectronNativeImage,
-  ElectronTray,
-} from '@flighthq/types/contract';
 import { describe, expect, it, vi } from 'vitest';
 
 import {
@@ -50,6 +43,13 @@ import {
   populateElectronHostTrayTitle,
   populateElectronHostTrayTooltip,
 } from './electronTray.ts';
+import type {
+  ElectronApi,
+  ElectronMenu,
+  ElectronMenuItemOptions,
+  ElectronNativeImage,
+  ElectronTray,
+} from './types/index.ts';
 
 interface FakeImage extends ElectronNativeImage {
   source: string;

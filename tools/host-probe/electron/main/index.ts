@@ -3,8 +3,8 @@ import { join } from 'node:path';
 
 import { closeWindow, createAppWindow, getAppName, getAppVersion, openWindow } from '@flighthq/app';
 import { electronHost, getElectronBrowserWindow } from '@flighthq/host-electron';
+import type { ElectronApi } from '@flighthq/host-electron';
 import { getScreens } from '@flighthq/screen/contract';
-import type { ElectronApi } from '@flighthq/types/contract';
 import electron from 'electron';
 
 import { captureHostProbeBackends, diffHostProbeBackends } from '#host-probe/capabilityBackends';

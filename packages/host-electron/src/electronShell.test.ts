@@ -1,5 +1,3 @@
-import type { ElectronApi } from '@flighthq/types/contract';
-
 import {
   electronHostShell,
   electronHostShellBeep,
@@ -15,6 +13,7 @@ import {
   populateElectronHostShellShortcutLink,
   populateElectronHostShellTrash,
 } from './electronShell.ts';
+import type { ElectronApi } from './types/index.ts';
 
 function fakeElectron(shell: Partial<ElectronApi['shell']>): ElectronApi {
   return { shell } as unknown as ElectronApi;

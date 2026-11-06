@@ -1,5 +1,4 @@
 import type { HostAppMenuCapability, HostMenuPopupCapability, HostMenuSelectCapability } from '@flighthq/menu/contract';
-import type { ElectronApi, ElectronMenu, ElectronMenuItemOptions } from '@flighthq/types/contract';
 
 import {
   electronHostMenu,
@@ -11,6 +10,7 @@ import {
   populateElectronHostMenuPopup,
   populateElectronHostMenuSelect,
 } from './electronMenu.ts';
+import type { ElectronApi, ElectronMenu, ElectronMenuItemOptions } from './types/index.ts';
 
 function fakeElectron(): {
   electron: ElectronApi;

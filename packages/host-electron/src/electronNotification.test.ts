@@ -1,6 +1,5 @@
+import { EntityRuntimeKey } from '@flighthq/entity/contract';
 import { closeNotification } from '@flighthq/notification/contract';
-import { EntityRuntimeKey } from '@flighthq/types/contract';
-import type { ElectronApi, ElectronNotificationOptions } from '@flighthq/types/contract';
 
 import {
   electronHostNotification,
@@ -15,6 +14,7 @@ import {
   populateElectronHostNotificationMacos,
   populateElectronHostNotificationCommon,
 } from './electronNotification.ts';
+import type { ElectronApi, ElectronNotificationOptions } from './types/index.ts';
 
 interface FakeNotification {
   close(): void;

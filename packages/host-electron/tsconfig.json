@@ -24,7 +24,13 @@
       "path": "../app/tsconfig.runtime.json"
     },
     {
+      "path": "../audio/tsconfig.runtime.json"
+    },
+    {
       "path": "../clipboard/tsconfig.runtime.json"
+    },
+    {
+      "path": "../device/tsconfig.runtime.json"
     },
     {
       "path": "../dialog"
@@ -36,19 +42,37 @@
       "path": "../geometry/tsconfig.contract.json"
     },
     {
+      "path": "../haptics"
+    },
+    {
       "path": "../host/tsconfig.runtime.json"
     },
     {
       "path": "../host-web"
     },
     {
+      "path": "../image-codec"
+    },
+    {
+      "path": "../input"
+    },
+    {
       "path": "../ipc/tsconfig.contract.json"
+    },
+    {
+      "path": "../lifecycle/tsconfig.runtime.json"
+    },
+    {
+      "path": "../media/tsconfig.runtime.json"
     },
     {
       "path": "../mediasession/tsconfig.contract.json"
     },
     {
       "path": "../menu/tsconfig.contract.json"
+    },
+    {
+      "path": "../net/tsconfig.runtime.json"
     },
     {
       "path": "../notification/tsconfig.runtime.json"
@@ -66,16 +90,34 @@
       "path": "../protocol/tsconfig.runtime.json"
     },
     {
-      "path": "../shell/tsconfig.contract.json"
+      "path": "../render-gl/tsconfig.runtime.json"
+    },
+    {
+      "path": "../render-wgpu/tsconfig.runtime.json"
     },
     {
       "path": "../screen"
+    },
+    {
+      "path": "../sensors/tsconfig.runtime.json"
+    },
+    {
+      "path": "../shell/tsconfig.contract.json"
     },
     {
       "path": "../shortcut"
     },
     {
       "path": "../signals"
+    },
+    {
+      "path": "../socket/tsconfig.runtime.json"
+    },
+    {
+      "path": "../statusbar/tsconfig.runtime.json"
+    },
+    {
+      "path": "../surface/tsconfig.runtime.json"
     },
     {
       "path": "../textshaper/tsconfig.contract.json"

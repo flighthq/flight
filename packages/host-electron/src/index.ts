@@ -132,3 +132,4 @@ export {
   getElectronBrowserWindow,
   getElectronWindowId,
 } from './electronWindow.ts';
+export type * from './types/index.ts';

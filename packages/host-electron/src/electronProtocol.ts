@@ -5,7 +5,8 @@ import type {
   HostProtocolRegistrationQueryCapability,
   HostProtocolUnregistrationCapability,
 } from '@flighthq/protocol/contract';
-import type { ElectronApi, ElectronProtocolCapabilities } from '@flighthq/types/contract';
+
+import type { ElectronApi, ElectronProtocolCapabilities } from './types/index.ts';
 
 function protocolDefault(electron: ElectronApi, registered: Set<string>): HostProtocolDefaultCapability {
   const out = {} as HostProtocolDefaultCapability;

@@ -2,7 +2,8 @@ import * as fs from 'node:fs';
 import { join } from 'node:path';
 
 import { getElectronBrowserWindow, electronHost } from '@flighthq/host-electron';
-import type { AppWindow, ElectronApi, MenuItemTemplate, ScreenInfo } from '@flighthq/sdk';
+import type { ElectronApi } from '@flighthq/host-electron';
+import type { AppWindow, MenuItemTemplate, ScreenInfo } from '@flighthq/sdk';
 import {
   createAppWindow,
   attachGlobalShortcut,

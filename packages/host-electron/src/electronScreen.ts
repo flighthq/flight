@@ -10,7 +10,8 @@ import type {
   ScreenInfo,
   ScreenOrientation,
 } from '@flighthq/screen/contract';
-import type { ElectronApi, ElectronDisplay } from '@flighthq/types/contract';
+
+import type { ElectronApi, ElectronDisplay } from './types/index.ts';
 
 export function electronHostScreen(electron: ElectronApi): Required<Pick<HostScreenCapabilities, 'change' | 'query'>> {
   return { change: electronHostScreenChange(electron), query: electronHostScreenQuery(electron) };

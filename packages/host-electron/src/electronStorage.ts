@@ -1,12 +1,13 @@
 import type {
-  ElectronApi,
   HostPreferencesCapabilities,
   HostPreferencesCapability,
   StorageClearFailureReason,
   StorageGetItemFailureReason,
   StorageRemoveItemFailureReason,
   StorageSetItemFailureReason,
-} from '@flighthq/types/contract';
+} from '@flighthq/preferences/contract';
+
+import type { ElectronApi } from './types/index.ts';
 
 type StorageRecord = Record<string, string>;
 type StorageRecordResult =

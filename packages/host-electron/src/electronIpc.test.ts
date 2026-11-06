@@ -1,5 +1,3 @@
-import type { ElectronApi, ElectronIpcRenderer, ElectronIpcTarget } from '@flighthq/types/contract';
-
 import {
   electronHostIpc,
   electronHostIpcHandle,
@@ -13,6 +11,7 @@ import {
   populateElectronHostIpcSend,
   populateElectronHostIpcTargetedSend,
 } from './electronIpc.ts';
+import type { ElectronApi, ElectronIpcRenderer, ElectronIpcTarget } from './types/index.ts';
 
 function fakeElectron(): {
   channels: Map<string, Set<(event: unknown, ...args: unknown[]) => void>>;

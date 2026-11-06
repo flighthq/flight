@@ -1,13 +1,7 @@
+import type { EntityRuntimeKey } from '@flighthq/entity/contract';
 import { createHost } from '@flighthq/host/contract';
-import type {
-  DesktopOsProfile,
-  ElectronApi,
-  ElectronHost,
-  ElectronHostOptions,
-  ElectronMacosHost,
-  EntityRuntimeKey,
-  Host,
-} from '@flighthq/types/contract';
+import type { DesktopOsProfile } from '@flighthq/tray/contract';
+import type { Host } from '@flighthq/types/contract';
 
 import { electronHostApp } from './electronApp.ts';
 import { electronHostClipboard } from './electronClipboard.ts';
@@ -62,6 +56,7 @@ import { electronHostStorageGroup } from './electronStorage.ts';
 import { electronHostTray } from './electronTray.ts';
 import { electronHostUpdater } from './electronUpdater.ts';
 import { electronHostWindow } from './electronWindow.ts';
+import type { ElectronApi, ElectronHost, ElectronHostOptions, ElectronMacosHost } from './types/index.ts';
 
 // Constructs the explicit Electron host from an injected Electron API and platform profile. Every
 // group is built through its separately exported constructor, including exact empty groups for

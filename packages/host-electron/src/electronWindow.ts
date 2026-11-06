@@ -23,7 +23,8 @@ import type {
   WindowBounds,
 } from '@flighthq/app/contract';
 import { emitSignal } from '@flighthq/signals/contract';
-import type { ElectronApi, ElectronBrowserWindow } from '@flighthq/types/contract';
+
+import type { ElectronApi, ElectronBrowserWindow } from './types/index.ts';
 
 // Maps Flight's window capability slots onto Electron's BrowserWindow, one BrowserWindow per
 // AppWindow. open() constructs the real OS window from WindowOptions and wires BrowserWindow OS

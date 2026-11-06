@@ -1,10 +1,9 @@
-import type { ElectronApi } from '@flighthq/types/contract';
-
 import {
   electronHostUpdater,
   electronHostUpdaterCommand,
   populateElectronHostUpdaterCommand,
 } from './electronUpdater.ts';
+import type { ElectronApi } from './types/index.ts';
 
 type NativeListener = (...args: unknown[]) => void;
 

@@ -1,11 +1,10 @@
-import type { ElectronApi } from '@flighthq/types/contract';
-
 import {
   electronHostShortcut,
   electronHostShortcutQuery,
   electronHostShortcutTrigger,
   populateElectronHostShortcutQuery,
 } from './electronShortcut.ts';
+import type { ElectronApi } from './types/index.ts';
 
 function fakeElectron() {
   const callbacks = new Map<string, () => void>();

@@ -1,4 +1,3 @@
-import type { ElectronApi, ElectronMenu, ElectronMenuItemOptions } from '@flighthq/types/contract';
 import { describe, expect, it, vi } from 'vitest';
 
 import {
@@ -31,6 +30,7 @@ import {
   populateElectronHostAppMacos,
   populateElectronHostAppWindows,
 } from './electronApp.ts';
+import type { ElectronApi, ElectronMenu, ElectronMenuItemOptions } from './types/index.ts';
 
 function fakeElectron() {
   const calls: string[] = [];

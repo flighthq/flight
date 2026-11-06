@@ -1,5 +1,3 @@
-import type { ElectronApi, ElectronNativeImage } from '@flighthq/types/contract';
-
 import {
   electronHostClipboard,
   electronHostClipboardBookmark,
@@ -7,6 +5,7 @@ import {
   electronHostClipboardImage,
   electronHostClipboardText,
 } from './electronClipboard.ts';
+import type { ElectronApi, ElectronNativeImage } from './types/index.ts';
 
 function clipboardProvider(electron: ElectronApi) {
   const clipboard = electronHostClipboard(electron);

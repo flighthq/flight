@@ -1,4 +1,7 @@
 import type { HostFullscreenCapabilities } from '@flighthq/app/contract';
+import type { HostAudioDecodeCapabilities } from '@flighthq/audio/contract';
+import type { HostDeviceCapabilities } from '@flighthq/device/contract';
+import type { HostHapticsCapabilities } from '@flighthq/haptics/contract';
 import {
   webHostAudioDecode,
   webHostImageDecode,
@@ -12,38 +15,34 @@ import type {
   HostSoftKeyboardCapabilities,
   HostTextSegmentCapabilities,
 } from '@flighthq/host/contract';
-import type { HostMediaSessionCapabilities } from '@flighthq/mediasession/contract';
-import type { HostTextShaperCapabilities } from '@flighthq/textshaper/contract';
 import type {
-  ElectronApi,
-  HostAudioCapabilities,
-  HostAudioDecodeCapabilities,
   HostBitmapCapabilities,
   HostCompressCapabilities,
-  HostDeviceCapabilities,
   HostFileSystemCapabilities,
   HostFontCapabilities,
   HostGeolocationCapabilities,
-  HostGlCapabilities,
   HostGlyphCapabilities,
-  HostHapticsCapabilities,
   HostImageCapabilities,
-  HostImageDecodeCapabilities,
-  HostImageEncodeCapabilities,
-  HostInputCapabilities,
-  HostLifecycleCapabilities,
   HostMidiCapabilities,
-  HostNetCapabilities,
-  HostSensorsCapabilities,
   HostShareCapabilities,
-  HostSocketCapabilities,
-  HostStatusBarCapabilities,
-  HostCanvasCapabilities,
-  HostSurfaceCapabilities,
   HostDecompressCapabilities,
-  HostWgpuCapabilities,
-} from '@flighthq/types/contract';
+} from '@flighthq/host/contract';
+import type { HostImageDecodeCapabilities, HostImageEncodeCapabilities } from '@flighthq/image-codec/contract';
+import type { HostInputCapabilities } from '@flighthq/input/contract';
+import type { HostLifecycleCapabilities } from '@flighthq/lifecycle/contract';
+import type { HostAudioCapabilities } from '@flighthq/media/contract';
+import type { HostMediaSessionCapabilities } from '@flighthq/mediasession/contract';
+import type { HostNetCapabilities } from '@flighthq/net/contract';
+import type { HostGlCapabilities } from '@flighthq/render-gl/contract';
+import type { HostWgpuCapabilities } from '@flighthq/render-wgpu/contract';
+import type { HostSensorsCapabilities } from '@flighthq/sensors/contract';
+import type { HostSocketCapabilities } from '@flighthq/socket/contract';
+import type { HostStatusBarCapabilities } from '@flighthq/statusbar/contract';
+import type { HostCanvasCapabilities, HostSurfaceCapabilities } from '@flighthq/surface/contract';
+import type { HostTextShaperCapabilities } from '@flighthq/textshaper/contract';
 import type { HostVideoCapabilities } from '@flighthq/video/contract';
+
+import type { ElectronApi } from './types/index.ts';
 
 // Unsupported groups still have named constructors so the full Electron host has the same explicit
 // 45-group composition boundary as every other canonical Host. Empty means absent, never stubbed.

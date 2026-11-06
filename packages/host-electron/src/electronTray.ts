@@ -27,6 +27,8 @@ import type {
   TrayInteractionEvent,
   TrayMenuSelectionEvent,
 } from '@flighthq/tray/contract';
+
+import { toElectronTemplate } from './electronMenuTemplate.ts';
 import type {
   ElectronApi,
   ElectronMenu,
@@ -34,9 +36,7 @@ import type {
   ElectronRectangle,
   ElectronTray,
   ElectronTrayCapabilitiesFor,
-} from '@flighthq/types/contract';
-
-import { toElectronTemplate } from './electronMenuTemplate.ts';
+} from './types/index.ts';
 
 interface NativeListener {
   event: string;

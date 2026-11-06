@@ -6,7 +6,8 @@ import type {
   HostIpcSendCapability,
   HostIpcTargetedSendCapability,
 } from '@flighthq/ipc/contract';
-import type { ElectronApi, ElectronIpcRenderer, ElectronIpcTarget } from '@flighthq/types/contract';
+
+import type { ElectronApi, ElectronIpcRenderer, ElectronIpcTarget } from './types/index.ts';
 
 // Electron's process sides expose different capability vectors. These constructors keep the slots
 // independent so a renderer host carries send/invoke while a main host carries message/handle/targetedSend.

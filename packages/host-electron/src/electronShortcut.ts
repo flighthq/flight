@@ -6,7 +6,8 @@ import type {
   HostShortcutTriggerCapability,
   ShortcutTriggerSubscription,
 } from '@flighthq/shortcut/contract';
-import type { ElectronApi } from '@flighthq/types/contract';
+
+import type { ElectronApi } from './types/index.ts';
 
 export function electronHostShortcut(
   electron: ElectronApi,

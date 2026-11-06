@@ -1,4 +1,3 @@
-import type { ElectronApi } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import {
@@ -15,6 +14,7 @@ import {
   populateElectronHostProtocolRegistrationQuery,
   populateElectronHostProtocolUnregistration,
 } from './electronProtocol.ts';
+import type { ElectronApi } from './types/index.ts';
 
 function fakeElectron() {
   const listeners = new Map<string, ((...args: unknown[]) => void)[]>();

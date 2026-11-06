@@ -9,12 +9,9 @@ import type {
   NotificationRequest,
   NotificationRequestField,
 } from '@flighthq/notification/contract';
-import type {
-  DesktopOsProfile,
-  ElectronApi,
-  ElectronHostOptions,
-  ElectronNotification,
-} from '@flighthq/types/contract';
+import type { DesktopOsProfile } from '@flighthq/tray/contract';
+
+import type { ElectronApi, ElectronHostOptions, ElectronNotification } from './types/index.ts';
 
 type ElectronNotificationCapabilitiesFor<Profile extends DesktopOsProfile> = Profile extends 'macos'
   ? ElectronMacosNotificationCapabilities

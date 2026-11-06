@@ -1,16 +1,17 @@
 import { createFileDialogHandle } from '@flighthq/dialog/contract';
 import type {
   HostDirectoryOpenDialogCapability,
-  HostDialogCapabilities,
   DirectoryOpenDialogResult,
-  ElectronApi,
   FileDialogFilter,
   HostFileOpenDialogCapability,
   FileOpenDialogResult,
   HostFileSaveDialogCapability,
   FileSaveDialogResult,
   HostMessageDialogCapability,
-} from '@flighthq/types/contract';
+} from '@flighthq/dialog/contract';
+import type { HostDialogCapabilities } from '@flighthq/host/contract';
+
+import type { ElectronApi } from './types/index.ts';
 
 export function electronHostDialog(
   electron: ElectronApi,

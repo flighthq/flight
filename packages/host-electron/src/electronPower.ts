@@ -16,7 +16,8 @@ import type {
   PowerStatus,
   PowerThermalState,
 } from '@flighthq/power/contract';
-import type { ElectronApi } from '@flighthq/types/contract';
+
+import type { ElectronApi } from './types/index.ts';
 
 function finishProvider<Provider>(populate: (out: Provider) => void): Provider {
   const out = {} as Provider;

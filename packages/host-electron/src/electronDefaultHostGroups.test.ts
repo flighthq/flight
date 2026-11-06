@@ -4,7 +4,6 @@ import {
   webHostImageEncode,
   webHostTextShaper,
 } from '@flighthq/host-web/contract';
-import type { ElectronApi } from '@flighthq/types/contract';
 
 import {
   electronHostAccessibilityGroup,
@@ -43,6 +42,7 @@ import {
   electronHostVideoGroup,
   electronHostWgpuGroup,
 } from './electronDefaultHostGroups.ts';
+import type { ElectronApi } from './types/index.ts';
 
 const electron = {} as ElectronApi;
 

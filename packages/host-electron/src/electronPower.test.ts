@@ -1,5 +1,4 @@
 import type { PowerStatus } from '@flighthq/power/contract';
-import type { ElectronApi } from '@flighthq/types/contract';
 
 import {
   electronHostPower,
@@ -21,6 +20,7 @@ import {
   populateElectronHostPowerSuspension,
   populateElectronHostPowerThermal,
 } from './electronPower.ts';
+import type { ElectronApi } from './types/index.ts';
 
 function emptyStatus(): PowerStatus {
   return {

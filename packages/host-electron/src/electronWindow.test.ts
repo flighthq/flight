@@ -1,6 +1,5 @@
 import { createAppWindow } from '@flighthq/app';
 import { connectSignal } from '@flighthq/signals/contract';
-import type { ElectronApi, ElectronBrowserWindowOptions, ElectronRectangle } from '@flighthq/types/contract';
 
 import {
   electronHostWindow,
@@ -25,6 +24,7 @@ import {
   getElectronWindowId,
   resetElectronHostWindowForTest,
 } from './electronWindow.ts';
+import type { ElectronApi, ElectronBrowserWindowOptions, ElectronRectangle } from './types/index.ts';
 
 interface FakeBrowserWindow {
   id: number;

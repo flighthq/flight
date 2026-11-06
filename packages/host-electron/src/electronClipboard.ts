@@ -1,13 +1,13 @@
 import type {
   ClipboardBookmark,
-  ElectronApi,
-  ElectronClipboardData,
   HostClipboardBookmarkCapability,
   HostClipboardCapabilities,
   HostClipboardFormatsCapability,
   HostClipboardImageCapability,
   HostClipboardTextCapability,
-} from '@flighthq/types/contract';
+} from '@flighthq/clipboard/contract';
+
+import type { ElectronApi, ElectronClipboardData } from './types/index.ts';
 
 export function electronHostClipboard(
   electron: ElectronApi,

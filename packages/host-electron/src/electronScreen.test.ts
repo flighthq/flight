@@ -1,6 +1,5 @@
 import { createScreenInfo } from '@flighthq/screen/contract';
 import type { ScreenInfo } from '@flighthq/screen/contract';
-import type { ElectronApi, ElectronDisplay } from '@flighthq/types/contract';
 
 import {
   electronHostScreen,
@@ -9,6 +8,7 @@ import {
   populateElectronHostScreenChange,
   populateElectronHostScreenQuery,
 } from './electronScreen.ts';
+import type { ElectronApi, ElectronDisplay } from './types/index.ts';
 
 function display(id: number, x: number): ElectronDisplay {
   return {

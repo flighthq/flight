@@ -27,17 +27,17 @@ import type {
   HostAppVersionCapability,
 } from '@flighthq/app/contract';
 import type { MenuItemTemplate } from '@flighthq/menu/contract';
+import type { DesktopOsProfile } from '@flighthq/tray/contract';
+
+import { toElectronTemplate } from './electronMenuTemplate.ts';
 import type {
-  DesktopOsProfile,
   ElectronApi,
   ElectronAppCapabilitiesFor,
   ElectronCommonAppCapabilities,
   ElectronLinuxAppCapabilities,
   ElectronMacosAppCapabilities,
   ElectronWindowsAppCapabilities,
-} from '@flighthq/types/contract';
-
-import { toElectronTemplate } from './electronMenuTemplate.ts';
+} from './types/index.ts';
 
 type AppSubscribe = (event: string, listener: (...args: unknown[]) => void) => () => void;
 

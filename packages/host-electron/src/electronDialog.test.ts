@@ -1,10 +1,3 @@
-import type {
-  ElectronApi,
-  ElectronMessageBoxOptions,
-  ElectronOpenDialogOptions,
-  ElectronSaveDialogOptions,
-} from '@flighthq/types/contract';
-
 import {
   electronHostDialog,
   electronHostDirectoryOpenDialog,
@@ -16,6 +9,12 @@ import {
   populateElectronHostFileSaveDialog,
   populateElectronHostMessageDialog,
 } from './electronDialog.ts';
+import type {
+  ElectronApi,
+  ElectronMessageBoxOptions,
+  ElectronOpenDialogOptions,
+  ElectronSaveDialogOptions,
+} from './types/index.ts';
 
 function fakeElectron(overrides: {
   open?: { canceled: boolean; filePaths: string[] } | Error;

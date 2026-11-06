@@ -1,12 +1,13 @@
 import { getAppName } from '@flighthq/app';
 import { readClipboardText } from '@flighthq/clipboard/contract';
+import { EntityRuntimeKey } from '@flighthq/entity/contract';
 import { createHost } from '@flighthq/host/contract';
-import { EntityRuntimeKey } from '@flighthq/types/contract';
-import type { ElectronApi, Entity } from '@flighthq/types/contract';
+import type { Entity } from '@flighthq/types/contract';
 
 import * as contractApi from './contract.ts';
 import { electronHost } from './electronRegister.ts';
 import * as publicApi from './index.ts';
+import type { ElectronApi } from './types/index.ts';
 
 const GROUPS = [
   ['accessibility', 'electronHostAccessibilityGroup'],
