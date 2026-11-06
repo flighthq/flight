@@ -1,5 +1,6 @@
 import { getTextureAtlasByteSize } from '@flighthq/textureatlas/contract';
-import type { BitmapFont, BitmapFontSummary } from '@flighthq/types/contract';
+
+import type { BitmapFont, BitmapFontSummary } from './types.ts';
 
 /** Summarizes a font's size and coverage as plain data: glyph and kerning-pair counts, page count, the
  *  CPU-side bytes its page images occupy, and the codepoint range.

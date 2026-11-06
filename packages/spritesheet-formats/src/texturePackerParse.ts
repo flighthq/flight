@@ -6,12 +6,12 @@ import {
 } from '@flighthq/spritesheet/contract';
 import { parseTexturePackerAtlasDocument } from '@flighthq/textureatlas-formats/contract';
 import { createTextureAtlas } from '@flighthq/textureatlas/contract';
+import type { TextureAtlasRegion } from '@flighthq/textureatlas/contract';
 import type {
   ImportDiagnostic,
   SpritesheetAnimationData,
   SpritesheetData,
   SpritesheetFrameData,
-  TextureAtlasRegion,
   TexturePackerDocument,
   TexturePackerFrameTag,
   TexturePackerMeta,

@@ -10,7 +10,7 @@
   },
   "references": [
     { "path": "../entity" },
-    { "path": "../textureatlas" },
+    { "path": "../textureatlas/tsconfig.runtime.json" },
     { "path": "../signals" },
     { "path": "../types" }
   ],

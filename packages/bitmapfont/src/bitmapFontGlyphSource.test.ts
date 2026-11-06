@@ -1,9 +1,10 @@
 import { createTextureAtlas, createTextureAtlasFromImageResource } from '@flighthq/textureatlas/contract';
-import type { BitmapFontData, ImageResource } from '@flighthq/types/contract';
+import type { ImageResource } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { createBitmapFont, getBitmapFontGlyph } from './bitmapFont.ts';
 import { createGlyphSourceFromBitmapFont, initializeGlyphSourceFromBitmapFont } from './bitmapFontGlyphSource.ts';
+import type { BitmapFontData } from './types.ts';
 
 describe('createGlyphSourceFromBitmapFont', () => {
   it('exposes the font as a GlyphSource whose lookups match the font', () => {

@@ -1,11 +1,9 @@
+import type { BitmapFont, BitmapFontEncoding, BitmapFontParseOptions } from '@flighthq/bitmapfont/contract';
 import type {
-  BitmapFont,
   ImportDiagnostic,
   BitmapFontCharRecord,
-  BitmapFontEncoding,
   BitmapFontKerningRecord,
   BitmapFontPageRecord,
-  BitmapFontParseOptions,
   BitmapFontRecord,
 } from '@flighthq/types/contract';
 

@@ -5,3 +5,4 @@ export * from './textureAtlasGrid.ts';
 export * from './textureAtlasRegion.ts';
 export { initializeTextureAtlas } from './textureAtlas.ts';
 export { initializeTextureAtlasRegion } from './textureAtlasRegion.ts';
+export * from './types.ts';

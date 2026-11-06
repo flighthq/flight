@@ -9,12 +9,12 @@
     "sourceMap": true
   },
   "references": [
-    { "path": "../bitmapfont" },
+    { "path": "../bitmapfont/tsconfig.runtime.json" },
     { "path": "../encoding" },
     { "path": "../importdiagnostics" },
     { "path": "../registry" },
     { "path": "../requirement" },
-    { "path": "../textureatlas" },
+    { "path": "../textureatlas/tsconfig.runtime.json" },
     { "path": "../types" },
     { "path": "../xml" }
   ],

@@ -1,5 +1,6 @@
 import { createTextureAtlasFromGrid } from '@flighthq/textureatlas/contract';
-import type { GridSliceOptions, Spritesheet, SpritesheetAnimation, TextureAtlas } from '@flighthq/types/contract';
+import type { GridSliceOptions, TextureAtlas } from '@flighthq/textureatlas/contract';
+import type { Spritesheet, SpritesheetAnimation } from '@flighthq/types/contract';
 
 import { createSpritesheet } from './spritesheet.ts';
 import { createSpritesheetAnimation } from './spritesheetAnimation.ts';

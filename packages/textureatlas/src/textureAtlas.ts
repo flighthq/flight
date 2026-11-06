@@ -1,7 +1,10 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
 import type { CompressedImageResource } from '@flighthq/image/contract';
-import type { Bitmap, EntityConstruction, TextureAtlas } from '@flighthq/types/contract';
-import { BitmapTextureSourceKind, CompressedImageTextureSourceKind } from '@flighthq/types/contract';
+import { BitmapTextureSourceKind, CompressedImageTextureSourceKind } from '@flighthq/texture/contract';
+import type { Bitmap } from '@flighthq/types/contract';
+
+import type { TextureAtlas } from './types.ts';
 
 export function createTextureAtlas(obj?: Partial<TextureAtlas>): TextureAtlas {
   const out = allocateEntity<TextureAtlas>();

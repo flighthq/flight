@@ -4,8 +4,9 @@ import {
   unregisterTestImageDimensionResolver,
 } from '@flighthq/image/contract';
 import { createTexture } from '@flighthq/texture/contract';
-import type { Bitmap, TextureAtlas, TextureAtlasRegion } from '@flighthq/types/contract';
-import { BitmapTextureSourceKind, TextureAtlasRotation } from '@flighthq/types/contract';
+import { BitmapTextureSourceKind } from '@flighthq/texture/contract';
+import type { Bitmap } from '@flighthq/types/contract';
+import { TextureAtlasRotation } from '@flighthq/types/contract';
 
 import {
   createTextureAtlas,
@@ -13,6 +14,7 @@ import {
   getTextureAtlasByteSize,
   initializeTextureAtlas,
 } from './textureAtlas.ts';
+import type { TextureAtlas, TextureAtlasRegion } from './types.ts';
 
 // A test that wraps a host handle supplies the host: the resource measures through the registered
 // resolver, and clearing after each test keeps this file from covering for another's missing one.

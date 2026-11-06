@@ -1,7 +1,7 @@
 import { getKindMapKeys, withKindMapEntry, withoutKindMapEntry } from '@flighthq/registry/contract';
+import type { TextureAtlas } from '@flighthq/textureatlas/contract';
 import type {
   Kind,
-  TextureAtlas,
   TextureAtlasFormatDescriptor,
   TextureAtlasFormatEntry,
   TextureAtlasFormatKind,

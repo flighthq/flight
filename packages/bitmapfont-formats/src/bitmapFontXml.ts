@@ -1,10 +1,9 @@
+import type { BitmapFont, BitmapFontParseOptions } from '@flighthq/bitmapfont/contract';
 import type {
-  BitmapFont,
   ImportDiagnostic,
   BitmapFontCharRecord,
   BitmapFontKerningRecord,
   BitmapFontPageRecord,
-  BitmapFontParseOptions,
   BitmapFontRecord,
 } from '@flighthq/types/contract';
 import type { XmlElement } from '@flighthq/xml/contract';

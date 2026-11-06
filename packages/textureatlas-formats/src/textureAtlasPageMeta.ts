@@ -1,4 +1,4 @@
-import type { TextureAtlas } from '@flighthq/types/contract';
+import type { TextureAtlas } from '@flighthq/textureatlas/contract';
 
 // TexturePacker writes `meta.scale` as a string ("0.5"); Aseprite omits it. A value that does not
 // parse leaves the atlas at 1 rather than NaN, which would silently poison every coordinate a

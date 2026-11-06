@@ -1,4 +1,4 @@
-import type { BitmapFont, BitmapFontGlyphExplanation } from '@flighthq/types/contract';
+import type { BitmapFont, BitmapFontGlyphExplanation } from './types.ts';
 
 /** Reports why `getBitmapFontGlyph` returned null for `codepoint`, or why the glyph it returned will
  *  still draw nothing, as plain data.

@@ -1,7 +1,7 @@
 import type { Rectangle } from '@flighthq/geometry/contract';
 import type { GlyphSource } from '@flighthq/glyphatlas/contract';
 import type { Node2D, Node2DData, Node2DRuntime } from '@flighthq/scene2d/contract';
-import type { TextureAtlas } from '@flighthq/types/contract';
+import type { TextureAtlas } from '@flighthq/textureatlas/contract';
 
 // Horizontal alignment of each laid-out line within the text block. `justify` stretches inter-word
 // gaps to fill the wrap width (the last line of a paragraph stays left-aligned); it degrades to

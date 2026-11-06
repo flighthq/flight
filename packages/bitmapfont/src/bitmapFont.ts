@@ -1,13 +1,10 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type {
-  BitmapFont,
-  BitmapFontData,
-  BitmapFontKerningPair,
-  EntityConstruction,
-  GlyphEntry,
-  GlyphMetrics,
-  TextureAtlas,
-} from '@flighthq/types/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
+import type { GlyphMetrics } from '@flighthq/font/contract';
+import type { GlyphEntry } from '@flighthq/glyphatlas/contract';
+import type { TextureAtlas } from '@flighthq/textureatlas/contract';
+
+import type { BitmapFont, BitmapFontData, BitmapFontKerningPair } from './types.ts';
 
 export function createBitmapFont(data: Readonly<BitmapFontData>): BitmapFont {
   const out = allocateEntity<BitmapFont>();

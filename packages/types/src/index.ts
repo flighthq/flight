@@ -753,6 +753,7 @@ export * from './TexturePackerAtlasParseOptions.ts';
 export * from './TextureAtlasParseOptions.ts';
 export * from './TexturePackerAtlasSchema.ts';
 export * from './TextureAtlasRegion.ts';
+export * from './TextureAtlasRotation.ts';
 export * from './TextureAtlasRegionTextureExplanation.ts';
 export * from './TextureContainer.ts';
 export * from './TextureContainerFormat.ts';

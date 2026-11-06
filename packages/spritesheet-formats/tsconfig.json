@@ -13,7 +13,7 @@
     { "path": "../importdiagnostics" },
     { "path": "../registry" },
     { "path": "../spritesheet" },
-    { "path": "../textureatlas" },
+    { "path": "../textureatlas/tsconfig.runtime.json" },
     { "path": "../textureatlas-formats" },
     { "path": "../requirement" },
     { "path": "../types" },

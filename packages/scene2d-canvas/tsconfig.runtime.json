@@ -34,7 +34,7 @@
     { "path": "../textinput/tsconfig.runtime.json" },
     { "path": "../textlayout/tsconfig.runtime.json" },
     { "path": "../texture/tsconfig.runtime.json" },
-    { "path": "../textureatlas" },
+    { "path": "../textureatlas/tsconfig.runtime.json" },
     { "path": "../tilemap" },
     { "path": "../types" },
     { "path": "./tsconfig.contract.json" }

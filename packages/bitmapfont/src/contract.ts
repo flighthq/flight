@@ -4,3 +4,4 @@ export * from './bitmapFontGlyphSource.ts';
 export * from './enableBitmapFontGuards.ts';
 export * from './explainBitmapFontGlyph.ts';
 export * from './summarizeBitmapFont.ts';
+export * from './types.ts';

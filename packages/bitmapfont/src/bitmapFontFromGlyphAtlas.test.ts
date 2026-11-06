@@ -1,5 +1,5 @@
+import type { HostGlyphRasterizerCapability } from '@flighthq/font/contract';
 import { createGlyphAtlas, getGlyphAtlasEntry } from '@flighthq/glyphatlas/contract';
-import type { HostGlyphRasterizerCapability } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { getBitmapFontGlyph, getBitmapFontMetrics } from './bitmapFont.ts';

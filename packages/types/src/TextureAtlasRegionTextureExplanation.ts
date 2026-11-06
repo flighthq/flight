@@ -1,13 +1,9 @@
-import type { TextureAtlas } from './TextureAtlas.ts';
+// Owned by `@flighthq/textureatlas`. These deprecated re-exports keep existing `@flighthq/types` imports
+// compiling until consumers import the owning package.
 
-export type TextureAtlasRegionTextureStatus = 'ready' | 'missing-region' | 'missing-texture' | 'rotated-page';
-
-export interface TextureAtlasRegionTextureExplanation {
-  readonly status: TextureAtlasRegionTextureStatus;
-}
-
-export type TextureAtlasRegionTextureGuard = (
-  atlas: Readonly<TextureAtlas>,
-  regionId: number,
-  explanation: Readonly<TextureAtlasRegionTextureExplanation>,
-) => void;
+/** @deprecated Import from `@flighthq/textureatlas/contract`. */
+export type {
+  TextureAtlasRegionTextureStatus,
+  TextureAtlasRegionTextureExplanation,
+  TextureAtlasRegionTextureGuard,
+} from '@flighthq/textureatlas/contract';

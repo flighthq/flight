@@ -1,17 +1,17 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
+import type { RectangleLike, Vector2Like } from '@flighthq/geometry/contract';
 import { cloneTexture, copyTexture, getTextureHeight, getTextureWidth } from '@flighthq/texture/contract';
+import type { Texture2D } from '@flighthq/texture/contract';
 import { TextureAtlasRotation } from '@flighthq/types/contract';
+
 import type {
-  EntityConstruction,
-  RectangleLike,
-  Texture2D,
   TextureAtlas,
   TextureAtlasRegion,
   TextureAtlasRegionLike,
   TextureAtlasRegionTextureExplanation,
   TextureAtlasRegionTextureGuard,
-  Vector2Like,
-} from '@flighthq/types/contract';
+} from './types.ts';
 
 // Appends a region to the atlas, assigning it an id no other region in the atlas holds.
 //

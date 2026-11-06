@@ -10,7 +10,7 @@
   },
   "references": [
     { "path": "../registry" },
-    { "path": "../textureatlas" },
+    { "path": "../textureatlas/tsconfig.runtime.json" },
     { "path": "../requirement" },
     { "path": "../types" },
     { "path": "../xml" }

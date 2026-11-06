@@ -100,6 +100,9 @@
       ".glyphatlas-types",
       ".timeline-types",
       ".scene2d-resources-types",
+      ".bitmapfont-types",
+      ".textureatlas-types",
+      ".textureatlas-bridge-types",
       ""
     ],
     "types": ["@testing-library/jest-dom", "vitest/globals", "@webgpu/types"]
@@ -452,6 +455,12 @@
     },
     {
       "path": "../scene2d-resources/tsconfig.contract.json"
+    },
+    {
+      "path": "../bitmapfont/tsconfig.contract.json"
+    },
+    {
+      "path": "../textureatlas/tsconfig.contract.json"
     }
   ],
   "include": ["src"]

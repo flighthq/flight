@@ -1,10 +1,11 @@
 import type { LogState } from '@flighthq/log/contract';
 import { clearLogOnceKeys, createLogState, getMemoryLogSinkEntries, setLogSink } from '@flighthq/log/contract';
+import type { LogEntry, MemoryLogSink } from '@flighthq/log/contract';
 import { createTextureAtlas } from '@flighthq/textureatlas/contract';
-import type { BitmapFontData, LogEntry, MemoryLogSink } from '@flighthq/types/contract';
 
 import { createBitmapFont } from './bitmapFont.ts';
 import { disableBitmapFontGuards, enableBitmapFontGuards } from './enableBitmapFontGuards.ts';
+import type { BitmapFontData } from './types.ts';
 
 let entries: LogEntry[];
 

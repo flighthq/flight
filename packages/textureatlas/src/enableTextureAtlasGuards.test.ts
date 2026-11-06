@@ -1,7 +1,7 @@
+import type { ImageResource } from '@flighthq/image/contract';
 import { addLogSink, createLogState, createMemoryLogSink, getMemoryLogSinkEntries } from '@flighthq/log/contract';
+import type { LogEntry } from '@flighthq/log/contract';
 import { createTexture } from '@flighthq/texture/contract';
-import type { LogEntry } from '@flighthq/types/contract';
-import type { ImageResource } from '@flighthq/types/contract';
 
 import {
   areTextureAtlasGuardsEnabled,

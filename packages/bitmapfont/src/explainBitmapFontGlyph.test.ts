@@ -1,8 +1,8 @@
 import { createTextureAtlas } from '@flighthq/textureatlas/contract';
-import type { BitmapFontData } from '@flighthq/types/contract';
 
 import { createBitmapFont } from './bitmapFont.ts';
 import { explainBitmapFontGlyph } from './explainBitmapFontGlyph.ts';
+import type { BitmapFontData } from './types.ts';
 
 function fontData(over: Partial<BitmapFontData> = {}): BitmapFontData {
   return {

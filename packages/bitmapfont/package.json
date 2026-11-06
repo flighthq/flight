@@ -41,6 +41,8 @@
   },
   "dependencies": {
     "@flighthq/entity": "*",
+    "@flighthq/font": "*",
+    "@flighthq/glyphatlas": "*",
     "@flighthq/log": "*",
     "@flighthq/texture": "*",
     "@flighthq/textureatlas": "*",

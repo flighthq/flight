@@ -1,7 +1,7 @@
 import { createTextureAtlasRegion } from '@flighthq/textureatlas/contract';
+import type { TextureAtlas } from '@flighthq/textureatlas/contract';
 import { TextureAtlasRotation } from '@flighthq/types/contract';
 import type {
-  TextureAtlas,
   TexturePackerAtlasArrayFrame,
   TexturePackerAtlasDocument,
   TexturePackerAtlasHashFrame,

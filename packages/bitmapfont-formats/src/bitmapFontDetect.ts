@@ -1,12 +1,11 @@
+import type { BitmapFont, BitmapFontParseOptions } from '@flighthq/bitmapfont/contract';
 import { decodeUTF8 } from '@flighthq/encoding/contract';
 import { getKindMapKeys, withKindMapEntry, withoutKindMapEntry } from '@flighthq/registry/contract';
 import type {
-  BitmapFont,
   BitmapFontFormatDescriptor,
   BitmapFontFormatEntry,
   BitmapFontFormatKind,
   BitmapFontImportOptions,
-  BitmapFontParseOptions,
   ImportDiagnostic,
   Kind,
 } from '@flighthq/types/contract';

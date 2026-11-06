@@ -3,8 +3,8 @@ import {
   registerTestImageDimensionResolver,
   unregisterTestImageDimensionResolver,
 } from '@flighthq/image/contract';
+import type { HostImageCapability, ImageResource } from '@flighthq/image/contract';
 import { getTextureSource } from '@flighthq/texture/contract';
-import type { HostImageCapability, ImageResource } from '@flighthq/types/contract';
 
 import {
   createTextureAtlasFromImageResource,

@@ -1,12 +1,10 @@
 import { getBitmapFontMetrics, unpackBitmapFontKerningKey } from '@flighthq/bitmapfont/contract';
+import type { BitmapFont, BitmapFontKerningPair, BitmapFontParseOptions } from '@flighthq/bitmapfont/contract';
 import type {
-  BitmapFont,
   ImportDiagnostic,
   BitmapFontCharRecord,
-  BitmapFontKerningPair,
   BitmapFontKerningRecord,
   BitmapFontPageRecord,
-  BitmapFontParseOptions,
   BitmapFontRecord,
   GlyphEntry,
 } from '@flighthq/types/contract';

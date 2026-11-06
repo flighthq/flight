@@ -6,6 +6,7 @@ import {
 } from '@flighthq/spritesheet/contract';
 import { parseTextureAtlasAsepriteDocument } from '@flighthq/textureatlas-formats/contract';
 import { createTextureAtlas } from '@flighthq/textureatlas/contract';
+import type { TextureAtlasRegion } from '@flighthq/textureatlas/contract';
 import type {
   AsepriteArrayFrame,
   AsepriteDocument,
@@ -16,7 +17,6 @@ import type {
   SpritesheetAnimationData,
   SpritesheetData,
   SpritesheetFrameData,
-  TextureAtlasRegion,
 } from '@flighthq/types/contract';
 import { ImportDiagnosticSeverity, TextureAtlasRotation } from '@flighthq/types/contract';
 function frameFromRegion(region: Readonly<TextureAtlasRegion>): SpritesheetFrameData {

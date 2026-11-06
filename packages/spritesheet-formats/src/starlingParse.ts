@@ -6,6 +6,7 @@ import {
 } from '@flighthq/spritesheet/contract';
 import { parseTextureAtlasStarlingXml } from '@flighthq/textureatlas-formats/contract';
 import { createTextureAtlas } from '@flighthq/textureatlas/contract';
+import type { TextureAtlasRegion } from '@flighthq/textureatlas/contract';
 import type {
   ImportDiagnostic,
   SpritesheetAnimationData,
@@ -15,7 +16,6 @@ import type {
   StarlingParseOptions,
   StarlingParsed,
   StarlingSubTexture,
-  TextureAtlasRegion,
 } from '@flighthq/types/contract';
 import { ImportDiagnosticSeverity, TextureAtlasRotation } from '@flighthq/types/contract';
 

@@ -1,15 +1,13 @@
 import { createBitmapFont } from '@flighthq/bitmapfont/contract';
-import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import type {
   BitmapFont,
-  ImportDiagnostic,
   BitmapFontData,
   BitmapFontGlyphData,
   BitmapFontKerningData,
   BitmapFontParseOptions,
-  BitmapFontRecord,
-  TextureAtlas,
-} from '@flighthq/types/contract';
+} from '@flighthq/bitmapfont/contract';
+import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import type { ImportDiagnostic, BitmapFontRecord, TextureAtlas } from '@flighthq/types/contract';
 import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
 // Maps a parsed `BitmapFontRecord` onto a `BitmapFont` via `createBitmapFont`, resolving every atlas

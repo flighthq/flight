@@ -1,8 +1,8 @@
+import type { BitmapFontParseOptions } from '@flighthq/bitmapfont/contract';
 import type {
   BitmapFontParseExplanation,
   BitmapFontParseExplanationFormat,
   BitmapFontParseExplanationReason,
-  BitmapFontParseOptions,
 } from '@flighthq/types/contract';
 
 export function explainBitmapFontParse(

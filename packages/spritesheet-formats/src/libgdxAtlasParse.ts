@@ -6,13 +6,13 @@ import {
 } from '@flighthq/spritesheet/contract';
 import { parseTextureAtlasLibgdxAtlas } from '@flighthq/textureatlas-formats/contract';
 import { createTextureAtlas } from '@flighthq/textureatlas/contract';
+import type { TextureAtlasRegion } from '@flighthq/textureatlas/contract';
 import type {
   ImportDiagnostic,
   LibgdxAtlasParseOptions,
   SpritesheetAnimationData,
   SpritesheetData,
   SpritesheetFrameData,
-  TextureAtlasRegion,
 } from '@flighthq/types/contract';
 import { ImportDiagnosticSeverity, TextureAtlasRotation } from '@flighthq/types/contract';
 

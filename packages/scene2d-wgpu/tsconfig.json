@@ -80,7 +80,7 @@
       "path": "../texture/tsconfig.runtime.json"
     },
     {
-      "path": "../textureatlas"
+      "path": "../textureatlas/tsconfig.runtime.json"
     },
     {
       "path": "../types"

@@ -1,5 +1,4 @@
 import { createTextureAtlas } from '@flighthq/textureatlas/contract';
-import type { BitmapFontData } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import {
@@ -15,6 +14,7 @@ import {
   setBitmapFontGuard,
   unpackBitmapFontKerningKey,
 } from './bitmapFont.ts';
+import type { BitmapFontData } from './types.ts';
 
 describe('createBitmapFont', () => {
   it('builds glyph and kerning lookups from plain data', () => {
