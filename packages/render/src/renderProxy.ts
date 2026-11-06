@@ -9,22 +9,14 @@ import {
   getNodeParent,
   getNodeRuntime,
 } from '@flighthq/node/contract';
-import type {
-  EntityConstruction,
-  Node,
-  Node2D,
-  RenderProxy,
-  RenderProxy2D,
-  RenderProxyVisitor,
-  RenderState,
-  NodeAny,
-} from '@flighthq/types/contract';
+import type { EntityConstruction, Node, Node2D, NodeAny } from '@flighthq/types/contract';
 import { BlendMode } from '@flighthq/types/contract';
 
 import { updateRenderProxyAppearance } from './renderAppearance.ts';
 import { updateRenderProxyMaterial } from './renderMaterial.ts';
 import { getRenderStateRuntime } from './renderState.ts';
 import { updateRenderProxy2DTransform } from './renderTransform2d.ts';
+import type { RenderProxy, RenderProxy2D, RenderProxyVisitor, RenderState } from './types.ts';
 import { RenderRegistryTable } from './types.ts';
 
 type AdaptHook = (state: RenderState, source: NodeAny, data: RenderProxy2D) => void;

@@ -1,8 +1,9 @@
 import { withKindMapEntry } from '@flighthq/registry/contract';
 import { buildWgpuRenderRegistries } from '@flighthq/render-wgpu/contract';
+import type { NodeRenderer } from '@flighthq/render/contract';
 import { MorphShapeKind, Scale9ShapeKind, ShapeKind } from '@flighthq/shape/contract';
 import { RichTextKind, TextLabelKind } from '@flighthq/text/contract';
-import type { Kind, NodeRenderer, WgpuRenderRegistries } from '@flighthq/types/contract';
+import type { Kind, WgpuRenderRegistries } from '@flighthq/types/contract';
 import {
   BitmapTextKind,
   DisplayObjectKind,

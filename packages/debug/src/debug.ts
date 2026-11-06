@@ -12,14 +12,8 @@ import {
   setLogLevel,
 } from '@flighthq/log/contract';
 import { enableColorAdjustmentGuards, enableRenderRegistriesGuards } from '@flighthq/render/contract';
-import type {
-  DebugOptions,
-  DebugSubsystemHooks,
-  DebugSubsystemName,
-  Entity,
-  LogSink,
-  RenderState,
-} from '@flighthq/types/contract';
+import type { RenderState } from '@flighthq/render/contract';
+import type { DebugOptions, DebugSubsystemHooks, DebugSubsystemName, Entity, LogSink } from '@flighthq/types/contract';
 import { LogLevel } from '@flighthq/types/contract';
 
 // The debug umbrella's state: the subsystem registry, the active session and the frame counter, held by

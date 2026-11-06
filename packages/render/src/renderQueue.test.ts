@@ -1,7 +1,6 @@
 import { addNodeChild } from '@flighthq/node/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
 import { createSprite } from '@flighthq/scene2d/contract';
-import type { NodeRenderer, RenderProxy, RenderQueueEntry } from '@flighthq/types/contract';
 
 import { registerNodeRenderer } from './renderer.ts';
 import { prepareScene2DRender } from './renderProxy.ts';
@@ -16,6 +15,7 @@ import {
   sortRenderQueue,
 } from './renderQueue.ts';
 import { createRenderState } from './renderState.ts';
+import type { NodeRenderer, RenderProxy, RenderQueueEntry } from './types.ts';
 
 function makeRenderer(): NodeRenderer {
   return { createData: () => null, submit: vi.fn() };

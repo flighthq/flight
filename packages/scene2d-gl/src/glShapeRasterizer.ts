@@ -1,5 +1,6 @@
 import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
-import type { GlRenderState, ShapeRasterizer } from '@flighthq/types/contract';
+import type { ShapeRasterizer } from '@flighthq/render/contract';
+import type { GlRenderState } from '@flighthq/types/contract';
 
 export function getGlShapeRasterizer(state: GlRenderState): ShapeRasterizer | null {
   const entry = getGlRenderStateRuntime(state).registries.shapeRasterizer;

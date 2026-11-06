@@ -1,5 +1,6 @@
+import type { RenderProxy2D } from '@flighthq/render/contract';
+
 import type { ColorScaleBias } from './ColorScaleBias.ts';
-import type { RenderProxy2D } from './RenderProxy2D.ts';
 import type { TintMaterialData } from './TintMaterialData.ts';
 import type {
   WgpuColorAdjustmentFlush,

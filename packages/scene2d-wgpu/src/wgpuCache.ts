@@ -22,13 +22,12 @@ import {
   prepareScene2DRender,
   registerRenderCacheNodeRenderer,
 } from '@flighthq/render/contract';
+import type { RenderProxy2D, Scene2DRenderer } from '@flighthq/render/contract';
 import type {
   Matrix,
   Node2D,
   RenderCache,
   RenderCacheRefreshOptions,
-  RenderProxy2D,
-  Scene2DRenderer,
   WgpuDeviceState,
   WgpuRenderState,
   WgpuRenderStateOptions,

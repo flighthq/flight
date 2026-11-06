@@ -5,8 +5,9 @@ import {
   renderIntoGlRenderTexture,
 } from '@flighthq/render-gl/contract';
 import { BatchFormat } from '@flighthq/render/contract';
+import type { RenderProxy2D } from '@flighthq/render/contract';
 import { createRenderTexture, createTexture, setTextureUvFromPixelRect } from '@flighthq/texture/contract';
-import type { Bitmap, ColorScaleBias, RenderProxy2D, Sprite } from '@flighthq/types/contract';
+import type { Bitmap, ColorScaleBias, Sprite } from '@flighthq/types/contract';
 import { BitmapTextureSourceKind } from '@flighthq/types/contract';
 
 import { registerGlColorAdjustmentMaterialFeature } from './glColorAdjustmentMaterialFeature.ts';

@@ -8,13 +8,9 @@ import {
   RenderCacheKind,
   useRenderCache,
 } from '@flighthq/render/contract';
+import type { RenderRootGuard } from '@flighthq/render/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
-import type {
-  WgpuQuadMaterialRenderer,
-  WgpuRenderState,
-  RenderRootGuard,
-  WgpuTextureRenderTarget,
-} from '@flighthq/types/contract';
+import type { WgpuQuadMaterialRenderer, WgpuRenderState, WgpuTextureRenderTarget } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import type {

@@ -8,7 +8,7 @@ import {
   enableRenderRegistriesGuards,
   explainRenderRegistriesMisses,
 } from '@flighthq/render/contract';
-import { RenderRegistries } from '@flighthq/types/contract';
+import { RenderRegistries } from '@flighthq/render/contract';
 
 import { getWgpuShapeRasterizer, registerWgpuShapeRasterizer } from './wgpuShapeRasterizer.ts';
 

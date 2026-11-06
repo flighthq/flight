@@ -1,0 +1,22 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "composite": true,
+    "rootDir": "src",
+    "outDir": "dist",
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "moduleSuffixes": [".bitmap-types", ".geometry-types", ".shape-types", ".surface-types", ".texture-types", ""],
+    "tsBuildInfoFile": "dist/.tsbuildinfo.render-state-bridge-types"
+  },
+  "references": [
+    { "path": "../bitmap/tsconfig.contract.json" },
+    { "path": "../entity" },
+    { "path": "../geometry/tsconfig.contract.json" },
+    { "path": "../shape/tsconfig.contract.json" },
+    { "path": "../surface/tsconfig.contract.json" },
+    { "path": "../texture/tsconfig.contract.json" }
+  ],
+  "include": ["src/contract.render-state-bridge-types.ts"]
+}

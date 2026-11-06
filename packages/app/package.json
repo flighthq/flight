@@ -43,6 +43,7 @@
     "@flighthq/entity": "*",
     "@flighthq/lifecycle": "*",
     "@flighthq/menu": "*",
+    "@flighthq/render": "*",
     "@flighthq/signals": "*",
     "@flighthq/types": "*"
   },

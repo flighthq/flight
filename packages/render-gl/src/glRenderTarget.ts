@@ -10,7 +10,8 @@ import type {
   ResolvedRenderTargetDescriptor,
 } from '@flighthq/render/contract';
 import { explainRenderTargetAxes, resolveRenderTargetDescriptor } from '@flighthq/render/contract';
-import type { EntityConstruction, Matrix, RenderProxy2D } from '@flighthq/types/contract';
+import type { RenderProxy2D } from '@flighthq/render/contract';
+import type { EntityConstruction, Matrix } from '@flighthq/types/contract';
 
 import type {
   GlRenderPass,

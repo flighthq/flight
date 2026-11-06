@@ -3,13 +3,15 @@ import type { EntityRaw, EntityRuntime, EntityRuntimeKey, Kind } from '@flighthq
 import type { ImageResource } from '@flighthq/image/contract';
 import type { BlendMode, Material, TintMaterialData } from '@flighthq/materials/contract';
 import type { ExternalTexture, RenderTexture } from '@flighthq/render/contract';
-import type { SamplerLike, TextureSource } from '@flighthq/texture/contract';
 import type {
   RenderProxy2D,
   RenderRegistries,
   RenderState,
   RenderStateRuntime,
   ShapeRasterizer,
+} from '@flighthq/render/contract';
+import type { SamplerLike, TextureSource } from '@flighthq/texture/contract';
+import type {
   WgpuColorAdjustmentMaterialFeature,
   WgpuColorAdjustmentMaterialFeatureGuard,
 } from '@flighthq/types/contract';

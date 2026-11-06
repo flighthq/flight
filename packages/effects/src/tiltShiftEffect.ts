@@ -1,10 +1,10 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type { RenderState } from '@flighthq/render/contract';
 import type {
   EntityConstruction,
   EntityWithoutRuntime,
   Effect,
   EffectPadding,
-  RenderState,
   TiltShiftEffect,
 } from '@flighthq/types/contract';
 

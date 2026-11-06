@@ -6,7 +6,8 @@ import {
 } from '@flighthq/image/contract';
 import { setNodeColorAdjustmentsTint } from '@flighthq/node/contract';
 import { registerGlImageTextureResolver } from '@flighthq/render-gl/contract';
-import type { BitmapText, GlyphEntry, GlyphSource, RenderProxy2D } from '@flighthq/types/contract';
+import type { RenderProxy2D } from '@flighthq/render/contract';
+import type { BitmapText, GlyphEntry, GlyphSource } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import { glBitmapTextRenderer } from './glBitmapText.ts';

@@ -1,15 +1,9 @@
 import { acquireMatrix, multiplyMatrix, releaseMatrix } from '@flighthq/geometry/contract';
 import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
 import { getRenderProxy2D, isRenderProxyVisible, noopRendererData } from '@flighthq/render/contract';
+import type { RenderProxy2D, Scene2DRenderer } from '@flighthq/render/contract';
 import { getNode2DRuntime } from '@flighthq/scene2d/contract';
-import type {
-  GlRenderPass,
-  GlRenderState,
-  Matrix,
-  Node2D,
-  RenderProxy2D,
-  Scene2DRenderer,
-} from '@flighthq/types/contract';
+import type { GlRenderPass, GlRenderState, Matrix, Node2D } from '@flighthq/types/contract';
 
 import { flushGlQuadBatchWriter } from './glQuadBatchWriter.ts';
 

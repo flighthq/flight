@@ -4,7 +4,7 @@ import {
   enableRenderRegistriesGuards,
   explainRenderRegistriesMisses,
 } from '@flighthq/render/contract';
-import { RenderRegistries } from '@flighthq/types/contract';
+import { RenderRegistries } from '@flighthq/render/contract';
 
 import { getGlShapeRasterizer, registerGlShapeRasterizer } from './glShapeRasterizer.ts';
 import { createGlState } from './glTestHelper.ts';

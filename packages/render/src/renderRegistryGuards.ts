@@ -1,10 +1,11 @@
 import { logOnce } from '@flighthq/log/contract';
 import type { LogState } from '@flighthq/log/contract';
 import { connectSignal } from '@flighthq/signals/contract';
-import type { Kind, RenderState } from '@flighthq/types/contract';
+import type { Kind } from '@flighthq/types/contract';
 import { LogLevel } from '@flighthq/types/contract';
 
 import { enableRenderRegistrySignals } from './renderRegistrySignals.ts';
+import type { RenderState } from './types.ts';
 import type { RenderRegistriesMiss, RenderRegistriesMissExplanation } from './types.ts';
 import { RenderRegistryTable } from './types.ts';
 

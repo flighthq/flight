@@ -1,6 +1,7 @@
 import * as flightNode from '@flighthq/node/contract';
 import { enableRenderRegistriesGuards, explainRenderRegistriesMisses, BatchFormat } from '@flighthq/render/contract';
 import { RenderRegistryTable } from '@flighthq/render/contract';
+import type { RenderProxy2D } from '@flighthq/render/contract';
 import {
   appendShapeBeginFill,
   appendShapeBeginGradientFill,
@@ -8,7 +9,6 @@ import {
   appendShapeRectangle,
   createShape,
 } from '@flighthq/shape/contract';
-import type { RenderProxy2D } from '@flighthq/types/contract';
 
 import { glMeshShapeRenderer, drawGlMeshShape } from './glMeshShapeRenderer.ts';
 import { registerGlShapeRasterizer } from './glShapeRasterizer.ts';

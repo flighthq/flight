@@ -5,9 +5,10 @@ import {
   unregisterTestImageDimensionResolver,
 } from '@flighthq/image/contract';
 import { getOrCreateRenderProxy2D, prepareScene2DRender, registerNodeRenderer } from '@flighthq/render/contract';
+import type { NodeRenderer } from '@flighthq/render/contract';
 import { createScale9Sprite, createSprite } from '@flighthq/scene2d/contract';
 import { createTexture } from '@flighthq/texture/contract';
-import type { Kind, NodeRenderer } from '@flighthq/types/contract';
+import type { Kind } from '@flighthq/types/contract';
 import { Scale9SpriteKind, SpriteKind } from '@flighthq/types/contract';
 
 import { registerCanvasImageTextureResolver } from './canvasImageTextureResolver.ts';

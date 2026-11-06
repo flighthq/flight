@@ -1,6 +1,6 @@
 import type { HostImageCapability } from '@flighthq/image/contract';
+import type { Scene3DGraphSyncPolicy } from '@flighthq/render/contract';
 import type { HostCanvasCapability } from '@flighthq/surface/contract';
-import type { Scene3DGraphSyncPolicy } from '@flighthq/types/contract';
 
 export interface WgpuRenderOptions {
   canvasHost?: Readonly<HostCanvasCapability>;

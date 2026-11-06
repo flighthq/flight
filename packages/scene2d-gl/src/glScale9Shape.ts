@@ -6,6 +6,7 @@ import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
 import { setGlBaseUniforms, setGlMatrixFromValues } from '@flighthq/render-gl/contract';
 import { createCanvasHostSurface, destroyCanvasHostSurface } from '@flighthq/render/contract';
 import { RenderRegistryTable } from '@flighthq/render/contract';
+import type { RenderProxy2D, Scene2DRenderer } from '@flighthq/render/contract';
 import { mapScale9ShapeCommands } from '@flighthq/shape/contract';
 import type { Scale9Shape, ShapeCommandToken } from '@flighthq/shape/contract';
 import { Scale9ShapeKind } from '@flighthq/shape/contract';
@@ -18,10 +19,8 @@ import type {
   HostImageCapability,
   ImageResource,
   MatrixLike,
-  RenderProxy2D,
   NodeAny,
   RendererData,
-  Scene2DRenderer,
 } from '@flighthq/types/contract';
 
 import { flushGlQuadBatchWriter } from './glQuadBatchWriter.ts';

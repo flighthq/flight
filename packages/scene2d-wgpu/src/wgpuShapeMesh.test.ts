@@ -5,9 +5,9 @@ import {
   getWgpuRenderStateRuntime,
   installWgpuMock,
 } from '@flighthq/render-wgpu/contract';
+import type { RenderProxy2D } from '@flighthq/render/contract';
 import type {
   ColorScaleBias,
-  RenderProxy2D,
   WgpuRenderState,
   WgpuShapeMeshBuffers,
   WgpuShapeMeshPipeline,

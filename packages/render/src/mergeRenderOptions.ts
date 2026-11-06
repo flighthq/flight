@@ -1,4 +1,4 @@
-import type { RenderStateOptions } from '@flighthq/types/contract';
+import type { RenderStateOptions } from './types.ts';
 
 /**
  * Composes render-state option fragments into one, field by field.

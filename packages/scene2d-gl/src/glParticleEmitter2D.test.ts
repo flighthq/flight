@@ -9,8 +9,8 @@ import {
   registerGlCompressedImageTextureResolver,
   registerGlImageTextureResolver,
 } from '@flighthq/render-gl/contract';
+import type { RenderProxy2D } from '@flighthq/render/contract';
 import { createTexture } from '@flighthq/texture/contract';
-import type { RenderProxy2D } from '@flighthq/types/contract';
 import { CompressedImageTextureSourceKind, TextureAtlasRotation } from '@flighthq/types/contract';
 
 import { glParticleEmitter2DRenderer, drawGlParticleEmitter2D } from './glParticleEmitter2D.ts';

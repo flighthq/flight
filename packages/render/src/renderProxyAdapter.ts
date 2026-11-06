@@ -1,8 +1,9 @@
 import { invalidateNodeAppearance } from '@flighthq/node/contract';
-import type { Node, NodeAny, RenderProxy2D, RenderProxyAdapter, RenderState } from '@flighthq/types/contract';
+import type { Node, NodeAny } from '@flighthq/types/contract';
 
 import { installRenderAdaptHook, updateRenderProxyRenderer } from './renderProxy.ts';
 import { getRenderStateRuntime } from './renderState.ts';
+import type { RenderProxy2D, RenderProxyAdapter, RenderState } from './types.ts';
 
 export function applyRenderProxyAdapter(state: RenderState, source: NodeAny, data: RenderProxy2D): void {
   const renderAdapter = getRenderStateRuntime(state).renderProxyAdapterMap.get(source) ?? null;

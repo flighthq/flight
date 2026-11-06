@@ -8,12 +8,11 @@ import {
   prepareScene2DRender,
   registerNodeRenderer,
 } from '@flighthq/render/contract';
+import type { RenderRootGuard, RenderState } from '@flighthq/render/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
 import type {
   Entity,
   EffectPaddingResolver,
-  RenderRootGuard,
-  RenderState,
   WgpuColorAdjustmentMaterialFeature,
   WgpuColorAdjustmentMaterialFeatureGuard,
 } from '@flighthq/types/contract';

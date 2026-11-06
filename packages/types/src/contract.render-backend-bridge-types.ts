@@ -4,13 +4,15 @@
 export type { Camera3D } from './Camera3D.ts';
 export type { CompressedImageResource } from './CompressedImageResource.ts';
 export type {
+  RenderProxy2D,
   RenderRegistries,
   RenderState,
+  RenderStateOptions,
   RenderStateRuntime,
   Scene3DGraphSyncPolicy,
   ShapeRasterizer,
-} from './contract.scene2d-dom-types.ts';
-export type { ColorScaleBias, RenderProxy2D } from './contract.scene2d-wgpu-bridge-types.ts';
+} from '@flighthq/render/contract';
+export type { ColorScaleBias } from './contract.scene2d-wgpu-bridge-types.ts';
 export type { ImageResource } from './ImageResource.ts';
 export type { TintMaterialData } from './TintMaterialData.ts';
 export type { EffectStateOptions } from '@flighthq/effects/contract';
@@ -59,7 +61,6 @@ export type { ModifierDefinition } from './ModifierDefinition.ts';
 export type { Node3D } from './Node3D.ts';
 export type { PlatformEndianness } from '@flighthq/platform/contract';
 export type { PbrExtension } from './PbrExtension.ts';
-export type { RenderStateOptions } from './RenderStateOptions.ts';
 export type {
   RenderTargetAxes,
   RenderTargetColorSpace,

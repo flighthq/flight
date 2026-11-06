@@ -12,8 +12,15 @@
       ".meshgeometry-types",
       ".materials-types",
       ".adjustments-types",
+      ".node-types",
+      ".scene2d-types",
+      ".image-types",
       ".geometry-types",
+      ".path-types",
+      ".shape-types",
+      ".surface-types",
       ".texture-types",
+      ".render-state-bridge-types",
       ""
     ]
   },
@@ -28,16 +35,37 @@
       "path": "../geometry/tsconfig.contract.json"
     },
     {
+      "path": "../image/tsconfig.contract.json"
+    },
+    {
       "path": "../materials/tsconfig.contract.json"
     },
     {
       "path": "../meshgeometry/tsconfig.contract.json"
     },
     {
+      "path": "../node/tsconfig.contract.json"
+    },
+    {
+      "path": "../path/tsconfig.contract.json"
+    },
+    {
+      "path": "../scene2d/tsconfig.contract.json"
+    },
+    {
+      "path": "../shape/tsconfig.contract.json"
+    },
+    {
       "path": "../signals"
     },
     {
       "path": "../texture/tsconfig.contract.json"
+    },
+    {
+      "path": "../surface/tsconfig.contract.json"
+    },
+    {
+      "path": "../types/tsconfig.render-state-bridge-types.json"
     },
     {
       "path": "../requirement"

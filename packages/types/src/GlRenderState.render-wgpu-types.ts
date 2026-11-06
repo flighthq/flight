@@ -1,3 +1,7 @@
+import type { RenderProxy2D } from '@flighthq/render/contract';
+import type { RenderRegistries, RenderState, RenderStateRuntime } from '@flighthq/render/contract';
+import type { ShapeRasterizer } from '@flighthq/render/contract';
+
 import type { BlendMode } from './BlendMode.ts';
 import type { ColorScaleBias } from './ColorScaleBias.ts';
 import type { Kind } from './Entity.ts';
@@ -22,10 +26,7 @@ import type { GlShapeMesh } from './GlShapeMesh.ts';
 import type { GlTextureResolver } from './GlTextureResolver.ts';
 import type { GlVelocityWriter } from './GlVelocityWriter.ts';
 import type { Material } from './Material.ts';
-import type { RenderProxy2D } from './RenderProxy2D.ts';
-import type { RenderRegistries, RenderState, RenderStateRuntime } from './RenderState.ts';
 import type { SamplerLike } from './Sampler.ts';
-import type { ShapeRasterizer } from './ShapeRasterizer.ts';
 import type { TintMaterialData } from './TintMaterialData.ts';
 
 export interface GlRenderState extends RenderState {

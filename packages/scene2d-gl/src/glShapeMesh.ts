@@ -1,7 +1,8 @@
 import { createGlProgram } from '@flighthq/render-gl/contract';
 import { getGlColorAdjustmentMaterialFeature } from '@flighthq/render-gl/contract';
 import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
-import type { GlContext, GlRenderState, RenderProxy2D } from '@flighthq/types/contract';
+import type { RenderProxy2D } from '@flighthq/render/contract';
+import type { GlContext, GlRenderState } from '@flighthq/types/contract';
 
 import { flushGlQuadBatchWriter } from './glQuadBatchWriter.ts';
 import type { GlShapeMesh, GlShapeMeshBinding } from './types.ts';

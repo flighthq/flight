@@ -8,7 +8,7 @@ import type {
   RenderState,
   RenderStateRuntime,
   ShapeRasterizer,
-} from '@flighthq/types/contract';
+} from '@flighthq/render/contract';
 
 import type { DomScene2DRectangle } from './DomScene2DRectangle.ts';
 import type { DomTextureResolver } from './DomTextureResolver.ts';

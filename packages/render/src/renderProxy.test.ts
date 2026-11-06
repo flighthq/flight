@@ -14,7 +14,7 @@ import {
 } from '@flighthq/node/contract';
 import { createDisplayObject, setNode2DClip } from '@flighthq/scene2d/contract';
 import { createSprite } from '@flighthq/scene2d/contract';
-import type { ClipRegion, Node, Node2D, RenderProxy, RenderProxy2D, RenderState } from '@flighthq/types/contract';
+import type { ClipRegion, Node, Node2D } from '@flighthq/types/contract';
 
 import { registerNodeRenderer } from './renderer.ts';
 import {
@@ -35,6 +35,7 @@ import {
   walkNode,
 } from './renderProxy.ts';
 import { createRenderState, getRenderStateRuntime } from './renderState.ts';
+import type { RenderProxy, RenderProxy2D, RenderState } from './types.ts';
 
 const DisplayObjectKind = 'DisplayObject';
 

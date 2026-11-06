@@ -3,10 +3,10 @@ import type { EntityConstruction } from '@flighthq/entity/contract';
 import { EntityRuntimeKey } from '@flighthq/entity/contract';
 import { getRenderStateRuntime } from '@flighthq/render/contract';
 import { RenderRegistryTable } from '@flighthq/render/contract';
+import type { RenderState } from '@flighthq/render/contract';
 import type { CanvasSurface, HostCanvasCapability } from '@flighthq/surface/contract';
 import { getTextureSourceKind } from '@flighthq/texture/contract';
 import type { Texture, TextureSourceKind } from '@flighthq/texture/contract';
-import type { RenderState } from '@flighthq/types/contract';
 
 import { acquireCanvasSurface, destroyCanvasSurfaceOwned } from './canvasRenderSurface.ts';
 import type { CanvasTextureResolver, CanvasTextureResolvers } from './types/CanvasTextureResolver.ts';

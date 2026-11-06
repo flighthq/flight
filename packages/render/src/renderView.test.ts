@@ -1,8 +1,9 @@
 import { allocateEntity, attachEntityBinding, finishEntity } from '@flighthq/entity/contract';
-import type { RenderState, Viewport } from '@flighthq/types/contract';
+import type { Viewport } from '@flighthq/types/contract';
 
 import type { RenderView, RenderViewResize } from './renderView.ts';
 import { createRenderView, initializeRenderView, resizeRenderView } from './renderView.ts';
+import type { RenderState } from './types.ts';
 import type { RenderTargetDimensions } from './types.ts';
 
 describe('createRenderView', () => {

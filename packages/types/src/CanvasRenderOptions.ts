@@ -1,4 +1,4 @@
-import type { Scene3DGraphSyncPolicy } from './RenderState.ts';
+import type { Scene3DGraphSyncPolicy } from '@flighthq/render/contract';
 
 export interface CanvasRenderOptions {
   imageSmoothingEnabled?: boolean;

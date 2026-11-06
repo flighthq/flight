@@ -1,12 +1,7 @@
+import type { RenderProxy2D, Scene2DRenderer } from '@flighthq/render/contract';
 import { createSpriteRendererData, isSpriteRendererDirty } from '@flighthq/scene2d/contract';
 import { getTextureViewSize } from '@flighthq/texture/contract';
-import type {
-  CanvasRenderState,
-  MatrixLike,
-  RenderProxy2D,
-  Scale9Sprite,
-  Scene2DRenderer,
-} from '@flighthq/types/contract';
+import type { CanvasRenderState, MatrixLike, Scale9Sprite } from '@flighthq/types/contract';
 
 import { drawCanvasScene2D } from './canvasNode2D.ts';
 import {

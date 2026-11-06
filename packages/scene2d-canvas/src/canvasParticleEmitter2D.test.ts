@@ -3,8 +3,8 @@ import {
   registerTestImageDimensionResolver,
   unregisterTestImageDimensionResolver,
 } from '@flighthq/image/contract';
+import type { RenderProxy2D } from '@flighthq/render/contract';
 import { createTexture } from '@flighthq/texture/contract';
-import type { RenderProxy2D } from '@flighthq/types/contract';
 
 import { registerCanvasImageTextureResolver } from './canvasImageTextureResolver.ts';
 import { drawCanvasParticleEmitter2D } from './canvasParticleEmitter2D.ts';

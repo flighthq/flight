@@ -1,4 +1,5 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type { RenderState } from '@flighthq/render/contract';
 import { connectSignal, createSignal, disconnectSignal, emitSignal } from '@flighthq/signals/contract';
 import type {
   EntityConstruction,
@@ -13,7 +14,6 @@ import type {
   InputPointerLockRequestOutcome,
   InputTargetHandle,
   Matrix,
-  RenderState,
   Surface,
 } from '@flighthq/types/contract';
 

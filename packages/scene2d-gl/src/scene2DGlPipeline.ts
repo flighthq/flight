@@ -5,9 +5,10 @@ import {
   standardGlBlendRealizations,
   standardGlTextureResolvers,
 } from '@flighthq/render-gl/contract';
+import type { NodeRenderer } from '@flighthq/render/contract';
 import { MorphShapeKind, Scale9ShapeKind, ShapeKind } from '@flighthq/shape/contract';
 import { RichTextKind, TextLabelKind } from '@flighthq/text/contract';
-import type { GlRenderRegistries, Kind, NodeRenderer } from '@flighthq/types/contract';
+import type { GlRenderRegistries, Kind } from '@flighthq/types/contract';
 import {
   BitmapTextKind,
   DisplayObjectKind,

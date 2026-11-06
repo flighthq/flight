@@ -5,6 +5,7 @@ import {
   unregisterTestImageDimensionResolver,
 } from '@flighthq/image/contract';
 import { createRenderState } from '@flighthq/render/contract';
+import type { RenderState } from '@flighthq/render/contract';
 import {
   appendShapeBeginTextureFill,
   appendShapeBeginFill,
@@ -28,7 +29,7 @@ import {
   PathCommand,
 } from '@flighthq/shape/contract';
 import { createSampler, createTexture } from '@flighthq/texture/contract';
-import type { HostImageCapability, RenderState } from '@flighthq/types/contract';
+import type { HostImageCapability } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import { registerCanvasBitmapTextureResolver } from './canvasBitmapTextureResolver.ts';

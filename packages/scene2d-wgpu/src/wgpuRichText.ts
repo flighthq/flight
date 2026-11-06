@@ -3,6 +3,7 @@ import { invalidateImageResource } from '@flighthq/image/contract';
 import { bindWgpuImageResourceTexture, drawWgpuQuad } from '@flighthq/render-wgpu/contract';
 import { getWgpuRenderStateRuntime, resolveWgpuApplyBlendMode } from '@flighthq/render-wgpu/contract';
 import { createCanvasHostSurface, destroyCanvasHostSurface } from '@flighthq/render/contract';
+import type { RenderProxy2D, RenderState, Scene2DRenderer } from '@flighthq/render/contract';
 import {
   computeRichTextContent,
   computeTextFormatFontString,
@@ -20,16 +21,7 @@ import {
   computeTextBoundsWidth,
   computeTextLayout,
 } from '@flighthq/textlayout/contract';
-import type {
-  CanvasSurface,
-  ImageResource,
-  NodeAny,
-  RendererData,
-  RenderProxy2D,
-  RenderState,
-  Scene2DRenderer,
-  WgpuRenderState,
-} from '@flighthq/types/contract';
+import type { CanvasSurface, ImageResource, NodeAny, RendererData, WgpuRenderState } from '@flighthq/types/contract';
 
 import type { WgpuRichTextOverlay } from './contract.scene2d-wgpu-types.ts';
 import { flushWgpuQuadBatchWriter } from './wgpuQuadBatchWriter.ts';

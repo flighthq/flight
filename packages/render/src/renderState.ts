@@ -1,12 +1,8 @@
 import { allocateEntity, createEntityRuntime, finishEntity } from '@flighthq/entity/contract';
-import type {
-  ColorAdjustmentUnsupportedGuard,
-  RenderState,
-  RenderStateRuntime,
-  NodeAny,
-  EntityConstruction,
-} from '@flighthq/types/contract';
+import type { NodeAny, EntityConstruction } from '@flighthq/types/contract';
 import { BlendMode, EntityRuntimeKey } from '@flighthq/types/contract';
+
+import type { ColorAdjustmentUnsupportedGuard, RenderState, RenderStateRuntime } from './types.ts';
 
 export function createRenderState(obj?: Partial<RenderState>): RenderState {
   const state = allocateEntity<RenderState>();

@@ -20,6 +20,9 @@
       "path": "../geometry/tsconfig.runtime.json"
     },
     {
+      "path": "../image"
+    },
+    {
       "path": "../lighting"
     },
     {
@@ -35,10 +38,19 @@
       "path": "../node/tsconfig.runtime.json"
     },
     {
+      "path": "../path"
+    },
+    {
       "path": "../scene3d"
     },
     {
       "path": "../signals"
+    },
+    {
+      "path": "../shape"
+    },
+    {
+      "path": "../surface"
     },
     {
       "path": "../quadbatch"

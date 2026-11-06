@@ -1,6 +1,7 @@
 import { createGlProgram } from '@flighthq/render-gl/contract';
 import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
 import { enableColorAdjustments } from '@flighthq/render/contract';
+import type { RenderProxy2D } from '@flighthq/render/contract';
 import type {
   ColorScaleBias,
   GlColorAdjustmentMaterialFeature,
@@ -9,7 +10,6 @@ import type {
   GlRenderStateRuntime,
   GlShapeMeshColorScaleBiasShader,
   GlUniformColorScaleBiasShader,
-  RenderProxy2D,
   TintMaterialData,
 } from '@flighthq/types/contract';
 

@@ -6,15 +6,21 @@ export type { Mesh, MeshGeometry } from '@flighthq/meshgeometry/contract';
 export type { Modifier } from './Modifier.ts';
 export type { ModifierDefinition } from './ModifierDefinition.ts';
 export type { Node3D } from './Node3D.ts';
-export type { RenderProxy2D } from './RenderProxy2D.ts';
-export type { RenderRegistries, RenderState, RenderStateRuntime, Scene3DGraphSyncPolicy } from './RenderState.ts';
-export type { RenderStateOptions } from './RenderStateOptions.ts';
-export type { RenderTargetColorSpace, RenderTargetDimensions } from '@flighthq/render/contract';
+export type {
+  RenderProxy2D,
+  RenderRegistries,
+  RenderState,
+  RenderStateOptions,
+  RenderStateRuntime,
+  RenderTargetColorSpace,
+  RenderTargetDimensions,
+  Scene3DGraphSyncPolicy,
+  ShapeRasterizer,
+} from '@flighthq/render/contract';
 export type { RenderTexture } from '@flighthq/render/contract';
 export type { Scene3DLightBlock } from './Scene3DLightBlock.ts';
 export type { Scene3DLightsLike } from './Scene3DLights.ts';
 export type { Scene3DRenderProxy } from '@flighthq/render/contract';
-export type { ShapeRasterizer } from './ShapeRasterizer.ts';
 export type {
   WgpuColorAdjustmentMaterialFeature,
   WgpuColorAdjustmentMaterialFeatureGuard,

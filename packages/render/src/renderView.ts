@@ -1,7 +1,8 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction, EntityRaw } from '@flighthq/entity/contract';
-import type { RenderState, Viewport } from '@flighthq/types/contract';
+import type { Viewport } from '@flighthq/types/contract';
 
+import type { RenderState } from './types.ts';
 import type { RenderTargetDescriptor, RenderTargetDimensions } from './types.ts';
 
 // One drawable view over caller-owned render components. A view is deliberately windowless: the

@@ -9,17 +9,15 @@ import {
   prepareScene2DRender,
   registerRenderCacheNodeRenderer,
 } from '@flighthq/render/contract';
+import type { Scene2DRenderer, RenderProxy2D, RenderState } from '@flighthq/render/contract';
 import type {
   CanvasRenderOptions,
   CanvasRenderRegistries,
   CanvasRenderState,
   Node2D,
-  Scene2DRenderer,
   Matrix,
   RenderCache,
   RenderCacheRefreshOptions,
-  RenderProxy2D,
-  RenderState,
 } from '@flighthq/types/contract';
 
 import { renderCanvasScene2D } from './canvasNode2D.ts';

@@ -1,8 +1,9 @@
 import { withKindMapEntry } from '@flighthq/registry/contract';
 import { getRenderStateRuntime } from '@flighthq/render/contract';
+import type { RenderState } from '@flighthq/render/contract';
 import { registerShapeBoundsCommand } from '@flighthq/shape/contract';
 import type { ShapeCommandKey } from '@flighthq/shape/contract';
-import type { CanvasShapeCommand, RenderState } from '@flighthq/types/contract';
+import type { CanvasShapeCommand } from '@flighthq/types/contract';
 
 // The command set is per render state, like every other kind-keyed handler registry: the state a
 // caller already holds is what carries the wiring, so `renderCanvasShapeCommands` can reach it from

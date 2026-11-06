@@ -1,12 +1,11 @@
 import type { Kind } from '@flighthq/entity/contract';
 import type {
-  CanvasShapeCommand,
-  EffectPaddingResolver,
   NodeRenderer,
   Scene3DGraphSyncPolicy,
   ShapeRasterizer,
   StrokeTessellator,
-} from '@flighthq/types/contract';
+} from '@flighthq/render/contract';
+import type { CanvasShapeCommand, EffectPaddingResolver } from '@flighthq/types/contract';
 
 import type { DomTextureResolver } from './DomTextureResolver.ts';
 

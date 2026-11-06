@@ -1,17 +1,11 @@
 import { getRenderProxyCache, noopRendererData, registerRenderCacheNodeRenderer } from '@flighthq/render/contract';
+import type { Scene2DRenderer, RenderProxy2D, RenderState } from '@flighthq/render/contract';
 import {
   createCanvasTextureRenderTarget,
   destroyCanvasTextureRenderTarget,
   resizeCanvasTextureRenderTarget,
 } from '@flighthq/scene2d-canvas/contract';
-import type {
-  CanvasTextureRenderTarget,
-  HostCanvasCapability,
-  Scene2DRenderer,
-  RenderCache,
-  RenderProxy2D,
-  RenderState,
-} from '@flighthq/types/contract';
+import type { CanvasTextureRenderTarget, HostCanvasCapability, RenderCache } from '@flighthq/types/contract';
 
 import type { DomRenderState } from './contract.scene2d-dom-types.ts';
 import { prepareDomElement, setDomRendererElement } from './domStyle.ts';

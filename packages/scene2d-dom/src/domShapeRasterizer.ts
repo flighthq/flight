@@ -1,4 +1,4 @@
-import type { ShapeRasterizer } from '@flighthq/types/contract';
+import type { ShapeRasterizer } from '@flighthq/render/contract';
 
 import type { DomRenderState } from './contract.scene2d-dom-types.ts';
 import { getDomRenderStateRuntime } from './domRenderState.ts';

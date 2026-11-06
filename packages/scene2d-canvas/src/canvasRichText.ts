@@ -1,5 +1,6 @@
 ﻿import { computeRgbaCssString } from '@flighthq/color/contract';
 import { noopRendererData } from '@flighthq/render/contract';
+import type { Scene2DRenderer, RenderProxy2D } from '@flighthq/render/contract';
 import {
   computeRichTextContent,
   computeTextFormatFontString,
@@ -18,12 +19,7 @@ import {
   getRichTextSelectionRectangles,
 } from '@flighthq/textlayout/contract';
 import type { TextSelectionRectangle } from '@flighthq/textlayout/contract';
-import type {
-  CanvasRenderState,
-  CanvasTextInputOverlay,
-  Scene2DRenderer,
-  RenderProxy2D,
-} from '@flighthq/types/contract';
+import type { CanvasRenderState, CanvasTextInputOverlay } from '@flighthq/types/contract';
 
 import { drawCanvasScene2D } from './canvasNode2D.ts';
 import { setCanvasTransform } from './canvasTransform.ts';

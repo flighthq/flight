@@ -1,9 +1,10 @@
 import { getNodeRuntime } from '@flighthq/node/contract';
 import { getKindMapKeys } from '@flighthq/registry/contract';
-import type { Kind, Material, NodeAny, RenderState } from '@flighthq/types/contract';
+import type { Kind, Material, NodeAny } from '@flighthq/types/contract';
 import { StandardMaterialKind } from '@flighthq/types/contract';
 
 import { getRenderStateRuntime } from './renderState.ts';
+import type { RenderState } from './types.ts';
 import type { Scene3DPipelineCoverageExplanation } from './types.ts';
 
 // Material renderers live on backend-specific registries (GlRenderRegistries, WgpuRenderRegistries),

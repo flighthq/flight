@@ -2,13 +2,13 @@
 // still declared here (Rust owner flight-render, no TS owner lane yet). Owned names come from their lanes.
 export type { CanvasShapeCommand } from './CanvasShapeRegistry.ts';
 export type { EffectPaddingResolver } from './EffectPadding.ts';
-export type { NodeRenderer } from './NodeRenderer.ts';
-export type { RenderProxy2D } from './RenderProxy2D.ts';
 export type {
+  NodeRenderer,
+  RenderProxy2D,
   RenderRegistries,
   RenderState,
   RenderStateRuntime,
   Scene3DGraphSyncPolicy,
+  ShapeRasterizer,
   StrokeTessellator,
-} from './RenderState.ts';
-export type { ShapeRasterizer } from './ShapeRasterizer.ts';
+} from '@flighthq/render/contract';

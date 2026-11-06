@@ -1,15 +1,9 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
+import type { RenderProxy2D, RenderState, Scene2DRenderer } from '@flighthq/render/contract';
 import { drawCanvasTextureView } from '@flighthq/scene2d-canvas/contract';
 import { getTextureViewSize } from '@flighthq/texture/contract';
-import type {
-  RenderProxy2D,
-  RenderState,
-  NodeAny,
-  RendererData,
-  Scale9Sprite,
-  Scene2DRenderer,
-} from '@flighthq/types/contract';
+import type { NodeAny, RendererData, Scale9Sprite } from '@flighthq/types/contract';
 
 import type { DomRenderState } from './contract.scene2d-dom-types.ts';
 import { applyDomStyle, prepareDomElement, setDomRendererElement } from './domStyle.ts';

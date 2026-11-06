@@ -1,11 +1,11 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type { RenderState } from '@flighthq/render/contract';
 import type {
   BitmapDisplacementEffect,
   EntityConstruction,
   EntityWithoutRuntime,
   Effect,
   EffectPadding,
-  RenderState,
   Texture2D,
 } from '@flighthq/types/contract';
 

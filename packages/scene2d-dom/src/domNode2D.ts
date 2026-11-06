@@ -1,8 +1,9 @@
 import { acquireMatrix, multiplyMatrix, releaseMatrix } from '@flighthq/geometry/contract';
 import type { Matrix } from '@flighthq/geometry/contract';
 import { getRenderProxy2D, isRenderProxyVisible, noopRendererData } from '@flighthq/render/contract';
+import type { RenderProxy2D, Scene2DRenderer } from '@flighthq/render/contract';
 import { getNode2DRuntime } from '@flighthq/scene2d/contract';
-import type { Node2D, RenderProxy2D, Scene2DRenderer } from '@flighthq/types/contract';
+import type { Node2D } from '@flighthq/types/contract';
 
 import type { DomRenderState } from './contract.scene2d-dom-types.ts';
 import { hasDomStructureChanged, processDomNode, reconcileDomContainer, swapDomOrderLists } from './domReconcile.ts';

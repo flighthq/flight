@@ -1,9 +1,9 @@
 import { logOnce } from '@flighthq/log/contract';
 import type { LogState } from '@flighthq/log/contract';
-import type { RenderState } from '@flighthq/types/contract';
 import { LogLevel } from '@flighthq/types/contract';
 
 import { getColorAdjustmentUnsupportedGuard, getRenderStateRuntime } from './renderState.ts';
+import type { RenderState } from './types.ts';
 
 // Returns whether the color-adjustment deferral guard is installed on `state`.
 export function areColorAdjustmentGuardsEnabled(state: RenderState): boolean {

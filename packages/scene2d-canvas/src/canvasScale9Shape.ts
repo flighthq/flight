@@ -1,7 +1,8 @@
 ﻿import { noopRendererData } from '@flighthq/render/contract';
+import type { RenderProxy2D, Scene2DRenderer } from '@flighthq/render/contract';
 import { mapScale9ShapeCommands } from '@flighthq/shape/contract';
 import type { Scale9Shape, ShapeCommandToken } from '@flighthq/shape/contract';
-import type { CanvasRenderState, MatrixLike, RenderProxy2D, Scene2DRenderer } from '@flighthq/types/contract';
+import type { CanvasRenderState, MatrixLike } from '@flighthq/types/contract';
 
 import { drawCanvasScene2D } from './canvasNode2D.ts';
 import { getCanvasRenderStateTextureResolvers } from './canvasRenderState.ts';

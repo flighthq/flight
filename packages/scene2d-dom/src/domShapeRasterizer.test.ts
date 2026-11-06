@@ -3,7 +3,7 @@ import {
   enableRenderRegistriesGuards,
   explainRenderRegistriesMisses,
 } from '@flighthq/render/contract';
-import { RenderRegistries } from '@flighthq/types/contract';
+import { RenderRegistries } from '@flighthq/render/contract';
 
 import { createDomRenderState, getDomRenderStateRuntime } from './domRenderState.ts';
 import { getDomShapeRasterizer, registerDomShapeRasterizer } from './domShapeRasterizer.ts';

@@ -1,4 +1,11 @@
 import type {
+  RenderProxy2D,
+  RenderRegistries,
+  RenderState,
+  RenderStateRuntime,
+  ShapeRasterizer,
+} from '@flighthq/render/contract';
+import type {
   BlendMode,
   ColorScaleBias,
   GlBitmapShader,
@@ -9,12 +16,7 @@ import type {
   GlVelocityWriter,
   Kind,
   Material,
-  RenderProxy2D,
-  RenderRegistries,
-  RenderState,
-  RenderStateRuntime,
   SamplerLike,
-  ShapeRasterizer,
   TintMaterialData,
 } from '@flighthq/types/contract';
 

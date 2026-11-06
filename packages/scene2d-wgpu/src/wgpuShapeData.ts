@@ -1,12 +1,12 @@
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
 import { createCanvasHostSurface, destroyCanvasHostSurface } from '@flighthq/render/contract';
+import type { RenderState } from '@flighthq/render/contract';
 import type {
   CanvasSurface,
   HostCanvasCapability,
   HostImageCapability,
   NodeAny,
   RendererData,
-  RenderState,
   WgpuRenderState,
 } from '@flighthq/types/contract';
 

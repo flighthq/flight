@@ -11,6 +11,7 @@ import {
   registerNodeRenderer,
   BatchFormat,
 } from '@flighthq/render/contract';
+import type { RenderProxy2D } from '@flighthq/render/contract';
 import { createScale9Sprite } from '@flighthq/scene2d/contract';
 import { createTexture } from '@flighthq/texture/contract';
 import type {
@@ -18,7 +19,6 @@ import type {
   GlQuadMaterialRenderer,
   GlRenderState,
   Material,
-  RenderProxy2D,
   Scale9Sprite,
 } from '@flighthq/types/contract';
 import { Scale9SpriteKind } from '@flighthq/types/contract';

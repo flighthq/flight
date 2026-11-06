@@ -1,4 +1,4 @@
-import type { RenderProxy2D } from '@flighthq/types/contract';
+import type { RenderProxy2D } from '@flighthq/render/contract';
 
 import { flushGlQuadBatchWriter } from './glQuadBatchWriter.ts';
 import { registerGlStandardMaterial } from './glStandardMaterial.ts';

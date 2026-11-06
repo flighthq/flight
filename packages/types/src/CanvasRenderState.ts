@@ -1,3 +1,6 @@
+import type { RenderProxy2D } from '@flighthq/render/contract';
+import type { RenderRegistries, RenderState, RenderStateRuntime } from '@flighthq/render/contract';
+
 import type { BlendMode } from './BlendMode.ts';
 import type { CanvasEffectRunner } from './CanvasEffectState.ts';
 import type { CanvasQuadMaterialRenderer } from './CanvasQuadMaterialRenderer.ts';
@@ -6,8 +9,6 @@ import type { CanvasRenderTarget, CanvasTextureRenderTarget } from './CanvasRend
 import type { CanvasTextureResolvers } from './CanvasTextureResolver.ts';
 import type { Kind } from './Entity.ts';
 import type { HostCanvasCapability } from './HostCanvas.ts';
-import type { RenderProxy2D } from './RenderProxy2D.ts';
-import type { RenderRegistries, RenderState, RenderStateRuntime } from './RenderState.ts';
 
 export interface CanvasRenderState extends RenderState {
   applyBlendMode: ((state: CanvasRenderState, blendMode: BlendMode | null) => void) | null;

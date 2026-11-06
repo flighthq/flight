@@ -1,3 +1,4 @@
+import type { NodeRenderer } from '@flighthq/render/contract';
 import { mergeDomRenderOptions } from '@flighthq/scene2d-dom/contract';
 import { mergeSwfParseOptions } from '@flighthq/swf/contract';
 import type {
@@ -8,7 +9,6 @@ import type {
   DomRenderOptions,
   GlRenderStateOptions,
   Kind,
-  NodeRenderer,
   RiveImportOptions,
   RivePathBooleanRegistrar,
   RiveRegistrar,

@@ -1,5 +1,6 @@
 import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
-import type { ColorScaleBias, RenderProxy2D } from '@flighthq/types/contract';
+import type { RenderProxy2D } from '@flighthq/render/contract';
+import type { ColorScaleBias } from '@flighthq/types/contract';
 
 import { registerGlColorAdjustmentMaterialFeature } from './glColorAdjustmentMaterialFeature.ts';
 import { drawGlShapeMeshBatch, drawGlShapeMeshes, ensureGlShapeMeshProgram } from './glShapeMesh.ts';

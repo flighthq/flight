@@ -1,13 +1,8 @@
 ﻿import { getRenderStateRuntime, noopRendererData } from '@flighthq/render/contract';
 import { RenderRegistryTable } from '@flighthq/render/contract';
+import type { RenderProxy2D, RenderState, Scene2DRenderer } from '@flighthq/render/contract';
 import type { Shape } from '@flighthq/shape/contract';
-import type {
-  CanvasRenderState,
-  CanvasShapeDrawState,
-  RenderProxy2D,
-  RenderState,
-  Scene2DRenderer,
-} from '@flighthq/types/contract';
+import type { CanvasRenderState, CanvasShapeDrawState } from '@flighthq/types/contract';
 
 import { drawCanvasScene2D } from './canvasNode2D.ts';
 import { getCanvasRenderStateTextureResolvers, setCanvasGlobalAlpha } from './canvasRenderState.ts';

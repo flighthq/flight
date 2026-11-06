@@ -1,7 +1,6 @@
 import type { Kind } from '@flighthq/entity/contract';
+import type { RenderStateOptions, ShapeRasterizer } from '@flighthq/render/contract';
 import type {
-  RenderStateOptions,
-  ShapeRasterizer,
   WgpuColorAdjustmentMaterialFeature,
   WgpuColorAdjustmentMaterialFeatureGuard,
 } from '@flighthq/types/contract';

@@ -1,7 +1,8 @@
 import { logOnce } from '@flighthq/log/contract';
 import type { LogState } from '@flighthq/log/contract';
 import { getRenderStateRuntime } from '@flighthq/render/contract';
-import type { GlRenderState, NodeAny, RenderState } from '@flighthq/types/contract';
+import type { RenderState } from '@flighthq/render/contract';
+import type { GlRenderState, NodeAny } from '@flighthq/types/contract';
 import { LogLevel } from '@flighthq/types/contract';
 
 import { getGlRenderStateRuntime } from './glRenderState.ts';

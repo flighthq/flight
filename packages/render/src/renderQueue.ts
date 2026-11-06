@@ -1,16 +1,9 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { getNodeRuntime } from '@flighthq/node/contract';
-import type {
-  EntityConstruction,
-  NodeAny,
-  RenderProxy,
-  RenderQueue,
-  RenderQueueEntry,
-  RenderSortKey,
-  RenderState,
-} from '@flighthq/types/contract';
+import type { EntityConstruction, NodeAny } from '@flighthq/types/contract';
 
 import { getRenderStateRuntime } from './renderState.ts';
+import type { RenderProxy, RenderQueue, RenderQueueEntry, RenderSortKey, RenderState } from './types.ts';
 
 // Fills `out` by walking the prepared subtree rooted at `source` and pushing one entry per visible
 // proxy with a renderer. The sort key is the scene-order index (order of encounter in a pre-order

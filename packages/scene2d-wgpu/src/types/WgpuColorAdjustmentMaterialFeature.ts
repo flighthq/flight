@@ -5,7 +5,8 @@ import type {
   WgpuRenderStateRuntime,
   WgpuShapeMeshBuffers,
 } from '@flighthq/render-wgpu/contract';
-import type { ColorScaleBias, RenderProxy2D } from '@flighthq/types/contract';
+import type { RenderProxy2D } from '@flighthq/render/contract';
+import type { ColorScaleBias } from '@flighthq/types/contract';
 
 import type { WgpuShapeMesh } from './WgpuShapeMesh.ts';
 

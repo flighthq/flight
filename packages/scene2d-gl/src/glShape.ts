@@ -1,5 +1,6 @@
 import { BatchFormat } from '@flighthq/render/contract';
-import type { GlRenderState, RenderProxy2D, Scene2DRenderer } from '@flighthq/types/contract';
+import type { RenderProxy2D, Scene2DRenderer } from '@flighthq/render/contract';
+import type { GlRenderState } from '@flighthq/types/contract';
 
 import { drawGlMeshShape } from './glMeshShapeRenderer.ts';
 import { drawGlRasterShape } from './glRasterShapeRenderer.ts';

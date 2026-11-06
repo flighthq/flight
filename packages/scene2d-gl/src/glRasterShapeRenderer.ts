@@ -4,9 +4,10 @@ import { bindGlImageResourceTexture, resolveGlQuadMaterialRenderer } from '@flig
 import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
 import { createCanvasHostSurface, destroyCanvasHostSurface, BatchFormat } from '@flighthq/render/contract';
 import { RenderRegistryTable } from '@flighthq/render/contract';
+import type { RenderProxy2D, Scene2DRenderer } from '@flighthq/render/contract';
 import type { Shape } from '@flighthq/shape/contract';
 import { ShapeKind } from '@flighthq/shape/contract';
-import type { GlRenderState, RenderProxy2D, Scene2DRenderer } from '@flighthq/types/contract';
+import type { GlRenderState } from '@flighthq/types/contract';
 
 import {
   QUAD_BATCH_INSTANCE_FLOATS,

@@ -1,7 +1,8 @@
 import { createMatrix, createRectangle } from '@flighthq/geometry/contract';
 import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
+import type { RenderProxy2D } from '@flighthq/render/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
-import type { ClipRegion, Node2D, RenderProxy2D } from '@flighthq/types/contract';
+import type { ClipRegion, Node2D } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import { enableGlClipSupport } from './glClip.ts';

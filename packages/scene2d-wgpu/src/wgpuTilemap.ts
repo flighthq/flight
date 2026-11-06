@@ -2,10 +2,10 @@ import { resolveWgpuQuadMaterialRenderer, resolveWgpuTexture } from '@flighthq/r
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
 import { SCENE2D_WORKING_COLOR_SPACE, BatchFormat } from '@flighthq/render/contract';
 import { noopRendererData } from '@flighthq/render/contract';
+import type { RenderProxy2D } from '@flighthq/render/contract';
 import { getTextureHeight, getTextureWidth, hasTextureSource } from '@flighthq/texture/contract';
 import type {
   ColorScaleBias,
-  RenderProxy2D,
   SpriteRenderer,
   Tilemap,
   TintMaterialData,

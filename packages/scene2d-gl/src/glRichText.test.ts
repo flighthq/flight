@@ -4,6 +4,7 @@
   unregisterTestImageDimensionResolver,
 } from '@flighthq/image/contract';
 import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
+import type { RenderProxy2D } from '@flighthq/render/contract';
 import { createRichText } from '@flighthq/text/contract';
 import type { RichText } from '@flighthq/text/contract';
 import { createTextFormatRange } from '@flighthq/textformat/contract';
@@ -14,7 +15,6 @@ import type {
   HostImageCapability,
   ImageResource,
   RendererData,
-  RenderProxy2D,
 } from '@flighthq/types/contract';
 
 import {

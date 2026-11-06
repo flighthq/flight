@@ -1,10 +1,16 @@
 import type { ColorScaleBias } from '@flighthq/adjustments/contract';
 import type { EntityRaw, EntityRuntime, EntityRuntimeKey, Kind } from '@flighthq/entity/contract';
 import type { Matrix, Matrix3, Matrix4, Vector2Like } from '@flighthq/geometry/contract';
-import type { BlendMode, Material, Material3D } from '@flighthq/materials/contract';
+import type { HostImageCapability } from '@flighthq/image/contract';
+import type { BlendMode, Material, Material2D, Material3D, MaterialData } from '@flighthq/materials/contract';
 import type { MeshSubset } from '@flighthq/meshgeometry/contract';
+import type { NodeAny, RendererData } from '@flighthq/node/contract';
+import type { Path, PathMesh, StrokeStyle } from '@flighthq/path/contract';
 import type { RequirementFacet } from '@flighthq/requirement/contract';
+import type { Node2D } from '@flighthq/scene2d/contract';
+import type { ShapeCommandToken } from '@flighthq/shape/contract';
 import type { Signal } from '@flighthq/signals/contract';
+import type { HostCanvasCapability } from '@flighthq/surface/contract';
 import type {
   ExternalTextureSourceKind,
   RenderTargetTextureSourceKind,
@@ -13,6 +19,7 @@ import type {
   TextureColorSpace,
   TextureSource,
 } from '@flighthq/texture/contract';
+import type { CanvasShapeCommand, EffectPaddingResolver } from '@flighthq/types/contract';
 
 // Identifies which geometry accumulation pipeline a renderer submits into. This is the first
 // component of the flush key: (BatchFormat, texture, blend, material). Consecutive draws that
@@ -124,6 +131,180 @@ export interface RenderStateStats {
   readonly flushCount: number;
   readonly proxyVisitedCount: number;
 }
+
+export interface NodeRenderer {
+  // Declares which geometry accumulation pipeline this renderer submits into. When set, the
+  // render walk can flush automatically on format changes instead of each immediate-draw renderer
+  // flushing manually. Absent means the renderer manages its own flush boundaries.
+  format?: BatchFormat;
+  createData(state: RenderState, source: NodeAny): RendererData | null;
+  // Frees any non-GC resource this renderer allocated into `data` (GPU textures, framebuffers).
+  // Called when the proxy's renderer/data is replaced or the proxy is destroyed. Optional: renderers
+  // whose data holds only GC-managed values (or none) omit it. `destroy*` semantics — frees now.
+  destroyData?(state: RenderState, data: RendererData): void;
+  // Kind-owned identity check reached through the already-selected renderer before a
+  // requiresInvalidation prepare can skip the node. Implementations keep their comparison stamp in
+  // rendererData, which is per-node and per-state; absent renderers retain the revision-only path.
+  isDirty?(state: RenderState, source: NodeAny, data: RendererData | null): boolean;
+  submit(state: RenderState, node: RenderProxy): void;
+}
+
+export interface RenderProxy extends EntityRaw {
+  [EntityRuntimeKey]: EntityRuntime | undefined;
+  source: NodeAny;
+  kind: Kind;
+  next: RenderProxy | null;
+
+  alpha: number;
+  appearanceFrameId: number;
+  blendMode: BlendMode | null;
+  // The node's color-adjustment stack resolved to the affine form the inline fold consumes.
+  colorScaleBias: ColorScaleBias | null;
+  // Full inherited 4x5 pointwise matrix for the uncommon channel-mixing path.
+  colorMatrix?: Readonly<Float32Array> | null;
+  material: Material | null;
+  materialData: MaterialData | null;
+  lastAppearanceId: number;
+  lastChildrenId: number;
+  lastLocalContentId: number;
+  lastLocalTransformId: number;
+  lastParentReferenceId: number;
+  name: string | null;
+  renderer: NodeRenderer | null;
+  rendererData: RendererData | null;
+  rendererDataSource: NodeAny | null;
+  rendererMapId: number;
+  transformFrameId: number;
+  visible: boolean;
+}
+
+// The unified 2D render node. Sprites and display objects share one render node type; the clip field is
+// inert for nodes that do not use it.
+export interface RenderProxy2D extends RenderProxy {
+  material: Material2D | null;
+  source: Node2D;
+  transform2D: Matrix;
+  traverseChildren: boolean;
+  clipDepth: number;
+}
+
+export type RenderProxyAdapter = {
+  adapt: (state: RenderState, source: NodeAny, node: RenderProxy2D) => boolean | null;
+};
+
+export type RenderProxyResolver = {
+  resolve: (state: RenderState, source: Node2D, node: RenderProxy2D) => boolean | null;
+};
+
+// Per-node update callback for the render walks.
+export type RenderProxyVisitor = (
+  state: RenderState,
+  source: NodeAny,
+  data: RenderProxy2D,
+  parentData: RenderProxy2D | undefined,
+) => void;
+
+export type RenderSortKey = number;
+
+export interface RenderQueueEntry {
+  readonly proxy: RenderProxy;
+  readonly sortKey: RenderSortKey;
+}
+
+export interface RenderQueue extends EntityRaw {
+  [EntityRuntimeKey]: EntityRuntime | undefined;
+  entries: RenderQueueEntry[];
+  entryCount: number;
+}
+
+// An Entity like every other object a create* factory returns, so it can carry runtime state on the
+// standard slot instead of growing fields on the public shape.
+export type RenderCacheAdapter = EntityRaw & { [EntityRuntimeKey]: EntityRuntime | undefined } & RenderProxyAdapter & {
+    cache: RenderCache | null;
+    signals: RenderCacheAdapterSignals | null;
+  };
+
+export interface Scene2DRenderer extends NodeRenderer {
+  createData(state: RenderState, source: Node2D): RendererData | null;
+  submit(state: RenderState, node: RenderProxy2D): void;
+}
+
+export interface Scene2DClipHooks {
+  finalize(state: RenderState): void;
+  popClip(state: RenderState, data: RenderProxy2D, source: Node2D): void;
+  pushClip(state: RenderState, data: RenderProxy2D, source: Node2D): void;
+}
+
+/** Controls whether a subsystem refreshes derived scene graph state from raw fields before use. */
+export type Scene3DGraphSyncPolicy = 'refreshDerivedState' | 'requiresInvalidation';
+
+export interface RenderState extends EntityRaw {
+  [EntityRuntimeKey]: EntityRuntime | undefined;
+  allowSmoothing: boolean;
+  currentClipDepth: number;
+  displayObjectClipHooks: Scene2DClipHooks | null;
+  pixelRatio: number;
+  canvasHost: Readonly<HostCanvasCapability> | null;
+  imageHost: Readonly<HostImageCapability> | null;
+  renderAlpha: number;
+  renderBlendMode: BlendMode | null;
+  sceneGraphSyncPolicy: Scene3DGraphSyncPolicy;
+  roundPixels: boolean;
+}
+
+export interface RenderRegistries {
+  canvasShapeCommands?: ReadonlyMap<Kind, CanvasShapeCommand>;
+  colorAdjustments?: ((state: RenderState, data: RenderProxy, parentData?: RenderProxy) => void) | null;
+  colorAdjustmentUnsupportedGuard?: ColorAdjustmentUnsupportedGuard | null;
+  effectPaddingResolvers?: ReadonlyMap<Kind, EffectPaddingResolver>;
+  nodeRenderers: ReadonlyMap<Kind, NodeRenderer>;
+  renderRootGuard?: RenderRootGuard | null;
+  strokeTessellator: StrokeTessellator | null;
+}
+
+export type ColorAdjustmentUnsupportedGuard = (state: RenderState, source: NodeAny) => void;
+export type RenderRootGuard = (state: RenderState, root: NodeAny) => void;
+
+export type StrokeTessellator = (
+  path: Readonly<Path>,
+  style: Readonly<StrokeStyle>,
+  tolerance?: number,
+) => PathMesh | null;
+
+export interface RenderStateRuntime extends EntityRuntime {
+  currentFrameId: number;
+  renderAdaptHook: ((state: RenderState, source: NodeAny, data: RenderProxy2D) => void) | null;
+  renderProxyAdapterMap: WeakMap<NodeAny, RenderProxyAdapter>;
+  renderProxyMap: WeakMap<NodeAny, RenderProxy>;
+  renderProxySources: Set<NodeAny>;
+  registryMiss:
+    | (((registry: RenderRegistryTable, kind: Kind) => void) & {
+        clear(): void;
+        readonly signals: RenderRegistrySignals;
+      })
+    | null;
+  registries: RenderRegistries;
+  rendererMapId: number;
+  tempStack: NodeAny[];
+}
+
+export interface RenderStateOptions {
+  canvasShapeCommands?: ReadonlyMap<Kind, CanvasShapeCommand>;
+  colorAdjustments?: ((state: RenderState, data: RenderProxy, parentData?: RenderProxy) => void) | null;
+  colorAdjustmentUnsupportedGuard?: ColorAdjustmentUnsupportedGuard | null;
+  effectPaddingResolvers?: ReadonlyMap<Kind, EffectPaddingResolver>;
+  nodeRenderers?: ReadonlyMap<Kind, NodeRenderer>;
+  renderRootGuard?: RenderRootGuard | null;
+  strokeTessellator?: StrokeTessellator | null;
+}
+
+// Replays a shape command stream into a 2D context for a backend that cannot express every fill as
+// GPU geometry.
+export type ShapeRasterizer = (
+  context: CanvasRenderingContext2D,
+  commands: readonly ShapeCommandToken[],
+  state: RenderState,
+) => void;
 
 // Substrate-agnostic render-target description. A target carries axes, not booleans: `format`/
 // `colorFormats` unlock HDR and the G-buffer, `colorAttachments` is MRT/deferred, `sampleCount` is

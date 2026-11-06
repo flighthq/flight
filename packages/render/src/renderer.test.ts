@@ -1,11 +1,3 @@
-import type {
-  ColorAdjustmentUnsupportedGuard,
-  RenderRootGuard,
-  NodeRenderer,
-  RenderState,
-  Scene2DClipHooks,
-} from '@flighthq/types/contract';
-
 import {
   copyAllRenderersFromRenderState,
   copyRenderStateRegistrations,
@@ -15,6 +7,13 @@ import {
   registerNodeRenderers,
 } from './renderer.ts';
 import { createRenderState, getRenderStateRuntime } from './renderState.ts';
+import type {
+  ColorAdjustmentUnsupportedGuard,
+  RenderRootGuard,
+  NodeRenderer,
+  RenderState,
+  Scene2DClipHooks,
+} from './types.ts';
 
 describe('copyAllRenderersFromRenderState', () => {
   it('copies all registrations and the clip hooks from source to target', () => {

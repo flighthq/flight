@@ -1,4 +1,5 @@
 import { computeRgbaCssString } from '@flighthq/color/contract';
+import type { RenderProxy2D } from '@flighthq/render/contract';
 import { getRichTextRuntime, getRichTextScrollYOffset } from '@flighthq/text/contract';
 import type { RichText } from '@flighthq/text/contract';
 import {
@@ -10,7 +11,7 @@ import {
 } from '@flighthq/textinput/contract';
 import { computeTextBoundsHeight, computeTextBoundsWidth } from '@flighthq/textlayout/contract';
 import type { TextSelectionRectangle } from '@flighthq/textlayout/contract';
-import type { CanvasRenderState, RenderProxy2D } from '@flighthq/types/contract';
+import type { CanvasRenderState } from '@flighthq/types/contract';
 
 import { registerCanvasTextInputOverlay } from './canvasRichText.ts';
 import { setCanvasTransform } from './canvasTransform.ts';

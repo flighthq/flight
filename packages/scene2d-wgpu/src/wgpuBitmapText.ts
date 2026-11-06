@@ -5,15 +5,10 @@ import {
 } from '@flighthq/render-wgpu/contract';
 import { SCENE2D_WORKING_COLOR_SPACE, BatchFormat } from '@flighthq/render/contract';
 import { noopRendererData } from '@flighthq/render/contract';
+import type { RenderProxy2D } from '@flighthq/render/contract';
 import { getNode2DRuntime } from '@flighthq/scene2d/contract';
 import { getTextureHeight, getTextureWidth, hasTextureSource } from '@flighthq/texture/contract';
-import type {
-  BitmapText,
-  BitmapTextRuntime,
-  RenderProxy2D,
-  SpriteRenderer,
-  WgpuRenderState,
-} from '@flighthq/types/contract';
+import type { BitmapText, BitmapTextRuntime, SpriteRenderer, WgpuRenderState } from '@flighthq/types/contract';
 import { TextureAtlasRotation } from '@flighthq/types/contract';
 
 import {

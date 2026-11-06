@@ -14,8 +14,8 @@ import {
 } from '@flighthq/render-wgpu/contract';
 import { createWgpuRenderStateForTest, installWgpuMock } from '@flighthq/render-wgpu/contract';
 import { getRenderProxy2D, prepareScene2DRender } from '@flighthq/render/contract';
+import type { RenderProxy2D } from '@flighthq/render/contract';
 import { createTexture } from '@flighthq/texture/contract';
-import type { RenderProxy2D } from '@flighthq/types/contract';
 import { CompressedImageTextureSourceKind, EntityRuntimeKey, TextureAtlasRotation } from '@flighthq/types/contract';
 
 import { wgpuParticleEmitter2DRenderer, drawWgpuParticleEmitter2D } from './wgpuParticleEmitter2D.ts';

@@ -21,16 +21,15 @@ import {
   prepareScene2DRender,
   registerRenderCacheNodeRenderer,
 } from '@flighthq/render/contract';
+import type { Scene2DRenderer, RenderProxy2D } from '@flighthq/render/contract';
 import type {
   Node2D,
-  Scene2DRenderer,
   GlRenderState,
   GlRenderStateOptions,
   GlTextureRenderTarget,
   Matrix,
   RenderCache,
   RenderCacheRefreshOptions,
-  RenderProxy2D,
 } from '@flighthq/types/contract';
 
 import { renderGlScene2D } from './glNode2D.ts';

@@ -1,5 +1,6 @@
 import { getOrCreateRenderProxy2D } from '@flighthq/render/contract';
-import type { Node2D, RenderProxy2D } from '@flighthq/types/contract';
+import type { RenderProxy2D } from '@flighthq/render/contract';
+import type { Node2D } from '@flighthq/types/contract';
 
 import type { WgpuBitmapShader, WgpuRenderState } from './contract.render-wgpu-types.ts';
 import { getWgpuRenderStateRuntime } from './wgpuRenderState.ts';

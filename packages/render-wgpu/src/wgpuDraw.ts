@@ -1,4 +1,5 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type { RenderProxy, RenderProxy2D } from '@flighthq/render/contract';
 import { getTextureSource } from '@flighthq/texture/contract';
 import type {
   Bitmap,
@@ -7,8 +8,6 @@ import type {
   EntityConstruction,
   HasColorScaleBias,
   ImageResource,
-  RenderProxy,
-  RenderProxy2D,
   Texture,
   TextureColorSpace,
   TextureSource,

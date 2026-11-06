@@ -4,7 +4,8 @@ import {
   registerTestImageDimensionResolver,
   unregisterTestImageDimensionResolver,
 } from '@flighthq/image/contract';
-import type { BitmapText, GlyphEntry, GlyphSource, ImageResource, RenderProxy2D } from '@flighthq/types/contract';
+import type { RenderProxy2D } from '@flighthq/render/contract';
+import type { BitmapText, GlyphEntry, GlyphSource, ImageResource } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 import { vi } from 'vitest';
 

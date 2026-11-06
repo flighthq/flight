@@ -1,11 +1,11 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type { RenderState } from '@flighthq/render/contract';
 import type {
   EntityConstruction,
   EntityWithoutRuntime,
   GlitchEffect,
   Effect,
   EffectPadding,
-  RenderState,
 } from '@flighthq/types/contract';
 
 import { initializeEffect } from './effect.ts';

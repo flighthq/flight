@@ -1,9 +1,10 @@
 import { multiplyColorMatrix } from '@flighthq/adjustments/contract';
 import { concatColorScaleBias, createColorScaleBias } from '@flighthq/materials/contract';
 import { getNodeRuntime } from '@flighthq/node/contract';
-import type { ColorAdjustmentRuntime, ColorScaleBias, Node, RenderProxy, RenderState } from '@flighthq/types/contract';
+import type { ColorAdjustmentRuntime, ColorScaleBias, Node } from '@flighthq/types/contract';
 
 import { getColorAdjustmentUnsupportedGuard, getRenderStateRuntime } from './renderState.ts';
+import type { RenderProxy, RenderState } from './types.ts';
 
 // Returns whether color-adjustment accumulation is installed on `state`.
 export function areColorAdjustmentsEnabled(state: RenderState): boolean {

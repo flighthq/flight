@@ -1,7 +1,8 @@
-import type { Kind, RenderState, Scene2DKindUsage } from '@flighthq/types/contract';
+import type { Kind, Scene2DKindUsage } from '@flighthq/types/contract';
 import { RequirementFacet } from '@flighthq/types/contract';
 
 import { getRenderStateRuntime } from './renderState.ts';
+import type { RenderState } from './types.ts';
 import type { CatalogRegistration, SceneCoverageCatalog, SceneCoverageEntry } from './types.ts';
 import { RenderRegistryTable, SceneCoverage } from './types.ts';
 

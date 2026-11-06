@@ -5,6 +5,7 @@ import {
 } from '@flighthq/image/contract';
 import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
 import { BatchFormat } from '@flighthq/render/contract';
+import type { RenderProxy2D } from '@flighthq/render/contract';
 import { createTextLabel, setTextLabelString } from '@flighthq/text/contract';
 import type { TextLabel } from '@flighthq/text/contract';
 import * as textlayout from '@flighthq/textlayout/contract';
@@ -14,7 +15,6 @@ import type {
   HostImageCapability,
   ImageResource,
   RendererData,
-  RenderProxy2D,
 } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 

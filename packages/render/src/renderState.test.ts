@@ -1,4 +1,3 @@
-import type { ColorAdjustmentUnsupportedGuard, RenderState } from '@flighthq/types/contract';
 import { BlendMode, EntityRuntimeKey } from '@flighthq/types/contract';
 
 import {
@@ -9,6 +8,7 @@ import {
   getRenderStateRuntime,
   initializeRenderState,
 } from './renderState.ts';
+import type { ColorAdjustmentUnsupportedGuard, RenderState } from './types.ts';
 
 describe('createRenderState', () => {
   let state: RenderState;

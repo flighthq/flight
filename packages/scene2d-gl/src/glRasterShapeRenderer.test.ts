@@ -7,8 +7,9 @@ import * as flightNode from '@flighthq/node/contract';
 import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
 import { enableRenderRegistriesGuards, explainRenderRegistriesMisses, BatchFormat } from '@flighthq/render/contract';
 import { RenderRegistryTable } from '@flighthq/render/contract';
+import type { RenderProxy2D } from '@flighthq/render/contract';
 import { appendShapeBeginFill, appendShapeEndFill, appendShapeRectangle, createShape } from '@flighthq/shape/contract';
-import type { CanvasSurface, HostCanvasCapability, HostImageCapability, RenderProxy2D } from '@flighthq/types/contract';
+import type { CanvasSurface, HostCanvasCapability, HostImageCapability } from '@flighthq/types/contract';
 
 beforeEach(() => {
   vi.spyOn(flightNode, 'getNodeLocalBoundsRectangle').mockImplementation((() => ({

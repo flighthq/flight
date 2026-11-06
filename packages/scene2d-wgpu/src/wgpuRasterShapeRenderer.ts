@@ -4,9 +4,10 @@ import { bindWgpuImageResourceTexture, resolveWgpuQuadMaterialRenderer } from '@
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
 import { createCanvasHostSurface, destroyCanvasHostSurface, BatchFormat } from '@flighthq/render/contract';
 import { RenderRegistryTable } from '@flighthq/render/contract';
+import type { RenderProxy2D, Scene2DRenderer } from '@flighthq/render/contract';
 import type { Shape } from '@flighthq/shape/contract';
 import { ShapeKind } from '@flighthq/shape/contract';
-import type { RenderProxy2D, Scene2DRenderer, WgpuRenderState } from '@flighthq/types/contract';
+import type { WgpuRenderState } from '@flighthq/types/contract';
 
 import {
   QUAD_BATCH_INSTANCE_FLOATS,

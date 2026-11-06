@@ -1,7 +1,8 @@
 import { withKindMapEntry } from '@flighthq/registry/contract';
+import type { NodeRenderer } from '@flighthq/render/contract';
 import { MorphShapeKind, Scale9ShapeKind, ShapeKind } from '@flighthq/shape/contract';
 import { RichTextKind, TextLabelKind } from '@flighthq/text/contract';
-import type { CanvasRenderRegistries, Kind, NodeRenderer } from '@flighthq/types/contract';
+import type { CanvasRenderRegistries, Kind } from '@flighthq/types/contract';
 import {
   BitmapTextKind,
   DisplayObjectKind,

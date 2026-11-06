@@ -1,6 +1,6 @@
 import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
+import type { RenderProxy2D } from '@flighthq/render/contract';
 import { TextureAtlasRotation } from '@flighthq/types/contract';
-import type { RenderProxy2D } from '@flighthq/types/contract';
 
 import { glQuadBatchRenderer } from './glQuadBatch.ts';
 import { flushGlQuadBatchWriter } from './glQuadBatchWriter.ts';

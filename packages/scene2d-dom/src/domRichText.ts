@@ -1,6 +1,7 @@
 import { computeRgbaCssString } from '@flighthq/color/contract';
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
+import type { RenderProxy2D, RenderState, Scene2DRenderer } from '@flighthq/render/contract';
 import {
   computeRichTextContent,
   computeTextFormatFontString,
@@ -18,7 +19,7 @@ import {
   computeTextLayout,
   getRichTextSelectionRectangles,
 } from '@flighthq/textlayout/contract';
-import type { RenderProxy2D, RenderState, NodeAny, RendererData, Scene2DRenderer } from '@flighthq/types/contract';
+import type { NodeAny, RendererData } from '@flighthq/types/contract';
 
 import type { DomRenderState, DomTextInputOverlay } from './contract.scene2d-dom-types.ts';
 import { getDomFontAscentCached, setDomFontAscentCached } from './domFontSource.ts';

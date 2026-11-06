@@ -1,5 +1,6 @@
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
-import type { WgpuRenderState, ShapeRasterizer } from '@flighthq/types/contract';
+import type { ShapeRasterizer } from '@flighthq/render/contract';
+import type { WgpuRenderState } from '@flighthq/types/contract';
 
 export function getWgpuShapeRasterizer(state: WgpuRenderState): ShapeRasterizer | null {
   const entry = getWgpuRenderStateRuntime(state).registries.shapeRasterizer;

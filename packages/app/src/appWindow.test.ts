@@ -1,4 +1,5 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type { RenderState } from '@flighthq/render/contract';
 import { cancelSignal, connectSignal, emitSignal } from '@flighthq/signals/contract';
 import type { Signal } from '@flighthq/signals/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
@@ -14,7 +15,6 @@ import type {
   InputPointerLockRequestOutcome,
   InputTargetHandle,
   Matrix,
-  RenderState,
   Surface,
   ScreenChangeEvent,
   ScreenInfo,

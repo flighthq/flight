@@ -1,7 +1,2 @@
-import type { NodeAny } from './Node.ts';
-import type { RenderProxy2D } from './RenderProxy2D.ts';
-import type { RenderState } from './RenderState.ts';
-
-export type RenderProxyAdapter = {
-  adapt: (state: RenderState, source: NodeAny, node: RenderProxy2D) => boolean | null;
-};
+/** @deprecated Import render contracts from `@flighthq/render/contract`. */
+export type { RenderProxyAdapter } from '@flighthq/render/contract';

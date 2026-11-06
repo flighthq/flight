@@ -1,11 +1,5 @@
-import type {
-  GlEffectRegistration,
-  GlScene3DPass,
-  GlVelocityWriter,
-  Kind,
-  RenderStateOptions,
-  ShapeRasterizer,
-} from '@flighthq/types/contract';
+import type { RenderStateOptions, ShapeRasterizer } from '@flighthq/render/contract';
+import type { GlEffectRegistration, GlScene3DPass, GlVelocityWriter, Kind } from '@flighthq/types/contract';
 
 import type { GlCompressedTextureDecoder } from './glCompressedTextureDecoderTypes.ts';
 import type { GlCompressedTextureUploader } from './glCompressedTextureUploaderTypes.ts';

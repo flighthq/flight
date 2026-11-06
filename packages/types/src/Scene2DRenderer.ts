@@ -1,22 +1,2 @@
-﻿import type { Node2D } from './Node2D.ts';
-import type { NodeRenderer } from './NodeRenderer.ts';
-import type { RendererData } from './RendererData.ts';
-import type { RenderProxy2D } from './RenderProxy2D.ts';
-import type { RenderState } from './RenderState.ts';
-
-export interface Scene2DRenderer extends NodeRenderer {
-  createData(state: RenderState, source: Node2D): RendererData | null;
-  submit(state: RenderState, node: RenderProxy2D): void;
-}
-
-// Realizes a node's `clip` (ClipRegion): a rectangle as a scissor, an arbitrary path as stencil-then-
-// cover (or CSS clip-path on DOM). Masks were retired into this — a former mask is a path ClipRegion.
-export interface Scene2DClipHooks {
-  finalize(state: RenderState): void;
-  // `source` lets the implementation pop down to the node's parent clip depth (excluding the node's
-  // own clip), so consecutive sibling clips at the same depth do not leak into one another.
-  popClip(state: RenderState, data: RenderProxy2D, source: Node2D): void;
-  // Pushed before the node draws its own content, so a clip clips the node itself and its children
-  // (like scrollRect minus the scroll), not only its children.
-  pushClip(state: RenderState, data: RenderProxy2D, source: Node2D): void;
-}
+/** @deprecated Import render contracts from `@flighthq/render/contract`. */
+export type { Scene2DClipHooks, Scene2DRenderer } from '@flighthq/render/contract';

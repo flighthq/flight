@@ -2,4 +2,4 @@
 // Types until their own packages gain acyclic contract lanes; keeping the bridge here prevents the
 // owner project from selecting an unrelated suffix barrel or depending on the full Types project.
 export type { ColorScaleBias } from './ColorScaleBias.ts';
-export type { RenderProxy2D } from './RenderProxy2D.ts';
+export type { RenderProxy2D } from '@flighthq/render/contract';

@@ -1,8 +1,8 @@
 import { getWgpuBlendState, getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
 import { enableColorAdjustments } from '@flighthq/render/contract';
+import type { RenderProxy2D } from '@flighthq/render/contract';
 import type {
   ColorScaleBias,
-  RenderProxy2D,
   WgpuColorAdjustmentFlush,
   WgpuRenderState,
   WgpuRenderStateRuntime,

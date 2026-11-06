@@ -33,7 +33,6 @@ import type {
   Matrix4,
   Node3D,
   PointLight,
-  RenderState,
   Scene3DLightBlock,
   Scene3DLightsLike,
   Scene3DRenderList,
@@ -53,6 +52,8 @@ import {
   SCENE_LIGHT_SPOT_OFFSET,
   SCENE_LIGHT_SPOT_STRIDE,
 } from '@flighthq/types/contract';
+
+import type { RenderState } from './types.ts';
 
 // Packs the directional + ambient + punctual (point/spot/hemisphere) draw-arg lights into `out` (the
 // GPU-ready light block), converting each packed sRgb color to linear, premultiplied radiance

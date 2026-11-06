@@ -7,14 +7,9 @@ import {
   renderIntoWgpuRenderTexture,
   submitWgpuFrame,
 } from '@flighthq/render-wgpu/contract';
+import type { RenderProxy2D } from '@flighthq/render/contract';
 import { createRenderTexture } from '@flighthq/texture/contract';
-import type {
-  ColorScaleBias,
-  RenderProxy2D,
-  Scale9Sprite,
-  Texture2D,
-  WgpuTextureEntry,
-} from '@flighthq/types/contract';
+import type { ColorScaleBias, Scale9Sprite, Texture2D, WgpuTextureEntry } from '@flighthq/types/contract';
 import { EntityRuntimeKey, Scale9SpriteKind } from '@flighthq/types/contract';
 
 import { wgpuScene2DRenderPreset } from './scene2DWgpuPipeline.ts';

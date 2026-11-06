@@ -10,12 +10,13 @@ import {
 import type { LogState } from '@flighthq/log/contract';
 import { setNodeColorAdjustments } from '@flighthq/node/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
-import type { Adjustment, LogEntry, MemoryLogSink, NodeAny, RenderProxy, RenderState } from '@flighthq/types/contract';
+import type { Adjustment, LogEntry, MemoryLogSink, NodeAny } from '@flighthq/types/contract';
 
 import { areColorAdjustmentGuardsEnabled, enableColorAdjustmentGuards } from './enableColorAdjustmentGuards.ts';
 import { enableColorAdjustments } from './enableColorAdjustments.ts';
 import { createRenderProxy } from './renderProxy.ts';
 import { createRenderState, getRenderStateRuntime } from './renderState.ts';
+import type { RenderProxy, RenderState } from './types.ts';
 
 // Each test logs into a fresh caller-owned state, so logOnce keys never leak between tests.
 let logState: LogState;

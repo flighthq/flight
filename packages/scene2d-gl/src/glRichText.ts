@@ -4,6 +4,7 @@ import { invalidateImageResource } from '@flighthq/image/contract';
 import { bindGlImageResourceTexture, drawGlQuad, useGlProgram } from '@flighthq/render-gl/contract';
 import { getGlRenderStateRuntime, resolveGlShader } from '@flighthq/render-gl/contract';
 import { createCanvasHostSurface, destroyCanvasHostSurface } from '@flighthq/render/contract';
+import type { RenderProxy2D, Scene2DRenderer } from '@flighthq/render/contract';
 import {
   computeRichTextContent,
   computeTextFormatFontString,
@@ -26,10 +27,8 @@ import type {
   EntityConstruction,
   GlRenderState,
   ImageResource,
-  RenderProxy2D,
   NodeAny,
   RendererData,
-  Scene2DRenderer,
 } from '@flighthq/types/contract';
 
 import { flushGlQuadBatchWriter } from './glQuadBatchWriter.ts';

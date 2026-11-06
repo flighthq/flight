@@ -16,6 +16,7 @@ import {
   prepareScene2DRender,
   registerNodeRenderer,
 } from '@flighthq/render/contract';
+import type { RenderState } from '@flighthq/render/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
 import type {
   EffectPaddingResolver,
@@ -25,7 +26,6 @@ import type {
   GlRenderStateOptions,
   LogEntry,
   MemoryLogSink,
-  RenderState,
 } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
