@@ -28,8 +28,7 @@
     "test:wasm:watch": "vitest --watch --config vitest.config.ts"
   },
   "dependencies": {
-    "@flighthq/compression": "*",
-    "@flighthq/types": "*"
+    "@flighthq/compression": "*"
   },
   "devDependencies": {
     "typescript": "^7.0.2"

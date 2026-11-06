@@ -1,4 +1,4 @@
-import { CompressionFraming } from '@flighthq/types';
+import { CompressionFraming } from '@flighthq/compression/contract';
 
 import {
   compressDeflate,

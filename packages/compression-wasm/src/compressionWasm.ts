@@ -4,8 +4,8 @@ import type {
   HostCompressLzmaCapability,
   HostDecompressDeflateCapability,
   HostDecompressLzmaCapability,
-} from '@flighthq/types';
-import { CompressionFraming } from '@flighthq/types';
+} from '@flighthq/compression/contract';
+import { CompressionFraming } from '@flighthq/compression/contract';
 
 import {
   compress_deflate_wasm,
