@@ -8,7 +8,6 @@
     "declarationMap": true,
     "sourceMap": true,
     "moduleSuffixes": [
-      ".scene2d-dom-types",
       ".render-types",
       ".app-types",
       ".geometry-types",
@@ -57,9 +56,6 @@
     },
     {
       "path": "../texture/tsconfig.contract.json"
-    },
-    {
-      "path": "../types/tsconfig.scene2d-dom-types.json"
     }
   ],
   "include": ["src/contract.scene2d-dom-types.ts", "src/types/**/*.ts"]

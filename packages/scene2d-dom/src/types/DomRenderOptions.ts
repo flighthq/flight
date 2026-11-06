@@ -1,11 +1,11 @@
 import type { Kind } from '@flighthq/entity/contract';
 import type {
   NodeRenderer,
+  RenderRegistries,
   Scene3DGraphSyncPolicy,
   ShapeRasterizer,
   StrokeTessellator,
 } from '@flighthq/render/contract';
-import type { CanvasShapeCommand, EffectPaddingResolver } from '@flighthq/types/contract';
 
 import type { DomTextureResolver } from './DomTextureResolver.ts';
 
@@ -13,9 +13,9 @@ export interface DomRenderOptions {
   /**
    * Shape commands this state replays, by kind. Seeded into the runtime registries at construction.
    */
-  canvasShapeCommands?: ReadonlyMap<Kind, CanvasShapeCommand>;
+  canvasShapeCommands?: NonNullable<RenderRegistries['canvasShapeCommands']>;
   /** Effect padding resolvers by kind, seeded into the runtime registries at construction. */
-  effectPaddingResolvers?: ReadonlyMap<Kind, EffectPaddingResolver>;
+  effectPaddingResolvers?: NonNullable<RenderRegistries['effectPaddingResolvers']>;
   /**
    * Node renderers this state draws with, by kind.
    *

@@ -379,7 +379,6 @@
     "src/WgpuVelocityWriter.render-wgpu-types.ts",
     "src/contract.render-wgpu-bridge-types.ts",
     "src/contract.scene3d-gl-bridge-types.ts",
-    "src/contract.scene2d-dom-types.ts",
     "src/contract.scene2d-wgpu-bridge-types.ts",
     "src/contract.scene3d-wgpu-bridge-types.ts"
   ],
