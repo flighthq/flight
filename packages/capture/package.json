@@ -41,7 +41,7 @@
   },
   "dependencies": {
     "@flighthq/bitmap": "*",
-    "@flighthq/types": "*"
+    "@flighthq/entity": "*"
   },
   "devDependencies": {
     "typescript": "^7.0.2"

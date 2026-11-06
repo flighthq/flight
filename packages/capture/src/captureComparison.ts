@@ -2,7 +2,8 @@
 // Rust is authoritative; run `npm run generate` after changing it.
 
 import { compareBitmapFingerprints, parseBitmapFingerprint } from '@flighthq/bitmap/contract';
-import type { CaptureCheckResult } from '@flighthq/types/contract';
+
+import type { CaptureCheckResult } from './types.ts';
 
 /**
  * The tolerant distance between two coarse render fingerprints in `<gridSize>:<hex>` text form:

@@ -4,7 +4,7 @@
 
 import { resolve } from 'node:path';
 
-import type { CaptureBaselineProvenance } from '@flighthq/types/contract';
+import type { CaptureBaselineProvenance } from '@flighthq/capture/contract';
 import pc from 'picocolors';
 
 import { launchBrowser } from './captureBrowser.ts';

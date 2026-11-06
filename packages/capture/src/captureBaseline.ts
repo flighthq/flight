@@ -1,11 +1,12 @@
+import type { NonEntityCreateResult } from '@flighthq/entity/contract';
+
 import type {
   CaptureBaseline,
   CaptureBaselineField,
   CaptureBaselineProvenance,
   CaptureBaselineProvenanceField,
   CaptureColumnBaseline,
-  NonEntityCreateResult,
-} from '@flighthq/types/contract';
+} from './types.ts';
 
 /** Allocates an empty baseline record. Columns are added via setCaptureBaselineField. */
 export function createCaptureBaseline(): NonEntityCreateResult<CaptureBaseline, 'descriptor'> {

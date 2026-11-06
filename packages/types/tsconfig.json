@@ -22,6 +22,7 @@
       ".bitmap-types",
       ".bitmaptext-types",
       ".camera-types",
+      ".capture-types",
       ".image-types",
       ".node-types",
       ".image-types",
@@ -146,6 +147,9 @@
     },
     {
       "path": "../camera/tsconfig.contract.json"
+    },
+    {
+      "path": "../capture/tsconfig.contract.json"
     },
     {
       "path": "../clock"

@@ -24,7 +24,7 @@ import type {
   CaptureBaselineProvenance,
   CaptureBaselineProvenanceField,
   CaptureColumnBaseline,
-} from '@flighthq/types/contract';
+} from '@flighthq/capture/contract';
 
 import { isRejectedCaptureBaselineHash, isUniformCaptureFingerprint } from './captureBaselineSanity.ts';
 

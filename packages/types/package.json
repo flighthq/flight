@@ -48,6 +48,7 @@
     "@flighthq/bitmaptext": "*",
     "@flighthq/buffer": "*",
     "@flighthq/camera": "*",
+    "@flighthq/capture": "*",
     "@flighthq/clip": "*",
     "@flighthq/clipboard": "*",
     "@flighthq/clock": "*",

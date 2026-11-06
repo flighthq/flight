@@ -13,7 +13,7 @@ import { mkdirSync, readFileSync, renameSync, rmSync, writeFileSync } from 'node
 import { join, resolve } from 'node:path';
 
 import { BITMAP_FINGERPRINT_COMPUTATION_ID } from '@flighthq/bitmap/contract';
-import type { CaptureBaselineProvenance } from '@flighthq/types/contract';
+import type { CaptureBaselineProvenance } from '@flighthq/capture/contract';
 import type { BrowserContext, Page } from '@playwright/test';
 
 import { getBaselineField, setBaselineCaptureEvidence, setBaselineField } from './baselineStore.ts';
