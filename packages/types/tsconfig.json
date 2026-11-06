@@ -9,6 +9,7 @@
     "sourceMap": true,
     "moduleSuffixes": [
       ".gui-types",
+      ".keyboard-types",
       ".scene2d-types",
       ".interaction-types",
       ".texture-types",
@@ -281,6 +282,9 @@
     },
     {
       "path": "../texture-formats/tsconfig.contract.json"
+    },
+    {
+      "path": "../keyboard/tsconfig.contract.json"
     }
   ],
   "include": ["src"]

@@ -8,6 +8,7 @@
     "declarationMap": true,
     "sourceMap": true,
     "moduleSuffixes": [
+      ".keyboard-types",
       ".scene2d-types",
       ".interaction-types",
       ".texture-types",
@@ -82,6 +83,9 @@
     },
     {
       "path": "../interaction/tsconfig.contract.json"
+    },
+    {
+      "path": "../keyboard/tsconfig.contract.json"
     },
     {
       "path": "../scene2d/tsconfig.contract.json"

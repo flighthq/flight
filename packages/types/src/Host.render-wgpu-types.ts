@@ -4,6 +4,15 @@ import type { HostClipboardCapabilities } from '@flighthq/clipboard/contract';
 import type { HostDeviceCapabilities } from '@flighthq/device/contract';
 import type { HostFontLoadingCapability, HostGlyphRasterizerCapability } from '@flighthq/font/contract';
 import type { HostInputCapabilities } from '@flighthq/input/contract';
+import type {
+  HostSoftKeyboardAccessoryBarCapability,
+  HostSoftKeyboardChangeCapability,
+  HostSoftKeyboardInfoCapability,
+  HostSoftKeyboardResizeModeWriteCapability,
+  HostSoftKeyboardScrollAssistCapability,
+  HostSoftKeyboardStyleCapability,
+  HostSoftKeyboardVisibilityCapability,
+} from '@flighthq/keyboard/contract';
 import type { HostLifecycleCapabilities } from '@flighthq/lifecycle/contract';
 import type { HostMenuCapabilities } from '@flighthq/menu/contract';
 import type { HostNetCapabilities } from '@flighthq/net/contract';
@@ -63,15 +72,6 @@ import type {
   HostIpcSendCapability,
   HostIpcTargetedSendCapability,
 } from './Ipc.ts';
-import type {
-  HostSoftKeyboardAccessoryBarCapability,
-  HostSoftKeyboardChangeCapability,
-  HostSoftKeyboardInfoCapability,
-  HostSoftKeyboardResizeModeWriteCapability,
-  HostSoftKeyboardScrollAssistCapability,
-  HostSoftKeyboardStyleCapability,
-  HostSoftKeyboardVisibilityCapability,
-} from './Keyboard.ts';
 import type { HostMediaSessionActionCapability, HostMediaSessionCapability } from './MediaSession.ts';
 import type { HostMidiAccessCapability, HostMidiPermissionCapability } from './Midi.ts';
 import type {

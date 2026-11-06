@@ -1,68 +1,31 @@
-import type { Signal } from '@flighthq/signals/contract';
-
-export type SoftKeyboardResizeMode = string;
+/** @deprecated Import keyboard contracts from `@flighthq/keyboard/contract`. The runtime kind values stay
+ * duplicated here because @flighthq/types may re-export owner contracts only as types. */
 export const SoftKeyboardResizeNoneKind = 'None';
 export const SoftKeyboardResizeBodyKind = 'Body';
-export type SoftKeyboardStyleKind = string;
 export const SoftKeyboardStyleDefaultKind = 'Default';
 export const SoftKeyboardStyleDarkKind = 'Dark';
-
-export interface SoftKeyboardInfo {
-  visible: boolean;
-  height: number;
-  x: number;
-  y: number;
-  width: number;
-}
-export interface SoftKeyboard {
-  onShow: Signal<number>;
-  onHide: Signal<void>;
-  onResize: Signal<number>;
-}
-
-export type SoftKeyboardVisibilityResult = 'ok' | 'operation-failed';
 export const SoftKeyboardVisibilityOkKind = 'ok';
 export const SoftKeyboardVisibilityOperationFailedKind = 'operation-failed';
-
-export type SoftKeyboardSetterResult = 'ok' | 'operation-unavailable' | 'operation-failed';
 export const SoftKeyboardSetterOkKind = 'ok';
 export const SoftKeyboardSetterOperationUnavailableKind = 'operation-unavailable';
 export const SoftKeyboardSetterOperationFailedKind = 'operation-failed';
-
-export type SoftKeyboardAttachResult = 'ok' | 'acquisition-failed';
 export const SoftKeyboardAttachOkKind = 'ok';
 export const SoftKeyboardAttachAcquisitionFailedKind = 'acquisition-failed';
 
-export interface HostSoftKeyboardInfoCapability {
-  getInfo(out: SoftKeyboardInfo): void;
-}
-
-export interface SoftKeyboardChangeSubscription {
-  readonly result: SoftKeyboardAttachResult;
-  readonly unsubscribe: (() => void) | null;
-}
-
-export interface HostSoftKeyboardChangeCapability {
-  subscribe(listener: () => void): Promise<SoftKeyboardChangeSubscription>;
-}
-
-export interface HostSoftKeyboardVisibilityCapability {
-  show(): Promise<SoftKeyboardVisibilityResult>;
-  hide(): Promise<SoftKeyboardVisibilityResult>;
-}
-
-export interface HostSoftKeyboardResizeModeWriteCapability {
-  setResizeMode(mode: SoftKeyboardResizeMode): Promise<SoftKeyboardSetterResult>;
-}
-
-export interface HostSoftKeyboardStyleCapability {
-  setStyle(style: SoftKeyboardStyleKind): Promise<SoftKeyboardSetterResult>;
-}
-
-export interface HostSoftKeyboardAccessoryBarCapability {
-  setAccessoryBarVisible(visible: boolean): Promise<SoftKeyboardSetterResult>;
-}
-
-export interface HostSoftKeyboardScrollAssistCapability {
-  setScrollAssistEnabled(enabled: boolean): Promise<SoftKeyboardSetterResult>;
-}
+export type {
+  SoftKeyboardResizeMode,
+  SoftKeyboardStyleKind,
+  SoftKeyboardInfo,
+  SoftKeyboard,
+  SoftKeyboardVisibilityResult,
+  SoftKeyboardSetterResult,
+  SoftKeyboardAttachResult,
+  HostSoftKeyboardInfoCapability,
+  SoftKeyboardChangeSubscription,
+  HostSoftKeyboardChangeCapability,
+  HostSoftKeyboardVisibilityCapability,
+  HostSoftKeyboardResizeModeWriteCapability,
+  HostSoftKeyboardStyleCapability,
+  HostSoftKeyboardAccessoryBarCapability,
+  HostSoftKeyboardScrollAssistCapability,
+} from '@flighthq/keyboard/contract';

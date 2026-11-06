@@ -63,6 +63,7 @@
     "@flighthq/importdiagnostics": "*",
     "@flighthq/input": "*",
     "@flighthq/interaction": "*",
+    "@flighthq/keyboard": "*",
     "@flighthq/layout": "*",
     "@flighthq/lifecycle": "*",
     "@flighthq/log": "*",

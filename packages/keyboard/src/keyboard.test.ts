@@ -1,18 +1,5 @@
+import { EntityRuntimeKey } from '@flighthq/entity/contract';
 import { connectSignal } from '@flighthq/signals/contract';
-import { EntityRuntimeKey, SoftKeyboardResizeBodyKind } from '@flighthq/types/contract';
-import type {
-  HostSoftKeyboardAccessoryBarCapability,
-  HostSoftKeyboardChangeCapability,
-  HostSoftKeyboardInfoCapability,
-  HostSoftKeyboardResizeModeWriteCapability,
-  HostSoftKeyboardScrollAssistCapability,
-  HostSoftKeyboardStyleCapability,
-  HostSoftKeyboardVisibilityCapability,
-  SoftKeyboardChangeSubscription,
-  SoftKeyboardInfo,
-  SoftKeyboardSetterResult,
-  SoftKeyboardVisibilityResult,
-} from '@flighthq/types/contract';
 
 import {
   attachSoftKeyboard,
@@ -30,6 +17,20 @@ import {
   setSoftKeyboardStyle,
   showSoftKeyboard,
 } from './keyboard.ts';
+import { SoftKeyboardResizeBodyKind } from './types.ts';
+import type {
+  HostSoftKeyboardAccessoryBarCapability,
+  HostSoftKeyboardChangeCapability,
+  HostSoftKeyboardInfoCapability,
+  HostSoftKeyboardResizeModeWriteCapability,
+  HostSoftKeyboardScrollAssistCapability,
+  HostSoftKeyboardStyleCapability,
+  HostSoftKeyboardVisibilityCapability,
+  SoftKeyboardChangeSubscription,
+  SoftKeyboardInfo,
+  SoftKeyboardSetterResult,
+  SoftKeyboardVisibilityResult,
+} from './types.ts';
 
 type OmitRuntime<T> = Omit<T, typeof EntityRuntimeKey>;
 

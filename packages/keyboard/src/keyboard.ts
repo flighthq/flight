@@ -1,8 +1,9 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
 import { createSignal, emitSignal } from '@flighthq/signals/contract';
+import type { Entity } from '@flighthq/types/contract';
+
 import type {
-  Entity,
-  EntityConstruction,
   HostSoftKeyboardAccessoryBarCapability,
   HostSoftKeyboardChangeCapability,
   HostSoftKeyboardInfoCapability,
@@ -17,7 +18,7 @@ import type {
   SoftKeyboardSetterResult,
   SoftKeyboardStyleKind,
   SoftKeyboardVisibilityResult,
-} from '@flighthq/types/contract';
+} from './types.ts';
 
 export async function attachSoftKeyboard(
   hostSoftKeyboardChange: Readonly<HostSoftKeyboardChangeCapability>,

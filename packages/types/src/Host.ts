@@ -17,6 +17,15 @@ import type {
   HostShareCapabilities,
 } from '@flighthq/host/contract';
 import type { HostInputCapabilities } from '@flighthq/input/contract';
+import type {
+  HostSoftKeyboardAccessoryBarCapability,
+  HostSoftKeyboardChangeCapability,
+  HostSoftKeyboardInfoCapability,
+  HostSoftKeyboardResizeModeWriteCapability,
+  HostSoftKeyboardScrollAssistCapability,
+  HostSoftKeyboardStyleCapability,
+  HostSoftKeyboardVisibilityCapability,
+} from '@flighthq/keyboard/contract';
 import type { HostLifecycleCapabilities } from '@flighthq/lifecycle/contract';
 import type { HostMenuCapabilities } from '@flighthq/menu/contract';
 import type { HostNetCapabilities } from '@flighthq/net/contract';
@@ -55,15 +64,6 @@ import type {
   HostIpcSendCapability,
   HostIpcTargetedSendCapability,
 } from './Ipc.ts';
-import type {
-  HostSoftKeyboardAccessoryBarCapability,
-  HostSoftKeyboardChangeCapability,
-  HostSoftKeyboardInfoCapability,
-  HostSoftKeyboardResizeModeWriteCapability,
-  HostSoftKeyboardScrollAssistCapability,
-  HostSoftKeyboardStyleCapability,
-  HostSoftKeyboardVisibilityCapability,
-} from './Keyboard.ts';
 import type { HostMediaSessionActionCapability, HostMediaSessionCapability } from './MediaSession.ts';
 import type { HostPermissionsCapability } from './Permission.ts';
 import type { HostPlatformCapability } from './Platform.ts';
