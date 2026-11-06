@@ -1,6 +1,8 @@
 import { createOrthographicProjection, createPerspectiveProjection } from '@flighthq/camera/contract';
-import type { GltfCoreFeatureContext, GltfCoreFeatureHandler, Scene3DDocumentCamera } from '@flighthq/types/contract';
+import type { Scene3DDocumentCamera } from '@flighthq/types/contract';
 import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
+
+import type { GltfCoreFeatureContext, GltfCoreFeatureHandler } from './contract.scene3d-formats-types.ts';
 
 // Imports the optional top-level `cameras` section after the bedrock node hierarchy exists.
 export const GltfCamerasCoreFeatureHandler: GltfCoreFeatureHandler = {

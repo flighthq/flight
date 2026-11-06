@@ -1,6 +1,6 @@
-import type { GltfCoreFeatureHandler, GltfExtensionHandler } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
+import type { GltfCoreFeatureHandler, GltfExtensionHandler } from './contract.scene3d-formats-types.ts';
 import { GltfCamerasCoreFeatureHandler } from './gltfCameras.ts';
 import { registerAllGltfHandlers } from './registerAllGltfHandlers.ts';
 import { registerGltfAnimationHandlers } from './registerGltfAnimationHandlers.ts';

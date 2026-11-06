@@ -1,7 +1,7 @@
 import { packLinearChannelsToColor } from '@flighthq/color/contract';
 import { createSpecularPbrExtension } from '@flighthq/materials/contract';
-import type { GltfExtensionHandler } from '@flighthq/types/contract';
 
+import type { GltfExtensionHandler } from './contract.scene3d-formats-types.ts';
 import { attachGltfPbrExtension } from './gltfMaterialExtension.ts';
 
 // KHR_materials_specular — retunes the dielectric F0 independently of roughness and metalness, so a

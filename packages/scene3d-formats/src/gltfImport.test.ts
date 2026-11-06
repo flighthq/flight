@@ -1,6 +1,6 @@
 import { getNodeChildren } from '@flighthq/node/contract';
-import type { GltfDocument } from '@flighthq/types/contract';
 
+import type { GltfDocument } from './contract.scene3d-formats-types.ts';
 import {
   createScene3DFromGlb,
   createScene3DFromGltf,

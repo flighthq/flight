@@ -1,5 +1,7 @@
-import type { GltfCoreFeatureContext, GltfCoreFeatureHandler, Scene3DDocumentSkin } from '@flighthq/types/contract';
+import type { Scene3DDocumentSkin } from '@flighthq/types/contract';
 import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
+
+import type { GltfCoreFeatureContext, GltfCoreFeatureHandler } from './contract.scene3d-formats-types.ts';
 
 // Imports the optional top-level `skins` section and binds each referencing mesh after the bedrock mesh and
 // node tables exist. JOINTS_0/WEIGHTS_0 remain bedrock vertex data; this handler owns only skeleton topology,

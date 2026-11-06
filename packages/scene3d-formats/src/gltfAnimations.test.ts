@@ -1,6 +1,6 @@
-import type { GltfDocument } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
+import type { GltfDocument } from './contract.scene3d-formats-types.ts';
 import { GltfAnimationsCoreFeatureHandler } from './gltfAnimations.ts';
 import { parseGltfWithCoreFeatureHandlers } from './gltfParse.ts';
 

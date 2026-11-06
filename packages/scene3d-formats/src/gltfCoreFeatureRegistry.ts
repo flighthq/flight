@@ -1,4 +1,4 @@
-import type { GltfCoreFeatureHandler } from '@flighthq/types/contract';
+import type { GltfCoreFeatureHandler } from './contract.scene3d-formats-types.ts';
 
 // Registers one handler into a caller-owned list. Re-registering the same canonical source kind replaces
 // the earlier implementation in place, matching the last-write-wins extension-handler dispatch contract.

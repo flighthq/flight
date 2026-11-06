@@ -1,6 +1,6 @@
 import { createAnisotropyPbrExtension } from '@flighthq/materials/contract';
-import type { GltfExtensionHandler } from '@flighthq/types/contract';
 
+import type { GltfExtensionHandler } from './contract.scene3d-formats-types.ts';
 import { attachGltfPbrExtension } from './gltfMaterialExtension.ts';
 
 // KHR_materials_anisotropy — stretches the microfacet response along the mesh tangents, which is what

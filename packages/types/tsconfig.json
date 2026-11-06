@@ -8,6 +8,7 @@
     "declarationMap": true,
     "sourceMap": true,
     "moduleSuffixes": [
+      ".scene3d-formats-types",
       ".gui-types",
       ".render-types",
       ".accessibility-types",
@@ -377,6 +378,9 @@
     },
     {
       "path": "../loader/tsconfig.contract.json"
+    },
+    {
+      "path": "../scene3d-formats/tsconfig.contract.json"
     }
   ],
   "include": ["src"]

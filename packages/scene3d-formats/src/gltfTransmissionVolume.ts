@@ -1,12 +1,9 @@
 import { packLinearChannelsToColor } from '@flighthq/color/contract';
 import { createTransmissionVolumePbrExtension } from '@flighthq/materials/contract';
-import type {
-  GltfExtensionContext,
-  GltfExtensionHandler,
-  TransmissionVolumePbrExtension,
-} from '@flighthq/types/contract';
+import type { TransmissionVolumePbrExtension } from '@flighthq/types/contract';
 import { TransmissionVolumePbrExtensionKind } from '@flighthq/types/contract';
 
+import type { GltfExtensionContext, GltfExtensionHandler } from './contract.scene3d-formats-types.ts';
 import { attachGltfPbrExtension, findGltfPbrExtension } from './gltfMaterialExtension.ts';
 
 // The three glTF extensions that share ONE Flight descriptor: refraction through a finite absorbing

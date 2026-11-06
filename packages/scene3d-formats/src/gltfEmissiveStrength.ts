@@ -1,6 +1,8 @@
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
-import type { ExtendedPbrMaterial, GltfExtensionHandler, StandardPbrMaterial } from '@flighthq/types/contract';
+import type { ExtendedPbrMaterial, StandardPbrMaterial } from '@flighthq/types/contract';
 import { ExtendedPbrMaterialKind, ImportDiagnosticSeverity, StandardPbrMaterialKind } from '@flighthq/types/contract';
+
+import type { GltfExtensionHandler } from './contract.scene3d-formats-types.ts';
 
 // KHR_materials_emissive_strength. A scalar multiplier on the emissive term the core already resolved —
 // no new descriptor and no promotion, because `emissiveStrength` is a field of the standard block itself.

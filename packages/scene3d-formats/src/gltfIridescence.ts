@@ -1,6 +1,6 @@
 import { createIridescencePbrExtension } from '@flighthq/materials/contract';
-import type { GltfExtensionHandler } from '@flighthq/types/contract';
 
+import type { GltfExtensionHandler } from './contract.scene3d-formats-types.ts';
 import { attachGltfPbrExtension } from './gltfMaterialExtension.ts';
 
 // KHR_materials_iridescence — view-dependent thin-film interference (soap bubbles, oil films, beetle

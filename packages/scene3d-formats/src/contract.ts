@@ -28,6 +28,7 @@ export * from './colladaParse.ts';
 export * from './colladaSceneShared.ts';
 export * from './colladaXml.ts';
 export * from './gltfAnimations.ts';
+export * from './contract.scene3d-formats-types.ts';
 export * from './gltfAnisotropy.ts';
 export * from './gltfCameras.ts';
 export * from './gltfClearcoat.ts';

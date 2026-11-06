@@ -1,8 +1,6 @@
 import { createAnimationTrack } from '@flighthq/animation/contract';
 import type {
   AnimationInterpolation,
-  GltfCoreFeatureContext,
-  GltfCoreFeatureHandler,
   Scene3DAnimationPath,
   Scene3DDocumentAnimation,
   Scene3DDocumentAnimationChannel,
@@ -16,6 +14,8 @@ import {
   Scene3DAnimationPathTranslation,
   Scene3DAnimationPathWeights,
 } from '@flighthq/types/contract';
+
+import type { GltfCoreFeatureContext, GltfCoreFeatureHandler } from './contract.scene3d-formats-types.ts';
 
 // Imports the optional top-level `animations` section after the bedrock mesh/node decomposition exists.
 // Its kind is the source JSON member itself, so registration and skip diagnostics use the asset author's

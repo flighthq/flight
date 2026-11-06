@@ -1,5 +1,4 @@
-import type { GltfExtensionHandler } from '@flighthq/types/contract';
-
+import type { GltfExtensionHandler } from './contract.scene3d-formats-types.ts';
 import { GltfAnisotropyExtensionHandler } from './gltfAnisotropy.ts';
 import { GltfClearcoatExtensionHandler } from './gltfClearcoat.ts';
 import { GltfEmissiveStrengthExtensionHandler } from './gltfEmissiveStrength.ts';

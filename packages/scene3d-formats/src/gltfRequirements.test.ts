@@ -1,4 +1,3 @@
-import type { GltfDocument } from '@flighthq/types/contract';
 import {
   RequirementFacet,
   SpecularGlossinessPbrMaterialKind,
@@ -6,6 +5,7 @@ import {
   UnlitMaterialKind,
 } from '@flighthq/types/contract';
 
+import type { GltfDocument } from './contract.scene3d-formats-types.ts';
 import { parseGlbRequirements, parseGltfRequirements } from './gltfRequirements.ts';
 
 describe('parseGlbRequirements', () => {

@@ -1,0 +1,40 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "composite": true,
+    "rootDir": "src",
+    "outDir": "dist",
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "types": ["@testing-library/jest-dom", "vitest/globals", "@webgpu/types"],
+    "tsBuildInfoFile": "dist/.tsbuildinfo.runtime"
+  },
+  "references": [
+    { "path": "../animation" },
+    { "path": "../camera" },
+    { "path": "../color" },
+    { "path": "../compression" },
+    { "path": "../encoding" },
+    { "path": "../entity" },
+    { "path": "../geometry/tsconfig.runtime.json" },
+    { "path": "../image/tsconfig.runtime.json" },
+    { "path": "../image-codec" },
+    { "path": "../importdiagnostics" },
+    { "path": "../lighting" },
+    { "path": "../materials/tsconfig.runtime.json" },
+    { "path": "../math" },
+    { "path": "../meshgeometry" },
+    { "path": "../node/tsconfig.runtime.json" },
+    { "path": "../requirement" },
+    { "path": "../scene3d" },
+    { "path": "../shading" },
+    { "path": "../skeleton3d" },
+    { "path": "../texture/tsconfig.runtime.json" },
+    { "path": "../types" },
+    { "path": "../xml" },
+    { "path": "./tsconfig.contract.json" }
+  ],
+  "include": ["src/**/*.ts"],
+  "exclude": ["src/contract.scene3d-formats-types.ts", "src/types/**/*.ts"]
+}

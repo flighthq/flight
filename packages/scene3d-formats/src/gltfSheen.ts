@@ -1,7 +1,7 @@
 import { packLinearChannelsToColor } from '@flighthq/color/contract';
 import { createSheenPbrExtension } from '@flighthq/materials/contract';
-import type { GltfExtensionHandler } from '@flighthq/types/contract';
 
+import type { GltfExtensionHandler } from './contract.scene3d-formats-types.ts';
 import { attachGltfPbrExtension } from './gltfMaterialExtension.ts';
 
 // KHR_materials_sheen — the grazing-angle retroreflective lobe cloth and fabric need. `sheenColorFactor`

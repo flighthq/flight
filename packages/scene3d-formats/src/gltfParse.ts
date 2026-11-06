@@ -21,13 +21,7 @@ import {
 } from '@flighthq/meshgeometry/contract';
 import { createScene3DFromDocument } from '@flighthq/scene3d/contract';
 import { createTexture } from '@flighthq/texture/contract';
-import type {
-  GltfAccessorData,
-  GltfAccessorFault,
-  GltfCoreFeatureContext,
-  GltfCoreFeatureHandler,
-  Scene3D,
-} from '@flighthq/types/contract';
+import type { Scene3D } from '@flighthq/types/contract';
 import type {
   ImageResourceReference,
   ImportDiagnostic,
@@ -45,24 +39,31 @@ import type {
   TextureFilter,
   TextureWrap,
   Transform3D,
-  GltfExtensionContext,
-  GltfDracoMesh,
-  GltfExtensionHandler,
-  GltfImportOptions,
+} from '@flighthq/types/contract';
+import { ImportDiagnosticSeverity, MeshKind, Node3DKind } from '@flighthq/types/contract';
+
+import type {
   GltfAccessor,
+  GltfAccessorData,
+  GltfAccessorFault,
   GltfBuffer,
   GltfBufferView,
   GltfComponentType,
+  GltfCoreFeatureContext,
+  GltfCoreFeatureHandler,
   GltfDocument,
+  GltfDracoMesh,
+  GltfExtensionContext,
+  GltfExtensionHandler,
   GltfImage,
+  GltfImportOptions,
   GltfMaterial,
   GltfMorphTarget,
   GltfNode,
   GltfPrimitive,
   GltfSampler,
   GltfTextureInfo,
-} from '@flighthq/types/contract';
-import { ImportDiagnosticSeverity, MeshKind, Node3DKind } from '@flighthq/types/contract';
+} from './contract.scene3d-formats-types.ts';
 
 // Builds a Scene3D from a binary glTF (`.glb`) container with exactly the optional core feature handlers the
 // caller registered — the file's default scene (`doc.scene`). Malformed containers return an empty Scene3D.

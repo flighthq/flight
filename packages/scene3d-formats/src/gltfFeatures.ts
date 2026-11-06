@@ -1,4 +1,4 @@
-import type { GltfDocument } from '@flighthq/types/contract';
+import type { GltfDocument } from './contract.scene3d-formats-types.ts';
 
 const GLTF_FEATURE_MESH = 'Mesh';
 const GLTF_FEATURE_ANIMATION = 'Animation';

@@ -1,5 +1,4 @@
-import type { GltfDocument } from '@flighthq/types/contract';
-
+import type { GltfDocument } from './contract.scene3d-formats-types.ts';
 import { collectGlbFeatures, collectGltfFeatures, extractGlbJsonChunk } from './gltfFeatures.ts';
 
 describe('collectGlbFeatures', () => {

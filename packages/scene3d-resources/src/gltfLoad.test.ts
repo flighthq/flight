@@ -1,12 +1,8 @@
 import * as netContract from '@flighthq/net/contract';
 import type { HostNetCapability, NetResponse } from '@flighthq/net/contract';
 import * as scene3dFormatsContract from '@flighthq/scene3d-formats/contract';
-import type {
-  GltfCoreFeatureHandler,
-  GltfExtensionHandler,
-  ImportDiagnostic,
-  Scene3DDocument,
-} from '@flighthq/types/contract';
+import type { GltfCoreFeatureHandler, GltfExtensionHandler } from '@flighthq/scene3d-formats/contract';
+import type { ImportDiagnostic, Scene3DDocument } from '@flighthq/types/contract';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {

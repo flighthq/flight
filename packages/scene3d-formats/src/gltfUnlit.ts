@@ -1,6 +1,8 @@
 import { createUnlitMaterial } from '@flighthq/materials/contract';
-import type { GltfExtensionHandler, MaterialLike, StandardPbrMaterial } from '@flighthq/types/contract';
+import type { MaterialLike, StandardPbrMaterial } from '@flighthq/types/contract';
 import { StandardPbrMaterialKind } from '@flighthq/types/contract';
+
+import type { GltfExtensionHandler } from './contract.scene3d-formats-types.ts';
 
 // KHR_materials_unlit — the surface is its base color, with no lighting evaluated at all. Like
 // spec-gloss, this REPLACES the material rather than extending it: unlit is not a contribution to the

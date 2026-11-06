@@ -1,4 +1,4 @@
-import type { GltfDracoDecoder } from '@flighthq/types/contract';
+import type { GltfDracoDecoder } from './contract.scene3d-formats-types.ts';
 
 // The seam a caller plugs its own Draco decoder into. Flight ships no implementation: Draco is an
 // export-time encoding choice, so a decoder is worth nothing to a consumer whose assets do not use it,

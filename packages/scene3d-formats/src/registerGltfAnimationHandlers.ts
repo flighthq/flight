@@ -1,5 +1,4 @@
-import type { GltfCoreFeatureHandler } from '@flighthq/types/contract';
-
+import type { GltfCoreFeatureHandler } from './contract.scene3d-formats-types.ts';
 import { GltfAnimationsCoreFeatureHandler } from './gltfAnimations.ts';
 import { registerGltfCoreFeatureHandler } from './gltfCoreFeatureRegistry.ts';
 

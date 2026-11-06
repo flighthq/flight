@@ -1,7 +1,8 @@
 import { createRequirementSet } from '@flighthq/requirement/contract';
-import type { GltfDocument, Requirement, RequirementSet } from '@flighthq/types/contract';
+import type { Requirement, RequirementSet } from '@flighthq/types/contract';
 import { RequirementFacet } from '@flighthq/types/contract';
 
+import type { GltfDocument } from './contract.scene3d-formats-types.ts';
 import { GLTF_FEATURE_SCENE_REQUIREMENTS } from './gltfFeatureRequirements.ts';
 import { collectGlbFeatures, collectGltfFeatures } from './gltfFeatures.ts';
 import { GLTF_REQUIREMENT_KEY_NAMESPACE } from './scene3dFormatRequirements.ts';

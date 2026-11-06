@@ -1,5 +1,4 @@
-import type { GltfExtensionHandler } from '@flighthq/types/contract';
-
+import type { GltfExtensionHandler } from './contract.scene3d-formats-types.ts';
 import { registerGltfExtensionHandler } from './gltfExtensionHandlerRegistry.ts';
 import { GltfPunctualLightsExtensionHandler } from './gltfPunctualLights.ts';
 

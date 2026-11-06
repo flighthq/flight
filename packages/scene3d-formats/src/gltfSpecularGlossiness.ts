@@ -1,7 +1,9 @@
 import { packLinearChannelsToColor } from '@flighthq/color/contract';
 import { createSpecularGlossinessPbrMaterial } from '@flighthq/materials/contract';
-import type { GltfExtensionHandler, MaterialLike, StandardPbrMaterial } from '@flighthq/types/contract';
+import type { MaterialLike, StandardPbrMaterial } from '@flighthq/types/contract';
 import { StandardPbrMaterialKind } from '@flighthq/types/contract';
+
+import type { GltfExtensionHandler } from './contract.scene3d-formats-types.ts';
 
 // KHR_materials_pbrSpecularGlossiness — the deprecated workflow that REPLACES a material's
 // metallic-roughness block rather than extending it. This is the one handler that swaps the document

@@ -1,8 +1,7 @@
 import type { HostNetCapability } from '@flighthq/net/contract';
+import type { GltfCoreFeatureHandler, GltfDocument } from '@flighthq/scene3d-formats/contract';
 import { parseGlbWithCoreFeatureHandlers, parseGltfWithCoreFeatureHandlers } from '@flighthq/scene3d-formats/contract';
 import type {
-  GltfCoreFeatureHandler,
-  GltfDocument,
   GltfScene3DDocumentLoadOptions,
   Scene3DDocument,
   Scene3DDocumentLoadOptions,

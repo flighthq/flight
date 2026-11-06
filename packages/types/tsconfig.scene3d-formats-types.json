@@ -1,0 +1,49 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "composite": true,
+    "rootDir": "src",
+    "outDir": "dist",
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "moduleSuffixes": [
+      ".scene3d-formats-bridge-types",
+      ".animation-types",
+      ".entity-types",
+      ".image-types",
+      ".materials-types",
+      ".geometry-types",
+      ""
+    ],
+    "tsBuildInfoFile": "dist/.tsbuildinfo.scene3d-formats-types"
+  },
+  "references": [
+    { "path": "../animation" },
+    { "path": "../entity" },
+    { "path": "../geometry/tsconfig.contract.json" },
+    { "path": "../image/tsconfig.contract.json" },
+    { "path": "../materials/tsconfig.contract.json" }
+  ],
+  "include": [
+    "src/Aabb.ts",
+    "src/AnimationTrack.ts",
+    "src/Camera3D.ts",
+    "src/contract.scene3d-formats-bridge-types.ts",
+    "src/Entity.ts",
+    "src/ImageResourceReference.ts",
+    "src/Light.ts",
+    "src/Material.materials-types.ts",
+    "src/Matrix4.ts",
+    "src/MeshGeometry.ts",
+    "src/MeshMorphBindPose.ts",
+    "src/MeshSkinBindPose.ts",
+    "src/MorphTarget.ts",
+    "src/Plane.ts",
+    "src/Scene3DAnimationPath.ts",
+    "src/Scene3DDocument.ts",
+    "src/Scene3DMetadata.ts",
+    "src/Transform3D.ts",
+    "src/Vector2.ts"
+  ]
+}
