@@ -1,4 +1,5 @@
 import type { ColorScaleBiasAdjustment } from '@flighthq/adjustments/contract';
+import type { EmbeddedAudioResourceReference } from '@flighthq/audio/contract';
 import type { Bitmap } from '@flighthq/bitmap/contract';
 import { sdkHostDecompressDeflate } from '@flighthq/compression/contract';
 import { AdvancedBlendMode } from '@flighthq/effects/contract';
@@ -43,7 +44,6 @@ import { setTextureSource } from '@flighthq/texture/contract';
 import type { TimelineAudioCue } from '@flighthq/timeline/contract';
 import type {
   HostDecompressDeflateCapability,
-  EmbeddedAudioResourceReference,
   EmbeddedImageResourceReference,
   ImportDiagnostic,
   Node2D,

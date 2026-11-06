@@ -1,6 +1,6 @@
+import type { AudioResourceReference } from '@flighthq/audio/contract';
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
-  AudioResourceReference,
   EntityConstruction,
   ImageResourceReference,
   Node2D,

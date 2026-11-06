@@ -1,11 +1,7 @@
 import { resolveAudioResourceReference } from '@flighthq/audio/contract';
+import type { AudioResourceFetch, AudioResourceReference } from '@flighthq/audio/contract';
 import { emitSignal } from '@flighthq/signals/contract';
-import type {
-  AudioResource,
-  AudioResourceFetch,
-  AudioResourceReference,
-  HostAudioDecodeCapabilities,
-} from '@flighthq/types/contract';
+import type { AudioResource, HostAudioDecodeCapabilities } from '@flighthq/types/contract';
 
 import { reportScene2DResourceFailure } from './scene2DResourceDiagnostics.ts';
 import type { Scene2DDocument } from './types/Scene2DDocument.ts';

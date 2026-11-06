@@ -82,7 +82,6 @@ export * from './AudioDeviceHandle.ts';
 export * from './AudioBus.ts';
 export * from './HostAudioMixer.ts';
 export * from './AudioResource.ts';
-export * from './AudioResourceReference.ts';
 export * from './AutoExposureEffect.ts';
 export * from './BarrelDistortionEffect.ts';
 export * from './BatchBarrier.ts';
