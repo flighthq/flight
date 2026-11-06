@@ -1,12 +1,2 @@
-import type { EntityRaw } from './Entity.ts';
-import type { InputSignals } from './InputSignals.ts';
-import type { RichText } from './RichText.ts';
-
-export interface TextInputSource extends Pick<InputSignals, 'onKeyDown' | 'onTextInput'> {}
-
-// `focused` is the RichText currently receiving text input — the field enableTextInput was called on.
-// There is no distinct TextInput entity; editing is an opt-in capability of RichText.
-export interface TextInputManager extends EntityRaw {
-  enabled: boolean;
-  focused: RichText | null;
-}
+/** @deprecated Import from `@flighthq/textinput/contract`. */
+export type { TextInputManager, TextInputSource } from '@flighthq/textinput/contract';

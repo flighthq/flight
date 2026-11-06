@@ -29,7 +29,7 @@
       "path": "../text/tsconfig.runtime.json"
     },
     {
-      "path": "../textinput"
+      "path": "../textinput/tsconfig.runtime.json"
     },
     {
       "path": "../types"

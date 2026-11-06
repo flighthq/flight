@@ -1,7 +1,7 @@
 // Generated from crates/flight-textinput/src/types.rs by flight-compiler.
 // Rust is authoritative; run `npm run generate` after changing it.
 
-import type { EntityRaw } from '@flighthq/entity/contract';
+import type { EntityRaw, EntityRuntime, EntityRuntimeKey } from '@flighthq/entity/contract';
 import type { InputKeyboardData, InputTextData } from '@flighthq/input/contract';
 import type { SignalRaw } from '@flighthq/signals/contract';
 import type { RichText } from '@flighthq/text/contract';
@@ -13,14 +13,19 @@ export type TextInputDisposer = () => void;
 
 export interface HandleTextInputKeyboardOptions {
   clipboardText?: string;
-  layout?: TextLayoutResult;
+  layout?: Readonly<TextLayoutResult>;
   onCopy?: TextInputCopyCallback;
 }
 
 export interface ReplaceTextInputOptions {
   applyInputRules?: boolean;
-  mergeKind?: string;
+  mergeKind?: string | null;
   skipHistory?: boolean;
+}
+
+export interface SelectableRichTextManager extends EntityRaw {
+  [EntityRuntimeKey]: EntityRuntime | undefined;
+  focused: RichText | null;
 }
 
 export interface SelectableRichTextManagerRaw extends EntityRaw {
@@ -41,6 +46,8 @@ export interface TextInputManagerRaw extends EntityRaw {
   enabled: boolean;
   focused: RichText | null;
 }
+
+export interface TextInputManager extends TextInputManagerRaw {}
 
 export interface TextInputSource {
   onKeyDown: SignalRaw<InputKeyboardData>;

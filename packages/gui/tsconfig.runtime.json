@@ -14,7 +14,7 @@
     { "path": "../node/tsconfig.runtime.json" },
     { "path": "../signals" },
     { "path": "../text/tsconfig.runtime.json" },
-    { "path": "../textinput" },
+    { "path": "../textinput/tsconfig.runtime.json" },
     { "path": "../types" },
     { "path": "./tsconfig.contract.json" }
   ],

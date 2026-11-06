@@ -885,7 +885,7 @@ function recordTextInputEdit(
   textAfter: string,
   caretIndexBefore: number,
   selectionIndexBefore: number,
-  mergeKind?: string,
+  mergeKind?: string | null,
 ): void {
   if (state.historyIndex < (state.history.length | 0) - 1) {
     const historyIndex = Math.max(state.historyIndex + 1, 0) >>> 0;
@@ -896,7 +896,7 @@ function recordTextInputEdit(
   }
   if (state.historyIndex >= 0) {
     const previous = state.history[state.historyIndex >>> 0];
-    if (mergeKind !== undefined && previous.mergeKind === mergeKind) {
+    if (mergeKind != null && previous.mergeKind === mergeKind) {
       previous.textAfter = String(textAfter);
       previous.caretIndexAfter = state.caretIndex;
       previous.selectionIndexAfter = state.selectionIndex;

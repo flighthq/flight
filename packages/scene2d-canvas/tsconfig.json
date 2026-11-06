@@ -68,7 +68,7 @@
       "path": "../textformat"
     },
     {
-      "path": "../textinput"
+      "path": "../textinput/tsconfig.runtime.json"
     },
     {
       "path": "../textlayout/tsconfig.runtime.json"

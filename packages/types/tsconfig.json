@@ -61,6 +61,7 @@
       ".spatial-types",
       ".statechart-types",
       ".text-types",
+      ".textinput-types",
       ".textlayout-types",
       ".textshaper-types",
       ".velocity-types",
@@ -258,6 +259,9 @@
     },
     {
       "path": "../textformat"
+    },
+    {
+      "path": "../textinput/tsconfig.contract.json"
     },
     {
       "path": "../textlayout/tsconfig.contract.json"

@@ -112,6 +112,7 @@
     "@flighthq/surface": "*",
     "@flighthq/text": "*",
     "@flighthq/textformat": "*",
+    "@flighthq/textinput": "*",
     "@flighthq/textlayout": "*",
     "@flighthq/textshaper": "*",
     "@flighthq/texture": "*",

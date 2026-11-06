@@ -1,9 +1,2 @@
-export interface TextInputEditRecord {
-  caretIndexAfter: number;
-  caretIndexBefore: number;
-  mergeKind: string | null;
-  selectionIndexAfter: number;
-  selectionIndexBefore: number;
-  textAfter: string;
-  textBefore: string;
-}
+/** @deprecated Import from `@flighthq/textinput/contract`. */
+export type { TextInputEditRecord } from '@flighthq/textinput/contract';
