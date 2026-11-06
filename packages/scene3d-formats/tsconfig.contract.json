@@ -7,14 +7,51 @@
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,
-    "moduleSuffixes": [".geometry-types", ".scene3d-types", ".texture-types", ""],
+    "moduleSuffixes": [
+      ".geometry-types",
+      ".materials-types",
+      ".meshgeometry-bridge-types",
+      ".meshgeometry-types",
+      ".scene3d-types",
+      ".texture-types",
+      ""
+    ],
     "tsBuildInfoFile": "dist/.tsbuildinfo.contract"
   },
   "references": [
-    { "path": "../geometry/tsconfig.contract.json" },
-    { "path": "../importdiagnostics" },
-    { "path": "../scene3d/tsconfig.contract.json" },
-    { "path": "../texture/tsconfig.contract.json" }
+    {
+      "path": "../compression"
+    },
+    {
+      "path": "../entity"
+    },
+    {
+      "path": "../geometry/tsconfig.contract.json"
+    },
+    {
+      "path": "../importdiagnostics"
+    },
+    {
+      "path": "../materials/tsconfig.contract.json"
+    },
+    {
+      "path": "../meshgeometry/tsconfig.contract.json"
+    },
+    {
+      "path": "../scene3d/tsconfig.contract.json"
+    },
+    {
+      "path": "../signals"
+    },
+    {
+      "path": "../texture/tsconfig.contract.json"
+    },
+    {
+      "path": "../types/tsconfig.meshgeometry-types.json"
+    },
+    {
+      "path": "../xml"
+    }
   ],
   "include": ["src/contract.scene3d-formats-types.ts", "src/types/**/*.ts"]
 }

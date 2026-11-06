@@ -1,7 +1,7 @@
-import { THREE_DS_CHUNK_HEADER_BYTES, THREE_DS_COLOR_FLOAT, THREE_DS_LIGHT } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { parseThreeDsLight, threeDsLightFamily, threeDsLightHandler } from './threeDsLightHandler.ts';
+import { THREE_DS_CHUNK_HEADER_BYTES, THREE_DS_COLOR_FLOAT, THREE_DS_LIGHT } from './types/ThreeDsSchema.ts';
 
 function writeChunk(id: number, payload: Uint8Array): Uint8Array {
   const total = THREE_DS_CHUNK_HEADER_BYTES + payload.byteLength;

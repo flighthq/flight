@@ -1,13 +1,14 @@
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import { createScene3DFromDocument } from '@flighthq/scene3d/contract';
 import type { Scene3D, Scene3DDocument } from '@flighthq/scene3d/contract';
-import type { ImportDiagnostic, Md5ImportOptions } from '@flighthq/types/contract';
+import type { ImportDiagnostic } from '@flighthq/types/contract';
 import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
 import { parseMd5Anim } from './md5AnimParse.ts';
 import { parseMd5MeshWithSectionHandlers } from './md5Parse.ts';
 import { md5AllSectionHandlers } from './md5SectionRegistry.ts';
 import { findScene3DSkeletonJoints } from './sceneSkeleton.ts';
+import type { Md5ImportOptions } from './types/Md5SectionHandler.ts';
 
 /**
  * Parses an id Tech 4 MD5 mesh file (`.md5mesh`) and assembles it into a live `Scene3D`.

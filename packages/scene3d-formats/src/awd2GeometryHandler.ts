@@ -5,7 +5,7 @@ import {
   computeMeshGeometryTangents,
   createMeshGeometry,
 } from '@flighthq/meshgeometry/contract';
-import type { Awd2BlockHandler, Awd2ParsedGeometry, ImportDiagnostic, SkinInfluence } from '@flighthq/types/contract';
+import type { ImportDiagnostic } from '@flighthq/types/contract';
 import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
 import { awdDataTypeByteSize, readAwdDataValue, readAwdString, skipAwdAttrList } from './awd2Reader.ts';
@@ -28,6 +28,8 @@ import {
   reverseVertexTriangleWinding,
   SKINNED_FLOATS_PER_VERTEX,
 } from './shared.ts';
+import type { Awd2BlockHandler, Awd2ParsedGeometry } from './types/Awd2Block.ts';
+import type { SkinInfluence } from './types/SkinInfluence.ts';
 
 // Triangle geometry: the vertex streams a mesh is drawn from. This is the one handler a build that
 // renders anything at all registers, and the only one that reaches @flighthq/meshgeometry.

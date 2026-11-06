@@ -1,14 +1,11 @@
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import type { Scene3DDocument } from '@flighthq/scene3d/contract';
-import type {
-  ImportDiagnostic,
-  ThreeDsChunkDispatch,
-  ThreeDsChunkHandler,
-  ThreeDsDropTally,
-  ThreeDsParseState,
-} from '@flighthq/types/contract';
+import type { ImportDiagnostic } from '@flighthq/types/contract';
+import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
+
+import type { ThreeDsChunkDispatch, ThreeDsChunkHandler, ThreeDsParseState } from './types/ThreeDsChunkHandler.ts';
+import type { ThreeDsDropTally } from './types/ThreeDsSchema.ts';
 import {
-  ImportDiagnosticSeverity,
   THREE_DS_CHUNK_HEADER_BYTES,
   THREE_DS_COLOR_BYTE,
   THREE_DS_COLOR_FLOAT,
@@ -16,7 +13,7 @@ import {
   THREE_DS_KEYFRAME,
   THREE_DS_MAIN,
   THREE_DS_OBJECT,
-} from '@flighthq/types/contract';
+} from './types/ThreeDsSchema.ts';
 
 // Packs a 3DS sRGB-space [r,g,b] triple plus an alpha (each in [0,1]) into a 0xRRGGBBAA integer.
 export function packThreeDsColor(rgb: readonly [number, number, number], alpha = 1): number {

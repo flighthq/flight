@@ -1,16 +1,14 @@
 import { getNodeChildren } from '@flighthq/node/contract';
-import type { ImportDiagnostic, ObjMaterialHandler } from '@flighthq/types/contract';
-import {
-  BlinnPhongMaterialKind,
-  OBJ_MATERIAL_BLINN_PHONG_FEATURE,
-  StandardPbrMaterialKind,
-} from '@flighthq/types/contract';
+import type { ImportDiagnostic } from '@flighthq/types/contract';
+import { BlinnPhongMaterialKind, StandardPbrMaterialKind } from '@flighthq/types/contract';
 
 import { parseObjMaterialLibrary } from './mtlParse.ts';
 import { objBlinnPhongMaterialHandler } from './objBlinnPhongMaterialHandler.ts';
 import { createScene3DFromObj, parseObj } from './objDocument.ts';
 import { objAllMaterialHandlers } from './objMaterialRegistry.ts';
 import { objStandardPbrMaterialHandler } from './objStandardPbrMaterialHandler.ts';
+import type { ObjMaterialHandler } from './types/ObjMaterialHandler.ts';
+import { OBJ_MATERIAL_BLINN_PHONG_FEATURE } from './types/ObjMaterialHandler.ts';
 
 // ★ OMITTING A HANDLER REMOVES ONE SHADING MODEL AND NOTHING ELSE. Each case drops a single handler and
 // checks both halves: the model it owns stops resolving, AND the other model plus all the geometry are

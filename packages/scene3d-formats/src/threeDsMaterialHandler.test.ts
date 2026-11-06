@@ -1,13 +1,13 @@
+import { describe, expect, it } from 'vitest';
+
+import { parseThreeDsMaterial, threeDsMaterialFamily, threeDsMaterialHandler } from './threeDsMaterialHandler.ts';
 import {
   THREE_DS_CHUNK_HEADER_BYTES,
   THREE_DS_COLOR_BYTE,
   THREE_DS_MATERIAL,
   THREE_DS_MATERIAL_DIFFUSE,
   THREE_DS_MATERIAL_NAME,
-} from '@flighthq/types/contract';
-import { describe, expect, it } from 'vitest';
-
-import { parseThreeDsMaterial, threeDsMaterialFamily, threeDsMaterialHandler } from './threeDsMaterialHandler.ts';
+} from './types/ThreeDsSchema.ts';
 
 function writeChunk(id: number, payload: Uint8Array): Uint8Array {
   const total = THREE_DS_CHUNK_HEADER_BYTES + payload.byteLength;

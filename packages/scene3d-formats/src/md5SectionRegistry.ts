@@ -1,7 +1,6 @@
-import type { Md5SectionHandler } from '@flighthq/types/contract';
-
 import { md5MaterialFamily } from './md5MaterialHandler.ts';
 import { md5SkeletonFamily } from './md5SkeletonHandler.ts';
+import type { Md5SectionHandler } from './types/Md5SectionHandler.ts';
 
 /**
  * Every section handler Flight reads an MD5 mesh file with — the full-support preset, which reproduces the

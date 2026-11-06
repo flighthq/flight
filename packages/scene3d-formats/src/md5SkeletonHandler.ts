@@ -11,11 +11,14 @@ import {
   setVector3,
 } from '@flighthq/geometry/contract';
 import type { Scene3DDocument, Scene3DDocumentSkin } from '@flighthq/scene3d/contract';
-import type { Matrix4, Md5DropTally, Md5Joint, Md5SectionHandler } from '@flighthq/types/contract';
-import { ImportDiagnosticSeverity, MD5_SKELETON_FEATURE, Node3DKind } from '@flighthq/types/contract';
+import type { Matrix4 } from '@flighthq/types/contract';
+import { ImportDiagnosticSeverity, Node3DKind } from '@flighthq/types/contract';
 
 import { tallyMd5Drop } from './md5Parse.ts';
 import { convertPositionsZUpToYUp, convertQuaternionsZUpToYUp } from './shared.ts';
+import type { Md5Joint } from './types/Md5Schema.ts';
+import type { Md5DropTally, Md5SectionHandler } from './types/Md5SectionHandler.ts';
+import { MD5_SKELETON_FEATURE } from './types/Md5SectionHandler.ts';
 
 /**
  * Emits the `joints { }` block as the document's skeleton — a group node plus one node per joint — and the

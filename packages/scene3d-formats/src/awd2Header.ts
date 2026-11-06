@@ -1,8 +1,4 @@
-import type {
-  Awd2Header,
-  HostDecompressDeflateCapability,
-  HostDecompressLzmaCapability,
-} from '@flighthq/types/contract';
+import type { HostDecompressDeflateCapability, HostDecompressLzmaCapability } from '@flighthq/types/contract';
 
 import {
   AWD2_FORMAT_VERSION,
@@ -12,6 +8,7 @@ import {
   AWD2_MAGIC_2,
   AWD2_VERSION_MAJOR_OFFSET,
 } from './awd2Schema.ts';
+import type { Awd2Header } from './types/Awd2Header.ts';
 
 /**
  * Reads the fixed 12-byte AWD2 header: magic, version, flags, compression method and body length. It

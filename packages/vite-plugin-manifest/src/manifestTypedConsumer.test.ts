@@ -6,15 +6,15 @@ import type { CanvasRenderStateOptions } from '@flighthq/scene2d-canvas/contract
 import type { DomRenderOptions } from '@flighthq/scene2d-dom/contract';
 import { mergeDomRenderOptions } from '@flighthq/scene2d-dom/contract';
 import type { RiveImportOptions, RivePathBooleanRegistrar, RiveRegistrar } from '@flighthq/scene2d-formats/contract';
-import type { SwfParseOptions, SwfTagHandler } from '@flighthq/swf/contract';
-import { mergeSwfParseOptions } from '@flighthq/swf/contract';
 import type {
   Awd2ParseOptions,
   ColladaElementDecoder,
   ColladaImportOptions,
   ThreeDsChunkHandler,
   ThreeDsImportOptions,
-} from '@flighthq/types/contract';
+} from '@flighthq/scene3d-formats/contract';
+import type { SwfParseOptions, SwfTagHandler } from '@flighthq/swf/contract';
+import { mergeSwfParseOptions } from '@flighthq/swf/contract';
 
 // THE POINT OF THIS FILE. The generated module is plain JS, so nothing in the emitted text proves a
 // fragment is spreadable into the API it names. These fixtures are TYPED: each declares a fragment in

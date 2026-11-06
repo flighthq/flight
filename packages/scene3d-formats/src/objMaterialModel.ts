@@ -1,7 +1,6 @@
-import type { ObjMaterial } from '@flighthq/types/contract';
-import { OBJ_MATERIAL_BLINN_PHONG_FEATURE, OBJ_MATERIAL_STANDARD_PBR_FEATURE } from '@flighthq/types/contract';
-
 import { parseObjMaterialLibrary } from './mtlParse.ts';
+import { OBJ_MATERIAL_BLINN_PHONG_FEATURE, OBJ_MATERIAL_STANDARD_PBR_FEATURE } from './types/ObjMaterialHandler.ts';
+import type { ObjMaterial } from './types/ObjSchema.ts';
 
 /**
  * Which shading models an MTL library actually declares, as the feature names the OBJ analyzer emits.

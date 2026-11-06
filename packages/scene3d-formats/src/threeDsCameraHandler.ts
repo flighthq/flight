@@ -11,23 +11,19 @@ import {
 } from '@flighthq/geometry/contract';
 import { DEG_TO_RAD } from '@flighthq/math/contract';
 import type { Scene3DDocument } from '@flighthq/scene3d/contract';
-import type {
-  ThreeDsCamera,
-  ThreeDsChunkHandler,
-  ThreeDsDropTally,
-  ThreeDsParseState,
-  Vector3,
-} from '@flighthq/types/contract';
+import type { Vector3 } from '@flighthq/types/contract';
+import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
+
+import { convertPositionsZUpToYUp } from './shared.ts';
+import { readChunkEnd, tallyThreeDsDrop } from './threeDsParse.ts';
+import type { ThreeDsChunkHandler, ThreeDsParseState } from './types/ThreeDsChunkHandler.ts';
+import type { ThreeDsCamera, ThreeDsDropTally } from './types/ThreeDsSchema.ts';
 import {
-  ImportDiagnosticSeverity,
   THREE_DS_CAMERA_APERTURE_MM,
   THREE_DS_CAMERA_RANGES,
   THREE_DS_CAMERA,
   THREE_DS_CHUNK_HEADER_BYTES,
-} from '@flighthq/types/contract';
-
-import { convertPositionsZUpToYUp } from './shared.ts';
-import { readChunkEnd, tallyThreeDsDrop } from './threeDsParse.ts';
+} from './types/ThreeDsSchema.ts';
 
 // Parses a camera chunk (0x4700). The payload is a fixed 32-byte record — position (3 float32), aim
 // target (3 float32), bank/roll angle in degrees, and lens focal length in millimetres — followed by

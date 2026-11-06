@@ -13,28 +13,8 @@ import { createMeshGeometry } from '@flighthq/meshgeometry/contract';
 import type { MeshSubset } from '@flighthq/meshgeometry/contract';
 import { MeshKind } from '@flighthq/meshgeometry/contract';
 import type { Scene3DDocument, Scene3DDocumentMesh, Scene3DDocumentNode } from '@flighthq/scene3d/contract';
-import type {
-  Material,
-  MaterialLike,
-  ThreeDsChunkHandler,
-  ThreeDsDropTally,
-  ThreeDsMaterial,
-  ThreeDsMaterialGroup,
-  ThreeDsMesh,
-  ThreeDsParseState,
-  Transform3D,
-} from '@flighthq/types/contract';
-import {
-  ImportDiagnosticSeverity,
-  THREE_DS_CHUNK_HEADER_BYTES,
-  THREE_DS_FACE_MATERIAL,
-  THREE_DS_FACES,
-  THREE_DS_SMOOTH_GROUP,
-  THREE_DS_TRANSFORM_MATRIX,
-  THREE_DS_TRIMESH,
-  THREE_DS_UV_COORDS,
-  THREE_DS_VERTICES,
-} from '@flighthq/types/contract';
+import type { Material, MaterialLike, Transform3D } from '@flighthq/types/contract';
+import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
 import {
   CANONICAL_FLOATS_PER_VERTEX,
@@ -49,6 +29,18 @@ import {
   readNullTerminatedString,
   tallyThreeDsDrop,
 } from './threeDsParse.ts';
+import type { ThreeDsChunkHandler, ThreeDsParseState } from './types/ThreeDsChunkHandler.ts';
+import type { ThreeDsDropTally, ThreeDsMaterial, ThreeDsMaterialGroup, ThreeDsMesh } from './types/ThreeDsSchema.ts';
+import {
+  THREE_DS_CHUNK_HEADER_BYTES,
+  THREE_DS_FACE_MATERIAL,
+  THREE_DS_FACES,
+  THREE_DS_SMOOTH_GROUP,
+  THREE_DS_TRANSFORM_MATRIX,
+  THREE_DS_TRIMESH,
+  THREE_DS_UV_COORDS,
+  THREE_DS_VERTICES,
+} from './types/ThreeDsSchema.ts';
 
 export const threeDsMeshHandler: Readonly<ThreeDsChunkHandler> = {
   chunkIds: [THREE_DS_TRIMESH],

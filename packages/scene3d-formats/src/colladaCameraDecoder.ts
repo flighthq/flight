@@ -4,16 +4,16 @@ import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import { DEG_TO_RAD } from '@flighthq/math/contract';
 import type { Scene3DDocument, Scene3DDocumentCamera } from '@flighthq/scene3d/contract';
 import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
-import type {
-  ColladaCameraDefinition,
-  ColladaDeferredCameraBinding,
-  ColladaElementDecoder,
-  ImportDiagnostic,
-} from '@flighthq/types/contract';
+import type { ImportDiagnostic } from '@flighthq/types/contract';
 import type { XmlElement } from '@flighthq/xml/contract';
 
 import { buildColladaNodeWorldMatrices } from './colladaSceneShared.ts';
 import { colladaChild, colladaChildren, colladaDescendants, colladaIdOf, colladaText } from './colladaXml.ts';
+import type {
+  ColladaCameraDefinition,
+  ColladaDeferredCameraBinding,
+  ColladaElementDecoder,
+} from './types/ColladaDecoding.ts';
 
 function decodeColladaCameraDefinitions(
   root: XmlElement,

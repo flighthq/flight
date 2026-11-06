@@ -18,7 +18,6 @@ import type {
   BlinnPhongMaterial,
   ExternalImageResourceReference,
   ImportDiagnostic,
-  Md5DropTally,
   Scene3DAnimationTarget,
   Node3D,
 } from '@flighthq/types/contract';
@@ -31,6 +30,7 @@ import { createScene3DFromMd5Mesh, importMd5Mesh, parseMd5Mesh } from './md5Docu
 import { canonicalizeMd5TangentHandedness, parseMd5MeshWithSectionHandlers, tallyMd5Drop } from './md5Parse.ts';
 import { getTestTextureResource } from './scene3DFormatsTestHelper.ts';
 import { findScene3DSkeletonJoints } from './sceneSkeleton.ts';
+import type { Md5DropTally } from './types/Md5SectionHandler.ts';
 
 function findDiagnostic(diagnostics: readonly ImportDiagnostic[], kind: string): ImportDiagnostic | undefined {
   return diagnostics.find((diagnostic) => diagnostic.kind === kind);

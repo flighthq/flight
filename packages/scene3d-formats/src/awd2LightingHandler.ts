@@ -8,14 +8,7 @@ import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import { createAmbientLight, createDirectionalLight, createPointLight } from '@flighthq/lighting/contract';
 import type { Light } from '@flighthq/lighting/contract';
 import type { Scene3DDocument } from '@flighthq/scene3d/contract';
-import type {
-  Awd2BlockHandler,
-  Awd2ParsedLight,
-  Awd2ParsedLightPicker,
-  ImportDiagnostic,
-  Awd2ParseState,
-  Transform3D,
-} from '@flighthq/types/contract';
+import type { ImportDiagnostic, Transform3D } from '@flighthq/types/contract';
 import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
 import {
@@ -51,6 +44,7 @@ import {
   AWD2_LIGHT_TYPE_POINT,
   AWD2_BUILD_PHASE_LIGHTING,
 } from './awd2Schema.ts';
+import type { Awd2BlockHandler, Awd2ParsedLight, Awd2ParsedLightPicker, Awd2ParseState } from './types/Awd2Block.ts';
 
 // Lights and light pickers. A light fills the document's PLACEMENT TABLE rather than the node graph — in
 // Flight a light is a per-draw argument the caller reads off the document, not a scene member — so this

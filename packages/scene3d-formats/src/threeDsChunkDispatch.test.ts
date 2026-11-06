@@ -1,10 +1,10 @@
-import { THREE_DS_CAMERA, THREE_DS_TRIMESH } from '@flighthq/types/contract';
-import type { ThreeDsChunkHandler } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { buildThreeDsChunkDispatch } from './threeDsChunkDispatch.ts';
 import { threeDsAllChunkHandlers } from './threeDsChunkRegistry.ts';
 import { threeDsMeshFamily } from './threeDsMeshHandler.ts';
+import type { ThreeDsChunkHandler } from './types/ThreeDsChunkHandler.ts';
+import { THREE_DS_CAMERA, THREE_DS_TRIMESH } from './types/ThreeDsSchema.ts';
 
 describe('buildThreeDsChunkDispatch', () => {
   it('maps every chunk id a handler claims to that handler', () => {

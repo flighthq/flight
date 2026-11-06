@@ -1,12 +1,8 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { Scene3DDocument } from '@flighthq/scene3d/contract';
-import type {
-  Awd2BlockDispatch,
-  Awd2BlockHandler,
-  Awd2ParseState,
-  EntityConstruction,
-  ImportDiagnostic,
-} from '@flighthq/types/contract';
+import type { EntityConstruction, ImportDiagnostic } from '@flighthq/types/contract';
+
+import type { Awd2BlockDispatch, Awd2BlockHandler, Awd2ParseState } from './types/Awd2Block.ts';
 
 // Expanding a handler array into the table the block walk runs on. This module imports no handler,
 // which is what makes the boundary structural rather than a favour from a tree shaker: the importer

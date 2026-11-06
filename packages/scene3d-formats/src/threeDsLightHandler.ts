@@ -8,15 +8,14 @@ import {
 import { createPointLight, createSpotLight } from '@flighthq/lighting/contract';
 import type { Light } from '@flighthq/lighting/contract';
 import type { Scene3DDocument } from '@flighthq/scene3d/contract';
-import type {
-  ThreeDsChunkHandler,
-  ThreeDsDropTally,
-  ThreeDsLight,
-  ThreeDsParseState,
-  Vector3,
-} from '@flighthq/types/contract';
+import type { Vector3 } from '@flighthq/types/contract';
+import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
+
+import { convertPositionsZUpToYUp } from './shared.ts';
+import { packThreeDsColor, parseColorChunk, readChunkEnd, tallyThreeDsDrop } from './threeDsParse.ts';
+import type { ThreeDsChunkHandler, ThreeDsParseState } from './types/ThreeDsChunkHandler.ts';
+import type { ThreeDsDropTally, ThreeDsLight } from './types/ThreeDsSchema.ts';
 import {
-  ImportDiagnosticSeverity,
   THREE_DS_CHUNK_HEADER_BYTES,
   THREE_DS_COLOR_BYTE,
   THREE_DS_COLOR_FLOAT,
@@ -26,10 +25,7 @@ import {
   THREE_DS_LIGHT_OFF,
   THREE_DS_LIGHT_OUTER_RANGE,
   THREE_DS_LIGHT_SPOT,
-} from '@flighthq/types/contract';
-
-import { convertPositionsZUpToYUp } from './shared.ts';
-import { packThreeDsColor, parseColorChunk, readChunkEnd, tallyThreeDsDrop } from './threeDsParse.ts';
+} from './types/ThreeDsSchema.ts';
 
 // Parses a light chunk (0x4600). The payload is the light's position (3 float32) followed by sub-chunks
 // carrying its color, intensity multiplier, ranges, and — if the light is a spot — its aim and cone.

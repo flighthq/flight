@@ -104,6 +104,7 @@
       ".bitmapfont-types",
       ".textureatlas-types",
       ".textureatlas-bridge-types",
+      ".meshgeometry-bridge-types",
       ""
     ],
     "types": ["@testing-library/jest-dom", "vitest/globals", "@webgpu/types"]

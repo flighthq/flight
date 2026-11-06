@@ -8,16 +8,12 @@ import {
 import type { MeshSubset, PrimitiveTopology } from '@flighthq/meshgeometry/contract';
 import { MeshKind } from '@flighthq/meshgeometry/contract';
 import type { Scene3DDocument, Scene3DDocumentMesh, Scene3DDocumentNode } from '@flighthq/scene3d/contract';
-import type {
-  ImportDiagnostic,
-  Material,
-  MaterialLike,
-  ObjMaterialHandler,
-  ObjMaterialLibrary,
-} from '@flighthq/types/contract';
+import type { ImportDiagnostic, Material, MaterialLike } from '@flighthq/types/contract';
 import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
 import { CANONICAL_FLOATS_PER_VERTEX, CANONICAL_LAYOUT } from './shared.ts';
+import type { ObjMaterialHandler } from './types/ObjMaterialHandler.ts';
+import type { ObjMaterialLibrary } from './types/ObjSchema.ts';
 
 // The OBJ smoothing-group id meaning "no smoothing" — both `s off` and `s 0` select it. UNSTATED is the
 // separate pre-`s` state: one shared group, so a file that never mentions smoothing imports exactly as it

@@ -30,6 +30,19 @@ import type {
   Vector3,
 } from '@flighthq/types/contract';
 import { BlinnPhongMaterialKind, ImportDiagnosticSeverity } from '@flighthq/types/contract';
+
+import { getTestTextureResource } from './scene3DFormatsTestHelper.ts';
+import { convertPositionsZUpToYUp } from './shared.ts';
+import { createScene3DFrom3ds, parse3ds } from './threeDsDocument.ts';
+import {
+  packThreeDsColor,
+  parseColorChunk,
+  parseThreeDsDocumentWithDispatch,
+  readChunkEnd,
+  readChunkLength,
+  readNullTerminatedString,
+  tallyThreeDsDrop,
+} from './threeDsParse.ts';
 import {
   THREE_DS_CAMERA,
   THREE_DS_CAMERA_APERTURE_MM,
@@ -68,20 +81,7 @@ import {
   THREE_DS_TRIMESH,
   THREE_DS_UV_COORDS,
   THREE_DS_VERTICES,
-} from '@flighthq/types/contract';
-
-import { getTestTextureResource } from './scene3DFormatsTestHelper.ts';
-import { convertPositionsZUpToYUp } from './shared.ts';
-import { createScene3DFrom3ds, parse3ds } from './threeDsDocument.ts';
-import {
-  packThreeDsColor,
-  parseColorChunk,
-  parseThreeDsDocumentWithDispatch,
-  readChunkEnd,
-  readChunkLength,
-  readNullTerminatedString,
-  tallyThreeDsDrop,
-} from './threeDsParse.ts';
+} from './types/ThreeDsSchema.ts';
 
 // Builds a minimal valid 3DS binary from helper functions. The 3DS format is a recursive chunk tree:
 // each chunk has a uint16 ID + uint32 length (including the 6-byte header) + payload.

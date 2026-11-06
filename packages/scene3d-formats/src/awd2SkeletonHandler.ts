@@ -20,18 +20,8 @@ import {
   Scene3DAnimationPathScale,
   Scene3DAnimationPathTranslation,
 } from '@flighthq/scene3d/contract';
-import type {
-  Awd2BlockHandler,
-  Awd2ParsedJoint,
-  Awd2ParsedSkeleton,
-  Awd2ParsedSkeletonAnimation,
-  Awd2ParsedSkeletonPose,
-  ImportDiagnostic,
-  AnimationTrack,
-  Matrix4,
-} from '@flighthq/types/contract';
+import type { ImportDiagnostic, AnimationTrack, Matrix4 } from '@flighthq/types/contract';
 import { ImportDiagnosticSeverity, Node3DKind } from '@flighthq/types/contract';
-import type { Awd2ParseState } from '@flighthq/types/contract';
 
 import {
   awdTransformToMatrix4,
@@ -47,6 +37,14 @@ import {
   AWD2_BUILD_PHASE_SKELETON,
   AWD2_BUILD_PHASE_SKELETON_ANIMATION,
 } from './awd2Schema.ts';
+import type {
+  Awd2BlockHandler,
+  Awd2ParsedJoint,
+  Awd2ParsedSkeleton,
+  Awd2ParsedSkeletonAnimation,
+  Awd2ParsedSkeletonPose,
+} from './types/Awd2Block.ts';
+import type { Awd2ParseState } from './types/Awd2Block.ts';
 
 // Skeletons, their poses, and the animations that sequence them. This handler owns the only reach into
 // @flighthq/animation, so a build that does not register it links no animation code at all.

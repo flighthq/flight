@@ -1,8 +1,7 @@
-import { MD5_MATERIAL_FEATURE, MD5_SKELETON_FEATURE } from '@flighthq/types/contract';
-
 import { md5MaterialFamily } from './md5MaterialHandler.ts';
 import { md5AllSectionHandlers } from './md5SectionRegistry.ts';
 import { md5SkeletonFamily } from './md5SkeletonHandler.ts';
+import { MD5_MATERIAL_FEATURE, MD5_SKELETON_FEATURE } from './types/Md5SectionHandler.ts';
 
 describe('md5AllSectionHandlers', () => {
   it('contains every family', () => {

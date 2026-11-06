@@ -1,4 +1,4 @@
-import type { ThreeDsChunkDispatch, ThreeDsChunkHandler } from '@flighthq/types/contract';
+import type { ThreeDsChunkDispatch, ThreeDsChunkHandler } from './types/ThreeDsChunkHandler.ts';
 
 export function buildThreeDsChunkDispatch(handlers: readonly Readonly<ThreeDsChunkHandler>[]): ThreeDsChunkDispatch {
   const dispatch = new Map<number, Readonly<ThreeDsChunkHandler>>();

@@ -1,6 +1,5 @@
-// One joint influence on a vertex: the joint's index in the skeleton and its blend weight. The unit
-// packSkinInfluences reduces to the fixed 4-slot joints0/weights0 channels.
-export interface SkinInfluence {
-  jointIndex: number;
-  weight: number;
-}
+// Owned by `@flighthq/scene3d-formats`. These deprecated re-exports keep existing `@flighthq/types`
+// imports compiling until consumers import the owning package.
+
+/** @deprecated Import from `@flighthq/scene3d-formats/contract`. */
+export type { SkinInfluence } from '@flighthq/scene3d-formats/contract';

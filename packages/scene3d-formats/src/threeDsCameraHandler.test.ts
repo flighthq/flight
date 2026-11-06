@@ -1,7 +1,7 @@
-import { THREE_DS_CAMERA, THREE_DS_CHUNK_HEADER_BYTES } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { parseThreeDsCamera, threeDsCameraFamily, threeDsCameraHandler } from './threeDsCameraHandler.ts';
+import { THREE_DS_CAMERA, THREE_DS_CHUNK_HEADER_BYTES } from './types/ThreeDsSchema.ts';
 
 function writeChunk(id: number, payload: Uint8Array): Uint8Array {
   const total = THREE_DS_CHUNK_HEADER_BYTES + payload.byteLength;

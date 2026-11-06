@@ -2,11 +2,6 @@ import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import { createScene3DFromDocument } from '@flighthq/scene3d/contract';
 import type { Scene3D, Scene3DDocument } from '@flighthq/scene3d/contract';
 import type {
-  Awd2Block,
-  Awd2BlockDispatch,
-  Awd2BlockHandler,
-  Awd2ParseOptions,
-  Awd2ParseState,
   Decompressor,
   HostDecompressDeflateCapability,
   HostDecompressLzmaCapability,
@@ -28,6 +23,8 @@ import {
   AWD2_NAMESPACE_CORE,
   AWD2_VERSION_MAJOR_OFFSET,
 } from './awd2Schema.ts';
+import type { Awd2Block, Awd2BlockDispatch, Awd2BlockHandler, Awd2ParseState } from './types/Awd2Block.ts';
+import type { Awd2ParseOptions } from './types/Awd2ParseOptions.ts';
 
 // Parses an Away3D AWD 2.x binary file into a Scene3D. Convenience over
 // `createScene3DFromDocument(parseAwd2(...))`. See parseAwd2 for the import model, and for why the block

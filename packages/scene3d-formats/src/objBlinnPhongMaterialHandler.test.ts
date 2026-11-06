@@ -1,8 +1,8 @@
 import type { Scene3DDocument } from '@flighthq/scene3d/contract';
-import type { ObjMaterial } from '@flighthq/types/contract';
 import { BlinnPhongMaterialKind } from '@flighthq/types/contract';
 
 import { objBlinnPhongMaterialHandler, objMaterialToBlinnPhong } from './objBlinnPhongMaterialHandler.ts';
+import type { ObjMaterial } from './types/ObjSchema.ts';
 
 function emptyDocument(): Scene3DDocument {
   return {

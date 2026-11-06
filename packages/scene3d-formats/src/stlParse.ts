@@ -1,7 +1,6 @@
 import { decodeUTF8 } from '@flighthq/encoding/contract';
 import { createMeshGeometry } from '@flighthq/meshgeometry/contract';
 import type { MeshGeometry } from '@flighthq/meshgeometry/contract';
-import type { StlImportOptions, StlNormalPolicy } from '@flighthq/types/contract';
 
 import { CANONICAL_FLOATS_PER_VERTEX, CANONICAL_LAYOUT } from './shared.ts';
 import {
@@ -10,6 +9,7 @@ import {
   countAsciiStlFacets,
   readBinaryStlTriangleCount,
 } from './stlFeatures.ts';
+import type { StlImportOptions, StlNormalPolicy } from './types/StlImportOptions.ts';
 
 /**
  * Reads an STL file — either encoding — into one `MeshGeometry`, or `null` when the bytes are not a readable STL.

@@ -1,5 +1,6 @@
 import { decodeUTF8 } from '@flighthq/encoding/contract';
-import type { StlFeatures } from '@flighthq/types/contract';
+
+import type { StlFeatures } from './types/StlFeatures.ts';
 
 /** The one `document.format` feature STL has. Triangles are the whole format. */
 export const STL_MESH_FEATURE = 'Mesh';

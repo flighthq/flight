@@ -1,8 +1,9 @@
 import type { Scene3DDocument } from '@flighthq/scene3d/contract';
-import type { Md5Joint, Md5ParseContext } from '@flighthq/types/contract';
-import { MD5_SKELETON_FEATURE } from '@flighthq/types/contract';
 
 import { buildMd5SkeletonDocument, md5SkeletonFamily, md5SkeletonHandler } from './md5SkeletonHandler.ts';
+import type { Md5Joint } from './types/Md5Schema.ts';
+import type { Md5ParseContext } from './types/Md5SectionHandler.ts';
+import { MD5_SKELETON_FEATURE } from './types/Md5SectionHandler.ts';
 
 // ★ MOVED HERE WITH THE FUNCTION. This described `buildMd5SkeletonDocument` while it lived in `md5Parse.ts`, and its old
 // comment said the export existed so the handler "can wrap it without moving a hundred lines of quaternion work out of

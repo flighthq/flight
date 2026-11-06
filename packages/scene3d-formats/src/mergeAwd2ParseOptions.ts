@@ -1,4 +1,4 @@
-import type { Awd2ParseOptions } from '@flighthq/types/contract';
+import type { Awd2ParseOptions } from './types/Awd2ParseOptions.ts';
 
 /**
  * Composes AWD2 parse-option fragments into one, field by field.

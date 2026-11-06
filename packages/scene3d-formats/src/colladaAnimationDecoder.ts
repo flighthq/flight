@@ -12,16 +12,12 @@ import type {
   Scene3DDocumentAnimationChannel,
 } from '@flighthq/scene3d/contract';
 import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
-import type {
-  AnimationInterpolation,
-  ColladaDecodedAnimationChannel,
-  ColladaElementDecoder,
-  ImportDiagnostic,
-} from '@flighthq/types/contract';
+import type { AnimationInterpolation, ImportDiagnostic } from '@flighthq/types/contract';
 import type { XmlElement } from '@flighthq/xml/contract';
 import { parseXmlDocument } from '@flighthq/xml/contract';
 
 import { colladaChild, colladaDescendants, colladaIdOf, colladaNumbers } from './colladaXml.ts';
+import type { ColladaDecodedAnimationChannel, ColladaElementDecoder } from './types/ColladaDecoding.ts';
 
 /** Internal Arc 6a seam; channel targets remain authored ID/SID paths for later hierarchy binding. */
 export function decodeColladaAnimations(

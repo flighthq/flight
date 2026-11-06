@@ -1,3 +1,6 @@
+import { BlinnPhongMaterialKind, RequirementFacet } from '@flighthq/types/contract';
+
+import { parseThreeDsRequirements } from './threeDsRequirements.ts';
 import {
   THREE_DS_CAMERA,
   THREE_DS_CHUNK_HEADER_BYTES,
@@ -7,10 +10,7 @@ import {
   THREE_DS_MATERIAL,
   THREE_DS_OBJECT,
   THREE_DS_TRIMESH,
-} from '@flighthq/types/contract';
-import { BlinnPhongMaterialKind, RequirementFacet } from '@flighthq/types/contract';
-
-import { parseThreeDsRequirements } from './threeDsRequirements.ts';
+} from './types/ThreeDsSchema.ts';
 
 describe('parseThreeDsRequirements', () => {
   it('reports one document.format requirement per distinct feature chunk type', () => {

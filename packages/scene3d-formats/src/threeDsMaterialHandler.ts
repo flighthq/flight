@@ -1,4 +1,6 @@
-import type { ThreeDsChunkHandler, ThreeDsMaterial, ThreeDsParseState } from '@flighthq/types/contract';
+import { parseColorChunk, readChunkEnd, readNullTerminatedString } from './threeDsParse.ts';
+import type { ThreeDsChunkHandler, ThreeDsParseState } from './types/ThreeDsChunkHandler.ts';
+import type { ThreeDsMaterial } from './types/ThreeDsSchema.ts';
 import {
   THREE_DS_CHUNK_HEADER_BYTES,
   THREE_DS_MATERIAL,
@@ -14,9 +16,7 @@ import {
   THREE_DS_MATERIAL_TRANSPARENCY,
   THREE_DS_PERCENT_FLOAT,
   THREE_DS_PERCENT_INT,
-} from '@flighthq/types/contract';
-
-import { parseColorChunk, readChunkEnd, readNullTerminatedString } from './threeDsParse.ts';
+} from './types/ThreeDsSchema.ts';
 
 export const threeDsMaterialHandler: Readonly<ThreeDsChunkHandler> = {
   chunkIds: [THREE_DS_MATERIAL],

@@ -2,7 +2,7 @@ import { createOrthographicProjection, createPerspectiveProjection } from '@flig
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import { DEG_TO_RAD } from '@flighthq/math/contract';
 import type { Scene3DDocument } from '@flighthq/scene3d/contract';
-import type { Awd2BlockHandler, Awd2ParsedCamera, ImportDiagnostic, Projection } from '@flighthq/types/contract';
+import type { ImportDiagnostic, Projection } from '@flighthq/types/contract';
 import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
 import {
@@ -24,6 +24,7 @@ import {
   AWD2_CAMERA_PROP_ORTHO_TOP,
   AWD2_BUILD_PHASE_CAMERA,
 } from './awd2Schema.ts';
+import type { Awd2BlockHandler, Awd2ParsedCamera } from './types/Awd2Block.ts';
 
 // Cameras. Like lights, a camera fills the document's PLACEMENT TABLE rather than the node graph — it is
 // not a scene member in Flight — so this handler builds after the node passes, when a camera parented to

@@ -13,7 +13,7 @@ import {
   THREE_DS_MATERIAL_TEXTURE_MAP,
   THREE_DS_OBJECT,
   THREE_DS_TRIMESH,
-} from '@flighthq/types/contract';
+} from './types/ThreeDsSchema.ts';
 
 /**
  * Walks the 3DS chunk tree and counts how many top-level feature chunks of each type appear, reading

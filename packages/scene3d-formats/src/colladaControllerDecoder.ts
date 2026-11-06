@@ -1,20 +1,18 @@
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import type { Scene3DDocument, Scene3DDocumentSkin } from '@flighthq/scene3d/contract';
 import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
-import type {
-  ColladaDecodedMorph,
-  ColladaDecodedSkin,
-  ColladaDeferredControllerBinding,
-  ColladaElementDecoder,
-  ImportDiagnostic,
-  MeshMorph,
-  MorphTarget,
-} from '@flighthq/types/contract';
+import type { ImportDiagnostic, MeshMorph, MorphTarget } from '@flighthq/types/contract';
 import type { XmlElement } from '@flighthq/xml/contract';
 import { parseXmlDocument } from '@flighthq/xml/contract';
 
 import { applyColladaMaterialOverrides } from './colladaSceneShared.ts';
 import { colladaChild, colladaDescendants, colladaIdOf, colladaNumbers } from './colladaXml.ts';
+import type {
+  ColladaDecodedMorph,
+  ColladaDecodedSkin,
+  ColladaDeferredControllerBinding,
+  ColladaElementDecoder,
+} from './types/ColladaDecoding.ts';
 
 /** Internal Arc 5a seam; intentionally not re-exported from the package contract. */
 export function decodeColladaControllers(xml: string, diagnostics: ImportDiagnostic[] = []): ColladaDecodedSkin[] {

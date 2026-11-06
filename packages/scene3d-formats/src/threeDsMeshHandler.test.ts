@@ -1,12 +1,12 @@
+import { describe, expect, it } from 'vitest';
+
+import { parseThreeDsTrimesh, threeDsMeshFamily, threeDsMeshHandler } from './threeDsMeshHandler.ts';
 import {
   THREE_DS_CHUNK_HEADER_BYTES,
   THREE_DS_FACES,
   THREE_DS_TRIMESH,
   THREE_DS_VERTICES,
-} from '@flighthq/types/contract';
-import { describe, expect, it } from 'vitest';
-
-import { parseThreeDsTrimesh, threeDsMeshFamily, threeDsMeshHandler } from './threeDsMeshHandler.ts';
+} from './types/ThreeDsSchema.ts';
 
 function writeChunk(id: number, payload: Uint8Array): Uint8Array {
   const total = THREE_DS_CHUNK_HEADER_BYTES + payload.byteLength;

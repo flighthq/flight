@@ -1,15 +1,12 @@
 import { createRequirementSet } from '@flighthq/requirement/contract';
 import type { Requirement, RequirementSet } from '@flighthq/types/contract';
-import {
-  OBJ_MATERIAL_BLINN_PHONG_FEATURE,
-  OBJ_MATERIAL_STANDARD_PBR_FEATURE,
-  RequirementFacet,
-} from '@flighthq/types/contract';
+import { RequirementFacet } from '@flighthq/types/contract';
 
 import { OBJ_FEATURE_SCENE_REQUIREMENTS } from './objFeatureRequirements.ts';
 import { collectObjFeatures, OBJ_MATERIAL_FEATURE } from './objFeatures.ts';
 import { collectObjMaterialModels } from './objMaterialModel.ts';
 import { OBJ_REQUIREMENT_KEY_NAMESPACE } from './scene3dFormatRequirements.ts';
+import { OBJ_MATERIAL_BLINN_PHONG_FEATURE, OBJ_MATERIAL_STANDARD_PBR_FEATURE } from './types/ObjMaterialHandler.ts';
 
 /**
  * Build-time inventory of what one OBJ file asks a build to support: one `document.format`

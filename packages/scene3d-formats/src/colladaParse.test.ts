@@ -1,8 +1,8 @@
-import type { ColladaElementDecoder } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { colladaGeometryDecoder } from './colladaGeometryDecoder.ts';
 import { parseColladaWithDecoders } from './colladaParse.ts';
+import type { ColladaElementDecoder } from './types/ColladaDecoding.ts';
 
 const MINIMAL = '<COLLADA><asset><up_axis>Y_UP</up_axis></asset><scene/></COLLADA>';
 

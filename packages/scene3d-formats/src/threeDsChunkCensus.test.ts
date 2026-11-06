@@ -1,3 +1,4 @@
+import { collectThreeDsChunkCounts, getThreeDsChunkName, getThreeDsFeatureNames } from './threeDsChunkCensus.ts';
 import {
   THREE_DS_CAMERA,
   THREE_DS_CHUNK_HEADER_BYTES,
@@ -11,9 +12,7 @@ import {
   THREE_DS_MATERIAL_TEXTURE_MAP,
   THREE_DS_OBJECT,
   THREE_DS_TRIMESH,
-} from '@flighthq/types/contract';
-
-import { collectThreeDsChunkCounts, getThreeDsChunkName, getThreeDsFeatureNames } from './threeDsChunkCensus.ts';
+} from './types/ThreeDsSchema.ts';
 
 describe('collectThreeDsChunkCounts', () => {
   it('counts trimesh, material, light, and camera chunks', () => {

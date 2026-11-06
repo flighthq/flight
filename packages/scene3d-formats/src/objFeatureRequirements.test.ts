@@ -1,12 +1,7 @@
-import {
-  BlinnPhongMaterialKind,
-  OBJ_MATERIAL_BLINN_PHONG_FEATURE,
-  OBJ_MATERIAL_STANDARD_PBR_FEATURE,
-  RequirementFacet,
-  StandardPbrMaterialKind,
-} from '@flighthq/types/contract';
+import { BlinnPhongMaterialKind, RequirementFacet, StandardPbrMaterialKind } from '@flighthq/types/contract';
 
 import { OBJ_FEATURE_SCENE_REQUIREMENTS } from './objFeatureRequirements.ts';
+import { OBJ_MATERIAL_BLINN_PHONG_FEATURE, OBJ_MATERIAL_STANDARD_PBR_FEATURE } from './types/ObjMaterialHandler.ts';
 
 describe('OBJ_FEATURE_SCENE_REQUIREMENTS', () => {
   // ★ EACH MODEL IMPLIES ONLY ITS OWN RENDERER. This table used to key on one coarse `Material` feature and

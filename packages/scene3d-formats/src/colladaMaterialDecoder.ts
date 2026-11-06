@@ -1,6 +1,5 @@
-import type { ColladaElementDecoder } from '@flighthq/types/contract';
-
 import { appendColladaMaterials } from './colladaMaterial.ts';
+import type { ColladaElementDecoder } from './types/ColladaDecoding.ts';
 
 /**
  * The decoder for each COLLADA feature, as values a caller composes.

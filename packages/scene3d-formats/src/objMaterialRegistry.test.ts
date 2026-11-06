@@ -1,5 +1,3 @@
-import type { ObjMaterial } from '@flighthq/types/contract';
-
 import { objBlinnPhongMaterialHandler } from './objBlinnPhongMaterialHandler.ts';
 import {
   objAllMaterialHandlers,
@@ -7,6 +5,7 @@ import {
   objStandardPbrMaterialFamily,
 } from './objMaterialRegistry.ts';
 import { objStandardPbrMaterialHandler } from './objStandardPbrMaterialHandler.ts';
+import type { ObjMaterial } from './types/ObjSchema.ts';
 
 describe('objAllMaterialHandlers', () => {
   it('contains both handler families', () => {

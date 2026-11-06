@@ -1,7 +1,6 @@
-import type { ColladaImportOptions, ColladaParseResult } from '@flighthq/types/contract';
-
 import { colladaAllElementDecoders } from './colladaDecoderFamily.ts';
 import { parseColladaWithDecoders } from './colladaParse.ts';
+import type { ColladaImportOptions, ColladaParseResult } from './types/ColladaParse.ts';
 
 /**
  * Reads a COLLADA document, with every feature Flight supports unless the caller names fewer.

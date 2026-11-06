@@ -1,11 +1,7 @@
 import type { Requirement } from '@flighthq/types/contract';
-import {
-  BlinnPhongMaterialKind,
-  OBJ_MATERIAL_BLINN_PHONG_FEATURE,
-  OBJ_MATERIAL_STANDARD_PBR_FEATURE,
-  RequirementFacet,
-  StandardPbrMaterialKind,
-} from '@flighthq/types/contract';
+import { BlinnPhongMaterialKind, RequirementFacet, StandardPbrMaterialKind } from '@flighthq/types/contract';
+
+import { OBJ_MATERIAL_BLINN_PHONG_FEATURE, OBJ_MATERIAL_STANDARD_PBR_FEATURE } from './types/ObjMaterialHandler.ts';
 
 /**
  * Which scene requirements an OBJ feature implies — the fact that turns a FORMAT requirement into

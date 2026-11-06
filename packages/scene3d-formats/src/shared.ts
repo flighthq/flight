@@ -7,10 +7,11 @@ import type {
   ExternalImageResourceReference,
   ImageResourceReference,
   MutableNumberArray,
-  SkinInfluence,
   Texture,
 } from '@flighthq/types/contract';
 import { ImageResourceReferenceKind } from '@flighthq/types/contract';
+
+import type { SkinInfluence } from './types/SkinInfluence.ts';
 
 export const CANONICAL_FLOATS_PER_VERTEX = 12;
 export const CANONICAL_LAYOUT: VertexAttributeLayout = {

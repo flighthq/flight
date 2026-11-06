@@ -13,19 +13,8 @@ import {
 import type { MeshGeometry, MeshTriangleVertexIndices } from '@flighthq/meshgeometry/contract';
 import { MeshKind } from '@flighthq/meshgeometry/contract';
 import type { Scene3DDocument, Scene3DDocumentMesh } from '@flighthq/scene3d/contract';
-import type {
-  ImportDiagnostic,
-  Md5DropTally,
-  Md5Joint,
-  Md5Mesh,
-  Md5MeshSection,
-  Md5ParseContext,
-  Md5SectionHandler,
-  Md5Vertex,
-  Md5Weight,
-  SkinInfluence,
-} from '@flighthq/types/contract';
-import { ImportDiagnosticSeverity, MD5_MATERIAL_FEATURE, MD5_SKELETON_FEATURE } from '@flighthq/types/contract';
+import type { ImportDiagnostic } from '@flighthq/types/contract';
+import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
 import {
   convertPositionsZUpToYUp,
@@ -34,6 +23,10 @@ import {
   reverseTriangleWinding,
   SKINNED_FLOATS_PER_VERTEX,
 } from './shared.ts';
+import type { Md5Joint, Md5Mesh, Md5Vertex, Md5Weight } from './types/Md5Schema.ts';
+import type { Md5DropTally, Md5MeshSection, Md5ParseContext, Md5SectionHandler } from './types/Md5SectionHandler.ts';
+import { MD5_MATERIAL_FEATURE, MD5_SKELETON_FEATURE } from './types/Md5SectionHandler.ts';
+import type { SkinInfluence } from './types/SkinInfluence.ts';
 
 // A single MD5 joint influence on a vertex, extended (over the shared SkinInfluence) with the weight's
 // resolved model-space position so the bind position can be baked from the same top-4 reduced set the

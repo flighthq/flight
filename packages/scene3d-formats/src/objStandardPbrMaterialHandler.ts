@@ -1,11 +1,14 @@
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import { createStandardPbrMaterial } from '@flighthq/materials/contract';
 import type { Scene3DDocument } from '@flighthq/scene3d/contract';
-import type { ImportDiagnostic, ObjMaterial, ObjMaterialHandler, StandardPbrMaterial } from '@flighthq/types/contract';
-import { ImportDiagnosticSeverity, OBJ_MATERIAL_STANDARD_PBR_FEATURE } from '@flighthq/types/contract';
+import type { ImportDiagnostic, StandardPbrMaterial } from '@flighthq/types/contract';
+import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
 import { externalObjTexture, packObjColor } from './objMaterialHelpers.ts';
 import { hasObjPbrDirectives } from './objMaterialModel.ts';
+import type { ObjMaterialHandler } from './types/ObjMaterialHandler.ts';
+import { OBJ_MATERIAL_STANDARD_PBR_FEATURE } from './types/ObjMaterialHandler.ts';
+import type { ObjMaterial } from './types/ObjSchema.ts';
 
 export const objStandardPbrMaterialHandler: Readonly<ObjMaterialHandler> = {
   feature: OBJ_MATERIAL_STANDARD_PBR_FEATURE,

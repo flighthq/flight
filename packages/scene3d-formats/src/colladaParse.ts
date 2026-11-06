@@ -8,20 +8,7 @@ import {
 } from '@flighthq/geometry/contract';
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import type { Scene3DDocument, Scene3DDocumentNode, Scene3DDocumentScene } from '@flighthq/scene3d/contract';
-import type {
-  ColladaBuildContext,
-  ColladaDeferredCameraBinding,
-  ColladaDeferredControllerBinding,
-  ColladaDeferredLightBinding,
-  ColladaElementDecoder,
-  ColladaImportOptions,
-  ColladaParseContext,
-  ColladaParseResult,
-  ColladaUpAxis,
-  ImportDiagnostic,
-  Matrix4Like,
-  Transform3D,
-} from '@flighthq/types/contract';
+import type { ImportDiagnostic, Matrix4Like, Transform3D } from '@flighthq/types/contract';
 import { ImportDiagnosticSeverity, Node3DKind } from '@flighthq/types/contract';
 import type { XmlElement } from '@flighthq/xml/contract';
 import { parseXmlDocument } from '@flighthq/xml/contract';
@@ -35,6 +22,15 @@ import {
   colladaText,
   walkColladaElement,
 } from './colladaXml.ts';
+import type {
+  ColladaBuildContext,
+  ColladaDeferredCameraBinding,
+  ColladaDeferredControllerBinding,
+  ColladaDeferredLightBinding,
+  ColladaElementDecoder,
+  ColladaParseContext,
+} from './types/ColladaDecoding.ts';
+import type { ColladaImportOptions, ColladaParseResult, ColladaUpAxis } from './types/ColladaParse.ts';
 const Y_UP_ROOT = [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1] as const;
 const Z_UP_ROOT = [1, 0, 0, 0, 0, 0, -1, 0, 0, 1, 0, 0, 0, 0, 0, 1] as const;
 const X_UP_ROOT = [0, 0, 1, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1] as const;

@@ -1,3 +1,6 @@
+import { describe, expect, it } from 'vitest';
+
+import { collectThreeDsPivots, threeDsKeyframeFamily, threeDsKeyframeHandler } from './threeDsKeyframeHandler.ts';
 import {
   THREE_DS_CHUNK_HEADER_BYTES,
   THREE_DS_EDITOR,
@@ -6,10 +9,7 @@ import {
   THREE_DS_KEYFRAME_OBJECT_NODE,
   THREE_DS_KEYFRAME_PIVOT,
   THREE_DS_MAIN,
-} from '@flighthq/types/contract';
-import { describe, expect, it } from 'vitest';
-
-import { collectThreeDsPivots, threeDsKeyframeFamily, threeDsKeyframeHandler } from './threeDsKeyframeHandler.ts';
+} from './types/ThreeDsSchema.ts';
 
 function writeChunk(id: number, payload: Uint8Array): Uint8Array {
   const total = THREE_DS_CHUNK_HEADER_BYTES + payload.byteLength;

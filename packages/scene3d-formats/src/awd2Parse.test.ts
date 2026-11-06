@@ -21,7 +21,6 @@ import type {
 } from '@flighthq/scene3d/contract';
 import { getTextureSource } from '@flighthq/texture/contract';
 import type {
-  Awd2ParseOptions,
   Decompressor,
   HostDecompressDeflateCapability,
   HostDecompressLzmaCapability,
@@ -100,6 +99,7 @@ import {
   AWD2_TEXTURE_TYPE_EXTERNAL,
 } from './awd2Schema.ts';
 import { getTestTextureResource } from './scene3DFormatsTestHelper.ts';
+import type { Awd2ParseOptions } from './types/Awd2ParseOptions.ts';
 
 function buildAwdHeader(bodyLength: number, compression = 0, flags = 0, versionMajor = 2): Uint8Array {
   const header = new Uint8Array(12);

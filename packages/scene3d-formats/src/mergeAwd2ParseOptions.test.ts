@@ -1,6 +1,5 @@
-import type { Awd2ParseOptions } from '@flighthq/types/contract';
-
 import { mergeAwd2ParseOptions } from './mergeAwd2ParseOptions.ts';
+import type { Awd2ParseOptions } from './types/Awd2ParseOptions.ts';
 
 // Every field Awd2ParseOptions declares. Adding one fails the exhaustiveness test until someone decides
 // how it composes, which is the drift alarm a generic merge would have hidden.

@@ -1,5 +1,14 @@
 import { getNodeChildren } from '@flighthq/node/contract';
-import type { ImportDiagnostic, ThreeDsChunkHandler } from '@flighthq/types/contract';
+import type { ImportDiagnostic } from '@flighthq/types/contract';
+
+import { threeDsCameraHandler } from './threeDsCameraHandler.ts';
+import { threeDsAllChunkHandlers } from './threeDsChunkRegistry.ts';
+import { createScene3DFrom3ds, parse3ds } from './threeDsDocument.ts';
+import { threeDsKeyframeHandler } from './threeDsKeyframeHandler.ts';
+import { threeDsLightHandler } from './threeDsLightHandler.ts';
+import { threeDsMaterialHandler } from './threeDsMaterialHandler.ts';
+import { threeDsMeshHandler } from './threeDsMeshHandler.ts';
+import type { ThreeDsChunkHandler } from './types/ThreeDsChunkHandler.ts';
 import {
   THREE_DS_CAMERA,
   THREE_DS_EDITOR,
@@ -17,15 +26,7 @@ import {
   THREE_DS_VERTICES,
   THREE_DS_FACES,
   THREE_DS_FACE_MATERIAL,
-} from '@flighthq/types/contract';
-
-import { threeDsCameraHandler } from './threeDsCameraHandler.ts';
-import { threeDsAllChunkHandlers } from './threeDsChunkRegistry.ts';
-import { createScene3DFrom3ds, parse3ds } from './threeDsDocument.ts';
-import { threeDsKeyframeHandler } from './threeDsKeyframeHandler.ts';
-import { threeDsLightHandler } from './threeDsLightHandler.ts';
-import { threeDsMaterialHandler } from './threeDsMaterialHandler.ts';
-import { threeDsMeshHandler } from './threeDsMeshHandler.ts';
+} from './types/ThreeDsSchema.ts';
 
 // ★ OMITTING A HANDLER REMOVES ONE FEATURE AND NOTHING ELSE. Each case drops a single handler and checks
 // both halves: the feature it owns disappears, AND every other feature is untouched. The second half is

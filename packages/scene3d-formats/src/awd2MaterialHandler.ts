@@ -2,16 +2,7 @@ import { detectImageMimeType } from '@flighthq/image-codec/contract';
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import type { Scene3DDocument } from '@flighthq/scene3d/contract';
 import { createShadedMaterial } from '@flighthq/shading/contract';
-import type {
-  Awd2BlockHandler,
-  Awd2ParsedMaterial,
-  Awd2ParsedTexture,
-  ImportDiagnostic,
-  Material,
-  Material3D,
-  MaterialLike,
-  Texture,
-} from '@flighthq/types/contract';
+import type { ImportDiagnostic, Material, Material3D, MaterialLike, Texture } from '@flighthq/types/contract';
 import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
 import {
@@ -39,6 +30,7 @@ import {
   AWD2_TEXTURE_TYPE_EMBEDDED,
 } from './awd2Schema.ts';
 import { createEmbeddedTextureRef, createExternalTextureRef } from './shared.ts';
+import type { Awd2BlockHandler, Awd2ParsedMaterial, Awd2ParsedTexture } from './types/Awd2Block.ts';
 
 // Materials and the textures they sample. This handler owns the only reach into @flighthq/shading and the
 // image-codec chain, so a build that loads geometry and scene structure without registering it carries

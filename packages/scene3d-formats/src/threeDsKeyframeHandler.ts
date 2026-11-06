@@ -1,4 +1,5 @@
-import type { ThreeDsChunkHandler, ThreeDsParseState } from '@flighthq/types/contract';
+import { readChunkEnd, readChunkLength, readNullTerminatedString } from './threeDsParse.ts';
+import type { ThreeDsChunkHandler, ThreeDsParseState } from './types/ThreeDsChunkHandler.ts';
 import {
   THREE_DS_CHUNK_HEADER_BYTES,
   THREE_DS_KEYFRAME,
@@ -6,9 +7,7 @@ import {
   THREE_DS_KEYFRAME_OBJECT_NODE,
   THREE_DS_KEYFRAME_PIVOT,
   THREE_DS_MAIN,
-} from '@flighthq/types/contract';
-
-import { readChunkEnd, readChunkLength, readNullTerminatedString } from './threeDsParse.ts';
+} from './types/ThreeDsSchema.ts';
 
 export const threeDsKeyframeHandler: Readonly<ThreeDsChunkHandler> = {
   chunkIds: [THREE_DS_KEYFRAME_OBJECT_NODE],

@@ -1,6 +1,8 @@
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
-import type { ImportDiagnostic, ObjMaterial, ObjMaterialLibrary } from '@flighthq/types/contract';
+import type { ImportDiagnostic } from '@flighthq/types/contract';
 import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
+
+import type { ObjMaterial, ObjMaterialLibrary } from './types/ObjSchema.ts';
 
 // Parses a Wavefront MTL material library from its text source. Two directive families are read: the
 // classic Blinn-Phong block (`newmtl`, `Ka`, `Kd`, `Ks`, `Ns`, `d`, `Tr`, `illum`, `map_Kd`, `map_Ka`,

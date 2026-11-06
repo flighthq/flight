@@ -1,9 +1,11 @@
 import { createScene3DFromDocument } from '@flighthq/scene3d/contract';
 import type { Scene3D, Scene3DDocument } from '@flighthq/scene3d/contract';
-import type { ImportDiagnostic, ObjImportOptions, ObjMaterialLibrary } from '@flighthq/types/contract';
+import type { ImportDiagnostic } from '@flighthq/types/contract';
 
 import { objAllMaterialHandlers } from './objMaterialRegistry.ts';
 import { parseObjWithMaterialHandlers } from './objParse.ts';
+import type { ObjImportOptions } from './types/ObjMaterialHandler.ts';
+import type { ObjMaterialLibrary } from './types/ObjSchema.ts';
 
 /**
  * Parses a Wavefront OBJ text source and assembles it into a live `Scene3D`.

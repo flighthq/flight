@@ -1,8 +1,9 @@
 import { createBlinnPhongMaterial } from '@flighthq/materials/contract';
-import type { Material, MaterialLike, Md5SectionHandler } from '@flighthq/types/contract';
-import { MD5_MATERIAL_FEATURE } from '@flighthq/types/contract';
+import type { Material, MaterialLike } from '@flighthq/types/contract';
 
 import { createExternalTextureRef } from './shared.ts';
+import type { Md5SectionHandler } from './types/Md5SectionHandler.ts';
+import { MD5_MATERIAL_FEATURE } from './types/Md5SectionHandler.ts';
 
 /**
  * Turns a `mesh { }` block's `shader` line into the material that block binds.

@@ -1,5 +1,3 @@
-import type { ColladaElementDecoder } from '@flighthq/types/contract';
-
 import { colladaAnimationDecoder } from './colladaAnimationDecoder.ts';
 import { colladaCameraDecoder } from './colladaCameraDecoder.ts';
 import { colladaControllerDecoder } from './colladaControllerDecoder.ts';
@@ -9,6 +7,7 @@ import { COLLADA_FEATURE_ELEMENTS } from './colladaFeatures.ts';
 import { colladaGeometryDecoder } from './colladaGeometryDecoder.ts';
 import { colladaLightDecoder } from './colladaLightDecoder.ts';
 import { colladaMaterialDecoder } from './colladaMaterialDecoder.ts';
+import type { ColladaElementDecoder } from './types/ColladaDecoding.ts';
 
 describe('colladaAllElementDecoders', () => {
   it('is the six decoders, in the order the single-function parser ran them', () => {

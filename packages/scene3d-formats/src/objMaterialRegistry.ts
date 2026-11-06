@@ -1,7 +1,6 @@
-import type { ObjMaterialHandler } from '@flighthq/types/contract';
-
 import { objBlinnPhongMaterialHandler } from './objBlinnPhongMaterialHandler.ts';
 import { objStandardPbrMaterialHandler } from './objStandardPbrMaterialHandler.ts';
+import type { ObjMaterialHandler } from './types/ObjMaterialHandler.ts';
 
 export const objBlinnPhongMaterialFamily: readonly ObjMaterialHandler[] = [objBlinnPhongMaterialHandler];
 

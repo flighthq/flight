@@ -10,17 +10,17 @@ import {
 import type { Light } from '@flighthq/lighting/contract';
 import type { Scene3DDocument } from '@flighthq/scene3d/contract';
 import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
+import type { ImportDiagnostic } from '@flighthq/types/contract';
+import type { XmlElement } from '@flighthq/xml/contract';
+
+import { buildColladaNodeWorldMatrices } from './colladaSceneShared.ts';
+import { colladaChild, colladaChildren, colladaIdOf, colladaLocalName } from './colladaXml.ts';
 import type {
   ColladaDeferredLightBinding,
   ColladaElementDecoder,
   ColladaLightDefinition,
   ColladaLightKind,
-  ImportDiagnostic,
-} from '@flighthq/types/contract';
-import type { XmlElement } from '@flighthq/xml/contract';
-
-import { buildColladaNodeWorldMatrices } from './colladaSceneShared.ts';
-import { colladaChild, colladaChildren, colladaIdOf, colladaLocalName } from './colladaXml.ts';
+} from './types/ColladaDecoding.ts';
 
 // Decodes the reusable light definitions without adding uninstantiated library entries to the document.
 // A null value records an ID whose definition was present but malformed, so an instance of it is skipped
