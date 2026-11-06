@@ -1,3 +1,4 @@
+export * from './contract.gizmo-types.ts';
 export { computeGizmoAlignmentDeltas, findGizmoSmartGuides } from './gizmoAlignment.ts';
 export {
   createGizmoState,

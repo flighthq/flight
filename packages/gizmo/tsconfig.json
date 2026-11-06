@@ -1,14 +1,9 @@
 {
-  "extends": "../../tsconfig.base.json",
-  "compilerOptions": {
-    "composite": true,
-    "rootDir": "src",
-    "outDir": "dist",
-    "declaration": true,
-    "declarationMap": true,
-    "sourceMap": true
-  },
+  "files": [],
   "references": [
+    {
+      "path": "../entity"
+    },
     {
       "path": "../camera/tsconfig.runtime.json"
     },
@@ -37,8 +32,10 @@
       "path": "../signals"
     },
     {
-      "path": "../types"
+      "path": "./tsconfig.contract.json"
+    },
+    {
+      "path": "./tsconfig.runtime.json"
     }
-  ],
-  "include": ["src"]
+  ]
 }

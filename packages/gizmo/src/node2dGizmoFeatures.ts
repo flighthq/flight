@@ -1,13 +1,11 @@
+import type { NonEntityCreateResult } from '@flighthq/entity/contract';
 import { copyRectangle, matrixTransformPointXY } from '@flighthq/geometry/contract';
+import type { Rectangle, Vector2Like } from '@flighthq/geometry/contract';
 import { RAD_TO_DEG } from '@flighthq/math/contract';
 import { getNodeWorldBoundsRectangle, getNodeWorldMatrix } from '@flighthq/node/contract';
-import type {
-  GizmoNode2DFeatures,
-  Node2D,
-  NonEntityCreateResult,
-  Rectangle,
-  Vector2Like,
-} from '@flighthq/types/contract';
+import type { Node2D } from '@flighthq/scene2d/contract';
+
+import type { GizmoNode2DFeatures } from './types.ts';
 
 export function createNode2DGizmoFeatures(): NonEntityCreateResult<GizmoNode2DFeatures<Node2D>, 'type-only'> {
   return {

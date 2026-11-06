@@ -1,5 +1,7 @@
 import { getRectangleMaxX, getRectangleMaxY, getRectangleMinX, getRectangleMinY } from '@flighthq/geometry/contract';
-import type { GizmoAlignment, GizmoSmartGuideResult, RectangleLike } from '@flighthq/types/contract';
+import type { RectangleLike } from '@flighthq/geometry/contract';
+
+import type { GizmoAlignment, GizmoSmartGuideResult } from './types.ts';
 
 /**
  * Writes interleaved world- or local-space translation deltas for aligning a selection to its

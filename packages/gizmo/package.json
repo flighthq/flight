@@ -41,6 +41,7 @@
   },
   "dependencies": {
     "@flighthq/camera": "*",
+    "@flighthq/entity": "*",
     "@flighthq/geometry": "*",
     "@flighthq/interaction": "*",
     "@flighthq/math": "*",
@@ -48,8 +49,7 @@
     "@flighthq/scene2d": "*",
     "@flighthq/selection": "*",
     "@flighthq/shape": "*",
-    "@flighthq/signals": "*",
-    "@flighthq/types": "*"
+    "@flighthq/signals": "*"
   },
   "devDependencies": {
     "typescript": "^7.0.2"

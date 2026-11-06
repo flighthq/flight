@@ -1,12 +1,16 @@
 import { projectCamera2DPoint, unprojectCamera2DPoint } from '@flighthq/camera/contract';
 import type { Camera2D } from '@flighthq/camera/contract';
+import { EntityRuntimeKey } from '@flighthq/entity/contract';
+import type { EntityRuntime } from '@flighthq/entity/contract';
 import { createRectangle, createVector2 } from '@flighthq/geometry/contract';
+import type { Rectangle, Vector2Like } from '@flighthq/geometry/contract';
 import {
   enableInteractionSignals,
   setNodeCursor,
   setNodeHitArea,
   setNodeHitTestEnabled,
 } from '@flighthq/interaction/contract';
+import type { PointerEventData } from '@flighthq/interaction/contract';
 import { DEG_TO_RAD, RAD_TO_DEG, roundTo } from '@flighthq/math/contract';
 import {
   addNodeChild,
@@ -15,8 +19,11 @@ import {
   invalidateNodeLocalTransform,
   removeNodeChild,
 } from '@flighthq/node/contract';
+import type { NodeAny } from '@flighthq/node/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
+import type { Node2D, Scene2D } from '@flighthq/scene2d/contract';
 import { getActiveNode, getSelectedNodes } from '@flighthq/selection/contract';
+import type { SelectionState } from '@flighthq/selection/contract';
 import {
   appendShapeBeginFill,
   appendShapeCircle,
@@ -31,8 +38,8 @@ import {
 } from '@flighthq/shape/contract';
 import type { Shape } from '@flighthq/shape/contract';
 import { connectSignal, createSignal, disconnectSignal, emitSignal } from '@flighthq/signals/contract';
+
 import type {
-  EntityRuntime,
   GizmoCreateOptions,
   GizmoHandleKind,
   GizmoMode,
@@ -42,15 +49,7 @@ import type {
   GizmoSpace,
   GizmoState,
   GizmoTransformMode,
-  HierarchyNodeAny,
-  Node2D,
-  PointerEventData,
-  Rectangle,
-  Scene2D,
-  SelectionState,
-  Vector2Like,
-} from '@flighthq/types/contract';
-import { EntityRuntimeKey } from '@flighthq/types/contract';
+} from './types.ts';
 
 interface GizmoDrag {
   axisRotation: number;
@@ -88,7 +87,7 @@ type GizmoHandlePlacement =
   | 'translate-xy'
   | 'translate-y';
 
-interface GizmoRuntime<NodeType extends HierarchyNodeAny> extends EntityRuntime {
+interface GizmoRuntime<NodeType extends NodeAny> extends EntityRuntime {
   bounds: Rectangle;
   camera: Readonly<Camera2D> | null;
   cleanups: Array<() => void>;
@@ -121,7 +120,7 @@ interface GizmoRuntime<NodeType extends HierarchyNodeAny> extends EntityRuntime 
   signals: GizmoSignals;
 }
 
-export function createGizmoState<NodeType extends HierarchyNodeAny>(
+export function createGizmoState<NodeType extends NodeAny>(
   options: Readonly<GizmoCreateOptions<NodeType>>,
 ): GizmoState<NodeType> {
   const state = {
@@ -187,7 +186,7 @@ export function createGizmoState<NodeType extends HierarchyNodeAny>(
   return state;
 }
 
-export function disposeGizmoState<NodeType extends HierarchyNodeAny>(state: GizmoState<NodeType>): void {
+export function disposeGizmoState<NodeType extends NodeAny>(state: GizmoState<NodeType>): void {
   const runtime = getGizmoRuntime(state);
   if (runtime.disposed) return;
   finishGizmoTransform(runtime);
@@ -202,78 +201,68 @@ export function disposeGizmoState<NodeType extends HierarchyNodeAny>(state: Gizm
   runtime.selection = null;
 }
 
-export function getGizmoMode<NodeType extends HierarchyNodeAny>(state: Readonly<GizmoState<NodeType>>): GizmoMode {
+export function getGizmoMode<NodeType extends NodeAny>(state: Readonly<GizmoState<NodeType>>): GizmoMode {
   return getGizmoRuntime(state).mode;
 }
 
-export function getGizmoSignals<NodeType extends HierarchyNodeAny>(
+export function getGizmoSignals<NodeType extends NodeAny>(
   state: Readonly<GizmoState<NodeType>>,
 ): Readonly<GizmoSignals> {
   return getGizmoRuntime(state).signals;
 }
 
-export function getGizmoSpace<NodeType extends HierarchyNodeAny>(state: Readonly<GizmoState<NodeType>>): GizmoSpace {
+export function getGizmoSpace<NodeType extends NodeAny>(state: Readonly<GizmoState<NodeType>>): GizmoSpace {
   return getGizmoRuntime(state).space;
 }
 
-export function setGizmoCustomPivot<NodeType extends HierarchyNodeAny>(
-  state: GizmoState<NodeType>,
-  x: number,
-  y: number,
-): void {
+export function setGizmoCustomPivot<NodeType extends NodeAny>(state: GizmoState<NodeType>, x: number, y: number): void {
   const runtime = getGizmoRuntime(state);
   runtime.customPivotX = x;
   runtime.customPivotY = y;
 }
 
-export function setGizmoMode<NodeType extends HierarchyNodeAny>(state: GizmoState<NodeType>, mode: GizmoMode): void {
+export function setGizmoMode<NodeType extends NodeAny>(state: GizmoState<NodeType>, mode: GizmoMode): void {
   const runtime = getGizmoRuntime(state);
   if (runtime.mode === mode) return;
   finishGizmoTransform(runtime);
   runtime.mode = mode;
 }
 
-export function setGizmoPivot<NodeType extends HierarchyNodeAny>(state: GizmoState<NodeType>, pivot: GizmoPivot): void {
+export function setGizmoPivot<NodeType extends NodeAny>(state: GizmoState<NodeType>, pivot: GizmoPivot): void {
   getGizmoRuntime(state).pivot = pivot;
 }
 
-export function setGizmoSelectionOutlineColor<NodeType extends HierarchyNodeAny>(
+export function setGizmoSelectionOutlineColor<NodeType extends NodeAny>(
   state: GizmoState<NodeType>,
   color: number,
 ): void {
   getGizmoRuntime(state).outlineColor = color >>> 0;
 }
 
-export function setGizmoSelectionOutlineEnabled<NodeType extends HierarchyNodeAny>(
+export function setGizmoSelectionOutlineEnabled<NodeType extends NodeAny>(
   state: GizmoState<NodeType>,
   enabled: boolean,
 ): void {
   getGizmoRuntime(state).outlineEnabled = enabled;
 }
 
-export function setGizmoSnapRotation<NodeType extends HierarchyNodeAny>(
-  state: GizmoState<NodeType>,
-  degrees: number,
-): void {
+export function setGizmoSnapRotation<NodeType extends NodeAny>(state: GizmoState<NodeType>, degrees: number): void {
   getGizmoRuntime(state).snapRotation = normalizeGizmoSnap(degrees);
 }
 
-export function setGizmoSnapScale<NodeType extends HierarchyNodeAny>(state: GizmoState<NodeType>, step: number): void {
+export function setGizmoSnapScale<NodeType extends NodeAny>(state: GizmoState<NodeType>, step: number): void {
   getGizmoRuntime(state).snapScale = normalizeGizmoSnap(step);
 }
 
-export function setGizmoSnapTranslate<NodeType extends HierarchyNodeAny>(
-  state: GizmoState<NodeType>,
-  worldUnits: number,
-): void {
+export function setGizmoSnapTranslate<NodeType extends NodeAny>(state: GizmoState<NodeType>, worldUnits: number): void {
   getGizmoRuntime(state).snapTranslate = normalizeGizmoSnap(worldUnits);
 }
 
-export function setGizmoSpace<NodeType extends HierarchyNodeAny>(state: GizmoState<NodeType>, space: GizmoSpace): void {
+export function setGizmoSpace<NodeType extends NodeAny>(state: GizmoState<NodeType>, space: GizmoSpace): void {
   getGizmoRuntime(state).space = space;
 }
 
-export function updateGizmo<NodeType extends HierarchyNodeAny>(state: GizmoState<NodeType>): void {
+export function updateGizmo<NodeType extends NodeAny>(state: GizmoState<NodeType>): void {
   const runtime = getGizmoRuntime(state);
   if (runtime.disposed) return;
 
@@ -308,7 +297,7 @@ export function updateGizmo<NodeType extends HierarchyNodeAny>(state: GizmoState
   updateGizmoHandleLayout(runtime);
 }
 
-function computeGizmoBounds<NodeType extends HierarchyNodeAny>(
+function computeGizmoBounds<NodeType extends NodeAny>(
   runtime: GizmoRuntime<NodeType>,
   selected: readonly NodeType[],
 ): boolean {
@@ -339,10 +328,7 @@ function computeGizmoBounds<NodeType extends HierarchyNodeAny>(
   return true;
 }
 
-function connectGizmoHandle<NodeType extends HierarchyNodeAny>(
-  runtime: GizmoRuntime<NodeType>,
-  handle: GizmoHandle,
-): void {
+function connectGizmoHandle<NodeType extends NodeAny>(runtime: GizmoRuntime<NodeType>, handle: GizmoHandle): void {
   const signals = enableInteractionSignals(handle.node);
   const onPointerDown = (data: Readonly<PointerEventData>) => startGizmoTransform(runtime, handle.kind, data);
   const onPointerMove = (data: Readonly<PointerEventData>) => updateGizmoTransform(runtime, data);
@@ -363,7 +349,7 @@ function connectGizmoHandle<NodeType extends HierarchyNodeAny>(
   });
 }
 
-function connectGizmoHandles<NodeType extends HierarchyNodeAny>(runtime: GizmoRuntime<NodeType>): void {
+function connectGizmoHandles<NodeType extends NodeAny>(runtime: GizmoRuntime<NodeType>): void {
   for (let i = 0; i < runtime.handles.length; i++) connectGizmoHandle(runtime, runtime.handles[i]);
 }
 
@@ -483,7 +469,7 @@ function drawGizmoRotateHandle(shape: Shape, radius: number): void {
   setNodeHitArea(shape, createRectangle(-radius - 6, -radius - 6, radius * 2 + 12, radius * 2 + 12));
 }
 
-function finishGizmoTransform<NodeType extends HierarchyNodeAny>(runtime: GizmoRuntime<NodeType>): void {
+function finishGizmoTransform<NodeType extends NodeAny>(runtime: GizmoRuntime<NodeType>): void {
   if (runtime.drag === null) return;
   runtime.drag = null;
   emitSignal(runtime.signals.onTransformEnd, undefined);
@@ -501,9 +487,7 @@ function getGizmoHandleCursor(
   return 'move';
 }
 
-function getGizmoRuntime<NodeType extends HierarchyNodeAny>(
-  state: Readonly<GizmoState<NodeType>>,
-): GizmoRuntime<NodeType> {
+function getGizmoRuntime<NodeType extends NodeAny>(state: Readonly<GizmoState<NodeType>>): GizmoRuntime<NodeType> {
   return state[EntityRuntimeKey] as GizmoRuntime<NodeType>;
 }
 
@@ -524,7 +508,7 @@ function normalizeGizmoSnap(value: number): number {
   return value > 0 && Number.isFinite(value) ? value : 0;
 }
 
-function resolveGizmoPivot<NodeType extends HierarchyNodeAny>(runtime: GizmoRuntime<NodeType>): void {
+function resolveGizmoPivot<NodeType extends NodeAny>(runtime: GizmoRuntime<NodeType>): void {
   if (runtime.mode !== 'rotate' && runtime.mode !== 'scale') {
     setGizmoPivotToBoundsCenter(runtime);
     return;
@@ -541,12 +525,12 @@ function resolveGizmoPivot<NodeType extends HierarchyNodeAny>(runtime: GizmoRunt
   setGizmoPivotToBoundsCenter(runtime);
 }
 
-function setGizmoPivotToBoundsCenter<NodeType extends HierarchyNodeAny>(runtime: GizmoRuntime<NodeType>): void {
+function setGizmoPivotToBoundsCenter<NodeType extends NodeAny>(runtime: GizmoRuntime<NodeType>): void {
   runtime.pivotWorld.x = runtime.bounds.x + runtime.bounds.width * 0.5;
   runtime.pivotWorld.y = runtime.bounds.y + runtime.bounds.height * 0.5;
 }
 
-function resolveGizmoScreenRotation<NodeType extends HierarchyNodeAny>(runtime: GizmoRuntime<NodeType>): number {
+function resolveGizmoScreenRotation<NodeType extends NodeAny>(runtime: GizmoRuntime<NodeType>): number {
   if (runtime.space === 'world') return 0;
   const worldRotation = runtime.features!.getWorldRotation(getActiveNode(runtime.selection!)!);
   return worldRotation - runtime.camera!.rotation * RAD_TO_DEG;
@@ -574,7 +558,7 @@ function snapGizmoScale(value: number, step: number): number {
   return step === 0 ? value : 1 + roundTo(value - 1, step);
 }
 
-function startGizmoTransform<NodeType extends HierarchyNodeAny>(
+function startGizmoTransform<NodeType extends NodeAny>(
   runtime: GizmoRuntime<NodeType>,
   handle: GizmoHandleKind,
   data: Readonly<PointerEventData>,
@@ -627,17 +611,14 @@ function toGizmoHandleName(placement: GizmoHandlePlacement): string {
   return 'TranslateXY';
 }
 
-function updateGizmoHandleVisibility<NodeType extends HierarchyNodeAny>(
-  runtime: GizmoRuntime<NodeType>,
-  mode: GizmoMode,
-): void {
+function updateGizmoHandleVisibility<NodeType extends NodeAny>(runtime: GizmoRuntime<NodeType>, mode: GizmoMode): void {
   for (let i = 0; i < runtime.handles.length; i++) {
     const handle = runtime.handles[i];
     setGizmoNodeVisible(handle.node, getGizmoTransformMode(handle.kind) === mode);
   }
 }
 
-function updateGizmoOutline<NodeType extends HierarchyNodeAny>(runtime: GizmoRuntime<NodeType>): void {
+function updateGizmoOutline<NodeType extends NodeAny>(runtime: GizmoRuntime<NodeType>): void {
   const bounds = runtime.bounds;
   const points = runtime.outlinePoints;
   projectCamera2DPoint(
@@ -696,7 +677,7 @@ function updateGizmoOutline<NodeType extends HierarchyNodeAny>(runtime: GizmoRun
   appendShapeLineTo(runtime.outline, points[0], points[1]);
 }
 
-function updateGizmoHandleLayout<NodeType extends HierarchyNodeAny>(runtime: GizmoRuntime<NodeType>): void {
+function updateGizmoHandleLayout<NodeType extends NodeAny>(runtime: GizmoRuntime<NodeType>): void {
   const radians = runtime.handleRoot.rotation * DEG_TO_RAD;
   const cos = Math.cos(radians);
   const sin = Math.sin(radians);
@@ -744,7 +725,7 @@ function updateGizmoHandleLayout<NodeType extends HierarchyNodeAny>(runtime: Giz
   }
 }
 
-function updateGizmoScale<NodeType extends HierarchyNodeAny>(
+function updateGizmoScale<NodeType extends NodeAny>(
   runtime: GizmoRuntime<NodeType>,
   drag: Readonly<GizmoDrag>,
   screenX: number,
@@ -782,7 +763,7 @@ function updateGizmoScale<NodeType extends HierarchyNodeAny>(
   ]);
 }
 
-function updateGizmoTransform<NodeType extends HierarchyNodeAny>(
+function updateGizmoTransform<NodeType extends NodeAny>(
   runtime: GizmoRuntime<NodeType>,
   data: Readonly<PointerEventData>,
 ): void {
@@ -797,7 +778,7 @@ function updateGizmoTransform<NodeType extends HierarchyNodeAny>(
   } else updateGizmoScale(runtime, drag, data.x, data.y, data.shiftKey);
 }
 
-function updateGizmoTranslation<NodeType extends HierarchyNodeAny>(
+function updateGizmoTranslation<NodeType extends NodeAny>(
   runtime: GizmoRuntime<NodeType>,
   drag: Readonly<GizmoDrag>,
   screenX: number,

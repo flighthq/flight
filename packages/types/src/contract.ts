@@ -210,8 +210,6 @@ export * from './FileSystem.ts';
 export * from './FilmEmulationEffect.ts';
 export * from './FilmGrainEffect.ts';
 export * from './FilmicToneMapOptions.ts';
-export * from './GizmoAlignment.ts';
-export * from './GizmoState.ts';
 export * from './FocusEventData.ts';
 export * from './FocusManager.ts';
 export type * from '@flighthq/font/contract';

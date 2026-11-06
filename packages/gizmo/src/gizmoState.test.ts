@@ -1,29 +1,18 @@
 import { createCamera2D, projectCamera2DPoint } from '@flighthq/camera/contract';
 import { createRectangle } from '@flighthq/geometry/contract';
+import type { Rectangle, Vector2Like } from '@flighthq/geometry/contract';
 import { enableInteractionSignals } from '@flighthq/interaction/contract';
+import type { PointerEventData } from '@flighthq/interaction/contract';
 import { createNode, getNodeChildByName, getNodeParent, removeNodeChild } from '@flighthq/node/contract';
+import type { NodeAny } from '@flighthq/node/contract';
 import { createScene2D } from '@flighthq/scene2d/contract';
+import type { Node2D, Scene2D } from '@flighthq/scene2d/contract';
 import { createSelectionState, selectAllNodes } from '@flighthq/selection/contract';
+import type { SelectionState } from '@flighthq/selection/contract';
 import { createShape } from '@flighthq/shape/contract';
 import type { Shape } from '@flighthq/shape/contract';
 import { connectSignal, emitSignal } from '@flighthq/signals/contract';
 import type { Signal } from '@flighthq/signals/contract';
-import type {
-  GizmoCreateOptions,
-  GizmoMode,
-  GizmoNode2DFeatures,
-  GizmoPivot,
-  GizmoSignals,
-  GizmoSpace,
-  GizmoState,
-  HierarchyNodeAny,
-  Node2D,
-  PointerEventData,
-  Rectangle,
-  Scene2D,
-  SelectionState,
-  Vector2Like,
-} from '@flighthq/types/contract';
 
 import {
   createGizmoState,
@@ -42,6 +31,15 @@ import {
   setGizmoSpace,
   updateGizmo,
 } from './gizmoState.ts';
+import type {
+  GizmoCreateOptions,
+  GizmoMode,
+  GizmoNode2DFeatures,
+  GizmoPivot,
+  GizmoSignals,
+  GizmoSpace,
+  GizmoState,
+} from './types.ts';
 
 interface TestNodeFeatures {
   bounds: Rectangle;
@@ -52,10 +50,10 @@ interface TestNodeFeatures {
 
 interface TestContext {
   camera: ReturnType<typeof createCamera2D>;
-  featuresByNode: Map<HierarchyNodeAny, TestNodeFeatures>;
+  featuresByNode: Map<NodeAny, TestNodeFeatures>;
   overlay: Scene2D;
-  selection: SelectionState<HierarchyNodeAny>;
-  state: GizmoState<HierarchyNodeAny>;
+  selection: SelectionState<NodeAny>;
+  state: GizmoState<NodeAny>;
 }
 
 interface TestGizmoOptions {
@@ -77,13 +75,13 @@ describe('createGizmoState', () => {
     const root = getGizmoRoot(context.overlay);
     const handleRoot = getNodeChildByName(root, 'GizmoHandleRoot') as Node2D;
 
-    expectTypeOf(context.state).toMatchTypeOf<GizmoState<HierarchyNodeAny>>();
-    expectTypeOf<keyof GizmoCreateOptions<HierarchyNodeAny>>().toEqualTypeOf<
+    expectTypeOf(context.state).toMatchTypeOf<GizmoState<NodeAny>>();
+    expectTypeOf<keyof GizmoCreateOptions<NodeAny>>().toEqualTypeOf<
       'camera' | 'features' | 'overlayScene' | 'selection' | 'viewportHeight' | 'viewportWidth'
     >();
     expectTypeOf<
       Extract<
-        keyof GizmoState<HierarchyNodeAny>,
+        keyof GizmoState<NodeAny>,
         | 'customPivotX'
         | 'customPivotY'
         | 'mode'
@@ -853,18 +851,18 @@ function createPointerData(x: number, y: number, pointerId: number = 1, shiftKey
 
 function createTestContext(
   options: Readonly<TestGizmoOptions> = {},
-  nodes: readonly HierarchyNodeAny[] = [createTestNode()],
+  nodes: readonly NodeAny[] = [createTestNode()],
 ): TestContext {
   const camera = createCamera2D();
   const overlay = Object.assign(createScene2D(), { scene2dHeight: 100, scene2dWidth: 200 });
-  const selection = createSelectionState<HierarchyNodeAny>();
-  const featuresByNode = new Map<HierarchyNodeAny, TestNodeFeatures>();
+  const selection = createSelectionState<NodeAny>();
+  const featuresByNode = new Map<NodeAny, TestNodeFeatures>();
   for (let i = 0; i < nodes.length; i++) {
     featuresByNode.set(nodes[i], createTestNodeFeatures(0, 0, 0, 0));
   }
   selectAllNodes(selection, nodes);
-  const features: GizmoNode2DFeatures<HierarchyNodeAny> = {
-    getWorldBoundsRectangle: (out: Rectangle, node: Readonly<HierarchyNodeAny>) => {
+  const features: GizmoNode2DFeatures<NodeAny> = {
+    getWorldBoundsRectangle: (out: Rectangle, node: Readonly<NodeAny>) => {
       const value = featuresByNode.get(node);
       if (value === undefined) return false;
       out.x = value.bounds.x;
@@ -873,12 +871,12 @@ function createTestContext(
       out.height = value.bounds.height;
       return true;
     },
-    getWorldOrigin: (out: Vector2Like, node: Readonly<HierarchyNodeAny>) => {
+    getWorldOrigin: (out: Vector2Like, node: Readonly<NodeAny>) => {
       const value = featuresByNode.get(node)!;
       out.x = value.originX;
       out.y = value.originY;
     },
-    getWorldRotation: (node: Readonly<HierarchyNodeAny>) => featuresByNode.get(node)!.rotation,
+    getWorldRotation: (node: Readonly<NodeAny>) => featuresByNode.get(node)!.rotation,
   };
   const state = createGizmoState({
     camera,
@@ -893,7 +891,7 @@ function createTestContext(
   return { camera, featuresByNode, overlay, selection, state };
 }
 
-function applyTestGizmoOptions(state: GizmoState<HierarchyNodeAny>, options: Readonly<TestGizmoOptions>): void {
+function applyTestGizmoOptions(state: GizmoState<NodeAny>, options: Readonly<TestGizmoOptions>): void {
   if (options.customPivotX !== undefined || options.customPivotY !== undefined)
     setGizmoCustomPivot(state, options.customPivotX ?? 0, options.customPivotY ?? 0);
   if (options.mode !== undefined) setGizmoMode(state, options.mode);
@@ -907,11 +905,11 @@ function applyTestGizmoOptions(state: GizmoState<HierarchyNodeAny>, options: Rea
   if (options.space !== undefined) setGizmoSpace(state, options.space);
 }
 
-function createTestNode(): HierarchyNodeAny {
+function createTestNode(): NodeAny {
   return createNode('GizmoTestNode');
 }
 
-function getSelectedTestNode(context: Readonly<TestContext>): HierarchyNodeAny {
+function getSelectedTestNode(context: Readonly<TestContext>): NodeAny {
   return [...context.featuresByNode.keys()][0];
 }
 
