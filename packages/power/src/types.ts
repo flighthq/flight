@@ -1,4 +1,4 @@
-import type { Entity } from '@flighthq/entity/contract';
+import type { EntityRaw, EntityRuntime, EntityRuntimeKey } from '@flighthq/entity/contract';
 import type { Signal } from '@flighthq/signals/contract';
 
 // Detailed battery health report, distinct from the live PowerStatus snapshot. Hosts that cannot
@@ -126,7 +126,8 @@ export type WebPowerCapabilities = Required<
 // The consumer-held power event entity. Signals are null until enablePowerSignals allocates them, so an
 // unused group tree-shakes out. Entity-composed: this is a user-held identity-bearing object, unlike the
 // PowerStatus / PowerBatteryHealth value structs the queries fill.
-export interface Power extends Entity {
+export interface Power extends EntityRaw {
+  [EntityRuntimeKey]: EntityRuntime | undefined;
   onChange: Signal<Readonly<PowerStatus>> | null;
   onCharging: Signal<void> | null;
   onDischarging: Signal<void> | null;
