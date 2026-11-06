@@ -1,5 +1,4 @@
-import type { CubeTexture, ImageResource, TextureSourceCubeFaces } from '@flighthq/types/contract';
-import { CubeFaceNegativeX, CubeFacePositiveX, CubeFacePositiveY } from '@flighthq/types/contract';
+import type { ImageResource } from '@flighthq/image/contract';
 
 import {
   cloneCubeTexture,
@@ -11,6 +10,8 @@ import {
   setCubeTextureFace,
 } from './cubeTexture.ts';
 import { createSampler, equalsSampler } from './sampler.ts';
+import { CubeFaceNegativeX, CubeFacePositiveX, CubeFacePositiveY } from './types.ts';
+import type { CubeTexture, TextureSourceCubeFaces } from './types.ts';
 
 const fakeFace = { width: 64, height: 64 } as ImageResource;
 const fakeFace2 = { width: 128, height: 128 } as ImageResource;

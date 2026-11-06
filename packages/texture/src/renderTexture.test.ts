@@ -1,4 +1,4 @@
-import type { RenderTexture } from '@flighthq/types/contract';
+import type { RenderTexture } from '@flighthq/render/contract';
 
 import { createRenderTexture, initializeRenderTextureTarget } from './renderTexture.ts';
 import { createSampler } from './sampler.ts';

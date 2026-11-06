@@ -27,9 +27,6 @@
       "path": "../render/tsconfig.contract.json"
     },
     {
-      "path": "../types"
-    },
-    {
       "path": "../video"
     },
     {

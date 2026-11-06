@@ -1,5 +1,5 @@
 import { createMatrix3, createVector2 } from '@flighthq/geometry/contract';
-import type { ImageResource } from '@flighthq/types/contract';
+import type { ImageResource } from '@flighthq/image/contract';
 import { createVideoResource } from '@flighthq/video/contract';
 import type { HostVideoCapability, VideoResource } from '@flighthq/video/contract';
 

@@ -45,7 +45,6 @@
     "@flighthq/host": "*",
     "@flighthq/image": "*",
     "@flighthq/render": "*",
-    "@flighthq/types": "*",
     "@flighthq/video": "*"
   },
   "devDependencies": {

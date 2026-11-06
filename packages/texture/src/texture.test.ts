@@ -1,7 +1,7 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { createMatrix3, createVector2, inverseMatrix3 } from '@flighthq/geometry/contract';
-import type { ImageResource, RenderTarget, Texture2D } from '@flighthq/types/contract';
-import { ImageTextureSourceKind, RenderTargetTextureSourceKind } from '@flighthq/types/contract';
+import type { ImageResource } from '@flighthq/image/contract';
+import type { RenderTarget } from '@flighthq/render/contract';
 
 import { createSampler, equalsSampler } from './sampler.ts';
 import {
@@ -30,6 +30,8 @@ import {
   setTextureUvScale,
   transformTextureUv,
 } from './texture.ts';
+import { ImageTextureSourceKind, RenderTargetTextureSourceKind } from './types.ts';
+import type { Texture2D } from './types.ts';
 
 const fakeImage = { height: 64, kind: ImageTextureSourceKind, width: 32 } as ImageResource;
 
