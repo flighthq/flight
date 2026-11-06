@@ -1,0 +1,31 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "composite": true,
+    "rootDir": "src",
+    "outDir": "dist",
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "tsBuildInfoFile": "dist/.tsbuildinfo.runtime"
+  },
+  "references": [
+    {
+      "path": "../entity"
+    },
+    {
+      "path": "../loader/tsconfig.runtime.json"
+    },
+    {
+      "path": "../log"
+    },
+    {
+      "path": "../signals"
+    },
+    {
+      "path": "./tsconfig.contract.json"
+    }
+  ],
+  "include": ["src"],
+  "exclude": ["src/contract.assets-types.ts", "src/types.ts"]
+}

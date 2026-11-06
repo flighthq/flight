@@ -7,8 +7,9 @@
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,
+    "moduleSuffixes": [".assets-types", ""],
     "types": ["node", "vitest/globals"]
   },
-  "references": [{ "path": "../types" }],
+  "references": [{ "path": "../assets/tsconfig.contract.json" }],
   "include": ["src"]
 }

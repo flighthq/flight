@@ -1,4 +1,4 @@
-import type { AssetLibrary, AssetLoadExplanation } from '@flighthq/types/contract';
+import type { AssetLibrary, AssetLoadExplanation } from './types.ts';
 
 // Reports the id's catalog, adapter, and residency state without initiating work. This is the pull
 // diagnostic for getAsset's null sentinel and getAssetRefCount's zero sentinel.

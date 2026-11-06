@@ -1,5 +1,3 @@
-import type { AssetDescriptor } from '@flighthq/types/contract';
-
 import {
   acquireAsset,
   createAssetLibrary,
@@ -8,6 +6,7 @@ import {
   releaseAsset,
 } from './assetLibrary.ts';
 import { explainAssetLoad } from './explainAssetLoad.ts';
+import type { AssetDescriptor } from './types.ts';
 
 describe('explainAssetLoad', () => {
   it('distinguishes catalog, adapter, loading, resident, and freed states', async () => {

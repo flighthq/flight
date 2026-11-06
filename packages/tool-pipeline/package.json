@@ -41,7 +41,7 @@
     "clean:dist": "tsx ../../scripts/clean-package-dist.ts"
   },
   "dependencies": {
-    "@flighthq/types": "*"
+    "@flighthq/assets": "*"
   },
   "devDependencies": {
     "esbuild": "*",

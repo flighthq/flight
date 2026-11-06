@@ -1,4 +1,4 @@
-import type { AssetType } from '@flighthq/types/contract';
+import type { AssetType } from '@flighthq/assets/contract';
 
 export const TOOL_PIPELINE_CONFIG_SCHEMA_VERSION = 1;
 

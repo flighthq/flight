@@ -40,6 +40,7 @@
       ".adjustments-types",
       ".audio-types",
       ".app-types",
+      ".assets-types",
       ".clip-types",
       ".clipboard-types",
       ".device-types",
@@ -118,6 +119,9 @@
     },
     {
       "path": "../app/tsconfig.contract.json"
+    },
+    {
+      "path": "../assets/tsconfig.contract.json"
     },
     {
       "path": "../animation"

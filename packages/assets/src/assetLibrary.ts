@@ -1,4 +1,5 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
 import {
   createResourceLoader,
   disposeResourceLoader,
@@ -7,6 +8,7 @@ import {
   startResourceLoad,
 } from '@flighthq/loader/contract';
 import { connectSignal, emitSignal } from '@flighthq/signals/contract';
+
 import type {
   AssetAcquireGuard,
   AssetDescriptor,
@@ -17,8 +19,7 @@ import type {
   AssetLoaderAdapter,
   AssetManifest,
   AssetType,
-  EntityConstruction,
-} from '@flighthq/types/contract';
+} from './types.ts';
 
 // Increments the reference count for `id` and resolves its loaded value. If the asset is already
 // resident, resolves immediately. If a load is already in flight (a concurrent acquire), the same

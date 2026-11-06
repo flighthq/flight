@@ -1,5 +1,4 @@
 import { connectSignal, createSignal } from '@flighthq/signals/contract';
-import type { AssetDescriptor, AssetLoadProgress, AssetManifest } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import {
@@ -19,6 +18,7 @@ import {
   releaseAssetGroup,
   setAssetAcquireGuard,
 } from './assetLibrary.ts';
+import type { AssetDescriptor, AssetLoadProgress, AssetManifest } from './types.ts';
 
 // A mock loader adapter: counts load calls, records disposed values, and holds each load open until
 // flush() so tests can observe in-flight state (dedup, bounded concurrency). Each load resolves a

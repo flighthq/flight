@@ -2,7 +2,7 @@ import { createHash } from 'node:crypto';
 import { lstat, mkdir, mkdtemp, readFile, rename, rm, writeFile } from 'node:fs/promises';
 import { basename, dirname, join, resolve } from 'node:path';
 
-import type { AssetType } from '@flighthq/types/contract';
+import type { AssetType } from '@flighthq/assets/contract';
 
 import { parseToolPipelineConfig } from './pipelineConfig.ts';
 import type { ToolPipelineSource } from './pipelineConfig.ts';

@@ -1,9 +1,8 @@
 import type { LogState } from '@flighthq/log/contract';
-import { logOnce } from '@flighthq/log/contract';
-import type { AssetAcquireGuard, AssetLibrary, AssetLoadExplanation } from '@flighthq/types/contract';
-import { LogLevel } from '@flighthq/types/contract';
+import { LogLevel, logOnce } from '@flighthq/log/contract';
 
 import { setAssetAcquireGuard } from './assetLibrary.ts';
+import type { AssetAcquireGuard, AssetLibrary, AssetLoadExplanation } from './types.ts';
 
 export function areAssetGuardsEnabled(library: Readonly<AssetLibrary>): boolean {
   const installed = _warningGuards.get(library);
