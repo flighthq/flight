@@ -1,15 +1,15 @@
 import { createVector2, normalizeVector2 } from '@flighthq/geometry/contract';
+
+import { getCollisionPolygonValidationStatus2D } from './collisionShapeValidation2D.ts';
+import { writeAabbVertices, writeObbVertices } from './convexVertices2D.ts';
+import { clearCollisionManifold2D } from './manifold2D.ts';
 import type {
   CollisionAabb2D,
   CollisionCircle2D,
   CollisionManifold2D,
   CollisionObb2D,
   CollisionPolygon2D,
-} from '@flighthq/types/contract';
-
-import { getCollisionPolygonValidationStatus2D } from './collisionShapeValidation2D.ts';
-import { writeAabbVertices, writeObbVertices } from './convexVertices2D.ts';
-import { clearCollisionManifold2D } from './manifold2D.ts';
+} from './types.ts';
 
 // The 2D narrow-phase pair tests. Each writes an `out` CollisionManifold2D and returns whether the
 // pair overlaps. On overlap the manifold normal is the unit minimum-translation axis oriented to

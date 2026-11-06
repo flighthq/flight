@@ -14,7 +14,7 @@ import type {
   CollisionContactManifold3D,
   CollisionRaycastHit3D,
   CollisionTimeOfImpact3D,
-} from '@flighthq/types/contract';
+} from '@flighthq/collision/contract';
 
 export function collidePhysics3DColliderShapes(
   shapeA: Readonly<CollisionColliderShape3D>,

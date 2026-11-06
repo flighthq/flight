@@ -1,5 +1,7 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { CollisionManifold2D, EntityConstruction } from '@flighthq/types/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
+
+import type { CollisionManifold2D } from './types.ts';
 
 // Clears a manifold to the non-overlapping state: `overlapping` false, normal and depth zero. The
 // narrow-phase tests call this on their disjoint path, so a reused `out` never carries a stale

@@ -1,8 +1,8 @@
 import { cloneCollisionColliderShape3D } from '@flighthq/collision/contract';
+import type { CollisionColliderShape3D } from '@flighthq/collision/contract';
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { createUniformGridSpatialBackend3D } from '@flighthq/spatial/contract';
 import type {
-  CollisionColliderShape3D,
   EntityConstruction,
   NonEntityCreateResult,
   Physics3DBodyType,

@@ -1,4 +1,3 @@
-import type { CollisionBox3D, CollisionManifold3D, CollisionShape3D } from '@flighthq/types/contract';
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import { registerBuiltInCollisionSupports3D } from './collisionSupport3D.ts';
@@ -13,6 +12,7 @@ import {
   testSphereCapsuleCollision3D,
   testSphereSphereCollision3D,
 } from './shapeCollision3D.ts';
+import type { CollisionBox3D, CollisionManifold3D, CollisionShape3D } from './types.ts';
 
 beforeEach(() => {
   registerBuiltInCollisionSupports3D();

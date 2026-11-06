@@ -1,3 +1,4 @@
+import { getCollisionPolygonValidationStatus2D } from './collisionShapeValidation2D.ts';
 import type {
   CollisionAabb2D,
   CollisionCapsule2D,
@@ -5,9 +6,7 @@ import type {
   CollisionObb2D,
   CollisionPolygon2D,
   CollisionSegment2D,
-} from '@flighthq/types/contract';
-
-import { getCollisionPolygonValidationStatus2D } from './collisionShapeValidation2D.ts';
+} from './types.ts';
 
 // Segment-vs-shape overlap queries. Segments are area-less, so these return a boolean rather than a
 // manifold (a swept/contact answer is a later phase). All are boundary-inclusive: a segment that

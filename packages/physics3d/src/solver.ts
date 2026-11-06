@@ -1,7 +1,7 @@
 import { createCollisionContactManifold3D } from '@flighthq/collision/contract';
+import type { CollisionContactManifold3D } from '@flighthq/collision/contract';
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
-  CollisionContactManifold3D,
   EntityConstruction,
   Physics3DContactConstraint,
   Physics3DContactConstraintPoint,

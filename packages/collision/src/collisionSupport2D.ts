@@ -1,3 +1,4 @@
+import { writeObbVertices } from './convexVertices2D.ts';
 import type {
   CollisionAabb2D,
   CollisionCircle2D,
@@ -7,9 +8,7 @@ import type {
   CollisionShape2D,
   CollisionShapeKind2D,
   CollisionSupport2D,
-} from '@flighthq/types/contract';
-
-import { writeObbVertices } from './convexVertices2D.ts';
+} from './types.ts';
 
 // The two registries the narrow phase dispatches through.
 //

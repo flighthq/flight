@@ -51,6 +51,7 @@
     "@flighthq/clip": "*",
     "@flighthq/clipboard": "*",
     "@flighthq/clock": "*",
+    "@flighthq/collision": "*",
     "@flighthq/compression": "*",
     "@flighthq/connectivity": "*",
     "@flighthq/device": "*",

@@ -1,8 +1,7 @@
 import { createCollisionContactManifold3D, createCollisionTimeOfImpact3D } from '@flighthq/collision/contract';
+import type { CollisionContactManifold3D, CollisionTimeOfImpact3D } from '@flighthq/collision/contract';
 import { DEG_TO_RAD } from '@flighthq/math/contract';
 import type {
-  CollisionContactManifold3D,
-  CollisionTimeOfImpact3D,
   Physics3DContact,
   Physics3DRotationalCcdEnvelope,
   Physics3DWorld,

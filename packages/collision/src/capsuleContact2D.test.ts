@@ -1,4 +1,3 @@
-import type { CollisionBuiltInShape2D } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import {
@@ -11,6 +10,7 @@ import {
 import { collideContactManifold2D } from './collideContactManifold2D.ts';
 import { createCollisionContactManifold2D } from './contactManifold2D.ts';
 import { getCollisionShapeContainsPoint2D } from './pointContainment2D.ts';
+import type { CollisionBuiltInShape2D } from './types.ts';
 
 function manifold() {
   return createCollisionContactManifold2D();

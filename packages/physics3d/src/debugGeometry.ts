@@ -1,9 +1,11 @@
 import { writeCollisionConvexHullFaces3D } from '@flighthq/collision/contract';
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   CollisionColliderShape3D,
   CollisionHeightfield3D,
   CollisionTriangleMesh3D,
+} from '@flighthq/collision/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type {
   EntityConstruction,
   Physics3DDebugFeature,
   Physics3DDebugGeometry,

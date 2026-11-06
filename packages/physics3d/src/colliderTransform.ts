@@ -1,7 +1,7 @@
 import { writeCollisionHeightfieldBounds3D, writeCollisionTriangleMeshBounds3D } from '@flighthq/collision/contract';
+import type { CollisionColliderShape3D } from '@flighthq/collision/contract';
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
-  CollisionColliderShape3D,
   Entity,
   EntityConstruction,
   Physics3DCollider,

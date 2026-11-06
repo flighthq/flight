@@ -1,4 +1,3 @@
-import type { CollisionBuiltInShape2D } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { collideContactManifold2D } from './collideContactManifold2D.ts';
@@ -8,6 +7,7 @@ import {
   initializeCollisionTimeOfImpact2D,
   sweepCollisionShape2D,
 } from './sweepCollisionShape2D.ts';
+import type { CollisionBuiltInShape2D } from './types.ts';
 
 type CollisionCapsule2D = Extract<CollisionBuiltInShape2D, { kind: 'capsule' }>;
 type CollisionSweepTarget2D = Extract<CollisionBuiltInShape2D, { kind: 'aabb' | 'capsule' | 'circle' | 'obb' }>;

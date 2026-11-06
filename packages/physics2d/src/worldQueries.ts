@@ -5,11 +5,13 @@ import {
   raycastCollisionShape2D,
   sweepCollisionShape2D,
 } from '@flighthq/collision/contract';
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   CollisionBuiltInShape2D,
   CollisionRaycastHit2D,
   CollisionTimeOfImpact2D,
+} from '@flighthq/collision/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type {
   EntityConstruction,
   NonEntityCreateResult,
   Physics2DCollider,

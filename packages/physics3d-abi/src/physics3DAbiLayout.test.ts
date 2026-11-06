@@ -1,4 +1,4 @@
-import { MAX_COLLISION_CONTACT_POINTS_3D } from '@flighthq/types/contract';
+import { MAX_COLLISION_CONTACT_POINTS_3D } from '@flighthq/collision/contract';
 import { describe, expect, it } from 'vitest';
 
 import {

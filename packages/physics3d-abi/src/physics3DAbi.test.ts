@@ -1,3 +1,8 @@
+import type {
+  CollisionColliderShape3D,
+  CollisionHeightfield3D,
+  CollisionTriangleMesh3D,
+} from '@flighthq/collision/contract';
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import {
   addPhysics3DBody,
@@ -16,9 +21,6 @@ import {
   stepPhysics3D,
 } from '@flighthq/physics3d/contract';
 import type {
-  CollisionColliderShape3D,
-  CollisionHeightfield3D,
-  CollisionTriangleMesh3D,
   Physics3DAbi,
   Physics3DAbiBodyBuffer,
   Physics3DAbiCommandBuffer,

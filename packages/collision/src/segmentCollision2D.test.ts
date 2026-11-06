@@ -1,10 +1,3 @@
-import type {
-  CollisionAabb2D,
-  CollisionCircle2D,
-  CollisionObb2D,
-  CollisionPolygon2D,
-  CollisionSegment2D,
-} from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import {
@@ -15,6 +8,13 @@ import {
   testSegmentPolygonCollision2D,
   testSegmentSegmentCollision2D,
 } from './segmentCollision2D.ts';
+import type {
+  CollisionAabb2D,
+  CollisionCircle2D,
+  CollisionObb2D,
+  CollisionPolygon2D,
+  CollisionSegment2D,
+} from './types.ts';
 
 function segment(x0: number, y0: number, x1: number, y1: number): CollisionSegment2D {
   return { x0, y0, x1, y1 };

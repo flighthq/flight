@@ -12,13 +12,15 @@ import {
   sweepCollisionShape2D,
 } from '@flighthq/collision/contract';
 import type {
-  Physics2DContactIntakeGuard,
-  Physics2DJointResolutionGuard,
-  Physics2DStepGuard,
   CollisionContactManifold2D,
   CollisionSegment2D,
   CollisionBuiltInShape2D,
   CollisionTimeOfImpact2D,
+} from '@flighthq/collision/contract';
+import type {
+  Physics2DContactIntakeGuard,
+  Physics2DJointResolutionGuard,
+  Physics2DStepGuard,
   Physics2DContact,
   Physics2DContactPoint,
   Physics2DWorld,

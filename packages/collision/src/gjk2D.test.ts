@@ -1,9 +1,8 @@
-import type { CollisionShape2D } from '@flighthq/types/contract';
-
 import { registerBuiltInCollisionSupports2D } from './collisionSupport2D.ts';
 import { testCollisionSupport2D, testCollisionSupportOverlap2D } from './gjk2D.ts';
 import { createCollisionManifold2D } from './manifold2D.ts';
 import { testCollision2D } from './testCollision2D.ts';
+import type { CollisionShape2D } from './types.ts';
 
 registerBuiltInCollisionSupports2D();
 

@@ -1,4 +1,3 @@
-import type { CollisionShape3D } from '@flighthq/types/contract';
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import {
@@ -19,6 +18,7 @@ import {
   writeVertexListSupport3D,
 } from './collisionSupport3D.ts';
 import { getCollisionShapeContainsPoint3D } from './pointContainment3D.ts';
+import type { CollisionShape3D } from './types.ts';
 
 beforeEach(() => {
   registerBuiltInCollisionSupports3D();

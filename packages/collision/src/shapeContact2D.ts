@@ -1,12 +1,3 @@
-import type {
-  CollisionAabb2D,
-  CollisionCircle2D,
-  CollisionContactManifold2D,
-  CollisionManifold2D,
-  CollisionObb2D,
-  CollisionPolygon2D,
-} from '@flighthq/types/contract';
-
 import { FEATURE_INDEX_LIMIT, packContactFeatureId } from './contactFeatureId.ts';
 import { clearCollisionContactManifold2D } from './contactManifold2D.ts';
 import { writeAabbVertices, writeObbVertices } from './convexVertices2D.ts';
@@ -17,6 +8,14 @@ import {
   testCircleObbCollision2D,
   testCirclePolygonCollision2D,
 } from './shapeCollision2D.ts';
+import type {
+  CollisionAabb2D,
+  CollisionCircle2D,
+  CollisionContactManifold2D,
+  CollisionManifold2D,
+  CollisionObb2D,
+  CollisionPolygon2D,
+} from './types.ts';
 
 // The 2D narrow-phase contact tests — the same ten manifold-bearing pairs as the `test*Collision`
 // family, but resolving the full contact set instead of only the minimum-translation vector. Each

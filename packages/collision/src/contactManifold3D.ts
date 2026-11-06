@@ -1,6 +1,8 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { CollisionContactManifold3D, EntityConstruction } from '@flighthq/types/contract';
-import { MAX_COLLISION_CONTACT_POINTS_3D } from '@flighthq/types/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
+
+import type { CollisionContactManifold3D } from './types.ts';
+import { MAX_COLLISION_CONTACT_POINTS_3D } from './types.ts';
 
 // Clears a contact manifold to the non-overlapping state. The point array keeps its identity and its
 // length — only `pointCount` goes to zero — so a caller holding a reference to a point across a miss

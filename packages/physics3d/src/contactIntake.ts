@@ -1,6 +1,6 @@
 import { createCollisionContactManifold3D } from '@flighthq/collision/contract';
+import type { CollisionContactManifold3D } from '@flighthq/collision/contract';
 import type {
-  CollisionContactManifold3D,
   Physics3DCollider,
   Physics3DContactIntakeGuard,
   Physics3DContact,

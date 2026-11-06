@@ -1,3 +1,4 @@
+import type { CollisionBuiltInShape2D } from '@flighthq/collision/contract';
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import {
   addPhysics2DBody,
@@ -50,7 +51,6 @@ import {
   writePhysics2DJointReaction,
 } from '@flighthq/physics2d/contract';
 import type {
-  CollisionBuiltInShape2D,
   Physics2DAbi,
   Physics2DAbiBodyBuffer,
   Physics2DAbiCommandBuffer,

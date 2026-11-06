@@ -1,3 +1,4 @@
+import type { CollisionColliderShape3D } from '@flighthq/collision/contract';
 import {
   Physics3DBallAndSocketJointKind,
   Physics3DConeTwistJointKind,
@@ -8,7 +9,6 @@ import {
   Physics3DSliderJointKind,
 } from '@flighthq/physics3d/contract';
 import type {
-  CollisionColliderShape3D,
   Physics3DAbiCommandBuffer,
   Physics3DAbiObjectId,
   Physics3DCollider,

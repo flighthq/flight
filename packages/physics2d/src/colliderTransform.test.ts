@@ -1,4 +1,4 @@
-import type { CollisionBuiltInShape2D } from '@flighthq/types/contract';
+import type { CollisionBuiltInShape2D } from '@flighthq/collision/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 

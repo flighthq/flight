@@ -1,6 +1,6 @@
+import type { CollisionBuiltInShape2D } from '@flighthq/collision/contract';
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
-  CollisionBuiltInShape2D,
   EntityConstruction,
   Physics2DDebugCircle,
   Physics2DDebugFeature,

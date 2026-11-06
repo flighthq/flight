@@ -1,4 +1,4 @@
-import type { CollisionShape2D, CollisionTestStatus } from '@flighthq/types/contract';
+import type { CollisionShape2D, CollisionTestStatus } from './types.ts';
 
 // Validates the flat polygon contract and distinguishes zero-area/malformed input from a real but
 // non-convex polygon. Winding and collinear vertices are accepted when the polygon still has area.

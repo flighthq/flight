@@ -144,7 +144,6 @@ export * from './ClipboardWatch.ts';
 export * from './Clock.ts';
 export * from './Command.ts';
 export * from './ClockOptions.ts';
-export * from './Collision.ts';
 export * from './CollisionResponse.ts';
 export * from './ColorScaleBias.ts';
 export * from './ColorScaleBiasAdjustment.ts';

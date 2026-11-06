@@ -1,4 +1,5 @@
-import type { CollisionColliderShape3D } from './Collision.ts';
+import type { CollisionColliderShape3D } from '@flighthq/collision/contract';
+
 import type { Entity } from './Entity.ts';
 import type { SpatialIndexBackend3D } from './Spatial.ts';
 

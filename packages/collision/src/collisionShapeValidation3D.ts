@@ -1,4 +1,4 @@
-import type { CollisionShape3D, CollisionTestStatus } from '@flighthq/types/contract';
+import type { CollisionShape3D, CollisionTestStatus } from './types.ts';
 
 // Validates the flat convex-hull vertex contract.
 //

@@ -1,3 +1,4 @@
+import type { CollisionColliderShape3D } from '@flighthq/collision/contract';
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import {
   createPhysics3DBallAndSocketJoint,
@@ -11,7 +12,7 @@ import {
   createPhysics3DSolverConfig,
   createRigidBody3D,
 } from '@flighthq/physics3d/contract';
-import type { CollisionColliderShape3D, Physics3DAbiCommandBuffer, Physics3DJoint } from '@flighthq/types/contract';
+import type { Physics3DAbiCommandBuffer, Physics3DJoint } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { clearPhysics3DAbiCommandBuffer, createPhysics3DAbiCommandBuffer } from './physics3DAbiBuffer.ts';

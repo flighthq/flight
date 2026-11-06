@@ -2,7 +2,8 @@ import {
   registerBuiltInCollisionFaceQueries3D,
   registerBuiltInCollisionSupports3D,
 } from '@flighthq/collision/contract';
-import type { CollisionBuiltInShape3D, Physics3DWorld, RigidBody3D } from '@flighthq/types/contract';
+import type { CollisionBuiltInShape3D } from '@flighthq/collision/contract';
+import type { Physics3DWorld, RigidBody3D } from '@flighthq/types/contract';
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import { buildPhysics3DContacts, refreshPhysics3DContacts, setPhysics3DContactIntakeGuard } from './contactIntake.ts';

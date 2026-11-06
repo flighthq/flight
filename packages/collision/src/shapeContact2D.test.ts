@@ -1,4 +1,3 @@
-import type { CollisionAabb2D, CollisionCircle2D, CollisionObb2D, CollisionPolygon2D } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { createCollisionContactManifold2D } from './contactManifold2D.ts';
@@ -21,6 +20,7 @@ import {
   collideObbPolygonContactManifold2D,
   collidePolygonPolygonContactManifold2D,
 } from './shapeContact2D.ts';
+import type { CollisionAabb2D, CollisionCircle2D, CollisionObb2D, CollisionPolygon2D } from './types.ts';
 
 // A wide, shallow ground slab every resting-contact case sits on.
 const ground: CollisionAabb2D = { minX: -5, minY: -1, maxX: 5, maxY: 0 };

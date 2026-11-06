@@ -6,7 +6,7 @@ import {
   registerBuiltInCollisionFaceQueries3D,
   registerBuiltInCollisionSupports3D,
 } from '@flighthq/collision/contract';
-import type { CollisionShape3D } from '@flighthq/types/contract';
+import type { CollisionShape3D } from '@flighthq/collision/contract';
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import {

@@ -1,7 +1,6 @@
-import type { CollisionShape2D } from '@flighthq/types/contract';
-
 import { explainCollisionTest2D } from './explainCollisionTest2D.ts';
 import { registerBuiltInCollisionPairTests2D } from './registerBuiltInCollisionPairTests2D.ts';
+import type { CollisionShape2D } from './types.ts';
 
 registerBuiltInCollisionPairTests2D();
 

@@ -43,6 +43,7 @@
       ".app-types",
       ".assets-types",
       ".clip-types",
+      ".collision-types",
       ".clipboard-types",
       ".device-types",
       ".lifecycle-types",
@@ -152,6 +153,9 @@
     },
     {
       "path": "../clip/tsconfig.contract.json"
+    },
+    {
+      "path": "../collision/tsconfig.contract.json"
     },
     {
       "path": "../clipboard/tsconfig.contract.json"

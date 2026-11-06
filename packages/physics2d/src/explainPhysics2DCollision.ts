@@ -1,4 +1,5 @@
-import type { CollisionShapeKind2D, Physics2DCollisionExplanation, Physics2DWorld } from '@flighthq/types/contract';
+import type { CollisionShapeKind2D } from '@flighthq/collision/contract';
+import type { Physics2DCollisionExplanation, Physics2DWorld } from '@flighthq/types/contract';
 
 // Reports the collider kinds in `world` that the 2D contact dispatcher cannot turn into a manifold, and
 // which therefore generate no contacts at all.

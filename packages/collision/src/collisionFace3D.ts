@@ -6,7 +6,7 @@ import type {
   CollisionFaceQuery3D,
   CollisionShape3D,
   CollisionShapeKind3D,
-} from '@flighthq/types/contract';
+} from './types.ts';
 
 // The face registry: the shape-aware half of the narrow phase, sitting beside the shape-agnostic
 // support registry.

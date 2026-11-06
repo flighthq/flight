@@ -1,6 +1,5 @@
-import type { CollisionBuiltInShape3D, CollisionConvex3D, CollisionSphere3D } from '@flighthq/types/contract';
-
 import { testCollisionSupportOverlap3D } from './gjk3D.ts';
+import type { CollisionBuiltInShape3D, CollisionConvex3D, CollisionSphere3D } from './types.ts';
 
 // Whether the point (`x`,`y`,`z`) lies inside a 3D collider. Unknown kinds return false. The hull is
 // assumed convex.

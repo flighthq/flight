@@ -1,3 +1,4 @@
+import type { CollisionBuiltInShape2D } from '@flighthq/collision/contract';
 import {
   addPhysics2DBody,
   createPhysics2DCollider,
@@ -8,7 +9,7 @@ import {
   addPhysics2DJoint,
   stepPhysics2D,
 } from '@flighthq/physics2d/contract';
-import type { CollisionBuiltInShape2D, Physics2DAbiCommandBuffer, RigidBody2D } from '@flighthq/types/contract';
+import type { Physics2DAbiCommandBuffer, RigidBody2D } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { createPhysics2DAbi, readPhysics2DAbiBodies, stepPhysics2DAbiWorld } from './physics2DAbi.ts';

@@ -1,5 +1,5 @@
 import { collideContactManifold2D, createCollisionContactManifold2D } from '@flighthq/collision/contract';
-import type { CollisionBuiltInShape2D } from '@flighthq/types/contract';
+import type { CollisionBuiltInShape2D } from '@flighthq/collision/contract';
 import { describe, expect, it } from 'vitest';
 
 import {

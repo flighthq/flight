@@ -3,11 +3,13 @@ import {
   createCollisionTimeOfImpact3D,
   getCollisionShapeContainsPoint3D,
 } from '@flighthq/collision/contract';
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   CollisionBuiltInShape3D,
   CollisionRaycastHit3D,
   CollisionTimeOfImpact3D,
+} from '@flighthq/collision/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type {
   EntityConstruction,
   NonEntityCreateResult,
   Physics3DCollider,

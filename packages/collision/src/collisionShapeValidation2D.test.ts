@@ -1,9 +1,8 @@
-import type { CollisionShape2D } from '@flighthq/types/contract';
-
 import {
   getCollisionPolygonValidationStatus2D,
   getCollisionShapeValidationStatus2D,
 } from './collisionShapeValidation2D.ts';
+import type { CollisionShape2D } from './types.ts';
 
 describe('getCollisionPolygonValidationStatus2D', () => {
   it('distinguishes valid, degenerate, and non-convex polygons', () => {

@@ -1,5 +1,5 @@
+import type { CollisionBuiltInShape2D } from '@flighthq/collision/contract';
 import type {
-  CollisionBuiltInShape2D,
   Physics2DCollider,
   Physics2DContact,
   Physics2DJoint,

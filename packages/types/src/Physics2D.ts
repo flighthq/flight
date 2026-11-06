@@ -1,4 +1,5 @@
-import type { CollisionBuiltInShape2D } from './Collision.ts';
+import type { CollisionBuiltInShape2D } from '@flighthq/collision/contract';
+
 import type { Entity } from './Entity.ts';
 import type { SpatialIndexBackend2D } from './Spatial.ts';
 

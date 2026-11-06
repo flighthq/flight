@@ -1,11 +1,6 @@
+import type { CollisionBuiltInShape3D } from '@flighthq/collision/contract';
 import { setSpatialIndexingGuard } from '@flighthq/spatial/contract';
-import type {
-  CollisionBuiltInShape3D,
-  Physics3DWorld,
-  RigidBody3D,
-  SpatialIndexingNotice,
-  SpatialPair,
-} from '@flighthq/types/contract';
+import type { Physics3DWorld, RigidBody3D, SpatialIndexingNotice, SpatialPair } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { synchronizePhysics3DBroadphase, synchronizePhysics3DSweptBroadphase } from './broadphase.ts';

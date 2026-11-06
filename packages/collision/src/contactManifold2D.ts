@@ -1,5 +1,7 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { CollisionContactManifold2D, CollisionContactPoint2D, EntityConstruction } from '@flighthq/types/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
+
+import type { CollisionContactManifold2D, CollisionContactPoint2D } from './types.ts';
 
 // Lifecycle for the contact manifold the `collide*ContactManifold` functions write. The two contact
 // points are allocated once, here, and reused for the manifold's whole life — a solver's per-frame

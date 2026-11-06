@@ -1,4 +1,3 @@
-import type { CollisionShape2D } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import {
@@ -11,6 +10,7 @@ import {
 import { clearCollisionManifold2D, createCollisionManifold2D } from './manifold2D.ts';
 import { registerBuiltInCollisionPairTests2D } from './registerBuiltInCollisionPairTests2D.ts';
 import { setCollisionTestGuard2D, testCollision2D } from './testCollision2D.ts';
+import type { CollisionShape2D } from './types.ts';
 
 // Both doors, because this dispatcher is the one place their precedence is observable. Nothing is
 // registered at module load, so a caller that opens neither gets `false` from every pair — which is what

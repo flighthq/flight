@@ -1,11 +1,12 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { CollisionBuiltInShape2D, CollisionTimeOfImpact2D, EntityConstruction } from '@flighthq/types/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
 
 import { collideContactManifold2D } from './collideContactManifold2D.ts';
 import { getCollisionShapeValidationStatus2D } from './collisionShapeValidation2D.ts';
 import { createCollisionContactManifold2D } from './contactManifold2D.ts';
 import { writeAabbVertices, writeObbVertices } from './convexVertices2D.ts';
 import { createCollisionRaycastHit2D } from './raycastCollisionShape2D.ts';
+import type { CollisionBuiltInShape2D, CollisionTimeOfImpact2D } from './types.ts';
 
 export function createCollisionTimeOfImpact2D(): CollisionTimeOfImpact2D {
   const out = allocateEntity<CollisionTimeOfImpact2D>();

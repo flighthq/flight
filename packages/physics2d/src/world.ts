@@ -1,7 +1,7 @@
+import type { CollisionBuiltInShape2D } from '@flighthq/collision/contract';
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { createUniformGridSpatialBackend2D } from '@flighthq/spatial/contract';
 import type {
-  CollisionBuiltInShape2D,
   EntityConstruction,
   NonEntityCreateResult,
   Physics2DCollisionFilter,

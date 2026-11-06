@@ -8,6 +8,7 @@ import {
   registerBuiltInCollisionPairTests3D,
   registerBuiltInCollisionSupports3D,
 } from '@flighthq/collision/contract';
+import type { CollisionColliderShape3D } from '@flighthq/collision/contract';
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import {
   addPhysics3DBody,
@@ -64,7 +65,6 @@ import {
 } from '@flighthq/physics3d/contract';
 import type { EntityConstruction } from '@flighthq/types/contract';
 import type {
-  CollisionColliderShape3D,
   Physics3DAbi,
   Physics3DAbiBodyBuffer,
   Physics3DAbiCommandBuffer,

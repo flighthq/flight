@@ -1,3 +1,4 @@
+import type { CollisionBuiltInShape2D } from '@flighthq/collision/contract';
 import {
   Physics2DDistanceJointKind,
   Physics2DGearJointKind,
@@ -10,7 +11,6 @@ import {
   Physics2DWheelJointKind,
 } from '@flighthq/physics2d/contract';
 import type {
-  CollisionBuiltInShape2D,
   Physics2DAbiCommandBuffer,
   Physics2DAbiObjectId,
   Physics2DCollider,

@@ -1,4 +1,4 @@
-import type { CollisionAabb2D, CollisionObb2D } from '@flighthq/types/contract';
+import type { CollisionAabb2D, CollisionObb2D } from './types.ts';
 
 // Materializes a box collider as the flat `[x0,y0,...]` vertex list the convex cores consume, so
 // AABB, OBB, and polygon all reduce to one representation. Package-internal: these are a detail of

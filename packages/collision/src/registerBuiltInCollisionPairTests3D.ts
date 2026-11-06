@@ -1,5 +1,3 @@
-import type { CollisionAabb3D, CollisionBox3D, CollisionCapsule3D, CollisionSphere3D } from '@flighthq/types/contract';
-
 import { registerCollisionPairTest3D } from './collisionSupport3D.ts';
 import {
   testAabbAabbCollision3D,
@@ -10,6 +8,7 @@ import {
   testSphereCapsuleCollision3D,
   testSphereSphereCollision3D,
 } from './shapeCollision3D.ts';
+import type { CollisionAabb3D, CollisionBox3D, CollisionCapsule3D, CollisionSphere3D } from './types.ts';
 
 // Registers the seven closed-form 3D pairs over the generic GJK/EPA floor.
 //

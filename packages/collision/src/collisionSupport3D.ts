@@ -10,7 +10,7 @@ import type {
   CollisionShapeKind3D,
   CollisionSphere3D,
   CollisionSupport3D,
-} from '@flighthq/types/contract';
+} from './types.ts';
 
 // The two registries the 3D narrow phase dispatches through — the same pair the 2D half uses, keyed by
 // 3D kinds and holding 3D support functions.

@@ -6,13 +6,14 @@ import {
   getMemoryLogSinkEntries,
   removeLogSink,
 } from '@flighthq/log/contract';
-import type { CollisionShape2D, LogEntry, MemoryLogSink } from '@flighthq/types/contract';
+import type { LogEntry, MemoryLogSink } from '@flighthq/log/contract';
 
 import { areCollisionGuardsEnabled, disableCollisionGuards, enableCollisionGuards } from './enableCollisionGuards.ts';
 import { createCollisionManifold2D } from './manifold2D.ts';
 import { createCollisionManifold3D } from './manifold3D.ts';
 import { testCollision2D } from './testCollision2D.ts';
 import { testCollision3D } from './testCollision3D.ts';
+import type { CollisionShape2D } from './types.ts';
 
 function captureLog(run: () => void): readonly LogEntry[] {
   const sink = createMemoryLogSink(8);

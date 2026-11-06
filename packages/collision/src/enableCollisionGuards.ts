@@ -1,18 +1,18 @@
 import type { LogState } from '@flighthq/log/contract';
 import { logOnce } from '@flighthq/log/contract';
+import { LogLevel } from '@flighthq/log/contract';
+
+import { getCollisionShapeValidationStatus2D } from './collisionShapeValidation2D.ts';
+import { getCollisionShapeValidationStatus3D } from './collisionShapeValidation3D.ts';
+import { setCollisionTestGuard2D } from './testCollision2D.ts';
+import { setCollisionTestGuard3D } from './testCollision3D.ts';
 import type {
   CollisionShape2D,
   CollisionShape3D,
   CollisionTestExplanation2D,
   CollisionTestExplanation3D,
   CollisionTestStatus,
-} from '@flighthq/types/contract';
-import { LogLevel } from '@flighthq/types/contract';
-
-import { getCollisionShapeValidationStatus2D } from './collisionShapeValidation2D.ts';
-import { getCollisionShapeValidationStatus3D } from './collisionShapeValidation3D.ts';
-import { setCollisionTestGuard2D } from './testCollision2D.ts';
-import { setCollisionTestGuard3D } from './testCollision3D.ts';
+} from './types.ts';
 
 export function areCollisionGuardsEnabled(): boolean {
   return collisionGuardsEnabled;

@@ -1,5 +1,3 @@
-import type { CollisionShape2D } from '@flighthq/types/contract';
-
 import {
   getCollisionPairTest2D,
   getCollisionSupport2D,
@@ -12,6 +10,7 @@ import {
   supportCollisionPolygon2D,
   writeVertexListSupport2D,
 } from './collisionSupport2D.ts';
+import type { CollisionShape2D } from './types.ts';
 
 registerBuiltInCollisionSupports2D();
 

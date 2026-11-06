@@ -1,5 +1,5 @@
+import type { CollisionBuiltInShape3D } from '@flighthq/collision/contract';
 import type {
-  CollisionBuiltInShape3D,
   Physics3DAbi,
   Physics3DAbiQueryBuffer,
   Physics3DAbiWorldHandle,

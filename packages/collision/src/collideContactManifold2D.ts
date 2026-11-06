@@ -1,9 +1,3 @@
-import type {
-  CollisionContactManifold2D,
-  CollisionBuiltInShape2D,
-  CollisionShapeKind2D,
-} from '@flighthq/types/contract';
-
 import {
   collideCapsuleAabbContactManifold2D,
   collideCapsuleCapsuleContactManifold2D,
@@ -24,6 +18,7 @@ import {
   collideObbPolygonContactManifold2D,
   collidePolygonPolygonContactManifold2D,
 } from './shapeContact2D.ts';
+import type { CollisionContactManifold2D, CollisionBuiltInShape2D, CollisionShapeKind2D } from './types.ts';
 
 // Generic narrow-phase contact test: the `testCollision2D` dispatcher's contact-resolving twin.
 // Dispatches on the two shapes' `kind`s and writes the full contact manifold pushing **A out of B**.

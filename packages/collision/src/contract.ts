@@ -1,3 +1,4 @@
+export * from './contract.collision-types.ts';
 export * from './capsuleContact2D.ts';
 export * from './collideContactManifold2D.ts';
 export * from './collideContactManifold3D.ts';

@@ -1,4 +1,3 @@
-import { MAX_COLLISION_CONTACT_POINTS_3D } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import {
@@ -6,6 +5,7 @@ import {
   createCollisionContactManifold3D,
   initializeCollisionContactManifold3D,
 } from './contactManifold3D.ts';
+import { MAX_COLLISION_CONTACT_POINTS_3D } from './types.ts';
 
 describe('clearCollisionContactManifold3D', () => {
   it('resets the overlap state and the point count', () => {

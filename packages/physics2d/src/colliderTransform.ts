@@ -1,4 +1,3 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   CollisionBuiltInShape2D,
   CollisionCapsule2D,
@@ -7,11 +6,9 @@ import type {
   CollisionPoint2D,
   CollisionPolygon2D,
   CollisionSegment2D,
-  Entity,
-  EntityConstruction,
-  Physics2DCollider,
-  RigidBody2D,
-} from '@flighthq/types/contract';
+} from '@flighthq/collision/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type { Entity, EntityConstruction, Physics2DCollider, RigidBody2D } from '@flighthq/types/contract';
 
 // Allocates the world-space shape a collider needs for `local`, choosing the kind the transform can
 // actually express. Every field is filled at creation so the shape is never read half-initialised, and

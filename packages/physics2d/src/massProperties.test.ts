@@ -1,9 +1,5 @@
-import type {
-  CollisionBuiltInShape2D,
-  Physics2DCollider,
-  Physics2DMassData,
-  RigidBody2D,
-} from '@flighthq/types/contract';
+import type { CollisionBuiltInShape2D } from '@flighthq/collision/contract';
+import type { Physics2DCollider, Physics2DMassData, RigidBody2D } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { computePhysics2DColliderMassData, updateRigidBody2DMassData } from './massProperties.ts';
