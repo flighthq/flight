@@ -1,10 +1,6 @@
+import type { ColorLut } from '@flighthq/adjustments/contract';
 import { installWgpuMock } from '@flighthq/render-wgpu/contract';
-import type {
-  ColorLut,
-  WgpuColorLutTextureCache,
-  WgpuRenderState,
-  WgpuTextureRenderTarget,
-} from '@flighthq/types/contract';
+import type { WgpuColorLutTextureCache, WgpuRenderState, WgpuTextureRenderTarget } from '@flighthq/types/contract';
 
 import { applyColorLutPassToWgpu } from './wgpuColorLutPass.ts';
 import * as wgpuEffectPassModule from './wgpuEffectPass.ts';

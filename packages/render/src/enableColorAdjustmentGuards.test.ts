@@ -1,4 +1,5 @@
 import { createTintAdjustment } from '@flighthq/adjustments/contract';
+import type { Adjustment } from '@flighthq/adjustments/contract';
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import {
   addLogSink,
@@ -10,7 +11,7 @@ import {
 import type { LogState } from '@flighthq/log/contract';
 import { setNodeColorAdjustments } from '@flighthq/node/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
-import type { Adjustment, LogEntry, MemoryLogSink, NodeAny } from '@flighthq/types/contract';
+import type { LogEntry, MemoryLogSink, NodeAny } from '@flighthq/types/contract';
 
 import { areColorAdjustmentGuardsEnabled, enableColorAdjustmentGuards } from './enableColorAdjustmentGuards.ts';
 import { enableColorAdjustments } from './enableColorAdjustments.ts';

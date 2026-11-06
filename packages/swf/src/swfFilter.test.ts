@@ -1,9 +1,8 @@
+import type { Adjustment, ColorMatrixAdjustment } from '@flighthq/adjustments/contract';
 import { collectImportDiagnostics } from '@flighthq/importdiagnostics/contract';
 import type {
-  Adjustment,
   BevelEffect,
   BlurEffect,
-  ColorMatrixAdjustment,
   ConvolutionEffect,
   DropShadowEffect,
   GradientGlowEffect,

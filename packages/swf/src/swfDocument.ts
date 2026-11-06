@@ -1,3 +1,4 @@
+import type { Adjustment } from '@flighthq/adjustments/contract';
 import { createClipRegionFromContours, createClipRegionFromPath } from '@flighthq/clip/contract';
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { createMatrix, inverseMatrix, matrixTransformPointXY, multiplyMatrix } from '@flighthq/geometry/contract';
@@ -30,7 +31,6 @@ import type {
   HostDecompressDeflateCapability,
   HostDecompressLzmaCapability,
   ImportDiagnostic,
-  Adjustment,
   MovieClip,
   Node2D,
   Node2DFields,

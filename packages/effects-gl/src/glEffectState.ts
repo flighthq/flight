@@ -5,6 +5,7 @@ import {
   getAdjustmentColorMatrix,
   isColorLutAdjustment,
 } from '@flighthq/adjustments/contract';
+import type { Adjustment } from '@flighthq/adjustments/contract';
 import { srgbChannelToLinear } from '@flighthq/color/contract';
 import type { Effect, EffectStateOptions } from '@flighthq/effects/contract';
 import {
@@ -22,7 +23,6 @@ import {
 } from '@flighthq/render-gl/contract';
 import type { RenderTargetColorSpace } from '@flighthq/render/contract';
 import type {
-  Adjustment,
   GlRenderPass,
   GlRenderState,
   GlTextureRenderTarget,

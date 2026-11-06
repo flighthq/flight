@@ -1,5 +1,6 @@
+import type { ColorLut } from '@flighthq/adjustments/contract';
 import * as renderGlContract from '@flighthq/render-gl/contract';
-import type { ColorLut, GlColorLutTextureCache, GlRenderState, GlTextureRenderTarget } from '@flighthq/types/contract';
+import type { GlColorLutTextureCache, GlRenderState, GlTextureRenderTarget } from '@flighthq/types/contract';
 
 import { applyColorLutPassToGl } from './glColorLutPass.ts';
 import * as glEffectProgramCache from './glEffectProgramCache.ts';

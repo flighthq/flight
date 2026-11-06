@@ -1,5 +1,6 @@
 import { sampleColorLut } from '@flighthq/adjustments/contract';
-import type { CanvasTextureRenderTarget, ColorLut } from '@flighthq/types/contract';
+import type { ColorLut } from '@flighthq/adjustments/contract';
+import type { CanvasTextureRenderTarget } from '@flighthq/types/contract';
 
 import { drawCanvasImageDataPass } from './canvasEffectCompositing.ts';
 

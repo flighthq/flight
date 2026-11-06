@@ -1,4 +1,5 @@
 import { createColorMatrixAdjustment } from '@flighthq/adjustments/contract';
+import type { Adjustment } from '@flighthq/adjustments/contract';
 import {
   createBevelEffect,
   createBlurEffect,
@@ -12,7 +13,7 @@ import {
 } from '@flighthq/effects/contract';
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import { RAD_TO_DEG } from '@flighthq/math/contract';
-import type { Adjustment, ImportDiagnostic, Effect, SwfFilterListGuard } from '@flighthq/types/contract';
+import type { ImportDiagnostic, Effect, SwfFilterListGuard } from '@flighthq/types/contract';
 import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
 import type { SwfReader } from './swfReader.ts';

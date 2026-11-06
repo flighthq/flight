@@ -1,5 +1,6 @@
 import { createColorScaleBiasAdjustment } from '@flighthq/adjustments/contract';
-import type { Adjustment, Effect, SwfTagReader } from '@flighthq/types/contract';
+import type { Adjustment } from '@flighthq/adjustments/contract';
+import type { Effect, SwfTagReader } from '@flighthq/types/contract';
 import { AdvancedBlendMode, BlendMode } from '@flighthq/types/contract';
 
 import { FIXED_8_8_ONE } from './swfPrimitive.ts';

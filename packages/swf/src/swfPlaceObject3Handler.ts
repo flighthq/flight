@@ -1,12 +1,6 @@
+import type { Adjustment } from '@flighthq/adjustments/contract';
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
-import type {
-  Adjustment,
-  Effect,
-  ImportDiagnostic,
-  SwfTagHandler,
-  SwfTagPlacement,
-  SwfTagReader,
-} from '@flighthq/types/contract';
+import type { Effect, ImportDiagnostic, SwfTagHandler, SwfTagPlacement, SwfTagReader } from '@flighthq/types/contract';
 import { BlendMode, ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
 import {

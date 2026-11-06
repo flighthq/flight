@@ -5,6 +5,7 @@ import {
   getAdjustmentColorMatrix,
   isColorLutAdjustment,
 } from '@flighthq/adjustments/contract';
+import type { Adjustment } from '@flighthq/adjustments/contract';
 import { srgbChannelToLinear } from '@flighthq/color/contract';
 import type { Effect, EffectStateOptions } from '@flighthq/effects/contract';
 import {
@@ -23,7 +24,7 @@ import {
 } from '@flighthq/render-wgpu/contract';
 import type { WgpuRenderPass, WgpuRenderState, WgpuTextureRenderTarget } from '@flighthq/render-wgpu/contract';
 import type { RenderTargetColorSpace } from '@flighthq/render/contract';
-import type { Adjustment, NonEntityCreateResult, RenderTargetClear } from '@flighthq/types/contract';
+import type { NonEntityCreateResult, RenderTargetClear } from '@flighthq/types/contract';
 
 import type { WgpuEffectState, WgpuEffectStateSampleCountGuard, WgpuEffectStateSkipGuard } from './types.ts';
 import { applyColorLutPassToWgpu } from './wgpuColorLutPass.ts';
