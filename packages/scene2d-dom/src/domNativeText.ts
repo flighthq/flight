@@ -1,14 +1,8 @@
 import { computeRgbaCssString } from '@flighthq/color/contract';
 import { getNativeTextRuntime } from '@flighthq/text/contract';
 import type { NativeText, NativeTextRuntime, NativeTextStyle } from '@flighthq/text/contract';
-import type {
-  Scene2DRenderer,
-  NodeAny,
-  RendererData,
-  RenderProxy2D,
-  RenderState,
-  TextVerticalAlign,
-} from '@flighthq/types/contract';
+import type { TextVerticalAlign } from '@flighthq/textlayout/contract';
+import type { Scene2DRenderer, NodeAny, RendererData, RenderProxy2D, RenderState } from '@flighthq/types/contract';
 
 import type { DomRenderState } from './contract.scene2d-dom-types.ts';
 import { applyDomStyle, prepareDomElement, setDomRendererElement } from './domStyle.ts';

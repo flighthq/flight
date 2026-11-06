@@ -1,4 +1,5 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
 import {
   getTextFormatAscent,
   getTextFormatDescent,
@@ -8,7 +9,6 @@ import {
 import type { TextFormatRangeRaw as TextFormatRange } from '@flighthq/textformat/contract';
 import type { TextFormat } from '@flighthq/textformat/contract';
 import type { TextDirection, TextMeasureFunction } from '@flighthq/textshaper/contract';
-import type { EntityConstruction } from '@flighthq/types/contract';
 
 import { createTextLayoutGroup } from './textLayoutGroup.ts';
 import { getTextLineBreaks } from './textLineBreaks.ts';

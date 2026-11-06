@@ -3,10 +3,10 @@ import { createTextFormatRange } from '@flighthq/textformat/contract';
 import type { TextFormatRangeRaw as TextFormatRange } from '@flighthq/textformat/contract';
 import type { TextFormat } from '@flighthq/textformat/contract';
 import { createRichTextContent } from '@flighthq/textlayout/contract';
+import type { RichTextContent } from '@flighthq/textlayout/contract';
 import type {
   MarkupTagHandler,
   MarkupTagRegistry,
-  RichTextContent,
   TextMarkupExplanation,
   TextMarkupGuard,
   TextMarkupIssue,

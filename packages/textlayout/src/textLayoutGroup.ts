@@ -1,6 +1,6 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
 import type { TextFormat } from '@flighthq/textformat/contract';
-import type { EntityConstruction } from '@flighthq/types/contract';
 
 import type { TextLayoutGroup } from './types.ts';
 

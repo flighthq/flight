@@ -8,7 +8,7 @@ import {
   getTextInputSelectionRectangles,
   getTextInputState,
 } from '@flighthq/textinput/contract';
-import type { TextLayoutResult, TextSelectionRectangle } from '@flighthq/types/contract';
+import type { TextLayoutResult, TextSelectionRectangle } from '@flighthq/textlayout/contract';
 
 import { registerWgpuTextInputOverlay } from './wgpuRichText.ts';
 

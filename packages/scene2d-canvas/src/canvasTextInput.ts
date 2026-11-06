@@ -9,7 +9,8 @@ import {
   getTextInputState,
 } from '@flighthq/textinput/contract';
 import { computeTextBoundsHeight, computeTextBoundsWidth } from '@flighthq/textlayout/contract';
-import type { CanvasRenderState, RenderProxy2D, TextSelectionRectangle } from '@flighthq/types/contract';
+import type { TextSelectionRectangle } from '@flighthq/textlayout/contract';
+import type { CanvasRenderState, RenderProxy2D } from '@flighthq/types/contract';
 
 import { registerCanvasTextInputOverlay } from './canvasRichText.ts';
 import { setCanvasTransform } from './canvasTransform.ts';

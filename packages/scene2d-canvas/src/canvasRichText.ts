@@ -17,7 +17,7 @@ import {
   computeTextLayout,
   getRichTextSelectionRectangles,
 } from '@flighthq/textlayout/contract';
-import type { TextSelectionRectangle } from '@flighthq/types/contract';
+import type { TextSelectionRectangle } from '@flighthq/textlayout/contract';
 import type {
   CanvasRenderState,
   CanvasTextInputOverlay,

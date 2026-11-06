@@ -14,7 +14,6 @@
     { "path": "../geometry/tsconfig.runtime.json" },
     { "path": "../textformat" },
     { "path": "../textshaper/tsconfig.runtime.json" },
-    { "path": "../types" },
     { "path": "./tsconfig.contract.json" }
   ],
   "include": ["src/**/*.ts"],
