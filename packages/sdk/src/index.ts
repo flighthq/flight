@@ -58,6 +58,20 @@ export type { EasingFunction, EasingSegment, ScalarRemap, StepPosition } from '@
 export * from '@flighthq/effects';
 export * from '@flighthq/effects-canvas';
 export * from '@flighthq/effects-gl';
+export type {
+  EffectStateOptions,
+  GlColorLutTextureCache,
+  GlCustomShaderSourceGuard,
+  GlEffectApplicationExplanation,
+  GlEffectApplicationGuard,
+  GlEffectApplicationStatus,
+  GlEffectContext,
+  GlEffectRegistration,
+  GlEffectResolver,
+  GlEffectRunner,
+  GlEffectState,
+  GlEffectStateSkipGuard,
+} from '@flighthq/effects-gl';
 export * from '@flighthq/effects-wgpu';
 export * from '@flighthq/entity';
 export { Entity } from './entity.ts';
