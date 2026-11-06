@@ -1,4 +1,4 @@
-import type { AccessibilityNode } from '@flighthq/types/contract';
+import type { AccessibilityNode } from '@flighthq/accessibility/contract';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { webHostAccessibility } from './webAccessibility.ts';

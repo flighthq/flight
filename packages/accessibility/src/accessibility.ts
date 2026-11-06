@@ -6,7 +6,7 @@ import type {
   AccessibilityNode,
   AccessibilityOperationOutcome,
   HostAccessibilityCapability,
-} from '@flighthq/types/contract';
+} from './types.ts';
 
 /**
  * Speaks a transient message through the selected host provider (TS `announceAccessibility`). The

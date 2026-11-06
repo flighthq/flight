@@ -3,7 +3,7 @@ import type {
   AccessibilityLiveness,
   AccessibilityNode,
   AccessibilityState,
-} from '@flighthq/types/contract';
+} from '@flighthq/accessibility/contract';
 
 function createWebAccessibilityBackend(container?: HTMLElement): HostAccessibilityCapability {
   const out = {} as HostAccessibilityCapability;

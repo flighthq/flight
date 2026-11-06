@@ -40,7 +40,6 @@ export * from './WrappedDiffusePbrExtension.ts';
 export * from './Accelerator.ts';
 export * from './AcceleratorParseError.ts';
 export * from './Accessibility.ts';
-export * from './AccessibilityDescriptor.ts';
 export * from './Adjustment.ts';
 export * from './AdjustmentKind.ts';
 export * from './BrightnessContrastAdjustment.ts';
