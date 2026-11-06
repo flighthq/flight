@@ -1,5 +1,7 @@
 {
-  "compilerOptions": { "composite": true },
+  "compilerOptions": {
+    "composite": true
+  },
   "files": [],
   "references": [
     {
@@ -61,6 +63,9 @@
     },
     {
       "path": "../types"
+    },
+    {
+      "path": "../effects/tsconfig.runtime.json"
     },
     {
       "path": "./tsconfig.contract.json"

@@ -1,10 +1,6 @@
+import type { AdvancedBlendMode } from '@flighthq/effects/contract';
 import { getCanvasRenderStateRuntime } from '@flighthq/scene2d-canvas/contract';
-import type {
-  AdvancedBlendMode,
-  BlendEffect,
-  CanvasRenderState,
-  CanvasTextureRenderTarget,
-} from '@flighthq/types/contract';
+import type { BlendEffect, CanvasRenderState, CanvasTextureRenderTarget } from '@flighthq/types/contract';
 
 import { drawCanvasEffectPass } from './canvasEffectCompositing.ts';
 import { registerCanvasEffect } from './canvasEffectRegistry.ts';

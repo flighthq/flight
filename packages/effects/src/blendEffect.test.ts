@@ -1,6 +1,5 @@
-import { AdvancedBlendMode } from '@flighthq/types/contract';
-
 import { createBlendEffect, initializeBlendEffect } from './blendEffect.ts';
+import { AdvancedBlendMode } from './types.ts';
 
 describe('createBlendEffect', () => {
   it('builds a BlendEffect carrying the requested mode', () => {

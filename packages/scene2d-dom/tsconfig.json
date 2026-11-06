@@ -74,6 +74,9 @@
       "path": "../materials/tsconfig.contract.json"
     },
     {
+      "path": "../effects/tsconfig.runtime.json"
+    },
+    {
       "path": "./tsconfig.contract.json"
     },
     {

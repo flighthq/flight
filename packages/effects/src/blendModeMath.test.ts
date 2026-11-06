@@ -1,11 +1,10 @@
-import { AdvancedBlendMode } from '@flighthq/types/contract';
-
 import {
   blendNonSeparableRgb,
   getAdvancedBlendRgb,
   getSeparableBlendChannel,
   isNonSeparableBlendMode,
 } from './blendModeMath.ts';
+import { AdvancedBlendMode } from './types.ts';
 
 const LUM = (r: number, g: number, b: number): number => 0.3 * r + 0.59 * g + 0.11 * b;
 const SAT = (r: number, g: number, b: number): number => Math.max(r, g, b) - Math.min(r, g, b);

@@ -1,12 +1,12 @@
+import type { AdvancedBlendMode } from '@flighthq/effects/contract';
+import { AdvancedBlendMode as AdvancedBlendModeValues } from '@flighthq/effects/contract';
 import type {
-  AdvancedBlendMode,
   BlendEffect,
   WgpuDualSourceEffectPipeline,
   WgpuEffectRunner,
   WgpuRenderState,
   WgpuTextureRenderTarget,
 } from '@flighthq/types/contract';
-import { AdvancedBlendMode as AdvancedBlendModeValues } from '@flighthq/types/contract';
 
 import { createWgpuDualSourceEffectPipeline, drawWgpuDualSourceEffectPass } from './wgpuEffectPass.ts';
 import { registerWgpuEffect } from './wgpuEffectRegistry.ts';

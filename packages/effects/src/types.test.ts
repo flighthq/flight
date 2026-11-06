@@ -1,5 +1,6 @@
-import { AdvancedBlendMode } from './AdvancedBlendMode.ts';
-import { BlendMode } from './BlendMode.ts';
+import { BlendMode } from '@flighthq/types/contract';
+
+import { AdvancedBlendMode } from './types.ts';
 
 describe('AdvancedBlendMode', () => {
   it('carries the full destination-reading / non-separable set', () => {

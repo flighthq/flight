@@ -1,5 +1,6 @@
 export type { Effect, EffectStateOptions } from './contract.ts';
 export {
+  AdvancedBlendMode,
   blendNonSeparableRgb,
   canLerpEffects,
   computeEffectCaptureGeometry,

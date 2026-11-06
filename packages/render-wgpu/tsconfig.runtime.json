@@ -56,6 +56,9 @@
       "path": "../types"
     },
     {
+      "path": "../effects/tsconfig.runtime.json"
+    },
+    {
       "path": "./tsconfig.contract.json"
     }
   ],

@@ -1,10 +1,11 @@
+import { AdvancedBlendMode } from '@flighthq/effects/contract';
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import { RAD_TO_DEG } from '@flighthq/math/contract';
 import { addNodeChild } from '@flighthq/node/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
 import type { DisplayObject, EntityConstruction, ImportDiagnostic } from '@flighthq/types/contract';
-import { AdvancedBlendMode, BlendMode, ImportDiagnosticSeverity } from '@flighthq/types/contract';
+import { BlendMode, ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
 import type {
   RiveAdvancedBlend,

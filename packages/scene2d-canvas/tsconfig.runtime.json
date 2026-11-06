@@ -11,33 +11,90 @@
     "tsBuildInfoFile": "dist/.tsbuildinfo.runtime"
   },
   "references": [
-    { "path": "../app/tsconfig.contract.json" },
-    { "path": "../bitmap/tsconfig.runtime.json" },
-    { "path": "../bitmaptext" },
-    { "path": "../color" },
-    { "path": "../entity" },
-    { "path": "../geometry/tsconfig.runtime.json" },
-    { "path": "../glyphatlas/tsconfig.contract.json" },
-    { "path": "../image/tsconfig.runtime.json" },
-    { "path": "../log" },
-    { "path": "../node/tsconfig.runtime.json" },
-    { "path": "../path/tsconfig.runtime.json" },
-    { "path": "../quadbatch" },
-    { "path": "../registry" },
-    { "path": "../render/tsconfig.runtime.json" },
-    { "path": "../scene2d/tsconfig.runtime.json" },
-    { "path": "../shape/tsconfig.runtime.json" },
-    { "path": "../signals" },
-    { "path": "../surface/tsconfig.runtime.json" },
-    { "path": "../text/tsconfig.runtime.json" },
-    { "path": "../textformat/tsconfig.runtime.json" },
-    { "path": "../textinput/tsconfig.runtime.json" },
-    { "path": "../textlayout/tsconfig.runtime.json" },
-    { "path": "../texture/tsconfig.runtime.json" },
-    { "path": "../textureatlas/tsconfig.runtime.json" },
-    { "path": "../tilemap" },
-    { "path": "../types" },
-    { "path": "./tsconfig.contract.json" }
+    {
+      "path": "../app/tsconfig.contract.json"
+    },
+    {
+      "path": "../bitmap/tsconfig.runtime.json"
+    },
+    {
+      "path": "../bitmaptext"
+    },
+    {
+      "path": "../color"
+    },
+    {
+      "path": "../entity"
+    },
+    {
+      "path": "../geometry/tsconfig.runtime.json"
+    },
+    {
+      "path": "../glyphatlas/tsconfig.contract.json"
+    },
+    {
+      "path": "../image/tsconfig.runtime.json"
+    },
+    {
+      "path": "../log"
+    },
+    {
+      "path": "../node/tsconfig.runtime.json"
+    },
+    {
+      "path": "../path/tsconfig.runtime.json"
+    },
+    {
+      "path": "../quadbatch"
+    },
+    {
+      "path": "../registry"
+    },
+    {
+      "path": "../render/tsconfig.runtime.json"
+    },
+    {
+      "path": "../scene2d/tsconfig.runtime.json"
+    },
+    {
+      "path": "../shape/tsconfig.runtime.json"
+    },
+    {
+      "path": "../signals"
+    },
+    {
+      "path": "../surface/tsconfig.runtime.json"
+    },
+    {
+      "path": "../text/tsconfig.runtime.json"
+    },
+    {
+      "path": "../textformat/tsconfig.runtime.json"
+    },
+    {
+      "path": "../textinput/tsconfig.runtime.json"
+    },
+    {
+      "path": "../textlayout/tsconfig.runtime.json"
+    },
+    {
+      "path": "../texture/tsconfig.runtime.json"
+    },
+    {
+      "path": "../textureatlas/tsconfig.runtime.json"
+    },
+    {
+      "path": "../tilemap"
+    },
+    {
+      "path": "../types"
+    },
+    {
+      "path": "../effects/tsconfig.runtime.json"
+    },
+    {
+      "path": "./tsconfig.contract.json"
+    }
   ],
   "include": ["src/**/*.ts"],
   "exclude": ["src/contract.scene2d-canvas-types.ts", "src/types/**/*.ts"]

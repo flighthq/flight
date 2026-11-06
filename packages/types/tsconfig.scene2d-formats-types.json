@@ -255,7 +255,6 @@
   "files": [
     "src/Adjustment.ts",
     "src/AdjustmentKind.ts",
-    "src/AdvancedBlendMode.ts",
     "src/AlphaType.ts",
     "src/AnimationChannel.ts",
     "src/AnimationClip.ts",

@@ -1,4 +1,5 @@
-import { AdvancedBlendMode, BlendMode } from '@flighthq/types/contract';
+import { AdvancedBlendMode } from '@flighthq/effects/contract';
+import { BlendMode } from '@flighthq/types/contract';
 
 import type { DomBlendModeFidelity, DomRenderState } from './contract.scene2d-dom-types.ts';
 

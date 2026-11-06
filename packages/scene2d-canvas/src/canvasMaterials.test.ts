@@ -1,5 +1,6 @@
+import { AdvancedBlendMode } from '@flighthq/effects/contract';
 import type { CanvasRenderState } from '@flighthq/types/contract';
-import { AdvancedBlendMode, BlendMode } from '@flighthq/types/contract';
+import { BlendMode } from '@flighthq/types/contract';
 
 import { applyCanvasBlendMode, enableCanvasBlendMode } from './canvasMaterials.ts';
 import { allocateEmptyCanvasRenderRegistries } from './canvasPipeline.ts';

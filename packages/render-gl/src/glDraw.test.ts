@@ -1,8 +1,8 @@
+import { AdvancedBlendMode } from '@flighthq/effects/contract';
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { getTextureSource } from '@flighthq/texture/contract';
 import type { Bitmap, CompressedImageResource, ImageResource, SamplerLike, Texture } from '@flighthq/types/contract';
 import {
-  AdvancedBlendMode,
   BitmapTextureSourceKind,
   BlendMode,
   CompressedImageTextureSourceKind,
