@@ -1,3 +1,4 @@
+export type * from './contract.screen-types.ts';
 export * from './screen.ts';
 export {
   initializeScreenInfo,

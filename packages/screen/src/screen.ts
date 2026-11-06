@@ -1,19 +1,19 @@
 import { allocateEntity, finishEntity, stripEntityRuntime } from '@flighthq/entity/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
+import type { RectangleLike, Vector2Like } from '@flighthq/geometry/contract';
 import { clearSignal, createSignal, emitSignal } from '@flighthq/signals/contract';
+
 import type {
-  EntityConstruction,
   HostScreenChangeCapability,
   HostScreenDetailsCapability,
   HostScreenPermissionChangeCapability,
   HostScreenQueryCapability,
-  RectangleLike,
   ScreenInfo,
   ScreenMode,
   ScreenPermissionChange,
   ScreenPermissionState,
   ScreenSignals,
-  Vector2Like,
-} from '@flighthq/types/contract';
+} from './contract.screen-types.ts';
 
 export function attachScreenPermissionChange(
   hostScreenPermissionChange: Readonly<HostScreenPermissionChangeCapability>,

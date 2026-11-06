@@ -1,5 +1,6 @@
 import { createScreenInfo } from '@flighthq/screen/contract';
-import type { ScreenInfo, ElectronApi, ElectronDisplay } from '@flighthq/types/contract';
+import type { ScreenInfo } from '@flighthq/screen/contract';
+import type { ElectronApi, ElectronDisplay } from '@flighthq/types/contract';
 
 import {
   electronHostScreen,

@@ -27,3 +27,20 @@ export {
   screenToDipPoint,
   screenToDipRect,
 } from './contract.ts';
+export type {
+  HostScreenCapabilities,
+  HostScreenChangeCapability,
+  HostScreenDetailsCapability,
+  HostScreenPermissionChangeCapability,
+  HostScreenQueryCapability,
+  ScreenChangeEvent,
+  ScreenChangedMetrics,
+  ScreenChangeKind,
+  ScreenColorSpace,
+  ScreenInfo,
+  ScreenMode,
+  ScreenOrientation,
+  ScreenPermissionChange,
+  ScreenPermissionState,
+  ScreenSignals,
+} from './contract.ts';

@@ -41,8 +41,8 @@
   },
   "dependencies": {
     "@flighthq/entity": "*",
-    "@flighthq/signals": "*",
-    "@flighthq/types": "*"
+    "@flighthq/geometry": "*",
+    "@flighthq/signals": "*"
   },
   "devDependencies": {
     "typescript": "^7.0.2"

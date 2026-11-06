@@ -18,6 +18,7 @@
       ".image-types",
       ".materials-types",
       ".scene3d-wgpu-types",
+      ".screen-types",
       ".render-wgpu-types",
       ".adjustments-types",
       ".audio-types",
@@ -255,6 +256,9 @@
     },
     {
       "path": "../scene2d/tsconfig.contract.json"
+    },
+    {
+      "path": "../screen/tsconfig.contract.json"
     },
     {
       "path": "../gui/tsconfig.contract.json"

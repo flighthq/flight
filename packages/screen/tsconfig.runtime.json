@@ -1,0 +1,21 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "composite": true,
+    "rootDir": "src",
+    "outDir": "dist",
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "tsBuildInfoFile": "dist/.tsbuildinfo.runtime",
+    "moduleSuffixes": [".geometry-types", ""]
+  },
+  "references": [
+    { "path": "../entity" },
+    { "path": "../geometry/tsconfig.contract.json" },
+    { "path": "../signals" },
+    { "path": "./tsconfig.contract.json" }
+  ],
+  "include": ["src/**/*.ts"],
+  "exclude": ["src/contract.screen-types.ts", "src/types.ts"]
+}

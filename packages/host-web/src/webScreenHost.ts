@@ -1,4 +1,4 @@
-import type { HostScreenCapabilities } from '@flighthq/types/contract';
+import type { HostScreenCapabilities } from '@flighthq/screen/contract';
 
 import {
   webHostScreenChange,

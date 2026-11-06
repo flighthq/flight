@@ -9,7 +9,10 @@ import type { HostMenuCapabilities } from '@flighthq/menu/contract';
 import type { HostNetCapabilities } from '@flighthq/net/contract';
 import type { HostPowerCapabilities } from '@flighthq/power/contract';
 import type { HostPreferencesCapabilities } from '@flighthq/preferences/contract';
+import type { HostScreenCapabilities } from '@flighthq/screen/contract';
 import type { HostCanvasCapabilities, HostSurfaceCapabilities } from '@flighthq/surface/contract';
+
+export type { HostScreenCapabilities } from '@flighthq/screen/contract';
 
 import type { HostAccessibilityCapability } from './Accessibility.ts';
 import type {
@@ -88,12 +91,6 @@ import type {
   HostProtocolRegistrationQueryCapability,
   HostProtocolUnregistrationCapability,
 } from './Protocol.ts';
-import type {
-  HostScreenChangeCapability,
-  HostScreenDetailsCapability,
-  HostScreenPermissionChangeCapability,
-  HostScreenQueryCapability,
-} from './Screen.ts';
 import type { HostSensorsCapability } from './Sensors.ts';
 import type { HostShareContentCapability, HostShareFilesCapability } from './Share.ts';
 import type {
@@ -302,13 +299,6 @@ export interface HostProtocolCapabilities {
   readonly registration?: HostProtocolRegistrationCapability;
   readonly registrationQuery?: HostProtocolRegistrationQueryCapability;
   readonly unregistration?: HostProtocolUnregistrationCapability;
-}
-
-export interface HostScreenCapabilities {
-  readonly change?: HostScreenChangeCapability;
-  readonly details?: HostScreenDetailsCapability;
-  readonly permissionChange?: HostScreenPermissionChangeCapability;
-  readonly query?: HostScreenQueryCapability;
 }
 
 export type WebScreenCapabilities = Required<HostScreenCapabilities>;

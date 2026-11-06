@@ -1,14 +1,14 @@
 import { allocateEntity, attachEntityBinding, finishEntity, getEntityBinding } from '@flighthq/entity/contract';
+import { EntityRuntimeKey } from '@flighthq/entity/contract';
 import { connectSignal } from '@flighthq/signals/contract';
+import { describe, expect, it, vi } from 'vitest';
+
 import type {
   HostScreenQueryCapability,
   ScreenChangeEvent,
   ScreenInfo,
   ScreenPermissionState,
-} from '@flighthq/types/contract';
-import { EntityRuntimeKey } from '@flighthq/types/contract';
-import { describe, expect, it, vi } from 'vitest';
-
+} from './contract.screen-types.ts';
 import {
   attachScreenPermissionChange,
   attachScreenSignals,

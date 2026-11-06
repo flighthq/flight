@@ -1,8 +1,6 @@
 import { allocateEntity } from '@flighthq/entity/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
 import type {
-  ElectronApi,
-  ElectronDisplay,
-  EntityConstruction,
   HostScreenCapabilities,
   HostScreenChangeCapability,
   HostScreenQueryCapability,
@@ -11,7 +9,8 @@ import type {
   ScreenColorSpace,
   ScreenInfo,
   ScreenOrientation,
-} from '@flighthq/types/contract';
+} from '@flighthq/screen/contract';
+import type { ElectronApi, ElectronDisplay } from '@flighthq/types/contract';
 
 export function electronHostScreen(electron: ElectronApi): Required<Pick<HostScreenCapabilities, 'change' | 'query'>> {
   return { change: electronHostScreenChange(electron), query: electronHostScreenQuery(electron) };

@@ -1,13 +1,2 @@
-// One selectable display mode (resolution + refresh + color depth) for a screen. The web reports a
-// single synthetic mode derived from the current ScreenInfo; a native host enumerates every mode the
-// display supports. Sentinels: refreshRate/colorDepth are -1 and pixelFormat is '' when unknown.
-import type { Entity } from './Entity.ts';
-
-export interface ScreenMode extends Entity {
-  width: number;
-  height: number;
-  refreshRate: number;
-  colorDepth: number;
-  // Host-specific pixel format identifier, or '' when none.
-  pixelFormat: string;
-}
+/** @deprecated Import screen contracts from `@flighthq/screen/contract`. */
+export type { ScreenMode } from '@flighthq/screen/contract';
