@@ -1,10 +1,11 @@
 import { createRequirementSet } from '@flighthq/requirement/contract';
-import type { Requirement, RequirementCatalog, RequirementFacet, RequirementSet } from '@flighthq/types/contract';
+import type { Requirement, RequirementFacet, RequirementSetRaw } from '@flighthq/requirement/contract';
+import type { RequirementCatalog } from '@flighthq/types/contract';
 
 /** What a read reports: the parsed value, or the reasons the text is not one. */
 export interface RequirementSetFileValidation {
   readonly problems: readonly string[];
-  readonly requirementSet: RequirementSet | null;
+  readonly requirementSet: RequirementSetRaw | null;
 }
 
 /** What a catalog read reports: the parsed catalog, or the reasons the text is not one. */
@@ -162,7 +163,7 @@ export function readRequirementSetFile(text: string): RequirementSetFileValidati
  * also carry its runtime slot; naming the fields keeps the file a description of content rather than a
  * snapshot of one process's objects.
  */
-export function writeRequirementSetFile(requirementSet: Readonly<RequirementSet>): string {
+export function writeRequirementSetFile(requirementSet: Readonly<RequirementSetRaw>): string {
   return `${JSON.stringify(
     {
       covers: [...requirementSet.covers],

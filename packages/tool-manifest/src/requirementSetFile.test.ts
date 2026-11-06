@@ -1,5 +1,5 @@
 import { createRequirementSet } from '@flighthq/requirement/contract';
-import { RequirementFacet } from '@flighthq/types/contract';
+import { RequirementFacet } from '@flighthq/requirement/contract';
 
 import { readRequirementCatalogFile, readRequirementSetFile, writeRequirementSetFile } from './requirementSetFile.ts';
 

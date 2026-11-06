@@ -3,9 +3,9 @@ import { extname, join } from 'node:path';
 
 import { createRequirementCodegenPlan } from '@flighthq/requirement-codegen/contract';
 import { diffRequirementSets, mergeRequirementSets } from '@flighthq/requirement/contract';
+import type { RequirementSetRaw } from '@flighthq/requirement/contract';
 import { parseAwd2Requirements } from '@flighthq/scene3d-formats/contract';
 import { parseSwfRequirements } from '@flighthq/swf/contract';
-import type { RequirementSet } from '@flighthq/types/contract';
 
 import { readRequirementCatalogFile, readRequirementSetFile, writeRequirementSetFile } from './requirementSetFile.ts';
 
@@ -73,7 +73,7 @@ export async function runManifestTool(args: readonly string[], io: Readonly<Mani
 
 type Flags = Readonly<Record<string, readonly string[]>>;
 
-const CONTENT_ANALYZERS: ReadonlyMap<string, (source: Uint8Array) => RequirementSet> = new Map([
+const CONTENT_ANALYZERS: ReadonlyMap<string, (source: Uint8Array) => RequirementSetRaw> = new Map([
   ['.awd', (source: Uint8Array) => parseAwd2Requirements(source, null, null)],
   ['.swf', (source: Uint8Array) => parseSwfRequirements(source, null, null)],
 ]);
@@ -94,7 +94,7 @@ function parseFlags(args: readonly string[]): Flags | null {
   return flags;
 }
 
-async function readSet(path: string): Promise<RequirementSet> {
+async function readSet(path: string): Promise<RequirementSetRaw> {
   const validation = readRequirementSetFile(await readFile(path, 'utf8'));
   if (validation.requirementSet === null) throw new Error(`${path}: ${validation.problems.join('; ')}`);
   return validation.requirementSet;
@@ -181,7 +181,7 @@ async function runScan(flags: Flags, io: Readonly<ManifestToolIO>): Promise<numb
     return 1;
   }
   const names = (await readdir(dir)).filter((name) => CONTENT_ANALYZERS.has(extname(name).toLowerCase())).sort();
-  const sets: RequirementSet[] = [];
+  const sets: RequirementSetRaw[] = [];
   for (const name of names) {
     const analyze = CONTENT_ANALYZERS.get(extname(name).toLowerCase())!;
     sets.push(analyze(new Uint8Array(await readFile(join(dir, name)))));
