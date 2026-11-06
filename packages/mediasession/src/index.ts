@@ -10,3 +10,22 @@ export {
   setMediaSessionPlaybackState,
   setMediaSessionPositionState,
 } from './contract.ts';
+export type {
+  HostMediaSessionActionCapability,
+  HostMediaSessionCapabilities,
+  HostMediaSessionCapability,
+  MediaSessionAction,
+  MediaSessionActionDetails,
+  MediaSessionActionSignal,
+  MediaSessionArtwork,
+  MediaSessionClearMetadataOutcome,
+  MediaSessionClearPositionStateOutcome,
+  MediaSessionMetadata,
+  MediaSessionOperationBlockReason,
+  MediaSessionOperationOutcome,
+  MediaSessionPlaybackState,
+  MediaSessionPositionState,
+  MediaSessionSetMetadataOutcome,
+  MediaSessionSetPlaybackStateOutcome,
+  MediaSessionSetPositionStateOutcome,
+} from './contract.ts';

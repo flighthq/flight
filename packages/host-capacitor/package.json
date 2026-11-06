@@ -48,6 +48,7 @@
     "@flighthq/haptics": "*",
     "@flighthq/host": "*",
     "@flighthq/host-web": "*",
+    "@flighthq/mediasession": "*",
     "@flighthq/menu": "*",
     "@flighthq/notification": "*",
     "@flighthq/share": "*",

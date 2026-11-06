@@ -1,9 +1,10 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
 import { clearSignal, createSignal, emitSignal } from '@flighthq/signals/contract';
+
 import type {
-  EntityConstruction,
-  HostMediaSessionCapability,
   HostMediaSessionActionCapability,
+  HostMediaSessionCapability,
   MediaSessionAction,
   MediaSessionActionSignal,
   MediaSessionClearMetadataOutcome,
@@ -14,7 +15,7 @@ import type {
   MediaSessionSetMetadataOutcome,
   MediaSessionSetPlaybackStateOutcome,
   MediaSessionSetPositionStateOutcome,
-} from '@flighthq/types/contract';
+} from './contract.mediasession-types.ts';
 
 // Attaches exactly the action named by `signal`. A null provider subscription is a truthful runtime
 // refusal and leaves the entity detached. Reattaching first releases the prior exact origin.

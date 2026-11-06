@@ -1,4 +1,4 @@
-import type { MediaSessionActionDetails } from '@flighthq/types/contract';
+import type { MediaSessionActionDetails } from '@flighthq/mediasession/contract';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { webHost } from './webHost.ts';

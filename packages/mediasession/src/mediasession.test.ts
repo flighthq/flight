@@ -1,14 +1,14 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { EntityRuntimeKey } from '@flighthq/entity/contract';
 import { connectSignal, hasSignalSlots } from '@flighthq/signals/contract';
-import { EntityRuntimeKey } from '@flighthq/types/contract';
-import type {
-  HostMediaSessionActionCapability,
-  MediaSessionActionDetails,
-  HostMediaSessionCapability,
-  MediaSessionPositionState,
-} from '@flighthq/types/contract';
 import { describe, expect, it, vi } from 'vitest';
 
+import type {
+  HostMediaSessionActionCapability,
+  HostMediaSessionCapability,
+  MediaSessionActionDetails,
+  MediaSessionPositionState,
+} from './contract.mediasession-types.ts';
 import {
   attachMediaSessionAction,
   clearMediaSessionMetadata,

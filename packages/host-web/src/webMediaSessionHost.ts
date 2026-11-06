@@ -1,4 +1,4 @@
-import type { HostMediaSessionCapabilities } from '@flighthq/types/contract';
+import type { HostMediaSessionCapabilities } from '@flighthq/mediasession/contract';
 
 import { webHostMediaSession, webHostMediaSessionAction } from './webMediasession.ts';
 

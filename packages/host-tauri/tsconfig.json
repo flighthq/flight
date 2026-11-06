@@ -7,7 +7,7 @@
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,
-    "moduleSuffixes": [".shell-types", ".menu-types", ""],
+    "moduleSuffixes": [".shell-types", ".mediasession-types", ".menu-types", ""],
     "types": ["node", "@testing-library/jest-dom", "vitest/globals", "@webgpu/types"]
   },
   "references": [
@@ -28,6 +28,9 @@
     },
     {
       "path": "../host-web"
+    },
+    {
+      "path": "../mediasession/tsconfig.contract.json"
     },
     {
       "path": "../menu/tsconfig.contract.json"

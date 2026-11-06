@@ -2,6 +2,7 @@ import type { HostAppCapabilities, HostFullscreenCapabilities, HostWindowCapabil
 import type { HostClipboardCapabilities } from '@flighthq/clipboard/contract';
 import type { HostDeviceCapabilities } from '@flighthq/device/contract';
 import type { HostLifecycleCapabilities } from '@flighthq/lifecycle/contract';
+import type { HostMediaSessionCapabilities } from '@flighthq/mediasession/contract';
 import type { HostMenuCapabilities } from '@flighthq/menu/contract';
 import type { HostNetCapabilities } from '@flighthq/net/contract';
 import type { HostPowerCapabilities } from '@flighthq/power/contract';
@@ -28,7 +29,6 @@ import type {
   HostGlyphCapabilities,
   HostImageCapabilities,
   HostInputCapabilities,
-  HostMediaSessionCapabilities,
   HostNotificationCapabilities,
   HostPermissionsCapabilities,
   HostPlatformCapabilities,

@@ -44,6 +44,7 @@
     "@flighthq/entity": "*",
     "@flighthq/host": "*",
     "@flighthq/host-web": "*",
+    "@flighthq/mediasession": "*",
     "@flighthq/menu": "*",
     "@flighthq/notification": "*",
     "@flighthq/platform": "*",

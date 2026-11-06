@@ -9,6 +9,7 @@
     "sourceMap": true,
     "moduleSuffixes": [
       ".lifecycle-types",
+      ".mediasession-types",
       ".power-types",
       ".shell-types",
       ".shortcut-types",
@@ -70,6 +71,9 @@
     },
     {
       "path": "../media"
+    },
+    {
+      "path": "../mediasession/tsconfig.contract.json"
     },
     {
       "path": "../menu/tsconfig.contract.json"

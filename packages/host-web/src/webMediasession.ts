@@ -1,11 +1,11 @@
 import type {
-  MediaSessionAction,
   HostMediaSessionActionCapability,
-  MediaSessionActionDetails,
   HostMediaSessionCapability,
+  MediaSessionAction,
+  MediaSessionActionDetails,
   MediaSessionMetadata,
   MediaSessionPlaybackState,
-} from '@flighthq/types/contract';
+} from '@flighthq/mediasession/contract';
 
 const OK = { reason: 'ok' } as const;
 const INVALID_ARTWORK_SOURCE = { reason: 'invalid-artwork-source' } as const;

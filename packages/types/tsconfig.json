@@ -33,6 +33,7 @@
       ".geometry-types",
       ".font-types",
       ".host-types",
+      ".mediasession-types",
       ".menu-types",
       ".midi-types",
       ".net-types",
@@ -156,6 +157,9 @@
     },
     {
       "path": "../math"
+    },
+    {
+      "path": "../mediasession/tsconfig.contract.json"
     },
     {
       "path": "../menu/tsconfig.contract.json"

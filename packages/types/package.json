@@ -69,6 +69,7 @@
     "@flighthq/log": "*",
     "@flighthq/materials": "*",
     "@flighthq/math": "*",
+    "@flighthq/mediasession": "*",
     "@flighthq/menu": "*",
     "@flighthq/midi": "*",
     "@flighthq/net": "*",

@@ -28,6 +28,7 @@ import type {
   HostSoftKeyboardVisibilityCapability,
 } from '@flighthq/keyboard/contract';
 import type { HostLifecycleCapabilities } from '@flighthq/lifecycle/contract';
+import type { HostMediaSessionCapabilities } from '@flighthq/mediasession/contract';
 import type { HostMenuCapabilities } from '@flighthq/menu/contract';
 import type { HostNetCapabilities } from '@flighthq/net/contract';
 import type { HostPowerCapabilities } from '@flighthq/power/contract';
@@ -68,7 +69,6 @@ import type {
   HostIpcSendCapability,
   HostIpcTargetedSendCapability,
 } from './Ipc.ts';
-import type { HostMediaSessionActionCapability, HostMediaSessionCapability } from './MediaSession.ts';
 import type { HostPermissionsCapability } from './Permission.ts';
 import type { HostPlatformCapability } from './Platform.ts';
 import type { HostTextSegmenterCapability } from './TextSegment.ts';
@@ -77,6 +77,7 @@ import type { HostUpdaterCommandCapability } from './Updater.ts';
 
 /** @deprecated Import `HostInputCapabilities` from `@flighthq/input/contract`. */
 export type { HostInputCapabilities } from '@flighthq/input/contract';
+export type { HostMediaSessionCapabilities } from '@flighthq/mediasession/contract';
 
 export interface Host extends Entity {
   readonly accessibility: HostAccessibilityCapabilities;
@@ -158,11 +159,6 @@ export interface HostIpcCapabilities {
   readonly message?: HostIpcMessageCapability;
   readonly send?: HostIpcSendCapability;
   readonly targetedSend?: HostIpcTargetedSendCapability;
-}
-
-export interface HostMediaSessionCapabilities {
-  readonly action?: HostMediaSessionActionCapability;
-  readonly control?: HostMediaSessionCapability;
 }
 
 export interface HostPermissionsCapabilities {
