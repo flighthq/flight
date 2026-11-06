@@ -1,13 +1,13 @@
-/** Identifies a bitmap font descriptor format for detection and dispatch.
- *
- *  Open string alias: use a vendor-prefixed value (e.g. `'acme.MyFont'`) for a custom format so it cannot
- *  collide with a built-in kind string. */
-export type BitmapFontFormatKind = string;
-/** BMFont binary: the `BMF` magic followed by version 3. */
+// Owned by `@flighthq/bitmapfont-formats`. The runtime values stay duplicated here because the Types
+// core layer may cross this owner edge only with type imports/exports; package validation enforces it.
+
+/** @deprecated Import from `@flighthq/bitmapfont-formats/contract`. */
 export const BitmapFontFormatKindBmFontBinary = 'BmFontBinary';
-/** BMFont text: the line-oriented `info`/`common`/`page`/`char` grammar. */
-export const BitmapFontFormatKindBmFontText = 'BmFontText';
-/** BMFont XML: a document whose root element is `<font>`. */
-export const BitmapFontFormatKindBmFontXml = 'BmFontXml';
-/** BMFont JSON: an object carrying `common` and `chars`. */
+/** @deprecated Import from `@flighthq/bitmapfont-formats/contract`. */
 export const BitmapFontFormatKindBmFontJson = 'BmFontJson';
+/** @deprecated Import from `@flighthq/bitmapfont-formats/contract`. */
+export const BitmapFontFormatKindBmFontText = 'BmFontText';
+/** @deprecated Import from `@flighthq/bitmapfont-formats/contract`. */
+export const BitmapFontFormatKindBmFontXml = 'BmFontXml';
+/** @deprecated Import from `@flighthq/bitmapfont-formats/contract`. */
+export type { BitmapFontFormatKind } from '@flighthq/bitmapfont-formats/contract';

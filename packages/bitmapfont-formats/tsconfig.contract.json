@@ -1,0 +1,15 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "composite": true,
+    "rootDir": "src",
+    "outDir": "dist",
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "moduleSuffixes": [".bitmapfont-types", ""],
+    "tsBuildInfoFile": "dist/.tsbuildinfo.contract"
+  },
+  "references": [{ "path": "../bitmapfont/tsconfig.contract.json" }, { "path": "../importdiagnostics" }],
+  "include": ["src/contract.bitmapfont-formats-types.ts", "src/types.ts"]
+}

@@ -4,11 +4,12 @@ import {
   getBitmapFontMetrics,
   getBitmapFontPage,
 } from '@flighthq/bitmapfont/contract';
+import type { ImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import { createTextureAtlas } from '@flighthq/textureatlas/contract';
-import type { BitmapFontRecord, ImportDiagnostic } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { buildBitmapFontFromRecord, reportDroppedBitmapFontRecords } from './bitmapFontRecord.ts';
+import type { BitmapFontRecord } from './types.ts';
 
 describe('buildBitmapFontFromRecord', () => {
   it('maps chars, kernings, and common metrics onto a BitmapFont', () => {

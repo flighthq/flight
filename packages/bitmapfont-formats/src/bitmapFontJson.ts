@@ -1,13 +1,8 @@
 import type { BitmapFont, BitmapFontEncoding, BitmapFontParseOptions } from '@flighthq/bitmapfont/contract';
-import type {
-  ImportDiagnostic,
-  BitmapFontCharRecord,
-  BitmapFontKerningRecord,
-  BitmapFontPageRecord,
-  BitmapFontRecord,
-} from '@flighthq/types/contract';
+import type { ImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 
 import { buildBitmapFontFromRecord, reportDroppedBitmapFontRecords } from './bitmapFontRecord.ts';
+import type { BitmapFontCharRecord, BitmapFontKerningRecord, BitmapFontPageRecord, BitmapFontRecord } from './types.ts';
 
 // Parses the JSON AngelCode/BMFont export into a `BitmapFont`. The shape mirrors the text/XML blocks as
 // an object: `{ common: { lineHeight, base }, pages: [file, …], chars: [{ id, x, … }], kernings: [{

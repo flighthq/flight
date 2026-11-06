@@ -1,0 +1,26 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "composite": true,
+    "rootDir": "src",
+    "outDir": "dist",
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "tsBuildInfoFile": "dist/.tsbuildinfo.runtime"
+  },
+  "references": [
+    { "path": "../bitmapfont/tsconfig.runtime.json" },
+    { "path": "../encoding" },
+    { "path": "../glyphatlas/tsconfig.contract.json" },
+    { "path": "../image/tsconfig.runtime.json" },
+    { "path": "../importdiagnostics" },
+    { "path": "../registry" },
+    { "path": "../requirement" },
+    { "path": "../textureatlas/tsconfig.runtime.json" },
+    { "path": "../xml" },
+    { "path": "./tsconfig.contract.json" }
+  ],
+  "include": ["src/**/*.ts"],
+  "exclude": ["src/contract.bitmapfont-formats-types.ts", "src/types.ts"]
+}

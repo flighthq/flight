@@ -1,9 +1,10 @@
 import type { BitmapFontParseOptions } from '@flighthq/bitmapfont/contract';
+
 import type {
   BitmapFontParseExplanation,
   BitmapFontParseExplanationFormat,
   BitmapFontParseExplanationReason,
-} from '@flighthq/types/contract';
+} from './types.ts';
 
 export function explainBitmapFontParse(
   text: string,

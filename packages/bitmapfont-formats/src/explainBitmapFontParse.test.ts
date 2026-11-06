@@ -1,4 +1,4 @@
-import type { TextureAtlas } from '@flighthq/types/contract';
+import type { TextureAtlas } from '@flighthq/textureatlas/contract';
 import { describe, expect, it } from 'vitest';
 
 import { explainBitmapFontParse } from './explainBitmapFontParse.ts';

@@ -102,6 +102,7 @@
       ".timeline-types",
       ".scene2d-resources-types",
       ".bitmapfont-types",
+      ".bitmapfont-formats-types",
       ".textureatlas-types",
       ".textureatlas-bridge-types",
       ".meshgeometry-bridge-types",
@@ -463,6 +464,9 @@
     },
     {
       "path": "../bitmapfont/tsconfig.contract.json"
+    },
+    {
+      "path": "../bitmapfont-formats/tsconfig.contract.json"
     },
     {
       "path": "../textureatlas/tsconfig.contract.json"

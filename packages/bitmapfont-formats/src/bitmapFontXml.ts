@@ -1,11 +1,5 @@
 import type { BitmapFont, BitmapFontParseOptions } from '@flighthq/bitmapfont/contract';
-import type {
-  ImportDiagnostic,
-  BitmapFontCharRecord,
-  BitmapFontKerningRecord,
-  BitmapFontPageRecord,
-  BitmapFontRecord,
-} from '@flighthq/types/contract';
+import type { ImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import type { XmlElement } from '@flighthq/xml/contract';
 import {
   getXmlElementAttribute,
@@ -16,6 +10,7 @@ import {
 } from '@flighthq/xml/contract';
 
 import { buildBitmapFontFromRecord, reportDroppedBitmapFontRecords } from './bitmapFontRecord.ts';
+import type { BitmapFontCharRecord, BitmapFontKerningRecord, BitmapFontPageRecord, BitmapFontRecord } from './types.ts';
 
 // Parses the XML AngelCode/BMFont `.fnt` variant into a `BitmapFont`. The document is
 // `<font><info/><common/><pages><page/></pages><chars><char/></chars><kernings><kerning/></kernings></font>`

@@ -1,13 +1,8 @@
 import type { BitmapFont, BitmapFontEncoding, BitmapFontParseOptions } from '@flighthq/bitmapfont/contract';
-import type {
-  ImportDiagnostic,
-  BitmapFontCharRecord,
-  BitmapFontKerningRecord,
-  BitmapFontPageRecord,
-  BitmapFontRecord,
-} from '@flighthq/types/contract';
+import type { ImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 
 import { buildBitmapFontFromRecord, reportDroppedBitmapFontRecords } from './bitmapFontRecord.ts';
+import type { BitmapFontCharRecord, BitmapFontKerningRecord, BitmapFontPageRecord, BitmapFontRecord } from './types.ts';
 
 // Parses the BMFont binary `.fnt` format (version 3) into a `BitmapFont`. The binary layout is a
 // 4-byte header (`BMF` + version byte 3) followed by typed blocks: block 1 = info, block 2 =

@@ -1,8 +1,8 @@
 import { createTextureAtlas } from '@flighthq/textureatlas/contract';
-import type { BitmapFontCharRecord, BitmapFontKerningRecord, BitmapFontPageRecord } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { parseBitmapFontBinary } from './bitmapFontBinary.ts';
+import type { BitmapFontCharRecord, BitmapFontKerningRecord, BitmapFontPageRecord } from './types.ts';
 
 function buildBinaryFont(options: {
   chars?: BitmapFontCharRecord[];

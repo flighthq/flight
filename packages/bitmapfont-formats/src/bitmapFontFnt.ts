@@ -1,15 +1,10 @@
 import { getBitmapFontMetrics, unpackBitmapFontKerningKey } from '@flighthq/bitmapfont/contract';
 import type { BitmapFont, BitmapFontKerningPair, BitmapFontParseOptions } from '@flighthq/bitmapfont/contract';
-import type {
-  ImportDiagnostic,
-  BitmapFontCharRecord,
-  BitmapFontKerningRecord,
-  BitmapFontPageRecord,
-  BitmapFontRecord,
-  GlyphEntry,
-} from '@flighthq/types/contract';
+import type { GlyphEntry } from '@flighthq/glyphatlas/contract';
+import type { ImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 
 import { buildBitmapFontFromRecord, reportDroppedBitmapFontRecords } from './bitmapFontRecord.ts';
+import type { BitmapFontCharRecord, BitmapFontKerningRecord, BitmapFontPageRecord, BitmapFontRecord } from './types.ts';
 
 // Re-emits a `BitmapFont` as the classic AngelCode/BMFont text `.fnt` (`info`/`common`/`page`/`char`/
 // `kerning` lines of `key=value` pairs). Lossless for the fields the model carries — the glyph table

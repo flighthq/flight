@@ -42,14 +42,15 @@
   "dependencies": {
     "@flighthq/bitmapfont": "*",
     "@flighthq/encoding": "*",
+    "@flighthq/glyphatlas": "*",
     "@flighthq/importdiagnostics": "*",
     "@flighthq/registry": "*",
     "@flighthq/requirement": "*",
-    "@flighthq/types": "*",
+    "@flighthq/textureatlas": "*",
     "@flighthq/xml": "*"
   },
   "devDependencies": {
-    "@flighthq/textureatlas": "*",
+    "@flighthq/image": "*",
     "typescript": "^7.0.2"
   },
   "description": "AngelCode/BMFont codec neighbor of @flighthq/bitmapfont — parse the text/XML/JSON .fnt variants into a BitmapFont and re-emit the text form",

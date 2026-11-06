@@ -6,9 +6,11 @@ import type {
   BitmapFontKerningData,
   BitmapFontParseOptions,
 } from '@flighthq/bitmapfont/contract';
-import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
-import type { ImportDiagnostic, BitmapFontRecord, TextureAtlas } from '@flighthq/types/contract';
-import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
+import { ImportDiagnosticSeverity, reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import type { ImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import type { TextureAtlas } from '@flighthq/textureatlas/contract';
+
+import type { BitmapFontRecord } from './types.ts';
 
 // Maps a parsed `BitmapFontRecord` onto a `BitmapFont` via `createBitmapFont`, resolving every atlas
 // page the record declares through `options.resolvePage` (called once per page id). The resolved

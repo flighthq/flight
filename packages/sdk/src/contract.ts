@@ -20,6 +20,12 @@ export type {
 export * from '@flighthq/buffer/contract';
 export * from '@flighthq/bitmapfont';
 export * from '@flighthq/bitmapfont-formats';
+export {
+  BitmapFontFormatKindBmFontBinary,
+  BitmapFontFormatKindBmFontJson,
+  BitmapFontFormatKindBmFontText,
+  BitmapFontFormatKindBmFontXml,
+} from '@flighthq/bitmapfont-formats';
 export * from '@flighthq/bitmaptext';
 export { BitmapTextKind } from '@flighthq/bitmaptext';
 export * from '@flighthq/camera';

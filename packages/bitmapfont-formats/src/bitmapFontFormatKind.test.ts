@@ -1,12 +1,12 @@
+import { describe, expect, it } from 'vitest';
+
+import { readBitmapFontFormatKind } from './bitmapFontFormatKind.ts';
 import {
   BitmapFontFormatKindBmFontBinary,
   BitmapFontFormatKindBmFontJson,
   BitmapFontFormatKindBmFontText,
   BitmapFontFormatKindBmFontXml,
-} from '@flighthq/types/contract';
-import { describe, expect, it } from 'vitest';
-
-import { readBitmapFontFormatKind } from './bitmapFontFormatKind.ts';
+} from './types.ts';
 
 // ★ THE EXTENSION CANNOT NAME THE FORMAT, WHICH IS THE WHOLE REASON THIS IS SEPARATELY IMPORTABLE. BMFont writes
 // binary, text and XML all under `.fnt`, so a build-time analyzer that keyed on the extension would name the text

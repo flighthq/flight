@@ -4,8 +4,8 @@ import {
   getBitmapFontMetrics,
   getBitmapFontPage,
 } from '@flighthq/bitmapfont/contract';
+import type { ImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import { createTextureAtlas } from '@flighthq/textureatlas/contract';
-import type { ImportDiagnostic } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { parseBitmapFontXml } from './bitmapFontXml.ts';

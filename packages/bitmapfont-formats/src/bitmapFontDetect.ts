@@ -1,26 +1,25 @@
 import type { BitmapFont, BitmapFontParseOptions } from '@flighthq/bitmapfont/contract';
 import { decodeUTF8 } from '@flighthq/encoding/contract';
+import type { ImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import { getKindMapKeys, withKindMapEntry, withoutKindMapEntry } from '@flighthq/registry/contract';
-import type {
-  BitmapFontFormatDescriptor,
-  BitmapFontFormatEntry,
-  BitmapFontFormatKind,
-  BitmapFontImportOptions,
-  ImportDiagnostic,
-  Kind,
-} from '@flighthq/types/contract';
-import {
-  BitmapFontFormatKindBmFontBinary,
-  BitmapFontFormatKindBmFontJson,
-  BitmapFontFormatKindBmFontText,
-  BitmapFontFormatKindBmFontXml,
-} from '@flighthq/types/contract';
 
 import { parseBitmapFontBinary } from './bitmapFontBinary.ts';
 import { parseBitmapFontFnt } from './bitmapFontFnt.ts';
 import { readBitmapFontFormatKind } from './bitmapFontFormatKind.ts';
 import { parseBitmapFontJson } from './bitmapFontJson.ts';
 import { parseBitmapFontXml } from './bitmapFontXml.ts';
+import type {
+  BitmapFontFormatDescriptor,
+  BitmapFontFormatEntry,
+  BitmapFontFormatKind,
+  BitmapFontImportOptions,
+} from './types.ts';
+import {
+  BitmapFontFormatKindBmFontBinary,
+  BitmapFontFormatKindBmFontJson,
+  BitmapFontFormatKindBmFontText,
+  BitmapFontFormatKindBmFontXml,
+} from './types.ts';
 
 /**
  * Installs the formats named in `options` into the registry.
@@ -153,11 +152,11 @@ function bindBitmapFontFormat(kind: BitmapFontFormatKind, entry: BitmapFontForma
 // own modules on import: this package declares `"sideEffects": false`, so a top-level
 // `registerBitmapFontFormat` call in each front end would be the import-time side effect the SDK bans, and it
 // would drag every front end into any consumer that imported one.
-function getRegistry(): ReadonlyMap<Kind, BitmapFontFormatEntry> {
+function getRegistry(): ReadonlyMap<BitmapFontFormatKind, BitmapFontFormatEntry> {
   if (_registry !== null) return _registry;
   _registry = new Map();
   applyBitmapFontImportOptions({ formats: bitmapFontAllFormats });
   return _registry;
 }
 
-let _registry: ReadonlyMap<Kind, BitmapFontFormatEntry> | null = null;
+let _registry: ReadonlyMap<BitmapFontFormatKind, BitmapFontFormatEntry> | null = null;

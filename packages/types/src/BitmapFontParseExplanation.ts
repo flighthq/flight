@@ -1,18 +1,9 @@
-export type BitmapFontParseExplanationFormat = 'fnt' | 'json' | 'unknown' | 'xml';
+// Owned by `@flighthq/bitmapfont-formats`. These deprecated re-exports keep existing
+// `@flighthq/types` imports compiling until consumers import the owning package.
 
-export type BitmapFontParseExplanationReason =
-  | 'invalid-data'
-  | 'missing-chars'
-  | 'missing-common'
-  | 'ok'
-  | 'unresolved-page';
-
-export interface BitmapFontParseExplanation {
-  charCount: number;
-  detectedFormat: BitmapFontParseExplanationFormat;
-  kerningCount: number;
-  pageCount: number;
-  reason: BitmapFontParseExplanationReason;
-  success: boolean;
-  unresolvedPages: readonly number[];
-}
+/** @deprecated Import from `@flighthq/bitmapfont-formats/contract`. */
+export type {
+  BitmapFontParseExplanation,
+  BitmapFontParseExplanationFormat,
+  BitmapFontParseExplanationReason,
+} from '@flighthq/bitmapfont-formats/contract';

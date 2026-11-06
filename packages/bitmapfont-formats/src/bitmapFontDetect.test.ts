@@ -1,12 +1,5 @@
 import { encodeUTF8 } from '@flighthq/encoding/contract';
 import { createTextureAtlas } from '@flighthq/textureatlas/contract';
-import type { BitmapFontFormatKind } from '@flighthq/types/contract';
-import {
-  BitmapFontFormatKindBmFontBinary,
-  BitmapFontFormatKindBmFontJson,
-  BitmapFontFormatKindBmFontText,
-  BitmapFontFormatKindBmFontXml,
-} from '@flighthq/types/contract';
 
 import {
   applyBitmapFontImportOptions,
@@ -22,6 +15,13 @@ import {
   registerBitmapFontFormat,
   unregisterBitmapFontFormat,
 } from './bitmapFontDetect.ts';
+import {
+  BitmapFontFormatKindBmFontBinary,
+  BitmapFontFormatKindBmFontJson,
+  BitmapFontFormatKindBmFontText,
+  BitmapFontFormatKindBmFontXml,
+} from './types.ts';
+import type { BitmapFontFormatKind } from './types.ts';
 
 const TEXT = encodeUTF8(
   [

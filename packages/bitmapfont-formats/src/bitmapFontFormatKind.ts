@@ -1,11 +1,12 @@
 import { decodeUTF8 } from '@flighthq/encoding/contract';
-import type { BitmapFontFormatKind } from '@flighthq/types/contract';
+
 import {
   BitmapFontFormatKindBmFontBinary,
   BitmapFontFormatKindBmFontJson,
   BitmapFontFormatKindBmFontText,
   BitmapFontFormatKindBmFontXml,
-} from '@flighthq/types/contract';
+} from './types.ts';
+import type { BitmapFontFormatKind } from './types.ts';
 
 /**
  * The bitmap-font content discrimination, with NO registry behind it.
