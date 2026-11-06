@@ -1,3 +1,4 @@
+export * from './types.ts';
 export * from './spring.ts';
 export * from './spring2D.ts';
 export * from './spring3D.ts';

@@ -376,7 +376,7 @@
       "path": "../spatial/tsconfig.runtime.json"
     },
     {
-      "path": "../spring"
+      "path": "../spring/tsconfig.runtime.json"
     },
     {
       "path": "../statechart/tsconfig.runtime.json"

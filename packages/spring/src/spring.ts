@@ -1,6 +1,9 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
 import { approxEqual, approxZero, TAU } from '@flighthq/math/contract';
-import type { Spring, SpringConfig, EntityConstruction } from '@flighthq/types/contract';
+
+import type { SpringConfig } from './springConfig.ts';
+import type { Spring } from './types.ts';
 
 // Add `velocity` to the spring's current velocity without changing its position. This is the
 // allocation-free flick/throw control: repeated impulses compose additively, and the next analytic

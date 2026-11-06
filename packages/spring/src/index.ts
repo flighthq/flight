@@ -21,3 +21,5 @@ export {
   updateSpring3D,
   updateSpringAngle,
 } from './contract.ts';
+export type { Spring, Spring2D, Spring3D } from './types.ts';
+export type { SpringConfig } from './springConfig.ts';
