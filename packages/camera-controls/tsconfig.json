@@ -9,7 +9,7 @@
     "sourceMap": true
   },
   "references": [
-    { "path": "../camera" },
+    { "path": "../camera/tsconfig.runtime.json" },
     { "path": "../entity" },
     { "path": "../geometry/tsconfig.runtime.json" },
     { "path": "../math" },

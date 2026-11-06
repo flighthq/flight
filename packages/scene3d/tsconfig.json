@@ -4,7 +4,7 @@
   "references": [
     { "path": "../adjustments/tsconfig.runtime.json" },
     { "path": "../animation" },
-    { "path": "../camera" },
+    { "path": "../camera/tsconfig.runtime.json" },
     { "path": "../entity" },
     { "path": "../geometry/tsconfig.runtime.json" },
     { "path": "../image/tsconfig.runtime.json" },

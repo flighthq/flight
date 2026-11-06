@@ -12,7 +12,7 @@
   },
   "references": [
     {
-      "path": "../camera"
+      "path": "../camera/tsconfig.runtime.json"
     },
     {
       "path": "../color"

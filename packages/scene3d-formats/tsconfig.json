@@ -5,7 +5,7 @@
   "files": [],
   "references": [
     { "path": "../animation" },
-    { "path": "../camera" },
+    { "path": "../camera/tsconfig.runtime.json" },
     { "path": "../color" },
     { "path": "../compression" },
     { "path": "../encoding" },
