@@ -1,4 +1,5 @@
-import type { CapacitorApi, HostHapticsCapabilities, HostSoftKeyboardCapabilities } from '@flighthq/types/contract';
+import type { HostSoftKeyboardCapabilities } from '@flighthq/host/contract';
+import type { CapacitorApi, HostHapticsCapabilities } from '@flighthq/types/contract';
 
 import { capacitorHostHaptics } from './capacitorHaptics.ts';
 import {

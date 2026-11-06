@@ -40,6 +40,7 @@
     "generate:check": "tsx ../../scripts/generate-rust-package.ts --crate flight-host --package host --lenient --check"
   },
   "dependencies": {
+    "@flighthq/accessibility": "*",
     "@flighthq/bitmap": "*",
     "@flighthq/compression": "*",
     "@flighthq/connectivity": "*",
@@ -49,6 +50,7 @@
     "@flighthq/font": "*",
     "@flighthq/geolocation": "*",
     "@flighthq/image": "*",
+    "@flighthq/keyboard": "*",
     "@flighthq/log": "*",
     "@flighthq/midi": "*",
     "@flighthq/notification": "*",
@@ -57,6 +59,7 @@
     "@flighthq/protocol": "*",
     "@flighthq/screen": "*",
     "@flighthq/share": "*",
+    "@flighthq/textsegment": "*",
     "@flighthq/textshaper": "*",
     "@flighthq/types": "*",
     "@flighthq/updater": "*",

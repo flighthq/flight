@@ -26,10 +26,16 @@
       ".protocol-types",
       ".updater-types",
       ".connectivity-types",
+      ".accessibility-types",
+      ".keyboard-types",
+      ".textsegment-types",
       ""
     ]
   },
   "references": [
+    {
+      "path": "../accessibility/tsconfig.contract.json"
+    },
     {
       "path": "../app/tsconfig.contract.json"
     },
@@ -67,6 +73,9 @@
       "path": "../image/tsconfig.contract.json"
     },
     {
+      "path": "../keyboard/tsconfig.contract.json"
+    },
+    {
       "path": "../menu/tsconfig.contract.json"
     },
     {
@@ -98,6 +107,9 @@
     },
     {
       "path": "../surface/tsconfig.contract.json"
+    },
+    {
+      "path": "../textsegment/tsconfig.contract.json"
     },
     {
       "path": "../texture-formats/tsconfig.contract.json"

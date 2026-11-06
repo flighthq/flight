@@ -1,4 +1,4 @@
-import type { HostSoftKeyboardCapabilities } from '@flighthq/types/contract';
+import type { HostSoftKeyboardCapabilities } from '@flighthq/host/contract';
 
 import { webHostSoftKeyboardChange, webHostSoftKeyboardInfo, webHostSoftKeyboardVisibility } from './webKeyboard.ts';
 

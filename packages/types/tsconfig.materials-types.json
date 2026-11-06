@@ -45,6 +45,9 @@
       ".updater-types",
       ".connectivity-types",
       ".render-gl-types",
+      ".accessibility-types",
+      ".keyboard-types",
+      ".textsegment-types",
       ""
     ],
     "tsBuildInfoFile": "dist/.tsbuildinfo.materials-types"
@@ -130,6 +133,18 @@
     },
     {
       "path": "../render-gl/tsconfig.contract.json"
+    },
+    {
+      "path": "../accessibility/tsconfig.contract.json"
+    },
+    {
+      "path": "../keyboard/tsconfig.contract.json"
+    },
+    {
+      "path": "../textsegment/tsconfig.contract.json"
+    },
+    {
+      "path": "../textsegment/tsconfig.contract.json"
     }
   ],
   "files": [

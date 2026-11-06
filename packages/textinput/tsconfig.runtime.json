@@ -17,7 +17,7 @@
     { "path": "../text/tsconfig.runtime.json" },
     { "path": "../textformat" },
     { "path": "../textlayout/tsconfig.runtime.json" },
-    { "path": "../textsegment" },
+    { "path": "../textsegment/tsconfig.runtime.json" },
     { "path": "./tsconfig.contract.json" }
   ],
   "include": ["src/**/*.ts"],

@@ -421,7 +421,7 @@
       "path": "../textlayout/tsconfig.runtime.json"
     },
     {
-      "path": "../textsegment"
+      "path": "../textsegment/tsconfig.runtime.json"
     },
     {
       "path": "../textshaper/tsconfig.runtime.json"

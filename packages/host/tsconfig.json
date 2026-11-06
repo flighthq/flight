@@ -65,6 +65,15 @@
       "path": "../video/tsconfig.contract.json"
     },
     {
+      "path": "../accessibility/tsconfig.contract.json"
+    },
+    {
+      "path": "../keyboard/tsconfig.contract.json"
+    },
+    {
+      "path": "../textsegment/tsconfig.contract.json"
+    },
+    {
       "path": "./tsconfig.contract.json"
     },
     {

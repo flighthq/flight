@@ -2,6 +2,7 @@
 // crates/flight-host/src/host_capabilities.rs). Each group names capabilities owned by domain
 // packages and imported from their contract lanes, so this file never imports @flighthq/types.
 
+import type { HostAccessibilityCapability } from '@flighthq/accessibility/contract';
 import type { HostBitmapEncodeCapability, HostBitmapReadbackCapability } from '@flighthq/bitmap/contract';
 import type {
   HostCompressDeflateCapability,
@@ -29,6 +30,15 @@ import type { HostFileSystemCapability } from '@flighthq/filesystem/contract';
 import type { HostFontLoadingCapability, HostGlyphRasterizerCapability } from '@flighthq/font/contract';
 import type { HostGeolocationCapability } from '@flighthq/geolocation/contract';
 import type { HostImageCapability } from '@flighthq/image/contract';
+import type {
+  HostSoftKeyboardAccessoryBarCapability,
+  HostSoftKeyboardChangeCapability,
+  HostSoftKeyboardInfoCapability,
+  HostSoftKeyboardResizeModeWriteCapability,
+  HostSoftKeyboardScrollAssistCapability,
+  HostSoftKeyboardStyleCapability,
+  HostSoftKeyboardVisibilityCapability,
+} from '@flighthq/keyboard/contract';
 import type { HostMidiAccessCapability, HostMidiPermissionCapability } from '@flighthq/midi/contract';
 import type {
   HostNotificationActionCapability,
@@ -54,6 +64,7 @@ import type {
 } from '@flighthq/protocol/contract';
 import type { HostScreenCapabilities } from '@flighthq/screen/contract';
 import type { HostShareContentCapability, HostShareFilesCapability } from '@flighthq/share/contract';
+import type { HostTextSegmenterCapability } from '@flighthq/textsegment/contract';
 import type { HostUpdaterCommandCapability } from '@flighthq/updater/contract';
 
 // Opaque host-side image handle carried across the native seam. The web target aliases the
@@ -172,3 +183,21 @@ export type AudioSourceHandle = number & { readonly __brand: 'AudioSourceHandle'
 export type AudioBusNodeHandle = number & { readonly __brand: 'AudioBusNodeHandle' };
 
 export type AudioMixerGraphHandle = number & { readonly __brand: 'AudioMixerGraphHandle' };
+
+export interface HostAccessibilityCapabilities {
+  readonly tree?: HostAccessibilityCapability;
+}
+
+export interface HostSoftKeyboardCapabilities {
+  readonly accessoryBar?: HostSoftKeyboardAccessoryBarCapability;
+  readonly change?: HostSoftKeyboardChangeCapability;
+  readonly info?: HostSoftKeyboardInfoCapability;
+  readonly resizeModeWrite?: HostSoftKeyboardResizeModeWriteCapability;
+  readonly scrollAssist?: HostSoftKeyboardScrollAssistCapability;
+  readonly style?: HostSoftKeyboardStyleCapability;
+  readonly visibility?: HostSoftKeyboardVisibilityCapability;
+}
+
+export interface HostTextSegmentCapabilities {
+  readonly segmenter?: HostTextSegmenterCapability;
+}

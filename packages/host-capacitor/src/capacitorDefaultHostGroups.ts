@@ -6,6 +6,7 @@ import {
   webHostTextShaperGroup,
 } from '@flighthq/host-web/contract';
 import type { HostPermissionsCapabilities, HostUpdaterCapabilities } from '@flighthq/host/contract';
+import type { HostAccessibilityCapabilities, HostTextSegmentCapabilities } from '@flighthq/host/contract';
 import type { HostIpcCapabilities } from '@flighthq/ipc/contract';
 import type { HostMediaSessionCapabilities } from '@flighthq/mediasession/contract';
 import type { HostMenuCapabilities } from '@flighthq/menu/contract';
@@ -14,7 +15,6 @@ import type { HostShortcutCapabilities } from '@flighthq/shortcut/contract';
 import type { HostTextShaperCapabilities } from '@flighthq/textshaper/contract';
 import type { HostTrayCapabilities } from '@flighthq/tray/contract';
 import type {
-  HostAccessibilityCapabilities,
   HostAudioCapabilities,
   HostAudioDecodeCapabilities,
   HostBitmapCapabilities,
@@ -36,7 +36,6 @@ import type {
   HostSocketCapabilities,
   HostCanvasCapabilities,
   HostSurfaceCapabilities,
-  HostTextSegmentCapabilities,
   HostCompressCapabilities,
   HostDecompressCapabilities,
   HostWgpuCapabilities,

@@ -9,11 +9,15 @@ import type { HostProtocolCapabilities } from '@flighthq/host/contract';
 import type { HostUpdaterCapabilities } from '@flighthq/host/contract';
 import type { HostPermissionsCapabilities } from '@flighthq/host/contract';
 import type { HostConnectivityCapabilities } from '@flighthq/host/contract';
+import type {
+  HostAccessibilityCapabilities,
+  HostSoftKeyboardCapabilities,
+  HostTextSegmentCapabilities,
+} from '@flighthq/host/contract';
 import type { HostIpcCapabilities } from '@flighthq/ipc/contract';
 import type { HostMediaSessionCapabilities } from '@flighthq/mediasession/contract';
 import type { HostTextShaperCapabilities } from '@flighthq/textshaper/contract';
 import type {
-  HostAccessibilityCapabilities,
   HostAudioCapabilities,
   HostAudioDecodeCapabilities,
   HostBitmapCapabilities,
@@ -37,11 +41,9 @@ import type {
   HostSensorsCapabilities,
   HostShareCapabilities,
   HostSocketCapabilities,
-  HostSoftKeyboardCapabilities,
   HostStatusBarCapabilities,
   HostCanvasCapabilities,
   HostSurfaceCapabilities,
-  HostTextSegmentCapabilities,
   HostCompressCapabilities,
   HostDecompressCapabilities,
   HostWgpuCapabilities,

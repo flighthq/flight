@@ -21,6 +21,7 @@ export type {
   AudioDeviceHandle,
   AudioMixerGraphHandle,
   AudioSourceHandle,
+  HostAccessibilityCapabilities,
   HostBitmapCapabilities,
   HostCompressCapabilities,
   HostConnectivityCapabilities,
@@ -37,6 +38,8 @@ export type {
   HostPermissionsCapabilities,
   HostProtocolCapabilities,
   HostShareCapabilities,
+  HostSoftKeyboardCapabilities,
+  HostTextSegmentCapabilities,
   HostUpdaterCapabilities,
   WebScreenCapabilities,
 } from './hostCapabilities.ts';

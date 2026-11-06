@@ -72,6 +72,7 @@
       ".connectivity-types",
       ".video-types",
       ".media-types",
+      ".textsegment-types",
       ""
     ],
     "types": ["@testing-library/jest-dom", "vitest/globals", "@webgpu/types"]
@@ -337,6 +338,12 @@
     },
     {
       "path": "../media/tsconfig.contract.json"
+    },
+    {
+      "path": "../textsegment/tsconfig.contract.json"
+    },
+    {
+      "path": "../textsegment/tsconfig.contract.json"
     }
   ],
   "include": ["src"]

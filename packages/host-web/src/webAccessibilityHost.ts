@@ -1,4 +1,4 @@
-import type { HostAccessibilityCapabilities } from '@flighthq/types/contract';
+import type { HostAccessibilityCapabilities } from '@flighthq/host/contract';
 
 import { webHostAccessibility } from './webAccessibility.ts';
 

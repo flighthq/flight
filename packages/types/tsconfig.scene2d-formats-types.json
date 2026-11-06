@@ -46,6 +46,8 @@
       ".updater-types",
       ".connectivity-types",
       ".render-gl-types",
+      ".accessibility-types",
+      ".textsegment-types",
       ""
     ],
     "tsBuildInfoFile": "dist/.tsbuildinfo.scene2d-formats-types"
@@ -233,6 +235,15 @@
     },
     {
       "path": "../render-gl/tsconfig.contract.json"
+    },
+    {
+      "path": "../accessibility/tsconfig.contract.json"
+    },
+    {
+      "path": "../textsegment/tsconfig.contract.json"
+    },
+    {
+      "path": "../textsegment/tsconfig.contract.json"
     }
   ],
   "files": [

@@ -42,6 +42,8 @@
       ".updater-types",
       ".connectivity-types",
       ".render-gl-types",
+      ".accessibility-types",
+      ".textsegment-types",
       ""
     ],
     "types": ["@webgpu/types"],
@@ -173,6 +175,15 @@
     },
     {
       "path": "../render-gl/tsconfig.contract.json"
+    },
+    {
+      "path": "../accessibility/tsconfig.contract.json"
+    },
+    {
+      "path": "../textsegment/tsconfig.contract.json"
+    },
+    {
+      "path": "../textsegment/tsconfig.contract.json"
     }
   ],
   "files": [
