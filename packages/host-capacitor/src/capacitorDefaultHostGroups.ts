@@ -39,9 +39,9 @@ import type {
   HostCompressCapabilities,
   HostDecompressCapabilities,
   HostTextShaperCapabilities,
-  HostVideoCapabilities,
   HostWgpuCapabilities,
 } from '@flighthq/types/contract';
+import type { HostVideoCapabilities } from '@flighthq/video/contract';
 
 // Groups Capacitor does not cover. Returning an explicit empty group keeps capability absence
 // structural: a missing slot is the honest report, where an inert method would be indistinguishable

@@ -1,12 +1,7 @@
+import type { HostImageSource } from '@flighthq/host/contract';
 import { clamp } from '@flighthq/math/contract';
 import { createSignal, emitSignal } from '@flighthq/signals/contract';
-import type {
-  HostImageSource,
-  HostVideoCapability,
-  VideoChannel,
-  VideoPlayOptions,
-  VideoResource,
-} from '@flighthq/types/contract';
+import type { HostVideoCapability, VideoChannel, VideoPlayOptions, VideoResource } from '@flighthq/video/contract';
 
 import { getVideoChannelSignals } from './mediaChannelSignals.ts';
 

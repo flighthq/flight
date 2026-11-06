@@ -1,10 +1,4 @@
-import type {
-  HostVideoCapability,
-  VideoResource,
-  VideoResourceLoadOptions,
-  VideoResourceUrl,
-} from '@flighthq/types/contract';
-
+import type { HostVideoCapability, VideoResource, VideoResourceLoadOptions, VideoResourceUrl } from './types.ts';
 import { selectVideoResourceUrl } from './videoFormat.ts';
 import { createVideoResource } from './videoResource.ts';
 

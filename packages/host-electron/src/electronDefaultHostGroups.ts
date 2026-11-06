@@ -39,9 +39,9 @@ import type {
   HostTextSegmentCapabilities,
   HostDecompressCapabilities,
   HostTextShaperCapabilities,
-  HostVideoCapabilities,
   HostWgpuCapabilities,
 } from '@flighthq/types/contract';
+import type { HostVideoCapabilities } from '@flighthq/video/contract';
 
 // Unsupported groups still have named constructors so the full Electron host has the same explicit
 // 45-group composition boundary as every other canonical Host. Empty means absent, never stubbed.

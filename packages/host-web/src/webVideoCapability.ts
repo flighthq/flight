@@ -1,4 +1,5 @@
-import type { HostImageSource, HostVideoCapability, VideoResourceLoadOptions } from '@flighthq/types/contract';
+import type { HostImageSource } from '@flighthq/host/contract';
+import type { HostVideoCapability, VideoResourceLoadOptions } from '@flighthq/video/contract';
 
 export const webHostVideo: HostVideoCapability = {
   addEndedListener: (element: HostImageSource, listener: () => void): void => {

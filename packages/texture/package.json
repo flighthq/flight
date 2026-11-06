@@ -42,10 +42,11 @@
   "dependencies": {
     "@flighthq/entity": "*",
     "@flighthq/geometry": "*",
-    "@flighthq/types": "*"
+    "@flighthq/host": "*",
+    "@flighthq/types": "*",
+    "@flighthq/video": "*"
   },
   "devDependencies": {
-    "@flighthq/video": "*",
     "typescript": "^7.0.2"
   },
   "description": "Textures and samplers: image-backed material texture bindings and cubemaps",

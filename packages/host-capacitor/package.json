@@ -58,7 +58,8 @@
     "@flighthq/statusbar": "*",
     "@flighthq/tray": "*",
     "@flighthq/types": "*",
-    "@flighthq/useragent": "*"
+    "@flighthq/useragent": "*",
+    "@flighthq/video": "*"
   },
   "devDependencies": {
     "typescript": "^7.0.2"

@@ -7,7 +7,7 @@
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,
-    "moduleSuffixes": [".shell-types", ".ipc-types", ".mediasession-types", ".menu-types", ""],
+    "moduleSuffixes": [".shell-types", ".ipc-types", ".mediasession-types", ".menu-types", ".video-types", ""],
     "types": ["node", "@testing-library/jest-dom", "vitest/globals", "@webgpu/types"]
   },
   "references": [
@@ -58,6 +58,9 @@
     },
     {
       "path": "../types"
+    },
+    {
+      "path": "../video/tsconfig.contract.json"
     }
   ],
   "include": ["src"]

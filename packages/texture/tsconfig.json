@@ -8,6 +8,9 @@
       "path": "../geometry/tsconfig.runtime.json"
     },
     {
+      "path": "../host/tsconfig.contract.json"
+    },
+    {
       "path": "../types"
     },
     {

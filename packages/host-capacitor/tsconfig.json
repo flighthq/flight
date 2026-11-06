@@ -14,6 +14,7 @@
       ".menu-types",
       ".platform-types",
       ".shortcut-types",
+      ".video-types",
       ""
     ],
     "types": ["node", "@testing-library/jest-dom", "vitest/globals", "@webgpu/types"]
@@ -81,6 +82,9 @@
     },
     {
       "path": "../useragent"
+    },
+    {
+      "path": "../video/tsconfig.contract.json"
     }
   ],
   "include": ["src"]

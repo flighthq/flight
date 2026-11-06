@@ -7,7 +7,7 @@
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,
-    "moduleSuffixes": [".platform-types", ""],
+    "moduleSuffixes": [".platform-types", ".video-types", ""],
     "tsBuildInfoFile": "dist/.tsbuildinfo.runtime"
   },
   "references": [
@@ -25,6 +25,9 @@
     },
     {
       "path": "../types"
+    },
+    {
+      "path": "../video/tsconfig.contract.json"
     },
     {
       "path": "./tsconfig.contract.json"

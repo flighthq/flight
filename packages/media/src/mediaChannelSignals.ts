@@ -1,5 +1,6 @@
 import { createSignal } from '@flighthq/signals/contract';
-import type { AudioChannel, MediaChannelSignals, VideoChannel } from '@flighthq/types/contract';
+import type { AudioChannel, MediaChannelSignals } from '@flighthq/types/contract';
+import type { VideoChannel } from '@flighthq/video/contract';
 
 // Opt-in per channel, following the SDK's enable*Signals shape: nothing is allocated until a caller
 // asks, and every producer is a null check until then. Held in a WeakMap keyed by the channel rather

@@ -53,7 +53,8 @@
     "@flighthq/shell": "*",
     "@flighthq/signals": "*",
     "@flighthq/tray": "*",
-    "@flighthq/types": "*"
+    "@flighthq/types": "*",
+    "@flighthq/video": "*"
   },
   "devDependencies": {
     "typescript": "^7.0.2"

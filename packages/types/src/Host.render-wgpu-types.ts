@@ -29,6 +29,7 @@ import type { HostSocketCapabilities } from '@flighthq/socket/contract';
 import type { HostStatusBarCapabilities } from '@flighthq/statusbar/contract';
 import type { HostCanvasCapabilities, HostSurfaceCapabilities } from '@flighthq/surface/contract';
 import type { HostTrayCapabilities } from '@flighthq/tray/contract';
+import type { HostVideoCapabilities } from '@flighthq/video/contract';
 
 export type { HostScreenCapabilities } from '@flighthq/screen/contract';
 export type { HostSensorsCapabilities } from '@flighthq/sensors/contract';
@@ -70,7 +71,6 @@ import type { HostImageOpenDialogCapability } from './HostImageOpenDialog.ts';
 import type { HostMessageDialogCapability } from './HostMessageDialog.ts';
 import type { HostPhotoCaptureDialogCapability } from './HostPhotoCaptureDialog.ts';
 import type { HostPromptDialogCapability } from './HostPromptDialog.ts';
-import type { HostVideoCapability } from './HostVideo.ts';
 import type { HostVideoCaptureDialogCapability } from './HostVideoCaptureDialog.ts';
 import type { HostImageCapability } from './ImageResource.ts';
 import type { HostMidiAccessCapability, HostMidiPermissionCapability } from './Midi.ts';
@@ -291,10 +291,6 @@ export interface HostTextShaperCapabilities {
 
 export interface HostUpdaterCapabilities {
   readonly command?: HostUpdaterCommandCapability;
-}
-
-export interface HostVideoCapabilities {
-  readonly playback?: HostVideoCapability;
 }
 
 export interface HostWgpuCapabilities {

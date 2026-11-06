@@ -59,7 +59,8 @@
     "@flighthq/preferences": "*",
     "@flighthq/tray": "*",
     "@flighthq/types": "*",
-    "@flighthq/updater": "*"
+    "@flighthq/updater": "*",
+    "@flighthq/video": "*"
   },
   "devDependencies": {
     "typescript": "^7.0.2"

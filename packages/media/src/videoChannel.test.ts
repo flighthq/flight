@@ -1,10 +1,11 @@
+import type { HostImageSource } from '@flighthq/host/contract';
 import {
   createVideoTexture,
   destroyVideoTexture,
   getTextureSource,
   getVideoTextureWidth,
 } from '@flighthq/texture/contract';
-import type { HostImageSource, HostVideoCapability } from '@flighthq/types/contract';
+import type { HostVideoCapability } from '@flighthq/video/contract';
 import { createVideoResource, destroyVideoResource } from '@flighthq/video/contract';
 
 import {

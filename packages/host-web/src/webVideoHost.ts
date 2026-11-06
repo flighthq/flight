@@ -1,4 +1,4 @@
-import type { HostVideoCapabilities } from '@flighthq/types/contract';
+import type { HostVideoCapabilities } from '@flighthq/video/contract';
 
 import { webHostVideo } from './webVideoCapability.ts';
 

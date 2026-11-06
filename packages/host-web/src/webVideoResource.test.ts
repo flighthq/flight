@@ -1,4 +1,5 @@
-import type { HostImageSource, HostVideoCapability } from '@flighthq/types/contract';
+import type { HostImageSource } from '@flighthq/host/contract';
+import type { HostVideoCapability } from '@flighthq/video/contract';
 
 import { createWebVideoResourceFromMediaStream } from './webVideoResource.ts';
 

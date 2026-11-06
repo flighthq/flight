@@ -118,6 +118,7 @@
     "@flighthq/updater": "*",
     "@flighthq/useragent": "*",
     "@flighthq/velocity": "*",
+    "@flighthq/video": "*",
     "@flighthq/xml": "*"
   },
   "peerDependencies": {

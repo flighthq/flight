@@ -44,9 +44,9 @@ import type {
   HostCompressCapabilities,
   HostDecompressCapabilities,
   HostTextShaperCapabilities,
-  HostVideoCapabilities,
   HostWgpuCapabilities,
 } from '@flighthq/types/contract';
+import type { HostVideoCapabilities } from '@flighthq/video/contract';
 
 // These constructors make the deliberately unsupported Tauri groups explicit. Returning an empty
 // group is truthful and keeps capability absence structural rather than installing sentinel providers.

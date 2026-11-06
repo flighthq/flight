@@ -14,6 +14,7 @@ import type { HostShellCapabilities } from '@flighthq/shell/contract';
 import type { HostSocketCapabilities } from '@flighthq/socket/contract';
 import type { HostStatusBarCapabilities } from '@flighthq/statusbar/contract';
 import type { HostCanvasCapabilities, HostSurfaceCapabilities } from '@flighthq/surface/contract';
+import type { HostVideoCapabilities } from '@flighthq/video/contract';
 
 import type { HostHapticsCapabilities } from './Haptics.ts';
 import type {
@@ -35,7 +36,6 @@ import type {
   HostProtocolCapabilities,
   HostShareCapabilities,
   HostSoftKeyboardCapabilities,
-  HostVideoCapabilities,
 } from './Host.ts';
 
 export type WebHost = Omit<

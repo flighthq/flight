@@ -7,6 +7,7 @@
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,
+    "moduleSuffixes": [".host-types", ""],
     "tsBuildInfoFile": "dist/.tsbuildinfo.runtime"
   },
   "references": [
@@ -15,6 +16,9 @@
     },
     {
       "path": "../geometry/tsconfig.runtime.json"
+    },
+    {
+      "path": "../host/tsconfig.contract.json"
     },
     {
       "path": "../types"

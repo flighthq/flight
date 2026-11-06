@@ -59,6 +59,9 @@
       "path": "../connectivity/tsconfig.contract.json"
     },
     {
+      "path": "../video/tsconfig.contract.json"
+    },
+    {
       "path": "./tsconfig.contract.json"
     },
     {

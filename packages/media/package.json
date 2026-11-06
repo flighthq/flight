@@ -42,6 +42,7 @@
   "dependencies": {
     "@flighthq/audio": "*",
     "@flighthq/entity": "*",
+    "@flighthq/host": "*",
     "@flighthq/log": "*",
     "@flighthq/math": "*",
     "@flighthq/signals": "*",

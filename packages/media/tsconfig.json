@@ -6,7 +6,8 @@
     "outDir": "dist",
     "declaration": true,
     "declarationMap": true,
-    "sourceMap": true
+    "sourceMap": true,
+    "moduleSuffixes": [".host-types", ""]
   },
   "references": [
     {
@@ -17,6 +18,9 @@
     },
     {
       "path": "../log"
+    },
+    {
+      "path": "../host/tsconfig.contract.json"
     },
     {
       "path": "../math"

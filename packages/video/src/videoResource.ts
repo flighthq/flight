@@ -1,5 +1,8 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { EntityConstruction, HostImageSource, HostVideoCapability, VideoResource } from '@flighthq/types/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
+import type { HostImageSource } from '@flighthq/host/contract';
+
+import type { HostVideoCapability, VideoResource } from './types.ts';
 
 // No provider parameter: this only stores a source the caller already holds, and storing it needs
 // nothing from a host. Every export that READS video state takes the provider first; these two do not

@@ -1,17 +1,10 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
 import { inverseMatrix3 } from '@flighthq/geometry/contract';
-import type {
-  EntityConstruction,
-  HostImageSource,
-  HostVideoCapability,
-  ImageResource,
-  Matrix3Like,
-  Texture,
-  Texture2D,
-  TextureLike,
-  VideoResource,
-} from '@flighthq/types/contract';
+import type { HostImageSource } from '@flighthq/host/contract';
+import type { ImageResource, Matrix3Like, Texture, Texture2D, TextureLike } from '@flighthq/types/contract';
 import { ImageTextureSourceKind } from '@flighthq/types/contract';
+import type { HostVideoCapability, VideoResource } from '@flighthq/video/contract';
 
 import { cloneTexture, copyTexture, createTexture, getTextureUvMatrix } from './texture.ts';
 

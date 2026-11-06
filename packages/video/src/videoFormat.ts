@@ -1,4 +1,4 @@
-import type { HostVideoCapability, VideoResourceUrl } from '@flighthq/types/contract';
+import type { HostVideoCapability, VideoResourceUrl } from './types.ts';
 
 export function canPlayVideoType(backend: Readonly<HostVideoCapability>, mimeType: string): boolean {
   if (mimeType === '') return false;

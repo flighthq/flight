@@ -68,6 +68,7 @@
       ".tray-types",
       ".updater-types",
       ".connectivity-types",
+      ".video-types",
       ""
     ],
     "types": ["@testing-library/jest-dom", "vitest/globals", "@webgpu/types"]
@@ -321,6 +322,9 @@
     },
     {
       "path": "../connectivity/tsconfig.contract.json"
+    },
+    {
+      "path": "../video/tsconfig.contract.json"
     }
   ],
   "include": ["src"]

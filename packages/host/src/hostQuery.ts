@@ -26,9 +26,9 @@ import type {
   HostPreferencesPersistenceQueryCapability,
   HostTextSegmenterCapability,
   HostTextShaperCapability,
-  HostVideoCapability,
   HostWgpuCapability,
 } from '@flighthq/types/contract';
+import type { HostVideoCapability } from '@flighthq/video/contract';
 
 // Typed accessors for the capability slots a Flight package actually takes as a function parameter. Each
 // is named after the capability interface it returns — `HostVideoCapability` -> `getHostVideo` — so the

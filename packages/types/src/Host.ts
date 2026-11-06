@@ -47,6 +47,7 @@ import type { HostSocketCapabilities } from '@flighthq/socket/contract';
 import type { HostStatusBarCapabilities } from '@flighthq/statusbar/contract';
 import type { HostCanvasCapabilities, HostSurfaceCapabilities } from '@flighthq/surface/contract';
 import type { HostTrayCapabilities } from '@flighthq/tray/contract';
+import type { HostVideoCapabilities } from '@flighthq/video/contract';
 
 export type { HostScreenCapabilities } from '@flighthq/screen/contract';
 export type { HostSensorsCapabilities } from '@flighthq/sensors/contract';
@@ -63,7 +64,6 @@ import type { HostAudioMixerCapability } from './HostAudioMixer.ts';
 import type { HostGlCapability } from './HostGl.ts';
 import type { HostImageDecodeCapabilities } from './HostImageDecode.ts';
 import type { HostImageEncodeCapabilities } from './HostImageEncode.ts';
-import type { HostVideoCapability } from './HostVideo.ts';
 import type { HostTextSegmenterCapability } from './TextSegment.ts';
 import type { HostTextShaperCapability } from './TextShaper.ts';
 
@@ -156,10 +156,6 @@ export interface HostTextSegmentCapabilities {
 
 export interface HostTextShaperCapabilities {
   readonly shaper?: HostTextShaperCapability;
-}
-
-export interface HostVideoCapabilities {
-  readonly playback?: HostVideoCapability;
 }
 
 export type { HostWgpuCapabilities } from '@flighthq/render-wgpu/contract';

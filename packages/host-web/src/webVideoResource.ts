@@ -1,5 +1,5 @@
-import type { HostVideoCapability, VideoResource } from '@flighthq/types/contract';
 import { createVideoResource } from '@flighthq/video/contract';
+import type { HostVideoCapability, VideoResource } from '@flighthq/video/contract';
 
 export function createWebVideoResourceFromMediaStream(
   hostVideo: Readonly<HostVideoCapability>,
