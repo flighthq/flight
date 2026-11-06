@@ -1,4 +1,4 @@
-import type { SocketCloseInfo, SocketEventSink, SocketMessage } from '@flighthq/types/contract';
+import type { SocketCloseInfo, SocketEventSink, SocketMessage } from '@flighthq/socket/contract';
 
 import { webHostSocket as fromPublicLane } from './index.ts';
 import { webHostSocket } from './webSocket.ts';

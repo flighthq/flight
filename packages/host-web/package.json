@@ -71,6 +71,7 @@
     "@flighthq/share": "*",
     "@flighthq/shell": "*",
     "@flighthq/signals": "*",
+    "@flighthq/socket": "*",
     "@flighthq/statusbar": "*",
     "@flighthq/surface": "*",
     "@flighthq/text": "*",

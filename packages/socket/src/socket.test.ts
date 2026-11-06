@@ -1,13 +1,4 @@
 import { connectSignal } from '@flighthq/signals/contract';
-import type {
-  HostSocketCapability,
-  SocketCloseInfo,
-  SocketConnection,
-  SocketEventSink,
-  SocketMessage,
-  TcpSocketConnection,
-  TcpSocketOptions,
-} from '@flighthq/types/contract';
 
 import { openTcpSocket } from './index.ts';
 import {
@@ -21,6 +12,15 @@ import {
   sendSocketMessage,
   setSocketGuard,
 } from './socket.ts';
+import type {
+  HostSocketCapability,
+  SocketCloseInfo,
+  SocketConnection,
+  SocketEventSink,
+  SocketMessage,
+  TcpSocketConnection,
+  TcpSocketOptions,
+} from './types.ts';
 
 interface FakeSocket {
   backend: HostSocketCapability;

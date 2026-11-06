@@ -1,9 +1,9 @@
-import type { LogState } from '@flighthq/log/contract';
+import type { LogEntry, LogState } from '@flighthq/log/contract';
 import { addLogSink, createLogState, createMemoryLogSink, getMemoryLogSinkEntries } from '@flighthq/log/contract';
-import type { HostSocketCapability, LogEntry } from '@flighthq/types/contract';
 
 import { areSocketGuardsEnabled, disableSocketGuards, enableSocketGuards } from './enableSocketGuards.ts';
 import { closeSocket, createSocket, disposeSocket, enableSocketSignals, sendSocketMessage } from './socket.ts';
+import type { HostSocketCapability } from './types.ts';
 
 function captureLog(run: () => void): readonly LogEntry[] {
   const sink = createMemoryLogSink(8);

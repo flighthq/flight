@@ -1,9 +1,8 @@
 import type { LogState } from '@flighthq/log/contract';
-import { logOnce } from '@flighthq/log/contract';
-import type { SocketGuardNotice } from '@flighthq/types/contract';
-import { LogLevel } from '@flighthq/types/contract';
+import { LogLevel, logOnce } from '@flighthq/log/contract';
 
 import { setSocketGuard } from './socket.ts';
+import type { SocketGuardNotice } from './types.ts';
 
 export function areSocketGuardsEnabled(): boolean {
   return _enabled;

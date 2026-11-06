@@ -1,5 +1,6 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { createSignal, emitSignal } from '@flighthq/signals/contract';
+
 import type {
   HostSocketCapability,
   Socket,
@@ -13,7 +14,7 @@ import type {
   SocketSignals,
   TcpSocketConnection,
   TcpSocketOptions,
-} from '@flighthq/types/contract';
+} from './types.ts';
 
 // Resumes delivery of provider events to the socket's signals (idempotent). Pair with detachSocket.
 // createSocket leaves a new socket attached, so this is only needed to resume after detachSocket. A

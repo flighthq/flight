@@ -12,6 +12,7 @@ import type { HostPreferencesCapabilities } from '@flighthq/preferences/contract
 import type { HostScreenCapabilities } from '@flighthq/screen/contract';
 import type { HostSensorsCapabilities } from '@flighthq/sensors/contract';
 import type { HostShellCapabilities } from '@flighthq/shell/contract';
+import type { HostSocketCapabilities } from '@flighthq/socket/contract';
 import type { HostStatusBarCapabilities } from '@flighthq/statusbar/contract';
 import type { HostCanvasCapabilities, HostSurfaceCapabilities } from '@flighthq/surface/contract';
 
@@ -98,7 +99,6 @@ import type {
 } from './Protocol.ts';
 import type { HostShareContentCapability, HostShareFilesCapability } from './Share.ts';
 import type { HostShortcutQueryCapability, HostShortcutTriggerCapability } from './Shortcut.ts';
-import type { HostSocketCapability } from './Socket.ts';
 import type { HostTextSegmenterCapability } from './TextSegment.ts';
 import type { HostTextShaperCapability } from './TextShaper.ts';
 import type {
@@ -298,10 +298,6 @@ export interface HostShareCapabilities {
 export interface HostShortcutCapabilities {
   readonly query?: HostShortcutQueryCapability;
   readonly trigger?: HostShortcutTriggerCapability;
-}
-
-export interface HostSocketCapabilities {
-  readonly connection?: HostSocketCapability;
 }
 
 export interface HostSoftKeyboardCapabilities {

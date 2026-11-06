@@ -1,4 +1,4 @@
-import type { Socket, SocketSendFailureExplanation } from '@flighthq/types/contract';
+import type { Socket, SocketSendFailureExplanation } from './types.ts';
 
 // Explains the deterministic preflight reasons sendSocketMessage returns false without invoking its
 // backend. Returns null when the socket can reach the backend; the backend may still return false.

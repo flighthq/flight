@@ -1,4 +1,4 @@
-import type { HostSocketCapability, SocketConnection, SocketMessage } from '@flighthq/types/contract';
+import type { HostSocketCapability, SocketConnection, SocketMessage } from '@flighthq/socket/contract';
 
 // Builds the Web provider over the DOM WebSocket. Nothing constructs one at import time, so importing
 // the package has no side effect; a host composes this value into its own net group. Returns a

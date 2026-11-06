@@ -9,6 +9,7 @@ import type { HostPreferencesCapabilities } from '@flighthq/preferences/contract
 import type { HostScreenCapabilities } from '@flighthq/screen/contract';
 import type { HostSensorsCapabilities } from '@flighthq/sensors/contract';
 import type { HostShellCapabilities } from '@flighthq/shell/contract';
+import type { HostSocketCapabilities } from '@flighthq/socket/contract';
 import type { HostStatusBarCapabilities } from '@flighthq/statusbar/contract';
 import type { HostCanvasCapabilities, HostSurfaceCapabilities } from '@flighthq/surface/contract';
 
@@ -33,7 +34,6 @@ import type {
   HostPlatformCapabilities,
   HostProtocolCapabilities,
   HostShareCapabilities,
-  HostSocketCapabilities,
   HostSoftKeyboardCapabilities,
   HostVideoCapabilities,
 } from './Host.ts';

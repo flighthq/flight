@@ -1,6 +1,5 @@
-import type { HostSocketCapability, SocketConnection, SocketEventSink } from '@flighthq/types/contract';
-
 import { createSocket, getSocketReadyState } from './socket.ts';
+import type { HostSocketCapability, SocketConnection, SocketEventSink } from './types.ts';
 
 function recordingBackend(label: string, opened: string[]): HostSocketCapability {
   return {

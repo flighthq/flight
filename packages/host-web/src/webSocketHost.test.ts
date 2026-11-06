@@ -1,4 +1,4 @@
-import type { HostSocketCapabilities } from '@flighthq/types/contract';
+import type { HostSocketCapabilities } from '@flighthq/socket/contract';
 
 import { webHostSocket } from './webSocket.ts';
 import { webHostSocketGroup } from './webSocketHost.ts';

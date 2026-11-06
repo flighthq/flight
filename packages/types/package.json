@@ -95,6 +95,7 @@
     "@flighthq/share": "*",
     "@flighthq/shell": "*",
     "@flighthq/signals": "*",
+    "@flighthq/socket": "*",
     "@flighthq/spatial": "*",
     "@flighthq/statechart": "*",
     "@flighthq/statusbar": "*",

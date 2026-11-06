@@ -13,3 +13,21 @@ export {
   openTcpSocket,
   sendSocketMessage,
 } from './contract.ts';
+export type {
+  HostSocketCapabilities,
+  HostSocketCapability,
+  Socket,
+  SocketCloseInfo,
+  SocketConnection,
+  SocketEventSink,
+  SocketGuard,
+  SocketGuardNotice,
+  SocketMessage,
+  SocketOptions,
+  SocketReadyState,
+  SocketRuntime,
+  SocketSendFailureExplanation,
+  SocketSignals,
+  TcpSocketConnection,
+  TcpSocketOptions,
+} from './contract.ts';

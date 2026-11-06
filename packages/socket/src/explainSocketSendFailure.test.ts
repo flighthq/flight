@@ -1,7 +1,6 @@
-import type { HostSocketCapability, SocketEventSink } from '@flighthq/types/contract';
-
 import { explainSocketSendFailure } from './explainSocketSendFailure.ts';
 import { createSocket, disposeSocket, sendSocketMessage } from './socket.ts';
+import type { HostSocketCapability, SocketEventSink } from './types.ts';
 
 function installBackend(
   hasConnection: boolean,
