@@ -1,4 +1,4 @@
-import type { BitmapDisplacementMapOptions, BitmapEdgeMode, BitmapRegion } from '@flighthq/types/contract';
+import type { BitmapDisplacementMapOptions, BitmapEdgeMode, BitmapRegion } from './types.ts';
 
 /**
  * Warps `source` by sampling each output pixel from a displaced source position,

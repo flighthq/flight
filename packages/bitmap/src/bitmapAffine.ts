@@ -1,6 +1,5 @@
-import type { BitmapEdgeMode, BitmapRegion, BitmapResizeMode } from '@flighthq/types/contract';
-
 import { invalidateBitmap } from './bitmap.ts';
+import type { BitmapEdgeMode, BitmapRegion, BitmapResizeMode } from './types.ts';
 
 /**
  * Applies a full 2×3 affine transform to the `source` region, writing into

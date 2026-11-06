@@ -1,7 +1,6 @@
-import type { BitmapHistogram, BitmapRegion } from '@flighthq/types/contract';
-
 import { invalidateBitmap } from './bitmap.ts';
 import { applyBitmapPaletteMap } from './bitmapPaletteMap.ts';
+import type { BitmapHistogram, BitmapRegion } from './types.ts';
 
 /**
  * Applies histogram equalization to `source`, writing into `dest`. Each RGB

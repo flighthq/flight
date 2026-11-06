@@ -2,8 +2,8 @@
 // registers the readable target before drawing, invokes the optional draw callback, and performs the
 // complete versioned verification handshake only when tool-capture is driving the page.
 
+import type { Bitmap } from '@flighthq/bitmap/contract';
 import type {
-  Bitmap,
   CanvasRenderState,
   CanvasScreenRenderTarget,
   DomRenderState,

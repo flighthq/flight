@@ -1,9 +1,9 @@
 import type { ColorScaleBias } from '@flighthq/adjustments/contract';
+import type { Bitmap } from '@flighthq/bitmap/contract';
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { RenderProxy, RenderProxy2D } from '@flighthq/render/contract';
 import { getTextureSource } from '@flighthq/texture/contract';
 import type {
-  Bitmap,
   CompressedImageResource,
   EntityConstruction,
   HasColorScaleBias,

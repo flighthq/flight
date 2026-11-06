@@ -3,11 +3,11 @@ import {
   registerTestImageDimensionResolver,
   unregisterTestImageDimensionResolver,
 } from '@flighthq/image/contract';
-import type { HostBitmapReadbackCapability } from '@flighthq/types/contract';
 import { vi } from 'vitest';
 
 import { createBitmap } from './bitmap.ts';
 import { captureBitmapFromImageResource, createBitmapFromImageSource } from './bitmapFrom.ts';
+import type { HostBitmapReadbackCapability } from './types.ts';
 
 beforeEach(() => {
   registerTestImageDimensionResolver();

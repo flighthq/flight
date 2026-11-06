@@ -1,5 +1,5 @@
 import { createBitmapFromImageSource, explainBitmapReadback } from '@flighthq/bitmap/contract';
-import type { HostBitmapReadbackCapability } from '@flighthq/types/contract';
+import type { HostBitmapReadbackCapability } from '@flighthq/bitmap/contract';
 import { vi } from 'vitest';
 
 import { webHostBitmapReadback } from './webBitmapReadback.ts';

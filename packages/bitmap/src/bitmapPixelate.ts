@@ -1,4 +1,4 @@
-import type { BitmapRegion } from '@flighthq/types/contract';
+import type { BitmapRegion } from './types.ts';
 
 /**
  * Pixelates (mosaics) `source` into `out`: the region is divided into

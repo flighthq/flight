@@ -1,6 +1,5 @@
-import type { BitmapRegion, BitmapSharpenOptions } from '@flighthq/types/contract';
-
 import { boxBlurBitmap } from './bitmapBlur.ts';
+import type { BitmapRegion, BitmapSharpenOptions } from './types.ts';
 
 /**
  * Sharpens `source` into `out` using an unsharp mask: it blurs the source, then

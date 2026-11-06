@@ -5,6 +5,7 @@ import {
   getBitmapCoverage,
   getBitmapPixel,
 } from '@flighthq/bitmap/contract';
+import type { Bitmap } from '@flighthq/bitmap/contract';
 import { enableWgpuEffectGuards } from '@flighthq/effects-wgpu/contract';
 import { createWebBitmapFromCanvas } from '@flighthq/host-web/contract';
 import { createLogState } from '@flighthq/log/contract';
@@ -19,7 +20,6 @@ import type {
   Node2D,
   DomRenderState,
   GlRenderState,
-  Bitmap,
   WgpuRenderState,
   WgpuScreenRenderTarget,
 } from '@flighthq/types/contract';

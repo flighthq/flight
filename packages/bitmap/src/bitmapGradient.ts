@@ -1,6 +1,5 @@
-import type { BitmapGradientBevelOptions, BitmapGradientGlowOptions, BitmapRegion } from '@flighthq/types/contract';
-
 import { blurBitmapPixelsHorizontal, blurBitmapPixelsVertical } from './bitmapBlur.ts';
+import type { BitmapGradientBevelOptions, BitmapGradientGlowOptions, BitmapRegion } from './types.ts';
 
 /**
  * Fills `out` (256 RGBA entries, 1024 bytes) with a gradient lookup table built

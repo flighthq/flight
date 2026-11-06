@@ -1,4 +1,6 @@
-import type { RectangleLike, BitmapRegion } from '@flighthq/types/contract';
+import type { RectangleLike } from '@flighthq/types/contract';
+
+import type { BitmapRegion } from './types.ts';
 
 /**
  * Scans the `source` region for pixels matching `color` under `mask`

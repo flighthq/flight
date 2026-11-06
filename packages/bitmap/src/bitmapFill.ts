@@ -1,6 +1,5 @@
-import type { Bitmap, BitmapRegion } from '@flighthq/types/contract';
-
 import { invalidateBitmap } from './bitmap.ts';
+import type { Bitmap, BitmapRegion } from './types.ts';
 
 let _floodFillVisited: Uint8Array | null = null;
 

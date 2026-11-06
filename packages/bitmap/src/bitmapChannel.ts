@@ -1,8 +1,9 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { Bitmap, BitmapRegion, EntityConstruction } from '@flighthq/types/contract';
-import { BitmapTextureSourceKind } from '@flighthq/types/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
+import { BitmapTextureSourceKind } from '@flighthq/texture/contract';
 
 import { invalidateBitmap } from './bitmap.ts';
+import type { Bitmap, BitmapRegion } from './types.ts';
 
 export function initializeBitmap(
   out: EntityConstruction<Bitmap>,

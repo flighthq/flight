@@ -1,6 +1,6 @@
 import { encodeBitmap } from '@flighthq/bitmap/contract';
+import type { Bitmap, HostBitmapEncodeCapability } from '@flighthq/bitmap/contract';
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { Bitmap, HostBitmapEncodeCapability } from '@flighthq/types/contract';
 import { BitmapTextureSourceKind } from '@flighthq/types/contract';
 
 import { webHostBitmapEncode } from './webBitmapEncode.ts';

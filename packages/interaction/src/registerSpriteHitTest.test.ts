@@ -1,7 +1,7 @@
+import type { HostBitmapReadbackCapability } from '@flighthq/bitmap/contract';
 import { setRectangle } from '@flighthq/geometry/contract';
 import { getNodeLocalBoundsRectangle } from '@flighthq/node/contract';
 import { createSprite } from '@flighthq/scene2d/contract';
-import type { HostBitmapReadbackCapability } from '@flighthq/types/contract';
 
 import { findGraphHitTargetPrecise } from './hitTests.ts';
 import { setNodeHitTestEnabled } from './nodeInteractionState.ts';

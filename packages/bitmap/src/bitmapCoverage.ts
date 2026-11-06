@@ -1,4 +1,4 @@
-import type { Bitmap } from '@flighthq/types/contract';
+import type { Bitmap } from './types.ts';
 
 /**
  * Returns the fraction of pixels (0..1) that differ from `backgroundColor` by more than

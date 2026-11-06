@@ -1,4 +1,4 @@
-import type { BitmapRegion } from '@flighthq/types/contract';
+import type { BitmapRegion } from './types.ts';
 
 /**
  * Applies a median filter to `source`, writing into `out`. Each output channel

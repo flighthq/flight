@@ -1,4 +1,4 @@
-import type { HostBitmapEncodeCapability } from '@flighthq/types/contract';
+import type { HostBitmapEncodeCapability } from '@flighthq/bitmap/contract';
 
 export const webHostBitmapEncode: HostBitmapEncodeCapability = {
   encodeBitmap: (source, format, quality): Uint8Array => {

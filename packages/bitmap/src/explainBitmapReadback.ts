@@ -1,10 +1,7 @@
-import type {
-  BitmapReadbackExplanation,
-  HostBitmapReadbackCapability,
-  HostImageSource,
-} from '@flighthq/types/contract';
+import type { HostImageSource } from '@flighthq/types/contract';
 
 import { resolveBitmapReadback } from './bitmapReadbackResolver.ts';
+import type { BitmapReadbackExplanation, HostBitmapReadbackCapability } from './types.ts';
 
 export function explainBitmapReadback(
   hostBitmapReadback: Readonly<HostBitmapReadbackCapability>,

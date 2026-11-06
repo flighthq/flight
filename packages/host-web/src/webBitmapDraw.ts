@@ -1,5 +1,5 @@
 import { extractBitmapPixels } from '@flighthq/bitmap/contract';
-import type { BitmapRegion } from '@flighthq/types/contract';
+import type { BitmapRegion } from '@flighthq/bitmap/contract';
 
 export function drawWebBitmap(dest: HTMLCanvasElement, source: Readonly<BitmapRegion>, x: number, y: number): void {
   if (source.width <= 0 || source.height <= 0) return;

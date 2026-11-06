@@ -1,6 +1,5 @@
-import type { BitmapEdgeMode, BitmapRegion, BitmapResizeMode } from '@flighthq/types/contract';
-
 import { invalidateBitmap } from './bitmap.ts';
+import type { BitmapEdgeMode, BitmapRegion, BitmapResizeMode } from './types.ts';
 
 /**
  * Applies a full 3×3 projective (homography) warp to `source`, writing into

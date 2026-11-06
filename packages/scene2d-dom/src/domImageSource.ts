@@ -1,6 +1,6 @@
+import type { Bitmap } from '@flighthq/bitmap/contract';
 import type { ImageResource } from '@flighthq/image/contract';
 import { BitmapTextureSourceKind } from '@flighthq/texture/contract';
-import type { Bitmap } from '@flighthq/types/contract';
 
 import type { DomImageSourceKind } from './contract.scene2d-dom-types.ts';
 

@@ -1,6 +1,9 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { AlphaType, Bitmap, EntityConstruction } from '@flighthq/types/contract';
-import { BitmapTextureSourceKind } from '@flighthq/types/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
+import type { AlphaType } from '@flighthq/texture/contract';
+import { BitmapTextureSourceKind } from '@flighthq/texture/contract';
+
+import type { Bitmap } from './types.ts';
 
 export function cloneBitmap(source: Readonly<Bitmap>): Bitmap {
   const out = allocateEntity<Bitmap>();

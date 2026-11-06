@@ -1,6 +1,5 @@
-import type { BitmapRegion } from '@flighthq/types/contract';
-
 import { invalidateBitmap } from './bitmap.ts';
+import type { BitmapRegion } from './types.ts';
 
 /**
  * Applies a 256-entry per-channel lookup table (LUT) to `out`. The LUT maps

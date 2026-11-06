@@ -1,4 +1,6 @@
-import type { Bitmap, BitmapRegion, NonEntityCreateResult } from '@flighthq/types/contract';
+import type { NonEntityCreateResult } from '@flighthq/entity/contract';
+
+import type { Bitmap, BitmapRegion } from './types.ts';
 
 /**
  * Allocates a `BitmapRegion`. With no bounds it covers the whole bitmap, so

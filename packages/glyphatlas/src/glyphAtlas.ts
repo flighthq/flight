@@ -1,7 +1,7 @@
 import { createBitmap } from '@flighthq/bitmap/contract';
+import type { Bitmap } from '@flighthq/bitmap/contract';
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
-  Bitmap,
   EntityConstruction,
   GlyphAtlas,
   GlyphAtlasOptions,

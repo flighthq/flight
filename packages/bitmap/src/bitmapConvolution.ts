@@ -1,4 +1,4 @@
-import type { BitmapConvolutionOptions, BitmapRegion } from '@flighthq/types/contract';
+import type { BitmapConvolutionOptions, BitmapRegion } from './types.ts';
 
 /**
  * Applies a convolution kernel to `source` and writes into `out`.

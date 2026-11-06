@@ -1,6 +1,5 @@
-import type { BitmapRegion } from '@flighthq/types/contract';
-
 import { invalidateBitmap } from './bitmap.ts';
+import type { BitmapRegion } from './types.ts';
 
 /**
  * Mirrors the `source` region left-to-right into the `dest` region. The mirror

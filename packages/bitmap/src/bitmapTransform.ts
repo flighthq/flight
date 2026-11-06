@@ -1,6 +1,7 @@
-import type { ColorScaleBiasLike, Bitmap, BitmapRegion, ThresholdOperation } from '@flighthq/types/contract';
+import type { ColorScaleBiasLike } from '@flighthq/types/contract';
 
 import { invalidateBitmap } from './bitmap.ts';
+import type { Bitmap, BitmapRegion, ThresholdOperation } from './types.ts';
 
 let _scrollScratch: Uint8Array | null = null;
 

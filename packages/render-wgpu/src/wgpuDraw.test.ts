@@ -1,7 +1,8 @@
+import type { Bitmap } from '@flighthq/bitmap/contract';
 import { getOrCreateRenderProxy2D, prepareScene2DRender } from '@flighthq/render/contract';
 import { createSprite } from '@flighthq/scene2d/contract';
 import { getTextureSource } from '@flighthq/texture/contract';
-import type { Bitmap, CompressedImageResource, ImageResource, Texture } from '@flighthq/types/contract';
+import type { CompressedImageResource, ImageResource, Texture } from '@flighthq/types/contract';
 import {
   BitmapTextureSourceKind,
   BlendMode,

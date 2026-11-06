@@ -1,10 +1,6 @@
-import type {
-  Bitmap,
-  BitmapReadbackBlockReason,
-  BitmapReadbackMode,
-  HostBitmapReadbackCapability,
-  HostImageSource,
-} from '@flighthq/types/contract';
+import type { HostImageSource } from '@flighthq/types/contract';
+
+import type { Bitmap, BitmapReadbackBlockReason, BitmapReadbackMode, HostBitmapReadbackCapability } from './types.ts';
 
 interface BitmapReadbackResolution {
   readonly bitmap: Bitmap | null;

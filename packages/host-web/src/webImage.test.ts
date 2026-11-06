@@ -1,4 +1,5 @@
-import type { Bitmap, HostImageCapability } from '@flighthq/types/contract';
+import type { Bitmap } from '@flighthq/bitmap/contract';
+import type { HostImageCapability } from '@flighthq/types/contract';
 import { BitmapTextureSourceKind } from '@flighthq/types/contract';
 
 import { webHostImage } from './webImage.ts';

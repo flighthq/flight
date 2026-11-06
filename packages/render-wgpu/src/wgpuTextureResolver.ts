@@ -1,9 +1,9 @@
+import type { Bitmap } from '@flighthq/bitmap/contract';
 import { withoutKindMapEntry, withKindMapEntry } from '@flighthq/registry/contract';
 import type { RenderTargetColorSpace, RenderTexture } from '@flighthq/render/contract';
 import { RenderRegistryTable } from '@flighthq/render/contract';
 import { getTextureSampleColorSpace, getTextureSource, getTextureSourceKind } from '@flighthq/texture/contract';
 import type {
-  Bitmap,
   CompressedImageResource,
   ImageResource,
   TextureColorSpace,

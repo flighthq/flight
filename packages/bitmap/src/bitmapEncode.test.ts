@@ -1,7 +1,6 @@
-import type { HostBitmapEncodeCapability, ImageFormat } from '@flighthq/types/contract';
-
 import { createBitmap } from './bitmap.ts';
 import { encodeBitmap, explainBitmapEncodeFailure } from './bitmapEncode.ts';
+import type { HostBitmapEncodeCapability, ImageFormat } from './types.ts';
 
 function hostWith(
   supportedFormats: HostBitmapEncodeCapability['supportedFormats'] = ['jpeg', 'png'],

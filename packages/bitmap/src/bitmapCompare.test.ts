@@ -1,8 +1,7 @@
-import type { Bitmap } from '@flighthq/types/contract';
-
 import { cloneBitmap, createBitmap } from './bitmap.ts';
 import { compareBitmap, getBitmapMismatch } from './bitmapCompare.ts';
 import { setBitmapPixel } from './bitmapPixel.ts';
+import type { Bitmap } from './types.ts';
 
 describe('compareBitmap', () => {
   it('throws when widths differ', () => {

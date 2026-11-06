@@ -1,4 +1,4 @@
-import type { BitmapRegion } from '@flighthq/types/contract';
+import type { BitmapRegion } from './types.ts';
 
 /**
  * Applies morphological dilation to `source`, writing into `out`. Each output

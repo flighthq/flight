@@ -1,9 +1,4 @@
-import type {
-  Bitmap,
-  BitmapEncodeFailureExplanation,
-  HostBitmapEncodeCapability,
-  ImageFormat,
-} from '@flighthq/types/contract';
+import type { Bitmap, BitmapEncodeFailureExplanation, HostBitmapEncodeCapability, ImageFormat } from './types.ts';
 
 export function encodeBitmap(
   hostBitmapEncode: Readonly<HostBitmapEncodeCapability>,

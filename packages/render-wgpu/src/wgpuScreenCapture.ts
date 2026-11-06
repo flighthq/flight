@@ -1,5 +1,5 @@
 import { createBitmap } from '@flighthq/bitmap/contract';
-import type { Bitmap } from '@flighthq/types/contract';
+import type { Bitmap } from '@flighthq/bitmap/contract';
 
 import type { WgpuScreenRenderTarget } from './contract.render-wgpu-types.ts';
 

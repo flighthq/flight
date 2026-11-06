@@ -1,7 +1,6 @@
-import type { Bitmap } from '@flighthq/types/contract';
-
 import { invalidateBitmap } from './bitmap.ts';
 import type { ImageChannel } from './bitmapImageChannel.ts';
+import type { Bitmap } from './types.ts';
 
 // W3C luma coefficients for perceptual luminance (same as CSS saturate/grayscale).
 const LUMA_R = 0.2126;

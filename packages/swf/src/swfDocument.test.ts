@@ -1,4 +1,5 @@
 import type { ColorScaleBiasAdjustment } from '@flighthq/adjustments/contract';
+import type { Bitmap } from '@flighthq/bitmap/contract';
 import { sdkHostDecompressDeflate } from '@flighthq/compression/contract';
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { allocateGlyphRasterizerBackendFromGlyphOutlineSource } from '@flighthq/font/contract';
@@ -35,7 +36,6 @@ import { RichTextKind } from '@flighthq/text/contract';
 import { getTextureSource } from '@flighthq/texture/contract';
 import { setTextureSource } from '@flighthq/texture/contract';
 import type {
-  Bitmap,
   HostDecompressDeflateCapability,
   SwfParseOptions,
   EmbeddedAudioResourceReference,

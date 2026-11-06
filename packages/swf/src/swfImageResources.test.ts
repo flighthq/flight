@@ -1,3 +1,4 @@
+import type { Bitmap } from '@flighthq/bitmap/contract';
 // @vitest-environment jsdom
 import { sdkHostDecompressDeflate } from '@flighthq/compression/contract';
 import type { HostImageDecodeCapabilities, HostImageDecodeFormatCapability } from '@flighthq/image-codec/contract';
@@ -6,7 +7,7 @@ import { loadScene2DImageResources } from '@flighthq/scene2d-resources/contract'
 import type { Shape } from '@flighthq/shape/contract';
 import { ShapeKind } from '@flighthq/shape/contract';
 import { getTextureSource } from '@flighthq/texture/contract';
-import type { Bitmap, Texture2D, TextureSource } from '@flighthq/types/contract';
+import type { Texture2D, TextureSource } from '@flighthq/types/contract';
 import { BitmapTextureSourceKind, ImageResourceReferenceKind, ResourceResolutionState } from '@flighthq/types/contract';
 
 import { swfAllTagHandlers } from './swfAllTagHandlers.ts';

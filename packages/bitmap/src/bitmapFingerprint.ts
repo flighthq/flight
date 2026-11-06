@@ -1,5 +1,7 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { Bitmap, BitmapFingerprint, EntityConstruction } from '@flighthq/types/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
+
+import type { Bitmap, BitmapFingerprint } from './types.ts';
 
 // A coarse downscaled RGB fingerprint: the bitmap is averaged into a gridSize × gridSize grid, so
 // antialiasing jitter that breaks an exact hash washes out while gross changes still register. The

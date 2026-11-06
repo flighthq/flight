@@ -1,4 +1,5 @@
-import type { Bitmap, CanvasImageSourceKind, ImageResource } from '@flighthq/types/contract';
+import type { Bitmap } from '@flighthq/bitmap/contract';
+import type { CanvasImageSourceKind, ImageResource } from '@flighthq/types/contract';
 import { BitmapTextureSourceKind } from '@flighthq/types/contract';
 
 // Reports whether Canvas can draw a source directly or must materialize its bytes. The query never

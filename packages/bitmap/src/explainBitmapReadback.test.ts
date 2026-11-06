@@ -1,9 +1,9 @@
-import type { HostBitmapReadbackCapability, BitmapReadbackBackendReason } from '@flighthq/types/contract';
 import { describe, expect, it, vi } from 'vitest';
 
 import { createBitmap } from './bitmap.ts';
 import { createBitmapFromImageSource } from './bitmapFrom.ts';
 import { explainBitmapReadback } from './explainBitmapReadback.ts';
+import type { HostBitmapReadbackCapability, BitmapReadbackBackendReason } from './types.ts';
 
 function hostWith(backend: HostBitmapReadbackCapability): {
   readonly graphics: { readonly bitmapReadback: HostBitmapReadbackCapability };
