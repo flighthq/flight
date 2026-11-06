@@ -27,4 +27,15 @@ export type { KeyboardEventData } from './types/KeyboardEventData.ts';
 export type { Node2DInteractionSignals } from './types/Node2DInteractionSignals.ts';
 export type { HitArea } from './types/NodeInteraction.ts';
 export type { NodeInteractionState } from './types/NodeInteractionState.ts';
+export { NodeInteractiveStateRefusalReason } from './types/NodeInteractiveStateBinding.ts';
+export type {
+  NodeInteractiveStateBinding,
+  NodeInteractiveStateBindingRuntime,
+  NodeInteractiveStateExplanation,
+  NodeInteractiveStateFlags,
+  NodeInteractiveStateProperty,
+  NodeInteractiveStateTransition,
+  NodeInteractiveStateTransitionRequest,
+  NodeInteractiveStateTransitionValue,
+} from './types/NodeInteractiveStateBinding.ts';
 export type { PointerEventData } from './types/PointerEventData.ts';

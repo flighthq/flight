@@ -2,8 +2,6 @@ import { getNodeAppearanceRevision, getNodeLocalTransformRevision, getNodeRuntim
 import { withKindMapEntry } from '@flighthq/registry/contract';
 import type { FlightDocumentInteractiveStates, FlightDocumentSchemaRegistry } from '@flighthq/scene-document/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
-import type { NodeInteractiveStateTransitionRequest } from '@flighthq/types/contract';
-import { NodeInteractiveStateRefusalReason } from '@flighthq/types/contract';
 
 import {
   applyNodeInteractiveStates,
@@ -11,6 +9,8 @@ import {
   disposeNodeInteractiveStateBinding,
   explainNodeInteractiveStateBinding,
 } from './nodeInteractiveStateBinding.ts';
+import type { NodeInteractiveStateTransitionRequest } from './types/NodeInteractiveStateBinding.ts';
+import { NodeInteractiveStateRefusalReason } from './types/NodeInteractiveStateBinding.ts';
 
 describe('applyNodeInteractiveStates', () => {
   it('composes hover then pressed by property and treats disabled as exclusive', () => {

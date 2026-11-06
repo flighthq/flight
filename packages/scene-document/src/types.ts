@@ -6,11 +6,7 @@ import type { NodeAny } from '@flighthq/node/contract';
 import type { Node2D, Scene2D } from '@flighthq/scene2d/contract';
 import type { Scene3D, Scene3DDocumentCamera, Scene3DDocumentLight } from '@flighthq/scene3d/contract';
 import type { ShapeCommandSchema } from '@flighthq/shape-formats/contract';
-import type {
-  NodeInteractiveStateExtensionRuntime,
-  NodeInteractiveStateProperty,
-  NodeInteractiveStateTransition,
-} from '@flighthq/types/contract';
+import type { NodeInteractiveStateExtensionRuntime, NodeInteractiveStateTransition } from '@flighthq/types/contract';
 
 interface SceneDocumentEntity extends EntityRaw {
   [EntityRuntimeKey]: EntityRuntime | undefined;
@@ -34,7 +30,7 @@ export interface FlightDocumentFieldSchema {
   validate: FlightDocumentFieldValidator;
 }
 
-export type FlightDocumentInteractiveStateProperty = NodeInteractiveStateProperty;
+export type FlightDocumentInteractiveStateProperty = 'alpha' | 'scaleX' | 'scaleY' | 'visible' | 'x' | 'y';
 export type FlightDocumentInteractiveStateValue = boolean | number;
 
 export interface FlightDocumentInteractiveStateExtensionDescriptor {

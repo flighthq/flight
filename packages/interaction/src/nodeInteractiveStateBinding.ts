@@ -1,3 +1,4 @@
+import { EntityRuntimeKey } from '@flighthq/entity/contract';
 import { invalidateNodeAppearance, invalidateNodeLocalTransform } from '@flighthq/node/contract';
 import type { NodeAny } from '@flighthq/node/contract';
 import type {
@@ -7,17 +8,18 @@ import type {
   FlightDocumentInteractiveStateTransitionDescriptor,
   FlightDocumentSchemaRegistry,
 } from '@flighthq/scene-document/contract';
+import type { NodeInteractiveStateExtensionRuntime } from '@flighthq/types/contract';
+
 import type {
   NodeInteractiveStateBinding,
   NodeInteractiveStateBindingRuntime,
   NodeInteractiveStateExplanation,
-  NodeInteractiveStateExtensionRuntime,
   NodeInteractiveStateFlags,
   NodeInteractiveStateProperty,
   NodeInteractiveStateTransition,
   NodeInteractiveStateTransitionValue,
-} from '@flighthq/types/contract';
-import { EntityRuntimeKey, NodeInteractiveStateRefusalReason } from '@flighthq/types/contract';
+} from './types/NodeInteractiveStateBinding.ts';
+import { NodeInteractiveStateRefusalReason } from './types/NodeInteractiveStateBinding.ts';
 
 interface InteractiveExtension {
   base: FlightDocumentFields;

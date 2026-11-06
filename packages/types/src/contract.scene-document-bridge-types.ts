@@ -1,5 +1,6 @@
-// Exact dependency bridge for interaction's document-aware extension callbacks. Interaction consumes
-// Types, so importing its full contract back into scene-document would form a package cycle.
+// Exact dependency bridge for the two interaction callback shapes exposed by Scene Document.
+// Interaction consumes Scene Document at runtime, so the document contract cannot import Interaction
+// back. The property union is declared by each owner and no longer crosses this seam.
 import type { NodeAny } from '@flighthq/node/contract';
 
 type FlightDocumentScalarBridge = boolean | number | string | null;
@@ -9,10 +10,9 @@ interface FlightDocumentFieldsBridge {
   [name: string]: FlightDocumentValueBridge;
 }
 
-export type NodeInteractiveStateProperty = 'alpha' | 'scaleX' | 'scaleY' | 'visible' | 'x' | 'y';
-export type NodeInteractiveStateTransitionValue = boolean | number;
+type NodeInteractiveStateTransitionValue = boolean | number;
 
-export interface NodeInteractiveStateTransitionRequest<N extends NodeAny = NodeAny, P extends string = string> {
+interface NodeInteractiveStateTransitionRequest<N extends NodeAny = NodeAny, P extends string = string> {
   readonly apply: (value?: NodeInteractiveStateTransitionValue) => void;
   readonly from: NodeInteractiveStateTransitionValue;
   readonly property: P;
