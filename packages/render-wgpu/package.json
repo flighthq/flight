@@ -19,6 +19,10 @@
     "./contract": {
       "types": "./dist/contract.d.ts",
       "default": "./dist/contract.js"
+    },
+    "./compressed-texture-decoder-contract": {
+      "types": "./dist/compressed-texture-decoder-contract/compressedTextureDecoderContract.d.ts",
+      "default": "./dist/compressed-texture-decoder-contract/compressedTextureDecoderContract.js"
     }
   },
   "files": [

@@ -72,6 +72,9 @@
       "path": "../velocity/tsconfig.contract.json"
     },
     {
+      "path": "./tsconfig.compressed-texture-decoder-contract.json"
+    },
+    {
       "path": "./tsconfig.contract.json"
     },
     {

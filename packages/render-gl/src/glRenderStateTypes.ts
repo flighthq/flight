@@ -1,6 +1,7 @@
 import type { ColorScaleBias } from '@flighthq/adjustments/contract';
 import type { Kind } from '@flighthq/entity/contract';
 import type { BlendMode, Material, TintMaterialData } from '@flighthq/materials/contract';
+import type { GlCompressedTextureDecoder } from '@flighthq/render-gl/compressed-texture-decoder-contract';
 import type {
   RenderProxy2D,
   RenderRegistries,
@@ -18,7 +19,6 @@ import type {
   GlVelocityWriter,
 } from '@flighthq/types/contract';
 
-import type { GlCompressedTextureDecoder } from './glCompressedTextureDecoderTypes.ts';
 import type { GlCompressedTextureUploader } from './glCompressedTextureUploaderTypes.ts';
 import type { GlContextRuntime } from './glContextRuntimeTypes.ts';
 import type { GlContextState } from './glContextStateTypes.ts';

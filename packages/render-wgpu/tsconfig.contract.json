@@ -105,6 +105,9 @@
     },
     {
       "path": "../geometry/tsconfig.contract.json"
+    },
+    {
+      "path": "./tsconfig.compressed-texture-decoder-contract.json"
     }
   ],
   "include": ["src/contract.render-wgpu-types.ts", "src/types/**/*.ts"]

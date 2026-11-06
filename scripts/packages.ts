@@ -329,6 +329,14 @@ function scanFlightImports(files: string[]): Set<string> {
 
 const convertedContractLanePackages = new Set<string>();
 const splitRuntimePackages = new Set<string>();
+const acyclicOwnerContractSpecifiers = new Set([
+  '@flighthq/render-gl/compressed-texture-decoder-contract',
+  '@flighthq/render-wgpu/compressed-texture-decoder-contract',
+]);
+
+function isOwnerContractSpecifier(specifier: string, packageName: string): boolean {
+  return specifier === `${packageName}/contract` || acyclicOwnerContractSpecifiers.has(specifier);
+}
 
 function scanContractLaneImports(files: string[], importingPackage: string): Map<string, string[]> {
   const violations = new Map<string, string[]>();
@@ -339,7 +347,7 @@ function scanContractLaneImports(files: string[], importingPackage: string): Map
       if (
         packageName === importingPackage ||
         !convertedContractLanePackages.has(packageName) ||
-        specifier === `${packageName}/contract` ||
+        isOwnerContractSpecifier(specifier, packageName) ||
         (specifier === packageName && splitRuntimePackages.has(packageName))
       )
         continue;
@@ -362,7 +370,7 @@ function scanTypeOnlyOwnerContractViolations(files: string[]): Map<string, strin
   const record = (filePath: string, specifier: string, typeOnly: boolean): void => {
     if (!specifier.startsWith('@flighthq/')) return;
     const packageName = specifier.split('/').slice(0, 2).join('/');
-    if (typeOnly && specifier === `${packageName}/contract`) return;
+    if (typeOnly && isOwnerContractSpecifier(specifier, packageName)) return;
     const path = relative(root, filePath).replaceAll('\\', '/');
     const filesForPackage = violations.get(packageName);
     if (filesForPackage === undefined) violations.set(packageName, [path]);
@@ -671,7 +679,14 @@ for (const pkgDir of packageDirs) {
       'add the public/contract package lane',
     );
     for (const subpath of Object.keys(pkg.exports).filter((key) => key.startsWith('.'))) {
-      if (subpath === '.' || subpath === './contract' || name === '@flighthq/sdk') continue;
+      const specifier = `${name}/${subpath.slice(2)}`;
+      if (
+        subpath === '.' ||
+        subpath === './contract' ||
+        name === '@flighthq/sdk' ||
+        acyclicOwnerContractSpecifiers.has(specifier)
+      )
+        continue;
       check(errors, `${subpath} is a blessed package export`, false, 'only "." and "./contract" are allowed');
     }
   }

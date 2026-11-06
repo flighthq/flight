@@ -2,6 +2,7 @@ import type { ColorScaleBias } from '@flighthq/adjustments/contract';
 import type { EntityRaw, EntityRuntime, EntityRuntimeKey, Kind } from '@flighthq/entity/contract';
 import type { ImageResource } from '@flighthq/image/contract';
 import type { BlendMode, Material, TintMaterialData } from '@flighthq/materials/contract';
+import type { WgpuCompressedTextureDecoder } from '@flighthq/render-wgpu/compressed-texture-decoder-contract';
 import type { ExternalTexture, RenderTexture } from '@flighthq/render/contract';
 import type {
   RenderProxy2D,
@@ -16,7 +17,6 @@ import type {
   WgpuColorAdjustmentMaterialFeatureGuard,
 } from '@flighthq/types/contract';
 
-import type { WgpuCompressedTextureDecoder } from './WgpuCompressedTextureDecoder.ts';
 import type { WgpuCompressedTextureUploader } from './WgpuCompressedTextureUploader.ts';
 import type { WgpuCustomMaterialShaderSource } from './WgpuCustomMaterialShaderSource.ts';
 import type { WgpuDeviceRuntime } from './WgpuDeviceRuntime.ts';

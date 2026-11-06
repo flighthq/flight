@@ -43,7 +43,6 @@
       ".notification-types",
       ".permissions-types",
       ".screen-types",
-      ".texture-formats-types",
       ".protocol-types",
       ".updater-types",
       ".connectivity-types",
@@ -225,7 +224,10 @@
       "path": "../share"
     },
     {
-      "path": "../texture-formats/tsconfig.contract.json"
+      "path": "../render-gl/tsconfig.compressed-texture-decoder-contract.json"
+    },
+    {
+      "path": "../render-wgpu/tsconfig.compressed-texture-decoder-contract.json"
     },
     {
       "path": "../protocol/tsconfig.contract.json"

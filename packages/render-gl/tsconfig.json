@@ -68,6 +68,9 @@
       "path": "../effects/tsconfig.runtime.json"
     },
     {
+      "path": "./tsconfig.compressed-texture-decoder-contract.json"
+    },
+    {
       "path": "./tsconfig.contract.json"
     },
     {

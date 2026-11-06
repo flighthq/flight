@@ -69,11 +69,13 @@
     },
     {
       "path": "../texture-formats/tsconfig.contract.json"
+    },
+    {
+      "path": "./tsconfig.compressed-texture-decoder-contract.json"
     }
   ],
   "include": [
     "src/contract.render-gl-types.ts",
-    "src/glCompressedTextureDecoderTypes.ts",
     "src/glCompressedTextureUploaderTypes.ts",
     "src/glContextRuntimeTypes.ts",
     "src/glContextStateTypes.ts",

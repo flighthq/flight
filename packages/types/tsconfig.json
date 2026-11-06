@@ -81,7 +81,6 @@
       ".textlayout-types",
       ".textshaper-types",
       ".velocity-types",
-      ".texture-formats-types",
       ".particles-types",
       ".particles-formats-types",
       ".protocol-types",
@@ -362,7 +361,10 @@
       "path": "../gui/tsconfig.contract.json"
     },
     {
-      "path": "../texture-formats/tsconfig.contract.json"
+      "path": "../render-gl/tsconfig.compressed-texture-decoder-contract.json"
+    },
+    {
+      "path": "../render-wgpu/tsconfig.compressed-texture-decoder-contract.json"
     },
     {
       "path": "../particles/tsconfig.contract.json"

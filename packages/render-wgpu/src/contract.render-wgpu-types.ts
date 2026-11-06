@@ -1,6 +1,6 @@
 export type { HostWgpuCapabilities } from './types/Host.ts';
 export type { WgpuAdapterCapabilities } from './types/WgpuAdapterCapabilities.ts';
-export type { WgpuCompressedTextureDecoder } from './types/WgpuCompressedTextureDecoder.ts';
+export type { WgpuCompressedTextureDecoder } from '@flighthq/render-wgpu/compressed-texture-decoder-contract';
 export type { WgpuCompressedTextureSupport } from './types/WgpuCompressedTextureSupport.ts';
 export type { WgpuCompressedTextureUploader } from './types/WgpuCompressedTextureUploader.ts';
 export type { WgpuCustomMaterialShaderSource } from './types/WgpuCustomMaterialShaderSource.ts';

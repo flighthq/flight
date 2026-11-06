@@ -1,7 +1,7 @@
 import type { CompressedImageResource } from '@flighthq/image/contract';
+import type { GlCompressedTextureDecoder } from '@flighthq/render-gl/compressed-texture-decoder-contract';
 import type { TextureColorSpace } from '@flighthq/texture/contract';
 
-import type { GlCompressedTextureDecoder } from './GlCompressedTextureDecoder.ts';
 import type { GlContext } from './GlContext.ts';
 
 // The opt-in seam that uploads a CompressedImageResource's payload to the currently-bound GL

@@ -1,12 +1,12 @@
 import type { ColorScaleBias } from '@flighthq/adjustments/contract';
 import type { BlendMode, Material, TintMaterialData } from '@flighthq/materials/contract';
+import type { GlCompressedTextureDecoder } from '@flighthq/render-gl/compressed-texture-decoder-contract';
 import type { RenderProxy2D } from '@flighthq/render/contract';
 import type { RenderRegistries, RenderState, RenderStateRuntime } from '@flighthq/render/contract';
 import type { ShapeRasterizer } from '@flighthq/render/contract';
 import type { SamplerLike } from '@flighthq/texture/contract';
 
 import type { Kind } from './Entity.ts';
-import type { GlCompressedTextureDecoder } from './GlCompressedTextureDecoder.ts';
 import type { GlCompressedTextureUploader } from './GlCompressedTextureUploader.ts';
 import type { GlContext } from './GlContext.ts';
 import type { GlContextRuntime } from './GlContextRuntime.ts';

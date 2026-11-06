@@ -1,8 +1,8 @@
 import type { Kind } from '@flighthq/entity/contract';
+import type { GlCompressedTextureDecoder } from '@flighthq/render-gl/compressed-texture-decoder-contract';
 import type { RenderStateOptions, ShapeRasterizer } from '@flighthq/render/contract';
 import type { GlEffectRegistration, GlScene3DPass, GlVelocityWriter } from '@flighthq/types/contract';
 
-import type { GlCompressedTextureDecoder } from './glCompressedTextureDecoderTypes.ts';
 import type { GlCompressedTextureUploader } from './glCompressedTextureUploaderTypes.ts';
 import type { GlCustomMaterialShaderSource } from './glCustomMaterialShaderSourceTypes.ts';
 import type { GlMeshMaterialRenderer } from './glMeshMaterialRendererTypes.ts';

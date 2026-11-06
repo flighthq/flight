@@ -1,7 +1,7 @@
 import type { CompressedImageResource } from '@flighthq/image/contract';
+import type { WgpuCompressedTextureDecoder } from '@flighthq/render-wgpu/compressed-texture-decoder-contract';
 import type { TextureColorSpace } from '@flighthq/texture/contract';
 
-import type { WgpuCompressedTextureDecoder } from './WgpuCompressedTextureDecoder.ts';
 import type { WgpuRenderState, WgpuTextureEntry } from './WgpuRenderState.ts';
 
 // Opt-in bridge from a CompressedImageResource to a sampleable WebGPU texture entry.

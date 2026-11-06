@@ -63,5 +63,9 @@
     }
   ],
   "include": ["src/**/*.ts"],
-  "exclude": ["src/contract.render-wgpu-types.ts", "src/types/**/*.ts"]
+  "exclude": [
+    "src/compressed-texture-decoder-contract/**/*.ts",
+    "src/contract.render-wgpu-types.ts",
+    "src/types/**/*.ts"
+  ]
 }

@@ -27,7 +27,6 @@
       ".shape-types",
       ".velocity-types",
       ".image-types",
-      ".texture-formats-types",
       ".platform-types",
       ".lighting-types",
       ".scene3d-node-types",
@@ -86,7 +85,10 @@
       "path": "../image/tsconfig.contract.json"
     },
     {
-      "path": "../texture-formats/tsconfig.contract.json"
+      "path": "../render-gl/tsconfig.compressed-texture-decoder-contract.json"
+    },
+    {
+      "path": "../render-wgpu/tsconfig.compressed-texture-decoder-contract.json"
     },
     {
       "path": "../platform/tsconfig.contract.json"

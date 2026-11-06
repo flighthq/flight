@@ -1,5 +1,6 @@
 // Acyclic build entry selected by contract-only projects through the `.render-gl-types` module suffix.
 // The published @flighthq/render-gl/contract entry remains contract.ts, which also exposes runtime helpers.
+export type { GlCompressedTextureDecoder } from '@flighthq/render-gl/compressed-texture-decoder-contract';
 export type {
   GlCapabilities,
   GlContext,
@@ -8,7 +9,6 @@ export type {
   HostGlCapabilities,
   HostGlCapability,
 } from './types.ts';
-export type { GlCompressedTextureDecoder } from './glCompressedTextureDecoderTypes.ts';
 export type { GlCompressedTextureUploader } from './glCompressedTextureUploaderTypes.ts';
 export type { GlContextRuntime } from './glContextRuntimeTypes.ts';
 export type { GlContextState } from './glContextStateTypes.ts';

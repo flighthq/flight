@@ -1,0 +1,18 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "composite": true,
+    "rootDir": "src",
+    "outDir": "dist",
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "moduleSuffixes": [".texture-formats-types", ""],
+    "tsBuildInfoFile": "dist/.tsbuildinfo.compressed-texture-decoder-contract"
+  },
+  "references": [{ "path": "../texture-formats/tsconfig.contract.json" }],
+  "include": [
+    "src/compressed-texture-decoder-contract/compressedTextureDecoderContract.ts",
+    "src/compressed-texture-decoder-contract/WgpuCompressedTextureDecoder.ts"
+  ]
+}
