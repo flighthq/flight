@@ -1,4 +1,4 @@
-import type { RequirementBackend, RequirementCatalogEntry } from '@flighthq/requirement-catalog/contract';
+import type { RequirementBackend } from '@flighthq/requirement-catalog/contract';
 
 import {
   BACKEND_OPTION_FIELD_OVERRIDES,
@@ -7,6 +7,9 @@ import {
   REQUIREMENT_OPTION_FIELDS,
   SCALAR_OPTION_FIELDS,
 } from './requirementOptionFields.ts';
+import type { ManifestModuleEntry, ManifestModuleResult } from './types.ts';
+
+export type { ManifestModuleEntry, ManifestModuleResult } from './types.ts';
 
 /** The backends a manifest module always exports a fragment for, and the export name each one uses. */
 export const MANIFEST_BACKEND_EXPORTS: Readonly<Record<string, string>> = Object.freeze({
@@ -47,19 +50,6 @@ export const MANIFEST_BACKEND_FULL_EXPORTS: Readonly<Record<string, string>> = O
  * knows which row is which. Routing by facet alone would send both to the same place.
  */
 export const MANIFEST_PARSER_BACKEND = 'parser';
-
-/** One resolved row: the catalog entry, and the requirement kind it satisfies. */
-export interface ManifestModuleEntry {
-  readonly entry: Readonly<RequirementCatalogEntry>;
-  readonly kind: string;
-}
-
-/** What the emitter produced, and every row it could not place. */
-export interface ManifestModuleResult {
-  /** Rows dropped with the reason, so a caller reports them instead of losing them silently. */
-  readonly problems: readonly string[];
-  readonly source: string;
-}
 
 /**
  * Emits the per-file manifest module for one content file.

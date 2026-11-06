@@ -1,11 +1,8 @@
 import { readFile } from 'node:fs/promises';
 import { dirname, extname, isAbsolute, resolve } from 'node:path';
 
-import type { HostDecompressDeflateCapability, HostDecompressLzmaCapability } from '@flighthq/compression/contract';
 import type { NonEntityCreateResult } from '@flighthq/entity/contract';
-import type { LogState } from '@flighthq/log/contract';
 import { logWarn } from '@flighthq/log/contract';
-import type { RequirementCatalog } from '@flighthq/requirement-catalog/contract';
 import { createRequirementCodegenPlan } from '@flighthq/requirement-codegen/contract';
 import type { Requirement } from '@flighthq/requirement/contract';
 
@@ -16,49 +13,12 @@ import {
   MANIFEST_BACKEND_EXPORTS,
   MANIFEST_PARSER_BACKEND,
 } from './manifestModuleSource.ts';
+import type { ManifestPlugin, ManifestPluginOptions } from './types.ts';
 
 /** The import suffix that asks this plugin for a file's manifest instead of the file itself. */
 export const MANIFEST_QUERY_SUFFIX = '?manifest';
 
-/** What `createManifestPlugin` accepts. Every input is explicit; nothing is discovered by convention. */
-export interface ManifestPluginOptions {
-  /** The catalog mapping a requirement to the implementation that satisfies it, for every backend. */
-  readonly catalog: Readonly<RequirementCatalog>;
-  /**
-   * Inflates a `CWS` SWF body or a deflate-compressed AWD2 body. Without it, compressed content cannot
-   * be read at all — and an unreadable file is REPORTED rather than analyzed to an empty manifest,
-   * because a silently empty manifest is a bundle missing every handler the content needed.
-   */
-  readonly deflate?: Readonly<HostDecompressDeflateCapability> | null;
-  /** Decodes a `ZWS` SWF body or an LZMA-compressed AWD2 body. Absent behaves as for `deflate`. */
-  readonly lzma?: Readonly<HostDecompressLzmaCapability> | null;
-  /**
-   * The build tool's log state, which receives the default diagnostics. Absent with no `onDiagnostic`,
-   * diagnostics have nowhere to go and are discarded.
-   */
-  readonly logState?: LogState | null;
-  /**
-   * Called for every unsupported format, unreadable file, analyzer failure and unresolved requirement.
-   * Defaults to a warning on the `flight-manifest` channel of `logState` through `@flighthq/log`,
-   * stamped with the build host's clock. A requirement the build cannot place is reported rather than
-   * skipped: silently dropping one is how a bundle ends up missing an implementation it needed.
-   */
-  readonly onDiagnostic?: (message: string) => void;
-}
-
-/** The subset of Vite's plugin surface this factory produces. Structural, so Vite is a peer, not a dep. */
-export interface ManifestPlugin {
-  /**
-   * Runs in Vite's `pre` stage. Without it Vite's own asset handling claims `./asset.swf?manifest`
-   * first and hands rollup the binary to parse as JavaScript — the plugin must see the id before the
-   * default resolver treats the path as a file to serve.
-   */
-  readonly enforce: 'pre';
-  readonly handleHotUpdate: (context: { readonly file: string }) => void;
-  readonly load: (id: string) => Promise<string | null>;
-  readonly name: string;
-  readonly resolveId: (id: string, importer?: string) => string | null;
-}
+export type { ManifestPlugin, ManifestPluginOptions } from './types.ts';
 
 /**
  * Creates the plugin. Explicit factory, no default export and no module-level state: importing this

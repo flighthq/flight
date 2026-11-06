@@ -1,5 +1,4 @@
 import { BITMAP_FONT_REQUIREMENT_KEY_NAMESPACE, readBitmapFontFormatKind } from '@flighthq/bitmapfont-formats/contract';
-import type { HostDecompressDeflateCapability, HostDecompressLzmaCapability } from '@flighthq/compression/contract';
 import { decodeUTF8 } from '@flighthq/encoding/contract';
 import { PARTICLES_REQUIREMENT_KEY_NAMESPACE, StarlingPexFormatKind } from '@flighthq/particles-formats/contract';
 import type { RequirementSetRaw } from '@flighthq/requirement/contract';
@@ -50,47 +49,9 @@ import {
 import { parseXmlDocument } from '@flighthq/xml/contract';
 
 import { composeContentAnalyzers } from './composeContentAnalyzers.ts';
+import type { ContentAnalyzer } from './types.ts';
 
-/** The decompressors a build supplies so compressed content can be read. */
-export interface ContentDecompressors {
-  readonly deflate: Readonly<HostDecompressDeflateCapability> | null;
-  readonly lzma: Readonly<HostDecompressLzmaCapability> | null;
-}
-
-/**
- * How one format is read: whether the bytes are readable at all, and what they require.
- *
- * `isReadable` exists because the two questions have DIFFERENT answers and only one of them is
- * visible in a `RequirementSet`. An analyzer returns an empty set both for a file that genuinely
- * requires nothing AND for a file it could not decode — a `CWS` SWF or a deflate AWD when no
- * decompressor was supplied. Without a separate readability probe the plugin cannot tell those apart,
- * and the second one silently produces a bundle missing every handler the content needed. The header
- * parsers answer it for a bounded prefix, which is exactly what they are for.
- */
-export interface ContentAnalyzer {
-  readonly analyze: (
-    source: Uint8Array,
-    decompressors: Readonly<ContentDecompressors>,
-    // Optional so the analyzers that need no sibling file stay two-argument functions, and so a caller
-    // driving an analyzer directly need not pass an empty array.
-    references?: readonly string[],
-  ) => RequirementSetRaw;
-  readonly isReadable: (source: Uint8Array, decompressors: Readonly<ContentDecompressors>) => boolean;
-  /**
-   * Sibling files this analyzer needs, as paths RELATIVE to the content file, or absent when it needs none.
-   *
-   * ★ THE ANALYZER NAMES THE FILES; THE PLUGIN READS THEM. OBJ is the case that forced this: the shading
-   * model lives in the MTL, a separate file, so without it the inventory had to claim both models for every
-   * material-bearing OBJ and every classic model dragged the PBR path into the bundle. Doing the I/O here
-   * would give the analysis layer a filesystem and make it untestable without one; declaring the paths keeps
-   * it a pure function of text and leaves resolution to the caller that already owns a path.
-   *
-   * The texts come back in `analyze`'s `references`, in the order returned here. A path the build could not
-   * read is simply absent, so an analyzer must still produce a usable answer from fewer texts than it asked
-   * for.
-   */
-  readonly collectReferences?: (source: Uint8Array) => readonly string[];
-}
+export type { ContentAnalyzer, ContentDecompressors } from './types.ts';
 
 /**
  * The formats Flight analyzes, keyed by lowercase file extension.

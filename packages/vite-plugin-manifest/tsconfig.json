@@ -1,13 +1,8 @@
 {
-  "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "composite": true,
-    "rootDir": "src",
-    "outDir": "dist",
-    "declaration": true,
-    "declarationMap": true,
-    "sourceMap": true
+    "composite": true
   },
+  "files": [],
   "references": [
     {
       "path": "../bitmapfont-formats"
@@ -70,11 +65,13 @@
       "path": "../tilemap-formats/tsconfig.runtime.json"
     },
     {
-      "path": "../types"
+      "path": "../xml"
     },
     {
-      "path": "../xml"
+      "path": "./tsconfig.contract.json"
+    },
+    {
+      "path": "./tsconfig.runtime.json"
     }
-  ],
-  "include": ["src"]
+  ]
 }

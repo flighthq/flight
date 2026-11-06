@@ -1,6 +1,6 @@
 import { mergeRequirementSets } from '@flighthq/requirement/contract';
 
-import type { ContentAnalyzer } from './contentAnalyzers.ts';
+import type { ContentAnalyzer } from './types.ts';
 
 /**
  * One analyzer for an extension SEVERAL format families claim, answering the union of what they report.

@@ -52,7 +52,6 @@
     "@flighthq/skeleton2d-formats": "*",
     "@flighthq/swf": "*",
     "@flighthq/tilemap-formats": "*",
-    "@flighthq/types": "*",
     "@flighthq/xml": "*"
   },
   "devDependencies": {

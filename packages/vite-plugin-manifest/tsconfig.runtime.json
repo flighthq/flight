@@ -1,0 +1,38 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "composite": true,
+    "rootDir": "src",
+    "outDir": "dist",
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "tsBuildInfoFile": "dist/.tsbuildinfo.runtime"
+  },
+  "references": [
+    { "path": "../bitmapfont-formats" },
+    { "path": "../compression" },
+    { "path": "../encoding" },
+    { "path": "../entity" },
+    { "path": "../importdiagnostics" },
+    { "path": "../log" },
+    { "path": "../particles-formats" },
+    { "path": "../render/tsconfig.runtime.json" },
+    { "path": "../render-gl/tsconfig.runtime.json" },
+    { "path": "../render-wgpu/tsconfig.runtime.json" },
+    { "path": "../requirement" },
+    { "path": "../requirement-catalog" },
+    { "path": "../requirement-codegen" },
+    { "path": "../scene2d-dom/tsconfig.runtime.json" },
+    { "path": "../scene2d-formats/tsconfig.runtime.json" },
+    { "path": "../scene2d-canvas/tsconfig.contract.json" },
+    { "path": "../scene3d-formats" },
+    { "path": "../skeleton2d-formats/tsconfig.runtime.json" },
+    { "path": "../swf/tsconfig.runtime.json" },
+    { "path": "../tilemap-formats/tsconfig.runtime.json" },
+    { "path": "../xml" },
+    { "path": "./tsconfig.contract.json" }
+  ],
+  "include": ["src/**/*.ts"],
+  "exclude": ["src/contract.vite-plugin-manifest-types.ts", "src/types.ts"]
+}
