@@ -38,16 +38,16 @@ import {
   GltfUnlitExtensionHandler,
   GltfVolumeExtensionHandler,
 } from '@flighthq/scene3d-formats/contract';
-import { parseSkeleton2D, parseSpineSkeletonBinary } from '@flighthq/skeleton2d-formats';
-import { createScene2DImportFromSwf, swfAllTagHandlers } from '@flighthq/swf';
-import { explainTextureContainerParse, parseAtf, parseBasis, parseDds, parseKtx2 } from '@flighthq/texture-formats';
 import type {
   GltfDocument,
   GltfExtensionHandler,
-  ImportDiagnostic,
   ObjMaterial,
   ObjMaterialLibrary,
-} from '@flighthq/types/contract';
+} from '@flighthq/scene3d-formats/contract';
+import { parseSkeleton2D, parseSpineSkeletonBinary } from '@flighthq/skeleton2d-formats';
+import { createScene2DImportFromSwf, swfAllTagHandlers } from '@flighthq/swf';
+import { explainTextureContainerParse, parseAtf, parseBasis, parseDds, parseKtx2 } from '@flighthq/texture-formats';
+import type { ImportDiagnostic } from '@flighthq/types/contract';
 
 import type {
   ConformanceFixtureAdapter,

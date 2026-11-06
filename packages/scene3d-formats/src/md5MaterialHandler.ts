@@ -1,5 +1,5 @@
 import { createBlinnPhongMaterial } from '@flighthq/materials/contract';
-import type { Material, MaterialLike } from '@flighthq/types/contract';
+import type { Material, MaterialLike } from '@flighthq/materials/contract';
 
 import { createExternalTextureRef } from './shared.ts';
 import type { Md5SectionHandler } from './types/Md5SectionHandler.ts';

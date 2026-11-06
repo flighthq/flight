@@ -3,7 +3,7 @@
 // handler code entirely — this fixture proves the production shipping cost when material
 // resolution is reachable.
 import { parseObj } from '@flighthq/scene3d-formats';
-import type { ObjMaterialLibrary } from '@flighthq/types';
+import type { ObjMaterialLibrary } from '@flighthq/scene3d-formats/contract';
 
 const OBJ_SOURCE = 'v 0 0 0\nv 1 0 0\nv 0 1 0\nusemtl m\nf 1 2 3';
 

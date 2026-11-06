@@ -1,9 +1,10 @@
+import type { ImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import { ImportDiagnosticSeverity } from '@flighthq/importdiagnostics/contract';
 import type { DirectionalLight, PointLight, SpotLight } from '@flighthq/lighting/contract';
 import { DirectionalLightKind, PointLightKind, SpotLightKind } from '@flighthq/lighting/contract';
-import type { ImportDiagnostic, GltfDocument } from '@flighthq/types/contract';
-import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
+import type { GltfDocument } from './contract.scene3d-formats-types.ts';
 import { parseGltf } from './gltfImport.ts';
 import { GltfPunctualLightsExtensionHandler } from './gltfPunctualLights.ts';
 

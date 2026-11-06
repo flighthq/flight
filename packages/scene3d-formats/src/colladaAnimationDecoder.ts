@@ -1,4 +1,5 @@
 import { createAnimationTrack } from '@flighthq/animation/contract';
+import type { AnimationInterpolation } from '@flighthq/animation/contract';
 import {
   createMatrix4,
   createTransform3D,
@@ -6,13 +7,13 @@ import {
   setMatrix4,
 } from '@flighthq/geometry/contract';
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import { ImportDiagnosticSeverity } from '@flighthq/importdiagnostics/contract';
+import type { ImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import type {
   Scene3DAnimationPath,
   Scene3DDocument,
   Scene3DDocumentAnimationChannel,
 } from '@flighthq/scene3d/contract';
-import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
-import type { AnimationInterpolation, ImportDiagnostic } from '@flighthq/types/contract';
 import type { XmlElement } from '@flighthq/xml/contract';
 import { parseXmlDocument } from '@flighthq/xml/contract';
 

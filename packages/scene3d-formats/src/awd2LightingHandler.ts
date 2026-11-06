@@ -4,12 +4,13 @@ import {
   normalizeVector3,
   setQuaternionFromUnitVectors,
 } from '@flighthq/geometry/contract';
+import type { Transform3D } from '@flighthq/geometry/contract';
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import type { ImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import { ImportDiagnosticSeverity } from '@flighthq/importdiagnostics/contract';
 import { createAmbientLight, createDirectionalLight, createPointLight } from '@flighthq/lighting/contract';
 import type { Light } from '@flighthq/lighting/contract';
 import type { Scene3DDocument } from '@flighthq/scene3d/contract';
-import type { ImportDiagnostic, Transform3D } from '@flighthq/types/contract';
-import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
 import {
   awdTransformToTransform3D,

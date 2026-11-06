@@ -1,10 +1,10 @@
-import type { Requirement } from '@flighthq/types/contract';
 import {
-  RequirementFacet,
   SpecularGlossinessPbrMaterialKind,
   StandardPbrMaterialKind,
   UnlitMaterialKind,
-} from '@flighthq/types/contract';
+} from '@flighthq/materials/contract';
+import type { Requirement } from '@flighthq/requirement/contract';
+import { RequirementFacet } from '@flighthq/requirement/contract';
 
 export const GLTF_FEATURE_SCENE_REQUIREMENTS: ReadonlyMap<string, readonly Requirement[]> = new Map([
   ['Mesh', [{ facet: RequirementFacet.SceneMaterialKind, key: StandardPbrMaterialKind }]],

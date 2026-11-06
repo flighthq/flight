@@ -1,5 +1,6 @@
-import type { Requirement } from '@flighthq/types/contract';
-import { BlinnPhongMaterialKind, RequirementFacet } from '@flighthq/types/contract';
+import { BlinnPhongMaterialKind } from '@flighthq/materials/contract';
+import type { Requirement } from '@flighthq/requirement/contract';
+import { RequirementFacet } from '@flighthq/requirement/contract';
 
 import { getThreeDsChunkName } from './threeDsChunkCensus.ts';
 

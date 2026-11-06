@@ -1,12 +1,13 @@
+import type { ImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import { ImportDiagnosticSeverity } from '@flighthq/importdiagnostics/contract';
 import {
   getMeshGeometryIndexCount,
   getMeshGeometryVertexCount,
   getMeshGeometryVertexPosition,
 } from '@flighthq/meshgeometry/contract';
-import type { GltfDocument, GltfDracoDecoder, GltfDracoMesh, ImportDiagnostic } from '@flighthq/types/contract';
-import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 import { afterEach, describe, expect, it } from 'vitest';
 
+import type { GltfDocument, GltfDracoDecoder, GltfDracoMesh } from './contract.scene3d-formats-types.ts';
 import {
   getGltfDracoDecoder,
   hasGltfDracoDecoder,

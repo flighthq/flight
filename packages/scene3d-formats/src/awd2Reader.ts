@@ -1,5 +1,5 @@
 import { createMatrix4, createTransform3D, decomposeMatrix4ToTransform3D } from '@flighthq/geometry/contract';
-import type { Matrix4, Transform3D } from '@flighthq/types/contract';
+import type { Matrix4, Transform3D } from '@flighthq/geometry/contract';
 
 import {
   AWD2_DATA_FLOAT32,

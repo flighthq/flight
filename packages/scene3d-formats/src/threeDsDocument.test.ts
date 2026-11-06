@@ -1,5 +1,5 @@
+import type { ImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import { getNodeChildren } from '@flighthq/node/contract';
-import type { ImportDiagnostic } from '@flighthq/types/contract';
 
 import { threeDsCameraHandler } from './threeDsCameraHandler.ts';
 import { threeDsAllChunkHandlers } from './threeDsChunkRegistry.ts';

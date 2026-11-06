@@ -1,4 +1,4 @@
-import type { HostDecompressDeflateCapability, HostDecompressLzmaCapability } from '@flighthq/types/contract';
+import type { HostDecompressDeflateCapability, HostDecompressLzmaCapability } from '@flighthq/compression/contract';
 
 import { parseAwd2Header } from './awd2Header.ts';
 import { rehydrateAwd2Body } from './awd2Parse.ts';

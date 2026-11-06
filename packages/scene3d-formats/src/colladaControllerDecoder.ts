@@ -1,8 +1,8 @@
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import { ImportDiagnosticSeverity } from '@flighthq/importdiagnostics/contract';
+import type { ImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import type { MeshMorph, MorphTarget } from '@flighthq/meshgeometry/contract';
 import type { Scene3DDocument, Scene3DDocumentSkin } from '@flighthq/scene3d/contract';
-import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
-import type { ImportDiagnostic } from '@flighthq/types/contract';
 import type { XmlElement } from '@flighthq/xml/contract';
 import { parseXmlDocument } from '@flighthq/xml/contract';
 

@@ -1,5 +1,5 @@
 import { encodeUTF8 } from '@flighthq/encoding/contract';
-import { RequirementFacet } from '@flighthq/types/contract';
+import { RequirementFacet } from '@flighthq/requirement/contract';
 
 import { STL_REQUIREMENT_KEY_NAMESPACE } from './scene3dFormatRequirements.ts';
 import { parseStlRequirements } from './stlRequirements.ts';

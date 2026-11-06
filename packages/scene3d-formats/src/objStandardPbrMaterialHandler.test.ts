@@ -1,5 +1,5 @@
+import { StandardPbrMaterialKind } from '@flighthq/materials/contract';
 import type { Scene3DDocument } from '@flighthq/scene3d/contract';
-import { StandardPbrMaterialKind } from '@flighthq/types/contract';
 
 import { objMaterialToStandardPbr, objStandardPbrMaterialHandler } from './objStandardPbrMaterialHandler.ts';
 import type { ObjMaterial } from './types/ObjSchema.ts';

@@ -2,15 +2,11 @@ import type { LinearColorRaw } from '@flighthq/color/contract';
 import { allocateLinearColor, packLinearChannelsToColor } from '@flighthq/color/contract';
 import type { ImageResourceReference } from '@flighthq/image/contract';
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import type { ImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import { ImportDiagnosticSeverity } from '@flighthq/importdiagnostics/contract';
 import { createStandardPbrMaterial, getPbrRoughnessFromPhongShininess } from '@flighthq/materials/contract';
-import type {
-  ImportDiagnostic,
-  MaterialLike,
-  StandardPbrMaterial,
-  Texture,
-  TextureColorSpace,
-} from '@flighthq/types/contract';
-import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
+import type { MaterialLike, StandardPbrMaterial } from '@flighthq/materials/contract';
+import type { Texture, TextureColorSpace } from '@flighthq/texture/contract';
 import type { XmlElement } from '@flighthq/xml/contract';
 
 import { createExternalTextureRef } from './shared.ts';

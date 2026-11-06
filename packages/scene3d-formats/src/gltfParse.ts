@@ -6,11 +6,15 @@ import {
   decomposeMatrix4ToTransform3D,
   multiplyMatrix4,
 } from '@flighthq/geometry/contract';
+import type { Transform3D } from '@flighthq/geometry/contract';
 import { detectImageMimeType } from '@flighthq/image-codec/contract';
 import { createEmbeddedImageResourceReference, createExternalImageResourceReference } from '@flighthq/image/contract';
 import type { ImageResourceReference } from '@flighthq/image/contract';
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import type { ImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import { ImportDiagnosticSeverity } from '@flighthq/importdiagnostics/contract';
 import { createStandardPbrMaterial } from '@flighthq/materials/contract';
+import type { Material, MaterialLike } from '@flighthq/materials/contract';
 import {
   CANONICAL_SKINNED_MESH_GEOMETRY_LAYOUT,
   computeMeshGeometryFlatNormals,
@@ -28,17 +32,7 @@ import type { Scene3D } from '@flighthq/scene3d/contract';
 import type { Scene3DDocument, Scene3DDocumentMesh, Scene3DDocumentNode } from '@flighthq/scene3d/contract';
 import { Node3DKind } from '@flighthq/scene3d/contract';
 import { createTexture } from '@flighthq/texture/contract';
-import type {
-  ImportDiagnostic,
-  Material,
-  MaterialLike,
-  Texture,
-  TextureColorSpace,
-  TextureFilter,
-  TextureWrap,
-  Transform3D,
-} from '@flighthq/types/contract';
-import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
+import type { Texture, TextureColorSpace, TextureFilter, TextureWrap } from '@flighthq/texture/contract';
 
 import type {
   GltfAccessor,

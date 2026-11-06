@@ -3,7 +3,7 @@ import { parseGltfWithCoreFeatureHandlers, registerGltfMaterialExtensionHandlers
 // shows extension weight is independent of the core-feature preset.
 // ★ THE SELECTIVE ENTRY IS `parseGltfWithCoreFeatureHandlers`, which reads with the core-feature handlers it is
 // given and resolves no preset. The zero-config `parseGltf` costs all three core families by construction.
-import type { GltfExtensionHandler } from '@flighthq/types';
+import type { GltfExtensionHandler } from '@flighthq/scene3d-formats/contract';
 
 const extensionHandlers: GltfExtensionHandler[] = [];
 registerGltfMaterialExtensionHandlers(extensionHandlers);

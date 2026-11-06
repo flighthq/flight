@@ -1,6 +1,6 @@
+import type { ImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import { createScene3DFromDocument } from '@flighthq/scene3d/contract';
 import type { Scene3D, Scene3DDocument } from '@flighthq/scene3d/contract';
-import type { ImportDiagnostic } from '@flighthq/types/contract';
 
 import { parseMd2WithSectionHandlers } from './md2Parse.ts';
 import { md2AllSectionHandlers } from './md2SectionRegistry.ts';

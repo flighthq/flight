@@ -1,5 +1,6 @@
-import type { Requirement } from '@flighthq/types/contract';
-import { BlinnPhongMaterialKind, RequirementFacet, StandardPbrMaterialKind } from '@flighthq/types/contract';
+import { BlinnPhongMaterialKind, StandardPbrMaterialKind } from '@flighthq/materials/contract';
+import type { Requirement } from '@flighthq/requirement/contract';
+import { RequirementFacet } from '@flighthq/requirement/contract';
 
 import { OBJ_MATERIAL_BLINN_PHONG_FEATURE, OBJ_MATERIAL_STANDARD_PBR_FEATURE } from './types/ObjMaterialHandler.ts';
 

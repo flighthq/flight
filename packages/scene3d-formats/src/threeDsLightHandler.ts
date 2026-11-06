@@ -5,11 +5,11 @@ import {
   setQuaternionFromUnitVectors,
   subtractVector3,
 } from '@flighthq/geometry/contract';
+import type { Vector3 } from '@flighthq/geometry/contract';
+import { ImportDiagnosticSeverity } from '@flighthq/importdiagnostics/contract';
 import { createPointLight, createSpotLight } from '@flighthq/lighting/contract';
 import type { Light } from '@flighthq/lighting/contract';
 import type { Scene3DDocument } from '@flighthq/scene3d/contract';
-import type { Vector3 } from '@flighthq/types/contract';
-import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
 import { convertPositionsZUpToYUp } from './shared.ts';
 import { packThreeDsColor, parseColorChunk, readChunkEnd, tallyThreeDsDrop } from './threeDsParse.ts';

@@ -1,8 +1,8 @@
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import type { ImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import { ImportDiagnosticSeverity } from '@flighthq/importdiagnostics/contract';
 import { createScene3DFromDocument } from '@flighthq/scene3d/contract';
 import type { Scene3D, Scene3DDocument } from '@flighthq/scene3d/contract';
-import type { ImportDiagnostic } from '@flighthq/types/contract';
-import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
 import { parseMd5Anim } from './md5AnimParse.ts';
 import { parseMd5MeshWithSectionHandlers } from './md5Parse.ts';

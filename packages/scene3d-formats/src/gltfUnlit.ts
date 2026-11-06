@@ -1,6 +1,6 @@
 import { createUnlitMaterial } from '@flighthq/materials/contract';
-import type { MaterialLike, StandardPbrMaterial } from '@flighthq/types/contract';
-import { StandardPbrMaterialKind } from '@flighthq/types/contract';
+import type { MaterialLike, StandardPbrMaterial } from '@flighthq/materials/contract';
+import { StandardPbrMaterialKind } from '@flighthq/materials/contract';
 
 import type { GltfExtensionHandler } from './contract.scene3d-formats-types.ts';
 

@@ -1,4 +1,7 @@
 import type { ExternalImageResourceReference } from '@flighthq/image/contract';
+import type { ImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import type { BlinnPhongMaterial } from '@flighthq/materials/contract';
+import { BlinnPhongMaterialKind } from '@flighthq/materials/contract';
 import {
   getMeshGeometryIndexCount,
   getMeshGeometryVertexCount,
@@ -11,8 +14,6 @@ import { getNodeChildren } from '@flighthq/node/contract';
 import { isMesh } from '@flighthq/scene3d/contract';
 import type { Node3D } from '@flighthq/scene3d/contract';
 import { getTextureSource } from '@flighthq/texture/contract';
-import type { BlinnPhongMaterial, ImportDiagnostic, Scene3DAnimationTarget } from '@flighthq/types/contract';
-import { BlinnPhongMaterialKind } from '@flighthq/types/contract';
 
 // parseMd2 and createScene3DFromMd2 live in md2Document.ts, which owns the default section-handler
 // family; md2Parse.ts holds the parse itself and never sees the handler graph.
@@ -20,6 +21,7 @@ import { createScene3DFromMd2, parseMd2 } from './md2Document.ts';
 import { parseMd2WithSectionHandlers } from './md2Parse.ts';
 import { MD2_ANORMS } from './md2Schema.ts';
 import { md2SkinHandler } from './md2SkinHandler.ts';
+type Scene3DAnimationTarget = { node: unknown; path: string };
 import { getTestTextureResource } from './scene3DFormatsTestHelper.ts';
 
 // Builds a minimal valid MD2 binary buffer with one frame and the given triangles, vertices, and

@@ -1,5 +1,5 @@
+import { BlinnPhongMaterialKind } from '@flighthq/materials/contract';
 import type { Scene3DDocument } from '@flighthq/scene3d/contract';
-import { BlinnPhongMaterialKind } from '@flighthq/types/contract';
 
 import { MD2_SKIN_SIZE } from './md2Schema.ts';
 import { md2SkinFamily, md2SkinHandler } from './md2SkinHandler.ts';

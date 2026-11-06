@@ -1,12 +1,12 @@
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import type { ImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import { ImportDiagnosticSeverity } from '@flighthq/importdiagnostics/contract';
 import {
   CANONICAL_SKINNED_MESH_GEOMETRY_LAYOUT,
   computeMeshGeometryNormals,
   computeMeshGeometryTangents,
   createMeshGeometry,
 } from '@flighthq/meshgeometry/contract';
-import type { ImportDiagnostic } from '@flighthq/types/contract';
-import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
 import { awdDataTypeByteSize, readAwdDataValue, readAwdString, skipAwdAttrList } from './awd2Reader.ts';
 import {

@@ -1,8 +1,9 @@
 import { packLinearChannelsToColor } from '@flighthq/color/contract';
-import type { GltfDocument, SpecularGlossinessPbrMaterial } from '@flighthq/types/contract';
-import { SpecularGlossinessPbrMaterialKind, StandardPbrMaterialKind } from '@flighthq/types/contract';
+import type { SpecularGlossinessPbrMaterial } from '@flighthq/materials/contract';
+import { SpecularGlossinessPbrMaterialKind, StandardPbrMaterialKind } from '@flighthq/materials/contract';
 import { describe, expect, it } from 'vitest';
 
+import type { GltfDocument } from './contract.scene3d-formats-types.ts';
 import { GltfClearcoatExtensionHandler } from './gltfClearcoat.ts';
 import { parseGltf } from './gltfImport.ts';
 import { GltfSpecularGlossinessExtensionHandler } from './gltfSpecularGlossiness.ts';

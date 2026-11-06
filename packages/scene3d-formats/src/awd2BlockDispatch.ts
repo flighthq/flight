@@ -1,6 +1,7 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
+import type { ImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import type { Scene3DDocument } from '@flighthq/scene3d/contract';
-import type { EntityConstruction, ImportDiagnostic } from '@flighthq/types/contract';
 
 import type { Awd2BlockDispatch, Awd2BlockHandler, Awd2ParseState } from './types/Awd2Block.ts';
 

@@ -1,4 +1,5 @@
 import { createAnimationTrack } from '@flighthq/animation/contract';
+import type { AnimationTrack } from '@flighthq/animation/contract';
 import {
   copyMatrix4,
   createMatrix4,
@@ -8,7 +9,10 @@ import {
   multiplyMatrix4,
   setMatrix4Identity,
 } from '@flighthq/geometry/contract';
+import type { Matrix4 } from '@flighthq/geometry/contract';
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import type { ImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import { ImportDiagnosticSeverity } from '@flighthq/importdiagnostics/contract';
 import type {
   Scene3DDocument,
   Scene3DDocumentAnimationChannel,
@@ -21,8 +25,6 @@ import {
   Scene3DAnimationPathTranslation,
 } from '@flighthq/scene3d/contract';
 import { Node3DKind } from '@flighthq/scene3d/contract';
-import type { ImportDiagnostic, AnimationTrack, Matrix4 } from '@flighthq/types/contract';
-import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
 import {
   awdTransformToMatrix4,

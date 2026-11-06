@@ -1,5 +1,8 @@
 import { createTransform3D } from '@flighthq/geometry/contract';
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import type { ImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import { ImportDiagnosticSeverity } from '@flighthq/importdiagnostics/contract';
+import type { Material, MaterialLike } from '@flighthq/materials/contract';
 import {
   computeMeshGeometryNormals,
   computeMeshGeometryTangents,
@@ -8,8 +11,6 @@ import {
 import type { MeshSubset, PrimitiveTopology } from '@flighthq/meshgeometry/contract';
 import { MeshKind } from '@flighthq/meshgeometry/contract';
 import type { Scene3DDocument, Scene3DDocumentMesh, Scene3DDocumentNode } from '@flighthq/scene3d/contract';
-import type { ImportDiagnostic, Material, MaterialLike } from '@flighthq/types/contract';
-import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
 import { CANONICAL_FLOATS_PER_VERTEX, CANONICAL_LAYOUT } from './shared.ts';
 import type { ObjMaterialHandler } from './types/ObjMaterialHandler.ts';

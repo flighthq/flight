@@ -1,9 +1,10 @@
 import { packLinearChannelsToColor } from '@flighthq/color/contract';
 import type { ImageResourceReference } from '@flighthq/image/contract';
 import { ImageResourceReferenceKind } from '@flighthq/image/contract';
+import type { ImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import { ImportDiagnosticSeverity } from '@flighthq/importdiagnostics/contract';
 import { getPbrRoughnessFromPhongShininess } from '@flighthq/materials/contract';
-import type { ImportDiagnostic, MaterialLike, StandardPbrMaterial } from '@flighthq/types/contract';
-import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
+import type { MaterialLike, StandardPbrMaterial } from '@flighthq/materials/contract';
 import type { XmlElement } from '@flighthq/xml/contract';
 import { parseXmlDocument } from '@flighthq/xml/contract';
 import { describe, expect, it } from 'vitest';

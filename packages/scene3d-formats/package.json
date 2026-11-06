@@ -56,11 +56,11 @@
     "@flighthq/meshgeometry": "*",
     "@flighthq/node": "*",
     "@flighthq/requirement": "*",
+    "@flighthq/resource": "*",
     "@flighthq/scene3d": "*",
     "@flighthq/shading": "*",
     "@flighthq/skeleton3d": "*",
     "@flighthq/texture": "*",
-    "@flighthq/types": "*",
     "@flighthq/xml": "*"
   },
   "devDependencies": {

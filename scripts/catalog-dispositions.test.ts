@@ -11,8 +11,11 @@ import {
   OBJ_MATERIAL_FEATURE,
   STL_MESH_FEATURE,
 } from '@flighthq/scene3d-formats/contract';
+import {
+  OBJ_MATERIAL_BLINN_PHONG_FEATURE,
+  OBJ_MATERIAL_STANDARD_PBR_FEATURE,
+} from '@flighthq/scene3d-formats/contract';
 import { SpineBinarySectionKind, SpineBinaryTimelineKind } from '@flighthq/skeleton2d-formats/contract';
-import { OBJ_MATERIAL_BLINN_PHONG_FEATURE, OBJ_MATERIAL_STANDARD_PBR_FEATURE } from '@flighthq/types/contract';
 
 import {
   ALWAYS_READ_FORMAT_FEATURES,

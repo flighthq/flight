@@ -1,6 +1,6 @@
 import { createRequirementSet } from '@flighthq/requirement/contract';
-import type { Requirement, RequirementSet } from '@flighthq/types/contract';
-import { RequirementFacet } from '@flighthq/types/contract';
+import type { Requirement, RequirementSetRaw as RequirementSet } from '@flighthq/requirement/contract';
+import { RequirementFacet } from '@flighthq/requirement/contract';
 
 import { STL_REQUIREMENT_KEY_NAMESPACE } from './scene3dFormatRequirements.ts';
 import { collectStlFeatures, STL_MESH_FEATURE } from './stlFeatures.ts';

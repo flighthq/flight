@@ -1,5 +1,5 @@
 import type { ImageResourceReference } from '@flighthq/image/contract';
-import type { Texture } from '@flighthq/types/contract';
+import type { Texture } from '@flighthq/texture/contract';
 
 export function getTestTextureResource(
   resources: readonly ImageResourceReference[],

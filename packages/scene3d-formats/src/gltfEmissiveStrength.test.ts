@@ -1,12 +1,9 @@
-import type {
-  ExtendedPbrMaterial,
-  GltfDocument,
-  ImportDiagnostic,
-  StandardPbrMaterial,
-} from '@flighthq/types/contract';
-import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
+import type { ImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import { ImportDiagnosticSeverity } from '@flighthq/importdiagnostics/contract';
+import type { ExtendedPbrMaterial, StandardPbrMaterial } from '@flighthq/materials/contract';
 import { describe, expect, it } from 'vitest';
 
+import type { GltfDocument } from './contract.scene3d-formats-types.ts';
 import { GltfClearcoatExtensionHandler } from './gltfClearcoat.ts';
 import { GltfEmissiveStrengthExtensionHandler } from './gltfEmissiveStrength.ts';
 import { parseGltf } from './gltfImport.ts';

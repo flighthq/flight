@@ -1,6 +1,7 @@
-import type { AnisotropyPbrExtension, ExtendedPbrMaterial, GltfDocument } from '@flighthq/types/contract';
+import type { AnisotropyPbrExtension, ExtendedPbrMaterial } from '@flighthq/materials/contract';
 import { describe, expect, it } from 'vitest';
 
+import type { GltfDocument } from './contract.scene3d-formats-types.ts';
 import { GltfAnisotropyExtensionHandler } from './gltfAnisotropy.ts';
 import { parseGltf } from './gltfImport.ts';
 

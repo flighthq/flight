@@ -1,6 +1,6 @@
+import type { ImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import { BlinnPhongMaterialKind } from '@flighthq/materials/contract';
 import { getNodeChildren } from '@flighthq/node/contract';
-import type { ImportDiagnostic } from '@flighthq/types/contract';
-import { BlinnPhongMaterialKind } from '@flighthq/types/contract';
 
 import { md2AnimationHandler } from './md2AnimationHandler.ts';
 import { createScene3DFromMd2, parseMd2 } from './md2Document.ts';

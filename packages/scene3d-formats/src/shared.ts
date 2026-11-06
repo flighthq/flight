@@ -8,9 +8,11 @@ import { ImageResourceReferenceKind } from '@flighthq/image/contract';
 import { CANONICAL_SKINNED_MESH_GEOMETRY_LAYOUT } from '@flighthq/meshgeometry/contract';
 import type { VertexAttributeLayout } from '@flighthq/meshgeometry/contract';
 import { createTexture } from '@flighthq/texture/contract';
-import type { MutableNumberArray, Texture } from '@flighthq/types/contract';
+import type { Texture } from '@flighthq/texture/contract';
 
 import type { SkinInfluence } from './types/SkinInfluence.ts';
+
+type MutableNumberArray = Float32Array | Float64Array | number[];
 
 export const CANONICAL_FLOATS_PER_VERTEX = 12;
 export const CANONICAL_LAYOUT: VertexAttributeLayout = {

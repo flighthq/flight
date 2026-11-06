@@ -1,7 +1,16 @@
 import { sampleAnimationTrack } from '@flighthq/animation/contract';
+import type { AnimationClip } from '@flighthq/animation/contract';
 import { sdkHostDecompressDeflate } from '@flighthq/compression/contract';
+import type {
+  Decompressor,
+  HostDecompressDeflateCapability,
+  HostDecompressLzmaCapability,
+} from '@flighthq/compression/contract';
+import { Compression, CompressionFraming } from '@flighthq/compression/contract';
 import { createVector3, rotateVector3ByQuaternion } from '@flighthq/geometry/contract';
 import type { EmbeddedImageResourceReference, ExternalImageResourceReference } from '@flighthq/image/contract';
+import type { ImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import { ImportDiagnosticSeverity } from '@flighthq/importdiagnostics/contract';
 import type { AmbientLight, DirectionalLight, PointLight } from '@flighthq/lighting/contract';
 import { AmbientLightKind, DirectionalLightKind, PointLightKind } from '@flighthq/lighting/contract';
 import {
@@ -13,6 +22,7 @@ import {
 } from '@flighthq/meshgeometry/contract';
 import type { Mesh } from '@flighthq/meshgeometry/contract';
 import { getNodeChildren, getNodeLocalMatrix4, getNodeParent } from '@flighthq/node/contract';
+import { ResourceResolutionState } from '@flighthq/resource/contract';
 import { createNode3D, isMesh } from '@flighthq/scene3d/contract';
 import type {
   Scene3DDocumentAnimation,
@@ -24,14 +34,6 @@ import type { Node3D } from '@flighthq/scene3d/contract';
 import type { ShadedMaterial } from '@flighthq/shading/contract';
 import { ShadedMaterialKind } from '@flighthq/shading/contract';
 import { getTextureSource } from '@flighthq/texture/contract';
-import type {
-  Decompressor,
-  HostDecompressDeflateCapability,
-  HostDecompressLzmaCapability,
-} from '@flighthq/types/contract';
-import { Compression, CompressionFraming } from '@flighthq/types/contract';
-import type { AnimationClip, ImportDiagnostic, Scene3DAnimationTarget } from '@flighthq/types/contract';
-import { ImportDiagnosticSeverity, ResourceResolutionState } from '@flighthq/types/contract';
 
 import { awd2AllBlockHandlers, awd2SkeletonFamily } from './awd2BlockRegistry.ts';
 import { createScene3DFromAwd2, parseAwd2 } from './awd2Parse.ts';
@@ -94,6 +96,7 @@ import {
   AWD2_TEXTURE_TYPE_EMBEDDED,
   AWD2_TEXTURE_TYPE_EXTERNAL,
 } from './awd2Schema.ts';
+type Scene3DAnimationTarget = { node: unknown; path: string };
 import { getTestTextureResource } from './scene3DFormatsTestHelper.ts';
 import type { Awd2ParseOptions } from './types/Awd2ParseOptions.ts';
 

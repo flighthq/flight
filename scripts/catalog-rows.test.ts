@@ -21,6 +21,7 @@ import {
 import * as scene3dFormats from '@flighthq/scene3d-formats';
 import { getThreeDsChunkName, THREE_DS_REQUIREMENT_KEY_NAMESPACE } from '@flighthq/scene3d-formats/contract';
 import * as scene3dFormatsContract from '@flighthq/scene3d-formats/contract';
+import { THREE_DS_MATERIAL_TEXTURE_MAP } from '@flighthq/scene3d-formats/contract';
 import {
   dragonBonesAllSectionHandlers,
   dragonBonesAllTimelineHandlers,
@@ -35,7 +36,7 @@ import { getSwfTagName } from '@flighthq/swf/contract';
 import * as swfContract from '@flighthq/swf/contract';
 import * as tilemapFormats from '@flighthq/tilemap-formats';
 import * as tilemapFormatsContract from '@flighthq/tilemap-formats/contract';
-import { RequirementFacet, THREE_DS_MATERIAL_TEXTURE_MAP } from '@flighthq/types/contract';
+import { RequirementFacet } from '@flighthq/types/contract';
 
 import { ALWAYS_READ_FORMAT_FEATURES } from './catalog-dispositions.ts';
 import {

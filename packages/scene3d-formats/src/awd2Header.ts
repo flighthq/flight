@@ -1,4 +1,4 @@
-import type { HostDecompressDeflateCapability, HostDecompressLzmaCapability } from '@flighthq/types/contract';
+import type { HostDecompressDeflateCapability, HostDecompressLzmaCapability } from '@flighthq/compression/contract';
 
 import {
   AWD2_FORMAT_VERSION,

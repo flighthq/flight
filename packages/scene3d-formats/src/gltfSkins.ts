@@ -1,5 +1,5 @@
+import { ImportDiagnosticSeverity } from '@flighthq/importdiagnostics/contract';
 import type { Scene3DDocumentSkin } from '@flighthq/scene3d/contract';
-import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
 import type { GltfCoreFeatureContext, GltfCoreFeatureHandler } from './contract.scene3d-formats-types.ts';
 

@@ -1,7 +1,8 @@
-import type { ClearcoatPbrExtension, ExtendedPbrMaterial, GltfDocument } from '@flighthq/types/contract';
-import { ExtendedPbrMaterialKind, StandardPbrMaterialKind } from '@flighthq/types/contract';
+import type { ClearcoatPbrExtension, ExtendedPbrMaterial } from '@flighthq/materials/contract';
+import { ExtendedPbrMaterialKind, StandardPbrMaterialKind } from '@flighthq/materials/contract';
 import { describe, expect, it } from 'vitest';
 
+import type { GltfDocument } from './contract.scene3d-formats-types.ts';
 import { GltfClearcoatExtensionHandler } from './gltfClearcoat.ts';
 import { parseGltf } from './gltfImport.ts';
 

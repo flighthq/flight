@@ -3,14 +3,14 @@ import {
   createSheenPbrExtension,
   createStandardPbrMaterial,
 } from '@flighthq/materials/contract';
-import type { Scene3DDocument } from '@flighthq/scene3d/contract';
 import type {
   ClearcoatPbrExtension,
   ExtendedPbrMaterial,
   MaterialLike,
   StandardPbrMaterial,
-} from '@flighthq/types/contract';
-import { ExtendedPbrMaterialKind, StandardPbrMaterialKind } from '@flighthq/types/contract';
+} from '@flighthq/materials/contract';
+import { ExtendedPbrMaterialKind, StandardPbrMaterialKind } from '@flighthq/materials/contract';
+import type { Scene3DDocument } from '@flighthq/scene3d/contract';
 import { describe, expect, it } from 'vitest';
 
 import { attachGltfPbrExtension, findGltfPbrExtension } from './gltfMaterialExtension.ts';

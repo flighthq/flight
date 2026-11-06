@@ -1,4 +1,5 @@
-import { RequirementFacet, StandardPbrMaterialKind } from '@flighthq/types/contract';
+import { StandardPbrMaterialKind } from '@flighthq/materials/contract';
+import { RequirementFacet } from '@flighthq/requirement/contract';
 
 import { COLLADA_FEATURE_SCENE_REQUIREMENTS } from './colladaFeatureRequirements.ts';
 

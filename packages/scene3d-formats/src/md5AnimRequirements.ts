@@ -1,6 +1,6 @@
 import { createRequirementSet } from '@flighthq/requirement/contract';
-import type { Requirement, RequirementSet } from '@flighthq/types/contract';
-import { RequirementFacet } from '@flighthq/types/contract';
+import type { Requirement, RequirementSetRaw as RequirementSet } from '@flighthq/requirement/contract';
+import { RequirementFacet } from '@flighthq/requirement/contract';
 
 import { collectMd5AnimFeatures } from './md5AnimFeatures.ts';
 import { MD5_REQUIREMENT_KEY_NAMESPACE } from './scene3dFormatRequirements.ts';

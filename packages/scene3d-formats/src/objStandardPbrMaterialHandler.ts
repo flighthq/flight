@@ -1,8 +1,9 @@
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import type { ImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import { ImportDiagnosticSeverity } from '@flighthq/importdiagnostics/contract';
 import { createStandardPbrMaterial } from '@flighthq/materials/contract';
+import type { StandardPbrMaterial } from '@flighthq/materials/contract';
 import type { Scene3DDocument } from '@flighthq/scene3d/contract';
-import type { ImportDiagnostic, StandardPbrMaterial } from '@flighthq/types/contract';
-import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
 import { externalObjTexture, packObjColor } from './objMaterialHelpers.ts';
 import { hasObjPbrDirectives } from './objMaterialModel.ts';

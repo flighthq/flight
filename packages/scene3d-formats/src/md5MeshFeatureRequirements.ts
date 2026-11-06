@@ -1,5 +1,6 @@
-import type { Requirement } from '@flighthq/types/contract';
-import { BlinnPhongMaterialKind, RequirementFacet } from '@flighthq/types/contract';
+import { BlinnPhongMaterialKind } from '@flighthq/materials/contract';
+import type { Requirement } from '@flighthq/requirement/contract';
+import { RequirementFacet } from '@flighthq/requirement/contract';
 
 /**
  * Which scene requirements an MD5 mesh feature implies — the fact that turns a FORMAT requirement

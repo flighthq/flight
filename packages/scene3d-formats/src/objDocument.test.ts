@@ -1,6 +1,6 @@
+import type { ImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import { BlinnPhongMaterialKind, StandardPbrMaterialKind } from '@flighthq/materials/contract';
 import { getNodeChildren } from '@flighthq/node/contract';
-import type { ImportDiagnostic } from '@flighthq/types/contract';
-import { BlinnPhongMaterialKind, StandardPbrMaterialKind } from '@flighthq/types/contract';
 
 import { parseObjMaterialLibrary } from './mtlParse.ts';
 import { objBlinnPhongMaterialHandler } from './objBlinnPhongMaterialHandler.ts';

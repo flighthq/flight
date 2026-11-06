@@ -1,5 +1,5 @@
+import { BlinnPhongMaterialKind } from '@flighthq/materials/contract';
 import type { Scene3DDocument } from '@flighthq/scene3d/contract';
-import { BlinnPhongMaterialKind } from '@flighthq/types/contract';
 
 import { objBlinnPhongMaterialHandler, objMaterialToBlinnPhong } from './objBlinnPhongMaterialHandler.ts';
 import type { ObjMaterial } from './types/ObjSchema.ts';

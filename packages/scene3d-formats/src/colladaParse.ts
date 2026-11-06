@@ -6,11 +6,12 @@ import {
   multiplyMatrix4,
   setMatrix4,
 } from '@flighthq/geometry/contract';
+import type { Matrix4Like, Transform3D } from '@flighthq/geometry/contract';
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import type { ImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import { ImportDiagnosticSeverity } from '@flighthq/importdiagnostics/contract';
 import type { Scene3DDocument, Scene3DDocumentNode, Scene3DDocumentScene } from '@flighthq/scene3d/contract';
 import { Node3DKind } from '@flighthq/scene3d/contract';
-import type { ImportDiagnostic, Matrix4Like, Transform3D } from '@flighthq/types/contract';
-import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 import type { XmlElement } from '@flighthq/xml/contract';
 import { parseXmlDocument } from '@flighthq/xml/contract';
 

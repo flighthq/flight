@@ -104,6 +104,17 @@ import {
   OBJ_REQUIREMENT_KEY_NAMESPACE,
   THREE_DS_REQUIREMENT_KEY_NAMESPACE,
 } from '@flighthq/scene3d-formats/contract';
+import type {
+  Awd2BlockHandler,
+  ColladaElementDecoder,
+  GltfCoreFeatureHandler,
+  GltfExtensionHandler,
+  Md2SectionHandler,
+  Md5SectionHandler,
+  ObjMaterialHandler,
+  ThreeDsChunkHandler,
+} from '@flighthq/scene3d-formats/contract';
+import { THREE_DS_MATERIAL_TEXTURE_MAP } from '@flighthq/scene3d-formats/contract';
 import {
   dragonBonesAllSectionHandlers,
   dragonBonesAllTimelineHandlers,
@@ -199,22 +210,14 @@ import {
 } from '@flighthq/tilemap-formats/contract';
 import type { PathBooleanKernel, RiveImportRegistry } from '@flighthq/types/contract';
 import type {
-  Awd2BlockHandler,
-  ColladaElementDecoder,
-  GltfCoreFeatureHandler,
-  GltfExtensionHandler,
   LottieLayerHandler,
   LottieMaskHandler,
   LottieShapeItemHandler,
-  Md2SectionHandler,
   SvgClipHandler,
   SvgElementHandler,
-  Md5SectionHandler,
-  ObjMaterialHandler,
   SwfTagHandler,
-  ThreeDsChunkHandler,
 } from '@flighthq/types/contract';
-import { RequirementFacet, THREE_DS_MATERIAL_TEXTURE_MAP } from '@flighthq/types/contract';
+import { RequirementFacet } from '@flighthq/types/contract';
 
 /**
  * The built-in ownership rows, DERIVED from the handlers themselves rather than transcribed.

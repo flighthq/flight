@@ -2,7 +2,7 @@
 // that forces handler dispatch. This is the selective counterpart to obj-import-material: it
 // proves that naming only one handler excludes the StandardPbr handler from the bundle.
 import { objBlinnPhongMaterialHandler, parseObjWithMaterialHandlers } from '@flighthq/scene3d-formats';
-import type { ObjMaterialLibrary } from '@flighthq/types';
+import type { ObjMaterialLibrary } from '@flighthq/scene3d-formats/contract';
 
 const OBJ_SOURCE = 'v 0 0 0\nv 1 0 0\nv 0 1 0\nusemtl m\nf 1 2 3';
 

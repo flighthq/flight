@@ -1,6 +1,7 @@
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
-import type { ExtendedPbrMaterial, StandardPbrMaterial } from '@flighthq/types/contract';
-import { ExtendedPbrMaterialKind, ImportDiagnosticSeverity, StandardPbrMaterialKind } from '@flighthq/types/contract';
+import { ImportDiagnosticSeverity } from '@flighthq/importdiagnostics/contract';
+import type { ExtendedPbrMaterial, StandardPbrMaterial } from '@flighthq/materials/contract';
+import { ExtendedPbrMaterialKind, StandardPbrMaterialKind } from '@flighthq/materials/contract';
 
 import type { GltfExtensionHandler } from './contract.scene3d-formats-types.ts';
 

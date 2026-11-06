@@ -1,10 +1,10 @@
 import { createOrthographicProjection, createPerspectiveProjection } from '@flighthq/camera/contract';
 import { createTransform3D, decomposeMatrix4ToTransform3D } from '@flighthq/geometry/contract';
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import { ImportDiagnosticSeverity } from '@flighthq/importdiagnostics/contract';
+import type { ImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import { DEG_TO_RAD } from '@flighthq/math/contract';
 import type { Scene3DDocument, Scene3DDocumentCamera } from '@flighthq/scene3d/contract';
-import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
-import type { ImportDiagnostic } from '@flighthq/types/contract';
 import type { XmlElement } from '@flighthq/xml/contract';
 
 import { buildColladaNodeWorldMatrices } from './colladaSceneShared.ts';

@@ -1,9 +1,11 @@
 import { detectImageMimeType } from '@flighthq/image-codec/contract';
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import type { ImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import { ImportDiagnosticSeverity } from '@flighthq/importdiagnostics/contract';
+import type { Material, Material3D, MaterialLike } from '@flighthq/materials/contract';
 import type { Scene3DDocument } from '@flighthq/scene3d/contract';
 import { createShadedMaterial } from '@flighthq/shading/contract';
-import type { ImportDiagnostic, Material, Material3D, MaterialLike, Texture } from '@flighthq/types/contract';
-import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
+import type { Texture } from '@flighthq/texture/contract';
 
 import {
   readAwdProperties,

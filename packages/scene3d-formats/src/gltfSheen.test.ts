@@ -1,8 +1,9 @@
 import { packLinearChannelsToColor } from '@flighthq/color/contract';
-import type { ExtendedPbrMaterial, GltfDocument, SheenPbrExtension } from '@flighthq/types/contract';
-import { ExtendedPbrMaterialKind } from '@flighthq/types/contract';
+import type { ExtendedPbrMaterial, SheenPbrExtension } from '@flighthq/materials/contract';
+import { ExtendedPbrMaterialKind } from '@flighthq/materials/contract';
 import { describe, expect, it } from 'vitest';
 
+import type { GltfDocument } from './contract.scene3d-formats-types.ts';
 import { parseGltf } from './gltfImport.ts';
 import { GltfSheenExtensionHandler } from './gltfSheen.ts';
 

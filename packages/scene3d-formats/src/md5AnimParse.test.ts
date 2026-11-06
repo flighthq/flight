@@ -1,11 +1,13 @@
 import { sampleAnimationTrack } from '@flighthq/animation/contract';
+import type { AnimationClip } from '@flighthq/animation/contract';
+import type { ImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import { ImportDiagnosticSeverity } from '@flighthq/importdiagnostics/contract';
 import { createNode3D } from '@flighthq/scene3d/contract';
 import { Scene3DAnimationPathRotation, Scene3DAnimationPathTranslation } from '@flighthq/scene3d/contract';
 import type { Node3D } from '@flighthq/scene3d/contract';
-import type { AnimationClip, ImportDiagnostic, Scene3DAnimationTarget } from '@flighthq/types/contract';
-import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
 import { parseMd5Anim } from './md5AnimParse.ts';
+type Scene3DAnimationTarget = { node: unknown; path: string };
 
 // Minimal valid MD5 anim with one joint, one frame, no animated components (all from baseframe).
 const SINGLE_JOINT_STATIC = [

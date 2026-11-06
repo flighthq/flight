@@ -1,4 +1,5 @@
-import { BlinnPhongMaterialKind, RequirementFacet } from '@flighthq/types/contract';
+import { BlinnPhongMaterialKind } from '@flighthq/materials/contract';
+import { RequirementFacet } from '@flighthq/requirement/contract';
 
 import { parseThreeDsRequirements } from './threeDsRequirements.ts';
 import {

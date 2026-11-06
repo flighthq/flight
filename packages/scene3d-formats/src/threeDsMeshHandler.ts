@@ -8,13 +8,14 @@ import {
   matrix4TransformPoint,
   multiplyMatrix4,
 } from '@flighthq/geometry/contract';
+import type { Transform3D } from '@flighthq/geometry/contract';
+import { ImportDiagnosticSeverity } from '@flighthq/importdiagnostics/contract';
 import { createBlinnPhongMaterial } from '@flighthq/materials/contract';
+import type { Material, MaterialLike } from '@flighthq/materials/contract';
 import { createMeshGeometry } from '@flighthq/meshgeometry/contract';
 import type { MeshSubset } from '@flighthq/meshgeometry/contract';
 import { MeshKind } from '@flighthq/meshgeometry/contract';
 import type { Scene3DDocument, Scene3DDocumentMesh, Scene3DDocumentNode } from '@flighthq/scene3d/contract';
-import type { Material, MaterialLike, Transform3D } from '@flighthq/types/contract';
-import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
 import {
   CANONICAL_FLOATS_PER_VERTEX,

@@ -1,7 +1,8 @@
 import { packLinearChannelsToColor } from '@flighthq/color/contract';
-import type { ExtendedPbrMaterial, GltfDocument, SpecularPbrExtension } from '@flighthq/types/contract';
+import type { ExtendedPbrMaterial, SpecularPbrExtension } from '@flighthq/materials/contract';
 import { describe, expect, it } from 'vitest';
 
+import type { GltfDocument } from './contract.scene3d-formats-types.ts';
 import { parseGltf } from './gltfImport.ts';
 import { GltfSpecularExtensionHandler } from './gltfSpecular.ts';
 

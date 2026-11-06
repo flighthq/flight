@@ -1,4 +1,5 @@
-import { BlinnPhongMaterialKind, RequirementFacet } from '@flighthq/types/contract';
+import { BlinnPhongMaterialKind } from '@flighthq/materials/contract';
+import { RequirementFacet } from '@flighthq/requirement/contract';
 
 import { parseMd2Requirements } from './md2Requirements.ts';
 import { MD2_HEADER_SIZE, MD2_MAGIC, MD2_VERSION } from './md2Schema.ts';

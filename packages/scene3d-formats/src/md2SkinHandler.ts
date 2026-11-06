@@ -1,7 +1,7 @@
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import { ImportDiagnosticSeverity } from '@flighthq/importdiagnostics/contract';
 import { createBlinnPhongMaterial } from '@flighthq/materials/contract';
-import type { Material, MaterialLike } from '@flighthq/types/contract';
-import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
+import type { Material, MaterialLike } from '@flighthq/materials/contract';
 
 import { MD2_SKIN_SIZE } from './md2Schema.ts';
 import { createExternalTextureRef } from './shared.ts';

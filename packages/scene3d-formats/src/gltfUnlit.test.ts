@@ -1,7 +1,8 @@
-import type { GltfDocument, UnlitMaterial } from '@flighthq/types/contract';
-import { StandardPbrMaterialKind, UnlitMaterialKind } from '@flighthq/types/contract';
+import type { UnlitMaterial } from '@flighthq/materials/contract';
+import { StandardPbrMaterialKind, UnlitMaterialKind } from '@flighthq/materials/contract';
 import { describe, expect, it } from 'vitest';
 
+import type { GltfDocument } from './contract.scene3d-formats-types.ts';
 import { GltfClearcoatExtensionHandler } from './gltfClearcoat.ts';
 import { parseGltf } from './gltfImport.ts';
 import { GltfUnlitExtensionHandler } from './gltfUnlit.ts';

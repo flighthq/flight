@@ -1,4 +1,4 @@
-import { RequirementFacet } from '@flighthq/types/contract';
+import { RequirementFacet } from '@flighthq/requirement/contract';
 
 import { parseAwd2Requirements } from './awd2Requirements.ts';
 

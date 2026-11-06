@@ -4,8 +4,8 @@ import type {
   ExternalImageResourceReference,
   ImageResourceReference,
 } from '@flighthq/image/contract';
+import { ResourceResolutionState } from '@flighthq/resource/contract';
 import { getTextureSource } from '@flighthq/texture/contract';
-import { ResourceResolutionState } from '@flighthq/types/contract';
 
 import { getTestTextureResource } from './scene3DFormatsTestHelper.ts';
 import {

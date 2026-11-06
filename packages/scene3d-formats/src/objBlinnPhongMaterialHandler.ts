@@ -1,8 +1,9 @@
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import type { ImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import { ImportDiagnosticSeverity } from '@flighthq/importdiagnostics/contract';
 import { createBlinnPhongMaterial } from '@flighthq/materials/contract';
+import type { BlinnPhongMaterial } from '@flighthq/materials/contract';
 import type { Scene3DDocument } from '@flighthq/scene3d/contract';
-import type { BlinnPhongMaterial, ImportDiagnostic } from '@flighthq/types/contract';
-import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
 import { externalObjTexture, packObjColor } from './objMaterialHelpers.ts';
 import { hasObjPbrDirectives } from './objMaterialModel.ts';

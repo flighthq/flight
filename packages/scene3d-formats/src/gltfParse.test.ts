@@ -1,6 +1,10 @@
 import { sampleAnimationTrack } from '@flighthq/animation/contract';
 import { linearChannelToSrgb } from '@flighthq/color/contract';
 import type { EmbeddedImageResourceReference, ExternalImageResourceReference } from '@flighthq/image/contract';
+import type { ImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import { ImportDiagnosticSeverity } from '@flighthq/importdiagnostics/contract';
+import type { StandardPbrMaterial } from '@flighthq/materials/contract';
+import { StandardPbrMaterialKind } from '@flighthq/materials/contract';
 import {
   getMeshGeometryIndexCount,
   getMeshGeometryVertexCount,
@@ -14,15 +18,8 @@ import { getNodeChildren, getNodeLocalMatrix4 } from '@flighthq/node/contract';
 import { isMesh } from '@flighthq/scene3d/contract';
 import type { Node3D } from '@flighthq/scene3d/contract';
 import { getTextureSource } from '@flighthq/texture/contract';
-import type {
-  GltfCoreFeatureHandler,
-  ImportDiagnostic,
-  Scene3DAnimationTarget,
-  StandardPbrMaterial,
-  GltfDocument,
-} from '@flighthq/types/contract';
-import { ImportDiagnosticSeverity, StandardPbrMaterialKind } from '@flighthq/types/contract';
 
+import type { GltfCoreFeatureHandler, GltfDocument } from './contract.scene3d-formats-types.ts';
 import { GltfAnimationsCoreFeatureHandler } from './gltfAnimations.ts';
 import { GltfCamerasCoreFeatureHandler } from './gltfCameras.ts';
 import {
@@ -39,6 +36,7 @@ import {
   parseGlbWithCoreFeatureHandlers,
   parseGltfWithCoreFeatureHandlers,
 } from './gltfParse.ts';
+type Scene3DAnimationTarget = { node: unknown; path: string };
 import { getTestTextureResource } from './scene3DFormatsTestHelper.ts';
 
 function findGltfDiagnostic(diagnostics: readonly ImportDiagnostic[], kind: string): ImportDiagnostic | undefined {

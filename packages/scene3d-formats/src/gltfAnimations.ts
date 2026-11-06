@@ -1,4 +1,6 @@
 import { createAnimationTrack } from '@flighthq/animation/contract';
+import type { AnimationInterpolation } from '@flighthq/animation/contract';
+import { ImportDiagnosticSeverity } from '@flighthq/importdiagnostics/contract';
 import type {
   Scene3DAnimationPath,
   Scene3DDocumentAnimation,
@@ -12,8 +14,6 @@ import {
   Scene3DAnimationPathTranslation,
   Scene3DAnimationPathWeights,
 } from '@flighthq/scene3d/contract';
-import type { AnimationInterpolation } from '@flighthq/types/contract';
-import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
 import type { GltfCoreFeatureContext, GltfCoreFeatureHandler } from './contract.scene3d-formats-types.ts';
 

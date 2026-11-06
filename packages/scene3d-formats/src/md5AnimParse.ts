@@ -1,9 +1,10 @@
 import { createAnimationChannel, createAnimationClip, createAnimationTrack } from '@flighthq/animation/contract';
+import type { AnimationChannel, AnimationClip } from '@flighthq/animation/contract';
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import type { ImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import { ImportDiagnosticSeverity } from '@flighthq/importdiagnostics/contract';
 import { Scene3DAnimationPathRotation, Scene3DAnimationPathTranslation } from '@flighthq/scene3d/contract';
 import type { Node3D } from '@flighthq/scene3d/contract';
-import type { AnimationChannel, AnimationClip, ImportDiagnostic } from '@flighthq/types/contract';
-import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
 import { convertPositionsZUpToYUp, convertQuaternionsZUpToYUp } from './shared.ts';
 

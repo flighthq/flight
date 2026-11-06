@@ -1,13 +1,14 @@
-import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
-import { createScene3DFromDocument } from '@flighthq/scene3d/contract';
-import type { Scene3D, Scene3DDocument } from '@flighthq/scene3d/contract';
 import type {
   Decompressor,
   HostDecompressDeflateCapability,
   HostDecompressLzmaCapability,
-  ImportDiagnostic,
-} from '@flighthq/types/contract';
-import { CompressionFraming, ImportDiagnosticSeverity } from '@flighthq/types/contract';
+} from '@flighthq/compression/contract';
+import { CompressionFraming } from '@flighthq/compression/contract';
+import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import type { ImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import { ImportDiagnosticSeverity } from '@flighthq/importdiagnostics/contract';
+import { createScene3DFromDocument } from '@flighthq/scene3d/contract';
+import type { Scene3D, Scene3DDocument } from '@flighthq/scene3d/contract';
 
 import { expandAwd2BlockDispatch, createAwd2ParseState } from './awd2BlockDispatch.ts';
 import {

@@ -1,4 +1,4 @@
-import { RequirementFacet } from '@flighthq/types/contract';
+import { RequirementFacet } from '@flighthq/requirement/contract';
 
 import { parseMd5AnimRequirements } from './md5AnimRequirements.ts';
 

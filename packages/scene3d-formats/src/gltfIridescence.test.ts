@@ -1,6 +1,7 @@
-import type { ExtendedPbrMaterial, GltfDocument, IridescencePbrExtension } from '@flighthq/types/contract';
+import type { ExtendedPbrMaterial, IridescencePbrExtension } from '@flighthq/materials/contract';
 import { describe, expect, it } from 'vitest';
 
+import type { GltfDocument } from './contract.scene3d-formats-types.ts';
 import { parseGltf } from './gltfImport.ts';
 import { GltfIridescenceExtensionHandler } from './gltfIridescence.ts';
 

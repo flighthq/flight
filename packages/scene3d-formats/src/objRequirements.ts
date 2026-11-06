@@ -1,6 +1,6 @@
 import { createRequirementSet } from '@flighthq/requirement/contract';
-import type { Requirement, RequirementSet } from '@flighthq/types/contract';
-import { RequirementFacet } from '@flighthq/types/contract';
+import type { Requirement, RequirementSetRaw as RequirementSet } from '@flighthq/requirement/contract';
+import { RequirementFacet } from '@flighthq/requirement/contract';
 
 import { OBJ_FEATURE_SCENE_REQUIREMENTS } from './objFeatureRequirements.ts';
 import { collectObjFeatures, OBJ_MATERIAL_FEATURE } from './objFeatures.ts';

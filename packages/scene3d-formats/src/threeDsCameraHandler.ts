@@ -9,10 +9,10 @@ import {
   setQuaternionFromUnitVectors,
   subtractVector3,
 } from '@flighthq/geometry/contract';
+import type { Vector3 } from '@flighthq/geometry/contract';
+import { ImportDiagnosticSeverity } from '@flighthq/importdiagnostics/contract';
 import { DEG_TO_RAD } from '@flighthq/math/contract';
 import type { Scene3DDocument } from '@flighthq/scene3d/contract';
-import type { Vector3 } from '@flighthq/types/contract';
-import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
 import { convertPositionsZUpToYUp } from './shared.ts';
 import { readChunkEnd, tallyThreeDsDrop } from './threeDsParse.ts';

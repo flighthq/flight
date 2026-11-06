@@ -71,7 +71,7 @@ export const STL_SQUARE_FACETS: readonly StlFacetLike[] = [
   },
 ];
 
-// A structural facet shape, not an exported type: every exported type lives in `@flighthq/types`, and a fixture
+// A structural facet shape, not an exported type: every exported type lives in its owning package, and a fixture
 // input has no business there. Structural literals are the endorsed form for `*Like` inputs.
 type StlFacetLike = Readonly<{ normal: readonly number[]; vertices: readonly (readonly number[])[] }>;
 

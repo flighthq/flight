@@ -1,7 +1,7 @@
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import type { ImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import { ImportDiagnosticSeverity } from '@flighthq/importdiagnostics/contract';
 import type { Scene3DDocument } from '@flighthq/scene3d/contract';
-import type { ImportDiagnostic } from '@flighthq/types/contract';
-import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
 import type { ThreeDsChunkDispatch, ThreeDsChunkHandler, ThreeDsParseState } from './types/ThreeDsChunkHandler.ts';
 import type { ThreeDsDropTally } from './types/ThreeDsSchema.ts';

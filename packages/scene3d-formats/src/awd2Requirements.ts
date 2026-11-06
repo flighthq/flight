@@ -1,11 +1,7 @@
+import type { HostDecompressDeflateCapability, HostDecompressLzmaCapability } from '@flighthq/compression/contract';
 import { createRequirementSet } from '@flighthq/requirement/contract';
-import type {
-  HostDecompressDeflateCapability,
-  HostDecompressLzmaCapability,
-  Requirement,
-  RequirementSet,
-} from '@flighthq/types/contract';
-import { RequirementFacet } from '@flighthq/types/contract';
+import type { Requirement, RequirementSetRaw as RequirementSet } from '@flighthq/requirement/contract';
+import { RequirementFacet } from '@flighthq/requirement/contract';
 
 import { collectAwd2BlockCounts } from './awd2BlockCensus.ts';
 

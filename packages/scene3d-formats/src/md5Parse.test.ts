@@ -1,5 +1,9 @@
 import { getMatrix4Position } from '@flighthq/geometry/contract';
 import type { ExternalImageResourceReference } from '@flighthq/image/contract';
+import type { ImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import { ImportDiagnosticSeverity } from '@flighthq/importdiagnostics/contract';
+import type { BlinnPhongMaterial } from '@flighthq/materials/contract';
+import { BlinnPhongMaterialKind } from '@flighthq/materials/contract';
 import {
   CANONICAL_MESH_GEOMETRY_LAYOUT,
   createMeshGeometry,
@@ -16,14 +20,13 @@ import { isMesh } from '@flighthq/scene3d/contract';
 import type { Scene3DDocument } from '@flighthq/scene3d/contract';
 import type { Node3D } from '@flighthq/scene3d/contract';
 import { getTextureSource } from '@flighthq/texture/contract';
-import type { BlinnPhongMaterial, ImportDiagnostic, Scene3DAnimationTarget } from '@flighthq/types/contract';
-import { BlinnPhongMaterialKind, ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
 import { parseMd5Anim } from './md5AnimParse.ts';
 // parseMd5Mesh, createScene3DFromMd5Mesh and importMd5Mesh live in md5Document.ts, which owns the
 // default section-handler family; md5Parse.ts holds the parse itself.
 import { createScene3DFromMd5Mesh, importMd5Mesh, parseMd5Mesh } from './md5Document.ts';
 import { canonicalizeMd5TangentHandedness, parseMd5MeshWithSectionHandlers, tallyMd5Drop } from './md5Parse.ts';
+type Scene3DAnimationTarget = { node: unknown; path: string };
 import { getTestTextureResource } from './scene3DFormatsTestHelper.ts';
 import { findScene3DSkeletonJoints } from './sceneSkeleton.ts';
 import type { Md5DropTally } from './types/Md5SectionHandler.ts';

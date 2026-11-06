@@ -1,6 +1,6 @@
+import type { ImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import { BlinnPhongMaterialKind } from '@flighthq/materials/contract';
 import { getNodeChildren } from '@flighthq/node/contract';
-import type { ImportDiagnostic } from '@flighthq/types/contract';
-import { BlinnPhongMaterialKind } from '@flighthq/types/contract';
 
 import { createScene3DFromMd5Mesh, importMd5Mesh, parseMd5Mesh } from './md5Document.ts';
 import { md5MaterialHandler } from './md5MaterialHandler.ts';
