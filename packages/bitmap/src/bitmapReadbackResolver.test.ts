@@ -1,4 +1,3 @@
-import type { HostImageSource } from '@flighthq/types/contract';
 import { vi } from 'vitest';
 
 import { resolveBitmapReadback } from './bitmapReadbackResolver.ts';
@@ -35,4 +34,4 @@ describe('resolveBitmapReadback', () => {
   });
 });
 
-const source = {} as HostImageSource;
+const source = {} as CanvasImageSource;

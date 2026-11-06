@@ -1,5 +1,5 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { RectangleLike } from '@flighthq/types/contract';
+import type { RectangleLike } from '@flighthq/geometry/contract';
 
 import { initializeBitmap } from './bitmapChannel.ts';
 import type { Bitmap, BitmapEdgeMode } from './types.ts';

@@ -29,6 +29,9 @@
       "path": "../types"
     },
     {
+      "path": "../bitmap/tsconfig.runtime.json"
+    },
+    {
       "path": "./tsconfig.contract.json"
     }
   ],

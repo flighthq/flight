@@ -1,4 +1,4 @@
-import type { RectangleLike } from '@flighthq/types/contract';
+import type { RectangleLike } from '@flighthq/geometry/contract';
 
 import type { BitmapRegion } from './types.ts';
 

@@ -27,8 +27,8 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { compareBitmapFingerprints, parseBitmapFingerprint } from '@flighthq/bitmap/contract';
+import type { BitmapFingerprint } from '@flighthq/bitmap/contract';
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { BitmapFingerprint } from '@flighthq/types/contract';
 
 export interface FunctionalOrientationFinding {
   backends: readonly [string, string];

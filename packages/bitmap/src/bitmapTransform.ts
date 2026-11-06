@@ -1,4 +1,4 @@
-import type { ColorScaleBiasLike } from '@flighthq/types/contract';
+import type { ColorScaleBiasLike } from '@flighthq/adjustments/contract';
 
 import { invalidateBitmap } from './bitmap.ts';
 import type { Bitmap, BitmapRegion, ThresholdOperation } from './types.ts';

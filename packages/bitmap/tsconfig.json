@@ -11,7 +11,10 @@
       "path": "../entity"
     },
     {
-      "path": "../types"
+      "path": "../adjustments/tsconfig.contract.json"
+    },
+    {
+      "path": "../geometry/tsconfig.contract.json"
     },
     {
       "path": "./tsconfig.contract.json"

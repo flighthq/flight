@@ -1,3 +1,4 @@
+import type { Bitmap } from '@flighthq/bitmap/contract';
 import {
   createImageResource,
   registerTestImageDimensionResolver,
@@ -5,7 +6,6 @@ import {
 } from '@flighthq/image/contract';
 import { createTexture } from '@flighthq/texture/contract';
 import { BitmapTextureSourceKind } from '@flighthq/texture/contract';
-import type { Bitmap } from '@flighthq/types/contract';
 
 import {
   createTextureAtlas,

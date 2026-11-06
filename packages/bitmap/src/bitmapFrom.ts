@@ -1,5 +1,4 @@
 import type { ImageResource } from '@flighthq/image/contract';
-import type { HostImageSource } from '@flighthq/types/contract';
 
 import { resolveBitmapReadback } from './bitmapReadbackResolver.ts';
 import type { Bitmap, HostBitmapReadbackCapability } from './types.ts';
@@ -13,7 +12,7 @@ export function captureBitmapFromImageResource(
 
 export function createBitmapFromImageSource(
   hostBitmapReadback: Readonly<HostBitmapReadbackCapability>,
-  source: HostImageSource,
+  source: CanvasImageSource,
   width: number,
   height: number,
 ): Bitmap | null {
