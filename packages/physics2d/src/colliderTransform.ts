@@ -8,7 +8,10 @@ import type {
   CollisionSegment2D,
 } from '@flighthq/collision/contract';
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { Entity, EntityConstruction, Physics2DCollider, RigidBody2D } from '@flighthq/types/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
+
+import type { Physics2DEntityCompatibility as Entity } from './entityCompatibility.ts';
+import type { Physics2DCollider, RigidBody2D } from './types.ts';
 
 // Allocates the world-space shape a collider needs for `local`, choosing the kind the transform can
 // actually express. Every field is filled at creation so the shape is never read half-initialised, and

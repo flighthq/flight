@@ -1,7 +1,8 @@
 import type { CollisionBuiltInShape2D } from '@flighthq/collision/contract';
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
+
 import type {
-  EntityConstruction,
   Physics2DDebugCircle,
   Physics2DDebugFeature,
   Physics2DDebugGeometry,
@@ -12,8 +13,7 @@ import type {
   Physics2DPulleyJoint,
   Physics2DWorld,
   RigidBody2D,
-} from '@flighthq/types/contract';
-
+} from './types.ts';
 import { findPhysics2DBody } from './world.ts';
 
 const DEFAULT_OPTIONS: Readonly<Physics2DDebugGeometryOptions> = {

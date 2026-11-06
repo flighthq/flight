@@ -3,8 +3,7 @@ import type {
   Physics2DJointResolutionExplanation,
   Physics2DJointResolutionStatus,
   Physics2DWorld,
-} from '@flighthq/types/contract';
-
+} from './types.ts';
 import { findPhysics2DBody } from './world.ts';
 
 // Pure diagnostic twin of the step's silent joint skips. It re-walks the world as it exists now and

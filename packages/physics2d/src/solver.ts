@@ -1,6 +1,5 @@
-import type { Physics2DContact, Physics2DContactPoint, Physics2DWorld, RigidBody2D } from '@flighthq/types/contract';
-
 import { isRigidBody2DPairAwake } from './islands.ts';
+import type { Physics2DContact, Physics2DContactPoint, Physics2DWorld, RigidBody2D } from './types.ts';
 import { findPhysics2DBody } from './world.ts';
 
 // Applies equal and opposite impulses at the pair's contact point. The angular term is the lever arm

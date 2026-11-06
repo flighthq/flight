@@ -1,4 +1,3 @@
-import type { RigidBody2D } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import {
@@ -11,6 +10,7 @@ import {
   warmStartPhysics2DContacts,
 } from './solver.ts';
 import { stepPhysics2D } from './step.ts';
+import type { RigidBody2D } from './types.ts';
 import { addPhysics2DBody, createPhysics2DCollider, createPhysics2DWorld, createRigidBody2D } from './world.ts';
 
 const STONE = { density: 1, friction: 0.3, restitution: 0 };

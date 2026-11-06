@@ -1,16 +1,4 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type {
-  Physics2DDistanceJoint,
-  Physics2DGearJoint,
-  Physics2DMouseJoint,
-  Physics2DPrismaticJoint,
-  Physics2DPulleyJoint,
-  Physics2DRevoluteJoint,
-  Physics2DRopeJoint,
-  Physics2DWheelJoint,
-  Physics2DWeldJoint,
-  Physics2DWorld,
-} from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { addPhysics2DJoint, registerPhysics2DJointSolver } from './jointRegistry.ts';
@@ -35,6 +23,18 @@ import {
   physics2DWeldJointSolver,
 } from './joints.ts';
 import { stepPhysics2D } from './step.ts';
+import type {
+  Physics2DDistanceJoint,
+  Physics2DGearJoint,
+  Physics2DMouseJoint,
+  Physics2DPrismaticJoint,
+  Physics2DPulleyJoint,
+  Physics2DRevoluteJoint,
+  Physics2DRopeJoint,
+  Physics2DWheelJoint,
+  Physics2DWeldJoint,
+  Physics2DWorld,
+} from './types.ts';
 import { addPhysics2DBody, createPhysics2DCollider, createPhysics2DWorld, createRigidBody2D } from './world.ts';
 
 const STONE = { density: 1, friction: 0.3, restitution: 0 };

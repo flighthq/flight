@@ -1,4 +1,4 @@
-import type { Physics2DCollider, Physics2DMassData, RigidBody2D } from '@flighthq/types/contract';
+import type { Physics2DCollider, Physics2DMassData, RigidBody2D } from './types.ts';
 
 // Mass properties are DERIVED from collider geometry and density, never assigned. A body whose mass
 // was set independently of its shape can be given a rotational inertia that contradicts its outline —

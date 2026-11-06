@@ -1,6 +1,5 @@
-import type { Physics2DWorld, RigidBody2D } from '@flighthq/types/contract';
-
 import { assertPhysics2DBodyNotStepping } from './ownership.ts';
+import type { Physics2DWorld, RigidBody2D } from './types.ts';
 import { findPhysics2DBody } from './world.ts';
 
 /** Rebuilds deterministic contiguous lists for the awake solve islands.

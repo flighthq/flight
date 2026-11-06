@@ -45,11 +45,10 @@
     "@flighthq/log": "*",
     "@flighthq/math": "*",
     "@flighthq/node": "*",
-    "@flighthq/spatial": "*",
-    "@flighthq/types": "*"
+    "@flighthq/scene2d": "*",
+    "@flighthq/spatial": "*"
   },
   "devDependencies": {
-    "@flighthq/scene2d": "*",
     "typescript": "^7.0.2"
   },
   "description": "2D rigid-body dynamics — deterministic sequential-impulse solver over collision manifolds and a spatial broadphase, with explicit stepping and no hidden per-frame allocation",

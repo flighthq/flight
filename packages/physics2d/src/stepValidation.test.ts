@@ -1,7 +1,7 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { Entity, Physics2DContact, Physics2DJoint } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
+import type { Physics2DEntityCompatibility as Entity } from './entityCompatibility.ts';
 import { addPhysics2DJoint } from './jointRegistry.ts';
 import {
   isPhysics2DBodyStateValid,
@@ -13,6 +13,7 @@ import {
   isPhysics2DSolverConfigValid,
   isPhysics2DTimestepValid,
 } from './stepValidation.ts';
+import type { Physics2DContact, Physics2DJoint } from './types.ts';
 import { addPhysics2DBody, createPhysics2DCollider, createPhysics2DWorld, createRigidBody2D } from './world.ts';
 
 const STONE = { density: 1, friction: 0.3, restitution: 0 };

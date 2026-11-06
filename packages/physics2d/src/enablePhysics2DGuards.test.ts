@@ -7,21 +7,16 @@ import {
   removeLogSink,
 } from '@flighthq/log/contract';
 import type { LogState } from '@flighthq/log/contract';
-import type {
-  Entity,
-  LogEntry,
-  MemoryLogSink,
-  Physics2DDistanceJoint,
-  Physics2DWorld,
-  RigidBody2D,
-} from '@flighthq/types/contract';
+import type { LogEntry, MemoryLogSink } from '@flighthq/log/contract';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { arePhysics2DGuardsEnabled, disablePhysics2DGuards, enablePhysics2DGuards } from './enablePhysics2DGuards.ts';
+import type { Physics2DEntityCompatibility as Entity } from './entityCompatibility.ts';
 import { addPhysics2DJoint } from './jointRegistry.ts';
 import { Physics2DDistanceJointKind } from './joints.ts';
 import { registerBuiltInPhysics2DJointSolvers } from './registerBuiltInPhysics2DJointSolvers.ts';
 import { stepPhysics2D } from './step.ts';
+import type { Physics2DDistanceJoint, Physics2DWorld, RigidBody2D } from './types.ts';
 import { addPhysics2DBody, createPhysics2DCollider, createPhysics2DWorld, createRigidBody2D } from './world.ts';
 
 // Each test logs into a fresh caller-owned state, so logOnce keys never leak between tests.

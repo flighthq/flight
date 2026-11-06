@@ -1,13 +1,7 @@
-import type {
-  Physics2DJoint,
-  Physics2DJointKind,
-  Physics2DJointSolver,
-  Physics2DWorld,
-} from '@flighthq/types/contract';
-
 import { wakePhysics2DBody } from './islands.ts';
 import { rebuildPhysics2DJointCollisionSuppressions } from './jointCollisionSuppression.ts';
 import { assertPhysics2DWorldNotStepping, physics2DJointOwners } from './ownership.ts';
+import type { Physics2DJoint, Physics2DJointKind, Physics2DJointSolver, Physics2DWorld } from './types.ts';
 import { findPhysics2DBody, isPhysics2DPairOrdered } from './world.ts';
 
 // Adds `joint` to `world` under the same canonical body ordering contacts use, swapping its two ends when

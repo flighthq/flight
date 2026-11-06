@@ -11,9 +11,12 @@ import type {
   CollisionTimeOfImpact2D,
 } from '@flighthq/collision/contract';
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type { EntityConstruction, NonEntityCreateResult } from '@flighthq/entity/contract';
+import type { SpatialAabb2D } from '@flighthq/spatial/contract';
+
+import { synchronizePhysics2DBroadphase } from './broadphase.ts';
+import { writePhysics2DColliderBounds } from './colliderTransform.ts';
 import type {
-  EntityConstruction,
-  NonEntityCreateResult,
   Physics2DCollider,
   Physics2DQueryFilter,
   Physics2DQueryResult,
@@ -22,11 +25,7 @@ import type {
   Physics2DShapeCastResult,
   Physics2DWorld,
   RigidBody2D,
-  SpatialAabb2D,
-} from '@flighthq/types/contract';
-
-import { synchronizePhysics2DBroadphase } from './broadphase.ts';
-import { writePhysics2DColliderBounds } from './colliderTransform.ts';
+} from './types.ts';
 import { findPhysics2DBody } from './world.ts';
 
 export function createPhysics2DQueryFilter(): NonEntityCreateResult<Physics2DQueryFilter, 'options'> {

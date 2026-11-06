@@ -1,17 +1,8 @@
 import type { CollisionBuiltInShape2D } from '@flighthq/collision/contract';
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type { EntityConstruction, NonEntityCreateResult } from '@flighthq/entity/contract';
 import { createUniformGridSpatialBackend2D } from '@flighthq/spatial/contract';
-import type {
-  EntityConstruction,
-  NonEntityCreateResult,
-  Physics2DCollisionFilter,
-  Physics2DCollider,
-  Physics2DMaterial,
-  Physics2DSolverConfig,
-  Physics2DWorld,
-  RigidBody2D,
-  SpatialIndexBackend2D,
-} from '@flighthq/types/contract';
+import type { SpatialIndexBackend2D } from '@flighthq/spatial/contract';
 
 import { synchronizePhysics2DBroadphase } from './broadphase.ts';
 import { createPhysics2DColliderWorldShape } from './colliderTransform.ts';
@@ -24,6 +15,14 @@ import {
   physics2DColliderOwners,
   physics2DJointOwners,
 } from './ownership.ts';
+import type {
+  Physics2DCollisionFilter,
+  Physics2DCollider,
+  Physics2DMaterial,
+  Physics2DSolverConfig,
+  Physics2DWorld,
+  RigidBody2D,
+} from './types.ts';
 
 // Adds `body` to `world`, assigning it the persistent index every contact is keyed and ordered by. The
 // index comes from a monotonic counter rather than the array position, so removing a

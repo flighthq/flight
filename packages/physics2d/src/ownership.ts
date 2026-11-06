@@ -1,4 +1,4 @@
-import type { Physics2DCollider, Physics2DJoint, Physics2DWorld, RigidBody2D } from '@flighthq/types/contract';
+import type { Physics2DCollider, Physics2DJoint, Physics2DWorld, RigidBody2D } from './types.ts';
 
 // Ownership is runtime state rather than serialized entity data. Weak keys make membership follow the
 // explicit add/remove lifecycle without keeping a detached entity alive, and map directly to an owner

@@ -1,4 +1,5 @@
 import type { CollisionBuiltInShape2D } from '@flighthq/collision/contract';
+
 import type {
   Physics2DCollider,
   Physics2DContact,
@@ -6,7 +7,7 @@ import type {
   Physics2DSolverConfig,
   Physics2DWorld,
   RigidBody2D,
-} from '@flighthq/types/contract';
+} from './types.ts';
 
 export function isPhysics2DBodyStateValid(world: Readonly<Physics2DWorld>): boolean {
   if (!Number.isSafeInteger(world.nextBodyIndex) || world.nextBodyIndex < 0) return false;

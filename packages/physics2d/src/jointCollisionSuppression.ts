@@ -1,4 +1,4 @@
-import type { Physics2DWorld } from '@flighthq/types/contract';
+import type { Physics2DWorld } from './types.ts';
 
 // Constant-time broadphase lookup for whether any active joint suppresses this body pair.
 export function isPhysics2DPairJointSuppressed(world: Readonly<Physics2DWorld>, bodyA: number, bodyB: number): boolean {

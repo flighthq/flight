@@ -1,5 +1,4 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { Physics2DJoint } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import {
@@ -10,6 +9,7 @@ import {
   removePhysics2DJoint,
 } from './jointRegistry.ts';
 import { stepPhysics2D } from './step.ts';
+import type { Physics2DJoint } from './types.ts';
 import {
   addPhysics2DBody,
   createPhysics2DCollider,

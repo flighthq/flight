@@ -1,15 +1,9 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { createUniformGridSpatialBackend2D } from '@flighthq/spatial/contract';
-import type {
-  Entity,
-  Physics2DJoint,
-  Physics2DWorld,
-  RigidBody2D,
-  SpatialIndexBackend2D,
-  SpatialPair,
-} from '@flighthq/types/contract';
+import type { SpatialIndexBackend2D, SpatialPair } from '@flighthq/spatial/contract';
 import { afterEach, describe, expect, it } from 'vitest';
 
+import type { Physics2DEntityCompatibility as Entity } from './entityCompatibility.ts';
 import { addPhysics2DJoint, registerPhysics2DJointSolver } from './jointRegistry.ts';
 import { physics2DDistanceJointSolver, physics2DWeldJointSolver } from './joints.ts';
 import {
@@ -18,6 +12,7 @@ import {
   setPhysics2DStepGuard,
   stepPhysics2D,
 } from './step.ts';
+import type { Physics2DJoint, Physics2DWorld, RigidBody2D } from './types.ts';
 import {
   addPhysics2DBody,
   applyPhysics2DForce,

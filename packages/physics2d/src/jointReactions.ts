@@ -1,10 +1,7 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type {
-  EntityConstruction,
-  Physics2DJoint,
-  Physics2DJointReaction,
-  Physics2DWorld,
-} from '@flighthq/types/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
+
+import type { Physics2DJoint, Physics2DJointReaction, Physics2DWorld } from './types.ts';
 
 export function createPhysics2DJointReaction(): Physics2DJointReaction {
   const out = allocateEntity<Physics2DJointReaction>();

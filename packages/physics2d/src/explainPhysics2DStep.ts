@@ -1,5 +1,3 @@
-import type { Physics2DStepExplanation, Physics2DWorld } from '@flighthq/types/contract';
-
 import {
   isPhysics2DBodyStateValid,
   isPhysics2DContactStateValid,
@@ -9,6 +7,7 @@ import {
   isPhysics2DSolverConfigValid,
   isPhysics2DTimestepValid,
 } from './stepValidation.ts';
+import type { Physics2DStepExplanation, Physics2DWorld } from './types.ts';
 
 // Pure diagnostic twin of stepPhysics2D's early return. Invalid input rejects the whole step rather than
 // integrating only the phases that happen to tolerate it: a partial step would be harder to recover from

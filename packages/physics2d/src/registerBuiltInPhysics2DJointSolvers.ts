@@ -1,5 +1,3 @@
-import type { Physics2DWorld } from '@flighthq/types/contract';
-
 import { registerPhysics2DJointSolver } from './jointRegistry.ts';
 import {
   Physics2DDistanceJointKind,
@@ -21,6 +19,7 @@ import {
   physics2DWeldJointSolver,
   physics2DWheelJointSolver,
 } from './joints.ts';
+import type { Physics2DWorld } from './types.ts';
 
 // Installs Flight's complete built-in joint bank into one world. Kept as an explicit assembly rather
 // than part of createPhysics2DWorld: importing or constructing a world still links no solver math, and

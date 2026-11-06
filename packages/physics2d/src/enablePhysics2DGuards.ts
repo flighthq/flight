@@ -1,16 +1,12 @@
 import { logOnce } from '@flighthq/log/contract';
 import type { LogState } from '@flighthq/log/contract';
-import type {
-  Physics2DJointResolutionExplanation,
-  Physics2DStepExplanation,
-  Physics2DWorld,
-} from '@flighthq/types/contract';
-import { LogLevel } from '@flighthq/types/contract';
+import { LogLevel } from '@flighthq/log/contract';
 
 import { explainPhysics2DCollision } from './explainPhysics2DCollision.ts';
 import { explainPhysics2DJoints } from './explainPhysics2DJoints.ts';
 import { explainPhysics2DStep } from './explainPhysics2DStep.ts';
 import { setPhysics2DContactIntakeGuard, setPhysics2DJointResolutionGuard, setPhysics2DStepGuard } from './step.ts';
+import type { Physics2DJointResolutionExplanation, Physics2DStepExplanation, Physics2DWorld } from './types.ts';
 
 export function arePhysics2DGuardsEnabled(): boolean {
   return physics2DGuardsEnabled;

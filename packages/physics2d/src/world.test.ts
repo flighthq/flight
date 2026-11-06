@@ -1,9 +1,10 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { Entity, Physics2DJoint } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
+import type { Physics2DEntityCompatibility as Entity } from './entityCompatibility.ts';
 import { addPhysics2DJoint, registerPhysics2DJointSolver } from './jointRegistry.ts';
 import { stepPhysics2D } from './step.ts';
+import type { Physics2DJoint } from './types.ts';
 import {
   Physics2DWorldVersion,
   addPhysics2DBody,

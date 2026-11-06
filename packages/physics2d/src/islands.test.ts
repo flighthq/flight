@@ -1,4 +1,3 @@
-import type { Physics2DWorld, RigidBody2D } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import {
@@ -8,6 +7,7 @@ import {
   wakePhysics2DBody,
 } from './islands.ts';
 import { registerPhysics2DJointSolver } from './jointRegistry.ts';
+import type { Physics2DWorld, RigidBody2D } from './types.ts';
 import { addPhysics2DBody, createPhysics2DWorld, createRigidBody2D } from './world.ts';
 
 // A contact carries no mass properties and no geometry that sleep cares about — only which two bodies it

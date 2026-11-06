@@ -1,6 +1,5 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { Physics2DJoint, Physics2DJointReaction, Physics2DWorld, RigidBody2D } from '@flighthq/types/contract';
-import { EntityRuntimeKey } from '@flighthq/types/contract';
+import { EntityRuntimeKey } from '@flighthq/entity/contract';
 import { describe, expect, it } from 'vitest';
 
 import {
@@ -22,6 +21,7 @@ import {
 } from './joints.ts';
 import { registerBuiltInPhysics2DJointSolvers } from './registerBuiltInPhysics2DJointSolvers.ts';
 import { stepPhysics2D } from './step.ts';
+import type { Physics2DJoint, Physics2DJointReaction, Physics2DWorld, RigidBody2D } from './types.ts';
 import { addPhysics2DBody, createPhysics2DCollider, createPhysics2DWorld, createRigidBody2D } from './world.ts';
 
 // Every assertion in this file is a STATICS check, not a comparison against the formula under test. A

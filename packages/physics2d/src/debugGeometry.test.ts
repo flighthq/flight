@@ -1,6 +1,5 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { Physics2DJoint, Physics2DMouseJoint, Physics2DPulleyJoint } from '@flighthq/types/contract';
-import { EntityRuntimeKey } from '@flighthq/types/contract';
+import { EntityRuntimeKey } from '@flighthq/entity/contract';
 import { describe, expect, it } from 'vitest';
 
 import { updatePhysics2DColliderWorldShape } from './colliderTransform.ts';
@@ -10,6 +9,7 @@ import {
   writePhysics2DDebugGeometry,
 } from './debugGeometry.ts';
 import { addPhysics2DJoint } from './jointRegistry.ts';
+import type { Physics2DJoint, Physics2DMouseJoint, Physics2DPulleyJoint } from './types.ts';
 import { addPhysics2DBody, createPhysics2DCollider, createPhysics2DWorld, createRigidBody2D } from './world.ts';
 
 const STONE = { density: 1, friction: 0.3, restitution: 0 };

@@ -1,6 +1,8 @@
 import { RAD_TO_DEG } from '@flighthq/math/contract';
 import { invalidateNodeLocalTransform } from '@flighthq/node/contract';
-import type { Node2D, RigidBody2D } from '@flighthq/types/contract';
+import type { Node2D } from '@flighthq/scene2d/contract';
+
+import type { RigidBody2D } from './types.ts';
 
 // Copies a 2D rigid body's world pose onto a display object's local transform fields and invalidates
 // its matrix cache. The body's `angle` (radians, math layer) is converted to the node's `rotation`

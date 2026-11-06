@@ -1,3 +1,4 @@
+export * from './contract.physics2d-types.ts';
 export * from './broadphase.ts';
 export {
   createPhysics2DColliderWorldShape,

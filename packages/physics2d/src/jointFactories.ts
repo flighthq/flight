@@ -1,4 +1,17 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
+
+import {
+  Physics2DDistanceJointKind,
+  Physics2DGearJointKind,
+  Physics2DMouseJointKind,
+  Physics2DPrismaticJointKind,
+  Physics2DPulleyJointKind,
+  Physics2DRevoluteJointKind,
+  Physics2DRopeJointKind,
+  Physics2DWeldJointKind,
+  Physics2DWheelJointKind,
+} from './joints.ts';
 import type {
   Physics2DDistanceJoint,
   Physics2DDistanceJointOptions,
@@ -20,20 +33,7 @@ import type {
   Physics2DWeldJointOptions,
   Physics2DWheelJoint,
   Physics2DWheelJointOptions,
-  EntityConstruction,
-} from '@flighthq/types/contract';
-
-import {
-  Physics2DDistanceJointKind,
-  Physics2DGearJointKind,
-  Physics2DMouseJointKind,
-  Physics2DPrismaticJointKind,
-  Physics2DPulleyJointKind,
-  Physics2DRevoluteJointKind,
-  Physics2DRopeJointKind,
-  Physics2DWeldJointKind,
-  Physics2DWheelJointKind,
-} from './joints.ts';
+} from './types.ts';
 
 // Joint factories mirror Flight's other descriptor factories: they allocate plain data, accept one
 // readonly options object, and make only authoring choices. Registration and world mutation remain

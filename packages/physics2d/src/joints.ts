@@ -1,3 +1,5 @@
+import { writePhysics2DSoftRowParameters } from './jointRows.ts';
+import { applyPhysics2DImpulse } from './solver.ts';
 import type {
   Physics2DDistanceJoint,
   Physics2DJointReaction,
@@ -12,10 +14,7 @@ import type {
   Physics2DWeldJoint,
   Physics2DWorld,
   RigidBody2D,
-} from '@flighthq/types/contract';
-
-import { writePhysics2DSoftRowParameters } from './jointRows.ts';
-import { applyPhysics2DImpulse } from './solver.ts';
+} from './types.ts';
 import { findPhysics2DBody } from './world.ts';
 
 // The built-in joint kinds. Bare names are reserved for these; a user's own joint takes a vendor prefix.

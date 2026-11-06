@@ -624,7 +624,6 @@ export * from './SketchEffect.ts';
 export * from './SmaaEffect.ts';
 export * from './Socket.ts';
 export * from './SphereCollider.ts';
-export * from './Physics2D.ts';
 export * from './Physics3D.ts';
 export * from './Physics3DAbi.ts';
 export * from './Spatial.ts';

@@ -17,16 +17,7 @@ import type {
   CollisionBuiltInShape2D,
   CollisionTimeOfImpact2D,
 } from '@flighthq/collision/contract';
-import type {
-  Physics2DContactIntakeGuard,
-  Physics2DJointResolutionGuard,
-  Physics2DStepGuard,
-  Physics2DContact,
-  Physics2DContactPoint,
-  Physics2DWorld,
-  RigidBody2D,
-  SpatialPair,
-} from '@flighthq/types/contract';
+import type { SpatialPair } from '@flighthq/spatial/contract';
 
 import { synchronizePhysics2DBroadphase, synchronizePhysics2DSweptBroadphase } from './broadphase.ts';
 import { updatePhysics2DColliderWorldShape } from './colliderTransform.ts';
@@ -52,6 +43,15 @@ import {
   isPhysics2DSolverConfigValid,
   isPhysics2DTimestepValid,
 } from './stepValidation.ts';
+import type {
+  Physics2DContactIntakeGuard,
+  Physics2DJointResolutionGuard,
+  Physics2DStepGuard,
+  Physics2DContact,
+  Physics2DContactPoint,
+  Physics2DWorld,
+  RigidBody2D,
+} from './types.ts';
 import { findPhysics2DBody, isPhysics2DPairOrdered } from './world.ts';
 
 // Builds this step's contact set from the broadphase pairs, preserving each surviving contact's cached
