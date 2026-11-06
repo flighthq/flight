@@ -22,3 +22,19 @@ export {
   isSensorsSupported,
   requestSensorsPermission,
 } from './contract.ts';
+export type {
+  AmbientLightReading,
+  HostSensorsCapabilities,
+  HostSensorsCapability,
+  MotionReading,
+  OrientationReading,
+  PressureReading,
+  ProximityReading,
+  QuaternionReading,
+  RotationRateReading,
+  SensorAccuracy,
+  SensorReading,
+  Sensors,
+  SensorsPermissionState,
+  SensorSubscribeOptions,
+} from './contract.ts';

@@ -1,4 +1,4 @@
-import type { HostSensorsCapabilities } from '@flighthq/types/contract';
+import type { HostSensorsCapabilities } from '@flighthq/sensors/contract';
 
 import { webHostSensors } from './webSensors.ts';
 

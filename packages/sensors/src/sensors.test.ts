@@ -1,10 +1,10 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { connectSignal, disconnectSignal } from '@flighthq/signals/contract';
 import type { Signal, SlotId } from '@flighthq/signals/contract';
-import type { EntityRuntimeKey } from '@flighthq/types/contract';
+
 import type {
-  HostSensorsCapability,
   AmbientLightReading,
+  HostSensorsCapability,
   MotionReading,
   OrientationReading,
   PressureReading,
@@ -12,8 +12,7 @@ import type {
   QuaternionReading,
   RotationRateReading,
   SensorsPermissionState,
-} from '@flighthq/types/contract';
-
+} from './contract.sensors-types.ts';
 import {
   attachSensors,
   computeEulerFromQuaternion,

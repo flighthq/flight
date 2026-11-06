@@ -13,9 +13,9 @@ import type {
   OrientationReading,
   QuaternionReading,
   RotationRateReading,
-  SensorsPermissionState,
   SensorSubscribeOptions,
-} from '@flighthq/types/contract';
+  SensorsPermissionState,
+} from '@flighthq/sensors/contract';
 
 // Builds the default Web provider over the devicemotion, deviceorientation, and deviceorientationabsolute
 // window events, plus the Generic Sensor API where available. Degrades to no-op subscriptions where

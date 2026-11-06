@@ -11,6 +11,7 @@ import {
 import type { EntityConstruction } from '@flighthq/entity/contract';
 import { DEG_TO_RAD, RAD_TO_DEG } from '@flighthq/math/contract';
 import { createSignal, emitSignal } from '@flighthq/signals/contract';
+
 import type {
   AmbientLightReading,
   HostSensorsCapability,
@@ -21,8 +22,8 @@ import type {
   QuaternionReading,
   RotationRateReading,
   Sensors,
-} from '@flighthq/types/contract';
-import type { SensorsPermissionState } from '@flighthq/types/contract';
+  SensorsPermissionState,
+} from './contract.sensors-types.ts';
 
 /**
  * Exact releases held by one attached Sensors entity. The field order follows unsubscribe order.

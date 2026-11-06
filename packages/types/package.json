@@ -88,6 +88,7 @@
     "@flighthq/scene2d-wgpu": "*",
     "@flighthq/scene3d-wgpu": "*",
     "@flighthq/screen": "*",
+    "@flighthq/sensors": "*",
     "@flighthq/selection": "*",
     "@flighthq/shape": "*",
     "@flighthq/shape-formats": "*",

@@ -19,6 +19,7 @@
       ".materials-types",
       ".scene3d-wgpu-types",
       ".screen-types",
+      ".sensors-types",
       ".render-wgpu-types",
       ".adjustments-types",
       ".audio-types",
@@ -263,6 +264,9 @@
     },
     {
       "path": "../screen/tsconfig.contract.json"
+    },
+    {
+      "path": "../sensors/tsconfig.contract.json"
     },
     {
       "path": "../gui/tsconfig.contract.json"

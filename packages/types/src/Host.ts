@@ -11,10 +11,12 @@ import type { HostPowerCapabilities } from '@flighthq/power/contract';
 import type { HostPreferencesCapabilities } from '@flighthq/preferences/contract';
 import type { HostWgpuCapabilities } from '@flighthq/render-wgpu/contract';
 import type { HostScreenCapabilities } from '@flighthq/screen/contract';
+import type { HostSensorsCapabilities } from '@flighthq/sensors/contract';
 import type { HostShellCapabilities } from '@flighthq/shell/contract';
 import type { HostCanvasCapabilities, HostSurfaceCapabilities } from '@flighthq/surface/contract';
 
 export type { HostScreenCapabilities } from '@flighthq/screen/contract';
+export type { HostSensorsCapabilities } from '@flighthq/sensors/contract';
 
 import type { HostAccessibilityCapability } from './Accessibility.ts';
 import type {
@@ -93,7 +95,6 @@ import type {
   HostProtocolRegistrationQueryCapability,
   HostProtocolUnregistrationCapability,
 } from './Protocol.ts';
-import type { HostSensorsCapability } from './Sensors.ts';
 import type { HostShareContentCapability, HostShareFilesCapability } from './Share.ts';
 import type { HostShortcutQueryCapability, HostShortcutTriggerCapability } from './Shortcut.ts';
 import type { HostSocketCapability } from './Socket.ts';
@@ -294,10 +295,6 @@ export interface HostProtocolCapabilities {
 }
 
 export type WebScreenCapabilities = Required<HostScreenCapabilities>;
-
-export interface HostSensorsCapabilities {
-  readonly query?: HostSensorsCapability;
-}
 
 export interface HostShareCapabilities {
   readonly content?: HostShareContentCapability;

@@ -1,3 +1,4 @@
+export type * from './contract.sensors-types.ts';
 export * from './sensors.ts';
 export {
   initializeAmbientLightReading,
