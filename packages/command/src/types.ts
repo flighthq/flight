@@ -1,7 +1,13 @@
+// The command-owned contracts. They import nothing from @flighthq/types.
+
+import type { EntityRaw, EntityRuntime, Kind } from '@flighthq/entity/contract';
+import type { EntityRuntimeKey } from '@flighthq/entity/contract';
+import type { NodeAny } from '@flighthq/node/contract';
 import type { Signal } from '@flighthq/signals/contract';
 
-import type { Entity, Kind } from './Entity.ts';
-import type { NodeAny } from './Node.ts';
+interface CommandEntity extends EntityRaw {
+  [EntityRuntimeKey]: EntityRuntime | undefined;
+}
 
 // A recorded, reversible intent — PLAIN KIND-TAGGED DATA, never an object carrying execute/undo methods.
 //
@@ -16,7 +22,7 @@ import type { NodeAny } from './Node.ts';
 // disk. Nodes have no stable identity to name instead — `scene-document` is what supplies one, by key and
 // path — so this is a limit of the SDK today rather than of this design. Everything except the target is
 // already serializable, and the seam is in the right place for the rest to follow once identity exists.
-export interface Command extends Entity {
+export interface Command extends CommandEntity {
   readonly kind: Kind;
   // Human-readable description, shown by a history panel and returned by the undo/redo label queries.
   readonly label: string;
@@ -42,7 +48,7 @@ export type CommandBindingTable = ReadonlyMap<Kind, CommandBinding>;
 // `index` is the count of APPLIED entries: `entries[0 .. index - 1]` have been executed and
 // `entries[index .. ]` are available to redo. Executing a new command discards everything from `index`
 // onward, which is the standard fork-the-timeline behaviour.
-export interface CommandHistory extends Entity {
+export interface CommandHistory extends CommandEntity {
   // Persistent table — every registration returns a REPLACEMENT that the owner assigns, so this field is
   // reassigned rather than mutated.
   bindings: CommandBindingTable;

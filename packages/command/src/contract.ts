@@ -4,3 +4,4 @@ export * from './commandHistory.ts';
 export * from './commandHistorySignals.ts';
 export * from './commandTransaction.ts';
 export * from './explainCommandDispatch.ts';
+export * from './types.ts';

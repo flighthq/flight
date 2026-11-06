@@ -1,23 +1,24 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
 import { getNodeChildIndex } from '@flighthq/node/contract';
+import type { NodeAny } from '@flighthq/node/contract';
+
 import type {
   AddNodeChildCommand,
   Command,
   CommandPropertyEntry,
   CompositeCommand,
-  EntityConstruction,
-  NodeAny,
   RemoveNodeChildCommand,
   ReorderNodeChildCommand,
   SetNodePropertyCommand,
-} from '@flighthq/types/contract';
+} from './types.ts';
 import {
   AddNodeChildCommandKind,
   CompositeCommandKind,
   RemoveNodeChildCommandKind,
   ReorderNodeChildCommandKind,
   SetNodePropertyCommandKind,
-} from '@flighthq/types/contract';
+} from './types.ts';
 
 // Constructors for the built-in command kinds. Each returns PLAIN DATA — no method, no captured closure —
 // so the result can be inspected by a history panel, compared, and (once nodes carry stable identity)

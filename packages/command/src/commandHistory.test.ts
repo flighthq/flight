@@ -1,7 +1,7 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { createNode, getNodeChildCount } from '@flighthq/node/contract';
+import type { NodeAny } from '@flighthq/node/contract';
 import { connectSignal } from '@flighthq/signals/contract';
-import type { Command, CommandHistory, NodeAny } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { createAddNodeChildCommand, createSetNodePropertyCommand } from './command.ts';
@@ -22,6 +22,7 @@ import {
   undoCommand,
 } from './commandHistory.ts';
 import { enableCommandHistorySignals } from './commandHistorySignals.ts';
+import type { Command, CommandHistory } from './types.ts';
 
 describe('canRedoCommand', () => {
   it('is false until something has been undone', () => {

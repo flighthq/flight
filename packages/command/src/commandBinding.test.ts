@@ -1,7 +1,6 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { addNodeChild, createNode, getNodeChildCount, getNodeChildIndex } from '@flighthq/node/contract';
-import type { CommandBinding, NodeAny, SetNodePropertyCommand } from '@flighthq/types/contract';
-import { SetNodePropertyCommandKind } from '@flighthq/types/contract';
+import type { NodeAny } from '@flighthq/node/contract';
 import { describe, expect, it } from 'vitest';
 
 import {
@@ -20,6 +19,8 @@ import {
   registerDefaultCommandBindings,
 } from './commandBinding.ts';
 import { createCommandHistory, executeCommand, undoCommand } from './commandHistory.ts';
+import type { CommandBinding, SetNodePropertyCommand } from './types.ts';
+import { SetNodePropertyCommandKind } from './types.ts';
 
 describe('createCommandBindingTable', () => {
   it('starts empty, so nothing dispatches until a caller registers it', () => {

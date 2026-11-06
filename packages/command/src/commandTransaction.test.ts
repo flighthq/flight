@@ -1,6 +1,5 @@
 import { createNode, getNodeChildCount } from '@flighthq/node/contract';
-import type { CommandHistory, CompositeCommand, NodeAny } from '@flighthq/types/contract';
-import { CompositeCommandKind } from '@flighthq/types/contract';
+import type { NodeAny } from '@flighthq/node/contract';
 import { describe, expect, it } from 'vitest';
 
 import { createAddNodeChildCommand, createSetNodePropertyCommand } from './command.ts';
@@ -18,6 +17,8 @@ import {
   endCommandTransaction,
   isCommandTransactionOpen,
 } from './commandTransaction.ts';
+import type { CommandHistory, CompositeCommand } from './types.ts';
+import { CompositeCommandKind } from './types.ts';
 
 describe('abortCommandTransaction', () => {
   it('returns false when no bracket is open', () => {

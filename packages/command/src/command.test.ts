@@ -1,13 +1,6 @@
+import { EntityRuntimeKey } from '@flighthq/entity/contract';
 import { addNodeChild, createNode, getNodeChildIndex } from '@flighthq/node/contract';
-import type { NodeAny } from '@flighthq/types/contract';
-import {
-  AddNodeChildCommandKind,
-  CompositeCommandKind,
-  EntityRuntimeKey,
-  RemoveNodeChildCommandKind,
-  ReorderNodeChildCommandKind,
-  SetNodePropertyCommandKind,
-} from '@flighthq/types/contract';
+import type { NodeAny } from '@flighthq/node/contract';
 import { describe, expect, it } from 'vitest';
 
 import {
@@ -22,6 +15,13 @@ import {
   initializeRemoveNodeChildCommand,
   initializeReorderNodeChildCommand,
 } from './command.ts';
+import {
+  AddNodeChildCommandKind,
+  CompositeCommandKind,
+  RemoveNodeChildCommandKind,
+  ReorderNodeChildCommandKind,
+  SetNodePropertyCommandKind,
+} from './types.ts';
 
 describe('createAddNodeChildCommand', () => {
   it('is Entity data carrying its kind, and appends by default', () => {

@@ -1,8 +1,9 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
 import { emitSignal } from '@flighthq/signals/contract';
-import type { Command, CommandHistory, EntityConstruction } from '@flighthq/types/contract';
 
 import { createCommandBindingTable, getCommandBinding } from './commandBinding.ts';
+import type { Command, CommandHistory } from './types.ts';
 
 /** Whether there is an applied entry to reverse. */
 export function canRedoCommand(history: Readonly<CommandHistory>): boolean {

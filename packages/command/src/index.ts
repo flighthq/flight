@@ -30,3 +30,23 @@ export {
 export * from './commandHistorySignals.ts';
 export * from './commandTransaction.ts';
 export * from './explainCommandDispatch.ts';
+export {
+  AddNodeChildCommandKind,
+  CompositeCommandKind,
+  RemoveNodeChildCommandKind,
+  ReorderNodeChildCommandKind,
+  SetNodePropertyCommandKind,
+} from './types.ts';
+export type {
+  AddNodeChildCommand,
+  Command,
+  CommandBinding,
+  CommandBindingTable,
+  CommandDispatchExplanation,
+  CommandHistory,
+  CommandPropertyEntry,
+  CompositeCommand,
+  RemoveNodeChildCommand,
+  ReorderNodeChildCommand,
+  SetNodePropertyCommand,
+} from './types.ts';

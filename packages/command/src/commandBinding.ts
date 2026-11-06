@@ -1,27 +1,26 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type { EntityConstruction, Kind, NonEntityCreateResult } from '@flighthq/entity/contract';
 import { addNodeChildAt, getNodeChildCount, removeNodeChild, setNodeChildIndex } from '@flighthq/node/contract';
+import type { NodeAny } from '@flighthq/node/contract';
 import { withKindMapEntry } from '@flighthq/registry/contract';
+
 import type {
   AddNodeChildCommand,
   CommandBinding,
   CommandBindingTable,
   CommandHistory,
   CompositeCommand,
-  EntityConstruction,
-  Kind,
-  NodeAny,
-  NonEntityCreateResult,
   RemoveNodeChildCommand,
   ReorderNodeChildCommand,
   SetNodePropertyCommand,
-} from '@flighthq/types/contract';
+} from './types.ts';
 import {
   AddNodeChildCommandKind,
   CompositeCommandKind,
   RemoveNodeChildCommandKind,
   ReorderNodeChildCommandKind,
   SetNodePropertyCommandKind,
-} from '@flighthq/types/contract';
+} from './types.ts';
 
 /** An empty command binding table. Every kind a history will dispatch must be registered into it. */
 export function createCommandBindingTable(): NonEntityCreateResult<CommandBindingTable, 'descriptor'> {

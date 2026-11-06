@@ -1,6 +1,5 @@
-import type { Command, CommandDispatchExplanation, CommandHistory, CompositeCommand } from '@flighthq/types/contract';
-
 import { getCommandBinding } from './commandBinding.ts';
+import type { Command, CommandDispatchExplanation, CommandHistory, CompositeCommand } from './types.ts';
 
 // Why `executeCommand` would refuse, as plain data rather than a message. A separately importable query,
 // so a caller who never asks pays nothing for it and the core carries no prose — the diagnostics inversion
