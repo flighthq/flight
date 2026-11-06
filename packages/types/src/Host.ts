@@ -1,5 +1,5 @@
 import type { HostAppCapabilities, HostFullscreenCapabilities, HostWindowCapabilities } from '@flighthq/app/contract';
-import type { HostAudioCodecCapability, HostAudioDecodeCapabilities } from '@flighthq/audio/contract';
+import type { HostAudioDecodeCapabilities } from '@flighthq/audio/contract';
 import type { HostClipboardCapabilities } from '@flighthq/clipboard/contract';
 import type { HostDeviceCapabilities } from '@flighthq/device/contract';
 import type {
@@ -20,6 +20,9 @@ import type {
   HostShareCapabilities,
   HostUpdaterCapabilities,
 } from '@flighthq/host/contract';
+
+/** @deprecated Import from `@flighthq/media/contract`. */
+export type { HostAudioCapabilities } from '@flighthq/media/contract';
 import type { HostInputCapabilities } from '@flighthq/input/contract';
 import type { HostIpcCapabilities } from '@flighthq/ipc/contract';
 import type {
@@ -32,6 +35,7 @@ import type {
   HostSoftKeyboardVisibilityCapability,
 } from '@flighthq/keyboard/contract';
 import type { HostLifecycleCapabilities } from '@flighthq/lifecycle/contract';
+import type { HostAudioCapabilities } from '@flighthq/media/contract';
 import type { HostMediaSessionCapabilities } from '@flighthq/mediasession/contract';
 import type { HostMenuCapabilities } from '@flighthq/menu/contract';
 import type { HostNetCapabilities } from '@flighthq/net/contract';
@@ -61,8 +65,6 @@ import type { HostAccessibilityCapability } from '@flighthq/accessibility/contra
 
 import type { Entity } from './Entity.ts';
 import type { HostHapticsCapabilities } from './Haptics.ts';
-import type { HostAudioDeviceCapability } from './HostAudioDevice.ts';
-import type { HostAudioMixerCapability } from './HostAudioMixer.ts';
 import type { HostImageDecodeCapabilities } from './HostImageDecode.ts';
 import type { HostImageEncodeCapabilities } from './HostImageEncode.ts';
 import type { HostTextSegmenterCapability } from './TextSegment.ts';
@@ -129,12 +131,6 @@ export interface Host extends Entity {
 
 export interface HostAccessibilityCapabilities {
   readonly tree?: HostAccessibilityCapability;
-}
-
-export interface HostAudioCapabilities {
-  readonly codec?: HostAudioCodecCapability;
-  readonly device?: HostAudioDeviceCapability;
-  readonly mixer?: HostAudioMixerCapability;
 }
 
 export interface HostSoftKeyboardCapabilities {

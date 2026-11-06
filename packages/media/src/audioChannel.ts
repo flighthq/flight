@@ -1,16 +1,10 @@
+import type { AudioBufferHandle, AudioDeviceHandle, AudioSourceHandle } from '@flighthq/host/contract';
 import { clamp } from '@flighthq/math/contract';
 import { createSignal, emitSignal } from '@flighthq/signals/contract';
-import type {
-  AudioBufferHandle,
-  AudioChannel,
-  HostAudioDeviceCapability,
-  AudioDeviceHandle,
-  AudioPlayOptions,
-  AudioResource,
-  AudioSourceHandle,
-} from '@flighthq/types/contract';
+import type { AudioChannel, AudioPlayOptions, AudioResource } from '@flighthq/types/contract';
 
 import { getAudioChannelSignals } from './mediaChannelSignals.ts';
+import type { HostAudioDeviceCapability } from './types.ts';
 
 export function clearAudioChannelLoopRegion(channel: AudioChannel): void {
   channel.loopEnd = 0;

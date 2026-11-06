@@ -1,7 +1,7 @@
 import { createAudioResource } from '@flighthq/audio/contract';
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type { AudioDeviceHandle, AudioSourceHandle } from '@flighthq/host/contract';
 import { connectSignal } from '@flighthq/signals/contract';
-import type { HostAudioDeviceCapability, AudioDeviceHandle, AudioSourceHandle } from '@flighthq/types/contract';
 
 import { pauseAudioChannel, playAudioResource, resumeAudioChannel, stopAudioChannel } from './audioChannel.ts';
 import {
@@ -10,6 +10,7 @@ import {
   getAudioChannelSignals,
   getVideoChannelSignals,
 } from './mediaChannelSignals.ts';
+import type { HostAudioDeviceCapability } from './types.ts';
 
 const device = 1 as unknown as AudioDeviceHandle;
 let onEnded: Map<number, (() => void) | null>;

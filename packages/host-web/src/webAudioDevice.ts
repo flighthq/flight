@@ -1,9 +1,5 @@
-import type {
-  AudioBufferHandle,
-  HostAudioDeviceCapability,
-  AudioDeviceHandle,
-  AudioSourceHandle,
-} from '@flighthq/types/contract';
+import type { AudioBufferHandle, AudioDeviceHandle, AudioSourceHandle } from '@flighthq/host/contract';
+import type { HostAudioDeviceCapability } from '@flighthq/media/contract';
 
 /**
  * The Web Audio implementation of the audio device seam.

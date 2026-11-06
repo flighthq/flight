@@ -16,6 +16,11 @@ export type { BackendOperationExplanation, BackendOperationExplanationLayer } fr
 export { enableHostGuards } from './enableHostGuards.ts';
 export { createHost, initializeHost } from './host.ts';
 export type {
+  AudioBufferHandle,
+  AudioBusNodeHandle,
+  AudioDeviceHandle,
+  AudioMixerGraphHandle,
+  AudioSourceHandle,
   HostBitmapCapabilities,
   HostCompressCapabilities,
   HostConnectivityCapabilities,

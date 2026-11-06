@@ -1,5 +1,5 @@
-export type AudioBufferHandle = number & { readonly __brand: 'AudioBufferHandle' };
+// Owned by `@flighthq/host`. These deprecated re-exports keep existing `@flighthq/types`
+// imports compiling until consumers import the owning package.
 
-export type AudioDeviceHandle = number & { readonly __brand: 'AudioDeviceHandle' };
-
-export type AudioSourceHandle = number & { readonly __brand: 'AudioSourceHandle' };
+/** @deprecated Import from `@flighthq/host/contract`. */
+export type { AudioBufferHandle, AudioDeviceHandle, AudioSourceHandle } from '@flighthq/host/contract';

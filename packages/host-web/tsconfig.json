@@ -76,7 +76,7 @@
       "path": "../lifecycle/tsconfig.contract.json"
     },
     {
-      "path": "../media"
+      "path": "../media/tsconfig.runtime.json"
     },
     {
       "path": "../mediasession/tsconfig.contract.json"

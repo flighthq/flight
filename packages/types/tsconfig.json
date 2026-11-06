@@ -70,6 +70,7 @@
       ".updater-types",
       ".connectivity-types",
       ".video-types",
+      ".media-types",
       ""
     ],
     "types": ["@testing-library/jest-dom", "vitest/globals", "@webgpu/types"]
@@ -329,6 +330,9 @@
     },
     {
       "path": "../video/tsconfig.contract.json"
+    },
+    {
+      "path": "../media/tsconfig.contract.json"
     }
   ],
   "include": ["src"]

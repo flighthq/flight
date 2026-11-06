@@ -1,4 +1,5 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type { AudioBusNodeHandle, AudioDeviceHandle, AudioMixerGraphHandle } from '@flighthq/host/contract';
 import {
   addLogSink,
   createLogState,
@@ -7,17 +8,11 @@ import {
   removeLogSink,
 } from '@flighthq/log/contract';
 import type { LogState } from '@flighthq/log/contract';
-import type {
-  AudioBusNodeHandle,
-  AudioDeviceHandle,
-  AudioMixerGraphHandle,
-  HostAudioMixerCapability,
-  LogEntry,
-  MemoryLogSink,
-} from '@flighthq/types/contract';
+import type { LogEntry, MemoryLogSink } from '@flighthq/types/contract';
 
 import { addAudioBusToMixer, createAudioBus, createAudioMixer, setAudioBusGain } from './audioMixer.ts';
 import { disableAudioMixerGuards, enableAudioMixerGuards } from './enableAudioMixerGuards.ts';
+import type { HostAudioMixerCapability } from './types.ts';
 
 // Each test logs into a fresh caller-owned state, so logOnce keys never leak between tests.
 let logState: LogState;

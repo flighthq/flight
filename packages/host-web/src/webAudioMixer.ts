@@ -3,9 +3,8 @@ import type {
   AudioDeviceHandle,
   AudioMixerGraphHandle,
   AudioSourceHandle,
-  HostAudioDeviceCapability,
-  HostAudioMixerCapability,
-} from '@flighthq/types/contract';
+} from '@flighthq/host/contract';
+import type { HostAudioDeviceCapability, HostAudioMixerCapability } from '@flighthq/media/contract';
 
 import { webHostAudioDevice } from './webAudioDevice.ts';
 

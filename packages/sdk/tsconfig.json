@@ -214,7 +214,7 @@
       "path": "../math"
     },
     {
-      "path": "../media"
+      "path": "../media/tsconfig.runtime.json"
     },
     {
       "path": "../mediasession"

@@ -1,4 +1,4 @@
-import type { AudioDeviceHandle } from '@flighthq/types/contract';
+import type { AudioDeviceHandle } from '@flighthq/host/contract';
 
 import { webHostAudioDevice } from './webAudioDevice.ts';
 import { webHostAudioMixer } from './webAudioMixer.ts';

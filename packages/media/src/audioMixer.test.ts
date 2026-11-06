@@ -4,9 +4,7 @@ import type {
   AudioDeviceHandle,
   AudioMixerGraphHandle,
   AudioSourceHandle,
-  HostAudioDeviceCapability,
-  HostAudioMixerCapability,
-} from '@flighthq/types/contract';
+} from '@flighthq/host/contract';
 
 import { pauseAudioChannel, playAudioResource } from './audioChannel.ts';
 import {
@@ -29,6 +27,7 @@ import {
   stopAllAudioMixerChannels,
   unrouteAudioChannelFromMixerBus,
 } from './audioMixer.ts';
+import type { HostAudioDeviceCapability, HostAudioMixerCapability } from './types.ts';
 
 let nextSourceHandle = 1;
 let mockBackend: HostAudioDeviceCapability;

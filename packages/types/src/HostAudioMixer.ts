@@ -1,19 +1,8 @@
-import type { AudioDeviceHandle, AudioSourceHandle } from './AudioDeviceHandle.ts';
+// Owned by `@flighthq/host` and `@flighthq/media`. These deprecated re-exports keep existing `@flighthq/types`
+// imports compiling until consumers import the owning package.
 
-export type AudioBusNodeHandle = number & { readonly __brand: 'AudioBusNodeHandle' };
+/** @deprecated Import from `@flighthq/host/contract`. */
+export type { AudioBusNodeHandle, AudioMixerGraphHandle } from '@flighthq/host/contract';
 
-export type AudioMixerGraphHandle = number & { readonly __brand: 'AudioMixerGraphHandle' };
-
-export interface HostAudioMixerCapability {
-  createMixerGraph(device: AudioDeviceHandle, masterGain: number): AudioMixerGraphHandle;
-  destroyMixerGraph(graph: AudioMixerGraphHandle): void;
-  createBusNode(graph: AudioMixerGraphHandle, gain: number, pan: number): AudioBusNodeHandle;
-  destroyBusNode(graph: AudioMixerGraphHandle, bus: AudioBusNodeHandle): void;
-  setBusNodeGain(graph: AudioMixerGraphHandle, bus: AudioBusNodeHandle, gain: number): void;
-  setBusNodePan(graph: AudioMixerGraphHandle, bus: AudioBusNodeHandle, pan: number): void;
-  fadeBusNodeGain(graph: AudioMixerGraphHandle, bus: AudioBusNodeHandle, target: number, durationMs: number): void;
-  setMasterGain(graph: AudioMixerGraphHandle, gain: number): void;
-  routeSourceToBus(graph: AudioMixerGraphHandle, source: AudioSourceHandle, bus: AudioBusNodeHandle): void;
-  unrouteSource(graph: AudioMixerGraphHandle, source: AudioSourceHandle): void;
-  routeSourceToDefault(graph: AudioMixerGraphHandle, source: AudioSourceHandle): void;
-}
+/** @deprecated Import from `@flighthq/media/contract`. */
+export type { HostAudioMixerCapability } from '@flighthq/media/contract';

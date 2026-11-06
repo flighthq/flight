@@ -1,18 +1,15 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type { AudioBusNodeHandle, AudioDeviceHandle, AudioMixerGraphHandle } from '@flighthq/host/contract';
 import { clamp } from '@flighthq/math/contract';
 import type {
   AudioBus,
-  AudioBusNodeHandle,
   AudioBusMixerGuard,
   AudioBusMixerOperation,
   AudioBusOptions,
   AudioChannel,
-  AudioDeviceHandle,
   AudioMixer,
-  AudioMixerGraphHandle,
   AudioMixerOptions,
   EntityConstruction,
-  HostAudioMixerCapability,
 } from '@flighthq/types/contract';
 
 import {
@@ -22,6 +19,7 @@ import {
   setAudioChannelSourceRoute,
   stopAudioChannel,
 } from './audioChannel.ts';
+import type { HostAudioMixerCapability } from './types.ts';
 
 export function addAudioBusToMixer(
   hostAudioMixer: Readonly<HostAudioMixerCapability>,

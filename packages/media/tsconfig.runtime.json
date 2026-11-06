@@ -1,0 +1,47 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "composite": true,
+    "rootDir": "src",
+    "outDir": "dist",
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "moduleSuffixes": [".host-types", ""],
+    "tsBuildInfoFile": "dist/.tsbuildinfo.runtime"
+  },
+  "references": [
+    {
+      "path": "../audio/tsconfig.runtime.json"
+    },
+    {
+      "path": "../entity"
+    },
+    {
+      "path": "../log"
+    },
+    {
+      "path": "../host/tsconfig.contract.json"
+    },
+    {
+      "path": "../math"
+    },
+    {
+      "path": "../signals"
+    },
+    {
+      "path": "../texture/tsconfig.runtime.json"
+    },
+    {
+      "path": "../types"
+    },
+    {
+      "path": "../video"
+    },
+    {
+      "path": "./tsconfig.contract.json"
+    }
+  ],
+  "include": ["src"],
+  "exclude": ["src/contract.media-types.ts", "src/types.ts"]
+}

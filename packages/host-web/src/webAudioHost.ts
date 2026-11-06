@@ -1,4 +1,4 @@
-import type { HostAudioCapabilities } from '@flighthq/types/contract';
+import type { HostAudioCapabilities } from '@flighthq/media/contract';
 
 import { webHostAudio } from './webAudio.ts';
 import { webHostAudioDevice } from './webAudioDevice.ts';

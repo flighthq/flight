@@ -160,3 +160,15 @@ export interface HostConnectivityCapabilities {
   readonly reachability?: HostConnectivityReachabilityCapability;
   readonly status?: HostConnectivityStatusCapability;
 }
+
+// Provider-issued numeric host ids (crates/flight-host/src/numeric_handles.rs, rust-only there): branded
+// numbers a host issues and alone interprets.
+export type AudioBufferHandle = number & { readonly __brand: 'AudioBufferHandle' };
+
+export type AudioDeviceHandle = number & { readonly __brand: 'AudioDeviceHandle' };
+
+export type AudioSourceHandle = number & { readonly __brand: 'AudioSourceHandle' };
+
+export type AudioBusNodeHandle = number & { readonly __brand: 'AudioBusNodeHandle' };
+
+export type AudioMixerGraphHandle = number & { readonly __brand: 'AudioMixerGraphHandle' };

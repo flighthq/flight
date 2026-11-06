@@ -1,5 +1,6 @@
-import type { AudioDeviceHandle, HostAudioDeviceCapability } from '@flighthq/types/contract';
-import type { AudioSourceHandle } from '@flighthq/types/contract';
+import type { AudioDeviceHandle } from '@flighthq/host/contract';
+import type { AudioSourceHandle } from '@flighthq/host/contract';
+import type { HostAudioDeviceCapability } from '@flighthq/media/contract';
 
 import {
   getAudioDeviceContext,

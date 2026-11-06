@@ -1,0 +1,121 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "composite": true,
+    "rootDir": "src",
+    "outDir": "dist",
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "moduleSuffixes": [
+      ".app-types",
+      ".audio-types",
+      ".bitmap-types",
+      ".connectivity-types",
+      ".font-types",
+      ".geometry-types",
+      ".host-types",
+      ".image-types",
+      ".menu-types",
+      ".midi-types",
+      ".notification-types",
+      ".path-types",
+      ".permissions-types",
+      ".protocol-types",
+      ".screen-types",
+      ".surface-types",
+      ".texture-formats-types",
+      ".texture-types",
+      ".updater-types",
+      ""
+    ],
+    "tsBuildInfoFile": "dist/.tsbuildinfo.contract"
+  },
+  "references": [
+    {
+      "path": "../app/tsconfig.contract.json"
+    },
+    {
+      "path": "../audio/tsconfig.contract.json"
+    },
+    {
+      "path": "../bitmap/tsconfig.contract.json"
+    },
+    {
+      "path": "../compression"
+    },
+    {
+      "path": "../connectivity/tsconfig.contract.json"
+    },
+    {
+      "path": "../dialog"
+    },
+    {
+      "path": "../entity"
+    },
+    {
+      "path": "../filesystem"
+    },
+    {
+      "path": "../font/tsconfig.contract.json"
+    },
+    {
+      "path": "../geolocation"
+    },
+    {
+      "path": "../geometry/tsconfig.contract.json"
+    },
+    {
+      "path": "../host/tsconfig.contract.json"
+    },
+    {
+      "path": "../image-codec"
+    },
+    {
+      "path": "../image/tsconfig.contract.json"
+    },
+    {
+      "path": "../menu/tsconfig.contract.json"
+    },
+    {
+      "path": "../midi/tsconfig.contract.json"
+    },
+    {
+      "path": "../notification/tsconfig.contract.json"
+    },
+    {
+      "path": "../path/tsconfig.contract.json"
+    },
+    {
+      "path": "../permissions/tsconfig.contract.json"
+    },
+    {
+      "path": "../protocol/tsconfig.contract.json"
+    },
+    {
+      "path": "../resource"
+    },
+    {
+      "path": "../screen/tsconfig.contract.json"
+    },
+    {
+      "path": "../share"
+    },
+    {
+      "path": "../signals"
+    },
+    {
+      "path": "../surface/tsconfig.contract.json"
+    },
+    {
+      "path": "../texture-formats/tsconfig.contract.json"
+    },
+    {
+      "path": "../texture/tsconfig.contract.json"
+    },
+    {
+      "path": "../updater/tsconfig.contract.json"
+    }
+  ],
+  "include": ["src/contract.media-types.ts", "src/types.ts"]
+}

@@ -1,6 +1,6 @@
 import { createAudioResource } from '@flighthq/audio/contract';
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { HostAudioDeviceCapability, AudioDeviceHandle, AudioSourceHandle } from '@flighthq/types/contract';
+import type { AudioDeviceHandle, AudioSourceHandle } from '@flighthq/host/contract';
 
 import {
   destroyAudioChannel,
@@ -24,6 +24,7 @@ import {
   setAudioChannelSourceRoute,
   stopAudioChannel,
 } from './audioChannel.ts';
+import type { HostAudioDeviceCapability } from './types.ts';
 
 let deviceTime = 0;
 let nextSourceHandle = 1;
