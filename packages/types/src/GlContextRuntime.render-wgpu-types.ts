@@ -1,5 +1,7 @@
+import type { ExternalTexture } from '@flighthq/render/contract';
+import type { RenderTexture } from '@flighthq/render/contract';
+
 import type { EntityRuntime } from './Entity.ts';
-import type { ExternalTexture } from './ExternalTexture.ts';
 import type { GlColorAdjustmentResources } from './GlColorAdjustmentResources.ts';
 import type { GlContext } from './GlContext.ts';
 import type { GlParticleResources } from './GlParticleResources.ts';
@@ -9,7 +11,6 @@ import type { GlRenderTextureEntry } from './GlRenderTexture.ts';
 import type { GlShapeMeshResources } from './GlShapeMeshResources.ts';
 import type { GlTextureRealization } from './GlTextureResolver.ts';
 import type { ImageResource } from './ImageResource.ts';
-import type { RenderTexture } from './RenderTexture.ts';
 import type { TextureSource } from './TextureSource.ts';
 
 // Shared GPU state for one WebGL context, stored as the Entity runtime of a GlContextState. Wraps

@@ -1,6 +1,6 @@
 import { resolveGlQuadMaterialRenderer, resolveGlTexture } from '@flighthq/render-gl/contract';
 import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
-import { SCENE2D_WORKING_COLOR_SPACE } from '@flighthq/render/contract';
+import { SCENE2D_WORKING_COLOR_SPACE, BatchFormat } from '@flighthq/render/contract';
 import { noopRendererData } from '@flighthq/render/contract';
 import { getTextureHeight, getTextureWidth, hasTextureSource } from '@flighthq/texture/contract';
 import { TextureAtlasRotation } from '@flighthq/types/contract';
@@ -12,7 +12,6 @@ import type {
   Tilemap,
   TintMaterialData,
 } from '@flighthq/types/contract';
-import { BatchFormat } from '@flighthq/types/contract';
 
 import {
   QUAD_BATCH_INSTANCE_FLOATS,

@@ -4,9 +4,10 @@ import {
   registerGlRenderTextureResolver,
   renderIntoGlRenderTexture,
 } from '@flighthq/render-gl/contract';
+import { BatchFormat } from '@flighthq/render/contract';
 import { createRenderTexture, createTexture, setTextureUvFromPixelRect } from '@flighthq/texture/contract';
 import type { Bitmap, ColorScaleBias, RenderProxy2D, Sprite } from '@flighthq/types/contract';
-import { BatchFormat, BitmapTextureSourceKind } from '@flighthq/types/contract';
+import { BitmapTextureSourceKind } from '@flighthq/types/contract';
 
 import { registerGlColorAdjustmentMaterialFeature } from './glColorAdjustmentMaterialFeature.ts';
 import { flushGlQuadBatchWriter } from './glQuadBatchWriter.ts';

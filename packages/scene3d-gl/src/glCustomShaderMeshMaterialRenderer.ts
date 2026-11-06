@@ -2,6 +2,7 @@ import type { MeshGeometry } from '@flighthq/meshgeometry/contract';
 import { withKindMapEntry } from '@flighthq/registry/contract';
 import { getGlRenderStateRuntime, resolveGlTexture } from '@flighthq/render-gl/contract';
 import type { GlCustomMaterialShaderSource, GlMeshMaterialRenderer } from '@flighthq/render-gl/contract';
+import type { Scene3DRenderProxy } from '@flighthq/render/contract';
 import type {
   GlContext,
   Camera3D,
@@ -9,7 +10,6 @@ import type {
   GlRenderState,
   Material,
   Scene3DLightBlock,
-  Scene3DRenderProxy,
   Texture,
 } from '@flighthq/types/contract';
 import { CustomShaderMaterialKind } from '@flighthq/types/contract';

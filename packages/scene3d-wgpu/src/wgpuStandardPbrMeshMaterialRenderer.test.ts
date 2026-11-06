@@ -2,14 +2,8 @@ import { createCamera3D, createPerspectiveProjection } from '@flighthq/camera/co
 import { createMatrix3, createMatrix4 } from '@flighthq/geometry/contract';
 import { createStandardPbrMaterial } from '@flighthq/materials/contract';
 import { createBoxMeshGeometry } from '@flighthq/meshgeometry/contract';
-import type {
-  Camera3D,
-  Matrix3,
-  Matrix4,
-  Scene3DLightBlock,
-  Scene3DRenderProxy,
-  Texture,
-} from '@flighthq/types/contract';
+import type { Scene3DRenderProxy } from '@flighthq/render/contract';
+import type { Camera3D, Matrix3, Matrix4, Scene3DLightBlock, Texture } from '@flighthq/types/contract';
 import { ImageTextureSourceKind } from '@flighthq/types/contract';
 
 import { ensureWgpuPbrPipeline } from './wgpuPbrPipelineCache.ts';

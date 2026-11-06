@@ -18,6 +18,7 @@
     { "path": "../host-web" },
     { "path": "../log" },
     { "path": "../registry" },
+    { "path": "../render/tsconfig.runtime.json" },
     { "path": "../render-gl" },
     { "path": "../types" },
     { "path": "./tsconfig.contract.json" }

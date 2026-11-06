@@ -1,6 +1,7 @@
 import { getWgpuRenderTextureTarget, writeWgpuRenderTextureTarget } from '@flighthq/render-wgpu/contract';
 import type { WgpuRenderState, WgpuRenderTexturePool } from '@flighthq/render-wgpu/contract';
-import type { Effect, RenderTexture } from '@flighthq/types/contract';
+import type { RenderTexture } from '@flighthq/render/contract';
+import type { Effect } from '@flighthq/types/contract';
 
 import type {
   WgpuEffectApplicationExplanation,

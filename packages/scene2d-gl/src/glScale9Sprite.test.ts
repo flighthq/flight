@@ -5,7 +5,12 @@ import {
   registerGlBitmapTextureResolver,
   registerGlQuadMaterialRenderer,
 } from '@flighthq/render-gl/contract';
-import { getOrCreateRenderProxy2D, prepareScene2DRender, registerNodeRenderer } from '@flighthq/render/contract';
+import {
+  getOrCreateRenderProxy2D,
+  prepareScene2DRender,
+  registerNodeRenderer,
+  BatchFormat,
+} from '@flighthq/render/contract';
 import { createScale9Sprite } from '@flighthq/scene2d/contract';
 import { createTexture } from '@flighthq/texture/contract';
 import type {
@@ -16,7 +21,7 @@ import type {
   RenderProxy2D,
   Scale9Sprite,
 } from '@flighthq/types/contract';
-import { BatchFormat, Scale9SpriteKind } from '@flighthq/types/contract';
+import { Scale9SpriteKind } from '@flighthq/types/contract';
 
 import { glScale9SpriteRenderer, drawGlScale9Sprite } from './glScale9Sprite.ts';
 import { registerGlStandardMaterial } from './glStandardMaterial.ts';

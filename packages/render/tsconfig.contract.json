@@ -8,14 +8,27 @@
     "declarationMap": true,
     "sourceMap": true,
     "tsBuildInfoFile": "dist/.tsbuildinfo.contract",
-    "moduleSuffixes": [".meshgeometry-types", ".geometry-types", ".texture-types", ""]
+    "moduleSuffixes": [
+      ".meshgeometry-types",
+      ".materials-types",
+      ".adjustments-types",
+      ".geometry-types",
+      ".texture-types",
+      ""
+    ]
   },
   "references": [
+    {
+      "path": "../adjustments/tsconfig.contract.json"
+    },
     {
       "path": "../entity"
     },
     {
       "path": "../geometry/tsconfig.contract.json"
+    },
+    {
+      "path": "../materials/tsconfig.contract.json"
     },
     {
       "path": "../meshgeometry/tsconfig.contract.json"

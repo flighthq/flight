@@ -18,7 +18,7 @@ export type { Entity } from './Entity.ts';
 export type { Texture } from './Texture.ts';
 export type { Effect } from './Effect.ts';
 export type { EntityRuntime } from './Entity.ts';
-export type { ExternalTexture } from './ExternalTexture.ts';
+export type { ExternalTexture } from '@flighthq/render/contract';
 export type { HostCanvasCapability } from './HostCanvas.ts';
 export type { HostImageCapability } from './ImageResource.ts';
 export type { GlColorAdjustmentResources } from './GlColorAdjustmentResources.render-wgpu-types.ts';
@@ -66,12 +66,12 @@ export type {
   RenderTargetDepth,
   RenderTargetDimensions,
   RenderTargetFormat,
-} from './RenderTarget.ts';
-export type { RenderTexture } from './RenderTexture.ts';
+} from '@flighthq/render/contract';
+export type { RenderTexture } from '@flighthq/render/contract';
 export type { SamplerLike } from './Sampler.ts';
 export type { Scene3DLightBlock } from './Scene3DLightBlock.ts';
 export type { Scene3DLightsLike } from './Scene3DLights.ts';
-export type { Scene3DRenderProxy } from './Scene3DRenderProxy.ts';
+export type { Scene3DRenderProxy } from '@flighthq/render/contract';
 export type { Signal } from '@flighthq/signals/contract';
 export type { NativeSurfaceHandle, Surface } from './Surface.ts';
 export type { TextureColorSpace, TextureLike } from './Texture.ts';

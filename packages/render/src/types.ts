@@ -1,8 +1,35 @@
+import type { ColorScaleBias } from '@flighthq/adjustments/contract';
 import type { EntityRaw, EntityRuntime, EntityRuntimeKey, Kind } from '@flighthq/entity/contract';
-import type { Matrix } from '@flighthq/geometry/contract';
+import type { Matrix, Matrix3, Matrix4, Vector2Like } from '@flighthq/geometry/contract';
+import type { BlendMode, Material, Material3D } from '@flighthq/materials/contract';
+import type { MeshSubset } from '@flighthq/meshgeometry/contract';
 import type { RequirementFacet } from '@flighthq/requirement/contract';
 import type { Signal } from '@flighthq/signals/contract';
-import type { SamplerLike, TextureColorSpace } from '@flighthq/texture/contract';
+import type {
+  ExternalTextureSourceKind,
+  RenderTargetTextureSourceKind,
+  SamplerLike,
+  Texture2D,
+  TextureColorSpace,
+  TextureSource,
+} from '@flighthq/texture/contract';
+
+// Identifies which geometry accumulation pipeline a renderer submits into. This is the first
+// component of the flush key: (BatchFormat, texture, blend, material). Consecutive draws that
+// share the same key coalesce in the open batch; a key change or a BatchBarrier forces a flush.
+//
+// Quad:         Instanced textured-quad path. One instance = implicit four-vertex quad with
+//               per-instance transform, UV rect, and alpha. Used by sprites, bitmaps, glyphs,
+//               video frames — anything that maps a rectangular region of a texture onto a quad.
+//
+// VertexStream: Explicit vertex + index buffer path. Geometry arrives as a vertex/index stream
+//               rather than as quad instances. Used by shapes, gradients, and scale-9 geometry.
+//               Named VertexStream rather than Mesh to avoid collision with 3D mesh assets when
+//               the world package gains real 3D geometry.
+export enum BatchFormat {
+  Quad,
+  VertexStream,
+}
 
 export interface CreateExternalTextureOptions {
   // Declares the borrowed handle's existing sample interpretation; the backend cannot reinterpret
@@ -11,6 +38,53 @@ export interface CreateExternalTextureOptions {
   readonly height: number;
   readonly sampler?: Readonly<SamplerLike>;
   readonly width: number;
+}
+
+// Construction options for a render-target 2D Texture. Target allocation stays lazy and backend-owned;
+// sampling and UV fields remain ordinary Texture state.
+export interface CreateRenderTextureOptions {
+  readonly colorSpace?: TextureColorSpace;
+  readonly colorAttachments?: number;
+  readonly colorFormats?: ReadonlyArray<RenderTargetFormat>;
+  readonly depth?: RenderTargetDepth;
+  readonly flipX?: boolean;
+  readonly flipY?: boolean;
+  readonly format?: RenderTargetFormat;
+  readonly height: number;
+  readonly sampleCount?: number;
+  readonly sampler?: Readonly<SamplerLike>;
+  readonly uvOffset?: Readonly<Vector2Like>;
+  readonly uvRotation?: number;
+  readonly uvScale?: Readonly<Vector2Like>;
+  readonly width: number;
+}
+
+/**
+ * A foreign GPU texture bound by one render backend. The backend borrows and never uploads or owns
+ * the associated GPU handle.
+ */
+export interface ExternalTexture extends TextureSource {
+  readonly kind: typeof ExternalTextureSourceKind;
+}
+
+export interface RenderBlendStateEntry {
+  readonly alpha: number;
+  readonly blendMode: BlendMode | null;
+}
+
+export interface RenderBatchKey {
+  readonly blend: BlendMode | null;
+  readonly format: BatchFormat;
+  readonly material: Material | null;
+  readonly rendererKind: Kind;
+  readonly texture: object | null;
+}
+
+export interface RenderDrawContext {
+  drawCallCount: number;
+  flushCount: number;
+  openBatchKey: RenderBatchKey | null;
+  proxyVisitedCount: number;
 }
 
 /**
@@ -49,6 +123,96 @@ export interface RenderStateStats {
   readonly drawCallCount: number;
   readonly flushCount: number;
   readonly proxyVisitedCount: number;
+}
+
+// Substrate-agnostic render-target description. A target carries axes, not booleans: `format`/
+// `colorFormats` unlock HDR and the G-buffer, `colorAttachments` is MRT/deferred, `sampleCount` is
+// MSAA, `depth` carries target-scope stencil and (for '-sampled') a readable depth texture. The
+// per-backend target types (GlRenderTarget, WgpuRenderTarget) realize these axes; each splits into a
+// screen realization (the swap chain) and a texture realization (GlTextureRenderTarget,
+// WgpuTextureRenderTarget — sampleable offscreen storage).
+
+// Common allocation-backed target identity used by backend-neutral assemblies. Backend target types
+// extend this with their storage handles and effective format axes.
+export interface RenderTargetDimensions {
+  height: number;
+  width: number;
+}
+
+export type RenderTargetFormat = 'rgba8' | 'rgba16f' | 'rgba32f';
+
+// Allocation policy for a requested color format. 'preferred' permits a backend to select a
+// renderable fallback and report it through effective axes; 'required' refuses substitution.
+export type RenderTargetFormatPolicy = 'preferred' | 'required';
+
+export type RenderTargetDepth = 'none' | 'depth-stencil' | 'depth-stencil-sampled';
+
+// Color space of the pixels a target holds — a declared property of the target, NOT inferred from
+// `format` ('rgba16f' can hold either linear HDR scene radiance or already-sRGB 2D content). 'linear'
+// content (scene-gl materials output linear) must be sRGB-encoded once at present; 'srgb' content (2D
+// display-object colors, already encoded) is presented as-is. The present step reads this to decide
+// whether to run the linear->sRGB OETF, so gamma is neither double-applied nor skipped.
+export type RenderTargetColorSpace = 'linear' | 'srgb';
+
+// Canonical storage axes after descriptor defaults and substrate-independent normalization are
+// resolved. A backend starts from this shape, then records any device-driven substitutions on its
+// realized target rather than silently treating the requested descriptor as effective storage.
+export interface RenderTargetAxes {
+  readonly width: number;
+  readonly height: number;
+  readonly format: RenderTargetFormat;
+  readonly colorAttachments: number;
+  readonly colorFormats: ReadonlyArray<RenderTargetFormat>;
+  readonly sampleCount: number;
+  readonly depth: RenderTargetDepth;
+  readonly colorSpace: RenderTargetColorSpace;
+}
+
+export interface RenderTargetAxisDifference {
+  readonly axis: keyof RenderTargetAxes;
+  readonly effective: RenderTargetAxes[keyof RenderTargetAxes];
+  readonly requested: RenderTargetAxes[keyof RenderTargetAxes];
+}
+
+export interface RenderTargetExplanation {
+  readonly differences: ReadonlyArray<RenderTargetAxisDifference>;
+  readonly effective: Readonly<RenderTargetAxes>;
+  readonly requested: Readonly<RenderTargetAxes>;
+}
+
+export interface RenderTargetDescriptor {
+  width: number;
+  height: number;
+  // Color attachment 0 format. Default 'rgba8'. 'rgba16f'/'rgba32f' give HDR headroom for bloom and
+  // are the float formats a future G-buffer uses.
+  format?: RenderTargetFormat;
+  // Number of color attachments (MRT). Default 1. >1 is the deferred-shading / G-buffer path.
+  colorAttachments?: number;
+  // Per-attachment format override when colorAttachments > 1; index 0 falls back to `format`.
+  colorFormats?: ReadonlyArray<RenderTargetFormat>;
+  // MSAA sample count. Default 1 (no MSAA). 2 | 4 | 8 — clamped to the device max.
+  sampleCount?: number;
+  // Depth/stencil attachment. Default 'none'. 'depth-stencil-sampled' additionally exposes the depth
+  // as a sampleable texture for depth-dependent effects (SSAO, depth-of-field, fog).
+  depth?: RenderTargetDepth;
+  // Color space of the content the target will hold. Default 'srgb' (existing callers + all 2D are
+  // unchanged: presented as-is). Producers of linear content (the 3D scene path) declare 'linear' so
+  // the present applies the single sRGB encode.
+  colorSpace?: RenderTargetColorSpace;
+}
+
+// GPU-owned TextureSource descriptor. A render backend realizes this request lazily in the state that
+// first renders into or samples its owning RenderTexture.
+export interface RenderTarget extends RenderTargetDescriptor, TextureSource {
+  readonly kind: typeof RenderTargetTextureSourceKind;
+}
+
+// A descriptor with every default resolved. Backend realizations start from this shape and apply
+// only device capability substitutions.
+export interface ResolvedRenderTargetDescriptor extends RenderTargetAxes {}
+
+export interface RenderTexture extends Texture2D {
+  source: RenderTarget;
 }
 
 // Explicit per-aspect clear values for a render target. Omitted aspects are untouched.
@@ -110,6 +274,24 @@ export interface Scene3DPipelineCoverageExplanation {
   unusedRegistrations: readonly Kind[];
   usedKinds: readonly Kind[];
   usedMaterialKinds: readonly Kind[];
+}
+
+// The per-draw resolved record drawScene3D hands one mesh-material renderer for a single Mesh subset.
+// The proxy is a reused scratch record owned by drawScene3D, valid only for the duration of the draw
+// call it is passed to; a renderer must not retain it.
+export interface Scene3DRenderProxy {
+  alpha?: number;
+  colorScaleBias?: Readonly<ColorScaleBias> | null;
+  colorMatrix?: Readonly<Float32Array> | null;
+  instanceCount?: number;
+  instanceMatrices?: Readonly<Float32Array> | null;
+  instanceColors?: Readonly<Float32Array> | null;
+  jointMatrices?: Readonly<Float32Array> | null;
+  normalMatrices?: Readonly<Float32Array> | null;
+  material: Readonly<Material3D>;
+  normalMatrix: Readonly<Matrix3>;
+  subset: Readonly<MeshSubset>;
+  worldMatrix: Readonly<Matrix4>;
 }
 
 // Numeric registry identifiers keep diagnostic policy and human-readable messages out of render core.

@@ -3,14 +3,8 @@ import { allocateLinearColor, unpackColorToLinear } from '@flighthq/color/contra
 import type { MeshGeometry } from '@flighthq/meshgeometry/contract';
 import { resolveGlTexture } from '@flighthq/render-gl/contract';
 import type { GlMeshMaterialRenderer } from '@flighthq/render-gl/contract';
-import type {
-  Camera3D,
-  GlRenderState,
-  MatcapMaterial,
-  Material,
-  Scene3DLightBlock,
-  Scene3DRenderProxy,
-} from '@flighthq/types/contract';
+import type { Scene3DRenderProxy } from '@flighthq/render/contract';
+import type { Camera3D, GlRenderState, MatcapMaterial, Material, Scene3DLightBlock } from '@flighthq/types/contract';
 import { MatcapMaterialKind } from '@flighthq/types/contract';
 
 import type { GlMatcapDefineKey } from './contract.scene3d-gl-types.ts';

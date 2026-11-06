@@ -1,9 +1,10 @@
+import type { RenderTargetDescriptor } from '@flighthq/render/contract';
+
 import type { Entity } from './Entity.ts';
 import type { GlContextOptions } from './GlContext.ts';
 import type { GlRenderState } from './GlRenderState.ts';
 import type { GlRenderStateOptions } from './GlRenderStateOptions.ts';
 import type { GlTextureRenderTarget } from './GlRenderTarget.ts';
-import type { RenderTargetDescriptor } from './RenderTarget.ts';
 import type { Viewport } from './Viewport.ts';
 
 export interface GlAppRenderViewOptions {

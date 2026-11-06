@@ -10,11 +10,10 @@ import {
   getWgpuRenderStateRuntime,
   installWgpuMock,
 } from '@flighthq/render-wgpu/contract';
-import { enableRenderRegistriesGuards, explainRenderRegistriesMisses } from '@flighthq/render/contract';
+import { enableRenderRegistriesGuards, explainRenderRegistriesMisses, BatchFormat } from '@flighthq/render/contract';
 import { RenderRegistryTable } from '@flighthq/render/contract';
 import { appendShapeBeginFill, appendShapeEndFill, appendShapeRectangle, createShape } from '@flighthq/shape/contract';
 import type { CanvasSurface, HostCanvasCapability, HostImageCapability, RenderProxy2D } from '@flighthq/types/contract';
-import { BatchFormat } from '@flighthq/types/contract';
 
 import { wgpuRasterShapeRenderer, drawWgpuRasterShape } from './wgpuRasterShapeRenderer.ts';
 import { registerWgpuShapeRasterizer } from './wgpuShapeRasterizer.ts';

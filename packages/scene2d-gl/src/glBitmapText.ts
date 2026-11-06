@@ -1,5 +1,5 @@
 import { getGlRenderStateRuntime, resolveGlQuadMaterialRenderer, resolveGlTexture } from '@flighthq/render-gl/contract';
-import { SCENE2D_WORKING_COLOR_SPACE } from '@flighthq/render/contract';
+import { SCENE2D_WORKING_COLOR_SPACE, BatchFormat } from '@flighthq/render/contract';
 import { noopRendererData } from '@flighthq/render/contract';
 import { getNode2DRuntime } from '@flighthq/scene2d/contract';
 import { getTextureHeight, getTextureWidth, hasTextureSource } from '@flighthq/texture/contract';
@@ -11,7 +11,6 @@ import type {
   RenderProxy2D,
   SpriteRenderer,
 } from '@flighthq/types/contract';
-import { BatchFormat } from '@flighthq/types/contract';
 
 import {
   QUAD_BATCH_INSTANCE_FLOATS,

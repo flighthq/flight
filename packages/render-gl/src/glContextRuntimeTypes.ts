@@ -1,12 +1,11 @@
+import type { ExternalTexture, RenderTexture } from '@flighthq/render/contract';
 import type {
   EntityRuntime,
-  ExternalTexture,
   GlColorAdjustmentResources,
   GlParticleResources,
   GlQuadBatchResources,
   GlShapeMeshResources,
   ImageResource,
-  RenderTexture,
   TextureSource,
 } from '@flighthq/types/contract';
 

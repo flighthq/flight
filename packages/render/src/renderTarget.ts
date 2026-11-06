@@ -1,15 +1,13 @@
 import { createMatrix, inverseMatrix, multiplyMatrix } from '@flighthq/geometry/contract';
 import { getNodeLocalMatrix } from '@flighthq/node/contract';
+import type { MatrixLike, Node2D, RectangleLike, EffectPadding } from '@flighthq/types/contract';
+
 import type {
-  MatrixLike,
-  Node2D,
-  RectangleLike,
-  EffectPadding,
   RenderTargetAxes,
   RenderTargetAxisDifference,
   RenderTargetDescriptor,
   ResolvedRenderTargetDescriptor,
-} from '@flighthq/types/contract';
+} from './types.ts';
 
 /**
  * Writes into outCacheTransform the transform to pass to the cache resolver so the

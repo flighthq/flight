@@ -1,7 +1,8 @@
+import type { RenderTexture } from '@flighthq/render/contract';
+
 import type { CanvasRenderTargetPool } from './CanvasEffectState.ts';
 import type { CanvasRenderState } from './CanvasRenderState.ts';
 import type { Entity } from './Entity.ts';
-import type { RenderTexture } from './RenderTexture.ts';
 
 /** @deprecated Import Canvas render-texture contracts from `@flighthq/scene2d-canvas/contract`. */
 export type {

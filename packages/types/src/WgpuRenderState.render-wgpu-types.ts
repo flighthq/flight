@@ -1,12 +1,13 @@
+import type { ExternalTexture } from '@flighthq/render/contract';
+import type { RenderTexture } from '@flighthq/render/contract';
+
 import type { BlendMode } from './BlendMode.ts';
 import type { ColorScaleBias } from './ColorScaleBias.ts';
 import type { Entity, Kind } from './Entity.ts';
-import type { ExternalTexture } from './ExternalTexture.ts';
 import type { ImageResource } from './ImageResource.ts';
 import type { Material } from './Material.ts';
 import type { RenderProxy2D } from './RenderProxy2D.ts';
 import type { RenderRegistries, RenderState, RenderStateRuntime } from './RenderState.ts';
-import type { RenderTexture } from './RenderTexture.ts';
 import type { SamplerLike } from './Sampler.ts';
 import type { ShapeRasterizer } from './ShapeRasterizer.ts';
 import type { TextureSource } from './TextureSource.ts';

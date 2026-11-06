@@ -3,13 +3,13 @@ import { createMatrix3, createMatrix4 } from '@flighthq/geometry/contract';
 import { createStandardPbrMaterial } from '@flighthq/materials/contract';
 import { createBoxMeshGeometry, createMeshGeometry } from '@flighthq/meshgeometry/contract';
 import { getWgpuRenderStateDeviceResources, getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
+import type { Scene3DRenderProxy } from '@flighthq/render/contract';
 import { createTexture, setTextureUvOffset, setTextureUvScale } from '@flighthq/texture/contract';
 import type {
   Camera3D,
   Bitmap,
   ImageResource,
   Scene3DLightBlock,
-  Scene3DRenderProxy,
   Texture,
   WgpuColorAdjustmentMaterialFeature,
 } from '@flighthq/types/contract';

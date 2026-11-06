@@ -1,5 +1,2 @@
-import type { BlendMode } from './BlendMode.ts';
-export interface RenderBlendStateEntry {
-  readonly alpha: number;
-  readonly blendMode: BlendMode | null;
-}
+/** @deprecated Import render contracts from `@flighthq/render/contract`. */
+export type { RenderBlendStateEntry } from '@flighthq/render/contract';

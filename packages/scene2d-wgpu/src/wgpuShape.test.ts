@@ -8,6 +8,7 @@ import { PathCommand } from '@flighthq/path/contract';
 import { beginWgpuScreenRenderPassForTest, submitWgpuFrame } from '@flighthq/render-wgpu/contract';
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
 import { createWgpuRenderStateForTest, installWgpuMock } from '@flighthq/render-wgpu/contract';
+import { BatchFormat } from '@flighthq/render/contract';
 import {
   appendShapeBeginFill,
   appendShapeEndFill,
@@ -19,7 +20,6 @@ import {
   createShape,
 } from '@flighthq/shape/contract';
 import type { CanvasSurface, HostCanvasCapability, HostImageCapability, RenderProxy2D } from '@flighthq/types/contract';
-import { BatchFormat } from '@flighthq/types/contract';
 
 import { enableWgpuStrokePathTessellation } from './enableWgpuStrokePathTessellation.ts';
 import { wgpuMorphShapeRenderer, wgpuShapeRenderer, drawWgpuShape } from './wgpuShape.ts';

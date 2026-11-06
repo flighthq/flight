@@ -1,4 +1,5 @@
 import type { Mesh, MeshGeometry } from '@flighthq/meshgeometry/contract';
+import type { Scene3DRenderProxy } from '@flighthq/render/contract';
 
 import type { Camera3D } from './Camera3D.ts';
 import type { GlMeshProgram } from './GlMeshProgram.ts';
@@ -11,7 +12,6 @@ import type { Node3D } from './Node3D.ts';
 import type { PbrExtension } from './PbrExtension.ts';
 import type { Scene3DLightBlock } from './Scene3DLightBlock.ts';
 import type { Scene3DLightsLike } from './Scene3DLights.ts';
-import type { Scene3DRenderProxy } from './Scene3DRenderProxy.ts';
 import type { Texture } from './Texture.ts';
 import type { TextureColorSpace } from './Texture.ts';
 

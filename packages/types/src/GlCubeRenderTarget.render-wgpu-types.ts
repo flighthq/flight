@@ -1,6 +1,7 @@
+import type { RenderTargetColorSpace } from '@flighthq/render/contract';
+
 import type { Entity } from './Entity.ts';
 import type { GlContext } from './GlContext.ts';
-import type { RenderTargetColorSpace } from './RenderTarget.ts';
 
 // A single-sample RGBA16F cubemap whose six faces share one framebuffer attachment point. The
 // framebuffer is reattached to the selected face by beginGlCubeRenderFace. `textures` mirrors the

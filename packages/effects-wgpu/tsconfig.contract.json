@@ -10,6 +10,7 @@
     "types": ["@webgpu/types"],
     "moduleSuffixes": [
       ".effects-types",
+      ".render-types",
       ".render-backend-bridge-types",
       ".render-wgpu-types",
       ".adjustments-types",
@@ -23,6 +24,9 @@
     },
     {
       "path": "../effects/tsconfig.contract.json"
+    },
+    {
+      "path": "../render/tsconfig.contract.json"
     },
     {
       "path": "../render-wgpu/tsconfig.contract.json"

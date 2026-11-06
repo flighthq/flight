@@ -1,5 +1,5 @@
 import type { EntityRaw, EntityRuntime, EntityRuntimeKey, Kind } from '@flighthq/entity/contract';
-import type { RenderTargetDepth, RenderTargetFormat } from '@flighthq/types/contract';
+import type { RenderTargetDepth, RenderTargetFormat } from '@flighthq/render/contract';
 
 // Open substrate-agnostic base contract for render-effect intents. The kind is both the serialized
 // discriminant and the per-backend registry key; concrete effect records remain open to third parties.

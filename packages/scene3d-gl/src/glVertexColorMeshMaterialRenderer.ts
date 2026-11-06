@@ -2,12 +2,12 @@ import type { LinearColorRaw } from '@flighthq/color/contract';
 import { allocateLinearColor, unpackColorToLinear } from '@flighthq/color/contract';
 import type { MeshGeometry } from '@flighthq/meshgeometry/contract';
 import type { GlMeshMaterialRenderer } from '@flighthq/render-gl/contract';
+import type { Scene3DRenderProxy } from '@flighthq/render/contract';
 import type {
   Camera3D,
   GlRenderState,
   Material,
   Scene3DLightBlock,
-  Scene3DRenderProxy,
   VertexColorMaterial,
 } from '@flighthq/types/contract';
 import { VertexColorMaterialKind } from '@flighthq/types/contract';

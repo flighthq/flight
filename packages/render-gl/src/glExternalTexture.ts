@@ -1,9 +1,9 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type { ExternalTexture } from '@flighthq/render/contract';
 import { cloneSampler, createTexture } from '@flighthq/texture/contract';
 import type {
   CreateExternalTextureOptions,
   EntityConstruction,
-  ExternalTexture,
   GlRenderState,
   GlTextureRealization,
   Texture,

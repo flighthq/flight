@@ -7,8 +7,9 @@ import {
   registerGlImageTextureResolver,
   registerGlRenderTextureResolver,
 } from '@flighthq/render-gl/contract';
+import type { Scene3DRenderProxy } from '@flighthq/render/contract';
 import { advanceVideoTexture, createRenderTexture, createVideoTexture } from '@flighthq/texture/contract';
-import type { Camera3D, HostVideoCapability, Scene3DLightBlock, Scene3DRenderProxy } from '@flighthq/types/contract';
+import type { Camera3D, HostVideoCapability, Scene3DLightBlock } from '@flighthq/types/contract';
 import { UnlitMaterialKind } from '@flighthq/types/contract';
 import { createVideoResource } from '@flighthq/video/contract';
 

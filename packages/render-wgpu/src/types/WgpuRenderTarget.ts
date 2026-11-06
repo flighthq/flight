@@ -1,5 +1,5 @@
 import type { EntityRaw, EntityRuntime, EntityRuntimeKey } from '@flighthq/entity/contract';
-import type { RenderTargetColorSpace, RenderTargetDimensions } from '@flighthq/types/contract';
+import type { RenderTargetColorSpace, RenderTargetDimensions } from '@flighthq/render/contract';
 
 import type { WgpuPresentationSurface } from './WgpuHost.ts';
 import type { WgpuRenderState, WgpuTextureBindings } from './WgpuRenderState.ts';

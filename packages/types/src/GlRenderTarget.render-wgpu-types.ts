@@ -1,12 +1,13 @@
-import type { Entity } from './Entity.ts';
-import type { GlContext } from './GlContext.ts';
 import type {
   RenderTargetAxes,
   RenderTargetColorSpace,
   RenderTargetDepth,
   RenderTargetDimensions,
   RenderTargetFormat,
-} from './RenderTarget.ts';
+} from '@flighthq/render/contract';
+
+import type { Entity } from './Entity.ts';
+import type { GlContext } from './GlContext.ts';
 
 // Base type for all GL render targets — what pass functions need (bind + clear + viewport).
 // `framebuffer` is null for the screen (default framebuffer) and a WebGLFramebuffer for offscreen

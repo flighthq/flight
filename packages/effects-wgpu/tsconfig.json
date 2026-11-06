@@ -10,6 +10,7 @@
     {
       "path": "../log"
     },
+    { "path": "../render/tsconfig.runtime.json" },
     { "path": "../render-wgpu/tsconfig.runtime.json" },
     { "path": "../registry" },
     { "path": "../types" },

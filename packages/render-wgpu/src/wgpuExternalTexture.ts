@@ -1,12 +1,7 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type { ExternalTexture } from '@flighthq/render/contract';
 import { cloneSampler, createTexture } from '@flighthq/texture/contract';
-import type {
-  CreateExternalTextureOptions,
-  EntityConstruction,
-  ExternalTexture,
-  Texture,
-  TextureLike,
-} from '@flighthq/types/contract';
+import type { CreateExternalTextureOptions, EntityConstruction, Texture, TextureLike } from '@flighthq/types/contract';
 import { ExternalTextureSourceKind } from '@flighthq/types/contract';
 
 import type { WgpuRenderState, WgpuTextureEntry } from './contract.render-wgpu-types.ts';

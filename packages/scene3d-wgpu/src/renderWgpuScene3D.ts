@@ -13,6 +13,7 @@ import {
   getWgpuColorAdjustmentMaterialFeature,
   getWgpuRenderStateRuntime,
 } from '@flighthq/render-wgpu/contract';
+import type { Scene3DRenderProxy } from '@flighthq/render/contract';
 import { prepareScene3DRender } from '@flighthq/render/contract';
 import { getNode3DRuntime, getNode3DWorldAlpha } from '@flighthq/scene3d/contract';
 import type {
@@ -24,7 +25,6 @@ import type {
   Scene3DLightBlock,
   Scene3DLightsLike,
   Node3D,
-  Scene3DRenderProxy,
   Material3D,
   WgpuMeshMaterialRenderer,
   WgpuRenderPass,

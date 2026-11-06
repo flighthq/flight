@@ -2,7 +2,8 @@ import { createCamera3D, createPerspectiveProjection } from '@flighthq/camera/co
 import { createMatrix3, createMatrix4 } from '@flighthq/geometry/contract';
 import { createToonMaterial } from '@flighthq/materials/contract';
 import { createBoxMeshGeometry } from '@flighthq/meshgeometry/contract';
-import type { Camera3D, Matrix3, Matrix4, Scene3DLightBlock, Scene3DRenderProxy } from '@flighthq/types/contract';
+import type { Scene3DRenderProxy } from '@flighthq/render/contract';
+import type { Camera3D, Matrix3, Matrix4, Scene3DLightBlock } from '@flighthq/types/contract';
 import { ToonMaterialKind } from '@flighthq/types/contract';
 
 import { getWgpuMeshMaterialRenderer } from './wgpuMeshMaterialRegistry.ts';

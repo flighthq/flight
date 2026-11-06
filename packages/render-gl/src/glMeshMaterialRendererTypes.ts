@@ -1,5 +1,6 @@
 import type { MeshGeometry } from '@flighthq/meshgeometry/contract';
-import type { Camera3D, Material, Scene3DLightBlock, Scene3DRenderProxy } from '@flighthq/types/contract';
+import type { Scene3DRenderProxy } from '@flighthq/render/contract';
+import type { Camera3D, Material, Scene3DLightBlock } from '@flighthq/types/contract';
 
 import type { GlRenderState } from './glRenderStateTypes.ts';
 

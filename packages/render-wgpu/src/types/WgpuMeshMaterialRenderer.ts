@@ -1,6 +1,7 @@
 import type { Material } from '@flighthq/materials/contract';
 import type { MeshGeometry } from '@flighthq/meshgeometry/contract';
-import type { Camera3D, Scene3DLightBlock, Scene3DRenderProxy } from '@flighthq/types/contract';
+import type { Scene3DRenderProxy } from '@flighthq/render/contract';
+import type { Camera3D, Scene3DLightBlock } from '@flighthq/types/contract';
 
 import type { WgpuRenderState } from './WgpuRenderState.ts';
 

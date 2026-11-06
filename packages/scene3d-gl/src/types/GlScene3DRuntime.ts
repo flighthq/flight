@@ -4,6 +4,7 @@ import type { Mesh } from '@flighthq/meshgeometry/contract';
 import type { MeshGeometry } from '@flighthq/meshgeometry/contract';
 import type { GlRenderState } from '@flighthq/render-gl/contract';
 import type { GlTextureRenderTarget } from '@flighthq/render-gl/contract';
+import type { Scene3DRenderProxy } from '@flighthq/render/contract';
 import type { Texture } from '@flighthq/texture/contract';
 import type { TextureColorSpace } from '@flighthq/texture/contract';
 import type { Camera3D } from '@flighthq/types/contract';
@@ -11,7 +12,6 @@ import type { GlSkinPaletteTexture } from '@flighthq/types/contract';
 import type { Node3D } from '@flighthq/types/contract';
 import type { Scene3DLightBlock } from '@flighthq/types/contract';
 import type { Scene3DLightsLike } from '@flighthq/types/contract';
-import type { Scene3DRenderProxy } from '@flighthq/types/contract';
 
 import type { GlMeshProgram } from './GlMeshProgram.ts';
 import type { GlPbrTransmissionSceneColor } from './GlPbrTransmissionSceneColor.ts';

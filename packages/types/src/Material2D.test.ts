@@ -1,4 +1,5 @@
 import type { Mesh } from '@flighthq/meshgeometry/contract';
+import type { Scene3DRenderProxy } from '@flighthq/render/contract';
 import { describe, expect, expectTypeOf, it } from 'vitest';
 
 import type { HasMaterial } from './HasMaterial.ts';
@@ -7,7 +8,6 @@ import type { Material2D } from './Material2D.ts';
 import type { Material3D } from './Material3D.ts';
 import type { PhongMaterial } from './PhongMaterial.ts';
 import type { RenderProxy2D } from './RenderProxy2D.ts';
-import type { Scene3DRenderProxy } from './Scene3DRenderProxy.ts';
 import type { StandardMaterial } from './StandardMaterial.ts';
 
 // These are compile-time assertions: the file failing to typecheck IS the failure signal. The runtime

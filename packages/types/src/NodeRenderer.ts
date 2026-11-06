@@ -1,4 +1,5 @@
-﻿import type { BatchFormat } from './BatchFormat.ts';
+﻿import type { BatchFormat } from '@flighthq/render/contract';
+
 import type { NodeAny } from './Node.ts';
 import type { RendererData } from './RendererData.ts';
 import type { RenderProxy } from './RenderProxy.ts';

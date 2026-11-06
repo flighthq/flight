@@ -1,11 +1,11 @@
 import type {
-  Entity,
   RenderTargetAxes,
   RenderTargetColorSpace,
   RenderTargetDepth,
   RenderTargetDimensions,
   RenderTargetFormat,
-} from '@flighthq/types/contract';
+} from '@flighthq/render/contract';
+import type { Entity } from '@flighthq/types/contract';
 
 import type { GlContext } from './types.ts';
 

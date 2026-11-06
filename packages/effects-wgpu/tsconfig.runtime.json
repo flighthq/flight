@@ -17,6 +17,7 @@
     { "path": "../entity" },
     { "path": "../geometry/tsconfig.runtime.json" },
     { "path": "../log" },
+    { "path": "../render/tsconfig.runtime.json" },
     { "path": "../render-wgpu/tsconfig.runtime.json" },
     { "path": "../registry" },
     { "path": "../types" },

@@ -12,6 +12,7 @@ import {
   invalidateGlRenderStateCache,
 } from '@flighthq/render-gl/contract';
 import type { GlMeshMaterialRenderer } from '@flighthq/render-gl/contract';
+import type { Scene3DRenderProxy } from '@flighthq/render/contract';
 import { prepareScene3DRender } from '@flighthq/render/contract';
 import { getNode3DRuntime, getNode3DWorldAlpha } from '@flighthq/scene3d/contract';
 import type {
@@ -25,7 +26,6 @@ import type {
   Scene3DLightsLike,
   Scene3DLightBlock,
   Node3D,
-  Scene3DRenderProxy,
   Material3D,
 } from '@flighthq/types/contract';
 import { BlendMode, StandardMaterialKind, MAX_FORWARD_LIGHTS } from '@flighthq/types/contract';

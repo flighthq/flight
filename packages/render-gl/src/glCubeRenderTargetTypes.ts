@@ -1,4 +1,5 @@
-import type { Entity, RenderTargetColorSpace } from '@flighthq/types/contract';
+import type { RenderTargetColorSpace } from '@flighthq/render/contract';
+import type { Entity } from '@flighthq/types/contract';
 
 import type { GlContext } from './types.ts';
 

@@ -11,4 +11,4 @@ export type { ModifierDefinition } from './ModifierDefinition.ts';
 export type { Node3D } from './Node3D.ts';
 export type { Scene3DLightBlock } from './Scene3DLightBlock.ts';
 export type { Scene3DLightsLike } from './Scene3DLights.ts';
-export type { Scene3DRenderProxy } from './Scene3DRenderProxy.ts';
+export type { Scene3DRenderProxy } from '@flighthq/render/contract';

@@ -4,12 +4,12 @@ import {
   registerWgpuBitmapTextureResolver,
   registerWgpuImageTextureResolver,
 } from '@flighthq/render-wgpu/contract';
+import type { Scene3DRenderProxy } from '@flighthq/render/contract';
 import type {
   Camera3D,
   Material,
   NormalMaterial,
   Scene3DLightBlock,
-  Scene3DRenderProxy,
   WgpuMeshMaterialRenderer,
   WgpuRenderState,
 } from '@flighthq/types/contract';

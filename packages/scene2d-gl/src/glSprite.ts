@@ -1,7 +1,7 @@
 import { createMatrix3 } from '@flighthq/geometry/contract';
 import { resolveGlQuadMaterialRenderer, resolveGlTexture } from '@flighthq/render-gl/contract';
 import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
-import { SCENE2D_WORKING_COLOR_SPACE } from '@flighthq/render/contract';
+import { SCENE2D_WORKING_COLOR_SPACE, BatchFormat } from '@flighthq/render/contract';
 import { createSpriteRendererData, isSpriteRendererDirty } from '@flighthq/scene2d/contract';
 import {
   getTextureSourceKind,
@@ -10,7 +10,7 @@ import {
   hasTextureSource,
 } from '@flighthq/texture/contract';
 import type { GlRenderState, RenderProxy2D, Scene2DRenderer, Sprite } from '@flighthq/types/contract';
-import { BatchFormat, RenderTargetTextureSourceKind } from '@flighthq/types/contract';
+import { RenderTargetTextureSourceKind } from '@flighthq/types/contract';
 
 import {
   QUAD_BATCH_INSTANCE_FLOATS,

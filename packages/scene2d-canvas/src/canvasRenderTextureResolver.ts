@@ -1,6 +1,6 @@
+import type { RenderTexture } from '@flighthq/render/contract';
 import { RenderTargetTextureSourceKind } from '@flighthq/texture/contract';
-import type { RenderTexture, Texture } from '@flighthq/types/contract';
-import type { CanvasRenderState } from '@flighthq/types/contract';
+import type { CanvasRenderState, Texture } from '@flighthq/types/contract';
 
 import { bindCanvasRenderTexture } from './canvasRenderTexture.ts';
 import { registerCanvasTextureResolver } from './canvasTextureResolver.ts';

@@ -1,6 +1,6 @@
 import { resolveWgpuQuadMaterialRenderer, resolveWgpuTexture } from '@flighthq/render-wgpu/contract';
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
-import { SCENE2D_WORKING_COLOR_SPACE } from '@flighthq/render/contract';
+import { SCENE2D_WORKING_COLOR_SPACE, BatchFormat } from '@flighthq/render/contract';
 import { noopRendererData } from '@flighthq/render/contract';
 import { getTextureHeight, getTextureWidth, hasTextureSource } from '@flighthq/texture/contract';
 import type {
@@ -11,7 +11,7 @@ import type {
   TintMaterialData,
   WgpuRenderState,
 } from '@flighthq/types/contract';
-import { BatchFormat, TextureAtlasRotation } from '@flighthq/types/contract';
+import { TextureAtlasRotation } from '@flighthq/types/contract';
 
 import {
   packWgpuQuadBatchMaterialInstance,

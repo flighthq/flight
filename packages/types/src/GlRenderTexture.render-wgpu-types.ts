@@ -1,8 +1,9 @@
+import type { RenderTexture } from '@flighthq/render/contract';
+
 import type { Entity } from './Entity.ts';
 import type { GlContext } from './GlContext.ts';
 import type { GlRenderState } from './GlRenderState.ts';
 import type { GlTextureRenderTarget, GlTextureRenderTargetPool } from './GlRenderTarget.ts';
-import type { RenderTexture } from './RenderTexture.ts';
 
 export type GlRenderTextureStatus = 'ready' | 'released' | 'unrendered' | 'writing';
 

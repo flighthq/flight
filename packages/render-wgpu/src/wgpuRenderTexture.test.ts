@@ -1,4 +1,5 @@
-import type { RenderTargetClear, RenderTexture } from '@flighthq/types/contract';
+import type { RenderTexture } from '@flighthq/render/contract';
+import type { RenderTargetClear } from '@flighthq/types/contract';
 import { RenderTargetTextureSourceKind } from '@flighthq/types/contract';
 
 import { submitWgpuFrame } from './wgpuFrame.ts';

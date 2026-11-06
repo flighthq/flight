@@ -3,8 +3,9 @@ import { createMatrix3, createMatrix4 } from '@flighthq/geometry/contract';
 import { createCustomShaderMaterial } from '@flighthq/materials/contract';
 import { createBoxMeshGeometry } from '@flighthq/meshgeometry/contract';
 import { getWgpuRenderStateRuntime, registerWgpuImageTextureResolver } from '@flighthq/render-wgpu/contract';
+import type { Scene3DRenderProxy } from '@flighthq/render/contract';
 import { createTexture } from '@flighthq/texture/contract';
-import type { Camera3D, ImageResource, Scene3DLightBlock, Scene3DRenderProxy } from '@flighthq/types/contract';
+import type { Camera3D, ImageResource, Scene3DLightBlock } from '@flighthq/types/contract';
 import { CustomShaderMaterialKind, ImageTextureSourceKind } from '@flighthq/types/contract';
 
 import {

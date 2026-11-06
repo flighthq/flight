@@ -1,13 +1,11 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type { RenderTargetAxes, RenderTargetDescriptor, RenderTargetFormatPolicy } from '@flighthq/render/contract';
 import { resolveRenderTargetDescriptor } from '@flighthq/render/contract';
 import type {
   EntityConstruction,
   GlRenderState,
   GlTextureRenderTarget,
   GlTextureRenderTargetPool,
-  RenderTargetAxes,
-  RenderTargetDescriptor,
-  RenderTargetFormatPolicy,
 } from '@flighthq/types/contract';
 
 import { clearGlRenderTarget } from './glFullscreenPass.ts';

@@ -1,6 +1,7 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { getKindMapKeys } from '@flighthq/registry/contract';
-import type { ImageResource, RenderTarget, RenderTexture, Texture, TextureSource } from '@flighthq/types/contract';
+import type { RenderTarget, RenderTexture } from '@flighthq/render/contract';
+import type { ImageResource, Texture, TextureSource } from '@flighthq/types/contract';
 import {
   BitmapTextureSourceKind,
   CompressedImageTextureSourceKind,

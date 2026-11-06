@@ -9,13 +9,13 @@ import {
   getWgpuSampler,
   resolveWgpuTexture,
 } from '@flighthq/render-wgpu/contract';
+import type { Scene3DRenderProxy } from '@flighthq/render/contract';
 import { getTextureUvMatrix, hasTextureSource, hasTextureUvTransform } from '@flighthq/texture/contract';
 import type {
   Camera3D,
   EntityConstruction,
   Material,
   Scene3DLightBlock,
-  Scene3DRenderProxy,
   Material3D,
   Texture,
   TextureLike,

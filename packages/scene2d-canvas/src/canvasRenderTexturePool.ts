@@ -1,4 +1,5 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type { RenderTarget, RenderTargetDescriptor, RenderTexture } from '@flighthq/render/contract';
 import { createRenderTexture, resetTextureUvTransform } from '@flighthq/texture/contract';
 import type {
   CanvasRenderState,
@@ -6,9 +7,6 @@ import type {
   CanvasRenderTexturePool,
   EntityConstruction,
   HostCanvasCapability,
-  RenderTarget,
-  RenderTargetDescriptor,
-  RenderTexture,
 } from '@flighthq/types/contract';
 
 import { destroyCanvasRenderTexture, invalidateCanvasRenderTexture } from './canvasRenderTexture.ts';

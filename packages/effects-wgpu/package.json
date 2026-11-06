@@ -46,6 +46,7 @@
     "@flighthq/entity": "*",
     "@flighthq/geometry": "*",
     "@flighthq/log": "*",
+    "@flighthq/render": "*",
     "@flighthq/render-wgpu": "*",
     "@flighthq/registry": "*",
     "@flighthq/types": "*"

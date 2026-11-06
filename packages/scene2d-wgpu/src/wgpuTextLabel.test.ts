@@ -6,6 +6,7 @@ import {
 import { beginWgpuScreenRenderPassForTest, submitWgpuFrame } from '@flighthq/render-wgpu/contract';
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
 import { createWgpuRenderStateForTest, installWgpuMock } from '@flighthq/render-wgpu/contract';
+import { BatchFormat } from '@flighthq/render/contract';
 import { createTextLabel } from '@flighthq/text/contract';
 import * as textlayout from '@flighthq/textlayout/contract';
 import type {
@@ -15,7 +16,6 @@ import type {
   ImageResource,
   RenderProxy2D,
 } from '@flighthq/types/contract';
-import { BatchFormat } from '@flighthq/types/contract';
 
 import { registerWgpuStandardMaterial } from './wgpuStandardMaterial.ts';
 import { wgpuTextLabelRenderer, drawWgpuTextLabel } from './wgpuTextLabel.ts';

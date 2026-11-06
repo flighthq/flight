@@ -1,88 +1,14 @@
-import type { TextureSource } from './TextureSource.ts';
-import type { RenderTargetTextureSourceKind } from './TextureSourceKind.ts';
-
-// Substrate-agnostic render-target description. A target carries axes, not booleans: `format`/
-// `colorFormats` unlock HDR and the G-buffer, `colorAttachments` is MRT/deferred, `sampleCount` is
-// MSAA, `depth` carries target-scope stencil and (for '-sampled') a readable depth texture. The
-// per-backend target types (GlRenderTarget, WgpuRenderTarget) realize these axes; each splits into a
-// screen realization (the swap chain) and a texture realization (GlTextureRenderTarget,
-// WgpuTextureRenderTarget — sampleable offscreen storage).
-
-// Common allocation-backed target identity used by backend-neutral assemblies. Backend target types
-// extend this with their storage handles and effective format axes.
-export interface RenderTargetDimensions {
-  height: number;
-  width: number;
-}
-
-export type RenderTargetFormat = 'rgba8' | 'rgba16f' | 'rgba32f';
-
-// Allocation policy for a requested color format. 'preferred' permits a backend to select a
-// renderable fallback and report it through effective axes; 'required' refuses substitution.
-export type RenderTargetFormatPolicy = 'preferred' | 'required';
-
-export type RenderTargetDepth = 'none' | 'depth-stencil' | 'depth-stencil-sampled';
-
-// Color space of the pixels a target holds — a declared property of the target, NOT inferred from
-// `format` ('rgba16f' can hold either linear HDR scene radiance or already-sRGB 2D content). 'linear'
-// content (scene-gl materials output linear) must be sRGB-encoded once at present; 'srgb' content (2D
-// display-object colors, already encoded) is presented as-is. The present step reads this to decide
-// whether to run the linear->sRGB OETF, so gamma is neither double-applied nor skipped.
-export type RenderTargetColorSpace = 'linear' | 'srgb';
-
-// Canonical storage axes after descriptor defaults and substrate-independent normalization are
-// resolved. A backend starts from this shape, then records any device-driven substitutions on its
-// realized target rather than silently treating the requested descriptor as effective storage.
-export interface RenderTargetAxes {
-  readonly width: number;
-  readonly height: number;
-  readonly format: RenderTargetFormat;
-  readonly colorAttachments: number;
-  readonly colorFormats: ReadonlyArray<RenderTargetFormat>;
-  readonly sampleCount: number;
-  readonly depth: RenderTargetDepth;
-  readonly colorSpace: RenderTargetColorSpace;
-}
-
-export interface RenderTargetAxisDifference {
-  readonly axis: keyof RenderTargetAxes;
-  readonly effective: RenderTargetAxes[keyof RenderTargetAxes];
-  readonly requested: RenderTargetAxes[keyof RenderTargetAxes];
-}
-
-export interface RenderTargetExplanation {
-  readonly differences: ReadonlyArray<RenderTargetAxisDifference>;
-  readonly effective: Readonly<RenderTargetAxes>;
-  readonly requested: Readonly<RenderTargetAxes>;
-}
-
-export interface RenderTargetDescriptor {
-  width: number;
-  height: number;
-  // Color attachment 0 format. Default 'rgba8'. 'rgba16f'/'rgba32f' give HDR headroom for bloom and
-  // are the float formats a future G-buffer uses.
-  format?: RenderTargetFormat;
-  // Number of color attachments (MRT). Default 1. >1 is the deferred-shading / G-buffer path.
-  colorAttachments?: number;
-  // Per-attachment format override when colorAttachments > 1; index 0 falls back to `format`.
-  colorFormats?: ReadonlyArray<RenderTargetFormat>;
-  // MSAA sample count. Default 1 (no MSAA). 2 | 4 | 8 — clamped to the device max.
-  sampleCount?: number;
-  // Depth/stencil attachment. Default 'none'. 'depth-stencil-sampled' additionally exposes the depth
-  // as a sampleable texture for depth-dependent effects (SSAO, depth-of-field, fog).
-  depth?: RenderTargetDepth;
-  // Color space of the content the target will hold. Default 'srgb' (existing callers + all 2D are
-  // unchanged: presented as-is). Producers of linear content (the 3D scene path) declare 'linear' so
-  // the present applies the single sRGB encode.
-  colorSpace?: RenderTargetColorSpace;
-}
-
-// GPU-owned TextureSource descriptor. A render backend realizes this request lazily in the state that
-// first renders into or samples its owning RenderTexture.
-export interface RenderTarget extends RenderTargetDescriptor, TextureSource {
-  readonly kind: typeof RenderTargetTextureSourceKind;
-}
-
-// A descriptor with every default resolved. Backend realizations start from this shape and apply
-// only device capability substitutions.
-export interface ResolvedRenderTargetDescriptor extends RenderTargetAxes {}
+/** @deprecated Import render contracts from `@flighthq/render/contract`. */
+export type {
+  RenderTarget,
+  RenderTargetAxes,
+  RenderTargetAxisDifference,
+  RenderTargetColorSpace,
+  RenderTargetDepth,
+  RenderTargetDescriptor,
+  RenderTargetDimensions,
+  RenderTargetExplanation,
+  RenderTargetFormat,
+  RenderTargetFormatPolicy,
+  ResolvedRenderTargetDescriptor,
+} from '@flighthq/render/contract';

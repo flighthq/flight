@@ -183,7 +183,6 @@
     "src/Adjustment.ts",
     "src/AdjustmentKind.ts",
     "src/AlphaType.ts",
-    "src/BatchFormat.ts",
     "src/Bitmap.ts",
     "src/BlendMode.materials-types.ts",
     "src/CanvasShapeDrawState.ts",

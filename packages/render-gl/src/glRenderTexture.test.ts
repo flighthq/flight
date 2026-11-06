@@ -6,7 +6,8 @@ import {
   removeLogSink,
 } from '@flighthq/log/contract';
 import type { LogState } from '@flighthq/log/contract';
-import type { LogEntry, MemoryLogSink, RenderTargetClear, RenderTexture } from '@flighthq/types/contract';
+import type { RenderTexture } from '@flighthq/render/contract';
+import type { LogEntry, MemoryLogSink, RenderTargetClear } from '@flighthq/types/contract';
 import { RenderTargetTextureSourceKind } from '@flighthq/types/contract';
 
 import { enableGlRenderTextureGuards } from './enableGlRenderTextureGuards.ts';

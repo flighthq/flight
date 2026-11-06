@@ -1,5 +1,6 @@
+import type { RenderTexture } from '@flighthq/render/contract';
+
 import type { Entity } from './Entity.ts';
-import type { RenderTexture } from './RenderTexture.ts';
 import type { WgpuRenderState } from './WgpuRenderState.ts';
 import type { WgpuRenderTargetPool, WgpuTextureRenderTarget } from './WgpuRenderTarget.ts';
 

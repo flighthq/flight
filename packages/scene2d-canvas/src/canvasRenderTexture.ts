@@ -1,4 +1,5 @@
-import type { CanvasRenderState, RenderTexture } from '@flighthq/types/contract';
+import type { RenderTexture } from '@flighthq/render/contract';
+import type { CanvasRenderState } from '@flighthq/types/contract';
 
 import { beginCanvasRenderPass, endCanvasRenderPass } from './canvasRenderPass.ts';
 import { registerCanvasRenderStateTeardown } from './canvasRenderState.ts';

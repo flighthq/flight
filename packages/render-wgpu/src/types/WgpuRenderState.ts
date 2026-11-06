@@ -2,14 +2,13 @@ import type { ColorScaleBias } from '@flighthq/adjustments/contract';
 import type { EntityRaw, EntityRuntime, EntityRuntimeKey, Kind } from '@flighthq/entity/contract';
 import type { ImageResource } from '@flighthq/image/contract';
 import type { BlendMode, Material, TintMaterialData } from '@flighthq/materials/contract';
+import type { ExternalTexture, RenderTexture } from '@flighthq/render/contract';
 import type { SamplerLike, TextureSource } from '@flighthq/texture/contract';
 import type {
-  ExternalTexture,
   RenderProxy2D,
   RenderRegistries,
   RenderState,
   RenderStateRuntime,
-  RenderTexture,
   ShapeRasterizer,
   WgpuColorAdjustmentMaterialFeature,
   WgpuColorAdjustmentMaterialFeatureGuard,

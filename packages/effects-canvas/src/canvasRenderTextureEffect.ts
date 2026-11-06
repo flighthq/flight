@@ -1,6 +1,7 @@
 import type { Effect } from '@flighthq/effects/contract';
+import type { RenderTexture } from '@flighthq/render/contract';
 import { getCanvasRenderTextureTarget, writeCanvasRenderTextureTarget } from '@flighthq/scene2d-canvas/contract';
-import type { CanvasRenderState, CanvasRenderTexturePool, RenderTexture } from '@flighthq/types/contract';
+import type { CanvasRenderState, CanvasRenderTexturePool } from '@flighthq/types/contract';
 
 import { getCanvasEffectRunner } from './canvasEffectRegistry.ts';
 

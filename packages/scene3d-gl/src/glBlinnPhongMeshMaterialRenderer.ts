@@ -3,13 +3,13 @@ import { allocateLinearColor, unpackColorToLinear } from '@flighthq/color/contra
 import type { MeshGeometry } from '@flighthq/meshgeometry/contract';
 import { resolveGlTexture } from '@flighthq/render-gl/contract';
 import type { GlMeshMaterialRenderer } from '@flighthq/render-gl/contract';
+import type { Scene3DRenderProxy } from '@flighthq/render/contract';
 import type {
   BlinnPhongMaterial,
   Camera3D,
   GlRenderState,
   Material,
   Scene3DLightBlock,
-  Scene3DRenderProxy,
 } from '@flighthq/types/contract';
 import { BlinnPhongMaterialKind } from '@flighthq/types/contract';
 

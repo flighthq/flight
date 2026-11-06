@@ -47,6 +47,7 @@
     "@flighthq/geometry": "*",
     "@flighthq/log": "*",
     "@flighthq/registry": "*",
+    "@flighthq/render": "*",
     "@flighthq/render-gl": "*",
     "@flighthq/types": "*"
   },

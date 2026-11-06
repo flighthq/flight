@@ -20,6 +20,7 @@ import {
   releaseGlTextureRenderTarget,
   resizeGlTextureRenderTarget,
 } from '@flighthq/render-gl/contract';
+import type { RenderTargetColorSpace } from '@flighthq/render/contract';
 import type {
   Adjustment,
   GlRenderPass,
@@ -27,7 +28,6 @@ import type {
   GlTextureRenderTarget,
   NonEntityCreateResult,
   RenderTargetClear,
-  RenderTargetColorSpace,
 } from '@flighthq/types/contract';
 
 import { applyColorLutPassToGl } from './glColorLutPass.ts';

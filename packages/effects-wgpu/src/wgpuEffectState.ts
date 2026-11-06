@@ -22,12 +22,8 @@ import {
   resizeWgpuTextureRenderTarget,
 } from '@flighthq/render-wgpu/contract';
 import type { WgpuRenderPass, WgpuRenderState, WgpuTextureRenderTarget } from '@flighthq/render-wgpu/contract';
-import type {
-  Adjustment,
-  NonEntityCreateResult,
-  RenderTargetClear,
-  RenderTargetColorSpace,
-} from '@flighthq/types/contract';
+import type { RenderTargetColorSpace } from '@flighthq/render/contract';
+import type { Adjustment, NonEntityCreateResult, RenderTargetClear } from '@flighthq/types/contract';
 
 import type { WgpuEffectState, WgpuEffectStateSampleCountGuard, WgpuEffectStateSkipGuard } from './types.ts';
 import { applyColorLutPassToWgpu } from './wgpuColorLutPass.ts';

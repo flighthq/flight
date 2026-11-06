@@ -1,4 +1,4 @@
-import type { RenderTargetColorSpace } from '@flighthq/types/contract';
+import type { RenderTargetColorSpace } from './types.ts';
 
 // The colour space the 2D tower composites in, declared once for both backend leaf renderers.
 //

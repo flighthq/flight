@@ -1,5 +1,6 @@
+import type { RenderTexture } from '@flighthq/render/contract';
 import { resolveRenderTargetDescriptor } from '@flighthq/render/contract';
-import type { RenderTargetClear, RenderTexture, SamplerLike, TextureColorSpace } from '@flighthq/types/contract';
+import type { RenderTargetClear, SamplerLike, TextureColorSpace } from '@flighthq/types/contract';
 
 import type {
   GlRenderPass,

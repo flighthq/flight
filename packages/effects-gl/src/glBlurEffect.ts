@@ -6,13 +6,8 @@ import {
   withGlRenderState,
   writeGlRenderTextureTarget,
 } from '@flighthq/render-gl/contract';
-import type {
-  BlurEffect,
-  GlEffectRunner,
-  GlRenderState,
-  GlTextureRenderTarget,
-  RenderTexture,
-} from '@flighthq/types/contract';
+import type { RenderTexture } from '@flighthq/render/contract';
+import type { BlurEffect, GlEffectRunner, GlRenderState, GlTextureRenderTarget } from '@flighthq/types/contract';
 
 import { getGlEffectProgram, getGlEffectUniformLocation } from './glEffectProgramCache.ts';
 import { registerGlEffect } from './glEffectRegistry.ts';

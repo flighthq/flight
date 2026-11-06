@@ -1,4 +1,5 @@
-import type { Entity, RenderTexture } from '@flighthq/types/contract';
+import type { RenderTexture } from '@flighthq/render/contract';
+import type { Entity } from '@flighthq/types/contract';
 
 import type { GlRenderState } from './glRenderStateTypes.ts';
 import type { GlTextureRenderTarget, GlTextureRenderTargetPool } from './glRenderTargetTypes.ts';
