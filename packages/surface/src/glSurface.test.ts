@@ -1,16 +1,29 @@
 import type { AppWindow } from '@flighthq/app/contract';
 import { finishEntity } from '@flighthq/entity/contract';
-import type { Entity, GlContext, GlSurface, HostGlCapability } from '@flighthq/types/contract';
 
 import { createGlSurface, createGlSurfaceFromNativeHandle, destroyGlSurface } from './glSurface.ts';
 import { allocateSurface, getSurfaceHandle } from './surface.ts';
+import type { HostSurfaceContextCapability, SurfaceWithContext } from './types.ts';
 
-function glCapability(fields: HostGlCapability): HostGlCapability {
-  return finishEntity(Object.assign(allocateSurface(null), fields) as never) as unknown as HostGlCapability;
+interface TestGlContext {
+  readonly marker: 'gl';
+}
+
+interface TestGlOptions {
+  readonly antialias?: boolean;
+}
+
+type TestGlSurface = SurfaceWithContext<TestGlContext, 'GlSurface'>;
+type TestGlCapability = HostSurfaceContextCapability<TestGlContext, TestGlOptions> & {
+  subscribe(): () => void;
+};
+
+function glCapability(fields: TestGlCapability): TestGlCapability {
+  return finishEntity(Object.assign(allocateSurface(null), fields) as never) as unknown as TestGlCapability;
 }
 
 const appWindow = {} as AppWindow;
-const context = {} as GlContext;
+const context: TestGlContext = { marker: 'gl' };
 const defaults = { release() {}, subscribe: () => () => {} };
 
 describe('createGlSurface', () => {
@@ -92,7 +105,7 @@ describe('destroyGlSurface', () => {
       release,
       subscribe: () => () => {},
     });
-    const surface = createGlSurface(capability, appWindow, 8, 8) as GlSurface;
+    const surface = createGlSurface(capability, appWindow, 8, 8) as TestGlSurface;
     destroyGlSurface(capability, surface);
 
     expect(release).toHaveBeenCalledExactlyOnceWith(surface);

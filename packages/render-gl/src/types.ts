@@ -1,5 +1,4 @@
-import type { AppWindow } from '@flighthq/app/contract';
-import type { NativeSurfaceHandle, Surface } from '@flighthq/surface/contract';
+import type { HostSurfaceContextCapability, Surface, SurfaceWithContext } from '@flighthq/surface/contract';
 
 // The GL backend's context contract. This list is derived from the members used by the production
 // render-gl, scene2d-gl, effects-gl, scene3d-gl, example, and capture call graph. Keeping the
@@ -260,6 +259,8 @@ export interface GlContextOptions {
   readonly powerPreference?: WebGLPowerPreference;
 }
 
+export type GlSurface = SurfaceWithContext<GlContext, 'GlSurface'>;
+
 export interface GlCapabilities {
   maxTextureSize: number;
   maxTextureUnits: number;
@@ -280,15 +281,7 @@ export interface GlCapabilities {
 // before the window surface exists. Every other operation addresses the Surface itself: null from
 // `acquire` means the drawable cannot yield a context, and `release` drops the host's record without
 // forcing context loss, which the driver owns and `subscribe` reports.
-export interface HostGlCapability {
-  acquire(surface: Readonly<Surface>, options?: Readonly<GlContextOptions>): GlContext | null;
-  create(
-    window: Readonly<AppWindow>,
-    width: number,
-    height: number,
-    options?: Readonly<GlContextOptions>,
-  ): NativeSurfaceHandle | null;
-  release(surface: Readonly<Surface>): void;
+export interface HostGlCapability extends HostSurfaceContextCapability<GlContext, GlContextOptions> {
   subscribe(surface: Readonly<Surface>, onLost: () => void, onRestored: () => void): () => void;
 }
 

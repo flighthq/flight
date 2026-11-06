@@ -5,9 +5,11 @@ export type {
   HostCanvasCapabilities,
   HostCanvasCapability,
   HostSurfaceCapabilities,
+  HostSurfaceContextCapability,
   HostSurfaceDisplayCapability,
   HostSurfaceResizeCapability,
   NativeSurfaceHandle,
   Surface,
+  SurfaceWithContext,
   SurfaceRuntime,
 } from './types.ts';

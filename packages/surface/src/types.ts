@@ -13,6 +13,28 @@ export interface Surface extends EntityRaw {
   [EntityRuntimeKey]: EntityRuntime | undefined;
 }
 
+// A backend-neutral surface whose public context is supplied by the capability that acquired it.
+// Backend packages specialize both type parameters (`GlContext`/`GlSurface`, for example), so this
+// feature-layer contract never imports a renderer while preserving the exact context type for callers.
+export interface SurfaceWithContext<Context, Brand extends string> extends Surface {
+  readonly __brand: Brand;
+  readonly context: Context;
+}
+
+// The structural acquire/create/release seam shared by surface factories. A backend capability may add
+// operations (GL adds context-loss subscription) and remains assignable here without a feature->backend
+// dependency. Options and context stay correlated through inference at the factory call.
+export interface HostSurfaceContextCapability<Context, Options> {
+  acquire(surface: Readonly<Surface>, options?: Readonly<Options>): Context | null;
+  create(
+    window: Readonly<AppWindow>,
+    width: number,
+    height: number,
+    options?: Readonly<Options>,
+  ): NativeSurfaceHandle | null;
+  release(surface: Readonly<Surface>): void;
+}
+
 // Package-private machinery for a Surface. `handle` is required rather than a nullable subsystem slot: a
 // surface without a drawable is meaningless, so it is set once at construction and lives exactly as long
 // as the surface. This is deliberately not a side table — a WeakMap keyed by surface would have no C/C++
