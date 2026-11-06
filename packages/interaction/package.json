@@ -65,7 +65,6 @@
   },
   "devDependencies": {
     "@flighthq/quadbatch": "*",
-    "@flighthq/scene2d": "*",
     "typescript": "^7.0.2"
   },
   "description": "Interaction: pointer event dispatch, hit testing, focus, and cursor management",

@@ -7,6 +7,7 @@ import {
 } from '@flighthq/render-gl/contract';
 import { MorphShapeKind, Scale9ShapeKind, ShapeKind } from '@flighthq/shape/contract';
 import { RichTextKind, TextLabelKind } from '@flighthq/text/contract';
+import { TilemapKind } from '@flighthq/tilemap/contract';
 import {
   BitmapTextureSourceKind,
   BlendMode,
@@ -18,7 +19,6 @@ import {
   Scale9SpriteKind,
   SpriteKind,
   StandardMaterialKind,
-  TilemapKind,
 } from '@flighthq/types/contract';
 
 import { glSpriteRenderer } from './glSprite.ts';

@@ -29,7 +29,7 @@
     { "path": "../render-gl" },
     { "path": "../shape/tsconfig.runtime.json" },
     { "path": "../quadbatch" },
-    { "path": "../tilemap" },
+    { "path": "../tilemap/tsconfig.runtime.json" },
     { "path": "../text/tsconfig.runtime.json" },
     { "path": "../textformat/tsconfig.runtime.json" },
     { "path": "../textinput/tsconfig.runtime.json" },

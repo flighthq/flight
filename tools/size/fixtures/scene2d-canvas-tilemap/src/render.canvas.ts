@@ -17,8 +17,7 @@ import {
 import { createCanvasSurfaceFromNativeHandle } from '@flighthq/surface';
 import { createTexture } from '@flighthq/texture';
 import { addTextureAtlasRegion, createTextureAtlas } from '@flighthq/textureatlas';
-import { createTilemap, setTilemapTile } from '@flighthq/tilemap';
-import { TilemapKind } from '@flighthq/types';
+import { createTilemap, setTilemapTile, TilemapKind } from '@flighthq/tilemap';
 
 // REQUIRED WIRING for one tile grid, and nothing else:
 //   surface   webHostCanvas — the single Canvas surface provider, NOT the aggregate

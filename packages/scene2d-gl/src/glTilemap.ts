@@ -5,13 +5,8 @@ import { noopRendererData } from '@flighthq/render/contract';
 import type { RenderProxy2D } from '@flighthq/render/contract';
 import { getTextureHeight, getTextureWidth, hasTextureSource } from '@flighthq/texture/contract';
 import { TextureAtlasRotation } from '@flighthq/textureatlas/contract';
-import type {
-  ColorScaleBias,
-  GlRenderState,
-  SpriteRenderer,
-  Tilemap,
-  TintMaterialData,
-} from '@flighthq/types/contract';
+import type { Tilemap } from '@flighthq/tilemap/contract';
+import type { ColorScaleBias, GlRenderState, SpriteRenderer, TintMaterialData } from '@flighthq/types/contract';
 
 import {
   QUAD_BATCH_INSTANCE_FLOATS,

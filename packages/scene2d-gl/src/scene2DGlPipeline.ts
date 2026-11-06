@@ -9,6 +9,7 @@ import {
 import type { NodeRenderer } from '@flighthq/render/contract';
 import { MorphShapeKind, Scale9ShapeKind, ShapeKind } from '@flighthq/shape/contract';
 import { RichTextKind, TextLabelKind } from '@flighthq/text/contract';
+import { TilemapKind } from '@flighthq/tilemap/contract';
 import type { GlRenderRegistries, Kind } from '@flighthq/types/contract';
 import {
   DisplayObjectKind,
@@ -17,7 +18,6 @@ import {
   Scale9SpriteKind,
   SpriteKind,
   StandardMaterialKind,
-  TilemapKind,
 } from '@flighthq/types/contract';
 
 import { glBitmapTextRenderer } from './glBitmapText.ts';

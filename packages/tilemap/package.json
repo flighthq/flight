@@ -42,11 +42,12 @@
   "dependencies": {
     "@flighthq/entity": "*",
     "@flighthq/geometry": "*",
+    "@flighthq/materials": "*",
     "@flighthq/node": "*",
     "@flighthq/quadbatch": "*",
     "@flighthq/scene2d": "*",
     "@flighthq/signals": "*",
-    "@flighthq/types": "*"
+    "@flighthq/textureatlas": "*"
   },
   "devDependencies": {
     "typescript": "^7.0.2"

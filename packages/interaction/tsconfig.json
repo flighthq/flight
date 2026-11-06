@@ -47,7 +47,7 @@
       "path": "../quadbatch"
     },
     {
-      "path": "../tilemap"
+      "path": "../tilemap/tsconfig.runtime.json"
     },
     {
       "path": "../bitmap/tsconfig.runtime.json"

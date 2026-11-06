@@ -442,7 +442,7 @@
       "path": "../tilemap-formats"
     },
     {
-      "path": "../tilemap"
+      "path": "../tilemap/tsconfig.runtime.json"
     },
     {
       "path": "../timeline/tsconfig.runtime.json"

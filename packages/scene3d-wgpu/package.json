@@ -69,6 +69,7 @@
     "@flighthq/bitmaptext": "*",
     "@flighthq/shape": "*",
     "@flighthq/text": "*",
+    "@flighthq/tilemap": "*",
     "@flighthq/video": "*",
     "@webgpu/types": "*",
     "typescript": "^7.0.2"

@@ -15,6 +15,7 @@ import {
 } from '@flighthq/shading/contract';
 import { MorphShapeKind, Scale9ShapeKind, ShapeKind } from '@flighthq/shape/contract';
 import { RichTextKind, TextLabelKind } from '@flighthq/text/contract';
+import { TilemapKind } from '@flighthq/tilemap/contract';
 import {
   BitmapTextureSourceKind,
   BlinnPhongMaterialKind,
@@ -36,7 +37,6 @@ import {
   SpriteKind,
   StandardMaterialKind,
   StandardPbrMaterialKind,
-  TilemapKind,
   ToonMaterialKind,
   UnlitMaterialKind,
   VertexColorMaterialKind,

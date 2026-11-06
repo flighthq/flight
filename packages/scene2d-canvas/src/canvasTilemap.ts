@@ -1,6 +1,7 @@
 ﻿import { noopRendererData } from '@flighthq/render/contract';
 import type { RenderProxy2D } from '@flighthq/render/contract';
-import type { CanvasRenderState, SpriteRenderer, Tilemap } from '@flighthq/types/contract';
+import type { Tilemap } from '@flighthq/tilemap/contract';
+import type { CanvasRenderState, SpriteRenderer } from '@flighthq/types/contract';
 
 import { drawCanvasAtlasRegion } from './canvasAtlasRegion.ts';
 import { applyCanvasMaterial } from './canvasQuadMaterialRegistry.ts';

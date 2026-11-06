@@ -1,13 +1,5 @@
 {
-  "extends": "../../tsconfig.base.json",
-  "compilerOptions": {
-    "composite": true,
-    "rootDir": "src",
-    "outDir": "dist",
-    "declaration": true,
-    "declarationMap": true,
-    "sourceMap": true
-  },
+  "files": [],
   "references": [
     {
       "path": "../entity"
@@ -16,7 +8,10 @@
       "path": "../geometry/tsconfig.runtime.json"
     },
     {
-      "path": "../node/tsconfig.runtime.json"
+      "path": "../materials/tsconfig.contract.json"
+    },
+    {
+      "path": "../node/tsconfig.contract.json"
     },
     {
       "path": "../quadbatch"
@@ -28,8 +23,13 @@
       "path": "../signals"
     },
     {
-      "path": "../types"
+      "path": "../textureatlas/tsconfig.runtime.json"
+    },
+    {
+      "path": "./tsconfig.contract.json"
+    },
+    {
+      "path": "./tsconfig.runtime.json"
     }
-  ],
-  "include": ["src"]
+  ]
 }

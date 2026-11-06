@@ -4,13 +4,13 @@ import { withKindMapEntry } from '@flighthq/registry/contract';
 import type { NodeRenderer } from '@flighthq/render/contract';
 import { MorphShapeKind, Scale9ShapeKind, ShapeKind } from '@flighthq/shape/contract';
 import { RichTextKind, TextLabelKind } from '@flighthq/text/contract';
+import { TilemapKind } from '@flighthq/tilemap/contract';
 import {
   DisplayObjectKind,
   QuadBatchKind,
   RenderCacheKind,
   Scale9SpriteKind,
   SpriteKind,
-  TilemapKind,
 } from '@flighthq/types/contract';
 
 import { canvasBitmapTextRenderer } from './canvasBitmapText.ts';

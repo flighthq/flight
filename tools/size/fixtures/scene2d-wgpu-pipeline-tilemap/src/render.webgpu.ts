@@ -22,8 +22,8 @@ import { standardWgpuQuadMaterialRenderer } from '@flighthq/scene2d-wgpu/contrac
 import { createWgpuSurface } from '@flighthq/surface';
 import { createTexture } from '@flighthq/texture';
 import { createTextureAtlas, createTextureAtlasRegion } from '@flighthq/textureatlas';
-import { createTilemap } from '@flighthq/tilemap';
-import { StandardMaterialKind, TilemapKind } from '@flighthq/types';
+import { createTilemap, TilemapKind } from '@flighthq/tilemap';
+import { StandardMaterialKind } from '@flighthq/types';
 
 const appWindow = createAppWindow();
 openWindow(webHostWindowLifecycle, webHostWindowGeometry, appWindow, {});

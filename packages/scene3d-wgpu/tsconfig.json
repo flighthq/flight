@@ -74,6 +74,9 @@
       "path": "../textureatlas/tsconfig.runtime.json"
     },
     {
+      "path": "../tilemap/tsconfig.contract.json"
+    },
+    {
       "path": "../types"
     },
     {

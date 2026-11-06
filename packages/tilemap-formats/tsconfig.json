@@ -15,7 +15,7 @@
     { "path": "../log" },
     { "path": "../registry" },
     { "path": "../requirement" },
-    { "path": "../tilemap" },
+    { "path": "../tilemap/tsconfig.runtime.json" },
     { "path": "../xml" }
   ],
   "include": ["src"]

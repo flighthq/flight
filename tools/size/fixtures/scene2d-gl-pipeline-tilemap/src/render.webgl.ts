@@ -21,8 +21,7 @@ import { glTilemapRenderer, registerGlStandardMaterial, renderGlScene2D } from '
 import { createGlSurface } from '@flighthq/surface';
 import { createTexture } from '@flighthq/texture';
 import { createTextureAtlas, createTextureAtlasRegion } from '@flighthq/textureatlas';
-import { createTilemap } from '@flighthq/tilemap';
-import { TilemapKind } from '@flighthq/types';
+import { createTilemap, TilemapKind } from '@flighthq/tilemap';
 
 const appWindow = createAppWindow();
 openWindow(webHostWindowLifecycle, webHostWindowGeometry, appWindow, {});

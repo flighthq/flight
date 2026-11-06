@@ -4,6 +4,7 @@ import { buildWgpuRenderRegistries } from '@flighthq/render-wgpu/contract';
 import type { NodeRenderer } from '@flighthq/render/contract';
 import { MorphShapeKind, Scale9ShapeKind, ShapeKind } from '@flighthq/shape/contract';
 import { RichTextKind, TextLabelKind } from '@flighthq/text/contract';
+import { TilemapKind } from '@flighthq/tilemap/contract';
 import type { Kind, WgpuRenderRegistries } from '@flighthq/types/contract';
 import {
   DisplayObjectKind,
@@ -12,7 +13,6 @@ import {
   Scale9SpriteKind,
   SpriteKind,
   StandardMaterialKind,
-  TilemapKind,
 } from '@flighthq/types/contract';
 
 import { wgpuBitmapTextRenderer } from './wgpuBitmapText.ts';

@@ -2,7 +2,8 @@ import { MovieClipKind } from '@flighthq/movieclip/contract';
 import { DisplayObjectKind, HtmlViewKind, Scale9SpriteKind, SpriteKind } from '@flighthq/scene2d/contract';
 import { MorphShapeKind, Scale9ShapeKind, ShapeKind } from '@flighthq/shape/contract';
 import { RichTextKind, TextLabelKind } from '@flighthq/text/contract';
-import { QuadBatchKind, TilemapKind } from '@flighthq/types/contract';
+import { TilemapKind } from '@flighthq/tilemap/contract';
+import { QuadBatchKind } from '@flighthq/types/contract';
 
 import {
   defaultNode2DHitTestHandler,

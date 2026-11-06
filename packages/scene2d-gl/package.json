@@ -60,6 +60,7 @@
     "@flighthq/textformat": "*",
     "@flighthq/textinput": "*",
     "@flighthq/textlayout": "*",
+    "@flighthq/tilemap": "*",
     "@flighthq/texture": "*",
     "@flighthq/textureatlas": "*",
     "@flighthq/types": "*",
@@ -70,7 +71,6 @@
     "@flighthq/clip": "*",
     "@flighthq/glyphatlas": "*",
     "@flighthq/quadbatch": "*",
-    "@flighthq/tilemap": "*",
     "typescript": "^7.0.2"
   },
   "description": "WebGL2 display-object renderers (bitmap, shape, sprite, text, tilemap, particles)",

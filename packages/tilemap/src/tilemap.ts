@@ -1,20 +1,14 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
+import type { Rectangle, Vector2Like } from '@flighthq/geometry/contract';
+import type { TintMaterialData } from '@flighthq/materials/contract';
+import type { BoundsNode, MethodsOf } from '@flighthq/node/contract';
 import { createNode2D, createNode2DRuntime, getNode2DRuntime } from '@flighthq/scene2d/contract';
+import type { Node2DFields } from '@flighthq/scene2d/contract';
 import { createSignal } from '@flighthq/signals/contract';
-import type {
-  BoundsNode,
-  EntityConstruction,
-  MethodsOf,
-  Node2DFields,
-  Rectangle,
-  Tilemap,
-  TilemapData,
-  TilemapRuntime,
-  TilemapSignals,
-  TintMaterialData,
-  Vector2Like,
-} from '@flighthq/types/contract';
-import { TilemapKind } from '@flighthq/types/contract';
+
+import type { Tilemap, TilemapData, TilemapRuntime, TilemapSignals } from './types.ts';
+import { TilemapKind } from './types.ts';
 
 /** Fills all cells with -1 (empty). Equivalent to `fillTilemapTiles(tilemap, -1)`. Fires `onCleared` when signals are enabled. */
 export function clearTilemap(tilemap: Tilemap): void {

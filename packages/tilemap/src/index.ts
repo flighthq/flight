@@ -18,3 +18,5 @@ export {
   setTilemapTiles,
   setTilemapTileTint,
 } from './tilemap.ts';
+export type { Tilemap, TilemapData, TilemapRuntime, TilemapSignals } from './types.ts';
+export { TilemapKind } from './types.ts';

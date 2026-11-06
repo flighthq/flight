@@ -59,7 +59,7 @@
       "path": "../registry"
     },
     {
-      "path": "../tilemap"
+      "path": "../tilemap/tsconfig.runtime.json"
     },
     {
       "path": "../types"

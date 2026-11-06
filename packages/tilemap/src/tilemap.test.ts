@@ -1,7 +1,7 @@
 import { createRectangle, createVector2 } from '@flighthq/geometry/contract';
+import type { Node } from '@flighthq/node/contract';
 import { connectSignal } from '@flighthq/signals/contract';
-import type { Node, TextureAtlas } from '@flighthq/types/contract';
-import { TilemapKind } from '@flighthq/types/contract';
+import type { TextureAtlas } from '@flighthq/textureatlas/contract';
 
 import {
   clearTilemap,
@@ -29,6 +29,7 @@ import {
   setTilemapTileTint,
   setTilemapTiles,
 } from './tilemap.ts';
+import { TilemapKind } from './types.ts';
 
 describe('clearTilemap', () => {
   it('fills all cells with -1', () => {

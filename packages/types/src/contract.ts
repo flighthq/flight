@@ -581,8 +581,6 @@ export * from './TextureCubeFace.ts';
 export * from './TextureUvTransform.ts';
 export * from './VoxelGrid.ts';
 export * from './ThresholdOperation.ts';
-export * from './Tilemap.ts';
-export * from './TilemapSignals.ts';
 export * from './TiltShiftEffect.ts';
 export * from './Timeline.ts';
 export * from './TintAdjustment.ts';

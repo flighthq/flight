@@ -61,6 +61,7 @@
     "@flighthq/textformat": "*",
     "@flighthq/textinput": "*",
     "@flighthq/textlayout": "*",
+    "@flighthq/tilemap": "*",
     "@flighthq/texture": "*",
     "@flighthq/textureatlas": "*",
     "@flighthq/types": "*"
@@ -68,7 +69,6 @@
   "devDependencies": {
     "@flighthq/glyphatlas": "*",
     "@flighthq/quadbatch": "*",
-    "@flighthq/tilemap": "*",
     "typescript": "^7.0.2"
   },
   "description": "Canvas 2D renderer implementation",
