@@ -7,7 +7,7 @@
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,
-    "moduleSuffixes": [".platform-types", ".video-types", ".textshaper-types", ""],
+    "moduleSuffixes": [".platform-types", ".video-types", ".textshaper-types", ".surface-types", ""],
     "tsBuildInfoFile": "dist/.tsbuildinfo.runtime"
   },
   "references": [
@@ -22,6 +22,9 @@
     },
     {
       "path": "../platform/tsconfig.contract.json"
+    },
+    {
+      "path": "../surface/tsconfig.contract.json"
     },
     {
       "path": "../textshaper/tsconfig.contract.json"
