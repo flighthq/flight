@@ -10,8 +10,8 @@
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "types": ["@webgpu/types"],
     "moduleSuffixes": [
+      ".adjustments-types",
       ".render-types",
-      ".scene2d-wgpu-bridge-types",
       ".materials-types",
       ".render-wgpu-types",
       ".image-types",
@@ -27,6 +27,9 @@
     "tsBuildInfoFile": "dist/.tsbuildinfo.contract"
   },
   "references": [
+    {
+      "path": "../adjustments/tsconfig.contract.json"
+    },
     {
       "path": "../image/tsconfig.contract.json"
     },
@@ -47,9 +50,6 @@
     },
     {
       "path": "../textlayout/tsconfig.contract.json"
-    },
-    {
-      "path": "../types/tsconfig.scene2d-wgpu-types.json"
     },
     {
       "path": "../render/tsconfig.contract.json"

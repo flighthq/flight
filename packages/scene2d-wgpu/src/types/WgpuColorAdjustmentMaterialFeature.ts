@@ -1,3 +1,4 @@
+import type { ColorScaleBias } from '@flighthq/adjustments/contract';
 import type { TintMaterialData } from '@flighthq/materials/contract';
 import type {
   WgpuColorAdjustmentFlush,
@@ -6,7 +7,6 @@ import type {
   WgpuShapeMeshBuffers,
 } from '@flighthq/render-wgpu/contract';
 import type { RenderProxy2D } from '@flighthq/render/contract';
-import type { ColorScaleBias } from '@flighthq/types/contract';
 
 import type { WgpuShapeMesh } from './WgpuShapeMesh.ts';
 

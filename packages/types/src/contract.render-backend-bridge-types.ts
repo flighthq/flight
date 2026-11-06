@@ -1,6 +1,7 @@
 // Exact bridge for the GL/WGPU backend owner contract lanes (render-gl, scene2d-gl, effects-gl, effects-wgpu).
 // Restores the entry these lanes resolved before the render-wgpu bridge was narrowed; selected through the
 // `.render-backend-bridge-types` module suffix.
+export type { ColorScaleBias } from '@flighthq/adjustments/contract';
 export type { Camera3D } from './Camera3D.ts';
 export type { CompressedImageResource } from './CompressedImageResource.ts';
 export type {
@@ -12,7 +13,6 @@ export type {
   Scene3DGraphSyncPolicy,
   ShapeRasterizer,
 } from '@flighthq/render/contract';
-export type { ColorScaleBias } from './contract.scene2d-wgpu-bridge-types.ts';
 export type { ImageResource } from './ImageResource.ts';
 export type { TintMaterialData } from './TintMaterialData.ts';
 export type { EffectStateOptions } from '@flighthq/effects/contract';
