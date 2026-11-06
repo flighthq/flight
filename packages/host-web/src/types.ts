@@ -3,6 +3,7 @@ import type { HostClipboardCapabilities } from '@flighthq/clipboard/contract';
 import type { HostDeviceCapabilities } from '@flighthq/device/contract';
 import type { HostHapticsCapabilities } from '@flighthq/haptics/contract';
 import type {
+  Host,
   HostAccessibilityCapabilities,
   HostBitmapCapabilities,
   HostConnectivityCapabilities,
@@ -34,7 +35,6 @@ import type { HostShellCapabilities } from '@flighthq/shell/contract';
 import type { HostSocketCapabilities } from '@flighthq/socket/contract';
 import type { HostStatusBarCapabilities } from '@flighthq/statusbar/contract';
 import type { HostCanvasCapabilities, HostSurfaceCapabilities } from '@flighthq/surface/contract';
-import type { Host } from '@flighthq/types/contract';
 import type { HostVideoCapabilities } from '@flighthq/video/contract';
 
 export type WebHost = Omit<

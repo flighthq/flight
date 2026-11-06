@@ -184,9 +184,6 @@
       "path": "../tray/tsconfig.contract.json"
     },
     {
-      "path": "../types"
-    },
-    {
       "path": "../useragent"
     },
     {

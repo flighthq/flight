@@ -90,7 +90,6 @@
     "@flighthq/texture": "*",
     "@flighthq/textureatlas": "*",
     "@flighthq/tray": "*",
-    "@flighthq/types": "*",
     "@flighthq/useragent": "*",
     "@flighthq/video": "*"
   },
