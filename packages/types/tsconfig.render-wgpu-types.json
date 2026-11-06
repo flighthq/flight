@@ -381,7 +381,9 @@
     "src/contract.scene2d-dom-types.ts",
     "src/contract.scene2d-wgpu-bridge-types.ts",
     "src/contract.render-backend-bridge-types.ts",
-    "src/BlendMode.ts"
+    "src/BlendMode.ts",
+    "src/WgpuSurface.surface-bridge-types.ts",
+    "src/contract.surface-bridge-types.ts"
   ],
   "include": []
 }
