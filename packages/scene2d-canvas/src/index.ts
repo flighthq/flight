@@ -91,6 +91,12 @@ export {
   registerCanvasTextureResolver,
 } from './canvasTextureResolver.ts';
 export { canvasTilemapRenderer } from './canvasTilemap.ts';
+export type {
+  CanvasRenderTarget,
+  CanvasRenderTargetSurfaceOwnership,
+  CanvasScreenRenderTarget,
+  CanvasTextureRenderTarget,
+} from './types/CanvasRenderTarget.ts';
 export * from './enableCanvasTextureResolverGuards.ts';
 export * from './explainCanvasScene2DCoverage.ts';
 export * from './explainCanvasTextureResolution.ts';

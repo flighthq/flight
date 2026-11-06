@@ -2,13 +2,13 @@ import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   CanvasRenderPass,
   CanvasRenderState,
-  CanvasRenderTarget,
   CanvasSavedPassState,
   RenderTargetClear,
 } from '@flighthq/types/contract';
 import { BlendMode } from '@flighthq/types/contract';
 
 import { getCanvasRenderStateRuntime } from './canvasRenderState.ts';
+import type { CanvasRenderTarget } from './types/CanvasRenderTarget.ts';
 
 // Opens a render pass into `target` and returns the handle to draw through. Binding a target on this
 // backend means installing its context on the state — each canvas element has its own — so the pass

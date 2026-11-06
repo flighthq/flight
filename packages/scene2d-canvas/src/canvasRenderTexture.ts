@@ -1,7 +1,6 @@
 import type {
   CanvasRenderPass,
   CanvasRenderState,
-  CanvasTextureRenderTarget,
   CanvasRenderTextureEntry,
   CanvasRenderTextureExplanation,
   RenderTexture,
@@ -15,6 +14,7 @@ import {
   destroyCanvasTextureRenderTarget,
   resizeCanvasTextureRenderTarget,
 } from './canvasTextureRenderTarget.ts';
+import type { CanvasTextureRenderTarget } from './types/CanvasRenderTarget.ts';
 
 // Returns a populated render texture's state-owned canvas without copying pixels.
 export function bindCanvasRenderTexture(

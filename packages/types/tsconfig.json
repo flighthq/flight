@@ -28,6 +28,7 @@
       ".sensors-types",
       ".render-wgpu-types",
       ".scene2d-gl-types",
+      ".scene2d-canvas-types",
       ".effects-canvas-types",
       ".effects-types",
       ".effects-gl-types",
@@ -228,6 +229,9 @@
     },
     {
       "path": "../scene2d-dom/tsconfig.contract.json"
+    },
+    {
+      "path": "../scene2d-canvas/tsconfig.contract.json"
     },
     {
       "path": "../scene2d-formats/tsconfig.contract.json"

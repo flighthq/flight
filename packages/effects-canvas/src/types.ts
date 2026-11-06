@@ -1,8 +1,9 @@
 import type { ColorLutCache } from '@flighthq/adjustments/contract';
 import type { Effect, EffectStateOptions } from '@flighthq/effects/contract';
 import type { EntityRaw, EntityRuntime, EntityRuntimeKey } from '@flighthq/entity/contract';
+import type { CanvasTextureRenderTarget } from '@flighthq/scene2d-canvas/contract';
 import type { HostCanvasCapability } from '@flighthq/surface/contract';
-import type { CanvasRenderState, CanvasTextureRenderTarget } from '@flighthq/types/contract';
+import type { CanvasRenderState } from '@flighthq/types/contract';
 
 // What a Canvas 2D effect runner is handed: the state, the offscreen scene canvas it reads, the
 // offscreen canvas it writes, and a scratch pool it borrows intermediate canvases from. `source` and

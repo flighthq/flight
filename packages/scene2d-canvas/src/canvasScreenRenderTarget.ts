@@ -1,11 +1,9 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
 import { getSurfaceHandle } from '@flighthq/surface/contract';
-import type {
-  CanvasRenderTarget,
-  CanvasScreenRenderTarget,
-  CanvasSurface,
-  EntityConstruction,
-} from '@flighthq/types/contract';
+import type { CanvasSurface } from '@flighthq/surface/contract';
+
+import type { CanvasRenderTarget, CanvasScreenRenderTarget } from './types/CanvasRenderTarget.ts';
 
 // The presentation canvas as a render target. It takes the host-created surface rather than a canvas
 // element, because the surface is what already carries the 2D context — and because that is the seam a

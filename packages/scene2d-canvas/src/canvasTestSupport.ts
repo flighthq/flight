@@ -8,9 +8,7 @@ import type {
   CanvasRenderOptions,
   CanvasRenderPass,
   CanvasRenderState,
-  CanvasScreenRenderTarget,
   CanvasSurface,
-  CanvasTextureRenderTarget,
   CanvasTextureResolvers,
   HostCanvasCapability,
   NativeSurfaceHandle,
@@ -24,6 +22,7 @@ import { createCanvasScreenRenderTarget as createExplicitCanvasScreenRenderTarge
 import { createCanvasTextureRenderTarget as createExplicitCanvasRenderTarget } from './canvasTextureRenderTarget.ts';
 import { createCanvasTextureResolvers as createExplicitCanvasTextureResolvers } from './canvasTextureResolver.ts';
 import { canvasScene2DRenderPreset } from './scene2DCanvasPipeline.ts';
+import type { CanvasScreenRenderTarget, CanvasTextureRenderTarget } from './types/CanvasRenderTarget.ts';
 
 export * from './canvasRenderState.ts';
 export * from './canvasRenderPass.ts';

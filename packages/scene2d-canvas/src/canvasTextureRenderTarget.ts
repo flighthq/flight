@@ -1,8 +1,10 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
 import { getSurfaceHandle } from '@flighthq/surface/contract';
-import type { CanvasTextureRenderTarget, EntityConstruction, HostCanvasCapability } from '@flighthq/types/contract';
+import type { HostCanvasCapability } from '@flighthq/surface/contract';
 
 import { acquireCanvasSurface, destroyCanvasSurfaceOwned } from './canvasRenderSurface.ts';
+import type { CanvasTextureRenderTarget } from './types/CanvasRenderTarget.ts';
 
 export function createCanvasTextureRenderTarget(
   canvasHost: Readonly<HostCanvasCapability>,
