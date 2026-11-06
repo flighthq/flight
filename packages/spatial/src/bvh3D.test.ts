@@ -1,4 +1,4 @@
-import { EntityRuntimeKey } from '@flighthq/types/contract';
+import { EntityRuntimeKey } from '@flighthq/entity/contract';
 import { describe, expect, it } from 'vitest';
 
 import { createBvhSpatialBackend3D, initializeBvhSpatialBackend3D } from './bvh3D.ts';

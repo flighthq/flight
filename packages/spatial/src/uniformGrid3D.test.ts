@@ -1,4 +1,4 @@
-import { EntityRuntimeKey } from '@flighthq/types/contract';
+import { EntityRuntimeKey } from '@flighthq/entity/contract';
 import { afterEach, describe, expect, it } from 'vitest';
 
 import { setSpatialIndexingGuard } from './spatialIndexingGuard.ts';

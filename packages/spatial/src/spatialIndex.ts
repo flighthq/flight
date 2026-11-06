@@ -1,5 +1,5 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { EntityConstruction } from '@flighthq/types/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
 
 import type { SpatialAabb2D, SpatialIndex2D, SpatialIndexBackend2D, SpatialObjectId, SpatialPair } from './types.ts';
 import { createUniformGridSpatialBackend2D } from './uniformGrid.ts';

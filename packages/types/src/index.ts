@@ -451,8 +451,6 @@ export * from './SignalTrackedConnectOptions.ts';
 export * from './SketchEffect.ts';
 export * from './SmaaEffect.ts';
 export * from './Socket.ts';
-export * from './Spatial.ts';
-export * from './SpatialIndexing.ts';
 export * from './SpecularGlossinessPbrMaterial.ts';
 export * from './SpotLight.ts';
 export * from './Statechart.ts';

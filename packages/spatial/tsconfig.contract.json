@@ -9,6 +9,10 @@
     "sourceMap": true,
     "tsBuildInfoFile": "dist/.tsbuildinfo.contract"
   },
-  "references": [{ "path": "../entity" }],
+  "references": [
+    {
+      "path": "../entity"
+    }
+  ],
   "include": ["src/contract.spatial-types.ts", "src/types.ts"]
 }

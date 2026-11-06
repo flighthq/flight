@@ -1,5 +1,5 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { Entity, EntityConstruction } from '@flighthq/types/contract';
+import type { Entity, EntityConstruction } from '@flighthq/entity/contract';
 
 import { reportSpatialIndexing } from './spatialIndexingGuard.ts';
 import type {

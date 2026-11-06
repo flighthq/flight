@@ -29,3 +29,23 @@ export {
 export * from './spatialIndexingGuard.ts';
 export { MAX_INDEXED_CELLS_PER_OBJECT, createUniformGridSpatialBackend2D } from './uniformGrid.ts';
 export { createUniformGridSpatialBackend3D } from './uniformGrid3D.ts';
+export type {
+  SpatialAabb2D,
+  SpatialAabb3D,
+  SpatialDeclineReason,
+  SpatialFrustum3D,
+  SpatialIndex2D,
+  SpatialIndex3D,
+  SpatialIndexBackend2D,
+  SpatialIndexBackend3D,
+  SpatialIndexRuntime2D,
+  SpatialIndexRuntime3D,
+  SpatialIndexingExplanation,
+  SpatialIndexingGuard,
+  SpatialIndexingMode,
+  SpatialIndexingNotice,
+  SpatialIndexingOperation,
+  SpatialIndexingReason,
+  SpatialObjectId,
+  SpatialPair,
+} from './contract.ts';
