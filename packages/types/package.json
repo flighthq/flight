@@ -135,7 +135,6 @@
     "@flighthq/surface": "*",
     "@flighthq/swf": "*",
     "@flighthq/text": "*",
-    "@flighthq/text-markup": "*",
     "@flighthq/textformat": "*",
     "@flighthq/textinput": "*",
     "@flighthq/textlayout": "*",

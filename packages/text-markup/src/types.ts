@@ -2,7 +2,7 @@ import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { EntityRaw } from '@flighthq/entity/contract';
 import type { TextFormat } from '@flighthq/textformat/contract';
 
-// Text-markup declarations, owned here and re-exported by @flighthq/types for compatibility.
+// Text-markup declarations owned by this package's acyclic contract lane.
 // Resolves a `<font color>` attribute value to a packed 24-bit RGB integer, or null when unrecognized.
 // The color seam a `MarkupTagRegistry` carries and the standard `<font>` handler consults: the standard
 // dialect installs a hex-only resolver (`#rgb`/`#rrggbb`/`0x`), and `registerMarkupNamedColors` swaps in

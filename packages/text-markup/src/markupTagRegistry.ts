@@ -1,6 +1,6 @@
 import { packOpaqueColor } from '@flighthq/color/contract';
+import type { NonEntityCreateResult } from '@flighthq/entity/contract';
 import type { TextFormat, TextFormatAlign, TextFormatListMarker } from '@flighthq/textformat/contract';
-import type { NonEntityCreateResult } from '@flighthq/types/contract';
 
 import type { MarkupClassResolver, MarkupColorResolver, MarkupTagHandler, MarkupTagRegistry } from './types.ts';
 

@@ -1,7 +1,7 @@
+import { EntityRuntimeKey } from '@flighthq/entity/contract';
 import { createTextFormatRange } from '@flighthq/textformat/contract';
 import type { TextFormat } from '@flighthq/textformat/contract';
 import type { RichTextContent } from '@flighthq/textlayout/contract';
-import { EntityRuntimeKey } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { createMarkupTagRegistry, registerMarkupTag } from './markupTagRegistry.ts';

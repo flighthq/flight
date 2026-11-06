@@ -44,8 +44,7 @@
     "@flighthq/entity": "*",
     "@flighthq/log": "*",
     "@flighthq/textformat": "*",
-    "@flighthq/textlayout": "*",
-    "@flighthq/types": "*"
+    "@flighthq/textlayout": "*"
   },
   "devDependencies": {
     "typescript": "^7.0.2"
