@@ -1,9 +1,9 @@
 import type { Effect } from '@flighthq/effects/contract';
+import type { AdvancedBlendMode } from '@flighthq/effects/contract';
 import type { EntityRaw, EntityRuntime, EntityRuntimeKey } from '@flighthq/entity/contract';
 import type { EmbeddedImageResourceReference } from '@flighthq/image/contract';
 import type { Scene2DDocument } from '@flighthq/scene2d-resources/contract';
 import type { Node2D } from '@flighthq/scene2d/contract';
-import type { AdvancedBlendMode } from '@flighthq/types/contract';
 
 /**
  * A SWF import, with the appearance a display tree cannot carry travelling beside the document rather

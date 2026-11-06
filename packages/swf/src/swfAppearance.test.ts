@@ -1,6 +1,7 @@
 import { createColorScaleBiasAdjustment } from '@flighthq/adjustments/contract';
 import type { ColorScaleBiasAdjustment } from '@flighthq/adjustments/contract';
-import { AdvancedBlendMode, BlendMode } from '@flighthq/types/contract';
+import { AdvancedBlendMode } from '@flighthq/effects/contract';
+import { BlendMode } from '@flighthq/materials/contract';
 
 import {
   EMPTY_ADJUSTMENTS,

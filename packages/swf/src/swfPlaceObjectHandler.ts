@@ -1,4 +1,4 @@
-import { BlendMode } from '@flighthq/types/contract';
+import { BlendMode } from '@flighthq/materials/contract';
 
 import { EMPTY_ADJUSTMENTS, EMPTY_EFFECTS, readSwfColorTransform } from './swfAppearance.ts';
 import { IDENTITY_MATRIX, readSwfMatrix } from './swfPrimitive.ts';

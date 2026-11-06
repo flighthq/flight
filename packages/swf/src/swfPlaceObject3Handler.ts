@@ -1,7 +1,8 @@
 import type { Adjustment } from '@flighthq/adjustments/contract';
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import { BlendMode } from '@flighthq/materials/contract';
 import type { Effect, ImportDiagnostic } from '@flighthq/types/contract';
-import { BlendMode, ImportDiagnosticSeverity } from '@flighthq/types/contract';
+import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
 import {
   EMPTY_ADJUSTMENTS,

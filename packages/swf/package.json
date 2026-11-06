@@ -55,6 +55,7 @@
     "@flighthq/image-codec": "*",
     "@flighthq/importdiagnostics": "*",
     "@flighthq/log": "*",
+    "@flighthq/materials": "*",
     "@flighthq/math": "*",
     "@flighthq/movieclip": "*",
     "@flighthq/node": "*",

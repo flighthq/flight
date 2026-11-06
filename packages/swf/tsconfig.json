@@ -53,6 +53,9 @@
       "path": "../math"
     },
     {
+      "path": "../materials/tsconfig.runtime.json"
+    },
+    {
       "path": "../movieclip"
     },
     {

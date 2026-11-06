@@ -16,11 +16,11 @@
       ".path-types",
       ".scene2d-types",
       ".shape-types",
-      ".swf-bridge-types",
       ".text-types",
       ".texture-types",
       ".timeline-types",
       ".scene2d-resources-types",
+      ".materials-types",
       ""
     ],
     "tsBuildInfoFile": "dist/.tsbuildinfo.contract"
@@ -51,6 +51,9 @@
       "path": "../importdiagnostics"
     },
     {
+      "path": "../materials/tsconfig.contract.json"
+    },
+    {
       "path": "../path/tsconfig.contract.json"
     },
     {
@@ -70,9 +73,6 @@
     },
     {
       "path": "../timeline/tsconfig.contract.json"
-    },
-    {
-      "path": "../types/tsconfig.swf-bridge-types.json"
     }
   ],
   "include": ["src/contract.swf-types.ts", "src/types/**/*.ts"]
