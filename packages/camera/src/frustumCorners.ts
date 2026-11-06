@@ -1,7 +1,8 @@
 import { createMatrix4, inverseMatrix4 } from '@flighthq/geometry/contract';
-import type { Camera3D, Vector3Like } from '@flighthq/types/contract';
+import type { Vector3Like } from '@flighthq/geometry/contract';
 
 import { getCamera3DViewProjectionMatrix4 } from './camera.ts';
+import type { Camera3D } from './types.ts';
 
 // Writes the 8 world-space corners of the camera frustum into `out` (a length-8 array of
 // Vector3Like) and returns true. Returns false (leaving `out` untouched) when the

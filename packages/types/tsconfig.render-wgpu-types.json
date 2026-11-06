@@ -16,6 +16,7 @@
       ".interaction-types",
       ".texture-types",
       ".bitmap-types",
+      ".camera-types",
       ".node-types",
       ".materials-types",
       ".scene3d-gl-bridge-types",
@@ -78,6 +79,9 @@
     },
     {
       "path": "../bitmap/tsconfig.contract.json"
+    },
+    {
+      "path": "../camera/tsconfig.contract.json"
     },
     {
       "path": "../adjustments/tsconfig.contract.json"

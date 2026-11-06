@@ -1,5 +1,7 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { Camera2D, Camera2DOptions, EntityConstruction } from '@flighthq/types/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
+
+import type { Camera2D, Camera2DOptions } from './types.ts';
 
 // Allocates a plain-data 2D camera. The camera starts centered on world origin at zoom 1 with no
 // rotation; `options` overrides any of `x`, `y`, `zoom`, `rotation`. This is the only allocating

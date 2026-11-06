@@ -1,5 +1,7 @@
 import { createMatrix4, multiplyMatrix4, setMatrix4 } from '@flighthq/geometry/contract';
-import type { Camera3D, Matrix4Like, PlaneLike } from '@flighthq/types/contract';
+import type { Matrix4Like, PlaneLike } from '@flighthq/geometry/contract';
+
+import type { Camera3D } from './types.ts';
 
 // Modifies a projection matrix so the near clip plane aligns with an arbitrary plane in view
 // space. This is the Lengyel oblique near-plane technique: the third row of the projection

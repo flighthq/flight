@@ -1,6 +1,7 @@
 import { createMatrix, inverseMatrix, matrixTransformBounds } from '@flighthq/geometry/contract';
-import type { Camera2D, RectangleLike } from '@flighthq/types/contract';
+import type { RectangleLike } from '@flighthq/geometry/contract';
 
+import type { Camera2D } from './types.ts';
 import { getCamera2DViewMatrix } from './viewMatrix.ts';
 
 // Writes the axis-aligned world rectangle the viewport currently covers into `out` — the conservative

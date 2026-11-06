@@ -1,3 +1,4 @@
+export * from './contract.camera-types.ts';
 export * from './basis.ts';
 export * from './camera.ts';
 export * from './camera2d.ts';

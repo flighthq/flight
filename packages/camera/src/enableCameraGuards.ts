@@ -1,10 +1,9 @@
+import { LogLevel, logOnce } from '@flighthq/log/contract';
 import type { LogState } from '@flighthq/log/contract';
-import { logOnce } from '@flighthq/log/contract';
-import type { Camera2D, Camera3D } from '@flighthq/types/contract';
-import { LogLevel } from '@flighthq/types/contract';
 
 import { setCamera3DViewGuard } from './camera.ts';
 import { explainCamera3DView } from './explainCamera3DView.ts';
+import type { Camera2D, Camera3D } from './types.ts';
 import { setCamera2DVisibleBoundsGuard } from './visibleBounds.ts';
 
 export function areCameraGuardsEnabled(): boolean {

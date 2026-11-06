@@ -7,10 +7,11 @@
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,
-    "moduleSuffixes": [".scene3d-bridge-types", ".node-types", ".entity-types", ".geometry-types", ""],
+    "moduleSuffixes": [".scene3d-bridge-types", ".node-types", ".entity-types", ".geometry-types", ".camera-types", ""],
     "tsBuildInfoFile": "dist/.tsbuildinfo.scene3d-types"
   },
   "references": [
+    { "path": "../camera/tsconfig.contract.json" },
     { "path": "../entity" },
     { "path": "../geometry/tsconfig.contract.json" },
     { "path": "../node/tsconfig.contract.json" }

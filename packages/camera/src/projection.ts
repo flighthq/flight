@@ -1,6 +1,8 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
 import { createMatrix4, setOrthographicMatrix4, setPerspectiveMatrix4 } from '@flighthq/geometry/contract';
-import type { EntityConstruction, Matrix4Like } from '@flighthq/types/contract';
+import type { Matrix4Like } from '@flighthq/geometry/contract';
+
 import type {
   OrthographicProjection,
   OrthographicProjectionOptions,
@@ -9,7 +11,7 @@ import type {
   Projection,
   RawProjection,
   RawProjectionOptions,
-} from '@flighthq/types/contract';
+} from './types.ts';
 
 export function createOrthographicProjection(opts: Readonly<OrthographicProjectionOptions>): OrthographicProjection {
   const out = allocateEntity<OrthographicProjection>();

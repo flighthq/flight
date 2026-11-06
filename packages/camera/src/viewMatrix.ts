@@ -1,5 +1,7 @@
 import { setTransformMatrix, translateMatrixByVectorXY } from '@flighthq/geometry/contract';
-import type { Camera2D, MatrixLike } from '@flighthq/types/contract';
+import type { MatrixLike } from '@flighthq/geometry/contract';
+
+import type { Camera2D } from './types.ts';
 
 // Writes the camera's world->screen affine into `out`.
 //

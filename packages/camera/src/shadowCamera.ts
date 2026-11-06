@@ -1,7 +1,8 @@
-import type { AabbLike, Camera3D, Vector3Like } from '@flighthq/types/contract';
+import type { AabbLike, Vector3Like } from '@flighthq/geometry/contract';
 
 import { setCamera3DViewMatrix4FromLookAt } from './camera.ts';
 import { createOrthographicProjection } from './projection.ts';
+import type { Camera3D } from './types.ts';
 
 // Configures `camera` as the shadow camera for a directional light — the spec's "a shadow camera is
 // just a Camera3D placed at the light." Looks along `lightDirection` (the light's travel direction) at

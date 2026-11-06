@@ -1,4 +1,4 @@
-import type { Camera3D, Camera3DViewExplanation } from '@flighthq/types/contract';
+import type { Camera3D, Camera3DViewExplanation } from './types.ts';
 
 // Reports whether a camera's view matrix satisfies the orthonormality precondition its consumers rely
 // on, as PLAIN DATA rather than a verdict. Callers get the measured deviations and decide for

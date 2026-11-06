@@ -6,9 +6,10 @@ import {
   isFrustumIntersectingSphere,
   setFrustumFromMatrix4,
 } from '@flighthq/geometry/contract';
-import type { AabbLike, BoundingSphereLike, Camera3D, FrustumLike, Vector3Like } from '@flighthq/types/contract';
+import type { AabbLike, BoundingSphereLike, FrustumLike, Vector3Like } from '@flighthq/geometry/contract';
 
 import { getCamera3DViewProjectionMatrix4 } from './camera.ts';
+import type { Camera3D } from './types.ts';
 
 // Extracts the six clip planes of the camera's view frustum into `out` and returns true.
 // The planes are normalized with inward-pointing normals (the convention used by geometry's

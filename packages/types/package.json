@@ -44,6 +44,7 @@
     "@flighthq/binpack": "*",
     "@flighthq/bitmap": "*",
     "@flighthq/buffer": "*",
+    "@flighthq/camera": "*",
     "@flighthq/clip": "*",
     "@flighthq/clipboard": "*",
     "@flighthq/clock": "*",

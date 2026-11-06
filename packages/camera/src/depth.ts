@@ -1,9 +1,8 @@
 // Generated from crates/flight-camera/src/depth.rs by flight-compiler.
 // Rust is authoritative; run `npm run generate` after changing it.
 
-import type { Camera3D } from '@flighthq/types/contract';
-
 import { isOrthographicProjection } from './projection.ts';
+import type { Camera3D } from './types.ts';
 
 /**
  * Converts a raw NDC depth value (ndcZ in [-1, 1]) to a linear view-space Z (TS

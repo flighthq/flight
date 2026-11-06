@@ -1,5 +1,2 @@
-// Structural inputs for createPerspectiveProjection. `aspect` defaults to 1 (square viewport).
-export interface PerspectiveProjectionOptions {
-  aspect?: number;
-  fovY: number;
-}
+/** @deprecated Import PerspectiveProjectionOptions from @flighthq/camera/contract. */
+export type { PerspectiveProjectionOptions } from '@flighthq/camera/contract';

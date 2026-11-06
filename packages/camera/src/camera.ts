@@ -1,4 +1,5 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
 import {
   createMatrix4,
   createVector2,
@@ -6,10 +7,11 @@ import {
   multiplyMatrix4,
   setMatrix4LookAt,
 } from '@flighthq/geometry/contract';
-import type { Camera3D, Camera3DOptions, EntityConstruction, Matrix4Like, Vector3Like } from '@flighthq/types/contract';
+import type { Matrix4Like, Vector3Like } from '@flighthq/geometry/contract';
 
 import { setProjectionMatrix4 } from './projection.ts';
 import { applyObliqueNearClipPlane } from './reflection.ts';
+import type { Camera3D, Camera3DOptions } from './types.ts';
 
 export function createCamera3D(opts: Readonly<Camera3DOptions>): Camera3D {
   const out = allocateEntity<Camera3D>();

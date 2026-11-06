@@ -1,6 +1,7 @@
-import type { BoundingSphereLike, Camera3D, PlaneLike, Ray3DLike, Vector3Like } from '@flighthq/types/contract';
+import type { BoundingSphereLike, PlaneLike, Ray3DLike, Vector3Like } from '@flighthq/geometry/contract';
 
 import { getCamera3DScreenToWorldRay, getCamera3DWorldToScreen } from './picking.ts';
+import type { Camera3D } from './types.ts';
 
 // Returns the world-space ray from the camera through the center of a bounding sphere, writing
 // the result into `out` and returning true. The ray is suitable for picking and hover-highlight

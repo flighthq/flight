@@ -1,0 +1,15 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "composite": true,
+    "rootDir": "src",
+    "outDir": "dist",
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "moduleSuffixes": [".geometry-types", ""],
+    "tsBuildInfoFile": "dist/.tsbuildinfo.contract"
+  },
+  "references": [{ "path": "../entity" }, { "path": "../geometry/tsconfig.contract.json" }],
+  "include": ["src/contract.camera-types.ts", "src/types.ts"]
+}

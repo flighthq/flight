@@ -19,6 +19,7 @@
       ".interaction-types",
       ".texture-types",
       ".bitmap-types",
+      ".camera-types",
       ".image-types",
       ".node-types",
       ".image-types",
@@ -124,6 +125,9 @@
     },
     {
       "path": "../buffer"
+    },
+    {
+      "path": "../camera/tsconfig.contract.json"
     },
     {
       "path": "../clock"
