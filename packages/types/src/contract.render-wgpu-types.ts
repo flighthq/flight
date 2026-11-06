@@ -9,7 +9,9 @@ export type {
   Scene3DGraphSyncPolicy,
   ShapeRasterizer,
 } from './contract.scene2d-dom-types.ts';
-export type { ColorScaleBias, ImageResource, RenderProxy2D, TintMaterialData } from './contract.scene2d-wgpu-types.ts';
+export type { ColorScaleBias, RenderProxy2D } from './contract.scene2d-wgpu-bridge-types.ts';
+export type { ImageResource } from './ImageResource.ts';
+export type { TintMaterialData } from './TintMaterialData.ts';
 export type { EffectStateOptions } from './EffectStateOptions.render-wgpu-types.ts';
 export type { Entity } from './Entity.ts';
 export type { Texture } from './Texture.ts';
@@ -79,4 +81,4 @@ export type { VelocityField } from './Velocity.ts';
 export type {
   WgpuColorAdjustmentMaterialFeature,
   WgpuColorAdjustmentMaterialFeatureGuard,
-} from './WgpuRenderState.scene2d-wgpu-types.ts';
+} from './WgpuColorAdjustmentMaterialFeature.scene2d-wgpu-bridge-types.ts';

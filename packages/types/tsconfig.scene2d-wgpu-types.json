@@ -18,7 +18,7 @@
       ".scene3d-gl-bridge-types",
       ".scene3d-wgpu-types",
       ".render-wgpu-types",
-      ".scene2d-wgpu-types",
+      ".scene2d-wgpu-bridge-types",
       ".adjustments-types",
       ".app-types",
       ".clip-types",
@@ -349,11 +349,12 @@
     "src/WgpuScene3DRuntime.render-wgpu-types.ts",
     "src/WgpuRenderTarget.render-wgpu-types.ts",
     "src/WgpuRenderTexture.render-wgpu-types.ts",
-    "src/WgpuShapeMesh.scene2d-wgpu-types.ts",
+    "src/WgpuColorAdjustmentMaterialFeature.scene2d-wgpu-bridge-types.ts",
+    "src/WgpuShapeMesh.scene2d-wgpu-bridge-types.ts",
     "src/WgpuSkinningAdapter.render-wgpu-types.ts",
     "src/WgpuTextureResolver.render-wgpu-types.ts",
     "src/WgpuVelocityWriter.render-wgpu-types.ts",
-    "src/contract.scene2d-wgpu-types.ts"
+    "src/contract.scene2d-wgpu-bridge-types.ts"
   ],
   "include": []
 }

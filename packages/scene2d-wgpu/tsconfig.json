@@ -29,6 +29,9 @@
       "path": "../log"
     },
     {
+      "path": "../materials/tsconfig.runtime.json"
+    },
+    {
       "path": "../node/tsconfig.runtime.json"
     },
     {
@@ -48,6 +51,9 @@
     },
     {
       "path": "../shape/tsconfig.runtime.json"
+    },
+    {
+      "path": "../surface/tsconfig.runtime.json"
     },
     {
       "path": "../quadbatch"

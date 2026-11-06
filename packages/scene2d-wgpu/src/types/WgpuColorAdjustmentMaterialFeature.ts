@@ -1,12 +1,11 @@
+import type { TintMaterialData } from '@flighthq/materials/contract';
 import type {
-  ColorScaleBias,
-  RenderProxy2D,
-  TintMaterialData,
   WgpuColorAdjustmentFlush,
   WgpuRenderState,
   WgpuRenderStateRuntime,
   WgpuShapeMeshBuffers,
-} from '@flighthq/types/contract';
+} from '@flighthq/render-wgpu/contract';
+import type { ColorScaleBias, RenderProxy2D } from '@flighthq/types/contract';
 
 import type { WgpuShapeMesh } from './WgpuShapeMesh.ts';
 

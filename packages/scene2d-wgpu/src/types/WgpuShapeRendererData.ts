@@ -1,4 +1,7 @@
-import type { CanvasSurface, ImageResource, RendererData, WgpuShapeMeshBuffers } from '@flighthq/types/contract';
+import type { ImageResource } from '@flighthq/image/contract';
+import type { RendererData } from '@flighthq/node/contract';
+import type { WgpuShapeMeshBuffers } from '@flighthq/render-wgpu/contract';
+import type { CanvasSurface } from '@flighthq/surface/contract';
 
 import type { WgpuShapeMesh } from './WgpuShapeMesh.ts';
 

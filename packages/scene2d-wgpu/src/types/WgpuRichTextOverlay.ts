@@ -1,5 +1,5 @@
+import type { RichText } from '@flighthq/text/contract';
 import type { TextLayoutResult } from '@flighthq/textlayout/contract';
-import type { RichText } from '@flighthq/types/contract';
 
 export type WgpuRichTextOverlay = (
   context: CanvasRenderingContext2D,
