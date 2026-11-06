@@ -39,7 +39,9 @@
   },
   "dependencies": {
     "@flighthq/bitmapfont-formats": "*",
+    "@flighthq/compression": "*",
     "@flighthq/encoding": "*",
+    "@flighthq/entity": "*",
     "@flighthq/log": "*",
     "@flighthq/particles-formats": "*",
     "@flighthq/requirement": "*",
@@ -54,8 +56,10 @@
     "@flighthq/xml": "*"
   },
   "devDependencies": {
-    "@flighthq/compression": "*",
+    "@flighthq/importdiagnostics": "*",
     "@flighthq/render": "*",
+    "@flighthq/render-gl": "*",
+    "@flighthq/render-wgpu": "*",
     "@flighthq/requirement": "*",
     "@flighthq/scene2d-dom": "*",
     "esbuild": "*",

@@ -1,6 +1,6 @@
 import { encodeUTF8 } from '@flighthq/encoding/contract';
 import { BUILT_IN_REQUIREMENT_CATALOG_ENTRIES } from '@flighthq/requirement-catalog/contract';
-import { RequirementFacet } from '@flighthq/types/contract';
+import { RequirementFacet } from '@flighthq/requirement/contract';
 
 import { DEFAULT_CONTENT_ANALYZERS } from './contentAnalyzers.ts';
 import { generateManifestModuleSource } from './manifestModuleSource.ts';

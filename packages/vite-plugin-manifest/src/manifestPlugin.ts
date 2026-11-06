@@ -1,16 +1,13 @@
 import { readFile } from 'node:fs/promises';
 import { dirname, extname, isAbsolute, resolve } from 'node:path';
 
+import type { HostDecompressDeflateCapability, HostDecompressLzmaCapability } from '@flighthq/compression/contract';
+import type { NonEntityCreateResult } from '@flighthq/entity/contract';
 import type { LogState } from '@flighthq/log/contract';
 import { logWarn } from '@flighthq/log/contract';
 import type { RequirementCatalog } from '@flighthq/requirement-catalog/contract';
 import { createRequirementCodegenPlan } from '@flighthq/requirement-codegen/contract';
-import type {
-  HostDecompressDeflateCapability,
-  HostDecompressLzmaCapability,
-  NonEntityCreateResult,
-  Requirement,
-} from '@flighthq/types/contract';
+import type { Requirement } from '@flighthq/requirement/contract';
 
 import { DEFAULT_CONTENT_ANALYZERS } from './contentAnalyzers.ts';
 import type { ManifestModuleEntry } from './manifestModuleSource.ts';

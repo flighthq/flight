@@ -1,4 +1,4 @@
-import { RequirementFacet } from '@flighthq/types/contract';
+import { RequirementFacet } from '@flighthq/requirement/contract';
 
 /**
  * The render-state options field that collects each facet's implementations.

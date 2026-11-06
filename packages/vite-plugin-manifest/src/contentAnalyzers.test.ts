@@ -2,8 +2,8 @@ import { deflateSync } from 'node:zlib';
 
 import { sdkHostDecompressDeflate } from '@flighthq/compression/contract';
 import { encodeUTF8 } from '@flighthq/encoding/contract';
+import { RequirementFacet } from '@flighthq/requirement/contract';
 import { MD2_HEADER_SIZE, MD2_MAGIC, MD2_VERSION } from '@flighthq/scene3d-formats/contract';
-import { RequirementFacet } from '@flighthq/types/contract';
 
 import { DEFAULT_CONTENT_ANALYZERS } from './contentAnalyzers.ts';
 

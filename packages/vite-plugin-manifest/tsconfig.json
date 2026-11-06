@@ -19,6 +19,12 @@
       "path": "../encoding"
     },
     {
+      "path": "../entity"
+    },
+    {
+      "path": "../importdiagnostics"
+    },
+    {
       "path": "../log"
     },
     {
@@ -26,6 +32,12 @@
     },
     {
       "path": "../render/tsconfig.runtime.json"
+    },
+    {
+      "path": "../render-gl/tsconfig.runtime.json"
+    },
+    {
+      "path": "../render-wgpu/tsconfig.runtime.json"
     },
     {
       "path": "../requirement"

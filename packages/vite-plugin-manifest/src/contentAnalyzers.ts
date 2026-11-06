@@ -1,7 +1,9 @@
 import { BITMAP_FONT_REQUIREMENT_KEY_NAMESPACE, readBitmapFontFormatKind } from '@flighthq/bitmapfont-formats/contract';
+import type { HostDecompressDeflateCapability, HostDecompressLzmaCapability } from '@flighthq/compression/contract';
 import { decodeUTF8 } from '@flighthq/encoding/contract';
 import { PARTICLES_REQUIREMENT_KEY_NAMESPACE } from '@flighthq/particles-formats/contract';
-import { createRequirementSet } from '@flighthq/requirement/contract';
+import type { RequirementSetRaw } from '@flighthq/requirement/contract';
+import { createRequirementSet, RequirementFacet } from '@flighthq/requirement/contract';
 import {
   isReadableLottie,
   isReadableRive,
@@ -39,13 +41,7 @@ import {
 } from '@flighthq/skeleton2d-formats/contract';
 import { parseSwfHeader, parseSwfRequirements } from '@flighthq/swf/contract';
 import { TILEMAP_REQUIREMENT_KEY_NAMESPACE } from '@flighthq/tilemap-formats/contract';
-import type {
-  HostDecompressDeflateCapability,
-  HostDecompressLzmaCapability,
-  RequirementSet,
-} from '@flighthq/types/contract';
 import {
-  RequirementFacet,
   StarlingPexFormatKind,
   TilemapFormatKindTiledTmj,
   TilemapFormatKindTiledTmx,
@@ -79,7 +75,7 @@ export interface ContentAnalyzer {
     // Optional so the analyzers that need no sibling file stay two-argument functions, and so a caller
     // driving an analyzer directly need not pass an empty array.
     references?: readonly string[],
-  ) => RequirementSet;
+  ) => RequirementSetRaw;
   readonly isReadable: (source: Uint8Array, decompressors: Readonly<ContentDecompressors>) => boolean;
   /**
    * Sibling files this analyzer needs, as paths RELATIVE to the content file, or absent when it needs none.
@@ -267,7 +263,7 @@ function jsonObjectAnalyzer(kind: string): ContentAnalyzer {
 // One document-format requirement, or none when the content is not the format its extension claimed. A bedrock
 // format has nothing else to say: it names one parser, and a census of what is inside the document would not
 // change which code reads it.
-function bedrockRequirementSet(kind: string | null): RequirementSet {
+function bedrockRequirementSet(kind: string | null): RequirementSetRaw {
   return createRequirementSet(
     [RequirementFacet.DocumentFormat],
     kind === null ? [] : [{ facet: RequirementFacet.DocumentFormat, key: kind }],

@@ -8,8 +8,8 @@ import {
   BUILT_IN_REQUIREMENT_DISPOSITIONS,
   BUILT_IN_REQUIREMENT_TRANSLATIONS,
 } from '@flighthq/requirement-catalog/contract';
+import { RequirementFacet } from '@flighthq/requirement/contract';
 import { MD2_HEADER_SIZE, MD2_MAGIC, MD2_VERSION } from '@flighthq/scene3d-formats/contract';
-import { RequirementFacet } from '@flighthq/types/contract';
 import { build } from 'vite';
 
 import { MANIFEST_PARSER_BACKEND } from './manifestModuleSource.ts';

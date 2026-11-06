@@ -1,7 +1,7 @@
 import { mergeRenderOptions } from '@flighthq/render/contract';
 import type { RenderStateOptions } from '@flighthq/render/contract';
+import type { SwfParseOptions } from '@flighthq/swf/contract';
 import { mergeSwfParseOptions } from '@flighthq/swf/contract';
-import type { SwfParseOptions } from '@flighthq/types/contract';
 
 // A build that imports two documents gets two fragments per backend, and composes them with the merge
 // function the OWNING package exports — not with a generic merge living here. These tests pin that

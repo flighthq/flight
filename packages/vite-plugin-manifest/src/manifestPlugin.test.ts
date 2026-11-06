@@ -4,10 +4,10 @@ import { join } from 'node:path';
 import { deflateSync } from 'node:zlib';
 
 import { sdkHostDecompressDeflate } from '@flighthq/compression/contract';
+import type { LogEntry } from '@flighthq/log/contract';
 import { addLogSink, createLogState, createMemoryLogSink, getMemoryLogSinkEntries } from '@flighthq/log/contract';
 import { createRequirementSet } from '@flighthq/requirement/contract';
-import type { LogEntry } from '@flighthq/types/contract';
-import { RequirementFacet } from '@flighthq/types/contract';
+import { RequirementFacet } from '@flighthq/requirement/contract';
 
 import { MANIFEST_PARSER_BACKEND } from './manifestModuleSource.ts';
 import { createManifestPlugin, MANIFEST_QUERY_SUFFIX } from './manifestPlugin.ts';

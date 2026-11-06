@@ -1,7 +1,7 @@
 import { encodeUTF8 } from '@flighthq/encoding/contract';
+import type { RequirementSetRaw } from '@flighthq/requirement/contract';
 import { createRequirementSet } from '@flighthq/requirement/contract';
-import type { RequirementSet } from '@flighthq/types/contract';
-import { RequirementFacet } from '@flighthq/types/contract';
+import { RequirementFacet } from '@flighthq/requirement/contract';
 
 import { composeContentAnalyzers } from './composeContentAnalyzers.ts';
 import type { ContentAnalyzer, ContentDecompressors } from './contentAnalyzers.ts';
@@ -133,7 +133,7 @@ describe('composeContentAnalyzers', () => {
   });
 });
 
-function keysOf(set: Readonly<RequirementSet>): string[] {
+function keysOf(set: Readonly<RequirementSetRaw>): string[] {
   return set.requirements.map((requirement) => requirement.key);
 }
 
@@ -144,7 +144,7 @@ function stubAnalyzer(covers: readonly RequirementFacet[], keys: readonly string
 // Built with the real constructor, because a RequirementSet carries entity identity a literal cannot fake. What
 // makes it a stub is the `covers` list: an EMPTY one, which no real analyzer produces and which is exactly the
 // input the intersection rule is about.
-function stubSet(covers: readonly RequirementFacet[], keys: readonly string[]): RequirementSet {
+function stubSet(covers: readonly RequirementFacet[], keys: readonly string[]): RequirementSetRaw {
   return createRequirementSet(
     covers,
     keys.map((key) => ({ facet: RequirementFacet.DocumentFormat, key })),

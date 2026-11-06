@@ -1,9 +1,9 @@
 import { parseBitmapFontBinary } from '@flighthq/bitmapfont-formats/contract';
 import { decodeUTF8, encodeUTF8 } from '@flighthq/encoding/contract';
+import type { ImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import { parseStarlingPex } from '@flighthq/particles-formats/contract';
 import { BUILT_IN_REQUIREMENT_CATALOG_ENTRIES } from '@flighthq/requirement-catalog/contract';
 import { parseTiledTmx } from '@flighthq/tilemap-formats/contract';
-import type { ImportDiagnostic } from '@flighthq/types/contract';
 
 import { DEFAULT_CONTENT_ANALYZERS } from './contentAnalyzers.ts';
 import { generateManifestModuleSource } from './manifestModuleSource.ts';

@@ -1,22 +1,19 @@
+import type { Kind } from '@flighthq/entity/contract';
+import type { GlRenderStateOptions } from '@flighthq/render-gl/contract';
+import type { WgpuRenderStateOptions } from '@flighthq/render-wgpu/contract';
 import type { NodeRenderer } from '@flighthq/render/contract';
+import type { DomRenderOptions } from '@flighthq/scene2d-dom/contract';
 import { mergeDomRenderOptions } from '@flighthq/scene2d-dom/contract';
+import type { RiveImportOptions, RivePathBooleanRegistrar, RiveRegistrar } from '@flighthq/scene2d-formats/contract';
+import type { SwfParseOptions, SwfTagHandler } from '@flighthq/swf/contract';
 import { mergeSwfParseOptions } from '@flighthq/swf/contract';
 import type {
   Awd2ParseOptions,
   CanvasRenderStateOptions,
   ColladaElementDecoder,
   ColladaImportOptions,
-  DomRenderOptions,
-  GlRenderStateOptions,
-  Kind,
-  RiveImportOptions,
-  RivePathBooleanRegistrar,
-  RiveRegistrar,
-  SwfParseOptions,
-  SwfTagHandler,
   ThreeDsChunkHandler,
   ThreeDsImportOptions,
-  WgpuRenderStateOptions,
 } from '@flighthq/types/contract';
 
 // THE POINT OF THIS FILE. The generated module is plain JS, so nothing in the emitted text proves a
