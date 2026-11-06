@@ -52,7 +52,6 @@ export * from '@flighthq/scene2d-dom';
 export * from '@flighthq/scene2d-formats';
 export * from '@flighthq/scene2d-resources';
 export * from '@flighthq/scene2d-gl';
-export type { GlShapeMesh, GlShapeMeshBinding } from '@flighthq/scene2d-gl';
 export * from '@flighthq/scene2d-wgpu';
 export * from '@flighthq/easing';
 export type { EasingFunction, EasingSegment, ScalarRemap, StepPosition } from '@flighthq/easing';
@@ -66,10 +65,6 @@ export type {
   GlEffectApplicationExplanation,
   GlEffectApplicationGuard,
   GlEffectApplicationStatus,
-  GlEffectContext,
-  GlEffectRegistration,
-  GlEffectResolver,
-  GlEffectRunner,
   GlEffectState,
   GlEffectStateSkipGuard,
 } from '@flighthq/effects-gl';
