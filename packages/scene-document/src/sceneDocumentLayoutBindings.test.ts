@@ -1,6 +1,7 @@
 import { addNodeChild } from '@flighthq/node/contract';
+import type { NodeAny } from '@flighthq/node/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
-import type { Node2D, NodeAny } from '@flighthq/types/contract';
+import type { Node2D } from '@flighthq/scene2d/contract';
 
 import {
   checkFlightDocumentLayoutTargets,

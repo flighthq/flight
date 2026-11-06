@@ -1,5 +1,5 @@
 import { withKindMapEntry } from '@flighthq/registry/contract';
-import { DisplayObjectKind } from '@flighthq/types/contract';
+import { DisplayObjectKind } from '@flighthq/scene2d/contract';
 
 import { getFlightDocumentResourceDependencies } from './flightDocumentResourceDependencies.ts';
 import type {

@@ -6,7 +6,6 @@ import type { NodeAny } from '@flighthq/node/contract';
 import type { Node2D, Scene2D } from '@flighthq/scene2d/contract';
 import type { Scene3D, Scene3DDocumentCamera, Scene3DDocumentLight } from '@flighthq/scene3d/contract';
 import type { ShapeCommandSchema } from '@flighthq/shape-formats/contract';
-import type { NodeInteractiveStateExtensionRuntime, NodeInteractiveStateTransition } from '@flighthq/types/contract';
 
 interface SceneDocumentEntity extends EntityRaw {
   [EntityRuntimeKey]: EntityRuntime | undefined;
@@ -282,4 +281,30 @@ export interface FlightDocumentRefusalExplanation extends SceneDocumentEntity {
   resourceKey: string | null;
   tokenKey: string | null;
   version: number | null;
+}
+
+// The interactive-state extension and transition callbacks a document binds. Scene Document owns them
+// because their payload is its own FlightDocumentFields; Interaction implements them and imports them
+// from here (it already depends on Scene Document), so no bridge crosses the two owners.
+export type NodeInteractiveStateTransitionValue = boolean | number;
+
+export interface NodeInteractiveStateTransitionRequest<N extends NodeAny = NodeAny, P extends string = string> {
+  readonly apply: (value?: NodeInteractiveStateTransitionValue) => void;
+  readonly from: NodeInteractiveStateTransitionValue;
+  readonly property: P;
+  readonly target: N;
+  readonly value: NodeInteractiveStateTransitionValue;
+}
+
+export interface NodeInteractiveStateTransition<N extends NodeAny = NodeAny, P extends string = string> {
+  readonly run: (request: Readonly<NodeInteractiveStateTransitionRequest<N, P>>) => void;
+}
+
+export interface NodeInteractiveStateExtensionRuntime {
+  apply: (
+    fields: Readonly<FlightDocumentFields>,
+    transition: Readonly<NodeInteractiveStateTransition> | null,
+  ) => boolean;
+  capture: (out: FlightDocumentFields) => boolean;
+  dispose: () => void;
 }

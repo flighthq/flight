@@ -7,7 +7,7 @@
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,
-    "moduleSuffixes": [".node-types", ".geometry-types", ".path-types", ".spatial-types", ""],
+    "moduleSuffixes": [".node-types", ".geometry-types", ".path-types", ".spatial-types", ".scene-document-types", ""],
     "tsBuildInfoFile": "dist/.tsbuildinfo.contract"
   },
   "references": [

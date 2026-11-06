@@ -1,7 +1,3 @@
-import type { NodeInteractiveStateTransition } from '@flighthq/interaction/contract';
-
-import type { FlightDocumentFields } from './FlightDocumentFieldSchema.ts';
-
 /** @deprecated Import interaction contracts from `@flighthq/interaction/contract`. */
 export type {
   NodeInteractiveStateBinding,
@@ -28,14 +24,5 @@ export const NodeInteractiveStateRefusalReason = {
 export type NodeInteractiveStateRefusalReason =
   (typeof NodeInteractiveStateRefusalReason)[keyof typeof NodeInteractiveStateRefusalReason];
 
-// This is the single scene-document-shaped cycle seam: Interaction executes the runtime, while its
-// field payload is owned by Scene Document. The compatibility bridge keeps the two owner contracts
-// from importing each other's full package surface.
-export interface NodeInteractiveStateExtensionRuntime {
-  apply: (
-    fields: Readonly<FlightDocumentFields>,
-    transition: Readonly<NodeInteractiveStateTransition> | null,
-  ) => boolean;
-  capture: (out: FlightDocumentFields) => boolean;
-  dispose: () => void;
-}
+/** @deprecated Import from `@flighthq/scene-document/contract`. */
+export type { NodeInteractiveStateExtensionRuntime } from '@flighthq/scene-document/contract';

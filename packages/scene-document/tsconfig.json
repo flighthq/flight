@@ -12,7 +12,6 @@
     { "path": "../scene2d/tsconfig.runtime.json" },
     { "path": "../scene3d/tsconfig.runtime.json" },
     { "path": "../shape-formats/tsconfig.contract.json" },
-    { "path": "../types" },
     { "path": "./tsconfig.contract.json" },
     { "path": "./tsconfig.runtime.json" }
   ]

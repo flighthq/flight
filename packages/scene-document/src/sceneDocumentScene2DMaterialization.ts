@@ -1,10 +1,12 @@
 import { allocateEntity, finishEntity, getEntityRuntime } from '@flighthq/entity/contract';
+import type { EntityConstruction, EntityRaw, EntityRuntime, EntityRuntimeKey } from '@flighthq/entity/contract';
 import { getNodeRuntime } from '@flighthq/node/contract';
 import { addNodeChild, getNodeChildren } from '@flighthq/node/contract';
+import type { NodeAny } from '@flighthq/node/contract';
 import { createScene2D } from '@flighthq/scene2d/contract';
+import { Node2DFieldsKey } from '@flighthq/scene2d/contract';
+import type { Node2D, Node2DRuntime, Scene2D } from '@flighthq/scene2d/contract';
 import { Node3DFieldsKey } from '@flighthq/scene3d/contract';
-import { Node2DFieldsKey } from '@flighthq/types/contract';
-import type { EntityConstruction, Entity, Node2D, Node2DRuntime, NodeAny, Scene2D } from '@flighthq/types/contract';
 
 import { explainFlightDocumentText, parseFlightDocumentText } from './flightDocumentText.ts';
 import {
@@ -47,13 +49,13 @@ export function createFlightDocumentFromScene2D(
   schemas: Readonly<FlightDocumentSchemaRegistry>,
   interactiveStateBindings: readonly Readonly<FlightDocumentInteractiveStateBinding<Node2D>>[] = [],
   layoutBindings: readonly Readonly<FlightDocumentLayoutBinding<Node2D>>[] = [],
-): FlightDocumentScene2D & Entity {
+): FlightDocumentScene2D & SceneDocumentEntity {
   const bindingLookup = createInteractiveStateBindingLookup(interactiveStateBindings);
   const usedBindings = new Set<Readonly<NodeAny>>();
   const writtenNodes = new Map<Readonly<NodeAny>, FlightDocumentNode>();
   const scene = writeNode(source.root, schemas, bindingLookup, usedBindings, writtenNodes);
   assertAllInteractiveStateBindingsUsed(bindingLookup, usedBindings);
-  const out = allocateEntity<FlightDocumentScene2D & Entity>();
+  const out = allocateEntity<FlightDocumentScene2D & SceneDocumentEntity>();
   initializeFlightDocumentFromScene2D(out, source, scene, layoutBindings, writtenNodes);
   return finishEntity(out);
 }
@@ -170,7 +172,7 @@ export function explainFlightDocumentRefusalFromText(
 }
 
 export function initializeFlightDocumentFromScene2D(
-  out: EntityConstruction<FlightDocumentScene2D & Entity>,
+  out: EntityConstruction<FlightDocumentScene2D & SceneDocumentEntity>,
   source: Readonly<Scene2D>,
   scene: FlightDocumentNode,
   layoutBindings: readonly Readonly<FlightDocumentLayoutBinding<Node2D>>[],
@@ -336,3 +338,5 @@ function checkRootKindDimension(
 function createEmptyResourceLookup(): FlightDocumentResourceLookup {
   return {};
 }
+
+type SceneDocumentEntity = EntityRaw & { [EntityRuntimeKey]: EntityRuntime | undefined };

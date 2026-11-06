@@ -1,5 +1,5 @@
 import { getNodeChildren } from '@flighthq/node/contract';
-import type { NodeAny } from '@flighthq/types/contract';
+import type { NodeAny } from '@flighthq/node/contract';
 
 import { createSceneRefusal } from './sceneDocumentRefusal.ts';
 import type {

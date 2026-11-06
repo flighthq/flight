@@ -14,7 +14,6 @@
       ".scene2d-types",
       ".scene3d-types",
       ".shape-formats-types",
-      ".scene-document-bridge-types",
       ""
     ],
     "tsBuildInfoFile": "dist/.tsbuildinfo.contract"
@@ -27,8 +26,7 @@
     { "path": "../node/tsconfig.contract.json" },
     { "path": "../scene2d/tsconfig.contract.json" },
     { "path": "../scene3d/tsconfig.contract.json" },
-    { "path": "../shape-formats/tsconfig.contract.json" },
-    { "path": "../types/tsconfig.scene-document-bridge-types.json" }
+    { "path": "../shape-formats/tsconfig.contract.json" }
   ],
   "include": ["src/contract.scene-document-types.ts", "src/types.ts"]
 }

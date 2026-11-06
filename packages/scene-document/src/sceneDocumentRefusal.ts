@@ -1,5 +1,6 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { EntityConstruction, NodeAny } from '@flighthq/types/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
+import type { NodeAny } from '@flighthq/node/contract';
 
 import type {
   FlightDocumentFieldSchema,

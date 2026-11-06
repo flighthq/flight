@@ -1,5 +1,4 @@
 import type { EntityRuntime } from '@flighthq/entity/contract';
-import type { NodeAny } from '@flighthq/node/contract';
 
 import type { InteractionEntity as Entity } from './InteractionEntity.ts';
 
@@ -21,19 +20,13 @@ export interface NodeInteractiveStateFlags {
 
 export type NodeInteractiveStateProperty = 'alpha' | 'scaleX' | 'scaleY' | 'visible' | 'x' | 'y';
 
-export type NodeInteractiveStateTransitionValue = boolean | number;
-
-export interface NodeInteractiveStateTransitionRequest<N extends NodeAny = NodeAny, P extends string = string> {
-  readonly apply: (value?: NodeInteractiveStateTransitionValue) => void;
-  readonly from: NodeInteractiveStateTransitionValue;
-  readonly property: P;
-  readonly target: N;
-  readonly value: NodeInteractiveStateTransitionValue;
-}
-
-export interface NodeInteractiveStateTransition<N extends NodeAny = NodeAny, P extends string = string> {
-  readonly run: (request: Readonly<NodeInteractiveStateTransitionRequest<N, P>>) => void;
-}
+// The transition callback shapes are owned by Scene Document, whose document fields drive them;
+// Interaction republishes them on its contract because its binding runtime executes them.
+export type {
+  NodeInteractiveStateTransition,
+  NodeInteractiveStateTransitionRequest,
+  NodeInteractiveStateTransitionValue,
+} from '@flighthq/scene-document/contract';
 
 export const NodeInteractiveStateRefusalReason = {
   ExtensionCreationFailed: 'node-interactive-state.extension.creation-failed',

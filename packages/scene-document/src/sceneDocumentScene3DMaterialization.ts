@@ -1,6 +1,7 @@
 import { createCamera3D, setCamera3DViewMatrix4FromMatrix4 } from '@flighthq/camera/contract';
 import type { Camera3D } from '@flighthq/camera/contract';
 import { allocateEntity, finishEntity, getEntityRuntime } from '@flighthq/entity/contract';
+import type { EntityConstruction, EntityRaw, EntityRuntime, EntityRuntimeKey } from '@flighthq/entity/contract';
 import {
   acquireMatrix4,
   composeMatrix4FromTransform3D,
@@ -12,18 +13,11 @@ import {
 import type { Scene3DLights } from '@flighthq/lighting/contract';
 import { AmbientLightKind, DirectionalLightKind } from '@flighthq/lighting/contract';
 import { addNodeChild, getNodeChildren, getNodeWorldMatrix4 } from '@flighthq/node/contract';
+import type { NodeAny } from '@flighthq/node/contract';
 import { createScene3D, createScene3DLightsFromDocument } from '@flighthq/scene3d/contract';
 import type { Node3D } from '@flighthq/scene3d/contract';
 import { Node3DFieldsKey } from '@flighthq/scene3d/contract';
-import type {
-  Entity,
-  NodeAny,
-  Scene3D,
-  Scene3DDocument,
-  Scene3DDocumentCamera,
-  Scene3DDocumentLight,
-  EntityConstruction,
-} from '@flighthq/types/contract';
+import type { Scene3D, Scene3DDocument, Scene3DDocumentCamera, Scene3DDocumentLight } from '@flighthq/scene3d/contract';
 
 import { explainFlightDocumentText, parseFlightDocumentText } from './flightDocumentText.ts';
 import {
@@ -68,13 +62,13 @@ export function createFlightDocumentFromScene3D(
   schemas: Readonly<FlightDocumentSchemaRegistry>,
   interactiveStateBindings: readonly Readonly<FlightDocumentInteractiveStateBinding<Node3D>>[] = [],
   layoutBindings: readonly Readonly<FlightDocumentLayoutBinding<Node3D>>[] = [],
-): FlightDocumentScene3D & Entity {
+): FlightDocumentScene3D & SceneDocumentEntity {
   const bindingLookup = createInteractiveStateBindingLookup(interactiveStateBindings);
   const usedBindings = new Set<Readonly<NodeAny>>();
   const writtenNodes = new Map<Readonly<NodeAny>, FlightDocumentNode>();
   const scene = writeNode(source.root, schemas, bindingLookup, usedBindings, writtenNodes);
   assertAllInteractiveStateBindingsUsed(bindingLookup, usedBindings);
-  const out = allocateEntity<FlightDocumentScene3D & Entity>();
+  const out = allocateEntity<FlightDocumentScene3D & SceneDocumentEntity>();
   initializeFlightDocumentFromScene3D(out, source, cameras, lights, scene, layoutBindings, writtenNodes);
   return finishEntity(out);
 }
@@ -196,7 +190,7 @@ export function explainFlightDocumentScene3DRefusalFromText(
 }
 
 export function initializeFlightDocumentFromScene3D(
-  out: EntityConstruction<FlightDocumentScene3D & Entity>,
+  out: EntityConstruction<FlightDocumentScene3D & SceneDocumentEntity>,
   source: Readonly<Scene3D>,
   cameras: readonly Readonly<Scene3DDocumentCamera>[],
   lights: readonly Readonly<Scene3DDocumentLight>[],
@@ -454,3 +448,5 @@ function checkRootKindDimension3D(
     kind: documentRoot.kind,
   };
 }
+
+type SceneDocumentEntity = EntityRaw & { [EntityRuntimeKey]: EntityRuntime | undefined };

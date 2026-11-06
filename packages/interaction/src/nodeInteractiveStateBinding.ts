@@ -8,7 +8,7 @@ import type {
   FlightDocumentInteractiveStateTransitionDescriptor,
   FlightDocumentSchemaRegistry,
 } from '@flighthq/scene-document/contract';
-import type { NodeInteractiveStateExtensionRuntime } from '@flighthq/types/contract';
+import type { NodeInteractiveStateExtensionRuntime } from '@flighthq/scene-document/contract';
 
 import type {
   NodeInteractiveStateBinding,

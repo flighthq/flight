@@ -18,7 +18,6 @@
     { "path": "../registry" },
     { "path": "../scene2d/tsconfig.runtime.json" },
     { "path": "../scene3d/tsconfig.runtime.json" },
-    { "path": "../types" },
     { "path": "./tsconfig.contract.json" }
   ],
   "include": ["src/**/*.ts"],

@@ -1,6 +1,6 @@
+import type { NodeAny } from '@flighthq/node/contract';
 import { withKindMapEntry } from '@flighthq/registry/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
-import type { NodeAny } from '@flighthq/types/contract';
 
 import {
   assertAllInteractiveStateBindingsUsed,
