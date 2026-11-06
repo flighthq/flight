@@ -5,9 +5,9 @@ import type {
   HostNotificationDeliveryCapability,
   HostNotificationLifecycleCapability,
   HostNotificationPermissionCapability,
-  TauriApi,
   TauriNotificationCapabilities,
-} from '@flighthq/types/contract';
+} from '@flighthq/notification/contract';
+import type { TauriApi } from '@flighthq/types/contract';
 
 export function tauriHostNotification(tauri: TauriApi): TauriNotificationCapabilities {
   const state = createNotificationState(tauri);

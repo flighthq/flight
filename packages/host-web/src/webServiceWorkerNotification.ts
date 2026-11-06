@@ -11,7 +11,6 @@ import type {
   WebServiceWorkerNotificationCapabilities,
   WebServiceWorkerNotificationEvent,
 } from '@flighthq/notification/contract';
-
 interface WebServiceWorkerNotificationDispatch {
   action(notification: Notification, actionId: string): void;
   click(notification: Notification): void;

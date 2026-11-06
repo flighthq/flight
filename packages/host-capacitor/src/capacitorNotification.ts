@@ -4,9 +4,6 @@ import {
   createScheduledNotificationResource,
 } from '@flighthq/notification/contract';
 import type {
-  CapacitorApi,
-  CapacitorLocalNotificationAction,
-  CapacitorLocalNotificationSchema,
   CapacitorNotificationCapabilities,
   HostNotificationActionCapability,
   HostNotificationClickCapability,
@@ -23,6 +20,11 @@ import type {
   NotificationRequestField,
   NotificationSchedule,
   ScheduledNotification,
+} from '@flighthq/notification/contract';
+import type {
+  CapacitorApi,
+  CapacitorLocalNotificationAction,
+  CapacitorLocalNotificationSchema,
 } from '@flighthq/types/contract';
 
 export function capacitorHostNotification(capacitor: CapacitorApi): CapacitorNotificationCapabilities {

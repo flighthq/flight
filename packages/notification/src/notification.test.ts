@@ -1,6 +1,5 @@
+import { EntityRuntimeKey } from '@flighthq/entity/contract';
 import { connectSignal } from '@flighthq/signals/contract';
-import { EntityRuntimeKey } from '@flighthq/types/contract';
-import type { HostNotificationCapabilities } from '@flighthq/types/contract';
 
 import {
   attachNotificationActionSubscription,
@@ -40,9 +39,23 @@ import {
   scheduleNotification,
   showNotification,
 } from './notification.ts';
-import type { Notification, HostNotificationClickCapability, NotificationEventBackendAttachOutcome } from './types.ts';
+import type {
+  HostNotificationActionCapability,
+  HostNotificationActiveListCapability,
+  HostNotificationClickCapability,
+  HostNotificationCloseCapability,
+  HostNotificationDeliveryCapability,
+  HostNotificationDismissCapability,
+  HostNotificationLifecycleCapability,
+  HostNotificationPermissionCapability,
+  HostNotificationReceivedCapability,
+  HostNotificationReplyCapability,
+  HostNotificationSchedulingCapability,
+  Notification,
+  NotificationEventBackendAttachOutcome,
+} from './types.ts';
 
-function host<const TCapabilities extends HostNotificationCapabilities>(notification: TCapabilities) {
+function host<const TCapabilities extends NotificationHostSlot>(notification: TCapabilities) {
   return { notification };
 }
 
@@ -570,3 +583,20 @@ describe('showNotification', () => {
     ).resolves.toEqual({ notification, reason: 'accepted' });
   });
 });
+
+// The `host.notification` slot shape, composed from this package's own capability contracts. The aggregate
+// `HostNotificationCapabilities` is owned by @flighthq/host, which depends on this package, so the fixture
+// mirrors it locally rather than importing back up the graph.
+interface NotificationHostSlot {
+  readonly action?: HostNotificationActionCapability;
+  readonly activeList?: HostNotificationActiveListCapability;
+  readonly click?: HostNotificationClickCapability;
+  readonly close?: HostNotificationCloseCapability;
+  readonly delivery?: HostNotificationDeliveryCapability;
+  readonly dismiss?: HostNotificationDismissCapability;
+  readonly lifecycle?: HostNotificationLifecycleCapability;
+  readonly permission?: HostNotificationPermissionCapability;
+  readonly received?: HostNotificationReceivedCapability;
+  readonly reply?: HostNotificationReplyCapability;
+  readonly scheduling?: HostNotificationSchedulingCapability;
+}

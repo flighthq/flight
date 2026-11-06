@@ -13,7 +13,6 @@ import type {
   WebPageNotificationCapabilities,
   WebPageNotificationInstance,
 } from '@flighthq/notification/contract';
-
 export function createWebPageNotificationCapabilities(
   api: Readonly<WebPageNotificationApi>,
   hostNotificationPermission: Readonly<HostNotificationPermissionCapability>,

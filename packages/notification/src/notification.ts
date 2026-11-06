@@ -1,7 +1,7 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type { EntityConstruction, EntityRaw, EntityRuntime, EntityRuntimeKey } from '@flighthq/entity/contract';
 import { clearSignal, createSignal, emitSignal } from '@flighthq/signals/contract';
 import type { Signal } from '@flighthq/signals/contract';
-import type { Entity, EntityConstruction } from '@flighthq/types/contract';
 
 import type {
   HostNotificationActionCapability,
@@ -343,8 +343,8 @@ interface NotificationSubscriptionRuntime {
   pending: Promise<NotificationEventBackendAttachOutcome> | null;
 }
 
-function createNotificationSubscription<TSubscription extends Entity>(
-  fields: Omit<TSubscription, keyof Entity>,
+function createNotificationSubscription<TSubscription extends SubscriptionEntity>(
+  fields: Omit<TSubscription, keyof SubscriptionEntity>,
 ): TSubscription {
   const subscription = allocateEntity<TSubscription>();
   Object.assign(subscription, fields);
@@ -359,7 +359,7 @@ function createNotificationSubscription<TSubscription extends Entity>(
   return subscription;
 }
 
-async function attachNotificationSubscription<TSubscription extends Entity, TArgs extends unknown[]>(
+async function attachNotificationSubscription<TSubscription extends SubscriptionEntity, TArgs extends unknown[]>(
   subscription: TSubscription,
   attach: NotificationAttach<TArgs>,
   listener: (...args: TArgs) => void,
@@ -420,7 +420,9 @@ async function attachNotificationSubscription<TSubscription extends Entity, TArg
   return { reason: 'ok' };
 }
 
-async function detachNotificationSubscription(subscription: Entity): Promise<NotificationSubscriptionDetachOutcome> {
+async function detachNotificationSubscription(
+  subscription: SubscriptionEntity,
+): Promise<NotificationSubscriptionDetachOutcome> {
   const runtime = _notificationSubscriptions.get(subscription);
   if (runtime === undefined || runtime.attachment === null) return { reason: 'not-attached' };
   const attachment = runtime.attachment;
@@ -431,7 +433,7 @@ async function detachNotificationSubscription(subscription: Entity): Promise<Not
 }
 
 async function disposeNotificationSubscription<T>(
-  subscription: Entity,
+  subscription: SubscriptionEntity,
   signal: Signal<T>,
 ): Promise<NotificationSubscriptionDisposeOutcome> {
   const runtime = _notificationSubscriptions.get(subscription);
@@ -472,4 +474,7 @@ const _notificationClose = new WeakMap<Notification, () => Promise<NotificationC
 const _closedNotifications = new WeakSet<Notification>();
 const _scheduledNotificationCancel = new WeakMap<ScheduledNotification, () => Promise<NotificationCancelOutcome>>();
 const _cancelledScheduledNotifications = new WeakSet<ScheduledNotification>();
-const _notificationSubscriptions = new WeakMap<Entity, NotificationSubscriptionRuntime>();
+const _notificationSubscriptions = new WeakMap<SubscriptionEntity, NotificationSubscriptionRuntime>();
+
+// The entity shape every notification subscription shares: a raw record carrying its runtime slot.
+type SubscriptionEntity = EntityRaw & { [EntityRuntimeKey]: EntityRuntime | undefined };
