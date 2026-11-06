@@ -52,9 +52,6 @@
     },
     {
       "path": "../texture/tsconfig.contract.json"
-    },
-    {
-      "path": "../types/tsconfig.materials-types.json"
     }
   ],
   "include": ["src/contract.shape-types.ts", "src/types/**/*.ts"]
