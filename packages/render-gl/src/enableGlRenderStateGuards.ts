@@ -1,10 +1,11 @@
 import { logOnce } from '@flighthq/log/contract';
 import type { LogState } from '@flighthq/log/contract';
+import { LogLevel } from '@flighthq/log/contract';
+import type { NodeAny } from '@flighthq/node/contract';
 import { getRenderStateRuntime } from '@flighthq/render/contract';
 import type { RenderState } from '@flighthq/render/contract';
-import type { GlRenderState, NodeAny } from '@flighthq/types/contract';
-import { LogLevel } from '@flighthq/types/contract';
 
+import type { GlRenderState } from './contract.render-gl-types.ts';
 import { getGlRenderStateRuntime } from './glRenderState.ts';
 
 export function areGlRenderStateGuardsEnabled(state: GlRenderState): boolean {

@@ -6,9 +6,10 @@ import {
   removeLogSink,
 } from '@flighthq/log/contract';
 import type { LogState } from '@flighthq/log/contract';
+import type { LogEntry, MemoryLogSink } from '@flighthq/log/contract';
 import type { RenderTexture } from '@flighthq/render/contract';
-import type { LogEntry, MemoryLogSink, RenderTargetClear } from '@flighthq/types/contract';
-import { RenderTargetTextureSourceKind } from '@flighthq/types/contract';
+import type { RenderTargetClear } from '@flighthq/render/contract';
+import { RenderTargetTextureSourceKind } from '@flighthq/texture/contract';
 
 import { enableGlRenderTextureGuards } from './enableGlRenderTextureGuards.ts';
 import { getGlRenderStateRuntime } from './glRenderState.ts';

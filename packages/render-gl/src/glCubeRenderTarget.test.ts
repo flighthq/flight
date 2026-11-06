@@ -1,6 +1,6 @@
-import type { GlRenderPass, GlRenderTarget } from '@flighthq/types/contract';
-import { EntityRuntimeKey } from '@flighthq/types/contract';
+import { EntityRuntimeKey } from '@flighthq/entity/contract';
 
+import type { GlRenderPass, GlRenderTarget } from './contract.render-gl-types.ts';
 import {
   beginGlCubeRenderFace,
   createGlCubeRenderTarget,

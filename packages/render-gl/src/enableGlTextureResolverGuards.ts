@@ -1,6 +1,7 @@
 import type { LogState } from '@flighthq/log/contract';
 import { areRenderRegistriesGuardsEnabled, enableRenderRegistriesGuards } from '@flighthq/render/contract';
-import type { GlRenderState } from '@flighthq/types/contract';
+
+import type { GlRenderState } from './contract.render-gl-types.ts';
 
 export function areGlTextureResolverGuardsEnabled(state: GlRenderState): boolean {
   return areRenderRegistriesGuardsEnabled(state);

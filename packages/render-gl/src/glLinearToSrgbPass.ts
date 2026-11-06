@@ -3,8 +3,7 @@ import type {
   GlRenderState,
   GlRenderTarget,
   GlTextureRenderTarget,
-} from '@flighthq/types/contract';
-
+} from './contract.render-gl-types.ts';
 import { compileGlFullscreenProgram, drawGlFullscreenPass } from './glFullscreenPass.ts';
 import { getGlRenderStateRuntime } from './glRenderState.ts';
 import type { GlContext } from './types.ts';

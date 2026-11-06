@@ -1,8 +1,8 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { createViewport } from '@flighthq/node/contract';
 import type { RenderViewTargetOptions } from '@flighthq/render/contract';
-import type { GlRenderStateOptions, GlRenderViewResources } from '@flighthq/types/contract';
 
+import type { GlRenderStateOptions, GlRenderViewResources } from './contract.render-gl-types.ts';
 import { createGlRenderState, destroyGlRenderState, invalidateGlRenderStateCache } from './glRenderState.ts';
 import {
   createGlTextureRenderTarget,

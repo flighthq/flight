@@ -1,10 +1,11 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
+import { EntityRuntimeKey } from '@flighthq/entity/contract';
 import { createRenderState } from '@flighthq/render/contract';
-import type { EntityConstruction, GlBitmapShader, GlRenderState, GlRenderStateRuntime } from '@flighthq/types/contract';
-import { EntityRuntimeKey } from '@flighthq/types/contract';
-import type { GlShaderLocations } from '@flighthq/types/contract';
 import { vi } from 'vitest';
 
+import type { GlBitmapShader, GlRenderState, GlRenderStateRuntime } from './contract.render-gl-types.ts';
+import type { GlShaderLocations } from './contract.render-gl-types.ts';
 import { createGlContextState, createGlRenderStateRuntime } from './glRenderState.ts';
 
 export function createGlState(options?: { allowSmoothing?: boolean }): {

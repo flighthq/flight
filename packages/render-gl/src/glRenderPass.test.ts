@@ -1,9 +1,10 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { createMatrix } from '@flighthq/geometry/contract';
+import type { Viewport } from '@flighthq/node/contract';
 import { getOrCreateRenderProxy2D } from '@flighthq/render/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
-import type { GlRenderPass, GlRenderTarget, GlTextureRenderTarget, Viewport } from '@flighthq/types/contract';
 
+import type { GlRenderPass, GlRenderTarget, GlTextureRenderTarget } from './contract.render-gl-types.ts';
 import { clearGlRenderTarget, clearGlRenderTargetAttachments, fillGlRect } from './glFullscreenPass.ts';
 import {
   acquireGlRenderPassHandle,

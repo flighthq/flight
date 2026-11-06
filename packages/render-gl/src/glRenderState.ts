@@ -1,11 +1,11 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
+import { EntityRuntimeKey } from '@flighthq/entity/contract';
 import {
   createRenderState as _createRenderState,
   createRenderStateRuntime,
   destroyRenderState,
 } from '@flighthq/render/contract';
-import type { EntityConstruction } from '@flighthq/types/contract';
-import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import type {
   GlColorAdjustmentMaterialFeature,

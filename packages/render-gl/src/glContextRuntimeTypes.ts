@@ -2,13 +2,13 @@ import type { EntityRuntime } from '@flighthq/entity/contract';
 import type { ImageResource } from '@flighthq/image/contract';
 import type { ExternalTexture, RenderTexture } from '@flighthq/render/contract';
 import type { TextureSource } from '@flighthq/texture/contract';
+
 import type {
   GlColorAdjustmentResources,
   GlParticleResources,
   GlQuadBatchResources,
   GlShapeMeshResources,
-} from '@flighthq/types/contract';
-
+} from './glOwnerTypes.ts';
 import type { GlBlendSignature, GlBoundShader } from './glRenderStateTypes.ts';
 import type { GlRenderTextureEntry } from './glRenderTextureTypes.ts';
 import type { GlTextureRealization } from './glTextureResolverTypes.ts';

@@ -1,7 +1,7 @@
 import { createLogState, setLogSink } from '@flighthq/log/contract';
 import type { LogState } from '@flighthq/log/contract';
+import type { LogEntry } from '@flighthq/log/contract';
 import { getRenderStateRuntime } from '@flighthq/render/contract';
-import type { LogEntry } from '@flighthq/types/contract';
 
 import { areGlRenderStateGuardsEnabled, enableGlRenderStateGuards } from './enableGlRenderStateGuards.ts';
 import { useGlProgram } from './glDraw.ts';

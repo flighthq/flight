@@ -1,16 +1,12 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
 import type { ExternalTexture } from '@flighthq/render/contract';
+import type { CreateExternalTextureOptions } from '@flighthq/render/contract';
 import { cloneSampler, createTexture } from '@flighthq/texture/contract';
-import type {
-  CreateExternalTextureOptions,
-  EntityConstruction,
-  GlRenderState,
-  GlTextureRealization,
-  Texture,
-  TextureLike,
-} from '@flighthq/types/contract';
-import { ExternalTextureSourceKind } from '@flighthq/types/contract';
+import type { Texture, TextureLike } from '@flighthq/texture/contract';
+import { ExternalTextureSourceKind } from '@flighthq/texture/contract';
 
+import type { GlRenderState, GlTextureRealization } from './contract.render-gl-types.ts';
 import { applyGlSamplerState, bindGlTextureRealization } from './glDraw.ts';
 import { getGlRenderStateRuntime } from './glRenderState.ts';
 import { registerGlTextureResolver } from './glTextureResolver.ts';

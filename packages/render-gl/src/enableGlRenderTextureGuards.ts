@@ -1,7 +1,7 @@
 import { logOnce } from '@flighthq/log/contract';
 import type { LogState } from '@flighthq/log/contract';
+import { LogLevel } from '@flighthq/log/contract';
 import type { RenderTexture } from '@flighthq/render/contract';
-import { LogLevel } from '@flighthq/types/contract';
 
 import type { GlRenderState, GlRenderTextureExplanation } from './contract.render-gl-types.ts';
 import { setGlRenderTextureGuard } from './glRenderTexture.ts';

@@ -1,24 +1,25 @@
+import type { Bitmap } from '@flighthq/bitmap/contract';
+import type { CompressedImageResource, ImageResource } from '@flighthq/image/contract';
+import { BlendMode } from '@flighthq/materials/contract';
 import { withKindMapEntry } from '@flighthq/registry/contract';
 import { getTextureSource } from '@flighthq/texture/contract';
 import type {
-  Bitmap,
-  CompressedImageResource,
+  TextureSource,
+  TextureColorSpace,
+  SamplerLike,
+  TextureLike,
+  TextureFilter,
+  TextureWrap,
+} from '@flighthq/texture/contract';
+
+import type {
   GlBitmapShader,
   GlBlendRealization,
   GlBlendSignature,
   GlRenderState,
   GlRenderStateRuntime,
   GlTextureRealization,
-  TextureSource,
-  TextureColorSpace,
-  ImageResource,
-  SamplerLike,
-  TextureLike,
-  TextureFilter,
-  TextureWrap,
-} from '@flighthq/types/contract';
-import { BlendMode } from '@flighthq/types/contract';
-
+} from './contract.render-gl-types.ts';
 import { getGlRenderStateRuntime } from './glRenderState.ts';
 import { ensureDefaultGlBitmapShader, setGlAttributes, setGlMatrixFromValues } from './glShader.ts';
 import { uploadGlTextureData, uploadGlTextureElement } from './glTextureUpload.ts';

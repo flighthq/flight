@@ -4,8 +4,7 @@ import type {
   GlRenderTarget,
   GlScissorRect,
   GlViewportRect,
-} from '@flighthq/types/contract';
-
+} from './contract.render-gl-types.ts';
 import { getGlRenderStateRuntime } from './glRenderState.ts';
 import { popGlRenderState, pushGlRenderState, withGlRenderState } from './glRenderStateBracket.ts';
 import { createGlState } from './glTestHelper.ts';

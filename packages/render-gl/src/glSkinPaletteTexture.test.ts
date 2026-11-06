@@ -1,5 +1,4 @@
-import type { GlSkinPaletteTexture } from '@flighthq/types/contract';
-
+import type { GlSkinPaletteTexture } from './contract.render-gl-types.ts';
 import {
   createGlSkinPaletteTexture,
   destroyGlSkinPaletteTexture,

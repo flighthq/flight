@@ -1,6 +1,7 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type { Kind } from '@flighthq/entity/contract';
 import { getOrCreateRenderProxy2D } from '@flighthq/render/contract';
-import type { Node2D, Kind } from '@flighthq/types/contract';
+import type { Node2D } from '@flighthq/scene2d/contract';
 
 import { getGlRenderStateRuntime } from './glRenderState.ts';
 import {

@@ -46,6 +46,7 @@
   "dependencies": {
     "@flighthq/adjustments": "*",
     "@flighthq/app": "*",
+    "@flighthq/bitmap": "*",
     "@flighthq/camera": "*",
     "@flighthq/color": "*",
     "@flighthq/effects": "*",
@@ -60,12 +61,13 @@
     "@flighthq/registry": "*",
     "@flighthq/render": "*",
     "@flighthq/scene2d": "*",
+    "@flighthq/scene3d": "*",
     "@flighthq/shading": "*",
     "@flighthq/signals": "*",
     "@flighthq/surface": "*",
     "@flighthq/texture": "*",
     "@flighthq/texture-formats": "*",
-    "@flighthq/types": "*"
+    "@flighthq/velocity": "*"
   },
   "devDependencies": {
     "typescript": "^7.0.2"

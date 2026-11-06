@@ -10,14 +10,6 @@ import type {
   ShapeRasterizer,
 } from '@flighthq/render/contract';
 import type { SamplerLike } from '@flighthq/texture/contract';
-import type {
-  GlBitmapShader,
-  GlEffectRegistration,
-  GlScene3DPass,
-  GlShaderLocations,
-  GlShapeMesh,
-  GlVelocityWriter,
-} from '@flighthq/types/contract';
 
 import type { GlCompressedTextureUploader } from './glCompressedTextureUploaderTypes.ts';
 import type { GlContextRuntime } from './glContextRuntimeTypes.ts';
@@ -26,6 +18,14 @@ import type { GlCubeRenderTarget } from './glCubeRenderTargetTypes.ts';
 import type { GlCustomMaterialShaderSource } from './glCustomMaterialShaderSourceTypes.ts';
 import type { GlMeshMaterialRenderer } from './glMeshMaterialRendererTypes.ts';
 import type { GlModifierSnippet } from './glModifierSnippetTypes.ts';
+import type {
+  GlBitmapShader,
+  GlEffectRegistration,
+  GlScene3DPass,
+  GlShaderLocations,
+  GlShapeMesh,
+  GlVelocityWriter,
+} from './glOwnerTypes.ts';
 import type { GlPbrExtensionRegistration } from './glPbrExtensionRegistrationTypes.ts';
 import type { GlQuadMaterialRenderer } from './glQuadMaterialRendererTypes.ts';
 import type { GlRenderPass } from './glRenderPassTypes.ts';
@@ -129,8 +129,8 @@ export type GlColorAdjustmentMaterialFeatureGuard = (
 
 // Package-private GPU state for a GlRenderState entity. Lives in the runtime tier (not on the
 // entity) so the public GlRenderState surface stays minimal; the render path resolves it each
-// frame via getGlRenderStateRuntime. Defined in @flighthq/types — the header layer — so
-// out-of-package custom renderers can reach the same state.
+// frame via getGlRenderStateRuntime. Defined in the render-gl contract owner lane so
+// out-of-package custom renderers can reach the same state without the aggregate Types package.
 export interface GlRenderStateRuntime extends RenderStateRuntime {
   context: GlContextRuntime;
   registries: GlRenderRegistries;

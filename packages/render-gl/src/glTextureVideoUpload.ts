@@ -1,4 +1,4 @@
-import type { ImageResource } from '@flighthq/types/contract';
+import type { ImageResource } from '@flighthq/image/contract';
 
 import { uploadGlTextureElement } from './glTextureUpload.ts';
 import type { GlContext } from './types.ts';

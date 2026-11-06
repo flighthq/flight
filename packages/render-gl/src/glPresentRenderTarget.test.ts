@@ -1,6 +1,6 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { GlTextureRenderTarget } from '@flighthq/types/contract';
 
+import type { GlTextureRenderTarget } from './contract.render-gl-types.ts';
 import { presentGlRenderTarget } from './glPresentRenderTarget.ts';
 import { createGlState } from './glTestHelper.ts';
 

@@ -12,6 +12,9 @@
   },
   "references": [
     {
+      "path": "../bitmap/tsconfig.contract.json"
+    },
+    {
       "path": "../app/tsconfig.contract.json"
     },
     {
@@ -51,9 +54,6 @@
       "path": "../texture-formats/tsconfig.contract.json"
     },
     {
-      "path": "../types"
-    },
-    {
       "path": "../effects/tsconfig.runtime.json"
     },
     {
@@ -61,5 +61,10 @@
     }
   ],
   "include": ["src/**/*.ts"],
-  "exclude": ["src/compressed-texture-decoder-contract/**/*.ts", "src/contract.render-gl-types.ts", "src/types.ts"]
+  "exclude": [
+    "src/compressed-texture-decoder-contract/**/*.ts",
+    "src/contract.render-gl-types.ts",
+    "src/glOwnerTypes.ts",
+    "src/types.ts"
+  ]
 }

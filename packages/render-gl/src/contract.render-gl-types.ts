@@ -15,8 +15,33 @@ export type { GlContextState } from './glContextStateTypes.ts';
 export type { GlCustomMaterialShaderSource } from './glCustomMaterialShaderSourceTypes.ts';
 export type { GlCubeRenderTarget, GlCubeRenderTargetOptions } from './glCubeRenderTargetTypes.ts';
 export type { GlMeshMaterialRenderer } from './glMeshMaterialRendererTypes.ts';
+export type {
+  GlBitmapShader,
+  GlColorAdjustmentResources,
+  GlCompressedTextureSupport,
+  GlEffectContext,
+  GlEffectRegistration,
+  GlEffectResolver,
+  GlEffectRunner,
+  GlFullscreenProgram,
+  GlParticleResources,
+  GlPbrExtensionBindContext,
+  GlPbrExtensionRegistration,
+  GlPbrExtensionShaderContext,
+  GlPbrExtensionShaderContribution,
+  GlQuadBatchResources,
+  GlRenderViewResources,
+  GlScene3DPass,
+  GlShader,
+  GlShaderLocations,
+  GlShapeMesh,
+  GlShapeMeshBinding,
+  GlShapeMeshResources,
+  GlSkinPaletteTexture,
+  GlVelocityContext,
+  GlVelocityWriter,
+} from './glOwnerTypes.ts';
 export type { GlModifierBindContext, GlModifierSnippet } from './glModifierSnippetTypes.ts';
-export type { GlPbrExtensionRegistration } from './glPbrExtensionRegistrationTypes.ts';
 export type { GlQuadMaterialRenderer } from './glQuadMaterialRendererTypes.ts';
 export type { GlRenderOptions } from './glRenderOptionsTypes.ts';
 export type { GlRenderPass } from './glRenderPassTypes.ts';

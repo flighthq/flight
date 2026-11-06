@@ -1,5 +1,7 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
 import { acquireMatrix, multiplyMatrix, releaseMatrix } from '@flighthq/geometry/contract';
+import type { Matrix } from '@flighthq/geometry/contract';
 import type {
   RenderTargetAxes,
   RenderTargetColorSpace,
@@ -11,7 +13,6 @@ import type {
 } from '@flighthq/render/contract';
 import { explainRenderTargetAxes, resolveRenderTargetDescriptor } from '@flighthq/render/contract';
 import type { RenderProxy2D } from '@flighthq/render/contract';
-import type { EntityConstruction, Matrix } from '@flighthq/types/contract';
 
 import type {
   GlRenderPass,

@@ -1,4 +1,5 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { EntityRuntimeKey } from '@flighthq/entity/contract';
 import {
   addLogSink,
   createLogState,
@@ -7,6 +8,7 @@ import {
   removeLogSink,
 } from '@flighthq/log/contract';
 import type { LogState } from '@flighthq/log/contract';
+import type { LogEntry, MemoryLogSink } from '@flighthq/log/contract';
 import { withKindMapEntry } from '@flighthq/registry/contract';
 import {
   enableColorAdjustmentGuards,
@@ -18,16 +20,13 @@ import {
 } from '@flighthq/render/contract';
 import type { EffectPaddingResolver, RenderState } from '@flighthq/render/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
+
 import type {
   GlBitmapShader,
   GlColorAdjustmentMaterialFeature,
   GlColorAdjustmentMaterialFeatureGuard,
   GlRenderStateOptions,
-  LogEntry,
-  MemoryLogSink,
-} from '@flighthq/types/contract';
-import { EntityRuntimeKey } from '@flighthq/types/contract';
-
+} from './contract.render-gl-types.ts';
 import { areGlRenderStateGuardsEnabled, enableGlRenderStateGuards } from './enableGlRenderStateGuards.ts';
 import { registerGlCompressedTextureDecoder, registerGlCompressedTextureUpload } from './glCompressedTexture.ts';
 import { isBlendModeSupported, registerGlBlendMode, useGlProgram } from './glDraw.ts';

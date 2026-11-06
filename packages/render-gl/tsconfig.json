@@ -5,6 +5,9 @@
   "files": [],
   "references": [
     {
+      "path": "../bitmap/tsconfig.contract.json"
+    },
+    {
       "path": "../adjustments/tsconfig.contract.json"
     },
     {
@@ -50,6 +53,9 @@
       "path": "../scene2d/tsconfig.runtime.json"
     },
     {
+      "path": "../scene3d/tsconfig.node.json"
+    },
+    {
       "path": "../shading/tsconfig.contract.json"
     },
     {
@@ -65,7 +71,7 @@
       "path": "../texture-formats/tsconfig.contract.json"
     },
     {
-      "path": "../types"
+      "path": "../velocity/tsconfig.contract.json"
     },
     {
       "path": "../effects/tsconfig.runtime.json"

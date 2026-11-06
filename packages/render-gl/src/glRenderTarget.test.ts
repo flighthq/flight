@@ -1,7 +1,7 @@
+import { EntityRuntimeKey } from '@flighthq/entity/contract';
 import { createMatrix } from '@flighthq/geometry/contract';
 import { getOrCreateRenderProxy2D } from '@flighthq/render/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
-import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import { beginGlRenderPass, endGlRenderPass } from './glRenderPass.ts';
 import { getGlRenderStateRuntime } from './glRenderState.ts';

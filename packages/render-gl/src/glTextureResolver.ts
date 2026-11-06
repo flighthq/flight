@@ -1,21 +1,16 @@
+import type { Bitmap } from '@flighthq/bitmap/contract';
+import type { CompressedImageResource, ImageResource } from '@flighthq/image/contract';
 import { withoutKindMapEntry, withKindMapEntry } from '@flighthq/registry/contract';
 import type { RenderTargetColorSpace, RenderTexture } from '@flighthq/render/contract';
 import { RenderRegistryTable } from '@flighthq/render/contract';
 import { getTextureSampleColorSpace, getTextureSource, getTextureSourceKind } from '@flighthq/texture/contract';
-import type {
-  Bitmap,
-  CompressedImageResource,
-  ImageResource,
-  TextureColorSpace,
-  TextureSourceKind,
-  TextureLike,
-} from '@flighthq/types/contract';
+import type { TextureColorSpace, TextureSourceKind, TextureLike } from '@flighthq/texture/contract';
 import {
   BitmapTextureSourceKind,
   CompressedImageTextureSourceKind,
   ImageTextureSourceKind,
   RenderTargetTextureSourceKind,
-} from '@flighthq/types/contract';
+} from '@flighthq/texture/contract';
 
 import type { GlRenderState, GlTextureRealization, GlTextureResolver } from './contract.render-gl-types.ts';
 import {

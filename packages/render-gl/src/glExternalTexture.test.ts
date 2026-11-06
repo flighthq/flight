@@ -1,5 +1,5 @@
 import { getTextureSourceKind } from '@flighthq/texture/contract';
-import { ExternalTextureSourceKind } from '@flighthq/types/contract';
+import { ExternalTextureSourceKind } from '@flighthq/texture/contract';
 
 import {
   createExternalGlTexture,

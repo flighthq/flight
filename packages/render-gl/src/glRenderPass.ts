@@ -1,5 +1,6 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { RenderTargetClear, Viewport } from '@flighthq/types/contract';
+import type { Viewport } from '@flighthq/node/contract';
+import type { RenderTargetClear } from '@flighthq/render/contract';
 
 import type {
   GlRenderState,

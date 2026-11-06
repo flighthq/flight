@@ -1,13 +1,14 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type { ImageResource } from '@flighthq/image/contract';
 import { getKindMapKeys } from '@flighthq/registry/contract';
 import type { RenderTexture } from '@flighthq/render/contract';
-import type { ImageResource, TextureLike, TextureSource } from '@flighthq/types/contract';
+import type { TextureLike, TextureSource } from '@flighthq/texture/contract';
 import {
   BitmapTextureSourceKind,
   CompressedImageTextureSourceKind,
   ImageTextureSourceKind,
   RenderTargetTextureSourceKind,
-} from '@flighthq/types/contract';
+} from '@flighthq/texture/contract';
 
 import { getGlRenderStateRuntime } from './glRenderState.ts';
 import { renderIntoGlRenderTexture } from './glRenderTexture.ts';

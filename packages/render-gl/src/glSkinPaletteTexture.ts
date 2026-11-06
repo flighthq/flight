@@ -1,6 +1,7 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { GlSkinPaletteTexture, EntityConstruction } from '@flighthq/types/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
 
+import type { GlSkinPaletteTexture } from './contract.render-gl-types.ts';
 import type { GlContext } from './types.ts';
 
 // The GPU skinning bone-palette data texture: the per-mesh joint-matrix palette in an RGBA32F texture

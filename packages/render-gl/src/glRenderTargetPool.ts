@@ -1,13 +1,9 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
 import type { RenderTargetAxes, RenderTargetDescriptor, RenderTargetFormatPolicy } from '@flighthq/render/contract';
 import { resolveRenderTargetDescriptor } from '@flighthq/render/contract';
-import type {
-  EntityConstruction,
-  GlRenderState,
-  GlTextureRenderTarget,
-  GlTextureRenderTargetPool,
-} from '@flighthq/types/contract';
 
+import type { GlRenderState, GlTextureRenderTarget, GlTextureRenderTargetPool } from './contract.render-gl-types.ts';
 import { clearGlRenderTarget } from './glFullscreenPass.ts';
 import {
   createGlTextureRenderTarget,

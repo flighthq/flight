@@ -1,5 +1,4 @@
-import type { GlTextureRenderTarget } from '@flighthq/types/contract';
-
+import type { GlTextureRenderTarget } from './contract.render-gl-types.ts';
 import { readGlRenderTargetPixels } from './glReadback.ts';
 import { createGlState } from './glTestHelper.ts';
 

@@ -1,6 +1,6 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { GlRenderPass, GlRenderState, GlTextureRenderTarget } from '@flighthq/types/contract';
 
+import type { GlRenderPass, GlRenderState, GlTextureRenderTarget } from './contract.render-gl-types.ts';
 import {
   clearGlRenderTarget,
   clearGlRenderTargetAttachments,

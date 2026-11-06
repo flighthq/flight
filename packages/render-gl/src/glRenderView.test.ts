@@ -1,6 +1,6 @@
-import { EntityRuntimeKey } from '@flighthq/types/contract';
-import type { GlRenderViewResources } from '@flighthq/types/contract';
+import { EntityRuntimeKey } from '@flighthq/entity/contract';
 
+import type { GlRenderViewResources } from './contract.render-gl-types.ts';
 import {
   createGlRenderViewResources,
   destroyGlRenderViewResources,

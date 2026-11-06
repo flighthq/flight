@@ -1,13 +1,15 @@
+import type { Bitmap } from '@flighthq/bitmap/contract';
 import { AdvancedBlendMode } from '@flighthq/effects/contract';
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type { CompressedImageResource, ImageResource } from '@flighthq/image/contract';
+import { BlendMode } from '@flighthq/materials/contract';
 import { getTextureSource } from '@flighthq/texture/contract';
-import type { Bitmap, CompressedImageResource, ImageResource, SamplerLike, Texture } from '@flighthq/types/contract';
+import type { SamplerLike, Texture } from '@flighthq/texture/contract';
 import {
   BitmapTextureSourceKind,
-  BlendMode,
   CompressedImageTextureSourceKind,
   ImageTextureSourceKind,
-} from '@flighthq/types/contract';
+} from '@flighthq/texture/contract';
 
 import { registerGlCompressedTextureDecoder, registerGlCompressedTextureUpload } from './glCompressedTexture.ts';
 import {

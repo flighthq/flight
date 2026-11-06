@@ -12,6 +12,7 @@
       ".adjustments-types",
       ".camera-types",
       ".meshgeometry-types",
+      ".effects-types",
       ".render-types",
       ".render-backend-bridge-types",
       ".render-wgpu-bridge-types",
@@ -24,6 +25,9 @@
       ".geometry-types",
       ".texture-types",
       ".texture-formats-types",
+      ".velocity-types",
+      ".scene3d-node-types",
+      ".node-types",
       ""
     ],
     "tsBuildInfoFile": "dist/.tsbuildinfo.contract"
@@ -42,6 +46,9 @@
       "path": "../entity"
     },
     {
+      "path": "../effects/tsconfig.contract.json"
+    },
+    {
       "path": "../image/tsconfig.contract.json"
     },
     {
@@ -57,10 +64,13 @@
       "path": "../shading/tsconfig.contract.json"
     },
     {
-      "path": "../types/tsconfig.render-wgpu-types.json"
+      "path": "../render/tsconfig.contract.json"
     },
     {
-      "path": "../render/tsconfig.contract.json"
+      "path": "../scene3d/tsconfig.node.json"
+    },
+    {
+      "path": "../node/tsconfig.contract.json"
     },
     {
       "path": "../lighting/tsconfig.contract.json"
@@ -75,6 +85,9 @@
       "path": "../texture-formats/tsconfig.contract.json"
     },
     {
+      "path": "../velocity/tsconfig.contract.json"
+    },
+    {
       "path": "./tsconfig.compressed-texture-decoder-contract.json"
     }
   ],
@@ -87,6 +100,7 @@
     "src/glCubeRenderTargetTypes.ts",
     "src/glMeshMaterialRendererTypes.ts",
     "src/glModifierSnippetTypes.ts",
+    "src/glOwnerTypes.ts",
     "src/glPbrExtensionRegistrationTypes.ts",
     "src/glQuadMaterialRendererTypes.ts",
     "src/glRenderOptionsTypes.ts",

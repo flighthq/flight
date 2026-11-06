@@ -1,8 +1,9 @@
 ﻿import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
 import type { RenderProxy, RenderProxy2D } from '@flighthq/render/contract';
-import type { GlBitmapShader, GlShaderLocations, EntityConstruction } from '@flighthq/types/contract';
-import type { GlRenderState } from '@flighthq/types/contract';
 
+import type { GlBitmapShader, GlShaderLocations } from './contract.render-gl-types.ts';
+import type { GlRenderState } from './contract.render-gl-types.ts';
 import { createGlProgram } from './glProgram.ts';
 import { getGlRenderStateRuntime } from './glRenderState.ts';
 import type { GlContext } from './types.ts';

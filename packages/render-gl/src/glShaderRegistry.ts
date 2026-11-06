@@ -1,6 +1,5 @@
-import type { GlRenderState } from '@flighthq/types/contract';
-import type { GlBitmapShader } from '@flighthq/types/contract';
-
+import type { GlRenderState } from './contract.render-gl-types.ts';
+import type { GlBitmapShader } from './contract.render-gl-types.ts';
 import { getGlRenderStateRuntime } from './glRenderState.ts';
 
 export function registerGlBitmapShader(state: GlRenderState, shader: GlBitmapShader): void {
