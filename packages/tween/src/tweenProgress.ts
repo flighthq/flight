@@ -1,9 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { emitSignal } from '@flighthq/signals/contract';
-import type { Tween } from '@flighthq/types/contract';
 
 import { initializeTween } from './internal.ts';
+import type { Tween } from './types.ts';
 
 /**
  * Return the normalized playback progress of a tween in the range 0..1.

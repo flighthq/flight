@@ -451,7 +451,7 @@
       "path": "../tray/tsconfig.runtime.json"
     },
     {
-      "path": "../tween"
+      "path": "../tween/tsconfig.runtime.json"
     },
     {
       "path": "../types"

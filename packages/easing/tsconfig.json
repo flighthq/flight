@@ -11,9 +11,6 @@
   "references": [
     {
       "path": "../log"
-    },
-    {
-      "path": "../types"
     }
   ],
   "include": ["src"]

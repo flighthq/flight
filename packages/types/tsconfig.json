@@ -83,6 +83,7 @@
       ".textsegment-types",
       ".text-markup-types",
       ".loader-types",
+      ".tween-types",
       ""
     ],
     "types": ["@testing-library/jest-dom", "vitest/globals", "@webgpu/types"]
@@ -381,6 +382,12 @@
     },
     {
       "path": "../scene3d-formats/tsconfig.contract.json"
+    },
+    {
+      "path": "../easing"
+    },
+    {
+      "path": "../tween/tsconfig.contract.json"
     }
   ],
   "include": ["src"]

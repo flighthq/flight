@@ -4,6 +4,7 @@ import { connectSignal, disconnectSignal } from '@flighthq/signals/contract';
 import { hasTextureSource } from '@flighthq/texture/contract';
 import type { Texture } from '@flighthq/texture/contract';
 import { createTween } from '@flighthq/tween/contract';
+import type { TweenManager } from '@flighthq/tween/contract';
 import type {
   Material,
   Node3D,
@@ -11,7 +12,6 @@ import type {
   Scene3DResourceResolver,
   Scene3DResourceResolverWithRuntime,
   Scene3DResourceRevealOptions,
-  TweenManager,
 } from '@flighthq/types/contract';
 import { ResourceResolutionState } from '@flighthq/types/contract';
 

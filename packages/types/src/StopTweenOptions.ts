@@ -1,6 +1,5 @@
-export interface StopTweenOptions {
-  /** Apply final property values to the target before stopping. Default: false. */
-  complete?: boolean;
-  /** Fire onComplete when complete is true. Default: true. */
-  sendEvent?: boolean;
-}
+// Owned by `@flighthq/tween`. These deprecated re-exports keep existing `@flighthq/types` imports
+// compiling until consumers import the owning package.
+
+/** @deprecated Import from `@flighthq/tween/contract`. */
+export type { StopTweenOptions } from '@flighthq/tween/contract';

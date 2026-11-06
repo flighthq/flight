@@ -50,6 +50,7 @@
       ".render-gl-types",
       ".accessibility-types",
       ".textsegment-types",
+      ".tween-types",
       ""
     ],
     "tsBuildInfoFile": "dist/.tsbuildinfo.scene2d-formats-types"
@@ -243,6 +244,12 @@
     },
     {
       "path": "../textsegment/tsconfig.contract.json"
+    },
+    {
+      "path": "../easing"
+    },
+    {
+      "path": "../tween/tsconfig.contract.json"
     }
   ],
   "files": [

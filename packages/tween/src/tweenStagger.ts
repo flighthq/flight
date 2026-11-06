@@ -1,7 +1,7 @@
 import type { EasingFunction } from '@flighthq/easing/contract';
-import type { NumericProps, Tween, TweenManager, TweenOptions, TweenStaggerOptions } from '@flighthq/types/contract';
 
 import { createTween } from './tween.ts';
+import type { NumericProps, Tween, TweenManager, TweenOptions, TweenStaggerOptions } from './types.ts';
 
 /**
  * Batch-tween an array of targets with staggered start delays.

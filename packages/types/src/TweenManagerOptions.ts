@@ -1,6 +1,5 @@
-import type { EasingFunction } from './EasingFunction.ts';
+// Owned by `@flighthq/tween`. These deprecated re-exports keep existing `@flighthq/types` imports
+// compiling until consumers import the owning package.
 
-export interface TweenManagerOptions {
-  /** Default easing function used by tweens that do not specify one explicitly. */
-  defaultEase?: EasingFunction;
-}
+/** @deprecated Import from `@flighthq/tween/contract`. */
+export type { TweenManagerOptions } from '@flighthq/tween/contract';

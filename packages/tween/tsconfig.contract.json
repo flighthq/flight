@@ -1,0 +1,24 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "composite": true,
+    "rootDir": "src",
+    "outDir": "dist",
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "tsBuildInfoFile": "dist/.tsbuildinfo.contract"
+  },
+  "references": [
+    {
+      "path": "../easing"
+    },
+    {
+      "path": "../entity"
+    },
+    {
+      "path": "../signals"
+    }
+  ],
+  "include": ["src/contract.tween-types.ts", "src/types.ts"]
+}

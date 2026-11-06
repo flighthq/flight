@@ -1,11 +1,5 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+// Owned by `@flighthq/tween`. These deprecated re-exports keep existing `@flighthq/types` imports
+// compiling until consumers import the owning package.
 
-import type { EasingFunction } from './EasingFunction.ts';
-import type { Entity } from './Entity.ts';
-import type { Tween } from './Tween.ts';
-
-export interface TweenManager extends Entity {
-  readonly __brand: 'TweenManager';
-  defaultEase: EasingFunction;
-  tweens: Map<object, Tween<any>[]>;
-}
+/** @deprecated Import from `@flighthq/tween/contract`. */
+export type { TweenManager } from '@flighthq/tween/contract';
