@@ -1,7 +1,8 @@
-import type { Entity } from '@flighthq/entity/contract';
+import type { EntityRaw, EntityRuntime, EntityRuntimeKey } from '@flighthq/entity/contract';
 import type { Path } from '@flighthq/path/contract';
 
-export interface FontResource extends Entity {
+export interface FontResource extends EntityRaw {
+  [EntityRuntimeKey]: EntityRuntime | undefined;
   family: string;
   face: FontFace | null;
 }

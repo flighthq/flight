@@ -1,4 +1,4 @@
-import type { Entity } from '@flighthq/entity/contract';
+import type { EntityRaw, EntityRuntime, EntityRuntimeKey } from '@flighthq/entity/contract';
 
 export const AnchorLayoutKind = 'AnchorLayout';
 export const FlexLayoutKind = 'FlexLayout';
@@ -115,7 +115,8 @@ export type LayoutResolver = (
 
 export type LayoutResolutionGuard = (explanation: Readonly<LayoutResolutionExplanation>) => void;
 
-export interface LayoutState extends Entity {
+export interface LayoutState extends EntityRaw {
+  [EntityRuntimeKey]: EntityRuntime | undefined;
   guard: LayoutResolutionGuard | null;
   lastFailureActualLength: number;
   lastFailureKind: LayoutResolutionFailureKind | null;
