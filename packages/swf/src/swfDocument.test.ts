@@ -28,6 +28,7 @@ import {
   createScene2DDocumentImporterRegistry,
   resolveScene2DResources,
 } from '@flighthq/scene2d-resources/contract';
+import type { Scene2DDocument } from '@flighthq/scene2d-resources/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
 import type { MorphShape, Scale9Shape, Shape } from '@flighthq/shape/contract';
 import { MorphShapeKind, Scale9ShapeKind, ShapeKind } from '@flighthq/shape/contract';
@@ -43,7 +44,6 @@ import type {
   ImportDiagnostic,
   MovieClip,
   Node2D,
-  Scene2DDocument,
   Sprite,
   Texture2D,
 } from '@flighthq/types/contract';

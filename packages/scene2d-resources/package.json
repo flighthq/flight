@@ -46,6 +46,7 @@
     "@flighthq/image-codec": "*",
     "@flighthq/log": "*",
     "@flighthq/node": "*",
+    "@flighthq/scene2d": "*",
     "@flighthq/scene2d-formats": "*",
     "@flighthq/signals": "*",
     "@flighthq/texture": "*",

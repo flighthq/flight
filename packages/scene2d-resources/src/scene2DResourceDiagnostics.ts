@@ -1,11 +1,12 @@
+import { ResourceResolutionState } from '@flighthq/types/contract';
+
+import type { Scene2DDocument } from './types/Scene2DDocument.ts';
 import type {
-  Scene2DDocument,
   Scene2DResourceCoverageCount,
   Scene2DResourceCoverageExplanation,
   Scene2DResourceFailureGuard,
   Scene2DResourceFailureNotice,
-} from '@flighthq/types/contract';
-import { ResourceResolutionState } from '@flighthq/types/contract';
+} from './types/Scene2DResources.ts';
 
 // Reports document-wide coverage from the live reference states. The query is allocation-only and
 // has no logging side effect; call the image/audio reference explainers for an individual failure.

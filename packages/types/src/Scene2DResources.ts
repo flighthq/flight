@@ -1,168 +1,27 @@
-import type {
-  AudioDecoderRegistry,
-  AudioResourceFetch,
-  AudioResourceReference,
-  HostAudioDecodeCapabilities,
-} from '@flighthq/audio/contract';
-import type { Signal } from '@flighthq/signals/contract';
-
-import type { ImageDecodeFallback } from './ImageDecoder.ts';
-import type { ImageResourceFetch, ImageResourceReference } from './ImageResourceReference.ts';
-import type { Node2D } from './Node2D.ts';
-import type { Scene2DDocument, Scene2DSlotReference } from './Scene2DDocument.ts';
-
-export interface Scene2DDocumentFetchProgress {
-  loaded: number;
-  total: number;
-  url: string;
-}
-
-export type Scene2DDocumentFetcher = (
-  url: string,
-  signal: AbortSignal,
-  progress: Signal<Readonly<Scene2DDocumentFetchProgress>> | null,
-) => Promise<Uint8Array | null>;
-
-export interface Scene2DDocumentImportContext {
-  mimeType: string | null;
-  url: string | null;
-}
-
-export type Scene2DDocumentImporter = (
-  source: Uint8Array,
-  context: Readonly<Scene2DDocumentImportContext>,
-) => Scene2DDocument | null;
-
-export type Scene2DDocumentImporterMatcher = (
-  source: Uint8Array,
-  context: Readonly<Scene2DDocumentImportContext>,
-) => boolean;
-
-export interface Scene2DDocumentImporterEntry {
-  importDocument: Scene2DDocumentImporter;
-  kind: string;
-  matches: Scene2DDocumentImporterMatcher;
-}
-
-export interface Scene2DDocumentImporterRegistry {
-  entries: Scene2DDocumentImporterEntry[];
-}
-
-export interface Scene2DDocumentLoadOptions {
-  mimeType?: string | null;
-  progress?: Signal<Readonly<Scene2DDocumentFetchProgress>>;
-  signal?: AbortSignal;
-}
-
-// Receives the whole reference rather than its fields so the seam stays stable as slots gain fields.
-export type Scene2DSlotContentResolver = (reference: Readonly<Scene2DSlotReference>) => Node2D | null;
-
-export interface Scene2DSlotResolution {
-  content: Node2D;
-  reference: Scene2DSlotReference;
-}
-
-export interface Scene2DResources {
-  document: Scene2DDocument;
-  resolved: Scene2DSlotResolution[];
-  root: Node2D;
-  unresolved: Scene2DSlotReference[];
-}
-
-export interface ResolveScene2DResourcesOptions {
-  resolveSlotContent?: Scene2DSlotContentResolver;
-  select?: (reference: Readonly<Scene2DSlotReference>) => boolean;
-}
-
-export interface Scene2DImageResourceLoadProgress {
-  loaded: number;
-  reference: ImageResourceReference;
-  total: number;
-}
-
-// Counted by reference rather than by waiting Texture: a document that places one bitmap a hundred times
-// reports one resolution, which is also exactly one decode.
-export interface Scene2DImageResources {
-  document: Scene2DDocument;
-  resolved: ImageResourceReference[];
-  unresolved: ImageResourceReference[];
-}
-
-export interface LoadScene2DImageResourcesOptions {
-  decode?: ImageDecodeFallback;
-  // Resolves an External reference's uri. A document whose images are all embedded never needs one.
-  fetch?: ImageResourceFetch;
-  progress?: Signal<Readonly<Scene2DImageResourceLoadProgress>>;
-  select?: (reference: Readonly<ImageResourceReference>) => boolean;
-  signal?: AbortSignal;
-}
-
-export interface Scene2DAudioResourceLoadProgress {
-  loaded: number;
-  reference: AudioResourceReference;
-  total: number;
-}
-
-export interface Scene2DAudioResources {
-  document: Scene2DDocument;
-  resolved: AudioResourceReference[];
-  unresolved: AudioResourceReference[];
-}
-
-export interface LoadScene2DAudioResourcesOptions {
-  // The host's standard-container decoders. Omitted when every selected reference resolves through a
-  // caller-supplied decoder or the fetch seam, so a host that ships no audio codec still loads a document.
-  audioDecode?: Readonly<HostAudioDecodeCapabilities>;
-  // Caller-owned decoders for formats outside the standard containers, keyed by MIME essence. This is the
-  // whole extension seam: it travels with the load rather than living anywhere global, so two documents
-  // in one process can disagree about what is decodable.
-  decoders?: AudioDecoderRegistry;
-  // Resolves an External reference's uri. A document whose sounds are all embedded never needs one.
-  fetch?: AudioResourceFetch;
-  progress?: Signal<Readonly<Scene2DAudioResourceLoadProgress>>;
-  select?: (reference: Readonly<AudioResourceReference>) => boolean;
-  signal?: AbortSignal;
-}
-
-// One aggregate lane in explainScene2DResourceCoverage. Counts are document-wide rather than scoped
-// to the last load selection, so a caller can ask one stable question after any combination of loads.
-export interface Scene2DResourceCoverageCount {
-  readonly resolved: number;
-  readonly total: number;
-}
-
-// Complete when every authored image/audio reference is resolved and every required application slot
-// has content. Optional slots deliberately do not affect completeness.
-export interface Scene2DResourceCoverageExplanation {
-  readonly audioResources: Readonly<Scene2DResourceCoverageCount>;
-  readonly complete: boolean;
-  readonly imageResources: Readonly<Scene2DResourceCoverageCount>;
-  readonly requiredSlots: Readonly<Scene2DResourceCoverageCount>;
-}
-
-export type Scene2DResourceFailureOperation =
-  | 'createScene2DDocumentFromBytes'
-  | 'loadScene2DAudioResources'
-  | 'loadScene2DDocumentFromUrl'
-  | 'loadScene2DImageResources'
-  | 'resolveScene2DResources';
-
-export type Scene2DResourceFailureReason =
-  | 'audio-resources-unresolved'
-  | 'document-fetch-failed'
-  | 'document-import-failed'
-  | 'document-importer-missing'
-  | 'image-resources-unresolved'
-  | 'required-slots-unresolved';
-
-// Plain-data notice installed by enableScene2DResourceFailureGuards. The aggregate counts keep the
-// hook operation-scoped and avoid retaining document graphs in diagnostic sinks.
-export interface Scene2DResourceFailureNotice {
-  readonly operation: Scene2DResourceFailureOperation;
-  readonly reason: Scene2DResourceFailureReason;
-  readonly total: number;
-  readonly unresolved: number;
-  readonly url: string | null;
-}
-
-export type Scene2DResourceFailureGuard = (notice: Readonly<Scene2DResourceFailureNotice>) => void;
+/** @deprecated Import scene document contracts from `@flighthq/scene2d-resources/contract`. */
+export type {
+  LoadScene2DAudioResourcesOptions,
+  LoadScene2DImageResourcesOptions,
+  ResolveScene2DResourcesOptions,
+  Scene2DAudioResourceLoadProgress,
+  Scene2DAudioResources,
+  Scene2DDocumentFetchProgress,
+  Scene2DDocumentFetcher,
+  Scene2DDocumentImportContext,
+  Scene2DDocumentImporter,
+  Scene2DDocumentImporterEntry,
+  Scene2DDocumentImporterMatcher,
+  Scene2DDocumentImporterRegistry,
+  Scene2DDocumentLoadOptions,
+  Scene2DImageResourceLoadProgress,
+  Scene2DImageResources,
+  Scene2DResourceCoverageCount,
+  Scene2DResourceCoverageExplanation,
+  Scene2DResourceFailureGuard,
+  Scene2DResourceFailureNotice,
+  Scene2DResourceFailureOperation,
+  Scene2DResourceFailureReason,
+  Scene2DResources,
+  Scene2DSlotContentResolver,
+  Scene2DSlotResolution,
+} from '@flighthq/scene2d-resources/contract';

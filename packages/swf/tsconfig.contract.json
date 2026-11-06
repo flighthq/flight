@@ -20,6 +20,7 @@
       ".text-types",
       ".texture-types",
       ".timeline-types",
+      ".scene2d-resources-types",
       ""
     ],
     "tsBuildInfoFile": "dist/.tsbuildinfo.contract"
@@ -51,6 +52,9 @@
     },
     {
       "path": "../path/tsconfig.contract.json"
+    },
+    {
+      "path": "../scene2d-resources/tsconfig.contract.json"
     },
     {
       "path": "../scene2d/tsconfig.contract.json"

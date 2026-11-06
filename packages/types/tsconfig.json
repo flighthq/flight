@@ -98,6 +98,7 @@
       ".swf-types",
       ".glyphatlas-types",
       ".timeline-types",
+      ".scene2d-resources-types",
       ""
     ],
     "types": ["@testing-library/jest-dom", "vitest/globals", "@webgpu/types"]
@@ -444,6 +445,9 @@
     },
     {
       "path": "../timeline/tsconfig.contract.json"
+    },
+    {
+      "path": "../scene2d-resources/tsconfig.contract.json"
     }
   ],
   "include": ["src"]

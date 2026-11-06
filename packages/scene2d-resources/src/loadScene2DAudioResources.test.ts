@@ -5,15 +5,12 @@ import {
 } from '@flighthq/audio/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
 import { connectSignal, createSignal } from '@flighthq/signals/contract';
-import type {
-  AudioResourceFetch,
-  HostAudioDecodeCapabilities,
-  Scene2DAudioResourceLoadProgress,
-} from '@flighthq/types/contract';
+import type { AudioResourceFetch, HostAudioDecodeCapabilities } from '@flighthq/types/contract';
 import { ResourceResolutionState } from '@flighthq/types/contract';
 
 import { loadScene2DAudioResources } from './loadScene2DAudioResources.ts';
 import { createScene2DDocument } from './scene2DDocument.ts';
+import type { Scene2DAudioResourceLoadProgress } from './types/Scene2DResources.ts';
 
 const decodedBuffer = { duration: 1 } as AudioBuffer;
 

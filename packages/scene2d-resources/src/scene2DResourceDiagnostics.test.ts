@@ -1,7 +1,6 @@
 import { createExternalAudioResourceReference } from '@flighthq/audio/contract';
 import { createExternalImageResourceReference } from '@flighthq/image/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
-import type { Scene2DResourceFailureNotice } from '@flighthq/types/contract';
 import { ResourceResolutionState } from '@flighthq/types/contract';
 
 import { loadScene2DAudioResources } from './loadScene2DAudioResources.ts';
@@ -20,6 +19,7 @@ import {
   setScene2DResourceFailureGuard,
 } from './scene2DResourceDiagnostics.ts';
 import { setScene2DSlotReferenceContent } from './scene2DSlotReference.ts';
+import type { Scene2DResourceFailureNotice } from './types/Scene2DResources.ts';
 
 function notice(reason: Scene2DResourceFailureNotice['reason']): Scene2DResourceFailureNotice {
   return { operation: 'resolveScene2DResources', reason, total: 2, unresolved: 1, url: null };

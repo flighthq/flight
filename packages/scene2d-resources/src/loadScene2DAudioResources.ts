@@ -4,13 +4,12 @@ import type {
   AudioResource,
   AudioResourceFetch,
   AudioResourceReference,
-  LoadScene2DAudioResourcesOptions,
-  Scene2DAudioResources,
   HostAudioDecodeCapabilities,
-  Scene2DDocument,
 } from '@flighthq/types/contract';
 
 import { reportScene2DResourceFailure } from './scene2DResourceDiagnostics.ts';
+import type { Scene2DDocument } from './types/Scene2DDocument.ts';
+import type { LoadScene2DAudioResourcesOptions, Scene2DAudioResources } from './types/Scene2DResources.ts';
 
 // Operation-scoped asynchronous boundary for a document's sounds, the twin of loadScene2DImageResources.
 // Each selected reference decodes once into the resource it already handed out, so a trigger bound before

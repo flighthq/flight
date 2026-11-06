@@ -4,11 +4,12 @@ import { createEmbeddedImageResourceReference, createExternalImageResourceRefere
 import { createDisplayObject } from '@flighthq/scene2d/contract';
 import { connectSignal, createSignal } from '@flighthq/signals/contract';
 import { createTexture, getTextureSource } from '@flighthq/texture/contract';
-import type { ImageResource, ImageResourceReference, Scene2DImageResourceLoadProgress } from '@flighthq/types/contract';
+import type { ImageResource, ImageResourceReference } from '@flighthq/types/contract';
 import { BitmapTextureSourceKind, ResourceResolutionState } from '@flighthq/types/contract';
 
 import { loadScene2DImageResources } from './loadScene2DImageResources.ts';
 import { createScene2DDocument } from './scene2DDocument.ts';
+import type { Scene2DImageResourceLoadProgress } from './types/Scene2DResources.ts';
 
 const fetchedImage = { height: 4, width: 4 } as ImageResource;
 

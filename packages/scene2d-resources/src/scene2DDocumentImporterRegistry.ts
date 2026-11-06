@@ -1,13 +1,13 @@
+import type { NonEntityCreateResult } from '@flighthq/types/contract';
+
+import { reportScene2DResourceFailure } from './scene2DResourceDiagnostics.ts';
+import type { Scene2DDocument } from './types/Scene2DDocument.ts';
 import type {
-  NonEntityCreateResult,
-  Scene2DDocument,
   Scene2DDocumentImportContext,
   Scene2DDocumentImporter,
   Scene2DDocumentImporterMatcher,
   Scene2DDocumentImporterRegistry,
-} from '@flighthq/types/contract';
-
-import { reportScene2DResourceFailure } from './scene2DResourceDiagnostics.ts';
+} from './types/Scene2DResources.ts';
 
 export function createScene2DDocumentFromBytes(
   source: Uint8Array,

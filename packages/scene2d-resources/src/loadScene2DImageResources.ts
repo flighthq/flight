@@ -2,16 +2,11 @@ import type { HostImageDecodeCapabilities } from '@flighthq/image-codec/contract
 import { resolveImageResourceReference } from '@flighthq/image/contract';
 import { emitSignal } from '@flighthq/signals/contract';
 import { setTextureSource } from '@flighthq/texture/contract';
-import type {
-  ImageResourceFetch,
-  ImageResourceReference,
-  LoadScene2DImageResourcesOptions,
-  Scene2DDocument,
-  Scene2DImageResources,
-  TextureSource,
-} from '@flighthq/types/contract';
+import type { ImageResourceFetch, ImageResourceReference, TextureSource } from '@flighthq/types/contract';
 
 import { reportScene2DResourceFailure } from './scene2DResourceDiagnostics.ts';
+import type { Scene2DDocument } from './types/Scene2DDocument.ts';
+import type { LoadScene2DImageResourcesOptions, Scene2DImageResources } from './types/Scene2DResources.ts';
 
 // Operation-scoped asynchronous boundary for a document's pixels. Each selected reference decodes once and
 // binds into every Texture waiting on it, so a bitmap character placed a hundred times costs one decode and

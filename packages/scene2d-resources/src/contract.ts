@@ -1,3 +1,4 @@
+export * from './contract.scene2d-resources-types.ts';
 export * from './builtInScene2DDocumentImporters.ts';
 export * from './enableScene2DResourceFailureGuards.ts';
 export * from './loadScene2DAudioResources.ts';

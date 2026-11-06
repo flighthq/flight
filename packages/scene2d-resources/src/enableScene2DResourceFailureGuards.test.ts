@@ -1,6 +1,6 @@
 import type { LogState } from '@flighthq/log/contract';
 import { addLogSink, createLogState, createMemoryLogSink, getMemoryLogSinkEntries } from '@flighthq/log/contract';
-import type { LogEntry, Scene2DResourceFailureNotice } from '@flighthq/types/contract';
+import type { LogEntry } from '@flighthq/types/contract';
 
 import {
   areScene2DResourceFailureGuardsEnabled,
@@ -8,6 +8,7 @@ import {
   enableScene2DResourceFailureGuards,
 } from './enableScene2DResourceFailureGuards.ts';
 import { reportScene2DResourceFailure } from './scene2DResourceDiagnostics.ts';
+import type { Scene2DResourceFailureNotice } from './types/Scene2DResources.ts';
 
 let logState: LogState;
 

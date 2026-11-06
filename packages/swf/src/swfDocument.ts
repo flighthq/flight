@@ -20,6 +20,11 @@ import {
   createScene2DSlotReference,
   registerScene2DDocumentImporter,
 } from '@flighthq/scene2d-resources/contract';
+import type {
+  Scene2DDocument,
+  Scene2DDocumentImportContext,
+  Scene2DDocumentImporterRegistry,
+} from '@flighthq/scene2d-resources/contract';
 import { setNode2DClip } from '@flighthq/scene2d/contract';
 import { getShapeFillRegions, setMorphShapeProgress } from '@flighthq/shape/contract';
 import type { MorphShape } from '@flighthq/shape/contract';
@@ -35,9 +40,6 @@ import type {
   MovieClip,
   Node2D,
   Node2DFields,
-  Scene2DDocument,
-  Scene2DDocumentImportContext,
-  Scene2DDocumentImporterRegistry,
   Scene2DSlotReference,
 } from '@flighthq/types/contract';
 import { Compression, CompressionFraming, ImportDiagnosticSeverity } from '@flighthq/types/contract';

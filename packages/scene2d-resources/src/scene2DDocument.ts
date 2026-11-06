@@ -4,9 +4,10 @@ import type {
   EntityConstruction,
   ImageResourceReference,
   Node2D,
-  Scene2DDocument,
   Scene2DSlotReference,
 } from '@flighthq/types/contract';
+
+import type { Scene2DDocument } from './types/Scene2DDocument.ts';
 
 export function createScene2DDocument(
   root: Node2D,

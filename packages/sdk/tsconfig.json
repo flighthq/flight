@@ -109,7 +109,7 @@
       "path": "../scene2d-formats/tsconfig.runtime.json"
     },
     {
-      "path": "../scene2d-resources"
+      "path": "../scene2d-resources/tsconfig.runtime.json"
     },
     {
       "path": "../scene2d-gl"

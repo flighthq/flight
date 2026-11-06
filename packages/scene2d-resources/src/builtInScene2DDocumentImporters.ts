@@ -3,17 +3,13 @@ import {
   createScene2DFromLottieDocument,
   createScene2DFromSvgDocument,
 } from '@flighthq/scene2d-formats/contract';
-import type {
-  PathBooleanKernel,
-  ImportDiagnostic,
-  Scene2DDocument,
-  Scene2DDocumentImportContext,
-  Scene2DDocumentImporterRegistry,
-} from '@flighthq/types/contract';
+import type { PathBooleanKernel, ImportDiagnostic } from '@flighthq/types/contract';
 import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
 import { createScene2DDocument } from './scene2DDocument.ts';
 import { registerScene2DDocumentImporter } from './scene2DDocumentImporterRegistry.ts';
+import type { Scene2DDocument } from './types/Scene2DDocument.ts';
+import type { Scene2DDocumentImportContext, Scene2DDocumentImporterRegistry } from './types/Scene2DResources.ts';
 
 export function registerLottieScene2DDocumentImporter(registry: Scene2DDocumentImporterRegistry): void {
   registerScene2DDocumentImporter(registry, 'lottie', matchesLottieDocument, importLottieDocument);

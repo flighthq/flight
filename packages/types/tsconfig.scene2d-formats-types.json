@@ -309,7 +309,6 @@
     "src/ResourceResolutionState.ts",
     "src/Sampler.ts",
     "src/Scene2D.scene2d-types.ts",
-    "src/Scene2DDocument.ts",
     "src/Scene2DSignals.scene2d-types.ts",
     "src/Shape.ts",
     "src/ShapeCommand.ts",

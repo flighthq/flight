@@ -1,12 +1,11 @@
+import { createScene2DDocumentFromBytes } from './scene2DDocumentImporterRegistry.ts';
+import { reportScene2DResourceFailure } from './scene2DResourceDiagnostics.ts';
+import type { Scene2DDocument } from './types/Scene2DDocument.ts';
 import type {
-  Scene2DDocument,
   Scene2DDocumentFetcher,
   Scene2DDocumentImporterRegistry,
   Scene2DDocumentLoadOptions,
-} from '@flighthq/types/contract';
-
-import { createScene2DDocumentFromBytes } from './scene2DDocumentImporterRegistry.ts';
-import { reportScene2DResourceFailure } from './scene2DResourceDiagnostics.ts';
+} from './types/Scene2DResources.ts';
 
 export async function loadScene2DDocumentFromUrl(
   url: string,
