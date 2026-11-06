@@ -38,6 +38,7 @@ import type {
   HostNotificationReplyCapability,
   HostNotificationSchedulingCapability,
 } from '@flighthq/notification/contract';
+import type { HostPermissionsCapability } from '@flighthq/permissions/contract';
 import type {
   HostProtocolDefaultCapability,
   HostProtocolLaunchCapability,
@@ -143,4 +144,8 @@ export interface HostProtocolCapabilities {
 
 export interface HostUpdaterCapabilities {
   readonly command?: HostUpdaterCommandCapability;
+}
+
+export interface HostPermissionsCapabilities {
+  readonly query?: HostPermissionsCapability;
 }

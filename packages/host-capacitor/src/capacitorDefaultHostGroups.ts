@@ -5,7 +5,7 @@ import {
   webHostImageEncode,
   webHostTextShaperGroup,
 } from '@flighthq/host-web/contract';
-import type { HostUpdaterCapabilities } from '@flighthq/host/contract';
+import type { HostPermissionsCapabilities, HostUpdaterCapabilities } from '@flighthq/host/contract';
 import type { HostMediaSessionCapabilities } from '@flighthq/mediasession/contract';
 import type { HostMenuCapabilities } from '@flighthq/menu/contract';
 import type { HostPlatformCapabilities } from '@flighthq/platform/contract';
@@ -27,7 +27,6 @@ import type {
   HostLifecycleCapabilities,
   HostMidiCapabilities,
   HostNetCapabilities,
-  HostPermissionsCapabilities,
   HostPowerCapabilities,
   HostPreferencesCapabilities,
   HostScreenCapabilities,

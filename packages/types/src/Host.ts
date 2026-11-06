@@ -14,6 +14,7 @@ import type {
   HostImageCapabilities,
   HostMidiCapabilities,
   HostNotificationCapabilities,
+  HostPermissionsCapabilities,
   HostProtocolCapabilities,
   HostShareCapabilities,
   HostUpdaterCapabilities,
@@ -72,7 +73,6 @@ import type {
   HostIpcSendCapability,
   HostIpcTargetedSendCapability,
 } from './Ipc.ts';
-import type { HostPermissionsCapability } from './Permission.ts';
 import type { HostTextSegmenterCapability } from './TextSegment.ts';
 import type { HostTextShaperCapability } from './TextShaper.ts';
 
@@ -162,10 +162,6 @@ export interface HostIpcCapabilities {
   readonly targetedSend?: HostIpcTargetedSendCapability;
 }
 
-export interface HostPermissionsCapabilities {
-  readonly query?: HostPermissionsCapability;
-}
-
 export interface HostSoftKeyboardCapabilities {
   readonly accessoryBar?: HostSoftKeyboardAccessoryBarCapability;
   readonly change?: HostSoftKeyboardChangeCapability;
@@ -192,6 +188,7 @@ export type { HostWgpuCapabilities } from '@flighthq/render-wgpu/contract';
 
 /** @deprecated Import from `@flighthq/host/contract`. */
 export type {
+  HostPermissionsCapabilities,
   HostUpdaterCapabilities,
   HostProtocolCapabilities,
   HostBitmapCapabilities,

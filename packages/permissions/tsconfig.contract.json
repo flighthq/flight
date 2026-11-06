@@ -7,8 +7,13 @@
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,
-    "tsBuildInfoFile": "dist/.tsbuildinfo.contract"
+    "tsBuildInfoFile": "dist/.tsbuildinfo.contract",
+    "moduleSuffixes": [".notification-types", ""]
   },
-  "references": [],
+  "references": [
+    {
+      "path": "../notification/tsconfig.contract.json"
+    }
+  ],
   "include": ["src/contract.permissions-types.ts", "src/types.ts"]
 }

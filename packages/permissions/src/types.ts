@@ -1,3 +1,5 @@
+import type { HostNotificationPermissionCapability } from '@flighthq/notification/contract';
+
 // Shared vocabulary projected by @flighthq/permissions from explicit Host capability providers.
 // A named OS/runtime permission. The listed names are the interim shared vocabulary; the open string
 // tail lets a caller receive an honest unsupported outcome for a host-specific name.
@@ -52,3 +54,10 @@ export type PermissionRequestOutcome =
   // This arm records storage policy state, not a human decision.
   | { readonly reason: 'best-effort'; readonly state: PermissionState | null }
   | { readonly reason: PermissionRequestFailureReason };
+
+export interface HostPermissionsCapability {
+  readonly notification: HostNotificationPermissionCapability;
+  queryPermission(name: PermissionName): Promise<PermissionQueryOutcome>;
+  requestMediaAccess(name: 'camera' | 'microphone'): Promise<PermissionRequestOutcome>;
+  requestWakeLock(): Promise<PermissionRequestOutcome>;
+}

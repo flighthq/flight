@@ -53,6 +53,9 @@
       "path": "../updater/tsconfig.contract.json"
     },
     {
+      "path": "../permissions/tsconfig.contract.json"
+    },
+    {
       "path": "./tsconfig.contract.json"
     },
     {

@@ -1,4 +1,4 @@
-import type { HostPermissionsCapabilities } from '@flighthq/types/contract';
+import type { HostPermissionsCapabilities } from '@flighthq/host/contract';
 
 import { webHostPermissions } from './webPermissions.ts';
 

@@ -1,8 +1,7 @@
-import type { PermissionName, PermissionQueryOutcome, PermissionRequestOutcome } from '@flighthq/permissions/contract';
+// Owned by `@flighthq/permissions`. These deprecated re-exports keep existing `@flighthq/types`
+// imports compiling until consumers import the owning package.
 
-import type { HostNotificationPermissionCapability } from './Notification.ts';
-
-/** @deprecated Import permission contracts from `@flighthq/permissions/contract`. */
+/** @deprecated Import from `@flighthq/permissions/contract`. */
 export type {
   PermissionName,
   PermissionState,
@@ -10,11 +9,5 @@ export type {
   PermissionQueryOutcome,
   PermissionRequestFailureReason,
   PermissionRequestOutcome,
+  HostPermissionsCapability,
 } from '@flighthq/permissions/contract';
-
-export interface HostPermissionsCapability {
-  readonly notification: HostNotificationPermissionCapability;
-  queryPermission(name: PermissionName): Promise<PermissionQueryOutcome>;
-  requestMediaAccess(name: 'camera' | 'microphone'): Promise<PermissionRequestOutcome>;
-  requestWakeLock(): Promise<PermissionRequestOutcome>;
-}

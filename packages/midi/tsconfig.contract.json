@@ -7,7 +7,7 @@
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,
-    "moduleSuffixes": [".permissions-types", ""],
+    "moduleSuffixes": [".permissions-types", ".notification-types", ""],
     "tsBuildInfoFile": "dist/.tsbuildinfo.contract"
   },
   "references": [
@@ -19,6 +19,9 @@
     },
     {
       "path": "../signals"
+    },
+    {
+      "path": "../notification/tsconfig.contract.json"
     }
   ],
   "include": ["src/contract.midi-types.ts", "src/types.ts"]

@@ -11,6 +11,9 @@
   },
   "references": [
     {
+      "path": "../notification/tsconfig.runtime.json"
+    },
+    {
       "path": "../types"
     },
     {
