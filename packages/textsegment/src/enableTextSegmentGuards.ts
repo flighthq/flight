@@ -1,6 +1,6 @@
 import type { LogState } from '@flighthq/log/contract';
 import { logOnce } from '@flighthq/log/contract';
-import { LogLevel } from '@flighthq/log/contract';
+import { LogLevel } from '@flighthq/types/contract';
 
 import { setTextSegmentGuard } from './textSegmentGuards.ts';
 
