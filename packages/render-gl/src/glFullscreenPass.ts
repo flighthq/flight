@@ -1,12 +1,6 @@
-import type {
-  GlFullscreenProgram,
-  GlRenderPass,
-  GlRenderState,
-  GlRenderTarget,
-  RectangleLike,
-  RenderTargetClear,
-} from '@flighthq/types/contract';
+import type { GlFullscreenProgram, RectangleLike, RenderTargetClear } from '@flighthq/types/contract';
 
+import type { GlRenderPass, GlRenderState, GlRenderTarget } from './contract.render-gl-types.ts';
 import { applyGlBlendMode } from './glDraw.ts';
 import { createGlProgram } from './glProgram.ts';
 import { getGlRenderStateRuntime } from './glRenderState.ts';

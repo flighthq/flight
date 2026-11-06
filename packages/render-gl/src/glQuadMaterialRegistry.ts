@@ -1,7 +1,8 @@
 import { withKindMapEntry } from '@flighthq/registry/contract';
-import type { GlQuadMaterialRenderer, GlRenderState, Kind, Material } from '@flighthq/types/contract';
+import type { Kind, Material } from '@flighthq/types/contract';
 import { RenderRegistryTable, StandardMaterialKind } from '@flighthq/types/contract';
 
+import type { GlQuadMaterialRenderer, GlRenderState } from './contract.render-gl-types.ts';
 import { getGlRenderStateRuntime } from './glRenderState.ts';
 
 export function getGlQuadMaterialRenderer(state: GlRenderState, kind: Kind): GlQuadMaterialRenderer | null {

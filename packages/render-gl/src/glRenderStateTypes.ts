@@ -2,20 +2,10 @@ import type {
   BlendMode,
   ColorScaleBias,
   GlBitmapShader,
-  GlCompressedTextureDecoder,
-  GlCompressedTextureUploader,
-  GlCustomMaterialShaderSource,
   GlEffectRegistration,
-  GlMeshMaterialRenderer,
-  GlModifierSnippet,
-  GlPbrExtensionRegistration,
-  GlQuadMaterialRenderer,
-  GlRenderPass,
-  GlRenderTextureGuard,
   GlScene3DPass,
   GlShaderLocations,
   GlShapeMesh,
-  GlTextureResolver,
   GlVelocityWriter,
   Kind,
   Material,
@@ -28,10 +18,20 @@ import type {
   TintMaterialData,
 } from '@flighthq/types/contract';
 
+import type { GlCompressedTextureDecoder } from './glCompressedTextureDecoderTypes.ts';
+import type { GlCompressedTextureUploader } from './glCompressedTextureUploaderTypes.ts';
 import type { GlContextRuntime } from './glContextRuntimeTypes.ts';
 import type { GlContextState } from './glContextStateTypes.ts';
 import type { GlCubeRenderTarget } from './glCubeRenderTargetTypes.ts';
+import type { GlCustomMaterialShaderSource } from './glCustomMaterialShaderSourceTypes.ts';
+import type { GlMeshMaterialRenderer } from './glMeshMaterialRendererTypes.ts';
+import type { GlModifierSnippet } from './glModifierSnippetTypes.ts';
+import type { GlPbrExtensionRegistration } from './glPbrExtensionRegistrationTypes.ts';
+import type { GlQuadMaterialRenderer } from './glQuadMaterialRendererTypes.ts';
+import type { GlRenderPass } from './glRenderPassTypes.ts';
 import type { GlRenderTarget } from './glRenderTargetTypes.ts';
+import type { GlRenderTextureGuard } from './glRenderTextureTypes.ts';
+import type { GlTextureResolver } from './glTextureResolverTypes.ts';
 import type { GlContext } from './types.ts';
 
 export interface GlRenderState extends RenderState {

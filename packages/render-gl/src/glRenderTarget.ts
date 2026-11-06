@@ -3,7 +3,6 @@ import { acquireMatrix, multiplyMatrix, releaseMatrix } from '@flighthq/geometry
 import { explainRenderTargetAxes, resolveRenderTargetDescriptor } from '@flighthq/render/contract';
 import type {
   EntityConstruction,
-  GlRenderPass,
   Matrix,
   RenderProxy2D,
   RenderTargetAxes,
@@ -15,7 +14,12 @@ import type {
   ResolvedRenderTargetDescriptor,
 } from '@flighthq/types/contract';
 
-import type { GlRenderState, GlScreenRenderTarget, GlTextureRenderTarget } from './contract.render-gl-types.ts';
+import type {
+  GlRenderPass,
+  GlRenderState,
+  GlScreenRenderTarget,
+  GlTextureRenderTarget,
+} from './contract.render-gl-types.ts';
 import { bindGlTextureRealization, drawGlQuad, useGlProgram } from './glDraw.ts';
 import { getGlRenderStateRuntime } from './glRenderState.ts';
 import { setGlAttributes, setGlBaseUniforms, setGlMatrixFromTransform } from './glShader.ts';

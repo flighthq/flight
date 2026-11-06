@@ -17,13 +17,23 @@
   ],
   "include": [
     "src/contract.render-gl-types.ts",
+    "src/glCompressedTextureDecoderTypes.ts",
+    "src/glCompressedTextureUploaderTypes.ts",
     "src/glContextRuntimeTypes.ts",
     "src/glContextStateTypes.ts",
+    "src/glCustomMaterialShaderSourceTypes.ts",
     "src/glCubeRenderTargetTypes.ts",
+    "src/glMeshMaterialRendererTypes.ts",
+    "src/glModifierSnippetTypes.ts",
+    "src/glPbrExtensionRegistrationTypes.ts",
+    "src/glQuadMaterialRendererTypes.ts",
     "src/glRenderOptionsTypes.ts",
+    "src/glRenderPassTypes.ts",
     "src/glRenderStateOptionsTypes.ts",
     "src/glRenderStateTypes.ts",
     "src/glRenderTargetTypes.ts",
+    "src/glRenderTextureTypes.ts",
+    "src/glTextureResolverTypes.ts",
     "src/types.ts"
   ]
 }

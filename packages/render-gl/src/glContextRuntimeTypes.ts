@@ -4,15 +4,15 @@ import type {
   GlColorAdjustmentResources,
   GlParticleResources,
   GlQuadBatchResources,
-  GlRenderTextureEntry,
   GlShapeMeshResources,
-  GlTextureRealization,
   ImageResource,
   RenderTexture,
   TextureSource,
 } from '@flighthq/types/contract';
 
 import type { GlBlendSignature, GlBoundShader } from './glRenderStateTypes.ts';
+import type { GlRenderTextureEntry } from './glRenderTextureTypes.ts';
+import type { GlTextureRealization } from './glTextureResolverTypes.ts';
 import type { GlContext } from './types.ts';
 
 // Shared GPU state for one WebGL context, stored as the Entity runtime of a GlContextState. Wraps

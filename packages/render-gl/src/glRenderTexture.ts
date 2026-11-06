@@ -1,16 +1,13 @@
 import { resolveRenderTargetDescriptor } from '@flighthq/render/contract';
+import type { RenderTargetClear, RenderTexture, SamplerLike, TextureColorSpace } from '@flighthq/types/contract';
+
 import type {
   GlRenderPass,
   GlRenderState,
   GlRenderTextureEntry,
   GlRenderTextureExplanation,
   GlRenderTextureGuard,
-  RenderTargetClear,
-  RenderTexture,
-  SamplerLike,
-  TextureColorSpace,
-} from '@flighthq/types/contract';
-
+} from './contract.render-gl-types.ts';
 import { applyGlSamplerState, bindGlTextureRealization } from './glDraw.ts';
 import { clearGlRenderTarget } from './glFullscreenPass.ts';
 import { beginGlRenderPass, endGlRenderPass } from './glRenderPass.ts';

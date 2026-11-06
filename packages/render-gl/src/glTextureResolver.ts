@@ -4,9 +4,6 @@ import type {
   RenderTargetColorSpace,
   Bitmap,
   CompressedImageResource,
-  GlRenderState,
-  GlTextureRealization,
-  GlTextureResolver,
   ImageResource,
   RenderTexture,
   TextureColorSpace,
@@ -21,6 +18,7 @@ import {
   RenderTargetTextureSourceKind,
 } from '@flighthq/types/contract';
 
+import type { GlRenderState, GlTextureRealization, GlTextureResolver } from './contract.render-gl-types.ts';
 import {
   bindGlBitmapTexture,
   bindGlCompressedImageTexture,

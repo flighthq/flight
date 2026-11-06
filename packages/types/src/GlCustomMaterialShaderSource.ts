@@ -1,5 +1,2 @@
-// The vertex + fragment GLSL source pair for a custom material shader.
-export interface GlCustomMaterialShaderSource {
-  fragment: string;
-  vertex: string;
-}
+// Compatibility facade: render-gl owns this contract.
+export type { GlCustomMaterialShaderSource } from '@flighthq/render-gl/contract';

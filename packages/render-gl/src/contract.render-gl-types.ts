@@ -8,10 +8,18 @@ export type {
   HostGlCapabilities,
   HostGlCapability,
 } from './types.ts';
+export type { GlCompressedTextureDecoder } from './glCompressedTextureDecoderTypes.ts';
+export type { GlCompressedTextureUploader } from './glCompressedTextureUploaderTypes.ts';
 export type { GlContextRuntime } from './glContextRuntimeTypes.ts';
 export type { GlContextState } from './glContextStateTypes.ts';
+export type { GlCustomMaterialShaderSource } from './glCustomMaterialShaderSourceTypes.ts';
 export type { GlCubeRenderTarget, GlCubeRenderTargetOptions } from './glCubeRenderTargetTypes.ts';
+export type { GlMeshMaterialRenderer } from './glMeshMaterialRendererTypes.ts';
+export type { GlModifierBindContext, GlModifierSnippet } from './glModifierSnippetTypes.ts';
+export type { GlPbrExtensionRegistration } from './glPbrExtensionRegistrationTypes.ts';
+export type { GlQuadMaterialRenderer } from './glQuadMaterialRendererTypes.ts';
 export type { GlRenderOptions } from './glRenderOptionsTypes.ts';
+export type { GlRenderPass } from './glRenderPassTypes.ts';
 export type { GlRenderStateOptions } from './glRenderStateOptionsTypes.ts';
 export type {
   GlBlendEquation,
@@ -38,3 +46,11 @@ export type {
   GlTextureRenderTarget,
   GlTextureRenderTargetPool,
 } from './glRenderTargetTypes.ts';
+export type {
+  GlRenderTextureEntry,
+  GlRenderTextureExplanation,
+  GlRenderTextureGuard,
+  GlRenderTexturePool,
+  GlRenderTextureStatus,
+} from './glRenderTextureTypes.ts';
+export type { GlTextureRealization, GlTextureResolver } from './glTextureResolverTypes.ts';

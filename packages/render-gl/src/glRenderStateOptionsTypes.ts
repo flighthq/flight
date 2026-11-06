@@ -1,26 +1,26 @@
 import type {
-  GlCompressedTextureDecoder,
-  GlCompressedTextureUploader,
-  GlCustomMaterialShaderSource,
   GlEffectRegistration,
-  GlMeshMaterialRenderer,
-  GlModifierSnippet,
-  GlPbrExtensionRegistration,
-  GlQuadMaterialRenderer,
   GlScene3DPass,
-  GlTextureResolver,
   GlVelocityWriter,
   Kind,
   RenderStateOptions,
   ShapeRasterizer,
 } from '@flighthq/types/contract';
 
+import type { GlCompressedTextureDecoder } from './glCompressedTextureDecoderTypes.ts';
+import type { GlCompressedTextureUploader } from './glCompressedTextureUploaderTypes.ts';
+import type { GlCustomMaterialShaderSource } from './glCustomMaterialShaderSourceTypes.ts';
+import type { GlMeshMaterialRenderer } from './glMeshMaterialRendererTypes.ts';
+import type { GlModifierSnippet } from './glModifierSnippetTypes.ts';
+import type { GlPbrExtensionRegistration } from './glPbrExtensionRegistrationTypes.ts';
+import type { GlQuadMaterialRenderer } from './glQuadMaterialRendererTypes.ts';
 import type { GlRenderOptions } from './glRenderOptionsTypes.ts';
 import type {
   GlBlendRealization,
   GlColorAdjustmentMaterialFeature,
   GlColorAdjustmentMaterialFeatureGuard,
 } from './glRenderStateTypes.ts';
+import type { GlTextureResolver } from './glTextureResolverTypes.ts';
 
 export interface GlRenderStateOptions extends RenderStateOptions, GlRenderOptions {
   blendRealizations?: ReadonlyMap<Kind, GlBlendRealization>;

@@ -1,14 +1,8 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { createRenderTexture, resetTextureUvTransform } from '@flighthq/texture/contract';
-import type {
-  EntityConstruction,
-  GlRenderState,
-  GlRenderTexturePool,
-  RenderTarget,
-  RenderTargetDescriptor,
-  RenderTexture,
-} from '@flighthq/types/contract';
+import type { EntityConstruction, RenderTarget, RenderTargetDescriptor, RenderTexture } from '@flighthq/types/contract';
 
+import type { GlRenderState, GlRenderTexturePool } from './contract.render-gl-types.ts';
 import { createGlTextureRenderTargetPool, destroyGlTextureRenderTargetPool } from './glRenderTargetPool.ts';
 import { destroyGlRenderTexture, invalidateGlRenderTexture } from './glRenderTexture.ts';
 

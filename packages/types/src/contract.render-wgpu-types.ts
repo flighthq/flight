@@ -24,7 +24,10 @@ export type { GlEffectRegistration } from './GlEffectState.render-wgpu-types.ts'
 export type { GlMeshMaterialRenderer } from './GlMeshMaterialRenderer.ts';
 export type { GlModifierSnippet } from './GlModifierSnippet.ts';
 export type { GlParticleResources } from './GlParticleResources.render-wgpu-types.ts';
+export type { GlPbrExtensionBindContext } from './GlPbrExtensionBindContext.ts';
 export type { GlPbrExtensionRegistration } from './GlPbrExtensionRegistration.ts';
+export type { GlPbrExtensionShaderContext } from './GlPbrExtensionShaderContext.ts';
+export type { GlPbrExtensionShaderContribution } from './GlPbrExtensionShaderContribution.ts';
 export type { GlQuadBatchResources } from './GlQuadBatchResources.render-wgpu-types.ts';
 export type { GlQuadMaterialRenderer } from './GlQuadMaterialRenderer.ts';
 export type { GlRenderPass } from './GlRenderPass.ts';
@@ -51,6 +54,7 @@ export type { Modifier } from './Modifier.ts';
 export type { ModifierDefinition } from './ModifierDefinition.ts';
 export type { Node3D } from './Node3D.ts';
 export type { PlatformEndianness } from '@flighthq/platform/contract';
+export type { PbrExtension } from './PbrExtension.ts';
 export type { RenderStateOptions } from './RenderStateOptions.ts';
 export type {
   RenderTargetAxes,
