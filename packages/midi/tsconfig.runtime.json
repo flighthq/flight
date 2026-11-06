@@ -7,6 +7,7 @@
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,
+    "moduleSuffixes": [".permissions-types", ""],
     "tsBuildInfoFile": "dist/.tsbuildinfo.runtime"
   },
   "references": [
@@ -14,10 +15,10 @@
       "path": "../entity"
     },
     {
-      "path": "../signals"
+      "path": "../permissions/tsconfig.contract.json"
     },
     {
-      "path": "../types"
+      "path": "../signals"
     },
     {
       "path": "./tsconfig.contract.json"

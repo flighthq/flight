@@ -13,6 +13,7 @@
       ".ipc-types",
       ".mediasession-types",
       ".power-types",
+      ".permissions-types",
       ".render-gl-types",
       ".shell-types",
       ".shortcut-types",
@@ -96,6 +97,9 @@
     },
     {
       "path": "../notification/tsconfig.runtime.json"
+    },
+    {
+      "path": "../permissions/tsconfig.contract.json"
     },
     {
       "path": "../platform"

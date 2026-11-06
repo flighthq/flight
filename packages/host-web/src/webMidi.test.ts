@@ -1,6 +1,6 @@
+import { EntityRuntimeKey } from '@flighthq/entity/contract';
 import * as midi from '@flighthq/midi/contract';
 import { connectSignal } from '@flighthq/signals/contract';
-import { EntityRuntimeKey } from '@flighthq/types/contract';
 import { describe, expect, it, vi } from 'vitest';
 
 import { webHost } from './webHost.ts';

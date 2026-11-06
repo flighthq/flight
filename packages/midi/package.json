@@ -42,8 +42,7 @@
   "dependencies": {
     "@flighthq/entity": "*",
     "@flighthq/permissions": "*",
-    "@flighthq/signals": "*",
-    "@flighthq/types": "*"
+    "@flighthq/signals": "*"
   },
   "devDependencies": {
     "typescript": "^7.0.2"

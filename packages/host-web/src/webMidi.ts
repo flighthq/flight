@@ -1,11 +1,11 @@
 import { allocateEntity } from '@flighthq/entity/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
 import {
   createMidiAccessResource,
   createMidiInputPortResource,
   createMidiOutputPortResource,
 } from '@flighthq/midi/contract';
 import type {
-  EntityConstruction,
   HostMidiAccessCapability,
   HostMidiPermissionCapability,
   MidiAccess,
@@ -14,9 +14,8 @@ import type {
   MidiInputPort,
   MidiOutputPort,
   MidiPort,
-  PermissionQueryOutcome,
-  PermissionState,
-} from '@flighthq/types/contract';
+} from '@flighthq/midi/contract';
+import type { PermissionQueryOutcome, PermissionState } from '@flighthq/permissions/contract';
 
 export function initializeWebMidiAccessBackend(
   out: HostMidiAccessCapability,

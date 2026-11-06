@@ -1,4 +1,4 @@
-import type { PermissionQueryOutcome } from '@flighthq/types/contract';
+import type { PermissionQueryOutcome } from '@flighthq/permissions/contract';
 
 import type { HostMidiPermissionCapability } from './types.ts';
 

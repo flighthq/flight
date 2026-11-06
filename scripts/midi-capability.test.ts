@@ -9,7 +9,8 @@ describe('MIDI explicit Host capability shape', () => {
   it('publishes one required group with split direct provider leaves', () => {
     const host = source('packages/types/src/Host.ts');
     expect(host).toContain('readonly midi: HostMidiCapabilities;');
-    const body = interfaceBody(host, 'HostMidiCapabilities');
+    const capabilities = source('packages/host/src/hostCapabilities.ts');
+    const body = interfaceBody(capabilities, 'HostMidiCapabilities');
     expect(propertyNames(body)).toEqual(['access', 'permission']);
     expect(body).toContain('readonly access?: HostMidiAccessCapability;');
     expect(body).toContain('readonly permission?: HostMidiPermissionCapability;');
@@ -61,7 +62,7 @@ describe('MIDI explicit Host capability shape', () => {
   });
 
   it('keeps public MIDI resources entity-based and operations origin-keyed rather than id-routed', () => {
-    const types = source('packages/types/src/Midi.ts');
+    const types = source('packages/midi/src/types.ts');
     for (const resource of ['MidiAccess', 'MidiInputPort', 'MidiOutputPort']) {
       expect(types).toMatch(new RegExp(`export interface ${resource} extends Entity`, 'u'));
     }

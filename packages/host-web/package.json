@@ -62,6 +62,7 @@
     "@flighthq/midi": "*",
     "@flighthq/net": "*",
     "@flighthq/notification": "*",
+    "@flighthq/permissions": "*",
     "@flighthq/platform": "*",
     "@flighthq/power": "*",
     "@flighthq/preferences": "*",

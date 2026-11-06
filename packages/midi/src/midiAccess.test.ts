@@ -1,5 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import { EntityRuntimeKey } from '@flighthq/types/contract';
+import { allocateEntity, EntityRuntimeKey, finishEntity } from '@flighthq/entity/contract';
 import { describe, expect, it, vi } from 'vitest';
 
 import * as midi from './contract.ts';

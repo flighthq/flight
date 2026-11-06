@@ -1,7 +1,7 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type { EntityConstruction, EntityRaw } from '@flighthq/entity/contract';
 import { clearSignal, createSignal, emitSignal } from '@flighthq/signals/contract';
 import type { Signal } from '@flighthq/signals/contract';
-import type { Entity, EntityConstruction } from '@flighthq/types/contract';
 
 import { getMidiAccessResourceState, getMidiPortResourceState } from './midiResource.ts';
 import type {
@@ -134,12 +134,12 @@ interface MidiSubscriptionRuntime {
   disposeCompleted: boolean;
   disposed: boolean;
   generation: number;
-  ownerSubscriptions: Set<Entity> | null;
+  ownerSubscriptions: Set<EntityRaw> | null;
 }
 
-const subscriptionStates = new WeakMap<Entity, MidiSubscriptionRuntime>();
+const subscriptionStates = new WeakMap<EntityRaw, MidiSubscriptionRuntime>();
 
-function createMidiSubscription<Subscription extends Entity>(
+function createMidiSubscription<Subscription extends EntityRaw>(
   init: (out: EntityConstruction<Subscription>) => void,
 ): Subscription {
   const subscription = allocateEntity<Subscription>();
@@ -156,7 +156,7 @@ function createMidiSubscription<Subscription extends Entity>(
   return subscription;
 }
 
-async function attachMidiSubscription<Subscription extends Entity, Arguments extends unknown[]>(
+async function attachMidiSubscription<Subscription extends EntityRaw, Arguments extends unknown[]>(
   subscription: Subscription,
   ownerSubscriptions: Set<Subscription>,
   attach: MidiAttach<Arguments>,
@@ -177,7 +177,7 @@ async function attachMidiSubscription<Subscription extends Entity, Arguments ext
     if (runtime.disposed) return attachFailure();
   }
   const generation = ++runtime.generation;
-  runtime.ownerSubscriptions = ownerSubscriptions as Set<Entity>;
+  runtime.ownerSubscriptions = ownerSubscriptions as Set<EntityRaw>;
   ownerSubscriptions.add(subscription);
   const attaching = performMidiAttach(subscription, runtime, generation, attach, listener);
   runtime.attaching = attaching;
@@ -187,7 +187,7 @@ async function attachMidiSubscription<Subscription extends Entity, Arguments ext
 }
 
 async function performMidiAttach<Arguments extends unknown[]>(
-  subscription: Entity,
+  subscription: EntityRaw,
   runtime: MidiSubscriptionRuntime,
   generation: number,
   attach: MidiAttach<Arguments>,
@@ -213,7 +213,7 @@ async function performMidiAttach<Arguments extends unknown[]>(
   return { reason: 'ok' };
 }
 
-async function detachMidiSubscription(subscription: Entity): Promise<MidiSubscriptionDetachOutcome> {
+async function detachMidiSubscription(subscription: EntityRaw): Promise<MidiSubscriptionDetachOutcome> {
   const runtime = subscriptionStates.get(subscription);
   if (runtime === undefined) return { reason: 'not-attached' };
   runtime.generation++;
@@ -233,7 +233,7 @@ async function detachMidiSubscription(subscription: Entity): Promise<MidiSubscri
 }
 
 async function disposeMidiSubscription<Payload>(
-  subscription: Entity,
+  subscription: EntityRaw,
   signal: Signal<Payload>,
 ): Promise<MidiSubscriptionDisposeOutcome> {
   const runtime = subscriptionStates.get(subscription);
@@ -268,14 +268,17 @@ async function releaseMidiAttachment(attachment: MidiEventAttachment): Promise<b
   }
 }
 
-async function releaseTrackedMidiAttachment(subscription: Entity, runtime: MidiSubscriptionRuntime): Promise<boolean> {
+async function releaseTrackedMidiAttachment(
+  subscription: EntityRaw,
+  runtime: MidiSubscriptionRuntime,
+): Promise<boolean> {
   if (runtime.attachment === null || !(await releaseMidiAttachment(runtime.attachment))) return false;
   runtime.attachment = null;
   untrackMidiSubscription(subscription, runtime);
   return true;
 }
 
-function untrackMidiSubscription(subscription: Entity, runtime: MidiSubscriptionRuntime): void {
+function untrackMidiSubscription(subscription: EntityRaw, runtime: MidiSubscriptionRuntime): void {
   runtime.ownerSubscriptions?.delete(subscription);
   runtime.ownerSubscriptions = null;
 }
