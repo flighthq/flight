@@ -8,14 +8,28 @@
     "declarationMap": true,
     "sourceMap": true,
     "types": ["@webgpu/types"],
-    "moduleSuffixes": [".effects-types", ".render-wgpu-types", ".adjustments-types", ""],
+    "moduleSuffixes": [
+      ".effects-types",
+      ".render-backend-bridge-types",
+      ".render-wgpu-types",
+      ".adjustments-types",
+      ""
+    ],
     "tsBuildInfoFile": "dist/.tsbuildinfo.contract"
   },
   "references": [
-    { "path": "../adjustments/tsconfig.contract.json" },
-    { "path": "../effects/tsconfig.contract.json" },
-    { "path": "../render-wgpu/tsconfig.contract.json" },
-    { "path": "../types/tsconfig.render-wgpu-types.json" }
+    {
+      "path": "../adjustments/tsconfig.contract.json"
+    },
+    {
+      "path": "../effects/tsconfig.contract.json"
+    },
+    {
+      "path": "../render-wgpu/tsconfig.contract.json"
+    },
+    {
+      "path": "../types/tsconfig.render-wgpu-types.json"
+    }
   ],
   "include": ["src/contract.effects-wgpu-types.ts", "src/types.ts"]
 }

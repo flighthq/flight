@@ -9,6 +9,8 @@
     "sourceMap": true,
     "moduleSuffixes": [
       ".render-types",
+      ".render-backend-bridge-types",
+      ".render-wgpu-bridge-types",
       ".render-wgpu-types",
       ".image-types",
       ".node-types",

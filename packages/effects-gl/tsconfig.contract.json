@@ -11,6 +11,7 @@
       ".effects-types",
       ".render-types",
       ".render-gl-types",
+      ".render-backend-bridge-types",
       ".render-wgpu-types",
       ".adjustments-types",
       ""
