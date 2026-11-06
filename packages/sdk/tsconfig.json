@@ -25,7 +25,7 @@
       "path": "../app/tsconfig.runtime.json"
     },
     {
-      "path": "../assets"
+      "path": "../assets/tsconfig.runtime.json"
     },
     {
       "path": "../audio/tsconfig.runtime.json"
