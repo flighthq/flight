@@ -1,19 +1,19 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
+import type { Matrix } from '@flighthq/geometry/contract';
 import type { RenderState } from '@flighthq/render/contract';
+import type { HostScreenChangeCapability } from '@flighthq/screen/contract';
 import { connectSignal, createSignal, disconnectSignal, emitSignal } from '@flighthq/signals/contract';
 import type {
-  EntityConstruction,
   HostGlCapability,
   HostInputDropFileCapability,
   HostInputFocusCapability,
   HostInputPointerLockCapability,
   HostInputTargetCapability,
-  HostScreenChangeCapability,
   HostSurfaceResizeCapability,
   InputPointerLockExitOutcome,
   InputPointerLockRequestOutcome,
   InputTargetHandle,
-  Matrix,
   Surface,
 } from '@flighthq/types/contract';
 

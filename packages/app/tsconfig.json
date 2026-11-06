@@ -2,9 +2,11 @@
   "files": [],
   "references": [
     { "path": "../entity" },
+    { "path": "../geometry/tsconfig.contract.json" },
     { "path": "../lifecycle/tsconfig.contract.json" },
     { "path": "../menu/tsconfig.contract.json" },
     { "path": "../render/tsconfig.contract.json" },
+    { "path": "../screen/tsconfig.contract.json" },
     { "path": "../signals" },
     { "path": "../types" },
     { "path": "./tsconfig.contract.json" },

@@ -41,9 +41,11 @@
   },
   "dependencies": {
     "@flighthq/entity": "*",
+    "@flighthq/geometry": "*",
     "@flighthq/lifecycle": "*",
     "@flighthq/menu": "*",
     "@flighthq/render": "*",
+    "@flighthq/screen": "*",
     "@flighthq/signals": "*",
     "@flighthq/types": "*"
   },
