@@ -154,3 +154,4 @@ export {
   getWebWindowHandle,
 } from './webWindow.ts';
 export * from './webWindowHost.ts';
+export type { WebHost } from './types.ts';

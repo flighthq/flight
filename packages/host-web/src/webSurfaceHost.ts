@@ -1,4 +1,4 @@
-import type { HostSurfaceCapabilities } from '@flighthq/types/contract';
+import type { HostSurfaceCapabilities } from '@flighthq/surface/contract';
 
 import { webHostSurfaceDisplay, webHostSurfaceResize } from './webHostSurface.ts';
 

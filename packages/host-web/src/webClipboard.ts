@@ -3,8 +3,8 @@ import type {
   HostClipboardFormatsCapability,
   HostClipboardImageCapability,
   HostClipboardTextCapability,
-} from '@flighthq/types/contract';
-import { ClipboardFormatHtml, ClipboardFormatRtf } from '@flighthq/types/contract';
+} from '@flighthq/clipboard/contract';
+import { ClipboardFormatHtml, ClipboardFormatRtf } from '@flighthq/clipboard/contract';
 
 type WebClipboardChangeProvider = HostClipboardChangeCapability &
   Required<Pick<HostClipboardChangeCapability, 'subscribe'>>;

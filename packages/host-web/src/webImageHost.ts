@@ -1,4 +1,4 @@
-import type { HostImageCapabilities } from '@flighthq/types/contract';
+import type { HostImageCapabilities } from '@flighthq/host/contract';
 
 import { webHostImage } from './webImage.ts';
 

@@ -1,6 +1,6 @@
+import type { NonEntityCreateResult } from '@flighthq/entity/contract';
 import { bindNotificationClose, createNotificationResource } from '@flighthq/notification/contract';
 import type {
-  NonEntityCreateResult,
   Notification,
   NotificationEventBackendAttachOutcome,
   NotificationLifecycleFailure,
@@ -10,7 +10,7 @@ import type {
   WebServiceWorkerNotificationApi,
   WebServiceWorkerNotificationCapabilities,
   WebServiceWorkerNotificationEvent,
-} from '@flighthq/types/contract';
+} from '@flighthq/notification/contract';
 
 interface WebServiceWorkerNotificationDispatch {
   action(notification: Notification, actionId: string): void;

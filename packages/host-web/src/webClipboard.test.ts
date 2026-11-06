@@ -1,4 +1,5 @@
-import { ClipboardFormatText, EntityRuntimeKey } from '@flighthq/types/contract';
+import { ClipboardFormatText } from '@flighthq/clipboard/contract';
+import { EntityRuntimeKey } from '@flighthq/entity/contract';
 
 import {
   initializeWebClipboardBackend,

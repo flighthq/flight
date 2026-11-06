@@ -1,4 +1,4 @@
-import type { HostWgpuCapabilities } from '@flighthq/types/contract';
+import type { HostWgpuCapabilities } from '@flighthq/render-wgpu/contract';
 
 import { webHostWgpuContext } from './webHostWgpuContext.ts';
 

@@ -1,4 +1,5 @@
 import type { NonEntityCreateResult } from '@flighthq/entity/contract';
+import type { WebScreenCapabilities } from '@flighthq/host/contract';
 import { createScreenInfo } from '@flighthq/screen/contract';
 import type {
   HostScreenChangeCapability,
@@ -9,7 +10,6 @@ import type {
   ScreenInfo,
   ScreenPermissionState,
 } from '@flighthq/screen/contract';
-import type { WebScreenCapabilities } from '@flighthq/types/contract';
 
 interface DetailedScreen {
   availHeight: number;

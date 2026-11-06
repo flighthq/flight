@@ -1,6 +1,7 @@
+import type { EntityRuntimeKey } from '@flighthq/entity/contract';
 import { createHost } from '@flighthq/host/contract';
-import type { EntityRuntimeKey, WebHost } from '@flighthq/types/contract';
 
+import type { WebHost } from './types.ts';
 import { webHostAccessibilityGroup } from './webAccessibilityHost.ts';
 import { webHostApp } from './webAppHost.ts';
 import { webHostAudioDecode } from './webAudioDecodeHost.ts';

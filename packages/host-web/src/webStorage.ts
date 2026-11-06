@@ -5,7 +5,7 @@ import type {
   StorageGetItemFailureReason,
   StorageRemoveItemFailureReason,
   StorageSetItemFailureReason,
-} from '@flighthq/types/contract';
+} from '@flighthq/preferences/contract';
 
 type WebStorageBackend = HostPreferencesCapability & HostPreferencesChangeCapability;
 

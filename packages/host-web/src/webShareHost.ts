@@ -1,4 +1,4 @@
-import type { HostShareCapabilities } from '@flighthq/types/contract';
+import type { HostShareCapabilities } from '@flighthq/host/contract';
 
 import { webHostShareContent, webHostShareFiles } from './webShare.ts';
 

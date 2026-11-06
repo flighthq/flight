@@ -1,11 +1,11 @@
+import { EntityRuntimeKey } from '@flighthq/entity/contract';
 import { closeNotification } from '@flighthq/notification/contract';
-import { EntityRuntimeKey } from '@flighthq/types/contract';
 import type {
   NotificationPermission,
   WebNotificationOptions,
   WebPageNotificationApi,
   WebPageNotificationInstance,
-} from '@flighthq/types/contract';
+} from '@flighthq/notification/contract';
 
 import { createWebPageNotificationCapabilities } from './webNotification.ts';
 

@@ -1,4 +1,4 @@
-import type { HostAudioCodecCapability } from '@flighthq/types/contract';
+import type { HostAudioCodecCapability } from '@flighthq/audio/contract';
 
 export function initializeWebAudioBackend(out: HostAudioCodecCapability): void {
   out.canPlayType = (mimeType: string): boolean => {

@@ -1,4 +1,4 @@
-import type { ConnectivityStatus } from '@flighthq/types/contract';
+import type { ConnectivityStatus } from '@flighthq/connectivity/contract';
 
 import {
   webHostConnectivityChange,

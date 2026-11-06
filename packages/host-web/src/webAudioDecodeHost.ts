@@ -1,4 +1,4 @@
-import type { HostAudioDecodeCapabilities, HostAudioDecodeFormatCapability } from '@flighthq/types/contract';
+import type { HostAudioDecodeCapabilities, HostAudioDecodeFormatCapability } from '@flighthq/audio/contract';
 
 // Web Audio decodes every standard container the browser ships a codec for, and it content-sniffs rather
 // than reading a MIME type, so one capability serves all seven slots. They are still seven named slots

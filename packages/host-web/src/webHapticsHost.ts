@@ -1,4 +1,4 @@
-import type { HostHapticsCapabilities } from '@flighthq/types/contract';
+import type { HostHapticsCapabilities } from '@flighthq/haptics/contract';
 
 import { webHostHaptics } from './webHaptics.ts';
 

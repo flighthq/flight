@@ -1,13 +1,9 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
+import type { HostImageSource } from '@flighthq/host/contract';
 import { registerHostImageDimensionResolver } from '@flighthq/image/contract';
-import type {
-  EntityConstruction,
-  HostImageDimensionResolver,
-  HostImageDimensions,
-  HostImageSource,
-  ImageResource,
-} from '@flighthq/types/contract';
-import { ImageTextureSourceKind } from '@flighthq/types/contract';
+import type { HostImageDimensionResolver, HostImageDimensions, ImageResource } from '@flighthq/image/contract';
+import { ImageTextureSourceKind } from '@flighthq/texture/contract';
 
 // The web realizations of an ImageResource: a canvas, a decoded ImageBitmap, or an <img> element. Each
 // names a browser type, which is why they live here rather than in the portable image package — that

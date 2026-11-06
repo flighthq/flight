@@ -1,4 +1,4 @@
-import type { HostPreferencesCapabilities } from '@flighthq/types/contract';
+import type { HostPreferencesCapabilities } from '@flighthq/preferences/contract';
 
 import { webHostStorage, webHostStorageChange } from './webStorage.ts';
 import { webHostStoragePersistenceQuery, webHostStoragePersistenceRequest } from './webStoragePersistence.ts';

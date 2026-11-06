@@ -1,5 +1,5 @@
 import type { PermissionState } from '@flighthq/permissions/contract';
-import type { WebWindowStoragePersistenceApi, WebWorkerStoragePersistenceApi } from '@flighthq/types/contract';
+import type { WebWindowStoragePersistenceApi, WebWorkerStoragePersistenceApi } from '@flighthq/preferences/contract';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import {

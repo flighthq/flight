@@ -4,7 +4,7 @@ import type {
   WebNotificationOptions,
   WebServiceWorkerNotificationApi,
   WebServiceWorkerNotificationInstance,
-} from '@flighthq/types/contract';
+} from '@flighthq/notification/contract';
 
 import {
   createWebServiceWorkerNotificationCapabilities,

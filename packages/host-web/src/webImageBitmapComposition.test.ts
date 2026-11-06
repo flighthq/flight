@@ -3,8 +3,9 @@ import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { HostImageDecodeCapabilities, HostImageDecodeFormatCapability } from '@flighthq/image-codec/contract';
 import { createEmbeddedImageResourceReference, resolveImageResourceReference } from '@flighthq/image/contract';
 import { ImageResourceFailureKind } from '@flighthq/image/contract';
-import type { ImageBitmapComposer } from '@flighthq/types/contract';
-import { BitmapTextureSourceKind, ResourceResolutionState } from '@flighthq/types/contract';
+import type { ImageBitmapComposer } from '@flighthq/image/contract';
+import { ResourceResolutionState } from '@flighthq/resource/contract';
+import { BitmapTextureSourceKind } from '@flighthq/texture/contract';
 import { vi } from 'vitest';
 
 import {

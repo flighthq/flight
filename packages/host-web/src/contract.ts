@@ -108,3 +108,4 @@ export * from './webVideoResource.ts';
 export * from './webWgpuHost.ts';
 export * from './webWindow.ts';
 export * from './webWindowHost.ts';
+export type * from './types.ts';

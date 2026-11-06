@@ -9,8 +9,9 @@ import type {
   InputPointerData,
   InputTextData,
   MouseWheelMode,
-} from '@flighthq/types/contract';
-import { KeyCode, KeyModifier } from '@flighthq/types/contract';
+} from '@flighthq/input/contract';
+import { KeyCode } from '@flighthq/input/contract';
+import { KeyModifier } from '@flighthq/types/contract';
 
 /**
  * Wraps a Web event target as a host-neutral input source. The source carries the provider token of

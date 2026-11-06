@@ -3,7 +3,7 @@ import type {
   HostConnectivityChangeCapability,
   HostConnectivityReachabilityCapability,
   HostConnectivityStatusCapability,
-} from '@flighthq/types/contract';
+} from '@flighthq/connectivity/contract';
 
 export const webHostConnectivityChange = createWebConnectivityChangeProvider();
 export const webHostConnectivityReachability = createWebConnectivityReachabilityProvider();

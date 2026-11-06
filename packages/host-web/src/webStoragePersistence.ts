@@ -1,13 +1,13 @@
+import type { NonEntityCreateResult } from '@flighthq/entity/contract';
 import type { PermissionState } from '@flighthq/permissions/contract';
 import type {
   HostPreferencesPersistenceQueryCapability,
-  NonEntityCreateResult,
   StoragePersistenceOutcome,
   WebWindowStoragePersistenceApi,
   WebWindowStoragePersistenceCapabilities,
   WebWorkerStoragePersistenceApi,
   WebWorkerStoragePersistenceCapabilities,
-} from '@flighthq/types/contract';
+} from '@flighthq/preferences/contract';
 
 export function createWebWindowStoragePersistenceCapabilities(
   api: Readonly<WebWindowStoragePersistenceApi>,

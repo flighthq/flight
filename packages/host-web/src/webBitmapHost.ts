@@ -1,4 +1,4 @@
-import type { HostBitmapCapabilities } from '@flighthq/types/contract';
+import type { HostBitmapCapabilities } from '@flighthq/host/contract';
 
 import { webHostBitmapEncode } from './webBitmapEncode.ts';
 import { webHostBitmapReadback } from './webBitmapReadback.ts';

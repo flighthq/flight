@@ -1,4 +1,5 @@
-import type { HostImageCapability, ImageResource, Surface } from '@flighthq/types/contract';
+import type { HostImageCapability, ImageResource } from '@flighthq/image/contract';
+import type { Surface } from '@flighthq/surface/contract';
 
 import { createWebImageResourceFromCanvas, createWebImageResourceFromImageElement } from './webImageResource.ts';
 import { getWebSurfaceCanvasHandle } from './webSurfaceHandle.ts';

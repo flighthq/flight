@@ -1,6 +1,8 @@
 import { exitAppInputPointerLock, lockAppInputPointer } from '@flighthq/app';
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { EntityWithoutRuntime, HostInputPointerLockCapability, InputTargetHandle } from '@flighthq/types/contract';
+import type { EntityWithoutRuntime } from '@flighthq/entity/contract';
+import type { InputTargetHandleRaw as InputTargetHandle } from '@flighthq/input/contract';
+import type { HostInputPointerLockCapability } from '@flighthq/input/contract';
 
 import { webHost } from './webHost.ts';
 import { webHostInputIngress } from './webInputIngress.ts';

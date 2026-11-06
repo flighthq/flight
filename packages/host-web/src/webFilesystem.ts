@@ -1,4 +1,4 @@
-import type { FileEntry, HostFileSystemCapability } from '@flighthq/types/contract';
+import type { FileEntry, HostFileSystemCapability } from '@flighthq/filesystem/contract';
 
 // Stable OPFS provider. Unsupported symlink, permissions, real-path, watch, and well-known-path
 // operations are intentionally absent; @flighthq/filesystem owns those documented absence results.

@@ -196,7 +196,6 @@ export * from './ElectronApi.ts';
 export * from './ElectronAppCapabilitiesFor.ts';
 export * from './ElectronHostOptions.ts';
 export * from './ElectronHost.ts';
-export * from './WebHost.ts';
 export * from './ElectronProtocolCapabilities.ts';
 export * from './ElectronTrayCapabilitiesFor.ts';
 export * from './EmissiveMaterial.ts';

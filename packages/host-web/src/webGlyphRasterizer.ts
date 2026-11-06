@@ -3,7 +3,7 @@ import type {
   GlyphRasterizeOptions,
   GlyphRasterizedBitmap,
   HostGlyphRasterizerCapability,
-} from '@flighthq/types/contract';
+} from '@flighthq/font/contract';
 
 export const webHostGlyphRasterizer: HostGlyphRasterizerCapability = {
   measureMetrics: (options): GlyphMetrics | null => {

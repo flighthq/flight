@@ -1,4 +1,4 @@
-import type { HostGeolocationCapabilities } from '@flighthq/types/contract';
+import type { HostGeolocationCapabilities } from '@flighthq/host/contract';
 
 import { webHostGeolocation } from './webGeolocation.ts';
 

@@ -1,6 +1,6 @@
 import type { Bitmap, HostBitmapReadbackCapability } from '@flighthq/bitmap/contract';
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import { BitmapTextureSourceKind } from '@flighthq/types/contract';
+import { BitmapTextureSourceKind } from '@flighthq/texture/contract';
 
 export const webHostBitmapReadback: HostBitmapReadbackCapability = {
   readBitmap: (source, width, height, mode) => {

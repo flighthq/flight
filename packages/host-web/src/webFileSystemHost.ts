@@ -1,4 +1,4 @@
-import type { HostFileSystemCapabilities } from '@flighthq/types/contract';
+import type { HostFileSystemCapabilities } from '@flighthq/host/contract';
 
 import { webHostFileSystem } from './webFilesystem.ts';
 

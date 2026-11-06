@@ -1,7 +1,26 @@
 import type { HostAppCapabilities, HostFullscreenCapabilities, HostWindowCapabilities } from '@flighthq/app/contract';
 import type { HostClipboardCapabilities } from '@flighthq/clipboard/contract';
 import type { HostDeviceCapabilities } from '@flighthq/device/contract';
+import type { HostHapticsCapabilities } from '@flighthq/haptics/contract';
+import type {
+  HostAccessibilityCapabilities,
+  HostBitmapCapabilities,
+  HostConnectivityCapabilities,
+  HostDialogCapabilities,
+  HostFileSystemCapabilities,
+  HostFontCapabilities,
+  HostGeolocationCapabilities,
+  HostGlyphCapabilities,
+  HostImageCapabilities,
+  HostNotificationCapabilities,
+  HostPermissionsCapabilities,
+  HostProtocolCapabilities,
+  HostShareCapabilities,
+  HostSoftKeyboardCapabilities,
+} from '@flighthq/host/contract';
+import type { HostInputCapabilities } from '@flighthq/input/contract';
 import type { HostLifecycleCapabilities } from '@flighthq/lifecycle/contract';
+import type { HostAudioCapabilities } from '@flighthq/media/contract';
 import type { HostMediaSessionCapabilities } from '@flighthq/mediasession/contract';
 import type { HostMenuCapabilities } from '@flighthq/menu/contract';
 import type { HostNetCapabilities } from '@flighthq/net/contract';
@@ -15,28 +34,8 @@ import type { HostShellCapabilities } from '@flighthq/shell/contract';
 import type { HostSocketCapabilities } from '@flighthq/socket/contract';
 import type { HostStatusBarCapabilities } from '@flighthq/statusbar/contract';
 import type { HostCanvasCapabilities, HostSurfaceCapabilities } from '@flighthq/surface/contract';
+import type { Host } from '@flighthq/types/contract';
 import type { HostVideoCapabilities } from '@flighthq/video/contract';
-
-import type { HostHapticsCapabilities } from './Haptics.ts';
-import type {
-  Host,
-  HostAccessibilityCapabilities,
-  HostAudioCapabilities,
-  HostBitmapCapabilities,
-  HostConnectivityCapabilities,
-  HostDialogCapabilities,
-  HostFileSystemCapabilities,
-  HostFontCapabilities,
-  HostGeolocationCapabilities,
-  HostGlyphCapabilities,
-  HostImageCapabilities,
-  HostInputCapabilities,
-  HostNotificationCapabilities,
-  HostPermissionsCapabilities,
-  HostProtocolCapabilities,
-  HostShareCapabilities,
-  HostSoftKeyboardCapabilities,
-} from './Host.ts';
 
 export type WebHost = Omit<
   Host,

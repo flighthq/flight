@@ -1,4 +1,4 @@
-import type { HostCanvasCapabilities } from '@flighthq/types/contract';
+import type { HostCanvasCapabilities } from '@flighthq/surface/contract';
 
 import { webHostCanvas } from './webHostCanvas.ts';
 

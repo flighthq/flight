@@ -193,7 +193,6 @@ export * from './ElectronApi.ts';
 export type { ElectronAppCapabilitiesFor } from './ElectronAppCapabilitiesFor.ts';
 export * from './ElectronHostOptions.ts';
 export type { ElectronHost, ElectronMacosHost } from './ElectronHost.ts';
-export type { WebHost } from './WebHost.ts';
 export type { ElectronProtocolCapabilities } from './ElectronProtocolCapabilities.ts';
 export type { ElectronTrayCapabilitiesFor } from './ElectronTrayCapabilitiesFor.ts';
 export * from './EmissiveMaterial.ts';

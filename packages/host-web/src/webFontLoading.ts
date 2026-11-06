@@ -1,4 +1,4 @@
-import type { HostFontLoadingCapability } from '@flighthq/types/contract';
+import type { HostFontLoadingCapability } from '@flighthq/font/contract';
 
 export const webHostFontLoading: HostFontLoadingCapability = {
   addFontFace: (face: FontFace): void => {

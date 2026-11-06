@@ -1,14 +1,14 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
+import type { InputTargetHandleRaw as InputTargetHandle } from '@flighthq/input/contract';
 import type {
-  EntityConstruction,
   HostInputDropFileCapability,
   HostInputFocusCapability,
   HostInputPointerLockCapability,
   HostInputTargetCapability,
   InputPointerLockExitOutcome,
   InputPointerLockRequestOutcome,
-  InputTargetHandle,
-} from '@flighthq/types/contract';
+} from '@flighthq/input/contract';
 
 import { webHostInputIngress } from './webInputIngress.ts';
 

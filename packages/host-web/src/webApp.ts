@@ -8,7 +8,7 @@ import type {
   HostAppReadyCapability,
   HostAppRelaunchCapability,
 } from '@flighthq/app/contract';
-import type { NonEntityCreateResult } from '@flighthq/types/contract';
+import type { NonEntityCreateResult } from '@flighthq/entity/contract';
 
 // A capability GROUP: host dispatch infrastructure, not a domain object Flight defines and allocates,
 // so it is plain data formed as a literal — no Entity, no runtime tier, no allocate/finish bracket.

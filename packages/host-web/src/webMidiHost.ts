@@ -1,4 +1,4 @@
-import type { HostMidiCapabilities } from '@flighthq/types/contract';
+import type { HostMidiCapabilities } from '@flighthq/host/contract';
 
 import { webHostMidiAccess, webHostMidiPermission } from './webMidi.ts';
 

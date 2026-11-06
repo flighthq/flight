@@ -1,4 +1,4 @@
-import type { HostClipboardCapabilities } from '@flighthq/types/contract';
+import type { HostClipboardCapabilities } from '@flighthq/clipboard/contract';
 
 import {
   webHostClipboardChange,

@@ -1,4 +1,4 @@
-import type { HostSurfaceDisplayCapability, HostSurfaceResizeCapability, Surface } from '@flighthq/types/contract';
+import type { HostSurfaceDisplayCapability, HostSurfaceResizeCapability, Surface } from '@flighthq/surface/contract';
 
 import { getWebSurfaceCanvasHandle, getWebSurfaceElementHandle } from './webSurfaceHandle.ts';
 

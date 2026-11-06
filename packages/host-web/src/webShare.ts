@@ -4,7 +4,7 @@ import type {
   HostShareFilesCapability,
   ShareFilesContent,
   ShareResult,
-} from '@flighthq/types/contract';
+} from '@flighthq/share/contract';
 
 export function initializeWebShareContentBackend(out: HostShareContentCapability): void {
   out.canShareContent = (content) => {

@@ -1,7 +1,7 @@
 import type { Bitmap } from '@flighthq/bitmap/contract';
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { EntityConstruction } from '@flighthq/types/contract';
-import { BitmapTextureSourceKind } from '@flighthq/types/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
+import { BitmapTextureSourceKind } from '@flighthq/texture/contract';
 
 export function createWebBitmapFromCanvas(
   canvas: HTMLCanvasElement,

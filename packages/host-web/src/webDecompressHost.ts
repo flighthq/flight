@@ -1,4 +1,4 @@
-import type { HostDecompressCapabilities } from '@flighthq/types/contract';
+import type { HostDecompressCapabilities } from '@flighthq/host/contract';
 
 // Web exposes no decompression API this adapter can forward to — DecompressionStream is async while
 // every container parser here is synchronous — so the group is empty rather than stubbed. A caller

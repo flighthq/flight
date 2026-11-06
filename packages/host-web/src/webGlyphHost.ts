@@ -1,4 +1,4 @@
-import type { HostGlyphCapabilities } from '@flighthq/types/contract';
+import type { HostGlyphCapabilities } from '@flighthq/host/contract';
 
 import { webHostGlyphRasterizer } from './webGlyphRasterizer.ts';
 

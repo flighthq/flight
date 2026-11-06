@@ -1,6 +1,6 @@
 import type { AppWindow } from '@flighthq/app/contract';
 import { createCanvasSurfaceFromNativeHandle, destroyCanvasSurface } from '@flighthq/surface/contract';
-import type { CanvasSurface, HostCanvasCapability, Surface } from '@flighthq/types/contract';
+import type { CanvasSurface, HostCanvasCapability, Surface } from '@flighthq/surface/contract';
 
 import { allocateWebSurfaceCanvas, getWebSurfaceCanvasHandle } from './webSurfaceHandle.ts';
 

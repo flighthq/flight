@@ -3,7 +3,7 @@ import type {
   HapticNotificationType,
   HostHapticsCapability,
   HapticsCapabilities,
-} from '@flighthq/types/contract';
+} from '@flighthq/haptics/contract';
 
 export function initializeWebHapticsBackend(out: HostHapticsCapability): void {
   out.cancel = (): boolean => {

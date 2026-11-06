@@ -1,4 +1,4 @@
-import type { HostDialogCapabilities } from '@flighthq/types/contract';
+import type { HostDialogCapabilities } from '@flighthq/host/contract';
 
 import {
   webHostDirectoryOpenDialog,

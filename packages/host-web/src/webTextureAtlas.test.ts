@@ -1,5 +1,5 @@
+import type { ImageResource } from '@flighthq/image/contract';
 import { getTextureSource } from '@flighthq/texture/contract';
-import type { ImageResource } from '@flighthq/types/contract';
 
 import {
   createWebTextureAtlasFromCanvas,

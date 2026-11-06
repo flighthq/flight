@@ -1,7 +1,7 @@
+import type { NonEntityCreateResult } from '@flighthq/entity/contract';
 import { bindNotificationClose, createNotificationResource } from '@flighthq/notification/contract';
 import type {
   HostNotificationPermissionCapability,
-  NonEntityCreateResult,
   Notification,
   NotificationEventBackendAttachOutcome,
   NotificationLifecycleFailure,
@@ -12,7 +12,7 @@ import type {
   WebPageNotificationApi,
   WebPageNotificationCapabilities,
   WebPageNotificationInstance,
-} from '@flighthq/types/contract';
+} from '@flighthq/notification/contract';
 
 export function createWebPageNotificationCapabilities(
   api: Readonly<WebPageNotificationApi>,

@@ -1,5 +1,5 @@
+import { EntityRuntimeKey } from '@flighthq/entity/contract';
 import { createHost } from '@flighthq/host/contract';
-import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import * as contractApi from './contract.ts';
 import * as publicApi from './index.ts';

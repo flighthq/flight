@@ -14,7 +14,7 @@ import type {
   WindowResizeTargetHandle,
 } from '@flighthq/app/contract';
 import { allocateEntity } from '@flighthq/entity/contract';
-import type { EntityConstruction } from '@flighthq/types/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
 
 // The web window group, decomposed one capability per independently-coverable concept. Web covers
 // attach, appearance, focus, fullscreen, geometry and lifecycle. It omits attention, contentProtection,

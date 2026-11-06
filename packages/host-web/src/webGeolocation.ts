@@ -6,7 +6,7 @@ import type {
   GeolocationPosition as FlightGeolocationPosition,
   GeolocationRequestOptions,
   HostGeolocationCapability,
-} from '@flighthq/types/contract';
+} from '@flighthq/geolocation/contract';
 
 function createWebGeolocationBackend(): HostGeolocationCapability {
   const out = {} as HostGeolocationCapability;

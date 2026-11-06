@@ -24,7 +24,7 @@ import type {
   SaveFileDialogOptions,
   HostVideoCaptureDialogCapability,
   VideoCaptureDialogResult,
-} from '@flighthq/types/contract';
+} from '@flighthq/dialog/contract';
 
 export function initializeWebDirectoryOpenDialogBackend(out: HostDirectoryOpenDialogCapability): void {
   out.open = openDirectory;

@@ -1,4 +1,4 @@
-import type { HostInputCapabilities } from '@flighthq/types/contract';
+import type { HostInputCapabilities } from '@flighthq/input/contract';
 
 import { webHostInputIngress } from './webInputIngress.ts';
 import {

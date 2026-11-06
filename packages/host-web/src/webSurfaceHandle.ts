@@ -1,7 +1,7 @@
 import type { AppWindow } from '@flighthq/app/contract';
 import { finishEntity } from '@flighthq/entity/contract';
 import { allocateSurface, getSurfaceHandle } from '@flighthq/surface/contract';
-import type { NativeSurfaceHandle, Surface } from '@flighthq/types/contract';
+import type { NativeSurfaceHandle, Surface } from '@flighthq/surface/contract';
 
 import { getWebWindowHandle } from './webWindow.ts';
 
