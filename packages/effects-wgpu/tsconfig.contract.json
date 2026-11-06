@@ -1,0 +1,20 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "composite": true,
+    "rootDir": "src",
+    "outDir": "dist",
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "types": ["@webgpu/types"],
+    "moduleSuffixes": [".render-wgpu-types", ".adjustments-types", ""],
+    "tsBuildInfoFile": "dist/.tsbuildinfo.contract"
+  },
+  "references": [
+    { "path": "../adjustments/tsconfig.contract.json" },
+    { "path": "../render-wgpu/tsconfig.contract.json" },
+    { "path": "../types/tsconfig.render-wgpu-types.json" }
+  ],
+  "include": ["src/contract.effects-wgpu-types.ts", "src/types.ts"]
+}

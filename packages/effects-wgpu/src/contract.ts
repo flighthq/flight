@@ -1,3 +1,4 @@
+export * from './contract.effects-wgpu-types.ts';
 export * from './enableWgpuEffectGuards.ts';
 export * from './wgpuBevelEffect.ts';
 export * from './wgpuBitmapDisplacementEffect.ts';

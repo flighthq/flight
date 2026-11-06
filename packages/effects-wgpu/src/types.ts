@@ -1,35 +1,16 @@
-import type { ColorLutCache } from './ColorLutCache.ts';
-import type { Effect } from './Effect.ts';
-import type { EffectStateOptions } from './EffectStateOptions.render-wgpu-types.ts';
-import type { WgpuColorLutTextureCache } from './WgpuColorLutTextureCache.ts';
-import type { WgpuRenderState } from './WgpuRenderState.ts';
-import type { WgpuRenderTargetPool, WgpuTextureRenderTarget } from './WgpuRenderTarget.ts';
+import type { ColorLut, ColorLutCache } from '@flighthq/adjustments/contract';
+import type { WgpuRenderState, WgpuRenderTargetPool, WgpuTextureRenderTarget } from '@flighthq/render-wgpu/contract';
+import type { EffectStateOptions } from '@flighthq/types/contract';
 
-// What a Wgpu effect runner is handed: the state, the input it reads, the output it writes, the pool
-// it borrows intermediate targets from, and the scene G-buffer attachments. `source` and `dest` are
-// distinct targets the pipeline ping-pongs between stages. `sceneDepthTexture`/`sceneVelocityTexture`
-// are the scene's depth and per-pixel velocity attachments, or null when the scene did not produce
-// them — a depth/velocity-dependent recipe reads them when present and falls back to a color-only
-// path when null. The Wgpu mirror of GlEffectContext.
-export interface WgpuEffectContext {
-  readonly state: WgpuRenderState;
-  readonly source: Readonly<WgpuTextureRenderTarget>;
-  readonly dest: Readonly<WgpuTextureRenderTarget>;
-  readonly pool: WgpuRenderTargetPool;
-  readonly sceneDepthTexture: GPUTexture | null;
-  readonly sceneVelocityTexture: GPUTexture | null;
-}
-
-// The per-backend realization registered against an effect `type`. A single function over targets —
-// not a multi-method per-node renderer. The built-ins are exported as `default*` named constants
-// (e.g. through registerWgpuBloomEffect); register an alternative under the same key to swap algorithms.
-export type WgpuEffectRunner = (ctx: Readonly<WgpuEffectContext>, effect: Readonly<Effect>) => void;
-
-export type WgpuEffectResolver = (state: WgpuRenderState, effect: Readonly<Effect>) => boolean;
-
-export interface WgpuEffectRegistration {
-  readonly isResolvable?: WgpuEffectResolver;
-  readonly runner: WgpuEffectRunner;
+// GPU-upload memo for the fused color LUT on WebGPU: the uploaded `size³` 3D texture, the axis `size` it
+// was created at (the texture is recreated when size changes), and the ColorLut reference last written
+// into it (all null/0 before the first upload). applyColorLutPassToWgpu re-uploads only when the incoming
+// lut differs by identity from `lut` — the bake cache returns a stable reference for an unchanged run, so
+// a static grade uploads once. `texture` is a GPU resource; destroy it on pipeline teardown.
+export interface WgpuColorLutTextureCache {
+  texture: GPUTexture | null;
+  size: number;
+  lut: ColorLut | null;
 }
 
 // Retains the GPU resources an effect pass needs across frames: the scene target the pipeline renders

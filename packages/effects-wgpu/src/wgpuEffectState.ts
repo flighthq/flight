@@ -20,6 +20,7 @@ import {
   releaseWgpuTextureRenderTarget,
   resizeWgpuTextureRenderTarget,
 } from '@flighthq/render-wgpu/contract';
+import type { WgpuRenderPass, WgpuRenderState, WgpuTextureRenderTarget } from '@flighthq/render-wgpu/contract';
 import type {
   Adjustment,
   Effect,
@@ -27,14 +28,9 @@ import type {
   NonEntityCreateResult,
   RenderTargetClear,
   RenderTargetColorSpace,
-  WgpuEffectState,
-  WgpuEffectStateSampleCountGuard,
-  WgpuEffectStateSkipGuard,
-  WgpuRenderPass,
-  WgpuRenderState,
-  WgpuTextureRenderTarget,
 } from '@flighthq/types/contract';
 
+import type { WgpuEffectState, WgpuEffectStateSampleCountGuard, WgpuEffectStateSkipGuard } from './types.ts';
 import { applyColorLutPassToWgpu } from './wgpuColorLutPass.ts';
 import { applyColorMatrixPassToWgpu } from './wgpuColorMatrixPass.ts';
 import { drawWgpuEffectPass } from './wgpuEffectPass.ts';

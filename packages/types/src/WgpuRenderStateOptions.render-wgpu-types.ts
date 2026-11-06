@@ -4,7 +4,7 @@ import type { ShapeRasterizer } from './ShapeRasterizer.ts';
 import type { WgpuCompressedTextureDecoder } from './WgpuCompressedTextureDecoder.ts';
 import type { WgpuCompressedTextureUploader } from './WgpuCompressedTextureUploader.ts';
 import type { WgpuCustomMaterialShaderSource } from './WgpuCustomMaterialShaderSource.ts';
-import type { WgpuEffectRegistration } from './WgpuEffectState.ts';
+import type { WgpuEffectRegistration } from './WgpuEffectRegistration.render-wgpu-types.ts';
 import type { WgpuMeshMaterialRenderer } from './WgpuMeshMaterialRenderer.ts';
 import type { WgpuModifierSnippet } from './WgpuModifierSnippet.ts';
 import type { WgpuQuadMaterialRenderer } from './WgpuQuadMaterialRenderer.ts';

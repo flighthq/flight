@@ -1,12 +1,9 @@
+import type { ColorLut } from '@flighthq/adjustments/contract';
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type {
-  ColorLut,
-  WgpuColorLutTextureCache,
-  WgpuRenderState,
-  WgpuTextureRenderTarget,
-} from '@flighthq/types/contract';
+import type { WgpuRenderState, WgpuTextureRenderTarget } from '@flighthq/render-wgpu/contract';
 import type { WgpuEffectPipeline } from '@flighthq/types/contract';
 
+import type { WgpuColorLutTextureCache } from './types.ts';
 import { initializeWgpuEffectPipeline } from './wgpuBitmapDisplacementEffect.ts';
 import { EFFECT_VERTEX_WGSL, getWgpuEffectPassState } from './wgpuEffectPass.ts';
 

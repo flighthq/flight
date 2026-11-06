@@ -1,3 +1,12 @@
+export type {
+  WgpuColorLutTextureCache,
+  WgpuEffectApplicationExplanation,
+  WgpuEffectApplicationGuard,
+  WgpuEffectApplicationStatus,
+  WgpuEffectState,
+  WgpuEffectStateSampleCountGuard,
+  WgpuEffectStateSkipGuard,
+} from './contract.ts';
 export * from './enableWgpuEffectGuards.ts';
 export { wgpuBevelEffectRunner, registerWgpuBevelEffect } from './wgpuBevelEffect.ts';
 export {

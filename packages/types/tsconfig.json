@@ -27,6 +27,7 @@
       ".render-wgpu-types",
       ".scene2d-gl-types",
       ".effects-gl-types",
+      ".effects-wgpu-types",
       ".render-gl-types",
       ".adjustments-types",
       ".audio-types",
@@ -347,6 +348,9 @@
     },
     {
       "path": "../effects-gl/tsconfig.contract.json"
+    },
+    {
+      "path": "../effects-wgpu/tsconfig.contract.json"
     },
     {
       "path": "../video/tsconfig.contract.json"

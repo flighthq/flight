@@ -1,14 +1,12 @@
 import { getWgpuRenderTextureTarget, writeWgpuRenderTextureTarget } from '@flighthq/render-wgpu/contract';
+import type { WgpuRenderState, WgpuRenderTexturePool } from '@flighthq/render-wgpu/contract';
+import type { Effect, RenderTexture } from '@flighthq/types/contract';
+
 import type {
-  Effect,
-  RenderTexture,
   WgpuEffectApplicationExplanation,
   WgpuEffectApplicationGuard,
   WgpuEffectApplicationStatus,
-  WgpuRenderState,
-  WgpuRenderTexturePool,
-} from '@flighthq/types/contract';
-
+} from './types.ts';
 import { getWgpuEffectRunner, isWgpuEffectResolvable } from './wgpuEffectRegistry.ts';
 
 // Encodes the registered members of a chain from one completed RenderTexture into another. The

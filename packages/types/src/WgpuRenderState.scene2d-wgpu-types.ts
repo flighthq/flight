@@ -16,7 +16,7 @@ import type { WgpuCompressedTextureUploader } from './WgpuCompressedTextureUploa
 import type { WgpuCustomMaterialShaderSource } from './WgpuCustomMaterialShaderSource.ts';
 import type { WgpuDeviceRuntime } from './WgpuDeviceRuntime.ts';
 import type { WgpuDeviceState } from './WgpuDeviceState.ts';
-import type { WgpuEffectRegistration } from './WgpuEffectState.ts';
+import type { WgpuEffectRegistration } from './WgpuEffectRegistration.render-wgpu-types.ts';
 import type { WgpuMeshMaterialRenderer } from './WgpuMeshMaterialRenderer.ts';
 import type { WgpuModifierSnippet } from './WgpuModifierSnippet.ts';
 import type { WgpuParticleResources } from './WgpuParticleResources.ts';
