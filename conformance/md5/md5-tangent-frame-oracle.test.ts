@@ -1,6 +1,7 @@
+import type { Mesh } from '@flighthq/meshgeometry/contract';
 import { getNodeChildren } from '@flighthq/node/contract';
 import { createScene3DFromMd5Mesh } from '@flighthq/scene3d-formats/contract';
-import type { Mesh, Scene3D } from '@flighthq/types/contract';
+import type { Scene3D } from '@flighthq/scene3d/contract';
 
 import {
   formatMd5TangentFrameOracleCorpusReport,

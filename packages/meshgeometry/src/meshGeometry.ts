@@ -1,7 +1,6 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity, EntityRuntimeKey } from '@flighthq/entity/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
 import { createAabb } from '@flighthq/geometry/contract';
-import type { EntityConstruction } from '@flighthq/types/contract';
-import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import type {
   MeshGeometry,

@@ -56,7 +56,6 @@
     "src/HasTransform3D.node-types.ts",
     "src/Light.ts",
     "src/Matrix4.ts",
-    "src/MorphTarget.ts",
     "src/Node.node-types.ts",
     "src/Plane.ts",
     "src/Vector2.ts"

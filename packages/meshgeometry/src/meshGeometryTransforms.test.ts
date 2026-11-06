@@ -1,5 +1,5 @@
 import { createMatrix4, setMatrix4, setMatrix4Identity } from '@flighthq/geometry/contract';
-import type { Aabb } from '@flighthq/types/contract';
+import type { Aabb } from '@flighthq/geometry/contract';
 
 import type { VertexAttributeLayout } from './contract.meshgeometry-types.ts';
 import { createMeshGeometry } from './meshGeometry.ts';

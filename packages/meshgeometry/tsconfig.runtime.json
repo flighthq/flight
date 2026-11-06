@@ -12,7 +12,6 @@
   "references": [
     { "path": "../entity" },
     { "path": "../geometry/tsconfig.runtime.json" },
-    { "path": "../types" },
     { "path": "./tsconfig.contract.json" }
   ],
   "include": ["src/**/*.ts"],

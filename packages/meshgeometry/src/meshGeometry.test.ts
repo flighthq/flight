@@ -1,4 +1,4 @@
-import { EntityRuntimeKey } from '@flighthq/types/contract';
+import { EntityRuntimeKey } from '@flighthq/entity/contract';
 
 import type {
   MeshGeometryRuntime,

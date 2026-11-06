@@ -1,3 +1,4 @@
+export * from './contract.meshgeometry-types.ts';
 export {
   cloneMeshGeometry,
   cloneMeshGeometryMetadata,

@@ -1,6 +1,6 @@
+import { EntityRuntimeKey } from '@flighthq/entity/contract';
 import { createAabb } from '@flighthq/geometry/contract';
-import type { Aabb, AabbLike, BoundingSphereLike } from '@flighthq/types/contract';
-import { EntityRuntimeKey } from '@flighthq/types/contract';
+import type { Aabb, AabbLike, BoundingSphereLike } from '@flighthq/geometry/contract';
 
 import type { MeshGeometry, MeshGeometryRuntime, MeshTriangleVertexIndices } from './contract.meshgeometry-types.ts';
 import { getMeshGeometryTriangleCount, getMeshGeometryTriangleVertexIndices } from './meshGeometryOperations.ts';

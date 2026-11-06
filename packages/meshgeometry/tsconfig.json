@@ -17,9 +17,6 @@
       "path": "../signals"
     },
     {
-      "path": "../types"
-    },
-    {
       "path": "../scene3d/tsconfig.node.json"
     },
     {

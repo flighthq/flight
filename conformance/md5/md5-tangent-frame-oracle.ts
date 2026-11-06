@@ -8,10 +8,11 @@ import {
   createMeshGeometry,
   getVertexAttributeFloatOffset,
 } from '@flighthq/meshgeometry/contract';
+import type { MeshGeometry } from '@flighthq/meshgeometry/contract';
 import { getNodeChildren } from '@flighthq/node/contract';
 import { createScene3DFromMd5Mesh } from '@flighthq/scene3d-formats/contract';
 import { isMesh } from '@flighthq/scene3d/contract';
-import type { MeshGeometry, Scene3D } from '@flighthq/types/contract';
+import type { Scene3D } from '@flighthq/scene3d/contract';
 
 import {
   FIXTURE_RELEASE_TAG,
