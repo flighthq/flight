@@ -187,6 +187,20 @@ export type {
   TextSegmenterExplanation,
 } from '@flighthq/textsegment';
 export * from '@flighthq/textshaper';
+export {
+  TextFeatureCapitals,
+  TextFeatureContextualAlternates,
+  TextFeatureDiscretionaryLigatures,
+  TextFeatureFractions,
+  TextFeatureKerning,
+  TextFeatureLigatures,
+  TextFeatureOldStyleFigures,
+  TextFeatureSmallCaps,
+  TextFeatureStylisticAlternates,
+  TextFeatureSubscript,
+  TextFeatureSuperscript,
+  TextFeatureTabularFigures,
+} from '@flighthq/textshaper';
 export * from '@flighthq/texture';
 export * from '@flighthq/texture-formats';
 export * from '@flighthq/textureatlas';
