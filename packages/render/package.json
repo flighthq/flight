@@ -46,6 +46,7 @@
     "@flighthq/entity": "*",
     "@flighthq/geometry": "*",
     "@flighthq/image": "*",
+    "@flighthq/lighting": "*",
     "@flighthq/log": "*",
     "@flighthq/materials": "*",
     "@flighthq/meshgeometry": "*",

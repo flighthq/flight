@@ -35,7 +35,6 @@ import type {
   PointLight,
   Scene3DLightBlock,
   Scene3DLightsLike,
-  Scene3DRenderList,
   SpotLight,
   Transform3DNode,
 } from '@flighthq/types/contract';
@@ -53,6 +52,7 @@ import {
   SCENE_LIGHT_SPOT_STRIDE,
 } from '@flighthq/types/contract';
 
+import type { Scene3DRenderList } from './types.ts';
 import type { RenderState } from './types.ts';
 
 // Packs the directional + ambient + punctual (point/spot/hemisphere) draw-arg lights into `out` (the

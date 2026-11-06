@@ -2,8 +2,9 @@ import type { ColorScaleBias } from '@flighthq/adjustments/contract';
 import type { EntityRaw, EntityRuntime, EntityRuntimeKey, Kind } from '@flighthq/entity/contract';
 import type { Matrix, Matrix3, Matrix4, Vector2Like } from '@flighthq/geometry/contract';
 import type { HostImageCapability } from '@flighthq/image/contract';
+import type { Scene3DLightBlock } from '@flighthq/lighting/contract';
 import type { BlendMode, Material, Material2D, Material3D, MaterialData } from '@flighthq/materials/contract';
-import type { MeshSubset } from '@flighthq/meshgeometry/contract';
+import type { InstancedMesh, Mesh, MeshSubset } from '@flighthq/meshgeometry/contract';
 import type { NodeAny, RendererData } from '@flighthq/node/contract';
 import type { Path, PathMesh, StrokeStyle } from '@flighthq/path/contract';
 import type { RequirementFacet } from '@flighthq/requirement/contract';
@@ -590,3 +591,26 @@ export type SceneCoverageEntry =
   | SatisfiedSceneCoverageEntry
   | UnavailableSceneCoverageEntry
   | UnregisteredSceneCoverageEntry;
+
+// The prepared, render-ready frame produced by prepareScene3DRender and consumed by the backend
+// drawScene3D. prepareScene3DRender walks the scene once per frame — propagating world transforms,
+// computing the camera view-projection, frustum-culling, and packing lights — and leaves only
+// the work the backend cannot do without a GPU context (uploading buffers, binding, drawing).
+//
+// `visibleMeshes` is the subset of the scene's Mesh nodes whose world-space bounds intersect the
+// camera frustum, in scene-graph (front-to-back-agnostic) order; their world matrices are resolved
+// on the node runtime (HasTransform3DRuntime.worldMatrix4). `viewProjection` is projection × view
+// for the draw camera. `lights` is the packed light environment. `meshCount` is the live length of
+// `visibleMeshes` — the array is a reused scratch buffer owned by the producer that may be longer
+// than the visible count, so consumers must iterate to `meshCount`, not `visibleMeshes.length`.
+//
+// The list is reused scratch owned by the render state across frames; a consumer must not retain
+// it past the drawScene3D it is passed to.
+export interface Scene3DRenderList {
+  instancedMeshCount: number;
+  lights: Readonly<Scene3DLightBlock>;
+  meshCount: number;
+  viewProjection: Readonly<Matrix4>;
+  visibleInstancedMeshes: InstancedMesh[];
+  visibleMeshes: Mesh[];
+}

@@ -5,8 +5,9 @@ import { SCENE_LIGHT_BLOCK_FLOATS } from '@flighthq/lighting/contract';
 import type { Mesh } from '@flighthq/meshgeometry/contract';
 import { getNodeWorldMatrix4 } from '@flighthq/node/contract';
 import { packScene3DLightBlock } from '@flighthq/render/contract';
+import type { Scene3DRenderList } from '@flighthq/render/contract';
 import { getNode3DWorldBounds } from '@flighthq/scene3d/contract';
-import type { Scene3DRenderList, WgpuRenderState } from '@flighthq/types/contract';
+import type { WgpuRenderState } from '@flighthq/types/contract';
 
 import type { WgpuScene3DForwardLightList } from './contract.scene3d-wgpu-types.ts';
 
