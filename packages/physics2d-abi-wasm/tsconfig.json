@@ -8,6 +8,6 @@
     "declarationMap": true,
     "sourceMap": true
   },
-  "references": [{ "path": "../physics2d-abi" }, { "path": "../types" }],
+  "references": [{ "path": "../entity" }, { "path": "../physics2d-abi" }],
   "include": ["src"]
 }

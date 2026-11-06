@@ -28,8 +28,8 @@
     "test:wasm:watch": "vitest --watch --config vitest.config.ts"
   },
   "dependencies": {
-    "@flighthq/physics2d-abi": "*",
-    "@flighthq/types": "*"
+    "@flighthq/entity": "*",
+    "@flighthq/physics2d-abi": "*"
   },
   "devDependencies": {
     "typescript": "^7.0.2"
