@@ -192,6 +192,7 @@ export * from '@flighthq/requirement-catalog';
 export * from '@flighthq/requirement-codegen';
 export * from '@flighthq/scene-document';
 export * from '@flighthq/scene3d';
+export { InstancedMeshKind, MeshKind } from '@flighthq/meshgeometry';
 export * from '@flighthq/scene3d-formats';
 export * from '@flighthq/scene3d-gl';
 export * from '@flighthq/scene3d-resources';
