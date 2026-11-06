@@ -8,7 +8,7 @@ import type { GlContextRuntime } from './GlContextRuntime.ts';
 import type { GlContextState } from './GlContextState.ts';
 import type { GlCubeRenderTarget } from './GlCubeRenderTarget.ts';
 import type { GlCustomMaterialShaderSource } from './GlCustomMaterialShaderSource.ts';
-import type { GlEffectRegistration } from './GlEffectState.ts';
+import type { GlEffectRegistration } from './GlEffectRegistration.render-wgpu-types.ts';
 import type { GlMeshMaterialRenderer } from './GlMeshMaterialRenderer.ts';
 import type { GlModifierSnippet } from './GlModifierSnippet.ts';
 import type { GlPbrExtensionRegistration } from './GlPbrExtensionRegistration.ts';

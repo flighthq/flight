@@ -1,12 +1,6 @@
 import type { ColorLut, ColorLutCache } from '@flighthq/adjustments/contract';
-import type {
-  Effect,
-  GlRenderState,
-  GlTextureRenderTarget,
-  GlTextureRenderTargetPool,
-  RenderTargetDepth,
-  RenderTargetFormat,
-} from '@flighthq/types/contract';
+import type { GlRenderState, GlTextureRenderTarget, GlTextureRenderTargetPool } from '@flighthq/render-gl/contract';
+import type { Effect, RenderTargetDepth, RenderTargetFormat } from '@flighthq/types/contract';
 
 // GPU-upload memo for the fused color LUT on WebGL 2: the uploaded `size³` 3D texture and the ColorLut
 // reference last written into it. A stable LUT reference lets the effect pipeline skip re-uploading.

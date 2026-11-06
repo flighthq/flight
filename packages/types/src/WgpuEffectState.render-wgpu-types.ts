@@ -1,6 +1,6 @@
 import type { ColorLutCache } from './ColorLutCache.ts';
 import type { Effect } from './Effect.ts';
-import type { EffectStateOptions } from './GlEffectState.ts';
+import type { EffectStateOptions } from './EffectStateOptions.render-wgpu-types.ts';
 import type { WgpuColorLutTextureCache } from './WgpuColorLutTextureCache.ts';
 import type { WgpuRenderState } from './WgpuRenderState.ts';
 import type { WgpuRenderTargetPool, WgpuTextureRenderTarget } from './WgpuRenderTarget.ts';

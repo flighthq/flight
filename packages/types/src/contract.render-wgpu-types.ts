@@ -20,7 +20,7 @@ export type { GlColorAdjustmentResources } from './GlColorAdjustmentResources.re
 export type { GlCompressedTextureDecoder } from './GlCompressedTextureDecoder.ts';
 export type { GlCompressedTextureUploader } from './GlCompressedTextureUploader.ts';
 export type { GlCustomMaterialShaderSource } from './GlCustomMaterialShaderSource.ts';
-export type { GlEffectRegistration } from './GlEffectState.render-wgpu-types.ts';
+export type { GlEffectRegistration } from './GlEffectRegistration.render-wgpu-types.ts';
 export type { GlMeshMaterialRenderer } from './GlMeshMaterialRenderer.ts';
 export type { GlModifierSnippet } from './GlModifierSnippet.ts';
 export type { GlParticleResources } from './GlParticleResources.render-wgpu-types.ts';
