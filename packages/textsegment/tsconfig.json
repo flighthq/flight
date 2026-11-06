@@ -8,9 +8,6 @@
       "path": "../log"
     },
     {
-      "path": "../types"
-    },
-    {
       "path": "./tsconfig.contract.json"
     },
     {

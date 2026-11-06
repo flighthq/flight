@@ -1,6 +1,5 @@
-import type { LogState } from '@flighthq/log/contract';
+import type { LogEntry, LogState } from '@flighthq/log/contract';
 import { createLogState, setLogSink } from '@flighthq/log/contract';
-import type { LogEntry } from '@flighthq/types/contract';
 import { vi } from 'vitest';
 
 import { disableTextSegmentGuards, enableTextSegmentGuards } from './enableTextSegmentGuards.ts';

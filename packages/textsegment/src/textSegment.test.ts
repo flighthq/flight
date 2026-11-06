@@ -1,15 +1,18 @@
-import type { Host } from '@flighthq/types/contract';
-
 import { segmentGraphemes, segmentSentences, segmentWords } from './textSegment.ts';
 import { webTextSegmenterBackend } from './textSegmenterBackend.ts';
-import type { HostTextSegmenterCapability, TextSegment, TextSegmentGranularity } from './types.ts';
+import type {
+  HostTextSegmentCapabilities,
+  HostTextSegmenterCapability,
+  TextSegment,
+  TextSegmentGranularity,
+} from './types.ts';
 
 const backend = webTextSegmenterBackend;
 
 describe('segmentGraphemes', () => {
   it('accepts the text segmenter capability exposed by Host', () => {
     const readonlySegments: readonly TextSegment[] = [{ start: 0, end: 5, text: 'hello' }];
-    const hostTextSegment: Host['textSegment'] = {
+    const hostTextSegment: HostTextSegmentCapabilities = {
       segmenter: { segment: () => readonlySegments },
     };
     const hostCapability = hostTextSegment.segmenter;

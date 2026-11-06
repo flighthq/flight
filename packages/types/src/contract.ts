@@ -615,7 +615,6 @@ export * from './TextLayout.ts';
 export * from './TextLineMetrics.ts';
 export * from './TextListMarker.ts';
 export * from './TextMetrics.ts';
-export * from './TextSegment.ts';
 export * from './TextSelectionRange.ts';
 export * from './TextSelectionRectangle.ts';
 export * from './TextShaper.ts';

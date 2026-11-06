@@ -87,7 +87,6 @@
       ".connectivity-types",
       ".video-types",
       ".media-types",
-      ".textsegment-types",
       ".loader-types",
       ".tween-types",
       ".scene3d-resources-types",
@@ -404,9 +403,6 @@
     },
     {
       "path": "../media/tsconfig.contract.json"
-    },
-    {
-      "path": "../textsegment/tsconfig.contract.json"
     },
     {
       "path": "../render/tsconfig.contract.json"
