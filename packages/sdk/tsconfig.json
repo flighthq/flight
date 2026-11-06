@@ -82,7 +82,7 @@
       "path": "../connectivity/tsconfig.runtime.json"
     },
     {
-      "path": "../debug"
+      "path": "../debug/tsconfig.runtime.json"
     },
     {
       "path": "../device/tsconfig.runtime.json"
