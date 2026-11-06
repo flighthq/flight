@@ -1,4 +1,4 @@
-import type { Entity } from '@flighthq/entity/contract';
+import type { EntityRaw, EntityRuntime, EntityRuntimeKey } from '@flighthq/entity/contract';
 import type { RenderTexture } from '@flighthq/types/contract';
 
 import type { WgpuRenderState } from './WgpuRenderState.ts';
@@ -20,7 +20,8 @@ export interface WgpuRenderTextureEntry {
 
 // App-level lease pool. Handles and raw effect targets are locked to the first GPUDevice that uses
 // the pool; RenderTexture remains the public currency while recipes consume effectTargets internally.
-export interface WgpuRenderTexturePool extends Entity {
+export interface WgpuRenderTexturePool extends EntityRaw {
+  [EntityRuntimeKey]: EntityRuntime | undefined;
   device: GPUDevice | null;
   destroyed: boolean;
   readonly effectTargets: WgpuRenderTargetPool;

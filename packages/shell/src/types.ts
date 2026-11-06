@@ -1,4 +1,4 @@
-import type { Entity } from '@flighthq/entity/contract';
+import type { EntityRaw, EntityRuntime, EntityRuntimeKey } from '@flighthq/entity/contract';
 
 // Opening an external URL is security-sensitive, so every call must name the schemes it permits.
 // There is deliberately no default and no allow-all sentinel: callers decide policy before a provider
@@ -45,7 +45,8 @@ export interface ShellProcessExitStatus {
 // A live provider-owned child process. Standard I/O uses the same Uint8Array Web Streams convention
 // as file-system streaming. Closing stdin is the WritableStream lifecycle; terminate requests process
 // termination, while exit settles exactly once with the provider's terminal status.
-export interface ShellProcess extends Entity {
+export interface ShellProcess extends EntityRaw {
+  [EntityRuntimeKey]: EntityRuntime | undefined;
   readonly exit: Promise<Readonly<ShellProcessExitStatus>>;
   readonly stderr: ReadableStream<Uint8Array>;
   readonly stdin: WritableStream<Uint8Array>;

@@ -1,4 +1,4 @@
-import type { Entity } from '@flighthq/entity/contract';
+import type { EntityRaw, EntityRuntime, EntityRuntimeKey } from '@flighthq/entity/contract';
 import type { Signal } from '@flighthq/signals/contract';
 
 // Bidirectional persistent-connection transport seam — the Flight home for what OpenFL/Lime expose
@@ -38,7 +38,8 @@ export interface SocketCloseInfo {
 
 // Opt-in event group, allocated lazily by enableSocketSignals and stored on the runtime. A bare
 // socket keeps these null and pays no signal allocation or dispatch cost.
-export interface SocketSignals extends Entity {
+export interface SocketSignals extends EntityRaw {
+  [EntityRuntimeKey]: EntityRuntime | undefined;
   onSocketOpen: Signal<void>;
   onSocketMessage: Signal<Readonly<SocketMessage>>;
   onSocketClose: Signal<Readonly<SocketCloseInfo>>;
@@ -115,7 +116,8 @@ export interface SocketRuntime {
 // Persistent-connection transport entity. `url` is the requested endpoint; all live state lives on
 // the opaque runtime. Create with createSocket, observe via enableSocketSignals, send with
 // sendSocketMessage, and tear down with closeSocket (the connection) then disposeSocket (the entity).
-export interface Socket extends Entity {
+export interface Socket extends EntityRaw {
+  [EntityRuntimeKey]: EntityRuntime | undefined;
   url: string;
   runtime: SocketRuntime;
 }

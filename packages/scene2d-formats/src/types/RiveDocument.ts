@@ -1,5 +1,5 @@
 import type { AnimationClip } from '@flighthq/animation/contract';
-import type { Entity } from '@flighthq/entity/contract';
+import type { EntityRaw, EntityRuntime, EntityRuntimeKey } from '@flighthq/entity/contract';
 import type { ImageResourceReference } from '@flighthq/image/contract';
 import type { LayoutTree } from '@flighthq/layout/contract';
 import type { PathWinding } from '@flighthq/path/contract';
@@ -116,7 +116,8 @@ export interface RiveArtboardGraph {
 }
 
 /** Every artboard in a `.riv`, each with its component tree resolved. */
-export interface RiveObjectGraph extends Entity {
+export interface RiveObjectGraph extends EntityRaw {
+  [EntityRuntimeKey]: EntityRuntime | undefined;
   artboards: RiveArtboardGraph[];
 }
 
@@ -214,7 +215,8 @@ export type RiveAnimationLoop = (typeof RiveAnimationLoop)[keyof typeof RiveAnim
  * not a bone. Animation keys its objects by component index, so a channel needs this to reach the
  * bone it drives.
  */
-export interface RiveSkeleton2DImport extends Entity {
+export interface RiveSkeleton2DImport extends EntityRaw {
+  [EntityRuntimeKey]: EntityRuntime | undefined;
   boneIndices: number[];
   skeleton: Skeleton2D;
 }
@@ -337,7 +339,8 @@ export interface RivePathRecord {
  * they came from. The artboards travel alongside because their clips, state machines and advanced
  * blends have no place in a static document — a caller that wants to play or blend needs the import.
  */
-export interface RiveScene2DDocumentResult extends Entity {
+export interface RiveScene2DDocumentResult extends EntityRaw {
+  [EntityRuntimeKey]: EntityRuntime | undefined;
   imageResources: ImageResourceReference[];
   imported: RiveDocumentImportResult;
   root: DisplayObject;
@@ -345,7 +348,8 @@ export interface RiveScene2DDocumentResult extends Entity {
 }
 
 /** The result of importing a `.riv`: every artboard it declares, in file order. */
-export interface RiveDocumentImportResult extends Entity {
+export interface RiveDocumentImportResult extends EntityRaw {
+  [EntityRuntimeKey]: EntityRuntime | undefined;
   artboards: RiveArtboardImport[];
   /** Every asset the file declares, in the order it declares them — which is how they are addressed. */
   assets: RiveFileAsset[];

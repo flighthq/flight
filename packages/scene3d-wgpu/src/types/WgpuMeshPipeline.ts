@@ -1,10 +1,11 @@
-import type { Entity } from '@flighthq/entity/contract';
+import type { EntityRaw, EntityRuntime, EntityRuntimeKey } from '@flighthq/entity/contract';
 
 // A compiled mesh-material pipeline plus the material bind-group layout its group(2) targets. Frame and
 // Draw layouts are shared on the runtime (see ensureWgpuScene3DLayouts), so they are not stored here.
 // `hasShadowGroup` is set when the pipeline was laid out with the group(3) shadow-sample layout (lit
 // families that PCF-sample the directional shadow map); beginWgpuMeshDraw then also binds group(3).
-export interface WgpuMeshPipeline extends Entity {
+export interface WgpuMeshPipeline extends EntityRaw {
+  [EntityRuntimeKey]: EntityRuntime | undefined;
   hasIblGroup: boolean;
   hasPbrSampleGroup: boolean;
   hasShadowGroup: boolean;

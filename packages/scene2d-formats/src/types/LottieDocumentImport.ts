@@ -1,5 +1,5 @@
 import type { AnimationClip } from '@flighthq/animation/contract';
-import type { Entity } from '@flighthq/entity/contract';
+import type { EntityRaw, EntityRuntime, EntityRuntimeKey } from '@flighthq/entity/contract';
 import type { ImageResource } from '@flighthq/image/contract';
 import type { DisplayObject } from '@flighthq/scene2d/contract';
 
@@ -18,7 +18,8 @@ export interface LottieDocumentImportOptions {
   shapeItemHandlers?: LottieShapeItemHandlerEntry[];
 }
 
-export interface LottieDocumentImportResult extends Entity {
+export interface LottieDocumentImportResult extends EntityRaw {
+  [EntityRuntimeKey]: EntityRuntime | undefined;
   advancedBlends: LottieAdvancedBlend[];
   clip: AnimationClip;
   duration: number;

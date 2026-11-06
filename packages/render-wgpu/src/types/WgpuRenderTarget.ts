@@ -1,4 +1,4 @@
-import type { Entity } from '@flighthq/entity/contract';
+import type { EntityRaw, EntityRuntime, EntityRuntimeKey } from '@flighthq/entity/contract';
 import type { RenderTargetColorSpace, RenderTargetDimensions } from '@flighthq/types/contract';
 
 import type { WgpuPresentationSurface } from './WgpuHost.ts';
@@ -16,7 +16,8 @@ import type { WgpuRenderState, WgpuTextureBindings } from './WgpuRenderState.ts'
 //
 // Fields are mutable because resize reallocates them in place; callers that must not mutate a target
 // take it as Readonly<WgpuRenderTarget>.
-export interface WgpuRenderTarget extends RenderTargetDimensions, Entity {
+export interface WgpuRenderTarget extends RenderTargetDimensions, EntityRaw {
+  [EntityRuntimeKey]: EntityRuntime | undefined;
   colorAttachments: number;
   // Declared color space of the target's content. A producer stamps linear 3D radiance as 'linear';
   // the final present reads this and applies the single linear-to-sRGB encode.
@@ -39,7 +40,7 @@ export interface WgpuRenderTarget extends RenderTargetDimensions, Entity {
 // A free-list of reusable texture targets. The effect pipeline owns one and lends intermediate targets
 // to multi-pass recipes via acquireWgpuRenderTarget / releaseWgpuRenderTarget. Screen targets are never
 // pooled — there is one per surface and it lives as long as its context.
-export type WgpuRenderTargetPool = Entity & {
+export type WgpuRenderTargetPool = EntityRaw & { [EntityRuntimeKey]: EntityRuntime | undefined } & {
   free: WgpuTextureRenderTarget[];
 };
 

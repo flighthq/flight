@@ -1,5 +1,5 @@
 import type { ColorScaleBias } from '@flighthq/adjustments/contract';
-import type { Entity, Kind } from '@flighthq/entity/contract';
+import type { EntityRaw, EntityRuntime, EntityRuntimeKey, Kind } from '@flighthq/entity/contract';
 import type { ImageResource } from '@flighthq/image/contract';
 import type { BlendMode, Material, TintMaterialData } from '@flighthq/materials/contract';
 import type { SamplerLike, TextureSource } from '@flighthq/texture/contract';
@@ -50,8 +50,7 @@ export interface WgpuRenderState extends RenderState {
  * than a programmer error — so it is reported, not thrown. `info` is the device's own loss report,
  * carried through unchanged; nothing here claims a device can be rebuilt or recovered.
  */
-export type WgpuOffscreenRenderStateResult = Entity &
-  (
+export type WgpuOffscreenRenderStateResult = EntityRaw & { [EntityRuntimeKey]: EntityRuntime | undefined } & (
     | { readonly reason: 'device-lost'; readonly info: GPUDeviceLostInfo }
     | { readonly reason: 'ok'; readonly state: WgpuRenderState }
   );
@@ -91,7 +90,8 @@ export interface WgpuColorAdjustmentFlush {
 // entity) so the public WgpuRenderState surface stays minimal; the render path resolves it each
 // frame via getWgpuRenderStateRuntime. Defined in @flighthq/types — the header layer — so
 // out-of-package custom renderers can reach the same state.
-export interface WgpuBindGroupLayouts extends Entity {
+export interface WgpuBindGroupLayouts extends EntityRaw {
+  [EntityRuntimeKey]: EntityRuntime | undefined;
   readonly textureBindGroupLayout: GPUBindGroupLayout;
   readonly uniformBindGroupLayout: GPUBindGroupLayout;
 }
@@ -429,7 +429,8 @@ export type WgpuTextureBindings = Map<GPUSampler, GPUBindGroup>;
 
 // An uploaded GPU texture, cached per image source in the WgpuRenderState runtime's textureCache: an
 // allocated resource plus the per-sampler bind groups derived from it.
-export interface WgpuTextureEntry extends WgpuTextureResource, Entity {
+export interface WgpuTextureEntry extends WgpuTextureResource, EntityRaw {
+  [EntityRuntimeKey]: EntityRuntime | undefined;
   bindings: WgpuTextureBindings;
   // A sampler fixed by the SOURCE rather than by the draw — external and video textures carry their
   // own filtering, which the global `allowSmoothing` policy must not override. Absent means "follow the

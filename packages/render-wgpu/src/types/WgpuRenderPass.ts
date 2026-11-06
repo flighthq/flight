@@ -1,4 +1,4 @@
-import type { Entity } from '@flighthq/entity/contract';
+import type { EntityRaw, EntityRuntime, EntityRuntimeKey } from '@flighthq/entity/contract';
 
 import type { WgpuRenderState, WgpuScissorRect } from './WgpuRenderState.ts';
 import type { WgpuRenderTarget } from './WgpuRenderTarget.ts';
@@ -13,7 +13,8 @@ import type { WgpuRenderTarget } from './WgpuRenderTarget.ts';
 //
 // `encoder` is re-created when a nested pass ends and this one resumes: WebGPU pass encoders cannot be
 // reopened, so resuming records a fresh encoder with loadOp 'load' over the same attachments.
-export interface WgpuRenderPass extends Entity {
+export interface WgpuRenderPass extends EntityRaw {
+  [EntityRuntimeKey]: EntityRuntime | undefined;
   // The view this pass draws into: the target's own view offscreen, and the swap-chain (or supersample)
   // view on screen. An effect that composites "to the canvas" writes here rather than reaching for a
   // canvas view on the render state, which is why the field is on the pass and not on the state.

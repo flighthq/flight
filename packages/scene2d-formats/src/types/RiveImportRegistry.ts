@@ -1,4 +1,4 @@
-import type { Entity } from '@flighthq/entity/contract';
+import type { EntityRaw, EntityRuntime, EntityRuntimeKey } from '@flighthq/entity/contract';
 import type { ImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import type { DisplayObject } from '@flighthq/scene2d/contract';
 
@@ -55,7 +55,8 @@ export interface RiveCoreObjectHandler {
  * `nodes` is index-for-index with `artboard.objects`, carrying `null` where a component became no
  * display object, so a later pass can resolve a stated component index to the node it produced.
  */
-export interface RiveArtboardImportContext extends Entity {
+export interface RiveArtboardImportContext extends EntityRaw {
+  [EntityRuntimeKey]: EntityRuntime | undefined;
   /** Nodes whose blend mode must be realized through a `BlendEffect` rather than blend state. */
   advancedBlends: RiveAdvancedBlend[];
   /**
@@ -85,7 +86,8 @@ export interface RiveArtboardImportContext extends Entity {
 }
 
 /** Everything a document-wide importer reads and writes, for content that belongs to no artboard. */
-export interface RiveDocumentImportContext extends Entity {
+export interface RiveDocumentImportContext extends EntityRaw {
+  [EntityRuntimeKey]: EntityRuntime | undefined;
   assets: RiveFileAsset[];
   diagnostics: ImportDiagnostic[] | undefined;
   objects: readonly RiveCoreObject[];
