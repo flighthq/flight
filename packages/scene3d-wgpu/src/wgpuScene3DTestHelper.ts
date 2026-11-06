@@ -1,15 +1,15 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { EntityRuntimeKey } from '@flighthq/entity/contract';
 import { createWgpuDeviceState, createWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
-import { createRenderState } from '@flighthq/render/contract';
 import type {
   WgpuRenderPass,
   WgpuRenderState,
   WgpuRenderStateOptions,
   WgpuRenderStateRuntime,
   WgpuTextureRenderTarget,
-} from '@flighthq/types/contract';
-import { EntityRuntimeKey } from '@flighthq/types/contract';
-import type { WgpuSkinningAdapter } from '@flighthq/types/contract';
+} from '@flighthq/render-wgpu/contract';
+import type { WgpuSkinningAdapter } from '@flighthq/render-wgpu/contract';
+import { createRenderState } from '@flighthq/render/contract';
 
 import { getWgpuSkinningAdapter } from './wgpuScene3DRuntime.ts';
 import { registerWgpuGpuSkinning } from './wgpuSkinPalette.ts';

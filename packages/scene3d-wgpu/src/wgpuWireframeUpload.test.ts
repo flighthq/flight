@@ -1,5 +1,5 @@
 import { createBoxMeshGeometry, createMeshGeometry } from '@flighthq/meshgeometry/contract';
-import type { WgpuSkinningAdapter } from '@flighthq/types/contract';
+import type { WgpuSkinningAdapter } from '@flighthq/render-wgpu/contract';
 
 import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime.ts';
 import { makeWgpuScene3DState } from './wgpuScene3DTestHelper.ts';

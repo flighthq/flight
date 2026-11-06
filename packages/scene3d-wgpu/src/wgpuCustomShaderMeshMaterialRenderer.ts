@@ -1,5 +1,7 @@
 import type { Camera3D } from '@flighthq/camera/contract';
 import type { Scene3DLightBlock } from '@flighthq/lighting/contract';
+import type { CustomShaderMaterial, Material } from '@flighthq/materials/contract';
+import { CustomShaderMaterialKind } from '@flighthq/materials/contract';
 import type { MeshGeometry } from '@flighthq/meshgeometry/contract';
 import { withKindMapEntry } from '@flighthq/registry/contract';
 import {
@@ -7,15 +9,12 @@ import {
   registerWgpuBitmapTextureResolver,
   registerWgpuImageTextureResolver,
 } from '@flighthq/render-wgpu/contract';
-import type { Scene3DRenderProxy } from '@flighthq/render/contract';
 import type {
-  CustomShaderMaterial,
-  Material,
   WgpuCustomMaterialShaderSource,
   WgpuMeshMaterialRenderer,
   WgpuRenderState,
-} from '@flighthq/types/contract';
-import { CustomShaderMaterialKind } from '@flighthq/types/contract';
+} from '@flighthq/render-wgpu/contract';
+import type { Scene3DRenderProxy } from '@flighthq/render/contract';
 
 import type { WgpuMeshPipeline } from './contract.scene3d-wgpu-types.ts';
 import { WGPU_CUSTOM_SHADER_TEXTURE_CAPACITY, WGPU_CUSTOM_SHADER_USER_VEC4_CAPACITY } from './wgpuCustomMaterialAbi.ts';

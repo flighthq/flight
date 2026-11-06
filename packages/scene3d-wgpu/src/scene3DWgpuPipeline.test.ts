@@ -1,8 +1,28 @@
+import {
+  BlinnPhongMaterialKind,
+  CustomShaderMaterialKind,
+  DepthMaterialKind,
+  EmissiveMaterialKind,
+  ExtendedPbrMaterialKind,
+  LambertMaterialKind,
+  MatcapMaterialKind,
+  NormalMaterialKind,
+  PhongMaterialKind,
+  SpecularGlossinessPbrMaterialKind,
+  StandardMaterialKind,
+  StandardPbrMaterialKind,
+  ToonMaterialKind,
+  UnlitMaterialKind,
+  VertexColorMaterialKind,
+  WireframeMaterialKind,
+} from '@flighthq/materials/contract';
 import { ParticleEmitter2DKind } from '@flighthq/particleemitter/contract';
 import { QuadBatchKind } from '@flighthq/quadbatch/contract';
 import { getKindMapKeys } from '@flighthq/registry/contract';
 import {} from '@flighthq/render-wgpu/contract';
+import { RenderCacheKind } from '@flighthq/render/contract';
 import { wgpuScene2DRenderPreset } from '@flighthq/scene2d-wgpu/contract';
+import { DisplayObjectKind, Scale9SpriteKind, SpriteKind } from '@flighthq/scene2d/contract';
 import {
   AnimatedNormalModifierKind,
   DissolveModifierKind,
@@ -16,32 +36,12 @@ import {
 } from '@flighthq/shading/contract';
 import { MorphShapeKind, Scale9ShapeKind, ShapeKind } from '@flighthq/shape/contract';
 import { RichTextKind, TextLabelKind } from '@flighthq/text/contract';
-import { TilemapKind } from '@flighthq/tilemap/contract';
 import {
   BitmapTextureSourceKind,
-  BlinnPhongMaterialKind,
-  CustomShaderMaterialKind,
-  DepthMaterialKind,
-  DisplayObjectKind,
-  EmissiveMaterialKind,
-  ExtendedPbrMaterialKind,
   ImageTextureSourceKind,
-  LambertMaterialKind,
-  MatcapMaterialKind,
-  NormalMaterialKind,
-  PhongMaterialKind,
-  RenderCacheKind,
   RenderTargetTextureSourceKind,
-  Scale9SpriteKind,
-  SpecularGlossinessPbrMaterialKind,
-  SpriteKind,
-  StandardMaterialKind,
-  StandardPbrMaterialKind,
-  ToonMaterialKind,
-  UnlitMaterialKind,
-  VertexColorMaterialKind,
-  WireframeMaterialKind,
-} from '@flighthq/types/contract';
+} from '@flighthq/texture/contract';
+import { TilemapKind } from '@flighthq/tilemap/contract';
 import { describe, expect, it } from 'vitest';
 
 import { wgpuScene3DRenderPreset } from './scene3DWgpuPipeline.ts';

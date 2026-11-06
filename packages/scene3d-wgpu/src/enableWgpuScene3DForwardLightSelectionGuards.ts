@@ -1,8 +1,8 @@
 import type { Scene3DLightsLike } from '@flighthq/lighting/contract';
 import type { LogState } from '@flighthq/log/contract';
 import { logOnce } from '@flighthq/log/contract';
-import type { WgpuRenderState } from '@flighthq/types/contract';
-import { LogLevel } from '@flighthq/types/contract';
+import { LogLevel } from '@flighthq/log/contract';
+import type { WgpuRenderState } from '@flighthq/render-wgpu/contract';
 
 import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime.ts';
 

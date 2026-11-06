@@ -12,6 +12,12 @@
   },
   "references": [
     {
+      "path": "../adjustments/tsconfig.runtime.json"
+    },
+    {
+      "path": "../bitmap/tsconfig.runtime.json"
+    },
+    {
       "path": "../bitmaptext/tsconfig.contract.json"
     },
     {
@@ -60,6 +66,15 @@
       "path": "../render-wgpu/tsconfig.runtime.json"
     },
     {
+      "path": "../requirement"
+    },
+    {
+      "path": "../resource"
+    },
+    {
+      "path": "../scene2d/tsconfig.runtime.json"
+    },
+    {
       "path": "../scene2d-wgpu/tsconfig.runtime.json"
     },
     {
@@ -82,9 +97,6 @@
     },
     {
       "path": "../tilemap/tsconfig.contract.json"
-    },
-    {
-      "path": "../types"
     },
     {
       "path": "../video"

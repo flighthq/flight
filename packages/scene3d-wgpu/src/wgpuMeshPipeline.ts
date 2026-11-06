@@ -1,6 +1,7 @@
 import { getCamera3DPosition, getCamera3DViewProjectionMatrix4 } from '@flighthq/camera/contract';
 import type { Camera3D } from '@flighthq/camera/contract';
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
 import { createMatrix3, createMatrix4 } from '@flighthq/geometry/contract';
 import type { Scene3DLightBlock } from '@flighthq/lighting/contract';
 import {
@@ -13,6 +14,8 @@ import {
   SCENE_LIGHT_SPOT_OFFSET,
   SCENE_LIGHT_SPOT_STRIDE,
 } from '@flighthq/lighting/contract';
+import type { Material, Material3D } from '@flighthq/materials/contract';
+import { BlendMode } from '@flighthq/materials/contract';
 import type { MeshGeometry } from '@flighthq/meshgeometry/contract';
 import {
   getWgpuBlendState,
@@ -21,20 +24,12 @@ import {
   getWgpuSampler,
   resolveWgpuTexture,
 } from '@flighthq/render-wgpu/contract';
+import type { WgpuMeshInstanceBufferSlot, WgpuRenderState } from '@flighthq/render-wgpu/contract';
+import type { WgpuSkinningAdapter } from '@flighthq/render-wgpu/contract';
 import type { Scene3DRenderProxy } from '@flighthq/render/contract';
+import type { WgpuColorAdjustmentMaterialFeature } from '@flighthq/scene2d-wgpu/contract';
 import { getTextureUvMatrix, hasTextureSource, hasTextureUvTransform } from '@flighthq/texture/contract';
-import type {
-  EntityConstruction,
-  Material,
-  Material3D,
-  Texture,
-  TextureLike,
-  WgpuColorAdjustmentMaterialFeature,
-  WgpuMeshInstanceBufferSlot,
-  WgpuRenderState,
-} from '@flighthq/types/contract';
-import { BlendMode } from '@flighthq/types/contract';
-import type { WgpuSkinningAdapter } from '@flighthq/types/contract';
+import type { Texture, TextureLike } from '@flighthq/texture/contract';
 
 import type {
   WgpuMaterialBinding,

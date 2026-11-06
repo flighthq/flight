@@ -1,11 +1,12 @@
 import { createStandardPbrMaterial } from '@flighthq/materials/contract';
+import type { Material } from '@flighthq/materials/contract';
+import { StandardMaterialKind, StandardPbrMaterialKind } from '@flighthq/materials/contract';
 import {
   getWgpuRenderStateRuntime,
   registerWgpuQuadMaterialRenderer,
   resolveWgpuQuadMaterialRenderer,
 } from '@flighthq/render-wgpu/contract';
-import type { Material, WgpuMeshMaterialRenderer, WgpuQuadMaterialRenderer } from '@flighthq/types/contract';
-import { StandardMaterialKind, StandardPbrMaterialKind } from '@flighthq/types/contract';
+import type { WgpuMeshMaterialRenderer, WgpuQuadMaterialRenderer } from '@flighthq/render-wgpu/contract';
 
 import {
   getWgpuMeshMaterialRenderer,

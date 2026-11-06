@@ -1,6 +1,7 @@
+import type { ImageResource } from '@flighthq/image/contract';
 import type { Environment } from '@flighthq/lighting/contract';
-import type { ImageResource, Texture } from '@flighthq/types/contract';
-import { ImageTextureSourceKind } from '@flighthq/types/contract';
+import type { Texture } from '@flighthq/texture/contract';
+import { ImageTextureSourceKind } from '@flighthq/texture/contract';
 
 import { bakeWgpuEnvironmentIbl, destroyWgpuScene3DIbl } from './wgpuEnvironmentIblBake.ts';
 import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime.ts';

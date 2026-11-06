@@ -23,7 +23,7 @@ import type { WgpuQuadMaterialRenderer } from './WgpuQuadMaterialRenderer.ts';
 import type { WgpuRenderPass, WgpuRenderPassViewport } from './WgpuRenderPass.ts';
 import type { WgpuRenderTarget, WgpuScreenRenderTarget } from './WgpuRenderTarget.ts';
 import type { WgpuRenderTextureEntry, WgpuRenderTextureGuard } from './WgpuRenderTexture.ts';
-import type { WgpuScene3DPass } from './WgpuScene3DRuntime.ts';
+import type { WgpuScene3DPass } from './WgpuScene3DRuntime.render-wgpu-types.ts';
 import type { WgpuShapeMesh } from './WgpuShapeMesh.ts';
 import type { WgpuSkinningAdapter } from './WgpuSkinningAdapter.ts';
 import type { WgpuTextureResolver } from './WgpuTextureResolver.ts';

@@ -1,7 +1,10 @@
+import type { Bitmap } from '@flighthq/bitmap/contract';
+import type { ImageResource } from '@flighthq/image/contract';
 import type { Environment } from '@flighthq/lighting/contract';
 import { uploadWgpuTextureData, uploadWgpuTextureImageResource } from '@flighthq/render-wgpu/contract';
-import type { Bitmap, TextureSource, ImageResource, Texture, WgpuRenderState } from '@flighthq/types/contract';
-import { BitmapTextureSourceKind, ImageTextureSourceKind } from '@flighthq/types/contract';
+import type { WgpuRenderState } from '@flighthq/render-wgpu/contract';
+import type { TextureSource, Texture } from '@flighthq/texture/contract';
+import { BitmapTextureSourceKind, ImageTextureSourceKind } from '@flighthq/texture/contract';
 
 import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime.ts';
 

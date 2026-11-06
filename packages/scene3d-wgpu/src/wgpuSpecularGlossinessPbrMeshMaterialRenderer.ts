@@ -2,21 +2,20 @@ import type { Camera3D } from '@flighthq/camera/contract';
 import type { LinearColorRaw } from '@flighthq/color/contract';
 import { allocateLinearColor, packLinearChannelsToColor, unpackColorToLinear } from '@flighthq/color/contract';
 import type { Scene3DLightBlock } from '@flighthq/lighting/contract';
+import type {
+  Material,
+  SpecularGlossinessPbrMaterial,
+  StandardPbrMaterialProperties,
+} from '@flighthq/materials/contract';
+import { SpecularGlossinessPbrMaterialKind } from '@flighthq/materials/contract';
 import type { MeshGeometry } from '@flighthq/meshgeometry/contract';
 import {
   getWgpuRenderStateRuntime,
   registerWgpuBitmapTextureResolver,
   registerWgpuImageTextureResolver,
 } from '@flighthq/render-wgpu/contract';
+import type { WgpuMeshMaterialRenderer, WgpuRenderState } from '@flighthq/render-wgpu/contract';
 import type { Scene3DRenderProxy } from '@flighthq/render/contract';
-import type {
-  Material,
-  SpecularGlossinessPbrMaterial,
-  StandardPbrMaterialProperties,
-  WgpuMeshMaterialRenderer,
-  WgpuRenderState,
-} from '@flighthq/types/contract';
-import { SpecularGlossinessPbrMaterialKind } from '@flighthq/types/contract';
 
 import { registerWgpuMeshMaterialRenderer } from './wgpuMeshMaterialRegistry.ts';
 import { beginWgpuMeshDraw, drawWgpuMeshSubset, writeWgpuFrameUniform } from './wgpuMeshPipeline.ts';

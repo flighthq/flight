@@ -1,7 +1,8 @@
 import type { LinearColorRaw } from '@flighthq/color/contract';
 import { allocateLinearColor } from '@flighthq/color/contract';
+import type { ImageResource } from '@flighthq/image/contract';
+import type { WgpuColorAdjustmentMaterialFeature } from '@flighthq/scene2d-wgpu/contract';
 import { createTexture } from '@flighthq/texture/contract';
-import type { ImageResource, WgpuColorAdjustmentMaterialFeature } from '@flighthq/types/contract';
 
 import type { WgpuClassicDefineKey, WgpuClassicLightingModel } from './contract.scene3d-wgpu-types.ts';
 import {

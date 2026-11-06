@@ -1,7 +1,9 @@
+import type { Kind } from '@flighthq/entity/contract';
+import type { Material } from '@flighthq/materials/contract';
+import { StandardMaterialKind } from '@flighthq/materials/contract';
 import { withKindMapEntry } from '@flighthq/registry/contract';
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
-import type { Kind, Material, WgpuMeshMaterialRenderer, WgpuRenderState } from '@flighthq/types/contract';
-import { StandardMaterialKind } from '@flighthq/types/contract';
+import type { WgpuMeshMaterialRenderer, WgpuRenderState } from '@flighthq/render-wgpu/contract';
 
 // Returns the 3D mesh-material renderer registered for a kind on this state, or null. The 3D scene
 // analog of getWgpuQuadMaterialRenderer; reads the shared materialRenderers table (a material kind is

@@ -2,7 +2,7 @@ import type { LinearColorRaw } from '@flighthq/color/contract';
 import { allocateLinearColor } from '@flighthq/color/contract';
 import { registerWgpuImageTextureResolver } from '@flighthq/render-wgpu/contract';
 import { advanceVideoTexture, createVideoTexture } from '@flighthq/texture/contract';
-import type { HostVideoCapability } from '@flighthq/types/contract';
+import type { HostVideoCapability } from '@flighthq/video/contract';
 import { createVideoResource } from '@flighthq/video/contract';
 
 import type { WgpuUnlitDefineKey } from './contract.scene3d-wgpu-types.ts';

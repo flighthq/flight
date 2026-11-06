@@ -1,3 +1,4 @@
+import { EntityRuntimeKey } from '@flighthq/entity/contract';
 import {
   CANONICAL_SKINNED_MESH_GEOMETRY_LAYOUT,
   createBoxMeshGeometry,
@@ -8,7 +9,6 @@ import {
 import type { MeshGeometryRuntime, VertexAttributeLayout } from '@flighthq/meshgeometry/contract';
 import type { MeshMorph } from '@flighthq/meshgeometry/contract';
 import { createMesh, updateMeshMorph } from '@flighthq/scene3d/contract';
-import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import { ensureWgpuMeshUpload } from './wgpuMeshUpload.ts';
 import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime.ts';

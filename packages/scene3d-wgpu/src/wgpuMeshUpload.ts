@@ -1,7 +1,7 @@
+import { EntityRuntimeKey } from '@flighthq/entity/contract';
 import type { MeshGeometry, MeshGeometryRuntime } from '@flighthq/meshgeometry/contract';
-import type { WgpuRenderState } from '@flighthq/types/contract';
-import { EntityRuntimeKey } from '@flighthq/types/contract';
-import type { WgpuSkinningAdapter } from '@flighthq/types/contract';
+import type { WgpuRenderState } from '@flighthq/render-wgpu/contract';
+import type { WgpuSkinningAdapter } from '@flighthq/render-wgpu/contract';
 
 import type { WgpuMeshUpload } from './contract.scene3d-wgpu-types.ts';
 import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime.ts';

@@ -18,7 +18,7 @@ import {
 import { createNode3D, Node3DKind } from '@flighthq/scene3d/contract';
 import { createTexture } from '@flighthq/texture/contract';
 import { TextureAtlasRotation } from '@flighthq/textureatlas/contract';
-import type { TextureAtlas, TextureAtlasRegion } from '@flighthq/types/contract';
+import type { TextureAtlas, TextureAtlasRegion } from '@flighthq/textureatlas/contract';
 import { describe, expect, it } from 'vitest';
 
 import {

@@ -1,5 +1,6 @@
 import { getWgpuColorAdjustmentMaterialFeature } from '@flighthq/render-wgpu/contract';
-import type { WgpuColorAdjustmentMaterialFeature, WgpuRenderState } from '@flighthq/types/contract';
+import type { WgpuRenderState } from '@flighthq/render-wgpu/contract';
+import type { WgpuColorAdjustmentMaterialFeature } from '@flighthq/scene2d-wgpu/contract';
 
 import type { WgpuPbrPipeline, WgpuPbrDefineKey } from './contract.scene3d-wgpu-types.ts';
 import { createWgpuMeshPipeline, ensureWgpuPbrSampleLayout, ensureWgpuScene3DPipeline } from './wgpuMeshPipeline.ts';

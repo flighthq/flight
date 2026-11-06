@@ -1,7 +1,8 @@
 import type { LogState } from '@flighthq/log/contract';
 import { logOnce } from '@flighthq/log/contract';
-import type { CustomShaderMaterial, WgpuCustomMaterialShaderSource, WgpuRenderState } from '@flighthq/types/contract';
-import { LogLevel } from '@flighthq/types/contract';
+import { LogLevel } from '@flighthq/log/contract';
+import type { CustomShaderMaterial } from '@flighthq/materials/contract';
+import type { WgpuCustomMaterialShaderSource, WgpuRenderState } from '@flighthq/render-wgpu/contract';
 
 import { WGPU_CUSTOM_SHADER_TEXTURE_CAPACITY, WGPU_CUSTOM_SHADER_USER_VEC4_CAPACITY } from './wgpuCustomMaterialAbi.ts';
 import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime.ts';

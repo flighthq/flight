@@ -9,6 +9,7 @@ import { createMatrix4, createVector3 } from '@flighthq/geometry/contract';
 import { createAmbientLight, createDirectionalLight } from '@flighthq/lighting/contract';
 import type { Scene3DLightsLike } from '@flighthq/lighting/contract';
 import { createStandardPbrMaterial } from '@flighthq/materials/contract';
+import { BlendMode } from '@flighthq/materials/contract';
 import {
   CANONICAL_SKINNED_MESH_GEOMETRY_LAYOUT,
   createBoxMeshGeometry,
@@ -28,7 +29,6 @@ import {
   setInstancedMeshInstanceMatrix,
 } from '@flighthq/scene3d/contract';
 import type { Skeleton3D } from '@flighthq/scene3d/contract';
-import { BlendMode } from '@flighthq/types/contract';
 
 import { registerWgpuStandardPbrMaterial } from './registerWgpuStandardPbrMaterial.ts';
 import { renderWgpuScene3D, isWgpuMeshGpuSkinned } from './renderWgpuScene3D.ts';

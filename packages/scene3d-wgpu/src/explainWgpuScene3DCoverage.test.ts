@@ -1,24 +1,24 @@
+import { EntityRuntimeKey } from '@flighthq/entity/contract';
 import type { ImageResourceReference } from '@flighthq/image/contract';
 import { ImageResourceReferenceKind } from '@flighthq/image/contract';
+import { StandardMaterialKind } from '@flighthq/materials/contract';
 import { createBoxMeshGeometry } from '@flighthq/meshgeometry/contract';
 import { addNodeChild } from '@flighthq/node/contract';
+import type { WgpuRenderState } from '@flighthq/render-wgpu/contract';
 import type { SceneCoverageCatalog, SceneCoverageEntry } from '@flighthq/render/contract';
 import { RenderRegistryTable, SceneCoverage } from '@flighthq/render/contract';
+import { RequirementFacet } from '@flighthq/requirement/contract';
+import { ResourceResolutionState } from '@flighthq/resource/contract';
 import { createMesh, createScene3D, createScene3DKindUsage, getScene3DKindUsage } from '@flighthq/scene3d/contract';
 import { createRimModifier, createShadedMaterial } from '@flighthq/shading/contract';
 import { createTexture } from '@flighthq/texture/contract';
-import type { Scene3DKindUsage, WgpuRenderState } from '@flighthq/types/contract';
-import {
-  EntityRuntimeKey,
-  RequirementFacet,
-  ResourceResolutionState,
-  StandardMaterialKind,
-} from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { explainWgpuScene3DCoverage, hasWgpuScene3DCoverage } from './explainWgpuScene3DCoverage.ts';
 import { registerWgpuMeshMaterialRenderer } from './wgpuMeshMaterialRegistry.ts';
 import { makeWgpuScene3DState } from './wgpuScene3DTestHelper.ts';
+
+type Scene3DKindUsage = ReturnType<typeof createScene3DKindUsage>;
 
 const coverageCatalog: SceneCoverageCatalog = [
   {

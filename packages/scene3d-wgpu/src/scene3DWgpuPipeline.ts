@@ -1,15 +1,4 @@
-import { concatKindMap, withKindMapEntry } from '@flighthq/registry/contract';
-import { standardWgpuTextureResolvers } from '@flighthq/render-wgpu/contract';
-import { wgpuScene2DRenderPreset } from '@flighthq/scene2d-wgpu/contract';
-import { ShadedMaterialKind } from '@flighthq/shading/contract';
-import type {
-  Kind,
-  WgpuMeshMaterialRenderer,
-  WgpuModifierSnippet,
-  WgpuQuadMaterialRenderer,
-  WgpuRenderRegistries,
-  WgpuTextureResolver,
-} from '@flighthq/types/contract';
+import type { Kind } from '@flighthq/entity/contract';
 import {
   BlinnPhongMaterialKind,
   CustomShaderMaterialKind,
@@ -25,7 +14,18 @@ import {
   UnlitMaterialKind,
   VertexColorMaterialKind,
   WireframeMaterialKind,
-} from '@flighthq/types/contract';
+} from '@flighthq/materials/contract';
+import { concatKindMap, withKindMapEntry } from '@flighthq/registry/contract';
+import { standardWgpuTextureResolvers } from '@flighthq/render-wgpu/contract';
+import type {
+  WgpuMeshMaterialRenderer,
+  WgpuModifierSnippet,
+  WgpuQuadMaterialRenderer,
+  WgpuRenderRegistries,
+  WgpuTextureResolver,
+} from '@flighthq/render-wgpu/contract';
+import { wgpuScene2DRenderPreset } from '@flighthq/scene2d-wgpu/contract';
+import { ShadedMaterialKind } from '@flighthq/shading/contract';
 
 import { wgpuBlinnPhongMeshMaterialRenderer } from './wgpuBlinnPhongMeshMaterialRenderer.ts';
 import { wgpuCustomShaderMeshMaterialRenderer } from './wgpuCustomShaderMeshMaterialRenderer.ts';

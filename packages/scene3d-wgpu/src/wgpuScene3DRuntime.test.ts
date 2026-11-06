@@ -1,5 +1,5 @@
-import type { WgpuRenderStateRuntime } from '@flighthq/types/contract';
-import { EntityRuntimeKey } from '@flighthq/types/contract';
+import { EntityRuntimeKey } from '@flighthq/entity/contract';
+import type { WgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
 
 import { getWgpuScene3DRuntime, getWgpuSkinningAdapter } from './wgpuScene3DRuntime.ts';
 import { makeWgpuScene3DState } from './wgpuScene3DTestHelper.ts';

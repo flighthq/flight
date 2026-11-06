@@ -1,15 +1,19 @@
+import type { Bitmap } from '@flighthq/bitmap/contract';
 import { createCamera3D, createOrthographicProjection, createPerspectiveProjection } from '@flighthq/camera/contract';
 import type { Camera3D } from '@flighthq/camera/contract';
 import { createMatrix3, createMatrix4 } from '@flighthq/geometry/contract';
+import type { ImageResource } from '@flighthq/image/contract';
 import type { Scene3DLightBlock } from '@flighthq/lighting/contract';
 import { SCENE_LIGHT_BLOCK_FLOATS } from '@flighthq/lighting/contract';
 import { createStandardPbrMaterial } from '@flighthq/materials/contract';
+import { BlendMode } from '@flighthq/materials/contract';
 import { createBoxMeshGeometry, createMeshGeometry } from '@flighthq/meshgeometry/contract';
 import { getWgpuRenderStateDeviceResources, getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
 import type { Scene3DRenderProxy } from '@flighthq/render/contract';
+import type { WgpuColorAdjustmentMaterialFeature } from '@flighthq/scene2d-wgpu/contract';
 import { createTexture, setTextureUvOffset, setTextureUvScale } from '@flighthq/texture/contract';
-import type { Bitmap, ImageResource, Texture, WgpuColorAdjustmentMaterialFeature } from '@flighthq/types/contract';
-import { BitmapTextureSourceKind, BlendMode, ImageTextureSourceKind } from '@flighthq/types/contract';
+import type { Texture } from '@flighthq/texture/contract';
+import { BitmapTextureSourceKind, ImageTextureSourceKind } from '@flighthq/texture/contract';
 
 import type { WgpuMaterialBinding } from './contract.scene3d-wgpu-types.ts';
 import {

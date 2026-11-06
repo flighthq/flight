@@ -1,6 +1,6 @@
+import { StandardPbrMaterialKind } from '@flighthq/materials/contract';
 import { registerWgpuBitmapTextureResolver, registerWgpuImageTextureResolver } from '@flighthq/render-wgpu/contract';
-import type { WgpuRenderState } from '@flighthq/types/contract';
-import { StandardPbrMaterialKind } from '@flighthq/types/contract';
+import type { WgpuRenderState } from '@flighthq/render-wgpu/contract';
 
 import { registerWgpuMeshMaterialRenderer } from './wgpuMeshMaterialRegistry.ts';
 import { wgpuStandardPbrMeshMaterialRenderer } from './wgpuStandardPbrMeshMaterialRenderer.ts';

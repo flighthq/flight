@@ -1,6 +1,9 @@
 import { allocateLinearColor } from '@flighthq/color/contract';
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type { ImageResource } from '@flighthq/image/contract';
 import { getWgpuRenderStateRuntime, registerWgpuImageTextureResolver } from '@flighthq/render-wgpu/contract';
+import type { WgpuModifierSnippet } from '@flighthq/render-wgpu/contract';
+import type { WgpuColorAdjustmentMaterialFeature } from '@flighthq/scene2d-wgpu/contract';
 import {
   createAnimatedNormalModifier,
   createDissolveModifier,
@@ -15,13 +18,8 @@ import {
 import type { Modifier } from '@flighthq/shading/contract';
 import { FogModifierMode, ModifierSlot, VertexDisplaceModifierSource } from '@flighthq/shading/contract';
 import { createTexture, getTextureSource } from '@flighthq/texture/contract';
-import type {
-  ImageResource,
-  Texture,
-  WgpuColorAdjustmentMaterialFeature,
-  WgpuModifierSnippet,
-} from '@flighthq/types/contract';
-import { ImageTextureSourceKind } from '@flighthq/types/contract';
+import type { Texture } from '@flighthq/texture/contract';
+import { ImageTextureSourceKind } from '@flighthq/texture/contract';
 
 import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime.ts';
 import { makeWgpuScene3DState, makeWgpuSkinningAdapter } from './wgpuScene3DTestHelper.ts';

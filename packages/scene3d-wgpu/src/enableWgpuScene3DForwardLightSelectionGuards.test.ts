@@ -6,7 +6,7 @@ import {
   getMemoryLogSinkEntries,
   removeLogSink,
 } from '@flighthq/log/contract';
-import type { LogEntry, MemoryLogSink } from '@flighthq/types/contract';
+import type { LogEntry, MemoryLogSink } from '@flighthq/log/contract';
 
 import {
   areWgpuScene3DForwardLightSelectionGuardsEnabled,

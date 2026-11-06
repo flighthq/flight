@@ -1,8 +1,16 @@
+import type { Kind } from '@flighthq/entity/contract';
+import { StandardMaterialKind } from '@flighthq/materials/contract';
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
+import type { WgpuRenderState } from '@flighthq/render-wgpu/contract';
 import type { CatalogRegistration, SceneCoverageCatalog, SceneCoverageEntry } from '@flighthq/render/contract';
 import { RenderRegistryTable, SceneCoverage } from '@flighthq/render/contract';
-import type { Kind, Scene3DKindUsage, WgpuRenderState } from '@flighthq/types/contract';
-import { RequirementFacet, StandardMaterialKind } from '@flighthq/types/contract';
+import { RequirementFacet } from '@flighthq/requirement/contract';
+
+interface WgpuScene3DKindUsage {
+  readonly materialKinds: readonly Kind[];
+  readonly modifierKinds: readonly Kind[];
+  readonly textureSourceKinds: readonly Kind[];
+}
 
 // Clears `out`, then reports every kind in `usage` with how well this state is wired for it — satisfied
 // ones included, so one call is a complete manifest. The WebGPU twin of explainGlScene3DCoverage, and
@@ -16,7 +24,7 @@ import { RequirementFacet, StandardMaterialKind } from '@flighthq/types/contract
 export function explainWgpuScene3DCoverage(
   out: SceneCoverageEntry[],
   state: WgpuRenderState,
-  usage: Readonly<Scene3DKindUsage>,
+  usage: Readonly<WgpuScene3DKindUsage>,
   catalog: SceneCoverageCatalog,
 ): void {
   out.length = 0;
@@ -25,7 +33,7 @@ export function explainWgpuScene3DCoverage(
 
 // Whether this state can draw every kind `usage` names, counting a fallback as a shortfall — the
 // authored material is not what would appear. Stops at the first shortfall and never allocates.
-export function hasWgpuScene3DCoverage(state: WgpuRenderState, usage: Readonly<Scene3DKindUsage>): boolean {
+export function hasWgpuScene3DCoverage(state: WgpuRenderState, usage: Readonly<WgpuScene3DKindUsage>): boolean {
   return !collectWgpuScene3DCoverageGaps(null, state, usage, true, null);
 }
 
@@ -34,7 +42,7 @@ export function hasWgpuScene3DCoverage(state: WgpuRenderState, usage: Readonly<S
 function collectWgpuScene3DCoverageGaps(
   out: SceneCoverageEntry[] | null,
   state: WgpuRenderState,
-  usage: Readonly<Scene3DKindUsage>,
+  usage: Readonly<WgpuScene3DKindUsage>,
   stopAtFirst: boolean,
   catalog: SceneCoverageCatalog | null,
 ): boolean {

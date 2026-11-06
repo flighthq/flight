@@ -1,3 +1,4 @@
+import type { ColorScaleBias } from '@flighthq/adjustments/contract';
 import type { Camera3D } from '@flighthq/camera/contract';
 import type { LinearColorRaw } from '@flighthq/color/contract';
 import { allocateLinearColor, unpackColorToLinear } from '@flighthq/color/contract';
@@ -7,8 +8,11 @@ import {
   getMatrix4Determinant,
   setMatrix3NormalFromMatrix4,
 } from '@flighthq/geometry/contract';
+import type { Matrix3, Matrix4 } from '@flighthq/geometry/contract';
 import type { Scene3DLightBlock, Scene3DLightsLike } from '@flighthq/lighting/contract';
 import { MAX_FORWARD_LIGHTS } from '@flighthq/lighting/contract';
+import type { Material, Material3D } from '@flighthq/materials/contract';
+import { BlendMode, StandardMaterialKind } from '@flighthq/materials/contract';
 import type { InstancedMesh, Mesh, MeshSubset } from '@flighthq/meshgeometry/contract';
 import { getNodeWorldMatrix4 } from '@flighthq/node/contract';
 import {
@@ -16,22 +20,12 @@ import {
   getWgpuColorAdjustmentMaterialFeature,
   getWgpuRenderStateRuntime,
 } from '@flighthq/render-wgpu/contract';
+import type { WgpuMeshMaterialRenderer, WgpuRenderPass, WgpuRenderState } from '@flighthq/render-wgpu/contract';
+import type { WgpuSkinningAdapter } from '@flighthq/render-wgpu/contract';
 import type { Scene3DRenderProxy } from '@flighthq/render/contract';
 import { prepareScene3DRender } from '@flighthq/render/contract';
 import { getNode3DRuntime, getNode3DWorldAlpha } from '@flighthq/scene3d/contract';
 import type { Node3D } from '@flighthq/scene3d/contract';
-import type {
-  ColorScaleBias,
-  Material,
-  Matrix3,
-  Matrix4,
-  Material3D,
-  WgpuMeshMaterialRenderer,
-  WgpuRenderPass,
-  WgpuRenderState,
-} from '@flighthq/types/contract';
-import { BlendMode, StandardMaterialKind } from '@flighthq/types/contract';
-import type { WgpuSkinningAdapter } from '@flighthq/types/contract';
 
 import type { WgpuScene3DDrawEntry, WgpuScene3DForwardLightList } from './contract.scene3d-wgpu-types.ts';
 import { resolveWgpuMeshMaterialRenderer } from './wgpuMeshMaterialRegistry.ts';

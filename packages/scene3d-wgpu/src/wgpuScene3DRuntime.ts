@@ -1,6 +1,6 @@
-import type { WgpuRenderState, WgpuRenderStateRuntime } from '@flighthq/types/contract';
-import { EntityRuntimeKey } from '@flighthq/types/contract';
-import type { WgpuSkinningAdapter } from '@flighthq/types/contract';
+import { EntityRuntimeKey } from '@flighthq/entity/contract';
+import type { WgpuRenderState, WgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
+import type { WgpuSkinningAdapter } from '@flighthq/render-wgpu/contract';
 
 import type { WgpuMeshUpload, WgpuScene3DRuntime } from './contract.scene3d-wgpu-types.ts';
 

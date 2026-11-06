@@ -1,6 +1,15 @@
 import type { LinearColorRaw } from '@flighthq/color/contract';
 import { allocateLinearColor, unpackColorToLinear } from '@flighthq/color/contract';
+import type { Kind } from '@flighthq/entity/contract';
 import { getWgpuColorAdjustmentMaterialFeature, getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
+import type {
+  WgpuModifierCompileContext,
+  WgpuModifierContribution,
+  WgpuModifierSnippet,
+  WgpuRenderState,
+} from '@flighthq/render-wgpu/contract';
+import type { WgpuSkinningAdapter } from '@flighthq/render-wgpu/contract';
+import type { WgpuColorAdjustmentMaterialFeature } from '@flighthq/scene2d-wgpu/contract';
 import {
   createModifierRegistry,
   getModifierDefineKey,
@@ -35,16 +44,7 @@ import {
   VertexDisplaceModifierKind,
   VertexDisplaceModifierSource,
 } from '@flighthq/shading/contract';
-import type {
-  Kind,
-  Texture,
-  WgpuColorAdjustmentMaterialFeature,
-  WgpuModifierCompileContext,
-  WgpuModifierContribution,
-  WgpuModifierSnippet,
-  WgpuRenderState,
-} from '@flighthq/types/contract';
-import type { WgpuSkinningAdapter } from '@flighthq/types/contract';
+import type { Texture } from '@flighthq/texture/contract';
 
 import type { WgpuMeshPipeline } from './contract.scene3d-wgpu-types.ts';
 import { getWgpuClassicSharedSamplerModuleSourceForKey } from './wgpuClassicPrelude.ts';

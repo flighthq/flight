@@ -2,17 +2,12 @@ import type { Camera3D } from '@flighthq/camera/contract';
 import type { LinearColorRaw } from '@flighthq/color/contract';
 import { allocateLinearColor, unpackColorToLinear } from '@flighthq/color/contract';
 import type { Scene3DLightBlock } from '@flighthq/lighting/contract';
+import type { Material, WireframeMaterial } from '@flighthq/materials/contract';
+import { WireframeMaterialKind } from '@flighthq/materials/contract';
 import type { MeshGeometry } from '@flighthq/meshgeometry/contract';
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
+import type { WgpuMeshMaterialRenderer, WgpuRenderState, WgpuSkinningAdapter } from '@flighthq/render-wgpu/contract';
 import type { Scene3DRenderProxy } from '@flighthq/render/contract';
-import type {
-  Material,
-  WgpuMeshMaterialRenderer,
-  WgpuRenderState,
-  WgpuSkinningAdapter,
-  WireframeMaterial,
-} from '@flighthq/types/contract';
-import { WireframeMaterialKind } from '@flighthq/types/contract';
 
 import { registerWgpuMeshMaterialRenderer } from './wgpuMeshMaterialRegistry.ts';
 import {
