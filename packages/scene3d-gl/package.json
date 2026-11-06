@@ -42,6 +42,7 @@
   "dependencies": {
     "@flighthq/camera": "*",
     "@flighthq/color": "*",
+    "@flighthq/entity": "*",
     "@flighthq/geometry": "*",
     "@flighthq/image": "*",
     "@flighthq/lighting": "*",
@@ -59,7 +60,6 @@
     "@flighthq/types": "*"
   },
   "devDependencies": {
-    "@flighthq/entity": "*",
     "@flighthq/particleemitter": "*",
     "@flighthq/skeleton3d": "*",
     "@flighthq/video": "*",

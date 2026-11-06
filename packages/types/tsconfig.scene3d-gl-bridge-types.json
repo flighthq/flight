@@ -1,0 +1,14 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "composite": true,
+    "rootDir": "src",
+    "outDir": "dist",
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "tsBuildInfoFile": "dist/.tsbuildinfo.scene3d-gl-bridge-types"
+  },
+  "references": [{ "path": "./tsconfig.scene3d-types.json" }],
+  "include": ["src/contract.scene3d-gl-bridge-types.ts", "src/GlSkinPaletteTexture.ts"]
+}

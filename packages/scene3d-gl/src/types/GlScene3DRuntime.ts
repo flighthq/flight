@@ -1,3 +1,4 @@
+import type { Camera3D } from '@flighthq/camera/contract';
 import type { Matrix4 } from '@flighthq/geometry/contract';
 import type { Scene3DLightBlock } from '@flighthq/lighting/contract';
 import type { Scene3DLightsLike } from '@flighthq/lighting/contract';
@@ -9,7 +10,6 @@ import type { GlTextureRenderTarget } from '@flighthq/render-gl/contract';
 import type { Scene3DRenderProxy } from '@flighthq/render/contract';
 import type { Texture } from '@flighthq/texture/contract';
 import type { TextureColorSpace } from '@flighthq/texture/contract';
-import type { Camera3D } from '@flighthq/types/contract';
 import type { GlSkinPaletteTexture } from '@flighthq/types/contract';
 import type { Node3D } from '@flighthq/types/contract';
 

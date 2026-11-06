@@ -1,4 +1,4 @@
-import type { Kind } from '@flighthq/types/contract';
+import type { Kind } from '@flighthq/entity/contract';
 
 export type GlPbrExtensionIssueCode =
   | 'duplicate-kind'

@@ -10,13 +10,13 @@
     "moduleSuffixes": [
       ".meshgeometry-types",
       ".render-types",
+      ".camera-types",
       ".scene3d-gl-bridge-types",
       ".scene3d-gl-types",
       ".materials-types",
       ".render-gl-types",
       ".geometry-types",
       ".texture-types",
-      ".scene3d-wgpu-types",
       ".render-wgpu-types",
       ".lighting-types",
       ""
@@ -24,6 +24,12 @@
     "tsBuildInfoFile": "dist/.tsbuildinfo.contract"
   },
   "references": [
+    {
+      "path": "../camera/tsconfig.contract.json"
+    },
+    {
+      "path": "../entity"
+    },
     {
       "path": "../geometry/tsconfig.contract.json"
     },
@@ -40,13 +46,13 @@
       "path": "../texture/tsconfig.contract.json"
     },
     {
-      "path": "../types/tsconfig.scene3d-wgpu-types.json"
-    },
-    {
       "path": "../render/tsconfig.contract.json"
     },
     {
       "path": "../lighting/tsconfig.contract.json"
+    },
+    {
+      "path": "../types/tsconfig.scene3d-gl-bridge-types.json"
     }
   ],
   "include": ["src/contract.scene3d-gl-types.ts", "src/types/**/*.ts"]
