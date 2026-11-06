@@ -1,3 +1,4 @@
+import { EntityRuntimeKey } from '@flighthq/entity/contract';
 import {
   blendMeshGeometryMorph,
   captureMeshMorphBindPose,
@@ -6,7 +7,6 @@ import {
 } from '@flighthq/meshgeometry/contract';
 import type { Mesh, MeshGeometry, MeshGeometryRuntime } from '@flighthq/meshgeometry/contract';
 import type { MeshMorph } from '@flighthq/meshgeometry/contract';
-import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 // Blends a morphed mesh into its geometry for the current weights — the explicit per-frame morph call,
 // sibling of updateMeshSkin. Run it after the weights are set (a Weights animation channel applied via

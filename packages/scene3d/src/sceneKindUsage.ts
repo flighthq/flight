@@ -1,12 +1,14 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
+import type { Material } from '@flighthq/materials/contract';
 import { forEachNodeDescendant } from '@flighthq/node/contract';
 import type { Modifier } from '@flighthq/shading/contract';
-import type { EntityConstruction, Material, Scene3DKindUsage } from '@flighthq/types/contract';
-import { ImageTextureSourceKind } from '@flighthq/types/contract';
+import { ImageTextureSourceKind } from '@flighthq/texture/contract';
 
 import type { Scene3D } from './contract.scene3d-types.ts';
 import { isMesh } from './mesh.ts';
 import type { Node3D } from './types/Node3D.ts';
+import type { Scene3DKindUsage } from './types/Scene3DKindUsage.ts';
 
 export function createScene3DKindUsage(): Scene3DKindUsage {
   const out = allocateEntity<Scene3DKindUsage>();

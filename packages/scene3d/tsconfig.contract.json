@@ -46,9 +46,6 @@
       "path": "../meshgeometry/tsconfig.contract.json"
     },
     {
-      "path": "../types/tsconfig.scene3d-types.json"
-    },
-    {
       "path": "../lighting/tsconfig.contract.json"
     },
     {

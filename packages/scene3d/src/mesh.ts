@@ -1,3 +1,4 @@
+import type { Material3D } from '@flighthq/materials/contract';
 import { cloneMeshGeometryForDeformation } from '@flighthq/meshgeometry/contract';
 import type { Mesh, MeshGeometry, MeshRuntime } from '@flighthq/meshgeometry/contract';
 import { MeshKind } from '@flighthq/meshgeometry/contract';
@@ -9,10 +10,11 @@ import {
   setNodeLocalMatrix4,
   setNodeTransform3D,
 } from '@flighthq/node/contract';
-import type { Material3D, MeshDeformer, NodeSignals } from '@flighthq/types/contract';
+import type { NodeSignals } from '@flighthq/node/contract';
 import { MeshDeformerMorph, MeshDeformerNone, MeshDeformerSkeletal } from '@flighthq/types/contract';
 
 import { createNode3D, getNode3DRuntime } from './sceneNode.ts';
+import type { MeshDeformer } from './types/MeshDeformer.ts';
 
 export { MeshKind } from '@flighthq/meshgeometry/contract';
 

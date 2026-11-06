@@ -1,6 +1,6 @@
+import type { Material } from '@flighthq/materials/contract';
 import type { Mesh } from '@flighthq/meshgeometry/contract';
 import { findNode, forEachNodeDescendant } from '@flighthq/node/contract';
-import type { Material } from '@flighthq/types/contract';
 
 import type { Node3D } from './types/Node3D.ts';
 

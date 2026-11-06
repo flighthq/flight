@@ -41,6 +41,9 @@
       "path": "../scene2d/tsconfig.runtime.json"
     },
     {
+      "path": "../resource"
+    },
+    {
       "path": "../shading"
     },
     {

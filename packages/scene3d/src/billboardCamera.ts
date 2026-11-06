@@ -8,11 +8,12 @@ import {
   inverseMatrix4,
   multiplyMatrix4,
 } from '@flighthq/geometry/contract';
+import type { Matrix4 } from '@flighthq/geometry/contract';
 import { getNodeParent, getNodeWorldMatrix4, setNodeLocalMatrix4 } from '@flighthq/node/contract';
-import type { Billboard, BillboardMode, Matrix4 } from '@flighthq/types/contract';
 
 import { isBillboard } from './billboard.ts';
 import { getNode3DRuntime } from './sceneNode.ts';
+import type { Billboard, BillboardMode } from './types/Billboard.ts';
 import type { Node3D } from './types/Node3D.ts';
 
 // Orients a single Billboard to face `camera`, rewriting its localMatrix so that after the scene's

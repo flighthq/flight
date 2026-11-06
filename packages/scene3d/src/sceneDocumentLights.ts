@@ -1,4 +1,5 @@
 import { rotateVector3ByQuaternion } from '@flighthq/geometry/contract';
+import type { Transform3DLike, Vector3Like } from '@flighthq/geometry/contract';
 import {
   cloneAmbientLight,
   cloneDirectionalLight,
@@ -22,7 +23,6 @@ import {
   PointLightKind,
   SpotLightKind,
 } from '@flighthq/lighting/contract';
-import type { Transform3DLike, Vector3Like } from '@flighthq/types/contract';
 
 import type { Scene3DDocument } from './contract.scene3d-types.ts';
 

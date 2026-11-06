@@ -1,7 +1,7 @@
 import { createStandardPbrMaterial } from '@flighthq/materials/contract';
+import type { Material } from '@flighthq/materials/contract';
 import { createBoxMeshGeometry } from '@flighthq/meshgeometry/contract';
 import { addNodeChild, getNodeChildCount, getNodeChildren } from '@flighthq/node/contract';
-import type { Material } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { cloneNode3DSubtree } from './cloneNode3DSubtree.ts';

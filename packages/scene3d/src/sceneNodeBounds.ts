@@ -1,7 +1,7 @@
 import { createAabb, setAabb, transformAabbByMatrix4, unionAabb } from '@flighthq/geometry/contract';
+import type { AabbLike } from '@flighthq/geometry/contract';
 import { ensureMeshGeometryBounds } from '@flighthq/meshgeometry/contract';
 import { ensureNodeWorldMatrix4, getNodeRuntime, getNodeWorldMatrix4 } from '@flighthq/node/contract';
-import type { AabbLike } from '@flighthq/types/contract';
 
 import { isMesh } from './mesh.ts';
 import type { Node3D } from './types/Node3D.ts';

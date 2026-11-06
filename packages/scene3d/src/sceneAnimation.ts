@@ -3,7 +3,8 @@ import type { AnimationClip } from '@flighthq/animation/contract';
 import { setQuaternion, setVector3 } from '@flighthq/geometry/contract';
 import type { Mesh } from '@flighthq/meshgeometry/contract';
 import { invalidateNodeLocalTransform } from '@flighthq/node/contract';
-import type { Scene3DAnimationTarget } from '@flighthq/types/contract';
+
+import type { Scene3DAnimationTarget } from './types/Scene3DAnimationTarget.ts';
 
 // Samples every channel of `clip` at `time` and applies it to its target's sink — the 3D binding layer
 // over the target-free @flighthq/animation core (the core samples values; this maps a channel's opaque

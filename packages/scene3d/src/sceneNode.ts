@@ -1,4 +1,5 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type { Kind } from '@flighthq/entity/contract';
 import {
   createNodeRuntime,
   enableNodeSignals,
@@ -10,7 +11,7 @@ import {
   initTransform3DRuntimeTrait,
   initTransform3DTrait,
 } from '@flighthq/node/contract';
-import type { Kind, NodeAny, NodeSignals } from '@flighthq/types/contract';
+import type { NodeAny, NodeSignals } from '@flighthq/node/contract';
 
 import type { Node3D, Node3DRuntime, Node3DFields } from './types/Node3D.ts';
 import { Node3DFieldsKey, Node3DKind } from './types/Node3D.ts';

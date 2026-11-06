@@ -5,6 +5,7 @@ export {
   isBillboard,
   BillboardKind,
 } from './billboard.ts';
+export type { Billboard, BillboardMode, BillboardRuntime } from './types/Billboard.ts';
 export { orientBillboardToCamera, orientScene3DBillboardsToCamera } from './billboardCamera.ts';
 export * from './cloneNode3DSubtree.ts';
 export * from './enableScene3DGuards.ts';
@@ -32,12 +33,15 @@ export {
   InstancedMeshKind,
 } from './instancedMesh.ts';
 export { cloneMesh, createMesh, enableMeshSignals, getMeshDeformer, getMeshSignals, isMesh, MeshKind } from './mesh.ts';
+export type { MeshDeformer } from './types/MeshDeformer.ts';
 export * from './prepareScene3DMorph.ts';
 export { createScene3D } from './scene.ts';
 export * from './sceneAnimation.ts';
+export type { Scene3DAnimationTarget } from './types/Scene3DAnimationTarget.ts';
 export * from './sceneDocument.ts';
 export * from './sceneDocumentLights.ts';
 export { createScene3DKindUsage, getScene3DKindUsage } from './sceneKindUsage.ts';
+export type { Scene3DKindUsage } from './types/Scene3DKindUsage.ts';
 export * from './sceneMaterial.ts';
 export { createNode3D, enableNode3DSignals, getNode3DSignals, isNode3D, Node3DKind } from './sceneNode.ts';
 export { Node3DFieldsKey } from './types/Node3D.ts';

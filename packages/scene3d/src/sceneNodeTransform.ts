@@ -1,6 +1,6 @@
 import { createMatrix4 } from '@flighthq/geometry/contract';
+import type { Vector3Like } from '@flighthq/geometry/contract';
 import { setNodeLocalMatrix4 } from '@flighthq/node/contract';
-import type { Vector3Like } from '@flighthq/types/contract';
 
 import type { Node3D } from './types/Node3D.ts';
 

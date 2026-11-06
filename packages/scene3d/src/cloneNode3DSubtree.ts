@@ -1,3 +1,4 @@
+import type { Material3D } from '@flighthq/materials/contract';
 import {
   addNodeChild,
   getNodeChildren,
@@ -6,7 +7,6 @@ import {
   setNodeLocalMatrix4,
   setNodeTransform3D,
 } from '@flighthq/node/contract';
-import type { Material3D } from '@flighthq/types/contract';
 
 import { cloneMesh, isMesh } from './mesh.ts';
 import { createNode3D } from './sceneNode.ts';

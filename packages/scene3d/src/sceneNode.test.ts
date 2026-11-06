@@ -1,3 +1,4 @@
+import type { Matrix4 } from '@flighthq/geometry/contract';
 import {
   addNodeChild,
   ensureNodeWorldMatrix4,
@@ -14,7 +15,6 @@ import {
   setNodeLocalMatrix4,
 } from '@flighthq/node/contract';
 import { createNode2D } from '@flighthq/scene2d/contract';
-import type { Matrix4 } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import {

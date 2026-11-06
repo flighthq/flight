@@ -1,12 +1,12 @@
 import { createAnimationTrack } from '@flighthq/animation/contract';
+import { EntityRuntimeKey } from '@flighthq/entity/contract';
 import { createTransform3D } from '@flighthq/geometry/contract';
 import { createStandardPbrMaterial } from '@flighthq/materials/contract';
+import type { MaterialLike } from '@flighthq/materials/contract';
 import { CANONICAL_MESH_GEOMETRY_LAYOUT, createMeshGeometry } from '@flighthq/meshgeometry/contract';
 import type { Mesh } from '@flighthq/meshgeometry/contract';
 import { MeshKind } from '@flighthq/meshgeometry/contract';
 import { getNodeChildren } from '@flighthq/node/contract';
-import type { MaterialLike } from '@flighthq/types/contract';
-import { EntityRuntimeKey } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import type { Scene3DDocument } from './contract.scene3d-types.ts';

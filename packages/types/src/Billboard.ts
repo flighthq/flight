@@ -1,12 +1,5 @@
-import type { MeshGeometry } from '@flighthq/meshgeometry/contract';
-import type { Node3D, Node3DRuntime } from '@flighthq/scene3d/contract';
+/** @deprecated Import from `@flighthq/scene3d/contract`. */
+export type { Billboard, BillboardMode, BillboardRuntime } from '@flighthq/scene3d/contract';
 
-import type { Material3D } from './Material3D.ts';
-export type BillboardMode = 'axisY' | 'full' | 'screenAligned';
-export interface Billboard extends Node3D {
-  geometry: MeshGeometry;
-  materials: (Material3D | null)[];
-  mode: BillboardMode;
-}
-export type BillboardRuntime = Node3DRuntime;
+// Exact value bridge for the type-only @flighthq/types -> @flighthq/scene3d owner edge.
 export const BillboardKind = 'Billboard';

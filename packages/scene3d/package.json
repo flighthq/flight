@@ -53,11 +53,12 @@
     "@flighthq/node": "*",
     "@flighthq/shading": "*",
     "@flighthq/signals": "*",
+    "@flighthq/texture": "*",
     "@flighthq/types": "*"
   },
   "devDependencies": {
+    "@flighthq/resource": "*",
     "@flighthq/scene2d": "*",
-    "@flighthq/texture": "*",
     "typescript": "^7.0.2"
   },
   "description": "3D scene graph and spatial node hierarchy",
