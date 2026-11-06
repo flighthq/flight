@@ -1,4 +1,4 @@
-import type { Entity } from './Entity.ts';
+import type { EntityRaw, EntityRuntime, EntityRuntimeKey } from '@flighthq/entity/contract';
 
 // Trauma-based camera shake: accumulate `trauma` (0–1) from game events, and each `updateCameraShake`
 // call decays it and writes a deterministic offset into an output vector. Intensity is `trauma²`
@@ -7,7 +7,8 @@ import type { Entity } from './Entity.ts';
 //
 // The offset output is additive — apply it AFTER the camera's base transform (orbit, follow, etc.).
 // Translation is in world units; rotation is degrees (authoring layer convention).
-export interface CameraShake extends Entity {
+export interface CameraShake extends EntityRaw {
+  [EntityRuntimeKey]: EntityRuntime | undefined;
   // Current trauma level, clamped to [0, 1]. Accumulate with `addCameraShakeTrauma`.
   trauma: number;
   // Trauma units per second to subtract. Higher = quicker recovery. Default 1.5.
@@ -30,7 +31,8 @@ export interface CameraShakeOptions {
 }
 
 // Additive offset produced by `updateCameraShake`. Apply after the camera's base transform.
-export interface CameraShakeOffset extends Entity {
+export interface CameraShakeOffset extends EntityRaw {
+  [EntityRuntimeKey]: EntityRuntime | undefined;
   rotationX: number;
   rotationY: number;
   rotationZ: number;

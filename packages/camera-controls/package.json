@@ -43,8 +43,7 @@
     "@flighthq/camera": "*",
     "@flighthq/entity": "*",
     "@flighthq/geometry": "*",
-    "@flighthq/math": "*",
-    "@flighthq/types": "*"
+    "@flighthq/math": "*"
   },
   "devDependencies": {
     "typescript": "^7.0.2"

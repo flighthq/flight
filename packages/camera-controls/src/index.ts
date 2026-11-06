@@ -1,3 +1,4 @@
+export * from './contract.camera-controls-types.ts';
 export {
   addCameraShakeTrauma,
   cloneFlyCameraController,

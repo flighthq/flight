@@ -1,6 +1,8 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
 import { clamp } from '@flighthq/math/contract';
-import type { CameraShake, CameraShakeOffset, CameraShakeOptions, EntityConstruction } from '@flighthq/types/contract';
+
+import type { CameraShake, CameraShakeOffset, CameraShakeOptions } from './contract.camera-controls-types.ts';
 
 export function addCameraShakeTrauma(shake: CameraShake, amount: number): void {
   shake.trauma = clamp(shake.trauma + amount, 0, 1);

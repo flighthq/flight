@@ -49,7 +49,7 @@
       "path": "../camera/tsconfig.runtime.json"
     },
     {
-      "path": "../camera-controls"
+      "path": "../camera-controls/tsconfig.runtime.json"
     },
     {
       "path": "../capture"

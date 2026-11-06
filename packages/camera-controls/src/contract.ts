@@ -1,3 +1,4 @@
+export * from './contract.camera-controls-types.ts';
 export * from './cameraShake.ts';
 export * from './flyCameraController.ts';
 export * from './follow.ts';

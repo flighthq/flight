@@ -1,6 +1,5 @@
-import type { Entity } from './Entity.ts';
-import type { Vector3 } from './Vector3.ts';
-import type { Vector3Like } from './Vector3.ts';
+import type { EntityRaw, EntityRuntime, EntityRuntimeKey } from '@flighthq/entity/contract';
+import type { Vector3, Vector3Like } from '@flighthq/geometry/contract';
 
 // A stateful fly / first-person camera controller: plain data holding a world `position` and look
 // angles `yaw`/`pitch` (radians). `moveFlyCameraController` translates `position` along the current
@@ -10,7 +9,8 @@ import type { Vector3Like } from './Vector3.ts';
 // it takes intent deltas, not raw input, so it stays input-agnostic. `pitch` is clamped to
 // [`minPitch`, `maxPitch`] (kept just inside ±90° to avoid gimbal flip); `smoothTime` is the
 // `@flighthq/math` `damp` time constant for the look angles; <= 0 snaps.
-export interface FlyCameraController extends Entity {
+export interface FlyCameraController extends EntityRaw {
+  [EntityRuntimeKey]: EntityRuntime | undefined;
   goalPitch: number;
   goalYaw: number;
   maxPitch: number;

@@ -1,13 +1,11 @@
 import { setCamera3DViewMatrix4FromLookAt } from '@flighthq/camera/contract';
+import type { Camera3D } from '@flighthq/camera/contract';
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
 import { createVector3 } from '@flighthq/geometry/contract';
 import { clamp, damp, deltaAngle } from '@flighthq/math/contract';
-import type {
-  Camera3D,
-  EntityConstruction,
-  FlyCameraController,
-  FlyCameraControllerOptions,
-} from '@flighthq/types/contract';
+
+import type { FlyCameraController, FlyCameraControllerOptions } from './contract.camera-controls-types.ts';
 
 // Allocates an independent Entity containing the same controller value state.
 export function cloneFlyCameraController(source: Readonly<FlyCameraController>): FlyCameraController {

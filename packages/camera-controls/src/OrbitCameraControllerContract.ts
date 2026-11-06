@@ -1,6 +1,5 @@
-import type { Entity } from './Entity.ts';
-import type { Vector3 } from './Vector3.ts';
-import type { Vector3Like } from './Vector3.ts';
+import type { EntityRaw, EntityRuntime, EntityRuntimeKey } from '@flighthq/entity/contract';
+import type { Vector3, Vector3Like } from '@flighthq/geometry/contract';
 
 // A stateful orbit (arcball) camera controller: plain data holding spherical coordinates around a
 // `target` point. Intent verbs (`rotateOrbitCameraController`/`dollyOrbitCameraController`/`panOrbitCameraController`)
@@ -11,7 +10,8 @@ import type { Vector3Like } from './Vector3.ts';
 // measured from the horizon and clamped to [`minPolar`, `maxPolar`] (kept just inside ±90° so the
 // look-at up vector never degenerates); `distance` is clamped to [`minDistance`, `maxDistance`].
 // `smoothTime` is the `@flighthq/math` `damp` time constant; <= 0 snaps.
-export interface OrbitCameraController extends Entity {
+export interface OrbitCameraController extends EntityRaw {
+  [EntityRuntimeKey]: EntityRuntime | undefined;
   azimuth: number;
   distance: number;
   goalAzimuth: number;
