@@ -5,8 +5,8 @@ import {
 } from '@flighthq/image/contract';
 import { getOrCreateRenderProxy2D, registerNodeRenderer } from '@flighthq/render/contract';
 import { createScale9Sprite } from '@flighthq/scene2d/contract';
+import { Scale9SpriteKind } from '@flighthq/scene2d/contract';
 import { createTexture } from '@flighthq/texture/contract';
-import { Scale9SpriteKind } from '@flighthq/types/contract';
 
 import { registerDomImageTextureResolver } from './domImageTextureResolver.ts';
 import { createDomRenderState, getDomRenderStateRuntime } from './domRenderState.ts';

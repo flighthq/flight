@@ -1,4 +1,5 @@
 import { computeRgbaCssString } from '@flighthq/color/contract';
+import type { RendererData } from '@flighthq/node/contract';
 import type { RenderProxy2D } from '@flighthq/render/contract';
 import { getRichTextRuntime, getRichTextScrollYOffset } from '@flighthq/text/contract';
 import type { RichText } from '@flighthq/text/contract';
@@ -10,7 +11,6 @@ import {
   getTextInputState,
 } from '@flighthq/textinput/contract';
 import type { TextSelectionRectangle } from '@flighthq/textlayout/contract';
-import type { RendererData } from '@flighthq/types/contract';
 
 import type { DomRenderState } from './contract.scene2d-dom-types.ts';
 import { registerDomTextInputOverlay } from './domRichText.ts';

@@ -1,6 +1,6 @@
 import { getTextureSourceKind } from '@flighthq/texture/contract';
 import type { Texture } from '@flighthq/texture/contract';
-import type { TextureResolutionExplanation } from '@flighthq/types/contract';
+import type { TextureResolutionExplanation } from '@flighthq/texture/contract';
 
 import type { DomRenderState } from './contract.scene2d-dom-types.ts';
 import { getDomRenderStateRuntime } from './domRenderState.ts';

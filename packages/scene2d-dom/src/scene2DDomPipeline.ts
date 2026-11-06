@@ -1,15 +1,10 @@
 import type { Kind } from '@flighthq/entity/contract';
 import { withKindMapEntry } from '@flighthq/registry/contract';
 import type { NodeRenderer } from '@flighthq/render/contract';
+import { RenderCacheKind } from '@flighthq/render/contract';
+import { DisplayObjectKind, HtmlViewKind, Scale9SpriteKind, SpriteKind } from '@flighthq/scene2d/contract';
 import { MorphShapeKind, Scale9ShapeKind, ShapeKind } from '@flighthq/shape/contract';
 import { NativeTextKind, RichTextKind, TextLabelKind } from '@flighthq/text/contract';
-import {
-  DisplayObjectKind,
-  HtmlViewKind,
-  RenderCacheKind,
-  Scale9SpriteKind,
-  SpriteKind,
-} from '@flighthq/types/contract';
 
 import type { DomRenderOptions } from './contract.scene2d-dom-types.ts';
 import { domRenderCacheRenderer } from './domCache.ts';

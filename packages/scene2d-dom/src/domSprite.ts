@@ -1,9 +1,10 @@
+import type { NodeAny } from '@flighthq/node/contract';
 import type { RenderProxy2D, RenderState, Scene2DRenderer } from '@flighthq/render/contract';
 import { drawCanvasTextureView } from '@flighthq/scene2d-canvas/contract';
 import { createSpriteRendererData, isSpriteRendererDirty } from '@flighthq/scene2d/contract';
+import type { Sprite, SpriteIdentityRendererData } from '@flighthq/scene2d/contract';
 import { getTextureHeight, getTextureViewSize, getTextureWidth } from '@flighthq/texture/contract';
 import type { Texture2D } from '@flighthq/texture/contract';
-import type { NodeAny, Sprite, SpriteIdentityRendererData } from '@flighthq/types/contract';
 
 import type { DomRenderState } from './contract.scene2d-dom-types.ts';
 import { applyDomStyle, prepareDomElement, setDomRendererElement } from './domStyle.ts';

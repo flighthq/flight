@@ -1,8 +1,8 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
+import type { EntityRaw, EntityRuntime, EntityRuntimeKey } from '@flighthq/entity/contract';
 import type { MatrixLike, RectangleLike } from '@flighthq/geometry/contract';
 import type { RenderProxy2D } from '@flighthq/render/contract';
-import type { Entity } from '@flighthq/types/contract';
 
 import type {
   DomClipContourEntry,
@@ -67,14 +67,14 @@ export function applyDomClipRectangles(
 export function createDomScene2DRectangle(
   rect: Readonly<RectangleLike>,
   transform: Readonly<MatrixLike>,
-): DomScene2DRectangle & Entity {
-  const out = allocateEntity<DomScene2DRectangle & Entity>();
+): DomScene2DRectangle & DomScene2DRectangleEntity {
+  const out = allocateEntity<DomScene2DRectangle & DomScene2DRectangleEntity>();
   initializeDomScene2DRectangle(out, rect, transform);
   return finishEntity(out);
 }
 
 export function initializeDomScene2DRectangle(
-  out: EntityConstruction<DomScene2DRectangle & Entity>,
+  out: EntityConstruction<DomScene2DRectangle & DomScene2DRectangleEntity>,
   rect: Readonly<RectangleLike>,
   transform: Readonly<MatrixLike>,
 ): void {
@@ -195,3 +195,5 @@ const domClipHooksImpl: DomClipHooks = {
     applyDomClipRectangles(state, data, getDomRenderStateRuntime(state).domClipStack);
   },
 };
+
+type DomScene2DRectangleEntity = EntityRaw & { [EntityRuntimeKey]: EntityRuntime | undefined };

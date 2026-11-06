@@ -1,5 +1,5 @@
 import { getOrCreateRenderProxy2D } from '@flighthq/render/contract';
-import type { Node2D } from '@flighthq/types/contract';
+import type { Node2D } from '@flighthq/scene2d/contract';
 
 import { enableDomCssFilterSupport, getDomCssFilter, setDomCssFilter } from './domCSSFilterBinding.ts';
 import { createDomRenderState } from './domRenderState.ts';

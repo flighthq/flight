@@ -1,7 +1,7 @@
 ﻿import { setMatrix } from '@flighthq/geometry/contract';
+import { BlendMode } from '@flighthq/materials/contract';
 import { getOrCreateRenderProxy2D } from '@flighthq/render/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
-import { BlendMode } from '@flighthq/types/contract';
 
 import { enableDomCssFilterSupport, setDomCssFilter } from './domCSSFilterBinding.ts';
 import { enableDomBlendModeSupport } from './domMaterials.ts';

@@ -1,6 +1,6 @@
+import type { ConvolutionEffect, DisplacementEffect } from '@flighthq/effects/contract';
 import { getOrCreateRenderProxy2D } from '@flighthq/render/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
-import type { ConvolutionEffect, DisplacementEffect } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { enableDomCssFilterSupport, getDomCssFilter } from './domCSSFilterBinding.ts';

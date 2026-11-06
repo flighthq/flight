@@ -1,5 +1,5 @@
 import { AdvancedBlendMode } from '@flighthq/effects/contract';
-import { BlendMode } from '@flighthq/types/contract';
+import { BlendMode } from '@flighthq/materials/contract';
 
 import { applyDomBlendMode, enableDomBlendModeSupport, getDomBlendModeFidelity } from './domMaterials.ts';
 import { createDomRenderState } from './domRenderState.ts';

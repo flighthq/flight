@@ -1,4 +1,5 @@
-import type { ConvolutionEffect, DisplacementEffect, Node2D } from '@flighthq/types/contract';
+import type { ConvolutionEffect, DisplacementEffect } from '@flighthq/effects/contract';
+import type { Node2D } from '@flighthq/scene2d/contract';
 
 import type { DomRenderState } from './contract.scene2d-dom-types.ts';
 import { setDomCssFilter } from './domCSSFilterBinding.ts';
