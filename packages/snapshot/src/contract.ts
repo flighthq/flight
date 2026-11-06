@@ -1,3 +1,4 @@
+export * from './contract.snapshot-types.ts';
 export * from './captureSnapshot.ts';
 export * from './enableSnapshotGuards.ts';
 export * from './equalsSnapshot.ts';

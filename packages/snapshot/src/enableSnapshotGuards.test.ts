@@ -1,6 +1,5 @@
-import type { LogState } from '@flighthq/log/contract';
+import type { LogEntry, LogState } from '@flighthq/log/contract';
 import { createLogState, setLogSink } from '@flighthq/log/contract';
-import type { LogEntry } from '@flighthq/types/contract';
 
 import { captureSnapshot } from './captureSnapshot.ts';
 import { disableSnapshotGuards, enableSnapshotGuards } from './enableSnapshotGuards.ts';

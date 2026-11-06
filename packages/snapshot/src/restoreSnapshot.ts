@@ -1,4 +1,4 @@
-import type { Snapshot } from '@flighthq/types/contract';
+import type { Snapshot } from './types.ts';
 
 /** Restore `snapshot` back into the live mutable `target`, deep-assigning every field in place.
  *

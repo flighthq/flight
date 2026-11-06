@@ -1,4 +1,4 @@
-import type { Snapshot } from '@flighthq/types/contract';
+import type { Snapshot } from './types.ts';
 
 /** Deep structural equality between two snapshots: `true` when they have the same shape and every
  *  leaf value is strictly equal.

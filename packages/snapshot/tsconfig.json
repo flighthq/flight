@@ -1,23 +1,10 @@
 {
-  "extends": "../../tsconfig.base.json",
-  "compilerOptions": {
-    "composite": true,
-    "rootDir": "src",
-    "outDir": "dist",
-    "declaration": true,
-    "declarationMap": true,
-    "sourceMap": true
-  },
+  "compilerOptions": { "composite": true },
+  "files": [],
   "references": [
-    {
-      "path": "../log"
-    },
-    {
-      "path": "../math"
-    },
-    {
-      "path": "../types"
-    }
-  ],
-  "include": ["src"]
+    { "path": "../log" },
+    { "path": "../math" },
+    { "path": "./tsconfig.contract.json" },
+    { "path": "./tsconfig.runtime.json" }
+  ]
 }

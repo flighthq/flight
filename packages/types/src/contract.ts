@@ -651,7 +651,6 @@ export * from './Skeleton3DValidationDiagnostic.ts';
 export * from './SkinInfluence.ts';
 export * from './SketchEffect.ts';
 export * from './SmaaEffect.ts';
-export * from './Snapshot.ts';
 export * from './Socket.ts';
 export * from './SphereCollider.ts';
 export * from './Physics2D.ts';

@@ -1,5 +1,6 @@
 import { clamp, lerp } from '@flighthq/math/contract';
-import type { Snapshot, SnapshotSchema } from '@flighthq/types/contract';
+
+import type { Snapshot, SnapshotSchema } from './types.ts';
 
 /** Interpolate between two snapshots into a live mutable `out`, the "tween over instances" for smooth
  *  netcode/replay rendering between two fixed frames.
