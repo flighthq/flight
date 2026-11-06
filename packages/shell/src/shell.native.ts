@@ -18,7 +18,7 @@ import type {
   ShellShortcutLinkWriteOutcome,
   ShellShortcutWriteOperation,
   ShellTrashOutcome,
-} from '@flighthq/types/contract';
+} from './types.ts';
 
 // Pure policy validation used by openShellExternalUrl before any host effect. Callers must supply the
 // policy on every invocation; an empty allowedSchemes array intentionally blocks every URL.

@@ -7,6 +7,7 @@ import type { HostNetCapabilities } from '@flighthq/net/contract';
 import type { HostPowerCapabilities } from '@flighthq/power/contract';
 import type { HostPreferencesCapabilities } from '@flighthq/preferences/contract';
 import type { HostScreenCapabilities } from '@flighthq/screen/contract';
+import type { HostShellCapabilities } from '@flighthq/shell/contract';
 import type { HostCanvasCapabilities, HostSurfaceCapabilities } from '@flighthq/surface/contract';
 
 import type { HostHapticsCapabilities } from './Haptics.ts';
@@ -31,7 +32,6 @@ import type {
   HostProtocolCapabilities,
   HostSensorsCapabilities,
   HostShareCapabilities,
-  HostShellCapabilities,
   HostSocketCapabilities,
   HostSoftKeyboardCapabilities,
   HostStatusBarCapabilities,

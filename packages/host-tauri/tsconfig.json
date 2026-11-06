@@ -7,7 +7,7 @@
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,
-    "moduleSuffixes": [".menu-types", ""],
+    "moduleSuffixes": [".shell-types", ".menu-types", ""],
     "types": ["node", "@testing-library/jest-dom", "vitest/globals", "@webgpu/types"]
   },
   "references": [
@@ -42,7 +42,7 @@
       "path": "../shortcut"
     },
     {
-      "path": "../shell"
+      "path": "../shell/tsconfig.contract.json"
     },
     {
       "path": "../signals"

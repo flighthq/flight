@@ -1,4 +1,4 @@
-import type { HostShellCapabilities } from '@flighthq/types/contract';
+import type { HostShellCapabilities } from '@flighthq/shell/contract';
 
 import { webHostShellExternal } from './webShell.ts';
 

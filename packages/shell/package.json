@@ -40,10 +40,9 @@
     "clean:dist": "tsx ../../scripts/clean-package-dist.ts"
   },
   "dependencies": {
-    "@flighthq/types": "*"
+    "@flighthq/entity": "*"
   },
   "devDependencies": {
-    "@flighthq/entity": "*",
     "typescript": "^7.0.2"
   },
   "description": "OS shell commands over seven explicit Host capability slots with required external URL policy",

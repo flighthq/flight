@@ -1,0 +1,25 @@
+// Acyclic build entry selected by contract-only projects through the `.shell-types` module suffix.
+// The published @flighthq/shell/contract entry remains contract.ts, which also exposes runtime helpers.
+export type {
+  HostShellBeepCapability,
+  HostShellCapabilities,
+  HostShellExternalCapability,
+  HostShellPathOpenCapability,
+  HostShellPathRevealCapability,
+  HostShellProcessCapability,
+  HostShellShortcutLinkCapability,
+  HostShellTrashCapability,
+  ShellExternalOutcome,
+  ShellExternalReason,
+  ShellExternalUrlPolicy,
+  ShellPathOpenOutcome,
+  ShellPathRevealOutcome,
+  ShellProcess,
+  ShellProcessExitStatus,
+  ShellProcessOptions,
+  ShellShortcutLink,
+  ShellShortcutLinkReadOutcome,
+  ShellShortcutLinkWriteOutcome,
+  ShellShortcutWriteOperation,
+  ShellTrashOutcome,
+} from './types.ts';

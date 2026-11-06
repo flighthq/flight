@@ -69,6 +69,7 @@
     "@flighthq/screen": "*",
     "@flighthq/sensors": "*",
     "@flighthq/share": "*",
+    "@flighthq/shell": "*",
     "@flighthq/signals": "*",
     "@flighthq/statusbar": "*",
     "@flighthq/surface": "*",

@@ -92,6 +92,7 @@
     "@flighthq/shape": "*",
     "@flighthq/shape-formats": "*",
     "@flighthq/share": "*",
+    "@flighthq/shell": "*",
     "@flighthq/signals": "*",
     "@flighthq/spatial": "*",
     "@flighthq/statechart": "*",

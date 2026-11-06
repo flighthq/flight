@@ -1,6 +1,7 @@
 // Generated from crates/flight-shell/src/shell.rs by flight-compiler.
 // Rust is authoritative; run `npm run generate` after changing it.
 
+import { isShellUrlAllowed } from './shell.native.ts';
 import type {
   HostShellBeepCapability,
   HostShellExternalCapability,
@@ -20,9 +21,7 @@ import type {
   ShellShortcutLinkWriteOutcome,
   ShellShortcutWriteOperation,
   ShellTrashOutcome,
-} from '@flighthq/types/contract';
-
-import { isShellUrlAllowed } from './shell.native.ts';
+} from './types.ts';
 
 // [lenient] fn is_shell_url_allowed: unsupported Rust method call `.scheme()`; impl sugar is not a transpilation source
 

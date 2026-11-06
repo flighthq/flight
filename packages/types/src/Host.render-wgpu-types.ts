@@ -10,6 +10,7 @@ import type { HostNetCapabilities } from '@flighthq/net/contract';
 import type { HostPowerCapabilities } from '@flighthq/power/contract';
 import type { HostPreferencesCapabilities } from '@flighthq/preferences/contract';
 import type { HostScreenCapabilities } from '@flighthq/screen/contract';
+import type { HostShellCapabilities } from '@flighthq/shell/contract';
 import type { HostCanvasCapabilities, HostSurfaceCapabilities } from '@flighthq/surface/contract';
 
 export type { HostScreenCapabilities } from '@flighthq/screen/contract';
@@ -93,15 +94,6 @@ import type {
 } from './Protocol.ts';
 import type { HostSensorsCapability } from './Sensors.ts';
 import type { HostShareContentCapability, HostShareFilesCapability } from './Share.ts';
-import type {
-  HostShellBeepCapability,
-  HostShellExternalCapability,
-  HostShellPathOpenCapability,
-  HostShellPathRevealCapability,
-  HostShellProcessCapability,
-  HostShellShortcutLinkCapability,
-  HostShellTrashCapability,
-} from './Shell.ts';
 import type { HostShortcutQueryCapability, HostShortcutTriggerCapability } from './Shortcut.ts';
 import type { HostSocketCapability } from './Socket.ts';
 import type {
@@ -310,16 +302,6 @@ export interface HostSensorsCapabilities {
 export interface HostShareCapabilities {
   readonly content?: HostShareContentCapability;
   readonly files?: HostShareFilesCapability;
-}
-
-export interface HostShellCapabilities {
-  readonly beep?: HostShellBeepCapability;
-  readonly external?: HostShellExternalCapability;
-  readonly pathOpen?: HostShellPathOpenCapability;
-  readonly pathReveal?: HostShellPathRevealCapability;
-  readonly process?: HostShellProcessCapability;
-  readonly shortcutLink?: HostShellShortcutLinkCapability;
-  readonly trash?: HostShellTrashCapability;
 }
 
 export interface HostShortcutCapabilities {

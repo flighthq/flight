@@ -1,17 +1,4 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type {
-  EntityRuntimeKey,
-  HostShellBeepCapability,
-  HostShellExternalCapability,
-  HostShellPathOpenCapability,
-  HostShellPathRevealCapability,
-  HostShellShortcutLinkCapability,
-  HostShellTrashCapability,
-  ShellExternalUrlPolicy,
-  ShellProcess,
-  HostShellProcessCapability,
-  ShellProcessOptions,
-} from '@flighthq/types/contract';
 
 import {
   isShellUrlAllowed,
@@ -25,6 +12,18 @@ import {
   spawnShellProcess,
   writeShellShortcutLink,
 } from './shell.ts';
+import type {
+  HostShellBeepCapability,
+  HostShellExternalCapability,
+  HostShellPathOpenCapability,
+  HostShellPathRevealCapability,
+  HostShellShortcutLinkCapability,
+  HostShellTrashCapability,
+  ShellExternalUrlPolicy,
+  ShellProcess,
+  HostShellProcessCapability,
+  ShellProcessOptions,
+} from './types.ts';
 
 describe('isShellUrlAllowed', () => {
   it('matches schemes case-insensitively from an explicit policy', () => {

@@ -1,7 +1,4 @@
 import type {
-  ElectronApi,
-  ElectronShortcutDetails,
-  DesktopOsProfile,
   HostShellCapabilities,
   HostShellBeepCapability,
   HostShellExternalCapability,
@@ -10,7 +7,8 @@ import type {
   ShellShortcutLink,
   HostShellShortcutLinkCapability,
   HostShellTrashCapability,
-} from '@flighthq/types/contract';
+} from '@flighthq/shell/contract';
+import type { DesktopOsProfile, ElectronApi, ElectronShortcutDetails } from '@flighthq/types/contract';
 
 // Builds Electron's exact Shell capability group. platform is caller-injected because shortcut-link
 // support is a construction-time Windows fact, not something capability resolution reads ambiently.

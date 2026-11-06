@@ -47,6 +47,7 @@
       ".selection-types",
       ".shape-formats-types",
       ".shape-types",
+      ".shell-types",
       ".spatial-types",
       ".statechart-types",
       ".text-types",
@@ -205,6 +206,9 @@
     },
     {
       "path": "../share"
+    },
+    {
+      "path": "../shell/tsconfig.contract.json"
     },
     {
       "path": "../signals"

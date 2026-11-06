@@ -1,4 +1,4 @@
-import type { HostShellExternalCapability } from '@flighthq/types/contract';
+import type { HostShellExternalCapability } from '@flighthq/shell/contract';
 
 export function initializeWebShellExternalBackend(out: HostShellExternalCapability): void {
   out.open = async (url) => {
