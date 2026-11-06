@@ -1,6 +1,4 @@
 import type {
-  CapacitorApi,
-  CapacitorPluginListenerHandle,
   HostSoftKeyboardAccessoryBarCapability,
   HostSoftKeyboardChangeCapability,
   SoftKeyboardChangeSubscription,
@@ -14,12 +12,13 @@ import type {
   SoftKeyboardStyleKind,
   HostSoftKeyboardVisibilityCapability,
   SoftKeyboardVisibilityResult,
-} from '@flighthq/types/contract';
+} from '@flighthq/keyboard/contract';
 import {
   SoftKeyboardResizeBodyKind,
   SoftKeyboardResizeNoneKind,
   SoftKeyboardStyleDarkKind,
-} from '@flighthq/types/contract';
+} from '@flighthq/keyboard/contract';
+import type { CapacitorApi, CapacitorPluginListenerHandle } from '@flighthq/types/contract';
 
 export function capacitorHostSoftKeyboardAccessoryBar(capacitor: CapacitorApi): HostSoftKeyboardAccessoryBarCapability {
   const out = {} as HostSoftKeyboardAccessoryBarCapability;

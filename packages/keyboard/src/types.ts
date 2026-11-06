@@ -1,3 +1,4 @@
+import type { EntityRaw, EntityRuntime, EntityRuntimeKey } from '@flighthq/entity/contract';
 import type { Signal } from '@flighthq/signals/contract';
 
 export type SoftKeyboardResizeMode = string;
@@ -14,7 +15,8 @@ export interface SoftKeyboardInfo {
   y: number;
   width: number;
 }
-export interface SoftKeyboard {
+export interface SoftKeyboard extends EntityRaw {
+  [EntityRuntimeKey]: EntityRuntime | undefined;
   onShow: Signal<number>;
   onHide: Signal<void>;
   onResize: Signal<number>;

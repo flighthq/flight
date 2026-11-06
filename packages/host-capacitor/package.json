@@ -49,6 +49,7 @@
     "@flighthq/host": "*",
     "@flighthq/host-web": "*",
     "@flighthq/ipc": "*",
+    "@flighthq/keyboard": "*",
     "@flighthq/mediasession": "*",
     "@flighthq/menu": "*",
     "@flighthq/notification": "*",

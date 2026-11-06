@@ -1,4 +1,4 @@
-import type { SoftKeyboardInfo } from '@flighthq/types/contract';
+import type { SoftKeyboardInfo } from '@flighthq/keyboard/contract';
 
 import { webHostSoftKeyboardVisibility, webHostSoftKeyboardInfo, webHostSoftKeyboardChange } from './webKeyboard.ts';
 

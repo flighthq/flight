@@ -55,6 +55,9 @@
       "path": "../ipc/tsconfig.contract.json"
     },
     {
+      "path": "../keyboard/tsconfig.contract.json"
+    },
+    {
       "path": "../mediasession/tsconfig.contract.json"
     },
     {

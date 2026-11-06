@@ -15,7 +15,6 @@
       ".gui-types",
       ".render-types",
       ".accessibility-types",
-      ".keyboard-types",
       ".scene2d-types",
       ".interaction-types",
       ".texture-types",
@@ -379,9 +378,6 @@
     },
     {
       "path": "../particles-formats/tsconfig.contract.json"
-    },
-    {
-      "path": "../keyboard/tsconfig.contract.json"
     },
     {
       "path": "../protocol/tsconfig.contract.json"

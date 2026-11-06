@@ -1,5 +1,7 @@
-import type { CapacitorApi, SoftKeyboardInfo } from '@flighthq/types/contract';
-import { EntityRuntimeKey, SoftKeyboardResizeBodyKind } from '@flighthq/types/contract';
+import { EntityRuntimeKey } from '@flighthq/entity/contract';
+import { SoftKeyboardResizeBodyKind } from '@flighthq/keyboard/contract';
+import type { SoftKeyboardInfo } from '@flighthq/keyboard/contract';
+import type { CapacitorApi } from '@flighthq/types/contract';
 
 import {
   capacitorHostSoftKeyboardAccessoryBar,

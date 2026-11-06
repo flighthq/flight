@@ -1,7 +1,6 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 import { createSignal, emitSignal } from '@flighthq/signals/contract';
-import type { Entity } from '@flighthq/types/contract';
 
 import type {
   HostSoftKeyboardAccessoryBarCapability,
@@ -51,8 +50,8 @@ export async function attachSoftKeyboard(
   return 'ok';
 }
 
-export function createSoftKeyboard(): SoftKeyboard & Entity {
-  const out = allocateEntity<SoftKeyboard & Entity>();
+export function createSoftKeyboard(): SoftKeyboard {
+  const out = allocateEntity<SoftKeyboard>();
   initializeSoftKeyboard(out);
   return finishEntity(out);
 }
@@ -88,7 +87,7 @@ export function hideSoftKeyboard(
   return hostSoftKeyboardVisibility.hide();
 }
 
-export function initializeSoftKeyboard(out: EntityConstruction<SoftKeyboard & Entity>): void {
+export function initializeSoftKeyboard(out: EntityConstruction<SoftKeyboard>): void {
   out.onHide = createSignal();
   out.onResize = createSignal();
   out.onShow = createSignal();

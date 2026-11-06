@@ -368,7 +368,6 @@ export * from './InteractionManager.ts';
 export * from './InteractionHitEligibility.ts';
 export * from './InteractionSignals.ts';
 export * from './Ipc.ts';
-export * from './Keyboard.ts';
 export * from './KeyboardEventData.ts';
 export * from './KeyCode.ts';
 export * from './KeyModifier.ts';

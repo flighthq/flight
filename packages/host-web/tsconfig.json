@@ -78,6 +78,9 @@
       "path": "../ipc/tsconfig.contract.json"
     },
     {
+      "path": "../keyboard/tsconfig.contract.json"
+    },
+    {
       "path": "../lifecycle/tsconfig.contract.json"
     },
     {

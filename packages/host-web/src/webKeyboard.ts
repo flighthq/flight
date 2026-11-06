@@ -5,7 +5,7 @@ import type {
   HostSoftKeyboardVisibilityCapability,
   SoftKeyboardInfo,
   SoftKeyboardVisibilityResult,
-} from '@flighthq/types/contract';
+} from '@flighthq/keyboard/contract';
 
 export const webHostSoftKeyboardChange: HostSoftKeyboardChangeCapability = {
   subscribe: async (listener: () => void): Promise<SoftKeyboardChangeSubscription> => {
