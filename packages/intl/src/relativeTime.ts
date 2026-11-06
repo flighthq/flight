@@ -1,6 +1,5 @@
-import type { LocaleInput } from '@flighthq/types/contract';
-
 import { getCacheKey, getCached } from './cache.ts';
+import type { LocaleInput } from './types.ts';
 
 /**
  * Format `value` of `unit` as a locale-aware relative-time phrase in `locale` —

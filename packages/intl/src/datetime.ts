@@ -1,6 +1,5 @@
-import type { LocaleInput } from '@flighthq/types/contract';
-
 import { getCacheKey, getCached } from './cache.ts';
+import type { LocaleInput } from './types.ts';
 
 /**
  * Format the date portion of `date` (a `Date` or epoch-millisecond number) in

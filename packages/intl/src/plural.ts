@@ -1,6 +1,5 @@
-import type { LocaleInput } from '@flighthq/types/contract';
-
 import { getCacheKey, getCached } from './cache.ts';
+import type { LocaleInput } from './types.ts';
 
 /**
  * Select the ordinal plural category of `value` in `locale` (`type: 'ordinal'`)

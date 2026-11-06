@@ -1,3 +1,5 @@
+// The intl-owned contracts.
+
 /**
  * A BCP-47 locale specifier accepted by every `@flighthq/intl` formatter.
  *

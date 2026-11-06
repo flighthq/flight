@@ -391,7 +391,6 @@ export * from './LightLayerMask.ts';
 export * from './LightProbe.ts';
 export * from './LightUnit.ts';
 export * from './PhotometricLightLike.ts';
-export * from './LocaleInput.ts';
 export * from './LodMesh.ts';
 export * from './Log.ts';
 export * from './BufferedLogSink.ts';

@@ -5,3 +5,4 @@ export * from './list.ts';
 export * from './number.ts';
 export * from './plural.ts';
 export * from './relativeTime.ts';
+export * from './types.ts';
