@@ -1,5 +1,4 @@
-import type { SwfTagHandler } from '@flighthq/types/contract';
-
 import { swfFontHandler } from './swfFontHandler.ts';
+import type { SwfTagHandler } from './types/SwfTagHandler.ts';
 
 export const swfFontTagFamily: readonly SwfTagHandler[] = [swfFontHandler];

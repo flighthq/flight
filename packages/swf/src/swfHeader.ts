@@ -1,11 +1,8 @@
-import type {
-  HostDecompressDeflateCapability,
-  HostDecompressLzmaCapability,
-  SwfHeader,
-} from '@flighthq/types/contract';
+import type { HostDecompressDeflateCapability, HostDecompressLzmaCapability } from '@flighthq/types/contract';
 
 import { uncompressSwfSource } from './swfDocument.ts';
 import { readSwfHeaderRectangle, readSwfHeaderUint32, SWF_HEADER_PREFIX_LENGTH } from './swfHeaderReader.ts';
+import type { SwfHeader } from './types/SwfHeader.ts';
 
 /**
  * Reads the fixed header of a SWF file: container decompression, then the 8-byte prefix, stage

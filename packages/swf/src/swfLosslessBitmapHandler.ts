@@ -1,6 +1,6 @@
-import type { SwfTagHandler, SwfTagParseState, SwfTagReader } from '@flighthq/types/contract';
-
 import { SWF_LOSSLESS_ALPHA_MIME_TYPE, SWF_LOSSLESS_MIME_TYPE } from './swfImageMimeType.ts';
+import type { SwfTagHandler } from './types/SwfTagHandler.ts';
+import type { SwfTagParseState, SwfTagReader } from './types/SwfTagParseState.ts';
 
 const TAG_DEFINE_BITS_LOSSLESS = 20;
 

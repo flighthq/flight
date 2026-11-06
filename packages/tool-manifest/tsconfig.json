@@ -26,7 +26,7 @@
       "path": "../scene3d-formats"
     },
     {
-      "path": "../swf"
+      "path": "../swf/tsconfig.runtime.json"
     },
     {
       "path": "../types"

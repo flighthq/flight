@@ -1,11 +1,12 @@
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
-import type { SwfTagHandler, SwfTagParseState } from '@flighthq/types/contract';
 import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
 import { readSwfBoundedDefinitionHeader } from './swfBoundedDefinition.ts';
 import { readSwfMatrix } from './swfPrimitive.ts';
 import { SwfReader } from './swfReader.ts';
 import { createSwfTextShape } from './swfText.ts';
+import type { SwfTagHandler } from './types/SwfTagHandler.ts';
+import type { SwfTagParseState } from './types/SwfTagParseState.ts';
 
 const TAG_DEFINE_TEXT = 11;
 const TAG_DEFINE_TEXT_2 = 33;

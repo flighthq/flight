@@ -13,9 +13,10 @@ import type {
   NodeData,
   Rectangle,
   Sprite,
-  SwfTagRectangle,
   Texture2D,
 } from '@flighthq/types/contract';
+
+import type { SwfTagRectangle } from './types/SwfTagParseState.ts';
 
 // The display nodes a SWF character becomes, and the authored-extent hook they all carry. A SWF sizes a
 // character by the RECT the authoring tool recorded rather than by the geometry inside it, so every node

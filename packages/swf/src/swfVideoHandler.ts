@@ -1,13 +1,9 @@
 import { createSampler, createTexture } from '@flighthq/texture/contract';
-import type {
-  SwfTagHandler,
-  SwfTagParseResult,
-  SwfTagParseState,
-  SwfTagReader,
-  Texture2D,
-} from '@flighthq/types/contract';
+import type { Texture2D } from '@flighthq/types/contract';
 
 import { createSwfTexturedSprite } from './swfNode.ts';
+import type { SwfTagHandler } from './types/SwfTagHandler.ts';
+import type { SwfTagParseResult, SwfTagParseState, SwfTagReader } from './types/SwfTagParseState.ts';
 
 // Video characters. A DefineVideoStream declares a packet sequence rather than a browser-playable file,
 // so what this family retains is the character's identity and authored extent — enough to materialize

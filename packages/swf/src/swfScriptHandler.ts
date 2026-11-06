@@ -1,15 +1,10 @@
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
-import type {
-  SwfTagHandler,
-  SwfTagParseState,
-  SwfTagReader,
-  SwfTagTimelineState,
-  SwfTimeline,
-} from '@flighthq/types/contract';
 import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
 import { readSwfAbcFrameScripts, readSwfFrameActions } from './swfFrameAction.ts';
 import { SwfReader } from './swfReader.ts';
+import type { SwfTagHandler } from './types/SwfTagHandler.ts';
+import type { SwfTagParseState, SwfTagReader, SwfTagTimelineState, SwfTimeline } from './types/SwfTagParseState.ts';
 
 // Timeline scripts, in both virtual machines' forms. Parsing only stashes bytes; the recognition work —
 // and with it the whole AVM2 bytecode reader — happens in `resolve`, because a script binds to a

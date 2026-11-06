@@ -1,16 +1,17 @@
-import type { AdvancedBlendMode } from './AdvancedBlendMode.ts';
-import type { Effect } from './Effect.ts';
-import type { Entity } from './Entity.ts';
-import type { EmbeddedImageResourceReference } from './ImageResourceReference.ts';
-import type { Node2D } from './Node2D.ts';
-import type { Scene2DDocument } from './Scene2DDocument.ts';
+import type { Effect } from '@flighthq/effects/contract';
+import type { EntityRaw, EntityRuntime, EntityRuntimeKey } from '@flighthq/entity/contract';
+import type { EmbeddedImageResourceReference } from '@flighthq/image/contract';
+import type { Node2D } from '@flighthq/scene2d/contract';
+import type { AdvancedBlendMode } from '@flighthq/types/contract';
+import type { Scene2DDocument } from '@flighthq/types/contract';
 
 /**
  * A SWF import, with the appearance a display tree cannot carry travelling beside the document rather
  * than being dropped or silently flattened onto a node. `createScene2DFromSwf` returns the document
  * alone for the callers — the importer registry among them — that only want the graph.
  */
-export interface SwfDocumentImport extends Entity {
+export interface SwfDocumentImport extends EntityRaw {
+  [EntityRuntimeKey]: EntityRuntime | undefined;
   /** Every placement appearance the caller has to realize itself. Empty for a file that uses none. */
   appearances: SwfNodeAppearance[];
   document: Scene2DDocument;

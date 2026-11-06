@@ -38,18 +38,6 @@ import type {
   Scene2DDocumentImportContext,
   Scene2DDocumentImporterRegistry,
   Scene2DSlotReference,
-  SwfDocumentImport,
-  SwfJpegAlphaPayload,
-  SwfNodeAppearance,
-  SwfTagHandler,
-  SwfParseOptions,
-  SwfTagHandlerResources,
-  SwfTagParseResult,
-  SwfTagMatrix,
-  SwfTagParseState,
-  SwfTagPlacement,
-  SwfTagRectangle,
-  SwfTimeline,
   TimelineCue,
   TimelineLabel,
   TimelineSource,
@@ -61,6 +49,17 @@ import { applySwfMorphBounds, createSwfDisplayObject, createSwfMovieClip } from 
 import { FIXED_8_8_ONE, readSwfRectangle, transformSwfRectangle, mergeSwfRectangles } from './swfPrimitive.ts';
 import { SwfReader } from './swfReader.ts';
 import { MAX_TIMELINE_FRAME_ENTRIES, readSwfTimeline } from './swfTimelineParse.ts';
+import type { SwfDocumentImport, SwfJpegAlphaPayload, SwfNodeAppearance } from './types/SwfDocumentImport.ts';
+import type { SwfParseOptions } from './types/SwfParseOptions.ts';
+import type { SwfTagHandler, SwfTagHandlerResources } from './types/SwfTagHandler.ts';
+import type {
+  SwfTagParseResult,
+  SwfTagMatrix,
+  SwfTagParseState,
+  SwfTagPlacement,
+  SwfTagRectangle,
+  SwfTimeline,
+} from './types/SwfTagParseState.ts';
 
 // Recovers every embedded DefineFont/2/3 as the generic, glyph-index-keyed outline seam. The map key
 // is the SWF character id used by DefineText and DefineEditText. This is a separate parse entry from

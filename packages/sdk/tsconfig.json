@@ -397,7 +397,7 @@
       "path": "../surface/tsconfig.runtime.json"
     },
     {
-      "path": "../swf"
+      "path": "../swf/tsconfig.runtime.json"
     },
     {
       "path": "../bitmap/tsconfig.runtime.json"

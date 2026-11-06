@@ -1,4 +1,4 @@
-import type { SwfParseOptions } from '@flighthq/types/contract';
+import type { SwfParseOptions } from './types/SwfParseOptions.ts';
 
 /**
  * Composes SWF parse-option fragments into one, field by field.

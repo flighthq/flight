@@ -1,5 +1,5 @@
 import { collectImportDiagnostics } from '@flighthq/importdiagnostics/contract';
-import type { ImportDiagnostic, SwfTagHandler, SwfTimeline, TimelineLabel } from '@flighthq/types/contract';
+import type { ImportDiagnostic, TimelineLabel } from '@flighthq/types/contract';
 import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
 import { expandSwfTagHandlerDispatch } from './expandSwfTagHandlerDispatch.ts';
@@ -8,6 +8,8 @@ import { swfPlacementTagFamily } from './swfPlacementTagFamily.ts';
 import { SwfReader } from './swfReader.ts';
 import { createSwfTestParseState, createSwfTagRecord, joinSwfBytes, swfUint16Bytes } from './swfTagStreamTestHelper.ts';
 import { addSwfTimelineLabel, readSwfTimeline } from './swfTimelineParse.ts';
+import type { SwfTagHandler } from './types/SwfTagHandler.ts';
+import type { SwfTimeline } from './types/SwfTagParseState.ts';
 
 describe('addSwfTimelineLabel', () => {
   it('appends a label at the given frame', () => {

@@ -37,7 +37,6 @@ import { getTextureSource } from '@flighthq/texture/contract';
 import { setTextureSource } from '@flighthq/texture/contract';
 import type {
   HostDecompressDeflateCapability,
-  SwfParseOptions,
   EmbeddedAudioResourceReference,
   EmbeddedImageResourceReference,
   ImportDiagnostic,
@@ -92,6 +91,7 @@ import {
   swfUint16Bytes,
   swfUint32Bytes,
 } from './swfTagStreamTestHelper.ts';
+import type { SwfParseOptions } from './types/SwfParseOptions.ts';
 
 describe('createGlyphOutlineSourcesFromSwf', () => {
   it('funnels a DefineFont2 outline and code table through the font adapter into glyphatlas', () => {

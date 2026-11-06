@@ -1,4 +1,4 @@
-import type { SwfTagRectangle } from '@flighthq/types/contract';
+import type { SwfTagRectangle } from './types/SwfTagParseState.ts';
 
 // Package-internal SWF prefix readers, shared by the header parse and the tag census. They live in
 // their own module because both lanes need them but neither should publish them: an application has no

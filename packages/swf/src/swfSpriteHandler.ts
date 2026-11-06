@@ -1,7 +1,6 @@
-import type { SwfTagHandler } from '@flighthq/types/contract';
-
 import { SwfReader } from './swfReader.ts';
 import { readSwfTimeline } from './swfTimelineParse.ts';
+import type { SwfTagHandler } from './types/SwfTagHandler.ts';
 
 // Nested timelines. A sprite body is a tag stream in its own right, walked with the very registry the
 // root was given, so a family absent from the document is absent from every symbol inside it too.

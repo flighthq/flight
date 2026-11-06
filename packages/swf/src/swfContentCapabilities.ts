@@ -1,12 +1,9 @@
-import type {
-  HostDecompressDeflateCapability,
-  HostDecompressLzmaCapability,
-  SwfContentCapabilities,
-} from '@flighthq/types/contract';
+import type { HostDecompressDeflateCapability, HostDecompressLzmaCapability } from '@flighthq/types/contract';
 
 import { uncompressSwfSource } from './swfDocument.ts';
 import { parseSwfHeader } from './swfHeader.ts';
 import { readSwfHeaderRectangle, readSwfHeaderUint32, SWF_HEADER_PREFIX_LENGTH } from './swfHeaderReader.ts';
+import type { SwfContentCapabilities } from './types/SwfContentCapabilities.ts';
 
 /**
  * Walk the tag stream, count tag codes, and extract content capability signals.

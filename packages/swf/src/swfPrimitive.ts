@@ -1,4 +1,4 @@
-import type { SwfTagMatrix, SwfTagReader, SwfTagRectangle } from '@flighthq/types/contract';
+import type { SwfTagMatrix, SwfTagReader, SwfTagRectangle } from './types/SwfTagParseState.ts';
 
 // The byte-level structures every SWF tag is written out of: the RECT and MATRIX records, and the
 // rectangle arithmetic their consumers do on the results. Nothing here knows what a tag means, which is

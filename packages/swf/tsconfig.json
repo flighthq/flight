@@ -1,14 +1,5 @@
 {
-  "extends": "../../tsconfig.base.json",
-  "compilerOptions": {
-    "composite": true,
-    "rootDir": "src",
-    "outDir": "dist",
-    "declaration": true,
-    "declarationMap": true,
-    "sourceMap": true,
-    "types": ["@testing-library/jest-dom", "vitest/globals", "@webgpu/types"]
-  },
+  "files": [],
   "references": [
     {
       "path": "../abc"
@@ -96,7 +87,12 @@
     },
     {
       "path": "../types"
+    },
+    {
+      "path": "./tsconfig.contract.json"
+    },
+    {
+      "path": "./tsconfig.runtime.json"
     }
-  ],
-  "include": ["src"]
+  ]
 }

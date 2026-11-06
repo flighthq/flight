@@ -1,18 +1,14 @@
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import type { RichText } from '@flighthq/text/contract';
-import type {
-  ImportDiagnostic,
-  Node2D,
-  SwfTagHandler,
-  SwfTagParseResult,
-  SwfTagRectangle,
-} from '@flighthq/types/contract';
+import type { ImportDiagnostic, Node2D } from '@flighthq/types/contract';
 import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
 import { readSwfBoundedDefinitionHeader } from './swfBoundedDefinition.ts';
 import { readSwfEditTextFactory } from './swfEditText.ts';
 import { applySwfAuthoredBounds } from './swfNode.ts';
 import { SwfReader } from './swfReader.ts';
+import type { SwfTagHandler } from './types/SwfTagHandler.ts';
+import type { SwfTagParseResult, SwfTagRectangle } from './types/SwfTagParseState.ts';
 
 const TAG_DEFINE_EDIT_TEXT = 37;
 

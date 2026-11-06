@@ -16,9 +16,10 @@ import {
 import type { CapsStyle, GradientType, JointStyle, Shape, SpreadMethod } from '@flighthq/shape/contract';
 import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 import type { Matrix, Texture2D } from '@flighthq/types/contract';
-import type { ImportDiagnostic, SwfMorphShapePaths } from '@flighthq/types/contract';
+import type { ImportDiagnostic } from '@flighthq/types/contract';
 
 import type { SwfReader } from './swfReader.ts';
+import type { SwfMorphShapePaths } from './types/SwfMorphShapePaths.ts';
 
 // Decodes a glyph outline. A glyph is a bare SHAPE rather than a SHAPEWITHSTYLE — a font's glyphs carry
 // no styles of their own, because the colour belongs to whatever text record draws the glyph. So the

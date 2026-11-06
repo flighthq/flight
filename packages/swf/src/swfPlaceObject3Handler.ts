@@ -1,6 +1,6 @@
 import type { Adjustment } from '@flighthq/adjustments/contract';
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
-import type { Effect, ImportDiagnostic, SwfTagHandler, SwfTagPlacement, SwfTagReader } from '@flighthq/types/contract';
+import type { Effect, ImportDiagnostic } from '@flighthq/types/contract';
 import { BlendMode, ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
 import {
@@ -13,6 +13,8 @@ import {
 } from './swfAppearance.ts';
 import { readSwfFilterList } from './swfFilter.ts';
 import { IDENTITY_MATRIX, readSwfMatrix } from './swfPrimitive.ts';
+import type { SwfTagHandler } from './types/SwfTagHandler.ts';
+import type { SwfTagPlacement, SwfTagReader } from './types/SwfTagParseState.ts';
 
 const TAG_PLACE_OBJECT_3 = 70;
 const TAG_PLACE_OBJECT_4 = 94;

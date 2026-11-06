@@ -1,21 +1,15 @@
 import { createEmbeddedImageResourceReference } from '@flighthq/image/contract';
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
-import type {
-  EmbeddedImageResourceReference,
-  ImageResourceReference,
-  SwfJpegAlphaPayload,
-  SwfTagHandler,
-  SwfTagParseResult,
-  SwfTagParseState,
-  SwfTagReader,
-  SwfTagRectangle,
-} from '@flighthq/types/contract';
+import type { EmbeddedImageResourceReference, ImageResourceReference } from '@flighthq/types/contract';
 import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
 import { SWF_LOSSLESS_ALPHA_MIME_TYPE, SWF_LOSSLESS_MIME_TYPE } from './swfImageMimeType.ts';
 import { acquireSwfImageTexture } from './swfImageTexture.ts';
 import { createSwfTexturedSprite } from './swfNode.ts';
 import { resolveSwfDimensionBounds, readBigEndianUint16, readBigEndianUint32 } from './swfPrimitive.ts';
+import type { SwfJpegAlphaPayload } from './types/SwfDocumentImport.ts';
+import type { SwfTagHandler } from './types/SwfTagHandler.ts';
+import type { SwfTagParseResult, SwfTagParseState, SwfTagReader, SwfTagRectangle } from './types/SwfTagParseState.ts';
 
 const TAG_DEFINE_BITS = 6;
 

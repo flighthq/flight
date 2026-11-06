@@ -1,20 +1,12 @@
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
-import type {
-  FrameScript,
-  ImportDiagnostic,
-  SwfTagHandler,
-  SwfTagHandlerDispatch,
-  SwfTagParseState,
-  SwfTagPlacement,
-  SwfTagTimelineState,
-  TimelineLabel,
-  SwfTimeline,
-} from '@flighthq/types/contract';
+import type { FrameScript, ImportDiagnostic, TimelineLabel } from '@flighthq/types/contract';
 import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
 import { isKnownSwfTag } from './swfKnownTags.ts';
 import { SwfReader } from './swfReader.ts';
 import { SWF_NON_CONTENT_TAGS } from './swfTagVocabulary.ts';
+import type { SwfTagHandler, SwfTagHandlerDispatch } from './types/SwfTagHandler.ts';
+import type { SwfTagParseState, SwfTagPlacement, SwfTagTimelineState, SwfTimeline } from './types/SwfTagParseState.ts';
 
 // The tag walk itself: one flat lookup per tag, and a length-prefixed skip for every tag no registered
 // family claims. It is deliberately the only module that knows how a tag stream is framed, so the root

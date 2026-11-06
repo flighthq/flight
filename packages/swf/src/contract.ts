@@ -1,3 +1,4 @@
+export * from './contract.swf-types.ts';
 export * from './enableSwfGuards.ts';
 export * from './expandSwfTagHandlerDispatch.ts';
 export * from './mergeSwfParseOptions.ts';

@@ -49,6 +49,7 @@
     "@flighthq/compression": "*",
     "@flighthq/effects": "*",
     "@flighthq/entity": "*",
+    "@flighthq/font": "*",
     "@flighthq/geometry": "*",
     "@flighthq/image": "*",
     "@flighthq/image-codec": "*",

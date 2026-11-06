@@ -1,6 +1,6 @@
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import type { MorphShape } from '@flighthq/shape/contract';
-import type { ImportDiagnostic, SwfTagHandler, SwfTagParseState, SwfTagReader } from '@flighthq/types/contract';
+import type { ImportDiagnostic } from '@flighthq/types/contract';
 import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
 import { readSwfBoundedDefinitionHeader } from './swfBoundedDefinition.ts';
@@ -8,6 +8,8 @@ import { acquireSwfImageTexture } from './swfImageTexture.ts';
 import { createSwfMorphShape } from './swfMorphShape.ts';
 import { createSwfMorphShapeTarget } from './swfNode.ts';
 import { SwfReader } from './swfReader.ts';
+import type { SwfTagHandler } from './types/SwfTagHandler.ts';
+import type { SwfTagParseState, SwfTagReader } from './types/SwfTagParseState.ts';
 
 const TAG_DEFINE_MORPH_SHAPE = 46;
 

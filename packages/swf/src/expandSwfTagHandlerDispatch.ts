@@ -1,4 +1,4 @@
-import type { SwfTagHandler, SwfTagHandlerDispatch } from '@flighthq/types/contract';
+import type { SwfTagHandler, SwfTagHandlerDispatch } from './types/SwfTagHandler.ts';
 
 // Expands a handler array into the flat tag-code table a tag walk dispatches through. This module
 // imports no handler, which is what keeps the import boundary structural rather than a favour from a

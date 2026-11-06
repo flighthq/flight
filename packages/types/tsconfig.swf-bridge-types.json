@@ -1,0 +1,51 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "composite": true,
+    "rootDir": "src",
+    "outDir": "dist",
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "moduleSuffixes": [".audio-types", ".image-types", ".materials-types", ".scene2d-types", ""],
+    "tsBuildInfoFile": "dist/.tsbuildinfo.swf-bridge-types"
+  },
+  "references": [
+    {
+      "path": "../audio/tsconfig.contract.json"
+    },
+    {
+      "path": "../entity"
+    },
+    {
+      "path": "../image/tsconfig.contract.json"
+    },
+    {
+      "path": "../materials/tsconfig.contract.json"
+    },
+    {
+      "path": "../scene2d/tsconfig.contract.json"
+    },
+    {
+      "path": "../signals"
+    }
+  ],
+  "files": [
+    "src/AdvancedBlendMode.ts",
+    "src/BlendMode.materials-types.ts",
+    "src/Entity.ts",
+    "src/FrameScript.ts",
+    "src/ImageResourceReference.ts",
+    "src/Node2D.scene2d-types.ts",
+    "src/Scene2DDocument.ts",
+    "src/Timeline.ts",
+    "src/TimelineCue.ts",
+    "src/TimelineFrameEvent.ts",
+    "src/TimelineLabel.ts",
+    "src/TimelinePlayMode.ts",
+    "src/TimelineSignals.ts",
+    "src/TimelineSource.ts",
+    "src/contract.swf-bridge-types.ts"
+  ],
+  "include": []
+}

@@ -5,17 +5,20 @@ import type {
   AudioResource,
   AudioResourceReference,
   EntityConstruction,
-  SwfTagHandler,
-  SwfTagParseResult,
-  SwfTagParseState,
-  SwfTagReader,
-  SwfTagTimelineState,
   TimelineAudioCue,
   TimelineAudioEnvelopePoint,
   TimelineCue,
   TimelineStreamAudioCue,
 } from '@flighthq/types/contract';
 import { ImportDiagnosticSeverity, TimelineAudioCueKind, TimelineStreamAudioCueKind } from '@flighthq/types/contract';
+
+import type { SwfTagHandler } from './types/SwfTagHandler.ts';
+import type {
+  SwfTagParseResult,
+  SwfTagParseState,
+  SwfTagReader,
+  SwfTagTimelineState,
+} from './types/SwfTagParseState.ts';
 
 // Event and stream sounds: the payloads a document ships and the edge-triggered cues that start them. A
 // trigger is not frame content — it is something entering a frame *does* — so a cue rides on the

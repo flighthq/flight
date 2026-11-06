@@ -13,10 +13,11 @@ import {
 } from '@flighthq/effects/contract';
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import { RAD_TO_DEG } from '@flighthq/math/contract';
-import type { ImportDiagnostic, Effect, SwfFilterListGuard } from '@flighthq/types/contract';
+import type { ImportDiagnostic, Effect } from '@flighthq/types/contract';
 import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
 import type { SwfReader } from './swfReader.ts';
+import type { SwfFilterListGuard } from './types/SwfFilterListGuard.ts';
 
 // Reads a SURFACEFILTERLIST into the two tiers Flight splits image operations across, appending to the
 // arrays the caller owns. The split is the architecture, not a convenience: a colour matrix is a

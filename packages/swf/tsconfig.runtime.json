@@ -1,0 +1,107 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "composite": true,
+    "rootDir": "src",
+    "outDir": "dist",
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "types": ["@testing-library/jest-dom", "vitest/globals", "@webgpu/types"],
+    "tsBuildInfoFile": "dist/.tsbuildinfo.runtime"
+  },
+  "references": [
+    {
+      "path": "../abc"
+    },
+    {
+      "path": "../adjustments/tsconfig.runtime.json"
+    },
+    {
+      "path": "../audio/tsconfig.runtime.json"
+    },
+    {
+      "path": "../bitmap/tsconfig.runtime.json"
+    },
+    {
+      "path": "../clip/tsconfig.runtime.json"
+    },
+    {
+      "path": "../color"
+    },
+    {
+      "path": "../compression"
+    },
+    {
+      "path": "../effects"
+    },
+    {
+      "path": "../entity"
+    },
+    {
+      "path": "../font/tsconfig.runtime.json"
+    },
+    {
+      "path": "../geometry/tsconfig.runtime.json"
+    },
+    {
+      "path": "../glyphatlas"
+    },
+    {
+      "path": "../image/tsconfig.runtime.json"
+    },
+    {
+      "path": "../image-codec"
+    },
+    {
+      "path": "../importdiagnostics"
+    },
+    {
+      "path": "../log"
+    },
+    {
+      "path": "../math"
+    },
+    {
+      "path": "../movieclip"
+    },
+    {
+      "path": "../node/tsconfig.runtime.json"
+    },
+    {
+      "path": "../path/tsconfig.runtime.json"
+    },
+    {
+      "path": "../requirement"
+    },
+    {
+      "path": "../scene2d/tsconfig.runtime.json"
+    },
+    {
+      "path": "../scene2d-resources"
+    },
+    {
+      "path": "../shape/tsconfig.runtime.json"
+    },
+    {
+      "path": "../text/tsconfig.runtime.json"
+    },
+    {
+      "path": "../text-markup/tsconfig.runtime.json"
+    },
+    {
+      "path": "../textformat/tsconfig.runtime.json"
+    },
+    {
+      "path": "../texture/tsconfig.runtime.json"
+    },
+    {
+      "path": "../types"
+    },
+    {
+      "path": "./tsconfig.contract.json"
+    }
+  ],
+  "include": ["src/**/*.ts"],
+  "exclude": ["src/contract.swf-types.ts", "src/types/**/*.ts"]
+}

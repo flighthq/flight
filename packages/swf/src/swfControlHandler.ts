@@ -1,19 +1,13 @@
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
-import type {
-  FrameScript,
-  ImportDiagnostic,
-  SwfTagHandler,
-  SwfTagParseState,
-  SwfTagPlacement,
-  SwfTagReader,
-  TimelineLabel,
-} from '@flighthq/types/contract';
+import type { FrameScript, ImportDiagnostic, TimelineLabel } from '@flighthq/types/contract';
 import { BlendMode, ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
 import { EMPTY_ADJUSTMENTS, EMPTY_EFFECTS, readSwfColorTransform } from './swfAppearance.ts';
 import { readSwfMatrix, readSwfRectangle } from './swfPrimitive.ts';
 import { SwfReader } from './swfReader.ts';
 import { addSwfTimelineLabel } from './swfTimelineParse.ts';
+import type { SwfTagHandler } from './types/SwfTagHandler.ts';
+import type { SwfTagParseState, SwfTagPlacement, SwfTagReader } from './types/SwfTagParseState.ts';
 
 // The tags that describe the document rather than draw it: the stage colour, frame labels and scene
 // tables, the linkage names that publish a character to code, the nine-slice splitter, and buttons —

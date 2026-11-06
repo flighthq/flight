@@ -1,8 +1,7 @@
-import type { SwfTagHandler } from '@flighthq/types/contract';
-
 import { expandSwfTagHandlerDispatch } from './expandSwfTagHandlerDispatch.ts';
 import { swfAllTagHandlers } from './swfAllTagHandlers.ts';
 import { swfShapeTagFamily } from './swfShapeTagFamily.ts';
+import type { SwfTagHandler } from './types/SwfTagHandler.ts';
 
 describe('expandSwfTagHandlerDispatch', () => {
   it('maps every tag a handler claims to that handler', () => {

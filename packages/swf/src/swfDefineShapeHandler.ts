@@ -2,14 +2,6 @@ import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import { copyShapeCommands, createScale9Shape, createShape } from '@flighthq/shape/contract';
 import type { Scale9Shape } from '@flighthq/shape/contract';
 import type { Shape } from '@flighthq/shape/contract';
-import type {
-  SwfTagHandler,
-  SwfTagParseResult,
-  SwfTagParseState,
-  SwfTagReader,
-  SwfTagRectangle,
-  SwfTimeline,
-} from '@flighthq/types/contract';
 import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
 import { readSwfBoundedDefinitionHeader } from './swfBoundedDefinition.ts';
@@ -18,6 +10,14 @@ import { applySwfAuthoredBounds } from './swfNode.ts';
 import { readSwfRectangle } from './swfPrimitive.ts';
 import { SwfReader } from './swfReader.ts';
 import { createSwfShape } from './swfShape.ts';
+import type { SwfTagHandler } from './types/SwfTagHandler.ts';
+import type {
+  SwfTagParseResult,
+  SwfTagParseState,
+  SwfTagReader,
+  SwfTagRectangle,
+  SwfTimeline,
+} from './types/SwfTagParseState.ts';
 
 const TAG_DEFINE_SHAPE = 2;
 

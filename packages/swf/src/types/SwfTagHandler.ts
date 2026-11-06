@@ -1,8 +1,8 @@
 import type { AudioResourceReference } from '@flighthq/audio/contract';
+import type { ImageResourceReference } from '@flighthq/image/contract';
+import type { ImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import type { Node2D } from '@flighthq/scene2d/contract';
 
-import type { ImageResourceReference } from './ImageResourceReference.ts';
-import type { ImportDiagnostic } from './ImportDiagnostic.ts';
-import type { Node2D } from './Node2D.ts';
 import type { SwfJpegAlphaPayload } from './SwfDocumentImport.ts';
 import type {
   SwfTagParseResult,

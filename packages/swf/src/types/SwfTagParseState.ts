@@ -1,20 +1,20 @@
+import type { Adjustment } from '@flighthq/adjustments/contract';
 import type { AudioResource } from '@flighthq/audio/contract';
+import type { Effect } from '@flighthq/effects/contract';
 import type { GlyphOutlineSource } from '@flighthq/font/contract';
+import type { ImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import type { MorphShape } from '@flighthq/shape/contract';
+import type { Shape } from '@flighthq/shape/contract';
+import type { RichText } from '@flighthq/text/contract';
+import type { Texture2D } from '@flighthq/texture/contract';
+import type { AdvancedBlendMode } from '@flighthq/types/contract';
+import type { BlendMode } from '@flighthq/types/contract';
+import type { FrameScript } from '@flighthq/types/contract';
+import type { TimelineAudioCue } from '@flighthq/types/contract';
+import type { TimelineCue } from '@flighthq/types/contract';
+import type { TimelineLabel } from '@flighthq/types/contract';
 
-import type { Adjustment } from './Adjustment.ts';
-import type { AdvancedBlendMode } from './AdvancedBlendMode.ts';
-import type { BlendMode } from './BlendMode.ts';
-import type { Effect } from './Effect.ts';
-import type { FrameScript } from './FrameScript.ts';
-import type { ImportDiagnostic } from './ImportDiagnostic.ts';
-import type { MorphShape } from './MorphShape.ts';
-import type { RichText } from './RichText.ts';
-import type { Shape } from './Shape.ts';
 import type { SwfTagHandlerDispatch } from './SwfTagHandler.ts';
-import type { Texture2D } from './Texture.ts';
-import type { TimelineAudioCue } from './TimelineCue.ts';
-import type { TimelineCue } from './TimelineCue.ts';
-import type { TimelineLabel } from './TimelineLabel.ts';
 
 /**
  * The bounded reader a SWF tag handler receives. Reads are little-endian for bytes, big-endian

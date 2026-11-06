@@ -1,5 +1,3 @@
-import type { SwfTagHandler } from '@flighthq/types/contract';
-
 import { swfBitmapTagFamily } from './swfBitmapTagFamily.ts';
 import { swfControlTagFamily } from './swfControlTagFamily.ts';
 import { swfFontTagFamily } from './swfFontTagFamily.ts';
@@ -10,6 +8,7 @@ import { swfSoundTagFamily } from './swfSoundTagFamily.ts';
 import { swfSpriteTagFamily } from './swfSpriteTagFamily.ts';
 import { swfTextTagFamily } from './swfTextTagFamily.ts';
 import { swfVideoTagFamily } from './swfVideoTagFamily.ts';
+import type { SwfTagHandler } from './types/SwfTagHandler.ts';
 
 /**
  * Every tag handler Flight reads a SWF with — the full-support preset.
