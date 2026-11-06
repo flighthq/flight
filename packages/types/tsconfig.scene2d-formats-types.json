@@ -45,6 +45,7 @@
       ".protocol-types",
       ".updater-types",
       ".connectivity-types",
+      ".render-gl-types",
       ""
     ],
     "tsBuildInfoFile": "dist/.tsbuildinfo.scene2d-formats-types"
@@ -229,6 +230,9 @@
     },
     {
       "path": "../connectivity/tsconfig.contract.json"
+    },
+    {
+      "path": "../render-gl/tsconfig.contract.json"
     }
   ],
   "files": [

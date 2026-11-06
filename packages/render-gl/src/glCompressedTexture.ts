@@ -1,5 +1,4 @@
 import type {
-  GlContext,
   CompressedImageResource,
   GlCompressedTextureDecoder,
   GlCompressedTextureSupport,
@@ -10,6 +9,7 @@ import type {
 } from '@flighthq/types/contract';
 
 import { getGlRenderStateRuntime } from './glRenderState.ts';
+import type { GlContext } from './types.ts';
 
 // GPU-native block-compressed texture upload for WebGL2: hand a parsed TextureContainer (KTX2 / DDS /
 // ATF) plus its byte payload and this pushes every mip level straight to the GPU with

@@ -51,6 +51,7 @@
       ".protocol-types",
       ".updater-types",
       ".connectivity-types",
+      ".render-gl-types",
       ""
     ],
     "types": ["@webgpu/types"],
@@ -179,6 +180,9 @@
     },
     {
       "path": "../connectivity/tsconfig.contract.json"
+    },
+    {
+      "path": "../render-gl/tsconfig.contract.json"
     }
   ],
   "files": [

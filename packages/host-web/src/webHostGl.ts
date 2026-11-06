@@ -1,5 +1,6 @@
 import type { AppWindow } from '@flighthq/app/contract';
-import type { GlContextOptions, HostGlCapability, Surface } from '@flighthq/types/contract';
+import type { GlContextOptions, HostGlCapability } from '@flighthq/render-gl/contract';
+import type { Surface } from '@flighthq/surface/contract';
 
 import { getWebGlContext } from './webGlContext.ts';
 import { allocateWebSurfaceCanvas, getWebSurfaceCanvasHandle } from './webSurfaceHandle.ts';

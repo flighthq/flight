@@ -1,4 +1,4 @@
-import type { GlContext, GlContextOptions } from '@flighthq/types/contract';
+import type { GlContext, GlContextOptions } from '@flighthq/render-gl/contract';
 
 export function createWebGlContext(canvas: HTMLCanvasElement, options: Readonly<GlContextOptions> = {}): GlContext {
   const context = getWebGlContext(canvas, options);

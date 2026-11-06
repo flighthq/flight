@@ -7,7 +7,6 @@ import {
 import type {
   GlColorAdjustmentMaterialFeature,
   GlColorAdjustmentMaterialFeatureGuard,
-  GlContext,
   GlContextRuntime,
   GlContextState,
   GlRenderRegistries,
@@ -17,6 +16,8 @@ import type {
   EntityConstruction,
 } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
+
+import type { GlContext } from './types.ts';
 
 export function buildGlRenderRegistries(options: Readonly<GlRenderStateOptions>): GlRenderRegistries {
   const registries = {} as GlRenderRegistries;

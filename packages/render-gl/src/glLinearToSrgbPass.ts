@@ -1,5 +1,4 @@
 import type {
-  GlContext,
   GlFullscreenProgram,
   GlRenderState,
   GlRenderTarget,
@@ -8,6 +7,7 @@ import type {
 
 import { compileGlFullscreenProgram, drawGlFullscreenPass } from './glFullscreenPass.ts';
 import { getGlRenderStateRuntime } from './glRenderState.ts';
+import type { GlContext } from './types.ts';
 
 // The linear->sRGB OETF present pass: encode a linear render-target texture into display sRGB as a
 // fullscreen pass. scene-gl materials write linear HDR radiance into an rgba16f target and tonemap

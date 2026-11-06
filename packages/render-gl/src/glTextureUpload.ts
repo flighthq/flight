@@ -1,4 +1,6 @@
-import type { GlContext, ImageResource } from '@flighthq/types/contract';
+import type { ImageResource } from '@flighthq/types/contract';
+
+import type { GlContext } from './types.ts';
 
 // Raw texel-upload primitives. Each writes level 0 of the texture currently bound at `target` — the GL
 // enum for a 2D texture (gl.TEXTURE_2D) or a cube face (gl.TEXTURE_CUBE_MAP_POSITIVE_X + face). They set

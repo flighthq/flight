@@ -87,6 +87,7 @@
     "@flighthq/protocol": "*",
     "@flighthq/registry": "*",
     "@flighthq/render-wgpu": "*",
+    "@flighthq/render-gl": "*",
     "@flighthq/requirement": "*",
     "@flighthq/resource": "*",
     "@flighthq/scene2d": "*",

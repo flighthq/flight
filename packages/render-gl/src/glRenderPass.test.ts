@@ -2,13 +2,7 @@ import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { createMatrix } from '@flighthq/geometry/contract';
 import { getOrCreateRenderProxy2D } from '@flighthq/render/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
-import type {
-  GlContext,
-  GlRenderPass,
-  GlRenderTarget,
-  GlTextureRenderTarget,
-  Viewport,
-} from '@flighthq/types/contract';
+import type { GlRenderPass, GlRenderTarget, GlTextureRenderTarget, Viewport } from '@flighthq/types/contract';
 
 import { clearGlRenderTarget, clearGlRenderTargetAttachments, fillGlRect } from './glFullscreenPass.ts';
 import {
@@ -21,6 +15,7 @@ import {
 import { createGlRenderState, getGlRenderStateRuntime } from './glRenderState.ts';
 import { drawGlTextureRenderTargetResult } from './glRenderTarget.ts';
 import { createGlState } from './glTestHelper.ts';
+import type { GlContext } from './types.ts';
 
 function makeTarget(overrides?: Partial<GlTextureRenderTarget>): GlTextureRenderTarget {
   const texture = { id: 'c0' } as unknown as WebGLTexture;

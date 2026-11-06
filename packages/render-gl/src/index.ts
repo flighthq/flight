@@ -39,3 +39,4 @@ export {
 } from './glRenderTexturePool.ts';
 export * from './glRenderView.ts';
 export * from './glTextureResolver.ts';
+export type { GlCapabilities, GlContext, GlContextOptions, HostGlCapabilities, HostGlCapability } from './contract.ts';

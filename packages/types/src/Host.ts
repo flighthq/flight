@@ -38,6 +38,7 @@ import type { HostNetCapabilities } from '@flighthq/net/contract';
 import type { HostPlatformCapabilities } from '@flighthq/platform/contract';
 import type { HostPowerCapabilities } from '@flighthq/power/contract';
 import type { HostPreferencesCapabilities } from '@flighthq/preferences/contract';
+import type { HostGlCapabilities } from '@flighthq/render-gl/contract';
 import type { HostWgpuCapabilities } from '@flighthq/render-wgpu/contract';
 import type { HostScreenCapabilities } from '@flighthq/screen/contract';
 import type { HostSensorsCapabilities } from '@flighthq/sensors/contract';
@@ -62,7 +63,6 @@ import type { Entity } from './Entity.ts';
 import type { HostHapticsCapabilities } from './Haptics.ts';
 import type { HostAudioDeviceCapability } from './HostAudioDevice.ts';
 import type { HostAudioMixerCapability } from './HostAudioMixer.ts';
-import type { HostGlCapability } from './HostGl.ts';
 import type { HostImageDecodeCapabilities } from './HostImageDecode.ts';
 import type { HostImageEncodeCapabilities } from './HostImageEncode.ts';
 import type { HostTextSegmenterCapability } from './TextSegment.ts';
@@ -135,10 +135,6 @@ export interface HostAudioCapabilities {
   readonly codec?: HostAudioCodecCapability;
   readonly device?: HostAudioDeviceCapability;
   readonly mixer?: HostAudioMixerCapability;
-}
-
-export interface HostGlCapabilities {
-  readonly context?: HostGlCapability;
 }
 
 export interface HostSoftKeyboardCapabilities {

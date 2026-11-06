@@ -3,7 +3,6 @@ import { acquireMatrix, multiplyMatrix, releaseMatrix } from '@flighthq/geometry
 import { explainRenderTargetAxes, resolveRenderTargetDescriptor } from '@flighthq/render/contract';
 import type {
   EntityConstruction,
-  GlContext,
   GlRenderPass,
   GlRenderState,
   GlScreenRenderTarget,
@@ -22,6 +21,7 @@ import type {
 import { bindGlTextureRealization, drawGlQuad, useGlProgram } from './glDraw.ts';
 import { getGlRenderStateRuntime } from './glRenderState.ts';
 import { setGlAttributes, setGlBaseUniforms, setGlMatrixFromTransform } from './glShader.ts';
+import type { GlContext } from './types.ts';
 
 interface GlTextureRenderTargetStorage extends RenderTargetAxes {
   framebuffer: WebGLFramebuffer;

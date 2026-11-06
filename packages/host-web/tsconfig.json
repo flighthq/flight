@@ -12,6 +12,7 @@
       ".ipc-types",
       ".mediasession-types",
       ".power-types",
+      ".render-gl-types",
       ".shell-types",
       ".shortcut-types",
       ".socket-types",
@@ -108,7 +109,7 @@
       "path": "../render"
     },
     {
-      "path": "../render-gl"
+      "path": "../render-gl/tsconfig.contract.json"
     },
     {
       "path": "../render-wgpu/tsconfig.runtime.json"

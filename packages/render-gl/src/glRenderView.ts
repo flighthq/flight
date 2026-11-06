@@ -1,7 +1,7 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { createViewport } from '@flighthq/node/contract';
 import type { RenderViewTargetOptions } from '@flighthq/render/contract';
-import type { GlContext, GlRenderStateOptions, GlRenderViewResources } from '@flighthq/types/contract';
+import type { GlRenderStateOptions, GlRenderViewResources } from '@flighthq/types/contract';
 
 import { createGlRenderState, destroyGlRenderState, invalidateGlRenderStateCache } from './glRenderState.ts';
 import {
@@ -9,6 +9,7 @@ import {
   destroyGlTextureRenderTarget,
   resizeGlTextureRenderTarget,
 } from './glRenderTarget.ts';
+import type { GlContext } from './types.ts';
 
 // The render-layer half of a GL application view. A caller acquires a context (host.gl for a
 // provider-bound target) and passes it here; the window half and the resize reconciliation belong to

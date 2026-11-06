@@ -1,4 +1,4 @@
-import type { GlContext } from '@flighthq/types/contract';
+import type { GlContext } from './types.ts';
 // Shared GL shader-compile/link primitives. Every GL program in the SDK is built through these so the
 // COMPILE_STATUS / LINK_STATUS checks are applied uniformly. Those queries are not only error handling:
 // they force a driver that defers compilation/linking (KHR_parallel_shader_compile) to finish before the

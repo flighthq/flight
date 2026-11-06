@@ -1,6 +1,5 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
-  GlContext,
   GlRenderPass,
   GlRenderState,
   GlRenderTarget,
@@ -13,6 +12,7 @@ import type {
 
 import { getGlRenderStateRuntime } from './glRenderState.ts';
 import { resolveGlTextureRenderTarget } from './glRenderTarget.ts';
+import type { GlContext } from './types.ts';
 
 type SavedGlPassState = {
   clipForms: ('rect' | 'contour')[];

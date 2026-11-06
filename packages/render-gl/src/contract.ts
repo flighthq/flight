@@ -27,3 +27,4 @@ export * from './glSkinPaletteTexture.ts';
 export * from './glTextureResolver.ts';
 export * from './glTextureUpload.ts';
 export * from './glTextureVideoUpload.ts';
+export type { GlCapabilities, GlContext, GlContextOptions, HostGlCapabilities, HostGlCapability } from './types.ts';

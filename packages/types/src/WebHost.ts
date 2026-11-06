@@ -8,6 +8,7 @@ import type { HostNetCapabilities } from '@flighthq/net/contract';
 import type { HostPlatformCapabilities } from '@flighthq/platform/contract';
 import type { HostPowerCapabilities } from '@flighthq/power/contract';
 import type { HostPreferencesCapabilities } from '@flighthq/preferences/contract';
+import type { HostGlCapabilities } from '@flighthq/render-gl/contract';
 import type { HostScreenCapabilities } from '@flighthq/screen/contract';
 import type { HostSensorsCapabilities } from '@flighthq/sensors/contract';
 import type { HostShellCapabilities } from '@flighthq/shell/contract';
@@ -27,7 +28,6 @@ import type {
   HostFileSystemCapabilities,
   HostFontCapabilities,
   HostGeolocationCapabilities,
-  HostGlCapabilities,
   HostGlyphCapabilities,
   HostImageCapabilities,
   HostInputCapabilities,

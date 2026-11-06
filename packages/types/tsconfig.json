@@ -23,6 +23,7 @@
       ".screen-types",
       ".sensors-types",
       ".render-wgpu-types",
+      ".render-gl-types",
       ".adjustments-types",
       ".audio-types",
       ".app-types",
@@ -322,6 +323,9 @@
     },
     {
       "path": "../connectivity/tsconfig.contract.json"
+    },
+    {
+      "path": "../render-gl/tsconfig.contract.json"
     },
     {
       "path": "../video/tsconfig.contract.json"

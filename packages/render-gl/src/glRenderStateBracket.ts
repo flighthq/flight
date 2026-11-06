@@ -1,6 +1,7 @@
-import type { GlContext, GlContextRuntime, GlRenderState, GlRenderStateRuntime } from '@flighthq/types/contract';
+import type { GlContextRuntime, GlRenderState, GlRenderStateRuntime } from '@flighthq/types/contract';
 
 import { getGlRenderStateRuntime } from './glRenderState.ts';
+import type { GlContext } from './types.ts';
 
 type GlBooleanQuad = [boolean, boolean, boolean, boolean];
 type GlBox = [number, number, number, number];

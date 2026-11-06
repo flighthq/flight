@@ -1,12 +1,2 @@
-export interface GlCapabilities {
-  maxTextureSize: number;
-  maxTextureUnits: number;
-  maxSamples: number;
-  maxDrawBuffers: number;
-  maxColorAttachments: number;
-  maxRenderbufferSize: number;
-  supportsColorBufferFloat: boolean;
-  supportsFloatLinear: boolean;
-  supportsSrgb: boolean;
-  maxAnisotropy: number;
-}
+/** @deprecated Import GL contracts from `@flighthq/render-gl/contract`. */
+export type { GlCapabilities } from '@flighthq/render-gl/contract';

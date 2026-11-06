@@ -21,6 +21,7 @@ import type { HostNetCapabilities } from '@flighthq/net/contract';
 import type { HostPlatformCapabilities } from '@flighthq/platform/contract';
 import type { HostPowerCapabilities } from '@flighthq/power/contract';
 import type { HostPreferencesCapabilities } from '@flighthq/preferences/contract';
+import type { HostGlCapabilities } from '@flighthq/render-gl/contract';
 import type { HostScreenCapabilities } from '@flighthq/screen/contract';
 import type { HostSensorsCapabilities } from '@flighthq/sensors/contract';
 import type { HostShellCapabilities } from '@flighthq/shell/contract';
@@ -65,7 +66,6 @@ import type {
   HostFileOpenDialogCapability,
   HostFileSaveDialogCapability,
 } from './HostFileDialog.ts';
-import type { HostGlCapability } from './HostGl.ts';
 import type { HostImageDecodeCapabilities } from './HostImageDecode.ts';
 import type { HostImageEncodeCapabilities } from './HostImageEncode.ts';
 import type { HostImageOpenDialogCapability } from './HostImageOpenDialog.ts';
@@ -209,10 +209,6 @@ export interface HostFontCapabilities {
 
 export interface HostGeolocationCapabilities {
   readonly position?: HostGeolocationCapability;
-}
-
-export interface HostGlCapabilities {
-  readonly context?: HostGlCapability;
 }
 
 export interface HostGlyphCapabilities {

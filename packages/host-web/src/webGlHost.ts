@@ -1,4 +1,4 @@
-import type { HostGlCapabilities } from '@flighthq/types/contract';
+import type { HostGlCapabilities } from '@flighthq/render-gl/contract';
 
 import { webHostGl } from './webHostGl.ts';
 

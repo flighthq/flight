@@ -1,0 +1,31 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "composite": true,
+    "rootDir": "src",
+    "outDir": "dist",
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "moduleSuffixes": [".app-types", ".surface-types", ""],
+    "tsBuildInfoFile": "dist/.tsbuildinfo.runtime"
+  },
+  "references": [
+    { "path": "../app/tsconfig.contract.json" },
+    { "path": "../color" },
+    { "path": "../entity" },
+    { "path": "../geometry/tsconfig.runtime.json" },
+    { "path": "../log" },
+    { "path": "../node/tsconfig.runtime.json" },
+    { "path": "../registry" },
+    { "path": "../render" },
+    { "path": "../scene2d/tsconfig.runtime.json" },
+    { "path": "../signals" },
+    { "path": "../surface/tsconfig.contract.json" },
+    { "path": "../texture/tsconfig.runtime.json" },
+    { "path": "../types" },
+    { "path": "./tsconfig.contract.json" }
+  ],
+  "include": ["src/**/*.ts"],
+  "exclude": ["src/contract.render-gl-types.ts", "src/types.ts"]
+}

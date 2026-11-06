@@ -1,5 +1,4 @@
 import type {
-  GlContext,
   GlFullscreenProgram,
   GlRenderState,
   GlRenderTarget,
@@ -9,6 +8,7 @@ import type {
 import { compileGlFullscreenProgram, drawGlFullscreenPass } from './glFullscreenPass.ts';
 import { drawGlLinearToSrgbPass } from './glLinearToSrgbPass.ts';
 import { getGlRenderStateRuntime } from './glRenderState.ts';
+import type { GlContext } from './types.ts';
 
 // Presents `target` onto `dest` (the canvas when null): the generic, subject-agnostic final step that
 // puts a finished render target on screen. It reads the target's DECLARED color space — 'linear' content

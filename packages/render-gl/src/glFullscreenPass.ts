@@ -1,5 +1,4 @@
 import type {
-  GlContext,
   GlFullscreenProgram,
   GlRenderPass,
   GlRenderState,
@@ -11,6 +10,7 @@ import type {
 import { applyGlBlendMode } from './glDraw.ts';
 import { createGlProgram } from './glProgram.ts';
 import { getGlRenderStateRuntime } from './glRenderState.ts';
+import type { GlContext } from './types.ts';
 
 // The substrate-level fullscreen-pass primitive: draw a clip-space quad through a fragment shader,
 // reading N input textures and writing to a target (or the canvas). Filter and effect recipes draw
