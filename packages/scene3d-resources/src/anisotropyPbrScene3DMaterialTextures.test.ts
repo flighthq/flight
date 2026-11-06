@@ -1,6 +1,6 @@
 import { createAnisotropyPbrExtension, createExtendedPbrMaterial } from '@flighthq/materials/contract';
 import { createTexture } from '@flighthq/texture/contract';
-import type { Texture } from '@flighthq/types/contract';
+import type { Texture } from '@flighthq/texture/contract';
 
 import { registerAnisotropyPbrScene3DMaterialTextures } from './anisotropyPbrScene3DMaterialTextures.ts';
 import {

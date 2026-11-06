@@ -1,10 +1,7 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
 import { createSignal } from '@flighthq/signals/contract';
-import type {
-  Scene3DResourceResolverWithRuntime,
-  Scene3DResourceSignals,
-  EntityConstruction,
-} from '@flighthq/types/contract';
+import type { Scene3DResourceResolverWithRuntime, Scene3DResourceSignals } from '@flighthq/types/contract';
 import { Scene3DResourceResolverRuntimeKey } from '@flighthq/types/contract';
 
 export function createScene3DResourceSignals(): Scene3DResourceSignals {

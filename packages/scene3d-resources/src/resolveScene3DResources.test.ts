@@ -1,24 +1,17 @@
+import { EntityRuntimeKey } from '@flighthq/entity/contract';
 import * as imageModule from '@flighthq/image/contract';
+import type { HostImageCapability, ImageResource, ImageResourceReference } from '@flighthq/image/contract';
+import { ImageResourceFailureKind, ImageResourceReferenceKind } from '@flighthq/image/contract';
 import { createUnlitMaterial } from '@flighthq/materials/contract';
 import { createBoxMeshGeometry } from '@flighthq/meshgeometry/contract';
 import { addNodeChild } from '@flighthq/node/contract';
 import { createMesh, createScene3D } from '@flighthq/scene3d/contract';
 import { connectSignal } from '@flighthq/signals/contract';
 import { createTexture, getTextureSource } from '@flighthq/texture/contract';
-import type {
-  HostImageCapability,
-  ImageResource,
-  ImageResourceReference,
-  Scene3DResourceResolverWithRuntime,
-  Texture,
-} from '@flighthq/types/contract';
-import {
-  EntityRuntimeKey,
-  ImageResourceFailureKind,
-  ImageTextureSourceKind,
-  ResourceResolutionState,
-  ImageResourceReferenceKind,
-} from '@flighthq/types/contract';
+import type { Texture } from '@flighthq/texture/contract';
+import { ImageTextureSourceKind } from '@flighthq/texture/contract';
+import type { Scene3DResourceResolverWithRuntime } from '@flighthq/types/contract';
+import { ResourceResolutionState } from '@flighthq/types/contract';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { waitForScene3DResourceResolver } from './loadScene3DResources.ts';

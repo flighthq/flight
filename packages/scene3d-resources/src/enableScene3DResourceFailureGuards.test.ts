@@ -1,15 +1,13 @@
+import { EntityRuntimeKey } from '@flighthq/entity/contract';
+import type { HostImageCapability, ImageResourceReference } from '@flighthq/image/contract';
+import { ImageResourceFailureKind, ImageResourceReferenceKind } from '@flighthq/image/contract';
 import type { LogState } from '@flighthq/log/contract';
 import { addLogSink, createLogState, createMemoryLogSink, getMemoryLogSinkEntries } from '@flighthq/log/contract';
+import type { LogEntry, MemoryLogSink } from '@flighthq/log/contract';
+import { LogLevel } from '@flighthq/log/contract';
 import { emitSignal, hasSignalSlots } from '@flighthq/signals/contract';
 import { createTexture } from '@flighthq/texture/contract';
-import type { HostImageCapability, ImageResourceReference, LogEntry, MemoryLogSink } from '@flighthq/types/contract';
-import {
-  EntityRuntimeKey,
-  ImageResourceFailureKind,
-  ImageResourceReferenceKind,
-  LogLevel,
-  ResourceResolutionState,
-} from '@flighthq/types/contract';
+import { ResourceResolutionState } from '@flighthq/types/contract';
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import {

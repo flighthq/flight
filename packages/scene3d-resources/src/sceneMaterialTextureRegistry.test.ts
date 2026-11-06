@@ -1,3 +1,4 @@
+import { EntityRuntimeKey } from '@flighthq/entity/contract';
 import {
   createAnisotropyPbrExtension,
   createExtendedPbrMaterial,
@@ -6,10 +7,10 @@ import {
   createUnlitMaterial,
 } from '@flighthq/materials/contract';
 import { createTexture } from '@flighthq/texture/contract';
-import type { Material, Texture } from '@flighthq/types/contract';
+import type { Texture } from '@flighthq/texture/contract';
+import type { Material } from '@flighthq/types/contract';
 import {
   AnisotropyPbrExtensionKind,
-  EntityRuntimeKey,
   ExtendedPbrMaterialKind,
   StandardPbrMaterialKind,
   UnlitMaterialKind,

@@ -1,4 +1,6 @@
-import type { ImageResourceReference, Scene3D, Texture } from '@flighthq/types/contract';
+import type { ImageResourceReference } from '@flighthq/image/contract';
+import type { Texture } from '@flighthq/texture/contract';
+import type { Scene3D } from '@flighthq/types/contract';
 
 // Clears `out`, then fills it with the unique Textures reachable through `scene` whose `resource` is
 // non-null. Shared Textures (a parser memoizes one Texture object across meshes) are deduped by

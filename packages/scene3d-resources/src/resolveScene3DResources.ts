@@ -1,21 +1,20 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
 import { createImageResourceFailure, resolveImageResourceReference } from '@flighthq/image/contract';
+import type { ImageResourceFailure, ImageResourceReference } from '@flighthq/image/contract';
+import { ImageResourceFailureKind } from '@flighthq/image/contract';
 import { queueResourceLoad } from '@flighthq/loader/contract';
 import { emitSignal } from '@flighthq/signals/contract';
+import type { Texture, TextureSource } from '@flighthq/texture/contract';
 import type {
-  EntityConstruction,
-  ImageResourceFailure,
-  ImageResourceReference,
   ResolveScene3DResourcesOptions,
   Scene3D,
   Scene3DResourceResolver,
   Scene3DResourceWorkingSet,
   Scene3DResources,
-  Texture,
-  TextureSource,
   UpdateScene3DResourceStreamingOptions,
 } from '@flighthq/types/contract';
-import { ImageResourceFailureKind, ResourceResolutionState } from '@flighthq/types/contract';
+import { ResourceResolutionState } from '@flighthq/types/contract';
 import { Scene3DResourceResolverRuntimeKey } from '@flighthq/types/contract';
 import type { Scene3DResourceInFlight, Scene3DResourceResolverWithRuntime } from '@flighthq/types/contract';
 

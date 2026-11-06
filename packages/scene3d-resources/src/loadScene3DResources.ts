@@ -1,6 +1,6 @@
+import type { ImageResourceReference } from '@flighthq/image/contract';
 import { emitSignal } from '@flighthq/signals/contract';
 import type {
-  ImageResourceReference,
   LoadScene3DResourcesOptions,
   Scene3D,
   Scene3DResourceResolverWithRuntime,

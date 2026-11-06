@@ -1,5 +1,5 @@
 import { loadImageResourceFromUrl } from '@flighthq/image/contract';
-import type { HostImageCapability, ImageResourceFetch } from '@flighthq/types/contract';
+import type { HostImageCapability, ImageResourceFetch } from '@flighthq/image/contract';
 
 export function createWebImageResourceFetch(hostImage: Readonly<HostImageCapability>): ImageResourceFetch {
   return async (ref, signal) => {

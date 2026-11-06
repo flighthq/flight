@@ -1,10 +1,10 @@
 import { explainImageResourceReferenceResolution } from '@flighthq/image/contract';
 import type { LogState } from '@flighthq/log/contract';
 import { logOnce } from '@flighthq/log/contract';
+import { LogLevel } from '@flighthq/log/contract';
 import { connectSignal, disconnectSignal } from '@flighthq/signals/contract';
 import type { SlotId } from '@flighthq/signals/contract';
 import type { Scene3DResourceEvent, Scene3DResourceResolverWithRuntime } from '@flighthq/types/contract';
-import { LogLevel } from '@flighthq/types/contract';
 
 import { enableScene3DResourceSignals } from './sceneResourceSignals.ts';
 

@@ -1,14 +1,13 @@
+import type { Kind, NonEntityCreateResult } from '@flighthq/entity/contract';
+import type { Texture } from '@flighthq/texture/contract';
 import type {
   ExtendedPbrMaterial,
-  Kind,
   Material,
-  NonEntityCreateResult,
   Scene3DMaterialTextureLister,
   Scene3DMaterialTextureRegistry,
   Scene3DPbrExtensionTextureLister,
   StandardPbrMaterial,
   StandardPbrMaterialProperties,
-  Texture,
   UnlitMaterial,
 } from '@flighthq/types/contract';
 import { ExtendedPbrMaterialKind, StandardPbrMaterialKind, UnlitMaterialKind } from '@flighthq/types/contract';

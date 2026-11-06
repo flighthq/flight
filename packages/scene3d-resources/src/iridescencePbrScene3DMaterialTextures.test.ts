@@ -1,6 +1,6 @@
 import { createExtendedPbrMaterial, createIridescencePbrExtension } from '@flighthq/materials/contract';
 import { createTexture } from '@flighthq/texture/contract';
-import type { Texture } from '@flighthq/types/contract';
+import type { Texture } from '@flighthq/texture/contract';
 
 import { registerIridescencePbrScene3DMaterialTextures } from './iridescencePbrScene3DMaterialTextures.ts';
 import {

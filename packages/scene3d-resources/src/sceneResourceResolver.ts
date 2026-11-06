@@ -1,11 +1,13 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
+import type { HostImageCapability } from '@flighthq/image/contract';
 import {
   cancelResourceLoad,
   createResourceLoader,
   disposeResourceLoader,
   startResourceLoad,
 } from '@flighthq/loader/contract';
-import type { HostImageCapability, Scene3DResourceResolverOptions, EntityConstruction } from '@flighthq/types/contract';
+import type { Scene3DResourceResolverOptions } from '@flighthq/types/contract';
 import { Scene3DResourceResolverRuntimeKey } from '@flighthq/types/contract';
 import type { Scene3DResourceResolverWithRuntime } from '@flighthq/types/contract';
 

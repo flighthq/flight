@@ -1,6 +1,8 @@
+import { EntityRuntimeKey } from '@flighthq/entity/contract';
 import * as imageContract from '@flighthq/image/contract';
-import type { ExternalImageResourceReference, HostImageCapability, ImageResource } from '@flighthq/types/contract';
-import { EntityRuntimeKey, ImageResourceReferenceKind, ResourceResolutionState } from '@flighthq/types/contract';
+import type { ExternalImageResourceReference, HostImageCapability, ImageResource } from '@flighthq/image/contract';
+import { ImageResourceReferenceKind } from '@flighthq/image/contract';
+import { ResourceResolutionState } from '@flighthq/types/contract';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { createWebImageResourceFetch, resolveImageResourceUri } from './imageResourceFetch.ts';

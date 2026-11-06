@@ -1,6 +1,6 @@
 import { createClearcoatPbrExtension, createExtendedPbrMaterial } from '@flighthq/materials/contract';
 import { createTexture } from '@flighthq/texture/contract';
-import type { Texture } from '@flighthq/types/contract';
+import type { Texture } from '@flighthq/texture/contract';
 
 import { registerClearcoatPbrScene3DMaterialTextures } from './clearcoatPbrScene3DMaterialTextures.ts';
 import {

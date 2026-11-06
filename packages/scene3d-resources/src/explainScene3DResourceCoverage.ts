@@ -1,6 +1,7 @@
+import type { Kind } from '@flighthq/entity/contract';
 import type { CatalogRegistration, SceneCoverageCatalog, SceneCoverageEntry } from '@flighthq/render/contract';
 import { RenderRegistryTable, SceneCoverage } from '@flighthq/render/contract';
-import type { Kind, Scene3DKindUsage, Scene3DResourceResolver } from '@flighthq/types/contract';
+import type { Scene3DKindUsage, Scene3DResourceResolver } from '@flighthq/types/contract';
 import { RequirementFacet } from '@flighthq/types/contract';
 
 import { hasScene3DMaterialTextureLister } from './sceneMaterialTextureRegistry.ts';

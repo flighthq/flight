@@ -1,7 +1,7 @@
+import { ImageResourceReferenceKind } from '@flighthq/image/contract';
 import { loadBytes, loadText } from '@flighthq/loader/contract';
 import type { HostNetCapability } from '@flighthq/net/contract';
 import type { Scene3DDocument, Scene3DDocumentLoadOptions } from '@flighthq/types/contract';
-import { ImageResourceReferenceKind } from '@flighthq/types/contract';
 
 export function getScene3DDocumentBasePathFromUrl(url: string): string | null {
   const query = url.search(/[?#]/);

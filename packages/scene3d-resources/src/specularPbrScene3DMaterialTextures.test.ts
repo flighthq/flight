@@ -1,6 +1,6 @@
 import { createExtendedPbrMaterial, createSpecularPbrExtension } from '@flighthq/materials/contract';
 import { createTexture } from '@flighthq/texture/contract';
-import type { Texture } from '@flighthq/types/contract';
+import type { Texture } from '@flighthq/texture/contract';
 
 import {
   createScene3DMaterialTextureRegistry,
