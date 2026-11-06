@@ -1,3 +1,5 @@
+// Acyclic build entry selected by contract-only projects through the `.scene3d-wgpu-types` suffix.
+// The published contract entry also exposes runtime helpers without making this header lane cyclic.
 export type {
   WgpuClassicDefineKey,
   WgpuClassicLightingModel,

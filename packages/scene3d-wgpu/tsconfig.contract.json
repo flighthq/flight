@@ -8,38 +8,22 @@
     "declarationMap": true,
     "sourceMap": true,
     "types": ["@webgpu/types"],
-    "moduleSuffixes": [
-      ".scene3d-wgpu-types",
-      ".render-wgpu-types",
-      ".app-types",
-      ".flow-types",
-      ".geometry-types",
-      ".font-types",
-      ".host-types",
-      ".menu-types",
-      ".midi-types",
-      ".notification-types",
-      ".path-boolean-types",
-      ".path-types",
-      ".permissions-types",
-      ".preferences-types",
-      ".scene2d-dom-types",
-      ".scene2d-formats-types",
-      ".scene2d-wgpu-types",
-      ".selection-types",
-      ".shape-formats-types",
-      ".shape-types",
-      ".spatial-types",
-      ".statechart-types",
-      ".text-types",
-      ".textlayout-types",
-      ".textshaper-types",
-      ".velocity-types",
-      ""
-    ],
+    "moduleSuffixes": [".scene3d-wgpu-bridge-types", ".materials-types", ".render-wgpu-types", ".geometry-types", ""],
     "tsBuildInfoFile": "dist/.tsbuildinfo.contract"
   },
   "references": [
+    {
+      "path": "../entity"
+    },
+    {
+      "path": "../geometry/tsconfig.contract.json"
+    },
+    {
+      "path": "../materials/tsconfig.contract.json"
+    },
+    {
+      "path": "../render-wgpu/tsconfig.contract.json"
+    },
     {
       "path": "../types/tsconfig.scene3d-wgpu-types.json"
     }

@@ -1,4 +1,4 @@
-import type { Entity } from '@flighthq/types/contract';
+import type { Entity } from '@flighthq/entity/contract';
 
 // A compiled mesh-material pipeline plus the material bind-group layout its group(2) targets. Frame and
 // Draw layouts are shared on the runtime (see ensureWgpuScene3DLayouts), so they are not stored here.

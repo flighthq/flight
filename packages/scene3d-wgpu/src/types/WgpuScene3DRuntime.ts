@@ -1,11 +1,7 @@
-import type {
-  BlendMode,
-  CustomShaderMaterial,
-  Matrix4,
-  Scene3DLightsLike,
-  WgpuCustomMaterialShaderSource,
-  WgpuRenderState,
-} from '@flighthq/types/contract';
+import type { Matrix4 } from '@flighthq/geometry/contract';
+import type { BlendMode, CustomShaderMaterial } from '@flighthq/materials/contract';
+import type { WgpuCustomMaterialShaderSource, WgpuRenderState } from '@flighthq/render-wgpu/contract';
+import type { Scene3DLightsLike } from '@flighthq/types/contract';
 
 import type { WgpuMeshPipeline } from './WgpuMeshPipeline.ts';
 

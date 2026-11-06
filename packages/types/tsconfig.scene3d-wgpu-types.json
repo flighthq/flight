@@ -16,7 +16,7 @@
       ".node-types",
       ".materials-types",
       ".scene3d-gl-bridge-types",
-      ".scene3d-wgpu-types",
+      ".scene3d-wgpu-bridge-types",
       ".render-wgpu-types",
       ".adjustments-types",
       ".app-types",
@@ -354,17 +354,16 @@
     "src/WgpuEffectState.render-wgpu-types.ts",
     "src/WgpuHost.render-wgpu-types.ts",
     "src/WgpuMeshMaterialRenderer.render-wgpu-types.ts",
-    "src/WgpuMeshPipeline.scene3d-wgpu-types.ts",
     "src/WgpuModifierSnippet.render-wgpu-types.ts",
     "src/WgpuParticleResources.render-wgpu-types.ts",
     "src/WgpuQuadBatchResources.render-wgpu-types.ts",
     "src/WgpuQuadMaterialRenderer.render-wgpu-types.ts",
     "src/WgpuRenderPass.render-wgpu-types.ts",
     "src/WgpuRenderState.render-wgpu-types.ts",
+    "src/WgpuScene3DRuntime.render-wgpu-types.ts",
     "src/WgpuRenderState.scene2d-wgpu-types.ts",
     "src/WgpuRenderTarget.render-wgpu-types.ts",
     "src/WgpuRenderTexture.render-wgpu-types.ts",
-    "src/WgpuScene3DRuntime.scene3d-wgpu-types.ts",
     "src/WgpuShapeMesh.scene2d-wgpu-types.ts",
     "src/WgpuSkinningAdapter.render-wgpu-types.ts",
     "src/WgpuTextureResolver.render-wgpu-types.ts",
@@ -373,7 +372,7 @@
     "src/contract.scene3d-gl-bridge-types.ts",
     "src/contract.scene2d-dom-types.ts",
     "src/contract.scene2d-wgpu-types.ts",
-    "src/contract.scene3d-wgpu-types.ts"
+    "src/contract.scene3d-wgpu-bridge-types.ts"
   ],
   "include": []
 }
