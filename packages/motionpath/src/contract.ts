@@ -1,3 +1,4 @@
+export * from './contract.motionpath-types.ts';
 export {
   createMotionPath,
   getMotionPathHeading,
@@ -10,5 +11,3 @@ export {
   setMotionPathProgress,
   updateMotionPath,
 } from './motionPath.ts';
-export { getMotionPathLoopModeString, parseMotionPathLoopMode } from './types.ts';
-export type { MotionPathDirection, MotionPathLoopMode, MotionPathRaw } from './types.ts';

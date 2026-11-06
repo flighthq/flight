@@ -7,7 +7,7 @@ import type { Vector2Like } from '@flighthq/geometry/contract';
 import { getPathLength, getPathPositionAtDistance, getPathTangentAtDistance } from '@flighthq/path/contract';
 import type { Path } from '@flighthq/path/contract';
 
-import type { MotionPathDirection, MotionPathLoopMode, MotionPathRaw } from './types.ts';
+import type { MotionPathDirection, MotionPathLoopMode, MotionPathRaw } from './contract.motionpath-types.ts';
 
 /**
  * Allocates a motion-path marker at the start of `path` (TS `createMotionPath`): distance 0,

@@ -229,7 +229,7 @@
       "path": "../meshgeometry/tsconfig.runtime.json"
     },
     {
-      "path": "../motionpath"
+      "path": "../motionpath/tsconfig.runtime.json"
     },
     {
       "path": "../movieclip/tsconfig.runtime.json"

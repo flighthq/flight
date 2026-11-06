@@ -422,7 +422,6 @@ export * from './MorphTarget.ts';
 export * from './MorphShape.ts';
 export * from './MorphShapeAnimationTarget.ts';
 export * from './MotionBlurEffect.ts';
-export * from './MotionPath.ts';
 export * from './MouseButton.ts';
 export * from './MouseWheelMode.ts';
 export * from './NativeText.ts';
