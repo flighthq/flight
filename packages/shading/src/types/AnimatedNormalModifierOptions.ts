@@ -1,5 +1,5 @@
-import type { Texture } from './Texture.ts';
-import type { Vector2Like } from './Vector2.ts';
+import type { Vector2Like } from '@flighthq/geometry/contract';
+import type { Texture } from '@flighthq/texture/contract';
 
 export interface AnimatedNormalModifierOptions {
   map: Texture | null;

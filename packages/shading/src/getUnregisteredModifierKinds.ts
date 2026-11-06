@@ -1,6 +1,5 @@
-import type { Modifier, ModifierKind } from '@flighthq/types/contract';
-import type { ModifierRegistry } from '@flighthq/types/contract';
-
+import type { Modifier, ModifierKind } from './contract.shading-types.ts';
+import type { ModifierRegistry } from './contract.shading-types.ts';
 import { resolveModifier } from './modifierRegistry.ts';
 
 // Returns the kinds in `stack` that have no definition in `registry` — the modifiers the compile

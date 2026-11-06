@@ -12,5 +12,4 @@ export type { GlBitmapShader, GlShaderLocations } from './GlShaderLocations.ts';
 export type { GlShapeMesh } from './GlShapeMesh.render-wgpu-types.ts';
 export type { GlShapeMeshResources } from './GlShapeMeshResources.render-wgpu-types.ts';
 export type { GlVelocityWriter } from './GlVelocityWriter.ts';
-export type { Modifier } from './Modifier.ts';
-export type { ModifierDefinition } from './ModifierDefinition.ts';
+export type { Modifier, ModifierDefinition } from '@flighthq/shading/contract';

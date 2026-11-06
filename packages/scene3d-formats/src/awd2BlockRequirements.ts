@@ -1,5 +1,6 @@
+import { ShadedMaterialKind } from '@flighthq/shading/contract';
 import type { Requirement } from '@flighthq/types/contract';
-import { RequirementFacet, ShadedMaterialKind } from '@flighthq/types/contract';
+import { RequirementFacet } from '@flighthq/types/contract';
 
 /**
  * Which scene requirements an AWD2 block type implies — the fact that turns a BLOCK requirement

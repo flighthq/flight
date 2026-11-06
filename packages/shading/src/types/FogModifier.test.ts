@@ -1,4 +1,5 @@
-import { EntityRuntimeKey } from './Entity.ts';
+import { EntityRuntimeKey } from '@flighthq/entity/contract';
+
 import { FogModifierKind, FogModifierMode } from './FogModifier.ts';
 import type { FogModifier } from './FogModifier.ts';
 import type { Modifier } from './Modifier.ts';

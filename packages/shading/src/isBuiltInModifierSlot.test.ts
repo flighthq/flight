@@ -1,6 +1,6 @@
-import { ModifierSlot } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
+import { ModifierSlot } from './contract.shading-types.ts';
 import { isBuiltInModifierSlot } from './isBuiltInModifierSlot.ts';
 
 describe('isBuiltInModifierSlot', () => {

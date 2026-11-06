@@ -9,8 +9,9 @@ import {
   registerWgpuImageTextureResolver,
 } from '@flighthq/render-wgpu/contract';
 import type { Scene3DRenderProxy } from '@flighthq/render/contract';
-import type { Material, ShadedMaterial, WgpuMeshMaterialRenderer, WgpuRenderState } from '@flighthq/types/contract';
-import { ShadedMaterialKind } from '@flighthq/types/contract';
+import type { ShadedMaterial } from '@flighthq/shading/contract';
+import { ShadedMaterialKind } from '@flighthq/shading/contract';
+import type { Material, WgpuMeshMaterialRenderer, WgpuRenderState } from '@flighthq/types/contract';
 
 import { registerWgpuMeshMaterialRenderer } from './wgpuMeshMaterialRegistry.ts';
 import {

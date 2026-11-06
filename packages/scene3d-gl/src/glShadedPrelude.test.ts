@@ -6,8 +6,9 @@ import {
   createVertexDisplaceModifier,
   registerModifier,
 } from '@flighthq/shading/contract';
-import type { GlColorAdjustmentMaterialFeature, Modifier } from '@flighthq/types/contract';
-import { ModifierSlot, VertexDisplaceModifierSource } from '@flighthq/types/contract';
+import type { Modifier } from '@flighthq/shading/contract';
+import { ModifierSlot, VertexDisplaceModifierSource } from '@flighthq/shading/contract';
+import type { GlColorAdjustmentMaterialFeature } from '@flighthq/types/contract';
 
 import type { GlShadedDefineKey } from './contract.scene3d-gl-types.ts';
 import { GL_SKIN_VERTEX_DECLARATIONS_GLSL } from './glMeshSkinning.ts';

@@ -1,6 +1,7 @@
-import type { Material3D } from './Material3D.ts';
+import type { Material3D } from '@flighthq/materials/contract';
+import type { Texture } from '@flighthq/texture/contract';
+
 import type { Modifier } from './Modifier.ts';
-import type { Texture } from './Texture.ts';
 
 // The composable lit base material owned by @flighthq/shading: a diffuse + half-vector-specular
 // surface (the classic lit path) that carries an ordered `modifiers` stack of compiled shader

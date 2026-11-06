@@ -1,7 +1,8 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { ToonModifier, ToonModifierOptions, EntityConstruction } from '@flighthq/types/contract';
-import { ModifierSlot, ToonModifierKind } from '@flighthq/types/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
 
+import type { ToonModifier, ToonModifierOptions } from './contract.shading-types.ts';
+import { ModifierSlot, ToonModifierKind } from './contract.shading-types.ts';
 import { initializeModifier } from './modifier.ts';
 
 // The options for `createToonModifier`. Only `steps` is required; `smoothness` carries a documented

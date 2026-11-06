@@ -1,6 +1,6 @@
-import { EnvReflectModifierKind, ModifierSlot } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
+import { EnvReflectModifierKind, ModifierSlot } from './contract.shading-types.ts';
 import { createEnvReflectModifier, initializeEnvReflectModifier } from './createEnvReflectModifier.ts';
 
 describe('createEnvReflectModifier', () => {

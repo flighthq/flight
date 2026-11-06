@@ -1,7 +1,7 @@
-import type { Texture } from '@flighthq/types/contract';
-import { EmissiveModifierFacing, EmissiveModifierKind, ModifierSlot } from '@flighthq/types/contract';
+import type { Texture } from '@flighthq/texture/contract';
 import { describe, expect, it } from 'vitest';
 
+import { EmissiveModifierFacing, EmissiveModifierKind, ModifierSlot } from './contract.shading-types.ts';
 import { createEmissiveModifier, initializeEmissiveModifier } from './createEmissiveModifier.ts';
 
 describe('createEmissiveModifier', () => {

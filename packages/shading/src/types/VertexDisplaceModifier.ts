@@ -1,6 +1,7 @@
+import type { Vector3Like } from '@flighthq/geometry/contract';
+import type { Texture } from '@flighthq/texture/contract';
+
 import type { Modifier } from './Modifier.ts';
-import type { Texture } from './Texture.ts';
-import type { Vector3Like } from './Vector3.ts';
 
 // How a VertexDisplaceModifier drives its per-vertex offset amount. `Sine` is a procedural traveling
 // wave `sin(dot(position, direction) * frequency + time * speed)` — no texture, the animated-flag /

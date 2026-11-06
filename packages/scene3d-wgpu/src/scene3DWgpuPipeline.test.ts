@@ -2,21 +2,27 @@ import { ParticleEmitter2DKind } from '@flighthq/particleemitter/contract';
 import { getKindMapKeys } from '@flighthq/registry/contract';
 import {} from '@flighthq/render-wgpu/contract';
 import { wgpuScene2DRenderPreset } from '@flighthq/scene2d-wgpu/contract';
+import {
+  AnimatedNormalModifierKind,
+  DissolveModifierKind,
+  EmissiveModifierKind,
+  EnvReflectModifierKind,
+  FogModifierKind,
+  RimModifierKind,
+  ShadedMaterialKind,
+  ToonModifierKind,
+  VertexDisplaceModifierKind,
+} from '@flighthq/shading/contract';
 import { MorphShapeKind, Scale9ShapeKind, ShapeKind } from '@flighthq/shape/contract';
 import { RichTextKind, TextLabelKind } from '@flighthq/text/contract';
 import {
-  AnimatedNormalModifierKind,
   BitmapTextureSourceKind,
   BlinnPhongMaterialKind,
   CustomShaderMaterialKind,
   DepthMaterialKind,
   DisplayObjectKind,
-  DissolveModifierKind,
   EmissiveMaterialKind,
-  EmissiveModifierKind,
-  EnvReflectModifierKind,
   ExtendedPbrMaterialKind,
-  FogModifierKind,
   ImageTextureSourceKind,
   LambertMaterialKind,
   MatcapMaterialKind,
@@ -25,19 +31,15 @@ import {
   QuadBatchKind,
   RenderCacheKind,
   RenderTargetTextureSourceKind,
-  RimModifierKind,
   Scale9SpriteKind,
-  ShadedMaterialKind,
   SpecularGlossinessPbrMaterialKind,
   SpriteKind,
   StandardMaterialKind,
   StandardPbrMaterialKind,
   TilemapKind,
   ToonMaterialKind,
-  ToonModifierKind,
   UnlitMaterialKind,
   VertexColorMaterialKind,
-  VertexDisplaceModifierKind,
   WireframeMaterialKind,
 } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';

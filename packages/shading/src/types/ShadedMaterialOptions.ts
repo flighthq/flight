@@ -1,4 +1,5 @@
-import type { Material3DOptions } from './Material3DOptions.ts';
+import type { Material3DOptions } from '@flighthq/materials/contract';
+
 import type { Modifier } from './Modifier.ts';
 import type { ShadedMaterial } from './ShadedMaterial.ts';
 

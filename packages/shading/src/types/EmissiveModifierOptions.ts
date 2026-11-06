@@ -1,5 +1,6 @@
+import type { Texture } from '@flighthq/texture/contract';
+
 import type { EmissiveModifierFacing } from './EmissiveModifier.ts';
-import type { Texture } from './Texture.ts';
 
 export interface EmissiveModifierOptions {
   // Packed sRGB RGBA (`0xRRGGBBAA`), seeding EmissiveModifier.color.

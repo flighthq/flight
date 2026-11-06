@@ -1,5 +1,5 @@
-import type { ShadedMaterial } from '@flighthq/types/contract';
-import { ShadedMaterialKind } from '@flighthq/types/contract';
+import type { ShadedMaterial } from '@flighthq/shading/contract';
+import { ShadedMaterialKind } from '@flighthq/shading/contract';
 
 import { registerScene3DMaterialTextures } from './sceneMaterialTextureRegistry.ts';
 import type { Scene3DMaterialTextureRegistry } from './types.ts';

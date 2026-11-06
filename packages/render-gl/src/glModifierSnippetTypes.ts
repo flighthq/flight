@@ -1,4 +1,4 @@
-import type { Modifier, ModifierDefinition } from '@flighthq/types/contract';
+import type { Modifier, ModifierDefinition } from '@flighthq/shading/contract';
 
 import type { GlRenderState } from './glRenderStateTypes.ts';
 

@@ -1,20 +1,26 @@
 import { getKindMapKeys } from '@flighthq/registry/contract';
 import { glScene2DRenderPreset } from '@flighthq/scene2d-gl/contract';
-import type { Kind } from '@flighthq/types/contract';
 import {
   AnimatedNormalModifierKind,
+  DissolveModifierKind,
+  EmissiveModifierKind,
+  EnvReflectModifierKind,
+  FogModifierKind,
+  RimModifierKind,
+  ShadedMaterialKind,
+  ToonModifierKind,
+  VertexDisplaceModifierKind,
+} from '@flighthq/shading/contract';
+import type { Kind } from '@flighthq/types/contract';
+import {
   AnisotropyPbrExtensionKind,
   BitmapTextureSourceKind,
   BlinnPhongMaterialKind,
   ClearcoatPbrExtensionKind,
   CustomShaderMaterialKind,
   DepthMaterialKind,
-  DissolveModifierKind,
   EmissiveMaterialKind,
-  EmissiveModifierKind,
-  EnvReflectModifierKind,
   ExtendedPbrMaterialKind,
-  FogModifierKind,
   ImageTextureSourceKind,
   IridescencePbrExtensionKind,
   LambertMaterialKind,
@@ -22,19 +28,15 @@ import {
   NormalMaterialKind,
   PhongMaterialKind,
   RenderTargetTextureSourceKind,
-  RimModifierKind,
-  ShadedMaterialKind,
   SheenPbrExtensionKind,
   SpecularGlossinessPbrMaterialKind,
   SpecularPbrExtensionKind,
   StandardMaterialKind,
   StandardPbrMaterialKind,
   ToonMaterialKind,
-  ToonModifierKind,
   TransmissionVolumePbrExtensionKind,
   UnlitMaterialKind,
   VertexColorMaterialKind,
-  VertexDisplaceModifierKind,
   WireframeMaterialKind,
   WrappedDiffusePbrExtensionKind,
 } from '@flighthq/types/contract';

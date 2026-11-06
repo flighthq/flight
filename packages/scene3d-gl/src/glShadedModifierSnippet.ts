@@ -1,7 +1,8 @@
 import { withKindMapEntry } from '@flighthq/registry/contract';
 import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
 import type { GlModifierSnippet } from '@flighthq/render-gl/contract';
-import type { GlRenderState, ModifierKind } from '@flighthq/types/contract';
+import type { ModifierKind } from '@flighthq/shading/contract';
+import type { GlRenderState } from '@flighthq/types/contract';
 
 // Registers (or replaces) the GL snippet for a modifier kind on this state's render policy. Opt-in
 // and last-write-wins (a vendor-prefixed kind, or an override of a built-in, wins). Unregistered

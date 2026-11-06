@@ -1,7 +1,7 @@
-import type { Texture } from '@flighthq/types/contract';
-import { EmissiveModifierFacing } from '@flighthq/types/contract';
+import type { Texture } from '@flighthq/texture/contract';
 import { describe, expect, it } from 'vitest';
 
+import { EmissiveModifierFacing } from './contract.shading-types.ts';
 import { createAnimatedNormalModifier } from './createAnimatedNormalModifier.ts';
 import { createEmissiveModifier } from './createEmissiveModifier.ts';
 import { createRimModifier } from './createRimModifier.ts';

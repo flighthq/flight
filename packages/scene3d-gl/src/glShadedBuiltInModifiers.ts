@@ -18,14 +18,13 @@ import type {
   EmissiveModifier,
   EnvReflectModifier,
   FogModifier,
-  GlRenderState,
   Modifier,
   RimModifier,
-  Texture,
   ToonModifier,
   VertexDisplaceModifier,
-} from '@flighthq/types/contract';
-import { EmissiveModifierFacing, FogModifierMode, VertexDisplaceModifierSource } from '@flighthq/types/contract';
+} from '@flighthq/shading/contract';
+import { EmissiveModifierFacing, FogModifierMode, VertexDisplaceModifierSource } from '@flighthq/shading/contract';
+import type { GlRenderState, Texture } from '@flighthq/types/contract';
 
 import { registerGlModifierSnippet } from './glShadedModifierSnippet.ts';
 

@@ -1,6 +1,7 @@
+import { EntityRuntimeKey } from '@flighthq/entity/contract';
+import type { Material3D } from '@flighthq/materials/contract';
+
 import type { EmissiveModifier } from './EmissiveModifier.ts';
-import { EntityRuntimeKey } from './Entity.ts';
-import type { Material3D } from './Material3D.ts';
 import type { RimModifier } from './RimModifier.ts';
 import type { ShadedMaterial } from './ShadedMaterial.ts';
 import { ShadedMaterialKind } from './ShadedMaterial.ts';

@@ -1,4 +1,6 @@
-import type { Texture } from '@flighthq/types/contract';
+import type { Texture } from '@flighthq/texture/contract';
+import { describe, expect, it } from 'vitest';
+
 import {
   AnimatedNormalModifierKind,
   DissolveModifierKind,
@@ -12,9 +14,7 @@ import {
   ToonModifierKind,
   VertexDisplaceModifierKind,
   VertexDisplaceModifierSource,
-} from '@flighthq/types/contract';
-import { describe, expect, it } from 'vitest';
-
+} from './contract.shading-types.ts';
 import { createAnimatedNormalModifier } from './createAnimatedNormalModifier.ts';
 import { createDissolveModifier } from './createDissolveModifier.ts';
 import { createEmissiveModifier } from './createEmissiveModifier.ts';

@@ -1,7 +1,8 @@
-import type { Texture, Vector2Like } from '@flighthq/types/contract';
-import { AnimatedNormalModifierKind, ModifierSlot } from '@flighthq/types/contract';
+import type { Vector2Like } from '@flighthq/geometry/contract';
+import type { Texture } from '@flighthq/texture/contract';
 import { describe, expect, it } from 'vitest';
 
+import { AnimatedNormalModifierKind, ModifierSlot } from './contract.shading-types.ts';
 import { createAnimatedNormalModifier, initializeAnimatedNormalModifier } from './createAnimatedNormalModifier.ts';
 
 describe('createAnimatedNormalModifier', () => {

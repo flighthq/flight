@@ -1,6 +1,7 @@
 import { concatKindMap, withKindMapEntry } from '@flighthq/registry/contract';
 import { standardWgpuTextureResolvers } from '@flighthq/render-wgpu/contract';
 import { wgpuScene2DRenderPreset } from '@flighthq/scene2d-wgpu/contract';
+import { ShadedMaterialKind } from '@flighthq/shading/contract';
 import type {
   Kind,
   WgpuMeshMaterialRenderer,
@@ -18,7 +19,6 @@ import {
   MatcapMaterialKind,
   NormalMaterialKind,
   PhongMaterialKind,
-  ShadedMaterialKind,
   SpecularGlossinessPbrMaterialKind,
   StandardPbrMaterialKind,
   ToonMaterialKind,

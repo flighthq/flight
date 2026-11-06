@@ -1,12 +1,9 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type {
-  Vector3Like,
-  VertexDisplaceModifier,
-  VertexDisplaceModifierOptions,
-  EntityConstruction,
-} from '@flighthq/types/contract';
-import { ModifierSlot, VertexDisplaceModifierKind } from '@flighthq/types/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
+import type { Vector3Like } from '@flighthq/geometry/contract';
 
+import type { VertexDisplaceModifier, VertexDisplaceModifierOptions } from './contract.shading-types.ts';
+import { ModifierSlot, VertexDisplaceModifierKind } from './contract.shading-types.ts';
 import { initializeModifier } from './modifier.ts';
 
 // The options for `createVertexDisplaceModifier`. `source` and `amplitude` are required; the rest

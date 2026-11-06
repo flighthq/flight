@@ -61,6 +61,7 @@
     "@flighthq/registry": "*",
     "@flighthq/render": "*",
     "@flighthq/scene3d": "*",
+    "@flighthq/shading": "*",
     "@flighthq/signals": "*",
     "@flighthq/surface": "*",
     "@flighthq/texture": "*",

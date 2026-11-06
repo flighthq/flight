@@ -1,6 +1,7 @@
+import { EntityRuntimeKey } from '@flighthq/entity/contract';
+
 import type { EmissiveModifier } from './EmissiveModifier.ts';
 import { EmissiveModifierFacing, EmissiveModifierKind } from './EmissiveModifier.ts';
-import { EntityRuntimeKey } from './Entity.ts';
 import type { Modifier } from './Modifier.ts';
 
 describe('EmissiveModifier', () => {

@@ -1,6 +1,6 @@
-import { ModifierSlot, ToonModifierKind } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
+import { ModifierSlot, ToonModifierKind } from './contract.shading-types.ts';
 import { createToonModifier, initializeToonModifier } from './createToonModifier.ts';
 
 describe('createToonModifier', () => {

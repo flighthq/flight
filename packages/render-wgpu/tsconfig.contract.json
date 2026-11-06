@@ -10,6 +10,7 @@
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "types": ["@webgpu/types"],
     "moduleSuffixes": [
+      ".shading-types",
       ".meshgeometry-types",
       ".effects-types",
       ".render-types",
@@ -83,6 +84,9 @@
     },
     {
       "path": "../signals"
+    },
+    {
+      "path": "../shading/tsconfig.contract.json"
     },
     {
       "path": "../surface/tsconfig.contract.json"

@@ -1,4 +1,5 @@
-import { RequirementFacet, ShadedMaterialKind } from '@flighthq/types/contract';
+import { ShadedMaterialKind } from '@flighthq/shading/contract';
+import { RequirementFacet } from '@flighthq/types/contract';
 
 import { AWD2_BLOCK_SCENE_REQUIREMENTS } from './awd2BlockRequirements.ts';
 

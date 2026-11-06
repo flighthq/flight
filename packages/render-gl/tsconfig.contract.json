@@ -8,6 +8,7 @@
     "declarationMap": true,
     "sourceMap": true,
     "moduleSuffixes": [
+      ".shading-types",
       ".adjustments-types",
       ".camera-types",
       ".meshgeometry-types",
@@ -51,6 +52,9 @@
     },
     {
       "path": "../surface/tsconfig.contract.json"
+    },
+    {
+      "path": "../shading/tsconfig.contract.json"
     },
     {
       "path": "../types/tsconfig.render-wgpu-types.json"

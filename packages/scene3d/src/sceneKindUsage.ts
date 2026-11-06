@@ -1,6 +1,7 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { forEachNodeDescendant } from '@flighthq/node/contract';
-import type { EntityConstruction, Material, Modifier, Scene3DKindUsage } from '@flighthq/types/contract';
+import type { Modifier } from '@flighthq/shading/contract';
+import type { EntityConstruction, Material, Scene3DKindUsage } from '@flighthq/types/contract';
 import { ImageTextureSourceKind } from '@flighthq/types/contract';
 
 import type { Scene3D } from './contract.scene3d-types.ts';

@@ -1,7 +1,8 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { EnvReflectModifier, EnvReflectModifierOptions, EntityConstruction } from '@flighthq/types/contract';
-import { EnvReflectModifierKind, ModifierSlot } from '@flighthq/types/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
 
+import type { EnvReflectModifier, EnvReflectModifierOptions } from './contract.shading-types.ts';
+import { EnvReflectModifierKind, ModifierSlot } from './contract.shading-types.ts';
 import { initializeModifier } from './modifier.ts';
 
 // The options for `createEnvReflectModifier`. Every field is optional and carries a documented

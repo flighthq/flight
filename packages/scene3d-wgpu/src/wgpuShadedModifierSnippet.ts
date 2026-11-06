@@ -1,6 +1,7 @@
 import { withKindMapEntry } from '@flighthq/registry/contract';
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
-import type { ModifierKind, WgpuModifierSnippet, WgpuRenderState } from '@flighthq/types/contract';
+import type { ModifierKind } from '@flighthq/shading/contract';
+import type { WgpuModifierSnippet, WgpuRenderState } from '@flighthq/types/contract';
 
 // State-scoped, last-write-wins WGSL compiler registry. Unknown kinds are an expected miss and
 // contribute nothing, matching scene-gl's open modifier compiler contract.

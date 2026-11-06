@@ -50,6 +50,9 @@
       "path": "../scene2d/tsconfig.runtime.json"
     },
     {
+      "path": "../shading/tsconfig.contract.json"
+    },
+    {
       "path": "../signals"
     },
     {

@@ -21,6 +21,8 @@ import type {
   Scene3DDocumentLight,
 } from '@flighthq/scene3d/contract';
 import type { Node3D } from '@flighthq/scene3d/contract';
+import type { ShadedMaterial } from '@flighthq/shading/contract';
+import { ShadedMaterialKind } from '@flighthq/shading/contract';
 import { getTextureSource } from '@flighthq/texture/contract';
 import type {
   Decompressor,
@@ -28,8 +30,8 @@ import type {
   HostDecompressLzmaCapability,
 } from '@flighthq/types/contract';
 import { Compression, CompressionFraming } from '@flighthq/types/contract';
-import type { AnimationClip, ImportDiagnostic, Scene3DAnimationTarget, ShadedMaterial } from '@flighthq/types/contract';
-import { ImportDiagnosticSeverity, ResourceResolutionState, ShadedMaterialKind } from '@flighthq/types/contract';
+import type { AnimationClip, ImportDiagnostic, Scene3DAnimationTarget } from '@flighthq/types/contract';
+import { ImportDiagnosticSeverity, ResourceResolutionState } from '@flighthq/types/contract';
 
 import { awd2AllBlockHandlers, awd2SkeletonFamily } from './awd2BlockRegistry.ts';
 import { createScene3DFromAwd2, parseAwd2 } from './awd2Parse.ts';

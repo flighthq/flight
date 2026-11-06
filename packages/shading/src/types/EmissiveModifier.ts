@@ -1,5 +1,6 @@
+import type { Texture } from '@flighthq/texture/contract';
+
 import type { Modifier } from './Modifier.ts';
-import type { Texture } from './Texture.ts';
 
 // How an EmissiveModifier gates its contribution by surface facing. `Ignore` emits everywhere;
 // `AwayFromLight` emits where the surface faces away from the dominant light (the night-side case —

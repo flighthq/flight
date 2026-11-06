@@ -12,20 +12,16 @@ import {
   createToonModifier,
   createVertexDisplaceModifier,
 } from '@flighthq/shading/contract';
+import type { Modifier } from '@flighthq/shading/contract';
+import { FogModifierMode, ModifierSlot, VertexDisplaceModifierSource } from '@flighthq/shading/contract';
 import { createTexture, getTextureSource } from '@flighthq/texture/contract';
 import type {
   ImageResource,
-  Modifier,
   Texture,
   WgpuColorAdjustmentMaterialFeature,
   WgpuModifierSnippet,
 } from '@flighthq/types/contract';
-import {
-  FogModifierMode,
-  ImageTextureSourceKind,
-  ModifierSlot,
-  VertexDisplaceModifierSource,
-} from '@flighthq/types/contract';
+import { ImageTextureSourceKind } from '@flighthq/types/contract';
 
 import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime.ts';
 import { makeWgpuScene3DState, makeWgpuSkinningAdapter } from './wgpuScene3DTestHelper.ts';

@@ -1,4 +1,6 @@
-import type { EntityConstruction, Modifier, ModifierKind, ModifierSlot } from '@flighthq/types/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
+
+import type { Modifier, ModifierKind, ModifierSlot } from './contract.shading-types.ts';
 
 export function initializeModifier<T extends Modifier>(
   out: EntityConstruction<T>,

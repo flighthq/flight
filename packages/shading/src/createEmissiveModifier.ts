@@ -1,7 +1,8 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { EmissiveModifier, EmissiveModifierOptions, EntityConstruction } from '@flighthq/types/contract';
-import { EmissiveModifierFacing, EmissiveModifierKind, ModifierSlot } from '@flighthq/types/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
 
+import type { EmissiveModifier, EmissiveModifierOptions } from './contract.shading-types.ts';
+import { EmissiveModifierFacing, EmissiveModifierKind, ModifierSlot } from './contract.shading-types.ts';
 import { initializeModifier } from './modifier.ts';
 
 // The options for `createEmissiveModifier`. Only `color` is required; every other field carries a

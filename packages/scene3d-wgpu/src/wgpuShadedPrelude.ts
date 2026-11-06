@@ -13,21 +13,14 @@ import type {
   EmissiveModifier,
   EnvReflectModifier,
   FogModifier,
-  Kind,
   Modifier,
   ModifierKind,
   ModifierRegistry,
   RimModifier,
   ShadedMaterial,
-  Texture,
   ToonModifier,
   VertexDisplaceModifier,
-  WgpuColorAdjustmentMaterialFeature,
-  WgpuModifierCompileContext,
-  WgpuModifierContribution,
-  WgpuModifierSnippet,
-  WgpuRenderState,
-} from '@flighthq/types/contract';
+} from '@flighthq/shading/contract';
 import {
   AnimatedNormalModifierKind,
   DissolveModifierKind,
@@ -41,6 +34,15 @@ import {
   ToonModifierKind,
   VertexDisplaceModifierKind,
   VertexDisplaceModifierSource,
+} from '@flighthq/shading/contract';
+import type {
+  Kind,
+  Texture,
+  WgpuColorAdjustmentMaterialFeature,
+  WgpuModifierCompileContext,
+  WgpuModifierContribution,
+  WgpuModifierSnippet,
+  WgpuRenderState,
 } from '@flighthq/types/contract';
 import type { WgpuSkinningAdapter } from '@flighthq/types/contract';
 

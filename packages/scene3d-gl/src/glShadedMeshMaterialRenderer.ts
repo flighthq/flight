@@ -7,8 +7,9 @@ import { getGlRenderStateRuntime, resolveGlTexture } from '@flighthq/render-gl/c
 import type { GlModifierBindContext, GlMeshMaterialRenderer } from '@flighthq/render-gl/contract';
 import type { Scene3DRenderProxy } from '@flighthq/render/contract';
 import { orderModifierStack } from '@flighthq/shading/contract';
-import type { GlRenderState, Material, Modifier, ShadedMaterial } from '@flighthq/types/contract';
-import { ShadedMaterialKind } from '@flighthq/types/contract';
+import type { Modifier, ShadedMaterial } from '@flighthq/shading/contract';
+import { ShadedMaterialKind } from '@flighthq/shading/contract';
+import type { GlRenderState, Material } from '@flighthq/types/contract';
 
 import type { GlShadedDefineKey, GlShadedProgram } from './contract.scene3d-gl-types.ts';
 import { bindGlMeshLightBlock } from './glLitProgram.ts';

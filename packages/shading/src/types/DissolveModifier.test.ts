@@ -1,6 +1,7 @@
+import { EntityRuntimeKey } from '@flighthq/entity/contract';
+
 import { DissolveModifierKind } from './DissolveModifier.ts';
 import type { DissolveModifier } from './DissolveModifier.ts';
-import { EntityRuntimeKey } from './Entity.ts';
 import type { Modifier } from './Modifier.ts';
 
 describe('DissolveModifier', () => {

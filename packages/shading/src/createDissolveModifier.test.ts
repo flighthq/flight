@@ -1,7 +1,7 @@
-import type { Texture } from '@flighthq/types/contract';
-import { DissolveModifierKind, ModifierSlot } from '@flighthq/types/contract';
+import type { Texture } from '@flighthq/texture/contract';
 import { describe, expect, it } from 'vitest';
 
+import { DissolveModifierKind, ModifierSlot } from './contract.shading-types.ts';
 import { createDissolveModifier, initializeDissolveModifier } from './createDissolveModifier.ts';
 
 describe('createDissolveModifier', () => {

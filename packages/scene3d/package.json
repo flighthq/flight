@@ -51,12 +51,12 @@
     "@flighthq/materials": "*",
     "@flighthq/meshgeometry": "*",
     "@flighthq/node": "*",
+    "@flighthq/shading": "*",
     "@flighthq/signals": "*",
     "@flighthq/types": "*"
   },
   "devDependencies": {
     "@flighthq/scene2d": "*",
-    "@flighthq/shading": "*",
     "@flighthq/texture": "*",
     "typescript": "^7.0.2"
   },

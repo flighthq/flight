@@ -1,6 +1,5 @@
-import type { Modifier } from '@flighthq/types/contract';
-import type { ModifierRegistry } from '@flighthq/types/contract';
-
+import type { Modifier } from './contract.shading-types.ts';
+import type { ModifierRegistry } from './contract.shading-types.ts';
 import { getUnregisteredModifierKinds } from './getUnregisteredModifierKinds.ts';
 
 // Returns true when every modifier in `stack` has a definition in `registry` — the boolean the

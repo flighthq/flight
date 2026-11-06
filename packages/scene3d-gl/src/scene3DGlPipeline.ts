@@ -2,37 +2,39 @@ import { withKindMapEntry } from '@flighthq/registry/contract';
 import type { GlMeshMaterialRenderer } from '@flighthq/render-gl/contract';
 import type { GlModifierSnippet, GlPbrExtensionRegistration } from '@flighthq/render-gl/contract';
 import { glScene2DRenderPreset } from '@flighthq/scene2d-gl/contract';
-import type { GlQuadMaterialRenderer, GlRenderRegistries, Kind } from '@flighthq/types/contract';
 import {
   AnimatedNormalModifierKind,
+  DissolveModifierKind,
+  EmissiveModifierKind,
+  EnvReflectModifierKind,
+  FogModifierKind,
+  RimModifierKind,
+  ShadedMaterialKind,
+  ToonModifierKind,
+  VertexDisplaceModifierKind,
+} from '@flighthq/shading/contract';
+import type { GlQuadMaterialRenderer, GlRenderRegistries, Kind } from '@flighthq/types/contract';
+import {
   AnisotropyPbrExtensionKind,
   BlinnPhongMaterialKind,
   ClearcoatPbrExtensionKind,
   CustomShaderMaterialKind,
   DepthMaterialKind,
-  DissolveModifierKind,
   EmissiveMaterialKind,
-  EmissiveModifierKind,
-  EnvReflectModifierKind,
   ExtendedPbrMaterialKind,
-  FogModifierKind,
   IridescencePbrExtensionKind,
   LambertMaterialKind,
   MatcapMaterialKind,
   NormalMaterialKind,
   PhongMaterialKind,
-  RimModifierKind,
-  ShadedMaterialKind,
   SheenPbrExtensionKind,
   SpecularGlossinessPbrMaterialKind,
   SpecularPbrExtensionKind,
   StandardPbrMaterialKind,
   ToonMaterialKind,
-  ToonModifierKind,
   TransmissionVolumePbrExtensionKind,
   UnlitMaterialKind,
   VertexColorMaterialKind,
-  VertexDisplaceModifierKind,
   WireframeMaterialKind,
   WrappedDiffusePbrExtensionKind,
 } from '@flighthq/types/contract';

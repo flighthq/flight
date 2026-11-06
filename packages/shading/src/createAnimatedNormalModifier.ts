@@ -1,11 +1,8 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type {
-  AnimatedNormalModifier,
-  AnimatedNormalModifierOptions,
-  EntityConstruction,
-} from '@flighthq/types/contract';
-import { AnimatedNormalModifierKind, ModifierSlot } from '@flighthq/types/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
 
+import type { AnimatedNormalModifier, AnimatedNormalModifierOptions } from './contract.shading-types.ts';
+import { AnimatedNormalModifierKind, ModifierSlot } from './contract.shading-types.ts';
 import { initializeModifier } from './modifier.ts';
 
 // The options for `createAnimatedNormalModifier`. `map` (nullable) and `scroll` are required; the

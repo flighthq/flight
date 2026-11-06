@@ -4,7 +4,7 @@ import type {
   FogModifier,
   Modifier,
   VertexDisplaceModifier,
-} from '@flighthq/types/contract';
+} from './contract.shading-types.ts';
 import {
   AnimatedNormalModifierKind,
   DissolveModifierKind,
@@ -18,9 +18,8 @@ import {
   ToonModifierKind,
   VertexDisplaceModifierKind,
   VertexDisplaceModifierSource,
-} from '@flighthq/types/contract';
-import type { ModifierDefinition, ModifierRegistry } from '@flighthq/types/contract';
-
+} from './contract.shading-types.ts';
+import type { ModifierDefinition, ModifierRegistry } from './contract.shading-types.ts';
 import { registerModifier } from './modifierRegistry.ts';
 
 // The substrate-agnostic AnimatedNormal built-in definition (slot: Normal). Its signature keys the

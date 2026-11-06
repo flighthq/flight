@@ -1,6 +1,5 @@
-import type { Modifier } from '@flighthq/types/contract';
-import type { ModifierRegistry } from '@flighthq/types/contract';
-
+import type { Modifier } from './contract.shading-types.ts';
+import type { ModifierRegistry } from './contract.shading-types.ts';
 import { resolveModifier } from './modifierRegistry.ts';
 import { orderModifierStack } from './orderModifierStack.ts';
 

@@ -1,4 +1,5 @@
-import type { Entity } from './Entity.ts';
+import type { EntityRaw, EntityRuntime, EntityRuntimeKey } from '@flighthq/entity/contract';
+
 import type { ModifierKind } from './ModifierKind.ts';
 import type { ModifierSlot } from './ModifierSlot.ts';
 
@@ -16,7 +17,8 @@ import type { ModifierSlot } from './ModifierSlot.ts';
 // Modifier is an open base contract: a new modifier is added by defining its interface (extending
 // Modifier with a literal `kind` and `slot`) and registering a per-backend compiler — no central
 // union to edit here.
-export interface Modifier extends Entity {
+export interface Modifier extends EntityRaw {
+  [EntityRuntimeKey]: EntityRuntime | undefined;
   kind: ModifierKind;
   slot: ModifierSlot;
 }

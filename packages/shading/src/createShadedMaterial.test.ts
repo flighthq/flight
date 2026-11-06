@@ -1,6 +1,7 @@
-import { EntityRuntimeKey, ShadedMaterialKind } from '@flighthq/types/contract';
+import { EntityRuntimeKey } from '@flighthq/entity/contract';
 import { describe, expect, it } from 'vitest';
 
+import { ShadedMaterialKind } from './contract.shading-types.ts';
 import { createEmissiveModifier } from './createEmissiveModifier.ts';
 import { createShadedMaterial, initializeShadedMaterial } from './createShadedMaterial.ts';
 

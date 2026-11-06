@@ -1,4 +1,5 @@
-import { EntityRuntimeKey } from './Entity.ts';
+import { EntityRuntimeKey } from '@flighthq/entity/contract';
+
 import { EnvReflectModifierKind } from './EnvReflectModifier.ts';
 import type { EnvReflectModifier } from './EnvReflectModifier.ts';
 import type { Modifier } from './Modifier.ts';

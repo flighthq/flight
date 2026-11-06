@@ -1,4 +1,4 @@
-import type { Texture } from './Texture.ts';
+import type { Texture } from '@flighthq/texture/contract';
 
 export interface DissolveModifierOptions {
   threshold: number;

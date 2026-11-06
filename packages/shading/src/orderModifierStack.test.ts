@@ -1,7 +1,7 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { Modifier } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
+import type { Modifier } from './contract.shading-types.ts';
 import { createAnimatedNormalModifier } from './createAnimatedNormalModifier.ts';
 import { createEmissiveModifier } from './createEmissiveModifier.ts';
 import { createRimModifier } from './createRimModifier.ts';

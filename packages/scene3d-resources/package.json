@@ -53,6 +53,7 @@
     "@flighthq/render": "*",
     "@flighthq/scene3d": "*",
     "@flighthq/scene3d-formats": "*",
+    "@flighthq/shading": "*",
     "@flighthq/signals": "*",
     "@flighthq/texture": "*",
     "@flighthq/tween": "*",
@@ -61,7 +62,6 @@
   "devDependencies": {
     "@flighthq/materials": "*",
     "@flighthq/meshgeometry": "*",
-    "@flighthq/shading": "*",
     "typescript": "^7.0.2"
   },
   "description": "Renderer-neutral scene-document URL acquisition and caller-driven resolution of scene texture references into live ImageResources",

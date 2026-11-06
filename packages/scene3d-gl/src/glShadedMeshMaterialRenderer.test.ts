@@ -5,7 +5,7 @@ import type { Scene3DLightBlock } from '@flighthq/lighting/contract';
 import { createBoxMeshGeometry } from '@flighthq/meshgeometry/contract';
 import type { Scene3DRenderProxy } from '@flighthq/render/contract';
 import { createEmissiveModifier, createRimModifier, createShadedMaterial } from '@flighthq/shading/contract';
-import { ShadedMaterialKind } from '@flighthq/types/contract';
+import { ShadedMaterialKind } from '@flighthq/shading/contract';
 
 import { getGlMeshMaterialRenderer } from './glMeshMaterialRegistry.ts';
 import { getGlScene3DRuntime } from './glScene3DRuntime.ts';

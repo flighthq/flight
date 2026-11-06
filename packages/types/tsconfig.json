@@ -8,6 +8,7 @@
     "declarationMap": true,
     "sourceMap": true,
     "moduleSuffixes": [
+      ".shading-types",
       ".meshgeometry-types",
       ".scene-document-types",
       ".scene3d-types",
@@ -454,6 +455,9 @@
     },
     {
       "path": "../scene3d/tsconfig.node.json"
+    },
+    {
+      "path": "../shading/tsconfig.contract.json"
     }
   ],
   "include": ["src"]

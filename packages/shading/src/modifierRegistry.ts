@@ -1,9 +1,6 @@
-import type {
-  ModifierDefinition,
-  ModifierKind,
-  ModifierRegistry,
-  NonEntityCreateResult,
-} from '@flighthq/types/contract';
+import type { NonEntityCreateResult } from '@flighthq/entity/contract';
+
+import type { ModifierDefinition, ModifierKind, ModifierRegistry } from './contract.shading-types.ts';
 
 // The substrate-agnostic registration record for one modifier kind: where it injects (`slot`) and
 // how its descriptor's compile-time structure contributes to the define-key (`getDefineSignature`).

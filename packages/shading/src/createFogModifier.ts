@@ -1,7 +1,8 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { FogModifier, FogModifierOptions, EntityConstruction } from '@flighthq/types/contract';
-import { FogModifierKind, FogModifierMode, ModifierSlot } from '@flighthq/types/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
 
+import type { FogModifier, FogModifierOptions } from './contract.shading-types.ts';
+import { FogModifierKind, FogModifierMode, ModifierSlot } from './contract.shading-types.ts';
 import { initializeModifier } from './modifier.ts';
 
 // The options for `createFogModifier`. Only `color` is required; `mode`/`near`/`far`/`density` carry

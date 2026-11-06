@@ -1,3 +1,4 @@
+export * from './contract.shading-types.ts';
 export * from './createAnimatedNormalModifier.ts';
 export * from './modifier.ts';
 export * from './createDissolveModifier.ts';

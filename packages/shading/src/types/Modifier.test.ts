@@ -1,4 +1,5 @@
-import { EntityRuntimeKey } from './Entity.ts';
+import { EntityRuntimeKey } from '@flighthq/entity/contract';
+
 import type { Modifier } from './Modifier.ts';
 import { ModifierSlot } from './ModifierSlot.ts';
 

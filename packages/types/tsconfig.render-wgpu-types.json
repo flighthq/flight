@@ -8,6 +8,7 @@
     "declarationMap": true,
     "sourceMap": true,
     "moduleSuffixes": [
+      ".shading-types",
       ".meshgeometry-types",
       ".render-wgpu-bridge-types",
       ".render-types",
@@ -101,6 +102,9 @@
     },
     {
       "path": "../scene3d/tsconfig.node.json"
+    },
+    {
+      "path": "../shading/tsconfig.contract.json"
     }
   ],
   "include": [
@@ -113,10 +117,6 @@
     "src/GlShader.ts",
     "src/GlShaderLocations.ts",
     "src/GlSkinPaletteTexture.ts",
-    "src/GlVelocityWriter.ts",
-    "src/Modifier.ts",
-    "src/ModifierDefinition.ts",
-    "src/ModifierKind.ts",
-    "src/ModifierSlot.ts"
+    "src/GlVelocityWriter.ts"
   ]
 }

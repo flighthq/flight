@@ -1,3 +1,4 @@
+export * from './contract.shading-types.ts';
 export {
   animatedNormalModifierDefinition,
   createAnimatedNormalModifier,

@@ -1,7 +1,8 @@
-import type { Texture, Vector3Like } from '@flighthq/types/contract';
-import { ModifierSlot, VertexDisplaceModifierKind, VertexDisplaceModifierSource } from '@flighthq/types/contract';
+import type { Vector3Like } from '@flighthq/geometry/contract';
+import type { Texture } from '@flighthq/texture/contract';
 import { describe, expect, it } from 'vitest';
 
+import { ModifierSlot, VertexDisplaceModifierKind, VertexDisplaceModifierSource } from './contract.shading-types.ts';
 import { createVertexDisplaceModifier, initializeVertexDisplaceModifier } from './createVertexDisplaceModifier.ts';
 
 describe('createVertexDisplaceModifier', () => {

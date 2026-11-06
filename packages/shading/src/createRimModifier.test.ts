@@ -1,6 +1,6 @@
-import { ModifierSlot, RimModifierKind } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
+import { ModifierSlot, RimModifierKind } from './contract.shading-types.ts';
 import { createRimModifier, initializeRimModifier } from './createRimModifier.ts';
 
 describe('createRimModifier', () => {

@@ -1,7 +1,8 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { DissolveModifier, DissolveModifierOptions, EntityConstruction } from '@flighthq/types/contract';
-import { DissolveModifierKind, ModifierSlot } from '@flighthq/types/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
 
+import type { DissolveModifier, DissolveModifierOptions } from './contract.shading-types.ts';
+import { DissolveModifierKind, ModifierSlot } from './contract.shading-types.ts';
 import { initializeModifier } from './modifier.ts';
 
 // The options for `createDissolveModifier`. Only `threshold` is required; the rest carry documented

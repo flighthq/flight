@@ -1,6 +1,6 @@
-import { FogModifierKind, FogModifierMode, ModifierSlot } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
+import { FogModifierKind, FogModifierMode, ModifierSlot } from './contract.shading-types.ts';
 import { createFogModifier, initializeFogModifier } from './createFogModifier.ts';
 
 describe('createFogModifier', () => {

@@ -1,6 +1,7 @@
+import { EntityRuntimeKey } from '@flighthq/entity/contract';
+
 import type { AnimatedNormalModifier } from './AnimatedNormalModifier.ts';
 import { AnimatedNormalModifierKind } from './AnimatedNormalModifier.ts';
-import { EntityRuntimeKey } from './Entity.ts';
 import type { Modifier } from './Modifier.ts';
 
 describe('AnimatedNormalModifier', () => {
