@@ -454,9 +454,6 @@
       "path": "../tween/tsconfig.runtime.json"
     },
     {
-      "path": "../types"
-    },
-    {
       "path": "../updater/tsconfig.runtime.json"
     },
     {

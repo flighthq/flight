@@ -4,7 +4,6 @@ export * from '@flighthq/animation';
 export * from '@flighthq/app';
 export * from '@flighthq/assets';
 export * from '@flighthq/audio';
-// Explicit owner exports: @flighthq/types keeps deprecated duplicate runtime values for these.
 export * from '@flighthq/binpack';
 export type {
   BinPackHeuristic,

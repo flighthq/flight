@@ -1,3 +1,4 @@
+import type { Kind } from '@flighthq/entity/contract';
 import { webHostCanvas } from '@flighthq/host-web';
 import { addNodeChild, invalidateNodeAppearance } from '@flighthq/node';
 import { withKindMapEntry } from '@flighthq/registry';
@@ -15,6 +16,7 @@ import {
   endCanvasRenderPass,
   renderCanvasScene2D,
 } from '@flighthq/scene2d-canvas';
+import type { CanvasShapeCommand } from '@flighthq/scene2d-canvas/contract';
 import {
   appendShapeBeginFill,
   appendShapeEndFill,
@@ -23,7 +25,6 @@ import {
   Scale9ShapeKind,
 } from '@flighthq/shape';
 import { createCanvasSurfaceFromNativeHandle } from '@flighthq/surface';
-import type { CanvasShapeCommand, Kind } from '@flighthq/types';
 
 // REQUIRED WIRING for one nine-sliced vector shape, and nothing else:
 //   surface   webHostCanvas — the single Canvas surface provider, NOT the aggregate

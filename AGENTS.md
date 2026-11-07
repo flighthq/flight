@@ -37,7 +37,7 @@ When a feature's familiar API would require hidden state, eager side effects, or
 - Keep modules tree-shakable, and expose each package through exactly **two blessed lanes**: the root `.` entry (`index.ts`) is the cultivated **public** API for end-user apps and the `@flighthq/sdk` barrel; `./contract` (`contract.ts`) is the **full** exported surface that other `@flighthq/*` packages consume. Intra-SDK imports always resolve to `@flighthq/x/contract`; `.` is the app boundary only. No _other_ subpath is allowed; file-mirroring subpaths (`@flighthq/x/renderProxy`) stay banned. Full rules in [export lanes](agents/conventions/export-lanes.md).
 - Packages are import side-effect-free and declare `"sideEffects": false`. Do not register renderers, patch globals, start listeners/timers, or mutate shared state at module top level; expose explicit `register*`, `init*`, or `create*` functions and let callers opt in.
 - Packages must not import from `@flighthq/sdk`. Examples usually import from `@flighthq/sdk` when demonstrating application usage, but may import individual packages when intentionally demonstrating lower-level or tree-shaken usage.
-- **Exported types live in their owning package** — each type belongs to the package that defines it, matching Rust crate structure. `@flighthq/types` is a transitional compatibility aggregator that re-exports types from owning packages; it will be dissolved once the flight-compiler transpilation pipeline covers all packages. Consumers import their contract lane. `npm run type-home` is a source-derived migration meter, not a gate. Export-lane rules still apply unchanged. See [file naming & type home](agents/conventions/file-naming.md) and [the TS/Rust alignment plan](agents/ts-rust-alignment.md).
+- **Exported types live in their owning package** — each type belongs to the package that defines it, matching Rust crate structure. There is no central types package: consumers import the owner's contract lane, and backwards-compatible re-exports, when needed, belong in `@flighthq/sdk`. `npm run type-home` meters package-owned types. Export-lane rules still apply unchanged. See [file naming & type home](agents/conventions/file-naming.md) and [the TS/Rust alignment plan](agents/ts-rust-alignment.md).
 
 ## License Provenance
 
@@ -178,7 +178,7 @@ See [testing conventions](agents/conventions/testing.md) for the full rules, Web
 
 Package names grouped by domain, `@flighthq/` prefix omitted. For boundaries and ownership, read the [package catalog](agents/packages/catalog.md); for API surface, the [package map](agents/packages/map.md). `npm run api <name>` queries signatures. [Feature lookup](agents/feature-lookup.md) maps a keyword to its owning package.
 
-Core: `types`, `entity`, `geometry`, `math`, `color`, `compression`, `encoding` (portable UTF-8), `layout`, `abc`, `node`, `signals`.
+Core: `entity`, `geometry`, `math`, `color`, `compression`, `encoding` (portable UTF-8), `layout`, `abc`, `node`, `signals`.
 
 Scene graph: `scene2d`, `text`, `quadbatch`, `tilemap`, `scene3d`, `clip`, `path`, `shape`, `interaction`, plus codecs `path-formats`, `path-boolean`, `shape-formats`, `scene2d-formats`, and `swf`.
 

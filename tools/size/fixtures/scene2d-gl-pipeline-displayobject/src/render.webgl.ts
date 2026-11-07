@@ -8,10 +8,9 @@ import {
   endGlRenderPass,
   createGlScreenRenderTarget,
 } from '@flighthq/render-gl';
-import { createDisplayObject } from '@flighthq/scene2d';
+import { createDisplayObject, DisplayObjectKind } from '@flighthq/scene2d';
 import { glScene2DRenderer, renderGlScene2D } from '@flighthq/scene2d-gl';
 import { createGlSurface } from '@flighthq/surface';
-import { DisplayObjectKind } from '@flighthq/types';
 
 // DisplayObject is a genuine non-visible container. This size-only control deliberately has no
 // capture manifest: its one registered renderer traverses children but submits no geometry of its own.

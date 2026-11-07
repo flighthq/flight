@@ -6,6 +6,7 @@ import {
   webHostWindowGeometry,
   webHostWindowLifecycle,
 } from '@flighthq/host-web';
+import { StandardMaterialKind } from '@flighthq/materials';
 import { addNodeChild } from '@flighthq/node';
 import { withKindMapEntry } from '@flighthq/registry';
 import { prepareScene2DRender } from '@flighthq/render';
@@ -23,7 +24,6 @@ import { createWgpuSurface } from '@flighthq/surface';
 import { createTexture } from '@flighthq/texture';
 import { createTextureAtlas, createTextureAtlasRegion } from '@flighthq/textureatlas';
 import { createTilemap, TilemapKind } from '@flighthq/tilemap';
-import { StandardMaterialKind } from '@flighthq/types';
 
 const appWindow = createAppWindow();
 openWindow(webHostWindowLifecycle, webHostWindowGeometry, appWindow, {});

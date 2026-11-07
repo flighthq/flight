@@ -348,9 +348,7 @@
       "@flighthq/textshaper": ["./packages/textshaper/src/index.ts"],
       "@flighthq/textshaper/*": ["./packages/textshaper/src/*"],
       "@flighthq/vite-plugin-manifest": ["./packages/vite-plugin-manifest/src/index.ts"],
-      "@flighthq/vite-plugin-manifest/*": ["./packages/vite-plugin-manifest/src/*"],
-      "@flighthq/types": ["./packages/types/src/index.ts"],
-      "@flighthq/types/*": ["./packages/types/src/*"]
+      "@flighthq/vite-plugin-manifest/*": ["./packages/vite-plugin-manifest/src/*"]
     },
     "types": ["@testing-library/jest-dom", "vitest/globals", "@webgpu/types"] // Include Vitest globals and WebGPU types for type-checking
   },

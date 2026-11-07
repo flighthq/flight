@@ -6,6 +6,7 @@ import {
   webHostWindowGeometry,
   webHostWindowLifecycle,
 } from '@flighthq/host-web';
+import { StandardMaterialKind } from '@flighthq/materials';
 import { addNodeChild } from '@flighthq/node';
 import { appendQuadBatchInstance, createQuadBatch } from '@flighthq/quadbatch';
 import { QuadBatchKind } from '@flighthq/quadbatch';
@@ -24,7 +25,6 @@ import { standardWgpuQuadMaterialRenderer } from '@flighthq/scene2d-wgpu/contrac
 import { createWgpuSurface } from '@flighthq/surface';
 import { createTexture } from '@flighthq/texture';
 import { createTextureAtlas, createTextureAtlasRegion } from '@flighthq/textureatlas';
-import { StandardMaterialKind } from '@flighthq/types';
 
 const appWindow = createAppWindow();
 openWindow(webHostWindowLifecycle, webHostWindowGeometry, appWindow, {});

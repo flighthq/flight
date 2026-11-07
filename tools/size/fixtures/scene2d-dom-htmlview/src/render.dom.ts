@@ -1,8 +1,7 @@
 import { addNodeChild } from '@flighthq/node';
 import { prepareScene2DRender, registerNodeRenderer } from '@flighthq/render';
-import { createDisplayObject, createHtmlView } from '@flighthq/scene2d';
+import { createDisplayObject, createHtmlView, HtmlViewKind } from '@flighthq/scene2d';
 import { createDomRenderState, domHtmlViewRenderer, renderDomScene2D } from '@flighthq/scene2d-dom';
-import { HtmlViewKind } from '@flighthq/types';
 
 const container = document.createElement('div');
 container.style.width = '400px';

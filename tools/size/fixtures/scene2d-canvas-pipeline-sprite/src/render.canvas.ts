@@ -2,7 +2,7 @@ import { createWebImageResourceFromCanvas, webHostCanvas } from '@flighthq/host-
 import { addNodeChild } from '@flighthq/node';
 import { withKindMapEntry } from '@flighthq/registry';
 import { prepareScene2DRender, registerNodeRenderer } from '@flighthq/render';
-import { createDisplayObject, createSprite } from '@flighthq/scene2d';
+import { createDisplayObject, createSprite, SpriteKind } from '@flighthq/scene2d';
 import {
   beginCanvasRenderPass,
   createCanvasRenderState,
@@ -16,7 +16,6 @@ import {
 } from '@flighthq/scene2d-canvas';
 import { createCanvasSurfaceFromNativeHandle } from '@flighthq/surface';
 import { createTexture } from '@flighthq/texture';
-import { SpriteKind } from '@flighthq/types';
 
 const canvas = document.createElement('canvas');
 canvas.width = 400;

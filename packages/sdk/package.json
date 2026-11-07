@@ -616,10 +616,6 @@
       "types": "./dist/tween.d.ts",
       "default": "./dist/tween.js"
     },
-    "./types": {
-      "types": "./dist/types.d.ts",
-      "default": "./dist/types.js"
-    },
     "./updater": {
       "types": "./dist/updater.d.ts",
       "default": "./dist/updater.js"
@@ -813,7 +809,6 @@
     "@flighthq/tokens": "*",
     "@flighthq/tray": "*",
     "@flighthq/tween": "*",
-    "@flighthq/types": "*",
     "@flighthq/updater": "*",
     "@flighthq/useragent": "*",
     "@flighthq/velocity": "*",

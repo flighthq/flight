@@ -1,7 +1,7 @@
 import { getAppName, getAppVersion } from '@flighthq/app';
 import { tauriHost } from '@flighthq/host-tauri';
 import { getPlatformName } from '@flighthq/platform/contract';
-import type { DesktopOsProfile } from '@flighthq/types/contract';
+import type { DesktopOsProfile } from '@flighthq/tray/contract';
 import * as app from '@tauri-apps/api/app';
 import * as menu from '@tauri-apps/api/menu';
 import * as tray from '@tauri-apps/api/tray';

@@ -26,7 +26,6 @@ export default defineConfig(() => {
     },
     resolve: {
       alias,
-      dedupe: ['@flighthq/types'],
     },
     server: {
       fs: { allow: [resolve(__dirname, '../..')] },

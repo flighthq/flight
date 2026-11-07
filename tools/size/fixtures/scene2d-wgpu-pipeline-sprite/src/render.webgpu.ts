@@ -16,10 +16,9 @@ import {
   endWgpuRenderPass,
   registerWgpuImageTextureResolver,
 } from '@flighthq/render-wgpu';
-import { createDisplayObject, createSprite } from '@flighthq/scene2d';
+import { createDisplayObject, createSprite, SpriteKind } from '@flighthq/scene2d';
 import { wgpuSpriteRenderer, registerWgpuStandardMaterial, renderWgpuScene2D } from '@flighthq/scene2d-wgpu';
 import { createWgpuSurface } from '@flighthq/surface';
-import { SpriteKind } from '@flighthq/types';
 
 const appWindow = createAppWindow();
 openWindow(webHostWindowLifecycle, webHostWindowGeometry, appWindow, {});

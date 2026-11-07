@@ -5,7 +5,7 @@ import {
   webHostGlyphRasterizer,
   webHostNotificationPermission,
 } from '@flighthq/host-web';
-import type { WebPageNotificationApi } from '@flighthq/types/contract';
+import type { WebPageNotificationApi } from '@flighthq/notification/contract';
 
 import { captureHostProbeBackends, diffHostProbeBackends } from '#host-probe/capabilityBackends';
 import type { HostProbeBackendSnapshot } from '#host-probe/capabilityBackends';

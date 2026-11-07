@@ -46,22 +46,6 @@
   },
   "overrides": [
     {
-      "files": ["packages/types/**/*.{ts,tsx}"],
-      "rules": {
-        "no-restricted-imports": [
-          "error",
-          {
-            "patterns": [
-              {
-                "group": ["@*/*"],
-                "message": "Scoped imports are not allowed. Please avoid using @scope/pkg."
-              }
-            ]
-          }
-        ]
-      }
-    },
-    {
       "files": [
         "packages/api/**/*.{ts,tsx}",
         "functional/**",

@@ -1,4 +1,4 @@
-import type { HostNotificationCapabilities } from '@flighthq/types/contract';
+import type { HostNotificationCapabilities } from '@flighthq/host/contract';
 
 import type { HostProbeHost, HostProbeResult } from './contract.ts';
 

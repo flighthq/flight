@@ -6,6 +6,7 @@ import {
   webHostWindowGeometry,
   webHostWindowLifecycle,
 } from '@flighthq/host-web';
+import { StandardMaterialKind } from '@flighthq/materials';
 import { addNodeChild } from '@flighthq/node';
 import { withKindMapEntry } from '@flighthq/registry';
 import { prepareScene2DRender } from '@flighthq/render';
@@ -20,7 +21,6 @@ import { wgpuTextLabelRenderer, renderWgpuScene2D } from '@flighthq/scene2d-wgpu
 import { standardWgpuQuadMaterialRenderer } from '@flighthq/scene2d-wgpu/contract';
 import { createWgpuSurface } from '@flighthq/surface';
 import { createTextLabel, TextLabelKind } from '@flighthq/text';
-import { StandardMaterialKind } from '@flighthq/types';
 
 const appWindow = createAppWindow();
 openWindow(webHostWindowLifecycle, webHostWindowGeometry, appWindow, {});

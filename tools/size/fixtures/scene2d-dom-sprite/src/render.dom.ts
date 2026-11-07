@@ -1,7 +1,7 @@
 import { createWebImageResourceFromCanvas } from '@flighthq/host-web';
 import { addNodeChild } from '@flighthq/node';
 import { prepareScene2DRender, registerNodeRenderer } from '@flighthq/render';
-import { createDisplayObject, createSprite } from '@flighthq/scene2d';
+import { createDisplayObject, createSprite, SpriteKind } from '@flighthq/scene2d';
 import {
   createDomRenderState,
   domSpriteRenderer,
@@ -9,7 +9,6 @@ import {
   renderDomScene2D,
 } from '@flighthq/scene2d-dom';
 import { createTexture } from '@flighthq/texture';
-import { SpriteKind } from '@flighthq/types';
 
 const container = document.createElement('div');
 container.style.width = '400px';

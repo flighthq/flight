@@ -8,7 +8,7 @@ import {
   webHostWindowLifecycle,
 } from '@flighthq/host-web';
 import { createScene3DLights } from '@flighthq/lighting';
-import { createUnlitMaterial } from '@flighthq/materials';
+import { createUnlitMaterial, UnlitMaterialKind } from '@flighthq/materials';
 import { CANONICAL_MESH_GEOMETRY_LAYOUT, createMeshGeometry } from '@flighthq/meshgeometry';
 import { addNodeChild } from '@flighthq/node';
 import { withKindMapEntry } from '@flighthq/registry';
@@ -22,7 +22,6 @@ import {
 import { createBillboard, createScene3D, orientScene3DBillboardsToCamera } from '@flighthq/scene3d';
 import { renderWgpuScene3D, wgpuUnlitMeshMaterialRenderer } from '@flighthq/scene3d-wgpu';
 import { createWgpuSurface } from '@flighthq/surface';
-import { UnlitMaterialKind } from '@flighthq/types';
 
 const appWindow = createAppWindow();
 openWindow(webHostWindowLifecycle, webHostWindowGeometry, appWindow, {});

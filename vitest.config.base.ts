@@ -53,7 +53,4 @@ export default defineConfig({
       },
     },
   },
-  resolve: {
-    dedupe: ['@flighthq/types'],
-  },
 });

@@ -16,11 +16,10 @@ import {
   endGlRenderPass,
   createGlScreenRenderTarget,
 } from '@flighthq/render-gl';
-import { createDisplayObject, createSprite } from '@flighthq/scene2d';
+import { createDisplayObject, createSprite, SpriteKind } from '@flighthq/scene2d';
 import { glSpriteRenderer, registerGlStandardMaterial, renderGlScene2D } from '@flighthq/scene2d-gl';
 import { createGlSurface } from '@flighthq/surface';
 import { createTexture } from '@flighthq/texture';
-import { SpriteKind } from '@flighthq/types';
 
 const appWindow = createAppWindow();
 openWindow(webHostWindowLifecycle, webHostWindowGeometry, appWindow, {});

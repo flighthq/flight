@@ -3,7 +3,7 @@ import { createCamera3D, createPerspectiveProjection, setCamera3DViewMatrix4From
 import { createVector3 } from '@flighthq/geometry';
 import { webHostGl, appendWebSurface, webHostWindowGeometry, webHostWindowLifecycle } from '@flighthq/host-web';
 import { createScene3DLights } from '@flighthq/lighting';
-import { createUnlitMaterial } from '@flighthq/materials';
+import { createUnlitMaterial, UnlitMaterialKind } from '@flighthq/materials';
 import { CANONICAL_MESH_GEOMETRY_LAYOUT, createMeshGeometry } from '@flighthq/meshgeometry';
 import { addNodeChild } from '@flighthq/node';
 import { withKindMapEntry } from '@flighthq/registry';
@@ -17,7 +17,6 @@ import {
 import { createBillboard, createScene3D, orientScene3DBillboardsToCamera } from '@flighthq/scene3d';
 import { renderGlScene3D, glUnlitMeshMaterialRenderer } from '@flighthq/scene3d-gl';
 import { createGlSurface } from '@flighthq/surface';
-import { UnlitMaterialKind } from '@flighthq/types';
 
 const appWindow = createAppWindow();
 openWindow(webHostWindowLifecycle, webHostWindowGeometry, appWindow, {});

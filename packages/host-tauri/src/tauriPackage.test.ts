@@ -1,6 +1,7 @@
 import { execFileSync } from 'node:child_process';
-import { readFileSync, readdirSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { mkdtempSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join, resolve } from 'node:path';
 
 import { rollup } from 'rollup';
 import type { OutputChunk } from 'rollup';
@@ -195,7 +196,14 @@ function declarationProgram(): {
 } {
   const publicPath = resolve(DIST_ROOT, 'index.d.ts');
   const contractPath = resolve(DIST_ROOT, 'contract.d.ts');
-  const entityPath = resolve(ROOT, 'packages/types/dist/Entity.d.ts');
+  // The Entity base, stated from @flighthq/entity's emitted vocabulary: a raw record carrying the runtime slot.
+  const entityPath = join(mkdtempSync(join(tmpdir(), 'flight-tauri-entity-')), 'Entity.d.ts');
+  const entityTypes = resolve(ROOT, 'packages/entity/dist/types.js');
+  writeFileSync(
+    entityPath,
+    `import type { EntityRaw, EntityRuntime, EntityRuntimeKey } from '${entityTypes}';\n` +
+      'export interface Entity extends EntityRaw {\n  [EntityRuntimeKey]: EntityRuntime | undefined;\n}\n',
+  );
   // The package builds against the menu contract-types project (tsconfig `moduleSuffixes`), which emits
   // only `contract.menu-types.d.ts`, so resolve `@flighthq/menu/contract` to that declaration as the build
   // does. Every import must resolve: an unresolved one reads as `any`, which is assignable to `Entity`.
