@@ -2657,11 +2657,9 @@ impl VisitMut for TestLocalCollectorRewriter<'_> {
             }
             let identifier = binding.ident.to_string();
             let receiver = call.receiver.as_ref().clone();
-            let local_identifier: syn::Ident = syn::parse_str(&format!(
-                "__thread_local_{}",
-                name.to_ascii_lowercase()
-            ))
-            .expect("a Rust identifier plus an ASCII identifier is a Rust identifier");
+            let local_identifier: syn::Ident =
+                syn::parse_str(&format!("__thread_local_{}", name.to_ascii_lowercase()))
+                    .expect("a Rust identifier plus an ASCII identifier is a Rust identifier");
             let target: Expr = syn::parse_quote! { #local_identifier };
             let mut body = closure.body.as_ref().clone();
             self.visit_expr_mut(&mut body);
@@ -2706,8 +2704,7 @@ impl VisitMut for TestLocalCollectorRewriter<'_> {
     }
 
     fn visit_macro_mut(&mut self, rust_macro: &mut syn::Macro) {
-        let parser =
-            syn::punctuated::Punctuated::<Expr, syn::Token![,]>::parse_terminated;
+        let parser = syn::punctuated::Punctuated::<Expr, syn::Token![,]>::parse_terminated;
         let Ok(mut arguments) = parser.parse2(rust_macro.tokens.clone()) else {
             visit_mut::visit_macro_mut(self, rust_macro);
             return;
@@ -2790,8 +2787,11 @@ impl VisitMut for TestLocalCollectorBorrowRewriter<'_> {
             let borrowed = match unary.expr.as_ref() {
                 Expr::MethodCall(call)
                     if matches!(call.method.to_string().as_str(), "borrow" | "borrow_mut")
-                        && call.args.is_empty() => expression_name(&call.receiver)
-                    .is_some_and(|name| name == self.binding || self.aliases.contains(&name)),
+                        && call.args.is_empty() =>
+                {
+                    expression_name(&call.receiver)
+                        .is_some_and(|name| name == self.binding || self.aliases.contains(&name))
+                }
                 _ => false,
             };
             if direct || borrowed {

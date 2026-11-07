@@ -16,27 +16,25 @@ use crate::typescript::{
     RETURNS_CONTRACT_TYPED_ARRAY_MARKER,
 };
 use crate::typescript::{
-    ProvenanceImportRule, begin_option_if, begin_option_while, contract_typed_array_return_value,
-    emit_block_with_tail_returns,
-    emit_expression, emit_expression_for_type, emit_for_header, emit_format_template, emit_local,
-    emit_iter_mut_loop_if_supported, emit_local_function, emit_local_with_shadow_and_else, emit_match_statement,
-    emit_option_binding, emit_parameter, emit_type, emit_type_parameters,
-    emit_vec_extend_statement, export_name, flight_error_result_aliases, flight_error_result_type,
-    frozen_object_name, function_expression_context,
-    function_returns_uint8_array, exact_mutable_scalar_reference, exact_portable_scalar_type,
-    insert_type_parameter_context, lexical_binding_names,
-    insert_vitest_helper_return_context, insert_vitest_import_alias_context,
-    insert_vitest_rebound_struct_context, is_data_union_variant, is_lowered_cross_crate_type,
-    is_lowered_cross_crate_value, is_string_union, is_vitest_function, is_vitest_own_public,
-    is_vitest_struct, js_string_literal, lexical_pattern_context, local_pattern_binding_id,
-    numeric_literal_spelling,
-    option_scrutinee_is_rereadable, provenance_import_rules, snake_to_lower_camel,
-    type_script_type_aliases, update_vitest_local_function_context,
+    MUTABLE_SCALAR_REFERENCE_ARGUMENT_MARKER, ProvenanceImportRule,
+    VITEST_MUTABLE_SCALAR_CELL_LOCAL_BINDING_MARKER, VITEST_MUTABLE_SCALAR_CELL_PARAMETER_MARKER,
+    begin_option_if, begin_option_while, contract_typed_array_return_value,
+    emit_block_with_tail_returns, emit_expression, emit_expression_for_type, emit_for_header,
+    emit_format_template, emit_iter_mut_loop_if_supported, emit_local, emit_local_function,
+    emit_local_with_shadow_and_else, emit_match_statement, emit_option_binding, emit_parameter,
+    emit_type, emit_type_parameters, emit_vec_extend_statement, exact_mutable_scalar_reference,
+    exact_portable_scalar_type, export_name, flight_error_result_aliases, flight_error_result_type,
+    frozen_object_name, function_expression_context, function_returns_uint8_array,
+    insert_type_parameter_context, insert_vitest_helper_return_context,
+    insert_vitest_import_alias_context, insert_vitest_rebound_struct_context,
+    is_data_union_variant, is_lowered_cross_crate_type, is_lowered_cross_crate_value,
+    is_string_union, is_vitest_function, is_vitest_own_public, is_vitest_struct, js_string_literal,
+    lexical_binding_names, lexical_pattern_context, local_pattern_binding_id,
+    numeric_literal_spelling, option_scrutinee_is_rereadable, provenance_import_rules,
+    snake_to_lower_camel, type_script_type_aliases, update_vitest_local_function_context,
     update_vitest_struct_local_context, validate_vitest_function_provenance,
     vitest_current_path_prefix, vitest_function_path_binding_name, vitest_struct_path_binding_name,
-    write_indent, MUTABLE_SCALAR_REFERENCE_ARGUMENT_MARKER,
-    VITEST_MUTABLE_SCALAR_CELL_LOCAL_BINDING_MARKER,
-    VITEST_MUTABLE_SCALAR_CELL_PARAMETER_MARKER,
+    write_indent,
 };
 use crate::{CompileError, compile_error};
 
@@ -586,12 +584,13 @@ fn collect_contract_symbols(
             // Rust function items are in scope throughout their block, including before the item.
             // Record all of them before walking any expression so they are never mistaken for
             // package-contract imports.
-            self.declared.extend(block.stmts.iter().filter_map(|statement| {
-                let Stmt::Item(syn::Item::Fn(function)) = statement else {
-                    return None;
-                };
-                Some(function.sig.ident.to_string())
-            }));
+            self.declared
+                .extend(block.stmts.iter().filter_map(|statement| {
+                    let Stmt::Item(syn::Item::Fn(function)) = statement else {
+                        return None;
+                    };
+                    Some(function.sig.ident.to_string())
+                }));
             for statement in &block.stmts {
                 if let Stmt::Local(local) = statement {
                     if let Some(initializer) = &local.init {
@@ -1813,7 +1812,8 @@ fn insert_vitest_mutable_scalar_cell_context(
         {
             return None;
         }
-        return path.path
+        return path
+            .path
             .segments
             .first()
             .map(|segment| segment.ident.to_string());
@@ -1826,9 +1826,7 @@ fn insert_vitest_mutable_scalar_cell_context(
         }
         impl<'ast> Visit<'ast> for Finder<'_> {
             fn visit_expr_path(&mut self, path: &'ast syn::ExprPath) {
-                if path.qself.is_none()
-                    && path.path.is_ident(self.name)
-                {
+                if path.qself.is_none() && path.path.is_ident(self.name) {
                     self.found = true;
                     return;
                 }
@@ -2590,12 +2588,17 @@ fn validate_vitest_local_functions(
     // Validation runs before statement emission so every function item has Rust's block-wide
     // hoisting. Collect the block's locals up front as well: even a binding written after an item
     // is an enclosing value that the item must never acquire as a JavaScript closure capture.
-    outer_bindings.extend(statements.iter().filter_map(|statement| {
-        let Stmt::Local(local) = statement else {
-            return None;
-        };
-        Some(pattern_names(&local.pat))
-    }).flatten());
+    outer_bindings.extend(
+        statements
+            .iter()
+            .filter_map(|statement| {
+                let Stmt::Local(local) = statement else {
+                    return None;
+                };
+                Some(pattern_names(&local.pat))
+            })
+            .flatten(),
+    );
     let mut call_graph = BTreeMap::<String, BTreeSet<String>>::new();
     for function in functions {
         if !function.attrs.is_empty()
@@ -2671,9 +2674,7 @@ fn validate_vitest_local_functions(
         let shadowed_helpers = body
             .inner_bindings
             .iter()
-            .filter(|binding| {
-                emitted_names.contains_key(&snake_to_lower_camel(binding))
-            })
+            .filter(|binding| emitted_names.contains_key(&snake_to_lower_camel(binding)))
             .cloned()
             .collect::<BTreeSet<_>>();
         if !shadowed_helpers.is_empty() {
@@ -2863,9 +2864,7 @@ fn emit_helper(
     validate_vitest_function_provenance(function, context)?;
     let mut context = function_expression_context(function, context);
     if function_returns_uint8_array(function, &context) {
-        context.insert(format!(
-            "{RETURNS_CONTRACT_TYPED_ARRAY_MARKER}Uint8Array"
-        ));
+        context.insert(format!("{RETURNS_CONTRACT_TYPED_ARRAY_MARKER}Uint8Array"));
     }
     insert_type_parameter_context(&mut context, &function.sig.generics);
     let parameters = function
@@ -4983,8 +4982,7 @@ fn emit_statement(
                     emit_expression(value, context)?,
                     context,
                 );
-                writeln!(out, "return {emitted};")
-                    .expect("writing to a String cannot fail");
+                writeln!(out, "return {emitted};").expect("writing to a String cannot fail");
             } else {
                 out.push_str("return;\n");
             }

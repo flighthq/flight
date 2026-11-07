@@ -1,7 +1,8 @@
 use flight_compiler::{
     ExternalAliasSource, ModuleSource, SourceMode, TypeScriptArrayField, TypeScriptArrayParameter,
-    TypeScriptArrayParameterRepresentation, TypeScriptArrayReturn, TypeScriptDefaultNullOptionParameter,
-    TypeScriptInlineStringUnion, TypeScriptNullableOptionField, TypeScriptNullableOptionParameter,
+    TypeScriptArrayParameterRepresentation, TypeScriptArrayReturn,
+    TypeScriptDefaultNullOptionParameter, TypeScriptInlineStringUnion,
+    TypeScriptNullableOptionField, TypeScriptNullableOptionParameter,
     TypeScriptNullableOptionReturn, TypeScriptStringUnion, TypeScriptTypeAlias, VitestAliasSource,
     VitestSupportSource, VitestVisibilitySource, compile_typescript, compile_typescript_lenient,
     compile_typescript_with_alias_sources, compile_typescript_with_external_alias_sources,
@@ -13,9 +14,10 @@ use flight_compiler::{
     compile_vitest_with_contract_alias_sources, compile_vitest_with_external_alias_sources,
     compile_vitest_with_module_alias_sources,
     compile_vitest_with_module_visibility_sources_and_array_parameters,
-    compile_vitest_with_named_visibility_sources_and_array_parameters, compile_vitest_with_options,
+    compile_vitest_with_named_visibility_sources_and_array_parameters,
     compile_vitest_with_named_visibility_sources_and_array_representations,
-    compile_vitest_with_visibility_sources, root_only_names, source_mode,
+    compile_vitest_with_options, compile_vitest_with_visibility_sources, root_only_names,
+    source_mode,
 };
 
 mod source_modes {
@@ -14017,21 +14019,29 @@ pub fn ordinary() -> Vec<u8> {
             "{output}"
         );
         assert!(output.contains("  return owned;"), "{output}");
-        assert!(output.contains("export function build(): Uint8Array {"), "{output}");
-        assert!(output.contains("  return new Uint8Array(bytes);"), "{output}");
+        assert!(
+            output.contains("export function build(): Uint8Array {"),
+            "{output}"
+        );
+        assert!(
+            output.contains("  return new Uint8Array(bytes);"),
+            "{output}"
+        );
         assert!(output.contains("  bytes: Uint8Array;"), "{output}");
         assert!(output.contains("  ordinary: number[];"), "{output}");
         assert!(
             output.contains("return { bytes: new Uint8Array(bytes), ordinary };"),
             "{output}"
         );
-        assert!(output.contains("export function ordinary(): number[] {"), "{output}");
+        assert!(
+            output.contains("export function ordinary(): number[] {"),
+            "{output}"
+        );
 
         for rust_type in ["Vec<i8>", "Vec<u16>", "Vec<T>", "&Vec<u8>", "&mut Vec<u8>"] {
             let generic = if rust_type.contains('T') { "<T>" } else { "" };
-            let source_text = format!(
-                "pub fn consume{generic}(bytes: {rust_type}) {{ let _ = bytes.len(); }}\n"
-            );
+            let source_text =
+                format!("pub fn consume{generic}(bytes: {rust_type}) {{ let _ = bytes.len(); }}\n");
             let metadata = [TypeScriptArrayParameter {
                 owner: "consume",
                 parameter: "bytes",
@@ -14049,7 +14059,10 @@ pub fn ordinary() -> Vec<u8> {
             )
             .unwrap_err()
             .to_string();
-            assert!(error.contains("exact standard Rust"), "{rust_type}: {error}");
+            assert!(
+                error.contains("exact standard Rust"),
+                "{rust_type}: {error}"
+            );
         }
 
         let custom = ModuleSource {
@@ -14116,7 +14129,10 @@ pub fn ordinary() -> Vec<u8> {
         )
         .unwrap_err()
         .to_string();
-        assert!(error.contains("exactly one visible Rust function, found 2"), "{error}");
+        assert!(
+            error.contains("exactly one visible Rust function, found 2"),
+            "{error}"
+        );
     }
 
     #[test]
@@ -19699,7 +19715,10 @@ mod byte_helpers {
         )
         .unwrap();
 
-        assert!(output.contains("function buildBytes(): Uint8Array {"), "{output}");
+        assert!(
+            output.contains("function buildBytes(): Uint8Array {"),
+            "{output}"
+        );
         assert!(output.contains("return new Uint8Array(bytes);"), "{output}");
         assert!(output.contains("buildBytes()[0]"), "{output}");
     }
@@ -20800,9 +20819,18 @@ fn advances_one_seed_cell() {
             output.contains("seed.value = (Math.imul(seed.value, 3) >>> 0) + 1 >>> 0;"),
             "{output}"
         );
-        assert!(output.contains("expect(next(seed)).toEqual(4);"), "{output}");
-        assert!(output.contains("expect(seed.value).toEqual(4);"), "{output}");
-        assert!(output.contains("expect(next(seed)).toEqual(13);"), "{output}");
+        assert!(
+            output.contains("expect(next(seed)).toEqual(4);"),
+            "{output}"
+        );
+        assert!(
+            output.contains("expect(seed.value).toEqual(4);"),
+            "{output}"
+        );
+        assert!(
+            output.contains("expect(next(seed)).toEqual(13);"),
+            "{output}"
+        );
     }
 
     #[test]
@@ -20827,12 +20855,18 @@ fn fills_bytes_from_one_seed_cell() {
 
         let output = compile_vitest(source, "./contract.ts").unwrap();
 
-        assert!(output.contains("const seed: { value: number } = { value: 1 };"), "{output}");
+        assert!(
+            output.contains("const seed: { value: number } = { value: 1 };"),
+            "{output}"
+        );
         assert!(
             output.contains("for (let __i = 0; __i < bytes.length; __i++) {"),
             "{output}"
         );
-        assert!(output.contains("bytes[__i] = next(seed) & 0xff;"), "{output}");
+        assert!(
+            output.contains("bytes[__i] = next(seed) & 0xff;"),
+            "{output}"
+        );
         assert!(!output.contains("byte_.value"), "{output}");
     }
 
@@ -25344,10 +25378,7 @@ fn resets_and_reads_calls_in_order() {
 
         let output = compile_vitest(source, "@flighthq/example/contract").unwrap();
 
-        assert!(
-            output.contains("let CALLS = [] as never[];"),
-            "{output}"
-        );
+        assert!(output.contains("let CALLS = [] as never[];"), "{output}");
         assert!(output.contains("let CURRENT = undefined;"), "{output}");
         assert!(output.contains("let COUNT = 0;"), "{output}");
         assert!(
@@ -25362,15 +25393,9 @@ fn resets_and_reads_calls_in_order() {
             output.contains("__threadLocalCalls.push(value);"),
             "{output}"
         );
-        assert!(
-            output.contains("__threadLocalCurrent = 3;"),
-            "{output}"
-        );
+        assert!(output.contains("__threadLocalCurrent = 3;"), "{output}");
         assert!(output.contains("__threadLocalCount++;"), "{output}");
-        assert!(
-            output.contains("__threadLocalPixels[0] = 7;"),
-            "{output}"
-        );
+        assert!(output.contains("__threadLocalPixels[0] = 7;"), "{output}");
         assert!(output.contains("if (calls[0] !== 2)"), "{output}");
         assert!(output.contains("if (calls[1] !== 1)"), "{output}");
         assert!(!output.contains("thread_local"), "{output}");
@@ -27147,8 +27172,14 @@ fn mutates_samples_by_reference() {
         .unwrap();
 
         assert!(output.contains("samples[__i].previous = null;"), "{output}");
-        assert!(output.contains("samples[__i].previous === null"), "{output}");
-        assert!(!output.contains("samples[__i].previous = undefined;"), "{output}");
+        assert!(
+            output.contains("samples[__i].previous === null"),
+            "{output}"
+        );
+        assert!(
+            !output.contains("samples[__i].previous = undefined;"),
+            "{output}"
+        );
     }
 
     #[test]
@@ -27529,7 +27560,12 @@ mod write_vector2_to_float32_array {
         assert!(output.contains("for (const [value, expected] of cases) {"));
         assert!(output.contains("let out = new Float32Array(2).fill(0);"));
         assert!(output.contains("expect(Array.from(out)).toEqual([1, 2]);"));
-        assert_eq!(output.matches("expect(Array.from(out)).toEqual([1, 2]);").count(), 2);
+        assert_eq!(
+            output
+                .matches("expect(Array.from(out)).toEqual([1, 2]);")
+                .count(),
+            2
+        );
         assert!(output.contains("expect(expected).toEqual(expected);"));
         assert!(!output.contains("Array.from(expected)"));
         assert!(output.contains(

@@ -314,8 +314,7 @@ const REFERENCE_PARAMETER_BINDING_MARKER: &str = "@reference-parameter-binding:"
 // parameter's lexical BindingId inside `function_expression_context`.
 pub(super) const VITEST_MUTABLE_SCALAR_CELL_PARAMETER_MARKER: &str =
     "@vitest-mutable-scalar-cell-parameter:";
-const MUTABLE_SCALAR_CELL_PARAMETER_NAME_MARKER: &str =
-    "@mutable-scalar-cell-parameter-name:";
+const MUTABLE_SCALAR_CELL_PARAMETER_NAME_MARKER: &str = "@mutable-scalar-cell-parameter-name:";
 const MUTABLE_SCALAR_CELL_PARAMETER_BINDING_MARKER: &str =
     "@mutable-scalar-cell-parameter-binding:";
 // The outer portable-test local whose identity is the cell passed to an approved helper.
@@ -1340,12 +1339,14 @@ fn uint8_array_parameter(
     ));
 }
 
-pub(crate) fn function_returns_uint8_array(
-    function: &ItemFn,
-    entities: &HashSet<String>,
-) -> bool {
+pub(crate) fn function_returns_uint8_array(function: &ItemFn, entities: &HashSet<String>) -> bool {
     return current_source(entities).map_or_else(
-        || entities.contains(&format!("{UINT8_ARRAY_RETURN_MARKER}{}", function.sig.ident)),
+        || {
+            entities.contains(&format!(
+                "{UINT8_ARRAY_RETURN_MARKER}{}",
+                function.sig.ident
+            ))
+        },
         |current| {
             entities.contains(&format!(
                 "{UINT8_ARRAY_RETURN_MARKER}{current}{PROVENANCE_SEPARATOR}{}",
@@ -4950,19 +4951,16 @@ fn safe_collection_element_typescript_type(
         return None;
     }
     let typescript_type = emit_type(rust_type, entities).ok()?;
-    if typescript_type.split(|character: char| {
-        !(character.is_ascii_alphanumeric() || character == '_')
-    }).any(|part| matches!(part, "any" | "never" | "unknown"))
+    if typescript_type
+        .split(|character: char| !(character.is_ascii_alphanumeric() || character == '_'))
+        .any(|part| matches!(part, "any" | "never" | "unknown"))
     {
         return None;
     }
     return Some(typescript_type);
 }
 
-fn binding_fact_typescript_type(
-    fact: &BindingFact,
-    entities: &HashSet<String>,
-) -> Option<String> {
+fn binding_fact_typescript_type(fact: &BindingFact, entities: &HashSet<String>) -> Option<String> {
     return match fact {
         BindingFact::Option(payload) => {
             let payload = binding_fact_typescript_type(payload, entities)?;
@@ -5065,13 +5063,11 @@ fn empty_vec_initializer<'a>(
                     return Some(EmptyVecInitializer::UnprovenOwner);
                 }
             };
-            Some(
-                if type_path_is_standard_vec(&owner, entities) {
-                    EmptyVecInitializer::Standard(element)
-                } else {
-                    EmptyVecInitializer::UnprovenOwner
-                },
-            )
+            Some(if type_path_is_standard_vec(&owner, entities) {
+                EmptyVecInitializer::Standard(element)
+            } else {
+                EmptyVecInitializer::UnprovenOwner
+            })
         }
         Expr::Group(group) => empty_vec_initializer(&group.expr, entities),
         Expr::Macro(invocation)
@@ -5900,8 +5896,12 @@ fn canonical_entity_ir_typed_array_alias(
     from: &str,
 ) -> Option<&'static str> {
     let rust_type = match rust_type {
-        Type::Group(group) => return canonical_entity_ir_typed_array_alias(&group.elem, entities, from),
-        Type::Paren(paren) => return canonical_entity_ir_typed_array_alias(&paren.elem, entities, from),
+        Type::Group(group) => {
+            return canonical_entity_ir_typed_array_alias(&group.elem, entities, from);
+        }
+        Type::Paren(paren) => {
+            return canonical_entity_ir_typed_array_alias(&paren.elem, entities, from);
+        }
         rust_type => rust_type,
     };
     let Type::Path(path) = rust_type else {
@@ -7447,10 +7447,7 @@ fn insert_lexical_binding_context(function: &ItemFn, context: &mut HashSet<Strin
                     _ => None,
                 };
             }
-            return binding_fact_typescript_type(
-                &self.initializer_fact(expression),
-                self.context,
-            );
+            return binding_fact_typescript_type(&self.initializer_fact(expression), self.context);
         }
 
         fn record_empty_sequence_candidate(
@@ -8535,9 +8532,8 @@ fn insert_lexical_binding_context(function: &ItemFn, context: &mut HashSet<Strin
             }
             if method == "push"
                 && call.args.len() == 1
-                && let Some(receiver) = single_path_identifier(peel_reference_and_paren(
-                    &call.receiver,
-                ))
+                && let Some(receiver) =
+                    single_path_identifier(peel_reference_and_paren(&call.receiver))
                 && let Some(id) = self.binding_id(&receiver)
                 && self.empty_sequence_bindings.contains(&id)
             {
@@ -8554,11 +8550,7 @@ fn insert_lexical_binding_context(function: &ItemFn, context: &mut HashSet<Strin
                 && let Some(id) = self.binding_id(&name)
                 && self.empty_sequence_bindings.contains(&id)
             {
-                self.record_empty_sequence_candidate(
-                    &id,
-                    self.result_element_type.clone(),
-                    true,
-                );
+                self.record_empty_sequence_candidate(&id, self.result_element_type.clone(), true);
             }
             syn::visit::visit_expr_return(self, expression);
         }
@@ -10966,11 +10958,7 @@ fn generation_context_with_types(
                     if array_like {
                         "array-like"
                     } else {
-                        typed_slice_parameter_kind_with_provenance(
-                            &argument.ty,
-                            &context,
-                            module,
-                        )
+                        typed_slice_parameter_kind_with_provenance(&argument.ty, &context, module)
                     }
                 ));
                 let Some(parameters) =
@@ -13739,8 +13727,7 @@ fn emit_expression_value(
             if matches!(
                 empty_vec_initializer(expression, entities),
                 Some(EmptyVecInitializer::Standard(_))
-            )
-            {
+            ) {
                 return Ok("[] as never[]".to_string());
             }
             if expression_is_associated_path(&call.func, "serde_json", "to_string")
@@ -15122,12 +15109,7 @@ fn emit_iter_mut_loop(
     chain: IterMutChain<'_>,
     entities: &HashSet<String>,
     indent: usize,
-    emit_body: fn(
-        &mut String,
-        &[Stmt],
-        &HashSet<String>,
-        usize,
-    ) -> Result<(), CompileError>,
+    emit_body: fn(&mut String, &[Stmt], &HashSet<String>, usize) -> Result<(), CompileError>,
 ) -> Result<(), CompileError> {
     let collection_expr = emit_expression(collection, entities)?;
     let index_var = "__i";
@@ -15174,13 +15156,14 @@ fn emit_iter_mut_loop(
         _ => mark_reference(&mut loop_context, &loop_expression.pat),
     }
 
-    let add_alias = |context: &mut HashSet<String>, pattern: &Pat, collection: &str, index: &str| {
-        if let Some(name) = local_pattern_name(pattern)
-            && let Some(id) = lexical_binding(context, &name)
-        {
-            context.insert(format!("{ITER_MUT_ALIAS_MARKER}{id}={collection}[{index}]"));
-        }
-    };
+    let add_alias =
+        |context: &mut HashSet<String>, pattern: &Pat, collection: &str, index: &str| {
+            if let Some(name) = local_pattern_name(pattern)
+                && let Some(id) = lexical_binding(context, &name)
+            {
+                context.insert(format!("{ITER_MUT_ALIAS_MARKER}{id}={collection}[{index}]"));
+            }
+        };
 
     if let IterMutChain::Zip(zip_expr) = &chain {
         let zip_collection = emit_expression(zip_expr, entities)?;
@@ -15230,7 +15213,10 @@ fn emit_iter_mut_loop(
         let index_name = emit_pattern(&tuple.elems[0])?;
         add_alias(
             &mut loop_context,
-            tuple.elems.last().expect("two tuple elements were required"),
+            tuple
+                .elems
+                .last()
+                .expect("two tuple elements were required"),
             &collection_expr,
             &index_name,
         );
@@ -15272,12 +15258,7 @@ pub(super) fn emit_iter_mut_loop_if_supported(
     loop_expression: &syn::ExprForLoop,
     entities: &HashSet<String>,
     indent: usize,
-    emit_body: fn(
-        &mut String,
-        &[Stmt],
-        &HashSet<String>,
-        usize,
-    ) -> Result<(), CompileError>,
+    emit_body: fn(&mut String, &[Stmt], &HashSet<String>, usize) -> Result<(), CompileError>,
 ) -> Result<bool, CompileError> {
     let Some((collection, chain)) = iter_mut_chain(&loop_expression.expr) else {
         return Ok(false);
@@ -15570,9 +15551,7 @@ fn emit_function(
         function_context.insert(RETURNS_NULLABLE_MARKER.to_string());
     }
     if function_returns_uint8_array(function, entities) {
-        function_context.insert(format!(
-            "{RETURNS_CONTRACT_TYPED_ARRAY_MARKER}Uint8Array"
-        ));
+        function_context.insert(format!("{RETURNS_CONTRACT_TYPED_ARRAY_MARKER}Uint8Array"));
     }
     if let ReturnType::Type(_, rust_type) = &function.sig.output
         && let Type::Array(array) = rust_type.as_ref()
@@ -15664,9 +15643,7 @@ pub(crate) fn emit_local_function(
         function_context.insert(RETURNS_U32_MARKER.to_string());
     }
     if function_returns_uint8_array(function, entities) {
-        function_context.insert(format!(
-            "{RETURNS_CONTRACT_TYPED_ARRAY_MARKER}Uint8Array"
-        ));
+        function_context.insert(format!("{RETURNS_CONTRACT_TYPED_ARRAY_MARKER}Uint8Array"));
     }
     if let ReturnType::Type(_, rust_type) = &function.sig.output
         && let Type::Array(array) = rust_type.as_ref()
@@ -25030,11 +25007,10 @@ fn emit_parameter_with_aliases(
         }
     };
     if matches!(argument.pat.as_ref(), Pat::Ident(pattern)
-        if entities.contains(&format!(
-            "{MUTABLE_SCALAR_CELL_PARAMETER_NAME_MARKER}{}",
-            pattern.ident
-        )))
-        && let Type::Reference(reference) = argument.ty.as_ref()
+    if entities.contains(&format!(
+        "{MUTABLE_SCALAR_CELL_PARAMETER_NAME_MARKER}{}",
+        pattern.ident
+    ))) && let Type::Reference(reference) = argument.ty.as_ref()
         && reference.mutability.is_some()
     {
         return Ok(format!(
@@ -27130,13 +27106,8 @@ fn emit_statement(
             emit_swap_remove_statement(out, call, entities, indent)?;
         }
         Stmt::Expr(Expr::ForLoop(loop_expression), _) => {
-            if !emit_iter_mut_loop_if_supported(
-                out,
-                loop_expression,
-                entities,
-                indent,
-                emit_block,
-            )? {
+            if !emit_iter_mut_loop_if_supported(out, loop_expression, entities, indent, emit_block)?
+            {
                 let mut loop_context = lexical_pattern_context(entities, &loop_expression.pat);
                 if let Some(loop_var) = local_pattern_name(&loop_expression.pat) {
                     loop_context.insert(format!("{SCOPE_DECLARED_MARKER}{loop_var}"));
@@ -27969,7 +27940,12 @@ pub(crate) fn insert_type_script_vitest_array_return_context<'a>(
     let test_functions = test_program
         .helpers
         .iter()
-        .chain(test_program.suites.iter().flat_map(|suite| suite.helpers.iter()))
+        .chain(
+            test_program
+                .suites
+                .iter()
+                .flat_map(|suite| suite.helpers.iter()),
+        )
         .collect::<Vec<_>>();
     for metadata in returns {
         let mut matches = test_functions
@@ -28087,8 +28063,7 @@ fn uint8_buffer_parameter_kind(
     let Type::Reference(reference) = rust_type else {
         return None;
     };
-    if canonical_entity_ir_typed_array_alias(&reference.elem, entities, from)
-        == Some("Uint8Array")
+    if canonical_entity_ir_typed_array_alias(&reference.elem, entities, from) == Some("Uint8Array")
     {
         return Some(if reference.mutability.is_some() {
             "uint8-mut-slice"
@@ -28115,7 +28090,8 @@ fn is_standard_u8_vec(rust_type: &Type, entities: &HashSet<String>) -> bool {
     };
     return path.qself.is_none()
         && type_path_is_standard_vec(&path.path, entities)
-        && standard_vec_inner_type(rust_type, entities).is_some_and(|inner| type_is_named(inner, "u8"));
+        && standard_vec_inner_type(rust_type, entities)
+            .is_some_and(|inner| type_is_named(inner, "u8"));
 }
 
 pub(crate) fn insert_type_script_nullable_option_field_context<'a>(

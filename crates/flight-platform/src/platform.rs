@@ -1,4 +1,3 @@
-
 use flight_entity::allocate_entity;
 
 use crate::types::*;

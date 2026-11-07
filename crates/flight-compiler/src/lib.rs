@@ -1116,25 +1116,22 @@ fn compile_vitest_with_contract_alias_sources_internal(
         alias_semantic_program_refs
             .iter()
             .map(|(module, program)| (*module, *program, true))
-            .chain(visibility_semantic_program_refs
-            .iter()
-            .zip(visibility_sources)
-            .map(|((module, program), source)| {
-                (*module, *program, source.current_package)
-            })),
+            .chain(
+                visibility_semantic_program_refs
+                    .iter()
+                    .zip(visibility_sources)
+                    .map(|((module, program), source)| (*module, *program, source.current_package)),
+            ),
     );
     typescript::insert_vitest_local_crate_context(
         &mut context,
         contract_module,
-        alias_sources
-            .iter()
-            .map(|source| source.module)
-            .chain(
-                visibility_sources
-                    .iter()
-                    .filter(|source| source.current_package)
-                    .map(|source| source.path),
-            ),
+        alias_sources.iter().map(|source| source.module).chain(
+            visibility_sources
+                .iter()
+                .filter(|source| source.current_package)
+                .map(|source| source.path),
+        ),
     );
     let visibility_function_programs = alias_program_refs
         .iter()
@@ -1143,9 +1140,7 @@ fn compile_vitest_with_contract_alias_sources_internal(
             visibility_program_refs
                 .iter()
                 .zip(visibility_sources)
-                .map(|((module, program), source)| {
-                    (*module, *program, source.current_package)
-                }),
+                .map(|((module, program), source)| (*module, *program, source.current_package)),
         )
         .collect::<Vec<_>>();
     typescript::insert_vitest_visibility_function_context(
@@ -1244,7 +1239,10 @@ fn compile_vitest_with_contract_alias_sources_internal(
     // A target-native sibling's hand-written TypeScript twin takes `T | null` for the Option parameters
     // of a `nullable-options` module, so a `None` argument passed to its public functions lowers to `null`.
     for visibility_source in visibility_sources {
-        if !matches!(source_mode(visibility_source.source)?, SourceMode::TargetNative) {
+        if !matches!(
+            source_mode(visibility_source.source)?,
+            SourceMode::TargetNative
+        ) {
             continue;
         }
         let visibility_program = model::parse_external_nullable_options(visibility_source.source)?;
@@ -3189,10 +3187,13 @@ fn validate_type_script_array_parameters(
     return Ok(());
 }
 
-fn validate_type_script_array_fields(fields: &[TypeScriptArrayField<'_>]) -> Result<(), CompileError> {
+fn validate_type_script_array_fields(
+    fields: &[TypeScriptArrayField<'_>],
+) -> Result<(), CompileError> {
     let mut positions = std::collections::BTreeSet::new();
     for field in fields {
-        if !valid_type_script_identifier(field.owner) || !valid_type_script_identifier(field.field) {
+        if !valid_type_script_identifier(field.owner) || !valid_type_script_identifier(field.field)
+        {
             return Err(compile_error(format!(
                 "TypeScript array field has invalid position `{}.{}`",
                 field.owner, field.field

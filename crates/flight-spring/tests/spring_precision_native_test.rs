@@ -1,4 +1,3 @@
-
 use flight_spring::contract::*;
 
 fn assert_accumulated_close(actual: f32, expected: f32, digits: i32, evaluations: usize) {
