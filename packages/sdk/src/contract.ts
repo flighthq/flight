@@ -38,7 +38,7 @@ export * from '@flighthq/clock';
 export * from '@flighthq/color';
 export { HslColor, HsvColor, LinearColor } from '@flighthq/color';
 export * from '@flighthq/command';
-export { CompressionFraming } from '@flighthq/compression/contract';
+export { CompressionFraming } from '@flighthq/compression';
 export * from '@flighthq/collision';
 export * from '@flighthq/connectivity';
 export * from '@flighthq/debug';

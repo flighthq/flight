@@ -40,7 +40,6 @@ export * from '@flighthq/color';
 export { HslColor, HsvColor, LinearColor } from '@flighthq/color';
 export * from '@flighthq/command';
 export * from '@flighthq/compression';
-export { CompressionFraming } from '@flighthq/compression/contract';
 export * from '@flighthq/encoding';
 export * from '@flighthq/collision';
 export * from '@flighthq/connectivity';

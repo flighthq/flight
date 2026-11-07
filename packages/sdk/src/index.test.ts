@@ -1,4 +1,5 @@
 import { BitmapCompositeMode as ContractBitmapCompositeMode } from './contract.ts';
+import { CompressionFraming as ContractCompressionFraming } from './contract.ts';
 import {
   BillboardKind as ContractBillboardKind,
   MeshDeformerSkeletal as ContractMeshDeformerSkeletal,
@@ -55,6 +56,14 @@ describe('package exports', () => {
 
     it('exports DisplayObjectKind with expected value', () => {
       expect(sdk.DisplayObjectKind).toBe('DisplayObject');
+    });
+  });
+
+  describe('compression domain', () => {
+    it('exports owner values without Types disambiguation', () => {
+      expect(sdk.Compression.Brotli).toBe('brotli');
+      expect(sdk.CompressionFraming.Raw).toBe('Raw');
+      expect(ContractCompressionFraming.Rfc1950).toBe('Rfc1950');
     });
   });
 

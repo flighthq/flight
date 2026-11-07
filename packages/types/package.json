@@ -50,7 +50,6 @@
     "@flighthq/clipboard": "*",
     "@flighthq/clock": "*",
     "@flighthq/collision": "*",
-    "@flighthq/compression": "*",
     "@flighthq/connectivity": "*",
     "@flighthq/device": "*",
     "@flighthq/dialog": "*",

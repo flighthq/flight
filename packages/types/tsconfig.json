@@ -152,9 +152,6 @@
       "path": "../clipboard/tsconfig.contract.json"
     },
     {
-      "path": "../compression"
-    },
-    {
       "path": "../dialog"
     },
     {

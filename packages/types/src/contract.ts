@@ -221,7 +221,6 @@ export * from './ColorScaleBias.ts';
 export * from './ColorScaleBiasAdjustment.ts';
 export * from './TintMaterialData.ts';
 export * from './ColorAdjustmentRuntime.ts';
-export * from './Compression.ts';
 export * from './CompressedImageResource.ts';
 export * from './Connectivity.ts';
 export * from './CreateCubeTextureOptions.ts';
