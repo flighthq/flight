@@ -3,6 +3,7 @@ import {
   lottieNullLayerHandler,
   lottieSolidLayerHandler,
 } from '@flighthq/scene2d-formats';
+import { LottieLayerKind } from '@flighthq/scene2d-formats/contract';
 // The floor: transforms and one flat rectangle. No images, no text, no shape items — and so none of `@flighthq/text`,
 // `@flighthq/texture`, the sprite, or the paint/path render stack.
 // ★ THE SELECTIVE ENTRY IS `createScene2DFromLottieDocumentWithRegistry`, NOT `createScene2DFromLottieDocument`.
@@ -12,10 +13,9 @@ import {
 // ★ AND THIS FIXTURE NAMES ONLY PUBLIC LANES. The selective entry, two handlers and a kind table all come from `.`, so
 // a name that left the public lane fails the build here. It proves the NAMES resolve, not the types: these fixtures are
 // bundled, never typechecked. The typed half is `createScene2DFromLottieDocumentWithRegistry`'s own test, which builds a
-// `LottieRegistry` out of `@flighthq/types` under tsc. Both halves are needed, because
-// `packages/types/src/LottieRegistry.ts` was contract-only while `LottieDocumentImportOptions.layerHandlers` was
-// already public — a public option whose element type no application could name.
-import { LottieLayerKind } from '@flighthq/types';
+// `LottieRegistry` out of `@flighthq/scene2d-formats/contract` under tsc. Both halves are needed, because the registry
+// contract was once contract-only while `LottieDocumentImportOptions.layerHandlers` was already public — a public
+// option whose element type no application could name.
 
 export const result = createScene2DFromLottieDocumentWithRegistry('{}', {
   layerHandlers: [

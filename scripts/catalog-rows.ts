@@ -43,6 +43,14 @@ import {
   svgUseElementHandler,
   SVG_REQUIREMENT_KEY_NAMESPACE,
 } from '@flighthq/scene2d-formats/contract';
+import type {
+  LottieLayerHandler,
+  LottieMaskHandler,
+  LottieShapeItemHandler,
+  RiveImportRegistry,
+  SvgClipHandler,
+  SvgElementHandler,
+} from '@flighthq/scene2d-formats/contract';
 import {
   awd2CameraHandler,
   awd2ContainerHandler,
@@ -209,14 +217,7 @@ import {
   TilemapFormatKindTiledTsx,
   TILEMAP_REQUIREMENT_KEY_NAMESPACE,
 } from '@flighthq/tilemap-formats/contract';
-import type { PathBooleanKernel, RiveImportRegistry } from '@flighthq/types/contract';
-import type {
-  LottieLayerHandler,
-  LottieMaskHandler,
-  LottieShapeItemHandler,
-  SvgClipHandler,
-  SvgElementHandler,
-} from '@flighthq/types/contract';
+import type { PathBooleanKernel } from '@flighthq/types/contract';
 import { RequirementFacet } from '@flighthq/types/contract';
 
 /**

@@ -62,7 +62,7 @@ export function createSvgNode2DBounds(target: Node2D, context: SvgImportContext)
  *
  * ★ THIS NAMES THE TEXT FAMILY'S NODE KINDS, AND ONLY ITS KINDS. Text bounds depend on a shaper the importer does not
  * run, so a subtree containing a label has no box and every `objectBoundingBox` consumer over it has to decline rather
- * than guess. That is a comparison against two kind constants from `@flighthq/types` — it links no text reading — so a
+ * than guess. That is a comparison against two kind constants from this package — it links no text reading — so a
  * build with no text family still answers the question correctly, by never meeting a label.
  */
 // Why `createSvgNode2DBounds` could not measure a subtree. The clip path reports this alongside the drop so

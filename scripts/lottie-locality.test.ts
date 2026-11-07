@@ -6,8 +6,8 @@ import {
   lottieAdditiveMaskHandler,
   lottieShapeLayerHandler,
 } from '@flighthq/scene2d-formats';
-import type { LottieDocument, LottieRegistry } from '@flighthq/types';
-import { LottieLayerKind, LottieMaskKind } from '@flighthq/types';
+import { LottieLayerKind, LottieMaskKind } from '@flighthq/scene2d-formats/contract';
+import type { LottieDocument, LottieRegistry } from '@flighthq/scene2d-formats/contract';
 import { build } from 'esbuild';
 import { describe, expect, it } from 'vitest';
 
@@ -18,7 +18,7 @@ const srcDir = join(root, 'packages', 'scene2d-formats', 'src');
 // FEATURE module — a layer, a shape item, or a paint — and the point of the decomposition is that the core cannot
 // reach one.
 const CORE = 'lottieDocument.ts';
-const ALLOWED_LOCAL = new Set(['lottieRegistry.ts']);
+const ALLOWED_LOCAL = new Set(['contract.scene2d-formats-types.ts', 'lottieRegistry.ts']);
 
 // Packages only a feature needs. A document of null layers has no business linking `@flighthq/text`, and the core
 // naming any of these is the coupling this file exists to prevent. `@flighthq/clip` joined the list when masks became a
@@ -177,9 +177,8 @@ describe('lottie locality', () => {
   // ★ THE SELECTIVE API HAS TO BE NAMEABLE, NOT JUST PRESENT. `LottieRegistry.ts` holds the registry, both handler
   // entry types and both `*Kind` tables; while `types` published it on `./contract` only, `layerHandlers` was a public
   // option with a private element type and no application could call the selective entry at all. The fixtures are the
-  // end-to-end proof — they name the entry, the handlers and a kind table from `.` alone — so the assertion that they
-  // reach for no contract lane is the assertion that the public lane is complete.
-  it('publishes the registry types and the selective entry on both lanes, and prices them through the public one', () => {
+  // end-to-end proof — they name the entry and handlers from `.`, and the kind tables from the owner contract lane.
+  it('publishes the selective entry publicly and prices owner contracts without Types', () => {
     const typesIndex = readFileSync(join(root, 'packages', 'types', 'src', 'index.ts'), 'utf8');
     const typesContract = readFileSync(join(root, 'packages', 'types', 'src', 'contract.ts'), 'utf8');
     for (const lane of [typesIndex, typesContract]) expect(lane).toContain("export * from './LottieRegistry.ts';");
@@ -189,16 +188,22 @@ describe('lottie locality', () => {
 
     for (const fixture of FIXTURES) {
       const source = readFileSync(join(root, 'tools', 'size', 'fixtures', fixture, 'src', 'render.canvas.ts'), 'utf8');
-      expect(codeOfText(source), `${fixture} imports a contract lane`).not.toContain("/contract'");
+      expect(codeOfText(source), `${fixture} omits the owner public lane`).toContain(
+        "from '@flighthq/scene2d-formats'",
+      );
+      if (fixture !== 'lottie-import') {
+        expect(codeOfText(source), `${fixture} omits the owner contract lane`).toContain(
+          "from '@flighthq/scene2d-formats/contract'",
+        );
+      }
     }
   });
 
   // ★ AND THE TYPES HAVE TO BE SATISFIABLE, NOT ONLY THE NAMES. The fixtures are bundled, never typechecked, so they
   // prove every name resolves on `.` and nothing more. This is the other half: a `LottieRegistry` written the way a
-  // caller has to write one, out of `@flighthq/types`' public lane, under tsc. It lives in `scripts/` because a package
-  // may not import a public lane — intra-SDK imports resolve to `/contract` — so no test inside `scene2d-formats` can
-  // make this claim at all.
-  it('lets an application drive the selective entry from the public lanes alone', () => {
+  // caller has to write one, out of `@flighthq/scene2d-formats/contract`, under tsc. It lives in `scripts/` because
+  // it verifies the non-package consumer lane that replaces the compatibility facade.
+  it('lets a non-package caller drive the selective entry from owner lanes', () => {
     const registry: LottieRegistry = {
       layerHandlers: [{ handle: lottieShapeLayerHandler, kind: LottieLayerKind.Shape }],
       maskHandlers: [{ handle: lottieAdditiveMaskHandler, kind: LottieMaskKind.Additive }],

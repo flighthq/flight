@@ -11,7 +11,7 @@ import {
   svgGeometryElementHandler,
   svgPathClipHandler,
 } from '@flighthq/scene2d-formats';
-import { SvgClipKind, SvgElementKind } from '@flighthq/types';
+import { SvgClipKind, SvgElementKind } from '@flighthq/scene2d-formats/contract';
 
 const registry = createSvgRegistry();
 registerSvgElementHandler(registry, SvgElementKind.Container, svgContainerElementHandler);

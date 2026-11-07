@@ -11,7 +11,7 @@ import {
   lottieShapeLayerHandler,
   lottieTrimPathShapeItemHandler,
 } from '@flighthq/scene2d-formats';
-import { LottieLayerKind, LottieShapeItemKind } from '@flighthq/types';
+import { LottieLayerKind, LottieShapeItemKind } from '@flighthq/scene2d-formats/contract';
 
 export const result = createScene2DFromLottieDocumentWithRegistry('{}', {
   layerHandlers: [{ handle: lottieShapeLayerHandler, kind: LottieLayerKind.Shape }],

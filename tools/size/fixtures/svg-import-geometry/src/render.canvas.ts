@@ -13,7 +13,7 @@ import {
   svgContainerElementHandler,
   svgGeometryElementHandler,
 } from '@flighthq/scene2d-formats';
-import { SvgElementKind } from '@flighthq/types';
+import { SvgElementKind } from '@flighthq/scene2d-formats/contract';
 
 const registry = createSvgRegistry();
 registerSvgElementHandler(registry, SvgElementKind.Container, svgContainerElementHandler);
