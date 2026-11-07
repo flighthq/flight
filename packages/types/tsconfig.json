@@ -416,9 +416,6 @@
       "path": "../scene3d-formats/tsconfig.contract.json"
     },
     {
-      "path": "../easing"
-    },
-    {
       "path": "../tween/tsconfig.contract.json"
     },
     {

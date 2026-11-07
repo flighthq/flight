@@ -10,7 +10,10 @@ import {
   SvgElementKind as ContractSvgElementKind,
 } from './contract.ts';
 import { TextFormatRange as ContractTextFormatRange } from './contract.ts';
-import type { TextFormatRangeRaw as ContractTextFormatRangeRaw } from './contract.ts';
+import type {
+  EasingStepsGuard as ContractEasingStepsGuard,
+  TextFormatRangeRaw as ContractTextFormatRangeRaw,
+} from './contract.ts';
 import * as sdk from './index.ts';
 
 describe('package exports', () => {
@@ -58,6 +61,14 @@ describe('package exports', () => {
   describe('effects domain', () => {
     it('exports createBloomEffect', () => {
       expect(sdk.createBloomEffect).toBeTypeOf('function');
+    });
+  });
+
+  describe('easing domain', () => {
+    it('exports the owner guard type from both aggregate lanes', () => {
+      const guard: sdk.EasingStepsGuard = (_count, _position) => undefined;
+
+      expectTypeOf(guard).toEqualTypeOf<ContractEasingStepsGuard>();
     });
   });
 
