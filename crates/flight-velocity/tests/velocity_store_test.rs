@@ -274,3 +274,30 @@ mod suppress_velocity {
         assert_eq!(out.y, 0.0);
     }
 }
+
+mod velocity_contributor {
+    use std::sync::Arc;
+
+    use super::*;
+
+    #[test]
+    fn accepts_the_transform_contributor_and_custom_producers() {
+        let contributors: Vec<VelocityContributor> = vec![
+            Arc::new(contribute_transform_velocity),
+            Arc::new(|field: &mut VelocityField, root: &NodeRef| {
+                let source = get_entity_id(&*root.read().unwrap());
+                contribute_velocity(field, source, 3.0, 4.0);
+            }),
+        ];
+        let mut field = create_velocity_field();
+        let root: NodeRef = create_display_object();
+        let source = get_entity_id(&*root.read().unwrap());
+        begin_velocity_frame(&mut field);
+        for contributor in &contributors {
+            contributor(&mut field, &root);
+        }
+        let mut out = Velocity2D { x: 0.0, y: 0.0 };
+        get_velocity(&field, source, &mut out);
+        assert_eq!((out.x, out.y), (3.0, 4.0));
+    }
+}

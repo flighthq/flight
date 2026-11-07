@@ -5,6 +5,7 @@
 //! `velocity_sample` module; the source-keyed wrappers here are one lookup plus one portable call.
 
 use std::collections::HashMap;
+use std::sync::Arc;
 
 use flight_entity::EntityRuntimeSlot;
 use flight_entity::allocate_entity;
@@ -37,6 +38,12 @@ pub struct VelocityField {
     pub samples: HashMap<SourceId, VelocitySample>,
     runtime: EntityRuntimeSlot,
 }
+
+/// A velocity producer: writes into the field (via `contribute_velocity` / `suppress_velocity`) for
+/// `root`'s subtree. A plain callable so any system (physics, tween, camera, transform delta) can be
+/// one without depending on this crate's internals; `contribute_transform_velocity` is the default.
+/// TS takes the root as `object`, the same node-identity mapping `ensure_node_velocity_sample` uses.
+pub type VelocityContributor = Arc<dyn Fn(&mut VelocityField, &NodeRef) + Send + Sync>;
 
 pub fn create_velocity_field() -> VelocityField {
     let mut out: VelocityField = allocate_entity();
