@@ -35,7 +35,7 @@
       "path": "../texture/tsconfig.runtime.json"
     },
     {
-      "path": "../types"
+      "path": "../types/tsconfig.scene2d-runtime-bridge-types.json"
     },
     {
       "path": "./tsconfig.contract.json"
