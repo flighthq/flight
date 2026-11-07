@@ -131,7 +131,7 @@ function collectStructuralHostGroupTypes(files: readonly Source[]): Array<Pick<V
   const hostGroupProperty = hostGroupPropertyPattern(hostGroups);
   const violations: Array<Pick<Violation, 'file' | 'type'>> = [];
   for (const { file, source } of files) {
-    if (file.startsWith('packages/types/') || !hostGroupProperty.test(source)) continue;
+    if (!hostGroupProperty.test(source)) continue;
     const sourceFile = ts.createSourceFile(file, source, ts.ScriptTarget.Latest, false, ts.ScriptKind.TS);
     const visit = (node: ts.Node): void => {
       if (
@@ -211,12 +211,13 @@ function containsCapabilityMember(type: ts.TypeNode, sourceFile: ts.SourceFile):
   return method;
 }
 
+// There is no aggregate Host (D26); the Web provider's own group declaration names every capability group.
 function collectHostGroups(): ReadonlySet<string> {
-  const source = readFileSync(resolve(PACKAGES, 'types/src/Host.ts'), 'utf8');
-  const sourceFile = ts.createSourceFile('Host.ts', source, ts.ScriptTarget.Latest, true, ts.ScriptKind.TS);
+  const source = readFileSync(resolve(PACKAGES, 'host-web/src/webHostGroups.ts'), 'utf8');
+  const sourceFile = ts.createSourceFile('webHostGroups.ts', source, ts.ScriptTarget.Latest, true, ts.ScriptKind.TS);
   const groups = new Set<string>();
   for (const statement of sourceFile.statements) {
-    if (!ts.isInterfaceDeclaration(statement) || statement.name.text !== 'Host') continue;
+    if (!ts.isInterfaceDeclaration(statement) || statement.name.text !== 'WebHostGroups') continue;
     for (const member of statement.members) {
       if (ts.isPropertySignature(member)) groups.add(propertyName(member.name));
     }

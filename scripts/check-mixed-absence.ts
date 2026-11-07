@@ -1,4 +1,4 @@
-import { readdirSync, readFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join, relative, resolve } from 'node:path';
 
 import pc from 'picocolors';
@@ -60,7 +60,8 @@ function containsNull(node: ts.TypeNode): boolean {
   return false;
 }
 
-function collectTypeSourceFiles(root: string): string[] {
+// Exported contracts live in their owner packages: each package's `src/types.ts` and `src/types/` tree.
+function collectTypeSourceFiles(packagesDir: string): string[] {
   const files: string[] = [];
   function walk(dir: string): void {
     for (const entry of readdirSync(dir, { withFileTypes: true })) {
@@ -72,13 +73,17 @@ function collectTypeSourceFiles(root: string): string[] {
       }
     }
   }
-  walk(root);
-  return files;
+  for (const packageEntry of readdirSync(packagesDir, { withFileTypes: true })) {
+    if (!packageEntry.isDirectory()) continue;
+    const src = join(packagesDir, packageEntry.name, 'src');
+    if (existsSync(join(src, 'types.ts'))) files.push(join(src, 'types.ts'));
+    if (existsSync(join(src, 'types'))) walk(join(src, 'types'));
+  }
+  return files.sort();
 }
 
 export function checkMixedAbsence(root: string): MixedAbsenceReport {
-  const typesDir = resolve(root, 'packages/types/src');
-  const sourceFiles = collectTypeSourceFiles(typesDir);
+  const sourceFiles = collectTypeSourceFiles(resolve(root, 'packages'));
   const allowlisted: MixedAbsenceSite[] = [];
   const violations: MixedAbsenceSite[] = [];
 
@@ -146,7 +151,7 @@ const provenance = formatGateProvenance(
     counting:
       'exported interface properties that are both optional (?:) and nullable (| null), ' +
       'excluding allowlisted dual-sentinel sites',
-    scope: 'packages/types/src/**/*.ts (non-test)',
+    scope: 'packages/*/src/types.ts and packages/*/src/types/**/*.ts (non-test)',
   },
   treeState,
 );
@@ -173,7 +178,8 @@ if (report.allowlisted.length > 0) {
   process.stdout.write(`\n${pc.dim(`${report.allowlisted.length} allowlisted dual-sentinel sites (intentional)`)}\n`);
 }
 
-const BASELINE = 105;
+// Measured on the owner packages' type files after @flighthq/types was deleted (the old subject).
+const BASELINE = 76;
 
 process.stdout.write(
   `\nbaseline: ${BASELINE}  current: ${report.violations.length}  allowlisted: ${report.allowlisted.length}\n`,

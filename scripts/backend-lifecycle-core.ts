@@ -265,7 +265,7 @@ export function formatBackendLifecycleReport(
         counting:
           'one unit = one interface; counted = DECLARES a ZERO-PARAMETER destroy/dispose in method or property syntax (a per-object teardown taking an id is excluded) AND an ambient set*Backend, structurally matched explicit Host destroy owner, or explicit Host slot owns its lifetime; this is declaration and wiring only, never evidence that destroy releases what the backend owns; enforced + noTeardownHook is asserted equal to total',
         scope:
-          'every exported *Backend or primary Host*Capability interface declared in packages/types/src or in owner-package sources (nested src directories included), plus every exported ambient set*Backend, structurally matched explicit Host destroy owner, and top-level function body in packages/*/src/**/*.ts; *.test.ts excluded',
+          'every exported *Backend or primary Host*Capability interface declared in owner-package sources (nested src directories included), with groups named by the Web provider WebHostGroups, plus every exported ambient set*Backend, structurally matched explicit Host destroy owner, and top-level function body in packages/*/src/**/*.ts; *.test.ts excluded',
       },
       readGateTreeState(process.cwd()),
     ),

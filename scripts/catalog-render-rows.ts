@@ -14,6 +14,7 @@ import {
   applyCanvasBlendMode,
 } from '@flighthq/scene2d-canvas';
 import * as canvas from '@flighthq/scene2d-canvas';
+import type { CanvasShapeCommand } from '@flighthq/scene2d-canvas/contract';
 import { domScene2DRenderPreset } from '@flighthq/scene2d-dom';
 import * as dom from '@flighthq/scene2d-dom';
 import { glScene2DRenderPreset } from '@flighthq/scene2d-gl';
@@ -40,7 +41,6 @@ import { wgpuScene3DRenderPreset } from '@flighthq/scene3d-wgpu';
 import * as scene3dWgpu from '@flighthq/scene3d-wgpu';
 import { SWF_DOCUMENT_NODE_KINDS, SWF_REQUIREMENT_KEY_NAMESPACE, SWF_TAG_NODE_KINDS } from '@flighthq/swf/contract';
 import { getSwfTagName } from '@flighthq/swf/contract';
-import type { CanvasShapeCommand } from '@flighthq/types/contract';
 
 /**
  * The render half of the built-in catalog: which renderer serves a node kind on each backend, and which

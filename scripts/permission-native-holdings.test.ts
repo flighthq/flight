@@ -13,7 +13,7 @@ describe('permission host ownership', () => {
   });
 
   it('defines the exact narrow provider and publishes it through the system Host group', () => {
-    const permissionTypes = readFileSync(resolve('packages/types/src/Permission.ts'), 'utf8');
+    const permissionTypes = readFileSync(resolve('packages/permissions/src/types.ts'), 'utf8');
     expect(permissionTypes).toMatch(/export interface HostPermissionsCapability \{/u);
     expect(permissionTypes).toContain('readonly notification: HostNotificationPermissionCapability;');
     expect(permissionTypes).toContain('queryPermission(name: PermissionName): Promise<PermissionQueryOutcome>;');
@@ -22,7 +22,7 @@ describe('permission host ownership', () => {
     );
     expect(permissionTypes).toContain('requestWakeLock(): Promise<PermissionRequestOutcome>;');
 
-    const hostTypes = readFileSync(resolve('packages/types/src/Host.ts'), 'utf8');
+    const hostTypes = readFileSync(resolve('packages/host-web/src/webHostGroups.ts'), 'utf8');
     expect(hostTypes).toMatch(/readonly permissions: HostPermissionsCapabilities;/u);
   });
 
@@ -51,8 +51,9 @@ describe('permission host ownership', () => {
 
   it('retires the native-holdings ledger and its exported type', () => {
     expect(existsSync(resolve('packages/permissions/src/permissionNativeHoldings.ts'))).toBe(false);
-    expect(existsSync(resolve('packages/types/src/PermissionNativeHolding.ts'))).toBe(false);
-    expect(readFileSync(resolve('packages/types/src/contract.ts'), 'utf8')).not.toContain('PermissionNativeHolding');
+    expect(readFileSync(resolve('packages/permissions/src/contract.ts'), 'utf8')).not.toContain(
+      'PermissionNativeHolding',
+    );
     expect(productionPermissionSource()).not.toContain('PERMISSION_NATIVE_HOLDINGS');
   });
 
@@ -90,8 +91,8 @@ function productionPermissionSource(): string {
 }
 
 function productionPermissionTypeSource(): string {
-  return ['Host.ts', 'Permission.ts']
-    .map((file) => readFileSync(resolve('packages/types/src', file), 'utf8'))
+  return ['packages/host-web/src/webHostGroups.ts', 'packages/permissions/src/types.ts']
+    .map((file) => readFileSync(resolve(file), 'utf8'))
     .join('\n');
 }
 

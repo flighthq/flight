@@ -445,8 +445,18 @@ function findExportedDeclarations(name: string): string[] {
   return findings.sort();
 }
 
+// Capability contracts live in their owner packages: every package's `src/types.ts`, `src/types/` tree,
+// and the Host vocabulary in `@flighthq/host`.
 function typeSources(): ts.SourceFile[] {
-  return sourcePaths(resolve(ROOT, 'packages/types/src'))
+  return readdirSync(resolve(ROOT, 'packages'), { withFileTypes: true })
+    .filter((entry) => entry.isDirectory())
+    .flatMap((entry) => {
+      const src = resolve(ROOT, 'packages', entry.name, 'src');
+      return [
+        ...[resolve(src, 'types.ts'), resolve(src, 'hostCapabilities.ts')].filter((path) => existsSync(path)),
+        ...sourcePaths(resolve(src, 'types')),
+      ];
+    })
     .filter((path) => !path.endsWith('.test.ts'))
     .map((path) => parseSource(path, readFileSync(path, 'utf8')));
 }

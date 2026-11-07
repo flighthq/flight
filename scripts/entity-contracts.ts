@@ -101,6 +101,9 @@ export interface EntityContractReport {
 }
 
 export interface EntityContractScope {
+  // The source declaring `Entity` and `EntityRuntime`. Production synthesizes it from @flighthq/entity;
+  // without one, a fixture source at `types/src/Entity.ts` serves.
+  entityReference?: SourceFile;
   project: Project;
   root: string;
   sourceFiles: readonly SourceFile[];
@@ -181,10 +184,10 @@ const TEST_SOURCE = /(?:^|\/)(?:__tests__|tests?)(?:\/|$)|\.(?:spec|test)\.(?:[c
 const TEST_HELPER_SOURCE = /(?:testhelper|testsupport)\.(?:[cm]?ts|tsx)$/i;
 
 export function checkEntityContracts(scope: Readonly<EntityContractScope>): EntityContractReport {
-  const entitySource = scope.sourceFiles.find((source) =>
-    normalizePath(source.getFilePath()).endsWith('/types/src/Entity.ts'),
-  );
-  if (entitySource === undefined) throw new Error('Entity contract gate could not find packages/types/src/Entity.ts');
+  const entitySource =
+    scope.entityReference ??
+    scope.sourceFiles.find((source) => normalizePath(source.getFilePath()).endsWith('/types/src/Entity.ts'));
+  if (entitySource === undefined) throw new Error('Entity contract gate has no Entity reference source');
   const entityType = exportedType(entitySource, 'Entity');
   const entityRuntimeType = exportedType(entitySource, 'EntityRuntime');
   const nonEntityCreateResults = scope.sourceFiles.flatMap((source) => {
@@ -298,7 +301,7 @@ export function checkEntityContracts(scope: Readonly<EntityContractScope>): Enti
         exposure.alias,
         'exported-local-alias',
         exposure.alias.getName(),
-        `implementation-local alias is exposed by ${shown}${remainder}; move the public shape to @flighthq/types`,
+        `implementation-local alias is exposed by ${shown}${remainder}; move the public shape to its owner package's types`,
       ),
     );
   }
@@ -325,7 +328,7 @@ export function checkEntityContracts(scope: Readonly<EntityContractScope>): Enti
 function exportedType(source: SourceFile, name: string): Type {
   const declaration = source.getExportedDeclarations().get(name)?.[0];
   if (declaration === undefined) {
-    throw new Error(`Entity contract gate could not resolve exported ${name} from packages/types/src/Entity.ts`);
+    throw new Error(`Entity contract gate could not resolve exported ${name} from ${source.getFilePath()}`);
   }
   return declaration.getType();
 }
@@ -472,8 +475,21 @@ export function readEntityContractReport(root: string): EntityContractReport {
     tsConfigFilePath: join(root, 'tsconfig.base.json'),
   });
   const sourceFiles = productionPaths.map((path) => project.addSourceFileAtPath(path));
+  // The Entity base: a raw record carrying the runtime slot, stated once here from @flighthq/entity's own
+  // vocabulary. Created in memory and never saved; it is a measuring reference, not production source.
+  const entityReference = project.createSourceFile(
+    join(root, 'packages/entity/src/entityContractReference.ts'),
+    [
+      "import type { EntityRaw, EntityRuntime, EntityRuntimeKey } from './types.ts';",
+      'export type { EntityRuntime };',
+      'export interface Entity extends EntityRaw {',
+      '  [EntityRuntimeKey]: EntityRuntime | undefined;',
+      '}',
+    ].join('\n'),
+    { overwrite: true },
+  );
   return {
-    ...checkEntityContracts({ project, root, sourceFiles }),
+    ...checkEntityContracts({ entityReference, project, root, sourceFiles }),
     excludedDeclarationFiles,
     excludedTestFiles,
     excludedTestHelperFiles,

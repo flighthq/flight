@@ -39,7 +39,7 @@ const PROVIDER_FIRST_TEXTURE_FUNCTIONS = [
   'setVideoTextureSource',
 ] as const;
 // The repository-wide ratchet scans that justified a 30s budget here have been retired; what remains
-// parses fixtures and the `packages/types/src` surface, which is bounded work. The budget stays only as
+// parses fixtures and the owner type surface, which is bounded work. The budget stays only as
 // contention headroom for the aggregate run, where this file shares the CPU with every other worker.
 describe('video host-seam closure', { timeout: 30_000 }, () => {
   it('recognizes every forbidden portable browser fixture', () => {
@@ -125,7 +125,7 @@ describe('video host-seam closure', { timeout: 30_000 }, () => {
   });
 
   it('keeps HostImageSource as the unchanged web drawable-source alias', () => {
-    const path = resolve(ROOT, 'packages/types/src/HostImageSource.ts');
+    const path = resolve(ROOT, 'packages/host/src/hostCapabilities.ts');
     const source = parseSource(path, readFileSync(path, 'utf8'));
     const aliases = source.statements
       .filter(ts.isTypeAliasDeclaration)
@@ -203,8 +203,18 @@ function productionTextureSources(): ts.SourceFile[] {
     .map((path) => parseSource(path, readFileSync(path, 'utf8')));
 }
 
+// Capability contracts live in their owner packages: every package's `src/types.ts`, `src/types/` tree,
+// and the Host vocabulary in `@flighthq/host`.
 function typeSources(): ts.SourceFile[] {
-  return sourcePaths(resolve(ROOT, 'packages/types/src'))
+  return readdirSync(resolve(ROOT, 'packages'), { withFileTypes: true })
+    .filter((entry) => entry.isDirectory())
+    .flatMap((entry) => {
+      const src = resolve(ROOT, 'packages', entry.name, 'src');
+      return [
+        ...[resolve(src, 'types.ts'), resolve(src, 'hostCapabilities.ts')].filter((path) => existsSync(path)),
+        ...sourcePaths(resolve(src, 'types')),
+      ];
+    })
     .filter((path) => !path.endsWith('.test.ts'))
     .map((path) => parseSource(path, readFileSync(path, 'utf8')));
 }

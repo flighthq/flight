@@ -9,48 +9,18 @@ import {
   readTsconfigPatterns,
   runTypechecks,
   typecheckProjects,
-  typeDeclarationsProject,
 } from './typecheck-core.ts';
 import type { TypecheckProject, TypecheckResult } from './typecheck-core.ts';
 import { workspacePackages } from './workspaces.ts';
 
 describe('runTypechecks', () => {
-  it('finishes the types declaration prerequisite before tools or another consumer starts', async () => {
-    const started: string[] = [];
-    let finishTypes!: (result: TypecheckResult) => void;
-    const typesFinished = new Promise<TypecheckResult>((resolve) => {
-      finishTypes = resolve;
-    });
-    let typesPassed = false;
-    const runProject = vi.fn(async (project: Readonly<TypecheckProject>): Promise<TypecheckResult> => {
-      started.push(project.label);
-      if (project === typeDeclarationsProject) return await typesFinished;
-      expect(typesPassed).toBe(true);
-      return result(project, true);
-    });
-
-    const pending = runTypechecks(typecheckProjects.length, runProject);
-
-    expect(typeDeclarationsProject.args).toEqual(['-b', 'packages/types/tsconfig.json']);
-    expect(started).toEqual(['types declarations prerequisite']);
-    expect(started).not.toContain('tools and root configs');
-
-    typesPassed = true;
-    finishTypes(result(typeDeclarationsProject, true));
-    const results = await pending;
-
-    expect(started).toEqual(['types declarations prerequisite', ...typecheckProjects.map(({ label }) => label)]);
-    expect(results.map(({ label }) => label)).toEqual(started);
-  });
-
-  it('does not launch any downstream project when declaration generation fails', async () => {
-    const runProject = vi.fn(async (project: Readonly<TypecheckProject>) => result(project, false));
+  it('runs every typecheck project and reports each result in project order', async () => {
+    const runProject = vi.fn(async (project: Readonly<TypecheckProject>) => result(project, true));
 
     const results = await runTypechecks(typecheckProjects.length, runProject);
 
-    expect(runProject).toHaveBeenCalledTimes(1);
-    expect(runProject).toHaveBeenCalledWith(typeDeclarationsProject);
-    expect(results).toEqual([result(typeDeclarationsProject, false)]);
+    expect(runProject).toHaveBeenCalledTimes(typecheckProjects.length);
+    expect(results.map(({ label }) => label)).toEqual(typecheckProjects.map(({ label }) => label));
   });
 });
 

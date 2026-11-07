@@ -3,11 +3,7 @@ import { join } from 'node:path';
 
 import { describe, expect, it } from 'vitest';
 
-import {
-  getPackageLayerCoverageViolations,
-  getPackageLayerDependencyViolation,
-  isTransitionalTypeAggregatorPackage,
-} from './package-layers.ts';
+import { getPackageLayerCoverageViolations, getPackageLayerDependencyViolation } from './package-layers.ts';
 import { isSdkBarrelExcludedPackage } from './sdk-policy.ts';
 
 describe('package dependency layers', () => {
@@ -38,10 +34,5 @@ describe('package dependency layers', () => {
       .map((manifest) => manifest.name);
 
     expect(getPackageLayerCoverageViolations(workspacePackageNames, isSdkBarrelExcludedPackage)).toEqual([]);
-  });
-
-  it('marks Types as a transitional type aggregator without changing its core layer', () => {
-    expect(isTransitionalTypeAggregatorPackage('@flighthq/types')).toBe(true);
-    expect(isTransitionalTypeAggregatorPackage('@flighthq/app')).toBe(false);
   });
 });

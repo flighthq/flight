@@ -179,10 +179,6 @@ describe('lottie locality', () => {
   // a private element type and no application could call the selective entry at all. The fixtures are the
   // end-to-end proof — they name the entry and handlers from `.`, and the kind tables from the owner contract lane.
   it('publishes the selective entry publicly and prices owner contracts without Types', () => {
-    const typesIndex = readFileSync(join(root, 'packages', 'types', 'src', 'index.ts'), 'utf8');
-    const typesContract = readFileSync(join(root, 'packages', 'types', 'src', 'contract.ts'), 'utf8');
-    for (const lane of [typesIndex, typesContract]) expect(lane).not.toContain('LottieRegistry.ts');
-
     const formatsIndex = readFileSync(join(srcDir, 'index.ts'), 'utf8');
     expect(formatsIndex).toContain('createScene2DFromLottieDocumentWithRegistry');
 

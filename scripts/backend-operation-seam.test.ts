@@ -4,6 +4,7 @@ import { pathToFileURL } from 'node:url';
 
 import { beforeAll, describe, expect, it } from 'vitest';
 
+import { capabilityDeclarationFiles } from './backend-lifecycle-collect.ts';
 import {
   BACKEND_OPERATION_SEAM_SCOPE_CAVEAT,
   collectBackendInterfaceNames,
@@ -31,7 +32,7 @@ describe('backend operation seam ratchet', () => {
   const RETIRED_MIGRATION_OBLIGATIONS: readonly string[] = ['LogTransport'];
 
   beforeAll(async () => {
-    const names = collectBackendInterfaceNames(packageSourceFiles('types'));
+    const names = collectBackendInterfaceNames(capabilityDeclarationFiles());
     const exportsByPackage = new Map<string, ReadonlySet<string>>();
     for (const packageName of packageNames()) {
       const publicLane = join(ROOT, 'packages', packageName, 'src', 'contract.ts');
@@ -43,7 +44,7 @@ describe('backend operation seam ratchet', () => {
       exportsByPackage.set(packageName, new Set(Object.keys(module)));
     }
     explicitHostSlots = collectExplicitHostOperationSeams(
-      packageSourceFiles('types'),
+      capabilityDeclarationFiles(),
       packageNames().flatMap(packageSourceFiles),
     );
     report = createBackendOperationSeamReport(names, exportsByPackage, explicitHostSlots);
@@ -99,7 +100,7 @@ describe('backend operation seam ratchet', () => {
 
   it('offsets the floor only for the two explicitly retired ambient migration obligations', () => {
     const byName = new Map(report.entries.map((entry) => [entry.name, entry]));
-    const hostTypes = readFileSync(resolve(ROOT, 'packages/types/src/Host.ts'), 'utf8');
+    const hostTypes = readFileSync(resolve(ROOT, 'packages/host-web/src/webHostGroups.ts'), 'utf8');
 
     expect(RETIRED_MIGRATION_OBLIGATIONS).toEqual(['LogTransport']);
     expect(byName.has('LogTransport')).toBe(false);

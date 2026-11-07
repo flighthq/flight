@@ -131,9 +131,9 @@ export interface FixtureTreeStampPack {
   verifiedFixturePaths: readonly string[];
 }
 
-// What an extracted pack actually put on disk, measured rather than assumed. Declared here rather than in
-// `@flighthq/types` because `scripts/` is outside the package graph — a build-script type does not belong
-// in the SDK's exported surface.
+// What an extracted pack actually put on disk, measured rather than assumed. Declared here rather than in a
+// package because `scripts/` is outside the package graph — a build-script type does not belong in the
+// SDK's exported surface.
 export interface FixtureExtractionVerification {
   // How many paths the pack's manifest declares. The specification, not a measurement.
   declaredFixtureFiles: number;

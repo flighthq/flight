@@ -14,7 +14,6 @@ import {
   getCoreGuardRuntimeImportViolations,
   getPackageLayerCoverageViolations,
   getPackageLayerDependencyViolation,
-  isTransitionalTypeAggregatorPackage,
 } from './package-layers.ts';
 import { getPackageLicenseViolations } from './package-license-policy.ts';
 import {
@@ -361,62 +360,6 @@ function scanContractLaneImports(files: string[], importingPackage: string): Map
   return violations;
 }
 
-// A transitional type aggregator may point up to feature owners only through statement-level type
-// imports/exports on their public contract lane. A value import, dynamic import, side-effect import,
-// package root, or arbitrary subpath remains a normal runtime edge and therefore a layer violation.
-function scanTypeOnlyOwnerContractViolations(files: string[]): Map<string, string[]> {
-  const violations = new Map<string, string[]>();
-
-  const record = (filePath: string, specifier: string, typeOnly: boolean): void => {
-    if (!specifier.startsWith('@flighthq/')) return;
-    const packageName = specifier.split('/').slice(0, 2).join('/');
-    if (typeOnly && isOwnerContractSpecifier(specifier, packageName)) return;
-    const path = relative(root, filePath).replaceAll('\\', '/');
-    const filesForPackage = violations.get(packageName);
-    if (filesForPackage === undefined) violations.set(packageName, [path]);
-    else if (!filesForPackage.includes(path)) filesForPackage.push(path);
-  };
-
-  for (const filePath of files) {
-    const parsed = getCheckedOxcSource(filePath);
-    if (parsed === null) continue;
-    for (const statement of parsed.program.body) {
-      if (statement.type === 'ImportDeclaration') {
-        const typeOnly =
-          statement.importKind === 'type' ||
-          (statement.specifiers.length > 0 &&
-            statement.specifiers.every(
-              (specifier) => specifier.type === 'ImportSpecifier' && specifier.importKind === 'type',
-            ));
-        record(filePath, statement.source.value, typeOnly);
-      } else if (statement.type === 'ExportNamedDeclaration' && statement.source !== null) {
-        const typeOnly =
-          statement.exportKind === 'type' ||
-          (statement.specifiers.length > 0 &&
-            statement.specifiers.every((specifier) => specifier.exportKind === 'type'));
-        record(filePath, statement.source.value, typeOnly);
-      } else if (statement.type === 'ExportAllDeclaration') {
-        record(filePath, statement.source.value, statement.exportKind === 'type');
-      } else if (
-        statement.type === 'TSImportEqualsDeclaration' &&
-        statement.moduleReference.type === 'TSExternalModuleReference' &&
-        statement.moduleReference.expression !== null
-      ) {
-        record(filePath, statement.moduleReference.expression.value, false);
-      }
-    }
-    for (const dynamicImport of parsed.module.dynamicImports) {
-      const source = parsed.text.slice(dynamicImport.moduleRequest.start, dynamicImport.moduleRequest.end);
-      const quote = source[0];
-      if ((quote === "'" || quote === '"') && source.at(-1) === quote) {
-        record(filePath, source.slice(1, -1), false);
-      }
-    }
-  }
-
-  return violations;
-}
-
 function skipOuterExpressions(expression: Expression): Expression {
   let e = expression;
   while (true) {
@@ -720,22 +663,9 @@ for (const pkgDir of packageDirs) {
     ),
   );
   const allFlightDeps = new Set<string>(Object.keys(allDeps).filter((d) => d.startsWith('@flighthq/')));
-  const aggregatorContractViolations = isTransitionalTypeAggregatorPackage(name)
-    ? scanTypeOnlyOwnerContractViolations(srcFiles)
-    : new Map<string, string[]>();
-
   for (const dep of [...prodDeps].sort()) {
     const violation = getPackageLayerDependencyViolation(name, dep);
     if (violation === null) continue;
-    if (isTransitionalTypeAggregatorPackage(name) && !aggregatorContractViolations.has(dep)) continue;
-    if (isTransitionalTypeAggregatorPackage(name)) {
-      const files = aggregatorContractViolations.get(dep) ?? [];
-      errors.push({
-        label: `${dep} uses a type-only owner contract edge`,
-        detail: `${name} may cross its core layer only with import type/export type through ${dep}/contract; invalid use in ${files.join(', ') || 'the manifest'}`,
-      });
-      continue;
-    }
     errors.push(violation);
   }
 

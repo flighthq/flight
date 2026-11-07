@@ -8,7 +8,7 @@
 //
 // WHY THIS IS NOT A DIAGNOSTIC-KIND REGISTRY, WHICH IS THE OPPOSITE RULE. `ImportDiagnostic.kind` is a
 // value colocated at each drop site and deliberately has no central list, because a registry drifts and
-// preserves stale "cannot do X" claims after X is built (see packages/types/src/ImportDiagnostic.ts).
+// preserves stale "cannot do X" claims after X is built (see packages/importdiagnostics/src/types.ts).
 // The two are different axes and must never be unified: a CAPABILITY is something the importer can do
 // and mostly emits no diagnostic at all, while a KIND names a place it declined. Several kinds here —
 // container rejections — correspond to no capability whatsoever.

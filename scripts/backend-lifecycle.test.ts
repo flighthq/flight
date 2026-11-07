@@ -162,15 +162,15 @@ describe('backend provider lifetime census', () => {
   });
 
   it('keeps the retired Log transport as a directly owned Entity outside the Backend census', () => {
-    const fileLogSinkTypes = readFileSync(resolve('packages/types/src/FileLogSink.ts'), 'utf8');
-    const logTypes = readFileSync(resolve('packages/types/src/Log.ts'), 'utf8');
+    const fileLogSinkTypes = readFileSync(resolve('packages/log/src/types.ts'), 'utf8');
+    const logTypes = readFileSync(resolve('packages/log/src/types.ts'), 'utf8');
 
     expect(report.entries.some((entry) => entry.interfaceName === 'LogTransportBackend')).toBe(false);
     expect(RETIRED_HISTORICAL_NAMES).toEqual(['LogTransportBackend']);
-    expect(logTypes).toContain('export interface LogTransport extends Entity');
+    expect(logTypes).toContain('export interface LogTransport extends LogEntity');
     expect(logTypes).toContain('flush(): Promise<LogTransportFlushOutcome>');
     expect(logTypes).toContain('destroy(): Promise<LogTransportDestroyOutcome>');
-    expect(fileLogSinkTypes).toContain('export interface FileLogSink extends Entity');
+    expect(fileLogSinkTypes).toContain('export interface FileLogSink extends LogEntity');
   });
 
   it('classifies all six bounded Shell providers without false teardown rows', () => {
@@ -274,26 +274,6 @@ describe('backend provider lifetime census', () => {
     expect(names).toContain('AppMenuBackend');
     expect(names).toContain('WindowGeometryBackend');
     expect(names).toContain('InputPointerLockBackend');
-  });
-
-  // Mutation coverage for the redefinition: the old Types-only subject cannot see the menu contract, so the
-  // same report built on it loses AppMenuBackend — the exact regression the widening repairs.
-  it('loses AppMenuBackend when the subject is narrowed back to packages/types', () => {
-    const typesOnly = packageSourceFiles('types');
-    const narrowed = createBackendLifecycleReport(
-      collectBackendInterfaceNames(typesOnly).map((name) => `${name}Backend`),
-      collectWholeBackendTeardowns(typesOnly),
-      collectSetterBodies(),
-      collectFunctionBodies(),
-      collectExplicitHostDestroyOwners(allPackageSourceFiles()),
-      new Map([
-        ['ScreenQueryBackend', 'Host.screen.query'],
-        ...collectExplicitHostLifecycleSlots(typesOnly, allPackageSourceFiles()),
-      ]),
-    );
-    expect(narrowed.enforcedNames).not.toContain('AppMenuBackend');
-    expect(narrowed.total).toBeLessThan(report.total);
-    expect(report.enforcedNames).toContain('AppMenuBackend');
   });
 
   it('pins the historical baseline names to the three original enforced backends', () => {

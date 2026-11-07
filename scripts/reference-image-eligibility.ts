@@ -20,8 +20,8 @@
 // available in-tree; it is still evidence, not proof, which is why the human review step in
 // `flight-reference-images` (§7 step 5) is the actual blessing and cannot be skipped.
 //
-// Types are declared locally rather than in `@flighthq/types` because `scripts/` is outside the package
-// graph — the same reason `ReferenceImageLock` lives in `scripts/reference-image-records.ts`.
+// Types are declared locally rather than in a package because `scripts/` is outside the package graph —
+// the same reason `ReferenceImageLock` lives in `scripts/reference-image-records.ts`.
 
 /** One cell's fresh-capture facts, read from `<root>/<subject>/<entry>/<renderer>/status.json`. */
 export interface ReferenceImageCaptureFact {

@@ -1,12 +1,9 @@
 // Validates the requirement-facet vocabulary. Its single authority is the Rust `RequirementFacet`
 // declaration in crates/flight-requirement, generated into @flighthq/requirement; a declaration rather
 // than an inventory derived from current scene walks can name a facet no producer emits yet, which makes
-// an unreported facet visible as missing coverage. `@flighthq/types` only re-exports it.
+// an unreported facet visible as missing coverage.
 //
-// `npm run facets` and `npm run facets:check` both verify: unique, well-formed and sorted ids and names,
-// and a `@flighthq/types` RequirementFacet that is a re-export rather than a second definition.
-import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
+// `npm run facets` and `npm run facets:check` both verify unique, well-formed and sorted ids and names.
 
 import { RequirementFacet } from '../packages/requirement/src/types.ts';
 
@@ -30,25 +27,8 @@ export function verifyRequirementFacets(facets: Readonly<Record<string, string>>
   return problems;
 }
 
-export function verifyTypesRequirementFacetAlias(source: string): string[] {
-  const code = source.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '');
-  if (/\b(?:const|type|enum)\s+RequirementFacet\b/.test(code)) {
-    return ['packages/types/src/RequirementFacet.ts defines RequirementFacet instead of re-exporting it'];
-  }
-  if (!/export\s*\{\s*RequirementFacet\s*\}\s*from\s*'@flighthq\/requirement\/contract'/.test(code)) {
-    return ['packages/types/src/RequirementFacet.ts must re-export RequirementFacet from @flighthq/requirement'];
-  }
-  return [];
-}
-
-const REPO_ROOT = join(import.meta.dirname, '..');
-const TYPES_ALIAS_PATH = join(REPO_ROOT, 'packages', 'types', 'src', 'RequirementFacet.ts');
-
 function main(): void {
-  const problems = [
-    ...verifyRequirementFacets(RequirementFacet),
-    ...verifyTypesRequirementFacetAlias(readFileSync(TYPES_ALIAS_PATH, 'utf8')),
-  ];
+  const problems = verifyRequirementFacets(RequirementFacet);
   if (problems.length > 0) {
     console.error(`✗ requirement-facet vocabulary is malformed:\n  ${problems.join('\n  ')}`);
     process.exitCode = 1;

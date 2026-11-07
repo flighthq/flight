@@ -7,7 +7,7 @@ const ROOT = resolve(import.meta.dirname, '..');
 
 describe('MIDI explicit Host capability shape', () => {
   it('publishes one required group with split direct provider leaves', () => {
-    const host = source('packages/types/src/Host.ts');
+    const host = source('packages/host-web/src/webHostGroups.ts');
     expect(host).toContain('readonly midi: HostMidiCapabilities;');
     const capabilities = source('packages/host/src/hostCapabilities.ts');
     const body = interfaceBody(capabilities, 'HostMidiCapabilities');

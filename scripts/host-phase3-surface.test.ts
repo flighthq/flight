@@ -25,11 +25,11 @@ describe('Host Phase 3 surface', () => {
   });
 
   it('does not redeclare removed Host aliases, witnesses, or partial web Hosts', () => {
-    const typeSources = sourceFiles(resolve(ROOT, 'packages/types/src'))
+    const typeSources = ownerSourceFiles()
       .filter((path) => !path.endsWith('.test.ts'))
       .map(readSource)
       .join('\n');
-    const hostSource = readSource(resolve(ROOT, 'packages/types/src/Host.ts'));
+    const hostSource = readSource(resolve(ROOT, 'packages/host-web/src/webHostGroups.ts'));
     const adapterSources = [
       ...sourceFiles(resolve(ROOT, 'packages/host-web/src')),
       ...sourceFiles(resolve(ROOT, 'packages/dialog/src')),
@@ -87,7 +87,7 @@ function canonicalWebHostNames(api: object): string[] {
 function collectHostCapabilityNames(): string[] {
   const names = new Set<string>();
   const pattern = /\bexport\s+(?:interface|type)\s+(Host[A-Z][A-Za-z0-9]*Capability)\b/gu;
-  for (const path of sourceFiles(resolve(ROOT, 'packages/types/src'))) {
+  for (const path of ownerSourceFiles()) {
     if (path.endsWith('.test.ts')) continue;
     for (const match of readSource(path).matchAll(pattern)) names.add(match[1]);
   }
@@ -172,6 +172,14 @@ function sourceFiles(directory: string): string[] {
       return entry.isDirectory() ? sourceFiles(path) : entry.isFile() && entry.name.endsWith('.ts') ? [path] : [];
     })
     .sort();
+}
+
+// Capability contracts live in their owner packages (there is no central types package), so the scan
+// covers every package's src tree.
+function ownerSourceFiles(): string[] {
+  return readdirSync(resolve(ROOT, 'packages'), { withFileTypes: true })
+    .filter((entry) => entry.isDirectory())
+    .flatMap((entry) => sourceFiles(resolve(ROOT, 'packages', entry.name, 'src')));
 }
 
 function repositoryTextFiles(directory: string): string[] {

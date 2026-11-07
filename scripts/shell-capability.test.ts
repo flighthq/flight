@@ -12,8 +12,8 @@ function source(path: string): string {
 describe('Shell explicit Host capability shape', () => {
   it('removes the aggregate, ambient selector, diagnostics, sentinel, and policy state', () => {
     const production = [
-      source('packages/types/src/Shell.ts'),
-      source('packages/types/src/Host.ts'),
+      source('packages/shell/src/types.ts'),
+      source('packages/host-web/src/webHostGroups.ts'),
       source('packages/shell/src/shell.ts'),
       source('packages/host-web/src/webShell.ts'),
       source('packages/host-electron/src/electronRegister.ts'),
@@ -49,7 +49,7 @@ describe('Shell explicit Host capability shape', () => {
   });
 
   it('removes ignored portable options and the duplicate path and batch methods', () => {
-    const types = source('packages/types/src/Shell.ts');
+    const types = source('packages/shell/src/types.ts');
     const coreAndProviders = [
       source('packages/shell/src/shell.ts'),
       source('packages/host-web/src/webShell.ts'),
@@ -60,7 +60,7 @@ describe('Shell explicit Host capability shape', () => {
     expect(types).not.toContain('ShellOpenPathOptions');
     expect(coreAndProviders).not.toContain('openPathResult');
     expect(coreAndProviders).not.toContain('moveItemsToTrash');
-    expect(source('packages/types/src/TauriApi.ts')).not.toContain('openWith');
+    expect(source('packages/host-tauri/src/types.ts')).not.toContain('openWith');
   });
 
   it('uses only the injected platform fact for Electron Shell construction', () => {

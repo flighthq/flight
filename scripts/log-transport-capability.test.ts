@@ -11,7 +11,7 @@ function source(path: string): string {
 
 describe('LogTransport zero-provider capability shape', () => {
   it('deletes the orphan Host slot and Has trait without a successor', () => {
-    const host = source('packages/types/src/Host.ts');
+    const host = source('packages/host-web/src/webHostGroups.ts');
 
     expect(host).not.toContain('LogTransport');
     expect(host).not.toContain('logTransport');
@@ -20,8 +20,8 @@ describe('LogTransport zero-provider capability shape', () => {
 
   it('deletes every ambient selector, operation query, and provider slot', () => {
     const production = [
-      source('packages/types/src/Log.ts'),
-      source('packages/types/src/FileLogSink.ts'),
+      source('packages/log/src/types.ts'),
+      source('packages/log/src/types.ts'),
       source('packages/log/src/log.ts'),
       source('packages/log/src/index.ts'),
       source('packages/log/src/contract.ts'),
@@ -42,12 +42,12 @@ describe('LogTransport zero-provider capability shape', () => {
   });
 
   it('takes one configured transport directly and pins it to an Entity sink', () => {
-    const fileLogSinkTypes = source('packages/types/src/FileLogSink.ts');
+    const fileLogSinkTypes = source('packages/log/src/types.ts');
     const fileLogSink = source('packages/log/src/fileLogSink.ts');
-    const logTypes = source('packages/types/src/Log.ts');
+    const logTypes = source('packages/log/src/types.ts');
 
-    expect(logTypes).toContain('export interface LogTransport extends Entity');
-    expect(fileLogSinkTypes).toContain('export interface FileLogSink extends Entity');
+    expect(logTypes).toContain('export interface LogTransport extends LogEntity');
+    expect(fileLogSinkTypes).toContain('export interface FileLogSink extends LogEntity');
     // The caller-owned LogState comes first (explicit state); the one transport is still taken directly.
     expect(fileLogSink).toMatch(
       /export function createFileLogSink\(\s*state: Readonly<LogState>,\s*transport: LogTransport,/,
@@ -56,7 +56,7 @@ describe('LogTransport zero-provider capability shape', () => {
   });
 
   it('requires admission, delivery, and terminal outcomes instead of optional operations', () => {
-    const logTypes = source('packages/types/src/Log.ts');
+    const logTypes = source('packages/log/src/types.ts');
 
     for (const outcome of [
       'LogTransportWriteOutcome',

@@ -9,7 +9,7 @@ function source(path: string): string {
 
 describe('Shortcut explicit dependency structure', () => {
   it('publishes required top-level trigger/query slots with exact W/E/T/C coverage', () => {
-    const hostTypes = source('packages/types/src/Host.ts');
+    const hostTypes = source('packages/host-web/src/webHostGroups.ts');
     expect(hostTypes).toContain('readonly shortcut: HostShortcutCapabilities;');
     expect(hostTypes).not.toContain('readonly shortcut?: ShortcutBackend;');
     expect(hostTypes).not.toContain('export interface HasShortcutTrigger');

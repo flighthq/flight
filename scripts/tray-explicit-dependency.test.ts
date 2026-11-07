@@ -4,8 +4,8 @@ import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 const root = process.cwd();
-const hostSource = readFileSync(resolve(root, 'packages/types/src/Host.ts'), 'utf8');
-const trayTypeSource = readFileSync(resolve(root, 'packages/types/src/Tray.ts'), 'utf8');
+const hostSource = readFileSync(resolve(root, 'packages/host-web/src/webHostGroups.ts'), 'utf8');
+const trayTypeSource = readFileSync(resolve(root, 'packages/tray/src/types.ts'), 'utf8');
 const trayCoreSource = readFileSync(resolve(root, 'packages/tray/src/tray.ts'), 'utf8');
 const electronRegisterSource = readFileSync(resolve(root, 'packages/host-electron/src/electronRegister.ts'), 'utf8');
 const tauriHostSource = readFileSync(resolve(root, 'packages/host-tauri/src/tauriHost.ts'), 'utf8');

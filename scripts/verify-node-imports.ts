@@ -14,7 +14,6 @@ const NODE_IMPORT_SPECIFIERS = [
   '@flighthq/tool-manifest',
   '@flighthq/tool-pipeline',
   '@flighthq/tool-registry',
-  '@flighthq/types/contract',
   '@flighthq/vite-plugin-manifest',
 ] as const;
 

@@ -168,8 +168,9 @@ describe('causal limitation prose', () => {
     expect(canvasState).not.toMatch(/\bcolorAdjustments\s*:/);
     expect(domState).not.toMatch(/\bcolorAdjustments\s*:/);
 
-    const lights = read('packages/types/src/Scene3DLights.ts');
-    expect(lights).not.toMatch(/\barea\??\s*:/);
+    const lightingTypes = read('packages/lighting/src/types.ts');
+    const lights = lightingTypes.slice(lightingTypes.indexOf('export interface Scene3DLights'));
+    expect(lights.slice(0, lights.indexOf('\n}'))).not.toMatch(/\barea\??\s*:/);
     const sceneIndex = read('packages/scene3d/src/index.ts');
     expect(sceneIndex).not.toContain('LodMesh');
     expect(read('packages/scene3d-gl/src/index.ts')).not.toMatch(/\bLodMesh\b/);

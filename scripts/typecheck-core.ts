@@ -28,15 +28,6 @@ export interface TypecheckResult {
 
 export type RunTypecheckProject = (project: Readonly<TypecheckProject>) => Promise<TypecheckResult>;
 
-// `@flighthq/types` publishes declarations from dist, so the independently configured functional and
-// tools projects resolve that output rather than the package's source. Running them beside the SDK
-// build lets a newly changed source tree race stale declarations. This prerequisite emits the current
-// declarations before any consumer process exists.
-export const typeDeclarationsProject: Readonly<TypecheckProject> = {
-  args: ['-b', 'packages/types/tsconfig.json'],
-  label: 'types declarations prerequisite',
-};
-
 export const typecheckProjects: readonly Readonly<TypecheckProject>[] = [
   { label: 'sdk, examples, and scripts', args: ['-b', '--noEmit'] },
   { label: 'functional scenes', args: ['-p', 'functional/tsconfig.json'] },
@@ -101,9 +92,7 @@ export function readTsconfigPatterns(path: string): TsconfigPatterns {
 }
 
 export async function runTypechecks(limit: number, runProject: RunTypecheckProject): Promise<TypecheckResult[]> {
-  const prerequisite = await runProject(typeDeclarationsProject);
-  if (!prerequisite.passed) return [prerequisite];
-  return [prerequisite, ...(await runProjects(typecheckProjects, limit, runProject))];
+  return await runProjects(typecheckProjects, limit, runProject);
 }
 
 // TypeScript reads a bare `include` entry as a directory subtree when it names one and as a file when it

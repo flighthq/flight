@@ -46,7 +46,10 @@ describe('render lane architecture', () => {
   // several canvases, and which one is the pass's business. The entity may name neither the surface it
   // came from nor the attributes that configured it.
   it('leaves the Canvas render state without a driver', () => {
-    const source = readFileSync(resolve(repositoryRoot, 'packages/types/src/CanvasRenderState.ts'), 'utf-8');
+    const source = readFileSync(
+      resolve(repositoryRoot, 'packages/scene2d-canvas/src/types/CanvasRenderState.ts'),
+      'utf-8',
+    );
     const fields = source.slice(source.indexOf('export interface CanvasRenderState'));
     const body = fields.slice(0, fields.indexOf('\n}'));
 

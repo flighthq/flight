@@ -397,37 +397,37 @@ version = "0.0.0"
 edition = "2024"
 
 [dependencies]
-flight-host = "0.0.0"
+flight-textformat = "0.0.0"
 `,
     );
     writeFileSync(join(crateRoot, 'src', 'lib.rs'), 'mod value;\npub mod contract;\npub use contract::*;\n');
     writeFileSync(join(crateRoot, 'src', 'contract.rs'), 'pub use super::value::*;\n');
     writeFileSync(
       sourcePath,
-      `use flight_host::BackendOperationExplanation;
+      `use flight_textformat::TextFormat;
 
-pub fn echo_explanation(value: BackendOperationExplanation) -> BackendOperationExplanation {
+pub fn echo_format(value: TextFormat) -> TextFormat {
     return value;
 }
 `,
     );
     writeFileSync(
       join(packageRoot, 'src', 'value.ts'),
-      `import type { BackendOperationExplanation } from '@flighthq/types/contract';
+      `import type { TextFormat } from '@flighthq/textlayout/contract';
 
-export function echoExplanation(value: BackendOperationExplanation): BackendOperationExplanation {
+export function echoFormat(value: TextFormat): TextFormat {
   return value;
 }
 `,
     );
-    writeFileSync(join(packageRoot, 'src', 'index.ts'), "export { echoExplanation } from './contract.ts';\n");
+    writeFileSync(join(packageRoot, 'src', 'index.ts'), "export { echoFormat } from './contract.ts';\n");
 
     const run = await generateWhileScanning();
 
     expect(run.code, run.stderr).toBe(0);
     const value = readFileSync(join(packageRoot, 'src', 'value.ts'), 'utf8');
-    expect(value).toContain("import type { BackendOperationExplanation } from '@flighthq/types/contract';");
-    expect(value).not.toContain("from '@flighthq/host/contract'");
+    expect(value).toContain("import type { TextFormat } from '@flighthq/textlayout/contract';");
+    expect(value).not.toContain("from '@flighthq/textformat/contract'");
   }, 120_000);
 
   it('replaces generated test-local records with their established external contract types', async () => {
@@ -465,7 +465,7 @@ fn consumes_the_established_binding() {
     writeFileSync(
       join(packageRoot, 'src', 'value.test.ts'),
       `import type { FlightDocumentLayoutBinding } from '@flighthq/scene-document/contract';
-import type { NodeAny } from '@flighthq/types/contract';
+import type { NodeAny } from '@flighthq/node/contract';
 
 const target = { name: 'root' } as NodeAny;
 const binding: FlightDocumentLayoutBinding = { targets: [target], tree: { nodes: [] } };
@@ -479,7 +479,7 @@ void binding;
       expect(run.code, run.stderr).toBe(0);
       const test = readFileSync(join(packageRoot, 'src', 'value.test.ts'), 'utf8');
       expect(test).toContain("import type { FlightDocumentLayoutBinding } from '@flighthq/scene-document/contract';");
-      expect(test).toContain("import type { NodeAny } from '@flighthq/types/contract';");
+      expect(test).toContain("import type { NodeAny } from '@flighthq/node/contract';");
       expect(test).toContain('const binding: FlightDocumentLayoutBinding =');
       expect(test).not.toContain('interface FlightDocumentLayoutBinding');
       expect(test).not.toContain('interface NodeAny');
@@ -725,7 +725,7 @@ pub fn unsupported_probe(value: &dyn std::any::Any) -> bool {
     );
     writeFileSync(
       join(packageRoot, 'src', 'value.ts'),
-      `import type { ShellExternalOutcome, ShellExternalReason } from '@flighthq/types/contract';
+      `import type { ShellExternalOutcome, ShellExternalReason } from '@flighthq/shell/contract';
 
 export function blockedOutcome(): ShellExternalOutcome {
   return { reason: 'blocked-scheme' as ShellExternalReason };
@@ -784,7 +784,7 @@ pub fn default_loop_mode() -> AnimationLoopMode {
     );
     writeFileSync(
       join(packageRoot, 'src', 'value.ts'),
-      `import type { AnimationLoopMode } from '@flighthq/types/contract';
+      `import type { AnimationLoopMode } from '@flighthq/animation/contract';
 
 export function defaultLoopMode(): AnimationLoopMode {
   return 'PingPong';
@@ -798,7 +798,7 @@ export function defaultLoopMode(): AnimationLoopMode {
 
     expect(run.code, run.stderr).toBe(0);
     const value = readFileSync(join(packageRoot, 'src', 'value.ts'), 'utf8');
-    expect(value).toContain("import type { AnimationLoopMode } from '@flighthq/types/contract';");
+    expect(value).toContain("import type { AnimationLoopMode } from '@flighthq/animation/contract';");
     expect(value).toContain("return 'PingPong';");
     expect(value).not.toContain("return 'pingPong';");
   }, 120_000);
@@ -859,7 +859,7 @@ mod shell_external_reason {
     );
     writeFileSync(
       join(packageRoot, 'src', 'value.ts'),
-      `import type { ShellExternalReason } from '@flighthq/types/contract';
+      `import type { ShellExternalReason } from '@flighthq/shell/contract';
 
 export function blockedReason(): ShellExternalReason {
   return 'blocked-scheme';
@@ -868,7 +868,7 @@ export function blockedReason(): ShellExternalReason {
     );
     writeFileSync(
       join(packageRoot, 'src', 'value.test.ts'),
-      `import type { ShellExternalReason } from '@flighthq/types/contract';
+      `import type { ShellExternalReason } from '@flighthq/shell/contract';
 
 describe('ShellExternalReason', () => {
   it('returns the blocked scheme literal', () => {
@@ -886,10 +886,10 @@ describe('ShellExternalReason', () => {
 
     expect(run.code, run.stderr).toBe(0);
     const value = readFileSync(join(packageRoot, 'src', 'value.ts'), 'utf8');
-    expect(value).toContain("import type { ShellExternalReason } from '@flighthq/types/contract';");
+    expect(value).toContain("import type { ShellExternalReason } from '@flighthq/shell/contract';");
     expect(value).toContain("return 'blocked-scheme';");
     const test = readFileSync(join(packageRoot, 'src', 'value.test.ts'), 'utf8');
-    expect(test).toContain("import type { ShellExternalReason } from '@flighthq/types/contract';");
+    expect(test).toContain("import type { ShellExternalReason } from '@flighthq/shell/contract';");
     expect(test).toContain("const reason: ShellExternalReason = 'blocked-scheme';");
     expect(test).toContain("expect(reason).toEqual('blocked-scheme');");
     expect(test).not.toContain('ShellExternalReason.BlockedScheme');
@@ -956,7 +956,7 @@ mod complete_status {
     // The production module names the canonical type-only owner; the handwritten test never did.
     writeFileSync(
       join(packageRoot, 'src', 'value.ts'),
-      `import type { Physics2DAbiExecutionStatus } from '@flighthq/types/contract';
+      `import type { Physics2DAbiExecutionStatus } from '@flighthq/physics2d-abi/contract';
 
 export function completeStatus(): Physics2DAbiExecutionStatus {
   return 'Complete';
@@ -1168,7 +1168,7 @@ flight-render-gl = { path = "${renderGlCrateRoot}" }
     writeFileSync(secondSourcePath, '//! flight-compiler: target-native\npub fn second_value() -> i32 { return 2; }\n');
     writeFileSync(
       join(packageRoot, 'src', 'value.ts'),
-      `import type { GlRenderState } from '@flighthq/types/contract';
+      `import type { GlRenderState } from '@flighthq/render-gl/contract';
 
 export function firstValue(_state?: Readonly<GlRenderState>): number {
   return 1;
@@ -1177,7 +1177,7 @@ export function firstValue(_state?: Readonly<GlRenderState>): number {
     );
     writeFileSync(
       join(packageRoot, 'src', 'second.ts'),
-      `import type { GlRenderStateOptions } from '@flighthq/types/contract';
+      `import type { GlRenderStateOptions } from '@flighthq/render-gl/contract';
 
 export function secondValue(_options?: Readonly<GlRenderStateOptions>): number {
   return 2;
@@ -1278,7 +1278,7 @@ compile_error!("unrelated target-native modules must not be probed for resolved 
     );
     writeFileSync(
       join(packageRoot, 'src', 'value.ts'),
-      `import type { AnimationPlayer, AnimationStateMachine } from '@flighthq/types/contract';
+      `import type { AnimationPlayer, AnimationStateMachine } from '@flighthq/animation/contract';
 
 export function advance(players: readonly AnimationPlayer[]): AnimationPlayer {
   return players[0];
@@ -1337,7 +1337,7 @@ fn keeps_the_existing_target_representation() {
 
     expect(run.code, run.stderr).toBe(0);
     const value = readFileSync(join(packageRoot, 'src', 'value.ts'), 'utf8');
-    expect(value).toContain("import type { AnimationPlayer } from '@flighthq/types/contract';");
+    expect(value).toContain("import type { AnimationPlayer } from '@flighthq/animation/contract';");
     expect(value).toContain('players: Readonly<AnimationPlayer[]>');
     expect(value).toContain('machine.transitionFromStateIndex = null;');
     expect(value).toContain('machine.transitionToStateIndex = null;');
@@ -1602,7 +1602,7 @@ pub fn remove_accessibility_node(
     );
     writeFileSync(
       join(packageRoot, 'src', 'value.ts'),
-      `import type { AccessibilityOperationOutcome } from '@flighthq/types/contract';
+      `import type { AccessibilityOperationOutcome } from '@flighthq/accessibility/contract';
 
 export function clearAccessibilityTree(
   outcome: AccessibilityOperationOutcome<'destroyed' | 'no-dom'>,

@@ -14,7 +14,7 @@
 // first one, and it answers any future case the same way the rule does: go look at the type name.
 //
 // The test: when a backend token sits at a non-initial position and is followed by another word, the
-// segment from that token to the end of the name must itself be a type exported by @flighthq/types. If
+// segment from that token to the end of the name must itself be a type exported by an owner package. If
 // it is, the backend is already glued to its type and whatever precedes it is an adjective. If it is
 // not, the token is wedged inside a type name that has been split around it.
 //
@@ -32,9 +32,9 @@ import pc from 'picocolors';
 import { SCAN_SKIP_DIRECTORIES } from './scanSkipDirectories.ts';
 
 // The render-backend token vocabulary. Closed on purpose: this scan validates a token against types
-// exported by @flighthq/types, so a token whose types are not here would govern nothing — an inert
+// exported by owner packages, so a token whose types are not there would govern nothing — an inert
 // entry reads like coverage while checking no name. A backend gains its token when its seam types
-// land in @flighthq/types, not when the backend is planned. Non-web backends built in sibling repos
+// land in an owner package, not when the backend is planned. Non-web backends built in sibling repos
 // (`render-cairo`, `scene2d-cairo` in flight-hx) are chartered under agents/packages/ with `spunOut`
 // front matter and enter here at that point; see agents/conventions/export-lanes.md.
 //
@@ -83,7 +83,7 @@ export interface BackendPrefixScan {
 // here (a ReferenceError in packageOf, five tests passing, backend-prefix:check broken), which is why
 // this seam exists rather than main() doing the work and calling process.exit itself.
 export function runBackendPrefixScan(): BackendPrefixScan {
-  const exportedTypes = collectExportedTypes(join(root, 'packages', 'types', 'src'));
+  const exportedTypes = collectExportedTypes(join(root, 'packages'));
   const sourceFiles: string[] = [];
   walk(join(root, 'packages'), sourceFiles);
   const registrarsByPackage = collectRegistrarsByPackage(sourceFiles);
@@ -144,7 +144,7 @@ function main(): void {
   );
   for (const v of violations) {
     console.log(
-      `  ${pc.yellow('!')} ${pc.white(`${v.path}`)} ${pc.bold(v.name)} ${pc.dim(`— "${v.segment}" is not a type in @flighthq/types; move the backend token to the front of the type name`)}`,
+      `  ${pc.yellow('!')} ${pc.white(`${v.path}`)} ${pc.bold(v.name)} ${pc.dim(`— "${v.segment}" is not an exported owner type; move the backend token to the front of the type name`)}`,
     );
   }
   console.log(
@@ -203,7 +203,7 @@ function namesType(segment: string, types: ReadonlySet<string>): boolean {
 //
 // ★ THIS IS A SECOND SPELLING OF THE SAME PROOF, NOT A SOFTENING, and someone will eventually read it as
 // one. The proof is TRANSITIVE: the aggregate is proved by the singular registrar, and that registrar was
-// proved against a real exported type. THE CHAIN STILL BOTTOMS OUT IN @flighthq/types — a rule that
+// proved against a real exported type. THE CHAIN STILL BOTTOMS OUT IN AN OWNER'S EXPORTED TYPE — a rule that
 // learns a second route to the same ground has not weakened. What it stops requiring is that every
 // aggregate invent a plural TYPE nobody needs purely to satisfy the checker.
 //

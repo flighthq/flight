@@ -49,7 +49,7 @@ export function createEmptyBackendOperationSeamReport(): BackendOperationSeamRep
   return { enforced: 0, entries: [], notMigrated: 0, total: 0, violations: [] };
 }
 
-// Every legacy `*Backend` or primary `Host*Capability` interface declared in `@flighthq/types`.
+// Every `*Backend` or primary `Host*Capability` interface declared in the census subject sources.
 // Canonical capabilities retain their historical Backend report identities so the long-lived ratchet
 // remains comparable after the transitional public aliases are removed.
 export function collectBackendInterfaceNames(typeSourceFiles: readonly string[]): string[] {
@@ -189,7 +189,7 @@ export function formatBackendOperationSeamReport(report: Readonly<BackendOperati
         counting:
           'one unit = one interface; enforced = its owning package exports explain<Name>Operation or a derived explicit Host slot is called for every non-lifecycle method; enforced + notMigrated is asserted equal to total',
         scope:
-          'every exported *Backend or primary Host*Capability interface in packages/types/src/*.ts, against the live contract-lane exports of every packages/*/ with a package.json; aggregator lanes that re-export another @flighthq package by name are excluded, because such a lane serves that package built output and would vouch for a deleted seam; no roster, no allowlist',
+          'every exported *Backend or primary Host*Capability interface declared in owner-package sources, against the live contract-lane exports of every packages/*/ with a package.json; aggregator lanes that re-export another @flighthq package by name are excluded, because such a lane serves that package built output and would vouch for a deleted seam; no roster, no allowlist',
       },
       readGateTreeState(process.cwd()),
     ),
@@ -311,10 +311,10 @@ export function collectHostCapabilityBackendAliases(typeSourceFiles: readonly st
   let hostSource = '';
   for (const sourceFile of typeSourceFiles) {
     const source = readFileSync(sourceFile, 'utf-8');
-    if (source.includes(HOST_DECLARATION)) hostSource = source;
+    if (HOST_DECLARATION.test(source)) hostSource = source;
     for (const match of source.matchAll(aliasPattern)) backendByCapability.set(match[2], match[1]);
   }
-  const hostStart = hostSource.indexOf('export interface Host extends Entity');
+  const hostStart = hostSource.search(HOST_DECLARATION);
   // The Host shape plus every Host group body, wherever the group is declared: owner packages declare
   // their own groups (`HostMenuCapabilities` in @flighthq/menu) after the type-home migration.
   const { groupByType, hostGroupBody } = collectHostGroups(typeSourceFiles);
@@ -336,8 +336,9 @@ function collectHostGroups(typeSourceFiles: readonly string[]): {
   hostGroupBody: (groupType: string) => string | undefined;
 } {
   const sources = typeSourceFiles.map((sourceFile) => ({ source: readFileSync(sourceFile, 'utf-8'), sourceFile }));
-  const hostSource = sources.find(({ source }) => source.includes(HOST_DECLARATION))?.source ?? '';
-  const hostBody = /export interface Host extends Entity \{([\s\S]*?)\n\}/u.exec(hostSource)?.[1] ?? '';
+  const hostSource = sources.find(({ source }) => HOST_DECLARATION.test(source))?.source ?? '';
+  const hostStart = hostSource.search(HOST_DECLARATION);
+  const hostBody = hostStart < 0 ? '' : (/\{([\s\S]*?)\n\}/u.exec(hostSource.slice(hostStart))?.[1] ?? '');
   const groupByType = new Map<string, string>();
   for (const match of hostBody.matchAll(/^\s*readonly ([A-Za-z0-9]+): (Host[A-Za-z0-9]+Capabilities);$/gmu)) {
     groupByType.set(match[2], match[1]);
@@ -362,6 +363,8 @@ export function capabilityBackendName(capability: string): string {
   return `${stem}Backend`;
 }
 
-// The canonical Host shape is found by its declaration, not a file name: owner packages also have a
-// `Host.ts` (`app/src/types/Host.ts`) that declares only their own groups.
-export const HOST_DECLARATION = 'export interface Host extends Entity';
+// The canonical group list is found by its declaration, not a file name. There is no aggregate Host
+// (D26); the Web provider's `WebHostGroups` declares every group, and the historical `Host` form is
+// still recognized so a fixture can state either shape.
+export const HOST_DECLARATION =
+  /export interface (?:Host extends Entity|[A-Z][A-Za-z0-9]*HostGroups extends EntityRaw) \{/u;

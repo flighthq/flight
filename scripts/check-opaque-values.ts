@@ -1,4 +1,4 @@
-import { readdirSync, readFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join, relative, resolve } from 'node:path';
 
 import pc from 'picocolors';
@@ -43,7 +43,8 @@ const ALLOWLIST: ReadonlySet<string> = new Set([
   'TweenManager.tweens',
 ]);
 
-function collectTypeSourceFiles(root: string): string[] {
+// Exported contracts live in their owner packages: each package's `src/types.ts` and `src/types/` tree.
+function collectTypeSourceFiles(packagesDir: string): string[] {
   const files: string[] = [];
   function walk(dir: string): void {
     for (const entry of readdirSync(dir, { withFileTypes: true })) {
@@ -55,8 +56,13 @@ function collectTypeSourceFiles(root: string): string[] {
       }
     }
   }
-  walk(root);
-  return files;
+  for (const packageEntry of readdirSync(packagesDir, { withFileTypes: true })) {
+    if (!packageEntry.isDirectory()) continue;
+    const src = join(packagesDir, packageEntry.name, 'src');
+    if (existsSync(join(src, 'types.ts'))) files.push(join(src, 'types.ts'));
+    if (existsSync(join(src, 'types'))) walk(join(src, 'types'));
+  }
+  return files.sort();
 }
 
 function isOpaqueType(node: ts.TypeNode): 'any' | 'record-unknown' | 'unknown' | null {
@@ -86,8 +92,7 @@ function isOpaqueType(node: ts.TypeNode): 'any' | 'record-unknown' | 'unknown' |
 }
 
 export function checkOpaqueValues(root: string): OpaqueValueReport {
-  const typesDir = resolve(root, 'packages/types/src');
-  const sourceFiles = collectTypeSourceFiles(typesDir);
+  const sourceFiles = collectTypeSourceFiles(resolve(root, 'packages'));
   const allowlisted: OpaqueValueSite[] = [];
   const violations: OpaqueValueSite[] = [];
 
@@ -215,7 +220,7 @@ const provenance = formatGateProvenance(
     counting:
       'exported interface properties typed as Record<string, unknown>, bare any, or bare unknown ' +
       '(excluding allowlisted error values, platform boundaries, and generic constraints)',
-    scope: 'packages/types/src/**/*.ts (non-test)',
+    scope: 'packages/*/src/types.ts and packages/*/src/types/**/*.ts (non-test)',
   },
   treeState,
 );
@@ -244,7 +249,10 @@ if (report.allowlisted.length > 0) {
   );
 }
 
-const BASELINE = 23;
+// Re-pinned when @flighthq/types was deleted: the subject moved from its facades (which by then declared
+// nothing and measured 0) to the owner packages' type files, where these 26 sites already lived. A
+// subject redefinition, not new opaque values.
+const BASELINE = 26;
 
 process.stdout.write(
   `\nbaseline: ${BASELINE}  current: ${report.violations.length}  allowlisted: ${report.allowlisted.length}\n`,

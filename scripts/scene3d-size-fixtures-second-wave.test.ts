@@ -83,7 +83,7 @@ describe('Scene3D second-wave size fixture isolation', () => {
       `@flighthq/scene3d-${backend}`,
       '@flighthq/surface',
       ...(spec.feature === 'billboard'
-        ? ['@flighthq/materials', '@flighthq/meshgeometry', '@flighthq/node', '@flighthq/registry', '@flighthq/types']
+        ? ['@flighthq/materials', '@flighthq/meshgeometry', '@flighthq/node', '@flighthq/registry']
         : spec.feature === 'particle-emitter'
           ? ['@flighthq/node', '@flighthq/particleemitter']
           : []),

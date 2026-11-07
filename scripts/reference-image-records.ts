@@ -12,8 +12,8 @@
 // host that produced a requested image remain provenance about that image rather than part of its key.
 // Nothing in this file or in `reference-image-state.ts` parses an identity.
 //
-// Types are declared locally rather than in `@flighthq/types` because `scripts/` is outside the package
-// graph — the same reason `FixtureExtractionVerification` lives in `scripts/fixtures.ts`.
+// Types are declared locally rather than in a package because `scripts/` is outside the package graph —
+// the same reason `FixtureExtractionVerification` lives in `scripts/fixtures.ts`.
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 

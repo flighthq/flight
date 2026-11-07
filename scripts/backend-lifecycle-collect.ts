@@ -52,18 +52,16 @@ export function collectFunctionBodies(): ReadonlyMap<string, string> {
   }
   return bodies;
 }
-// The census subject: every source that DECLARES a capability contract. `@flighthq/types` stays in full
-// (it holds the canonical `Host` shape), joined by each owner-package source that declares an exported
-// `Host*Capability`, `Host*Capabilities` group or `*Backend` interface — where those contracts live after
-// the type-home migration. A re-export (`export type { … } from`) is not a declaration, so an owner
-// contract and its Types alias are counted once.
+// The census subject: every owner-package source that DECLARES an exported `Host*Capability`,
+// `Host*Capabilities` group or `*Backend` interface, plus the Web provider's `WebHostGroups`, which
+// names every capability group now that there is no aggregate Host (D26). A re-export
+// (`export type { … } from`) is not a declaration, so each contract is counted once.
 export function capabilityDeclarationFiles(): string[] {
   const declaration = /^export interface (?:Host[A-Z]\w*Capabilit(?:y|ies)|[A-Z]\w*Backend)\b/m;
   const owners = packageNames()
-    .filter((packageName) => packageName !== 'types')
     .flatMap(packageSourceFiles)
     .filter((file) => declaration.test(readFileSync(file, 'utf-8')));
-  return [...packageSourceFiles('types'), ...owners];
+  return [resolve(ROOT, 'packages/host-web/src/webHostGroups.ts'), ...owners];
 }
 
 export function packageNames(): string[] {
