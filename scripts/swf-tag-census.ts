@@ -15,10 +15,9 @@
 import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { decompressDeflate, sdkHostDecompressDeflate } from '@flighthq/compression/contract';
+import { CompressionFraming, decompressDeflate, sdkHostDecompressDeflate } from '@flighthq/compression/contract';
 import { createHost } from '@flighthq/host/contract';
 import { createScene2DFromSwf, swfAllTagHandlers } from '@flighthq/swf/contract';
-import { CompressionFraming } from '@flighthq/types/contract';
 
 const SWF_PARSE_OPTIONS = {
   host: createHost({ decompress: { deflate: sdkHostDecompressDeflate } }),

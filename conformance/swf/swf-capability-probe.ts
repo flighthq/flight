@@ -1,5 +1,4 @@
-import { decompressDeflate } from '@flighthq/compression/contract';
-import { CompressionFraming } from '@flighthq/types/contract';
+import { CompressionFraming, decompressDeflate } from '@flighthq/compression/contract';
 
 export interface SwfCapabilityProbe {
   capabilities: string[];
