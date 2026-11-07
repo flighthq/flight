@@ -1,6 +1,5 @@
 // Texture-atlas contracts and their nominal runtime values are owned here. Keeping the rotation enum in
-// this contract project lets every consumer use the same value without a reverse dependency on
-// @flighthq/types.
+// this contract project lets every consumer use the same value.
 
 import type { EntityRaw, EntityRuntime, EntityWithoutRuntime } from '@flighthq/entity/contract';
 import type { EntityRuntimeKey } from '@flighthq/entity/contract';

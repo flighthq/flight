@@ -1,4 +1,4 @@
-// The command-owned contracts. They import nothing from @flighthq/types.
+// The command-owned contracts.
 
 import type { EntityRaw, EntityRuntime, Kind } from '@flighthq/entity/contract';
 import type { EntityRuntimeKey } from '@flighthq/entity/contract';

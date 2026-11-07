@@ -1,6 +1,6 @@
 // TypeScript-only host capability groups, kept as a target-native companion (see
 // crates/flight-host/src/host_capabilities.rs). Each group names capabilities owned by domain
-// packages and imported from their contract lanes, so this file never imports @flighthq/types.
+// packages and imported from their contract lanes.
 
 import type { HostAccessibilityCapability } from '@flighthq/accessibility/contract';
 import type { HostBitmapEncodeCapability, HostBitmapReadbackCapability } from '@flighthq/bitmap/contract';

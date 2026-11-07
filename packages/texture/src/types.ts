@@ -1,5 +1,5 @@
-// The texture-owned contracts in an acyclic lane: they import nothing from @flighthq/types, which now
-// re-exports them. Contract-only projects select this file through the `.texture-types` module suffix.
+// The texture-owned contracts in an acyclic lane. Contract-only projects select this file through the
+// `.texture-types` module suffix.
 
 import type { EntityRaw, EntityRuntime, EntityWithoutRuntime } from '@flighthq/entity/contract';
 import type { EntityRuntimeKey } from '@flighthq/entity/contract';

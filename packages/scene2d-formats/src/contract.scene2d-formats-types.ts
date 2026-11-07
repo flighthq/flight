@@ -1,4 +1,4 @@
-// Acyclic build entry selected by @flighthq/types through the `.scene2d-formats-types` module suffix.
+// Acyclic build entry selected by contract-only projects through the `.scene2d-formats-types` module suffix.
 // The published @flighthq/scene2d-formats/contract entry remains contract.ts, which adds runtime values.
 export * from './types/LottieDocument.ts';
 export * from './types/LottieDocumentImport.ts';

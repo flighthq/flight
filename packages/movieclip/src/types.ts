@@ -1,5 +1,5 @@
 // Movieclip-owned contracts. The header lane depends directly on the scene2d, spritesheet, and timeline
-// owners so runtime code and consumers do not need @flighthq/types.
+// owners.
 
 import type { Node2D, Node2DData, Node2DRuntime } from '@flighthq/scene2d/contract';
 import type { SpritesheetAnimation } from '@flighthq/spritesheet/contract';

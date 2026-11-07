@@ -1,5 +1,4 @@
-// The tween-owned contracts. They import nothing from @flighthq/types, which re-exports them
-// type-only for compatibility.
+// The tween-owned contracts.
 
 import type { EasingFunction } from '@flighthq/easing/contract';
 import type { EntityRaw, EntityRuntime } from '@flighthq/entity/contract';

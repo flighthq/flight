@@ -1,5 +1,4 @@
-// The glyphatlas-owned contracts. They import nothing from @flighthq/types, which re-exports them
-// type-only for compatibility.
+// The glyphatlas-owned contracts.
 
 import type { Bitmap } from '@flighthq/bitmap/contract';
 import type { EntityRaw, EntityRuntime } from '@flighthq/entity/contract';

@@ -59,7 +59,7 @@ const TIERS =
   'For each tier list CONCRETE, specific additions (named functions/types/capabilities), not vague goals. Be honest about effort and ordering.';
 
 const CONVENTIONS =
-  'Honor the Flight design rules: define shared types in @flighthq/types first (the header layer); plain data over runtime objects; free functions over methods; explicit allocation (create*/out-params); Readonly by default; *Kind string identifiers; tree-shakable, "sideEffects": false, single root "." export; swappable *Backend seams with get*/set*/createWeb* for platform capabilities; the "-formats" neighbor-package pattern for importers/parsers; signals via enable* groups; sentinels (null/false/-1) for expected failure, throw only on misuse; native-first with a Rust crate mirror (flighthq-<name>). Names carry the full unabbreviated type word.';
+  'Honor the Flight design rules: define shared types in their owning package first (its types/contract lane); plain data over runtime objects; free functions over methods; explicit allocation (create*/out-params); Readonly by default; *Kind string identifiers; tree-shakable, "sideEffects": false, single root "." export; swappable *Backend seams with get*/set*/createWeb* for platform capabilities; the "-formats" neighbor-package pattern for importers/parsers; signals via enable* groups; sentinels (null/false/-1) for expected failure, throw only on misuse; native-first with a Rust crate mirror (flighthq-<name>). Names carry the full unabbreviated type word.';
 
 const DEFAULT_PACKAGES = [
   'application',
@@ -489,7 +489,7 @@ function breadthMatPrompt(p) {
       p.name +
       '`, then **Represents** (one line), **Requested by** (' +
       p.by +
-      '), **Fits** (where it sits in the architecture: dependencies, neighbor packages, backend seam, Rust crate name), `## Bronze`, `## Silver`, `## Gold` (each a concrete bullet list naming the types/functions/capabilities — types in @flighthq/types first), `## Boundaries` (what stays out / lives in neighbors), and `## Open design questions`.',
+      '), **Fits** (where it sits in the architecture: dependencies, neighbor packages, backend seam, Rust crate name), `## Bronze`, `## Silver`, `## Gold` (each a concrete bullet list naming the types/functions/capabilities — types in the owning package first), `## Boundaries` (what stays out / lives in neighbors), and `## Open design questions`.',
     'Name functions and types concretely following the house naming rules. After writing, return the structured summary.',
   ].join('\n');
 }

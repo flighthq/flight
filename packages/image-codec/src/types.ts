@@ -1,5 +1,4 @@
-// The image-codec-owned contracts. They import nothing from @flighthq/types, which re-exports them
-// type-only for compatibility.
+// The image-codec-owned contracts.
 
 // Raw decoded image: straight (non-premultiplied) RGBA8 pixels plus dimensions. The output of an
 // ImageDecoder and the input to an ImageEncoder. `data` is row-major, 4 bytes per pixel, width*height*4

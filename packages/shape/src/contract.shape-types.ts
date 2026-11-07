@@ -1,4 +1,4 @@
-// Acyclic build entry selected by @flighthq/types through the `.shape-types` module suffix. The
+// Acyclic build entry selected by contract-only projects through the `.shape-types` module suffix. The
 // published ./contract.shape-types.ts entry remains contract.ts, which adds the runtime barrel.
 export * from './types/MorphShape.ts';
 export * from './types/MorphShapeAnimationTarget.ts';

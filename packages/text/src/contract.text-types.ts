@@ -1,4 +1,4 @@
-// Acyclic build entry selected by @flighthq/types through the `.text-types` module suffix. The
+// Acyclic build entry selected by contract-only projects through the `.text-types` module suffix. The
 // published @flighthq/text/contract entry remains contract.ts, which adds the runtime barrel.
 export type {
   NativeText,

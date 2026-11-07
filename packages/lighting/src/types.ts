@@ -1,5 +1,4 @@
-// The lighting-owned contracts. They import nothing from @flighthq/types, which re-exports the types
-// and keeps structural copies of the literal constants for compatibility.
+// The lighting-owned contracts.
 
 import type { EntityRaw, EntityRuntime, EntityWithoutRuntime, Kind } from '@flighthq/entity/contract';
 import type { EntityRuntimeKey } from '@flighthq/entity/contract';

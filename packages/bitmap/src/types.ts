@@ -1,5 +1,5 @@
-// The bitmap-owned contracts in an acyclic lane: they import nothing from @flighthq/types, which now
-// re-exports them. Contract-only projects select this file through the `.bitmap-types` module suffix.
+// The bitmap-owned contracts in an acyclic lane. Contract-only projects select this file through the
+// `.bitmap-types` module suffix.
 
 import type { EntityRaw, EntityRuntime } from '@flighthq/entity/contract';
 import type { EntityRuntimeKey } from '@flighthq/entity/contract';

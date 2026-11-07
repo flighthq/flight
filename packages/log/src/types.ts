@@ -2,8 +2,7 @@ import type { EntityRaw, EntityRuntime } from '@flighthq/entity/contract';
 import type { EntityRuntimeKey } from '@flighthq/entity/contract';
 import type { Signal } from '@flighthq/signals/contract';
 
-// The runtime-slotted entity shape these log records extend. Log owns its contracts, so it no longer
-// borrows the deprecated `Entity` from @flighthq/types (which re-exports these types instead).
+// The runtime-slotted entity shape these log records extend.
 interface LogEntity extends EntityRaw {
   [EntityRuntimeKey]: EntityRuntime | undefined;
 }

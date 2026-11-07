@@ -162,7 +162,7 @@ export interface WgpuScene3DRuntime {
   shadowSampleView: GPUTextureView | null;
   shadowUniformBuffer: GPUBuffer | null;
   // Opaque scene-wgpu caches. Values stay unknown here so backend-private binding/plan records do not
-  // leak into @flighthq/types; scene-wgpu narrows them at the ownership boundary.
+  // leak into the public contract; scene-wgpu narrows them at the ownership boundary.
   shadedMaterialBindingCache: WeakMap<object, unknown>;
   shadedMaterialPlanCache: WeakMap<object, unknown>;
   skinDrawBindGroup: GPUBindGroup | null;

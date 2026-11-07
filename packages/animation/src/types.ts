@@ -9,7 +9,7 @@ interface AnimationEntity extends EntityRaw {
 }
 
 // Structurally identical to `EasingFunction` from @flighthq/easing; declared here so animation's contracts
-// do not depend on the easing package (which depends on @flighthq/types).
+// do not depend on the easing package.
 type EasingFunction = (t: number) => number;
 
 // How an AnimationTrack interpolates between keyframes. 'Step' holds the previous keyframe's value;

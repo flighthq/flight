@@ -191,7 +191,7 @@ const API_CHECKLIST =
   '- Accessors use get*; boolean-returning use has*/is*. Flag get* that returns boolean or a non-getter, and boolean getters without has/is.\n' +
   '- Verb CONSISTENCY: the same operation uses the same verb across the package and vs sibling packages (create vs make vs new; copy/set vs assign; enable* signal groups). Flag inconsistent verbs for the same concept.\n' +
   '- Parameter-ordering symmetry across related functions (out/target placement consistent; source/target order consistent). Flag asymmetry.\n' +
-  '- `import type {}` on its own line (never `import { type Foo, bar }`). Cross-package types come from @flighthq/types, not defined inline.\n' +
+  '- `import type {}` on its own line (never `import { type Foo, bar }`). Cross-package types come from the owning package contract lane, not defined inline.\n' +
   '- Exported functions alphabetized within the file (npm run order checks this — only note egregious cases).';
 
 const FILENAME_CHECKLIST =
@@ -206,7 +206,7 @@ const FILENAME_CHECKLIST =
 const DEPS_CHECKLIST =
   'Dependency hygiene checklist (run `npm run packages:check` first; report what JUDGMENT adds beyond it):\n' +
   '- No package imports @flighthq/sdk (the barrel). Flag any.\n' +
-  '- Cross-package types live in @flighthq/types, not redefined inline in a consumer. Flag inline cross-package types.\n' +
+  '- Cross-package types live in their owning package, not redefined inline in a consumer. Flag inline cross-package types.\n' +
   '- Declared deps are MINIMAL and CORRECT: no unused declared dependency; no used-but-undeclared (phantom) dependency; workspace deps pinned "*".\n' +
   '- Layering is respected: depend on features/the header, not across boundaries. Renderers depend on render core; backends do not depend on each other; nothing reaches "up" a layer. Flag boundary violations and surprising edges.\n' +
   '- type-only deps imported with `import type` and not pulling runtime weight; package stays tree-shakable ("sideEffects": false).\n' +

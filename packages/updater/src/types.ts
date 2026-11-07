@@ -1,5 +1,4 @@
-// The updater-owned contracts. They import nothing from @flighthq/types, which re-exports them
-// type-only for compatibility.
+// The updater-owned contracts.
 
 import type { EntityRaw, EntityRuntime } from '@flighthq/entity/contract';
 import type { EntityRuntimeKey } from '@flighthq/entity/contract';

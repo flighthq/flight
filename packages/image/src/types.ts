@@ -18,8 +18,6 @@ interface ImageEntity extends EntityRaw {
 }
 
 // The image-owned contracts that depend on nothing outside the platform: the acyclic image contract lane.
-// @flighthq/types re-exports these; the image contracts that still reference bitmap, texture, surface,
-// host-source or image-codec types remain in @flighthq/types until those owners have acyclic lanes too.
 
 export interface HostImageDimensions {
   height: number;

@@ -8,7 +8,7 @@
 // This is visual because cropping is a draw-time source-region selection — the only way to confirm it
 // is to read the rasterized output and see exactly one quadrant's pixels, not the whole image.
 //
-// (Field confirmed in packages/types/src/Bitmap.ts: `sourceRectangle: Rectangle | null`, honored by the
+// (Field confirmed in packages/bitmap/src/types.ts: `sourceRectangle: Rectangle | null`, honored by the
 // canvas, dom, gl, and wgpu bitmap renderers.)
 import { createWebImageResourceFromCanvas } from '@flighthq/host-web';
 import type { Bitmap } from '@flighthq/sdk';

@@ -1,5 +1,5 @@
 // The media-owned contracts: host audio capabilities (crates/flight-media), audio channels, buses
-// and the mixer, and per-channel media signals. They import nothing from @flighthq/types.
+// and the mixer, and per-channel media signals.
 
 import type { AudioChannelState, AudioResource, HostAudioCodecCapability } from '@flighthq/audio/contract';
 import type { EntityRaw, EntityRuntime } from '@flighthq/entity/contract';

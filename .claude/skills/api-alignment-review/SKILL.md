@@ -37,7 +37,7 @@ For a small, targeted check you can also just follow the checklists below by han
 - Sentinels (`null`/`false`/`-1`) for expected failure; `throw` only for programmer error.
 - `get*` accessors; `has*`/`is*` for booleans.
 - **Verb & parameter-order consistency** within and across packages (the `_consistency.md` synthesis).
-- `import type {}` on its own line; cross-package types from `@flighthq/types`.
+- `import type {}` on its own line; cross-package types from the owning package's `/contract` lane.
 
 ### 2. `filenames` — filename descriptiveness (per package + `_global.md`)
 
@@ -52,7 +52,7 @@ The test: **remove the folder — is the bare filename self-describing?**
 ### 3. `deps` — dependency hygiene (per package + `_graph.md`)
 
 - No package imports `@flighthq/sdk`.
-- Cross-package types live in `@flighthq/types`, not redefined inline.
+- Cross-package types live in their owning package, not redefined inline.
 - Declared deps minimal/correct: no unused, no phantom (used-but-undeclared), workspace `"*"`.
 - Layering respected (renderers→render core; backends independent; nothing reaches up a layer).
 - The dep set is predictable from the package's purpose; flag surprising edges and cycles.

@@ -1,6 +1,5 @@
-// The texture-formats-owned container contracts in an acyclic lane: they import nothing from
-// @flighthq/types, which re-exports them. Contract-only projects select this file through the
-// `.texture-formats-types` module suffix.
+// The texture-formats-owned container contracts in an acyclic lane. Contract-only projects select this
+// file through the `.texture-formats-types` module suffix.
 
 // The GPU texture format carried by a texture container (KTX2 / DDS / Basis / ATF). This is the format the
 // level byte ranges are already encoded in — what a GL/WGPU backend hands to `texImage2D` /

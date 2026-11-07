@@ -57,7 +57,7 @@ import type { RenderState } from './types.ts';
 // GPU-ready light block), converting each packed sRgb color to linear, premultiplied radiance
 // (unpackColorToLinear(color) * intensity) so the shader never sees sRgb. Sets every presence count
 // (directional/ambient 0..1, point/spot/hemisphere 0..MAX_FORWARD_LIGHTS). The float layout matches
-// the shader's std140 light block exactly (SCENE_LIGHT_* offsets/strides in @flighthq/types); absent
+// the shader's std140 light block exactly (SCENE_LIGHT_* offsets/strides in @flighthq/lighting); absent
 // terms and unused array slots stay zeroed. Punctual arrays beyond MAX_FORWARD_LIGHTS are dropped.
 //
 // `version` bumps only when the packed data or counts actually change from the previous pack — a

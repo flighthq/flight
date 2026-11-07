@@ -1,5 +1,5 @@
 // Spritesheet-owned contracts. This header-only lane depends directly on the entity, signals, and
-// textureatlas owners so the runtime package no longer needs @flighthq/types.
+// textureatlas owners.
 
 import type { Entity } from '@flighthq/entity/contract';
 import type { Signal } from '@flighthq/signals/contract';
