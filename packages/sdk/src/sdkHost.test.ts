@@ -4,7 +4,7 @@ import {
   sdkHostDecompressDeflate,
   sdkHostDecompressLzma,
 } from '@flighthq/compression';
-import { CompressionFraming } from '@flighthq/types/contract';
+import { CompressionFraming } from '@flighthq/compression/contract';
 
 import { sdkHost, sdkHostCompress, sdkHostDecompress } from './sdkHost.ts';
 

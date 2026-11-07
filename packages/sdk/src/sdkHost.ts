@@ -1,6 +1,6 @@
 import { sdkHostCompressDeflate, sdkHostCompressLzma } from '@flighthq/compression';
 import { sdkHostDecompressDeflate, sdkHostDecompressLzma } from '@flighthq/compression';
-import type { HostCompressCapabilities, HostDecompressCapabilities } from '@flighthq/types/contract';
+import type { HostCompressCapabilities, HostDecompressCapabilities } from '@flighthq/host/contract';
 
 export const sdkHostCompress = {
   deflate: sdkHostCompressDeflate,

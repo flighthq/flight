@@ -38,12 +38,14 @@ export * from '@flighthq/clock';
 export * from '@flighthq/color';
 export { HslColor, HsvColor, LinearColor } from '@flighthq/color';
 export * from '@flighthq/command';
+export { CompressionFraming } from '@flighthq/compression/contract';
 export * from '@flighthq/collision';
 export * from '@flighthq/connectivity';
 export * from '@flighthq/debug';
 export * from '@flighthq/device';
 export * from '@flighthq/dialog';
 export * from '@flighthq/scene2d';
+export { DisplayObjectKind, SpriteKind } from '@flighthq/scene2d/contract';
 export * from '@flighthq/scene2d-canvas';
 export * from '@flighthq/scene2d-dom';
 export * from '@flighthq/scene2d-formats';
@@ -388,7 +390,33 @@ export {
 export * from '@flighthq/timeline';
 export * from '@flighthq/tray';
 export * from '@flighthq/tween';
-export * from '@flighthq/types';
+export type { HostAudioCodecCapability } from '@flighthq/audio/contract';
+export type { AudioDeviceOperation, HostAudioDeviceCapability } from '@flighthq/media/contract';
+export type { GlContextRuntime, GlContextState } from '@flighthq/render-gl/contract';
+export type { RendererData } from '@flighthq/node/contract';
+export type {
+  RenderCacheAdapter,
+  RenderCacheAdapterSignals,
+  RenderCacheRefreshOptions,
+  RenderProxy,
+  RenderProxy2D,
+  RenderProxyAdapter,
+  RenderProxyResolver,
+  RenderProxyVisitor,
+  RenderQueue,
+  RenderQueueEntry,
+  RenderSortKey,
+  RenderStateStats,
+  Scene3DRenderProxy,
+} from '@flighthq/render/contract';
+export type {
+  WgpuDeviceRuntime,
+  WgpuDeviceRuntimeResources,
+  WgpuDeviceState,
+  WgpuUniformEndiannessExplanation,
+  WgpuUniformEndiannessStatus,
+} from '@flighthq/render-wgpu/contract';
+export type { HostVideoCapabilities, HostVideoCapability } from '@flighthq/video/contract';
 export * from '@flighthq/updater';
 export * from '@flighthq/useragent';
 export * from '@flighthq/velocity';
