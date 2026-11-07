@@ -19,10 +19,10 @@ import {
   getRichTextSelectionRectangles,
 } from '@flighthq/textlayout/contract';
 import type { TextSelectionRectangle } from '@flighthq/textlayout/contract';
-import type { CanvasTextInputOverlay } from '@flighthq/types/contract';
 
 import { drawCanvasScene2D } from './canvasNode2D.ts';
 import { setCanvasTransform } from './canvasTransform.ts';
+import type { CanvasTextInputOverlay } from './contract.scene2d-canvas-types.ts';
 import type { CanvasRenderState } from './types/CanvasRenderState.ts';
 
 export function drawCanvasRichText(state: CanvasRenderState, renderProxy: RenderProxy2D): void {

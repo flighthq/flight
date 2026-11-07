@@ -96,6 +96,12 @@
       "path": "../effects/tsconfig.runtime.json"
     },
     {
+      "path": "../requirement"
+    },
+    {
+      "path": "../textshaper/tsconfig.runtime.json"
+    },
+    {
       "path": "./tsconfig.contract.json"
     }
   ],

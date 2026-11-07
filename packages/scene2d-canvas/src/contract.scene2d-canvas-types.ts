@@ -22,3 +22,5 @@ export type {
   CanvasRenderTextureStatus,
 } from './types/CanvasRenderTexture.ts';
 export type { CanvasTextureResolver, CanvasTextureResolvers } from './types/CanvasTextureResolver.ts';
+export type { CanvasImageSourceKind } from './types/CanvasImageSourceKind.ts';
+export type { CanvasTextInputOverlay } from './types/CanvasTextInputOverlay.ts';

@@ -2,8 +2,8 @@ import type { Kind } from '@flighthq/entity/contract';
 import { explainScene2DCoverage, hasScene2DCoverage } from '@flighthq/render/contract';
 import type { CatalogRegistration, SceneCoverageCatalog, SceneCoverageEntry } from '@flighthq/render/contract';
 import { RenderRegistryTable, SceneCoverage } from '@flighthq/render/contract';
+import { RequirementFacet } from '@flighthq/requirement/contract';
 import type { Scene2DKindUsage } from '@flighthq/scene2d/contract';
-import { RequirementFacet } from '@flighthq/types/contract';
 
 import { getCanvasQuadMaterialRenderer } from './canvasQuadMaterialRegistry.ts';
 import type { CanvasRenderState } from './types/CanvasRenderState.ts';

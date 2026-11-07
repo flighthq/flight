@@ -8,7 +8,7 @@ import type { InstancedMesh, Mesh, MeshSubset } from '@flighthq/meshgeometry/con
 import type { NodeAny, RendererData } from '@flighthq/node/contract';
 import type { Path, PathMesh, StrokeStyle } from '@flighthq/path/contract';
 import type { RequirementFacet } from '@flighthq/requirement/contract';
-import type { Node2D } from '@flighthq/scene2d/contract';
+import type { Node2D, Sprite } from '@flighthq/scene2d/contract';
 import type { ShapeCommandToken } from '@flighthq/shape/contract';
 import type { Signal } from '@flighthq/signals/contract';
 import type { HostCanvasCapability } from '@flighthq/surface/contract';
@@ -161,6 +161,12 @@ export interface NodeRenderer {
   // rendererData, which is per-node and per-state; absent renderers retain the revision-only path.
   isDirty?(state: RenderState, source: NodeAny, data: RendererData | null): boolean;
   submit(state: RenderState, node: RenderProxy): void;
+}
+
+// The NodeRenderer shape for Sprite nodes, shared by the Canvas, GL and WebGPU sprite renderers.
+export interface SpriteRenderer extends NodeRenderer {
+  createData(state: RenderState, source: Sprite): RendererData | null;
+  submit(state: RenderState, node: RenderProxy2D): void;
 }
 
 export interface RenderProxy extends EntityRaw {

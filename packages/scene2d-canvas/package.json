@@ -54,6 +54,7 @@
     "@flighthq/quadbatch": "*",
     "@flighthq/registry": "*",
     "@flighthq/render": "*",
+    "@flighthq/requirement": "*",
     "@flighthq/scene2d": "*",
     "@flighthq/shape": "*",
     "@flighthq/signals": "*",
@@ -62,9 +63,10 @@
     "@flighthq/textformat": "*",
     "@flighthq/textinput": "*",
     "@flighthq/textlayout": "*",
-    "@flighthq/tilemap": "*",
+    "@flighthq/textshaper": "*",
     "@flighthq/texture": "*",
     "@flighthq/textureatlas": "*",
+    "@flighthq/tilemap": "*",
     "@flighthq/types": "*"
   },
   "devDependencies": {

@@ -119,3 +119,4 @@ export * from './enableCanvasTextureResolverGuards.ts';
 export * from './explainCanvasScene2DCoverage.ts';
 export * from './explainCanvasTextureResolution.ts';
 export * from './scene2DCanvasPipeline.ts';
+export type { CanvasImageSourceKind, CanvasTextInputOverlay } from './contract.scene2d-canvas-types.ts';

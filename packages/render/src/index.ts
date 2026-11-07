@@ -15,3 +15,4 @@ export { destroyRenderState } from './renderState.ts';
 export { registerNodeRenderer, registerNodeRenderers } from './renderer.ts';
 export * from './scene2dWorkingColorSpace.ts';
 export { prepareScene3DRender } from './sceneRender.ts';
+export type { SpriteRenderer } from './types.ts';

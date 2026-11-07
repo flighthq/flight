@@ -92,6 +92,12 @@
       "path": "../types"
     },
     {
+      "path": "../requirement"
+    },
+    {
+      "path": "../textshaper/tsconfig.runtime.json"
+    },
+    {
       "path": "./tsconfig.contract.json"
     },
     {

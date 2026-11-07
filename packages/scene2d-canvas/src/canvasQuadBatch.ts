@@ -2,8 +2,8 @@
 import type { QuadBatch } from '@flighthq/quadbatch/contract';
 import { noopRendererData } from '@flighthq/render/contract';
 import type { RenderProxy2D } from '@flighthq/render/contract';
+import type { SpriteRenderer } from '@flighthq/render/contract';
 import { TextureAtlasRotation } from '@flighthq/textureatlas/contract';
-import type { SpriteRenderer } from '@flighthq/types/contract';
 
 import { drawCanvasAtlasRegion } from './canvasAtlasRegion.ts';
 import { applyCanvasMaterial } from './canvasQuadMaterialRegistry.ts';
