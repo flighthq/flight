@@ -1,6 +1,6 @@
 import type { HostWindowCapabilities } from '@flighthq/app/contract';
 import type { HostClipboardCapabilities } from '@flighthq/clipboard/contract';
-import type { Host, HostDialogCapabilities, HostUpdaterCapabilities } from '@flighthq/host/contract';
+import type { HostDialogCapabilities, HostUpdaterCapabilities } from '@flighthq/host/contract';
 import type { HostIpcCapabilities, HostIpcTargetedSendCapability } from '@flighthq/ipc/contract';
 import type { ElectronMenuCapabilities } from '@flighthq/menu/contract';
 import type {
@@ -29,8 +29,10 @@ type ElectronShellCapabilitiesFor<Profile extends DesktopOsProfile> = Required<
 > &
   (Profile extends 'windows' ? Required<Pick<HostShellCapabilities, 'shortcutLink'>> : object);
 
+import type { ElectronHostGroups } from './ElectronHostGroups.ts';
+
 export type ElectronHost<Profile extends DesktopOsProfile> = Omit<
-  Host,
+  ElectronHostGroups,
   | 'app'
   | 'clipboard'
   | 'dialog'

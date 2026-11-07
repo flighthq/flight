@@ -1,6 +1,6 @@
 import type { HostAppCapabilities, HostWindowCapabilities } from '@flighthq/app/contract';
 import type { HostClipboardCapabilities } from '@flighthq/clipboard/contract';
-import type { Host, HostDialogCapabilities } from '@flighthq/host/contract';
+import type { HostDialogCapabilities } from '@flighthq/host/contract';
 import type { TauriMenuCapabilities } from '@flighthq/menu/contract';
 import type { TauriNotificationCapabilities } from '@flighthq/notification/contract';
 import type { HostPlatformCapabilities } from '@flighthq/platform/contract';
@@ -36,6 +36,8 @@ import type { DesktopOsProfile, HostTrayCapabilities } from '@flighthq/tray/cont
 // wide async/sync gap: most Tauri calls are Promise-based, while several Flight
 // seams (window/shortcut/app getters/menu install/tray create) are synchronous. Those adapters call the
 // async Tauri method fire-and-forget and mirror state locally — see each adapter for the exact contract.
+
+import type { TauriHostGroups } from './tauriHostGroups.ts';
 
 export interface TauriApi {
   app: TauriAppModule;
@@ -331,7 +333,7 @@ export type TauriAppCapabilities = Required<
   Pick<HostAppCapabilities, 'hide' | 'locale' | 'name' | 'quit' | 'relaunch' | 'show' | 'version'>
 >;
 
-export type TauriHost<Profile extends DesktopOsProfile> = Host & {
+export type TauriHost<Profile extends DesktopOsProfile> = TauriHostGroups & {
   readonly app: TauriAppCapabilities;
   readonly clipboard: Required<Pick<HostClipboardCapabilities, 'text'>>;
   readonly dialog: Required<Pick<HostDialogCapabilities, 'directoryOpen' | 'fileOpen' | 'fileSave' | 'message'>>;

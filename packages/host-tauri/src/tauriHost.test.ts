@@ -1,6 +1,5 @@
 import { readClipboardText } from '@flighthq/clipboard/contract';
 import { EntityRuntimeKey } from '@flighthq/entity/contract';
-import { createHost } from '@flighthq/host/contract';
 import { getPlatformName } from '@flighthq/platform/contract';
 import { spawnSync } from 'child_process';
 import { resolve } from 'path';
@@ -170,7 +169,7 @@ function fakeTauri(): TauriApi {
 describe('tauriHost', () => {
   it('constructs one Entity with every Host group and exact supported slots', async () => {
     const host = publicApi.tauriHost(fakeTauri(), 'linux');
-    const hostGroups = Object.keys(createHost()).sort();
+    const hostGroups = [...HOST_GROUP_NAMES];
     expect(EntityRuntimeKey in host).toBe(true);
     expect(GROUPS.map(([group]) => group).sort()).toEqual(hostGroups);
     expect(Object.keys(host).sort()).toEqual(hostGroups);
@@ -255,3 +254,59 @@ describe('tauriHost', () => {
     expect(result.stdout).toBe('');
   });
 });
+
+// The capability groups every provider host carries (D26: each provider declares its own; there is no
+// aggregate Host to read them from).
+const HOST_GROUP_NAMES = [
+  'accessibility',
+  'app',
+  'audio',
+  'audioDecode',
+  'bitmap',
+  'canvas',
+  'clipboard',
+  'compress',
+  'connectivity',
+  'decompress',
+  'device',
+  'dialog',
+  'fileSystem',
+  'font',
+  'fullscreen',
+  'geolocation',
+  'gl',
+  'glyph',
+  'haptics',
+  'image',
+  'imageDecode',
+  'imageEncode',
+  'input',
+  'ipc',
+  'lifecycle',
+  'mediaSession',
+  'menu',
+  'midi',
+  'net',
+  'notification',
+  'permissions',
+  'platform',
+  'power',
+  'preferences',
+  'protocol',
+  'screen',
+  'sensors',
+  'share',
+  'shell',
+  'shortcut',
+  'socket',
+  'softKeyboard',
+  'statusBar',
+  'surface',
+  'textSegment',
+  'textShaper',
+  'tray',
+  'updater',
+  'video',
+  'wgpu',
+  'window',
+];

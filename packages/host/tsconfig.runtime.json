@@ -67,9 +67,6 @@
       "path": "../textshaper/tsconfig.contract.json"
     },
     {
-      "path": "../types"
-    },
-    {
       "path": "../video/tsconfig.contract.json"
     },
     {

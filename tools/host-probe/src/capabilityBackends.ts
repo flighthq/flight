@@ -1,4 +1,4 @@
-import type { Host } from '@flighthq/types/contract';
+import type { WebHostGroups } from '@flighthq/host-web';
 
 import type { HostProbeCapability } from './expectations.ts';
 
@@ -7,7 +7,7 @@ export type HostProbeBackendSnapshot = Readonly<Record<HostProbeCapability, unkn
 export function captureHostProbeBackends(
   host: Partial<
     Pick<
-      Host,
+      WebHostGroups,
       | 'accessibility'
       | 'app'
       | 'clipboard'

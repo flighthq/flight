@@ -1,6 +1,5 @@
 import { readClipboardText } from '@flighthq/clipboard/contract';
 import { EntityRuntimeKey } from '@flighthq/entity/contract';
-import { createHost } from '@flighthq/host/contract';
 
 import { capacitorHost } from './capacitorHost.ts';
 import type { CapacitorApi } from './types/index.ts';
@@ -69,7 +68,7 @@ describe('capacitor power slot coverage', () => {
 
 describe('capacitorHost', () => {
   it('publishes every Host group and no parallel top-level surface', () => {
-    expect(Object.keys(capacitorHost(fakeCapacitor(), 'ios')).sort()).toEqual(Object.keys(createHost()).sort());
+    expect(Object.keys(capacitorHost(fakeCapacitor(), 'ios')).sort()).toEqual([...HOST_GROUP_NAMES]);
   });
 
   it('exposes the real Capacitor haptics provider', () => {
@@ -145,3 +144,59 @@ describe('capacitorHost', () => {
     expect(await readClipboardText(host.clipboard.text)).toBe('CAP-TEXT');
   });
 });
+
+// The capability groups every provider host carries (D26: each provider declares its own; there is no
+// aggregate Host to read them from).
+const HOST_GROUP_NAMES = [
+  'accessibility',
+  'app',
+  'audio',
+  'audioDecode',
+  'bitmap',
+  'canvas',
+  'clipboard',
+  'compress',
+  'connectivity',
+  'decompress',
+  'device',
+  'dialog',
+  'fileSystem',
+  'font',
+  'fullscreen',
+  'geolocation',
+  'gl',
+  'glyph',
+  'haptics',
+  'image',
+  'imageDecode',
+  'imageEncode',
+  'input',
+  'ipc',
+  'lifecycle',
+  'mediaSession',
+  'menu',
+  'midi',
+  'net',
+  'notification',
+  'permissions',
+  'platform',
+  'power',
+  'preferences',
+  'protocol',
+  'screen',
+  'sensors',
+  'share',
+  'shell',
+  'shortcut',
+  'socket',
+  'softKeyboard',
+  'statusBar',
+  'surface',
+  'textSegment',
+  'textShaper',
+  'tray',
+  'updater',
+  'video',
+  'wgpu',
+  'window',
+];

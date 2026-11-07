@@ -3,7 +3,6 @@ import { dirname, isAbsolute, relative, resolve, sep } from 'node:path';
 
 import { sdkHostDecompressDeflate } from '@flighthq/compression';
 import { createGlyphOutlineSourceFromOpenTypeFont } from '@flighthq/font-formats';
-import { createHost } from '@flighthq/host/contract';
 import type { ImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import { parseParticleConfigDocument } from '@flighthq/particles-formats';
 import { martinezPathBooleanKernel } from '@flighthq/path-boolean';
@@ -452,11 +451,11 @@ const GLTF_EXTENSION_HANDLERS: readonly GltfExtensionHandler[] = [
 // The SWF import these adapters run with: deflate for CWS bodies, and every tag handler, since a
 // conformance run is exactly the case that must read whatever a fixture contains.
 const SWF_PARSE_OPTIONS = {
-  host: createHost({ decompress: { deflate: sdkHostDecompressDeflate } }),
+  deflate: sdkHostDecompressDeflate,
   tags: swfAllTagHandlers,
 };
 
 const AWD2_PARSE_OPTIONS = {
   blocks: awd2AllBlockHandlers,
-  host: createHost({ decompress: { deflate: sdkHostDecompressDeflate } }),
+  deflate: sdkHostDecompressDeflate,
 };

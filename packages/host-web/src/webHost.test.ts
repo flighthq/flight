@@ -1,5 +1,4 @@
 import { EntityRuntimeKey } from '@flighthq/entity/contract';
-import { createHost } from '@flighthq/host/contract';
 
 import * as contractApi from './contract.ts';
 import * as publicApi from './index.ts';
@@ -182,7 +181,7 @@ describe('webHost', () => {
   it('composes every Host group from its separately exported identity', () => {
     const host = publicApi.webHost as unknown as Record<string, unknown>;
     expect(EntityRuntimeKey in publicApi.webHost).toBe(true);
-    expect(GROUPS.map((entry) => entry[0]).sort()).toEqual(hostGroupNames(createHost()));
+    expect(GROUPS.map((entry) => entry[0]).sort()).toEqual([...HOST_GROUP_NAMES]);
     for (const [path, exportName] of GROUPS) {
       expect(Reflect.get(publicApi, exportName), exportName).toBe(Reflect.get(contractApi, exportName));
       expect(host[path], path).toBe(Reflect.get(publicApi, exportName));
@@ -246,3 +245,59 @@ function hostGroupNames(host: object): string[] {
     .filter((key) => key !== String(EntityRuntimeKey))
     .sort();
 }
+
+// The capability groups every provider host carries (D26: each provider declares its own; there is no
+// aggregate Host to read them from).
+const HOST_GROUP_NAMES = [
+  'accessibility',
+  'app',
+  'audio',
+  'audioDecode',
+  'bitmap',
+  'canvas',
+  'clipboard',
+  'compress',
+  'connectivity',
+  'decompress',
+  'device',
+  'dialog',
+  'fileSystem',
+  'font',
+  'fullscreen',
+  'geolocation',
+  'gl',
+  'glyph',
+  'haptics',
+  'image',
+  'imageDecode',
+  'imageEncode',
+  'input',
+  'ipc',
+  'lifecycle',
+  'mediaSession',
+  'menu',
+  'midi',
+  'net',
+  'notification',
+  'permissions',
+  'platform',
+  'power',
+  'preferences',
+  'protocol',
+  'screen',
+  'sensors',
+  'share',
+  'shell',
+  'shortcut',
+  'socket',
+  'softKeyboard',
+  'statusBar',
+  'surface',
+  'textSegment',
+  'textShaper',
+  'tray',
+  'updater',
+  'video',
+  'wgpu',
+  'window',
+];

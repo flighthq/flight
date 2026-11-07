@@ -1,6 +1,5 @@
 import type { EntityRuntimeKey } from '@flighthq/entity/contract';
-import { createHost } from '@flighthq/host/contract';
-import type { Host } from '@flighthq/host/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { DesktopOsProfile } from '@flighthq/tray/contract';
 
 import { electronHostApp } from './electronApp.ts';
@@ -56,6 +55,7 @@ import { electronHostStorageGroup } from './electronStorage.ts';
 import { electronHostTray } from './electronTray.ts';
 import { electronHostUpdater } from './electronUpdater.ts';
 import { electronHostWindow } from './electronWindow.ts';
+import type { ElectronHostGroups } from './types/ElectronHostGroups.ts';
 import type { ElectronApi, ElectronHost, ElectronHostOptions, ElectronMacosHost } from './types/index.ts';
 
 // Constructs the explicit Electron host from an injected Electron API and platform profile. Every
@@ -129,6 +129,8 @@ export function electronHost(
     video: electronHostVideoGroup(electron),
     wgpu: electronHostWgpuGroup(electron),
     window: electronHostWindow(electron),
-  } as const satisfies Omit<Host, typeof EntityRuntimeKey>;
-  return createHost(groups) as ElectronHost<DesktopOsProfile> | ElectronMacosHost;
+  } as const satisfies Omit<ElectronHostGroups, typeof EntityRuntimeKey>;
+  return finishEntity(Object.assign(allocateEntity<ElectronHost<DesktopOsProfile>>(), groups)) as
+    | ElectronHost<DesktopOsProfile>
+    | ElectronMacosHost;
 }

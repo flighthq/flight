@@ -2,7 +2,6 @@ import { readFileSync } from 'node:fs';
 import { parentPort } from 'node:worker_threads';
 
 import { sdkHostDecompressDeflate } from '@flighthq/compression/contract';
-import { createHost } from '@flighthq/host/contract';
 import type { ImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import { createScene2DFromSwf, swfAllTagHandlers } from '@flighthq/swf/contract';
 
@@ -36,6 +35,6 @@ parentPort.on('message', (request: SwfImportConformanceWorkerRequest) => {
 });
 
 const SWF_PARSE_OPTIONS = {
-  host: createHost({ decompress: { deflate: sdkHostDecompressDeflate } }),
+  deflate: sdkHostDecompressDeflate,
   tags: swfAllTagHandlers,
 };

@@ -1,5 +1,5 @@
 import type { EntityRuntimeKey } from '@flighthq/entity/contract';
-import { createHost } from '@flighthq/host/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 
 import type { WebHost } from './types.ts';
 import { webHostAccessibilityGroup } from './webAccessibilityHost.ts';
@@ -115,4 +115,4 @@ const groups = {
   window: webHostWindow,
 } as const satisfies Omit<WebHost, typeof EntityRuntimeKey>;
 
-export const webHost: WebHost = createHost(groups);
+export const webHost: WebHost = finishEntity(Object.assign(allocateEntity<WebHost>(), groups));

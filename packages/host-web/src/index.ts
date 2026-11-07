@@ -155,3 +155,4 @@ export {
 } from './webWindow.ts';
 export * from './webWindowHost.ts';
 export type { WebHost } from './types.ts';
+export type { WebHostGroups } from './webHostGroups.ts';

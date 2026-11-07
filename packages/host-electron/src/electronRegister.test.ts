@@ -2,7 +2,6 @@ import { getAppName } from '@flighthq/app';
 import { readClipboardText } from '@flighthq/clipboard/contract';
 import { EntityRuntimeKey } from '@flighthq/entity/contract';
 import type { EntityRaw, EntityRuntime } from '@flighthq/entity/contract';
-import { createHost } from '@flighthq/host/contract';
 
 import * as contractApi from './contract.ts';
 import { electronHost } from './electronRegister.ts';
@@ -246,9 +245,7 @@ describe('electronHost', () => {
 
   it('constructs every Host group through explicit canonical boundaries', () => {
     const host = electronHost(fakeElectron(), { platform: 'linux' }) as unknown as Record<string, unknown>;
-    const hostGroups = Object.keys(createHost())
-      .filter((key) => key !== String(EntityRuntimeKey))
-      .sort();
+    const hostGroups = [...HOST_GROUP_NAMES];
     expect(GROUPS.map((entry) => entry[0]).sort()).toEqual(hostGroups);
     expect(
       Object.keys(host)
@@ -303,3 +300,59 @@ describe('electronHost', () => {
     expect(Object.keys(linuxHost.shell).sort()).toEqual(['beep', 'external', 'pathOpen', 'pathReveal', 'trash']);
   });
 });
+
+// The capability groups every provider host carries (D26: each provider declares its own; there is no
+// aggregate Host to read them from).
+const HOST_GROUP_NAMES = [
+  'accessibility',
+  'app',
+  'audio',
+  'audioDecode',
+  'bitmap',
+  'canvas',
+  'clipboard',
+  'compress',
+  'connectivity',
+  'decompress',
+  'device',
+  'dialog',
+  'fileSystem',
+  'font',
+  'fullscreen',
+  'geolocation',
+  'gl',
+  'glyph',
+  'haptics',
+  'image',
+  'imageDecode',
+  'imageEncode',
+  'input',
+  'ipc',
+  'lifecycle',
+  'mediaSession',
+  'menu',
+  'midi',
+  'net',
+  'notification',
+  'permissions',
+  'platform',
+  'power',
+  'preferences',
+  'protocol',
+  'screen',
+  'sensors',
+  'share',
+  'shell',
+  'shortcut',
+  'socket',
+  'softKeyboard',
+  'statusBar',
+  'surface',
+  'textSegment',
+  'textShaper',
+  'tray',
+  'updater',
+  'video',
+  'wgpu',
+  'window',
+];

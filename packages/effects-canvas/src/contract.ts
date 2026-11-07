@@ -32,3 +32,4 @@ export type {
   CanvasEffectState,
   CanvasRenderTargetPool,
 } from './types.ts';
+export type { CanvasEffectSupport } from './types.ts';

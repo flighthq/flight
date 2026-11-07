@@ -254,7 +254,7 @@ function runtimeSourceFiles(): Source[] {
 function collectRuntimeSourceFiles(): Source[] {
   const files: Source[] = [];
   for (const packageEntry of readdirSync(PACKAGES, { withFileTypes: true })) {
-    // The Host layer itself is out of scope. `host` owns createHost/initializeHost and the accessors, and
+    // The Host layer itself is out of scope. `host` owns the bottom host vocabulary and capability seams, and
     // `host-*` are the platform backends that compose whole hosts; every API in either one is about a host
     // by definition, which is the opposite of the overbroad *runtime* parameter this ratchet catches.
     // `host` does not match the `host-` prefix, so it was scanned for as long as the package has existed.
