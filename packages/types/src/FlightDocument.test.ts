@@ -1,4 +1,5 @@
 import type { Camera3D, Projection } from '@flighthq/camera/contract';
+import type { Transform3D } from '@flighthq/geometry/contract';
 import type { Node3D } from '@flighthq/scene3d/contract';
 import type { Scene3D, Scene3DDocumentCamera, Scene3DDocumentLight } from '@flighthq/scene3d/contract';
 
@@ -18,7 +19,6 @@ import type { Light } from './Light.ts';
 import type { Node2D } from './Node2D.ts';
 import type { Scene2D } from './Scene2D.ts';
 import type { Scene3DLights } from './Scene3DLights.ts';
-import type { Transform3D } from './Transform3D.ts';
 
 describe('FlightDocument', () => {
   it('groups mixed-dimension scenes over one shared resource table', () => {

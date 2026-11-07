@@ -48,16 +48,12 @@
     }
   ],
   "include": [
-    "src/Aabb.ts",
     "src/Camera3D.ts",
     "src/contract.scene3d-bridge-types.ts",
     "src/Entity.ts",
     "src/HasAppearance.node-types.ts",
     "src/HasTransform3D.node-types.ts",
     "src/Light.ts",
-    "src/Matrix4.ts",
-    "src/Node.node-types.ts",
-    "src/Plane.ts",
-    "src/Vector2.ts"
+    "src/Node.node-types.ts"
   ]
 }

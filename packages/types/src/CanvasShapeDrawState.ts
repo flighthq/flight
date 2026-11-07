@@ -1,5 +1,6 @@
+import type { Matrix } from '@flighthq/geometry/contract';
+
 import type { CanvasTextureResolvers } from './CanvasTextureResolver.ts';
-import type { Matrix } from './Matrix.ts';
 import type { LineScaleMode } from './ShapeCommand.ts';
 
 export interface CanvasShapeDrawState {
