@@ -35,9 +35,6 @@
       "path": "../render-wgpu/tsconfig.contract.json"
     },
     {
-      "path": "../types/tsconfig.render-wgpu-types.json"
-    },
-    {
       "path": "../lighting/tsconfig.contract.json"
     },
     {
