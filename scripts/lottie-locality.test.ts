@@ -174,14 +174,14 @@ describe('lottie locality', () => {
     },
   );
 
-  // ★ THE SELECTIVE API HAS TO BE NAMEABLE, NOT JUST PRESENT. `LottieRegistry.ts` holds the registry, both handler
-  // entry types and both `*Kind` tables; while `types` published it on `./contract` only, `layerHandlers` was a public
-  // option with a private element type and no application could call the selective entry at all. The fixtures are the
+  // ★ THE SELECTIVE API HAS TO BE NAMEABLE, NOT JUST PRESENT. The Scene2D Formats contract owns the registry, handler
+  // entry types and `*Kind` tables; while the compatibility facade owned them, `layerHandlers` was a public option with
+  // a private element type and no application could call the selective entry at all. The fixtures are the
   // end-to-end proof — they name the entry and handlers from `.`, and the kind tables from the owner contract lane.
   it('publishes the selective entry publicly and prices owner contracts without Types', () => {
     const typesIndex = readFileSync(join(root, 'packages', 'types', 'src', 'index.ts'), 'utf8');
     const typesContract = readFileSync(join(root, 'packages', 'types', 'src', 'contract.ts'), 'utf8');
-    for (const lane of [typesIndex, typesContract]) expect(lane).toContain("export * from './LottieRegistry.ts';");
+    for (const lane of [typesIndex, typesContract]) expect(lane).not.toContain('LottieRegistry.ts');
 
     const formatsIndex = readFileSync(join(srcDir, 'index.ts'), 'utf8');
     expect(formatsIndex).toContain('createScene2DFromLottieDocumentWithRegistry');

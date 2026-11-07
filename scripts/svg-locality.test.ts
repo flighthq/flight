@@ -10,7 +10,14 @@ const srcDir = join(root, 'packages', 'scene2d-formats', 'src');
 // The document core, and the only local modules it may reach. Everything else in this package's SVG surface is either a
 // FEATURE module — an element family or the clip family — or shared plumbing one of them owns.
 const CORE = 'svgDocument.ts';
-const ALLOWED_LOCAL = new Set(['svgGradient.ts', 'svgRegistry.ts', 'svgStyle.ts', 'svgTransform.ts', 'svgXml.ts']);
+const ALLOWED_LOCAL = new Set([
+  'contract.scene2d-formats-types.ts',
+  'svgGradient.ts',
+  'svgRegistry.ts',
+  'svgStyle.ts',
+  'svgTransform.ts',
+  'svgXml.ts',
+]);
 
 // Packages only a feature needs. `@flighthq/clip` is the one this decomposition was ruled on: clipping used to be a step
 // in the element walk, so the clip region, the bounding-box measurement and a second reading of the geometry elements and
@@ -127,17 +134,23 @@ describe('svg locality', () => {
     expect(importers.sort()).toEqual([...expected]);
   });
 
-  // ★ AND THE SELECTIVE API HAS TO BE NAMEABLE FROM THE PUBLIC LANE. `types` publishes `SvgRegistry.ts` on both lanes, so
-  // an application can name the registry, both kind tables and the handlers it registers — and the fixtures are the
-  // end-to-end proof, because esbuild fails the build if any of those names left `.`. They are bundled and never
-  // typechecked, so the typed half is the package's own tests under tsc.
-  it('prices every subset through the public lane alone', () => {
+  // ★ AND THE SELECTIVE API HAS TO BE NAMEABLE FROM THE OWNER LANE. Scene2D Formats publishes its SVG registry contract, so
+  // a non-package caller can name the registry, both kind tables and the handlers it registers — and the fixtures are
+  // the end-to-end proof, because esbuild fails if any owner-lane name disappears.
+  it('prices every subset through the owner public and contract lanes', () => {
     const formatsIndex = readFileSync(join(srcDir, 'index.ts'), 'utf8');
     expect(formatsIndex).toContain('createScene2DFromSvgDocumentWithRegistry');
     expect(formatsIndex).toContain('svgPathClipHandler');
     for (const fixture of FIXTURES) {
       const source = readFileSync(join(root, 'tools', 'size', 'fixtures', fixture, 'src', 'render.canvas.ts'), 'utf8');
-      expect(codeOfText(source), `${fixture} imports a contract lane`).not.toContain("/contract'");
+      expect(codeOfText(source), `${fixture} omits the owner public lane`).toContain(
+        "from '@flighthq/scene2d-formats'",
+      );
+      if (fixture !== 'svg-import') {
+        expect(codeOfText(source), `${fixture} omits the owner contract lane`).toContain(
+          "from '@flighthq/scene2d-formats/contract'",
+        );
+      }
     }
   });
 

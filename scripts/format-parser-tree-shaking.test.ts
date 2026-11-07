@@ -543,10 +543,9 @@ const CASES: readonly FormatParserTreeShakingCase[] = [
     name: 'Lottie',
     packageDirectory: 'scene2d-formats',
     publicInfrastructureExports: [
-      // ★ THE SELECTIVE ENTRY IS PUBLIC. It was contract-only while `types` published `LottieRegistry.ts` on its
-      // contract lane alone, which made `LottieDocumentImportOptions.layerHandlers` a public option whose element
-      // type no application could name. Both lanes now carry the registry, so the selective path is reachable from
-      // `@flighthq/sdk` and the size fixtures prove it by naming nothing but `.`.
+      // ★ THE SELECTIVE ENTRY IS PUBLIC. Its registry contract remains on the Scene2D Formats owner contract lane,
+      // which makes `LottieDocumentImportOptions.layerHandlers` nameable without a Types facade. The SDK aggregate
+      // selects the owner exports explicitly, and the size fixtures exercise both owner lanes.
       'createLottieRegistry',
       'createScene2DFromLottieDocumentWithRegistry',
       'getLottieLayerHandler',
@@ -563,8 +562,8 @@ const CASES: readonly FormatParserTreeShakingCase[] = [
     // `svgContainerElementHandler` called `svgContainerElementReader`, which lived in the 1,780-line document core
     // alongside every other element. The handler is now the real function, in the module that owns its interpretation,
     // so there is one identity per family instead of two — and it is public, because it is what a caller names.
-    // The selective entry is PUBLIC here, unlike Lottie's was: `types` already publishes `SvgRegistry.ts` on both lanes,
-    // so an application can name the registry it has to pass. What stays contract-only is the shared plumbing the
+    // The selective entry is PUBLIC here, and Scene2D Formats owns its SVG registry contract, so a non-package caller
+    // can name the registry it has to pass. What stays contract-only is the shared plumbing the
     // families read — the attribute primitives, the style cascade, the clip lowering — which no application calls.
     contractOnlyExports: ['applySvgElementClipFamily', 'resolveSvgStyle', 'svgAttribute'],
     families: [

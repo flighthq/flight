@@ -4,6 +4,11 @@ import {
   MeshDeformerSkeletal as ContractMeshDeformerSkeletal,
   Scene3DAnimationPathWeights as ContractScene3DAnimationPathWeights,
 } from './contract.ts';
+import {
+  LottieLayerKind as ContractLottieLayerKind,
+  RiveAnimationLoop as ContractRiveAnimationLoop,
+  SvgElementKind as ContractSvgElementKind,
+} from './contract.ts';
 import { TextFormatRange as ContractTextFormatRange } from './contract.ts';
 import type { TextFormatRangeRaw as ContractTextFormatRangeRaw } from './contract.ts';
 import * as sdk from './index.ts';
@@ -94,6 +99,17 @@ describe('package exports', () => {
       expect(ContractBillboardKind).toBe('Billboard');
       expect(ContractMeshDeformerSkeletal).toBe('skeletal');
       expect(ContractScene3DAnimationPathWeights).toBe('Weights');
+    });
+  });
+
+  describe('scene2d formats domain', () => {
+    it('exports owner compatibility values from both aggregate lanes', () => {
+      expect(sdk.LottieLayerKind.Shape).toBe(4);
+      expect(sdk.RiveAnimationLoop.Loop).toBe('Loop');
+      expect(sdk.SvgElementKind.Text).toBe('text');
+      expect(ContractLottieLayerKind.Shape).toBe(4);
+      expect(ContractRiveAnimationLoop.Loop).toBe('Loop');
+      expect(ContractSvgElementKind.Text).toBe('text');
     });
   });
 
