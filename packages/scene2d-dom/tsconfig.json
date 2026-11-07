@@ -71,9 +71,6 @@
       "path": "../texture/tsconfig.runtime.json"
     },
     {
-      "path": "../types"
-    },
-    {
       "path": "../materials/tsconfig.contract.json"
     },
     {

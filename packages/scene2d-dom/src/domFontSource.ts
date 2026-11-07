@@ -1,4 +1,4 @@
-import type { FontResource } from '@flighthq/types/contract';
+import type { FontResource } from '@flighthq/font/contract';
 
 const _domFontAscentCache = new Map<string, number>();
 

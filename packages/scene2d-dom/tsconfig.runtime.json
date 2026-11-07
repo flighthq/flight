@@ -77,9 +77,6 @@
       "path": "../texture/tsconfig.runtime.json"
     },
     {
-      "path": "../types"
-    },
-    {
       "path": "../effects/tsconfig.runtime.json"
     },
     {

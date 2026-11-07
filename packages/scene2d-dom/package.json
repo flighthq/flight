@@ -42,6 +42,7 @@
     "@flighthq/color": "*",
     "@flighthq/effects": "*",
     "@flighthq/entity": "*",
+    "@flighthq/font": "*",
     "@flighthq/geometry": "*",
     "@flighthq/image": "*",
     "@flighthq/log": "*",
@@ -54,12 +55,12 @@
     "@flighthq/scene2d-canvas": "*",
     "@flighthq/shape": "*",
     "@flighthq/signals": "*",
+    "@flighthq/surface": "*",
     "@flighthq/text": "*",
     "@flighthq/textformat": "*",
     "@flighthq/textinput": "*",
     "@flighthq/textlayout": "*",
-    "@flighthq/texture": "*",
-    "@flighthq/types": "*"
+    "@flighthq/texture": "*"
   },
   "devDependencies": {
     "@flighthq/clip": "*",

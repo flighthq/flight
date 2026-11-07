@@ -30,8 +30,8 @@ export interface DomRenderRegistries extends RenderRegistries {
 
 // Package-private DOM state for a DomRenderState entity. Lives in the runtime tier (not on the
 // entity) so the public DomRenderState surface stays minimal; the render path resolves it each frame
-// via getDomRenderStateRuntime. Defined in @flighthq/types — the header layer — so out-of-package
-// custom renderers can reach the same state.
+// via getDomRenderStateRuntime. Declared in scene2d-dom's contract lane so out-of-package custom
+// renderers can reach the same state.
 export interface DomRenderStateRuntime extends RenderStateRuntime {
   registries: DomRenderRegistries;
   // Active blend mode tracked to avoid redundant DOM writes. Internal — formerly public on the

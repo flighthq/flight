@@ -6,7 +6,7 @@ import {
   destroyCanvasSurface,
   getSurfaceHandle,
 } from '@flighthq/surface/contract';
-import type { HostCanvasCapability } from '@flighthq/types/contract';
+import type { HostCanvasCapability } from '@flighthq/surface/contract';
 
 import {
   domRenderCacheRenderer,

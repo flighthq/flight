@@ -7,7 +7,7 @@ import {
   resizeCanvasTextureRenderTarget,
 } from '@flighthq/scene2d-canvas/contract';
 import type { CanvasTextureRenderTarget } from '@flighthq/scene2d-canvas/contract';
-import type { HostCanvasCapability } from '@flighthq/types/contract';
+import type { HostCanvasCapability } from '@flighthq/surface/contract';
 
 import type { DomRenderState } from './contract.scene2d-dom-types.ts';
 import { prepareDomElement, setDomRendererElement } from './domStyle.ts';
