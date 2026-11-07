@@ -665,14 +665,13 @@ export type AnimationPlayerRef = number;
   it('retains owner-proven canonical types for generated test-local records', () => {
     const symbols = new Map([
       [
-        '@flighthq/types/contract',
-        new Map([
-          ['FlightDocumentLayoutBinding', { hasType: true, hasValue: false }],
-          ['NodeAny', { hasType: true, hasValue: false }],
-        ]),
+        '@flighthq/scene-document/contract',
+        new Map([['FlightDocumentLayoutBinding', { hasType: true, hasValue: false }]]),
       ],
+      ['@flighthq/types/contract', new Map([['NodeAny', { hasType: true, hasValue: false }]])],
     ]);
-    const existing = `import type { FlightDocumentLayoutBinding, NodeAny } from '@flighthq/types/contract';
+    const existing = `import type { FlightDocumentLayoutBinding } from '@flighthq/scene-document/contract';
+import type { NodeAny } from '@flighthq/types/contract';
 const node = {} as NodeAny;
 const binding: FlightDocumentLayoutBinding = { targets: [node], tree: { nodes: [] } };
 `;
@@ -682,7 +681,7 @@ interface FlightDocumentLayoutBinding { targets: NodeAny[]; tree: LayoutTree; }
 
     expect(typeScriptTestTypeAliasArguments(existing, generated, symbols)).toEqual([
       '--typescript-type-alias',
-      'FlightDocumentLayoutBinding=@flighthq/types/contract#FlightDocumentLayoutBinding',
+      'FlightDocumentLayoutBinding=@flighthq/scene-document/contract#FlightDocumentLayoutBinding',
       '--typescript-type-alias',
       'NodeAny=@flighthq/types/contract#NodeAny',
     ]);

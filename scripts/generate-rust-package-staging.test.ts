@@ -464,7 +464,8 @@ fn consumes_the_established_binding() {
     );
     writeFileSync(
       join(packageRoot, 'src', 'value.test.ts'),
-      `import type { FlightDocumentLayoutBinding, NodeAny } from '@flighthq/types/contract';
+      `import type { FlightDocumentLayoutBinding } from '@flighthq/scene-document/contract';
+import type { NodeAny } from '@flighthq/types/contract';
 
 const target = { name: 'root' } as NodeAny;
 const binding: FlightDocumentLayoutBinding = { targets: [target], tree: { nodes: [] } };
@@ -477,7 +478,8 @@ void binding;
 
       expect(run.code, run.stderr).toBe(0);
       const test = readFileSync(join(packageRoot, 'src', 'value.test.ts'), 'utf8');
-      expect(test).toContain("import type { FlightDocumentLayoutBinding, NodeAny } from '@flighthq/types/contract';");
+      expect(test).toContain("import type { FlightDocumentLayoutBinding } from '@flighthq/scene-document/contract';");
+      expect(test).toContain("import type { NodeAny } from '@flighthq/types/contract';");
       expect(test).toContain('const binding: FlightDocumentLayoutBinding =');
       expect(test).not.toContain('interface FlightDocumentLayoutBinding');
       expect(test).not.toContain('interface NodeAny');
