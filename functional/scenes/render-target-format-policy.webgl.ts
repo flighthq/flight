@@ -1,5 +1,6 @@
 import { createAppWindow, openWindow } from '@flighthq/app';
 import { getBitmapPixelRgb } from '@flighthq/bitmap';
+import type { Bitmap } from '@flighthq/bitmap';
 import {
   webHostGl,
   appendWebSurface,
@@ -19,7 +20,6 @@ import {
 } from '@flighthq/render-gl/contract';
 import { glScene3DRenderPreset } from '@flighthq/scene3d-gl/contract';
 import { createGlSurface, setSurfaceDisplaySize } from '@flighthq/surface/contract';
-import type { Bitmap } from '@flighthq/types';
 import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
 
 declareAntialiasingPolicy('no-aa');

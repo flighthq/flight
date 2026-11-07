@@ -1,5 +1,6 @@
 import { createAppWindow } from '@flighthq/app';
 import { getBitmapPixelRgb } from '@flighthq/bitmap';
+import type { Bitmap } from '@flighthq/bitmap';
 import { createCamera3D, createPerspectiveProjection, setCamera3DViewMatrix4FromLookAt } from '@flighthq/camera';
 import { createVector3 } from '@flighthq/geometry';
 import { getWebGlContext } from '@flighthq/host-web';
@@ -18,7 +19,6 @@ import { presentGlRenderTarget } from '@flighthq/render-gl/contract';
 import { createMesh, createScene3D } from '@flighthq/scene3d';
 import { renderGlScene3D, glScene3DRenderPreset } from '@flighthq/scene3d-gl';
 import { connectSignal, emitSignal } from '@flighthq/signals';
-import type { Bitmap } from '@flighthq/types';
 import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
 
 declareAntialiasingPolicy('no-aa');

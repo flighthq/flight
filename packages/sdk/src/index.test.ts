@@ -1,3 +1,4 @@
+import { BitmapCompositeMode as ContractBitmapCompositeMode } from './contract.ts';
 import { TextFormatRange as ContractTextFormatRange } from './contract.ts';
 import type { TextFormatRangeRaw as ContractTextFormatRangeRaw } from './contract.ts';
 import * as sdk from './index.ts';
@@ -16,6 +17,13 @@ describe('package exports', () => {
 
     it('exports createAppWindow', () => {
       expect(sdk.createAppWindow).toBeTypeOf('function');
+    });
+  });
+
+  describe('bitmap domain', () => {
+    it('exports the owner BitmapCompositeMode value from both aggregate lanes', () => {
+      expect(sdk.BitmapCompositeMode.Multiply).toBe('Multiply');
+      expect(ContractBitmapCompositeMode.DestinationOut).toBe('DestinationOut');
     });
   });
 

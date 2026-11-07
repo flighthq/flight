@@ -1,3 +1,4 @@
+export * from './contract.bitmap-types.ts';
 export * from './bitmap.ts';
 export * from './bitmapAffine.ts';
 export * from './bitmapAlpha.ts';

@@ -308,6 +308,50 @@ export * from '@flighthq/surface';
 export * from '@flighthq/preferences';
 export * from '@flighthq/swf';
 export * from '@flighthq/bitmap';
+export { BitmapCompositeMode } from '@flighthq/bitmap/contract';
+export type {
+  Bitmap,
+  BitmapBevelOptions,
+  BitmapBevelType,
+  BitmapBoxBlurOptions,
+  BitmapConvolutionOptions,
+  BitmapDisplacementMapMode,
+  BitmapDisplacementMapOptions,
+  BitmapDropShadowOptions,
+  BitmapEdgeMode,
+  BitmapEncodeFailureExplanation,
+  BitmapEncodeOperation,
+  BitmapFingerprint,
+  BitmapGlowOptions,
+  BitmapGradientBevelOptions,
+  BitmapGradientGlowOptions,
+  BitmapHistogram,
+  BitmapInnerGlowOptions,
+  BitmapInnerShadowOptions,
+  BitmapMismatch,
+  BitmapReadbackBackendReason,
+  BitmapReadbackBlockReason,
+  BitmapReadbackExplanation,
+  BitmapReadbackMode,
+  BitmapReadbackOutcome,
+  BitmapRegion,
+  BitmapResizeMode,
+  BitmapResizeOptions,
+  BitmapShadowBlurOptions,
+  BitmapSharpenOptions,
+  GradientSpread,
+  HostBitmapEncodeCapability,
+  HostBitmapReadbackCapability,
+  ImageFormat,
+  PixelOrder,
+  ThresholdOperation,
+} from '@flighthq/bitmap/contract';
+export type { BitmapDisplacementEffect, BitmapDisplacementEffectEdgeMode } from '@flighthq/effects/contract';
+export type {
+  ImageBitmapComposer,
+  ImageBitmapComposition,
+  ImageBitmapCompositionResolver,
+} from '@flighthq/image/contract';
 export * from '@flighthq/text';
 export * from '@flighthq/text-markup';
 export * from '@flighthq/textbidi';

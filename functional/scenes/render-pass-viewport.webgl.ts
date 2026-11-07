@@ -1,4 +1,5 @@
 import { createAppWindow, openWindow } from '@flighthq/app';
+import type { Bitmap } from '@flighthq/bitmap';
 import { getBitmapPixelRgb } from '@flighthq/bitmap';
 import { createCamera3D, createPerspectiveProjection, setCamera3DViewMatrix4FromLookAt } from '@flighthq/camera';
 import { createClipRegionFromRectangle } from '@flighthq/clip';
@@ -32,7 +33,7 @@ import { createMesh, createScene3D } from '@flighthq/scene3d';
 import { renderGlScene3D, glScene3DRenderPreset } from '@flighthq/scene3d-gl';
 import { appendShapeBeginFill, appendShapeEndFill, appendShapeRectangle, createShape } from '@flighthq/shape';
 import { createGlSurface, setSurfaceDisplaySize } from '@flighthq/surface';
-import type { Bitmap, GlRenderPass, GlRenderState, Viewport } from '@flighthq/types';
+import type { GlRenderPass, GlRenderState, Viewport } from '@flighthq/types';
 import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
 
 declareAntialiasingPolicy('no-aa');

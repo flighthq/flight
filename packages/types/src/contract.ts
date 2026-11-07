@@ -67,7 +67,50 @@ export * from './BatchFormat.ts';
 export * from './BevelEffect.ts';
 export * from './Billboard.ts';
 export * from './BinPack.ts';
-export * from './BitmapDisplacementEffect.ts';
+export type {
+  Bitmap,
+  BitmapBevelOptions,
+  BitmapBevelType,
+  BitmapBoxBlurOptions,
+  BitmapCompositeMode,
+  BitmapConvolutionOptions,
+  BitmapDisplacementMapMode,
+  BitmapDisplacementMapOptions,
+  BitmapDropShadowOptions,
+  BitmapEdgeMode,
+  BitmapEncodeFailureExplanation,
+  BitmapEncodeOperation,
+  BitmapFingerprint,
+  BitmapGlowOptions,
+  BitmapGradientBevelOptions,
+  BitmapGradientGlowOptions,
+  BitmapHistogram,
+  BitmapInnerGlowOptions,
+  BitmapInnerShadowOptions,
+  BitmapMismatch,
+  BitmapReadbackBackendReason,
+  BitmapReadbackBlockReason,
+  BitmapReadbackExplanation,
+  BitmapReadbackMode,
+  BitmapReadbackOutcome,
+  BitmapRegion,
+  BitmapResizeMode,
+  BitmapResizeOptions,
+  BitmapShadowBlurOptions,
+  BitmapSharpenOptions,
+  GradientSpread,
+  HostBitmapEncodeCapability,
+  HostBitmapReadbackCapability,
+  ImageFormat,
+  PixelOrder,
+  ThresholdOperation,
+} from '@flighthq/bitmap/contract';
+export type { BitmapDisplacementEffect, BitmapDisplacementEffectEdgeMode } from '@flighthq/effects/contract';
+export type {
+  ImageBitmapComposer,
+  ImageBitmapComposition,
+  ImageBitmapCompositionResolver,
+} from '@flighthq/image/contract';
 export * from './BlendMode.ts';
 export * from './BlinnPhongMaterial.ts';
 export * from './BloomEffect.ts';
@@ -219,7 +262,6 @@ export * from './GlyphSource.ts';
 export * from './GodRaysEffect.ts';
 export * from './GradientBevelEffect.ts';
 export * from './GradientGlowEffect.ts';
-export * from './GradientSpread.ts';
 export * from './GridSliceOptions.ts';
 export * from './Group.ts';
 export * from './HalftoneEffect.ts';
@@ -249,15 +291,10 @@ export * from './HostVideoCaptureDialog.ts';
 export * from './HostMessageDialog.ts';
 export * from './HostPromptDialog.ts';
 export * from './TextureSource.ts';
-export * from './HostBitmapEncode.ts';
-export * from './BitmapEncodeFailureExplanation.ts';
-export * from './HostBitmapReadback.ts';
 export * from './ImageDecodeOptions.ts';
 export * from './ImageDecoder.ts';
-export * from './ImageBitmapComposition.ts';
 export * from './ImageEncodeOptions.ts';
 export * from './ImageEncoder.ts';
-export * from './ImageFormat.ts';
 export * from './ImageResource.ts';
 export * from './CompressedImageData.ts';
 export * from './ImportDiagnostic.ts';
@@ -341,7 +378,6 @@ export * from './PathOffsetOptions.ts';
 export * from './PhongMaterial.ts';
 export * from './PixelateEffect.ts';
 export * from './PixelFormat.ts';
-export * from './PixelOrder.ts';
 export * from './Plane.ts';
 export * from './PosterizeEffect.ts';
 export * from './Platform.ts';
@@ -493,18 +529,9 @@ export * from './StatusBar.ts';
 export * from './StepPosition.ts';
 export * from './StopTweenOptions.ts';
 export * from './Storage.ts';
-export * from './Bitmap.ts';
-export * from './BitmapReadback.ts';
-export * from './BitmapCompositeMode.ts';
-export * from './BitmapEdgeMode.ts';
-export * from './BitmapFingerprint.ts';
-export * from './BitmapHistogram.ts';
 export * from './Material2D.ts';
 export * from './Material3D.ts';
 export * from './Material3DOptions.ts';
-export * from './BitmapMismatch.ts';
-export * from './BitmapRegion.ts';
-export * from './BitmapResizeMode.ts';
 export * from './TaaEffect.ts';
 export * from './TextAutoSize.ts';
 export * from './TextBoundsSpec.ts';
@@ -542,7 +569,6 @@ export * from './TextureSourceKind.ts';
 export * from './TextureCubeFace.ts';
 export * from './TextureUvTransform.ts';
 export * from './VoxelGrid.ts';
-export * from './ThresholdOperation.ts';
 export * from './TiltShiftEffect.ts';
 export * from './TintAdjustment.ts';
 export * from './ToneMapEffect.ts';
@@ -628,21 +654,6 @@ export * from './HemisphereLightOptions.ts';
 export * from './PointLightOptions.ts';
 export * from './SpotLightConeAngles.ts';
 export * from './SpotLightOptions.ts';
-export * from './BitmapBevelOptions.ts';
-export * from './BitmapBevelType.ts';
-export * from './BitmapBoxBlurOptions.ts';
-export * from './BitmapConvolutionOptions.ts';
-export * from './BitmapDisplacementMapMode.ts';
-export * from './BitmapDisplacementMapOptions.ts';
-export * from './BitmapDropShadowOptions.ts';
-export * from './BitmapGlowOptions.ts';
-export * from './BitmapGradientBevelOptions.ts';
-export * from './BitmapGradientGlowOptions.ts';
-export * from './BitmapInnerGlowOptions.ts';
-export * from './BitmapInnerShadowOptions.ts';
-export * from './BitmapResizeOptions.ts';
-export * from './BitmapShadowBlurOptions.ts';
-export * from './BitmapSharpenOptions.ts';
 export * from './SvgDocumentImport.ts';
 export * from './SvgRegistry.ts';
 export * from './Scene2DDocument.ts';
