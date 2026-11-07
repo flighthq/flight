@@ -17,7 +17,6 @@
       ".render-backend-bridge-types",
       ".render-wgpu-bridge-types",
       ".render-wgpu-types",
-      ".app-types",
       ".image-types",
       ".materials-types",
       ".surface-types",
@@ -35,9 +34,6 @@
   "references": [
     {
       "path": "../adjustments/tsconfig.contract.json"
-    },
-    {
-      "path": "../app/tsconfig.contract.json"
     },
     {
       "path": "../camera/tsconfig.contract.json"

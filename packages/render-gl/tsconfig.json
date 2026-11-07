@@ -11,9 +11,6 @@
       "path": "../adjustments/tsconfig.contract.json"
     },
     {
-      "path": "../app/tsconfig.contract.json"
-    },
-    {
       "path": "../camera/tsconfig.contract.json"
     },
     {
