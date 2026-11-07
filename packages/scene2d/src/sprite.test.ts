@@ -117,9 +117,9 @@ describe('createSpriteRendererData', () => {
       Object.assign(created.data, { texture: texture(16, 16) });
       return created;
     })(createSprite());
-    const data = createSpriteRendererData({} as never, sprite);
+    const data = createSpriteRendererData(sprite);
 
-    expect(isSpriteRendererDirty({} as never, sprite, data)).toBe(false);
+    expect(isSpriteRendererDirty(sprite, data)).toBe(false);
   });
 });
 
@@ -168,14 +168,14 @@ describe('isSpriteRendererDirty', () => {
       Object.assign(created.data, { texture: texture(64, 64) });
       return created;
     })(createSprite());
-    const data = createSpriteRendererData({} as never, sprite);
+    const data = createSpriteRendererData(sprite);
     const runtime = getEntityRuntime(sprite) as SpriteRuntime;
     const contentId = runtime.localContentId;
 
     sprite.data.texture = texture(64, 64);
 
-    expect(isSpriteRendererDirty({} as never, sprite, data)).toBe(true);
-    expect(isSpriteRendererDirty({} as never, sprite, data)).toBe(false);
+    expect(isSpriteRendererDirty(sprite, data)).toBe(true);
+    expect(isSpriteRendererDirty(sprite, data)).toBe(false);
     expect(runtime.localContentId).toBe(contentId);
   });
 
@@ -184,10 +184,10 @@ describe('isSpriteRendererDirty', () => {
       Object.assign(created.data, { texture: texture(64, 64) });
       return created;
     })(createSprite());
-    const data = createSpriteRendererData({} as never, sprite);
+    const data = createSpriteRendererData(sprite);
     sprite.data.texture!.version++;
 
-    expect(isSpriteRendererDirty({} as never, sprite, data)).toBe(true);
+    expect(isSpriteRendererDirty(sprite, data)).toBe(true);
   });
 });
 

@@ -3,7 +3,6 @@ import type { EntityConstruction } from '@flighthq/entity/contract';
 import type { Rectangle } from '@flighthq/geometry/contract';
 import type { BoundsNode, MethodsOf, NodeAny, RendererData } from '@flighthq/node/contract';
 import { getTextureViewSize } from '@flighthq/texture/contract';
-import type { RenderState } from '@flighthq/types/contract';
 
 import type {
   Node2DFields,
@@ -48,9 +47,9 @@ export function createSpriteData(): SpriteData {
   return finishEntity(out);
 }
 
-export function createSpriteRendererData(_state: RenderState, source: NodeAny): SpriteIdentityRendererData {
+export function createSpriteRendererData(source: NodeAny): SpriteIdentityRendererData {
   const out = allocateEntity<SpriteIdentityRendererData>();
-  initializeSpriteRendererData(out, _state, source);
+  initializeSpriteRendererData(out, source);
   return finishEntity(out);
 }
 
@@ -69,11 +68,10 @@ export function initializeSpriteData(out: EntityConstruction<SpriteData>): void 
   out.texture = null;
 }
 
-// Creates the per-state identity stamp used by a Sprite renderer's optional dirty hook. The data is
-// attached to that state's render proxy, so separate render pipelines compare independently.
+// Creates the identity stamp used by a Sprite renderer's optional dirty hook. Backends attach the data
+// to their own render proxy, so separate render pipelines compare independently.
 export function initializeSpriteRendererData(
   out: EntityConstruction<SpriteIdentityRendererData>,
-  _state: RenderState,
   source: NodeAny,
 ): void {
   const texture = (source as Sprite).data.texture;
@@ -83,11 +81,7 @@ export function initializeSpriteRendererData(
 
 // Detects Texture identity/version changes before requiresInvalidation can skip a Sprite. Each
 // backend opts into this through its registered renderer; the generic walk never knows SpriteKind.
-export function isSpriteRendererDirty(
-  _state: RenderState,
-  source: NodeAny,
-  rendererData: RendererData | null,
-): boolean {
+export function isSpriteRendererDirty(source: NodeAny, rendererData: RendererData | null): boolean {
   if (rendererData === null) return false;
   const data = rendererData as SpriteIdentityRendererData;
   const texture = (source as Sprite).data.texture;

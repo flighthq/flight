@@ -18,7 +18,7 @@ interface DomSpriteData extends SpriteIdentityRendererData {
 }
 
 function createDomSpriteData(state: RenderState, source: NodeAny): DomSpriteData {
-  const data = createSpriteRendererData(state, source) as DomSpriteData;
+  const data = createSpriteRendererData(source) as DomSpriteData;
   data.canvas = null;
   data.context = null;
   data.image = null;
@@ -137,7 +137,7 @@ function applyDomSpriteSampling(state: DomRenderState, element: HTMLElement, ren
 
 export const domSpriteRenderer: Scene2DRenderer = {
   createData: createDomSpriteData,
-  isDirty: isSpriteRendererDirty,
+  isDirty: (_state, source, rendererData) => isSpriteRendererDirty(source, rendererData),
   submit: drawDomSprite,
 };
 

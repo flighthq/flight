@@ -123,8 +123,8 @@ export function drawGlScale9Sprite(state: GlRenderState, renderProxy: RenderProx
 
 export const glScale9SpriteRenderer: Scene2DRenderer = {
   format: BatchFormat.Quad,
-  createData: createSpriteRendererData,
-  isDirty: isSpriteRendererDirty,
+  createData: (_state, source) => createSpriteRendererData(source),
+  isDirty: (_state, source, rendererData) => isSpriteRendererDirty(source, rendererData),
   submit: drawGlScale9Sprite,
 };
 

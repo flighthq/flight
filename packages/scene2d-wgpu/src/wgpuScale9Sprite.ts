@@ -114,9 +114,9 @@ export function drawWgpuScale9Sprite(state: WgpuRenderState, renderProxy: Render
 }
 
 export const wgpuScale9SpriteRenderer: Scene2DRenderer = {
-  createData: createSpriteRendererData,
+  createData: (_state, source) => createSpriteRendererData(source),
   format: BatchFormat.Quad,
-  isDirty: isSpriteRendererDirty,
+  isDirty: (_state, source, rendererData) => isSpriteRendererDirty(source, rendererData),
   submit: drawWgpuScale9Sprite,
 };
 

@@ -87,8 +87,8 @@ export function drawWgpuSprite(state: WgpuRenderState, renderProxy: RenderProxy2
 
 export const wgpuSpriteRenderer: Scene2DRenderer = {
   format: BatchFormat.Quad,
-  createData: createSpriteRendererData,
-  isDirty: isSpriteRendererDirty,
+  createData: (_state, source) => createSpriteRendererData(source),
+  isDirty: (_state, source, rendererData) => isSpriteRendererDirty(source, rendererData),
   submit: drawWgpuSprite,
 };
 

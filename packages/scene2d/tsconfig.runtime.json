@@ -7,7 +7,6 @@
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,
-    "moduleSuffixes": [".scene2d-runtime-bridge-types", ""],
     "tsBuildInfoFile": "dist/.tsbuildinfo.runtime"
   },
   "references": [
@@ -20,7 +19,6 @@
     { "path": "../node/tsconfig.runtime.json" },
     { "path": "../signals" },
     { "path": "../texture/tsconfig.runtime.json" },
-    { "path": "../types/tsconfig.scene2d-runtime-bridge-types.json" },
     { "path": "./tsconfig.contract.json" }
   ],
   "include": ["src/**/*.ts"],

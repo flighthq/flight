@@ -86,8 +86,8 @@ export function drawCanvasScale9Sprite(state: CanvasRenderState, renderProxy: Re
 // sprite renderer: nothing here reaches into drawCanvasSprite, and registering this kind leaves
 // SpriteKind resolving to its own renderer untouched.
 export const canvasScale9SpriteRenderer: Scene2DRenderer = {
-  createData: createSpriteRendererData,
-  isDirty: isSpriteRendererDirty,
+  createData: (_state, source) => createSpriteRendererData(source),
+  isDirty: (_state, source, rendererData) => isSpriteRendererDirty(source, rendererData),
   submit: drawCanvasScale9Sprite,
 };
 

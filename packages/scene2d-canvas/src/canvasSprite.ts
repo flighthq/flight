@@ -39,8 +39,8 @@ export function drawCanvasSprite(state: CanvasRenderState, sprite: RenderProxy2D
 }
 
 export const canvasSpriteRenderer: Scene2DRenderer = {
-  createData: createSpriteRendererData,
-  isDirty: isSpriteRendererDirty,
+  createData: (_state, source) => createSpriteRendererData(source),
+  isDirty: (_state, source, rendererData) => isSpriteRendererDirty(source, rendererData),
   submit: drawCanvasSprite,
 };
 

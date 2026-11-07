@@ -89,8 +89,8 @@ export function drawGlSprite(state: GlRenderState, renderProxy: RenderProxy2D): 
 
 export const glSpriteRenderer: Scene2DRenderer = {
   format: BatchFormat.Quad,
-  createData: createSpriteRendererData,
-  isDirty: isSpriteRendererDirty,
+  createData: (_state, source) => createSpriteRendererData(source),
+  isDirty: (_state, source, rendererData) => isSpriteRendererDirty(source, rendererData),
   submit: drawGlSprite,
 };
 
