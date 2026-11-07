@@ -1,14 +1,10 @@
+import type { HostImageCapability } from '@flighthq/image/contract';
+import type { NodeAny, RendererData } from '@flighthq/node/contract';
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
+import type { WgpuRenderState } from '@flighthq/render-wgpu/contract';
 import { createCanvasHostSurface, destroyCanvasHostSurface } from '@flighthq/render/contract';
 import type { RenderState } from '@flighthq/render/contract';
-import type {
-  CanvasSurface,
-  HostCanvasCapability,
-  HostImageCapability,
-  NodeAny,
-  RendererData,
-  WgpuRenderState,
-} from '@flighthq/types/contract';
+import type { CanvasSurface, HostCanvasCapability } from '@flighthq/surface/contract';
 
 import type { WgpuShapeRendererData } from './contract.scene2d-wgpu-types.ts';
 import { createWgpuRendererData, getWgpuRendererData } from './wgpuRendererData.ts';

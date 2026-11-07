@@ -9,7 +9,7 @@ import {
 } from '@flighthq/render-wgpu/contract';
 import { createWgpuRenderStateForTest, installWgpuMock } from '@flighthq/render-wgpu/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
-import type { TextureAtlas, TextureAtlasRegion } from '@flighthq/types/contract';
+import type { TextureAtlas, TextureAtlasRegion } from '@flighthq/textureatlas/contract';
 import { beginVelocityFrame, contributeVelocity, createVelocityField } from '@flighthq/velocity/contract';
 import { beforeAll, describe, expect, it } from 'vitest';
 

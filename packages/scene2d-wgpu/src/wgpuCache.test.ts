@@ -1,5 +1,11 @@
+import { EntityRuntimeKey } from '@flighthq/entity/contract';
 import { createMatrix } from '@flighthq/geometry/contract';
 import * as renderWgpu from '@flighthq/render-wgpu/contract';
+import type {
+  WgpuQuadMaterialRenderer,
+  WgpuRenderState,
+  WgpuTextureRenderTarget,
+} from '@flighthq/render-wgpu/contract';
 import {
   createRenderCache,
   createRenderState,
@@ -10,8 +16,6 @@ import {
 } from '@flighthq/render/contract';
 import type { RenderRootGuard } from '@flighthq/render/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
-import type { WgpuQuadMaterialRenderer, WgpuRenderState, WgpuTextureRenderTarget } from '@flighthq/types/contract';
-import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import type {
   WgpuColorAdjustmentMaterialFeature,

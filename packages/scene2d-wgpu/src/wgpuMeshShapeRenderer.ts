@@ -1,12 +1,12 @@
 import { getNodeLocalContentRevision } from '@flighthq/node/contract';
 import { tessellatePath } from '@flighthq/path/contract';
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
+import type { WgpuRenderState } from '@flighthq/render-wgpu/contract';
 import { RenderRegistryTable, BatchFormat } from '@flighthq/render/contract';
 import type { RenderProxy2D, Scene2DRenderer } from '@flighthq/render/contract';
 import { getShapeFillRegions, getShapeStrokeOutlineRegions, getShapeStrokeRegions } from '@flighthq/shape/contract';
 import type { Shape, ShapeCommandToken, ShapeFillRegion, ShapeStrokeRegion } from '@flighthq/shape/contract';
 import { ShapeKind } from '@flighthq/shape/contract';
-import type { WgpuRenderState } from '@flighthq/types/contract';
 
 import type { WgpuShapeMesh } from './contract.scene2d-wgpu-types.ts';
 import { createWgpuShapeData, destroyWgpuShapeData, getWgpuShapeData } from './wgpuShapeData.ts';

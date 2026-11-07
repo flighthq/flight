@@ -1,3 +1,7 @@
+import type { ColorScaleBias } from '@flighthq/adjustments/contract';
+import type { MatrixLike } from '@flighthq/geometry/contract';
+import type { TintMaterialData, Material, MaterialData } from '@flighthq/materials/contract';
+import type { BlendMode } from '@flighthq/materials/contract';
 import {
   getWgpuBlendState,
   getWgpuSampler,
@@ -12,19 +16,13 @@ import {
   getWgpuRenderPassViewport,
 } from '@flighthq/render-wgpu/contract';
 import type {
-  ColorScaleBias,
-  TintMaterialData,
-  Material,
-  MaterialData,
-  MatrixLike,
-  SamplerLike,
   WgpuQuadMaterialRenderer,
   WgpuQuadBatchResources,
   WgpuRenderState,
   WgpuTextureEntry,
   WgpuQuadBatchWriterBufferSlot,
-} from '@flighthq/types/contract';
-import type { BlendMode } from '@flighthq/types/contract';
+} from '@flighthq/render-wgpu/contract';
+import type { SamplerLike } from '@flighthq/texture/contract';
 
 import { recordWgpuBatchFlush } from './wgpuRenderStats.ts';
 

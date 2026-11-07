@@ -9,6 +9,7 @@
     "sourceMap": true,
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "types": ["@testing-library/jest-dom", "vitest/globals", "@webgpu/types"],
+    "moduleSuffixes": [".scene2d-wgpu-runtime-bridge-types", ""],
     "tsBuildInfoFile": "dist/.tsbuildinfo.runtime"
   },
   "references": [
@@ -88,7 +89,7 @@
       "path": "../textureatlas/tsconfig.runtime.json"
     },
     {
-      "path": "../types"
+      "path": "../types/tsconfig.scene2d-wgpu-runtime-bridge-types.json"
     },
     {
       "path": "../velocity/tsconfig.runtime.json"

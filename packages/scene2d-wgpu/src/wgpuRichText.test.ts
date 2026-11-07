@@ -3,6 +3,7 @@ import {
   registerTestImageDimensionResolver,
   unregisterTestImageDimensionResolver,
 } from '@flighthq/image/contract';
+import type { HostImageCapability, ImageResource } from '@flighthq/image/contract';
 import {
   beginWgpuScreenRenderPassForTest,
   getWgpuRenderStateRuntime,
@@ -10,9 +11,9 @@ import {
 } from '@flighthq/render-wgpu/contract';
 import { createWgpuRenderStateForTest, installWgpuMock } from '@flighthq/render-wgpu/contract';
 import { getOrCreateRenderProxy2D, prepareScene2DRender } from '@flighthq/render/contract';
+import type { CanvasSurface, HostCanvasCapability } from '@flighthq/surface/contract';
 import { createRichText } from '@flighthq/text/contract';
 import { enableTextInput } from '@flighthq/textinput/contract';
-import type { CanvasSurface, HostCanvasCapability, HostImageCapability, ImageResource } from '@flighthq/types/contract';
 
 import { getWgpuRendererData } from './wgpuRendererData.ts';
 import {

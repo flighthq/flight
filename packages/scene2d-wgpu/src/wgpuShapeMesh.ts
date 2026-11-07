@@ -5,8 +5,8 @@ import {
   getWgpuRenderPassViewport,
   retireWgpuBuffer,
 } from '@flighthq/render-wgpu/contract';
+import type { WgpuRenderState, WgpuShapeMeshBuffers, WgpuShapeMeshPipeline } from '@flighthq/render-wgpu/contract';
 import type { RenderProxy2D } from '@flighthq/render/contract';
-import type { WgpuRenderState, WgpuShapeMeshBuffers, WgpuShapeMeshPipeline } from '@flighthq/types/contract';
 
 import type { WgpuShapeMesh } from './contract.scene2d-wgpu-types.ts';
 import { flushWgpuQuadBatchWriter } from './wgpuQuadBatchWriter.ts';

@@ -4,6 +4,7 @@ import {
   registerTestImageDimensionResolver,
   unregisterTestImageDimensionResolver,
 } from '@flighthq/image/contract';
+import type { HostImageCapability } from '@flighthq/image/contract';
 import {
   beginWgpuScreenRenderPassForTest,
   bindWgpuImageResourceTexture,
@@ -13,7 +14,7 @@ import {
 import { createWgpuRenderStateForTest, installWgpuMock } from '@flighthq/render-wgpu/contract';
 import { getOrCreateRenderProxy2D, prepareScene2DRender } from '@flighthq/render/contract';
 import { appendShapeBeginFill, appendShapeRectangle, createScale9Shape } from '@flighthq/shape/contract';
-import type { CanvasSurface, HostCanvasCapability, HostImageCapability } from '@flighthq/types/contract';
+import type { CanvasSurface, HostCanvasCapability } from '@flighthq/surface/contract';
 
 import {
   acquireWgpuScale9ShapeRasterSurface,

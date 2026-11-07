@@ -6,11 +6,12 @@ import {
   resolveWgpuShader,
   resolveWgpuTexture,
 } from '@flighthq/render-wgpu/contract';
+import type { WgpuRenderState } from '@flighthq/render-wgpu/contract';
 import { SCENE2D_WORKING_COLOR_SPACE, BatchFormat } from '@flighthq/render/contract';
 import type { RenderProxy2D, Scene2DRenderer } from '@flighthq/render/contract';
 import { createSpriteRendererData, isSpriteRendererDirty } from '@flighthq/scene2d/contract';
+import type { Sprite } from '@flighthq/scene2d/contract';
 import { getTextureUvMatrix, getTextureViewSize, hasTextureSource } from '@flighthq/texture/contract';
-import type { Sprite, WgpuRenderState } from '@flighthq/types/contract';
 
 import {
   QUAD_BATCH_INSTANCE_FLOATS,

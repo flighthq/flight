@@ -1,19 +1,16 @@
+import type { Kind } from '@flighthq/entity/contract';
+import { StandardMaterialKind } from '@flighthq/materials/contract';
 import { ParticleEmitter2DKind } from '@flighthq/particleemitter/contract';
 import { QuadBatchKind } from '@flighthq/quadbatch/contract';
 import { withKindMapEntry } from '@flighthq/registry/contract';
 import { buildWgpuRenderRegistries } from '@flighthq/render-wgpu/contract';
+import type { WgpuRenderRegistries } from '@flighthq/render-wgpu/contract';
 import type { NodeRenderer } from '@flighthq/render/contract';
+import { RenderCacheKind } from '@flighthq/render/contract';
+import { DisplayObjectKind, Scale9SpriteKind, SpriteKind } from '@flighthq/scene2d/contract';
 import { MorphShapeKind, Scale9ShapeKind, ShapeKind } from '@flighthq/shape/contract';
 import { RichTextKind, TextLabelKind } from '@flighthq/text/contract';
 import { TilemapKind } from '@flighthq/tilemap/contract';
-import type { Kind, WgpuRenderRegistries } from '@flighthq/types/contract';
-import {
-  DisplayObjectKind,
-  RenderCacheKind,
-  Scale9SpriteKind,
-  SpriteKind,
-  StandardMaterialKind,
-} from '@flighthq/types/contract';
 
 import { wgpuBitmapTextRenderer } from './wgpuBitmapText.ts';
 import { wgpuRenderCacheRenderer } from './wgpuCache.ts';

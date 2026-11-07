@@ -1,8 +1,11 @@
+import type { ColorScaleBias } from '@flighthq/adjustments/contract';
+import { EntityRuntimeKey } from '@flighthq/entity/contract';
+import type { Material } from '@flighthq/materials/contract';
+import { BlendMode } from '@flighthq/materials/contract';
 import { beginWgpuScreenRenderPassForTest, submitWgpuFrame } from '@flighthq/render-wgpu/contract';
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
 import { createWgpuRenderStateForTest, installWgpuMock } from '@flighthq/render-wgpu/contract';
-import type { ColorScaleBias, Material, WgpuTextureEntry } from '@flighthq/types/contract';
-import { BlendMode, EntityRuntimeKey } from '@flighthq/types/contract';
+import type { WgpuTextureEntry } from '@flighthq/render-wgpu/contract';
 
 import { registerWgpuColorAdjustmentMaterialFeature } from './wgpuColorAdjustmentMaterialFeature.ts';
 import {

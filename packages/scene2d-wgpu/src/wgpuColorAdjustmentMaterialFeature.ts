@@ -1,15 +1,15 @@
+import type { ColorScaleBias } from '@flighthq/adjustments/contract';
+import type { TintMaterialData } from '@flighthq/materials/contract';
 import { getWgpuBlendState, getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
-import { enableColorAdjustments } from '@flighthq/render/contract';
-import type { RenderProxy2D } from '@flighthq/render/contract';
 import type {
-  ColorScaleBias,
   WgpuColorAdjustmentFlush,
   WgpuRenderState,
   WgpuRenderStateRuntime,
   WgpuShapeMeshBuffers,
   WgpuShapeMeshPipeline,
-  TintMaterialData,
-} from '@flighthq/types/contract';
+} from '@flighthq/render-wgpu/contract';
+import { enableColorAdjustments } from '@flighthq/render/contract';
+import type { RenderProxy2D } from '@flighthq/render/contract';
 
 import type { WgpuColorAdjustmentMaterialFeature, WgpuShapeMesh } from './contract.scene2d-wgpu-types.ts';
 import { getWgpuQuadBatchPreludeWGSL } from './wgpuQuadBatchWriter.ts';

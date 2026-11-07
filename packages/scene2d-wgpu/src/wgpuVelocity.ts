@@ -1,3 +1,5 @@
+import type { Kind } from '@flighthq/entity/contract';
+import { EntityRuntimeKey } from '@flighthq/entity/contract';
 import {
   ensureNodeWorldBoundsRectangle,
   ensureNodeWorldMatrix,
@@ -6,6 +8,7 @@ import {
   getNodeWorldBoundsRectangle,
   getNodeWorldMatrix,
 } from '@flighthq/node/contract';
+import type { Spatial2DNode, Transform2DNode } from '@flighthq/node/contract';
 import type { ParticleEmitter2D } from '@flighthq/particleemitter/contract';
 import type { QuadBatch, QuadBatchRuntime } from '@flighthq/quadbatch/contract';
 import {
@@ -15,19 +18,14 @@ import {
   resumeWgpuRenderPass,
   suspendWgpuRenderPass,
 } from '@flighthq/render-wgpu/contract';
-import { TextureAtlasRotation } from '@flighthq/textureatlas/contract';
 import type {
-  Kind,
-  Spatial2DNode,
-  Transform2DNode,
-  Velocity2D,
-  VelocityField,
   WgpuRenderState,
   WgpuTextureRenderTarget,
   WgpuVelocityContext,
   WgpuVelocityWriter,
-} from '@flighthq/types/contract';
-import { EntityRuntimeKey } from '@flighthq/types/contract';
+} from '@flighthq/render-wgpu/contract';
+import { TextureAtlasRotation } from '@flighthq/textureatlas/contract';
+import type { Velocity2D, VelocityField } from '@flighthq/velocity/contract';
 import { getVelocity } from '@flighthq/velocity/contract';
 
 // Wgpu velocity-buffer production, the mirror of scene2d-gl's webglVelocity. Velocity is tied to the

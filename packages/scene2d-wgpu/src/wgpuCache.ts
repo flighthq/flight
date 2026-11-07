@@ -1,4 +1,5 @@
 import { createMatrix, createRectangle, multiplyMatrix } from '@flighthq/geometry/contract';
+import type { Matrix } from '@flighthq/geometry/contract';
 import { computeNodeBoundsRectangle } from '@flighthq/node/contract';
 import {
   beginWgpuRenderPass,
@@ -13,6 +14,12 @@ import {
   registerWgpuRenderStateTeardown,
   withWgpuFrameBorrow,
 } from '@flighthq/render-wgpu/contract';
+import type {
+  WgpuDeviceState,
+  WgpuRenderState,
+  WgpuRenderStateOptions,
+  WgpuTextureRenderTarget,
+} from '@flighthq/render-wgpu/contract';
 import {
   computeScene2DRenderTargetTransform,
   computeRenderCacheTransform,
@@ -23,16 +30,8 @@ import {
   registerRenderCacheNodeRenderer,
 } from '@flighthq/render/contract';
 import type { RenderProxy2D, Scene2DRenderer } from '@flighthq/render/contract';
-import type {
-  Matrix,
-  Node2D,
-  RenderCache,
-  RenderCacheRefreshOptions,
-  WgpuDeviceState,
-  WgpuRenderState,
-  WgpuRenderStateOptions,
-  WgpuTextureRenderTarget,
-} from '@flighthq/types/contract';
+import type { RenderCache, RenderCacheRefreshOptions } from '@flighthq/render/contract';
+import type { Node2D } from '@flighthq/scene2d/contract';
 
 import { renderWgpuScene2D } from './wgpuNode2D.ts';
 import { flushWgpuQuadBatchWriter } from './wgpuQuadBatchWriter.ts';

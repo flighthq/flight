@@ -1,3 +1,4 @@
+import type { ColorScaleBias } from '@flighthq/adjustments/contract';
 import {
   addLogSink,
   createLogState,
@@ -5,9 +6,9 @@ import {
   getMemoryLogSinkEntries,
   removeLogSink,
 } from '@flighthq/log/contract';
+import type { LogEntry, MemoryLogSink } from '@flighthq/log/contract';
 import { createWgpuRenderStateForTest, installWgpuMock } from '@flighthq/render-wgpu/contract';
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
-import type { ColorScaleBias, LogEntry, MemoryLogSink } from '@flighthq/types/contract';
 
 import {
   areWgpuColorAdjustmentGuardsEnabled,

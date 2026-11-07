@@ -1,10 +1,10 @@
+import type { ColorScaleBias } from '@flighthq/adjustments/contract';
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { EntityRuntimeKey } from '@flighthq/entity/contract';
 import { beginWgpuScreenRenderPassForTest, submitWgpuFrame } from '@flighthq/render-wgpu/contract';
 import { getWgpuColorAdjustmentMaterialFeature, getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
 import { createWgpuRenderStateForTest, installWgpuMock } from '@flighthq/render-wgpu/contract';
 import { areColorAdjustmentsEnabled } from '@flighthq/render/contract';
-import type { ColorScaleBias } from '@flighthq/types/contract';
-import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import { registerWgpuColorAdjustmentMaterialFeature } from './wgpuColorAdjustmentMaterialFeature.ts';
 import {

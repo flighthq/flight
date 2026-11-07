@@ -1,3 +1,4 @@
+import { EntityRuntimeKey } from '@flighthq/entity/contract';
 import {
   createImageResource,
   registerTestImageDimensionResolver,
@@ -16,8 +17,8 @@ import { createWgpuRenderStateForTest, installWgpuMock } from '@flighthq/render-
 import { getRenderProxy2D, prepareScene2DRender } from '@flighthq/render/contract';
 import type { RenderProxy2D } from '@flighthq/render/contract';
 import { createTexture } from '@flighthq/texture/contract';
+import { CompressedImageTextureSourceKind } from '@flighthq/texture/contract';
 import { TextureAtlasRotation } from '@flighthq/textureatlas/contract';
-import { CompressedImageTextureSourceKind, EntityRuntimeKey } from '@flighthq/types/contract';
 
 import { wgpuParticleEmitter2DRenderer, drawWgpuParticleEmitter2D } from './wgpuParticleEmitter2D.ts';
 

@@ -1,6 +1,6 @@
+import { StandardMaterialKind } from '@flighthq/materials/contract';
 import { getWgpuRenderStateRuntime, registerWgpuQuadMaterialRenderer } from '@flighthq/render-wgpu/contract';
-import type { WgpuQuadMaterialRenderer, WgpuRenderState } from '@flighthq/types/contract';
-import { StandardMaterialKind } from '@flighthq/types/contract';
+import type { WgpuQuadMaterialRenderer, WgpuRenderState } from '@flighthq/render-wgpu/contract';
 
 import { getWgpuQuadBatchPreludeWGSL } from './wgpuQuadBatchWriter.ts';
 

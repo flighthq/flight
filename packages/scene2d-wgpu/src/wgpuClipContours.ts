@@ -1,6 +1,7 @@
+import type { Matrix } from '@flighthq/geometry/contract';
 import type { PathWinding } from '@flighthq/path/contract';
 import { getWgpuRenderStateRuntime, getWgpuRenderPassViewport, retireWgpuBuffer } from '@flighthq/render-wgpu/contract';
-import type { Matrix, WgpuClipContourPipelines, WgpuRenderState } from '@flighthq/types/contract';
+import type { WgpuClipContourPipelines, WgpuRenderState } from '@flighthq/render-wgpu/contract';
 
 import { flushWgpuQuadBatchWriter } from './wgpuQuadBatchWriter.ts';
 

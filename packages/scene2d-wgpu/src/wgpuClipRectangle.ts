@@ -1,9 +1,10 @@
+import type { MatrixLike, RectangleLike } from '@flighthq/geometry/contract';
 import {
   getWgpuRenderStateRuntime,
   getWgpuRenderPassViewport,
   setWgpuRenderPassScissorRect,
 } from '@flighthq/render-wgpu/contract';
-import type { MatrixLike, RectangleLike, WgpuRenderState, WgpuScissorRect } from '@flighthq/types/contract';
+import type { WgpuRenderState, WgpuScissorRect } from '@flighthq/render-wgpu/contract';
 
 import { flushWgpuQuadBatchWriter } from './wgpuQuadBatchWriter.ts';
 

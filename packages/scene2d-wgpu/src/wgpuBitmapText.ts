@@ -3,13 +3,14 @@ import {
   resolveWgpuQuadMaterialRenderer,
   resolveWgpuTexture,
 } from '@flighthq/render-wgpu/contract';
+import type { WgpuRenderState } from '@flighthq/render-wgpu/contract';
 import { SCENE2D_WORKING_COLOR_SPACE, BatchFormat } from '@flighthq/render/contract';
 import { noopRendererData } from '@flighthq/render/contract';
 import type { RenderProxy2D } from '@flighthq/render/contract';
 import { getNode2DRuntime } from '@flighthq/scene2d/contract';
 import { getTextureHeight, getTextureWidth, hasTextureSource } from '@flighthq/texture/contract';
 import { TextureAtlasRotation } from '@flighthq/textureatlas/contract';
-import type { SpriteRenderer, WgpuRenderState } from '@flighthq/types/contract';
+import type { SpriteRenderer } from '@flighthq/types/contract';
 
 import {
   packWgpuQuadBatchMaterialInstance,

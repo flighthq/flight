@@ -1,0 +1,19 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "composite": true,
+    "rootDir": "src",
+    "outDir": "dist",
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "moduleSuffixes": [".node-types", ".render-types", ".scene2d-types", ""],
+    "tsBuildInfoFile": "dist/.tsbuildinfo.scene2d-wgpu-runtime-bridge-types"
+  },
+  "references": [
+    { "path": "../node/tsconfig.contract.json" },
+    { "path": "../render/tsconfig.contract.json" },
+    { "path": "../scene2d/tsconfig.contract.json" }
+  ],
+  "include": ["src/contract.scene2d-wgpu-runtime-bridge-types.ts"]
+}

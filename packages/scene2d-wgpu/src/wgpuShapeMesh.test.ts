@@ -1,18 +1,14 @@
+import type { ColorScaleBias } from '@flighthq/adjustments/contract';
 import { createMatrix } from '@flighthq/geometry/contract';
+import { BlendMode } from '@flighthq/materials/contract';
 import {
   beginWgpuScreenRenderPassForTest,
   createWgpuRenderStateForTest,
   getWgpuRenderStateRuntime,
   installWgpuMock,
 } from '@flighthq/render-wgpu/contract';
+import type { WgpuRenderState, WgpuShapeMeshBuffers, WgpuShapeMeshPipeline } from '@flighthq/render-wgpu/contract';
 import type { RenderProxy2D } from '@flighthq/render/contract';
-import type {
-  ColorScaleBias,
-  WgpuRenderState,
-  WgpuShapeMeshBuffers,
-  WgpuShapeMeshPipeline,
-} from '@flighthq/types/contract';
-import { BlendMode } from '@flighthq/types/contract';
 
 import type { WgpuShapeMesh } from './contract.scene2d-wgpu-types.ts';
 import { registerWgpuColorAdjustmentMaterialFeature } from './wgpuColorAdjustmentMaterialFeature.ts';

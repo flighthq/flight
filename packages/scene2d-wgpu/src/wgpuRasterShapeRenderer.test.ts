@@ -3,6 +3,7 @@ import {
   registerTestImageDimensionResolver,
   unregisterTestImageDimensionResolver,
 } from '@flighthq/image/contract';
+import type { HostImageCapability } from '@flighthq/image/contract';
 import * as flightNode from '@flighthq/node/contract';
 import {
   beginWgpuScreenRenderPassForTest,
@@ -14,7 +15,7 @@ import { enableRenderRegistriesGuards, explainRenderRegistriesMisses, BatchForma
 import { RenderRegistryTable } from '@flighthq/render/contract';
 import type { RenderProxy2D } from '@flighthq/render/contract';
 import { appendShapeBeginFill, appendShapeEndFill, appendShapeRectangle, createShape } from '@flighthq/shape/contract';
-import type { CanvasSurface, HostCanvasCapability, HostImageCapability } from '@flighthq/types/contract';
+import type { CanvasSurface, HostCanvasCapability } from '@flighthq/surface/contract';
 
 import { wgpuRasterShapeRenderer, drawWgpuRasterShape } from './wgpuRasterShapeRenderer.ts';
 import { registerWgpuShapeRasterizer } from './wgpuShapeRasterizer.ts';

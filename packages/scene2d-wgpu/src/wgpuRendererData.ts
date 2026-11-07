@@ -1,5 +1,6 @@
-import { EntityRuntimeKey } from '@flighthq/types/contract';
-import type { RendererData, EntityConstruction } from '@flighthq/types/contract';
+import { EntityRuntimeKey } from '@flighthq/entity/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
+import type { RendererData } from '@flighthq/node/contract';
 
 export function createWgpuRendererData<T extends object>(data: T): T & RendererData {
   (data as Record<symbol, unknown>)[EntityRuntimeKey] = undefined;

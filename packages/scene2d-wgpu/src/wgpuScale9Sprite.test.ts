@@ -1,3 +1,5 @@
+import type { ColorScaleBias } from '@flighthq/adjustments/contract';
+import { EntityRuntimeKey } from '@flighthq/entity/contract';
 import {
   beginWgpuScreenRenderPassForTest,
   createWgpuRenderStateForTest,
@@ -7,10 +9,12 @@ import {
   renderIntoWgpuRenderTexture,
   submitWgpuFrame,
 } from '@flighthq/render-wgpu/contract';
+import type { WgpuTextureEntry } from '@flighthq/render-wgpu/contract';
 import type { RenderProxy2D } from '@flighthq/render/contract';
+import type { Scale9Sprite } from '@flighthq/scene2d/contract';
+import { Scale9SpriteKind } from '@flighthq/scene2d/contract';
 import { createRenderTexture } from '@flighthq/texture/contract';
-import type { ColorScaleBias, Scale9Sprite, Texture2D, WgpuTextureEntry } from '@flighthq/types/contract';
-import { EntityRuntimeKey, Scale9SpriteKind } from '@flighthq/types/contract';
+import type { Texture2D } from '@flighthq/texture/contract';
 
 import { wgpuScene2DRenderPreset } from './scene2DWgpuPipeline.ts';
 import { registerWgpuColorAdjustmentMaterialFeature } from './wgpuColorAdjustmentMaterialFeature.ts';

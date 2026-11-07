@@ -3,6 +3,7 @@ import {
   registerTestImageDimensionResolver,
   unregisterTestImageDimensionResolver,
 } from '@flighthq/image/contract';
+import type { HostImageCapability } from '@flighthq/image/contract';
 import * as flightNode from '@flighthq/node/contract';
 import { PathCommand } from '@flighthq/path/contract';
 import { beginWgpuScreenRenderPassForTest, submitWgpuFrame } from '@flighthq/render-wgpu/contract';
@@ -20,7 +21,7 @@ import {
   appendShapeRectangle,
   createShape,
 } from '@flighthq/shape/contract';
-import type { CanvasSurface, HostCanvasCapability, HostImageCapability } from '@flighthq/types/contract';
+import type { CanvasSurface, HostCanvasCapability } from '@flighthq/surface/contract';
 
 import { enableWgpuStrokePathTessellation } from './enableWgpuStrokePathTessellation.ts';
 import { wgpuMorphShapeRenderer, wgpuShapeRenderer, drawWgpuShape } from './wgpuShape.ts';

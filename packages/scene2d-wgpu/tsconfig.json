@@ -83,7 +83,7 @@
       "path": "../textureatlas/tsconfig.runtime.json"
     },
     {
-      "path": "../types"
+      "path": "../types/tsconfig.scene2d-wgpu-runtime-bridge-types.json"
     },
     {
       "path": "../velocity/tsconfig.runtime.json"

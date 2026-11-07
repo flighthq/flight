@@ -1,10 +1,11 @@
+import { EntityRuntimeKey } from '@flighthq/entity/contract';
+import { StandardMaterialKind } from '@flighthq/materials/contract';
 import {
   createWgpuDeviceState,
   createWgpuRenderStateRuntime,
   getWgpuQuadMaterialRenderer,
 } from '@flighthq/render-wgpu/contract';
-import type { WgpuRenderState } from '@flighthq/types/contract';
-import { EntityRuntimeKey, StandardMaterialKind } from '@flighthq/types/contract';
+import type { WgpuRenderState } from '@flighthq/render-wgpu/contract';
 
 import { registerWgpuStandardMaterial, standardWgpuQuadMaterialRenderer } from './wgpuStandardMaterial.ts';
 

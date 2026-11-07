@@ -3,14 +3,15 @@ import {
   registerTestImageDimensionResolver,
   unregisterTestImageDimensionResolver,
 } from '@flighthq/image/contract';
+import type { HostImageCapability, ImageResource } from '@flighthq/image/contract';
 import { beginWgpuScreenRenderPassForTest, submitWgpuFrame } from '@flighthq/render-wgpu/contract';
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
 import { createWgpuRenderStateForTest, installWgpuMock } from '@flighthq/render-wgpu/contract';
 import { BatchFormat } from '@flighthq/render/contract';
 import type { RenderProxy2D } from '@flighthq/render/contract';
+import type { CanvasSurface, HostCanvasCapability } from '@flighthq/surface/contract';
 import { createTextLabel } from '@flighthq/text/contract';
 import * as textlayout from '@flighthq/textlayout/contract';
-import type { CanvasSurface, HostCanvasCapability, HostImageCapability, ImageResource } from '@flighthq/types/contract';
 
 import { registerWgpuStandardMaterial } from './wgpuStandardMaterial.ts';
 import { wgpuTextLabelRenderer, drawWgpuTextLabel } from './wgpuTextLabel.ts';

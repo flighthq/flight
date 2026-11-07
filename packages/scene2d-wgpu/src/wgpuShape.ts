@@ -1,6 +1,6 @@
+import type { WgpuRenderState } from '@flighthq/render-wgpu/contract';
 import { BatchFormat } from '@flighthq/render/contract';
 import type { RenderProxy2D, Scene2DRenderer } from '@flighthq/render/contract';
-import type { WgpuRenderState } from '@flighthq/types/contract';
 
 import { drawWgpuMeshShape } from './wgpuMeshShapeRenderer.ts';
 import { drawWgpuRasterShape } from './wgpuRasterShapeRenderer.ts';

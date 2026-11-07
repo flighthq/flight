@@ -1,4 +1,4 @@
-import type { WgpuRenderState } from '@flighthq/types/contract';
+import type { WgpuRenderState } from '@flighthq/render-wgpu/contract';
 
 import type { WgpuRenderStats } from './contract.scene2d-wgpu-types.ts';
 
