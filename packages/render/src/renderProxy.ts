@@ -1,5 +1,7 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
 import { createMatrix } from '@flighthq/geometry/contract';
+import { BlendMode } from '@flighthq/materials/contract';
 import {
   getNodeAppearanceRevision,
   getNodeChildrenRevision,
@@ -9,8 +11,8 @@ import {
   getNodeParent,
   getNodeRuntime,
 } from '@flighthq/node/contract';
-import type { EntityConstruction, Node, Node2D, NodeAny } from '@flighthq/types/contract';
-import { BlendMode } from '@flighthq/types/contract';
+import type { Node, NodeAny } from '@flighthq/node/contract';
+import type { Node2D } from '@flighthq/scene2d/contract';
 
 import { updateRenderProxyAppearance } from './renderAppearance.ts';
 import { updateRenderProxyMaterial } from './renderMaterial.ts';

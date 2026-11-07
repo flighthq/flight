@@ -1,6 +1,6 @@
+import type { Kind } from '@flighthq/entity/contract';
 import { connectSignal } from '@flighthq/signals/contract';
 import type { Signal } from '@flighthq/signals/contract';
-import type { Kind } from '@flighthq/types/contract';
 
 import { enableRenderRegistrySignals } from './renderRegistrySignals.ts';
 import { createRenderState, getRenderStateRuntime } from './renderState.ts';

@@ -2,7 +2,7 @@ import { multiplyColorMatrix } from '@flighthq/adjustments/contract';
 import type { ColorAdjustmentRuntime, ColorScaleBias } from '@flighthq/adjustments/contract';
 import { concatColorScaleBias, createColorScaleBias } from '@flighthq/materials/contract';
 import { getNodeRuntime } from '@flighthq/node/contract';
-import type { Node } from '@flighthq/types/contract';
+import type { Node } from '@flighthq/node/contract';
 
 import { getColorAdjustmentUnsupportedGuard, getRenderStateRuntime } from './renderState.ts';
 import type { RenderProxy, RenderState } from './types.ts';

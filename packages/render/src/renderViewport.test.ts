@@ -7,7 +7,7 @@ import {
   invalidateNodeLocalTransform,
 } from '@flighthq/node/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
-import type { Node2DRuntime } from '@flighthq/types/contract';
+import type { Node2DRuntime } from '@flighthq/scene2d/contract';
 
 import { createRenderProxy2D, prepareScene2DRender } from './renderProxy.ts';
 import { createRenderState } from './renderState.ts';

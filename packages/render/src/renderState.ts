@@ -1,6 +1,8 @@
 import { allocateEntity, createEntityRuntime, finishEntity } from '@flighthq/entity/contract';
-import type { NodeAny, EntityConstruction } from '@flighthq/types/contract';
-import { BlendMode, EntityRuntimeKey } from '@flighthq/types/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
+import { EntityRuntimeKey } from '@flighthq/entity/contract';
+import { BlendMode } from '@flighthq/materials/contract';
+import type { NodeAny } from '@flighthq/node/contract';
 
 import type { ColorAdjustmentUnsupportedGuard, RenderState, RenderStateRuntime } from './types.ts';
 

@@ -1,6 +1,7 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
 import { getNodeRuntime } from '@flighthq/node/contract';
-import type { EntityConstruction, NodeAny } from '@flighthq/types/contract';
+import type { NodeAny } from '@flighthq/node/contract';
 
 import { getRenderStateRuntime } from './renderState.ts';
 import type { RenderProxy, RenderQueue, RenderQueueEntry, RenderSortKey, RenderState } from './types.ts';

@@ -13,9 +13,10 @@ import {
   invalidateNodeLocalTransform,
   removeNodeChild,
 } from '@flighthq/node/contract';
+import type { Node } from '@flighthq/node/contract';
 import { createDisplayObject, setNode2DClip } from '@flighthq/scene2d/contract';
 import { createSprite } from '@flighthq/scene2d/contract';
-import type { Node, Node2D } from '@flighthq/types/contract';
+import type { Node2D } from '@flighthq/scene2d/contract';
 
 import { registerNodeRenderer } from './renderer.ts';
 import {

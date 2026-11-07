@@ -1,5 +1,6 @@
-import type { Kind, Scene2DKindUsage } from '@flighthq/types/contract';
-import { RequirementFacet } from '@flighthq/types/contract';
+import type { Kind } from '@flighthq/entity/contract';
+import { RequirementFacet } from '@flighthq/requirement/contract';
+import type { Scene2DKindUsage } from '@flighthq/scene2d/contract';
 
 import { getRenderStateRuntime } from './renderState.ts';
 import type { RenderState } from './types.ts';

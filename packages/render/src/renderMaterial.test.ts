@@ -1,5 +1,5 @@
 import { createMaterial } from '@flighthq/materials/contract';
-import type { NodeAny } from '@flighthq/types/contract';
+import type { NodeAny } from '@flighthq/node/contract';
 
 import { updateRenderProxyMaterial } from './renderMaterial.ts';
 import { createRenderProxy } from './renderProxy.ts';

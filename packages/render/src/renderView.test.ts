@@ -1,5 +1,5 @@
 import { allocateEntity, attachEntityBinding, finishEntity } from '@flighthq/entity/contract';
-import type { Viewport } from '@flighthq/types/contract';
+import type { Viewport } from '@flighthq/node/contract';
 
 import type { RenderView, RenderViewResize } from './renderView.ts';
 import { createRenderView, initializeRenderView, resizeRenderView } from './renderView.ts';

@@ -1,5 +1,6 @@
-import type { CanvasShapeCommand, Scene2DKindUsage } from '@flighthq/types/contract';
-import { RequirementFacet } from '@flighthq/types/contract';
+import { RequirementFacet } from '@flighthq/requirement/contract';
+import type { Scene2DKindUsage } from '@flighthq/scene2d/contract';
+import type { CanvasShapeCommand } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { explainScene2DCoverage, hasScene2DCoverage } from './explainScene2DCoverage.ts';

@@ -6,6 +6,7 @@ import {
 import type { Camera3D } from '@flighthq/camera/contract';
 import { allocateLinearColor, unpackColorToLinear } from '@flighthq/color/contract';
 import { createAabb, createMatrix4 } from '@flighthq/geometry/contract';
+import type { Matrix4 } from '@flighthq/geometry/contract';
 import {
   createAmbientLight,
   createDirectionalLight,
@@ -13,6 +14,14 @@ import {
   createPointLight,
   createSpotLight,
 } from '@flighthq/lighting/contract';
+import type { Scene3DLightBlock, Scene3DLightsLike } from '@flighthq/lighting/contract';
+import {
+  SCENE_LIGHT_BLOCK_FLOATS,
+  SCENE_LIGHT_HEMISPHERE_OFFSET,
+  SCENE_LIGHT_POINT_OFFSET,
+  SCENE_LIGHT_SPOT_OFFSET,
+} from '@flighthq/lighting/contract';
+import type { Material3D } from '@flighthq/materials/contract';
 import {
   CANONICAL_MESH_GEOMETRY_LAYOUT,
   computeMeshGeometryBounds,
@@ -36,13 +45,6 @@ import {
   setInstancedMeshInstanceMatrix,
 } from '@flighthq/scene3d/contract';
 import type { Skin } from '@flighthq/scene3d/contract';
-import type { Matrix4, Material3D, Scene3DLightBlock, Scene3DLightsLike } from '@flighthq/types/contract';
-import {
-  SCENE_LIGHT_BLOCK_FLOATS,
-  SCENE_LIGHT_HEMISPHERE_OFFSET,
-  SCENE_LIGHT_POINT_OFFSET,
-  SCENE_LIGHT_SPOT_OFFSET,
-} from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { createRenderState } from './renderState.ts';

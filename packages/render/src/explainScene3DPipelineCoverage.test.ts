@@ -1,11 +1,11 @@
+import type { Kind } from '@flighthq/entity/contract';
 import { createMaterial3D } from '@flighthq/materials/contract';
+import { StandardMaterialKind } from '@flighthq/materials/contract';
 import { createBoxMeshGeometry } from '@flighthq/meshgeometry/contract';
 import { addNodeChild } from '@flighthq/node/contract';
 import { withKindMapEntry } from '@flighthq/registry/contract';
 import { createMesh, createNode3D } from '@flighthq/scene3d/contract';
 import { Node3DKind } from '@flighthq/scene3d/contract';
-import type { Kind } from '@flighthq/types/contract';
-import { StandardMaterialKind } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { explainScene3DPipelineCoverage } from './explainScene3DPipelineCoverage.ts';

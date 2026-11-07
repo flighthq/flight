@@ -1,4 +1,5 @@
-import { BlendMode, EntityRuntimeKey } from '@flighthq/types/contract';
+import { EntityRuntimeKey } from '@flighthq/entity/contract';
+import { BlendMode } from '@flighthq/materials/contract';
 
 import {
   createRenderState,

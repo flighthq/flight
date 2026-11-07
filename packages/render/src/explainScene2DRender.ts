@@ -1,4 +1,4 @@
-import type { HasAppearance, NodeAny } from '@flighthq/types/contract';
+import type { HasAppearance, NodeAny } from '@flighthq/node/contract';
 
 import { getRenderProxy2D } from './renderProxy.ts';
 import { getRenderStateRuntime } from './renderState.ts';

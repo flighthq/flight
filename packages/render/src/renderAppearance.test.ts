@@ -1,6 +1,6 @@
+import { BlendMode } from '@flighthq/materials/contract';
 import { invalidateNodeAppearance } from '@flighthq/node/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
-import { BlendMode } from '@flighthq/types/contract';
 
 import { updateRenderProxyAppearance } from './renderAppearance.ts';
 import { createRenderProxy } from './renderProxy.ts';

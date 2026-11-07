@@ -1,4 +1,4 @@
-import type { HasMaterial } from '@flighthq/types/contract';
+import type { HasMaterial } from '@flighthq/node/contract';
 
 import type { RenderProxy, RenderState } from './types.ts';
 

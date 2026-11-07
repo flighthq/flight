@@ -16,28 +16,16 @@ import {
   transformAabbByMatrix4,
   unionAabb,
 } from '@flighthq/geometry/contract';
-import { ensureMeshGeometryBounds } from '@flighthq/meshgeometry/contract';
-import type { InstancedMesh, InstancedMeshRuntime, Mesh, MeshRuntime } from '@flighthq/meshgeometry/contract';
-import {
-  getNodeRuntime,
-  getNodeWorldMatrix4,
-  invalidateNodeLocalTransform,
-  isNodeLocalMatrix4Detached,
-} from '@flighthq/node/contract';
-import type { Node3D } from '@flighthq/scene3d/contract';
+import type { Aabb, Frustum, Matrix4 } from '@flighthq/geometry/contract';
 import type {
-  Aabb,
   AmbientLight,
   DirectionalLight,
-  Frustum,
   HemisphereLight,
-  Matrix4,
   PointLight,
   Scene3DLightBlock,
   Scene3DLightsLike,
   SpotLight,
-  Transform3DNode,
-} from '@flighthq/types/contract';
+} from '@flighthq/lighting/contract';
 import {
   MAX_FORWARD_LIGHTS,
   SCENE_LIGHT_AMBIENT_RADIANCE_OFFSET,
@@ -50,7 +38,17 @@ import {
   SCENE_LIGHT_POINT_STRIDE,
   SCENE_LIGHT_SPOT_OFFSET,
   SCENE_LIGHT_SPOT_STRIDE,
-} from '@flighthq/types/contract';
+} from '@flighthq/lighting/contract';
+import { ensureMeshGeometryBounds } from '@flighthq/meshgeometry/contract';
+import type { InstancedMesh, InstancedMeshRuntime, Mesh, MeshRuntime } from '@flighthq/meshgeometry/contract';
+import {
+  getNodeRuntime,
+  getNodeWorldMatrix4,
+  invalidateNodeLocalTransform,
+  isNodeLocalMatrix4Detached,
+} from '@flighthq/node/contract';
+import type { Transform3DNode } from '@flighthq/node/contract';
+import type { Node3D } from '@flighthq/scene3d/contract';
 
 import type { Scene3DRenderList } from './types.ts';
 import type { RenderState } from './types.ts';

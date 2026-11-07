@@ -8,12 +8,12 @@ import { createAabb } from '@flighthq/geometry/contract';
 import { createAmbientLight, createDirectionalLight } from '@flighthq/lighting/contract';
 import { createLogState, setLogSink } from '@flighthq/log/contract';
 import type { LogState } from '@flighthq/log/contract';
+import type { LogEntry } from '@flighthq/log/contract';
 import { computeMeshGeometryBounds, createBoxMeshGeometry } from '@flighthq/meshgeometry/contract';
 import type { Mesh, MeshGeometry } from '@flighthq/meshgeometry/contract';
 import { addNodeChild } from '@flighthq/node/contract';
 import { createMesh, createNode3D, Node3DKind } from '@flighthq/scene3d/contract';
 import type { Skin } from '@flighthq/scene3d/contract';
-import type { LogEntry } from '@flighthq/types/contract';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { disableSceneRenderGuards, enableSceneRenderGuards } from './enableSceneRenderGuards.ts';

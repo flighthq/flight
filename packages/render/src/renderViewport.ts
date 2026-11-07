@@ -1,6 +1,8 @@
 import { createRectangle, matrixTransformRectangle } from '@flighthq/geometry/contract';
+import type { Matrix, Rectangle } from '@flighthq/geometry/contract';
 import { getNodeWorldBoundsRectangle } from '@flighthq/node/contract';
-import type { Matrix, Node2D, Rectangle, Viewport } from '@flighthq/types/contract';
+import type { Viewport } from '@flighthq/node/contract';
+import type { Node2D } from '@flighthq/scene2d/contract';
 
 import type { RenderProxy2D } from './types.ts';
 

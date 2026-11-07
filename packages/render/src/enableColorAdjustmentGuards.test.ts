@@ -9,9 +9,10 @@ import {
   removeLogSink,
 } from '@flighthq/log/contract';
 import type { LogState } from '@flighthq/log/contract';
+import type { LogEntry, MemoryLogSink } from '@flighthq/log/contract';
 import { setNodeColorAdjustments } from '@flighthq/node/contract';
+import type { NodeAny } from '@flighthq/node/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
-import type { LogEntry, MemoryLogSink, NodeAny } from '@flighthq/types/contract';
 
 import { areColorAdjustmentGuardsEnabled, enableColorAdjustmentGuards } from './enableColorAdjustmentGuards.ts';
 import { enableColorAdjustments } from './enableColorAdjustments.ts';

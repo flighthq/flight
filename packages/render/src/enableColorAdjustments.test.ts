@@ -5,8 +5,8 @@ import {
   createTintAdjustment,
 } from '@flighthq/adjustments/contract';
 import { addNodeChild, setNodeColorAdjustments } from '@flighthq/node/contract';
+import type { NodeAny } from '@flighthq/node/contract';
 import { createDisplayObject, getNode2DRuntime } from '@flighthq/scene2d/contract';
-import type { NodeAny } from '@flighthq/types/contract';
 
 import { areColorAdjustmentsEnabled, enableColorAdjustments } from './enableColorAdjustments.ts';
 import { createRenderProxy, getRenderProxy2D, prepareScene2DRender } from './renderProxy.ts';

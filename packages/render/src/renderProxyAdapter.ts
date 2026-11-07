@@ -1,5 +1,5 @@
 import { invalidateNodeAppearance } from '@flighthq/node/contract';
-import type { Node, NodeAny } from '@flighthq/types/contract';
+import type { Node, NodeAny } from '@flighthq/node/contract';
 
 import { installRenderAdaptHook, updateRenderProxyRenderer } from './renderProxy.ts';
 import { getRenderStateRuntime } from './renderState.ts';

@@ -1,7 +1,8 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
 import { createMatrix, multiplyMatrix } from '@flighthq/geometry/contract';
+import type { NodeAny } from '@flighthq/node/contract';
 import { createSignal } from '@flighthq/signals/contract';
-import type { NodeAny, EntityConstruction } from '@flighthq/types/contract';
 
 import { registerNodeRenderer } from './renderer.ts';
 import { getRenderProxyAdapter, setRenderProxyAdapter } from './renderProxyAdapter.ts';

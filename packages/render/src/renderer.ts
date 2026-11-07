@@ -1,5 +1,6 @@
+import type { Kind } from '@flighthq/entity/contract';
+import type { NodeAny, RendererData } from '@flighthq/node/contract';
 import { withKindMapEntry } from '@flighthq/registry/contract';
-import type { Kind, NodeAny, RendererData } from '@flighthq/types/contract';
 
 import { getRenderStateRuntime } from './renderState.ts';
 import type { NodeRenderer, RenderState } from './types.ts';

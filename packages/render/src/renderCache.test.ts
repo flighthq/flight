@@ -1,6 +1,6 @@
+import { EntityRuntimeKey } from '@flighthq/entity/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
 import { connectSignal } from '@flighthq/signals/contract';
-import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import {
   RenderCacheKind,
