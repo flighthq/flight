@@ -2,13 +2,13 @@ import type { Material3D } from '@flighthq/materials/contract';
 import type { MeshGeometry } from '@flighthq/meshgeometry/contract';
 import { enableNodeSignals, getNodeSignals } from '@flighthq/node/contract';
 import type { NodeSignals } from '@flighthq/node/contract';
-import { BillboardKind } from '@flighthq/types/contract';
 
 import { createNode3D, getNode3DRuntime } from './sceneNode.ts';
+import { BillboardKind } from './types/Billboard.ts';
 import type { Billboard, BillboardRuntime } from './types/Billboard.ts';
 import type { Node3D } from './types/Node3D.ts';
 
-export { BillboardKind } from '@flighthq/types/contract';
+export { BillboardKind } from './types/Billboard.ts';
 
 // Allocates a camera-facing Billboard node: a Node3D (so it shares the scene hierarchy with mesh
 // and group nodes) carrying `geometry`, one `materials` entry per geometry subset (positional; a

@@ -1,4 +1,9 @@
 import { BitmapCompositeMode as ContractBitmapCompositeMode } from './contract.ts';
+import {
+  BillboardKind as ContractBillboardKind,
+  MeshDeformerSkeletal as ContractMeshDeformerSkeletal,
+  Scene3DAnimationPathWeights as ContractScene3DAnimationPathWeights,
+} from './contract.ts';
 import { TextFormatRange as ContractTextFormatRange } from './contract.ts';
 import type { TextFormatRangeRaw as ContractTextFormatRangeRaw } from './contract.ts';
 import * as sdk from './index.ts';
@@ -78,6 +83,17 @@ describe('package exports', () => {
 
     it('exports registerNodeRenderer', () => {
       expect(sdk.registerNodeRenderer).toBeTypeOf('function');
+    });
+  });
+
+  describe('scene3d domain', () => {
+    it('exports owner compatibility values from both aggregate lanes', () => {
+      expect(sdk.BillboardKind).toBe('Billboard');
+      expect(sdk.MeshDeformerSkeletal).toBe('skeletal');
+      expect(sdk.Scene3DAnimationPathWeights).toBe('Weights');
+      expect(ContractBillboardKind).toBe('Billboard');
+      expect(ContractMeshDeformerSkeletal).toBe('skeletal');
+      expect(ContractScene3DAnimationPathWeights).toBe('Weights');
     });
   });
 

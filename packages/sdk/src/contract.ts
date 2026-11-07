@@ -216,6 +216,37 @@ export * from '@flighthq/requirement-codegen';
 export * from '@flighthq/scene-document';
 export { FlightDocumentRefusalReason } from '@flighthq/scene-document';
 export * from '@flighthq/scene3d';
+export {
+  BillboardKind,
+  MeshDeformerMorph,
+  MeshDeformerNone,
+  MeshDeformerSkeletal,
+  Scene3DAnimationPathRotation,
+  Scene3DAnimationPathScale,
+  Scene3DAnimationPathTranslation,
+  Scene3DAnimationPathWeights,
+} from '@flighthq/scene3d/contract';
+export type {
+  Billboard,
+  BillboardMode,
+  BillboardRuntime,
+  MeshDeformer,
+  Scene3D,
+  Scene3DAnimationPath,
+  Scene3DAnimationTarget,
+  Scene3DDocument,
+  Scene3DDocumentAnimation,
+  Scene3DDocumentAnimationChannel,
+  Scene3DDocumentCamera,
+  Scene3DDocumentLight,
+  Scene3DDocumentMesh,
+  Scene3DDocumentNode,
+  Scene3DDocumentScene,
+  Scene3DDocumentSkin,
+  Scene3DKindUsage,
+  Scene3DMetadata,
+  Scene3DRuntime,
+} from '@flighthq/scene3d/contract';
 export { InstancedMeshKind, MeshKind } from '@flighthq/meshgeometry/contract';
 export * from '@flighthq/scene3d-formats';
 export * from '@flighthq/scene3d-gl';

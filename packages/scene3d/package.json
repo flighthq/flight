@@ -53,8 +53,7 @@
     "@flighthq/node": "*",
     "@flighthq/shading": "*",
     "@flighthq/signals": "*",
-    "@flighthq/texture": "*",
-    "@flighthq/types": "*"
+    "@flighthq/texture": "*"
   },
   "devDependencies": {
     "@flighthq/resource": "*",

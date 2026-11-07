@@ -33,10 +33,18 @@ export {
   InstancedMeshKind,
 } from './instancedMesh.ts';
 export { cloneMesh, createMesh, enableMeshSignals, getMeshDeformer, getMeshSignals, isMesh, MeshKind } from './mesh.ts';
+export { MeshDeformerMorph, MeshDeformerNone, MeshDeformerSkeletal } from './types/MeshDeformer.ts';
 export type { MeshDeformer } from './types/MeshDeformer.ts';
 export * from './prepareScene3DMorph.ts';
 export { createScene3D } from './scene.ts';
 export * from './sceneAnimation.ts';
+export {
+  Scene3DAnimationPathRotation,
+  Scene3DAnimationPathScale,
+  Scene3DAnimationPathTranslation,
+  Scene3DAnimationPathWeights,
+} from './types/Scene3DAnimationPath.ts';
+export type { Scene3DAnimationPath } from './types/Scene3DAnimationPath.ts';
 export type { Scene3DAnimationTarget } from './types/Scene3DAnimationTarget.ts';
 export * from './sceneDocument.ts';
 export * from './sceneDocumentLights.ts';

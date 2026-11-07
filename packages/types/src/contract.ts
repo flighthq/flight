@@ -65,7 +65,27 @@ export * from './BarrelDistortionEffect.ts';
 export * from './BatchBarrier.ts';
 export * from './BatchFormat.ts';
 export * from './BevelEffect.ts';
-export * from './Billboard.ts';
+export type {
+  Billboard,
+  BillboardMode,
+  BillboardRuntime,
+  MeshDeformer,
+  Scene3D,
+  Scene3DAnimationPath,
+  Scene3DAnimationTarget,
+  Scene3DDocument,
+  Scene3DDocumentAnimation,
+  Scene3DDocumentAnimationChannel,
+  Scene3DDocumentCamera,
+  Scene3DDocumentLight,
+  Scene3DDocumentMesh,
+  Scene3DDocumentNode,
+  Scene3DDocumentScene,
+  Scene3DDocumentSkin,
+  Scene3DKindUsage,
+  Scene3DMetadata,
+  Scene3DRuntime,
+} from '@flighthq/scene3d/contract';
 export * from './BinPack.ts';
 export type {
   Bitmap,
@@ -344,7 +364,6 @@ export * from './Matrix3.ts';
 export * from './Matrix4.ts';
 export * from './MedianEffect.ts';
 export * from './MediaSession.ts';
-export * from './MeshDeformer.ts';
 export * from './MethodsOf.ts';
 export * from './MorphShape.ts';
 export * from './MorphShapeAnimationTarget.ts';
@@ -439,19 +458,13 @@ export * from './Scale9Mapper.ts';
 export * from './Scale9Shape.ts';
 export * from './Scale9Sprite.ts';
 export * from './ScanlinesEffect.ts';
-export * from './Scene3D.ts';
 export * from './SceneCoverageCatalog.ts';
 export * from './RequirementCatalog.ts';
 export * from './SceneCoverageEntry.ts';
-export * from './Scene3DKindUsage.ts';
-export * from './Scene3DAnimationPath.ts';
-export * from './Scene3DAnimationTarget.ts';
-export * from './Scene3DDocument.ts';
 export * from './Scene3DLightBlock.ts';
 export * from './Scene3DForwardLightSelection.ts';
 export * from './Scene3DForwardLightSelectionExplanation.ts';
 export * from './Scene3DLights.ts';
-export * from './Scene3DMetadata.ts';
 export * from './Node3DVisitor.ts';
 export * from './Scene3DRenderList.ts';
 export * from './Scene3DRenderProxy.ts';
