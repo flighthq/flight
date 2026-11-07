@@ -16,5 +16,8 @@ export type VelocityField = VelocityFieldOwned;
 
 /** @deprecated Import `VelocityExplanation` from `@flighthq/velocity/contract`. */
 export type VelocityExplanation = VelocityExplanationOwned;
-/** @deprecated Import velocity contracts from `@flighthq/velocity/contract`. */
-export type { VelocityContributor } from '@flighthq/velocity/contract';
+
+// A source of per-node velocity for a frame — physics, tween, camera, or the transform-delta baseline.
+// Implementations write into the field (via contributeVelocity / suppressVelocity) for `root`'s subtree.
+// Kept as a plain function so any system can be one without depending on the velocity package's internals.
+export type VelocityContributor = (field: VelocityField, root: object) => void;
