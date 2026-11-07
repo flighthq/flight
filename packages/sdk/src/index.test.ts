@@ -1,5 +1,6 @@
 import { BitmapCompositeMode as ContractBitmapCompositeMode } from './contract.ts';
 import { CompressionFraming as ContractCompressionFraming } from './contract.ts';
+import { NodeKind as ContractNodeKind, NullScene3D as ContractNullScene3D } from './contract.ts';
 import {
   BillboardKind as ContractBillboardKind,
   MeshDeformerSkeletal as ContractMeshDeformerSkeletal,
@@ -88,6 +89,13 @@ describe('package exports', () => {
 
     it('exports createRectangle', () => {
       expect(sdk.createRectangle).toBeTypeOf('function');
+    });
+  });
+
+  describe('node domain', () => {
+    it('exports owner identity values from both aggregate lanes', () => {
+      expect(sdk.NodeKind).toBe(ContractNodeKind);
+      expect(sdk.NullScene3D).toBe(ContractNullScene3D);
     });
   });
 

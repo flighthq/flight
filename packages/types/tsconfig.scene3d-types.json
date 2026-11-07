@@ -47,13 +47,5 @@
       "path": "../scene3d/tsconfig.node.json"
     }
   ],
-  "include": [
-    "src/Camera3D.ts",
-    "src/contract.scene3d-bridge-types.ts",
-    "src/Entity.ts",
-    "src/HasAppearance.node-types.ts",
-    "src/HasTransform3D.node-types.ts",
-    "src/Light.ts",
-    "src/Node.node-types.ts"
-  ]
+  "include": ["src/Camera3D.ts", "src/contract.scene3d-bridge-types.ts", "src/Entity.ts", "src/Light.ts"]
 }

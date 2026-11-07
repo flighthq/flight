@@ -1,3 +1,5 @@
+import type { NodeAny } from '@flighthq/node/contract';
+
 import type { FlightDocumentFields } from './FlightDocumentFieldSchema.ts';
 import type {
   FlightDocumentLayoutBinding,
@@ -6,7 +8,6 @@ import type {
   FlightDocumentLayoutTree,
 } from './FlightDocumentLayout.ts';
 import type { LayoutNode, LayoutTree } from './Layout.ts';
-import type { NodeAny } from './Node.ts';
 
 describe('FlightDocumentLayout', () => {
   it('specializes the existing LayoutTree vocabulary to document-safe fields', () => {

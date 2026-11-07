@@ -1,9 +1,9 @@
 import type { Mesh } from '@flighthq/meshgeometry/contract';
+import type { HasMaterial } from '@flighthq/node/contract';
 import type { Scene3DRenderProxy } from '@flighthq/render/contract';
 import type { RenderProxy2D } from '@flighthq/render/contract';
 import { describe, expect, expectTypeOf, it } from 'vitest';
 
-import type { HasMaterial } from './HasMaterial.ts';
 import type { Material } from './Material.ts';
 import type { Material2D } from './Material2D.ts';
 import type { Material3D } from './Material3D.ts';

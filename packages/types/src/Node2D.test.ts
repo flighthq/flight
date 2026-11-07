@@ -1,6 +1,5 @@
-import type { HasBoundsRectangleRuntime } from './HasBoundsRectangle.ts';
-import type { HasTransform2DRuntime } from './HasTransform2D.ts';
-import type { NodeRuntime } from './Node.ts';
+import type { HasBoundsRectangleRuntime, HasTransform2DRuntime, NodeRuntime } from '@flighthq/node/contract';
+
 import type { Node2DRuntime, Node2DFields } from './Node2D.ts';
 
 describe('Node2DRuntime', () => {

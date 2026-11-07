@@ -1,3 +1,4 @@
+import type { Viewport } from '@flighthq/node/contract';
 import type { RenderTargetDescriptor } from '@flighthq/render/contract';
 export type { GlRenderViewResources } from '@flighthq/render-gl/contract';
 
@@ -6,7 +7,6 @@ import type { GlContextOptions } from './GlContext.ts';
 import type { GlRenderState } from './GlRenderState.ts';
 import type { GlRenderStateOptions } from './GlRenderStateOptions.ts';
 import type { GlTextureRenderTarget } from './GlRenderTarget.ts';
-import type { Viewport } from './Viewport.ts';
 
 export interface GlAppRenderViewOptions {
   readonly context?: Readonly<GlContextOptions>;

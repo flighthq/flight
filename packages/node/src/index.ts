@@ -63,6 +63,7 @@ export * from './revision.ts';
 export * from './stageFit.ts';
 export * from './traversal.ts';
 export { createViewport, getViewportAspect } from './viewport.ts';
+export { NodeKind, NullScene3D } from './contract.ts';
 export type { NodeRef } from './types.ts';
 export type {
   AppearanceNode,
