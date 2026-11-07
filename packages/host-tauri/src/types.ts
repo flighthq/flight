@@ -1,13 +1,12 @@
 import type { HostAppCapabilities, HostWindowCapabilities } from '@flighthq/app/contract';
 import type { HostClipboardCapabilities } from '@flighthq/clipboard/contract';
-import type { HostDialogCapabilities } from '@flighthq/host/contract';
+import type { Host, HostDialogCapabilities } from '@flighthq/host/contract';
 import type { TauriMenuCapabilities } from '@flighthq/menu/contract';
 import type { TauriNotificationCapabilities } from '@flighthq/notification/contract';
 import type { HostPlatformCapabilities } from '@flighthq/platform/contract';
 import type { HostShellCapabilities } from '@flighthq/shell/contract';
 import type { HostShortcutCapabilities } from '@flighthq/shortcut/contract';
 import type { DesktopOsProfile, HostTrayCapabilities } from '@flighthq/tray/contract';
-import type { Host } from '@flighthq/types/contract';
 
 // The precise slice of the Tauri (v2) JavaScript API — `@tauri-apps/api` plus its official plugins —
 // that Flight's host providers call. A consumer aggregates the real Tauri modules and passes the object:
