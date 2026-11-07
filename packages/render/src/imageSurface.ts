@@ -1,4 +1,4 @@
-import type { CanvasSurface, HostCanvasCapability } from '@flighthq/types/contract';
+import type { CanvasSurface, HostCanvasCapability } from '@flighthq/surface/contract';
 
 export function createCanvasHostSurface(
   host: Readonly<HostCanvasCapability>,

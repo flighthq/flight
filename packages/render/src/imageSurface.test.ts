@@ -1,4 +1,4 @@
-import type { CanvasSurface, HostCanvasCapability } from '@flighthq/types/contract';
+import type { CanvasSurface, HostCanvasCapability } from '@flighthq/surface/contract';
 
 import { createCanvasHostSurface, destroyCanvasHostSurface, getCanvasHostSurface } from './imageSurface.ts';
 

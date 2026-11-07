@@ -7,9 +7,13 @@
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,
+    "moduleSuffixes": [".surface-types", ".app-types", ".menu-types", ""],
     "tsBuildInfoFile": "dist/.tsbuildinfo.runtime"
   },
   "references": [
+    {
+      "path": "../surface/tsconfig.contract.json"
+    },
     {
       "path": "../clip/tsconfig.runtime.json"
     },
