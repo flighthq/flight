@@ -7,7 +7,6 @@
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,
-    "moduleSuffixes": [".scene2d-gl-bridge-types", ""],
     "tsBuildInfoFile": "dist/.tsbuildinfo.runtime"
   },
   "references": [
@@ -97,9 +96,6 @@
     },
     {
       "path": "../textureatlas/tsconfig.runtime.json"
-    },
-    {
-      "path": "../types/tsconfig.scene2d-gl-bridge-types.json"
     },
     {
       "path": "../velocity/tsconfig.runtime.json"

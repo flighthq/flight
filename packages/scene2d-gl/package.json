@@ -67,7 +67,6 @@
     "@flighthq/tilemap": "*",
     "@flighthq/texture": "*",
     "@flighthq/textureatlas": "*",
-    "@flighthq/types": "*",
     "@flighthq/velocity": "*"
   },
   "devDependencies": {
