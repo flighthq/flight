@@ -3,8 +3,8 @@ import { parentPort } from 'node:worker_threads';
 
 import { sdkHostDecompressDeflate } from '@flighthq/compression/contract';
 import { createHost } from '@flighthq/host/contract';
+import type { ImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import { createScene2DFromSwf, swfAllTagHandlers } from '@flighthq/swf/contract';
-import type { ImportDiagnostic } from '@flighthq/types/contract';
 
 import type {
   SwfImportConformanceWorkerRequest,

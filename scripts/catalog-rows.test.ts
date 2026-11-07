@@ -1,6 +1,7 @@
 import * as bitmapfontFormatsContract from '@flighthq/bitmapfont-formats/contract';
 import * as particlesFormats from '@flighthq/particles-formats';
 import * as particlesFormatsContract from '@flighthq/particles-formats/contract';
+import { RequirementFacet } from '@flighthq/requirement/contract';
 import {
   createRiveImportRegistry,
   lottieAllLayerHandlers,
@@ -36,7 +37,6 @@ import { getSwfTagName } from '@flighthq/swf/contract';
 import * as swfContract from '@flighthq/swf/contract';
 import * as tilemapFormats from '@flighthq/tilemap-formats';
 import * as tilemapFormatsContract from '@flighthq/tilemap-formats/contract';
-import { RequirementFacet } from '@flighthq/types/contract';
 
 import { ALWAYS_READ_FORMAT_FEATURES } from './catalog-dispositions.ts';
 import {

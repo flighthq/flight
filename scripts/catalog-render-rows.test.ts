@@ -5,6 +5,7 @@ import * as renderGl from '@flighthq/render-gl';
 // made this file fail lint at base: the names are simply not there, which is the policy working.
 import { standardGlBlendRealizations } from '@flighthq/render-gl/contract';
 import * as renderWgpu from '@flighthq/render-wgpu';
+import { RequirementFacet } from '@flighthq/requirement/contract';
 import * as canvas from '@flighthq/scene2d-canvas';
 import { canvasScene2DRenderPreset } from '@flighthq/scene2d-canvas';
 import { applyCanvasBlendMode } from '@flighthq/scene2d-canvas/contract';
@@ -17,7 +18,6 @@ import * as scene3dGl from '@flighthq/scene3d-gl';
 import { glScene3DRenderPreset } from '@flighthq/scene3d-gl';
 import * as scene3dWgpu from '@flighthq/scene3d-wgpu';
 import { wgpuScene3DRenderPreset } from '@flighthq/scene3d-wgpu';
-import { RequirementFacet } from '@flighthq/types/contract';
 
 import {
   buildRenderCatalogRows,

@@ -3,8 +3,8 @@ import { join, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
 import { getEntityRuntime } from '@flighthq/entity/contract';
+import { Node2DFieldsKey } from '@flighthq/scene2d/contract';
 import { Node3DFieldsKey } from '@flighthq/scene3d/contract';
-import { Node2DFieldsKey } from '@flighthq/types/contract';
 import { beforeAll, describe, expect, it } from 'vitest';
 
 import {

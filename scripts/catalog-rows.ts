@@ -6,7 +6,9 @@ import {
   BitmapFontFormatKindBmFontXml,
 } from '@flighthq/bitmapfont-formats/contract';
 import { PARTICLES_REQUIREMENT_KEY_NAMESPACE, StarlingPexFormatKind } from '@flighthq/particles-formats/contract';
+import type { PathBooleanKernel } from '@flighthq/path-boolean/contract';
 import type { RequirementCatalogEntry } from '@flighthq/requirement-catalog/contract';
+import { RequirementFacet } from '@flighthq/requirement/contract';
 import {
   createRiveImportRegistry,
   getRiveCoreTypeName,
@@ -217,8 +219,6 @@ import {
   TilemapFormatKindTiledTsx,
   TILEMAP_REQUIREMENT_KEY_NAMESPACE,
 } from '@flighthq/tilemap-formats/contract';
-import type { PathBooleanKernel } from '@flighthq/types/contract';
-import { RequirementFacet } from '@flighthq/types/contract';
 
 /**
  * The built-in ownership rows, DERIVED from the handlers themselves rather than transcribed.

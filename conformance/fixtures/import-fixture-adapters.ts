@@ -4,6 +4,7 @@ import { dirname, isAbsolute, relative, resolve, sep } from 'node:path';
 import { sdkHostDecompressDeflate } from '@flighthq/compression';
 import { createGlyphOutlineSourceFromOpenTypeFont } from '@flighthq/font-formats';
 import { createHost } from '@flighthq/host/contract';
+import type { ImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import { parseParticleConfigDocument } from '@flighthq/particles-formats';
 import { martinezPathBooleanKernel } from '@flighthq/path-boolean';
 import {
@@ -47,7 +48,6 @@ import type {
 import { parseSkeleton2D, parseSpineSkeletonBinary } from '@flighthq/skeleton2d-formats';
 import { createScene2DImportFromSwf, swfAllTagHandlers } from '@flighthq/swf';
 import { explainTextureContainerParse, parseAtf, parseBasis, parseDds, parseKtx2 } from '@flighthq/texture-formats';
-import type { ImportDiagnostic } from '@flighthq/types/contract';
 
 import type {
   ConformanceFixtureAdapter,

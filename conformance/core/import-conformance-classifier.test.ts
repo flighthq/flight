@@ -1,5 +1,5 @@
-import type { ImportDiagnostic } from '@flighthq/types/contract';
-import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
+import type { ImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import { ImportDiagnosticSeverity } from '@flighthq/importdiagnostics/contract';
 
 import { createImportConformanceSingleMemberCaseIdentity } from './import-conformance-case.ts';
 import { classifyImportConformanceObservation } from './import-conformance-classifier.ts';
