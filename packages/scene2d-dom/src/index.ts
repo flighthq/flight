@@ -23,3 +23,17 @@ export * from './enableDomTextureResolverGuards.ts';
 export * from './explainDomTextureResolution.ts';
 export * from './mergeDomRenderOptions.ts';
 export * from './scene2DDomPipeline.ts';
+export type {
+  DomBlendModeFidelity,
+  DomClipContourEntry,
+  DomClipEntry,
+  DomClipHooks,
+  DomImageSourceKind,
+  DomRenderOptions,
+  DomRenderRegistries,
+  DomRenderState,
+  DomRenderStateRuntime,
+  DomScene2DRectangle,
+  DomTextInputOverlay,
+  DomTextureResolver,
+} from './contract.ts';
