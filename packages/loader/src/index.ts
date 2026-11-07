@@ -17,3 +17,18 @@ export {
   setResourceLoaderConcurrency,
   startResourceLoad,
 } from './contract.ts';
+export type {
+  LoadOptions,
+  LoadProgress,
+  ResourceLoadBytes,
+  ResourceLoadBytesReporter,
+  ResourceLoadCounts,
+  ResourceLoadHandle,
+  ResourceLoadItem,
+  ResourceLoadItemStatus,
+  ResourceLoadReport,
+  ResourceLoadReportStatus,
+  ResourceLoader,
+  ResourceLoaderItemSignals,
+  ResourceLoaderOptions,
+} from './contract.ts';
