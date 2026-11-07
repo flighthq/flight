@@ -10,10 +10,8 @@ import type {
   InputPointerLockRequestOutcome,
   InputTargetHandleRaw as InputTargetHandle,
 } from '@flighthq/input/contract';
-import type { RenderState } from '@flighthq/render/contract';
 import type { HostScreenChangeCapability } from '@flighthq/screen/contract';
-import { connectSignal, createSignal, disconnectSignal, emitSignal } from '@flighthq/signals/contract';
-import type { HostGlCapability, HostSurfaceResizeCapability, Surface } from '@flighthq/types/contract';
+import { createSignal, emitSignal } from '@flighthq/signals/contract';
 
 import type {
   AppWindow,
@@ -56,6 +54,21 @@ const kVisibility = Symbol();
 // Attaches an existing native window without requiring an AppLoop. A false result leaves the
 // window's current lifecycle unchanged; success pins its eventual close to this exact lifecycle
 // capability, so a later closeWindow reaches the host that adopted the handle.
+// Window observer slots for the owners that bind host capabilities to a window from outside this package:
+// render-gl's render-context ingress and surface's render-state sizing. Attaching releases the slot's
+// previous observer first, so a window holds at most one of each; the release callback runs on detach.
+export function attachAppWindowRenderContextObserver(win: AppWindow, release: () => void): void {
+  const observers = getAppWindowObservers(win);
+  observers.get(kRenderContext)?.();
+  observers.set(kRenderContext, release);
+}
+
+export function attachAppWindowRenderStateObserver(win: AppWindow, release: () => void): void {
+  const observers = getAppWindowObservers(win);
+  observers.get(kRenderState)?.();
+  observers.set(kRenderState, release);
+}
+
 export function attachWindow(
   hostWindowAttach: Readonly<HostWindowAttachCapability>,
   hostWindowLifecycle: Readonly<HostWindowLifecycleCapability>,
@@ -171,47 +184,6 @@ export function attachWindowOrientation(hostScreenChange: Readonly<HostScreenCha
   );
 }
 
-export function attachWindowRenderContext(
-  hostGl: Readonly<HostGlCapability>,
-  win: AppWindow,
-  surface: Readonly<Surface>,
-): void {
-  const observers = getAppWindowObservers(win);
-  observers.get(kRenderContext)?.();
-  observers.set(
-    kRenderContext,
-    hostGl.subscribe(
-      surface,
-      () => emitSignal(win.onRenderContextLost, undefined),
-      () => emitSignal(win.onRenderContextRestored, undefined),
-    ),
-  );
-}
-
-// Binds a canvas render state to the window's size and devicePixelRatio: sizes the canvas backing
-// store on every onResize, so moving the window between displays or zooming is handled. Pair with
-// attachWindowResize — it is the source of the size/DPI updates this reacts to. DOM render states
-// need no surface resize (the browser rasterizes DOM at device resolution), so this is for canvas/Gl.
-export function attachWindowRenderState(
-  hostSurfaceResize: Readonly<HostSurfaceResizeCapability>,
-  win: AppWindow,
-  state: RenderState,
-  surface: Readonly<Surface>,
-): void {
-  const observers = getAppWindowObservers(win);
-  observers.get(kRenderState)?.();
-  const apply = (): void => {
-    hostSurfaceResize.resize(
-      surface,
-      Math.round(win.width * win.devicePixelRatio),
-      Math.round(win.height * win.devicePixelRatio),
-    );
-  };
-  apply();
-  const resizeSlot = connectSignal(win.onResize, apply);
-  observers.set(kRenderState, () => disconnectSignal(win.onResize, resizeSlot));
-}
-
 export function attachWindowResize(
   hostWindowGeometry: Readonly<
     HostWindowGeometryCapability & Required<Pick<HostWindowGeometryCapability, 'subscribeResize'>>
@@ -287,6 +259,18 @@ export function createAppWindow(): AppWindow {
   return finishEntity(out);
 }
 
+export function detachAppWindowRenderContextObserver(win: AppWindow): void {
+  const observers = getAppWindowObservers(win);
+  observers.get(kRenderContext)?.();
+  observers.delete(kRenderContext);
+}
+
+export function detachAppWindowRenderStateObserver(win: AppWindow): void {
+  const observers = getAppWindowObservers(win);
+  observers.get(kRenderState)?.();
+  observers.delete(kRenderState);
+}
+
 export function detachWindowClose(win: AppWindow): void {
   const observers = getAppWindowObservers(win);
   observers.get(kClose)?.();
@@ -321,18 +305,6 @@ export function detachWindowOrientation(win: AppWindow): void {
   const observers = getAppWindowObservers(win);
   observers.get(kOrientation)?.();
   observers.delete(kOrientation);
-}
-
-export function detachWindowRenderContext(win: AppWindow): void {
-  const observers = getAppWindowObservers(win);
-  observers.get(kRenderContext)?.();
-  observers.delete(kRenderContext);
-}
-
-export function detachWindowRenderState(win: AppWindow): void {
-  const observers = getAppWindowObservers(win);
-  observers.get(kRenderState)?.();
-  observers.delete(kRenderState);
 }
 
 export function detachWindowResize(win: AppWindow): void {

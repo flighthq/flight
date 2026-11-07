@@ -45,6 +45,7 @@
   },
   "dependencies": {
     "@flighthq/adjustments": "*",
+    "@flighthq/app": "*",
     "@flighthq/bitmap": "*",
     "@flighthq/camera": "*",
     "@flighthq/color": "*",

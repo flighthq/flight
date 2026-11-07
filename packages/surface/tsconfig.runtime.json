@@ -7,12 +7,12 @@
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,
-    "moduleSuffixes": [".app-types", ""],
     "tsBuildInfoFile": "dist/.tsbuildinfo.runtime"
   },
   "references": [
-    { "path": "../app/tsconfig.contract.json" },
+    { "path": "../app/tsconfig.runtime.json" },
     { "path": "../entity" },
+    { "path": "../signals" },
     { "path": "./tsconfig.contract.json" }
   ],
   "include": ["src/**/*.ts"],

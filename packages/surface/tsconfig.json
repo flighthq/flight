@@ -2,8 +2,9 @@
   "compilerOptions": { "composite": true },
   "files": [],
   "references": [
-    { "path": "../app/tsconfig.contract.json" },
+    { "path": "../app/tsconfig.runtime.json" },
     { "path": "../entity" },
+    { "path": "../signals" },
     { "path": "./tsconfig.contract.json" },
     { "path": "./tsconfig.runtime.json" }
   ]

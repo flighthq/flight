@@ -7,15 +7,7 @@
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,
-    "moduleSuffixes": [
-      ".app-bridge-types",
-      ".geometry-types",
-      ".lifecycle-types",
-      ".menu-types",
-      ".render-types",
-      ".screen-types",
-      ""
-    ],
+    "moduleSuffixes": [".geometry-types", ".lifecycle-types", ".menu-types", ".screen-types", ""],
     "tsBuildInfoFile": "dist/.tsbuildinfo.runtime"
   },
   "references": [
@@ -24,10 +16,8 @@
     { "path": "../input" },
     { "path": "../lifecycle/tsconfig.contract.json" },
     { "path": "../menu/tsconfig.contract.json" },
-    { "path": "../render/tsconfig.contract.json" },
     { "path": "../screen/tsconfig.contract.json" },
     { "path": "../signals" },
-    { "path": "../types/tsconfig.app-bridge-types.json" },
     { "path": "./tsconfig.contract.json" }
   ],
   "include": ["src/**/*.ts"],

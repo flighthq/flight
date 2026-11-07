@@ -22,3 +22,4 @@ export type {
   WgpuSurfaceAttachResult,
   WgpuSurfaceAttachment,
 } from './contract.ts';
+export { attachWindowRenderState, detachWindowRenderState } from './contract.ts';

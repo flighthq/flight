@@ -10,13 +10,13 @@ import type {
   InputPointerLockRequestOutcome,
   InputTargetHandleRaw as InputTargetHandle,
 } from '@flighthq/input/contract';
-import type { RenderState } from '@flighthq/render/contract';
 import type { HostScreenChangeCapability, ScreenChangeEvent, ScreenInfo } from '@flighthq/screen/contract';
 import { cancelSignal, connectSignal, emitSignal } from '@flighthq/signals/contract';
 import type { Signal } from '@flighthq/signals/contract';
-import type { HostGlCapability, HostSurfaceResizeCapability, Surface } from '@flighthq/types/contract';
 
 import {
+  attachAppWindowRenderContextObserver,
+  attachAppWindowRenderStateObserver,
   attachWindow,
   attachWindowClose,
   attachWindowDropFile,
@@ -24,22 +24,20 @@ import {
   attachWindowFullscreen,
   attachWindowMove,
   attachWindowOrientation,
-  attachWindowRenderContext,
-  attachWindowRenderState,
   attachWindowResize,
   attachWindowVisibility,
   centerWindow,
   closeWindow,
   computeWindowDeviceTransform,
   createAppWindow,
+  detachAppWindowRenderContextObserver,
+  detachAppWindowRenderStateObserver,
   detachWindowClose,
   detachWindowDropFile,
   detachWindowFocus,
   detachWindowFullscreen,
   detachWindowMove,
   detachWindowOrientation,
-  detachWindowRenderContext,
-  detachWindowRenderState,
   detachWindowResize,
   detachWindowVisibility,
   disposeAppWindow,
@@ -154,19 +152,7 @@ type RecordingInputFocusBackend = HostInputFocusCapability & {
 
 type RecordingInputPointerLockBackend = HostInputPointerLockCapability & { calls: string[] };
 
-type RecordingRenderContextBackend = HostGlCapability & {
-  calls: string[];
-  emitLost(): void;
-  emitRestored(): void;
-};
-
-type RecordingRenderSurfaceBackend = HostSurfaceResizeCapability & { calls: string[] };
-
 type TestHost = {
-  readonly graphics: {
-    readonly renderContext: RecordingRenderContextBackend;
-    readonly renderSurface: RecordingRenderSurfaceBackend;
-  };
   readonly input: {
     readonly dropFile: RecordingInputDropFileBackend;
     readonly focus: RecordingInputFocusBackend;
@@ -177,15 +163,9 @@ type TestHost = {
   readonly window: RecordingWindowBackend;
 };
 
-type WindowTargetHost = { readonly graphics: { readonly renderContext: HostGlCapability } } & {
-  readonly graphics: { readonly renderSurface: HostSurfaceResizeCapability };
-} & { readonly input: { readonly dropFile: HostInputDropFileCapability } } & {
+type WindowTargetHost = { readonly input: { readonly dropFile: HostInputDropFileCapability } } & {
   readonly input: { readonly focus: HostInputFocusCapability };
 } & { readonly input: { readonly pointerLock: HostInputPointerLockCapability } };
-
-function makeRenderState(): RenderState {
-  return {} as unknown as RenderState;
-}
 
 function recordingWindowBackend(): RecordingWindowBackend {
   const closeSubscriptions = new Set<{
@@ -331,10 +311,6 @@ function recordingWindowBackend(): RecordingWindowBackend {
   return out;
 }
 
-function createHostSurface(): Surface {
-  return finishEntity(allocateEntity<Surface>());
-}
-
 function createHostTarget(): InputTargetHandle {
   return finishEntity(allocateEntity<InputTargetHandle>());
 }
@@ -434,41 +410,6 @@ function recordingInputPointerLockBackend(): RecordingInputPointerLockBackend {
   return out;
 }
 
-function recordingRenderContextBackend(): RecordingRenderContextBackend {
-  let onLost: (() => void) | null = null;
-  let onRestored: (() => void) | null = null;
-  const calls: string[] = [];
-  const out = {} as RecordingRenderContextBackend;
-  out.calls = calls;
-  out.emitLost = () => {
-    onLost?.();
-  };
-  out.emitRestored = () => {
-    onRestored?.();
-  };
-  out.subscribe = (_surface: Readonly<Surface>, nextLost: () => void, nextRestored: () => void) => {
-    calls.push('subscribe');
-    onLost = nextLost;
-    onRestored = nextRestored;
-    return () => {
-      calls.push('release');
-      if (onLost === nextLost) onLost = null;
-      if (onRestored === nextRestored) onRestored = null;
-    };
-  };
-  return out;
-}
-
-function recordingRenderSurfaceBackend(): RecordingRenderSurfaceBackend {
-  const calls: string[] = [];
-  const out = {} as RecordingRenderSurfaceBackend;
-  out.calls = calls;
-  out.resize = (_surface: Readonly<Surface>, width: number, height: number) => {
-    calls.push(`resize:${width},${height}`);
-  };
-  return out;
-}
-
 function recordingScreenChangeBackend(): RecordingScreenChangeBackend {
   const listeners = new Set<(event: ScreenChangeEvent) => void>();
   const calls: string[] = [];
@@ -497,7 +438,6 @@ function orientationChangeEvent(): ScreenChangeEvent {
 
 function createTestHost(windowBackend: RecordingWindowBackend = recordingWindowBackend()): TestHost {
   return {
-    graphics: { renderContext: recordingRenderContextBackend(), renderSurface: recordingRenderSurfaceBackend() },
     input: {
       dropFile: recordingInputDropFileBackend(),
       focus: recordingInputFocusBackend(),
@@ -513,6 +453,30 @@ let host: TestHost;
 
 beforeEach(() => {
   host = createTestHost();
+});
+
+describe('attachAppWindowRenderContextObserver', () => {
+  it('releases the previous render-context observer before holding the next', () => {
+    const win = createAppWindow();
+    const calls: string[] = [];
+    attachAppWindowRenderContextObserver(win, () => calls.push('first'));
+    attachAppWindowRenderContextObserver(win, () => calls.push('second'));
+    expect(calls).toEqual(['first']);
+    detachAppWindowRenderContextObserver(win);
+    expect(calls).toEqual(['first', 'second']);
+  });
+});
+
+describe('attachAppWindowRenderStateObserver', () => {
+  it('releases the previous render-state observer before holding the next', () => {
+    const win = createAppWindow();
+    const calls: string[] = [];
+    attachAppWindowRenderStateObserver(win, () => calls.push('first'));
+    attachAppWindowRenderStateObserver(win, () => calls.push('second'));
+    expect(calls).toEqual(['first']);
+    detachAppWindowRenderStateObserver(win);
+    expect(calls).toEqual(['first', 'second']);
+  });
 });
 
 describe('attachWindow', () => {
@@ -650,6 +614,22 @@ describe('attachWindowDropFile', () => {
     expect(origin.input.dropFile.calls).toEqual(['subscribe', 'release']);
     expect(replacement.input.dropFile.calls).toEqual(['subscribe', 'release']);
   });
+
+  it('composes the three retained input seams as explicit trait intersections', async () => {
+    const targetHost = createTestHost();
+    const composedHost: WindowTargetHost = targetHost;
+    const target = createHostTarget();
+    const win = createAppWindow();
+
+    attachWindowDropFile(composedHost.input.dropFile, win, target);
+    attachWindowFocus(composedHost.input.focus, win, target);
+    await lockAppInputPointer(composedHost.input.pointerLock, target);
+
+    expect(targetHost.input.dropFile.calls).toEqual(['subscribe']);
+    expect(targetHost.input.focus.calls).toEqual(['subscribe']);
+    expect(targetHost.input.pointerLock.calls).toEqual(['request']);
+    await exitAppInputPointerLock(targetHost.input.pointerLock);
+  });
 });
 
 describe('attachWindowFocus', () => {
@@ -750,119 +730,6 @@ describe('attachWindowOrientation', () => {
     attachWindowOrientation(host.screen.change, win);
     host.screen.change.emitOrientation();
     expect(called).toBe(true);
-  });
-});
-
-describe('attachWindowRenderContext', () => {
-  it('emits onRenderContextLost from host render-context ingress', () => {
-    const win = createAppWindow();
-    let called = false;
-    connectSignal(win.onRenderContextLost, () => {
-      called = true;
-    });
-    attachWindowRenderContext(host.graphics.renderContext, win, createHostSurface());
-    host.graphics.renderContext.emitLost();
-    expect(called).toBe(true);
-  });
-
-  it('emits onRenderContextRestored from host render-context ingress', () => {
-    const win = createAppWindow();
-    let called = false;
-    connectSignal(win.onRenderContextRestored, () => {
-      called = true;
-    });
-    attachWindowRenderContext(host.graphics.renderContext, win, createHostSurface());
-    host.graphics.renderContext.emitRestored();
-    expect(called).toBe(true);
-  });
-
-  it('releases the origin provider before attaching a replacement provider', () => {
-    const origin = createTestHost();
-    const replacement = createTestHost();
-    const win = createAppWindow();
-    const target = createHostSurface();
-
-    attachWindowRenderContext(origin.graphics.renderContext, win, target);
-    attachWindowRenderContext(replacement.graphics.renderContext, win, target);
-    detachWindowRenderContext(win);
-
-    expect(origin.graphics.renderContext.calls).toEqual(['subscribe', 'release']);
-    expect(replacement.graphics.renderContext.calls).toEqual(['subscribe', 'release']);
-  });
-});
-
-describe('attachWindowRenderState', () => {
-  it('sizes the opaque render surface from the window', () => {
-    const win = createAppWindow();
-    win.width = 800;
-    win.height = 600;
-    win.devicePixelRatio = 2;
-    const state = makeRenderState();
-    attachWindowRenderState(host.graphics.renderSurface, win, state, createHostSurface());
-    expect(host.graphics.renderSurface.calls).toEqual(['resize:1600,1200']);
-  });
-
-  it('keeps onResize core-owned while reapplying the backing size', () => {
-    const win = createAppWindow();
-    win.width = 800;
-    win.height = 600;
-    win.devicePixelRatio = 1;
-    const state = makeRenderState();
-    attachWindowRenderState(host.graphics.renderSurface, win, state, createHostSurface());
-    win.width = 400;
-    win.devicePixelRatio = 2;
-    emitSignal(win.onResize, undefined);
-    expect(host.graphics.renderSurface.calls).toEqual(['resize:800,600', 'resize:800,1200']);
-  });
-
-  it('stops reapplying after detach disconnects its resize slot', () => {
-    const win = createAppWindow();
-    win.width = 100;
-    win.height = 100;
-    win.devicePixelRatio = 1;
-    attachWindowRenderState(host.graphics.renderSurface, win, makeRenderState(), createHostSurface());
-    detachWindowRenderState(win);
-    win.width = 200;
-    emitSignal(win.onResize, undefined);
-    expect(host.graphics.renderSurface.calls).toEqual(['resize:100,100']);
-  });
-
-  it('pins resize commands to the provider captured by the core signal attachment', () => {
-    const origin = createTestHost();
-    const active = createTestHost();
-    const win = createAppWindow();
-    win.width = 320;
-    win.height = 200;
-    const state = makeRenderState();
-
-    attachWindowRenderState(origin.graphics.renderSurface, win, state, createHostSurface());
-    host = active;
-    win.width = 640;
-    emitSignal(win.onResize, undefined);
-
-    expect(origin.graphics.renderSurface.calls).toEqual(['resize:320,200', 'resize:640,200']);
-    expect(active.graphics.renderSurface.calls).toEqual([]);
-  });
-
-  it('composes the five retained seams as explicit trait intersections', async () => {
-    const targetHost = createTestHost();
-    const composedHost: WindowTargetHost = targetHost;
-    const target = createHostTarget();
-    const surface = createHostSurface();
-    const win = createAppWindow();
-
-    attachWindowDropFile(composedHost.input.dropFile, win, target);
-    attachWindowFocus(composedHost.input.focus, win, target);
-    attachWindowRenderContext(composedHost.graphics.renderContext, win, surface);
-    attachWindowRenderState(composedHost.graphics.renderSurface, win, makeRenderState(), surface);
-    await lockAppInputPointer(composedHost.input.pointerLock, target);
-
-    expect(targetHost.input.dropFile.calls).toEqual(['subscribe']);
-    expect(targetHost.input.focus.calls).toEqual(['subscribe']);
-    expect(targetHost.graphics.renderContext.calls).toEqual(['subscribe']);
-    expect(targetHost.graphics.renderSurface.calls).toEqual(['resize:0,0']);
-    expect(targetHost.input.pointerLock.calls).toEqual(['request']);
-    await exitAppInputPointerLock(targetHost.input.pointerLock);
   });
 });
 
@@ -1043,6 +910,28 @@ describe('createAppWindow', () => {
   });
 });
 
+describe('detachAppWindowRenderContextObserver', () => {
+  it('runs the held release once and clears the slot', () => {
+    const win = createAppWindow();
+    let released = 0;
+    attachAppWindowRenderContextObserver(win, () => released++);
+    detachAppWindowRenderContextObserver(win);
+    detachAppWindowRenderContextObserver(win);
+    expect(released).toBe(1);
+  });
+});
+
+describe('detachAppWindowRenderStateObserver', () => {
+  it('runs the held release once and clears the slot', () => {
+    const win = createAppWindow();
+    let released = 0;
+    attachAppWindowRenderStateObserver(win, () => released++);
+    detachAppWindowRenderStateObserver(win);
+    detachAppWindowRenderStateObserver(win);
+    expect(released).toBe(1);
+  });
+});
+
 describe('detachWindowClose', () => {
   it('stops emitting onClose after detach', () => {
     const win = createAppWindow();
@@ -1132,36 +1021,6 @@ describe('detachWindowOrientation', () => {
     host.screen.change.emitOrientation();
 
     expect(called).toBe(false);
-  });
-});
-
-describe('detachWindowRenderContext', () => {
-  it('releases render-context ingress', () => {
-    const win = createAppWindow();
-    let called = false;
-    connectSignal(win.onRenderContextLost, () => {
-      called = true;
-    });
-    attachWindowRenderContext(host.graphics.renderContext, win, createHostSurface());
-    detachWindowRenderContext(win);
-    host.graphics.renderContext.emitLost();
-    expect(called).toBe(false);
-    expect(host.graphics.renderContext.calls).toEqual(['subscribe', 'release']);
-  });
-});
-
-describe('detachWindowRenderState', () => {
-  it('stops reacting to window resize', () => {
-    const win = createAppWindow();
-    win.width = 800;
-    win.height = 600;
-    win.devicePixelRatio = 1;
-    const state = makeRenderState();
-    attachWindowRenderState(host.graphics.renderSurface, win, state, createHostSurface());
-    detachWindowRenderState(win);
-    win.width = 400;
-    emitSignal(win.onResize, undefined);
-    expect(host.graphics.renderSurface.calls).toEqual(['resize:800,600']);
   });
 });
 

@@ -12,6 +12,9 @@
   },
   "references": [
     {
+      "path": "../app/tsconfig.runtime.json"
+    },
+    {
       "path": "../bitmap/tsconfig.contract.json"
     },
     {

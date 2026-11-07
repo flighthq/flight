@@ -40,3 +40,4 @@ export {
 } from './glRenderTexturePool.ts';
 export * from './glRenderView.ts';
 export * from './glTextureResolver.ts';
+export { attachWindowRenderContext, detachWindowRenderContext } from './windowRenderContext.ts';
