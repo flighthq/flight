@@ -3,4 +3,4 @@
 export type { Velocity2D } from './velocity2D.ts';
 export type { VelocityExplanation, VelocityReason } from './velocityExplanation.ts';
 export type { VelocitySample } from './velocitySample.ts';
-export type { SourceId, VelocityField } from './velocityStore.ts';
+export type { SourceId, VelocityContributor, VelocityField } from './velocityStore.ts';

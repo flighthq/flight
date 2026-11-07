@@ -20,7 +20,6 @@ import type {
   TextureColorSpace,
   TextureSource,
 } from '@flighthq/texture/contract';
-import type { CanvasShapeCommand } from '@flighthq/types/contract';
 
 // Identifies which geometry accumulation pipeline a renderer submits into. This is the first
 // component of the flush key: (BatchFormat, texture, blend, material). Consecutive draws that
@@ -273,7 +272,7 @@ export interface RenderState extends EntityRaw {
 }
 
 export interface RenderRegistries {
-  canvasShapeCommands?: ReadonlyMap<Kind, CanvasShapeCommand>;
+  canvasShapeCommands?: ReadonlyMap<Kind, unknown>;
   colorAdjustments?: ((state: RenderState, data: RenderProxy, parentData?: RenderProxy) => void) | null;
   colorAdjustmentUnsupportedGuard?: ColorAdjustmentUnsupportedGuard | null;
   effectPaddingResolvers?: ReadonlyMap<Kind, EffectPaddingResolver>;
@@ -309,7 +308,7 @@ export interface RenderStateRuntime extends EntityRuntime {
 }
 
 export interface RenderStateOptions {
-  canvasShapeCommands?: ReadonlyMap<Kind, CanvasShapeCommand>;
+  canvasShapeCommands?: ReadonlyMap<Kind, unknown>;
   colorAdjustments?: ((state: RenderState, data: RenderProxy, parentData?: RenderProxy) => void) | null;
   colorAdjustmentUnsupportedGuard?: ColorAdjustmentUnsupportedGuard | null;
   effectPaddingResolvers?: ReadonlyMap<Kind, EffectPaddingResolver>;

@@ -34,3 +34,4 @@ export type { RendererData } from './types/RendererData.ts';
 export type { Scene2DFitContext } from './types/Scene2DFitContext.ts';
 export type { Viewport, ViewportLike } from './types/Viewport.ts';
 export type { ViewportScaleMode } from './types/ViewportScaleMode.ts';
+export type { HierarchyNode, HierarchyNodeAny } from './types/HierarchyNode.ts';

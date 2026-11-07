@@ -20,7 +20,6 @@
       ".shape-types",
       ".surface-types",
       ".texture-types",
-      ".render-state-bridge-types",
       ".lighting-types",
       ""
     ]
@@ -64,9 +63,6 @@
     },
     {
       "path": "../surface/tsconfig.contract.json"
-    },
-    {
-      "path": "../types/tsconfig.render-state-bridge-types.json"
     },
     {
       "path": "../requirement"

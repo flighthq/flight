@@ -90,9 +90,6 @@
       "path": "../tilemap/tsconfig.runtime.json"
     },
     {
-      "path": "../types"
-    },
-    {
       "path": "../effects/tsconfig.runtime.json"
     },
     {

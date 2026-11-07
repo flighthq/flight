@@ -18,3 +18,5 @@ export interface CanvasEffectState {
   readonly pool: CanvasRenderTargetPool;
   readonly lutCache: ColorLutCache;
 }
+
+export type CanvasEffectSupport = 'approximate' | 'passthrough' | 'real';

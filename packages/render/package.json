@@ -59,8 +59,7 @@
     "@flighthq/shape": "*",
     "@flighthq/signals": "*",
     "@flighthq/surface": "*",
-    "@flighthq/texture": "*",
-    "@flighthq/types": "*"
+    "@flighthq/texture": "*"
   },
   "devDependencies": {
     "@flighthq/clip": "*",

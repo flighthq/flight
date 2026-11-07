@@ -90,3 +90,4 @@ export type {
   GlTextureInternalFormat,
   GlTextureWrapKind,
 } from './glPipelineStateTypes.ts';
+export type { GlAppRenderView, GlAppRenderViewOptions } from './glAppRenderViewTypes.ts';

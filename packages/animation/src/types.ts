@@ -273,3 +273,5 @@ export interface AnimationStateMachine extends AnimationEntity {
   transitionToStateIndex: number | null;
   transitionWeight: number;
 }
+
+export type PlayMode = 'loop' | 'once';

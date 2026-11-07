@@ -92,6 +92,7 @@
   ],
   "include": [
     "src/contract.render-gl-types.ts",
+    "src/glAppRenderViewTypes.ts",
     "src/glContextLossTypes.ts",
     "src/glPipelineStateTypes.ts",
     "src/glCompressedTextureUploaderTypes.ts",

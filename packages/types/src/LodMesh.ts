@@ -1,12 +1,3 @@
-import type { Mesh } from '@flighthq/meshgeometry/contract';
-import type { Node3D, Node3DRuntime } from '@flighthq/scene3d/contract';
-export interface LodLevel {
-  mesh: Mesh;
-  minDistance: number;
-}
-export interface LodMesh extends Node3D {
-  activeLevelIndex: number;
-  levels: readonly LodLevel[];
-}
-export type LodMeshRuntime = Node3DRuntime;
+/** @deprecated Import from `@flighthq/scene3d/contract`. */
+export type { LodLevel, LodMesh, LodMeshRuntime } from '@flighthq/scene3d/contract';
 export const LodMeshKind = 'LodMesh';

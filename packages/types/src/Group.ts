@@ -1,4 +1,3 @@
-import type { Node3D, Node3DRuntime } from '@flighthq/scene3d/contract';
-export interface Group extends Node3D {}
-export type GroupRuntime = Node3DRuntime;
+/** @deprecated Import from `@flighthq/scene2d/contract`. */
+export type { Group, GroupRuntime } from '@flighthq/scene2d/contract';
 export const GroupKind = 'Group';

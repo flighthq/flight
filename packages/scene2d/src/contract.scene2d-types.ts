@@ -42,3 +42,4 @@ export type { Scene2DSignals } from './types/Scene2DSignals.ts';
 export { SpriteKind } from './types/Sprite.ts';
 export type { Sprite, SpriteData, SpriteRuntime } from './types/Sprite.ts';
 export type { SpriteIdentityRendererData } from './types/SpriteIdentityRendererData.ts';
+export * from './types/Group.ts';

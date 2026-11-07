@@ -66,8 +66,7 @@
     "@flighthq/textshaper": "*",
     "@flighthq/texture": "*",
     "@flighthq/textureatlas": "*",
-    "@flighthq/tilemap": "*",
-    "@flighthq/types": "*"
+    "@flighthq/tilemap": "*"
   },
   "devDependencies": {
     "@flighthq/glyphatlas": "*",

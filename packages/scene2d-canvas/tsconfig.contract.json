@@ -8,6 +8,8 @@
     "declarationMap": true,
     "sourceMap": true,
     "moduleSuffixes": [
+      ".shape-types",
+      ".geometry-types",
       ".bitmap-types",
       ".effects-types",
       ".materials-types",
@@ -19,6 +21,8 @@
     "tsBuildInfoFile": "dist/.tsbuildinfo.contract"
   },
   "references": [
+    { "path": "../geometry/tsconfig.contract.json" },
+    { "path": "../shape/tsconfig.contract.json" },
     { "path": "../bitmap/tsconfig.contract.json" },
     { "path": "../effects/tsconfig.contract.json" },
     { "path": "../entity" },

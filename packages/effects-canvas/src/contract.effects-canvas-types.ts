@@ -1,4 +1,5 @@
 export type {
+  CanvasEffectSupport,
   CanvasEffectContext,
   CanvasEffectRunner,
   CanvasEffectSourceMode,

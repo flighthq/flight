@@ -2,13 +2,13 @@
 import { RenderRegistryTable } from '@flighthq/render/contract';
 import type { RenderProxy2D, RenderState, Scene2DRenderer } from '@flighthq/render/contract';
 import type { Shape } from '@flighthq/shape/contract';
-import type { CanvasShapeDrawState } from '@flighthq/types/contract';
 
 import { drawCanvasScene2D } from './canvasNode2D.ts';
 import { getCanvasRenderStateTextureResolvers, setCanvasGlobalAlpha } from './canvasRenderState.ts';
 import { getCanvasShapeCommand } from './canvasShapeRegistry.ts';
 import { setCanvasTransform } from './canvasTransform.ts';
 import type { CanvasRenderState } from './types/CanvasRenderState.ts';
+import type { CanvasShapeDrawState } from './types/CanvasShape.ts';
 import type { CanvasTextureResolvers } from './types/CanvasTextureResolver.ts';
 
 export function drawCanvasShape(state: CanvasRenderState, renderProxy: RenderProxy2D): void {

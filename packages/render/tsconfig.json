@@ -65,9 +65,6 @@
       "path": "../tilemap/tsconfig.runtime.json"
     },
     {
-      "path": "../types"
-    },
-    {
       "path": "../texture/tsconfig.runtime.json"
     },
     {

@@ -1,6 +1,5 @@
 import { RequirementFacet } from '@flighthq/requirement/contract';
 import type { Scene2DKindUsage } from '@flighthq/scene2d/contract';
-import type { CanvasShapeCommand } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { explainScene2DCoverage, hasScene2DCoverage } from './explainScene2DCoverage.ts';
@@ -51,7 +50,7 @@ function entries(
 // scene2d-canvas, which render cannot depend on, so the test installs the binding directly.
 function wireShapeCommand(state: ReturnType<typeof createRenderState>, key: string): void {
   const runtime = getRenderStateRuntime(state);
-  runtime.registries.canvasShapeCommands = new Map([[key, { key, draw: () => {} } as unknown as CanvasShapeCommand]]);
+  runtime.registries.canvasShapeCommands = new Map([[key, { key, draw: () => {} }]]);
 }
 
 describe('explainScene2DCoverage', () => {

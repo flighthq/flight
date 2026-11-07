@@ -22,6 +22,11 @@ export interface VelocityField extends EntityRaw {
   samples: WeakMap<SourceId, VelocitySample>;
 }
 
+// A velocity producer: implementations write into the field (via contributeVelocity / suppressVelocity) for
+// `root`'s subtree. Kept as a plain function so any system can be one without depending on this package's
+// internals.
+export type VelocityContributor = (field: VelocityField, root: object) => void;
+
 export function beginVelocityFrame(field: VelocityField): void {
   field.frameId += 1;
 }

@@ -18,7 +18,8 @@ import {
 import type { LineScaleMode } from '@flighthq/shape/contract';
 import { getTextureViewSize } from '@flighthq/texture/contract';
 import type { Texture } from '@flighthq/texture/contract';
-import type { CanvasShapeCommand } from '@flighthq/types/contract';
+
+import type { CanvasShapeCommand } from './types/CanvasShape.ts';
 
 const _fillMatrixInverse: Matrix = createMatrix();
 

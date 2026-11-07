@@ -10,3 +10,4 @@ export * from './types/Scene3DDocument.ts';
 export * from './types/Scene3DKindUsage.ts';
 export * from './types/Scene3DMetadata.ts';
 export type { Node3DVisitor } from './types/Node3DVisitor.ts';
+export * from './types/LodMesh.ts';

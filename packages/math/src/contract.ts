@@ -27,3 +27,4 @@ export { randomBool, randomInt, randomRange, randomSign } from './randomRange.ts
 export { ceilTo, euclideanMod, floorTo, fract, roundTo } from './rounding.ts';
 export { ceilPowerOfTwo, floorPowerOfTwo, quantize, sign } from './scalar.ts';
 export { mean, median, standardDeviation, variance, weightedAverage } from './statistics.ts';
+export type { MutableNumberArray } from './types.ts';
