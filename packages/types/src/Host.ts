@@ -55,8 +55,9 @@ export type { HostShortcutCapabilities } from '@flighthq/shortcut/contract';
 export type { HostStatusBarCapabilities } from '@flighthq/statusbar/contract';
 export type { HostPlatformCapabilities } from '@flighthq/platform/contract';
 
+import type { HostHapticsCapabilities } from '@flighthq/haptics/contract';
+
 import type { Entity } from './Entity.ts';
-import type { HostHapticsCapabilities } from './Haptics.ts';
 import type { HostImageDecodeCapabilities } from './HostImageDecode.ts';
 import type { HostImageEncodeCapabilities } from './HostImageEncode.ts';
 

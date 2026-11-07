@@ -153,7 +153,7 @@ export type {
   HapticsOperation,
   HostHapticsCapabilities,
   HostHapticsCapability,
-} from '@flighthq/haptics';
+} from '@flighthq/haptics/contract';
 export * from '@flighthq/image';
 export * from '@flighthq/image-codec';
 export * from '@flighthq/importdiagnostics';

@@ -311,7 +311,14 @@ export * from './GlyphAtlasEntryExplanation.ts';
 export * from './GlyphSource.ts';
 export * from './GridSliceOptions.ts';
 export * from './Group.ts';
-export * from './Haptics.ts';
+export type {
+  HapticImpactStyle,
+  HapticNotificationType,
+  HapticsCapabilities,
+  HapticsOperation,
+  HostHapticsCapabilities,
+  HostHapticsCapability,
+} from '@flighthq/haptics/contract';
 export * from './HasAppearance.ts';
 export * from './HasBlendMode.ts';
 export * from './HasBoundsRectangle.ts';

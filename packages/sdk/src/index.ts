@@ -155,7 +155,7 @@ export type {
   HapticsOperation,
   HostHapticsCapabilities,
   HostHapticsCapability,
-} from '@flighthq/haptics';
+} from '@flighthq/haptics/contract';
 export * from '@flighthq/host';
 export * from './sdkHost.ts';
 export * from '@flighthq/image';
