@@ -16,7 +16,6 @@
       ".loader-types",
       ".materials-types",
       ".menu-types",
-      ".scene3d-bridge-types",
       ".scene3d-formats-types",
       ".scene3d-types",
       ".surface-types",
@@ -90,9 +89,6 @@
     },
     {
       "path": "../texture/tsconfig.contract.json"
-    },
-    {
-      "path": "../types/tsconfig.scene3d-types.json"
     },
     {
       "path": "../lighting/tsconfig.contract.json"

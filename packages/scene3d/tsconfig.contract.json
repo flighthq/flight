@@ -10,7 +10,6 @@
     "moduleSuffixes": [
       ".camera-types",
       ".meshgeometry-types",
-      ".scene3d-bridge-types",
       ".geometry-types",
       ".image-types",
       ".materials-types",
