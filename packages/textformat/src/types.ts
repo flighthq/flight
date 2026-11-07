@@ -44,5 +44,3 @@ export interface TextFormatRangeRaw extends EntityRaw {
   format: TextFormat;
   start: number;
 }
-
-export type TextListMarker = 'bullet' | 'none';
