@@ -14,6 +14,8 @@ const ROOT = resolve(__dirname, '../../..');
 const PACKAGE_ROOT = resolve(__dirname, '..');
 const DIST_ROOT = resolve(PACKAGE_ROOT, 'dist');
 const PACK_TIMEOUT_MS = 120_000;
+// Cannot find module, and a module that resolves but lacks the imported name: either one reads as `any`.
+const UNRESOLVED_DIAGNOSTIC_CODES: ReadonlySet<number> = new Set([2305, 2307, 2614, 2724]);
 
 const ENTITY_CONSTRUCTORS = ['tauriHost'] as const;
 
@@ -64,8 +66,8 @@ interface PackResult {
 let packedFiles: string[];
 
 // `npm pack` would run this package's `prepack`, whose `tsc -b --clean` walks every project reference and
-// deletes then rebuilds thousands of files across the referenced packages (all of `types/dist` included)
-// on every test run, while other workers read them. Cleaning only this package's outputs and letting
+// deletes then rebuilds thousands of files across the referenced packages on every test run, while other
+// workers read them. Cleaning only this package's outputs and letting
 // `tsc -b` rebuild incrementally still packs a fresh, clean build of the surface under test.
 beforeAll(() => {
   execFileSync('npm', ['run', 'clean:dist'], { cwd: PACKAGE_ROOT, stdio: 'ignore' });
@@ -204,19 +206,20 @@ function declarationProgram(): {
     `import type { EntityRaw, EntityRuntime, EntityRuntimeKey } from '${entityTypes}';\n` +
       'export interface Entity extends EntityRaw {\n  [EntityRuntimeKey]: EntityRuntime | undefined;\n}\n',
   );
-  // The package builds against the menu contract-types project (tsconfig `moduleSuffixes`), which emits
-  // only `contract.menu-types.d.ts`, so resolve `@flighthq/menu/contract` to that declaration as the build
-  // does. Every import must resolve: an unresolved one reads as `any`, which is assignable to `Entity`.
+  // The package builds against several contract-types projects (tsconfig `moduleSuffixes`), each of which emits
+  // only `contract.<pkg>-types.d.ts`, so resolve every such `@flighthq/<pkg>/contract` to that declaration as the
+  // build does. A full `dist/contract.d.ts` left over from an earlier build may lack the names, and a missing name
+  // reads as `any`, which is assignable to `Entity`.
   const program = ts.createProgram([publicPath, contractPath, entityPath], {
     module: ts.ModuleKind.ESNext,
     moduleResolution: ts.ModuleResolutionKind.Bundler,
-    paths: { '@flighthq/menu/contract': [resolve(ROOT, 'packages/menu/dist/contract.menu-types.d.ts')] },
+    paths: contractTypesPaths(),
     skipLibCheck: true,
     target: ts.ScriptTarget.ESNext,
   });
   const unresolved = ts
     .getPreEmitDiagnostics(program)
-    .filter((diagnostic) => diagnostic.code === 2307)
+    .filter((diagnostic) => UNRESOLVED_DIAGNOSTIC_CODES.has(diagnostic.code))
     .map((diagnostic) => ts.flattenDiagnosticMessageText(diagnostic.messageText, ' '));
   expect(unresolved).toEqual([]);
   return {
@@ -225,6 +228,20 @@ function declarationProgram(): {
     entitySource: program.getSourceFile(entityPath)!,
     publicSource: program.getSourceFile(publicPath)!,
   };
+}
+
+function contractTypesPaths(): Record<string, string[]> {
+  const tsconfig = JSON.parse(readFileSync(resolve(PACKAGE_ROOT, 'tsconfig.json'), 'utf8')) as {
+    compilerOptions: { moduleSuffixes: string[] };
+  };
+  const paths: Record<string, string[]> = {};
+  for (const suffix of tsconfig.compilerOptions.moduleSuffixes) {
+    const match = /^\.(.+)-types$/u.exec(suffix);
+    if (match === null) continue;
+    const name = match[1]!;
+    paths[`@flighthq/${name}/contract`] = [resolve(ROOT, `packages/${name}/dist/contract.${name}-types.d.ts`)];
+  }
+  return paths;
 }
 
 function moduleExports(checker: ts.TypeChecker, source: ts.SourceFile): ts.Symbol[] {
