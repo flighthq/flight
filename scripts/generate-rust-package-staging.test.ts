@@ -659,7 +659,7 @@ pub fn default_liveness() -> AccessibilityLiveness {
     );
     writeFileSync(
       join(packageRoot, 'src', 'value.ts'),
-      `import type { AccessibilityLiveness } from '@flighthq/types/contract';
+      `import type { AccessibilityLiveness } from '@flighthq/accessibility/contract';
 
 export function defaultLiveness(): AccessibilityLiveness {
   return 'polite';
@@ -673,7 +673,7 @@ export function defaultLiveness(): AccessibilityLiveness {
 
     expect(run.code, run.stderr).toBe(0);
     const value = readFileSync(join(packageRoot, 'src', 'value.ts'), 'utf8');
-    expect(value).toContain("import type { AccessibilityLiveness } from '@flighthq/types/contract';");
+    expect(value).toContain("import type { AccessibilityLiveness } from '@flighthq/accessibility/contract';");
     expect(value).toContain("return 'polite';");
     expect(value).not.toContain('AccessibilityLiveness.Polite');
   }, 120_000);

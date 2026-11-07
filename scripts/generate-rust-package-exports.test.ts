@@ -301,7 +301,7 @@ interface PrivateState { index: number | null; }
   it('passes only explicitly imported type-only string unions to the compiler', () => {
     const symbols = new Map([
       [
-        '@flighthq/types/contract',
+        '@flighthq/accessibility/contract',
         new Map([
           [
             'AccessibilityLiveness',
@@ -337,12 +337,12 @@ interface PrivateState { index: number | null; }
         `import type {
   AccessibilityLiveness as Liveness,
   AccessibilityNode,
-} from '@flighthq/types/contract';
-import { RuntimeLiveness } from '@flighthq/types/contract';
+} from '@flighthq/accessibility/contract';
+import { RuntimeLiveness } from '@flighthq/accessibility/contract';
 `,
         symbols,
       ),
-    ).toEqual(['--typescript-string-union', '@flighthq/types/contract#Liveness=["polite","assertive"]']);
+    ).toEqual(['--typescript-string-union', '@flighthq/accessibility/contract#Liveness=["polite","assertive"]']);
   });
 
   it('carries exact Layout string-union owners without accepting runtime enums', () => {
@@ -1443,7 +1443,7 @@ describe('renderReferencedImports', () => {
   AccessibilityOperationOutcome,
   HostAccessibilityCapability,
   StaleType,
-} from '@flighthq/types/contract';
+} from '@flighthq/accessibility/contract';
 import { createHelper, staleHelper } from './helper.ts';
 
 export function announceAccessibility(): void {}
@@ -1458,7 +1458,7 @@ export function announceAccessibility(): void {}
 `;
     const importedContracts = new Map([
       [
-        '@flighthq/types/contract',
+        '@flighthq/accessibility/contract',
         collectTypeScriptExportSymbols(`export type AccessibilityTreeBlockReason = 'destroyed' | 'no-dom';
 export type UnusedContractType = string;
 `),
@@ -1467,7 +1467,7 @@ export type UnusedContractType = string;
 
     expect(renderReferencedImports(existing, generated, importedContracts)).toBe(
       `import { createHelper } from './helper.ts';
-import type { AccessibilityLiveness, AccessibilityNode, AccessibilityOperationOutcome, AccessibilityTreeBlockReason, HostAccessibilityCapability } from '@flighthq/types/contract';
+import type { AccessibilityLiveness, AccessibilityNode, AccessibilityOperationOutcome, AccessibilityTreeBlockReason, HostAccessibilityCapability } from '@flighthq/accessibility/contract';
 
 `,
     );
