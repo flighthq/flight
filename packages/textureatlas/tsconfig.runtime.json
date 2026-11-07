@@ -26,9 +26,6 @@
       "path": "../texture/tsconfig.runtime.json"
     },
     {
-      "path": "../types"
-    },
-    {
       "path": "../bitmap/tsconfig.runtime.json"
     },
     {
