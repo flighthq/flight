@@ -64,7 +64,9 @@
   "exclude": [
     "src/compressed-texture-decoder-contract/**/*.ts",
     "src/contract.render-gl-types.ts",
+    "src/glContextLossTypes.ts",
     "src/glOwnerTypes.ts",
+    "src/glPipelineStateTypes.ts",
     "src/types.ts"
   ]
 }

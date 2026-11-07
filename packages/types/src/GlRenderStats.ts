@@ -1,8 +1,2 @@
-export interface GlRenderStats {
-  drawCalls: number;
-  triangles: number;
-  textureBinds: number;
-  programSwitches: number;
-  framebufferBinds: number;
-  uniformUploads: number;
-}
+/** @deprecated Import GL contracts from `@flighthq/render-gl/contract`. */
+export type { GlRenderStats } from '@flighthq/render-gl/contract';

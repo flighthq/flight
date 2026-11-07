@@ -1,8 +1,2 @@
-import type { Signal } from '@flighthq/signals/contract';
-
-import type { GlRenderState } from './GlRenderState.ts';
-
-export interface GlContextLossSignals {
-  onGlContextLost: Signal<(state: GlRenderState) => void>;
-  onGlContextRestored: Signal<(state: GlRenderState) => void>;
-}
+/** @deprecated Import GL contracts from `@flighthq/render-gl/contract`. */
+export type { GlContextLossSignals } from '@flighthq/render-gl/contract';

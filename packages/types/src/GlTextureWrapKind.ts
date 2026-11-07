@@ -1,1 +1,2 @@
-export type GlTextureWrapKind = 'ClampToEdge' | 'MirroredRepeat' | 'Repeat';
+/** @deprecated Import GL contracts from `@flighthq/render-gl/contract`. */
+export type { GlTextureWrapKind } from '@flighthq/render-gl/contract';

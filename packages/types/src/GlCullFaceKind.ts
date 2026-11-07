@@ -1,1 +1,2 @@
-export type GlCullFaceKind = 'Back' | 'Front' | 'FrontAndBack';
+/** @deprecated Import GL contracts from `@flighthq/render-gl/contract`. */
+export type { GlCullFaceKind } from '@flighthq/render-gl/contract';

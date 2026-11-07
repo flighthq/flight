@@ -79,3 +79,14 @@ export type {
   GlRenderTextureStatus,
 } from './glRenderTextureTypes.ts';
 export type { GlTextureRealization, GlTextureResolver } from './glTextureResolverTypes.ts';
+export type { GlContextLossSignals } from './glContextLossTypes.ts';
+export type {
+  GlCullFaceKind,
+  GlDepthFuncKind,
+  GlFramebufferStatusKind,
+  GlRenderStats,
+  GlTextureDescriptor,
+  GlTextureFilterKind,
+  GlTextureInternalFormat,
+  GlTextureWrapKind,
+} from './glPipelineStateTypes.ts';

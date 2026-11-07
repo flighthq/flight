@@ -65,3 +65,11 @@ export interface GlyphOutlineSource {
   getGlyphOutlineIndexForCodePoint(codePoint: number): number;
   getGlyphOutlineMetrics(): Readonly<GlyphOutlineMetrics>;
 }
+
+export interface FontVariationAxis {
+  readonly defaultValue: number;
+  readonly max: number;
+  readonly min: number;
+  readonly name: string;
+  readonly tag: string;
+}

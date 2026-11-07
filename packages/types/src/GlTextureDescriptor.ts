@@ -1,22 +1,2 @@
-import type { GlTextureFilterKind } from './GlTextureFilterKind.ts';
-import type { GlTextureWrapKind } from './GlTextureWrapKind.ts';
-export interface GlTextureDescriptor {
-  readonly wrapS?: GlTextureWrapKind;
-  readonly wrapT?: GlTextureWrapKind;
-  readonly minFilter?: GlTextureFilterKind;
-  readonly magFilter?: GlTextureFilterKind;
-  readonly mipmaps?: boolean;
-  readonly anisotropy?: number;
-  readonly premultiplyAlpha?: boolean;
-  readonly format?: GlTextureInternalFormat;
-}
-export type GlTextureInternalFormat =
-  | 'r8'
-  | 'r16f'
-  | 'r32f'
-  | 'rg8'
-  | 'rg16f'
-  | 'rgba8'
-  | 'rgba16f'
-  | 'rgba32f'
-  | 'srgb8_alpha8';
+/** @deprecated Import GL contracts from `@flighthq/render-gl/contract`. */
+export type { GlTextureDescriptor, GlTextureInternalFormat } from '@flighthq/render-gl/contract';

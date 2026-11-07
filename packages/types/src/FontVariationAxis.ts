@@ -1,7 +1,2 @@
-export interface FontVariationAxis {
-  readonly defaultValue: number;
-  readonly max: number;
-  readonly min: number;
-  readonly name: string;
-  readonly tag: string;
-}
+/** @deprecated Import font contracts from `@flighthq/font/contract`. */
+export type { FontVariationAxis } from '@flighthq/font/contract';
