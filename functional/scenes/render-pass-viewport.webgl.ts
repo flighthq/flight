@@ -16,6 +16,7 @@ import { createAmbientLight } from '@flighthq/lighting';
 import { createUnlitMaterial } from '@flighthq/materials';
 import { createBoxMeshGeometry } from '@flighthq/meshgeometry';
 import { addNodeChild, createViewport } from '@flighthq/node';
+import type { Viewport } from '@flighthq/node';
 import { prepareScene2DRender } from '@flighthq/render';
 import {
   beginGlRenderPass,
@@ -33,7 +34,7 @@ import { createMesh, createScene3D } from '@flighthq/scene3d';
 import { renderGlScene3D, glScene3DRenderPreset } from '@flighthq/scene3d-gl';
 import { appendShapeBeginFill, appendShapeEndFill, appendShapeRectangle, createShape } from '@flighthq/shape';
 import { createGlSurface, setSurfaceDisplaySize } from '@flighthq/surface';
-import type { GlRenderPass, GlRenderState, Viewport } from '@flighthq/types';
+import type { GlRenderPass, GlRenderState } from '@flighthq/types';
 import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
 
 declareAntialiasingPolicy('no-aa');
