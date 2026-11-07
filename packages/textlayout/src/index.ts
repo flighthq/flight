@@ -29,3 +29,16 @@ export {
   isTextLayoutTruncated,
   setTextLayoutMeasureProvider,
 } from './contract.ts';
+export type {
+  RichTextContent,
+  TextAutoSize,
+  TextBoundsSpec,
+  TextJustification,
+  TextLayoutGroup,
+  TextLayoutParams,
+  TextLayoutResult,
+  TextLineMetrics,
+  TextMetrics,
+  TextSelectionRectangle,
+  TextVerticalAlign,
+} from './contract.ts';

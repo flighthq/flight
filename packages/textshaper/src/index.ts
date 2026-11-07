@@ -26,3 +26,4 @@ export {
   shapeTextRunInto,
 } from './textShaperRun.ts';
 export { disposeTextShaperSignals, enableTextShaperSignals, getTextShaperSignals } from './textShaperSignals.ts';
+export type { TextMeasureFunction } from './contract.ts';
