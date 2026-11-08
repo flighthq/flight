@@ -1551,6 +1551,10 @@ pub(super) fn emit_method_call(
             "{receiver}.vertexAttrib4f({args})",
             args = arguments.join(", ")
         )),
+        "uniform_4_f32_slice" if arguments.len() == 2 => Ok(format!(
+            "{receiver}.uniform4fv({args})",
+            args = arguments.join(", ")
+        )),
         "tex_image_2d" => Ok(format!(
             "{receiver}.texImage2D({args})",
             args = arguments.join(", ")
@@ -1817,9 +1821,13 @@ pub(super) fn emit_method_call(
             "{receiver}.bezierCurveTo({args})",
             args = arguments.join(", ")
         )),
+        "blit_framebuffer" => Ok(format!(
+            "{receiver}.blitFramebuffer({args})",
+            args = arguments.join(", ")
+        )),
         // Canvas 2D and GL methods (simple camelCase).
         "cull_face" | "front_face" | "clear_rect" | "move_to" | "line_to"
-        | "quadratic_curve_to" | "flush_path" | "is_alphanumeric" => {
+        | "quadratic_curve_to" | "flush_path" | "is_alphanumeric" | "close_path" => {
             let camel = snake_to_lower_camel(&method);
             Ok(format!(
                 "{receiver}.{camel}({args})",
