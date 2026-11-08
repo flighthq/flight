@@ -1517,6 +1517,397 @@ pub(super) fn emit_method_call(
             "(typeof {receiver} === 'object' && {receiver} !== null && !Array.isArray({receiver}))"
         )),
         "is_null" if arguments.is_empty() => Ok(format!("({receiver} === null)")),
+        // Fallback lowerings for glow (OpenGL) uniform and texture methods whose WebGL2 names
+        // diverge from simple snake_case → camelCase (numeric suffixes, `fv` variants).
+        "uniform_1_f32" if arguments.len() == 2 => Ok(format!(
+            "{receiver}.uniform1f({args})",
+            args = arguments.join(", ")
+        )),
+        "uniform_2_f32" if arguments.len() == 3 => Ok(format!(
+            "{receiver}.uniform2f({args})",
+            args = arguments.join(", ")
+        )),
+        "uniform_3_f32" if arguments.len() == 4 => Ok(format!(
+            "{receiver}.uniform3f({args})",
+            args = arguments.join(", ")
+        )),
+        "uniform_4_f32" if arguments.len() == 5 => Ok(format!(
+            "{receiver}.uniform4f({args})",
+            args = arguments.join(", ")
+        )),
+        "uniform_1_i32" if arguments.len() == 2 => Ok(format!(
+            "{receiver}.uniform1i({args})",
+            args = arguments.join(", ")
+        )),
+        "uniform_matrix_3_f32_slice" if arguments.len() == 3 => Ok(format!(
+            "{receiver}.uniformMatrix3fv({args})",
+            args = arguments.join(", ")
+        )),
+        "uniform_matrix_4_f32_slice" if arguments.len() == 3 => Ok(format!(
+            "{receiver}.uniformMatrix4fv({args})",
+            args = arguments.join(", ")
+        )),
+        "vertex_attrib_4_f32" if arguments.len() == 5 => Ok(format!(
+            "{receiver}.vertexAttrib4f({args})",
+            args = arguments.join(", ")
+        )),
+        "tex_image_2d" => Ok(format!(
+            "{receiver}.texImage2D({args})",
+            args = arguments.join(", ")
+        )),
+        "tex_sub_image_2d" => Ok(format!(
+            "{receiver}.texSubImage2D({args})",
+            args = arguments.join(", ")
+        )),
+        "tex_storage_3d" => Ok(format!(
+            "{receiver}.texStorage3D({args})",
+            args = arguments.join(", ")
+        )),
+        "tex_parameter_i32" if arguments.len() == 3 => Ok(format!(
+            "{receiver}.texParameteri({args})",
+            args = arguments.join(", ")
+        )),
+        "get_parameter_i32" if arguments.len() == 1 => Ok(format!(
+            "{receiver}.getParameter({args})",
+            args = arguments[0]
+        )),
+        "get_parameter_i32_slice" if arguments.len() == 2 => Ok(format!(
+            "{receiver}.getParameter({args})",
+            args = arguments[0]
+        )),
+        "get_parameter_bool" if arguments.len() == 1 => Ok(format!(
+            "{receiver}.getParameter({args})",
+            args = arguments[0]
+        )),
+        "get_parameter_program" if arguments.len() == 2 => Ok(format!(
+            "{receiver}.getProgramParameter({args})",
+            args = arguments.join(", ")
+        )),
+        "get_parameter_framebuffer" if arguments.len() == 2 => Ok(format!(
+            "{receiver}.getFramebufferParameter({args})",
+            args = arguments.join(", ")
+        )),
+        "clear_buffer_f32_slice" if arguments.len() == 3 => Ok(format!(
+            "{receiver}.clearBufferfv({args})",
+            args = arguments.join(", ")
+        )),
+        // Fallback lowering for Regex::is_match → RegExp.test (distinctive to Regex).
+        "is_match" if arguments.len() == 1 => Ok(format!("{receiver}.test({})", arguments[0])),
+        // Fallback lowerings for methods whose TS equivalent is a simple snake_case → camelCase
+        // rename. These names are distinctive to their API domains (WebGL2, WebGPU, BinaryReader)
+        // and are safe as unguarded fallbacks.
+        "get_uniform_location"
+        | "get_attrib_location"
+        | "active_texture"
+        | "use_program"
+        | "link_program"
+        | "bind_buffer"
+        | "bind_texture"
+        | "bind_framebuffer"
+        | "bind_vertex_array"
+        | "create_vertex_array"
+        | "create_framebuffer"
+        | "create_shader"
+        | "compile_shader"
+        | "shader_source"
+        | "attach_shader"
+        | "delete_texture"
+        | "delete_program"
+        | "delete_shader"
+        | "delete_framebuffer"
+        | "delete_vertex_array"
+        | "delete_buffer"
+        | "enable_vertex_attrib_array"
+        | "disable_vertex_attrib_array"
+        | "vertex_attrib_pointer"
+        | "generate_mipmap"
+        | "pixel_store_i32"
+        | "blend_func"
+        | "blend_func_separate"
+        | "blend_equation"
+        | "blend_equation_separate"
+        | "depth_func"
+        | "depth_mask"
+        | "stencil_func"
+        | "stencil_func_separate"
+        | "stencil_mask"
+        | "stencil_mask_separate"
+        | "stencil_op"
+        | "stencil_op_separate"
+        | "clear_color"
+        | "color_mask"
+        | "buffer_data"
+        | "buffer_sub_data"
+        | "draw_arrays"
+        | "draw_arrays_instanced"
+        | "draw_elements"
+        | "draw_elements_instanced"
+        | "read_pixels"
+        | "create_buffer"
+        | "create_texture"
+        | "create_view"
+        | "create_shader_module"
+        | "create_bind_group"
+        | "create_bind_group_layout"
+        | "create_render_pipeline"
+        | "create_pipeline_layout"
+        | "create_sampler"
+        | "create_command_encoder"
+        | "begin_render_pass"
+        | "copy_texture_to_buffer"
+        | "set_pipeline"
+        | "set_bind_group"
+        | "set_vertex_buffer"
+        | "set_index_buffer"
+        | "set_viewport"
+        | "set_scissor_rect"
+        | "set_stencil_reference"
+        | "set_blend_constant"
+        | "draw_indexed"
+        | "write_buffer"
+        | "write_texture"
+        | "copy_external_image_to_texture"
+        | "get_current_texture"
+        | "get_preferred_canvas_format"
+        | "request_adapter"
+        | "request_device"
+        | "get_mapped_range"
+        | "map_async"
+        | "read_uint8"
+        | "read_uint16"
+        | "read_uint32"
+        | "read_int8"
+        | "read_int16"
+        | "read_int32"
+        | "read_float32"
+        | "read_float64"
+        | "read_var_uint"
+        | "read_var_int"
+        | "read_unsigned_bits"
+        | "read_signed_bits"
+        | "read_string"
+        | "read_encoded_uint32"
+        | "set_device_lost_callback"
+        | "align_to_byte"
+        | "on_submitted_work_done" => {
+            let camel = snake_to_lower_camel(&method);
+            Ok(format!(
+                "{receiver}.{camel}({args})",
+                args = arguments.join(", ")
+            ))
+        }
+        // GL methods whose WebGL2 name drops a Rust type suffix.
+        "vertex_attrib_pointer_f32" => Ok(format!(
+            "{receiver}.vertexAttribPointer({args})",
+            args = arguments.join(", ")
+        )),
+        "buffer_data_u8_slice" => Ok(format!(
+            "{receiver}.bufferData({args})",
+            args = arguments.join(", ")
+        )),
+        "pixel_store_i32" if arguments.len() == 2 => Ok(format!(
+            "{receiver}.pixelStorei({args})",
+            args = arguments.join(", ")
+        )),
+        // Rust-only lifetime/ownership erasure — no-op in TS.
+        "forget_lifetime" if arguments.is_empty() => Ok(receiver),
+        // Single-word pass-through methods (GL/WGPU/Canvas2D), emitted unchanged.
+        "enable" | "disable" | "draw" | "destroy" | "finish" | "configure" | "unconfigure"
+        | "submit" | "unmap" | "flush" | "end" | "viewport" | "scissor" | "clear" => Ok(format!(
+            "{receiver}.{method}({args})",
+            args = arguments.join(", ")
+        )),
+        // Rust getter methods that become property accesses in TS (no parentheses).
+        "width" | "height" | "format" | "dimension" | "size" | "limits" | "features"
+        | "map_state" | "usage"
+            if arguments.is_empty() =>
+        {
+            Ok(format!("{receiver}.{method}"))
+        }
+        // wgpu-rs helper: buffer.as_entire_binding() → { buffer: receiver } (a BindingResource).
+        "as_entire_binding" if arguments.is_empty() => Ok(format!("{{ buffer: {receiver} }}")),
+        // Additional GL methods with non-standard WebGL2 name mapping.
+        "vertex_attrib_divisor" => Ok(format!(
+            "{receiver}.vertexAttribDivisor({args})",
+            args = arguments.join(", ")
+        )),
+        "get_parameter_framebuffer" | "get_parameter_renderbuffer" => Ok(format!(
+            "{receiver}.getParameter({args})",
+            args = arguments.join(", ")
+        )),
+        "get_parameter_program" => Ok(format!(
+            "{receiver}.getProgramParameter({args})",
+            args = arguments.join(", ")
+        )),
+        "get_parameter_f32" | "get_parameter_f32_slice" => Ok(format!(
+            "{receiver}.getParameter({args})",
+            args = arguments[0]
+        )),
+        "get_shader_compile_status" if arguments.len() == 1 => Ok(format!(
+            "{receiver}.getShaderParameter({}, {receiver}.COMPILE_STATUS)",
+            arguments[0]
+        )),
+        "get_program_link_status" if arguments.len() == 1 => Ok(format!(
+            "{receiver}.getProgramParameter({}, {receiver}.LINK_STATUS)",
+            arguments[0]
+        )),
+        "uniform_2_f32_slice" if arguments.len() == 2 => Ok(format!(
+            "{receiver}.uniform2fv({args})",
+            args = arguments.join(", ")
+        )),
+        "framebuffer_texture_2d" => Ok(format!(
+            "{receiver}.framebufferTexture2D({args})",
+            args = arguments.join(", ")
+        )),
+        "tex_image_3d" => Ok(format!(
+            "{receiver}.texImage3D({args})",
+            args = arguments.join(", ")
+        )),
+        "compressed_tex_sub_image_3d" => Ok(format!(
+            "{receiver}.compressedTexSubImage3D({args})",
+            args = arguments.join(", ")
+        )),
+        "check_framebuffer_status" if arguments.len() == 1 => Ok(format!(
+            "{receiver}.checkFramebufferStatus({})",
+            arguments[0]
+        )),
+        "buffer_data_size" => Ok(format!(
+            "{receiver}.bufferData({args})",
+            args = arguments.join(", ")
+        )),
+        "buffer_sub_data_u8_slice" => Ok(format!(
+            "{receiver}.bufferSubData({args})",
+            args = arguments.join(", ")
+        )),
+        "clear_buffer_depth_stencil" => Ok(format!(
+            "{receiver}.clearBufferfi({args})",
+            args = arguments.join(", ")
+        )),
+        "delete_renderbuffer" if arguments.len() == 1 => {
+            Ok(format!("{receiver}.deleteRenderbuffer({})", arguments[0]))
+        }
+        "draw_buffers" => Ok(format!(
+            "{receiver}.drawBuffers({args})",
+            args = arguments.join(", ")
+        )),
+        "clear_buffer_i32_slice" => Ok(format!(
+            "{receiver}.clearBufferiv({args})",
+            args = arguments.join(", ")
+        )),
+        "uniform_3_f32_slice" if arguments.len() == 2 => Ok(format!(
+            "{receiver}.uniform3fv({args})",
+            args = arguments.join(", ")
+        )),
+        "tex_parameter_f32" => Ok(format!(
+            "{receiver}.texParameterf({args})",
+            args = arguments.join(", ")
+        )),
+        "compressed_tex_image_2d" => Ok(format!(
+            "{receiver}.compressedTexImage2D({args})",
+            args = arguments.join(", ")
+        )),
+        "get_shader_info_log" if arguments.len() == 1 => {
+            Ok(format!("{receiver}.getShaderInfoLog({})", arguments[0]))
+        }
+        "get_parameter_texture" => Ok(format!(
+            "{receiver}.getTexParameter({args})",
+            args = arguments.join(", ")
+        )),
+        "cubic_curve_to" => Ok(format!(
+            "{receiver}.bezierCurveTo({args})",
+            args = arguments.join(", ")
+        )),
+        // Canvas 2D and GL methods (simple camelCase).
+        "cull_face" | "front_face" | "clear_rect" | "move_to" | "line_to"
+        | "quadratic_curve_to" | "flush_path" | "is_alphanumeric" => {
+            let camel = snake_to_lower_camel(&method);
+            Ok(format!(
+                "{receiver}.{camel}({args})",
+                args = arguments.join(", ")
+            ))
+        }
+        // Additional camelCase pass-through methods (Flight render state, binary reader, misc).
+        "render_registries"
+        | "render_registries_mut"
+        | "mesh_program"
+        | "is_texture_ready"
+        | "modifier_define_signature"
+        | "render_state"
+        | "is_enabled"
+        | "as_mesh"
+        | "clip_view"
+        | "color_attachments"
+        | "color_textures"
+        | "as_texture"
+        | "material_view"
+        | "set_float"
+        | "set_linear_color"
+        | "set_transform"
+        | "set_cursor"
+        | "set_stroke_style"
+        | "supported_extensions"
+        | "get_effect_field"
+        | "set_effect_field"
+        | "clear_effect_field"
+        | "get_argument"
+        | "read_fixed8"
+        | "read_bytes"
+        | "read_buffer"
+        | "read_rive_number"
+        | "read_rive_text"
+        | "read_rive_u32"
+        | "read_rive_flag"
+        | "as_numbers"
+        | "as_image_copy"
+        | "copy_to_texture"
+        | "kind_fields_are_finite"
+        | "pack_instance"
+        | "intensity_unit"
+        | "billboard_mode"
+        | "enabled_value"
+        | "command_index"
+        | "spatial_influence"
+        | "shape_commands"
+        | "shape_commands_mut"
+        | "source_2d"
+        | "has_transmission_scene_color"
+        | "bind_transmission_scene_color"
+        | "casts_shadow_value"
+        | "for_each_number_field"
+        | "expand_point"
+        | "ascii_serialization"
+        | "as_matrix_mut"
+        | "draw_circle"
+        | "draw_rectangle"
+        | "draw_ellipse"
+        | "draw_rounded_rectangle"
+        | "measure_metrics"
+        | "is_ready"
+        | "split_word_bounds"
+        | "colored_intensity"
+        | "as_numbers_mut"
+        | "as_boolean" => {
+            let camel = snake_to_lower_camel(&method);
+            Ok(format!(
+                "{receiver}.{camel}({args})",
+                args = arguments.join(", ")
+            ))
+        }
+        // Rust getter methods on Flight types → property access.
+        "remaining"
+        | "appearance"
+        | "kind"
+        | "origin"
+        | "position"
+        | "gl"
+        | "intensity"
+        | "intensity_mut"
+        | "hemisphere_intensity"
+        | "framebuffer"
+            if arguments.is_empty() =>
+        {
+            Ok(format!("{receiver}.{method}"))
+        }
         _ => Err(compile_error(
             match method_delegation_targets(call, entities).first() {
                 Some(target) => format!(
