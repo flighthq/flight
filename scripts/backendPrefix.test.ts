@@ -20,7 +20,7 @@ describe('findWedgedBackendSegment', () => {
 
   it('accepts a plural aggregate proved by its same-package singular registrar', () => {
     // The type path cannot prove this one: `GlBlendModes` is not a type, and deliberately so — the
-    // un-widened rule would have forced a junk plural type into @flighthq/types purely to satisfy a
+    // un-widened rule would have forced a junk plural type into the owning package purely to satisfy a
     // mechanical check, corrupting the layer it validates against. The proof is transitive instead:
     // proved by `registerGlBlendMode`, which was itself proved the hard way through `BlendMode`.
     expect(findWedgedBackendSegment('registerDefaultGlBlendModes', renderGl, types)).toBeNull();

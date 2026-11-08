@@ -64,7 +64,7 @@ describe('canonicalizeGeneratedContractImports', () => {
     const existing = `import type {
   BackendOperationExplanation,
   NativeSurfaceHandle as SurfaceHandle,
-} from '@flighthq/types/contract';
+} from '@flighthq/owner/contract';
 import { createHost } from '@flighthq/host/contract';
 `;
     const generated = `import type {
@@ -85,7 +85,7 @@ export function useHost(
 
     expect(canonicalizeGeneratedContractImports(existing, generated)).toBe(
       `import type { Host } from '@flighthq/host/contract';
-import type { BackendOperationExplanation, NativeSurfaceHandle as SurfaceHandle } from '@flighthq/types/contract';
+import type { BackendOperationExplanation, NativeSurfaceHandle as SurfaceHandle } from '@flighthq/owner/contract';
 import { createHost } from '@flighthq/host/contract';
 
 export function useHost(
@@ -102,7 +102,7 @@ export function useHost(
   it('keeps each import declaration separate when a non-contract import precedes a contract import', () => {
     const existing = `import { describe, expect, it } from 'vitest';
 
-import type { UnpackedRectangle } from '@flighthq/types/contract';
+import type { UnpackedRectangle } from '@flighthq/owner/contract';
 import { packRectangles } from './contract.ts';
 `;
     const generated = `import { describe, expect, it } from 'vitest';
@@ -133,7 +133,7 @@ describe('explainUnpackedRectangles', () => {
 
 import { explainUnpackedRectangles, getUnpackedRectangleReasonString, packRectangles } from './contract.ts';
 
-import type { UnpackedRectangle } from '@flighthq/types/contract';
+import type { UnpackedRectangle } from '@flighthq/owner/contract';
 
 describe('explainUnpackedRectangles', () => {
   it('explains', () => {
@@ -173,7 +173,7 @@ export type Result = Shared;
   });
 
   it('moves generated local-contract test types back to their canonical owner', () => {
-    const existing = `import type { ShellExternalReason } from '@flighthq/types/contract';
+    const existing = `import type { ShellExternalReason } from '@flighthq/owner/contract';
 import { blockedReason } from './contract.ts';
 `;
     const generated = `import { blockedReason } from './contract.ts';
@@ -184,7 +184,7 @@ const reason: ShellExternalReason = blockedReason();
 
     expect(canonicalizeGeneratedContractImports(existing, generated)).toBe(
       `import { blockedReason } from './contract.ts';
-import type { ShellExternalReason } from '@flighthq/types/contract';
+import type { ShellExternalReason } from '@flighthq/owner/contract';
 
 const reason: ShellExternalReason = blockedReason();
 `,
@@ -259,7 +259,7 @@ describe('dependency contract exports', () => {
       ...collectTypeScriptExportSymbols(`export interface WidgetRaw {}
 export class Widget {}
 export function createWidget(): WidgetRaw { return {}; }
-export type { Format, Source as Renamed } from '@flighthq/types/contract';
+export type { Format, Source as Renamed } from '@flighthq/owner/contract';
 export { RuntimeValue, type RuntimeType } from './runtime.ts';
 `),
     ]).toEqual([
@@ -348,7 +348,7 @@ import { RuntimeLiveness } from '@flighthq/accessibility/contract';
   it('carries exact Layout string-union owners without accepting runtime enums', () => {
     const symbols = new Map([
       [
-        '@flighthq/types/contract',
+        '@flighthq/owner/contract',
         new Map([
           [
             'ViewportAlign',
@@ -380,14 +380,14 @@ import { RuntimeLiveness } from '@flighthq/accessibility/contract';
 
     expect(
       typeScriptStringUnionArguments(
-        `import type { FlexLayoutWrap, RuntimeWrap, ViewportAlign } from '@flighthq/types/contract';`,
+        `import type { FlexLayoutWrap, RuntimeWrap, ViewportAlign } from '@flighthq/owner/contract';`,
         symbols,
       ),
     ).toEqual([
       '--typescript-string-union',
-      '@flighthq/types/contract#FlexLayoutWrap=["nowrap","wrap","wrap-reverse"]',
+      '@flighthq/owner/contract#FlexLayoutWrap=["nowrap","wrap","wrap-reverse"]',
       '--typescript-string-union',
-      '@flighthq/types/contract#ViewportAlign=["bottom","bottomleft","bottomright","left","right","top","topleft","topright"]',
+      '@flighthq/owner/contract#ViewportAlign=["bottom","bottomleft","bottomright","left","right","top","topleft","topright"]',
     ]);
   });
 
@@ -415,7 +415,7 @@ import type { ViewportAlign } from '@flighthq/second/contract';`,
   it('reads a contract import that follows an unrelated import', () => {
     const symbols = new Map([
       [
-        '@flighthq/types/contract',
+        '@flighthq/owner/contract',
         new Map([
           ['ExecutionStatus', { hasType: true, hasValue: false, stringUnionValues: ['Complete', 'InvalidBuffer'] }],
         ]),
@@ -427,10 +427,10 @@ import type { ViewportAlign } from '@flighthq/second/contract';`,
         `import { describe, expect, it } from 'vitest';
 
 import { createResult } from './contract.ts';
-import type { ExecutionStatus } from '@flighthq/types/contract';`,
+import type { ExecutionStatus } from '@flighthq/owner/contract';`,
         symbols,
       ),
-    ).toEqual(['--typescript-string-union', '@flighthq/types/contract#ExecutionStatus=["Complete","InvalidBuffer"]']);
+    ).toEqual(['--typescript-string-union', '@flighthq/owner/contract#ExecutionStatus=["Complete","InvalidBuffer"]']);
   });
 
   it('maps a test contract type the package contract does not export to its production owner', () => {
@@ -441,12 +441,12 @@ import type { Buffer, Exported, Unimported } from './contract.ts';
 `;
     const packageContract = new Map([['Exported', { hasType: true, hasValue: false }]]);
     const production = [
-      `import type { Buffer, Exported } from '@flighthq/types/contract';`,
+      `import type { Buffer, Exported } from '@flighthq/owner/contract';`,
       `import type { Unimported as Renamed } from './local.ts';`,
     ];
     const symbols = new Map([
       [
-        '@flighthq/types/contract',
+        '@flighthq/owner/contract',
         new Map([
           ['Buffer', { hasType: true, hasValue: false }],
           ['Exported', { hasType: true, hasValue: false }],
@@ -456,7 +456,7 @@ import type { Buffer, Exported, Unimported } from './contract.ts';
 
     expect(typeScriptTestContractTypeOwnerArguments(generated, packageContract, production, symbols)).toEqual([
       '--typescript-type-alias',
-      'Buffer=@flighthq/types/contract#Buffer',
+      'Buffer=@flighthq/owner/contract#Buffer',
     ]);
     expect(typeScriptTestContractTypeOwnerArguments(generated, packageContract, production, new Map())).toEqual([]);
     expect(() =>
@@ -466,7 +466,7 @@ import type { Buffer, Exported, Unimported } from './contract.ts';
         [...production, `import type { Buffer } from '@flighthq/other/contract';`],
         symbols,
       ),
-    ).toThrow(/Buffer is imported from both @flighthq\/other\/contract and @flighthq\/types\/contract/);
+    ).toThrow(/Buffer is imported from both @flighthq\/other\/contract and @flighthq\/owner\/contract/);
   });
 
   it('finds the canonical owner of a test-named enum in the package production imports', () => {
@@ -476,14 +476,14 @@ import type {
   ExecutionResult,
   ExecutionStatus,
   WorldStatus as World,
-} from '@flighthq/types/contract';
+} from '@flighthq/owner/contract';
 import { helper } from './helper.ts';`,
-      `import type { ExecutionStatus } from '@flighthq/types/contract';`,
+      `import type { ExecutionStatus } from '@flighthq/owner/contract';`,
     ];
 
     expect(typeScriptStringUnionOwnerImports(production, new Set(['ExecutionStatus', 'WorldStatus', 'helper']))).toBe(
-      `import type { ExecutionStatus } from '@flighthq/types/contract';
-import type { WorldStatus } from '@flighthq/types/contract';`,
+      `import type { ExecutionStatus } from '@flighthq/owner/contract';
+import type { WorldStatus } from '@flighthq/owner/contract';`,
     );
     expect(typeScriptStringUnionOwnerImports(production, new Set(['Missing']))).toBe('');
     const ambiguous = typeScriptStringUnionOwnerImports(
@@ -491,7 +491,7 @@ import type { WorldStatus } from '@flighthq/types/contract';`,
       new Set(['ExecutionStatus']),
     );
     const symbols = new Map(
-      ['@flighthq/types/contract', '@flighthq/other/contract'].map((module) => [
+      ['@flighthq/owner/contract', '@flighthq/other/contract'].map((module) => [
         module,
         new Map([['ExecutionStatus', { hasType: true, hasValue: false, stringUnionValues: ['Complete'] }]]),
       ]),
@@ -522,14 +522,14 @@ export function unrelated(): AccessibilityTreeBlockReason { throw 0; }
   it('derives explicit reference-alias metadata from matching exported signatures', () => {
     const symbols = new Map([
       [
-        '@flighthq/types/contract',
+        '@flighthq/owner/contract',
         new Map([
           ['AnimationPlayer', { hasType: true, hasValue: false }],
           ['Unrelated', { hasType: true, hasValue: false }],
         ]),
       ],
     ]);
-    const existing = `import type { AnimationPlayer } from '@flighthq/types/contract';
+    const existing = `import type { AnimationPlayer } from '@flighthq/owner/contract';
 import type { DebugState } from './debug.ts';
 export function advance(players: readonly AnimationPlayer[], target: unknown, state: Readonly<DebugState>): AnimationPlayer[] { return []; }
 export function isReady(): Promise<boolean> { throw 0; }
@@ -542,7 +542,7 @@ export function incompatible(value: RealAlias | undefined): void {}
 
     expect(typeScriptTypeAliasArguments(existing, generated, symbols)).toEqual([
       '--typescript-type-alias',
-      'AnimationPlayerRef=@flighthq/types/contract#AnimationPlayer',
+      'AnimationPlayerRef=@flighthq/owner/contract#AnimationPlayer',
       '--typescript-type-alias',
       'DebugStateRef=./debug.ts#DebugState',
       '--typescript-type-alias',
@@ -650,9 +650,9 @@ function overloaded(): number[] { return []; }
 
   it('does not infer type aliases from names or unmatched signatures', () => {
     const symbols = new Map([
-      ['@flighthq/types/contract', new Map([['AnimationPlayer', { hasType: true, hasValue: false }]])],
+      ['@flighthq/owner/contract', new Map([['AnimationPlayer', { hasType: true, hasValue: false }]])],
     ]);
-    const existing = `import type { AnimationPlayer } from '@flighthq/types/contract';
+    const existing = `import type { AnimationPlayer } from '@flighthq/owner/contract';
 export function established(player: AnimationPlayer): void {}
 `;
     const generated = `export function other(player: AnimationPlayerRef): void {}
@@ -668,10 +668,10 @@ export type AnimationPlayerRef = number;
         '@flighthq/scene-document/contract',
         new Map([['FlightDocumentLayoutBinding', { hasType: true, hasValue: false }]]),
       ],
-      ['@flighthq/types/contract', new Map([['NodeAny', { hasType: true, hasValue: false }]])],
+      ['@flighthq/owner/contract', new Map([['NodeAny', { hasType: true, hasValue: false }]])],
     ]);
     const existing = `import type { FlightDocumentLayoutBinding } from '@flighthq/scene-document/contract';
-import type { NodeAny } from '@flighthq/types/contract';
+import type { NodeAny } from '@flighthq/owner/contract';
 const node = {} as NodeAny;
 const binding: FlightDocumentLayoutBinding = { targets: [node], tree: { nodes: [] } };
 `;
@@ -683,7 +683,7 @@ interface FlightDocumentLayoutBinding { targets: NodeAny[]; tree: LayoutTree; }
       '--typescript-type-alias',
       'FlightDocumentLayoutBinding=@flighthq/scene-document/contract#FlightDocumentLayoutBinding',
       '--typescript-type-alias',
-      'NodeAny=@flighthq/types/contract#NodeAny',
+      'NodeAny=@flighthq/owner/contract#NodeAny',
     ]);
   });
 
@@ -692,7 +692,7 @@ interface FlightDocumentLayoutBinding { targets: NodeAny[]; tree: LayoutTree; }
       ['@flighthq/first/contract', new Map([['Ambiguous', { hasType: true, hasValue: false }]])],
       ['@flighthq/second/contract', new Map([['Ambiguous', { hasType: true, hasValue: false }]])],
       [
-        '@flighthq/types/contract',
+        '@flighthq/owner/contract',
         new Map([
           ['Shadowed', { hasType: true, hasValue: false }],
           ['Unavailable', { hasType: false, hasValue: true }],
@@ -702,7 +702,7 @@ interface FlightDocumentLayoutBinding { targets: NodeAny[]; tree: LayoutTree; }
     ]);
     const existing = `import type { Ambiguous } from '@flighthq/first/contract';
 import type { Ambiguous } from '@flighthq/second/contract';
-import type { Shadowed, Unavailable, Unused } from '@flighthq/types/contract';
+import type { Shadowed, Unavailable, Unused } from '@flighthq/owner/contract';
 interface Shadowed { local: true; }
 const ambiguous: Ambiguous = {} as Ambiguous;
 const shadowed: Shadowed = { local: true };
@@ -720,14 +720,14 @@ interface Unused { value: number; }
   it('matches alias owners by parameter identity when target-native out-parameters are reordered', () => {
     const symbols = new Map([
       [
-        '@flighthq/types/contract',
+        '@flighthq/owner/contract',
         new Map([
           ['Matrix', { hasType: true, hasValue: false }],
           ['Surface', { hasType: true, hasValue: false }],
         ]),
       ],
     ]);
-    const existing = `import type { Matrix, Surface } from '@flighthq/types/contract';
+    const existing = `import type { Matrix, Surface } from '@flighthq/owner/contract';
 import type { AppWindow, WindowBounds } from './types/contract.ts';
 export function computeWindowDeviceTransform(win: Readonly<AppWindow>, out: Matrix): void {}
 export function getWindowBounds(surface: Surface, win: Readonly<AppWindow>, out: WindowBounds): void {}
@@ -741,9 +741,9 @@ export function getWindowBounds(out: WindowBounds, surface: Surface, win: AppWin
 
   it('reads ownership signatures through unparenthesized lenient-probe arrow invocations', () => {
     const symbols = new Map([
-      ['@flighthq/types/contract', new Map([['AnimationPlayer', { hasType: true, hasValue: false }]])],
+      ['@flighthq/owner/contract', new Map([['AnimationPlayer', { hasType: true, hasValue: false }]])],
     ]);
-    const existing = `import type { AnimationPlayer } from '@flighthq/types/contract';
+    const existing = `import type { AnimationPlayer } from '@flighthq/owner/contract';
 export function advance(player: AnimationPlayer): void {}
 `;
     const generated = `export function advance(player: AnimationPlayerRef): void {
@@ -754,7 +754,7 @@ export function advance(player: AnimationPlayer): void {}
 
     expect(typeScriptTypeAliasArguments(existing, generated, symbols)).toEqual([
       '--typescript-type-alias',
-      'AnimationPlayerRef=@flighthq/types/contract#AnimationPlayer',
+      'AnimationPlayerRef=@flighthq/owner/contract#AnimationPlayer',
     ]);
   });
 
@@ -829,7 +829,7 @@ export type { PlatformEndianness, PlatformEngine, Unknown };
   it('derives nullable field metadata from canonical owner positions used by generated functions', () => {
     const symbols = new Map([
       [
-        '@flighthq/types/contract',
+        '@flighthq/owner/contract',
         new Map([
           [
             'AnimationStateMachine',
@@ -842,7 +842,7 @@ export type { PlatformEndianness, PlatformEngine, Unknown };
         ]),
       ],
     ]);
-    const existing = `import type { AnimationStateMachine } from '@flighthq/types/contract';
+    const existing = `import type { AnimationStateMachine } from '@flighthq/owner/contract';
 export function advance(machine: AnimationStateMachine): void {}
 `;
     const generated = `export function advance(machine: AnimationStateMachine): void {
@@ -859,16 +859,16 @@ export function unrelated(machine: AnimationStateMachine): void {
 
     expect(typeScriptNullableOptionFieldArguments(existing, generated, symbols)).toEqual([
       '--typescript-nullable-option-field',
-      '@flighthq/types/contract#AnimationStateMachine.transitionFromStateIndex',
+      '@flighthq/owner/contract#AnimationStateMachine.transitionFromStateIndex',
       '--typescript-nullable-option-field',
-      '@flighthq/types/contract#AnimationStateMachine.transitionToStateIndex',
+      '@flighthq/owner/contract#AnimationStateMachine.transitionToStateIndex',
     ]);
   });
 
   it('refuses nullable field metadata for wrapped or locally shadowed owners', () => {
     const symbols = new Map([
       [
-        '@flighthq/types/contract',
+        '@flighthq/owner/contract',
         new Map([
           [
             'LayoutState',
@@ -881,7 +881,7 @@ export function unrelated(machine: AnimationStateMachine): void {
         ]),
       ],
     ]);
-    const existing = `import type { LayoutState } from '@flighthq/types/contract';`;
+    const existing = `import type { LayoutState } from '@flighthq/owner/contract';`;
 
     expect(
       typeScriptNullableOptionFieldArguments(
@@ -917,7 +917,7 @@ export function renamedPath(): Path | undefined { return undefined; }
   });
 
   it('derives nullable callable returns from exact aliases and canonical owner references', () => {
-    const existing = `import type { LayoutState } from '@flighthq/types/contract';
+    const existing = `import type { LayoutState } from '@flighthq/owner/contract';
 export type LocalResolver = () => Failure | null;
 export type OrdinaryResolver = () => Failure | undefined;
 export type MixedResolver = () => Failure | null | undefined;
@@ -929,7 +929,7 @@ export type MixedResolver = () => Failure | undefined;
 `;
     const symbols = new Map([
       [
-        '@flighthq/types/contract',
+        '@flighthq/owner/contract',
         new Map([
           ['LayoutState', { hasType: true, hasValue: false, referencedTypes: ['LayoutResolver', 'UnrelatedResolver'] }],
           ['LayoutResolver', { hasType: true, hasValue: false, nullableCallableReturn: true }],
@@ -954,11 +954,11 @@ export type MixedResolver = () => Failure | undefined;
   });
 
   it('coalesces Effects-GL nullable callable paths at their canonical owner and isolates unrelated graphs', () => {
-    const existing = `import type { GlRenderState } from '@flighthq/types/contract';
-import type { GlRenderStateOptions } from '@flighthq/types/contract';`;
+    const existing = `import type { GlRenderState } from '@flighthq/owner/contract';
+import type { GlRenderStateOptions } from '@flighthq/owner/contract';`;
     const symbols = new Map([
       [
-        '@flighthq/types/contract',
+        '@flighthq/owner/contract',
         new Map([
           [
             'GlRenderState',
@@ -980,7 +980,7 @@ import type { GlRenderStateOptions } from '@flighthq/types/contract';`;
     );
 
     expect(metadata.arguments).toEqual(['--typescript-nullable-option-return', 'GlCompressedTextureDecoder']);
-    expect(metadata.owners).toEqual(new Map([['GlCompressedTextureDecoder', '@flighthq/types/contract']]));
+    expect(metadata.owners).toEqual(new Map([['GlCompressedTextureDecoder', '@flighthq/owner/contract']]));
     expect(typeScriptNullableOptionReturnMetadata(existing, '', symbols, new Set()).arguments).toEqual([]);
   });
 
@@ -1473,7 +1473,7 @@ import type { AccessibilityLiveness, AccessibilityNode, AccessibilityOperationOu
   });
 
   it('does not import a name declared or already imported by generated output', () => {
-    const existing = `import type { LocalOptions, Widget } from '@flighthq/types/contract';
+    const existing = `import type { LocalOptions, Widget } from '@flighthq/owner/contract';
 import { createWidget } from './widget.ts';
 `;
     const generated = `import type { Widget } from './types.ts';
@@ -1488,7 +1488,7 @@ export function createWidget(): Widget { return {} as Widget; }
 describe('renderReferencedExports', () => {
   it('retains named forwarding exports that generated declarations do not replace', () => {
     const existing = `export type { MissingType, ReplacedType } from './compat.ts';
-export { ImageChannel, InternalName as PublicName } from '@flighthq/types/contract';
+export { ImageChannel, InternalName as PublicName } from '@flighthq/owner/contract';
 export { NativeFallback } from './value.native.ts';
 export * from './wildcard.ts';
 `;
@@ -1496,7 +1496,7 @@ export * from './wildcard.ts';
 
     expect(renderReferencedExports(existing, generated)).toBe(
       `export type { MissingType } from './compat.ts';
-export { ImageChannel, InternalName as PublicName } from '@flighthq/types/contract';
+export { ImageChannel, InternalName as PublicName } from '@flighthq/owner/contract';
 `,
     );
   });

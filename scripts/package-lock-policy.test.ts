@@ -11,7 +11,7 @@ const manifest: WorkspaceManifest = {
   name: '@flighthq/example',
   version: '0.2.0',
   dependencies: {
-    '@flighthq/types': '*',
+    '@flighthq/geometry': '*',
   },
 };
 
@@ -21,15 +21,15 @@ const validLock: PackageLockJson = {
       name: '@flighthq/example',
       version: '0.2.0',
       dependencies: {
-        '@flighthq/types': '*',
+        '@flighthq/geometry': '*',
       },
     },
     'node_modules/@flighthq/example': {
       resolved: 'packages/example',
       link: true,
     },
-    'node_modules/@flighthq/types': {
-      resolved: 'packages/types',
+    'node_modules/@flighthq/geometry': {
+      resolved: 'packages/geometry',
       link: true,
     },
   },
@@ -141,9 +141,9 @@ describe('package-lock workspace policy', () => {
     };
 
     expect(check([manifest], lock)).toContainEqual({
-      label: 'packages/example dependency @flighthq/types has a workspace link',
+      label: 'packages/example dependency @flighthq/geometry has a workspace link',
       detail:
-        'add exactly packages["node_modules/@flighthq/types"] with link true; declared by packages/example/package.json',
+        'add exactly packages["node_modules/@flighthq/geometry"] with link true; declared by packages/example/package.json',
     });
   });
 
@@ -159,8 +159,8 @@ describe('package-lock workspace policy', () => {
     };
 
     expect(check([manifest], lock)).toContainEqual({
-      label: 'packages/example dependencies entry for @flighthq/types matches manifest',
-      detail: 'set exactly packages["packages/example"].dependencies["@flighthq/types"] to "*"; got undefined',
+      label: 'packages/example dependencies entry for @flighthq/geometry matches manifest',
+      detail: 'set exactly packages["packages/example"].dependencies["@flighthq/geometry"] to "*"; got undefined',
     });
   });
 });

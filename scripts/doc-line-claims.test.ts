@@ -74,14 +74,14 @@ describe('resolveDocLineClaimPath', () => {
   });
 
   it('falls back to a repo-wide lookup when the file lives outside the citing package', () => {
-    // ★ The case that hides rot: a package's doc citing a type, which lives in @flighthq/types rather
-    // than in that package. Resolving only within the package files it as "not found", which reads as
-    // unjudgeable rather than as unchecked.
+    // ★ The case that hides rot: a package's doc citing a file owned by another package (here the
+    // surface seam a renderer consumes) rather than one in that package. Resolving only within the
+    // package files it as "not found", which reads as unjudgeable rather than as unchecked.
     expect(
-      resolveDocLineClaimPath('ClipRegion.ts', 'agents/packages/clip/status.md', () => [
-        'packages/types/src/ClipRegion.ts',
+      resolveDocLineClaimPath('wgpuSurface.ts', 'agents/packages/render-wgpu/status.md', () => [
+        'packages/surface/src/wgpuSurface.ts',
       ]),
-    ).toBe('packages/types/src/ClipRegion.ts');
+    ).toBe('packages/surface/src/wgpuSurface.ts');
   });
 
   it('refuses an ambiguous basename rather than picking one', () => {
@@ -130,7 +130,7 @@ describe('packageNamedBeforeClaim', () => {
   it('takes the package the sentence names over the one the doc lives in', () => {
     // `index.ts` exists in nearly every package, so misresolving it lands on a real file of the wrong
     // size and reports rot that is not there.
-    expect(packageNamedBeforeClaim('`@flighthq/types` `index.ts:271-272`', 'index.ts')).toBe('types');
+    expect(packageNamedBeforeClaim('`@flighthq/surface` `index.ts:271-272`', 'index.ts')).toBe('surface');
   });
 
   it('ignores a package named far away from the citation', () => {

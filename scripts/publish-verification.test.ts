@@ -24,9 +24,9 @@ function expectation(name: string, version = OURS): PublishExpectation {
 
 describe('describePublishProblem', () => {
   it('names the registry as the authority for a missing version', () => {
-    const problem: PublishProblem = { name: '@flighthq/types', version: OURS, kind: 'missing', tagVersion: OLDER };
+    const problem: PublishProblem = { name: '@flighthq/geometry', version: OURS, kind: 'missing', tagVersion: OLDER };
     expect(describePublishProblem(problem, 'next')).toBe(
-      `@flighthq/types@${OURS} is NOT on the registry — npm reported success but the version does not exist`,
+      `@flighthq/geometry@${OURS} is NOT on the registry — npm reported success but the version does not exist`,
     );
   });
 
@@ -53,10 +53,10 @@ describe('describePublishProblem', () => {
 describe('findPublishProblems', () => {
   it('reports nothing when every version is live and on the tag', () => {
     const problems = findPublishProblems(
-      [expectation('@flighthq/xml'), expectation('@flighthq/types')],
+      [expectation('@flighthq/xml'), expectation('@flighthq/geometry')],
       state({
         '@flighthq/xml': { hasVersion: true, tagVersion: OURS },
-        '@flighthq/types': { hasVersion: true, tagVersion: OURS },
+        '@flighthq/geometry': { hasVersion: true, tagVersion: OURS },
       }),
     );
     expect(problems).toEqual([]);
@@ -64,14 +64,14 @@ describe('findPublishProblems', () => {
 
   it('catches the silent drop: npm exited 0 but the version is absent', () => {
     const problems = findPublishProblems(
-      [expectation('@flighthq/xml'), expectation('@flighthq/types')],
+      [expectation('@flighthq/xml'), expectation('@flighthq/geometry')],
       state({
         '@flighthq/xml': { hasVersion: true, tagVersion: OURS },
         // What the registry actually held: still at the previous release.
-        '@flighthq/types': { hasVersion: false, tagVersion: OLDER },
+        '@flighthq/geometry': { hasVersion: false, tagVersion: OLDER },
       }),
     );
-    expect(problems).toEqual([{ name: '@flighthq/types', version: OURS, kind: 'missing', tagVersion: OLDER }]);
+    expect(problems).toEqual([{ name: '@flighthq/geometry', version: OURS, kind: 'missing', tagVersion: OLDER }]);
   });
 
   it('reports a version that exists while the tag lags behind it', () => {
@@ -95,10 +95,10 @@ describe('findPublishProblems', () => {
   it('still reports a missing version even when a newer build owns the tag', () => {
     // The newer tag excuses a lagging pointer, never an absent version: siblings pin us exactly.
     const problems = findPublishProblems(
-      [expectation('@flighthq/types')],
-      state({ '@flighthq/types': { hasVersion: false, tagVersion: NEWER } }),
+      [expectation('@flighthq/geometry')],
+      state({ '@flighthq/geometry': { hasVersion: false, tagVersion: NEWER } }),
     );
-    expect(problems).toEqual([{ name: '@flighthq/types', version: OURS, kind: 'missing', tagVersion: NEWER }]);
+    expect(problems).toEqual([{ name: '@flighthq/geometry', version: OURS, kind: 'missing', tagVersion: NEWER }]);
   });
 
   it('reports a package the registry could not be read for', () => {
@@ -116,13 +116,13 @@ describe('findPublishProblems', () => {
 
   it('verifies a stable release on the same terms', () => {
     const problems = findPublishProblems(
-      [expectation('@flighthq/xml', '0.5.1'), expectation('@flighthq/types', '0.5.1')],
+      [expectation('@flighthq/xml', '0.5.1'), expectation('@flighthq/geometry', '0.5.1')],
       state({
         '@flighthq/xml': { hasVersion: true, tagVersion: '0.5.1' },
-        '@flighthq/types': { hasVersion: false, tagVersion: '0.4.0' },
+        '@flighthq/geometry': { hasVersion: false, tagVersion: '0.4.0' },
       }),
     );
-    expect(problems).toEqual([{ name: '@flighthq/types', version: '0.5.1', kind: 'missing', tagVersion: '0.4.0' }]);
+    expect(problems).toEqual([{ name: '@flighthq/geometry', version: '0.5.1', kind: 'missing', tagVersion: '0.4.0' }]);
   });
 
   it('reports every problem rather than stopping at the first', () => {

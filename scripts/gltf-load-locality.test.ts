@@ -27,7 +27,6 @@ async function bundleFixture(name: string): Promise<{ code: string; modules: Map
   const workspacePackages = [
     { dir: resolve(root, 'packages/scene3d-resources/src'), name: '@flighthq/scene3d-resources' },
     { dir: resolve(root, 'packages/scene3d-formats/src'), name: '@flighthq/scene3d-formats' },
-    { dir: resolve(root, 'packages/types/src'), name: '@flighthq/types' },
   ];
   const result = await build({
     bundle: true,

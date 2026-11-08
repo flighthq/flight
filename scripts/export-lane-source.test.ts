@@ -66,7 +66,7 @@ export { LocalWrapper };
 
   it('keeps package re-exports while leaving relative re-exports to their owning module', () => {
     const source = `
-      import { ExternalKind, type ExternalType } from '@flighthq/types/contract';
+      import { ExternalKind, type ExternalType } from '@flighthq/geometry/contract';
       import { siblingValue } from './sibling';
       export { ExternalKind as PublicKind, type ExternalType, siblingValue };
     `;

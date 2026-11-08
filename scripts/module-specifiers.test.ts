@@ -49,7 +49,9 @@ describe('getTypeScriptSpecifierReplacement', () => {
   });
 
   it('keeps package, asset, query, and explicit TypeScript specifiers unchanged', () => {
-    expect(getTypeScriptSpecifierReplacement(containingFile, '@flighthq/types/contract', fileExists)).toBeUndefined();
+    expect(
+      getTypeScriptSpecifierReplacement(containingFile, '@flighthq/geometry/contract', fileExists),
+    ).toBeUndefined();
     expect(getTypeScriptSpecifierReplacement(containingFile, './data.json', fileExists)).toBeUndefined();
     expect(getTypeScriptSpecifierReplacement(containingFile, './direct.ts', fileExists)).toBeUndefined();
     expect(getTypeScriptSpecifierReplacement(containingFile, './shader?raw', fileExists)).toBeUndefined();

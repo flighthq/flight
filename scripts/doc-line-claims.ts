@@ -66,7 +66,7 @@ export function isCommitPinnedClaim(docLineText: string, rawPath?: string): bool
   return /[0-9a-f]{7,40}:$/.test(docLineText.slice(Math.max(0, citationAt - 41), citationAt));
 }
 
-// Whether the prose names a package immediately before the citation, as in "`@flighthq/types`
+// Whether the prose names a package immediately before the citation, as in "`@flighthq/surface`
 // `index.ts:271`".
 //
 // ★ WITHOUT THIS, A DOC THAT SAYS WHICH PACKAGE IT MEANS IS RESOLVED AGAINST THE WRONG ONE. Bare
@@ -92,8 +92,8 @@ export function packageNamedBeforeClaim(docLineText: string, rawPath: string): s
 // inference is what makes a bare citation legible to a reader, so the checker makes it too.
 //
 // ★ THE DOC'S PACKAGE IS A GOOD FIRST GUESS AND A BAD ONLY GUESS, AND ASSUMING IT ALONE HIDES ROT.
-// A package's doc routinely cites files that live somewhere else entirely: every exported type is in
-// `@flighthq/types`, host backends are in `host-*`, tooling in `tool-*`. Resolving only within the
+// A package's doc routinely cites files that live somewhere else entirely: a type it consumes lives in
+// its owning package, host backends are in `host-*`, tooling in `tool-*`. Resolving only within the
 // citing package files all of those as "not found", which reads as an unjudgeable claim rather than
 // as a claim nobody checked — so real rot hides inside the skipped pile. `findByBasename` supplies
 // the fallback, and an AMBIGUOUS basename resolves to null rather than to a guess, because picking

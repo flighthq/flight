@@ -115,7 +115,7 @@ describe('getUnitTestCapability', () => {
 
   it('returns null for an ordinary specifier', () => {
     expect(getUnitTestCapability('node:fs')).toBeNull();
-    expect(getUnitTestCapability('@flighthq/types/contract')).toBeNull();
+    expect(getUnitTestCapability('@flighthq/geometry/contract')).toBeNull();
   });
 });
 
