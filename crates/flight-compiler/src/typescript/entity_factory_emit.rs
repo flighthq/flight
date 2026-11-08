@@ -3,8 +3,8 @@ use std::collections::HashSet;
 use syn::{Expr, FnArg, ItemFn, Pat, ReturnType, Stmt, Type};
 
 use super::{
-    ENTITY_TYPE_MARKER, READONLY_ENTITY_MARKER, current_source, named_type, resolve_type_path,
-    resolved_type_identity,
+    ENTITY_TYPE_MARKER, READONLY_ENTITY_MARKER, current_source, expression_is_associated_path,
+    named_type, resolve_type_path, resolved_type_identity,
 };
 pub(super) fn leading_mutable_entity_parameter(
     function: &ItemFn,
@@ -107,12 +107,12 @@ pub(super) fn is_flight_entity_allocation(expression: &Expr, context: &HashSet<S
 // The returned local of the canonical Rust Entity construction transaction:
 //
 // 1. allocate one exactly resolved Entity into an explicitly typed mutable local;
-// 2. immediately call a local `initialize_*` whose leading `&mut` parameter resolves to that Entity;
-// 3. return that same local.
+// 2. optionally call a local `initialize_*` and/or assign fields on the binding;
+// 3. return that same local, either directly or through `Arc::new(RwLock::new(out))`.
 //
 // Every part is structural and source-qualified. Missing or ambiguous ownership, a non-Entity
-// result, a same-named allocation helper, a different initializer target, or any extra statement
-// declines the lowering and preserves the ordinary emitted return.
+// result, a same-named allocation helper, or a return of a different binding declines the lowering
+// and preserves the ordinary emitted return.
 pub(super) fn entity_factory_finish_binding(
     function: &ItemFn,
     functions: &[ItemFn],
@@ -126,31 +126,72 @@ pub(super) fn entity_factory_finish_binding(
     if !context.contains(&format!("{ENTITY_TYPE_MARKER}{entity}")) {
         return None;
     }
-    let [
-        Stmt::Local(local),
-        Stmt::Expr(Expr::Call(initialize), _),
-        Stmt::Expr(Expr::Return(returned), _),
-    ] = function.block.stmts.as_slice()
-    else {
+    // Find the allocation local anywhere in the body.
+    let (binding, allocation_index) =
+        find_allocation_local(&function.block.stmts, context, &module, &entity)?;
+    // The last statement must be a return of the allocation binding.
+    let Stmt::Expr(Expr::Return(returned), _) = function.block.stmts.last()? else {
         return None;
     };
-    let Pat::Type(typed) = &local.pat else {
+    let returned_inner = peel_ref_constructor(returned.expr.as_deref()?);
+    let Expr::Path(returned_path) = returned_inner else {
         return None;
     };
-    let Pat::Ident(binding) = typed.pat.as_ref() else {
-        return None;
-    };
-    if binding.by_ref.is_some() || binding.mutability.is_none() || binding.subpat.is_some() {
+    if !returned_path.path.is_ident(&binding) {
         return None;
     }
-    if resolved_type_identity(context, &module, &typed.ty).as_deref() != Some(entity.as_str()) {
-        return None;
+    // Verify an initializer call when the body is the strict 3-statement pattern, so the stronger
+    // proof applies to the common case.
+    if function.block.stmts.len() == 3 && allocation_index == 0 {
+        if let Stmt::Expr(Expr::Call(initialize), _) = &function.block.stmts[1] {
+            verify_initializer(initialize, functions, context, &module, &entity, &binding)?;
+        }
     }
-    let initializer = local.init.as_ref()?;
-    if initializer.diverge.is_some() || !is_flight_entity_allocation(&initializer.expr, context) {
-        return None;
-    }
+    return Some(binding);
+}
 
+fn find_allocation_local(
+    stmts: &[Stmt],
+    context: &HashSet<String>,
+    module: &str,
+    entity: &str,
+) -> Option<(String, usize)> {
+    for (index, stmt) in stmts.iter().enumerate() {
+        let Stmt::Local(local) = stmt else {
+            continue;
+        };
+        let Pat::Type(typed) = &local.pat else {
+            continue;
+        };
+        let Pat::Ident(ident) = typed.pat.as_ref() else {
+            continue;
+        };
+        if ident.by_ref.is_some() || ident.mutability.is_none() || ident.subpat.is_some() {
+            continue;
+        }
+        if resolved_type_identity(context, module, &typed.ty).as_deref() != Some(entity) {
+            continue;
+        }
+        let Some(initializer) = local.init.as_ref() else {
+            continue;
+        };
+        if initializer.diverge.is_some() || !is_flight_entity_allocation(&initializer.expr, context)
+        {
+            continue;
+        }
+        return Some((ident.ident.to_string(), index));
+    }
+    return None;
+}
+
+fn verify_initializer(
+    initialize: &syn::ExprCall,
+    functions: &[ItemFn],
+    context: &HashSet<String>,
+    module: &str,
+    entity: &str,
+    binding: &str,
+) -> Option<()> {
     let Expr::Path(initializer_path) = initialize.func.as_ref() else {
         return None;
     };
@@ -172,8 +213,8 @@ pub(super) fn entity_factory_finish_binding(
         return None;
     };
     if initializer_reference.mutability.is_none()
-        || resolved_type_identity(context, &module, &initializer_reference.elem).as_deref()
-            != Some(entity.as_str())
+        || resolved_type_identity(context, module, &initializer_reference.elem).as_deref()
+            != Some(entity)
     {
         return None;
     }
@@ -183,14 +224,26 @@ pub(super) fn entity_factory_finish_binding(
     let Expr::Path(argument_path) = argument.expr.as_ref() else {
         return None;
     };
-    if argument.mutability.is_none() || !argument_path.path.is_ident(&binding.ident) {
+    if argument.mutability.is_none() || !argument_path.path.is_ident(binding) {
         return None;
     }
-    let Expr::Path(returned_path) = returned.expr.as_deref()? else {
-        return None;
+    return Some(());
+}
+
+// Peel `Arc::new(RwLock::new(expr))`, `Ref::new(RwLock::new(expr))`, or bare `RwLock::new(expr)`
+// wrappers to find the inner expression. Returns the expression unchanged when no wrapper matches.
+pub(super) fn peel_ref_constructor(expression: &Expr) -> &Expr {
+    let Expr::Call(call) = expression else {
+        return expression;
     };
-    if !returned_path.path.is_ident(&binding.ident) {
-        return None;
+    if (expression_is_associated_path(&call.func, "Arc", "new")
+        || expression_is_associated_path(&call.func, "Ref", "new"))
+        && call.args.len() == 1
+    {
+        return peel_ref_constructor(&call.args[0]);
     }
-    return Some(binding.ident.to_string());
+    if expression_is_associated_path(&call.func, "RwLock", "new") && call.args.len() == 1 {
+        return peel_ref_constructor(&call.args[0]);
+    }
+    return expression;
 }

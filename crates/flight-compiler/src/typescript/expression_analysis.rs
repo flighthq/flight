@@ -421,7 +421,8 @@ pub(super) fn expression_is_finished_entity_return(
     expression: &Expr,
     context: &HashSet<String>,
 ) -> bool {
-    let Expr::Path(path) = expression else {
+    let inner = super::peel_ref_constructor(expression);
+    let Expr::Path(path) = inner else {
         return false;
     };
     if path.qself.is_some() || path.path.segments.len() != 1 {

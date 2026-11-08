@@ -224,15 +224,19 @@ pub(super) fn emit_function(
         function_context.insert(FLIGHT_ERROR_RETURNS_MARKER.to_string());
     }
     if let Some(binding) = finish_entity_return {
-        let Stmt::Local(local) = function
+        let local = function
             .block
             .stmts
-            .first()
-            .expect("a proven entity factory starts with its allocation local")
-        else {
-            unreachable!("a proven entity factory starts with its allocation local")
-        };
-        assert_eq!(local_pattern_name(&local.pat).as_deref(), Some(binding));
+            .iter()
+            .find_map(|stmt| match stmt {
+                Stmt::Local(local)
+                    if local_pattern_name(&local.pat).as_deref() == Some(binding) =>
+                {
+                    Some(local)
+                }
+                _ => None,
+            })
+            .expect("a proven entity factory contains its allocation local");
         let id = local_pattern_binding_id(&function_context, &local.pat)
             .expect("the lexical resolver recorded the proven allocation binding");
         function_context.insert(format!("{FINISH_ENTITY_RETURN_MARKER}{id}"));
