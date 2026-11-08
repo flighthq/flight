@@ -1625,7 +1625,6 @@ pub(super) fn emit_method_call(
         | "disable_vertex_attrib_array"
         | "vertex_attrib_pointer"
         | "generate_mipmap"
-        | "pixel_store_i32"
         | "blend_func"
         | "blend_func_separate"
         | "blend_equation"
