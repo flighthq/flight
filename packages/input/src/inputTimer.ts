@@ -1,7 +1,7 @@
 // Generated from crates/flight-input/src/input_timer.rs by flight-compiler.
 // Rust is authoritative; run `npm run generate` after changing it.
 
-import { allocateEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 
 import type {
   InputKeyRepeatOptions,
@@ -38,7 +38,7 @@ export function advanceInputKeyRepeatTimer(timer: InputKeyRepeatTimerRaw, nowMs:
 export function createInputKeyRepeatTimer(options: Readonly<InputKeyRepeatOptions>): InputKeyRepeatTimerRaw {
   let out: InputKeyRepeatTimerRaw = allocateEntity<InputKeyRepeatTimerRaw>();
   initializeInputKeyRepeatTimer(out, options);
-  return out;
+  return finishEntity(out);
 }
 
 /**
@@ -60,7 +60,7 @@ export function initializeInputKeyRepeatTimer(
 }
 
 function beginInputKeyRepeatCycle(timer: InputKeyRepeatTimerRaw, callback: InputRepeatCallback, nowMs: number): void {
-  let locked = timer!;
+  let locked = timer;
   const cycle = getInputKeyRepeatTimerCycle(locked);
   cycle.callback = callback;
   cycle.nextFireMs = nowMs + cycle.delayMs;
@@ -89,7 +89,7 @@ export function startInputKeyRepeatTimer(
  * Cancels the repeat cycle and drops its callback (TS `InputKeyRepeatTimer.stop`).
  */
 export function stopInputKeyRepeatTimer(timer: InputKeyRepeatTimerRaw): void {
-  let locked = timer!;
+  let locked = timer;
   const cycle = getInputKeyRepeatTimerCycle(locked);
   cycle.callback = undefined;
   cycle.started = false;
@@ -99,7 +99,7 @@ function takeDueInputKeyRepeatTick(
   timer: InputKeyRepeatTimerRaw,
   nowMs: number,
 ): readonly [InputRepeatCallback | undefined, boolean] | undefined {
-  let locked = timer!;
+  let locked = timer;
   const cycle = getInputKeyRepeatTimerCycle(locked);
   if (!cycle.started || nowMs < cycle.nextFireMs) {
     return undefined;

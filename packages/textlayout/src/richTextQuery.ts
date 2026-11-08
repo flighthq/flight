@@ -13,11 +13,11 @@ export function computeRichTextCharIndexAtPoint(layout: Readonly<TextLayoutResul
   }
   let closestLineIndex = 0;
   let closestDistance = Number.POSITIVE_INFINITY;
-  let closestLineBottom = 0.0;
-  for (let index = 0; index < layout.lineHeights.length; index += 1) {
+  let closestLineBottom = 0;
+  for (let index = 0; index < layout.lineHeights.length; index++) {
     const lineTop = richTextGetLineOffsetY(layout, index);
-    const lineBottom = lineTop + getF32(layout.lineHeights, index, 0.0);
-    const distance = y < lineTop ? lineTop - y : y > lineBottom ? y - lineBottom : 0.0;
+    const lineBottom = lineTop + getF32(layout.lineHeights, index, 0);
+    const distance = y < lineTop ? lineTop - y : y > lineBottom ? y - lineBottom : 0;
     if (distance < closestDistance) {
       closestDistance = distance;
       closestLineIndex = index;
@@ -47,7 +47,7 @@ export function computeRichTextCharIndexAtPoint(layout: Readonly<TextLayoutResul
     if (x <= group.offsetX + group.width) {
       let groupX = group.offsetX;
       for (const [index, advance] of group.positions.entries()) {
-        if (x <= groupX + advance / 2.0) {
+        if (x <= groupX + advance / 2) {
           return group.startIndex + index;
         }
         groupX += advance;
@@ -62,11 +62,11 @@ export function computeRichTextLineMetrics(
   layout: Readonly<TextLayoutResult>,
   lineIndex: number,
 ): TextLineMetrics | null {
-  let ascent = 0.0;
-  let descent = 0.0;
-  let leading = 0.0;
+  let ascent = 0;
+  let descent = 0;
+  let leading = 0;
   let x = Number.POSITIVE_INFINITY;
-  let right = 0.0;
+  let right = 0;
   let found = false;
   for (const group of layout.groups) {
     if (group.lineIndex !== lineIndex) {
@@ -83,12 +83,12 @@ export function computeRichTextLineMetrics(
     return null;
   }
   return {
-    ascent: ascent,
-    descent: descent,
+    ascent,
+    descent,
     height: getF32(layout.lineHeights, lineIndex, ascent + descent + leading),
-    leading: leading,
+    leading,
     width: right - x,
-    x: x === Number.POSITIVE_INFINITY ? 0.0 : x,
+    x: x === Number.POSITIVE_INFINITY ? 0 : x,
   };
 }
 
@@ -107,12 +107,12 @@ export function getRichTextCharBoundaries(
   }
   let x = group.offsetX;
   const limit = Math.min(charIndex - group.startIndex, group.positions.length);
-  for (let index = 0; index < limit; index += 1) {
-    x += getF32(group.positions, index, 0.0);
+  for (let index = 0; index < limit; index++) {
+    x += getF32(group.positions, index, 0);
   }
   out.x = x;
   out.y = group.offsetY;
-  out.width = getF32(group.positions, charIndex - group.startIndex, 0.0);
+  out.width = getF32(group.positions, charIndex - group.startIndex, 0);
   out.height = group.height;
   return true;
 }
@@ -131,10 +131,10 @@ export function getRichTextFirstCharInParagraph(text: string, charIndex: number)
 export function getRichTextLineIndexAtPoint(layout: Readonly<TextLayoutResult>, y: number): number {
   let closestLineIndex = 0;
   let closestDistance = Number.POSITIVE_INFINITY;
-  for (let index = 0; index < layout.lineHeights.length; index += 1) {
+  for (let index = 0; index < layout.lineHeights.length; index++) {
     const lineTop = richTextGetLineOffsetY(layout, index);
     const lineBottom = lineTop + layout.lineHeights[index];
-    const distance = y < lineTop ? lineTop - y : y > lineBottom ? y - lineBottom : 0.0;
+    const distance = y < lineTop ? lineTop - y : y > lineBottom ? y - lineBottom : 0;
     if (distance < closestDistance) {
       closestDistance = distance;
       closestLineIndex = index;
@@ -196,7 +196,7 @@ export function getRichTextLineText(text: string, layout: Readonly<TextLayoutRes
 
 export function getRichTextLinkAtPoint(layout: Readonly<TextLayoutResult>, x: number, y: number): string | null {
   for (const group of layout.groups) {
-    const url = group.format!.url;
+    const url = group.format.url;
     if (url === undefined) {
       continue;
     }
@@ -245,15 +245,15 @@ export function getRichTextSelectionRectangles(
     }
     const x = richTextGetCaretX(group, groupStart);
     const right = richTextGetCaretX(group, groupEnd);
-    out.push({ height: group.height, lineIndex: group.lineIndex, width: right - x, x: x, y: group.offsetY });
+    out.push({ height: group.height, lineIndex: group.lineIndex, width: right - x, x, y: group.offsetY });
   }
 }
 
 function richTextGetCaretX(group: TextLayoutGroup, index: number): number {
   let x = group.offsetX;
   const limit = Math.max(0, Math.min(index, group.endIndex) - group.startIndex);
-  for (let positionIndex = 0; positionIndex < limit; positionIndex += 1) {
-    x += getF32(group.positions, positionIndex, 0.0);
+  for (let positionIndex = 0; positionIndex < limit; positionIndex++) {
+    x += getF32(group.positions, positionIndex, 0);
   }
   return x;
 }
@@ -272,8 +272,8 @@ function richTextGetLineOffsetY(layout: Readonly<TextLayoutResult>, lineIndex: n
     }
   }
   let y = TEXT_LAYOUT_GUTTER;
-  for (let index = 0; index < lineIndex; index += 1) {
-    y += getF32(layout.lineHeights, index, 0.0);
+  for (let index = 0; index < lineIndex; index++) {
+    y += getF32(layout.lineHeights, index, 0);
   }
   return y;
 }

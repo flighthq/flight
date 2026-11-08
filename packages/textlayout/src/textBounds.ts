@@ -12,7 +12,7 @@ export function computeTextBoundsHeight(spec: Readonly<TextBoundsSpec>, layout: 
   if (spec.autoSize === 'none') {
     return spec.height;
   }
-  return Math.ceil(layout.textHeight + TEXT_LAYOUT_GUTTER * 2.0);
+  return Math.ceil(layout.textHeight + TEXT_LAYOUT_GUTTER * 2);
 }
 
 export function computeTextBoundsOffsetX(spec: Readonly<TextBoundsSpec>, layout: Readonly<TextLayoutResult>): number {
@@ -21,9 +21,9 @@ export function computeTextBoundsOffsetX(spec: Readonly<TextBoundsSpec>, layout:
     return slack;
   }
   if (spec.autoSize === 'center') {
-    return slack / 2.0;
+    return slack / 2;
   }
-  return 0.0;
+  return 0;
 }
 
 export function computeTextBoundsRectangle(
@@ -33,8 +33,8 @@ export function computeTextBoundsRectangle(
 ): void {
   const width = computeTextBoundsWidth(spec, layout);
   const slack = spec.width - width;
-  out.x = spec.autoSize === 'right' ? slack : spec.autoSize === 'center' ? slack / 2.0 : 0.0;
-  out.y = 0.0;
+  out.x = spec.autoSize === 'right' ? slack : spec.autoSize === 'center' ? slack / 2 : 0;
+  out.y = 0;
   out.width = width;
   out.height = computeTextBoundsHeight(spec, layout);
 }
@@ -43,5 +43,5 @@ export function computeTextBoundsWidth(spec: Readonly<TextBoundsSpec>, layout: R
   if (spec.autoSize === 'none' || (spec.wordWrap ?? false)) {
     return spec.width;
   }
-  return Math.ceil(layout.textWidth + TEXT_LAYOUT_GUTTER * 2.0);
+  return Math.ceil(layout.textWidth + TEXT_LAYOUT_GUTTER * 2);
 }

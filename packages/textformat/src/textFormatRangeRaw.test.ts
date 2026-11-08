@@ -36,27 +36,27 @@ function emptyTextFormat(): TextFormat {
 describe('createTextFormatRange', () => {
   it('creates a range with the given fields', () => {
     let fields = emptyTextFormat();
-    fields.size = 16.0;
+    fields.size = 16;
     fields.bold = true;
     const format = fields;
     const range = createTextFormatRange(format, 0, 10);
     expect([range.start, range.end]).toEqual([0, 10]);
     expect(range.format === format).toBe(true);
-    expect(range.format!.size).toEqual(16.0);
-    expect(range.format!.bold).toEqual(true);
+    expect(range.format.size).toEqual(16);
+    expect(range.format.bold).toEqual(true);
   });
   it('retains the callers format object and later edits', () => {
     const format = emptyTextFormat();
     const range = createTextFormatRange(format, 0, 1);
-    format!.bold = false;
-    expect(range.format!.bold).toEqual(false);
+    format.bold = false;
+    expect(range.format.bold).toEqual(false);
     expect(range.format === format).toBe(true);
   });
   it('preserves utf16 offsets across a surrogate pair', () => {
     const format = emptyTextFormat();
     const range = createTextFormatRange(format, 1, 3);
     const units: number[] = Array.from({ length: 'a😀b'.length }, (_, index) => 'a😀b'.charCodeAt(index));
-    expect(units.slice(range.start, range.end)).toEqual([0xd83d, 0xde00]);
+    expect(Array.from(units.slice(range.start, range.end))).toEqual([0xd83d, 0xde00]);
     expect([range.start, range.end]).toEqual([1, 3]);
   });
   it('allocates independent range entity identities', () => {

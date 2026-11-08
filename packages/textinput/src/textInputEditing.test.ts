@@ -88,7 +88,7 @@ interface TestRichText {
 }
 
 function createInput(data: TestRichTextData, options: TextInputOptions): RichText {
-  const text = createTestRichText({ data: data });
+  const text = createTestRichText({ data });
   enableTextInput(text, options);
   return text;
 }
@@ -98,35 +98,35 @@ function createLayout(): TextLayoutResult {
   let first = createTextLayoutGroup(format);
   first.startIndex = 0;
   first.endIndex = 3;
-  first.ascent = 10.0;
-  first.descent = 2.0;
-  first.height = 12.0;
+  first.ascent = 10;
+  first.descent = 2;
+  first.height = 12;
   first.lineIndex = 0;
-  first.offsetX = 2.0;
-  first.offsetY = 2.0;
-  first.positions = [10.0, 10.0, 10.0];
-  first.width = 30.0;
+  first.offsetX = 2;
+  first.offsetY = 2;
+  first.positions = [10, 10, 10];
+  first.width = 30;
   let second = createTextLayoutGroup(format);
   second.startIndex = 3;
   second.endIndex = 7;
-  second.ascent = 10.0;
-  second.descent = 2.0;
-  second.height = 12.0;
+  second.ascent = 10;
+  second.descent = 2;
+  second.height = 12;
   second.lineIndex = 1;
-  second.offsetX = 2.0;
-  second.offsetY = 14.0;
-  second.positions = [10.0, 10.0, 10.0, 10.0];
-  second.width = 40.0;
+  second.offsetX = 2;
+  second.offsetY = 14;
+  second.positions = [10, 10, 10, 10];
+  second.width = 40;
   let layout = createTextLayoutResult();
   layout.groups = [first, second];
-  layout.lineAscents = [10.0, 10.0];
-  layout.lineDescents = [2.0, 2.0];
-  layout.lineHeights = [12.0, 12.0];
-  layout.lineLeadings = [0.0, 0.0];
-  layout.lineWidths = [30.0, 40.0];
+  layout.lineAscents = [10, 10];
+  layout.lineDescents = [2, 2];
+  layout.lineHeights = [12, 12];
+  layout.lineLeadings = [0, 0];
+  layout.lineWidths = [30, 40];
   layout.numLines = 2;
-  layout.textHeight = 24.0;
-  layout.textWidth = 40.0;
+  layout.textHeight = 24;
+  layout.textWidth = 40;
   return layout;
 }
 
@@ -134,54 +134,54 @@ function createSingleLineLayout(): TextLayoutResult {
   let group = createTextLayoutGroup(formatRef(emptyTextFormat()));
   group.startIndex = 0;
   group.endIndex = 11;
-  group.ascent = 10.0;
-  group.descent = 2.0;
-  group.height = 12.0;
+  group.ascent = 10;
+  group.descent = 2;
+  group.height = 12;
   group.lineIndex = 0;
-  group.offsetX = 2.0;
-  group.offsetY = 2.0;
-  group.positions = new Array(11).fill(10.0);
-  group.width = 110.0;
+  group.offsetX = 2;
+  group.offsetY = 2;
+  group.positions = new Array(11).fill(10);
+  group.width = 110;
   let layout = createTextLayoutResult();
   layout.groups = [group];
-  layout.lineAscents = [10.0];
-  layout.lineDescents = [2.0];
-  layout.lineHeights = [12.0];
-  layout.lineLeadings = [0.0];
-  layout.lineWidths = [110.0];
+  layout.lineAscents = [10];
+  layout.lineDescents = [2];
+  layout.lineHeights = [12];
+  layout.lineLeadings = [0];
+  layout.lineWidths = [110];
   layout.numLines = 1;
-  layout.textHeight = 12.0;
-  layout.textWidth = 110.0;
+  layout.textHeight = 12;
+  layout.textWidth = 110;
   return layout;
 }
 
 function createTallLayout(): TextLayoutResult {
   const format = formatRef(emptyTextFormat());
-  let groups: TextLayoutGroup[] = [] as never[];
-  for (let line = 0; line < 4; line += 1) {
+  let groups: TextLayoutGroup[] = [];
+  for (let line = 0; line < 4; line++) {
     let group = createTextLayoutGroup(format);
     group.startIndex = line;
     group.endIndex = line + 1;
-    group.ascent = 10.0;
-    group.descent = 2.0;
-    group.height = 12.0;
+    group.ascent = 10;
+    group.descent = 2;
+    group.height = 12;
     group.lineIndex = line;
-    group.offsetX = 2.0;
-    group.offsetY = 2.0 + line * 12.0;
-    group.positions = [10.0];
-    group.width = 10.0;
+    group.offsetX = 2;
+    group.offsetY = 2 + line * 12;
+    group.positions = [10];
+    group.width = 10;
     groups.push(group);
   }
   let layout = createTextLayoutResult();
   layout.groups = groups;
-  layout.lineAscents = new Array(4).fill(10.0);
-  layout.lineDescents = new Array(4).fill(2.0);
-  layout.lineHeights = new Array(4).fill(12.0);
-  layout.lineLeadings = new Array(4).fill(0.0);
-  layout.lineWidths = new Array(4).fill(10.0);
+  layout.lineAscents = new Array(4).fill(10);
+  layout.lineDescents = new Array(4).fill(2);
+  layout.lineHeights = new Array(4).fill(12);
+  layout.lineLeadings = new Array(4).fill(0);
+  layout.lineWidths = new Array(4).fill(10);
   layout.numLines = 4;
-  layout.textHeight = 48.0;
-  layout.textWidth = 10.0;
+  layout.textHeight = 48;
+  layout.textWidth = 10;
   return layout;
 }
 
@@ -243,7 +243,7 @@ function keyboardData(): InputKeyboardData {
     numLock: false,
     repeat: false,
     shiftKey: false,
-    timeStamp: 0.0,
+    timeStamp: 0,
   };
 }
 
@@ -285,10 +285,10 @@ function setLayout(source: RichText, layout: TextLayoutResult): void {
 function createTestRichText(obj: Readonly<TestRichText> | undefined): RichText {
   const text = crate.createDefaultRichText();
   {
-    const $data = ((obj) => (obj === undefined ? undefined : obj.data))(obj);
+    const $data = obj === undefined ? undefined : obj.data;
     if ($data !== undefined) {
       const data = $data;
-      assignTestRichTextData(text!.data, data);
+      assignTestRichTextData(text.data, data);
     }
   }
   return text;
@@ -382,18 +382,18 @@ function assignTestRichTextData(out: RichTextData, data: Readonly<TestRichTextDa
 }
 
 function optionsWithRestrict(restrict: string): TextInputOptions {
-  return { ...inputOptions(), restrict: String(restrict) };
+  return { ...inputOptions(), restrict };
 }
 
 function textData(text: string): TestRichTextData {
-  return { ...richTextOptions(), text: String(text) };
+  return { ...richTextOptions(), text };
 }
 
 describe('appendTextInput', () => {
   it('appends without input restrictions', () => {
     const text = createInput({ ...richTextOptions(), maxChars: 3, text: 'abc' }, inputOptions());
     appendTextInput(text, 'def');
-    expect(text!.data.text).toEqual('abcdef');
+    expect(text.data.text).toEqual('abcdef');
     expect(getTextInputCaretIndex(text)).toEqual(6);
   });
 });
@@ -453,7 +453,7 @@ describe('clearTextInputHistory', () => {
     clearTextInputHistory(text);
     expect(!canUndoTextInput(text)).toBe(true);
     expect(!canRedoTextInput(text)).toBe(true);
-    expect(text!.data.text).toEqual('Xabc');
+    expect(text.data.text).toEqual('Xabc');
   });
 });
 
@@ -462,21 +462,21 @@ describe('deleteTextInputBackward', () => {
     const text = createInput(textData('abc'), inputOptions());
     setTextInputSelection(text, 2, 2);
     deleteTextInputBackward(text);
-    expect(text!.data.text).toEqual('ac');
+    expect(text.data.text).toEqual('ac');
     expect(getTextInputCaretIndex(text)).toEqual(1);
   });
   it('deletes the previous grapheme without splitting utf16', () => {
     const text = createInput(textData('a👨‍👩‍👧‍👦b'), inputOptions());
     setTextInputSelection(text, 12, 12);
     deleteTextInputBackward(text);
-    expect(text!.data.text).toEqual('ab');
+    expect(text.data.text).toEqual('ab');
     expect(getTextInputCaretIndex(text)).toEqual(1);
   });
   it('deletes the selected range', () => {
     const text = createInput(textData('abcd'), inputOptions());
     setTextInputSelection(text, 1, 3);
     deleteTextInputBackward(text);
-    expect(text!.data.text).toEqual('ad');
+    expect(text.data.text).toEqual('ad');
   });
 });
 
@@ -485,13 +485,13 @@ describe('deleteTextInputForward', () => {
     const text = createInput(textData('abc'), inputOptions());
     setTextInputSelection(text, 1, 1);
     deleteTextInputForward(text);
-    expect(text!.data.text).toEqual('ac');
+    expect(text.data.text).toEqual('ac');
   });
   it('deletes the next grapheme without splitting utf16', () => {
     const text = createInput(textData('a👍🏽b'), inputOptions());
     setTextInputSelection(text, 1, 1);
     deleteTextInputForward(text);
-    expect(text!.data.text).toEqual('ab');
+    expect(text.data.text).toEqual('ab');
   });
 });
 
@@ -500,26 +500,26 @@ describe('deleteTextInputWordBackward', () => {
     const text = createInput(textData('hello world'), inputOptions());
     setTextInputSelection(text, 6, 6);
     deleteTextInputWordBackward(text);
-    expect(text!.data.text).toEqual('world');
+    expect(text.data.text).toEqual('world');
     expect(getTextInputCaretIndex(text)).toEqual(0);
   });
   it('deletes the selected range instead of a word', () => {
     const text = createInput(textData('hello world'), inputOptions());
     setTextInputSelection(text, 0, 5);
     deleteTextInputWordBackward(text);
-    expect(text!.data.text).toEqual(' world');
+    expect(text.data.text).toEqual(' world');
   });
   it('deletes the word before the caret', () => {
     const text = createInput(textData('hello world'), inputOptions());
     setTextInputSelection(text, 11, 11);
     deleteTextInputWordBackward(text);
-    expect(text!.data.text).toEqual('hello ');
+    expect(text.data.text).toEqual('hello ');
     expect(getTextInputCaretIndex(text)).toEqual(6);
   });
   it('does nothing at the beginning of text', () => {
     const text = createInput(textData('abc'), inputOptions());
     deleteTextInputWordBackward(text);
-    expect(text!.data.text).toEqual('abc');
+    expect(text.data.text).toEqual('abc');
   });
 });
 
@@ -528,20 +528,20 @@ describe('deleteTextInputWordForward', () => {
     const text = createInput(textData('hello world'), inputOptions());
     setTextInputSelection(text, 6, 11);
     deleteTextInputWordForward(text);
-    expect(text!.data.text).toEqual('hello ');
+    expect(text.data.text).toEqual('hello ');
   });
   it('deletes the word after the caret', () => {
     const text = createInput(textData('hello world'), inputOptions());
     setTextInputSelection(text, 6, 6);
     deleteTextInputWordForward(text);
-    expect(text!.data.text).toEqual('hello ');
+    expect(text.data.text).toEqual('hello ');
     expect(getTextInputCaretIndex(text)).toEqual(6);
   });
   it('does nothing at the end of text', () => {
     const text = createInput(textData('abc'), inputOptions());
     setTextInputSelection(text, 3, 3);
     deleteTextInputWordForward(text);
-    expect(text!.data.text).toEqual('abc');
+    expect(text.data.text).toEqual('abc');
   });
 });
 
@@ -556,21 +556,21 @@ describe('getTextInputCaretIndex', () => {
 describe('getTextInputCaretRectangle', () => {
   it('writes a caret rectangle from the layout group', () => {
     const text = createInput(textData('abcdefg'), inputOptions());
-    let out = { height: 0.0, lineIndex: 0, width: 0.0, x: 0.0, y: 0.0 };
+    let out = { height: 0, lineIndex: 0, width: 0, x: 0, y: 0 };
     setTextInputSelection(text, 2, 2);
     getTextInputCaretRectangle(out, text, createLayout());
-    expect(out).toEqual({ height: 12.0, lineIndex: 0, width: 1.0, x: 22.0, y: 2.0 });
+    expect(out).toEqual({ height: 12, lineIndex: 0, width: 1, x: 22, y: 2 });
   });
 });
 
 describe('getTextInputCharacterIndexAtPoint', () => {
   it('returns the nearest character index on a line', () => {
     const text = createInput(textData('abcdefg'), inputOptions());
-    expect(getTextInputCharacterIndexAtPoint(text, createLayout(), 27.0, 3.0)).toEqual(3);
+    expect(getTextInputCharacterIndexAtPoint(text, createLayout(), 27, 3)).toEqual(3);
   });
   it('selects the closest line by y', () => {
     const text = createInput(textData('abcdefg'), inputOptions());
-    expect(getTextInputCharacterIndexAtPoint(text, createLayout(), 2.0, 20.0)).toEqual(3);
+    expect(getTextInputCharacterIndexAtPoint(text, createLayout(), 2, 20)).toEqual(3);
   });
 });
 
@@ -608,12 +608,12 @@ describe('getTextInputSelectionEndIndex', () => {
 describe('getTextInputSelectionRectangles', () => {
   it('writes one rectangle per selected layout group', () => {
     const text = createInput(textData('abcdefg'), inputOptions());
-    let out: TextSelectionRectangle[] = [] as never[];
+    let out: TextSelectionRectangle[] = [];
     setTextInputSelection(text, 1, 5);
     getTextInputSelectionRectangles(out, text, createLayout());
     expect(out).toEqual([
-      { height: 12.0, lineIndex: 0, width: 20.0, x: 12.0, y: 2.0 },
-      { height: 12.0, lineIndex: 1, width: 20.0, x: 2.0, y: 14.0 },
+      { height: 12, lineIndex: 0, width: 20, x: 12, y: 2 },
+      { height: 12, lineIndex: 1, width: 20, x: 2, y: 14 },
     ]);
   });
 });
@@ -696,7 +696,7 @@ describe('handleTextInputKeyboard', () => {
     data.key = 'Backspace';
     data.keyCode = KeyCode.BACKSPACE;
     handleTextInputKeyboard(text, data, undefined);
-    expect(text!.data.text).toEqual('ac');
+    expect(text.data.text).toEqual('ac');
   });
   it('handles ctrl a selection', () => {
     const text = createInput(textData('abc'), inputOptions());
@@ -716,7 +716,7 @@ describe('handleTextInputKeyboard', () => {
     data.key = 'Backspace';
     data.keyCode = KeyCode.BACKSPACE;
     handleTextInputKeyboard(text, data, undefined);
-    expect(text!.data.text).toEqual('hello ');
+    expect(text.data.text).toEqual('hello ');
   });
   it('handles ctrl delete word delete forward', () => {
     const text = createInput(textData('hello world'), inputOptions());
@@ -726,7 +726,7 @@ describe('handleTextInputKeyboard', () => {
     data.key = 'Delete';
     data.keyCode = KeyCode.DELETE;
     handleTextInputKeyboard(text, data, undefined);
-    expect(text!.data.text).toEqual('hello ');
+    expect(text.data.text).toEqual('hello ');
   });
   it('handles ctrl left word left motion', () => {
     const text = createInput(textData('hello world'), inputOptions());
@@ -774,7 +774,7 @@ describe('handleTextInputKeyboard', () => {
     data.keyCode = KeyCode.V;
     const options: HandleTextInputKeyboardOptions = { clipboardText: 'b23', layout: undefined, onCopy: undefined };
     handleTextInputKeyboard(text, data, options);
-    expect(text!.data.text).toEqual('a23');
+    expect(text.data.text).toEqual('a23');
   });
   it('handles up arrow with layout', () => {
     const text = createInput(textData('abcdefg'), inputOptions());
@@ -810,7 +810,7 @@ describe('handleTextInputKeyboard', () => {
     data.key = 'Enter';
     data.keyCode = KeyCode.RETURN;
     expect(handleTextInputKeyboard(text, data, undefined)).toBe(true);
-    expect(text!.data.text).toEqual('a\n');
+    expect(text.data.text).toEqual('a\n');
   });
   it('invokes on copy callback for copy command', () => {
     const text = createInput(textData('hello'), inputOptions());
@@ -845,7 +845,7 @@ describe('insertTextInput', () => {
     const text = createInput(textData('ab'), optionsWithRestrict('0-9'));
     setTextInputSelection(text, 1, 1);
     insertTextInput(text, 'c3');
-    expect(text!.data.text).toEqual('a3b');
+    expect(text.data.text).toEqual('a3b');
   });
 });
 
@@ -859,9 +859,9 @@ describe('moveTextInputCaret', () => {
   it('resets desired caret x on horizontal move', () => {
     const text = createInput(textData('abc'), inputOptions());
     const state = getTextInputState(text)!;
-    state!.desiredCaretX = 50.0;
+    state.desiredCaretX = 50;
     moveTextInputCaret(text, 1, false);
-    expect(state!.desiredCaretX).toEqual(-1.0);
+    expect(state.desiredCaretX).toEqual(-1);
   });
 });
 
@@ -928,7 +928,7 @@ describe('moveTextInputCaretDown', () => {
     setTextInputSelection(text, 1, 1);
     const state = getTextInputState(text)!;
     moveTextInputCaretDown(text, createLayout(), false);
-    expect(state!.desiredCaretX).not.toEqual(-1.0);
+    expect(state.desiredCaretX).not.toEqual(-1);
   });
 });
 
@@ -1002,14 +1002,14 @@ describe('redoTextInput', () => {
     const text = createInput(textData('abc'), inputOptions());
     insertTextInput(text, 'X');
     redoTextInput(text);
-    expect(text!.data.text).toEqual('Xabc');
+    expect(text.data.text).toEqual('Xabc');
   });
   it('reapplies an undone edit', () => {
     const text = createInput(textData('abc'), inputOptions());
     insertTextInput(text, 'X');
     undoTextInput(text);
     redoTextInput(text);
-    expect(text!.data.text).toEqual('Xabc');
+    expect(text.data.text).toEqual('Xabc');
   });
   it('restores the caret position recorded after the edit', () => {
     const text = createInput(textData('abc'), inputOptions());
@@ -1026,25 +1026,25 @@ describe('replaceSelectedTextInput', () => {
     setTextInputSelection(text, 1, 1);
     const options: ReplaceTextInputOptions = { applyInputRules: true, mergeKind: undefined, skipHistory: undefined };
     replaceSelectedTextInput(text, 'c345', options);
-    expect(text!.data.text).toEqual('a34b');
+    expect(text.data.text).toEqual('a34b');
   });
   it('does not apply input restrictions by default', () => {
     const text = createInput({ ...richTextOptions(), maxChars: 3, text: 'abc' }, optionsWithRestrict('0-9'));
     setTextInputSelection(text, 1, 2);
     replaceSelectedTextInput(text, 'XYZ', undefined);
-    expect(text!.data.text).toEqual('aXYZc');
+    expect(text.data.text).toEqual('aXYZc');
   });
 });
 
 describe('replaceTextInput', () => {
   it('replaces a range and collapses selection after inserted text', () => {
     const text = createInput(textData('hello world'), inputOptions());
-    const before = getNodeAppearanceRevision(text!);
+    const before = getNodeAppearanceRevision(text);
     replaceTextInput(text, 6, 11, 'Flight', undefined);
-    expect(text!.data.text).toEqual('hello Flight');
+    expect(text.data.text).toEqual('hello Flight');
     expect(getTextInputSelectionBeginIndex(text)).toEqual(12);
     expect(getTextInputSelectionEndIndex(text)).toEqual(12);
-    expect(getNodeAppearanceRevision(text!)).not.toEqual(before);
+    expect(getNodeAppearanceRevision(text)).not.toEqual(before);
   });
   it('updates serialized text format ranges after insertion', () => {
     const text = createInput(textData('abcd'), inputOptions());
@@ -1052,11 +1052,11 @@ describe('replaceTextInput', () => {
     bold.bold = true;
     setRichTextFormatRange(text, formatRef(bold), 0, 4);
     replaceTextInput(text, 2, 2, 'XY', undefined);
-    const source = text!;
+    const source = text;
     expect(source.data.textFormatRanges.length).toEqual(1);
     const range = source.data.textFormatRanges[0];
     expect([range.start, range.end]).toEqual([0, 6]);
-    expect(range.format!.bold).toEqual(true);
+    expect(range.format.bold).toEqual(true);
   });
   it('updates serialized text format ranges after replacement', () => {
     const text = createInput(textData('abcd'), inputOptions());
@@ -1067,41 +1067,41 @@ describe('replaceTextInput', () => {
     setRichTextFormatRange(text, formatRef(bold), 0, 2);
     setRichTextFormatRange(text, formatRef(italic), 2, 4);
     replaceTextInput(text, 1, 3, 'Z', undefined);
-    const source = text!;
+    const source = text;
     expect(source.data.textFormatRanges.length).toEqual(2);
     const first = source.data.textFormatRanges[0];
     const second = source.data.textFormatRanges[1];
     expect([first.start, first.end]).toEqual([0, 1]);
-    expect(first.format!.bold).toEqual(true);
+    expect(first.format.bold).toEqual(true);
     expect([second.start, second.end]).toEqual([1, 3]);
-    expect(second.format!.italic).toEqual(true);
+    expect(second.format.italic).toEqual(true);
   });
 });
 
 describe('scrollTextInputCaretIntoView', () => {
   it('leaves scroll unchanged when the caret is already visible', () => {
     const text = createInput(
-      { ...richTextOptions(), height: 60.0, multiline: true, text: 'abcd', width: 100.0 },
+      { ...richTextOptions(), height: 60, multiline: true, text: 'abcd', width: 100 },
       inputOptions(),
     );
-    scrollTextInputCaretIntoView(text, createTallLayout(), 100.0, 60.0);
-    expect(text!.data.scrollV).toEqual(1.0);
-    expect(text!.data.scrollH).toEqual(0.0);
+    scrollTextInputCaretIntoView(text, createTallLayout(), 100, 60);
+    expect(text.data.scrollV).toEqual(1);
+    expect(text.data.scrollH).toEqual(0);
   });
   it('scrolls down so a caret below the viewport becomes visible', () => {
     const text = createInput(
-      { ...richTextOptions(), height: 28.0, multiline: true, text: 'abcd', width: 100.0 },
+      { ...richTextOptions(), height: 28, multiline: true, text: 'abcd', width: 100 },
       inputOptions(),
     );
     setTextInputSelection(text, 4, 4);
-    scrollTextInputCaretIntoView(text, createTallLayout(), 100.0, 24.0);
-    expect(text!.data.scrollV > 1.0).toBe(true);
+    scrollTextInputCaretIntoView(text, createTallLayout(), 100, 24);
+    expect(text.data.scrollV > 1).toBe(true);
   });
   it('scrolls horizontally so a caret past the right edge becomes visible', () => {
-    const text = createInput({ ...richTextOptions(), height: 40.0, text: 'abcdefg', width: 20.0 }, inputOptions());
+    const text = createInput({ ...richTextOptions(), height: 40, text: 'abcdefg', width: 20 }, inputOptions());
     setTextInputSelection(text, 7, 7);
-    scrollTextInputCaretIntoView(text, createLayout(), 20.0, 40.0);
-    expect(text!.data.scrollH > 0.0).toBe(true);
+    scrollTextInputCaretIntoView(text, createLayout(), 20, 40);
+    expect(text.data.scrollH > 0).toBe(true);
   });
 });
 
@@ -1213,7 +1213,7 @@ describe('undoTextInput', () => {
   function replaceOptions(mergeKind: string | undefined): ReplaceTextInputOptions {
     return {
       applyInputRules: undefined,
-      mergeKind: ((value) => (value === undefined ? undefined : String(value)))(mergeKind),
+      mergeKind: mergeKind === undefined ? undefined : mergeKind,
       skipHistory: undefined,
     };
   }
@@ -1222,19 +1222,19 @@ describe('undoTextInput', () => {
     replaceTextInput(text, 0, 0, 'a', replaceOptions('type'));
     replaceTextInput(text, 1, 1, 'b', replaceOptions('type'));
     undoTextInput(text);
-    expect(text!.data.text).toEqual('');
+    expect(text.data.text).toEqual('');
   });
   it('does nothing when there is nothing to undo', () => {
     const text = createInput(textData('abc'), inputOptions());
     undoTextInput(text);
-    expect(text!.data.text).toEqual('abc');
+    expect(text.data.text).toEqual('abc');
   });
   it('does not record history when history limit is zero', () => {
     const text = createInput(textData('abc'), { ...inputOptions(), historyLimit: 0 });
     insertTextInput(text, 'X');
     expect(!canUndoTextInput(text)).toBe(true);
     undoTextInput(text);
-    expect(text!.data.text).toEqual('Xabc');
+    expect(text.data.text).toEqual('Xabc');
   });
   it('restores the caret position recorded before the edit', () => {
     const text = createInput(textData('abc'), inputOptions());
@@ -1248,15 +1248,15 @@ describe('undoTextInput', () => {
     const text = createInput(textData('abc'), inputOptions());
     insertTextInput(text, 'X');
     undoTextInput(text);
-    expect(text!.data.text).toEqual('abc');
+    expect(text.data.text).toEqual('abc');
   });
   it('walks back through multiple non merged edits in order', () => {
     const text = createInput(textData(''), inputOptions());
     replaceTextInput(text, 0, 0, 'a', replaceOptions(undefined));
     replaceTextInput(text, 1, 1, 'b', replaceOptions(undefined));
     undoTextInput(text);
-    expect(text!.data.text).toEqual('a');
+    expect(text.data.text).toEqual('a');
     undoTextInput(text);
-    expect(text!.data.text).toEqual('');
+    expect(text.data.text).toEqual('');
   });
 });

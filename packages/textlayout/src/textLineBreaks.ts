@@ -7,18 +7,18 @@ export function getTextLineBreakIndex(lineBreaks: Readonly<number[]>, startIndex
   if (lineBreaks.length === 0) {
     return -1;
   }
-  const startIndex_1 = startIndex ?? 0;
+  startIndex = startIndex ?? 0;
   let low = 0;
   let high = lineBreaks.length;
   while (low < high) {
     const middle = (low + high) >> 1;
-    if (lineBreaks[middle] >= startIndex_1) {
+    if (lineBreaks[middle] >= startIndex) {
       high = middle;
     } else {
       low = middle + 1;
     }
   }
-  return low < lineBreaks.length ? lineBreaks[low] | 0 : -1;
+  return low < lineBreaks.length ? lineBreaks[low] : -1;
 }
 
 export function getTextLineBreaks(out: number[], text: string): void {

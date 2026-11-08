@@ -1,7 +1,13 @@
 // Generated from crates/flight-textformat/src/font_variation.rs by flight-compiler.
 // Rust is authoritative; run `npm run generate` after changing it.
 
-export type { FontVariation } from './types.ts';
+/**
+ * One readonly OpenType tag/value record. Custom tags remain strings, as in the source.
+ */
+export interface FontVariation {
+  readonly axis: string;
+  readonly value: number;
+}
 
 export const FontVariationItalic = 'ital' as const;
 

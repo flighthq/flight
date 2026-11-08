@@ -269,7 +269,7 @@ function emitGamepadAxisMove(manager: InputManagerRaw, data: Readonly<InputGamep
   if (!isManagerEnabled(manager)) {
     return;
   }
-  const signal = manager!.onGamepadAxisMove;
+  const signal = manager.onGamepadAxisMove;
   emitSignal(signal, data);
 }
 
@@ -277,7 +277,7 @@ function emitGamepadButtonDown(manager: InputManagerRaw, data: Readonly<InputGam
   if (!isManagerEnabled(manager)) {
     return;
   }
-  const signal = manager!.onGamepadButtonDown;
+  const signal = manager.onGamepadButtonDown;
   emitSignal(signal, data);
 }
 
@@ -285,7 +285,7 @@ function emitGamepadButtonUp(manager: InputManagerRaw, data: Readonly<InputGamep
   if (!isManagerEnabled(manager)) {
     return;
   }
-  const signal = manager!.onGamepadButtonUp;
+  const signal = manager.onGamepadButtonUp;
   emitSignal(signal, data);
 }
 
@@ -293,7 +293,7 @@ function emitGamepadConnect(manager: InputManagerRaw, data: Readonly<InputGamepa
   if (!isManagerEnabled(manager)) {
     return;
   }
-  const signal = manager!.onGamepadConnect;
+  const signal = manager.onGamepadConnect;
   emitSignal(signal, data);
 }
 
@@ -301,7 +301,7 @@ function emitGamepadDisconnect(manager: InputManagerRaw, data: Readonly<InputGam
   if (!isManagerEnabled(manager)) {
     return;
   }
-  const signal = manager!.onGamepadDisconnect;
+  const signal = manager.onGamepadDisconnect;
   emitSignal(signal, data);
 }
 
@@ -309,7 +309,7 @@ function emitKeyDown(manager: InputManagerRaw, data: Readonly<InputKeyboardData>
   if (!isManagerEnabled(manager)) {
     return;
   }
-  const signal = manager!.onKeyDown;
+  const signal = manager.onKeyDown;
   emitSignal(signal, data);
 }
 
@@ -317,7 +317,7 @@ function emitKeyUp(manager: InputManagerRaw, data: Readonly<InputKeyboardData>):
   if (!isManagerEnabled(manager)) {
     return;
   }
-  const signal = manager!.onKeyUp;
+  const signal = manager.onKeyUp;
   emitSignal(signal, data);
 }
 
@@ -325,7 +325,7 @@ function emitPointerCancel(manager: InputManagerRaw, data: Readonly<InputPointer
   if (!isManagerEnabled(manager)) {
     return;
   }
-  const signal = manager!.onPointerCancel;
+  const signal = manager.onPointerCancel;
   emitSignal(signal, data);
 }
 
@@ -333,7 +333,7 @@ function emitPointerDown(manager: InputManagerRaw, data: Readonly<InputPointerDa
   if (!isManagerEnabled(manager)) {
     return;
   }
-  const signal = manager!.onPointerDown;
+  const signal = manager.onPointerDown;
   emitSignal(signal, data);
 }
 
@@ -341,7 +341,7 @@ function emitPointerMove(manager: InputManagerRaw, data: Readonly<InputPointerDa
   if (!isManagerEnabled(manager)) {
     return;
   }
-  const signal = manager!.onPointerMove;
+  const signal = manager.onPointerMove;
   emitSignal(signal, data);
 }
 
@@ -349,7 +349,7 @@ function emitPointerMoveRelative(manager: InputManagerRaw, data: Readonly<InputP
   if (!isManagerEnabled(manager)) {
     return;
   }
-  const signal = manager!.onPointerMoveRelative;
+  const signal = manager.onPointerMoveRelative;
   emitSignal(signal, data);
 }
 
@@ -357,7 +357,7 @@ function emitPointerUp(manager: InputManagerRaw, data: Readonly<InputPointerData
   if (!isManagerEnabled(manager)) {
     return;
   }
-  const signal = manager!.onPointerUp;
+  const signal = manager.onPointerUp;
   emitSignal(signal, data);
 }
 
@@ -365,7 +365,7 @@ function emitTextEdit(manager: InputManagerRaw, data: Readonly<InputTextData>): 
   if (!isManagerEnabled(manager)) {
     return;
   }
-  const signal = manager!.onTextEdit;
+  const signal = manager.onTextEdit;
   emitSignal(signal, data);
 }
 
@@ -373,7 +373,7 @@ function emitTextInput(manager: InputManagerRaw, data: Readonly<InputTextData>):
   if (!isManagerEnabled(manager)) {
     return;
   }
-  const signal = manager!.onTextInput;
+  const signal = manager.onTextInput;
   emitSignal(signal, data);
 }
 
@@ -381,7 +381,7 @@ function emitWheel(manager: InputManagerRaw, data: Readonly<InputPointerData>): 
   if (!isManagerEnabled(manager)) {
     return;
   }
-  const signal = manager!.onWheel;
+  const signal = manager.onWheel;
   emitSignal(signal, data);
 }
 
@@ -391,7 +391,7 @@ function getInputManagerRegistry(manager: InputManagerRaw): InputManagerRuntime 
 
 function getOrCreateSink(manager: InputManagerRaw): InputIngressSink {
   const candidate = buildInputIngressSink(manager);
-  let locked = manager!;
+  let locked = manager;
   const registry = getInputManagerRegistry(locked);
   if (registry.sink !== undefined) {
     const sink = registry.sink;
@@ -410,7 +410,7 @@ function isInputBindingFor(
 }
 
 function isManagerEnabled(manager: InputManagerRaw): boolean {
-  return manager!.enabled;
+  return manager.enabled;
 }
 
 function setInputBinding(
@@ -425,7 +425,7 @@ function setInputBinding(
       previous();
     }
   }
-  let locked = manager!;
+  let locked = manager;
   const registry = getInputManagerRegistry(locked);
   registry.bindings.push({ source, kind, release });
 }
@@ -435,7 +435,7 @@ function takeInputBindingRelease(
   source: Readonly<InputIngressSource>,
   kind: InputBindingKind,
 ): InputIngressRelease | undefined {
-  let locked = manager!;
+  let locked = manager;
   const registry = getInputManagerRegistry(locked);
   let release = undefined;
   for (const binding of registry.bindings) {

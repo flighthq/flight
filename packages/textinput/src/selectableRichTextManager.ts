@@ -13,17 +13,19 @@ import { jsRound, utf16Len, utf16Slice } from './textUnits.ts';
 import type { SelectableRichTextManagerRaw, TextInputCopyCallback } from './types.ts';
 
 export function blurSelectableRichText(manager: SelectableRichTextManagerRaw): void {
-  const target = manager!.focused ?? undefined;
+  const target = manager.focused ?? undefined;
   if (target !== undefined) {
     let runtime = getMutableRuntime(target);
     runtime.selectionBeginIndex = 0;
     runtime.selectionEndIndex = 0;
   }
-  manager!.focused = null;
+  manager.focused = null;
 }
 
 export function createSelectableRichTextManager(): SelectableRichTextManagerRaw {
-  let out: SelectableRichTextManagerRaw = allocateEntity<SelectableRichTextManagerRaw>();
+  let out: SelectableRichTextManagerRaw = Object.assign(allocateEntity<SelectableRichTextManagerRaw>(), {
+    focused: null,
+  });
   initializeSelectableRichTextManager(out);
   return out;
 }
@@ -33,16 +35,16 @@ export function dispatchSelectableRichTextKeyDown(
   data: Readonly<InputKeyboardData>,
   onCopy?: TextInputCopyCallback,
 ): boolean {
-  const target = manager!.focused ?? undefined;
+  const target = manager.focused ?? undefined;
   if (target === undefined) {
     return false;
   }
   const command = data.ctrlKey || data.metaKey;
   const key: string = data.key;
   if (command && (key.toLowerCase() === 'a' || data.keyCode === KeyCode.A)) {
-    const textLength = utf16Len(target!.data.text);
+    const textLength = utf16Len(target.data.text);
     const runtime = getMutableRuntime(target);
-    let runtimeGuard = runtime!;
+    let runtimeGuard = runtime;
     runtimeGuard.selectionBeginIndex = 0;
     runtimeGuard.selectionEndIndex = textLength;
     return true;
@@ -50,13 +52,13 @@ export function dispatchSelectableRichTextKeyDown(
   if (command && (key.toLowerCase() === 'c' || data.keyCode === KeyCode.C)) {
     const runtime = getMutableRuntime(target);
     const [start, end] = (() => {
-      const runtimeGuard = runtime!;
+      const runtimeGuard = runtime;
       return [
         Math.min(runtimeGuard.selectionBeginIndex, runtimeGuard.selectionEndIndex),
         Math.max(runtimeGuard.selectionBeginIndex, runtimeGuard.selectionEndIndex),
       ];
     })();
-    const selected = utf16Slice(target!.data.text, start, end);
+    const selected = utf16Slice(target.data.text, start, end);
     if (selected.length !== 0) {
       if (onCopy !== undefined) {
         onCopy(selected);
@@ -74,7 +76,7 @@ export function dispatchSelectableRichTextPointerDown(
   y: number,
   extend: boolean,
 ): void {
-  manager!.focused = target;
+  manager.focused = target;
   let runtime = getMutableRuntime(target);
   const node: NodeRef = target;
   let layout = getTextLayout(node) ?? undefined;
@@ -85,7 +87,7 @@ export function dispatchSelectableRichTextPointerDown(
     }
     return;
   }
-  const index = computeRichTextCharIndexAtPoint(layout!, x, y);
+  const index = computeRichTextCharIndexAtPoint(layout, x, y);
   if (extend) {
     runtime.selectionEndIndex = index;
   } else {
@@ -99,7 +101,7 @@ export function dispatchSelectableRichTextPointerMove(
   x: number,
   y: number,
 ): void {
-  const target = manager!.focused ?? undefined;
+  const target = manager.focused ?? undefined;
   if (target === undefined) {
     return;
   }
@@ -109,32 +111,32 @@ export function dispatchSelectableRichTextPointerMove(
   if (layout === undefined) {
     return;
   }
-  const index = computeRichTextCharIndexAtPoint(layout!, x, y);
-  runtime!.selectionEndIndex = index;
+  const index = computeRichTextCharIndexAtPoint(layout, x, y);
+  runtime.selectionEndIndex = index;
 }
 
 export function dispatchSelectableRichTextWheel(manager: SelectableRichTextManagerRaw, deltaLines: number): void {
-  const target = manager!.focused ?? undefined;
+  const target = manager.focused ?? undefined;
   if (target === undefined) {
     return;
   }
-  const scrollV = target!.data.scrollV;
+  const scrollV = target.data.scrollV;
   setRichTextScrollV(target, scrollV + jsRound(deltaLines), undefined);
 }
 
 export function focusSelectableRichText(manager: SelectableRichTextManagerRaw, target: RichText): void {
-  manager!.focused = target;
+  manager.focused = target;
 }
 
 export function getSelectableRichTextSelectionText(manager: SelectableRichTextManagerRaw): string {
-  const target = manager!.focused ?? undefined;
+  const target = manager.focused ?? undefined;
   if (target === undefined) {
     return '';
   }
   let runtime = getMutableRuntime(target);
   const start = Math.min(runtime.selectionBeginIndex, runtime.selectionEndIndex);
   const end = Math.max(runtime.selectionBeginIndex, runtime.selectionEndIndex);
-  return utf16Slice(target!.data.text, start, end);
+  return utf16Slice(target.data.text, start, end);
 }
 
 function getMutableRuntime(source: RichText): RichTextRuntime {

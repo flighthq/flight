@@ -2,10 +2,18 @@
 // Rust is authoritative; run `npm run generate` after changing it.
 
 import { allocateEntity } from '@flighthq/entity/contract';
+import type { EntityRaw } from '@flighthq/entity/contract';
 
-import type { TextFormat, TextFormatRangeRaw } from './types.ts';
+import type { TextFormat } from './types.ts';
 
-export type { TextFormatRangeRaw } from './types.ts';
+/**
+ * Half-open UTF-16 code-unit offsets (D15), with the same format object as the caller.
+ */
+export interface TextFormatRangeRaw extends EntityRaw {
+  end: number;
+  format: TextFormat;
+  start: number;
+}
 
 /**
  * Mechanically relocated from textlayout/textFormatRange.ts to its approved D8 type owner.

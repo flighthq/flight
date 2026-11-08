@@ -62,7 +62,7 @@ interface TestRichText {
 }
 
 function createInput(data: TestRichTextData, options: TextInputOptions): RichText {
-  const text = createTestRichText({ data: data });
+  const text = createTestRichText({ data });
   enableTextInput(text, options);
   return text;
 }
@@ -72,35 +72,35 @@ function createLayout(): TextLayoutResult {
   let first = createTextLayoutGroup(format);
   first.startIndex = 0;
   first.endIndex = 3;
-  first.ascent = 10.0;
-  first.descent = 2.0;
-  first.height = 12.0;
+  first.ascent = 10;
+  first.descent = 2;
+  first.height = 12;
   first.lineIndex = 0;
-  first.offsetX = 2.0;
-  first.offsetY = 2.0;
-  first.positions = [10.0, 10.0, 10.0];
-  first.width = 30.0;
+  first.offsetX = 2;
+  first.offsetY = 2;
+  first.positions = [10, 10, 10];
+  first.width = 30;
   let second = createTextLayoutGroup(format);
   second.startIndex = 3;
   second.endIndex = 7;
-  second.ascent = 10.0;
-  second.descent = 2.0;
-  second.height = 12.0;
+  second.ascent = 10;
+  second.descent = 2;
+  second.height = 12;
   second.lineIndex = 1;
-  second.offsetX = 2.0;
-  second.offsetY = 14.0;
-  second.positions = [10.0, 10.0, 10.0, 10.0];
-  second.width = 40.0;
+  second.offsetX = 2;
+  second.offsetY = 14;
+  second.positions = [10, 10, 10, 10];
+  second.width = 40;
   let layout = createTextLayoutResult();
   layout.groups = [first, second];
-  layout.lineAscents = [10.0, 10.0];
-  layout.lineDescents = [2.0, 2.0];
-  layout.lineHeights = [12.0, 12.0];
-  layout.lineLeadings = [0.0, 0.0];
-  layout.lineWidths = [30.0, 40.0];
+  layout.lineAscents = [10, 10];
+  layout.lineDescents = [2, 2];
+  layout.lineHeights = [12, 12];
+  layout.lineLeadings = [0, 0];
+  layout.lineWidths = [30, 40];
   layout.numLines = 2;
-  layout.textHeight = 24.0;
-  layout.textWidth = 40.0;
+  layout.textHeight = 24;
+  layout.textWidth = 40;
   return layout;
 }
 
@@ -108,54 +108,54 @@ function createSingleLineLayout(): TextLayoutResult {
   let group = createTextLayoutGroup(formatRef(emptyTextFormat()));
   group.startIndex = 0;
   group.endIndex = 11;
-  group.ascent = 10.0;
-  group.descent = 2.0;
-  group.height = 12.0;
+  group.ascent = 10;
+  group.descent = 2;
+  group.height = 12;
   group.lineIndex = 0;
-  group.offsetX = 2.0;
-  group.offsetY = 2.0;
-  group.positions = new Array(11).fill(10.0);
-  group.width = 110.0;
+  group.offsetX = 2;
+  group.offsetY = 2;
+  group.positions = new Array(11).fill(10);
+  group.width = 110;
   let layout = createTextLayoutResult();
   layout.groups = [group];
-  layout.lineAscents = [10.0];
-  layout.lineDescents = [2.0];
-  layout.lineHeights = [12.0];
-  layout.lineLeadings = [0.0];
-  layout.lineWidths = [110.0];
+  layout.lineAscents = [10];
+  layout.lineDescents = [2];
+  layout.lineHeights = [12];
+  layout.lineLeadings = [0];
+  layout.lineWidths = [110];
   layout.numLines = 1;
-  layout.textHeight = 12.0;
-  layout.textWidth = 110.0;
+  layout.textHeight = 12;
+  layout.textWidth = 110;
   return layout;
 }
 
 function createTallLayout(): TextLayoutResult {
   const format = formatRef(emptyTextFormat());
-  let groups: TextLayoutGroup[] = [] as never[];
-  for (let line = 0; line < 4; line += 1) {
+  let groups: TextLayoutGroup[] = [];
+  for (let line = 0; line < 4; line++) {
     let group = createTextLayoutGroup(format);
     group.startIndex = line;
     group.endIndex = line + 1;
-    group.ascent = 10.0;
-    group.descent = 2.0;
-    group.height = 12.0;
+    group.ascent = 10;
+    group.descent = 2;
+    group.height = 12;
     group.lineIndex = line;
-    group.offsetX = 2.0;
-    group.offsetY = 2.0 + line * 12.0;
-    group.positions = [10.0];
-    group.width = 10.0;
+    group.offsetX = 2;
+    group.offsetY = 2 + line * 12;
+    group.positions = [10];
+    group.width = 10;
     groups.push(group);
   }
   let layout = createTextLayoutResult();
   layout.groups = groups;
-  layout.lineAscents = new Array(4).fill(10.0);
-  layout.lineDescents = new Array(4).fill(2.0);
-  layout.lineHeights = new Array(4).fill(12.0);
-  layout.lineLeadings = new Array(4).fill(0.0);
-  layout.lineWidths = new Array(4).fill(10.0);
+  layout.lineAscents = new Array(4).fill(10);
+  layout.lineDescents = new Array(4).fill(2);
+  layout.lineHeights = new Array(4).fill(12);
+  layout.lineLeadings = new Array(4).fill(0);
+  layout.lineWidths = new Array(4).fill(10);
   layout.numLines = 4;
-  layout.textHeight = 48.0;
-  layout.textWidth = 10.0;
+  layout.textHeight = 48;
+  layout.textWidth = 10;
   return layout;
 }
 
@@ -217,7 +217,7 @@ function keyboardData(): InputKeyboardData {
     numLock: false,
     repeat: false,
     shiftKey: false,
-    timeStamp: 0.0,
+    timeStamp: 0,
   };
 }
 
@@ -259,10 +259,10 @@ function setLayout(source: RichText, layout: TextLayoutResult): void {
 function createTestRichText(obj: Readonly<TestRichText> | undefined): RichText {
   const text = crate.createDefaultRichText();
   {
-    const $data = ((obj) => (obj === undefined ? undefined : obj.data))(obj);
+    const $data = obj === undefined ? undefined : obj.data;
     if ($data !== undefined) {
       const data = $data;
-      assignTestRichTextData(text!.data, data);
+      assignTestRichTextData(text.data, data);
     }
   }
   return text;
@@ -356,11 +356,11 @@ function assignTestRichTextData(out: RichTextData, data: Readonly<TestRichTextDa
 }
 
 function isFocused(target: RichText): boolean {
-  return ((state) => (state === null ? null : state!.focused))(getTextInputState(target)) ?? false;
+  return ((state) => (state === null ? null : state.focused))(getTextInputState(target)) ?? false;
 }
 
 function textData(text: string): TestRichTextData {
-  return { ...richTextOptions(), text: String(text) };
+  return { ...richTextOptions(), text };
 }
 
 describe('blurTextInput', () => {
@@ -370,7 +370,7 @@ describe('blurTextInput', () => {
     focusTextInput(manager, target);
     expect(isFocused(target)).toBe(true);
     blurTextInput(manager);
-    expect(manager!.focused === null).toBe(true);
+    expect(manager.focused === null).toBe(true);
     expect(!isFocused(target)).toBe(true);
   });
 });
@@ -383,18 +383,18 @@ describe('connectInputToTextInput', () => {
     focusTextInput(manager, target);
     const disconnect = connectInputToTextInput(input, manager);
     emitSignal(input.onTextInput, { isComposing: false, text: 'A' });
-    expect(target!.data.text).toEqual('A');
+    expect(target.data.text).toEqual('A');
     disconnect();
     emitSignal(input.onTextInput, { isComposing: false, text: 'B' });
-    expect(target!.data.text).toEqual('A');
+    expect(target.data.text).toEqual('A');
   });
 });
 
 describe('createTextInputManager', () => {
   it('creates an enabled manager without focus', () => {
     const manager = createTextInputManager();
-    expect(manager!.enabled).toBe(true);
-    expect(manager!.focused === null).toBe(true);
+    expect(manager.enabled).toBe(true);
+    expect(manager.focused === null).toBe(true);
   });
 });
 
@@ -404,7 +404,7 @@ describe('dispatchTextInput', () => {
     const target = createInput(richTextOptions(), inputOptions());
     focusTextInput(manager, target);
     expect(dispatchTextInput(manager, 'x')).toBe(true);
-    expect(target!.data.text).toEqual('x');
+    expect(target.data.text).toEqual('x');
   });
   it('returns false without focus', () => {
     expect(!dispatchTextInput(createTextInputManager(), 'x')).toBe(true);
@@ -437,7 +437,7 @@ describe('dispatchTextInputKeyDown', () => {
     data.key = 'Backspace';
     data.keyCode = KeyCode.BACKSPACE;
     expect(dispatchTextInputKeyDown(manager, data, undefined, undefined)).toBe(true);
-    expect(target!.data.text).toEqual('ac');
+    expect(target.data.text).toEqual('ac');
   });
   it('uses the focused target layout for line relative home and end', () => {
     const manager = createTextInputManager();
@@ -463,15 +463,15 @@ describe('dispatchTextInputPointerDown', () => {
   it('focuses the target', () => {
     const manager = createTextInputManager();
     const target = createInput(textData('hello'), inputOptions());
-    dispatchTextInputPointerDown(manager, target, 0.0, 0.0, false, 1);
-    expect(manager!.focused! === target).toBe(true);
+    dispatchTextInputPointerDown(manager, target, 0, 0, false, 1);
+    expect(manager.focused === target).toBe(true);
     expect(isFocused(target)).toBe(true);
   });
   it('selects a line on triple click', () => {
     const manager = createTextInputManager();
     const target = createInput(textData('hello world'), inputOptions());
     setLayout(target, createSingleLineLayout());
-    dispatchTextInputPointerDown(manager, target, 7.0, 5.0, false, 3);
+    dispatchTextInputPointerDown(manager, target, 7, 5, false, 3);
     expect(getTextInputSelectionBeginIndex(target)).toEqual(0);
     expect(getTextInputSelectionEndIndex(target)).toEqual(11);
   });
@@ -479,7 +479,7 @@ describe('dispatchTextInputPointerDown', () => {
     const manager = createTextInputManager();
     const target = createInput(textData('hello world'), inputOptions());
     setLayout(target, createSingleLineLayout());
-    dispatchTextInputPointerDown(manager, target, 7.0, 5.0, false, 2);
+    dispatchTextInputPointerDown(manager, target, 7, 5, false, 2);
     expect(getTextInputSelectionBeginIndex(target)).toEqual(0);
     expect(getTextInputSelectionEndIndex(target)).toEqual(5);
   });
@@ -490,21 +490,21 @@ describe('dispatchTextInputPointerMove', () => {
     const manager = createTextInputManager();
     const target = createInput(textData('hello world'), inputOptions());
     setLayout(target, createSingleLineLayout());
-    dispatchTextInputPointerDown(manager, target, 53.0, 5.0, false, 1);
-    dispatchTextInputPointerMove(manager, 999.0, 5.0);
+    dispatchTextInputPointerDown(manager, target, 53, 5, false, 1);
+    dispatchTextInputPointerMove(manager, 999, 5);
     expect(getTextInputSelectionEndIndex(target)).toEqual(11);
-    dispatchTextInputPointerMove(manager, -100.0, 5.0);
+    dispatchTextInputPointerMove(manager, -100, 5);
     expect(getTextInputSelectionBeginIndex(target)).toEqual(0);
   });
   it('does not panic when nothing is focused', () => {
-    dispatchTextInputPointerMove(createTextInputManager(), 0.0, 0.0);
+    dispatchTextInputPointerMove(createTextInputManager(), 0, 0);
   });
   it('extends selection backward when pointer moves left', () => {
     const manager = createTextInputManager();
     const target = createInput(textData('hello world'), inputOptions());
     setLayout(target, createSingleLineLayout());
-    dispatchTextInputPointerDown(manager, target, 73.0, 5.0, false, 1);
-    dispatchTextInputPointerMove(manager, 23.0, 5.0);
+    dispatchTextInputPointerDown(manager, target, 73, 5, false, 1);
+    dispatchTextInputPointerMove(manager, 23, 5);
     expect(getTextInputSelectionBeginIndex(target)).toEqual(2);
     expect(getTextInputSelectionEndIndex(target)).toEqual(7);
   });
@@ -512,10 +512,10 @@ describe('dispatchTextInputPointerMove', () => {
     const manager = createTextInputManager();
     const target = createInput(textData('hello world'), inputOptions());
     setLayout(target, createSingleLineLayout());
-    dispatchTextInputPointerDown(manager, target, 23.0, 5.0, false, 1);
+    dispatchTextInputPointerDown(manager, target, 23, 5, false, 1);
     expect(getTextInputSelectionBeginIndex(target)).toEqual(2);
     expect(getTextInputSelectionEndIndex(target)).toEqual(2);
-    dispatchTextInputPointerMove(manager, 73.0, 5.0);
+    dispatchTextInputPointerMove(manager, 73, 5);
     expect(getTextInputSelectionBeginIndex(target)).toEqual(2);
     expect(getTextInputSelectionEndIndex(target)).toEqual(7);
   });
@@ -526,12 +526,12 @@ describe('dispatchTextInputWheel', () => {
     const manager = createTextInputManager();
     const target = createInput(textData('hello'), inputOptions());
     focusTextInput(manager, target);
-    expect(target!.data.scrollV).toEqual(1.0);
-    dispatchTextInputWheel(manager, 2.0);
-    expect(target!.data.scrollV).toEqual(3.0);
+    expect(target.data.scrollV).toEqual(1);
+    dispatchTextInputWheel(manager, 2);
+    expect(target.data.scrollV).toEqual(3);
   });
   it('does not panic when nothing is focused', () => {
-    dispatchTextInputWheel(createTextInputManager(), 1.0);
+    dispatchTextInputWheel(createTextInputManager(), 1);
   });
 });
 
@@ -549,7 +549,7 @@ describe('focusTextInput', () => {
     const manager = createTextInputManager();
     const target = createInput(textData('abc'), inputOptions());
     focusTextInput(manager, target);
-    expect(manager!.focused! === target).toBe(true);
+    expect(manager.focused === target).toBe(true);
     expect(isFocused(target)).toBe(true);
     expect(getTextInputSelectionBeginIndex(target)).toEqual(0);
     expect(getTextInputSelectionEndIndex(target)).toEqual(0);
@@ -559,10 +559,10 @@ describe('focusTextInput', () => {
 describe('initializeTextInputManager', () => {
   it('is the construction initializer of create text input manager', () => {
     const manager = createTextInputManager();
-    manager!.enabled = false;
-    manager!.focused = createInput(textData('focused'), inputOptions());
-    initializeTextInputManager(manager!);
-    expect(manager!.enabled).toBe(true);
-    expect(manager!.focused === null).toBe(true);
+    manager.enabled = false;
+    manager.focused = createInput(textData('focused'), inputOptions());
+    initializeTextInputManager(manager);
+    expect(manager.enabled).toBe(true);
+    expect(manager.focused === null).toBe(true);
   });
 });

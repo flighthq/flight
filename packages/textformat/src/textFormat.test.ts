@@ -58,48 +58,48 @@ describe('getTextFormatAlignString', () => {
 
 describe('getTextFormatAscent', () => {
   it('returns 12 when size is absent', () => {
-    expect(getTextFormatAscent(emptyTextFormat())).toEqual(12.0);
+    expect(getTextFormatAscent(emptyTextFormat())).toEqual(12);
   });
   it('returns size when specified', () => {
     let format = emptyTextFormat();
-    format.size = 24.0;
-    expect(getTextFormatAscent(format)).toEqual(24.0);
+    format.size = 24;
+    expect(getTextFormatAscent(format)).toEqual(24);
   });
 });
 
 describe('getTextFormatDescent', () => {
   it('returns descent proportional to size', () => {
     let format = emptyTextFormat();
-    format.size = 100.0;
+    format.size = 100;
     expect(getTextFormatDescent(format)).toEqual(18.5);
   });
   it('uses default size when absent', () => {
-    expect(getTextFormatDescent(emptyTextFormat())).toEqual(12.0 * 0.185);
+    expect(getTextFormatDescent(emptyTextFormat())).toEqual(12 * 0.185);
   });
 });
 
 describe('getTextFormatHeight', () => {
   it('sums ascent descent and leading', () => {
     let format = emptyTextFormat();
-    format.size = 10.0;
-    format.leading = 4.0;
-    expect(getTextFormatHeight(format)).toEqual(10.0 + 10.0 * 0.185 + 4.0);
+    format.size = 10;
+    format.leading = 4;
+    expect(getTextFormatHeight(format)).toEqual(10 + 10 * 0.185 + 4);
   });
   it('treats absent leading as zero', () => {
     let format = emptyTextFormat();
-    format.size = 10.0;
-    expect(getTextFormatHeight(format)).toEqual(10.0 + 10.0 * 0.185);
+    format.size = 10;
+    expect(getTextFormatHeight(format)).toEqual(10 + 10 * 0.185);
   });
 });
 
 describe('getTextFormatLeading', () => {
   it('returns 0 when absent', () => {
-    expect(getTextFormatLeading(emptyTextFormat())).toEqual(0.0);
+    expect(getTextFormatLeading(emptyTextFormat())).toEqual(0);
   });
   it('returns leading when specified', () => {
     let format = emptyTextFormat();
-    format.leading = 6.0;
-    expect(getTextFormatLeading(format)).toEqual(6.0);
+    format.leading = 6;
+    expect(getTextFormatLeading(format)).toEqual(6);
   });
 });
 
@@ -116,44 +116,44 @@ describe('getTextFormatListMarkerString', () => {
 describe('mergeTextFormat', () => {
   it('applies non null override fields onto base', () => {
     let base = emptyTextFormat();
-    base.size = 12.0;
+    base.size = 12;
     base.bold = false;
     let overrides = emptyTextFormat();
     overrides.bold = true;
     overrides.color = 0xff0000ff;
     const result = mergeTextFormat(base, overrides);
-    expect(result.size).toEqual(12.0);
+    expect(result.size).toEqual(12);
     expect(result.bold).toEqual(true);
     expect(result.color).toEqual(0xff0000ff);
   });
   it('does not mutate the base object', () => {
     let base = emptyTextFormat();
-    base.size = 12.0;
+    base.size = 12;
     let overrides = emptyTextFormat();
-    overrides.size = 24.0;
+    overrides.size = 24;
     mergeTextFormat(base, overrides);
-    expect(base.size).toEqual(12.0);
+    expect(base.size).toEqual(12);
   });
   it('skips absent override fields', () => {
     let base = emptyTextFormat();
-    base.size = 12.0;
+    base.size = 12;
     const result = mergeTextFormat(base, emptyTextFormat());
-    expect(result.size).toEqual(12.0);
+    expect(result.size).toEqual(12);
     expect(result.bold).toEqual(undefined);
   });
   it('clones tab stops from both base and override', () => {
     let base: TextFormat = emptyTextFormat();
-    base.tabStops = [8.0];
-    base.variations = [{ axis: String(FontVariationWeight), value: 400.0 }];
+    base.tabStops = [8];
+    base.variations = [{ axis: FontVariationWeight, value: 400 }];
     let fromBase: TextFormat = mergeTextFormat(base, emptyTextFormat());
-    fromBase.tabStops![0] = 12.0;
-    expect(base.tabStops).toEqual([8.0]);
+    fromBase.tabStops![0] = 12;
+    expect(base.tabStops).toEqual([8]);
     expect(base.variations! === fromBase.variations!).toBe(true);
     let overrides = emptyTextFormat();
-    overrides.tabStops = [16.0];
+    overrides.tabStops = [16];
     let fromOverride = mergeTextFormat(base, overrides);
-    fromOverride.tabStops![0] = 20.0;
-    expect(overrides.tabStops).toEqual([16.0]);
+    fromOverride.tabStops![0] = 20;
+    expect(overrides.tabStops).toEqual([16]);
   });
 });
 
@@ -222,13 +222,13 @@ describe('textFormatFields', () => {
     explicit.kerning = false;
     explicit.strikethrough = false;
     explicit.underline = false;
-    explicit.size = 0.0;
-    explicit.blockIndent = 0.0;
-    explicit.indent = 0.0;
-    explicit.leading = 0.0;
-    explicit.leftMargin = 0.0;
-    explicit.rightMargin = 0.0;
-    explicit.letterSpacing = 0.0;
+    explicit.size = 0;
+    explicit.blockIndent = 0;
+    explicit.indent = 0;
+    explicit.leading = 0;
+    explicit.leftMargin = 0;
+    explicit.rightMargin = 0;
+    explicit.letterSpacing = 0;
     explicit.color = 0;
     explicit.font = '';
     explicit.target = '';
@@ -240,7 +240,7 @@ describe('textFormatFields', () => {
     expect(explicit).not.toEqual(absent);
     expect(explicit.bold).toEqual(false);
     expect(explicit.kerning).toEqual(false);
-    expect(explicit.size).toEqual(0.0);
+    expect(explicit.size).toEqual(0);
     expect(explicit.color).toEqual(0);
     expect(explicit.font).toEqual('');
     expect(explicit.target).toEqual('');
@@ -251,19 +251,19 @@ describe('textFormatFields', () => {
   });
   it('keeps plain tab stop and variation order without deduplication', () => {
     let format = emptyTextFormat();
-    format.tabStops = [24.0, 8.0, 24.0];
+    format.tabStops = [24, 8, 24];
     format.variations = [
-      { axis: String(FontVariationWeight), value: 400.0 },
-      { axis: String(FontVariationWidth), value: 125.0 },
-      { axis: String(FontVariationWeight), value: 450.0 },
+      { axis: FontVariationWeight, value: 400 },
+      { axis: FontVariationWidth, value: 125 },
+      { axis: FontVariationWeight, value: 450 },
     ];
     const stops: Readonly<number[]> = format.tabStops!;
-    expect(stops).toEqual([24.0, 8.0, 24.0]);
+    expect(Array.from(stops)).toEqual([24, 8, 24]);
     const variations = format.variations!;
     expect(variations[0].axis).toEqual('wght');
     expect(variations[1].axis).toEqual('wdth');
     expect(variations[2].axis).toEqual('wght');
-    expect(variations[2].value).toEqual(450.0);
+    expect(variations[2].value).toEqual(450);
   });
   it('preserves the full packed rgba integer domain', () => {
     let format = emptyTextFormat();

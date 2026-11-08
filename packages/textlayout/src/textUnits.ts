@@ -7,7 +7,7 @@ export function findUtf16Unit(units: Readonly<number[]>, unit: number, start: nu
     if (units[index] === unit) {
       return index;
     }
-    index += 1;
+    index++;
   }
   return undefined;
 }

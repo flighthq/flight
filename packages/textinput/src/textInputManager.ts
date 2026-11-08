@@ -29,11 +29,11 @@ import type {
 } from './types.ts';
 
 export function blurTextInput(manager: TextInputManagerRaw): void {
-  const target = manager!.focused ?? undefined;
+  const target = manager.focused ?? undefined;
   if (target !== undefined) {
     setTextInputFocused(target, false);
   }
-  manager!.focused = null;
+  manager.focused = null;
 }
 
 export function connectInputToTextInput(
@@ -90,9 +90,9 @@ export function dispatchTextInputKeyDown(
     return false;
   }
   const options: HandleTextInputKeyboardOptions = {
-    clipboardText: ((value) => (value === undefined ? undefined : String(value)))(clipboardText),
+    clipboardText: clipboardText === undefined ? undefined : clipboardText,
     layout: getTargetLayout(target),
-    onCopy: onCopy,
+    onCopy,
   };
   return handleTextInputKeyboard(target, data, options);
 }
@@ -110,56 +110,53 @@ export function dispatchTextInputPointerDown(
   if (layout === undefined) {
     return;
   }
-  const index = getTextInputCharacterIndexAtPoint(target, layout!, x, y);
+  const index = getTextInputCharacterIndexAtPoint(target, layout, x, y);
   if (clickCount >= 3) {
-    selectLineAtTextInputIndex(target, index | 0);
+    selectLineAtTextInputIndex(target, index);
+  } else if (clickCount === 2) {
+    selectWordAtTextInputIndex(target, index);
   } else {
-    if (clickCount === 2) {
-      selectWordAtTextInputIndex(target, index | 0);
-    } else {
-      moveTextInputCaret(target, index | 0, extend);
-    }
+    moveTextInputCaret(target, index, extend);
   }
 }
 
 export function dispatchTextInputPointerMove(manager: TextInputManagerRaw, x: number, y: number): void {
-  let target = manager!.focused ?? undefined;
+  let target = manager.focused ?? undefined;
   if (target === undefined) {
     return;
   }
-  if (!target!.enabled) {
+  if (!target.enabled) {
     return;
   }
   const layout = getTargetLayout(target);
   if (layout === undefined) {
     return;
   }
-  const index = getTextInputCharacterIndexAtPoint(target, layout!, x, y);
-  moveTextInputCaret(target, index | 0, true);
+  const index = getTextInputCharacterIndexAtPoint(target, layout, x, y);
+  moveTextInputCaret(target, index, true);
 }
 
 export function dispatchTextInputWheel(manager: TextInputManagerRaw, deltaLines: number): void {
-  let target = manager!.focused ?? undefined;
+  let target = manager.focused ?? undefined;
   if (target === undefined) {
     return;
   }
-  const targetGuard = target!;
+  const targetGuard = target;
   if (!targetGuard.enabled) {
     return;
   }
   const scrollV = targetGuard.data.scrollV;
-  void targetGuard;
   setRichTextScrollV(target, scrollV + jsRound(deltaLines), undefined);
 }
 
 export function focusTextInput(manager: TextInputManagerRaw, target: RichText): void {
-  const previous = manager!.focused ?? undefined;
+  const previous = manager.focused ?? undefined;
   if (previous !== undefined) {
     if (!(previous === target)) {
       setTextInputFocused(previous, false);
     }
   }
-  manager!.focused = target;
+  manager.focused = target;
   setTextInputFocused(target, true);
 }
 
@@ -181,7 +178,7 @@ function getTextInputFocusTarget(manager: TextInputManagerRaw): RichText | undef
   if (target === undefined) {
     return undefined;
   }
-  if (!target!.enabled) {
+  if (!target.enabled) {
     return undefined;
   }
   return target;
@@ -189,10 +186,9 @@ function getTextInputFocusTarget(manager: TextInputManagerRaw): RichText | undef
 
 function setTextInputFocused(target: RichText, focused: boolean): void {
   {
-    const $state = getTextInputState(target) ?? undefined;
-    if ($state !== undefined) {
-      const state = $state;
-      state!.focused = focused;
+    const state = getTextInputState(target) ?? undefined;
+    if (state !== undefined) {
+      state.focused = focused;
     }
   }
 }

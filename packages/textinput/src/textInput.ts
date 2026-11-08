@@ -9,8 +9,8 @@ function createTextInputState(options?: Readonly<TextInputOptions>): TextInputSt
     alwaysShowSelection: false,
     caretColor: 0x0000_00ff,
     caretIndex: 0,
-    caretWidth: 1.0,
-    desiredCaretX: -1.0,
+    caretWidth: 1,
+    desiredCaretX: -1,
     displayAsPassword: false,
     focused: false,
     history: [],
@@ -71,23 +71,23 @@ export function disableTextInput(node: RichText): void {
   const runtime: RichTextRuntime = (() => {
     return getRichTextRuntime(node);
   })();
-  runtime!.input = null;
+  runtime.input = null;
 }
 
 export function enableTextInput(node: RichText, options?: Readonly<TextInputOptions>): TextInputState {
   const runtime: RichTextRuntime = (() => {
     return getRichTextRuntime(node);
   })();
-  const existing = runtime!.input ?? undefined;
+  const existing = runtime.input ?? undefined;
   if (existing !== undefined) {
     const state = existing;
     if (options !== undefined) {
-      applyTextInputOptions(state!, options);
+      applyTextInputOptions(state, options);
     }
     return state;
   }
   const state = createTextInputState(options);
-  runtime!.input = state;
+  runtime.input = state;
   return state;
 }
 
@@ -95,7 +95,7 @@ export function getTextInputState(node: RichText): TextInputState | null {
   const runtime: RichTextRuntime = (() => {
     return getRichTextRuntime(node);
   })();
-  const input = runtime!.input ?? undefined;
+  const input = runtime.input ?? undefined;
   return input ?? null;
 }
 

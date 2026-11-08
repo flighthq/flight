@@ -43,7 +43,7 @@ interface TestRichText {
 }
 
 function createInput(data: TestRichTextData, options: TextInputOptions): RichText {
-  const text = createTestRichText({ data: data });
+  const text = createTestRichText({ data });
   enableTextInput(text, options);
   return text;
 }
@@ -53,35 +53,35 @@ function createLayout(): TextLayoutResult {
   let first = createTextLayoutGroup(format);
   first.startIndex = 0;
   first.endIndex = 3;
-  first.ascent = 10.0;
-  first.descent = 2.0;
-  first.height = 12.0;
+  first.ascent = 10;
+  first.descent = 2;
+  first.height = 12;
   first.lineIndex = 0;
-  first.offsetX = 2.0;
-  first.offsetY = 2.0;
-  first.positions = [10.0, 10.0, 10.0];
-  first.width = 30.0;
+  first.offsetX = 2;
+  first.offsetY = 2;
+  first.positions = [10, 10, 10];
+  first.width = 30;
   let second = createTextLayoutGroup(format);
   second.startIndex = 3;
   second.endIndex = 7;
-  second.ascent = 10.0;
-  second.descent = 2.0;
-  second.height = 12.0;
+  second.ascent = 10;
+  second.descent = 2;
+  second.height = 12;
   second.lineIndex = 1;
-  second.offsetX = 2.0;
-  second.offsetY = 14.0;
-  second.positions = [10.0, 10.0, 10.0, 10.0];
-  second.width = 40.0;
+  second.offsetX = 2;
+  second.offsetY = 14;
+  second.positions = [10, 10, 10, 10];
+  second.width = 40;
   let layout = createTextLayoutResult();
   layout.groups = [first, second];
-  layout.lineAscents = [10.0, 10.0];
-  layout.lineDescents = [2.0, 2.0];
-  layout.lineHeights = [12.0, 12.0];
-  layout.lineLeadings = [0.0, 0.0];
-  layout.lineWidths = [30.0, 40.0];
+  layout.lineAscents = [10, 10];
+  layout.lineDescents = [2, 2];
+  layout.lineHeights = [12, 12];
+  layout.lineLeadings = [0, 0];
+  layout.lineWidths = [30, 40];
   layout.numLines = 2;
-  layout.textHeight = 24.0;
-  layout.textWidth = 40.0;
+  layout.textHeight = 24;
+  layout.textWidth = 40;
   return layout;
 }
 
@@ -89,54 +89,54 @@ function createSingleLineLayout(): TextLayoutResult {
   let group = createTextLayoutGroup(formatRef(emptyTextFormat()));
   group.startIndex = 0;
   group.endIndex = 11;
-  group.ascent = 10.0;
-  group.descent = 2.0;
-  group.height = 12.0;
+  group.ascent = 10;
+  group.descent = 2;
+  group.height = 12;
   group.lineIndex = 0;
-  group.offsetX = 2.0;
-  group.offsetY = 2.0;
-  group.positions = new Array(11).fill(10.0);
-  group.width = 110.0;
+  group.offsetX = 2;
+  group.offsetY = 2;
+  group.positions = new Array(11).fill(10);
+  group.width = 110;
   let layout = createTextLayoutResult();
   layout.groups = [group];
-  layout.lineAscents = [10.0];
-  layout.lineDescents = [2.0];
-  layout.lineHeights = [12.0];
-  layout.lineLeadings = [0.0];
-  layout.lineWidths = [110.0];
+  layout.lineAscents = [10];
+  layout.lineDescents = [2];
+  layout.lineHeights = [12];
+  layout.lineLeadings = [0];
+  layout.lineWidths = [110];
   layout.numLines = 1;
-  layout.textHeight = 12.0;
-  layout.textWidth = 110.0;
+  layout.textHeight = 12;
+  layout.textWidth = 110;
   return layout;
 }
 
 function createTallLayout(): TextLayoutResult {
   const format = formatRef(emptyTextFormat());
-  let groups: TextLayoutGroup[] = [] as never[];
-  for (let line = 0; line < 4; line += 1) {
+  let groups: TextLayoutGroup[] = [];
+  for (let line = 0; line < 4; line++) {
     let group = createTextLayoutGroup(format);
     group.startIndex = line;
     group.endIndex = line + 1;
-    group.ascent = 10.0;
-    group.descent = 2.0;
-    group.height = 12.0;
+    group.ascent = 10;
+    group.descent = 2;
+    group.height = 12;
     group.lineIndex = line;
-    group.offsetX = 2.0;
-    group.offsetY = 2.0 + line * 12.0;
-    group.positions = [10.0];
-    group.width = 10.0;
+    group.offsetX = 2;
+    group.offsetY = 2 + line * 12;
+    group.positions = [10];
+    group.width = 10;
     groups.push(group);
   }
   let layout = createTextLayoutResult();
   layout.groups = groups;
-  layout.lineAscents = new Array(4).fill(10.0);
-  layout.lineDescents = new Array(4).fill(2.0);
-  layout.lineHeights = new Array(4).fill(12.0);
-  layout.lineLeadings = new Array(4).fill(0.0);
-  layout.lineWidths = new Array(4).fill(10.0);
+  layout.lineAscents = new Array(4).fill(10);
+  layout.lineDescents = new Array(4).fill(2);
+  layout.lineHeights = new Array(4).fill(12);
+  layout.lineLeadings = new Array(4).fill(0);
+  layout.lineWidths = new Array(4).fill(10);
   layout.numLines = 4;
-  layout.textHeight = 48.0;
-  layout.textWidth = 10.0;
+  layout.textHeight = 48;
+  layout.textWidth = 10;
   return layout;
 }
 
@@ -198,7 +198,7 @@ function keyboardData(): InputKeyboardData {
     numLock: false,
     repeat: false,
     shiftKey: false,
-    timeStamp: 0.0,
+    timeStamp: 0,
   };
 }
 
@@ -240,10 +240,10 @@ function setLayout(source: RichText, layout: TextLayoutResult): void {
 function createTestRichText(obj: Readonly<TestRichText> | undefined): RichText {
   const text = crate.createDefaultRichText();
   {
-    const $data = ((obj) => (obj === undefined ? undefined : obj.data))(obj);
+    const $data = obj === undefined ? undefined : obj.data;
     if ($data !== undefined) {
       const data = $data;
-      assignTestRichTextData(text!.data, data);
+      assignTestRichTextData(text.data, data);
     }
   }
   return text;
@@ -342,7 +342,7 @@ describe('disableTextInput', () => {
     enableTextInput(text, undefined);
     disableTextInput(text);
     expect(!hasTextInput(text)).toBe(true);
-    expect(text!.data.text).toEqual('');
+    expect(text.data.text).toEqual('');
   });
 });
 
@@ -370,9 +370,9 @@ describe('enableTextInput', () => {
   it('is idempotent and returns the existing state applying new options', () => {
     const text = createTestRichText({ data: undefined });
     const first = enableTextInput(text, undefined);
-    const second = enableTextInput(text, { ...inputOptions(), caretWidth: 3.0 });
+    const second = enableTextInput(text, { ...inputOptions(), caretWidth: 3 });
     expect(first === second).toBe(true);
-    expect(first!.caretWidth).toEqual(3.0);
+    expect(first.caretWidth).toEqual(3);
   });
 });
 

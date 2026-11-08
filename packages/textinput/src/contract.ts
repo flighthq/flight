@@ -1,5 +1,73 @@
 // Generated from crates/flight-textinput/src/lib.rs by flight-compiler.
 // Rust is authoritative; run `npm run generate` after changing it.
 
-export * from './contract.textinput-types.ts';
-export * from './runtime.ts';
+export {
+  blurSelectableRichText,
+  createSelectableRichTextManager,
+  dispatchSelectableRichTextKeyDown,
+  dispatchSelectableRichTextPointerDown,
+  dispatchSelectableRichTextPointerMove,
+  dispatchSelectableRichTextWheel,
+  focusSelectableRichText,
+  getSelectableRichTextSelectionText,
+  initializeSelectableRichTextManager,
+} from './selectableRichTextManager.ts';
+export { disableTextInput, enableTextInput, getTextInputState, hasTextInput } from './textInput.ts';
+export {
+  appendTextInput,
+  applyTextInputRestriction,
+  canRedoTextInput,
+  canUndoTextInput,
+  clearTextInputHistory,
+  deleteTextInputBackward,
+  deleteTextInputForward,
+  deleteTextInputWordBackward,
+  deleteTextInputWordForward,
+  getTextInputCaretIndex,
+  getTextInputCaretRectangle,
+  getTextInputCharacterIndexAtPoint,
+  getTextInputDisplayText,
+  getTextInputSelectionBeginIndex,
+  getTextInputSelectionEndIndex,
+  getTextInputSelectionRectangles,
+  getTextInputSelectionText,
+  handleTextInputKeyboard,
+  insertTextInput,
+  moveTextInputCaret,
+  moveTextInputCaretByWord,
+  moveTextInputCaretDown,
+  moveTextInputCaretToLineEnd,
+  moveTextInputCaretToLineStart,
+  moveTextInputCaretUp,
+  redoTextInput,
+  replaceSelectedTextInput,
+  replaceTextInput,
+  scrollTextInputCaretIntoView,
+  selectAllTextInput,
+  selectLineAtTextInputIndex,
+  selectWordAtTextInputIndex,
+  setTextInputSelection,
+  undoTextInput,
+} from './textInputEditing.ts';
+export {
+  blurTextInput,
+  connectInputToTextInput,
+  createTextInputManager,
+  dispatchTextInput,
+  dispatchTextInputKeyDown,
+  dispatchTextInputPointerDown,
+  dispatchTextInputPointerMove,
+  dispatchTextInputWheel,
+  focusTextInput,
+  initializeTextInputManager,
+} from './textInputManager.ts';
+export type {
+  HandleTextInputKeyboardOptions,
+  ReplaceTextInputOptions,
+  SelectableRichTextManagerRaw,
+  TextInputCopyCallback,
+  TextInputDisposer,
+  TextInputEditRecord,
+  TextInputManagerRaw,
+  TextInputSource,
+} from './types.ts';
