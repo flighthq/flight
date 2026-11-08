@@ -1,0 +1,5 @@
+exclude:
+  - file: src/jsPattern.ts
+  - file: src/rustTestSupport.ts
+  - file: src/userAgentNative.ts
+  - file: src/userAgentTruthy.ts

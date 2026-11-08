@@ -1,0 +1,14 @@
+protected:
+  - getPathMorphCreationReasonString
+  - getPathWindingString
+  - getStrokeCapString
+  - getStrokeJoinString
+  - getStrokePathTessellationReasonString
+  - parsePathMorphCreationReason
+  - parsePathWinding
+  - parseStrokeCap
+  - parseStrokeJoin
+  - parseStrokePathTessellationReason
+exclude:
+  - allocatePathMorph
+  - preparePathMorph

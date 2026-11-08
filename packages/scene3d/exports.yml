@@ -1,2 +1,3 @@
 protected:
   - ensureNode3DWorldAlpha
+  - LodMeshKind

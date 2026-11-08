@@ -3,3 +3,4 @@ public:
 
 protected:
   - createInteractionSignals
+  - NodeInteractiveStateRefusalReason

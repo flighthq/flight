@@ -1,0 +1,12 @@
+protected:
+  - TextAutoSize
+  - TextJustification
+  - TextVerticalAlign
+  - getTextAutoSizeString
+  - getTextJustificationString
+  - getTextVerticalAlignString
+  - parseTextAutoSize
+  - parseTextJustification
+  - parseTextVerticalAlign
+exclude:
+  - file: src/textUnits.ts

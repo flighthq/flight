@@ -1,2 +1,19 @@
 protected:
   - createInputSignals
+  - getGamepadAxisKindString
+  - getGamepadButtonKindString
+  - getGamepadMappingString
+  - getInputPointerLockExitReasonString
+  - getInputPointerLockRequestReasonString
+  - getMouseWheelModeString
+  - getPointerTypeString
+  - parseGamepadAxisKind
+  - parseGamepadButtonKind
+  - parseGamepadMapping
+  - parseInputPointerLockExitReason
+  - parseInputPointerLockRequestReason
+  - parseMouseWheelMode
+  - parsePointerType
+exclude:
+  - inputKeyRepeatTimerCycleStore
+  - inputManagerRegistryStore

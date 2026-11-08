@@ -60,3 +60,6 @@ protected:
   - updateRenderProxyMaterial
   - updateRenderProxyRenderer
   - walkNode
+  - BatchFormat
+  - RenderRegistryTable
+  - SceneCoverage

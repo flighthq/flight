@@ -1,0 +1,4 @@
+protected:
+  - DEFAULT_EASING_DERIVATIVE_EPSILON
+  - getStepPositionString
+  - parseStepPosition

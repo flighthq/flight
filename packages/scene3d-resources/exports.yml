@@ -21,3 +21,4 @@ protected:
   - registerTransmissionVolumePbrScene3DMaterialTextures
   - registerUnlitScene3DMaterialTextures
   - registerWrappedDiffusePbrScene3DMaterialTextures
+  - Scene3DResourceResolverRuntimeKey

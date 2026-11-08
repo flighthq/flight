@@ -5,3 +5,20 @@ protected:
   - createSpriteData
   - createSpriteRendererData
   - isSpriteRendererDirty
+  - GroupKind
+  - Node2DAnimationPathAlpha
+  - Node2DAnimationPathPivot
+  - Node2DAnimationPathPivotX
+  - Node2DAnimationPathPivotY
+  - Node2DAnimationPathPosition
+  - Node2DAnimationPathRotation
+  - Node2DAnimationPathScale
+  - Node2DAnimationPathScaleX
+  - Node2DAnimationPathScaleY
+  - Node2DAnimationPathSkew
+  - Node2DAnimationPathSkewX
+  - Node2DAnimationPathSkewY
+  - Node2DAnimationPathVisible
+  - Node2DAnimationPathX
+  - Node2DAnimationPathY
+  - Node2DFieldsKey

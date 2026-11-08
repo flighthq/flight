@@ -96,3 +96,11 @@ protected:
   - unflattenLottieShapePath
   - usesSvgObjectBoundingBoxUnits
   - visitSvgElements
+  - LottieLayerKind
+  - LottieMaskKind
+  - LottieShapeItemKind
+  - RiveAnimationLoop
+  - RiveFieldType
+  - RiveWeightedPointKind
+  - SvgClipKind
+  - SvgElementKind

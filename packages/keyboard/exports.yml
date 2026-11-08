@@ -1,0 +1,12 @@
+protected:
+  - SoftKeyboardAttachAcquisitionFailedKind
+  - SoftKeyboardAttachOkKind
+  - SoftKeyboardResizeBodyKind
+  - SoftKeyboardResizeNoneKind
+  - SoftKeyboardSetterOkKind
+  - SoftKeyboardSetterOperationFailedKind
+  - SoftKeyboardSetterOperationUnavailableKind
+  - SoftKeyboardStyleDarkKind
+  - SoftKeyboardStyleDefaultKind
+  - SoftKeyboardVisibilityOkKind
+  - SoftKeyboardVisibilityOperationFailedKind

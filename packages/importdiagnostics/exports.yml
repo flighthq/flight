@@ -1,2 +1,4 @@
 public:
   - reportImportDiagnostic # public diagnostic seam function
+protected:
+  - ImportDiagnosticSeverity

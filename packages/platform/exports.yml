@@ -1,2 +1,13 @@
 public:
   - getPlatformRuntime # returns PlatformRuntime string, not an opaque runtime object
+protected:
+  - getPlatformEndiannessString
+  - getPlatformEngineString
+  - getPlatformKindString
+  - getPlatformNameString
+  - getPlatformRuntimeString
+  - parsePlatformEndianness
+  - parsePlatformEngine
+  - parsePlatformKind
+  - parsePlatformName
+  - parsePlatformRuntime

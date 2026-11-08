@@ -1,0 +1,15 @@
+protected:
+  - BitmapTextureSourceKind
+  - CompressedImageTextureSourceKind
+  - CubeFaceNegativeX
+  - CubeFaceNegativeY
+  - CubeFaceNegativeZ
+  - CubeFacePositiveX
+  - CubeFacePositiveY
+  - CubeFacePositiveZ
+  - ExternalTextureSourceKind
+  - ImageTextureSourceKind
+  - RenderTargetTextureSourceKind
+  - SamplerKind
+  - TextureKind
+  - VoxelGridTextureSourceKind

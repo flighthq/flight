@@ -1,2 +1,6 @@
 protected:
   - notifyWindowClosed
+  - attachAppWindowRenderContextObserver
+  - attachAppWindowRenderStateObserver
+  - detachAppWindowRenderContextObserver
+  - detachAppWindowRenderStateObserver
