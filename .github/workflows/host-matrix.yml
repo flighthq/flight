@@ -111,11 +111,11 @@ jobs:
 
       - name: Install the Android Appium driver
         if: matrix.host == 'capacitor-android'
-        run: npm exec --workspace=@flighthq/tool-host-probe -- appium driver install uiautomator2
+        run: npm exec --workspace=@flighthq/tool-host-probe -- appium driver install uiautomator2@8.7.3
 
       - name: Install the iOS Appium driver
         if: matrix.host == 'capacitor-ios'
-        run: npm exec --workspace=@flighthq/tool-host-probe -- appium driver install xcuitest
+        run: npm exec --workspace=@flighthq/tool-host-probe -- appium driver install xcuitest@12.22.8
 
       # Build before starting either simulator so native compilation does not contend with the device
       # and Appium for the runner's CPU and memory.

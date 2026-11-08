@@ -52,9 +52,11 @@ Capacitor native projects are generated on demand and ignored. The first Android
 Install each Appium driver once before using that device lane:
 
 ```bash
-npm exec --workspace=@flighthq/tool-host-probe -- appium driver install uiautomator2
-npm exec --workspace=@flighthq/tool-host-probe -- appium driver install xcuitest
+npm exec --workspace=@flighthq/tool-host-probe -- appium driver install uiautomator2@8.7.3
+npm exec --workspace=@flighthq/tool-host-probe -- appium driver install xcuitest@12.22.8
 ```
+
+The drivers are pinned to the last releases that support the Appium 3 server in `package.json`; newer majors (uiautomator2 9, xcuitest 13) require Appium 4. Move the pins together with the server.
 
 Android also needs an SDK and a running emulator (or connected device). iOS needs macOS, Xcode, and a booted simulator. Override Appium selection with `HOST_PROBE_CAPACITOR_DEVICE` and `HOST_PROBE_CAPACITOR_PLATFORM_VERSION`; use `HOST_PROBE_CAPACITOR_APP` to test a prebuilt app.
 
