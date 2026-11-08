@@ -4,6 +4,7 @@ export * from './webApp.ts';
 export * from './webAppHost.ts';
 export * from './webAppLoopExit.ts';
 export * from './webAudio.ts';
+export * from './webAudioBuffer.ts';
 export * from './webAudioDecodeHost.ts';
 export * from './webAudioDevice.ts';
 export * from './webAudioHost.ts';

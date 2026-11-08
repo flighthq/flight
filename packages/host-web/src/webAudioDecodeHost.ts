@@ -1,4 +1,10 @@
-import type { HostAudioDecodeCapabilities, HostAudioDecodeFormatCapability } from '@flighthq/audio/contract';
+import type {
+  AudioBuffer,
+  HostAudioDecodeCapabilities,
+  HostAudioDecodeFormatCapability,
+} from '@flighthq/audio/contract';
+
+import { createAudioBufferFromWebAudioBuffer } from './webAudioBuffer.ts';
 
 // Web Audio decodes every standard container the browser ships a codec for, and it content-sniffs rather
 // than reading a MIME type, so one capability serves all seven slots. They are still seven named slots
@@ -18,7 +24,7 @@ const decodeWithWebAudio: HostAudioDecodeFormatCapability = {
       // decodeAudioData cannot be cancelled once begun, so an abort that lands mid-decode has to suppress
       // the result here. Returning null rather than throwing keeps an abort indistinguishable from any
       // other expected miss at this seam; the caller's own throwIfAborted is what turns it into a cancel.
-      return signal.aborted ? null : decoded;
+      return signal.aborted ? null : createAudioBufferFromWebAudioBuffer(decoded);
     } catch {
       // A container this browser has no codec for, or bytes that are not audio at all. Both are expected
       // misses the caller distinguishes by trying another source, so neither is an exception here.

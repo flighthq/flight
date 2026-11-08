@@ -1,6 +1,7 @@
 import { sendNetRequest } from '@flighthq/net/contract';
 import type { HostNetCapability } from '@flighthq/net/contract';
 
+import { copyToAudioBufferChannel, createAudioBuffer } from './audioBuffer.ts';
 import { canPlayAudioType, getAudioMimeTypeEssence, inferAudioMimeType } from './audioFormat.ts';
 import { createAudioResource } from './audioResource.ts';
 import { decodeAudioResourceBytes } from './decodeAudioResourceBytes.ts';
@@ -14,16 +15,14 @@ import type {
 
 // Builds a resource from raw PCM channel data without needing an AudioContext. Each entry in
 // `channels` holds one channel's Float32 samples; all are expected to share the first channel's
-// length. Uses the AudioBuffer constructor (not context.createBuffer) so it works off the audio
-// thread. Returns a null-buffer resource for empty or zero-length input.
+// length. Returns a null-buffer resource for empty or zero-length input.
 export function createAudioResourceFromSamples(channels: readonly Float32Array[], sampleRate: number): AudioResource {
   const numberOfChannels = channels.length;
   const length = numberOfChannels > 0 ? channels[0].length : 0;
   if (numberOfChannels === 0 || length === 0) return createAudioResource();
-  const buffer = new AudioBuffer({ length, numberOfChannels, sampleRate });
+  const buffer = createAudioBuffer(length, numberOfChannels, sampleRate);
   for (let channel = 0; channel < numberOfChannels; channel++) {
-    // Narrow the widened ArrayBufferLike backing to the ArrayBuffer that copyToChannel requires.
-    buffer.copyToChannel(channels[channel] as Float32Array<ArrayBuffer>, channel);
+    copyToAudioBufferChannel(buffer, channels[channel], channel);
   }
   return createAudioResource(buffer);
 }

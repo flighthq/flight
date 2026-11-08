@@ -1,12 +1,18 @@
+import { createAudioBuffer } from './audioBuffer.ts';
 import { createAudioResource } from './audioResource.ts';
 import { decodeAudioResourceBytes } from './decodeAudioResourceBytes.ts';
-import type { AudioDecoder, HostAudioDecodeCapabilities, HostAudioDecodeFormatCapability } from './types.ts';
+import type {
+  AudioBuffer,
+  AudioDecoder,
+  HostAudioDecodeCapabilities,
+  HostAudioDecodeFormatCapability,
+} from './types.ts';
 
 describe('decodeAudioResourceBytes', () => {
   it('dispatches a parameterized MIME type through the decoder the caller supplied', async () => {
     // One entry serves every parameter combination a container emits for that format, which is what lets a
     // SWF sound tagged with its rate and channel count reach the decoder registered for the bare type.
-    const decodedBuffer = { duration: 2 } as AudioBuffer;
+    const decodedBuffer = createAudioBuffer(2, 1, 44100);
     const decoder = vi.fn<AudioDecoder>(async () => createAudioResource(decodedBuffer));
     const bytes = new Uint8Array([1, 2]);
     const signal = new AbortController().signal;
@@ -35,7 +41,7 @@ describe('decodeAudioResourceBytes', () => {
   });
 
   it('decodes a standard container through the host slot for it', async () => {
-    const buffer = { duration: 1 } as AudioBuffer;
+    const buffer = createAudioBuffer(1, 1, 44100);
     const mp3 = slot(buffer);
     const resource = await decodeAudioResourceBytes({ mp3 }, new Uint8Array([1]), 'audio/mpeg', signal());
     expect(resource?.buffer).toBe(buffer);
@@ -44,8 +50,8 @@ describe('decodeAudioResourceBytes', () => {
   // A caller's decoder exists precisely because the platform cannot read that format, so handing the bytes
   // to the host first would give them to a codec that will reject them.
   it('prefers the decoder the caller supplied over a host slot claiming the same type', async () => {
-    const hostBuffer = { duration: 1 } as AudioBuffer;
-    const callerBuffer = { duration: 2 } as AudioBuffer;
+    const hostBuffer = createAudioBuffer(1, 1, 44100);
+    const callerBuffer = createAudioBuffer(2, 1, 44100);
     const decoders = new Map<string, AudioDecoder>([['audio/mpeg', async () => createAudioResource(callerBuffer)]]);
     const resource = await decodeAudioResourceBytes(
       { mp3: slot(hostBuffer) },
@@ -60,13 +66,13 @@ describe('decodeAudioResourceBytes', () => {
   // A payload served with no content-type still decoded before this group existed, because the platform
   // reads the container rather than the label. Sniffing is what keeps that working.
   it('sniffs the container when no MIME type is declared', async () => {
-    const buffer = { duration: 1 } as AudioBuffer;
+    const buffer = createAudioBuffer(1, 1, 44100);
     const resource = await decodeAudioResourceBytes({ wav: slot(buffer) }, riffWave(), undefined, signal());
     expect(resource?.buffer).toBe(buffer);
   });
 
   it('sniffs the container when the declared type names no standard format', async () => {
-    const buffer = { duration: 1 } as AudioBuffer;
+    const buffer = createAudioBuffer(1, 1, 44100);
     const resource = await decodeAudioResourceBytes(
       { wav: slot(buffer) },
       riffWave(),
@@ -84,7 +90,7 @@ describe('decodeAudioResourceBytes', () => {
   it('refuses before decoding when the signal is already aborted', async () => {
     const controller = new AbortController();
     controller.abort();
-    const decode = vi.fn(async () => ({ duration: 1 }) as AudioBuffer);
+    const decode = vi.fn(async () => createAudioBuffer(1, 1, 44100));
     await expect(
       decodeAudioResourceBytes({ mp3: { decode } }, new Uint8Array([1]), 'audio/mpeg', controller.signal),
     ).rejects.toThrow();
@@ -99,7 +105,7 @@ describe('decodeAudioResourceBytes', () => {
       mp3: {
         decode: async () => {
           controller.abort();
-          return { duration: 1 } as AudioBuffer;
+          return createAudioBuffer(1, 1, 44100);
         },
       },
     };

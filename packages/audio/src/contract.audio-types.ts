@@ -2,6 +2,7 @@
 // The published @flighthq/audio/contract entry remains contract.ts, which also exposes runtime atoms.
 export { AudioResourceFailureKind, AudioResourceReferenceKind } from './types.ts';
 export type {
+  AudioBuffer,
   AudioChannelState,
   AudioDecoder,
   AudioDecoderRegistry,

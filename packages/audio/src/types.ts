@@ -12,6 +12,17 @@ export interface AudioPlayOptions {
   playbackRate?: number;
 }
 
+/**
+ * Planar PCM samples owned by Flight. Each channel is one fixed Float32Array of `length` frames; channel
+ * reads hand back that same array, so writes through it mutate the buffer in place. On web, host-web
+ * bridges to and from the Web Audio buffer; native hosts own the samples directly.
+ */
+export interface AudioBuffer {
+  channels: Float32Array[];
+  length: number;
+  sampleRate: number;
+}
+
 /** Decoded PCM resource. */
 export interface AudioResource extends EntityRaw {
   buffer: AudioBuffer | null;

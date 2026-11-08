@@ -1,7 +1,7 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 
-import type { AudioResource } from './types.ts';
+import type { AudioBuffer, AudioResource } from './types.ts';
 
 // Allocates a new resource identity over the SAME underlying AudioBuffer. The buffer is shared by
 // reference, not duplicated — clone gives an independent resource object over the same decoded PCM,
@@ -29,11 +29,11 @@ export function disposeAudioResource(resource: AudioResource): void {
 // when there is no buffer. Mirrors getImageResourceByteSize (width × height × 4).
 export function getAudioResourceByteSize(resource: Readonly<AudioResource>): number {
   const buffer = resource.buffer;
-  return buffer !== null ? buffer.numberOfChannels * buffer.length * 4 : 0;
+  return buffer !== null ? buffer.channels.length * buffer.length * 4 : 0;
 }
 
 export function getAudioResourceChannelCount(resource: Readonly<AudioResource>): number {
-  return resource.buffer !== null ? resource.buffer.numberOfChannels : 0;
+  return resource.buffer !== null ? resource.buffer.channels.length : 0;
 }
 
 // Returns the Float32 samples for one channel by reference (Web Audio's getChannelData contract), or
@@ -41,12 +41,14 @@ export function getAudioResourceChannelCount(resource: Readonly<AudioResource>):
 // mutates the decoded buffer in place.
 export function getAudioResourceChannelData(resource: Readonly<AudioResource>, channel: number): Float32Array | null {
   const buffer = resource.buffer;
-  if (buffer === null || channel < 0 || channel >= buffer.numberOfChannels) return null;
-  return buffer.getChannelData(channel);
+  if (buffer === null || channel < 0 || channel >= buffer.channels.length) return null;
+  return buffer.channels[channel];
 }
 
+// Seconds of decoded audio: frames over sample rate, the same derivation as Web Audio's duration.
 export function getAudioResourceDuration(resource: Readonly<AudioResource>): number {
-  return resource.buffer !== null ? resource.buffer.duration : 0;
+  const buffer = resource.buffer;
+  return buffer !== null ? buffer.length / buffer.sampleRate : 0;
 }
 
 export function getAudioResourceSampleRate(resource: Readonly<AudioResource>): number {

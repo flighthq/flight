@@ -1,6 +1,7 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { HostNetCapability } from '@flighthq/net/contract';
 
+import { createAudioBuffer } from './audioBuffer.ts';
 import { createAudioResource } from './audioResource.ts';
 import {
   createAudioResourceFromSamples,
@@ -12,6 +13,7 @@ import {
   selectAudioResourceUrl,
 } from './audioResourceFrom.ts';
 import type {
+  AudioBuffer,
   AudioDecoder,
   HostAudioCodecCapability,
   HostAudioDecodeCapabilities,
@@ -56,7 +58,7 @@ function fakeNetAudioHost(
   return { ...fakeNetHost(backend), ...fakeAudioCodecHost(canPlay) };
 }
 
-const decodedBuffer = { duration: 1 } as AudioBuffer;
+const decodedBuffer = createAudioBuffer(1, 1, 44100);
 
 const mockDecode = vi.fn(async () => decodedBuffer);
 // Every slot answers, the way a browser's own decoders do: Web Audio reads the container rather than the
@@ -84,35 +86,6 @@ function oggBytes(): Uint8Array {
   return new Uint8Array([0x4f, 0x67, 0x67, 0x53]);
 }
 
-// jsdom lacks the AudioBuffer constructor; this minimal stand-in honours the { length,
-// numberOfChannels, sampleRate } constructor plus copyToChannel/getChannelData used by
-// createAudioResourceFromSamples.
-class MockAudioBuffer {
-  length: number;
-  numberOfChannels: number;
-  sampleRate: number;
-  private channels: Float32Array[];
-
-  constructor(options: { length: number; numberOfChannels: number; sampleRate: number }) {
-    this.length = options.length;
-    this.numberOfChannels = options.numberOfChannels;
-    this.sampleRate = options.sampleRate;
-    this.channels = Array.from({ length: options.numberOfChannels }, () => new Float32Array(options.length));
-  }
-
-  copyToChannel(source: Float32Array, channel: number): void {
-    this.channels[channel].set(source.subarray(0, this.length));
-  }
-
-  getChannelData(channel: number): Float32Array {
-    return this.channels[channel];
-  }
-}
-
-beforeEach(() => {
-  vi.stubGlobal('AudioBuffer', MockAudioBuffer);
-});
-
 afterEach(() => {
   vi.unstubAllGlobals();
   vi.restoreAllMocks();
@@ -121,16 +94,16 @@ afterEach(() => {
 
 describe('createAudioResourceFromSamples', () => {
   it('builds a buffer from channel data and copies the samples', () => {
-    // Values exactly representable in Float32 so copyToChannel round-trips without precision drift.
+    // Values exactly representable in Float32 so the copy round-trips without precision drift.
     const left = new Float32Array([0, 0.5, 0.25]);
     const right = new Float32Array([0.75, -0.5, 0.25]);
     const resource = createAudioResourceFromSamples([left, right], 48000);
 
     expect(resource.buffer).not.toBeNull();
-    expect(resource.buffer?.numberOfChannels).toBe(2);
+    expect(resource.buffer?.channels.length).toBe(2);
     expect(resource.buffer?.length).toBe(3);
     expect(resource.buffer?.sampleRate).toBe(48000);
-    expect(Array.from(resource.buffer!.getChannelData(1))).toEqual([0.75, -0.5, 0.25]);
+    expect(Array.from(resource.buffer!.channels[1])).toEqual([0.75, -0.5, 0.25]);
   });
 
   it('returns a null-buffer resource for empty input', () => {
@@ -199,7 +172,7 @@ describe('loadAudioResourceFromBytes', () => {
   });
 
   it('prefers a caller-supplied decoder when the MIME type is known', async () => {
-    const customBuffer = { duration: 2 } as AudioBuffer;
+    const customBuffer = createAudioBuffer(2, 1, 44100);
     const decoder = vi.fn<AudioDecoder>(async () => createAudioResource(customBuffer));
     const bytes = new Uint8Array([4, 3, 2, 1]);
     const signal = new AbortController().signal;
@@ -372,7 +345,7 @@ describe('loadAudioResourceFromUrls', () => {
   });
 
   it('loads a caller-supplied format even when the platform cannot play it', async () => {
-    const customBuffer = { duration: 2 } as AudioBuffer;
+    const customBuffer = createAudioBuffer(2, 1, 44100);
     const decoder = vi.fn<AudioDecoder>(async () => createAudioResource(customBuffer));
     const decoders = new Map([['audio/vnd.acme.custom', decoder]]);
     const host = fakeNetAudioHost(() => false, {

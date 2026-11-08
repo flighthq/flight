@@ -1,4 +1,4 @@
-import { createAudioResource } from '@flighthq/audio/contract';
+import { createAudioBuffer, createAudioResource } from '@flighthq/audio/contract';
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { AudioDeviceHandle, AudioSourceHandle } from '@flighthq/host/contract';
 import { connectSignal } from '@flighthq/signals/contract';
@@ -16,16 +16,6 @@ const device = 1 as unknown as AudioDeviceHandle;
 let onEnded: Map<number, (() => void) | null>;
 let nextHandle = 1;
 let backend: HostAudioDeviceCapability;
-
-function mockBuffer(): AudioBuffer {
-  return {
-    duration: 1,
-    getChannelData: () => new Float32Array(8),
-    length: 8,
-    numberOfChannels: 1,
-    sampleRate: 8,
-  } as unknown as AudioBuffer;
-}
 
 function mockBackend(): HostAudioDeviceCapability {
   const out = allocateEntity<any>();
@@ -67,13 +57,13 @@ function recorded(channel: Parameters<typeof enableAudioChannelSignals>[0]): str
 
 describe('enableAudioChannelSignals', () => {
   it('returns the same signals object on a second call rather than replacing listeners', () => {
-    const channel = playAudioResource(backend, device, createAudioResource(mockBuffer()))!;
+    const channel = playAudioResource(backend, device, createAudioResource(createAudioBuffer(3000, 1, 3000)))!;
     const first = enableAudioChannelSignals(channel);
     expect(enableAudioChannelSignals(channel)).toBe(first);
   });
 
   it('reports the pause, play and stop a caller drives', () => {
-    const channel = playAudioResource(backend, device, createAudioResource(mockBuffer()))!;
+    const channel = playAudioResource(backend, device, createAudioResource(createAudioBuffer(3000, 1, 3000)))!;
     const seen = recorded(channel);
     pauseAudioChannel(channel);
     resumeAudioChannel(channel);
@@ -82,7 +72,9 @@ describe('enableAudioChannelSignals', () => {
   });
 
   it('reports a loop iteration and then the completion, in that order', () => {
-    const channel = playAudioResource(backend, device, createAudioResource(mockBuffer()), { loops: 1 })!;
+    const channel = playAudioResource(backend, device, createAudioResource(createAudioBuffer(3000, 1, 3000)), {
+      loops: 1,
+    })!;
     const seen = recorded(channel);
     onEnded.get(1)!();
     onEnded.get(2)!();
@@ -90,7 +82,9 @@ describe('enableAudioChannelSignals', () => {
   });
 
   it('does not report a play for a loop iteration', () => {
-    const channel = playAudioResource(backend, device, createAudioResource(mockBuffer()), { loops: 2 })!;
+    const channel = playAudioResource(backend, device, createAudioResource(createAudioBuffer(3000, 1, 3000)), {
+      loops: 2,
+    })!;
     const seen = recorded(channel);
     onEnded.get(1)!();
     expect(seen).toEqual(['loop']);
@@ -107,14 +101,14 @@ describe('enableVideoChannelSignals', () => {
 
 describe('getAudioChannelSignals', () => {
   it('returns null until a caller opts in, so nothing is allocated for anyone else', () => {
-    const channel = playAudioResource(backend, device, createAudioResource(mockBuffer()))!;
+    const channel = playAudioResource(backend, device, createAudioResource(createAudioBuffer(3000, 1, 3000)))!;
     expect(getAudioChannelSignals(channel)).toBeNull();
     expect(enableAudioChannelSignals(channel)).not.toBeNull();
     expect(getAudioChannelSignals(channel)).not.toBeNull();
   });
 
   it('lets an un-opted channel run its whole lifecycle without producing anything', () => {
-    const channel = playAudioResource(backend, device, createAudioResource(mockBuffer()))!;
+    const channel = playAudioResource(backend, device, createAudioResource(createAudioBuffer(3000, 1, 3000)))!;
     pauseAudioChannel(channel);
     resumeAudioChannel(channel);
     stopAudioChannel(channel);

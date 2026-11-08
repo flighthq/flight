@@ -1,4 +1,5 @@
 export { AudioResourceFailureKind, AudioResourceReferenceKind } from './contract.ts';
+export * from './audioBuffer.ts';
 export * from './audioDecodeSlot.ts';
 export * from './audioFormat.ts';
 export {
@@ -24,6 +25,7 @@ export {
   resolveAudioResourceReference,
 } from './audioResourceReference.ts';
 export type {
+  AudioBuffer,
   AudioChannelState,
   AudioDecoder,
   AudioDecoderRegistry,

@@ -13,6 +13,7 @@ export {
 export * from './webAppHost.ts';
 export * from './webAppLoopExit.ts';
 export { webHostAudio } from './webAudio.ts';
+export * from './webAudioBuffer.ts';
 export * from './webAudioDecodeHost.ts';
 export { getAudioDeviceContext, hasAudioDeviceWebNodeAccess, webHostAudioDevice } from './webAudioDevice.ts';
 export * from './webAudioHost.ts';

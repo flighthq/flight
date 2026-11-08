@@ -90,17 +90,17 @@ export function playAudioResource(
   if (source.buffer === null) return null;
 
   const buf = source.buffer;
-  const numberOfChannels = buf.numberOfChannels;
+  const numberOfChannels = buf.channels.length;
   const data: Float32Array[] = [];
   for (let i = 0; i < numberOfChannels; i++) {
-    data.push(buf.getChannelData(i));
+    data.push(buf.channels[i]);
   }
   const bufferHandle = backend.createBuffer(device, numberOfChannels, buf.length, buf.sampleRate, data);
 
   const channel: AudioChannel = {
     currentTime: options?.currentTime ?? 0,
     gain: options?.gain ?? 1,
-    length: buf.duration * 1000,
+    length: (buf.length / buf.sampleRate) * 1000,
     loopEnd: 0,
     loops: options?.loops ?? 0,
     loopStart: 0,

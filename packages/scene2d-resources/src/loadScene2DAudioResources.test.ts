@@ -1,4 +1,5 @@
 import {
+  createAudioBuffer,
   createAudioResource,
   createEmbeddedAudioResourceReference,
   createExternalAudioResourceReference,
@@ -13,7 +14,7 @@ import { loadScene2DAudioResources } from './loadScene2DAudioResources.ts';
 import { createScene2DDocument } from './scene2DDocument.ts';
 import type { Scene2DAudioResourceLoadProgress } from './types/Scene2DResources.ts';
 
-const decodedBuffer = { duration: 1 } as AudioBuffer;
+const decodedBuffer = createAudioBuffer(1, 1, 44100);
 
 // Every standard slot answers, the way a platform-backed host's do: a browser decodes by reading the
 // container rather than the MIME type, so one capability serves all seven.

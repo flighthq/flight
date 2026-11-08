@@ -23,9 +23,10 @@ describe('webHostAudioDecode', () => {
     expect(Object.keys(webHostAudioDecode).sort()).toEqual(['aac', 'flac', 'mp3', 'mp4', 'ogg', 'wav', 'webm']);
   });
 
-  it('decodes through the platform and returns the buffer', async () => {
+  it('decodes through the platform and wraps the result as a Flight AudioBuffer', async () => {
     const decoded = await webHostAudioDecode.mp3.decode(new Uint8Array([1, 2, 3, 4]), signal());
-    expect(decoded).toBe(decodedBuffer);
+    expect(decoded).toEqual({ channels: decodedChannels, length: 3, sampleRate: 48000 });
+    expect(decoded!.channels[1]).toBe(decodedChannels[1]);
     expect(decodeAudioData).toHaveBeenCalledOnce();
   });
 
@@ -94,5 +95,12 @@ function signal(): AbortSignal {
   return new AbortController().signal;
 }
 
-const decodedBuffer = { duration: 1 } as AudioBuffer;
+// A Web Audio buffer stand-in: two channels of three frames, enough to observe the Flight wrapping.
+const decodedChannels = [new Float32Array([0.5, 0, 0]), new Float32Array([0, 0.25, 0])];
+const decodedBuffer = {
+  getChannelData: (channel: number) => decodedChannels[channel],
+  length: 3,
+  numberOfChannels: 2,
+  sampleRate: 48000,
+} as unknown as AudioBuffer;
 let decodeAudioData = vi.fn(async (_buffer: ArrayBuffer) => decodedBuffer);

@@ -1,6 +1,7 @@
 import { allocateEntity, EntityRuntimeKey, finishEntity } from '@flighthq/entity/contract';
 import { ResourceResolutionState } from '@flighthq/resource/contract';
 
+import { createAudioBuffer } from './audioBuffer.ts';
 import { createAudioResource } from './audioResource.ts';
 import {
   createAudioResourceFailure,
@@ -156,7 +157,7 @@ describe('resetFailedAudioResourceReference', () => {
 });
 
 describe('resolveAudioResourceReference', () => {
-  const decodedBuffer = { duration: 1 } as AudioBuffer;
+  const decodedBuffer = createAudioBuffer(1, 1, 44100);
   const audioDecode: HostAudioDecodeCapabilities = { mp3: { decode: async () => decodedBuffer } };
   const noFetch: AudioResourceFetch = async () => null;
 
@@ -174,7 +175,7 @@ describe('resolveAudioResourceReference', () => {
   });
 
   it('prefers a caller-supplied decoder over the host for a format the platform cannot parse', async () => {
-    const swfBuffer = { duration: 2 } as AudioBuffer;
+    const swfBuffer = createAudioBuffer(2, 1, 44100);
     const decoder = vi.fn<AudioDecoder>(async () => createAudioResource(swfBuffer));
     const decoders = new Map<string, AudioDecoder>([['audio/vnd.adobe.swf-adpcm', decoder]]);
     const reference = createEmbeddedAudioResourceReference(
@@ -205,7 +206,7 @@ describe('resolveAudioResourceReference', () => {
   });
 
   it('routes an external reference through the fetch seam', async () => {
-    const fetched = { duration: 3 } as AudioBuffer;
+    const fetched = createAudioBuffer(3, 1, 44100);
     const fetch = vi.fn(async () => createAudioResource(fetched));
     const reference = createExternalAudioResourceReference('hit.mp3', '/sounds');
 

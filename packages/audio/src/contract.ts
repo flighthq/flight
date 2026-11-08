@@ -1,4 +1,5 @@
 export * from './contract.audio-types.ts';
+export * from './audioBuffer.ts';
 export * from './audioDecodeSlot.ts';
 export * from './audioFormat.ts';
 export * from './audioResource.ts';

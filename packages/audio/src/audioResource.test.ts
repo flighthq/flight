@@ -1,3 +1,4 @@
+import { createAudioBuffer } from './audioBuffer.ts';
 import {
   cloneAudioResource,
   createAudioResource,
@@ -11,27 +12,16 @@ import {
   initializeAudioResource,
   isAudioResourceEmpty,
 } from './audioResource.ts';
+import type { AudioBuffer } from './types.ts';
 
-// jsdom has no AudioBuffer; the media package models it the same way — a plain cast carrying only the
-// fields under test (mirrors its createMockAudioBuffer helper).
-function createMockAudioBuffer(overrides: Partial<AudioBuffer> = {}): AudioBuffer {
-  const length = 100;
-  const numberOfChannels = 2;
-  const sampleRate = 44100;
-  const channels = [new Float32Array(length), new Float32Array(length)];
-  return {
-    duration: length / sampleRate,
-    getChannelData: (channel: number) => channels[channel],
-    length,
-    numberOfChannels,
-    sampleRate,
-    ...overrides,
-  } as unknown as AudioBuffer;
+// A two-channel, 100-frame buffer at 44.1 kHz, with any field replaced for the case under test.
+function createTestAudioBuffer(overrides: Partial<AudioBuffer> = {}): AudioBuffer {
+  return { ...createAudioBuffer(100, 2, 44100), ...overrides };
 }
 
 describe('cloneAudioResource', () => {
   it('shares the buffer by reference and gives an independent resource identity', () => {
-    const buffer = createMockAudioBuffer();
+    const buffer = createTestAudioBuffer();
     const resource = createAudioResource(buffer);
 
     const copy = cloneAudioResource(resource);
@@ -51,14 +41,14 @@ describe('createAudioResource', () => {
   });
 
   it('wraps a provided buffer', () => {
-    const buffer = createMockAudioBuffer();
+    const buffer = createTestAudioBuffer();
     expect(createAudioResource(buffer).buffer).toBe(buffer);
   });
 });
 
 describe('disposeAudioResource', () => {
   it('releases the buffer reference', () => {
-    const resource = createAudioResource(createMockAudioBuffer());
+    const resource = createAudioResource(createTestAudioBuffer());
     disposeAudioResource(resource);
     expect(resource.buffer).toBeNull();
   });
@@ -70,7 +60,7 @@ describe('getAudioResourceByteSize', () => {
   });
 
   it('returns channels × length × 4 for Float32 PCM', () => {
-    const resource = createAudioResource(createMockAudioBuffer());
+    const resource = createAudioResource(createTestAudioBuffer());
     expect(getAudioResourceByteSize(resource)).toBe(2 * 100 * 4);
   });
 });
@@ -78,13 +68,13 @@ describe('getAudioResourceByteSize', () => {
 describe('getAudioResourceChannelCount', () => {
   it('returns 0 without a buffer and the channel count with one', () => {
     expect(getAudioResourceChannelCount(createAudioResource())).toBe(0);
-    expect(getAudioResourceChannelCount(createAudioResource(createMockAudioBuffer()))).toBe(2);
+    expect(getAudioResourceChannelCount(createAudioResource(createTestAudioBuffer()))).toBe(2);
   });
 });
 
 describe('getAudioResourceChannelData', () => {
   it('returns the Float32Array for an in-range channel', () => {
-    const resource = createAudioResource(createMockAudioBuffer());
+    const resource = createAudioResource(createTestAudioBuffer());
     const data = getAudioResourceChannelData(resource, 1);
     expect(data).toBeInstanceOf(Float32Array);
     expect(data?.length).toBe(100);
@@ -92,7 +82,7 @@ describe('getAudioResourceChannelData', () => {
 
   it('returns null without a buffer or for an out-of-range channel', () => {
     expect(getAudioResourceChannelData(createAudioResource(), 0)).toBeNull();
-    const resource = createAudioResource(createMockAudioBuffer());
+    const resource = createAudioResource(createTestAudioBuffer());
     expect(getAudioResourceChannelData(resource, -1)).toBeNull();
     expect(getAudioResourceChannelData(resource, 2)).toBeNull();
   });
@@ -101,21 +91,21 @@ describe('getAudioResourceChannelData', () => {
 describe('getAudioResourceDuration', () => {
   it('returns 0 without a buffer and the buffer duration with one', () => {
     expect(getAudioResourceDuration(createAudioResource())).toBe(0);
-    expect(getAudioResourceDuration(createAudioResource(createMockAudioBuffer({ duration: 2.5 })))).toBe(2.5);
+    expect(getAudioResourceDuration(createAudioResource(createTestAudioBuffer({ length: 110250 })))).toBe(2.5);
   });
 });
 
 describe('getAudioResourceSampleRate', () => {
   it('returns 0 without a buffer and the sample rate with one', () => {
     expect(getAudioResourceSampleRate(createAudioResource())).toBe(0);
-    expect(getAudioResourceSampleRate(createAudioResource(createMockAudioBuffer()))).toBe(44100);
+    expect(getAudioResourceSampleRate(createAudioResource(createTestAudioBuffer()))).toBe(44100);
   });
 });
 
 describe('hasAudioResourceBuffer', () => {
   it('is false without a buffer and true with one', () => {
     expect(hasAudioResourceBuffer(createAudioResource())).toBe(false);
-    expect(hasAudioResourceBuffer(createAudioResource(createMockAudioBuffer()))).toBe(true);
+    expect(hasAudioResourceBuffer(createAudioResource(createTestAudioBuffer()))).toBe(true);
   });
 });
 
@@ -130,7 +120,7 @@ describe('isAudioResourceEmpty', () => {
   });
 
   it('is true for a zero-length buffer and false once it has samples', () => {
-    expect(isAudioResourceEmpty(createAudioResource(createMockAudioBuffer({ length: 0 })))).toBe(true);
-    expect(isAudioResourceEmpty(createAudioResource(createMockAudioBuffer()))).toBe(false);
+    expect(isAudioResourceEmpty(createAudioResource(createTestAudioBuffer({ length: 0 })))).toBe(true);
+    expect(isAudioResourceEmpty(createAudioResource(createTestAudioBuffer()))).toBe(false);
   });
 });

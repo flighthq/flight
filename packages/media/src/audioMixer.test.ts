@@ -1,4 +1,4 @@
-import { createAudioResource } from '@flighthq/audio/contract';
+import { createAudioBuffer, createAudioResource } from '@flighthq/audio/contract';
 import type {
   AudioBusNodeHandle,
   AudioDeviceHandle,
@@ -35,16 +35,6 @@ let mockMixer: HostAudioMixerCapability;
 const device = 1 as unknown as AudioDeviceHandle;
 const graph = 1 as unknown as AudioMixerGraphHandle;
 const busNode = 1 as unknown as AudioBusNodeHandle;
-
-function createMockAudioBuffer(): AudioBuffer {
-  return {
-    duration: 1,
-    getChannelData: () => new Float32Array(44100),
-    length: 44100,
-    numberOfChannels: 1,
-    sampleRate: 44100,
-  } as unknown as AudioBuffer;
-}
 
 function createMockBackend(): HostAudioDeviceCapability {
   const out = {} as HostAudioDeviceCapability;
@@ -142,7 +132,7 @@ describe('destroyAudioMixer', () => {
   it('stops routed channels, clears the active set, and is safe to call twice', () => {
     const mixer = createAudioMixer(mockMixer, device);
     const bus = createAudioBus();
-    const channel = playAudioResource(mockBackend, device, createAudioResource(createMockAudioBuffer()));
+    const channel = playAudioResource(mockBackend, device, createAudioResource(createAudioBuffer(44100, 1, 44100)));
     expect(channel).not.toBeNull();
     routeAudioChannelToMixerBus(mockMixer, mixer, channel!, bus);
     destroyAudioMixer(mockMixer, mixer);
@@ -160,7 +150,7 @@ describe('explicit provider-first mixer operations', () => {
     const operationProvider = createMockMixer();
     const mixer = createAudioMixer(mockMixer, device);
     const bus = createAudioBus();
-    const channel = playAudioResource(mockBackend, device, createAudioResource(createMockAudioBuffer()))!;
+    const channel = playAudioResource(mockBackend, device, createAudioResource(createAudioBuffer(44100, 1, 44100)))!;
 
     addAudioBusToMixer(operationProvider, mixer, bus);
     setAudioBusGain(operationProvider, bus, 0.5);
@@ -215,7 +205,7 @@ describe('getAudioMixerActiveChannels', () => {
   it('returns routed channels', () => {
     const mixer = createAudioMixer(mockMixer, device);
     const bus = createAudioBus();
-    const channel = playAudioResource(mockBackend, device, createAudioResource(createMockAudioBuffer()));
+    const channel = playAudioResource(mockBackend, device, createAudioResource(createAudioBuffer(44100, 1, 44100)));
     expect(channel).not.toBeNull();
     routeAudioChannelToMixerBus(mockMixer, mixer, channel!, bus);
     expect(getAudioMixerActiveChannels(mixer)).toHaveLength(1);
@@ -232,7 +222,7 @@ describe('pauseAllAudioMixerChannels', () => {
   it('destroys the active source and marks playing channels as paused', () => {
     const mixer = createAudioMixer(mockMixer, device);
     const bus = createAudioBus();
-    const channel = playAudioResource(mockBackend, device, createAudioResource(createMockAudioBuffer()));
+    const channel = playAudioResource(mockBackend, device, createAudioResource(createAudioBuffer(44100, 1, 44100)));
     expect(channel).not.toBeNull();
     routeAudioChannelToMixerBus(mockMixer, mixer, channel!, bus);
     pauseAllAudioMixerChannels(mixer);
@@ -245,7 +235,7 @@ describe('resumeAllAudioMixerChannels', () => {
   it('creates a new source and marks paused channels as playing', () => {
     const mixer = createAudioMixer(mockMixer, device);
     const bus = createAudioBus();
-    const channel = playAudioResource(mockBackend, device, createAudioResource(createMockAudioBuffer()));
+    const channel = playAudioResource(mockBackend, device, createAudioResource(createAudioBuffer(44100, 1, 44100)));
     expect(channel).not.toBeNull();
     routeAudioChannelToMixerBus(mockMixer, mixer, channel!, bus);
     const createCountBefore = (mockBackend.createSource as ReturnType<typeof vi.fn>).mock.calls.length;
@@ -259,7 +249,7 @@ describe('resumeAllAudioMixerChannels', () => {
 
 describe('resumeAllAudioMixerChannels scope', () => {
   function playRouted(mixer: ReturnType<typeof createAudioMixer>, bus: ReturnType<typeof createAudioBus>) {
-    const channel = playAudioResource(mockBackend, device, createAudioResource(createMockAudioBuffer()))!;
+    const channel = playAudioResource(mockBackend, device, createAudioResource(createAudioBuffer(44100, 1, 44100)))!;
     routeAudioChannelToMixerBus(mockMixer, mixer, channel, bus);
     return channel;
   }
@@ -334,7 +324,7 @@ describe('routeAudioChannelToMixerBus', () => {
   it('adds the channel to the mixer active channels', () => {
     const mixer = createAudioMixer(mockMixer, device);
     const bus = createAudioBus();
-    const channel = playAudioResource(mockBackend, device, createAudioResource(createMockAudioBuffer()));
+    const channel = playAudioResource(mockBackend, device, createAudioResource(createAudioBuffer(44100, 1, 44100)));
     expect(channel).not.toBeNull();
     routeAudioChannelToMixerBus(mockMixer, mixer, channel!, bus);
     expect(getAudioMixerActiveChannels(mixer)).toContain(channel!);
@@ -425,7 +415,7 @@ describe('stopAllAudioMixerChannels', () => {
   it('stops all routed channels and clears the active set', () => {
     const mixer = createAudioMixer(mockMixer, device);
     const bus = createAudioBus();
-    const channel = playAudioResource(mockBackend, device, createAudioResource(createMockAudioBuffer()));
+    const channel = playAudioResource(mockBackend, device, createAudioResource(createAudioBuffer(44100, 1, 44100)));
     expect(channel).not.toBeNull();
     routeAudioChannelToMixerBus(mockMixer, mixer, channel!, bus);
     stopAllAudioMixerChannels(mixer);
@@ -436,7 +426,7 @@ describe('stopAllAudioMixerChannels', () => {
   it('stops the underlying source, not just the channel state', () => {
     const mixer = createAudioMixer(mockMixer, device);
     const bus = createAudioBus();
-    const channel = playAudioResource(mockBackend, device, createAudioResource(createMockAudioBuffer()))!;
+    const channel = playAudioResource(mockBackend, device, createAudioResource(createAudioBuffer(44100, 1, 44100)))!;
     routeAudioChannelToMixerBus(mockMixer, mixer, channel, bus);
     const stopSource = mockBackend.stopSource as unknown as ReturnType<typeof vi.fn>;
     const destroySource = mockBackend.destroySource as unknown as ReturnType<typeof vi.fn>;
@@ -452,8 +442,8 @@ describe('stopAllAudioMixerChannels', () => {
   it('stops every routed channel, not only the first', () => {
     const mixer = createAudioMixer(mockMixer, device);
     const bus = createAudioBus();
-    const first = playAudioResource(mockBackend, device, createAudioResource(createMockAudioBuffer()))!;
-    const second = playAudioResource(mockBackend, device, createAudioResource(createMockAudioBuffer()))!;
+    const first = playAudioResource(mockBackend, device, createAudioResource(createAudioBuffer(44100, 1, 44100)))!;
+    const second = playAudioResource(mockBackend, device, createAudioResource(createAudioBuffer(44100, 1, 44100)))!;
     routeAudioChannelToMixerBus(mockMixer, mixer, first, bus);
     routeAudioChannelToMixerBus(mockMixer, mixer, second, bus);
 
@@ -468,7 +458,7 @@ describe('unrouteAudioChannelFromMixerBus', () => {
   it('removes the channel from the mixer active channels', () => {
     const mixer = createAudioMixer(mockMixer, device);
     const bus = createAudioBus();
-    const channel = playAudioResource(mockBackend, device, createAudioResource(createMockAudioBuffer()));
+    const channel = playAudioResource(mockBackend, device, createAudioResource(createAudioBuffer(44100, 1, 44100)));
     expect(channel).not.toBeNull();
     routeAudioChannelToMixerBus(mockMixer, mixer, channel!, bus);
     unrouteAudioChannelFromMixerBus(mockMixer, mixer, channel!);
