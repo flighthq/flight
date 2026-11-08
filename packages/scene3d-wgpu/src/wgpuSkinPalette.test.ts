@@ -1,4 +1,5 @@
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
+import type { WgpuBindGroup } from '@flighthq/render-wgpu/contract';
 import { describe, expect, it } from 'vitest';
 
 import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime.ts';
@@ -20,7 +21,7 @@ describe('destroyWgpuSkinPalette', () => {
     const { state } = makeWgpuScene3DState();
     uploadWgpuSkinPalette(state, new Float32Array(16));
     const runtime = getWgpuScene3DRuntime(state);
-    runtime.skinDrawBindGroup = {} as GPUBindGroup;
+    runtime.skinDrawBindGroup = {} as WgpuBindGroup;
 
     destroyWgpuSkinPalette(state);
 

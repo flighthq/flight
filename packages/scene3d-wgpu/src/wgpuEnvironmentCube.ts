@@ -1,8 +1,18 @@
 import type { Bitmap } from '@flighthq/bitmap/contract';
 import type { ImageResource } from '@flighthq/image/contract';
 import type { Environment } from '@flighthq/lighting/contract';
-import { uploadWgpuTextureData, uploadWgpuTextureImageResource } from '@flighthq/render-wgpu/contract';
-import type { WgpuRenderState } from '@flighthq/render-wgpu/contract';
+import {
+  WgpuTextureUsage,
+  uploadWgpuTextureData,
+  uploadWgpuTextureImageResource,
+} from '@flighthq/render-wgpu/contract';
+import type {
+  WgpuDevice,
+  WgpuRenderState,
+  WgpuTexture,
+  WgpuTextureFormat,
+  WgpuTextureView,
+} from '@flighthq/render-wgpu/contract';
 import type { TextureSource, Texture } from '@flighthq/texture/contract';
 import { BitmapTextureSourceKind, ImageTextureSourceKind } from '@flighthq/texture/contract';
 
@@ -22,7 +32,7 @@ import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime.ts';
 export function ensureWgpuEnvironmentSourceCube(
   state: WgpuRenderState,
   environment: Readonly<Environment>,
-): GPUTextureView | null {
+): WgpuTextureView | null {
   const scene = getWgpuScene3DRuntime(state);
   if (scene.environmentSourceCubeView !== null) return scene.environmentSourceCubeView;
 
@@ -33,11 +43,11 @@ export function ensureWgpuEnvironmentSourceCube(
   // Cube textures must be square; every face shares the +X face's dimensions (a well-formed cube).
   const size = sources[0]!.width;
   const device = state.device;
-  const format: GPUTextureFormat = cube.colorSpace === 'srgb' ? 'rgba8unorm-srgb' : 'rgba8unorm';
+  const format: WgpuTextureFormat = cube.colorSpace === 'srgb' ? 'rgba8unorm-srgb' : 'rgba8unorm';
   const texture = device.createTexture({
     size: [size, size, 6],
     format,
-    usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST | GPUTextureUsage.RENDER_ATTACHMENT,
+    usage: WgpuTextureUsage.TEXTURE_BINDING | WgpuTextureUsage.COPY_DST | WgpuTextureUsage.RENDER_ATTACHMENT,
   });
   // Each face uploads into its array layer, in the canonical +X, -X, +Y, -Y, +Z, -Z order (the array-layer
   // index IS the face index — the wgpu counterpart of GL's CUBE_MAP_POSITIVE_X + face).
@@ -82,8 +92,8 @@ function hasWgpuCubeFacePixels(cube: Readonly<Texture>): boolean {
 }
 
 function uploadWgpuEnvironmentImage(
-  device: GPUDevice,
-  texture: GPUTexture,
+  device: WgpuDevice,
+  texture: WgpuTexture,
   face: number,
   image: Readonly<TextureSource>,
 ): void {

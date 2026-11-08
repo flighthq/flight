@@ -1,3 +1,4 @@
+import { WgpuBufferUsage, WgpuTextureUsage } from './contract.render-wgpu-types.ts';
 import { createWgpuRenderStateForTest, installWgpuMock } from './wgpuTestHelper.ts';
 
 beforeAll(() => {
@@ -7,14 +8,14 @@ beforeAll(() => {
 describe('installWgpuMock', () => {
   it('accepts aligned writeBuffer data using typed-array element units', async () => {
     const state = await createWgpuRenderStateForTest();
-    const buffer = state.device.createBuffer({ size: 8, usage: GPUBufferUsage.COPY_DST });
+    const buffer = state.device.createBuffer({ size: 8, usage: WgpuBufferUsage.COPY_DST });
 
     expect(() => state.device.queue.writeBuffer(buffer, 0, new Uint16Array([0, 1, 2]), 0, 2)).not.toThrow();
   });
 
   it('rejects writeBuffer content whose byte length is not a multiple of four', async () => {
     const state = await createWgpuRenderStateForTest();
-    const buffer = state.device.createBuffer({ size: 8, usage: GPUBufferUsage.COPY_DST });
+    const buffer = state.device.createBuffer({ size: 8, usage: WgpuBufferUsage.COPY_DST });
 
     expect(() => state.device.queue.writeBuffer(buffer, 0, new Uint16Array([0, 1, 2]))).toThrow(
       expect.objectContaining({ name: 'OperationError' }),
@@ -23,7 +24,7 @@ describe('installWgpuMock', () => {
 
   it('rejects writeBuffer source ranges and destination offsets outside the API contract', async () => {
     const state = await createWgpuRenderStateForTest();
-    const buffer = state.device.createBuffer({ size: 8, usage: GPUBufferUsage.COPY_DST });
+    const buffer = state.device.createBuffer({ size: 8, usage: WgpuBufferUsage.COPY_DST });
 
     expect(() => state.device.queue.writeBuffer(buffer, 0, new Uint32Array([0]), 2)).toThrow(
       /data range is out of bounds/,
@@ -35,8 +36,8 @@ describe('installWgpuMock', () => {
 
   it('rejects writeBuffer destinations without enough COPY_DST storage', async () => {
     const state = await createWgpuRenderStateForTest();
-    const tooSmall = state.device.createBuffer({ size: 4, usage: GPUBufferUsage.COPY_DST });
-    const wrongUsage = state.device.createBuffer({ size: 8, usage: GPUBufferUsage.VERTEX });
+    const tooSmall = state.device.createBuffer({ size: 4, usage: WgpuBufferUsage.COPY_DST });
+    const wrongUsage = state.device.createBuffer({ size: 8, usage: WgpuBufferUsage.VERTEX });
 
     expect(() => state.device.queue.writeBuffer(tooSmall, 0, new Uint32Array([0, 1]))).toThrow(
       /destination range exceeds the buffer size/,
@@ -51,7 +52,7 @@ describe('installWgpuMock', () => {
     const texture = state.device.createTexture({
       size: [2, 2, 1],
       format: 'rgba8unorm',
-      usage: GPUTextureUsage.COPY_DST,
+      usage: WgpuTextureUsage.COPY_DST,
     });
 
     expect(() =>

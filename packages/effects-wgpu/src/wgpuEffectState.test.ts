@@ -7,6 +7,12 @@ import {
   endWgpuRenderPass,
   installWgpuMock,
 } from '@flighthq/render-wgpu/contract';
+import type {
+  WgpuColorDict,
+  WgpuColorTargetState,
+  WgpuRenderPipelineDescriptor,
+  WgpuTexture,
+} from '@flighthq/render-wgpu/contract';
 
 import { getWgpuEffectPipeline } from './wgpuEffectProgramCache.ts';
 import {
@@ -66,7 +72,7 @@ describe('beginWgpuEffectPass', () => {
     });
 
     const attachment = Array.from(beginRenderPass.mock.calls.at(-1)![0].colorAttachments)[0]!;
-    const clearValue = attachment.clearValue as GPUColorDict;
+    const clearValue = attachment.clearValue as WgpuColorDict;
     expect(clearValue.r).toBeCloseTo(0x40 / 255);
     expect(clearValue.g).toBeCloseTo(0x80 / 255);
     expect(clearValue.b).toBeCloseTo(0xc0 / 255);
@@ -85,7 +91,7 @@ describe('beginWgpuEffectPass', () => {
     const scenePass = beginWgpuEffectPass(screenPass, pipeline);
 
     const attachment = Array.from(beginRenderPass.mock.calls.at(-1)![0].colorAttachments)[0]!;
-    const clearValue = attachment.clearValue as GPUColorDict;
+    const clearValue = attachment.clearValue as WgpuColorDict;
     expect([clearValue.r, clearValue.g, clearValue.b, clearValue.a]).toEqual([0, 0, 0, 0]);
     endWgpuEffectPass(scenePass, pipeline, []);
     endWgpuRenderPass(screenPass);
@@ -239,7 +245,7 @@ describe('endWgpuEffectPass', () => {
     endWgpuRenderPass(screenPass);
 
     const present = getWgpuEffectPipeline(state, 'effect.present', '') as unknown as {
-      pipeline: { __descriptor: GPURenderPipelineDescriptor };
+      pipeline: { __descriptor: WgpuRenderPipelineDescriptor };
     };
     const [target] = [...present.pipeline.__descriptor.fragment!.targets];
     const blend = target!.blend!;
@@ -270,8 +276,8 @@ describe('endWgpuEffectPass', () => {
     const scenePass = beginWgpuEffectPass(screenPass, pipeline, undefined, 'linear');
     endWgpuEffectPass(scenePass, pipeline, []);
 
-    const presentCall = createRenderPipeline.mock.calls.at(-1)![0] as GPURenderPipelineDescriptor;
-    const blend = (presentCall.fragment!.targets as GPUColorTargetState[])[0].blend!;
+    const presentCall = createRenderPipeline.mock.calls.at(-1)![0] as WgpuRenderPipelineDescriptor;
+    const blend = (presentCall.fragment!.targets as WgpuColorTargetState[])[0].blend!;
     expect(blend.color.srcFactor).toBe('one');
     expect(blend.color.dstFactor).toBe('zero');
     expect(blend.alpha.srcFactor).toBe('one');
@@ -340,7 +346,7 @@ describe('setWgpuEffectVelocityTexture', () => {
       lutTexture: { texture: null, size: 0, lut: null },
       velocityTexture: null,
     } as any;
-    const texture = {} as GPUTexture;
+    const texture = {} as WgpuTexture;
     setWgpuEffectVelocityTexture(pipeline, texture);
     expect(pipeline.velocityTexture).toBe(texture);
   });

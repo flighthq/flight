@@ -1,6 +1,11 @@
 import { beforeAll, describe, expect, it } from 'vitest';
 
-import type { WgpuScreenRenderTarget } from './contract.render-wgpu-types.ts';
+import type {
+  WgpuBuffer,
+  WgpuBufferMapState,
+  WgpuCommandEncoder,
+  WgpuScreenRenderTarget,
+} from './contract.render-wgpu-types.ts';
 import { beginWgpuRenderPass, endWgpuRenderPass } from './wgpuRenderPass.ts';
 import {
   createBitmapFromWgpuScreenRenderTarget,
@@ -90,7 +95,7 @@ describe('encodeWgpuScreenRenderTargetCapture', () => {
     const state = await createWgpuRenderStateForTest();
     const screen = createWgpuScreenRenderTargetForTest(state);
     let copied = false;
-    const encoder = { copyTextureToBuffer: () => (copied = true) } as unknown as GPUCommandEncoder;
+    const encoder = { copyTextureToBuffer: () => (copied = true) } as unknown as WgpuCommandEncoder;
     encodeWgpuScreenRenderTargetCapture(screen, encoder);
     expect(copied).toBe(false);
   });
@@ -100,12 +105,12 @@ describe('encodeWgpuScreenRenderTargetCapture', () => {
     // enqueueing copies into a buffer a readback has mapped or is waiting to map.
     const state = await createWgpuRenderStateForTest();
     const screen = captureReadyScreenRenderTarget(state);
-    let mapState: GPUBufferMapState = 'unmapped';
+    let mapState: WgpuBufferMapState = 'unmapped';
     installCaptureBuffer(screen, () => Promise.resolve());
     Object.defineProperty(screen.captureBuffer, 'mapState', { get: () => mapState });
 
     let copies = 0;
-    const encoder = { copyTextureToBuffer: () => copies++ } as unknown as GPUCommandEncoder;
+    const encoder = { copyTextureToBuffer: () => copies++ } as unknown as WgpuCommandEncoder;
 
     mapState = 'pending';
     encodeWgpuScreenRenderTargetCapture(screen, encoder);
@@ -129,7 +134,7 @@ describe('encodeWgpuScreenRenderTargetCapture', () => {
     let copies = 0;
     encodeWgpuScreenRenderTargetCapture(screen, {
       copyTextureToBuffer: () => copies++,
-    } as unknown as GPUCommandEncoder);
+    } as unknown as WgpuCommandEncoder);
 
     expect(copies).toBe(1);
   });
@@ -153,7 +158,7 @@ function installCaptureBuffer(target: WgpuScreenRenderTarget, mapAsync: () => Pr
     getMappedRange: () => new ArrayBuffer(256),
     unmap: () => {},
     destroy: () => {},
-  } as unknown as GPUBuffer;
+  } as unknown as WgpuBuffer;
   target.captureWidth = 1;
   target.captureHeight = 1;
   target.captureBytesPerRow = 256;

@@ -8,13 +8,29 @@ import type { ParticleEmitter3D, ParticleEmitterData } from '@flighthq/particlee
 import { ParticleEmitter3DKind } from '@flighthq/particleemitter/contract';
 import type { ParticleBlendMode } from '@flighthq/particles/contract';
 import {
+  WgpuBufferUsage,
+  WgpuShaderStage,
+  WgpuTextureUsage,
   getWgpuBlendState,
   getWgpuRenderStateDeviceResources,
   getWgpuRenderStateRuntime,
   getWgpuSampler,
   resolveWgpuTexture,
 } from '@flighthq/render-wgpu/contract';
-import type { WgpuRenderState } from '@flighthq/render-wgpu/contract';
+import type {
+  WgpuBindGroup,
+  WgpuBindGroupLayout,
+  WgpuBlendState,
+  WgpuBuffer,
+  WgpuPipelineLayout,
+  WgpuRenderPassEncoder,
+  WgpuRenderPipeline,
+  WgpuRenderState,
+  WgpuShaderModule,
+  WgpuTextureFormat,
+  WgpuTextureView,
+  WgpuVertexBufferLayout,
+} from '@flighthq/render-wgpu/contract';
 import { prepareScene3DRender } from '@flighthq/render/contract';
 import type { Node3D } from '@flighthq/scene3d/contract';
 import { getTextureHeight, getTextureWidth, hasTextureSource } from '@flighthq/texture/contract';
@@ -34,7 +50,7 @@ const PARTICLE_TRANSFORM_STRIDE = 4;
 // rewrite (which would race under one command encoder, every draw seeing the last write).
 const FRAME_UNIFORM_BYTES = 96;
 
-const DEPTH_STENCIL_FORMAT: GPUTextureFormat = 'depth24plus-stencil8';
+const DEPTH_STENCIL_FORMAT: WgpuTextureFormat = 'depth24plus-stencil8';
 
 // The WGSL mirror of scene-gl's PARTICLE_3D_VS/FS. A camera-facing billboard: the unit corner is scaled
 // by the normalized quad size, rotated by cos/sin*scale, then placed at the world position along the
@@ -109,27 +125,27 @@ struct VertexOutput {
 `;
 
 interface WgpuParticle3DInstanceBuffer {
-  buffer: GPUBuffer;
+  buffer: WgpuBuffer;
   capacity: number;
 }
 
 interface WgpuParticle3DResources {
-  cornerBuffer: GPUBuffer;
-  frameBindGroup: GPUBindGroup;
-  frameBuffer: GPUBuffer;
-  frameLayout: GPUBindGroupLayout;
-  indexBuffer: GPUBuffer;
+  cornerBuffer: WgpuBuffer;
+  frameBindGroup: WgpuBindGroup;
+  frameBuffer: WgpuBuffer;
+  frameLayout: WgpuBindGroupLayout;
+  indexBuffer: WgpuBuffer;
   instanceBuffers: WeakMap<ParticleEmitter3D, WgpuParticle3DInstanceBuffer>;
   instanceData: Float32Array<ArrayBuffer>;
-  module: GPUShaderModule;
-  pipelineLayout: GPUPipelineLayout;
-  pipelines: Map<string, GPURenderPipeline>;
-  textureLayout: GPUBindGroupLayout;
+  module: WgpuShaderModule;
+  pipelineLayout: WgpuPipelineLayout;
+  pipelines: Map<string, WgpuRenderPipeline>;
+  textureLayout: WgpuBindGroupLayout;
 }
 
 // ParticleBlendMode uses serialized lowercase spellings; translate them to the canonical fixed-function
 // BlendMode family so particles and surface meshes share render-wgpu's one blend-state table.
-function wgpuParticleBlendState(mode: ParticleBlendMode): GPUBlendState {
+function wgpuParticleBlendState(mode: ParticleBlendMode): WgpuBlendState {
   switch (mode) {
     case 'add':
       return getWgpuBlendState(BlendMode.Add);
@@ -163,30 +179,30 @@ function ensureParticle3DResources(state: WgpuRenderState): WgpuParticle3DResour
 
   const cornerBuffer = device.createBuffer({
     size: 8 * 4,
-    usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
+    usage: WgpuBufferUsage.VERTEX | WgpuBufferUsage.COPY_DST,
   });
   device.queue.writeBuffer(cornerBuffer, 0, new Float32Array([0, 0, 1, 0, 1, 1, 0, 1]));
 
   const indexBuffer = device.createBuffer({
     size: 6 * 2,
-    usage: GPUBufferUsage.INDEX | GPUBufferUsage.COPY_DST,
+    usage: WgpuBufferUsage.INDEX | WgpuBufferUsage.COPY_DST,
   });
   device.queue.writeBuffer(indexBuffer, 0, new Uint16Array([0, 1, 2, 0, 2, 3]));
 
   const frameLayout = device.createBindGroupLayout({
-    entries: [{ binding: 0, visibility: GPUShaderStage.VERTEX, buffer: { type: 'uniform' } }],
+    entries: [{ binding: 0, visibility: WgpuShaderStage.VERTEX, buffer: { type: 'uniform' } }],
   });
   const textureLayout = device.createBindGroupLayout({
     entries: [
-      { binding: 0, visibility: GPUShaderStage.FRAGMENT, texture: { sampleType: 'float' } },
-      { binding: 1, visibility: GPUShaderStage.FRAGMENT, sampler: { type: 'filtering' } },
+      { binding: 0, visibility: WgpuShaderStage.FRAGMENT, texture: { sampleType: 'float' } },
+      { binding: 1, visibility: WgpuShaderStage.FRAGMENT, sampler: { type: 'filtering' } },
     ],
   });
   const pipelineLayout = device.createPipelineLayout({ bindGroupLayouts: [frameLayout, textureLayout] });
 
   const frameBuffer = device.createBuffer({
     size: FRAME_UNIFORM_BYTES,
-    usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+    usage: WgpuBufferUsage.UNIFORM | WgpuBufferUsage.COPY_DST,
   });
   const frameBindGroup = device.createBindGroup({
     layout: frameLayout,
@@ -218,7 +234,7 @@ function ensureParticle3DPipeline(
   resources: WgpuParticle3DResources,
   mode: ParticleBlendMode,
   hasTexture: boolean,
-): GPURenderPipeline {
+): WgpuRenderPipeline {
   const format = getWgpuRenderStateRuntime(state).currentColorFormat ?? state.format;
   const key = `${format}|${mode}|${hasTexture ? 't' : 'u'}`;
   let pipeline = resources.pipelines.get(key);
@@ -249,7 +265,7 @@ function ensureParticle3DInstanceBuffer(
   resources: WgpuParticle3DResources,
   emitter: ParticleEmitter3D,
   count: number,
-): GPUBuffer {
+): WgpuBuffer {
   let entry = resources.instanceBuffers.get(emitter);
   if (entry !== undefined && entry.capacity >= count) return entry.buffer;
 
@@ -257,7 +273,7 @@ function ensureParticle3DInstanceBuffer(
   const capacity = Math.max(count, entry !== undefined ? entry.capacity * 2 : 8);
   const buffer = state.device.createBuffer({
     size: capacity * INSTANCE_STRIDE,
-    usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
+    usage: WgpuBufferUsage.VERTEX | WgpuBufferUsage.COPY_DST,
   });
   resources.instanceBuffers.set(emitter, { buffer, capacity });
   return buffer;
@@ -266,7 +282,7 @@ function ensureParticle3DInstanceBuffer(
 function drawParticleEmitter3DNode(
   state: WgpuRenderState,
   resources: WgpuParticle3DResources,
-  pass: GPURenderPassEncoder,
+  pass: WgpuRenderPassEncoder,
   emitter: Readonly<ParticleEmitter3D>,
 ): void {
   const data: Readonly<ParticleEmitterData> = emitter.data;
@@ -412,13 +428,13 @@ function drawParticleEmitter3DNode(
 
 // A 1x1 opaque-white texture bound to the untextured pipeline variant so its (unused) texture slot is
 // satisfied. The HAS_TEXTURE=0 fragment path never samples it. Cached per state.
-function ensureDummyTextureView(state: WgpuRenderState): GPUTextureView {
+function ensureDummyTextureView(state: WgpuRenderState): WgpuTextureView {
   let view = dummyTextureCache.get(state);
   if (view !== undefined) return view;
   const texture = state.device.createTexture({
     size: [1, 1, 1],
     format: 'rgba8unorm',
-    usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST,
+    usage: WgpuTextureUsage.TEXTURE_BINDING | WgpuTextureUsage.COPY_DST,
   });
   state.device.queue.writeTexture({ texture }, WHITE_PIXEL, { bytesPerRow: 4 }, [1, 1, 1]);
   view = texture.createView();
@@ -485,7 +501,7 @@ export function registerWgpuParticleEmitter3DPass(state: WgpuRenderState): void 
 
 // Per-instance vertex layout: the static corner quad (slot 0, per-vertex) + the per-particle instance
 // buffer (slot 1, per-instance) — matching the @location bindings in PARTICLE_3D_WGSL.
-const VERTEX_BUFFER_LAYOUTS: GPUVertexBufferLayout[] = [
+const VERTEX_BUFFER_LAYOUTS: WgpuVertexBufferLayout[] = [
   {
     arrayStride: 8,
     stepMode: 'vertex',
@@ -509,4 +525,4 @@ const WHITE_PIXEL = new Uint8Array([255, 255, 255, 255]);
 const emitterScratch: ParticleEmitter3D[] = [];
 const frameScratch = new Float32Array(FRAME_UNIFORM_BYTES / 4);
 const resourceCache = new WeakMap<WgpuRenderState, WgpuParticle3DResources>();
-const dummyTextureCache = new WeakMap<WgpuRenderState, GPUTextureView>();
+const dummyTextureCache = new WeakMap<WgpuRenderState, WgpuTextureView>();

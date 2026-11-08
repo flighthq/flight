@@ -10,7 +10,12 @@ import type {
 } from '@flighthq/materials/contract';
 import type { MeshGeometry } from '@flighthq/meshgeometry/contract';
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
-import type { WgpuMeshMaterialRenderer, WgpuRenderState } from '@flighthq/render-wgpu/contract';
+import type {
+  WgpuMeshMaterialRenderer,
+  WgpuRenderState,
+  WgpuSampler,
+  WgpuTextureView,
+} from '@flighthq/render-wgpu/contract';
 import type { Scene3DRenderProxy } from '@flighthq/render/contract';
 
 import type { WgpuPbrPipeline, WgpuPbrDefineKey, WgpuMaterialBinding } from './contract.scene3d-wgpu-types.ts';
@@ -230,8 +235,8 @@ const FALLBACK_MATERIAL = {} as Readonly<StandardPbrMaterial>;
 
 const _colorScratch: LinearColorRaw = allocateLinearColor();
 const _materialScratch = new Float32Array(WGPU_PBR_MATERIAL_UNIFORM_FLOATS);
-const _samplerScratch = new Array<GPUSampler>(6);
+const _samplerScratch = new Array<WgpuSampler>(6);
 // Reused per-bind resolved-view scratch (base-color, metallic-roughness, normal, occlusion, emissive,
 // alpha) so a steady-state re-bind allocates nothing; ensureWgpuPerMapMaterialBinding copies it only on
 // create/rebuild.
-const _viewScratch = new Array<GPUTextureView>(6);
+const _viewScratch = new Array<WgpuTextureView>(6);

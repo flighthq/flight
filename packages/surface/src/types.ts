@@ -112,51 +112,18 @@ export interface WgpuPresentationSurface {
   readonly width: number;
 }
 
-/** The device, presentation context, and ownership state acquired for a WGPU surface. */
-export interface WgpuHostAcquisition extends EntityRaw {
-  [EntityRuntimeKey]: EntityRuntime | undefined;
-  readonly context: GPUCanvasContext;
-  readonly device: GPUDevice;
-  readonly format: GPUTextureFormat;
-  /** `flight` identifies handles created for Flight; `caller` identifies exact borrowed handles. */
-  readonly ownership: 'caller' | 'flight';
-  readonly surface: WgpuPresentationSurface;
-}
-
-export interface WgpuHostAcquisitionOptions {
-  readonly format?: GPUTextureFormat;
-  readonly powerPreference?: GPUPowerPreference;
-}
-
-/** A WGPU rendering surface with its host-acquired device and presentation context. */
-export interface WgpuSurface extends Surface {
-  readonly __brand: 'WgpuSurface';
-  readonly acquisition: WgpuHostAcquisition;
-}
-
-export interface WgpuSurfaceAttachResult {
-  readonly context: GPUCanvasContext;
-  readonly surface: WgpuPresentationSurface;
-}
-
-export interface WgpuSurfaceAttachment {
-  readonly alphaMode: GPUCanvasAlphaMode;
-  readonly device: GPUDevice;
-  readonly format: GPUTextureFormat;
-}
-
-/**
- * Host lifecycle seam for allocating, acquiring, attaching, and releasing WGPU surfaces. It belongs in
- * the surface contract lane because Surface's factories consume it and render-wgpu already depends on
- * Surface; keeping it in a renderer would force an otherwise type-only dependency cycle.
- */
-export interface HostWgpuCapability {
-  acquire(surface: Readonly<Surface>, options: Readonly<WgpuHostAcquisitionOptions>): Promise<WgpuHostAcquisition>;
+// The async acquire/create/release seam WGPU surface factories consume. WGPU acquires a device and a
+// presentation context together, asynchronously, so the result is one acquisition value rather than GL's
+// synchronous context. render-wgpu specializes both type parameters (`HostWgpuCapability`), which keeps
+// this feature-layer contract free of a renderer import and of every platform GPU type.
+export interface HostWgpuSurfaceCapability<Acquisition, Options> {
+  acquire(surface: Readonly<Surface>, options: Readonly<Partial<Options>>): Promise<Acquisition>;
   create(window: Readonly<AppWindow>, width: number, height: number): NativeSurfaceHandle | null;
-  attachSurface(
-    surface: Readonly<Surface>,
-    attachment: Readonly<WgpuSurfaceAttachment>,
-  ): WgpuSurfaceAttachResult | null;
-  isSupported(): boolean;
-  release(acquisition: Readonly<WgpuHostAcquisition>): void;
+  release(acquisition: Readonly<Acquisition>): void;
+}
+
+// A backend-neutral WGPU surface whose acquisition is supplied by the capability that acquired it.
+export interface SurfaceWithAcquisition<Acquisition, Brand extends string> extends Surface {
+  readonly __brand: Brand;
+  readonly acquisition: Acquisition;
 }

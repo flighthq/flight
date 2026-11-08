@@ -5,14 +5,24 @@ import { CustomShaderMaterialKind } from '@flighthq/materials/contract';
 import type { MeshGeometry } from '@flighthq/meshgeometry/contract';
 import { withKindMapEntry } from '@flighthq/registry/contract';
 import {
+  WgpuBufferUsage,
+  WgpuShaderStage,
   getWgpuRenderStateRuntime,
   registerWgpuBitmapTextureResolver,
   registerWgpuImageTextureResolver,
 } from '@flighthq/render-wgpu/contract';
 import type {
+  WgpuBindGroup,
+  WgpuBindGroupEntry,
+  WgpuBindGroupLayout,
+  WgpuBindGroupLayoutEntry,
+  WgpuBuffer,
   WgpuCustomMaterialShaderSource,
   WgpuMeshMaterialRenderer,
   WgpuRenderState,
+  WgpuSampler,
+  WgpuTextureFormat,
+  WgpuTextureView,
 } from '@flighthq/render-wgpu/contract';
 import type { Scene3DRenderProxy } from '@flighthq/render/contract';
 
@@ -36,17 +46,17 @@ import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime.ts';
 export { WGPU_CUSTOM_SHADER_TEXTURE_CAPACITY, WGPU_CUSTOM_SHADER_USER_VEC4_CAPACITY } from './wgpuCustomMaterialAbi.ts';
 
 interface CustomMaterialBinding {
-  textureBindGroup: GPUBindGroup | null;
+  textureBindGroup: WgpuBindGroup | null;
   textureKeys: string[];
-  textureSamplers: GPUSampler[];
-  textureViews: GPUTextureView[];
-  uniformBindGroup: GPUBindGroup;
-  uniformBuffer: GPUBuffer;
+  textureSamplers: WgpuSampler[];
+  textureViews: WgpuTextureView[];
+  uniformBindGroup: WgpuBindGroup;
+  uniformBuffer: WgpuBuffer;
 }
 
 interface CustomMaterialLayouts {
-  texture: GPUBindGroupLayout;
-  user: GPUBindGroupLayout;
+  texture: WgpuBindGroupLayout;
+  user: WgpuBindGroupLayout;
 }
 
 // WebGPU's CustomShaderMaterial mesh renderer. The shader is a complete caller-authored WGSL module,
@@ -160,7 +170,7 @@ export function registerWgpuCustomShaderMaterial(state: WgpuRenderState): void {
 function compileCustomMaterialPipeline(
   state: WgpuRenderState,
   source: WgpuCustomMaterialShaderSource,
-  format: GPUTextureFormat,
+  format: WgpuTextureFormat,
   doubleSided: boolean,
   blended: boolean,
   skinned: boolean,
@@ -181,8 +191,8 @@ function ensureCustomMaterialLayouts(state: WgpuRenderState): CustomMaterialLayo
   let layouts = _customMaterialLayouts.get(state);
   if (layouts !== undefined) return layouts;
 
-  const visibility = GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT;
-  const entries: GPUBindGroupLayoutEntry[] = [];
+  const visibility = WgpuShaderStage.VERTEX | WgpuShaderStage.FRAGMENT;
+  const entries: WgpuBindGroupLayoutEntry[] = [];
   for (let slot = 0; slot < WGPU_CUSTOM_SHADER_TEXTURE_CAPACITY; slot++) {
     entries.push({
       binding: slot * 2,
@@ -208,7 +218,7 @@ function ensureCustomMaterialLayouts(state: WgpuRenderState): CustomMaterialLayo
 function ensureCustomMaterialBinding(
   state: WgpuRenderState,
   material: Readonly<CustomShaderMaterial>,
-  layout: GPUBindGroupLayout,
+  layout: WgpuBindGroupLayout,
 ): CustomMaterialBinding {
   let stateBindings = _customMaterialBindings.get(state);
   if (stateBindings === undefined) {
@@ -220,7 +230,7 @@ function ensureCustomMaterialBinding(
 
   const uniformBuffer = state.device.createBuffer({
     size: WGPU_CUSTOM_SHADER_USER_VEC4_CAPACITY * 16,
-    usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+    usage: WgpuBufferUsage.UNIFORM | WgpuBufferUsage.COPY_DST,
   });
   binding = {
     textureBindGroup: null,
@@ -239,7 +249,7 @@ function ensureCustomMaterialBinding(
 
 function uploadCustomUniforms(
   state: WgpuRenderState,
-  buffer: GPUBuffer,
+  buffer: WgpuBuffer,
   material: Readonly<CustomShaderMaterial>,
 ): void {
   _uniformScratch.fill(0);
@@ -264,9 +274,9 @@ function uploadCustomUniforms(
 function ensureCustomTextureBindGroup(
   state: WgpuRenderState,
   material: Readonly<CustomShaderMaterial>,
-  layout: GPUBindGroupLayout,
+  layout: WgpuBindGroupLayout,
   binding: CustomMaterialBinding,
-): GPUBindGroup {
+): WgpuBindGroup {
   const textures = material.textures ?? {};
   const placeholder = ensureWgpuPlaceholderTextureView(state);
   let textureCount = 0;
@@ -288,7 +298,7 @@ function ensureCustomTextureBindGroup(
 
   if (!customTextureBindingNeedsRebuild(binding, textureCount)) return binding.textureBindGroup!;
 
-  const entries: GPUBindGroupEntry[] = [];
+  const entries: WgpuBindGroupEntry[] = [];
   for (let slot = 0; slot < WGPU_CUSTOM_SHADER_TEXTURE_CAPACITY; slot++) {
     entries.push({ binding: slot * 2, resource: _textureSamplerScratch[slot] });
     entries.push({ binding: slot * 2 + 1, resource: _textureViewScratch[slot] });
@@ -325,5 +335,5 @@ const _customMaterialLayouts = new WeakMap<WgpuRenderState, CustomMaterialLayout
 const _customMaterialBindings = new WeakMap<WgpuRenderState, WeakMap<object, CustomMaterialBinding>>();
 const _uniformScratch = new Float32Array(WGPU_CUSTOM_SHADER_USER_VEC4_CAPACITY * 4);
 const _textureKeyScratch: string[] = [];
-const _textureSamplerScratch: GPUSampler[] = new Array(WGPU_CUSTOM_SHADER_TEXTURE_CAPACITY);
-const _textureViewScratch: GPUTextureView[] = new Array(WGPU_CUSTOM_SHADER_TEXTURE_CAPACITY);
+const _textureSamplerScratch: WgpuSampler[] = new Array(WGPU_CUSTOM_SHADER_TEXTURE_CAPACITY);
+const _textureViewScratch: WgpuTextureView[] = new Array(WGPU_CUSTOM_SHADER_TEXTURE_CAPACITY);

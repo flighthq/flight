@@ -1,3 +1,4 @@
+import type { WgpuRenderPassEncoder } from './contract.render-wgpu-types.ts';
 import { beginWgpuRenderPass, endWgpuRenderPass } from './wgpuRenderPass.ts';
 import { getWgpuRenderStateRuntime } from './wgpuRenderState.ts';
 import {
@@ -20,7 +21,7 @@ describe('applyWgpuScissorRect', () => {
     const runtime = getWgpuRenderStateRuntime(state);
     runtime.currentScissorRect = { x: 10, y: 20, width: 100, height: 50 };
     const calls: number[][] = [];
-    const fakePass = { setScissorRect: (...args: number[]) => calls.push(args) } as unknown as GPURenderPassEncoder;
+    const fakePass = { setScissorRect: (...args: number[]) => calls.push(args) } as unknown as WgpuRenderPassEncoder;
     applyWgpuScissorRect(state, fakePass);
     expect(calls.length).toBe(1);
     expect(calls[0]).toEqual([10, 20, 100, 50]);
@@ -30,7 +31,7 @@ describe('applyWgpuScissorRect', () => {
     const state = await createWgpuRenderStateForTest();
     beginWgpuScreenRenderPassForTest(state);
     const calls: number[][] = [];
-    const fakePass = { setScissorRect: (...args: number[]) => calls.push(args) } as unknown as GPURenderPassEncoder;
+    const fakePass = { setScissorRect: (...args: number[]) => calls.push(args) } as unknown as WgpuRenderPassEncoder;
     applyWgpuScissorRect(state, fakePass);
     expect(calls.length).toBe(0);
   });
@@ -41,7 +42,7 @@ describe('applyWgpuScissorRect', () => {
     const runtime = getWgpuRenderStateRuntime(state);
     runtime.currentScissorRect = { x: 0, y: 0, width: 0, height: 0 };
     const calls: number[][] = [];
-    const fakePass = { setScissorRect: (...args: number[]) => calls.push(args) } as unknown as GPURenderPassEncoder;
+    const fakePass = { setScissorRect: (...args: number[]) => calls.push(args) } as unknown as WgpuRenderPassEncoder;
     applyWgpuScissorRect(state, fakePass);
     expect(calls[0]).toEqual([0, 0, 1, 1]);
   });
@@ -108,7 +109,7 @@ describe('setWgpuRenderPassScissorRect', () => {
     beginWgpuScreenRenderPassForTest(state, { color: [0, 0, 0, 0] }, { antialias: true });
     const setScissorRect = vi.fn();
 
-    setWgpuRenderPassScissorRect(state, { setScissorRect } as unknown as GPURenderPassEncoder, 3, 5, 7, 11);
+    setWgpuRenderPassScissorRect(state, { setScissorRect } as unknown as WgpuRenderPassEncoder, 3, 5, 7, 11);
 
     expect(setScissorRect).toHaveBeenCalledWith(6, 10, 14, 22);
   });
@@ -122,7 +123,7 @@ describe('setWgpuRenderPassScissorRect', () => {
     const pass = beginWgpuRenderPass(state, createWgpuTextureRenderTarget(state, 64, 64, state.format, 'srgb', 4));
     const setScissorRect = vi.fn();
 
-    setWgpuRenderPassScissorRect(state, { setScissorRect } as unknown as GPURenderPassEncoder, 3, 5, 7, 11);
+    setWgpuRenderPassScissorRect(state, { setScissorRect } as unknown as WgpuRenderPassEncoder, 3, 5, 7, 11);
 
     expect(setScissorRect).toHaveBeenCalledWith(6, 10, 14, 22);
     endWgpuRenderPass(pass);
@@ -135,7 +136,7 @@ describe('setWgpuRenderPassScissorRect', () => {
     const pass = beginWgpuRenderPass(state, createWgpuTextureRenderTarget(state, 64, 64));
     const setScissorRect = vi.fn();
 
-    setWgpuRenderPassScissorRect(state, { setScissorRect } as unknown as GPURenderPassEncoder, 3, 5, 7, 11);
+    setWgpuRenderPassScissorRect(state, { setScissorRect } as unknown as WgpuRenderPassEncoder, 3, 5, 7, 11);
 
     expect(setScissorRect).toHaveBeenCalledWith(3, 5, 7, 11);
     endWgpuRenderPass(pass);

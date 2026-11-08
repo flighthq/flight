@@ -1,7 +1,10 @@
 import type { EntityRaw, EntityRuntime, EntityRuntimeKey } from '@flighthq/entity/contract';
 
+import type { WgpuRenderPassEncoder } from './WgpuRenderPassEncoder.ts';
 import type { WgpuRenderState, WgpuScissorRect } from './WgpuRenderState.ts';
 import type { WgpuRenderTarget } from './WgpuRenderTarget.ts';
+import type { WgpuTextureFormat } from './WgpuTextureFormat.ts';
+import type { WgpuTextureView } from './WgpuTextureView.ts';
 
 // The drawing bracket. beginWgpuRenderPass acquires one from a pool and endWgpuRenderPass returns it,
 // so a render loop allocates no pass per frame; using a handle after its end is a bug, exactly as with
@@ -18,8 +21,8 @@ export interface WgpuRenderPass extends EntityRaw {
   // The view this pass draws into: the target's own view offscreen, and the swap-chain (or supersample)
   // view on screen. An effect that composites "to the canvas" writes here rather than reaching for a
   // canvas view on the render state, which is why the field is on the pass and not on the state.
-  colorView: GPUTextureView;
-  encoder: GPURenderPassEncoder | null;
+  colorView: WgpuTextureView;
+  encoder: WgpuRenderPassEncoder | null;
   // True when this pass opened the frame's command encoder, in which case its end submits the frame.
   // False when the caller opened the frame with beginWgpuFrame and will submit it itself, which is how
   // a multi-pass recipe (a shadow depth pass before the screen pass) still costs one submit.
@@ -41,7 +44,7 @@ export interface WgpuRenderPassViewport {
 // state: inheriting the enclosing entries would let a nested pass pop clips it never pushed.
 export interface WgpuSavedPassState {
   clipForms: ('rect' | 'contour')[];
-  colorFormat: GPUTextureFormat | undefined;
+  colorFormat: WgpuTextureFormat | undefined;
   currentMaskDepth: number;
   currentScissorRect: WgpuScissorRect | null;
   maskWriteMode: boolean;

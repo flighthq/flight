@@ -9,7 +9,7 @@ import {
   renderIntoWgpuRenderTexture,
   submitWgpuFrame,
 } from '@flighthq/render-wgpu/contract';
-import type { WgpuTextureEntry } from '@flighthq/render-wgpu/contract';
+import type { WgpuTexture, WgpuTextureEntry, WgpuTextureView } from '@flighthq/render-wgpu/contract';
 import type { RenderProxy2D } from '@flighthq/render/contract';
 import type { Scale9Sprite } from '@flighthq/scene2d/contract';
 import { Scale9SpriteKind } from '@flighthq/scene2d/contract';
@@ -123,8 +123,8 @@ function createWgpuTextureEntry(): WgpuTextureEntry {
     [EntityRuntimeKey]: undefined,
     bindings: new Map(),
     mipLevelCount: 1,
-    texture: {} as GPUTexture,
-    view: {} as GPUTextureView,
+    texture: {} as WgpuTexture,
+    view: {} as WgpuTextureView,
   };
 }
 

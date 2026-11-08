@@ -1,4 +1,11 @@
-import type { WgpuRenderState, WgpuScreenRenderTarget } from './contract.render-wgpu-types.ts';
+import type {
+  WgpuBindGroupLayout,
+  WgpuCommandEncoder,
+  WgpuRenderState,
+  WgpuScreenRenderTarget,
+  WgpuTextureView,
+} from './contract.render-wgpu-types.ts';
+import { WgpuShaderStage, WgpuTextureUsage } from './contract.render-wgpu-types.ts';
 import { getWgpuRenderStateDeviceResources, getWgpuRenderStateRuntime } from './wgpuRenderState.ts';
 import { syncWgpuScreenRenderTargetExtent } from './wgpuScreenRenderTarget.ts';
 
@@ -22,7 +29,7 @@ export function enableWgpuScreenRenderTargetAntialias(target: WgpuScreenRenderTa
 function acquireWgpuScreenRenderTargetAntialiasView(
   state: WgpuRenderState,
   target: WgpuScreenRenderTarget,
-): GPUTextureView {
+): WgpuTextureView {
   const width = target.width;
   const height = target.height;
   const maxDimension = target.device.limits.maxTextureDimension2D;
@@ -38,7 +45,7 @@ function acquireWgpuScreenRenderTargetAntialiasView(
   const texture = target.device.createTexture({
     size: [width, height, 1],
     format: target.format,
-    usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.TEXTURE_BINDING,
+    usage: WgpuTextureUsage.RENDER_ATTACHMENT | WgpuTextureUsage.TEXTURE_BINDING,
   });
   target.antialiasTexture = texture;
   target.antialiasView = texture.createView();
@@ -55,7 +62,7 @@ function acquireWgpuScreenRenderTargetAntialiasView(
 function encodeWgpuScreenRenderTargetResolve(
   state: WgpuRenderState,
   target: Readonly<WgpuScreenRenderTarget>,
-  encoder: GPUCommandEncoder,
+  encoder: WgpuCommandEncoder,
 ): void {
   const presentationView = target.presentationView;
   const bindGroup = target.antialiasResolveBindGroup;
@@ -83,15 +90,15 @@ function encodeWgpuScreenRenderTargetResolve(
 function ensureWgpuScreenAntialiasPipeline(
   state: WgpuRenderState,
   target: Readonly<WgpuScreenRenderTarget>,
-): GPUBindGroupLayout {
+): WgpuBindGroupLayout {
   const runtime = getWgpuRenderStateRuntime(state);
   const existing = runtime.surfaceAntialiasResolveBindGroupLayout;
   if (existing !== null && runtime.surfaceAntialiasResolvePipeline !== null) return existing;
 
   const bindGroupLayout = target.device.createBindGroupLayout({
     entries: [
-      { binding: 0, visibility: GPUShaderStage.FRAGMENT, texture: { sampleType: 'float' } },
-      { binding: 1, visibility: GPUShaderStage.FRAGMENT, sampler: { type: 'filtering' } },
+      { binding: 0, visibility: WgpuShaderStage.FRAGMENT, texture: { sampleType: 'float' } },
+      { binding: 1, visibility: WgpuShaderStage.FRAGMENT, sampler: { type: 'filtering' } },
     ],
   });
   const layout = target.device.createPipelineLayout({ bindGroupLayouts: [bindGroupLayout] });

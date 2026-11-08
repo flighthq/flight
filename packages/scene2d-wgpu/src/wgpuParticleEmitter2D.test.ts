@@ -7,6 +7,7 @@ import {
 import type { CompressedImageResource } from '@flighthq/image/contract';
 import { createParticleEmitter2D } from '@flighthq/particleemitter/contract';
 import {
+  WgpuTextureUsage,
   beginWgpuScreenRenderPassForTest,
   getWgpuRenderStateRuntime,
   registerWgpuCompressedImageTextureResolver,
@@ -66,7 +67,7 @@ describe('drawWgpuParticleEmitter2D', () => {
       const texture = state.device.createTexture({
         size: [4, 4],
         format: 'bc3-rgba-unorm',
-        usage: GPUTextureUsage.TEXTURE_BINDING,
+        usage: WgpuTextureUsage.TEXTURE_BINDING,
       });
       const view = texture.createView();
       return {

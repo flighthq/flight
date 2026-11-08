@@ -1,5 +1,6 @@
 import type { MeshGeometry } from '@flighthq/meshgeometry/contract';
 import type { WgpuRenderState } from '@flighthq/render-wgpu/contract';
+import { WgpuBufferUsage } from '@flighthq/render-wgpu/contract';
 
 import type { WgpuWireframeUpload } from './contract.scene3d-wgpu-types.ts';
 import { ensureWgpuMeshUpload } from './wgpuMeshUpload.ts';
@@ -32,7 +33,7 @@ export function ensureWgpuWireframeUpload(
   const lines = buildLineIndices(geometry);
   const lineIndexBuffer = device.createBuffer({
     size: Math.max(4, alignTo4(lines.byteLength)),
-    usage: GPUBufferUsage.INDEX | GPUBufferUsage.COPY_DST,
+    usage: WgpuBufferUsage.INDEX | WgpuBufferUsage.COPY_DST,
   });
   device.queue.writeBuffer(lineIndexBuffer, 0, lines.buffer, lines.byteOffset, lines.byteLength);
 

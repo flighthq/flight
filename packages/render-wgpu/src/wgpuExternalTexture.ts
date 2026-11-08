@@ -6,13 +6,21 @@ import { cloneSampler, createTexture } from '@flighthq/texture/contract';
 import type { Texture, TextureLike } from '@flighthq/texture/contract';
 import { ExternalTextureSourceKind } from '@flighthq/texture/contract';
 
-import type { WgpuRenderState, WgpuTextureEntry } from './contract.render-wgpu-types.ts';
+import type {
+  WgpuFilterMode,
+  WgpuMipmapFilterMode,
+  WgpuRenderState,
+  WgpuSampler,
+  WgpuTexture,
+  WgpuTextureEntry,
+  WgpuTextureView,
+} from './contract.render-wgpu-types.ts';
 import { getWgpuRenderStateRuntime, getWgpuSampler } from './wgpuRenderState.ts';
 import { registerWgpuTextureResolver } from './wgpuTextureResolver.ts';
 
 export function createExternalWgpuTexture(
   state: WgpuRenderState,
-  handle: GPUTexture,
+  handle: WgpuTexture,
   options: Readonly<CreateExternalTextureOptions>,
 ): Texture {
   const source = allocateEntity<ExternalTexture>();
@@ -48,9 +56,9 @@ export function disposeExternalWgpuTexture(state: WgpuRenderState, texture: Read
 
 export function initializeExternalWgpuTextureEntry(
   out: EntityConstruction<WgpuTextureEntry>,
-  sampler: GPUSampler,
-  texture: GPUTexture,
-  view: GPUTextureView,
+  sampler: WgpuSampler,
+  texture: WgpuTexture,
+  view: WgpuTextureView,
 ): void {
   out.bindings = new Map();
   out.mipLevelCount = 1;
@@ -69,11 +77,11 @@ export function initializeExternalWgpuTextureSource(
   out.width = options.width;
 }
 
-function getExternalWgpuSampler(state: WgpuRenderState, texture: Readonly<Texture>): GPUSampler {
+function getExternalWgpuSampler(state: WgpuRenderState, texture: Readonly<Texture>): WgpuSampler {
   const sampler = texture.sampler;
-  const minFilter: GPUFilterMode = sampler.minFilter.startsWith('nearest') ? 'nearest' : 'linear';
-  const magFilter: GPUFilterMode = sampler.magFilter.startsWith('nearest') ? 'nearest' : 'linear';
-  const mipmapFilter: GPUMipmapFilterMode | undefined = sampler.mipmaps
+  const minFilter: WgpuFilterMode = sampler.minFilter.startsWith('nearest') ? 'nearest' : 'linear';
+  const magFilter: WgpuFilterMode = sampler.magFilter.startsWith('nearest') ? 'nearest' : 'linear';
+  const mipmapFilter: WgpuMipmapFilterMode | undefined = sampler.mipmaps
     ? sampler.minFilter.endsWith('mipmap-nearest')
       ? 'nearest'
       : sampler.minFilter.endsWith('mipmap-linear')

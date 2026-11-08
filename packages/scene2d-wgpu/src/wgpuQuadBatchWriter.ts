@@ -3,6 +3,9 @@ import type { MatrixLike } from '@flighthq/geometry/contract';
 import type { TintMaterialData, Material, MaterialData } from '@flighthq/materials/contract';
 import type { BlendMode } from '@flighthq/materials/contract';
 import {
+  WgpuBufferUsage,
+  WgpuColorWrite,
+  WgpuShaderStage,
   getWgpuBlendState,
   getWgpuSampler,
   resolveWgpuApplyBlendMode,
@@ -16,11 +19,18 @@ import {
   getWgpuRenderPassViewport,
 } from '@flighthq/render-wgpu/contract';
 import type {
-  WgpuQuadMaterialRenderer,
+  WgpuBindGroup,
+  WgpuBuffer,
+  WgpuFilterMode,
   WgpuQuadBatchResources,
-  WgpuRenderState,
-  WgpuTextureEntry,
   WgpuQuadBatchWriterBufferSlot,
+  WgpuQuadMaterialRenderer,
+  WgpuRenderPipeline,
+  WgpuRenderState,
+  WgpuShaderModule,
+  WgpuStencilFaceState,
+  WgpuTextureEntry,
+  WgpuTextureView,
 } from '@flighthq/render-wgpu/contract';
 import type { SamplerLike } from '@flighthq/texture/contract';
 
@@ -97,13 +107,13 @@ export function ensureWgpuQuadBatchResources(state: WgpuRenderState): WgpuQuadBa
   const { uniformBindGroupLayout, textureBindGroupLayout } = getWgpuRenderStateDeviceResources(state);
 
   const instanceBindGroupLayout = device.createBindGroupLayout({
-    entries: [{ binding: 0, visibility: GPUShaderStage.VERTEX, buffer: { type: 'read-only-storage' } }],
+    entries: [{ binding: 0, visibility: WgpuShaderStage.VERTEX, buffer: { type: 'read-only-storage' } }],
   });
 
   // Generic per-instance material buffer (array<f32>); the same layout serves every material that
   // appends per-instance data, so the batch — not the material — owns it.
   const materialBindGroupLayout = device.createBindGroupLayout({
-    entries: [{ binding: 0, visibility: GPUShaderStage.VERTEX, buffer: { type: 'read-only-storage' } }],
+    entries: [{ binding: 0, visibility: WgpuShaderStage.VERTEX, buffer: { type: 'read-only-storage' } }],
   });
 
   const basePipelineLayout = device.createPipelineLayout({
@@ -217,10 +227,10 @@ export function flushWgpuQuadBatchWriter(state: WgpuRenderState): void {
 export function getWgpuQuadBatchPipeline(
   state: WgpuRenderState,
   resources: WgpuQuadBatchResources,
-  module: GPUShaderModule,
+  module: WgpuShaderModule,
   hasMaterialData: boolean,
   blendMode: BlendMode | null,
-): GPURenderPipeline {
+): WgpuRenderPipeline {
   const runtime = getWgpuRenderStateRuntime(state);
   let perModule = resources.pipelines.get(module);
   if (perModule === undefined) {
@@ -239,7 +249,7 @@ export function getWgpuQuadBatchPipeline(
   const blend = getWgpuBlendState(blendMode);
   const isMaskWrite = stencilMode === 'maskwrite';
 
-  let stencilFace: GPUStencilFaceState;
+  let stencilFace: WgpuStencilFaceState;
   if (isMaskWrite) {
     stencilFace = { compare: 'always', passOp: 'replace', failOp: 'keep', depthFailOp: 'keep' };
   } else if (stencilMode === 'masked') {
@@ -254,7 +264,7 @@ export function getWgpuQuadBatchPipeline(
     fragment: {
       module,
       entryPoint: 'fs_main',
-      targets: [{ format, blend: isMaskWrite ? undefined : blend, writeMask: isMaskWrite ? 0 : GPUColorWrite.ALL }],
+      targets: [{ format, blend: isMaskWrite ? undefined : blend, writeMask: isMaskWrite ? 0 : WgpuColorWrite.ALL }],
     },
     depthStencil: {
       format: 'depth24plus-stencil8',
@@ -440,8 +450,8 @@ function acquireWgpuQuadBatchWriterBufferSlot(state: WgpuRenderState): WgpuQuadB
   return slot;
 }
 
-function createWgpuQuadBatchWriterBuffer(state: WgpuRenderState, size: number): GPUBuffer {
-  return state.device.createBuffer({ size, usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST });
+function createWgpuQuadBatchWriterBuffer(state: WgpuRenderState, size: number): WgpuBuffer {
+  return state.device.createBuffer({ size, usage: WgpuBufferUsage.STORAGE | WgpuBufferUsage.COPY_DST });
 }
 
 function resetWgpuQuadBatchWriter(state: WgpuRenderState): void {
@@ -458,12 +468,12 @@ function resetWgpuQuadBatchWriter(state: WgpuRenderState): void {
 
 function createWgpuTextureSamplerBindGroup(
   state: WgpuRenderState,
-  view: GPUTextureView,
+  view: WgpuTextureView,
   sampler: Readonly<SamplerLike>,
-): GPUBindGroup {
-  const minFilter: GPUFilterMode = sampler.minFilter.startsWith('nearest') ? 'nearest' : 'linear';
-  const magFilter: GPUFilterMode = sampler.magFilter.startsWith('nearest') ? 'nearest' : 'linear';
-  const mipmapFilter: GPUFilterMode | undefined =
+): WgpuBindGroup {
+  const minFilter: WgpuFilterMode = sampler.minFilter.startsWith('nearest') ? 'nearest' : 'linear';
+  const magFilter: WgpuFilterMode = sampler.magFilter.startsWith('nearest') ? 'nearest' : 'linear';
+  const mipmapFilter: WgpuFilterMode | undefined =
     sampler.mipmaps && sampler.minFilter.includes('mipmap')
       ? sampler.minFilter.endsWith('nearest')
         ? 'nearest'

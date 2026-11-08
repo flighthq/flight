@@ -1,4 +1,11 @@
-import type { WgpuRenderState } from './contract.render-wgpu-types.ts';
+import type {
+  WgpuCommandBuffer,
+  WgpuCommandEncoder,
+  WgpuRenderPassEncoder,
+  WgpuRenderState,
+  WgpuTexture,
+  WgpuTextureView,
+} from './contract.render-wgpu-types.ts';
 import { generateWgpuMipmaps, getWgpuMipLevelCount, registerWgpuMipmapGeneration } from './wgpuMipmap.ts';
 import { getWgpuRenderStateRuntime } from './wgpuRenderState.ts';
 import { createWgpuRenderStateForTest, installWgpuMock } from './wgpuTestHelper.ts';
@@ -7,8 +14,8 @@ beforeAll(() => {
   installWgpuMock();
 });
 
-function makeTextureSpy(): GPUTexture {
-  return { createView: vi.fn(() => ({}) as GPUTextureView), destroy: () => {} } as unknown as GPUTexture;
+function makeTextureSpy(): WgpuTexture {
+  return { createView: vi.fn(() => ({}) as WgpuTextureView), destroy: () => {} } as unknown as WgpuTexture;
 }
 
 // Replaces the mock device's command encoder with one whose render passes are spies, so a test can
@@ -21,9 +28,9 @@ function spyEncoderPasses(state: WgpuRenderState): ReturnType<typeof vi.fn> {
         setBindGroup: vi.fn(),
         draw: vi.fn(),
         end: vi.fn(),
-      }) as unknown as GPURenderPassEncoder,
+      }) as unknown as WgpuRenderPassEncoder,
   );
-  const encoder = { beginRenderPass, finish: () => ({}) as GPUCommandBuffer } as unknown as GPUCommandEncoder;
+  const encoder = { beginRenderPass, finish: () => ({}) as WgpuCommandBuffer } as unknown as WgpuCommandEncoder;
   vi.spyOn(state.device, 'createCommandEncoder').mockReturnValue(encoder);
   return beginRenderPass;
 }

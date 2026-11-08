@@ -3,7 +3,16 @@ import type { BitmapDisplacementEffect, Effect } from '@flighthq/effects/contrac
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 import { getWgpuSampler, resolveWgpuTexture } from '@flighthq/render-wgpu/contract';
-import type { WgpuEffectRunner, WgpuRenderState, WgpuTextureRenderTarget } from '@flighthq/render-wgpu/contract';
+import type {
+  WgpuBlendState,
+  WgpuEffectRunner,
+  WgpuFilterMode,
+  WgpuMipmapFilterMode,
+  WgpuRenderState,
+  WgpuSampler,
+  WgpuTextureFormat,
+  WgpuTextureRenderTarget,
+} from '@flighthq/render-wgpu/contract';
 import type { Sampler, TextureFilter } from '@flighthq/texture/contract';
 
 import type { WgpuEffectPipeline } from './types.ts';
@@ -101,7 +110,7 @@ export const wgpuBitmapDisplacementEffectRunner: WgpuEffectRunner = (ctx, effect
   applyBitmapDisplacementEffectToWgpu(ctx.state, ctx.source, ctx.dest, effect as BitmapDisplacementEffect);
 };
 
-function getBitmapDisplacementMapSampler(state: WgpuRenderState, sampler: Readonly<Sampler>): GPUSampler {
+function getBitmapDisplacementMapSampler(state: WgpuRenderState, sampler: Readonly<Sampler>): WgpuSampler {
   const mipmapFilter = getMipmapFilter(sampler.minFilter, sampler.mipmaps);
   return getWgpuSampler(
     state,
@@ -114,16 +123,16 @@ function getBitmapDisplacementMapSampler(state: WgpuRenderState, sampler: Readon
   );
 }
 
-function getFilter(filter: TextureFilter): GPUFilterMode {
+function getFilter(filter: TextureFilter): WgpuFilterMode {
   return filter.startsWith('nearest') ? 'nearest' : 'linear';
 }
 
-function getMipmapFilter(filter: TextureFilter, mipmaps: boolean): GPUMipmapFilterMode | undefined {
+function getMipmapFilter(filter: TextureFilter, mipmaps: boolean): WgpuMipmapFilterMode | undefined {
   if (!mipmaps || !filter.includes('mipmap')) return undefined;
   return filter.endsWith('nearest') ? 'nearest' : 'linear';
 }
 
-function getBitmapDisplacementPipeline(state: WgpuRenderState, format: GPUTextureFormat): WgpuEffectPipeline {
+function getBitmapDisplacementPipeline(state: WgpuRenderState, format: WgpuTextureFormat): WgpuEffectPipeline {
   let byFormat = _pipelines.get(state);
   if (byFormat === undefined) {
     byFormat = new Map();
@@ -212,9 +221,9 @@ fn fs_main(@location(0) uv : vec2f) -> @location(0) vec4f {
 
 const NO_UNIFORMS = () => {};
 
-const REPLACE_BLEND: GPUBlendState = {
+const REPLACE_BLEND: WgpuBlendState = {
   color: { srcFactor: 'one', dstFactor: 'zero', operation: 'add' },
   alpha: { srcFactor: 'one', dstFactor: 'zero', operation: 'add' },
 };
 
-const _pipelines = new WeakMap<WgpuRenderState, Map<GPUTextureFormat, WgpuEffectPipeline>>();
+const _pipelines = new WeakMap<WgpuRenderState, Map<WgpuTextureFormat, WgpuEffectPipeline>>();

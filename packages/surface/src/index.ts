@@ -10,16 +10,12 @@ export type {
   HostSurfaceContextCapability,
   HostSurfaceDisplayCapability,
   HostSurfaceResizeCapability,
-  HostWgpuCapability,
+  HostWgpuSurfaceCapability,
   NativeSurfaceHandle,
   Surface,
   SurfaceWithContext,
   SurfaceRuntime,
-  WgpuHostAcquisition,
-  WgpuHostAcquisitionOptions,
+  SurfaceWithAcquisition,
   WgpuPresentationSurface,
-  WgpuSurface,
-  WgpuSurfaceAttachResult,
-  WgpuSurfaceAttachment,
 } from './contract.ts';
 export { attachWindowRenderState, detachWindowRenderState } from './contract.ts';

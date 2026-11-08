@@ -2,7 +2,12 @@ import { createGradientBevelEffect } from '@flighthq/effects/contract';
 import type { GradientBevelEffect } from '@flighthq/effects/contract';
 import * as renderWgpuContractModule from '@flighthq/render-wgpu/contract';
 import { createWgpuRenderStateForTest, installWgpuMock } from '@flighthq/render-wgpu/contract';
-import type { WgpuRenderState, WgpuTextureRenderTarget, WgpuRenderTargetPool } from '@flighthq/render-wgpu/contract';
+import type {
+  WgpuDevice,
+  WgpuRenderState,
+  WgpuRenderTargetPool,
+  WgpuTextureRenderTarget,
+} from '@flighthq/render-wgpu/contract';
 
 import * as wgpuEffectBlitShaderModule from './wgpuEffectBlitShader.ts';
 import * as wgpuEffectBoxBlurModule from './wgpuEffectBoxBlur.ts';
@@ -124,13 +129,13 @@ const STOPS = { alphas: [1, 1], colors: [0x000000, 0xffffff], ratios: [0, 255] }
 
 // Enough device surface for the two pipelines this recipe builds itself; the shared pass state is
 // mocked above, so nothing here touches a real adapter.
-function createDevice(): GPUDevice {
+function createDevice(): WgpuDevice {
   return {
     createBindGroup: vi.fn((descriptor: unknown) => ({ descriptor })),
     createPipelineLayout: vi.fn((descriptor: unknown) => ({ descriptor })),
     createRenderPipeline: vi.fn(() => ({ id: 'pipeline' })),
     createShaderModule: vi.fn((descriptor: unknown) => ({ descriptor })),
-  } as unknown as GPUDevice;
+  } as unknown as WgpuDevice;
 }
 
 function apply(effect: Readonly<Partial<GradientBevelEffect>> = {}): void {

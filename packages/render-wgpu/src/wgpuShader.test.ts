@@ -1,6 +1,7 @@
 import { AdvancedBlendMode } from '@flighthq/effects/contract';
 import { BlendMode } from '@flighthq/materials/contract';
 
+import type { WgpuRenderPipelineDescriptor } from './contract.render-wgpu-types.ts';
 import { getWgpuRenderStateDeviceResources, getWgpuRenderStateRuntime } from './wgpuRenderState.ts';
 import {
   UNIFORM_BYTE_SIZE,
@@ -95,7 +96,7 @@ describe('getWgpuPipeline', () => {
     const state = await createWgpuRenderStateForTest();
     const blendOf = (mode: BlendMode) =>
       [
-        ...(getWgpuPipeline(state, mode, 'normal') as unknown as { __descriptor: GPURenderPipelineDescriptor })
+        ...(getWgpuPipeline(state, mode, 'normal') as unknown as { __descriptor: WgpuRenderPipelineDescriptor })
           .__descriptor.fragment!.targets,
       ][0]!.blend!.color;
     expect(blendOf(BlendMode.Normal)).toEqual({ srcFactor: 'one', dstFactor: 'one-minus-src-alpha', operation: 'add' });
@@ -114,7 +115,7 @@ describe('getWgpuPipeline', () => {
     const state = await createWgpuRenderStateForTest();
     const blendOf = (mode: BlendMode) =>
       [
-        ...(getWgpuPipeline(state, mode, 'normal') as unknown as { __descriptor: GPURenderPipelineDescriptor })
+        ...(getWgpuPipeline(state, mode, 'normal') as unknown as { __descriptor: WgpuRenderPipelineDescriptor })
           .__descriptor.fragment!.targets,
       ][0]!.blend!.color;
     expect(blendOf(AdvancedBlendMode.Overlay)).toEqual({

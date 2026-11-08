@@ -1,4 +1,4 @@
-import type { WgpuAdapterCapabilities } from './contract.render-wgpu-types.ts';
+import type { WgpuAdapter, WgpuAdapterCapabilities } from './contract.render-wgpu-types.ts';
 
 // Queries a GPUAdapter for the capabilities that createWgpuRenderState uses to gate format and
 // feature paths. Call this after requestAdapter but before createWgpuRenderState and pass the
@@ -7,7 +7,7 @@ import type { WgpuAdapterCapabilities } from './contract.render-wgpu-types.ts';
 // The adapter is read-only here — no device is created. This is intentional: capabilities are
 // queried at configuration time, before the device is allocated, so the device can be requested
 // with the right requiredFeatures list.
-export function getWgpuAdapterCapabilities(adapter: GPUAdapter): WgpuAdapterCapabilities {
+export function getWgpuAdapterCapabilities(adapter: WgpuAdapter): WgpuAdapterCapabilities {
   const features = adapter.features;
   const limits = adapter.limits;
 

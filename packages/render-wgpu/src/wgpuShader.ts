@@ -4,7 +4,20 @@ import type { EntityConstruction } from '@flighthq/entity/contract';
 import { BlendMode } from '@flighthq/materials/contract';
 import type { RenderProxy } from '@flighthq/render/contract';
 
-import type { WgpuBindGroupLayouts, WgpuRenderState } from './contract.render-wgpu-types.ts';
+import type {
+  WgpuBindGroupLayout,
+  WgpuBindGroupLayouts,
+  WgpuBlendComponent,
+  WgpuBlendFactor,
+  WgpuBlendOperation,
+  WgpuBlendState,
+  WgpuDevice,
+  WgpuPipelineLayout,
+  WgpuRenderPipeline,
+  WgpuRenderState,
+  WgpuStencilFaceState,
+} from './contract.render-wgpu-types.ts';
+import { WgpuColorWrite, WgpuShaderStage } from './contract.render-wgpu-types.ts';
 import { getWgpuRenderPassViewport } from './wgpuRenderPass.ts';
 import { getWgpuRenderStateDeviceResources, getWgpuRenderStateRuntime } from './wgpuRenderState.ts';
 
@@ -136,7 +149,7 @@ fn fs_main(in : VertexOut) -> @location(0) vec4f {
 
 type StencilMode = 'normal' | 'masked' | 'maskwrite';
 
-const NORMAL_BLEND: GPUBlendState = createWgpuBlendState('one', 'one-minus-src-alpha');
+const NORMAL_BLEND: WgpuBlendState = createWgpuBlendState('one', 'one-minus-src-alpha');
 
 // The fixed-function realizations, mirroring render-gl's DEFAULT_GL_BLEND_MODES — the cheap fixed-function
 // set. Both channels share one component (WebGPU reads the alpha part of a color factor in the alpha slot,
@@ -148,7 +161,7 @@ const NORMAL_BLEND: GPUBlendState = createWgpuBlendState('one', 'one-minus-src-a
 // Darken/Lighten are the two entries here that are NOT exact under partial coverage: MIN/MAX do not
 // distribute over `(1-a)*dst + a*B(src, dst)`, so at zero alpha Darken wipes the backdrop to black. See
 // the matching note in render-gl's DEFAULT_GL_BLEND_MODES; both want a destination-reading BlendEffect.
-const BLEND_MODES: Record<BlendMode, GPUBlendState | null> = {
+const BLEND_MODES: Record<BlendMode, WgpuBlendState | null> = {
   [BlendMode.Add]: createWgpuBlendState('one', 'one'),
   [BlendMode.Darken]: createWgpuBlendState('one', 'one', 'min'),
   [BlendMode.Lighten]: createWgpuBlendState('one', 'one', 'max'),
@@ -159,17 +172,17 @@ const BLEND_MODES: Record<BlendMode, GPUBlendState | null> = {
   [BlendMode.Screen]: createWgpuBlendState('one', 'one-minus-src'),
 };
 
-export function createWgpuBindGroupLayouts(device: GPUDevice): WgpuBindGroupLayouts {
+export function createWgpuBindGroupLayouts(device: WgpuDevice): WgpuBindGroupLayouts {
   const out = allocateEntity<WgpuBindGroupLayouts>();
   initializeWgpuBindGroupLayouts(out, device);
   return finishEntity(out);
 }
 
 export function createWgpuPipelineLayout(
-  device: GPUDevice,
-  uniformBindGroupLayout: GPUBindGroupLayout,
-  textureBindGroupLayout: GPUBindGroupLayout,
-): GPUPipelineLayout {
+  device: WgpuDevice,
+  uniformBindGroupLayout: WgpuBindGroupLayout,
+  textureBindGroupLayout: WgpuBindGroupLayout,
+): WgpuPipelineLayout {
   return device.createPipelineLayout({
     bindGroupLayouts: [uniformBindGroupLayout, textureBindGroupLayout],
   });
@@ -177,7 +190,7 @@ export function createWgpuPipelineLayout(
 
 // ---- Pipeline creation ----
 
-export function getActiveWgpuPipeline(state: WgpuRenderState): GPURenderPipeline {
+export function getActiveWgpuPipeline(state: WgpuRenderState): WgpuRenderPipeline {
   const runtime = getWgpuRenderStateRuntime(state);
   const stencilMode: StencilMode = runtime.maskWriteMode
     ? 'maskwrite'
@@ -190,11 +203,11 @@ export function getActiveWgpuPipeline(state: WgpuRenderState): GPURenderPipeline
 // Shared by every immutable 2D pipeline family. WebGPU bakes blend state into the pipeline, so the
 // bitmap, quad-batch writer, and tessellated-shape paths must resolve the same node BlendMode table rather
 // than each maintaining a partial copy. Unknown/shader-composited modes deliberately fall back to Normal.
-export function getWgpuBlendState(blendMode: BlendMode | null): GPUBlendState {
+export function getWgpuBlendState(blendMode: BlendMode | null): WgpuBlendState {
   return (blendMode !== null ? BLEND_MODES[blendMode] : null) ?? NORMAL_BLEND;
 }
 
-function buildStencilFaceState(stencilMode: StencilMode): GPUStencilFaceState {
+function buildStencilFaceState(stencilMode: StencilMode): WgpuStencilFaceState {
   if (stencilMode === 'maskwrite') {
     return { compare: 'always', passOp: 'replace', failOp: 'keep', depthFailOp: 'keep' };
   }
@@ -208,7 +221,7 @@ export function getWgpuPipeline(
   state: WgpuRenderState,
   blendMode: BlendMode | null,
   stencilMode: StencilMode,
-): GPURenderPipeline {
+): WgpuRenderPipeline {
   const runtime = getWgpuRenderStateRuntime(state);
   // The pipeline bakes its color-attachment format, so key on the current target format too (rgba16float
   // inside an HDR effect target vs the canvas format).
@@ -238,7 +251,7 @@ export function getWgpuPipeline(
         {
           format,
           blend: isMaskWrite ? undefined : blend,
-          writeMask: isMaskWrite ? 0 : GPUColorWrite.ALL,
+          writeMask: isMaskWrite ? 0 : WgpuColorWrite.ALL,
         },
       ],
     },
@@ -258,20 +271,23 @@ export function getWgpuPipeline(
   return pipeline;
 }
 
-export function initializeWgpuBindGroupLayouts(out: EntityConstruction<WgpuBindGroupLayouts>, device: GPUDevice): void {
+export function initializeWgpuBindGroupLayouts(
+  out: EntityConstruction<WgpuBindGroupLayouts>,
+  device: WgpuDevice,
+): void {
   const uniformBindGroupLayout = device.createBindGroupLayout({
     entries: [
       {
         binding: 0,
-        visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
+        visibility: WgpuShaderStage.VERTEX | WgpuShaderStage.FRAGMENT,
         buffer: { type: 'uniform', hasDynamicOffset: true, minBindingSize: UNIFORM_BYTE_SIZE },
       },
     ],
   });
   const textureBindGroupLayout = device.createBindGroupLayout({
     entries: [
-      { binding: 0, visibility: GPUShaderStage.FRAGMENT, texture: { sampleType: 'float' } },
-      { binding: 1, visibility: GPUShaderStage.FRAGMENT, sampler: { type: 'filtering' } },
+      { binding: 0, visibility: WgpuShaderStage.FRAGMENT, texture: { sampleType: 'float' } },
+      { binding: 1, visibility: WgpuShaderStage.FRAGMENT, sampler: { type: 'filtering' } },
     ],
   });
   out.uniformBindGroupLayout = uniformBindGroupLayout;
@@ -411,10 +427,10 @@ export function writeWgpuQuadUniforms(
 // (e.g. 'dst' → Ad) in the alpha slot, so a single factor pair reproduces GL's non-separate
 // blendFunc. For min/max/reverse-subtract the factors are ignored but must still be valid.
 function createWgpuBlendState(
-  srcFactor: GPUBlendFactor,
-  dstFactor: GPUBlendFactor,
-  operation: GPUBlendOperation = 'add',
-): GPUBlendState {
-  const component: GPUBlendComponent = { srcFactor, dstFactor, operation };
+  srcFactor: WgpuBlendFactor,
+  dstFactor: WgpuBlendFactor,
+  operation: WgpuBlendOperation = 'add',
+): WgpuBlendState {
+  const component: WgpuBlendComponent = { srcFactor, dstFactor, operation };
   return { color: component, alpha: component };
 }

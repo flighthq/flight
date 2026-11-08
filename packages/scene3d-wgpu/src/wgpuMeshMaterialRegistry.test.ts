@@ -6,7 +6,11 @@ import {
   registerWgpuQuadMaterialRenderer,
   resolveWgpuQuadMaterialRenderer,
 } from '@flighthq/render-wgpu/contract';
-import type { WgpuMeshMaterialRenderer, WgpuQuadMaterialRenderer } from '@flighthq/render-wgpu/contract';
+import type {
+  WgpuMeshMaterialRenderer,
+  WgpuQuadMaterialRenderer,
+  WgpuShaderModule,
+} from '@flighthq/render-wgpu/contract';
 
 import {
   getWgpuMeshMaterialRenderer,
@@ -82,7 +86,7 @@ describe('resolveWgpuMeshMaterialRenderer', () => {
 describe('shared materialRenderers storage', () => {
   const quadRenderer: WgpuQuadMaterialRenderer = {
     instanceFloatCount: 0,
-    getShaderModule: () => null as unknown as GPUShaderModule,
+    getShaderModule: () => null as unknown as WgpuShaderModule,
   };
   const meshRenderer: WgpuMeshMaterialRenderer = { bind() {}, draw() {} };
   const QuadKind = 'TestQuadMaterial';

@@ -1,3 +1,5 @@
+import type { WgpuRenderPipelineDescriptor } from '@flighthq/render-wgpu/contract';
+
 import type { WgpuDebugDefineKey } from './contract.scene3d-wgpu-types.ts';
 import {
   bindWgpuDebugSurface,
@@ -51,7 +53,7 @@ describe('compileWgpuDebugPipeline', () => {
     const { fake, state } = makeWgpuScene3DState();
     compileWgpuDebugPipeline(state, NORMAL, 'rgba16float', false, true);
     const call = fake.calls.filter((c) => c.name === 'createRenderPipeline').at(-1);
-    expect((call!.args[0] as GPURenderPipelineDescriptor).primitive?.cullMode).toBe('none');
+    expect((call!.args[0] as WgpuRenderPipelineDescriptor).primitive?.cullMode).toBe('none');
   });
 });
 

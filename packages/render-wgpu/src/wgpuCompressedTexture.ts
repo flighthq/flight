@@ -7,19 +7,23 @@ import type { TextureColorSpace } from '@flighthq/texture/contract';
 import type {
   WgpuCompressedTextureDecoder,
   WgpuCompressedTextureSupport,
+  WgpuDevice,
   WgpuRenderState,
+  WgpuTexture,
   WgpuTextureEntry,
+  WgpuTextureFormat,
 } from './contract.render-wgpu-types.ts';
+import { WgpuTextureUsage } from './contract.render-wgpu-types.ts';
 import { getWgpuRenderStateDeviceResources, getWgpuRenderStateRuntime } from './wgpuRenderState.ts';
 
 interface WgpuCompressedFormatInfo {
   blockHeight: number;
   blockWidth: number;
   bytesPerBlock: number;
-  format: GPUTextureFormat;
+  format: WgpuTextureFormat;
 }
 
-export function detectWgpuCompressedTextureSupport(device: GPUDevice): WgpuCompressedTextureSupport {
+export function detectWgpuCompressedTextureSupport(device: WgpuDevice): WgpuCompressedTextureSupport {
   return {
     astc: device.features.has('texture-compression-astc'),
     bc: device.features.has('texture-compression-bc'),
@@ -28,9 +32,9 @@ export function detectWgpuCompressedTextureSupport(device: GPUDevice): WgpuCompr
 }
 
 export function getWgpuCompressedTextureFormat(
-  device: GPUDevice,
+  device: WgpuDevice,
   format: TextureContainerFormat,
-): GPUTextureFormat | null {
+): WgpuTextureFormat | null {
   const info = getCompressedFormatInfo(format);
   if (info === null) return null;
   const support = detectWgpuCompressedTextureSupport(device);
@@ -89,7 +93,7 @@ export function uploadWgpuCompressedTextureContainer(
   payload: Readonly<Uint8Array>,
   decode?: WgpuCompressedTextureDecoder,
   colorSpace?: TextureColorSpace,
-): GPUTexture | null {
+): WgpuTexture | null {
   if (
     container.supercompression !== 'None' ||
     container.depth !== 1 ||
@@ -108,7 +112,7 @@ export function uploadWgpuCompressedTextureContainer(
       size: [container.width, container.height, container.layers * container.faces],
       format: native,
       mipLevelCount: container.mipLevels,
-      usage: GPUTextureUsage.COPY_DST | GPUTextureUsage.TEXTURE_BINDING,
+      usage: WgpuTextureUsage.COPY_DST | WgpuTextureUsage.TEXTURE_BINDING,
     });
     for (let flat = 0; flat < container.levels.length; flat++) {
       const level = container.levels[flat];
@@ -145,7 +149,7 @@ export function uploadWgpuCompressedTextureContainer(
     size: [container.width, container.height, 1],
     format: colorSpace === 'srgb' ? 'rgba8unorm-srgb' : 'rgba8unorm',
     mipLevelCount: container.mipLevels,
-    usage: GPUTextureUsage.COPY_DST | GPUTextureUsage.TEXTURE_BINDING,
+    usage: WgpuTextureUsage.COPY_DST | WgpuTextureUsage.TEXTURE_BINDING,
   });
   for (let mipLevel = 0; mipLevel < container.levels.length; mipLevel++) {
     const level = container.levels[mipLevel];
@@ -208,19 +212,19 @@ function getCompressedFormatInfo(format: TextureContainerFormat): WgpuCompressed
     blockWidth: Number(match[1]),
     blockHeight: Number(match[2]),
     bytesPerBlock: 16,
-    format: `astc-${match[1]}x${match[2]}-unorm` as GPUTextureFormat,
+    format: `astc-${match[1]}x${match[2]}-unorm` as WgpuTextureFormat,
   };
 }
 
 function getWgpuCompressedTextureFormatForColorSpace(
-  device: GPUDevice,
+  device: WgpuDevice,
   format: TextureContainerFormat,
   colorSpace: TextureColorSpace | undefined,
-): GPUTextureFormat | null {
+): WgpuTextureFormat | null {
   const resolved = colorSpace === undefined ? format : getTextureContainerFormatForColorSpace(format, colorSpace);
   const native = getWgpuCompressedTextureFormat(device, resolved);
   if (native !== null && colorSpace === 'srgb' && format.startsWith('astc')) {
-    return `${native}-srgb` as GPUTextureFormat;
+    return `${native}-srgb` as WgpuTextureFormat;
   }
   return native;
 }
@@ -235,7 +239,7 @@ function getTextureContainerFormatForColorSpace(
 }
 
 const fixed = (
-  format: GPUTextureFormat,
+  format: WgpuTextureFormat,
   bytesPerBlock: number,
   blockWidth = 4,
   blockHeight = 4,

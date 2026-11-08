@@ -14,7 +14,7 @@ import {
   createTiltShiftEffect,
 } from '@flighthq/effects/contract';
 import { EntityRuntimeKey } from '@flighthq/entity/contract';
-import type { WgpuRenderState, WgpuTextureRenderTarget } from '@flighthq/render-wgpu/contract';
+import type { WgpuRenderState, WgpuTexture, WgpuTextureRenderTarget } from '@flighthq/render-wgpu/contract';
 
 import * as wgpuEffectPassModule from './wgpuEffectPass.ts';
 import * as wgpuEffectProgramCacheModule from './wgpuEffectProgramCache.ts';
@@ -133,7 +133,7 @@ const logicalEffects: ReadonlyArray<{
         renderState,
         source,
         dest,
-        { createView: () => ({}) } as unknown as GPUTexture,
+        { createView: () => ({}) } as unknown as WgpuTexture,
         createMotionBlurEffect() as never,
       ),
     name: 'active motion blur',

@@ -8,8 +8,8 @@ import type { Material3D } from '@flighthq/materials/contract';
 import { BlendMode, StandardMaterialKind } from '@flighthq/materials/contract';
 import type { InstancedMesh, Mesh } from '@flighthq/meshgeometry/contract';
 import { forEachNodeDescendant, getNodeWorldMatrix4 } from '@flighthq/node/contract';
-import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
-import type { WgpuRenderState } from '@flighthq/render-wgpu/contract';
+import { WgpuTextureUsage, getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
+import type { WgpuRenderPipeline, WgpuRenderState, WgpuVertexBufferLayout } from '@flighthq/render-wgpu/contract';
 import type { Scene3DRenderProxy } from '@flighthq/render/contract';
 import type { Node3D, Node3DFields } from '@flighthq/scene3d/contract';
 
@@ -92,7 +92,7 @@ export function renderWgpuScene3DShadowMap(
     const depthTexture = state.device.createTexture({
       size: [DIRECTIONAL_SHADOW_MAP_SIZE, DIRECTIONAL_SHADOW_MAP_SIZE, 1],
       format: SHADOW_DEPTH_FORMAT,
-      usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.TEXTURE_BINDING,
+      usage: WgpuTextureUsage.RENDER_ATTACHMENT | WgpuTextureUsage.TEXTURE_BINDING,
     });
     shadow = {
       depthTexture,
@@ -126,7 +126,7 @@ export function renderWgpuScene3DShadowMap(
     },
   });
   pass.setViewport(0, 0, shadow.mapWidth, shadow.mapHeight, 0, 1);
-  let boundPipeline: GPURenderPipeline | null = null;
+  let boundPipeline: WgpuRenderPipeline | null = null;
 
   forEachNodeDescendant<Node3DFields>(scene, (node) => {
     // A drawable node carries geometry (structural, like prepareScene3DRender's mesh test).
@@ -205,7 +205,7 @@ function normalizeDirectionalShadowPcfRadius(radius: number): number {
 // with front-face culling. Its group(0) is the shared Draw layout (dynamic-offset per-mesh world matrix),
 // so renderWgpuScene3DShadowMap reuses writeWgpuDrawUniform's ring bind group. The WGSL mirror of scene-gl's
 // compileShadowDepthProgram.
-function ensureWgpuShadowDepthPipeline(state: WgpuRenderState, skinned: boolean): GPURenderPipeline {
+function ensureWgpuShadowDepthPipeline(state: WgpuRenderState, skinned: boolean): WgpuRenderPipeline {
   const scene = getWgpuScene3DRuntime(state);
   const cached = skinned ? scene.shadowDepthSkinnedPipeline : scene.shadowDepthPipeline;
   if (cached !== null) return cached;
@@ -223,7 +223,7 @@ function ensureWgpuShadowDepthPipeline(state: WgpuRenderState, skinned: boolean)
     ],
   });
   // TS 7's DOM lib types `buffers` as a mutable array, so the readonly skinned layouts are copied.
-  const buffers: GPUVertexBufferLayout[] =
+  const buffers: WgpuVertexBufferLayout[] =
     skinned && skinning !== null ? [...skinning.vertexBufferLayouts] : SHADOW_VERTEX_BUFFER_LAYOUTS;
   const pipeline = device.createRenderPipeline({
     layout,
@@ -239,7 +239,7 @@ function ensureWgpuShadowDepthPipeline(state: WgpuRenderState, skinned: boolean)
 // The HAS_INSTANCES depth pipeline: the rigid depth pass plus the instance-step vertex buffer carrying
 // one mat4 per instance, so a batch records one silhouette per live instance. group(0) is the same shared
 // Draw layout the rigid variant uses. The WGSL mirror of scene-gl's compileShadowDepthInstancedProgram.
-function ensureWgpuShadowDepthInstancedPipeline(state: WgpuRenderState): GPURenderPipeline {
+function ensureWgpuShadowDepthInstancedPipeline(state: WgpuRenderState): WgpuRenderPipeline {
   const scene = getWgpuScene3DRuntime(state);
   if (scene.shadowDepthInstancedPipeline !== null) return scene.shadowDepthInstancedPipeline;
 
@@ -307,7 +307,7 @@ struct Draw {
 // Position from the shared 48-byte vertex, plus the 64-byte instance-step matrix buffer at slot 1. The
 // instance layout matches wgpuMeshPipeline's INSTANCE_BUFFER_LAYOUT — the same buffer ensureWgpuInstanceBuffer
 // fills for the forward pass — so the two paths place an instance identically.
-const SHADOW_INSTANCED_VERTEX_BUFFER_LAYOUTS: GPUVertexBufferLayout[] = [
+const SHADOW_INSTANCED_VERTEX_BUFFER_LAYOUTS: WgpuVertexBufferLayout[] = [
   { arrayStride: 48, attributes: [{ shaderLocation: 0, offset: 0, format: 'float32x3' }] },
   {
     arrayStride: INSTANCE_RECORD_FLOATS * 4,
@@ -348,7 +348,7 @@ struct Draw {
 `;
 
 // The shadow VS binds only position (@location 0) from the shared 48-byte interleaved vertex.
-const SHADOW_VERTEX_BUFFER_LAYOUTS: GPUVertexBufferLayout[] = [
+const SHADOW_VERTEX_BUFFER_LAYOUTS: WgpuVertexBufferLayout[] = [
   { arrayStride: 48, attributes: [{ shaderLocation: 0, offset: 0, format: 'float32x3' }] },
 ];
 

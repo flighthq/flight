@@ -4,7 +4,13 @@ import type { Matrix } from '@flighthq/geometry/contract';
 import type { Material } from '@flighthq/materials/contract';
 import type { RenderTargetColorSpace } from '@flighthq/render/contract';
 
-import type { WgpuRenderState, WgpuTextureEntry, WgpuTextureRenderTarget } from './contract.render-wgpu-types.ts';
+import type {
+  WgpuRenderState,
+  WgpuTextureEntry,
+  WgpuTextureFormat,
+  WgpuTextureRenderTarget,
+} from './contract.render-wgpu-types.ts';
+import { WgpuTextureUsage } from './contract.render-wgpu-types.ts';
 import { drawWgpuQuadWithTransform } from './wgpuDraw.ts';
 import { getWgpuRenderStateRuntime } from './wgpuRenderState.ts';
 
@@ -12,7 +18,7 @@ export function createWgpuTextureRenderTarget(
   state: WgpuRenderState,
   width: number,
   height: number,
-  format: GPUTextureFormat = state.format,
+  format: WgpuTextureFormat = state.format,
   colorSpace: RenderTargetColorSpace = 'srgb',
   sampleCount = 1,
 ): WgpuTextureRenderTarget {
@@ -84,7 +90,7 @@ export function initializeWgpuTextureRenderTarget(
   state: WgpuRenderState,
   width: number,
   height: number,
-  format: GPUTextureFormat = state.format,
+  format: WgpuTextureFormat = state.format,
   colorSpace: RenderTargetColorSpace = 'srgb',
   sampleCount = 1,
 ): void {
@@ -100,13 +106,13 @@ export function initializeWgpuTextureRenderTarget(
   const texture = device.createTexture({
     size: [w, h, 1],
     format,
-    usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_SRC,
+    usage: WgpuTextureUsage.RENDER_ATTACHMENT | WgpuTextureUsage.TEXTURE_BINDING | WgpuTextureUsage.COPY_SRC,
   });
   const view = texture.createView();
   const depthStencilTexture = device.createTexture({
     size: [w, h, 1],
     format: 'depth24plus-stencil8',
-    usage: GPUTextureUsage.RENDER_ATTACHMENT,
+    usage: WgpuTextureUsage.RENDER_ATTACHMENT,
   });
   const depthStencilView = depthStencilTexture.createView();
   out.bindings = new Map();
@@ -153,7 +159,7 @@ export function resizeWgpuTextureRenderTarget(
   const newTexture = device.createTexture({
     size: [w, h, 1],
     format,
-    usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_SRC,
+    usage: WgpuTextureUsage.RENDER_ATTACHMENT | WgpuTextureUsage.TEXTURE_BINDING | WgpuTextureUsage.COPY_SRC,
   });
   target.texture = newTexture;
   target.view = newTexture.createView();
@@ -163,7 +169,7 @@ export function resizeWgpuTextureRenderTarget(
   const newDepth = device.createTexture({
     size: [w, h, 1],
     format: 'depth24plus-stencil8',
-    usage: GPUTextureUsage.RENDER_ATTACHMENT,
+    usage: WgpuTextureUsage.RENDER_ATTACHMENT,
   });
   target.depthStencilTexture = newDepth;
   target.depthStencilView = newDepth.createView();

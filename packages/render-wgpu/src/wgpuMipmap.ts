@@ -1,4 +1,11 @@
-import type { WgpuRenderState } from './contract.render-wgpu-types.ts';
+import type {
+  WgpuBindGroupLayout,
+  WgpuRenderPipeline,
+  WgpuRenderState,
+  WgpuTexture,
+  WgpuTextureFormat,
+} from './contract.render-wgpu-types.ts';
+import { WgpuShaderStage } from './contract.render-wgpu-types.ts';
 import { getWgpuRenderStateDeviceResources, getWgpuRenderStateRuntime } from './wgpuRenderState.ts';
 
 // Generates the mip chain for an already-uploaded texture by downsampling each level into the next
@@ -8,10 +15,10 @@ import { getWgpuRenderStateDeviceResources, getWgpuRenderStateRuntime } from './
 // getWgpuMipLevelCount) and RENDER_ATTACHMENT usage. A single-level (1x1) texture is a no-op.
 export function generateWgpuMipmaps(
   state: WgpuRenderState,
-  texture: GPUTexture,
+  texture: WgpuTexture,
   width: number,
   height: number,
-  format: GPUTextureFormat,
+  format: WgpuTextureFormat,
 ): void {
   const levelCount = getWgpuMipLevelCount(width, height);
   if (levelCount <= 1) return;
@@ -58,16 +65,16 @@ export function registerWgpuMipmapGeneration(state: WgpuRenderState): void {
 // material textures require distinct render-pipeline targets.
 function ensureWgpuMipmapPipeline(
   state: WgpuRenderState,
-  format: GPUTextureFormat,
-): { bindGroupLayout: GPUBindGroupLayout; pipeline: GPURenderPipeline } {
+  format: WgpuTextureFormat,
+): { bindGroupLayout: WgpuBindGroupLayout; pipeline: WgpuRenderPipeline } {
   const runtime = getWgpuRenderStateRuntime(state);
   const cached = runtime.context.mipmapPipelineCache.get(format);
   if (cached !== undefined) return cached;
   const { device } = state;
   const bindGroupLayout = device.createBindGroupLayout({
     entries: [
-      { binding: 0, visibility: GPUShaderStage.FRAGMENT, texture: { sampleType: 'float' } },
-      { binding: 1, visibility: GPUShaderStage.FRAGMENT, sampler: { type: 'filtering' } },
+      { binding: 0, visibility: WgpuShaderStage.FRAGMENT, texture: { sampleType: 'float' } },
+      { binding: 1, visibility: WgpuShaderStage.FRAGMENT, sampler: { type: 'filtering' } },
     ],
   });
   const module = device.createShaderModule({ code: MIPMAP_WGSL });

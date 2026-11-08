@@ -1,6 +1,6 @@
 import { StandardMaterialKind } from '@flighthq/materials/contract';
 import { getWgpuRenderStateRuntime, registerWgpuQuadMaterialRenderer } from '@flighthq/render-wgpu/contract';
-import type { WgpuQuadMaterialRenderer, WgpuRenderState } from '@flighthq/render-wgpu/contract';
+import type { WgpuQuadMaterialRenderer, WgpuRenderState, WgpuShaderModule } from '@flighthq/render-wgpu/contract';
 
 import { getWgpuQuadBatchPreludeWGSL } from './wgpuQuadBatchWriter.ts';
 
@@ -15,7 +15,7 @@ export function registerWgpuStandardMaterial(state: WgpuRenderState): void {
 // even the plain path is just a registered material — this module IS the base quad-batch writer shader.
 export const standardWgpuQuadMaterialRenderer: WgpuQuadMaterialRenderer = {
   instanceFloatCount: 0,
-  getShaderModule(state: WgpuRenderState): GPUShaderModule {
+  getShaderModule(state: WgpuRenderState): WgpuShaderModule {
     const runtime = getWgpuRenderStateRuntime(state);
     const cached = runtime.context.standardMaterialModule;
     if (cached !== undefined) return cached;

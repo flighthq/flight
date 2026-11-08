@@ -1,7 +1,8 @@
 import { EntityRuntimeKey } from '@flighthq/entity/contract';
 import type { MeshGeometry, MeshGeometryRuntime } from '@flighthq/meshgeometry/contract';
-import type { WgpuRenderState } from '@flighthq/render-wgpu/contract';
+import type { WgpuBuffer, WgpuQueue, WgpuRenderState } from '@flighthq/render-wgpu/contract';
 import type { WgpuSkinningAdapter } from '@flighthq/render-wgpu/contract';
+import { WgpuBufferUsage } from '@flighthq/render-wgpu/contract';
 
 import type { WgpuMeshUpload } from './contract.scene3d-wgpu-types.ts';
 import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime.ts';
@@ -48,15 +49,15 @@ export function ensureWgpuMeshUpload(
   const vertices = hasSkinBindPose ? skinning!.getUploadVertices(geometry)! : geometry.vertices;
   const vertexBuffer = device.createBuffer({
     size: Math.max(4, alignTo4(vertices.byteLength)),
-    usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
+    usage: WgpuBufferUsage.VERTEX | WgpuBufferUsage.COPY_DST,
   });
   device.queue.writeBuffer(vertexBuffer, 0, vertices.buffer, vertices.byteOffset, vertices.byteLength);
 
-  let indexBuffer: GPUBuffer | null = null;
+  let indexBuffer: WgpuBuffer | null = null;
   if (indices !== null) {
     indexBuffer = device.createBuffer({
       size: Math.max(4, alignTo4(indices.byteLength)),
-      usage: GPUBufferUsage.INDEX | GPUBufferUsage.COPY_DST,
+      usage: WgpuBufferUsage.INDEX | WgpuBufferUsage.COPY_DST,
     });
     writeMeshIndices(device.queue, indexBuffer, indices);
   }
@@ -88,8 +89,8 @@ function alignTo4(byteLength: number): number {
 // Pad only that upload through a reusable scratch; indexCount remains the source length, so the trailing
 // word is buffer padding rather than a drawn index. Uint32 and even-length Uint16 arrays upload directly.
 function writeMeshIndices(
-  queue: GPUQueue,
-  indexBuffer: GPUBuffer,
+  queue: WgpuQueue,
+  indexBuffer: WgpuBuffer,
   indices: Readonly<Uint16Array<ArrayBuffer> | Uint32Array<ArrayBuffer>>,
 ): void {
   const byteLength = indices.byteLength;

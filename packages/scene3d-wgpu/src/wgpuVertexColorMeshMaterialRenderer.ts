@@ -6,7 +6,7 @@ import type { Material, VertexColorMaterial } from '@flighthq/materials/contract
 import { VertexColorMaterialKind } from '@flighthq/materials/contract';
 import type { MeshGeometry } from '@flighthq/meshgeometry/contract';
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
-import type { WgpuMeshMaterialRenderer, WgpuRenderState } from '@flighthq/render-wgpu/contract';
+import type { WgpuBindGroup, WgpuMeshMaterialRenderer, WgpuRenderState } from '@flighthq/render-wgpu/contract';
 import type { Scene3DRenderProxy } from '@flighthq/render/contract';
 
 import type { WgpuUnlitDefineKey } from './contract.scene3d-wgpu-types.ts';
@@ -35,7 +35,7 @@ export const wgpuVertexColorMeshMaterialRenderer: WgpuMeshMaterialRenderer = {
     const pipeline = ensureWgpuUnlitPipeline(state, defineKeyForMaterial(vertexColor), format);
     writeWgpuFrameUniform(state, camera, _lights);
 
-    let group: GPUBindGroup;
+    let group: WgpuBindGroup;
     if (vertexColor === null) {
       _scratch.r = 1;
       _scratch.g = 1;

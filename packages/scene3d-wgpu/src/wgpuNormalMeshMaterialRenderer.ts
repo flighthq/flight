@@ -8,7 +8,7 @@ import {
   registerWgpuBitmapTextureResolver,
   registerWgpuImageTextureResolver,
 } from '@flighthq/render-wgpu/contract';
-import type { WgpuMeshMaterialRenderer, WgpuRenderState } from '@flighthq/render-wgpu/contract';
+import type { WgpuBindGroup, WgpuMeshMaterialRenderer, WgpuRenderState } from '@flighthq/render-wgpu/contract';
 import type { Scene3DRenderProxy } from '@flighthq/render/contract';
 
 import { bindWgpuDebugSurface, ensureWgpuDebugPipeline } from './wgpuDebugPrelude.ts';
@@ -47,7 +47,7 @@ export const wgpuNormalMeshMaterialRenderer: WgpuMeshMaterialRenderer = {
     );
     writeWgpuFrameUniform(state, camera, _lights);
 
-    let group: GPUBindGroup;
+    let group: WgpuBindGroup;
     if (normal === null) {
       group = bindWgpuDebugSurface(state, pipeline, FALLBACK_MATERIAL, 0, 1, 1);
     } else {

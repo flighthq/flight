@@ -7,6 +7,12 @@ import { createCustomShaderMaterial } from '@flighthq/materials/contract';
 import { CustomShaderMaterialKind } from '@flighthq/materials/contract';
 import { createBoxMeshGeometry } from '@flighthq/meshgeometry/contract';
 import { getWgpuRenderStateRuntime, registerWgpuImageTextureResolver } from '@flighthq/render-wgpu/contract';
+import type {
+  WgpuDevice,
+  WgpuPipelineLayoutDescriptor,
+  WgpuSampler,
+  WgpuSamplerDescriptor,
+} from '@flighthq/render-wgpu/contract';
 import type { Scene3DRenderProxy } from '@flighthq/render/contract';
 import { createTexture } from '@flighthq/texture/contract';
 import { ImageTextureSourceKind } from '@flighthq/texture/contract';
@@ -127,7 +133,7 @@ describe('wgpuCustomShaderMeshMaterialRenderer', () => {
     );
 
     const layoutCall = fake.calls.find((call) => call.name === 'createPipelineLayout');
-    const descriptor = layoutCall?.args[0] as GPUPipelineLayoutDescriptor;
+    const descriptor = layoutCall?.args[0] as WgpuPipelineLayoutDescriptor;
     expect(descriptor.bindGroupLayouts).toHaveLength(4);
     expect(fake.calls.filter((call) => call.name === 'setBindGroup').map((call) => call.args[0])).toEqual([0, 2, 3]);
   });
@@ -167,10 +173,10 @@ describe('wgpuCustomShaderMeshMaterialRenderer', () => {
 
   it('rebuilds group(3) for readiness, replacement, sampler, key, and bag-order changes', () => {
     const { fake, state } = makeWgpuScene3DState();
-    state.device.createSampler = ((descriptor: GPUSamplerDescriptor) => {
+    state.device.createSampler = ((descriptor: WgpuSamplerDescriptor) => {
       fake.calls.push({ name: 'createSampler', args: [descriptor] });
-      return { descriptor } as unknown as GPUSampler;
-    }) as GPUDevice['createSampler'];
+      return { descriptor } as unknown as WgpuSampler;
+    }) as WgpuDevice['createSampler'];
     const first = createTexture();
     const second = createTexture();
     const material = createCustomShaderMaterial({

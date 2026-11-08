@@ -1,15 +1,16 @@
 import type { EntityRaw, EntityRuntime, EntityRuntimeKey } from '@flighthq/entity/contract';
 import type { RenderTexture } from '@flighthq/render/contract';
 
+import type { WgpuDevice } from './WgpuDevice.ts';
 import type { WgpuRenderState } from './WgpuRenderState.ts';
 import type { WgpuRenderTargetPool, WgpuTextureRenderTarget } from './WgpuRenderTarget.ts';
 
 export type WgpuRenderTextureStatus = 'ready' | 'released' | 'unrendered' | 'writing';
 
 export interface WgpuRenderTextureExplanation {
-  readonly height: number;
-  readonly status: WgpuRenderTextureStatus;
-  readonly width: number;
+  height: number;
+  status: WgpuRenderTextureStatus;
+  width: number;
 }
 
 // Runtime-owned realization of one render Texture for one WgpuRenderState.
@@ -22,11 +23,11 @@ export interface WgpuRenderTextureEntry {
 // the pool; RenderTexture remains the public currency while recipes consume effectTargets internally.
 export interface WgpuRenderTexturePool extends EntityRaw {
   [EntityRuntimeKey]: EntityRuntime | undefined;
-  device: GPUDevice | null;
+  device: WgpuDevice | null;
   destroyed: boolean;
-  readonly effectTargets: WgpuRenderTargetPool;
-  readonly free: RenderTexture[];
-  readonly leased: Set<RenderTexture>;
+  effectTargets: WgpuRenderTargetPool;
+  free: RenderTexture[];
+  leased: Set<RenderTexture>;
 }
 
 export type WgpuRenderTextureGuard = (

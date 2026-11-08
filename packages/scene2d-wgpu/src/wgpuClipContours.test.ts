@@ -5,7 +5,7 @@ import {
   getWgpuRenderStateRuntime,
   installWgpuMock,
 } from '@flighthq/render-wgpu/contract';
-import type { WgpuRenderState } from '@flighthq/render-wgpu/contract';
+import type { WgpuRenderPassEncoder, WgpuRenderState } from '@flighthq/render-wgpu/contract';
 
 import { popWgpuClipContours, pushWgpuClipContours } from './wgpuClipContours.ts';
 
@@ -15,14 +15,14 @@ beforeAll(() => {
 
 const SQUARE = [[0, 0, 50, 0, 50, 50, 0, 50]];
 
-function makePassSpy(): GPURenderPassEncoder {
+function makePassSpy(): WgpuRenderPassEncoder {
   return {
     setPipeline: vi.fn(),
     setBindGroup: vi.fn(),
     setVertexBuffer: vi.fn(),
     setStencilReference: vi.fn(),
     draw: vi.fn(),
-  } as unknown as GPURenderPassEncoder;
+  } as unknown as WgpuRenderPassEncoder;
 }
 
 // A real screen pass, with its encoder swapped for a spy: the draw path reads the pass viewport for its

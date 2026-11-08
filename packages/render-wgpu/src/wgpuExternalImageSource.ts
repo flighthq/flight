@@ -1,8 +1,14 @@
+import type {
+  WgpuCopyExternalImageDestInfo,
+  WgpuCopyExternalImageSourceInfo,
+  WgpuExternalImageSource,
+  WgpuQueue,
+} from './contract.render-wgpu-types.ts';
 // WebGPU rejects an external-image copy when the host source has no current pixels. This predicate
 // covers the readiness state exposed by the platform; tryCopyWgpuExternalImageToTexture closes the
 // remaining gap where the browser cannot snapshot an otherwise dimension-valid source.
 export function isWgpuExternalImageSourceReady(
-  source: GPUCopyExternalImageSource,
+  source: WgpuExternalImageSource,
   width: number,
   height: number,
 ): boolean {
@@ -36,9 +42,9 @@ export function isWgpuExternalImageSourceReady(
 // rerasterized 2D text canvas replaces its backing resource). That is expected source unavailability,
 // so callers retain the previous texture and retry; security and destination/programming errors escape.
 export function tryCopyWgpuExternalImageToTexture(
-  queue: GPUQueue,
-  source: Readonly<GPUCopyExternalImageSourceInfo>,
-  destination: Readonly<GPUCopyExternalImageDestInfo>,
+  queue: WgpuQueue,
+  source: Readonly<WgpuCopyExternalImageSourceInfo>,
+  destination: Readonly<WgpuCopyExternalImageDestInfo>,
   width: number,
   height: number,
 ): boolean {

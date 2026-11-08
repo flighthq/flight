@@ -1,3 +1,5 @@
+import type { WgpuCanvasContext, WgpuDevice, WgpuGpu } from '@flighthq/render-wgpu/contract';
+
 import { webHostWgpuContext } from './webHostWgpuContext.ts';
 import { createWebSurfaceFromElement } from './webSurfaceHandle.ts';
 
@@ -19,7 +21,7 @@ function installMinimalWgpuMock(): void {
               limits: { maxTextureDimension2D: 8192 },
             }),
         }),
-    } as unknown as GPU,
+    } as unknown as WgpuGpu,
     configurable: true,
     writable: true,
   });
@@ -31,15 +33,10 @@ function installMinimalWgpuMock(): void {
     options?: unknown,
   ) {
     if (contextId === 'webgpu') {
-      return { configure: vi.fn(), getCurrentTexture: vi.fn(), unconfigure: vi.fn() } as unknown as GPUCanvasContext;
+      return { configure: vi.fn(), getCurrentTexture: vi.fn(), unconfigure: vi.fn() } as unknown as WgpuCanvasContext;
     }
     return (origGetContext as Function).call(this, contextId, options);
   };
-
-  const g = globalThis as Record<string, unknown>;
-  if (!g['GPUTextureUsage']) {
-    g['GPUTextureUsage'] = { COPY_SRC: 1, COPY_DST: 2, TEXTURE_BINDING: 4, STORAGE_BINDING: 8, RENDER_ATTACHMENT: 16 };
-  }
 }
 
 beforeAll(installMinimalWgpuMock);
@@ -68,7 +65,7 @@ describe('webHostWgpuContext', () => {
     expect(
       webHostWgpuContext.attachSurface(unregisteredSurface, {
         alphaMode: 'premultiplied',
-        device: {} as GPUDevice,
+        device: {} as WgpuDevice,
         format: 'bgra8unorm',
       }),
     ).toBeNull();

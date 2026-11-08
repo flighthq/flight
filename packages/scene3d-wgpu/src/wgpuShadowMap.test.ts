@@ -18,6 +18,7 @@ import {
 } from '@flighthq/meshgeometry/contract';
 import { addNodeChild } from '@flighthq/node/contract';
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
+import type { WgpuTextureDescriptor } from '@flighthq/render-wgpu/contract';
 import {
   createInstancedMesh,
   createMesh,
@@ -112,7 +113,7 @@ describe('renderWgpuScene3DShadowMap', () => {
     expect(fake.calls.some((call) => call.name === 'beginRenderPass')).toBe(false);
     expect(
       fake.calls.some(
-        (call) => call.name === 'createTexture' && (call.args[0] as GPUTextureDescriptor).format === 'depth32float',
+        (call) => call.name === 'createTexture' && (call.args[0] as WgpuTextureDescriptor).format === 'depth32float',
       ),
     ).toBe(false);
   });
@@ -135,7 +136,7 @@ describe('renderWgpuScene3DShadowMap', () => {
     renderWgpuScene3DShadowMap(state, makeShadowScene3D(), makeShadowCamera(), SHADOW_LIGHT);
 
     const depthCreate = fake.calls.find(
-      (c) => c.name === 'createTexture' && (c.args[0] as GPUTextureDescriptor).format === 'depth32float',
+      (c) => c.name === 'createTexture' && (c.args[0] as WgpuTextureDescriptor).format === 'depth32float',
     );
     expect(depthCreate).toBeDefined();
 
@@ -271,7 +272,7 @@ describe('renderWgpuScene3DShadowMap', () => {
     expect(getWgpuScene3DRuntime(state).shadowDepthSkinnedPipeline).toBeNull();
     expect(
       fake.calls.some(
-        (call) => call.name === 'createTexture' && (call.args[0] as GPUTextureDescriptor).format === 'rgba32float',
+        (call) => call.name === 'createTexture' && (call.args[0] as WgpuTextureDescriptor).format === 'rgba32float',
       ),
     ).toBe(false);
   });
@@ -301,7 +302,7 @@ describe('renderWgpuScene3DShadowMap', () => {
     expect(getWgpuScene3DRuntime(state).shadowDepthSkinnedPipeline).not.toBeNull();
     expect(
       fake.calls.some(
-        (call) => call.name === 'createTexture' && (call.args[0] as GPUTextureDescriptor).format === 'rgba32float',
+        (call) => call.name === 'createTexture' && (call.args[0] as WgpuTextureDescriptor).format === 'rgba32float',
       ),
     ).toBe(true);
     expect(fake.calls.some((call) => call.name === 'setBindGroup' && call.args[0] === 0)).toBe(true);
@@ -327,7 +328,7 @@ describe('renderWgpuScene3DShadowMap', () => {
     renderWgpuScene3DShadowMap(state, scene, camera, SHADOW_LIGHT);
     renderWgpuScene3DShadowMap(state, scene, camera, SHADOW_LIGHT);
     const depthCreates = fake.calls.filter(
-      (c) => c.name === 'createTexture' && (c.args[0] as GPUTextureDescriptor).format === 'depth32float',
+      (c) => c.name === 'createTexture' && (c.args[0] as WgpuTextureDescriptor).format === 'depth32float',
     ).length;
     expect(depthCreates).toBe(1);
   });

@@ -13,12 +13,17 @@ import type {
 } from '@flighthq/render/contract';
 import type { SamplerLike, TextureSource } from '@flighthq/texture/contract';
 
+import type { WgpuBindGroup } from './WgpuBindGroup.ts';
+import type { WgpuBindGroupLayout } from './WgpuBindGroupLayout.ts';
+import type { WgpuBuffer } from './WgpuBuffer.ts';
 import type {
   WgpuColorAdjustmentMaterialFeature,
   WgpuColorAdjustmentMaterialFeatureGuard,
 } from './WgpuColorAdjustmentMaterialFeature.ts';
+import type { WgpuCommandEncoder } from './WgpuCommandEncoder.ts';
 import type { WgpuCompressedTextureUploader } from './WgpuCompressedTextureUploader.ts';
 import type { WgpuCustomMaterialShaderSource } from './WgpuCustomMaterialShaderSource.ts';
+import type { WgpuDevice, WgpuDeviceLostInfo } from './WgpuDevice.ts';
 import type { WgpuDeviceRuntime } from './WgpuDeviceRuntime.ts';
 import type { WgpuDeviceState } from './WgpuDeviceState.ts';
 import type { WgpuEffectRegistration } from './WgpuEffectState.ts';
@@ -28,19 +33,26 @@ import type { WgpuParticleResources } from './WgpuParticleResources.ts';
 import type { WgpuQuadBatchResources } from './WgpuQuadBatchResources.ts';
 import type { WgpuQuadMaterialRenderer } from './WgpuQuadMaterialRenderer.ts';
 import type { WgpuRenderPass, WgpuRenderPassViewport } from './WgpuRenderPass.ts';
+import type { WgpuRenderPassEncoder } from './WgpuRenderPassEncoder.ts';
+import type { WgpuRenderPipeline } from './WgpuRenderPipeline.ts';
 import type { WgpuRenderTarget, WgpuScreenRenderTarget } from './WgpuRenderTarget.ts';
 import type { WgpuRenderTextureEntry, WgpuRenderTextureGuard } from './WgpuRenderTexture.ts';
+import type { WgpuSampler } from './WgpuSampler.ts';
 import type { WgpuScene3DPass } from './WgpuScene3DRuntime.ts';
+import type { WgpuShaderModule } from './WgpuShaderModule.ts';
 import type { WgpuSkinningAdapter } from './WgpuSkinningAdapter.ts';
+import type { WgpuTexture } from './WgpuTexture.ts';
+import type { WgpuTextureFormat } from './WgpuTextureFormat.ts';
 import type { WgpuTextureResolver } from './WgpuTextureResolver.ts';
+import type { WgpuTextureView } from './WgpuTextureView.ts';
 import type { WgpuVelocityWriter } from './WgpuVelocityWriter.ts';
 
 export interface WgpuRenderState extends RenderState {
   applyBlendMode: ((state: WgpuRenderState, blendMode: BlendMode | null) => void) | null;
-  readonly deviceState: WgpuDeviceState;
-  readonly device: GPUDevice;
-  readonly format: GPUTextureFormat;
-  readonly registries: Readonly<WgpuRenderRegistries>;
+  deviceState: WgpuDeviceState;
+  device: WgpuDevice;
+  format: WgpuTextureFormat;
+  registries: Readonly<WgpuRenderRegistries>;
 }
 
 /**
@@ -52,7 +64,7 @@ export interface WgpuRenderState extends RenderState {
  * carried through unchanged; nothing here claims a device can be rebuilt or recovered.
  */
 export type WgpuOffscreenRenderStateResult = EntityRaw & { [EntityRuntimeKey]: EntityRuntime | undefined } & (
-    | { readonly reason: 'device-lost'; readonly info: GPUDeviceLostInfo }
+    | { readonly reason: 'device-lost'; readonly info: WgpuDeviceLostInfo }
     | { readonly reason: 'ok'; readonly state: WgpuRenderState }
   );
 
@@ -84,7 +96,7 @@ export interface WgpuRenderRegistries extends RenderRegistries {
 export interface WgpuColorAdjustmentFlush {
   data: Float32Array | Uint32Array;
   floats: number;
-  module: GPUShaderModule;
+  module: WgpuShaderModule;
 }
 
 // Package-private GPU state for a WgpuRenderState entity. Lives in the runtime tier (not on the
@@ -93,8 +105,8 @@ export interface WgpuColorAdjustmentFlush {
 // out-of-package custom renderers can reach the same state without the aggregate Types package.
 export interface WgpuBindGroupLayouts extends EntityRaw {
   [EntityRuntimeKey]: EntityRuntime | undefined;
-  readonly textureBindGroupLayout: GPUBindGroupLayout;
-  readonly uniformBindGroupLayout: GPUBindGroupLayout;
+  textureBindGroupLayout: WgpuBindGroupLayout;
+  uniformBindGroupLayout: WgpuBindGroupLayout;
 }
 
 export interface WgpuRenderStateRuntime extends RenderStateRuntime {
@@ -113,31 +125,31 @@ export interface WgpuRenderStateRuntime extends RenderStateRuntime {
   borrowedSurfaceExtent: { readonly height: number; readonly width: number } | null;
 
   // Bind group layouts — shared across all pipelines
-  uniformBindGroupLayout: GPUBindGroupLayout;
-  textureBindGroupLayout: GPUBindGroupLayout;
+  uniformBindGroupLayout: WgpuBindGroupLayout;
+  textureBindGroupLayout: WgpuBindGroupLayout;
 
   // Uniform ring buffer: each slot is uniformStride bytes (minUniformBufferOffsetAlignment)
-  uniformBuffer: GPUBuffer;
+  uniformBuffer: WgpuBuffer;
   uniformData: Float32Array;
   uniformDataU32: Uint32Array;
   uniformOffset: number;
   uniformStride: number;
-  uniformBindGroup: GPUBindGroup;
+  uniformBindGroup: WgpuBindGroup;
 
   // Scratch array for matrix building (9 floats, column-major)
   matrixArray: Float32Array;
 
   // Pipeline cache keyed by blend mode + stencil mode + color adjustment flag
-  pipelineCache: Map<string, GPURenderPipeline>;
+  pipelineCache: Map<string, WgpuRenderPipeline>;
 
   // Samplers. linear/nearest are the clamp-to-edge defaults for the 2D bitmap path; material textures
   // that tile or mip go through samplerCache, keyed by a NUMBER that bit-packs min/mag/wrapU/wrapV/
   // mipmap/anisotropy (getWgpuSampler) — a number, not a template string, so the per-bind lookup that runs every
   // frame allocates nothing. A GPUSampler's address mode, mip filter, and anisotropy are immutable and
   // must be chosen at bind-group creation.
-  linearSampler: GPUSampler;
-  nearestSampler: GPUSampler;
-  samplerCache: Map<number, GPUSampler>;
+  linearSampler: WgpuSampler;
+  nearestSampler: WgpuSampler;
+  samplerCache: Map<number, WgpuSampler>;
 
   // Guard callback invoked when a texture requests mipmaps but no generator is registered. The
   // upload path degrades to a single-level texture; this slot reports the degradation. Null until
@@ -147,13 +159,13 @@ export interface WgpuRenderStateRuntime extends RenderStateRuntime {
   // upload paths read this slot rather than statically importing the generator module, so a bundle
   // that never registers mip generation tree-shakes the pipeline, shader, and cache entirely.
   mipmapGenerator:
-    | ((state: WgpuRenderState, texture: GPUTexture, width: number, height: number, format: GPUTextureFormat) => void)
+    | ((state: WgpuRenderState, texture: WgpuTexture, width: number, height: number, format: WgpuTextureFormat) => void)
     | null;
   // Lazily-built downsample render pipelines and bind-group layouts for GPU mip-chain generation.
   // WebGPU has no generateMipmap, so a mipmapped material texture's lower levels are rendered by
   // repeatedly downsampling the level above. The format-keyed cache keeps linear and sRGB target
   // pipelines distinct. Empty until the first such upload.
-  mipmapPipelineCache: Map<GPUTextureFormat, { bindGroupLayout: GPUBindGroupLayout; pipeline: GPURenderPipeline }>;
+  mipmapPipelineCache: Map<WgpuTextureFormat, { bindGroupLayout: WgpuBindGroupLayout; pipeline: WgpuRenderPipeline }>;
 
   // Raw-element texture cache: a canvas/video/image element uploaded directly, keyed by the element.
   textureCache: WeakMap<CanvasImageSource, WgpuTextureEntry>;
@@ -181,7 +193,7 @@ export interface WgpuRenderStateRuntime extends RenderStateRuntime {
   webgpuShaderBindingResolver?: (renderProxy: RenderProxy2D) => WgpuBitmapShader | undefined;
 
   // Particle instance buffer (grown on demand)
-  particleInstanceBuffer: GPUBuffer | null;
+  particleInstanceBuffer: WgpuBuffer | null;
   particleInstanceData: Float32Array | null;
   particleInstanceCapacity: number;
 
@@ -241,18 +253,18 @@ export interface WgpuRenderStateRuntime extends RenderStateRuntime {
   // MeshGeometryRuntime.webgpuData; scene-wgpu owns and casts the concrete value shape).
   sceneMeshUploadCache?: WeakMap<object, object> | null;
 
-  standardMaterialModule?: GPUShaderModule;
-  colorScaleBiasModule?: GPUShaderModule;
-  packedTintModule?: GPUShaderModule;
-  colorMatrixModule?: GPUShaderModule;
+  standardMaterialModule?: WgpuShaderModule;
+  colorScaleBiasModule?: WgpuShaderModule;
+  packedTintModule?: WgpuShaderModule;
+  colorMatrixModule?: WgpuShaderModule;
   shapeMeshColorScaleBiasPipelines?: Map<string, WgpuShapeMeshPipeline>;
 
   particleResources?: WgpuParticleResources;
   quadBatchResources?: WgpuQuadBatchResources;
 
   // Frame state: command encoder and current render pass
-  commandEncoder: GPUCommandEncoder | null;
-  renderPass: GPURenderPassEncoder | null;
+  commandEncoder: WgpuCommandEncoder | null;
+  renderPass: WgpuRenderPassEncoder | null;
 
   // The screen target whose swap-chain texture this frame presents into, set when a screen pass opens
   // and read by the submit that resolves supersampling and encodes capture. Null for a frame that only
@@ -261,8 +273,8 @@ export interface WgpuRenderStateRuntime extends RenderStateRuntime {
 
   // Device-tier resolve pipeline for a supersampled screen target. One per device, shared by every
   // screen target on it; the per-target texture, view, and bind group live on the target itself.
-  surfaceAntialiasResolveBindGroupLayout: GPUBindGroupLayout | null;
-  surfaceAntialiasResolvePipeline: GPURenderPipeline | null;
+  surfaceAntialiasResolveBindGroupLayout: WgpuBindGroupLayout | null;
+  surfaceAntialiasResolvePipeline: WgpuRenderPipeline | null;
 
   // Clip state. Masks were retired into clips (a mask is a path ClipRegion). `clipForms` is the
   // per-clip unwind stack (scissor vs stencil contour).
@@ -276,17 +288,17 @@ export interface WgpuRenderStateRuntime extends RenderStateRuntime {
   // Keyed per color-attachment format: the stencil pipelines declare a (write-masked) color target whose
   // format must match the pass attachment, so a clip inside an HDR (rgba16float) effect target needs its
   // own variant.
-  clipContourPipelines?: Map<GPUTextureFormat, WgpuClipContourPipelines>;
+  clipContourPipelines?: Map<WgpuTextureFormat, WgpuClipContourPipelines>;
   clipContourStack: WgpuClipContourEntry[];
   // GPU buffers replaced/retired mid-frame (a clip pop's per-clip buffers, a grown particle instance
   // buffer) but still referenced by recorded draws in the open command encoder; destroyed only after
   // submitWgpuFrame submits, since the frame's submit is deferred and destroying them earlier
   // invalidates the command buffer.
-  retiredBuffers?: GPUBuffer[];
+  retiredBuffers?: WgpuBuffer[];
   // The same deferral for TEXTURES replaced mid-frame (a grown skin-palette arena). A texture the open
   // encoder's bind groups still reference cannot be destroyed before submit either — doing so fails the
   // submit outright and the whole frame renders nothing, which is how this was found.
-  retiredTextures?: GPUTexture[];
+  retiredTextures?: WgpuTexture[];
 
   // Lazily-built flat-color pipeline for the GPU tessellated solid-fill shape path (webgpuShapeMesh.ts).
   // Null until the first solid-fill shape draws; shared across every shape on this device.
@@ -306,7 +318,7 @@ export interface WgpuRenderStateRuntime extends RenderStateRuntime {
   // Color format of the render target currently being drawn into. A Wgpu render pipeline bakes its
   // color attachment format, so scene pipelines key their compiled variant on this to draw into HDR
   // (rgba16float) effect targets.
-  currentColorFormat?: GPUTextureFormat;
+  currentColorFormat?: WgpuTextureFormat;
   // The target bound by the innermost open pass. Producers stamp its content color space. Null only
   // outside any pass — the screen is a target like any other now.
   currentRenderTarget: WgpuRenderTarget | null;
@@ -320,7 +332,7 @@ export interface WgpuRenderStateRuntime extends RenderStateRuntime {
 // The default shader is registered on the render state runtime; custom shaders are installed via
 // registerWgpuBitmapShader / setWgpuShader.
 export interface WgpuBitmapShader {
-  readonly pipeline: GPURenderPipeline;
+  pipeline: WgpuRenderPipeline;
   bind(
     state: WgpuRenderState,
     renderProxy: {
@@ -332,10 +344,10 @@ export interface WgpuBitmapShader {
 // One active contour clip's GPU resources. Kept on a stack so popWgpuClipContours can redraw the
 // same geometry/uniform to decrement its stencil region, then destroy the buffers.
 export interface WgpuClipContourEntry {
-  vertexBuffer: GPUBuffer;
+  vertexBuffer: WgpuBuffer;
   vertexCount: number;
-  uniformBuffer: GPUBuffer;
-  bindGroup: GPUBindGroup;
+  uniformBuffer: WgpuBuffer;
+  bindGroup: WgpuBindGroup;
   depth: number;
 }
 
@@ -343,9 +355,9 @@ export interface WgpuClipContourEntry {
 // `erase` decrements them (pop). Both are color-less, position-only, and share one uniform
 // bind-group layout.
 export interface WgpuClipContourPipelines {
-  write: GPURenderPipeline;
-  erase: GPURenderPipeline;
-  bindGroupLayout: GPUBindGroupLayout;
+  write: WgpuRenderPipeline;
+  erase: WgpuRenderPipeline;
+  bindGroupLayout: WgpuBindGroupLayout;
 }
 
 // A pixel-space scissor rectangle pushed onto the WgpuRenderState runtime's scissor stack for
@@ -362,16 +374,16 @@ export interface WgpuScissorRect {
 // sharing a slot would make every draw observe the final region's geometry and color. Slots grow by
 // replacement and are destroyed with rendererData.
 export interface WgpuShapeMeshBuffers {
-  vertexBuffers: GPUBuffer[];
+  vertexBuffers: WgpuBuffer[];
   vertexCapacities: number[];
-  indexBuffers: GPUBuffer[];
+  indexBuffers: WgpuBuffer[];
   indexCapacities: number[];
-  uniformBuffers: GPUBuffer[];
-  bindGroups: GPUBindGroup[];
+  uniformBuffers: WgpuBuffer[];
+  bindGroups: WgpuBindGroup[];
   // Separate opt-in slots for the larger scale/bias uniform. Untinted shapes allocate only the lean
   // 64-byte uniforms above; registered color adjustment allocates these 96-byte siblings on demand.
-  colorScaleBiasUniformBuffers: GPUBuffer[];
-  colorScaleBiasBindGroups: GPUBindGroup[];
+  colorScaleBiasUniformBuffers: WgpuBuffer[];
+  colorScaleBiasBindGroups: WgpuBindGroup[];
 }
 
 // Cached flat-color pipeline for the GPU tessellated solid-fill shape path. Position-only vertex
@@ -379,17 +391,17 @@ export interface WgpuShapeMeshBuffers {
 // 'equal' (gated by any active contour clip) and writes nothing, so the fill never disturbs the
 // stencil.
 export interface WgpuShapeMeshPipeline {
-  pipeline: GPURenderPipeline;
-  bindGroupLayout: GPUBindGroupLayout;
+  pipeline: WgpuRenderPipeline;
+  bindGroupLayout: WgpuBindGroupLayout;
 }
 
 // One pool slot's GPU buffers, sized lazily and grown by allocating a replacement (the superseded
 // buffer is released to GC, never destroyed mid-life, since a prior frame's submit may still
 // reference it). materialBuffer stays null until a flush with per-instance material data uses it.
 export interface WgpuQuadBatchWriterBufferSlot {
-  instanceBuffer: GPUBuffer | null;
+  instanceBuffer: WgpuBuffer | null;
   instanceCapacity: number;
-  materialBuffer: GPUBuffer | null;
+  materialBuffer: WgpuBuffer | null;
   materialCapacity: number;
 }
 
@@ -397,7 +409,7 @@ export interface WgpuQuadBatchWriterBufferSlot {
 // per-instance model matrices for one draw. Grown by allocating a replacement rather than destroying the
 // superseded buffer, which a prior frame's submit may still reference.
 export interface WgpuMeshInstanceBufferSlot {
-  buffer: GPUBuffer | null;
+  buffer: WgpuBuffer | null;
   capacity: number;
 }
 
@@ -412,8 +424,8 @@ export interface WgpuTextureResource {
   // True when sampled RGB is straight-alpha and the 2D display shader must premultiply it before
   // applying color adjustments/blending. Native compressed blocks cannot be premultiplied in place.
   straightAlpha?: boolean;
-  texture: GPUTexture;
-  view: GPUTextureView;
+  texture: WgpuTexture;
+  view: WgpuTextureView;
 }
 
 // The group(1) bind groups over one resource's `view`, one per sampler, keyed by sampler identity.
@@ -426,7 +438,7 @@ export interface WgpuTextureResource {
 // Layout is deliberately NOT a key axis. Every 2D-path bind group over these views is built against
 // the single `textureBindGroupLayout` on the runtime, so a layout dimension would never vary and
 // would be machinery with no second value to hold.
-export type WgpuTextureBindings = Map<GPUSampler, GPUBindGroup>;
+export type WgpuTextureBindings = Map<WgpuSampler, WgpuBindGroup>;
 
 // An uploaded GPU texture, cached per image source in the WgpuRenderState runtime's textureCache: an
 // allocated resource plus the per-sampler bind groups derived from it.
@@ -436,7 +448,7 @@ export interface WgpuTextureEntry extends WgpuTextureResource, EntityRaw {
   // A sampler fixed by the SOURCE rather than by the draw — external and video textures carry their
   // own filtering, which the global `allowSmoothing` policy must not override. Absent means "follow the
   // policy". An explicit per-bitmap smoothing override still wins over both, as it always did.
-  sampler?: GPUSampler;
+  sampler?: WgpuSampler;
 }
 
 // A WgpuTextureEntry cached per TextureSource, carrying the uploaded content `version`.
@@ -446,7 +458,7 @@ export interface WgpuTextureSourceTextureEntry extends WgpuTextureEntry {
 
 export interface WgpuVideoTextureEntry extends WgpuTextureEntry {
   height: number;
-  sampler: GPUSampler;
+  sampler: WgpuSampler;
   uploadedVersion: number;
   width: number;
 }

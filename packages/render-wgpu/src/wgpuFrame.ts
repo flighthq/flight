@@ -1,4 +1,4 @@
-import type { WgpuRenderState, WgpuRenderStateRuntime } from './contract.render-wgpu-types.ts';
+import type { WgpuBuffer, WgpuRenderState, WgpuRenderStateRuntime, WgpuTexture } from './contract.render-wgpu-types.ts';
 import { getWgpuRenderStateRuntime } from './wgpuRenderState.ts';
 import { endWgpuScreenRenderTargetFrame } from './wgpuScreenRenderTarget.ts';
 
@@ -28,7 +28,7 @@ export function beginWgpuFrame(state: WgpuRenderState): void {
 // retireWgpuTexture below, and subject to the same rule for the same reason: a frame records into one
 // encoder and submits once, so a buffer replaced mid-recording may still be referenced by a recorded draw.
 // Callers that retire more than one buffer call this once per buffer.
-export function retireWgpuBuffer(state: WgpuRenderState, buffer: GPUBuffer): void {
+export function retireWgpuBuffer(state: WgpuRenderState, buffer: WgpuBuffer): void {
   const runtime = getWgpuRenderStateRuntime(state);
   (runtime.retiredBuffers ?? (runtime.retiredBuffers = [])).push(buffer);
 }
@@ -43,7 +43,7 @@ export function retireWgpuBuffer(state: WgpuRenderState, buffer: GPUBuffer): voi
 // replace a texture during recording (a grown palette arena, a resized rasterization cache, a cache entry
 // rewritten on a payload version bump) retire it here; submitWgpuFrame frees it once the frame is
 // safely on the queue.
-export function retireWgpuTexture(state: WgpuRenderState, texture: GPUTexture): void {
+export function retireWgpuTexture(state: WgpuRenderState, texture: WgpuTexture): void {
   const runtime = getWgpuRenderStateRuntime(state);
   (runtime.retiredTextures ?? (runtime.retiredTextures = [])).push(texture);
 }

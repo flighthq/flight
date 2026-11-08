@@ -1,3 +1,4 @@
+export { WgpuBufferUsage, WgpuColorWrite, WgpuMapMode, WgpuShaderStage, WgpuTextureUsage } from './contract.ts';
 export { enableWgpuTextureResolverGuards } from './enableWgpuTextureResolverGuards.ts';
 export * from './explainWgpuTextureResolution.ts';
 export { explainWgpuUniformEndianness } from './explainWgpuUniformEndianness.ts';

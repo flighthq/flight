@@ -1,7 +1,20 @@
 import type { Matrix } from '@flighthq/geometry/contract';
 import type { PathWinding } from '@flighthq/path/contract';
-import { getWgpuRenderStateRuntime, getWgpuRenderPassViewport, retireWgpuBuffer } from '@flighthq/render-wgpu/contract';
-import type { WgpuClipContourPipelines, WgpuRenderState } from '@flighthq/render-wgpu/contract';
+import {
+  WgpuBufferUsage,
+  WgpuShaderStage,
+  getWgpuRenderPassViewport,
+  getWgpuRenderStateRuntime,
+  retireWgpuBuffer,
+} from '@flighthq/render-wgpu/contract';
+import type {
+  WgpuBuffer,
+  WgpuClipContourPipelines,
+  WgpuRenderPipeline,
+  WgpuRenderState,
+  WgpuStencilOperation,
+  WgpuVertexBufferLayout,
+} from '@flighthq/render-wgpu/contract';
 
 import { flushWgpuQuadBatchWriter } from './wgpuQuadBatchWriter.ts';
 
@@ -102,7 +115,7 @@ export function pushWgpuClipContours(
   runtime.currentMaskDepth = depth + 1;
 }
 
-function createClipContourUniformBuffer(state: WgpuRenderState, t: Readonly<Matrix>): GPUBuffer {
+function createClipContourUniformBuffer(state: WgpuRenderState, t: Readonly<Matrix>): WgpuBuffer {
   const viewport = getWgpuRenderPassViewport(state);
   const iw = 2 / viewport.width;
   const ih = 2 / viewport.height;
@@ -121,7 +134,7 @@ function createClipContourUniformBuffer(state: WgpuRenderState, t: Readonly<Matr
   m[10] = 1;
   const buffer = state.device.createBuffer({
     size: CLIP_UNIFORM_BYTES,
-    usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+    usage: WgpuBufferUsage.UNIFORM | WgpuBufferUsage.COPY_DST,
   });
   state.device.queue.writeBuffer(buffer, 0, m);
   return buffer;
@@ -132,7 +145,7 @@ function createClipContourUniformBuffer(state: WgpuRenderState, t: Readonly<Matr
 function createClipContourVertexBuffer(
   state: WgpuRenderState,
   contours: readonly (readonly number[])[],
-): { vertexBuffer: GPUBuffer; vertexCount: number } {
+): { vertexBuffer: WgpuBuffer; vertexCount: number } {
   const tris: number[] = [];
   for (let c = 0; c < contours.length; c++) {
     const contour = contours[c];
@@ -153,7 +166,7 @@ function createClipContourVertexBuffer(
   const vertexCount = data.length >> 1;
   const vertexBuffer = state.device.createBuffer({
     size: Math.max(4, data.byteLength),
-    usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
+    usage: WgpuBufferUsage.VERTEX | WgpuBufferUsage.COPY_DST,
   });
   if (data.byteLength > 0) state.device.queue.writeBuffer(vertexBuffer, 0, data);
   return { vertexBuffer, vertexCount };
@@ -169,14 +182,14 @@ function ensureClipContourPipelines(state: WgpuRenderState): WgpuClipContourPipe
   const device = state.device;
   const module = device.createShaderModule({ code: CLIP_WGSL });
   const bindGroupLayout = device.createBindGroupLayout({
-    entries: [{ binding: 0, visibility: GPUShaderStage.VERTEX, buffer: { type: 'uniform' } }],
+    entries: [{ binding: 0, visibility: WgpuShaderStage.VERTEX, buffer: { type: 'uniform' } }],
   });
   const layout = device.createPipelineLayout({ bindGroupLayouts: [bindGroupLayout] });
-  const vertexBuffers: GPUVertexBufferLayout[] = [
+  const vertexBuffers: WgpuVertexBufferLayout[] = [
     { arrayStride: 8, attributes: [{ shaderLocation: 0, offset: 0, format: 'float32x2' }] },
   ];
 
-  const make = (passOp: GPUStencilOperation): GPURenderPipeline =>
+  const make = (passOp: WgpuStencilOperation): WgpuRenderPipeline =>
     device.createRenderPipeline({
       layout,
       vertex: { module, entryPoint: 'vs_main', buffers: vertexBuffers },

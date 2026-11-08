@@ -5,7 +5,12 @@ import { BlendMode } from '@flighthq/materials/contract';
 import { beginWgpuScreenRenderPassForTest, submitWgpuFrame } from '@flighthq/render-wgpu/contract';
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
 import { createWgpuRenderStateForTest, installWgpuMock } from '@flighthq/render-wgpu/contract';
-import type { WgpuTextureEntry } from '@flighthq/render-wgpu/contract';
+import type {
+  WgpuRenderPipelineDescriptor,
+  WgpuTexture,
+  WgpuTextureEntry,
+  WgpuTextureView,
+} from '@flighthq/render-wgpu/contract';
 
 import { registerWgpuColorAdjustmentMaterialFeature } from './wgpuColorAdjustmentMaterialFeature.ts';
 import {
@@ -36,8 +41,8 @@ function makeTexture(): WgpuTextureEntry {
     [EntityRuntimeKey]: undefined,
     bindings: new Map(),
     mipLevelCount: 1,
-    texture: {} as GPUTexture,
-    view: {} as GPUTextureView,
+    texture: {} as WgpuTexture,
+    view: {} as WgpuTextureView,
   };
 }
 
@@ -186,7 +191,7 @@ describe('getWgpuQuadBatchPipeline', () => {
     const module = state.device.createShaderModule({ code: '' });
     const blendOf = (mode: BlendMode) => {
       const pipeline = getWgpuQuadBatchPipeline(state, resources, module, false, mode) as unknown as {
-        __descriptor: GPURenderPipelineDescriptor;
+        __descriptor: WgpuRenderPipelineDescriptor;
       };
       return [...pipeline.__descriptor.fragment!.targets][0]!.blend!.color;
     };

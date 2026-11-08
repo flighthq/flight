@@ -1,6 +1,13 @@
 import type { LinearColorRaw } from '@flighthq/color/contract';
-import { getWgpuColorAdjustmentMaterialFeature } from '@flighthq/render-wgpu/contract';
-import type { WgpuRenderState, WgpuSkinningAdapter } from '@flighthq/render-wgpu/contract';
+import { WgpuShaderStage, getWgpuColorAdjustmentMaterialFeature } from '@flighthq/render-wgpu/contract';
+import type {
+  WgpuBindGroup,
+  WgpuRenderState,
+  WgpuSampler,
+  WgpuSkinningAdapter,
+  WgpuTextureFormat,
+  WgpuTextureView,
+} from '@flighthq/render-wgpu/contract';
 import type { WgpuColorAdjustmentMaterialFeature } from '@flighthq/scene2d-wgpu/contract';
 import type { Texture } from '@flighthq/texture/contract';
 
@@ -36,7 +43,7 @@ export function bindWgpuClassicSurface(
   specularMap: Readonly<Texture> | null,
   normalMap: Readonly<Texture> | null,
   alphaMap: Readonly<Texture> | null,
-): GPUBindGroup {
+): WgpuBindGroup {
   // Re-resolve the primary sampler + map views every bind so a live material-map mutation (swap,
   // unready→ready, image replacement, version bump, primary-sampler change) is picked up; the views land
   // in a REUSED module scratch so the steady-state re-bind of an unchanged material allocates nothing.
@@ -94,7 +101,7 @@ export function buildWgpuClassicDefineKey(key: Readonly<WgpuClassicDefineKey>): 
 export function compileWgpuClassicPipeline(
   state: WgpuRenderState,
   key: Readonly<WgpuClassicDefineKey>,
-  format: GPUTextureFormat,
+  format: WgpuTextureFormat,
   blended = false,
   skinned = false,
   colorAdjustmentFeature: Readonly<WgpuColorAdjustmentMaterialFeature> | null = null,
@@ -105,15 +112,15 @@ export function compileWgpuClassicPipeline(
   });
   const materialBindGroupLayout = device.createBindGroupLayout({
     entries: [
-      { binding: 0, visibility: GPUShaderStage.FRAGMENT, buffer: { type: 'uniform' } },
-      { binding: 1, visibility: GPUShaderStage.FRAGMENT, sampler: { type: 'filtering' } },
-      { binding: 2, visibility: GPUShaderStage.FRAGMENT, sampler: { type: 'filtering' } },
-      { binding: 3, visibility: GPUShaderStage.FRAGMENT, sampler: { type: 'filtering' } },
-      { binding: 4, visibility: GPUShaderStage.FRAGMENT, sampler: { type: 'filtering' } },
-      { binding: 5, visibility: GPUShaderStage.FRAGMENT, texture: { sampleType: 'float' } },
-      { binding: 6, visibility: GPUShaderStage.FRAGMENT, texture: { sampleType: 'float' } },
-      { binding: 7, visibility: GPUShaderStage.FRAGMENT, texture: { sampleType: 'float' } },
-      { binding: 8, visibility: GPUShaderStage.FRAGMENT, texture: { sampleType: 'float' } },
+      { binding: 0, visibility: WgpuShaderStage.FRAGMENT, buffer: { type: 'uniform' } },
+      { binding: 1, visibility: WgpuShaderStage.FRAGMENT, sampler: { type: 'filtering' } },
+      { binding: 2, visibility: WgpuShaderStage.FRAGMENT, sampler: { type: 'filtering' } },
+      { binding: 3, visibility: WgpuShaderStage.FRAGMENT, sampler: { type: 'filtering' } },
+      { binding: 4, visibility: WgpuShaderStage.FRAGMENT, sampler: { type: 'filtering' } },
+      { binding: 5, visibility: WgpuShaderStage.FRAGMENT, texture: { sampleType: 'float' } },
+      { binding: 6, visibility: WgpuShaderStage.FRAGMENT, texture: { sampleType: 'float' } },
+      { binding: 7, visibility: WgpuShaderStage.FRAGMENT, texture: { sampleType: 'float' } },
+      { binding: 8, visibility: WgpuShaderStage.FRAGMENT, texture: { sampleType: 'float' } },
     ],
   });
   // The group(3) shadow-sample layout opts this pipeline into directional shadow reception: the pipeline
@@ -136,7 +143,7 @@ export function compileWgpuClassicPipeline(
 export function ensureWgpuClassicPipeline(
   state: WgpuRenderState,
   key: Readonly<WgpuClassicDefineKey>,
-  format: GPUTextureFormat,
+  format: WgpuTextureFormat,
 ): WgpuClassicPipeline {
   const fullKey: WgpuClassicDefineKey = {
     ...key,
@@ -390,7 +397,7 @@ const CLASSIC_SHARED_SAMPLER_WGSL_BODY = CLASSIC_WGSL_BODY.replace(
   .replaceAll('alphaSampler', 'materialSampler');
 
 const _scratch = new Float32Array(CLASSIC_UNIFORM_BYTES / 4);
-const _samplerScratch = new Array<GPUSampler>(4);
+const _samplerScratch = new Array<WgpuSampler>(4);
 // Reused per-bind resolved-view scratch (diffuse, specular, normal, alpha) so a steady-state re-bind
 // allocates nothing; ensureWgpuPerMapMaterialBinding copies it into the binding only on create/rebuild.
-const _viewScratch = new Array<GPUTextureView>(4);
+const _viewScratch = new Array<WgpuTextureView>(4);

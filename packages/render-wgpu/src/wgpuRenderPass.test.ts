@@ -1,5 +1,6 @@
 import { createMatrix } from '@flighthq/geometry/contract';
 
+import type { WgpuColorDict } from './contract.render-wgpu-types.ts';
 import { beginWgpuFrame, submitWgpuFrame } from './wgpuFrame.ts';
 import {
   beginWgpuRenderPass,
@@ -60,7 +61,7 @@ describe('beginWgpuRenderPass', () => {
     const pass = beginWgpuRenderPass(state, target, { color: [0.25, 0.5, 0.75, 1.0] });
 
     const attachment = Array.from(beginRenderPass.mock.calls.at(-1)![0].colorAttachments)[0]!;
-    const clearValue = attachment.clearValue as GPUColorDict;
+    const clearValue = attachment.clearValue as WgpuColorDict;
     expect([clearValue.r, clearValue.g, clearValue.b, clearValue.a]).toEqual([0.25, 0.5, 0.75, 1.0]);
     expect(attachment.loadOp).toBe('clear');
 

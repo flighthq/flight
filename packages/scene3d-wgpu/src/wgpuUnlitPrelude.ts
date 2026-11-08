@@ -1,6 +1,14 @@
 import type { LinearColorRaw } from '@flighthq/color/contract';
-import type { WgpuRenderState } from '@flighthq/render-wgpu/contract';
+import type {
+  WgpuBindGroup,
+  WgpuBuffer,
+  WgpuRenderState,
+  WgpuSampler,
+  WgpuTextureFormat,
+  WgpuTextureView,
+} from '@flighthq/render-wgpu/contract';
 import type { WgpuSkinningAdapter } from '@flighthq/render-wgpu/contract';
+import { WgpuBufferUsage, WgpuShaderStage } from '@flighthq/render-wgpu/contract';
 import type { Texture } from '@flighthq/texture/contract';
 
 import type { WgpuMaterialBinding, WgpuUnlitDefineKey, WgpuUnlitPipeline } from './contract.scene3d-wgpu-types.ts';
@@ -26,7 +34,7 @@ export function bindWgpuUnlitSurface(
   intensity: number,
   alphaCutoff: number,
   colorMap: Readonly<Texture> | null,
-): GPUBindGroup {
+): WgpuBindGroup {
   const sampler = getWgpuMaterialSampler(state, colorMap);
   const view = resolveWgpuMaterialTextureView(state, colorMap);
   const binding = ensureWgpuUnlitBinding(state, pipeline, materialKey, sampler, view);
@@ -44,7 +52,7 @@ export function bindWgpuUnlitVideoSurface(
   intensity: number,
   alphaCutoff: number,
   colorMap: Readonly<Texture>,
-): GPUBindGroup {
+): WgpuBindGroup {
   return bindWgpuUnlitSurface(state, pipeline, materialKey, color, intensity, alphaCutoff, colorMap);
 }
 
@@ -52,15 +60,15 @@ function ensureWgpuUnlitBinding(
   state: WgpuRenderState,
   pipeline: Readonly<WgpuUnlitPipeline>,
   materialKey: object,
-  sampler: GPUSampler,
-  view: GPUTextureView,
+  sampler: WgpuSampler,
+  view: WgpuTextureView,
 ): WgpuMaterialBinding {
   const scene = getWgpuScene3DRuntime(state);
   let binding = scene.materialBindGroups.get(materialKey);
   if (binding === undefined) {
     const buffer = state.device.createBuffer({
       size: UNLIT_UNIFORM_BYTES,
-      usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+      usage: WgpuBufferUsage.UNIFORM | WgpuBufferUsage.COPY_DST,
     });
     binding = {
       bindGroup: createWgpuUnlitBindGroup(state, pipeline, buffer, sampler, view),
@@ -82,10 +90,10 @@ function ensureWgpuUnlitBinding(
 function createWgpuUnlitBindGroup(
   state: WgpuRenderState,
   pipeline: Readonly<WgpuUnlitPipeline>,
-  buffer: GPUBuffer,
-  sampler: GPUSampler,
-  view: GPUTextureView,
-): GPUBindGroup {
+  buffer: WgpuBuffer,
+  sampler: WgpuSampler,
+  view: WgpuTextureView,
+): WgpuBindGroup {
   return state.device.createBindGroup({
     layout: pipeline.materialBindGroupLayout,
     entries: [
@@ -126,7 +134,7 @@ export function buildWgpuUnlitDefineKey(key: Readonly<WgpuUnlitDefineKey>): stri
 export function compileWgpuUnlitPipeline(
   state: WgpuRenderState,
   key: Readonly<WgpuUnlitDefineKey>,
-  format: GPUTextureFormat,
+  format: WgpuTextureFormat,
   blended = false,
   skinned = false,
 ): WgpuUnlitPipeline {
@@ -136,9 +144,9 @@ export function compileWgpuUnlitPipeline(
   });
   const materialBindGroupLayout = device.createBindGroupLayout({
     entries: [
-      { binding: 0, visibility: GPUShaderStage.FRAGMENT, buffer: { type: 'uniform' } },
-      { binding: 1, visibility: GPUShaderStage.FRAGMENT, sampler: { type: 'filtering' } },
-      { binding: 2, visibility: GPUShaderStage.FRAGMENT, texture: { sampleType: 'float' } },
+      { binding: 0, visibility: WgpuShaderStage.FRAGMENT, buffer: { type: 'uniform' } },
+      { binding: 1, visibility: WgpuShaderStage.FRAGMENT, sampler: { type: 'filtering' } },
+      { binding: 2, visibility: WgpuShaderStage.FRAGMENT, texture: { sampleType: 'float' } },
     ],
   });
   return createWgpuMeshPipeline(state, {
@@ -156,7 +164,7 @@ export function compileWgpuUnlitPipeline(
 export function ensureWgpuUnlitPipeline(
   state: WgpuRenderState,
   key: Readonly<WgpuUnlitDefineKey>,
-  format: GPUTextureFormat,
+  format: WgpuTextureFormat,
 ): WgpuUnlitPipeline {
   return ensureWgpuScene3DPipeline(state, `unlit:${format}|${buildWgpuUnlitDefineKey(key)}`, (blended, skinned) =>
     compileWgpuUnlitPipeline(state, key, format, blended, skinned),

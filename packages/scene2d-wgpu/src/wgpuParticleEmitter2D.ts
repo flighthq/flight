@@ -1,14 +1,16 @@
 import type { ParticleEmitter2D } from '@flighthq/particleemitter/contract';
 import {
-  getWgpuRenderStateRuntime,
-  getWgpuRenderStateDeviceResources,
-  getWgpuSampler,
+  WgpuBufferUsage,
+  WgpuShaderStage,
   getWgpuRenderPassViewport,
+  getWgpuRenderStateDeviceResources,
+  getWgpuRenderStateRuntime,
+  getWgpuSampler,
   resolveWgpuApplyBlendMode,
   resolveWgpuTexture,
   retireWgpuBuffer,
 } from '@flighthq/render-wgpu/contract';
-import type { WgpuParticleResources, WgpuRenderState } from '@flighthq/render-wgpu/contract';
+import type { WgpuParticleResources, WgpuRenderPipeline, WgpuRenderState } from '@flighthq/render-wgpu/contract';
 import { SCENE2D_WORKING_COLOR_SPACE } from '@flighthq/render/contract';
 import { noopRendererData } from '@flighthq/render/contract';
 import type { RenderProxy2D } from '@flighthq/render/contract';
@@ -116,7 +118,7 @@ function ensureParticleResources(state: WgpuRenderState): WgpuParticleResources 
     entries: [
       {
         binding: 0,
-        visibility: GPUShaderStage.VERTEX,
+        visibility: WgpuShaderStage.VERTEX,
         buffer: { type: 'read-only-storage' },
       },
     ],
@@ -139,7 +141,7 @@ function ensureParticleResources(state: WgpuRenderState): WgpuParticleResources 
 }
 
 // Returns the particle pipeline for the current target's color format, building and caching it on demand.
-function getParticlePipeline(state: WgpuRenderState, resources: WgpuParticleResources): GPURenderPipeline {
+function getParticlePipeline(state: WgpuRenderState, resources: WgpuParticleResources): WgpuRenderPipeline {
   const format = getWgpuRenderStateRuntime(state).currentColorFormat ?? state.format;
   const existing = resources.pipelines.get(format);
   if (existing !== undefined) return existing;
@@ -189,7 +191,7 @@ function ensureParticleInstanceBuffer(state: WgpuRenderState, count: number): vo
   const newCapacity = Math.max(needed, (runtime.particleInstanceCapacity || 0) * 2);
   runtime.particleInstanceBuffer = state.device.createBuffer({
     size: Math.max(newCapacity, INSTANCE_STRIDE),
-    usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
+    usage: WgpuBufferUsage.STORAGE | WgpuBufferUsage.COPY_DST,
   });
   runtime.particleInstanceCapacity = newCapacity;
   runtime.particleInstanceData = new Float32Array(newCapacity / 4);

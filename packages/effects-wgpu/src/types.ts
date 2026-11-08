@@ -1,15 +1,22 @@
 import type { ColorLut, ColorLutCache } from '@flighthq/adjustments/contract';
 import type { EffectStateOptions } from '@flighthq/effects/contract';
 import type { Entity } from '@flighthq/entity/contract';
-import type { WgpuRenderState, WgpuRenderTargetPool, WgpuTextureRenderTarget } from '@flighthq/render-wgpu/contract';
+import type {
+  WgpuRenderPipeline,
+  WgpuRenderState,
+  WgpuRenderTargetPool,
+  WgpuTexture,
+  WgpuTextureFormat,
+  WgpuTextureRenderTarget,
+} from '@flighthq/render-wgpu/contract';
 
 export type WgpuEffectBlendMode = 'premul' | 'replace' | 'erase';
 
 export type WgpuEffectPipeline = Entity & {
-  pipeline: GPURenderPipeline;
+  pipeline: WgpuRenderPipeline;
   blendMode: WgpuEffectBlendMode;
-  compileForFormat?: (format: GPUTextureFormat) => GPURenderPipeline;
-  variants?: Map<GPUTextureFormat, GPURenderPipeline>;
+  compileForFormat?: (format: WgpuTextureFormat) => WgpuRenderPipeline;
+  variants?: Map<WgpuTextureFormat, WgpuRenderPipeline>;
 };
 
 export type WgpuDualSourceEffectPipeline = WgpuEffectPipeline;
@@ -20,7 +27,7 @@ export type WgpuDualSourceEffectPipeline = WgpuEffectPipeline;
 // lut differs by identity from `lut` — the bake cache returns a stable reference for an unchanged run, so
 // a static grade uploads once. `texture` is a GPU resource; destroy it on pipeline teardown.
 export interface WgpuColorLutTextureCache {
-  texture: GPUTexture | null;
+  texture: WgpuTexture | null;
   size: number;
   lut: ColorLut | null;
 }
@@ -41,7 +48,7 @@ export interface WgpuEffectState {
   // Per-frame velocity G-buffer fed into ctx.sceneVelocityTexture for velocity-driven effects (motion
   // blur, TAA); null when no velocity pass ran (velocity-driven effects then color-only-fall-back).
   // Depth, by contrast, comes from the scene target directly.
-  velocityTexture: GPUTexture | null;
+  velocityTexture: WgpuTexture | null;
 }
 
 // Why an application of a WGPU effect chain to a render texture did not do what the caller asked. The

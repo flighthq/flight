@@ -2,11 +2,29 @@ import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { EntityRuntimeKey } from '@flighthq/entity/contract';
 import { createWgpuDeviceState, createWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
 import type {
+  WgpuBindGroupLayout,
+  WgpuBuffer,
+  WgpuBufferDescriptor,
+  WgpuBufferSource,
+  WgpuCommandEncoder,
+  WgpuDevice,
+  WgpuExtent3D,
+  WgpuExtent3DDict,
+  WgpuIndexFormat,
   WgpuRenderPass,
+  WgpuRenderPassEncoder,
   WgpuRenderState,
   WgpuRenderStateOptions,
   WgpuRenderStateRuntime,
+  WgpuSampler,
+  WgpuShaderModule,
+  WgpuTexelCopyBufferLayout,
+  WgpuTexelCopyTextureInfo,
+  WgpuTexture,
+  WgpuTextureDescriptor,
+  WgpuTextureFormat,
   WgpuTextureRenderTarget,
+  WgpuTextureView,
 } from '@flighthq/render-wgpu/contract';
 import type { WgpuSkinningAdapter } from '@flighthq/render-wgpu/contract';
 import { createRenderState } from '@flighthq/render/contract';
@@ -24,35 +42,6 @@ export interface FakeWgpu {
   calls: { name: string; args: unknown[] }[];
 }
 
-// WebGPU flag constants are only type-level in @webgpu/types; install runtime values for JSDOM so the
-// pipeline/buffer/texture descriptors the renderer builds resolve (mirrors render-wgpu's mock).
-function installWgpuConstants(): void {
-  const g = globalThis as Record<string, unknown>;
-  if (!g['GPUBufferUsage']) {
-    g['GPUBufferUsage'] = {
-      MAP_READ: 1,
-      MAP_WRITE: 2,
-      COPY_SRC: 4,
-      COPY_DST: 8,
-      INDEX: 16,
-      VERTEX: 32,
-      UNIFORM: 64,
-      STORAGE: 128,
-      INDIRECT: 256,
-      QUERY_RESOLVE: 512,
-    };
-  }
-  if (!g['GPUTextureUsage']) {
-    g['GPUTextureUsage'] = { COPY_SRC: 1, COPY_DST: 2, TEXTURE_BINDING: 4, STORAGE_BINDING: 8, RENDER_ATTACHMENT: 16 };
-  }
-  if (!g['GPUShaderStage']) {
-    g['GPUShaderStage'] = { VERTEX: 1, FRAGMENT: 2, COMPUTE: 4 };
-  }
-  if (!g['GPUColorWrite']) {
-    g['GPUColorWrite'] = { RED: 1, GREEN: 2, BLUE: 4, ALPHA: 8, ALL: 15 };
-  }
-}
-
 // A WgpuRenderState backed by the recording device, with an open recording render pass set on the
 // runtime (so bind/draw find runtime.renderPass), the uniform ring buffer wired up (so the draw path
 // can ring-allocate), and currentColorFormat set to the canvas format. scene-wgpu's own per-state
@@ -62,7 +51,6 @@ export function makeWgpuScene3DState(registry: Readonly<WgpuRenderStateOptions> 
   pass: WgpuRenderPass;
   state: WgpuRenderState;
 } {
-  installWgpuConstants();
   const calls: { name: string; args: unknown[] }[] = [];
   const record =
     (name: string, result?: unknown) =>
@@ -76,19 +64,19 @@ export function makeWgpuScene3DState(registry: Readonly<WgpuRenderStateOptions> 
     calls.push({ name: 'writeBuffer', args });
   };
   const writeTexture = (
-    destination: GPUTexelCopyTextureInfo,
-    data: GPUAllowSharedBufferSource,
-    dataLayout: GPUTexelCopyBufferLayout,
-    size: GPUExtent3D,
+    destination: WgpuTexelCopyTextureInfo,
+    data: WgpuBufferSource,
+    dataLayout: WgpuTexelCopyBufferLayout,
+    size: WgpuExtent3D,
   ): void => {
     validateWriteTextureSourceAllocation(destination, data, dataLayout, size);
     calls.push({ name: 'writeTexture', args: [destination, data, dataLayout, size] });
   };
-  const setIndexBuffer = (buffer: GPUBuffer, indexFormat: GPUIndexFormat, offset = 0, size?: number): void => {
+  const setIndexBuffer = (buffer: WgpuBuffer, indexFormat: WgpuIndexFormat, offset = 0, size?: number): void => {
     validateRenderBufferRange('setIndexBuffer', buffer, offset, size, indexFormat === 'uint32' ? 4 : 2);
     calls.push({ name: 'setIndexBuffer', args: [buffer, indexFormat, offset, size] });
   };
-  const setVertexBuffer = (slot: number, buffer: GPUBuffer | null, offset = 0, size?: number): void => {
+  const setVertexBuffer = (slot: number, buffer: WgpuBuffer | null, offset = 0, size?: number): void => {
     if (buffer !== null) validateRenderBufferRange('setVertexBuffer', buffer, offset, size, 4);
     calls.push({ name: 'setVertexBuffer', args: [slot, buffer, offset, size] });
   };
@@ -102,7 +90,7 @@ export function makeWgpuScene3DState(registry: Readonly<WgpuRenderStateOptions> 
     setPipeline: record('setPipeline'),
     setVertexBuffer,
     setViewport: record('setViewport'),
-  } as unknown as GPURenderPassEncoder;
+  } as unknown as WgpuRenderPassEncoder;
 
   // A recording command encoder whose beginRenderPass hands back the same recording pass — enough for
   // renderWgpuScene3DShadowMap and the IBL bake to drive their own render passes under JSDOM. `finish` returns
@@ -110,7 +98,7 @@ export function makeWgpuScene3DState(registry: Readonly<WgpuRenderStateOptions> 
   const commandEncoder = {
     beginRenderPass: record('beginRenderPass', renderPass),
     finish: record('finish', {}),
-  } as unknown as GPUCommandEncoder;
+  } as unknown as WgpuCommandEncoder;
 
   const device = {
     limits: { minUniformBufferOffsetAlignment: 256 },
@@ -126,9 +114,9 @@ export function makeWgpuScene3DState(registry: Readonly<WgpuRenderStateOptions> 
       calls.push({ name: 'createCommandEncoder', args: [] });
       return commandEncoder;
     },
-    createBuffer: (descriptor: GPUBufferDescriptor) => {
+    createBuffer: (descriptor: WgpuBufferDescriptor) => {
       calls.push({ name: 'createBuffer', args: [descriptor] });
-      return { destroy: () => {}, size: descriptor.size } as unknown as GPUBuffer;
+      return { destroy: () => {}, size: descriptor.size } as unknown as WgpuBuffer;
     },
     createPipelineLayout: record('createPipelineLayout', {}),
     createRenderPipeline: record('createRenderPipeline', {}),
@@ -138,13 +126,13 @@ export function makeWgpuScene3DState(registry: Readonly<WgpuRenderStateOptions> 
     },
     createShaderModule: (descriptor: unknown) => {
       calls.push({ name: 'createShaderModule', args: [descriptor] });
-      return {} as GPUShaderModule;
+      return {} as WgpuShaderModule;
     },
-    createTexture: (descriptor: GPUTextureDescriptor) => {
+    createTexture: (descriptor: WgpuTextureDescriptor) => {
       calls.push({ name: 'createTexture', args: [descriptor] });
       const [width, height, depthOrArrayLayers] = normalizeGpuExtent3D(descriptor.size);
       return {
-        createView: () => ({}) as GPUTextureView,
+        createView: () => ({}) as WgpuTextureView,
         depthOrArrayLayers,
         dimension: descriptor.dimension ?? '2d',
         destroy: () => {},
@@ -154,9 +142,9 @@ export function makeWgpuScene3DState(registry: Readonly<WgpuRenderStateOptions> 
         sampleCount: descriptor.sampleCount ?? 1,
         usage: descriptor.usage,
         width,
-      } as unknown as GPUTexture;
+      } as unknown as WgpuTexture;
     },
-  } as unknown as GPUDevice;
+  } as unknown as WgpuDevice;
 
   const state = createRenderState({ allowSmoothing: true }) as WgpuRenderState;
 
@@ -183,17 +171,17 @@ export function makeWgpuScene3DState(registry: Readonly<WgpuRenderStateOptions> 
     textureSourceStraightSrgbTextureCache: new WeakMap(),
     mipmapPipelineCache: new Map(),
     pipelineCache: new Map(),
-    textureBindGroupLayout: {} as GPUBindGroupLayout,
-    linearSampler: {} as GPUSampler,
-    nearestSampler: {} as GPUSampler,
+    textureBindGroupLayout: {} as WgpuBindGroupLayout,
+    linearSampler: {} as WgpuSampler,
+    nearestSampler: {} as WgpuSampler,
     samplerCache: new Map(),
     textureCache: new WeakMap(),
     currentRenderTarget: target,
     renderPass,
     // The fake stands in for a pass over a 256x256 surface: every draw reads this for its projection.
     renderTargetViewport: { height: 256, width: 256 },
-    uniformBuffer: { destroy: () => {} } as unknown as GPUBuffer,
-    uniformBindGroupLayout: {} as GPUBindGroupLayout,
+    uniformBuffer: { destroy: () => {} } as unknown as WgpuBuffer,
+    uniformBindGroupLayout: {} as WgpuBindGroupLayout,
     uniformData: new Float32Array(256 * 64),
     uniformDataU32: new Uint32Array(0),
     uniformOffset: 0,
@@ -204,7 +192,7 @@ export function makeWgpuScene3DState(registry: Readonly<WgpuRenderStateOptions> 
   // The fake pass the draw entry points take. It is bound to the same fake encoder the runtime carries,
   // so a test can assert on recorded calls exactly as before while the API says where the draw lands.
   const pass = allocateEntity<WgpuRenderPass>();
-  pass.colorView = {} as GPUTextureView;
+  pass.colorView = {} as WgpuTextureView;
   pass.encoder = renderPass;
   pass.ownsFrame = false;
   pass.saved = {
@@ -256,7 +244,7 @@ function getTypedArrayElementByteLength(data: ArrayBufferView): number {
   return (data as ArrayBufferView & { readonly BYTES_PER_ELEMENT: number }).BYTES_PER_ELEMENT;
 }
 
-function getWriteTextureBytesPerTexel(format: GPUTextureFormat): number | null {
+function getWriteTextureBytesPerTexel(format: WgpuTextureFormat): number | null {
   if (
     format === 'rgba8unorm' ||
     format === 'rgba8unorm-srgb' ||
@@ -269,22 +257,22 @@ function getWriteTextureBytesPerTexel(format: GPUTextureFormat): number | null {
   return null;
 }
 
-function normalizeGpuExtent3D(size: GPUExtent3D): [number, number, number] {
+function normalizeGpuExtent3D(size: WgpuExtent3D): [number, number, number] {
   if (Symbol.iterator in Object(size)) {
     const values = Array.from(size as Iterable<number>);
     return [values[0] ?? 1, values[1] ?? 1, values[2] ?? 1];
   }
-  const dictionary = size as GPUExtent3DDict;
+  const dictionary = size as WgpuExtent3DDict;
   return [dictionary.width, dictionary.height ?? 1, dictionary.depthOrArrayLayers ?? 1];
 }
 
 // Keep source-allocation validation scoped to the uncompressed formats used by this helper's
 // writeTexture paths. Block-compressed formats need a separate block-geometry model.
 function validateWriteTextureSourceAllocation(
-  destination: GPUTexelCopyTextureInfo,
-  data: GPUAllowSharedBufferSource,
-  dataLayout: GPUTexelCopyBufferLayout,
-  size: GPUExtent3D,
+  destination: WgpuTexelCopyTextureInfo,
+  data: WgpuBufferSource,
+  dataLayout: WgpuTexelCopyBufferLayout,
+  size: WgpuExtent3D,
 ): void {
   const isArrayBuffer = data instanceof ArrayBuffer;
   const isSharedArrayBuffer = typeof SharedArrayBuffer !== 'undefined' && data instanceof SharedArrayBuffer;
@@ -317,7 +305,7 @@ function validateWriteTextureSourceAllocation(
 // expose the same public size field as GPUBuffer; hand-authored opaque buffers remain record-only.
 function validateRenderBufferRange(
   call: 'setIndexBuffer' | 'setVertexBuffer',
-  buffer: GPUBuffer,
+  buffer: WgpuBuffer,
   offset: number,
   size: number | undefined,
   offsetAlignment: number,

@@ -14,8 +14,12 @@ import type { EffectPaddingResolver, RenderRootGuard, RenderState } from '@fligh
 import { createDisplayObject } from '@flighthq/scene2d/contract';
 
 import type {
+  WgpuBindGroupLayout,
   WgpuColorAdjustmentMaterialFeature,
   WgpuColorAdjustmentMaterialFeatureGuard,
+  WgpuDevice,
+  WgpuSampler,
+  WgpuShaderModule,
 } from './contract.render-wgpu-types.ts';
 import type {
   WgpuHostAcquisition,
@@ -68,7 +72,7 @@ beforeAll(() => {
 const _testPipeline = {};
 const _webBackend = testWgpuHost;
 
-function createWgpuRenderState(device: GPUDevice, options: Readonly<WgpuRenderOptions> = {}) {
+function createWgpuRenderState(device: WgpuDevice, options: Readonly<WgpuRenderOptions> = {}) {
   return createWgpuRenderStateWithPipeline(device, { ..._testPipeline, ...options });
 }
 
@@ -176,12 +180,12 @@ describe('createWgpuAcquisition', () => {
 
 describe('createWgpuDeviceState', () => {
   it('allocates distinct owners for repeated calls with the same raw device', () => {
-    const device = {} as GPUDevice;
+    const device = {} as WgpuDevice;
     expect(createWgpuDeviceState(device)).not.toBe(createWgpuDeviceState(device));
   });
 
   it('rejects a plain literal at the Entity boundary: EntityRuntimeKey is absent without allocateEntity', () => {
-    const device = {} as GPUDevice;
+    const device = {} as WgpuDevice;
     const literal = { device };
     expect(EntityRuntimeKey in literal).toBe(false);
 
@@ -190,16 +194,16 @@ describe('createWgpuDeviceState', () => {
   });
 
   it('returns a state that shares the device tier across derived runtimes', () => {
-    const device = {} as GPUDevice;
+    const device = {} as WgpuDevice;
     const deviceState = createWgpuDeviceState(device);
     const runtimeA = createWgpuRenderStateRuntime(deviceState);
     const runtimeB = createWgpuRenderStateRuntime(deviceState);
-    runtimeA.context.standardMaterialModule = {} as GPUShaderModule;
+    runtimeA.context.standardMaterialModule = {} as WgpuShaderModule;
     expect(runtimeB.context.standardMaterialModule).toBe(runtimeA.context.standardMaterialModule);
   });
 
   it('represents device-native resources as absent before the first render state initializes them', () => {
-    const runtime = getWgpuDeviceRuntime(createWgpuDeviceState({} as GPUDevice));
+    const runtime = getWgpuDeviceRuntime(createWgpuDeviceState({} as WgpuDevice));
     expect(runtime.resources).toBeNull();
   });
 });
@@ -509,7 +513,7 @@ describe('createWgpuRenderState', () => {
 
 describe('createWgpuRenderStateRuntime', () => {
   it('returns a runtime with the base binding slot and empty named registration tables', () => {
-    const runtime = createWgpuRenderStateRuntime(createWgpuDeviceState({} as GPUDevice));
+    const runtime = createWgpuRenderStateRuntime(createWgpuDeviceState({} as WgpuDevice));
     expect(runtime.binding).toBeNull();
     expect(runtime.registries.customMaterialShaders.size).toBe(0);
     expect(runtime.registries.materialRenderers.size).toBe(0);
@@ -525,23 +529,23 @@ describe('createWgpuRenderStateRuntime', () => {
   });
 
   it('shares the device tier when two runtimes are built from the same WgpuDeviceState', () => {
-    const deviceState = createWgpuDeviceState({} as GPUDevice);
+    const deviceState = createWgpuDeviceState({} as WgpuDevice);
     const runtimeA = createWgpuRenderStateRuntime(deviceState);
     const runtimeB = createWgpuRenderStateRuntime(deviceState);
 
     const resources = {
-      linearSampler: {} as GPUSampler,
-      nearestSampler: {} as GPUSampler,
-      textureBindGroupLayout: {} as GPUBindGroupLayout,
-      uniformBindGroupLayout: {} as GPUBindGroupLayout,
+      linearSampler: {} as WgpuSampler,
+      nearestSampler: {} as WgpuSampler,
+      textureBindGroupLayout: {} as WgpuBindGroupLayout,
+      uniformBindGroupLayout: {} as WgpuBindGroupLayout,
     };
     runtimeA.context.resources = resources;
     expect(runtimeB.context.resources).toBe(resources);
   });
 
   it('keeps separate device tiers when two runtimes are built from different WgpuDeviceStates', () => {
-    const runtimeA = createWgpuRenderStateRuntime(createWgpuDeviceState({} as GPUDevice));
-    const runtimeB = createWgpuRenderStateRuntime(createWgpuDeviceState({} as GPUDevice));
+    const runtimeA = createWgpuRenderStateRuntime(createWgpuDeviceState({} as WgpuDevice));
+    const runtimeB = createWgpuRenderStateRuntime(createWgpuDeviceState({} as WgpuDevice));
 
     expect(runtimeA.context).not.toBe(runtimeB.context);
   });
@@ -662,7 +666,7 @@ describe('getWgpuColorAdjustmentMaterialFeatureGuard', () => {
 
 describe('getWgpuDeviceRuntime', () => {
   it('returns the device runtime attached by createWgpuDeviceState', () => {
-    const device = {} as GPUDevice;
+    const device = {} as WgpuDevice;
     const deviceState = createWgpuDeviceState(device);
     const runtime = getWgpuDeviceRuntime(deviceState);
     expect(runtime).toBeDefined();
@@ -671,7 +675,7 @@ describe('getWgpuDeviceRuntime', () => {
   });
 
   it('resolves the same runtime object on repeated calls', () => {
-    const deviceState = createWgpuDeviceState({} as GPUDevice);
+    const deviceState = createWgpuDeviceState({} as WgpuDevice);
     expect(getWgpuDeviceRuntime(deviceState)).toBe(getWgpuDeviceRuntime(deviceState));
   });
 });

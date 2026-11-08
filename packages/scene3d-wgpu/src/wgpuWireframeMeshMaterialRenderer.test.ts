@@ -5,7 +5,7 @@ import type { Scene3DLightBlock } from '@flighthq/lighting/contract';
 import { createWireframeMaterial } from '@flighthq/materials/contract';
 import { WireframeMaterialKind } from '@flighthq/materials/contract';
 import { createBoxMeshGeometry } from '@flighthq/meshgeometry/contract';
-import type { WgpuSkinningAdapter } from '@flighthq/render-wgpu/contract';
+import type { WgpuBindGroup, WgpuSkinningAdapter } from '@flighthq/render-wgpu/contract';
 import type { Scene3DRenderProxy } from '@flighthq/render/contract';
 
 import { getWgpuMeshMaterialRenderer } from './wgpuMeshMaterialRegistry.ts';
@@ -83,7 +83,7 @@ describe('wgpuWireframeMeshMaterialRenderer', () => {
   it('draw binds the palette-backed group selected by a skinned pipeline', () => {
     const { fake, state } = makeWgpuScene3DState();
     const runtime = getWgpuScene3DRuntime(state);
-    const skinGroup = {} as GPUBindGroup;
+    const skinGroup = {} as WgpuBindGroup;
     let skinGroupCalls = 0;
     runtime.skinningAdapter = {
       ...wgpuSkinningAdapter,

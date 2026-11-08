@@ -10,7 +10,7 @@ import {
   registerWgpuBitmapTextureResolver,
   registerWgpuImageTextureResolver,
 } from '@flighthq/render-wgpu/contract';
-import type { WgpuMeshMaterialRenderer, WgpuRenderState } from '@flighthq/render-wgpu/contract';
+import type { WgpuBindGroup, WgpuMeshMaterialRenderer, WgpuRenderState } from '@flighthq/render-wgpu/contract';
 import type { Scene3DRenderProxy } from '@flighthq/render/contract';
 
 import type { WgpuClassicDefineKey } from './contract.scene3d-wgpu-types.ts';
@@ -50,7 +50,7 @@ export const wgpuLambertMeshMaterialRenderer: WgpuMeshMaterialRenderer = {
     _specular.g = 1;
     _specular.b = 1;
     _specular.a = 1;
-    let group: GPUBindGroup;
+    let group: WgpuBindGroup;
     if (lambert === null) {
       _diffuse.r = 1;
       _diffuse.g = 1;

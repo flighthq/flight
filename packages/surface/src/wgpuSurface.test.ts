@@ -3,16 +3,26 @@ import type { EntityRaw as Entity } from '@flighthq/entity/contract';
 import { finishEntity } from '@flighthq/entity/contract';
 
 import { allocateSurface, getSurfaceHandle } from './surface.ts';
-import type { HostWgpuCapability, WgpuHostAcquisition, WgpuSurface } from './types.ts';
+import type { HostWgpuSurfaceCapability, SurfaceWithAcquisition } from './types.ts';
 import { createWgpuSurface, createWgpuSurfaceFromNativeHandle, destroyWgpuSurface } from './wgpuSurface.ts';
 
-function wgpuCapability(fields: HostWgpuCapability): HostWgpuCapability {
-  return finishEntity(Object.assign(allocateSurface(null), fields) as never) as unknown as HostWgpuCapability;
+interface TestWgpuAcquisition {
+  readonly marker: 'wgpu';
+}
+
+interface TestWgpuOptions {
+  readonly format?: string;
+}
+
+type TestWgpuCapability = HostWgpuSurfaceCapability<TestWgpuAcquisition, TestWgpuOptions>;
+
+function wgpuCapability(fields: TestWgpuCapability): TestWgpuCapability {
+  return finishEntity(Object.assign(allocateSurface(null), fields) as never) as unknown as TestWgpuCapability;
 }
 
 const appWindow = {} as AppWindow;
-const acquisition = {} as WgpuHostAcquisition;
-const defaults = { attachSurface: () => null, isSupported: () => true, release() {} };
+const acquisition: TestWgpuAcquisition = { marker: 'wgpu' };
+const defaults = { release() {} };
 
 describe('createWgpuSurface', () => {
   it('allocates a drawable in the window and acquires a device for the surface it built', async () => {
@@ -37,7 +47,7 @@ describe('createWgpuSurface', () => {
 
   // ★ NULL, NOT REJECT. "This machine has no WebGPU" is an expected outcome, not API misuse.
   it('returns null when device acquisition rejects', async () => {
-    const acquire = async (): Promise<WgpuHostAcquisition> => {
+    const acquire = async (): Promise<TestWgpuAcquisition> => {
       throw new Error('no adapter');
     };
     expect(
@@ -64,12 +74,16 @@ describe('destroyWgpuSurface', () => {
     const release = vi.fn();
     const capability = wgpuCapability({
       acquire: async () => acquisition,
-      attachSurface: () => null,
       create: () => 'canvas',
-      isSupported: () => true,
       release,
     });
-    destroyWgpuSurface(capability, (await createWgpuSurface(capability, appWindow, 8, 8)) as WgpuSurface);
+    destroyWgpuSurface(
+      capability,
+      (await createWgpuSurface(capability, appWindow, 8, 8)) as SurfaceWithAcquisition<
+        TestWgpuAcquisition,
+        'WgpuSurface'
+      >,
+    );
 
     expect(release).toHaveBeenCalledExactlyOnceWith(acquisition);
   });

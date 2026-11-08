@@ -1,3 +1,4 @@
+import type { WgpuExternalImageSource, WgpuQueue, WgpuTexture } from './contract.render-wgpu-types.ts';
 import { isWgpuExternalImageSourceReady, tryCopyWgpuExternalImageToTexture } from './wgpuExternalImageSource.ts';
 import { createReadyImageElementForTest } from './wgpuTestHelper.ts';
 
@@ -30,15 +31,15 @@ describe('isWgpuExternalImageSourceReady', () => {
   });
 
   it('rejects an unrecognized source instead of failing open', () => {
-    expect(isWgpuExternalImageSourceReady({} as GPUCopyExternalImageSource, 1, 1)).toBe(false);
+    expect(isWgpuExternalImageSourceReady({} as WgpuExternalImageSource, 1, 1)).toBe(false);
   });
 });
 
 describe('tryCopyWgpuExternalImageToTexture', () => {
   it('copies a ready source', () => {
     const copyExternalImageToTexture = vi.fn();
-    const queue = { copyExternalImageToTexture } as unknown as GPUQueue;
-    const texture = {} as GPUTexture;
+    const queue = { copyExternalImageToTexture } as unknown as WgpuQueue;
+    const texture = {} as WgpuTexture;
     const source = createReadyImageElementForTest(4, 4);
     expect(tryCopyWgpuExternalImageToTexture(queue, { source }, { texture }, 4, 4)).toBe(true);
     expect(copyExternalImageToTexture).toHaveBeenCalledWith({ source }, { texture }, [4, 4, 1]);
@@ -51,8 +52,8 @@ describe('tryCopyWgpuExternalImageToTexture', () => {
     const copyExternalImageToTexture = vi.fn(() => {
       throw new DOMException('canvas has no rendering context', 'OperationError');
     });
-    const queue = { copyExternalImageToTexture } as unknown as GPUQueue;
-    expect(tryCopyWgpuExternalImageToTexture(queue, { source: canvas }, { texture: {} as GPUTexture }, 4, 4)).toBe(
+    const queue = { copyExternalImageToTexture } as unknown as WgpuQueue;
+    expect(tryCopyWgpuExternalImageToTexture(queue, { source: canvas }, { texture: {} as WgpuTexture }, 4, 4)).toBe(
       false,
     );
   });
@@ -66,8 +67,8 @@ describe('tryCopyWgpuExternalImageToTexture', () => {
         "Failed to execute 'copyExternalImageToTexture' on 'GPUQueue': Failed to copy content from external image.",
       );
     });
-    const queue = { copyExternalImageToTexture } as unknown as GPUQueue;
-    expect(tryCopyWgpuExternalImageToTexture(queue, { source: canvas }, { texture: {} as GPUTexture }, 4, 4)).toBe(
+    const queue = { copyExternalImageToTexture } as unknown as WgpuQueue;
+    expect(tryCopyWgpuExternalImageToTexture(queue, { source: canvas }, { texture: {} as WgpuTexture }, 4, 4)).toBe(
       false,
     );
   });
@@ -81,9 +82,9 @@ describe('tryCopyWgpuExternalImageToTexture', () => {
       copyExternalImageToTexture: vi.fn(() => {
         throw error;
       }),
-    } as unknown as GPUQueue;
+    } as unknown as WgpuQueue;
     expect(() =>
-      tryCopyWgpuExternalImageToTexture(queue, { source: canvas }, { texture: {} as GPUTexture }, 4, 4),
+      tryCopyWgpuExternalImageToTexture(queue, { source: canvas }, { texture: {} as WgpuTexture }, 4, 4),
     ).toThrow(error);
   });
 });

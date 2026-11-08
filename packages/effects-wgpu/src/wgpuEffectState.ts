@@ -23,7 +23,12 @@ import {
   releaseWgpuTextureRenderTarget,
   resizeWgpuTextureRenderTarget,
 } from '@flighthq/render-wgpu/contract';
-import type { WgpuRenderPass, WgpuRenderState, WgpuTextureRenderTarget } from '@flighthq/render-wgpu/contract';
+import type {
+  WgpuRenderPass,
+  WgpuRenderState,
+  WgpuTexture,
+  WgpuTextureRenderTarget,
+} from '@flighthq/render-wgpu/contract';
 import type { RenderTargetColorSpace } from '@flighthq/render/contract';
 import type { RenderTargetClear } from '@flighthq/render/contract';
 
@@ -205,7 +210,7 @@ export function setWgpuEffectStateSkipGuard(state: WgpuRenderState, guard: WgpuE
   else _skipGuards.set(state, guard);
 }
 
-export function setWgpuEffectVelocityTexture(pipeline: WgpuEffectState, texture: GPUTexture | null): void {
+export function setWgpuEffectVelocityTexture(pipeline: WgpuEffectState, texture: WgpuTexture | null): void {
   pipeline.velocityTexture = texture;
 }
 

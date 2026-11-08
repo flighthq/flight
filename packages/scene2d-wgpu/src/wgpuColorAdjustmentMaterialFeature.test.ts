@@ -4,6 +4,7 @@ import { EntityRuntimeKey } from '@flighthq/entity/contract';
 import { beginWgpuScreenRenderPassForTest, submitWgpuFrame } from '@flighthq/render-wgpu/contract';
 import { getWgpuColorAdjustmentMaterialFeature, getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
 import { createWgpuRenderStateForTest, installWgpuMock } from '@flighthq/render-wgpu/contract';
+import type { WgpuTexture, WgpuTextureView } from '@flighthq/render-wgpu/contract';
 import { areColorAdjustmentsEnabled } from '@flighthq/render/contract';
 
 import { registerWgpuColorAdjustmentMaterialFeature } from './wgpuColorAdjustmentMaterialFeature.ts';
@@ -124,8 +125,8 @@ describe('registerWgpuColorAdjustmentMaterialFeature', () => {
       [EntityRuntimeKey]: undefined,
       bindings: new Map(),
       mipLevelCount: 1,
-      texture: {} as GPUTexture,
-      view: {} as GPUTextureView,
+      texture: {} as WgpuTexture,
+      view: {} as WgpuTextureView,
     };
     prepareWgpuQuadBatchWrite(state, tex, null, null, null, standardWgpuQuadMaterialRenderer, 2);
     recordWgpuQuadBatchColorScaleBias(state, ct(0.5), 0);

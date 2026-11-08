@@ -1,3 +1,4 @@
+import type { WgpuBuffer, WgpuTexture } from './contract.render-wgpu-types.ts';
 import {
   beginWgpuFrame,
   retireWgpuBuffer,
@@ -23,7 +24,7 @@ describe('beginWgpuFrame', () => {
 describe('retireWgpuBuffer', () => {
   it('adds the buffer to the post-submit destruction ledger', async () => {
     const state = await createWgpuRenderStateForTest();
-    const buffer = { destroy: vi.fn() } as unknown as GPUBuffer;
+    const buffer = { destroy: vi.fn() } as unknown as WgpuBuffer;
     retireWgpuBuffer(state, buffer);
     expect(getWgpuRenderStateRuntime(state).retiredBuffers).toEqual([buffer]);
   });
@@ -32,7 +33,7 @@ describe('retireWgpuBuffer', () => {
 describe('retireWgpuTexture', () => {
   it('adds the texture to the post-submit destruction ledger', async () => {
     const state = await createWgpuRenderStateForTest();
-    const texture = { destroy: vi.fn() } as unknown as GPUTexture;
+    const texture = { destroy: vi.fn() } as unknown as WgpuTexture;
     retireWgpuTexture(state, texture);
     expect(getWgpuRenderStateRuntime(state).retiredTextures).toEqual([texture]);
   });

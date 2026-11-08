@@ -1,7 +1,13 @@
 import { createBitmap } from '@flighthq/bitmap/contract';
 import type { Bitmap } from '@flighthq/bitmap/contract';
 
-import type { WgpuScreenRenderTarget } from './contract.render-wgpu-types.ts';
+import type {
+  WgpuBuffer,
+  WgpuCommandEncoder,
+  WgpuScreenRenderTarget,
+  WgpuTexture,
+} from './contract.render-wgpu-types.ts';
+import { WgpuBufferUsage, WgpuMapMode, WgpuTextureUsage } from './contract.render-wgpu-types.ts';
 
 // Opt-in capture of a screen target's frame to a CPU Bitmap. Two environment facts drive the design:
 // (1) headless/software adapters never present the swap chain, and its texture reads back as zeros, so
@@ -72,7 +78,7 @@ export function enableWgpuScreenRenderTargetCapture(target: WgpuScreenRenderTarg
 
 // The offscreen texture a captured frame renders into, sized to the surface's logical extent (a
 // supersampled frame resolves down into it). Installed as the target's capture slot by the enable above.
-function acquireWgpuScreenRenderTargetCaptureTexture(target: WgpuScreenRenderTarget): GPUTexture {
+function acquireWgpuScreenRenderTargetCaptureTexture(target: WgpuScreenRenderTarget): WgpuTexture {
   const scale = target.antialias ? 2 : 1;
   const width = Math.max(1, Math.floor(target.width / scale));
   const height = Math.max(1, Math.floor(target.height / scale));
@@ -83,7 +89,7 @@ function acquireWgpuScreenRenderTargetCaptureTexture(target: WgpuScreenRenderTar
   const texture = target.device.createTexture({
     size: [width, height, 1],
     format: target.format,
-    usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_SRC,
+    usage: WgpuTextureUsage.RENDER_ATTACHMENT | WgpuTextureUsage.TEXTURE_BINDING | WgpuTextureUsage.COPY_SRC,
   });
   target.captureTexture = texture;
   return texture;
@@ -92,7 +98,7 @@ function acquireWgpuScreenRenderTargetCaptureTexture(target: WgpuScreenRenderTar
 // Encodes the capture-texture → capture-buffer copy into the frame's command encoder, sizing and
 // reallocating the retained buffer to the surface on demand. No-op unless capture is enabled. Internal:
 // called by submitWgpuFrame so the copy is queued in the render frame, not a later (dropped) task.
-export function encodeWgpuScreenRenderTargetCapture(target: WgpuScreenRenderTarget, encoder: GPUCommandEncoder): void {
+export function encodeWgpuScreenRenderTargetCapture(target: WgpuScreenRenderTarget, encoder: WgpuCommandEncoder): void {
   const texture = target.captureTexture;
   if (!target.captureEnabled || texture === null) return;
   // The reader owns the buffer while it holds a map. One retained buffer serves both sides, and the
@@ -116,7 +122,7 @@ export function encodeWgpuScreenRenderTargetCapture(target: WgpuScreenRenderTarg
     target.captureBuffer?.destroy();
     target.captureBuffer = target.device.createBuffer({
       size: bytesPerRow * height,
-      usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ,
+      usage: WgpuBufferUsage.COPY_DST | WgpuBufferUsage.MAP_READ,
     });
     target.captureBytesPerRow = bytesPerRow;
     target.captureWidth = width;
@@ -131,8 +137,8 @@ export function encodeWgpuScreenRenderTargetCapture(target: WgpuScreenRenderTarg
 // capture path exists for, the promise can simply never settle, and an unbounded await is indistinguishable
 // from a caller that stopped running. A late resolution after the deadline leaves the buffer mapped, which
 // is why the timeout is a hard end for this capture and not something to retry against the same buffer.
-async function mapWgpuCaptureBuffer(buffer: GPUBuffer, timeoutMs: number): Promise<void> {
-  const mapping = buffer.mapAsync(GPUMapMode.READ);
+async function mapWgpuCaptureBuffer(buffer: WgpuBuffer, timeoutMs: number): Promise<void> {
+  const mapping = buffer.mapAsync(WgpuMapMode.READ);
   if (timeoutMs <= 0) return mapping;
 
   // The race abandons `mapping` on timeout; adopt its eventual rejection here so it is never unhandled.

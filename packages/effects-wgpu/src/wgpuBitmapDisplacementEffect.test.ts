@@ -3,7 +3,15 @@ import { createBitmapDisplacementEffect } from '@flighthq/effects/contract';
 import type { BitmapDisplacementEffect } from '@flighthq/effects/contract';
 import * as renderWgpuContract from '@flighthq/render-wgpu/contract';
 import { createWgpuRenderStateForTest, installWgpuMock } from '@flighthq/render-wgpu/contract';
-import type { WgpuRenderState, WgpuTextureRenderTarget } from '@flighthq/render-wgpu/contract';
+import type {
+  WgpuBindGroup,
+  WgpuBindGroupDescriptor,
+  WgpuBindGroupLayout,
+  WgpuRenderState,
+  WgpuSampler,
+  WgpuTextureRenderTarget,
+  WgpuTextureView,
+} from '@flighthq/render-wgpu/contract';
 import type { Texture2D } from '@flighthq/texture/contract';
 
 import {
@@ -18,8 +26,8 @@ import * as wgpuEffectPass from './wgpuEffectPass.ts';
 import * as wgpuEffectProgramCache from './wgpuEffectProgramCache.ts';
 import { getWgpuEffectRunner, isWgpuEffectResolvable } from './wgpuEffectRegistry.ts';
 
-const sourceView = {} as GPUTextureView;
-const mapView = {} as GPUTextureView;
+const sourceView = {} as WgpuTextureView;
+const mapView = {} as WgpuTextureView;
 const source = {
   colorSpace: 'srgb',
   format: 'rgba8unorm',
@@ -27,7 +35,7 @@ const source = {
   view: sourceView,
   width: 128,
 } as WgpuTextureRenderTarget;
-const dest = { ...source, view: {} as GPUTextureView } as WgpuTextureRenderTarget;
+const dest = { ...source, view: {} as WgpuTextureView } as WgpuTextureRenderTarget;
 const map = {
   colorSpace: 'linear',
   dimension: '2d',
@@ -41,9 +49,9 @@ const map = {
   },
   source: {},
 } as unknown as Texture2D;
-const mapSampler = {} as GPUSampler;
-const sourceBindGroup = { id: 'source' } as unknown as GPUBindGroup;
-const mapBindGroup = { id: 'map' } as unknown as GPUBindGroup;
+const mapSampler = {} as WgpuSampler;
+const sourceBindGroup = { id: 'source' } as unknown as WgpuBindGroup;
+const mapBindGroup = { id: 'map' } as unknown as WgpuBindGroup;
 const pass = {
   draw: vi.fn(),
   end: vi.fn(),
@@ -53,10 +61,10 @@ const pass = {
 const fs = {
   acquireSlot: vi.fn(() => 256),
   beginPass: vi.fn(() => pass),
-  sampler: {} as GPUSampler,
-  textureBGLayout: {} as GPUBindGroupLayout,
-  uniformBG: {} as GPUBindGroup,
-  uniformBGLayout: {} as GPUBindGroupLayout,
+  sampler: {} as WgpuSampler,
+  textureBGLayout: {} as WgpuBindGroupLayout,
+  uniformBG: {} as WgpuBindGroup,
+  uniformBGLayout: {} as WgpuBindGroupLayout,
   writeSlot: vi.fn((_offset: number, callback: (f32: Float32Array, i32: Int32Array) => void) => {
     const f32 = new Float32Array(16);
     callback(f32, new Int32Array(f32.buffer));
@@ -64,7 +72,7 @@ const fs = {
   }),
 };
 const device = {
-  createBindGroup: vi.fn(({ entries }: GPUBindGroupDescriptor) =>
+  createBindGroup: vi.fn(({ entries }: WgpuBindGroupDescriptor) =>
     Array.from(entries)[0]?.resource === sourceView ? sourceBindGroup : mapBindGroup,
   ),
   createPipelineLayout: vi.fn(() => ({})),

@@ -2,7 +2,7 @@ import type { CompressedImageResource } from '@flighthq/image/contract';
 import type { TextureContainer } from '@flighthq/texture-formats/contract';
 import { CompressedImageTextureSourceKind } from '@flighthq/texture/contract';
 
-import type { WgpuCompressedTextureSupport } from './contract.render-wgpu-types.ts';
+import type { WgpuCompressedTextureSupport, WgpuFeatureName } from './contract.render-wgpu-types.ts';
 import {
   detectWgpuCompressedTextureSupport,
   getWgpuCompressedTextureFormat,
@@ -45,7 +45,7 @@ function compressedImage(): CompressedImageResource {
 describe('detectWgpuCompressedTextureSupport', () => {
   it('reads the three WebGPU compression features', async () => {
     const state = await createWgpuRenderStateForTest();
-    (state.device.features as Set<GPUFeatureName>).add('texture-compression-bc');
+    (state.device.features as Set<WgpuFeatureName>).add('texture-compression-bc');
     expect(detectWgpuCompressedTextureSupport(state.device)).toEqual({ astc: false, bc: true, etc2: false });
   });
 });
@@ -54,7 +54,7 @@ describe('getWgpuCompressedTextureFormat', () => {
   it('maps a format only when its family is enabled', async () => {
     const state = await createWgpuRenderStateForTest();
     expect(getWgpuCompressedTextureFormat(state.device, 'bc1')).toBeNull();
-    (state.device.features as Set<GPUFeatureName>).add('texture-compression-bc');
+    (state.device.features as Set<WgpuFeatureName>).add('texture-compression-bc');
     expect(getWgpuCompressedTextureFormat(state.device, 'bc1')).toBe('bc1-rgba-unorm');
     expect(getWgpuCompressedTextureFormat(state.device, 'rgba8unorm')).toBeNull();
   });
@@ -129,7 +129,7 @@ describe('registerWgpuCompressedTextureUpload', () => {
 
   it('marks native straight-alpha blocks for display-shader premultiplication', async () => {
     const state = await createWgpuRenderStateForTest();
-    (state.device.features as Set<GPUFeatureName>).add('texture-compression-bc');
+    (state.device.features as Set<WgpuFeatureName>).add('texture-compression-bc');
     registerWgpuCompressedTextureUpload(state, true);
     expect(bindWgpuCompressedImageTexture(state, compressedImage())?.straightAlpha).toBe(true);
   });
@@ -138,7 +138,7 @@ describe('registerWgpuCompressedTextureUpload', () => {
 describe('uploadWgpuCompressedTextureContainer', () => {
   it('uploads native blocks with their block-row layout', async () => {
     const state = await createWgpuRenderStateForTest();
-    (state.device.features as Set<GPUFeatureName>).add('texture-compression-bc');
+    (state.device.features as Set<WgpuFeatureName>).add('texture-compression-bc');
     const createTexture = vi.spyOn(state.device, 'createTexture');
     const writeTexture = vi.spyOn(state.device.queue, 'writeTexture');
     expect(uploadWgpuCompressedTextureContainer(state, container(), new Uint8Array(8))).not.toBeNull();
@@ -168,7 +168,7 @@ describe('uploadWgpuCompressedTextureContainer', () => {
     ]).flat();
     const cube = container({ faces: 6, height: 8, levels, mipLevels: 2, width: 8 });
     expect(uploadWgpuCompressedTextureContainer(state, cube, new Uint8Array(240), () => new Uint8Array(64))).toBeNull();
-    (state.device.features as Set<GPUFeatureName>).add('texture-compression-bc');
+    (state.device.features as Set<WgpuFeatureName>).add('texture-compression-bc');
     const writeTexture = vi.spyOn(state.device.queue, 'writeTexture');
     expect(uploadWgpuCompressedTextureContainer(state, cube, new Uint8Array(240))).not.toBeNull();
     expect(writeTexture).toHaveBeenCalledTimes(12);
@@ -178,7 +178,7 @@ describe('uploadWgpuCompressedTextureContainer', () => {
 
   it('maps canonical multi-mip array entries to the right mip and layer slice', async () => {
     const state = await createWgpuRenderStateForTest();
-    (state.device.features as Set<GPUFeatureName>).add('texture-compression-bc');
+    (state.device.features as Set<WgpuFeatureName>).add('texture-compression-bc');
     const array = container({
       height: 8,
       layers: 2,

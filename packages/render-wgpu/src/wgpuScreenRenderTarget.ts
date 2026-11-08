@@ -4,17 +4,21 @@ import type { Surface } from '@flighthq/surface/contract';
 
 import type {
   HostWgpuCapability,
+  WgpuDevice,
   WgpuRenderState,
   WgpuRenderTarget,
   WgpuScreenRenderTarget,
   WgpuScreenRenderTargetOptions,
+  WgpuTexture,
+  WgpuTextureView,
 } from './contract.render-wgpu-types.ts';
+import { WgpuTextureUsage } from './contract.render-wgpu-types.ts';
 
 // Acquires the color view a screen pass attaches to, sizing the target's storage to the surface first.
 // The returned view is the supersample texture when antialiasing is enabled and the presentation view
 // otherwise; either way `presentationView` names where the frame ultimately lands, so the submit can
 // resolve and capture it. Internal: called by beginWgpuRenderPass.
-export function bindWgpuScreenRenderTarget(state: WgpuRenderState, target: WgpuScreenRenderTarget): GPUTextureView {
+export function bindWgpuScreenRenderTarget(state: WgpuRenderState, target: WgpuScreenRenderTarget): WgpuTextureView {
   syncWgpuScreenRenderTargetExtent(target);
   ensureWgpuScreenRenderTargetDepthStencil(target);
 
@@ -32,7 +36,7 @@ export function bindWgpuScreenRenderTarget(state: WgpuRenderState, target: WgpuS
 // creations are Entity allocations, so a factory is the only place either capability is decided.
 export function createWgpuScreenRenderTarget(
   wgpuHost: Readonly<HostWgpuCapability>,
-  device: GPUDevice,
+  device: WgpuDevice,
   drawable: Readonly<Surface>,
   options: Readonly<WgpuScreenRenderTargetOptions> = {},
 ): WgpuScreenRenderTarget {
@@ -67,7 +71,7 @@ export function endWgpuScreenRenderTargetFrame(target: WgpuScreenRenderTarget): 
 export function initializeWgpuScreenRenderTarget(
   out: EntityConstruction<WgpuScreenRenderTarget>,
   wgpuHost: Readonly<HostWgpuCapability>,
-  device: GPUDevice,
+  device: WgpuDevice,
   drawable: Readonly<Surface>,
   options: Readonly<WgpuScreenRenderTargetOptions> = {},
 ): void {
@@ -125,11 +129,11 @@ export function syncWgpuScreenRenderTargetExtent(target: WgpuScreenRenderTarget)
   target.height = Math.max(1, target.surface.height) * scale;
 }
 
-function createWgpuScreenDepthStencilTexture(device: GPUDevice, width: number, height: number): GPUTexture {
+function createWgpuScreenDepthStencilTexture(device: WgpuDevice, width: number, height: number): WgpuTexture {
   return device.createTexture({
     size: [Math.max(1, width), Math.max(1, height), 1],
     format: 'depth24plus-stencil8',
-    usage: GPUTextureUsage.RENDER_ATTACHMENT,
+    usage: WgpuTextureUsage.RENDER_ATTACHMENT,
   });
 }
 

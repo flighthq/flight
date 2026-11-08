@@ -1,5 +1,6 @@
 import type { ImageResource } from '@flighthq/image/contract';
 import type { Environment } from '@flighthq/lighting/contract';
+import type { WgpuTextureDescriptor } from '@flighthq/render-wgpu/contract';
 import type { Texture } from '@flighthq/texture/contract';
 import { ImageTextureSourceKind } from '@flighthq/texture/contract';
 
@@ -48,12 +49,12 @@ describe('bakeWgpuEnvironmentIbl', () => {
     expect(runtime.ibl!.intensity).toBe(1);
 
     const bakeTextures = fake.calls.filter(
-      (c) => c.name === 'createTexture' && (c.args[0] as GPUTextureDescriptor).format === 'rgba16float',
+      (c) => c.name === 'createTexture' && (c.args[0] as WgpuTextureDescriptor).format === 'rgba16float',
     );
     // irradiance cube + prefiltered cube + BRDF LUT.
     expect(bakeTextures.length).toBe(3);
     // The prefiltered cube declares the full roughness mip chain up front.
-    expect(bakeTextures.some((c) => (c.args[0] as GPUTextureDescriptor).mipLevelCount === 5)).toBe(true);
+    expect(bakeTextures.some((c) => (c.args[0] as WgpuTextureDescriptor).mipLevelCount === 5)).toBe(true);
     // The bake WGSL is compiled (GGX importance sampling for the prefiltered/BRDF passes).
     expect(
       fake.calls.some(

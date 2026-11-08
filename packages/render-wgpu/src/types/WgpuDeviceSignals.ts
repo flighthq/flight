@@ -1,5 +1,7 @@
 import type { Signal } from '@flighthq/signals/contract';
 
+import type { WgpuDeviceLostInfo } from './WgpuDevice.ts';
+
 // Loss notification for one physical GPUDevice, armed by enableWgpuDeviceSignals. The group lives on
 // the device tier, not on a render state, because a device is shared by every state derived from it
 // and its loss is a property of the device rather than of any one consumer.
@@ -9,5 +11,5 @@ import type { Signal } from '@flighthq/signals/contract';
 // orderly teardown, so it is recorded as the terminal fact but never announced here. Read the fact
 // with getWgpuDeviceLoss, which reports both kinds.
 export interface WgpuDeviceSignals {
-  onDeviceLost: Signal<GPUDeviceLostInfo>;
+  onDeviceLost: Signal<WgpuDeviceLostInfo>;
 }

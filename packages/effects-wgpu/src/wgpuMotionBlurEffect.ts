@@ -1,5 +1,10 @@
 import type { MotionBlurEffect } from '@flighthq/effects/contract';
-import type { WgpuEffectRunner, WgpuRenderState, WgpuTextureRenderTarget } from '@flighthq/render-wgpu/contract';
+import type {
+  WgpuEffectRunner,
+  WgpuRenderState,
+  WgpuTexture,
+  WgpuTextureRenderTarget,
+} from '@flighthq/render-wgpu/contract';
 
 import type { WgpuDualSourceEffectPipeline } from './types.ts';
 import { createWgpuDualSourceEffectPipeline, drawWgpuDualSourceEffectPass } from './wgpuEffectPass.ts';
@@ -19,7 +24,7 @@ export function applyMotionBlurEffectToWgpu(
   state: WgpuRenderState,
   source: Readonly<WgpuTextureRenderTarget>,
   dest: Readonly<WgpuTextureRenderTarget>,
-  velocityTexture: GPUTexture | null,
+  velocityTexture: WgpuTexture | null,
   effect: Readonly<MotionBlurEffect>,
 ): void {
   const intensity = effect.intensity ?? 1;

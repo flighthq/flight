@@ -1,5 +1,11 @@
 import type { LinearColorRaw } from '@flighthq/color/contract';
-import type { WgpuRenderState, WgpuSkinningAdapter } from '@flighthq/render-wgpu/contract';
+import type {
+  WgpuBindGroup,
+  WgpuRenderState,
+  WgpuSkinningAdapter,
+  WgpuTextureFormat,
+} from '@flighthq/render-wgpu/contract';
+import { WgpuBufferUsage, WgpuShaderStage } from '@flighthq/render-wgpu/contract';
 
 import type { WgpuMaterialBinding, WgpuWireframePipeline } from './contract.scene3d-wgpu-types.ts';
 import { WGPU_MESH_FRAGMENT_TAIL } from './wgpuMeshFragmentTail.ts';
@@ -24,13 +30,13 @@ export function bindWgpuWireframeColor(
   materialKey: object,
   color: Readonly<LinearColorRaw>,
   alphaCutoff = 0.5,
-): GPUBindGroup {
+): WgpuBindGroup {
   const scene = getWgpuScene3DRuntime(state);
   let binding: WgpuMaterialBinding | undefined = scene.materialBindGroups.get(materialKey);
   if (binding === undefined) {
     const buffer = state.device.createBuffer({
       size: WIREFRAME_UNIFORM_BYTES,
-      usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+      usage: WgpuBufferUsage.UNIFORM | WgpuBufferUsage.COPY_DST,
     });
     const bindGroup = state.device.createBindGroup({
       layout: pipeline.materialBindGroupLayout,
@@ -60,7 +66,7 @@ export function bindWgpuWireframeColor(
 // Pure GPU work — no caching — used by ensureWgpuWireframePipeline.
 export function compileWgpuWireframePipeline(
   state: WgpuRenderState,
-  format: GPUTextureFormat,
+  format: WgpuTextureFormat,
   blended = false,
   alphaMaskEnabled = false,
   skinned = false,
@@ -71,7 +77,7 @@ export function compileWgpuWireframePipeline(
     code: getWgpuWireframeModuleSource(alphaMaskEnabled, skinned, skinning),
   });
   const materialBindGroupLayout = device.createBindGroupLayout({
-    entries: [{ binding: 0, visibility: GPUShaderStage.FRAGMENT, buffer: { type: 'uniform' } }],
+    entries: [{ binding: 0, visibility: WgpuShaderStage.FRAGMENT, buffer: { type: 'uniform' } }],
   });
   return createWgpuMeshPipeline(state, {
     blended,
@@ -88,7 +94,7 @@ export function compileWgpuWireframePipeline(
 // shared scene pipeline cache under the `wireframe:` family namespace.
 export function ensureWgpuWireframePipeline(
   state: WgpuRenderState,
-  format: GPUTextureFormat,
+  format: WgpuTextureFormat,
   alphaMaskEnabled = false,
 ): WgpuWireframePipeline {
   return ensureWgpuScene3DPipeline(

@@ -9,6 +9,16 @@ import { createStandardPbrMaterial } from '@flighthq/materials/contract';
 import { BlendMode } from '@flighthq/materials/contract';
 import { createBoxMeshGeometry, createMeshGeometry } from '@flighthq/meshgeometry/contract';
 import { getWgpuRenderStateDeviceResources, getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
+import type {
+  WgpuBindGroup,
+  WgpuBindGroupEntry,
+  WgpuBindGroupLayout,
+  WgpuBuffer,
+  WgpuRenderPipelineDescriptor,
+  WgpuSampler,
+  WgpuTexture,
+  WgpuTextureView,
+} from '@flighthq/render-wgpu/contract';
 import type { Scene3DRenderProxy } from '@flighthq/render/contract';
 import type { WgpuColorAdjustmentMaterialFeature } from '@flighthq/scene2d-wgpu/contract';
 import { createTexture, setTextureUvOffset, setTextureUvScale } from '@flighthq/texture/contract';
@@ -145,18 +155,18 @@ function makePbrSamplePipeline(state: ReturnType<typeof makeWgpuScene3DState>['s
 describe('buildWgpuMaterialBindGroup', () => {
   it('emits the uniform buffer at 0, the sampler at 1, and each map view at 2 + i', () => {
     const { fake, state } = makeWgpuScene3DState();
-    const layout = {} as GPUBindGroupLayout;
-    const buffer = {} as GPUBuffer;
-    const sampler = {} as GPUSampler;
-    const view0 = {} as GPUTextureView;
-    const view1 = {} as GPUTextureView;
+    const layout = {} as WgpuBindGroupLayout;
+    const buffer = {} as WgpuBuffer;
+    const sampler = {} as WgpuSampler;
+    const view0 = {} as WgpuTextureView;
+    const view1 = {} as WgpuTextureView;
 
     buildWgpuMaterialBindGroup(state, layout, buffer, sampler, [view0, view1]);
 
     const call = fake.calls.find((c) => c.name === 'createBindGroup');
-    const entries = (call!.args[0] as { entries: GPUBindGroupEntry[] }).entries;
+    const entries = (call!.args[0] as { entries: WgpuBindGroupEntry[] }).entries;
     expect(entries.map((e) => e.binding)).toEqual([0, 1, 2, 3]);
-    expect((entries[0].resource as { buffer: GPUBuffer }).buffer).toBe(buffer);
+    expect((entries[0].resource as { buffer: WgpuBuffer }).buffer).toBe(buffer);
     expect(entries[1].resource).toBe(sampler);
     expect(entries[2].resource).toBe(view0);
     expect(entries[3].resource).toBe(view1);
@@ -166,19 +176,19 @@ describe('buildWgpuMaterialBindGroup', () => {
 describe('buildWgpuPerMapMaterialBindGroup', () => {
   it('emits parallel samplers before their matching map views', () => {
     const { fake, state } = makeWgpuScene3DState();
-    const layout = {} as GPUBindGroupLayout;
-    const buffer = {} as GPUBuffer;
-    const sampler0 = {} as GPUSampler;
-    const sampler1 = {} as GPUSampler;
-    const view0 = {} as GPUTextureView;
-    const view1 = {} as GPUTextureView;
+    const layout = {} as WgpuBindGroupLayout;
+    const buffer = {} as WgpuBuffer;
+    const sampler0 = {} as WgpuSampler;
+    const sampler1 = {} as WgpuSampler;
+    const view0 = {} as WgpuTextureView;
+    const view1 = {} as WgpuTextureView;
 
     buildWgpuPerMapMaterialBindGroup(state, layout, buffer, [sampler0, sampler1], [view0, view1]);
 
     const call = fake.calls.find((c) => c.name === 'createBindGroup');
-    const entries = (call!.args[0] as { entries: GPUBindGroupEntry[] }).entries;
+    const entries = (call!.args[0] as { entries: WgpuBindGroupEntry[] }).entries;
     expect(entries.map((entry) => entry.binding)).toEqual([0, 1, 2, 3, 4]);
-    expect((entries[0].resource as { buffer: GPUBuffer }).buffer).toBe(buffer);
+    expect((entries[0].resource as { buffer: WgpuBuffer }).buffer).toBe(buffer);
     expect(entries.slice(1).map((entry) => entry.resource)).toEqual([sampler0, sampler1, view0, view1]);
   });
 });
@@ -227,7 +237,7 @@ describe('createWgpuMeshPipeline', () => {
     });
 
     const call = fake.calls.filter((c) => c.name === 'createRenderPipeline').at(-1);
-    const descriptor = call!.args[0] as GPURenderPipelineDescriptor;
+    const descriptor = call!.args[0] as WgpuRenderPipelineDescriptor;
     expect(Array.from(descriptor.fragment!.targets)[0]!.blend).toEqual({
       alpha: { dstFactor: 'one-minus-src-alpha', operation: 'add', srcFactor: 'one' },
       color: { dstFactor: 'one-minus-src-alpha', operation: 'add', srcFactor: 'one' },
@@ -249,7 +259,7 @@ describe('createWgpuMeshPipeline', () => {
     });
 
     const call = fake.calls.filter((c) => c.name === 'createRenderPipeline').at(-1);
-    const descriptor = call!.args[0] as GPURenderPipelineDescriptor;
+    const descriptor = call!.args[0] as WgpuRenderPipelineDescriptor;
     expect(Array.from(descriptor.fragment!.targets)[0]!.blend).toEqual({
       alpha: { dstFactor: 'one', operation: 'add', srcFactor: 'one' },
       color: { dstFactor: 'one', operation: 'add', srcFactor: 'one' },
@@ -260,7 +270,7 @@ describe('createWgpuMeshPipeline', () => {
     const { fake, state } = makeWgpuScene3DState();
     makePipeline(state);
     const call = fake.calls.filter((c) => c.name === 'createRenderPipeline').at(-1);
-    const descriptor = call!.args[0] as GPURenderPipelineDescriptor;
+    const descriptor = call!.args[0] as WgpuRenderPipelineDescriptor;
     expect(Array.from(descriptor.fragment!.targets)[0]!.blend).toBeUndefined();
     expect(descriptor.depthStencil!.depthWriteEnabled).toBe(true);
   });
@@ -347,13 +357,13 @@ describe('ensureWgpuIblSampleBindGroup', () => {
     const before = fake.calls.filter((c) => c.name === 'createBindGroup').length;
     // Simulate bakeWgpuEnvironmentIbl having stored a baked set this frame.
     getWgpuScene3DRuntime(state).ibl = {
-      brdfLut: {} as GPUTexture,
-      brdfLutView: {} as GPUTextureView,
+      brdfLut: {} as WgpuTexture,
+      brdfLutView: {} as WgpuTextureView,
       intensity: 1,
-      irradianceCube: {} as GPUTexture,
-      irradianceCubeView: {} as GPUTextureView,
-      prefilteredCube: {} as GPUTexture,
-      prefilteredCubeView: {} as GPUTextureView,
+      irradianceCube: {} as WgpuTexture,
+      irradianceCubeView: {} as WgpuTextureView,
+      prefilteredCube: {} as WgpuTexture,
+      prefilteredCubeView: {} as WgpuTextureView,
       prefilteredMipCount: 5,
     };
     ensureWgpuIblSampleBindGroup(state);
@@ -430,10 +440,10 @@ describe('ensureWgpuInstanceBuffer', () => {
 });
 
 describe('ensureWgpuMaterialBinding', () => {
-  const layout = {} as GPUBindGroupLayout;
-  const sampler = {} as GPUSampler;
-  const view0 = {} as GPUTextureView;
-  const view1 = {} as GPUTextureView;
+  const layout = {} as WgpuBindGroupLayout;
+  const sampler = {} as WgpuSampler;
+  const view0 = {} as WgpuTextureView;
+  const view1 = {} as WgpuTextureView;
 
   it('creates the buffer + bind group once, owns a copy of the scratch, and steady-state binds build nothing', () => {
     const { fake, state } = makeWgpuScene3DState();
@@ -462,7 +472,7 @@ describe('ensureWgpuMaterialBinding', () => {
     const scratch = [view0, view1];
     ensureWgpuMaterialBinding(state, key, layout, 48, sampler, scratch);
     // A live map swap resolves to a new view identity in the reused scratch.
-    scratch[0] = {} as GPUTextureView;
+    scratch[0] = {} as WgpuTextureView;
     ensureWgpuMaterialBinding(state, key, layout, 48, sampler, scratch);
 
     expect(fake.calls.filter((c) => c.name === 'createBuffer').length).toBe(1); // buffer reused
@@ -474,7 +484,7 @@ describe('ensureWgpuMaterialBinding', () => {
     const key = {};
     const scratch = [view0, view1];
     ensureWgpuMaterialBinding(state, key, layout, 48, sampler, scratch);
-    ensureWgpuMaterialBinding(state, key, layout, 48, {} as GPUSampler, scratch);
+    ensureWgpuMaterialBinding(state, key, layout, 48, {} as WgpuSampler, scratch);
     expect(fake.calls.filter((c) => c.name === 'createBindGroup').length).toBe(2);
   });
 });
@@ -499,8 +509,8 @@ describe('ensureWgpuPbrSampleBindGroup', () => {
     const before = fake.calls.filter((c) => c.name === 'createBindGroup').length;
 
     getWgpuScene3DRuntime(state).shadow = {
-      depthTexture: {} as GPUTexture,
-      depthView: {} as GPUTextureView,
+      depthTexture: {} as WgpuTexture,
+      depthView: {} as WgpuTextureView,
       enabled: true,
       mapHeight: 1024,
       mapWidth: 1024,
@@ -518,8 +528,8 @@ describe('ensureWgpuPbrSampleBindGroup', () => {
     const { fake, state } = makeWgpuScene3DState();
     const runtime = getWgpuScene3DRuntime(state);
     runtime.shadow = {
-      depthTexture: {} as GPUTexture,
-      depthView: {} as GPUTextureView,
+      depthTexture: {} as WgpuTexture,
+      depthView: {} as WgpuTextureView,
       enabled: true,
       mapHeight: 1024,
       mapWidth: 1024,
@@ -554,11 +564,11 @@ describe('ensureWgpuPbrSampleLayout', () => {
 });
 
 describe('ensureWgpuPerMapMaterialBinding', () => {
-  const layout = {} as GPUBindGroupLayout;
-  const sampler0 = {} as GPUSampler;
-  const sampler1 = {} as GPUSampler;
-  const view0 = {} as GPUTextureView;
-  const view1 = {} as GPUTextureView;
+  const layout = {} as WgpuBindGroupLayout;
+  const sampler0 = {} as WgpuSampler;
+  const sampler1 = {} as WgpuSampler;
+  const view0 = {} as WgpuTextureView;
+  const view1 = {} as WgpuTextureView;
 
   it('owns the parallel scratch copies and builds nothing on steady-state rebind', () => {
     const { fake, state } = makeWgpuScene3DState();
@@ -582,7 +592,7 @@ describe('ensureWgpuPerMapMaterialBinding', () => {
     const samplers = [sampler0, sampler1];
     const views = [view0, view1];
     const binding = ensureWgpuPerMapMaterialBinding(state, key, layout, 48, samplers, views);
-    const replacement = {} as GPUSampler;
+    const replacement = {} as WgpuSampler;
     samplers[1] = replacement;
 
     const rebuilt = ensureWgpuPerMapMaterialBinding(state, key, layout, 48, samplers, views);
@@ -733,8 +743,8 @@ describe('ensureWgpuShadowSampleBindGroup', () => {
     const before = fake.calls.filter((c) => c.name === 'createBindGroup').length;
     // Simulate renderWgpuScene3DShadowMap having stored a shadow this frame.
     getWgpuScene3DRuntime(state).shadow = {
-      depthTexture: {} as GPUTexture,
-      depthView: {} as GPUTextureView,
+      depthTexture: {} as WgpuTexture,
+      depthView: {} as WgpuTextureView,
       enabled: true,
       mapHeight: 1024,
       mapWidth: 1024,
@@ -751,8 +761,8 @@ describe('ensureWgpuShadowSampleBindGroup', () => {
     const { fake, state } = makeWgpuScene3DState();
     const runtime = getWgpuScene3DRuntime(state);
     runtime.shadow = {
-      depthTexture: {} as GPUTexture,
-      depthView: {} as GPUTextureView,
+      depthTexture: {} as WgpuTexture,
+      depthView: {} as WgpuTextureView,
       enabled: true,
       mapHeight: 1024,
       mapWidth: 1024,
@@ -865,12 +875,12 @@ describe('initializeWgpuMeshPipeline', () => {
 });
 
 describe('isWgpuMaterialBindGroupRebuildNeeded', () => {
-  const sampler = {} as GPUSampler;
-  const view0 = {} as GPUTextureView;
-  const view1 = {} as GPUTextureView;
+  const sampler = {} as WgpuSampler;
+  const view0 = {} as WgpuTextureView;
+  const view1 = {} as WgpuTextureView;
   const cached: WgpuMaterialBinding = {
-    bindGroup: {} as GPUBindGroup,
-    buffer: {} as GPUBuffer,
+    bindGroup: {} as WgpuBindGroup,
+    buffer: {} as WgpuBuffer,
     sampler,
     views: [view0, view1],
   };
@@ -882,19 +892,19 @@ describe('isWgpuMaterialBindGroupRebuildNeeded', () => {
   it('rebuilds when the primary sampler identity changes (a primary-map sampler edit)', () => {
     // Only the ONE primary-map sampler participates (shared-primary-sampler contract); a non-primary
     // map's per-Texture sampler is never bound and cannot trip this.
-    expect(isWgpuMaterialBindGroupRebuildNeeded(cached, {} as GPUSampler, [view0, view1])).toBe(true);
+    expect(isWgpuMaterialBindGroupRebuildNeeded(cached, {} as WgpuSampler, [view0, view1])).toBe(true);
   });
 
   it('rebuilds when any resolved view identity changes (swap / unready->ready / ready->ready / version++)', () => {
     // resolveWgpuMaterialTextureView is the invalidation seam: a texture swap, an unready->ready
     // transition, a ready->ready image replacement, or an ImageResource version bump each yield a new
     // view identity, so this single identity check covers all four.
-    expect(isWgpuMaterialBindGroupRebuildNeeded(cached, sampler, [{} as GPUTextureView, view1])).toBe(true);
+    expect(isWgpuMaterialBindGroupRebuildNeeded(cached, sampler, [{} as WgpuTextureView, view1])).toBe(true);
   });
 
   it('rebuilds when the resolved view count changes or the cache has no views yet', () => {
     expect(isWgpuMaterialBindGroupRebuildNeeded(cached, sampler, [view0])).toBe(true);
-    const noViews: WgpuMaterialBinding = { bindGroup: {} as GPUBindGroup, buffer: {} as GPUBuffer };
+    const noViews: WgpuMaterialBinding = { bindGroup: {} as WgpuBindGroup, buffer: {} as WgpuBuffer };
     expect(isWgpuMaterialBindGroupRebuildNeeded(noViews, sampler, [view0])).toBe(true);
   });
 });
@@ -1025,13 +1035,13 @@ describe('WGPU_MESH_PRELUDE_WGSL', () => {
 });
 
 describe('wgpuPerMapMaterialBindGroupNeedsRebuild', () => {
-  const sampler0 = {} as GPUSampler;
-  const sampler1 = {} as GPUSampler;
-  const view0 = {} as GPUTextureView;
-  const view1 = {} as GPUTextureView;
+  const sampler0 = {} as WgpuSampler;
+  const sampler1 = {} as WgpuSampler;
+  const view0 = {} as WgpuTextureView;
+  const view1 = {} as WgpuTextureView;
   const cached: WgpuMaterialBinding = {
-    bindGroup: {} as GPUBindGroup,
-    buffer: {} as GPUBuffer,
+    bindGroup: {} as WgpuBindGroup,
+    buffer: {} as WgpuBuffer,
     samplers: [sampler0, sampler1],
     views: [view0, view1],
   };
@@ -1041,11 +1051,11 @@ describe('wgpuPerMapMaterialBindGroupNeedsRebuild', () => {
   });
 
   it('rebuilds when a non-primary sampler changes', () => {
-    expect(wgpuPerMapMaterialBindGroupNeedsRebuild(cached, [sampler0, {} as GPUSampler], [view0, view1])).toBe(true);
+    expect(wgpuPerMapMaterialBindGroupNeedsRebuild(cached, [sampler0, {} as WgpuSampler], [view0, view1])).toBe(true);
   });
 
   it('rebuilds for a view change or mismatched array shape', () => {
-    expect(wgpuPerMapMaterialBindGroupNeedsRebuild(cached, [sampler0, sampler1], [view0, {} as GPUTextureView])).toBe(
+    expect(wgpuPerMapMaterialBindGroupNeedsRebuild(cached, [sampler0, sampler1], [view0, {} as WgpuTextureView])).toBe(
       true,
     );
     expect(wgpuPerMapMaterialBindGroupNeedsRebuild(cached, [sampler0], [view0, view1])).toBe(true);

@@ -1,75 +1,69 @@
 import type { RenderTargetClear } from '@flighthq/render/contract';
 
 import type {
-  WgpuRenderStateOptions,
+  WgpuAdapter,
+  WgpuBindGroup,
+  WgpuBindGroupLayout,
+  WgpuBuffer,
+  WgpuBufferDescriptor,
+  WgpuBufferSource,
+  WgpuCanvasContext,
+  WgpuCommandBuffer,
+  WgpuCommandEncoder,
+  WgpuDevice,
+  WgpuExtent3D,
+  WgpuExtent3DDict,
+  WgpuGpu,
+  WgpuPipelineLayout,
   WgpuRenderPass,
+  WgpuRenderPassEncoder,
+  WgpuRenderPipeline,
+  WgpuRenderPipelineDescriptor,
   WgpuRenderState,
+  WgpuRenderStateOptions,
+  WgpuSampler,
   WgpuScreenRenderTarget,
   WgpuScreenRenderTargetOptions,
+  WgpuShaderModule,
+  WgpuTexelCopyBufferLayout,
+  WgpuTexelCopyTextureInfo,
+  WgpuTexture,
+  WgpuTextureDescriptor,
+  WgpuTextureFormat,
+  WgpuTextureView,
 } from './contract.render-wgpu-types.ts';
 import { testWgpuHost, createTestWgpuSurface } from './wgpuHost.ts';
 
 export { testWgpuHost, createTestWgpuSurface };
+import { WgpuBufferUsage, WgpuTextureUsage } from './contract.render-wgpu-types.ts';
 import { beginWgpuRenderPass } from './wgpuRenderPass.ts';
 import { createWgpuAcquisition, createWgpuRenderState } from './wgpuRenderState.ts';
 import { enableWgpuScreenRenderTargetAntialias } from './wgpuScreenAntialias.ts';
 import { createWgpuScreenRenderTarget } from './wgpuScreenRenderTarget.ts';
 
-// Wgpu flag constants are only type-level in @webgpu/types; install runtime values for JSDOM.
-function installWgpuConstants(): void {
-  const g = globalThis as Record<string, unknown>;
-
-  if (!g['GPUBufferUsage']) {
-    g['GPUBufferUsage'] = {
-      MAP_READ: 1,
-      MAP_WRITE: 2,
-      COPY_SRC: 4,
-      COPY_DST: 8,
-      INDEX: 16,
-      VERTEX: 32,
-      UNIFORM: 64,
-      STORAGE: 128,
-      INDIRECT: 256,
-      QUERY_RESOLVE: 512,
-    };
-  }
-  if (!g['GPUTextureUsage']) {
-    g['GPUTextureUsage'] = { COPY_SRC: 1, COPY_DST: 2, TEXTURE_BINDING: 4, STORAGE_BINDING: 8, RENDER_ATTACHMENT: 16 };
-  }
-  if (!g['GPUShaderStage']) {
-    g['GPUShaderStage'] = { VERTEX: 1, FRAGMENT: 2, COMPUTE: 4 };
-  }
-  if (!g['GPUColorWrite']) {
-    g['GPUColorWrite'] = { RED: 1, GREEN: 2, BLUE: 4, ALPHA: 8, ALL: 15 };
-  }
-  if (!g['GPUMapMode']) {
-    g['GPUMapMode'] = { READ: 1, WRITE: 2 };
-  }
-}
-
 // Minimal Wgpu mock for JSDOM test environments.
 // Provides enough surface area for state creation and basic draw call recording.
 
-function makeBindGroup(): GPUBindGroup {
-  return {} as GPUBindGroup;
+function makeBindGroup(): WgpuBindGroup {
+  return {} as WgpuBindGroup;
 }
 
-function makeBindGroupLayout(): GPUBindGroupLayout {
-  return {} as GPUBindGroupLayout;
+function makeBindGroupLayout(): WgpuBindGroupLayout {
+  return {} as WgpuBindGroupLayout;
 }
 
-function makeBuffer(descriptor: GPUBufferDescriptor): GPUBuffer {
+function makeBuffer(descriptor: WgpuBufferDescriptor): WgpuBuffer {
   return {
     destroy: () => {},
     size: descriptor.size,
     usage: descriptor.usage,
-  } as unknown as GPUBuffer;
+  } as unknown as WgpuBuffer;
 }
 
-function makeTexture(descriptor?: GPUTextureDescriptor): GPUTexture {
+function makeTexture(descriptor?: WgpuTextureDescriptor): WgpuTexture {
   const [width, height, depthOrArrayLayers] = normalizeGpuExtent3D(descriptor?.size ?? [1, 1, 1]);
   return {
-    createView: () => ({}) as GPUTextureView,
+    createView: () => ({}) as WgpuTextureView,
     depthOrArrayLayers,
     dimension: descriptor?.dimension ?? '2d',
     destroy: () => {},
@@ -77,12 +71,12 @@ function makeTexture(descriptor?: GPUTextureDescriptor): GPUTexture {
     height,
     mipLevelCount: descriptor?.mipLevelCount ?? 1,
     sampleCount: descriptor?.sampleCount ?? 1,
-    usage: descriptor?.usage ?? GPUTextureUsage.RENDER_ATTACHMENT,
+    usage: descriptor?.usage ?? WgpuTextureUsage.RENDER_ATTACHMENT,
     width,
-  } as unknown as GPUTexture;
+  } as unknown as WgpuTexture;
 }
 
-function makeRenderPassEncoder(): GPURenderPassEncoder {
+function makeRenderPassEncoder(): WgpuRenderPassEncoder {
   return {
     draw: () => {},
     end: () => {},
@@ -91,39 +85,39 @@ function makeRenderPassEncoder(): GPURenderPassEncoder {
     setScissorRect: () => {},
     setStencilReference: () => {},
     setViewport: () => {},
-  } as unknown as GPURenderPassEncoder;
+  } as unknown as WgpuRenderPassEncoder;
 }
 
-function makeCommandEncoder(): GPUCommandEncoder {
+function makeCommandEncoder(): WgpuCommandEncoder {
   return {
     beginRenderPass: () => makeRenderPassEncoder(),
     copyTextureToBuffer: () => {},
     copyTextureToTexture: () => {},
-    finish: () => ({}) as GPUCommandBuffer,
-  } as unknown as GPUCommandEncoder;
+    finish: () => ({}) as WgpuCommandBuffer,
+  } as unknown as WgpuCommandEncoder;
 }
 
 // The descriptor is stashed on the returned pipeline so tests can assert blend/target state the
 // real device would consume but the mock otherwise discards.
-function makePipeline(descriptor?: GPURenderPipelineDescriptor): GPURenderPipeline {
-  return { __descriptor: descriptor } as unknown as GPURenderPipeline;
+function makePipeline(descriptor?: WgpuRenderPipelineDescriptor): WgpuRenderPipeline {
+  return { __descriptor: descriptor } as unknown as WgpuRenderPipeline;
 }
 
-function makeShaderModule(): GPUShaderModule {
-  return {} as GPUShaderModule;
+function makeShaderModule(): WgpuShaderModule {
+  return {} as WgpuShaderModule;
 }
 
-function makeSampler(): GPUSampler {
-  return {} as GPUSampler;
+function makeSampler(): WgpuSampler {
+  return {} as WgpuSampler;
 }
 
-function makePipelineLayout(): GPUPipelineLayout {
-  return {} as GPUPipelineLayout;
+function makePipelineLayout(): WgpuPipelineLayout {
+  return {} as WgpuPipelineLayout;
 }
 
-function makeDevice(): GPUDevice {
+function makeDevice(): WgpuDevice {
   const writeBuffer = (
-    buffer: GPUBuffer,
+    buffer: WgpuBuffer,
     bufferOffset: number,
     data: unknown,
     dataOffset?: number,
@@ -132,10 +126,10 @@ function makeDevice(): GPUDevice {
     validateWriteBufferDestination(buffer, bufferOffset, data, dataOffset, size);
   };
   const writeTexture = (
-    destination: GPUTexelCopyTextureInfo,
-    data: GPUAllowSharedBufferSource,
-    dataLayout: GPUTexelCopyBufferLayout,
-    size: GPUExtent3D,
+    destination: WgpuTexelCopyTextureInfo,
+    data: WgpuBufferSource,
+    dataLayout: WgpuTexelCopyBufferLayout,
+    size: WgpuExtent3D,
   ): void => {
     validateWriteTextureSourceAllocation(destination, data, dataLayout, size);
   };
@@ -146,27 +140,27 @@ function makeDevice(): GPUDevice {
     limits: { maxTextureDimension2D: 8192, minUniformBufferOffsetAlignment: 256 },
     createBindGroup: () => makeBindGroup(),
     createBindGroupLayout: () => makeBindGroupLayout(),
-    createBuffer: (descriptor: GPUBufferDescriptor) => makeBuffer(descriptor),
+    createBuffer: (descriptor: WgpuBufferDescriptor) => makeBuffer(descriptor),
     createCommandEncoder: () => makeCommandEncoder(),
     createPipelineLayout: () => makePipelineLayout(),
-    createRenderPipeline: (descriptor: GPURenderPipelineDescriptor) => makePipeline(descriptor),
+    createRenderPipeline: (descriptor: WgpuRenderPipelineDescriptor) => makePipeline(descriptor),
     createSampler: () => makeSampler(),
     createShaderModule: () => makeShaderModule(),
-    createTexture: (descriptor: GPUTextureDescriptor) => makeTexture(descriptor),
+    createTexture: (descriptor: WgpuTextureDescriptor) => makeTexture(descriptor),
     queue: {
       copyExternalImageToTexture: () => {},
       submit: () => {},
       writeBuffer,
       writeTexture,
     },
-  } as unknown as GPUDevice;
+  } as unknown as WgpuDevice;
 }
 
 // Mirror writeBuffer's synchronous BufferSource checks and the destination constraints that a real
 // device reports through GPU validation. This mock backs unit paths in three WGPU packages, so the
 // validation belongs at their shared fake-device boundary rather than in individual interaction tests.
 function validateWriteBufferDestination(
-  buffer: GPUBuffer,
+  buffer: WgpuBuffer,
   bufferOffset: number,
   data: unknown,
   dataOffset = 0,
@@ -200,7 +194,7 @@ function validateWriteBufferDestination(
   if (contentByteLength % 4 !== 0) {
     throw new DOMException('GPUQueue.writeBuffer: content byte length must be a multiple of 4', 'OperationError');
   }
-  if ((buffer.usage & GPUBufferUsage.COPY_DST) === 0) {
+  if ((buffer.usage & WgpuBufferUsage.COPY_DST) === 0) {
     throw new Error('Fake GPU validation: GPUQueue.writeBuffer destination buffer must have COPY_DST usage');
   }
   if (bufferOffset + contentByteLength > buffer.size) {
@@ -212,7 +206,7 @@ function getTypedArrayElementByteLength(data: ArrayBufferView): number {
   return (data as ArrayBufferView & { readonly BYTES_PER_ELEMENT: number }).BYTES_PER_ELEMENT;
 }
 
-function getWriteTextureBytesPerTexel(format: GPUTextureFormat): number | null {
+function getWriteTextureBytesPerTexel(format: WgpuTextureFormat): number | null {
   if (
     format === 'rgba8unorm' ||
     format === 'rgba8unorm-srgb' ||
@@ -225,12 +219,12 @@ function getWriteTextureBytesPerTexel(format: GPUTextureFormat): number | null {
   return null;
 }
 
-function normalizeGpuExtent3D(size: GPUExtent3D): [number, number, number] {
+function normalizeGpuExtent3D(size: WgpuExtent3D): [number, number, number] {
   if (Symbol.iterator in Object(size)) {
     const values = Array.from(size as Iterable<number>);
     return [values[0] ?? 1, values[1] ?? 1, values[2] ?? 1];
   }
-  const dictionary = size as GPUExtent3DDict;
+  const dictionary = size as WgpuExtent3DDict;
   return [dictionary.width, dictionary.height ?? 1, dictionary.depthOrArrayLayers ?? 1];
 }
 
@@ -238,10 +232,10 @@ function normalizeGpuExtent3D(size: GPUExtent3D): [number, number, number] {
 // requirement for the uncompressed formats exercised through this reusable fake; block-compressed
 // formats remain record-only until their block geometry is modeled deliberately.
 function validateWriteTextureSourceAllocation(
-  destination: GPUTexelCopyTextureInfo,
-  data: GPUAllowSharedBufferSource,
-  dataLayout: GPUTexelCopyBufferLayout,
-  size: GPUExtent3D,
+  destination: WgpuTexelCopyTextureInfo,
+  data: WgpuBufferSource,
+  dataLayout: WgpuTexelCopyBufferLayout,
+  size: WgpuExtent3D,
 ): void {
   const isArrayBuffer = data instanceof ArrayBuffer;
   const isSharedArrayBuffer = typeof SharedArrayBuffer !== 'undefined' && data instanceof SharedArrayBuffer;
@@ -270,14 +264,14 @@ function validateWriteTextureSourceAllocation(
   }
 }
 
-function makeAdapter(): GPUAdapter {
+function makeAdapter(): WgpuAdapter {
   return {
     // A real GPUAdapter always exposes `.limits`; the forward-lit pipeline's device request reads
     // maxBindGroups off it. Report 8 (the common desktop cap) so the 5-group request path is exercised.
     limits: { maxBindGroups: 8, minUniformBufferOffsetAlignment: 256 },
     features: new Set(),
     requestDevice: () => Promise.resolve(makeDevice()),
-  } as unknown as GPUAdapter;
+  } as unknown as WgpuAdapter;
 }
 
 // Opens a screen pass over a fresh 800x600 test surface — the shape of an ordinary frame, in one line,
@@ -341,11 +335,10 @@ const _testWgpuBackend = testWgpuHost;
 const _testWgpuPipeline = {};
 
 export function installWgpuMock(): void {
-  installWgpuConstants();
-  const gpu: GPU = {
-    getPreferredCanvasFormat: () => 'bgra8unorm' as GPUTextureFormat,
+  const gpu: WgpuGpu = {
+    getPreferredCanvasFormat: () => 'bgra8unorm' as WgpuTextureFormat,
     requestAdapter: () => Promise.resolve(makeAdapter()),
-  } as unknown as GPU;
+  } as unknown as WgpuGpu;
 
   // A shared (isolate:false) worker may reach this helper with no navigator present; defineProperty
   // on a missing navigator throws, so ensure one exists before attaching the mock GPU.
@@ -373,7 +366,7 @@ export function installWgpuMock(): void {
         configure: () => {},
         getCurrentTexture: () => makeTexture(),
         unconfigure: () => {},
-      } as unknown as GPUCanvasContext;
+      } as unknown as WgpuCanvasContext;
       _mockCanvasContexts.set(this, context);
       return context;
     }
@@ -382,4 +375,4 @@ export function installWgpuMock(): void {
   };
 }
 
-const _mockCanvasContexts = new WeakMap<HTMLCanvasElement, GPUCanvasContext>();
+const _mockCanvasContexts = new WeakMap<HTMLCanvasElement, WgpuCanvasContext>();

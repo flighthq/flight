@@ -1,3 +1,4 @@
+import type { WgpuCommandEncoder, WgpuRenderPassDescriptor } from './contract.render-wgpu-types.ts';
 import { beginWgpuRenderPass, endWgpuRenderPass } from './wgpuRenderPass.ts';
 import { enableWgpuScreenRenderTargetAntialias } from './wgpuScreenAntialias.ts';
 import { bindWgpuScreenRenderTarget } from './wgpuScreenRenderTarget.ts';
@@ -47,13 +48,13 @@ describe('enableWgpuScreenRenderTargetAntialias', () => {
     const screen = createWgpuScreenRenderTargetForTest(state, { antialias: true });
     const pass = beginWgpuRenderPass(state, screen, { color: [0, 0, 0, 0] });
     const presentationView = screen.presentationView;
-    const encoded: GPURenderPassDescriptor[] = [];
+    const encoded: WgpuRenderPassDescriptor[] = [];
     const encoder = {
-      beginRenderPass: (descriptor: GPURenderPassDescriptor) => {
+      beginRenderPass: (descriptor: WgpuRenderPassDescriptor) => {
         encoded.push(descriptor);
         return { draw: () => {}, end: () => {}, setBindGroup: () => {}, setPipeline: () => {} };
       },
-    } as unknown as GPUCommandEncoder;
+    } as unknown as WgpuCommandEncoder;
 
     screen.encodeAntialiasResolve!(state, screen, encoder);
 

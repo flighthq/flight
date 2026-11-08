@@ -11,6 +11,12 @@ import type { TextureWrap } from '@flighthq/texture/contract';
 import type {
   WgpuColorAdjustmentMaterialFeature,
   WgpuColorAdjustmentMaterialFeatureGuard,
+  WgpuDevice,
+  WgpuDeviceLostInfo,
+  WgpuFilterMode,
+  WgpuMipmapFilterMode,
+  WgpuSampler,
+  WgpuSamplerDescriptor,
 } from './contract.render-wgpu-types.ts';
 import type {
   HostWgpuCapability,
@@ -25,6 +31,7 @@ import type {
   WgpuRenderStateOptions,
   WgpuRenderStateRuntime,
 } from './contract.render-wgpu-types.ts';
+import { WgpuBufferUsage } from './contract.render-wgpu-types.ts';
 import { observeWgpuDeviceLoss } from './wgpuDeviceLoss.ts';
 import { warmWgpuPipelines } from './wgpuDraw.ts';
 import { createWgpuBindGroupLayouts, UNIFORM_BYTE_SIZE } from './wgpuShader.ts';
@@ -79,7 +86,7 @@ export async function createWgpuAcquisition(
   }
 }
 
-export function createWgpuDeviceState(device: GPUDevice): WgpuDeviceState {
+export function createWgpuDeviceState(device: WgpuDevice): WgpuDeviceState {
   const deviceRuntime = createMinimalDeviceRuntime(device);
   const state = allocateEntity<WgpuDeviceState>();
   initializeWgpuDeviceState(state, device);
@@ -145,7 +152,7 @@ export function createWgpuOffscreenRenderState(
 //   const screen = createWgpuScreenRenderTarget(webWgpuHost, acquisition.device, canvas, { format: acquisition.format });
 //   const state = createWgpuRenderState(acquisition.device, { ...pipeline, format: acquisition.format });
 export function createWgpuRenderState(
-  device: GPUDevice,
+  device: WgpuDevice,
   options: Readonly<WgpuRenderStateOptions> = {},
 ): WgpuRenderState {
   return initializeWgpuDeviceRenderState(createWgpuDeviceState(device), options);
@@ -164,7 +171,7 @@ function initializeWgpuDeviceRenderState(
   const ringByteSize = uniformStride * RING_SLOT_COUNT;
   const uniformBuffer = device.createBuffer({
     size: ringByteSize,
-    usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+    usage: WgpuBufferUsage.UNIFORM | WgpuBufferUsage.COPY_DST,
   });
   const uniformData = new Float32Array(ringByteSize / 4);
   const uniformBindGroup = device.createBindGroup({
@@ -342,17 +349,17 @@ export function getWgpuRenderStateRuntime(state: WgpuRenderState): WgpuRenderSta
 // keep their own pre-created linear/nearest samplers; this backs every non-default combination.
 export function getWgpuSampler(
   state: WgpuRenderState,
-  minFilter: GPUFilterMode,
-  magFilter: GPUFilterMode,
+  minFilter: WgpuFilterMode,
+  magFilter: WgpuFilterMode,
   wrapU: TextureWrap,
   wrapV: TextureWrap,
-  mipmapFilter?: GPUMipmapFilterMode,
+  mipmapFilter?: WgpuMipmapFilterMode,
   maxAnisotropy = 1,
-): GPUSampler {
+): WgpuSampler {
   const runtime = getWgpuRenderStateRuntime(state);
   const anisotropy = Math.max(1, Math.floor(maxAnisotropy));
-  const effectiveMinFilter: GPUFilterMode = anisotropy > 1 ? 'linear' : minFilter;
-  const effectiveMagFilter: GPUFilterMode = anisotropy > 1 ? 'linear' : magFilter;
+  const effectiveMinFilter: WgpuFilterMode = anisotropy > 1 ? 'linear' : minFilter;
+  const effectiveMagFilter: WgpuFilterMode = anisotropy > 1 ? 'linear' : magFilter;
   const effectiveMipmapFilter = anisotropy > 1 ? 'linear' : mipmapFilter;
   // Pack the sampler config into a single NUMBER key rather than a template string — this runs on every
   // material bind (per frame), so a per-call string allocation would be hidden GC pressure in the hot
@@ -367,7 +374,7 @@ export function getWgpuSampler(
   const cache = runtime.context.samplerCache;
   let sampler = cache.get(key);
   if (sampler === undefined) {
-    const descriptor: GPUSamplerDescriptor = {
+    const descriptor: WgpuSamplerDescriptor = {
       minFilter: effectiveMinFilter,
       magFilter: effectiveMagFilter,
       addressModeU: wrapU,
@@ -399,7 +406,7 @@ export function initializeWgpuHostAcquisition(
 
 export function initializeWgpuOffscreenRenderStateDeviceLostResult(
   out: EntityConstruction<Extract<WgpuOffscreenRenderStateResult, { reason: 'device-lost' }>>,
-  info: GPUDeviceLostInfo,
+  info: WgpuDeviceLostInfo,
 ): void {
   out.info = info;
   out.reason = 'device-lost';
@@ -417,15 +424,15 @@ export function isWgpuSupported(hostWgpu: Readonly<HostWgpuCapability>): boolean
   return hostWgpu.isSupported();
 }
 
-export function registerWgpuDeviceTeardown(state: WgpuRenderState, teardown: (device: GPUDevice) => void): void {
+export function registerWgpuDeviceTeardown(state: WgpuRenderState, teardown: (device: WgpuDevice) => void): void {
   getWgpuRenderStateRuntime(state).context.teardowns.push(teardown);
 }
 
 // Small-integer codes for the sampler-cache numeric key (see getWgpuSampler). Module-level so the key
 // packing reads a field instead of allocating — no per-call table construction.
-const SAMPLER_FILTER_BITS: Record<GPUFilterMode, number> = { nearest: 0, linear: 1 };
+const SAMPLER_FILTER_BITS: Record<WgpuFilterMode, number> = { nearest: 0, linear: 1 };
 const SAMPLER_WRAP_BITS: Record<TextureWrap, number> = { 'clamp-to-edge': 0, 'mirror-repeat': 1, repeat: 2 };
-const SAMPLER_MIPMAP_BITS: Record<GPUMipmapFilterMode, number> = { nearest: 1, linear: 2 };
+const SAMPLER_MIPMAP_BITS: Record<WgpuMipmapFilterMode, number> = { nearest: 1, linear: 2 };
 
 function ensureWgpuDeviceRuntimeResources(runtime: WgpuDeviceRuntime): WgpuDeviceRuntimeResources {
   if (runtime.resources !== null) return runtime.resources;
@@ -458,7 +465,7 @@ export function registerWgpuRenderStateTeardown(
   getWgpuRenderStateRuntime(state).teardowns.push(teardown);
 }
 
-function createMinimalDeviceRuntime(device: GPUDevice): WgpuDeviceRuntime {
+function createMinimalDeviceRuntime(device: WgpuDevice): WgpuDeviceRuntime {
   const runtime: WgpuDeviceRuntime = {
     binding: null,
     device,

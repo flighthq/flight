@@ -1,5 +1,6 @@
 import { createBoxMeshGeometry, createMeshGeometry } from '@flighthq/meshgeometry/contract';
 import type { WgpuSkinningAdapter } from '@flighthq/render-wgpu/contract';
+import { WgpuBufferUsage } from '@flighthq/render-wgpu/contract';
 
 import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime.ts';
 import { makeWgpuScene3DState } from './wgpuScene3DTestHelper.ts';
@@ -21,7 +22,7 @@ describe('ensureWgpuWireframeUpload', () => {
     const lineBufferCreate = fake.calls.find(
       (c) =>
         c.name === 'createBuffer' &&
-        ((c.args[0] as { usage: number; size: number }).usage & GPUBufferUsage.INDEX) !== 0 &&
+        ((c.args[0] as { usage: number; size: number }).usage & WgpuBufferUsage.INDEX) !== 0 &&
         (c.args[0] as { size: number }).size === triangleCount * 6 * bytesPerIndex,
     );
     expect(lineBufferCreate).toBeDefined();
@@ -49,7 +50,7 @@ describe('ensureWgpuWireframeUpload', () => {
     const lineBufferCreate = fake.calls.find(
       (c) =>
         c.name === 'createBuffer' &&
-        ((c.args[0] as { usage: number }).usage & GPUBufferUsage.INDEX) !== 0 &&
+        ((c.args[0] as { usage: number }).usage & WgpuBufferUsage.INDEX) !== 0 &&
         (c.args[0] as { size: number }).size === 2 * 6 * 2,
     );
     expect(lineBufferCreate).toBeDefined();

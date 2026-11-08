@@ -13,7 +13,12 @@ import { StandardMaterialKind } from '@flighthq/materials/contract';
 import { enableRenderRegistriesGuards, explainRenderRegistriesMisses } from '@flighthq/render/contract';
 import { RenderRegistryTable } from '@flighthq/render/contract';
 
-import type { WgpuQuadMaterialRenderer, WgpuRenderState } from './contract.render-wgpu-types.ts';
+import type {
+  WgpuDevice,
+  WgpuQuadMaterialRenderer,
+  WgpuRenderState,
+  WgpuShaderModule,
+} from './contract.render-wgpu-types.ts';
 import {
   getWgpuQuadMaterialRenderer,
   registerWgpuQuadMaterialRenderer,
@@ -31,11 +36,11 @@ beforeEach(() => {
 const TestKind = 'TestMaterial';
 const testRenderer: WgpuQuadMaterialRenderer = {
   instanceFloatCount: 0,
-  getShaderModule: () => ({}) as GPUShaderModule,
+  getShaderModule: () => ({}) as WgpuShaderModule,
 };
 
 function makeState(): WgpuRenderState {
-  const device = {} as GPUDevice;
+  const device = {} as WgpuDevice;
   const state = { device } as WgpuRenderState;
   state[EntityRuntimeKey] = createWgpuRenderStateRuntime(createWgpuDeviceState(device));
   return state;
@@ -65,7 +70,7 @@ describe('registerWgpuQuadMaterialRenderer', () => {
     const state = makeState();
     const replacement: WgpuQuadMaterialRenderer = {
       instanceFloatCount: 0,
-      getShaderModule: () => ({}) as GPUShaderModule,
+      getShaderModule: () => ({}) as WgpuShaderModule,
     };
     registerWgpuQuadMaterialRenderer(state, TestKind, testRenderer);
     const before = getWgpuRenderStateRuntime(state).registries.materialRenderers;

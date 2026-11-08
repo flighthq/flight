@@ -10,11 +10,11 @@ import type { WgpuRenderState } from './WgpuRenderState.ts';
 // contract stays clean and velocity production tree-shakes independently. The generic VelocityField
 // (velocity data) is render-agnostic and lives in @flighthq/velocity; this is only the render-side hook.
 export interface WgpuVelocityContext {
-  readonly state: WgpuRenderState;
-  readonly field: VelocityField;
-  readonly width: number;
-  readonly height: number;
-  readonly pixelRatio: number;
+  state: WgpuRenderState;
+  field: VelocityField;
+  width: number;
+  height: number;
+  pixelRatio: number;
 }
 
 export type WgpuVelocityWriter = (ctx: Readonly<WgpuVelocityContext>, node: object) => void;

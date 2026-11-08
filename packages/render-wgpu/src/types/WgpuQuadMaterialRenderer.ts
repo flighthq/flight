@@ -1,6 +1,7 @@
 import type { Material, MaterialData } from '@flighthq/materials/contract';
 
 import type { WgpuRenderState } from './WgpuRenderState.ts';
+import type { WgpuShaderModule } from './WgpuShaderModule.ts';
 
 // Per-backend behavior for a material kind on Wgpu, registered against the kind on the render
 // state via registerWgpuQuadMaterialRenderer. The renderer owns its shader module; the quad-batch writer
@@ -17,14 +18,14 @@ export interface WgpuQuadMaterialRenderer {
   // Number of per-instance floats this material appends to the parallel material storage buffer
   // (@group(3) @binding(0), declared as array<f32> in the material's shader). Zero for materials
   // that need no per-instance data.
-  readonly instanceFloatCount: number;
+  instanceFloatCount: number;
 
   // The shader module providing vs_main and fs_main for this material's quad-batch writer pipeline. It
   // reads the shared base instance record at @group(2) @binding(0); a material with
   // instanceFloatCount > 0 also reads its per-instance floats at @group(3) @binding(0). Reuse
   // getWgpuQuadBatchPreludeWGSL for the base bindings and vertex helper, and cache the compiled
   // module per device.
-  getShaderModule(state: WgpuRenderState): GPUShaderModule;
+  getShaderModule(state: WgpuRenderState): WgpuShaderModule;
 
   // Convert one instance's `materialData` (and the batch material) into instanceFloatCount floats
   // written at out[offset..]. Called once per accumulated instance during batch packing. Omitted by

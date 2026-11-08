@@ -1,8 +1,16 @@
 import type { EntityRaw, EntityRuntime, EntityRuntimeKey } from '@flighthq/entity/contract';
 import type { RenderTargetColorSpace, RenderTargetDimensions } from '@flighthq/render/contract';
 
+import type { WgpuBindGroup } from './WgpuBindGroup.ts';
+import type { WgpuBuffer } from './WgpuBuffer.ts';
+import type { WgpuCanvasAlphaMode, WgpuCanvasContext } from './WgpuCanvasContext.ts';
+import type { WgpuCommandEncoder } from './WgpuCommandEncoder.ts';
+import type { WgpuDevice } from './WgpuDevice.ts';
 import type { WgpuPresentationSurface } from './WgpuHost.ts';
 import type { WgpuRenderState, WgpuTextureBindings } from './WgpuRenderState.ts';
+import type { WgpuTexture } from './WgpuTexture.ts';
+import type { WgpuTextureFormat } from './WgpuTextureFormat.ts';
+import type { WgpuTextureView } from './WgpuTextureView.ts';
 
 // What a Wgpu render pass needs in order to bind and clear a target, and nothing more. The two
 // realizations differ in where the color pixels live: a screen target presents into a swap-chain
@@ -23,13 +31,13 @@ export interface WgpuRenderTarget extends RenderTargetDimensions, EntityRaw {
   // the final present reads this and applies the single linear-to-sRGB encode.
   colorSpace: RenderTargetColorSpace;
   // The swap-chain surface this target presents to, or null for offscreen texture storage.
-  context: GPUCanvasContext | null;
-  depthStencilTexture: GPUTexture;
-  depthStencilView: GPUTextureView;
+  context: WgpuCanvasContext | null;
+  depthStencilTexture: WgpuTexture;
+  depthStencilView: WgpuTextureView;
   // The color attachment's GPU format. A Wgpu pipeline bakes its color attachment format, so scene
   // pipelines key their compiled variant on this. Defaults to the canvas format; an HDR effect target
   // uses 'rgba16float'.
-  format: GPUTextureFormat;
+  format: WgpuTextureFormat;
   height: number;
   // Effective coverage sample count. WGPU realizes four samples by rendering a 2x extent in each axis;
   // a texture target remains sampleable so the existing presentation pass performs the resolve.
@@ -60,16 +68,16 @@ export interface WgpuScreenRenderTarget extends WgpuRenderTarget {
   // enableWgpuScreenRenderTargetAntialias. A frame loop that never asks for antialiasing therefore never
   // pulls in the resolve pipeline or its shader.
   antialias: boolean;
-  antialiasResolveBindGroup: GPUBindGroup | null;
-  antialiasTexture: GPUTexture | null;
-  antialiasView: GPUTextureView | null;
+  antialiasResolveBindGroup: WgpuBindGroup | null;
+  antialiasTexture: WgpuTexture | null;
+  antialiasView: WgpuTextureView | null;
   // Returns the view a frame draws into when supersampling is on — the 2x texture rather than the
   // presentation view. Null until antialiasing is enabled, and then the pass draws into the swap chain
   // directly.
-  acquireAntialiasView: ((state: WgpuRenderState, target: WgpuScreenRenderTarget) => GPUTextureView) | null;
+  acquireAntialiasView: ((state: WgpuRenderState, target: WgpuScreenRenderTarget) => WgpuTextureView) | null;
   // Encodes the supersample resolve into the frame's encoder, immediately before capture reads back.
   encodeAntialiasResolve:
-    | ((state: WgpuRenderState, target: Readonly<WgpuScreenRenderTarget>, encoder: GPUCommandEncoder) => void)
+    | ((state: WgpuRenderState, target: Readonly<WgpuScreenRenderTarget>, encoder: WgpuCommandEncoder) => void)
     | null;
   // Opt-in frame capture (enableWgpuScreenRenderTargetCapture ->
   // createBitmapFromWgpuScreenRenderTarget). When enabled the frame renders into `captureTexture` (an
@@ -79,33 +87,33 @@ export interface WgpuScreenRenderTarget extends WgpuRenderTarget {
   //
   // Same split as antialiasing: the buffers are data this target owns and frees, while the code that
   // fills them arrives through the two slots the enable* function installs.
-  captureBuffer: GPUBuffer | null;
+  captureBuffer: WgpuBuffer | null;
   captureBytesPerRow: number;
   captureEnabled: boolean;
   captureHeight: number;
-  captureTexture: GPUTexture | null;
+  captureTexture: WgpuTexture | null;
   captureWidth: number;
   // Returns the offscreen texture a captured frame renders into instead of the swap chain.
-  acquireCaptureTexture: ((target: WgpuScreenRenderTarget) => GPUTexture) | null;
+  acquireCaptureTexture: ((target: WgpuScreenRenderTarget) => WgpuTexture) | null;
   // Encodes the capture-texture -> capture-buffer copy into the frame's encoder.
-  encodeCapture: ((target: WgpuScreenRenderTarget, encoder: GPUCommandEncoder) => void) | null;
-  readonly context: GPUCanvasContext;
-  readonly device: GPUDevice;
+  encodeCapture: ((target: WgpuScreenRenderTarget, encoder: WgpuCommandEncoder) => void) | null;
+  context: WgpuCanvasContext;
+  device: WgpuDevice;
   // The view a frame ultimately presents into — the swap-chain view, or `captureTexture`'s view while
   // capture is on. Live only between the begin and the submit of one frame; null outside a frame.
-  presentationView: GPUTextureView | null;
+  presentationView: WgpuTextureView | null;
   // The presentation surface's live size. Not an HTMLCanvasElement: nothing on this path reads a DOM
   // member, so a native host supplies its own size provider and the web path passes its canvas directly.
-  readonly surface: WgpuPresentationSurface;
+  surface: WgpuPresentationSurface;
 }
 
 export interface WgpuScreenRenderTargetOptions {
   // Alpha compositing of the swap-chain texture against the page. Default 'premultiplied'.
-  readonly alphaMode?: GPUCanvasAlphaMode;
-  readonly colorSpace?: RenderTargetColorSpace;
+  alphaMode?: WgpuCanvasAlphaMode;
+  colorSpace?: RenderTargetColorSpace;
   // Swap-chain texture format. Default 'bgra8unorm'; pass the adapter's preferred canvas format when
   // the caller has one.
-  readonly format?: GPUTextureFormat;
+  format?: WgpuTextureFormat;
 }
 
 // Offscreen, sampleable render storage: the target an effect pass, a render cache, or a shadow map
@@ -114,9 +122,9 @@ export interface WgpuTextureRenderTarget extends WgpuRenderTarget {
   // Per-sampler bind groups over `view`, same contract as WgpuTextureEntry: which sampler a draw uses is
   // a draw policy re-read per draw, never captured into the target when it is allocated or resized.
   bindings: WgpuTextureBindings;
-  readonly context: null;
+  context: null;
   // Render targets are always allocated single-level; declared so a target satisfies WgpuTextureResource.
   mipLevelCount: number;
-  texture: GPUTexture;
-  view: GPUTextureView;
+  texture: WgpuTexture;
+  view: WgpuTextureView;
 }

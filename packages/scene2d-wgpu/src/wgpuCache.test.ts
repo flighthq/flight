@@ -2,9 +2,16 @@ import { EntityRuntimeKey } from '@flighthq/entity/contract';
 import { createMatrix } from '@flighthq/geometry/contract';
 import * as renderWgpu from '@flighthq/render-wgpu/contract';
 import type {
+  WgpuBuffer,
+  WgpuCanvasContext,
+  WgpuCommandEncoder,
+  WgpuDevice,
   WgpuQuadMaterialRenderer,
   WgpuRenderState,
+  WgpuTexture,
+  WgpuTextureFormat,
   WgpuTextureRenderTarget,
+  WgpuTextureView,
 } from '@flighthq/render-wgpu/contract';
 import {
   createRenderCache,
@@ -41,7 +48,7 @@ beforeEach(() => {
   vi.spyOn(wgpuQuadBatchWriter, 'flushWgpuQuadBatchWriter').mockImplementation((() => {}) as never);
 
   const beginWgpuFrameSpy = vi.spyOn(renderWgpu, 'beginWgpuFrame').mockImplementation(((state: WgpuRenderState) => {
-    renderWgpu.getWgpuRenderStateRuntime(state).commandEncoder = {} as GPUCommandEncoder;
+    renderWgpu.getWgpuRenderStateRuntime(state).commandEncoder = {} as WgpuCommandEncoder;
   }) as never);
   const submitWgpuFrameSpy = vi.spyOn(renderWgpu, 'submitWgpuFrame').mockImplementation(((state: WgpuRenderState) => {
     renderWgpu.getWgpuRenderStateRuntime(state).commandEncoder = null;
@@ -75,7 +82,7 @@ beforeEach(() => {
       retiredBuffers: [],
       retiredTextures: [],
       surfaceAntialiasTexture: null,
-      uniformBuffer: { destroy: vi.fn() } as unknown as GPUBuffer,
+      uniformBuffer: { destroy: vi.fn() } as unknown as WgpuBuffer,
       uniformData: new Float32Array(0),
       uniformOffset: 0,
     });
@@ -89,10 +96,10 @@ beforeEach(() => {
       context: null,
       mipLevelCount: 1,
       colorSpace: 'srgb',
-      depthStencilTexture: {} as GPUTexture,
-      depthStencilView: {} as GPUTextureView,
-      texture: {} as GPUTexture,
-      view: {} as GPUTextureView,
+      depthStencilTexture: {} as WgpuTexture,
+      depthStencilView: {} as WgpuTextureView,
+      texture: {} as WgpuTexture,
+      view: {} as WgpuTextureView,
       format: 'bgra8unorm',
       sampleCount: 1,
       width,
@@ -135,14 +142,14 @@ afterEach(() => vi.restoreAllMocks());
 
 function fakeScreen(options = {}): WgpuRenderState {
   const state = createRenderState(options) as unknown as WgpuRenderState;
-  const device = {} as GPUDevice;
+  const device = {} as WgpuDevice;
   const deviceState = renderWgpu.createWgpuDeviceState(device);
   const runtime = renderWgpu.createWgpuRenderStateRuntime(deviceState);
   Object.assign(state, {
-    context: {} as GPUCanvasContext,
+    context: {} as WgpuCanvasContext,
     device,
     deviceState,
-    format: 'bgra8unorm' as GPUTextureFormat,
+    format: 'bgra8unorm' as WgpuTextureFormat,
     registries: runtime.registries,
     surface: { height: 600, width: 800 },
   });
@@ -172,7 +179,7 @@ describe('createWgpuCacheState', () => {
     const screen = fakeScreen();
     const destroyUniformBuffer = vi.fn();
     const screenRuntime = renderWgpu.getWgpuRenderStateRuntime(screen);
-    screenRuntime.uniformBuffer = { destroy: destroyUniformBuffer } as unknown as GPUBuffer;
+    screenRuntime.uniformBuffer = { destroy: destroyUniformBuffer } as unknown as WgpuBuffer;
     screenRuntime.quadBatchWriterBufferPool = [];
 
     const cacheState = createCacheState(screen);
@@ -377,7 +384,7 @@ describe('refreshWgpuRenderCache', () => {
 
   it('records into an active application frame without submitting it', () => {
     const screen = fakeScreen();
-    const encoder = {} as GPUCommandEncoder;
+    const encoder = {} as WgpuCommandEncoder;
     renderWgpu.getWgpuRenderStateRuntime(screen).commandEncoder = encoder;
     const cacheState = createCacheState(screen);
     vi.mocked(renderWgpu.beginWgpuFrame).mockClear();

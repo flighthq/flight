@@ -10,7 +10,7 @@ import {
   registerWgpuBitmapTextureResolver,
   registerWgpuImageTextureResolver,
 } from '@flighthq/render-wgpu/contract';
-import type { WgpuMeshMaterialRenderer, WgpuRenderState } from '@flighthq/render-wgpu/contract';
+import type { WgpuBindGroup, WgpuMeshMaterialRenderer, WgpuRenderState } from '@flighthq/render-wgpu/contract';
 import type { Scene3DRenderProxy } from '@flighthq/render/contract';
 
 import type { WgpuClassicDefineKey } from './contract.scene3d-wgpu-types.ts';
@@ -47,7 +47,7 @@ export const wgpuPhongMeshMaterialRenderer: WgpuMeshMaterialRenderer = {
     const pipeline = ensureWgpuClassicPipeline(state, defineKeyForMaterial(phong), format);
     writeWgpuFrameUniform(state, camera, lights);
 
-    let group: GPUBindGroup;
+    let group: WgpuBindGroup;
     if (phong === null) {
       _diffuse.r = 1;
       _diffuse.g = 1;

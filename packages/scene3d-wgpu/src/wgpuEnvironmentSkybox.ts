@@ -1,8 +1,18 @@
 import { updateCamera3DInverseViewProjection } from '@flighthq/camera/contract';
 import type { Camera3D } from '@flighthq/camera/contract';
 import type { Environment } from '@flighthq/lighting/contract';
-import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
-import type { WgpuRenderPass, WgpuRenderState } from '@flighthq/render-wgpu/contract';
+import { WgpuBufferUsage, WgpuShaderStage, getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
+import type {
+  WgpuBindGroup,
+  WgpuBindGroupLayout,
+  WgpuBuffer,
+  WgpuRenderPass,
+  WgpuRenderPipeline,
+  WgpuRenderState,
+  WgpuSampler,
+  WgpuTextureFormat,
+  WgpuTextureView,
+} from '@flighthq/render-wgpu/contract';
 
 import { ensureWgpuEnvironmentSourceCube } from './wgpuEnvironmentCube.ts';
 import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime.ts';
@@ -64,12 +74,12 @@ export function renderWgpuEnvironmentSkybox(
 }
 
 interface WgpuSkybox {
-  cubeBindGroup: GPUBindGroup | null;
-  cubeBindGroupLayout: GPUBindGroupLayout;
-  cubeView: GPUTextureView | null;
-  pipeline: GPURenderPipeline;
-  uniformBindGroup: GPUBindGroup;
-  uniformBuffer: GPUBuffer;
+  cubeBindGroup: WgpuBindGroup | null;
+  cubeBindGroupLayout: WgpuBindGroupLayout;
+  cubeView: WgpuTextureView | null;
+  pipeline: WgpuRenderPipeline;
+  uniformBindGroup: WgpuBindGroup;
+  uniformBuffer: WgpuBuffer;
 }
 
 // Resolves (creating once per state + color format) the skybox pipeline: a fullscreen-triangle module, a
@@ -77,7 +87,7 @@ interface WgpuSkybox {
 // pipeline declares the scene pass's depth-stencil format with depth-write off and compare 'always' so the
 // backdrop never occludes geometry. Cached per (state, format) so the canvas (bgra8unorm) and the HDR
 // effect target (rgba16float) get distinct variants — the WGSL mirror of scene-gl's ensureGlSkybox.
-function ensureWgpuSkyboxPipeline(state: WgpuRenderState, format: GPUTextureFormat): WgpuSkybox {
+function ensureWgpuSkyboxPipeline(state: WgpuRenderState, format: WgpuTextureFormat): WgpuSkybox {
   let byState = _skyboxes.get(state);
   if (byState === undefined) {
     byState = new Map();
@@ -89,12 +99,14 @@ function ensureWgpuSkyboxPipeline(state: WgpuRenderState, format: GPUTextureForm
   const device = state.device;
   const module = device.createShaderModule({ code: SKYBOX_WGSL });
   const uniformBindGroupLayout = device.createBindGroupLayout({
-    entries: [{ binding: 0, visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT, buffer: { type: 'uniform' } }],
+    entries: [
+      { binding: 0, visibility: WgpuShaderStage.VERTEX | WgpuShaderStage.FRAGMENT, buffer: { type: 'uniform' } },
+    ],
   });
   const cubeBindGroupLayout = device.createBindGroupLayout({
     entries: [
-      { binding: 0, visibility: GPUShaderStage.FRAGMENT, texture: { sampleType: 'float', viewDimension: 'cube' } },
-      { binding: 1, visibility: GPUShaderStage.FRAGMENT, sampler: { type: 'filtering' } },
+      { binding: 0, visibility: WgpuShaderStage.FRAGMENT, texture: { sampleType: 'float', viewDimension: 'cube' } },
+      { binding: 1, visibility: WgpuShaderStage.FRAGMENT, sampler: { type: 'filtering' } },
     ],
   });
   const layout = device.createPipelineLayout({ bindGroupLayouts: [uniformBindGroupLayout, cubeBindGroupLayout] });
@@ -107,7 +119,7 @@ function ensureWgpuSkyboxPipeline(state: WgpuRenderState, format: GPUTextureForm
   });
   const uniformBuffer = device.createBuffer({
     size: SKYBOX_UNIFORM_BYTES,
-    usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+    usage: WgpuBufferUsage.UNIFORM | WgpuBufferUsage.COPY_DST,
   });
   const uniformBindGroup = device.createBindGroup({
     layout: uniformBindGroupLayout,
@@ -119,7 +131,7 @@ function ensureWgpuSkyboxPipeline(state: WgpuRenderState, format: GPUTextureForm
 }
 
 // The shared per-state filtering sampler for the skybox cube. Created once and reused across formats.
-function getWgpuSkyboxSampler(state: WgpuRenderState): GPUSampler {
+function getWgpuSkyboxSampler(state: WgpuRenderState): WgpuSampler {
   let sampler = _skyboxSamplers.get(state);
   if (sampler === undefined) {
     sampler = state.device.createSampler({ magFilter: 'linear', minFilter: 'linear' });
@@ -130,14 +142,14 @@ function getWgpuSkyboxSampler(state: WgpuRenderState): GPUSampler {
 
 // The scene pass's depth-stencil format, matching wgpuMeshPipeline's DEPTH_STENCIL_FORMAT — the skybox
 // pipeline must declare it to be compatible with the open scene render pass (it just never writes depth).
-const SKYBOX_DEPTH_STENCIL_FORMAT: GPUTextureFormat = 'depth24plus-stencil8';
+const SKYBOX_DEPTH_STENCIL_FORMAT: WgpuTextureFormat = 'depth24plus-stencil8';
 
 // Skybox uniform: mat4x4f inverse view-projection (64) + vec4f params (16, x = intensity) = 80 bytes.
 const SKYBOX_UNIFORM_BYTES = 80;
 
 const _skyScratch = new Float32Array(SKYBOX_UNIFORM_BYTES / 4);
-const _skyboxes = new WeakMap<WgpuRenderState, Map<GPUTextureFormat, WgpuSkybox>>();
-const _skyboxSamplers = new WeakMap<WgpuRenderState, GPUSampler>();
+const _skyboxes = new WeakMap<WgpuRenderState, Map<WgpuTextureFormat, WgpuSkybox>>();
+const _skyboxSamplers = new WeakMap<WgpuRenderState, WgpuSampler>();
 
 const SKYBOX_WGSL = /* wgsl */ `
 struct SkyUniform {

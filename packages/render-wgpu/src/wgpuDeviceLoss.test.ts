@@ -1,7 +1,13 @@
 import { EntityRuntimeKey } from '@flighthq/entity/contract';
 import { connectSignal, createSignal } from '@flighthq/signals/contract';
 
-import type { WgpuDeviceRuntime, WgpuRenderState } from './contract.render-wgpu-types.ts';
+import type {
+  WgpuDevice,
+  WgpuDeviceLostInfo,
+  WgpuDeviceLostReason,
+  WgpuDeviceRuntime,
+  WgpuRenderState,
+} from './contract.render-wgpu-types.ts';
 import {
   disposeWgpuDeviceSignals,
   enableWgpuDeviceSignals,
@@ -19,15 +25,15 @@ import {
 // A device whose loss the test drives by hand. `lost` is the only member the observer reads, so the
 // rest of GPUDevice stays absent on purpose: a probe that needed a full device would be testing the
 // mock. `resolveLost` stands in for the driver resolving the real terminal promise.
-function makeLosableDevice(): { device: GPUDevice; resolveLost: (reason: GPUDeviceLostReason) => void } {
-  let resolveLost!: (reason: GPUDeviceLostReason) => void;
-  const lost = new Promise<GPUDeviceLostInfo>((resolve) => {
-    resolveLost = (reason) => resolve({ message: `lost: ${reason}`, reason } as GPUDeviceLostInfo);
+function makeLosableDevice(): { device: WgpuDevice; resolveLost: (reason: WgpuDeviceLostReason) => void } {
+  let resolveLost!: (reason: WgpuDeviceLostReason) => void;
+  const lost = new Promise<WgpuDeviceLostInfo>((resolve) => {
+    resolveLost = (reason) => resolve({ message: `lost: ${reason}`, reason } as WgpuDeviceLostInfo);
   });
-  return { device: { destroy: () => {}, lost } as unknown as GPUDevice, resolveLost };
+  return { device: { destroy: () => {}, lost } as unknown as WgpuDevice, resolveLost };
 }
 
-function makeStateOn(device: GPUDevice): WgpuRenderState {
+function makeStateOn(device: WgpuDevice): WgpuRenderState {
   const deviceState = createWgpuDeviceState(device);
   const state = { applyBlendMode: null, deviceState } as unknown as WgpuRenderState;
   state[EntityRuntimeKey] = createWgpuRenderStateRuntime(deviceState);
@@ -52,7 +58,7 @@ describe('createWgpuOffscreenRenderState', () => {
   it('reports a method-tight device-lost outcome instead of deriving on a dead device', async () => {
     const { device, resolveLost } = makeLosableDevice();
     const screen = makeStateOn(device);
-    resolveLost('unknown' as GPUDeviceLostReason);
+    resolveLost('unknown' as WgpuDeviceLostReason);
     await settle();
     const result = createWgpuOffscreenRenderState(screen);
     expect(result.reason).toBe('device-lost');
@@ -96,7 +102,7 @@ describe('getWgpuDeviceLoss', () => {
     connectSignal(enableWgpuDeviceSignals(state).onDeviceLost, () => {
       emissions += 1;
     });
-    resolveLost('unknown' as GPUDeviceLostReason);
+    resolveLost('unknown' as WgpuDeviceLostReason);
     await settle();
     expect(emissions).toBe(1);
     expect(getWgpuDeviceLoss(state)?.reason).toBe('unknown');
@@ -112,7 +118,7 @@ describe('getWgpuDeviceLoss', () => {
     connectSignal(enableWgpuDeviceSignals(state).onDeviceLost, () => {
       emissions += 1;
     });
-    resolveLost('destroyed' as GPUDeviceLostReason);
+    resolveLost('destroyed' as WgpuDeviceLostReason);
     await settle();
     expect(emissions).toBe(0);
     expect(getWgpuDeviceLoss(state)?.reason).toBe('destroyed');
@@ -128,7 +134,7 @@ describe('getWgpuDeviceLoss', () => {
     connectSignal(enableWgpuDeviceSignals(screen).onDeviceLost, () => {
       emissions += 1;
     });
-    resolveLost('unknown' as GPUDeviceLostReason);
+    resolveLost('unknown' as WgpuDeviceLostReason);
     await settle();
     expect(emissions).toBe(1);
     expect(isWgpuDeviceLost(screen)).toBe(true);
@@ -140,7 +146,7 @@ describe('getWgpuDeviceLoss', () => {
   it('reports the terminal fact to a state created after the loss', async () => {
     const { device, resolveLost } = makeLosableDevice();
     const screen = makeStateOn(device);
-    resolveLost('unknown' as GPUDeviceLostReason);
+    resolveLost('unknown' as WgpuDeviceLostReason);
     await settle();
     const late = makeAliasOf(screen);
     expect(isWgpuDeviceLost(late)).toBe(true);
@@ -152,7 +158,7 @@ describe('getWgpuDeviceLoss', () => {
   // that, so it is asserted rather than assumed.
   it('records a loss that resolved before the device tier was ever constructed', async () => {
     const { device, resolveLost } = makeLosableDevice();
-    resolveLost('unknown' as GPUDeviceLostReason);
+    resolveLost('unknown' as WgpuDeviceLostReason);
     await settle();
     const state = makeStateOn(device);
     let emissions = 0;
@@ -172,7 +178,7 @@ describe('getWgpuDeviceLoss', () => {
   // A device with no `lost` member is reachable today — `createWgpuDeviceState({} as GPUDevice)` is
   // used by existing tests, and the host seam accepts caller-supplied handles from native hosts.
   it('treats a device with no lost promise as live rather than throwing', () => {
-    const state = makeStateOn({ destroy: () => {} } as unknown as GPUDevice);
+    const state = makeStateOn({ destroy: () => {} } as unknown as WgpuDevice);
     expect(isWgpuDeviceLost(state)).toBe(false);
   });
 });
@@ -184,7 +190,7 @@ describe('isWgpuDeviceLost', () => {
     const { device, resolveLost } = makeLosableDevice();
     const state = makeStateOn(device);
     enableWgpuDeviceSignals(state);
-    resolveLost('unknown' as GPUDeviceLostReason);
+    resolveLost('unknown' as WgpuDeviceLostReason);
     const deviceRuntime = getWgpuRenderStateRuntime(state).context;
     const holdsState = Object.values(deviceRuntime as unknown as Record<string, unknown>).some(
       (value) => value === state || (Array.isArray(value) && value.includes(state)),
@@ -196,7 +202,7 @@ describe('isWgpuDeviceLost', () => {
     const { device, resolveLost } = makeLosableDevice();
     const state = makeStateOn(device);
     expect(isWgpuDeviceLost(state)).toBe(false);
-    resolveLost('unknown' as GPUDeviceLostReason);
+    resolveLost('unknown' as WgpuDeviceLostReason);
     await settle();
     expect(isWgpuDeviceLost(state)).toBe(true);
   });
@@ -207,7 +213,7 @@ describe('observeWgpuDeviceLoss', () => {
     const { device, resolveLost } = makeLosableDevice();
     const deviceRuntime = { device, lost: null, signals: null } as unknown as WgpuDeviceRuntime;
     observeWgpuDeviceLoss(deviceRuntime);
-    resolveLost('unknown' as GPUDeviceLostReason);
+    resolveLost('unknown' as WgpuDeviceLostReason);
     await settle();
     expect(deviceRuntime.lost?.reason).toBe('unknown');
   });
@@ -219,7 +225,7 @@ describe('observeWgpuDeviceLoss', () => {
     const deviceRuntime = {
       device,
       lost: null,
-      signals: { onDeviceLost: createSignal<GPUDeviceLostInfo>() },
+      signals: { onDeviceLost: createSignal<WgpuDeviceLostInfo>() },
     } as unknown as WgpuDeviceRuntime;
     let emissions = 0;
     connectSignal(deviceRuntime.signals!.onDeviceLost, () => {
@@ -227,7 +233,7 @@ describe('observeWgpuDeviceLoss', () => {
     });
     observeWgpuDeviceLoss(deviceRuntime);
     observeWgpuDeviceLoss(deviceRuntime);
-    resolveLost('unknown' as GPUDeviceLostReason);
+    resolveLost('unknown' as WgpuDeviceLostReason);
     await settle();
     await settle();
     expect(emissions).toBe(1);

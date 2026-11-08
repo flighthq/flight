@@ -1,12 +1,25 @@
 import type { LinearColorRaw } from '@flighthq/color/contract';
 import { allocateLinearColor, unpackColorToLinear } from '@flighthq/color/contract';
 import type { Kind } from '@flighthq/entity/contract';
-import { getWgpuColorAdjustmentMaterialFeature, getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
+import {
+  WgpuBufferUsage,
+  WgpuShaderStage,
+  getWgpuColorAdjustmentMaterialFeature,
+  getWgpuRenderStateRuntime,
+} from '@flighthq/render-wgpu/contract';
 import type {
+  WgpuBindGroup,
+  WgpuBindGroupEntry,
+  WgpuBindGroupLayout,
+  WgpuBindGroupLayoutEntry,
+  WgpuBuffer,
   WgpuModifierCompileContext,
   WgpuModifierContribution,
   WgpuModifierSnippet,
   WgpuRenderState,
+  WgpuSampler,
+  WgpuTextureFormat,
+  WgpuTextureView,
 } from '@flighthq/render-wgpu/contract';
 import type { WgpuSkinningAdapter } from '@flighthq/render-wgpu/contract';
 import type { WgpuColorAdjustmentMaterialFeature } from '@flighthq/scene2d-wgpu/contract';
@@ -86,14 +99,14 @@ interface CachedShadedPlan {
 type WgpuModifierSnippetSource = Readonly<ModifierRegistry> | Readonly<ReadonlyMap<Kind, WgpuModifierSnippet>>;
 
 interface ShadedBinding {
-  bindGroup: GPUBindGroup;
-  buffer: GPUBuffer;
+  bindGroup: WgpuBindGroup;
+  buffer: WgpuBuffer;
   data: Float32Array;
-  entries: GPUBindGroupEntry[];
-  layout: GPUBindGroupLayout;
-  sampler: GPUSampler;
+  entries: WgpuBindGroupEntry[];
+  layout: WgpuBindGroupLayout;
+  sampler: WgpuSampler;
   textures: (Readonly<Texture> | null)[];
-  views: GPUTextureView[];
+  views: WgpuTextureView[];
 }
 
 // Writes the base surface plus every ordered modifier into one uniform allocation and binds the base
@@ -105,7 +118,7 @@ export function bindWgpuShadedSurface(
   material: Readonly<ShadedMaterial>,
   diffuse: Readonly<LinearColorRaw>,
   specular: Readonly<LinearColorRaw>,
-): GPUBindGroup {
+): WgpuBindGroup {
   const registry = getModifierSnippetTable(state);
   const plan = getCachedModifierPlan(state, material, registry);
   const byteLength = 48 + plan.uniformFloatCount * 4;
@@ -179,19 +192,19 @@ export function bindWgpuShadedSurface(
 
 function createShadedBinding(
   state: WgpuRenderState,
-  layout: GPUBindGroupLayout,
+  layout: WgpuBindGroupLayout,
   byteLength: number,
   textureCount: number,
-  sampler: GPUSampler,
+  sampler: WgpuSampler,
 ): ShadedBinding {
   const buffer = state.device.createBuffer({
     size: byteLength,
-    usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+    usage: WgpuBufferUsage.UNIFORM | WgpuBufferUsage.COPY_DST,
   });
   const textures = new Array<Readonly<Texture> | null>(textureCount).fill(null);
   const placeholder = resolveWgpuMaterialTextureView(state, null);
-  const views = new Array<GPUTextureView>(textureCount).fill(placeholder);
-  const entries = new Array<GPUBindGroupEntry>(textureCount + 3);
+  const views = new Array<WgpuTextureView>(textureCount).fill(placeholder);
+  const entries = new Array<WgpuBindGroupEntry>(textureCount + 3);
   entries[0] = { binding: 0, resource: { buffer } };
   entries[1] = { binding: 1, resource: sampler };
   entries[5] = { binding: 5, resource: placeholder };
@@ -236,7 +249,7 @@ export function buildWgpuShadedCacheKey(
 export function ensureWgpuShadedPipeline(
   state: WgpuRenderState,
   material: Readonly<ShadedMaterial>,
-  format: GPUTextureFormat,
+  format: WgpuTextureFormat,
 ): WgpuMeshPipeline {
   const runtime = getWgpuRenderStateRuntime(state);
   const registry = runtime.registries.modifierSnippets;
@@ -248,34 +261,34 @@ export function ensureWgpuShadedPipeline(
     colorMatrix ? 'color-matrix' : colorAdjusted ? 'color-adjusted' : 'base'
   }`;
   return ensureWgpuScene3DPipeline(state, key, (blended, skinned) => {
-    const entries: GPUBindGroupLayoutEntry[] = [
+    const entries: WgpuBindGroupLayoutEntry[] = [
       {
         binding: 0,
-        visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
+        visibility: WgpuShaderStage.VERTEX | WgpuShaderStage.FRAGMENT,
         buffer: { type: 'uniform' },
       },
       {
         binding: 1,
-        visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
+        visibility: WgpuShaderStage.VERTEX | WgpuShaderStage.FRAGMENT,
         sampler: { type: 'filtering' },
       },
       ...[2, 3, 4].map(
-        (binding): GPUBindGroupLayoutEntry => ({
+        (binding): WgpuBindGroupLayoutEntry => ({
           binding,
-          visibility: GPUShaderStage.FRAGMENT,
+          visibility: WgpuShaderStage.FRAGMENT,
           texture: { sampleType: 'float' },
         }),
       ),
       {
         binding: 5,
-        visibility: GPUShaderStage.FRAGMENT,
+        visibility: WgpuShaderStage.FRAGMENT,
         texture: { sampleType: 'float' },
       },
     ];
     for (let i = 0; i < plan.textureCount; i++) {
       entries.push({
         binding: i + 6,
-        visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
+        visibility: WgpuShaderStage.VERTEX | WgpuShaderStage.FRAGMENT,
         texture: { sampleType: 'float' },
       });
     }

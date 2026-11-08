@@ -1,5 +1,6 @@
 import type { ImageResource } from '@flighthq/image/contract';
 
+import type { WgpuDevice, WgpuTexture } from './contract.render-wgpu-types.ts';
 import {
   uploadWgpuTextureData,
   uploadWgpuTextureElement,
@@ -7,16 +8,16 @@ import {
 } from './wgpuTextureUpload.ts';
 
 // A device whose queue records the two upload calls so a test can assert which path ran and with what.
-function makeDevice(): GPUDevice {
+function makeDevice(): WgpuDevice {
   return {
     queue: { writeTexture: vi.fn(), copyExternalImageToTexture: vi.fn() },
-  } as unknown as GPUDevice;
+  } as unknown as WgpuDevice;
 }
 
 describe('uploadWgpuTextureData', () => {
   it('drives writeTexture with a tightly-packed rgba8 layout (bytesPerRow = width*4)', () => {
     const device = makeDevice();
-    const texture = {} as GPUTexture;
+    const texture = {} as WgpuTexture;
     const data = new Uint8Array(2 * 2 * 4);
     uploadWgpuTextureData(device, texture, [0, 0, 3], 2, 2, data);
     expect(device.queue.writeTexture).toHaveBeenCalledWith(
@@ -31,7 +32,7 @@ describe('uploadWgpuTextureData', () => {
 describe('uploadWgpuTextureElement', () => {
   it('drives copyExternalImageToTexture with the external source', () => {
     const device = makeDevice();
-    const texture = {} as GPUTexture;
+    const texture = {} as WgpuTexture;
     const source = document.createElement('canvas');
     source.width = 4;
     source.height = 4;
@@ -48,7 +49,7 @@ describe('uploadWgpuTextureElement', () => {
     const source = document.createElement('canvas');
     source.width = 4;
     source.height = 4;
-    uploadWgpuTextureElement(device, {} as GPUTexture, [0, 0, 0], 0, 4, source);
+    uploadWgpuTextureElement(device, {} as WgpuTexture, [0, 0, 0], 0, 4, source);
     expect(device.queue.copyExternalImageToTexture).not.toHaveBeenCalled();
   });
 
@@ -60,14 +61,14 @@ describe('uploadWgpuTextureElement', () => {
     vi.mocked(device.queue.copyExternalImageToTexture).mockImplementation(() => {
       throw new TypeError('Failed to copy content from external image.');
     });
-    expect(() => uploadWgpuTextureElement(device, {} as GPUTexture, [0, 0, 0], 4, 4, canvas)).not.toThrow();
+    expect(() => uploadWgpuTextureElement(device, {} as WgpuTexture, [0, 0, 0], 4, 4, canvas)).not.toThrow();
   });
 });
 
 describe('uploadWgpuTextureImageResource', () => {
   it('takes the element path when the resource carries a source', () => {
     const device = makeDevice();
-    const texture = {} as GPUTexture;
+    const texture = {} as WgpuTexture;
     const source = document.createElement('canvas');
     source.width = 4;
     source.height = 4;

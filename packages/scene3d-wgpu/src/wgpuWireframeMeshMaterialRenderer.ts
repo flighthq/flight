@@ -6,7 +6,12 @@ import type { Material, WireframeMaterial } from '@flighthq/materials/contract';
 import { WireframeMaterialKind } from '@flighthq/materials/contract';
 import type { MeshGeometry } from '@flighthq/meshgeometry/contract';
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
-import type { WgpuMeshMaterialRenderer, WgpuRenderState, WgpuSkinningAdapter } from '@flighthq/render-wgpu/contract';
+import type {
+  WgpuBindGroup,
+  WgpuMeshMaterialRenderer,
+  WgpuRenderState,
+  WgpuSkinningAdapter,
+} from '@flighthq/render-wgpu/contract';
 import type { Scene3DRenderProxy } from '@flighthq/render/contract';
 
 import { registerWgpuMeshMaterialRenderer } from './wgpuMeshMaterialRegistry.ts';
@@ -43,7 +48,7 @@ export const wgpuWireframeMeshMaterialRenderer: WgpuMeshMaterialRenderer = {
     const pipeline = ensureWgpuWireframePipeline(state, format, wireframe?.alphaMode === 'mask');
     writeWgpuFrameUniform(state, camera, _lights);
 
-    let group: GPUBindGroup;
+    let group: WgpuBindGroup;
     if (wireframe === null) {
       _scratch.r = 1;
       _scratch.g = 1;

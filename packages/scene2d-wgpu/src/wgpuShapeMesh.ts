@@ -1,11 +1,21 @@
 import {
+  WgpuBufferUsage,
+  WgpuShaderStage,
   getWgpuBlendState,
   getWgpuColorAdjustmentMaterialFeature,
-  getWgpuRenderStateRuntime,
   getWgpuRenderPassViewport,
+  getWgpuRenderStateRuntime,
   retireWgpuBuffer,
 } from '@flighthq/render-wgpu/contract';
-import type { WgpuRenderState, WgpuShapeMeshBuffers, WgpuShapeMeshPipeline } from '@flighthq/render-wgpu/contract';
+import type {
+  WgpuBindGroup,
+  WgpuBuffer,
+  WgpuQueue,
+  WgpuRenderState,
+  WgpuShapeMeshBuffers,
+  WgpuShapeMeshPipeline,
+  WgpuVertexBufferLayout,
+} from '@flighthq/render-wgpu/contract';
 import type { RenderProxy2D } from '@flighthq/render/contract';
 
 import type { WgpuShapeMesh } from './contract.scene2d-wgpu-types.ts';
@@ -36,8 +46,8 @@ export function drawWgpuShapeMeshBatch(
   meshes: readonly WgpuShapeMesh[],
   buffers: WgpuShapeMeshBuffers,
   pipelineEntry: WgpuShapeMeshPipeline,
-  uniformBuffers: GPUBuffer[],
-  bindGroups: GPUBindGroup[],
+  uniformBuffers: WgpuBuffer[],
+  bindGroups: WgpuBindGroup[],
   uniformData: Float32Array,
 ): void {
   if (meshes.length === 0) return;
@@ -135,7 +145,7 @@ function ensureShapeMeshIndexBuffer(
   buffers: WgpuShapeMeshBuffers,
   meshIndex: number,
   byteLength: number,
-): GPUBuffer {
+): WgpuBuffer {
   // Index buffers must be a multiple of 4 bytes for COPY_DST writes; round up the requested size.
   const size = Math.max(4, (byteLength + 3) & ~3);
   let buffer = buffers.indexBuffers[meshIndex];
@@ -143,7 +153,7 @@ function ensureShapeMeshIndexBuffer(
     if (buffer !== undefined) retireWgpuBuffer(state, buffer);
     buffer = state.device.createBuffer({
       size,
-      usage: GPUBufferUsage.INDEX | GPUBufferUsage.COPY_DST,
+      usage: WgpuBufferUsage.INDEX | WgpuBufferUsage.COPY_DST,
     });
     buffers.indexBuffers[meshIndex] = buffer;
     buffers.indexCapacities[meshIndex] = size;
@@ -157,15 +167,15 @@ function ensureShapeMeshIndexBuffer(
 function ensureShapeMeshUniform(
   state: WgpuRenderState,
   pipelineEntry: WgpuShapeMeshPipeline,
-  uniformBuffers: GPUBuffer[],
-  bindGroups: GPUBindGroup[],
+  uniformBuffers: WgpuBuffer[],
+  bindGroups: WgpuBindGroup[],
   meshIndex: number,
   byteLength: number,
 ): void {
   if (uniformBuffers[meshIndex] === undefined) {
     const uniformBuffer = state.device.createBuffer({
       size: byteLength,
-      usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+      usage: WgpuBufferUsage.UNIFORM | WgpuBufferUsage.COPY_DST,
     });
     uniformBuffers[meshIndex] = uniformBuffer;
     bindGroups[meshIndex] = state.device.createBindGroup({
@@ -186,10 +196,12 @@ function ensureShapeMeshPipeline(state: WgpuRenderState, blendMode: RenderProxy2
   const device = state.device;
   const module = device.createShaderModule({ code: SHAPE_MESH_WGSL });
   const bindGroupLayout = device.createBindGroupLayout({
-    entries: [{ binding: 0, visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT, buffer: { type: 'uniform' } }],
+    entries: [
+      { binding: 0, visibility: WgpuShaderStage.VERTEX | WgpuShaderStage.FRAGMENT, buffer: { type: 'uniform' } },
+    ],
   });
   const layout = device.createPipelineLayout({ bindGroupLayouts: [bindGroupLayout] });
-  const vertexBuffers: GPUVertexBufferLayout[] = [
+  const vertexBuffers: WgpuVertexBufferLayout[] = [
     { arrayStride: 8, attributes: [{ shaderLocation: 0, offset: 0, format: 'float32x2' }] },
   ];
 
@@ -231,14 +243,14 @@ function ensureShapeMeshVertexBuffer(
   buffers: WgpuShapeMeshBuffers,
   meshIndex: number,
   byteLength: number,
-): GPUBuffer {
+): WgpuBuffer {
   const size = Math.max(8, byteLength);
   let buffer = buffers.vertexBuffers[meshIndex];
   if (buffer === undefined || (buffers.vertexCapacities[meshIndex] ?? 0) < size) {
     if (buffer !== undefined) retireWgpuBuffer(state, buffer);
     buffer = state.device.createBuffer({
       size,
-      usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
+      usage: WgpuBufferUsage.VERTEX | WgpuBufferUsage.COPY_DST,
     });
     buffers.vertexBuffers[meshIndex] = buffer;
     buffers.vertexCapacities[meshIndex] = size;
@@ -273,7 +285,7 @@ function shapeMeshMatrix(state: WgpuRenderState, renderProxy: RenderProxy2D, out
 // but a mesh with an odd index count (e.g. a single triangle, 3 indices = 6 bytes) is not; pad the upload
 // up through the scratch in that case (the trailing index is never drawn — drawIndexed uses indices.length).
 // Even-length data, whose byte length is already a multiple of 4, uploads directly with no copy.
-function writeShapeMeshIndices(queue: GPUQueue, indexBuffer: GPUBuffer, indices: Readonly<Uint16Array>): void {
+function writeShapeMeshIndices(queue: WgpuQueue, indexBuffer: WgpuBuffer, indices: Readonly<Uint16Array>): void {
   const byteLength = indices.byteLength;
   if ((byteLength & 3) === 0) {
     queue.writeBuffer(indexBuffer, 0, indices.buffer, indices.byteOffset, byteLength);

@@ -1,5 +1,5 @@
-import { getWgpuColorAdjustmentMaterialFeature } from '@flighthq/render-wgpu/contract';
-import type { WgpuRenderState } from '@flighthq/render-wgpu/contract';
+import { WgpuShaderStage, getWgpuColorAdjustmentMaterialFeature } from '@flighthq/render-wgpu/contract';
+import type { WgpuRenderState, WgpuTextureFormat } from '@flighthq/render-wgpu/contract';
 import type { WgpuColorAdjustmentMaterialFeature } from '@flighthq/scene2d-wgpu/contract';
 
 import type { WgpuPbrPipeline, WgpuPbrDefineKey } from './contract.scene3d-wgpu-types.ts';
@@ -18,7 +18,7 @@ import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime.ts';
 export function compileWgpuPbrPipeline(
   state: WgpuRenderState,
   key: Readonly<WgpuPbrDefineKey>,
-  format: GPUTextureFormat,
+  format: WgpuTextureFormat,
   blended = false,
   skinned = false,
   colorAdjustmentFeature: Readonly<WgpuColorAdjustmentMaterialFeature> | null = null,
@@ -29,19 +29,19 @@ export function compileWgpuPbrPipeline(
   });
   const materialBindGroupLayout = device.createBindGroupLayout({
     entries: [
-      { binding: 0, visibility: GPUShaderStage.FRAGMENT, buffer: { type: 'uniform' } },
-      { binding: 1, visibility: GPUShaderStage.FRAGMENT, sampler: { type: 'filtering' } },
-      { binding: 2, visibility: GPUShaderStage.FRAGMENT, sampler: { type: 'filtering' } },
-      { binding: 3, visibility: GPUShaderStage.FRAGMENT, sampler: { type: 'filtering' } },
-      { binding: 4, visibility: GPUShaderStage.FRAGMENT, sampler: { type: 'filtering' } },
-      { binding: 5, visibility: GPUShaderStage.FRAGMENT, sampler: { type: 'filtering' } },
-      { binding: 6, visibility: GPUShaderStage.FRAGMENT, sampler: { type: 'filtering' } },
-      { binding: 7, visibility: GPUShaderStage.FRAGMENT, texture: { sampleType: 'float' } },
-      { binding: 8, visibility: GPUShaderStage.FRAGMENT, texture: { sampleType: 'float' } },
-      { binding: 9, visibility: GPUShaderStage.FRAGMENT, texture: { sampleType: 'float' } },
-      { binding: 10, visibility: GPUShaderStage.FRAGMENT, texture: { sampleType: 'float' } },
-      { binding: 11, visibility: GPUShaderStage.FRAGMENT, texture: { sampleType: 'float' } },
-      { binding: 12, visibility: GPUShaderStage.FRAGMENT, texture: { sampleType: 'float' } },
+      { binding: 0, visibility: WgpuShaderStage.FRAGMENT, buffer: { type: 'uniform' } },
+      { binding: 1, visibility: WgpuShaderStage.FRAGMENT, sampler: { type: 'filtering' } },
+      { binding: 2, visibility: WgpuShaderStage.FRAGMENT, sampler: { type: 'filtering' } },
+      { binding: 3, visibility: WgpuShaderStage.FRAGMENT, sampler: { type: 'filtering' } },
+      { binding: 4, visibility: WgpuShaderStage.FRAGMENT, sampler: { type: 'filtering' } },
+      { binding: 5, visibility: WgpuShaderStage.FRAGMENT, sampler: { type: 'filtering' } },
+      { binding: 6, visibility: WgpuShaderStage.FRAGMENT, sampler: { type: 'filtering' } },
+      { binding: 7, visibility: WgpuShaderStage.FRAGMENT, texture: { sampleType: 'float' } },
+      { binding: 8, visibility: WgpuShaderStage.FRAGMENT, texture: { sampleType: 'float' } },
+      { binding: 9, visibility: WgpuShaderStage.FRAGMENT, texture: { sampleType: 'float' } },
+      { binding: 10, visibility: WgpuShaderStage.FRAGMENT, texture: { sampleType: 'float' } },
+      { binding: 11, visibility: WgpuShaderStage.FRAGMENT, texture: { sampleType: 'float' } },
+      { binding: 12, visibility: WgpuShaderStage.FRAGMENT, texture: { sampleType: 'float' } },
     ],
   });
   // The PBR family is lit and may PCF-sample shadows plus image-based lighting. Both live in one group
@@ -63,7 +63,7 @@ export function compileWgpuPbrPipeline(
 export function ensureWgpuPbrPipeline(
   state: WgpuRenderState,
   key: Readonly<WgpuPbrDefineKey>,
-  format: GPUTextureFormat,
+  format: WgpuTextureFormat,
 ): WgpuPbrPipeline {
   const fullKey: WgpuPbrDefineKey = {
     ...key,

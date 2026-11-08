@@ -18,7 +18,12 @@ import {
 import { addNodeChild, invalidateNodeLocalTransform } from '@flighthq/node/contract';
 import { createParticleEmitter3D, reserveParticleEmitter3D } from '@flighthq/particleemitter/contract';
 import type { ParticleEmitter3D } from '@flighthq/particleemitter/contract';
-import { createWgpuOffscreenRenderState, getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
+import {
+  WgpuBufferUsage,
+  createWgpuOffscreenRenderState,
+  getWgpuRenderStateRuntime,
+} from '@flighthq/render-wgpu/contract';
+import type { WgpuBufferDescriptor } from '@flighthq/render-wgpu/contract';
 import {
   createInstancedMesh,
   createMesh,
@@ -389,7 +394,7 @@ function makeParticleEmitter2D(count: number): ParticleEmitter3D {
 function countMeshBuffers(calls: readonly { name: string; args: readonly unknown[] }[]): number {
   return calls.filter((call) => {
     if (call.name !== 'createBuffer') return false;
-    const usage = (call.args[0] as GPUBufferDescriptor).usage;
-    return (usage & (GPUBufferUsage.VERTEX | GPUBufferUsage.INDEX)) !== 0;
+    const usage = (call.args[0] as WgpuBufferDescriptor).usage;
+    return (usage & (WgpuBufferUsage.VERTEX | WgpuBufferUsage.INDEX)) !== 0;
   }).length;
 }

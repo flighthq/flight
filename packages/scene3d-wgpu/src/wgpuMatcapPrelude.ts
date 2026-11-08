@@ -1,6 +1,11 @@
 import type { LinearColorRaw } from '@flighthq/color/contract';
-import { getWgpuRenderStateDeviceResources } from '@flighthq/render-wgpu/contract';
-import type { WgpuRenderState, WgpuSkinningAdapter } from '@flighthq/render-wgpu/contract';
+import { WgpuBufferUsage, WgpuShaderStage, getWgpuRenderStateDeviceResources } from '@flighthq/render-wgpu/contract';
+import type {
+  WgpuBindGroup,
+  WgpuRenderState,
+  WgpuSkinningAdapter,
+  WgpuTextureFormat,
+} from '@flighthq/render-wgpu/contract';
 
 import type { WgpuMatcapDefineKey, WgpuMatcapPipeline, WgpuMaterialBinding } from './contract.scene3d-wgpu-types.ts';
 import { WGPU_MESH_FRAGMENT_TAIL } from './wgpuMeshFragmentTail.ts';
@@ -43,13 +48,13 @@ export function bindWgpuMatcapSurface(
   materialKey: object,
   tint: Readonly<LinearColorRaw>,
   alphaCutoff: number,
-): GPUBindGroup {
+): WgpuBindGroup {
   const scene = getWgpuScene3DRuntime(state);
   let binding: WgpuMaterialBinding | undefined = scene.materialBindGroups.get(materialKey);
   if (binding === undefined) {
     const buffer = state.device.createBuffer({
       size: MATCAP_UNIFORM_BYTES,
-      usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+      usage: WgpuBufferUsage.UNIFORM | WgpuBufferUsage.COPY_DST,
     });
     const bindGroup = state.device.createBindGroup({
       layout: pipeline.materialBindGroupLayout,
@@ -90,7 +95,7 @@ export function buildWgpuMatcapDefineKey(key: Readonly<WgpuMatcapDefineKey>): st
 export function compileWgpuMatcapPipeline(
   state: WgpuRenderState,
   key: Readonly<WgpuMatcapDefineKey>,
-  format: GPUTextureFormat,
+  format: WgpuTextureFormat,
   blended = false,
   skinned = false,
 ): WgpuMatcapPipeline {
@@ -99,9 +104,9 @@ export function compileWgpuMatcapPipeline(
   const module = device.createShaderModule({ code: getWgpuMatcapModuleSourceForKey(key, skinned, skinning) });
   const materialBindGroupLayout = device.createBindGroupLayout({
     entries: [
-      { binding: 0, visibility: GPUShaderStage.FRAGMENT, buffer: { type: 'uniform' } },
-      { binding: 1, visibility: GPUShaderStage.FRAGMENT, sampler: { type: 'filtering' } },
-      { binding: 2, visibility: GPUShaderStage.FRAGMENT, texture: { sampleType: 'float' } },
+      { binding: 0, visibility: WgpuShaderStage.FRAGMENT, buffer: { type: 'uniform' } },
+      { binding: 1, visibility: WgpuShaderStage.FRAGMENT, sampler: { type: 'filtering' } },
+      { binding: 2, visibility: WgpuShaderStage.FRAGMENT, texture: { sampleType: 'float' } },
     ],
   });
   return createWgpuMeshPipeline(state, {
@@ -119,7 +124,7 @@ export function compileWgpuMatcapPipeline(
 export function ensureWgpuMatcapPipeline(
   state: WgpuRenderState,
   key: Readonly<WgpuMatcapDefineKey>,
-  format: GPUTextureFormat,
+  format: WgpuTextureFormat,
 ): WgpuMatcapPipeline {
   return ensureWgpuScene3DPipeline(state, `matcap:${format}|${buildWgpuMatcapDefineKey(key)}`, (blended, skinned) =>
     compileWgpuMatcapPipeline(state, key, format, blended, skinned),

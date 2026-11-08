@@ -1,7 +1,19 @@
 import type { Matrix4 } from '@flighthq/geometry/contract';
 import type { Scene3DLightsLike } from '@flighthq/lighting/contract';
 import type { BlendMode, CustomShaderMaterial } from '@flighthq/materials/contract';
-import type { WgpuCustomMaterialShaderSource, WgpuRenderState } from '@flighthq/render-wgpu/contract';
+import type {
+  WgpuBindGroup,
+  WgpuBindGroupLayout,
+  WgpuBuffer,
+  WgpuCommandEncoder,
+  WgpuCustomMaterialShaderSource,
+  WgpuIndexFormat,
+  WgpuRenderPipeline,
+  WgpuRenderState,
+  WgpuSampler,
+  WgpuTexture,
+  WgpuTextureView,
+} from '@flighthq/render-wgpu/contract';
 
 import type { WgpuMeshPipeline } from './WgpuMeshPipeline.ts';
 
@@ -13,8 +25,8 @@ import type { WgpuMeshPipeline } from './WgpuMeshPipeline.ts';
 // shadow pass. Null = no shadow resource yet (lit draws bind a 1x1 dummy depth texture, gated off by the
 // shadow uniform). The depth texture is a non-GC GPU resource — freed by destroyWgpuScene3DShadow.
 export interface WgpuScene3DShadow {
-  depthTexture: GPUTexture;
-  depthView: GPUTextureView;
+  depthTexture: WgpuTexture;
+  depthView: WgpuTextureView;
   enabled: boolean;
   mapHeight: number;
   mapWidth: number;
@@ -34,19 +46,19 @@ export interface WgpuScene3DShadow {
 // destroyWgpuScene3DIbl. Each `*View` is the sampleable cube/2D view the lit bind wires into the PBR
 // sample group.
 export interface WgpuScene3DIbl {
-  brdfLut: GPUTexture;
-  brdfLutView: GPUTextureView;
+  brdfLut: WgpuTexture;
+  brdfLutView: WgpuTextureView;
   intensity: number;
-  irradianceCube: GPUTexture;
-  irradianceCubeView: GPUTextureView;
-  prefilteredCube: GPUTexture;
-  prefilteredCubeView: GPUTextureView;
+  irradianceCube: WgpuTexture;
+  irradianceCubeView: WgpuTextureView;
+  prefilteredCube: WgpuTexture;
+  prefilteredCubeView: WgpuTextureView;
   prefilteredMipCount: number;
 }
 
 export interface WgpuScene3DFrameBinding {
-  bindGroup: GPUBindGroup;
-  buffer: GPUBuffer;
+  bindGroup: WgpuBindGroup;
+  buffer: WgpuBuffer;
 }
 
 // A per-subset draw record held in renderWgpuScene3D's opaque/blended lists. Pooled on
@@ -89,11 +101,11 @@ export interface WgpuScene3DRuntime {
   activeMeshPipeline: WgpuMeshPipeline | null;
   blendedDrawList: WgpuScene3DDrawEntry[];
   blendedPool: WgpuScene3DDrawEntry[];
-  drawBindGroup: GPUBindGroup | null;
-  drawBindGroupLayout: GPUBindGroupLayout | null;
-  frameBindGroup: GPUBindGroup | null;
-  frameBindGroupLayout: GPUBindGroupLayout | null;
-  frameBuffer: GPUBuffer | null;
+  drawBindGroup: WgpuBindGroup | null;
+  drawBindGroupLayout: WgpuBindGroupLayout | null;
+  frameBindGroup: WgpuBindGroup | null;
+  frameBindGroupLayout: WgpuBindGroupLayout | null;
+  frameBuffer: WgpuBuffer | null;
   // One immutable binding identity per Scene3DLightBlock. Queue writes for several selected blocks are
   // recorded before submit, so sharing one buffer would make every draw observe the final write.
   frameBindings: WeakMap<object, WgpuScene3DFrameBinding>;
@@ -116,23 +128,23 @@ export interface WgpuScene3DRuntime {
   // a filtering sampler, 1x1 dummy cube + 2D LUT for the no-IBL case, and the shared sample
   // layout + bind group (rebuilt only when the bound irradiance view changes present ↔ absent). All
   // created lazily, so a state that never bakes IBL pays nothing. Freed by destroyWgpuScene3DIbl.
-  environmentSourceCube: GPUTexture | null;
-  environmentSourceCubeView: GPUTextureView | null;
+  environmentSourceCube: WgpuTexture | null;
+  environmentSourceCubeView: WgpuTextureView | null;
   ibl: WgpuScene3DIbl | null;
-  iblDummyCubeTexture: GPUTexture | null;
-  iblDummyCubeView: GPUTextureView | null;
-  iblDummyLutTexture: GPUTexture | null;
-  iblDummyLutView: GPUTextureView | null;
-  iblSampleBindGroup: GPUBindGroup | null;
-  iblSampleCubeView: GPUTextureView | null;
-  iblSampleLayout: GPUBindGroupLayout | null;
-  iblSampler: GPUSampler | null;
-  iblUniformBuffer: GPUBuffer | null;
+  iblDummyCubeTexture: WgpuTexture | null;
+  iblDummyCubeView: WgpuTextureView | null;
+  iblDummyLutTexture: WgpuTexture | null;
+  iblDummyLutView: WgpuTextureView | null;
+  iblSampleBindGroup: WgpuBindGroup | null;
+  iblSampleCubeView: WgpuTextureView | null;
+  iblSampleLayout: WgpuBindGroupLayout | null;
+  iblSampler: WgpuSampler | null;
+  iblUniformBuffer: WgpuBuffer | null;
   materialBindGroups: WeakMap<object, WgpuMaterialBinding>;
-  pbrSampleBindGroup: GPUBindGroup | null;
-  pbrSampleIblCubeView: GPUTextureView | null;
-  pbrSampleLayout: GPUBindGroupLayout | null;
-  pbrSampleShadowView: GPUTextureView | null;
+  pbrSampleBindGroup: WgpuBindGroup | null;
+  pbrSampleIblCubeView: WgpuTextureView | null;
+  pbrSampleLayout: WgpuBindGroupLayout | null;
+  pbrSampleShadowView: WgpuTextureView | null;
   opaqueDrawList: WgpuScene3DDrawEntry[];
   opaquePool: WgpuScene3DDrawEntry[];
   pendingDrawOffset: number;
@@ -140,7 +152,7 @@ export interface WgpuScene3DRuntime {
   // Draw uniform by the next writeWgpuDrawUniform, which resets it to identity after consuming.
   pendingUvTransform: Float32Array;
   pipelineCache: Map<string, WgpuMeshPipeline>;
-  placeholderView: GPUTextureView | null;
+  placeholderView: WgpuTextureView | null;
   // Directional shadow state (mirrors GlScene3DRuntime.shadow/shadowTarget). `shadow` is the retained
   // resource and per-frame enabled/config result written by renderWgpuScene3DShadowMap; the rest are the lazily-created singletons the write side
   // (shadowDepthPipeline) and the sample side (everything shadowSample*/shadowUniform*/shadowDummy*/
@@ -148,25 +160,25 @@ export interface WgpuScene3DRuntime {
   // bound depth view changes (present ↔ absent); its uniform is rewritten every bind. All created lazily,
   // so a state that never draws a shadow map pays nothing. Freed by destroyWgpuScene3DShadow.
   shadow: WgpuScene3DShadow | null;
-  shadowComparisonSampler: GPUSampler | null;
-  shadowDepthPipeline: GPURenderPipeline | null;
-  shadowDepthSkinnedPipeline: GPURenderPipeline | null;
+  shadowComparisonSampler: WgpuSampler | null;
+  shadowDepthPipeline: WgpuRenderPipeline | null;
+  shadowDepthSkinnedPipeline: WgpuRenderPipeline | null;
   // The HAS_INSTANCES depth variant, cached alongside the rigid and skinned ones. An InstancedMesh casts
   // one silhouette per live instance, so the depth pass needs the instance-step vertex buffer the forward
   // pipeline uses; a scene with no instanced caster never compiles it.
-  shadowDepthInstancedPipeline: GPURenderPipeline | null;
-  shadowDummyTexture: GPUTexture | null;
-  shadowDummyView: GPUTextureView | null;
-  shadowSampleBindGroup: GPUBindGroup | null;
-  shadowSampleLayout: GPUBindGroupLayout | null;
-  shadowSampleView: GPUTextureView | null;
-  shadowUniformBuffer: GPUBuffer | null;
+  shadowDepthInstancedPipeline: WgpuRenderPipeline | null;
+  shadowDummyTexture: WgpuTexture | null;
+  shadowDummyView: WgpuTextureView | null;
+  shadowSampleBindGroup: WgpuBindGroup | null;
+  shadowSampleLayout: WgpuBindGroupLayout | null;
+  shadowSampleView: WgpuTextureView | null;
+  shadowUniformBuffer: WgpuBuffer | null;
   // Opaque scene-wgpu caches. Values stay unknown here so backend-private binding/plan records do not
   // leak into the public contract; scene-wgpu narrows them at the ownership boundary.
   shadedMaterialBindingCache: WeakMap<object, unknown>;
   shadedMaterialPlanCache: WeakMap<object, unknown>;
-  skinDrawBindGroup: GPUBindGroup | null;
-  skinDrawBindGroupLayout: GPUBindGroupLayout | null;
+  skinDrawBindGroup: WgpuBindGroup | null;
+  skinDrawBindGroupLayout: WgpuBindGroupLayout | null;
   // The MESH path's own skin bind group and layout, carrying the normal palette at binding 2 alongside
   // the pose palette. Kept separate from the pair above rather than growing them.
   //
@@ -176,8 +188,8 @@ export interface WgpuScene3DRuntime {
   // something semantically meaningless forever, purely so the mesh path could have a binding. Two paths
   // with different needs sharing one declaration, where one fabricates an input to satisfy it, is the
   // decomposition smell; a second layout is the bounded, honest cost.
-  skinMeshDrawBindGroup: GPUBindGroup | null;
-  skinMeshDrawBindGroupLayout: GPUBindGroupLayout | null;
+  skinMeshDrawBindGroup: WgpuBindGroup | null;
+  skinMeshDrawBindGroupLayout: WgpuBindGroupLayout | null;
   // Each palette texture is a per-frame ARENA: every skinned draw owns a distinct region of it and reads
   // its own region through a base texel index carried in the Draw uniform.
   //
@@ -191,17 +203,17 @@ export interface WgpuScene3DRuntime {
   // counter: render-wgpu creates the encoder per frame and nulls it at submit). The bases map is keyed by
   // the palette array itself, so a skeleton drawn by several meshes — or by both the shadow and mesh
   // passes — allocates ONE region and every draw of it samples the same texels.
-  skinArenaFrame: GPUCommandEncoder | null;
+  skinArenaFrame: WgpuCommandEncoder | null;
   skinNormalPaletteArenaBases: Map<Readonly<Float32Array>, number> | null;
   skinNormalPaletteArenaCursor: number;
   skinNormalPaletteArenaRows: number;
-  skinNormalPaletteTexture: GPUTexture | null;
-  skinNormalPaletteView: GPUTextureView | null;
+  skinNormalPaletteTexture: WgpuTexture | null;
+  skinNormalPaletteView: WgpuTextureView | null;
   skinPaletteArenaBases: Map<Readonly<Float32Array>, number> | null;
   skinPaletteArenaCursor: number;
   skinPaletteArenaRows: number;
-  skinPaletteTexture: GPUTexture | null;
-  skinPaletteView: GPUTextureView | null;
+  skinPaletteTexture: WgpuTexture | null;
+  skinPaletteView: WgpuTextureView | null;
   // The arena base indices the NEXT Draw uniform write will publish. Written by the palette upload and
   // consumed — and cleared back to zero — by that write, so a rigid draw following a skinned one cannot
   // inherit a stale base.
@@ -221,12 +233,12 @@ export interface WgpuScene3DRuntime {
 // non-indexed draw over the same count. `indexFormat` is null rather than a default value because no
 // format applies — a stand-in would read as a fact about a buffer that does not exist.
 export interface WgpuMeshUpload {
-  indexBuffer: GPUBuffer | null;
+  indexBuffer: WgpuBuffer | null;
   indexCount: number;
-  indexFormat: GPUIndexFormat | null;
+  indexFormat: WgpuIndexFormat | null;
   skinBindUploaded?: boolean;
   version: number;
-  vertexBuffer: GPUBuffer;
+  vertexBuffer: WgpuBuffer;
 }
 
 // One material's per-state GPU binding: the Material uniform buffer (re-written each bind with the
@@ -241,13 +253,13 @@ export interface WgpuMeshUpload {
 // a non-primary map's per-Texture sampler does not participate. Optional so a binder that never
 // re-resolves (or predates the cache) can omit them.
 export interface WgpuMaterialBinding {
-  bindGroup: GPUBindGroup;
-  buffer: GPUBuffer;
+  bindGroup: WgpuBindGroup;
+  buffer: WgpuBuffer;
   // Per-map sampler cache for layouts that bind one immutable GPUSampler beside each texture view.
   // Classic and standard/PBR use this to honor every Texture.sampler independently.
-  samplers?: GPUSampler[];
+  samplers?: WgpuSampler[];
   // Legacy one-sampler layouts (unlit/toon/debug/matcap/shaded) retain this slot until their layouts
   // migrate to the per-map helper.
-  sampler?: GPUSampler;
-  views?: GPUTextureView[];
+  sampler?: WgpuSampler;
+  views?: WgpuTextureView[];
 }

@@ -1,5 +1,10 @@
-import { getWgpuRenderStateDeviceResources } from '@flighthq/render-wgpu/contract';
-import type { WgpuRenderState, WgpuSkinningAdapter } from '@flighthq/render-wgpu/contract';
+import { WgpuBufferUsage, WgpuShaderStage, getWgpuRenderStateDeviceResources } from '@flighthq/render-wgpu/contract';
+import type {
+  WgpuBindGroup,
+  WgpuRenderState,
+  WgpuSkinningAdapter,
+  WgpuTextureFormat,
+} from '@flighthq/render-wgpu/contract';
 
 import type { WgpuDebugDefineKey, WgpuDebugPipeline, WgpuMaterialBinding } from './contract.scene3d-wgpu-types.ts';
 import { WGPU_MESH_FRAGMENT_TAIL } from './wgpuMeshFragmentTail.ts';
@@ -24,13 +29,13 @@ export function bindWgpuDebugSurface(
   near: number,
   far: number,
   normalScale: number,
-): GPUBindGroup {
+): WgpuBindGroup {
   const scene = getWgpuScene3DRuntime(state);
   let binding: WgpuMaterialBinding | undefined = scene.materialBindGroups.get(materialKey);
   if (binding === undefined) {
     const buffer = state.device.createBuffer({
       size: DEBUG_UNIFORM_BYTES,
-      usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+      usage: WgpuBufferUsage.UNIFORM | WgpuBufferUsage.COPY_DST,
     });
     const bindGroup = state.device.createBindGroup({
       layout: pipeline.materialBindGroupLayout,
@@ -69,7 +74,7 @@ export function buildWgpuDebugDefineKey(key: Readonly<WgpuDebugDefineKey>): stri
 export function compileWgpuDebugPipeline(
   state: WgpuRenderState,
   key: Readonly<WgpuDebugDefineKey>,
-  format: GPUTextureFormat,
+  format: WgpuTextureFormat,
   blended = false,
   doubleSided = false,
   skinned = false,
@@ -79,9 +84,9 @@ export function compileWgpuDebugPipeline(
   const module = device.createShaderModule({ code: getWgpuDebugModuleSourceForKey(key, skinned, skinning) });
   const materialBindGroupLayout = device.createBindGroupLayout({
     entries: [
-      { binding: 0, visibility: GPUShaderStage.FRAGMENT, buffer: { type: 'uniform' } },
-      { binding: 1, visibility: GPUShaderStage.FRAGMENT, sampler: { type: 'filtering' } },
-      { binding: 2, visibility: GPUShaderStage.FRAGMENT, texture: { sampleType: 'float' } },
+      { binding: 0, visibility: WgpuShaderStage.FRAGMENT, buffer: { type: 'uniform' } },
+      { binding: 1, visibility: WgpuShaderStage.FRAGMENT, sampler: { type: 'filtering' } },
+      { binding: 2, visibility: WgpuShaderStage.FRAGMENT, texture: { sampleType: 'float' } },
     ],
   });
   return createWgpuMeshPipeline(state, { blended, doubleSided, format, materialBindGroupLayout, module, skinned });
@@ -93,7 +98,7 @@ export function compileWgpuDebugPipeline(
 export function ensureWgpuDebugPipeline(
   state: WgpuRenderState,
   key: Readonly<WgpuDebugDefineKey>,
-  format: GPUTextureFormat,
+  format: WgpuTextureFormat,
   doubleSided = false,
 ): WgpuDebugPipeline {
   return ensureWgpuScene3DPipeline(

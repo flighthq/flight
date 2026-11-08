@@ -9,6 +9,7 @@ import { PathCommand } from '@flighthq/path/contract';
 import { beginWgpuScreenRenderPassForTest, submitWgpuFrame } from '@flighthq/render-wgpu/contract';
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
 import { createWgpuRenderStateForTest, installWgpuMock } from '@flighthq/render-wgpu/contract';
+import type { WgpuRenderPassEncoder } from '@flighthq/render-wgpu/contract';
 import { BatchFormat } from '@flighthq/render/contract';
 import type { RenderProxy2D } from '@flighthq/render/contract';
 import {
@@ -143,7 +144,7 @@ function makeShapeProxy(data: Record<string, unknown> = {}, rendererData: unknow
   } as unknown as RenderProxy2D;
 }
 
-function makeMeshPassSpy(): GPURenderPassEncoder {
+function makeMeshPassSpy(): WgpuRenderPassEncoder {
   return {
     setPipeline: vi.fn(),
     setBindGroup: vi.fn(),
@@ -153,7 +154,7 @@ function makeMeshPassSpy(): GPURenderPassEncoder {
     draw: vi.fn(),
     drawIndexed: vi.fn(),
     end: vi.fn(),
-  } as unknown as GPURenderPassEncoder;
+  } as unknown as WgpuRenderPassEncoder;
 }
 
 describe('drawWgpuShape', () => {

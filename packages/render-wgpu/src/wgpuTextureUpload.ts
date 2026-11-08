@@ -1,5 +1,6 @@
 import type { ImageResource } from '@flighthq/image/contract';
 
+import type { WgpuDevice, WgpuExternalImageSource, WgpuOrigin3D, WgpuTexture } from './contract.render-wgpu-types.ts';
 import { tryCopyWgpuExternalImageToTexture } from './wgpuExternalImageSource.ts';
 
 // Texel-upload primitives for one texture region. Each writes into `texture` at `origin` (the [x, y, z]
@@ -10,9 +11,9 @@ import { tryCopyWgpuExternalImageToTexture } from './wgpuExternalImageSource.ts'
 // a native backend. `bytesPerRow` is width*4: a tightly-packed rgba8unorm (4 bytes/texel) region, which is
 // exactly what a Bitmap's `data` holds.
 export function uploadWgpuTextureData(
-  device: GPUDevice,
-  texture: GPUTexture,
-  origin: GPUOrigin3D,
+  device: WgpuDevice,
+  texture: WgpuTexture,
+  origin: WgpuOrigin3D,
   width: number,
   height: number,
   data: Readonly<Uint8Array<ArrayBuffer>>,
@@ -28,29 +29,22 @@ export function uploadWgpuTextureData(
 // Uploads a decoded DOM element through queue.copyExternalImageToTexture — the web fast-path (GPU-side
 // copy, no CPU staging). Absent on non-web hosts.
 export function uploadWgpuTextureElement(
-  device: GPUDevice,
-  texture: GPUTexture,
-  origin: GPUOrigin3D,
+  device: WgpuDevice,
+  texture: WgpuTexture,
+  origin: WgpuOrigin3D,
   width: number,
   height: number,
-  source: GPUCopyExternalImageSource,
+  source: WgpuExternalImageSource,
 ): void {
   tryCopyWgpuExternalImageToTexture(device.queue, { source }, { texture, origin }, width, height);
 }
 
 // Uploads a host-backed ImageResource through the decoded-element fast path.
 export function uploadWgpuTextureImageResource(
-  device: GPUDevice,
-  texture: GPUTexture,
-  origin: GPUOrigin3D,
+  device: WgpuDevice,
+  texture: WgpuTexture,
+  origin: WgpuOrigin3D,
   image: Readonly<ImageResource>,
 ): void {
-  uploadWgpuTextureElement(
-    device,
-    texture,
-    origin,
-    image.width,
-    image.height,
-    image.source as GPUCopyExternalImageSource,
-  );
+  uploadWgpuTextureElement(device, texture, origin, image.width, image.height, image.source as WgpuExternalImageSource);
 }

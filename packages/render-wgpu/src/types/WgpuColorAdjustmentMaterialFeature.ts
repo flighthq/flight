@@ -14,8 +14,8 @@ import type { WgpuShapeMesh } from './WgpuShapeMesh.ts';
 // live in a higher-level renderer, but this capability contract belongs beside the registry that
 // stores it so the render-wgpu owner lane remains acyclic.
 export interface WgpuColorAdjustmentMaterialFeature {
-  readonly fragmentShaderChunk: string;
-  readonly matrixFragmentShaderChunk: string;
+  fragmentShaderChunk: string;
+  matrixFragmentShaderChunk: string;
   drawShapeMeshes?(
     state: WgpuRenderState,
     renderProxy: RenderProxy2D,

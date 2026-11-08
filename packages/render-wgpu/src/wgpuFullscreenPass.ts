@@ -1,14 +1,22 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 
-import type { WgpuFullscreenPipeline, WgpuRenderState, WgpuTextureRenderTarget } from './contract.render-wgpu-types.ts';
+import type {
+  WgpuBindGroup,
+  WgpuBindGroupLayout,
+  WgpuFullscreenPipeline,
+  WgpuRenderState,
+  WgpuTextureFormat,
+  WgpuTextureRenderTarget,
+} from './contract.render-wgpu-types.ts';
+import { WgpuBufferUsage, WgpuShaderStage } from './contract.render-wgpu-types.ts';
 import { getWgpuRenderStateRuntime } from './wgpuRenderState.ts';
 
 export function createWgpuFullscreenPipeline(
   state: WgpuRenderState,
   fragmentWgsl: string,
   textureInputCount = 1,
-  format: GPUTextureFormat = state.format,
+  format: WgpuTextureFormat = state.format,
 ): WgpuFullscreenPipeline {
   const out = allocateEntity<WgpuFullscreenPipeline>();
   initializeWgpuFullscreenPipeline(out, state, fragmentWgsl, textureInputCount, format);
@@ -32,7 +40,7 @@ export function drawWgpuFullscreenPass(
   state: WgpuRenderState,
   wgpuPipeline: Readonly<WgpuFullscreenPipeline>,
   inputs: ReadonlyArray<Readonly<WgpuTextureRenderTarget>>,
-  setUniforms: ((state: WgpuRenderState, uniformBindGroupLayout: GPUBindGroupLayout) => GPUBindGroup) | null,
+  setUniforms: ((state: WgpuRenderState, uniformBindGroupLayout: WgpuBindGroupLayout) => WgpuBindGroup) | null,
 ): void {
   const runtime = getWgpuRenderStateRuntime(state);
   const pass = runtime.renderPass;
@@ -72,25 +80,25 @@ export function initializeWgpuFullscreenPipeline(
   state: WgpuRenderState,
   fragmentWgsl: string,
   textureInputCount = 1,
-  format: GPUTextureFormat = state.format,
+  format: WgpuTextureFormat = state.format,
 ): void {
   const { device } = state;
   const uniformBindGroupLayout = device.createBindGroupLayout({
     entries: [
       {
         binding: 0,
-        visibility: GPUShaderStage.FRAGMENT,
+        visibility: WgpuShaderStage.FRAGMENT,
         buffer: { type: 'uniform' },
       },
     ],
   });
-  const textureBindGroupLayouts: GPUBindGroupLayout[] = [];
+  const textureBindGroupLayouts: WgpuBindGroupLayout[] = [];
   for (let i = 0; i < textureInputCount; i++) {
     textureBindGroupLayouts.push(
       device.createBindGroupLayout({
         entries: [
-          { binding: 0, visibility: GPUShaderStage.FRAGMENT, texture: { sampleType: 'float' } },
-          { binding: 1, visibility: GPUShaderStage.FRAGMENT, sampler: { type: 'filtering' } },
+          { binding: 0, visibility: WgpuShaderStage.FRAGMENT, texture: { sampleType: 'float' } },
+          { binding: 1, visibility: WgpuShaderStage.FRAGMENT, sampler: { type: 'filtering' } },
         ],
       }),
     );
@@ -118,7 +126,7 @@ export function initializeWgpuFullscreenPipeline(
   });
   const emptyUniformBindGroup = device.createBindGroup({
     layout: uniformBindGroupLayout,
-    entries: [{ binding: 0, resource: { buffer: device.createBuffer({ size: 16, usage: GPUBufferUsage.UNIFORM }) } }],
+    entries: [{ binding: 0, resource: { buffer: device.createBuffer({ size: 16, usage: WgpuBufferUsage.UNIFORM }) } }],
   });
   out.pipeline = pipeline;
   out.pipelineLayout = pipelineLayout;

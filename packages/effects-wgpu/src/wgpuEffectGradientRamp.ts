@@ -1,4 +1,5 @@
-import type { WgpuRenderState } from '@flighthq/render-wgpu/contract';
+import type { WgpuRenderState, WgpuTexture } from '@flighthq/render-wgpu/contract';
+import { WgpuTextureUsage } from '@flighthq/render-wgpu/contract';
 
 /**
  * Returns a cached 256-entry RGBA gradient ramp texture for the given stops,
@@ -19,7 +20,7 @@ export function getWgpuEffectGradientRampTexture(
   colors: ReadonlyArray<number>,
   alphas: ReadonlyArray<number>,
   ratios: ReadonlyArray<number>,
-): GPUTexture {
+): WgpuTexture {
   let cache = rampCaches.get(state);
   if (cache === undefined) {
     cache = new Map();
@@ -94,14 +95,14 @@ function createWgpuEffectGradientRampTexture(
   colors: ReadonlyArray<number>,
   alphas: ReadonlyArray<number>,
   ratios: ReadonlyArray<number>,
-): GPUTexture {
+): WgpuTexture {
   const data = buildRampData(colors, alphas, ratios);
   const { device } = state;
 
   const texture = device.createTexture({
     size: [256, 1, 1],
     format: 'rgba8unorm',
-    usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST,
+    usage: WgpuTextureUsage.TEXTURE_BINDING | WgpuTextureUsage.COPY_DST,
   });
 
   device.queue.writeTexture(
@@ -116,4 +117,4 @@ function createWgpuEffectGradientRampTexture(
 
 // Per-render-state cache of ramp textures keyed by their stops. Textures live for the render state's
 // lifetime; they are tiny (256×1) and the distinct-gradient set is bounded in practice.
-const rampCaches = new WeakMap<WgpuRenderState, Map<string, GPUTexture>>();
+const rampCaches = new WeakMap<WgpuRenderState, Map<string, WgpuTexture>>();

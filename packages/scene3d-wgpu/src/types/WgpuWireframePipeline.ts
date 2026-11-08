@@ -1,3 +1,5 @@
+import type { WgpuBuffer, WgpuIndexFormat } from '@flighthq/render-wgpu/contract';
+
 import type { WgpuMeshPipeline } from './WgpuMeshPipeline.ts';
 
 // A compiled wireframe pipeline — a WgpuMeshPipeline (pipeline + group(2) color-uniform layout).
@@ -9,8 +11,8 @@ export interface WgpuWireframePipeline extends WgpuMeshPipeline {}
 // vertex buffer is reused (no duplicate vertex memory). Cached per state + geometry, re-derived when
 // geometry.version moves. Returns null for non-indexed geometry (this path needs triangle indices).
 export interface WgpuWireframeUpload {
-  indexFormat: GPUIndexFormat;
-  lineIndexBuffer: GPUBuffer;
+  indexFormat: WgpuIndexFormat;
+  lineIndexBuffer: WgpuBuffer;
   version: number;
-  vertexBuffer: GPUBuffer;
+  vertexBuffer: WgpuBuffer;
 }

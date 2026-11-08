@@ -5,6 +5,7 @@ import type { Scene3DLightBlock } from '@flighthq/lighting/contract';
 import { createDepthMaterial } from '@flighthq/materials/contract';
 import { DepthMaterialKind } from '@flighthq/materials/contract';
 import { createBoxMeshGeometry } from '@flighthq/meshgeometry/contract';
+import type { WgpuRenderPipelineDescriptor } from '@flighthq/render-wgpu/contract';
 import type { Scene3DRenderProxy } from '@flighthq/render/contract';
 
 import { wgpuDepthMeshMaterialRenderer, registerWgpuDepthMaterial } from './wgpuDepthMeshMaterialRenderer.ts';
@@ -61,7 +62,7 @@ describe('wgpuDepthMeshMaterialRenderer', () => {
     const { fake, state } = makeWgpuScene3DState();
     wgpuDepthMeshMaterialRenderer.bind(state, createDepthMaterial({ doubleSided: true }), NO_LIGHTS, makeCamera());
     const call = fake.calls.find((c) => c.name === 'createRenderPipeline');
-    expect((call!.args[0] as GPURenderPipelineDescriptor).primitive?.cullMode).toBe('none');
+    expect((call!.args[0] as WgpuRenderPipelineDescriptor).primitive?.cullMode).toBe('none');
   });
 
   it('draw issues an indexed draw over the subset after bind', () => {

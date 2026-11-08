@@ -2,7 +2,12 @@ import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 import type { RenderTargetColorSpace } from '@flighthq/render/contract';
 
-import type { WgpuRenderState, WgpuRenderTargetPool, WgpuTextureRenderTarget } from './contract.render-wgpu-types.ts';
+import type {
+  WgpuRenderState,
+  WgpuRenderTargetPool,
+  WgpuTextureFormat,
+  WgpuTextureRenderTarget,
+} from './contract.render-wgpu-types.ts';
 import { createWgpuTextureRenderTarget, destroyWgpuTextureRenderTarget } from './wgpuTextureRenderTarget.ts';
 
 // Lends reusable intermediate targets to multi-pass effect recipes. acquire/release are paired
@@ -15,7 +20,7 @@ export function acquireWgpuTextureRenderTarget(
   descriptor: Readonly<{
     width: number;
     height: number;
-    format?: GPUTextureFormat;
+    format?: WgpuTextureFormat;
     colorSpace?: RenderTargetColorSpace;
     sampleCount?: number;
   }>,

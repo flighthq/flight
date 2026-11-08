@@ -10,7 +10,7 @@ import {
   registerWgpuBitmapTextureResolver,
   registerWgpuImageTextureResolver,
 } from '@flighthq/render-wgpu/contract';
-import type { WgpuMeshMaterialRenderer, WgpuRenderState } from '@flighthq/render-wgpu/contract';
+import type { WgpuBindGroup, WgpuMeshMaterialRenderer, WgpuRenderState } from '@flighthq/render-wgpu/contract';
 import type { Scene3DRenderProxy } from '@flighthq/render/contract';
 
 import type { WgpuMatcapDefineKey } from './contract.scene3d-wgpu-types.ts';
@@ -41,7 +41,7 @@ export const wgpuMatcapMeshMaterialRenderer: WgpuMeshMaterialRenderer = {
     const pipeline = ensureWgpuMatcapPipeline(state, defineKeyForMaterial(matcap), format);
     writeWgpuFrameUniform(state, camera, _lights);
 
-    let group: GPUBindGroup;
+    let group: WgpuBindGroup;
     if (matcap === null) {
       _scratch.r = 1;
       _scratch.g = 1;

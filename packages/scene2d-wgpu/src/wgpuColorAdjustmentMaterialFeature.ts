@@ -1,10 +1,11 @@
 import type { ColorScaleBias } from '@flighthq/adjustments/contract';
 import type { TintMaterialData } from '@flighthq/materials/contract';
-import { getWgpuBlendState, getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
+import { WgpuShaderStage, getWgpuBlendState, getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
 import type {
   WgpuColorAdjustmentFlush,
   WgpuRenderState,
   WgpuRenderStateRuntime,
+  WgpuShaderModule,
   WgpuShapeMeshBuffers,
   WgpuShapeMeshPipeline,
 } from '@flighthq/render-wgpu/contract';
@@ -259,7 +260,7 @@ function fillWgpuQuadBatchWriterUniformColorMatrix(
 // prelude plus a scene2d that reads 8 per-instance floats from the material storage buffer (@group(3))
 // and applies `color * mult + offset` in unpremultiplied space. Reused verbatim from the former
 // color-adjustment material so premultiplied-alpha handling is unchanged.
-function getWgpuQuadBatchWriterColorScaleBiasModule(state: WgpuRenderState): GPUShaderModule {
+function getWgpuQuadBatchWriterColorScaleBiasModule(state: WgpuRenderState): WgpuShaderModule {
   const runtime = getWgpuRenderStateRuntime(state);
   const cached = runtime.context.colorScaleBiasModule;
   if (cached !== undefined) return cached;
@@ -270,7 +271,7 @@ function getWgpuQuadBatchWriterColorScaleBiasModule(state: WgpuRenderState): GPU
   return module;
 }
 
-function getWgpuQuadBatchWriterPackedTintModule(state: WgpuRenderState): GPUShaderModule {
+function getWgpuQuadBatchWriterPackedTintModule(state: WgpuRenderState): WgpuShaderModule {
   const runtime = getWgpuRenderStateRuntime(state);
   const cached = runtime.context.packedTintModule;
   if (cached !== undefined) return cached;
@@ -281,7 +282,7 @@ function getWgpuQuadBatchWriterPackedTintModule(state: WgpuRenderState): GPUShad
   return module;
 }
 
-function getWgpuQuadBatchWriterColorMatrixModule(state: WgpuRenderState): GPUShaderModule {
+function getWgpuQuadBatchWriterColorMatrixModule(state: WgpuRenderState): WgpuShaderModule {
   const runtime = getWgpuRenderStateRuntime(state);
   const cached = runtime.context.colorMatrixModule;
   if (cached !== undefined) return cached;
@@ -576,7 +577,9 @@ function ensureWgpuShapeMeshColorScaleBiasPipeline(
   const device = state.device;
   const module = device.createShaderModule({ code: SHAPE_MESH_COLOR_SCALE_BIAS_WGSL });
   const bindGroupLayout = device.createBindGroupLayout({
-    entries: [{ binding: 0, visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT, buffer: { type: 'uniform' } }],
+    entries: [
+      { binding: 0, visibility: WgpuShaderStage.VERTEX | WgpuShaderStage.FRAGMENT, buffer: { type: 'uniform' } },
+    ],
   });
   const layout = device.createPipelineLayout({ bindGroupLayouts: [bindGroupLayout] });
   const pipeline = device.createRenderPipeline({

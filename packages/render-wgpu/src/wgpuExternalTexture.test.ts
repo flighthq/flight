@@ -1,6 +1,7 @@
 import { getTextureSourceKind } from '@flighthq/texture/contract';
 import { ExternalTextureSourceKind } from '@flighthq/texture/contract';
 
+import type { WgpuTexture } from './contract.render-wgpu-types.ts';
 import {
   createExternalWgpuTexture,
   disposeExternalWgpuTexture,
@@ -18,7 +19,7 @@ describe('createExternalWgpuTexture', () => {
   it('resolves a borrowed handle and forgets it without destroying the allocation', async () => {
     const state = await createWgpuRenderStateForTest();
     const destroy = vi.fn();
-    const handle = { createView: vi.fn(() => ({})), destroy } as unknown as GPUTexture;
+    const handle = { createView: vi.fn(() => ({})), destroy } as unknown as WgpuTexture;
     const texture = createExternalWgpuTexture(state, handle, { height: 16, width: 32 });
 
     expect(getTextureSourceKind(texture)).toBe(ExternalTextureSourceKind);
@@ -32,7 +33,7 @@ describe('createExternalWgpuTexture', () => {
 describe('disposeExternalWgpuTexture', () => {
   it('returns false after the borrowed handle has already been forgotten', async () => {
     const state = await createWgpuRenderStateForTest();
-    const handle = { createView: () => ({}) } as unknown as GPUTexture;
+    const handle = { createView: () => ({}) } as unknown as WgpuTexture;
     const texture = createExternalWgpuTexture(state, handle, { height: 1, width: 1 });
     expect(disposeExternalWgpuTexture(state, texture)).toBe(true);
     expect(disposeExternalWgpuTexture(state, texture)).toBe(false);

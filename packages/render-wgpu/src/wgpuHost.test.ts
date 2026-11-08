@@ -1,7 +1,8 @@
 import { allocateEntity } from '@flighthq/entity/contract';
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 
-import type { WgpuHostAcquisition } from './contract.render-wgpu-types.ts';
+import type { WgpuDevice, WgpuHostAcquisition } from './contract.render-wgpu-types.ts';
+import { WgpuBufferUsage } from './contract.render-wgpu-types.ts';
 import { createTestWgpuSurface, testWgpuHost } from './wgpuHost.ts';
 import {
   createWgpuAcquisition,
@@ -14,7 +15,7 @@ import { installWgpuMock } from './wgpuTestHelper.ts';
 beforeAll(installWgpuMock);
 
 describe('createTestWgpuSurface', () => {
-  const ATTACHMENT = { alphaMode: 'premultiplied', device: {} as GPUDevice, format: 'bgra8unorm' } as const;
+  const ATTACHMENT = { alphaMode: 'premultiplied', device: {} as WgpuDevice, format: 'bgra8unorm' } as const;
 
   it('builds a surface the test host backend can resolve back to its canvas', () => {
     const canvas = document.createElement('canvas');
@@ -113,7 +114,7 @@ describe('testWgpuHost', () => {
 
     expect(destroy).not.toHaveBeenCalled();
     expect(unconfigure).not.toHaveBeenCalled();
-    expect(acquired.device.createBuffer({ size: 4, usage: GPUBufferUsage.COPY_DST }).size).toBe(4);
+    expect(acquired.device.createBuffer({ size: 4, usage: WgpuBufferUsage.COPY_DST }).size).toBe(4);
 
     destroy.mockRestore();
     unconfigure.mockRestore();

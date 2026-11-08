@@ -9,6 +9,7 @@ import type {
   WgpuRenderTextureExplanation,
   WgpuRenderTextureGuard,
   WgpuTextureEntry,
+  WgpuTextureFormat,
 } from './contract.render-wgpu-types.ts';
 import { beginWgpuRenderPass, endWgpuRenderPass } from './wgpuRenderPass.ts';
 import { getWgpuRenderStateRuntime } from './wgpuRenderState.ts';
@@ -175,7 +176,7 @@ function getWgpuRenderTextureEntry(
   return getWgpuRenderStateRuntime(state).context.wgpuRenderTextureCache?.get(renderTexture);
 }
 
-function getWgpuRenderTextureFormat(state: WgpuRenderState, format: RenderTargetFormat | undefined): GPUTextureFormat {
+function getWgpuRenderTextureFormat(state: WgpuRenderState, format: RenderTargetFormat | undefined): WgpuTextureFormat {
   if (format === 'rgba16f') return 'rgba16float';
   if (format === 'rgba32f') return 'rgba32float';
   return format === 'rgba8' ? 'rgba8unorm' : state.format;

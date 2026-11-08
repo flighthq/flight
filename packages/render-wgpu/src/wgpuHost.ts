@@ -2,7 +2,16 @@ import { allocateEntity, createEntityRuntime, finishEntity } from '@flighthq/ent
 import { EntityRuntimeKey } from '@flighthq/entity/contract';
 import type { NativeSurfaceHandle, Surface, SurfaceRuntime } from '@flighthq/surface/contract';
 
-import type { HostWgpuCapability, WgpuHostAcquisition, WgpuSurfaceAttachResult } from './contract.render-wgpu-types.ts';
+import type {
+  HostWgpuCapability,
+  WgpuCanvasContext,
+  WgpuDeviceDescriptor,
+  WgpuFeatureName,
+  WgpuGpu,
+  WgpuHostAcquisition,
+  WgpuSurfaceAttachResult,
+} from './contract.render-wgpu-types.ts';
+import { WgpuTextureUsage } from './contract.render-wgpu-types.ts';
 
 // Builds a Surface around an existing canvas, the way a host's create lane would. Reads the runtime slot
 // directly rather than through @flighthq/surface so this test double adds no package dependency.
@@ -39,16 +48,16 @@ function initializeTestWgpuHost(): HostWgpuCapability {
       const requiredLimits: Record<string, number> = {};
       if (adapter.limits.maxBindGroups >= 5) requiredLimits.maxBindGroups = 5;
       const requiredFeatures = (
-        ['texture-compression-bc', 'texture-compression-etc2', 'texture-compression-astc'] as GPUFeatureName[]
+        ['texture-compression-bc', 'texture-compression-etc2', 'texture-compression-astc'] as WgpuFeatureName[]
       ).filter((feature) => adapter.features.has(feature));
-      const descriptor: GPUDeviceDescriptor = {};
+      const descriptor: WgpuDeviceDescriptor = {};
       if (Object.keys(requiredLimits).length > 0) descriptor.requiredLimits = requiredLimits;
       if (requiredFeatures.length > 0) descriptor.requiredFeatures = requiredFeatures;
       const device = await adapter.requestDevice(descriptor);
 
       try {
         const format = options.format ?? gpu.getPreferredCanvasFormat();
-        const context = canvas.getContext('webgpu');
+        const context: WgpuCanvasContext | null = canvas.getContext('webgpu');
         if (context === null) throw new Error('Failed to get WebGPU canvas context.');
         const acquisition = allocateEntity<WgpuHostAcquisition>();
         acquisition.context = context;
@@ -65,13 +74,13 @@ function initializeTestWgpuHost(): HostWgpuCapability {
     attachSurface: (surface, attachment): WgpuSurfaceAttachResult | null => {
       const canvas = testCanvas(surface);
       if (canvas === null) return null;
-      const context = canvas.getContext('webgpu');
+      const context: WgpuCanvasContext | null = canvas.getContext('webgpu');
       if (context === null) return null;
       context.configure({
         device: attachment.device,
         format: attachment.format,
         alphaMode: attachment.alphaMode,
-        usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.COPY_SRC,
+        usage: WgpuTextureUsage.RENDER_ATTACHMENT | WgpuTextureUsage.COPY_SRC,
       });
       return { context, surface: canvas };
     },
@@ -90,7 +99,7 @@ function testCanvas(surface: Readonly<Surface>): HTMLCanvasElement | null {
   return handle instanceof HTMLCanvasElement ? handle : null;
 }
 
-function getWebWgpu(): GPU | null {
+function getWebWgpu(): WgpuGpu | null {
   if (typeof navigator === 'undefined') return null;
   try {
     return navigator.gpu ?? null;

@@ -1,5 +1,17 @@
 import type { Environment } from '@flighthq/lighting/contract';
-import type { WgpuRenderState } from '@flighthq/render-wgpu/contract';
+import type {
+  WgpuBindGroup,
+  WgpuBindGroupLayout,
+  WgpuBuffer,
+  WgpuColor,
+  WgpuRenderPipeline,
+  WgpuRenderState,
+  WgpuSampler,
+  WgpuTexture,
+  WgpuTextureFormat,
+  WgpuTextureView,
+} from '@flighthq/render-wgpu/contract';
+import { WgpuBufferUsage, WgpuShaderStage, WgpuTextureUsage } from '@flighthq/render-wgpu/contract';
 
 import type { WgpuScene3DIbl } from './contract.scene3d-wgpu-types.ts';
 import { ensureWgpuEnvironmentSourceCube } from './wgpuEnvironmentCube.ts';
@@ -95,14 +107,14 @@ export function destroyWgpuScene3DIbl(state: WgpuRenderState): void {
 }
 
 interface WgpuBakedCube {
-  texture: GPUTexture;
-  view: GPUTextureView;
+  texture: WgpuTexture;
+  view: WgpuTextureView;
 }
 
 function bakeWgpuIrradiance(
   state: WgpuRenderState,
   programs: Readonly<WgpuBakePrograms>,
-  sourceBindGroup: GPUBindGroup,
+  sourceBindGroup: WgpuBindGroup,
 ): WgpuBakedCube {
   const texture = createWgpuBakeCube(state, IRRADIANCE_SIZE, 1);
   renderWgpuBakeCubeFaces(
@@ -121,7 +133,7 @@ function bakeWgpuIrradiance(
 function bakeWgpuPrefiltered(
   state: WgpuRenderState,
   programs: Readonly<WgpuBakePrograms>,
-  sourceBindGroup: GPUBindGroup,
+  sourceBindGroup: WgpuBindGroup,
 ): WgpuBakedCube {
   const texture = createWgpuBakeCube(state, PREFILTERED_SIZE, PREFILTERED_MIPS);
   for (let mip = 0; mip < PREFILTERED_MIPS; mip++) {
@@ -141,12 +153,12 @@ function bakeWgpuPrefiltered(
   return { texture, view: texture.createView({ dimension: 'cube' }) };
 }
 
-function bakeWgpuBrdfLut(state: WgpuRenderState, programs: Readonly<WgpuBakePrograms>): GPUTexture {
+function bakeWgpuBrdfLut(state: WgpuRenderState, programs: Readonly<WgpuBakePrograms>): WgpuTexture {
   const device = state.device;
   const texture = device.createTexture({
     size: [BRDF_LUT_SIZE, BRDF_LUT_SIZE, 1],
     format: IBL_BAKE_FORMAT,
-    usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.TEXTURE_BINDING,
+    usage: WgpuTextureUsage.RENDER_ATTACHMENT | WgpuTextureUsage.TEXTURE_BINDING,
   });
   const encoder = device.createCommandEncoder();
   const pass = encoder.beginRenderPass({
@@ -164,13 +176,13 @@ function bakeWgpuBrdfLut(state: WgpuRenderState, programs: Readonly<WgpuBakeProg
 // uniform is consumed before the next face overwrites it. Mirrors scene-gl's renderGlBakeCubeFaces.
 function renderWgpuBakeCubeFaces(
   state: WgpuRenderState,
-  pipeline: GPURenderPipeline,
+  pipeline: WgpuRenderPipeline,
   programs: Readonly<WgpuBakePrograms>,
-  cube: GPUTexture,
+  cube: WgpuTexture,
   size: number,
   mipLevel: number,
   roughness: number,
-  sourceBindGroup: GPUBindGroup,
+  sourceBindGroup: WgpuBindGroup,
 ): void {
   const device = state.device;
   for (let face = 0; face < 6; face++) {
@@ -218,23 +230,23 @@ function renderWgpuBakeCubeFaces(
 // Allocates a bake-output cube texture (rgba16float, `mips` mip levels) with the full mip chain declared up
 // front so each prefiltered roughness level has storage before the bake renders into it. Cube = a 2d
 // texture with 6 array layers; the sampleable view is created with dimension 'cube' by the caller.
-function createWgpuBakeCube(state: WgpuRenderState, size: number, mips: number): GPUTexture {
+function createWgpuBakeCube(state: WgpuRenderState, size: number, mips: number): WgpuTexture {
   return state.device.createTexture({
     size: [size, size, 6],
     format: IBL_BAKE_FORMAT,
     mipLevelCount: mips,
-    usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.TEXTURE_BINDING,
+    usage: WgpuTextureUsage.RENDER_ATTACHMENT | WgpuTextureUsage.TEXTURE_BINDING,
   });
 }
 
 interface WgpuBakePrograms {
-  brdfPipeline: GPURenderPipeline;
-  irradiancePipeline: GPURenderPipeline;
-  prefilteredPipeline: GPURenderPipeline;
-  sampler: GPUSampler;
-  sourceBindGroupLayout: GPUBindGroupLayout;
-  uniformBindGroup: GPUBindGroup;
-  uniformBuffer: GPUBuffer;
+  brdfPipeline: WgpuRenderPipeline;
+  irradiancePipeline: WgpuRenderPipeline;
+  prefilteredPipeline: WgpuRenderPipeline;
+  sampler: WgpuSampler;
+  sourceBindGroupLayout: WgpuBindGroupLayout;
+  uniformBindGroup: WgpuBindGroup;
+  uniformBuffer: WgpuBuffer;
 }
 
 // Resolves (creating once per state) the three bake pipelines + their shared uniform/source layouts. The
@@ -246,12 +258,12 @@ function ensureWgpuBakePrograms(state: WgpuRenderState): WgpuBakePrograms {
 
   const device = state.device;
   const uniformBindGroupLayout = device.createBindGroupLayout({
-    entries: [{ binding: 0, visibility: GPUShaderStage.FRAGMENT, buffer: { type: 'uniform' } }],
+    entries: [{ binding: 0, visibility: WgpuShaderStage.FRAGMENT, buffer: { type: 'uniform' } }],
   });
   const sourceBindGroupLayout = device.createBindGroupLayout({
     entries: [
-      { binding: 0, visibility: GPUShaderStage.FRAGMENT, texture: { sampleType: 'float', viewDimension: 'cube' } },
-      { binding: 1, visibility: GPUShaderStage.FRAGMENT, sampler: { type: 'filtering' } },
+      { binding: 0, visibility: WgpuShaderStage.FRAGMENT, texture: { sampleType: 'float', viewDimension: 'cube' } },
+      { binding: 1, visibility: WgpuShaderStage.FRAGMENT, sampler: { type: 'filtering' } },
     ],
   });
   const cubeLayout = device.createPipelineLayout({ bindGroupLayouts: [uniformBindGroupLayout, sourceBindGroupLayout] });
@@ -263,7 +275,7 @@ function ensureWgpuBakePrograms(state: WgpuRenderState): WgpuBakePrograms {
 
   const uniformBuffer = device.createBuffer({
     size: BAKE_UNIFORM_BYTES,
-    usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+    usage: WgpuBufferUsage.UNIFORM | WgpuBufferUsage.COPY_DST,
   });
 
   programs = {
@@ -305,12 +317,12 @@ const BRDF_LUT_SIZE = 128;
 
 // The bake output format: rgba16float HDR, matching scene-gl's RGBA16F bake targets (16-bit float is
 // core-filterable in WebGPU, so no extra feature is required for the linear cube/LUT sampling).
-const IBL_BAKE_FORMAT: GPUTextureFormat = 'rgba16float';
+const IBL_BAKE_FORMAT: WgpuTextureFormat = 'rgba16float';
 
 // Per-face bake uniform: faceForward + faceRight + faceUp (3 padded vec3) + roughness = 4 vec4 = 64 bytes.
 const BAKE_UNIFORM_BYTES = 64;
 
-const BAKE_CLEAR: GPUColor = { r: 0, g: 0, b: 0, a: 1 };
+const BAKE_CLEAR: WgpuColor = { r: 0, g: 0, b: 0, a: 1 };
 
 // Per-face direction basis (forward = face normal, plus right/up spanning the face) in Texture face
 // order — identical to scene-gl's CUBE_FACE_BASIS. A fragment's world direction is

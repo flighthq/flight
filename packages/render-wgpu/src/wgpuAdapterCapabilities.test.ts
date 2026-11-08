@@ -1,10 +1,11 @@
+import type { WgpuAdapter } from './contract.render-wgpu-types.ts';
 import { getWgpuAdapterCapabilities } from './wgpuAdapterCapabilities.ts';
 
-function makeAdapter(features: ReadonlyArray<string> = [], limits: Record<string, number> = {}): GPUAdapter {
+function makeAdapter(features: ReadonlyArray<string> = [], limits: Record<string, number> = {}): WgpuAdapter {
   return {
     features: new Set(features),
     limits: { maxTextureDimension2D: 8192, ...limits },
-  } as unknown as GPUAdapter;
+  } as unknown as WgpuAdapter;
 }
 
 describe('getWgpuAdapterCapabilities', () => {
@@ -37,7 +38,7 @@ describe('getWgpuAdapterCapabilities', () => {
     const adapter = {
       features: new Set(),
       limits: {},
-    } as unknown as GPUAdapter;
+    } as unknown as WgpuAdapter;
     const caps = getWgpuAdapterCapabilities(adapter);
     expect(caps.maxTextureDimension2D).toBe(8192);
   });

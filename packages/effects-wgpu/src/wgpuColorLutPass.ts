@@ -1,6 +1,14 @@
 import type { ColorLut } from '@flighthq/adjustments/contract';
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { WgpuRenderState, WgpuTextureRenderTarget } from '@flighthq/render-wgpu/contract';
+import type {
+  WgpuBindGroupLayout,
+  WgpuBlendState,
+  WgpuRenderState,
+  WgpuTexture,
+  WgpuTextureFormat,
+  WgpuTextureRenderTarget,
+} from '@flighthq/render-wgpu/contract';
+import { WgpuShaderStage, WgpuTextureUsage } from '@flighthq/render-wgpu/contract';
 
 import type { WgpuEffectPipeline } from './types.ts';
 import type { WgpuColorLutTextureCache } from './types.ts';
@@ -57,13 +65,13 @@ export function applyColorLutPassToWgpu(
   pass.end();
 }
 
-function getLutBindGroupLayout(state: WgpuRenderState): GPUBindGroupLayout {
+function getLutBindGroupLayout(state: WgpuRenderState): WgpuBindGroupLayout {
   let layout = lutBindGroupLayouts.get(state);
   if (layout === undefined) {
     layout = state.device.createBindGroupLayout({
       entries: [
-        { binding: 0, visibility: GPUShaderStage.FRAGMENT, texture: { viewDimension: '3d' } },
-        { binding: 1, visibility: GPUShaderStage.FRAGMENT, sampler: {} },
+        { binding: 0, visibility: WgpuShaderStage.FRAGMENT, texture: { viewDimension: '3d' } },
+        { binding: 1, visibility: WgpuShaderStage.FRAGMENT, sampler: {} },
       ],
     });
     lutBindGroupLayouts.set(state, layout);
@@ -73,7 +81,7 @@ function getLutBindGroupLayout(state: WgpuRenderState): GPUBindGroupLayout {
 
 // A render pipeline's color target format must match the attachment it draws into, so an HDR
 // (rgba16float) effect target needs its own variant; pipelines are cached per (state, dest format).
-function getLutPipeline(state: WgpuRenderState, format: GPUTextureFormat): WgpuEffectPipeline {
+function getLutPipeline(state: WgpuRenderState, format: WgpuTextureFormat): WgpuEffectPipeline {
   let byFormat = lutPipelines.get(state);
   if (byFormat === undefined) {
     byFormat = new Map();
@@ -113,7 +121,7 @@ function uploadLutTexture(
   state: WgpuRenderState,
   lut: Readonly<ColorLut>,
   cache: WgpuColorLutTextureCache,
-): GPUTexture {
+): WgpuTexture {
   const { device } = state;
   const n = lut.size;
   if (cache.texture !== null && cache.lut === lut) return cache.texture;
@@ -123,7 +131,7 @@ function uploadLutTexture(
       size: [n, n, n],
       dimension: '3d',
       format: 'rgba8unorm',
-      usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST,
+      usage: WgpuTextureUsage.TEXTURE_BINDING | WgpuTextureUsage.COPY_DST,
     });
     cache.size = n;
   }
@@ -144,7 +152,7 @@ function clamp01(v: number): number {
   return v < 0 ? 0 : v > 1 ? 1 : v;
 }
 
-const REPLACE_BLEND: GPUBlendState = {
+const REPLACE_BLEND: WgpuBlendState = {
   color: { srcFactor: 'one', dstFactor: 'zero', operation: 'add' },
   alpha: { srcFactor: 'one', dstFactor: 'zero', operation: 'add' },
 };
@@ -168,5 +176,5 @@ fn fs_main(@location(0) uv : vec2f) -> @location(0) vec4f {
   return vec4f(graded, c.a);
 }`;
 
-const lutBindGroupLayouts = new WeakMap<WgpuRenderState, GPUBindGroupLayout>();
-const lutPipelines = new WeakMap<WgpuRenderState, Map<GPUTextureFormat, WgpuEffectPipeline>>();
+const lutBindGroupLayouts = new WeakMap<WgpuRenderState, WgpuBindGroupLayout>();
+const lutPipelines = new WeakMap<WgpuRenderState, Map<WgpuTextureFormat, WgpuEffectPipeline>>();

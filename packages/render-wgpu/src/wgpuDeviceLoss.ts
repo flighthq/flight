@@ -1,6 +1,11 @@
 import { createSignal, emitSignal } from '@flighthq/signals/contract';
 
-import type { WgpuDeviceRuntime, WgpuDeviceSignals, WgpuRenderState } from './contract.render-wgpu-types.ts';
+import type {
+  WgpuDeviceLostInfo,
+  WgpuDeviceRuntime,
+  WgpuDeviceSignals,
+  WgpuRenderState,
+} from './contract.render-wgpu-types.ts';
 import { getWgpuRenderStateRuntime } from './wgpuRenderState.ts';
 
 // Releases the device tier's signal group. The terminal loss FACT survives — a lost device stays
@@ -24,7 +29,7 @@ export function enableWgpuDeviceSignals(state: WgpuRenderState): WgpuDeviceSigna
 
 // The device's loss report, or null while it is live. Reports BOTH an unexpected loss and the
 // 'destroyed' resolution Flight's own release produces; branch on `reason` to tell them apart.
-export function getWgpuDeviceLoss(state: WgpuRenderState): GPUDeviceLostInfo | null {
+export function getWgpuDeviceLoss(state: WgpuRenderState): WgpuDeviceLostInfo | null {
   return getWgpuRenderStateRuntime(state).context.lost;
 }
 

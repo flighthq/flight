@@ -1,11 +1,11 @@
-import type { WgpuRenderState, WgpuScissorRect } from './contract.render-wgpu-types.ts';
+import type { WgpuRenderPassEncoder, WgpuRenderState, WgpuScissorRect } from './contract.render-wgpu-types.ts';
 import { getWgpuRenderStateRuntime } from './wgpuRenderState.ts';
 import { getWgpuRenderTargetSupersampleScale } from './wgpuRenderTarget.ts';
 
 // Applies the current scissor rectangle to the active render pass. No-op when there is no active
 // scissor or no open render pass. Call after each draw call or once per pass when the active
 // scissor changes.
-export function applyWgpuScissorRect(state: WgpuRenderState, pass: GPURenderPassEncoder): void {
+export function applyWgpuScissorRect(state: WgpuRenderState, pass: WgpuRenderPassEncoder): void {
   const runtime = getWgpuRenderStateRuntime(state);
   const rect = runtime.currentScissorRect;
   if (rect === null) return;
@@ -45,7 +45,7 @@ export function pushWgpuScissorRect(state: WgpuRenderState, rect: Readonly<WgpuS
 // storage was grown by, and a target with no supersample scales by 1.
 export function setWgpuRenderPassScissorRect(
   state: WgpuRenderState,
-  pass: GPURenderPassEncoder,
+  pass: WgpuRenderPassEncoder,
   x: number,
   y: number,
   width: number,

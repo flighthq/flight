@@ -1,6 +1,6 @@
 import type { LinearColorRaw } from '@flighthq/color/contract';
-import { getWgpuRenderStateDeviceResources } from '@flighthq/render-wgpu/contract';
-import type { WgpuRenderState } from '@flighthq/render-wgpu/contract';
+import { WgpuBufferUsage, WgpuShaderStage, getWgpuRenderStateDeviceResources } from '@flighthq/render-wgpu/contract';
+import type { WgpuBindGroup, WgpuRenderState, WgpuTextureFormat } from '@flighthq/render-wgpu/contract';
 import type { WgpuSkinningAdapter } from '@flighthq/render-wgpu/contract';
 
 import type { WgpuToonDefineKey, WgpuToonPipeline, WgpuMaterialBinding } from './contract.scene3d-wgpu-types.ts';
@@ -28,13 +28,13 @@ export function bindWgpuToonSurface(
   baseColor: Readonly<LinearColorRaw>,
   steps: number,
   alphaCutoff: number,
-): GPUBindGroup {
+): WgpuBindGroup {
   const scene = getWgpuScene3DRuntime(state);
   let binding: WgpuMaterialBinding | undefined = scene.materialBindGroups.get(materialKey);
   if (binding === undefined) {
     const buffer = state.device.createBuffer({
       size: TOON_UNIFORM_BYTES,
-      usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+      usage: WgpuBufferUsage.UNIFORM | WgpuBufferUsage.COPY_DST,
     });
     const placeholder = ensureWgpuPlaceholderTextureView(state);
     const bindGroup = state.device.createBindGroup({
@@ -79,7 +79,7 @@ export function buildWgpuToonDefineKey(key: Readonly<WgpuToonDefineKey>): string
 export function compileWgpuToonPipeline(
   state: WgpuRenderState,
   key: Readonly<WgpuToonDefineKey>,
-  format: GPUTextureFormat,
+  format: WgpuTextureFormat,
   blended = false,
   skinned = false,
 ): WgpuToonPipeline {
@@ -89,10 +89,10 @@ export function compileWgpuToonPipeline(
   });
   const materialBindGroupLayout = device.createBindGroupLayout({
     entries: [
-      { binding: 0, visibility: GPUShaderStage.FRAGMENT, buffer: { type: 'uniform' } },
-      { binding: 1, visibility: GPUShaderStage.FRAGMENT, sampler: { type: 'filtering' } },
-      { binding: 2, visibility: GPUShaderStage.FRAGMENT, texture: { sampleType: 'float' } },
-      { binding: 3, visibility: GPUShaderStage.FRAGMENT, texture: { sampleType: 'float' } },
+      { binding: 0, visibility: WgpuShaderStage.FRAGMENT, buffer: { type: 'uniform' } },
+      { binding: 1, visibility: WgpuShaderStage.FRAGMENT, sampler: { type: 'filtering' } },
+      { binding: 2, visibility: WgpuShaderStage.FRAGMENT, texture: { sampleType: 'float' } },
+      { binding: 3, visibility: WgpuShaderStage.FRAGMENT, texture: { sampleType: 'float' } },
     ],
   });
   // group(3) shadow-sample layout opts the toon pipeline into directional shadow reception; the shared
@@ -113,7 +113,7 @@ export function compileWgpuToonPipeline(
 export function ensureWgpuToonPipeline(
   state: WgpuRenderState,
   key: Readonly<WgpuToonDefineKey>,
-  format: GPUTextureFormat,
+  format: WgpuTextureFormat,
 ): WgpuToonPipeline {
   return ensureWgpuScene3DPipeline(state, `toon:${format}|${buildWgpuToonDefineKey(key)}`, (blended, skinned) =>
     compileWgpuToonPipeline(state, key, format, blended, skinned),

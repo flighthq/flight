@@ -10,11 +10,19 @@ import { getTextureSource } from '@flighthq/texture/contract';
 import type { Texture, TextureColorSpace, TextureSource } from '@flighthq/texture/contract';
 
 import type {
+  WgpuBindGroup,
+  WgpuExternalImageSource,
+  WgpuFilterMode,
   WgpuRenderState,
+  WgpuSampler,
+  WgpuTexture,
   WgpuTextureEntry,
+  WgpuTextureFormat,
   WgpuTextureSourceTextureEntry,
+  WgpuTextureView,
   WgpuVideoTextureEntry,
 } from './contract.render-wgpu-types.ts';
+import { WgpuTextureUsage } from './contract.render-wgpu-types.ts';
 import { isWgpuExternalImageSourceReady, tryCopyWgpuExternalImageToTexture } from './wgpuExternalImageSource.ts';
 import { retireWgpuTexture } from './wgpuFrame.ts';
 import { getWgpuRenderStateDeviceResources, getWgpuRenderStateRuntime, getWgpuSampler } from './wgpuRenderState.ts';
@@ -153,7 +161,7 @@ export function bindWgpuTexture(
     height = imageSource.height || 1;
   }
 
-  if (!isWgpuExternalImageSourceReady(imageSource as GPUCopyExternalImageSource, width, height)) return null;
+  if (!isWgpuExternalImageSourceReady(imageSource as WgpuExternalImageSource, width, height)) return null;
 
   if (generateMips && runtime.mipmapGenerator == null) runtime.mipmapDegradedGuard?.(state);
   const mipLevelCount = generateMips && runtime.mipmapGenerator != null ? wgpuMipLevelCount(width, height) : 1;
@@ -161,7 +169,7 @@ export function bindWgpuTexture(
     size: [width, height, 1],
     format: 'rgba8unorm',
     mipLevelCount,
-    usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST | GPUTextureUsage.RENDER_ATTACHMENT,
+    usage: WgpuTextureUsage.TEXTURE_BINDING | WgpuTextureUsage.COPY_DST | WgpuTextureUsage.RENDER_ATTACHMENT,
   });
 
   // Store every uploaded texture premultiplied, matching the premultiplied (ONE, ONE_MINUS_SRC_ALPHA)
@@ -178,7 +186,7 @@ export function bindWgpuTexture(
   // whatever it is handed — which is why that path guards on the declared alphaType and this one must not.
   const copied = tryCopyWgpuExternalImageToTexture(
     device.queue,
-    { source: imageSource as GPUCopyExternalImageSource, flipY: false },
+    { source: imageSource as WgpuExternalImageSource, flipY: false },
     { texture, premultipliedAlpha: true },
     width,
     height,
@@ -208,7 +216,7 @@ export function bindWgpuTexture(
 
 // The sampler the state's CURRENT draw policy selects. Read per draw and never stored on a resource:
 // `allowSmoothing` is mutable and shared, so a value captured at upload time goes stale silently.
-function getWgpuDrawPolicySampler(state: WgpuRenderState): GPUSampler {
+function getWgpuDrawPolicySampler(state: WgpuRenderState): WgpuSampler {
   const resources = getWgpuRenderStateDeviceResources(state);
   return state.allowSmoothing ? resources.linearSampler : resources.nearestSampler;
 }
@@ -216,7 +224,11 @@ function getWgpuDrawPolicySampler(state: WgpuRenderState): GPUSampler {
 // The group(1) bind group for this entry's view sampled with `sampler`, built once per sampler and
 // memoized on the entry. Every bind group over a cached texture goes through here, so no draw policy
 // can reach a resource's identity.
-function resolveWgpuTextureBinding(state: WgpuRenderState, entry: WgpuTextureEntry, sampler: GPUSampler): GPUBindGroup {
+function resolveWgpuTextureBinding(
+  state: WgpuRenderState,
+  entry: WgpuTextureEntry,
+  sampler: WgpuSampler,
+): WgpuBindGroup {
   const cached = entry.bindings.get(sampler);
   if (cached !== undefined) return cached;
   const bindGroup = buildWgpuTextureBindGroup(state, entry.view, sampler);
@@ -249,7 +261,7 @@ export function bindWgpuVideoTexture(
     const texture = state.device.createTexture({
       size: [width, height, 1],
       format: videoTexture.colorSpace === 'srgb' ? 'rgba8unorm-srgb' : 'rgba8unorm',
-      usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST | GPUTextureUsage.RENDER_ATTACHMENT,
+      usage: WgpuTextureUsage.TEXTURE_BINDING | WgpuTextureUsage.COPY_DST | WgpuTextureUsage.RENDER_ATTACHMENT,
     });
     const view = texture.createView();
     entry = (() => {
@@ -299,12 +311,12 @@ export function createWgpuTextureEntry(
   const texture = device.createTexture({
     size: [w, h, 1],
     format: 'rgba8unorm',
-    usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST | GPUTextureUsage.RENDER_ATTACHMENT,
+    usage: WgpuTextureUsage.TEXTURE_BINDING | WgpuTextureUsage.COPY_DST | WgpuTextureUsage.RENDER_ATTACHMENT,
   });
 
   const copied = tryCopyWgpuExternalImageToTexture(
     device.queue,
-    { source: canvas as GPUCopyExternalImageSource, flipY: false },
+    { source: canvas as WgpuExternalImageSource, flipY: false },
     { texture, premultipliedAlpha: true },
     w,
     h,
@@ -370,7 +382,7 @@ export function drawWgpuQuad(
   submitWgpuQuadDraw(state, uniformOffset, resolveWgpuSmoothingBindGroup(state, textureEntry, null));
 }
 
-function buildWgpuTextureBindGroup(state: WgpuRenderState, view: GPUTextureView, sampler: GPUSampler): GPUBindGroup {
+function buildWgpuTextureBindGroup(state: WgpuRenderState, view: WgpuTextureView, sampler: WgpuSampler): WgpuBindGroup {
   return state.device.createBindGroup({
     layout: getWgpuRenderStateDeviceResources(state).textureBindGroupLayout,
     entries: [
@@ -380,10 +392,10 @@ function buildWgpuTextureBindGroup(state: WgpuRenderState, view: GPUTextureView,
   });
 }
 
-function getWgpuVideoSampler(state: WgpuRenderState, videoTexture: Readonly<Texture>): GPUSampler {
+function getWgpuVideoSampler(state: WgpuRenderState, videoTexture: Readonly<Texture>): WgpuSampler {
   const sampler = videoTexture.sampler;
-  const minFilter: GPUFilterMode = sampler.minFilter.startsWith('nearest') ? 'nearest' : 'linear';
-  const magFilter: GPUFilterMode = sampler.magFilter.startsWith('nearest') ? 'nearest' : 'linear';
+  const minFilter: WgpuFilterMode = sampler.minFilter.startsWith('nearest') ? 'nearest' : 'linear';
+  const magFilter: WgpuFilterMode = sampler.magFilter.startsWith('nearest') ? 'nearest' : 'linear';
   // A live frame carries base level only; mip-aware filters collapse to their base filter rather than
   // sampling absent levels. Regenerating a full chain for every decoded frame would defeat the video
   // dirty gate.
@@ -436,8 +448,8 @@ export function getWgpuRenderProxyColorScaleBias(renderProxy: Readonly<RenderPro
 
 export function initializeWgpuTextureEntry(
   out: EntityConstruction<WgpuTextureEntry>,
-  texture: GPUTexture,
-  view: GPUTextureView,
+  texture: WgpuTexture,
+  view: WgpuTextureView,
 ): void {
   out.bindings = new Map();
   out.mipLevelCount = 1;
@@ -458,7 +470,7 @@ export function resolveWgpuSmoothingBindGroup(
   state: WgpuRenderState,
   entry: WgpuTextureEntry,
   smoothing: boolean | null,
-): GPUBindGroup {
+): WgpuBindGroup {
   const resources = getWgpuRenderStateDeviceResources(state);
   const sampler =
     smoothing === null
@@ -472,7 +484,7 @@ export function resolveWgpuSmoothingBindGroup(
 export function submitWgpuQuadDraw(
   state: WgpuRenderState,
   uniformOffset: number,
-  textureBindGroup: GPUBindGroup,
+  textureBindGroup: WgpuBindGroup,
 ): void {
   const runtime = getWgpuRenderStateRuntime(state);
   const pass = runtime.renderPass;
@@ -547,12 +559,12 @@ function uploadWgpuBitmapEntry(
   const height = bitmap.height || 1;
   if (generateMips && runtime.mipmapGenerator == null) runtime.mipmapDegradedGuard?.(state);
   const mipLevelCount = generateMips && runtime.mipmapGenerator != null ? wgpuMipLevelCount(width, height) : 1;
-  const format: GPUTextureFormat = colorSpace === 'srgb' ? 'rgba8unorm-srgb' : 'rgba8unorm';
+  const format: WgpuTextureFormat = colorSpace === 'srgb' ? 'rgba8unorm-srgb' : 'rgba8unorm';
   const texture = device.createTexture({
     size: [width, height, 1],
     format,
     mipLevelCount,
-    usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST | GPUTextureUsage.RENDER_ATTACHMENT,
+    usage: WgpuTextureUsage.TEXTURE_BINDING | WgpuTextureUsage.COPY_DST | WgpuTextureUsage.RENDER_ATTACHMENT,
   });
   // Resolve the source's declared encoding to the one the caller asked for, in EITHER direction. The
   // straight direction is what makes a premultiplied source safe as a 3D material map: 3D binds with
@@ -601,19 +613,19 @@ function uploadWgpuImageResourceEntry(
   const { device } = state;
   const width = resource.width || 1;
   const height = resource.height || 1;
-  if (!isWgpuExternalImageSourceReady(resource.source as GPUCopyExternalImageSource, width, height)) return null;
+  if (!isWgpuExternalImageSourceReady(resource.source as WgpuExternalImageSource, width, height)) return null;
   if (generateMips && runtime.mipmapGenerator == null) runtime.mipmapDegradedGuard?.(state);
   const mipLevelCount = generateMips && runtime.mipmapGenerator != null ? wgpuMipLevelCount(width, height) : 1;
-  const format: GPUTextureFormat = colorSpace === 'srgb' ? 'rgba8unorm-srgb' : 'rgba8unorm';
+  const format: WgpuTextureFormat = colorSpace === 'srgb' ? 'rgba8unorm-srgb' : 'rgba8unorm';
   const texture = device.createTexture({
     size: [width, height, 1],
     format,
     mipLevelCount,
-    usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST | GPUTextureUsage.RENDER_ATTACHMENT,
+    usage: WgpuTextureUsage.TEXTURE_BINDING | WgpuTextureUsage.COPY_DST | WgpuTextureUsage.RENDER_ATTACHMENT,
   });
   const copied = tryCopyWgpuExternalImageToTexture(
     device.queue,
-    { source: resource.source as GPUCopyExternalImageSource, flipY: false },
+    { source: resource.source as WgpuExternalImageSource, flipY: false },
     { texture, premultipliedAlpha: premultiply },
     width,
     height,

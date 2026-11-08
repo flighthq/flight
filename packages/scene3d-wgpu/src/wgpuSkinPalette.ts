@@ -1,7 +1,12 @@
 import { EntityRuntimeKey } from '@flighthq/entity/contract';
 import type { Mesh, MeshGeometry, MeshGeometryRuntime, MeshSkinBindPose } from '@flighthq/meshgeometry/contract';
-import { getWgpuRenderStateRuntime, retireWgpuTexture } from '@flighthq/render-wgpu/contract';
-import type { WgpuRenderState } from '@flighthq/render-wgpu/contract';
+import {
+  WgpuShaderStage,
+  WgpuTextureUsage,
+  getWgpuRenderStateRuntime,
+  retireWgpuTexture,
+} from '@flighthq/render-wgpu/contract';
+import type { WgpuBindGroup, WgpuBindGroupLayout, WgpuRenderState, WgpuTexture } from '@flighthq/render-wgpu/contract';
 import type { WgpuSkinningAdapter } from '@flighthq/render-wgpu/contract';
 
 import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime.ts';
@@ -30,7 +35,7 @@ export function destroyWgpuSkinPalette(state: WgpuRenderState): void {
 export function ensureWgpuSkinDrawBindGroup(
   state: WgpuRenderState,
   jointMatrices: Readonly<Float32Array>,
-): GPUBindGroup {
+): WgpuBindGroup {
   const scene = getWgpuScene3DRuntime(state);
   const stateRuntime = getWgpuRenderStateRuntime(state);
   uploadWgpuSkinPalette(state, jointMatrices);
@@ -47,7 +52,7 @@ export function ensureWgpuSkinDrawBindGroup(
   return scene.skinDrawBindGroup;
 }
 
-export function ensureWgpuSkinDrawLayout(state: WgpuRenderState): GPUBindGroupLayout {
+export function ensureWgpuSkinDrawLayout(state: WgpuRenderState): WgpuBindGroupLayout {
   const scene = getWgpuScene3DRuntime(state);
   if (scene.skinDrawBindGroupLayout === null) {
     scene.skinDrawBindGroupLayout = state.device.createBindGroupLayout({
@@ -57,11 +62,11 @@ export function ensureWgpuSkinDrawLayout(state: WgpuRenderState): GPUBindGroupLa
         // identical to the non-skinned drawBindGroupLayout or a skinned pipeline fails validation.
         {
           binding: 0,
-          visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
+          visibility: WgpuShaderStage.VERTEX | WgpuShaderStage.FRAGMENT,
           buffer: { type: 'uniform', hasDynamicOffset: true },
         },
         // The joint palette is sampled in the vertex stage only.
-        { binding: 1, visibility: GPUShaderStage.VERTEX, texture: { sampleType: 'unfilterable-float' } },
+        { binding: 1, visibility: WgpuShaderStage.VERTEX, texture: { sampleType: 'unfilterable-float' } },
       ],
     });
   }
@@ -80,7 +85,7 @@ export function ensureWgpuSkinMeshDrawBindGroup(
   state: WgpuRenderState,
   jointMatrices: Readonly<Float32Array>,
   normalMatrices: Readonly<Float32Array>,
-): GPUBindGroup {
+): WgpuBindGroup {
   const scene = getWgpuScene3DRuntime(state);
   const stateRuntime = getWgpuRenderStateRuntime(state);
   uploadWgpuSkinPalette(state, jointMatrices);
@@ -105,20 +110,20 @@ export function ensureWgpuSkinMeshDrawBindGroup(
 // The MESH path's layout: the shadow path's two bindings plus the normal palette at binding 2.
 // Binding 0 keeps VERTEX|FRAGMENT visibility for the same reason it does below — the fragment tail
 // reads draw.params.y — and the two palettes are vertex-stage only.
-export function ensureWgpuSkinMeshDrawLayout(state: WgpuRenderState): GPUBindGroupLayout {
+export function ensureWgpuSkinMeshDrawLayout(state: WgpuRenderState): WgpuBindGroupLayout {
   const scene = getWgpuScene3DRuntime(state);
   if (scene.skinMeshDrawBindGroupLayout === null) {
     scene.skinMeshDrawBindGroupLayout = state.device.createBindGroupLayout({
       entries: [
         {
           binding: 0,
-          visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
+          visibility: WgpuShaderStage.VERTEX | WgpuShaderStage.FRAGMENT,
           buffer: { type: 'uniform', hasDynamicOffset: true },
         },
-        { binding: 1, visibility: GPUShaderStage.VERTEX, texture: { sampleType: 'unfilterable-float' } },
+        { binding: 1, visibility: WgpuShaderStage.VERTEX, texture: { sampleType: 'unfilterable-float' } },
         // The normal palette — three texels per joint rather than four, since a 3x3 padded to vec4
         // columns is twelve floats.
-        { binding: 2, visibility: GPUShaderStage.VERTEX, texture: { sampleType: 'unfilterable-float' } },
+        { binding: 2, visibility: WgpuShaderStage.VERTEX, texture: { sampleType: 'unfilterable-float' } },
       ],
     });
   }
@@ -216,11 +221,11 @@ function beginWgpuSkinArenaFrame(state: WgpuRenderState): void {
   runtime.skinNormalPaletteArenaBases = new Map();
 }
 
-function createWgpuSkinArenaTexture(state: WgpuRenderState, rows: number): GPUTexture {
+function createWgpuSkinArenaTexture(state: WgpuRenderState, rows: number): WgpuTexture {
   return state.device.createTexture({
     size: [WGPU_SKIN_ARENA_WIDTH, rows, 1],
     format: 'rgba32float',
-    usage: GPUTextureUsage.COPY_DST | GPUTextureUsage.TEXTURE_BINDING,
+    usage: WgpuTextureUsage.COPY_DST | WgpuTextureUsage.TEXTURE_BINDING,
   });
 }
 
@@ -238,7 +243,7 @@ function rowAlignedWgpuSkinArenaTexels(texels: number): number {
 // partial row left over. `base` is row-aligned, so both are rectangular and neither needs a staging copy.
 function writeWgpuSkinArenaRegion(
   state: WgpuRenderState,
-  texture: GPUTexture,
+  texture: WgpuTexture,
   palette: Readonly<Float32Array>,
   base: number,
 ): void {

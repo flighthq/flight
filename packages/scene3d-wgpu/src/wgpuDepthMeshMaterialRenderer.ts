@@ -4,7 +4,7 @@ import type { DepthMaterial, Material } from '@flighthq/materials/contract';
 import { DepthMaterialKind } from '@flighthq/materials/contract';
 import type { MeshGeometry } from '@flighthq/meshgeometry/contract';
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
-import type { WgpuMeshMaterialRenderer, WgpuRenderState } from '@flighthq/render-wgpu/contract';
+import type { WgpuBindGroup, WgpuMeshMaterialRenderer, WgpuRenderState } from '@flighthq/render-wgpu/contract';
 import type { Scene3DRenderProxy } from '@flighthq/render/contract';
 
 import { bindWgpuDebugSurface, ensureWgpuDebugPipeline } from './wgpuDebugPrelude.ts';
@@ -38,7 +38,7 @@ export const wgpuDepthMeshMaterialRenderer: WgpuMeshMaterialRenderer = {
     );
     writeWgpuFrameUniform(state, camera, _lights);
 
-    let group: GPUBindGroup;
+    let group: WgpuBindGroup;
     if (depth === null) {
       group = bindWgpuDebugSurface(state, pipeline, FALLBACK_MATERIAL, 0, 1, 1);
     } else {

@@ -10,7 +10,7 @@ import {
   registerWgpuBitmapTextureResolver,
   registerWgpuImageTextureResolver,
 } from '@flighthq/render-wgpu/contract';
-import type { WgpuMeshMaterialRenderer, WgpuRenderState } from '@flighthq/render-wgpu/contract';
+import type { WgpuBindGroup, WgpuMeshMaterialRenderer, WgpuRenderState } from '@flighthq/render-wgpu/contract';
 import type { Scene3DRenderProxy } from '@flighthq/render/contract';
 
 import type { WgpuToonDefineKey } from './contract.scene3d-wgpu-types.ts';
@@ -54,7 +54,7 @@ export const wgpuToonMeshMaterialRenderer: WgpuMeshMaterialRenderer = {
     const pipeline = ensureWgpuToonPipeline(state, defineKeyForMaterial(toon), format);
     writeWgpuFrameUniform(state, camera, lights);
 
-    let group: GPUBindGroup;
+    let group: WgpuBindGroup;
     if (toon === null) {
       _scratch.r = 1;
       _scratch.g = 1;

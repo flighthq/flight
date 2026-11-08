@@ -12,6 +12,8 @@ import type { Spatial2DNode, Transform2DNode } from '@flighthq/node/contract';
 import type { ParticleEmitter2D } from '@flighthq/particleemitter/contract';
 import type { QuadBatch, QuadBatchRuntime } from '@flighthq/quadbatch/contract';
 import {
+  WgpuBufferUsage,
+  WgpuShaderStage,
   createWgpuTextureRenderTarget,
   getWgpuActiveRenderPass,
   getWgpuRenderStateRuntime,
@@ -19,6 +21,10 @@ import {
   suspendWgpuRenderPass,
 } from '@flighthq/render-wgpu/contract';
 import type {
+  WgpuBindGroup,
+  WgpuBuffer,
+  WgpuRenderPassEncoder,
+  WgpuRenderPipeline,
   WgpuRenderState,
   WgpuTextureRenderTarget,
   WgpuVelocityContext,
@@ -337,7 +343,7 @@ function ensureWgpuVelocityPipeline(state: WgpuRenderState): WgpuVelocityPipelin
     entries: [
       {
         binding: 0,
-        visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
+        visibility: WgpuShaderStage.VERTEX | WgpuShaderStage.FRAGMENT,
         buffer: { type: 'uniform', hasDynamicOffset: true },
       },
     ],
@@ -354,7 +360,7 @@ function ensureWgpuVelocityPipeline(state: WgpuRenderState): WgpuVelocityPipelin
 
   const uniformBuffer = device.createBuffer({
     size: UNIFORM_SLOTS * UNIFORM_STRIDE,
-    usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+    usage: WgpuBufferUsage.UNIFORM | WgpuBufferUsage.COPY_DST,
   });
   const bindGroup = device.createBindGroup({
     layout: bindGroupLayout,
@@ -387,9 +393,9 @@ function visitWgpuVelocity<Fields extends object>(
 }
 
 interface WgpuVelocityPipeline {
-  pipeline: GPURenderPipeline;
-  uniformBuffer: GPUBuffer;
-  bindGroup: GPUBindGroup;
+  pipeline: WgpuRenderPipeline;
+  uniformBuffer: WgpuBuffer;
+  bindGroup: WgpuBindGroup;
   cursor: number;
   scratch: Float32Array;
 }
@@ -434,5 +440,5 @@ const _scratchVelocity: Velocity2D = { x: 0, y: 0 };
 const _velocityPipelines = new WeakMap<WgpuRenderState, WgpuVelocityPipeline>();
 const _activeVelocityPasses = new WeakMap<
   WgpuRenderState,
-  { pass: GPURenderPassEncoder; pipeline: WgpuVelocityPipeline }
+  { pass: WgpuRenderPassEncoder; pipeline: WgpuVelocityPipeline }
 >();

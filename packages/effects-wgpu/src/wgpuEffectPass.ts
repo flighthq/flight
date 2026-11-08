@@ -1,12 +1,28 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 import {
+  WgpuBufferUsage,
+  WgpuShaderStage,
   getWgpuActiveRenderPass,
   getWgpuRenderPassViewport,
   getWgpuRenderStateRuntime,
   suspendWgpuRenderPass,
 } from '@flighthq/render-wgpu/contract';
-import type { WgpuRenderState, WgpuTextureRenderTarget } from '@flighthq/render-wgpu/contract';
+import type {
+  WgpuBindGroup,
+  WgpuBindGroupLayout,
+  WgpuBlendState,
+  WgpuBuffer,
+  WgpuDevice,
+  WgpuLoadOp,
+  WgpuRenderPassEncoder,
+  WgpuRenderPipeline,
+  WgpuRenderState,
+  WgpuSampler,
+  WgpuTextureFormat,
+  WgpuTextureRenderTarget,
+  WgpuTextureView,
+} from '@flighthq/render-wgpu/contract';
 
 import type { WgpuDualSourceEffectPipeline, WgpuEffectBlendMode, WgpuEffectPipeline } from './types.ts';
 
@@ -31,19 +47,19 @@ fn vs_main(@builtin(vertex_index) vi : u32) -> VertexOut {
 `;
 
 // Premultiplied-alpha compositing blend state, matching Gl's ONE + ONE_MINUS_SRC_ALPHA.
-const PREMUL_BLEND: GPUBlendState = {
+const PREMUL_BLEND: WgpuBlendState = {
   color: { srcFactor: 'one', dstFactor: 'one-minus-src-alpha', operation: 'add' },
   alpha: { srcFactor: 'one', dstFactor: 'one-minus-src-alpha', operation: 'add' },
 };
 
 // Opaque / replace blend: writes the effect result directly without compositing.
-const REPLACE_BLEND: GPUBlendState = {
+const REPLACE_BLEND: WgpuBlendState = {
   color: { srcFactor: 'one', dstFactor: 'zero', operation: 'add' },
   alpha: { srcFactor: 'one', dstFactor: 'zero', operation: 'add' },
 };
 
 // Destination-out erase blend: dst.rgb/a *= (1 - src.a).
-const ERASE_BLEND: GPUBlendState = {
+const ERASE_BLEND: WgpuBlendState = {
   color: { srcFactor: 'zero', dstFactor: 'one-minus-src-alpha', operation: 'add' },
   alpha: { srcFactor: 'zero', dstFactor: 'one-minus-src-alpha', operation: 'add' },
 };
@@ -51,18 +67,18 @@ const ERASE_BLEND: GPUBlendState = {
 // Per-render-state effect-pass infrastructure: ring buffer for uniforms, shared layouts,
 // and texture bind-group cache keyed by GPUTextureView.
 type WgpuEffectPassState = {
-  uniformBuffer: GPUBuffer;
+  uniformBuffer: WgpuBuffer;
   uniformData: Float32Array;
   uniformDataI32: Int32Array;
   uniformOffset: number;
   uniformStride: number;
   uniformSlots: number;
-  uniformBGLayout: GPUBindGroupLayout;
-  uniformBG: GPUBindGroup;
-  textureBGLayout: GPUBindGroupLayout;
-  textureBGs: WeakMap<GPUTextureView, GPUBindGroup>;
-  sampler: GPUSampler;
-  format: GPUTextureFormat;
+  uniformBGLayout: WgpuBindGroupLayout;
+  uniformBG: WgpuBindGroup;
+  textureBGLayout: WgpuBindGroupLayout;
+  textureBGs: WeakMap<WgpuTextureView, WgpuBindGroup>;
+  sampler: WgpuSampler;
+  format: WgpuTextureFormat;
 };
 
 const effectPassStates = new WeakMap<WgpuRenderState, WgpuEffectPassState>();
@@ -84,7 +100,7 @@ function getOrCreateEffectPassState(state: WgpuRenderState): WgpuEffectPassState
 
   const uniformBuffer = device.createBuffer({
     size: SLOTS * STRIDE,
-    usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+    usage: WgpuBufferUsage.UNIFORM | WgpuBufferUsage.COPY_DST,
   });
 
   const uniformData = new Float32Array((SLOTS * STRIDE) / 4);
@@ -95,7 +111,7 @@ function getOrCreateEffectPassState(state: WgpuRenderState): WgpuEffectPassState
     entries: [
       {
         binding: 0,
-        visibility: GPUShaderStage.FRAGMENT,
+        visibility: WgpuShaderStage.FRAGMENT,
         // minBindingSize omitted (0): the bound range size (uniformStride) is validated at
         // draw time instead of statically, so passes with structs larger than any fixed
         // minimum (color matrix 80B, convolution 244B) share this one layout.
@@ -111,8 +127,8 @@ function getOrCreateEffectPassState(state: WgpuRenderState): WgpuEffectPassState
 
   const textureBGLayout = device.createBindGroupLayout({
     entries: [
-      { binding: 0, visibility: GPUShaderStage.FRAGMENT, texture: {} },
-      { binding: 1, visibility: GPUShaderStage.FRAGMENT, sampler: {} },
+      { binding: 0, visibility: WgpuShaderStage.FRAGMENT, texture: {} },
+      { binding: 1, visibility: WgpuShaderStage.FRAGMENT, sampler: {} },
     ],
   });
 
@@ -141,7 +157,7 @@ function getOrCreateEffectPassState(state: WgpuRenderState): WgpuEffectPassState
   return fs;
 }
 
-function getOrCreateTextureBG(fs: WgpuEffectPassState, device: GPUDevice, view: GPUTextureView): GPUBindGroup {
+function getOrCreateTextureBG(fs: WgpuEffectPassState, device: WgpuDevice, view: WgpuTextureView): WgpuBindGroup {
   let bg = fs.textureBGs.get(view);
   if (bg === undefined) {
     bg = device.createBindGroup({
@@ -178,8 +194,8 @@ function writeUniformSlot(
 function beginEffectPass(
   state: WgpuRenderState,
   dest: WgpuTextureRenderTarget | null,
-  loadOp: GPULoadOp,
-): GPURenderPassEncoder {
+  loadOp: WgpuLoadOp,
+): WgpuRenderPassEncoder {
   const runtime = getWgpuRenderStateRuntime(state);
   if (runtime.commandEncoder === null) {
     throw new Error('No active command encoder — open a frame with beginWgpuRenderPass first');
@@ -212,7 +228,7 @@ function resolveEffectPipeline(
   state: WgpuRenderState,
   pipeline: Readonly<WgpuEffectPipeline>,
   dest: WgpuTextureRenderTarget | null,
-): GPURenderPipeline {
+): WgpuRenderPipeline {
   const canvasFormat = getOrCreateEffectPassState(state).format;
   const targetFormat = dest !== null ? dest.format : canvasFormat;
   if (pipeline.compileForFormat === undefined || pipeline.variants === undefined || targetFormat === canvasFormat) {
@@ -311,7 +327,7 @@ export function drawWgpuEffectPass(
   pass.end();
 }
 
-function getBlendState(blend: WgpuEffectBlendMode): GPUBlendState {
+function getBlendState(blend: WgpuEffectBlendMode): WgpuBlendState {
   if (blend === 'replace') return REPLACE_BLEND;
   if (blend === 'erase') return ERASE_BLEND;
   return PREMUL_BLEND;
@@ -322,13 +338,13 @@ function getBlendState(blend: WgpuEffectBlendMode): GPUBlendState {
  * that need to bind a custom texture (e.g., a gradient ramp) as group 2 or 3.
  */
 export function getWgpuEffectPassState(state: WgpuRenderState): {
-  uniformBG: GPUBindGroup;
-  textureBGLayout: GPUBindGroupLayout;
-  uniformBGLayout: GPUBindGroupLayout;
-  sampler: GPUSampler;
+  uniformBG: WgpuBindGroup;
+  textureBGLayout: WgpuBindGroupLayout;
+  uniformBGLayout: WgpuBindGroupLayout;
+  sampler: WgpuSampler;
   acquireSlot: () => number;
   writeSlot: (offset: number, fn: (f32: Float32Array, i32: Int32Array) => void) => void;
-  beginPass: (dest: WgpuTextureRenderTarget | null, loadOp: GPULoadOp) => GPURenderPassEncoder;
+  beginPass: (dest: WgpuTextureRenderTarget | null, loadOp: WgpuLoadOp) => WgpuRenderPassEncoder;
 } {
   const fs = getOrCreateEffectPassState(state);
   return {
@@ -355,7 +371,7 @@ export function initializeWgpuDualSourceEffectPipeline(
   const pipelineLayout = device.createPipelineLayout({
     bindGroupLayouts: [fs.uniformBGLayout, fs.textureBGLayout, fs.textureBGLayout],
   });
-  const compileForFormat = (format: GPUTextureFormat): GPURenderPipeline =>
+  const compileForFormat = (format: WgpuTextureFormat): WgpuRenderPipeline =>
     device.createRenderPipeline({
       layout: pipelineLayout,
       vertex: { module: shaderModule, entryPoint: 'vs_main' },
@@ -384,7 +400,7 @@ function initializeWgpuEffectPipeline(
   const pipelineLayout = device.createPipelineLayout({
     bindGroupLayouts: [fs.uniformBGLayout, fs.textureBGLayout],
   });
-  const compileForFormat = (format: GPUTextureFormat): GPURenderPipeline =>
+  const compileForFormat = (format: WgpuTextureFormat): WgpuRenderPipeline =>
     device.createRenderPipeline({
       layout: pipelineLayout,
       vertex: { module: shaderModule, entryPoint: 'vs_main' },

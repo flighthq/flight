@@ -18,13 +18,31 @@ import type { Material, Material3D } from '@flighthq/materials/contract';
 import { BlendMode } from '@flighthq/materials/contract';
 import type { MeshGeometry } from '@flighthq/meshgeometry/contract';
 import {
+  WgpuBufferUsage,
+  WgpuShaderStage,
+  WgpuTextureUsage,
   getWgpuBlendState,
   getWgpuRenderStateDeviceResources,
   getWgpuRenderStateRuntime,
   getWgpuSampler,
   resolveWgpuTexture,
 } from '@flighthq/render-wgpu/contract';
-import type { WgpuMeshInstanceBufferSlot, WgpuRenderState } from '@flighthq/render-wgpu/contract';
+import type {
+  WgpuBindGroup,
+  WgpuBindGroupEntry,
+  WgpuBindGroupLayout,
+  WgpuBuffer,
+  WgpuFilterMode,
+  WgpuMeshInstanceBufferSlot,
+  WgpuMipmapFilterMode,
+  WgpuPrimitiveTopology,
+  WgpuRenderState,
+  WgpuSampler,
+  WgpuShaderModule,
+  WgpuTextureFormat,
+  WgpuTextureView,
+  WgpuVertexBufferLayout,
+} from '@flighthq/render-wgpu/contract';
 import type { WgpuSkinningAdapter } from '@flighthq/render-wgpu/contract';
 import type { Scene3DRenderProxy } from '@flighthq/render/contract';
 import type { WgpuColorAdjustmentMaterialFeature } from '@flighthq/scene2d-wgpu/contract';
@@ -69,12 +87,12 @@ export function beginWgpuMeshDraw(state: WgpuRenderState, pipeline: Readonly<Wgp
 // PBR binders share this shape, so the same builder + the same rebuild check (below) cover both.
 export function buildWgpuMaterialBindGroup(
   state: WgpuRenderState,
-  layout: GPUBindGroupLayout,
-  buffer: GPUBuffer,
-  sampler: GPUSampler,
-  views: readonly GPUTextureView[],
-): GPUBindGroup {
-  const entries: GPUBindGroupEntry[] = [
+  layout: WgpuBindGroupLayout,
+  buffer: WgpuBuffer,
+  sampler: WgpuSampler,
+  views: readonly WgpuTextureView[],
+): WgpuBindGroup {
+  const entries: WgpuBindGroupEntry[] = [
     { binding: 0, resource: { buffer } },
     { binding: 1, resource: sampler },
   ];
@@ -87,13 +105,13 @@ export function buildWgpuMaterialBindGroup(
 // Texture.sampler while preserving a fixed layout for absent maps via placeholder views/default samplers.
 export function buildWgpuPerMapMaterialBindGroup(
   state: WgpuRenderState,
-  layout: GPUBindGroupLayout,
-  buffer: GPUBuffer,
-  samplers: readonly GPUSampler[],
-  views: readonly GPUTextureView[],
-): GPUBindGroup {
+  layout: WgpuBindGroupLayout,
+  buffer: WgpuBuffer,
+  samplers: readonly WgpuSampler[],
+  views: readonly WgpuTextureView[],
+): WgpuBindGroup {
   const count = views.length;
-  const entries: GPUBindGroupEntry[] = [{ binding: 0, resource: { buffer } }];
+  const entries: WgpuBindGroupEntry[] = [{ binding: 0, resource: { buffer } }];
   for (let i = 0; i < count; i++) entries.push({ binding: 1 + i, resource: samplers[i] });
   for (let i = 0; i < count; i++) entries.push({ binding: 1 + count + i, resource: views[i] });
   return state.device.createBindGroup({ layout, entries });
@@ -104,15 +122,15 @@ export function createWgpuMeshPipeline(
   options: Readonly<{
     blended?: boolean;
     doubleSided: boolean;
-    extraBindGroupLayout?: GPUBindGroupLayout;
-    format: GPUTextureFormat;
-    iblBindGroupLayout?: GPUBindGroupLayout;
-    materialBindGroupLayout: GPUBindGroupLayout;
-    module: GPUShaderModule;
-    pbrSampleBindGroupLayout?: GPUBindGroupLayout;
-    shadowBindGroupLayout?: GPUBindGroupLayout;
+    extraBindGroupLayout?: WgpuBindGroupLayout;
+    format: WgpuTextureFormat;
+    iblBindGroupLayout?: WgpuBindGroupLayout;
+    materialBindGroupLayout: WgpuBindGroupLayout;
+    module: WgpuShaderModule;
+    pbrSampleBindGroupLayout?: WgpuBindGroupLayout;
+    shadowBindGroupLayout?: WgpuBindGroupLayout;
     skinned?: boolean;
-    topology?: GPUPrimitiveTopology;
+    topology?: WgpuPrimitiveTopology;
   }>,
 ): WgpuMeshPipeline {
   const out = allocateEntity<WgpuMeshPipeline>();
@@ -191,12 +209,12 @@ function isWgpuMeshAlphaCoverage(material: Readonly<Material> | null | undefined
 // Resolves the shared Frame bind group, creating it from the shared Frame layout + Frame buffer on
 // first use. Every family pipeline declares the same group(0) layout, so this one bind group is valid
 // for all of them.
-export function ensureWgpuFrameBindGroup(state: WgpuRenderState): GPUBindGroup {
+export function ensureWgpuFrameBindGroup(state: WgpuRenderState): WgpuBindGroup {
   const scene = getWgpuScene3DRuntime(state);
   if (scene.frameBuffer === null) {
     scene.frameBuffer = state.device.createBuffer({
       size: FRAME_UNIFORM_BYTES,
-      usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+      usage: WgpuBufferUsage.UNIFORM | WgpuBufferUsage.COPY_DST,
     });
   }
   if (scene.frameBindGroup === null) {
@@ -222,14 +240,14 @@ const INSTANCE_RECORD_BYTES = INSTANCE_RECORD_FLOATS * 4;
 // (from scene.ibl) and rebuilds the bind group only when the bound irradiance view changes (present ↔
 // absent). A scene with no baked environment still renders: the dummy views are bound and the shader's
 // `enabled < 0.5` gate keeps them unsampled — mirroring GL's u_iblEnabled = 0 placeholder path.
-export function ensureWgpuIblSampleBindGroup(state: WgpuRenderState): GPUBindGroup {
+export function ensureWgpuIblSampleBindGroup(state: WgpuRenderState): WgpuBindGroup {
   const scene = getWgpuScene3DRuntime(state);
   const device = state.device;
 
   if (scene.iblUniformBuffer === null) {
     scene.iblUniformBuffer = device.createBuffer({
       size: IBL_SAMPLE_UNIFORM_BYTES,
-      usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+      usage: WgpuBufferUsage.UNIFORM | WgpuBufferUsage.COPY_DST,
     });
   }
   if (scene.iblSampler === null) {
@@ -246,13 +264,13 @@ export function ensureWgpuIblSampleBindGroup(state: WgpuRenderState): GPUBindGro
     scene.iblDummyCubeTexture = device.createTexture({
       size: [1, 1, 6],
       format: IBL_DUMMY_FORMAT,
-      usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST,
+      usage: WgpuTextureUsage.TEXTURE_BINDING | WgpuTextureUsage.COPY_DST,
     });
     scene.iblDummyCubeView = scene.iblDummyCubeTexture.createView({ dimension: 'cube' });
     scene.iblDummyLutTexture = device.createTexture({
       size: [1, 1, 1],
       format: IBL_DUMMY_FORMAT,
-      usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST,
+      usage: WgpuTextureUsage.TEXTURE_BINDING | WgpuTextureUsage.COPY_DST,
     });
     scene.iblDummyLutView = scene.iblDummyLutTexture.createView();
   }
@@ -294,16 +312,16 @@ export function ensureWgpuIblSampleBindGroup(state: WgpuRenderState): GPUBindGro
 // irradiance cube, a prefiltered specular cube, a 2D BRDF LUT, and a filtering sampler), created once per
 // state. Lit PBR pipelines pass this to createWgpuMeshPipeline; the shared bind group built by
 // ensureWgpuIblSampleBindGroup targets it, so one IBL bind group serves every lit PBR pipeline variant.
-export function ensureWgpuIblSampleLayout(state: WgpuRenderState): GPUBindGroupLayout {
+export function ensureWgpuIblSampleLayout(state: WgpuRenderState): WgpuBindGroupLayout {
   const scene = getWgpuScene3DRuntime(state);
   if (scene.iblSampleLayout === null) {
     scene.iblSampleLayout = state.device.createBindGroupLayout({
       entries: [
-        { binding: 0, visibility: GPUShaderStage.FRAGMENT, buffer: { type: 'uniform' } },
-        { binding: 1, visibility: GPUShaderStage.FRAGMENT, texture: { sampleType: 'float', viewDimension: 'cube' } },
-        { binding: 2, visibility: GPUShaderStage.FRAGMENT, texture: { sampleType: 'float', viewDimension: 'cube' } },
-        { binding: 3, visibility: GPUShaderStage.FRAGMENT, texture: { sampleType: 'float' } },
-        { binding: 4, visibility: GPUShaderStage.FRAGMENT, sampler: { type: 'filtering' } },
+        { binding: 0, visibility: WgpuShaderStage.FRAGMENT, buffer: { type: 'uniform' } },
+        { binding: 1, visibility: WgpuShaderStage.FRAGMENT, texture: { sampleType: 'float', viewDimension: 'cube' } },
+        { binding: 2, visibility: WgpuShaderStage.FRAGMENT, texture: { sampleType: 'float', viewDimension: 'cube' } },
+        { binding: 3, visibility: WgpuShaderStage.FRAGMENT, texture: { sampleType: 'float' } },
+        { binding: 4, visibility: WgpuShaderStage.FRAGMENT, sampler: { type: 'filtering' } },
       ],
     });
   }
@@ -322,7 +340,7 @@ export function ensureWgpuInstanceBuffer(
   state: WgpuRenderState,
   matrices: Readonly<Float32Array> | null | undefined,
   instanceCount: number,
-): GPUBuffer {
+): WgpuBuffer {
   const source = matrices !== null && matrices !== undefined ? matrices : identityInstance;
   const required = Math.max(1, instanceCount) * INSTANCE_RECORD_BYTES;
   const slot = acquireWgpuMeshInstanceBufferSlot(state);
@@ -332,7 +350,7 @@ export function ensureWgpuInstanceBuffer(
     const capacity = Math.max(required, slot.capacity * 2, INSTANCE_RECORD_BYTES * 64);
     slot.buffer = state.device.createBuffer({
       size: capacity,
-      usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
+      usage: WgpuBufferUsage.VERTEX | WgpuBufferUsage.COPY_DST,
     });
     slot.capacity = capacity;
   }
@@ -368,17 +386,17 @@ function acquireWgpuMeshInstanceBufferSlot(state: WgpuRenderState): WgpuMeshInst
 export function ensureWgpuMaterialBinding(
   state: WgpuRenderState,
   key: object,
-  layout: GPUBindGroupLayout,
+  layout: WgpuBindGroupLayout,
   uniformByteSize: number,
-  sampler: GPUSampler,
-  views: readonly GPUTextureView[],
+  sampler: WgpuSampler,
+  views: readonly WgpuTextureView[],
 ): WgpuMaterialBinding {
   const scene = getWgpuScene3DRuntime(state);
   let binding = scene.materialBindGroups.get(key);
   if (binding === undefined) {
     const buffer = state.device.createBuffer({
       size: uniformByteSize,
-      usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+      usage: WgpuBufferUsage.UNIFORM | WgpuBufferUsage.COPY_DST,
     });
     binding = {
       bindGroup: buildWgpuMaterialBindGroup(state, layout, buffer, sampler, views),
@@ -404,14 +422,14 @@ export function ensureWgpuMaterialBinding(
 
 // Resolves the combined PBR sample bind group. WebGPU's required maxBindGroups minimum is 4, so PBR
 // cannot afford separate shadow group(3) and IBL group(4). This layout packs both into group(3).
-export function ensureWgpuPbrSampleBindGroup(state: WgpuRenderState): GPUBindGroup {
+export function ensureWgpuPbrSampleBindGroup(state: WgpuRenderState): WgpuBindGroup {
   const scene = getWgpuScene3DRuntime(state);
   const device = state.device;
 
   if (scene.shadowUniformBuffer === null) {
     scene.shadowUniformBuffer = device.createBuffer({
       size: SHADOW_SAMPLE_UNIFORM_BYTES,
-      usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+      usage: WgpuBufferUsage.UNIFORM | WgpuBufferUsage.COPY_DST,
     });
   }
   if (scene.shadowComparisonSampler === null) {
@@ -421,7 +439,7 @@ export function ensureWgpuPbrSampleBindGroup(state: WgpuRenderState): GPUBindGro
     scene.shadowDummyTexture = device.createTexture({
       size: [1, 1, 1],
       format: SHADOW_DEPTH_FORMAT,
-      usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.RENDER_ATTACHMENT,
+      usage: WgpuTextureUsage.TEXTURE_BINDING | WgpuTextureUsage.RENDER_ATTACHMENT,
     });
     scene.shadowDummyView = scene.shadowDummyTexture.createView();
   }
@@ -429,7 +447,7 @@ export function ensureWgpuPbrSampleBindGroup(state: WgpuRenderState): GPUBindGro
   if (scene.iblUniformBuffer === null) {
     scene.iblUniformBuffer = device.createBuffer({
       size: IBL_SAMPLE_UNIFORM_BYTES,
-      usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+      usage: WgpuBufferUsage.UNIFORM | WgpuBufferUsage.COPY_DST,
     });
   }
   if (scene.iblSampler === null) {
@@ -443,13 +461,13 @@ export function ensureWgpuPbrSampleBindGroup(state: WgpuRenderState): GPUBindGro
     scene.iblDummyCubeTexture = device.createTexture({
       size: [1, 1, 6],
       format: IBL_DUMMY_FORMAT,
-      usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST,
+      usage: WgpuTextureUsage.TEXTURE_BINDING | WgpuTextureUsage.COPY_DST,
     });
     scene.iblDummyCubeView = scene.iblDummyCubeTexture.createView({ dimension: 'cube' });
     scene.iblDummyLutTexture = device.createTexture({
       size: [1, 1, 1],
       format: IBL_DUMMY_FORMAT,
-      usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST,
+      usage: WgpuTextureUsage.TEXTURE_BINDING | WgpuTextureUsage.COPY_DST,
     });
     scene.iblDummyLutView = scene.iblDummyLutTexture.createView();
   }
@@ -498,19 +516,19 @@ export function ensureWgpuPbrSampleBindGroup(state: WgpuRenderState): GPUBindGro
   return scene.pbrSampleBindGroup;
 }
 
-export function ensureWgpuPbrSampleLayout(state: WgpuRenderState): GPUBindGroupLayout {
+export function ensureWgpuPbrSampleLayout(state: WgpuRenderState): WgpuBindGroupLayout {
   const scene = getWgpuScene3DRuntime(state);
   if (scene.pbrSampleLayout === null) {
     scene.pbrSampleLayout = state.device.createBindGroupLayout({
       entries: [
-        { binding: 0, visibility: GPUShaderStage.FRAGMENT, buffer: { type: 'uniform' } },
-        { binding: 1, visibility: GPUShaderStage.FRAGMENT, texture: { sampleType: 'depth' } },
-        { binding: 2, visibility: GPUShaderStage.FRAGMENT, sampler: { type: 'comparison' } },
-        { binding: 3, visibility: GPUShaderStage.FRAGMENT, buffer: { type: 'uniform' } },
-        { binding: 4, visibility: GPUShaderStage.FRAGMENT, texture: { sampleType: 'float', viewDimension: 'cube' } },
-        { binding: 5, visibility: GPUShaderStage.FRAGMENT, texture: { sampleType: 'float', viewDimension: 'cube' } },
-        { binding: 6, visibility: GPUShaderStage.FRAGMENT, texture: { sampleType: 'float' } },
-        { binding: 7, visibility: GPUShaderStage.FRAGMENT, sampler: { type: 'filtering' } },
+        { binding: 0, visibility: WgpuShaderStage.FRAGMENT, buffer: { type: 'uniform' } },
+        { binding: 1, visibility: WgpuShaderStage.FRAGMENT, texture: { sampleType: 'depth' } },
+        { binding: 2, visibility: WgpuShaderStage.FRAGMENT, sampler: { type: 'comparison' } },
+        { binding: 3, visibility: WgpuShaderStage.FRAGMENT, buffer: { type: 'uniform' } },
+        { binding: 4, visibility: WgpuShaderStage.FRAGMENT, texture: { sampleType: 'float', viewDimension: 'cube' } },
+        { binding: 5, visibility: WgpuShaderStage.FRAGMENT, texture: { sampleType: 'float', viewDimension: 'cube' } },
+        { binding: 6, visibility: WgpuShaderStage.FRAGMENT, texture: { sampleType: 'float' } },
+        { binding: 7, visibility: WgpuShaderStage.FRAGMENT, sampler: { type: 'filtering' } },
       ],
     });
   }
@@ -520,17 +538,17 @@ export function ensureWgpuPbrSampleLayout(state: WgpuRenderState): GPUBindGroupL
 export function ensureWgpuPerMapMaterialBinding(
   state: WgpuRenderState,
   key: object,
-  layout: GPUBindGroupLayout,
+  layout: WgpuBindGroupLayout,
   uniformByteSize: number,
-  samplers: readonly GPUSampler[],
-  views: readonly GPUTextureView[],
+  samplers: readonly WgpuSampler[],
+  views: readonly WgpuTextureView[],
 ): WgpuMaterialBinding {
   const scene = getWgpuScene3DRuntime(state);
   let binding = scene.materialBindGroups.get(key);
   if (binding === undefined) {
     const buffer = state.device.createBuffer({
       size: uniformByteSize,
-      usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+      usage: WgpuBufferUsage.UNIFORM | WgpuBufferUsage.COPY_DST,
     });
     binding = {
       bindGroup: buildWgpuPerMapMaterialBindGroup(state, layout, buffer, samplers, views),
@@ -550,14 +568,14 @@ export function ensureWgpuPerMapMaterialBinding(
 // The one-time opaque-white 1x1 RGBA texture view bound to a family's map slots in the untextured
 // path, so a material bind-group layout that declares texture slots can be satisfied without uploading
 // real maps. Shared across families (cached on the scene runtime).
-export function ensureWgpuPlaceholderTextureView(state: WgpuRenderState): GPUTextureView {
+export function ensureWgpuPlaceholderTextureView(state: WgpuRenderState): WgpuTextureView {
   const scene = getWgpuScene3DRuntime(state);
   let view = scene.placeholderView;
   if (view === null) {
     const texture = state.device.createTexture({
       size: [1, 1, 1],
       format: 'rgba8unorm',
-      usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST,
+      usage: WgpuTextureUsage.TEXTURE_BINDING | WgpuTextureUsage.COPY_DST,
     });
     state.device.queue.writeTexture({ texture }, WHITE_PIXEL, { bytesPerRow: 4 }, [1, 1, 1]);
     view = texture.createView();
@@ -575,14 +593,14 @@ export function ensureWgpuScene3DLayouts(state: WgpuRenderState): WgpuScene3DLay
     const device = state.device;
     scene.frameBindGroupLayout = device.createBindGroupLayout({
       entries: [
-        { binding: 0, visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT, buffer: { type: 'uniform' } },
+        { binding: 0, visibility: WgpuShaderStage.VERTEX | WgpuShaderStage.FRAGMENT, buffer: { type: 'uniform' } },
       ],
     });
     scene.drawBindGroupLayout = device.createBindGroupLayout({
       entries: [
         {
           binding: 0,
-          visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
+          visibility: WgpuShaderStage.VERTEX | WgpuShaderStage.FRAGMENT,
           buffer: { type: 'uniform', hasDynamicOffset: true },
         },
       ],
@@ -626,14 +644,14 @@ export function ensureWgpuScene3DPipeline<T extends WgpuMeshPipeline>(
 // scene.shadow) and rebuilds the bind group only when the bound depth view changes (present ↔ absent).
 // A shadow-less scene still renders: the dummy view is bound and the shader's `enabled < 0.5` early-out
 // keeps it unsampled — mirroring GL's u_shadowEnabled = 0 path.
-export function ensureWgpuShadowSampleBindGroup(state: WgpuRenderState): GPUBindGroup {
+export function ensureWgpuShadowSampleBindGroup(state: WgpuRenderState): WgpuBindGroup {
   const scene = getWgpuScene3DRuntime(state);
   const device = state.device;
 
   if (scene.shadowUniformBuffer === null) {
     scene.shadowUniformBuffer = device.createBuffer({
       size: SHADOW_SAMPLE_UNIFORM_BYTES,
-      usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+      usage: WgpuBufferUsage.UNIFORM | WgpuBufferUsage.COPY_DST,
     });
   }
   if (scene.shadowComparisonSampler === null) {
@@ -645,7 +663,7 @@ export function ensureWgpuShadowSampleBindGroup(state: WgpuRenderState): GPUBind
     scene.shadowDummyTexture = device.createTexture({
       size: [1, 1, 1],
       format: SHADOW_DEPTH_FORMAT,
-      usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.RENDER_ATTACHMENT,
+      usage: WgpuTextureUsage.TEXTURE_BINDING | WgpuTextureUsage.RENDER_ATTACHMENT,
     });
     scene.shadowDummyView = scene.shadowDummyTexture.createView();
   }
@@ -671,14 +689,14 @@ export function ensureWgpuShadowSampleBindGroup(state: WgpuRenderState): GPUBind
 // depth texture, and a comparison sampler), created once per state. Lit pipelines pass this to
 // createWgpuMeshPipeline; the shared bind group built by ensureWgpuShadowSampleBindGroup targets it, so
 // one shadow bind group serves every lit family's pipeline (pbr today).
-export function ensureWgpuShadowSampleLayout(state: WgpuRenderState): GPUBindGroupLayout {
+export function ensureWgpuShadowSampleLayout(state: WgpuRenderState): WgpuBindGroupLayout {
   const scene = getWgpuScene3DRuntime(state);
   if (scene.shadowSampleLayout === null) {
     scene.shadowSampleLayout = state.device.createBindGroupLayout({
       entries: [
-        { binding: 0, visibility: GPUShaderStage.FRAGMENT, buffer: { type: 'uniform' } },
-        { binding: 1, visibility: GPUShaderStage.FRAGMENT, texture: { sampleType: 'depth' } },
-        { binding: 2, visibility: GPUShaderStage.FRAGMENT, sampler: { type: 'comparison' } },
+        { binding: 0, visibility: WgpuShaderStage.FRAGMENT, buffer: { type: 'uniform' } },
+        { binding: 1, visibility: WgpuShaderStage.FRAGMENT, texture: { sampleType: 'depth' } },
+        { binding: 2, visibility: WgpuShaderStage.FRAGMENT, sampler: { type: 'comparison' } },
       ],
     });
   }
@@ -725,13 +743,13 @@ function writeWgpuShadowSampleUniform(state: WgpuRenderState): WgpuScene3DShadow
 // invalidation cache tracks this one sampler accordingly (see isWgpuMaterialBindGroupRebuildNeeded).
 // Because a GPUSampler is immutable and baked into the cached bind group, this reads the descriptor at
 // bind-group creation — the same lifetime as the resolved texture views.
-export function getWgpuMaterialSampler(state: WgpuRenderState, texture: Readonly<Texture> | null): GPUSampler {
+export function getWgpuMaterialSampler(state: WgpuRenderState, texture: Readonly<Texture> | null): WgpuSampler {
   if (texture === null) return getWgpuRenderStateDeviceResources(state).linearSampler;
   const sampler = texture.sampler;
-  const minFilter: GPUFilterMode = sampler.minFilter.startsWith('nearest') ? 'nearest' : 'linear';
-  const magFilter: GPUFilterMode = sampler.magFilter.startsWith('nearest') ? 'nearest' : 'linear';
+  const minFilter: WgpuFilterMode = sampler.minFilter.startsWith('nearest') ? 'nearest' : 'linear';
+  const magFilter: WgpuFilterMode = sampler.magFilter.startsWith('nearest') ? 'nearest' : 'linear';
   const useMips = sampler.mipmaps && sampler.minFilter !== 'linear' && sampler.minFilter !== 'nearest';
-  const mipmapFilter: GPUMipmapFilterMode | undefined = useMips
+  const mipmapFilter: WgpuMipmapFilterMode | undefined = useMips
     ? sampler.minFilter.endsWith('nearest')
       ? 'nearest'
       : 'linear'
@@ -763,15 +781,15 @@ export function initializeWgpuMeshPipeline(
   options: Readonly<{
     blended?: boolean;
     doubleSided: boolean;
-    extraBindGroupLayout?: GPUBindGroupLayout;
-    format: GPUTextureFormat;
-    iblBindGroupLayout?: GPUBindGroupLayout;
-    materialBindGroupLayout: GPUBindGroupLayout;
-    module: GPUShaderModule;
-    pbrSampleBindGroupLayout?: GPUBindGroupLayout;
-    shadowBindGroupLayout?: GPUBindGroupLayout;
+    extraBindGroupLayout?: WgpuBindGroupLayout;
+    format: WgpuTextureFormat;
+    iblBindGroupLayout?: WgpuBindGroupLayout;
+    materialBindGroupLayout: WgpuBindGroupLayout;
+    module: WgpuShaderModule;
+    pbrSampleBindGroupLayout?: WgpuBindGroupLayout;
+    shadowBindGroupLayout?: WgpuBindGroupLayout;
     skinned?: boolean;
-    topology?: GPUPrimitiveTopology;
+    topology?: WgpuPrimitiveTopology;
   }>,
 ): void {
   const device = state.device;
@@ -779,7 +797,7 @@ export function initializeWgpuMeshPipeline(
   const sceneRuntime = getWgpuScene3DRuntime(state);
   const skinning = sceneRuntime.skinningAdapter as WgpuSkinningAdapter | null;
   const blendMode = options.blended ? (sceneRuntime.activeBlendMode ?? BlendMode.Normal) : null;
-  const bindGroupLayouts: GPUBindGroupLayout[] = [
+  const bindGroupLayouts: WgpuBindGroupLayout[] = [
     layouts.frameBindGroupLayout,
     options.skinned && skinning !== null ? skinning.getMeshDrawLayout(state) : layouts.drawBindGroupLayout,
     options.materialBindGroupLayout,
@@ -844,8 +862,8 @@ export function initializeWgpuMeshPipeline(
 // callers pass a reused scratch as `views`.
 export function isWgpuMaterialBindGroupRebuildNeeded(
   binding: Readonly<WgpuMaterialBinding>,
-  sampler: GPUSampler,
-  views: readonly GPUTextureView[],
+  sampler: WgpuSampler,
+  views: readonly WgpuTextureView[],
 ): boolean {
   if (binding.sampler !== sampler) return true;
   const cached = binding.views;
@@ -869,7 +887,7 @@ export function isWgpuTextureReady(texture: Readonly<Texture> | null): boolean {
 export function resolveWgpuMaterialTextureView(
   state: WgpuRenderState,
   texture: Readonly<Texture> | null,
-): GPUTextureView {
+): WgpuTextureView {
   return (
     (texture !== null ? resolveWgpuTexture(state, texture)?.view : null) ?? ensureWgpuPlaceholderTextureView(state)
   );
@@ -920,8 +938,8 @@ export function stashWgpuUvTransform(state: WgpuRenderState, texture: Readonly<T
 
 export function wgpuPerMapMaterialBindGroupNeedsRebuild(
   binding: Readonly<WgpuMaterialBinding>,
-  samplers: readonly GPUSampler[],
-  views: readonly GPUTextureView[],
+  samplers: readonly WgpuSampler[],
+  views: readonly WgpuTextureView[],
 ): boolean {
   if (samplers.length !== views.length) return true;
   const cachedSamplers = binding.samplers;
@@ -943,7 +961,7 @@ export function wgpuPerMapMaterialBindGroupNeedsRebuild(
 function overwriteIdentityCache<T extends 'samplers' | 'views'>(
   binding: WgpuMaterialBinding,
   key: T,
-  values: T extends 'samplers' ? readonly GPUSampler[] : readonly GPUTextureView[],
+  values: T extends 'samplers' ? readonly WgpuSampler[] : readonly WgpuTextureView[],
 ): void {
   const cached = binding[key] as unknown[] | undefined;
   if (cached === undefined || cached.length !== values.length) {
@@ -959,7 +977,7 @@ function overwriteIdentityCache<T extends 'samplers' | 'views'>(
 // dynamic-offset Draw bind group. Reusing the render-state ring keeps each subset draw to one ring
 // slot, not a fresh buffer; submitWgpuFrame uploads the used ring region before submit. Mirrors
 // the per-draw model/normal upload in scene-gl's drawGlMeshSubset.
-export function writeWgpuDrawUniform(state: WgpuRenderState, proxy: Readonly<Scene3DRenderProxy>): GPUBindGroup {
+export function writeWgpuDrawUniform(state: WgpuRenderState, proxy: Readonly<Scene3DRenderProxy>): WgpuBindGroup {
   const scene = getWgpuScene3DRuntime(state);
   const stateRuntime = getWgpuRenderStateRuntime(state);
 
@@ -1167,7 +1185,7 @@ export function writeWgpuFrameUniform(
   if (binding === undefined) {
     const buffer = state.device.createBuffer({
       size: FRAME_UNIFORM_BYTES,
-      usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+      usage: WgpuBufferUsage.UNIFORM | WgpuBufferUsage.COPY_DST,
     });
     const bindGroup = state.device.createBindGroup({
       layout: ensureWgpuScene3DLayouts(state).frameBindGroupLayout,
@@ -1288,11 +1306,11 @@ const scratchUvMatrix = createMatrix3();
 
 // The depth-stencil format the scene pass uses, matching render-wgpu's main-canvas / effect-target
 // depth attachment.
-const DEPTH_STENCIL_FORMAT: GPUTextureFormat = 'depth24plus-stencil8';
+const DEPTH_STENCIL_FORMAT: WgpuTextureFormat = 'depth24plus-stencil8';
 
 // The sampleable depth format the directional shadow map (and its 1x1 no-shadow dummy) use. depth32float
 // is bindable as a texture_depth_2d for the lit PCF comparison; renderWgpuScene3DShadowMap renders into it.
-export const SHADOW_DEPTH_FORMAT: GPUTextureFormat = 'depth32float';
+export const SHADOW_DEPTH_FORMAT: WgpuTextureFormat = 'depth32float';
 
 // Shared by the PBR, classic, and toon WGSL modules. The uniform's vec4 params mirror the single CPU
 // writer above: x=enabled, y=integer PCF radius, z=normalized depth bias, w=world-space normal bias.
@@ -1362,14 +1380,14 @@ const IBL_SAMPLE_UNIFORM_BYTES = 16;
 
 // The 1x1 no-IBL dummy cube + LUT format. A plain filterable 8-bit format satisfies the IBL `float`
 // texture slots (the dummies are never sampled — the IBL uniform's enabled flag gates them off).
-const IBL_DUMMY_FORMAT: GPUTextureFormat = 'rgba8unorm';
+const IBL_DUMMY_FORMAT: WgpuTextureFormat = 'rgba8unorm';
 
 // Opaque-white 1x1 RGBA pixel for the shared placeholder map texture (untextured path).
 const WHITE_PIXEL = new Uint8Array([255, 255, 255, 255]);
 
 // The canonical interleaved 48-byte PBR vertex: position(float32x3) @0, normal(float32x3) @12,
 // tangent(float32x4) @24, uv0(float32x2) @40. Matches the @location slots in the WGSL vs_main.
-const VERTEX_BUFFER_LAYOUTS: GPUVertexBufferLayout[] = [
+const VERTEX_BUFFER_LAYOUTS: WgpuVertexBufferLayout[] = [
   {
     arrayStride: 48,
     attributes: [
@@ -1384,7 +1402,7 @@ const VERTEX_BUFFER_LAYOUTS: GPUVertexBufferLayout[] = [
 // One instance record is the model matrix followed by the linear RGBA tint — 20 floats. The colour lives
 // in the same record rather than a second buffer so every instanced draw binds one buffer and the tint is
 // always defined (white when the batch carries none), which is what lets one pipeline serve both cases.
-const INSTANCE_BUFFER_LAYOUT: GPUVertexBufferLayout = {
+const INSTANCE_BUFFER_LAYOUT: WgpuVertexBufferLayout = {
   arrayStride: INSTANCE_RECORD_BYTES,
   stepMode: 'instance',
   attributes: [

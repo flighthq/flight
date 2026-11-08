@@ -2,13 +2,16 @@ import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { RenderTargetClear } from '@flighthq/render/contract';
 
 import type {
+  WgpuColor,
   WgpuRenderPass,
+  WgpuRenderPassEncoder,
   WgpuRenderPassViewport,
   WgpuRenderState,
   WgpuRenderTarget,
   WgpuSavedPassState,
   WgpuScreenRenderTarget,
   WgpuTextureRenderTarget,
+  WgpuTextureView,
 } from './contract.render-wgpu-types.ts';
 import { beginWgpuFrame, submitWgpuFrame } from './wgpuFrame.ts';
 import { getWgpuRenderStateRuntime } from './wgpuRenderState.ts';
@@ -160,7 +163,7 @@ export function suspendWgpuRenderPass(pass: WgpuRenderPass): void {
 function acquireWgpuRenderPassHandle(
   state: WgpuRenderState,
   target: WgpuRenderTarget,
-  colorView: GPUTextureView,
+  colorView: WgpuTextureView,
   saved: WgpuSavedPassState,
   ownsFrame: boolean,
 ): WgpuRenderPass {
@@ -188,7 +191,7 @@ function acquireWgpuRenderPassHandle(
 // Resolves the color view to attach: the swap-chain (or supersample) view for a screen target, the
 // target's own view for a texture target. Screen storage is sized to its surface here, which is why a
 // caller never announces a canvas resize.
-function bindWgpuRenderPassTarget(state: WgpuRenderState, target: WgpuRenderTarget): GPUTextureView {
+function bindWgpuRenderPassTarget(state: WgpuRenderState, target: WgpuRenderTarget): WgpuTextureView {
   if (isWgpuScreenRenderTarget(target)) {
     const view = bindWgpuScreenRenderTarget(state, target);
     getWgpuRenderStateRuntime(state).frameScreenTarget = target as WgpuScreenRenderTarget;
@@ -200,9 +203,9 @@ function bindWgpuRenderPassTarget(state: WgpuRenderState, target: WgpuRenderTarg
 function recordWgpuRenderPassEncoder(
   state: WgpuRenderState,
   target: Readonly<WgpuRenderTarget>,
-  colorView: GPUTextureView,
+  colorView: WgpuTextureView,
   clear: Readonly<RenderTargetClear> | undefined,
-): GPURenderPassEncoder {
+): WgpuRenderPassEncoder {
   const runtime = getWgpuRenderStateRuntime(state);
   const hasColor = clear !== undefined && (clear.color !== undefined || clear.colors !== undefined);
   const encoder = runtime.commandEncoder!.beginRenderPass({
@@ -239,7 +242,7 @@ function releaseWgpuRenderPassHandle(pass: WgpuRenderPass): void {
 // One color value broadcasts to every attachment; `colors` selects per attachment. WebGPU takes the
 // clear through the attachment's load operation, so only attachment 0 is expressible today — the
 // broadcast and the first per-attachment entry resolve to the same thing here.
-function resolveWgpuClearColor(clear: Readonly<RenderTargetClear> | undefined): GPUColor {
+function resolveWgpuClearColor(clear: Readonly<RenderTargetClear> | undefined): WgpuColor {
   const rgba = clear?.colors?.[0] ?? clear?.color;
   if (rgba === undefined) return { r: 0, g: 0, b: 0, a: 0 };
   return { r: rgba[0], g: rgba[1], b: rgba[2], a: rgba[3] };
