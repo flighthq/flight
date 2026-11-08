@@ -1,4 +1,4 @@
-import { allocateEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { EntityRaw } from '@flighthq/entity/contract';
 
 /**
@@ -134,7 +134,7 @@ function createEvent(events: SweepEvent[], x: number, y: number, isSubject: bool
 export function createMartinezPathBooleanKernel(): PathBooleanKernelRaw {
   let out: PathBooleanKernelRaw = allocateEntity<PathBooleanKernelRaw>();
   initializeMartinezPathBooleanKernel(out);
-  return out;
+  return finishEntity(out);
 }
 
 export function getPathBooleanFillRuleString(value: PathBooleanFillRule): string {

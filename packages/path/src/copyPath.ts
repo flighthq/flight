@@ -1,4 +1,4 @@
-import { allocateEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 
 import type { PathRaw } from './path.ts';
 
@@ -8,7 +8,7 @@ import type { PathRaw } from './path.ts';
 export function clonePath(source: Readonly<PathRaw>): PathRaw {
   let out: PathRaw = Object.assign(allocateEntity<PathRaw>(), { commands: [], data: [], winding: 'nonZero' });
   copyPath(out, source);
-  return out;
+  return finishEntity(out);
 }
 
 /**

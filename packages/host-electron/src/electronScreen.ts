@@ -1,4 +1,4 @@
-import { allocateEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 import type {
   HostScreenCapabilities,
@@ -112,7 +112,7 @@ export function populateElectronHostScreenQuery(out: HostScreenQueryCapability, 
 function emptyScreenInfo(): ScreenInfo {
   const out = allocateEntity<ScreenInfo>();
   initializeEmptyScreenInfo(out);
-  return out;
+  return finishEntity(out);
 }
 
 function fillScreenInfo(out: ScreenInfo, display: Readonly<ElectronDisplay>, isPrimary: boolean): ScreenInfo {

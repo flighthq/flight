@@ -130,6 +130,11 @@ const ALLOW: { rule: Rule; match: (rel: string) => boolean; why: string }[] = [
     match: (rel) => rel === 'packages/socket/src/socket.ts',
     why: 'createSocket not yet migrated to finishEntity',
   },
+  {
+    rule: 'unpaired-allocate',
+    match: (rel) => rel === 'packages/surface/src/surface.ts',
+    why: 'allocateSurface is the shared allocation step; each per-kind surface factory finishes the entity',
+  },
 ];
 
 const IGNORED_DIRS = new Set([...SCAN_SKIP_DIRECTORIES, '.claude', '.quimby', 'worktrees', 'incoming']);

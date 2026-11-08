@@ -1,4 +1,4 @@
-import { allocateEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { EntityRaw } from '@flighthq/entity/contract';
 
 /**
@@ -615,7 +615,7 @@ export function appendPathTangentArcTo(
 export function createPath(winding?: PathWinding): PathRaw {
   let out: PathRaw = Object.assign(allocateEntity<PathRaw>(), { commands: [], data: [], winding: 'nonZero' });
   initializePath(out, winding);
-  return out;
+  return finishEntity(out);
 }
 
 /**
