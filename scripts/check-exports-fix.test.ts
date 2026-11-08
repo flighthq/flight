@@ -68,6 +68,46 @@ it('accepts dependency-owned values derived into generated Rust lanes', () => {
   expect(check.output).toContain('textlayout: both files match');
 });
 
+it('accepts type lanes and values declared under src/types, and keeps type lanes through a fix', () => {
+  const fixtureRoot = mkdtempSync(join(tmpdir(), 'flight-check-exports-types-'));
+  temporaryDirectories.push(fixtureRoot);
+  const fixtureSource = join(fixtureRoot, 'packages', 'clip', 'src');
+  mkdirSync(join(fixtureSource, 'types'), { recursive: true });
+
+  writeFileSync(join(fixtureSource, 'types', 'Clip.ts'), "export const ClipKind = 'clip';\nexport interface Clip {}\n");
+  writeFileSync(join(fixtureSource, 'types', 'ClipShape.ts'), 'export interface ClipShape {}\n');
+  writeFileSync(join(fixtureSource, 'types.ts'), "export * from './types/Clip.ts';\n");
+  writeFileSync(join(fixtureSource, 'shapeTypes.ts'), "export type * from './types/ClipShape.ts';\n");
+  writeFileSync(
+    join(fixtureSource, 'contract.clip-types.ts'),
+    "export * from './types.ts';\nexport * from './shapeTypes.ts';\n",
+  );
+  writeFileSync(join(fixtureSource, 'clip.ts'), 'export function createClip() {}\n');
+  const contractPath = join(fixtureSource, 'contract.ts');
+  const contract = "export * from './contract.clip-types.ts';\nexport * from './clip.ts';\n";
+  writeFileSync(contractPath, contract);
+  const indexPath = join(fixtureSource, 'index.ts');
+  const index =
+    "export type { Clip, ClipShape } from './contract.ts';\nexport * from './clip.ts';\nexport * from './types.ts';\n";
+  writeFileSync(indexPath, index);
+
+  const check = runCheck(fixtureRoot);
+  expect(check.status, check.output).toBe(0);
+  expect(check.output).toContain('clip: both files match (2 total, 2 public, 0 protected, 0 excluded)');
+
+  writeFileSync(join(fixtureSource, 'clip.ts'), 'export function createClip() {}\nexport function destroyClip() {}\n');
+  writeFileSync(join(fixtureRoot, 'packages', 'clip', 'exports.yml'), 'protected:\n  - destroyClip\n');
+  writeFileSync(indexPath, index.replace("export * from './clip.ts';", "export { createClip } from './clip.ts';"));
+  writeFileSync(contractPath, "export * from './contract.clip-types.ts';\n");
+  const fix = runCheck(fixtureRoot, '--fix');
+  expect(fix.output).toContain('fixed: regenerated contract.ts + index.ts');
+  expect(readFileSync(contractPath, 'utf8')).toContain("export * from './contract.clip-types.ts';");
+  expect(readFileSync(indexPath, 'utf8')).toContain("export type { Clip, ClipShape } from './contract.ts';");
+
+  const recheck = runCheck(fixtureRoot);
+  expect(recheck.status, recheck.output).toBe(0);
+});
+
 function runCheck(root: string, ...args: string[]): { output: string; status: number | null } {
   // picocolors enables color whenever FORCE_COLOR is present, whatever its value, so drop it and
   // set NO_COLOR to keep the asserted output free of ANSI escapes on every terminal and CI.

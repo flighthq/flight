@@ -326,15 +326,46 @@ function getExportsByModule(srcDir: string): ModuleExports[] {
   const modules = getSourceModules(srcDir);
   const result: ModuleExports[] = [];
   for (const mod of modules) {
-    const names = getModuleValueExports(join(srcDir, mod + '.ts'));
-    if (names.length > 0)
-      result.push({ module: mod, names, publishedNames: getModulePublishedValueExports(join(srcDir, mod + '.ts')) });
+    const filePath = join(srcDir, mod + '.ts');
+    const nested = getNestedValueExports(filePath, srcDir);
+    const published = getModulePublishedValueExports(filePath);
+    const names = [
+      ...new Set([...getModuleValueExports(filePath), ...published.filter((n) => nested.has(n)), ...nested]),
+    ];
+    if (names.length > 0) result.push({ module: mod, names, publishedNames: [...new Set([...published, ...nested])] });
   }
   const ownedNames = new Set(result.flatMap(({ names }) => names));
   for (const moduleExports of result) {
     moduleExports.publishedNames = moduleExports.publishedNames.filter((name) => ownedNames.has(name));
   }
   return result;
+}
+
+// A top-level module owns the values declared in the subdirectory files it re-exports (`src/types/**` behind
+// `types.ts`), because only top-level files are lane modules: a constant declared in `types/Node2D.ts` reaches
+// the lanes through `types.ts` and nowhere else. Sibling top-level modules are scanned on their own.
+function getNestedValueExports(filePath: string, srcDir: string, visited = new Set<string>()): Set<string> {
+  const names = new Set<string>();
+  if (!existsSync(filePath) || visited.has(filePath)) return names;
+  visited.add(filePath);
+  const src = readFileSync(filePath, 'utf8');
+  for (const m of src.matchAll(/export\s*(\*|\{[^}]*\})\s*from\s*'(\.\/[^']+)'/g)) {
+    const target = resolve(dirname(filePath), m[2]);
+    if (dirname(target) === srcDir) continue;
+    const listed =
+      m[1] === '*'
+        ? null
+        : new Set(
+            m[1]
+              .slice(1, -1)
+              .split(',')
+              .map((item) => item.trim()),
+          );
+    for (const name of [...getModuleValueExports(target), ...getNestedValueExports(target, srcDir, visited)]) {
+      if (listed === null || listed.has(name)) names.add(name);
+    }
+  }
+  return names;
 }
 
 // ── Classification ───────────────────────────────────────────────────
@@ -474,6 +505,11 @@ function getExportNamesFromFile(
   }
 
   return names;
+}
+
+function getTypeOnlyExportStatements(filePath: string): string[] {
+  if (!existsSync(filePath)) return [];
+  return [...readFileSync(filePath, 'utf8').matchAll(/^export type [^;]*;/gms)].map((m) => m[0]);
 }
 
 function hasGeneratedRustProvenance(filePath: string): boolean {
@@ -709,20 +745,38 @@ for (const pkg of GOVERNED_PACKAGES) {
   const splitRuntimePublished = !hasSplitRuntimeLane || contractSourceModules?.has('runtime') === true;
   const splitTypesPublished = !hasSplitRuntimeLane || contractSourceModules?.has(contractTypesModule) === true;
   const runtimeSourceModules = hasSplitRuntimeLane && splitRuntimePublished ? getModulesFromFile(runtimePath) : null;
+  // A contract.<owner>-types.ts lane forwards its modules whether or not the runtime half is split out.
   const contractTypesSourceModules =
-    hasSplitRuntimeLane && splitTypesPublished ? getModulesFromFile(contractTypesPath) : null;
+    contractSourceModules?.has(contractTypesModule) === true || (hasSplitRuntimeLane && splitTypesPublished)
+      ? getModulesFromFile(contractTypesPath)
+      : null;
   const actualContractModules = new Set([
     ...(contractSourceModules ?? []),
     ...(contractTypesSourceModules ?? []),
     ...(runtimeSourceModules ?? []),
   ]);
-  const contractMissing = [...expectedContractModules].filter((m) => !actualContractModules.has(m)).sort();
+  const publishedContractNames = getExportNamesFromFile(contractPath, srcDir, true);
+  // A module reached through a nested lane (contract.<owner>-types.ts forwarding another lane, or a direct
+  // `./types/X.ts` re-export) is present when the lane publishes every one of its lane names.
+  const contractMissing = [...expectedContractModules]
+    .filter((m) => {
+      if (actualContractModules.has(m)) return false;
+      if (!(publishedContractNames instanceof Set)) return true;
+      const laneNames = [...classification.entries()]
+        .filter(([, c]) => c.module === m && c.lane !== 'exclude')
+        .map(([name]) => name);
+      return !laneNames.every((name) => publishedContractNames.has(name));
+    })
+    .sort();
+  // A module the lane re-exports without contributing a value is a type lane (types.ts,
+  // contract.<owner>-types.ts), not a stale module; only a missing file or one whose values all belong
+  // elsewhere is stale.
+  const ownedModules = new Set(exportsByModule.map(({ module }) => module));
   const contractExtra = [...actualContractModules]
     .filter((module) => {
       if (expectedContractModules.has(module)) return false;
-      if (!hasSplitRuntimeLane || (!contractSourceModules?.has(module) && !contractTypesSourceModules?.has(module)))
-        return true;
-      return getModuleValueExports(join(srcDir, module + '.ts')).length > 0;
+      if (!existsSync(join(srcDir, module + '.ts'))) return true;
+      return ownedModules.has(module);
     })
     .sort();
 
@@ -897,8 +951,18 @@ for (const pkg of GOVERNED_PACKAGES) {
       );
       console.log(pc.green(`   → fixed: regenerated contract.ts + runtime.ts + index.ts`));
     } else {
-      writeFileSync(contractPath, generateContract(exportsByModule, classification));
-      writeFileSync(indexPath, generateIndex(exportsByModule, classification));
+      // Type lanes carry no values for the generators to see, so they are kept as found rather than dropped.
+      const typeLaneModules = [...(contractSourceModules ?? [])].filter(
+        (module) => existsSync(join(srcDir, module + '.ts')) && !ownedModules.has(module),
+      );
+      const typeLaneExports = typeLaneModules.map((module) => `export * from './${module}.ts';\n`).join('');
+      writeFileSync(contractPath, typeLaneExports + generateContract(exportsByModule, classification));
+      const publicTypeExports = getTypeOnlyExportStatements(indexPath);
+      writeFileSync(
+        indexPath,
+        (publicTypeExports.length > 0 ? publicTypeExports.join('\n') + '\n' : '') +
+          generateIndex(exportsByModule, classification),
+      );
       console.log(pc.green(`   → fixed: regenerated contract.ts + index.ts`));
     }
   } else {
