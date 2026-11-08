@@ -1,7 +1,7 @@
 // Generated from crates/flight-statechart/src/statechart.rs by flight-compiler.
 // Rust is authoritative; run `npm run generate` after changing it.
 
-import { allocateEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 
 import { initializeStatechartInstanceFields } from './statechartInstanceFields.ts';
@@ -71,6 +71,7 @@ export function advanceStatechartInstance(instance: StatechartInstanceRaw, delta
 export function createStatechartInstance(chart: StatechartRaw): StatechartInstanceRaw {
   let out: StatechartInstanceRaw = allocateEntity<StatechartInstanceRaw>();
   initializeStatechartInstancePortable(out, chart);
+  finishEntity(out);
   return out;
 }
 

@@ -1,7 +1,7 @@
 // Generated from crates/flight-textinput/src/text_input_manager.rs by flight-compiler.
 // Rust is authoritative; run `npm run generate` after changing it.
 
-import { allocateEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { InputKeyboardData, InputTextData } from '@flighthq/input/contract';
 import type { NodeRef } from '@flighthq/node/contract';
 import { connectSignal, disconnectSignal } from '@flighthq/signals/contract';
@@ -64,6 +64,7 @@ export function createTextInputManager(): TextInputManagerRaw {
     focused: null,
   });
   initializeTextInputManager(out);
+  finishEntity(out);
   return out;
 }
 

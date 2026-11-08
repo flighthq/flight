@@ -22,6 +22,11 @@ type Rule = 'unpaired-allocate' | 'deprecated-create-entity';
 const ALLOW: { rule: Rule; match: (rel: string) => boolean; why: string }[] = [
   {
     rule: 'unpaired-allocate',
+    match: (rel) => rel === 'packages/surface/src/surface.ts',
+    why: 'allocateSurface is a deliberate partial allocator — per-kind factories call finishEntity',
+  },
+  {
+    rule: 'unpaired-allocate',
     match: (rel) => rel === 'packages/host-electron/src/electronShell.ts',
     why: 'host-electron shell capabilities not yet migrated to finishEntity',
   },

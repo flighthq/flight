@@ -1,7 +1,7 @@
 // Generated from crates/flight-signals/src/throttle.rs by flight-compiler.
 // Rust is authoritative; run `npm run generate` after changing it.
 
-import { allocateEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 
 import { connectSignal, disconnectSignal } from './slot.ts';
 import type {
@@ -308,6 +308,7 @@ export function createSignalTimerState(): SignalTimerStateRaw {
     timers: [],
   });
   initializeSignalTimerState(out);
+  finishEntity(out);
   return out;
 }
 
