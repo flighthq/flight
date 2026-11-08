@@ -648,12 +648,12 @@ pub fn read_renamed(state: &Arc<Lock<Counter>>) -> i32 {
 
 export function bump(state: Counter): number {
   const alias: Counter = state;
-  alias!.count++;
-  return state!.count;
+  alias.count++;
+  return state.count;
 }
 
 export function readRenamed(state: Counter): number {
-  return state!.count;
+  return state.count;
 }
 "#
         );
@@ -3814,7 +3814,7 @@ pub fn alias_tail(holder: &Holder, take: bool) -> i32 {
         assert!(output.contains("let seen = new Set();"), "{output}");
         assert!(output.contains("return seen.size;"), "{output}");
         // A ref alias of a shared-cell field writes through to the field.
-        assert!(output.contains("holder.shared!++;"), "{output}");
+        assert!(output.contains("holder.shared++;"), "{output}");
         assert!(!output.contains("alias++;"), "{output}");
     }
 
@@ -16215,9 +16215,9 @@ pub fn read_value() -> i32 {
             compile_typescript_with_external_alias_sources(consumer, None, &[], &externals)
                 .unwrap();
 
-        assert!(output.contains("runtime!.value = null;"), "{output}");
+        assert!(output.contains("runtime.value = null;"), "{output}");
         assert!(
-            output.contains("((runtime!.value) ?? undefined) === undefined"),
+            output.contains("((runtime.value) ?? undefined) === undefined"),
             "{output}"
         );
         assert!(
@@ -23086,8 +23086,8 @@ mod shared_ref {
         let output = compile_vitest(source, "@flighthq/example/contract").unwrap();
 
         assert!(output.contains("const value = { count: 1 };"));
-        assert!(output.contains("value!.count = 2;"));
-        assert!(output.contains("expect(value!.count).toEqual(2);"));
+        assert!(output.contains("value.count = 2;"));
+        assert!(output.contains("expect(value.count).toEqual(2);"));
         assert!(output.contains("expect(value === alias).toBe(true);"));
         assert!(output.contains("import * as flightEntity from '@flighthq/entity/contract';"));
         assert!(output.contains("const uid = flightEntity.getEntityUid(value);"));
@@ -23179,7 +23179,7 @@ pub fn replace_returned_owner_emit(owner: &Owner) {
 
         assert!(output.contains("const cell = signal.emit;"), "{output}");
         assert!(output.contains("signal.emit = 2;"), "{output}");
-        assert!(output.contains("signal.emit!++;"), "{output}");
+        assert!(output.contains("signal.emit++;"), "{output}");
         assert!(output.contains("signal.emit = 4;"), "{output}");
         assert!(
             output.contains("const cell = owner.state.signal.emit;"),
@@ -23473,14 +23473,14 @@ fn reads_nullable_fields_through_ref_guards() {
 
         assert_eq!(
             output
-                .matches("expect(sample!.previous === null).toBe(true);")
+                .matches("expect(sample.previous === null).toBe(true);")
                 .count(),
             1,
             "{output}"
         );
         assert_eq!(
             output
-                .matches("expect(createNullableSample()!.previous === null).toBe(true);")
+                .matches("expect(createNullableSample().previous === null).toBe(true);")
                 .count(),
             1,
             "{output}"

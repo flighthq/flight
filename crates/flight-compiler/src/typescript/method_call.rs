@@ -1453,6 +1453,13 @@ pub(super) fn emit_method_call(
         "unwrap" if arguments.is_empty() && expression_contains_method(&call.receiver, "lock") => {
             Ok(format!("{receiver}.value"))
         }
+        "unwrap"
+            if arguments.is_empty()
+                && (expression_contains_method(&call.receiver, "read")
+                    || expression_contains_method(&call.receiver, "write")) =>
+        {
+            Ok(receiver)
+        }
         "unsigned_abs" if arguments.is_empty() => Ok(format!("Math.abs({receiver}) >>> 0")),
         "upgrade" if arguments.is_empty() => Ok(receiver),
         "strong_count" if arguments.is_empty() => Err(compile_error(
