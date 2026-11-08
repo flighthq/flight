@@ -1487,6 +1487,36 @@ pub(super) fn emit_method_call(
             "{receiver}.map((item, index) => [item, {}[index]] as const)",
             arguments[0]
         )),
+        // Fallback lowerings for serde_json::Value and serde_json::Number methods, reached when the
+        // receiver's JSON provenance is unproven. The method names are distinctive to serde_json.
+        "as_f64" | "as_number" if arguments.is_empty() => Ok(format!(
+            "((v: unknown): number | undefined => typeof v === 'number' ? v : undefined)({receiver})"
+        )),
+        "as_i64" | "as_u64" if arguments.is_empty() => Ok(format!(
+            "((v: unknown): number | undefined => typeof v === 'number' && Number.isInteger(v) ? v : undefined)({receiver})"
+        )),
+        "as_bool" if arguments.is_empty() => Ok(format!(
+            "((v: unknown): boolean | undefined => typeof v === 'boolean' ? v : undefined)({receiver})"
+        )),
+        "as_str" if arguments.is_empty() => Ok(format!(
+            "((v: unknown): string | undefined => typeof v === 'string' ? v : undefined)({receiver})"
+        )),
+        "as_array" if arguments.is_empty() => Ok(format!(
+            "((v: unknown): unknown[] | undefined => Array.isArray(v) ? v : undefined)({receiver})"
+        )),
+        "as_object" if arguments.is_empty() => Ok(format!(
+            "((v: unknown): Record<string, unknown> | undefined => typeof v === 'object' && v !== null && !Array.isArray(v) ? v as Record<string, unknown> : undefined)({receiver})"
+        )),
+        "is_string" if arguments.is_empty() => Ok(format!("(typeof {receiver} === 'string')")),
+        "is_number" | "is_f64" | "is_i64" | "is_u64" if arguments.is_empty() => {
+            Ok(format!("(typeof {receiver} === 'number')"))
+        }
+        "is_boolean" if arguments.is_empty() => Ok(format!("(typeof {receiver} === 'boolean')")),
+        "is_array" if arguments.is_empty() => Ok(format!("Array.isArray({receiver})")),
+        "is_object" if arguments.is_empty() => Ok(format!(
+            "(typeof {receiver} === 'object' && {receiver} !== null && !Array.isArray({receiver}))"
+        )),
+        "is_null" if arguments.is_empty() => Ok(format!("({receiver} === null)")),
         _ => Err(compile_error(
             match method_delegation_targets(call, entities).first() {
                 Some(target) => format!(
