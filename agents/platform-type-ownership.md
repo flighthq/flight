@@ -21,12 +21,10 @@ This follows the existing pattern — `GlContext`, `NativeSurfaceHandle`, `HostI
 | `HostImageSource` | `CanvasImageSource` | Flight-owned alias; comment says "native ports replace this." |
 | `Host*Capability` | Platform capability interfaces | `HostGlCapability`, `HostWgpuCapability`, `HostCanvasCapability`, `HostAudioDecodeCapabilities`, `HostImageCapability`. |
 | `WgpuPresentationSurface` | `HTMLCanvasElement` (for WebGPU) | Flight-owned `{width, height}`, deliberately NOT a canvas element. |
+| `Wgpu*` (9 structural, 8 opaque, ~20 descriptors, ~15 unions, 5 constants) | `GPU*` browser types | Flight interfaces in `render-wgpu`. Methods take/return Flight types, not `Pick<GPU*>` — see [design note](#why-interfaces-not-picks). Browser objects satisfy them with no cast. |
+| `AudioBuffer` | Web Audio `AudioBuffer` | Plain record `{channels, length, sampleRate}` in `@flighthq/audio`, matching Rust `flight-audio/types.rs`. Bridge in `host-web/webAudioBuffer.ts`. |
 
 ### Needs Flight-owned types
-
-**WebGPU types** — `GPUDevice`, `GPUTexture`, `GPURenderPassEncoder`, `GPUTextureFormat`, `GPUCanvasContext`, etc. appear across ~20 type files in `packages/types/Wgpu*.ts` and `packages/render-wgpu/`. Following the `Wgpu` naming convention already used in the SDK (`WgpuDevice`, `WgpuRenderState`), these become Flight-owned structural types: `WgpuDevice`, `WgpuTexture`, `WgpuRenderPassEncoder`, etc. On web they map to the browser `GPU*` types; in Rust they map to the `wgpu` crate types; in C++ they map to Dawn types.
-
-**AudioBuffer** — `packages/audio/` uses the browser's `AudioBuffer` directly, including `new AudioBuffer({...})` construction. Flight defines its own `AudioBuffer` (same name, module-scoped — no `Flight` prefix). On web, a host bridge wraps the Web Audio `AudioBuffer`. On native, Flight owns the PCM data directly.
 
 **Canvas 2D as texture baker** — `CanvasRenderingContext2D` is used in two distinct roles:
 1. **Renderer target** (Canvas/DOM renderers) — target-native, correctly scoped, no change needed.
@@ -69,8 +67,8 @@ This extends to all platform seams:
 | Seam | Flight type | Web provider | Native provider |
 |---|---|---|---|
 | GL rendering | `GlContext` (done) | browser WebGL2 | GLES3 via host-webgl |
-| GPU rendering | `WgpuDevice` etc. (needed) | browser WebGPU | wgpu/Dawn via host-wgpu |
-| Audio data | `AudioBuffer` (needed) | bridges to Web AudioBuffer | owns PCM data |
+| GPU rendering | `WgpuDevice` etc. (done) | browser WebGPU | wgpu/Dawn via host-wgpu |
+| Audio data | `AudioBuffer` (done) | bridges to Web AudioBuffer | owns PCM data |
 | Texture baking | host rasterization capability (needed) | Canvas 2D | cairo/skia |
 | Windowing | `NativeSurfaceHandle` (done) | HTMLCanvasElement | SDL/GLFW window |
 | Image decode | `HostImageCapability` (done) | createImageBitmap | stb/platform |
@@ -81,3 +79,9 @@ This extends to all platform seams:
 No `Flight` prefix. The SDK does not use `Flight` as a general type prefix. Types are named for what they are: `GlContext`, `WgpuDevice`, `AudioBuffer`. The module boundary provides the namespace; the type name provides the identity.
 
 When a Flight type has the same name as a platform type (e.g., `AudioBuffer` vs the Web Audio `AudioBuffer`), the module scope disambiguates. The platform type appears only in host backends (target-native code). Portable code imports the Flight type from its owning package.
+
+## Why interfaces, not Picks
+
+`GlContext` uses `Pick<WebGL2RenderingContext, ...>` because GL is a single monolithic context — every method returns a primitive or void, so the picked type composes with itself. WGPU is different: `device.createBuffer()` returns `GPUBuffer`, so `Pick<GPUDevice, 'createBuffer'>` returns the full browser `GPUBuffer`, not a Flight `WgpuBuffer`. A `WgpuBuffer` obtained from a picked device then cannot be passed into a bind-group descriptor that expects `GPUBuffer`. The types don't compose through method signatures.
+
+The WGPU types are therefore Flight interfaces whose methods take and return other Flight types. Browser objects still satisfy them structurally (confirmed by a compile-time assignability test in `types/WgpuGpu.test.ts`), so no cast is needed on web — the same zero-cost property as GlContext's Pick, with correct composition across the type family.

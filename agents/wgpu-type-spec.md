@@ -115,6 +115,10 @@ WgpuMapMode:       READ
 
 ## Implementation note
 
-On web, the Flight-owned types can be `Pick<GPU*, ...>` (identical to GlContext's approach). The browser's GPU objects satisfy the structural picks directly. On native (Rust wgpu crate, C++ Dawn), the host backend wraps native objects to present the same structural interface.
+The Flight-owned types are interfaces, not `Pick<GPU*, ...>`. Unlike GlContext (where GL's monolithic context returns only primitives and void), WGPU methods return other GPU objects: `device.createBuffer()` returns `GPUBuffer`. A Pick of `GPUDevice` would return the full browser `GPUBuffer`, breaking composition when Flight code passes a `WgpuBuffer` to a descriptor expecting `GPUBuffer`. Flight interfaces whose methods take and return Flight types solve this — browser objects still satisfy them structurally with no cast, confirmed by compile-time assignability tests.
+
+Additional members beyond the original audit: `WgpuBuffer.mapState` (optional), `WgpuBuffer.usage`, `WgpuQueue.onSubmittedWorkDone` (used by tool-capture).
+
+Surface host types (`HostWgpuCapability`, `WgpuHostAcquisition`, surface attach types, `WgpuSurface`) moved from `surface` into `render-wgpu` to avoid a dependency cycle — surface sits below render-wgpu. This follows the GL pattern where surface has only a generic seam.
 
 The factory pattern (device creates objects, objects are passed to methods) means the type system is naturally decomposed. Unlike GL where one monolithic context owns everything, WGPU's types are already small and well-bounded.
