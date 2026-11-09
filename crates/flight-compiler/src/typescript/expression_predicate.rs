@@ -8,7 +8,7 @@ use super::{
     NULLABLE_OPTION_BINDING_MARKER, NULLABLE_OPTION_CALLABLE_BINDING_MARKER,
     NULLABLE_OPTION_FIELD_MARKER, NULLABLE_OPTION_RETURN_MARKER, NULLABLE_OPTIONS_MARKER,
     ORDERED_PRIMITIVE_MARKER, PRIMARY_PRECEDENCE, PROVENANCE_SEPARATOR, RENAME_MARKER,
-    TYPE_SCRIPT_NULLABLE_OPTION_RETURN_MARKER, call_fact, current_source,
+    STRUCT_FIELD_TYPE_MARKER, TYPE_SCRIPT_NULLABLE_OPTION_RETURN_MARKER, call_fact, current_source,
     direct_lock_guard_receiver, empty_vec_initializer, expression_is_known_string,
     expression_numeric_type, expression_precedence, expression_struct_identity,
     inferred_vitest_struct_literal_name, is_integer_division, is_type_script_nullable_option_field,
@@ -151,6 +151,18 @@ pub(super) fn expression_struct_name(
     entities: &HashSet<String>,
 ) -> Option<String> {
     return match expression {
+        Expr::Field(field) => {
+            let syn::Member::Named(member) = &field.member else {
+                return None;
+            };
+            let owner = expression_struct_name(&field.base, entities)?;
+            unique_marker_suffix(
+                entities,
+                &format!(
+                    "{STRUCT_FIELD_TYPE_MARKER}{owner}{PROVENANCE_SEPARATOR}{member}{PROVENANCE_SEPARATOR}"
+                ),
+            )
+        }
         Expr::Group(group) => expression_struct_name(&group.expr, entities),
         Expr::MethodCall(_) => direct_lock_guard_receiver(expression)
             .and_then(|receiver| expression_struct_name(receiver, entities)),
