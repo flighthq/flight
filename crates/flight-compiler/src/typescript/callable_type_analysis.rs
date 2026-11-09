@@ -322,6 +322,14 @@ pub(super) fn for_loop_iterates_strings(expression: &Expr, entities: &HashSet<St
     };
 }
 
+pub(super) fn for_loop_iterates_chars(expression: &Expr) -> bool {
+    return match expression {
+        Expr::MethodCall(call) => call.args.is_empty() && call.method == "chars",
+        Expr::Reference(reference) => for_loop_iterates_chars(&reference.expr),
+        _ => false,
+    };
+}
+
 // Whether an `if let` / `while let` scrutinee can be read twice with one result: a binding or a
 // field chain over one, through the identity adapters `.as_ref()`, `.as_mut()` and `.as_deref()`.
 pub(crate) fn option_scrutinee_is_rereadable(condition: &Expr) -> bool {

@@ -32680,6 +32680,46 @@ pub fn is_positive(value: Option<f64>) -> bool {
             "inlined is_some_and should not contain arrow function: {output}"
         );
     }
+
+    #[test]
+    fn char_literal_cast_to_u32_emits_code_point() {
+        let source = r#"
+pub fn letter_a() -> u32 {
+    return 'A' as u32;
+}
+"#;
+        let output = compile_typescript(source, None).unwrap();
+        assert!(
+            output.contains("65"),
+            "char literal 'A' as u32 should emit 65: {output}"
+        );
+        assert!(
+            !output.contains(">>> 0"),
+            "char literal cast should not emit >>> 0: {output}"
+        );
+    }
+
+    #[test]
+    fn char_variable_cast_to_u32_emits_code_point_at() {
+        let source = r#"
+pub fn first_code_point(text: &str) -> Option<u32> {
+    for c in text.chars() {
+        let code_point = c as u32;
+        return Some(code_point);
+    }
+    return None;
+}
+"#;
+        let output = compile_typescript(source, None).unwrap();
+        assert!(
+            output.contains("codePointAt(0)!"),
+            "char variable as u32 should emit .codePointAt(0)!: {output}"
+        );
+        assert!(
+            !output.contains(">>> 0"),
+            "char variable cast should not emit >>> 0: {output}"
+        );
+    }
 }
 
 mod receiver_provenance {

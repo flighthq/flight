@@ -8,8 +8,8 @@ use syn::{BinOp, Expr, GenericArgument, Lit, Pat, PathArguments, Stmt, Token};
 use crate::{CompileError, compile_error};
 
 use super::{
-    BindingFact, FLIGHT_ERROR_RETURNS_MARKER, RETURN_TYPE_MARKER, RETURNS_NULLABLE_MARKER,
-    RETURNS_TYPED_ARRAY_MARKER, RETURNS_U32_MARKER, SCOPE_DECLARED_MARKER,
+    BindingFact, CHAR_EXPRESSION_MARKER, FLIGHT_ERROR_RETURNS_MARKER, RETURN_TYPE_MARKER,
+    RETURNS_NULLABLE_MARKER, RETURNS_TYPED_ARRAY_MARKER, RETURNS_U32_MARKER, SCOPE_DECLARED_MARKER,
     STRING_EXPRESSION_MARKER, begin_option_if_with_rebind, begin_option_while,
     binary_is_assignment, contextual_assignment_field_context, contract_typed_array_return_value,
     data_union_pattern_test, emit_assert_comparison_statement, emit_assert_statement,
@@ -26,13 +26,14 @@ use super::{
     expression_hash_collection, expression_is_finished_entity_return,
     expression_is_nullable_option_field, expression_is_path, expression_is_path_call,
     expression_is_plain_place, expression_is_reusable, expression_is_sequence,
-    expression_is_unsigned_result, expression_path_ends_with, for_loop_iterates_strings,
-    ignored_caught_panic, indent_continuation_lines, is_primary_expression_text,
-    is_record_map_local, lexical_pattern_context, local_pattern_name, nullable_option_value,
-    option_absent_value, option_return_absent_value, option_scrutinee_is_rereadable,
-    pattern_identifiers, peel_reference_and_paren, production_std_panic_path, snake_to_lower_camel,
-    split_let_chain, statement_binds_name, std_mem_function, strip_value_position_parens,
-    swap_operand_is_place, throw_call, typed_array_literal, unique_marker_suffix, write_indent,
+    expression_is_unsigned_result, expression_path_ends_with, for_loop_iterates_chars,
+    for_loop_iterates_strings, ignored_caught_panic, indent_continuation_lines,
+    is_primary_expression_text, is_record_map_local, lexical_pattern_context, local_pattern_name,
+    nullable_option_value, option_absent_value, option_return_absent_value,
+    option_scrutinee_is_rereadable, pattern_identifiers, peel_reference_and_paren,
+    production_std_panic_path, snake_to_lower_camel, split_let_chain, statement_binds_name,
+    std_mem_function, strip_value_position_parens, swap_operand_is_place, throw_call,
+    typed_array_literal, unique_marker_suffix, write_indent,
 };
 pub(super) fn emit_value_block(
     block: &syn::Block,
@@ -641,6 +642,11 @@ pub(super) fn emit_statement(
                 if for_loop_iterates_strings(&loop_expression.expr, entities) {
                     if let Some(name) = local_pattern_name(&loop_expression.pat) {
                         loop_context.insert(format!("{STRING_EXPRESSION_MARKER}{name}"));
+                    }
+                }
+                if for_loop_iterates_chars(&loop_expression.expr) {
+                    if let Some(name) = local_pattern_name(&loop_expression.pat) {
+                        loop_context.insert(format!("{CHAR_EXPRESSION_MARKER}{name}"));
                     }
                 }
                 write_indent(out, indent);

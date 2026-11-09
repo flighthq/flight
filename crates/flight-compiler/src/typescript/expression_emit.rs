@@ -8,9 +8,9 @@ use syn::{BinOp, Expr, Pat, Stmt, Type, UnOp};
 use crate::{CompileError, compile_error};
 
 use super::{
-    BLOCK_ON_HELPER_MARKER, BindingFact, D15_FUTURE_CLOSURE_MARKER, D15_FUTURE_FIELD_MARKER,
-    DIRECT_LOCK_GUARD_BINDING_MARKER, DIRECT_LOCK_GUARD_REPLACED_MARKER, EmptyVecInitializer,
-    FLIGHT_ERROR_HELPER_MARKER, FLOAT_CONST_MARKER, ITER_MUT_ALIAS_MARKER,
+    BLOCK_ON_HELPER_MARKER, BindingFact, CHAR_EXPRESSION_MARKER, D15_FUTURE_CLOSURE_MARKER,
+    D15_FUTURE_FIELD_MARKER, DIRECT_LOCK_GUARD_BINDING_MARKER, DIRECT_LOCK_GUARD_REPLACED_MARKER,
+    EmptyVecInitializer, FLIGHT_ERROR_HELPER_MARKER, FLOAT_CONST_MARKER, ITER_MUT_ALIAS_MARKER,
     MUTABLE_SCALAR_CELL_PARAMETER_BINDING_MARKER, MUTABLE_SCALAR_REFERENCE_ARGUMENT_MARKER,
     NULLABLE_CALL_MARKER, NULLABLE_OPTION_FIELD_MARKER, NULLABLE_OPTIONS_MARKER,
     PANIC_MESSAGE_HELPER_MARKER, PROVENANCE_SEPARATOR, REFERENCE_PARAMETER_BINDING_MARKER,
@@ -887,6 +887,25 @@ pub(super) fn emit_expression_value(
         Expr::Cast(cast) if integer_literal_fits_cast(&cast.expr, &cast.ty) => {
             emit_expression(&cast.expr, entities)
         }
+        Expr::Cast(cast)
+            if matches!(&*cast.expr, Expr::Lit(lit) if matches!(&lit.lit, syn::Lit::Char(_)))
+                && (type_is_named(&cast.ty, "u8")
+                    || type_is_named(&cast.ty, "u16")
+                    || type_is_named(&cast.ty, "u32")
+                    || type_is_named(&cast.ty, "usize")
+                    || type_is_named(&cast.ty, "i8")
+                    || type_is_named(&cast.ty, "i16")
+                    || type_is_named(&cast.ty, "i32")
+                    || type_is_named(&cast.ty, "isize")) =>
+        {
+            if let Expr::Lit(lit) = &*cast.expr
+                && let syn::Lit::Char(c) = &lit.lit
+            {
+                Ok(format!("{}", c.value() as u32))
+            } else {
+                unreachable!()
+            }
+        }
         Expr::Cast(cast) if type_is_named(&cast.ty, "u8") => {
             let operand = emit_binary_operand(&cast.expr, entities, 7, false)?;
             Ok(format!("{operand} & 0xff"))
@@ -894,6 +913,18 @@ pub(super) fn emit_expression_value(
         Expr::Cast(cast) if type_is_named(&cast.ty, "u16") => {
             let operand = emit_binary_operand(&cast.expr, entities, 7, false)?;
             Ok(format!("{operand} & 0xffff"))
+        }
+        Expr::Cast(cast)
+            if (type_is_named(&cast.ty, "u32")
+                || type_is_named(&cast.ty, "usize")
+                || type_is_named(&cast.ty, "i32")
+                || type_is_named(&cast.ty, "isize"))
+                && referenced_path_identifier(&cast.expr).is_some_and(|identifier| {
+                    entities.contains(&format!("{CHAR_EXPRESSION_MARKER}{identifier}"))
+                }) =>
+        {
+            let operand = emit_expression(&cast.expr, entities)?;
+            Ok(format!("{operand}.codePointAt(0)!"))
         }
         Expr::Cast(cast) if type_is_named(&cast.ty, "u32") || type_is_named(&cast.ty, "usize") => {
             let operand = emit_binary_operand(&cast.expr, entities, 10, false)?;
