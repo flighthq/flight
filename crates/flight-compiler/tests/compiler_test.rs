@@ -33665,3 +33665,31 @@ pub fn same(a: Option<i32>, b: Option<i32>) -> bool {
         "arm bindings should not shadow the assigned tuple target: {output}"
     );
 }
+
+#[test]
+fn lowers_vec_drain_over_open_ranges_to_splice() {
+    let source = r#"
+pub fn take_all(values: &mut Vec<i32>) -> i32 {
+    let mut total = 0;
+    for value in values.drain(..) {
+        total += value;
+    }
+    let tail: Vec<i32> = values.drain(2..).collect();
+    let head: Vec<i32> = values.drain(..1).collect();
+    return total + tail.len() as i32 + head.len() as i32;
+}
+"#;
+    let output = compile_typescript(source, None).unwrap();
+    assert!(
+        output.contains("for (const value of values.splice(0, values.length)) {"),
+        "a full-range drain should empty the vector: {output}"
+    );
+    assert!(
+        output.contains("const tail: number[] = values.splice(2);"),
+        "a start-only drain should remove through the end: {output}"
+    );
+    assert!(
+        output.contains("const head: number[] = values.splice(0, 1);"),
+        "an end-only drain should remove from the start: {output}"
+    );
+}

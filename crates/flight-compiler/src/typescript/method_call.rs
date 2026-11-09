@@ -129,11 +129,26 @@ pub(super) fn emit_method_call(
             ));
         }
     }
+    // `.drain()` over an open range (`..`, `start..`, `..end`) removes through the missing bound,
+    // which `splice` expresses by omitting the delete count or starting at zero; the full range
+    // spells out the length. A closed range keeps the bounded lowering below.
     if call.method == "drain"
         && call.args.len() == 1
-        && matches!(call.args.first(), Some(Expr::Range(range)) if range.start.is_none() && range.end.is_none())
+        && let Expr::Range(range) = &call.args[0]
+        && matches!(range.limits, syn::RangeLimits::HalfOpen(_))
+        && (range.start.is_none() || range.end.is_none())
+        && !expression_is_known_string(&call.receiver, entities)
     {
-        return Ok(format!("{receiver}.splice(0, {receiver}.length)"));
+        let start = range
+            .start
+            .as_deref()
+            .map(|start| emit_expression(start, entities))
+            .transpose()?;
+        return Ok(match (start, range.end.as_deref()) {
+            (None, None) => format!("{receiver}.splice(0, {receiver}.length)"),
+            (Some(start), None) => format!("{receiver}.splice({start})"),
+            (_, Some(end)) => format!("{receiver}.splice(0, {})", emit_expression(end, entities)?),
+        });
     }
     let arguments = call
         .args
