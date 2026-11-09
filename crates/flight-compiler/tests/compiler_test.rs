@@ -18506,6 +18506,59 @@ fn parse_digit(s: &str) -> Option<u8> { Some(0) }
     }
 
     #[test]
+    fn lowers_try_operator_in_match_scrutinee() {
+        let source = r#"
+pub fn caps_style(value: Option<u32>) -> Option<&'static str> {
+    return match value? {
+        1 => Some("a"),
+        2 => Some("b"),
+        _ => None,
+    };
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(
+            output.contains("const __try0 = value;"),
+            "match scrutinee try should be pre-extracted: {output}"
+        );
+        assert!(
+            output.contains("if (__try0 === undefined)"),
+            "match scrutinee try should guard the extracted value: {output}"
+        );
+        assert!(
+            output.contains("switch (__try0)"),
+            "switch should use the extracted try temporary as its scrutinee: {output}"
+        );
+    }
+
+    #[test]
+    fn lowers_try_operator_in_option_match_scrutinee() {
+        let source = r#"
+pub fn lookup(value: Option<u32>) -> Option<&'static str> {
+    return match value? {
+        Some(1) => Some("one"),
+        _ => None,
+    };
+}
+
+fn inner(v: u32) -> Option<u32> { Some(v) }
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(
+            output.contains("__try0"),
+            "option-match scrutinee try should be pre-extracted: {output}"
+        );
+        assert!(
+            output.contains("return undefined;"),
+            "option-match scrutinee try should return on failure: {output}"
+        );
+    }
+
+    #[test]
     fn lowers_if_let_some_data_union_variant_to_combined_check() {
         let source = r#"
 pub enum DocValue {

@@ -258,8 +258,22 @@ pub(super) fn match_expression_scrutinee(
     expression: &syn::ExprMatch,
     entities: &HashSet<String>,
 ) -> Result<(String, Option<String>), CompileError> {
-    let emitted = emit_expression(&expression.expr, entities)?;
-    if is_js_identifier(&emitted) {
+    let (context, try_preamble) = if expression_contains_unconditional_try(&expression.expr) {
+        let mut preamble = String::new();
+        let ctx = emit_try_pre_extractions(&mut preamble, &expression.expr, entities, 1)?;
+        (
+            ctx,
+            if preamble.is_empty() {
+                None
+            } else {
+                Some(preamble)
+            },
+        )
+    } else {
+        (entities.clone(), None)
+    };
+    let emitted = emit_expression(&expression.expr, &context)?;
+    if try_preamble.is_none() && is_js_identifier(&emitted) {
         let collides = expression.arms.iter().any(|arm| {
             provenance_pattern_bindings(&arm.pat)
                 .iter()
@@ -269,16 +283,18 @@ pub(super) fn match_expression_scrutinee(
             return Ok((emitted, None));
         }
     }
-    return Ok((
-        "matchValue".to_string(),
-        Some(format!("  const matchValue = {emitted};\n")),
-    ));
+    let mut declaration = try_preamble.unwrap_or_default();
+    declaration.push_str(&format!("  const matchValue = {emitted};\n"));
+    return Ok(("matchValue".to_string(), Some(declaration)));
 }
 
 pub(super) fn match_needs_scrutinee_temp(
     expression: &syn::ExprMatch,
     entities: &HashSet<String>,
 ) -> Result<bool, CompileError> {
+    if expression_contains_unconditional_try(&expression.expr) {
+        return Ok(true);
+    }
     let emitted = emit_expression(&expression.expr, entities)?;
     if is_js_identifier(&emitted) {
         let collides = expression.arms.iter().any(|arm| {
@@ -299,7 +315,12 @@ pub(super) fn emit_match_scrutinee(
     entities: &HashSet<String>,
     indent: usize,
 ) -> Result<String, CompileError> {
-    let emitted = emit_expression(&expression.expr, entities)?;
+    let context = if expression_contains_unconditional_try(&expression.expr) {
+        emit_try_pre_extractions(out, &expression.expr, entities, indent)?
+    } else {
+        entities.clone()
+    };
+    let emitted = emit_expression(&expression.expr, &context)?;
     if is_js_identifier(&emitted) {
         let collides = expression.arms.iter().any(|arm| {
             provenance_pattern_bindings(&arm.pat)
@@ -840,7 +861,13 @@ pub(super) fn emit_match_statement_with_action(
     {
         return emit_match_as_if_else_with_action(out, expression, entities, indent, action);
     }
-    let (scrutinee, indent, scoped) = open_binding_switch(out, expression, entities, indent)?;
+    let switch_context = if expression_contains_unconditional_try(&expression.expr) {
+        emit_try_pre_extractions(out, &expression.expr, entities, indent)?
+    } else {
+        entities.clone()
+    };
+    let (scrutinee, indent, scoped) =
+        open_binding_switch(out, expression, &switch_context, indent)?;
     write_indent(out, indent);
     writeln!(out, "switch ({scrutinee}) {{").expect("writing to a String cannot fail");
     for arm in &expression.arms {
