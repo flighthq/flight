@@ -4805,6 +4805,31 @@ export function drainLocal(): number[] {
     }
 
     #[test]
+    fn lowers_vec_drain_full_range() {
+        let source = "pub fn take_all(values: &mut Vec<u32>) -> Vec<u32> { return values.drain(..).collect(); }\n";
+        assert_eq!(
+            compile_typescript(source, None).unwrap(),
+            "export function takeAll(values: number[]): number[] {\n  return values.splice(0, values.length);\n}\n"
+        );
+    }
+
+    #[test]
+    fn lowers_for_loop_over_vec_drain_full_range() {
+        let source = r#"
+pub fn consume(items: &mut Vec<i32>) -> i32 {
+    let mut total = 0_i32;
+    for item in items.drain(..) {
+        total += item;
+    }
+    return total;
+}
+"#;
+        let output = compile_typescript(source, None).unwrap();
+        assert!(output.contains("splice(0,"), "{output}");
+        assert!(output.contains("for (const item of"), "{output}");
+    }
+
+    #[test]
     fn lowers_vec_insert_with_rust_bounds() {
         let source = "pub fn add(values: &mut Vec<u32>, index: usize, value: u32) { values.insert(index, value); }\n";
         assert_eq!(

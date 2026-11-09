@@ -124,6 +124,12 @@ pub(super) fn emit_method_call(
             ));
         }
     }
+    if call.method == "drain"
+        && call.args.len() == 1
+        && matches!(call.args.first(), Some(Expr::Range(range)) if range.start.is_none() && range.end.is_none())
+    {
+        return Ok(format!("{receiver}.splice(0, {receiver}.length)"));
+    }
     let arguments = call
         .args
         .iter()
@@ -388,9 +394,12 @@ pub(super) fn emit_method_call(
                     "portable `.drain()` requires one half-open range with a start and end",
                 ));
             };
+            if range.start.is_none() && range.end.is_none() {
+                return Ok(format!("{receiver}.splice(0, {receiver}.length)"));
+            }
             let (Some(start), Some(end)) = (&range.start, &range.end) else {
                 return Err(compile_error(
-                    "portable `.drain()` requires one half-open range with a start and end",
+                    "portable `.drain()` requires one half-open range with a start and end, or `..` for all",
                 ));
             };
             if !matches!(range.limits, syn::RangeLimits::HalfOpen(_)) {
