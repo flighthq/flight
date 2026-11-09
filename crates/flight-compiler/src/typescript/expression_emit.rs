@@ -26,13 +26,13 @@ use super::{
     emit_entity_runtime_state_stores, emit_if_expression, emit_inclusive_comparison, emit_literal,
     emit_loop_value_expression, emit_macro_expression, emit_match_expression, emit_member,
     emit_method_call, emit_numeric_function_reference, emit_ordering_variant_comparison,
-    emit_path_segment, emit_record_map_payload, emit_type, emit_unary_expression,
-    empty_vec_initializer, entity_runtime_state_access, entity_runtime_state_is_designated,
-    explicit_default_object, export_name, expression_contains_method,
-    expression_is_associated_path, expression_is_diverging, expression_is_empty_vec,
-    expression_is_known_boolean, expression_is_none, expression_is_nullable_option_field,
-    expression_is_nullable_option_return, expression_is_path, expression_is_reusable,
-    expression_is_sequence, expression_is_shared_identity,
+    emit_path_segment, emit_record_map_payload, emit_type, emit_typed_array_vec_repeat,
+    emit_unary_expression, empty_vec_initializer, entity_runtime_state_access,
+    entity_runtime_state_is_designated, explicit_default_object, export_name,
+    expression_contains_method, expression_is_associated_path, expression_is_diverging,
+    expression_is_empty_vec, expression_is_known_boolean, expression_is_none,
+    expression_is_nullable_option_field, expression_is_nullable_option_return, expression_is_path,
+    expression_is_reusable, expression_is_sequence, expression_is_shared_identity,
     expression_is_type_script_nullable_option_field,
     expression_is_type_script_nullable_option_return, expression_kind, expression_path_ends_with,
     expression_struct_name, expression_typed_array, flight_error_throw, flight_error_value,
@@ -49,9 +49,9 @@ use super::{
     reject_unresolved_pattern_field, size_of_rust_type, snake_to_lower_camel,
     statement_macro_is_diverging, std_mem_function, strip_as_ptr, swap_operand_is_place,
     take_operand_place, turbofish_type, type_is_named, type_script_array_field,
-    typed_array_for_literal, typed_array_for_type, vitest_current_path_prefix,
-    vitest_function_path_binding_name, vitest_path_binding_name, vitest_struct_local,
-    vitest_struct_name, vitest_struct_owner, write_indent,
+    typed_array_alias_for_type, typed_array_for_literal, typed_array_for_type,
+    vitest_current_path_prefix, vitest_function_path_binding_name, vitest_path_binding_name,
+    vitest_struct_local, vitest_struct_name, vitest_struct_owner, write_indent,
 };
 // Emits `expression`. Source-directed nullable Options are normalized to the ordinary absent form
 // (`?? undefined`, preserving `false`, `0` and `""`) outside their declaration boundary. Exact
@@ -1536,6 +1536,11 @@ pub(crate) fn emit_expression_for_type(
     }
     if let Some(expression) = expression_with_contextual_parse_type(expression, rust_type) {
         return emit_expression(&expression, entities);
+    }
+    if let Some(array_type) = typed_array_alias_for_type(rust_type)
+        && let Some(value) = emit_typed_array_vec_repeat(expression, array_type, entities)?
+    {
+        return Ok(value);
     }
     return match rust_type {
         Type::Array(array_type) => match expression {

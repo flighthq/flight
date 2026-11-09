@@ -17,15 +17,16 @@ use super::{
     emit_contextual_struct_literal_expression, emit_expression, emit_expression_for_type,
     emit_hoisted_if_value_local, emit_hoisted_match_value_local, emit_hoisted_value_block_local,
     emit_let_else_local, emit_pattern, emit_record_map_construction, emit_scoped_value_block_local,
-    emit_try_pre_extractions, emit_type, empty_vec_initializer, entity_allocation,
-    exact_portable_scalar_type, expression_contains_identifier, expression_is_path_call,
-    expression_requires_string_union_const_assertion, expression_string_union_owner,
-    frozen_object_expression_name, if_expression_contains_function_exits,
-    indent_continuation_lines, inferred_fixed_buffer_type, inferred_vitest_option_initializer_type,
-    inferred_vitest_struct_literal_type, local_pattern_binding_id, local_pattern_name,
-    mutex_guard_receiver, next_try_rename, option_absent_value, option_return_absent_value,
-    pattern_is_mutable, ref_alias_receiver_capture, ref_alias_target_for_id, snake_to_lower_camel,
-    strip_value_position_parens, unique_marker_suffix, write_indent,
+    emit_try_pre_extractions, emit_type, emit_typed_array_vec_repeat, empty_vec_initializer,
+    entity_allocation, exact_portable_scalar_type, expression_contains_identifier,
+    expression_is_path_call, expression_requires_string_union_const_assertion,
+    expression_string_union_owner, frozen_object_expression_name,
+    if_expression_contains_function_exits, indent_continuation_lines, inferred_fixed_buffer_type,
+    inferred_vitest_option_initializer_type, inferred_vitest_struct_literal_type,
+    local_pattern_binding_id, local_pattern_name, mutex_guard_receiver, next_try_rename,
+    option_absent_value, option_return_absent_value, pattern_is_mutable,
+    ref_alias_receiver_capture, ref_alias_target_for_id, snake_to_lower_camel,
+    strip_value_position_parens, typed_array_vec_local, unique_marker_suffix, write_indent,
 };
 pub(crate) fn emit_local(
     out: &mut String,
@@ -361,6 +362,10 @@ pub(crate) fn emit_local_with_shadow_and_else(
             ));
         };
         entity_allocation(typescript_type, entities)?
+    } else if let Some(array_type) = typed_array_vec_local(local, entities)
+        && let Some(typed) = emit_typed_array_vec_repeat(&initializer.expr, &array_type, entities)?
+    {
+        typed
     } else if let Some(rust_type) = rust_type {
         emit_expression_for_type(&initializer.expr, rust_type, entities)?
     } else if inferred_struct_type.is_some() {

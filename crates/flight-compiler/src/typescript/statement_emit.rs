@@ -21,19 +21,21 @@ use super::{
     emit_match_statement_with_target, emit_option_binding, emit_panic_message, emit_path_segment,
     emit_receiver_preserving_optional_call, emit_resize_statement, emit_resize_with_statement,
     emit_retain_statement, emit_return_match_with_exits, emit_swap_remove_statement,
-    emit_try_pre_extractions, emit_type, emit_unreachable_message, emit_vec_extend_statement,
-    entity_allocation, entity_runtime_state_access, expression_contains_identifier,
-    expression_contains_unconditional_try, expression_hash_collection,
-    expression_is_finished_entity_return, expression_is_nullable_option_field, expression_is_path,
-    expression_is_path_call, expression_is_plain_place, expression_is_reusable,
-    expression_is_sequence, expression_is_unsigned_result, expression_path_ends_with,
-    for_loop_iterates_chars, for_loop_iterates_strings, hoist_nested_exit_match,
-    ignored_caught_panic, indent_continuation_lines, is_primary_expression_text,
-    is_record_map_local, lexical_pattern_context, local_pattern_name, nullable_option_value,
-    option_absent_value, option_return_absent_value, option_scrutinee_is_rereadable,
-    pattern_identifiers, peel_reference_and_paren, production_std_panic_path, snake_to_lower_camel,
-    split_let_chain, statement_binds_name, std_mem_function, strip_value_position_parens,
-    swap_operand_is_place, throw_call, typed_array_literal, unique_marker_suffix, write_indent,
+    emit_try_pre_extractions, emit_type, emit_typed_array_vec_repeat, emit_unreachable_message,
+    emit_vec_extend_statement, entity_allocation, entity_runtime_state_access,
+    expression_contains_identifier, expression_contains_unconditional_try,
+    expression_hash_collection, expression_is_finished_entity_return,
+    expression_is_nullable_option_field, expression_is_path, expression_is_path_call,
+    expression_is_plain_place, expression_is_reusable, expression_is_sequence,
+    expression_is_typed_array_vec_local, expression_is_unsigned_result, expression_path_ends_with,
+    for_loop_iterates_chars, for_loop_iterates_strings, function_returned_typed_array,
+    hoist_nested_exit_match, ignored_caught_panic, indent_continuation_lines,
+    is_primary_expression_text, is_record_map_local, lexical_pattern_context, local_pattern_name,
+    nullable_option_value, option_absent_value, option_return_absent_value,
+    option_scrutinee_is_rereadable, pattern_identifiers, peel_reference_and_paren,
+    production_std_panic_path, snake_to_lower_camel, split_let_chain, statement_binds_name,
+    std_mem_function, strip_value_position_parens, swap_operand_is_place, throw_call,
+    typed_array_literal, unique_marker_suffix, write_indent,
 };
 pub(super) fn emit_value_block(
     block: &syn::Block,
@@ -823,6 +825,7 @@ pub(super) fn emit_statement(
             write_indent(out, indent);
             if let Some(value) = &return_expression.expr {
                 let returned = value.as_ref();
+                let mut constructed_typed_array = false;
                 let mut value = if expression_is_finished_entity_return(value, entities) {
                     format!("finishEntity({})", emit_expression(value, entities)?)
                 } else if expression_is_path_call(value, "allocate_entity") {
@@ -841,6 +844,12 @@ pub(super) fn emit_statement(
                     )
                 {
                     typed_array_literal(peel_reference_and_paren(returned), &array_type, entities)?
+                } else if let Some(array_type) = function_returned_typed_array(entities)
+                    && let Some(typed) =
+                        emit_typed_array_vec_repeat(returned, &array_type, entities)?
+                {
+                    constructed_typed_array = true;
+                    typed
                 } else {
                     emit_expression(value, entities)?
                 };
@@ -856,7 +865,11 @@ pub(super) fn emit_statement(
                 if entities.contains(RETURNS_NULLABLE_MARKER) {
                     value = nullable_option_value(returned, value);
                 }
-                value = contract_typed_array_return_value(returned, value, entities);
+                if !constructed_typed_array
+                    && !expression_is_typed_array_vec_local(returned, entities)
+                {
+                    value = contract_typed_array_return_value(returned, value, entities);
+                }
                 let value = strip_value_position_parens(&value);
                 let value = indent_continuation_lines(&value, indent);
                 writeln!(out, "return {value};").expect("writing to a String cannot fail");

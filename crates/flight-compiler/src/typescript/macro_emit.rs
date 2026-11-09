@@ -3,14 +3,17 @@ use std::fmt::Write;
 
 use syn::parse::Parser;
 use syn::punctuated::Punctuated;
-use syn::{BinOp, Expr, Lit, Pat, Token};
+use syn::visit::Visit;
+use syn::{BinOp, Expr, Lit, Pat, Stmt, Token, Type};
 
 use crate::{CompileError, compile_error};
 
 use super::{
-    BINDING_MARKER, DataUnionPatternTest, NULLABLE_OPTIONS_MARKER, data_union_pattern_test,
+    BINDING_MARKER, DataUnionPatternTest, NULLABLE_OPTIONS_MARKER, RETURN_TYPE_MARKER,
+    RETURNS_CONTRACT_TYPED_ARRAY_MARKER, TYPED_ARRAY_VEC_LOCAL_MARKER, data_union_pattern_test,
     emit_expression, emit_literal, emit_path_segment, expression_is_reusable, js_string_literal,
-    parse_matches_arguments, parse_vec_repeat, snake_to_lower_camel, write_indent,
+    local_pattern_name, parse_matches_arguments, parse_vec_repeat, snake_to_lower_camel,
+    unique_marker_suffix, write_indent,
 };
 
 pub(crate) fn emit_format_template(
@@ -805,3 +808,270 @@ pub(super) fn emit_concat_macro(
     }
     return Ok(parts.join(" + "));
 }
+
+// `vec![value; length]`, optionally converted with `.into_boxed_slice()`, constructed directly as
+// `array_type`. Typed arrays are zero-initialized, so a zero `value` needs no fill.
+pub(super) fn emit_typed_array_vec_repeat(
+    expression: &Expr,
+    array_type: &str,
+    entities: &HashSet<String>,
+) -> Result<Option<String>, CompileError> {
+    let Some((value, length)) = typed_array_vec_repeat_operands(expression) else {
+        return Ok(None);
+    };
+    let length = emit_expression(&length, entities)?;
+    if expression_is_zero_literal(&value) {
+        return Ok(Some(format!("new {array_type}({length})")));
+    }
+    let value = emit_expression(&value, entities)?;
+    return Ok(Some(format!("new {array_type}({length}).fill({value})")));
+}
+
+// Marks each unannotated `let name = vec![value; length]` the function returns as `array_type`
+// (directly or through `.into_boxed_slice()`). A binding that is grown, rebound, or declared more
+// than once keeps the plain array lowering, since a typed array has a fixed length.
+pub(super) fn insert_typed_array_vec_locals(
+    block: &syn::Block,
+    array_type: &str,
+    context: &mut HashSet<String>,
+) {
+    let mut collector = TypedArrayVecLocalCollector::default();
+    collector.visit_block(block);
+    if let Some(Stmt::Expr(tail, None)) = block.stmts.last() {
+        collector.note_returned(tail);
+    }
+    for name in collector.candidates {
+        let declared_once = collector
+            .declarations
+            .iter()
+            .filter(|n| **n == name)
+            .count()
+            == 1;
+        if declared_once && collector.returned.contains(&name) && !collector.grown.contains(&name) {
+            context.insert(format!("{TYPED_ARRAY_VEC_LOCAL_MARKER}{name}={array_type}"));
+        }
+    }
+}
+
+// The typed array the enclosing function returns: a contract typed-array return, or a Rust return
+// type naming a typed-array alias.
+pub(super) fn function_returned_typed_array(entities: &HashSet<String>) -> Option<String> {
+    if let Some(array_type) = unique_marker_suffix(entities, RETURNS_CONTRACT_TYPED_ARRAY_MARKER) {
+        return Some(array_type);
+    }
+    return unique_marker_suffix(entities, RETURN_TYPE_MARKER)
+        .filter(|return_type| TYPED_ARRAY_ALIASES.contains(&return_type.as_str()));
+}
+
+// Whether `expression` (a returned value) is a binding marked to construct a typed array.
+pub(super) fn expression_is_typed_array_vec_local(
+    expression: &Expr,
+    entities: &HashSet<String>,
+) -> bool {
+    let Some(name) = returned_binding_name(expression) else {
+        return false;
+    };
+    let prefix = format!("{TYPED_ARRAY_VEC_LOCAL_MARKER}{name}=");
+    return entities.iter().any(|marker| marker.starts_with(&prefix));
+}
+
+// The typed array an unannotated `let` binding was marked to construct.
+pub(super) fn typed_array_vec_local(
+    local: &syn::Local,
+    entities: &HashSet<String>,
+) -> Option<String> {
+    if matches!(local.pat, Pat::Type(_)) {
+        return None;
+    }
+    let name = local_pattern_name(&local.pat)?;
+    let prefix = format!("{TYPED_ARRAY_VEC_LOCAL_MARKER}{name}=");
+    return entities
+        .iter()
+        .find_map(|marker| marker.strip_prefix(&prefix).map(str::to_string));
+}
+
+// The TypeScript typed array a Rust type names through its `flight_entity` alias (`Uint8Array`,
+// `Box<Float32Array>`, `&mut Uint16Array`). Each alias is `[T]`, which TypeScript holds as the typed
+// array itself, so `Box` around one is transparent.
+pub(super) fn typed_array_alias_for_type(rust_type: &Type) -> Option<&'static str> {
+    return match rust_type {
+        Type::Paren(paren) => typed_array_alias_for_type(&paren.elem),
+        Type::Group(group) => typed_array_alias_for_type(&group.elem),
+        Type::Reference(reference) => typed_array_alias_for_type(&reference.elem),
+        Type::Path(path) if path.qself.is_none() => {
+            let segment = path.path.segments.last()?;
+            if segment.ident == "Box" {
+                let syn::PathArguments::AngleBracketed(arguments) = &segment.arguments else {
+                    return None;
+                };
+                let [syn::GenericArgument::Type(inner)] =
+                    arguments.args.iter().collect::<Vec<_>>()[..]
+                else {
+                    return None;
+                };
+                return typed_array_alias_for_type(inner);
+            }
+            if !segment.arguments.is_empty() {
+                return None;
+            }
+            TYPED_ARRAY_ALIASES
+                .iter()
+                .find(|alias| segment.ident == **alias)
+                .copied()
+        }
+        _ => None,
+    };
+}
+
+#[derive(Default)]
+struct TypedArrayVecLocalCollector {
+    candidates: Vec<String>,
+    declarations: Vec<String>,
+    grown: HashSet<String>,
+    returned: HashSet<String>,
+}
+
+impl TypedArrayVecLocalCollector {
+    fn note_returned(&mut self, expression: &Expr) {
+        if let Some(name) = returned_binding_name(expression) {
+            self.returned.insert(name);
+        }
+    }
+}
+
+impl<'ast> Visit<'ast> for TypedArrayVecLocalCollector {
+    fn visit_local(&mut self, local: &'ast syn::Local) {
+        if let Some(name) = local_pattern_name(&local.pat) {
+            self.declarations.push(name.clone());
+            if !matches!(local.pat, Pat::Type(_))
+                && let Some(initializer) = &local.init
+                && initializer.diverge.is_none()
+                && typed_array_vec_repeat_operands(&initializer.expr).is_some()
+            {
+                self.candidates.push(name);
+            }
+        }
+        syn::visit::visit_local(self, local);
+    }
+
+    fn visit_expr_assign(&mut self, assign: &'ast syn::ExprAssign) {
+        if let Expr::Path(path) = assign.left.as_ref()
+            && let Some(identifier) = path.path.get_ident()
+        {
+            self.grown.insert(identifier.to_string());
+        }
+        syn::visit::visit_expr_assign(self, assign);
+    }
+
+    fn visit_expr_method_call(&mut self, call: &'ast syn::ExprMethodCall) {
+        if GROWING_VEC_METHODS.contains(&call.method.to_string().as_str())
+            && let Expr::Path(path) = peel_vec_receiver(&call.receiver)
+            && let Some(identifier) = path.path.get_ident()
+        {
+            self.grown.insert(identifier.to_string());
+        }
+        syn::visit::visit_expr_method_call(self, call);
+    }
+
+    fn visit_expr_return(&mut self, return_expression: &'ast syn::ExprReturn) {
+        if let Some(value) = &return_expression.expr {
+            self.note_returned(value);
+        }
+        syn::visit::visit_expr_return(self, return_expression);
+    }
+
+    // A closure's `return` leaves the closure, not the function.
+    fn visit_expr_closure(&mut self, closure: &'ast syn::ExprClosure) {
+        let returned = self.returned.clone();
+        syn::visit::visit_expr_closure(self, closure);
+        self.returned = returned;
+    }
+}
+
+fn expression_is_zero_literal(expression: &Expr) -> bool {
+    return match expression {
+        Expr::Paren(paren) => expression_is_zero_literal(&paren.expr),
+        Expr::Lit(literal) => match &literal.lit {
+            Lit::Int(int) => int.base10_parse::<u128>().is_ok_and(|value| value == 0),
+            Lit::Float(float) => float.base10_parse::<f64>().is_ok_and(|value| value == 0.0),
+            _ => false,
+        },
+        _ => false,
+    };
+}
+
+fn peel_vec_receiver(expression: &Expr) -> &Expr {
+    return match expression {
+        Expr::Paren(paren) => peel_vec_receiver(&paren.expr),
+        Expr::Group(group) => peel_vec_receiver(&group.expr),
+        Expr::Reference(reference) => peel_vec_receiver(&reference.expr),
+        Expr::Unary(unary) if matches!(unary.op, syn::UnOp::Deref(_)) => {
+            peel_vec_receiver(&unary.expr)
+        }
+        _ => expression,
+    };
+}
+
+fn returned_binding_name(expression: &Expr) -> Option<String> {
+    return match peel_boxed_slice(expression) {
+        Expr::Path(path) => path.path.get_ident().map(ToString::to_string),
+        _ => None,
+    };
+}
+
+// `expression` without a trailing `.into_boxed_slice()`, which is the identity on a typed array.
+fn peel_boxed_slice(expression: &Expr) -> &Expr {
+    return match expression {
+        Expr::Paren(paren) => peel_boxed_slice(&paren.expr),
+        Expr::Group(group) => peel_boxed_slice(&group.expr),
+        Expr::MethodCall(call) if call.method == "into_boxed_slice" && call.args.is_empty() => {
+            peel_boxed_slice(&call.receiver)
+        }
+        _ => expression,
+    };
+}
+
+fn typed_array_vec_repeat_operands(expression: &Expr) -> Option<(Expr, Expr)> {
+    let Expr::Macro(rust_macro) = peel_boxed_slice(expression) else {
+        return None;
+    };
+    if rust_macro.mac.path.segments.last()?.ident != "vec" {
+        return None;
+    }
+    return parse_vec_repeat(&rust_macro.mac).ok();
+}
+
+const GROWING_VEC_METHODS: &[&str] = &[
+    "append",
+    "clear",
+    "dedup",
+    "dedup_by",
+    "dedup_by_key",
+    "drain",
+    "extend",
+    "extend_from_slice",
+    "insert",
+    "pop",
+    "push",
+    "remove",
+    "reserve",
+    "resize",
+    "resize_with",
+    "retain",
+    "retain_mut",
+    "shrink_to_fit",
+    "split_off",
+    "swap_remove",
+    "truncate",
+];
+
+const TYPED_ARRAY_ALIASES: &[&str] = &[
+    "Float32Array",
+    "Float64Array",
+    "Int8Array",
+    "Int16Array",
+    "Int32Array",
+    "Uint8Array",
+    "Uint16Array",
+    "Uint32Array",
+];

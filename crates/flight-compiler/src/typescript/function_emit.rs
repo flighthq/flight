@@ -22,9 +22,10 @@ use super::{
     emit_type, emit_type_parameters, export_name, expression_contains_identifier,
     expression_is_path, flight_error_result_aliases, flight_error_result_type,
     flight_error_return_positions_are_proven, float32_array_parameter, function_expression_context,
-    function_returns_uint8_array, indent_continuation_lines, insert_program_type_path_context,
-    insert_std_float_consts_context, insert_std_mem_import_context, insert_type_parameter_context,
-    insert_type_path_context, insert_typed_array_constant_context, is_public,
+    function_returned_typed_array, function_returns_uint8_array, indent_continuation_lines,
+    insert_program_type_path_context, insert_std_float_consts_context,
+    insert_std_mem_import_context, insert_type_parameter_context, insert_type_path_context,
+    insert_typed_array_constant_context, insert_typed_array_vec_locals, is_public,
     leading_mutable_entity_parameter, lexical_binding, local_pattern_binding_id,
     local_pattern_name, named_type, nullable_type, option_inner_type, owner_marker,
     parameter_is_reassignable, reject_await_outside_async, snake_to_lower_camel,
@@ -257,6 +258,9 @@ pub(super) fn emit_function(
     {
         function_context.insert(format!("{RETURNS_TYPED_ARRAY_MARKER}{array_type}"));
     }
+    if let Some(array_type) = function_returned_typed_array(&function_context) {
+        insert_typed_array_vec_locals(&function.block, &array_type, &mut function_context);
+    }
     emit_function_block(out, &function.block.stmts, &function_context, 1)?;
     out.push_str("}\n");
     return Ok(());
@@ -348,6 +352,9 @@ pub(crate) fn emit_local_function(
         && let Some(array_type) = typed_array_for_type(&array.elem)
     {
         function_context.insert(format!("{RETURNS_TYPED_ARRAY_MARKER}{array_type}"));
+    }
+    if let Some(array_type) = function_returned_typed_array(&function_context) {
+        insert_typed_array_vec_locals(&function.block, &array_type, &mut function_context);
     }
     emit_function_block(out, &function.block.stmts, &function_context, indent + 1)?;
     write_indent(out, indent);

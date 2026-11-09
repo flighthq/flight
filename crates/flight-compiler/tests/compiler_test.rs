@@ -33971,3 +33971,130 @@ pub fn same(applied: Option<&Option<u32>>, value: &Option<u32>) -> bool {
         "`Option<Option<T>>` cannot distinguish its levels at runtime: {error}"
     );
 }
+
+#[test]
+fn constructs_zeroed_typed_arrays_from_vec_repeats_with_typed_array_destinations() {
+    let source = r#"
+use flight_entity::{Float32Array, Int8Array, Uint16Array, Uint32Array, Uint8Array};
+
+pub fn bytes(n: usize) -> Box<Uint8Array> {
+    return vec![0u8; n].into_boxed_slice();
+}
+
+pub fn signed(n: usize) -> Box<Int8Array> {
+    return vec![0i8; n].into_boxed_slice();
+}
+
+pub fn halves(n: usize) -> Box<Uint16Array> {
+    return vec![0u16; n].into_boxed_slice();
+}
+
+pub fn words(n: usize) -> Box<Uint32Array> {
+    return vec![7u32; n].into_boxed_slice();
+}
+
+pub fn first(n: usize) -> f32 {
+    let values: Box<Float32Array> = vec![0.0f32; n].into_boxed_slice();
+    return values[0];
+}
+"#;
+    let output = compile_typescript(source, Some("@flighthq/entity/contract")).unwrap();
+    assert!(
+        output.contains(
+            "export function bytes(n: number): Uint8Array {\n  return new Uint8Array(n);\n}"
+        ),
+        "a zero `vec!` returned as `Box<Uint8Array>` is a zeroed Uint8Array: {output}"
+    );
+    assert!(
+        output.contains("  return new Int8Array(n);\n"),
+        "i8 lowers to Int8Array: {output}"
+    );
+    assert!(
+        output.contains("  return new Uint16Array(n);\n"),
+        "u16 lowers to Uint16Array: {output}"
+    );
+    assert!(
+        output.contains("  return new Uint32Array(n).fill(7);\n"),
+        "a nonzero repeat value still fills: {output}"
+    );
+    assert!(
+        output.contains("  const values: Float32Array = new Float32Array(n);\n"),
+        "an annotated typed-array local constructs the typed array once: {output}"
+    );
+}
+
+#[test]
+fn constructs_returned_vec_repeat_locals_as_typed_arrays() {
+    let source = r#"
+use flight_entity::Uint8Array;
+
+pub fn encode(n: usize) -> Box<Uint8Array> {
+    let mut result = vec![0u8; n];
+    fill(&mut result);
+    return result.into_boxed_slice();
+}
+
+pub fn grown(n: usize) -> Box<Uint8Array> {
+    let mut result = vec![0u8; n];
+    result.push(1);
+    return result.into_boxed_slice();
+}
+
+pub fn plain(n: usize) -> Vec<u8> {
+    let out = vec![0u8; n];
+    return out;
+}
+
+fn fill(out: &mut Uint8Array) {
+    out[0] = 1;
+}
+"#;
+    let output = compile_typescript(source, Some("@flighthq/entity/contract")).unwrap();
+    assert!(
+        output.contains("export function encode(n: number): Uint8Array {\n  let result = new Uint8Array(n);\n  fill(result);\n  return result;\n}"),
+        "a local returned through `into_boxed_slice()` is constructed as the typed array: {output}"
+    );
+    assert!(
+        output.contains(
+            "export function grown(n: number): Uint8Array {\n  let result = new Array(n).fill(0);\n"
+        ),
+        "a local that grows keeps the resizable array: {output}"
+    );
+    assert!(
+        output.contains(
+            "export function plain(n: number): number[] {\n  const out = new Array(n).fill(0);\n"
+        ),
+        "a `Vec<u8>` destination stays a plain array: {output}"
+    );
+}
+
+#[test]
+fn resolves_box_through_a_sibling_super_glob_reexport() {
+    let source = r#"
+use flight_entity::Uint8Array;
+
+pub fn bytes(n: usize) -> Box<Uint8Array> {
+    return vec![0u8; n].into_boxed_slice();
+}
+"#;
+    let output = compile_typescript_with_visibility_sources(
+        ModuleSource {
+            path: "crates/flight-bytes/src/bytes.rs",
+            source,
+        },
+        Some("@flighthq/entity/contract"),
+        &[],
+        &[],
+        &[ModuleSource {
+            path: "crates/flight-bytes/src/contract.rs",
+            source: "pub use super::bytes::*;\n",
+        }],
+    )
+    .unwrap();
+    assert!(
+        output.contains(
+            "export function bytes(n: number): Uint8Array {\n  return new Uint8Array(n);\n}"
+        ),
+        "a `super::` glob in a re-exporting sibling is crate-relative and leaves `Box` provable: {output}"
+    );
+}

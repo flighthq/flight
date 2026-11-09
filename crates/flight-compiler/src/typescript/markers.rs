@@ -336,6 +336,9 @@ pub(super) const RETURNS_NULLABLE_MARKER: &str = "@returns-nullable";
 // returned array literals construct that typed array.
 pub(super) const RETURNS_TYPED_ARRAY_MARKER: &str = "@returns-typed-array:";
 pub(crate) const RETURNS_CONTRACT_TYPED_ARRAY_MARKER: &str = "@returns-contract-typed-array:";
+// `{marker}{rust_name}={TypedArray}`: an unannotated `let name = vec![value; length]` whose binding
+// the function returns as that typed array and never grows, so it is constructed as the typed array.
+pub(super) const TYPED_ARRAY_VEC_LOCAL_MARKER: &str = "@typed-array-vec-local:";
 
 pub(super) const PROVENANCE_SEPARATOR: char = '\u{1f}';
 
