@@ -29825,6 +29825,89 @@ pub fn bracket(items: &mut Vec<i32>, callback: fn(&mut Vec<i32>) -> i32) -> i32 
 }
 
 #[test]
+fn lowers_match_catch_unwind_with_return() {
+    let source = r#"
+use std::panic::{AssertUnwindSafe, catch_unwind};
+
+pub fn safe_parse(codec: fn(&str) -> i32, text: &str) -> i32 {
+    return match catch_unwind(AssertUnwindSafe(|| codec(text))) {
+        Ok(value) => value,
+        Err(_) => -1,
+    };
+}
+"#;
+    let output = compile_typescript(source, None).unwrap();
+    assert!(output.contains("try {"), "{output}");
+    assert!(output.contains("} catch"), "{output}");
+    assert!(output.contains("return -1"), "{output}");
+    assert!(!output.contains("catchUnwind"), "{output}");
+    assert!(!output.contains("AssertUnwindSafe"), "{output}");
+}
+
+#[test]
+fn lowers_match_catch_unwind_as_statement() {
+    let source = r#"
+use std::panic::{AssertUnwindSafe, catch_unwind};
+
+pub fn safe_run(action: fn() -> i32) -> i32 {
+    match catch_unwind(AssertUnwindSafe(|| action())) {
+        Ok(result) => {
+            return result;
+        }
+        Err(payload) => {
+            return -1;
+        }
+    }
+}
+"#;
+    let output = compile_typescript(source, None).unwrap();
+    assert!(output.contains("try {"), "{output}");
+    assert!(output.contains("} catch"), "{output}");
+    assert!(output.contains("return result"), "{output}");
+    assert!(output.contains("return -1"), "{output}");
+    assert!(!output.contains("catchUnwind"), "{output}");
+}
+
+#[test]
+fn lowers_catch_unwind_unwrap_or_in_return() {
+    let source = r#"
+use std::panic::{AssertUnwindSafe, catch_unwind};
+
+pub fn safe_detect(detect: fn(&str) -> bool, text: &str) -> bool {
+    return catch_unwind(AssertUnwindSafe(|| detect(text))).unwrap_or(false);
+}
+"#;
+    let output = compile_typescript(source, None).unwrap();
+    assert!(output.contains("try {"), "{output}");
+    assert!(output.contains("} catch"), "{output}");
+    assert!(output.contains("return false"), "{output}");
+    assert!(!output.contains("catchUnwind"), "{output}");
+    assert!(!output.contains("unwrapOr"), "{output}");
+}
+
+#[test]
+fn lowers_catch_unwind_unwrap_or_in_if_condition() {
+    let source = r#"
+use std::panic::{AssertUnwindSafe, catch_unwind};
+
+pub fn detect_format(detect: fn(&str) -> bool, text: &str) -> i32 {
+    if catch_unwind(AssertUnwindSafe(|| detect(text))).unwrap_or(false) {
+        return 1;
+    }
+    return 0;
+}
+"#;
+    let output = compile_typescript(source, None).unwrap();
+    assert!(output.contains("try {"), "{output}");
+    assert!(output.contains("} catch"), "{output}");
+    assert!(output.contains("let __caught"), "{output}");
+    assert!(output.contains("if (__caught)"), "{output}");
+    assert!(output.contains("return 1"), "{output}");
+    assert!(!output.contains("catchUnwind"), "{output}");
+    assert!(!output.contains("unwrapOr"), "{output}");
+}
+
+#[test]
 fn parse_ok_returns_undefined_not_null() {
     let source = r#"
 pub fn try_parse(s: &str) -> Option<f32> {

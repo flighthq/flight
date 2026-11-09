@@ -303,6 +303,100 @@ pub(super) fn production_std_panic_path(expression: &Expr, name: &str) -> bool {
             || segments == ["panic", name]);
 }
 
+pub(super) struct CaughtPanicMatch<'a> {
+    pub closure: &'a syn::ExprClosure,
+    pub ok_binding: &'a Pat,
+    pub ok_body: &'a Expr,
+    pub err_binding: &'a Pat,
+    pub err_body: &'a Expr,
+    pub returning: bool,
+}
+
+pub(super) fn caught_panic_match_statement(statement: &Stmt) -> Option<CaughtPanicMatch<'_>> {
+    let matched = match statement {
+        Stmt::Expr(Expr::Match(matched), _) => (matched, false),
+        Stmt::Expr(Expr::Return(returned), _) => {
+            let Some(Expr::Match(matched)) = returned.expr.as_deref() else {
+                return None;
+            };
+            (matched, true)
+        }
+        _ => return None,
+    };
+    let (matched, returning) = matched;
+    let closure = production_caught_panic_closure(matched.expr.as_ref())?;
+    if matched.arms.len() != 2 {
+        return None;
+    }
+    let ok_arm = &matched.arms[0];
+    let err_arm = &matched.arms[1];
+    let Pat::TupleStruct(ok_variant) = &ok_arm.pat else {
+        return None;
+    };
+    if !ok_variant.path.is_ident("Ok") || ok_variant.elems.len() != 1 {
+        return None;
+    }
+    if ok_arm.guard.is_some() {
+        return None;
+    }
+    let Pat::TupleStruct(err_variant) = &err_arm.pat else {
+        return None;
+    };
+    if !err_variant.path.is_ident("Err") || err_variant.elems.len() != 1 {
+        return None;
+    }
+    if err_arm.guard.is_some() {
+        return None;
+    }
+    return Some(CaughtPanicMatch {
+        closure,
+        ok_binding: &ok_variant.elems[0],
+        ok_body: ok_arm.body.as_ref(),
+        err_binding: &err_variant.elems[0],
+        err_body: err_arm.body.as_ref(),
+        returning,
+    });
+}
+
+pub(super) struct CaughtPanicUnwrapOr<'a> {
+    pub closure: &'a syn::ExprClosure,
+    pub fallback: &'a Expr,
+}
+
+fn unwrap_catch_unwind_method_chain(expression: &Expr) -> Option<CaughtPanicUnwrapOr<'_>> {
+    let Expr::MethodCall(method) = expression else {
+        return None;
+    };
+    if method.method != "unwrap_or" || method.args.len() != 1 {
+        return None;
+    }
+    let closure = production_caught_panic_closure(&method.receiver)?;
+    return Some(CaughtPanicUnwrapOr {
+        closure,
+        fallback: &method.args[0],
+    });
+}
+
+pub(super) fn caught_panic_unwrap_or_return(statement: &Stmt) -> Option<CaughtPanicUnwrapOr<'_>> {
+    let Stmt::Expr(Expr::Return(returned), _) = statement else {
+        return None;
+    };
+    let Some(expression) = returned.expr.as_deref() else {
+        return None;
+    };
+    return unwrap_catch_unwind_method_chain(expression);
+}
+
+pub(super) fn caught_panic_unwrap_or_if_condition<'a>(
+    statement: &'a Stmt,
+) -> Option<(&'a syn::ExprClosure, &'a Expr, &'a syn::ExprIf)> {
+    let Stmt::Expr(Expr::If(if_expr), _) = statement else {
+        return None;
+    };
+    let unwrapped = unwrap_catch_unwind_method_chain(if_expr.cond.as_ref())?;
+    return Some((unwrapped.closure, unwrapped.fallback, if_expr));
+}
+
 pub(super) fn emit_caught_panic_call(
     out: &mut String,
     closure: &syn::ExprClosure,
@@ -379,6 +473,132 @@ pub(super) fn emit_caught_panic_finally_transaction(
     emit_block(out, cleanup, entities, indent + 1)?;
     write_indent(out, indent);
     out.push_str("}\n");
+    return Ok(());
+}
+
+pub(super) fn emit_caught_panic_match(
+    out: &mut String,
+    matched: &CaughtPanicMatch<'_>,
+    entities: &HashSet<String>,
+    indent: usize,
+) -> Result<(), CompileError> {
+    let ok_name = emit_pattern(matched.ok_binding)?;
+    let err_name = emit_pattern(matched.err_binding)?;
+    let ok_context = lexical_pattern_context(entities, matched.ok_binding);
+    let err_context = lexical_pattern_context(entities, matched.err_binding);
+    write_indent(out, indent);
+    out.push_str("try {\n");
+    write_indent(out, indent + 1);
+    writeln!(
+        out,
+        "const {ok_name} = ({})();",
+        emit_closure(matched.closure, entities)?
+    )
+    .expect("writing to a String cannot fail");
+    emit_arm_body(
+        out,
+        matched.ok_body,
+        matched.returning,
+        &ok_context,
+        indent + 1,
+    )?;
+    write_indent(out, indent);
+    writeln!(out, "}} catch ({err_name}) {{").expect("writing to a String cannot fail");
+    emit_arm_body(
+        out,
+        matched.err_body,
+        matched.returning,
+        &err_context,
+        indent + 1,
+    )?;
+    write_indent(out, indent);
+    out.push_str("}\n");
+    return Ok(());
+}
+
+pub(super) fn emit_caught_panic_unwrap_or_return(
+    out: &mut String,
+    unwrapped: &CaughtPanicUnwrapOr<'_>,
+    entities: &HashSet<String>,
+    indent: usize,
+) -> Result<(), CompileError> {
+    let fallback = emit_expression(&unwrapped.fallback, entities)?;
+    write_indent(out, indent);
+    out.push_str("try {\n");
+    write_indent(out, indent + 1);
+    writeln!(
+        out,
+        "return ({})();",
+        emit_closure(unwrapped.closure, entities)?
+    )
+    .expect("writing to a String cannot fail");
+    write_indent(out, indent);
+    out.push_str("} catch {\n");
+    write_indent(out, indent + 1);
+    writeln!(out, "return {fallback};").expect("writing to a String cannot fail");
+    write_indent(out, indent);
+    out.push_str("}\n");
+    return Ok(());
+}
+
+pub(super) fn emit_caught_panic_unwrap_or_if(
+    out: &mut String,
+    closure: &syn::ExprClosure,
+    fallback: &Expr,
+    if_expr: &syn::ExprIf,
+    entities: &HashSet<String>,
+    indent: usize,
+) -> Result<(), CompileError> {
+    let fallback_str = emit_expression(fallback, entities)?;
+    let temp = "__caught";
+    write_indent(out, indent);
+    writeln!(out, "let {temp} = {fallback_str};").expect("writing to a String cannot fail");
+    write_indent(out, indent);
+    out.push_str("try {\n");
+    write_indent(out, indent + 1);
+    writeln!(out, "{temp} = ({})();", emit_closure(closure, entities)?)
+        .expect("writing to a String cannot fail");
+    write_indent(out, indent);
+    out.push_str("} catch {}\n");
+    write_indent(out, indent);
+    writeln!(out, "if ({temp}) {{").expect("writing to a String cannot fail");
+    emit_block(out, &if_expr.then_branch.stmts, entities, indent + 1)?;
+    if let Some((_, else_branch)) = &if_expr.else_branch {
+        write_indent(out, indent);
+        out.push_str("} else {\n");
+        emit_statement(
+            out,
+            &Stmt::Expr(else_branch.as_ref().clone(), None),
+            entities,
+            indent + 1,
+        )?;
+    }
+    write_indent(out, indent);
+    out.push_str("}\n");
+    return Ok(());
+}
+
+fn emit_arm_body(
+    out: &mut String,
+    body: &Expr,
+    returning: bool,
+    entities: &HashSet<String>,
+    indent: usize,
+) -> Result<(), CompileError> {
+    match body {
+        Expr::Block(block) => {
+            emit_block(out, &block.block.stmts, entities, indent)?;
+        }
+        _ => {
+            if returning {
+                write_indent(out, indent);
+                writeln!(out, "return {};", emit_expression(body, entities)?)
+                    .expect("writing to a String cannot fail");
+            } else {
+                emit_statement(out, &Stmt::Expr(body.clone(), None), entities, indent)?;
+            }
+        }
+    }
     return Ok(());
 }
 
@@ -585,7 +805,14 @@ pub(super) fn emit_function_block(
     let has_return_type = entities
         .iter()
         .any(|marker| marker.starts_with(RETURN_TYPE_MARKER) && !marker.ends_with("void"));
-    if has_return_type && let Some(Stmt::Expr(Expr::Match(match_expr), None)) = statements.last() {
+    if has_return_type && let Some(last @ Stmt::Expr(Expr::Match(_), None)) = statements.last() {
+        if let Some(matched) = caught_panic_match_statement(last) {
+            emit_block(out, &statements[..statements.len() - 1], entities, indent)?;
+            return emit_caught_panic_match(out, &matched, entities, indent);
+        }
+        let Stmt::Expr(Expr::Match(match_expr), _) = last else {
+            unreachable!();
+        };
         emit_block(out, &statements[..statements.len() - 1], entities, indent)?;
         emit_return_match_with_exits(out, match_expr, entities, indent)
     } else if has_return_type
@@ -696,6 +923,25 @@ pub(super) fn emit_block_with_tail(
                 indent,
             )?;
             skip_remaining = finally.cleanup_range.end + 1;
+            continue;
+        }
+        if let Some(matched) = caught_panic_match_statement(parsed) {
+            emit_caught_panic_match(out, &matched, &block_context, indent)?;
+            continue;
+        }
+        if let Some(unwrapped) = caught_panic_unwrap_or_return(parsed) {
+            emit_caught_panic_unwrap_or_return(out, &unwrapped, &block_context, indent)?;
+            continue;
+        }
+        if let Some((closure, fallback, if_expr)) = caught_panic_unwrap_or_if_condition(parsed) {
+            emit_caught_panic_unwrap_or_if(
+                out,
+                closure,
+                fallback,
+                if_expr,
+                &block_context,
+                indent,
+            )?;
             continue;
         }
         let statement = match tail {
