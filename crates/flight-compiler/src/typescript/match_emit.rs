@@ -634,6 +634,11 @@ pub(super) fn emit_match_expression(
         return Ok(out);
     }
     let (scrutinee, declaration) = match_expression_scrutinee(expression, entities)?;
+    if declaration.is_none()
+        && let Some(chain) = emit_match_as_conditional_chain(expression, &scrutinee, entities)?
+    {
+        return Ok(chain);
+    }
     let mut out = String::new();
     out.push_str("(() => {\n");
     if let Some(decl) = declaration {
@@ -664,6 +669,69 @@ pub(super) fn emit_match_expression(
     }
     out.push_str("  }\n})()");
     return Ok(out);
+}
+
+// A scalar `switch` match in value position whose arms bind nothing and are plain values lowers to
+// a conditional chain over the (already single-evaluation) scrutinee: each arm but the last tests its
+// case labels with `===`, as the `switch` would, and Rust's exhaustiveness makes the last arm the
+// remaining case. Returns `None` for an arm that needs a scope (a binding or a statement block).
+fn emit_match_as_conditional_chain(
+    expression: &syn::ExprMatch,
+    scrutinee: &str,
+    entities: &HashSet<String>,
+) -> Result<Option<String>, CompileError> {
+    let last = expression.arms.len().checked_sub(1);
+    let mut conditions = Vec::new();
+    let mut values = Vec::new();
+    for (index, arm) in expression.arms.iter().enumerate() {
+        if arm.guard.is_some() || switch_binding_name(&arm.pat).is_some() {
+            return Ok(None);
+        }
+        if let Expr::Block(block) = arm.body.as_ref()
+            && !matches!(block.block.stmts.as_slice(), [Stmt::Expr(_, None)])
+        {
+            return Ok(None);
+        }
+        let patterns = emit_match_patterns(&arm.pat, entities)?;
+        let is_default = patterns.iter().any(|pattern| pattern == "default");
+        if Some(index) == last {
+            conditions.push(None);
+        } else if is_default {
+            return Ok(None);
+        } else {
+            conditions.push(Some(
+                patterns
+                    .iter()
+                    .map(|pattern| format!("{scrutinee} === {pattern}"))
+                    .collect::<Vec<_>>()
+                    .join(" || "),
+            ));
+        }
+        let arm_context = lexical_pattern_context(entities, &arm.pat);
+        values.push(emit_expression(&arm.body, &arm_context)?);
+    }
+    if values.len() < 2 {
+        return Ok(None);
+    }
+    let mut chain = String::new();
+    for (condition, value) in conditions.iter().zip(&values) {
+        // A single token (a name, member read, literal or call without spaces) binds tighter than
+        // `?:`; anything else keeps its own parentheses inside the chain.
+        let value = if value.contains(char::is_whitespace)
+            || value.starts_with('{')
+            || value.contains("=>")
+        {
+            format!("({value})")
+        } else {
+            value.clone()
+        };
+        match condition {
+            Some(condition) => write!(chain, "{condition} ? {value} : "),
+            None => write!(chain, "{value}"),
+        }
+        .expect("writing to a String cannot fail");
+    }
+    return Ok(Some(format!("({chain})")));
 }
 
 pub(crate) fn emit_match_statement(

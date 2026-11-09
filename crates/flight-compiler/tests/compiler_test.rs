@@ -17810,7 +17810,12 @@ pub fn has_zero(values: &[u32]) -> bool {
             output.contains("const value = 1;") && output.contains("return value;"),
             "select_channel block tail: {output}"
         );
-        assert!(output.contains("const high = red << 24;\n    return high | alpha;"));
+        assert!(
+            output.contains(
+                "  let value: number;\n  {\n    const high = red << 24;\n    value = high | alpha;\n  }\n"
+            ),
+            "packed_block block initializer: {output}"
+        );
         assert!(output.contains("return value >>> 0;"));
         assert!(output.contains("return values.some((value) => value === 0);"));
     }
@@ -29996,6 +30001,137 @@ fn rejects_catch_unwind_cleanup_that_reads_the_result_beyond_is_err_and_is_ok() 
         let error = compile_typescript(&source, None).unwrap_err().to_string();
         assert!(error.contains("catch_unwind"), "{cleanup}\n{error}");
     }
+}
+
+#[test]
+fn lowers_value_matches_without_iifes() {
+    let source = r#"
+pub enum Space {
+    Linear,
+    Srgb,
+}
+
+pub struct Texture {
+    pub code: i32,
+}
+
+fn consume(value: i32) -> i32 {
+    return value;
+}
+
+pub fn set_space(texture: &mut Texture, space: Space) {
+    texture.code = match space {
+        Space::Linear => 1,
+        Space::Srgb => {
+            2
+        }
+    };
+}
+
+pub fn pass_space(space: Space) -> i32 {
+    return consume(match space {
+        Space::Linear => 1,
+        Space::Srgb => 2,
+    });
+}
+
+pub fn make_texture(space: Space, scale: i32) -> Texture {
+    return Texture {
+        code: match space {
+            Space::Linear => scale + 1,
+            _ => 0,
+        },
+    };
+}
+
+pub fn first(values: &Vec<i32>, index: usize) -> i32 {
+    let value = {
+        let current = values;
+        if index < current.len() { current[index] } else { 0 }
+    };
+    let (low, high) = {
+        let doubled = value * 2;
+        (value, doubled)
+    };
+    return low + high;
+}
+"#;
+    let output = compile_typescript(source, None).unwrap();
+    assert!(!output.contains("(() =>"), "{output}");
+    assert!(
+        output.contains(
+            "  switch (space) {\n    case Space.Linear:\n      texture.code = 1;\n      break;\n    case Space.Srgb:\n      texture.code = 2;\n      break;\n  }\n"
+        ),
+        "{output}"
+    );
+    assert!(
+        output.contains("return consume((space === Space.Linear ? 1 : 2));"),
+        "{output}"
+    );
+    assert!(
+        output.contains("return { code: (space === Space.Linear ? (scale + 1) : 0) };"),
+        "{output}"
+    );
+    assert!(
+        output.contains(
+            "  let value;\n  {\n    const current = values;\n    value = index < current.length ? current[index] : 0;\n  }\n"
+        ),
+        "{output}"
+    );
+    assert!(
+        output.contains(
+            "  let low;\n  let high;\n  {\n    const doubled = value * 2;\n    [low, high] = [value, doubled];\n  }\n"
+        ),
+        "{output}"
+    );
+}
+
+#[test]
+fn keeps_value_match_iifes_where_arms_need_their_own_scope() {
+    let source = r#"
+pub enum Space {
+    Linear,
+    Srgb,
+}
+
+pub struct Texture {
+    pub code: i32,
+}
+
+fn consume(value: i32) -> i32 {
+    return value;
+}
+
+pub fn pass_space(space: Space, scale: i32) -> i32 {
+    return consume(match space {
+        Space::Linear => {
+            let doubled = scale * 2;
+            doubled + 1
+        }
+        Space::Srgb => 2,
+    });
+}
+
+pub fn shadow(texture: &mut Texture, value: Option<Texture>) {
+    texture.code = match value {
+        Some(texture) => texture.code,
+        None => 0,
+    };
+}
+
+pub fn rebind(values: &Vec<i32>) -> i32 {
+    let value = {
+        let value = values.len() as i32;
+        value * 2
+    };
+    return value;
+}
+"#;
+    let output = compile_typescript(source, None).unwrap();
+    assert!(output.contains("return consume((() => {"), "{output}");
+    assert!(output.contains("const doubled = scale * 2;"), "{output}");
+    assert!(output.contains("texture.code = (() => {"), "{output}");
+    assert!(output.contains("const value_1 = (() => {"), "{output}");
 }
 
 #[test]

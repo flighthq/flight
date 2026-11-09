@@ -16,9 +16,9 @@ use super::{
     closure_parameter_types, emit_block, emit_closure_with_parameter_types,
     emit_contextual_struct_literal_expression, emit_expression, emit_expression_for_type,
     emit_hoisted_if_value_local, emit_hoisted_match_value_local, emit_hoisted_value_block_local,
-    emit_let_else_local, emit_pattern, emit_record_map_construction, emit_try_pre_extractions,
-    emit_type, empty_vec_initializer, entity_allocation, exact_portable_scalar_type,
-    expression_contains_identifier, expression_is_path_call,
+    emit_let_else_local, emit_pattern, emit_record_map_construction, emit_scoped_value_block_local,
+    emit_try_pre_extractions, emit_type, empty_vec_initializer, entity_allocation,
+    exact_portable_scalar_type, expression_contains_identifier, expression_is_path_call,
     expression_requires_string_union_const_assertion, expression_string_union_owner,
     frozen_object_expression_name, if_expression_contains_function_exits,
     indent_continuation_lines, inferred_fixed_buffer_type, inferred_vitest_option_initializer_type,
@@ -130,6 +130,14 @@ pub(crate) fn emit_local_with_shadow_and_else(
             shadowed,
             rebound,
         )?);
+    }
+    if !shadowed
+        && !rebound
+        && let Some(initializer) = &local.init
+        && let Expr::Block(block) = initializer.expr.as_ref()
+        && emit_scoped_value_block_local(out, local, &block.block, entities, indent)?
+    {
+        return Ok(vec![]);
     }
     if let Some(initializer) = &local.init
         && let Expr::Unsafe(unsafe_block) = initializer.expr.as_ref()

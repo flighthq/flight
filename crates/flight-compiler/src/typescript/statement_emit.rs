@@ -11,26 +11,28 @@ use super::{
     BindingFact, FLIGHT_ERROR_RETURNS_MARKER, RETURN_TYPE_MARKER, RETURNS_NULLABLE_MARKER,
     RETURNS_TYPED_ARRAY_MARKER, RETURNS_U32_MARKER, SCOPE_DECLARED_MARKER,
     STRING_EXPRESSION_MARKER, begin_option_if_with_rebind, begin_option_while,
-    binary_is_assignment, contract_typed_array_return_value, data_union_pattern_test,
-    emit_assert_comparison_statement, emit_assert_statement, emit_binary_operand, emit_block,
-    emit_block_expression, emit_copy_from_slice_statement, emit_data_union_tuple_binding,
-    emit_dedup_statement, emit_entry_or_default_assign, emit_entry_or_default_method,
-    emit_expression, emit_for_header, emit_format_template, emit_hashmap_retain_statement,
-    emit_hashset_retain_statement, emit_ignored_caught_panic, emit_iter_mut_loop_if_supported,
-    emit_local, emit_local_function, emit_match_statement, emit_option_binding, emit_panic_message,
-    emit_path_segment, emit_receiver_preserving_optional_call, emit_resize_statement,
-    emit_resize_with_statement, emit_retain_statement, emit_return_match_with_exits,
-    emit_swap_remove_statement, emit_try_pre_extractions, emit_type, emit_unreachable_message,
-    emit_vec_extend_statement, entity_allocation, expression_contains_unconditional_try,
-    expression_hash_collection, expression_is_finished_entity_return, expression_is_path,
-    expression_is_path_call, expression_is_reusable, expression_is_sequence,
+    binary_is_assignment, contextual_assignment_field_context, contract_typed_array_return_value,
+    data_union_pattern_test, emit_assert_comparison_statement, emit_assert_statement,
+    emit_binary_operand, emit_block, emit_block_expression, emit_copy_from_slice_statement,
+    emit_data_union_tuple_binding, emit_dedup_statement, emit_entry_or_default_assign,
+    emit_entry_or_default_method, emit_expression, emit_for_header, emit_format_template,
+    emit_hashmap_retain_statement, emit_hashset_retain_statement, emit_ignored_caught_panic,
+    emit_iter_mut_loop_if_supported, emit_local, emit_local_function, emit_match_statement,
+    emit_match_statement_with_target, emit_option_binding, emit_panic_message, emit_path_segment,
+    emit_receiver_preserving_optional_call, emit_resize_statement, emit_resize_with_statement,
+    emit_retain_statement, emit_return_match_with_exits, emit_swap_remove_statement,
+    emit_try_pre_extractions, emit_type, emit_unreachable_message, emit_vec_extend_statement,
+    entity_allocation, entity_runtime_state_access, expression_contains_unconditional_try,
+    expression_hash_collection, expression_is_finished_entity_return,
+    expression_is_nullable_option_field, expression_is_path, expression_is_path_call,
+    expression_is_plain_place, expression_is_reusable, expression_is_sequence,
     expression_is_unsigned_result, expression_path_ends_with, for_loop_iterates_strings,
     ignored_caught_panic, indent_continuation_lines, is_primary_expression_text,
     is_record_map_local, lexical_pattern_context, local_pattern_name, nullable_option_value,
     option_absent_value, option_return_absent_value, option_scrutinee_is_rereadable,
-    peel_reference_and_paren, production_std_panic_path, snake_to_lower_camel, split_let_chain,
-    statement_binds_name, std_mem_function, strip_value_position_parens, swap_operand_is_place,
-    throw_call, typed_array_literal, unique_marker_suffix, write_indent,
+    pattern_identifiers, peel_reference_and_paren, production_std_panic_path, snake_to_lower_camel,
+    split_let_chain, statement_binds_name, std_mem_function, strip_value_position_parens,
+    swap_operand_is_place, throw_call, typed_array_literal, unique_marker_suffix, write_indent,
 };
 pub(super) fn emit_value_block(
     block: &syn::Block,
@@ -853,6 +855,18 @@ pub(super) fn emit_statement(
             write_indent(out, indent);
             writeln!(out, "}}").expect("writing to a String cannot fail");
         }
+        // `place = match ..` assigns the place in each arm instead of through a value IIFE. Only a
+        // plain place whose generic assignment is `place = value` qualifies, so each arm emits exactly
+        // what the IIFE returned, under the same right-hand context.
+        Stmt::Expr(Expr::Assign(assign), _)
+            if let Expr::Match(matched) = assign.right.as_ref()
+                && match_assignment_distributes(assign, matched, entities)? =>
+        {
+            let right_context = contextual_assignment_field_context(assign, entities);
+            let target = emit_expression(&assign.left, entities)?;
+            let target = target.strip_suffix('!').unwrap_or(&target);
+            emit_match_statement_with_target(out, matched, &right_context, indent, target)?;
+        }
         Stmt::Expr(Expr::Assign(assign), _) if matches!(assign.right.as_ref(), Expr::Try(_)) => {
             let Expr::Try(try_expr) = assign.right.as_ref() else {
                 unreachable!()
@@ -1076,4 +1090,54 @@ pub(super) fn emit_statement(
         }
     }
     return Ok(());
+}
+
+// Whether `place = match ..` may assign `place` from each arm: the place is a plain variable or field
+// chain whose generic assignment is a bare `=`, and no arm rebinds the place's root identifier, which
+// would make the arm's `place` name a different value.
+fn match_assignment_distributes(
+    assign: &syn::ExprAssign,
+    matched: &syn::ExprMatch,
+    entities: &HashSet<String>,
+) -> Result<bool, CompileError> {
+    if !expression_is_plain_place(&assign.left)
+        || matches!(assign.left.as_ref(), Expr::Reference(_))
+        || expression_is_nullable_option_field(&assign.left, entities)
+    {
+        return Ok(false);
+    }
+    if let Expr::Field(field) = assign.left.as_ref()
+        && entity_runtime_state_access(field, entities)?.is_some()
+    {
+        return Ok(false);
+    }
+    let Some(root) = place_root_identifier(&assign.left) else {
+        return Ok(false);
+    };
+    struct Rebinds<'a> {
+        root: &'a syn::Ident,
+        found: bool,
+    }
+    impl<'ast> syn::visit::Visit<'ast> for Rebinds<'_> {
+        fn visit_pat(&mut self, pattern: &'ast Pat) {
+            if pattern_identifiers(pattern).contains(&self.root) {
+                self.found = true;
+            }
+        }
+    }
+    let mut rebinds = Rebinds { root, found: false };
+    for arm in &matched.arms {
+        syn::visit::Visit::visit_arm(&mut rebinds, arm);
+    }
+    return Ok(!rebinds.found);
+}
+
+fn place_root_identifier(expression: &Expr) -> Option<&syn::Ident> {
+    return match expression {
+        Expr::Path(path) => path.path.get_ident(),
+        Expr::Field(field) => place_root_identifier(&field.base),
+        Expr::Paren(paren) => place_root_identifier(&paren.expr),
+        Expr::Group(group) => place_root_identifier(&group.expr),
+        _ => None,
+    };
 }

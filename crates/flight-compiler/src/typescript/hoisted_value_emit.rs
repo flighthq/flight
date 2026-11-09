@@ -22,12 +22,12 @@ use super::{
     indent_continuation_lines, is_js_identifier, join_closing_brace_with, js_string_literal,
     lexical_pattern_context, local_pattern_binding_id, local_pattern_name,
     lower_camel_from_upper_camel, next_try_rename, open_binding_switch, option_absent_value,
-    option_scrutinee_is_rereadable, ordering_variant_value, pattern_is_mutable,
-    peel_reference_and_paren, provenance_pattern_bindings, referenced_path_identifier,
-    reserved_key_data_union_predicate, resolve_rename, runtime_categories_predicate,
-    scrutinee_elements, snake_to_lower_camel, split_let_chain, strip_value_position_parens,
-    switch_arm_needs_block, switch_binding_name, tagged_data_union_bindings,
-    tagged_data_union_predicate, write_indent,
+    option_scrutinee_is_rereadable, ordering_variant_value, pattern_identifiers,
+    pattern_is_mutable, peel_reference_and_paren, provenance_pattern_bindings,
+    referenced_path_identifier, reserved_key_data_union_predicate, resolve_rename,
+    runtime_categories_predicate, scrutinee_elements, snake_to_lower_camel, split_let_chain,
+    strip_value_position_parens, switch_arm_needs_block, switch_binding_name,
+    tagged_data_union_bindings, tagged_data_union_predicate, write_indent,
 };
 pub(super) fn arm_body_unconditionally_exits(body: &Expr) -> bool {
     return match body {
@@ -1067,6 +1067,119 @@ pub(super) fn emit_hoisted_value_block_local(
     writeln!(out, "{declaration} {pattern} = {value_str};")
         .expect("writing to a String cannot fail");
     return Ok(vec![]);
+}
+
+// `let x = { ..; tail }` without function exits: declares `x` and assigns the tail inside a block
+// that keeps the statements' own scope, instead of a value IIFE. Returns false, having written
+// nothing, for a shape the IIFE must keep: a destructuring other than plain names, a name the block
+// rebinds or the scope already declares, or a tail that needs `?` extraction.
+pub(super) fn emit_scoped_value_block_local(
+    out: &mut String,
+    local: &syn::Local,
+    block: &syn::Block,
+    entities: &HashSet<String>,
+    indent: usize,
+) -> Result<bool, CompileError> {
+    let Some((Stmt::Expr(value, None), preceding)) = block.stmts.split_last() else {
+        return Ok(false);
+    };
+    if preceding.is_empty() || expression_contains_unconditional_try(value) {
+        return Ok(false);
+    }
+    let plain_name = |pattern: &Pat| -> Option<String> {
+        let Pat::Ident(identifier) = pattern else {
+            return None;
+        };
+        return (identifier.subpat.is_none() && identifier.by_ref.is_none())
+            .then(|| identifier.ident.to_string());
+    };
+    let (names, rust_type) = match &local.pat {
+        Pat::Tuple(tuple) => {
+            let mut names = Vec::new();
+            for element in &tuple.elems {
+                if matches!(element, Pat::Wild(_)) {
+                    continue;
+                }
+                let Some(name) = plain_name(element) else {
+                    return Ok(false);
+                };
+                names.push(name);
+            }
+            (names, None)
+        }
+        Pat::Type(typed) => {
+            let Some(name) = plain_name(&typed.pat) else {
+                return Ok(false);
+            };
+            (vec![name], Some(typed.ty.as_ref()))
+        }
+        pattern => {
+            let Some(name) = plain_name(pattern) else {
+                return Ok(false);
+            };
+            (vec![name], None)
+        }
+    };
+    if names.is_empty()
+        || names
+            .iter()
+            .any(|name| entities.contains(&format!("{SCOPE_DECLARED_MARKER}{name}")))
+        || preceding.iter().any(|statement| {
+            matches!(statement, Stmt::Local(inner)
+                if pattern_identifiers(&inner.pat)
+                    .iter()
+                    .any(|identifier| names.contains(&identifier.to_string())))
+        })
+    {
+        return Ok(false);
+    }
+    let type_annotation = rust_type.map(|ty| emit_type(ty, entities)).transpose()?;
+    let mut statements = String::new();
+    let block_context = emit_block_with_context(&mut statements, preceding, entities, indent + 1)?;
+    let value_str = match rust_type {
+        Some(rust_type) => emit_expression_for_type(value, rust_type, &block_context)?,
+        None => emit_expression(value, &block_context)?,
+    };
+    let value_str = strip_value_position_parens(&value_str);
+    // Statements that lower to nothing (a lock read, an elided clone) leave only the value.
+    if statements.is_empty() {
+        let target = match &local.pat {
+            Pat::Tuple(_) => emit_pattern(&local.pat)?,
+            _ => snake_to_lower_camel(&names[0]),
+        };
+        write_indent(out, indent);
+        match &type_annotation {
+            Some(ts_type) => writeln!(out, "const {target}: {ts_type} = {value_str};"),
+            None => writeln!(out, "const {target} = {value_str};"),
+        }
+        .expect("writing to a String cannot fail");
+        return Ok(true);
+    }
+    let target = if let Pat::Tuple(_) = &local.pat {
+        for name in &names {
+            write_indent(out, indent);
+            writeln!(out, "let {};", snake_to_lower_camel(name))
+                .expect("writing to a String cannot fail");
+        }
+        emit_pattern(&local.pat)?
+    } else {
+        let target = snake_to_lower_camel(&names[0]);
+        write_indent(out, indent);
+        match &type_annotation {
+            Some(ts_type) => writeln!(out, "let {target}: {ts_type};"),
+            None => writeln!(out, "let {target};"),
+        }
+        .expect("writing to a String cannot fail");
+        target
+    };
+    write_indent(out, indent);
+    out.push_str("{\n");
+    out.push_str(&statements);
+    write_indent(out, indent + 1);
+    writeln!(out, "{target} = {value_str};").expect("writing to a String cannot fail");
+    write_indent(out, indent);
+    out.push_str("}\n");
+    return Ok(true);
 }
 
 pub(super) fn emit_hoisted_if_value_local(

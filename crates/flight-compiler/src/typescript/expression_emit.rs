@@ -1386,6 +1386,10 @@ pub(super) fn emit_block_expression(
         "portable value block",
     )?;
     match last {
+        // A block that is only its tail value is that value; no scope needs a function around it.
+        Stmt::Expr(value, None) if preceding.is_empty() => {
+            return Ok(format!("({})", emit_expression(value, entities)?));
+        }
         Stmt::Expr(value, None) => {
             let mut out = "(() => {\n".to_string();
             let block_context = emit_block_with_context(&mut out, preceding, entities, 1)?;
