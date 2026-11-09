@@ -6592,6 +6592,24 @@ pub fn with_logical_and(value: Option<bool>, a: bool, b: bool) -> bool {
     }
 
     #[test]
+    fn coalesce_rhs_with_arrow_function_is_parenthesized() {
+        let source = r#"
+pub struct Rect { pub x: f32, pub y: f32 }
+
+pub fn with_default_closure(value: Option<Box<dyn Fn(&mut Rect, &str)>>) -> Box<dyn Fn(&mut Rect, &str)> {
+    return value.unwrap_or_else(|| Box::new(|_out: &mut Rect, _source: &str| {}));
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(
+            output.contains("?? ((_out:"),
+            "arrow function as ?? RHS must be double-parenthesized (coalesce_safe wraps the arrow): {output}"
+        );
+    }
+
+    #[test]
     fn lowers_clone_from_to_object_assign() {
         let source = r#"
 pub struct Point { pub x: f32, pub y: f32 }

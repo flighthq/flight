@@ -72,8 +72,10 @@ pub(super) fn parenthesize_compound(expr: &str) -> std::borrow::Cow<'_, str> {
     return std::borrow::Cow::Borrowed(expr);
 }
 
-// JavaScript forbids mixing `??` with `||`/`&&` without explicit grouping. This wraps an expression
-// in parentheses when it contains a top-level `||` or `&&`, so it is safe as a `??` operand.
+// JavaScript forbids mixing `??` with `||`/`&&` without explicit grouping, and a bare arrow
+// function as `??` operand is ambiguous (the parser cannot tell a typed parameter list from a
+// parenthesized expression until it reaches `=>`). This wraps an expression in parentheses when
+// it contains a top-level `||`, `&&`, or `=>`.
 pub(super) fn coalesce_safe(expr: &str) -> std::borrow::Cow<'_, str> {
     let trimmed = expr.trim();
     if trimmed.starts_with('(') && trimmed.ends_with(')') {
@@ -91,6 +93,9 @@ pub(super) fn coalesce_safe(expr: &str) -> std::borrow::Cow<'_, str> {
                 return std::borrow::Cow::Owned(format!("({expr})"));
             }
             b'|' if depth == 0 && i + 1 < len && bytes[i + 1] == b'|' => {
+                return std::borrow::Cow::Owned(format!("({expr})"));
+            }
+            b'=' if depth == 0 && i + 1 < len && bytes[i + 1] == b'>' => {
                 return std::borrow::Cow::Owned(format!("({expr})"));
             }
             _ => {}
