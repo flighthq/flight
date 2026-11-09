@@ -33807,3 +33807,167 @@ pub fn promote(uniform: Option<i32>, packed: Option<i32>) -> i32 {
         "a call operand should be evaluated once into a local before the patterns test it: {output}"
     );
 }
+
+#[test]
+fn lowers_nested_enum_variant_patterns_to_if_chains() {
+    let source = r#"
+pub struct Sphere { pub radius: f32 }
+pub struct Mesh { pub count: u32 }
+
+pub fn kind(o: &Outer) -> u32 {
+    return match o {
+        Outer::BuiltIn(Inner::Sphere(s)) => s.radius as u32,
+        Outer::BuiltIn(Inner::Cube(_) | Inner::Cone(_)) => 2,
+        Outer::Mesh(m) => m.count,
+    };
+}
+
+pub fn twice(o: &Outer) -> u32 {
+    return 2 * match o {
+        Outer::BuiltIn(Inner::Sphere(_)) => 1,
+        _ => 0,
+    };
+}
+"#;
+    let output = compile_typescript(source, None).unwrap();
+    assert!(
+        output.contains("    if (o.kind === 'sphere') {\n      const s = o;\n"),
+        "a wrapper variant over an undeclared enum is identified by the inner kind: {output}"
+    );
+    assert!(
+        output.contains(
+            "    else if ((o.kind === 'cube' || o.kind === 'cone')) {\n      return 2;\n"
+        ),
+        "a nested or-pattern joins its alternatives: {output}"
+    );
+    assert!(
+        output.contains("    else if (o.kind === 'mesh') {\n      const m = o;\n"),
+        "a flat arm keeps its single-level test in the same chain: {output}"
+    );
+    assert!(
+        output.contains("  return (2 * (() => {\n    {\n      if (o.kind === 'sphere') {\n        return 1;\n      }\n      else {\n        return 0;\n      }\n    }\n  })()) >>> 0;"),
+        "a value-position nested match lowers inside an arrow function: {output}"
+    );
+}
+
+#[test]
+fn lowers_tuple_patterns_over_option_wrapped_enum_variants() {
+    let source = r#"
+pub fn mix(a: Option<Value>, b: Option<Value>, flag: bool) -> f32 {
+    return match (a, b) {
+        (Some(Value::Number(a)), Some(Value::Number(b))) => a + b,
+        (Some(Value::Color(a)), Some(Value::Color(b))) if flag => a + b,
+        (Some(_), None) => 1.0,
+        _ => 0.0,
+    };
+}
+"#;
+    let output = compile_typescript(source, None).unwrap();
+    assert!(
+        output.contains("    const $m0 = a;\n    const $m1 = b;\n    let $matched = false;\n"),
+        "each tuple element is read once before the guarded chain: {output}"
+    );
+    assert!(
+        output.contains("    if (!$matched && $m0 !== undefined && $m0.kind === 'number' && $m1 !== undefined && $m1.kind === 'number') {\n      const a = $m0;\n      const b = $m1;\n      $matched = true;\n      return a + b;\n"),
+        "`Some(Variant(x))` tests presence then the variant: {output}"
+    );
+    assert!(
+        output.contains("    if (!$matched && $m0 !== undefined && $m0.kind === 'color' && $m1 !== undefined && $m1.kind === 'color') {\n      const a = $m0;\n      const b = $m1;\n      if (flag) {\n        $matched = true;\n"),
+        "a guard runs after its bindings and only then claims the match: {output}"
+    );
+    assert!(
+        output.contains("    if (!$matched && $m0 !== undefined && $m1 === undefined) {\n"),
+        "flat Option elements mix with nested ones: {output}"
+    );
+}
+
+#[test]
+fn lowers_nested_patterns_over_declared_data_unions() {
+    let source = r#"
+//! flight-compiler: data-union Id Segment Wrap
+
+pub enum Id {
+    Number(i32),
+    Text(String),
+}
+
+pub enum Segment {
+    Move { x: f64 },
+    Close,
+}
+
+pub enum Wrap {
+    Key(Id),
+    Flag(bool),
+}
+
+pub fn pair(a: Option<Id>, b: Option<Segment>) -> f64 {
+    return match (a, b) {
+        (Some(Id::Number(n)), Some(Segment::Move { x })) => n as f64 + x,
+        (Some(Id::Text(_)), Some(Segment::Close)) => 1.0,
+        _ => 0.0,
+    };
+}
+
+pub fn unwrap(w: &Wrap) -> i32 {
+    return match w {
+        Wrap::Key(Id::Number(n)) => *n,
+        Wrap::Key(Id::Text(_)) => 1,
+        Wrap::Flag(_) => 2,
+    };
+}
+"#;
+    let output = compile_typescript(source, None).unwrap();
+    assert!(
+        output.contains("    if ($m0 !== undefined && typeof $m0 === 'number' && $m1 !== undefined && $m1.kind === 'move') {\n      const n = $m0;\n      const x = $m1.x;\n"),
+        "untagged payloads test their runtime category and tagged fields read through: {output}"
+    );
+    assert!(
+        output.contains("    if (((typeof w === 'number') || (typeof w === 'string')) && typeof w === 'number') {\n      const n = w;\n"),
+        "a declared wrapper keeps its own test before the payload's: {output}"
+    );
+}
+
+#[test]
+fn lowers_nested_json_value_patterns_to_runtime_type_tests() {
+    let source = r#"
+use serde_json::Value;
+
+pub fn low(range: &Value, high: Option<&Value>) -> bool {
+    return match (range.get("low"), high) {
+        (Some(Value::Number(n)), _) if n.as_f64().unwrap_or(0.0) != 0.0 => true,
+        (_, Some(Value::Bool(true))) => true,
+        _ => false,
+    };
+}
+"#;
+    let output = compile_typescript(source, None).unwrap();
+    assert!(
+        output.contains("if (!$matched && $m0 !== undefined && typeof $m0 === 'number') {\n      const n = $m0;\n"),
+        "a JSON number pattern is a runtime type test: {output}"
+    );
+    assert!(
+        output.contains(
+            "if (!$matched && $m1 !== undefined && typeof $m1 === 'boolean' && $m1 === true) {\n"
+        ),
+        "a JSON payload literal compares the value itself: {output}"
+    );
+}
+
+#[test]
+fn rejects_nested_option_patterns_that_erase() {
+    let source = r#"
+pub fn same(applied: Option<&Option<u32>>, value: &Option<u32>) -> bool {
+    return match (applied, value) {
+        (Some(Some(applied)), Some(value)) => applied == value,
+        (Some(None), None) => true,
+        _ => false,
+    };
+}
+"#;
+    let error = compile_typescript(source, None).unwrap_err().to_string();
+    assert!(
+        error.contains("nested Option pattern (`Some(Some(..))` or `Some(None)`) has no lowering"),
+        "`Option<Option<T>>` cannot distinguish its levels at runtime: {error}"
+    );
+}

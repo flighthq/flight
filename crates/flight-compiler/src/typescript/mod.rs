@@ -36,6 +36,7 @@ mod match_emit;
 mod match_types;
 mod method_call;
 mod naming;
+mod nested_pattern_emit;
 mod numeric_analysis;
 mod option_analysis;
 mod option_emit_helpers;
@@ -143,6 +144,7 @@ pub(crate) use naming::{
     default_item_name, emit_pattern, lower_camel_from_upper_camel, snake_to_lower_camel,
     string_union_literal,
 };
+use nested_pattern_emit::*;
 use numeric_analysis::*;
 pub(crate) use option_analysis::emit_option_binding;
 use option_analysis::*;

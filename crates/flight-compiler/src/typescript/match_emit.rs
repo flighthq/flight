@@ -11,13 +11,14 @@ use super::{
     analyze_option_wrapped_inferred_data_union_match, analyze_tagged_data_union_match,
     analyze_tuple_option_match, arm_body_unconditionally_exits, emit_block, emit_expression,
     emit_general_tuple_element_condition, emit_hoisted_match_arm_body, emit_literal,
-    emit_match_scrutinee, emit_path_segment, emit_pattern, emit_statement, emit_switch_scrutinee,
+    emit_match_scrutinee, emit_nested_pattern_match, emit_nested_pattern_match_expression,
+    emit_path_segment, emit_pattern, emit_statement, emit_switch_scrutinee,
     emit_try_pre_extractions, expression_contains_unconditional_try, expression_is_plain_place,
     js_string_literal, lexical_pattern_context, lower_camel_from_upper_camel,
-    match_arms_contain_loop_break, match_expression_scrutinee, option_absent_value,
-    reject_function_exits_in_value_position, reserved_key_data_union_predicate,
-    runtime_categories_predicate, scrutinee_elements, snake_to_lower_camel,
-    tagged_data_union_bindings, tagged_data_union_predicate, write_indent,
+    match_arms_contain_loop_break, match_expression_scrutinee, match_has_nested_patterns,
+    option_absent_value, reject_function_exits_in_value_position,
+    reserved_key_data_union_predicate, runtime_categories_predicate, scrutinee_elements,
+    snake_to_lower_camel, tagged_data_union_bindings, tagged_data_union_predicate, write_indent,
 };
 
 pub(super) fn emit_match_expression(
@@ -32,6 +33,9 @@ pub(super) fn emit_match_expression(
         },
         "portable `match` used as a value",
     )?;
+    if match_has_nested_patterns(expression, entities) {
+        return emit_nested_pattern_match_expression(expression, entities);
+    }
     if let Some(arms) = analyze_option_match(&expression.arms) {
         let has_guards = expression.arms.iter().any(|arm| arm.guard.is_some());
         let (scrutinee, declaration) = match_expression_scrutinee(expression, entities)?;
@@ -789,6 +793,9 @@ pub(crate) fn emit_match_statement(
     entities: &HashSet<String>,
     indent: usize,
 ) -> Result<(), CompileError> {
+    if match_has_nested_patterns(expression, entities) {
+        return emit_nested_pattern_match(out, expression, entities, indent, None);
+    }
     if let Some(arms) = analyze_option_match(&expression.arms) {
         let has_guards = expression.arms.iter().any(|arm| arm.guard.is_some());
         write_indent(out, indent);

@@ -15,20 +15,20 @@ use super::{
     data_union_pattern_test, emit_block, emit_block_with_context, emit_block_with_tail,
     emit_closure, emit_expression, emit_expression_for_type, emit_general_tuple_element_condition,
     emit_match_as_if_else_with_action, emit_match_patterns, emit_match_statement,
-    emit_option_binding, emit_option_wrapped_data_union_match_body, emit_pattern, emit_statement,
-    emit_try_pre_extractions, emit_type, expression_contains_identifier,
-    expression_contains_unconditional_try, expression_is_path, expression_is_reusable,
-    expression_string_union_owner, if_expression_contains_function_exits,
+    emit_nested_pattern_match, emit_option_binding, emit_option_wrapped_data_union_match_body,
+    emit_pattern, emit_statement, emit_try_pre_extractions, emit_type,
+    expression_contains_identifier, expression_contains_unconditional_try, expression_is_path,
+    expression_is_reusable, expression_string_union_owner, if_expression_contains_function_exits,
     indent_continuation_lines, is_js_identifier, join_closing_brace_with, js_string_literal,
     lexical_pattern_context, local_pattern_binding_id, local_pattern_name,
-    lower_camel_from_upper_camel, match_expression_contains_function_exits, next_try_rename,
-    open_binding_switch, option_absent_value, option_scrutinee_is_rereadable,
-    ordering_variant_value, pat_contains_range, pattern_identifiers, pattern_is_mutable,
-    peel_reference_and_paren, provenance_pattern_bindings, referenced_path_identifier,
-    reserved_key_data_union_predicate, resolve_rename, runtime_categories_predicate,
-    scrutinee_elements, snake_to_lower_camel, split_let_chain, strip_value_position_parens,
-    switch_arm_needs_block, switch_binding_name, tagged_data_union_bindings,
-    tagged_data_union_predicate, write_indent,
+    lower_camel_from_upper_camel, match_expression_contains_function_exits,
+    match_has_nested_patterns, next_try_rename, open_binding_switch, option_absent_value,
+    option_scrutinee_is_rereadable, ordering_variant_value, pat_contains_range,
+    pattern_identifiers, pattern_is_mutable, peel_reference_and_paren, provenance_pattern_bindings,
+    referenced_path_identifier, reserved_key_data_union_predicate, resolve_rename,
+    runtime_categories_predicate, scrutinee_elements, snake_to_lower_camel, split_let_chain,
+    strip_value_position_parens, switch_arm_needs_block, switch_binding_name,
+    tagged_data_union_bindings, tagged_data_union_predicate, write_indent,
 };
 pub(super) fn arm_body_unconditionally_exits(body: &Expr) -> bool {
     return match body {
@@ -466,6 +466,9 @@ pub(super) fn emit_match_statement_with_action(
     indent: usize,
     action: &HoistedMatchAction<'_>,
 ) -> Result<(), CompileError> {
+    if match_has_nested_patterns(expression, entities) {
+        return emit_nested_pattern_match(out, expression, entities, indent, Some(action));
+    }
     if let Some(arms) = analyze_option_match(&expression.arms) {
         let has_guards = expression.arms.iter().any(|arm| arm.guard.is_some());
         let needs_block = has_guards || match_needs_scrutinee_temp(expression, entities)?;
