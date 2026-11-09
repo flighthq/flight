@@ -258,7 +258,8 @@ pub(super) fn canonical_type_path_root(
     let prefix = format!("{TYPE_EXTERN_CRATE_MARKER}{first}{PROVENANCE_SEPARATOR}");
     if let Some(target) = context
         .iter()
-        .find_map(|marker| marker.strip_prefix(&prefix))
+        .filter_map(|marker| marker.strip_prefix(&prefix))
+        .min()
     {
         path[0] = target.to_string();
         return Some(path);
@@ -314,7 +315,8 @@ pub(super) fn resolve_type_path(
         let prefix = format!("{TYPE_USE_TARGET_MARKER}{first}{PROVENANCE_SEPARATOR}");
         let imported = context
             .iter()
-            .find_map(|marker| marker.strip_prefix(&prefix))?;
+            .filter_map(|marker| marker.strip_prefix(&prefix))
+            .min()?;
         let mut resolved = imported.split("::").map(str::to_string).collect::<Vec<_>>();
         resolved.extend(rest.iter().cloned());
         return canonical_type_path_root(resolved, context);
@@ -328,9 +330,12 @@ pub(super) fn resolve_type_path(
                 .collect(),
         );
     }
-    let globs = context
+    let glob_sources = context
         .iter()
         .filter_map(|marker| marker.strip_prefix(TYPE_USE_GLOB_MARKER))
+        .collect::<BTreeSet<_>>();
+    let globs = glob_sources
+        .into_iter()
         .map(|glob| {
             return canonical_type_path_root(
                 glob.split("::").map(str::to_string).collect(),
@@ -420,7 +425,8 @@ pub(super) fn std_mem_imported_function(context: &HashSet<String>, local: &str) 
         let prefix = format!("{STD_MEM_FUNCTION_TARGET_MARKER}{local}:");
         return context
             .iter()
-            .find_map(|marker| marker.strip_prefix(&prefix))
+            .filter_map(|marker| marker.strip_prefix(&prefix))
+            .min()
             .map(str::to_string);
     }
     if context.contains(STD_MEM_GLOB_MARKER)
