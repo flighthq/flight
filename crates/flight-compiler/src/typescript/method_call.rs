@@ -1232,7 +1232,7 @@ pub(super) fn emit_method_call(
             Ok(format!("{receiver}.sort((a, b) => a - b)"))
         }
         "swap" if arguments.len() == 2 => Ok(format!(
-            "([{receiver}[{}], {receiver}[{}]] = [{receiver}[{}], {receiver}[{}]])",
+            "[{receiver}[{}], {receiver}[{}]] = [{receiver}[{}], {receiver}[{}]]",
             arguments[0], arguments[1], arguments[1], arguments[0]
         )),
         "swap_remove" if arguments.len() == 1 => Ok(format!(

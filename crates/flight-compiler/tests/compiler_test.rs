@@ -4619,7 +4619,7 @@ export function flip(j: Joint): void {
 export function order(values: number[]): void {
   if (values[0] > values[1]) {
     const [first, second] = [0, 1] as const;
-    ([values[first], values[second]] = [values[second], values[first]]);
+    [values[first], values[second]] = [values[second], values[first]];
   }
   [values[2], values[3]] = [values[3], values[2]];
 }
