@@ -477,6 +477,9 @@ pub(super) const EXTERNAL_STRUCT_BINDING_MARKER: &str = "@external-struct-bindin
 // `{crate}::{function}␟{crate}::{Struct}` for a public dependency function returning one of that
 // dependency's structs. Tests use this to retain the owner of an inferred factory result.
 pub(super) const EXTERNAL_STRUCT_RETURN_MARKER: &str = "@external-struct-return:";
+// `{crate}::{function}␟{index}={element},...` for a public dependency function's `&mut Vec<element>`
+// parameters, the element spelled as the dependency declares it.
+pub(super) const EXTERNAL_MUT_VEC_PARAMETERS_MARKER: &str = "@external-mut-vec-parameters:";
 // `{struct identity}␟{field}␟{crate}::{Struct}` for a source struct field declared as a dependency
 // crate's struct.
 pub(super) const EXTERNAL_STRUCT_FIELD_MARKER: &str = "@external-struct-field:";

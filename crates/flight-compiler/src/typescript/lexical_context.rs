@@ -12,26 +12,27 @@ use crate::{CompileError, compile_error};
 use super::{
     BINDING_FACT_MARKER, BINDING_MARKER, BINDING_SITE_MARKER, BindingFact, DATA_UNION_UNIT_MARKER,
     DIRECT_LOCK_GUARD_REPLACED_MARKER, EMPTY_SEQUENCE_ELEMENT_TYPE_MARKER,
-    ERASED_CELL_WRITTEN_MARKER, ERASED_SHARED_CELL_FIELD_MARKER, EXTERNAL_STRUCT_BINDING_MARKER,
-    EmptyVecInitializer, HASH_COLLECTION_FIELD_MARKER, MUT_VEC_PARAMETERS_MARKER,
-    MUTEX_GUARD_BINDING_MARKER, NULLABLE_OPTION_BINDING_MARKER,
-    NULLABLE_OPTION_CALLABLE_BINDING_MARKER, NULLABLE_OPTION_CALLABLE_MAP_FIELD_MARKER,
-    NULLABLE_OPTION_RETURN_MARKER, NUMERIC_FIELD_TYPE_MARKER, OPTION_FIELD_MARKER,
-    OPTION_RETURN_MARKER, PROVENANCE_SEPARATOR, RECORD_MAP_VARIANT_MARKER,
-    REF_ALIAS_RECEIVER_CAPTURE_MARKER, REF_ALIAS_TARGET_MARKER, RETURN_BINDING_FACT_MARKER,
-    RuntimeCategory, SEQUENCE_FIELD_ELEMENT_MARKER, SEQUENCE_FIELD_MARKER, SEQUENCE_RETURN_MARKER,
-    SHARED_IDENTITY_BINDING_MARKER, SHARED_IDENTITY_EXTERNAL_FIELD_MARKER,
-    SHARED_IDENTITY_FIELD_MARKER, STRUCT_FIELD_TYPE_MARKER, STRUCT_OWNER_MARKER,
-    STRUCT_RETURN_MARKER, TAGGED_DATA_UNION_VARIANT_MARKER, TYPE_ALIAS_DEFINITION_MARKER,
-    TYPE_ALIAS_GENERICS_MARKER, TYPE_ALIAS_OWNER_MARKER, TYPED_ARRAY_SEQUENCE_FIELD_MARKER,
-    binary_operator_assigns, binding_fact_from_marker, binding_fact_marker,
-    binding_fact_typescript_type, binding_site_key, call_fact, call_returns_shared_identity,
-    context_type_identity, current_source, data_union_variant_marker, direct_lock_guard_receiver,
-    emit_type, empty_vec_initializer, entity_ref_data_union, expression_constructs_rw_lock_cell,
-    expression_is_associated_path, expression_is_identity_payload, expression_is_path,
-    expression_is_plain_place, expression_is_type_script_nullable_option_field,
+    ERASED_CELL_WRITTEN_MARKER, ERASED_SHARED_CELL_FIELD_MARKER,
+    EXTERNAL_MUT_VEC_PARAMETERS_MARKER, EXTERNAL_STRUCT_BINDING_MARKER, EmptyVecInitializer,
+    HASH_COLLECTION_FIELD_MARKER, MUT_VEC_PARAMETERS_MARKER, MUTEX_GUARD_BINDING_MARKER,
+    NULLABLE_OPTION_BINDING_MARKER, NULLABLE_OPTION_CALLABLE_BINDING_MARKER,
+    NULLABLE_OPTION_CALLABLE_MAP_FIELD_MARKER, NULLABLE_OPTION_RETURN_MARKER,
+    NUMERIC_FIELD_TYPE_MARKER, OPTION_FIELD_MARKER, OPTION_RETURN_MARKER, PROVENANCE_SEPARATOR,
+    RECORD_MAP_VARIANT_MARKER, REF_ALIAS_RECEIVER_CAPTURE_MARKER, REF_ALIAS_TARGET_MARKER,
+    RETURN_BINDING_FACT_MARKER, RuntimeCategory, SEQUENCE_FIELD_ELEMENT_MARKER,
+    SEQUENCE_FIELD_MARKER, SEQUENCE_RETURN_MARKER, SHARED_IDENTITY_BINDING_MARKER,
+    SHARED_IDENTITY_EXTERNAL_FIELD_MARKER, SHARED_IDENTITY_FIELD_MARKER, STRUCT_FIELD_TYPE_MARKER,
+    STRUCT_OWNER_MARKER, STRUCT_RETURN_MARKER, TAGGED_DATA_UNION_VARIANT_MARKER,
+    TYPE_ALIAS_DEFINITION_MARKER, TYPE_ALIAS_GENERICS_MARKER, TYPE_ALIAS_OWNER_MARKER,
+    TYPED_ARRAY_SEQUENCE_FIELD_MARKER, binary_operator_assigns, binding_fact_from_marker,
+    binding_fact_marker, binding_fact_typescript_type, binding_site_key, call_fact,
+    call_returns_shared_identity, context_type_identity, current_source, data_union_variant_marker,
+    direct_lock_guard_receiver, emit_type, empty_vec_initializer, entity_ref_data_union,
+    expression_constructs_rw_lock_cell, expression_is_associated_path,
+    expression_is_identity_payload, expression_is_path, expression_is_plain_place,
+    expression_is_type_script_nullable_option_field,
     expression_is_type_script_nullable_option_return, expression_typed_array,
-    external_struct_return, external_struct_type, fixed_typed_array_type,
+    external_function_fact, external_struct_return, external_struct_type, fixed_typed_array_type,
     hash_collection_construction, hash_collection_type, is_string_keyed_hash_map,
     is_type_script_nullable_option_field, literal_numeric_suffix, local_pattern_name,
     mutex_guard_receiver, numeric_associated_call_type, option_inner_type,
@@ -1771,7 +1772,13 @@ pub(super) fn insert_lexical_binding_context(function: &ItemFn, context: &mut Ha
                 return;
             }
             let Some(parameters) =
-                call_fact(self.context, MUT_VEC_PARAMETERS_MARKER, &function.path)
+                call_fact(self.context, MUT_VEC_PARAMETERS_MARKER, &function.path).or_else(|| {
+                    external_function_fact(
+                        &function.path,
+                        self.context,
+                        EXTERNAL_MUT_VEC_PARAMETERS_MARKER,
+                    )
+                })
             else {
                 return;
             };
@@ -1797,8 +1804,13 @@ pub(super) fn insert_lexical_binding_context(function: &ItemFn, context: &mut Ha
                 if !self.empty_sequence_bindings.contains(&id) {
                     continue;
                 }
-                let candidate = self.element_identity_typescript_type(element);
-                self.record_empty_sequence_candidate(&id, candidate, false);
+                // The parameter's declared `Vec<element>` is checked by Rust, so it is authoritative
+                // the way a declared local type is; an element that does not resolve here still
+                // proves nothing.
+                let Some(candidate) = self.element_identity_typescript_type(element) else {
+                    continue;
+                };
+                self.record_empty_sequence_candidate(&id, Some(candidate), true);
             }
         }
 

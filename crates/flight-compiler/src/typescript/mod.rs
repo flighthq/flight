@@ -79,8 +79,8 @@ pub(crate) use context_insert::{
     insert_program_type_path_context, insert_std_float_consts_context,
     insert_std_mem_import_context, insert_type_path_context, insert_typed_array_constant_context,
 };
-pub(crate) use cross_crate::CrossCrateSymbol;
 use cross_crate::*;
+pub(crate) use cross_crate::{CrossCrateSymbol, out_parameter_element_types};
 use d15_emit::*;
 use data_union_analysis::*;
 use data_union_runtime::*;

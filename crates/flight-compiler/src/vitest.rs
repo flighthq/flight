@@ -624,6 +624,11 @@ fn collect_contract_symbols(
                 }
             }
             self.visit_signature(&function.sig);
+            for element in
+                crate::typescript::out_parameter_element_types(&function.block, self.context)
+            {
+                self.visit_type(&element);
+            }
             self.visit_block(&function.block);
             self.declared = outer;
         }
@@ -899,6 +904,9 @@ fn collect_contract_symbols(
             external_modules: Vec::new(),
         };
         collector.visit_signature(&function.sig);
+        for element in crate::typescript::out_parameter_element_types(&function.block, context) {
+            collector.visit_type(&element);
+        }
         collector.visit_block(&function.block);
         symbols.extend(collector.symbols);
         type_symbols.extend(collector.type_symbols);

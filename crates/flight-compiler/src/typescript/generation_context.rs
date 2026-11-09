@@ -1160,8 +1160,14 @@ pub(super) fn generation_context_with_types(
                     };
                     reference.mutability?;
                     let element = standard_vec_inner_type(&reference.elem, &context)?;
+                    // A type alias or other non-struct element keeps its declared spelling, which
+                    // the caller resolves through its own imports.
                     let identity = primitive_type_identity(element)
                         .or_else(|| resolved_type_identity(&context, module, element))
+                        .or_else(|| {
+                            Some(element.to_token_stream().to_string())
+                                .filter(|spelled| !spelled.contains([',', '=']))
+                        })
                         .unwrap_or_default();
                     return Some(format!("{index}={identity}"));
                 })
@@ -1734,6 +1740,18 @@ fn insert_visibility_shared_identity_context(
                 }
             }
         }
+        for function in &program.functions {
+            let function_identity = format!("{module}{PROVENANCE_SEPARATOR}{}", function.sig.ident);
+            let parameters = mut_vec_parameter_elements(&function.sig, context);
+            if !parameters.is_empty()
+                && provenance_marker_values(context, MUT_VEC_PARAMETERS_MARKER, &function_identity)
+                    .is_empty()
+            {
+                facts.push(format!(
+                    "{MUT_VEC_PARAMETERS_MARKER}{function_identity}{PROVENANCE_SEPARATOR}{parameters}"
+                ));
+            }
+        }
         for structure in &program.structs {
             for field in &structure.fields {
                 if let Some(field_name) = &field.ident
@@ -1748,6 +1766,40 @@ fn insert_visibility_shared_identity_context(
         }
     }
     context.extend(facts);
+}
+
+// `{index}={element},...` for a signature's `&mut Vec<element>` parameters, each element spelled as
+// declared so a caller resolves it through its own imports. Generic signatures and elements whose
+// spelling would split the list are left out.
+pub(super) fn mut_vec_parameter_elements(
+    signature: &syn::Signature,
+    context: &HashSet<String>,
+) -> String {
+    if !signature.generics.params.is_empty() {
+        return String::new();
+    }
+    return signature
+        .inputs
+        .iter()
+        .enumerate()
+        .filter_map(|(index, input)| {
+            let FnArg::Typed(argument) = input else {
+                return None;
+            };
+            let Type::Reference(reference) = argument.ty.as_ref() else {
+                return None;
+            };
+            reference.mutability?;
+            let element = standard_vec_inner_type(&reference.elem, context)?
+                .to_token_stream()
+                .to_string();
+            if element.contains([',', '=']) {
+                return None;
+            }
+            return Some(format!("{index}={element}"));
+        })
+        .collect::<Vec<_>>()
+        .join(",");
 }
 
 pub(crate) fn function_expression_context(

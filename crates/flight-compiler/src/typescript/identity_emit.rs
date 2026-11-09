@@ -6,13 +6,13 @@ use syn::{Expr, GenericArgument, PathArguments, ReturnType, Type};
 use crate::{CompileError, compile_error};
 
 use super::{
-    EXTERNAL_STRUCT_RETURN_MARKER, PROVENANCE_SEPARATOR, SEQUENCE_FIELD_MARKER,
-    SHARED_IDENTITY_EXTERNAL_FIELD_MARKER, SHARED_IDENTITY_EXTERNAL_TYPE_MARKER,
-    TYPE_USE_TARGET_MARKER, VITEST_PUBLIC_FUNCTION_MARKER, canonical_type_path_root,
-    current_source, dependency_source_context, insert_type_path_context, is_public,
-    peel_reference_and_paren, provenance_marker_values, resolve_type_path, rust_type_is_sequence,
-    shared_identity_type_at_depth, source_type_context, substitute_type_param,
-    unique_marker_suffix,
+    EXTERNAL_MUT_VEC_PARAMETERS_MARKER, EXTERNAL_STRUCT_RETURN_MARKER, PROVENANCE_SEPARATOR,
+    SEQUENCE_FIELD_MARKER, SHARED_IDENTITY_EXTERNAL_FIELD_MARKER,
+    SHARED_IDENTITY_EXTERNAL_TYPE_MARKER, TYPE_USE_TARGET_MARKER, VITEST_PUBLIC_FUNCTION_MARKER,
+    canonical_type_path_root, current_source, dependency_source_context, insert_type_path_context,
+    is_public, mut_vec_parameter_elements, peel_reference_and_paren, provenance_marker_values,
+    resolve_type_path, rust_type_is_sequence, shared_identity_type_at_depth, source_type_context,
+    substitute_type_param, unique_marker_suffix,
 };
 pub(crate) fn external_shared_identity_facts(
     sources: &[(&str, &str)],
@@ -165,6 +165,13 @@ pub(crate) fn external_shared_identity_facts(
                     }
                 }
                 syn::Item::Fn(function) if is_public(&function.vis) => {
+                    let parameters = mut_vec_parameter_elements(&function.sig, &context);
+                    if !parameters.is_empty() {
+                        facts.insert(format!(
+                            "{EXTERNAL_MUT_VEC_PARAMETERS_MARKER}{}::{}{PROVENANCE_SEPARATOR}{parameters}",
+                            source.crate_name, function.sig.ident
+                        ));
+                    }
                     let ReturnType::Type(_, rust_type) = &function.sig.output else {
                         continue;
                     };
@@ -279,16 +286,26 @@ pub(super) fn external_struct_return(
     if path.qself.is_some() {
         return None;
     }
-    let Some(source) = current_source(entities) else {
-        return suite_external_struct_return(&path.path, entities);
-    };
-    let resolved = resolve_type_path(&path.path, &source_type_context(entities, &source))?;
-    return resolved_external_struct_return(&resolved, entities);
+    return external_function_fact(&path.path, entities, EXTERNAL_STRUCT_RETURN_MARKER);
 }
 
-fn resolved_external_struct_return(
+// The `{crate}::{function}`-keyed `marker` fact of the dependency function `path` calls.
+pub(super) fn external_function_fact(
+    path: &syn::Path,
+    entities: &HashSet<String>,
+    marker: &str,
+) -> Option<String> {
+    let Some(source) = current_source(entities) else {
+        return suite_external_function_fact(path, entities, marker);
+    };
+    let resolved = resolve_type_path(path, &source_type_context(entities, &source))?;
+    return resolved_external_function_fact(&resolved, entities, marker);
+}
+
+fn resolved_external_function_fact(
     resolved: &[String],
     entities: &HashSet<String>,
+    marker: &str,
 ) -> Option<String> {
     let (first, function) = (resolved.first()?, resolved.last()?);
     if resolved.len() < 2 || !first.starts_with("flight_") {
@@ -296,18 +313,22 @@ fn resolved_external_struct_return(
     }
     return unique_marker_suffix(
         entities,
-        &format!("{EXTERNAL_STRUCT_RETURN_MARKER}{first}::{function}{PROVENANCE_SEPARATOR}"),
+        &format!("{marker}{first}::{function}{PROVENANCE_SEPARATOR}"),
     );
 }
 
 // A Vitest suite has no current source: its context merges every loaded source's `use` targets, so
-// a bare dependency function name can carry targets from inside that dependency too. The call is
-// proven only when exactly one target names a dependency struct return and no suite helper or
+// a bare dependency function name can carry targets from inside that dependency too. The fact holds
+// only when exactly one target names a dependency function carrying it and no suite helper or
 // own-crate function shares the name.
-fn suite_external_struct_return(path: &syn::Path, entities: &HashSet<String>) -> Option<String> {
+fn suite_external_function_fact(
+    path: &syn::Path,
+    entities: &HashSet<String>,
+    marker: &str,
+) -> Option<String> {
     if path.segments.len() != 1 {
         let resolved = resolve_type_path(path, entities)?;
-        return resolved_external_struct_return(&resolved, entities);
+        return resolved_external_function_fact(&resolved, entities, marker);
     }
     let name = path.segments[0].ident.to_string();
     if !provenance_marker_values(entities, VITEST_PUBLIC_FUNCTION_MARKER, &name).is_empty() {
@@ -322,7 +343,7 @@ fn suite_external_struct_return(path: &syn::Path, entities: &HashSet<String>) ->
                 target.split("::").map(str::to_string).collect(),
                 entities,
             )?;
-            return resolved_external_struct_return(&resolved, entities);
+            return resolved_external_function_fact(&resolved, entities, marker);
         })
         .collect::<BTreeSet<_>>();
     if returns.len() != 1 {

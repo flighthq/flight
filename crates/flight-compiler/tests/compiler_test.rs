@@ -33441,3 +33441,95 @@ pub fn check_range(value: Option<i32>) -> bool {
         "matches! with range guard should compile: {output}"
     );
 }
+
+#[test]
+fn empty_vec_element_type_from_out_parameter() {
+    let source = r#"
+pub fn fill(out: &mut Vec<f32>, count: usize) {
+    for i in 0..count {
+        out.push(i as f32);
+    }
+}
+
+pub fn caller() -> Vec<f32> {
+    let mut result = Vec::new();
+    fill(&mut result, 10);
+    return result;
+}
+"#;
+    let output = compile_typescript(source, None).unwrap();
+    assert!(
+        output.contains("number[]"),
+        "empty Vec should infer element type from out-parameter: {output}"
+    );
+    assert!(
+        !output.contains("needs one fully known"),
+        "should not error on empty Vec with out-parameter provenance: {output}"
+    );
+}
+
+#[test]
+fn infers_vitest_empty_vec_elements_from_crate_and_dependency_out_parameters() {
+    let test = r#"
+use flight_example::contract::*;
+use flight_log::{LogEntry, get_log_entries};
+
+#[test]
+fn collects_through_out_parameters() {
+    let source = create_node();
+    let mut children = Vec::new();
+    get_node_children(&mut children, &source);
+    assert_eq!(children.len(), 0);
+    let mut entries = Vec::new();
+    get_log_entries(&mut entries);
+    assert_eq!(entries.len(), 0);
+}
+"#;
+    let owner = r#"
+//! flight-compiler: target-native
+
+pub struct Node {
+    pub value: f32,
+}
+
+pub fn create_node() -> Node {
+    return Node { value: 0.0 };
+}
+
+pub fn get_node_children(out: &mut Vec<Node>, source: &Node) {
+    out.clear();
+}
+"#;
+    let log = [ExternalAliasSource {
+        source: "pub struct LogEntry {\n    pub message: String,\n}\n\npub fn get_log_entries(out: &mut Vec<LogEntry>) {\n    out.clear();\n}\n",
+        module: "@flighthq/log/contract",
+    }];
+    let visibility = [VitestVisibilitySource {
+        source: owner,
+        path: "crates/flight-example/src/node.rs",
+        current_package: true,
+    }];
+    let output = compile_vitest_with_named_visibility_sources_and_array_representations(
+        test,
+        "@flighthq/example/contract",
+        Some("pub use crate::node::*;\n"),
+        &[],
+        &log,
+        &[],
+        &visibility,
+        &[],
+        &[],
+        &[],
+        &[],
+        &[],
+        &[],
+        &[],
+        &[],
+        &[],
+    )
+    .unwrap();
+    assert!(output.contains("let children: Node[] = [];"), "{output}");
+    assert!(output.contains("import type {\n  Node,\n}"), "{output}");
+    assert!(output.contains("let entries: LogEntry[] = [];"), "{output}");
+    assert!(output.contains("import type { LogEntry }"), "{output}");
+}
