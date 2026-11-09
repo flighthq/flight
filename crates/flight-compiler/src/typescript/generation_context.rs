@@ -227,6 +227,53 @@ pub(super) fn insert_visibility_collection_context(
             }
         }
     }
+    // Field types resolve once every visibility owner is known: a nested struct field, an `Option`
+    // payload, a sequence element or a numeric primitive is evidence for a chained read
+    // (`world.joint_events.broke`) the same way a program source's declarations are.
+    let mut typed_facts = Vec::new();
+    for (module, program) in programs {
+        for structure in &program.structs {
+            let identity = format!("{module}{PROVENANCE_SEPARATOR}{}", structure.ident);
+            for field in &structure.fields {
+                let Some(field_name) = &field.ident else {
+                    continue;
+                };
+                if let Some(field_identity) = resolved_type_identity(context, module, &field.ty) {
+                    typed_facts.push(format!(
+                        "{STRUCT_FIELD_TYPE_MARKER}{identity}{PROVENANCE_SEPARATOR}{field_name}{PROVENANCE_SEPARATOR}{field_identity}"
+                    ));
+                }
+                if let Some(inner) = option_inner_type(&field.ty) {
+                    let inner_fact = binding_fact_for_type(context, Some(module), inner);
+                    typed_facts.push(format!(
+                        "{OPTION_FIELD_MARKER}{identity}{PROVENANCE_SEPARATOR}{field_name}{PROVENANCE_SEPARATOR}{}",
+                        binding_fact_marker(&inner_fact)
+                    ));
+                }
+                if rust_type_is_sequence(&field.ty)
+                    && let Some(inner) = sequence_inner_type(&field.ty)
+                {
+                    let element_fact = binding_fact_for_type(context, Some(module), inner);
+                    if element_fact.has_source_structure()
+                        || matches!(element_fact, BindingFact::TypedArray(_))
+                    {
+                        typed_facts.push(format!(
+                            "{SEQUENCE_FIELD_ELEMENT_MARKER}{identity}{PROVENANCE_SEPARATOR}{field_name}{PROVENANCE_SEPARATOR}{}",
+                            binding_fact_marker(&element_fact)
+                        ));
+                    }
+                }
+                if let Some(numeric) = primitive_type_identity(&field.ty)
+                    .filter(|name| !matches!(name.as_str(), "bool" | "str" | "String"))
+                {
+                    typed_facts.push(format!(
+                        "{NUMERIC_FIELD_TYPE_MARKER}{identity}{PROVENANCE_SEPARATOR}{field_name}{PROVENANCE_SEPARATOR}{numeric}"
+                    ));
+                }
+            }
+        }
+    }
+    context.extend(typed_facts);
 }
 
 // Visibility-only sources do not contribute bodies or emitted declarations, but their public type

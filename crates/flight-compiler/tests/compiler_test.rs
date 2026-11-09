@@ -32155,4 +32155,40 @@ pub fn dimensions(desc: Option<&Desc>) -> u32 {
         assert!(output.contains("(outer.inner.count ?? 0)"), "{output}");
         assert!(output.contains("?? [0, 0]"), "{output}");
     }
+
+    // A target-native source importing a rust-only crate's struct through the crate root
+    // (`use crate::World;` beside `pub use types::*;`) sees its declared fields, as the generator
+    // passes the sibling modules only as visibility sources.
+    #[test]
+    fn resolves_visibility_struct_fields_through_the_crate_root() {
+        let types = "//! flight-compiler: rust-only\n\nuse std::collections::HashMap;\n\npub struct Inner {\n    pub broke: Vec<i32>,\n}\n\npub struct World {\n    pub counts: Vec<usize>,\n    pub inner: Inner,\n    pub table: HashMap<String, i32>,\n    pub value: Option<u32>,\n}\n";
+        let lib = "mod islands;\nmod types;\n\npub use types::*;\n";
+        let source = "use crate::World;\n\npub fn reset(world: &mut World) -> u32 {\n    world.counts.clear();\n    world.inner.broke.clear();\n    world.table.clear();\n    return world.value.unwrap_or_default();\n}\n";
+        let output = compile_typescript_with_visibility_sources(
+            ModuleSource {
+                path: "crates/flight-demo/src/islands.rs",
+                source,
+            },
+            None,
+            &[],
+            &[],
+            &[
+                ModuleSource {
+                    path: "crates/flight-demo/src/types.rs",
+                    source: types,
+                },
+                ModuleSource {
+                    path: "crates/flight-demo/src/lib.rs",
+                    source: lib,
+                },
+            ],
+        )
+        .unwrap();
+        assert!(
+            output.contains(
+                "  world.counts.length = 0;\n  world.inner.broke.length = 0;\n  world.table.clear();\n  return (world.value ?? 0) >>> 0;"
+            ),
+            "{output}"
+        );
+    }
 }

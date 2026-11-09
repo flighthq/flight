@@ -31,13 +31,13 @@ use super::{
     insert_type_script_nullable_option_field_context,
     insert_type_script_nullable_option_parameter_context,
     insert_type_script_nullable_option_return_context, insert_type_script_type_alias_context,
-    insert_visibility_collection_context, insert_vitest_import_alias_context, is_public,
-    js_string_literal, nullable_guard_types, option_absent_value, preferred_aliases,
-    program_value_bindings, provenance_import_rules, reject_const_group_wildcard_imports,
-    reject_entity_runtime_state_store_collisions, reject_unsafe_lazy_lock_initializers,
-    reject_unsupported_array_like_uses, snake_to_lower_camel, type_contains_nullable,
-    type_script_type_aliases, used_identity_aliases, validate_dependency_export_name_bindings,
-    vitest_current_path_prefix, write_indent,
+    insert_visibility_collection_context, insert_visibility_type_alias_context,
+    insert_vitest_import_alias_context, is_public, js_string_literal, nullable_guard_types,
+    option_absent_value, preferred_aliases, program_value_bindings, provenance_import_rules,
+    reject_const_group_wildcard_imports, reject_entity_runtime_state_store_collisions,
+    reject_unsafe_lazy_lock_initializers, reject_unsupported_array_like_uses, snake_to_lower_camel,
+    type_contains_nullable, type_script_type_aliases, used_identity_aliases,
+    validate_dependency_export_name_bindings, vitest_current_path_prefix, write_indent,
 };
 pub(crate) struct EmitProgramInput<'a> {
     pub program: &'a Program,
@@ -681,13 +681,14 @@ pub(crate) fn emit_program(input: &EmitProgramInput) -> Result<String, CompileEr
         visibility_programs,
         &[],
     )?;
-    insert_visibility_collection_context(
-        &mut expression_context,
-        &visibility_modules
-            .iter()
-            .map(|(module, program)| (module.as_str(), *program))
-            .collect::<Vec<_>>(),
-    );
+    let visibility_module_refs = visibility_modules
+        .iter()
+        .map(|(module, program)| (module.as_str(), *program))
+        .collect::<Vec<_>>();
+    // A source importing through a visibility-only crate root (`use crate::World;` beside the root's
+    // `pub use types::*;`) needs the root's use edges to reach the declaring module.
+    insert_visibility_type_alias_context(&mut expression_context, &visibility_module_refs);
+    insert_visibility_collection_context(&mut expression_context, &visibility_module_refs);
     for (_, program) in program_sources.iter().copied().chain(
         visibility_modules
             .iter()
