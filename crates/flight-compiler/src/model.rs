@@ -2458,7 +2458,6 @@ pub(crate) fn parse_test_program(source: &str) -> Result<TestProgram, CompileErr
             Item::Enum(_)
             | Item::ExternCrate(_)
             | Item::ForeignMod(_)
-            | Item::Macro(_)
             | Item::Static(_)
             | Item::Trait(_)
             | Item::TraitAlias(_)
@@ -2468,7 +2467,7 @@ pub(crate) fn parse_test_program(source: &str) -> Result<TestProgram, CompileErr
                     "unsupported top-level item in portable Rust test source",
                 ));
             }
-            _ => {}
+            Item::Macro(_) | _ => {}
         }
     }
 

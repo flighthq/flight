@@ -33024,6 +33024,33 @@ pub fn has_alnum(text: &str) -> bool {
             "is_alphanumeric should not pass through as camelCase: {output}"
         );
     }
+
+    #[test]
+    fn skips_top_level_macro_invocations_in_test_support() {
+        let source = r#"
+some_crate::impl_entity!(MyStruct);
+
+pub struct MyStruct {
+    pub value: f32,
+}
+
+#[cfg(test)]
+mod basic {
+    use super::*;
+
+    #[test]
+    fn reads_value() {
+        let s = MyStruct { value: 42.0 };
+        assert_eq!(s.value, 42.0);
+    }
+}
+"#;
+        let output = compile_vitest(source, "").unwrap();
+        assert!(
+            output.contains("42"),
+            "test should compile despite top-level macro invocation: {output}"
+        );
+    }
 }
 
 mod receiver_provenance {
