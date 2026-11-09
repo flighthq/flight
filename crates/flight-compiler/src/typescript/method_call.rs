@@ -7,20 +7,21 @@ use crate::{CompileError, compile_error};
 use super::{
     FUNCTION_OWNER_MARKER, METHOD_DELEGATION_MARKER, NULLABLE_OPTIONS_MARKER, PRIMARY_PRECEDENCE,
     PROVENANCE_SEPARATOR, RECORD_CLONE_LOCAL_MARKER, VEC_CLONE_EXPRESSION_MARKER,
-    checked_arithmetic_bounds, checked_arithmetic_operator, constructor_path_default_value,
-    current_source, emit_binary_operand, emit_checked_arithmetic_consumer, emit_closure,
-    emit_encode_utf16_cmp, emit_entity_clone, emit_expression, emit_hash_collection_method,
-    emit_option_combinator, emit_ordered_comparison, emit_record_map_method, emit_type,
-    emitted_closure_is_identity, entity_clone_expression_owner, expression_contains_method,
-    expression_hash_collection, expression_is_json_value, expression_is_known_string,
-    expression_is_reusable, expression_is_sequence, expression_numeric_type,
-    expression_struct_identity, expression_typed_array, function_identity_fact,
-    immediate_receiver_is_method, inline_emitted_closure, is_record_map_local, js_string_literal,
-    lexical_binding, marker_suffixes, method_chain_includes, named_type, numeric_dataview_info,
-    numeric_native_integer_typed_array, option_absent_value, option_binding_fact_default,
-    option_expression_payload, option_map_closure_default, parenthesize_compound,
-    peel_reference_and_paren, referenced_path_identifier, resolve_owner,
-    sequence_element_typed_array, snake_to_lower_camel, typed_array_literal,
+    checked_arithmetic_bounds, checked_arithmetic_operator, coalesce_safe,
+    constructor_path_default_value, current_source, emit_binary_operand,
+    emit_checked_arithmetic_consumer, emit_closure, emit_encode_utf16_cmp, emit_entity_clone,
+    emit_expression, emit_hash_collection_method, emit_option_combinator, emit_ordered_comparison,
+    emit_record_map_method, emit_type, emitted_closure_is_identity, entity_clone_expression_owner,
+    expression_contains_method, expression_hash_collection, expression_is_json_value,
+    expression_is_known_string, expression_is_reusable, expression_is_sequence,
+    expression_numeric_type, expression_struct_identity, expression_typed_array,
+    function_identity_fact, immediate_receiver_is_method, inline_emitted_closure,
+    is_record_map_local, js_string_literal, lexical_binding, marker_suffixes,
+    method_chain_includes, named_type, numeric_dataview_info, numeric_native_integer_typed_array,
+    option_absent_value, option_binding_fact_default, option_expression_payload,
+    option_map_closure_default, parenthesize_compound, peel_reference_and_paren,
+    referenced_path_identifier, resolve_owner, sequence_element_typed_array, snake_to_lower_camel,
+    typed_array_literal,
 };
 
 pub(super) fn emit_method_call(
@@ -766,9 +767,10 @@ pub(super) fn emit_method_call(
         "load" if arguments.len() == 1 => Ok(receiver),
         "last" | "last_mut" if arguments.is_empty() => Ok(format!("{receiver}.at(-1)")),
         "get" if arguments.is_empty() => Ok(format!("{receiver}.value")),
-        "get_or_insert" if arguments.len() == 1 => {
-            Ok(format!("({receiver} = {receiver} ?? {})", arguments[0]))
-        }
+        "get_or_insert" if arguments.len() == 1 => Ok(format!(
+            "({receiver} = {receiver} ?? {})",
+            coalesce_safe(&arguments[0])
+        )),
         "get_or_insert_with" if arguments.len() == 1 => {
             if let Some(default) = constructor_path_default_value(&call.args[0]) {
                 Ok(format!("({receiver} = {receiver} ?? {default})"))
@@ -851,7 +853,9 @@ pub(super) fn emit_method_call(
         "ok" if arguments.is_empty() => Ok(receiver),
         "ok_or" if arguments.len() == 1 => Ok(receiver),
         "ok_or_else" if arguments.len() == 1 => Ok(receiver),
-        "or" if arguments.len() == 1 => Ok(format!("({receiver} ?? {})", arguments[0])),
+        "or" if arguments.len() == 1 => {
+            Ok(format!("({receiver} ?? {})", coalesce_safe(&arguments[0])))
+        }
         "or_else" if arguments.len() == 1 => {
             if let Some(default) = constructor_path_default_value(&call.args[0]) {
                 Ok(format!("({receiver} ?? {default})"))
@@ -1468,7 +1472,7 @@ pub(super) fn emit_method_call(
             if let Expr::Closure(closure) = peel_reference_and_paren(&call.args[0]) {
                 if closure.inputs.is_empty() && !matches!(closure.body.as_ref(), Expr::Block(_)) {
                     let body = emit_expression(&closure.body, entities)?;
-                    Ok(format!("({receiver} ?? {body})"))
+                    Ok(format!("({receiver} ?? {})", coalesce_safe(&body)))
                 } else if closure.inputs.is_empty() {
                     let arrow = emit_closure(closure, entities)?;
                     Ok(format!("({receiver} ?? ({arrow})())"))
@@ -1487,7 +1491,9 @@ pub(super) fn emit_method_call(
         {
             Ok(receiver)
         }
-        "unwrap_or" if arguments.len() == 1 => Ok(format!("({receiver} ?? {})", arguments[0])),
+        "unwrap_or" if arguments.len() == 1 => {
+            Ok(format!("({receiver} ?? {})", coalesce_safe(&arguments[0])))
+        }
         "unwrap_or_default" if arguments.is_empty() => {
             let default_value = option_binding_fact_default(&call.receiver, entities)
                 .map(ToString::to_string)

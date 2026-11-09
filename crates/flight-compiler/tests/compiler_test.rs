@@ -6569,6 +6569,29 @@ pub fn with_default(value: Option<i32>, fallback: i32) -> i32 {
     }
 
     #[test]
+    fn coalesce_rhs_with_logical_operators_is_parenthesized() {
+        let source = r#"
+pub fn with_logical_or(value: Option<bool>, a: bool, b: bool) -> bool {
+    return value.unwrap_or_else(|| a || b);
+}
+pub fn with_logical_and(value: Option<bool>, a: bool, b: bool) -> bool {
+    return value.unwrap_or(a && b);
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(
+            output.contains("?? (a || b)"),
+            "unwrap_or_else with || in closure body must parenthesize the RHS: {output}"
+        );
+        assert!(
+            output.contains("?? (a && b)"),
+            "unwrap_or with && in argument must parenthesize the RHS: {output}"
+        );
+    }
+
+    #[test]
     fn lowers_clone_from_to_object_assign() {
         let source = r#"
 pub struct Point { pub x: f32, pub y: f32 }

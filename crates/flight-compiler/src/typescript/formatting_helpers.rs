@@ -72,6 +72,34 @@ pub(super) fn parenthesize_compound(expr: &str) -> std::borrow::Cow<'_, str> {
     return std::borrow::Cow::Borrowed(expr);
 }
 
+// JavaScript forbids mixing `??` with `||`/`&&` without explicit grouping. This wraps an expression
+// in parentheses when it contains a top-level `||` or `&&`, so it is safe as a `??` operand.
+pub(super) fn coalesce_safe(expr: &str) -> std::borrow::Cow<'_, str> {
+    let trimmed = expr.trim();
+    if trimmed.starts_with('(') && trimmed.ends_with(')') {
+        return std::borrow::Cow::Borrowed(expr);
+    }
+    let bytes = trimmed.as_bytes();
+    let len = bytes.len();
+    let mut depth = 0i32;
+    let mut i = 0;
+    while i < len {
+        match bytes[i] {
+            b'(' | b'[' => depth += 1,
+            b')' | b']' => depth -= 1,
+            b'&' if depth == 0 && i + 1 < len && bytes[i + 1] == b'&' => {
+                return std::borrow::Cow::Owned(format!("({expr})"));
+            }
+            b'|' if depth == 0 && i + 1 < len && bytes[i + 1] == b'|' => {
+                return std::borrow::Cow::Owned(format!("({expr})"));
+            }
+            _ => {}
+        }
+        i += 1;
+    }
+    return std::borrow::Cow::Borrowed(expr);
+}
+
 pub(crate) fn write_indent(out: &mut String, indent: usize) {
     for _ in 0..indent {
         out.push_str("  ");
