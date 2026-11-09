@@ -8,8 +8,8 @@ use syn::{BinOp, Expr, Lit, Pat, Token};
 use crate::{CompileError, compile_error};
 
 use super::{
-    BINDING_MARKER, NULLABLE_OPTIONS_MARKER, data_union_pattern_test, emit_expression,
-    emit_literal, emit_path_segment, expression_is_reusable, js_string_literal,
+    BINDING_MARKER, DataUnionPatternTest, NULLABLE_OPTIONS_MARKER, data_union_pattern_test,
+    emit_expression, emit_literal, emit_path_segment, expression_is_reusable, js_string_literal,
     parse_matches_arguments, parse_vec_repeat, snake_to_lower_camel, write_indent,
 };
 
@@ -352,10 +352,22 @@ pub(super) fn emit_matches_macro(
         }
         return Ok(format!("((value) => {full_predicate})({text})"));
     }
-    if guard.is_some() {
-        return Err(compile_error(
-            "portable `matches!` guard requires a data union variant pattern",
-        ));
+    if let Some(guard_expr) = &guard {
+        let Some(test) = matches_binding_pattern_test(&pattern, subject, entities)? else {
+            return Err(compile_error(
+                "portable `matches!` guard requires a data union variant, `Some`, binding or literal pattern",
+            ));
+        };
+        let guard_text = emit_matches_guard(guard_expr, &test.bindings, entities)?;
+        let full_predicate = match test.predicate {
+            Some(predicate) if guard_text != "true" => format!("{predicate} && {guard_text}"),
+            Some(predicate) => predicate,
+            None => guard_text,
+        };
+        if reusable {
+            return Ok(full_predicate);
+        }
+        return Ok(format!("((value) => {full_predicate})({text})"));
     }
     if let Some(predicate) = emit_matches_literal_predicate(&pattern, subject, entities)? {
         if reusable {
@@ -396,6 +408,80 @@ pub(super) fn emit_matches_guard(
     Ok(format!("(({params}) => {guard_text})({args})"))
 }
 
+// A `matches!` pattern whose bindings a guard reads: a binding identifier (`v`, `v @ inner`), `Some`
+// over one (an `Option` lowers to its payload or an absent value), a reference pattern, or a data
+// union variant or literal pattern. `None` when the pattern has no portable test.
+fn matches_binding_pattern_test(
+    pattern: &Pat,
+    subject: &str,
+    entities: &HashSet<String>,
+) -> Result<Option<DataUnionPatternTest>, CompileError> {
+    match pattern {
+        Pat::Paren(paren) => return matches_binding_pattern_test(&paren.pat, subject, entities),
+        Pat::Reference(reference) => {
+            return matches_binding_pattern_test(&reference.pat, subject, entities);
+        }
+        Pat::Ident(ident) if pattern_identifier_is_binding(&ident.ident) => {
+            let mut test = match &ident.subpat {
+                Some((_, inner)) => {
+                    let Some(test) = matches_binding_pattern_test(inner, subject, entities)? else {
+                        return Ok(None);
+                    };
+                    test
+                }
+                None => DataUnionPatternTest {
+                    bindings: Vec::new(),
+                    predicate: None,
+                },
+            };
+            test.bindings
+                .insert(0, (ident.ident.to_string(), subject.to_string()));
+            return Ok(Some(test));
+        }
+        Pat::TupleStruct(tuple)
+            if tuple.qself.is_none() && tuple.path.is_ident("Some") && tuple.elems.len() == 1 =>
+        {
+            let Some(inner) = matches_binding_pattern_test(&tuple.elems[0], subject, entities)?
+            else {
+                return Ok(None);
+            };
+            let absent = if entities.contains(NULLABLE_OPTIONS_MARKER) {
+                "null"
+            } else {
+                "undefined"
+            };
+            let present = format!("{subject} !== {absent}");
+            return Ok(Some(DataUnionPatternTest {
+                bindings: inner.bindings,
+                predicate: Some(match inner.predicate {
+                    Some(predicate) => format!("{present} && ({predicate})"),
+                    None => present,
+                }),
+            }));
+        }
+        _ => {}
+    }
+    if let Some(test) = data_union_pattern_test(pattern, subject, entities)? {
+        return Ok(Some(test));
+    }
+    return Ok(
+        emit_matches_literal_predicate(pattern, subject, entities)?.map(|predicate| {
+            DataUnionPatternTest {
+                bindings: Vec::new(),
+                predicate: Some(predicate),
+            }
+        }),
+    );
+}
+
+// A lowercase pattern identifier binds the matched value; an uppercase one names a constant or a
+// unit struct, which the pattern compares against.
+fn pattern_identifier_is_binding(identifier: &syn::Ident) -> bool {
+    return identifier
+        .to_string()
+        .starts_with(|character: char| character.is_lowercase() || character == '_');
+}
+
 pub(super) fn emit_matches_literal_predicate(
     pattern: &Pat,
     subject: &str,
@@ -418,6 +504,11 @@ pub(super) fn emit_matches_literal_predicate(
             Ok(Some(parts.join(" || ")))
         }
         Pat::Wild(_) => Ok(Some("true".to_string())),
+        Pat::Ident(ident)
+            if ident.subpat.is_none() && pattern_identifier_is_binding(&ident.ident) =>
+        {
+            Ok(Some("true".to_string()))
+        }
         Pat::Ident(ident) if ident.subpat.is_none() => {
             let name = emit_path_segment(&ident.ident.to_string());
             Ok(Some(format!("{subject} === {name}")))
@@ -472,6 +563,9 @@ pub(super) fn emit_matches_literal_predicate(
             }
             if let Some(inner) = emit_matches_literal_predicate(&tuple.elems[0], subject, entities)?
             {
+                if inner == "true" {
+                    return Ok(Some(format!("{subject} !== {absent}")));
+                }
                 return Ok(Some(format!("{subject} !== {absent} && ({inner})")));
             }
             if let Some(test) = data_union_pattern_test(&tuple.elems[0], subject, entities)? {

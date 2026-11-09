@@ -33386,3 +33386,31 @@ pub fn create_projection() -> Arc<RwLock<Projection>> {
     assert!(output.contains("retained === projection"), "{output}");
     assert!(output.contains("copy === matrix"), "{output}");
 }
+
+#[test]
+fn matches_macro_with_some_guard() {
+    let source = r#"
+pub fn is_big_value(opt: Option<f32>) -> bool {
+    return matches!(opt, Some(v) if v > 100.0);
+}
+"#;
+    let output = compile_typescript(source, None).unwrap();
+    assert!(
+        output.contains("!=") && (output.contains("> 100") || output.contains(">100")),
+        "matches! with Some guard should compile: {output}"
+    );
+}
+
+#[test]
+fn matches_macro_with_literal_or_pattern_and_guard() {
+    let source = r#"
+pub fn check_range(value: Option<i32>) -> bool {
+    return matches!(value, Some(v) if v >= 0 && v < 100);
+}
+"#;
+    let output = compile_typescript(source, None).unwrap();
+    assert!(
+        output.contains("!=") && output.contains(">="),
+        "matches! with range guard should compile: {output}"
+    );
+}
