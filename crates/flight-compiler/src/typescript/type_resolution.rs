@@ -242,7 +242,7 @@ pub(super) fn vec_clone_optional(rust_type: &Type) -> Option<bool> {
 // this crate's item unless the path is absolute (a leading empty segment for `::root`, which starts in
 // the extern prelude); an `extern crate` binding is replaced by the crate it names; `std` without one is
 // absent under `#![no_std]`, and `alloc` is never in scope without one.
-// flight-lint: allow(hashmap-iteration) each local name has at most one recorded extern crate
+// flight-lint: allow(hashmap-iteration) deterministic: min() selects the lexicographically smallest match
 pub(super) fn canonical_type_path_root(
     mut path: Vec<String>,
     context: &HashSet<String>,
@@ -294,7 +294,7 @@ pub(super) fn is_standard_type_path(path: &[String], name: &str) -> bool {
 // marker traits) or an extern `std` / `core` / `alloc` root. `None` when that cannot be decided from this
 // source: an unknown root, a prelude name it does not model, or a glob outside the standard library that
 // could supply the name.
-// flight-lint: allow(hashmap-iteration) each local name has at most one recorded import target
+// flight-lint: allow(hashmap-iteration) deterministic: min() and BTreeSet ensure stable iteration
 pub(super) fn resolve_type_path(
     path: &syn::Path,
     context: &HashSet<String>,
@@ -419,7 +419,7 @@ pub(super) fn std_mem_function(expression: &Expr, context: &HashSet<String>) -> 
 }
 
 // The `std::mem` function a single-segment call name was imported as, if any.
-// flight-lint: allow(hashmap-iteration) each local name has at most one recorded std::mem function
+// flight-lint: allow(hashmap-iteration) deterministic: min() selects the lexicographically smallest match
 pub(super) fn std_mem_imported_function(context: &HashSet<String>, local: &str) -> Option<String> {
     if context.contains(&format!("{STD_MEM_FUNCTION_MARKER}{local}")) {
         let prefix = format!("{STD_MEM_FUNCTION_TARGET_MARKER}{local}:");
