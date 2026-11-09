@@ -1069,6 +1069,47 @@ pub fn any_match(haystack: &[PlayerRef], needle: &PlayerRef) -> bool {
         );
     }
 
+    #[test]
+    fn marks_struct_field_access_as_shared_identity() {
+        let source = r#"
+use std::sync::Arc;
+use std::sync::RwLock;
+
+pub type Ref<T> = Arc<RwLock<T>>;
+
+pub struct Player {
+    pub name: String,
+}
+
+pub type PlayerRef = Ref<Player>;
+
+pub struct Layer {
+    pub player: PlayerRef,
+    pub blend_tree: Option<PlayerRef>,
+}
+
+pub fn layer_has_player(layer: &Layer, target: &PlayerRef) -> bool {
+    return Arc::ptr_eq(&layer.player, target);
+}
+
+pub fn match_blend_tree(layer: &Layer, target: &PlayerRef) -> bool {
+    if let Some(ref bt) = layer.blend_tree {
+        return Arc::ptr_eq(bt, target);
+    }
+    return false;
+}
+"#;
+        let output = compile_typescript(source, None).unwrap();
+        assert!(
+            output.contains("layer.player === target"),
+            "struct field access should be proven identity-bearing: {output}"
+        );
+        assert!(
+            output.contains("bt === target"),
+            "if-let binding from struct field should be proven identity-bearing: {output}"
+        );
+    }
+
     // A dependency crate's identity-bearing types and public fields are read in that crate's own
     // sources (an alias in one file, the struct using it in another), so its handles compare by
     // allocation; its primitive payload still fails closed.

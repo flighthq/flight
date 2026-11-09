@@ -20,7 +20,8 @@ use super::{
     OPTION_RETURN_MARKER, PROVENANCE_SEPARATOR, RECORD_MAP_VARIANT_MARKER,
     REF_ALIAS_RECEIVER_CAPTURE_MARKER, REF_ALIAS_TARGET_MARKER, RETURN_BINDING_FACT_MARKER,
     RuntimeCategory, SEQUENCE_FIELD_ELEMENT_MARKER, SEQUENCE_FIELD_MARKER, SEQUENCE_RETURN_MARKER,
-    SHARED_IDENTITY_BINDING_MARKER, STRUCT_FIELD_TYPE_MARKER, STRUCT_OWNER_MARKER,
+    SHARED_IDENTITY_BINDING_MARKER, SHARED_IDENTITY_EXTERNAL_FIELD_MARKER,
+    SHARED_IDENTITY_FIELD_MARKER, STRUCT_FIELD_TYPE_MARKER, STRUCT_OWNER_MARKER,
     STRUCT_RETURN_MARKER, TAGGED_DATA_UNION_VARIANT_MARKER, TYPE_ALIAS_DEFINITION_MARKER,
     TYPE_ALIAS_GENERICS_MARKER, TYPE_ALIAS_OWNER_MARKER, TYPED_ARRAY_SEQUENCE_FIELD_MARKER,
     binary_operator_assigns, binding_fact_from_marker, binding_fact_marker,
@@ -546,6 +547,30 @@ pub(super) fn insert_lexical_binding_context(function: &ItemFn, context: &mut Ha
                             )
                         )
                 }
+                Expr::Field(field) => {
+                    if self.expression_structure_identity(expression).is_some() {
+                        return true;
+                    }
+                    let syn::Member::Named(member) = &field.member else {
+                        return false;
+                    };
+                    let base = peel_shared_view(&field.base);
+                    if let Some(owner) = self.expression_structure_identity(base) {
+                        return self.context.contains(&format!(
+                            "{SHARED_IDENTITY_FIELD_MARKER}{owner}{PROVENANCE_SEPARATOR}{member}"
+                        ));
+                    }
+                    if let Some(name) = single_path_identifier(base)
+                        && let Some(id) = self.binding_id(&name)
+                        && let Some(external) = self.external_structs.get(&id)
+                    {
+                        return self.context.contains(&format!(
+                            "{SHARED_IDENTITY_EXTERNAL_FIELD_MARKER}{external}{PROVENANCE_SEPARATOR}{member}"
+                        ));
+                    }
+                    false
+                }
+                Expr::Reference(reference) => self.initializer_is_shared_identity(&reference.expr),
                 _ => false,
             };
         }
