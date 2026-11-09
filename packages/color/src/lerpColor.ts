@@ -25,7 +25,7 @@ export function lerpColor(start: number, end: number, t: number): number {
   const g = sg + (eg - sg) * tc;
   const b = sb + (eb - sb) * tc;
   const a = sa + (ea - sa) * tc;
-  return packLinearChannelsToColor(r, g, b, a) >>> 0;
+  return packLinearChannelsToColor(r, g, b, a);
 }
 
 /**

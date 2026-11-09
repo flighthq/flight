@@ -1,7 +1,7 @@
 // Generated from crates/flight-input/src/input_signals.rs by flight-compiler.
 // Rust is authoritative; run `npm run generate` after changing it.
 
-import { allocateEntity } from '@flighthq/entity/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { SignalRaw } from '@flighthq/signals/contract';
 import { createSignal } from '@flighthq/signals/contract';
 
@@ -40,32 +40,16 @@ export function createInputManager(): InputManagerRaw {
     onWheel: allocateEntity<SignalRaw<InputPointerData>>(),
   });
   initializeInputManager(out);
-  return out;
+  return finishEntity(out);
 }
 
 /**
  * Allocates the full event signal group (TS `createInputSignals`).
  */
 export function createInputSignals(): InputSignalsRaw {
-  let out: InputSignalsRaw = Object.assign(allocateEntity<InputSignalsRaw>(), {
-    onGamepadAxisMove: allocateEntity<SignalRaw<InputGamepadAxisData>>(),
-    onGamepadButtonDown: allocateEntity<SignalRaw<InputGamepadButtonData>>(),
-    onGamepadButtonUp: allocateEntity<SignalRaw<InputGamepadButtonData>>(),
-    onGamepadConnect: allocateEntity<SignalRaw<InputGamepadConnectData>>(),
-    onGamepadDisconnect: allocateEntity<SignalRaw<InputGamepadConnectData>>(),
-    onKeyDown: allocateEntity<SignalRaw<InputKeyboardData>>(),
-    onKeyUp: allocateEntity<SignalRaw<InputKeyboardData>>(),
-    onPointerCancel: allocateEntity<SignalRaw<InputPointerData>>(),
-    onPointerDown: allocateEntity<SignalRaw<InputPointerData>>(),
-    onPointerMove: allocateEntity<SignalRaw<InputPointerData>>(),
-    onPointerMoveRelative: allocateEntity<SignalRaw<InputPointerData>>(),
-    onPointerUp: allocateEntity<SignalRaw<InputPointerData>>(),
-    onTextEdit: allocateEntity<SignalRaw<InputTextData>>(),
-    onTextInput: allocateEntity<SignalRaw<InputTextData>>(),
-    onWheel: allocateEntity<SignalRaw<InputPointerData>>(),
-  });
+  let out: InputSignalsRaw = allocateEntity<InputSignalsRaw>();
   initializeInputSignals(out);
-  return out;
+  return finishEntity(out);
 }
 
 /**
