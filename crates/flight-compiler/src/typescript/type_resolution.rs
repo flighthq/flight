@@ -284,7 +284,12 @@ pub(super) fn canonical_type_path_root(
         path.remove(0);
     }
     let first = path.first()?.clone();
-    if !absolute && context.contains(&format!("{TYPE_LOCAL_MARKER}{first}")) {
+    // A `self::` / `super::` path (a sibling module's `use super::module::*`) is crate-relative, the
+    // same root `resolve_type_path` gives such a path.
+    if !absolute
+        && (context.contains(&format!("{TYPE_LOCAL_MARKER}{first}"))
+            || matches!(first.as_str(), "self" | "super"))
+    {
         return Some(std::iter::once("crate".to_string()).chain(path).collect());
     }
     let prefix = format!("{TYPE_EXTERN_CRATE_MARKER}{first}{PROVENANCE_SEPARATOR}");
