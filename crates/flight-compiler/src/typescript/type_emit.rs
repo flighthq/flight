@@ -23,12 +23,13 @@ use super::{
     emit_callable_parameters, emit_documentation, emit_function_trait_type,
     emit_function_trait_type_with_parameter_names, emit_hash_collection_type,
     emit_single_generic_type, export_name, flight_error_result_type, hash_collection_type,
-    identity_alias_tag, inline_string_union, is_internal_type_export, is_primitive_typescript_type,
-    is_public, is_standard_type_path, js_string_literal, marker_suffixes, named_type,
-    nullable_type, option_inner_type, owner_marker, pinned_boxed_trait_output, resolve_path_owner,
-    resolve_type_path, rust_type_has_interior_mutability, snake_to_lower_camel,
-    standard_vec_inner_type, type_is_named, type_kind, type_path_is_standard_vec,
-    vitest_current_path_prefix, vitest_struct_path_binding_name,
+    identity_alias_tag, inline_string_union, is_crate_wide, is_internal_type_export,
+    is_primitive_typescript_type, is_public, is_standard_type_path, js_string_literal,
+    marker_suffixes, named_type, nullable_type, option_inner_type, owner_marker,
+    pinned_boxed_trait_output, resolve_path_owner, resolve_type_path,
+    rust_type_has_interior_mutability, snake_to_lower_camel, standard_vec_inner_type,
+    type_is_named, type_kind, type_path_is_standard_vec, vitest_current_path_prefix,
+    vitest_struct_path_binding_name,
 };
 
 pub(crate) fn insert_type_script_type_alias_context(
@@ -544,18 +545,23 @@ pub(crate) fn insert_type_script_nullable_option_return_context<'a>(
                         metadata.name
                     )));
                 };
-                if !is_public(&function.vis) || option_inner_type(rust_type).is_none() {
+                if !is_crate_wide(&function.vis) || option_inner_type(rust_type).is_none() {
                     return Err(compile_error(format!(
-                        "TypeScript nullable Option return `{}` must designate a public Rust function or callable alias returning `Option`",
+                        "TypeScript nullable Option return `{}` must designate a public or crate-visible Rust function or callable alias returning `Option`",
                         metadata.name
                     )));
                 }
                 let function_name = function.sig.ident.to_string();
+                let access = if is_public(&function.vis) {
+                    SourceAccess::Public
+                } else {
+                    SourceAccess::Crate
+                };
                 context.insert(owner_marker(
                     FUNCTION_OWNER_MARKER,
                     module,
                     &function_name,
-                    SourceAccess::Public,
+                    access,
                 ));
                 context.insert(format!(
                     "{NULLABLE_OPTION_RETURN_MARKER}{module}{PROVENANCE_SEPARATOR}{function_name}{PROVENANCE_SEPARATOR}"
@@ -565,17 +571,22 @@ pub(crate) fn insert_type_script_nullable_option_return_context<'a>(
                 ));
             }
             ReturnOwner::Callable(module, alias) => {
-                if !is_public(&alias.vis) || callable_option_return_type(&alias.ty).is_none() {
+                if !is_crate_wide(&alias.vis) || callable_option_return_type(&alias.ty).is_none() {
                     return Err(compile_error(format!(
-                        "TypeScript nullable Option return `{}` must designate a public Rust function or callable alias returning `Option`",
+                        "TypeScript nullable Option return `{}` must designate a public or crate-visible Rust function or callable alias returning `Option`",
                         metadata.name
                     )));
                 }
+                let access = if is_public(&alias.vis) {
+                    SourceAccess::Public
+                } else {
+                    SourceAccess::Crate
+                };
                 context.insert(owner_marker(
                     TYPE_ALIAS_OWNER_MARKER,
                     module,
                     &alias.ident.to_string(),
-                    SourceAccess::Public,
+                    access,
                 ));
                 context.insert(format!(
                     "{NULLABLE_OPTION_CALLABLE_RETURN_MARKER}{module}{PROVENANCE_SEPARATOR}{}",
@@ -738,18 +749,23 @@ pub(crate) fn insert_type_script_nullable_option_parameter_context<'a>(
         }
         let (module, function, argument, pattern, index) =
             matches.pop().expect("one match was required");
-        if !is_public(&function.vis) || option_inner_type(&argument.ty).is_none() {
+        if !is_crate_wide(&function.vis) || option_inner_type(&argument.ty).is_none() {
             return Err(compile_error(format!(
-                "TypeScript nullable Option parameter `{}.{}` must designate a public Rust function `Option` parameter",
+                "TypeScript nullable Option parameter `{}.{}` must designate a public or crate-visible Rust function `Option` parameter",
                 metadata.owner, metadata.parameter
             )));
         }
         let function_name = function.sig.ident.to_string();
+        let access = if is_public(&function.vis) {
+            SourceAccess::Public
+        } else {
+            SourceAccess::Crate
+        };
         context.insert(owner_marker(
             FUNCTION_OWNER_MARKER,
             module,
             &function_name,
-            SourceAccess::Public,
+            access,
         ));
         context.insert(format!(
             "{NULLABLE_OPTION_PARAMETER_MARKER}{module}{PROVENANCE_SEPARATOR}{function_name}{PROVENANCE_SEPARATOR}{}",
@@ -800,18 +816,23 @@ pub(crate) fn insert_type_script_default_null_option_parameter_context<'a>(
         }
         let (module, function, argument, pattern, index) =
             matches.pop().expect("one match was required");
-        if !is_public(&function.vis) || option_inner_type(&argument.ty).is_none() {
+        if !is_crate_wide(&function.vis) || option_inner_type(&argument.ty).is_none() {
             return Err(compile_error(format!(
-                "TypeScript default-null Option parameter `{}.{}` must designate a public Rust function `Option` parameter",
+                "TypeScript default-null Option parameter `{}.{}` must designate a public or crate-visible Rust function `Option` parameter",
                 metadata.owner, metadata.parameter
             )));
         }
         let function_name = function.sig.ident.to_string();
+        let access = if is_public(&function.vis) {
+            SourceAccess::Public
+        } else {
+            SourceAccess::Crate
+        };
         context.insert(owner_marker(
             FUNCTION_OWNER_MARKER,
             module,
             &function_name,
-            SourceAccess::Public,
+            access,
         ));
         context.insert(format!(
             "{DEFAULT_NULL_OPTION_PARAMETER_MARKER}{module}{PROVENANCE_SEPARATOR}{function_name}{PROVENANCE_SEPARATOR}{}",

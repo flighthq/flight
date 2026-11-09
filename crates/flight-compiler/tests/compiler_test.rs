@@ -15675,11 +15675,11 @@ pub fn resolve(state: &State) -> bool {
         for (declaration, expected) in [
             (
                 "pub type Invalid = fn() -> bool;",
-                "public Rust function or callable alias returning `Option`",
+                "public or crate-visible Rust function or callable alias returning `Option`",
             ),
             (
                 "type Invalid = fn() -> Option<bool>;",
-                "public Rust function or callable alias returning `Option`",
+                "public or crate-visible Rust function or callable alias returning `Option`",
             ),
         ] {
             let metadata = [TypeScriptNullableOptionReturn { name: "Invalid" }];
