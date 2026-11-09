@@ -1640,6 +1640,15 @@ pub(super) fn emit_match_patterns(
     };
 }
 
+fn parse_char_range_bound(bound: &Option<Box<Expr>>) -> Option<char> {
+    return bound.as_ref().and_then(|expr| match expr.as_ref() {
+        Expr::Lit(syn::ExprLit {
+            lit: Lit::Char(ch), ..
+        }) => Some(ch.value()),
+        _ => None,
+    });
+}
+
 fn parse_range_bound(bound: &Option<Box<Expr>>) -> Option<i64> {
     return bound.as_ref().and_then(|expr| match expr.as_ref() {
         Expr::Lit(syn::ExprLit {
@@ -1691,17 +1700,33 @@ pub(super) fn emit_pattern_condition(
         Pat::Range(range) => {
             let start = parse_range_bound(&range.start);
             let end = parse_range_bound(&range.end);
-            let (Some(start), Some(end)) = (start, end) else {
-                return Err(compile_error("unsupported portable Rust range pattern"));
-            };
-            let inclusive_end = if matches!(range.limits, syn::RangeLimits::Closed(_)) {
-                end
+            if let (Some(start), Some(end)) = (start, end) {
+                let inclusive_end = if matches!(range.limits, syn::RangeLimits::Closed(_)) {
+                    end
+                } else {
+                    end - 1
+                };
+                return Ok(format!(
+                    "{scrutinee} >= {start} && {scrutinee} <= {inclusive_end}"
+                ));
+            }
+            let char_start = parse_char_range_bound(&range.start);
+            let char_end = parse_char_range_bound(&range.end);
+            if let (Some(start), Some(end)) = (char_start, char_end) {
+                let inclusive_end = if matches!(range.limits, syn::RangeLimits::Closed(_)) {
+                    end
+                } else {
+                    char::from_u32(end as u32 - 1)
+                        .ok_or_else(|| compile_error("invalid char range bound"))?
+                };
+                let start_str = js_string_literal(&start.to_string());
+                let end_str = js_string_literal(&inclusive_end.to_string());
+                Ok(format!(
+                    "{scrutinee} >= {start_str} && {scrutinee} <= {end_str}"
+                ))
             } else {
-                end - 1
-            };
-            Ok(format!(
-                "{scrutinee} >= {start} && {scrutinee} <= {inclusive_end}"
-            ))
+                Err(compile_error("unsupported portable Rust range pattern"))
+            }
         }
         Pat::Or(or) => {
             let conditions: Vec<String> = or

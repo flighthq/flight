@@ -29458,6 +29458,33 @@ pub fn classify_byte(byte: u8) -> i32 {
 }
 
 #[test]
+fn lowers_char_range_match_to_string_comparisons() {
+    let source = r#"
+pub fn classify_char(c: char) -> i32 {
+    match c {
+        'a'..='z' => 1,
+        'A'..='Z' => 2,
+        '0'..='9' => 3,
+        _ => 0,
+    }
+}
+"#;
+    let output = compile_typescript(source, None).unwrap();
+    assert!(
+        output.contains("c >= 'a' && c <= 'z'"),
+        "should emit string range check for a-z: {output}"
+    );
+    assert!(
+        output.contains("c >= 'A' && c <= 'Z'"),
+        "should emit string range check for A-Z: {output}"
+    );
+    assert!(
+        output.contains("c >= '0' && c <= '9'"),
+        "should emit string range check for 0-9: {output}"
+    );
+}
+
+#[test]
 fn lowers_match_on_option_of_enum_variant_to_kind_check() {
     let source = r#"
 pub struct Mapping { pub name: String }
