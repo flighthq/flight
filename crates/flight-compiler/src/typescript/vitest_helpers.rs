@@ -7,21 +7,21 @@ use crate::model::{Program, TestProgram};
 use crate::{CompileError, compile_error};
 
 use super::{
-    BindingFact, EXPORT_NAME_MARKER, EXPORT_NAME_TARGET_MARKER, FUNCTION_OWNER_MARKER,
-    NULLABLE_CALL_MARKER, NULLABLE_OPTIONS_MARKER, PROVENANCE_SEPARATOR, ProvenanceIdentity,
-    ProvenanceImportRule, RETURN_BINDING_FACT_MARKER, SHARED_IDENTITY_FIELD_MARKER,
-    SHARED_IDENTITY_RETURN_MARKER, SLICE_ARGUMENT_MARKER, STRUCT_OWNER_MARKER, SourceAccess,
-    TYPE_ALIAS_DEFINITION_MARKER, argument_is_option, bind_lexical_pattern, binding_fact_for_type,
-    binding_fact_marker, callable_parameter_rust_types, clear_provenance_binding,
-    collect_cross_crate_use_tree, direct_lock_guard_receiver, export_name,
-    expression_is_associated_path, expression_is_path, foreign_wildcard_modules,
-    insert_dependency_export_name_context, insert_provenance_binding, is_primitive_typescript_type,
-    is_public, lexical_fact, local_pattern_name, marker_suffixes, provenance_binding_table,
-    provenance_import_rules, provenance_marker_values, provenance_pattern_bindings,
-    replace_provenance_binding_table, resolve_owner_inner, resolved_provenance_binding,
-    rust_type_is_shared_identity, shared_identity_type_at_depth, snake_to_lower_camel,
-    source_module_name, typed_slice_parameter_kind, unique_alias_owner, unique_marker_suffix,
-    vec_clone_optional,
+    BindingFact, ENUM_OWNER_MARKER, EXPORT_NAME_MARKER, EXPORT_NAME_TARGET_MARKER,
+    FUNCTION_OWNER_MARKER, NULLABLE_CALL_MARKER, NULLABLE_OPTIONS_MARKER, PROVENANCE_SEPARATOR,
+    ProvenanceIdentity, ProvenanceImportRule, RETURN_BINDING_FACT_MARKER,
+    SHARED_IDENTITY_FIELD_MARKER, SHARED_IDENTITY_RETURN_MARKER, SLICE_ARGUMENT_MARKER,
+    STRUCT_OWNER_MARKER, SourceAccess, TYPE_ALIAS_DEFINITION_MARKER, argument_is_option,
+    bind_lexical_pattern, binding_fact_for_type, binding_fact_marker,
+    callable_parameter_rust_types, clear_provenance_binding, collect_cross_crate_use_tree,
+    direct_lock_guard_receiver, export_name, expression_is_associated_path, expression_is_path,
+    foreign_wildcard_modules, insert_dependency_export_name_context, insert_provenance_binding,
+    is_primitive_typescript_type, is_public, lexical_fact, local_pattern_name, marker_suffixes,
+    provenance_binding_table, provenance_import_rules, provenance_marker_values,
+    provenance_pattern_bindings, replace_provenance_binding_table, resolve_owner_inner,
+    resolved_provenance_binding, rust_type_is_shared_identity, shared_identity_type_at_depth,
+    snake_to_lower_camel, source_module_name, typed_slice_parameter_kind, unique_alias_owner,
+    unique_marker_suffix, vec_clone_optional,
 };
 
 pub(super) const VITEST_FUNCTION_CANDIDATE_MARKER: &str = "@vitest-function-candidate:";
@@ -38,6 +38,8 @@ pub(super) const VITEST_STRUCT_OWNER_MARKER: &str = "@vitest-struct-owner:";
 // stays on the crate's contract import even when a foreign wildcard is also in scope.
 const VITEST_OWN_PUBLIC_MARKER: &str = "@vitest-own-public:";
 pub(super) const VITEST_STRUCT_CANDIDATE_MARKER: &str = "@vitest-struct-candidate:";
+pub(super) const VITEST_ENUM_CANDIDATE_MARKER: &str = "@vitest-enum-candidate:";
+pub(super) const VITEST_ENUM_OWNER_MARKER: &str = "@vitest-enum-owner:";
 pub(super) const VITEST_PUBLIC_FUNCTION_MARKER: &str = "@vitest-public-function:";
 pub(super) const VITEST_REBOUND_TYPE_MARKER: &str = "@vitest-rebound-type:";
 pub(super) const VITEST_STRUCT_RETURN_MARKER: &str = "@vitest-struct-return:";
@@ -1352,6 +1354,25 @@ pub(super) fn vitest_struct_owner(entities: &HashSet<String>, structure: &str) -
     return unique_marker_suffix(
         entities,
         &format!("{VITEST_STRUCT_OWNER_MARKER}{structure}{PROVENANCE_SEPARATOR}"),
+    );
+}
+
+// The source identity of the enum a test-module path names, resolved through the test's imports and
+// the contract's selections exactly as a struct path is. Fails closed on anything ambiguous.
+pub(super) fn vitest_enum_owner(context: &HashSet<String>, path: &syn::Path) -> Option<String> {
+    let name = resolved_vitest_path_binding(
+        path,
+        context,
+        VITEST_ENUM_OWNER_MARKER,
+        VITEST_ENUM_CANDIDATE_MARKER,
+        ENUM_OWNER_MARKER,
+        "enum",
+    )
+    .ok()
+    .flatten()?;
+    return unique_marker_suffix(
+        context,
+        &format!("{VITEST_ENUM_OWNER_MARKER}{name}{PROVENANCE_SEPARATOR}"),
     );
 }
 

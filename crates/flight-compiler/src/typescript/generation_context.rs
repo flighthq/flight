@@ -19,43 +19,45 @@ use super::{
     DIRECT_LOCK_GUARD_TARGET_MARKER, ENTITY_CLONE_FIELD_MARKER, ENTITY_DEFAULT_FIELD_MARKER,
     ENTITY_DEFINITELY_INITIALIZED_FIELD_MARKER, ENTITY_INITIALIZER_PREFIX_FIELD_MARKER,
     ENTITY_RUNTIME_STATE_FIELD_MARKER, ENTITY_RUNTIME_STATE_MARKER, ENTITY_TYPE_MARKER,
-    ENTITY_UNSUPPORTED_DEFAULT_FIELD_MARKER, ENUM_DEFAULT_VARIANT_MARKER,
-    ERASED_SHARED_CELL_FIELD_MARKER, EXTERNAL_STRUCT_FIELD_MARKER, FIXED_BUFFER_ARGUMENT_MARKER,
-    FIXED_BUFFER_LOCAL_MARKER, FROZEN_OBJECT_MARKER, FUNCTION_OWNER_MARKER,
-    HASH_COLLECTION_FIELD_MARKER, INLINE_STRING_UNION_MARKER, INTEGER_EXPRESSION_MARKER,
-    INTERIOR_MUTABLE_STRUCT_MARKER, INTERNAL_TYPE_EXPORT_MARKER, JSON_VALUE_MARKER,
-    JSON_VALUE_OPTION_MARKER, METHOD_DELEGATION_MARKER, MUT_VEC_PARAMETERS_MARKER,
-    MUTABLE_SCALAR_CELL_PARAMETER_BINDING_MARKER, MUTABLE_SCALAR_CELL_PARAMETER_NAME_MARKER,
-    MUTABLE_SCALAR_REFERENCE_ARGUMENT_MARKER, NULLABLE_CALL_MARKER, NULLABLE_OPTION_FIELD_MARKER,
-    NULLABLE_OPTION_LITERAL_FIELD_MARKER, NULLABLE_OPTION_RETURN_MARKER, NULLABLE_OPTIONS_MARKER,
-    NULLABLE_OPTIONS_SOURCE_MARKER, NUMERIC_FIELD_TYPE_MARKER, OPTION_FIELD_MARKER,
-    OPTION_RETURN_MARKER, ORDERED_PRIMITIVE_MARKER, PROVENANCE_SEPARATOR,
-    PUBLIC_USE_BINDING_MARKER, PUBLIC_USE_GLOB_MARKER, ProvenanceDeclarations, ProvenanceIdentity,
-    READONLY_ENTITY_MARKER, RECORD_CLONE_ARGUMENT_MARKER, RECORD_CLONE_LOCAL_MARKER,
-    RECORD_CLONE_TYPE_MARKER, RECORD_VEC_FIELD_MARKER, REFERENCE_PARAMETER_BINDING_MARKER,
-    RETURN_BINDING_FACT_MARKER, RuntimeCategory, SEQUENCE_FIELD_ELEMENT_MARKER,
-    SEQUENCE_FIELD_MARKER, SEQUENCE_RETURN_MARKER, SHARED_IDENTITY_ELEMENT_FIELD_MARKER,
-    SHARED_IDENTITY_ENTITY_MARKER, SHARED_IDENTITY_FIELD_MARKER, SHARED_IDENTITY_RETURN_MARKER,
-    SLICE_ARGUMENT_MARKER, SOURCE_TYPE_PATH_CONTEXT_MARKER, STRING_EXPRESSION_MARKER,
-    STRING_FIELD_MARKER, STRING_RETURN_MARKER, STRING_UNION_MARKER, STRUCT_FIELD_TYPE_MARKER,
-    STRUCT_OWNER_MARKER, STRUCT_RETURN_MARKER, SourceAccess, TARGET_NATIVE_ENTITY_MARKER,
-    TYPE_ALIAS_DEFINITION_MARKER, TYPE_ALIAS_GENERICS_MARKER, TYPE_ALIAS_OWNER_MARKER,
-    TYPED_ARRAY_FIELD_MARKER, TYPED_ARRAY_SEQUENCE_FIELD_MARKER, UNSIGNED_INTEGER_LOCAL_MARKER,
-    USE_BINDING_MARKER, USE_GLOB_MARKER, VEC_CLONE_ARGUMENT_MARKER, VEC_CLONE_EXPRESSION_MARKER,
-    VITEST_FUNCTION_CANDIDATE_MARKER, VITEST_FUNCTION_RETURN_CANDIDATE_MARKER,
-    VITEST_FUNCTION_RETURN_UNRESOLVED_MARKER, VITEST_PUBLIC_FUNCTION_MARKER,
-    VITEST_STRUCT_CANDIDATE_MARKER, VITEST_STRUCT_LOCAL_MARKER, VITEST_STRUCT_OWNER_MARKER,
-    VITEST_STRUCT_RETURN_MARKER, argument_is_nullable_guard, argument_is_option,
-    bind_lexical_pattern, binding_fact_for_type, binding_fact_marker, call_turbofish_is_json_value,
-    callable_parameter_types, collect_definitely_assigned_fields, contract_export_rules,
-    cross_crate_symbols, custom_default_field_values, data_union_variant_categories,
-    default_object_literal, direct_lock_guard_receiver, emit_path_type_arguments, emit_type,
-    entity_allocation_of, entity_field_default, entity_runtime_state_store,
-    exact_mutable_scalar_reference, expression_is_json_value, expression_is_known_boolean,
-    expression_is_known_string, expression_is_option_of_json_value, expression_is_plain_place,
-    external_struct_type_in, fixed_buffer_type, fixed_typed_array_type, hash_collection_type,
-    initializer_prefix_fields, insert_data_union_context, insert_data_union_context_for,
-    insert_export_name_context, insert_lexical_binding_context, insert_program_type_path_context,
+    ENTITY_UNSUPPORTED_DEFAULT_FIELD_MARKER, ENUM_DEFAULT_VARIANT_MARKER, ENUM_OWNER_MARKER,
+    ENUM_VARIANT_FIELD_FACT_MARKER, ERASED_SHARED_CELL_FIELD_MARKER, EXTERNAL_STRUCT_FIELD_MARKER,
+    FIXED_BUFFER_ARGUMENT_MARKER, FIXED_BUFFER_LOCAL_MARKER, FROZEN_OBJECT_MARKER,
+    FUNCTION_OWNER_MARKER, HASH_COLLECTION_FIELD_MARKER, INLINE_STRING_UNION_MARKER,
+    INTEGER_EXPRESSION_MARKER, INTERIOR_MUTABLE_STRUCT_MARKER, INTERNAL_TYPE_EXPORT_MARKER,
+    JSON_VALUE_MARKER, JSON_VALUE_OPTION_MARKER, METHOD_DELEGATION_MARKER,
+    MUT_VEC_PARAMETERS_MARKER, MUTABLE_SCALAR_CELL_PARAMETER_BINDING_MARKER,
+    MUTABLE_SCALAR_CELL_PARAMETER_NAME_MARKER, MUTABLE_SCALAR_REFERENCE_ARGUMENT_MARKER,
+    NULLABLE_CALL_MARKER, NULLABLE_OPTION_FIELD_MARKER, NULLABLE_OPTION_LITERAL_FIELD_MARKER,
+    NULLABLE_OPTION_RETURN_MARKER, NULLABLE_OPTIONS_MARKER, NULLABLE_OPTIONS_SOURCE_MARKER,
+    NUMERIC_FIELD_TYPE_MARKER, OPTION_FIELD_MARKER, OPTION_RETURN_MARKER, ORDERED_PRIMITIVE_MARKER,
+    PROVENANCE_SEPARATOR, PUBLIC_USE_BINDING_MARKER, PUBLIC_USE_GLOB_MARKER,
+    ProvenanceDeclarations, ProvenanceIdentity, READONLY_ENTITY_MARKER,
+    RECORD_CLONE_ARGUMENT_MARKER, RECORD_CLONE_LOCAL_MARKER, RECORD_CLONE_TYPE_MARKER,
+    RECORD_VEC_FIELD_MARKER, REFERENCE_PARAMETER_BINDING_MARKER, RETURN_BINDING_FACT_MARKER,
+    RuntimeCategory, SEQUENCE_FIELD_ELEMENT_MARKER, SEQUENCE_FIELD_MARKER, SEQUENCE_RETURN_MARKER,
+    SHARED_IDENTITY_ELEMENT_FIELD_MARKER, SHARED_IDENTITY_ENTITY_MARKER,
+    SHARED_IDENTITY_FIELD_MARKER, SHARED_IDENTITY_RETURN_MARKER, SLICE_ARGUMENT_MARKER,
+    SOURCE_TYPE_PATH_CONTEXT_MARKER, STRING_EXPRESSION_MARKER, STRING_FIELD_MARKER,
+    STRING_RETURN_MARKER, STRING_UNION_MARKER, STRUCT_FIELD_TYPE_MARKER, STRUCT_OWNER_MARKER,
+    STRUCT_RETURN_MARKER, SourceAccess, TARGET_NATIVE_ENTITY_MARKER, TYPE_ALIAS_DEFINITION_MARKER,
+    TYPE_ALIAS_GENERICS_MARKER, TYPE_ALIAS_OWNER_MARKER, TYPED_ARRAY_FIELD_MARKER,
+    TYPED_ARRAY_SEQUENCE_FIELD_MARKER, UNSIGNED_INTEGER_LOCAL_MARKER, USE_BINDING_MARKER,
+    USE_GLOB_MARKER, VEC_CLONE_ARGUMENT_MARKER, VEC_CLONE_EXPRESSION_MARKER,
+    VITEST_ENUM_CANDIDATE_MARKER, VITEST_ENUM_OWNER_MARKER, VITEST_FUNCTION_CANDIDATE_MARKER,
+    VITEST_FUNCTION_RETURN_CANDIDATE_MARKER, VITEST_FUNCTION_RETURN_UNRESOLVED_MARKER,
+    VITEST_PUBLIC_FUNCTION_MARKER, VITEST_STRUCT_CANDIDATE_MARKER, VITEST_STRUCT_LOCAL_MARKER,
+    VITEST_STRUCT_OWNER_MARKER, VITEST_STRUCT_RETURN_MARKER, argument_is_nullable_guard,
+    argument_is_option, bind_lexical_pattern, binding_fact_for_type, binding_fact_marker,
+    call_turbofish_is_json_value, callable_parameter_types, collect_definitely_assigned_fields,
+    contract_export_rules, cross_crate_symbols, custom_default_field_values,
+    data_union_variant_categories, default_object_literal, direct_lock_guard_receiver,
+    emit_path_type_arguments, emit_type, entity_allocation_of, entity_field_default,
+    entity_runtime_state_store, erased_shared_cell_payload, exact_mutable_scalar_reference,
+    expression_is_json_value, expression_is_known_boolean, expression_is_known_string,
+    expression_is_option_of_json_value, expression_is_plain_place, external_struct_type_in,
+    fixed_buffer_type, fixed_typed_array_type, hash_collection_type, initializer_prefix_fields,
+    insert_data_union_context, insert_data_union_context_for, insert_export_name_context,
+    insert_lexical_binding_context, insert_program_type_path_context,
     insert_record_map_local_context, insert_typed_array_constant_context, is_crate_wide, is_public,
     js_string_literal, leading_mutable_entity_parameter, lexical_binding, local_pattern_binding_id,
     local_pattern_name, module_identity_segments, named_type, option_inner_type, owner_marker,
@@ -195,6 +197,14 @@ pub(super) fn insert_visibility_collection_context(
     for (module, program) in programs {
         let mut type_path_context = HashSet::new();
         insert_program_type_path_context(&mut type_path_context, program);
+        for rust_enum in &program.enums {
+            context.insert(owner_marker(
+                ENUM_OWNER_MARKER,
+                module,
+                &rust_enum.ident.to_string(),
+                source_access_for_visibility(&rust_enum.vis),
+            ));
+        }
         for structure in &program.structs {
             context.insert(owner_marker(
                 STRUCT_OWNER_MARKER,
@@ -740,7 +750,19 @@ pub(super) fn generation_context_with_types(
     insert_visibility_type_alias_context(&mut context, provenance_visibility_programs);
     let mut public_struct_owners = ProvenanceDeclarations::new();
     let mut public_function_owners = ProvenanceDeclarations::new();
+    let mut public_enum_owners = ProvenanceDeclarations::new();
     for (module, program) in &provenance_programs {
+        for rust_enum in &program.enums {
+            if is_public(&rust_enum.vis) {
+                public_enum_owners
+                    .entry(rust_enum.ident.to_string())
+                    .or_default()
+                    .insert(ProvenanceIdentity {
+                        declaration: rust_enum.ident.to_string(),
+                        module: (*module).to_string(),
+                    });
+            }
+        }
         for structure in &program.structs {
             if is_public(&structure.vis) {
                 public_struct_owners
@@ -768,7 +790,19 @@ pub(super) fn generation_context_with_types(
         public_module_bindings(&public_struct_owners, &provenance_programs);
     let public_function_module_bindings =
         public_module_bindings(&public_function_owners, &provenance_programs);
+    let public_enum_module_bindings =
+        public_module_bindings(&public_enum_owners, &provenance_programs);
     if strict_vitest_provenance {
+        for (declaration, identities) in &public_enum_owners {
+            for identity in identities {
+                insert_provenance_binding(
+                    &mut context,
+                    VITEST_ENUM_CANDIDATE_MARKER,
+                    declaration,
+                    &identity.encoded(),
+                );
+            }
+        }
         for (declaration, identities) in &public_struct_owners {
             for identity in identities {
                 insert_provenance_binding(
@@ -808,6 +842,21 @@ pub(super) fn generation_context_with_types(
                 identity.encoded()
             ));
         }
+        // Enum owners only add match-arm payload provenance, so an ambiguous export leaves enum
+        // payload bindings unproven instead of failing a test module that never relies on them.
+        let enum_bindings = provenance_bindings(
+            &public_enum_owners,
+            &public_enum_module_bindings,
+            contract_rules.as_deref(),
+            "enum",
+        )
+        .unwrap_or_default();
+        for (exported, identity) in &enum_bindings {
+            context.insert(format!(
+                "{VITEST_ENUM_OWNER_MARKER}{exported}{PROVENANCE_SEPARATOR}{}",
+                identity.encoded()
+            ));
+        }
         for (exported, identity) in &function_bindings {
             context.insert(format!(
                 "{VITEST_PUBLIC_FUNCTION_MARKER}{exported}{PROVENANCE_SEPARATOR}{}",
@@ -815,6 +864,14 @@ pub(super) fn generation_context_with_types(
             ));
         }
     } else {
+        for (rust_enum, owners) in &public_enum_owners {
+            for owner in owners {
+                context.insert(format!(
+                    "{VITEST_ENUM_OWNER_MARKER}{rust_enum}{PROVENANCE_SEPARATOR}{}",
+                    owner.encoded()
+                ));
+            }
+        }
         for (structure, owners) in &public_struct_owners {
             for owner in owners {
                 context.insert(format!(
@@ -931,6 +988,14 @@ pub(super) fn generation_context_with_types(
                     "{ENTITY_CLONE_FIELD_MARKER}{owner}{PROVENANCE_SEPARATOR}{field}"
                 ));
             }
+        }
+        for rust_enum in &program.enums {
+            context.insert(owner_marker(
+                ENUM_OWNER_MARKER,
+                module,
+                &rust_enum.ident.to_string(),
+                source_access_for_visibility(&rust_enum.vis),
+            ));
         }
         for structure in &program.structs {
             context.insert(owner_marker(
@@ -1291,6 +1356,28 @@ pub(super) fn generation_context_with_types(
                 "{METHOD_DELEGATION_MARKER}{owner}{PROVENANCE_SEPARATOR}{}{PROVENANCE_SEPARATOR}{module}{PROVENANCE_SEPARATOR}{}{PROVENANCE_SEPARATOR}{arguments}",
                 delegation.method, delegation.function
             ));
+        }
+        for rust_enum in &program.enums {
+            for variant in &rust_enum.variants {
+                for (position, field) in variant.fields.iter().enumerate() {
+                    let payload = erased_shared_cell_payload(&field.ty, &type_path_context)
+                        .unwrap_or(&field.ty);
+                    let fact = binding_fact_for_type(&context, Some(module), payload);
+                    if !fact.has_source_structure() {
+                        continue;
+                    }
+                    let member = field
+                        .ident
+                        .as_ref()
+                        .map_or_else(|| position.to_string(), ToString::to_string);
+                    context.insert(format!(
+                        "{ENUM_VARIANT_FIELD_FACT_MARKER}{module}{PROVENANCE_SEPARATOR}{}{PROVENANCE_SEPARATOR}{}{PROVENANCE_SEPARATOR}{member}{PROVENANCE_SEPARATOR}{}",
+                        rust_enum.ident,
+                        variant.ident,
+                        binding_fact_marker(&fact)
+                    ));
+                }
+            }
         }
         for structure in &program.structs {
             for field in &structure.fields {

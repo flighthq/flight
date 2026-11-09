@@ -59,6 +59,41 @@ pub(super) fn call_turbofish_is_json_value(expression: &Expr, context: &HashSet<
 // target-language cell. A clone of one of those fields therefore needs a forwarding alias when Rust
 // later writes through the cloned cell. Names alone are insufficient: a local `Ref`/`Arc`/`RwLock`
 // declaration must not acquire standard-library semantics.
+// The `T` of a proven erased shared cell (`flight_entity::Ref<T>` or standard `Arc<RwLock<T>>`), the
+// value its TypeScript lowering stands for.
+pub(super) fn erased_shared_cell_payload<'a>(
+    rust_type: &'a Type,
+    context: &HashSet<String>,
+) -> Option<&'a Type> {
+    if !rust_type_is_erased_shared_cell(rust_type, context) {
+        return None;
+    }
+    let mut payload = rust_type;
+    for _ in 0..2 {
+        payload = match payload {
+            Type::Group(group) => &group.elem,
+            Type::Paren(paren) => &paren.elem,
+            _ => payload,
+        };
+        let Type::Path(path) = payload else {
+            return None;
+        };
+        let PathArguments::AngleBracketed(arguments) = &path.path.segments.last()?.arguments else {
+            return None;
+        };
+        payload = arguments.args.iter().find_map(|argument| match argument {
+            GenericArgument::Type(rust_type) => Some(rust_type),
+            _ => None,
+        })?;
+        let is_lock = matches!(payload, Type::Path(inner)
+            if inner.path.segments.last().is_some_and(|segment| segment.ident == "RwLock"));
+        if !is_lock {
+            return Some(payload);
+        }
+    }
+    return None;
+}
+
 pub(super) fn rust_type_is_erased_shared_cell(rust_type: &Type, context: &HashSet<String>) -> bool {
     let path = match rust_type {
         Type::Group(group) => return rust_type_is_erased_shared_cell(&group.elem, context),

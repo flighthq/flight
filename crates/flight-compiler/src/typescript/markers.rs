@@ -146,6 +146,13 @@ pub(super) const ENTITY_CLONE_FIELD_MARKER: &str = "@entity-clone-field:";
 
 pub(super) const ENUM_DEFAULT_VARIANT_MARKER: &str = "@enum-default-variant:";
 
+pub(super) const ENUM_OWNER_MARKER: &str = "@enum-owner:";
+
+// A source enum variant field's binding fact, keyed by `{module}|{Enum}|{Variant}|{field}|`, where
+// `field` is the tuple position or the named field. A match-arm pattern that names the variant binds
+// the field's pattern with this fact, because Rust has already proven the scrutinee is that enum.
+pub(super) const ENUM_VARIANT_FIELD_FACT_MARKER: &str = "@enum-variant-field-fact:";
+
 // A struct field whose declared type provably erases an identity-bearing shared cell in TypeScript:
 // `flight_entity::Ref<T>` or the equivalent standard `Arc<RwLock<T>>`. Only clones of these fields
 // may be rewritten as forwarding aliases to the original field.

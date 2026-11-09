@@ -34098,3 +34098,128 @@ pub fn bytes(n: usize) -> Box<Uint8Array> {
         "a `super::` glob in a re-exporting sibling is crate-relative and leaves `Box` provable: {output}"
     );
 }
+
+#[test]
+fn match_arm_binding_carries_type_provenance_for_field_access() {
+    let source = r#"
+pub struct Inner {
+    pub value: f32,
+    pub label: String,
+}
+
+pub enum Wrapper {
+    First(Inner),
+    Empty,
+}
+
+pub fn extract_value(w: &Wrapper) -> f32 {
+    match w {
+        Wrapper::First(inner) => inner.value + 1.0,
+        Wrapper::Empty => 0.0,
+    }
+}
+"#;
+    let output = compile_typescript(source, None).unwrap();
+    assert!(
+        output.contains("inner.value + 1"),
+        "match-arm binding should have type provenance for field access: {output}"
+    );
+}
+
+#[test]
+fn match_arm_binding_with_read_guard_field_access() {
+    let source = r#"
+use std::sync::{Arc, RwLock};
+
+pub struct Projection {
+    pub fov_y: f32,
+    pub aspect: f32,
+}
+
+pub enum CameraMode {
+    Perspective(Arc<RwLock<Projection>>),
+}
+
+pub fn get_fov(mode: &CameraMode) -> f32 {
+    match mode {
+        CameraMode::Perspective(projection) => {
+            let guard = projection.read().unwrap();
+            return guard.fov_y;
+        }
+    }
+}
+"#;
+    let output = compile_typescript(source, None).unwrap();
+    assert!(
+        output.contains(".fovY") || output.contains(".fov_y"),
+        "read guard from match-arm Arc<RwLock<T>> should allow field access: {output}"
+    );
+}
+
+#[test]
+fn vitest_match_arm_bindings_carry_enum_variant_payload_provenance() {
+    let production = r#"
+use std::sync::{Arc, RwLock};
+
+pub struct PerspectiveProjection {
+    pub fov_y: f32,
+}
+
+pub struct OrthographicProjection {
+    pub size: f32,
+}
+
+pub enum Projection {
+    Perspective(Arc<RwLock<PerspectiveProjection>>),
+    Orthographic { projection: Arc<RwLock<OrthographicProjection>> },
+}
+
+pub struct Camera3D {
+    pub projection: Projection,
+}
+
+pub fn create_camera() -> Camera3D {
+    return Camera3D {
+        projection: Projection::Perspective(Arc::new(RwLock::new(PerspectiveProjection {
+            fov_y: 1.0,
+        }))),
+    };
+}
+"#;
+    let contract = "pub use super::camera::*;\n";
+    let source = r#"
+use flight_example::*;
+
+#[test]
+fn reads_the_matched_projection() {
+    let camera = create_camera();
+    match &camera.projection {
+        Projection::Perspective(projection) => {
+            let borrowed = projection.read().unwrap();
+            assert_eq!(borrowed.fov_y, 1.0);
+        }
+        Projection::Orthographic { projection } => {
+            assert_eq!(projection.read().unwrap().size, 2.0);
+        }
+    }
+}
+"#;
+    let output = compile_vitest_with_contract_alias_sources(
+        source,
+        "@flighthq/example/contract",
+        contract,
+        &[VitestAliasSource {
+            source: production,
+            module: "src/camera.rs",
+        }],
+    )
+    .unwrap();
+    assert!(
+        output.contains("borrowed.fovY"),
+        "a guard read from a matched tuple-variant payload reads its fields: {output}"
+    );
+    assert!(
+        output.contains(".size"),
+        "a struct-variant field binding reads its fields: {output}"
+    );
+}

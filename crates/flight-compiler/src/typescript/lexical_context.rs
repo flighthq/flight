@@ -4,15 +4,17 @@ use quote::ToTokens;
 use syn::parse::Parser;
 use syn::punctuated::Punctuated;
 use syn::visit::Visit;
-use syn::{Expr, FnArg, ItemFn, ItemStruct, Lit, Pat, ReturnType, Token, Type, UnOp};
+use syn::{
+    Expr, FnArg, ItemFn, ItemStruct, Lit, Pat, PathArguments, ReturnType, Token, Type, UnOp,
+};
 
 use crate::model::Program;
 use crate::{CompileError, compile_error};
 
 use super::{
     BINDING_FACT_MARKER, BINDING_MARKER, BINDING_SITE_MARKER, BindingFact, DATA_UNION_UNIT_MARKER,
-    DIRECT_LOCK_GUARD_REPLACED_MARKER, EMPTY_SEQUENCE_ELEMENT_TYPE_MARKER,
-    ERASED_CELL_WRITTEN_MARKER, ERASED_SHARED_CELL_FIELD_MARKER,
+    DIRECT_LOCK_GUARD_REPLACED_MARKER, EMPTY_SEQUENCE_ELEMENT_TYPE_MARKER, ENUM_OWNER_MARKER,
+    ENUM_VARIANT_FIELD_FACT_MARKER, ERASED_CELL_WRITTEN_MARKER, ERASED_SHARED_CELL_FIELD_MARKER,
     EXTERNAL_MUT_VEC_PARAMETERS_MARKER, EXTERNAL_STRUCT_BINDING_MARKER, EmptyVecInitializer,
     HASH_COLLECTION_FIELD_MARKER, MUT_VEC_PARAMETERS_MARKER, MUTEX_GUARD_BINDING_MARKER,
     NULLABLE_OPTION_BINDING_MARKER, NULLABLE_OPTION_CALLABLE_BINDING_MARKER,
@@ -44,7 +46,7 @@ use super::{
     rust_type_is_shared_identity, safe_collection_element_typescript_type, sequence_inner_type,
     snake_to_lower_camel, standard_vec_inner_type, substitute_type_param, transparent_data_union,
     typed_array_element_primitive, typed_binding_name, uint8_array_parameter, unique_marker_suffix,
-    vitest_path_binding_name, vitest_struct_owner,
+    vitest_enum_owner, vitest_path_binding_name, vitest_struct_owner,
 };
 pub(super) fn insert_data_union_context(
     context: &mut HashSet<String>,
@@ -428,6 +430,18 @@ pub(super) fn insert_lexical_binding_context(function: &ItemFn, context: &mut Ha
                         self.bind_pattern(pattern, (*element).clone());
                     }
                 }
+                Pat::Struct(structure)
+                    if let Some(variant) = self.enum_variant_identity(&structure.path) =>
+                {
+                    for field in &structure.fields {
+                        let member = match &field.member {
+                            syn::Member::Named(name) => name.to_string(),
+                            syn::Member::Unnamed(index) => index.index.to_string(),
+                        };
+                        let field_fact = self.enum_variant_field_fact(&variant, &member);
+                        self.bind_pattern(&field.pat, field_fact);
+                    }
+                }
                 Pat::Struct(structure) => {
                     let BindingFact::Structure(identity) = fact else {
                         self.bind_unresolved_pattern(pattern);
@@ -497,12 +511,69 @@ pub(super) fn insert_lexical_binding_context(function: &ItemFn, context: &mut Ha
                     };
                     self.bind_pattern(&tuple.elems[0], *payload);
                 }
+                Pat::TupleStruct(tuple)
+                    if let Some(variant) = self.enum_variant_identity(&tuple.path) =>
+                {
+                    if tuple
+                        .elems
+                        .iter()
+                        .any(|element| matches!(element, Pat::Rest(_)))
+                    {
+                        self.bind_unresolved_pattern(pattern);
+                        return;
+                    }
+                    for (position, element) in tuple.elems.iter().enumerate() {
+                        let field_fact =
+                            self.enum_variant_field_fact(&variant, &position.to_string());
+                        self.bind_pattern(element, field_fact);
+                    }
+                }
                 Pat::Type(typed) => {
                     self.bind_pattern(&typed.pat, self.typed_fact(&typed.ty));
                 }
                 Pat::Wild(_) | Pat::Rest(_) => {}
                 _ => self.bind_unresolved_pattern(pattern),
             }
+        }
+
+        // `{module}|{Enum}|{Variant}` for a pattern path naming a variant of a source enum. The path
+        // itself names the enum, and Rust has proven the scrutinee has that type, so the variant's
+        // declared field types hold for its subpatterns whatever is known about the scrutinee.
+        fn enum_variant_identity(&self, path: &syn::Path) -> Option<String> {
+            let variant = path.segments.last()?.ident.to_string();
+            if path.segments.len() < 2
+                || path.segments.iter().any(|segment| {
+                    segment.ident == "Self" || !matches!(segment.arguments, PathArguments::None)
+                })
+            {
+                return None;
+            }
+            let mut enum_path = path.clone();
+            enum_path.segments.pop();
+            enum_path.segments.pop_punct();
+            let owner = match current_source(self.context) {
+                Some(current) => {
+                    resolve_path_owner(self.context, ENUM_OWNER_MARKER, &current, &enum_path).map(
+                        |(module, declaration)| {
+                            format!("{module}{PROVENANCE_SEPARATOR}{declaration}")
+                        },
+                    )?
+                }
+                None => vitest_enum_owner(self.context, &enum_path)?,
+            };
+            return Some(format!("{owner}{PROVENANCE_SEPARATOR}{variant}"));
+        }
+
+        fn enum_variant_field_fact(&self, variant: &str, member: &str) -> BindingFact {
+            return unique_marker_suffix(
+                self.context,
+                &format!(
+                    "{ENUM_VARIANT_FIELD_FACT_MARKER}{variant}{PROVENANCE_SEPARATOR}{member}{PROVENANCE_SEPARATOR}"
+                ),
+            )
+            .map_or(BindingFact::UnresolvedPattern, |fact| {
+                binding_fact_from_marker(&fact)
+            });
         }
 
         fn bind_unresolved_pattern(&mut self, pattern: &Pat) {
