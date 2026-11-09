@@ -30694,6 +30694,24 @@ pub fn is_valid(value: &str) -> bool {
 }
 
 #[test]
+fn format_macro_with_positional_arguments() {
+    let source = r#"
+pub fn expand_hex(chars: &[char]) -> String {
+    return format!("{0}{0}{1}{1}{2}{2}", chars[0], chars[1], chars[2]);
+}
+"#;
+    let output = compile_typescript(source, None).unwrap();
+    assert!(
+        !output.contains("unused"),
+        "positional format arguments should not trigger unused-value error: {output}"
+    );
+    assert!(
+        output.contains("${") && output.contains("chars[0]"),
+        "should emit template literal with positional values: {output}"
+    );
+}
+
+#[test]
 fn lowers_hashset_clone_to_new_set() {
     let source = r#"
 use std::collections::HashSet;

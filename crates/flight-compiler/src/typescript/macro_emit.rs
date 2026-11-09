@@ -24,6 +24,7 @@ pub(crate) fn emit_format_template(
         .replace('`', "\\`")
         .replace("${", "\\${");
     let mut value_index = 0;
+    let mut positional_used = false;
     let mut rendered = String::new();
     while let Some(start) = template.find('{') {
         if template[start + 1..].starts_with('{') {
@@ -47,9 +48,15 @@ pub(crate) fn emit_format_template(
             };
             value_index += 1;
             emit_expression(value, entities)?
+        } else if let Ok(positional) = name.parse::<usize>() {
+            let Some(value) = values.get(positional) else {
+                return Err(compile_error(format!(
+                    "{error_prefix} positional argument {{{positional}}} is out of range"
+                )));
+            };
+            positional_used = true;
+            emit_expression(value, entities)?
         } else if let Ok(identifier) = syn::parse_str::<syn::Ident>(name) {
-            // An implicitly captured argument (`{name}`) reads the binding in scope, so it resolves
-            // through the same path as `name` written in code: a shadowing destructure's rename applies.
             emit_expression(
                 &Expr::Path(syn::ExprPath {
                     attrs: Vec::new(),
@@ -113,7 +120,7 @@ pub(crate) fn emit_format_template(
         template = template[end + 1..].to_string();
     }
     rendered.push_str(&template.replace("}}", "}"));
-    if value_index != values.len() {
+    if !positional_used && value_index != values.len() {
         return Err(compile_error(format!(
             "{error_prefix} has unused formatting values"
         )));
