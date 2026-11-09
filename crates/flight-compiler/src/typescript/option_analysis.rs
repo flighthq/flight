@@ -681,7 +681,8 @@ pub(super) fn emit_option_combinator(
         };
         return Ok(format!("{receiver}?.{fields}"));
     }
-    let body = if matches!(closure.body.as_ref(), Expr::Block(_)) {
+    // A block body (a source block, or a match that exits from an arm) is invoked, not spliced.
+    let body = if matches!(closure.body.as_ref(), Expr::Block(_)) || body.starts_with('{') {
         format!("(({binding}) => {body})({binding})")
     } else {
         body.to_string()

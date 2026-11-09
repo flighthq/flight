@@ -27,13 +27,13 @@ use super::{
     expression_is_nullable_option_field, expression_is_path, expression_is_path_call,
     expression_is_plain_place, expression_is_reusable, expression_is_sequence,
     expression_is_unsigned_result, expression_path_ends_with, for_loop_iterates_chars,
-    for_loop_iterates_strings, ignored_caught_panic, indent_continuation_lines,
-    is_primary_expression_text, is_record_map_local, lexical_pattern_context, local_pattern_name,
-    nullable_option_value, option_absent_value, option_return_absent_value,
-    option_scrutinee_is_rereadable, pattern_identifiers, peel_reference_and_paren,
-    production_std_panic_path, snake_to_lower_camel, split_let_chain, statement_binds_name,
-    std_mem_function, strip_value_position_parens, swap_operand_is_place, throw_call,
-    typed_array_literal, unique_marker_suffix, write_indent,
+    for_loop_iterates_strings, hoist_nested_exit_match, ignored_caught_panic,
+    indent_continuation_lines, is_primary_expression_text, is_record_map_local,
+    lexical_pattern_context, local_pattern_name, nullable_option_value, option_absent_value,
+    option_return_absent_value, option_scrutinee_is_rereadable, pattern_identifiers,
+    peel_reference_and_paren, production_std_panic_path, snake_to_lower_camel, split_let_chain,
+    statement_binds_name, std_mem_function, strip_value_position_parens, swap_operand_is_place,
+    throw_call, typed_array_literal, unique_marker_suffix, write_indent,
 };
 pub(super) fn emit_value_block(
     block: &syn::Block,
@@ -741,6 +741,34 @@ pub(super) fn emit_statement(
                 unreachable!()
             };
             emit_return_match_with_exits(out, match_expr, entities, indent)?;
+        }
+        // A returned value wrapping a `match` that exits from an arm (`return Some(match ...)`) binds
+        // the match first in its own scope, then returns the value reading that binding.
+        Stmt::Expr(Expr::Return(return_expression), semicolon)
+            if let Some(value) = return_expression.expr.as_deref()
+                && let Some((match_expr, rewritten)) = hoist_nested_exit_match(value) =>
+        {
+            write_indent(out, indent);
+            out.push_str("{\n");
+            write_indent(out, indent + 1);
+            out.push_str("let hoistedMatchValue;\n");
+            emit_match_statement_with_target(
+                out,
+                &match_expr,
+                entities,
+                indent + 1,
+                "hoistedMatchValue",
+            )?;
+            let mut rewritten_return = return_expression.clone();
+            rewritten_return.expr = Some(Box::new(rewritten));
+            emit_statement(
+                out,
+                &Stmt::Expr(Expr::Return(rewritten_return), *semicolon),
+                entities,
+                indent + 1,
+            )?;
+            write_indent(out, indent);
+            out.push_str("}\n");
         }
         Stmt::Expr(Expr::Return(return_expression), _)
             if return_expression

@@ -207,9 +207,10 @@ use crate::{CompileError, compile_error};
 
 use safety::{
     block_contains_function_exits, if_expression_contains_function_exits,
-    reject_await_outside_async, reject_entity_runtime_state_store_collisions,
-    reject_function_exits_in_value_position, reject_unresolved_pattern_field,
-    reject_unsafe_lazy_lock_initializers, reject_unsupported_array_like_uses,
+    match_expression_contains_function_exits, reject_await_outside_async,
+    reject_entity_runtime_state_store_collisions, reject_function_exits_in_value_position,
+    reject_unresolved_pattern_field, reject_unsafe_lazy_lock_initializers,
+    reject_unsupported_array_like_uses,
 };
 #[allow(unused_imports)]
 pub(crate) use vitest_helpers::*;

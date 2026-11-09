@@ -21,11 +21,12 @@ use super::{
     emit_try_pre_extractions, emit_type, expression_contains_identifier,
     expression_contains_unconditional_try, insert_provenance_binding,
     insert_vitest_rebound_struct_context, lexical_pattern_context, local_pattern_name,
-    next_try_rename, peel_reference_and_paren, provenance_pattern_bindings,
-    reject_function_exits_in_value_position, rust_type_is_string, snake_to_lower_camel,
-    statement_contains_identifier, strip_value_position_parens, tuple_pattern_bindings,
-    type_is_named, unique_marker_suffix, update_vitest_local_function_context,
-    update_vitest_struct_local_context, vitest_named_type, vitest_struct_owner, write_indent,
+    match_expression_contains_function_exits, next_try_rename, peel_reference_and_paren,
+    provenance_pattern_bindings, reject_function_exits_in_value_position, rust_type_is_string,
+    snake_to_lower_camel, statement_contains_identifier, strip_value_position_parens,
+    tuple_pattern_bindings, type_is_named, unique_marker_suffix,
+    update_vitest_local_function_context, update_vitest_struct_local_context, vitest_named_type,
+    vitest_struct_owner, write_indent,
 };
 pub(super) fn emit_block(
     out: &mut String,
@@ -1511,6 +1512,15 @@ pub(super) fn emit_closure_with_parameter_types(
             let mut body = String::new();
             body.push_str("{\n");
             emit_block_with_tail_returns(&mut body, &block.block.stmts, &closure_context, 1)?;
+            body.push('}');
+            body
+        }
+        // A closure whose body is a `match` that exits from an arm returns from the closure itself,
+        // which a block body with a statement-level match preserves.
+        Expr::Match(match_expr) if match_expression_contains_function_exits(match_expr) => {
+            let mut body = String::new();
+            body.push_str("{\n");
+            emit_return_match_with_exits(&mut body, match_expr, &closure_context, 1)?;
             body.push('}');
             body
         }

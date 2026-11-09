@@ -21,13 +21,14 @@ use super::{
     expression_string_union_owner, if_expression_contains_function_exits,
     indent_continuation_lines, is_js_identifier, join_closing_brace_with, js_string_literal,
     lexical_pattern_context, local_pattern_binding_id, local_pattern_name,
-    lower_camel_from_upper_camel, next_try_rename, open_binding_switch, option_absent_value,
-    option_scrutinee_is_rereadable, ordering_variant_value, pat_contains_range,
-    pattern_identifiers, pattern_is_mutable, peel_reference_and_paren, provenance_pattern_bindings,
-    referenced_path_identifier, reserved_key_data_union_predicate, resolve_rename,
-    runtime_categories_predicate, scrutinee_elements, snake_to_lower_camel, split_let_chain,
-    strip_value_position_parens, switch_arm_needs_block, switch_binding_name,
-    tagged_data_union_bindings, tagged_data_union_predicate, write_indent,
+    lower_camel_from_upper_camel, match_expression_contains_function_exits, next_try_rename,
+    open_binding_switch, option_absent_value, option_scrutinee_is_rereadable,
+    ordering_variant_value, pat_contains_range, pattern_identifiers, pattern_is_mutable,
+    peel_reference_and_paren, provenance_pattern_bindings, referenced_path_identifier,
+    reserved_key_data_union_predicate, resolve_rename, runtime_categories_predicate,
+    scrutinee_elements, snake_to_lower_camel, split_let_chain, strip_value_position_parens,
+    switch_arm_needs_block, switch_binding_name, tagged_data_union_bindings,
+    tagged_data_union_predicate, write_indent,
 };
 pub(super) fn arm_body_unconditionally_exits(body: &Expr) -> bool {
     return match body {
@@ -96,6 +97,20 @@ pub(super) enum HoistedMatchAction<'a> {
     Return,
 }
 
+// The JavaScript names a hoisted match arm assigns: one local, or each element of a tuple target.
+fn hoisted_match_target_names(action: &HoistedMatchAction<'_>) -> Vec<String> {
+    let HoistedMatchAction::Assign(target) = action else {
+        return Vec::new();
+    };
+    return target
+        .trim_start_matches('[')
+        .trim_end_matches(']')
+        .split(',')
+        .map(|name| name.trim().to_string())
+        .filter(|name| !name.is_empty())
+        .collect();
+}
+
 pub(super) fn emit_hoisted_match_arm_value(
     out: &mut String,
     value_str: &str,
@@ -124,6 +139,12 @@ pub(super) fn emit_hoisted_match_arm_body(
     if matches!(body, Expr::Return(_) | Expr::Continue(_) | Expr::Break(_)) {
         return emit_statement(out, &Stmt::Expr(body.clone(), None), entities, indent);
     }
+    // A nested `match` that exits from an arm stays a statement and carries the same action.
+    if let Expr::Match(nested) = body
+        && match_expression_contains_function_exits(nested)
+    {
+        return emit_match_statement_with_action(out, nested, entities, indent, action);
+    }
     if let Expr::Block(block) = body {
         let Some((last, preceding)) = block.block.stmts.split_last() else {
             return Err(compile_error(
@@ -147,6 +168,11 @@ pub(super) fn emit_hoisted_match_arm_body(
             entities.clone()
         };
         let block_context = emit_block_with_context(out, preceding, &arm_entities, indent)?;
+        if let Stmt::Expr(Expr::Match(nested), None) = last
+            && match_expression_contains_function_exits(nested)
+        {
+            return emit_match_statement_with_action(out, nested, &block_context, indent, action);
+        }
         if let Stmt::Expr(value, None) = last {
             if expression_contains_unconditional_try(value) {
                 let try_context = emit_try_pre_extractions(out, value, &block_context, indent)?;
@@ -237,6 +263,87 @@ pub(super) fn emit_hoisted_match_value_local(
     }
     emit_match_statement_with_target(out, match_expr, entities, indent, &pattern)?;
     return Ok(());
+}
+
+// Finds a `match` that exits from an arm nested inside a returned value (`return Some(match ...)`)
+// and returns it with the expression rewritten to read `hoisted_match_value` in its place. The walk
+// only descends through operands whose evaluation order is unobservable once the match runs first:
+// every operand evaluated before the match must be a literal, a path, or a field or reference of one,
+// and short-circuit operators, conditionals, loops and closures are never crossed.
+pub(super) fn hoist_nested_exit_match(expression: &Expr) -> Option<(syn::ExprMatch, Expr)> {
+    if expression_contains_identifier(expression, HOISTED_MATCH_VALUE) {
+        return None;
+    }
+    let mut rewritten = expression.clone();
+    let found = take_nested_exit_match(&mut rewritten)?;
+    return Some((found, rewritten));
+}
+
+fn take_nested_exit_match(expression: &mut Expr) -> Option<syn::ExprMatch> {
+    fn operands_pure(operands: &[&Expr]) -> bool {
+        return operands.iter().all(|operand| operand_is_pure(operand));
+    }
+    fn operand_is_pure(expression: &Expr) -> bool {
+        return match expression {
+            Expr::Lit(_) | Expr::Path(_) => true,
+            Expr::Field(field) => operand_is_pure(&field.base),
+            Expr::Reference(reference) => operand_is_pure(&reference.expr),
+            Expr::Paren(paren) => operand_is_pure(&paren.expr),
+            _ => false,
+        };
+    }
+    fn take_from_sequence<'a>(
+        elements: impl Iterator<Item = &'a mut Expr>,
+    ) -> Option<syn::ExprMatch> {
+        let mut preceding_pure = true;
+        for element in elements {
+            if !preceding_pure {
+                return None;
+            }
+            if let Some(found) = take_nested_exit_match(element) {
+                return Some(found);
+            }
+            preceding_pure = operand_is_pure(element);
+        }
+        return None;
+    }
+    if let Expr::Match(match_expr) = expression
+        && match_expression_contains_function_exits(match_expr)
+    {
+        let found = match_expr.clone();
+        *expression = syn::parse_quote!(hoisted_match_value);
+        return Some(found);
+    }
+    return match expression {
+        Expr::Call(call) if matches!(call.func.as_ref(), Expr::Path(_)) => {
+            take_from_sequence(call.args.iter_mut())
+        }
+        Expr::MethodCall(call) => {
+            if !operand_is_pure(&call.receiver) {
+                return None;
+            }
+            take_from_sequence(call.args.iter_mut())
+        }
+        Expr::Tuple(tuple) => take_from_sequence(tuple.elems.iter_mut()),
+        Expr::Array(array) => take_from_sequence(array.elems.iter_mut()),
+        Expr::Struct(structure) if structure.rest.is_none() => {
+            take_from_sequence(structure.fields.iter_mut().map(|field| &mut field.expr))
+        }
+        Expr::Binary(binary) if !matches!(binary.op, syn::BinOp::And(_) | syn::BinOp::Or(_)) => {
+            if let Some(found) = take_nested_exit_match(&mut binary.left) {
+                return Some(found);
+            }
+            if !operands_pure(&[&binary.left]) {
+                return None;
+            }
+            take_nested_exit_match(&mut binary.right)
+        }
+        Expr::Paren(paren) => take_nested_exit_match(&mut paren.expr),
+        Expr::Reference(reference) => take_nested_exit_match(&mut reference.expr),
+        Expr::Cast(cast) => take_nested_exit_match(&mut cast.expr),
+        Expr::Unary(unary) => take_nested_exit_match(&mut unary.expr),
+        _ => None,
+    };
 }
 
 pub(crate) fn emit_return_match_with_exits(
@@ -641,15 +748,26 @@ pub(super) fn emit_match_statement_with_action(
                     writeln!(out, "{prefix} ({predicate}) {{")
                         .expect("writing to a String cannot fail");
                 }
+                let mut renames = Vec::new();
                 for (i, element) in info.elements.iter().enumerate() {
                     if let TupleOptionElement::SomeBinding(name) = element {
                         let binding = snake_to_lower_camel(name);
+                        // A binding named like an assignment target would shadow the target the arm
+                        // writes, so it takes a `$` name inside the arm.
+                        let declared = if hoisted_match_target_names(action).contains(&binding) {
+                            let fresh = format!("${binding}");
+                            renames.push(format!("{RENAME_MARKER}{binding}={fresh}"));
+                            fresh
+                        } else {
+                            binding
+                        };
                         write_indent(out, indent + 2);
-                        writeln!(out, "const {binding} = {};", temps[i])
+                        writeln!(out, "const {declared} = {};", temps[i])
                             .expect("writing to a String cannot fail");
                     }
                 }
-                let arm_context = lexical_pattern_context(entities, &arm.pat);
+                let mut arm_context = lexical_pattern_context(entities, &arm.pat);
+                arm_context.extend(renames);
                 let body_indent = indent + 2;
                 emit_hoisted_match_arm_body(out, &arm.body, action, &arm_context, body_indent)?;
                 write_indent(out, indent + 1);
@@ -1057,6 +1175,22 @@ pub(super) fn emit_hoisted_value_block_local(
             ));
         }
     };
+    // A tail `match` that exits from an arm cannot be an arrow-wrapped value: declare the binding and
+    // assign it from a statement-level match, as a `let` bound directly to such a match does.
+    if let Expr::Match(match_expr) = value
+        && tuple_pat.is_none()
+        && !matches!(local.pat, Pat::Wild(_))
+        && match_expression_contains_function_exits(match_expr)
+    {
+        let suffix = match rust_type {
+            Some(rust_type) => format!(": {}", emit_type(rust_type, entities)?),
+            None => String::new(),
+        };
+        write_indent(out, indent);
+        writeln!(out, "let {pattern}{suffix};").expect("writing to a String cannot fail");
+        emit_match_statement_with_target(out, match_expr, &block_context, indent, &pattern)?;
+        return Ok(vec![]);
+    }
     let declaration = if shadowed || mutable || rebound {
         "let"
     } else {
@@ -1761,3 +1895,5 @@ pub(super) fn emit_switch_scrutinee(
     }
     return emit_expression(&expression.expr, entities);
 }
+
+const HOISTED_MATCH_VALUE: &str = "hoisted_match_value";

@@ -33533,3 +33533,135 @@ pub fn get_node_children(out: &mut Vec<Node>, source: &Node) {
     assert!(output.contains("let entries: LogEntry[] = [];"), "{output}");
     assert!(output.contains("import type { LogEntry }"), "{output}");
 }
+
+#[test]
+fn hoists_value_block_tail_match_with_return() {
+    let source = r#"
+pub struct Holder {
+    pub inner: Option<i32>,
+}
+
+pub fn block_tail(holder: &Holder) -> i32 {
+    let value = {
+        let h = holder;
+        match h.inner {
+            Some(v) => v,
+            None => return -1,
+        }
+    };
+    return value * 2;
+}
+"#;
+    let output = compile_typescript(source, None).unwrap();
+    assert!(
+        output.contains(
+            "  let value;\n  {\n    const matchValue = h.inner;\n    if (matchValue !== undefined) {\n      const v = matchValue;\n      value = v;\n    } else {\n      return -1;\n    }\n  }\n  return value * 2;\n"
+        ),
+        "tail match should assign the block binding from a statement match: {output}"
+    );
+}
+
+#[test]
+fn hoists_nested_arm_match_with_return() {
+    let source = r#"
+pub fn nested(a: Option<i32>, b: Option<i32>) -> bool {
+    let value = match a {
+        Some(v) => v,
+        None => match b {
+            Some(w) => w,
+            _ => return false,
+        },
+    };
+    return value > 0;
+}
+"#;
+    let output = compile_typescript(source, None).unwrap();
+    assert!(
+        output.contains(
+            "  } else {\n    if (b !== undefined) {\n      const w = b;\n      value = w;\n    } else {\n      return false;\n    }\n  }\n"
+        ),
+        "nested arm match should stay a statement assigning the same target: {output}"
+    );
+}
+
+#[test]
+fn hoists_match_with_return_nested_in_returned_value() {
+    let source = r#"
+pub fn wrapped(flag: i32) -> Option<i32> {
+    return Some(match flag {
+        0 => 10,
+        _ => return None,
+    });
+}
+"#;
+    let output = compile_typescript(source, None).unwrap();
+    assert!(
+        output.contains("  {\n    let hoistedMatchValue;\n"),
+        "nested match should bind a scoped temporary first: {output}"
+    );
+    assert!(
+        output.contains("hoistedMatchValue = 10;") && output.contains("return undefined;"),
+        "arms should assign the temporary or exit: {output}"
+    );
+    assert!(
+        output.contains("    return hoistedMatchValue;\n  }\n"),
+        "the returned value should read the temporary: {output}"
+    );
+}
+
+#[test]
+fn keeps_rejecting_nested_exit_match_after_an_impure_operand() {
+    let source = r#"
+pub fn next() -> i32 {
+    return 1;
+}
+
+pub fn pair(flag: i32) -> (i32, i32) {
+    return (next(), match flag {
+        0 => 10,
+        _ => return (0, 0),
+    });
+}
+"#;
+    let error = compile_typescript(source, None).unwrap_err().to_string();
+    assert!(
+        error.contains("cannot use `return` to leave the enclosing function"),
+        "hoisting past a call would reorder evaluation: {error}"
+    );
+}
+
+#[test]
+fn lowers_closure_body_match_with_return_as_block() {
+    let source = r#"
+pub fn first(values: &[Option<i32>]) -> Option<i32> {
+    return values.iter().find(|v| v.is_some()).and_then(|v| match v {
+        Some(x) => return Some(*x),
+        None => return None,
+    });
+}
+"#;
+    let output = compile_typescript(source, None).unwrap();
+    assert!(
+        output.contains("((v) => {\n    if (v !== undefined) {\n      const x = v;\n      return x;\n    } else {\n      return undefined;\n    }\n  })(v)"),
+        "closure match should become a block body returning from the closure: {output}"
+    );
+}
+
+#[test]
+fn renames_tuple_match_bindings_that_shadow_the_hoisted_target() {
+    let source = r#"
+pub fn same(a: Option<i32>, b: Option<i32>) -> bool {
+    let (x, y) = match (a, b) {
+        (None, None) => return true,
+        (Some(x), Some(y)) => (x, y),
+        _ => return false,
+    };
+    return x == y;
+}
+"#;
+    let output = compile_typescript(source, None).unwrap();
+    assert!(
+        output.contains("      const $x = $m0;\n      const $y = $m1;\n      [x, y] = [$x, $y];\n"),
+        "arm bindings should not shadow the assigned tuple target: {output}"
+    );
+}
