@@ -111,6 +111,151 @@ pub(super) fn caught_panic_transaction<'a>(
     return Some((closure, error_pattern, &handler.then_branch));
 }
 
+pub(super) struct CaughtPanicFinally<'a> {
+    pub closure: &'a syn::ExprClosure,
+    pub cleanup_range: std::ops::Range<usize>,
+    pub returning: bool,
+}
+
+// Recognizes the generalized catch_unwind transaction with cleanup between the catch and the
+// terminator: `let result = catch_unwind(..); ..cleanup..; return match result { Ok(v) => v,
+// Err(p) => resume_unwind(p) }` or `..cleanup..; if let Err(p) = result { resume_unwind(p) }`.
+// The cleanup statements must not reference `result`.
+pub(super) fn caught_panic_finally_transaction<'a>(
+    statement: &'a Stmt,
+    remaining: &'a [Stmt],
+) -> Option<CaughtPanicFinally<'a>> {
+    let Stmt::Local(local) = statement else {
+        return None;
+    };
+    let Pat::Ident(result_pattern) = &local.pat else {
+        return None;
+    };
+    if result_pattern.by_ref.is_some()
+        || result_pattern.mutability.is_some()
+        || result_pattern.subpat.is_some()
+    {
+        return None;
+    }
+    let initializer = local.init.as_ref()?;
+    if initializer.diverge.is_some() {
+        return None;
+    }
+    let closure = production_caught_panic_closure(&initializer.expr)?;
+    let result_name = result_pattern.ident.to_string();
+    let terminator_index = remaining.iter().position(|stmt| {
+        is_resume_unwind_if_let_err(stmt, &result_name)
+            || is_resume_unwind_return_match(stmt, &result_name)
+    })?;
+    for stmt in &remaining[..terminator_index] {
+        if statement_contains_identifier(stmt, &result_name) {
+            return None;
+        }
+    }
+    for stmt in remaining.get(terminator_index + 1..).unwrap_or_default() {
+        if statement_contains_identifier(stmt, &result_name) {
+            return None;
+        }
+    }
+    let returning = is_resume_unwind_return_match(&remaining[terminator_index], &result_name);
+    return Some(CaughtPanicFinally {
+        closure,
+        cleanup_range: 0..terminator_index,
+        returning,
+    });
+}
+
+fn is_resume_unwind_if_let_err(statement: &Stmt, result_name: &str) -> bool {
+    let Stmt::Expr(Expr::If(handler), _) = statement else {
+        return false;
+    };
+    if handler.else_branch.is_some() {
+        return false;
+    }
+    let Expr::Let(binding) = handler.cond.as_ref() else {
+        return false;
+    };
+    let Pat::TupleStruct(error_variant) = binding.pat.as_ref() else {
+        return false;
+    };
+    if !error_variant.path.is_ident("Err") || error_variant.elems.len() != 1 {
+        return false;
+    }
+    let Pat::Ident(error) = &error_variant.elems[0] else {
+        return false;
+    };
+    if error.by_ref.is_some() || error.mutability.is_some() || error.subpat.is_some() {
+        return false;
+    }
+    let Expr::Path(result) = binding.expr.as_ref() else {
+        return false;
+    };
+    if !result.path.is_ident(result_name) {
+        return false;
+    }
+    let Some(Stmt::Expr(Expr::Call(resume), _)) = handler.then_branch.stmts.last() else {
+        return false;
+    };
+    if !production_std_panic_path(&resume.func, "resume_unwind") || resume.args.len() != 1 {
+        return false;
+    }
+    let Expr::Path(resumed) = &resume.args[0] else {
+        return false;
+    };
+    return resumed.path.is_ident(&error.ident);
+}
+
+fn is_resume_unwind_return_match(statement: &Stmt, result_name: &str) -> bool {
+    let Stmt::Expr(Expr::Return(returned), _) = statement else {
+        return false;
+    };
+    let Some(Expr::Match(matched)) = returned.expr.as_deref() else {
+        return false;
+    };
+    let Expr::Path(scrutinee) = matched.expr.as_ref() else {
+        return false;
+    };
+    if !scrutinee.path.is_ident(result_name) || matched.arms.len() != 2 {
+        return false;
+    }
+    let ok_arm = &matched.arms[0];
+    let err_arm = &matched.arms[1];
+    let Pat::TupleStruct(ok_variant) = &ok_arm.pat else {
+        return false;
+    };
+    if !ok_variant.path.is_ident("Ok") || ok_variant.elems.len() != 1 {
+        return false;
+    }
+    let Pat::Ident(ok_binding) = &ok_variant.elems[0] else {
+        return false;
+    };
+    let Expr::Path(ok_body) = ok_arm.body.as_ref() else {
+        return false;
+    };
+    if !ok_body.path.is_ident(&ok_binding.ident) {
+        return false;
+    }
+    let Pat::TupleStruct(err_variant) = &err_arm.pat else {
+        return false;
+    };
+    if !err_variant.path.is_ident("Err") || err_variant.elems.len() != 1 {
+        return false;
+    }
+    let Pat::Ident(err_binding) = &err_variant.elems[0] else {
+        return false;
+    };
+    let Expr::Call(resume) = err_arm.body.as_ref() else {
+        return false;
+    };
+    if !production_std_panic_path(&resume.func, "resume_unwind") || resume.args.len() != 1 {
+        return false;
+    }
+    let Expr::Path(resumed) = &resume.args[0] else {
+        return false;
+    };
+    return resumed.path.is_ident(&err_binding.ident);
+}
+
 pub(super) fn ignored_caught_panic(local: &syn::Local) -> Option<&syn::ExprClosure> {
     if !matches!(local.pat, Pat::Wild(_)) {
         return None;
@@ -207,6 +352,31 @@ pub(super) fn emit_caught_panic_transaction(
     )?;
     write_indent(out, indent + 1);
     writeln!(out, "throw {error};").expect("writing to a String cannot fail");
+    write_indent(out, indent);
+    out.push_str("}\n");
+    return Ok(());
+}
+
+pub(super) fn emit_caught_panic_finally_transaction(
+    out: &mut String,
+    closure: &syn::ExprClosure,
+    cleanup: &[Stmt],
+    returning: bool,
+    entities: &HashSet<String>,
+    indent: usize,
+) -> Result<(), CompileError> {
+    write_indent(out, indent);
+    out.push_str("try {\n");
+    if returning {
+        write_indent(out, indent + 1);
+        writeln!(out, "return ({})();", emit_closure(closure, entities)?)
+            .expect("writing to a String cannot fail");
+    } else {
+        emit_caught_panic_call(out, closure, entities, indent + 1)?;
+    }
+    write_indent(out, indent);
+    out.push_str("} finally {\n");
+    emit_block(out, cleanup, entities, indent + 1)?;
     write_indent(out, indent);
     out.push_str("}\n");
     return Ok(());
@@ -487,10 +657,10 @@ pub(super) fn emit_block_with_tail(
         }
     }
     let mut declared: HashSet<String> = HashSet::new();
-    let mut skip_next = false;
+    let mut skip_remaining: usize = 0;
     for (index, parsed) in statements.iter().enumerate() {
-        if skip_next {
-            skip_next = false;
+        if skip_remaining > 0 {
+            skip_remaining -= 1;
             continue;
         }
         if (tail.is_none() || index + 2 < statements.len())
@@ -509,7 +679,23 @@ pub(super) fn emit_block_with_tail(
                 &block_context,
                 indent,
             )?;
-            skip_next = true;
+            skip_remaining = 1;
+            continue;
+        }
+        if let Some(finally) = caught_panic_finally_transaction(
+            parsed,
+            statements.get(index + 1..).unwrap_or_default(),
+        ) {
+            emit_caught_panic_finally_transaction(
+                out,
+                finally.closure,
+                &statements[index + 1 + finally.cleanup_range.start
+                    ..index + 1 + finally.cleanup_range.end],
+                finally.returning,
+                &block_context,
+                indent,
+            )?;
+            skip_remaining = finally.cleanup_range.end + 1;
             continue;
         }
         let statement = match tail {

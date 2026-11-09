@@ -29727,6 +29727,79 @@ pub fn measure(run: fn() -> i32) -> i32 {
 }
 
 #[test]
+fn lowers_catch_unwind_with_finally_cleanup_and_return_match() {
+    let source = r#"
+use std::panic::{AssertUnwindSafe, catch_unwind, resume_unwind};
+
+pub fn with_state(state: &mut Vec<i32>, callback: fn(&mut Vec<i32>) -> i32) -> i32 {
+    state.push(1);
+    let result = catch_unwind(AssertUnwindSafe(|| callback(state)));
+    state.pop();
+    return match result {
+        Ok(value) => value,
+        Err(payload) => resume_unwind(payload),
+    };
+}
+"#;
+    let output = compile_typescript(source, None).unwrap();
+    assert!(output.contains("try {"), "{output}");
+    assert!(output.contains("return ("), "{output}");
+    assert!(output.contains("} finally {"), "{output}");
+    assert!(output.contains("state.pop()"), "{output}");
+    assert!(!output.contains("catchUnwind"), "{output}");
+    assert!(!output.contains("resumeUnwind"), "{output}");
+    assert!(!output.contains("AssertUnwindSafe"), "{output}");
+}
+
+#[test]
+fn lowers_catch_unwind_with_finally_cleanup_and_if_let_err() {
+    let source = r#"
+use std::panic::{AssertUnwindSafe, catch_unwind, resume_unwind};
+
+pub fn render(pass: &mut Vec<i32>, callback: fn(&mut Vec<i32>)) {
+    let result = catch_unwind(AssertUnwindSafe(|| callback(pass)));
+    pass.clear();
+    if let Err(payload) = result {
+        resume_unwind(payload);
+    }
+}
+"#;
+    let output = compile_typescript(source, None).unwrap();
+    assert!(output.contains("try {"), "{output}");
+    assert!(output.contains("} finally {"), "{output}");
+    assert!(output.contains("pass.length = 0"), "{output}");
+    assert!(!output.contains("return ("), "{output}");
+    assert!(!output.contains("catchUnwind"), "{output}");
+    assert!(!output.contains("resumeUnwind"), "{output}");
+}
+
+#[test]
+fn lowers_catch_unwind_with_multiple_finally_statements() {
+    let source = r#"
+use std::panic::{AssertUnwindSafe, catch_unwind, resume_unwind};
+
+pub fn bracket(items: &mut Vec<i32>, callback: fn(&mut Vec<i32>) -> i32) -> i32 {
+    items.push(10);
+    let result = catch_unwind(AssertUnwindSafe(|| {
+        items.push(20);
+        return callback(items);
+    }));
+    items.pop();
+    items.push(30);
+    return match result {
+        Ok(value) => value,
+        Err(payload) => resume_unwind(payload),
+    };
+}
+"#;
+    let output = compile_typescript(source, None).unwrap();
+    assert!(output.contains("try {"), "{output}");
+    assert!(output.contains("} finally {"), "{output}");
+    assert!(output.contains("items.pop()"), "{output}");
+    assert!(output.contains("items.push(30)"), "{output}");
+}
+
+#[test]
 fn parse_ok_returns_undefined_not_null() {
     let source = r#"
 pub fn try_parse(s: &str) -> Option<f32> {
