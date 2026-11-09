@@ -1424,35 +1424,63 @@ pub(super) fn emit_let_else_local(
         }
     }
     if let Pat::Tuple(tuple) = &local.pat {
-        let Expr::Tuple(init_tuple) = initializer.expr.as_ref() else {
-            return Err(compile_error(
-                "portable `let-else` tuple pattern requires a tuple initializer",
-            ));
+        let init_tuple = if let Expr::Tuple(t) = initializer.expr.as_ref() {
+            if tuple.elems.len() != t.elems.len() {
+                return Err(compile_error(
+                    "portable `let-else` tuple pattern length must match initializer",
+                ));
+            }
+            Some(t)
+        } else {
+            None
         };
-        if tuple.elems.len() != init_tuple.elems.len() {
-            return Err(compile_error(
-                "portable `let-else` tuple pattern length must match initializer",
-            ));
-        }
+        let opaque_base = if init_tuple.is_none() {
+            let emitted = emit_expression(initializer.expr.as_ref(), entities)?;
+            let temp = "__tup".to_string();
+            write_indent(out, indent);
+            writeln!(out, "const {temp} = {emitted};").expect("writing to a String cannot fail");
+            Some(temp)
+        } else {
+            None
+        };
         let mut temps = Vec::new();
         let mut names = Vec::new();
         let mut rebinds = Vec::new();
         let mut conditions = Vec::new();
         for (i, elem) in tuple.elems.iter().enumerate() {
-            let value = emit_expression(&init_tuple.elems[i], entities)?;
+            let value = if let Some(t) = &init_tuple {
+                emit_expression(&t.elems[i], entities)?
+            } else {
+                format!("{}[{i}]", opaque_base.as_ref().unwrap())
+            };
+            let elem_expr: Option<&Expr> = init_tuple.map(|t| &t.elems[i]);
+            let absent_for_elem = |entities: &HashSet<String>| -> &'static str {
+                if let Some(expr) = elem_expr {
+                    option_absent_value(expr, entities)
+                } else {
+                    "undefined"
+                }
+            };
+            let elem_contains_ident = |name: &str| -> bool {
+                if let Some(expr) = elem_expr {
+                    expression_contains_identifier(expr, name)
+                } else {
+                    expression_contains_identifier(initializer.expr.as_ref(), name)
+                }
+            };
             match elem {
                 Pat::TupleStruct(ts)
                     if (ts.path.is_ident("Some") || ts.path.is_ident("Ok"))
                         && ts.elems.len() == 1 =>
                 {
-                    let absent = option_absent_value(&init_tuple.elems[i], entities);
+                    let absent = absent_for_elem(entities);
                     match &ts.elems[0] {
                         Pat::Ident(ident) => {
                             let rust_name = ident.ident.to_string();
                             let base_name = snake_to_lower_camel(&rust_name);
                             let name = resolve_rename(entities, &base_name);
                             let is_rebind = shadowed
-                                || expression_contains_identifier(&init_tuple.elems[i], &rust_name)
+                                || elem_contains_ident(&rust_name)
                                 || entities
                                     .contains(&format!("{SCOPE_DECLARED_MARKER}{rust_name}"));
                             let temp = format!("$t{i}");
@@ -1480,10 +1508,7 @@ pub(super) fn emit_let_else_local(
                                 let base_name = snake_to_lower_camel(&rust_name);
                                 let name = resolve_rename(entities, &base_name);
                                 let is_rebind = shadowed
-                                    || expression_contains_identifier(
-                                        &init_tuple.elems[i],
-                                        &rust_name,
-                                    )
+                                    || elem_contains_ident(&rust_name)
                                     || entities
                                         .contains(&format!("{SCOPE_DECLARED_MARKER}{rust_name}"));
                                 let temp = format!("$t{i}");
@@ -1513,7 +1538,7 @@ pub(super) fn emit_let_else_local(
                     rebinds.push(false);
                 }
                 Pat::Path(path) if path.path.is_ident("None") => {
-                    let absent = option_absent_value(&init_tuple.elems[i], entities);
+                    let absent = absent_for_elem(entities);
                     let temp = format!("$t{i}");
                     write_indent(out, indent);
                     writeln!(out, "const {temp} = {value};")
@@ -1524,7 +1549,7 @@ pub(super) fn emit_let_else_local(
                     rebinds.push(false);
                 }
                 Pat::Ident(ident) if ident.ident == "None" => {
-                    let absent = option_absent_value(&init_tuple.elems[i], entities);
+                    let absent = absent_for_elem(entities);
                     let temp = format!("$t{i}");
                     write_indent(out, indent);
                     writeln!(out, "const {temp} = {value};")
@@ -1539,7 +1564,7 @@ pub(super) fn emit_let_else_local(
                     let base_name = snake_to_lower_camel(&rust_name);
                     let name = resolve_rename(entities, &base_name);
                     let is_rebind = shadowed
-                        || expression_contains_identifier(&init_tuple.elems[i], &rust_name)
+                        || elem_contains_ident(&rust_name)
                         || entities.contains(&format!("{SCOPE_DECLARED_MARKER}{rust_name}"));
                     if is_rebind {
                         write_indent(out, indent);

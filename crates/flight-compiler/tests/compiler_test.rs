@@ -31028,6 +31028,38 @@ pub fn compare(a: &str, b: &str) -> f64 {
 }
 
 #[test]
+fn tuple_let_else_with_variable_initializer() {
+    let source = r#"
+fn get_pair() -> (Option<u32>, Option<u32>) { (None, None) }
+
+pub fn process() -> u32 {
+    let colliders = get_pair();
+    let (Some(collider_a), Some(collider_b)) = colliders else {
+        return 0;
+    };
+    return collider_a + collider_b;
+}
+"#;
+    let output = compile_typescript(source, None).unwrap();
+    assert!(
+        output.contains("const __tup = colliders"),
+        "variable initializer should be stored in __tup: {output}"
+    );
+    assert!(
+        output.contains("$t0 = __tup[0]") && output.contains("$t1 = __tup[1]"),
+        "tuple elements should be accessed via indexed access: {output}"
+    );
+    assert!(
+        output.contains("$t0 === undefined") && output.contains("$t1 === undefined"),
+        "should test elements against undefined: {output}"
+    );
+    assert!(
+        output.contains("const colliderA = $t0") && output.contains("const colliderB = $t1"),
+        "should bind camelCase names from tuple elements: {output}"
+    );
+}
+
+#[test]
 fn scoping_block_preserves_braces() {
     let source = r#"
 fn process(data: &[u8]) -> u32 { 0 }
