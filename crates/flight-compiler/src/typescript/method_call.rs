@@ -755,6 +755,12 @@ pub(super) fn emit_method_call(
         "as_slice" if arguments.is_empty() => Ok(receiver),
         "as_str" | "to_str" if arguments.is_empty() => Ok(receiver),
         "borrow" | "borrow_mut" if arguments.is_empty() => Ok(receiver),
+        "count_ones" if arguments.is_empty() => Ok(format!(
+            "((x: number): number => {{ x = x - ((x >>> 1) & 0x55555555); x = (x & 0x33333333) + ((x >>> 2) & 0x33333333); return (((x + (x >>> 4)) & 0x0f0f0f0f) * 0x01010101) >>> 24; }})({receiver})"
+        )),
+        "count_zeros" if arguments.is_empty() => Ok(format!(
+            "((x: number): number => {{ x = ~x >>> 0; x = x - ((x >>> 1) & 0x55555555); x = (x & 0x33333333) + ((x >>> 2) & 0x33333333); return (((x + (x >>> 4)) & 0x0f0f0f0f) * 0x01010101) >>> 24; }})({receiver})"
+        )),
         "leading_zeros" if arguments.is_empty() => Ok(format!("Math.clz32({receiver})")),
         "len" if arguments.is_empty() => Ok(format!("{receiver}.length")),
         "load" if arguments.len() == 1 => Ok(receiver),
@@ -976,6 +982,18 @@ pub(super) fn emit_method_call(
             Ok(format!("{receiver}.splice({}, 1)[0]", arguments[0]))
         }
         "reverse" if arguments.is_empty() => Ok(format!("{receiver}.reverse()")),
+        "rotate_left" if arguments.len() == 1 => {
+            let n = &arguments[0];
+            Ok(format!(
+                "(({receiver} << {n} | {receiver} >>> (32 - {n})) >>> 0)"
+            ))
+        }
+        "rotate_right" if arguments.len() == 1 => {
+            let n = &arguments[0];
+            Ok(format!(
+                "(({receiver} >>> {n} | {receiver} << (32 - {n})) >>> 0)"
+            ))
+        }
         "replace" if arguments.len() == 2 => Ok(format!(
             "{receiver}.replaceAll({}, {})",
             arguments[0], arguments[1]
@@ -1375,6 +1393,9 @@ pub(super) fn emit_method_call(
         "total_cmp" if arguments.len() == 1 => Ok(format!(
             "((a: number, b: number): number => a < b ? -1 : a > b ? 1 : 0)({receiver}, {})",
             arguments[0]
+        )),
+        "trailing_zeros" if arguments.is_empty() => Ok(format!(
+            "({receiver} === 0 ? 32 : 31 - Math.clz32({receiver} & -{receiver}))"
         )),
         "try_into" if arguments.is_empty() => Ok(receiver),
         "trunc" if arguments.is_empty() => Ok(format!("Math.trunc({receiver})")),

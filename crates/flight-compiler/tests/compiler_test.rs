@@ -29531,6 +29531,40 @@ pub fn negate_comparison(a: u32, b: u32) -> bool {
 }
 
 #[test]
+fn lowers_integer_bit_counting_methods() {
+    let source = r#"
+pub fn popcount(x: u32) -> u32 {
+    return x.count_ones();
+}
+
+pub fn zero_count(x: u32) -> u32 {
+    return x.count_zeros();
+}
+
+pub fn lowest_bit(x: u32) -> u32 {
+    return x.trailing_zeros();
+}
+"#;
+    let output = compile_typescript(source, None).unwrap();
+    assert!(
+        output.contains("0x55555555"),
+        "count_ones should emit popcount bit-parallel algorithm: {output}"
+    );
+    assert!(
+        output.contains("~x >>> 0"),
+        "count_zeros should invert before counting: {output}"
+    );
+    assert!(
+        output.contains("Math.clz32"),
+        "trailing_zeros should use Math.clz32: {output}"
+    );
+    assert!(
+        !output.contains("[lenient]"),
+        "should not produce lenient skips: {output}"
+    );
+}
+
+#[test]
 fn lowers_match_on_option_of_enum_variant_to_kind_check() {
     let source = r#"
 pub struct Mapping { pub name: String }
