@@ -80,7 +80,6 @@ if (!scoped) {
   // `npm run check` and was attested green. A gate the standard check cannot reach is one that
   // eventually goes unrun.
   add('backend-lifecycle:check', 'tsx', ['scripts/backend-lifecycle.ts']);
-  add('entity-contracts:check', 'tsx', ['scripts/entity-contracts.ts']);
   add('api:check', 'tsx', ['scripts/api.ts', '--check']);
   // Doc-lane checks live in `npm run check:docs`, not here — doc staleness is principal's
   // responsibility on principal's schedule, not something that gates the fleet's commit path.

@@ -3,7 +3,7 @@
 _2026-09-04. Architecture record — the allocate-initialize construction discipline for all Entity types._
 
 **Status: RATIFIED 2026-09-07.** Read before adding a `create*` factory, changing how a hierarchical entity is
-constructed, or adding a base type or trait initializer. Enforced by `npm run construction:check`.
+constructed, or adding a base type or trait initializer.
 
 ## The problem
 
@@ -290,15 +290,10 @@ prove all fields were written. This is the cost of staying in free-function land
 tree-shaking, the absence of prototype chains, and C portability outweigh the constructor's built-in
 definite-assignment check.
 
-A script-level check (`construction:check`) can validate:
-
-- Every `allocateEntity` call has a matching `finishEntity` without the value escaping between them.
-- Each initializer writes only fields declared by its layer's type (ownership derived from type
-  declarations in `@flighthq/types`).
-- No field is assigned by two construction layers.
-
-Deferred until the first hierarchical factory is migrated, since a check with nothing to observe
-cannot be tested (same deferral pattern as explicit-dependency-model R4).
+The `construction:check` gate that enforced `allocateEntity`/`finishEntity` pairing has been removed.
+`finishEntity` was a runtime no-op (a type-only cast from `EntityConstruction<T>` to `T`) inherited
+from the earlier Haxe transpiler, with no Rust equivalent. Struct construction in Rust is implicit;
+the transpiler does not need to synthesize a ceremony that does not exist in the source.
 
 ## `NodeDataFactory` pattern
 

@@ -10,8 +10,8 @@ Sorted from `review.md` (solid, 92/100) and the direction session (2026-07-02). 
 
 ## Directed
 
-1. **~~Track the proposed `create*` Entity convention as an advisory.~~** — retired 2026-09-07. The allocate-initialize-finish model (`allocateEntity` → `initialize*` → `finishEntity`) is now the strict ruleset with 1,808 `finishEntity` usages across the codebase. `npm run construction:check` enforces pairing as a CI gate; `npm run entity-contracts:check` audits the Entity return shape. The convention is enforced, not advisory.
-2. **~~Make the migration semantic rather than a cast or verb-table exercise.~~** — retired 2026-09-08. The uniform Entity construction model is retained for all `create*` products, including pure data descriptors (adjustments, effects, projections, PBR extensions, physics configs/results, sensor readings). The null runtime slot cost is trivial (one pointer), and the single-constructor discipline enforces V8 hidden-class monomorphism at kind-dispatched hot paths — a measured benefit that outweighs the per-descriptor overhead. No `*Like` input seam exists for these types, so consumers already depend on the concrete constructor. `npm run entity-contracts:check` and `npm run construction:check` enforce the convention as CI gates.
+1. **~~Track the proposed `create*` Entity convention as an advisory.~~** — retired 2026-09-07; gates removed 2026-11-09. The allocate-initialize model (`allocateEntity` → `initialize*`) remains the convention. `finishEntity` and the `construction:check` / `entity-contracts:check` CI gates have been removed — `finishEntity` was a runtime no-op inherited from the Haxe transpiler with no Rust equivalent, and the Entity return-type gate enforced a TS-OOP hierarchy that Rust does not share.
+2. **~~Make the migration semantic rather than a cast or verb-table exercise.~~** — retired 2026-09-08; gates removed 2026-11-09. The uniform Entity construction model is retained for `create*` products. The `entity-contracts:check` and `construction:check` CI gates have been removed as part of the Rust-primary transition.
 
 ## Recommended
 

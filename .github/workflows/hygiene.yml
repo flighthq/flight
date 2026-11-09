@@ -151,7 +151,7 @@ jobs:
         continue-on-error: true
         run: npm run check
         env:
-          FLIGHT_CHECK_GATES: 'exports:check,reachability:check,type-home:check, backend-lifecycle:check,entity-contracts:check,api:check, facets:check,catalog:check,support:check,instrumentation:check, fingerprint-computation-id:check,evidence:check,assertions:check, data-cast-colour:check,unit-test-cost:check, expected-image-descriptions:check,functional-antialiasing:check, degree-constants:check,capability-arrival:check,host-bypasses:check, mixed-absence:check,opaque-values:check,double-casts:check, capture provenance (advisory)'
+          FLIGHT_CHECK_GATES: 'exports:check,reachability:check,type-home:check, backend-lifecycle:check,api:check, facets:check,catalog:check,support:check,instrumentation:check, fingerprint-computation-id:check,evidence:check,assertions:check, data-cast-colour:check,unit-test-cost:check, expected-image-descriptions:check,functional-antialiasing:check, degree-constants:check,capability-arrival:check,host-bypasses:check, mixed-absence:check,opaque-values:check,double-casts:check, capture provenance (advisory)'
       # Advisory by construction: `npm run size` always exits 0 and only reports which bundles moved
       # against the committed unminified baseline.
       - id: size
