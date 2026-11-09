@@ -178,7 +178,10 @@ function rememberTypeScriptArrayParameterArguments(arguments_: string[], rustSou
     if (previous !== undefined && previous.rustSource !== rustSource) {
       throw new Error(`TypeScript array parameter ${position} has conflicting Rust owners`);
     }
-    packageTypeScriptArrayParameters.set(position, { rustSource, specification });
+    packageTypeScriptArrayParameters.set(position, {
+      rustSource,
+      specification,
+    });
   }
   if (merged.length / 2 !== packageTypeScriptArrayParameters.size) {
     throw new Error('TypeScript array parameter metadata lost its Rust owner');
@@ -432,6 +435,7 @@ function mergedTypeScriptTypeAliasArguments(...groups: readonly string[][]): str
       const name = specification.split('=', 1)[0];
       const previous = aliases.get(name);
       if (previous !== undefined && previous !== specification) {
+        if (options.auditNative) continue;
         throw new Error(`Rust type alias ${name} has conflicting TypeScript representations`);
       }
       aliases.set(name, specification);
@@ -510,7 +514,10 @@ try {
     const companions = needsGeneratedSymbols ? loadCompanions(modules) : [];
     const symbolModules = [...modules, ...companions];
     const symbols = needsGeneratedSymbols ? collectExportSymbols(symbolModules) : new Map<string, SymbolOwner>();
-    let externalExports: ResolvedExternalContractExports = { output: '', symbols: new Map() };
+    let externalExports: ResolvedExternalContractExports = {
+      output: '',
+      symbols: new Map(),
+    };
     if (rootMode === 'generate') {
       const contractUses = collectRustPublicUses(readFileSync(join(crateRoot, 'src', 'contract.rs'), 'utf8'));
       externalExports = resolveExternalContractExports(contractUses, loadExternalContracts(contractUses));
@@ -797,14 +804,27 @@ function auditNativeSources(
   for (const { mode, rustPath } of rustSources) {
     if (mode !== 'target-native') continue;
     const fileName = `${snakeToLowerCamel(basename(rustPath, '.rs'))}.ts`;
-    const probe = probeNativeSource(
-      'generate',
-      rustPath,
-      fileName,
-      [],
-      aliasSources,
-      targetNativeSources.filter((candidate) => candidate !== rustPath),
-    );
+    let probe: NativeAuditProbe;
+    try {
+      probe = probeNativeSource(
+        'generate',
+        rustPath,
+        fileName,
+        [],
+        aliasSources,
+        targetNativeSources.filter((candidate) => candidate !== rustPath),
+      );
+    } catch (error) {
+      entries.push({
+        diagnostics: [`pipeline error: ${error instanceof Error ? error.message : String(error)}`],
+        kind: 'source',
+        rustSource: rustPath,
+        skipped: 0,
+        status: 'blocked',
+        typescript: fileName,
+      });
+      continue;
+    }
     entries.push(probe.entry);
     rememberTypeScriptTypeAliasArguments(probe.typeAliasArguments);
     rememberTypeScriptArrayPositionArguments('--typescript-array-field', probe.arrayFieldArguments, rustPath);
@@ -825,21 +845,34 @@ function auditNativeSources(
     const fileName = `${snakeToLowerCamel(rustTest.slice(0, -8))}.test.ts`;
     const compilePath = testSourceWithSupport(rustPath, join(rawRoot, `${rustTest}.audit.rs`));
     const positionOwners = packageTypeScriptPositionOwnerSources();
-    const probe = probeNativeSource(
-      'generate-tests',
-      compilePath,
-      fileName,
-      ['./contract.ts', '--contract-source', join(crateRoot, 'src', 'contract.rs')],
-      [...new Set([...aliasSources, ...positionOwners])],
-      targetNativeSources.filter((candidate) => candidate !== rustPath && !positionOwners.includes(candidate)),
-      rustPath,
-      packageTypeScriptTypeAliasArguments(),
-      packageTypeScriptArrayParameterArguments(),
-      packageTypeScriptNullableOptionFieldArguments(),
-      packageTypeScriptNullableOptionParameterArguments(),
-      packageTypeScriptDefaultNullOptionParameterArguments(),
-      packageTypeScriptNullableOptionReturnArguments(),
-    );
+    let probe: NativeAuditProbe;
+    try {
+      probe = probeNativeSource(
+        'generate-tests',
+        compilePath,
+        fileName,
+        ['./contract.ts', '--contract-source', join(crateRoot, 'src', 'contract.rs')],
+        [...new Set([...aliasSources, ...positionOwners])],
+        targetNativeSources.filter((candidate) => candidate !== rustPath && !positionOwners.includes(candidate)),
+        rustPath,
+        packageTypeScriptTypeAliasArguments(),
+        packageTypeScriptArrayParameterArguments(),
+        packageTypeScriptNullableOptionFieldArguments(),
+        packageTypeScriptNullableOptionParameterArguments(),
+        packageTypeScriptDefaultNullOptionParameterArguments(),
+        packageTypeScriptNullableOptionReturnArguments(),
+      );
+    } catch (error) {
+      entries.push({
+        diagnostics: [`pipeline error: ${error instanceof Error ? error.message : String(error)}`],
+        kind: 'test',
+        rustSource: rustPath,
+        skipped: 0,
+        status: 'blocked',
+        typescript: fileName,
+      });
+      continue;
+    }
     entries.push(probe.entry);
   }
   const summary = {
@@ -891,7 +924,11 @@ function probeNativeSource(
             .filter((candidate) => candidate !== reportedSource)
             .map((candidate) => readFileSync(candidate, 'utf8')),
         )
-      : { inlineStringUnionArguments: [], typeAliasArguments: [], typeExportArguments: [] };
+      : {
+          inlineStringUnionArguments: [],
+          typeAliasArguments: [],
+          typeExportArguments: [],
+        };
   const namedRepresentationArguments = [
     ...typeScriptStringUnionArguments(existingTypescript, loadImportedContractSymbols(existingTypescript)),
     ...internalTypeExports.inlineStringUnionArguments,
@@ -1290,7 +1327,10 @@ function compile(
     ...contractArguments(command, trailing),
   ];
   if (options.lenient && command === 'generate') {
-    const result = spawnSync(compilerPath, arguments_, { cwd: repositoryRoot, encoding: 'utf8' });
+    const result = spawnSync(compilerPath, arguments_, {
+      cwd: repositoryRoot,
+      encoding: 'utf8',
+    });
     if (result.stderr) process.stderr.write(result.stderr);
     if (result.error) throw result.error;
     if (result.status !== 0) {
@@ -1602,7 +1642,11 @@ function collectContractTypeScriptSymbols(path: string): Map<string, ContractSym
     const nullableFields = collectTypeScriptNullableOptionFields(typescript);
     const referencedTypes = collectTypeScriptReferencedTypes(typescript);
     for (const [name, owner] of collectTypeScriptExportSymbols(typescript)) {
-      const existing = symbols.get(name) ?? { hasType: false, hasValue: false, isClass: false };
+      const existing = symbols.get(name) ?? {
+        hasType: false,
+        hasValue: false,
+        isClass: false,
+      };
       existing.hasType ||= owner.hasType;
       existing.hasValue ||= owner.hasValue;
       existing.isClass ||= owner.isClass;
