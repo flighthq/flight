@@ -30345,30 +30345,30 @@ pub fn under(a: u8, b: u8, limit: u8) -> bool {
     assert!(!output.contains("=> {"), "{output}");
     assert!(
         output.contains(
-            "  if (offset + length > 0x7FFFFFFF || offset + length < 0 ? true : offset + length > byteLength) {"
+            "  if (offset + length > 0x7fffffff || offset + length < 0 ? true : offset + length > byteLength) {"
         ),
         "{output}"
     );
     assert!(
         output.contains(
-            "return bytes.length - offset > 0x7FFFFFFF || bytes.length - offset < 0 ? 0 : (bytes.length - offset);"
+            "return bytes.length - offset > 0x7fffffff || bytes.length - offset < 0 ? 0 : (bytes.length - offset);"
         ),
         "{output}"
     );
     assert!(
-        output.contains("return !(a * b > 0x7FFFFFFF || a * b < -0x80000000);"),
+        output.contains("return !(a * b > 0x7fffffff || a * b < -0x80000000);"),
         "{output}"
     );
     assert!(
-        output.contains("return a + b > 0x7FFFFFFF || a + b < -0x80000000;"),
+        output.contains("return a + b > 0x7fffffff || a + b < -0x80000000;"),
         "{output}"
     );
     assert!(
-        output.contains("return a + b > 0xFFFFFFFF || a + b < 0 || a + b > limit;"),
+        output.contains("return a + b > 0xffffffff || a + b < 0 || a + b > limit;"),
         "{output}"
     );
     assert!(
-        output.contains("return !(a + b > 0xFF || a + b < 0) && a + b < limit;"),
+        output.contains("return !(a + b > 0xff || a + b < 0) && a + b < limit;"),
         "{output}"
     );
 }
@@ -30388,7 +30388,7 @@ pub fn general(a: usize, b: usize) -> usize {
     // An unsigned subtraction below zero is Rust's `None`, so the range floor is 0, not `i32::MIN`.
     assert!(
         output.contains(
-            "((a: number, b: number): number | undefined => { const diff = a - b; return diff > 0x7FFFFFFF || diff < 0 ? undefined : diff })(compute(a), b) ?? 0"
+            "((a: number, b: number): number | undefined => { const diff = a - b; return diff > 0x7fffffff || diff < 0 ? undefined : diff })(compute(a), b) ?? 0"
         ),
         "{output}"
     );
