@@ -5708,12 +5708,12 @@ pub fn safe_sub(a: i32, b: i32) -> Option<i32> {
 
         assert!(
             output.contains(
-                "const sum = a + b; return sum > 0x7FFFFFFF || sum < -0x80000000 ? undefined : sum"
+                "const sum = a + b; return sum > 0x7fffffff || sum < -0x80000000 ? undefined : sum"
             ),
             "{output}"
         );
         assert!(
-            output.contains("const diff = a - b; return diff > 0x7FFFFFFF || diff < -0x80000000 ? undefined : diff"),
+            output.contains("const diff = a - b; return diff > 0x7fffffff || diff < -0x80000000 ? undefined : diff"),
             "{output}"
         );
     }
@@ -5841,7 +5841,7 @@ pub fn safe_mul(a: i32, b: i32) -> Option<i32> {
             "checked_mul should compute product: {output}"
         );
         assert!(
-            output.contains("0x7FFFFFFF"),
+            output.contains("0x7fffffff"),
             "checked_mul should check overflow: {output}"
         );
     }
@@ -6152,7 +6152,7 @@ pub fn safe_add(a: u32, b: u32) -> u32 {
         let output = compile_typescript(source, None).unwrap();
 
         assert!(
-            output.contains("Math.min(0x7FFFFFFF"),
+            output.contains("Math.min(0x7fffffff"),
             "saturating_add should clamp to max: {output}"
         );
     }
@@ -7741,7 +7741,7 @@ pub fn safe_mul(a: u32, b: u32) -> u32 {
 
         let output = compile_typescript(source, None).unwrap();
 
-        assert!(output.contains("Math.min(0x7FFFFFFF, a * b)"), "{output}");
+        assert!(output.contains("Math.min(0x7fffffff, a * b)"), "{output}");
     }
 
     #[test]
@@ -17277,7 +17277,7 @@ pub fn numeric_literals() -> (u32, u32, f64, f64) {
 
         let output = compile_typescript(source, None).unwrap();
 
-        assert!(output.contains("const hex: number = 0xAB_CD;"));
+        assert!(output.contains("const hex: number = 0xab_cd;"));
         assert!(output.contains("const grouped: number = 1_000;"));
         assert!(output.contains("const decimal: number = 1.250_0;"));
         assert!(output.contains("const scientific: number = 5e-13;"));
@@ -29658,7 +29658,7 @@ fn lowers_checked_neg_to_overflow_checked_negation() {
     let source = "pub fn f(value: i32) -> Option<i32> { return value.checked_neg(); }\n";
     let output = compile_typescript(source, None).unwrap();
     assert!(
-        output.contains("const neg = -n") && output.contains("0x7FFFFFFF"),
+        output.contains("const neg = -n") && output.contains("0x7fffffff"),
         "checked_neg should produce overflow-checking negation: {output}"
     );
 }
@@ -32802,7 +32802,7 @@ pub fn in_half_open(x: usize, len: usize) -> bool {
 "#;
         let output = compile_typescript(source, None).unwrap();
         assert!(
-            output.contains("c >= 0x0041 && c <= 0x005A"),
+            output.contains("c >= 0x0041 && c <= 0x005a"),
             "inclusive range contains should be bounds check: {output}"
         );
         assert!(

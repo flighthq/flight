@@ -291,6 +291,9 @@ pub(crate) fn numeric_literal_spelling(spelling: &str, suffix: &str) -> String {
     if base.len() >= 3 && base.ends_with(".0") && base.as_bytes()[base.len() - 3].is_ascii_digit() {
         return base[..base.len() - 2].to_string();
     }
+    if base.starts_with("0x") || base.starts_with("0X") {
+        return base.to_ascii_lowercase();
+    }
     return base.to_string();
 }
 
