@@ -22,8 +22,8 @@ use super::{
     indent_continuation_lines, is_js_identifier, join_closing_brace_with, js_string_literal,
     lexical_pattern_context, local_pattern_binding_id, local_pattern_name,
     lower_camel_from_upper_camel, next_try_rename, open_binding_switch, option_absent_value,
-    option_scrutinee_is_rereadable, ordering_variant_value, pattern_identifiers,
-    pattern_is_mutable, peel_reference_and_paren, provenance_pattern_bindings,
+    option_scrutinee_is_rereadable, ordering_variant_value, pat_contains_range,
+    pattern_identifiers, pattern_is_mutable, peel_reference_and_paren, provenance_pattern_bindings,
     referenced_path_identifier, reserved_key_data_union_predicate, resolve_rename,
     runtime_categories_predicate, scrutinee_elements, snake_to_lower_camel, split_let_chain,
     strip_value_position_parens, switch_arm_needs_block, switch_binding_name,
@@ -858,6 +858,10 @@ pub(super) fn emit_match_statement_with_action(
     }
     if match_arms_contain_loop_break(&expression.arms)
         || expression.arms.iter().any(|arm| arm.guard.is_some())
+        || expression
+            .arms
+            .iter()
+            .any(|arm| pat_contains_range(&arm.pat))
     {
         return emit_match_as_if_else_with_action(out, expression, entities, indent, action);
     }

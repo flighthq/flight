@@ -2905,7 +2905,7 @@ pub fn apply(mode: u32, a: f64, b: f64) -> f64 {
     }
 
     #[test]
-    fn lowers_match_with_integer_range_patterns_to_expanded_cases() {
+    fn lowers_match_with_integer_range_patterns_to_range_checks() {
         let source = r#"
 pub fn f(x: u8) -> &'static str {
     return match x {
@@ -2917,14 +2917,17 @@ pub fn f(x: u8) -> &'static str {
 "#;
         let output = compile_typescript(source, None).unwrap();
         assert!(
-            output.contains("case 0:") && output.contains("case 1:") && output.contains("case 2:"),
-            "range 0..=2 expanded: {output}"
+            output.contains("x >= 0 && x <= 2"),
+            "range 0..=2 as range check: {output}"
         );
         assert!(
-            output.contains("case 3:") && output.contains("case 4:") && output.contains("case 5:"),
-            "range 3..=5 expanded: {output}"
+            output.contains("x >= 3 && x <= 5"),
+            "range 3..=5 as range check: {output}"
         );
-        assert!(output.contains("default:"), "wildcard arm: {output}");
+        assert!(
+            !output.contains("case 0:") && !output.contains("case 1:"),
+            "must not enumerate individual cases: {output}"
+        );
     }
 
     #[test]
@@ -29424,7 +29427,7 @@ pub fn topology_name(mode: Option<i32>) -> &'static str {
 }
 
 #[test]
-fn lowers_byte_range_match_to_switch_cases() {
+fn lowers_byte_range_match_to_range_checks() {
     let source = r#"
 pub fn classify_byte(byte: u8) -> i32 {
     return match byte {
@@ -29437,16 +29440,20 @@ pub fn classify_byte(byte: u8) -> i32 {
 "#;
     let output = compile_typescript(source, None).unwrap();
     assert!(
-        output.contains("case 65:"),
-        "should emit case 65 for b'A': {output}"
+        output.contains("byte_ >= 65 && byte_ <= 90"),
+        "should emit range check for A-Z: {output}"
     );
     assert!(
-        output.contains("case 90:"),
-        "should emit case 90 for b'Z': {output}"
+        output.contains("byte_ >= 97 && byte_ <= 122"),
+        "should emit range check for a-z: {output}"
     );
     assert!(
-        output.contains("case 97:"),
-        "should emit case 97 for b'a': {output}"
+        output.contains("byte_ >= 48 && byte_ <= 57"),
+        "should emit range check for 0-9: {output}"
+    );
+    assert!(
+        !output.contains("case 65:") && !output.contains("case 97:"),
+        "must not enumerate individual cases: {output}"
     );
 }
 

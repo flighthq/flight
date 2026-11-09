@@ -579,6 +579,10 @@ pub(super) fn emit_match_expression(
         return Ok(out);
     }
     let has_guards = expression.arms.iter().any(|arm| arm.guard.is_some());
+    let has_ranges = expression
+        .arms
+        .iter()
+        .any(|arm| pat_contains_range(&arm.pat));
     if has_guards {
         let (scrutinee, declaration) = match_expression_scrutinee(expression, entities)?;
         let mut out = String::new();
@@ -588,18 +592,15 @@ pub(super) fn emit_match_expression(
         }
         out.push_str("  let $matched = false;\n");
         for arm in &expression.arms {
-            let patterns = emit_match_patterns(&arm.pat, entities)?;
             let arm_context = lexical_pattern_context(entities, &arm.pat);
-            let is_default = (patterns.len() == 1 && patterns[0] == "default")
-                || is_match_binding_pattern(&arm.pat);
+            let is_default = is_match_binding_pattern(&arm.pat)
+                || matches!(&arm.pat, Pat::Wild(_))
+                || matches!(&arm.pat, Pat::Ident(id) if id.ident == "_");
             if is_default {
                 out.push_str("  if (!$matched) {\n");
             } else {
-                let conditions: Vec<String> = patterns
-                    .iter()
-                    .map(|p| format!("{scrutinee} === {p}"))
-                    .collect();
-                writeln!(out, "  if (!$matched && ({})) {{", conditions.join(" || "))
+                let condition = emit_pattern_condition(&scrutinee, &arm.pat, entities)?;
+                writeln!(out, "  if (!$matched && ({condition})) {{")
                     .expect("writing to a String cannot fail");
             }
             if is_match_binding_pattern(&arm.pat) {
@@ -627,6 +628,54 @@ pub(super) fn emit_match_expression(
                     emit_expression(&arm.body, &arm_context)?
                 )
                 .expect("writing to a String cannot fail");
+            }
+            out.push_str("  }\n");
+        }
+        out.push_str("})()");
+        return Ok(out);
+    }
+    if has_ranges {
+        let (scrutinee, declaration) = match_expression_scrutinee(expression, entities)?;
+        let mut out = String::new();
+        out.push_str("(() => {\n");
+        if let Some(decl) = declaration {
+            out.push_str(&decl);
+        }
+        let mut first = true;
+        for arm in &expression.arms {
+            let arm_context = lexical_pattern_context(entities, &arm.pat);
+            let is_default = is_match_binding_pattern(&arm.pat)
+                || matches!(&arm.pat, Pat::Wild(_))
+                || matches!(&arm.pat, Pat::Ident(id) if id.ident == "_");
+            if is_default {
+                if first {
+                    out.push_str("  {\n");
+                } else {
+                    out.push_str("  else {\n");
+                }
+            } else {
+                let condition = emit_pattern_condition(&scrutinee, &arm.pat, entities)?;
+                let prefix = if first { "if" } else { "else if" };
+                writeln!(out, "  {prefix} ({condition}) {{")
+                    .expect("writing to a String cannot fail");
+            }
+            first = false;
+            if is_match_binding_pattern(&arm.pat) {
+                if let Some(binding) = match_binding_name(&arm.pat) {
+                    writeln!(out, "    const {binding} = {scrutinee};")
+                        .expect("writing to a String cannot fail");
+                }
+            }
+            let value = emit_expression(&arm.body, &arm_context)?;
+            if switch_binding_name(&arm.pat).is_some() {
+                writeln!(
+                    out,
+                    "    const {} = {scrutinee};\n    return {value};",
+                    emit_pattern(&arm.pat)?
+                )
+                .expect("writing to a String cannot fail");
+            } else {
+                writeln!(out, "    return {value};").expect("writing to a String cannot fail");
             }
             out.push_str("  }\n");
         }
@@ -1379,6 +1428,10 @@ pub(crate) fn emit_match_statement(
     }
     if match_arms_contain_loop_break(&expression.arms)
         || expression.arms.iter().any(|arm| arm.guard.is_some())
+        || expression
+            .arms
+            .iter()
+            .any(|arm| pat_contains_range(&arm.pat))
     {
         return emit_match_as_if_else(out, expression, entities, indent);
     }
@@ -1548,64 +1601,8 @@ pub(super) fn emit_match_patterns(
             entities,
         )?]),
         Pat::Range(range) => {
-            let start = range.start.as_ref().and_then(|expr| match expr.as_ref() {
-                Expr::Lit(syn::ExprLit {
-                    lit: Lit::Int(int), ..
-                }) => int.base10_parse::<i64>().ok(),
-                Expr::Lit(syn::ExprLit {
-                    lit: Lit::Byte(byte),
-                    ..
-                }) => Some(byte.value() as i64),
-                Expr::Unary(unary)
-                    if matches!(unary.op, UnOp::Neg(_))
-                        && matches!(
-                            unary.expr.as_ref(),
-                            Expr::Lit(syn::ExprLit {
-                                lit: Lit::Int(_),
-                                ..
-                            })
-                        ) =>
-                {
-                    if let Expr::Lit(syn::ExprLit {
-                        lit: Lit::Int(int), ..
-                    }) = unary.expr.as_ref()
-                    {
-                        int.base10_parse::<i64>().ok().map(|v| -v)
-                    } else {
-                        None
-                    }
-                }
-                _ => None,
-            });
-            let end = range.end.as_ref().and_then(|expr| match expr.as_ref() {
-                Expr::Lit(syn::ExprLit {
-                    lit: Lit::Int(int), ..
-                }) => int.base10_parse::<i64>().ok(),
-                Expr::Lit(syn::ExprLit {
-                    lit: Lit::Byte(byte),
-                    ..
-                }) => Some(byte.value() as i64),
-                Expr::Unary(unary)
-                    if matches!(unary.op, UnOp::Neg(_))
-                        && matches!(
-                            unary.expr.as_ref(),
-                            Expr::Lit(syn::ExprLit {
-                                lit: Lit::Int(_),
-                                ..
-                            })
-                        ) =>
-                {
-                    if let Expr::Lit(syn::ExprLit {
-                        lit: Lit::Int(int), ..
-                    }) = unary.expr.as_ref()
-                    {
-                        int.base10_parse::<i64>().ok().map(|v| -v)
-                    } else {
-                        None
-                    }
-                }
-                _ => None,
-            });
+            let start = parse_range_bound(&range.start);
+            let end = parse_range_bound(&range.end);
             let (Some(start), Some(end)) = (start, end) else {
                 return Err(compile_error("unsupported portable Rust match pattern"));
             };
@@ -1643,6 +1640,104 @@ pub(super) fn emit_match_patterns(
     };
 }
 
+fn parse_range_bound(bound: &Option<Box<Expr>>) -> Option<i64> {
+    return bound.as_ref().and_then(|expr| match expr.as_ref() {
+        Expr::Lit(syn::ExprLit {
+            lit: Lit::Int(int), ..
+        }) => int.base10_parse::<i64>().ok(),
+        Expr::Lit(syn::ExprLit {
+            lit: Lit::Byte(byte),
+            ..
+        }) => Some(byte.value() as i64),
+        Expr::Unary(unary)
+            if matches!(unary.op, UnOp::Neg(_))
+                && matches!(
+                    unary.expr.as_ref(),
+                    Expr::Lit(syn::ExprLit {
+                        lit: Lit::Int(_),
+                        ..
+                    })
+                ) =>
+        {
+            if let Expr::Lit(syn::ExprLit {
+                lit: Lit::Int(int), ..
+            }) = unary.expr.as_ref()
+            {
+                int.base10_parse::<i64>().ok().map(|v| -v)
+            } else {
+                None
+            }
+        }
+        _ => None,
+    });
+}
+
+pub(super) fn pat_contains_range(pattern: &Pat) -> bool {
+    return match pattern {
+        Pat::Range(_) => true,
+        Pat::Or(or) => or.cases.iter().any(pat_contains_range),
+        Pat::Reference(reference) => pat_contains_range(&reference.pat),
+        Pat::Paren(paren) => pat_contains_range(&paren.pat),
+        _ => false,
+    };
+}
+
+pub(super) fn emit_pattern_condition(
+    scrutinee: &str,
+    pattern: &Pat,
+    entities: &HashSet<String>,
+) -> Result<String, CompileError> {
+    return match pattern {
+        Pat::Range(range) => {
+            let start = parse_range_bound(&range.start);
+            let end = parse_range_bound(&range.end);
+            let (Some(start), Some(end)) = (start, end) else {
+                return Err(compile_error("unsupported portable Rust range pattern"));
+            };
+            let inclusive_end = if matches!(range.limits, syn::RangeLimits::Closed(_)) {
+                end
+            } else {
+                end - 1
+            };
+            Ok(format!(
+                "{scrutinee} >= {start} && {scrutinee} <= {inclusive_end}"
+            ))
+        }
+        Pat::Or(or) => {
+            let conditions: Vec<String> = or
+                .cases
+                .iter()
+                .map(|case| emit_pattern_condition(scrutinee, case, entities))
+                .collect::<Result<_, _>>()?;
+            if conditions.len() == 1 {
+                Ok(conditions.into_iter().next().unwrap())
+            } else {
+                Ok(conditions
+                    .iter()
+                    .map(|c| {
+                        if c.contains("&&") {
+                            format!("({c})")
+                        } else {
+                            c.clone()
+                        }
+                    })
+                    .collect::<Vec<_>>()
+                    .join(" || "))
+            }
+        }
+        Pat::Reference(reference) => emit_pattern_condition(scrutinee, &reference.pat, entities),
+        Pat::Paren(paren) => emit_pattern_condition(scrutinee, &paren.pat, entities),
+        _ => {
+            let patterns = emit_match_patterns(pattern, entities)?;
+            let conditions: Vec<String> = patterns
+                .iter()
+                .map(|p| format!("{scrutinee} === {p}"))
+                .collect();
+            Ok(conditions.join(" || "))
+        }
+    };
+}
+
 pub(super) fn is_match_binding_pattern(pattern: &Pat) -> bool {
     match pattern {
         Pat::Ident(identifier) => identifier.ident != "_" && identifier.subpat.is_none(),
@@ -1667,20 +1762,17 @@ pub(super) fn emit_match_as_if_else(
     }
     let mut first = true;
     for arm in &expression.arms {
-        let patterns = emit_match_patterns(&arm.pat, entities)?;
         let arm_context = lexical_pattern_context(entities, &arm.pat);
-        let is_default =
-            (patterns.len() == 1 && patterns[0] == "default") || is_match_binding_pattern(&arm.pat);
+        let is_default = is_match_binding_pattern(&arm.pat)
+            || matches!(&arm.pat, Pat::Wild(_))
+            || matches!(&arm.pat, Pat::Ident(id) if id.ident == "_");
         write_indent(out, indent + 1);
         if has_guards {
             if is_default {
                 out.push_str("if (!$matched) {\n");
             } else {
-                let conditions: Vec<String> = patterns
-                    .iter()
-                    .map(|p| format!("{scrutinee} === {p}"))
-                    .collect();
-                writeln!(out, "if (!$matched && ({})) {{", conditions.join(" || "))
+                let condition = emit_pattern_condition(&scrutinee, &arm.pat, entities)?;
+                writeln!(out, "if (!$matched && ({condition})) {{")
                     .expect("writing to a String cannot fail");
             }
         } else if is_default {
@@ -1690,13 +1782,9 @@ pub(super) fn emit_match_as_if_else(
                 out.push_str("else {\n");
             }
         } else {
-            let conditions: Vec<String> = patterns
-                .iter()
-                .map(|p| format!("{scrutinee} === {p}"))
-                .collect();
+            let condition = emit_pattern_condition(&scrutinee, &arm.pat, entities)?;
             let prefix = if first { "if" } else { "else if" };
-            writeln!(out, "{prefix} ({}) {{", conditions.join(" || "))
-                .expect("writing to a String cannot fail");
+            writeln!(out, "{prefix} ({condition}) {{").expect("writing to a String cannot fail");
         }
         first = false;
         if is_match_binding_pattern(&arm.pat) {
@@ -1768,20 +1856,17 @@ pub(super) fn emit_match_as_if_else_with_action(
     }
     let mut first = true;
     for arm in &expression.arms {
-        let patterns = emit_match_patterns(&arm.pat, entities)?;
         let arm_context = lexical_pattern_context(entities, &arm.pat);
-        let is_default =
-            (patterns.len() == 1 && patterns[0] == "default") || is_match_binding_pattern(&arm.pat);
+        let is_default = is_match_binding_pattern(&arm.pat)
+            || matches!(&arm.pat, Pat::Wild(_))
+            || matches!(&arm.pat, Pat::Ident(id) if id.ident == "_");
         write_indent(out, indent + 1);
         if has_guards {
             if is_default {
                 out.push_str("if (!$matched) {\n");
             } else {
-                let conditions: Vec<String> = patterns
-                    .iter()
-                    .map(|p| format!("{scrutinee} === {p}"))
-                    .collect();
-                writeln!(out, "if (!$matched && ({})) {{", conditions.join(" || "))
+                let condition = emit_pattern_condition(&scrutinee, &arm.pat, entities)?;
+                writeln!(out, "if (!$matched && ({condition})) {{")
                     .expect("writing to a String cannot fail");
             }
         } else if is_default {
@@ -1791,13 +1876,9 @@ pub(super) fn emit_match_as_if_else_with_action(
                 out.push_str("else {\n");
             }
         } else {
-            let conditions: Vec<String> = patterns
-                .iter()
-                .map(|p| format!("{scrutinee} === {p}"))
-                .collect();
+            let condition = emit_pattern_condition(&scrutinee, &arm.pat, entities)?;
             let prefix = if first { "if" } else { "else if" };
-            writeln!(out, "{prefix} ({}) {{", conditions.join(" || "))
-                .expect("writing to a String cannot fail");
+            writeln!(out, "{prefix} ({condition}) {{").expect("writing to a String cannot fail");
         }
         first = false;
         if is_match_binding_pattern(&arm.pat) {
