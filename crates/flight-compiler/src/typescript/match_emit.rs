@@ -12,11 +12,12 @@ use super::{
     analyze_tuple_option_match, arm_body_unconditionally_exits, emit_block, emit_expression,
     emit_general_tuple_element_condition, emit_hoisted_match_arm_body, emit_literal,
     emit_match_scrutinee, emit_path_segment, emit_pattern, emit_statement, emit_switch_scrutinee,
-    expression_contains_unconditional_try, expression_is_plain_place, js_string_literal,
-    lexical_pattern_context, lower_camel_from_upper_camel, match_arms_contain_loop_break,
-    match_expression_scrutinee, option_absent_value, reject_function_exits_in_value_position,
-    reserved_key_data_union_predicate, runtime_categories_predicate, scrutinee_elements,
-    snake_to_lower_camel, tagged_data_union_bindings, tagged_data_union_predicate, write_indent,
+    emit_try_pre_extractions, expression_contains_unconditional_try, expression_is_plain_place,
+    js_string_literal, lexical_pattern_context, lower_camel_from_upper_camel,
+    match_arms_contain_loop_break, match_expression_scrutinee, option_absent_value,
+    reject_function_exits_in_value_position, reserved_key_data_union_predicate,
+    runtime_categories_predicate, scrutinee_elements, snake_to_lower_camel,
+    tagged_data_union_bindings, tagged_data_union_predicate, write_indent,
 };
 
 pub(super) fn emit_match_expression(
@@ -1313,7 +1314,13 @@ pub(crate) fn emit_match_statement(
     {
         return emit_match_as_if_else(out, expression, entities, indent);
     }
-    let (scrutinee, indent, scoped) = open_binding_switch(out, expression, entities, indent)?;
+    let switch_context = if expression_contains_unconditional_try(&expression.expr) {
+        emit_try_pre_extractions(out, &expression.expr, entities, indent)?
+    } else {
+        entities.clone()
+    };
+    let (scrutinee, indent, scoped) =
+        open_binding_switch(out, expression, &switch_context, indent)?;
     write_indent(out, indent);
     writeln!(out, "switch ({scrutinee}) {{").expect("writing to a String cannot fail");
     for arm in &expression.arms {
