@@ -1,7 +1,7 @@
 // Generated from crates/flight-path/src/path_morph_geometry.rs by flight-compiler.
 // Rust is authoritative; run `npm run generate` after changing it.
 
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 
 import { forEachPathSegment } from './forEachPathSegment.ts';
@@ -121,7 +121,7 @@ function alignClosedCubicContour(start: Readonly<CubicContour>, end: CubicContou
 function allocatePathMorph(preparation: PathMorphPreparation, winding: PathWinding): PathMorph {
   let morph: PathMorph = allocateEntity<PathMorph>();
   initializePathMorph(morph, preparation.commands, preparation.endData, preparation.startData, winding);
-  return finishEntity(morph);
+  return morph;
 }
 
 function appendCubicContourPair(
