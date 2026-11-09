@@ -7,9 +7,9 @@ use crate::{CompileError, compile_error};
 
 use super::{
     ITER_MUT_ALIAS_MARKER, REFERENCE_PARAMETER_BINDING_MARKER, STRING_EXPRESSION_MARKER,
-    emit_expression, emit_pattern, for_loop_iterates_strings, lexical_binding,
-    lexical_pattern_context, local_pattern_name, pattern_identifiers, pattern_is_mutable,
-    peel_reference_and_paren, write_indent,
+    emit_expression, emit_pattern, for_loop_iterates_chars, for_loop_iterates_strings,
+    lexical_binding, lexical_pattern_context, local_pattern_name, pattern_identifiers,
+    pattern_is_mutable, peel_reference_and_paren, write_indent,
 };
 pub(super) enum IterMutChain<'a> {
     Bare,
@@ -294,7 +294,21 @@ pub(crate) fn emit_for_header(
             "let {pattern} = {start}; {pattern} {comparison} {end}; {increment}"
         ));
     }
-    let mut iterable = emit_expression(expression, entities)?;
+    let mut iterable = if for_loop_iterates_chars(expression) {
+        if let Expr::MethodCall(call) = expression {
+            emit_expression(&call.receiver, entities)?
+        } else if let Expr::Reference(reference) = expression {
+            if let Expr::MethodCall(call) = reference.expr.as_ref() {
+                emit_expression(&call.receiver, entities)?
+            } else {
+                emit_expression(expression, entities)?
+            }
+        } else {
+            emit_expression(expression, entities)?
+        }
+    } else {
+        emit_expression(expression, entities)?
+    };
     if let Expr::Array(array) = expression
         && !array.elems.is_empty()
         && array

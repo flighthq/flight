@@ -32804,6 +32804,14 @@ pub fn first_code_point(text: &str) -> Option<u32> {
             !output.contains(">>> 0"),
             "char variable cast should not emit >>> 0: {output}"
         );
+        assert!(
+            output.contains("for (const c of text)"),
+            "chars() for-loop should iterate string directly without spread: {output}"
+        );
+        assert!(
+            !output.contains("[...text]"),
+            "chars() for-loop should not create intermediate array: {output}"
+        );
     }
 }
 
