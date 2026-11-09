@@ -933,6 +933,142 @@ pub fn are_same(a: &PlayerRef, b: &PlayerRef) -> bool {
         );
     }
 
+    #[test]
+    fn propagates_shared_identity_through_for_loop_and_iterator_closure() {
+        let source = r#"
+use std::sync::Arc;
+use std::sync::RwLock;
+
+pub type Ref<T> = Arc<RwLock<T>>;
+
+pub struct Player {
+    pub name: String,
+}
+
+pub type PlayerRef = Ref<Player>;
+
+pub fn find_match(players: &[PlayerRef], target: &PlayerRef) -> bool {
+    for player in players {
+        if Arc::ptr_eq(player, target) {
+            return true;
+        }
+    }
+    return false;
+}
+
+pub fn any_match(haystack: &[PlayerRef], needle: &PlayerRef) -> bool {
+    return haystack.iter().any(|p| Arc::ptr_eq(p, needle));
+}
+"#;
+        let output = compile_typescript(source, None).unwrap();
+        assert!(
+            output.contains("player === target"),
+            "for-loop variable should inherit shared identity from collection element: {output}"
+        );
+        assert!(
+            output.contains("p === needle"),
+            "iterator closure parameter should inherit shared identity from collection element: {output}"
+        );
+    }
+
+    #[test]
+    fn propagates_shared_identity_through_cross_module_alias_chain() {
+        let alias_source = r#"
+use std::sync::Arc;
+use std::sync::RwLock;
+
+pub type Ref<T> = Arc<RwLock<T>>;
+
+pub struct Player {
+    pub name: String,
+}
+
+pub type PlayerRef = Ref<Player>;
+"#;
+        let source = r#"
+use std::sync::Arc;
+
+use crate::types::PlayerRef;
+
+pub fn find_match(players: &[PlayerRef], target: &PlayerRef) -> bool {
+    for player in players {
+        if Arc::ptr_eq(player, target) {
+            return true;
+        }
+    }
+    return false;
+}
+
+pub fn any_match(haystack: &[PlayerRef], needle: &PlayerRef) -> bool {
+    return haystack.iter().any(|p| Arc::ptr_eq(p, needle));
+}
+"#;
+        let output = compile_typescript_with_alias_sources(source, None, &[alias_source]).unwrap();
+        assert!(
+            output.contains("player === target"),
+            "cross-module for-loop variable should inherit shared identity: {output}"
+        );
+        assert!(
+            output.contains("p === needle"),
+            "cross-module iterator closure parameter should inherit shared identity: {output}"
+        );
+    }
+
+    #[test]
+    fn propagates_shared_identity_through_external_dependency_alias_chain() {
+        let entity_dep = ExternalAliasSource {
+            source: r#"
+use std::sync::Arc;
+use std::sync::RwLock;
+
+pub type Ref<T> = Arc<RwLock<T>>;
+"#,
+            module: "@flighthq/entity/contract",
+        };
+        let animation_alias = r#"
+use flight_entity::Ref;
+
+pub struct Player {
+    pub name: String,
+}
+
+pub type PlayerRef = Ref<Player>;
+"#;
+        let source = r#"
+use std::sync::Arc;
+
+use crate::types::PlayerRef;
+
+pub fn find_match(players: &[PlayerRef], target: &PlayerRef) -> bool {
+    for player in players {
+        if Arc::ptr_eq(player, target) {
+            return true;
+        }
+    }
+    return false;
+}
+
+pub fn any_match(haystack: &[PlayerRef], needle: &PlayerRef) -> bool {
+    return haystack.iter().any(|p| Arc::ptr_eq(p, needle));
+}
+"#;
+        let output = compile_typescript_with_external_alias_sources(
+            source,
+            None,
+            &[animation_alias],
+            &[entity_dep],
+        )
+        .unwrap();
+        assert!(
+            output.contains("player === target"),
+            "external dep for-loop variable should inherit shared identity: {output}"
+        );
+        assert!(
+            output.contains("p === needle"),
+            "external dep iterator closure parameter should inherit shared identity: {output}"
+        );
+    }
+
     // A dependency crate's identity-bearing types and public fields are read in that crate's own
     // sources (an alias in one file, the struct using it in another), so its handles compare by
     // allocation; its primitive payload still fails closed.

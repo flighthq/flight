@@ -22,13 +22,13 @@ use super::{
     RuntimeCategory, SEQUENCE_FIELD_ELEMENT_MARKER, SEQUENCE_FIELD_MARKER, SEQUENCE_RETURN_MARKER,
     SHARED_IDENTITY_BINDING_MARKER, STRUCT_FIELD_TYPE_MARKER, STRUCT_OWNER_MARKER,
     STRUCT_RETURN_MARKER, TAGGED_DATA_UNION_VARIANT_MARKER, TYPE_ALIAS_DEFINITION_MARKER,
-    TYPE_ALIAS_OWNER_MARKER, TYPED_ARRAY_SEQUENCE_FIELD_MARKER, binary_operator_assigns,
-    binding_fact_from_marker, binding_fact_marker, binding_fact_typescript_type, binding_site_key,
-    call_fact, call_returns_shared_identity, context_type_identity, current_source,
-    data_union_variant_marker, direct_lock_guard_receiver, emit_type, empty_vec_initializer,
-    entity_ref_data_union, expression_constructs_rw_lock_cell, expression_is_associated_path,
-    expression_is_identity_payload, expression_is_path, expression_is_plain_place,
-    expression_is_type_script_nullable_option_field,
+    TYPE_ALIAS_GENERICS_MARKER, TYPE_ALIAS_OWNER_MARKER, TYPED_ARRAY_SEQUENCE_FIELD_MARKER,
+    binary_operator_assigns, binding_fact_from_marker, binding_fact_marker,
+    binding_fact_typescript_type, binding_site_key, call_fact, call_returns_shared_identity,
+    context_type_identity, current_source, data_union_variant_marker, direct_lock_guard_receiver,
+    emit_type, empty_vec_initializer, entity_ref_data_union, expression_constructs_rw_lock_cell,
+    expression_is_associated_path, expression_is_identity_payload, expression_is_path,
+    expression_is_plain_place, expression_is_type_script_nullable_option_field,
     expression_is_type_script_nullable_option_return, expression_typed_array,
     external_struct_return, external_struct_type, fixed_typed_array_type,
     hash_collection_construction, hash_collection_type, is_string_keyed_hash_map,
@@ -40,7 +40,7 @@ use super::{
     reserved_key_data_union_variant_type_marker, reserved_key_record_fields, resolve_path_owner,
     result_ok_type, runtime_categories_for_type, rust_type_is_erased_shared_cell,
     rust_type_is_shared_identity, safe_collection_element_typescript_type, sequence_inner_type,
-    snake_to_lower_camel, standard_vec_inner_type, transparent_data_union,
+    snake_to_lower_camel, standard_vec_inner_type, substitute_type_param, transparent_data_union,
     typed_array_element_primitive, typed_binding_name, uint8_array_parameter, unique_marker_suffix,
     vitest_path_binding_name, vitest_struct_owner,
 };
@@ -260,6 +260,7 @@ pub(super) fn insert_lexical_binding_context(function: &ItemFn, context: &mut Ha
         scopes: Vec<BTreeMap<String, String>>,
         external_structs: BTreeMap<String, String>,
         shared_identities: BTreeSet<String>,
+        shared_identity_sequence_elements: BTreeSet<String>,
         sites: Vec<(String, String)>,
         replaced_guards: HashSet<String>,
         result_element_type: Option<String>,
@@ -590,6 +591,25 @@ pub(super) fn insert_lexical_binding_context(function: &ItemFn, context: &mut Ha
             if proven && let Some(id) = self.binding_id(&name) {
                 self.shared_identities.insert(id);
             }
+        }
+
+        fn receiver_has_identity_elements(&self, expression: &Expr) -> bool {
+            let expression = peel_reference_and_paren(expression);
+            if let Expr::MethodCall(call) = expression
+                && matches!(
+                    call.method.to_string().as_str(),
+                    "iter" | "iter_mut" | "into_iter"
+                )
+                && call.args.is_empty()
+            {
+                return self.receiver_has_identity_elements(&call.receiver);
+            }
+            if let Some(name) = single_path_identifier(expression)
+                && let Some(id) = self.binding_id(&name)
+            {
+                return self.shared_identity_sequence_elements.contains(&id);
+            }
+            return false;
         }
 
         fn fact_of(&self, name: &str) -> Option<BindingFact> {
@@ -1650,13 +1670,44 @@ pub(super) fn insert_lexical_binding_context(function: &ItemFn, context: &mut Ha
             let from = current_source(self.context)?;
             let (owner, alias) =
                 resolve_path_owner(self.context, TYPE_ALIAS_OWNER_MARKER, &from, path)?;
-            let definition = unique_marker_suffix(
+            let mut definition_str = unique_marker_suffix(
                 self.context,
                 &format!(
                     "{TYPE_ALIAS_DEFINITION_MARKER}{owner}{PROVENANCE_SEPARATOR}{alias}{PROVENANCE_SEPARATOR}"
                 ),
-            )?;
-            syn::parse_str::<Type>(&definition).ok()
+            )?
+            .to_string();
+            if let Some(generics_str) = unique_marker_suffix(
+                self.context,
+                &format!(
+                    "{TYPE_ALIAS_GENERICS_MARKER}{owner}{PROVENANCE_SEPARATOR}{alias}{PROVENANCE_SEPARATOR}"
+                ),
+            ) {
+                let params: Vec<&str> = generics_str.split(',').collect();
+                let type_args: Vec<&Type> = path
+                    .segments
+                    .last()
+                    .and_then(|seg| match &seg.arguments {
+                        syn::PathArguments::AngleBracketed(args) => Some(
+                            args.args
+                                .iter()
+                                .filter_map(|a| match a {
+                                    syn::GenericArgument::Type(t) => Some(t),
+                                    _ => None,
+                                })
+                                .collect::<Vec<_>>(),
+                        ),
+                        _ => None,
+                    })
+                    .unwrap_or_default();
+                if params.len() == type_args.len() {
+                    for (param, arg) in params.iter().zip(type_args.iter()) {
+                        let arg_tokens = arg.to_token_stream().to_string();
+                        definition_str = substitute_type_param(&definition_str, param, &arg_tokens);
+                    }
+                }
+            }
+            syn::parse_str::<Type>(&definition_str).ok()
         }
     }
 
@@ -1759,6 +1810,7 @@ pub(super) fn insert_lexical_binding_context(function: &ItemFn, context: &mut Ha
                             .unwrap_or(BindingFact::Unknown),
                         _ => BindingFact::Unknown,
                     };
+                    let identity_elements = self.receiver_has_identity_elements(&call.receiver);
                     self.scopes.push(BTreeMap::new());
                     let mut inputs = closure.inputs.iter();
                     if method == "fold" || method == "try_fold" || method == "scan" {
@@ -1768,6 +1820,9 @@ pub(super) fn insert_lexical_binding_context(function: &ItemFn, context: &mut Ha
                     }
                     if let Some(element_param) = inputs.next() {
                         self.bind_pattern(element_param, element_fact);
+                        if identity_elements {
+                            self.mark_shared_identity(element_param, true);
+                        }
                     }
                     for remaining in inputs {
                         self.bind_pattern(remaining, BindingFact::Unknown);
@@ -1817,8 +1872,12 @@ pub(super) fn insert_lexical_binding_context(function: &ItemFn, context: &mut Ha
                     .unwrap_or(BindingFact::UnresolvedPattern),
                 _ => BindingFact::UnresolvedPattern,
             };
+            let identity_elements = self.receiver_has_identity_elements(&expression.expr);
             self.scopes.push(BTreeMap::new());
             self.bind_pattern(&expression.pat, fact);
+            if identity_elements {
+                self.mark_shared_identity(&expression.pat, true);
+            }
             self.visit_block(&expression.body);
             self.scopes.pop();
         }
@@ -2032,6 +2091,14 @@ pub(super) fn insert_lexical_binding_context(function: &ItemFn, context: &mut Ha
                 self.nullable_callable_options.insert(id);
             }
             self.mark_shared_identity(&local.pat, shared_identity);
+            if let Pat::Type(typed) = &local.pat
+                && let Some(element_type) = sequence_inner_type(&typed.ty)
+                && rust_type_is_shared_identity(self.context, element_type)
+                && let Some(name) = local_pattern_name(&local.pat)
+                && let Some(id) = self.binding_id(&name)
+            {
+                self.shared_identity_sequence_elements.insert(id);
+            }
             if let Pat::Type(typed) = &local.pat {
                 self.mark_external_struct(&typed.pat, &typed.ty);
             } else if let Some(external) = returned_external_struct
@@ -2138,6 +2205,7 @@ pub(super) fn insert_lexical_binding_context(function: &ItemFn, context: &mut Ha
         scopes: vec![BTreeMap::new()],
         external_structs: BTreeMap::new(),
         shared_identities: BTreeSet::new(),
+        shared_identity_sequence_elements: BTreeSet::new(),
         sites: Vec::new(),
         replaced_guards: HashSet::new(),
         result_element_type,
@@ -2168,6 +2236,13 @@ pub(super) fn insert_lexical_binding_context(function: &ItemFn, context: &mut Ha
         }
         let shared_identity = rust_type_is_shared_identity(context, &argument.ty);
         resolver.mark_shared_identity(&argument.pat, shared_identity);
+        if let Some(element_type) = sequence_inner_type(&argument.ty)
+            && rust_type_is_shared_identity(context, element_type)
+            && let Some(name) = local_pattern_name(&argument.pat)
+            && let Some(id) = resolver.binding_id(&name)
+        {
+            resolver.shared_identity_sequence_elements.insert(id);
+        }
         resolver.mark_external_struct(&argument.pat, &argument.ty);
     }
     let parameters = resolver.scopes[0].clone();
