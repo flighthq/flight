@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction, EntityWithoutRuntime } from '@flighthq/entity/contract';
 
 import { initializeEffect } from './effect.ts';
@@ -7,7 +7,7 @@ import type { CrtEffect } from './types/CrtEffect.ts';
 export function createCrtEffect(options: Readonly<Omit<EntityWithoutRuntime<CrtEffect>, 'kind'>> = {}): CrtEffect {
   const out = allocateEntity<CrtEffect>();
   initializeCrtEffect(out, options);
-  return finishEntity(out);
+  return out;
 }
 
 export function initializeCrtEffect(

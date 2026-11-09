@@ -8,7 +8,7 @@ import type {
   CollisionRaycastHit3D,
   CollisionTimeOfImpact3D,
 } from '@flighthq/collision/contract';
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction, NonEntityCreateResult } from '@flighthq/entity/contract';
 import type { SpatialAabb3D } from '@flighthq/spatial/contract';
 
@@ -49,19 +49,19 @@ export function createPhysics3DQueryFilter(): NonEntityCreateResult<Physics3DQue
 export function createPhysics3DQueryResult(): Physics3DQueryResult {
   const out = allocateEntity<Physics3DQueryResult>();
   initializePhysics3DQueryResult(out);
-  return finishEntity(out);
+  return out;
 }
 
 export function createPhysics3DRayResult(): Physics3DRayResult {
   const out = allocateEntity<Physics3DRayResult>();
   initializePhysics3DRayResult(out);
-  return finishEntity(out);
+  return out;
 }
 
 export function createPhysics3DShapeCastResult(): Physics3DShapeCastResult {
   const out = allocateEntity<Physics3DShapeCastResult>();
   initializePhysics3DShapeCastResult(out);
-  return finishEntity(out);
+  return out;
 }
 
 // Allocates a reusable query buffer. Entries stay allocated at their high-water mark; query functions

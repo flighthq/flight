@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 
 import { applyParticleCollisions, applyParticleObjectCollisions } from './applyParticleCollisions.ts';
 import type { ParticleEmitterCollisionTarget } from './applyParticleCollisions.ts';

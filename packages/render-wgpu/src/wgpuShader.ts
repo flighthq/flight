@@ -1,5 +1,5 @@
 import type { ColorScaleBias } from '@flighthq/adjustments/contract';
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 import { BlendMode } from '@flighthq/materials/contract';
 import type { RenderProxy } from '@flighthq/render/contract';
@@ -175,7 +175,7 @@ const BLEND_MODES: Record<BlendMode, WgpuBlendState | null> = {
 export function createWgpuBindGroupLayouts(device: WgpuDevice): WgpuBindGroupLayouts {
   const out = allocateEntity<WgpuBindGroupLayouts>();
   initializeWgpuBindGroupLayouts(out, device);
-  return finishEntity(out);
+  return out;
 }
 
 export function createWgpuPipelineLayout(

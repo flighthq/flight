@@ -1,7 +1,7 @@
 // Generated from crates/flight-requirement/src/requirement_set_raw.rs by flight-compiler.
 // Rust is authoritative; run `npm run generate` after changing it.
 
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction, EntityRaw } from '@flighthq/entity/contract';
 
 import type { Requirement, RequirementFacet } from './types.ts';
@@ -21,7 +21,7 @@ export function createRequirementSet(
 ): RequirementSetRaw {
   let out: RequirementSetRaw = allocateEntity<RequirementSetRaw>();
   initializeRequirementSet(out, covers, requirements);
-  return finishEntity(out);
+  return out;
 }
 
 /**

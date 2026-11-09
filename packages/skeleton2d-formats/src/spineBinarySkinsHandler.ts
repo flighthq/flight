@@ -1,5 +1,5 @@
 import type { ByteReader } from '@flighthq/buffer/contract';
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import type { ImportDiagnostic } from '@flighthq/importdiagnostics/contract';
@@ -180,7 +180,7 @@ function rejectSpineBinaryMesh(
   skipSpineBinaryBytes(reader, reader.view.byteLength + 1);
   const out = allocateEntity<MeshAttachment2D>();
   initializeMeshAttachment2D(out, MeshAttachment2DKind, name, null, new Uint16Array(), new Float32Array(), 0, null);
-  return finishEntity(out);
+  return out;
 }
 
 function readSpineBinaryMeshAttachment(
@@ -222,7 +222,7 @@ function readSpineBinaryMeshAttachment(
     vertexCount,
     geometry.vertices,
   );
-  return finishEntity(out);
+  return out;
 }
 
 function readSpineBinaryRegionAttachment(
@@ -242,7 +242,7 @@ function readSpineBinaryRegionAttachment(
   skipSpineBinarySequence(reader);
   const out = allocateEntity<RegionAttachment2D>();
   initializeRegionAttachment2D(out, height, RegionAttachment2DKind, name, rotation, scaleX, scaleY, width, x, y);
-  return finishEntity(out);
+  return out;
 }
 
 function readSpineBinaryVertices(

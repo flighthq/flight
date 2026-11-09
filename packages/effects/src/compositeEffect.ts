@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction, EntityWithoutRuntime } from '@flighthq/entity/contract';
 
 import { initializeEffect } from './effect.ts';
@@ -17,7 +17,7 @@ export function createCompositeEffect(
 ): CompositeEffect {
   const out = allocateEntity<CompositeEffect>();
   initializeCompositeEffect(out, operator, options);
-  return finishEntity(out);
+  return out;
 }
 
 export function initializeCompositeEffect(

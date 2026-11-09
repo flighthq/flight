@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 
 import type { WrappedDiffusePbrExtension } from './contract.materials-types.ts';
@@ -11,7 +11,7 @@ export function createWrappedDiffusePbrExtension(
 ): WrappedDiffusePbrExtension {
   const out = allocateEntity<WrappedDiffusePbrExtension>();
   initializeWrappedDiffusePbrExtension(out, opts);
-  return finishEntity(out);
+  return out;
 }
 
 export function initializeWrappedDiffusePbrExtension(

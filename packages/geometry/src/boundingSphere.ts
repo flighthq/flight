@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 
 import type { AabbLike, BoundingSphere, BoundingSphereLike, Matrix4Like, Vector3, Vector3Like } from './types.ts';
@@ -48,7 +48,7 @@ export function createBoundingSphere(
   const center = createVector3(centerX ?? 0, centerY ?? 0, centerZ ?? 0);
   const out = allocateEntity<BoundingSphere>();
   initializeBoundingSphere(out, center, radius ?? -1);
-  return finishEntity(out);
+  return out;
 }
 
 /**

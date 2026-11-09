@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import { createPath } from '@flighthq/path/contract';
 import type { Path } from '@flighthq/path/contract';
 import { PathCommand } from '@flighthq/path/contract';
@@ -40,7 +40,7 @@ function weightedPath(skin: Skin2D, pointCount: number, commands: number[]): Pat
   out.skin = skin;
   out.vertices = null;
   out.winding = 'evenOdd';
-  return finishEntity(out) as PathAttachment2D;
+  return out as PathAttachment2D;
 }
 
 describe('deformSkeleton2DPathAttachment', () => {
@@ -160,7 +160,7 @@ describe('deformSkeleton2DPathAttachment', () => {
       out.skin = null;
       out.vertices = new Float32Array([2, 0, 0, 3]);
       out.winding = 'nonZero';
-      return finishEntity(out) as PathAttachment2D;
+      return out as PathAttachment2D;
     })();
     const out = emptyPath();
 

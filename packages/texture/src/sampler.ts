@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 
 import type { Sampler, SamplerLike } from './types.ts';
@@ -13,7 +13,7 @@ export function cloneSampler(source: Readonly<SamplerLike>): Sampler {
   out.mipmaps = source.mipmaps;
   out.wrapU = source.wrapU;
   out.wrapV = source.wrapV;
-  return finishEntity(out);
+  return out;
 }
 
 // Copies every sampling field from source into out in place. Safe when out aliases source: all
@@ -49,7 +49,7 @@ export function createPixelArtSampler(): Sampler {
 export function createSampler(opts?: Readonly<Partial<SamplerLike>>): Sampler {
   const out = allocateEntity<Sampler>();
   initializeSampler(out, opts);
-  return finishEntity(out);
+  return out;
 }
 
 // Tiling sampler: repeat wrap on both axes, trilinear filtering, mipmaps on. Suitable for

@@ -1,5 +1,5 @@
 import type { GradientBevelEffect } from '@flighthq/effects/contract';
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import { acquireWgpuTextureRenderTarget, releaseWgpuTextureRenderTarget } from '@flighthq/render-wgpu/contract';
 import type {
   WgpuEffectRunner,
@@ -193,7 +193,7 @@ function getApplyPipeline(state: WgpuRenderState): WgpuEffectPipeline {
     });
     const _entity = allocateEntity<WgpuEffectPipeline>();
     initializeWgpuEffectPipeline(_entity, 'premul', pipeline);
-    p = finishEntity(_entity);
+    p = _entity;
     applyPipelines.set(state, p);
   }
   return p;
@@ -216,7 +216,7 @@ function getEncodePipeline(state: WgpuRenderState): WgpuEffectPipeline {
     });
     const _entity = allocateEntity<WgpuEffectPipeline>();
     initializeWgpuEffectPipeline(_entity, 'replace', pipeline);
-    p = finishEntity(_entity);
+    p = _entity;
     encodePipelines.set(state, p);
   }
   return p;

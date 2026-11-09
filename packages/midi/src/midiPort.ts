@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 
 import {
@@ -52,7 +52,7 @@ export function createMidiInputPortResource(
 ): MidiInputPort {
   const out = allocateEntity<MidiInputPort>();
   initializeMidiInputPortResource(out, metadata);
-  const port = finishEntity(out);
+  const port = out;
   retainMidiInputPortResourceState(port, operations);
   return port;
 }
@@ -63,7 +63,7 @@ export function createMidiOutputPortResource(
 ): MidiOutputPort {
   const out = allocateEntity<MidiOutputPort>();
   initializeMidiOutputPortResource(out, metadata);
-  const port = finishEntity(out);
+  const port = out;
   retainMidiOutputPortResourceState(port, operations);
   return port;
 }

@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 import { getSurfaceHandle } from '@flighthq/surface/contract';
 import type { HostCanvasCapability } from '@flighthq/surface/contract';
@@ -13,7 +13,7 @@ export function createCanvasTextureRenderTarget(
 ): CanvasTextureRenderTarget {
   const out = allocateEntity<CanvasTextureRenderTarget>();
   initializeCanvasTextureRenderTarget(out, canvasHost, width, height);
-  return finishEntity(out);
+  return out;
 }
 
 export function destroyCanvasTextureRenderTarget(target: CanvasTextureRenderTarget): void {

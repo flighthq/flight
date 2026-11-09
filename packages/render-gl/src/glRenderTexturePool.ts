@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 import type { RenderTarget, RenderTargetDescriptor, RenderTexture } from '@flighthq/render/contract';
 import { createRenderTexture, resetTextureUvTransform } from '@flighthq/texture/contract';
@@ -25,7 +25,7 @@ export function acquireGlRenderTexture(
 export function createGlRenderTexturePool(): GlRenderTexturePool {
   const out = allocateEntity<GlRenderTexturePool>();
   initializeGlRenderTexturePool(out);
-  return finishEntity(out);
+  return out;
 }
 
 // Destroys free and currently leased handles. A shutdown caller need not recover every outstanding

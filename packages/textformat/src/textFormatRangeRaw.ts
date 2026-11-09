@@ -1,7 +1,7 @@
 // Generated from crates/flight-textformat/src/text_format_range_raw.rs by flight-compiler.
 // Rust is authoritative; run `npm run generate` after changing it.
 
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityRaw } from '@flighthq/entity/contract';
 
 import type { TextFormat } from './types.ts';
@@ -21,7 +21,6 @@ export interface TextFormatRangeRaw extends EntityRaw {
 export function createTextFormatRange(format: TextFormat, start: number, end: number): TextFormatRangeRaw {
   let out: TextFormatRangeRaw = Object.assign(allocateEntity<TextFormatRangeRaw>(), { end: 0, start: 0 });
   initializeTextFormatRange(out, format, start, end);
-  finishEntity(out);
   return out;
 }
 

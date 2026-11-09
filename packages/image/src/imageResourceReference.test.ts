@@ -1,5 +1,5 @@
 import type { Bitmap } from '@flighthq/bitmap/contract';
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import { EntityRuntimeKey } from '@flighthq/entity/contract';
 import type { HostImageDecodeCapabilities, HostImageDecodeFormatCapability } from '@flighthq/image-codec/contract';
 import { ResourceResolutionState } from '@flighthq/resource/contract';
@@ -129,7 +129,7 @@ function createTestBitmap(alphaType: Bitmap['alphaType']): Bitmap {
   out.kind = BitmapTextureSourceKind;
   out.version = 0;
   out.width = 1;
-  return finishEntity(out);
+  return out;
 }
 describe('registerImageBitmapCompositionResolver', () => {
   it('routes a reference that carries composition data through the installed resolver', async () => {

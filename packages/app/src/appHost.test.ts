@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import { EntityRuntimeKey } from '@flighthq/entity/contract';
 import { connectSignal } from '@flighthq/signals/contract';
 import { describe, expect, it, vi } from 'vitest';
@@ -13,24 +13,24 @@ describe('app explicit Host ownership', () => {
     const quit = vi.fn();
     const setBadgeCount = vi.fn(async () => true);
     const hostAppBadge = (() => {
-      const out = allocateEntity<any>();
+      const out = allocateEntity<any>() as any;
       out.setBadgeCount = setBadgeCount;
-      return finishEntity(out);
+      return out;
     })();
     const hostAppFocus = (() => {
-      const out = allocateEntity<any>();
+      const out = allocateEntity<any>() as any;
       out.focus = focus;
-      return finishEntity(out);
+      return out;
     })();
     const hostAppName = (() => {
-      const out = allocateEntity<any>();
+      const out = allocateEntity<any>() as any;
       out.getName = getName;
-      return finishEntity(out);
+      return out;
     })();
     const hostAppQuit = (() => {
-      const out = allocateEntity<any>();
+      const out = allocateEntity<any>() as any;
       out.quit = quit;
-      return finishEntity(out);
+      return out;
     })();
 
     focusApp(hostAppFocus);
@@ -51,14 +51,14 @@ describe('app explicit Host ownership', () => {
       return vi.fn();
     });
     const inert = (() => {
-      const out = allocateEntity<any>();
+      const out = allocateEntity<any>() as any;
       out.subscribe = () => vi.fn();
-      return finishEntity(out);
+      return out;
     })();
     const hostAppReady = (() => {
-      const out = allocateEntity<any>();
+      const out = allocateEntity<any>() as any;
       out.subscribe = subscribe;
-      return finishEntity(out);
+      return out;
     })();
     const app = createAppEvents();
     let readyCount = 0;

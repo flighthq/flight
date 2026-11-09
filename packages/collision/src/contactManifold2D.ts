@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 
 import type { CollisionContactManifold2D, CollisionContactPoint2D } from './types.ts';
@@ -22,7 +22,7 @@ export function clearCollisionContactManifold2D(out: CollisionContactManifold2D)
 export function createCollisionContactManifold2D(): CollisionContactManifold2D {
   const out = allocateEntity<CollisionContactManifold2D>();
   initializeCollisionContactManifold2D(out);
-  return finishEntity(out);
+  return out;
 }
 
 // Allocates a fresh contact manifold in the non-overlapping state, with its fixed two-point array

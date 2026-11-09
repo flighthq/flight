@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction, EntityWithoutRuntime } from '@flighthq/entity/contract';
 import type { RenderState } from '@flighthq/render/contract';
 import type { EffectPadding } from '@flighthq/render/contract';
@@ -29,7 +29,7 @@ export function createBloomEffect(
 ): BloomEffect {
   const out = allocateEntity<BloomEffect>();
   initializeBloomEffect(out, options);
-  return finishEntity(out);
+  return out;
 }
 
 export function getBloomEffectPadding(effect: Readonly<BloomEffect>): EffectPadding {

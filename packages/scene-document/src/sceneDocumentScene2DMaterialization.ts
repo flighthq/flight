@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity, getEntityRuntime } from '@flighthq/entity/contract';
+import { allocateEntity, getEntityRuntime } from '@flighthq/entity/contract';
 import type { EntityConstruction, EntityRaw, EntityRuntime, EntityRuntimeKey } from '@flighthq/entity/contract';
 import { getNodeRuntime } from '@flighthq/node/contract';
 import { addNodeChild, getNodeChildren } from '@flighthq/node/contract';
@@ -57,7 +57,7 @@ export function createFlightDocumentFromScene2D(
   assertAllInteractiveStateBindingsUsed(bindingLookup, usedBindings);
   const out = allocateEntity<FlightDocumentScene2D & SceneDocumentEntity>();
   initializeFlightDocumentFromScene2D(out, source, scene, layoutBindings, writtenNodes);
-  return finishEntity(out);
+  return out;
 }
 
 export function createFlightDocumentScene2DMaterialization(
@@ -117,7 +117,7 @@ export function createFlightDocumentScene2DMaterialization(
   if (layoutBindings === null) return null;
   const out = allocateEntity<FlightDocumentScene2DMaterialization>();
   initializeFlightDocumentScene2DMaterialization(out, interactiveStateBindings, layoutBindings, scene);
-  return finishEntity(out);
+  return out;
 }
 
 export function createFlightDocumentScene2DMaterializationFromText(

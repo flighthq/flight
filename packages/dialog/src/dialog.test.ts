@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 
 import {
   showConfirmDialog,
@@ -15,21 +15,21 @@ function fakeHost() {
   return {
     dialog: {
       message: (() => {
-        const out = allocateEntity<any>();
+        const out = allocateEntity<any>() as any;
         out.confirm = async () => {
           return true;
         };
         out.message = async () => {
           return { buttonIndex: 2, cancelled: false, checkboxChecked: false };
         };
-        return finishEntity(out);
+        return out;
       })(),
       prompt: (() => {
-        const out = allocateEntity<any>();
+        const out = allocateEntity<any>() as any;
         out.prompt = async () => {
           return 'typed';
         };
-        return finishEntity(out);
+        return out;
       })(),
     },
   };
@@ -39,7 +39,7 @@ function severityHost(observed: string[]) {
   return {
     dialog: {
       message: (() => {
-        const out = allocateEntity<any>();
+        const out = allocateEntity<any>() as any;
         out.confirm = async () => {
           return true;
         };
@@ -47,7 +47,7 @@ function severityHost(observed: string[]) {
           observed.push(options.kind ?? 'none');
           return { buttonIndex: 0, cancelled: false, checkboxChecked: false };
         };
-        return finishEntity(out);
+        return out;
       })(),
     },
   };
@@ -63,10 +63,10 @@ describe('showConfirmDialog', () => {
     const host = {
       dialog: {
         message: (() => {
-          const out = allocateEntity<any>();
+          const out = allocateEntity<any>() as any;
           out.confirm = confirm;
           out.message = vi.fn();
-          return finishEntity(out);
+          return out;
         })(),
       },
     };

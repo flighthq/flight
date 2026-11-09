@@ -1,6 +1,6 @@
 import { sampleAnimationClip } from '@flighthq/animation/contract';
 import type { AnimationChannel, AnimationClip } from '@flighthq/animation/contract';
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 
 import type { MorphShape, MorphShapeAnimationTarget } from './contract.shape-types.ts';
@@ -30,7 +30,7 @@ export function applyMorphShapeAnimationSample(
 export function createMorphShapeAnimationTarget(shape: MorphShape): MorphShapeAnimationTarget {
   const out = allocateEntity<MorphShapeAnimationTarget>();
   initializeMorphShapeAnimationTarget(out, shape);
-  return finishEntity(out);
+  return out;
 }
 
 // Allocates one stable binding descriptor. Keep and reuse this identity when multiple animation

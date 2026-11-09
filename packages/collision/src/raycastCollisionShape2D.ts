@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 
 import { getCollisionPolygonValidationStatus2D } from './collisionShapeValidation2D.ts';
@@ -10,7 +10,7 @@ const RELATIVE_EPSILON = 1e-9;
 export function createCollisionRaycastHit2D(): CollisionRaycastHit2D {
   const out = allocateEntity<CollisionRaycastHit2D>();
   initializeCollisionRaycastHit2D(out);
-  return finishEntity(out);
+  return out;
 }
 
 export function initializeCollisionRaycastHit2D(out: EntityConstruction<CollisionRaycastHit2D>): void {

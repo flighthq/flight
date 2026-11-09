@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 import { createSignal } from '@flighthq/signals/contract';
 
@@ -7,7 +7,7 @@ import type { ParticleEmitterSignals } from './types/ParticleSimulation.ts';
 export function createParticleEmitterSignals(): ParticleEmitterSignals {
   const out = allocateEntity<ParticleEmitterSignals>();
   initializeParticleEmitterSignals(out);
-  return finishEntity(out);
+  return out;
 }
 
 /** Opt-in signals for a typed-array particle emitter.

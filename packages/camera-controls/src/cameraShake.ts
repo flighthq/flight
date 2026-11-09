@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 import { clamp } from '@flighthq/math/contract';
 
@@ -11,13 +11,13 @@ export function addCameraShakeTrauma(shake: CameraShake, amount: number): void {
 export function createCameraShake(options?: Readonly<CameraShakeOptions>): CameraShake {
   const out = allocateEntity<CameraShake>();
   initializeCameraShake(out, options);
-  return finishEntity(out);
+  return out;
 }
 
 export function createCameraShakeOffset(): CameraShakeOffset {
   const out = allocateEntity<CameraShakeOffset>();
   initializeCameraShakeOffset(out);
-  return finishEntity(out);
+  return out;
 }
 
 export function initializeCameraShake(

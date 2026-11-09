@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import { EntityRuntimeKey } from '@flighthq/entity/contract';
 import { connectSignal, hasSignalSlots } from '@flighthq/signals/contract';
 
@@ -50,7 +50,7 @@ function fakeProvider(
   let destroyed = false;
   return Object.assign(
     (() => {
-      const out = allocateEntity<any>();
+      const out = allocateEntity<any>() as any;
       out.destroy = () => {
         if (destroyed) return;
         destroyed = true;
@@ -72,7 +72,7 @@ function fakeProvider(
           listeners.delete(listener);
         };
       };
-      return finishEntity(out);
+      return out;
     })(),
     {
       activeSubscriptions: () => listeners.size,

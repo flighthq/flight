@@ -1,6 +1,6 @@
 import { createInnerGlowEffect } from '@flighthq/effects/contract';
 import type { InnerGlowEffect } from '@flighthq/effects/contract';
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { CanvasTextureRenderTarget } from '@flighthq/scene2d-canvas/contract';
 
 import { getCanvasEffectRunner } from './canvasEffectRegistry.ts';
@@ -28,7 +28,7 @@ function seededPool(ids: readonly string[]): { pool: CanvasRenderTargetPool; tar
       out.canvasHost = canvasTestHost;
       out.free = [...targets].reverse();
       out.inUse = [];
-      return finishEntity(out) as unknown;
+      return out as unknown;
     })() as CanvasRenderTargetPool,
     targets,
   };

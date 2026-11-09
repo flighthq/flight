@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 
 import {
   canPlayAudioType,
@@ -17,7 +17,7 @@ function hostWith(canPlay: (type: string) => boolean): {
       audioCodec: (() => {
         const out = allocateEntity<any>();
         out.canPlayType = canPlay;
-        return finishEntity(out);
+        return out;
       })(),
     },
   } as { readonly media: { readonly audioCodec: HostAudioCodecCapability } };

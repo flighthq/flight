@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 
 import type {
@@ -20,7 +20,7 @@ export function createWgpuFullscreenPipeline(
 ): WgpuFullscreenPipeline {
   const out = allocateEntity<WgpuFullscreenPipeline>();
   initializeWgpuFullscreenPipeline(out, state, fragmentWgsl, textureInputCount, format);
-  return finishEntity(out);
+  return out;
 }
 
 // Destroys a fullscreen pipeline's GPU resources. The pipeline and layouts are GC-managed in

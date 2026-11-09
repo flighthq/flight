@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 
 import type { AnimationInterpolation, AnimationTrack, AnimationTrackValidationDiagnostic } from './types.ts';
@@ -16,7 +16,7 @@ export function cloneAnimationTrack(track: Readonly<AnimationTrack>): AnimationT
   out.segmentEasings = track.segmentEasings === null ? null : track.segmentEasings.slice();
   out.times = cloneNumberBuffer(track.times);
   out.values = cloneNumberBuffer(track.values);
-  return finishEntity(out);
+  return out;
 }
 
 export function createAnimationTrack(opts: {
@@ -30,7 +30,7 @@ export function createAnimationTrack(opts: {
 }): AnimationTrack {
   const out = allocateEntity<AnimationTrack>();
   initializeAnimationTrack(out, opts);
-  return finishEntity(out);
+  return out;
 }
 
 // Allocates an AnimationTrack. `times` must be ascending; `values` is the flat keyframe buffer
@@ -153,7 +153,7 @@ export function trimAnimationTrack(
       : track.segmentEasings.slice(sourceKeyframes[0], sourceKeyframes[sourceKeyframes.length - 1]);
   out.times = outTimes;
   out.values = outValues;
-  return finishEntity(out);
+  return out;
 }
 
 // Structurally validates a track, returning null when it is well-formed or an array of diagnostics

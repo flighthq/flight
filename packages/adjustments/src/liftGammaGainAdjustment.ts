@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityRuntimeKey, EntityConstruction } from '@flighthq/entity/contract';
 
 import { initializeColorLutAdjustment } from './colorLutAdjustment.ts';
@@ -9,7 +9,7 @@ export function createLiftGammaGainAdjustment(
 ): LiftGammaGainAdjustment {
   const out = allocateEntity<LiftGammaGainAdjustment>();
   initializeLiftGammaGainAdjustment(out, options);
-  return finishEntity(out);
+  return out;
 }
 
 // Lift/gamma/gain as a LUT-tier adjustment (gamma is the nonlinear part). Ported faithfully from the old

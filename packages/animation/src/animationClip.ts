@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 
 import { cloneAnimationTrack, sampleAnimationTrack } from './animationTrack.ts';
@@ -16,13 +16,13 @@ export function cloneAnimationClip(clip: Readonly<AnimationClip>): AnimationClip
   out.channels = channels;
   out.duration = clip.duration;
   out.events = events;
-  return finishEntity(out);
+  return out;
 }
 
 export function createAnimationChannel(track: AnimationTrack, targetRef: unknown): AnimationChannel {
   const out = allocateEntity<AnimationChannel>();
   initializeAnimationChannel(out, track, targetRef);
-  return finishEntity(out);
+  return out;
 }
 
 export function createAnimationClip(
@@ -32,13 +32,13 @@ export function createAnimationClip(
 ): AnimationClip {
   const out = allocateEntity<AnimationClip>();
   initializeAnimationClip(out, channels, duration, events);
-  return finishEntity(out);
+  return out;
 }
 
 export function createAnimationClipEvent(time: number, name: string, payload: unknown = null): AnimationClipEvent {
   const out = allocateEntity<AnimationClipEvent>();
   initializeAnimationClipEvent(out, time, name, payload);
-  return finishEntity(out);
+  return out;
 }
 
 // Returns the clip's total duration in seconds.

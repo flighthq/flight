@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction, EntityRaw, EntityRuntime, EntityRuntimeKey } from '@flighthq/entity/contract';
 import { BlendMode } from '@flighthq/materials/contract';
 import { forEachNodeDescendant } from '@flighthq/node/contract';
@@ -8,7 +8,7 @@ import type { Node2D, Scene2D, Scene2DKindUsage } from './contract.scene2d-types
 export function createScene2DKindUsage(): Scene2DKindUsage & Scene2DKindUsageEntity {
   const out = allocateEntity<Scene2DKindUsage & Scene2DKindUsageEntity>();
   initializeScene2DKindUsage(out);
-  return finishEntity(out);
+  return out;
 }
 
 // Clears `out`, then fills it with every kind this scene uses. One walk, no registry, no backend, no

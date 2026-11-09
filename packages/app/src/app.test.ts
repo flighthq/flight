@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import { EntityRuntimeKey } from '@flighthq/entity/contract';
 import { cancelSignal, connectSignal } from '@flighthq/signals/contract';
 import { describe, expect, it, vi } from 'vitest';
@@ -68,126 +68,126 @@ function createFixture() {
   };
   const subscribe = <Key extends keyof typeof listeners>(key: Key) =>
     (() => {
-      const out = allocateEntity<any>();
+      const out = allocateEntity<any>() as any;
       out.subscribe = (listener: NonNullable<(typeof listeners)[Key]>) => {
         listeners[key] = listener;
         return unsubscribes[key];
       };
-      return finishEntity(out);
+      return out;
     })();
   const host = {
     app: {
       activate: subscribe('activate'),
       activationPolicy: (() => {
-        const out = allocateEntity<any>();
+        const out = allocateEntity<any>() as any;
         out.setActivationPolicy = (policy: string) => calls.push(`policy:${policy}`);
-        return finishEntity(out);
+        return out;
       })(),
       allWindowsClosed: subscribe('allWindowsClosed'),
       badge: (() => {
-        const out = allocateEntity<any>();
+        const out = allocateEntity<any>() as any;
         out.setBadgeCount = async (count: number) => (calls.push(`badge:${count}`), true);
-        return finishEntity(out);
+        return out;
       })(),
       dock: (() => {
-        const out = allocateEntity<any>();
+        const out = allocateEntity<any>() as any;
         out.bounceDock = () => 17;
         out.cancelAttention = (id: number) => calls.push(`cancelAttention:${id}`);
         out.cancelDockBounce = (id: number) => calls.push(`cancelBounce:${id}`);
         out.requestAttention = (critical: boolean) => (calls.push(`attention:${critical}`), 19);
         out.setDockBadge = (text: string) => calls.push(`dockBadge:${text}`);
         out.setDockMenu = (items: readonly unknown[]) => calls.push(`dockMenu:${items.length}`);
-        return finishEntity(out);
+        return out;
       })(),
       focus: (() => {
-        const out = allocateEntity<any>();
+        const out = allocateEntity<any>() as any;
         out.focus = () => calls.push('focus');
-        return finishEntity(out);
+        return out;
       })(),
       hide: (() => {
-        const out = allocateEntity<any>();
+        const out = allocateEntity<any>() as any;
         out.hideApp = () => calls.push('hide');
-        return finishEntity(out);
+        return out;
       })(),
       locale: (() => {
-        const out = allocateEntity<any>();
+        const out = allocateEntity<any>() as any;
         out.getLocale = () => 'en-GB';
         out.getPreferredSystemLanguages = () => ['en-GB', 'fr'];
         out.getSystemLocale = () => 'en-US';
-        return finishEntity(out);
+        return out;
       })(),
       loginItem: (() => {
-        const out = allocateEntity<any>();
+        const out = allocateEntity<any>() as any;
         out.getLoginItem = () => ({ args: ['--start'], openAsHidden: true, openAtLogin: true, path: '/app' });
         out.setLoginItem = () => calls.push('loginItem');
-        return finishEntity(out);
+        return out;
       })(),
       name: (() => {
-        const out = allocateEntity<any>();
+        const out = allocateEntity<any>() as any;
         out.getName = () => 'Flight';
-        return finishEntity(out);
+        return out;
       })(),
       nameWrite: (() => {
-        const out = allocateEntity<any>();
+        const out = allocateEntity<any>() as any;
         out.setName = (name: string) => calls.push(`name:${name}`);
-        return finishEntity(out);
+        return out;
       })(),
       openFile: subscribe('openFile'),
       path: (() => {
-        const out = allocateEntity<any>();
+        const out = allocateEntity<any>() as any;
         out.getAppDirectoryPath = (kind: string) => `/app/${kind}`;
         out.getAppPath = () => '/app';
         out.getExecutablePath = () => '/app/flight';
-        return finishEntity(out);
+        return out;
       })(),
       quit: (() => {
-        const out = allocateEntity<any>();
+        const out = allocateEntity<any>() as any;
         out.quit = () => calls.push('quit');
-        return finishEntity(out);
+        return out;
       })(),
       quitRequest: subscribe('quitRequest'),
       ready: subscribe('ready'),
       recentDocuments: (() => {
-        const out = allocateEntity<any>();
+        const out = allocateEntity<any>() as any;
         out.addRecentDocument = (path: string) => calls.push(`recent:${path}`);
         out.clearRecentDocuments = () => calls.push('clearRecent');
-        return finishEntity(out);
+        return out;
       })(),
       relaunch: (() => {
-        const out = allocateEntity<any>();
+        const out = allocateEntity<any>() as any;
         out.relaunch = () => calls.push('relaunch');
-        return finishEntity(out);
+        return out;
       })(),
       secondInstance: subscribe('secondInstance'),
       show: (() => {
-        const out = allocateEntity<any>();
+        const out = allocateEntity<any>() as any;
         out.showApp = () => calls.push('show');
-        return finishEntity(out);
+        return out;
       })(),
       singleInstance: (() => {
-        const out = allocateEntity<any>();
+        const out = allocateEntity<any>() as any;
         out.hasSingleInstanceLock = () => true;
         out.releaseSingleInstanceLock = () => calls.push('releaseLock');
         out.requestSingleInstanceLock = () => true;
-        return finishEntity(out);
+        return out;
       })(),
       userModelId: (() => {
-        const out = allocateEntity<any>();
+        const out = allocateEntity<any>() as any;
         out.setUserModelId = (id: string) => calls.push(`userModel:${id}`);
-        return finishEntity(out);
+        return out;
       })(),
       version: (() => {
-        const out = allocateEntity<any>();
+        const out = allocateEntity<any>() as any;
         out.getVersion = () => '1.2.3';
-        return finishEntity(out);
+        return out;
       })(),
     },
     lifecycle: {
       state: (() => {
-        const out = allocateEntity<any>();
+        const out = allocateEntity<any>() as any;
         out.getState = () => 'background';
         out.subscribe = () => () => {};
-        return finishEntity(out);
+        return out;
       })(),
     },
   };

@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 import { cloneVector3, createVector3, setVector3 } from '@flighthq/geometry/contract';
 
@@ -30,7 +30,7 @@ export function cloneSpotLight(source: Readonly<SpotLight>): SpotLight {
   out.shadowNear = source.shadowNear;
   out.shadowStrength = source.shadowStrength;
   out.spotBlend = source.spotBlend;
-  return finishEntity(out);
+  return out;
 }
 
 export function createSpotLight(options?: Readonly<SpotLightOptions>): SpotLight {

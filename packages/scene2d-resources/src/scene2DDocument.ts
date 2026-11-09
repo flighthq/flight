@@ -1,5 +1,5 @@
 import type { AudioResourceReference } from '@flighthq/audio/contract';
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 import type { ImageResourceReference } from '@flighthq/image/contract';
 import type { Node2D, Scene2DSlotReference } from '@flighthq/scene2d/contract';
@@ -16,7 +16,7 @@ export function createScene2DDocument(
 ): Scene2DDocument {
   const out = allocateEntity<Scene2DDocument>();
   initializeScene2DDocument(out, root, slots, sourceKind, backgroundColor, imageResources, audioResources);
-  return finishEntity(out);
+  return out;
 }
 
 export function createScene2DSlotReference(
@@ -27,7 +27,7 @@ export function createScene2DSlotReference(
 ): Scene2DSlotReference {
   const out = allocateEntity<Scene2DSlotReference>();
   initializeScene2DSlotReference(out, name, target, linkage, required);
-  return finishEntity(out);
+  return out;
 }
 
 export function initializeScene2DDocument(

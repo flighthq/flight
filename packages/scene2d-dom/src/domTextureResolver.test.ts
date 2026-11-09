@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import {
   createImageResource,
   registerTestImageDimensionResolver,
@@ -28,7 +28,7 @@ describe('registerDomTextureResolver', () => {
     textureSource.kind = 'acme.test';
     textureSource.version = 0;
     textureSource.width = 1;
-    const texture = createTexture({ dimension: '2d', source: finishEntity(textureSource) as TextureSource });
+    const texture = createTexture({ dimension: '2d', source: textureSource as TextureSource });
     const canvas = document.createElement('canvas');
     const resolver = (): HTMLCanvasElement => canvas;
     registerDomTextureResolver(state, 'acme.test', resolver);

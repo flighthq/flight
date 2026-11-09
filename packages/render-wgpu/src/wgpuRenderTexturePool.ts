@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 import type { RenderTarget, RenderTargetDescriptor, RenderTexture } from '@flighthq/render/contract';
 import { createRenderTexture, resetTextureUvTransform } from '@flighthq/texture/contract';
@@ -25,7 +25,7 @@ export function acquireWgpuRenderTexture(
 export function createWgpuRenderTexturePool(): WgpuRenderTexturePool {
   const out = allocateEntity<WgpuRenderTexturePool>();
   initializeWgpuRenderTexturePool(out);
-  return finishEntity(out);
+  return out;
 }
 
 // Destroys both free and outstanding handles. Shutdown does not require callers to recover every

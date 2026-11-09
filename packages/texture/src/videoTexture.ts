@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 import { inverseMatrix3 } from '@flighthq/geometry/contract';
 import type { Matrix3Like } from '@flighthq/geometry/contract';
@@ -138,7 +138,7 @@ function createVideoImageResource(
   const image = allocateEntity<ImageResource>();
   initializeVideoImageResource(image, source.element, INITIAL_VIDEO_VERSION);
   updateVideoImageSize(hostVideo, image);
-  return finishEntity(image);
+  return image;
 }
 
 function getVideoSource(texture: Readonly<TextureLike>): HostImageSource | null {

@@ -1,4 +1,4 @@
-import { allocateEntity, EntityRuntimeKey, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity, EntityRuntimeKey } from '@flighthq/entity/contract';
 
 import {
   attachClipboardWatch,
@@ -290,7 +290,7 @@ function hostFor(clipboard: FakeClipboardBackend): FakeClipboardHost {
 }
 
 function fakeBackend(): FakeClipboardBackend {
-  const out = allocateEntity<any>();
+  const out = allocateEntity<any>() as any;
   out.bookmark = null;
   out.formats = {};
   out.html = '';
@@ -391,7 +391,7 @@ function fakeBackend(): FakeClipboardBackend {
     out.text = text;
     return true;
   };
-  return finishEntity(out);
+  return out;
 }
 
 describe('writeClipboardImage', () => {

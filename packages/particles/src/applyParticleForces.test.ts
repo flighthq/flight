@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 
 import { applyParticleForces, applyParticleObjectForces } from './applyParticleForces.ts';
 import type { ParticleEmitterLike } from './applyParticleForces.ts';

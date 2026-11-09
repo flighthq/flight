@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import { initializeFlightDocumentRefusalExplanation } from '@flighthq/scene-document/contract';
 import type {
   FlightDocumentFields,
@@ -114,7 +114,7 @@ function refuse(
       tokenKey,
       null,
     );
-    return finishEntity(out);
+    return out;
   })();
 }
 

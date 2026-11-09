@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 import type { Path, StrokeStyle } from '@flighthq/path/contract';
 import { PathCommand } from '@flighthq/path/contract';
@@ -74,7 +74,7 @@ export function getShapeStrokeOutlineRegions(commands: readonly ShapeCommandToke
         centerline = (() => {
           const out = allocateEntity<Path>();
           initializePath(out, [] as number[], [] as number[], 'nonZero');
-          return finishEntity(out);
+          return out;
         })();
       } else {
         style = null;

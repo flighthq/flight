@@ -1,14 +1,14 @@
 // Generated from crates/flight-textlayout/src/text_metrics.rs by flight-compiler.
 // Rust is authoritative; run `npm run generate` after changing it.
 
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 
 import type { TextLayoutResult, TextMetrics } from './types.ts';
 
 export function createTextMetrics(): TextMetrics {
   let out: TextMetrics = allocateEntity<TextMetrics>();
   initializeTextMetrics(out);
-  return finishEntity(out);
+  return out;
 }
 
 export function getTextMetrics(out: TextMetrics, layout: Readonly<TextLayoutResult>): void {

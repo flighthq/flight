@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 
 import { collideContactManifold2D } from './collideContactManifold2D.ts';
@@ -11,7 +11,7 @@ import type { CollisionBuiltInShape2D, CollisionTimeOfImpact2D } from './types.t
 export function createCollisionTimeOfImpact2D(): CollisionTimeOfImpact2D {
   const out = allocateEntity<CollisionTimeOfImpact2D>();
   initializeCollisionTimeOfImpact2D(out);
-  return finishEntity(out);
+  return out;
 }
 
 export function initializeCollisionTimeOfImpact2D(out: EntityConstruction<CollisionTimeOfImpact2D>): void {

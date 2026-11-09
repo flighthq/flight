@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 import { EntityRuntimeKey } from '@flighthq/entity/contract';
 import { getRenderStateRuntime } from '@flighthq/render/contract';
@@ -40,7 +40,7 @@ export function connectCanvasTextureResolverMisses(resolvers: CanvasTextureResol
 export function createCanvasTextureResolvers(canvasHost: Readonly<HostCanvasCapability>): CanvasTextureResolvers {
   const resolvers = allocateEntity<CanvasTextureResolvers>();
   initializeCanvasTextureResolvers(resolvers, canvasHost);
-  return finishEntity(resolvers);
+  return resolvers;
 }
 
 export function destroyCanvasTextureResolvers(resolvers: CanvasTextureResolvers): void {

@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 import { createEmbeddedImageResourceReference } from '@flighthq/image/contract';
 import type { ImageResourceReference } from '@flighthq/image/contract';
@@ -48,7 +48,7 @@ function collectRiveSlots(
         out.name = node.name !== null && node.name !== '' ? node.name : (target?.name ?? '');
         out.required = false;
         out.target = node;
-        return finishEntity(out);
+        return out;
       })(),
     );
   }
@@ -122,7 +122,7 @@ export function createScene2DDocumentFromRiveDocument(
     createRiveImageResources(imported, diagnostics),
     createRiveSlots(imported.artboards),
   );
-  return finishEntity(out);
+  return out;
 }
 
 export function initializeRiveScene2DDocumentResult(

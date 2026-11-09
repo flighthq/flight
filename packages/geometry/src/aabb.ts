@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 
 import type { Aabb, AabbLike, BoundingSphereLike, Matrix4Like, Vector3, Vector3Like } from './types.ts';
@@ -67,7 +67,7 @@ export function createAabb(
   );
   const out = allocateEntity<Aabb>();
   initializeAabb(out, min, max);
-  return finishEntity(out);
+  return out;
 }
 
 /**

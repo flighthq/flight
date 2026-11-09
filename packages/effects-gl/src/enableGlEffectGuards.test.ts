@@ -1,5 +1,5 @@
 import type { Effect } from '@flighthq/effects/contract';
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import { createWebGlContext } from '@flighthq/host-web/contract';
 import type { LogState } from '@flighthq/log/contract';
 import {
@@ -164,7 +164,7 @@ describe('enableGlEffectGuards', () => {
         (() => {
           const out = allocateEntity<any>();
           out.kind = 'test.pipeline-dropped-kind';
-          return finishEntity(out) as Effect;
+          return out as Effect;
         })(),
       ]);
     });
@@ -181,7 +181,7 @@ describe('enableGlEffectGuards', () => {
         (() => {
           const out = allocateEntity<any>();
           out.kind = 'test.pipeline-dropped-kind';
-          return finishEntity(out) as Effect;
+          return out as Effect;
         })(),
       ]);
     });
@@ -227,7 +227,7 @@ function applyChain(state: GlRenderState, kinds: readonly string[], publishDesti
       (() => {
         const out = allocateEntity<any>();
         out.kind = kind;
-        return finishEntity(out) as unknown;
+        return out as unknown;
       })() as Readonly<Effect>,
   );
   return applyGlEffectsToRenderTexture(state, pool, source, dest, scratch, effects);

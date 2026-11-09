@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 import type {
   CreateRenderTextureOptions,
@@ -24,7 +24,7 @@ export function createRenderTexture(options: Readonly<CreateRenderTextureOptions
     source: (() => {
       const out = allocateEntity<RenderTarget>();
       initializeRenderTextureTarget(out, options, colorSpace);
-      return finishEntity(out) as RenderTarget;
+      return out as RenderTarget;
     })(),
     uvRotation: options.uvRotation,
   }) as RenderTexture;

@@ -1,5 +1,4 @@
 import type { AppWindow } from '@flighthq/app/contract';
-import { finishEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 
 import { allocateSurface } from './surface.ts';
@@ -30,7 +29,7 @@ export function createCanvasSurfaceFromNativeHandle(
   const context = capability.acquire(surface as CanvasSurface, options);
   if (context === null) return null;
   (surface as EntityConstruction<CanvasSurface>).context = context;
-  return finishEntity(surface);
+  return surface;
 }
 
 export function destroyCanvasSurface(

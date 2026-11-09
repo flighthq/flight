@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 
 import { showCapturePhotoDialog, showCaptureVideoDialog, showOpenImageDialog } from './mediaDialog.ts';
 import type {
@@ -21,7 +21,7 @@ describe('showCapturePhotoDialog', () => {
         photoCapture: (() => {
           const out = allocateEntity<any>();
           out.capture = capture;
-          return finishEntity(out) as HostPhotoCaptureDialogCapability;
+          return out as HostPhotoCaptureDialogCapability;
         })(),
       },
     };
@@ -43,7 +43,7 @@ describe('showCapturePhotoDialog', () => {
         photoCapture: (() => {
           const out = allocateEntity<any>();
           out.capture = capture;
-          return finishEntity(out) as HostPhotoCaptureDialogCapability;
+          return out as HostPhotoCaptureDialogCapability;
         })(),
       },
     };
@@ -63,7 +63,7 @@ describe('showCaptureVideoDialog', () => {
         videoCapture: (() => {
           const out = allocateEntity<any>();
           out.capture = capture;
-          return finishEntity(out) as HostVideoCaptureDialogCapability;
+          return out as HostVideoCaptureDialogCapability;
         })(),
       },
     };
@@ -84,7 +84,7 @@ describe('showOpenImageDialog', () => {
         imageOpen: (() => {
           const out = allocateEntity<any>();
           out.open = open;
-          return finishEntity(out) as HostImageOpenDialogCapability;
+          return out as HostImageOpenDialogCapability;
         })(),
       },
     };
@@ -101,7 +101,7 @@ describe('showOpenImageDialog', () => {
         imageOpen: (() => {
           const out = allocateEntity<any>();
           out.open = open;
-          return finishEntity(out) as HostImageOpenDialogCapability;
+          return out as HostImageOpenDialogCapability;
         })(),
       },
     };

@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 import { createMatrix } from '@flighthq/geometry/contract';
 import { BlendMode } from '@flighthq/materials/contract';
@@ -26,7 +26,7 @@ type AdaptHook = (state: RenderState, source: NodeAny, data: RenderProxy2D) => v
 export function createRenderProxy(state: RenderState, source: NodeAny): RenderProxy {
   const out = allocateEntity<RenderProxy>();
   initializeRenderProxy(out, state, source);
-  return finishEntity(out);
+  return out;
 }
 
 // The one render-node allocator for the 2D graph. Sprites and display objects produce the same

@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { Entity, EntityConstruction } from '@flighthq/entity/contract';
 
 import { reportSpatialIndexing } from './spatialIndexingGuard.ts';
@@ -60,7 +60,7 @@ export function createUniformGridSpatialBackend2D(cellSize: number): SpatialInde
   };
   const out = allocateEntity<SpatialIndexBackend2D & Entity>();
   initializeUniformGridSpatialBackend2D(out, grid);
-  return finishEntity(out);
+  return out;
 }
 
 export function initializeUniformGridSpatialBackend2D(

@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import { describe, expect, it } from 'vitest';
 
 import type { Bone2D, MeshAttachment2D, Skeleton2DDeformLengthMismatch, Skin2D } from './contract.skeleton2d-types.ts';
@@ -33,7 +33,7 @@ function weightedMesh(skin: Skin2D, vertexCount: number): MeshAttachment2D {
   out.uvs = new Float32Array(vertexCount * 2);
   out.vertexCount = vertexCount;
   out.vertices = null;
-  return finishEntity(out) as MeshAttachment2D;
+  return out as MeshAttachment2D;
 }
 
 describe('deformSkeleton2DMeshAttachment', () => {
@@ -111,7 +111,7 @@ describe('deformSkeleton2DMeshAttachment', () => {
       out.uvs = new Float32Array(2);
       out.vertexCount = 1;
       out.vertices = new Float32Array([2, 0]);
-      return finishEntity(out) as MeshAttachment2D;
+      return out as MeshAttachment2D;
     })();
     const out = new Float32Array(2);
 
@@ -148,7 +148,7 @@ describe('deformSkeleton2DMeshAttachment', () => {
       out.uvs = new Float32Array(2);
       out.vertexCount = 1;
       out.vertices = verts;
-      return finishEntity(out) as MeshAttachment2D;
+      return out as MeshAttachment2D;
     })();
     // Deform in place (out === vertices) to exercise alias safety.
     deformSkeleton2DMeshAttachment(verts, mesh, s, 0);

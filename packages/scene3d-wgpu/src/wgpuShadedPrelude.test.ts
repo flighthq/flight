@@ -1,5 +1,5 @@
 import { allocateLinearColor } from '@flighthq/color/contract';
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { ImageResource } from '@flighthq/image/contract';
 import { getWgpuRenderStateRuntime, registerWgpuImageTextureResolver } from '@flighthq/render-wgpu/contract';
 import type { WgpuModifierSnippet } from '@flighthq/render-wgpu/contract';
@@ -117,7 +117,7 @@ describe('ensureWgpuShadedPipeline', () => {
       const out = allocateEntity<any>();
       out.kind = 'acme.Replace';
       out.slot = ModifierSlot.Effect;
-      return finishEntity(out) as Modifier;
+      return out as Modifier;
     })();
     registerWgpuModifierSnippet(state, {
       contribution: () => ({ source: '// compiler-marker-A' }),
@@ -220,13 +220,13 @@ describe('getWgpuShadedModuleSource', () => {
       const out = allocateEntity<any>();
       out.kind = 'acme.Glow';
       out.slot = ModifierSlot.Effect;
-      return finishEntity(out) as Modifier;
+      return out as Modifier;
     })();
     const missing = (() => {
       const out = allocateEntity<any>();
       out.kind = 'acme.Missing';
       out.slot = ModifierSlot.Effect;
-      return finishEntity(out) as Modifier;
+      return out as Modifier;
     })();
     const material = createShadedMaterial({ modifiers: [registered, missing] });
     const registry = getWgpuRenderStateRuntime(state).registries.modifierSnippets;
@@ -269,7 +269,7 @@ describe('getWgpuShadedModuleSource', () => {
           const out = allocateEntity<any>();
           out.kind = kind;
           out.slot = slots[i];
-          return finishEntity(out) as Modifier;
+          return out as Modifier;
         })(),
       );
     }
@@ -301,13 +301,13 @@ describe('getWgpuShadedModuleSource', () => {
           const out = allocateEntity<any>();
           out.kind = 'acme.DeclarationA';
           out.slot = ModifierSlot.Effect;
-          return finishEntity(out) as Modifier;
+          return out as Modifier;
         })(),
         (() => {
           const out = allocateEntity<any>();
           out.kind = 'acme.DeclarationB';
           out.slot = ModifierSlot.Effect;
-          return finishEntity(out) as Modifier;
+          return out as Modifier;
         })(),
       ],
     });
@@ -442,7 +442,7 @@ describe('shaded binding cache', () => {
       const out = allocateEntity<any>();
       out.kind = 'acme.Stable';
       out.slot = ModifierSlot.Effect;
-      return finishEntity(out) as Modifier;
+      return out as Modifier;
     })();
     registerWgpuModifierSnippet(state, {
       contribution: () => {

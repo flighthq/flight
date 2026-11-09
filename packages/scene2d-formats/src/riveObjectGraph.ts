@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import type { ImportDiagnostic } from '@flighthq/importdiagnostics/contract';
@@ -18,7 +18,7 @@ export function createRiveObjectGraph(
 ): RiveObjectGraph {
   const out = allocateEntity<RiveObjectGraph>();
   initializeRiveObjectGraph(out, document, diagnostics);
-  return finishEntity(out);
+  return out;
 }
 
 /**

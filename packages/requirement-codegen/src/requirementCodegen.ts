@@ -1,5 +1,5 @@
 import type { Entity, EntityConstruction } from '@flighthq/entity/contract';
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import { findRequirementCatalogEntries } from '@flighthq/requirement-catalog/contract';
 import type { RequirementCatalog, RequirementCatalogEntry } from '@flighthq/requirement-catalog/contract';
 import type { Requirement, RequirementSetRaw } from '@flighthq/requirement/contract';
@@ -13,7 +13,7 @@ export function createRequirementCodegenPlan(
 ): RequirementCodegenPlan & Entity {
   const out = allocateEntity<RequirementCodegenPlan & Entity>();
   initializeRequirementCodegenPlan(out, catalog, requirements, backend);
-  return finishEntity(out);
+  return out;
 }
 
 // Resolve only facts here. A later emitter may choose how a row becomes source after the ownership lane

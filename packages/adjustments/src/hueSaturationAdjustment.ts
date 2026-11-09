@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityRuntimeKey, EntityConstruction } from '@flighthq/entity/contract';
 
 import { initializeColorLutAdjustment } from './colorLutAdjustment.ts';
@@ -9,7 +9,7 @@ export function createHueSaturationAdjustment(
 ): HueSaturationAdjustment {
   const out = allocateEntity<HueSaturationAdjustment>();
   initializeHueSaturationAdjustment(out, options);
-  return finishEntity(out);
+  return out;
 }
 
 // Hue/saturation/lightness as a LUT-tier adjustment. The transform is the exact HSL round-trip the old

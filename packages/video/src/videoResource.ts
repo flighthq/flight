@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 import type { HostImageSource } from '@flighthq/host/contract';
 
@@ -14,7 +14,7 @@ export function createVideoResource(
 ): VideoResource {
   const out = allocateEntity<VideoResource>();
   initializeVideoResource(out, element, objectUrl, ownsElement);
-  return finishEntity(out);
+  return out;
 }
 
 // Releases a video resource's non-GC state: for owned elements, asks the host to release the element

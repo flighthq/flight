@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 
 import type { Environment, EnvironmentOptions } from './types.ts';
@@ -13,7 +13,7 @@ export function cloneEnvironment(source: Readonly<Environment>): Environment {
 export function createEnvironment(options?: Readonly<EnvironmentOptions>): Environment {
   const out = allocateEntity<Environment>();
   initializeEnvironment(out, options);
-  return finishEntity(out);
+  return out;
 }
 
 // Image-based environment lighting + skybox source. `environment` is the radiance cubemap used

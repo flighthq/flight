@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import { describe, expect, it, vi } from 'vitest';
 
 import {
@@ -12,8 +12,8 @@ import type { MidiAccess, MidiInputPort, MidiOutputPort } from './types.ts';
 
 describe('getMidiAccessResourceState', () => {
   it('returns only state retained for the exact access identity', () => {
-    const retained = finishEntity(allocateEntity<MidiAccess>()) as MidiAccess;
-    const other = finishEntity(allocateEntity<MidiAccess>()) as MidiAccess;
+    const retained = allocateEntity<MidiAccess>() as MidiAccess;
+    const other = allocateEntity<MidiAccess>() as MidiAccess;
     retainMidiAccessResourceState(retained, accessOperations());
     expect(getMidiAccessResourceState(retained)?.disposed).toBe(false);
     expect(getMidiAccessResourceState(other)).toBeUndefined();
@@ -32,7 +32,7 @@ describe('getMidiPortResourceState', () => {
 
 describe('retainMidiAccessResourceState', () => {
   it('starts an empty live access ownership ledger', () => {
-    const access = finishEntity(allocateEntity<MidiAccess>()) as MidiAccess;
+    const access = allocateEntity<MidiAccess>() as MidiAccess;
     retainMidiAccessResourceState(access, accessOperations());
     expect(getMidiAccessResourceState(access)).toMatchObject({
       disposeCompleted: false,
@@ -104,7 +104,7 @@ function inputPort(): MidiInputPort {
   out.name = null;
   out.type = 'input' as const;
   out.version = null;
-  return finishEntity(out);
+  return out;
 }
 
 function outputPort(): MidiOutputPort {
@@ -114,5 +114,5 @@ function outputPort(): MidiOutputPort {
   out.name = null;
   out.type = 'output' as const;
   out.version = null;
-  return finishEntity(out);
+  return out;
 }

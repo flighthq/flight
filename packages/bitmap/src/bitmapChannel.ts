@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 import { BitmapTextureSourceKind } from '@flighthq/texture/contract';
 
@@ -150,5 +150,5 @@ export function splitBitmapChannels(source: Readonly<Bitmap>): [Bitmap, Bitmap, 
 function makeBitmap(data: Uint8Array<ArrayBuffer>, width: number, height: number, source: Readonly<Bitmap>): Bitmap {
   const out = allocateEntity<Bitmap>();
   initializeBitmap(out, source.alphaType, data, source.format, source.gamut, height, width);
-  return finishEntity(out);
+  return out;
 }

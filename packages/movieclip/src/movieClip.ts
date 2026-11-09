@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import { EntityRuntimeKey } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 import { createNode2D, createNode2DRuntime, getNode2DRuntime } from '@flighthq/scene2d/contract';
@@ -37,7 +37,7 @@ export function createMovieClip(): MovieClip {
 export function createMovieClipData(): MovieClipData {
   const out = allocateEntity<MovieClipData>();
   initializeMovieClipData(out);
-  return finishEntity(out);
+  return out;
 }
 
 export function createMovieClipRuntime(): MovieClipRuntime {

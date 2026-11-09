@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 
 import { blendAnimationSamples } from './animationBlend.ts';
@@ -27,7 +27,7 @@ export function createAnimationStateMachine(
 ): AnimationStateMachine {
   const out = allocateEntity<AnimationStateMachine>();
   initializeAnimationStateMachine(out, states, initialState);
-  return finishEntity(out);
+  return out;
 }
 
 export function createAnimationStateMachineState(
@@ -36,7 +36,7 @@ export function createAnimationStateMachineState(
 ): AnimationStateMachineState {
   const out = allocateEntity<AnimationStateMachineState>();
   initializeAnimationStateMachineState(out, name, blendTree);
-  return finishEntity(out);
+  return out;
 }
 
 // Returns the active state. During a transition this remains the source until the duration completes.

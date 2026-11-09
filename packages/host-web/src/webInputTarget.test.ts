@@ -1,5 +1,5 @@
 import { exitAppInputPointerLock, lockAppInputPointer } from '@flighthq/app';
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityWithoutRuntime } from '@flighthq/entity/contract';
 import type { InputTargetHandleRaw as InputTargetHandle } from '@flighthq/input/contract';
 import type { HostInputPointerLockCapability } from '@flighthq/input/contract';
@@ -121,10 +121,10 @@ describe('webHostInputPointerLock', () => {
     const target = createWebInputTargetHandle(document.createElement('div'));
     const fallbackExit = vi.fn(async () => ({ reason: 'ok' as const }));
     const fallbackBackend = (() => {
-      const out = allocateEntity<any>();
+      const out = allocateEntity<any>() as any;
       out.exit = fallbackExit;
       out.request = async () => ({ reason: 'ok' });
-      return finishEntity(out);
+      return out;
     })();
     const fallbackHost: { readonly input: { readonly pointerLock: HostInputPointerLockCapability } } = {
       input: { pointerLock: fallbackBackend },
@@ -360,7 +360,7 @@ describe('webHostInputPointerLock', () => {
   });
 
   it('reports target-not-found for an entity never registered as a web input target', async () => {
-    const target = finishEntity(allocateEntity<InputTargetHandle>());
+    const target = allocateEntity<InputTargetHandle>();
 
     await expect(webHostInputPointerLock.request(target)).resolves.toEqual({ reason: 'target-not-found' });
     expect(() => webHostInputTarget.prepare(target)).not.toThrow();

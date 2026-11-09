@@ -1,7 +1,7 @@
 // Generated from crates/flight-signals/src/signal.rs by flight-compiler.
 // Rust is authoritative; run `npm run generate` after changing it.
 
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 
 import { dispatchSignalData } from './emitter.ts';
 import type { SignalRaw } from './types.ts';
@@ -11,7 +11,6 @@ export function createSignal<T>(): SignalRaw<T> {
   out.emit = (_unused0: T) => {};
   out.data = undefined;
   initializeSignal(out);
-  finishEntity(out);
   return out;
 }
 

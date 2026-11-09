@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 
 import { composeMatrix4, decomposeMatrix4 } from './matrix4.ts';
@@ -19,7 +19,7 @@ export function createTransform3D(): Transform3D {
   const scale = createVector3(1, 1, 1);
   const out = allocateEntity<Transform3D>();
   initializeTransform3D(out, position, rotation, scale);
-  return finishEntity(out);
+  return out;
 }
 
 // Decomposes `m` into a carrier's translation/rotation/scale. Best-effort: lossy on shear, since a

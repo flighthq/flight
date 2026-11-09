@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import { describe, expect, it } from 'vitest';
 
 import { addPhysics2DJoint, registerPhysics2DJointSolver } from './jointRegistry.ts';
@@ -47,7 +47,7 @@ function box(world: ReturnType<typeof createPhysics2DWorld>, type: 'dynamic' | '
 }
 
 function baseJoint(kind: string, bodyA: number, bodyB: number) {
-  const out = allocateEntity<any>();
+  const out = allocateEntity<any>() as any;
   out.kind = kind;
   out.bodyA = bodyA;
   out.bodyB = bodyB;
@@ -65,7 +65,7 @@ function baseJoint(kind: string, bodyA: number, bodyB: number) {
   out.rAY = 0;
   out.rBX = 0;
   out.rBY = 0;
-  return finishEntity(out);
+  return out;
 }
 
 function run(world: ReturnType<typeof createPhysics2DWorld>, steps: number): void {

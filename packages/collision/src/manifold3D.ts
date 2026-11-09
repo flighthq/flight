@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 
 import type { CollisionManifold3D } from './types.ts';
@@ -17,7 +17,7 @@ export function clearCollisionManifold3D(out: CollisionManifold3D): void {
 export function createCollisionManifold3D(): CollisionManifold3D {
   const out = allocateEntity<CollisionManifold3D>();
   initializeCollisionManifold3D(out);
-  return finishEntity(out);
+  return out;
 }
 
 // Allocates a fresh manifold in the non-overlapping state, ready to be passed as an `out` parameter.

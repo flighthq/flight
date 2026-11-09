@@ -7,7 +7,7 @@ import {
 } from '@flighthq/adjustments/contract';
 import type { Adjustment } from '@flighthq/adjustments/contract';
 import type { Effect, EffectStateOptions } from '@flighthq/effects/contract';
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction, NonEntityCreateResult } from '@flighthq/entity/contract';
 import type { RenderTargetClear } from '@flighthq/render/contract';
 import {
@@ -87,7 +87,7 @@ export function createCanvasTextureRenderTargetPool(
 ): CanvasRenderTargetPool {
   const out = allocateEntity<CanvasRenderTargetPool>();
   initializeCanvasRenderTargetPool(out, canvasHost);
-  return finishEntity(out);
+  return out;
 }
 
 export function destroyCanvasEffectState(_state: CanvasRenderState, pipeline: CanvasEffectState): void {

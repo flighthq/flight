@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction, Kind } from '@flighthq/entity/contract';
 
 import type { Material } from './contract.materials-types.ts';
@@ -9,7 +9,7 @@ export function cloneMaterial(source: Readonly<Material>): Material {
   const clone = allocateEntity<Material>();
   clone.kind = source.kind;
   copyMaterialFields(clone, source, source.kind);
-  return finishEntity(clone);
+  return clone;
 }
 
 // Structural copy for pooling and reuse. Writes all own enumerable fields from `source`
@@ -22,7 +22,7 @@ export function copyMaterial(out: Material, source: Readonly<Material>): void {
 export function createMaterial(kind: Kind): Material {
   const material = allocateEntity<Material>();
   initializeMaterial(material, kind);
-  return finishEntity(material);
+  return material;
 }
 
 // Structural equality for dedup, pooling, and serialization round-trips — NOT the batch

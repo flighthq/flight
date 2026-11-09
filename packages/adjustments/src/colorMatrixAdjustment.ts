@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 
 import { initializeAdjustment } from './adjustment.ts';
@@ -11,7 +11,7 @@ export function createColorMatrixAdjustment(colorMatrix: Readonly<Float32Array>)
   }
   const out = allocateEntity<ColorMatrixAdjustment>();
   initializeColorMatrixAdjustment(out, 'ColorMatrixAdjustment', new Float32Array(colorMatrix));
-  return finishEntity(out);
+  return out;
 }
 
 // Returns the 4×5 color matrix a stack operation contributes to the fused matrix-tier pass, or null if

@@ -1,5 +1,5 @@
 import { computeRgbaCssString } from '@flighthq/color/contract';
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 import { invalidateImageResource } from '@flighthq/image/contract';
 import type { ImageResource } from '@flighthq/image/contract';
@@ -43,7 +43,7 @@ interface GlRichTextData extends RendererData {
 export function createGlRichTextData(_state: GlRenderState, _source: NodeAny): RendererData {
   const out = allocateEntity<GlRichTextData>();
   initializeGlRichTextData(out, _state, _source);
-  return finishEntity(out);
+  return out;
 }
 
 // Remove the GPU realization while its Image key is still valid, then return the raster allocation to

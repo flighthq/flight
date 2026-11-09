@@ -1,7 +1,7 @@
 // Generated from crates/flight-selection/src/selection_state.rs by flight-compiler.
 // Rust is authoritative; run `npm run generate` after changing it.
 
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { NodeRef } from '@flighthq/node/contract';
 import { createSignal, emitSignal } from '@flighthq/signals/contract';
 
@@ -25,7 +25,6 @@ interface ActiveChangeEvent {
 function createSelectionStateCore(): SelectionStateRaw {
   let out: SelectionStateRaw = allocateEntity<SelectionStateRaw>();
   initializeSelectionStateCore(out);
-  finishEntity(out);
   return out;
 }
 

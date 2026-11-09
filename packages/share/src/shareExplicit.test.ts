@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 
 import { shareText } from './share.ts';
 import type { HostShareContentCapability, ShareContent } from './types.ts';

@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 
 import type { Bitmap, BitmapFingerprint } from './types.ts';
@@ -48,7 +48,7 @@ export function createBitmapFingerprint(source: Readonly<Bitmap>, gridSize: numb
     return (() => {
       const out = allocateEntity<BitmapFingerprint>();
       initializeBitmapFingerprint(out, gridSize, cells);
-      return finishEntity(out);
+      return out;
     })();
 
   for (let cy = 0; cy < gridSize; cy++) {
@@ -79,7 +79,7 @@ export function createBitmapFingerprint(source: Readonly<Bitmap>, gridSize: numb
   }
   const out = allocateEntity<BitmapFingerprint>();
   initializeBitmapFingerprint(out, gridSize, cells);
-  return finishEntity(out);
+  return out;
 }
 
 /**
@@ -127,5 +127,5 @@ export function parseBitmapFingerprint(text: string): BitmapFingerprint | null {
   }
   const out = allocateEntity<BitmapFingerprint>();
   initializeBitmapFingerprint(out, gridSize, cells);
-  return finishEntity(out);
+  return out;
 }

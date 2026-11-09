@@ -1,6 +1,6 @@
 import { createCollisionContactManifold3D } from '@flighthq/collision/contract';
 import type { CollisionContactManifold3D } from '@flighthq/collision/contract';
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 
 import { collidePhysics3DColliderShapes } from './colliderCollision.ts';
@@ -25,13 +25,13 @@ import { writeRigidBody3DWorldCenter } from './world.ts';
 export function createPhysics3DContactConstraint(): Physics3DContactConstraint {
   const out = allocateEntity<Physics3DContactConstraint>();
   initializePhysics3DContactConstraint(out);
-  return finishEntity(out);
+  return out;
 }
 
 export function createPhysics3DContactConstraintPoint(): Physics3DContactConstraintPoint {
   const out = allocateEntity<Physics3DContactConstraintPoint>();
   initializePhysics3DContactConstraintPoint(out);
-  return finishEntity(out);
+  return out;
 }
 
 // Allocates one contact constraint with no points. The solver owns this record; nothing here belongs

@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 import { CompressedImageTextureSourceKind, ImageTextureSourceKind } from '@flighthq/texture/contract';
 
@@ -18,13 +18,13 @@ export function cloneImageResource(resource: Readonly<ImageResource>): ImageReso
   out.source = resource.source;
   out.version = resource.version;
   out.width = resource.width;
-  return finishEntity(out);
+  return out;
 }
 
 export function createCompressedImageResource(compressed: Readonly<CompressedImageData>): CompressedImageResource {
   const out = allocateEntity<CompressedImageResource>();
   initializeCompressedImageResource(out, compressed);
-  return finishEntity(out);
+  return out;
 }
 
 // Wraps a borrowed host handle whose size is read through the registered host dimension resolver. A

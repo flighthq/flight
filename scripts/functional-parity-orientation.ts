@@ -28,7 +28,7 @@ import { fileURLToPath } from 'node:url';
 
 import { compareBitmapFingerprints, parseBitmapFingerprint } from '@flighthq/bitmap/contract';
 import type { BitmapFingerprint } from '@flighthq/bitmap/contract';
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 
 export interface FunctionalOrientationFinding {
   backends: readonly [string, string];
@@ -56,7 +56,7 @@ export function mirrorBitmapFingerprintVertically(fingerprint: Readonly<BitmapFi
   const out = allocateEntity<BitmapFingerprint>();
   out.cells = cells;
   out.gridSize = gridSize;
-  return finishEntity(out);
+  return out;
 }
 
 /**

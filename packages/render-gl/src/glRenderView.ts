@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import { createViewport } from '@flighthq/node/contract';
 import type { RenderViewTargetOptions } from '@flighthq/render/contract';
 
@@ -30,7 +30,7 @@ export function createGlRenderViewResources(
   out.renderState = createGlRenderState(context, { ...options, pixelRatio: devicePixelRatio });
   out.renderTarget = createGlTextureRenderTarget(out.renderState, { ...target, height, width });
   out.viewport = createViewport({ devicePixelRatio, height, width });
-  return finishEntity(out);
+  return out;
 }
 
 // Frees the storage and command state this builder allocated. The context stays caller-owned: host.gl

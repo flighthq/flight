@@ -1,14 +1,12 @@
-import { finishEntity } from '@flighthq/entity/contract';
-
 import { allocateSurface } from './surface.ts';
 import { resizeSurface, setSurfaceDisplaySize } from './surfaceDisplay.ts';
 import type { HostSurfaceDisplayCapability, HostSurfaceResizeCapability, Surface } from './types.ts';
 
 function capabilityOf<T>(fields: T): T {
-  return finishEntity(Object.assign(allocateSurface<Surface>(null), fields) as never) as T;
+  return Object.assign(allocateSurface<Surface>(null), fields) as never as T;
 }
 
-const surface = finishEntity(allocateSurface<Surface>({}));
+const surface = allocateSurface<Surface>({});
 
 describe('resizeSurface', () => {
   it('routes the device-pixel size to the surface through the capability', () => {

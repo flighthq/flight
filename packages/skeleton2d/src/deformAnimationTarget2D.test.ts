@@ -1,5 +1,5 @@
 import { createAnimationChannel, createAnimationClip, createAnimationTrack } from '@flighthq/animation/contract';
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import { afterEach, describe, expect, it } from 'vitest';
 
 import { applyAnimationClipToSkeleton2D } from './applyAnimationClipToSkeleton2D.ts';
@@ -40,7 +40,7 @@ function mesh(pointCount: number): MeshAttachment2D {
   out.uvs = new Float32Array(pointCount * 2);
   out.vertexCount = pointCount;
   out.vertices = null;
-  return finishEntity(out) as MeshAttachment2D;
+  return out as MeshAttachment2D;
 }
 
 function rig(attachment: MeshAttachment2D | null): {

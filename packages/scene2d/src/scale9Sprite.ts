@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 import type { RectangleLike } from '@flighthq/geometry/contract';
 
@@ -18,7 +18,7 @@ export function createScale9Sprite(scale9Grid: Readonly<RectangleLike>): Scale9S
 export function createScale9SpriteData(scale9Grid: Readonly<RectangleLike>): Scale9SpriteData {
   const out = allocateEntity<Scale9SpriteData>();
   initializeScale9SpriteData(out, scale9Grid);
-  return finishEntity(out);
+  return out;
 }
 
 export function createScale9SpriteRuntime(): Scale9SpriteRuntime {

@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import { createSignal, emitSignal } from '@flighthq/signals/contract';
 
 import type {
@@ -98,7 +98,7 @@ export function enableSocketSignals(socket: Socket): SocketSignals {
       out.onSocketMessage = createSignal<Readonly<SocketMessage>>();
       out.onSocketClose = createSignal<Readonly<SocketCloseInfo>>();
       out.onSocketError = createSignal<void>();
-      return finishEntity(out);
+      return out;
     })();
   }
   return runtime.signals;

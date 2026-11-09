@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 import type { ImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import type { Scene3DDocument } from '@flighthq/scene3d/contract';
@@ -23,7 +23,7 @@ export function createAwd2ParseState(
 ): Awd2ParseState {
   const out = allocateEntity<Awd2ParseState>();
   initializeAwd2ParseState(out, document, source, view, diagnostics);
-  return finishEntity(out);
+  return out;
 }
 
 // Expands a handler array into the flat block-type table the walk dispatches through. Built once per

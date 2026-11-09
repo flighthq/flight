@@ -1,5 +1,5 @@
 import type { CollisionBuiltInShape2D } from '@flighthq/collision/contract';
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 import {
   addPhysics2DBody,
@@ -108,7 +108,7 @@ import type {
 export function createReferencePhysics2DAbi(): Physics2DAbi {
   const out = allocateEntity<Physics2DAbi>();
   initializeReferencePhysics2DAbi(out);
-  return finishEntity(out);
+  return out;
 }
 
 // The executable specification for the Physics2D ABI: a real `Physics2DWorld` behind persistent

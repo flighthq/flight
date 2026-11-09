@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import {
   createImageResource,
   registerTestImageDimensionResolver,
@@ -103,7 +103,7 @@ function emptyData(): WgpuShapeRendererData {
     colorScaleBiasUniformBuffers: [],
     colorScaleBiasBindGroups: [],
   };
-  return finishEntity(out);
+  return out;
 }
 
 describe('acquireWgpuShapeRasterSurface', () => {

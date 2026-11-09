@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 import { reserveFloat32Array } from '@flighthq/geometry/contract';
 import type { RandomSource } from '@flighthq/math/contract';
@@ -11,7 +11,7 @@ export const PARTICLE_VELOCITY_STRIDE = 3;
 export function createParticleEmitterState(random: RandomSource = Math.random): ParticleEmitterState {
   const out = allocateEntity<ParticleEmitterState>();
   initializeParticleEmitterState(out, random);
-  return finishEntity(out);
+  return out;
 }
 
 /** Grow the per-particle state arrays to hold at least `capacity` particles.

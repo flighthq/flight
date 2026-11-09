@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 import { cloneVector3, createVector3, setVector3 } from '@flighthq/geometry/contract';
 
@@ -24,7 +24,7 @@ export function cloneDirectionalLight(source: Readonly<DirectionalLight>): Direc
   out.shadowMapSize = source.shadowMapSize;
   out.shadowNear = source.shadowNear;
   out.shadowStrength = source.shadowStrength;
-  return finishEntity(out);
+  return out;
 }
 
 export function createDirectionalLight(options?: Readonly<DirectionalLightOptions>): DirectionalLight {

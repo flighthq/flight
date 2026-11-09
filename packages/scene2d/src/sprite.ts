@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 import type { Rectangle } from '@flighthq/geometry/contract';
 import type { BoundsNode, MethodsOf, NodeAny, RendererData } from '@flighthq/node/contract';
@@ -44,13 +44,13 @@ export function createSprite(): Sprite {
 export function createSpriteData(): SpriteData {
   const out = allocateEntity<SpriteData>();
   initializeSpriteData(out);
-  return finishEntity(out);
+  return out;
 }
 
 export function createSpriteRendererData(source: NodeAny): SpriteIdentityRendererData {
   const out = allocateEntity<SpriteIdentityRendererData>();
   initializeSpriteRendererData(out, source);
-  return finishEntity(out);
+  return out;
 }
 
 export function createSpriteRuntime(): SpriteRuntime {

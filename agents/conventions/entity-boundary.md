@@ -1,8 +1,8 @@
 # Entity Boundary
 
-Entity is the base type for **domain objects** — things in the problem space that Flight defines and allocates. A domain object carries meaning in the domain, benefits from consistent construction (`allocateEntity` → initializers → `finishEntity`), predictable field layout, and OOP binding (mapping to a C++ class of the same name). A domain object may be complex (a scene graph node with lifecycle and runtime state) or simple (an effect descriptor with a kind and parameters) — the criterion is that it describes something in the domain, not that it exercises every Entity feature.
+Entity is the base type for **domain objects** — things in the problem space that Flight defines and allocates. A domain object carries meaning in the domain, benefits from consistent construction (`allocateEntity` → initializers → return), predictable field layout, and OOP binding (mapping to a C++ class of the same name). A domain object may be complex (a scene graph node with lifecycle and runtime state) or simple (an effect descriptor with a kind and parameters) — the criterion is that it describes something in the domain, not that it exercises every Entity feature.
 
-**Dispatch infrastructure** — function tables, containers that map kinds to handlers, and bundles of these — is not a domain object. It is the plumbing that connects domain objects to each other: a renderer maps a node kind to draw calls, a registry table maps kinds to handlers, a pipeline bundles registry tables, a host capability maps platform operations to functions. Dispatch infrastructure does not extend Entity, is not allocated via `allocateEntity`/`finishEntity`, and is formed as an object literal or returned from an ordinary factory.
+**Dispatch infrastructure** — function tables, containers that map kinds to handlers, and bundles of these — is not a domain object. It is the plumbing that connects domain objects to each other: a renderer maps a node kind to draw calls, a registry table maps kinds to handlers, a pipeline bundles registry tables, a host capability maps platform operations to functions. Dispatch infrastructure does not extend Entity, is not allocated via `allocateEntity`, and is formed as an object literal or returned from an ordinary factory.
 
 ## The test
 
@@ -18,7 +18,7 @@ Dispatch infrastructure (plain data) — **all** of:
 
 1. **It connects, dispatches, or maps.** It is a function table, a kind-to-handler lookup, or a bundle of these. Its purpose is to wire domain objects to behavior, not to describe something in the domain.
 2. **You would not name a C++ class after it.** You would not say "create a renderer" or "create a registry table" the way you say "create a sprite" or "create a blur effect." In C++ it is a `struct` of function pointers, an `unordered_map`, or a plain aggregate — not a class with a constructor.
-3. **It is formed as a literal.** Construction is assigning fields or inserting map entries, not an initialization chain. `allocateEntity`/`finishEntity` would be boilerplate around what is already an object literal.
+3. **It is formed as a literal.** Construction is assigning fields or inserting map entries, not an initialization chain. `allocateEntity` would be boilerplate around what is already an object literal.
 
 ## Why this boundary holds
 
@@ -28,7 +28,7 @@ Dispatch infrastructure is structurally distinct. Function tables and kind-to-ha
 
 ## What is dispatch infrastructure
 
-Types that do not extend Entity and are not allocated via `allocateEntity`/`finishEntity`:
+Types that do not extend Entity and are not allocated via `allocateEntity`:
 
 - **Registry tables** (`KeyedTable`, `SlotTable`, `OrdinalTable`) — containers with copy-on-write semantics mapping kinds to handlers. Plain frozen objects.
 - **Render registries** (`GlRenderRegistries`, `WgpuRenderRegistries`, `CanvasRenderRegistries`) — bags of registry tables. Destructured into the render state runtime on use.

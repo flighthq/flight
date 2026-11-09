@@ -1,6 +1,5 @@
 import type { AppWindow } from '@flighthq/app/contract';
 import type { EntityRaw as Entity } from '@flighthq/entity/contract';
-import { finishEntity } from '@flighthq/entity/contract';
 
 import { allocateSurface, getSurfaceHandle } from './surface.ts';
 import type { HostWgpuSurfaceCapability, SurfaceWithAcquisition } from './types.ts';
@@ -17,7 +16,7 @@ interface TestWgpuOptions {
 type TestWgpuCapability = HostWgpuSurfaceCapability<TestWgpuAcquisition, TestWgpuOptions>;
 
 function wgpuCapability(fields: TestWgpuCapability): TestWgpuCapability {
-  return finishEntity(Object.assign(allocateSurface(null), fields) as never) as unknown as TestWgpuCapability;
+  return Object.assign(allocateSurface(null), fields) as never as unknown as TestWgpuCapability;
 }
 
 const appWindow = {} as AppWindow;

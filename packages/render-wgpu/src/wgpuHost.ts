@@ -1,4 +1,4 @@
-import { allocateEntity, createEntityRuntime, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity, createEntityRuntime } from '@flighthq/entity/contract';
 import { EntityRuntimeKey } from '@flighthq/entity/contract';
 import type { NativeSurfaceHandle, Surface, SurfaceRuntime } from '@flighthq/surface/contract';
 
@@ -20,7 +20,7 @@ export function createTestWgpuSurface(canvas: HTMLCanvasElement): Surface {
   const runtime = createEntityRuntime() as SurfaceRuntime;
   runtime.handle = canvas;
   surface[EntityRuntimeKey] = runtime;
-  return finishEntity(surface);
+  return surface;
 }
 
 export const testWgpuHost: HostWgpuCapability = initializeTestWgpuHost();
@@ -65,7 +65,7 @@ function initializeTestWgpuHost(): HostWgpuCapability {
         acquisition.format = format;
         acquisition.ownership = 'flight';
         acquisition.surface = canvas;
-        return finishEntity(acquisition);
+        return acquisition;
       } catch (error) {
         device.destroy();
         throw error;

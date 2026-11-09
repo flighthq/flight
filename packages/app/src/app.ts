@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 import type { HostLifecycleCapability } from '@flighthq/lifecycle/contract';
 import type { MenuItemTemplate } from '@flighthq/menu/contract';
@@ -145,7 +145,7 @@ export function clearAppRecentDocuments(hostAppRecentDocuments: Readonly<HostApp
 export function createAppEvents(): AppEvents {
   const out = allocateEntity<AppEvents>();
   initializeAppEvents(out);
-  return finishEntity(out);
+  return out;
 }
 
 export function detachAppEvents(app: AppEvents): void {

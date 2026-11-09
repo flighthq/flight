@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction, NonEntityCreateResult } from '@flighthq/entity/contract';
 import { clearSignal, createSignal, emitSignal } from '@flighthq/signals/contract';
 
@@ -94,7 +94,7 @@ export function createGlobalShortcut(
     shortcut: (() => {
       const out = allocateEntity<GlobalShortcut>();
       initializeGlobalShortcut(out, formatParsedAccelerator(outcome));
-      return finishEntity(out);
+      return out;
     })(),
   };
 }

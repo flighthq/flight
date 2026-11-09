@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 import { clearSignal, createSignal, emitSignal } from '@flighthq/signals/contract';
 
@@ -47,7 +47,7 @@ export function clearMediaSessionPositionState(
 export function createMediaSessionActionSignal(action: MediaSessionAction): MediaSessionActionSignal {
   const out = allocateEntity<MediaSessionActionSignal>();
   initializeMediaSessionActionSignal(out, action);
-  return finishEntity(out);
+  return out;
 }
 
 // Provider lifetime is separate from per-action subscription lifetime. Every distinct provider is

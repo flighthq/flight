@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import { createMatrix, createRectangle, setRectangle } from '@flighthq/geometry/contract';
 import type { MatrixLike, Rectangle } from '@flighthq/geometry/contract';
 import {

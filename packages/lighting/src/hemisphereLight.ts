@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 
 import type { HemisphereLight, HemisphereLightOptions } from './types.ts';
@@ -18,7 +18,7 @@ export function cloneHemisphereLight(source: Readonly<HemisphereLight>): Hemisph
 export function createHemisphereLight(options?: Readonly<HemisphereLightOptions>): HemisphereLight {
   const out = allocateEntity<HemisphereLight>();
   initializeHemisphereLight(out, options);
-  return finishEntity(out);
+  return out;
 }
 
 // Gradient ambient: `skyColor` from above, `groundColor` from below, blended by the surface

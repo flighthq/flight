@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import { describe, expect, it } from 'vitest';
 
 import { createCompositeCommand } from './command.ts';
@@ -13,10 +13,10 @@ describe('explainCommandDispatch', () => {
       explainCommandDispatch(
         history,
         (() => {
-          const out = allocateEntity<any>();
+          const out = allocateEntity<any>() as any;
           out.kind = 'acme.Unbound';
           out.label = 'Nope';
-          return finishEntity(out);
+          return out;
         })(),
       ),
     ).toEqual({
@@ -32,10 +32,10 @@ describe('explainCommandDispatch', () => {
       explainCommandDispatch(
         history,
         (() => {
-          const out = allocateEntity<any>();
+          const out = allocateEntity<any>() as any;
           out.kind = 'acme.Bound';
           out.label = 'Yes';
-          return finishEntity(out);
+          return out;
         })(),
       ),
     ).toEqual({
@@ -51,10 +51,10 @@ describe('explainCommandDispatch', () => {
     registerCommandBinding(history, 'CompositeCommand', { execute: () => undefined, undo: () => undefined });
     const composite = createCompositeCommand('Group', [
       (() => {
-        const out = allocateEntity<any>();
+        const out = allocateEntity<any>() as any;
         out.kind = 'acme.Unbound';
         out.label = 'Child';
-        return finishEntity(out);
+        return out;
       })(),
     ]);
     expect(explainCommandDispatch(history, composite).missingKind).toBe('acme.Unbound');
@@ -66,10 +66,10 @@ describe('explainCommandDispatch', () => {
     registerCommandBinding(history, 'acme.Bound', { execute: () => undefined, undo: () => undefined });
     const composite = createCompositeCommand('Group', [
       (() => {
-        const out = allocateEntity<any>();
+        const out = allocateEntity<any>() as any;
         out.kind = 'acme.Bound';
         out.label = 'Child';
-        return finishEntity(out);
+        return out;
       })(),
     ]);
     expect(explainCommandDispatch(history, composite).resolved).toBe(true);

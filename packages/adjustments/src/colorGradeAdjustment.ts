@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityRuntimeKey, EntityConstruction } from '@flighthq/entity/contract';
 
 import { initializeColorLutAdjustment } from './colorLutAdjustment.ts';
@@ -9,7 +9,7 @@ export function createColorGradeAdjustment(
 ): ColorGradeAdjustment {
   const out = allocateEntity<ColorGradeAdjustment>();
   initializeColorGradeAdjustment(out, options);
-  return finishEntity(out);
+  return out;
 }
 
 // The full color grade as one LUT-tier adjustment. The exposure/brightness/temperature/tint/saturation/

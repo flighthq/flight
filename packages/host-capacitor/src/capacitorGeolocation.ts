@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type {
   HostGeolocationCapability,
   GeolocationPosition,
@@ -91,7 +91,7 @@ function toGeolocationPosition(position: Readonly<CapacitorPosition>): Geolocati
   out.heading = coords.heading ?? 0;
   out.speed = coords.speed ?? 0;
   out.timestamp = position.timestamp;
-  return finishEntity(out);
+  return out;
 }
 
 // Capacitor reports 'granted' | 'denied' | 'prompt' | 'prompt-with-rationale'; the last folds to 'prompt'.

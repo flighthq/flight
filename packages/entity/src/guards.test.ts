@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from './entity.ts';
+import { allocateEntity } from './entity.ts';
 import {
   areEntityRuntimeGuardsEnabled,
   createGuardedEntity,
@@ -16,7 +16,7 @@ type TestEntity = EntityRaw & { [EntityRuntimeKey]: EntityRuntime | undefined };
 function createTestEntity(fields?: Record<string, unknown>): TestEntity & Record<string, unknown> {
   const out = allocateEntity<TestEntity>();
   if (fields) Object.assign(out, fields);
-  return finishEntity(out) as TestEntity & Record<string, unknown>;
+  return out as TestEntity & Record<string, unknown>;
 }
 
 describe('areEntityRuntimeGuardsEnabled', () => {

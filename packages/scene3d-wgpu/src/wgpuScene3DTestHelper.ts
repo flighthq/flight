@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import { EntityRuntimeKey } from '@flighthq/entity/contract';
 import { createWgpuDeviceState, createWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
 import type {
@@ -209,7 +209,7 @@ export function makeWgpuScene3DState(registry: Readonly<WgpuRenderStateOptions> 
   pass.target = target;
   pass.viewport = { height: 256, width: 256 };
 
-  return { fake: { calls }, pass: finishEntity(pass), state };
+  return { fake: { calls }, pass: pass, state };
 }
 
 export function makeWgpuSkinningAdapter(): WgpuSkinningAdapter {

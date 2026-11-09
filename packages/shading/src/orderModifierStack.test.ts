@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import { describe, expect, it } from 'vitest';
 
 import type { Modifier } from './contract.shading-types.ts';

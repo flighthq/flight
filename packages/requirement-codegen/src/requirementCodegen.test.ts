@@ -1,4 +1,4 @@
-import { allocateEntity, EntityRuntimeKey, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity, EntityRuntimeKey } from '@flighthq/entity/contract';
 import { createRequirementCatalog } from '@flighthq/requirement-catalog/contract';
 import type {
   RequirementCatalog,
@@ -36,7 +36,7 @@ describe('createRequirementCodegenPlan', () => {
         { facet: RequirementFacet.SceneNodeKind, key: 'Shape' },
         { facet: RequirementFacet.SceneNodeKind, key: 'Sprite' },
       ];
-      return finishEntity(out);
+      return out;
     })();
 
     const plan = createRequirementCodegenPlan(catalog, requirements, 'webgl');
@@ -55,7 +55,7 @@ describe('createRequirementCodegenPlan', () => {
       const out = allocateEntity<RequirementSetRaw>();
       out.covers = [RequirementFacet.SceneNodeKind, RequirementFacet.SceneShapeCommand];
       out.requirements = [requirement, requirement];
-      return finishEntity(out);
+      return out;
     })();
 
     expect(createRequirementCodegenPlan(catalog, requirements, 'webgl')).toMatchObject({
@@ -70,10 +70,10 @@ describe('createRequirementCodegenPlan', () => {
       createRequirementCodegenPlan(
         createRequirementCatalog(),
         (() => {
-          const out = allocateEntity<any>();
+          const out = allocateEntity<any>() as any;
           out.covers = [];
           out.requirements = [];
-          return finishEntity(out);
+          return out;
         })(),
         'webgl',
       ),
@@ -184,7 +184,7 @@ function disposedSet(requirements: readonly Requirement[]): RequirementSetRaw {
   const out = allocateEntity<RequirementSetRaw>();
   out.covers = [RequirementFacet.SceneNodeKind];
   out.requirements = [...requirements];
-  return finishEntity(out);
+  return out;
 }
 
 function disposition(backend: string, kind: string, reason: string): RequirementDisposition {

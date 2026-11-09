@@ -1,5 +1,5 @@
 import { computeRgbaCssString } from '@flighthq/color/contract';
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 import type { NodeAny, RendererData } from '@flighthq/node/contract';
 import type { RenderProxy2D, RenderState, Scene2DRenderer } from '@flighthq/render/contract';
@@ -33,7 +33,7 @@ interface DomRichTextData extends RendererData {
 function createDomRichTextData(_state: RenderState, _source: NodeAny): DomRichTextData {
   const out = allocateEntity<DomRichTextData>();
   initializeDomRichTextData(out);
-  return finishEntity(out);
+  return out;
 }
 
 let _measureCtx: CanvasRenderingContext2D | null = null;

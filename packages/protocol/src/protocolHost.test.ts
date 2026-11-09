@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import { EntityRuntimeKey } from '@flighthq/entity/contract';
 import { connectSignal } from '@flighthq/signals/contract';
 import { describe, expect, it, vi } from 'vitest';
@@ -20,13 +20,13 @@ describe('protocol explicit Host ownership', () => {
         launch: (() => {
           const out = allocateEntity<any>();
           out.getLaunchUrl = getLaunchUrl;
-          return finishEntity(out);
+          return out;
         })(),
         registration: (() => {
           const out = allocateEntity<any>();
           out.getRegisteredSchemes = () => ['flight'];
           out.register = register;
-          return finishEntity(out);
+          return out;
         })(),
       },
     };
@@ -48,7 +48,7 @@ describe('protocol explicit Host ownership', () => {
         open: (() => {
           const out = allocateEntity<any>();
           out.subscribe = subscribe;
-          return finishEntity(out);
+          return out;
         })(),
       },
     };

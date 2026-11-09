@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import { createMatrix } from '@flighthq/geometry/contract';
 import { describe, expect, it } from 'vitest';
 
@@ -514,7 +514,7 @@ function testRegion(name: string): RegionAttachment2D {
   out.width = 0;
   out.x = 0;
   out.y = 0;
-  return finishEntity(out) as RegionAttachment2D;
+  return out as RegionAttachment2D;
 }
 describe('validateSkeleton2D', () => {
   it('returns null for a valid parent-before-child skeleton', () => {

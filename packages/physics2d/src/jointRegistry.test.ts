@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import { describe, expect, it } from 'vitest';
 
 import {
@@ -46,7 +46,7 @@ function joint(kind: string, bodyA: number, bodyB: number, anchorAX = 0, anchorB
   out.rAY = 0;
   out.rBX = 0;
   out.rBY = 0;
-  return finishEntity(out);
+  return out;
 }
 
 describe('addPhysics2DJoint', () => {

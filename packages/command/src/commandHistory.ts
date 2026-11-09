@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 import { emitSignal } from '@flighthq/signals/contract';
 
@@ -30,7 +30,7 @@ export function clearCommandHistory(history: CommandHistory): void {
 export function createCommandHistory(maxSize = 0): CommandHistory {
   const out = allocateEntity<CommandHistory>();
   initializeCommandHistory(out, maxSize);
-  return finishEntity(out);
+  return out;
 }
 
 // Applies `command` and pushes it. Returns false and changes nothing when the command's kind has no

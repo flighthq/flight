@@ -1,5 +1,5 @@
 import { disableEntityRuntimeGuards, enableEntityRuntimeGuards } from './enableEntityRuntimeGuards.ts';
-import { allocateEntity, finishEntity } from './entity.ts';
+import { allocateEntity } from './entity.ts';
 import { areEntityRuntimeGuardsEnabled, createGuardedEntity, createGuardedEntityRuntime } from './guards.ts';
 import { createEntityRuntime } from './runtime.ts';
 import type { EntityRaw, EntityRuntime, EntityRuntimeWriteSlot } from './types.ts';
@@ -8,7 +8,7 @@ import { EntityRuntimeKey } from './types.ts';
 type TestEntity = EntityRaw & { [EntityRuntimeKey]: EntityRuntime | undefined };
 
 function createTestEntity(): TestEntity {
-  return finishEntity(allocateEntity<TestEntity>());
+  return allocateEntity<TestEntity>();
 }
 
 // Every case runs the write under a reporter that records the slot, so what is asserted is what the

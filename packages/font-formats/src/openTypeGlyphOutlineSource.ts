@@ -1,5 +1,5 @@
 import type { HostDecompressDeflateCapability } from '@flighthq/compression/contract';
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction, EntityRaw } from '@flighthq/entity/contract';
 import { detectFontFormat } from '@flighthq/font/contract';
 import type { GlyphOutlineMetrics, GlyphOutlineSource } from '@flighthq/font/contract';
@@ -67,7 +67,7 @@ export function createGlyphOutlineSourceFromOpenTypeFont(
 
   const out = allocateEntity<GlyphOutlineSource & EntityRaw>();
   initializeGlyphOutlineSourceFromOpenTypeFont(out, parsed);
-  return finishEntity(out);
+  return out;
 }
 
 // Why `createGlyphOutlineSourceFromOpenTypeFont` returned null, as plain data.

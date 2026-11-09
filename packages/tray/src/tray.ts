@@ -1,4 +1,4 @@
-import { allocateEntity, createEntityRuntime, EntityRuntimeKey, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity, createEntityRuntime, EntityRuntimeKey } from '@flighthq/entity/contract';
 import type { EntityConstruction, EntityRaw, EntityRuntime } from '@flighthq/entity/contract';
 import type { Vector2Like } from '@flighthq/geometry/contract';
 import type { MenuItemTemplate } from '@flighthq/menu/contract';
@@ -72,19 +72,19 @@ export async function createTrayIcon(
   hostTrayLifecycle: Readonly<HostTrayLifecycleCapability>,
   options: Readonly<TrayIconOptions> = {},
 ): Promise<TrayCreateResult> {
-  const tray = finishEntity(allocateEntity<TrayIcon>());
+  const tray = allocateEntity<TrayIcon>();
   let result: TrayCreateCapabilityResult;
   try {
     result = await hostTrayLifecycle.create(tray, options);
   } catch (error) {
     const out = allocateEntity<Entity & { error?: unknown; outcome: 'tray-create-failed' }>();
     initializeTrayCreateFailedResult(out, error, 'tray-create-failed');
-    return finishEntity(out);
+    return out;
   }
   if (result.outcome !== 'created') {
     const out = allocateEntity<TrayCreateResult>();
     initializeTrayCreateProviderFailureResult(out, 'error' in result ? result.error : undefined, result.outcome);
-    return finishEntity(out);
+    return out;
   }
 
   const runtime = createEntityRuntime() as TrayRuntime;
@@ -98,7 +98,7 @@ export async function createTrayIcon(
   tray[EntityRuntimeKey] = runtime;
   const out = allocateEntity<Entity & { outcome: 'created'; tray: TrayIcon }>();
   initializeTrayCreateSuccessResult(out, 'created', tray);
-  return finishEntity(out);
+  return out;
 }
 
 export function destroyTrayIcon(tray: TrayIcon): Promise<TrayDestroyResult> {

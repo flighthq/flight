@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 
 import type { EmissiveModifier, EmissiveModifierOptions } from './contract.shading-types.ts';
@@ -13,7 +13,7 @@ import { initializeModifier } from './modifier.ts';
 export function createEmissiveModifier(options: Readonly<EmissiveModifierOptions>): EmissiveModifier {
   const out = allocateEntity<EmissiveModifier>();
   initializeEmissiveModifier(out, options);
-  return finishEntity(out);
+  return out;
 }
 
 // Builds an EmissiveModifier (slot: Emissive) — a self-illuminating contribution added to the shaded

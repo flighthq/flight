@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 
 import { acquireIdentityMatrix4, acquireMatrix4, releaseMatrix4 } from './matrix4Pool.ts';
@@ -342,7 +342,7 @@ export function copyMatrix4RowToVector4(out: Vector4Like, row: number, source: R
 export function createMatrix4(): Matrix4 {
   const out = allocateEntity<Matrix4>();
   initializeMatrix4(out);
-  return finishEntity(out);
+  return out;
 }
 
 /**

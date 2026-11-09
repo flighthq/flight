@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import { EntityRuntimeKey } from '@flighthq/entity/contract';
 import { connectSignal } from '@flighthq/signals/contract';
 import { describe, expect, it, vi } from 'vitest';
@@ -31,40 +31,40 @@ function createFixture() {
   const host = {
     protocol: {
       default: (() => {
-        const out = allocateEntity<any>();
+        const out = allocateEntity<any>() as any;
         out.isDefault = (scheme: string) => scheme === 'flight';
         out.removeAsDefault = (scheme: string) => (calls.push(`removeDefault:${scheme}`), true);
         out.setAsDefault = (scheme: string) => (calls.push(`default:${scheme}`), true);
-        return finishEntity(out);
+        return out;
       })(),
       launch: (() => {
-        const out = allocateEntity<any>();
+        const out = allocateEntity<any>() as any;
         out.getLaunchUrl = () => 'flight://cold-start';
-        return finishEntity(out);
+        return out;
       })(),
       open: (() => {
-        const out = allocateEntity<any>();
+        const out = allocateEntity<any>() as any;
         out.subscribe = (listener: (url: string) => void) => {
           open = listener;
           return unsubscribe;
         };
-        return finishEntity(out);
+        return out;
       })(),
       registration: (() => {
-        const out = allocateEntity<any>();
+        const out = allocateEntity<any>() as any;
         out.getRegisteredSchemes = () => ['flight'];
         out.register = (scheme: string) => (calls.push(`register:${scheme}`), scheme !== 'fail');
-        return finishEntity(out);
+        return out;
       })(),
       registrationQuery: (() => {
-        const out = allocateEntity<any>();
+        const out = allocateEntity<any>() as any;
         out.isRegistered = (scheme: string) => scheme === 'flight';
-        return finishEntity(out);
+        return out;
       })(),
       unregistration: (() => {
-        const out = allocateEntity<any>();
+        const out = allocateEntity<any>() as any;
         out.unregister = (scheme: string) => (calls.push(`unregister:${scheme}`), scheme !== 'fail');
-        return finishEntity(out);
+        return out;
       })(),
     },
   };

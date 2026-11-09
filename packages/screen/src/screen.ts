@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity, stripEntityRuntime } from '@flighthq/entity/contract';
+import { allocateEntity, stripEntityRuntime } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 import type { RectangleLike, Vector2Like } from '@flighthq/geometry/contract';
 import { clearSignal, createSignal, emitSignal } from '@flighthq/signals/contract';
@@ -40,25 +40,25 @@ export function attachScreenSignals(
 export function createScreenInfo(): ScreenInfo {
   const out = allocateEntity<ScreenInfo>();
   initializeScreenInfo(out);
-  return finishEntity(out);
+  return out;
 }
 
 export function createScreenMode(): ScreenMode {
   const out = allocateEntity<ScreenMode>();
   initializeScreenMode(out);
-  return finishEntity(out);
+  return out;
 }
 
 export function createScreenPermissionChange(): ScreenPermissionChange {
   const out = allocateEntity<ScreenPermissionChange>();
   initializeScreenPermissionChange(out);
-  return finishEntity(out);
+  return out;
 }
 
 export function createScreenSignals(): ScreenSignals {
   const out = allocateEntity<ScreenSignals>();
   initializeScreenSignals(out);
-  return finishEntity(out);
+  return out;
 }
 
 export function detachScreenPermissionChange(permissionChange: ScreenPermissionChange): void {

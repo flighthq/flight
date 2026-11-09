@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 
 import type { Vector3Like, Vector4, Vector4Like } from './types.ts';
@@ -90,7 +90,7 @@ export function copyVector4(out: Vector4Like, source: Readonly<Vector4Like>): vo
 export function createVector4(x?: number, y?: number, z?: number, w?: number): Vector4 {
   const out = allocateEntity<Vector4>();
   initializeVector4(out, x ?? 0, y ?? 0, z ?? 0, w ?? 0);
-  return finishEntity(out);
+  return out;
 }
 
 /**

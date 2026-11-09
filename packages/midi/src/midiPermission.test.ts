@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import { describe, expect, it, vi } from 'vitest';
 
 import * as midi from './contract.ts';
@@ -15,7 +15,7 @@ describe('getMidiPermission', () => {
         permission: (() => {
           const out = allocateEntity<any>();
           out.getPermission = getPermission;
-          return finishEntity(out);
+          return out;
         })(),
       },
     };

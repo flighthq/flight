@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction, EntityWithoutRuntime } from '@flighthq/entity/contract';
 import type { RenderState } from '@flighthq/render/contract';
 import type { EffectPadding } from '@flighthq/render/contract';
@@ -15,7 +15,7 @@ export function createBitmapDisplacementEffect(
 ): BitmapDisplacementEffect {
   const out = allocateEntity<BitmapDisplacementEffect>();
   initializeBitmapDisplacementEffect(out, map, options);
-  return finishEntity(out);
+  return out;
 }
 
 export function getBitmapDisplacementEffectPadding(effect: Readonly<BitmapDisplacementEffect>): EffectPadding {

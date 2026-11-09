@@ -1,6 +1,6 @@
 import { getCamera3DPosition, getCamera3DViewProjectionMatrix4 } from '@flighthq/camera/contract';
 import type { Camera3D } from '@flighthq/camera/contract';
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 import { createMatrix3, createMatrix4 } from '@flighthq/geometry/contract';
 import type { Scene3DLightBlock } from '@flighthq/lighting/contract';
@@ -135,7 +135,7 @@ export function createWgpuMeshPipeline(
 ): WgpuMeshPipeline {
   const out = allocateEntity<WgpuMeshPipeline>();
   initializeWgpuMeshPipeline(out, state, options);
-  return finishEntity(out);
+  return out;
 }
 
 // The shared per-draw tail for every mesh-material family: ring-allocates + writes the Draw uniform

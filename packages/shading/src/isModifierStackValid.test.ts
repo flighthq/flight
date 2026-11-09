@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import { describe, expect, it } from 'vitest';
 
 import type { Modifier } from './contract.shading-types.ts';
@@ -25,10 +25,10 @@ describe('isModifierStackValid', () => {
     const stack: Modifier[] = [
       createEmissiveModifier({ color: 0xffffffff }),
       (() => {
-        const out = allocateEntity<any>();
+        const out = allocateEntity<any>() as any;
         out.kind = 'acme.Missing';
         out.slot = 'Effect';
-        return finishEntity(out);
+        return out;
       })(),
     ];
     expect(isModifierStackValid(registry, stack)).toBe(false);

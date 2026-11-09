@@ -1,4 +1,4 @@
-import { allocateEntity, EntityRuntimeKey, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity, EntityRuntimeKey } from '@flighthq/entity/contract';
 import { connectSignal, disconnectSignal, hasSignalSlots } from '@flighthq/signals/contract';
 import type { Signal, SlotId } from '@flighthq/signals/contract';
 import { describe, expect, it, vi } from 'vitest';
@@ -21,7 +21,7 @@ describe('attachMidiAccessStateSubscription', () => {
         attachment: (() => {
           const out = allocateEntity<any>();
           out.release = release;
-          return finishEntity(out);
+          return out;
         })(),
         reason: 'ok',
       };
@@ -149,7 +149,7 @@ describe('detachMidiAccessStateSubscription', () => {
       attachment: (() => {
         const out = allocateEntity<any>();
         out.release = release;
-        return finishEntity(out);
+        return out;
       })(),
       reason: 'ok',
     }));
@@ -178,7 +178,7 @@ describe('detachMidiAccessStateSubscription', () => {
       attachment: (() => {
         const out = allocateEntity<any>();
         out.release = release;
-        return finishEntity(out);
+        return out;
       })(),
       reason: 'ok',
     });
@@ -199,7 +199,7 @@ describe('detachMidiInputMessageSubscription', () => {
         attachment: (() => {
           const out = allocateEntity<any>();
           out.release = release;
-          return finishEntity(out);
+          return out;
         })(),
         reason: 'ok',
       }),
@@ -221,7 +221,7 @@ describe('detachMidiPortStateSubscription', () => {
         attachment: (() => {
           const out = allocateEntity<any>();
           out.release = release;
-          return finishEntity(out);
+          return out;
         })(),
         reason: 'ok',
       }),
@@ -252,7 +252,7 @@ describe('disposeMidiAccessStateSubscription', () => {
       attachment: (() => {
         const out = allocateEntity<any>();
         out.release = release;
-        return finishEntity(out);
+        return out;
       })(),
       reason: 'ok',
     });
@@ -281,7 +281,7 @@ describe('disposeMidiInputMessageSubscription', () => {
         attachment: (() => {
           const out = allocateEntity<any>();
           out.release = release;
-          return finishEntity(out);
+          return out;
         })(),
         reason: 'ok',
       }),
@@ -362,7 +362,7 @@ function requiredFunction(name: string): (...args: unknown[]) => unknown {
 function successfulAttachment(): object {
   const out = allocateEntity<any>();
   out.release = async () => ({ reason: 'ok' });
-  return finishEntity(out);
+  return out;
 }
 describe('initializeMidiAccessStateSubscription', () => {
   it('is the construction initializer of createMidiAccessStateSubscription', () => {

@@ -1,7 +1,7 @@
 // Generated from crates/flight-input/src/input_signals.rs by flight-compiler.
 // Rust is authoritative; run `npm run generate` after changing it.
 
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { SignalRaw } from '@flighthq/signals/contract';
 import { createSignal } from '@flighthq/signals/contract';
 
@@ -40,7 +40,7 @@ export function createInputManager(): InputManagerRaw {
     onWheel: allocateEntity<SignalRaw<InputPointerData>>(),
   });
   initializeInputManager(out);
-  return finishEntity(out);
+  return out;
 }
 
 /**
@@ -49,7 +49,7 @@ export function createInputManager(): InputManagerRaw {
 export function createInputSignals(): InputSignalsRaw {
   let out: InputSignalsRaw = allocateEntity<InputSignalsRaw>();
   initializeInputSignals(out);
-  return finishEntity(out);
+  return out;
 }
 
 /**

@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityRuntimeKey, EntityConstruction } from '@flighthq/entity/contract';
 
 import { initializeColorMatrixAdjustment } from './colorMatrixAdjustment.ts';
@@ -9,7 +9,7 @@ export function createExposureAdjustment(
 ): ExposureAdjustment {
   const out = allocateEntity<ExposureAdjustment>();
   initializeExposureAdjustment(out, options);
-  return finishEntity(out);
+  return out;
 }
 
 // Linear exposure as a matrix-tier adjustment: RGB is scaled by `2^exposure` (a per-channel diagonal

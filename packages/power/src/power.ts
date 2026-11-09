@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 import { clearSignal, createSignal, emitSignal, hasSignalSlots } from '@flighthq/signals/contract';
 
@@ -118,7 +118,7 @@ export function attachPower(
 export function createPower(): Power {
   const out = allocateEntity<Power>();
   initializePower(out);
-  return finishEntity(out);
+  return out;
 }
 
 // Stops delivery without discarding the entity. Runs every teardown this entity opened, ATTEMPTING ALL

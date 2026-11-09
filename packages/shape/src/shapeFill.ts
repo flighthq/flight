@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 import { CIRCLE_KAPPA } from '@flighthq/math/contract';
 import type { Path, PathWinding } from '@flighthq/path/contract';
@@ -141,7 +141,7 @@ export function getShapeFillRegions(commands: readonly ShapeCommandToken[]): Sha
         path = (() => {
           const out = allocateEntity<Path>();
           initializePath(out, [] as number[], [] as number[], winding);
-          return finishEntity(out);
+          return out;
         })();
         break;
       }

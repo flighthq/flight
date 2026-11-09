@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 
 import type { SpritesheetAnimationData, SpritesheetData, SpritesheetFrameData } from './types.ts';
@@ -10,19 +10,19 @@ export type { SpritesheetAnimationData, SpritesheetData, SpritesheetFrameData };
 export function createSpritesheetAnimationData(obj?: Partial<SpritesheetAnimationData>): SpritesheetAnimationData {
   const out = allocateEntity<SpritesheetAnimationData>();
   initializeSpritesheetAnimationData(out, obj);
-  return finishEntity(out);
+  return out;
 }
 
 export function createSpritesheetData(obj?: Partial<SpritesheetData>): SpritesheetData {
   const out = allocateEntity<SpritesheetData>();
   initializeSpritesheetData(out, obj);
-  return finishEntity(out);
+  return out;
 }
 
 export function createSpritesheetFrameData(obj?: Partial<SpritesheetFrameData>): SpritesheetFrameData {
   const out = allocateEntity<SpritesheetFrameData>();
   initializeSpritesheetFrameData(out, obj);
-  return finishEntity(out);
+  return out;
 }
 
 export function initializeSpritesheetAnimationData(

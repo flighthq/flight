@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 
 import type { ToonModifier, ToonModifierOptions } from './contract.shading-types.ts';
@@ -12,7 +12,7 @@ import { initializeModifier } from './modifier.ts';
 export function createToonModifier(options: Readonly<ToonModifierOptions>): ToonModifier {
   const out = allocateEntity<ToonModifier>();
   initializeToonModifier(out, options);
-  return finishEntity(out);
+  return out;
 }
 
 // Builds a ToonModifier (slot: Effect) — quantizes the shaded radiance into `steps` flat cel bands,

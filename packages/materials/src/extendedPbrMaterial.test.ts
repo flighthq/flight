@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 
 import { createClearcoatPbrExtension } from './clearcoatPbrExtension.ts';
 import { ExtendedPbrMaterialKind } from './contract.materials-types.ts';
@@ -11,9 +11,9 @@ describe('createExtendedPbrMaterial', () => {
     const extensions = [
       createClearcoatPbrExtension(),
       (() => {
-        const out = allocateEntity<any>();
+        const out = allocateEntity<any>() as any;
         out.kind = 'VendorPbrExtension';
-        return finishEntity(out);
+        return out;
       })(),
     ];
 

@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import { createMatrix } from '@flighthq/geometry/contract';
 import * as renderGl from '@flighthq/render-gl/contract';
 import type { GlRenderState, GlTextureRenderTarget } from '@flighthq/render-gl/contract';
@@ -34,7 +34,7 @@ beforeEach(() => {
     descriptor: { width: number; height: number },
   ): GlTextureRenderTarget => {
     const texture = {} as WebGLTexture;
-    const out = allocateEntity<any>();
+    const out = allocateEntity<any>() as any;
     out.requestedAxes = {
       width: descriptor.width,
       height: descriptor.height,
@@ -60,7 +60,7 @@ beforeEach(() => {
     out.sampleCount = 1;
     out.width = descriptor.width;
     out.height = descriptor.height;
-    return finishEntity(out);
+    return out;
   }) as never);
   vi.spyOn(renderGl, 'destroyGlTextureRenderTarget').mockImplementation((() => {}) as never);
   vi.spyOn(renderGl, 'drawGlTextureRenderTargetResult').mockImplementation((() => {}) as never);

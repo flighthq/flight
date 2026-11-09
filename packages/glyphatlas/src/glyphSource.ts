@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 
 import { getGlyphAtlasBitmap, getGlyphAtlasLayoutVersion } from './glyphAtlas.ts';
@@ -9,7 +9,7 @@ import type { GlyphAtlas, GlyphSource } from './types.ts';
 export function createGlyphSourceFromGlyphAtlas(atlas: Readonly<GlyphAtlas>): GlyphSource {
   const out = allocateEntity<GlyphSource>();
   initializeGlyphSourceFromGlyphAtlas(out, atlas);
-  return finishEntity(out);
+  return out;
 }
 
 // Adapts a `GlyphAtlas` into the `GlyphSource` seam a text renderer consumes, binding the atlas's

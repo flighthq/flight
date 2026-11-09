@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 import { emitSignal } from '@flighthq/signals/contract';
 
@@ -125,7 +125,7 @@ export function clearNodeOrderList<Fields extends object = NodeFields>(list: Nod
 export function createNodeOrderList<Fields extends object = NodeFields>(): NodeOrderList<Fields> {
   const out = allocateEntity<NodeOrderList<Fields>>();
   initializeNodeOrderList(out);
-  return finishEntity(out);
+  return out;
 }
 
 /**

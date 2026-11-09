@@ -1,6 +1,6 @@
 import { createCompositeEffect } from '@flighthq/effects/contract';
 import type { CompositeEffect } from '@flighthq/effects/contract';
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { CanvasRenderState, CanvasTextureRenderTarget } from '@flighthq/scene2d-canvas/contract';
 
 import { registerCanvasBlendEffectBackdrop } from './canvasBlendEffect.ts';
@@ -135,7 +135,7 @@ describe('canvasCompositeEffectRunner', () => {
           out.canvasHost = canvasTestHost;
           out.free = [];
           out.inUse = [];
-          return finishEntity(out) as unknown;
+          return out as unknown;
         })() as CanvasRenderTargetPool,
       },
       compositeEffect({ operator: 'DestinationOver', backdropKey: 'scene' }),

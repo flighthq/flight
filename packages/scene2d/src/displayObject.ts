@@ -1,5 +1,5 @@
 import type { ClipRegion } from '@flighthq/clip/contract';
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { Kind } from '@flighthq/entity/contract';
 import {
   createNodeRuntime,
@@ -53,7 +53,7 @@ export function createNode2D<R extends Node2DRuntime>(
   initBlendModeTrait(out);
   initMaterialTrait(out);
   initClipTrait(out);
-  return finishEntity(out);
+  return out;
 }
 
 export function createNode2DRuntime(

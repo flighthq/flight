@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 import {
   createMidiAccessResource,
@@ -156,7 +156,7 @@ function attachWebMidiEvent<Target extends EventTarget, EventType extends Event>
   const attachmentEntity = (() => {
     const out = allocateEntity<MidiEventAttachment>();
     initializeWebMidiEventAttachment(out, target, type, eventListener);
-    return finishEntity(out);
+    return out;
   })();
   const attachment: MidiEventAttachment = attachmentEntity;
   return Promise.resolve({

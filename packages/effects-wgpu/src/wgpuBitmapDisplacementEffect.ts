@@ -1,6 +1,6 @@
 import { ImageChannel } from '@flighthq/bitmap/contract';
 import type { BitmapDisplacementEffect, Effect } from '@flighthq/effects/contract';
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 import { getWgpuSampler, resolveWgpuTexture } from '@flighthq/render-wgpu/contract';
 import type {
@@ -163,7 +163,7 @@ function getBitmapDisplacementPipeline(state: WgpuRenderState, format: WgpuTextu
       primitive: { topology: 'triangle-list' },
     }),
   );
-  pipeline = finishEntity(_entity);
+  pipeline = _entity;
   byFormat.set(format, pipeline);
   return pipeline;
 }

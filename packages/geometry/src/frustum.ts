@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 
 import { createPlane } from './plane.ts';
@@ -21,7 +21,7 @@ import type {
 export function createFrustum(): Frustum {
   const out = allocateEntity<Frustum>();
   initializeFrustum(out, createPlane(), createPlane(), createPlane(), createPlane(), createPlane(), createPlane());
-  return finishEntity(out);
+  return out;
 }
 
 /**

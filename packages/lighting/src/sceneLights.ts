@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 
 import type { Scene3DLights, Scene3DLightsLike } from './types.ts';
@@ -6,7 +6,7 @@ import type { Scene3DLights, Scene3DLightsLike } from './types.ts';
 export function createScene3DLights(options?: Readonly<Partial<Scene3DLightsLike>>): Scene3DLights {
   const out = allocateEntity<Scene3DLights>();
   initializeScene3DLights(out, options);
-  return finishEntity(out);
+  return out;
 }
 
 // Constructs a `Scene3DLights` draw-argument, filling every absent slot: the single ambient/directional

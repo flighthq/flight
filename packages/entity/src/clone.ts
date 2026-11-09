@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity, writeEntityRuntime } from './entity.ts';
+import { allocateEntity, writeEntityRuntime } from './entity.ts';
 import type { EntityRaw, EntityWithoutRuntime } from './types.ts';
 import { EntityRuntimeKey } from './types.ts';
 
@@ -15,7 +15,7 @@ export function cloneEntity<Type extends EntityRaw>(source: Readonly<Type>): Typ
     writable: true,
   });
   writeEntityRuntime(copy, undefined);
-  return finishEntity(copy);
+  return copy;
 }
 
 // Returns a plain object with the EntityRuntimeKey slot removed, ready to pass to a

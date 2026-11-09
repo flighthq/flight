@@ -1,7 +1,7 @@
 // Generated from crates/flight-textinput/src/selectable_rich_text_manager.rs by flight-compiler.
 // Rust is authoritative; run `npm run generate` after changing it.
 
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import { KeyCode } from '@flighthq/input/contract';
 import type { InputKeyboardData } from '@flighthq/input/contract';
 import type { NodeRef } from '@flighthq/node/contract';
@@ -27,7 +27,6 @@ export function createSelectableRichTextManager(): SelectableRichTextManagerRaw 
     focused: null,
   });
   initializeSelectableRichTextManager(out);
-  finishEntity(out);
   return out;
 }
 

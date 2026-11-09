@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 
 import type {
@@ -27,7 +27,7 @@ export function createRay3D(
   const direction = createVector3(directionX ?? 0, directionY ?? 0, directionZ ?? 1);
   const out = allocateEntity<Ray3D>();
   initializeRay3D(out, origin, direction);
-  return finishEntity(out);
+  return out;
 }
 
 /**

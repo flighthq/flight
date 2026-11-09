@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 import {
   WgpuBufferUsage,
@@ -255,7 +255,7 @@ export function createWgpuDualSourceEffectPipeline(
 ): WgpuDualSourceEffectPipeline {
   const out = allocateEntity<WgpuEffectPipeline>();
   initializeWgpuDualSourceEffectPipeline(out, state, fragmentWGSL, blend);
-  return finishEntity(out);
+  return out;
 }
 
 export function createWgpuEffectPipeline(
@@ -265,7 +265,7 @@ export function createWgpuEffectPipeline(
 ): WgpuEffectPipeline {
   const out = allocateEntity<WgpuEffectPipeline>();
   initializeWgpuEffectPipeline(out, state, fragmentWGSL, blend);
-  return finishEntity(out);
+  return out;
 }
 
 /**

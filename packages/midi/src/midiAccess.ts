@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 
 import { disposeMidiPort } from './midiPort.ts';
@@ -21,7 +21,7 @@ import type {
 export function createMidiAccessResource(operations: MidiAccessResourceOperations): MidiAccess {
   const out = allocateEntity<MidiAccess>();
   initializeMidiAccessResource(out);
-  const access = finishEntity(out);
+  const access = out;
   retainMidiAccessResourceState(access, operations);
   return access;
 }

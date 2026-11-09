@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 import { getNodeChildIndex } from '@flighthq/node/contract';
 import type { NodeAny } from '@flighthq/node/contract';
@@ -37,14 +37,14 @@ export function createAddNodeChildCommand(
 ): AddNodeChildCommand {
   const out = allocateEntity<AddNodeChildCommand>();
   initializeAddNodeChildCommand(out, label, parent, child, index);
-  return finishEntity(out);
+  return out;
 }
 
 /** Applies `children` as one history entry, in order; undo runs them in reverse. Nesting is allowed. */
 export function createCompositeCommand(label: string, children: readonly Command[]): CompositeCommand {
   const out = allocateEntity<CompositeCommand>();
   initializeCompositeCommand(out, label, children);
-  return finishEntity(out);
+  return out;
 }
 
 // Removes `child` from `parent`, capturing its CURRENT index so undo restores position and not merely
@@ -52,7 +52,7 @@ export function createCompositeCommand(label: string, children: readonly Command
 export function createRemoveNodeChildCommand(label: string, parent: NodeAny, child: NodeAny): RemoveNodeChildCommand {
   const out = allocateEntity<RemoveNodeChildCommand>();
   initializeRemoveNodeChildCommand(out, label, parent, child);
-  return finishEntity(out);
+  return out;
 }
 
 // Moves `child` to `toIndex`, capturing where it started. Build this before moving the child.
@@ -64,7 +64,7 @@ export function createReorderNodeChildCommand(
 ): ReorderNodeChildCommand {
   const out = allocateEntity<ReorderNodeChildCommand>();
   initializeReorderNodeChildCommand(out, label, parent, child, toIndex);
-  return finishEntity(out);
+  return out;
 }
 
 // One property assignment. `before` is read from the node NOW, so build this before writing the value.
@@ -83,7 +83,7 @@ export function createSetNodePropertyCommand(
 ): SetNodePropertyCommand {
   const out = allocateEntity<SetNodePropertyCommand>();
   initializeSetNodePropertyCommand(out, label, target, property, value, mergeWindow, time);
-  return finishEntity(out);
+  return out;
 }
 
 // Several property assignments applied together as one entry — the shape a gizmo drag produces when it
@@ -106,7 +106,7 @@ export function createSetNodePropertyCommandBatch(
   out.label = label;
   out.mergeWindow = mergeWindow;
   out.time = time;
-  return finishEntity(out);
+  return out;
 }
 
 export function initializeAddNodeChildCommand(

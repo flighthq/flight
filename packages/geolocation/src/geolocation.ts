@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 
 import type {
@@ -16,7 +16,7 @@ export function clearGeolocationWatch(hostGeolocation: Readonly<HostGeolocationC
 export function createGeolocationPosition(): FlightGeolocationPosition {
   const out = allocateEntity<FlightGeolocationPosition>();
   initializeGeolocationPosition(out);
-  return finishEntity(out);
+  return out;
 }
 
 export function getCurrentGeolocationPosition(

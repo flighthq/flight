@@ -1,5 +1,5 @@
 import type { ColorScaleBias } from '@flighthq/adjustments/contract';
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import { getGlColorAdjustmentMaterialFeature, getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
 import { areColorAdjustmentsEnabled } from '@flighthq/render/contract';
 
@@ -152,9 +152,9 @@ describe('registerGlColorAdjustmentMaterialFeature', () => {
     recordGlQuadBatchColorScaleBias(
       state,
       (() => {
-        const out = allocateEntity<any>();
+        const out = allocateEntity<any>() as any;
         out.tint = 0x808080ff;
-        return finishEntity(out);
+        return out;
       })(),
       0,
     );
@@ -174,9 +174,9 @@ describe('registerGlColorAdjustmentMaterialFeature', () => {
     recordGlQuadBatchColorScaleBias(
       state,
       (() => {
-        const out = allocateEntity<any>();
+        const out = allocateEntity<any>() as any;
         out.tint = 0x12345678;
-        return finishEntity(out);
+        return out;
       })(),
       1,
     );

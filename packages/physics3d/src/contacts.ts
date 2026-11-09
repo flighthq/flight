@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 
 import type { Physics3DContact, Physics3DContactPoint } from './types.ts';
@@ -19,13 +19,13 @@ import type { Physics3DContact, Physics3DContactPoint } from './types.ts';
 export function createPhysics3DContact(bodyA: number, bodyB: number, colliderA = 0, colliderB = 0): Physics3DContact {
   const out = allocateEntity<Physics3DContact>();
   initializePhysics3DContact(out, bodyA, bodyB, colliderA, colliderB);
-  return finishEntity(out);
+  return out;
 }
 
 export function createPhysics3DContactPoint(): Physics3DContactPoint {
   const out = allocateEntity<Physics3DContactPoint>();
   initializePhysics3DContactPoint(out);
-  return finishEntity(out);
+  return out;
 }
 
 // Allocates one contact between two bodies, in canonical order.

@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { Entity, EntityConstruction } from '@flighthq/entity/contract';
 
 import { reportSpatialIndexing } from './spatialIndexingGuard.ts';
@@ -18,7 +18,7 @@ import { MAX_INDEXED_CELLS_PER_OBJECT } from './uniformGrid.ts';
 export function createUniformGridSpatialBackend3D(cellSize: number): SpatialIndexBackend3D & Entity {
   const out = allocateEntity<SpatialIndexBackend3D & Entity>();
   initializeUniformGridSpatialBackend3D(out, cellSize);
-  return finishEntity(out);
+  return out;
 }
 
 // Builds a 3D uniform-grid (spatial-hash) backend: an object's AABB is mapped to the rectangular

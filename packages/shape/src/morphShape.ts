@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 import { invalidateContent } from '@flighthq/node/contract';
 import { createPath, samplePathMorph } from '@flighthq/path/contract';
@@ -63,7 +63,6 @@ export function initializeMorphShapeData(out: EntityConstruction<MorphShapeData>
   out.path = path;
   out.pathBindings = pathBindings;
   out.progress = progress;
-  finishEntity(out);
   sampleMorphShapePaintBindings(out, progress);
 }
 

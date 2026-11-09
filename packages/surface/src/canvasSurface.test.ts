@@ -1,12 +1,11 @@
 import type { AppWindow } from '@flighthq/app/contract';
-import { finishEntity } from '@flighthq/entity/contract';
 
 import { createCanvasSurface, createCanvasSurfaceFromNativeHandle, destroyCanvasSurface } from './canvasSurface.ts';
 import { allocateSurface, getSurfaceHandle } from './surface.ts';
 import type { CanvasSurface, HostCanvasCapability } from './types.ts';
 
 function canvasCapability(fields: HostCanvasCapability): HostCanvasCapability {
-  return finishEntity(Object.assign(allocateSurface(null), fields) as never) as unknown as HostCanvasCapability;
+  return Object.assign(allocateSurface(null), fields) as never as unknown as HostCanvasCapability;
 }
 
 const appWindow = {} as AppWindow;

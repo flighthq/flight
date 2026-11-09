@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 import type { HostLifecycleCapability } from '@flighthq/lifecycle/contract';
 import { connectSignal, createSignal, disconnectSignal, emitSignal } from '@flighthq/signals/contract';
@@ -63,7 +63,7 @@ export function attachAppLoopLifecycle(app: AppLoop, win: AppWindow): void {
 export function createAppLoop(): AppLoop {
   const out = allocateEntity<AppLoop>();
   initializeAppLoop(out);
-  return finishEntity(out);
+  return out;
 }
 
 export function detachAppLoopExit(app: AppLoop): void {

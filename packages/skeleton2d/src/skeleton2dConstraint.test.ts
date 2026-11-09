@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import { afterEach, describe, expect, it } from 'vitest';
 
 import type { Bone2D, Skeleton2DConstraint } from './contract.skeleton2d-types.ts';
@@ -32,7 +32,7 @@ function constraint(kind: string): Skeleton2DConstraint {
   const out = allocateEntity<Skeleton2DConstraint>();
   out.kind = kind;
   out.mix = 1;
-  return finishEntity(out) as Skeleton2DConstraint;
+  return out as Skeleton2DConstraint;
 }
 
 // The registry is a module GLOBAL, deliberately: last-write-wins is what lets a caller replace a built-in
@@ -109,7 +109,7 @@ describe('solveSkeleton2DConstraints', () => {
       out.kind = 'acme.Rope';
       out.mix = 0.25;
       out.slack = 3;
-      return finishEntity(out) as Skeleton2DConstraint;
+      return out as Skeleton2DConstraint;
     })();
 
     solveSkeleton2DConstraints(skeleton, [rope]);

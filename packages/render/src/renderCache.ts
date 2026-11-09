@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 import { createMatrix, multiplyMatrix } from '@flighthq/geometry/contract';
 import type { NodeAny } from '@flighthq/node/contract';
@@ -15,13 +15,13 @@ export { RenderCacheKind };
 export function createRenderCache(): RenderCache {
   const out = allocateEntity<RenderCache>();
   initializeRenderCache(out);
-  return finishEntity(out);
+  return out;
 }
 
 export function createRenderCacheAdapter(cache: RenderCache | null = null): RenderCacheAdapter {
   const adapter = allocateEntity<RenderCacheAdapter>();
   initializeRenderCacheAdapter(adapter, cache);
-  return finishEntity(adapter);
+  return adapter;
 }
 
 /**

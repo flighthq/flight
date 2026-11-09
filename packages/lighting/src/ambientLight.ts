@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 
 import type { AmbientLight, AmbientLightOptions } from './types.ts';
@@ -17,7 +17,7 @@ export function cloneAmbientLight(source: Readonly<AmbientLight>): AmbientLight 
 export function createAmbientLight(options?: Readonly<AmbientLightOptions>): AmbientLight {
   const out = allocateEntity<AmbientLight>();
   initializeAmbientLight(out, options);
-  return finishEntity(out);
+  return out;
 }
 
 // Uniform omnidirectional fill light. Color is packed sRgb-albedo RGBA (0xrrggbbaa); defaults to

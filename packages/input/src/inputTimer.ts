@@ -1,7 +1,7 @@
 // Generated from crates/flight-input/src/input_timer.rs by flight-compiler.
 // Rust is authoritative; run `npm run generate` after changing it.
 
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 
 import type {
   InputKeyRepeatOptions,
@@ -38,7 +38,7 @@ export function advanceInputKeyRepeatTimer(timer: InputKeyRepeatTimerRaw, nowMs:
 export function createInputKeyRepeatTimer(options: Readonly<InputKeyRepeatOptions>): InputKeyRepeatTimerRaw {
   let out: InputKeyRepeatTimerRaw = allocateEntity<InputKeyRepeatTimerRaw>();
   initializeInputKeyRepeatTimer(out, options);
-  return finishEntity(out);
+  return out;
 }
 
 /**

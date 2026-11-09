@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 
 import type { EnvReflectModifier, EnvReflectModifierOptions } from './contract.shading-types.ts';
@@ -12,7 +12,7 @@ import { initializeModifier } from './modifier.ts';
 export function createEnvReflectModifier(options?: Readonly<EnvReflectModifierOptions>): EnvReflectModifier {
   const out = allocateEntity<EnvReflectModifier>();
   initializeEnvReflectModifier(out, options);
-  return finishEntity(out);
+  return out;
 }
 
 // Builds an EnvReflectModifier (slot: Effect) — a view-dependent reflection of the scene's baked

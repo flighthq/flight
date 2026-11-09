@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 import { inverseMatrixTransformPointXY } from '@flighthq/geometry/contract';
 import type { InputKeyboardData, InputPointerData } from '@flighthq/input/contract';
@@ -158,13 +158,13 @@ export function createInteractionManager<N extends NodeAny>(
 ): InteractionManager<N> {
   const out = allocateEntity<InteractionManager<N>>();
   initializeInteractionManager(out, root, options);
-  return finishEntity(out);
+  return out;
 }
 
 export function createInteractionSignals(): InteractionSignals {
   const out = allocateEntity<InteractionSignals>();
   initializeInteractionSignals(out);
-  return finishEntity(out);
+  return out;
 }
 
 export function disconnectInteractionSignal<N extends NodeAny, Name extends InteractionSignalName>(

@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { ImageResource } from '@flighthq/image/contract';
 import { getKindMapKeys } from '@flighthq/registry/contract';
 import type { RenderTarget, RenderTexture } from '@flighthq/render/contract';
@@ -83,7 +83,7 @@ function renderTexture(): RenderTexture {
   _entity.kind = RenderTargetTextureSourceKind;
   _entity.version = 0;
   _entity.width = 8;
-  texture.source = finishEntity(_entity);
+  texture.source = _entity;
   return texture as RenderTexture;
 }
 

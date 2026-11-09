@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { HostUpdaterCapabilities } from '@flighthq/host/contract';
 import type {
   AppUpdateCheckOutcome,
@@ -146,7 +146,7 @@ function createDownloadedUpdate(args: readonly unknown[]): DownloadedUpdate {
     (() => {
       const out = allocateEntity<DownloadedUpdate>();
       out.info = info;
-      return finishEntity(out);
+      return out;
     })(),
   );
 }

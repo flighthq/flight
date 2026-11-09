@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 import { ResourceResolutionState } from '@flighthq/resource/contract';
 
@@ -25,13 +25,13 @@ export function createAudioResourceFailure(cause: unknown): AudioResourceFailure
     out.kind = AudioResourceFailureKind.Error;
     out.message = cause.message;
     out.name = cause.name;
-    return finishEntity(out);
+    return out;
   }
   const out = allocateEntity<AudioResourceFailure>();
   out.kind = AudioResourceFailureKind.Error;
   out.message = String(cause);
   out.name = null;
-  return finishEntity(out);
+  return out;
 }
 
 export function createEmbeddedAudioResourceReference(
@@ -41,7 +41,7 @@ export function createEmbeddedAudioResourceReference(
 ): EmbeddedAudioResourceReference {
   const out = allocateEntity<EmbeddedAudioResourceReference>();
   initializeEmbeddedAudioResourceReference(out, bytes, mimeType, name);
-  return finishEntity(out);
+  return out;
 }
 
 export function createExternalAudioResourceReference(
@@ -52,7 +52,7 @@ export function createExternalAudioResourceReference(
 ): ExternalAudioResourceReference {
   const out = allocateEntity<ExternalAudioResourceReference>();
   initializeExternalAudioResourceReference(out, uri, basePath, mimeType, name);
-  return finishEntity(out);
+  return out;
 }
 
 // Returns a detached plain-data explanation suitable for logs, tools, and serialization. It never throws
@@ -155,7 +155,7 @@ export async function resolveAudioResourceReference(
         out.kind = AudioResourceFailureKind.Unavailable;
         out.message = 'Audio resource unavailable';
         out.name = null;
-        return finishEntity(out);
+        return out;
       })();
       ref.state = ResourceResolutionState.Failed;
       return null;

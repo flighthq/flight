@@ -1,5 +1,5 @@
 import type { EntityConstruction } from '@flighthq/entity/contract';
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 
 import { reportTextBidiCompactTableMiss } from './textBidiGuards.ts';
 import type { BidiClass, BidiClassKernel, BidiClassKernelExplanation, BidiCodePointRange } from './types.ts';
@@ -15,7 +15,7 @@ import type { BidiClass, BidiClassKernel, BidiClassKernelExplanation, BidiCodePo
 export function createCompactBidiClassKernel(): BidiClassKernel {
   const out = allocateEntity<BidiClassKernel>();
   initializeCompactBidiClassKernel(out);
-  const kernel = finishEntity(out);
+  const kernel = out;
   _compactBackends.add(kernel);
   return kernel;
 }

@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityRuntimeKey, EntityConstruction } from '@flighthq/entity/contract';
 
 import { initializeColorMatrixAdjustment } from './colorMatrixAdjustment.ts';
@@ -9,7 +9,7 @@ export function createGrayscaleAdjustment(
 ): GrayscaleAdjustment {
   const out = allocateEntity<GrayscaleAdjustment>();
   initializeGrayscaleAdjustment(out, options);
-  return finishEntity(out);
+  return out;
 }
 
 // Luma desaturation as a matrix-tier adjustment. `mix(rgb, vec3(luma), intensity)` with ITU-R BT.709

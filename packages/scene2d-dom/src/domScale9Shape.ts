@@ -1,4 +1,4 @@
-﻿import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+﻿import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 import type { MatrixLike } from '@flighthq/geometry/contract';
 import { getNodeLocalBoundsRectangle } from '@flighthq/node/contract';
@@ -26,7 +26,7 @@ const _remappedCommands: ShapeCommandToken[] = [];
 export function createDomScale9ShapeData(_state: RenderState, _source: NodeAny): DomScale9ShapeData {
   const out = allocateEntity<DomScale9ShapeData>();
   initializeDomScale9ShapeData(out, _state, _source);
-  return finishEntity(out);
+  return out;
 }
 
 export function drawDomScale9Shape(state: DomRenderState, renderProxy: RenderProxy2D): void {

@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import { EntityRuntimeKey } from '@flighthq/entity/contract';
 
 import {
@@ -13,7 +13,7 @@ import {
 import type { HostGeolocationCapability, GeolocationErrorReason, GeolocationPosition } from './types.ts';
 
 function fakeBackend(available: boolean = true): HostGeolocationCapability & { cleared: number[]; lastWatch: number } {
-  const out = allocateEntity<any>();
+  const out = allocateEntity<any>() as any;
   out.cleared = [];
   out.lastWatch = 0;
   out.promptForAccess = () => Promise.resolve({ reason: 'granted' as const });
@@ -46,7 +46,7 @@ function fakeBackend(available: boolean = true): HostGeolocationCapability & { c
     if (onError) onError('denied');
     return ++out.lastWatch;
   };
-  return finishEntity(out);
+  return out;
 }
 
 function hostWith(backend: HostGeolocationCapability): {

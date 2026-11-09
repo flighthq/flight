@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 import type { HostImageSource } from '@flighthq/host/contract';
 import { registerHostImageDimensionResolver } from '@flighthq/image/contract';
@@ -12,19 +12,19 @@ import { ImageTextureSourceKind } from '@flighthq/texture/contract';
 export function createWebImageResourceFromCanvas(canvas: HTMLCanvasElement): ImageResource {
   const out = allocateEntity<ImageResource>();
   initializeWebImageResourceFromCanvas(out, canvas);
-  return finishEntity(out);
+  return out;
 }
 
 export function createWebImageResourceFromImageBitmap(bitmap: ImageBitmap): ImageResource {
   const out = allocateEntity<ImageResource>();
   initializeWebImageResourceFromImageBitmap(out, bitmap);
-  return finishEntity(out);
+  return out;
 }
 
 export function createWebImageResourceFromImageElement(img: HTMLImageElement): ImageResource {
   const out = allocateEntity<ImageResource>();
   initializeWebImageResourceFromImageElement(out, img);
-  return finishEntity(out);
+  return out;
 }
 
 export function initializeWebImageResourceFromCanvas(

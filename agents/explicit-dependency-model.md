@@ -302,7 +302,7 @@ These are **discoverable shortcuts to the explicit path**, not a different API. 
 
 Entity is the base type for **domain objects** — things in the problem space that Flight defines and allocates. A domain object benefits from consistent construction, predictable field layout, OOP binding (C++ class of the same name), and optionally runtime attachment. `create*` always returns Entity.
 
-**Dispatch infrastructure** — function tables, kind-to-handler containers, and bundles of these — is not Entity. Renderers, registry tables, pipelines, and host capabilities are plain data: formed as literals, no `allocateEntity`/`finishEntity`, no `create*` verb.
+**Dispatch infrastructure** — function tables, kind-to-handler containers, and bundles of these — is not Entity. Renderers, registry tables, pipelines, and host capabilities are plain data: formed as literals, no `allocateEntity`, no `create*` verb.
 
 **Not Entity — only what structurally cannot be one.** Arrays and tuples, callables, native and external handles (DOM elements, GPU objects), and primitive results.
 

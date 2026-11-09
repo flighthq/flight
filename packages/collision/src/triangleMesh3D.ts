@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 
 import { collideContactManifold3D } from './collideContactManifold3D.ts';
@@ -116,7 +116,7 @@ export function createCollisionHeightfield3D(
 ): CollisionHeightfield3D {
   const out = allocateEntity<CollisionHeightfield3D>();
   initializeCollisionHeightfield3D(out, columns, rows, heights, cellSizeX, cellSizeZ);
-  return finishEntity(out);
+  return out;
 }
 
 export function createCollisionTriangleMesh3D(
@@ -125,7 +125,7 @@ export function createCollisionTriangleMesh3D(
 ): CollisionTriangleMesh3D {
   const out = allocateEntity<CollisionTriangleMesh3D>();
   initializeCollisionTriangleMesh3D(out, points, indices);
-  return finishEntity(out);
+  return out;
 }
 
 export function getCollisionHeightfieldValidationStatus3D(

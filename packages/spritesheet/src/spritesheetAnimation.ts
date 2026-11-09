@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 
 import type { Spritesheet, SpritesheetAnimation } from './types.ts';
@@ -6,7 +6,7 @@ import type { Spritesheet, SpritesheetAnimation } from './types.ts';
 export function createSpritesheetAnimation(obj?: Partial<SpritesheetAnimation>): SpritesheetAnimation {
   const out = allocateEntity<SpritesheetAnimation>();
   initializeSpritesheetAnimation(out, obj);
-  return finishEntity(out);
+  return out;
 }
 
 // Builds a `SpritesheetAnimation` by selecting frames from a `Spritesheet` whose atlas region names

@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 import type { AlphaType } from '@flighthq/texture/contract';
 import { BitmapTextureSourceKind } from '@flighthq/texture/contract';
@@ -15,7 +15,7 @@ export function cloneBitmap(source: Readonly<Bitmap>): Bitmap {
   out.kind = source.kind;
   out.version = 0;
   out.width = source.width;
-  return finishEntity(out);
+  return out;
 }
 
 /**
@@ -63,7 +63,7 @@ export function convertBitmapAlphaType(out: Bitmap, target: AlphaType): void {
 export function createBitmap(width: number, height: number, color: number = 0): Bitmap {
   const out = allocateEntity<Bitmap>();
   initializeBitmap(out, width, height, color);
-  return finishEntity(out);
+  return out;
 }
 
 function initializeBitmap(out: EntityConstruction<Bitmap>, width: number, height: number, color: number = 0): void {

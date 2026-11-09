@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 
 import type { TransmissionVolumePbrExtension } from './contract.materials-types.ts';
@@ -11,7 +11,7 @@ export function createTransmissionVolumePbrExtension(
 ): TransmissionVolumePbrExtension {
   const out = allocateEntity<TransmissionVolumePbrExtension>();
   initializeTransmissionVolumePbrExtension(out, opts);
-  return finishEntity(out);
+  return out;
 }
 
 export function initializeTransmissionVolumePbrExtension(

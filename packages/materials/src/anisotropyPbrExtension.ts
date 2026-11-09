@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 
 import type { AnisotropyPbrExtension } from './contract.materials-types.ts';
@@ -9,7 +9,7 @@ import { isValidPbrUvSet } from './pbrExtension.ts';
 export function createAnisotropyPbrExtension(opts?: Readonly<Partial<AnisotropyPbrExtension>>): AnisotropyPbrExtension {
   const out = allocateEntity<AnisotropyPbrExtension>();
   initializeAnisotropyPbrExtension(out, opts);
-  return finishEntity(out);
+  return out;
 }
 
 export function initializeAnisotropyPbrExtension(

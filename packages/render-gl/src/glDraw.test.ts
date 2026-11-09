@@ -1,6 +1,6 @@
 import type { Bitmap } from '@flighthq/bitmap/contract';
 import { AdvancedBlendMode } from '@flighthq/effects/contract';
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { CompressedImageResource, ImageResource } from '@flighthq/image/contract';
 import { BlendMode } from '@flighthq/materials/contract';
 import { getTextureSource } from '@flighthq/texture/contract';
@@ -1049,11 +1049,11 @@ describe('useGlProgram', () => {
     const program = {} as WebGLProgram;
     const locations = { ...runtime.defaultBitmapShader!.locations, program };
     const shader = (() => {
-      const out = allocateEntity<any>();
+      const out = allocateEntity<any>() as any;
       out.bind = vi.fn();
       out.locations = locations;
       out.program = program;
-      return finishEntity(out);
+      return out;
     })();
 
     registerGlBitmapShader(state, shader);

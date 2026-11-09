@@ -1,5 +1,5 @@
 import type { CollisionColliderShape3D } from '@flighthq/collision/contract';
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import {
   createPhysics3DBallAndSocketJoint,
   createPhysics3DCollider,
@@ -301,7 +301,7 @@ function getColliderShapeCases(): ReadonlyArray<{
     {
       name: 'triangle mesh',
       shape: (() => {
-        const out = allocateEntity<any>();
+        const out = allocateEntity<any>() as any;
         out.kind = 'triangle-mesh';
         out.version = 2;
         out.x = 0;
@@ -313,14 +313,14 @@ function getColliderShapeCases(): ReadonlyArray<{
         out.rotationW = 1;
         out.points = [0, 0, 0, 1, 0, 0, 0, 0, 1];
         out.indices = [0, 1, 2];
-        return finishEntity(out);
+        return out;
       })(),
       code: Physics3DAbiShapeKind.TriangleMesh,
     },
     {
       name: 'heightfield',
       shape: (() => {
-        const out = allocateEntity<any>();
+        const out = allocateEntity<any>() as any;
         out.kind = 'heightfield';
         out.columns = 2;
         out.rows = 2;
@@ -335,7 +335,7 @@ function getColliderShapeCases(): ReadonlyArray<{
         out.rotationZ = 0;
         out.rotationW = 1;
         out.heights = [0, 0, 0, 0];
-        return finishEntity(out);
+        return out;
       })(),
       code: Physics3DAbiShapeKind.Heightfield,
     },

@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction, EntityWithoutRuntime } from '@flighthq/entity/contract';
 
 import { initializeEffect } from './effect.ts';
@@ -17,7 +17,7 @@ export function createBlendEffect(
 ): BlendEffect {
   const out = allocateEntity<BlendEffect>();
   initializeBlendEffect(out, mode, options);
-  return finishEntity(out);
+  return out;
 }
 
 export function initializeBlendEffect(

@@ -1,5 +1,5 @@
 import type { Bitmap } from '@flighthq/bitmap/contract';
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 import { decodeImage, decodeImagePremultiplied } from '@flighthq/image-codec/contract';
 import type { HostImageDecodeCapabilities, ImageDecodeFallback } from '@flighthq/image-codec/contract';
@@ -25,7 +25,7 @@ export function createEmbeddedImageResourceReference(
 ): EmbeddedImageResourceReference {
   const out = allocateEntity<EmbeddedImageResourceReference>();
   initializeEmbeddedImageResourceReference(out, bytes, mimeType, alphaType);
-  return finishEntity(out);
+  return out;
 }
 
 export function createExternalImageResourceReference(
@@ -34,7 +34,7 @@ export function createExternalImageResourceReference(
 ): ExternalImageResourceReference {
   const out = allocateEntity<ExternalImageResourceReference>();
   initializeExternalImageResourceReference(out, uri, basePath);
-  return finishEntity(out);
+  return out;
 }
 
 // The one encoded-byte producer for image resource references. A registered decoder owns format
@@ -69,7 +69,7 @@ async function decodeEmbeddedImageResourceReference(
   out.kind = BitmapTextureSourceKind;
   out.version = 0;
   out.width = decoded.width;
-  return finishEntity(out);
+  return out;
 }
 
 // Reduces a thrown value to the serialization-safe categories a reference retains. Raw Error objects and
@@ -80,13 +80,13 @@ export function createImageResourceFailure(cause: unknown): ImageResourceFailure
     out.kind = ImageResourceFailureKind.Error;
     out.message = cause.message;
     out.name = cause.name;
-    return finishEntity(out);
+    return out;
   }
   const out = allocateEntity<ImageResourceFailure>();
   out.kind = ImageResourceFailureKind.Error;
   out.message = String(cause);
   out.name = null;
-  return finishEntity(out);
+  return out;
 }
 
 // Returns a detached plain-data explanation suitable for logs, tools, and serialization. It never throws
@@ -180,7 +180,7 @@ export async function resolveImageResourceReference(
       out.kind = ImageResourceFailureKind.Unavailable;
       out.message = 'Image resource unavailable';
       out.name = null;
-      ref.failure = finishEntity(out);
+      ref.failure = out;
       ref.state = ResourceResolutionState.Failed;
       return null;
     }

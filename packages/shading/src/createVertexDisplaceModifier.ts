@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 import type { Vector3Like } from '@flighthq/geometry/contract';
 
@@ -14,7 +14,7 @@ import { initializeModifier } from './modifier.ts';
 export function createVertexDisplaceModifier(options: Readonly<VertexDisplaceModifierOptions>): VertexDisplaceModifier {
   const out = allocateEntity<VertexDisplaceModifier>();
   initializeVertexDisplaceModifier(out, options);
-  return finishEntity(out);
+  return out;
 }
 
 // Builds a VertexDisplaceModifier (slot: Vertex) — the one built-in VERTEX-scene2d modifier, displacing

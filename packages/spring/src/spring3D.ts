@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 
 import {
@@ -32,7 +32,7 @@ export function createSpring3D(
   (out as EntityConstruction<Spring3D>).y = createSpring();
   (out as EntityConstruction<Spring3D>).z = createSpring();
   initializeSpring3D(out, valueX, valueY, valueZ, velocityX, velocityY, velocityZ);
-  return finishEntity(out);
+  return out;
 }
 
 // Write per-axis values (default 0) and velocities (default 0) into all three existing axes in

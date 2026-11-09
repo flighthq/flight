@@ -1,5 +1,5 @@
 import type { Bitmap } from '@flighthq/bitmap/contract';
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 import type { CompressedImageResource } from '@flighthq/image/contract';
 import { BitmapTextureSourceKind, CompressedImageTextureSourceKind } from '@flighthq/texture/contract';
@@ -9,7 +9,7 @@ import type { TextureAtlas } from './types.ts';
 export function createTextureAtlas(obj?: Partial<TextureAtlas>): TextureAtlas {
   const out = allocateEntity<TextureAtlas>();
   initializeTextureAtlas(out, obj);
-  return finishEntity(out);
+  return out;
 }
 
 // Releases what keeps the atlas reachable: drops its regions and its texture reference. The texture

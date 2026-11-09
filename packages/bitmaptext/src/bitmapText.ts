@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 import { copyRectangle, createRectangle, reserveFloat32Array, reserveUint16Array } from '@flighthq/geometry/contract';
 import type { Rectangle } from '@flighthq/geometry/contract';
@@ -57,7 +57,7 @@ export function createBitmapText(glyphSource: GlyphSource | null, options?: Read
 export function createBitmapTextData(): BitmapTextData {
   const out = allocateEntity<BitmapTextData>();
   initializeBitmapTextData(out);
-  return finishEntity(out);
+  return out;
 }
 
 export function createBitmapTextRuntime(): BitmapTextRuntime {

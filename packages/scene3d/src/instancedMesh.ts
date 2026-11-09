@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction, Kind } from '@flighthq/entity/contract';
 import { copyMatrix4, createAabb, createMatrix4, transformAabbByMatrix4, unionAabb } from '@flighthq/geometry/contract';
 import type { Aabb, Matrix4 } from '@flighthq/geometry/contract';
@@ -124,7 +124,7 @@ export function createInstancedMesh(
 export function createInstancedMeshSignals(): InstancedMeshSignals {
   const out = allocateEntity<InstancedMeshSignals>();
   initializeInstancedMeshSignals(out);
-  return finishEntity(out);
+  return out;
 }
 
 /**

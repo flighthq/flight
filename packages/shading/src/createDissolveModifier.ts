@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 
 import type { DissolveModifier, DissolveModifierOptions } from './contract.shading-types.ts';
@@ -12,7 +12,7 @@ import { initializeModifier } from './modifier.ts';
 export function createDissolveModifier(options: Readonly<DissolveModifierOptions>): DissolveModifier {
   const out = allocateEntity<DissolveModifier>();
   initializeDissolveModifier(out, options);
-  return finishEntity(out);
+  return out;
 }
 
 // Builds a DissolveModifier (slot: Effect) — a clip/burn dissolve of the shaded output. A per-fragment

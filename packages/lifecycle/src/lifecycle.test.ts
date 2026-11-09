@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import { cancelSignal, connectSignal, disconnectSignal } from '@flighthq/signals/contract';
 import type { Signal, SlotId } from '@flighthq/signals/contract';
 

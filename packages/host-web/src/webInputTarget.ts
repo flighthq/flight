@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 import type { InputTargetHandleRaw as InputTargetHandle } from '@flighthq/input/contract';
 import type {
@@ -107,7 +107,7 @@ export const webHostInputTarget: HostInputTargetCapability = {
 export function createWebInputTargetHandle(element: HTMLElement): InputTargetHandle {
   const target = allocateEntity<InputTargetHandle>();
   initializeWebInputTargetHandle(target, element);
-  return finishEntity(target);
+  return target;
 }
 
 export function initializeWebInputTargetHandle(

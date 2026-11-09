@@ -1,5 +1,5 @@
 import type { Effect } from '@flighthq/effects/contract';
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import { endCanvasRenderPass, getCanvasActiveRenderPass } from '@flighthq/scene2d-canvas/contract';
 
 import { drawCanvasEffectPass } from './canvasEffectCompositing.ts';
@@ -96,12 +96,12 @@ describe('endCanvasEffectPass', () => {
       (() => {
         const out = allocateEntity<any>();
         out.kind = 'UnregisteredEffect';
-        return finishEntity(out);
+        return out;
       })(),
       (() => {
         const out = allocateEntity<any>();
         out.kind = 'RealizedEffect';
-        return finishEntity(out);
+        return out;
       })(),
     ] as Effect[]);
 

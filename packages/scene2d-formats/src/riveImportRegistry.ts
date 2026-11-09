@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction, NonEntityCreateResult } from '@flighthq/entity/contract';
 import type { ImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import type { DisplayObject } from '@flighthq/scene2d/contract';
@@ -49,7 +49,7 @@ export function createRiveArtboardImportContext(
 ): RiveArtboardImportContext {
   const out = allocateEntity<RiveArtboardImportContext>();
   initializeRiveArtboardImportContext(out, registry, artboard, objects, root, fontNames, diagnostics);
-  return finishEntity(out);
+  return out;
 }
 
 export function createRiveDocumentImportContext(
@@ -59,7 +59,7 @@ export function createRiveDocumentImportContext(
 ): RiveDocumentImportContext {
   const out = allocateEntity<RiveDocumentImportContext>();
   initializeRiveDocumentImportContext(out, registry, objects, diagnostics);
-  return finishEntity(out);
+  return out;
 }
 
 export function createRiveImportRegistry(): NonEntityCreateResult<RiveImportRegistry, 'descriptor'> {

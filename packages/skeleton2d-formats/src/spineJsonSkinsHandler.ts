@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import type { ImportDiagnostic } from '@flighthq/importdiagnostics/contract';
@@ -113,7 +113,7 @@ function parseSpineMeshAttachment(
       vertexCount,
       Float32Array.from(rawVerts),
     );
-    return finishEntity(out);
+    return out;
   }
   const out = allocateEntity<MeshAttachment2D>();
   initializeMeshAttachment2D(
@@ -126,7 +126,7 @@ function parseSpineMeshAttachment(
     vertexCount,
     null,
   );
-  return finishEntity(out);
+  return out;
 }
 
 function parseSpineRegionAttachment(name: string, raw: Record<string, unknown>): RegionAttachment2D {
@@ -143,7 +143,7 @@ function parseSpineRegionAttachment(name: string, raw: Record<string, unknown>):
     numberOr(raw.x, 0),
     numberOr(raw.y, 0),
   );
-  return finishEntity(out);
+  return out;
 }
 
 // Parses every named skin the file declares, in file order, into the rig's wardrobe. Spine keys each skin's

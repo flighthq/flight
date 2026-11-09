@@ -1,7 +1,7 @@
 // Generated from crates/flight-motionpath/src/motion_path.rs by flight-compiler.
 // Rust is authoritative; run `npm run generate` after changing it.
 
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import { createVector2 } from '@flighthq/geometry/contract';
 import type { Vector2Like } from '@flighthq/geometry/contract';
 import { getPathLength, getPathPositionAtDistance, getPathTangentAtDistance } from '@flighthq/path/contract';
@@ -25,7 +25,7 @@ export function createMotionPath(
 ): MotionPathRaw {
   let out: MotionPathRaw = allocateEntity<MotionPathRaw>();
   initializeMotionPath(out, path, speed, loopMode, tolerance);
-  return finishEntity(out);
+  return out;
 }
 
 /**

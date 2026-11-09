@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction, EntityRaw } from '@flighthq/entity/contract';
 import { clearSignal, emitSignal } from '@flighthq/signals/contract';
 import type { Signal } from '@flighthq/signals/contract';
@@ -77,7 +77,7 @@ export function createChildClock(parent: Clock, options?: Readonly<ClockOptions>
 export function createClock(): Clock {
   const out = allocateEntity<Clock>();
   initializeClock(out);
-  return finishEntity(out);
+  return out;
 }
 
 // Detaches a clock from its parent, releases its children, and drops any onTick listeners so nothing

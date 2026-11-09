@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { LogEntry, LogState } from '@flighthq/log/contract';
 import { createLogState, setLogSink } from '@flighthq/log/contract';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -28,7 +28,7 @@ function host() {
   return {
     tray: {
       lifecycle: (() => {
-        const out = allocateEntity<any>();
+        const out = allocateEntity<any>() as any;
         out.create = async (tray: TrayIcon) => {
           live.push(tray);
           return { outcome: 'created' as const };
@@ -39,14 +39,14 @@ function host() {
         };
         out.isDestroyed = (tray: TrayIcon) => !live.includes(tray);
         out.list = () => live.slice();
-        return finishEntity(out);
+        return out;
       })(),
       image: (() => {
-        const out = allocateEntity<any>();
+        const out = allocateEntity<any>() as any;
         out.set = async () => {
           return { outcome: 'updated' as const };
         };
-        return finishEntity(out);
+        return out;
       })(),
     },
   };

@@ -1,4 +1,4 @@
-import { allocateEntity, EntityRuntimeKey as EntityRuntimeKeyValue, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity, EntityRuntimeKey as EntityRuntimeKeyValue } from '@flighthq/entity/contract';
 import type { EntityRuntimeKey } from '@flighthq/entity/contract';
 import { connectSignal } from '@flighthq/signals/contract';
 

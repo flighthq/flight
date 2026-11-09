@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction, EntityRaw } from '@flighthq/entity/contract';
 
 import type { Velocity2D } from './velocity2D.ts';
@@ -38,7 +38,7 @@ export function contributeVelocity(field: VelocityField, source: SourceId, x: nu
 export function createVelocityField(): VelocityField {
   const out = allocateEntity<VelocityField>();
   initializeVelocityField(out);
-  return finishEntity(out);
+  return out;
 }
 
 export function ensureNodeVelocitySample(field: VelocityField, node: object): VelocitySample {

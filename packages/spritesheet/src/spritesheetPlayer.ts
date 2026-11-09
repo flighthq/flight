@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 import { clearSignal, createSignal, emitSignal } from '@flighthq/signals/contract';
 
@@ -31,13 +31,13 @@ export function cloneSpritesheetPlayer(player: Readonly<SpritesheetPlayer>): Spr
   out.paused = player.paused;
   out.queue = [...player.queue];
   out.speed = player.speed;
-  return finishEntity(out);
+  return out;
 }
 
 export function createSpritesheetPlayer(obj?: Partial<SpritesheetPlayer>): SpritesheetPlayer {
   const out = allocateEntity<SpritesheetPlayer>();
   initializeSpritesheetPlayer(out, obj);
-  return finishEntity(out);
+  return out;
 }
 
 export function disposeSpritesheetPlayer(player: SpritesheetPlayer): void {

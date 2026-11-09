@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 
 import {
@@ -34,13 +34,13 @@ export function clearPhysics2DAbiCommandBuffer(out: Physics2DAbiCommandBuffer): 
 export function createPhysics2DAbiBodyBuffer(capacity: number): Physics2DAbiBodyBuffer {
   const out = allocateEntity<Physics2DAbiBodyBuffer>();
   initializePhysics2DAbiBodyBuffer(out, capacity);
-  return finishEntity(out);
+  return out;
 }
 
 export function createPhysics2DAbiCommandBuffer(byteCapacity = 4096): Physics2DAbiCommandBuffer {
   const out = allocateEntity<Physics2DAbiCommandBuffer>();
   initializePhysics2DAbiCommandBuffer(out, byteCapacity);
-  return finishEntity(out);
+  return out;
 }
 
 export function createPhysics2DAbiContactBuffer(
@@ -49,25 +49,25 @@ export function createPhysics2DAbiContactBuffer(
 ): Physics2DAbiContactBuffer {
   const out = allocateEntity<Physics2DAbiContactBuffer>();
   initializePhysics2DAbiContactBuffer(out, contactCapacity, pointCapacity);
-  return finishEntity(out);
+  return out;
 }
 
 export function createPhysics2DAbiExecutionResult(): Physics2DAbiExecutionResult {
   const out = allocateEntity<Physics2DAbiExecutionResult>();
   initializePhysics2DAbiExecutionResult(out);
-  return finishEntity(out);
+  return out;
 }
 
 export function createPhysics2DAbiJointBuffer(capacity: number): Physics2DAbiJointBuffer {
   const out = allocateEntity<Physics2DAbiJointBuffer>();
   initializePhysics2DAbiJointBuffer(out, capacity);
-  return finishEntity(out);
+  return out;
 }
 
 export function createPhysics2DAbiQueryBuffer(capacity: number): Physics2DAbiQueryBuffer {
   const out = allocateEntity<Physics2DAbiQueryBuffer>();
   initializePhysics2DAbiQueryBuffer(out, capacity);
-  return finishEntity(out);
+  return out;
 }
 
 export function getPhysics2DAbiCommandBufferRemainingByteLength(buffer: Readonly<Physics2DAbiCommandBuffer>): number {

@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 import type { RenderTarget, RenderTargetDescriptor, RenderTexture } from '@flighthq/render/contract';
 import type { HostCanvasCapability } from '@flighthq/surface/contract';
@@ -29,8 +29,8 @@ export function createCanvasRenderTexturePool(canvasHost: Readonly<HostCanvasCap
   const effectTargets = allocateEntity<CanvasRenderTargetPool>();
   assignCanvasRenderTargetPoolFields(effectTargets, canvasHost);
   const out = allocateEntity<CanvasRenderTexturePool>();
-  initializeCanvasRenderTexturePool(out, finishEntity(effectTargets));
-  return finishEntity(out);
+  initializeCanvasRenderTexturePool(out, effectTargets);
+  return out;
 }
 
 // Drops both free and outstanding handles plus effect-runner scratch canvases. A shutdown caller

@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { SpritesheetData } from '@flighthq/spritesheet/contract';
 
 import { parseCocosPlistSpritesheet } from './cocosPlistParse.ts';
@@ -246,14 +246,14 @@ describe('getSpritesheetFormat', () => {
       detect,
       parse: () =>
         (() => {
-          const out = allocateEntity<any>();
+          const out = allocateEntity<any>() as any;
           out.animations = [];
           out.frames = [];
           out.imageFile = '';
           out.imageHeight = 0;
           out.imageWidth = 0;
           out.scale = 1;
-          return finishEntity(out);
+          return out;
         })(),
     });
     const entry = getSpritesheetFormat(kind);
@@ -270,14 +270,14 @@ describe('getSpritesheetFormatKinds', () => {
       detect: () => false,
       parse: () =>
         (() => {
-          const out = allocateEntity<any>();
+          const out = allocateEntity<any>() as any;
           out.animations = [];
           out.frames = [];
           out.imageFile = '';
           out.imageHeight = 0;
           out.imageWidth = 0;
           out.scale = 1;
-          return finishEntity(out);
+          return out;
         })(),
     });
     expect(getSpritesheetFormatKinds()).toEqual([
@@ -361,11 +361,11 @@ describe('registerSpritesheetFormat', () => {
       detect: (text) => text.startsWith('CUSTOM:'),
       parse: () =>
         (() => {
-          const out = allocateEntity<any>();
+          const out = allocateEntity<any>() as any;
           out.animations = [];
           out.frames = [
             (() => {
-              const out = allocateEntity<any>();
+              const out = allocateEntity<any>() as any;
               out.height = 10;
               out.name = 'custom';
               out.offsetX = 0;
@@ -378,14 +378,14 @@ describe('registerSpritesheetFormat', () => {
               out.width = 10;
               out.x = 0;
               out.y = 0;
-              return finishEntity(out);
+              return out;
             })(),
           ];
           out.imageFile = 'custom.png';
           out.imageHeight = 10;
           out.imageWidth = 10;
           out.scale = 1;
-          return finishEntity(out);
+          return out;
         })(),
     });
 
@@ -462,14 +462,14 @@ describe('unregisterSpritesheetFormat', () => {
       detect: (text) => text.startsWith('REMOVED:'),
       parse: () =>
         (() => {
-          const out = allocateEntity<any>();
+          const out = allocateEntity<any>() as any;
           out.animations = [];
           out.frames = [];
           out.imageFile = '';
           out.imageHeight = 0;
           out.imageWidth = 0;
           out.scale = 1;
-          return finishEntity(out);
+          return out;
         })(),
     });
 
@@ -490,5 +490,5 @@ function emptySpritesheetData(): SpritesheetData {
   out.imageHeight = 0;
   out.imageWidth = 0;
   out.scale = 1;
-  return finishEntity(out);
+  return out;
 }

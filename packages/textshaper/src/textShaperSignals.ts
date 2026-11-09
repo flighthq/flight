@@ -1,5 +1,5 @@
 import type { EntityConstruction } from '@flighthq/entity/contract';
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import { clearSignal, createSignal } from '@flighthq/signals/contract';
 
 import type { HostTextShaperCapability, TextShaperSignals } from './textShaperTypes.ts';
@@ -15,7 +15,7 @@ export function enableTextShaperSignals(): TextShaperSignals {
   _signals = (() => {
     const out = allocateEntity<TextShaperSignals>();
     initializeTextShaperSignals(out);
-    return finishEntity(out);
+    return out;
   })();
   return _signals;
 }

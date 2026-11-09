@@ -9,7 +9,7 @@ import type { AnimationClip, AnimationTrack } from '@flighthq/animation/contract
 import type { EasingFunction } from '@flighthq/easing/contract';
 import { easeCubicBezier } from '@flighthq/easing/contract';
 import { AdvancedBlendMode } from '@flighthq/effects/contract';
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import type { ImportDiagnostic } from '@flighthq/importdiagnostics/contract';
@@ -573,7 +573,7 @@ export function createScene2DFromLottieDocumentWithRegistry(
     );
     const out = allocateEntity<LottieDocumentImportResult>();
     initializeLottieDocumentImportResult(out, root, [], createAnimationClip([]), 0, 0);
-    return finishEntity(out);
+    return out;
   }
 
   const context: LottieImportContext = {
@@ -604,7 +604,7 @@ export function createScene2DFromLottieDocumentWithRegistry(
     duration,
     document.fr,
   );
-  return finishEntity(out);
+  return out;
 }
 
 export function hasComponentSpecificLottieEasing<T>(

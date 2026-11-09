@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 import { approxEqual, approxZero, TAU } from '@flighthq/math/contract';
 
@@ -15,7 +15,7 @@ export function addSpringImpulse(spring: Spring, velocity: number): void {
 export function createSpring(value: number = 0, velocity: number = 0): Spring {
   const out = allocateEntity<Spring>();
   initializeSpring(out, value, velocity);
-  return finishEntity(out);
+  return out;
 }
 
 // Allocate a scalar spring at `value` (default 0) with `velocity` (default 0). This is the only

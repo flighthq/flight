@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 
 import type { EulerOrder, Matrix4Like, Quaternion, QuaternionLike, Vector3Like } from './types.ts';
@@ -42,7 +42,7 @@ export function copyQuaternion(out: QuaternionLike, source: Readonly<QuaternionL
 export function createQuaternion(x?: number, y?: number, z?: number, w?: number): Quaternion {
   const out = allocateEntity<Quaternion>();
   initializeQuaternion(out, x ?? 0, y ?? 0, z ?? 0, w ?? 1);
-  return finishEntity(out);
+  return out;
 }
 
 export function equalsQuaternion(

@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 
 import type { SpatialAabb2D, SpatialIndex2D, SpatialIndexBackend2D, SpatialObjectId, SpatialPair } from './types.ts';
@@ -12,7 +12,7 @@ export function clearSpatialIndex2D(index: Readonly<SpatialIndex2D>): void {
 export function createSpatialIndex2D(backend?: SpatialIndexBackend2D): SpatialIndex2D {
   const out = allocateEntity<SpatialIndex2D>();
   initializeSpatialIndex2D(out, backend);
-  return finishEntity(out);
+  return out;
 }
 
 // Creates a 2D broadphase index. With no backend it defaults to a uniform grid sized for

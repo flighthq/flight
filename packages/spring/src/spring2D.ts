@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 
 import {
@@ -28,7 +28,7 @@ export function createSpring2D(
   (out as EntityConstruction<Spring2D>).x = createSpring();
   (out as EntityConstruction<Spring2D>).y = createSpring();
   initializeSpring2D(out, valueX, valueY, velocityX, velocityY);
-  return finishEntity(out);
+  return out;
 }
 
 // Write per-axis values (default 0) and velocities (default 0) into both existing axes in place;

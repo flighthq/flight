@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction, EntityWithoutRuntime } from '@flighthq/entity/contract';
 
 import { initializeEffect } from './effect.ts';
@@ -9,7 +9,7 @@ export function createPanniniProjectionEffect(
 ): PanniniProjectionEffect {
   const out = allocateEntity<PanniniProjectionEffect>();
   initializePanniniProjectionEffect(out, options);
-  return finishEntity(out);
+  return out;
 }
 
 export function initializePanniniProjectionEffect(

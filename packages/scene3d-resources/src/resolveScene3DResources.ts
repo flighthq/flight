@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 import { createImageResourceFailure, resolveImageResourceReference } from '@flighthq/image/contract';
 import type { ImageResourceFailure, ImageResourceReference } from '@flighthq/image/contract';
@@ -159,7 +159,7 @@ function finishScene3DResourceResolution(
         'Image resource resolution returned no source',
         null,
       );
-      return finishEntity(out);
+      return out;
     })();
     ref.state = ResourceResolutionState.Failed;
     for (const texture of entry.subscribers) emitScene3DResourceEvent(resolver, texture, ref, false);

@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction, Kind } from '@flighthq/entity/contract';
 import { withKindMapEntry } from '@flighthq/registry/contract';
 import type {
@@ -24,7 +24,7 @@ import type {
 export function createFlightDocumentTokenResolverRegistry(): FlightDocumentTokenResolverRegistry {
   const out = allocateEntity<FlightDocumentTokenResolverRegistry>();
   initializeFlightDocumentTokenResolverRegistry(out);
-  return finishEntity(out);
+  return out;
 }
 
 export function explainFlightDocumentSceneTokenResolution(
@@ -169,7 +169,7 @@ function refuse(
     out.resourceKey = null;
     out.tokenKey = tokenKey;
     out.version = null;
-    return finishEntity(out);
+    return out;
   })();
   return INVALID_FLIGHT_DOCUMENT_TOKEN_VALUE;
 }

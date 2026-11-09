@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import { PathCommand } from '@flighthq/path/contract';
 import { afterEach, describe, expect, it } from 'vitest';
 
@@ -52,7 +52,7 @@ function straightPath(): PathAttachment2D {
   out.skin = null;
   out.vertices = new Float32Array([0, 0, 100, 0]);
   out.winding = 'nonZero' as const;
-  return finishEntity(out) as PathAttachment2D;
+  return out as PathAttachment2D;
 }
 
 function pathSlot(attachment: PathAttachment2D | null): Slot2D {
@@ -74,7 +74,7 @@ function constraint(overrides: Partial<Skeleton2DPathConstraint> = {}): Skeleton
   out.spacingMode = Skeleton2DPathSpacingMode.Fixed;
   out.targetSlotIndex = 0;
   Object.assign(out, overrides);
-  return finishEntity(out) as Skeleton2DPathConstraint;
+  return out as Skeleton2DPathConstraint;
 }
 
 // Bone 0 carries the path slot; bones 1..n are the chain laid along it.
@@ -217,7 +217,7 @@ describe('solveSkeleton2DPathConstraint', () => {
         out.skin = null;
         out.vertices = new Float32Array([0, 0, 0, 100]);
         out.winding = 'nonZero' as const;
-        return finishEntity(out) as PathAttachment2D;
+        return out as PathAttachment2D;
       })(),
     );
     skeleton.bones[1].x = 40;
@@ -242,7 +242,7 @@ describe('solveSkeleton2DPathConstraint', () => {
         out.skin = null;
         out.vertices = new Float32Array([0, 0, 0, 100]);
         out.winding = 'nonZero' as const;
-        return finishEntity(out) as PathAttachment2D;
+        return out as PathAttachment2D;
       })(),
     );
 
@@ -263,7 +263,7 @@ describe('solveSkeleton2DPathConstraint', () => {
         out.skin = null;
         out.vertices = new Float32Array([0, 0, 50, 0, 50, 50]);
         out.winding = 'nonZero' as const;
-        return finishEntity(out) as PathAttachment2D;
+        return out as PathAttachment2D;
       })(),
     );
 

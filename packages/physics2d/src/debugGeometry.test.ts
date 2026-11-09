@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import { EntityRuntimeKey } from '@flighthq/entity/contract';
 import { describe, expect, it } from 'vitest';
 
@@ -39,7 +39,7 @@ function baseJoint(kind: string, bodyA: number, bodyB: number): Physics2DJoint {
   out.rAY = 0;
   out.rBX = 0;
   out.rBY = 0;
-  return finishEntity(out);
+  return out;
 }
 
 describe('createPhysics2DDebugGeometry', () => {

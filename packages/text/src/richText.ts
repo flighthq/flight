@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 import type { Rectangle } from '@flighthq/geometry/contract';
 import { invalidateNodeLocalBounds, invalidateNodeLocalContent } from '@flighthq/node/contract';
@@ -161,7 +161,7 @@ export function createRichTextRuntime(): RichTextRuntime {
 export function createTextFieldSignals(): TextFieldSignals {
   const out = allocateEntity<TextFieldSignals>();
   initializeTextFieldSignals(out);
-  return finishEntity(out);
+  return out;
 }
 
 // Checks whether the given point (in field-local space) is over a hyperlink, and if so emits

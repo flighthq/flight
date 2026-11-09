@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 
 import type { RimModifier, RimModifierOptions } from './contract.shading-types.ts';
@@ -12,7 +12,7 @@ import { initializeModifier } from './modifier.ts';
 export function createRimModifier(options: Readonly<RimModifierOptions>): RimModifier {
   const out = allocateEntity<RimModifier>();
   initializeRimModifier(out, options);
-  return finishEntity(out);
+  return out;
 }
 
 // Builds a RimModifier (slot: Effect) — a view-dependent Fresnel rim added to the shaded output at

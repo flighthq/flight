@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 
 import type { FogModifier, FogModifierOptions } from './contract.shading-types.ts';
@@ -13,7 +13,7 @@ import { initializeModifier } from './modifier.ts';
 export function createFogModifier(options: Readonly<FogModifierOptions>): FogModifier {
   const out = allocateEntity<FogModifier>();
   initializeFogModifier(out, options);
-  return finishEntity(out);
+  return out;
 }
 
 // Builds a FogModifier (slot: Effect) — blends the shaded output toward `color` by camera-distance

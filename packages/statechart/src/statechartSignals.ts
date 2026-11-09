@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 import { createSignal } from '@flighthq/signals/contract';
 
@@ -11,7 +11,7 @@ export function enableStatechartSignals(instance: StatechartInstanceRaw): Statec
   return (instance.signals ??= (() => {
     const out = allocateEntity<StatechartSignals>();
     initializeStatechartSignals(out);
-    return finishEntity(out);
+    return out;
   })());
 }
 

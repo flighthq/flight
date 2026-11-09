@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type {
   Accelerator,
   HostShortcutCapabilities,
@@ -52,7 +52,7 @@ export function electronHostShortcutTrigger(electron: ElectronApi): HostShortcut
       if (firstError !== undefined) throw firstError;
     };
     out.subscribe = async (accelerator: Accelerator, trigger: () => void) => {
-      const subscription = finishEntity(allocateEntity<ShortcutTriggerSubscription>());
+      const subscription = allocateEntity<ShortcutTriggerSubscription>();
       const registered = globalShortcut.register(accelerator, trigger);
       if (!registered) return { reason: 'refused' as const };
       registrations.set(subscription, accelerator);

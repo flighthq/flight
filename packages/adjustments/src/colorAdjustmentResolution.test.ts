@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 
 import {
   COLOR_ADJUSTMENT_AFFINE,
@@ -23,7 +23,7 @@ function makeColorScaleBias(fields: Partial<ColorScaleBias> = {}): ColorScaleBia
   out.blueBias = 0;
   out.alphaBias = 0;
   Object.assign(out, fields);
-  return finishEntity(out) as ColorScaleBias;
+  return out as ColorScaleBias;
 }
 
 describe('isAffineColorMatrix', () => {
@@ -52,7 +52,7 @@ describe('resolveColorAdjustmentsColorMatrix', () => {
         (() => {
           const out = allocateEntity<Adjustment>();
           out.kind = 'acme.Lut';
-          return finishEntity(out);
+          return out;
         })() as Adjustment,
       ]),
     ).toBeNull();

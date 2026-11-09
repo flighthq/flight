@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 
 import {
@@ -36,7 +36,7 @@ export function createPhysics3DBallAndSocketJoint(
 ): Physics3DBallAndSocketJoint {
   const out = allocateEntity<Physics3DBallAndSocketJoint>();
   initializePhysics3DBallAndSocketJoint(out, options);
-  return finishEntity(out);
+  return out;
 }
 
 export function createPhysics3DConeTwistJoint(
@@ -44,19 +44,19 @@ export function createPhysics3DConeTwistJoint(
 ): Physics3DConeTwistJoint {
   const out = allocateEntity<Physics3DConeTwistJoint>();
   initializePhysics3DConeTwistJoint(out, options);
-  return finishEntity(out);
+  return out;
 }
 
 export function createPhysics3DDistanceJoint(options: Readonly<Physics3DDistanceJointOptions>): Physics3DDistanceJoint {
   const out = allocateEntity<Physics3DDistanceJoint>();
   initializePhysics3DDistanceJoint(out, options);
-  return finishEntity(out);
+  return out;
 }
 
 export function createPhysics3DFixedJoint(options: Readonly<Physics3DFixedJointOptions>): Physics3DFixedJoint {
   const out = allocateEntity<Physics3DFixedJoint>();
   initializePhysics3DFixedJoint(out, options);
-  return finishEntity(out);
+  return out;
 }
 
 export function createPhysics3DGeneric6DofJoint(
@@ -64,19 +64,19 @@ export function createPhysics3DGeneric6DofJoint(
 ): Physics3DGeneric6DofJoint {
   const out = allocateEntity<Physics3DGeneric6DofJoint>();
   initializePhysics3DGeneric6DofJoint(out, options);
-  return finishEntity(out);
+  return out;
 }
 
 export function createPhysics3DHingeJoint(options: Readonly<Physics3DHingeJointOptions>): Physics3DHingeJoint {
   const out = allocateEntity<Physics3DHingeJoint>();
   initializePhysics3DHingeJoint(out, options);
-  return finishEntity(out);
+  return out;
 }
 
 export function createPhysics3DSliderJoint(options: Readonly<Physics3DSliderJointOptions>): Physics3DSliderJoint {
   const out = allocateEntity<Physics3DSliderJoint>();
   initializePhysics3DSliderJoint(out, options);
-  return finishEntity(out);
+  return out;
 }
 
 // Joint factories allocate plain data, take one readonly options object, and make only authoring choices.

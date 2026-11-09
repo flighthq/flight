@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 import { copyRectangle, createRectangle, reserveFloat32Array, reserveUint16Array } from '@flighthq/geometry/contract';
 import type { Rectangle, Vector2Like } from '@flighthq/geometry/contract';
@@ -207,7 +207,7 @@ export function createParticleEmitter2DRuntime(): ParticleEmitter2DRuntime {
 export function createParticleEmitterData(): ParticleEmitterData {
   const out = allocateEntity<ParticleEmitterData>();
   initializeParticleEmitterData(out);
-  return finishEntity(out);
+  return out;
 }
 
 export function getParticleEmitter2DCapacity(source: Readonly<ParticleEmitter2D>): number {

@@ -11,7 +11,7 @@ type EntityWithCompatibilityRuntime = EntityRaw & {
 export class Entity {
   readonly raw: EntityRaw;
 
-  constructor(raw: EntityRaw = finishEntity(allocateEntity<EntityRaw>())) {
+  constructor(raw: EntityRaw = allocateEntity<EntityRaw>()) {
     this.raw = raw;
     attachEntityWrapper(raw, this);
   }
@@ -47,10 +47,6 @@ export function attachEntityWrapper(entity: EntityRaw, wrapper: Entity): void {
     throw new TypeError('An EntityRaw object cannot be attached to more than one OOP wrapper');
   }
   EntityWrappers.set(entity, wrapper);
-}
-
-export function finishEntity<Type extends EntityRaw>(out: EntityConstruction<Type>): Type {
-  return out as Type;
 }
 
 export function getEntityWrapperAs<Type extends Entity>(source: Readonly<EntityRaw>): Type | null {

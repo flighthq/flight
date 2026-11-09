@@ -1,5 +1,5 @@
 import type { ColorScaleBias, ColorScaleBiasLike } from '@flighthq/adjustments/contract';
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 
 export function cloneColorScaleBias(source: Readonly<ColorScaleBiasLike>): ColorScaleBias {
@@ -50,7 +50,7 @@ export function copyColorScaleBiasToArrays(
 export function createColorScaleBias(opts?: Readonly<Partial<ColorScaleBiasLike>>): ColorScaleBias {
   const out = allocateEntity<ColorScaleBias>();
   initializeColorScaleBias(out, opts);
-  return finishEntity(out);
+  return out;
 }
 
 export function equalsColorScaleBias(a: Readonly<ColorScaleBiasLike>, b: Readonly<ColorScaleBiasLike>): boolean {

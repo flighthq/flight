@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 import type { Node2D } from '@flighthq/scene2d/contract';
 import { createSignal, emitSignal } from '@flighthq/signals/contract';
@@ -23,7 +23,7 @@ export function clearTimelineFrameScripts(timeline: Timeline): void {
 export function createTimeline(obj?: Partial<Timeline>): Timeline {
   const out = allocateEntity<Timeline>();
   initializeTimeline(out, obj);
-  return finishEntity(out);
+  return out;
 }
 
 export function createTimelineSource(obj: {
@@ -35,7 +35,7 @@ export function createTimelineSource(obj: {
 }): TimelineSource {
   const out = allocateEntity<TimelineSource>();
   initializeTimelineSource(out, obj);
-  return finishEntity(out);
+  return out;
 }
 
 export function disposeTimelineSignals(timeline: Timeline): void {

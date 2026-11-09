@@ -10,7 +10,7 @@ export {
 } from './binding.ts';
 export { cloneEntity, stripEntityRuntime } from './clone.ts';
 export { disableEntityRuntimeGuards, enableEntityRuntimeGuards } from './enableEntityRuntimeGuards.ts';
-export { Entity, allocateEntity, attachEntityWrapper, finishEntity, getEntityWrapperAs } from './entity.ts';
+export { Entity, allocateEntity, attachEntityWrapper, getEntityWrapperAs } from './entity.ts';
 export { getEntityUid, setEntityUid } from './entityUid.ts';
 export { explainEntityRuntimeWrite } from './explainEntityRuntimeWrite.ts';
 export {

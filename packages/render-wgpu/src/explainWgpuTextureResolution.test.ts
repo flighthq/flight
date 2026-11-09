@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import { createTexture } from '@flighthq/texture/contract';
 import type { TextureSource } from '@flighthq/texture/contract';
 
@@ -21,7 +21,7 @@ describe('explainWgpuTextureResolution', () => {
         out.kind = 'acme.test';
         out.version = 0;
         out.width = 1;
-        return finishEntity(out) as TextureSource;
+        return out as TextureSource;
       })(),
     });
 

@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 import type { Rectangle, Vector2Like } from '@flighthq/geometry/contract';
 import type { TintMaterialData } from '@flighthq/materials/contract';
@@ -51,7 +51,7 @@ export function createTilemap(): Tilemap {
 export function createTilemapData(): TilemapData {
   const out = allocateEntity<TilemapData>();
   initializeTilemapData(out);
-  return finishEntity(out);
+  return out;
 }
 
 export function createTilemapRuntime(): TilemapRuntime {
@@ -61,7 +61,7 @@ export function createTilemapRuntime(): TilemapRuntime {
 export function createTilemapSignals(): TilemapSignals {
   const out = allocateEntity<TilemapSignals>();
   initializeTilemapSignals(out);
-  return finishEntity(out);
+  return out;
 }
 
 /**
@@ -243,7 +243,7 @@ export function setTilemapTileTint(tilemap: Tilemap, column: number, row: number
   data.materialData[row * data.columns + column] = (() => {
     const out = allocateEntity<TintMaterialData>();
     out.tint = rgba >>> 0;
-    return finishEntity(out);
+    return out;
   })();
 }
 

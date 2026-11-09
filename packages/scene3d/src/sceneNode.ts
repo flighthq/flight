@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { Kind } from '@flighthq/entity/contract';
 import {
   createNodeRuntime,
@@ -23,7 +23,7 @@ export function createNode3D(kind: Kind = Node3DKind): Node3D {
   initializeNode(out, kind, undefined, createNode3DRuntime);
   initAppearanceTrait(out);
   initTransform3DTrait(out);
-  return finishEntity(out);
+  return out;
 }
 
 export function createNode3DRuntime(): Node3DRuntime {

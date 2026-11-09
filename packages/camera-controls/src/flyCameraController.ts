@@ -1,6 +1,6 @@
 import { setCamera3DViewMatrix4FromLookAt } from '@flighthq/camera/contract';
 import type { Camera3D } from '@flighthq/camera/contract';
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 import { createVector3 } from '@flighthq/geometry/contract';
 import { clamp, damp, deltaAngle } from '@flighthq/math/contract';
@@ -32,7 +32,7 @@ export function copyFlyCameraController(out: FlyCameraController, source: Readon
 export function createFlyCameraController(options?: Readonly<FlyCameraControllerOptions>): FlyCameraController {
   const out = allocateEntity<FlyCameraController>();
   initializeFlyCameraController(out, options);
-  return finishEntity(out);
+  return out;
 }
 
 // Allocates a fly / first-person controller. `position` defaults to the origin, `yaw`/`pitch` to 0

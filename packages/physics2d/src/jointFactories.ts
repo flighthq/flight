@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 
 import {
@@ -61,19 +61,19 @@ function initJointBase(out: Physics2DJoint, options: Readonly<Physics2DJointOpti
 export function createPhysics2DDistanceJoint(options: Readonly<Physics2DDistanceJointOptions>): Physics2DDistanceJoint {
   const out = allocateEntity<Physics2DDistanceJoint>();
   initializePhysics2DDistanceJoint(out, options);
-  return finishEntity(out);
+  return out;
 }
 
 export function createPhysics2DGearJoint(options: Readonly<Physics2DGearJointOptions>): Physics2DGearJoint {
   const out = allocateEntity<Physics2DGearJoint>();
   initializePhysics2DGearJoint(out, options);
-  return finishEntity(out);
+  return out;
 }
 
 export function createPhysics2DMouseJoint(options: Readonly<Physics2DMouseJointOptions>): Physics2DMouseJoint {
   const out = allocateEntity<Physics2DMouseJoint>();
   initializePhysics2DMouseJoint(out, options);
-  return finishEntity(out);
+  return out;
 }
 
 export function createPhysics2DPrismaticJoint(
@@ -81,37 +81,37 @@ export function createPhysics2DPrismaticJoint(
 ): Physics2DPrismaticJoint {
   const out = allocateEntity<Physics2DPrismaticJoint>();
   initializePhysics2DPrismaticJoint(out, options);
-  return finishEntity(out);
+  return out;
 }
 
 export function createPhysics2DPulleyJoint(options: Readonly<Physics2DPulleyJointOptions>): Physics2DPulleyJoint {
   const out = allocateEntity<Physics2DPulleyJoint>();
   initializePhysics2DPulleyJoint(out, options);
-  return finishEntity(out);
+  return out;
 }
 
 export function createPhysics2DRevoluteJoint(options: Readonly<Physics2DRevoluteJointOptions>): Physics2DRevoluteJoint {
   const out = allocateEntity<Physics2DRevoluteJoint>();
   initializePhysics2DRevoluteJoint(out, options);
-  return finishEntity(out);
+  return out;
 }
 
 export function createPhysics2DRopeJoint(options: Readonly<Physics2DRopeJointOptions>): Physics2DRopeJoint {
   const out = allocateEntity<Physics2DRopeJoint>();
   initializePhysics2DRopeJoint(out, options);
-  return finishEntity(out);
+  return out;
 }
 
 export function createPhysics2DWeldJoint(options: Readonly<Physics2DWeldJointOptions>): Physics2DWeldJoint {
   const out = allocateEntity<Physics2DWeldJoint>();
   initializePhysics2DWeldJoint(out, options);
-  return finishEntity(out);
+  return out;
 }
 
 export function createPhysics2DWheelJoint(options: Readonly<Physics2DWheelJointOptions>): Physics2DWheelJoint {
   const out = allocateEntity<Physics2DWheelJoint>();
   initializePhysics2DWheelJoint(out, options);
-  return finishEntity(out);
+  return out;
 }
 
 export function initializePhysics2DDistanceJoint(

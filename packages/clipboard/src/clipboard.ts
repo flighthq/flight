@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 import { createSignal, emitSignal } from '@flighthq/signals/contract';
 
@@ -37,7 +37,7 @@ export function clearClipboard(hostClipboardText: Readonly<HostClipboardTextCapa
 export function createClipboardWatch(): ClipboardWatch {
   const out = allocateEntity<ClipboardWatch>();
   initializeClipboardWatch(out);
-  return finishEntity(out);
+  return out;
 }
 
 // Stops delivery to watch and forgets its subscription. Safe to call when not attached.

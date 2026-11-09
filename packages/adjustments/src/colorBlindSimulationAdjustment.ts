@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityRuntimeKey, EntityConstruction } from '@flighthq/entity/contract';
 
 import { initializeColorMatrixAdjustment } from './colorMatrixAdjustment.ts';
@@ -9,7 +9,7 @@ export function createColorBlindSimulationAdjustment(
 ): ColorBlindSimulationAdjustment {
   const out = allocateEntity<ColorBlindSimulationAdjustment>();
   initializeColorBlindSimulationAdjustment(out, options);
-  return finishEntity(out);
+  return out;
 }
 
 // Color-vision-deficiency simulation as a matrix-tier adjustment — this op's FIRST backend realization

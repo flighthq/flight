@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 import type { GlyphMetrics } from '@flighthq/font/contract';
 import type { GlyphEntry } from '@flighthq/glyphatlas/contract';
@@ -9,7 +9,7 @@ import type { BitmapFont, BitmapFontData, BitmapFontKerningPair } from './types.
 export function createBitmapFont(data: Readonly<BitmapFontData>): BitmapFont {
   const out = allocateEntity<BitmapFont>();
   initializeBitmapFont(out, data);
-  return finishEntity(out);
+  return out;
 }
 
 // The glyph entry (atlas rectangle + advance + bearing) for a codepoint, or `null` when the font

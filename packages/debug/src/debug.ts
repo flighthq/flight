@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 import type { LogSink, LogState } from '@flighthq/log/contract';
 import {
@@ -23,7 +23,7 @@ export type { DebugState } from './types.ts';
 export function createDebugState(): DebugState {
   const out = allocateEntity<DebugState>();
   initializeDebugState(out);
-  return finishEntity(out);
+  return out;
 }
 
 // The one call that returns Flight to the zero-debug baseline: removes the sink enableDebug

@@ -9,7 +9,7 @@ import {
   registerBuiltInCollisionSupports3D,
 } from '@flighthq/collision/contract';
 import type { CollisionColliderShape3D } from '@flighthq/collision/contract';
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 import {
   addPhysics3DBody,
@@ -117,7 +117,7 @@ import type {
 export function createReferencePhysics3DAbi(): Physics3DAbi {
   const out = allocateEntity<Physics3DAbi>();
   initializeReferencePhysics3DAbi(out);
-  return finishEntity(out);
+  return out;
 }
 
 export function initializeReferencePhysics3DAbi(out: EntityConstruction<Physics3DAbi>): void {
@@ -502,7 +502,7 @@ function executeSetBody(
       out.centerX = values[26];
       out.centerY = values[27];
       out.centerZ = values[28];
-      return finishEntity(out);
+      return out;
     })(),
   );
   refreshRigidBody3DWorldInertia(body);

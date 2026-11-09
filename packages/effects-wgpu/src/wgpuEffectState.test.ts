@@ -1,6 +1,6 @@
 import { createColorLutCache } from '@flighthq/adjustments/contract';
 import type { Effect } from '@flighthq/effects/contract';
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import {
   beginWgpuScreenRenderPassForTest,
   createWgpuRenderStateForTest,
@@ -292,7 +292,7 @@ describe('endWgpuEffectPass', () => {
       (() => {
         const out = allocateEntity<any>();
         out.kind = 'test.wgpu-pipeline-unregistered';
-        return finishEntity(out);
+        return out;
       })() as Effect,
     ];
 
@@ -315,7 +315,7 @@ describe('setWgpuEffectStateSkipGuard', () => {
       (() => {
         const out = allocateEntity<any>();
         out.kind = 'test.wgpu-pipeline-skip-seam';
-        return finishEntity(out);
+        return out;
       })() as Effect,
     ];
 

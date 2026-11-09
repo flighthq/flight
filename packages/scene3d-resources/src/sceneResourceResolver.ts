@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 import type { HostImageCapability } from '@flighthq/image/contract';
 import {
@@ -38,7 +38,7 @@ export function createScene3DResourceResolver(
 ): Scene3DResourceResolverWithRuntime {
   const out = allocateEntity<Scene3DResourceResolverWithRuntime>();
   initializeScene3DResourceResolver(out, hostImage, options);
-  return finishEntity(out);
+  return out;
 }
 
 // Releases the resolver: cancels and disposes the loader, aborts every in-flight controller, and

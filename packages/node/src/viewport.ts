@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 
 import type { Viewport, ViewportLike } from './contract.node-types.ts';
@@ -6,7 +6,7 @@ import type { Viewport, ViewportLike } from './contract.node-types.ts';
 export function createViewport(obj?: Readonly<ViewportLike>): Viewport {
   const out = allocateEntity<Viewport>();
   initializeViewport(out, obj);
-  return finishEntity(out);
+  return out;
 }
 
 // Returns the viewport's aspect ratio (width / height), or 1 for a degenerate (zero-height) rect. A 3D

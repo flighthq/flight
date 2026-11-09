@@ -1,4 +1,4 @@
-import { allocateEntity, EntityRuntimeKey, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity, EntityRuntimeKey } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 import {
   createRenderState as _createRenderState,
@@ -80,7 +80,7 @@ export async function createWgpuAcquisition(
     const acquired = await hostWgpu.acquire(surface, options);
     const out = allocateEntity<WgpuHostAcquisition>();
     initializeWgpuHostAcquisition(out, acquired, 'caller');
-    return finishEntity(out);
+    return out;
   } catch {
     return null;
   }
@@ -91,7 +91,7 @@ export function createWgpuDeviceState(device: WgpuDevice): WgpuDeviceState {
   const state = allocateEntity<WgpuDeviceState>();
   initializeWgpuDeviceState(state, device);
   state[EntityRuntimeKey] = deviceRuntime;
-  return finishEntity(state);
+  return state;
 }
 
 /**
@@ -120,7 +120,7 @@ export function createWgpuOffscreenRenderState(
     return (() => {
       const out = allocateEntity<Extract<WgpuOffscreenRenderStateResult, { reason: 'device-lost' }>>();
       initializeWgpuOffscreenRenderStateDeviceLostResult(out, lost);
-      return finishEntity(out);
+      return out;
     })();
 
   const state = initializeWgpuDeviceRenderState(source.deviceState, {
@@ -140,7 +140,7 @@ export function createWgpuOffscreenRenderState(
   runtime.wgpuRenderTextureGuard = sourceRuntime.wgpuRenderTextureGuard;
   const out = allocateEntity<Extract<WgpuOffscreenRenderStateResult, { reason: 'ok' }>>();
   initializeWgpuOffscreenRenderStateOkResult(out, state);
-  return finishEntity(out);
+  return out;
 }
 
 // Takes the driver handle directly: the device is how a state talks to the GPU — shader compilation,

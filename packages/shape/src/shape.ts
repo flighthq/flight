@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 import type { Rectangle } from '@flighthq/geometry/contract';
 import { invalidateContent } from '@flighthq/node/contract';
@@ -43,7 +43,7 @@ export function createShape(): Shape {
 export function createShapeData(): ShapeData {
   const out = allocateEntity<ShapeData>();
   initializeShapeData(out);
-  return finishEntity(out);
+  return out;
 }
 
 export function createShapeRuntime(): ShapeRuntime {

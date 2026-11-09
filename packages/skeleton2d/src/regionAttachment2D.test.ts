@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import { describe, expect, it } from 'vitest';
 
 import type { Bone2D, RegionAttachment2D } from './contract.skeleton2d-types.ts';
@@ -34,7 +34,7 @@ function region(overrides: Partial<RegionAttachment2D> = {}): RegionAttachment2D
   out.x = 0;
   out.y = 0;
   Object.assign(out, overrides);
-  return finishEntity(out) as RegionAttachment2D;
+  return out as RegionAttachment2D;
 }
 
 describe('computeSkeleton2DRegionAttachmentVertices', () => {

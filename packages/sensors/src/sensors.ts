@@ -5,7 +5,6 @@ import {
   allocateEntity,
   attachEntityBinding,
   detachEntityBinding,
-  finishEntity,
   getEntityBindingAs,
 } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
@@ -289,7 +288,7 @@ export function computeWorldAccelerationFromDeviceAcceleration(
 export function createAmbientLightReading(): AmbientLightReading {
   let out: AmbientLightReading = allocateEntity<AmbientLightReading>();
   initializeAmbientLightReading(out);
-  return finishEntity(out);
+  return out;
 }
 
 /**
@@ -298,7 +297,7 @@ export function createAmbientLightReading(): AmbientLightReading {
 export function createMotionReading(): MotionReading {
   let out: MotionReading = allocateEntity<MotionReading>();
   initializeMotionReading(out);
-  return finishEntity(out);
+  return out;
 }
 
 /**
@@ -307,7 +306,7 @@ export function createMotionReading(): MotionReading {
 export function createOrientationReading(): OrientationReading {
   let out: OrientationReading = allocateEntity<OrientationReading>();
   initializeOrientationReading(out);
-  return finishEntity(out);
+  return out;
 }
 
 /**
@@ -316,7 +315,7 @@ export function createOrientationReading(): OrientationReading {
 export function createPressureReading(): PressureReading {
   let out: PressureReading = allocateEntity<PressureReading>();
   initializePressureReading(out);
-  return finishEntity(out);
+  return out;
 }
 
 /**
@@ -325,7 +324,7 @@ export function createPressureReading(): PressureReading {
 export function createProximityReading(): ProximityReading {
   let out: ProximityReading = allocateEntity<ProximityReading>();
   initializeProximityReading(out);
-  return finishEntity(out);
+  return out;
 }
 
 /**
@@ -334,7 +333,7 @@ export function createProximityReading(): ProximityReading {
 export function createQuaternionReading(): QuaternionReading {
   let out: QuaternionReading = allocateEntity<QuaternionReading>();
   initializeQuaternionReading(out);
-  return finishEntity(out);
+  return out;
 }
 
 /**
@@ -343,7 +342,7 @@ export function createQuaternionReading(): QuaternionReading {
 export function createRotationRateReading(): RotationRateReading {
   let out: RotationRateReading = allocateEntity<RotationRateReading>();
   initializeRotationRateReading(out);
-  return finishEntity(out);
+  return out;
 }
 
 /**
@@ -352,7 +351,7 @@ export function createRotationRateReading(): RotationRateReading {
 export function createSensors(): Sensors {
   let out: Sensors = allocateEntity<Sensors>();
   initializeSensors(out);
-  return finishEntity(out);
+  return out;
 }
 
 /**

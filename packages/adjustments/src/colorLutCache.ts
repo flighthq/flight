@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 
 import { bakeColorLut, COLOR_LUT_DEFAULT_SIZE } from './colorLut.ts';
@@ -42,7 +42,7 @@ export function bakeColorLutForRun(
 export function createColorLutCache(): ColorLutCache {
   const out = allocateEntity<ColorLutCache>();
   initializeColorLutCache(out);
-  return finishEntity(out);
+  return out;
 }
 
 export function initializeColorLutCache(out: EntityConstruction<ColorLutCache>): void {

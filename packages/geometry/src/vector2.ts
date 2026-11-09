@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 
 import type { Vector2, Vector2Like, Vector3Like } from './types.ts';
@@ -60,7 +60,7 @@ export function copyVector2(out: Vector2Like, source: Readonly<Vector2Like>): vo
 export function createVector2(x?: number, y?: number): Vector2 {
   const out = allocateEntity<Vector2>();
   initializeVector2(out, x ?? 0, y ?? 0);
-  return finishEntity(out);
+  return out;
 }
 
 export function createVector2FromPolar(length: number, angle: number): Vector2 {

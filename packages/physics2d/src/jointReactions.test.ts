@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import { EntityRuntimeKey } from '@flighthq/entity/contract';
 import { describe, expect, it } from 'vitest';
 
@@ -46,7 +46,7 @@ function ball(world: Physics2DWorld, type: RigidBody2D['type'], x: number, y: nu
 }
 
 function base(kind: string, bodyA: number, bodyB: number): Physics2DJoint {
-  const out = allocateEntity<any>();
+  const out = allocateEntity<any>() as any;
   out.kind = kind;
   out.bodyA = bodyA;
   out.bodyB = bodyB;
@@ -64,7 +64,7 @@ function base(kind: string, bodyA: number, bodyB: number): Physics2DJoint {
   out.rAY = 0;
   out.rBX = 0;
   out.rBY = 0;
-  return finishEntity(out);
+  return out;
 }
 
 function settledWorld(): Physics2DWorld {

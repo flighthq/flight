@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction, EntityRaw } from '@flighthq/entity/contract';
 import type { Viewport } from '@flighthq/node/contract';
 
@@ -34,7 +34,7 @@ export function createRenderView<State extends RenderState, Target extends Rende
 ): RenderView<State, Target> {
   const view = allocateEntity<RenderView<State, Target>>();
   initializeRenderView(view, renderState, renderTarget, viewport);
-  return finishEntity(view);
+  return view;
 }
 
 // Links an existing command state, target and viewport without taking ownership of any of them.

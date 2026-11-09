@@ -1,4 +1,4 @@
-import { allocateEntity, createEntityRuntime, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity, createEntityRuntime } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 import { EntityRuntimeKey } from '@flighthq/entity/contract';
 import { BlendMode } from '@flighthq/materials/contract';
@@ -9,7 +9,7 @@ import type { ColorAdjustmentUnsupportedGuard, RenderState, RenderStateRuntime }
 export function createRenderState(obj?: Partial<RenderState>): RenderState {
   const state = allocateEntity<RenderState>();
   initializeRenderState(state, obj);
-  return finishEntity(state);
+  return state;
 }
 
 // Allocates the package-private machinery runtime for a RenderState: the frame counter, proxy maps,

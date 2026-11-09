@@ -1,5 +1,5 @@
 import type { ColorLut } from '@flighthq/adjustments/contract';
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type {
   WgpuBindGroupLayout,
   WgpuBlendState,
@@ -107,7 +107,7 @@ function getLutPipeline(state: WgpuRenderState, format: WgpuTextureFormat): Wgpu
     });
     const _entity = allocateEntity<WgpuEffectPipeline>();
     initializeWgpuEffectPipeline(_entity, 'replace', gpuPipeline);
-    pipeline = finishEntity(_entity);
+    pipeline = _entity;
     byFormat.set(format, pipeline);
   }
   return pipeline;

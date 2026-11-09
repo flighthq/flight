@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 import { cloneVector2, copyVector2, createVector2, inverseMatrix3 } from '@flighthq/geometry/contract';
 import type { Matrix3Like, Vector2Like } from '@flighthq/geometry/contract';
@@ -49,28 +49,28 @@ export function cloneTexture(source: Readonly<TextureLike>): Texture {
       applyCommonTextureFields(out, common);
       out.dimension = '2d';
       out.source = source.source;
-      return finishEntity(out) as Texture2D;
+      return out as Texture2D;
     }
     case '2d-array': {
       const out = allocateEntity<Extract<Texture, { dimension: '2d-array' }>>();
       applyCommonTextureFields(out, common);
       out.dimension = '2d-array';
       out.sources = source.sources.slice();
-      return finishEntity(out) as Extract<Texture, { dimension: '2d-array' }>;
+      return out as Extract<Texture, { dimension: '2d-array' }>;
     }
     case '3d': {
       const out = allocateEntity<Extract<Texture, { dimension: '3d' }>>();
       applyCommonTextureFields(out, common);
       out.dimension = '3d';
       out.source = source.source;
-      return finishEntity(out) as Extract<Texture, { dimension: '3d' }>;
+      return out as Extract<Texture, { dimension: '3d' }>;
     }
     case 'cube': {
       const out = allocateEntity<Extract<Texture, { dimension: 'cube' }>>();
       applyCommonTextureFields(out, common);
       out.dimension = 'cube';
       out.sources = source.sources.slice() as unknown as TextureSourceCubeFaces;
-      return finishEntity(out) as Extract<Texture, { dimension: 'cube' }>;
+      return out as Extract<Texture, { dimension: 'cube' }>;
     }
   }
 }
@@ -131,7 +131,7 @@ export function createTexture(opts?: Readonly<CreateTextureOptions>): Texture {
       applyCommonTextureFields(out, common);
       out.dimension = '2d-array';
       out.sources = opts.sources?.slice() ?? [];
-      texture = finishEntity(out) as Extract<Texture, { dimension: '2d-array' }>;
+      texture = out as Extract<Texture, { dimension: '2d-array' }>;
       break;
     }
     case '3d': {
@@ -139,7 +139,7 @@ export function createTexture(opts?: Readonly<CreateTextureOptions>): Texture {
       applyCommonTextureFields(out, common);
       out.dimension = '3d';
       out.source = opts.source ?? null;
-      texture = finishEntity(out) as Extract<Texture, { dimension: '3d' }>;
+      texture = out as Extract<Texture, { dimension: '3d' }>;
       break;
     }
     case 'cube': {
@@ -154,7 +154,7 @@ export function createTexture(opts?: Readonly<CreateTextureOptions>): Texture {
         null,
         null,
       ]) as unknown as TextureSourceCubeFaces;
-      texture = finishEntity(out) as Extract<Texture, { dimension: 'cube' }>;
+      texture = out as Extract<Texture, { dimension: 'cube' }>;
       break;
     }
     // The 2D case returns straight from the leaf, which attaches the resource itself — falling through
@@ -173,7 +173,7 @@ export function createTexture(opts?: Readonly<CreateTextureOptions>): Texture {
 export function createTexture2D(opts?: Readonly<CreateTexture2DOptions>): Texture2D {
   const out = allocateEntity<Texture2D>();
   initializeTexture2D(out, opts);
-  const texture = finishEntity(out) as Texture2D;
+  const texture = out as Texture2D;
   attachTextureToResource(texture, opts?.resource);
   return texture;
 }

@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import { afterEach, describe, expect, it } from 'vitest';
 
 import type { Bone2D, Skeleton2DTransformConstraint } from './contract.skeleton2d-types.ts';
@@ -51,7 +51,7 @@ function transform(overrides: Partial<Skeleton2DTransformConstraint> = {}): Skel
   out.offsetY = 0;
   out.targetBoneIndex = 1;
   Object.assign(out, overrides);
-  return finishEntity(out) as Skeleton2DTransformConstraint;
+  return out as Skeleton2DTransformConstraint;
 }
 
 // This file registers a built-in solver into a module-global registry, so it restores whatever it found

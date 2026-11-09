@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import { EntityRuntimeKey } from '@flighthq/entity/contract';
 import {
   addLogSink,
@@ -415,7 +415,7 @@ describe('createGlRenderState (context sharing)', () => {
     const destroyData = vi.fn();
     const root = createDisplayObject();
     registerNodeRenderer(screen, root.kind, {
-      createData: () => finishEntity(allocateEntity()),
+      createData: () => allocateEntity(),
       destroyData,
       submit: vi.fn(),
     });
@@ -490,7 +490,7 @@ describe('destroyGlRenderState', () => {
     out.bind = vi.fn();
     out.locations = { ...owned.locations, program: callerProgram };
     out.program = callerProgram;
-    const shader = finishEntity(out);
+    const shader = out;
     const deleteProgram = vi.spyOn(gl, 'deleteProgram');
     useGlProgram(owner, shader);
 

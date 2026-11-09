@@ -1,6 +1,6 @@
 import { createOrthographicProjection, createPerspectiveProjection } from '@flighthq/camera/contract';
 import type { Projection } from '@flighthq/camera/contract';
-import { allocateEntity, EntityRuntimeKey, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity, EntityRuntimeKey } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 import { createTransform3D } from '@flighthq/geometry/contract';
 import type { Transform3D } from '@flighthq/geometry/contract';
@@ -522,7 +522,7 @@ function readFlightDocumentText(text: FlightDocumentText): FlightDocumentTextRea
           null,
           null,
         );
-        return finishEntity(out);
+        return out;
       })(),
     };
   }

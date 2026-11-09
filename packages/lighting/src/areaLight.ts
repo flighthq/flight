@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 import { cloneVector3, createVector3, normalizeVector3, setVector3 } from '@flighthq/geometry/contract';
 import type { Vector3Like } from '@flighthq/geometry/contract';
@@ -28,13 +28,13 @@ export function cloneAreaLight(source: Readonly<AreaLight>): AreaLight {
   out.shadowNear = source.shadowNear;
   out.shadowStrength = source.shadowStrength;
   out.up = cloneVector3(source.up);
-  return finishEntity(out);
+  return out;
 }
 
 export function createAreaLight(options?: Readonly<AreaLightOptions>): AreaLight {
   const out = allocateEntity<AreaLight>();
   initializeAreaLight(out, options);
-  return finishEntity(out);
+  return out;
 }
 
 // Rectangular area light (LTC-shaded). `position` is the rectangle center, `direction` its facing

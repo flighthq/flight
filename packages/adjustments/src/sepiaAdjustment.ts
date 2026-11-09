@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityRuntimeKey, EntityConstruction } from '@flighthq/entity/contract';
 
 import { initializeColorMatrixAdjustment } from './colorMatrixAdjustment.ts';
@@ -9,7 +9,7 @@ export function createSepiaAdjustment(
 ): SepiaAdjustment {
   const out = allocateEntity<SepiaAdjustment>();
   initializeSepiaAdjustment(out, options);
-  return finishEntity(out);
+  return out;
 }
 
 // Sepia tone as a matrix-tier adjustment. `mix(rgb, sepia·rgb, intensity)` is affine 3×3 (no offset);

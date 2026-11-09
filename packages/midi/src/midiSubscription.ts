@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction, EntityRaw } from '@flighthq/entity/contract';
 import { clearSignal, createSignal, emitSignal } from '@flighthq/signals/contract';
 import type { Signal } from '@flighthq/signals/contract';
@@ -144,7 +144,6 @@ function createMidiSubscription<Subscription extends EntityRaw>(
 ): Subscription {
   const subscription = allocateEntity<Subscription>();
   init(subscription);
-  finishEntity(subscription);
   subscriptionStates.set(subscription, {
     attachment: null,
     attaching: null,

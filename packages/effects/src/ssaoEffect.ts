@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction, EntityWithoutRuntime } from '@flighthq/entity/contract';
 
 import { initializeEffect } from './effect.ts';
@@ -7,7 +7,7 @@ import type { SsaoEffect } from './types/SsaoEffect.ts';
 export function createSsaoEffect(options: Readonly<Omit<EntityWithoutRuntime<SsaoEffect>, 'kind'>> = {}): SsaoEffect {
   const out = allocateEntity<SsaoEffect>();
   initializeSsaoEffect(out, options);
-  return finishEntity(out);
+  return out;
 }
 
 export function initializeSsaoEffect(

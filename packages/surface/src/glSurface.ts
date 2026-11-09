@@ -1,5 +1,4 @@
 import type { AppWindow } from '@flighthq/app/contract';
-import { finishEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 
 import { allocateSurface } from './surface.ts';
@@ -37,7 +36,7 @@ export function createGlSurfaceFromNativeHandle<Context, Options>(
   const context = capability.acquire(surface as GenericGlSurface<Context>, options);
   if (context === null) return null;
   (surface as EntityConstruction<GenericGlSurface<Context>>).context = context;
-  return finishEntity(surface);
+  return surface;
 }
 
 export function destroyGlSurface<Context, Options>(

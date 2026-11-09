@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 import { cloneVector3, createVector3 } from '@flighthq/geometry/contract';
 
@@ -26,13 +26,13 @@ export function clonePointLight(source: Readonly<PointLight>): PointLight {
   out.shadowMapSize = source.shadowMapSize;
   out.shadowNear = source.shadowNear;
   out.shadowStrength = source.shadowStrength;
-  return finishEntity(out);
+  return out;
 }
 
 export function createPointLight(options?: Readonly<PointLightOptions>): PointLight {
   const out = allocateEntity<PointLight>();
   initializePointLight(out, options);
-  return finishEntity(out);
+  return out;
 }
 
 // Omnidirectional point light. `position` is world-space; intensity falls off with distance up

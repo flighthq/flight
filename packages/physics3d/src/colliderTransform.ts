@@ -1,6 +1,6 @@
 import { writeCollisionHeightfieldBounds3D, writeCollisionTriangleMeshBounds3D } from '@flighthq/collision/contract';
 import type { CollisionColliderShape3D } from '@flighthq/collision/contract';
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 import type { SpatialAabb3D } from '@flighthq/spatial/contract';
 
@@ -17,13 +17,13 @@ export function createPhysics3DColliderWorldShape(
     case 'sphere': {
       const out = allocateEntity<Extract<CollisionColliderShape3D, { kind: 'sphere' }> & Entity>();
       initializeCollisionSphere3D(out, 'sphere', local.radius, local.x, local.y, local.z);
-      return finishEntity(out);
+      return out;
     }
     case 'aabb':
     case 'box': {
       const out = allocateEntity<Extract<CollisionColliderShape3D, { kind: 'box' }> & Entity>();
       initializeCollisionBox3D(out, 'box');
-      return finishEntity(out);
+      return out;
     }
     case 'capsule': {
       const out = allocateEntity<Extract<CollisionColliderShape3D, { kind: 'capsule' }> & Entity>();
@@ -38,7 +38,7 @@ export function createPhysics3DColliderWorldShape(
         local.z0,
         local.z1,
       );
-      return finishEntity(out);
+      return out;
     }
     case 'cylinder': {
       const out = allocateEntity<Extract<CollisionColliderShape3D, { kind: 'cylinder' }> & Entity>();
@@ -53,7 +53,7 @@ export function createPhysics3DColliderWorldShape(
         local.z0,
         local.z1,
       );
-      return finishEntity(out);
+      return out;
     }
     case 'cone': {
       const out = allocateEntity<Extract<CollisionColliderShape3D, { kind: 'cone' }> & Entity>();
@@ -68,12 +68,12 @@ export function createPhysics3DColliderWorldShape(
         'cone',
         local.radius,
       );
-      return finishEntity(out);
+      return out;
     }
     case 'convex': {
       const out = allocateEntity<Extract<CollisionColliderShape3D, { kind: 'convex' }> & Entity>();
       initializeCollisionConvex3D(out, 'convex', local.points.slice());
-      return finishEntity(out);
+      return out;
     }
     case 'triangle-mesh': {
       const out = allocateEntity<Extract<CollisionColliderShape3D, { kind: 'triangle-mesh' }> & Entity>();
@@ -91,7 +91,7 @@ export function createPhysics3DColliderWorldShape(
         local.y,
         local.z,
       );
-      return finishEntity(out);
+      return out;
     }
     case 'heightfield': {
       const out = allocateEntity<Extract<CollisionColliderShape3D, { kind: 'heightfield' }> & Entity>();
@@ -112,12 +112,12 @@ export function createPhysics3DColliderWorldShape(
         local.y,
         local.z,
       );
-      return finishEntity(out);
+      return out;
     }
     default: {
       const out = allocateEntity<Extract<CollisionColliderShape3D, { kind: 'sphere' }> & Entity>();
       initializeCollisionSphere3D(out, 'sphere', 0, 0, 0, 0);
-      return finishEntity(out);
+      return out;
     }
   }
 }

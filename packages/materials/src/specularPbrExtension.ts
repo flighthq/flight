@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 
 import type { SpecularPbrExtension } from './contract.materials-types.ts';
@@ -9,7 +9,7 @@ import { isValidPbrUvSet } from './pbrExtension.ts';
 export function createSpecularPbrExtension(opts?: Readonly<Partial<SpecularPbrExtension>>): SpecularPbrExtension {
   const out = allocateEntity<SpecularPbrExtension>();
   initializeSpecularPbrExtension(out, opts);
-  return finishEntity(out);
+  return out;
 }
 
 export function initializeSpecularPbrExtension(

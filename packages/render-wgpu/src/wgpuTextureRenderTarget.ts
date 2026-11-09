@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 import type { Matrix } from '@flighthq/geometry/contract';
 import type { Material } from '@flighthq/materials/contract';
@@ -24,7 +24,7 @@ export function createWgpuTextureRenderTarget(
 ): WgpuTextureRenderTarget {
   const out = allocateEntity<WgpuTextureRenderTarget>();
   initializeWgpuTextureRenderTarget(out, state, width, height, format, colorSpace, sampleCount);
-  return finishEntity(out);
+  return out;
 }
 
 export function destroyWgpuTextureRenderTarget(target: WgpuTextureRenderTarget): void {
@@ -70,7 +70,7 @@ export function drawWgpuTextureRenderTargetResult(
       out.mipLevelCount = target.mipLevelCount;
       out.texture = target.texture;
       out.view = target.view;
-      return finishEntity(out);
+      return out;
     })(),
     0,
     0,

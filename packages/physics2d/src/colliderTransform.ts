@@ -7,7 +7,7 @@ import type {
   CollisionPolygon2D,
   CollisionSegment2D,
 } from '@flighthq/collision/contract';
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 
 import type { Physics2DEntityCompatibility as Entity } from './entityCompatibility.ts';
@@ -23,38 +23,38 @@ export function createPhysics2DColliderWorldShape(
     case 'circle': {
       const out = allocateEntity<(CollisionCircle2D & { kind: 'circle' }) & Entity>();
       initializeCollisionCircle2D(out, 'circle', local.radius, local.x, local.y);
-      return finishEntity(out);
+      return out;
     }
     case 'aabb':
     case 'obb': {
       const out = allocateEntity<(CollisionObb2D & { kind: 'obb' }) & Entity>();
       initializeCollisionObb2D(out, 0, 0, 'obb', 0, 0, 0);
-      return finishEntity(out);
+      return out;
     }
     case 'capsule': {
       const out = allocateEntity<(CollisionCapsule2D & { kind: 'capsule' }) & Entity>();
       initializeCollisionCapsule2D(out, 'capsule', local.radius, 0, 0, 0, 0);
-      return finishEntity(out);
+      return out;
     }
     case 'polygon': {
       const out = allocateEntity<(CollisionPolygon2D & { kind: 'polygon' }) & Entity>();
       initializeCollisionPolygon2D(out, 'polygon', local.points.slice());
-      return finishEntity(out);
+      return out;
     }
     case 'segment': {
       const out = allocateEntity<(CollisionSegment2D & { kind: 'segment' }) & Entity>();
       initializeCollisionSegment2D(out, 'segment', local.x0, local.x1, local.y0, local.y1);
-      return finishEntity(out);
+      return out;
     }
     case 'point': {
       const out = allocateEntity<(CollisionPoint2D & { kind: 'point' }) & Entity>();
       initializeCollisionPoint2D(out, 'point', local.x, local.y);
-      return finishEntity(out);
+      return out;
     }
     default: {
       const out = allocateEntity<(CollisionPoint2D & { kind: 'point' }) & Entity>();
       initializeCollisionPoint2D(out, 'point', 0, 0);
-      return finishEntity(out);
+      return out;
     }
   }
 }

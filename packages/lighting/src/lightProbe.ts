@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 import { createVector3 } from '@flighthq/geometry/contract';
 import type { AabbLike, Vector3Like } from '@flighthq/geometry/contract';
@@ -17,7 +17,7 @@ import { LIGHT_PROBE_SH_FLOATS } from './types.ts';
 export function createLightProbe(position: Readonly<Vector3Like>, shCoefficients?: Readonly<Float32Array>): LightProbe {
   const out = allocateEntity<LightProbe>();
   initializeLightProbe(out, position, shCoefficients);
-  return finishEntity(out);
+  return out;
 }
 
 /**
@@ -36,7 +36,7 @@ export function createLightProbeGrid(
 ): LightProbeGrid {
   const out = allocateEntity<LightProbeGrid>();
   initializeLightProbeGrid(out, probes, bounds, resolution);
-  return finishEntity(out);
+  return out;
 }
 
 /**

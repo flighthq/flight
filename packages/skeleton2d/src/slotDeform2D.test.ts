@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import { describe, expect, it } from 'vitest';
 
 import type { Attachment2D, MeshAttachment2D, Skin2D, Slot2D } from './contract.skeleton2d-types.ts';
@@ -19,7 +19,7 @@ function mesh(pointCount: number): MeshAttachment2D {
   out.uvs = new Float32Array(pointCount * 2);
   out.vertexCount = pointCount;
   out.vertices = null;
-  return finishEntity(out) as MeshAttachment2D;
+  return out as MeshAttachment2D;
 }
 
 describe('getSkeleton2DSlotDeformOffsets', () => {

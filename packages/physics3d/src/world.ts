@@ -1,6 +1,6 @@
 import { cloneCollisionColliderShape3D } from '@flighthq/collision/contract';
 import type { CollisionColliderShape3D } from '@flighthq/collision/contract';
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction, NonEntityCreateResult } from '@flighthq/entity/contract';
 import { createUniformGridSpatialBackend3D } from '@flighthq/spatial/contract';
 import type { SpatialIndexBackend3D } from '@flighthq/spatial/contract';
@@ -280,7 +280,7 @@ export function createPhysics3DCollider(
     sensor,
     createPhysics3DColliderWorldShape(ownedLocal),
   );
-  return finishEntity(out);
+  return out;
 }
 
 // The default sequential-impulse tuning. Eight velocity iterations and three position iterations are
@@ -335,7 +335,7 @@ export function createPhysics3DWorld(index?: SpatialIndexBackend3D): Physics3DWo
     0,
     index ?? createUniformGridSpatialBackend3D(1),
   );
-  return finishEntity(out);
+  return out;
 }
 
 // Allocates a body at rest at the origin, with no mass. It is not in any world until added, and it will
@@ -344,7 +344,7 @@ export function createPhysics3DWorld(index?: SpatialIndexBackend3D): Physics3DWo
 export function createRigidBody3D(type: Physics3DBodyType = 'dynamic'): RigidBody3D {
   const out = allocateEntity<RigidBody3D>();
   initializeRigidBody3D(out, type);
-  return finishEntity(out);
+  return out;
 }
 
 // Looks a body up by its persistent index, or null when no body in this world carries it. The

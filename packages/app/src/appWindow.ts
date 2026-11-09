@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 import type { Matrix } from '@flighthq/geometry/contract';
 import type {
@@ -256,7 +256,7 @@ export function computeWindowDeviceTransform(win: Readonly<AppWindow>, out: Matr
 export function createAppWindow(): AppWindow {
   const out = allocateEntity<AppWindow>();
   initializeAppWindow(out);
-  return finishEntity(out);
+  return out;
 }
 
 export function detachAppWindowRenderContextObserver(win: AppWindow): void {

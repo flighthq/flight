@@ -16,8 +16,8 @@ describe('isTestSupportSource', () => {
 
 describe('getGeneratedExportLane', () => {
   it('derives public, protected, and excluded names from generated Rust barrels', () => {
-    const contractNames = new Set(['attachEntityWrapper', 'Entity', 'finishEntity']);
-    const publicNames = new Set(['Entity', 'finishEntity']);
+    const contractNames = new Set(['attachEntityWrapper', 'Entity', 'allocateEntity']);
+    const publicNames = new Set(['Entity', 'allocateEntity']);
 
     expect(getGeneratedExportLane('Entity', contractNames, publicNames)).toBe('public');
     expect(getGeneratedExportLane('attachEntityWrapper', contractNames, publicNames)).toBe('protected');

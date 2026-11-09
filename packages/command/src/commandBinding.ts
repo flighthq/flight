@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction, Kind, NonEntityCreateResult } from '@flighthq/entity/contract';
 import { addNodeChildAt, getNodeChildCount, removeNodeChild, setNodeChildIndex } from '@flighthq/node/contract';
 import type { NodeAny } from '@flighthq/node/contract';
@@ -165,7 +165,7 @@ const setNodePropertyCommandBinding: CommandBinding = {
       b.mergeWindow,
       b.time,
     );
-    return finishEntity(out);
+    return out;
   },
   undo: (command) => {
     const entries = (command as Readonly<SetNodePropertyCommand>).entries;

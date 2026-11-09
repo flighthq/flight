@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { Entity } from '@flighthq/entity/contract';
 import { EntityRuntimeKey } from '@flighthq/entity/contract';
 import { withKindMapEntry } from '@flighthq/registry/contract';
@@ -82,9 +82,9 @@ function createWgpuRenderStateRuntime(deviceState: ReturnType<typeof createWgpuD
 
 function entityHostBackend(fields: Omit<HostWgpuCapability, keyof Entity>): HostWgpuCapability {
   return (() => {
-    const out = allocateEntity<any>();
+    const out = allocateEntity<any>() as any;
     Object.assign(out, fields);
-    return finishEntity(out);
+    return out;
   })();
 }
 
@@ -339,7 +339,7 @@ describe('createWgpuOffscreenRenderState', () => {
     const screen = await createWgpuRenderStateForTest();
     const offscreen = createWgpuOffscreenRenderState(screen);
     const root = createDisplayObject();
-    registerNodeRenderer(offscreen, root.kind, { createData: () => finishEntity(allocateEntity()), submit: vi.fn() });
+    registerNodeRenderer(offscreen, root.kind, { createData: () => allocateEntity(), submit: vi.fn() });
     prepareScene2DRender(offscreen, root);
     beginWgpuFrame(screen);
 
@@ -417,7 +417,7 @@ describe('createWgpuOffscreenRenderState', () => {
     const root = createDisplayObject();
     const destroyData = vi.fn();
     registerNodeRenderer(screen, root.kind, {
-      createData: () => finishEntity(allocateEntity()),
+      createData: () => allocateEntity(),
       destroyData,
       submit: vi.fn(),
     });

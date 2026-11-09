@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 
 import { initializeColorMatrixAdjustment } from './colorMatrixAdjustment.ts';
@@ -7,7 +7,7 @@ import type { TintAdjustment } from './types.ts';
 export function createTintAdjustment(rgba: number): TintAdjustment {
   const out = allocateEntity<TintAdjustment>();
   initializeTintAdjustment(out, rgba);
-  return finishEntity(out);
+  return out;
 }
 
 // Builds a diagonal-affine tint from a packed `0xRRGGBBAA` color: each channel scale is that byte

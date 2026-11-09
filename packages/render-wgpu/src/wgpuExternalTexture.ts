@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 import type { ExternalTexture } from '@flighthq/render/contract';
 import type { CreateExternalTextureOptions } from '@flighthq/render/contract';
@@ -40,7 +40,7 @@ export function createExternalWgpuTexture(
     (() => {
       const entry = allocateEntity<WgpuTextureEntry>();
       initializeExternalWgpuTextureEntry(entry, sampler, handle, view);
-      return finishEntity(entry);
+      return entry;
     })(),
   );
   registerWgpuTextureResolver(state, ExternalTextureSourceKind, resolveExternalWgpuTexture);

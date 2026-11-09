@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 import { clearSignal, createSignal, emitSignal } from '@flighthq/signals/contract';
 
@@ -46,7 +46,7 @@ export function disposeShareSignals(signals: ShareSignals): void {
 export function enableShareSignals(): ShareSignals {
   const out = allocateEntity<ShareSignals>();
   initializeShareSignals(out);
-  return finishEntity(out);
+  return out;
 }
 
 export function hasShareContentFields(content: Readonly<ShareContent>): boolean {

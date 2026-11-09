@@ -1,5 +1,5 @@
 import { computeRgbaCssString } from '@flighthq/color/contract';
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 import { getNodeLocalContentRevision } from '@flighthq/node/contract';
 import type { NodeAny, RendererData } from '@flighthq/node/contract';
@@ -21,7 +21,7 @@ interface CanvasTextLabelData extends RendererData {
 function createCanvasTextLabelData(_state: CanvasRenderState, _source: NodeAny): RendererData {
   const out = allocateEntity<CanvasTextLabelData>();
   initializeCanvasTextLabelData(out);
-  return finishEntity(out);
+  return out;
 }
 
 export function drawCanvasTextLabel(state: CanvasRenderState, renderProxy: RenderProxy2D): void {

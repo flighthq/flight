@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import { createMatrix3, createVector2, inverseMatrix3 } from '@flighthq/geometry/contract';
 import type { ImageResource } from '@flighthq/image/contract';
 import type { RenderTarget } from '@flighthq/render/contract';
@@ -41,7 +41,7 @@ function makeRenderTarget(width: number, height: number): RenderTarget {
   out.kind = RenderTargetTextureSourceKind;
   out.version = 0;
   out.width = width;
-  return finishEntity(out) as RenderTarget;
+  return out as RenderTarget;
 }
 
 // Applies a column-major 3×3 uv matrix to (u, v, 1), writing the transformed coordinate into out.

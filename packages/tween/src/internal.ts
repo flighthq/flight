@@ -1,5 +1,5 @@
 import type { EasingFunction } from '@flighthq/easing/contract';
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import { createSignal } from '@flighthq/signals/contract';
 
 import type { NumericProps, Tween, TweenManager, TweenOptions, TweenPropertyDetail } from './types.ts';
@@ -97,7 +97,7 @@ export function makeTween<T extends object>(
   out.smartRotation = options?.smartRotation ?? false;
   out.snapping = options?.snapping ?? false;
   out.target = target;
-  return finishEntity(out);
+  return out;
 }
 
 // Proxy-backed tweens interpolate against their private target while manager operations address the

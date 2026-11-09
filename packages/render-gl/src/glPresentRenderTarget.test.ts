@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 
 import type { GlTextureRenderTarget } from './contract.render-gl-types.ts';
 import { presentGlRenderTarget } from './glPresentRenderTarget.ts';
@@ -32,7 +32,7 @@ function makeTarget(colorSpace: 'linear' | 'srgb', texture: WebGLTexture): GlTex
   out.depthTexture = null;
   out.colorRenderbuffers = [];
   out.depthStencilRenderbuffer = null;
-  return finishEntity(out);
+  return out;
 }
 
 describe('presentGlRenderTarget', () => {

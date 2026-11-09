@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 
 import type { GlRenderPass, GlRenderState, GlTextureRenderTarget } from './contract.render-gl-types.ts';
 import {
@@ -16,7 +16,7 @@ function makePass(state: GlRenderState): GlRenderPass {
   (pass as unknown as { gl: GlRenderState['gl'] }).gl = state.gl;
   (pass as unknown as { state: GlRenderState }).state = state;
   (pass as unknown as { target: null }).target = null as never;
-  return finishEntity(pass);
+  return pass;
 }
 
 const FRAG_SRC = `#version 300 es
@@ -62,7 +62,7 @@ function makeTarget(
   out.depthTexture = null;
   out.colorRenderbuffers = [];
   out.depthStencilRenderbuffer = null;
-  return finishEntity(out);
+  return out;
 }
 
 describe('clearGlRenderTarget', () => {

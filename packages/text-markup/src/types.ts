@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityRaw } from '@flighthq/entity/contract';
 import type { TextFormat } from '@flighthq/textformat/contract';
 
@@ -115,7 +115,7 @@ export interface TextMarkupGuardState extends EntityRaw {
 
 export function createTextMarkupGuardState(): TextMarkupGuardState {
   const out = allocateEntity<TextMarkupGuardState>();
-  return finishEntity(out);
+  return out;
 }
 
 export function getTextMarkupIssueKindString(value: TextMarkupIssueKind): string {

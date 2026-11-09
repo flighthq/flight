@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 
 import type { Scene3D } from './contract.scene3d-types.ts';
@@ -10,7 +10,7 @@ import { Node3DKind } from './types/Node3D.ts';
 export function createScene3D(): Scene3D {
   const out = allocateEntity<Scene3D>();
   initializeScene3D(out);
-  return finishEntity(out);
+  return out;
 }
 
 // Allocates a Scene3D: a 3D content document Entity that owns a `root` Node3D (allocated here), not a node in

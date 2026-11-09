@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 import {
   getTextFormatAscent,
@@ -781,7 +781,7 @@ function writeLineMetrics(out: TextLayoutResult, groups: readonly TextLayoutGrou
 export function createTextLayoutResult(): TextLayoutResult {
   const out = allocateEntity<TextLayoutResult>();
   initializeTextLayoutResult(out);
-  return finishEntity(out);
+  return out;
 }
 
 export function initializeTextLayoutResult(out: EntityConstruction<TextLayoutResult>): void {

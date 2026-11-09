@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 import type { Material } from '@flighthq/materials/contract';
 import { forEachNodeDescendant } from '@flighthq/node/contract';
@@ -13,7 +13,7 @@ import type { Scene3DKindUsage } from './types/Scene3DKindUsage.ts';
 export function createScene3DKindUsage(): Scene3DKindUsage {
   const out = allocateEntity<Scene3DKindUsage>();
   initializeScene3DKindUsage(out);
-  return finishEntity(out);
+  return out;
 }
 
 // Clears `out`, then fills it with every kind this scene uses. One walk, no registry, no backend, no

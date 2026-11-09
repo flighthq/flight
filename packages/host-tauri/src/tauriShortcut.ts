@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type {
   Accelerator,
   HostShortcutCapabilities,
@@ -55,7 +55,7 @@ export function tauriHostShortcutTrigger(tauri: TauriApi): HostShortcutTriggerCa
     if (firstError !== undefined) throw firstError;
   };
   provider.subscribe = async (accelerator: Accelerator, trigger: () => void) => {
-    const subscription = finishEntity(allocateEntity<ShortcutTriggerSubscription>());
+    const subscription = allocateEntity<ShortcutTriggerSubscription>();
     const registration = globalShortcut.register(accelerator, (event) => {
       if (event.state === 'Pressed' && registrations.has(subscription)) trigger();
     });

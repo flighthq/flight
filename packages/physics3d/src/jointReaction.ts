@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 
 import type { Physics3DJoint, Physics3DJointReaction, Physics3DWorld } from './types.ts';
@@ -53,7 +53,7 @@ export function clearPhysics3DJointReaction(out: Physics3DJointReaction): void {
 export function createPhysics3DJointReaction(): Physics3DJointReaction {
   const out = allocateEntity<Physics3DJointReaction>();
   initializePhysics3DJointReaction(out);
-  return finishEntity(out);
+  return out;
 }
 
 export function getPhysics3DJointReactionForce(reaction: Readonly<Physics3DJointReaction>): number {

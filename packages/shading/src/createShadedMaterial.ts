@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 import { BlendMode } from '@flighthq/materials/contract';
 
@@ -22,7 +22,7 @@ import { ShadedMaterialKind } from './contract.shading-types.ts';
 export function createShadedMaterial(options?: Readonly<ShadedMaterialOptions>): ShadedMaterial {
   const out = allocateEntity<ShadedMaterial>();
   initializeShadedMaterial(out, options ?? {});
-  return finishEntity(out);
+  return out;
 }
 
 export function initializeShadedMaterial(

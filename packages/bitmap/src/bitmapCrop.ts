@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { RectangleLike } from '@flighthq/geometry/contract';
 
 import { initializeBitmap } from './bitmapChannel.ts';
@@ -38,7 +38,7 @@ export function cropBitmap(source: Readonly<Bitmap>, rect: Readonly<RectangleLik
   }
   const out = allocateEntity<Bitmap>();
   initializeBitmap(out, source.alphaType, data, source.format, source.gamut, rh, rw);
-  return finishEntity(out);
+  return out;
 }
 
 /**
@@ -104,7 +104,7 @@ export function extendBitmap(
   }
   const out = allocateEntity<Bitmap>();
   initializeBitmap(out, source.alphaType, data, source.format, source.gamut, dh, dw);
-  return finishEntity(out);
+  return out;
 }
 
 /**
@@ -135,7 +135,7 @@ export function trimBitmap(source: Readonly<Bitmap>): Bitmap {
   if (maxX < 0) {
     const out = allocateEntity<Bitmap>();
     initializeBitmap(out, source.alphaType, new Uint8Array(4), source.format, source.gamut, 1, 1);
-    return finishEntity(out);
+    return out;
   }
   return cropBitmap(source, { x: minX, y: minY, width: maxX - minX + 1, height: maxY - minY + 1 });
 }

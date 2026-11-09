@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { ImageResource } from '@flighthq/image/contract';
 import { getKindMapKeys } from '@flighthq/registry/contract';
 import type { RenderTexture } from '@flighthq/render/contract';
@@ -72,7 +72,7 @@ function textureWithTarget(): TextureLike {
   const texture = textureWithImage(null);
   texture.colorSpace = 'linear';
   if (texture.dimension !== '2d') throw new Error('test texture must be 2d');
-  const _entity = allocateEntity<any>();
+  const _entity = allocateEntity<any>() as any;
   _entity.colorSpace = 'linear' as const;
   _entity.alphaType = 'straight' as const;
   _entity.gamut = 'srgb' as const;
@@ -80,7 +80,7 @@ function textureWithTarget(): TextureLike {
   _entity.kind = RenderTargetTextureSourceKind;
   _entity.version = 0;
   _entity.width = 8;
-  texture.source = finishEntity(_entity);
+  texture.source = _entity;
   return texture;
 }
 

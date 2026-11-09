@@ -3,7 +3,7 @@ import { createClipRegionFromContours, createClipRegionFromPath } from '@flighth
 import type { ClipRegion } from '@flighthq/clip/contract';
 import type { HostDecompressDeflateCapability, HostDecompressLzmaCapability } from '@flighthq/compression/contract';
 import { Compression, CompressionFraming } from '@flighthq/compression/contract';
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 import type { GlyphOutlineSource } from '@flighthq/font/contract';
 import { createMatrix, inverseMatrix, matrixTransformPointXY, multiplyMatrix } from '@flighthq/geometry/contract';
@@ -133,7 +133,7 @@ function instantiateSwfFile(
     createScene2DDocument(root, slots, 'swf', parsed.backgroundColor, resources.images, resources.audio),
     resources.jpegAlphaPayloads,
   );
-  return finishEntity(out);
+  return out;
 }
 
 // Instantiates a symbol the file exported by linkage name but never placed on a timeline. A library
@@ -590,7 +590,7 @@ function createSwfTimelineSource(
   };
   const out = allocateEntity<TimelineSource>();
   assignTimelineSourceFields(out, constructFrame, cues, frameRate, labels, frames.length);
-  return finishEntity(out);
+  return out;
 }
 
 // Pairs each drawn placement of a frame with the clip its mask imposes. SWF masks by depth range — a

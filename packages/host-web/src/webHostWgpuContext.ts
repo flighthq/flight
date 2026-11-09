@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type {
   HostWgpuCapability,
   WgpuCanvasContext,
@@ -51,7 +51,7 @@ function initializeWebHostWgpuContext(out: HostWgpuCapability): void {
       acquisition.format = format;
       acquisition.ownership = 'flight';
       acquisition.surface = canvas;
-      return finishEntity(acquisition);
+      return acquisition;
     } catch (error) {
       device.destroy();
       throw error;

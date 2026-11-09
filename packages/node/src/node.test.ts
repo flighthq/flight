@@ -1,4 +1,4 @@
-import { allocateEntity, attachEntityBinding, finishEntity, getEntityBinding } from '@flighthq/entity/contract';
+import { allocateEntity, attachEntityBinding, getEntityBinding } from '@flighthq/entity/contract';
 import { connectSignal } from '@flighthq/signals/contract';
 
 import type { Node, NodeData, NodeRuntime } from './contract.node-types.ts';
@@ -245,7 +245,7 @@ describe('initializeNode', () => {
   it('populates fields on an allocated entity', () => {
     const out = allocateEntity<Node>();
     initializeNode(out, NodeTestKind);
-    const node = finishEntity(out);
+    const node = out;
     expect(node.kind).toBe(NodeTestKind);
     expect(node.name).toBeNull();
     expect(node.enabled).toBe(true);
@@ -276,7 +276,7 @@ interface NodeTestRuntime extends NodeRuntime {
 function createGraphNodeTestData(): NodeTestData {
   const out = allocateEntity<NodeTestData>();
   out.testDataField = 'testDataField';
-  return finishEntity(out);
+  return out;
 }
 
 function createGraphNodeTestRuntime(): NodeTestRuntime {

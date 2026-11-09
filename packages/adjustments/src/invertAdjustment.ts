@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityRuntimeKey, EntityConstruction } from '@flighthq/entity/contract';
 
 import { initializeColorMatrixAdjustment } from './colorMatrixAdjustment.ts';
@@ -9,7 +9,7 @@ export function createInvertAdjustment(
 ): InvertAdjustment {
   const out = allocateEntity<InvertAdjustment>();
   initializeInvertAdjustment(out, options);
-  return finishEntity(out);
+  return out;
 }
 
 // Channel invert as a matrix-tier adjustment. `mix(rgb, 1 - rgb, intensity)` is affine per channel —

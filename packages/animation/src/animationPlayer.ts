@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 import { createSignal, emitSignal } from '@flighthq/signals/contract';
 
@@ -119,7 +119,7 @@ export function cloneAnimationPlayer(player: Readonly<AnimationPlayer>): Animati
   out.repeatCount = player.repeatCount;
   out.speed = player.speed;
   out.time = player.time;
-  return finishEntity(out);
+  return out;
 }
 
 export function createAnimationPlayer(
@@ -135,7 +135,7 @@ export function createAnimationPlayer(
 ): AnimationPlayer {
   const out = allocateEntity<AnimationPlayer>();
   initializeAnimationPlayer(out, clip, opts);
-  return finishEntity(out);
+  return out;
 }
 
 // Allocates and attaches the opt-in player signals (onFinished, onLooped) to a player created before

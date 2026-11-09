@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 
 import type {
@@ -149,7 +149,6 @@ export function createGlCubeRenderTarget(
 
   const target = allocateEntity<GlCubeRenderTarget>();
   initializeGlCubeRenderTarget(target, gl, normalizedSize, framebuffer, texture, depthStencilRenderbuffer);
-  finishEntity(target);
 
   gl.bindFramebuffer(gl.FRAMEBUFFER, previousFramebuffer);
   gl.bindRenderbuffer(gl.RENDERBUFFER, previousRenderbuffer);

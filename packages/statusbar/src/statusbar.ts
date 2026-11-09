@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 import { createSignal, emitSignal } from '@flighthq/signals/contract';
 
@@ -43,13 +43,13 @@ export function clearStatusBarStyleStack(hostStatusBarInfo: Readonly<HostStatusB
 export function createStatusBar(): StatusBar {
   const out = allocateEntity<StatusBar>();
   initializeStatusBar(out);
-  return finishEntity(out);
+  return out;
 }
 
 export function createStatusBarInfo(): StatusBarInfo {
   const out = allocateEntity<StatusBarInfo>();
   initializeStatusBarInfo(out);
-  return finishEntity(out);
+  return out;
 }
 
 export function detachStatusBar(bar: StatusBar): void {

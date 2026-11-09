@@ -1,6 +1,6 @@
 import { getCamera3DScreenToWorldRay } from '@flighthq/camera/contract';
 import type { Camera3D } from '@flighthq/camera/contract';
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 import {
   createAabb,
@@ -30,7 +30,7 @@ import type { Scene3DHit, Scene3DPickOptions } from './types.ts';
 export function createScene3DHit(): Scene3DHit {
   const out = allocateEntity<Scene3DHit>();
   initializeScene3DHit(out);
-  return finishEntity(out);
+  return out;
 }
 
 // Allocates a zeroed Scene3DHit. Handy for the `out` of `pickScene3D`/`pickScene3DWithRay3D` and for

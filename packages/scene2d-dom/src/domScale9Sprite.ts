@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 import type { NodeAny, RendererData } from '@flighthq/node/contract';
 import type { RenderProxy2D, RenderState, Scene2DRenderer } from '@flighthq/render/contract';
@@ -17,7 +17,7 @@ interface DomScale9SpriteData extends RendererData {
 export function createDomScale9SpriteData(_state: RenderState, _source: NodeAny): DomScale9SpriteData {
   const out = allocateEntity<DomScale9SpriteData>();
   initializeDomScale9SpriteData(out, _state, _source);
-  return finishEntity(out);
+  return out;
 }
 
 export function drawDomScale9Sprite(state: DomRenderState, renderProxy: RenderProxy2D): void {

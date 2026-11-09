@@ -1,6 +1,6 @@
 import { createColorMatrixAdjustment, createTintAdjustment } from '@flighthq/adjustments/contract';
 import type { ClipRegion } from '@flighthq/clip/contract';
-import { allocateEntity, finishEntity, getEntityRuntime } from '@flighthq/entity/contract';
+import { allocateEntity, getEntityRuntime } from '@flighthq/entity/contract';
 import type { Rectangle } from '@flighthq/geometry/contract';
 import { BlendMode } from '@flighthq/materials/contract';
 import {
@@ -205,7 +205,7 @@ describe('setNode2DClip', () => {
         out.rect = { x: 0, y: 0, width: 10, height: 10 } as Rectangle;
         out.winding = 'nonZero' as const;
         out.version = 0;
-        return finishEntity(out);
+        return out;
       })(),
     );
     expect(getRuntime_(obj).appearanceId).not.toBe(idBefore);
@@ -265,7 +265,7 @@ interface Node2DTestData extends Node2DData {
 }
 
 function createNode2DTestData(): Node2DTestData {
-  const out = allocateEntity<any>();
+  const out = allocateEntity<any>() as any;
   out.foo = 'bar';
-  return finishEntity(out);
+  return out;
 }

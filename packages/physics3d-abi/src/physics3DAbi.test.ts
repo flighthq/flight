@@ -3,7 +3,7 @@ import type {
   CollisionHeightfield3D,
   CollisionTriangleMesh3D,
 } from '@flighthq/collision/contract';
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import {
   addPhysics3DBody,
   addPhysics3DCollider,
@@ -622,7 +622,7 @@ function getColliderShapes(): CollisionColliderShape3D[] {
       out.rotationW = 1;
       out.points = [0, 0, 0, 1, 0, 0, 0, 0, 1];
       out.indices = [0, 1, 2];
-      return finishEntity(out);
+      return out;
     })(),
     (() => {
       const out = allocateEntity<CollisionHeightfield3D>();
@@ -640,7 +640,7 @@ function getColliderShapes(): CollisionColliderShape3D[] {
       out.rotationZ = 0;
       out.rotationW = 1;
       out.heights = [0, 0, 0, 0];
-      return finishEntity(out);
+      return out;
     })(),
   ];
 }

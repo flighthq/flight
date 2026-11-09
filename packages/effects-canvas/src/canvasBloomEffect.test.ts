@@ -1,5 +1,5 @@
 import { createBloomEffect } from '@flighthq/effects/contract';
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { CanvasTextureRenderTarget } from '@flighthq/scene2d-canvas/contract';
 
 import { applyBloomEffectToCanvas, canvasBloomEffectRunner, registerCanvasBloomEffect } from './canvasBloomEffect.ts';
@@ -40,7 +40,7 @@ function createTarget(pixels: ReadonlyArray<number>): CanvasTextureRenderTarget 
   };
   out.height = 1;
   out.width = pixels.length / 4;
-  return finishEntity(out) as CanvasTextureRenderTarget;
+  return out as CanvasTextureRenderTarget;
 }
 
 // The pool hands out targets that start as copies of the source, which is what the real
@@ -54,7 +54,7 @@ function createPool(width: number): CanvasRenderTargetPool {
   out.canvasHost = canvasTestHost;
   out.free = [blank(), blank()];
   out.inUse = [];
-  return finishEntity(out) as CanvasRenderTargetPool;
+  return out as CanvasRenderTargetPool;
 }
 
 const read = (target: CanvasTextureRenderTarget): number[] => [...target.context.getImageData(0, 0, 1, 1).data];

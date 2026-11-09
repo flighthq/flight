@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 import {
   createMatrix4,
@@ -16,7 +16,7 @@ import type { Camera3D, Camera3DOptions } from './types.ts';
 export function createCamera3D(opts: Readonly<Camera3DOptions>): Camera3D {
   const out = allocateEntity<Camera3D>();
   initializeCamera3D(out, opts);
-  return finishEntity(out);
+  return out;
 }
 
 // Writes the inverse of the camera's view-projection matrix into `out` and returns true, or

@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 
 import { createSpritesheetFrame } from './spritesheetFrame.ts';
@@ -19,13 +19,13 @@ export function cloneSpritesheet(spritesheet: Readonly<Spritesheet>): Spriteshee
   out.atlas = spritesheet.atlas;
   out.animations = { ...spritesheet.animations };
   out.frames = frames;
-  return finishEntity(out);
+  return out;
 }
 
 export function createSpritesheet(obj?: Partial<Spritesheet>): Spritesheet {
   const out = allocateEntity<Spritesheet>();
   initializeSpritesheet(out, obj);
-  return finishEntity(out);
+  return out;
 }
 
 export function getSpritesheetAnimation(spritesheet: Spritesheet, label: string): SpritesheetAnimation | null {

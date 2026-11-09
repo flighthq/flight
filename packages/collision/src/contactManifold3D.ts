@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 
 import type { CollisionContactManifold3D } from './types.ts';
@@ -18,7 +18,7 @@ export function clearCollisionContactManifold3D(out: CollisionContactManifold3D)
 export function createCollisionContactManifold3D(): CollisionContactManifold3D {
   const out = allocateEntity<CollisionContactManifold3D>();
   initializeCollisionContactManifold3D(out);
-  return finishEntity(out);
+  return out;
 }
 
 // Allocates a contact manifold with its full point array already built, in the non-overlapping state.

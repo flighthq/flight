@@ -1,6 +1,6 @@
 import { createBitmap } from '@flighthq/bitmap/contract';
 import type { Bitmap } from '@flighthq/bitmap/contract';
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 import type { GlyphMetrics, GlyphRasterizeOptions, HostGlyphRasterizerCapability } from '@flighthq/font/contract';
 
@@ -9,7 +9,7 @@ import type { GlyphAtlas, GlyphAtlasOptions } from './types.ts';
 export function createGlyphAtlas(options: Readonly<GlyphAtlasOptions>): GlyphAtlas {
   const out = allocateEntity<GlyphAtlas>();
   initializeGlyphAtlas(out, options);
-  return finishEntity(out);
+  return out;
 }
 
 // Estimates line metrics from a pixel font size when a real font-metrics source is not wired up. The

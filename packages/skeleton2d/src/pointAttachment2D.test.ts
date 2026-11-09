@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import { describe, expect, it } from 'vitest';
 
 import type { Bone2D, PointAttachment2D } from './contract.skeleton2d-types.ts';
@@ -32,7 +32,7 @@ function point(x: number, y: number, rotation: number): PointAttachment2D {
   out.rotation = rotation;
   out.x = x;
   out.y = y;
-  return finishEntity(out) as PointAttachment2D;
+  return out as PointAttachment2D;
 }
 
 describe('computeSkeleton2DPointAttachmentPosition', () => {

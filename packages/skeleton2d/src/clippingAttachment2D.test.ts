@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import { describe, expect, it } from 'vitest';
 
 import {
@@ -33,7 +33,7 @@ function clip(endSlotIndex: number, vertices: Float32Array | null = null): Clipp
   out.pointCount = vertices === null ? 0 : vertices.length / 2;
   out.skin = null;
   out.vertices = vertices;
-  return finishEntity(out) as ClippingAttachment2D;
+  return out as ClippingAttachment2D;
 }
 
 describe('computeSkeleton2DClippingAttachmentVertices', () => {

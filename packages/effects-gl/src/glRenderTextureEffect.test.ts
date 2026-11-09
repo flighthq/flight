@@ -1,5 +1,5 @@
 import type { Effect } from '@flighthq/effects/contract';
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import { createWebGlContext } from '@flighthq/host-web/contract';
 import {
   acquireGlRenderTexture,
@@ -54,14 +54,14 @@ describe('applyGlEffectsToRenderTexture', () => {
     expect(
       applyGlEffectsToRenderTexture(state, pool, source, dest, scratch, [
         (() => {
-          const out = allocateEntity<any>();
+          const out = allocateEntity<any>() as any;
           out.kind = 'acme.First';
-          return finishEntity(out);
+          return out;
         })(),
         (() => {
-          const out = allocateEntity<any>();
+          const out = allocateEntity<any>() as any;
           out.kind = 'acme.Second';
-          return finishEntity(out);
+          return out;
         })(),
       ]),
     ).toBe(true);
@@ -84,9 +84,9 @@ describe('applyGlEffectsToRenderTexture', () => {
     expect(
       applyGlEffectsToRenderTexture(state, pool, source, dest, scratch, [
         (() => {
-          const out = allocateEntity<any>();
+          const out = allocateEntity<any>() as any;
           out.kind = 'acme.Missing';
-          return finishEntity(out);
+          return out;
         })(),
       ]),
     ).toBe(false);
@@ -200,16 +200,16 @@ describe('explainGlEffectApplication', () => {
     );
     const chain = [
       (() => {
-        const out = allocateEntity<any>();
+        const out = allocateEntity<any>() as any;
         out.kind = 'test.explain-i';
         out.shaderKey = 'present';
-        return finishEntity(out);
+        return out;
       })(),
       (() => {
-        const out = allocateEntity<any>();
+        const out = allocateEntity<any>() as any;
         out.kind = 'test.explain-i';
         out.shaderKey = 'absent';
-        return finishEntity(out);
+        return out;
       })(),
     ];
     const explanation = explainGlEffectApplication(state, chain as unknown as ReadonlyArray<Readonly<Effect>>, true);
@@ -309,9 +309,9 @@ function effects(kinds: readonly string[]): ReadonlyArray<Readonly<Effect>> {
   return kinds.map(
     (kind) =>
       (() => {
-        const out = allocateEntity<any>();
+        const out = allocateEntity<any>() as any;
         out.kind = kind;
-        return finishEntity(out) as unknown;
+        return out as unknown;
       })() as Readonly<Effect>,
   );
 }

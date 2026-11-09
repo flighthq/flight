@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 import type { RenderTargetAxes, RenderTargetDescriptor, RenderTargetFormatPolicy } from '@flighthq/render/contract';
 import { resolveRenderTargetDescriptor } from '@flighthq/render/contract';
@@ -77,7 +77,7 @@ export function acquireGlTextureRenderTarget(
 export function createGlTextureRenderTargetPool(): GlTextureRenderTargetPool {
   const out = allocateEntity<GlTextureRenderTargetPool>();
   initializeGlTextureRenderTargetPool(out);
-  return finishEntity(out);
+  return out;
 }
 
 export function destroyGlTextureRenderTargetPool(pool: GlTextureRenderTargetPool): void {

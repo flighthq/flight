@@ -1,5 +1,5 @@
 import { AdvancedBlendMode } from '@flighthq/effects/contract';
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import type { ImportDiagnostic } from '@flighthq/importdiagnostics/contract';
@@ -49,7 +49,7 @@ export function createRiveDocumentImportResult(
   const document = parseRiveDocument(source, diagnostics);
   if (document === null) {
     initializeRiveDocumentImportResult(out, [], []);
-    return finishEntity(out);
+    return out;
   }
 
   const graph = createRiveObjectGraph(document, diagnostics);
@@ -65,7 +65,7 @@ export function createRiveDocumentImportResult(
     ),
     file.assets,
   );
-  return finishEntity(out);
+  return out;
 }
 
 export function initializeRiveDocumentImportResult(

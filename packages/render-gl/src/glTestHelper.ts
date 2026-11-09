@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 import { EntityRuntimeKey } from '@flighthq/entity/contract';
 import { createRenderState } from '@flighthq/render/contract';
@@ -52,7 +52,7 @@ export function createGlState(options?: { allowSmoothing?: boolean }): {
     defaultBitmapShader: (() => {
       const out = allocateEntity<GlBitmapShader>();
       initializeGlBitmapShader(out, vi.fn(), shaderLoc, shaderLoc.program);
-      return finishEntity(out);
+      return out;
     })(),
     quadVertexData: new Float32Array(16),
     matrixArray: new Float32Array(9),

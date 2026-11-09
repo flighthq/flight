@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityRuntimeKey } from '@flighthq/entity/contract';
 import { vi } from 'vitest';
 
@@ -11,13 +11,13 @@ interface RecordingBackend extends HostTextSegmenterCapability {
 
 function recordingBackend(): RecordingBackend {
   const calls: RecordingBackend['calls'] = [];
-  const out = allocateEntity<any>();
+  const out = allocateEntity<any>() as any;
   out.calls = calls;
   out.segment = (text: string, granularity: TextSegmentGranularity, locale?: string): TextSegment[] => {
     calls.push({ text, granularity, locale });
     return [{ start: 0, end: text.length, text }];
   };
-  return finishEntity(out);
+  return out;
 }
 
 afterEach(() => {

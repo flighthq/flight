@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { RenderTargetClear } from '@flighthq/render/contract';
 
 import type {
@@ -185,7 +185,7 @@ function acquireWgpuRenderPassHandle(
   out.state = state;
   out.target = target;
   out.viewport = { height: 0, width: 0 };
-  return finishEntity(out);
+  return out;
 }
 
 // Resolves the color view to attach: the swap-chain (or supersample) view for a screen target, the

@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 import { appendPathClose } from '@flighthq/path/contract';
 import type { Path, StrokeStyle } from '@flighthq/path/contract';
@@ -36,7 +36,7 @@ export function compactStrokePath(path: Readonly<Path>, style: Readonly<StrokeSt
       strokeSubpath(seg.points, seg.closed, halfWidth, join, cap, miterLimit, result, tolerance);
     }
   }
-  return finishEntity(result);
+  return result;
 }
 
 function initializePath(

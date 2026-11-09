@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import { afterEach, describe, expect, it } from 'vitest';
 
 import type { Bone2D, Skeleton2D, Skeleton2DIkConstraint } from './contract.skeleton2d-types.ts';
@@ -39,7 +39,7 @@ function ik(overrides: Partial<Skeleton2DIkConstraint> = {}): Skeleton2DIkConstr
   out.stretch = false;
   out.targetBoneIndex = 1;
   Object.assign(out, overrides);
-  return finishEntity(out) as Skeleton2DIkConstraint;
+  return out as Skeleton2DIkConstraint;
 }
 
 // The world position of a bone's TIP — its origin plus its length along its own x axis. That is the point

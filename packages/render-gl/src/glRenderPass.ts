@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { Viewport } from '@flighthq/node/contract';
 import type { RenderTargetClear } from '@flighthq/render/contract';
 
@@ -56,7 +56,7 @@ export function acquireGlRenderPassHandle(gl: GlContext, state: GlRenderState, t
   (handle as { gl: GlContext }).gl = gl;
   (handle as { state: GlRenderState }).state = state;
   (handle as { target: GlRenderTarget }).target = target;
-  return finishEntity(handle);
+  return handle;
 }
 
 // Begins a render pass into `target`: binds it (saving the previous binding for restore, so passes

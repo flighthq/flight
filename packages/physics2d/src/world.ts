@@ -1,5 +1,5 @@
 import type { CollisionBuiltInShape2D } from '@flighthq/collision/contract';
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction, NonEntityCreateResult } from '@flighthq/entity/contract';
 import { createUniformGridSpatialBackend2D } from '@flighthq/spatial/contract';
 import type { SpatialIndexBackend2D } from '@flighthq/spatial/contract';
@@ -183,7 +183,7 @@ export function createPhysics2DCollider(
     sensor,
     createPhysics2DColliderWorldShape(ownedLocal),
   );
-  return finishEntity(out);
+  return out;
 }
 
 function clonePhysics2DLocalShape(local: Readonly<CollisionBuiltInShape2D>): CollisionBuiltInShape2D {
@@ -266,7 +266,7 @@ export function createPhysics2DWorld(gravityX = 0, gravityY = -9.81, index?: Spa
     gravityY,
     index ?? createUniformGridSpatialBackend2D(1),
   );
-  return finishEntity(out);
+  return out;
 }
 
 // Creates a rigid body at rest. Mass properties stay zero until the body is added to a world, which
@@ -275,7 +275,7 @@ export function createPhysics2DWorld(gravityX = 0, gravityY = -9.81, index?: Spa
 export function createRigidBody2D(type: RigidBody2D['type'], x: number, y: number, angle = 0): RigidBody2D {
   const out = allocateEntity<RigidBody2D>();
   initializeRigidBody2D(out, angle, type, x, y);
-  return finishEntity(out);
+  return out;
 }
 
 // The body carrying `index`, or null when the world no longer holds it. Contacts store body indices

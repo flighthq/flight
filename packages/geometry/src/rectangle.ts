@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 
 import type { Rectangle, RectangleLike, Vector2Like } from './types.ts';
@@ -54,7 +54,7 @@ export function copyRectangle(out: RectangleLike, source: Readonly<RectangleLike
 export function createRectangle(x?: number, y?: number, width?: number, height?: number): Rectangle {
   const out = allocateEntity<Rectangle>();
   initializeRectangle(out, x ?? 0, y ?? 0, width ?? 0, height ?? 0);
-  return finishEntity(out);
+  return out;
 }
 
 export function enclosesRectangle(source: Readonly<RectangleLike>, other: Readonly<RectangleLike>): boolean {

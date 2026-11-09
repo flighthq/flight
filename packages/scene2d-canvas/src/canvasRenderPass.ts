@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import { BlendMode } from '@flighthq/materials/contract';
 import type { RenderTargetClear } from '@flighthq/render/contract';
 
@@ -112,7 +112,7 @@ function acquireCanvasRenderPassHandle(
   out.state = state;
   out.target = target;
   out.viewport = { height: target.height, width: target.width };
-  return finishEntity(out);
+  return out;
 }
 
 // Canvas clears by painting: an opaque colour fills, a transparent one erases. Depth and stencil have no

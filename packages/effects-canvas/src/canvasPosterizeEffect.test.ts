@@ -1,5 +1,5 @@
 import { createPosterizeEffect } from '@flighthq/effects/contract';
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { CanvasTextureRenderTarget } from '@flighthq/scene2d-canvas/contract';
 
 import { getCanvasEffectRunner } from './canvasEffectRegistry.ts';
@@ -26,7 +26,7 @@ function createStubTargets(pixels: ReadonlyArray<number>): {
     out.context = { getImageData: () => imageData };
     out.height = 1;
     out.width = pixels.length / 4;
-    return finishEntity(out) as CanvasTextureRenderTarget;
+    return out as CanvasTextureRenderTarget;
   })();
   const dest = (() => {
     const out = allocateEntity<any>();
@@ -44,7 +44,7 @@ function createStubTargets(pixels: ReadonlyArray<number>): {
     };
     out.height = 1;
     out.width = pixels.length / 4;
-    return finishEntity(out) as CanvasTextureRenderTarget;
+    return out as CanvasTextureRenderTarget;
   })();
   return { dest, source, written };
 }
@@ -129,7 +129,7 @@ describe('canvasPosterizeEffectRunner', () => {
           out.canvasHost = canvasTestHost;
           out.free = [];
           out.inUse = [];
-          return finishEntity(out) as unknown;
+          return out as unknown;
         })() as CanvasRenderTargetPool,
         source,
         state: {} as never,

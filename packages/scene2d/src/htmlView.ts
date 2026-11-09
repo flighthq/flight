@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 import type { Rectangle } from '@flighthq/geometry/contract';
 import { invalidateNodeLocalBounds } from '@flighthq/node/contract';
@@ -21,7 +21,7 @@ export function createHtmlView(): HtmlView {
 export function createHtmlViewData(): HtmlViewData {
   const out = allocateEntity<HtmlViewData>();
   initializeHtmlViewData(out);
-  return finishEntity(out);
+  return out;
 }
 
 export function createHtmlViewRuntime(): HtmlViewRuntime {

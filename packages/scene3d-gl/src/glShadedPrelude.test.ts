@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { GlColorAdjustmentMaterialFeature } from '@flighthq/render-gl/contract';
 import {
   createEmissiveModifier,
@@ -247,7 +247,7 @@ describe('ensureGlShadedProgram', () => {
       const out = allocateEntity<any>();
       out.kind = 'acme.Replace';
       out.slot = ModifierSlot.Effect;
-      return finishEntity(out) as Modifier;
+      return out as Modifier;
     })();
     ensureGlShadedProgram(state, BASE_KEY, [modifier]);
     const before = gl.calls.filter((call) => call.name === 'linkProgram').length;

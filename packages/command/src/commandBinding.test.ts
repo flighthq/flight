@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import { addNodeChild, createNode, getNodeChildCount, getNodeChildIndex } from '@flighthq/node/contract';
 import type { NodeAny } from '@flighthq/node/contract';
 import { describe, expect, it } from 'vitest';
@@ -61,10 +61,10 @@ describe('registerCommandBinding', () => {
     executeCommand(
       history,
       (() => {
-        const out = allocateEntity<any>();
+        const out = allocateEntity<any>() as any;
         out.kind = 'acme.Custom';
         out.label = 'Custom';
-        return finishEntity(out);
+        return out;
       })(),
     );
     undoCommand(history);

@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import { withKindMapEntry } from '@flighthq/registry/contract';
 import type { FlightDocumentScene2D, FlightDocumentToken } from '@flighthq/scene-document/contract';
 import { FlightDocumentRefusalReason } from '@flighthq/scene-document/contract';

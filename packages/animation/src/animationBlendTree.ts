@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 
 import {
@@ -28,7 +28,7 @@ export function advanceAnimationBlendTree(tree: AnimationBlendTree, dt: number):
 export function createAnimationBlendTree(inputs: readonly AnimationBlendTreeInput[]): AnimationBlendTree {
   const out = allocateEntity<AnimationBlendTree>();
   initializeAnimationBlendTree(out, inputs);
-  return finishEntity(out);
+  return out;
 }
 
 export function createAnimationBlendTreeInput(
@@ -38,7 +38,7 @@ export function createAnimationBlendTreeInput(
 ): AnimationBlendTreeInput {
   const out = allocateEntity<AnimationBlendTreeInput>();
   initializeAnimationBlendTreeInput(out, player, weight, additive);
-  return finishEntity(out);
+  return out;
 }
 
 // Allocates an N-way target-correspondence layout and one reusable accumulator per target. Every clip

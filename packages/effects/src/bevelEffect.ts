@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction, EntityWithoutRuntime } from '@flighthq/entity/contract';
 import type { RenderState } from '@flighthq/render/contract';
 import type { EffectPadding } from '@flighthq/render/contract';
@@ -14,7 +14,7 @@ export function createBevelEffect(
 ): BevelEffect {
   const out = allocateEntity<BevelEffect>();
   initializeBevelEffect(out, options);
-  return finishEntity(out);
+  return out;
 }
 
 export function getBevelEffectPadding(effect: Readonly<BevelEffect>): EffectPadding {

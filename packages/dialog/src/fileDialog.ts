@@ -1,4 +1,4 @@
-import { allocateEntity, createEntityRuntime, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity, createEntityRuntime } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 import { EntityRuntimeKey } from '@flighthq/entity/contract';
 
@@ -25,7 +25,7 @@ export function createFileDialogHandle(
 ): FileDialogHandle {
   const handle = allocateEntity<FileDialogHandle>();
   initializeFileDialogHandle(handle, kind, name, path, operations);
-  return finishEntity(handle);
+  return handle;
 }
 
 // Provider-neutral access to the handle's package-crossing runtime operations. A deserialized DTO or

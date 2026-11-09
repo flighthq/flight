@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import {
   addLogSink,
   createLogState,
@@ -73,7 +73,7 @@ function unregisteredJointWorld(): Physics2DWorld {
   joint.length = 3;
   joint.frequencyHz = 0;
   joint.dampingRatio = 0;
-  addPhysics2DJoint(world, finishEntity(joint));
+  addPhysics2DJoint(world, joint);
   return world;
 }
 

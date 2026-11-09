@@ -1,6 +1,6 @@
 import { sampleAnimationTrack } from '@flighthq/animation/contract';
 import type { AnimationChannel } from '@flighthq/animation/contract';
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction, Kind } from '@flighthq/entity/contract';
 import { getKindMapKeys, withKindMapEntry, withoutKindMapEntry } from '@flighthq/registry/contract';
 
@@ -28,7 +28,7 @@ export function createSkeleton2DBoneAnimationTarget(
 ): Skeleton2DAnimationTarget {
   const out = allocateEntity<Skeleton2DAnimationTarget>();
   initializeSkeleton2DBoneAnimationTarget(out, boneIndex, path);
-  return finishEntity(out);
+  return out;
 }
 
 export function createSkeleton2DSlotAnimationTarget(
@@ -38,7 +38,7 @@ export function createSkeleton2DSlotAnimationTarget(
 ): Skeleton2DSlotAnimationTarget {
   const out = allocateEntity<Skeleton2DSlotAnimationTarget>();
   initializeSkeleton2DSlotAnimationTarget(out, slotIndex, path, attachments);
-  return finishEntity(out);
+  return out;
 }
 
 /**

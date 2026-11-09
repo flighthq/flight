@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import { describe, expect, it } from 'vitest';
 
 import { computeSkeleton2DBoundingBoxAttachmentVertices } from './boundingBoxAttachment2D.ts';
@@ -30,7 +30,7 @@ function box(skin: Skin2D | null, vertices: Float32Array | null, pointCount: num
   out.pointCount = pointCount;
   out.skin = skin;
   out.vertices = vertices;
-  return finishEntity(out) as BoundingBoxAttachment2D;
+  return out as BoundingBoxAttachment2D;
 }
 
 describe('computeSkeleton2DBoundingBoxAttachmentVertices', () => {

@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction, EntityRaw, EntityRuntime } from '@flighthq/entity/contract';
 import type { EntityRuntimeKey } from '@flighthq/entity/contract';
 import { createSignal, emitSignal } from '@flighthq/signals/contract';
@@ -172,7 +172,7 @@ export function clearMemoryLogSink(handle: MemoryLogSink): void {
 export function createBufferedLogSink(target: LogSink, options?: Readonly<BufferedLogSinkOptions>): BufferedLogSink {
   const out = allocateEntity<BufferedLogSink>();
   initializeBufferedLogSink(out, target, options);
-  return finishEntity(out);
+  return out;
 }
 
 // Creates a child context that inherits the parent's channel and fields. The child wins on key
@@ -230,7 +230,7 @@ export function createJsonLogFormatter(state: Readonly<LogState>): LogFormatter 
 export function createLogContext(): LogContext {
   const out = allocateEntity<LogContext>();
   initializeLogContext(out);
-  return finishEntity(out);
+  return out;
 }
 
 // Creates a tracing span with the next span id from `state` and an empty name, channel and fields.
@@ -241,14 +241,14 @@ export function createLogContext(): LogContext {
 export function createLogSpan(state: LogState): LogSpan {
   const out = allocateEntity<LogSpan>();
   initializeLogSpan(out, state);
-  return finishEntity(out);
+  return out;
 }
 
 // Creates a fresh caller-owned log state: no sinks, global level Verbose, console level Info.
 export function createLogState(): LogState {
   const out = allocateEntity<LogState>();
   initializeLogState(out);
-  return finishEntity(out);
+  return out;
 }
 
 // Creates a sink that captures the last `capacity` entries in a ring buffer. Use
@@ -256,7 +256,7 @@ export function createLogState(): LogState {
 export function createMemoryLogSink(capacity: number): MemoryLogSink {
   const out = allocateEntity<MemoryLogSink>();
   initializeMemoryLogSink(out, capacity);
-  return finishEntity(out);
+  return out;
 }
 
 // Creates a sink that forwards at most `maxPerInterval` entries per `intervalMs` window, measured on
@@ -267,7 +267,7 @@ export function createRateLimitedLogSink(
 ): RateLimitedLogSink {
   const out = allocateEntity<RateLimitedLogSink>();
   initializeRateLimitedLogSink(out, target, options);
-  return finishEntity(out);
+  return out;
 }
 
 // Creates a sink that forwards approximately 1-in-N entries (probability = 1 / rate when rate > 1).
@@ -316,7 +316,7 @@ export function enableLogSignals(state: LogState): LogSignals {
   const signals = allocateEntity<LogSignals>();
   signals.onLogEntry = createSignal<Readonly<LogEntry>>();
   signals.onLogError = createSignal<Readonly<LogEntry>>();
-  state.signals = finishEntity(signals);
+  state.signals = signals;
   return state.signals;
 }
 

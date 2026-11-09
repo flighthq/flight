@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { CanvasTextureRenderTarget } from '@flighthq/scene2d-canvas/contract';
 
 import {
@@ -65,5 +65,5 @@ function makeTarget(w = 4, h = 4): CanvasTextureRenderTarget {
   out.context = context;
   out.width = w;
   out.height = h;
-  return finishEntity(out) as CanvasTextureRenderTarget;
+  return out as CanvasTextureRenderTarget;
 }

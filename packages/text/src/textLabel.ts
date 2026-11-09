@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 import type { Rectangle } from '@flighthq/geometry/contract';
 import { invalidateNodeLocalBounds, invalidateNodeLocalContent } from '@flighthq/node/contract';
@@ -78,7 +78,7 @@ export function createTextLabel(): TextLabel {
 export function createTextLabelData(): TextLabelData {
   const out = allocateEntity<TextLabelData>();
   initializeTextLabelData(out);
-  return finishEntity(out);
+  return out;
 }
 
 export function createTextLabelRuntime(): TextLabelRuntime {

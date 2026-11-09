@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { HostNetCapability } from '@flighthq/net/contract';
 
 import { createAudioBuffer } from './audioBuffer.ts';

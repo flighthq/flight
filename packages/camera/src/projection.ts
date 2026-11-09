@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 import { createMatrix4, setOrthographicMatrix4, setPerspectiveMatrix4 } from '@flighthq/geometry/contract';
 import type { Matrix4Like } from '@flighthq/geometry/contract';
@@ -16,19 +16,19 @@ import type {
 export function createOrthographicProjection(opts: Readonly<OrthographicProjectionOptions>): OrthographicProjection {
   const out = allocateEntity<OrthographicProjection>();
   initializeOrthographicProjection(out, opts);
-  return finishEntity(out);
+  return out;
 }
 
 export function createPerspectiveProjection(opts: Readonly<PerspectiveProjectionOptions>): PerspectiveProjection {
   const out = allocateEntity<PerspectiveProjection>();
   initializePerspectiveProjection(out, opts);
-  return finishEntity(out);
+  return out;
 }
 
 export function createRawProjection(opts: Readonly<RawProjectionOptions>): RawProjection {
   const out = allocateEntity<RawProjection>();
   initializeRawProjection(out, opts);
-  return finishEntity(out);
+  return out;
 }
 
 // Returns the larger world-space footprint of one texel across an orthographic projection. Using the

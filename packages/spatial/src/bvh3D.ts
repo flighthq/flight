@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { Entity, EntityConstruction } from '@flighthq/entity/contract';
 
 import { reportSpatialIndexing } from './spatialIndexingGuard.ts';
@@ -34,7 +34,7 @@ import type {
 export function createBvhSpatialBackend3D(margin = DEFAULT_BVH_MARGIN_3D): SpatialIndexBackend3D & Entity {
   const out = allocateEntity<SpatialIndexBackend3D & Entity>();
   initializeBvhSpatialBackend3D(out, margin);
-  return finishEntity(out);
+  return out;
 }
 
 // Creates a BVH backend. `margin` is how far each leaf's stored box is grown beyond its object; a

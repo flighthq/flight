@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 import { getNodeRuntime } from '@flighthq/node/contract';
 import type { NodeAny, NodeRuntime } from '@flighthq/node/contract';
@@ -16,7 +16,7 @@ export function areNodeChildrenHitTestEnabled(source: Readonly<NodeAny>): boolea
 export function createNodeInteractionState(): NodeInteractionState {
   const out = allocateEntity<NodeInteractionState>();
   initializeNodeInteractionState(out);
-  return finishEntity(out);
+  return out;
 }
 
 /**

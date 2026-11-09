@@ -1,5 +1,5 @@
 import { createAudioBuffer, createAudioResource } from '@flighthq/audio/contract';
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { AudioDeviceHandle, AudioSourceHandle } from '@flighthq/host/contract';
 
 import {

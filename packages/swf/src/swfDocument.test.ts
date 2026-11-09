@@ -5,7 +5,7 @@ import { sdkHostDecompressDeflate } from '@flighthq/compression/contract';
 import type { HostDecompressDeflateCapability } from '@flighthq/compression/contract';
 import { Compression, CompressionFraming } from '@flighthq/compression/contract';
 import { AdvancedBlendMode } from '@flighthq/effects/contract';
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import { allocateGlyphRasterizerBackendFromGlyphOutlineSource } from '@flighthq/font/contract';
 import { createGlyphAtlas, getGlyphAtlasEntry } from '@flighthq/glyphatlas/contract';
 import type { EmbeddedImageResourceReference } from '@flighthq/image/contract';
@@ -5049,7 +5049,7 @@ async function resolveSwfLosslessImages(document: Scene2DDocument): Promise<void
     bitmap.kind = BitmapTextureSourceKind;
     bitmap.version = 0;
     bitmap.width = decoded.width;
-    const source = finishEntity(bitmap);
+    const source = bitmap;
     if (ref.textures !== undefined) {
       for (const texture of ref.textures) setTextureSource(texture, source);
     }

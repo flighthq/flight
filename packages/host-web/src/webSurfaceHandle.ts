@@ -1,5 +1,4 @@
 import type { AppWindow } from '@flighthq/app/contract';
-import { finishEntity } from '@flighthq/entity/contract';
 import { allocateSurface, getSurfaceHandle } from '@flighthq/surface/contract';
 import type { NativeSurfaceHandle, Surface } from '@flighthq/surface/contract';
 
@@ -25,7 +24,7 @@ export function allocateWebSurfaceCanvas(
 // Builds a Surface around an element the caller already owns — an existing canvas in a page Flight did
 // not build. The caller keeps ownership of the element; nothing here appends or sizes it.
 export function createWebSurfaceFromElement(element: HTMLElement): Surface {
-  return finishEntity(allocateSurface<Surface>(element));
+  return allocateSurface<Surface>(element);
 }
 
 // The canvas a surface was built around, or null when its drawable is not one — a DOM-rendered container,

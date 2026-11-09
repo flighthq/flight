@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction, EntityWithoutRuntime } from '@flighthq/entity/contract';
 import type { RenderState } from '@flighthq/render/contract';
 import type { EffectPadding } from '@flighthq/render/contract';
@@ -13,7 +13,7 @@ export function createTiltShiftEffect(
 ): TiltShiftEffect {
   const out = allocateEntity<TiltShiftEffect>();
   initializeTiltShiftEffect(out, options);
-  return finishEntity(out);
+  return out;
 }
 
 export function getTiltShiftEffectPadding(effect: Readonly<TiltShiftEffect>): EffectPadding {

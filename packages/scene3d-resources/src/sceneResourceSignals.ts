@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 import { createSignal } from '@flighthq/signals/contract';
 
@@ -8,7 +8,7 @@ import { Scene3DResourceResolverRuntimeKey } from './types.ts';
 export function createScene3DResourceSignals(): Scene3DResourceSignals {
   const out = allocateEntity<Scene3DResourceSignals>();
   initializeScene3DResourceSignals(out);
-  return finishEntity(out);
+  return out;
 }
 
 // Enables (once) and returns the resolver's availability signals. Idempotent: repeated calls return

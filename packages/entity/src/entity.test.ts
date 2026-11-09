@@ -4,7 +4,6 @@ import {
   allocateEntity,
   attachEntityWrapper,
   Entity,
-  finishEntity,
   getEntityWrapperAs,
   readEntityRuntime,
   writeEntityRuntime,
@@ -29,7 +28,7 @@ describe('allocateEntity', () => {
 
 describe('attachEntityWrapper', () => {
   it('accepts an idempotent attachment and rejects a second wrapper', () => {
-    const raw = finishEntity(allocateEntity<EntityRaw>());
+    const raw = allocateEntity<EntityRaw>();
     const wrapper = Entity.from(raw);
 
     expect(() => attachEntityWrapper(raw, wrapper)).not.toThrow();
@@ -44,7 +43,7 @@ describe('Entity', () => {
   });
 
   it('returns one stable wrapper when the same raw object is wrapped twice', () => {
-    const raw = finishEntity(allocateEntity<EntityRaw>());
+    const raw = allocateEntity<EntityRaw>();
     expect(Entity.from(raw)).toBe(Entity.from(raw));
   });
 
@@ -56,7 +55,7 @@ describe('Entity', () => {
   });
 
   it('keeps wrapper identity separate from replaceable provider bindings', () => {
-    const raw = finishEntity(allocateEntity<EntityRaw>());
+    const raw = allocateEntity<EntityRaw>();
     const wrapper = Entity.from(raw);
     const firstProvider = { provider: 'first' };
     const secondProvider = { provider: 'second' };
@@ -69,7 +68,7 @@ describe('Entity', () => {
   });
 
   it('gives a clone a fresh wrapper identity', () => {
-    const raw = finishEntity(allocateEntity<EntityRaw>());
+    const raw = allocateEntity<EntityRaw>();
     const wrapper = Entity.from(raw);
     const clone = cloneEntity(raw);
 
@@ -91,17 +90,9 @@ describe('Entity', () => {
   });
 });
 
-describe('finishEntity', () => {
-  it('returns the same object', () => {
-    const out = allocateEntity();
-    const entity = finishEntity(out);
-    expect(entity).toBe(out);
-  });
-});
-
 describe('getEntityWrapperAs', () => {
   it('returns the attached wrapper and otherwise returns null', () => {
-    const raw = finishEntity(allocateEntity<EntityRaw>());
+    const raw = allocateEntity<EntityRaw>();
     expect(getEntityWrapperAs(raw)).toBeNull();
 
     const wrapper = Entity.from(raw);

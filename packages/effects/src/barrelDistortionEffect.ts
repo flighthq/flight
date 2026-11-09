@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction, EntityWithoutRuntime } from '@flighthq/entity/contract';
 
 import { initializeEffect } from './effect.ts';
@@ -9,7 +9,7 @@ export function createBarrelDistortionEffect(
 ): BarrelDistortionEffect {
   const out = allocateEntity<BarrelDistortionEffect>();
   initializeBarrelDistortionEffect(out, options);
-  return finishEntity(out);
+  return out;
 }
 
 export function initializeBarrelDistortionEffect(

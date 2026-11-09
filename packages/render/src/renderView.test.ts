@@ -1,4 +1,4 @@
-import { allocateEntity, attachEntityBinding, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity, attachEntityBinding } from '@flighthq/entity/contract';
 import type { Viewport } from '@flighthq/node/contract';
 
 import type { RenderView, RenderViewResize } from './renderView.ts';
@@ -32,7 +32,7 @@ describe('initializeRenderView', () => {
     const construction = allocateEntity<RenderView>();
 
     initializeRenderView(construction, state, target, viewport);
-    const view = finishEntity(construction);
+    const view = construction;
     resizeRenderView(view, 12, 7, 2, resize);
 
     expect(view.renderState).toBe(state);

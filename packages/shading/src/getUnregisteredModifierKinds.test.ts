@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import { describe, expect, it } from 'vitest';
 
 import type { Modifier } from './contract.shading-types.ts';
@@ -26,23 +26,23 @@ describe('getUnregisteredModifierKinds', () => {
     registerBuiltInModifiers(registry);
     const stack: Modifier[] = [
       (() => {
-        const out = allocateEntity<any>();
+        const out = allocateEntity<any>() as any;
         out.kind = 'acme.Missing';
         out.slot = 'Effect';
-        return finishEntity(out);
+        return out;
       })(),
       createEmissiveModifier({ color: 0xffffffff }),
       (() => {
-        const out = allocateEntity<any>();
+        const out = allocateEntity<any>() as any;
         out.kind = 'acme.Other';
         out.slot = 'Normal';
-        return finishEntity(out);
+        return out;
       })(),
       (() => {
-        const out = allocateEntity<any>();
+        const out = allocateEntity<any>() as any;
         out.kind = 'acme.Missing';
         out.slot = 'Effect';
-        return finishEntity(out);
+        return out;
       })(),
     ];
     expect(getUnregisteredModifierKinds(registry, stack)).toEqual(['acme.Missing', 'acme.Other']);

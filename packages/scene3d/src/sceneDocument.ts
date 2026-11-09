@@ -1,6 +1,6 @@
 import { createAnimationChannel, createAnimationClip } from '@flighthq/animation/contract';
 import type { AnimationChannel } from '@flighthq/animation/contract';
-import { EntityRuntimeKey, allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { EntityRuntimeKey, allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 import { setQuaternion, setVector3 } from '@flighthq/geometry/contract';
 import { createMaterial3D } from '@flighthq/materials/contract';
@@ -127,7 +127,7 @@ function applyDocumentSkins(document: Readonly<Scene3DDocument>, nodes: readonly
         names.some((name) => name.length > 0) ? names : null,
         new Float32Array(joints.length * 12),
       );
-      return finishEntity(out);
+      return out;
     })();
     return { skeleton, skeletonRoot: null };
   });

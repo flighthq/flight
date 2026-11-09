@@ -1,5 +1,5 @@
 import { createAudioResource } from '@flighthq/audio/contract';
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { TimelineAudioCue, TimelineStreamAudioCue } from '@flighthq/timeline/contract';
 import { TimelineAudioCueKind, TimelineStreamAudioCueKind } from '@flighthq/timeline/contract';
 
@@ -11,7 +11,7 @@ describe('initializeTimelineAudioCue', () => {
     const envelope = [{ leftGain: 1, rightGain: 1, time: 0 }];
     const out = allocateEntity<TimelineAudioCue>();
     initializeTimelineAudioCue(out, 2.5, envelope, 7, 3, 0.25, resource, true, false);
-    const cue = finishEntity(out);
+    const cue = out;
 
     expect(cue.kind).toBe(TimelineAudioCueKind);
     expect(cue.duration).toBe(2.5);
@@ -31,7 +31,7 @@ describe('initializeTimelineStreamAudioCue', () => {
     const resource = createAudioResource();
     const out = allocateEntity<TimelineStreamAudioCue>();
     initializeTimelineStreamAudioCue(out, 4, resource);
-    const cue = finishEntity(out);
+    const cue = out;
 
     expect(cue.kind).toBe(TimelineStreamAudioCueKind);
     expect(cue.frame).toBe(4);

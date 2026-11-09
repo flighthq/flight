@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 import { createSignal, emitSignal } from '@flighthq/signals/contract';
 
@@ -53,7 +53,7 @@ export async function attachSoftKeyboard(
 export function createSoftKeyboard(): SoftKeyboard {
   const out = allocateEntity<SoftKeyboard>();
   initializeSoftKeyboard(out);
-  return finishEntity(out);
+  return out;
 }
 
 export function detachSoftKeyboard(keyboard: SoftKeyboard): void {

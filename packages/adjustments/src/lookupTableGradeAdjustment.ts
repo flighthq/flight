@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityRuntimeKey, EntityConstruction } from '@flighthq/entity/contract';
 
 import { sampleColorLut } from './colorLut.ts';
@@ -10,7 +10,7 @@ export function createLookupTableGradeAdjustment(
 ): LookupTableGradeAdjustment {
   const out = allocateEntity<LookupTableGradeAdjustment>();
   initializeLookupTableGradeAdjustment(out, options);
-  return finishEntity(out);
+  return out;
 }
 
 // A supplied 3D color grade LUT applied at `strength`. Unlike the other LUT-tier ops it is ALREADY a LUT,

@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 import { inverseMatrix, multiplyMatrix } from '@flighthq/geometry/contract';
 import type { MatrixLike } from '@flighthq/geometry/contract';
@@ -21,7 +21,7 @@ export function cloneSkeleton2D(skeleton: Readonly<Skeleton2D>): Skeleton2D {
     skeleton.slots === null || skeleton.slots === undefined ? skeleton.slots : skeleton.slots.map((s) => ({ ...s })),
     skeleton.worldMatrices.slice(),
   );
-  return finishEntity(out);
+  return out;
 }
 
 // Fills the skin palette `boneMatrices[i] = worldMatrices[i] × inverseBindMatrices[i]` — the matrix that
@@ -163,7 +163,7 @@ export function createSkeleton2D(bones: Bone2D[], slots: Skeleton2D['slots'] = n
     slots,
     new Float32Array(count * MATRIX_STRIDE),
   );
-  return finishEntity(out);
+  return out;
 }
 
 // Detaches bones/slots so the skeleton is GC-eligible. `dispose*` (not `destroy*`): a Skeleton2D owns no

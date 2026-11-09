@@ -1,5 +1,5 @@
 import type { Bitmap, HostBitmapReadbackCapability } from '@flighthq/bitmap/contract';
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import { BitmapTextureSourceKind } from '@flighthq/texture/contract';
 
 export const webHostBitmapReadback: HostBitmapReadbackCapability = {
@@ -38,7 +38,7 @@ export const webHostBitmapReadback: HostBitmapReadbackCapability = {
       out.kind = BitmapTextureSourceKind;
       out.version = 0;
       out.width = raw.width;
-      return finishEntity(out);
+      return out;
     })();
     return { bitmap, reason: 'ok' };
   },

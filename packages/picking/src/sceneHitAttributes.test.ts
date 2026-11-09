@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import { createRay3D, createVector3, setRay3D, setVector3 } from '@flighthq/geometry/contract';
 import type { Material3D } from '@flighthq/materials/contract';
 import {

@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 import type { InputKeyboardData } from '@flighthq/input/contract';
 import { getNodeParent, getNodeRuntime, getNodeWorldBoundsRectangle } from '@flighthq/node/contract';
@@ -54,7 +54,7 @@ export function createFocusManager<N extends NodeAny>(
 ): FocusManager<N> {
   const out = allocateEntity<FocusManager<N>>();
   initializeFocusManager(out, root, options);
-  return finishEntity(out);
+  return out;
 }
 
 /**

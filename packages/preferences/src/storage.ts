@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 import { clearSignal, createSignal, emitSignal, hasSignalSlots } from '@flighthq/signals/contract';
 
@@ -79,7 +79,7 @@ export function clearStorageNamespace(
 export function createStorageSignals(): StorageSignals {
   const out = allocateEntity<StorageSignals>();
   initializeStorageSignals(out);
-  return finishEntity(out);
+  return out;
 }
 
 // Terminal teardown of the supplied raw-change provider. Per-entity detach is separate because one

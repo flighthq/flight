@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import { EntityRuntimeKey } from '@flighthq/entity/contract';
 import { createMatrix } from '@flighthq/geometry/contract';
 import type { HostImageCapability } from '@flighthq/image/contract';
@@ -109,7 +109,7 @@ describe('destroyCanvasRenderState', () => {
     const root = createDisplayObject();
     const destroyData = vi.fn();
     registerNodeRenderer(state, root.kind, {
-      createData: () => finishEntity(allocateEntity()),
+      createData: () => allocateEntity(),
       destroyData,
       submit: vi.fn(),
     });

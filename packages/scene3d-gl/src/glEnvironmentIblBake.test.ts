@@ -1,5 +1,5 @@
 import type { Bitmap } from '@flighthq/bitmap/contract';
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { Environment } from '@flighthq/lighting/contract';
 import { initializeGlCubeRenderTarget } from '@flighthq/render-gl/contract';
 import type { GlContext, GlCubeRenderTarget } from '@flighthq/render-gl/contract';
@@ -43,7 +43,7 @@ function dataOnlyEnvironment(size: number): Environment & { environment: CubeTex
 function captureTarget(gl: GlContext, texture: WebGLTexture): GlCubeRenderTarget {
   const target = allocateEntity<GlCubeRenderTarget>();
   initializeGlCubeRenderTarget(target, gl, 4, {} as WebGLFramebuffer, texture, null);
-  return finishEntity(target);
+  return target;
 }
 
 describe('bakeGlEnvironmentCaptureIbl', () => {

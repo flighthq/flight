@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import { createRenderState, enableRenderRegistrySignals, getRenderStateRuntime } from '@flighthq/render/contract';
 import { RenderRegistryTable } from '@flighthq/render/contract';
 import type { RenderState } from '@flighthq/render/contract';
@@ -35,7 +35,7 @@ describe('computeEffectPadding', () => {
       (() => {
         const out = allocateEntity<any>();
         out.kind = 'acme.Pointwise';
-        return finishEntity(out) as Effect;
+        return out as Effect;
       })(),
       createBlurEffect({ blurX: 1, blurY: 4 }),
     ]);
@@ -46,7 +46,7 @@ describe('computeEffectPadding', () => {
     const effect = (() => {
       const out = allocateEntity<any>();
       out.kind = 'acme.Missing';
-      return finishEntity(out) as Effect;
+      return out as Effect;
     })();
     const out = { bottom: -1, left: -1, right: -1, top: -1 };
     computeEffectPadding(out, state, effect);
@@ -75,7 +75,7 @@ describe('computeEffectPadding', () => {
       (() => {
         const out = allocateEntity<any>();
         out.kind = 'acme.Missing';
-        return finishEntity(out) as Effect;
+        return out as Effect;
       })(),
     );
     expect(out).toEqual({ bottom: 0, left: 0, right: 0, top: 0 });
@@ -94,7 +94,7 @@ describe('explainEffectPadding', () => {
         (() => {
           const out = allocateEntity<any>();
           out.kind = 'acme.Missing';
-          return finishEntity(out) as Effect;
+          return out as Effect;
         })(),
       ]),
     ).toEqual({

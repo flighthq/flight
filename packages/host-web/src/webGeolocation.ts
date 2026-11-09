@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import { initializeGeolocationPosition } from '@flighthq/geolocation/contract';
 import type {
   GeolocationAccessOutcome,
@@ -116,7 +116,7 @@ function mapWebPosition(position: Readonly<GlobalGeolocationPosition>): FlightGe
   out.longitude = coords.longitude;
   out.speed = coords.speed ?? 0;
   out.timestamp = position.timestamp;
-  return finishEntity(out);
+  return out;
 }
 
 function mapWebAccessError(error: GeolocationPositionError): GeolocationAccessOutcome['reason'] {

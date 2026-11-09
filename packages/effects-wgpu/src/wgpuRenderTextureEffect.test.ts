@@ -1,6 +1,6 @@
 import { createBlurEffect } from '@flighthq/effects/contract';
 import type { Effect } from '@flighthq/effects/contract';
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import {
   acquireWgpuRenderTexture,
   beginWgpuFrame,
@@ -41,14 +41,14 @@ describe('applyWgpuEffectsToRenderTexture', () => {
     expect(
       applyWgpuEffectsToRenderTexture(state, pool, source, dest, scratch, [
         (() => {
-          const out = allocateEntity<any>();
+          const out = allocateEntity<any>() as any;
           out.kind = 'acme.First';
-          return finishEntity(out);
+          return out;
         })(),
         (() => {
-          const out = allocateEntity<any>();
+          const out = allocateEntity<any>() as any;
           out.kind = 'acme.Second';
-          return finishEntity(out);
+          return out;
         })(),
       ]),
     ).toBe(true);
@@ -89,9 +89,9 @@ describe('applyWgpuEffectsToRenderTexture', () => {
     expect(
       applyWgpuEffectsToRenderTexture(state, pool, source, dest, scratch, [
         (() => {
-          const out = allocateEntity<any>();
+          const out = allocateEntity<any>() as any;
           out.kind = 'acme.Missing';
-          return finishEntity(out);
+          return out;
         })(),
       ]),
     ).toBe(false);
@@ -110,14 +110,14 @@ describe('explainWgpuEffectApplication', () => {
 
     const explanation = explainWgpuEffectApplication(state, source, dest, [
       (() => {
-        const out = allocateEntity<any>();
+        const out = allocateEntity<any>() as any;
         out.kind = 'test.explain-registered';
-        return finishEntity(out);
+        return out;
       })(),
       (() => {
-        const out = allocateEntity<any>();
+        const out = allocateEntity<any>() as any;
         out.kind = 'test.explain-missing';
-        return finishEntity(out);
+        return out;
       })(),
     ] as unknown as Readonly<Effect>[]);
 
@@ -141,9 +141,9 @@ describe('explainWgpuEffectApplication', () => {
     expect(
       explainWgpuEffectApplication(state, source, dest, [
         (() => {
-          const out = allocateEntity<any>();
+          const out = allocateEntity<any>() as any;
           out.kind = 'test.explain-unresolved';
-          return finishEntity(out);
+          return out;
         })(),
       ]),
     ).toMatchObject({
@@ -190,9 +190,9 @@ describe('setWgpuEffectApplicationGuard', () => {
     const seen: string[] = [];
     const chain = [
       (() => {
-        const out = allocateEntity<any>();
+        const out = allocateEntity<any>() as any;
         out.kind = 'test.seam-missing';
-        return finishEntity(out);
+        return out;
       })(),
     ] as unknown as Readonly<Effect>[];
 

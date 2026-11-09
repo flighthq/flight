@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import { connectSignal, disconnectSignal } from '@flighthq/signals/contract';
 import type { Signal, SlotId } from '@flighthq/signals/contract';
 
@@ -40,12 +40,12 @@ function popupHost(
     calls,
     menu: {
       popup: (() => {
-        const out = allocateEntity<any>();
+        const out = allocateEntity<any>() as any;
         out.popup = (_items: readonly MenuItemTemplate[], x: number, y: number): Promise<string | null> => {
           calls.push(`popup@${x},${y}`);
           return Promise.resolve(result);
         };
-        return finishEntity(out);
+        return out;
       })(),
     },
   };
@@ -58,12 +58,12 @@ function applicationHost(
   return {
     menu: {
       app: (() => {
-        const out = allocateEntity<any>();
+        const out = allocateEntity<any>() as any;
         out.setAppMenu = (items: readonly MenuItemTemplate[]): boolean => {
           seen.push([...items]);
           return accepted;
         };
-        return finishEntity(out);
+        return out;
       })(),
     },
   };
@@ -80,14 +80,14 @@ function selectHost(): { readonly menu: { readonly select: HostMenuSelectCapabil
     },
     menu: {
       select: (() => {
-        const out = allocateEntity<any>();
+        const out = allocateEntity<any>() as any;
         out.subscribe = (listener: (id: string) => void): (() => void) => {
           listeners.add(listener);
           return () => {
             listeners.delete(listener);
           };
         };
-        return finishEntity(out);
+        return out;
       })(),
     },
     subscriberCount(): number {
@@ -106,14 +106,14 @@ function highlightHost(): { readonly menu: { readonly highlight: HostMenuHighlig
     },
     menu: {
       highlight: (() => {
-        const out = allocateEntity<any>();
+        const out = allocateEntity<any>() as any;
         out.subscribe = (listener: (id: string) => void): (() => void) => {
           listeners.add(listener);
           return () => {
             listeners.delete(listener);
           };
         };
-        return finishEntity(out);
+        return out;
       })(),
     },
   };

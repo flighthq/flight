@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 
 import type { AabbLike, BoundingSphereLike, Matrix4Like, Obb, ObbLike, Ray3DLike, Vector3Like } from './types.ts';
@@ -33,7 +33,7 @@ export function createObb(
     orientationZ,
     orientationW,
   );
-  return finishEntity(out);
+  return out;
 }
 
 /**

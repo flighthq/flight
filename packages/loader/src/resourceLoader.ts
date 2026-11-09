@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 import { clearSignal, createSignal, emitSignal } from '@flighthq/signals/contract';
 
@@ -213,7 +213,7 @@ export function enableResourceLoaderItemSignals(loader: ResourceLoader): Resourc
       out.onItemError = createSignal();
       out.onItemRetry = createSignal();
       out.onItemStart = createSignal();
-      return finishEntity(out);
+      return out;
     })();
   }
   return internal.itemSignals;

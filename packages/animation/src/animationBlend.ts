@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 
 import type { AnimationSampleAccumulator } from './types.ts';
@@ -88,7 +88,7 @@ export function createAnimationSampleAccumulator(components: number, quaternion 
   const width = Math.max(0, components | 0);
   const out = allocateEntity<AnimationSampleAccumulator>();
   initializeAnimationSampleAccumulator(out, width, quaternion);
-  return finishEntity(out);
+  return out;
 }
 
 // Writes a normalized weighted result. Returns false without changing `out` for an empty

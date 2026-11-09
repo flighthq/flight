@@ -4,7 +4,7 @@ import {
   setCamera3DViewMatrix4FromLookAt,
 } from '@flighthq/camera/contract';
 import type { Camera3D } from '@flighthq/camera/contract';
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import { createVector3 } from '@flighthq/geometry/contract';
 import { createAmbientLight, createDirectionalLight } from '@flighthq/lighting/contract';
 import type { Scene3DLightsLike } from '@flighthq/lighting/contract';
@@ -30,7 +30,7 @@ function makeCamera(): Camera3D {
 }
 
 function makeTarget(): GlTextureRenderTarget {
-  const out = allocateEntity<any>();
+  const out = allocateEntity<any>() as any;
   out.requestedAxes = {
     width: 256,
     height: 256,
@@ -56,7 +56,7 @@ function makeTarget(): GlTextureRenderTarget {
   out.depthTexture = null;
   out.colorRenderbuffers = [];
   out.depthStencilRenderbuffer = { id: 'sceneDepth' } as unknown as WebGLRenderbuffer;
-  return finishEntity(out);
+  return out;
 }
 
 const LIGHTS: Scene3DLightsLike = {

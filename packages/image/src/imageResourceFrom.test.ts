@@ -1,5 +1,5 @@
 import type { Bitmap } from '@flighthq/bitmap/contract';
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import { BitmapTextureSourceKind } from '@flighthq/texture/contract';
 
 import { createImageResource } from './imageResource.ts';
@@ -141,7 +141,7 @@ function createTestBitmap(width: number, height: number): Bitmap {
   out.kind = BitmapTextureSourceKind;
   out.version = 0;
   out.width = width;
-  return finishEntity(out);
+  return out;
 }
 
 describe('isImageUrlSameOrigin', () => {

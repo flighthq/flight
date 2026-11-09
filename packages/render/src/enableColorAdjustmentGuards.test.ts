@@ -1,6 +1,6 @@
 import { createTintAdjustment } from '@flighthq/adjustments/contract';
 import type { Adjustment } from '@flighthq/adjustments/contract';
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import {
   addLogSink,
   createLogState,

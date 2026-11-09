@@ -1,5 +1,5 @@
 import type { EntityRuntimeKey } from '@flighthq/entity/contract';
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { DesktopOsProfile } from '@flighthq/tray/contract';
 
 import { electronHostApp } from './electronApp.ts';
@@ -130,7 +130,7 @@ export function electronHost(
     wgpu: electronHostWgpuGroup(electron),
     window: electronHostWindow(electron),
   } as const satisfies Omit<ElectronHostGroups, typeof EntityRuntimeKey>;
-  return finishEntity(Object.assign(allocateEntity<ElectronHost<DesktopOsProfile>>(), groups)) as
+  return Object.assign(allocateEntity<ElectronHost<DesktopOsProfile>>(), groups) as
     | ElectronHost<DesktopOsProfile>
     | ElectronMacosHost;
 }

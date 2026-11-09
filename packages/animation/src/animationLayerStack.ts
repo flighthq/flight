@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 
 import { advanceAnimationPlayers } from './animationAdvance.ts';
@@ -36,7 +36,7 @@ export function createAnimationBlendTreeLayer(
 export function createAnimationLayerStack(layers: readonly AnimationLayer[]): AnimationLayerStack {
   const out = allocateEntity<AnimationLayerStack>();
   initializeAnimationLayerStack(out, layers);
-  return finishEntity(out);
+  return out;
 }
 
 // Allocates a layer sourced by one named state machine. Its global target layout remains stable while
@@ -169,7 +169,7 @@ function createAnimationLayer(
   out.channelIndices = copyAnimationLayerChannelIndices(options?.channelIndices, channelCount);
   out.stateMachine = stateMachine;
   out.weight = options?.weight ?? 1;
-  return finishEntity(out);
+  return out;
 }
 
 function copyAnimationLayerChannelIndices(

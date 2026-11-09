@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import { connectSignal, disconnectSignal } from '@flighthq/signals/contract';
 import type { SignalSlot, SlotId } from '@flighthq/signals/contract';
 
@@ -236,7 +236,7 @@ export function createInputState(): InputStateRaw {
     pointerButtonsDown: new Map(),
   });
   initializeInputState(out);
-  return finishEntity(out);
+  return out;
 }
 
 function clearGamepadState(state: InputStateRaw, gamepad: number): void {

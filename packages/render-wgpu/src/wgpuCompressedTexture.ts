@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 import type { CompressedImageResource } from '@flighthq/image/contract';
 import type { TextureContainer, TextureContainerFormat } from '@flighthq/texture-formats/contract';
@@ -187,7 +187,7 @@ function uploadWgpuCompressedImage(
   const sampler = state.allowSmoothing ? resources.linearSampler : resources.nearestSampler;
   const out = allocateEntity<WgpuTextureEntry>();
   initializeWgpuTextureEntry(out, new Map(), container.mipLevels, sampler, native, texture, view);
-  return finishEntity(out);
+  return out;
 }
 
 function premultiplyRgba8(data: Readonly<Uint8Array<ArrayBuffer>>): Uint8Array<ArrayBuffer> {

@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 import type { RectangleLike, Vector2Like } from '@flighthq/geometry/contract';
 import { cloneTexture, copyTexture, getTextureHeight, getTextureWidth } from '@flighthq/texture/contract';
@@ -122,7 +122,7 @@ export function clearTextureAtlasRegions(target: TextureAtlas): void {
 export function createTextureAtlasRegion(obj?: Partial<TextureAtlasRegionLike>): TextureAtlasRegion {
   const out = allocateEntity<TextureAtlasRegion>();
   initializeTextureAtlasRegion(out, obj);
-  return finishEntity(out);
+  return out;
 }
 
 // Recomputes why getTextureAtlasRegionTexture can or cannot mint the requested view. A page with a

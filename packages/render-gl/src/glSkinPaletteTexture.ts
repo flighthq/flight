@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 
 import type { GlSkinPaletteTexture } from './contract.render-gl-types.ts';
@@ -14,7 +14,7 @@ import type { GlContext } from './types.ts';
 export function createGlSkinPaletteTexture(gl: GlContext): GlSkinPaletteTexture {
   const out = allocateEntity<GlSkinPaletteTexture>();
   initializeGlSkinPaletteTexture(out, gl);
-  return finishEntity(out);
+  return out;
 }
 
 // Frees the palette texture's GL object. The struct must not be used after this call. Deleting an

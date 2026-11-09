@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityRuntimeKey, EntityConstruction } from '@flighthq/entity/contract';
 
 import { initializeColorMatrixAdjustment } from './colorMatrixAdjustment.ts';
@@ -9,7 +9,7 @@ export function createBrightnessContrastAdjustment(
 ): BrightnessContrastAdjustment {
   const out = allocateEntity<BrightnessContrastAdjustment>();
   initializeBrightnessContrastAdjustment(out, options);
-  return finishEntity(out);
+  return out;
 }
 
 // Brightness/contrast as a matrix-tier adjustment. Reproduces the prior full-frame shader

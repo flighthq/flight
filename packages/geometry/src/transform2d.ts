@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 import { RAD_TO_DEG } from '@flighthq/math/contract';
 
@@ -30,7 +30,7 @@ export function createTransform2D(
     pivotX ?? 0,
     pivotY ?? 0,
   );
-  return finishEntity(out);
+  return out;
 }
 
 // Decomposes a 2D affine matrix into a `Transform2D` carrier's fields — the inverse of the display

@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 
 import { getCollisionSupport3D } from './collisionSupport3D.ts';
@@ -34,7 +34,7 @@ import type { CollisionDistance3D, CollisionShape3D } from './types.ts';
 export function createCollisionDistance3D(): CollisionDistance3D {
   const out = allocateEntity<CollisionDistance3D>();
   initializeCollisionDistance3D(out);
-  return finishEntity(out);
+  return out;
 }
 
 export function initializeCollisionDistance3D(out: EntityConstruction<CollisionDistance3D>): void {

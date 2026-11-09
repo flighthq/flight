@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 import type { GlyphSource } from '@flighthq/glyphatlas/contract';
 
@@ -8,7 +8,7 @@ import type { BitmapFont } from './types.ts';
 export function createGlyphSourceFromBitmapFont(font: Readonly<BitmapFont>): GlyphSource {
   const out = allocateEntity<GlyphSource>();
   initializeGlyphSourceFromBitmapFont(out, font);
-  return finishEntity(out);
+  return out;
 }
 
 // Adapts a `BitmapFont` into the `GlyphSource` seam a text renderer consumes, binding the font's pure

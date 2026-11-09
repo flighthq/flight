@@ -1,5 +1,5 @@
 import { createAppWindow } from '@flighthq/app/contract';
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import { emitSignal } from '@flighthq/signals/contract';
 
 import type { HostSurfaceResizeCapability, Surface } from './types.ts';
@@ -71,7 +71,7 @@ describe('detachWindowRenderState', () => {
 });
 
 function createSurface(): Surface {
-  return finishEntity(allocateEntity<Surface>());
+  return allocateEntity<Surface>();
 }
 
 function recordingResize(): HostSurfaceResizeCapability & { calls: string[] } {

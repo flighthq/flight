@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 
 import type { Physics2DJoint, Physics2DJointReaction, Physics2DWorld } from './types.ts';
@@ -6,7 +6,7 @@ import type { Physics2DJoint, Physics2DJointReaction, Physics2DWorld } from './t
 export function createPhysics2DJointReaction(): Physics2DJointReaction {
   const out = allocateEntity<Physics2DJointReaction>();
   initializePhysics2DJointReaction(out);
-  return finishEntity(out);
+  return out;
 }
 
 // An all-zero reaction, for a caller that wants somewhere to write.

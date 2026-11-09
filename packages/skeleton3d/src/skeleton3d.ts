@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 import {
   copyMatrix4,
@@ -61,7 +61,7 @@ export function cloneSkeleton3DJointHierarchy(
     skeleton.names === undefined ? undefined : skeleton.names === null ? null : skeleton.names.slice(),
     new Float32Array(skeleton.normalMatrices),
   );
-  return finishEntity(out);
+  return out;
 }
 
 export function computeSkeleton3DJointMatrices(skeleton: Readonly<Skeleton3D>): void {

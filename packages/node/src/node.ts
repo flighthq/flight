@@ -1,4 +1,4 @@
-import { allocateEntity, createEntityRuntime, finishEntity, getEntityRuntime } from '@flighthq/entity/contract';
+import { allocateEntity, createEntityRuntime, getEntityRuntime } from '@flighthq/entity/contract';
 import type { EntityConstruction, Kind } from '@flighthq/entity/contract';
 import { EntityRuntimeKey } from '@flighthq/entity/contract';
 import { clearSignal, createSignal } from '@flighthq/signals/contract';
@@ -27,7 +27,7 @@ export function createNode<
 ): Node<Fields> & Fields {
   const out = allocateEntity<Node<Fields> & Fields>();
   initializeNode(out, nodeKind, createData, createNodeRuntimeFactory);
-  return finishEntity(out);
+  return out;
 }
 
 export function createNodeRuntime<Fields extends object = NodeFields>(
@@ -66,7 +66,7 @@ export function createNodeRuntime<Fields extends object = NodeFields>(
 export function createNodeSignals(): NodeSignals {
   const out = allocateEntity<NodeSignals>();
   initializeNodeSignals(out);
-  return finishEntity(out);
+  return out;
 }
 
 export function defaultNodeRuntimeCanAddChild<Fields extends object>(

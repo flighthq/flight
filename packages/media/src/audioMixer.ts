@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 import type { AudioBusNodeHandle, AudioDeviceHandle, AudioMixerGraphHandle } from '@flighthq/host/contract';
 import { clamp } from '@flighthq/math/contract';
@@ -38,7 +38,7 @@ export function addAudioBusToMixer(
 export function createAudioBus(options?: Readonly<AudioBusOptions>): AudioBus {
   const out = allocateEntity<AudioBus>();
   initializeAudioBus(out, options);
-  return finishEntity(out);
+  return out;
 }
 
 export function createAudioMixer(

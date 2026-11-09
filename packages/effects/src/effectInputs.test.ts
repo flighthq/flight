@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 
 import { createBloomEffect } from './bloomEffect.ts';
 import { createBokehDepthOfFieldEffect } from './bokehDepthOfFieldEffect.ts';
@@ -39,7 +39,7 @@ describe('getEffectInputs', () => {
         (() => {
           const out = allocateEntity<any>();
           out.kind = 'acme.UnknownEffect';
-          return finishEntity(out) as never;
+          return out as never;
         })(),
       ),
     ).toEqual([]);

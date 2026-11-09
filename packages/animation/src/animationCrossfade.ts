@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 
 import { blendAnimationSamples } from './animationBlend.ts';
@@ -29,7 +29,7 @@ export function createAnimationCrossfade(
 ): AnimationCrossfade {
   const out = allocateEntity<AnimationCrossfade>();
   initializeAnimationCrossfade(out, from, to, duration, opts);
-  return finishEntity(out);
+  return out;
 }
 
 // Allocates a two-player transition, target-correspondence layout, and reusable sample scratch.

@@ -11,7 +11,6 @@ export {
   disableEntityRuntimeGuards,
   enableEntityRuntimeGuards,
   explainEntityRuntimeWrite,
-  finishEntity,
   getEntityBinding,
   getEntityBindingAs,
   getEntityUid,

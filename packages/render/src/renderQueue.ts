@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 import { getNodeRuntime } from '@flighthq/node/contract';
 import type { NodeAny } from '@flighthq/node/contract';
@@ -53,7 +53,7 @@ export function compareRenderQueueEntries(a: RenderQueueEntry, b: RenderQueueEnt
 export function createRenderQueue(): RenderQueue {
   const out = allocateEntity<RenderQueue>();
   initializeRenderQueue(out);
-  return finishEntity(out);
+  return out;
 }
 
 // Creates a new empty RenderQueue. The entries array is pre-allocated empty; entries grow as

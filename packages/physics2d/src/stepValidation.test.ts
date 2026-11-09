@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import { describe, expect, it } from 'vitest';
 
 import type { Physics2DEntityCompatibility as Entity } from './entityCompatibility.ts';
@@ -20,9 +20,9 @@ const STONE = { density: 1, friction: 0.3, restitution: 0 };
 
 function entityJoint(fields: Omit<Physics2DJoint, keyof Entity>): Physics2DJoint {
   return (() => {
-    const out = allocateEntity<any>();
+    const out = allocateEntity<any>() as any;
     Object.assign(out, fields);
-    return finishEntity(out);
+    return out;
   })();
 }
 

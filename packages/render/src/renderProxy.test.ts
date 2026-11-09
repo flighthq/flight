@@ -1,5 +1,5 @@
 import type { ClipRegion } from '@flighthq/clip/contract';
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import { createMatrix, createRectangle } from '@flighthq/geometry/contract';
 import {
   addNodeChild,
@@ -55,7 +55,7 @@ function makeClipRegion(): ClipRegion {
   out.rect = createRectangle(0, 0, 10, 10);
   out.winding = 'nonZero';
   out.version = 0;
-  return finishEntity(out);
+  return out;
 }
 
 function markRenderProxyClean<Fields extends object>(data: RenderProxy, source: Node<Fields>): void {

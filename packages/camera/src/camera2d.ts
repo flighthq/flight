@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 
 import type { Camera2D, Camera2DOptions } from './types.ts';
@@ -9,7 +9,7 @@ import type { Camera2D, Camera2DOptions } from './types.ts';
 export function createCamera2D(options?: Readonly<Camera2DOptions>): Camera2D {
   const out = allocateEntity<Camera2D>();
   initializeCamera2D(out, options);
-  return finishEntity(out);
+  return out;
 }
 
 export function initializeCamera2D(out: EntityConstruction<Camera2D>, options?: Readonly<Camera2DOptions>): void {

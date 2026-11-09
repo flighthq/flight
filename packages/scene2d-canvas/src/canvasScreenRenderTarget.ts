@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 import { getSurfaceHandle } from '@flighthq/surface/contract';
 import type { CanvasSurface } from '@flighthq/surface/contract';
@@ -14,7 +14,7 @@ import type { CanvasRenderTarget, CanvasScreenRenderTarget } from './types/Canva
 export function createCanvasScreenRenderTarget(surface: CanvasSurface): CanvasScreenRenderTarget {
   const out = allocateEntity<CanvasScreenRenderTarget>();
   initializeCanvasScreenRenderTarget(out, surface);
-  return finishEntity(out);
+  return out;
 }
 
 // Unbinds a screen target from its surface. It frees nothing: the canvas came from the host, which still

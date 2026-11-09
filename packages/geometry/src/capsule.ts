@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 
 import type { AabbLike, BoundingSphereLike, Capsule, CapsuleLike, Ray3DLike, Vector3Like } from './types.ts';
@@ -18,7 +18,7 @@ export function createCapsule(
 ): Capsule {
   const out = allocateEntity<Capsule>();
   initializeCapsule(out, startX, startY, startZ, endX, endY, endZ, radius);
-  return finishEntity(out);
+  return out;
 }
 
 /**

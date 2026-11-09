@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 import { acquireMatrix, multiplyMatrix, releaseMatrix } from '@flighthq/geometry/contract';
 import type { Matrix } from '@flighthq/geometry/contract';
@@ -42,7 +42,7 @@ export function createGlScreenRenderTarget(gl: GlContext): GlScreenRenderTarget 
   target.height = gl.drawingBufferHeight;
   target.colorAttachments = 1;
   target.colorSpace = 'srgb';
-  return finishEntity(target);
+  return target;
 }
 
 /**
@@ -101,7 +101,6 @@ export function createGlTextureRenderTarget(
   const target = allocateEntity<GlTextureRenderTarget>();
   (target as unknown as { gl: GlContext }).gl = gl;
   initializeGlTextureRenderTarget(target, requested, storage, texture);
-  finishEntity(target);
 
   gl.bindFramebuffer(gl.FRAMEBUFFER, runtime.currentFramebuffer);
   bindGlTextureRealization(state, null);

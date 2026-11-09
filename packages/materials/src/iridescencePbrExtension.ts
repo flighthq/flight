@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 
 import type { IridescencePbrExtension } from './contract.materials-types.ts';
@@ -15,7 +15,7 @@ export function createIridescencePbrExtension(
 ): IridescencePbrExtension {
   const out = allocateEntity<IridescencePbrExtension>();
   initializeIridescencePbrExtension(out, opts);
-  return finishEntity(out);
+  return out;
 }
 
 export function initializeIridescencePbrExtension(

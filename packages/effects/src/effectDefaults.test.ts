@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 
 import { createBloomEffect } from './bloomEffect.ts';
 import { getEffectDefaults, normalizeEffect } from './effectDefaults.ts';
@@ -49,7 +49,7 @@ describe('normalizeEffect', () => {
     const out = (() => {
       const out = allocateEntity<any>();
       out.kind = 'BloomEffect';
-      return finishEntity(out) as BloomEffect;
+      return out as BloomEffect;
     })();
     const ok = normalizeEffect(effect, out);
     expect(ok).toBe(true);
@@ -62,7 +62,7 @@ describe('normalizeEffect', () => {
     const out = (() => {
       const out = allocateEntity<any>();
       out.kind = 'BloomEffect';
-      return finishEntity(out) as BloomEffect;
+      return out as BloomEffect;
     })();
     normalizeEffect(effect, out);
     expect(out.threshold).toBe(0); // 0 is explicit, should not be replaced by default 0.8
@@ -72,7 +72,7 @@ describe('normalizeEffect', () => {
     const out = (() => {
       const out = allocateEntity<any>();
       out.kind = 'VignetteEffect';
-      return finishEntity(out) as VignetteEffect;
+      return out as VignetteEffect;
     })();
     normalizeEffect(effect, out);
     expect(out.intensity).toBe(0.3);
@@ -83,12 +83,12 @@ describe('normalizeEffect', () => {
     const effect = (() => {
       const e = allocateEntity<any>();
       e.kind = 'acme.UnknownEffect';
-      return finishEntity(e) as Effect;
+      return e as Effect;
     })();
     const out = (() => {
       const o = allocateEntity<any>();
       o.kind = 'acme.UnknownEffect';
-      return finishEntity(o) as Effect;
+      return o as Effect;
     })();
     expect(normalizeEffect(effect, out)).toBe(false);
   });

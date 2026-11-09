@@ -1,5 +1,5 @@
 import type { Effect } from '@flighthq/effects/contract';
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { LogState } from '@flighthq/log/contract';
 import {
   addLogSink,
@@ -113,7 +113,7 @@ describe('enableWgpuEffectGuards', () => {
       (() => {
         const out = allocateEntity<any>();
         out.kind = 'test.wgpu-pipeline-dropped-kind';
-        return finishEntity(out);
+        return out;
       })(),
     ] as unknown as Readonly<Effect>[];
 
@@ -205,7 +205,7 @@ function applyChain(state: WgpuRenderState, kinds: readonly string[]): boolean {
       (() => {
         const out = allocateEntity<any>();
         out.kind = kind;
-        return finishEntity(out) as unknown;
+        return out as unknown;
       })() as Readonly<Effect>,
   );
   return applyWgpuEffectsToRenderTexture(state, pool, source, dest, scratch, effects);

@@ -1,4 +1,4 @@
-import { allocateEntity, EntityRuntimeKey, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity, EntityRuntimeKey } from '@flighthq/entity/contract';
 import { describe, expect, it, vi } from 'vitest';
 
 import * as midi from './contract.ts';
@@ -38,7 +38,7 @@ describe('disposeMidiAccess', () => {
           attachment: (() => {
             const out = allocateEntity<any>();
             out.release = release;
-            return finishEntity(out);
+            return out;
           })(),
           reason: 'ok',
         };
@@ -140,7 +140,7 @@ describe('requestMidiAccess', () => {
         access: (() => {
           const out = allocateEntity<any>();
           out.requestAccess = requestAccess;
-          return finishEntity(out);
+          return out;
         })(),
       },
     };

@@ -1,5 +1,5 @@
 import type { EntityConstruction, EntityRuntime } from '@flighthq/entity/contract';
-import { allocateEntity, EntityRuntimeKey, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity, EntityRuntimeKey } from '@flighthq/entity/contract';
 import type { TextFormat } from '@flighthq/textformat/contract';
 
 import { shapeTextRun } from './textShaperRun.ts';
@@ -15,7 +15,7 @@ export function clearTextShaperCache(cache: TextShaperCache): void {
 export function createTextShaperCache(): TextShaperCache {
   const out = allocateEntity<TextShaperCache>();
   initializeTextShaperCache(out);
-  return finishEntity(out);
+  return out;
 }
 
 // Releases the `cache` object and all cached ShapedRuns. The cache must not be used after this

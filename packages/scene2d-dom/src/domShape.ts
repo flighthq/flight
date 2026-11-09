@@ -1,4 +1,4 @@
-﻿import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+﻿import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 import { getNodeLocalBoundsRectangle } from '@flighthq/node/contract';
 import type { NodeAny, RendererData } from '@flighthq/node/contract';
@@ -21,7 +21,7 @@ interface DomShapeData extends RendererData {
 function createDomShapeData(_state: RenderState, _source: NodeAny): DomShapeData {
   const out = allocateEntity<DomShapeData>();
   initializeDomShapeData(out);
-  return finishEntity(out);
+  return out;
 }
 
 export function drawDomShape(state: DomRenderState, renderProxy: RenderProxy2D): void {

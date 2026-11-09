@@ -1,4 +1,4 @@
-import { allocateEntity, attachEntityBinding, finishEntity, getEntityBinding } from '@flighthq/entity/contract';
+import { allocateEntity, attachEntityBinding, getEntityBinding } from '@flighthq/entity/contract';
 import { EntityRuntimeKey } from '@flighthq/entity/contract';
 import { connectSignal } from '@flighthq/signals/contract';
 import { describe, expect, it, vi } from 'vitest';
@@ -548,12 +548,12 @@ function createPermissionChangeHarness() {
   const host = {
     screen: {
       permissionChange: (() => {
-        const out = allocateEntity<any>();
+        const out = allocateEntity<any>() as any;
         out.subscribe = (next: (state: ScreenPermissionState) => void): (() => void) => {
           listener = next;
           return unsubscribe;
         };
-        return finishEntity(out);
+        return out;
       })(),
     },
   };
@@ -566,12 +566,12 @@ function createScreenChangeHarness() {
   const host = {
     screen: {
       change: (() => {
-        const out = allocateEntity<any>();
+        const out = allocateEntity<any>() as any;
         out.subscribe = (next: (event: Readonly<ScreenChangeEvent>) => void): (() => void) => {
           listener = next;
           return unsubscribe;
         };
-        return finishEntity(out);
+        return out;
       })(),
     },
   };
@@ -582,10 +582,10 @@ function createScreenDetailsHost(permission: ScreenPermissionState, requestResul
   return {
     screen: {
       details: (() => {
-        const out = allocateEntity<any>();
+        const out = allocateEntity<any>() as any;
         out.queryPermission = vi.fn(async () => permission);
         out.request = vi.fn(async () => requestResult);
-        return finishEntity(out);
+        return out;
       })(),
     },
   };
@@ -598,7 +598,7 @@ function createScreenQueryHost(
   return {
     screen: {
       query: (() => {
-        const out = allocateEntity<any>();
+        const out = allocateEntity<any>() as any;
         out.getCursorPosition = vi.fn((out: { x: number; y: number }) => {
           out.x = cursor.x;
           out.y = cursor.y;
@@ -614,7 +614,7 @@ function createScreenQueryHost(
           out.push(...screens);
           return out;
         });
-        return finishEntity(out);
+        return out;
       })(),
     },
   };

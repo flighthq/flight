@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 
 import type { LayoutResolver, LayoutState } from './types.ts';
@@ -6,7 +6,7 @@ import type { LayoutResolver, LayoutState } from './types.ts';
 export function createLayoutState(): LayoutState {
   const out = allocateEntity<LayoutState>();
   initializeLayoutState(out);
-  return finishEntity(out);
+  return out;
 }
 
 // Allocates the operation state and its open, last-write-wins resolver registry. Built-in resolvers are

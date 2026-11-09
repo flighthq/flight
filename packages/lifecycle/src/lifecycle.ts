@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 import type { BackendOperationExplanation } from '@flighthq/host/contract';
 import { createSignal, emitSignal } from '@flighthq/signals/contract';
@@ -64,7 +64,7 @@ export function attachAppLifecycle(hostLifecycle: Readonly<HostLifecycleCapabili
 export function createAppLifecycle(): AppLifecycle {
   const out = allocateEntity<AppLifecycle>();
   initializeAppLifecycle(out);
-  return finishEntity(out);
+  return out;
 }
 
 // Stops delivery to `app` and forgets its subscription. Safe to call when not attached.

@@ -1,5 +1,4 @@
 import type { AppWindow } from '@flighthq/app/contract';
-import { finishEntity } from '@flighthq/entity/contract';
 
 import { createGlSurface, createGlSurfaceFromNativeHandle, destroyGlSurface } from './glSurface.ts';
 import { allocateSurface, getSurfaceHandle } from './surface.ts';
@@ -19,7 +18,7 @@ type TestGlCapability = HostSurfaceContextCapability<TestGlContext, TestGlOption
 };
 
 function glCapability(fields: TestGlCapability): TestGlCapability {
-  return finishEntity(Object.assign(allocateSurface(null), fields) as never) as unknown as TestGlCapability;
+  return Object.assign(allocateSurface(null), fields) as never as unknown as TestGlCapability;
 }
 
 const appWindow = {} as AppWindow;

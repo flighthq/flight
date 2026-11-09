@@ -1,5 +1,4 @@
 import type { AppWindow } from '@flighthq/app/contract';
-import { finishEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 
 import { allocateSurface } from './surface.ts';
@@ -43,7 +42,7 @@ export async function createWgpuSurfaceFromNativeHandle<Acquisition, Options>(
     return null;
   }
   (surface as EntityConstruction<GenericWgpuSurface<Acquisition>>).acquisition = acquisition;
-  return finishEntity(surface);
+  return surface;
 }
 
 export function destroyWgpuSurface<Acquisition, Options>(

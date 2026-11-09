@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 
 import type { AnimatedNormalModifier, AnimatedNormalModifierOptions } from './contract.shading-types.ts';
@@ -13,7 +13,7 @@ import { initializeModifier } from './modifier.ts';
 export function createAnimatedNormalModifier(options: Readonly<AnimatedNormalModifierOptions>): AnimatedNormalModifier {
   const out = allocateEntity<AnimatedNormalModifier>();
   initializeAnimatedNormalModifier(out, options);
-  return finishEntity(out);
+  return out;
 }
 
 // Builds an AnimatedNormalModifier (slot: Normal) — a UV-panned normal map that perturbs the surface

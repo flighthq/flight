@@ -1,5 +1,5 @@
 import { createAppWindow } from '@flighthq/app/contract';
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import { connectSignal } from '@flighthq/signals/contract';
 import type { Surface } from '@flighthq/surface/contract';
 
@@ -61,7 +61,7 @@ describe('detachWindowRenderContext', () => {
 });
 
 function createSurface(): Surface {
-  return finishEntity(allocateEntity<Surface>());
+  return allocateEntity<Surface>();
 }
 
 type RecordingHostGl = HostGlCapability & { calls: string[]; emitLost(): void; emitRestored(): void };

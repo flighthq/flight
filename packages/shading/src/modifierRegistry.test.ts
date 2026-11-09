@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import { describe, expect, it } from 'vitest';
 
 import type { Modifier } from './contract.shading-types.ts';
@@ -44,10 +44,10 @@ describe('registerModifier', () => {
     expect(
       definition?.getDefineSignature?.(
         (() => {
-          const out = allocateEntity<any>();
+          const out = allocateEntity<any>() as any;
           out.kind = 'acme.Foo';
           out.slot = 'Effect';
-          return finishEntity(out);
+          return out;
         })(),
       ),
     ).toBe('Effect');

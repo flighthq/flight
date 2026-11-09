@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import { createBoundingSphere } from '@flighthq/geometry/contract';
 
 import { createAmbientLight } from './ambientLight.ts';
@@ -161,12 +161,12 @@ describe('getLightLuminance', () => {
   });
 
   it('returns zero for an open custom kind even when it resembles a colored light', () => {
-    const _light = allocateEntity<any>();
+    const _light = allocateEntity<any>() as any;
     _light.color = 0xffffffff;
     _light.enabled = true;
     _light.intensity = 5;
     _light.kind = 'acme:GlowLight';
-    const light = finishEntity(_light);
+    const light = _light;
     expect(getLightLuminance(light)).toBe(0);
   });
 
@@ -293,22 +293,22 @@ describe('isLightCastingShadow', () => {
   // is the assertion that separates the two: a truthiness check would accept `undefined` and report
   // this as working.
   it('returns strict false for a custom light kind that declares no castsShadow', () => {
-    const _light = allocateEntity<any>();
+    const _light = allocateEntity<any>() as any;
     _light.color = 0xffffffff;
     _light.intensity = 1;
     _light.kind = 'acme:GlowLight';
-    const light = finishEntity(_light);
+    const light = _light;
     expect(isLightCastingShadow(light)).toBe(false);
   });
 
   // Guards the return TYPE rather than its truthiness, so the contract cannot regress to `undefined`
   // while every `toBe(false)` assertion still passes by coincidence.
   it('returns a boolean for every light, including custom kinds', () => {
-    const _custom = allocateEntity<any>();
+    const _custom = allocateEntity<any>() as any;
     _custom.color = 0xffffffff;
     _custom.intensity = 1;
     _custom.kind = 'acme:GlowLight';
-    const custom = finishEntity(_custom);
+    const custom = _custom;
     expect(typeof isLightCastingShadow(custom)).toBe('boolean');
     expect(typeof isLightCastingShadow(createAmbientLight())).toBe('boolean');
     expect(typeof isLightCastingShadow(createDirectionalLight({ castsShadow: true }))).toBe('boolean');
@@ -317,14 +317,14 @@ describe('isLightCastingShadow', () => {
   // A custom kind that DOES opt in must still be honoured — the fix must not flatten every custom
   // light to false, which would be the easy over-correction.
   it('honours castsShadow on a custom light kind that declares it', () => {
-    const _casting = allocateEntity<any>();
+    const _casting = allocateEntity<any>() as any;
     _casting.castsShadow = true;
     _casting.kind = 'acme:GlowLight';
-    const casting = finishEntity(_casting);
-    const _notCasting = allocateEntity<any>();
+    const casting = _casting;
+    const _notCasting = allocateEntity<any>() as any;
     _notCasting.castsShadow = false;
     _notCasting.kind = 'acme:GlowLight';
-    const notCasting = finishEntity(_notCasting);
+    const notCasting = _notCasting;
     expect(isLightCastingShadow(casting)).toBe(true);
     expect(isLightCastingShadow(notCasting)).toBe(false);
   });
@@ -332,10 +332,10 @@ describe('isLightCastingShadow', () => {
   // A non-boolean `castsShadow` is a programmer error, not a configuration; the query still has to
   // return a boolean rather than leaking the foreign value to a caller that declared it cannot get one.
   it('returns a boolean when a custom kind carries a non-boolean castsShadow', () => {
-    const _light = allocateEntity<any>();
+    const _light = allocateEntity<any>() as any;
     _light.castsShadow = 1;
     _light.kind = 'acme:GlowLight';
-    const light = finishEntity(_light);
+    const light = _light;
     expect(typeof isLightCastingShadow(light)).toBe('boolean');
   });
 });

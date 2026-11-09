@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 
 import type {
@@ -19,7 +19,7 @@ export function clearSpatialIndex3D(index: Readonly<SpatialIndex3D>): void {
 export function createSpatialIndex3D(backend?: SpatialIndexBackend3D): SpatialIndex3D {
   const out = allocateEntity<SpatialIndex3D>();
   initializeSpatialIndex3D(out, backend);
-  return finishEntity(out);
+  return out;
 }
 
 // Creates a 3D broadphase index. With no backend it defaults to a uniform grid sized for

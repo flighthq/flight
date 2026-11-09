@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import {
   acquireCanvasRenderTexture,
   createCanvasOffscreenRenderState,
@@ -30,14 +30,14 @@ describe('applyCanvasEffectsToRenderTexture', () => {
     expect(
       applyCanvasEffectsToRenderTexture(state, state, pool, source, dest, scratch, [
         (() => {
-          const out = allocateEntity<any>();
+          const out = allocateEntity<any>() as any;
           out.kind = 'acme.First';
-          return finishEntity(out);
+          return out;
         })(),
         (() => {
-          const out = allocateEntity<any>();
+          const out = allocateEntity<any>() as any;
           out.kind = 'acme.Second';
-          return finishEntity(out);
+          return out;
         })(),
       ]),
     ).toBe(true);
@@ -60,9 +60,9 @@ describe('applyCanvasEffectsToRenderTexture', () => {
     expect(
       applyCanvasEffectsToRenderTexture(state, state, pool, source, dest, scratch, [
         (() => {
-          const out = allocateEntity<any>();
+          const out = allocateEntity<any>() as any;
           out.kind = 'acme.Missing';
-          return finishEntity(out);
+          return out;
         })(),
       ]),
     ).toBe(false);

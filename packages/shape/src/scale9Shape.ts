@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 import type { RectangleLike } from '@flighthq/geometry/contract';
 import { createNode2D, getNode2DRuntime } from '@flighthq/scene2d/contract';
@@ -18,7 +18,7 @@ export function createScale9Shape(scale9Grid: Readonly<RectangleLike>): Scale9Sh
 export function createScale9ShapeData(scale9Grid: Readonly<RectangleLike>): Scale9ShapeData {
   const out = allocateEntity<Scale9ShapeData>();
   initializeScale9ShapeData(out, scale9Grid);
-  return finishEntity(out);
+  return out;
 }
 
 export function createScale9ShapeRuntime(): Scale9ShapeRuntime {

@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import { createMatrix } from '@flighthq/geometry/contract';
 import type { Viewport } from '@flighthq/node/contract';
 import { getOrCreateRenderProxy2D } from '@flighthq/render/contract';
@@ -47,7 +47,7 @@ function makeTarget(overrides?: Partial<GlTextureRenderTarget>): GlTextureRender
   out.colorRenderbuffers = [];
   out.depthStencilRenderbuffer = { id: 'depth' } as unknown as WebGLRenderbuffer;
   Object.assign(out, overrides);
-  return finishEntity(out);
+  return out;
 }
 
 describe('acquireGlRenderPassHandle', () => {

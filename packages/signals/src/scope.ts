@@ -1,7 +1,7 @@
 // Generated from crates/flight-signals/src/scope.rs by flight-compiler.
 // Rust is authoritative; run `npm run generate` after changing it.
 
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 
 import { disconnectSignalConnection } from './connection.ts';
 import type { SignalConnection, SignalScopeRaw } from './types.ts';
@@ -9,7 +9,6 @@ import type { SignalConnection, SignalScopeRaw } from './types.ts';
 export function createSignalScope(): SignalScopeRaw {
   let out: SignalScopeRaw = Object.assign(allocateEntity<SignalScopeRaw>(), { connections: [] });
   initializeSignalScope(out);
-  finishEntity(out);
   return out;
 }
 

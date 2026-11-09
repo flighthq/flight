@@ -1,5 +1,5 @@
 import type { GradientGlowEffect } from '@flighthq/effects/contract';
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import { acquireWgpuTextureRenderTarget, releaseWgpuTextureRenderTarget } from '@flighthq/render-wgpu/contract';
 import type {
   WgpuEffectRunner,
@@ -129,7 +129,7 @@ function getLookupPipeline(state: WgpuRenderState): WgpuEffectPipeline {
     });
     const _entity = allocateEntity<WgpuEffectPipeline>();
     initializeWgpuEffectPipeline(_entity, 'premul', pipeline);
-    p = finishEntity(_entity);
+    p = _entity;
     lookupPipelines.set(state, p);
   }
   return p;

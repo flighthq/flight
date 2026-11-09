@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import type { ImportDiagnostic } from '@flighthq/importdiagnostics/contract';
@@ -164,7 +164,7 @@ function parseDragonBonesMeshDisplay(
     uvs.length >> 1,
     toFloat32Array(display.vertices),
   );
-  return finishEntity(out);
+  return out;
 }
 
 function parseDragonBonesRegionDisplay(display: Record<string, unknown>): RegionAttachment2D {
@@ -182,7 +182,7 @@ function parseDragonBonesRegionDisplay(display: Record<string, unknown>): Region
     transform.x,
     transform.y,
   );
-  return finishEntity(out);
+  return out;
 }
 
 function parseDragonBonesSkins(
@@ -310,7 +310,7 @@ function parseDragonBonesWeightedMesh(
     vertexCount,
     null,
   );
-  return finishEntity(out);
+  return out;
 }
 
 function toFloat32Array(value: unknown): Float32Array {

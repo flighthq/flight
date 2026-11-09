@@ -1,4 +1,4 @@
-﻿import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+﻿import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 import type { MatrixLike } from '@flighthq/geometry/contract';
 import { invalidateImageResource } from '@flighthq/image/contract';
@@ -52,7 +52,7 @@ export function acquireGlScale9ShapeRasterSurface(
 export function createGlScale9ShapeData(_state: GlRenderState, _source: NodeAny): RendererData | null {
   const out = allocateEntity<GlScale9ShapeData>();
   initializeGlScale9ShapeData(out, _state, _source);
-  return finishEntity(out);
+  return out;
 }
 
 // Remove the Image-keyed GPU entry before returning this per-node surface to the provider that created it.

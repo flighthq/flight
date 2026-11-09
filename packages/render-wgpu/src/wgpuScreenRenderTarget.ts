@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 import type { Surface } from '@flighthq/surface/contract';
 
@@ -42,7 +42,7 @@ export function createWgpuScreenRenderTarget(
 ): WgpuScreenRenderTarget {
   const out = allocateEntity<WgpuScreenRenderTarget>();
   initializeWgpuScreenRenderTarget(out, wgpuHost, device, drawable, options);
-  return finishEntity(out);
+  return out;
 }
 
 // Frees the GPU storage this target owns — depth-stencil, supersample, and capture — and unconfigures

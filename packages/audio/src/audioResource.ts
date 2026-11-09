@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 
 import type { AudioBuffer, AudioResource } from './types.ts';
@@ -10,13 +10,13 @@ import type { AudioBuffer, AudioResource } from './types.ts';
 export function cloneAudioResource(resource: Readonly<AudioResource>): AudioResource {
   const out = allocateEntity<AudioResource>();
   out.buffer = resource.buffer;
-  return finishEntity(out);
+  return out;
 }
 
 export function createAudioResource(buffer?: AudioBuffer): AudioResource {
   const out = allocateEntity<AudioResource>();
   initializeAudioResource(out, buffer);
-  return finishEntity(out);
+  return out;
 }
 
 // Releases the decoded AudioBuffer reference so it becomes eligible for GC. The AudioBuffer is plain

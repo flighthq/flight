@@ -1,5 +1,5 @@
 import { createAudioBuffer, createAudioResource } from '@flighthq/audio/contract';
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { AudioDeviceHandle, AudioSourceHandle } from '@flighthq/host/contract';
 import { connectSignal } from '@flighthq/signals/contract';
 
@@ -18,7 +18,7 @@ let nextHandle = 1;
 let backend: HostAudioDeviceCapability;
 
 function mockBackend(): HostAudioDeviceCapability {
-  const out = allocateEntity<any>();
+  const out = allocateEntity<any>() as any;
   out.createBuffer = vi.fn().mockReturnValue(1);
   out.createDevice = vi.fn().mockReturnValue(1);
   out.createSource = vi.fn(() => nextHandle++ as unknown as AudioSourceHandle);
@@ -35,7 +35,7 @@ function mockBackend(): HostAudioDeviceCapability {
   out.setSourcePlaybackRate = vi.fn();
   out.startSource = vi.fn();
   out.stopSource = vi.fn();
-  return finishEntity(out);
+  return out;
 }
 
 beforeEach(() => {

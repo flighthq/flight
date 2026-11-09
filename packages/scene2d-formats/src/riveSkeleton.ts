@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 import { RAD_TO_DEG } from '@flighthq/math/contract';
 import { createSkeleton2D } from '@flighthq/skeleton2d/contract';
@@ -56,7 +56,7 @@ export function createRiveSkeleton2D(artboard: Readonly<RiveArtboardGraph>): Riv
   );
   const out = allocateEntity<RiveSkeleton2DImport>();
   initializeRiveSkeleton2DImport(out, boneIndices, createSkeleton2D(bones));
-  return finishEntity(out);
+  return out;
 }
 
 export function initializeRiveSkeleton2DImport(

@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 
 import type { Matrix, Matrix3Like, Matrix4Like, MatrixLike, RectangleLike, Vector2Like, Vector3Like } from './types.ts';
@@ -142,7 +142,7 @@ export function createGradientTransformMatrix(
 export function createMatrix(a?: number, b?: number, c?: number, d?: number, tx?: number, ty?: number): Matrix {
   const out = allocateEntity<Matrix>();
   initializeMatrix(out, a ?? 1, b ?? 0, c ?? 0, d ?? 1, tx ?? 0, ty ?? 0);
-  return finishEntity(out);
+  return out;
 }
 
 export function createTransformMatrix(

@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 import { clearSignal, createSignal, emitSignal } from '@flighthq/signals/contract';
 
@@ -54,7 +54,7 @@ export function attachConnectivity(
 export function createConnectivity(): Connectivity {
   const out = allocateEntity<Connectivity>();
   initializeConnectivity(out);
-  return finishEntity(out);
+  return out;
 }
 
 // Terminal provider teardown. This is deliberately separate from per-entity detach: a caller that

@@ -1,4 +1,4 @@
-import { allocateEntity, EntityRuntimeKey, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity, EntityRuntimeKey } from '@flighthq/entity/contract';
 import { ResourceResolutionState } from '@flighthq/resource/contract';
 
 import { createAudioBuffer } from './audioBuffer.ts';
@@ -96,11 +96,11 @@ describe('explainAudioResourceReferenceResolution', () => {
   it('detaches the failure so a caller cannot mutate the reference through it', () => {
     const reference = createEmbeddedAudioResourceReference(new Uint8Array([1]));
     reference.state = ResourceResolutionState.Failed;
-    const _entity = allocateEntity<any>();
+    const _entity = allocateEntity<any>() as any;
     _entity.kind = 'Error' as const;
     _entity.message = 'boom';
     _entity.name = null;
-    reference.failure = finishEntity(_entity);
+    reference.failure = _entity;
     const explanation = explainAudioResourceReferenceResolution(reference);
     expect(explanation.retryable).toBe(true);
     expect(explanation.failure).not.toBe(reference.failure);
@@ -138,11 +138,11 @@ describe('resetFailedAudioResourceReference', () => {
   it('returns a failed reference to unresolved', () => {
     const reference = createEmbeddedAudioResourceReference(new Uint8Array([1]));
     reference.state = ResourceResolutionState.Failed;
-    const _entity = allocateEntity<any>();
+    const _entity = allocateEntity<any>() as any;
     _entity.kind = 'Error' as const;
     _entity.message = 'boom';
     _entity.name = null;
-    reference.failure = finishEntity(_entity);
+    reference.failure = _entity;
     expect(resetFailedAudioResourceReference(reference)).toBe(true);
     expect(reference.state).toBe(ResourceResolutionState.Unresolved);
     expect(reference.failure).toBeNull();

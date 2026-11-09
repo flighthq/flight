@@ -1,7 +1,7 @@
 // Generated from crates/flight-platform/src/platform.rs by flight-compiler.
 // Rust is authoritative; run `npm run generate` after changing it.
 
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 
 import type {
   HostPlatformCapability,
@@ -44,7 +44,7 @@ export function comparePlatformVersions(a: string, b: string): number {
 export function createPlatformInfo(): PlatformInfo {
   let out: PlatformInfo = allocateEntity<PlatformInfo>();
   initializePlatformInfo(out);
-  return finishEntity(out);
+  return out;
 }
 
 export function getPlatformEndiannessString(value: PlatformEndianness): string {

@@ -1,6 +1,6 @@
 import type { ColorScaleBias } from '@flighthq/adjustments/contract';
 import type { Bitmap } from '@flighthq/bitmap/contract';
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 import type { CompressedImageResource, ImageResource } from '@flighthq/image/contract';
 import { BlendMode } from '@flighthq/materials/contract';
@@ -274,7 +274,7 @@ export function bindWgpuVideoTexture(
       out.uploadedVersion = -1;
       out.view = view;
       out.width = width;
-      return finishEntity(out);
+      return out;
     })();
     cache.set(image!, entry);
   } else if (entry.sampler !== sampler) {
@@ -330,7 +330,7 @@ export function createWgpuTextureEntry(
 
   const out = allocateEntity<WgpuTextureEntry>();
   initializeWgpuTextureEntry(out, texture, view);
-  return finishEntity(out);
+  return out;
 }
 
 export function destroyWgpuVideoTexture(state: WgpuRenderState, videoTexture: Readonly<Texture>): boolean {
@@ -584,7 +584,7 @@ function uploadWgpuBitmapEntry(
   out.mipLevelCount = mipLevelCount;
   out.texture = texture;
   out.view = view;
-  return finishEntity(out);
+  return out;
 }
 
 function uploadWgpuCompressedImageEntry(
@@ -641,7 +641,7 @@ function uploadWgpuImageResourceEntry(
   out.mipLevelCount = mipLevelCount;
   out.texture = texture;
   out.view = view;
-  return finishEntity(out);
+  return out;
 }
 
 type WgpuTextureSourceUpload = (

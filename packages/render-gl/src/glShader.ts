@@ -1,4 +1,4 @@
-﻿import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+﻿import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 import type { RenderProxy, RenderProxy2D } from '@flighthq/render/contract';
 
@@ -57,7 +57,7 @@ export function compileGlBitmapProgram(gl: GlContext, fragmentSrc: string = FRAG
 export function createDefaultGlBitmapShader(shaderLoc: GlShaderLocations, matrixArray: Float32Array): GlBitmapShader {
   const out = allocateEntity<GlBitmapShader>();
   initializeDefaultGlBitmapShader(out, shaderLoc, matrixArray);
-  return finishEntity(out);
+  return out;
 }
 
 export function createGlBitmapShader(
@@ -67,7 +67,7 @@ export function createGlBitmapShader(
 ): GlBitmapShader {
   const out = allocateEntity<GlBitmapShader>();
   initializeGlBitmapShader(out, gl, fragmentSrc, onBind);
-  return finishEntity(out);
+  return out;
 }
 
 export function ensureDefaultGlBitmapShader(state: GlRenderState): GlBitmapShader {

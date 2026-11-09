@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import { createVector2 } from '@flighthq/geometry/contract';
 import type { Texture, Sampler } from '@flighthq/texture/contract';
 
@@ -6,14 +6,14 @@ import { cloneEnvironment, createEnvironment, initializeEnvironment } from './en
 import { EnvironmentKind } from './types.ts';
 
 function createTestCubeTexture(): Texture {
-  const sampler = allocateEntity<any>();
+  const sampler = allocateEntity<any>() as any;
   sampler.anisotropy = 1;
   sampler.magFilter = 'linear';
   sampler.minFilter = 'linear';
   sampler.mipmaps = false;
   sampler.wrapU = 'clamp-to-edge';
   sampler.wrapV = 'clamp-to-edge';
-  const out = allocateEntity<any>();
+  const out = allocateEntity<any>() as any;
   out.colorSpace = 'linear';
   out.flipX = false;
   out.flipY = false;
@@ -24,7 +24,7 @@ function createTestCubeTexture(): Texture {
   out.uvRotation = 0;
   out.uvScale = createVector2(1, 1);
   out.version = 0;
-  return finishEntity(out);
+  return out;
 }
 
 describe('cloneEnvironment', () => {

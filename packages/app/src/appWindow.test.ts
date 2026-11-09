@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import { EntityRuntimeKey } from '@flighthq/entity/contract';
 import type { Matrix } from '@flighthq/geometry/contract';
 import type {
@@ -312,13 +312,13 @@ function recordingWindowBackend(): RecordingWindowBackend {
 }
 
 function createHostTarget(): InputTargetHandle {
-  return finishEntity(allocateEntity<InputTargetHandle>());
+  return allocateEntity<InputTargetHandle>();
 }
 
 function createWindowResizeTarget(): WindowResizeTargetHandle {
   const out = allocateEntity<WindowResizeTargetHandle>();
   out.__brand = 'WindowResizeTargetHandle' as const;
-  return finishEntity(out);
+  return out;
 }
 
 function recordingFullscreenBackend(): RecordingFullscreenBackend {
@@ -1410,7 +1410,7 @@ describe('prepareElementForInput', () => {
     const backend = {} as HostInputTargetCapability;
     backend.prepare = prepare;
     const target = (() => {
-      return finishEntity(allocateEntity<InputTargetHandle>());
+      return allocateEntity<InputTargetHandle>();
     })();
 
     prepareElementForInput({ input: { target: backend } }.input.target, target);

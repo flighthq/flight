@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 
 import { sampleAnimationTrack } from './animationTrack.ts';
@@ -10,7 +10,7 @@ export function createAnimationRootMotionExtractor(
 ): AnimationRootMotionExtractor {
   const extractor = allocateEntity<AnimationRootMotionExtractor>();
   initializeAnimationRootMotionExtractor(extractor, clip, channelIndex);
-  return finishEntity(extractor);
+  return extractor;
 }
 
 // Writes the accumulated root delta from finite unwrapped `startTime` to `endTime`. Times may cross

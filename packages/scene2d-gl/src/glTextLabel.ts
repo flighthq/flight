@@ -1,5 +1,5 @@
 import { computeRgbaCssString } from '@flighthq/color/contract';
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 import { invalidateImageResource } from '@flighthq/image/contract';
 import type { ImageResource } from '@flighthq/image/contract';
@@ -46,7 +46,7 @@ function getGlTextLabelData(data: RendererData): GlTextLabelData {
 function createGlTextLabelData(_state: GlRenderState, _source: NodeAny): RendererData {
   const out = allocateEntity<GlTextLabelData>();
   initializeGlTextLabelData(out);
-  return finishEntity(out);
+  return out;
 }
 
 // Remove the GPU cache entry while its Image key is still valid, then return the raster allocation to

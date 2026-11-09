@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import { EntityRuntimeKey } from '@flighthq/entity/contract';
 import {
   createImageResource,
@@ -42,7 +42,7 @@ function emptyData(): GlShapeRendererData {
   out.meshVersion = -1;
   out.meshes = null;
   out.surface = null;
-  return finishEntity(out);
+  return out;
 }
 
 beforeEach(() => {

@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction, NonEntityCreateResult } from '@flighthq/entity/contract';
 import { clearSignal, createSignal, emitSignal } from '@flighthq/signals/contract';
 
@@ -49,7 +49,7 @@ export function cloneMenuTemplate(template: Readonly<MenuItemTemplate>): MenuIte
 export function createMenuHighlight(): MenuHighlight {
   const out = allocateEntity<MenuHighlight>();
   initializeMenuHighlight(out);
-  return finishEntity(out);
+  return out;
 }
 
 // Builds a menu item template, filling defaults (type 'normal', enabled true). Recursively normalizes
@@ -72,7 +72,7 @@ export function createMenuItemTemplate(
 export function createMenuSelect(): MenuSelect {
   const out = allocateEntity<MenuSelect>();
   initializeMenuSelect(out);
-  return finishEntity(out);
+  return out;
 }
 
 // Stops delivery without discarding the entity: runs this entity's own unsubscribe, if it has one.
@@ -134,7 +134,7 @@ export function enableMenuSignals(): MenuSignals {
     const out = allocateEntity<MenuSignals>();
     out.onContextMenuClose = createSignal();
     out.onContextMenuOpen = createSignal();
-    return finishEntity(out);
+    return out;
   })();
   return _menuSignals;
 }

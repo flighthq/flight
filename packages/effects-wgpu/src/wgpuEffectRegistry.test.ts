@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import {
   createWgpuRenderStateForTest,
   getWgpuRenderStateRuntime,
@@ -44,9 +44,9 @@ describe('isWgpuEffectResolvable', () => {
       isWgpuEffectResolvable(
         state,
         (() => {
-          const out = allocateEntity<any>();
+          const out = allocateEntity<any>() as any;
           out.kind = 'acme.Always';
-          return finishEntity(out);
+          return out;
         })(),
       ),
     ).toBe(true);
@@ -59,9 +59,9 @@ describe('isWgpuEffectResolvable', () => {
       isWgpuEffectResolvable(
         state,
         (() => {
-          const out = allocateEntity<any>();
+          const out = allocateEntity<any>() as any;
           out.kind = 'acme.Named';
-          return finishEntity(out);
+          return out;
         })(),
       ),
     ).toBe(false);
@@ -69,10 +69,10 @@ describe('isWgpuEffectResolvable', () => {
       isWgpuEffectResolvable(
         state,
         (() => {
-          const out = allocateEntity<any>();
+          const out = allocateEntity<any>() as any;
           out.key = 'ready';
           out.kind = 'acme.Named';
-          return finishEntity(out) as never;
+          return out as never;
         })(),
       ),
     ).toBe(true);

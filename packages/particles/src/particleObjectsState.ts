@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 import { reserveFloat32Array } from '@flighthq/geometry/contract';
 import type { RandomSource } from '@flighthq/math/contract';
@@ -8,7 +8,7 @@ import type { ParticleObjectsState } from './types/ParticleSimulation.ts';
 export function createParticleObjectsState(capacity: number, random: RandomSource = Math.random): ParticleObjectsState {
   const out = allocateEntity<ParticleObjectsState>();
   initializeParticleObjectsState(out, capacity, random);
-  return finishEntity(out);
+  return out;
 }
 
 export function ensureParticleObjectsStateCapacity(state: ParticleObjectsState, capacity: number): void {

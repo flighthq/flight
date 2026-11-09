@@ -4,7 +4,7 @@ import type {
   CollisionHeightfield3D,
   CollisionTriangleMesh3D,
 } from '@flighthq/collision/contract';
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 
 import type {
@@ -19,7 +19,7 @@ import { writeRigidBody3DWorldCenter } from './world.ts';
 export function createPhysics3DDebugGeometry(): Physics3DDebugGeometry {
   const out = allocateEntity<Physics3DDebugGeometry>();
   initializePhysics3DDebugGeometry(out);
-  return finishEntity(out);
+  return out;
 }
 
 // Creates a reusable destination for `writePhysics3DDebugGeometry`. The arrays are capacity pools: the

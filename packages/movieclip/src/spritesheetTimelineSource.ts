@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 import { addNodeChild, invalidateNodeLocalTransform } from '@flighthq/node/contract';
 import { createSprite } from '@flighthq/scene2d/contract';
@@ -19,7 +19,7 @@ export function createSpritesheetTimelineSource(
 ): TimelineSource {
   const out = allocateEntity<TimelineSource>();
   initializeSpritesheetTimelineSource(out, spritesheet, animation);
-  return finishEntity(out);
+  return out;
 }
 
 // Reports the authored playback fields the TimelineSource vocabulary cannot carry. Direction is exact:

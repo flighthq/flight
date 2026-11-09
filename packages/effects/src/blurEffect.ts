@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction, EntityWithoutRuntime } from '@flighthq/entity/contract';
 import type { RenderState } from '@flighthq/render/contract';
 import type { EffectPadding } from '@flighthq/render/contract';
@@ -14,7 +14,7 @@ import type { BlurEffect } from './types/BlurEffect.ts';
 export function createBlurEffect(options: Readonly<Omit<EntityWithoutRuntime<BlurEffect>, 'kind'>> = {}): BlurEffect {
   const out = allocateEntity<BlurEffect>();
   initializeBlurEffect(out, options);
-  return finishEntity(out);
+  return out;
 }
 
 export function getBlurEffectPadding(effect: Readonly<BlurEffect>): EffectPadding {

@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 import type { EntityRaw, EntityRuntime, EntityRuntimeKey } from '@flighthq/entity/contract';
 import type { MatrixLike, RectangleLike } from '@flighthq/geometry/contract';
@@ -70,7 +70,7 @@ export function createDomScene2DRectangle(
 ): DomScene2DRectangle & DomScene2DRectangleEntity {
   const out = allocateEntity<DomScene2DRectangle & DomScene2DRectangleEntity>();
   initializeDomScene2DRectangle(out, rect, transform);
-  return finishEntity(out);
+  return out;
 }
 
 export function initializeDomScene2DRectangle(

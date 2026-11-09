@@ -1,5 +1,5 @@
 import type { CollisionBuiltInShape2D } from '@flighthq/collision/contract';
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 
 import type {
@@ -29,7 +29,7 @@ const DEFAULT_OPTIONS: Readonly<Physics2DDebugGeometryOptions> = {
 export function createPhysics2DDebugGeometry(): Physics2DDebugGeometry {
   const out = allocateEntity<Physics2DDebugGeometry>();
   initializePhysics2DDebugGeometry(out);
-  return finishEntity(out);
+  return out;
 }
 
 // Creates a reusable destination for writePhysics2DDebugGeometry. The arrays are capacity pools: the

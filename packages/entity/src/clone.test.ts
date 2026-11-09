@@ -1,6 +1,6 @@
 import { attachEntityBinding } from './binding.ts';
 import { cloneEntity, stripEntityRuntime } from './clone.ts';
-import { allocateEntity, Entity, finishEntity } from './entity.ts';
+import { allocateEntity, Entity } from './entity.ts';
 import { hasEntityRuntime } from './runtime.ts';
 import type { EntityRaw, EntityRuntime } from './types.ts';
 import { EntityRuntimeKey } from './types.ts';
@@ -10,7 +10,7 @@ type TestEntity = EntityRaw & { [EntityRuntimeKey]: EntityRuntime | undefined };
 function createTestEntity(fields?: Record<string, unknown>): TestEntity & Record<string, unknown> {
   const out = allocateEntity<TestEntity>();
   if (fields) Object.assign(out, fields);
-  return finishEntity(out) as TestEntity & Record<string, unknown>;
+  return out as TestEntity & Record<string, unknown>;
 }
 
 describe('cloneEntity', () => {
@@ -118,7 +118,7 @@ describe('stripEntityRuntime', () => {
     const stripped = stripEntityRuntime(original);
     const out = allocateEntity<TestEntity>();
     Object.assign(out, stripped);
-    const restored = finishEntity(out);
+    const restored = out;
     expect((restored as unknown as Record<string, unknown>).value).toBe(99);
     expect(hasEntityRuntime(restored)).toBe(false);
   });

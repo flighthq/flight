@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction, EntityWithoutRuntime } from '@flighthq/entity/contract';
 
 import { initializeEffect } from './effect.ts';
@@ -9,7 +9,7 @@ export function createScanlinesEffect(
 ): ScanlinesEffect {
   const out = allocateEntity<ScanlinesEffect>();
   initializeScanlinesEffect(out, options);
-  return finishEntity(out);
+  return out;
 }
 
 export function initializeScanlinesEffect(

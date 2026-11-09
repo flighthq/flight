@@ -1,5 +1,5 @@
 import type { ColorScaleBias } from '@flighthq/adjustments/contract';
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import { EntityRuntimeKey } from '@flighthq/entity/contract';
 import { beginWgpuScreenRenderPassForTest, submitWgpuFrame } from '@flighthq/render-wgpu/contract';
 import { getWgpuColorAdjustmentMaterialFeature, getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
@@ -147,9 +147,9 @@ describe('registerWgpuColorAdjustmentMaterialFeature', () => {
     recordWgpuQuadBatchColorScaleBias(
       state,
       (() => {
-        const out = allocateEntity<any>();
+        const out = allocateEntity<any>() as any;
         out.tint = 0x12345678;
-        return finishEntity(out);
+        return out;
       })(),
       1,
     );
@@ -166,9 +166,9 @@ describe('registerWgpuColorAdjustmentMaterialFeature', () => {
     recordWgpuQuadBatchColorScaleBias(
       state,
       (() => {
-        const out = allocateEntity<any>();
+        const out = allocateEntity<any>() as any;
         out.tint = 0x808080ff;
-        return finishEntity(out);
+        return out;
       })(),
       0,
     );
@@ -185,9 +185,9 @@ describe('registerWgpuColorAdjustmentMaterialFeature', () => {
     recordWgpuQuadBatchColorScaleBias(
       state,
       (() => {
-        const out = allocateEntity<any>();
+        const out = allocateEntity<any>() as any;
         out.tint = 0x808080ff;
-        return finishEntity(out);
+        return out;
       })(),
       0,
     );

@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 
 import type { Skin2D } from './contract.skeleton2d-types.ts';
@@ -6,7 +6,7 @@ import type { Skin2D } from './contract.skeleton2d-types.ts';
 export function createSkin2D(influenceCounts: Uint16Array, influences: Float32Array): Skin2D {
   const out = allocateEntity<Skin2D>();
   initializeSkin2D(out, influenceCounts, influences);
-  return finishEntity(out);
+  return out;
 }
 
 // Allocates a weight binding over the two streams a caller already owns. The arrays are adopted, not

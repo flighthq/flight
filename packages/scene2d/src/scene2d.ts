@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import { EntityRuntimeKey } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 import { getNodeRoot, getNodeRuntime } from '@flighthq/node/contract';
@@ -30,7 +30,7 @@ export function createScene2DRuntime(): Scene2DRuntime {
 export function createScene2DSignals(): Scene2DSignals {
   const out = allocateEntity<Scene2DSignals>();
   initializeScene2DSignals(out);
-  return finishEntity(out);
+  return out;
 }
 
 export function enableScene2DSignals(source: Scene2D): Scene2DSignals {

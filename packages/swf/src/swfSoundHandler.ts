@@ -1,7 +1,7 @@
 import { createAudioResource, createEmbeddedAudioResourceReference } from '@flighthq/audio/contract';
 import type { AudioResourceReference } from '@flighthq/audio/contract';
 import type { AudioResource } from '@flighthq/audio/contract';
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import { ImportDiagnosticSeverity } from '@flighthq/importdiagnostics/contract';
@@ -138,7 +138,7 @@ function appendSwfStreamSoundCue(
   const cue = (() => {
     const out = allocateEntity<TimelineStreamAudioCue>();
     initializeTimelineStreamAudioCue(out, startFrame, resource);
-    return finishEntity(out);
+    return out;
   })();
   cues.push(cue);
 }
@@ -223,7 +223,7 @@ function createSwfAudioCue(info: Readonly<SwfSoundInfo>, frame: number, resource
     !info.stop && info.skipIfPlaying,
     info.stop,
   );
-  return finishEntity(out);
+  return out;
 }
 
 // Pairs every class-named trigger with the character its class was bound to, now that the whole tag stream

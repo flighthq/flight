@@ -89,13 +89,13 @@ Each public constructor allocates its own concrete type exactly once:
 export function createNode2D(options?: Readonly<Node2DOptions>): Node2D {
   const out = allocateEntity<Node2D>();
   initializeNode2D(out, Node2DKind, null, options);
-  return finishEntity(out);
+  return out;
 }
 
 export function createSprite(options?: Readonly<SpriteOptions>): Sprite {
   const out = allocateEntity<Sprite>();
   initializeSprite(out, options);
-  return finishEntity(out);
+  return out;
 }
 ```
 
@@ -124,12 +124,6 @@ TypeScript cannot enforce definite initialization across separate function calls
 (see [Enforcement](#enforcement)). What it does guarantee is that the *construction* and *finished*
 states are distinct types that cannot be confused at call sites.
 
-### `finishEntity(out)`
-
-A zero-cost cast from `EntityConstruction<T>` to `T`. At runtime it returns the same object. Its
-purpose is to mark the boundary where construction ends and the public readonly contract begins.
-Every `allocateEntity` has a matching `finishEntity` — grep-able and enforceable by a lint rule.
-
 ### Initializers
 
 Each initializer calls its base first, then writes only the fields its own layer introduced:
@@ -149,7 +143,7 @@ All `initialize*` functions are exported on the **contract lane** (`./contract`)
 public lane (`.`). End-user code calls `createSprite`, not `initializeSprite`. The contract export
 serves three internal consumers: derived types in other packages that chain through the initializer,
 pools that call it to reset a recycled object, and tests. `create*` remains on the public lane.
-`allocateEntity`, `finishEntity`, and `EntityConstruction<T>` are likewise contract-only.
+`allocateEntity` and `EntityConstruction<T>` are likewise contract-only.
 
 ### Positional arguments vs options
 
@@ -186,7 +180,7 @@ abstract capability — the concrete platform layer owns the assignment.
 2. **Initializers call their base first**, then write their own fields — canonical base-to-derived
    order with the chain encoded in the initializers, not the caller.
 3. **Each initializer writes only fields owned by its layer.**
-4. **Every required field is assigned exactly once before `finishEntity`.**
+4. **Every required field is assigned exactly once before the factory returns.**
 5. **The under-construction value does not escape**, is not registered, and is not returned early.
 6. **No object spreads or `Object.assign` across inheritance layers** (options structs may spread;
    entity field assignment must not).
@@ -196,7 +190,7 @@ abstract capability — the concrete platform layer owns the assignment.
 ## Flat entities
 
 Every entity type gets an `initialize*` function, even flat ones with no inheritance. The model is
-the same: `allocateEntity` + `initialize*` + `finishEntity`.
+the same: `allocateEntity` + `initialize*` + return.
 
 ```typescript
 function initializeColorLutCache(
@@ -209,7 +203,7 @@ function initializeColorLutCache(
 export function createColorLutCache(): ColorLutCache {
   const out = allocateEntity<ColorLutCache>();
   initializeColorLutCache(out);
-  return finishEntity(out);
+  return out;
 }
 ```
 
@@ -223,13 +217,13 @@ Three reasons for the uniform rule:
    construction dialect — it already has an `initialize*` that the new base chains through.
 
 3. **Fully mechanical shape.** Every `create*` is exactly `allocateEntity` + one `initialize*` call +
-   `finishEntity`, no exceptions. A script or agent can verify the pattern without distinguishing
-   flat from hierarchical.
+   return, no exceptions. A script or agent can verify the pattern without distinguishing flat from
+   hierarchical.
 
 ## `createEntity` disposition
 
 `createEntity({ fields })` is deprecated for new code. Existing call sites migrate to
-`allocateEntity` + initializer(s) + `finishEntity` as they are touched. A file that adopts
+`allocateEntity` + initializer(s) as they are touched. A file that adopts
 `allocateEntity` removes its `createEntity` calls in the same commit — no dual dialect within a file.
 
 `createEntity` remains available during the migration.
@@ -266,7 +260,7 @@ createSprite()
       -> initializeNode()    // base fields first
     <- Node2D fields         // derived fields
   <- Sprite fields           // leaf fields
-  -> finishEntity()
+  -> return out
 ```
 
 This is mechanically equivalent to:
@@ -311,7 +305,7 @@ object and resets it through the same initializer `create*` uses:
 function acquireColorLutCache(pool: Pool<ColorLutCache>): ColorLutCache {
   const out = pool.recycle() as EntityConstruction<ColorLutCache>;
   initializeColorLutCache(out);
-  return finishEntity(out);
+  return out;
 }
 ```
 

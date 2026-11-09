@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 import {
   createResourceLoader,
@@ -78,7 +78,7 @@ export function acquireAsset<T = unknown>(library: Readonly<AssetLibrary>, id: s
 export function createAssetLibrary(): AssetLibrary {
   const out = allocateEntity<AssetLibrary>();
   initializeAssetLibrary(out);
-  return finishEntity(out);
+  return out;
 }
 
 // Disposes every resident asset through its registered adapter and empties the library — adapters,

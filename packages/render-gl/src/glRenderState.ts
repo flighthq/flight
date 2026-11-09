@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 import { EntityRuntimeKey } from '@flighthq/entity/contract';
 import {
@@ -52,7 +52,7 @@ export function buildGlRenderRegistries(options: Readonly<GlRenderStateOptions>)
 export function createGlContextState(gl: GlContext): GlContextState {
   const state = allocateEntity<GlContextState>();
   initializeGlContextState(state, gl);
-  const result = finishEntity(state);
+  const result = state;
   _contextStateByGl.set(gl, result);
   return result;
 }
@@ -272,7 +272,7 @@ function _createGlRenderStateFromContext(
   gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
   gl.disable(gl.DEPTH_TEST);
 
-  return finishEntity(state);
+  return state;
 }
 
 export function registerGlRenderStateTeardown(state: GlRenderState, teardown: (state: GlRenderState) => void): void {

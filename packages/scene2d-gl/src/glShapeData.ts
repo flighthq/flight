@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 import type { HostImageCapability } from '@flighthq/image/contract';
 import type { NodeAny, RendererData } from '@flighthq/node/contract';
@@ -26,7 +26,7 @@ export function acquireGlShapeRasterSurface(
 export function createGlShapeData(_state: GlRenderState, _source: NodeAny): RendererData | null {
   const out = allocateEntity<GlShapeRendererData>();
   initializeGlShapeData(out, _state, _source);
-  return finishEntity(out);
+  return out;
 }
 
 // The batch uploads this shape's raster resource into the shared cache. Teardown deletes that GPU texture

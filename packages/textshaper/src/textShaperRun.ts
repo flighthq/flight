@@ -1,5 +1,5 @@
 import type { EntityConstruction, EntityRuntime, EntityRuntimeKey } from '@flighthq/entity/contract';
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { TextFormat } from '@flighthq/textformat/contract';
 
 import type {
@@ -26,7 +26,7 @@ export function clearShapedRun(run: ShapedRun): void {
 export function createShapedRun(): ShapedRunEntity {
   const out = allocateEntity<ShapedRunEntity>();
   initializeShapedRun(out);
-  return finishEntity(out);
+  return out;
 }
 
 export function getCodePointForGlyph(

@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 import { copyRectangle, createRectangle, reserveFloat32Array, reserveUint16Array } from '@flighthq/geometry/contract';
 import type { Rectangle, Vector2Like } from '@flighthq/geometry/contract';
@@ -195,7 +195,7 @@ export function createQuadBatch(): QuadBatch {
 export function createQuadBatchData(): QuadBatchData {
   const out = allocateEntity<QuadBatchData>();
   initializeQuadBatchData(out);
-  return finishEntity(out);
+  return out;
 }
 
 export function createQuadBatchRuntime(): QuadBatchRuntime {
@@ -208,7 +208,7 @@ export function createQuadBatchRuntime(): QuadBatchRuntime {
 export function createQuadBatchSignals(): QuadBatchSignals {
   const out = allocateEntity<QuadBatchSignals>();
   initializeQuadBatchSignals(out);
-  return finishEntity(out);
+  return out;
 }
 
 /**
@@ -554,7 +554,7 @@ export function setQuadBatchInstanceTint(target: QuadBatch, index: number, rgba:
   data.materialData[index] = (() => {
     const out = allocateEntity<TintMaterialData>();
     out.tint = rgba >>> 0;
-    return finishEntity(out);
+    return out;
   })();
 }
 

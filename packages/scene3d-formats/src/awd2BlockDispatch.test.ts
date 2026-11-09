@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 
 import { expandAwd2BlockDispatch, createAwd2ParseState, initializeAwd2ParseState } from './awd2BlockDispatch.ts';
 import { awd2AllBlockHandlers } from './awd2BlockRegistry.ts';
@@ -55,7 +55,7 @@ describe('initializeAwd2ParseState', () => {
     const source = new Uint8Array(8);
     const out = allocateEntity<Awd2ParseState>();
     initializeAwd2ParseState(out, document, source, new DataView(source.buffer), undefined);
-    const parseState = finishEntity(out);
+    const parseState = out;
     expect(parseState.document).toBe(document);
     expect(parseState.source).toBe(source);
   });

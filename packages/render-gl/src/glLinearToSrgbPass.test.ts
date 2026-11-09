@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 
 import type { GlTextureRenderTarget } from './contract.render-gl-types.ts';
 import { drawGlLinearToSrgbPass, LINEAR_TO_SRGB_FRAGMENT_SRC } from './glLinearToSrgbPass.ts';
@@ -36,7 +36,7 @@ function makeTarget(
   out.depthTexture = null;
   out.colorRenderbuffers = [];
   out.depthStencilRenderbuffer = null;
-  return finishEntity(out);
+  return out;
 }
 
 describe('drawGlLinearToSrgbPass', () => {

@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction } from '@flighthq/entity/contract';
 import type { Rectangle } from '@flighthq/geometry/contract';
 import { invalidateNodeLocalBounds, invalidateNodeLocalContent } from '@flighthq/node/contract';
@@ -43,7 +43,7 @@ export function createNativeText(): NativeText {
 export function createNativeTextData(): NativeTextData {
   const out = allocateEntity<NativeTextData>();
   initializeNativeTextData(out);
-  return finishEntity(out);
+  return out;
 }
 
 export function createNativeTextRuntime(): NativeTextRuntime {

@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction, EntityRaw, EntityRuntime, EntityRuntimeKey } from '@flighthq/entity/contract';
 import { clearSignal, createSignal, emitSignal } from '@flighthq/signals/contract';
 import type { Signal } from '@flighthq/signals/contract';
@@ -189,7 +189,7 @@ export function createNotificationReplySubscription(): NotificationReplySubscrip
 export function createNotificationResource(id: string, title: string, tag: string = ''): Notification {
   const out = allocateEntity<Notification>();
   initializeNotificationResource(out, id, title, tag);
-  return finishEntity(out);
+  return out;
 }
 
 export function createScheduledNotificationResource(
@@ -199,7 +199,7 @@ export function createScheduledNotificationResource(
 ): ScheduledNotification {
   const out = allocateEntity<ScheduledNotification>();
   initializeScheduledNotificationResource(out, id, request, schedule);
-  return finishEntity(out);
+  return out;
 }
 
 export function destroyNotificationCapabilities(
@@ -348,7 +348,6 @@ function createNotificationSubscription<TSubscription extends SubscriptionEntity
 ): TSubscription {
   const subscription = allocateEntity<TSubscription>();
   Object.assign(subscription, fields);
-  finishEntity(subscription);
   _notificationSubscriptions.set(subscription, {
     attachment: null,
     disposeCompleted: false,
