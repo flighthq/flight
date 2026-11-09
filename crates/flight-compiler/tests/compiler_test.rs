@@ -252,6 +252,44 @@ export function addVector2(out: Vector2Raw, a: Readonly<Vector2Raw>, b: Readonly
     }
 
     #[test]
+    fn entity_factory_finish_binding_is_deterministic_across_runs() {
+        let source = r#"
+use flight_entity::{EntityRuntimeSlot, allocate_entity};
+
+pub struct Vector2 {
+    runtime: EntityRuntimeSlot,
+    pub x: f32,
+    pub y: f32,
+}
+
+pub fn create_vector2(x: f32, y: f32) -> Vector2 {
+    let mut out: Vector2 = allocate_entity();
+    initialize_vector2(&mut out, x, y);
+    return out;
+}
+
+pub fn initialize_vector2(out: &mut Vector2, x: f32, y: f32) {
+    out.x = x;
+    out.y = y;
+}
+
+flight_entity::impl_entity!(Vector2);
+"#;
+        let first = compile_typescript(source, Some("@flighthq/entity/contract")).unwrap();
+        assert!(
+            first.contains("finishEntity"),
+            "entity factory should emit finishEntity: {first}"
+        );
+        for i in 1..50 {
+            let output = compile_typescript(source, Some("@flighthq/entity/contract")).unwrap();
+            assert_eq!(
+                first, output,
+                "entity factory output must be deterministic (diverged on iteration {i})"
+            );
+        }
+    }
+
+    #[test]
     fn finishes_only_proven_entity_creation_lifecycles() {
         let source = ModuleSource {
             path: "crates/flight-layout/src/layout_state.rs",
