@@ -32813,6 +32813,24 @@ pub fn first_code_point(text: &str) -> Option<u32> {
             "chars() for-loop should not create intermediate array: {output}"
         );
     }
+
+    #[test]
+    fn is_alphanumeric_emits_regex_test() {
+        let source = r#"
+pub fn has_alnum(text: &str) -> bool {
+    return text.chars().any(|c| c.is_alphanumeric());
+}
+"#;
+        let output = compile_typescript(source, None).unwrap();
+        assert!(
+            output.contains("test("),
+            "is_alphanumeric should emit regex test, not camelCase method call: {output}"
+        );
+        assert!(
+            !output.contains(".isAlphanumeric("),
+            "is_alphanumeric should not pass through as camelCase: {output}"
+        );
+    }
 }
 
 mod receiver_provenance {

@@ -721,6 +721,9 @@ pub(super) fn emit_method_call(
         "is_ascii_alphabetic" if arguments.is_empty() => Ok(format!(
             "((v: string | number): boolean => typeof v === 'number' ? (v >= 65 && v <= 90) || (v >= 97 && v <= 122) : (/^[a-zA-Z]$/).test(v))({receiver})"
         )),
+        "is_alphanumeric" if arguments.is_empty() => Ok(format!(
+            "((v: string | number): boolean => typeof v === 'number' ? (v >= 48 && v <= 57) || (v >= 65 && v <= 90) || (v >= 97 && v <= 122) : (/^[a-zA-Z0-9]$/).test(v))({receiver})"
+        )),
         "is_ascii_alphanumeric" if arguments.is_empty() => Ok(format!(
             "((v: string | number): boolean => typeof v === 'number' ? (v >= 48 && v <= 57) || (v >= 65 && v <= 90) || (v >= 97 && v <= 122) : (/^[a-zA-Z0-9]$/).test(v))({receiver})"
         )),
@@ -1851,7 +1854,7 @@ pub(super) fn emit_method_call(
         )),
         // Canvas 2D and GL methods (simple camelCase).
         "cull_face" | "front_face" | "clear_rect" | "move_to" | "line_to"
-        | "quadratic_curve_to" | "flush_path" | "is_alphanumeric" | "close_path" => {
+        | "quadratic_curve_to" | "flush_path" | "close_path" => {
             let camel = snake_to_lower_camel(&method);
             Ok(format!(
                 "{receiver}.{camel}({args})",
