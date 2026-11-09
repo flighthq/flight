@@ -3,12 +3,10 @@
 export type {
   HandleTextInputKeyboardOptions,
   ReplaceTextInputOptions,
-  SelectableRichTextManager,
   SelectableRichTextManagerRaw,
   TextInputCopyCallback,
   TextInputDisposer,
   TextInputEditRecord,
-  TextInputManager,
   TextInputManagerRaw,
   TextInputSource,
 } from './types.ts';

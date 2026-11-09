@@ -1,5 +1,5 @@
 import type { CompressedImageResource } from '@flighthq/image/contract';
-import type { TextureContainer } from '@flighthq/texture-formats/contract';
+import type { TextureContainer, TextureContainerFormat } from '@flighthq/texture-formats/contract';
 import { CompressedImageTextureSourceKind } from '@flighthq/texture/contract';
 
 import type { WgpuCompressedTextureSupport, WgpuFeatureName } from './contract.render-wgpu-types.ts';
@@ -99,7 +99,7 @@ describe('registerWgpuCompressedTextureUpload', () => {
   it('lets the compressed-image binder consume its source', async () => {
     const state = await createWgpuRenderStateForTest();
     registerWgpuCompressedTextureUpload(state, true);
-    registerWgpuCompressedTextureDecoder(state, (_format, width, height) => {
+    registerWgpuCompressedTextureDecoder(state, (_format: TextureContainerFormat, width: number, height: number) => {
       return new Uint8Array(width * height * 4);
     });
     const writeTexture = vi.spyOn(state.device.queue, 'writeTexture');
@@ -110,7 +110,7 @@ describe('registerWgpuCompressedTextureUpload', () => {
   it('premultiplies straight-alpha decoder output before the RGBA upload', async () => {
     const state = await createWgpuRenderStateForTest();
     registerWgpuCompressedTextureUpload(state, true);
-    registerWgpuCompressedTextureDecoder(state, (_format, width, height) => {
+    registerWgpuCompressedTextureDecoder(state, (_format: TextureContainerFormat, width: number, height: number) => {
       const rgba = new Uint8Array(width * height * 4);
       for (let i = 0; i < rgba.length; i += 4) {
         rgba[i] = 255;

@@ -1235,9 +1235,9 @@ export * from '@flighthq/textinput';
 export type {
   HandleTextInputKeyboardOptions,
   ReplaceTextInputOptions,
-  SelectableRichTextManager,
+  SelectableRichTextManagerRaw,
   TextInputEditRecord,
-  TextInputManager,
+  TextInputManagerRaw,
   TextInputSource,
 } from '@flighthq/textinput/contract';
 export * from '@flighthq/textlayout';

@@ -61,13 +61,5 @@ export {
   focusTextInput,
   initializeTextInputManager,
 } from './textInputManager.ts';
-export type {
-  HandleTextInputKeyboardOptions,
-  ReplaceTextInputOptions,
-  SelectableRichTextManagerRaw,
-  TextInputCopyCallback,
-  TextInputDisposer,
-  TextInputEditRecord,
-  TextInputManagerRaw,
-  TextInputSource,
-} from './types.ts';
+export * from './contract.textinput-types.ts';
+export * from './runtime.ts';

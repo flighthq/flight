@@ -36,6 +36,7 @@ import {
   createAppWindow,
   openWindow,
 } from '@flighthq/sdk';
+import type { TextureContainerFormat } from '@flighthq/texture-formats/contract';
 import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
 import { registerWgpuFunctionalTarget } from '@ft/verify';
 
@@ -97,7 +98,7 @@ registerWgpuCompressedImageTextureResolver(state);
 registerNodeRenderer(state, DisplayObjectKind, wgpuScene2DRenderer);
 registerNodeRenderer(state, SpriteKind, wgpuSpriteRenderer);
 registerWgpuCompressedTextureUpload(state, true);
-registerWgpuCompressedTextureDecoder(state, (_format, w, h) => {
+registerWgpuCompressedTextureDecoder(state, (_format: TextureContainerFormat, w: number, h: number) => {
   const rgba = new Uint8Array(w * h * 4);
   for (let i = 0; i < rgba.length; i += 4) {
     rgba[i + 2] = 255;

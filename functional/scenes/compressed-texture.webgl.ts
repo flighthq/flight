@@ -22,6 +22,7 @@ import {
   registerGlCompressedTextureDecoder,
   registerGlCompressedTextureUpload,
 } from '@flighthq/sdk';
+import type { TextureContainerFormat } from '@flighthq/texture-formats/contract';
 import { createFunctionalTarget, declareAntialiasingPolicy } from '@ft/render';
 
 const WIDTH = 800;
@@ -70,7 +71,7 @@ const target = await createFunctionalTarget({
 if (target.kind === 'webgl') {
   registerGlCompressedImageTextureResolver(target.state);
   registerGlCompressedTextureUpload(target.state);
-  registerGlCompressedTextureDecoder(target.state, (_format, w, h) => {
+  registerGlCompressedTextureDecoder(target.state, (_format: TextureContainerFormat, w: number, h: number) => {
     const rgba = new Uint8Array(w * h * 4);
     for (let i = 0; i < rgba.length; i += 4) {
       rgba[i] = 0;
