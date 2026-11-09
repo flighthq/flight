@@ -1366,8 +1366,69 @@ pub(super) fn emit_hoisted_if_value_local(
         write_indent(out, indent);
         writeln!(out, "let {pattern};").expect("writing to a String cannot fail");
     }
+    // An `if let` chain binds its payloads only through the statement-level `if`, so the chain is
+    // rewritten to assign the binding in each branch tail and emitted as that statement.
+    if let Some(name) = local_pattern_name(&local.pat)
+        && if_chain_has_let_condition(if_expr)
+    {
+        let target: syn::Ident = syn::parse_str(&name)
+            .map_err(|_| compile_error("hoisted if-value binding must be an identifier"))?;
+        let mut context = entities.clone();
+        context.insert(format!("{SCOPE_DECLARED_MARKER}{name}"));
+        let assigning = assign_if_chain_tails(if_expr, &target)?;
+        return emit_statement(
+            out,
+            &Stmt::Expr(Expr::If(assigning), None),
+            &context,
+            indent,
+        );
+    }
     emit_hoisted_if_value_branches(out, if_expr, &pattern, entities, indent)?;
     return Ok(());
+}
+
+fn if_chain_has_let_condition(if_expr: &syn::ExprIf) -> bool {
+    if matches!(if_expr.cond.as_ref(), Expr::Let(_)) {
+        return true;
+    }
+    return match if_expr
+        .else_branch
+        .as_ref()
+        .map(|(_, otherwise)| otherwise.as_ref())
+    {
+        Some(Expr::If(nested)) => if_chain_has_let_condition(nested),
+        _ => false,
+    };
+}
+
+// The same `if` chain with each branch's tail value turned into `target = value;`. A branch that ends
+// in a statement (an exit, or a unit expression) is left as it is.
+fn assign_if_chain_tails(
+    if_expr: &syn::ExprIf,
+    target: &syn::Ident,
+) -> Result<syn::ExprIf, CompileError> {
+    fn assign_block_tail(block: &mut syn::Block, target: &syn::Ident) {
+        if let Some(Stmt::Expr(value, None)) = block.stmts.last_mut()
+            && !arm_body_unconditionally_exits(value)
+        {
+            let assigned: Expr = syn::parse_quote!(#target = #value);
+            *block.stmts.last_mut().expect("checked above") =
+                Stmt::Expr(assigned, Some(Default::default()));
+        }
+    }
+    let mut rewritten = if_expr.clone();
+    assign_block_tail(&mut rewritten.then_branch, target);
+    if let Some((_, otherwise)) = rewritten.else_branch.as_mut() {
+        match otherwise.as_mut() {
+            Expr::If(nested) => *nested = assign_if_chain_tails(nested, target)?,
+            Expr::Block(block) => assign_block_tail(&mut block.block, target),
+            other => {
+                let value = other.clone();
+                *other = syn::parse_quote!({ #target = #value; });
+            }
+        }
+    }
+    return Ok(rewritten);
 }
 
 pub(super) fn emit_hoisted_if_value_branch_block(

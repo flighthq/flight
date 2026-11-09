@@ -33712,3 +33712,51 @@ pub fn drain_call(state: &mut State) -> Vec<i32> {
         "a call-based place should be evaluated once: {output}"
     );
 }
+
+#[test]
+fn hoists_if_let_value_chain_whose_branches_exit() {
+    let source = r#"
+pub fn pick(a: Option<i32>, b: Option<i32>) -> i32 {
+    let value = if let Some(x) = a {
+        x
+    } else if let Some(y) = b {
+        y
+    } else {
+        return -1;
+    };
+    return value;
+}
+"#;
+    let output = compile_typescript(source, None).unwrap();
+    assert!(
+        output.contains(
+            "  let value;\n  if (a !== undefined) {\n    const x = a;\n    value = x;\n  } else {\n    if (b !== undefined) {\n      const y = b;\n      value = y;\n    } else {\n      return -1;\n    }\n  }\n  return value;\n"
+        ),
+        "each if-let branch should assign the binding or exit: {output}"
+    );
+}
+
+#[test]
+fn lowers_while_let_some_reference_pattern_as_a_copy() {
+    let source = r#"
+use std::collections::HashMap;
+
+pub fn root(parents: &HashMap<i32, i32>, index: i32) -> i32 {
+    let mut root = index;
+    while let Some(&parent) = parents.get(&root) {
+        if parent == root {
+            break;
+        }
+        root = parent;
+    }
+    return root;
+}
+"#;
+    let output = compile_typescript(source, None).unwrap();
+    assert!(
+        output.contains(
+            "    const $parent = parents.get(root);\n    if ($parent === undefined) {\n      break;\n    }\n    const parent = $parent;\n"
+        ),
+        "`Some(&parent)` should bind the payload like `Some(parent)`: {output}"
+    );
+}

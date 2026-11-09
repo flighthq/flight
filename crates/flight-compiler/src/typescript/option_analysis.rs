@@ -548,7 +548,13 @@ pub(crate) fn emit_option_binding(
             option_absent_value(&binding.expr, entities),
         )));
     }
-    let Pat::Ident(identifier) = &pattern.elems[0] else {
+    // `Some(&name)` copies the payload out of a reference, which TypeScript's erased references bind
+    // the same way as `Some(name)`.
+    let payload = match &pattern.elems[0] {
+        Pat::Reference(reference) if reference.mutability.is_none() => reference.pat.as_ref(),
+        payload => payload,
+    };
+    let Pat::Ident(identifier) = payload else {
         return Ok(None);
     };
     return Ok(Some((
