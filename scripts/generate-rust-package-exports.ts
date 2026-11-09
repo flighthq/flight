@@ -766,6 +766,16 @@ export function typeScriptTypeAliasArguments(
   function record(alias: string, owner: TypeScriptTypeAliasOwner): void {
     const previous = aliases.get(alias);
     if (previous !== undefined && (previous.module !== owner.module || previous.name !== owner.name)) {
+      // Entity/Like split: a Rust struct maps to both `Foo` (Entity) and `FooLike` (structural
+      // input). Prefer the non-Like form — the compiler emits the struct type for return/field
+      // positions, and parameter positions use Readonly<FooLike> wrapping separately.
+      if (previous.name.endsWith('Like') && !owner.name.endsWith('Like')) {
+        aliases.set(alias, owner);
+        return;
+      }
+      if (!previous.name.endsWith('Like') && owner.name.endsWith('Like')) {
+        return;
+      }
       throw new Error(
         `Rust type alias ${alias} has conflicting TypeScript representations ${renderTypeAliasOwner(previous)} and ${renderTypeAliasOwner(owner)}`,
       );
