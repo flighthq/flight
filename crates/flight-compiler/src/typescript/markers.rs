@@ -383,6 +383,11 @@ pub(super) const SEQUENCE_FIELD_ELEMENT_MARKER: &str = "@sequence-field-element:
 // construction. The element type is recorded only when declared, receiver and function-result
 // provenance agree on one fully representable non-generic type.
 pub(super) const EMPTY_SEQUENCE_ELEMENT_TYPE_MARKER: &str = "@empty-sequence-element-type:";
+// `{module}␟{function}␟{index}={element},…` listing each `&mut Vec<element>` parameter of a non-generic
+// function, `element` the element's Rust primitive name or resolved struct identity (empty when neither
+// resolves). Rust requires the argument's element type to match exactly, so an empty local `Vec`
+// passed there as `&mut local` holds that element.
+pub(super) const MUT_VEC_PARAMETERS_MARKER: &str = "@mut-vec-parameters:";
 // `{function}:{index}:{kind}` for each typed parameter: `slice` (`&[f64]`) or `mut-slice` (`&mut [f64]`)
 // over a typed-array primitive, otherwise `other`. A fixed typed array (`Float64Array`) coerces to such a
 // slice in Rust but not to its `number[]` in TypeScript, so a call converts or rejects it.

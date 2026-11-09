@@ -4,9 +4,9 @@ use syn::{Expr, Lit, Member, Pat, Type};
 
 use super::{
     BindingFact, OPTION_FIELD_MARKER, OPTION_RETURN_MARKER, PROVENANCE_SEPARATOR,
-    binding_fact_from_marker, call_fact, expression_is_associated_path, expression_is_known_string,
-    expression_numeric_type, expression_struct_name, lexical_fact, marker_suffixes,
-    unique_marker_suffix,
+    RETURN_BINDING_FACT_MARKER, binding_fact_from_marker, call_fact, expression_is_associated_path,
+    expression_is_known_string, expression_numeric_type, expression_struct_identity,
+    expression_struct_name, lexical_fact, marker_suffixes, unique_marker_suffix,
 };
 pub(super) fn option_closure_parameter(pattern: &Pat) -> Option<&syn::Ident> {
     return match pattern {
@@ -71,7 +71,9 @@ pub(super) fn option_expression_payload(
             let syn::Member::Named(field_name) = &field.member else {
                 return None;
             };
-            let structure = expression_struct_name(&field.base, entities)?;
+            // A nested owner (`outer.inner.count`) resolves through declared struct field types.
+            let structure = expression_struct_name(&field.base, entities)
+                .or_else(|| expression_struct_identity(&field.base, entities))?;
             find(format!(
                 "{OPTION_FIELD_MARKER}{structure}{PROVENANCE_SEPARATOR}{field_name}{PROVENANCE_SEPARATOR}"
             ))
@@ -206,7 +208,9 @@ pub(super) fn option_binding_fact_default(
         }
         Expr::Field(field) => {
             if let syn::Member::Named(field_name) = &field.member {
-                if let Some(owner) = expression_struct_name(&field.base, entities) {
+                if let Some(owner) = expression_struct_name(&field.base, entities)
+                    .or_else(|| expression_struct_identity(&field.base, entities))
+                {
                     let payload = unique_marker_suffix(
                         entities,
                         &format!(
@@ -219,6 +223,26 @@ pub(super) fn option_binding_fact_default(
                 }
             }
             None
+        }
+        // A call to a function declared to return `Option<payload>` of a named payload type.
+        Expr::Call(call) => {
+            let Expr::Path(path) = call.func.as_ref() else {
+                return None;
+            };
+            if path.qself.is_some() {
+                return None;
+            }
+            if let Some(BindingFact::Option(payload)) =
+                call_fact(entities, RETURN_BINDING_FACT_MARKER, &path.path)
+                    .map(|fact| binding_fact_from_marker(&fact))
+            {
+                return binding_fact_default(&payload);
+            }
+            let payload = call_fact(entities, OPTION_RETURN_MARKER, &path.path)?;
+            if payload.is_empty() {
+                return None;
+            }
+            return binding_fact_default(&BindingFact::Structure(payload));
         }
         Expr::Path(path) if path.qself.is_none() && path.path.segments.len() == 1 => {
             lexical_fact(entities, &path.path.segments[0].ident.to_string())
@@ -234,6 +258,62 @@ pub(super) fn option_binding_fact_default(
         return None;
     };
     return binding_fact_default(&payload);
+}
+
+// The TypeScript `Default` of `option.map(|..| result)` when the closure's result expression spells its
+// own type: a primitive cast or literal, `format!`, or a tuple of those (lowered as an array).
+pub(super) fn option_map_closure_default(
+    expression: &Expr,
+    entities: &HashSet<String>,
+) -> Option<String> {
+    let Expr::MethodCall(call) = expression else {
+        return None;
+    };
+    if call.method != "map" || call.args.len() != 1 {
+        return None;
+    }
+    option_expression_payload(&call.receiver, entities)?;
+    let Some(Expr::Closure(closure)) = call.args.first() else {
+        return None;
+    };
+    return closure_result_default(&closure.body);
+}
+
+fn closure_result_default(expression: &Expr) -> Option<String> {
+    return match expression {
+        Expr::Block(block) => match block.block.stmts.last()? {
+            syn::Stmt::Expr(Expr::Return(returned), _) => {
+                closure_result_default(returned.expr.as_deref()?)
+            }
+            syn::Stmt::Expr(tail, None) => closure_result_default(tail),
+            _ => None,
+        },
+        Expr::Cast(cast) => {
+            let Type::Path(path) = cast.ty.as_ref() else {
+                return None;
+            };
+            let name = path.path.get_ident()?.to_string();
+            binding_fact_default(&BindingFact::Structure(name)).map(ToString::to_string)
+        }
+        Expr::Group(group) => closure_result_default(&group.expr),
+        Expr::Lit(literal) => match &literal.lit {
+            Lit::Bool(_) => Some("false".to_string()),
+            Lit::Float(_) | Lit::Int(_) => Some("0".to_string()),
+            Lit::Str(_) => Some("''".to_string()),
+            _ => None,
+        },
+        Expr::Macro(invocation) if invocation.mac.path.is_ident("format") => Some("''".to_string()),
+        Expr::Paren(paren) => closure_result_default(&paren.expr),
+        Expr::Tuple(tuple) if !tuple.elems.is_empty() => {
+            let elements = tuple
+                .elems
+                .iter()
+                .map(closure_result_default)
+                .collect::<Option<Vec<_>>>()?;
+            Some(format!("[{}]", elements.join(", ")))
+        }
+        _ => None,
+    };
 }
 
 pub(super) fn binding_fact_default(fact: &BindingFact) -> Option<&'static str> {

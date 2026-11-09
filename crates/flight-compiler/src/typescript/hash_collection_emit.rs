@@ -7,8 +7,8 @@ use crate::CompileError;
 use super::{
     BindingFact, HASH_COLLECTION_FIELD_MARKER, NULLABLE_OPTIONS_MARKER, PROVENANCE_SEPARATOR,
     RETURN_BINDING_FACT_MARKER, TYPE_USE_MARKER, binding_fact_from_marker, binding_fact_marker,
-    call_fact, compile_error, emit_expression, emit_type, expression_struct_name, lexical_fact,
-    option_inner_type, resolve_type_path,
+    call_fact, compile_error, emit_expression, emit_type, expression_struct_identity,
+    expression_struct_name, lexical_fact, option_inner_type, resolve_type_path,
 };
 pub(super) fn emit_hash_collection_method(
     call: &syn::ExprMethodCall,
@@ -131,7 +131,9 @@ pub(super) fn expression_hash_collection(
             let syn::Member::Named(field_name) = &field.member else {
                 return None;
             };
-            let identity = expression_struct_name(&field.base, entities)?;
+            // A nested owner (`state.runtime.keys`) resolves through declared struct field types.
+            let identity = expression_struct_name(&field.base, entities)
+                .or_else(|| expression_struct_identity(&field.base, entities))?;
             [BindingFact::HashMap, BindingFact::HashSet]
                 .into_iter()
                 .find(|kind| {

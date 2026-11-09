@@ -13,20 +13,20 @@ use super::{
     BINDING_FACT_MARKER, BINDING_MARKER, BINDING_SITE_MARKER, BindingFact, DATA_UNION_UNIT_MARKER,
     DIRECT_LOCK_GUARD_REPLACED_MARKER, EMPTY_SEQUENCE_ELEMENT_TYPE_MARKER,
     ERASED_CELL_WRITTEN_MARKER, ERASED_SHARED_CELL_FIELD_MARKER, EXTERNAL_STRUCT_BINDING_MARKER,
-    EmptyVecInitializer, HASH_COLLECTION_FIELD_MARKER, MUTEX_GUARD_BINDING_MARKER,
-    NULLABLE_OPTION_BINDING_MARKER, NULLABLE_OPTION_CALLABLE_BINDING_MARKER,
-    NULLABLE_OPTION_CALLABLE_MAP_FIELD_MARKER, NULLABLE_OPTION_RETURN_MARKER,
-    NUMERIC_FIELD_TYPE_MARKER, OPTION_FIELD_MARKER, OPTION_RETURN_MARKER, PROVENANCE_SEPARATOR,
-    RECORD_MAP_VARIANT_MARKER, REF_ALIAS_RECEIVER_CAPTURE_MARKER, REF_ALIAS_TARGET_MARKER,
-    RETURN_BINDING_FACT_MARKER, RuntimeCategory, SEQUENCE_FIELD_ELEMENT_MARKER,
-    SEQUENCE_FIELD_MARKER, SEQUENCE_RETURN_MARKER, SHARED_IDENTITY_BINDING_MARKER,
-    STRUCT_FIELD_TYPE_MARKER, STRUCT_OWNER_MARKER, STRUCT_RETURN_MARKER,
-    TAGGED_DATA_UNION_VARIANT_MARKER, TYPE_ALIAS_DEFINITION_MARKER, TYPE_ALIAS_OWNER_MARKER,
-    TYPED_ARRAY_SEQUENCE_FIELD_MARKER, binary_operator_assigns, binding_fact_from_marker,
-    binding_fact_marker, binding_fact_typescript_type, binding_site_key, call_fact,
-    call_returns_shared_identity, context_type_identity, current_source, data_union_variant_marker,
-    direct_lock_guard_receiver, emit_type, empty_vec_initializer, entity_ref_data_union,
-    expression_constructs_rw_lock_cell, expression_is_associated_path,
+    EmptyVecInitializer, HASH_COLLECTION_FIELD_MARKER, MUT_VEC_PARAMETERS_MARKER,
+    MUTEX_GUARD_BINDING_MARKER, NULLABLE_OPTION_BINDING_MARKER,
+    NULLABLE_OPTION_CALLABLE_BINDING_MARKER, NULLABLE_OPTION_CALLABLE_MAP_FIELD_MARKER,
+    NULLABLE_OPTION_RETURN_MARKER, NUMERIC_FIELD_TYPE_MARKER, OPTION_FIELD_MARKER,
+    OPTION_RETURN_MARKER, PROVENANCE_SEPARATOR, RECORD_MAP_VARIANT_MARKER,
+    REF_ALIAS_RECEIVER_CAPTURE_MARKER, REF_ALIAS_TARGET_MARKER, RETURN_BINDING_FACT_MARKER,
+    RuntimeCategory, SEQUENCE_FIELD_ELEMENT_MARKER, SEQUENCE_FIELD_MARKER, SEQUENCE_RETURN_MARKER,
+    SHARED_IDENTITY_BINDING_MARKER, STRUCT_FIELD_TYPE_MARKER, STRUCT_OWNER_MARKER,
+    STRUCT_RETURN_MARKER, TAGGED_DATA_UNION_VARIANT_MARKER, TYPE_ALIAS_DEFINITION_MARKER,
+    TYPE_ALIAS_OWNER_MARKER, TYPED_ARRAY_SEQUENCE_FIELD_MARKER, binary_operator_assigns,
+    binding_fact_from_marker, binding_fact_marker, binding_fact_typescript_type, binding_site_key,
+    call_fact, call_returns_shared_identity, context_type_identity, current_source,
+    data_union_variant_marker, direct_lock_guard_receiver, emit_type, empty_vec_initializer,
+    entity_ref_data_union, expression_constructs_rw_lock_cell, expression_is_associated_path,
     expression_is_identity_payload, expression_is_path, expression_is_plain_place,
     expression_is_type_script_nullable_option_field,
     expression_is_type_script_nullable_option_return, expression_typed_array,
@@ -602,6 +602,22 @@ pub(super) fn insert_lexical_binding_context(function: &ItemFn, context: &mut Ha
                 .map(|(_, fact)| fact.clone());
         }
 
+        // The TypeScript type of an element recorded as a Rust primitive name or a struct identity,
+        // when that identity is also what its bare name resolves to from this source.
+        fn element_identity_typescript_type(&self, identity: &str) -> Option<String> {
+            if identity.is_empty() {
+                return None;
+            }
+            let name = identity.rsplit(PROVENANCE_SEPARATOR).next()?;
+            let rust_type = syn::parse_str::<Type>(name).ok()?;
+            if name != identity
+                && context_type_identity(self.context, &rust_type).as_deref() != Some(identity)
+            {
+                return None;
+            }
+            return safe_collection_element_typescript_type(&rust_type, self.context);
+        }
+
         fn expression_typescript_type(&self, expression: &Expr) -> Option<String> {
             if let Expr::Lit(literal) = peel_reference_and_paren(expression) {
                 return match literal.lit {
@@ -611,6 +627,31 @@ pub(super) fn insert_lexical_binding_context(function: &ItemFn, context: &mut Ha
                     Lit::Char(_) | Lit::Str(_) => Some("string".to_string()),
                     _ => None,
                 };
+            }
+            // Values that spell their own type: a struct literal names its struct, `format!` builds a
+            // `String`, and a tuple is the tuple of its elements' types.
+            match peel_reference_and_paren(expression) {
+                Expr::Macro(invocation) if invocation.mac.path.is_ident("format") => {
+                    return Some("string".to_string());
+                }
+                Expr::Struct(literal) if literal.qself.is_none() => {
+                    return safe_collection_element_typescript_type(
+                        &Type::Path(syn::TypePath {
+                            qself: None,
+                            path: literal.path.clone(),
+                        }),
+                        self.context,
+                    );
+                }
+                Expr::Tuple(tuple) if !tuple.elems.is_empty() => {
+                    let elements = tuple
+                        .elems
+                        .iter()
+                        .map(|element| self.expression_typescript_type(element))
+                        .collect::<Option<Vec<_>>>()?;
+                    return Some(format!("readonly [{}]", elements.join(", ")));
+                }
+                _ => {}
             }
             return binding_fact_typescript_type(&self.initializer_fact(expression), self.context);
         }
@@ -1635,6 +1676,53 @@ pub(super) fn insert_lexical_binding_context(function: &ItemFn, context: &mut Ha
             self.visit_expr(&closure.body);
             self.scopes.pop();
             self.closure_depth -= 1;
+        }
+
+        // A local empty `Vec` passed as `&mut local` to a function whose parameter there is
+        // `&mut Vec<element>` holds exactly that element (see `MUT_VEC_PARAMETERS_MARKER`). A local
+        // callable shadowing the name, or an element that does not resolve to the same type from this
+        // source, proves nothing.
+        fn visit_expr_call(&mut self, call: &'ast syn::ExprCall) {
+            syn::visit::visit_expr_call(self, call);
+            let Expr::Path(function) = call.func.as_ref() else {
+                return;
+            };
+            if function.qself.is_some()
+                || single_path_identifier(&call.func)
+                    .is_some_and(|name| self.binding_id(&name).is_some())
+            {
+                return;
+            }
+            let Some(parameters) =
+                call_fact(self.context, MUT_VEC_PARAMETERS_MARKER, &function.path)
+            else {
+                return;
+            };
+            for parameter in parameters.split(',') {
+                let Some((index, element)) = parameter.split_once('=') else {
+                    continue;
+                };
+                let Ok(index) = index.parse::<usize>() else {
+                    continue;
+                };
+                let Some(Expr::Reference(reference)) = call.args.iter().nth(index) else {
+                    continue;
+                };
+                if reference.mutability.is_none() {
+                    continue;
+                }
+                let Some(local) = single_path_identifier(&reference.expr) else {
+                    continue;
+                };
+                let Some(id) = self.binding_id(&local) else {
+                    continue;
+                };
+                if !self.empty_sequence_bindings.contains(&id) {
+                    continue;
+                }
+                let candidate = self.element_identity_typescript_type(element);
+                self.record_empty_sequence_candidate(&id, candidate, false);
+            }
         }
 
         fn visit_expr_method_call(&mut self, call: &'ast syn::ExprMethodCall) {

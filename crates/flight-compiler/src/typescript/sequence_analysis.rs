@@ -5,7 +5,7 @@ use syn::{Expr, Lit, UnOp};
 use super::{
     BindingFact, PROVENANCE_SEPARATOR, RETURN_BINDING_FACT_MARKER, SEQUENCE_FIELD_MARKER,
     SEQUENCE_RETURN_MARKER, binding_fact_from_marker, call_fact, expression_external_struct,
-    expression_is_known_string, expression_struct_name, lexical_fact,
+    expression_is_known_string, expression_struct_identity, expression_struct_name, lexical_fact,
 };
 pub(super) fn expression_is_sequence(expression: &Expr, entities: &HashSet<String>) -> bool {
     if expression_is_vec_construction(expression) {
@@ -44,9 +44,11 @@ pub(super) fn expression_is_sequence(expression: &Expr, entities: &HashSet<Strin
             };
             // A local struct's field, or a dependency struct's under its external identity
             // (`crate::Struct`); a dependency entity has both, so either may carry the fact.
+            // A nested owner (`state.runtime.items`) resolves through declared struct field types.
             [
                 expression_struct_name(&field.base, entities),
                 expression_external_struct(&field.base, entities),
+                expression_struct_identity(&field.base, entities),
             ]
             .into_iter()
             .flatten()

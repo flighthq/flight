@@ -17,9 +17,9 @@ use super::{
     immediate_receiver_is_method, inline_emitted_closure, is_record_map_local, js_string_literal,
     lexical_binding, marker_suffixes, method_chain_includes, named_type, numeric_dataview_info,
     numeric_native_integer_typed_array, option_absent_value, option_binding_fact_default,
-    option_expression_payload, parenthesize_compound, peel_reference_and_paren,
-    referenced_path_identifier, resolve_owner, sequence_element_typed_array, snake_to_lower_camel,
-    typed_array_literal,
+    option_expression_payload, option_map_closure_default, parenthesize_compound,
+    peel_reference_and_paren, referenced_path_identifier, resolve_owner,
+    sequence_element_typed_array, snake_to_lower_camel, typed_array_literal,
 };
 
 pub(super) fn emit_method_call(
@@ -1442,7 +1442,9 @@ pub(super) fn emit_method_call(
         }
         "unwrap_or" if arguments.len() == 1 => Ok(format!("({receiver} ?? {})", arguments[0])),
         "unwrap_or_default" if arguments.is_empty() => {
-            let default_value = option_binding_fact_default(&call.receiver, entities);
+            let default_value = option_binding_fact_default(&call.receiver, entities)
+                .map(ToString::to_string)
+                .or_else(|| option_map_closure_default(&call.receiver, entities));
             match default_value {
                 Some(value) => Ok(format!("({receiver} ?? {value})")),
                 None => Err(compile_error(

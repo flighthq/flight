@@ -31967,3 +31967,192 @@ pub fn is_positive(value: Option<f64>) -> bool {
         );
     }
 }
+
+mod receiver_provenance {
+    use super::*;
+
+    #[test]
+    fn clears_collection_fields_through_nested_struct_fields() {
+        let source = r#"
+pub struct Runtime {
+    pub teardowns: Vec<i32>,
+    pub keys: std::collections::HashSet<i32>,
+}
+
+pub struct State {
+    pub runtime: Runtime,
+}
+
+pub fn reset_state(state: &mut State) {
+    state.runtime.teardowns.clear();
+    state.runtime.keys.clear();
+}
+"#;
+        let output = compile_typescript(source, None).unwrap();
+        assert!(
+            output.contains("  state.runtime.teardowns.length = 0;\n  state.runtime.keys.clear();"),
+            "{output}"
+        );
+    }
+
+    #[test]
+    fn maps_option_fields_through_nested_struct_fields() {
+        let source = r#"
+pub struct Inner {
+    pub count: Option<u32>,
+}
+
+pub struct Outer {
+    pub inner: Inner,
+}
+
+pub fn doubled(outer: &Outer) -> Option<u32> {
+    return outer.inner.count.map(|count| count * 2);
+}
+"#;
+        let output = compile_typescript(source, None).unwrap();
+        assert!(
+            output.contains("outer.inner.count === undefined"),
+            "{output}"
+        );
+    }
+
+    #[test]
+    fn types_empty_vec_locals_from_mut_vec_parameters() {
+        let source = r#"
+pub struct Explanation {
+    pub code: i32,
+}
+
+pub fn explain_all(out: &mut Vec<Explanation>) {
+    out.push(Explanation { code: 1 });
+}
+
+pub fn fill_values(out: &mut Vec<f32>) {
+    out.push(1.0);
+}
+
+pub fn count_explanations() -> usize {
+    let mut explanations = Vec::new();
+    explain_all(&mut explanations);
+    return explanations.len();
+}
+
+pub fn count_values() -> usize {
+    let mut values = Vec::new();
+    fill_values(&mut values);
+    return values.len();
+}
+"#;
+        let output = compile_typescript(source, None).unwrap();
+        assert!(
+            output.contains("let explanations: Explanation[] = [];\n  explainAll(explanations);"),
+            "{output}"
+        );
+        assert!(
+            output.contains("let values: number[] = [];\n  fillValues(values);"),
+            "{output}"
+        );
+    }
+
+    #[test]
+    fn types_empty_vec_locals_from_self_typed_pushes() {
+        let source = r#"
+pub struct Quad {
+    pub x: f32,
+}
+
+pub fn count_quads() -> usize {
+    let mut quads = Vec::new();
+    quads.push(Quad { x: 1.0 });
+    return quads.len();
+}
+
+pub fn count_names(count: i32) -> usize {
+    let mut names = Vec::new();
+    for index in 0..count {
+        names.push(format!("n{index}"));
+    }
+    return names.len();
+}
+
+pub fn count_pairs() -> usize {
+    let mut pairs = Vec::new();
+    pairs.push((1, "a"));
+    return pairs.len();
+}
+"#;
+        let output = compile_typescript(source, None).unwrap();
+        assert!(output.contains("let quads: Quad[] = [];"), "{output}");
+        assert!(output.contains("let names: string[] = [];"), "{output}");
+        assert!(
+            output.contains("let pairs: Array<readonly [number, string]> = [];"),
+            "{output}"
+        );
+    }
+
+    #[test]
+    fn rejects_empty_vec_locals_whose_mut_vec_parameter_is_shadowed() {
+        let source = r#"
+pub fn fill_values(out: &mut Vec<f32>) {
+    out.push(1.0);
+}
+
+pub fn count_values() -> usize {
+    let fill_values = |values: &mut Vec<i32>| values.clear();
+    let mut values = Vec::new();
+    fill_values(&mut values);
+    return values.len();
+}
+"#;
+        let error = compile_typescript(source, None).unwrap_err();
+        assert!(
+            format!("{error:?}").contains("portable empty `Vec` local `values`"),
+            "{error:?}"
+        );
+    }
+
+    #[test]
+    fn unwraps_option_defaults_from_calls_and_mapped_closures() {
+        let source = r#"
+pub struct Desc {
+    pub width: f64,
+    pub height: f64,
+}
+
+pub struct Inner {
+    pub count: Option<u32>,
+}
+
+pub struct Outer {
+    pub inner: Inner,
+}
+
+pub fn find_value(key: i32) -> Option<f32> {
+    if key > 0 {
+        return Some(1.0);
+    }
+    return None;
+}
+
+pub fn read_value(key: i32) -> f32 {
+    return find_value(key).unwrap_or_default();
+}
+
+pub fn read_count(outer: &Outer) -> u32 {
+    return outer.inner.count.unwrap_or_default();
+}
+
+pub fn dimensions(desc: Option<&Desc>) -> u32 {
+    let size = desc
+        .map(|desc| (desc.width as u32, desc.height as u32))
+        .unwrap_or_default();
+    return size.0;
+}
+"#;
+        let output = compile_typescript(source, None).unwrap();
+        assert!(output.contains("return findValue(key) ?? 0;"), "{output}");
+        assert!(output.contains("(outer.inner.count ?? 0)"), "{output}");
+        assert!(output.contains("?? [0, 0]"), "{output}");
+    }
+}

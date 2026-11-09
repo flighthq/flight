@@ -24,24 +24,24 @@ use super::{
     FIXED_BUFFER_LOCAL_MARKER, FROZEN_OBJECT_MARKER, FUNCTION_OWNER_MARKER,
     HASH_COLLECTION_FIELD_MARKER, INLINE_STRING_UNION_MARKER, INTERIOR_MUTABLE_STRUCT_MARKER,
     INTERNAL_TYPE_EXPORT_MARKER, JSON_VALUE_MARKER, JSON_VALUE_OPTION_MARKER,
-    METHOD_DELEGATION_MARKER, MUTABLE_SCALAR_CELL_PARAMETER_BINDING_MARKER,
-    MUTABLE_SCALAR_CELL_PARAMETER_NAME_MARKER, MUTABLE_SCALAR_REFERENCE_ARGUMENT_MARKER,
-    NULLABLE_CALL_MARKER, NULLABLE_OPTION_FIELD_MARKER, NULLABLE_OPTION_LITERAL_FIELD_MARKER,
-    NULLABLE_OPTION_RETURN_MARKER, NULLABLE_OPTIONS_MARKER, NULLABLE_OPTIONS_SOURCE_MARKER,
-    NUMERIC_FIELD_TYPE_MARKER, OPTION_FIELD_MARKER, OPTION_RETURN_MARKER, ORDERED_PRIMITIVE_MARKER,
-    PROVENANCE_SEPARATOR, PUBLIC_USE_BINDING_MARKER, PUBLIC_USE_GLOB_MARKER,
-    ProvenanceDeclarations, ProvenanceIdentity, READONLY_ENTITY_MARKER,
-    RECORD_CLONE_ARGUMENT_MARKER, RECORD_CLONE_LOCAL_MARKER, RECORD_CLONE_TYPE_MARKER,
-    RECORD_VEC_FIELD_MARKER, REFERENCE_PARAMETER_BINDING_MARKER, RETURN_BINDING_FACT_MARKER,
-    RuntimeCategory, SEQUENCE_FIELD_ELEMENT_MARKER, SEQUENCE_FIELD_MARKER, SEQUENCE_RETURN_MARKER,
-    SHARED_IDENTITY_ELEMENT_FIELD_MARKER, SHARED_IDENTITY_ENTITY_MARKER,
-    SHARED_IDENTITY_FIELD_MARKER, SHARED_IDENTITY_RETURN_MARKER, SLICE_ARGUMENT_MARKER,
-    SOURCE_TYPE_PATH_CONTEXT_MARKER, STRING_EXPRESSION_MARKER, STRING_FIELD_MARKER,
-    STRING_RETURN_MARKER, STRING_UNION_MARKER, STRUCT_FIELD_TYPE_MARKER, STRUCT_OWNER_MARKER,
-    STRUCT_RETURN_MARKER, SourceAccess, TARGET_NATIVE_ENTITY_MARKER, TYPE_ALIAS_DEFINITION_MARKER,
-    TYPE_ALIAS_GENERICS_MARKER, TYPE_ALIAS_OWNER_MARKER, TYPED_ARRAY_FIELD_MARKER,
-    TYPED_ARRAY_SEQUENCE_FIELD_MARKER, UNSIGNED_INTEGER_LOCAL_MARKER, USE_BINDING_MARKER,
-    USE_GLOB_MARKER, VEC_CLONE_ARGUMENT_MARKER, VEC_CLONE_EXPRESSION_MARKER,
+    METHOD_DELEGATION_MARKER, MUT_VEC_PARAMETERS_MARKER,
+    MUTABLE_SCALAR_CELL_PARAMETER_BINDING_MARKER, MUTABLE_SCALAR_CELL_PARAMETER_NAME_MARKER,
+    MUTABLE_SCALAR_REFERENCE_ARGUMENT_MARKER, NULLABLE_CALL_MARKER, NULLABLE_OPTION_FIELD_MARKER,
+    NULLABLE_OPTION_LITERAL_FIELD_MARKER, NULLABLE_OPTION_RETURN_MARKER, NULLABLE_OPTIONS_MARKER,
+    NULLABLE_OPTIONS_SOURCE_MARKER, NUMERIC_FIELD_TYPE_MARKER, OPTION_FIELD_MARKER,
+    OPTION_RETURN_MARKER, ORDERED_PRIMITIVE_MARKER, PROVENANCE_SEPARATOR,
+    PUBLIC_USE_BINDING_MARKER, PUBLIC_USE_GLOB_MARKER, ProvenanceDeclarations, ProvenanceIdentity,
+    READONLY_ENTITY_MARKER, RECORD_CLONE_ARGUMENT_MARKER, RECORD_CLONE_LOCAL_MARKER,
+    RECORD_CLONE_TYPE_MARKER, RECORD_VEC_FIELD_MARKER, REFERENCE_PARAMETER_BINDING_MARKER,
+    RETURN_BINDING_FACT_MARKER, RuntimeCategory, SEQUENCE_FIELD_ELEMENT_MARKER,
+    SEQUENCE_FIELD_MARKER, SEQUENCE_RETURN_MARKER, SHARED_IDENTITY_ELEMENT_FIELD_MARKER,
+    SHARED_IDENTITY_ENTITY_MARKER, SHARED_IDENTITY_FIELD_MARKER, SHARED_IDENTITY_RETURN_MARKER,
+    SLICE_ARGUMENT_MARKER, SOURCE_TYPE_PATH_CONTEXT_MARKER, STRING_EXPRESSION_MARKER,
+    STRING_FIELD_MARKER, STRING_RETURN_MARKER, STRING_UNION_MARKER, STRUCT_FIELD_TYPE_MARKER,
+    STRUCT_OWNER_MARKER, STRUCT_RETURN_MARKER, SourceAccess, TARGET_NATIVE_ENTITY_MARKER,
+    TYPE_ALIAS_DEFINITION_MARKER, TYPE_ALIAS_GENERICS_MARKER, TYPE_ALIAS_OWNER_MARKER,
+    TYPED_ARRAY_FIELD_MARKER, TYPED_ARRAY_SEQUENCE_FIELD_MARKER, UNSIGNED_INTEGER_LOCAL_MARKER,
+    USE_BINDING_MARKER, USE_GLOB_MARKER, VEC_CLONE_ARGUMENT_MARKER, VEC_CLONE_EXPRESSION_MARKER,
     VITEST_FUNCTION_CANDIDATE_MARKER, VITEST_FUNCTION_RETURN_CANDIDATE_MARKER,
     VITEST_FUNCTION_RETURN_UNRESOLVED_MARKER, VITEST_PUBLIC_FUNCTION_MARKER,
     VITEST_STRUCT_CANDIDATE_MARKER, VITEST_STRUCT_LOCAL_MARKER, VITEST_STRUCT_OWNER_MARKER,
@@ -59,16 +59,16 @@ use super::{
     insert_record_map_local_context, insert_typed_array_constant_context, is_crate_wide, is_public,
     js_string_literal, leading_mutable_entity_parameter, lexical_binding, local_pattern_binding_id,
     local_pattern_name, module_identity_segments, named_type, option_inner_type, owner_marker,
-    path_owner_and_member, peel_wrapper_type_name, provenance_bindings, provenance_import_rules,
-    public_module_bindings, resolve_import_rules, resolve_program_use_prefix,
-    resolved_production_type_identities, resolved_type_identity, rust_default_expression,
-    rust_type_description, rust_type_has_interior_mutability, rust_type_is_erased_shared_cell,
-    rust_type_is_json_value, rust_type_is_ordered_primitive, rust_type_is_sequence,
-    rust_type_is_string, sequence_inner_type, shared_identity_type_at_depth, snake_to_lower_camel,
-    source_access_for_visibility, type_is_unsigned_integer, type_script_type_alias,
-    typed_slice_parameter_kind_with_provenance, uint8_array_parameter, use_tree_paths,
-    vec_clone_optional, vitest_named_type, vitest_path_binding_name, vitest_pattern_context,
-    vitest_struct_owner, write_indent,
+    path_owner_and_member, peel_wrapper_type_name, primitive_type_identity, provenance_bindings,
+    provenance_import_rules, public_module_bindings, resolve_import_rules,
+    resolve_program_use_prefix, resolved_production_type_identities, resolved_type_identity,
+    rust_default_expression, rust_type_description, rust_type_has_interior_mutability,
+    rust_type_is_erased_shared_cell, rust_type_is_json_value, rust_type_is_ordered_primitive,
+    rust_type_is_sequence, rust_type_is_string, sequence_inner_type, shared_identity_type_at_depth,
+    snake_to_lower_camel, source_access_for_visibility, standard_vec_inner_type,
+    type_is_unsigned_integer, type_script_type_alias, typed_slice_parameter_kind_with_provenance,
+    uint8_array_parameter, use_tree_paths, vec_clone_optional, vitest_named_type,
+    vitest_path_binding_name, vitest_pattern_context, vitest_struct_owner, write_indent,
 };
 pub(crate) fn generation_context(
     programs: &[(&str, &Program)],
@@ -1092,6 +1092,39 @@ pub(super) fn generation_context_with_types(
                         "{ERASED_SHARED_CELL_FIELD_MARKER}{identity}{PROVENANCE_SEPARATOR}{field_name}"
                     ));
                 }
+            }
+        }
+        for function in program
+            .functions
+            .iter()
+            .filter(|function| function.sig.generics.params.is_empty())
+        {
+            let parameters = function
+                .sig
+                .inputs
+                .iter()
+                .enumerate()
+                .filter_map(|(index, input)| {
+                    let FnArg::Typed(argument) = input else {
+                        return None;
+                    };
+                    let Type::Reference(reference) = argument.ty.as_ref() else {
+                        return None;
+                    };
+                    reference.mutability?;
+                    let element = standard_vec_inner_type(&reference.elem, &context)?;
+                    let identity = primitive_type_identity(element)
+                        .or_else(|| resolved_type_identity(&context, module, element))
+                        .unwrap_or_default();
+                    return Some(format!("{index}={identity}"));
+                })
+                .collect::<Vec<_>>();
+            if !parameters.is_empty() {
+                owned_facts.push(format!(
+                    "{MUT_VEC_PARAMETERS_MARKER}{module}{PROVENANCE_SEPARATOR}{}{PROVENANCE_SEPARATOR}{}",
+                    function.sig.ident,
+                    parameters.join(",")
+                ));
             }
         }
         for function in &program.functions {
