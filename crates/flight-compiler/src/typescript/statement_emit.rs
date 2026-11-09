@@ -22,18 +22,18 @@ use super::{
     emit_receiver_preserving_optional_call, emit_resize_statement, emit_resize_with_statement,
     emit_retain_statement, emit_return_match_with_exits, emit_swap_remove_statement,
     emit_try_pre_extractions, emit_type, emit_unreachable_message, emit_vec_extend_statement,
-    entity_allocation, entity_runtime_state_access, expression_contains_unconditional_try,
-    expression_hash_collection, expression_is_finished_entity_return,
-    expression_is_nullable_option_field, expression_is_path, expression_is_path_call,
-    expression_is_plain_place, expression_is_reusable, expression_is_sequence,
-    expression_is_unsigned_result, expression_path_ends_with, for_loop_iterates_chars,
-    for_loop_iterates_strings, hoist_nested_exit_match, ignored_caught_panic,
-    indent_continuation_lines, is_primary_expression_text, is_record_map_local,
-    lexical_pattern_context, local_pattern_name, nullable_option_value, option_absent_value,
-    option_return_absent_value, option_scrutinee_is_rereadable, pattern_identifiers,
-    peel_reference_and_paren, production_std_panic_path, snake_to_lower_camel, split_let_chain,
-    statement_binds_name, std_mem_function, strip_value_position_parens, swap_operand_is_place,
-    throw_call, typed_array_literal, unique_marker_suffix, write_indent,
+    entity_allocation, entity_runtime_state_access, expression_contains_identifier,
+    expression_contains_unconditional_try, expression_hash_collection,
+    expression_is_finished_entity_return, expression_is_nullable_option_field, expression_is_path,
+    expression_is_path_call, expression_is_plain_place, expression_is_reusable,
+    expression_is_sequence, expression_is_unsigned_result, expression_path_ends_with,
+    for_loop_iterates_chars, for_loop_iterates_strings, hoist_nested_exit_match,
+    ignored_caught_panic, indent_continuation_lines, is_primary_expression_text,
+    is_record_map_local, lexical_pattern_context, local_pattern_name, nullable_option_value,
+    option_absent_value, option_return_absent_value, option_scrutinee_is_rereadable,
+    pattern_identifiers, peel_reference_and_paren, production_std_panic_path, snake_to_lower_camel,
+    split_let_chain, statement_binds_name, std_mem_function, strip_value_position_parens,
+    swap_operand_is_place, throw_call, typed_array_literal, unique_marker_suffix, write_indent,
 };
 pub(super) fn emit_value_block(
     block: &syn::Block,
@@ -154,6 +154,18 @@ pub(super) fn emit_statement(
                 emit_expression(message, entities)?
             )
             .expect("writing to a String cannot fail");
+        }
+        // A tuple `if let` over calls binds each call to a local first, in source order, so the
+        // patterns test plain locals; the remaining elements are reusable and read in place.
+        Stmt::Expr(Expr::If(if_expression), semicolon)
+            if let Some(bound) = bind_tuple_if_let_operands(if_expression) =>
+        {
+            emit_statement(
+                out,
+                &Stmt::Expr(Expr::Block(bound), *semicolon),
+                entities,
+                indent,
+            )?;
         }
         Stmt::Expr(Expr::If(if_expression), _) => {
             let let_chain = split_let_chain(&if_expression.cond);
@@ -1171,4 +1183,40 @@ fn place_root_identifier(expression: &Expr) -> Option<&syn::Ident> {
         Expr::Group(group) => place_root_identifier(&group.expr),
         _ => None,
     };
+}
+
+fn bind_tuple_if_let_operands(if_expression: &syn::ExprIf) -> Option<syn::ExprBlock> {
+    let Expr::Let(binding) = if_expression.cond.as_ref() else {
+        return None;
+    };
+    let (Pat::Tuple(_), Expr::Tuple(values)) = (binding.pat.as_ref(), binding.expr.as_ref()) else {
+        return None;
+    };
+    if values.elems.iter().all(expression_is_reusable) {
+        return None;
+    }
+    let whole = Expr::If(if_expression.clone());
+    let mut locals: Vec<Stmt> = Vec::new();
+    let mut rewritten = if_expression.clone();
+    let Expr::Let(rewritten_binding) = rewritten.cond.as_mut() else {
+        return None;
+    };
+    let Expr::Tuple(rewritten_values) = rewritten_binding.expr.as_mut() else {
+        return None;
+    };
+    for (index, value) in rewritten_values.elems.iter_mut().enumerate() {
+        if expression_is_reusable(value) {
+            continue;
+        }
+        let name = format!("tuple_if_let_value_{index}");
+        if expression_contains_identifier(&whole, &name) {
+            return None;
+        }
+        let local: syn::Ident = syn::parse_str(&name).ok()?;
+        let original = value.clone();
+        locals.push(syn::parse_quote!(let #local = #original;));
+        *value = syn::parse_quote!(#local);
+    }
+    locals.push(Stmt::Expr(Expr::If(rewritten), None));
+    return Some(syn::parse_quote!({ #(#locals)* }));
 }

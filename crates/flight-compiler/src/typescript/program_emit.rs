@@ -155,13 +155,18 @@ pub(super) fn emit_data_union_tuple_binding(
             && (tuple_struct.path.is_ident("Some") || tuple_struct.path.is_ident("Ok"))
             && tuple_struct.elems.len() == 1
         {
+            let absent = option_absent_value(value, entities);
+            // `Some(_)` only tests presence.
+            if matches!(&tuple_struct.elems[0], Pat::Wild(_)) {
+                predicates.push(format!("{text} !== {absent}"));
+                continue;
+            }
             let Pat::Ident(ident) = &tuple_struct.elems[0] else {
                 return Err(compile_error(
                     "portable tuple `if let Some` binding needs an identifier",
                 ));
             };
             let name = snake_to_lower_camel(&ident.ident.to_string());
-            let absent = option_absent_value(value, entities);
             predicates.push(format!("{text} !== {absent}"));
             bindings.push((name, text));
         } else if matches!(pattern, Pat::Wild(_)) {

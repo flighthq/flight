@@ -3616,16 +3616,20 @@ pub fn move_distance(a: &Segment, b: &Segment) -> f64 {
             assert!(output.contains("value !== undefined"));
         }
 
-        for (condition, expected) in [
-            (
-                "let (Id::Number(n), _) = (pick(a), b)",
-                "portable tuple `if let` elements must be locals, fields, or literals",
-            ),
-            (
-                "let (x, _) = (a, b)",
-                "portable tuple `if let` needs at least one testable pattern",
-            ),
-        ] {
+        {
+            // A call operand is evaluated once into a local, which the variant pattern then tests.
+            let source = "//! flight-compiler: data-union Id\npub enum Id { Number(i32), Text(String) }\npub fn pick(id: &Id) -> Id { return id.clone(); }\npub fn check(a: &Id, b: &Id, value: Option<i32>) -> bool { if let (Id::Number(n), _) = (pick(a), b) { return true; } return false; }\n";
+            let output = compile_typescript(source, None).unwrap();
+            assert!(
+                output.contains("    const tupleIfLetValue0 = pick(a);\n    if (typeof tupleIfLetValue0 === 'number') {\n      const n = tupleIfLetValue0;\n"),
+                "{output}"
+            );
+        }
+
+        for (condition, expected) in [(
+            "let (x, _) = (a, b)",
+            "portable tuple `if let` needs at least one testable pattern",
+        )] {
             let source = format!(
                 "//! flight-compiler: data-union Id\npub enum Id {{ Number(i32), Text(String) }}\npub fn pick(id: &Id) -> Id {{ return id.clone(); }}\npub fn check(a: &Id, b: &Id, value: Option<i32>) -> bool {{ if {condition} {{ return true; }} return false; }}\n"
             );
@@ -33758,5 +33762,48 @@ pub fn root(parents: &HashMap<i32, i32>, index: i32) -> i32 {
             "    const $parent = parents.get(root);\n    if ($parent === undefined) {\n      break;\n    }\n    const parent = $parent;\n"
         ),
         "`Some(&parent)` should bind the payload like `Some(parent)`: {output}"
+    );
+}
+
+#[test]
+fn tests_presence_of_wildcard_some_in_tuple_if_let() {
+    let source = r#"
+pub struct Slot {
+    pub layout: Option<i32>,
+    pub pipeline: Option<i32>,
+}
+
+pub fn existing(slot: &Slot) -> i32 {
+    if let (Some(layout), Some(_)) = (&slot.layout, &slot.pipeline) {
+        return *layout;
+    }
+    return 0;
+}
+"#;
+    let output = compile_typescript(source, None).unwrap();
+    assert!(
+        output.contains("  if (slot.layout !== undefined && slot.pipeline !== undefined) {\n    const layout = slot.layout;\n"),
+        "`Some(_)` should test presence without binding: {output}"
+    );
+}
+
+#[test]
+fn binds_call_operands_before_tuple_if_let() {
+    let source = r#"
+pub fn tint(value: Option<i32>) -> Option<i32> {
+    return value;
+}
+
+pub fn promote(uniform: Option<i32>, packed: Option<i32>) -> i32 {
+    if let (Some(_), Some(packed)) = (tint(uniform), packed) {
+        return packed;
+    }
+    return 0;
+}
+"#;
+    let output = compile_typescript(source, None).unwrap();
+    assert!(
+        output.contains("  {\n    const tupleIfLetValue0 = tint(uniform);\n    if (tupleIfLetValue0 !== undefined && packed !== undefined) {\n      return packed;\n    }\n  }\n"),
+        "a call operand should be evaluated once into a local before the patterns test it: {output}"
     );
 }
