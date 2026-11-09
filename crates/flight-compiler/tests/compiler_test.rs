@@ -29908,6 +29908,97 @@ pub fn detect_format(detect: fn(&str) -> bool, text: &str) -> i32 {
 }
 
 #[test]
+fn lowers_catch_unwind_whose_cleanup_inspects_the_result_and_resumes_nested() {
+    let source = r#"
+use std::panic::{AssertUnwindSafe, catch_unwind, resume_unwind};
+
+pub fn run_hook(values: &mut Vec<i32>, hook: fn(&mut Vec<i32>)) {
+    let original = values.len();
+    let result = catch_unwind(AssertUnwindSafe(|| hook(values)));
+    let valid = values.len() < 8;
+    if result.is_err() || !valid {
+        values.truncate(original);
+        if let Err(payload) = result {
+            resume_unwind(payload);
+        }
+        panic!("hook produced invalid state");
+    }
+}
+"#;
+    let output = compile_typescript(source, None).unwrap();
+    assert!(
+        output.contains(
+            "  let resultPanicked = false;\n  let resultPayload: unknown = undefined;\n  try {\n    (() => hook(values))();\n  } catch (caught) {\n    resultPanicked = true;\n    resultPayload = caught;\n  }\n"
+        ),
+        "{output}"
+    );
+    assert!(
+        output.contains("if (resultPanicked || !valid) {"),
+        "{output}"
+    );
+    assert!(
+        output.contains("if (resultPanicked) {\n      throw resultPayload;\n    }"),
+        "{output}"
+    );
+    assert!(!output.contains("catchUnwind"), "{output}");
+    assert!(!output.contains("resumeUnwind"), "{output}");
+    assert!(!output.contains("isErr"), "{output}");
+}
+
+#[test]
+fn lowers_catch_unwind_whose_cleanup_reads_is_ok_before_a_returned_match() {
+    let source = r#"
+use std::panic::{AssertUnwindSafe, catch_unwind, resume_unwind};
+
+pub fn write_target(status: &mut Vec<i32>, callback: fn(&mut Vec<i32>) -> i32) -> i32 {
+    let result = catch_unwind(AssertUnwindSafe(|| callback(status)));
+    let rendered = result.is_ok();
+    if rendered {
+        status.push(1);
+    } else {
+        status.push(0);
+    }
+    return match result {
+        Ok(value) => value,
+        Err(payload) => resume_unwind(payload),
+    };
+}
+"#;
+    let output = compile_typescript(source, None).unwrap();
+    assert!(output.contains("let resultValue!: number;"), "{output}");
+    assert!(
+        output.contains("    resultValue = (() => callback(status))();\n"),
+        "{output}"
+    );
+    assert!(
+        output.contains("const rendered = !resultPanicked;"),
+        "{output}"
+    );
+    assert!(
+        output.contains(
+            "  if (resultPanicked) {\n    throw resultPayload;\n  }\n  return resultValue;\n"
+        ),
+        "{output}"
+    );
+    assert!(!output.contains("catchUnwind"), "{output}");
+    assert!(!output.contains("isOk"), "{output}");
+}
+
+#[test]
+fn rejects_catch_unwind_cleanup_that_reads_the_result_beyond_is_err_and_is_ok() {
+    for cleanup in [
+        "let failed = result.is_err();\n    let _ = result.unwrap_or(0);",
+        "let failed = result.is_err();\n    if let Err(payload) = result {\n        log(&payload);\n        resume_unwind(payload);\n    }",
+    ] {
+        let source = format!(
+            "use std::panic::{{AssertUnwindSafe, catch_unwind, resume_unwind}};\n\nfn log<T>(_value: &T) {{}}\n\npub fn run(callback: fn() -> i32) {{\n    let result = catch_unwind(AssertUnwindSafe(|| callback()));\n    {cleanup}\n}}\n"
+        );
+        let error = compile_typescript(&source, None).unwrap_err().to_string();
+        assert!(error.contains("catch_unwind"), "{cleanup}\n{error}");
+    }
+}
+
+#[test]
 fn parse_ok_returns_undefined_not_null() {
     let source = r#"
 pub fn try_parse(s: &str) -> Option<f32> {

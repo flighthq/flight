@@ -165,6 +165,152 @@ pub(super) fn caught_panic_finally_transaction<'a>(
     });
 }
 
+pub(super) struct CaughtPanicResultReference<'a> {
+    pub closure: &'a syn::ExprClosure,
+    pub result: String,
+    pub body: Vec<Stmt>,
+    pub returning: bool,
+    pub consumed: usize,
+}
+
+// Recognizes a catch_unwind whose following statements inspect the caught `Result` only through
+// `result.is_err()` / `result.is_ok()`, resume it with `if let Err(p) = result { ..; resume_unwind(p) }`
+// (at any depth), or return it last as `return match result { Ok(v) => v, Err(p) => resume_unwind(p) }`.
+// The statements are rewritten over two locals the emitted try/catch assigns: `{result}_panicked` for
+// the inspections and `{result}_payload` for the resumed panic. Any other use of `result` rejects.
+pub(super) fn caught_panic_result_reference_transaction<'a>(
+    statement: &'a Stmt,
+    remaining: &'a [Stmt],
+) -> Option<CaughtPanicResultReference<'a>> {
+    let Stmt::Local(local) = statement else {
+        return None;
+    };
+    let Pat::Ident(result_pattern) = &local.pat else {
+        return None;
+    };
+    if result_pattern.by_ref.is_some()
+        || result_pattern.mutability.is_some()
+        || result_pattern.subpat.is_some()
+    {
+        return None;
+    }
+    let initializer = local.init.as_ref()?;
+    if initializer.diverge.is_some() {
+        return None;
+    }
+    let closure = production_caught_panic_closure(&initializer.expr)?;
+    let result = result_pattern.ident.to_string();
+    let panicked = format!("{result}_panicked");
+    let payload = format!("{result}_payload");
+    let value = format!("{result}_value");
+    if remaining.iter().any(|statement| {
+        [&panicked, &payload, &value]
+            .iter()
+            .any(|name| statement_contains_identifier(statement, name))
+    }) || expression_contains_identifier(&Expr::Closure(closure.clone()), &panicked)
+    {
+        return None;
+    }
+    let returning = remaining
+        .last()
+        .is_some_and(|last| is_resume_unwind_return_match(last, &result));
+    let body = if returning {
+        &remaining[..remaining.len() - 1]
+    } else {
+        remaining
+    };
+    if !body
+        .iter()
+        .any(|statement| statement_contains_identifier(statement, &result))
+    {
+        return None;
+    }
+    let mut rewriter = CaughtResultRewriter {
+        result: &result,
+        panicked: quote::format_ident!("{panicked}"),
+        payload: quote::format_ident!("{payload}"),
+        rejected: false,
+    };
+    let mut rewritten = body.to_vec();
+    for statement in &mut rewritten {
+        syn::visit_mut::VisitMut::visit_stmt_mut(&mut rewriter, statement);
+    }
+    if rewriter.rejected
+        || rewritten
+            .iter()
+            .any(|statement| statement_contains_identifier(statement, &result))
+    {
+        return None;
+    }
+    return Some(CaughtPanicResultReference {
+        closure,
+        result,
+        body: rewritten,
+        returning,
+        consumed: remaining.len(),
+    });
+}
+
+struct CaughtResultRewriter<'a> {
+    result: &'a str,
+    panicked: syn::Ident,
+    payload: syn::Ident,
+    rejected: bool,
+}
+
+impl syn::visit_mut::VisitMut for CaughtResultRewriter<'_> {
+    fn visit_expr_mut(&mut self, expression: &mut Expr) {
+        if let Expr::MethodCall(call) = expression
+            && call.args.is_empty()
+            && matches!(call.receiver.as_ref(), Expr::Path(path) if path.path.is_ident(self.result))
+        {
+            let panicked = &self.panicked;
+            match call.method.to_string().as_str() {
+                "is_err" => *expression = syn::parse_quote!(#panicked),
+                "is_ok" => *expression = syn::parse_quote!(!#panicked),
+                _ => self.rejected = true,
+            }
+            return;
+        }
+        if let Expr::If(handler) = expression
+            && is_resume_unwind_if_let_err(
+                &Stmt::Expr(Expr::If(handler.clone()), None),
+                self.result,
+            )
+        {
+            let Expr::Let(binding) = handler.cond.as_ref() else {
+                unreachable!("a resume terminator binds `Err(..)`");
+            };
+            let Pat::TupleStruct(error_variant) = binding.pat.as_ref() else {
+                unreachable!("a resume terminator binds `Err(..)`");
+            };
+            let Pat::Ident(error) = &error_variant.elems[0] else {
+                unreachable!("a resume terminator binds an identifier");
+            };
+            let error = error.ident.to_string();
+            let leading = handler.then_branch.stmts.len() - 1;
+            // The payload may only be resumed: any other read would need the panic value itself.
+            if handler.then_branch.stmts[..leading]
+                .iter()
+                .any(|statement| statement_contains_identifier(statement, &error))
+            {
+                self.rejected = true;
+                return;
+            }
+            let panicked = &self.panicked;
+            let payload = &self.payload;
+            handler.cond = Box::new(syn::parse_quote!(#panicked));
+            handler.then_branch.stmts[leading] =
+                syn::parse_quote!(std::panic::resume_unwind(#payload););
+            for statement in &mut handler.then_branch.stmts[..leading] {
+                self.visit_stmt_mut(statement);
+            }
+            return;
+        }
+        syn::visit_mut::visit_expr_mut(self, expression);
+    }
+}
+
 fn is_resume_unwind_if_let_err(statement: &Stmt, result_name: &str) -> bool {
     let Stmt::Expr(Expr::If(handler), _) = statement else {
         return false;
@@ -473,6 +619,64 @@ pub(super) fn emit_caught_panic_finally_transaction(
     emit_block(out, cleanup, entities, indent + 1)?;
     write_indent(out, indent);
     out.push_str("}\n");
+    return Ok(());
+}
+
+// `let result = catch_unwind(..)` lowered over the locals its rewritten statements read: the try
+// records whether the closure threw and what, and a returning transaction keeps the closure's value
+// for the final `return` once the recorded panic has been rethrown.
+pub(super) fn emit_caught_panic_result_reference(
+    out: &mut String,
+    transaction: &CaughtPanicResultReference<'_>,
+    entities: &HashSet<String>,
+    indent: usize,
+) -> Result<(), CompileError> {
+    let panicked = snake_to_lower_camel(&format!("{}_panicked", transaction.result));
+    let payload = snake_to_lower_camel(&format!("{}_payload", transaction.result));
+    let value = snake_to_lower_camel(&format!("{}_value", transaction.result));
+    let closure = emit_closure(transaction.closure, entities)?;
+    write_indent(out, indent);
+    writeln!(out, "let {panicked} = false;").expect("writing to a String cannot fail");
+    write_indent(out, indent);
+    writeln!(out, "let {payload}: unknown = undefined;").expect("writing to a String cannot fail");
+    if transaction.returning {
+        let return_type = unique_marker_suffix(entities, RETURN_TYPE_MARKER)
+            .filter(|return_type| return_type != "void")
+            .ok_or_else(|| {
+                compile_error(
+                    "portable `catch_unwind` returned through `match` needs a known non-void return type",
+                )
+            })?;
+        write_indent(out, indent);
+        writeln!(out, "let {value}!: {return_type};").expect("writing to a String cannot fail");
+    }
+    write_indent(out, indent);
+    out.push_str("try {\n");
+    write_indent(out, indent + 1);
+    if transaction.returning {
+        writeln!(out, "{value} = ({closure})();").expect("writing to a String cannot fail");
+    } else {
+        writeln!(out, "({closure})();").expect("writing to a String cannot fail");
+    }
+    write_indent(out, indent);
+    out.push_str("} catch (caught) {\n");
+    write_indent(out, indent + 1);
+    writeln!(out, "{panicked} = true;").expect("writing to a String cannot fail");
+    write_indent(out, indent + 1);
+    writeln!(out, "{payload} = caught;").expect("writing to a String cannot fail");
+    write_indent(out, indent);
+    out.push_str("}\n");
+    emit_block(out, &transaction.body, entities, indent)?;
+    if transaction.returning {
+        write_indent(out, indent);
+        writeln!(out, "if ({panicked}) {{").expect("writing to a String cannot fail");
+        write_indent(out, indent + 1);
+        writeln!(out, "throw {payload};").expect("writing to a String cannot fail");
+        write_indent(out, indent);
+        out.push_str("}\n");
+        write_indent(out, indent);
+        writeln!(out, "return {value};").expect("writing to a String cannot fail");
+    }
     return Ok(());
 }
 
@@ -923,6 +1127,16 @@ pub(super) fn emit_block_with_tail(
                 indent,
             )?;
             skip_remaining = finally.cleanup_range.end + 1;
+            continue;
+        }
+        if tail.is_none()
+            && let Some(transaction) = caught_panic_result_reference_transaction(
+                parsed,
+                statements.get(index + 1..).unwrap_or_default(),
+            )
+        {
+            emit_caught_panic_result_reference(out, &transaction, &block_context, indent)?;
+            skip_remaining = transaction.consumed;
             continue;
         }
         if let Some(matched) = caught_panic_match_statement(parsed) {

@@ -28,9 +28,9 @@ use super::{
     ignored_caught_panic, indent_continuation_lines, is_primary_expression_text,
     is_record_map_local, lexical_pattern_context, local_pattern_name, nullable_option_value,
     option_absent_value, option_return_absent_value, option_scrutinee_is_rereadable,
-    peel_reference_and_paren, snake_to_lower_camel, split_let_chain, statement_binds_name,
-    std_mem_function, strip_value_position_parens, swap_operand_is_place, throw_call,
-    typed_array_literal, unique_marker_suffix, write_indent,
+    peel_reference_and_paren, production_std_panic_path, snake_to_lower_camel, split_let_chain,
+    statement_binds_name, std_mem_function, strip_value_position_parens, swap_operand_is_place,
+    throw_call, typed_array_literal, unique_marker_suffix, write_indent,
 };
 pub(super) fn emit_value_block(
     block: &syn::Block,
@@ -132,6 +132,14 @@ pub(super) fn emit_statement(
             writeln!(out, "{target}.length = 0;").expect("writing to a String cannot fail");
             write_indent(out, indent);
             writeln!(out, "{target}.push(...Object.keys({record}));")
+                .expect("writing to a String cannot fail");
+        }
+        // `resume_unwind(payload)` rethrows a panic caught by a lowered `catch_unwind` unchanged.
+        Stmt::Expr(Expr::Call(call), _)
+            if production_std_panic_path(&call.func, "resume_unwind") && call.args.len() == 1 =>
+        {
+            write_indent(out, indent);
+            writeln!(out, "throw {};", emit_expression(&call.args[0], entities)?)
                 .expect("writing to a String cannot fail");
         }
         Stmt::Expr(Expr::Call(call), _) if throw_call(call).is_some() => {
