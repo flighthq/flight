@@ -366,12 +366,9 @@ pub(super) fn emit_statement(
                     ));
                 } else {
                     let ctx = try_context.as_ref().unwrap_or(entities);
-                    writeln!(
-                        out,
-                        "if ({}) {{",
-                        emit_expression(&if_expression.cond, ctx)?
-                    )
-                    .expect("writing to a String cannot fail");
+                    let condition = emit_expression(&if_expression.cond, ctx)?;
+                    writeln!(out, "if ({}) {{", strip_value_position_parens(&condition))
+                        .expect("writing to a String cannot fail");
                 }
                 (indent, false)
             };

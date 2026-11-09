@@ -4,6 +4,7 @@ mod binding_analysis;
 mod binding_fact;
 mod block_emit;
 mod callable_type_analysis;
+mod checked_arithmetic_emit;
 mod context_insert;
 mod cross_crate;
 mod d15_emit;
@@ -72,6 +73,7 @@ pub(crate) use block_emit::emit_block_with_tail_returns;
 use block_emit::*;
 pub(crate) use callable_type_analysis::option_scrutinee_is_rereadable;
 use callable_type_analysis::*;
+use checked_arithmetic_emit::*;
 use context_insert::*;
 pub(crate) use context_insert::{
     insert_program_type_path_context, insert_std_float_consts_context,

@@ -7,7 +7,8 @@ use crate::{CompileError, compile_error};
 use super::{
     FUNCTION_OWNER_MARKER, METHOD_DELEGATION_MARKER, NULLABLE_OPTIONS_MARKER, PRIMARY_PRECEDENCE,
     PROVENANCE_SEPARATOR, RECORD_CLONE_LOCAL_MARKER, VEC_CLONE_EXPRESSION_MARKER,
-    constructor_path_default_value, current_source, emit_binary_operand, emit_closure,
+    checked_arithmetic_bounds, checked_arithmetic_operator, constructor_path_default_value,
+    current_source, emit_binary_operand, emit_checked_arithmetic_consumer, emit_closure,
     emit_encode_utf16_cmp, emit_entity_clone, emit_expression, emit_hash_collection_method,
     emit_option_combinator, emit_ordered_comparison, emit_record_map_method, emit_type,
     emitted_closure_is_identity, entity_clone_expression_owner, expression_contains_method,
@@ -28,6 +29,9 @@ pub(super) fn emit_method_call(
 ) -> Result<String, CompileError> {
     if let Some(delegated) = delegated_method_call(call, entities)? {
         return emit_expression(&Expr::Call(delegated), entities);
+    }
+    if let Some(consumed) = emit_checked_arithmetic_consumer(call, entities)? {
+        return Ok(consumed);
     }
     if is_record_map_local(&call.receiver, entities) {
         return emit_record_map_method(call, entities);
@@ -210,21 +214,31 @@ pub(super) fn emit_method_call(
             "[...{receiver}].map((char, index) => [index, char] as const)"
         )),
         "chain" if arguments.len() == 1 => Ok(format!("[...{receiver}, ...{}]", arguments[0])),
-        "checked_add" if arguments.len() == 1 => Ok(format!(
-            "((a: number, b: number): number | undefined => {{ const sum = a + b; return sum > 0x7FFFFFFF || sum < -0x80000000 ? undefined : sum }})({receiver}, {})",
-            arguments[0]
-        )),
-        "checked_mul" if arguments.len() == 1 => Ok(format!(
-            "((a: number, b: number): number | undefined => {{ const product = a * b; return product > 0x7FFFFFFF || product < -0x80000000 ? undefined : product }})({receiver}, {})",
-            arguments[0]
-        )),
-        "checked_sub" if arguments.len() == 1 => Ok(format!(
-            "((a: number, b: number): number | undefined => {{ const diff = a - b; return diff > 0x7FFFFFFF || diff < -0x80000000 ? undefined : diff }})({receiver}, {})",
-            arguments[0]
-        )),
-        "checked_neg" if arguments.is_empty() => Ok(format!(
-            "((n: number): number | undefined => {{ const neg = -n; return neg > 0x7FFFFFFF || neg < -0x80000000 ? undefined : neg }})({receiver})"
-        )),
+        "checked_add" | "checked_mul" | "checked_sub" | "checked_neg"
+            if checked_arithmetic_operator(method.as_str(), arguments.len()).is_some() =>
+        {
+            let numeric_type = expression_numeric_type(&call.receiver, entities);
+            let (minimum, maximum) = checked_arithmetic_bounds(numeric_type.as_deref());
+            Ok(
+                match checked_arithmetic_operator(method.as_str(), arguments.len()) {
+                    Some("neg") => format!(
+                        "((n: number): number | undefined => {{ const neg = -n; return neg > {maximum} || neg < {minimum} ? undefined : neg }})({receiver})"
+                    ),
+                    Some(operator) => {
+                        let name = match operator {
+                            "+" => "sum",
+                            "-" => "diff",
+                            _ => "product",
+                        };
+                        format!(
+                            "((a: number, b: number): number | undefined => {{ const {name} = a {operator} b; return {name} > {maximum} || {name} < {minimum} ? undefined : {name} }})({receiver}, {})",
+                            arguments[0]
+                        )
+                    }
+                    None => unreachable!("guarded by the arm condition"),
+                },
+            )
+        }
         "chunks" if arguments.len() == 1 => Ok(format!(
             "(<T>(items: readonly T[], size: number): T[][] => {{ const result: T[][] = []; for (let i = 0; i < items.length; i += size) {{ result.push(items.slice(i, i + size)); }} return result; }})({receiver}, {})",
             arguments[0]

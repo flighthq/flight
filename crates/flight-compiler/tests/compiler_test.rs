@@ -30135,6 +30135,91 @@ pub fn rebind(values: &Vec<i32>) -> i32 {
 }
 
 #[test]
+fn inlines_checked_arithmetic_consumed_by_option_combinators() {
+    let source = r#"
+fn assert_window(byte_length: usize, offset: usize, length: usize) {
+    if offset
+        .checked_add(length)
+        .map_or(true, |end| end > byte_length)
+    {
+        panic!("outside");
+    }
+}
+
+pub fn remaining(bytes: &Vec<u8>, offset: usize) -> usize {
+    return bytes.len().checked_sub(offset).unwrap_or(0);
+}
+
+pub fn fits(a: i32, b: i32) -> bool {
+    return a.checked_mul(b).is_some();
+}
+
+pub fn overflows(a: i32, b: i32) -> bool {
+    return a.checked_add(b).is_none();
+}
+
+pub fn fits_under(a: u32, b: u32, limit: u32) -> bool {
+    return a.checked_add(b).is_none_or(|sum| sum > limit);
+}
+
+pub fn under(a: u8, b: u8, limit: u8) -> bool {
+    return a.checked_add(b).is_some_and(|sum| sum < limit);
+}
+"#;
+    let output = compile_typescript(source, None).unwrap();
+    assert!(!output.contains("=> {"), "{output}");
+    assert!(
+        output.contains(
+            "  if (offset + length > 0x7FFFFFFF || offset + length < 0 ? true : offset + length > byteLength) {"
+        ),
+        "{output}"
+    );
+    assert!(
+        output.contains(
+            "return bytes.length - offset > 0x7FFFFFFF || bytes.length - offset < 0 ? 0 : (bytes.length - offset);"
+        ),
+        "{output}"
+    );
+    assert!(
+        output.contains("return !(a * b > 0x7FFFFFFF || a * b < -0x80000000);"),
+        "{output}"
+    );
+    assert!(
+        output.contains("return a + b > 0x7FFFFFFF || a + b < -0x80000000;"),
+        "{output}"
+    );
+    assert!(
+        output.contains("return a + b > 0xFFFFFFFF || a + b < 0 || a + b > limit;"),
+        "{output}"
+    );
+    assert!(
+        output.contains("return !(a + b > 0xFF || a + b < 0) && a + b < limit;"),
+        "{output}"
+    );
+}
+
+#[test]
+fn keeps_checked_arithmetic_iifes_for_operands_that_cannot_repeat() {
+    let source = r#"
+fn compute(a: usize) -> usize {
+    return a;
+}
+
+pub fn general(a: usize, b: usize) -> usize {
+    return compute(a).checked_sub(b).unwrap_or(0);
+}
+"#;
+    let output = compile_typescript(source, None).unwrap();
+    // An unsigned subtraction below zero is Rust's `None`, so the range floor is 0, not `i32::MIN`.
+    assert!(
+        output.contains(
+            "((a: number, b: number): number | undefined => { const diff = a - b; return diff > 0x7FFFFFFF || diff < 0 ? undefined : diff })(compute(a), b) ?? 0"
+        ),
+        "{output}"
+    );
+}
+
+#[test]
 fn parse_ok_returns_undefined_not_null() {
     let source = r#"
 pub fn try_parse(s: &str) -> Option<f32> {
