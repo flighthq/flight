@@ -4572,42 +4572,27 @@ mod retain {
             "{output}"
         );
 
-        for (source, expected) in [
-            (
-                "pub fn f(text: &mut String) { text.retain(|c| c != 'a'); }\n",
-                "portable `.retain()` requires a receiver declared as Rust `Vec` and one predicate",
-            ),
-            (
-                "pub struct R { pub start: u32, pub end: u32 }\npub fn f(values: &mut Vec<R>) {\n    let previous: Vec<R> = std::mem::take(values);\n    for value in previous {\n        if value.start < value.end {\n            values.push(value);\n        }\n    }\n}\n",
-                "portable `std::mem::take` has no portable lowering",
-            ),
-            (
-                "use std::mem;\npub fn f(values: &mut Vec<u32>) -> Vec<u32> { return mem::take(values); }\n",
-                "portable `std::mem::take` has no portable lowering",
-            ),
-            (
-                "use std::mem::take;\npub fn f(values: &mut Vec<u32>) -> Vec<u32> { return take(values); }\n",
-                "portable `std::mem::take` has no portable lowering",
-            ),
-            (
-                "use std::mem::take as grab;\npub fn f(values: &mut Vec<u32>) -> Vec<u32> { return grab(values); }\n",
-                "portable `std::mem::take` has no portable lowering",
-            ),
-            (
-                "use std::{mem::{self as m}, vec::Vec};\npub fn f(values: &mut Vec<u32>) -> Vec<u32> { return m::take(values); }\n",
-                "portable `std::mem::take` has no portable lowering",
-            ),
-            (
-                "use std::mem as m;\npub fn f(values: &mut Vec<u32>) -> Vec<u32> { return m::take(values); }\n",
-                "portable `std::mem::take` has no portable lowering",
-            ),
-            (
-                "use std::mem::*;\npub fn f(values: &mut Vec<u32>) -> Vec<u32> { return take(values); }\n",
-                "portable `std::mem::take` has no portable lowering",
-            ),
-        ] {
+        for (source, expected) in [(
+            "pub fn f(text: &mut String) { text.retain(|c| c != 'a'); }\n",
+            "portable `.retain()` requires a receiver declared as Rust `Vec` and one predicate",
+        )] {
             let error = compile_typescript(source, None).unwrap_err();
             assert_eq!(error.to_string(), expected, "{source}");
+        }
+
+        // A `&mut Vec` binding taken through any import spelling empties the caller's array in place,
+        // so a later push refills the same array the caller holds.
+        for source in [
+            "pub struct R { pub start: u32, pub end: u32 }\npub fn f(values: &mut Vec<R>) {\n    let previous: Vec<R> = std::mem::take(values);\n    for value in previous {\n        if value.start < value.end {\n            values.push(value);\n        }\n    }\n}\n",
+            "use std::mem;\npub fn f(values: &mut Vec<u32>) -> Vec<u32> { return mem::take(values); }\n",
+            "use std::mem::take;\npub fn f(values: &mut Vec<u32>) -> Vec<u32> { return take(values); }\n",
+            "use std::mem::take as grab;\npub fn f(values: &mut Vec<u32>) -> Vec<u32> { return grab(values); }\n",
+            "use std::{mem::{self as m}, vec::Vec};\npub fn f(values: &mut Vec<u32>) -> Vec<u32> { return m::take(values); }\n",
+            "use std::mem as m;\npub fn f(values: &mut Vec<u32>) -> Vec<u32> { return m::take(values); }\n",
+            "use std::mem::*;\npub fn f(values: &mut Vec<u32>) -> Vec<u32> { return take(values); }\n",
+        ] {
+            let output = compile_typescript(source, None).unwrap();
+            assert!(output.contains("values.splice(0)"), "{source}\n{output}");
         }
     }
 
@@ -4815,12 +4800,12 @@ pub fn drain_local() -> Vec<u32> {
 }
 
 export function drain(slot: Slot): number[] {
-  return (() => { const __tmp = slot.items; slot.items = undefined as any; return __tmp; })();
+  return slot.items.splice(0);
 }
 
 export function drainLocal(): number[] {
   let values = [1, 2, 3];
-  const taken = (() => { const __tmp = values; values = undefined as any; return __tmp; })();
+  const taken = values.splice(0);
   return taken;
 }
 "#
@@ -31914,8 +31899,8 @@ pub fn drain(state: &mut State) -> Vec<u32> {
 "#;
     let output = compile_typescript(source, None).unwrap();
     assert!(
-        output.contains("__tmp") && output.contains("return __tmp"),
-        "mem::take through method chain should lower as swap-and-return: {output}"
+        output.contains("return state.items.splice(0);"),
+        "mem::take through a lock guard should empty the vector in place: {output}"
     );
 }
 
@@ -33691,5 +33676,39 @@ pub fn take_all(values: &mut Vec<i32>) -> i32 {
     assert!(
         output.contains("const head: number[] = values.splice(0, 1);"),
         "an end-only drain should remove from the start: {output}"
+    );
+}
+
+#[test]
+fn lowers_mem_take_of_vec_places_to_in_place_splice() {
+    let source = r#"
+pub struct Runtime {
+    pub teardowns: Vec<i32>,
+}
+
+pub struct State {
+    pub runtime: Runtime,
+}
+
+pub fn get_runtime(state: &mut State) -> &mut Runtime {
+    return &mut state.runtime;
+}
+
+pub fn drain_param(items: &mut Vec<i32>) -> Vec<i32> {
+    return std::mem::take(items);
+}
+
+pub fn drain_call(state: &mut State) -> Vec<i32> {
+    return std::mem::take(&mut get_runtime(state).teardowns);
+}
+"#;
+    let output = compile_typescript(source, None).unwrap();
+    assert!(
+        output.contains("  return items.splice(0);\n"),
+        "a `&mut Vec` binding should be emptied in place for the caller: {output}"
+    );
+    assert!(
+        output.contains("  return getRuntime(state).teardowns.splice(0);\n"),
+        "a call-based place should be evaluated once: {output}"
     );
 }

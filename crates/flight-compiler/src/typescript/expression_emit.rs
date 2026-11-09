@@ -32,7 +32,8 @@ use super::{
     expression_is_associated_path, expression_is_diverging, expression_is_empty_vec,
     expression_is_known_boolean, expression_is_none, expression_is_nullable_option_field,
     expression_is_nullable_option_return, expression_is_path, expression_is_reusable,
-    expression_is_shared_identity, expression_is_type_script_nullable_option_field,
+    expression_is_sequence, expression_is_shared_identity,
+    expression_is_type_script_nullable_option_field,
     expression_is_type_script_nullable_option_return, expression_kind, expression_path_ends_with,
     expression_struct_name, expression_typed_array, flight_error_throw, flight_error_value,
     float_bit_comparison, float_const_js_value, float_constant_type, frozen_object_name,
@@ -47,10 +48,10 @@ use super::{
     referenced_path_identifier, reject_function_exits_in_value_position,
     reject_unresolved_pattern_field, size_of_rust_type, snake_to_lower_camel,
     statement_macro_is_diverging, std_mem_function, strip_as_ptr, swap_operand_is_place,
-    turbofish_type, type_is_named, type_script_array_field, typed_array_for_literal,
-    typed_array_for_type, vitest_current_path_prefix, vitest_function_path_binding_name,
-    vitest_path_binding_name, vitest_struct_local, vitest_struct_name, vitest_struct_owner,
-    write_indent,
+    take_operand_place, turbofish_type, type_is_named, type_script_array_field,
+    typed_array_for_literal, typed_array_for_type, vitest_current_path_prefix,
+    vitest_function_path_binding_name, vitest_path_binding_name, vitest_struct_local,
+    vitest_struct_name, vitest_struct_owner, write_indent,
 };
 // Emits `expression`. Source-directed nullable Options are normalized to the ordinary absent form
 // (`?? undefined`, preserving `false`, `0` and `""`) outside their declaration boundary. Exact
@@ -364,6 +365,17 @@ pub(super) fn emit_expression_value(
                                 "portable `std::mem::size_of` requires a turbofish with a known numeric type",
                             ))
                         }
+                    }
+                    // A taken `Vec` empties in place, which `splice(0)` does with one evaluation of
+                    // the place and is visible through a `&mut` binding, as Rust's empty default is.
+                    "take"
+                        if call.args.len() == 1
+                            && let Some(place) = take_operand_place(&call.args[0])
+                            && expression_is_sequence(place, entities)
+                            && expression_typed_array(place, entities).is_none() =>
+                    {
+                        let target = emit_expression(place, entities)?;
+                        Ok(format!("{target}.splice(0)"))
                     }
                     "take" if call.args.len() == 1 && swap_operand_is_place(&call.args[0]) => {
                         let target = emit_expression(&call.args[0], entities)?;

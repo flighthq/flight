@@ -56,6 +56,38 @@ pub(super) fn swap_operand_is_place(operand: &Expr) -> bool {
     };
 }
 
+// The place `std::mem::take` empties: the operand of `&mut place`, or a bare binding that is itself a
+// `&mut` reference. Wider than a swap operand: the base may be a call returning a reference or a
+// dereferenced guard, because the caller only accepts it where the place is evaluated once.
+pub(super) fn take_operand_place(operand: &Expr) -> Option<&Expr> {
+    fn is_place(expression: &Expr) -> bool {
+        return match expression {
+            Expr::Paren(paren) => is_place(&paren.expr),
+            Expr::Group(group) => is_place(&group.expr),
+            Expr::Path(path) => path.qself.is_none() && path.path.segments.len() == 1,
+            Expr::Field(field) => is_place(&field.base) || is_call(&field.base),
+            Expr::Index(index) => is_place(&index.expr),
+            Expr::MethodCall(call) if call.args.is_empty() => {
+                is_place(&call.receiver) || is_call(&call.receiver)
+            }
+            Expr::Unary(unary) if matches!(unary.op, syn::UnOp::Deref(_)) => is_place(&unary.expr),
+            _ => false,
+        };
+    }
+    fn is_call(expression: &Expr) -> bool {
+        return matches!(expression, Expr::Call(call) if matches!(call.func.as_ref(), Expr::Path(_)));
+    }
+    return match operand {
+        Expr::Paren(paren) => take_operand_place(&paren.expr),
+        Expr::Group(group) => take_operand_place(&group.expr),
+        Expr::Reference(reference) if reference.mutability.is_some() => {
+            is_place(&reference.expr).then_some(reference.expr.as_ref())
+        }
+        Expr::Path(path) if path.qself.is_none() && path.path.segments.len() == 1 => Some(operand),
+        _ => None,
+    };
+}
+
 // Whether any identifier token in `tokens`, at any group depth, is `name`.
 pub(super) fn tokens_contain_identifier(tokens: proc_macro2::TokenStream, name: &str) -> bool {
     return tokens.into_iter().any(|token| match token {
