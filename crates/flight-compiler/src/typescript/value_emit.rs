@@ -21,21 +21,27 @@ pub(super) fn emit_if_expression(
     }
     let condition = emit_expression(&expression.cond, entities)?;
     let then_value = emit_value_block(&expression.then_branch, entities)?;
-    let Some((_, otherwise)) = &expression.else_branch else {
-        return Err(compile_error(
-            "Rust if expression used as a value needs an else branch",
-        ));
-    };
-    let otherwise = match otherwise.as_ref() {
-        Expr::Block(block) => emit_value_block(&block.block, entities)?,
-        Expr::If(nested) => emit_if_expression(nested, entities)?,
-        _ => {
-            return Err(compile_error(
-                "unsupported non-block else branch in Rust if expression",
-            ));
-        }
-    };
+    let otherwise = emit_else_value(expression, entities, "if")?;
     return Ok(format!("{condition} ? {then_value} : {otherwise}"));
+}
+
+// The value of an `if` expression's else branch. Without one, Rust's `if` is `()` when the condition
+// fails, which lowers to `undefined` like every other unit value.
+fn emit_else_value(
+    expression: &syn::ExprIf,
+    entities: &HashSet<String>,
+    form: &str,
+) -> Result<String, CompileError> {
+    let Some((_, otherwise)) = &expression.else_branch else {
+        return Ok("undefined".to_string());
+    };
+    return match otherwise.as_ref() {
+        Expr::Block(block) => emit_value_block(&block.block, entities),
+        Expr::If(nested) => emit_if_expression(nested, entities),
+        _ => Err(compile_error(format!(
+            "unsupported non-block else branch in Rust {form} expression"
+        ))),
+    };
 }
 
 // Whether reading `expression` twice is the same as reading it once: a variable or a field of one,
@@ -68,11 +74,6 @@ pub(super) fn emit_if_let_value_expression(
         }
         return Ok(None);
     }
-    let Some((_, otherwise)) = &expression.else_branch else {
-        return Err(compile_error(
-            "Rust `if let` expression used as a value needs an else branch",
-        ));
-    };
     let then_context = if let Expr::Let(binding) = expression.cond.as_ref() {
         lexical_pattern_context(entities, &binding.pat)
     } else {
@@ -108,15 +109,7 @@ pub(super) fn emit_if_let_value_expression(
     let then_value = emit_value_block(&expression.then_branch, &then_context)?;
     writeln!(out, "    return {then_value};").expect("writing to a String cannot fail");
     out.push_str("  } else {\n");
-    let else_value = match otherwise.as_ref() {
-        Expr::Block(block) => emit_value_block(&block.block, entities)?,
-        Expr::If(nested) => emit_if_expression(nested, entities)?,
-        _ => {
-            return Err(compile_error(
-                "unsupported non-block else branch in Rust if-let expression",
-            ));
-        }
-    };
+    let else_value = emit_else_value(expression, entities, "if-let")?;
     writeln!(out, "    return {else_value};").expect("writing to a String cannot fail");
     out.push_str("  }\n})()");
     return Ok(Some(out));
@@ -128,11 +121,6 @@ pub(super) fn emit_if_let_data_union_value_expression(
     test: &DataUnionPatternTest,
     entities: &HashSet<String>,
 ) -> Result<String, CompileError> {
-    let Some((_, otherwise)) = &expression.else_branch else {
-        return Err(compile_error(
-            "Rust `if let` expression used as a value needs an else branch",
-        ));
-    };
     let then_context = lexical_pattern_context(entities, &binding.pat);
     let scrutinee = emit_expression(&binding.expr, entities)?;
     let predicate = test.predicate.as_deref().unwrap_or("true");
@@ -146,15 +134,7 @@ pub(super) fn emit_if_let_data_union_value_expression(
     let then_value = emit_value_block(&expression.then_branch, &then_context)?;
     writeln!(out, "    return {then_value};").expect("writing to a String cannot fail");
     out.push_str("  } else {\n");
-    let else_value = match otherwise.as_ref() {
-        Expr::Block(block) => emit_value_block(&block.block, entities)?,
-        Expr::If(nested) => emit_if_expression(nested, entities)?,
-        _ => {
-            return Err(compile_error(
-                "unsupported non-block else branch in Rust if-let expression",
-            ));
-        }
-    };
+    let else_value = emit_else_value(expression, entities, "if-let")?;
     writeln!(out, "    return {else_value};").expect("writing to a String cannot fail");
     out.push_str("  }\n})()");
     return Ok(out);

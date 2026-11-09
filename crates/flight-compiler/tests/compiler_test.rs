@@ -34223,3 +34223,50 @@ fn reads_the_matched_projection() {
         "a struct-variant field binding reads its fields: {output}"
     );
 }
+
+#[test]
+fn if_let_value_expression_without_else_branch() {
+    let source = r#"
+pub fn maybe_process(value: Option<f32>) -> () {
+    if let Some(x) = value {
+        let _ = x * 2.0;
+    }
+}
+"#;
+    let output = compile_typescript(source, None).unwrap();
+    assert!(
+        !output.contains("needs an else branch"),
+        "if let without else should compile when used as unit value: {output}"
+    );
+}
+
+#[test]
+fn if_expression_without_else_as_trailing_unit() {
+    let source = r#"
+pub fn conditional_action(flag: bool) {
+    let _result = if flag { 42 };
+}
+"#;
+    let output = compile_typescript(source, None);
+    assert!(
+        output.is_ok(),
+        "if without else as value should compile: {output:?}"
+    );
+}
+
+#[test]
+fn lowers_else_less_if_let_closure_bodies_to_undefined_otherwise() {
+    let source = r#"
+pub fn use_x(x: f32) {}
+
+pub fn each(value: Option<f32>) {
+    let apply = |value: Option<f32>| if let Some(x) = value { use_x(x) };
+    apply(value);
+}
+"#;
+    let output = compile_typescript(source, None).unwrap();
+    assert!(
+        output.contains("    if (value !== undefined) {\n      const x = value;\n      return useX(x);\n    } else {\n      return undefined;\n    }\n"),
+        "an else-less `if let` value is `undefined` when the pattern fails: {output}"
+    );
+}
