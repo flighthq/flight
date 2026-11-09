@@ -7,14 +7,15 @@ use crate::model::Program;
 use crate::{CompileError, compile_error};
 
 use super::{
-    ENTITY_RUNTIME_STATE_FIELD_MARKER, ENTITY_RUNTIME_STATE_MARKER, MUTEX_GUARD_BINDING_MARKER,
-    NULLABLE_OPTION_LITERAL_FIELD_MARKER, NULLABLE_OPTIONS_MARKER, PROVENANCE_SEPARATOR,
-    PreferredAliases, UNSIGNED_INTEGER_LOCAL_MARKER, current_source, emit_documentation,
-    emit_expression, emit_named_callable_type, emit_preferred_type, emit_type_parameters,
-    emit_type_with_aliases, export_name, expression_struct_name, insert_type_parameter_context,
-    is_lowered_primary, is_primary_expression_text, is_public, lexical_binding,
-    lower_camel_from_upper_camel, nullable_type, option_inner_type, referenced_path_identifier,
-    snake_to_lower_camel, type_script_array_field, unique_marker_suffix,
+    ENTITY_RUNTIME_STATE_FIELD_MARKER, ENTITY_RUNTIME_STATE_MARKER, INTEGER_EXPRESSION_MARKER,
+    MUTEX_GUARD_BINDING_MARKER, NULLABLE_OPTION_LITERAL_FIELD_MARKER, NULLABLE_OPTIONS_MARKER,
+    PROVENANCE_SEPARATOR, PreferredAliases, UNSIGNED_INTEGER_LOCAL_MARKER, current_source,
+    emit_documentation, emit_expression, emit_named_callable_type, emit_preferred_type,
+    emit_type_parameters, emit_type_with_aliases, export_name, expression_struct_name,
+    insert_type_parameter_context, is_lowered_primary, is_primary_expression_text, is_public,
+    lexical_binding, lower_camel_from_upper_camel, nullable_type, option_inner_type,
+    referenced_path_identifier, snake_to_lower_camel, type_script_array_field,
+    unique_marker_suffix,
 };
 pub(super) fn emit_static(
     out: &mut String,
@@ -193,7 +194,7 @@ fn operand_is_known_integer(expression: &Expr, entities: &HashSet<String>) -> bo
         Expr::Lit(literal) => matches!(&literal.lit, syn::Lit::Int(_) | syn::Lit::Byte(_)),
         Expr::Path(path) if path.qself.is_none() && path.path.segments.len() == 1 => {
             let name = path.path.segments[0].ident.to_string();
-            entities.contains(&format!("{UNSIGNED_INTEGER_LOCAL_MARKER}{name}"))
+            entities.contains(&format!("{INTEGER_EXPRESSION_MARKER}{name}"))
         }
         Expr::Binary(binary) => matches!(
             binary.op,

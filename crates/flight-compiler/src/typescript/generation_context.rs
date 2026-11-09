@@ -22,9 +22,9 @@ use super::{
     ENTITY_UNSUPPORTED_DEFAULT_FIELD_MARKER, ENUM_DEFAULT_VARIANT_MARKER,
     ERASED_SHARED_CELL_FIELD_MARKER, EXTERNAL_STRUCT_FIELD_MARKER, FIXED_BUFFER_ARGUMENT_MARKER,
     FIXED_BUFFER_LOCAL_MARKER, FROZEN_OBJECT_MARKER, FUNCTION_OWNER_MARKER,
-    HASH_COLLECTION_FIELD_MARKER, INLINE_STRING_UNION_MARKER, INTERIOR_MUTABLE_STRUCT_MARKER,
-    INTERNAL_TYPE_EXPORT_MARKER, JSON_VALUE_MARKER, JSON_VALUE_OPTION_MARKER,
-    METHOD_DELEGATION_MARKER, MUT_VEC_PARAMETERS_MARKER,
+    HASH_COLLECTION_FIELD_MARKER, INLINE_STRING_UNION_MARKER, INTEGER_EXPRESSION_MARKER,
+    INTERIOR_MUTABLE_STRUCT_MARKER, INTERNAL_TYPE_EXPORT_MARKER, JSON_VALUE_MARKER,
+    JSON_VALUE_OPTION_MARKER, METHOD_DELEGATION_MARKER, MUT_VEC_PARAMETERS_MARKER,
     MUTABLE_SCALAR_CELL_PARAMETER_BINDING_MARKER, MUTABLE_SCALAR_CELL_PARAMETER_NAME_MARKER,
     MUTABLE_SCALAR_REFERENCE_ARGUMENT_MARKER, NULLABLE_CALL_MARKER, NULLABLE_OPTION_FIELD_MARKER,
     NULLABLE_OPTION_LITERAL_FIELD_MARKER, NULLABLE_OPTION_RETURN_MARKER, NULLABLE_OPTIONS_MARKER,
@@ -65,7 +65,7 @@ use super::{
     rust_default_expression, rust_type_description, rust_type_has_interior_mutability,
     rust_type_is_erased_shared_cell, rust_type_is_json_value, rust_type_is_ordered_primitive,
     rust_type_is_sequence, rust_type_is_string, sequence_inner_type, shared_identity_type_at_depth,
-    snake_to_lower_camel, source_access_for_visibility, standard_vec_inner_type,
+    snake_to_lower_camel, source_access_for_visibility, standard_vec_inner_type, type_is_integer,
     type_is_unsigned_integer, type_script_type_alias, typed_slice_parameter_kind_with_provenance,
     uint8_array_parameter, use_tree_paths, vec_clone_optional, vitest_named_type,
     vitest_path_binding_name, vitest_pattern_context, vitest_struct_owner, write_indent,
@@ -1737,6 +1737,10 @@ pub(crate) fn function_expression_context(
                 && let Pat::Ident(pattern) = typed.pat.as_ref()
             {
                 let local = snake_to_lower_camel(&pattern.ident.to_string());
+                if type_is_integer(&typed.ty) {
+                    self.context
+                        .insert(format!("{INTEGER_EXPRESSION_MARKER}{}", pattern.ident));
+                }
                 if type_is_unsigned_integer(&typed.ty) {
                     self.context
                         .insert(format!("{UNSIGNED_INTEGER_LOCAL_MARKER}{}", pattern.ident));
@@ -1943,6 +1947,9 @@ pub(crate) fn function_expression_context(
             pattern.ident
         )) {
             context.insert(format!("{RECORD_CLONE_LOCAL_MARKER}{}", pattern.ident));
+        }
+        if type_is_integer(&argument.ty) {
+            context.insert(format!("{INTEGER_EXPRESSION_MARKER}{}", pattern.ident));
         }
         if type_is_unsigned_integer(&argument.ty) {
             context.insert(format!("{UNSIGNED_INTEGER_LOCAL_MARKER}{}", pattern.ident));

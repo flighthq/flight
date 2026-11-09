@@ -409,6 +409,8 @@ pub(super) const BOOLEAN_FIELD_MARKER: &str = "@boolean-field:";
 
 pub(super) const CHAR_EXPRESSION_MARKER: &str = "@char-expression:";
 
+pub(super) const INTEGER_EXPRESSION_MARKER: &str = "@integer-expression:";
+
 pub(super) const STRING_EXPRESSION_MARKER: &str = "@string-expression:";
 
 pub(super) const STRING_FIELD_MARKER: &str = "@string-field:";

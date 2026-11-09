@@ -159,6 +159,14 @@ pub(super) fn path_is_type_constant(path: &syn::Path, rust_type: &str, constant:
             .is_some_and(|segment| segment.ident == rust_type);
 }
 
+pub(super) fn type_is_integer(rust_type: &Type) -> bool {
+    return [
+        "i8", "i16", "i32", "i64", "isize", "u8", "u16", "u32", "u64", "usize",
+    ]
+    .iter()
+    .any(|name| type_is_named(rust_type, name));
+}
+
 pub(super) fn type_is_unsigned_integer(rust_type: &Type) -> bool {
     return ["u8", "u16", "u32", "u64", "usize"]
         .iter()

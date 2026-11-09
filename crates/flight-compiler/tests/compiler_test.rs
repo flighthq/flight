@@ -29495,6 +29495,10 @@ pub fn invert_mask(mask: u32) -> u32 {
     return !mask;
 }
 
+pub fn invert_signed(x: i32) -> i32 {
+    return !x;
+}
+
 pub fn negate_bool(x: bool) -> bool {
     return !x;
 }
@@ -29506,11 +29510,15 @@ pub fn negate_comparison(a: u32, b: u32) -> bool {
     let output = compile_typescript(source, None).unwrap();
     assert!(
         output.contains("~flag"),
-        "should emit ~ for integer bitwise NOT: {output}"
+        "should emit ~ for unsigned integer bitwise NOT: {output}"
     );
     assert!(
         output.contains("~mask"),
-        "should emit ~ for integer bitwise NOT: {output}"
+        "should emit ~ for unsigned integer bitwise NOT: {output}"
+    );
+    assert!(
+        output.contains("return ~x;"),
+        "should emit ~ for signed integer bitwise NOT: {output}"
     );
     assert!(
         output.contains("!x"),
