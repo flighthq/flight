@@ -1687,7 +1687,67 @@ pub(super) fn generation_context_with_types(
             context.insert(entry);
         }
     }
+    insert_visibility_shared_identity_context(&mut context, provenance_visibility_programs);
     return Ok(context);
+}
+
+// Shared-identity evidence from visibility-only sources (a suite's own crate): a public function
+// whose result, or a struct field whose declared type, lowers to an identity-bearing object, so
+// `Arc::ptr_eq` over `create_camera_3d().view` or a returned `Ref<T>` compares allocations.
+fn insert_visibility_shared_identity_context(
+    context: &mut HashSet<String>,
+    programs: &[(&str, &Program)],
+) {
+    let mut facts = Vec::new();
+    for (module, program) in programs {
+        for function in &program.functions {
+            let ReturnType::Type(_, rust_type) = &function.sig.output else {
+                continue;
+            };
+            if shared_identity_type_at_depth(context, Some(module), rust_type, 0) {
+                facts.push(format!(
+                    "{SHARED_IDENTITY_RETURN_MARKER}{module}{PROVENANCE_SEPARATOR}{}{PROVENANCE_SEPARATOR}",
+                    function.sig.ident
+                ));
+            }
+            let function_identity = format!("{module}{PROVENANCE_SEPARATOR}{}", function.sig.ident);
+            if is_public(&function.vis)
+                && provenance_marker_values(
+                    context,
+                    VITEST_STRUCT_RETURN_MARKER,
+                    &function_identity,
+                )
+                .is_empty()
+                && let Some(structure) = named_type(rust_type)
+                && let Some(identity) = vitest_struct_owner(context, &structure)
+            {
+                facts.push(format!(
+                    "{VITEST_STRUCT_RETURN_MARKER}{function_identity}{PROVENANCE_SEPARATOR}{identity}"
+                ));
+                if provenance_marker_values(context, RETURN_BINDING_FACT_MARKER, &function_identity)
+                    .is_empty()
+                {
+                    facts.push(format!(
+                        "{RETURN_BINDING_FACT_MARKER}{function_identity}{PROVENANCE_SEPARATOR}{}",
+                        binding_fact_marker(&BindingFact::Structure(identity))
+                    ));
+                }
+            }
+        }
+        for structure in &program.structs {
+            for field in &structure.fields {
+                if let Some(field_name) = &field.ident
+                    && shared_identity_type_at_depth(context, Some(module), &field.ty, 0)
+                {
+                    facts.push(format!(
+                        "{SHARED_IDENTITY_FIELD_MARKER}{module}{PROVENANCE_SEPARATOR}{}{PROVENANCE_SEPARATOR}{field_name}",
+                        structure.ident
+                    ));
+                }
+            }
+        }
+    }
+    context.extend(facts);
 }
 
 pub(crate) fn function_expression_context(

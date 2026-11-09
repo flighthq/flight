@@ -7,10 +7,12 @@ use crate::{CompileError, compile_error};
 
 use super::{
     EXTERNAL_STRUCT_RETURN_MARKER, PROVENANCE_SEPARATOR, SEQUENCE_FIELD_MARKER,
-    SHARED_IDENTITY_EXTERNAL_FIELD_MARKER, SHARED_IDENTITY_EXTERNAL_TYPE_MARKER, current_source,
-    dependency_source_context, insert_type_path_context, is_public, peel_reference_and_paren,
-    resolve_type_path, rust_type_is_sequence, shared_identity_type_at_depth, source_type_context,
-    substitute_type_param, unique_marker_suffix,
+    SHARED_IDENTITY_EXTERNAL_FIELD_MARKER, SHARED_IDENTITY_EXTERNAL_TYPE_MARKER,
+    TYPE_USE_TARGET_MARKER, VITEST_PUBLIC_FUNCTION_MARKER, canonical_type_path_root,
+    current_source, dependency_source_context, insert_type_path_context, is_public,
+    peel_reference_and_paren, provenance_marker_values, resolve_type_path, rust_type_is_sequence,
+    shared_identity_type_at_depth, source_type_context, substitute_type_param,
+    unique_marker_suffix,
 };
 pub(crate) fn external_shared_identity_facts(
     sources: &[(&str, &str)],
@@ -277,10 +279,17 @@ pub(super) fn external_struct_return(
     if path.qself.is_some() {
         return None;
     }
-    let context = current_source(entities)
-        .map(|source| source_type_context(entities, &source))
-        .unwrap_or_else(|| entities.clone());
-    let resolved = resolve_type_path(&path.path, &context)?;
+    let Some(source) = current_source(entities) else {
+        return suite_external_struct_return(&path.path, entities);
+    };
+    let resolved = resolve_type_path(&path.path, &source_type_context(entities, &source))?;
+    return resolved_external_struct_return(&resolved, entities);
+}
+
+fn resolved_external_struct_return(
+    resolved: &[String],
+    entities: &HashSet<String>,
+) -> Option<String> {
     let (first, function) = (resolved.first()?, resolved.last()?);
     if resolved.len() < 2 || !first.starts_with("flight_") {
         return None;
@@ -289,6 +298,37 @@ pub(super) fn external_struct_return(
         entities,
         &format!("{EXTERNAL_STRUCT_RETURN_MARKER}{first}::{function}{PROVENANCE_SEPARATOR}"),
     );
+}
+
+// A Vitest suite has no current source: its context merges every loaded source's `use` targets, so
+// a bare dependency function name can carry targets from inside that dependency too. The call is
+// proven only when exactly one target names a dependency struct return and no suite helper or
+// own-crate function shares the name.
+fn suite_external_struct_return(path: &syn::Path, entities: &HashSet<String>) -> Option<String> {
+    if path.segments.len() != 1 {
+        let resolved = resolve_type_path(path, entities)?;
+        return resolved_external_struct_return(&resolved, entities);
+    }
+    let name = path.segments[0].ident.to_string();
+    if !provenance_marker_values(entities, VITEST_PUBLIC_FUNCTION_MARKER, &name).is_empty() {
+        return None;
+    }
+    let prefix = format!("{TYPE_USE_TARGET_MARKER}{name}{PROVENANCE_SEPARATOR}");
+    let returns = entities
+        .iter()
+        .filter_map(|marker| marker.strip_prefix(&prefix))
+        .filter_map(|target| {
+            let resolved = canonical_type_path_root(
+                target.split("::").map(str::to_string).collect(),
+                entities,
+            )?;
+            return resolved_external_struct_return(&resolved, entities);
+        })
+        .collect::<BTreeSet<_>>();
+    if returns.len() != 1 {
+        return None;
+    }
+    return returns.into_iter().next();
 }
 
 // `rust_type_is_shared_identity` for a dependency source read on its own: its source structs are

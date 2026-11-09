@@ -589,6 +589,7 @@ pub(super) fn insert_lexical_binding_context(function: &ItemFn, context: &mut Ha
                 payload => {
                     expression_is_identity_payload(payload)
                         || self.expression_structure_identity(payload).is_some()
+                        || external_struct_return(payload, self.context).is_some()
                 }
             };
         }

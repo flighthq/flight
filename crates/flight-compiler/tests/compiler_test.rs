@@ -33232,3 +33232,139 @@ pub fn dimensions(desc: Option<&Desc>) -> u32 {
         );
     }
 }
+
+#[test]
+fn arc_ptr_eq_with_local_function_return_type() {
+    let source = r#"
+use std::sync::Arc;
+
+pub struct Widget {
+    pub label: String,
+}
+
+fn make_widget() -> Arc<Widget> {
+    return Arc::new(Widget { label: String::from("test") });
+}
+
+pub fn compare_widgets() -> bool {
+    let a = make_widget();
+    let b = a.clone();
+    return Arc::ptr_eq(&a, &b);
+}
+"#;
+    let output = compile_typescript(source, None).unwrap();
+    assert!(
+        output.contains("a === b"),
+        "Arc::ptr_eq with function return and .clone() should lower to ===: {output}"
+    );
+}
+
+#[test]
+fn arc_ptr_eq_with_clone_of_arc_new() {
+    let source = r#"
+use std::sync::Arc;
+
+pub struct Data {
+    pub value: f32,
+}
+
+pub fn identity_preserved() -> bool {
+    let original = Arc::new(Data { value: 1.0 });
+    let cloned = original.clone();
+    return Arc::ptr_eq(&original, &cloned);
+}
+"#;
+    let output = compile_typescript(source, None).unwrap();
+    assert!(
+        output.contains("original === cloned"),
+        "Arc::ptr_eq with Arc::new and .clone() should lower to ===: {output}"
+    );
+}
+
+#[test]
+fn proves_vitest_arc_ptr_eq_through_crate_and_dependency_sources() {
+    let test = r#"
+use std::sync::{Arc, RwLock};
+
+use flight_example::contract::*;
+use flight_geometry::create_matrix4;
+
+#[test]
+fn compares_shared_handles() {
+    let camera = create_camera();
+    let handle = camera.view.clone();
+    assert!(Arc::ptr_eq(&handle, &camera.view));
+    let projection = create_projection();
+    let retained = projection.clone();
+    assert!(Arc::ptr_eq(&retained, &projection));
+    let matrix = Arc::new(RwLock::new(create_matrix4()));
+    let copy = matrix.clone();
+    assert!(Arc::ptr_eq(&copy, &matrix));
+}
+"#;
+    let owner = r#"
+//! flight-compiler: target-native
+
+use std::sync::{Arc, RwLock};
+
+use flight_geometry::{Matrix4, create_matrix4};
+
+pub struct Camera {
+    pub view: Arc<RwLock<Matrix4>>,
+}
+
+pub struct Projection {
+    pub fov: f32,
+}
+
+pub fn create_camera() -> Camera {
+    return Camera {
+        view: Arc::new(RwLock::new(create_matrix4())),
+    };
+}
+
+pub fn create_projection() -> Arc<RwLock<Projection>> {
+    return Arc::new(RwLock::new(Projection { fov: 1.0 }));
+}
+"#;
+    // A dependency source loaded for visibility imports the same name from inside its own crate.
+    let pool = "use crate::matrix4::create_matrix4;\n\npub fn acquire_matrix4() -> crate::matrix4::Matrix4 {\n    return create_matrix4();\n}\n";
+    let geometry = [ExternalAliasSource {
+        source: "pub struct Matrix4 {\n    pub a: f32,\n}\n\npub fn create_matrix4() -> Matrix4 {\n    return Matrix4 { a: 1.0 };\n}\n",
+        module: "@flighthq/geometry/contract",
+    }];
+    let visibility = [
+        VitestVisibilitySource {
+            source: owner,
+            path: "crates/flight-example/src/camera.rs",
+            current_package: true,
+        },
+        VitestVisibilitySource {
+            source: pool,
+            path: "crates/flight-geometry/src/matrix4_pool.rs",
+            current_package: false,
+        },
+    ];
+    let output = compile_vitest_with_named_visibility_sources_and_array_representations(
+        test,
+        "@flighthq/example/contract",
+        Some("pub use crate::camera::*;\n"),
+        &[],
+        &geometry,
+        &[],
+        &visibility,
+        &[],
+        &[],
+        &[],
+        &[],
+        &[],
+        &[],
+        &[],
+        &[],
+        &[],
+    )
+    .unwrap();
+    assert!(output.contains("handle === camera.view"), "{output}");
+    assert!(output.contains("retained === projection"), "{output}");
+    assert!(output.contains("copy === matrix"), "{output}");
+}

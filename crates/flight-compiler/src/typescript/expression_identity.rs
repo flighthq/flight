@@ -19,9 +19,9 @@ use super::{
     VITEST_PUBLIC_FUNCTION_MARKER, binding_fact_from_marker, call_fact, compile_error,
     context_type_identity, current_source, emit_documentation, emit_expression_for_type,
     expression_is_associated_path, expression_is_field_reference, expression_struct_name,
-    is_string_union, lexical_binding, lexical_fact, owner_method_delegation_fact,
-    path_owner_and_member, peel_reference_and_paren, peel_shared_view,
-    sequence_element_binding_fact, unique_alias_owner, unique_marker_suffix,
+    external_struct_return, is_string_union, lexical_binding, lexical_fact,
+    owner_method_delegation_fact, path_owner_and_member, peel_reference_and_paren,
+    peel_shared_view, sequence_element_binding_fact, unique_alias_owner, unique_marker_suffix,
     vitest_path_binding_name,
 };
 pub(super) fn call_returns_shared_identity(entities: &HashSet<String>, callee: &Expr) -> bool {
@@ -341,6 +341,7 @@ pub(super) fn shared_payload_is_identity(payload: &Expr, entities: &HashSet<Stri
         payload => {
             expression_is_identity_payload(payload)
                 || expression_struct_identity(payload, entities).is_some()
+                || external_struct_return(payload, entities).is_some()
         }
     };
 }
