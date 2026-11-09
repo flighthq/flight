@@ -31872,6 +31872,32 @@ pub fn offsets(dirs: &[Dir]) -> Vec<i32> {
 }
 
 #[test]
+fn closure_body_match_with_return_emits_block_body() {
+    let source = r#"
+pub enum RiveValue {
+    String(String),
+    Number(f64),
+}
+
+pub fn find_string(items: &[RiveValue]) -> Option<String> {
+    return items.iter().find_map(|item| match item {
+        RiveValue::String(s) => return Some(s.clone()),
+        _ => return None,
+    });
+}
+"#;
+    let output = compile_typescript(source, None).unwrap();
+    assert!(
+        output.contains("return s;"),
+        "match arm with return in closure body should emit return: {output}"
+    );
+    assert!(
+        output.contains("return undefined;"),
+        "fallback arm with return None should emit return undefined: {output}"
+    );
+}
+
+#[test]
 fn partial_cmp_unwrap_does_not_emit_non_null_assertion() {
     let source = r#"
 pub fn sort_abs(values: &mut [f64]) {
