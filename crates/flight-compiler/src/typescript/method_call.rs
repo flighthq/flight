@@ -1088,11 +1088,11 @@ pub(super) fn emit_method_call(
             "((n: number): number => {{ const r = Math.round(n); const f = n - Math.trunc(n); return (f === 0.5 || f === -0.5) && r % 2 !== 0 ? r - Math.sign(n) : r; }})({receiver})"
         )),
         "saturating_add" if arguments.len() == 1 => Ok(format!(
-            "Math.min(0x7FFFFFFF, {receiver} + {})",
+            "Math.min(0x7fffffff, {receiver} + {})",
             parenthesize_compound(&arguments[0])
         )),
         "saturating_mul" if arguments.len() == 1 => Ok(format!(
-            "Math.min(0x7FFFFFFF, {receiver} * {})",
+            "Math.min(0x7fffffff, {receiver} * {})",
             arguments[0]
         )),
         "saturating_sub" if arguments.len() == 1 => {

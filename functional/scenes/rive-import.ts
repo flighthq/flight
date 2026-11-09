@@ -2,9 +2,9 @@ import { getBitmapPixelRgb } from '@flighthq/bitmap';
 import type { Bitmap } from '@flighthq/bitmap';
 import { martinezPathBooleanKernel } from '@flighthq/path-boolean';
 import { applyAnimationClipToNode2D } from '@flighthq/scene2d';
+import { DisplayObjectKind } from '@flighthq/scene2d';
 import { createScene2DFromRiveDocument } from '@flighthq/scene2d-formats';
 import { ShapeKind } from '@flighthq/shape';
-import { DisplayObjectKind } from '@flighthq/scene2d';
 import { createFunctionalTarget, declareAntialiasingPolicy } from '@ft/render';
 
 const WIDTH = 800;

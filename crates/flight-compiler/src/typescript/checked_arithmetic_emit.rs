@@ -21,13 +21,13 @@ pub(super) fn checked_arithmetic_bounds(
     numeric_type: Option<&str>,
 ) -> (&'static str, &'static str) {
     return match numeric_type {
-        Some("u8") => ("0", "0xFF"),
-        Some("u16") => ("0", "0xFFFF"),
-        Some("u32") => ("0", "0xFFFFFFFF"),
-        Some("u64" | "u128" | "usize") => ("0", "0x7FFFFFFF"),
-        Some("i8") => ("-0x80", "0x7F"),
-        Some("i16") => ("-0x8000", "0x7FFF"),
-        _ => ("-0x80000000", "0x7FFFFFFF"),
+        Some("u8") => ("0", "0xff"),
+        Some("u16") => ("0", "0xffff"),
+        Some("u32") => ("0", "0xffffffff"),
+        Some("u64" | "u128" | "usize") => ("0", "0x7fffffff"),
+        Some("i8") => ("-0x80", "0x7f"),
+        Some("i16") => ("-0x8000", "0x7fff"),
+        _ => ("-0x80000000", "0x7fffffff"),
     };
 }
 
