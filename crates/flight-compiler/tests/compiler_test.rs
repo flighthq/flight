@@ -29485,6 +29485,44 @@ pub fn classify_char(c: char) -> i32 {
 }
 
 #[test]
+fn lowers_bitwise_not_to_tilde_and_boolean_not_to_bang() {
+    let source = r#"
+pub fn clear_flag(value: u32, flag: u32) -> u32 {
+    return value & !flag;
+}
+
+pub fn invert_mask(mask: u32) -> u32 {
+    return !mask;
+}
+
+pub fn negate_bool(x: bool) -> bool {
+    return !x;
+}
+
+pub fn negate_comparison(a: u32, b: u32) -> bool {
+    return !(a > b);
+}
+"#;
+    let output = compile_typescript(source, None).unwrap();
+    assert!(
+        output.contains("~flag"),
+        "should emit ~ for integer bitwise NOT: {output}"
+    );
+    assert!(
+        output.contains("~mask"),
+        "should emit ~ for integer bitwise NOT: {output}"
+    );
+    assert!(
+        output.contains("!x"),
+        "should emit ! for boolean NOT: {output}"
+    );
+    assert!(
+        output.contains("!(a > b)"),
+        "should emit ! for negated comparison: {output}"
+    );
+}
+
+#[test]
 fn lowers_match_on_option_of_enum_variant_to_kind_check() {
     let source = r#"
 pub struct Mapping { pub name: String }

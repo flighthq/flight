@@ -9,12 +9,12 @@ use crate::{CompileError, compile_error};
 use super::{
     ENTITY_RUNTIME_STATE_FIELD_MARKER, ENTITY_RUNTIME_STATE_MARKER, MUTEX_GUARD_BINDING_MARKER,
     NULLABLE_OPTION_LITERAL_FIELD_MARKER, NULLABLE_OPTIONS_MARKER, PROVENANCE_SEPARATOR,
-    PreferredAliases, current_source, emit_documentation, emit_expression,
-    emit_named_callable_type, emit_preferred_type, emit_type_parameters, emit_type_with_aliases,
-    export_name, expression_struct_name, insert_type_parameter_context, is_lowered_primary,
-    is_primary_expression_text, is_public, lexical_binding, lower_camel_from_upper_camel,
-    nullable_type, option_inner_type, referenced_path_identifier, snake_to_lower_camel,
-    type_script_array_field, unique_marker_suffix,
+    PreferredAliases, UNSIGNED_INTEGER_LOCAL_MARKER, current_source, emit_documentation,
+    emit_expression, emit_named_callable_type, emit_preferred_type, emit_type_parameters,
+    emit_type_with_aliases, export_name, expression_struct_name, insert_type_parameter_context,
+    is_lowered_primary, is_primary_expression_text, is_public, lexical_binding,
+    lower_camel_from_upper_camel, nullable_type, option_inner_type, referenced_path_identifier,
+    snake_to_lower_camel, type_script_array_field, unique_marker_suffix,
 };
 pub(super) fn emit_static(
     out: &mut String,
@@ -150,7 +150,6 @@ pub(super) fn emit_unary_expression(
     unary: &syn::ExprUnary,
     entities: &HashSet<String>,
 ) -> Result<String, CompileError> {
-    let operator = emit_unary_operator(&unary.op)?;
     let operand = emit_expression(&unary.expr, entities)?;
     if matches!(unary.op, UnOp::Deref(_))
         && referenced_path_identifier(&unary.expr)
@@ -168,6 +167,12 @@ pub(super) fn emit_unary_expression(
     {
         return Ok(format!("{receiver}.length !== 0"));
     }
+    let operator =
+        if matches!(unary.op, UnOp::Not(_)) && operand_is_known_integer(&unary.expr, entities) {
+            "~"
+        } else {
+            emit_unary_operator(&unary.op)?
+        };
     if !is_lowered_primary(&unary.expr, &operand) || !is_primary_expression_text(&operand) {
         return Ok(format!("{operator}({operand})"));
     }
@@ -180,6 +185,30 @@ pub(super) fn emit_unary_operator(operator: &UnOp) -> Result<&'static str, Compi
         UnOp::Neg(_) => Ok("-"),
         UnOp::Not(_) => Ok("!"),
         _ => Err(compile_error("unsupported Rust unary operator")),
+    };
+}
+
+fn operand_is_known_integer(expression: &Expr, entities: &HashSet<String>) -> bool {
+    return match expression {
+        Expr::Lit(literal) => matches!(&literal.lit, syn::Lit::Int(_) | syn::Lit::Byte(_)),
+        Expr::Path(path) if path.qself.is_none() && path.path.segments.len() == 1 => {
+            let name = path.path.segments[0].ident.to_string();
+            entities.contains(&format!("{UNSIGNED_INTEGER_LOCAL_MARKER}{name}"))
+        }
+        Expr::Binary(binary) => matches!(
+            binary.op,
+            syn::BinOp::BitAnd(_)
+                | syn::BinOp::BitOr(_)
+                | syn::BinOp::BitXor(_)
+                | syn::BinOp::Shl(_)
+                | syn::BinOp::Shr(_)
+        ),
+        Expr::Unary(inner) => {
+            matches!(inner.op, UnOp::Not(_)) && operand_is_known_integer(&inner.expr, entities)
+        }
+        Expr::Group(group) => operand_is_known_integer(&group.expr, entities),
+        Expr::Paren(paren) => operand_is_known_integer(&paren.expr, entities),
+        _ => false,
     };
 }
 
