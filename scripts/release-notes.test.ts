@@ -56,4 +56,30 @@ describe('release notes', () => {
     expect(note).not.toContain('Tested candidate');
     expect(note).not.toContain('Changes through:');
   });
+
+  it('stays under the GitHub release body limit even with thousands of commits', () => {
+    const manyCommits = Array.from({ length: 5000 }, (_, index) =>
+      parseConventionalCommit(
+        `${'a'.repeat(39)}${String(index).padStart(1, '0')}`,
+        `feat(scope${index}): ${'x'.repeat(120)}`,
+      ),
+    );
+    const note = renderReleaseNote({ ...input, commits: manyCommits });
+
+    expect(note.length).toBeLessThanOrEqual(125_000);
+  });
+
+  it('summarizes by scope when a section exceeds the commit limit', () => {
+    const manyFeatures = Array.from({ length: 300 }, (_, index) =>
+      parseConventionalCommit(
+        `${'b'.repeat(39)}${String(index).padStart(1, '0')}`,
+        `feat(renderer): add feature ${index}`,
+      ),
+    );
+    const generated = renderGeneratedChanges(manyFeatures, input);
+
+    expect(generated).toContain('300 features across');
+    expect(generated).toContain('**renderer:** 300');
+    expect(generated).not.toContain('add feature 0');
+  });
 });

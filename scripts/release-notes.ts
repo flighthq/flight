@@ -9,6 +9,8 @@ import { parseConventionalCommit } from './conventional-commits.ts';
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const STABLE_VERSION_PATTERN = /^\d+\.\d+\.\d+$/;
 const RELEASE_VERSION_PATTERN = /^(\d+\.\d+\.\d+)(?:-(?:next|edge)\.\d+\.([0-9a-f]{7,40}))?$/;
+const GITHUB_RELEASE_BODY_LIMIT = 125_000;
+const SECTION_COMMIT_LIMIT = 200;
 
 export interface ReleaseNoteInput {
   version: string;
@@ -27,11 +29,12 @@ interface CliOptions {
 export function renderReleaseNote(input: Readonly<ReleaseNoteInput>): string {
   const description = input.description.trim();
   const introduction = description === '' ? '' : `${description}\n\n`;
-  return `# Flight ${input.version}
-
-${introduction}## Changes
-
-${renderGeneratedChanges(input.commits, input)}`;
+  const full = `# Flight ${input.version}\n\n${introduction}## Changes\n\n${renderGeneratedChanges(input.commits, input)}`;
+  if (full.length <= GITHUB_RELEASE_BODY_LIMIT) return full;
+  const comparison = `https://github.com/flighthq/flight/compare/${input.previousVersion}...${input.changesThrough}`;
+  const truncated = full.slice(0, GITHUB_RELEASE_BODY_LIMIT - 200);
+  const lastNewline = truncated.lastIndexOf('\n');
+  return `${truncated.slice(0, lastNewline)}\n\n---\n\n*Release notes truncated. [Full comparison](${comparison}).*\n`;
 }
 
 export function renderGeneratedChanges(
@@ -62,8 +65,9 @@ function formatCommit(commit: Readonly<ConventionalCommit>): string {
 }
 
 function formatCommitSection(title: string, commits: readonly ConventionalCommit[]): string {
-  const rows = commits.length === 0 ? ['- None.'] : commits.map(formatCommit);
-  return `### ${title}\n\n${rows.join('\n')}`;
+  if (commits.length === 0) return `### ${title}\n\n- None.`;
+  if (commits.length <= SECTION_COMMIT_LIMIT) return `### ${title}\n\n${commits.map(formatCommit).join('\n')}`;
+  return `### ${title}\n\n${formatScopeSummary(commits, title)}`;
 }
 
 function formatFixSummary(commits: readonly ConventionalCommit[]): string {
@@ -76,6 +80,18 @@ function formatFixSummary(commits: readonly ConventionalCommit[]): string {
     .sort(([scopeA], [scopeB]) => scopeA.localeCompare(scopeB))
     .map(([scope, count]) => `- **${escapeMarkdown(scope)}:** ${count} fix${count === 1 ? '' : 'es'}`);
   return `### Fixes\n\n${rows.length === 0 ? '- None.' : rows.join('\n')}`;
+}
+
+function formatScopeSummary(commits: readonly ConventionalCommit[], title: string): string {
+  const counts = new Map<string, number>();
+  for (const commit of commits) {
+    const scope = commit.scope ?? 'repository';
+    counts.set(scope, (counts.get(scope) ?? 0) + 1);
+  }
+  const rows = [...counts]
+    .sort(([scopeA], [scopeB]) => scopeA.localeCompare(scopeB))
+    .map(([scope, count]) => `- **${escapeMarkdown(scope)}:** ${count}`);
+  return `${commits.length} ${title.toLowerCase()} across ${counts.size} scope(s):\n\n${rows.join('\n')}`;
 }
 
 function escapeMarkdown(value: string): string {
