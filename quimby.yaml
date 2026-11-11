@@ -265,7 +265,7 @@ presets:
     agents:
       principal: { role: principal }
       manager: { role: manager }
-      integration: { role: integration, runtimeProfile: codex-sbx }
+      integration: { role: integration }
       auditor: { role: auditor, runtimeProfile: codex-sbx }
       foreman: { role: foreman, runtimeProfile: codex-sbx }
       builder: { role: builder }
