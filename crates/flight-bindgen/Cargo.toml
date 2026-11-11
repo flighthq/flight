@@ -1,0 +1,21 @@
+[package]
+name = "flight-bindgen"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+authors.workspace = true
+description = "Binding generator for Flight SDK — emits language-specific externs from Rust pub fn signatures"
+publish = false
+autotests = false
+
+[[bin]]
+name = "flight-bindgen"
+path = "src/main.rs"
+doctest = false
+
+[dependencies]
+
+[lints]
+workspace = true
