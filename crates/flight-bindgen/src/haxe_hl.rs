@@ -5,77 +5,84 @@ use std::path::Path;
 
 use crate::parse::{
     CrateExports, ParamKind, ParsedFn, ReturnKind, classify_param, classify_return, to_camel_case,
+    to_pascal_case,
 };
 
 const LIB_NAME: &str = "flight";
 
 pub fn generate(crate_exports: &[CrateExports], out_dir: &Path) {
-    fs::create_dir_all(out_dir).unwrap();
+    let hl_dir = out_dir.join("flight").join("_hl");
+    let fn_dir = hl_dir.join("_fn");
+    fs::create_dir_all(&hl_dir).unwrap();
+    fs::create_dir_all(&fn_dir).unwrap();
 
-    let mut all_fns: Vec<(&str, &ParsedFn)> = Vec::new();
-    let mut opaque_types: BTreeSet<String> = BTreeSet::new();
-
+    let mut all_opaque_types: BTreeSet<String> = BTreeSet::new();
     for crate_export in crate_exports {
         for func in &crate_export.fns {
-            all_fns.push((&crate_export.dir_name, func));
-            collect_opaque_types(func, &mut opaque_types);
+            collect_opaque_types(func, &mut all_opaque_types);
         }
+    }
+
+    let mut total_files = 0usize;
+    for ty in &all_opaque_types {
+        let type_output = emit_type_file(ty);
+        let type_path = hl_dir.join(format!("{ty}.hx"));
+        write_if_changed(&type_path, &type_output);
+        total_files += 1;
+    }
+
+    let mut total_fns = 0usize;
+    for crate_export in crate_exports {
+        let module_name = crate_dir_to_module(&crate_export.dir_name);
+        let module_output = emit_module_file(&module_name, &crate_export.fns);
+        if !module_output.is_empty() {
+            let module_path = fn_dir.join(format!("{module_name}.hx"));
+            write_if_changed(&module_path, &module_output);
+            total_fns += crate_export.fns.len();
+            total_files += 1;
+        }
+    }
+
+    eprintln!(
+        "wrote {total_files} files ({total_fns} functions, {} types) to {}",
+        all_opaque_types.len(),
+        hl_dir.display()
+    );
+}
+
+fn crate_dir_to_module(dir_name: &str) -> String {
+    let stripped = dir_name.strip_prefix("flight-").unwrap_or(dir_name);
+    to_pascal_case(stripped)
+}
+
+fn emit_type_file(ty: &str) -> String {
+    let mut output = String::new();
+    writeln!(output, "package flight._hl;").unwrap();
+    writeln!(output).unwrap();
+    writeln!(output, "abstract {ty}(hl.Bytes) {{}}").unwrap();
+    output
+}
+
+fn emit_module_file(module_name: &str, fns: &[ParsedFn]) -> String {
+    let mut emitted: Vec<String> = Vec::new();
+    for func in fns {
+        if let Some(decl) = emit_function(func) {
+            emitted.push(decl);
+        }
+    }
+    if emitted.is_empty() {
+        return String::new();
     }
 
     let mut output = String::new();
-    writeln!(output, "package flight;").unwrap();
+    writeln!(output, "package flight._hl._fn;").unwrap();
     writeln!(output).unwrap();
-
-    for ty in &opaque_types {
-        writeln!(output, "abstract {ty}(hl.Bytes) {{}}").unwrap();
+    writeln!(output, "extern class {module_name} {{").unwrap();
+    for decl in &emitted {
+        writeln!(output, "{decl}").unwrap();
     }
-    if !opaque_types.is_empty() {
-        writeln!(output).unwrap();
-    }
-
-    writeln!(output, "class Flight {{").unwrap();
-
-    let mut current_crate = "";
-    for (crate_name, func) in &all_fns {
-        if *crate_name != current_crate {
-            writeln!(output).unwrap();
-            writeln!(output, "\t// {crate_name}").unwrap();
-            current_crate = crate_name;
-        }
-        if let Some(decl) = emit_function(func) {
-            writeln!(output, "{decl}").unwrap();
-        }
-    }
-
-    writeln!(output).unwrap();
-    writeln!(output, "\t// free functions").unwrap();
-    writeln!(
-        output,
-        "\t@:hlNative(\"{LIB_NAME}\", \"flight_free_string\")"
-    )
-    .unwrap();
-    writeln!(
-        output,
-        "\tpublic static function freeString(ptr:hl.Bytes):Void;"
-    )
-    .unwrap();
-
-    for ty in &opaque_types {
-        let ffi_name = format!("flight_free_{}", to_snake_case(ty));
-        let haxe_name = format!("free{ty}");
-        writeln!(output, "\t@:hlNative(\"{LIB_NAME}\", \"{ffi_name}\")").unwrap();
-        writeln!(
-            output,
-            "\tpublic static function {haxe_name}(ptr:{ty}):Void;"
-        )
-        .unwrap();
-    }
-
     writeln!(output, "}}").unwrap();
-
-    let out_path = out_dir.join("Flight.hx");
-    fs::write(&out_path, &output).unwrap();
-    eprintln!("wrote {}", out_path.display());
+    output
 }
 
 fn emit_function(func: &ParsedFn) -> Option<String> {
@@ -104,8 +111,8 @@ fn emit_function(func: &ParsedFn) -> Option<String> {
 fn param_kind_to_haxe(kind: &ParamKind) -> String {
     match kind {
         ParamKind::Scalar(ty) => scalar_to_haxe(ty).to_string(),
-        ParamKind::RefConst(ty) => ty.clone(),
-        ParamKind::RefMut(ty) => ty.clone(),
+        ParamKind::RefConst(ty) => format!("flight._hl.{ty}"),
+        ParamKind::RefMut(ty) => format!("flight._hl.{ty}"),
         ParamKind::OptionF32 => "Single".to_string(),
     }
 }
@@ -114,7 +121,7 @@ fn return_kind_to_haxe(kind: &ReturnKind) -> String {
     match kind {
         ReturnKind::Void => "Void".to_string(),
         ReturnKind::Scalar(ty) => scalar_to_haxe(ty).to_string(),
-        ReturnKind::Struct(ty) => ty.clone(),
+        ReturnKind::Struct(ty) => format!("flight._hl.{ty}"),
         ReturnKind::StringReturn => "hl.Bytes".to_string(),
     }
 }
@@ -149,14 +156,11 @@ fn collect_opaque_types(func: &ParsedFn, types: &mut BTreeSet<String>) {
     }
 }
 
-fn to_snake_case(s: &str) -> String {
-    let mut out = String::new();
-    let chars: Vec<char> = s.chars().collect();
-    for (i, &c) in chars.iter().enumerate() {
-        if c.is_uppercase() && i > 0 && !chars[i - 1].is_uppercase() && chars[i - 1] != '_' {
-            out.push('_');
+fn write_if_changed(path: &Path, content: &str) {
+    if let Ok(existing) = fs::read_to_string(path) {
+        if existing == content {
+            return;
         }
-        out.push(c.to_ascii_lowercase());
     }
-    out
+    fs::write(path, content).unwrap();
 }
