@@ -1,11 +1,11 @@
-use std::collections::BTreeSet;
+use std::collections::{BTreeMap, BTreeSet};
 use std::fmt::Write as _;
 use std::fs;
 use std::path::Path;
 
 use crate::parse::{
-    CrateExports, ParamKind, ParsedFn, ReturnKind, classify_param, classify_return, to_camel_case,
-    to_pascal_case,
+    CrateExports, ParamKind, ParsedFn, ParsedStruct, ReturnKind, classify_param, classify_return,
+    to_camel_case, to_pascal_case,
 };
 
 const LIB_NAME: &str = "flight";
@@ -23,12 +23,24 @@ pub fn generate(crate_exports: &[CrateExports], out_dir: &Path) {
         }
     }
 
+    let mut struct_map: BTreeMap<String, &ParsedStruct> = BTreeMap::new();
+    for crate_export in crate_exports {
+        for s in &crate_export.structs {
+            struct_map.entry(s.name.clone()).or_insert(s);
+        }
+    }
+
     let mut total_files = 0usize;
+    let mut types_with_fields = 0usize;
     for ty in &all_opaque_types {
-        let type_output = emit_type_file(ty);
+        let parsed_struct = struct_map.get(ty.as_str()).copied();
+        let type_output = emit_type_file(ty, parsed_struct);
         let type_path = hl_dir.join(format!("{ty}.hx"));
         write_if_changed(&type_path, &type_output);
         total_files += 1;
+        if parsed_struct.is_some_and(|s| !s.fields.is_empty()) {
+            types_with_fields += 1;
+        }
     }
 
     let mut total_fns = 0usize;
@@ -44,7 +56,7 @@ pub fn generate(crate_exports: &[CrateExports], out_dir: &Path) {
     }
 
     eprintln!(
-        "wrote {total_files} files ({total_fns} functions, {} types) to {}",
+        "wrote {total_files} files ({total_fns} functions, {} types, {types_with_fields} with fields) to {}",
         all_opaque_types.len(),
         hl_dir.display()
     );
@@ -55,11 +67,37 @@ fn crate_dir_to_module(dir_name: &str) -> String {
     to_pascal_case(stripped)
 }
 
-fn emit_type_file(ty: &str) -> String {
+fn emit_type_file(ty: &str, parsed_struct: Option<&ParsedStruct>) -> String {
     let mut output = String::new();
     writeln!(output, "package flight._hl;").unwrap();
     writeln!(output).unwrap();
-    writeln!(output, "abstract {ty}(hl.Bytes) {{}}").unwrap();
+
+    let fields = parsed_struct.map(|s| &s.fields[..]).unwrap_or(&[]);
+    if fields.is_empty() {
+        writeln!(output, "abstract {ty}(hl.Bytes) {{}}").unwrap();
+        return output;
+    }
+
+    writeln!(output, "abstract {ty}(hl.Bytes) {{").unwrap();
+    for field in fields {
+        let haxe_ty = scalar_to_haxe(&field.ty);
+        let haxe_name = to_camel_case(&field.name);
+        let getter_ffi = format!("flight_get_{}_{}", to_snake_case(ty), field.name);
+        let setter_ffi = format!("flight_set_{}_{}", to_snake_case(ty), field.name);
+
+        writeln!(output, "\tpublic var {haxe_name}(get, set):{haxe_ty};").unwrap();
+        writeln!(output).unwrap();
+        writeln!(output, "\t@:hlNative(\"{LIB_NAME}\", \"{getter_ffi}\")").unwrap();
+        writeln!(output, "\tfunction get_{haxe_name}():{haxe_ty};").unwrap();
+        writeln!(output).unwrap();
+        writeln!(output, "\t@:hlNative(\"{LIB_NAME}\", \"{setter_ffi}\")").unwrap();
+        writeln!(
+            output,
+            "\tfunction set_{haxe_name}(value:{haxe_ty}):{haxe_ty};"
+        )
+        .unwrap();
+    }
+    writeln!(output, "}}").unwrap();
     output
 }
 
@@ -154,6 +192,18 @@ fn collect_opaque_types(func: &ParsedFn, types: &mut BTreeSet<String>) {
             types.insert(ty);
         }
     }
+}
+
+fn to_snake_case(s: &str) -> String {
+    let mut out = String::new();
+    let chars: Vec<char> = s.chars().collect();
+    for (i, &c) in chars.iter().enumerate() {
+        if c.is_uppercase() && i > 0 && !chars[i - 1].is_uppercase() && chars[i - 1] != '_' {
+            out.push('_');
+        }
+        out.push(c.to_ascii_lowercase());
+    }
+    out
 }
 
 fn write_if_changed(path: &Path, content: &str) {
