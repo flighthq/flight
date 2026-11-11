@@ -113,13 +113,11 @@ fn main() {
     let crates_dir = manifest_dir.parent().unwrap();
     let out_dir = PathBuf::from(env::var("OUT_DIR").unwrap());
 
-    let mut all_output = String::new();
+    let mut all_output = String::from("use flight_sdk;\n\n");
     let mut boxed_types: BTreeSet<String> = BTreeSet::new();
     let mut seen_names: BTreeSet<String> = BTreeSet::new();
-    let mut used_crates: BTreeSet<String> = BTreeSet::new();
 
     for dir_name in SCAN_CRATES {
-        let crate_name = dir_name.replace('-', "_");
         let src_dir = crates_dir.join(dir_name).join("src");
         if !src_dir.exists() {
             continue;
@@ -138,7 +136,7 @@ fn main() {
             if seen_names.contains(&ffi_name) {
                 continue;
             }
-            if let Some((wrapper, boxed_ty)) = generate_ffi_wrapper(&crate_name, func) {
+            if let Some((wrapper, boxed_ty)) = generate_ffi_wrapper(func) {
                 writeln!(crate_output, "{wrapper}").unwrap();
                 seen_names.insert(ffi_name);
                 crate_used = true;
@@ -151,20 +149,8 @@ fn main() {
             writeln!(all_output, "// {dir_name}").unwrap();
             all_output.push_str(&crate_output);
             writeln!(all_output).unwrap();
-            used_crates.insert(crate_name);
         }
     }
-
-    // Prepend use statements for crates that actually produced FFI wrappers
-    let mut preamble = String::new();
-    writeln!(preamble, "use flight_sdk;").unwrap();
-    for crate_name in &used_crates {
-        if crate_name != "flight_sdk" {
-            writeln!(preamble, "use {crate_name};").unwrap();
-        }
-    }
-    writeln!(preamble).unwrap();
-    all_output.insert_str(0, &preamble);
 
     writeln!(all_output, "// free functions").unwrap();
     writeln!(
@@ -456,7 +442,7 @@ fn is_ffi_incompatible(ty: &str) -> bool {
         || SKIP_TYPES.iter().any(|s| ty.contains(s))
 }
 
-fn generate_ffi_wrapper(crate_name: &str, func: &ParsedFn) -> Option<(String, Option<String>)> {
+fn generate_ffi_wrapper(func: &ParsedFn) -> Option<(String, Option<String>)> {
     if SKIP_FN_PREFIXES.iter().any(|p| func.name.starts_with(p)) {
         return None;
     }
@@ -483,7 +469,7 @@ fn generate_ffi_wrapper(crate_name: &str, func: &ParsedFn) -> Option<(String, Op
 
     let ffi_name = format!("flight_{}", func.name);
     let call = format!(
-        "{crate_name}::{name}({args})",
+        "flight_sdk::{name}({args})",
         name = func.name,
         args = call_args.join(", ")
     );
