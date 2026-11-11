@@ -4,21 +4,122 @@ use std::fmt::Write as _;
 use std::fs;
 use std::path::{Path, PathBuf};
 
+const QUALIFIER: &str = "flight_sdk";
+
+const SCAN_CRATES: &[&str] = &[
+    "flight-abc",
+    "flight-adjustments",
+    "flight-animation",
+    "flight-audio",
+    "flight-binpack",
+    "flight-bitmap",
+    "flight-bitmapfont",
+    "flight-bitmapfont-formats",
+    "flight-camera",
+    "flight-camera-controls",
+    "flight-clip",
+    "flight-clock",
+    "flight-collision",
+    "flight-color",
+    "flight-compression",
+    "flight-easing",
+    "flight-effects",
+    "flight-encoding",
+    "flight-entity",
+    "flight-flow",
+    "flight-font",
+    "flight-font-formats",
+    "flight-geometry",
+    "flight-image",
+    "flight-image-codec",
+    "flight-input",
+    "flight-intl",
+    "flight-layout",
+    "flight-lighting",
+    "flight-log",
+    "flight-materials",
+    "flight-math",
+    "flight-meshgeometry",
+    "flight-motionpath",
+    "flight-movieclip",
+    "flight-node",
+    "flight-particles",
+    "flight-particles-formats",
+    "flight-particleemitter",
+    "flight-path",
+    "flight-path-boolean",
+    "flight-path-formats",
+    "flight-physics2d",
+    "flight-physics2d-abi",
+    "flight-physics3d",
+    "flight-physics3d-abi",
+    "flight-picking",
+    "flight-quadbatch",
+    "flight-render",
+    "flight-scene2d",
+    "flight-scene2d-formats",
+    "flight-scene3d",
+    "flight-scene3d-formats",
+    "flight-shading",
+    "flight-shape",
+    "flight-shape-formats",
+    "flight-signals",
+    "flight-skeleton2d",
+    "flight-skeleton2d-formats",
+    "flight-skeleton3d",
+    "flight-snapshot",
+    "flight-spatial",
+    "flight-spring",
+    "flight-spritesheet",
+    "flight-spritesheet-formats",
+    "flight-statechart",
+    "flight-text",
+    "flight-text-markup",
+    "flight-textbidi",
+    "flight-textsegment",
+    "flight-texture",
+    "flight-texture-formats",
+    "flight-textureatlas",
+    "flight-textureatlas-formats",
+    "flight-tilemap",
+    "flight-tilemap-formats",
+    "flight-timeline",
+    "flight-tween",
+    "flight-velocity",
+    "flight-video",
+    "flight-xml",
+];
+
+const SKIP_FN_PREFIXES: &[&str] = &["initialize_"];
+const SKIP_TYPES: &[&str] = &[
+    "AttachmentSkin2D",
+    "BidiClassKernel",
+    "BidiClassKernelExplanation",
+    "ClippingAttachment2D",
+    "Float32Array",
+    "Uint8Array",
+    "MarkupTagRegistry",
+    "PathMorphBuildResult",
+    "PointAttachment2D",
+    "Skeleton2DClippingAttachmentSlotRange",
+    "Skeleton2DGuardState",
+    "StrokePathGeometry",
+    "TextMarkupGuardState",
+    "Value",
+];
+
 fn main() {
     let manifest_dir = PathBuf::from(env::var("CARGO_MANIFEST_DIR").unwrap());
     let crates_dir = manifest_dir.parent().unwrap();
     let out_dir = PathBuf::from(env::var("OUT_DIR").unwrap());
 
-    let crates: &[(&str, &str)] = &[
-        ("flight_color", "flight-color"),
-        ("flight_geometry", "flight-geometry"),
-        ("flight_math", "flight-math"),
-    ];
-
     let mut all_output = String::new();
     let mut boxed_types: BTreeSet<String> = BTreeSet::new();
+    let mut seen_names: BTreeSet<String> = BTreeSet::new();
+    let mut used_crates: BTreeSet<String> = BTreeSet::new();
 
-    for &(rust_name, dir_name) in crates {
+    for dir_name in SCAN_CRATES {
+        let crate_name = dir_name.replace('-', "_");
         let src_dir = crates_dir.join(dir_name).join("src");
         if !src_dir.exists() {
             continue;
@@ -30,29 +131,53 @@ fn main() {
             continue;
         }
 
-        writeln!(all_output, "// {dir_name}").unwrap();
+        let mut crate_output = String::new();
+        let mut crate_used = false;
         for func in &fns {
-            if let Some((wrapper, boxed_ty)) = generate_ffi_wrapper(rust_name, func) {
-                writeln!(all_output, "{wrapper}").unwrap();
+            let ffi_name = format!("flight_{}", func.name);
+            if seen_names.contains(&ffi_name) {
+                continue;
+            }
+            if let Some((wrapper, boxed_ty)) = generate_ffi_wrapper(&crate_name, func) {
+                writeln!(crate_output, "{wrapper}").unwrap();
+                seen_names.insert(ffi_name);
+                crate_used = true;
                 if let Some(ty) = boxed_ty {
                     boxed_types.insert(ty);
                 }
             }
         }
-        writeln!(all_output).unwrap();
+        if crate_used {
+            writeln!(all_output, "// {dir_name}").unwrap();
+            all_output.push_str(&crate_output);
+            writeln!(all_output).unwrap();
+            used_crates.insert(crate_name);
+        }
     }
+
+    // Prepend use statements for crates that actually produced FFI wrappers
+    let mut preamble = String::new();
+    writeln!(preamble, "use flight_sdk;").unwrap();
+    for crate_name in &used_crates {
+        if crate_name != "flight_sdk" {
+            writeln!(preamble, "use {crate_name};").unwrap();
+        }
+    }
+    writeln!(preamble).unwrap();
+    all_output.insert_str(0, &preamble);
 
     writeln!(all_output, "// free functions").unwrap();
     writeln!(
         all_output,
-        "#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn ffi_free_string(ptr: *mut std::ffi::c_char) {{\n    if !ptr.is_null() {{\n        unsafe {{ drop(std::ffi::CString::from_raw(ptr)); }}\n    }}\n}}"
+        "#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn flight_free_string(ptr: *mut std::ffi::c_char) {{\n    if !ptr.is_null() {{\n        unsafe {{ drop(std::ffi::CString::from_raw(ptr)); }}\n    }}\n}}"
     )
     .unwrap();
     for qualified_ty in &boxed_types {
-        let snake = qualified_ty.replace("::", "_");
+        let type_name = qualified_ty.rsplit("::").next().unwrap_or(qualified_ty);
+        let snake = to_snake_case(type_name);
         writeln!(
             all_output,
-            "#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn ffi_free_{snake}(ptr: *mut {qualified_ty}) {{\n    if !ptr.is_null() {{\n        unsafe {{ drop(Box::from_raw(ptr)); }}\n    }}\n}}"
+            "#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn flight_free_{snake}(ptr: *mut {qualified_ty}) {{\n    if !ptr.is_null() {{\n        unsafe {{ drop(Box::from_raw(ptr)); }}\n    }}\n}}"
         )
         .unwrap();
     }
@@ -74,6 +199,16 @@ struct Param {
 }
 
 fn collect_pub_fns(src_dir: &Path) -> Vec<ParsedFn> {
+    let lib_path = src_dir.join("lib.rs");
+    if !lib_path.exists() {
+        return Vec::new();
+    }
+
+    let exported_names = collect_exported_names(&lib_path, src_dir);
+    if exported_names.is_empty() {
+        return Vec::new();
+    }
+
     let mut fns = Vec::new();
     let mut entries: Vec<_> = fs::read_dir(src_dir)
         .unwrap()
@@ -86,14 +221,87 @@ fn collect_pub_fns(src_dir: &Path) -> Vec<ParsedFn> {
     entries.sort_by_key(|e| e.file_name());
 
     for entry in entries {
-        let content = fs::read_to_string(entry.path()).unwrap();
-        // Skip contract.rs (re-exports only) and mod-only files
-        if entry.file_name().to_string_lossy() == "contract.rs" {
+        let fname = entry.file_name().to_string_lossy().to_string();
+        if fname == "contract.rs" || fname == "lib.rs" {
             continue;
         }
-        parse_pub_fns(&content, &mut fns);
+        let content = fs::read_to_string(entry.path()).unwrap();
+        let mut all_fns = Vec::new();
+        parse_pub_fns(&content, &mut all_fns);
+        for f in all_fns {
+            if exported_names.contains(&f.name) {
+                fns.push(f);
+            }
+        }
     }
     fns
+}
+
+fn collect_exported_names(lib_path: &Path, src_dir: &Path) -> BTreeSet<String> {
+    let content = fs::read_to_string(lib_path).unwrap();
+    let mut names = BTreeSet::new();
+
+    for line in content.lines() {
+        let line = line.trim();
+
+        // pub use contract::foo_bar; or pub use sugar::foo_bar;
+        if line.starts_with("pub use ") {
+            if let Some(rest) = line.strip_prefix("pub use ") {
+                let rest = rest.trim_end_matches(';').trim();
+                if rest.ends_with("::*") {
+                    // glob re-export: pub use contract::* — resolve the module
+                    let mod_path = rest.trim_end_matches("::*");
+                    // e.g. "contract" or "super::foo"
+                    let mod_name = mod_path.rsplit("::").next().unwrap_or(mod_path);
+                    let mod_file = src_dir.join(format!("{mod_name}.rs"));
+                    if mod_file.exists() {
+                        collect_glob_names(&mod_file, src_dir, &mut names);
+                    }
+                } else if let Some(name) = rest.rsplit("::").next() {
+                    // named re-export
+                    if name.chars().next().is_some_and(|c| c.is_lowercase()) {
+                        names.insert(name.to_string());
+                    }
+                }
+            }
+        }
+    }
+    names
+}
+
+fn collect_glob_names(file: &Path, src_dir: &Path, names: &mut BTreeSet<String>) {
+    let content = match fs::read_to_string(file) {
+        Ok(c) => c,
+        Err(_) => return,
+    };
+    for line in content.lines() {
+        let line = line.trim();
+        // pub use super::module_name::*;  (contract.rs pattern)
+        if line.starts_with("pub use super::") && line.ends_with("::*;") {
+            let inner = line
+                .strip_prefix("pub use super::")
+                .unwrap()
+                .strip_suffix("::*;")
+                .unwrap();
+            let mod_file = src_dir.join(format!("{inner}.rs"));
+            if mod_file.exists() {
+                let mod_content = fs::read_to_string(&mod_file).unwrap();
+                let mut mod_fns = Vec::new();
+                parse_pub_fns(&mod_content, &mut mod_fns);
+                for f in mod_fns {
+                    names.insert(f.name);
+                }
+            }
+        }
+        // pub use super::module_name::specific_fn;
+        if line.starts_with("pub use super::") && !line.ends_with("::*;") {
+            if let Some(name) = line.trim_end_matches(';').rsplit("::").next() {
+                if name.chars().next().is_some_and(|c| c.is_lowercase()) {
+                    names.insert(name.to_string());
+                }
+            }
+        }
+    }
 }
 
 fn parse_pub_fns(content: &str, out: &mut Vec<ParsedFn>) {
@@ -103,7 +311,6 @@ fn parse_pub_fns(content: &str, out: &mut Vec<ParsedFn>) {
     while i < lines.len() {
         let line = lines[i].trim();
 
-        // Track brace depth to skip functions inside impl/struct/mod blocks
         if !line.starts_with("pub fn ") || brace_depth > 0 {
             for c in line.chars() {
                 match c {
@@ -116,7 +323,6 @@ fn parse_pub_fns(content: &str, out: &mut Vec<ParsedFn>) {
             continue;
         }
 
-        // Collect the full signature (may span multiple lines until `{`)
         let mut sig = String::new();
         while i < lines.len() {
             let l = lines[i].trim();
@@ -143,27 +349,22 @@ fn parse_pub_fns(content: &str, out: &mut Vec<ParsedFn>) {
 }
 
 fn parse_fn_signature(sig: &str) -> Option<ParsedFn> {
-    // Extract: pub fn name(params) -> RetType {
     let sig = sig.trim();
     let after_pub_fn = sig.strip_prefix("pub fn ")?;
 
-    // Find the function name (stop at `<` for generics or `(` for params)
     let name_end = after_pub_fn.find(|c: char| c == '(' || c == '<')?;
     let name = after_pub_fn[..name_end].trim().to_string();
 
-    // Skip generic functions — they can't cross FFI
     if after_pub_fn.as_bytes().get(name_end) == Some(&b'<') {
         return None;
     }
 
-    // Extract params between the outermost ()
     let params_start = after_pub_fn.find('(')?;
     let params_end = find_matching_paren(after_pub_fn, params_start)?;
     let params_str = &after_pub_fn[params_start + 1..params_end];
 
     let params = parse_params(params_str)?;
 
-    // Extract return type
     let after_params = after_pub_fn[params_end + 1..].trim();
     let ret = if after_params.starts_with("->") {
         let ret_str = after_params[2..].trim();
@@ -205,7 +406,6 @@ fn parse_params(params_str: &str) -> Option<Vec<Param>> {
     }
 
     let mut params = Vec::new();
-    // Split on commas, respecting nested angle brackets and parens
     let mut depth = 0i32;
     let mut start = 0;
     let bytes = params_str.as_bytes();
@@ -225,7 +425,6 @@ fn parse_params(params_str: &str) -> Option<Vec<Param>> {
             _ => {}
         }
     }
-    // Last param
     if let Some(p) = parse_single_param(&params_str[start..]) {
         params.push(p);
     } else if !params_str[start..].trim().is_empty() {
@@ -246,22 +445,19 @@ fn parse_single_param(param: &str) -> Option<Param> {
     Some(Param { name, ty })
 }
 
-const SKIP_PREFIXES: &[&str] = &["initialize_"];
-const SKIP_TYPES: &[&str] = &["Float32Array"];
+fn is_ffi_incompatible(ty: &str) -> bool {
+    ty.contains("dyn ")
+        || ty.contains("Fn(")
+        || ty.contains("FnMut(")
+        || ty.contains("FnOnce(")
+        || ty.contains('<')
+        || ty.contains("::")
+        || ty.ends_with("Like")
+        || SKIP_TYPES.iter().any(|s| ty.contains(s))
+}
 
 fn generate_ffi_wrapper(crate_name: &str, func: &ParsedFn) -> Option<(String, Option<String>)> {
-    if SKIP_PREFIXES.iter().any(|p| func.name.starts_with(p)) {
-        return None;
-    }
-    let all_types = func
-        .params
-        .iter()
-        .map(|p| p.ty.as_str())
-        .chain(func.ret.as_deref());
-    if all_types
-        .clone()
-        .any(|ty| SKIP_TYPES.iter().any(|s| ty.contains(s)))
-    {
+    if SKIP_FN_PREFIXES.iter().any(|p| func.name.starts_with(p)) {
         return None;
     }
 
@@ -269,23 +465,23 @@ fn generate_ffi_wrapper(crate_name: &str, func: &ParsedFn) -> Option<(String, Op
     let mut call_args = Vec::new();
 
     for param in &func.params {
-        let (ffi_ty, call_expr) = map_param_to_ffi(crate_name, &param.name, &param.ty)?;
+        let (ffi_ty, call_expr) = map_param_to_ffi(&param.name, &param.ty)?;
         ffi_params.push(format!("{}: {ffi_ty}", param.name));
         call_args.push(call_expr);
     }
 
     let (ret_decl, call_wrap) = match &func.ret {
         None => (String::new(), FfiReturn::Void),
-        Some(ty) => map_return_to_ffi(crate_name, ty)?,
+        Some(ty) => map_return_to_ffi(ty)?,
     };
 
     let boxed_ty = if matches!(call_wrap, FfiReturn::BoxReturn) {
-        func.ret.as_ref().map(|ty| qualify_type(crate_name, ty))
+        func.ret.as_ref().map(|ty| qualify_type(ty))
     } else {
         None
     };
 
-    let ffi_name = format!("ffi_{crate_name}_{}", func.name);
+    let ffi_name = format!("flight_{}", func.name);
     let call = format!(
         "{crate_name}::{name}({args})",
         name = func.name,
@@ -324,73 +520,60 @@ enum FfiReturn {
 }
 
 const SCALARS: &[&str] = &[
-    "f32", "f64", "i32", "i64", "u8", "u16", "u32", "u64", "usize", "isize", "bool",
+    "f32", "f64", "i8", "i16", "i32", "i64", "u8", "u16", "u32", "u64", "usize", "isize", "bool",
 ];
 
 fn is_scalar(ty: &str) -> bool {
     SCALARS.contains(&ty)
 }
 
-fn qualify_type(crate_name: &str, ty: &str) -> String {
+fn to_snake_case(s: &str) -> String {
+    let mut out = String::new();
+    let chars: Vec<char> = s.chars().collect();
+    for (i, &c) in chars.iter().enumerate() {
+        if c.is_uppercase() && i > 0 && !chars[i - 1].is_uppercase() && chars[i - 1] != '_' {
+            out.push('_');
+        }
+        out.push(c.to_ascii_lowercase());
+    }
+    out
+}
+
+fn qualify_type(ty: &str) -> String {
     if is_scalar(ty) || ty.starts_with('[') || ty.starts_with('(') {
         ty.to_string()
     } else {
-        format!("{crate_name}::{ty}")
+        format!("{QUALIFIER}::{ty}")
     }
 }
 
-fn map_param_to_ffi(crate_name: &str, name: &str, ty: &str) -> Option<(String, String)> {
+fn map_param_to_ffi(name: &str, ty: &str) -> Option<(String, String)> {
     let ty = ty.trim();
 
-    // Skip unsupported types: dyn, &str, slices, closures
-    if ty.contains("dyn ") || ty.contains("Fn(") || ty.contains("FnMut(") || ty.contains("FnOnce(")
-    {
+    if is_ffi_incompatible(ty) {
         return None;
     }
 
     // &mut T -> *mut T
     if let Some(inner) = ty.strip_prefix("&mut ") {
         let inner = inner.trim();
-        if inner == "str" || inner.starts_with('[') {
+        if inner == "str" || inner.starts_with('[') || is_ffi_incompatible(inner) {
             return None;
         }
-        let qualified = qualify_type(crate_name, inner);
+        let qualified = qualify_type(inner);
         return Some((
             format!("*mut {qualified}"),
             format!("unsafe {{ &mut *{name} }}"),
         ));
     }
 
-    // Option<&T> -> *const T (null = None)
-    if ty.starts_with("Option<&") && ty.ends_with('>') {
-        let inner = ty.strip_prefix("Option<&")?.strip_suffix('>')?.trim();
-        if inner == "str" || inner.starts_with('[') {
-            return None;
-        }
-        let qualified = qualify_type(crate_name, inner);
-        return Some((
-            format!("*const {qualified}"),
-            format!("if {name}.is_null() {{ None }} else {{ unsafe {{ Some(&*{name}) }} }}"),
-        ));
-    }
-
-    // Option<&mut T> -> *mut T (null = None)
-    if ty.starts_with("Option<&mut ") && ty.ends_with('>') {
-        let inner = ty.strip_prefix("Option<&mut ")?.strip_suffix('>')?.trim();
-        let qualified = qualify_type(crate_name, inner);
-        return Some((
-            format!("*mut {qualified}"),
-            format!("if {name}.is_null() {{ None }} else {{ unsafe {{ Some(&mut *{name}) }} }}"),
-        ));
-    }
-
     // &T -> *const T
     if let Some(inner) = ty.strip_prefix('&') {
         let inner = inner.trim();
-        if inner == "str" || inner.starts_with('[') {
+        if inner == "str" || inner.starts_with('[') || is_ffi_incompatible(inner) {
             return None;
         }
-        let qualified = qualify_type(crate_name, inner);
+        let qualified = qualify_type(inner);
         return Some((
             format!("*const {qualified}"),
             format!("unsafe {{ &*{name} }}"),
@@ -410,19 +593,13 @@ fn map_param_to_ffi(crate_name: &str, name: &str, ty: &str) -> Option<(String, S
         return Some((ty.to_string(), name.to_string()));
     }
 
-    // Unknown type — skip
     None
 }
 
-fn map_return_to_ffi(crate_name: &str, ty: &str) -> Option<(String, FfiReturn)> {
+fn map_return_to_ffi(ty: &str) -> Option<(String, FfiReturn)> {
     let ty = ty.trim();
 
-    // Skip unsupported return types
-    if ty.contains("dyn ")
-        || ty.contains("Fn(")
-        || ty.starts_with("Option<")
-        || ty == "&'static str"
-    {
+    if ty.starts_with('&') || is_ffi_incompatible(ty) {
         return None;
     }
 
@@ -435,11 +612,9 @@ fn map_return_to_ffi(crate_name: &str, ty: &str) -> Option<(String, FfiReturn)> 
             FfiReturn::StringReturn,
         ));
     }
-    // Fixed-size array returns (like [f32; 20]) — skip for now
     if ty.starts_with('[') {
         return None;
     }
-    // Struct return — box it and return a qualified pointer
-    let qualified = qualify_type(crate_name, ty);
+    let qualified = qualify_type(ty);
     Some((format!(" -> *mut {qualified}"), FfiReturn::BoxReturn))
 }

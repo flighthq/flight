@@ -165,6 +165,7 @@ flight-scene3d-formats = { path = "crates/flight-scene3d-formats", version = "0.
 flight-scene3d-gl = { path = "crates/flight-scene3d-gl", version = "0.6.0" }
 flight-scene3d-resources = { path = "crates/flight-scene3d-resources", version = "0.6.0" }
 flight-scene3d-wgpu = { path = "crates/flight-scene3d-wgpu", version = "0.6.0" }
+flight-sdk = { path = "crates/flight-sdk", version = "0.6.0" }
 flight-shell = { path = "crates/flight-shell", version = "0.6.0" }
 flight-skeleton2d = { path = "crates/flight-skeleton2d", version = "0.6.0" }
 flight-snapshot = { path = "crates/flight-snapshot", version = "0.6.0" }
