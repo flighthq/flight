@@ -1,3 +1,4 @@
+mod dispatch;
 mod haxe_hl;
 mod parse;
 
@@ -29,6 +30,7 @@ fn main() {
     match target {
         "haxe-hl" => {
             haxe_hl::generate(&exports, &out_dir);
+            dispatch::generate(&exports, &out_dir);
             eprintln!(
                 "{total_fns} functions from {total_crates} crates → {}",
                 out_dir.display()
