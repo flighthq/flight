@@ -267,11 +267,17 @@ if (failed.length > 0 || problems.length > 0) {
   process.exit(1);
 }
 if (!dryRun && targetTag === 'latest' && published.length === 0) {
-  console.error(
-    '[publish] stable release published zero packages: nothing was published. ' +
-      'This is expected for a rerun of an already-complete release; otherwise the package version bump was missed.',
-  );
-  process.exit(1);
+  if (expectations.length > 0 && problems.length === 0) {
+    console.log(
+      '[publish] stable release published zero packages, but all packages are verified live — rerun of a complete release.',
+    );
+  } else {
+    console.error(
+      '[publish] stable release published zero packages: nothing was published. ' +
+        'This is expected for a rerun of an already-complete release; otherwise the package version bump was missed.',
+    );
+    process.exit(1);
+  }
 }
 
 // Returns a manifest clone with every internal @flighthq/* "*" range replaced by the sibling's exact
