@@ -89,6 +89,7 @@ flight-animation = { path = "crates/flight-animation", version = "0.6.0" }
 flight-compression = { path = "crates/flight-compression", version = "0.6.0" }
 flight-device = { path = "crates/flight-device", version = "0.6.0" }
 flight-entity = { path = "crates/flight-entity", version = "0.6.0" }
+flight-ffi = { path = "crates/flight-ffi" }
 flight-clock = { path = "crates/flight-clock", version = "0.6.0" }
 flight-connectivity = { path = "crates/flight-connectivity", version = "0.6.0" }
 flight-flow = { path = "crates/flight-flow", version = "0.6.0" }
