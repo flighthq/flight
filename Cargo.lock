@@ -503,6 +503,15 @@ name = "flight-entity"
 version = "0.6.0"
 
 [[package]]
+name = "flight-ffi"
+version = "0.6.0"
+dependencies = [
+ "flight-color",
+ "flight-geometry",
+ "flight-math",
+]
+
+[[package]]
 name = "flight-filesystem"
 version = "0.6.0"
 dependencies = [
