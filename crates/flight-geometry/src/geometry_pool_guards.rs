@@ -6,6 +6,7 @@ use std::cell::RefCell;
 use std::sync::Arc;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum GeometryPoolReleaseFunction {
     ReleaseMatrix,
     ReleaseMatrix3,

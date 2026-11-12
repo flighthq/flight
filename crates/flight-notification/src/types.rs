@@ -14,6 +14,7 @@ pub use flight_host::ProviderRef;
 // ── Enums ──
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum NotificationCancelReason {
     AlreadyCancelled,
     Ok,
@@ -21,6 +22,7 @@ pub enum NotificationCancelReason {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum NotificationCloseReason {
     AlreadyClosed,
     Ok,
@@ -28,6 +30,7 @@ pub enum NotificationCloseReason {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum NotificationDeliveryReason {
     Accepted,
     InvalidRequest,
@@ -36,6 +39,7 @@ pub enum NotificationDeliveryReason {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum NotificationDirection {
     Auto,
     Ltr,
@@ -43,12 +47,14 @@ pub enum NotificationDirection {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum NotificationEventReleaseReason {
     Ok,
     OperationFailed,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum NotificationLifecycleFailureOperation {
     Cancel,
     Close,
@@ -56,6 +62,7 @@ pub enum NotificationLifecycleFailureOperation {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum NotificationLifecycleReason {
     AlreadyDestroyed,
     Ok,
@@ -63,6 +70,7 @@ pub enum NotificationLifecycleReason {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum NotificationPermission {
     Default,
     Denied,
@@ -70,6 +78,7 @@ pub enum NotificationPermission {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum NotificationPermissionRequestReason {
     Denied,
     Dismissed,
@@ -78,12 +87,14 @@ pub enum NotificationPermissionRequestReason {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum NotificationSchedulePrecision {
     Exact,
     Inexact,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum NotificationScheduleReason {
     InvalidSchedule,
     OperationFailed,
@@ -92,6 +103,7 @@ pub enum NotificationScheduleReason {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum NotificationScheduleRepeat {
     Day,
     Hour,
@@ -102,12 +114,14 @@ pub enum NotificationScheduleRepeat {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum NotificationSubscriptionAttachReason {
     Ok,
     OperationFailed,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum NotificationSubscriptionDetachReason {
     NotAttached,
     Ok,
@@ -115,6 +129,7 @@ pub enum NotificationSubscriptionDetachReason {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum NotificationSubscriptionDisposeReason {
     AlreadyDisposed,
     Ok,

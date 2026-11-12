@@ -11,6 +11,7 @@ use flight_signals::Signal;
 
 /// The menu item kind (TS `MenuItemType`), a closed string union.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum MenuItemType {
     Normal,
     Separator,
@@ -23,6 +24,7 @@ pub enum MenuItemType {
 /// role carried by a template stays an open `MenuItemRole` string; this enum is the declared table
 /// of well-known values.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum WellKnownMenuItemRoleValue {
     Copy,
     Cut,

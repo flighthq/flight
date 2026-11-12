@@ -10,6 +10,7 @@ use flight_textureatlas::TextureAtlas;
 
 /// Playback direction (TS `SpritesheetAnimationDirection`).
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+#[repr(u32)]
 pub enum SpritesheetAnimationDirection {
     #[default]
     Forward,
@@ -20,6 +21,7 @@ pub enum SpritesheetAnimationDirection {
 
 /// Severity of a parse diagnostic (TS `SpritesheetParseDiagnosticSeverity`).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum SpritesheetParseDiagnosticSeverity {
     Error,
     Warning,
@@ -27,6 +29,7 @@ pub enum SpritesheetParseDiagnosticSeverity {
 
 /// Severity of a validation diagnostic (TS `SpritesheetValidationSeverity`).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum SpritesheetValidationSeverity {
     Error,
     Warning,

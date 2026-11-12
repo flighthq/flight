@@ -12,6 +12,7 @@ pub use flight_host::ProviderRef;
 
 /// Reported confidence of a sensor reading (TS `SensorAccuracy`).
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+#[repr(u32)]
 pub enum SensorAccuracy {
     High,
     Low,
@@ -22,6 +23,7 @@ pub enum SensorAccuracy {
 
 /// Current permission state for a gated sensor (TS `SensorsPermissionState`).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum SensorsPermissionState {
     Denied,
     Granted,
@@ -31,6 +33,7 @@ pub enum SensorsPermissionState {
 
 /// The optional gated-sensor selector accepted by `getSensorsPermissionState`.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum SensorsPermissionSensor {
     Magnetometer,
     Motion,

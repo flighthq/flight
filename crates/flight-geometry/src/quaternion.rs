@@ -5,6 +5,7 @@ use crate::Vector3;
 use flight_entity::{EntityRuntimeSlot, allocate_entity};
 
 #[derive(Debug, Clone, Copy, PartialEq)]
+#[repr(u32)]
 pub enum EulerOrder {
     XYZ,
     XZY,

@@ -16,6 +16,7 @@ pub const TEXTURE_ATLAS_FORMAT_KIND_TEXTURE_PACKER: &str = "texturePacker";
 pub type TextureAtlasFormatKind = Kind;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum TextureAtlasFrameTagDirection {
     Forward,
     PingPong,

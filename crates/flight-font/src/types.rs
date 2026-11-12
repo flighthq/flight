@@ -206,6 +206,7 @@ pub struct GlyphRasterizedBitmap {
 
 /// Closed operation keys of `HostGlyphRasterizerCapability`.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum GlyphRasterizerOperation {
     MeasureMetrics,
     Rasterize,

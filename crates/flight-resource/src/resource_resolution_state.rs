@@ -18,6 +18,7 @@
 /// variant names: `'Failed'`, `'Loading'`, `'Resolved'`, `'Unresolved'`.
 /// C++ `enum class` with no re-casing.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[repr(u32)]
 pub enum ResourceResolutionState {
     Failed,
     Loading,

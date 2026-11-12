@@ -4,6 +4,7 @@
 /// Which layer answers for a backend (TS inline `BackendExplanation['layer']`): `custom` or `host`
 /// backends, a host that exists but has not enabled one, or a host with no implementation.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum BackendExplanationLayer {
     Custom,
     Host,
@@ -13,6 +14,7 @@ pub enum BackendExplanationLayer {
 
 /// Whether the explained backend can run (TS inline `BackendExplanation['viability']`).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum BackendExplanationViability {
     Available,
     RuntimeApiUnavailable,

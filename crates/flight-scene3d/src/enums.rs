@@ -1,6 +1,7 @@
 //! flight-compiler: rust-only
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum BillboardMode {
     AxisY,
     Full,
@@ -8,6 +9,7 @@ pub enum BillboardMode {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum MeshDeformer {
     Morph,
     None,
@@ -15,6 +17,7 @@ pub enum MeshDeformer {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum Scene3DAnimationPath {
     Rotation,
     Scale,

@@ -37,6 +37,7 @@ pub enum IntlDateInput {
 
 /// A CLDR plural category (TS `Intl.LDMLPluralRule`), a closed string union.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum IntlPluralCategory {
     Zero,
     One,
@@ -49,6 +50,7 @@ pub enum IntlPluralCategory {
 /// A relative-time unit (TS `Intl.RelativeTimeFormatUnit`), a closed string union including both
 /// singular and plural spellings accepted by the platform API.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum IntlRelativeTimeUnit {
     Year,
     Years,

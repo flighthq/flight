@@ -24,6 +24,7 @@ pub struct FileDialogFilter {
 
 /// Whether a dialog handle names a file or a directory (TS `FileDialogHandle['kind']`).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum FileDialogHandleKind {
     File,
     Directory,
@@ -143,6 +144,7 @@ pub struct OpenImageDialogOptions {
 /// The camera a capture dialog prefers (TS `MediaCaptureDialogFacingMode`), matching the browser
 /// file-input capture hint.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum MediaCaptureDialogFacingMode {
     Environment,
     User,
@@ -241,6 +243,7 @@ pub struct PromptDialogOptions {
 
 /// A message dialog's severity (TS `MessageDialogKind`).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum MessageDialogKind {
     Info,
     Warning,

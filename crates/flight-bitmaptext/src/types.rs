@@ -15,6 +15,7 @@ pub const BITMAP_TEXT_KIND: &str = "BitmapText";
 
 /// Horizontal line alignment (TS `BitmapTextAlign`).
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+#[repr(u32)]
 pub enum BitmapTextAlign {
     Center,
     Justify,

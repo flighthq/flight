@@ -207,6 +207,7 @@ pub enum PathCommand {
 
 /// Path winding rule.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+#[repr(u32)]
 pub enum PathWinding {
     #[default]
     NonZero,
@@ -243,6 +244,7 @@ pub struct PathMesh {
 
 /// Stroke line cap style.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+#[repr(u32)]
 pub enum StrokeCap {
     #[default]
     Butt,
@@ -252,6 +254,7 @@ pub enum StrokeCap {
 
 /// Stroke line join style.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+#[repr(u32)]
 pub enum StrokeJoin {
     #[default]
     Miter,
@@ -285,6 +288,7 @@ pub struct PathMorph {
 
 /// Reason a path morph could not be created.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[repr(u32)]
 pub enum PathMorphCreationReason {
     Ok,
     WindingMismatch,
@@ -304,6 +308,7 @@ pub struct PathMorphCreationExplanation {
 
 /// Reason a stroke path tessellation failed.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[repr(u32)]
 pub enum StrokePathTessellationReason {
     Ok,
     InvalidStyle,

@@ -37,6 +37,7 @@ pub const SCENE_LIGHT_BLOCK_FLOATS: usize =
     SCENE_LIGHT_HEMISPHERE_OFFSET + SCENE_LIGHT_HEMISPHERE_STRIDE * MAX_FORWARD_LIGHTS;
 
 #[derive(Clone, Copy, Debug, Default, Eq, Hash, PartialEq)]
+#[repr(u32)]
 pub enum LightUnit {
     Candela,
     Lumen,
@@ -51,6 +52,7 @@ pub const LUX_LIGHT_UNIT: LightUnit = LightUnit::Lux;
 pub const UNITLESS_LIGHT_UNIT: LightUnit = LightUnit::Unitless;
 
 #[derive(Clone, Copy, Debug, Default, Eq, Hash, PartialEq)]
+#[repr(u32)]
 pub enum Scene3DForwardLightSelectionReason {
     SelectionPrepared,
     SelectionRequired,

@@ -24,6 +24,7 @@ pub const PHYSICS2D_WORLD_VERSION: u32 = 2;
 
 /// How a body participates in the simulation (TS `Physics2DBodyType`), a closed string union.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum Physics2DBodyType {
     Dynamic,
     Kinematic,
@@ -205,6 +206,7 @@ pub struct Physics2DSolverConfigOptions {
 
 /// Whether a step can run (TS `Physics2DStepExplanation['status']`).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum Physics2DStepStatus {
     InvalidStep,
     Ready,
@@ -399,6 +401,7 @@ pub struct Physics2DPulleyJoint {
 
 /// Which coordinate of a body a gear couples (TS `Physics2DGearCoordinateKind`).
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+#[repr(u32)]
 pub enum Physics2DGearCoordinateKind {
     #[default]
     Angular,
@@ -702,6 +705,7 @@ pub struct Physics2DShapeCastResult {
 
 /// Whether every collider kind generates contacts (TS `Physics2DCollisionExplanation['status']`).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum Physics2DCollisionStatus {
     MissingContactSupport,
     Ready,
@@ -716,6 +720,7 @@ pub struct Physics2DCollisionExplanation {
 
 /// Why one joint is or is not solved (TS `Physics2DJointResolutionStatus`).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum Physics2DJointResolutionStatus {
     BodiesMissing,
     BodyAMissing,
@@ -740,6 +745,7 @@ pub struct Physics2DJointResolution {
 
 /// Whether every joint is solved (TS `Physics2DJointResolutionExplanation['status']`).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum Physics2DJointResolutionExplanationStatus {
     Complete,
     UnresolvedJoints,
@@ -787,6 +793,7 @@ pub struct Physics2DGuardState {
 
 /// What a debug primitive draws (TS `Physics2DDebugFeature`), a closed string union.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum Physics2DDebugFeature {
     CenterOfMass,
     Collider,

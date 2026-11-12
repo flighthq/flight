@@ -154,6 +154,7 @@ pub enum TrayAnimationStartResult {
 
 /// TS `TrayAnimationStopResult`: the exact outcome union; failure arms carry a `TrayFailure`.
 #[derive(Clone, Debug)]
+#[repr(u32)]
 pub enum TrayAnimationStopResult {
     Stopped,
     AlreadyStopped,
@@ -171,6 +172,7 @@ pub enum TrayCreateCapabilityResult {
 
 /// Host construction target (TS `DesktopOsProfile`).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum DesktopOsProfile {
     Linux,
     MacOs,
@@ -179,6 +181,7 @@ pub enum DesktopOsProfile {
 
 /// The balloon icon kind (TS inline `TrayBalloonOptions['iconType']`).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum TrayBalloonIconType {
     None,
     Info,
@@ -188,6 +191,7 @@ pub enum TrayBalloonIconType {
 
 /// The interaction kind (TS inline `TrayInteractionEvent['type']`).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum TrayInteractionType {
     Click,
     DoubleClick,
@@ -196,6 +200,7 @@ pub enum TrayInteractionType {
 
 /// The balloon event kind (TS inline `TrayBalloonEvent['type']`).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum TrayBalloonEventType {
     Click,
     Close,
@@ -204,6 +209,7 @@ pub enum TrayBalloonEventType {
 
 /// The non-created outcomes of a create (TS `Exclude<TrayCreateCapabilityResult, created>['outcome']`).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum TrayCreateFailureOutcome {
     Cancelled,
     RuntimeApiUnavailable,

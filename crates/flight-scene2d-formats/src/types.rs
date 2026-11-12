@@ -527,12 +527,14 @@ pub struct SvgElementHandlerEntry {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum SvgGradientKind {
     Linear,
     Radial,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum SvgGradientUnits {
     ObjectBoundingBox,
     UserSpaceOnUse,

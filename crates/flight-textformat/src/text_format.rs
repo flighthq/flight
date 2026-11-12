@@ -5,6 +5,7 @@ use std::sync::Arc;
 use crate::FontVariation;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+#[repr(u32)]
 pub enum TextFormatAlign {
     Center,
     End,
@@ -15,6 +16,7 @@ pub enum TextFormatAlign {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+#[repr(u32)]
 pub enum TextFormatListMarker {
     Circle,
     Decimal,

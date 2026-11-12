@@ -57,6 +57,7 @@ pub struct SurfaceBase {
 /// The DOM 2D context settings (TS `CanvasRenderingContext2DSettings`). Every field is optional so
 /// omission stays distinct; `color_space` is the closed predefined color-space union.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum CanvasColorSpace {
     Srgb,
     DisplayP3,
@@ -134,6 +135,7 @@ pub struct HostCanvasCapability {
 
 /// The WebGL context-attribute preference (TS `WebGLPowerPreference`).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum WebGlPowerPreference {
     Default,
     HighPerformance,
@@ -202,6 +204,7 @@ pub type GpuTextureFormat = String;
 
 /// Alpha compositing of the swap-chain texture against the page (TS `GPUCanvasAlphaMode`).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum GpuCanvasAlphaMode {
     Opaque,
     Premultiplied,
@@ -209,6 +212,7 @@ pub enum GpuCanvasAlphaMode {
 
 /// The adapter preference for WebGPU device acquisition (TS `GPUPowerPreference`).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum GpuPowerPreference {
     HighPerformance,
     LowPower,
@@ -217,6 +221,7 @@ pub enum GpuPowerPreference {
 /// Who created a WGPU acquisition's handles (TS `'caller' | 'flight'`): `Flight` for handles created
 /// for Flight, `Caller` for exact borrowed handles.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum WgpuHostAcquisitionOwnership {
     Caller,
     Flight,

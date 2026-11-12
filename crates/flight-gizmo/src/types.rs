@@ -12,6 +12,7 @@ use flight_signals::Signal;
 
 /// The edge or center line used to align a set of bounds (TS `GizmoAlignment`).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum GizmoAlignment {
     Bottom,
     HorizontalCenter,
@@ -42,6 +43,7 @@ pub struct GizmoNode2DFeatures {
 
 /// Semantic identity of one interactive gizmo handle (TS `GizmoHandleKind`).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum GizmoHandleKind {
     Rotate,
     ScaleX,
@@ -54,6 +56,7 @@ pub enum GizmoHandleKind {
 
 /// Active gizmo tool, including the outline-only disabled state (TS `GizmoMode`).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum GizmoMode {
     None,
     Rotate,
@@ -63,6 +66,7 @@ pub enum GizmoMode {
 
 /// Pivot source used by rotate and scale modes (TS `GizmoPivot`).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum GizmoPivot {
     Center,
     Custom,
@@ -71,6 +75,7 @@ pub enum GizmoPivot {
 
 /// Coordinate system used for axis-constrained handles (TS `GizmoSpace`).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum GizmoSpace {
     Local,
     World,
@@ -78,6 +83,7 @@ pub enum GizmoSpace {
 
 /// A transform-producing mode; unlike `GizmoMode`, this cannot be disabled.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum GizmoTransformMode {
     Rotate,
     Scale,

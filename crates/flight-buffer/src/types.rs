@@ -24,6 +24,7 @@ pub struct ArrayBuffer {
 /// The exact view constructors used by the pinned Flight project. `Uint8ClampedArray` is present;
 /// BigInt and Float16 views are absent because the audited source does not use them.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum ArrayBufferViewKind {
     Uint8Array,
     Uint8ClampedArray,

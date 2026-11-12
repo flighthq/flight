@@ -30,6 +30,7 @@ pub const RENDER_TARGET_TEXTURE_SOURCE_KIND: &str = "renderTarget";
 
 /// Geometry accumulator selected by a node renderer (TS `BatchFormat`).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum BatchFormat {
     Quad,
     VertexStream,
@@ -38,6 +39,7 @@ pub enum BatchFormat {
 /// Whether prepare recomputes derived transforms or trusts invalidation (TS
 /// `Scene3DGraphSyncPolicy`).
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+#[repr(u32)]
 pub enum Scene3DGraphSyncPolicy {
     #[default]
     RefreshDerivedState,
@@ -75,6 +77,7 @@ pub trait RenderState: Entity + Sized + 'static {
 /// The backend family a render state belongs to, selecting backend-specific diagnostics (TS: the
 /// structural checks on the state's `gl`, `device` or `element` member).
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)]
+#[repr(u32)]
 pub enum RenderStateBackend {
     #[default]
     Canvas,
@@ -280,6 +283,7 @@ pub struct RenderRegistriesMiss {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum RenderRegistriesMissStatus {
     Complete,
     MissesRecorded,
@@ -320,6 +324,7 @@ pub struct CatalogEntry {
 pub type SceneCoverageCatalog = Vec<CatalogEntry>;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum SceneCoverage {
     FallbackRemediable,
     FallbackUnavailable,
@@ -359,6 +364,7 @@ pub struct Scene3DPipelineCoverageExplanation {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum Scene2DRenderBlankReason {
     NoRenderer,
     NotPrepared,
@@ -378,6 +384,7 @@ pub struct Scene2DRenderExplanation {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum RenderTargetFormat {
     Rgba8,
     Rgba16F,
@@ -385,12 +392,14 @@ pub enum RenderTargetFormat {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum RenderTargetFormatPolicy {
     Preferred,
     Required,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum RenderTargetDepth {
     None,
     DepthStencil,
@@ -410,6 +419,7 @@ pub struct RenderTargetAxes {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum RenderTargetAxis {
     Width,
     Height,
@@ -863,6 +873,7 @@ flight_entity::impl_entity!(RenderQueue);
 /// Whether a texture's source kind has a registered resolver (TS `TextureResolutionStatus`). One
 /// definition shared by every backend (D8).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum TextureResolutionStatus {
     MissingKind,
     MissingResolver,

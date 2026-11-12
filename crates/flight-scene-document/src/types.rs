@@ -96,6 +96,7 @@ pub enum FlightDocumentScene {
 
 /// Which scene dimension a materialization or explanation targets (TS `'Scene2D' | 'Scene3D'`).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum FlightDocumentSceneDimension {
     Scene2D,
     Scene3D,
@@ -158,6 +159,7 @@ pub struct FlightDocumentScene3DMaterialization {
 
 /// The node property an interactive state may set (TS `NodeInteractiveStateProperty`).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum NodeInteractiveStateProperty {
     Alpha,
     ScaleX,
@@ -315,6 +317,7 @@ pub struct FlightDocumentNodeSchema {
 /// The stable refusal identities shared by text parsing, logical validation, resource resolution and
 /// scene materialization (TS `FlightDocumentRefusalReason`), a closed string table.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum FlightDocumentRefusalReason {
     AliasUnsupported,
     AnchorUnsupported,
@@ -542,6 +545,7 @@ pub struct NodeInteractiveStateExtensionRuntime {
 /// Why a live binding refused a phase (TS `NodeInteractiveStateRefusalReason`), a closed string
 /// table.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum NodeInteractiveStateRefusalReason {
     ExtensionCreationFailed,
     ExtensionKindUnregistered,

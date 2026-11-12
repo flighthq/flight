@@ -7,6 +7,7 @@ use crate::pack_rectangles::{
 
 /// The reason a rectangle could not be placed.
 #[derive(Debug, Clone, Copy, PartialEq)]
+#[repr(u32)]
 pub enum UnpackedRectangleReason {
     /// The rectangle exceeds the usable region in both orientations.
     Oversized,

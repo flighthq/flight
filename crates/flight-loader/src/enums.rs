@@ -1,6 +1,7 @@
 //! flight-compiler: rust-only
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum ResourceLoadItemStatus {
     Cancelled,
     Failed,
@@ -11,6 +12,7 @@ pub enum ResourceLoadItemStatus {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum ResourceLoadReportStatus {
     Cancelled,
     Failed,
@@ -19,12 +21,14 @@ pub enum ResourceLoadReportStatus {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum ResourceLoaderErrorPolicy {
     Continue,
     FailFast,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum ResourceLoaderRetryBackoff {
     Exponential,
     Linear,

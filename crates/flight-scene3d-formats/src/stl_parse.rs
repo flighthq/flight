@@ -49,6 +49,7 @@ pub struct StlImportOptions {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum StlNormalPolicy {
     FileNormals,
     RecomputeFromVertices,

@@ -20,6 +20,7 @@ pub const TILEMAP_FORMAT_KIND_TILED_TSX: &str = "tiled.tsx";
 pub type TilemapFormatKind = Kind;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum TiledCompression {
     Gzip,
     Zlib,
@@ -35,12 +36,14 @@ pub enum TiledPropertyValue {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum TiledLayerDataFailure {
     CompressedWithoutInflate,
     InflateFailed,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum TiledOrientation {
     Orthogonal,
     Isometric,
@@ -49,6 +52,7 @@ pub enum TiledOrientation {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum TiledRenderOrder {
     RightDown,
     RightUp,
@@ -57,18 +61,21 @@ pub enum TiledRenderOrder {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum TiledStaggerAxis {
     X,
     Y,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum TiledStaggerIndex {
     Even,
     Odd,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum TiledObjectAlignment {
     Unspecified,
     TopLeft,
@@ -83,6 +90,7 @@ pub enum TiledObjectAlignment {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum TiledPropertyType {
     String,
     Int,

@@ -4,6 +4,7 @@
 pub type NetMethod = String;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum NetCredentials {
     Omit,
     SameOrigin,
@@ -16,6 +17,7 @@ pub enum NetGuardOperation {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum NetGuardReason {
     BodyOnGetOrHead,
     NegativeTimeout,
@@ -23,12 +25,14 @@ pub enum NetGuardReason {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum NetProgressPhase {
     Upload,
     Download,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum NetRedirect {
     Follow,
     Error,
@@ -36,6 +40,7 @@ pub enum NetRedirect {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum NetResponseExplanationReason {
     Aborted,
     DecodeFailure,
@@ -44,6 +49,7 @@ pub enum NetResponseExplanationReason {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum NetResponseType {
     Text,
     Json,

@@ -42,6 +42,7 @@ pub struct LibgdxActiveRangeValue {
 
 /// The spawn shape (TS `shape: 'point' | 'line' | 'square' | 'ellipse'`).
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+#[repr(u32)]
 pub enum LibgdxSpawnShape {
     #[default]
     Point,
@@ -52,6 +53,7 @@ pub enum LibgdxSpawnShape {
 
 /// Which edge of the spawn shape emits (TS `side: 'both' | 'top' | 'bottom'`).
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+#[repr(u32)]
 pub enum LibgdxSpawnSide {
     #[default]
     Both,

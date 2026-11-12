@@ -7,6 +7,7 @@ pub type SpatialObjectId = i32;
 
 /// The mode a spatial index currently holds an object in.
 #[derive(Debug, Clone, Copy, PartialEq)]
+#[repr(u32)]
 pub enum SpatialIndexingMode {
     Absent,
     Cells,
@@ -16,6 +17,7 @@ pub enum SpatialIndexingMode {
 
 /// The operation that triggered a spatial indexing notice.
 #[derive(Debug, Clone, Copy, PartialEq)]
+#[repr(u32)]
 pub enum SpatialIndexingOperation {
     Insert,
     Update,
@@ -24,6 +26,7 @@ pub enum SpatialIndexingOperation {
 
 /// Why bounds were declined by the spatial index.
 #[derive(Debug, Clone, Copy, PartialEq)]
+#[repr(u32)]
 pub enum SpatialDeclineReason {
     InvertedBounds,
     NonFiniteBounds,
@@ -31,6 +34,7 @@ pub enum SpatialDeclineReason {
 
 /// Why a spatial indexing notice was raised. Superset of SpatialDeclineReason.
 #[derive(Debug, Clone, Copy, PartialEq)]
+#[repr(u32)]
 pub enum SpatialIndexingReason {
     InvalidCellSize,
     InvertedBounds,

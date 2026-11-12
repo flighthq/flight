@@ -13,6 +13,7 @@ use flight_notification::HostNotificationPermissionCapability;
 pub type PermissionName = String;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum PermissionState {
     Denied,
     Granted,
@@ -20,6 +21,7 @@ pub enum PermissionState {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum PermissionQueryFailureReason {
     OperationFailed,
     RuntimeUnavailable,
@@ -28,6 +30,7 @@ pub enum PermissionQueryFailureReason {
 
 /// The flattened reason field of the TS `PermissionQueryOutcome` union.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum PermissionQueryReason {
     BestEffort,
     Ok,
@@ -43,6 +46,7 @@ pub struct PermissionQueryOutcome {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum PermissionRequestFailureReason {
     NoRequestRoute,
     OperationFailed,
@@ -53,6 +57,7 @@ pub enum PermissionRequestFailureReason {
 
 /// The flattened reason field of the TS `PermissionRequestOutcome` union.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum PermissionRequestReason {
     BestEffort,
     CleanupFailed,
@@ -73,6 +78,7 @@ pub struct PermissionRequestOutcome {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum StoragePersistenceOutcomeReason {
     BestEffort,
     OperationFailed,

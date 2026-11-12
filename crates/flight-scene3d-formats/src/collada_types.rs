@@ -105,6 +105,7 @@ pub struct ColladaLightEntry {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum ColladaLightKind {
     Ambient,
     Directional,
@@ -118,6 +119,7 @@ pub struct ColladaMorphEntry {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum ColladaMorphMethod {
     Relative,
     Normalized,
@@ -178,6 +180,7 @@ pub struct ColladaStringArrayEntry {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum ColladaUpAxis {
     XUp,
     YUp,

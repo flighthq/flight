@@ -43,6 +43,7 @@ pub const TEXT_FEATURE_TABULAR_FIGURES: &str = "tnum";
 
 /// Text direction (TS `TextDirection` and its `TextDirection*` constants).
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)]
+#[repr(u32)]
 pub enum TextDirection {
     #[default]
     LeftToRight,
@@ -52,6 +53,7 @@ pub enum TextDirection {
 
 /// Every operation name on the host shaper (TS `TextShaperOperation = keyof HostTextShaperCapability`).
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+#[repr(u32)]
 pub enum TextShaperOperation {
     GetCodePointForGlyph,
     GetFontMetrics,

@@ -23,6 +23,7 @@ pub type Physics3DAbiObjectId = u32;
 
 /// A world's availability (TS `Physics3DAbiWorldStatus`).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum Physics3DAbiWorldStatus {
     Busy,
     Ready,
@@ -32,6 +33,7 @@ pub enum Physics3DAbiWorldStatus {
 /// The outcome of applying a command stream (TS `Physics3DAbiExecutionStatus`). Application is
 /// deliberately partial: every command before the reported one committed.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum Physics3DAbiExecutionStatus {
     BusyWorld,
     Complete,
@@ -82,6 +84,7 @@ pub struct Physics3DAbiBodyBuffer {
 
 /// Which contacts a contact read publishes (TS `Physics3DAbiContactSelection`).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum Physics3DAbiContactSelection {
     All,
     Began,
@@ -122,6 +125,7 @@ pub struct Physics3DAbiContactHooks {
 
 /// The outcome of a step (TS `Physics3DAbiStepStatus`).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum Physics3DAbiStepStatus {
     BusyWorld,
     Complete,

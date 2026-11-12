@@ -17,6 +17,7 @@ pub type Accelerator = String;
 
 /// Why an accelerator failed to parse (TS `AcceleratorParseErrorReason`).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum AcceleratorParseErrorReason {
     DuplicateModifier,
     Empty,
@@ -34,6 +35,7 @@ pub struct AcceleratorParseError {
 
 /// A canonical accelerator modifier (TS `ShortcutModifier`).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum ShortcutModifier {
     Alt,
     CommandOrControl,
@@ -45,6 +47,7 @@ pub enum ShortcutModifier {
 
 /// A canonical accelerator key token (TS `ShortcutKeyName`).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum ShortcutKeyName {
     Digit0,
     Digit1,
@@ -170,6 +173,7 @@ pub enum ShortcutKeyName {
 /// let _ = ShortcutDigitKeyName::A;
 /// ```
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum ShortcutDigitKeyName {
     Digit0,
     Digit1,
@@ -191,6 +195,7 @@ pub enum ShortcutDigitKeyName {
 /// let _ = ShortcutEditingKeyName::Digit0;
 /// ```
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum ShortcutEditingKeyName {
     Backspace,
     Delete,
@@ -209,6 +214,7 @@ pub enum ShortcutEditingKeyName {
 /// let _ = ShortcutFunctionKeyName::A;
 /// ```
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum ShortcutFunctionKeyName {
     F1,
     F2,
@@ -244,6 +250,7 @@ pub enum ShortcutFunctionKeyName {
 /// let _ = ShortcutLetterKeyName::F1;
 /// ```
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum ShortcutLetterKeyName {
     A,
     B,
@@ -281,6 +288,7 @@ pub enum ShortcutLetterKeyName {
 /// let _ = ShortcutLockKeyName::A;
 /// ```
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum ShortcutLockKeyName {
     CapsLock,
     NumLock,
@@ -296,6 +304,7 @@ pub enum ShortcutLockKeyName {
 /// let _ = ShortcutMediaKeyName::A;
 /// ```
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum ShortcutMediaKeyName {
     MediaNextTrack,
     MediaPlayPause,
@@ -314,6 +323,7 @@ pub enum ShortcutMediaKeyName {
 /// let _ = ShortcutNavigationKeyName::A;
 /// ```
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum ShortcutNavigationKeyName {
     ArrowDown,
     ArrowLeft,
@@ -333,6 +343,7 @@ pub enum ShortcutNavigationKeyName {
 /// let _ = ShortcutNumpadKeyName::Digit0;
 /// ```
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum ShortcutNumpadKeyName {
     Numpad0,
     Numpad1,
@@ -360,6 +371,7 @@ pub enum ShortcutNumpadKeyName {
 /// let _ = ShortcutPunctuationKeyName::A;
 /// ```
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum ShortcutPunctuationKeyName {
     Backquote,
     Backslash,
@@ -385,6 +397,7 @@ pub struct ParsedAccelerator {
 
 /// The reason field of `CreateGlobalShortcutOutcome`.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum CreateGlobalShortcutReason {
     Created,
     Unparseable,
@@ -411,6 +424,7 @@ pub enum CreateGlobalShortcutOutcome {
 
 /// The reason field of `GlobalShortcutAttachOutcome`.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum GlobalShortcutAttachReason {
     AlreadyAttached,
     AlreadyRegistered,
@@ -428,6 +442,7 @@ pub struct GlobalShortcutAttachOutcome {
 
 /// The reason field of `GlobalShortcutDetachOutcome`.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum GlobalShortcutDetachReason {
     Detached,
     NotAttached,
@@ -442,6 +457,7 @@ pub struct GlobalShortcutDetachOutcome {
 
 /// The reason field of `GlobalShortcutQueryOutcome`.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum GlobalShortcutQueryReason {
     NotRegistered,
     QueryProviderFailed,
@@ -480,6 +496,7 @@ pub struct ShortcutTriggerSubscription {
 
 /// The reason field of `ShortcutTriggerSubscribeOutcome`.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum ShortcutTriggerSubscribeReason {
     Refused,
     Subscribed,
@@ -502,6 +519,7 @@ pub enum ShortcutTriggerSubscribeOutcome {
 
 /// The reason field of `ShortcutTriggerUnsubscribeOutcome`.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum ShortcutTriggerUnsubscribeReason {
     UnknownSubscription,
     Unsubscribed,

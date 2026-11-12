@@ -15,6 +15,7 @@ pub struct RichTextContent {
 }
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)]
+#[repr(u32)]
 pub enum TextAutoSize {
     Center,
     Left,
@@ -32,6 +33,7 @@ pub struct TextBoundsSpec {
 }
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)]
+#[repr(u32)]
 pub enum TextJustification {
     InterCharacter,
     #[default]
@@ -116,6 +118,7 @@ pub struct TextSelectionRectangle {
 }
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)]
+#[repr(u32)]
 pub enum TextVerticalAlign {
     Bottom,
     Middle,

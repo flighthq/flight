@@ -48,6 +48,7 @@ flight_scene2d::impl_node2d!(MovieClip);
 /// Authored SpritesheetAnimation fields a TimelineSource cannot carry (TS
 /// `SpritesheetTimelineSourceUnsupportedField`), a closed string union.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum SpritesheetTimelineSourceUnsupportedField {
     FrameDurations,
     RepeatCount,

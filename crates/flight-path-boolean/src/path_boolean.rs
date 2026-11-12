@@ -18,6 +18,7 @@ pub struct PathBooleanOptions {
 
 /// The kind of boolean operation that was attempted.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[repr(u32)]
 pub enum PathBooleanExplanationOperation {
     Offset,
     Simplify,
@@ -25,6 +26,7 @@ pub enum PathBooleanExplanationOperation {
 
 /// The reason the operation produced a degenerate or empty result.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[repr(u32)]
 pub enum PathBooleanExplanationReason {
     CollapsedOrDegenerate,
     EmptyInput,
@@ -41,6 +43,7 @@ pub struct PathBooleanExplanation {
 
 /// Join style for the convex side of offset path corners.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[repr(u32)]
 pub enum PathOffsetJoin {
     Bevel,
     Miter,
@@ -50,6 +53,7 @@ pub enum PathOffsetJoin {
 
 /// End cap style for open path terminals.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[repr(u32)]
 pub enum PathOffsetEnd {
     Butt,
     Round,

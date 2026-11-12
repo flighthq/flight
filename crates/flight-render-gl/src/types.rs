@@ -49,6 +49,7 @@ pub struct GlCapabilities {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum GlCullFaceKind {
     Back,
     Front,
@@ -56,6 +57,7 @@ pub enum GlCullFaceKind {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum GlDepthFuncKind {
     Always,
     Equal,
@@ -68,6 +70,7 @@ pub enum GlDepthFuncKind {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum GlFramebufferStatusKind {
     Complete,
     IncompleteAttachment,
@@ -79,6 +82,7 @@ pub enum GlFramebufferStatusKind {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum GlTextureFilterKind {
     Linear,
     LinearMipmapLinear,
@@ -89,6 +93,7 @@ pub enum GlTextureFilterKind {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum GlTextureWrapKind {
     ClampToEdge,
     MirroredRepeat,
@@ -96,6 +101,7 @@ pub enum GlTextureWrapKind {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum GlTextureInternalFormat {
     R8,
     R16F,
@@ -288,6 +294,7 @@ pub struct GlShapeMeshResources {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum GlBlendFactor {
     DstColor,
     One,
@@ -297,6 +304,7 @@ pub enum GlBlendFactor {
 }
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+#[repr(u32)]
 pub enum GlBlendEquation {
     #[default]
     FuncAdd,
@@ -693,6 +701,7 @@ pub struct GlRenderStateRuntime {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum GlClipForm {
     Rect,
     Contour,
@@ -815,6 +824,7 @@ pub struct GlRenderViewResources {
 }
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+#[repr(u32)]
 pub enum GlRenderTextureStatus {
     Ready,
     Released,

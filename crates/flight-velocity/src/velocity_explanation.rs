@@ -2,6 +2,7 @@
 
 /// The reason for a velocity explanation result.
 #[derive(Debug, Clone, Copy, PartialEq)]
+#[repr(u32)]
 pub enum VelocityReason {
     NoSample,
     Stale,

@@ -15,6 +15,7 @@ use flight_stream::{ReadableStream, WritableStream};
 /// Read through `get_socket_ready_state`; driven by the backend through the event sink plus the
 /// explicit close command.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum SocketReadyState {
     Connecting,
     Open,
@@ -159,6 +160,7 @@ pub struct SocketSignals {
 /// The deterministic preflight reason a send returned false (TS `SocketSendFailureExplanation`'s
 /// discriminant), a closed string union.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum SocketSendFailureReason {
     Disposed,
     NoConnection,
@@ -183,6 +185,7 @@ pub type SocketGuard = Arc<dyn Fn(&SocketGuardNotice) + Send + Sync>;
 /// The lifecycle function that emitted a guard notice (TS `SocketGuardNotice.operation`), a closed
 /// string union.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum SocketGuardOperation {
     CreateSocket,
     CloseSocket,
@@ -192,6 +195,7 @@ pub enum SocketGuardOperation {
 
 /// The reason a guard notice was emitted (TS `SocketGuardNotice.reason`), a closed string union.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum SocketGuardReason {
     NoConnection,
     Disposed,

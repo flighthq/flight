@@ -5,6 +5,7 @@ use std::cmp::Ordering;
 
 /// The heuristic used by the MaxRects bin packing algorithm.
 #[derive(Debug, Clone, Copy, PartialEq, Default)]
+#[repr(u32)]
 pub enum BinPackHeuristic {
     #[default]
     BestShortSideFit,

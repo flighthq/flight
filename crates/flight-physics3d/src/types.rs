@@ -18,6 +18,7 @@ pub type Physics3DJointRef = Ref<dyn Physics3DJoint>;
 pub type RigidBody3DRef = Ref<RigidBody3D>;
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+#[repr(u32)]
 pub enum Physics3DBodyType {
     #[default]
     Dynamic,
@@ -277,6 +278,7 @@ pub struct Physics3DRotationalCcdEnvelope {
 }
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+#[repr(u32)]
 pub enum Physics3DCollisionStatus {
     MissingSupport,
     #[default]
@@ -284,6 +286,7 @@ pub enum Physics3DCollisionStatus {
 }
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+#[repr(u32)]
 pub enum Physics3DStepStatus {
     InvalidStep,
     #[default]
@@ -291,6 +294,7 @@ pub enum Physics3DStepStatus {
 }
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+#[repr(u32)]
 pub enum Physics3DJointStatus {
     InvalidBodies,
     #[default]
@@ -722,6 +726,7 @@ pub struct Physics3DShapeCastResult {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum Physics3DDebugFeature {
     CenterOfMass,
     Collider,

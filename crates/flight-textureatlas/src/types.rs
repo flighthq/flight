@@ -9,6 +9,7 @@ use flight_texture::Texture2D;
 /// The cardinal quarter-turn a packer applied to a region (TS `TextureAtlasRotation`). The one enum
 /// is both the rotation flag and its direction, so the two cannot disagree.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+#[repr(i32)]
 pub enum TextureAtlasRotation {
     Counterclockwise90 = -1,
     #[default]
@@ -19,6 +20,7 @@ pub enum TextureAtlasRotation {
 /// Why `get_texture_atlas_region_texture` can or cannot mint a region view (TS
 /// `TextureAtlasRegionTextureStatus`).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum TextureAtlasRegionTextureStatus {
     MissingRegion,
     MissingTexture,

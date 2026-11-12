@@ -182,6 +182,7 @@ pub struct Scene2DResourceCoverageExplanation {
 
 /// Operation that produced an expected resource sentinel.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum Scene2DResourceFailureOperation {
     CreateScene2DDocumentFromBytes,
     LoadScene2DAudioResources,
@@ -192,6 +193,7 @@ pub enum Scene2DResourceFailureOperation {
 
 /// Stable reason for an expected resource sentinel.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum Scene2DResourceFailureReason {
     AudioResourcesUnresolved,
     DocumentFetchFailed,

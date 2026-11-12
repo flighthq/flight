@@ -64,6 +64,7 @@ pub type CaptureBaseline = Record<CaptureColumnBaseline>;
 /// The string-valued fields of a column that a get/set-by-name accessor can carry. A closed union
 /// rather than the column's full key set, because the provenance members are records.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum CaptureBaselineField {
     Fingerprint,
     Sha256,
@@ -71,6 +72,7 @@ pub enum CaptureBaselineField {
 
 /// Which of a column's independently-written values a provenance record describes.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum CaptureBaselineProvenanceField {
     Fingerprint,
     Sha256,

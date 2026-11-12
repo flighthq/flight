@@ -49,6 +49,7 @@ pub type EntityConstruction<T> = T;
 /// Which slot a guarded direct write landed on: the entity's runtime slot,
 /// or an EntityRuntime's binding slot.
 #[derive(Clone, Copy, Debug, PartialEq)]
+#[repr(u32)]
 pub enum EntityRuntimeWriteSlot {
     BindingSlot,
     RuntimeSlot,

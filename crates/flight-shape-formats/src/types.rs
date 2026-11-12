@@ -8,6 +8,7 @@ use flight_texture::contract::Texture;
 /// Positional validation types shared by every retained-shape command codec (TS
 /// `ShapeCommandSchemaArgumentType`).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum ShapeCommandSchemaArgumentType {
     Boolean,
     MatrixOrNull,

@@ -36,6 +36,7 @@ pub struct SpineTintKeyframe {
 
 /// The Spine blend mode (TS `SpineBlendMode`, a closed string union).
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+#[repr(u32)]
 pub enum SpineBlendMode {
     #[default]
     Normal,
@@ -46,6 +47,7 @@ pub enum SpineBlendMode {
 
 /// The Spine spawn shape (TS `spawnShape: 'point' | 'ellipse' | 'line'`).
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+#[repr(u32)]
 pub enum SpineSpawnShape {
     #[default]
     Point,

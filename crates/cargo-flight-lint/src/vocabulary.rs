@@ -7,6 +7,7 @@ use std::collections::HashSet;
 use syn::{GenericArgument, PathArguments, ReturnType, TraitBoundModifier, Type, TypeParamBound};
 
 #[derive(Clone, Copy, PartialEq)]
+#[repr(u32)]
 pub enum Status {
     /// In use in user-approved code (flight-geometry) or ruled on.
     Established,

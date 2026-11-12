@@ -40,6 +40,7 @@ use crate::input_binding::InputManagerRuntime;
 
 /// The gamepad axis semantic name (TS `GamepadAxisKind`), a closed string union.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum GamepadAxisKind {
     StickLeftX,
     StickLeftY,
@@ -49,6 +50,7 @@ pub enum GamepadAxisKind {
 
 /// The gamepad button semantic name (TS `GamepadButtonKind`), a closed string union.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum GamepadButtonKind {
     ButtonEast,
     ButtonNorth,
@@ -73,6 +75,7 @@ pub enum GamepadButtonKind {
 /// The gamepad layout convention (TS `GamepadMapping`). `Unspecified` is the source's empty
 /// string.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+#[repr(u32)]
 pub enum GamepadMapping {
     Standard,
     Raw,
@@ -82,6 +85,7 @@ pub enum GamepadMapping {
 
 /// How a wheel delta is expressed (TS `MouseWheelMode`).
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+#[repr(u32)]
 pub enum MouseWheelMode {
     Lines,
     Pages,
@@ -92,6 +96,7 @@ pub enum MouseWheelMode {
 
 /// The pointer device family (TS `PointerType`).
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+#[repr(u32)]
 pub enum PointerType {
     Mouse,
     Pen,
@@ -205,6 +210,7 @@ pub struct GamepadStickOutput {
 
 /// The reason arm of a pointer-lock exit outcome (TS `InputPointerLockExitOutcome['reason']`).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum InputPointerLockExitReason {
     Ok,
     ApiUnavailable,
@@ -219,6 +225,7 @@ pub struct InputPointerLockExitOutcome {
 
 /// The reason arm of a pointer-lock request outcome (TS `InputPointerLockRequestOutcome['reason']`).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum InputPointerLockRequestReason {
     Ok,
     ApiUnavailable,

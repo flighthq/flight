@@ -33,6 +33,7 @@ pub struct WgpuCanvasFrame {
 
 /// Why a native acquisition produced no frame (wgpu's surface errors, D17).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum WgpuCanvasFrameError {
     Lost,
     Other,

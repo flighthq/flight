@@ -20,6 +20,7 @@ pub enum StorageBatchMutationOutcome<F> {
 }
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+#[repr(u32)]
 pub enum StorageClearFailureReason {
     ClearFailed,
     QuotaExceeded,
@@ -28,6 +29,7 @@ pub enum StorageClearFailureReason {
 }
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+#[repr(u32)]
 pub enum StorageClearNamespaceFailureReason {
     PersistenceInvalid,
     QuotaExceeded,
@@ -45,6 +47,7 @@ pub enum StorageFallbackOutcome<V> {
 }
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+#[repr(u32)]
 pub enum StorageGetItemFailureReason {
     PersistenceInvalid,
     ReadFailed,
@@ -53,6 +56,7 @@ pub enum StorageGetItemFailureReason {
 }
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+#[repr(u32)]
 pub enum StorageMigrationReadFailureReason {
     PersistenceInvalid,
     ReadFailed,
@@ -81,6 +85,7 @@ pub enum StorageQueryOutcome<V> {
 }
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+#[repr(u32)]
 pub enum StorageReadFailureReason {
     ParseFailed,
     PersistenceInvalid,
@@ -90,6 +95,7 @@ pub enum StorageReadFailureReason {
 }
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+#[repr(u32)]
 pub enum StorageRemoveItemFailureReason {
     PersistenceInvalid,
     QuotaExceeded,
@@ -100,6 +106,7 @@ pub enum StorageRemoveItemFailureReason {
 }
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+#[repr(u32)]
 pub enum StorageSetItemFailureReason {
     PersistenceInvalid,
     QuotaExceeded,
@@ -116,6 +123,7 @@ pub enum StorageValueOutcome<V, F> {
 }
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+#[repr(u32)]
 pub enum StorageWriteFailureReason {
     PersistenceInvalid,
     QuotaExceeded,

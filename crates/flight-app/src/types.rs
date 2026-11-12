@@ -14,6 +14,7 @@ use flight_signals::Signal;
 /// `AppActivationPolicy`). `Regular` shows in the dock and switcher; `Accessory` hides from both
 /// (menu-bar/agent apps); `Prohibited` is fully background. No-op on non-macOS and web.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum AppActivationPolicy {
     Regular,
     Accessory,
@@ -46,6 +47,7 @@ pub struct AppLoginItemLike {
 /// App-identity-relative directory kinds resolved by `get_app_directory_path` (TS `AppPathKind`).
 /// Bare OS directories live in flight-filesystem, not here.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum AppPathKind {
     UserData,
     Logs,
@@ -54,6 +56,7 @@ pub enum AppPathKind {
 
 /// Mobile host target (TS `MobileOsProfile`).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum MobileOsProfile {
     Android,
     Ios,

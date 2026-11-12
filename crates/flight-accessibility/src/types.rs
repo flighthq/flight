@@ -17,6 +17,7 @@ pub type AccessibilityRole = String;
 /// Announcement urgency for a live region (TS `AccessibilityLiveness`), a closed string union.
 /// `Polite` waits for the current speech to finish; `Assertive` interrupts.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum AccessibilityLiveness {
     Polite,
     Assertive,
@@ -61,6 +62,7 @@ pub struct AccessibilityNode {
 /// The block reason of an accessibility command (TS `AccessibilityOperationBlockReason`), a closed
 /// string union.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum AccessibilityOperationBlockReason {
     Destroyed,
     FocusNotMoved,
@@ -91,6 +93,7 @@ pub enum AccessibilityOperationBlockReason {
 ///     });
 /// ```
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum AccessibilityTreeBlockReason {
     Destroyed,
     NoDom,
@@ -108,6 +111,7 @@ pub enum AccessibilityTreeBlockReason {
 ///     });
 /// ```
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum AccessibilityRemoveNodeBlockReason {
     Destroyed,
     NoDom,

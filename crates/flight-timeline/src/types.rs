@@ -48,6 +48,7 @@ pub type FrameConstruct = Arc<dyn Fn(&Node2DRef, i32) + Send + Sync>;
 
 /// How a timeline behaves past its last frame (TS `TimelinePlayMode`).
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+#[repr(u32)]
 pub enum TimelinePlayMode {
     #[default]
     Loop,
@@ -56,6 +57,7 @@ pub enum TimelinePlayMode {
 
 /// Why the playhead arrived at a frame (TS `TimelineFrameEntryCause`), a closed string union.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+#[repr(u32)]
 pub enum TimelineFrameEntryCause {
     #[default]
     Advance,

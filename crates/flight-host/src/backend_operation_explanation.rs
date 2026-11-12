@@ -6,6 +6,7 @@
 /// distinct: `Sentinel` is a fall-through object that answers so the call cannot throw; `None` means
 /// there is no fall-through at all (nullable single-slot capabilities return null from their getter).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum BackendOperationExplanationLayer {
     Custom,
     Host,

@@ -54,6 +54,7 @@ pub struct HostImageDimensions {
 
 /// Stable category retained for a failed image reference.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+#[repr(u32)]
 pub enum ImageResourceFailureKind {
     #[default]
     Error,
@@ -62,6 +63,7 @@ pub enum ImageResourceFailureKind {
 
 /// Discriminant for an encoded image resource reference.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+#[repr(u32)]
 pub enum ImageResourceReferenceKind {
     #[default]
     Embedded,
@@ -70,6 +72,7 @@ pub enum ImageResourceReferenceKind {
 
 /// The two credential modes accepted by the host URL-loader seam.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum ImageCrossOrigin {
     Anonymous,
     UseCredentials,
@@ -77,6 +80,7 @@ pub enum ImageCrossOrigin {
 
 /// Closed operation keys of `HostImageCapability`.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum ImageOperation {
     CreateImageFromBitmap,
     CreateImageFromSurface,

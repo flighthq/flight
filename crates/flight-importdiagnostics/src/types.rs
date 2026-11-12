@@ -10,6 +10,7 @@ pub enum ImportDiagnosticDetailValue {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum ImportDiagnosticSeverity {
     Drop,
     Recover,

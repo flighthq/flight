@@ -36,6 +36,7 @@ mod sugar_tests {
 
 /// Contour orientation result.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[repr(u32)]
 pub enum ContourOrientation {
     Ccw,
     Cw,

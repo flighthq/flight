@@ -139,6 +139,7 @@ pub struct GlyphAtlasEntryExplanation {
 
 /// Closed reasons returned by `explain_glyph_atlas_entry`.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum GlyphAtlasEntryBlockReason {
     GlyphLargerThanAtlas,
     Ok,
@@ -147,6 +148,7 @@ pub enum GlyphAtlasEntryBlockReason {
 
 /// Closed reasons emitted through the opt-in entry guard.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum GlyphAtlasEntryGuardReason {
     GlyphLargerThanAtlas,
     RasterizerReturnedNull,
@@ -156,6 +158,7 @@ pub enum GlyphAtlasEntryGuardReason {
 
 /// Closed once-only log keys used by glyph-atlas diagnostics.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum GlyphAtlasGuardLogKey {
     GlyphLargerThanAtlas,
     RasterizerReturnedNull,

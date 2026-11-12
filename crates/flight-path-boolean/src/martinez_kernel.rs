@@ -15,6 +15,7 @@ pub type PathBooleanContour = Vec<f64>;
 
 /// The boolean set operation to perform on two path operands.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[repr(u32)]
 pub enum PathBooleanOperation {
     Difference,
     Intersection,
@@ -26,6 +27,7 @@ pub enum PathBooleanOperation {
 /// PathWinding with positive and negative rules used internally by the offset
 /// cleanup pass.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[repr(u32)]
 pub enum PathBooleanFillRule {
     EvenOdd,
     NonZero,

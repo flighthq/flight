@@ -5,18 +5,21 @@
 //! field is optional, and numeric properties keep the JS number domain (f64).
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum LocaleMatcher {
     Lookup,
     BestFit,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum CollatorUsage {
     Sort,
     Search,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum CollatorSensitivity {
     Base,
     Accent,
@@ -25,6 +28,7 @@ pub enum CollatorSensitivity {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum CollatorCaseFirst {
     Upper,
     Lower,
@@ -32,6 +36,7 @@ pub enum CollatorCaseFirst {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum NumberStyle {
     Decimal,
     Percent,
@@ -40,6 +45,7 @@ pub enum NumberStyle {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum CurrencyDisplay {
     Code,
     Symbol,
@@ -48,12 +54,14 @@ pub enum CurrencyDisplay {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum CurrencySign {
     Standard,
     Accounting,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum UnitDisplay {
     Short,
     Long,
@@ -61,6 +69,7 @@ pub enum UnitDisplay {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum NumberNotation {
     Standard,
     Scientific,
@@ -69,12 +78,14 @@ pub enum NumberNotation {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum CompactDisplay {
     Short,
     Long,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum SignDisplay {
     Auto,
     Never,
@@ -83,12 +94,14 @@ pub enum SignDisplay {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum DateFormatMatcher {
     Basic,
     BestFit,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum DateTimeStyle {
     Full,
     Long,
@@ -97,6 +110,7 @@ pub enum DateTimeStyle {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum HourCycle {
     H11,
     H12,
@@ -105,6 +119,7 @@ pub enum HourCycle {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum DateTimeTextStyle {
     Long,
     Short,
@@ -112,6 +127,7 @@ pub enum DateTimeTextStyle {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum MonthStyle {
     Numeric,
     TwoDigit,
@@ -121,6 +137,7 @@ pub enum MonthStyle {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum DayPeriodStyle {
     Narrow,
     Short,
@@ -128,6 +145,7 @@ pub enum DayPeriodStyle {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum TimeZoneNameStyle {
     Short,
     Long,
@@ -138,12 +156,14 @@ pub enum TimeZoneNameStyle {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum TimeFieldStyle {
     Numeric,
     TwoDigit,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum ListType {
     Conjunction,
     Disjunction,
@@ -151,6 +171,7 @@ pub enum ListType {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum ListStyle {
     Long,
     Short,
@@ -158,18 +179,21 @@ pub enum ListStyle {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum PluralType {
     Cardinal,
     Ordinal,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum RelativeTimeNumeric {
     Always,
     Auto,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum RelativeTimeStyle {
     Long,
     Short,

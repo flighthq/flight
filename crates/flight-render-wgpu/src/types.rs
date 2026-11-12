@@ -70,6 +70,7 @@ pub(crate) struct WgpuDeviceLossHookState {
 
 /// Why a device was lost (TS `GPUDeviceLostReason`): `Destroyed` is Flight's own orderly release.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum WgpuDeviceLostReason {
     Destroyed,
     Unknown,
@@ -730,6 +731,7 @@ pub struct WgpuRenderPassViewport {
 
 /// One clip's unwind form (TS `'rect' | 'contour'`).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum WgpuClipForm {
     Contour,
     Rect,
@@ -771,6 +773,7 @@ pub struct WgpuRenderPass<'a> {
 
 /// A render texture's realization status (TS `WgpuRenderTextureStatus`).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum WgpuRenderTextureStatus {
     Ready,
     Released,
@@ -827,6 +830,7 @@ pub struct WgpuFullscreenPipeline {
 
 /// Whether the uniform byte layout is validated on this host (TS `WgpuUniformEndiannessStatus`).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum WgpuUniformEndiannessStatus {
     Unvalidated,
     Validated,

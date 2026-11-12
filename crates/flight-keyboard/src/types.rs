@@ -33,6 +33,7 @@ pub struct SoftKeyboardInfo {
 
 /// Result of asking the host to show or hide the keyboard.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum SoftKeyboardVisibilityResult {
     Ok,
     OperationFailed,
@@ -45,6 +46,7 @@ pub const SOFT_KEYBOARD_VISIBILITY_OPERATION_FAILED_KIND: SoftKeyboardVisibility
 
 /// Result of changing one host keyboard setting.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum SoftKeyboardSetterResult {
     Ok,
     OperationUnavailable,
@@ -59,6 +61,7 @@ pub const SOFT_KEYBOARD_SETTER_OPERATION_FAILED_KIND: SoftKeyboardSetterResult =
 
 /// Result of acquiring a raw keyboard-change subscription.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum SoftKeyboardAttachResult {
     Ok,
     AcquisitionFailed,

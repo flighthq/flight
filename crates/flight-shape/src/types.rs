@@ -91,6 +91,7 @@ use std::any::Any;
 
 /// Line caps for shape strokes (TS `CapsStyle`), a closed union.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum CapsStyle {
     None,
     Round,
@@ -99,6 +100,7 @@ pub enum CapsStyle {
 
 /// Gradient kinds (TS `GradientType`), a closed union.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum GradientType {
     Linear,
     Radial,
@@ -106,6 +108,7 @@ pub enum GradientType {
 
 /// Gradient interpolation spaces (TS `InterpolationMethod`), a closed union.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum InterpolationMethod {
     LinearRgb,
     Rgb,
@@ -113,6 +116,7 @@ pub enum InterpolationMethod {
 
 /// Line joins for shape strokes (TS `JointStyle`), a closed union.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum JointStyle {
     Bevel,
     Miter,
@@ -121,6 +125,7 @@ pub enum JointStyle {
 
 /// Line scale modes (TS `LineScaleMode`), a closed union.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum LineScaleMode {
     Horizontal,
     None,
@@ -130,6 +135,7 @@ pub enum LineScaleMode {
 
 /// Gradient spread modes (TS `SpreadMethod`), a closed union.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum SpreadMethod {
     Pad,
     Reflect,
@@ -138,6 +144,7 @@ pub enum SpreadMethod {
 
 /// Triangle culling modes recorded by `drawTriangles` (TS `TriangleCulling`), a closed union.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum TriangleCulling {
     Negative,
     None,
@@ -146,6 +153,7 @@ pub enum TriangleCulling {
 
 /// Shape bounds modes (TS `ShapeBoundsMode`), a closed union.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum ShapeBoundsMode {
     Fill,
     Ink,
@@ -435,6 +443,7 @@ pub struct ShapeStrokeRegion {
 
 /// The tessellation answer (TS `ShapeTessellationExplanation`), closed status/blocker tables.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum ShapeTessellationBlockedBy {
     NonSolidFill,
     NonSolidStroke,
@@ -444,6 +453,7 @@ pub enum ShapeTessellationBlockedBy {
 
 /// The tessellation status (TS `ShapeTessellationStatus`), a closed union.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum ShapeTessellationStatus {
     NeedsRasterizer,
     Tessellates,
@@ -458,6 +468,7 @@ pub struct ShapeTessellationExplanation {
 
 /// Gradient endpoint issues (TS `MorphShapeGradientEndpointReason`), a closed table.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum MorphShapeGradientEndpointReason {
     EmptyGradient,
     EndStopComponentCountMismatch,

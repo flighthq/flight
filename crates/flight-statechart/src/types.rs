@@ -38,6 +38,7 @@ pub use flight_signals::Signal;
 // ============================================================================
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum StatechartComparison {
     Equal,
     GreaterThan,
@@ -48,6 +49,7 @@ pub enum StatechartComparison {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum StatechartInputKind {
     Boolean,
     Number,
@@ -55,6 +57,7 @@ pub enum StatechartInputKind {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum StatechartTransitionStatus {
     ConditionsUnmet,
     ExitTimePending,

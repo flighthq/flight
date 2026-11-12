@@ -15,6 +15,7 @@ pub type FileSystemProviderFuture<T> = Pin<Box<dyn Future<Output = Result<T, Fli
 
 /// The access a `can_access_file` query asks about (TS `'readable' | 'writable' | 'executable'`).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum FileAccessMode {
     Executable,
     Readable,
@@ -23,6 +24,7 @@ pub enum FileAccessMode {
 
 /// Well-known host directories (TS `FileSystemPathKind`).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum FileSystemPathKind {
     AppData,
     Cache,
@@ -35,6 +37,7 @@ pub enum FileSystemPathKind {
 
 /// What changed under a watched path (TS `FileWatchEventType`).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum FileWatchEventType {
     Created,
     Deleted,

@@ -20,6 +20,7 @@ pub type GuiTransitionRequest = flight_interaction::contract::NodeInteractiveSta
 pub type GuiTransitionValue = flight_interaction::contract::NodeInteractiveStateTransitionValue;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum GuiOrientation {
     Horizontal,
     Vertical,

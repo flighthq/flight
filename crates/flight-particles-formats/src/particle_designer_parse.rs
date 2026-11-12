@@ -15,6 +15,7 @@ use crate::text::{parse_js_float, parse_js_int};
 
 /// The emitter type (TS `emitterType: 0 | 1`; 0 = gravity, 1 = radial).
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+#[repr(u32)]
 pub enum ParticleDesignerEmitterType {
     #[default]
     Gravity,

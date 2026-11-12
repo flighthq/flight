@@ -14,6 +14,7 @@ use flight_texture::{TextureSource, TextureSourceFields};
 
 /// Edge mode for out-of-bounds pixel sampling.
 #[derive(Clone, Copy, Debug, PartialEq)]
+#[repr(u32)]
 pub enum BitmapEdgeMode {
     Transparent,
     Clamp,
@@ -23,6 +24,7 @@ pub enum BitmapEdgeMode {
 
 /// Resize / sampling interpolation mode.
 #[derive(Clone, Copy, Debug, PartialEq)]
+#[repr(u32)]
 pub enum BitmapResizeMode {
     Nearest,
     Bilinear,
@@ -73,6 +75,7 @@ pub enum ImageChannel {
 
 /// Pixel byte ordering.
 #[derive(Clone, Copy, Debug, PartialEq)]
+#[repr(u32)]
 pub enum PixelOrder {
     Rgba,
     Bgra,
@@ -82,6 +85,7 @@ pub enum PixelOrder {
 
 /// Gradient spread mode.
 #[derive(Clone, Copy, Debug, PartialEq)]
+#[repr(u32)]
 pub enum GradientSpread {
     Pad,
     Repeat,
@@ -90,6 +94,7 @@ pub enum GradientSpread {
 
 /// Image encoding format.
 #[derive(Clone, Copy, Debug, PartialEq)]
+#[repr(u32)]
 pub enum ImageFormat {
     Png,
     Jpeg,
@@ -97,6 +102,7 @@ pub enum ImageFormat {
 
 /// Threshold comparison operation.
 #[derive(Clone, Copy, Debug, PartialEq)]
+#[repr(u32)]
 pub enum ThresholdOperation {
     LessThan,
     LessThanOrEqual,
@@ -108,6 +114,7 @@ pub enum ThresholdOperation {
 
 /// Displacement map legacy mode (when edgeMode is None).
 #[derive(Clone, Copy, Debug, PartialEq)]
+#[repr(u32)]
 pub enum DisplacementMode {
     Wrap,
     Clamp,
@@ -117,6 +124,7 @@ pub enum DisplacementMode {
 
 /// Which side of the source edge a bitmap bevel or gradient bevel draws on (TS `BitmapBevelType`).
 #[derive(Clone, Copy, Debug, PartialEq)]
+#[repr(u32)]
 pub enum BitmapBevelType {
     Inner,
     Outer,
@@ -125,6 +133,7 @@ pub enum BitmapBevelType {
 
 /// Readback mode for bitmap capture.
 #[derive(Clone, Copy, Debug, PartialEq)]
+#[repr(u32)]
 pub enum BitmapReadbackMode {
     Bitmap,
     Probe,
@@ -132,6 +141,7 @@ pub enum BitmapReadbackMode {
 
 /// Readback block reason.
 #[derive(Clone, Debug, PartialEq)]
+#[repr(u32)]
 pub enum BitmapReadbackBlockReason {
     Ok,
     EmptySize,
@@ -143,6 +153,7 @@ pub enum BitmapReadbackBlockReason {
 /// The reasons a readback host can report (TS `BitmapReadbackBackendReason`): the block reasons less
 /// `backend-not-installed` and `empty-size`, which only the portable side decides.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum BitmapReadbackBackendReason {
     NoCanvas,
     Ok,

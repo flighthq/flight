@@ -93,6 +93,7 @@ pub enum EmitterShape {
 // ---------------------------------------------------------------------------
 
 #[derive(Clone, Copy, Debug, PartialEq)]
+#[repr(u32)]
 pub enum ParticleBlendMode {
     Add,
     Multiply,

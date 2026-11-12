@@ -17,6 +17,7 @@ pub struct PowerContext {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum PowerBatteryHealthState {
     Good,
     Fair,
@@ -34,6 +35,7 @@ pub struct PowerBatteryHealth {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum PowerIdleState {
     Active,
     Idle,
@@ -41,6 +43,7 @@ pub enum PowerIdleState {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum PowerKeepAwakeAcquireReason {
     Ok,
     Unavailable,
@@ -54,12 +57,14 @@ pub struct PowerKeepAwakeAcquireResult {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum PowerKeepAwakeMode {
     PreventDisplaySleep,
     PreventAppSuspension,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum PowerKeepAwakeReleaseReason {
     Ok,
     Inactive,
@@ -84,6 +89,7 @@ pub struct PowerStatus {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum PowerThermalState {
     Nominal,
     Fair,

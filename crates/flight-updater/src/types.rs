@@ -31,6 +31,7 @@ pub struct DownloadedUpdate {
 
 /// The reason arm of a check outcome (TS `AppUpdateCheckOutcome['reason']`).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum AppUpdateCheckReason {
     Downloaded,
     CheckInProgress,
@@ -68,6 +69,7 @@ pub enum AppUpdateCheckOutcome {
 
 /// The reason arm of an install outcome (TS `AppUpdateInstallOutcome['reason']`).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum AppUpdateInstallReason {
     Ok,
     OperationFailed,

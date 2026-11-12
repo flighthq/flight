@@ -11,6 +11,7 @@ use std::sync::Arc;
 
 /// Physical impact styles supported by a haptics provider.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum HapticImpactStyle {
     Light,
     Medium,
@@ -21,6 +22,7 @@ pub enum HapticImpactStyle {
 
 /// Notification feedback categories supported by a haptics provider.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum HapticNotificationType {
     Success,
     Warning,
@@ -73,6 +75,7 @@ pub struct HostHapticsCapabilities {
 
 /// Every operation exposed by `HostHapticsCapability`.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum HapticsOperation {
     Cancel,
     Capabilities,

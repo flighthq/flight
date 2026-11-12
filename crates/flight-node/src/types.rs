@@ -460,6 +460,7 @@ pub struct Viewport {
 
 /// How scene2d content is mapped into the view (TS `ViewportScaleMode`), a closed union.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum ViewportScaleMode {
     ExactFit,
     NoBorder,

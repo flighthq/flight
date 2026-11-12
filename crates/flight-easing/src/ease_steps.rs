@@ -6,6 +6,7 @@ use std::sync::{Arc, Mutex, PoisonError};
 use crate::EasingFunction;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[repr(u32)]
 pub enum StepPosition {
     JumpStart,
     JumpEnd,

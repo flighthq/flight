@@ -12,6 +12,7 @@ use flight_signals::Signal;
 use flight_stream::SharedFuture;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum MidiAccessDisposeReason {
     AlreadyDisposed,
     Ok,
@@ -19,6 +20,7 @@ pub enum MidiAccessDisposeReason {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum MidiAccessPortsReason {
     Disposed,
     Ok,
@@ -26,6 +28,7 @@ pub enum MidiAccessPortsReason {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum MidiAccessRequestReason {
     Accepted,
     OperationFailed,
@@ -35,18 +38,21 @@ pub enum MidiAccessRequestReason {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum MidiEventBackendAttachReason {
     Ok,
     OperationFailed,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum MidiEventReleaseReason {
     Ok,
     OperationFailed,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum MidiMessageSendReason {
     Disconnected,
     Disposed,
@@ -58,6 +64,7 @@ pub enum MidiMessageSendReason {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum MidiPortCloseReason {
     AlreadyClosed,
     Closed,
@@ -66,6 +73,7 @@ pub enum MidiPortCloseReason {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum MidiPortConnection {
     Closed,
     Open,
@@ -73,6 +81,7 @@ pub enum MidiPortConnection {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum MidiPortConnectionOutcomeReason {
     Disposed,
     Ok,
@@ -80,6 +89,7 @@ pub enum MidiPortConnectionOutcomeReason {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum MidiPortDisposeReason {
     AlreadyDisposed,
     Ok,
@@ -87,6 +97,7 @@ pub enum MidiPortDisposeReason {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum MidiPortLifecycleFailureOperation {
     Close,
     MessageSubscriptionRelease,
@@ -94,6 +105,7 @@ pub enum MidiPortLifecycleFailureOperation {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum MidiPortOpenReason {
     AlreadyOpen,
     Disconnected,
@@ -103,12 +115,14 @@ pub enum MidiPortOpenReason {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum MidiPortState {
     Connected,
     Disconnected,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum MidiPortStateOutcomeReason {
     Disposed,
     Ok,
@@ -116,18 +130,21 @@ pub enum MidiPortStateOutcomeReason {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum MidiPortType {
     Input,
     Output,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum MidiSubscriptionAttachReason {
     Ok,
     OperationFailed,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum MidiSubscriptionDetachReason {
     NotAttached,
     Ok,
@@ -135,6 +152,7 @@ pub enum MidiSubscriptionDetachReason {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum MidiSubscriptionDisposeReason {
     AlreadyDisposed,
     Ok,

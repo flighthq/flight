@@ -40,6 +40,7 @@ mod cache_tests {
 
 /// The topology of the primitive assembly for the mesh geometry.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[repr(u32)]
 pub enum PrimitiveTopology {
     LineList,
     LineStrip,

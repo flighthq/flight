@@ -30,6 +30,7 @@ pub struct MarqueeSelection {
 
 /// Whether a marquee accepts intersecting bounds or only fully enclosed bounds.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum MarqueeSelectionModeRaw {
     Contain,
     Intersect,

@@ -9,6 +9,7 @@ use flight_signals::Signal;
 
 /// The standard W3C transport actions the OS surfaces as buttons and hardware media keys (TS `MediaSessionAction`); the strings keep the web API source form.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum MediaSessionAction {
     Play,
     Pause,
@@ -23,6 +24,7 @@ pub enum MediaSessionAction {
 
 /// The OS's view of playback (TS `MediaSessionPlaybackState`): no active session, paused, or playing.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum MediaSessionPlaybackState {
     None,
     Paused,
@@ -31,6 +33,7 @@ pub enum MediaSessionPlaybackState {
 
 /// Reasons a media-session command can fail without throwing (TS `MediaSessionOperationBlockReason`). Each command narrows this to the reasons it can reach.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum MediaSessionOperationBlockReason {
     InvalidArtworkSource,
     InvalidDuration,
@@ -44,6 +47,7 @@ pub enum MediaSessionOperationBlockReason {
 
 /// The default outcome reason (TS `MediaSessionOperationOutcome['reason']` with its default type argument): `ok` or any block reason.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum MediaSessionOperationReason {
     Ok,
     InvalidArtworkSource,
@@ -58,6 +62,7 @@ pub enum MediaSessionOperationReason {
 
 /// The reasons `MediaSessionSetMetadataOutcome` can carry (TS `MediaSessionSetMetadataOutcome['reason']`): `ok` or one of its narrowed block reasons.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum MediaSessionSetMetadataReason {
     Ok,
     MediaSessionUnavailable,
@@ -68,6 +73,7 @@ pub enum MediaSessionSetMetadataReason {
 
 /// The reasons `MediaSessionClearMetadataOutcome` can carry (TS `MediaSessionClearMetadataOutcome['reason']`): `ok` or one of its narrowed block reasons.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum MediaSessionClearMetadataReason {
     Ok,
     MediaSessionUnavailable,
@@ -76,6 +82,7 @@ pub enum MediaSessionClearMetadataReason {
 
 /// The reasons `MediaSessionSetPlaybackStateOutcome` can carry (TS `MediaSessionSetPlaybackStateOutcome['reason']`): `ok` or one of its narrowed block reasons.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum MediaSessionSetPlaybackStateReason {
     Ok,
     MediaSessionUnavailable,
@@ -84,6 +91,7 @@ pub enum MediaSessionSetPlaybackStateReason {
 
 /// The reasons `MediaSessionSetPositionStateOutcome` can carry (TS `MediaSessionSetPositionStateOutcome['reason']`): `ok` or one of its narrowed block reasons.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum MediaSessionSetPositionStateReason {
     Ok,
     MediaSessionUnavailable,
@@ -96,6 +104,7 @@ pub enum MediaSessionSetPositionStateReason {
 
 /// The reasons `MediaSessionClearPositionStateOutcome` can carry (TS `MediaSessionClearPositionStateOutcome['reason']`): `ok` or one of its narrowed block reasons.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum MediaSessionClearPositionStateReason {
     Ok,
     MediaSessionUnavailable,

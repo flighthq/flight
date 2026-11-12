@@ -8,6 +8,7 @@ use flight_signals::Signal;
 
 /// Application lifecycle state (TS `AppLifecycleState`).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum AppLifecycleState {
     Active,
     Inactive,
@@ -17,6 +18,7 @@ pub enum AppLifecycleState {
 /// How the application was launched (TS `AppLaunchKind`): `Cold` is a fresh process start, `Warm` a
 /// resume from a frozen or backgrounded state.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum AppLaunchKind {
     Cold,
     Warm,
@@ -24,6 +26,7 @@ pub enum AppLaunchKind {
 
 /// OS memory-pressure level reported to `on_memory_warning` (TS `AppMemoryPressure`).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum AppMemoryPressure {
     Normal,
     Moderate,
@@ -33,6 +36,7 @@ pub enum AppMemoryPressure {
 /// Every operation name on the provider (TS `LifecycleOperation`, derived there as
 /// `keyof HostLifecycleCapability`): one variant per capability member.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum LifecycleOperation {
     GetState,
     Subscribe,

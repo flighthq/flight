@@ -13,6 +13,7 @@ pub const MODIFIER_SLOT_SPECULAR: &str = "Specular";
 pub const MODIFIER_SLOT_VERTEX: &str = "Vertex";
 
 #[derive(Clone, Copy, Debug, Default, Eq, Hash, PartialEq)]
+#[repr(u32)]
 pub enum EmissiveModifierFacing {
     AwayFromLight,
     #[default]
@@ -21,6 +22,7 @@ pub enum EmissiveModifierFacing {
 }
 
 #[derive(Clone, Copy, Debug, Default, Eq, Hash, PartialEq)]
+#[repr(u32)]
 pub enum FogModifierMode {
     Exponential,
     Exponential2,
@@ -29,6 +31,7 @@ pub enum FogModifierMode {
 }
 
 #[derive(Clone, Copy, Debug, Default, Eq, Hash, PartialEq)]
+#[repr(u32)]
 pub enum VertexDisplaceModifierSource {
     HeightMap,
     #[default]

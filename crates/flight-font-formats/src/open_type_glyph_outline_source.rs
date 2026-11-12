@@ -38,6 +38,7 @@ pub struct OpenTypeFontExplanation {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum OpenTypeFontExplanationReason {
     MalformedTable,
     MissingRequiredTable,

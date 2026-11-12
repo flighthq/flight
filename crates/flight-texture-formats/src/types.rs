@@ -14,6 +14,7 @@ pub struct TextureContainer {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+#[repr(u32)]
 pub enum TextureContainerFormat {
     Rgba8Unorm,
     Rgba8Srgb,
@@ -71,6 +72,7 @@ pub enum TextureContainerFormat {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+#[repr(u32)]
 pub enum TextureContainerKind {
     Atf,
     Basis,
@@ -93,6 +95,7 @@ pub struct TextureContainerParseExplanation {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+#[repr(u32)]
 pub enum TextureContainerParseFailureReason {
     ContainerUnrecognized,
     FormatUnsupported,
@@ -102,6 +105,7 @@ pub enum TextureContainerParseFailureReason {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+#[repr(u32)]
 pub enum TextureContainerSupercompression {
     None,
     BasisLz,

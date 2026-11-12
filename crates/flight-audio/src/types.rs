@@ -67,6 +67,7 @@ mod sugar_tests {
 /// Audio channel playback lifecycle (TS `AudioChannelState`). The owning channel lives in
 /// `flight-media`; audio owns this shared closed vocabulary.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+#[repr(u32)]
 pub enum AudioChannelState {
     Complete,
     Paused,
@@ -143,6 +144,7 @@ pub struct ExternalAudioResourceReference {
 
 /// Stable category retained for a failed resource reference.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+#[repr(u32)]
 pub enum AudioResourceFailureKind {
     #[default]
     Error,
@@ -151,6 +153,7 @@ pub enum AudioResourceFailureKind {
 
 /// Discriminant for an encoded resource reference.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+#[repr(u32)]
 pub enum AudioResourceReferenceKind {
     #[default]
     Embedded,

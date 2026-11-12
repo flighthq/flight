@@ -101,6 +101,7 @@ pub struct AsepriteParsed {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum SpritesheetDocumentVariant {
     Array,
     Hash,

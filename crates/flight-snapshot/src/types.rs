@@ -58,6 +58,7 @@ pub struct SnapshotNonPlain {
 
 /// The non-plain built-ins `structuredClone` accepts that break the snapshot contracts.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[repr(u32)]
 pub enum SnapshotNonPlainKind {
     ArrayBuffer,
     Date,

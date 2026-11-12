@@ -17,6 +17,7 @@ use flight_render_wgpu::{WgpuRenderState, WgpuRenderTargetPool, WgpuTextureRende
 /// How an effect pipeline composites into its destination (TS `WgpuEffectBlendMode`; strings via
 /// `get_wgpu_effect_blend_mode_string`).
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)]
+#[repr(u32)]
 pub enum WgpuEffectBlendMode {
     /// Destination-out: `dst *= 1 - src.a`.
     Erase,
@@ -83,6 +84,7 @@ pub enum WgpuEffectOperation {
 /// Why an application of a WebGPU effect chain to a render texture did not do what the caller
 /// asked (TS `WgpuEffectApplicationStatus`; strings via `get_wgpu_effect_application_status_string`).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum WgpuEffectApplicationStatus {
     Complete,
     NoEffects,

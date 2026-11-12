@@ -11,6 +11,7 @@ use flight_signals::{Signal, create_signal};
 use std::sync::{Arc, RwLock};
 pub type GuiDialog = GuiController<GuiDialogFields>;
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum GuiDialogCloseReason {
     Accepted,
     Cancelled,

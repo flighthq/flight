@@ -1,6 +1,7 @@
 //! flight-compiler: rust-only
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum AssetLoadStatus {
     Freed,
     Loading,

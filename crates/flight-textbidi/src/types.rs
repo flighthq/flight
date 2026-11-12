@@ -33,18 +33,21 @@ pub enum BidiClass {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum BidiClassKernelCoverage {
     CommonScriptRanges,
     ProviderDefined,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum BidiClassKernelKind {
     Compact,
     Custom,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum BidiDirection {
     Ltr,
     Rtl,
@@ -52,6 +55,7 @@ pub enum BidiDirection {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum BidiRunDirection {
     Ltr,
     Rtl,

@@ -61,6 +61,7 @@ pub struct Skeleton2DJsonAnalysis {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum SpineBinaryVersionFailureReason {
     NoStrategyMatched,
     StrategiesDisagree,

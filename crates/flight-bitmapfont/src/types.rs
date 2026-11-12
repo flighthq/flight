@@ -10,6 +10,7 @@ use flight_textureatlas::TextureAtlas;
 
 /// Pixel encoding carried by a static bitmap font.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+#[repr(u32)]
 pub enum BitmapFontEncoding {
     Msdf,
     #[default]
@@ -19,6 +20,7 @@ pub enum BitmapFontEncoding {
 
 /// Why one bitmap-font glyph will not render, or `Ok` when it will.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum BitmapFontGlyphExplanationReason {
     EmptyGlyph,
     NoGlyph,

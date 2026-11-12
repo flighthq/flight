@@ -7,6 +7,7 @@ use std::process;
 // ---------------------------------------------------------------------------
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum Level {
     Error,
     Warn,

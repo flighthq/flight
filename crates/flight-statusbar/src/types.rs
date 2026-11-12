@@ -10,6 +10,7 @@ use flight_signals::Signal;
 
 /// Status bar content style (TS `StatusBarStyle`).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum StatusBarStyle {
     Light,
     Dark,
@@ -19,6 +20,7 @@ pub enum StatusBarStyle {
 /// Transition used when showing or hiding the status bar (TS `StatusBarAnimation`). `None` is the
 /// default (immediate); native hosts honor the animated variants.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum StatusBarAnimation {
     None,
     Fade,

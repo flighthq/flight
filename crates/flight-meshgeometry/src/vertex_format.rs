@@ -8,6 +8,7 @@
 
 /// The format of a single vertex attribute in the interleaved record.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[repr(u32)]
 pub enum VertexFormat {
     Float32x2,
     Float32x3,
@@ -19,6 +20,7 @@ pub enum VertexFormat {
 
 /// The semantic purpose of a vertex attribute.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[repr(u32)]
 pub enum VertexSemantic {
     Color0,
     Joints0,

@@ -20,6 +20,7 @@ pub struct ShellExternalUrlPolicy {
 
 /// The reason arm of an external URL outcome (TS `ShellExternalOutcome['reason']`).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum ShellExternalReason {
     BlockedScheme,
     Ok,
@@ -35,6 +36,7 @@ pub struct ShellExternalOutcome {
 
 /// The reason arm of a path-open outcome (TS `ShellPathOpenOutcome['reason']`).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum ShellPathOpenReason {
     Ok,
     OperationFailed,
@@ -59,6 +61,7 @@ pub enum ShellPathOpenOutcome {
 
 /// The reason arm of a reveal outcome (TS `ShellPathRevealOutcome['reason']`).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum ShellPathRevealReason {
     Ok,
     OperationFailed,
@@ -85,6 +88,7 @@ pub struct ShellShortcutLink {
 
 /// The reason arm of a shortcut-link read outcome (TS `ShellShortcutLinkReadOutcome['reason']`).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum ShellShortcutLinkReadReason {
     Ok,
     OperationFailed,
@@ -111,6 +115,7 @@ pub enum ShellShortcutLinkReadOutcome {
 
 /// The reason arm of a shortcut-link write outcome (TS `ShellShortcutLinkWriteOutcome['reason']`).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum ShellShortcutLinkWriteReason {
     Ok,
     OperationFailed,
@@ -124,6 +129,7 @@ pub struct ShellShortcutLinkWriteOutcome {
 
 /// How `write_shell_shortcut_link` applies a link at a path (TS `ShellShortcutWriteOperation`).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum ShellShortcutWriteOperation {
     Create,
     Replace,
@@ -132,6 +138,7 @@ pub enum ShellShortcutWriteOperation {
 
 /// The reason arm of a trash outcome (TS `ShellTrashOutcome['reason']`).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum ShellTrashReason {
     Ok,
     OperationFailed,

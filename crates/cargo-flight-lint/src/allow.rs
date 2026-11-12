@@ -13,6 +13,7 @@ use crate::model::{Violation, find_rule};
 const PREFIX: &str = "flight-lint:";
 
 #[derive(Clone, Debug, PartialEq)]
+#[repr(u32)]
 pub enum MarkerKind {
     Item,
     File,

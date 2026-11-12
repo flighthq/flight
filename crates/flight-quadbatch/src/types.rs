@@ -16,6 +16,7 @@ pub const QUAD_BATCH_KIND: &str = "QuadBatch";
 
 /// The per-instance transform layout (TS `QuadTransformType`).
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+#[repr(u32)]
 pub enum QuadTransformType {
     Matrix3x2,
     #[default]

@@ -16,6 +16,7 @@ pub type VideoProviderFuture<T> = Pin<Box<dyn Future<Output = Result<T, FlightEr
 
 /// A video channel's playback state (TS `VideoChannelState`).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum VideoChannelState {
     Complete,
     Paused,
@@ -68,6 +69,7 @@ pub struct VideoResource {
 /// metadata (dimensions/duration known), canplay (enough buffered to start), or canplaythrough
 /// (estimated buffered to the end without stalling).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum VideoResourceLoadReadiness {
     Metadata,
     Canplay,

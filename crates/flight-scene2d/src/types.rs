@@ -269,6 +269,7 @@ pub struct Scene2DSlotReference {
 /// Which sink of a Node2D an animation channel drives (TS `Node2DAnimationPath`). Vector paths
 /// consume two components; scalar paths consume one.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum Node2DAnimationPath {
     Alpha,
     Pivot,
@@ -308,6 +309,7 @@ pub struct Node2DAnimationTarget {
 
 /// How a scene's content aligns in its view (TS `Scene2DAlign`), a closed string union.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum Scene2DAlign {
     Bottom,
     BottomLeft,
@@ -321,6 +323,7 @@ pub enum Scene2DAlign {
 
 /// A scene's display state (TS `Scene2DDisplayState`), a closed string union.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum Scene2DDisplayState {
     Fullscreen,
     FullscreenInteractive,
@@ -329,6 +332,7 @@ pub enum Scene2DDisplayState {
 
 /// A scene's render quality hint (TS `Scene2DQuality`), a closed string union.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum Scene2DQuality {
     Best,
     High,
@@ -338,6 +342,7 @@ pub enum Scene2DQuality {
 
 /// How a scene's content scales into its view (TS `Scene2DScaleMode`), a closed string union.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum Scene2DScaleMode {
     ExactFit,
     NoBorder,

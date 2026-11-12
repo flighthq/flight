@@ -7,6 +7,7 @@ use flight_entity::{EntityRuntimeSlot, FlightError};
 
 /// Why a position read failed (TS `GeolocationErrorReason`).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum GeolocationErrorReason {
     Denied,
     Timeout,
@@ -15,6 +16,7 @@ pub enum GeolocationErrorReason {
 
 /// The reason arm of an access-prompt outcome (TS `GeolocationAccessOutcome['reason']`).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum GeolocationAccessReason {
     CleanupFailed,
     Denied,

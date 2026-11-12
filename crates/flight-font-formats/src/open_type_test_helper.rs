@@ -25,6 +25,7 @@ pub struct SyntheticCidOptions {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum SyntheticFontFlavor {
     OpenType,
     TrueType,

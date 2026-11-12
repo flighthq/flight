@@ -30,6 +30,7 @@ pub struct UnityColor {
 
 /// A Unity min/max curve mode (TS `UnityMinMaxValue['mode']`).
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+#[repr(u32)]
 pub enum UnityMinMaxMode {
     #[default]
     Constant,
@@ -65,6 +66,7 @@ pub struct UnityEmission {
 
 /// The Unity shape type (TS `UnityParticleShapeType`, a closed string union).
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+#[repr(u32)]
 pub enum UnityParticleShapeType {
     Sphere,
     Hemisphere,

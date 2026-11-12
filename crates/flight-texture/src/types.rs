@@ -10,6 +10,7 @@ use flight_geometry::{Vector2, create_vector2};
 // flight-lint: allow-file(contract-vocabulary) D16 general open-family traits preserve TextureSource dispatch and the closed Texture family without erased fields
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+#[repr(u32)]
 pub enum AlphaType {
     Opaque,
     Premultiplied,
@@ -18,6 +19,7 @@ pub enum AlphaType {
 }
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+#[repr(u32)]
 pub enum PixelFormat {
     Bgra8Unorm,
     #[default]
@@ -25,6 +27,7 @@ pub enum PixelFormat {
 }
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+#[repr(u32)]
 pub enum RenderTargetColorSpace {
     Linear,
     #[default]
@@ -32,6 +35,7 @@ pub enum RenderTargetColorSpace {
 }
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+#[repr(u32)]
 pub enum TextureColorSpace {
     Linear,
     #[default]
@@ -39,6 +43,7 @@ pub enum TextureColorSpace {
 }
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+#[repr(u32)]
 pub enum TextureDimension {
     #[default]
     Texture2D,
@@ -48,6 +53,7 @@ pub enum TextureDimension {
 }
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+#[repr(u32)]
 pub enum TextureFilter {
     Linear,
     #[default]
@@ -59,6 +65,7 @@ pub enum TextureFilter {
 }
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+#[repr(u32)]
 pub enum TextureGamut {
     DisplayP3,
     #[default]
@@ -66,6 +73,7 @@ pub enum TextureGamut {
 }
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+#[repr(u32)]
 pub enum TextureWrap {
     #[default]
     ClampToEdge,

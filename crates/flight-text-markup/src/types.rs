@@ -58,6 +58,7 @@ pub enum MarkupTagResult {
 
 /// One lossy decision made by the parser (TS `TextMarkupIssueKind`).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum TextMarkupIssueKind {
     UnknownTag,
     UnresolvedFontColor,

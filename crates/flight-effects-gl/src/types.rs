@@ -44,6 +44,7 @@ pub struct GlEffectRegistration {
 /// Why an `apply_gl_effects_to_render_texture` call would not write its destination (TS
 /// `GlEffectApplicationStatus`; strings via `get_gl_effect_application_status_string`).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum GlEffectApplicationStatus {
     Complete,
     NoEffects,

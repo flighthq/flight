@@ -60,6 +60,7 @@ pub struct BitmapFontRecord {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum BitmapFontParseExplanationFormat {
     Fnt,
     Json,
@@ -68,6 +69,7 @@ pub enum BitmapFontParseExplanationFormat {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum BitmapFontParseExplanationReason {
     InvalidData,
     MissingChars,

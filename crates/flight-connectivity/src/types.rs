@@ -11,6 +11,7 @@ use flight_stream::{AbortSignal, is_abort_signal_aborted};
 
 /// The connection technology a provider reports (TS `ConnectivityConnectionType`).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum ConnectivityConnectionType {
     Wifi,
     Cellular,

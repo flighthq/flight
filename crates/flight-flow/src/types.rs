@@ -9,6 +9,7 @@ use flight_log::LogState;
 /// The kind of flow guard violation detected during a stack transition. The strings match the TS
 /// string union exactly (D9e).
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+#[repr(u32)]
 pub enum FlowGuardKind {
     DuplicateStatePush,
     TransitionDuringTransition,

@@ -30,6 +30,7 @@ pub struct ClipRegion {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum ClipRegionStatus {
     Active,
     Released,
@@ -42,6 +43,7 @@ pub struct ClipRegionExplanation {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum ClipRegionContoursReason {
     OddCoordinateCount,
     TooFewPoints,

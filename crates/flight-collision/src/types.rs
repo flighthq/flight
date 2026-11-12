@@ -11,6 +11,7 @@ pub(crate) struct DerivedCache(Mutex<Option<Box<dyn Any + Send>>>);
 // Shape kind enums
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[repr(u32)]
 pub enum CollisionShapeKind2D {
     Circle,
     Capsule,
@@ -22,6 +23,7 @@ pub enum CollisionShapeKind2D {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[repr(u32)]
 pub enum CollisionShapeKind3D {
     Sphere,
     Aabb,
@@ -404,6 +406,7 @@ pub struct CollisionDistance3D {
 // Collision test status
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[repr(u32)]
 pub enum CollisionTestStatus {
     DegenerateShape,
     NonConvexPolygon,

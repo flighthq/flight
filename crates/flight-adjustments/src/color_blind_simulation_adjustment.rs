@@ -27,6 +27,7 @@ mod sugar_tests {
 
 /// Color-blindness type.
 #[derive(Debug, Clone, Copy, PartialEq)]
+#[repr(u32)]
 pub enum ColorBlindType {
     Protanopia,
     Protanomaly,

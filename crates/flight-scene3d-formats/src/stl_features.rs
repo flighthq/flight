@@ -10,6 +10,7 @@ pub struct StlFeatures {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum StlVariant {
     Ascii,
     Binary,

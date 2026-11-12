@@ -830,6 +830,7 @@ pub type TextureSlot = Option<Ref<Texture>>;
 // ── Alpha mode ───────────────────────────────────────────────────────────────
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+#[repr(u32)]
 pub enum MaterialAlphaMode {
     Blend,
     Mask,
@@ -855,6 +856,7 @@ pub type PbrUvSet = u32;
 // ── Material conversion ──────────────────────────────────────────────────────
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum MaterialConversionDropReason {
     IncompatibleChannelSemantics,
     UnsupportedByTargetModel,

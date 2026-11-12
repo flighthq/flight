@@ -10,6 +10,7 @@ use std::sync::{Arc, Mutex, MutexGuard};
 
 /// The error class a typed panic translates to, including approved DOMException names.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[repr(u32)]
 pub enum FlightErrorKind {
     Error,
     NotReadableError,

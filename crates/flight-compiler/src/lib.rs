@@ -11,6 +11,7 @@ use std::fmt;
 /// `//! flight-compiler: target-native` or `//! flight-compiler: rust-only`.
 /// Files without either directive are generated normally.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[repr(u32)]
 pub enum SourceMode {
     Generate,
     RustOnly,
@@ -61,6 +62,7 @@ pub struct TypeScriptTypeAlias<'a> {
 
 /// The exact target-language array representation established for a Rust function parameter.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[repr(u32)]
 pub enum TypeScriptArrayParameterRepresentation {
     ArrayLikeNumber,
     Float32Array,

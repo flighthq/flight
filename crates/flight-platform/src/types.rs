@@ -15,6 +15,7 @@ use flight_host::ProviderRef;
 
 /// The specific OS/runtime name (TS `PlatformName`).
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+#[repr(u32)]
 pub enum PlatformName {
     Web,
     Windows,
@@ -28,6 +29,7 @@ pub enum PlatformName {
 
 /// Host CPU byte order as probed from the runtime (TS `PlatformEndianness`; 'unknown' when unprobeable).
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+#[repr(u32)]
 pub enum PlatformEndianness {
     Big,
     Little,
@@ -37,6 +39,7 @@ pub enum PlatformEndianness {
 
 /// Browser layout/JS engine family (TS `PlatformEngine`; 'unknown' for native or unrecognized hosts).
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+#[repr(u32)]
 pub enum PlatformEngine {
     Gecko,
     Blink,
@@ -47,6 +50,7 @@ pub enum PlatformEngine {
 
 /// The platform family (TS `PlatformKind`).
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+#[repr(u32)]
 pub enum PlatformKind {
     Desktop,
     Mobile,
@@ -57,6 +61,7 @@ pub enum PlatformKind {
 
 /// Host shell / runtime environment wrapping the page (TS `PlatformRuntime`; 'web' for a plain browser, 'native' for a non-web-shell native host, 'unknown' off-DOM).
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+#[repr(u32)]
 pub enum PlatformRuntime {
     Web,
     Electron,

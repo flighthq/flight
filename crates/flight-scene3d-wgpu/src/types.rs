@@ -77,6 +77,7 @@ pub struct WgpuScene3DLayouts {
 
 /// One classic shading model (TS `WgpuClassicLightingModel`).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum WgpuClassicLightingModel {
     BlinnPhong,
     Lambert,
@@ -99,6 +100,7 @@ pub struct WgpuClassicDefineKey {
 
 /// The debug fragment branch (TS `'depth' | 'normal'`).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum WgpuDebugMode {
     Depth,
     Normal,

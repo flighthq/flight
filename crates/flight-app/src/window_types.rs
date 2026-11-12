@@ -144,6 +144,7 @@ pub struct HostFullscreenCapabilities {
 /// Who owns an attached existing window (TS `WindowAttachmentOwnership`). Host-owned windows are
 /// detached from Flight on close but left alive; Flight-owned windows are closed by the provider.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum WindowAttachmentOwnership {
     Host,
     Flight,

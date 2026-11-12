@@ -6,6 +6,7 @@ use flight_entity::Uint8Array;
 
 /// Canonical algorithm keys used by compressed containers and host registrations.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum Compression {
     Brotli,
     Deflate,
@@ -15,6 +16,7 @@ pub enum Compression {
 /// Framing used for compressed data: raw DEFLATE stream or zlib-wrapped (RFC 1950).
 /// TS: a closed string union whose values are the serialized strings `'Raw'` and `'Rfc1950'`.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum CompressionFraming {
     Raw,
     Rfc1950,

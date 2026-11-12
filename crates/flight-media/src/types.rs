@@ -81,6 +81,7 @@ pub struct HostAudioMixerCapability {
 
 /// Which audio-device operation a caller is checking (TS `AudioDeviceOperation`).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum AudioDeviceOperation {
     CreateBuffer,
     CreateDevice,
@@ -101,6 +102,7 @@ pub enum AudioDeviceOperation {
 
 /// Which bus property a write targeted when no mixer node received it.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum AudioBusMixerOperation {
     Gain,
     Mute,
@@ -109,6 +111,7 @@ pub enum AudioBusMixerOperation {
 
 /// Opt-in readiness vocabulary shared by audio and video channels.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum MediaReadyState {
     Buffering,
     Error,

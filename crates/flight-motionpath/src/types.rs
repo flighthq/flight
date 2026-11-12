@@ -12,6 +12,7 @@ use flight_path::{Path, create_path};
 /// string union. `Clamp` stops at the ends; `Loop` wraps modulo the path length; `Pingpong`
 /// reflects at each end and reverses `direction`.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+#[repr(u32)]
 pub enum MotionPathLoopMode {
     #[default]
     Clamp,

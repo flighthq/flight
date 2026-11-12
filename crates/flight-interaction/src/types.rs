@@ -32,6 +32,7 @@ pub trait CursorBackend: Send + Sync {
 // ── PointerType ──
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum PointerType {
     Mouse,
     Pen,
@@ -149,6 +150,7 @@ pub struct InteractionSignals {
 // ── InteractionSignalName ──
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+#[repr(u32)]
 pub enum InteractionSignalName {
     OnClick,
     OnContextMenu,
@@ -275,6 +277,7 @@ pub type InteractionConnectGuard = Arc<dyn Fn(&NodeRef, InteractionSignalName) +
 // ── FocusManager ──
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum FocusDirection {
     Down,
     Left,

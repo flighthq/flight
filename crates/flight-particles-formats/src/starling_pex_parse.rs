@@ -24,6 +24,7 @@ pub struct StarlingPexColor {
 
 /// The emitter type (TS `emitterType: 0 | 1`).
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+#[repr(u32)]
 pub enum StarlingPexEmitterType {
     #[default]
     Gravity,

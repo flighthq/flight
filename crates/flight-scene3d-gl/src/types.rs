@@ -98,6 +98,7 @@ pub struct GlLitProgram {
 
 /// TS `GlClassicLightingModel`.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+#[repr(u32)]
 pub enum GlClassicLightingModel {
     BlinnPhong,
     #[default]
@@ -138,6 +139,7 @@ pub struct GlClassicProgram {
 
 /// TS `GlDebugDefineKey.mode`.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+#[repr(u32)]
 pub enum GlDebugMode {
     #[default]
     Depth,
@@ -402,6 +404,7 @@ pub struct GlEnvironmentCaptureOptions {
 
 /// TS `GlPbrExtensionIssueCode`.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum GlPbrExtensionIssueCode {
     DuplicateKind,
     FramebufferFeedback,

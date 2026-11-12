@@ -145,6 +145,7 @@ fn fs_main(in : VertexOut) -> @location(0) vec4f {
 
 /// Which stencil behavior a 2D pipeline bakes (TS `StencilMode`).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum WgpuStencilMode {
     Masked,
     MaskWrite,

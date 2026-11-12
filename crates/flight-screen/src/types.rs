@@ -12,6 +12,7 @@ use flight_signals::Signal;
 
 /// The four logical display orientations (TS `ScreenOrientation`); the flipped variants are the 180-degree counterparts.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+#[repr(u32)]
 pub enum ScreenOrientation {
     #[default]
     Landscape,
@@ -22,6 +23,7 @@ pub enum ScreenOrientation {
 
 /// The color gamut a display covers (TS `ScreenColorSpace`); `Srgb` is the default.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+#[repr(u32)]
 pub enum ScreenColorSpace {
     DisplayP3,
     Rec2020,
@@ -31,6 +33,7 @@ pub enum ScreenColorSpace {
 
 /// The window-management permission states a screen host can report (TS `ScreenPermissionState`).
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+#[repr(u32)]
 pub enum ScreenPermissionState {
     Denied,
     Granted,
@@ -40,6 +43,7 @@ pub enum ScreenPermissionState {
 
 /// What kind of display change an event reports (TS `ScreenChangeKind`).
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+#[repr(u32)]
 pub enum ScreenChangeKind {
     #[default]
     ScreenAdded,

@@ -7,6 +7,7 @@ use flight_requirement::{Requirement, RequirementFacet};
 
 /// Whether a direct parser consumes raw bytes or decoded text.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum ContentParserInputKind {
     Bytes,
     String,

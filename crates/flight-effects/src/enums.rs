@@ -30,6 +30,7 @@ pub const COMPOSITE_OPERATOR_SOURCE_OVER: &str = "SourceOver";
 pub const COMPOSITE_OPERATOR_XOR: &str = "Xor";
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+#[repr(u32)]
 pub enum EffectSourceMode {
     #[default]
     Draw,
@@ -38,6 +39,7 @@ pub enum EffectSourceMode {
 }
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+#[repr(u32)]
 pub enum InnerEffectSourceMode {
     #[default]
     Draw,
@@ -45,6 +47,7 @@ pub enum InnerEffectSourceMode {
 }
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+#[repr(u32)]
 pub enum BevelType {
     Full,
     #[default]
@@ -53,6 +56,7 @@ pub enum BevelType {
 }
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+#[repr(u32)]
 pub enum BitmapDisplacementEffectEdgeMode {
     Clamp,
     #[default]
@@ -60,6 +64,7 @@ pub enum BitmapDisplacementEffectEdgeMode {
 }
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+#[repr(u32)]
 pub enum ToneMapOperator {
     Reinhard,
     #[default]
@@ -70,6 +75,7 @@ pub enum ToneMapOperator {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
 pub enum EffectInput {
     Hdr,
     Depth,
@@ -91,6 +97,7 @@ pub struct EffectKindFieldRoles {
 pub type EffectFieldRoles = [EffectKindFieldRoles];
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+#[repr(u32)]
 pub enum EffectPaddingStatus {
     #[default]
     Complete,
