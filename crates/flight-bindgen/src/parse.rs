@@ -102,7 +102,7 @@ pub const SKIP_TYPES: &[&str] = &[
     "BoundsRectangleRuntimeMethods",
     "ClippingAttachment2D",
     "DateTimeFormatOptions",
-    "Float32Array",
+    "EffectFieldRoles",
     "MarkupTagRegistry",
     "MeshAttachment2D",
     "NodeRef",
@@ -122,7 +122,6 @@ pub const SKIP_TYPES: &[&str] = &[
     "TextLayoutContext",
     "TextMarkupGuardState",
     "Transform2DRuntimeMethods",
-    "Uint8Array",
     "Value",
 ];
 
@@ -259,6 +258,7 @@ fn has_ffi_compatible_signature(func: &ParsedFn) -> bool {
 }
 
 #[derive(Debug, Clone)]
+#[allow(dead_code)]
 pub enum ParamKind {
     Scalar(String),
     RefConst(String),
@@ -277,10 +277,15 @@ pub enum ParamKind {
     ArcRefMut,
     SliceConst(String),
     SliceMut(String),
+    FixedArrayConst(String, usize),
+    FixedArrayMut(String, usize),
+    OptionSliceConst(String),
+    OptionSliceMut(String),
     Enum(String),
 }
 
 #[derive(Debug, Clone)]
+#[allow(dead_code)]
 pub enum ReturnKind {
     Void,
     Scalar(String),
@@ -305,6 +310,43 @@ fn strip_lifetimes(ty: &str) -> String {
 }
 
 fn resolve_type_alias(ty: &str) -> String {
+    let slice_aliases: &[(&str, &str)] = &[
+        ("Uint8Array", "[u8]"),
+        ("Int8Array", "[i8]"),
+        ("Uint16Array", "[u16]"),
+        ("Int16Array", "[i16]"),
+        ("Uint32Array", "[u32]"),
+        ("Int32Array", "[i32]"),
+        ("Float32Array", "[f32]"),
+        ("Float64Array", "[f64]"),
+    ];
+    for &(alias, resolved) in slice_aliases {
+        if let Some(rest) = ty.strip_prefix("Option<&mut ") {
+            if let Some(inner) = rest.strip_suffix('>') {
+                if inner.trim() == alias {
+                    return format!("Option<&mut {resolved}>");
+                }
+            }
+        }
+        if let Some(rest) = ty.strip_prefix("Option<&") {
+            if let Some(inner) = rest.strip_suffix('>') {
+                if inner.trim() == alias {
+                    return format!("Option<&{resolved}>");
+                }
+            }
+        }
+        if let Some(rest) = ty.strip_prefix("&mut ") {
+            if rest.trim() == alias {
+                return format!("&mut {resolved}");
+            }
+        }
+        if let Some(rest) = ty.strip_prefix('&') {
+            if rest.trim() == alias {
+                return format!("&{resolved}");
+            }
+        }
+    }
+
     let aliases: &[(&str, &str)] = &[
         ("Physics2DAbiObjectId", "u32"),
         ("Physics3DAbiObjectId", "u32"),
@@ -378,6 +420,25 @@ pub fn classify_param(ty: &str) -> Option<ParamKind> {
         return Some(ParamKind::OptionStringParam);
     }
 
+    // Option<&mut [T]> for scalar T
+    if let Some(inner) = ty.strip_prefix("Option<&mut [") {
+        if let Some(inner) = inner.strip_suffix("]>") {
+            let inner = inner.trim();
+            if is_scalar(inner) {
+                return Some(ParamKind::OptionSliceMut(inner.to_string()));
+            }
+        }
+    }
+    // Option<&[T]> for scalar T
+    if let Some(inner) = ty.strip_prefix("Option<&[") {
+        if let Some(inner) = inner.strip_suffix("]>") {
+            let inner = inner.trim();
+            if is_scalar(inner) {
+                return Some(ParamKind::OptionSliceConst(inner.to_string()));
+            }
+        }
+    }
+
     if let Some(inner) = ty.strip_prefix("Option<&mut ") {
         if let Some(inner) = inner.strip_suffix('>') {
             let inner = inner.trim();
@@ -418,6 +479,38 @@ pub fn classify_param(ty: &str) -> Option<ParamKind> {
                 && !SKIP_TYPES.iter().any(|s| inner.contains(s))
             {
                 return Some(ParamKind::ArcRef);
+            }
+        }
+    }
+
+    // &mut [T; N] -> FixedArrayMut(T, N) for scalar T
+    if let Some(inner) = ty.strip_prefix("&mut [") {
+        if let Some(inner) = inner.strip_suffix(']') {
+            let inner = inner.trim();
+            if let Some((elem, size_str)) = inner.split_once(';') {
+                let elem = elem.trim();
+                let size_str = size_str.trim();
+                if is_scalar(elem) {
+                    if let Ok(size) = size_str.parse::<usize>() {
+                        return Some(ParamKind::FixedArrayMut(elem.to_string(), size));
+                    }
+                }
+            }
+        }
+    }
+
+    // &[T; N] -> FixedArrayConst(T, N) for scalar T
+    if let Some(inner) = ty.strip_prefix("&[") {
+        if let Some(inner) = inner.strip_suffix(']') {
+            let inner = inner.trim();
+            if let Some((elem, size_str)) = inner.split_once(';') {
+                let elem = elem.trim();
+                let size_str = size_str.trim();
+                if is_scalar(elem) {
+                    if let Ok(size) = size_str.parse::<usize>() {
+                        return Some(ParamKind::FixedArrayConst(elem.to_string(), size));
+                    }
+                }
             }
         }
     }

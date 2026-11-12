@@ -208,11 +208,18 @@ fn emit_one_method(ty: &str, tm: &TypeMethod<'_>) -> Option<String> {
         } else {
             let pname = to_camel_case(&param.name);
             match &kind {
-                ParamKind::SliceConst(_) | ParamKind::SliceMut(_) => {
+                ParamKind::SliceConst(_)
+                | ParamKind::SliceMut(_)
+                | ParamKind::OptionSliceConst(_)
+                | ParamKind::OptionSliceMut(_) => {
                     method_params.push(format!("{pname}:hl.Bytes"));
                     method_params.push(format!("{pname}Len:Int"));
                     call_args.push(pname.clone());
                     call_args.push(format!("{pname}Len"));
+                }
+                ParamKind::FixedArrayConst(_, _) | ParamKind::FixedArrayMut(_, _) => {
+                    method_params.push(format!("{pname}:hl.Bytes"));
+                    call_args.push(pname);
                 }
                 _ => {
                     let haxe_ty = param_kind_to_haxe(&kind);
@@ -278,9 +285,15 @@ fn emit_function(func: &ParsedFn) -> Option<String> {
         let kind = classify_param(&param.ty)?;
         let pname = to_camel_case(&param.name);
         match &kind {
-            ParamKind::SliceConst(_) | ParamKind::SliceMut(_) => {
+            ParamKind::SliceConst(_)
+            | ParamKind::SliceMut(_)
+            | ParamKind::OptionSliceConst(_)
+            | ParamKind::OptionSliceMut(_) => {
                 haxe_params.push(format!("{pname}:hl.Bytes"));
                 haxe_params.push(format!("{pname}Len:Int"));
+            }
+            ParamKind::FixedArrayConst(_, _) | ParamKind::FixedArrayMut(_, _) => {
+                haxe_params.push(format!("{pname}:hl.Bytes"));
             }
             _ => {
                 let haxe_ty = param_kind_to_haxe(&kind);
@@ -315,7 +328,11 @@ fn param_kind_to_haxe(kind: &ParamKind) -> String {
         | ParamKind::StringParam
         | ParamKind::OptionStr
         | ParamKind::OptionStringParam => "hl.Bytes".to_string(),
-        ParamKind::SliceConst(_) | ParamKind::SliceMut(_) => "hl.Bytes".to_string(),
+        ParamKind::SliceConst(_)
+        | ParamKind::SliceMut(_)
+        | ParamKind::OptionSliceConst(_)
+        | ParamKind::OptionSliceMut(_) => "hl.Bytes".to_string(),
+        ParamKind::FixedArrayConst(_, _) | ParamKind::FixedArrayMut(_, _) => "hl.Bytes".to_string(),
         ParamKind::Enum(_) => "Int".to_string(),
     }
 }

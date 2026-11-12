@@ -159,13 +159,21 @@ fn emit_dispatch_function(module_name: &str, func: &ParsedFn) -> Option<(String,
         let kind = classify_param(&param.ty)?;
         let param_name = to_camel_case(&param.name);
         match &kind {
-            ParamKind::SliceConst(_) | ParamKind::SliceMut(_) => {
+            ParamKind::SliceConst(_)
+            | ParamKind::SliceMut(_)
+            | ParamKind::OptionSliceConst(_)
+            | ParamKind::OptionSliceMut(_) => {
                 haxe_params.push(format!("{param_name}:Dynamic"));
                 haxe_params.push(format!("{param_name}Len:Int"));
                 call_args.push(param_name.clone());
                 call_args.push(format!("{param_name}Len"));
                 native_call_args.push(param_name.clone());
                 native_call_args.push(format!("{param_name}Len"));
+            }
+            ParamKind::FixedArrayConst(_, _) | ParamKind::FixedArrayMut(_, _) => {
+                haxe_params.push(format!("{param_name}:Dynamic"));
+                call_args.push(param_name.clone());
+                native_call_args.push(param_name.clone());
             }
             _ => {
                 let haxe_ty = param_kind_to_haxe(&kind);
@@ -259,7 +267,11 @@ fn param_kind_to_haxe(kind: &ParamKind) -> String {
         | ParamKind::StringParam
         | ParamKind::OptionStr
         | ParamKind::OptionStringParam => "String".to_string(),
-        ParamKind::SliceConst(_) | ParamKind::SliceMut(_) => "Dynamic".to_string(),
+        ParamKind::SliceConst(_)
+        | ParamKind::SliceMut(_)
+        | ParamKind::OptionSliceConst(_)
+        | ParamKind::OptionSliceMut(_) => "Dynamic".to_string(),
+        ParamKind::FixedArrayConst(_, _) | ParamKind::FixedArrayMut(_, _) => "Dynamic".to_string(),
         ParamKind::Enum(_) => "Int".to_string(),
     }
 }

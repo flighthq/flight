@@ -105,7 +105,7 @@ const SKIP_TYPES: &[&str] = &[
     "BoundsRectangleRuntimeMethods",
     "ClippingAttachment2D",
     "DateTimeFormatOptions",
-    "Float32Array",
+    "EffectFieldRoles",
     "MarkupTagRegistry",
     "NodeRef",
     "NumberFormatOptions",
@@ -125,7 +125,6 @@ const SKIP_TYPES: &[&str] = &[
     "TextLayoutContext",
     "TextMarkupGuardState",
     "Transform2DRuntimeMethods",
-    "Uint8Array",
     "Value",
 ];
 
@@ -945,6 +944,43 @@ fn qualify_type(ty: &str) -> String {
 }
 
 fn resolve_type_alias(ty: &str) -> String {
+    let slice_aliases: &[(&str, &str)] = &[
+        ("Uint8Array", "[u8]"),
+        ("Int8Array", "[i8]"),
+        ("Uint16Array", "[u16]"),
+        ("Int16Array", "[i16]"),
+        ("Uint32Array", "[u32]"),
+        ("Int32Array", "[i32]"),
+        ("Float32Array", "[f32]"),
+        ("Float64Array", "[f64]"),
+    ];
+    for &(alias, resolved) in slice_aliases {
+        if let Some(rest) = ty.strip_prefix("Option<&mut ") {
+            if let Some(inner) = rest.strip_suffix('>') {
+                if inner.trim() == alias {
+                    return format!("Option<&mut {resolved}>");
+                }
+            }
+        }
+        if let Some(rest) = ty.strip_prefix("Option<&") {
+            if let Some(inner) = rest.strip_suffix('>') {
+                if inner.trim() == alias {
+                    return format!("Option<&{resolved}>");
+                }
+            }
+        }
+        if let Some(rest) = ty.strip_prefix("&mut ") {
+            if rest.trim() == alias {
+                return format!("&mut {resolved}");
+            }
+        }
+        if let Some(rest) = ty.strip_prefix('&') {
+            if rest.trim() == alias {
+                return format!("&{resolved}");
+            }
+        }
+    }
+
     let aliases: &[(&str, &str)] = &[
         ("Physics2DAbiObjectId", "u32"),
         ("Physics3DAbiObjectId", "u32"),
@@ -1081,6 +1117,46 @@ fn map_param_to_ffi(name: &str, ty: &str) -> Option<MappedParam> {
         );
     }
 
+    // Option<&[T]> -> nullable pointer + length for scalar T
+    if let Some(inner) = ty.strip_prefix("Option<&[") {
+        if let Some(inner) = inner.strip_suffix("]>") {
+            let inner = inner.trim();
+            if is_scalar(inner) {
+                let ptr_name = format!("{name}_ptr");
+                let len_name = format!("{name}_len");
+                return Some(MappedParam {
+                    ffi_params: vec![
+                        (ptr_name.clone(), format!("*const {inner}")),
+                        (len_name.clone(), "usize".to_string()),
+                    ],
+                    call_expr: format!(
+                        "if {ptr_name}.is_null() {{ None }} else {{ Some(unsafe {{ std::slice::from_raw_parts({ptr_name}, {len_name}) }}) }}"
+                    ),
+                });
+            }
+        }
+    }
+
+    // Option<&mut [T]> -> nullable pointer + length for scalar T
+    if let Some(inner) = ty.strip_prefix("Option<&mut [") {
+        if let Some(inner) = inner.strip_suffix("]>") {
+            let inner = inner.trim();
+            if is_scalar(inner) {
+                let ptr_name = format!("{name}_ptr");
+                let len_name = format!("{name}_len");
+                return Some(MappedParam {
+                    ffi_params: vec![
+                        (ptr_name.clone(), format!("*mut {inner}")),
+                        (len_name.clone(), "usize".to_string()),
+                    ],
+                    call_expr: format!(
+                        "if {ptr_name}.is_null() {{ None }} else {{ Some(unsafe {{ std::slice::from_raw_parts_mut({ptr_name}, {len_name}) }}) }}"
+                    ),
+                });
+            }
+        }
+    }
+
     // Option<&mut T> -> nullable *mut T
     if let Some(inner) = ty.strip_prefix("Option<&mut ") {
         if let Some(inner) = inner.strip_suffix('>') {
@@ -1151,6 +1227,46 @@ fn map_param_to_ffi(name: &str, ty: &str) -> Option<MappedParam> {
                     "*const std::ffi::c_void",
                     format!("unsafe {{ &*({name} as *const flight_sdk::Ref<{qualified}>) }}"),
                 );
+            }
+        }
+    }
+
+    // &mut [T; N] -> *mut T (fixed-size array, no length needed)
+    if let Some(inner) = ty.strip_prefix("&mut [") {
+        if let Some(inner) = inner.strip_suffix(']') {
+            let inner = inner.trim();
+            if let Some((elem, size_str)) = inner.split_once(';') {
+                let elem = elem.trim();
+                let size_str = size_str.trim();
+                if is_scalar(elem) {
+                    if size_str.parse::<usize>().is_ok() {
+                        return mapped_single(
+                            name,
+                            &format!("*mut {elem}"),
+                            format!("unsafe {{ &mut *({name} as *mut [{elem}; {size_str}]) }}"),
+                        );
+                    }
+                }
+            }
+        }
+    }
+
+    // &[T; N] -> *const T (fixed-size array, no length needed)
+    if let Some(inner) = ty.strip_prefix("&[") {
+        if let Some(inner) = inner.strip_suffix(']') {
+            let inner = inner.trim();
+            if let Some((elem, size_str)) = inner.split_once(';') {
+                let elem = elem.trim();
+                let size_str = size_str.trim();
+                if is_scalar(elem) {
+                    if size_str.parse::<usize>().is_ok() {
+                        return mapped_single(
+                            name,
+                            &format!("*const {elem}"),
+                            format!("unsafe {{ &*({name} as *const [{elem}; {size_str}]) }}"),
+                        );
+                    }
+                }
             }
         }
     }
