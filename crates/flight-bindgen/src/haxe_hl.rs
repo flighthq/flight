@@ -334,6 +334,8 @@ fn param_kind_to_haxe(kind: &ParamKind) -> String {
         | ParamKind::OptionSliceMut(_) => "hl.Bytes".to_string(),
         ParamKind::FixedArrayConst(_, _) | ParamKind::FixedArrayMut(_, _) => "hl.Bytes".to_string(),
         ParamKind::Enum(_) => "Int".to_string(),
+        ParamKind::DynOpaque(_) => "Dynamic".to_string(),
+        ParamKind::DynMono(ty) => format!("{PKG}.{ty}"),
     }
 }
 

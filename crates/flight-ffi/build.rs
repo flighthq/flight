@@ -97,6 +97,108 @@ const SCAN_CRATES: &[&str] = &[
     "flight-xml",
 ];
 
+const DYN_OPAQUE_TRAITS: &[(&str, &str)] = &[
+    ("Node", "NodeRef"),
+    ("Node2D", "Node2DRef"),
+    ("Node3D", "Node3DRef"),
+];
+
+const DYN_MONO_TRAITS: &[(&str, &[&str])] = &[
+    (
+        "Material",
+        &[
+            "Material2DFields",
+            "Material3DFields",
+            "MaterialFields",
+            "ShadedMaterial",
+            "StandardMaterial",
+        ],
+    ),
+    ("Material3D", &["Material3DFields"]),
+    ("TextureVariant", &["Texture"]),
+    ("TextureUvTransform", &["Texture"]),
+    (
+        "Adjustment",
+        &[
+            "BrightnessContrastAdjustment",
+            "ChannelMixerAdjustment",
+            "ColorBlindSimulationAdjustment",
+            "ColorGradeAdjustment",
+            "ColorMatrixAdjustment",
+            "ColorScaleBiasAdjustment",
+            "ExposureAdjustment",
+            "GrayscaleAdjustment",
+            "HueSaturationAdjustment",
+            "InvertAdjustment",
+            "LiftGammaGainAdjustment",
+            "LookupTableGradeAdjustment",
+            "SepiaAdjustment",
+            "TintAdjustment",
+        ],
+    ),
+    (
+        "Modifier",
+        &[
+            "AnimatedNormalModifier",
+            "DissolveModifier",
+            "EmissiveModifier",
+            "EnvReflectModifier",
+            "FogModifier",
+            "RimModifier",
+            "ToonModifier",
+            "VertexDisplaceModifier",
+        ],
+    ),
+    (
+        "Light",
+        &[
+            "AmbientLight",
+            "DirectionalLight",
+            "Environment",
+            "HemisphereLight",
+        ],
+    ),
+    ("PunctualLight", &["PointLight", "SpotLight"]),
+    (
+        "PhotometricLightLike",
+        &["AmbientLight", "DirectionalLight", "HemisphereLight"],
+    ),
+    (
+        "Skeleton2DConstraint",
+        &[
+            "Skeleton2DIkConstraint",
+            "Skeleton2DPathConstraint",
+            "Skeleton2DTransformConstraint",
+        ],
+    ),
+    (
+        "Physics2DJoint",
+        &[
+            "Physics2DDistanceJoint",
+            "Physics2DGearJoint",
+            "Physics2DMouseJoint",
+            "Physics2DPrismaticJoint",
+            "Physics2DPulleyJoint",
+            "Physics2DRevoluteJoint",
+            "Physics2DRopeJoint",
+            "Physics2DWeldJoint",
+            "Physics2DWheelJoint",
+        ],
+    ),
+    (
+        "Physics3DJoint",
+        &[
+            "Physics3DBallAndSocketJoint",
+            "Physics3DConeTwistJoint",
+            "Physics3DDistanceJoint",
+            "Physics3DFixedJoint",
+            "Physics3DGeneric6DofJoint",
+            "Physics3DHingeJoint",
+            "Physics3DSliderJoint",
+        ],
+    ),
+];
+
 const SKIP_FN_PREFIXES: &[&str] = &["initialize_"];
 const SKIP_TYPES: &[&str] = &[
     "AttachmentSkin2D",
@@ -176,16 +278,30 @@ fn main() {
         let mut crate_output = String::new();
         let mut crate_used = false;
         for func in &fns {
-            let ffi_name = format!("flight_{}", func.name);
-            if seen_names.contains(&ffi_name) {
-                continue;
-            }
-            if let Some((wrapper, boxed_ty)) = generate_ffi_wrapper(func) {
-                writeln!(crate_output, "{wrapper}").unwrap();
-                seen_names.insert(ffi_name);
-                crate_used = true;
-                if let Some(ty) = boxed_ty {
-                    boxed_types.insert(ty);
+            if has_mono_dyn_param(func) {
+                let wrappers = generate_mono_wrappers(func);
+                for (ffi_name, wrapper, boxed_ty) in wrappers {
+                    if !seen_names.contains(&ffi_name) {
+                        writeln!(crate_output, "{wrapper}").unwrap();
+                        seen_names.insert(ffi_name);
+                        crate_used = true;
+                        if let Some(ty) = boxed_ty {
+                            boxed_types.insert(ty);
+                        }
+                    }
+                }
+            } else {
+                let ffi_name = format!("flight_{}", func.name);
+                if seen_names.contains(&ffi_name) {
+                    continue;
+                }
+                if let Some((wrapper, boxed_ty)) = generate_ffi_wrapper(func) {
+                    writeln!(crate_output, "{wrapper}").unwrap();
+                    seen_names.insert(ffi_name);
+                    crate_used = true;
+                    if let Some(ty) = boxed_ty {
+                        boxed_types.insert(ty);
+                    }
                 }
             }
         }
@@ -810,9 +926,32 @@ fn generate_field_accessors(
     output
 }
 
+fn extract_dyn_trait(ty: &str) -> Option<&str> {
+    let inner = ty.strip_prefix("&mut ").or_else(|| ty.strip_prefix('&'))?;
+    let inner = inner.strip_prefix("dyn ")?;
+    Some(inner.trim())
+}
+
+fn is_known_dyn_opaque(ty: &str) -> bool {
+    extract_dyn_trait(ty)
+        .map(|t| DYN_OPAQUE_TRAITS.iter().any(|(name, _)| *name == t))
+        .unwrap_or(false)
+}
+
+fn is_known_dyn_mono(ty: &str) -> bool {
+    extract_dyn_trait(ty)
+        .map(|t| DYN_MONO_TRAITS.iter().any(|(name, _)| *name == t))
+        .unwrap_or(false)
+}
+
 fn is_ffi_incompatible(ty: &str) -> bool {
-    ty.contains("dyn ")
-        || ty.contains("Fn(")
+    if ty.contains("dyn ") {
+        if is_known_dyn_opaque(ty) || is_known_dyn_mono(ty) {
+            return false;
+        }
+        return true;
+    }
+    ty.contains("Fn(")
         || ty.contains("FnMut(")
         || ty.contains("FnOnce(")
         || ty.contains('<')
@@ -828,6 +967,7 @@ fn generate_ffi_wrapper(func: &ParsedFn) -> Option<(String, Option<String>)> {
 
     let mut ffi_params = Vec::new();
     let mut call_args = Vec::new();
+    let mut guard_bindings = Vec::new();
 
     for param in &func.params {
         let mapped = map_param_to_ffi(&param.name, &param.ty)?;
@@ -835,6 +975,28 @@ fn generate_ffi_wrapper(func: &ParsedFn) -> Option<(String, Option<String>)> {
             ffi_params.push(format!("{pname}: {pty}"));
         }
         call_args.push(mapped.call_expr);
+
+        let ty = strip_lifetimes(&resolve_type_alias(param.ty.trim()));
+        if let Some(trait_name) = extract_dyn_trait(&ty) {
+            if let Some((_, ref_alias)) = DYN_OPAQUE_TRAITS.iter().find(|(n, _)| *n == trait_name) {
+                let qualified_ref = qualify_type(ref_alias);
+                let name = &param.name;
+                let clean = name.trim_start_matches('_');
+                if ty.starts_with("&mut ") {
+                    guard_bindings.push(format!(
+                        "    let arc_{clean} = unsafe {{ &*({name} as *const {qualified_ref}) }};\n    \
+                         let mut guard_{clean} = arc_{clean}.write().unwrap();\n    \
+                         let dyn_{clean}: &mut dyn {QUALIFIER}::{trait_name} = &mut *guard_{clean};"
+                    ));
+                } else {
+                    guard_bindings.push(format!(
+                        "    let arc_{clean} = unsafe {{ &*({name} as *const {qualified_ref}) }};\n    \
+                         let guard_{clean} = arc_{clean}.read().unwrap();\n    \
+                         let dyn_{clean}: &dyn {QUALIFIER}::{trait_name} = &*guard_{clean};"
+                    ));
+                }
+            }
+        }
     }
 
     let (ret_decl, call_wrap) = match &func.ret {
@@ -855,22 +1017,28 @@ fn generate_ffi_wrapper(func: &ParsedFn) -> Option<(String, Option<String>)> {
         args = call_args.join(", ")
     );
 
+    let preamble = if guard_bindings.is_empty() {
+        String::new()
+    } else {
+        format!("{}\n", guard_bindings.join("\n"))
+    };
+
     let body = match call_wrap {
-        FfiReturn::Void => format!("    {call};"),
-        FfiReturn::Direct => format!("    return {call};"),
+        FfiReturn::Void => format!("{preamble}    {call};"),
+        FfiReturn::Direct => format!("{preamble}    return {call};"),
         FfiReturn::BoxReturn => {
-            format!("    return Box::into_raw(Box::new({call}));")
+            format!("{preamble}    return Box::into_raw(Box::new({call}));")
         }
         FfiReturn::StringReturn => {
             format!(
-                "    let s = {call};\n    \
+                "{preamble}    let s = {call};\n    \
                      let c_str = std::ffi::CString::new(s).unwrap_or_default();\n    \
                      return c_str.into_raw();"
             )
         }
         FfiReturn::OptionStringReturn => {
             format!(
-                "    match {call} {{\n        \
+                "{preamble}    match {call} {{\n        \
                      Some(s) => std::ffi::CString::new(s).unwrap_or_default().into_raw(),\n        \
                      None => std::ptr::null_mut(),\n    \
                      }}"
@@ -878,20 +1046,20 @@ fn generate_ffi_wrapper(func: &ParsedFn) -> Option<(String, Option<String>)> {
         }
         FfiReturn::ArcRefReturn => {
             format!(
-                "    let arc = {call};\n    \
+                "{preamble}    let arc = {call};\n    \
                      return Box::into_raw(Box::new(arc)) as *mut std::ffi::c_void;"
             )
         }
         FfiReturn::OptionArcRefReturn => {
             format!(
-                "    match {call} {{\n        \
+                "{preamble}    match {call} {{\n        \
                      Some(arc) => Box::into_raw(Box::new(arc)) as *mut std::ffi::c_void,\n        \
                      None => std::ptr::null_mut(),\n    \
                      }}"
             )
         }
         FfiReturn::EnumReturn => {
-            format!("    return {call} as u32;")
+            format!("{preamble}    return {call} as u32;")
         }
     };
 
@@ -902,6 +1070,166 @@ fn generate_ffi_wrapper(func: &ParsedFn) -> Option<(String, Option<String>)> {
         ),
         boxed_ty,
     ))
+}
+
+fn has_mono_dyn_param(func: &ParsedFn) -> bool {
+    func.params
+        .iter()
+        .any(|p| is_known_dyn_mono(&strip_lifetimes(&resolve_type_alias(p.ty.trim()))))
+}
+
+struct MonoParam {
+    index: usize,
+    #[allow(dead_code)]
+    trait_name: String,
+    concrete_types: Vec<String>,
+}
+
+fn collect_mono_params(func: &ParsedFn) -> Vec<MonoParam> {
+    let mut result = Vec::new();
+    for (i, p) in func.params.iter().enumerate() {
+        let ty = strip_lifetimes(&resolve_type_alias(p.ty.trim()));
+        if let Some(trait_name) = extract_dyn_trait(&ty) {
+            if let Some((_, impls)) = DYN_MONO_TRAITS.iter().find(|(n, _)| *n == trait_name) {
+                result.push(MonoParam {
+                    index: i,
+                    trait_name: trait_name.to_string(),
+                    concrete_types: impls.iter().map(|s| s.to_string()).collect(),
+                });
+            }
+        }
+    }
+    result
+}
+
+fn generate_mono_wrappers(func: &ParsedFn) -> Vec<(String, String, Option<String>)> {
+    if SKIP_FN_PREFIXES.iter().any(|p| func.name.starts_with(p)) {
+        return Vec::new();
+    }
+
+    let mono_params = collect_mono_params(func);
+    if mono_params.is_empty() {
+        return Vec::new();
+    }
+
+    let (ret_decl, call_wrap) = match &func.ret {
+        None => (String::new(), FfiReturn::Void),
+        Some(ty) => match map_return_to_ffi(ty) {
+            Some(r) => r,
+            None => return Vec::new(),
+        },
+    };
+
+    let boxed_ty = if matches!(call_wrap, FfiReturn::BoxReturn) {
+        func.ret.as_ref().map(|ty| qualify_type(ty))
+    } else {
+        None
+    };
+
+    let mut combos: Vec<Vec<(usize, &str)>> = vec![vec![]];
+    for mp in &mono_params {
+        let mut new_combos = Vec::new();
+        for existing in &combos {
+            for concrete in &mp.concrete_types {
+                let mut combo = existing.clone();
+                combo.push((mp.index, concrete.as_str()));
+                new_combos.push(combo);
+            }
+        }
+        combos = new_combos;
+    }
+
+    let mut wrappers = Vec::new();
+    for combo in &combos {
+        let suffix: Vec<String> = combo.iter().map(|(_, ty)| to_snake_case(ty)).collect();
+        let ffi_name = format!("flight_{}__{}", func.name, suffix.join("__"));
+
+        let mut ffi_params = Vec::new();
+        let mut call_args = Vec::new();
+        let mut ok = true;
+
+        for (i, param) in func.params.iter().enumerate() {
+            if let Some((_, concrete_ty)) = combo.iter().find(|(idx, _)| *idx == i) {
+                let ty = strip_lifetimes(&resolve_type_alias(param.ty.trim()));
+                let qualified = qualify_type(concrete_ty);
+                let trait_name = extract_dyn_trait(&ty).unwrap();
+                if ty.starts_with("&mut ") {
+                    ffi_params.push(format!("{}: *mut {qualified}", param.name));
+                    call_args.push(format!(
+                        "unsafe {{ &mut *{name} }} as &mut dyn {QUALIFIER}::{trait_name}",
+                        name = param.name
+                    ));
+                } else {
+                    ffi_params.push(format!("{}: *const {qualified}", param.name));
+                    call_args.push(format!(
+                        "unsafe {{ &*{name} }} as &dyn {QUALIFIER}::{trait_name}",
+                        name = param.name
+                    ));
+                }
+            } else {
+                match map_param_to_ffi(&param.name, &param.ty) {
+                    Some(mapped) => {
+                        for (pname, pty) in &mapped.ffi_params {
+                            ffi_params.push(format!("{pname}: {pty}"));
+                        }
+                        call_args.push(mapped.call_expr);
+                    }
+                    None => {
+                        ok = false;
+                        break;
+                    }
+                }
+            }
+        }
+
+        if !ok {
+            continue;
+        }
+
+        let call = format!(
+            "flight_sdk::{name}({args})",
+            name = func.name,
+            args = call_args.join(", ")
+        );
+
+        let body = match call_wrap {
+            FfiReturn::Void => format!("    {call};"),
+            FfiReturn::Direct => format!("    return {call};"),
+            FfiReturn::BoxReturn => format!("    return Box::into_raw(Box::new({call}));"),
+            FfiReturn::StringReturn => format!(
+                "    let s = {call};\n    \
+                     let c_str = std::ffi::CString::new(s).unwrap_or_default();\n    \
+                     return c_str.into_raw();"
+            ),
+            FfiReturn::OptionStringReturn => format!(
+                "    match {call} {{\n        \
+                     Some(s) => std::ffi::CString::new(s).unwrap_or_default().into_raw(),\n        \
+                     None => std::ptr::null_mut(),\n    \
+                     }}"
+            ),
+            FfiReturn::ArcRefReturn => format!(
+                "    let arc = {call};\n    \
+                     return Box::into_raw(Box::new(arc)) as *mut std::ffi::c_void;"
+            ),
+            FfiReturn::OptionArcRefReturn => format!(
+                "    match {call} {{\n        \
+                     Some(arc) => Box::into_raw(Box::new(arc)) as *mut std::ffi::c_void,\n        \
+                     None => std::ptr::null_mut(),\n    \
+                     }}"
+            ),
+            FfiReturn::EnumReturn => format!("    return {call} as u32;"),
+        };
+
+        wrappers.push((
+            ffi_name.clone(),
+            format!(
+                "#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn {ffi_name}({params}){ret_decl} {{\n{body}\n}}",
+                params = ffi_params.join(", "),
+            ),
+            boxed_ty.clone(),
+        ));
+    }
+    wrappers
 }
 
 enum FfiReturn {
@@ -1308,6 +1636,27 @@ fn map_param_to_ffi(name: &str, ty: &str) -> Option<MappedParam> {
                     ),
                 });
             }
+        }
+    }
+
+    // &dyn Trait / &mut dyn Trait -> opaque handle (Strategy A: NodeRef, Node2DRef, Node3DRef)
+    // These need special handling: the RwLock guard must outlive the function call,
+    // so we can't inline the expression. Instead we mark them as DynOpaque and handle
+    // them in generate_ffi_wrapper's body generation.
+    if let Some(trait_name) = extract_dyn_trait(ty) {
+        if DYN_OPAQUE_TRAITS.iter().any(|(n, _)| *n == trait_name) {
+            let clean = name.trim_start_matches('_');
+            return Some(MappedParam {
+                ffi_params: vec![(
+                    name.to_string(),
+                    if ty.starts_with("&mut ") {
+                        "*mut std::ffi::c_void".to_string()
+                    } else {
+                        "*const std::ffi::c_void".to_string()
+                    },
+                )],
+                call_expr: format!("dyn_{clean}"),
+            });
         }
     }
 

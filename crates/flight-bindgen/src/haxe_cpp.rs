@@ -312,6 +312,8 @@ fn param_kind_to_haxe(kind: &ParamKind) -> String {
             "cpp.Star<cpp.Void>".to_string()
         }
         ParamKind::Enum(_) => "Int".to_string(),
+        ParamKind::DynOpaque(_) => "cpp.Star<cpp.Void>".to_string(),
+        ParamKind::DynMono(ty) => format!("{PKG}.{ty}"),
     }
 }
 

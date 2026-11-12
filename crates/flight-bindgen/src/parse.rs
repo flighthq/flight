@@ -93,6 +93,108 @@ pub const SCAN_CRATES: &[&str] = &[
     "flight-xml",
 ];
 
+pub const DYN_OPAQUE_TRAITS: &[(&str, &str)] = &[
+    ("Node", "NodeRef"),
+    ("Node2D", "Node2DRef"),
+    ("Node3D", "Node3DRef"),
+];
+
+pub const DYN_MONO_TRAITS: &[(&str, &[&str])] = &[
+    (
+        "Material",
+        &[
+            "Material2DFields",
+            "Material3DFields",
+            "MaterialFields",
+            "ShadedMaterial",
+            "StandardMaterial",
+        ],
+    ),
+    ("Material3D", &["Material3DFields"]),
+    ("TextureVariant", &["Texture"]),
+    ("TextureUvTransform", &["Texture"]),
+    (
+        "Adjustment",
+        &[
+            "BrightnessContrastAdjustment",
+            "ChannelMixerAdjustment",
+            "ColorBlindSimulationAdjustment",
+            "ColorGradeAdjustment",
+            "ColorMatrixAdjustment",
+            "ColorScaleBiasAdjustment",
+            "ExposureAdjustment",
+            "GrayscaleAdjustment",
+            "HueSaturationAdjustment",
+            "InvertAdjustment",
+            "LiftGammaGainAdjustment",
+            "LookupTableGradeAdjustment",
+            "SepiaAdjustment",
+            "TintAdjustment",
+        ],
+    ),
+    (
+        "Modifier",
+        &[
+            "AnimatedNormalModifier",
+            "DissolveModifier",
+            "EmissiveModifier",
+            "EnvReflectModifier",
+            "FogModifier",
+            "RimModifier",
+            "ToonModifier",
+            "VertexDisplaceModifier",
+        ],
+    ),
+    (
+        "Light",
+        &[
+            "AmbientLight",
+            "DirectionalLight",
+            "Environment",
+            "HemisphereLight",
+        ],
+    ),
+    ("PunctualLight", &["PointLight", "SpotLight"]),
+    (
+        "PhotometricLightLike",
+        &["AmbientLight", "DirectionalLight", "HemisphereLight"],
+    ),
+    (
+        "Skeleton2DConstraint",
+        &[
+            "Skeleton2DIkConstraint",
+            "Skeleton2DPathConstraint",
+            "Skeleton2DTransformConstraint",
+        ],
+    ),
+    (
+        "Physics2DJoint",
+        &[
+            "Physics2DDistanceJoint",
+            "Physics2DGearJoint",
+            "Physics2DMouseJoint",
+            "Physics2DPrismaticJoint",
+            "Physics2DPulleyJoint",
+            "Physics2DRevoluteJoint",
+            "Physics2DRopeJoint",
+            "Physics2DWeldJoint",
+            "Physics2DWheelJoint",
+        ],
+    ),
+    (
+        "Physics3DJoint",
+        &[
+            "Physics3DBallAndSocketJoint",
+            "Physics3DConeTwistJoint",
+            "Physics3DDistanceJoint",
+            "Physics3DFixedJoint",
+            "Physics3DGeneric6DofJoint",
+            "Physics3DHingeJoint",
+            "Physics3DSliderJoint",
+        ],
+    ),
+];
+
 pub const SKIP_FN_PREFIXES: &[&str] = &["initialize_"];
 
 pub const SKIP_TYPES: &[&str] = &[
@@ -165,9 +267,32 @@ pub fn is_scalar(ty: &str) -> bool {
     SCALARS.contains(&ty)
 }
 
+pub fn extract_dyn_trait(ty: &str) -> Option<&str> {
+    let inner = ty.strip_prefix("&mut ").or_else(|| ty.strip_prefix('&'))?;
+    let inner = inner.strip_prefix("dyn ")?;
+    Some(inner.trim())
+}
+
+pub fn is_known_dyn_opaque(ty: &str) -> bool {
+    extract_dyn_trait(ty)
+        .map(|t| DYN_OPAQUE_TRAITS.iter().any(|(name, _)| *name == t))
+        .unwrap_or(false)
+}
+
+pub fn is_known_dyn_mono(ty: &str) -> bool {
+    extract_dyn_trait(ty)
+        .map(|t| DYN_MONO_TRAITS.iter().any(|(name, _)| *name == t))
+        .unwrap_or(false)
+}
+
 pub fn is_ffi_incompatible(ty: &str) -> bool {
-    ty.contains("dyn ")
-        || ty.contains("Fn(")
+    if ty.contains("dyn ") {
+        if is_known_dyn_opaque(ty) || is_known_dyn_mono(ty) {
+            return false;
+        }
+        return true;
+    }
+    ty.contains("Fn(")
         || ty.contains("FnMut(")
         || ty.contains("FnOnce(")
         || ty.contains('<')
@@ -222,13 +347,25 @@ pub fn scan_all_crates(crates_dir: &Path) -> Vec<CrateExports> {
             if SKIP_FN_PREFIXES.iter().any(|p| func.name.starts_with(p)) {
                 continue;
             }
-            let ffi_name = format!("flight_{}", func.name);
-            if seen_names.contains(&ffi_name) {
+            if !has_ffi_compatible_signature(&func) {
                 continue;
             }
-            if has_ffi_compatible_signature(&func) {
-                seen_names.insert(ffi_name);
-                exported_fns.push(func);
+
+            if has_mono_dyn_param(&func) {
+                let expanded = expand_mono_dyn(&func);
+                for ef in expanded {
+                    let ffi_name = format!("flight_{}", ef.name);
+                    if !seen_names.contains(&ffi_name) {
+                        seen_names.insert(ffi_name);
+                        exported_fns.push(ef);
+                    }
+                }
+            } else {
+                let ffi_name = format!("flight_{}", func.name);
+                if !seen_names.contains(&ffi_name) {
+                    seen_names.insert(ffi_name);
+                    exported_fns.push(func);
+                }
             }
         }
 
@@ -241,6 +378,74 @@ pub fn scan_all_crates(crates_dir: &Path) -> Vec<CrateExports> {
         }
     }
     results
+}
+
+fn to_snake_case(s: &str) -> String {
+    let mut out = String::new();
+    let chars: Vec<char> = s.chars().collect();
+    for (i, &c) in chars.iter().enumerate() {
+        if c.is_uppercase() && i > 0 && !chars[i - 1].is_uppercase() && chars[i - 1] != '_' {
+            out.push('_');
+        }
+        out.push(c.to_ascii_lowercase());
+    }
+    out
+}
+
+fn has_mono_dyn_param(func: &ParsedFn) -> bool {
+    func.params.iter().any(|p| {
+        let ty = strip_lifetimes(&resolve_type_alias(p.ty.trim()));
+        is_known_dyn_mono(&ty)
+    })
+}
+
+fn expand_mono_dyn(func: &ParsedFn) -> Vec<ParsedFn> {
+    let mut mono_indices = Vec::new();
+    for (i, p) in func.params.iter().enumerate() {
+        let ty = strip_lifetimes(&resolve_type_alias(p.ty.trim()));
+        if let Some(trait_name) = extract_dyn_trait(&ty) {
+            if let Some((_, impls)) = DYN_MONO_TRAITS.iter().find(|(n, _)| *n == trait_name) {
+                let is_mut = ty.starts_with("&mut ");
+                mono_indices.push((i, is_mut, *impls));
+            }
+        }
+    }
+    if mono_indices.is_empty() {
+        return vec![func.clone()];
+    }
+
+    let mut combos: Vec<Vec<(usize, bool, &str)>> = vec![vec![]];
+    for (idx, is_mut, impls) in &mono_indices {
+        let mut new_combos = Vec::new();
+        for existing in &combos {
+            for concrete in *impls {
+                let mut combo = existing.clone();
+                combo.push((*idx, *is_mut, concrete));
+                new_combos.push(combo);
+            }
+        }
+        combos = new_combos;
+    }
+
+    let mut result = Vec::new();
+    for combo in &combos {
+        let suffix: Vec<String> = combo.iter().map(|(_, _, ty)| to_snake_case(ty)).collect();
+        let new_name = format!("{}__{}", func.name, suffix.join("__"));
+        let mut new_params = func.params.clone();
+        for &(idx, is_mut, concrete_ty) in combo {
+            if is_mut {
+                new_params[idx].ty = format!("&mut {concrete_ty}");
+            } else {
+                new_params[idx].ty = format!("&{concrete_ty}");
+            }
+        }
+        result.push(ParsedFn {
+            name: new_name,
+            params: new_params,
+            ret: func.ret.clone(),
+        });
+    }
+    result
 }
 
 fn has_ffi_compatible_signature(func: &ParsedFn) -> bool {
@@ -282,6 +487,8 @@ pub enum ParamKind {
     OptionSliceConst(String),
     OptionSliceMut(String),
     Enum(String),
+    DynOpaque(String),
+    DynMono(String),
 }
 
 #[derive(Debug, Clone)]
@@ -532,6 +739,16 @@ pub fn classify_param(ty: &str) -> Option<ParamKind> {
             if is_scalar(inner) {
                 return Some(ParamKind::SliceConst(inner.to_string()));
             }
+        }
+    }
+
+    // &dyn Trait -> DynOpaque or DynMono
+    if let Some(trait_name) = extract_dyn_trait(ty) {
+        if DYN_OPAQUE_TRAITS.iter().any(|(n, _)| *n == trait_name) {
+            return Some(ParamKind::DynOpaque(trait_name.to_string()));
+        }
+        if DYN_MONO_TRAITS.iter().any(|(n, _)| *n == trait_name) {
+            return Some(ParamKind::DynMono(trait_name.to_string()));
         }
     }
 
