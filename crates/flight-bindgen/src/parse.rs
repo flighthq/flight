@@ -208,7 +208,6 @@ pub const SKIP_TYPES: &[&str] = &[
     "EffectFieldRoles",
     "MarkupTagRegistry",
     "MeshAttachment2D",
-    "NodeRef",
     "NumberFormatOptions",
     "PathMeshPool",
     "PathMorphBuildResult",
@@ -588,6 +587,9 @@ fn resolve_type_alias(ty: &str) -> String {
         ("Kind", "String"),
         ("AnimationPlayerRef", "Ref<AnimationPlayer>"),
         ("LogStateRef", "Ref<LogState>"),
+        ("NodeRef", "Ref<dyn Node>"),
+        ("Node2DRef", "Ref<dyn Node2D>"),
+        ("Node3DRef", "Ref<dyn Node3D>"),
     ];
     for &(alias, resolved) in aliases {
         if ty == alias {

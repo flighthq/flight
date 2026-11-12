@@ -210,7 +210,6 @@ const SKIP_TYPES: &[&str] = &[
     "DateTimeFormatOptions",
     "EffectFieldRoles",
     "MarkupTagRegistry",
-    "NodeRef",
     "NumberFormatOptions",
     "PathMeshPool",
     "MeshAttachment2D",
@@ -1293,6 +1292,8 @@ fn to_snake_case(s: &str) -> String {
 fn qualify_type(ty: &str) -> String {
     if is_scalar(ty) || ty.starts_with('[') || ty.starts_with('(') || ty == "String" {
         ty.to_string()
+    } else if let Some(inner) = ty.strip_prefix("dyn ") {
+        format!("dyn {QUALIFIER}::{inner}")
     } else {
         format!("{QUALIFIER}::{ty}")
     }
@@ -1364,6 +1365,9 @@ fn resolve_type_alias(ty: &str) -> String {
         ("Kind", "String"),
         ("AnimationPlayerRef", "Ref<AnimationPlayer>"),
         ("LogStateRef", "Ref<LogState>"),
+        ("NodeRef", "Ref<dyn Node>"),
+        ("Node2DRef", "Ref<dyn Node2D>"),
+        ("Node3DRef", "Ref<dyn Node3D>"),
     ];
     for &(alias, resolved) in aliases {
         if ty == alias {
