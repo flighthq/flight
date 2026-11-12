@@ -905,6 +905,46 @@ pub fn classify_param(ty: &str) -> Option<ParamKind> {
         }
     }
 
+    // Option<enum> -> OptionI32
+    if let Some(inner) = ty.strip_prefix("Option<") {
+        if let Some(inner) = inner.strip_suffix('>') {
+            let inner = inner.trim();
+            if is_known_enum(inner) {
+                return Some(ParamKind::OptionI32);
+            }
+        }
+    }
+
+    // Ref<T> (owned) -> ArcRef
+    if let Some(inner) = ty.strip_prefix("Ref<") {
+        if let Some(inner) = inner.strip_suffix('>') {
+            let inner = inner.trim();
+            if !inner.contains('<')
+                && !inner.contains("::")
+                && !SKIP_TYPES.iter().any(|s| inner.contains(s))
+            {
+                return Some(ParamKind::ArcRef);
+            }
+        }
+    }
+
+    // [T; N] (owned fixed array) -> FixedArrayConst
+    if ty.starts_with('[') {
+        if let Some(inner) = ty.strip_prefix('[') {
+            if let Some(inner) = inner.strip_suffix(']') {
+                if let Some((elem, size)) = inner.rsplit_once(';') {
+                    let elem = elem.trim();
+                    let size = size.trim();
+                    if is_scalar(elem) {
+                        if let Ok(n) = size.parse::<usize>() {
+                            return Some(ParamKind::FixedArrayConst(elem.to_string(), n));
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     if is_ffi_incompatible(ty) {
         return None;
     }
@@ -925,10 +965,6 @@ pub fn classify_param(ty: &str) -> Option<ParamKind> {
             return None;
         }
         return Some(ParamKind::RefConst(inner.to_string()));
-    }
-
-    if ty == "Option<f32>" {
-        return Some(ParamKind::OptionF32);
     }
 
     // String param
