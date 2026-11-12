@@ -224,9 +224,6 @@ const SKIP_TYPES: &[&str] = &[
     "ShapeJsonFormatOptions",
     "ShapeJsonParseOptions",
     "AdjustmentRef",
-    "AnimationPlayerRef",
-    "AnimationStateMachineRef",
-    "FlowGuardStateRef",
     "Skeleton2DClippingAttachmentSlotRange",
     "Skeleton2DCoercedInterpolation",
     "Skeleton2DConstraintSolver",
@@ -1634,7 +1631,9 @@ fn resolve_type_alias(ty: &str) -> String {
         ("AnimationPlayerRef", "Ref<AnimationPlayer>"),
         ("AnimationStateMachineRef", "Ref<AnimationStateMachine>"),
         ("CameraGuardStateRef", "Ref<CameraGuardState>"),
+        ("AnimationBlendTreeRef", "Ref<AnimationBlendTree>"),
         ("DebugStateRef", "Ref<DebugState>"),
+        ("FlowGuardStateRef", "Ref<FlowGuardState>"),
         ("LogStateRef", "Ref<LogState>"),
         ("Node2DRef", "Ref<dyn Node2D>"),
         ("Node3DRef", "Ref<dyn Node3D>"),
@@ -1652,6 +1651,7 @@ fn resolve_type_alias(ty: &str) -> String {
         ("TimelineRef", "Ref<Timeline>"),
         ("BitmapTextClock", clock_alias),
         ("ClockProvider", clock_alias),
+        ("EasingFn", "Arc<dyn Fn(f32) -> f32 + Send + Sync>"),
         ("MovieClipGuardClock", clock_alias),
         ("NodeGuardClock", clock_alias),
         ("Physics2DGuardClock", clock_alias),
@@ -2355,6 +2355,58 @@ fn map_param_to_ffi(name: &str, ty: &str) -> Option<MappedParam> {
         }
     }
 
+    // Option<Arc<dyn Fn(args) -> ret>> -> nullable fn+ctx pair
+    if let Some(inner) = ty.strip_prefix("Option<") {
+        if let Some(inner) = inner.strip_suffix('>') {
+            let resolved_inner =
+                strip_crate_paths(&strip_lifetimes(&resolve_type_alias(inner.trim())));
+            if let Some(parsed) = parse_closure_param(&resolved_inner) {
+                if parsed.is_arc
+                    && parsed.params.iter().all(|(cty, _)| is_scalar(cty))
+                    && (parsed.ret == "void" || is_scalar(&parsed.ret))
+                {
+                    let fn_name = format!("{name}_fn");
+                    let ctx_name = format!("{name}_ctx");
+                    let mut ffi_fn_params = vec!["*mut std::ffi::c_void".to_string()];
+                    let mut ffi_fn_args_str = Vec::new();
+                    let mut outer_closure_params = Vec::new();
+                    for (i, (cty, _)) in parsed.params.iter().enumerate() {
+                        let arg_name = format!("__a{i}");
+                        ffi_fn_params.push(cty.clone());
+                        ffi_fn_args_str.push(arg_name.clone());
+                        outer_closure_params.push(format!("{arg_name}: {cty}"));
+                    }
+                    let ffi_ret = if parsed.ret == "void" {
+                        String::new()
+                    } else {
+                        format!(" -> {}", parsed.ret)
+                    };
+                    let ffi_fn_sig =
+                        format!("extern \"C\" fn({}){ffi_ret}", ffi_fn_params.join(", "));
+                    let outer_params_str = outer_closure_params.join(", ");
+                    let arc_call_args = if ffi_fn_args_str.is_empty() {
+                        "__ctx as *mut std::ffi::c_void".to_string()
+                    } else {
+                        format!(
+                            "__ctx as *mut std::ffi::c_void, {}",
+                            ffi_fn_args_str.join(", ")
+                        )
+                    };
+                    let closure_body = format!(
+                        "if ({fn_name} as *const ()).is_null() {{ None }} else {{ let __ctx = {ctx_name} as usize; let __f = {fn_name} as usize; Some(std::sync::Arc::new(move |{outer_params_str}| {{ let __fp: {ffi_fn_sig} = unsafe {{ std::mem::transmute(__f) }}; __fp({arc_call_args}) }})) }}"
+                    );
+                    return Some(MappedParam {
+                        ffi_params: vec![
+                            (fn_name, ffi_fn_sig),
+                            (ctx_name, "*mut std::ffi::c_void".to_string()),
+                        ],
+                        call_expr: closure_body,
+                    });
+                }
+            }
+        }
+    }
+
     // &dyn Fn(args) -> ret / &mut dyn FnMut(args) -> ret -> extern "C" fn(*mut c_void, args) -> ret + *mut c_void
     if let Some(parsed) = parse_closure_param(ty) {
         let fn_name = format!("{name}_fn");
@@ -2362,12 +2414,33 @@ fn map_param_to_ffi(name: &str, ty: &str) -> Option<MappedParam> {
         let mut ffi_fn_params = vec!["*mut std::ffi::c_void".to_string()];
         let mut ffi_fn_args_str = Vec::new();
         let mut outer_closure_params = Vec::new();
-        for (i, (cty, _is_ref)) in parsed.params.iter().enumerate() {
-            if is_scalar(cty) {
-                ffi_fn_params.push(cty.clone());
-                let arg_name = format!("__a{i}");
+        for (i, (cty, is_ref)) in parsed.params.iter().enumerate() {
+            let resolved_cty = strip_crate_paths(&resolve_type_alias(cty));
+            let arg_name = format!("__a{i}");
+            if is_scalar(&resolved_cty) {
+                ffi_fn_params.push(resolved_cty.clone());
                 ffi_fn_args_str.push(arg_name.clone());
-                outer_closure_params.push(format!("{arg_name}: {cty}"));
+                outer_closure_params.push(format!("{arg_name}: {resolved_cty}"));
+            } else if *is_ref && resolved_cty.starts_with("Ref<") {
+                let inner = resolved_cty
+                    .strip_prefix("Ref<")
+                    .and_then(|s| s.strip_suffix('>'))
+                    .unwrap_or(&resolved_cty);
+                let qualified_inner = if inner.starts_with("dyn ") {
+                    let trait_name = inner.strip_prefix("dyn ").unwrap();
+                    format!("dyn {QUALIFIER}::{trait_name}")
+                } else {
+                    format!("{QUALIFIER}::{inner}")
+                };
+                let qualified_ref = format!("{QUALIFIER}::Ref<{qualified_inner}>");
+                ffi_fn_params.push("*const std::ffi::c_void".to_string());
+                ffi_fn_args_str.push(format!("{arg_name} as *const _ as *const std::ffi::c_void"));
+                outer_closure_params.push(format!("{arg_name}: &{qualified_ref}"));
+            } else if *is_ref && !resolved_cty.contains('<') && !resolved_cty.contains("dyn ") {
+                let qualified = qualify_type(&resolved_cty);
+                ffi_fn_params.push(format!("*const {qualified}"));
+                ffi_fn_args_str.push(format!("{arg_name} as *const _ as *const {qualified}"));
+                outer_closure_params.push(format!("{arg_name}: &{qualified}"));
             } else {
                 return None;
             }
