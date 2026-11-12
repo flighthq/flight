@@ -221,6 +221,12 @@ fn emit_one_method(ty: &str, tm: &TypeMethod<'_>) -> Option<String> {
                     method_params.push(format!("{pname}:hl.Bytes"));
                     call_args.push(pname);
                 }
+                ParamKind::Closure | ParamKind::OptionClosure => {
+                    method_params.push(format!("{pname}Fn:Dynamic"));
+                    method_params.push(format!("{pname}Ctx:Dynamic"));
+                    call_args.push(format!("{pname}Fn"));
+                    call_args.push(format!("{pname}Ctx"));
+                }
                 _ => {
                     let haxe_ty = param_kind_to_haxe(&kind);
                     method_params.push(format!("{pname}:{haxe_ty}"));
@@ -295,6 +301,10 @@ fn emit_function(func: &ParsedFn) -> Option<String> {
             ParamKind::FixedArrayConst(_, _) | ParamKind::FixedArrayMut(_, _) => {
                 haxe_params.push(format!("{pname}:hl.Bytes"));
             }
+            ParamKind::Closure | ParamKind::OptionClosure => {
+                haxe_params.push(format!("{pname}Fn:Dynamic"));
+                haxe_params.push(format!("{pname}Ctx:Dynamic"));
+            }
             _ => {
                 let haxe_ty = param_kind_to_haxe(&kind);
                 haxe_params.push(format!("{pname}:{haxe_ty}"));
@@ -339,6 +349,7 @@ fn param_kind_to_haxe(kind: &ParamKind) -> String {
         ParamKind::VecMut(_) | ParamKind::VecConst(_) | ParamKind::VecOwned(_) => {
             "Dynamic".to_string()
         }
+        ParamKind::Closure | ParamKind::OptionClosure => "Dynamic".to_string(),
     }
 }
 

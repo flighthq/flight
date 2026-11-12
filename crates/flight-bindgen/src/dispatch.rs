@@ -175,6 +175,14 @@ fn emit_dispatch_function(module_name: &str, func: &ParsedFn) -> Option<(String,
                 call_args.push(param_name.clone());
                 native_call_args.push(param_name.clone());
             }
+            ParamKind::Closure | ParamKind::OptionClosure => {
+                haxe_params.push(format!("{param_name}Fn:Dynamic"));
+                haxe_params.push(format!("{param_name}Ctx:Dynamic"));
+                call_args.push(format!("{param_name}Fn"));
+                call_args.push(format!("{param_name}Ctx"));
+                native_call_args.push(format!("{param_name}Fn"));
+                native_call_args.push(format!("{param_name}Ctx"));
+            }
             _ => {
                 let haxe_ty = param_kind_to_haxe(&kind);
                 haxe_params.push(format!("{param_name}:{haxe_ty}"));
@@ -278,6 +286,7 @@ fn param_kind_to_haxe(kind: &ParamKind) -> String {
         ParamKind::VecMut(_) | ParamKind::VecConst(_) | ParamKind::VecOwned(_) => {
             "Dynamic".to_string()
         }
+        ParamKind::Closure | ParamKind::OptionClosure => "Dynamic".to_string(),
     }
 }
 

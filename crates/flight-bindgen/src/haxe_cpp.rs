@@ -197,6 +197,12 @@ fn emit_one_method(ty: &str, tm: &TypeMethod<'_>) -> Option<String> {
                     method_params.push(format!("{pname}:cpp.Star<cpp.Void>"));
                     call_args.push(pname);
                 }
+                ParamKind::Closure | ParamKind::OptionClosure => {
+                    method_params.push(format!("{pname}Fn:cpp.Star<cpp.Void>"));
+                    method_params.push(format!("{pname}Ctx:cpp.Star<cpp.Void>"));
+                    call_args.push(format!("{pname}Fn"));
+                    call_args.push(format!("{pname}Ctx"));
+                }
                 _ => {
                     let haxe_ty = param_kind_to_haxe(&kind);
                     method_params.push(format!("{pname}:{haxe_ty}"));
@@ -271,6 +277,10 @@ fn emit_function(func: &ParsedFn) -> Option<String> {
             ParamKind::FixedArrayConst(_, _) | ParamKind::FixedArrayMut(_, _) => {
                 haxe_params.push(format!("{pname}:cpp.Star<cpp.Void>"));
             }
+            ParamKind::Closure | ParamKind::OptionClosure => {
+                haxe_params.push(format!("{pname}Fn:cpp.Star<cpp.Void>"));
+                haxe_params.push(format!("{pname}Ctx:cpp.Star<cpp.Void>"));
+            }
             _ => {
                 let haxe_ty = param_kind_to_haxe(&kind);
                 haxe_params.push(format!("{pname}:{haxe_ty}"));
@@ -317,6 +327,7 @@ fn param_kind_to_haxe(kind: &ParamKind) -> String {
         ParamKind::VecMut(_) | ParamKind::VecConst(_) | ParamKind::VecOwned(_) => {
             "cpp.Star<cpp.Void>".to_string()
         }
+        ParamKind::Closure | ParamKind::OptionClosure => "cpp.Star<cpp.Void>".to_string(),
     }
 }
 

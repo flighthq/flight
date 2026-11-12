@@ -492,6 +492,8 @@ pub enum ParamKind {
     VecMut(String),
     VecConst(String),
     VecOwned(String),
+    Closure,
+    OptionClosure,
 }
 
 #[derive(Debug, Clone)]
@@ -811,6 +813,23 @@ pub fn classify_param(ty: &str) -> Option<ParamKind> {
                 || (!is_ffi_incompatible(inner) && !inner.contains('<'))
             {
                 return Some(ParamKind::VecOwned(inner.to_string()));
+            }
+        }
+    }
+
+    // Closure params: &dyn Fn(...), &mut dyn FnMut(...), Arc<dyn Fn(...) + Send + Sync>
+    if ty.starts_with("&dyn Fn(")
+        || ty.starts_with("&mut dyn FnMut(")
+        || ty.starts_with("Arc<dyn Fn(")
+    {
+        return Some(ParamKind::Closure);
+    }
+    // Option<Arc<dyn Fn(...)>>
+    if let Some(inner) = ty.strip_prefix("Option<") {
+        if let Some(inner) = inner.strip_suffix('>') {
+            let inner = inner.trim();
+            if inner.starts_with("Arc<dyn Fn(") {
+                return Some(ParamKind::OptionClosure);
             }
         }
     }
