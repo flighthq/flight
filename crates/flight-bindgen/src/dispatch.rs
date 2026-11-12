@@ -167,10 +167,17 @@ fn emit_dispatch_function(module_name: &str, func: &ParsedFn) -> Option<(String,
     };
     let haxe_ret = return_kind_to_haxe(&ret_kind);
     let has_return = !matches!(ret_kind, ReturnKind::Void);
+    let needs_cast = matches!(ret_kind, ReturnKind::StringReturn);
 
     let params_str = haxe_params.join(", ");
     let args_str = call_args.join(", ");
-    let ret_prefix = if has_return { "return " } else { "" };
+    let ret_prefix = if needs_cast {
+        "return cast "
+    } else if has_return {
+        "return "
+    } else {
+        ""
+    };
 
     let mut sig = String::new();
     writeln!(
@@ -221,7 +228,7 @@ fn return_kind_to_haxe(kind: &ReturnKind) -> String {
         ReturnKind::Void => "Void".to_string(),
         ReturnKind::Scalar(ty) => scalar_to_haxe(ty).to_string(),
         ReturnKind::Struct(ty) => ty.clone(),
-        ReturnKind::StringReturn => "hl.Bytes".to_string(),
+        ReturnKind::StringReturn => "String".to_string(),
     }
 }
 
