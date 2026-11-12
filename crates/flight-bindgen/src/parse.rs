@@ -92,16 +92,27 @@ pub const SKIP_TYPES: &[&str] = &[
     "AttachmentSkin2D",
     "BidiClassKernel",
     "BidiClassKernelExplanation",
+    "BoundsRectangleRuntimeMethods",
     "ClippingAttachment2D",
+    "DateTimeFormatOptions",
     "Float32Array",
-    "Uint8Array",
     "MarkupTagRegistry",
+    "NodeRef",
+    "NumberFormatOptions",
+    "PathMeshPool",
     "PathMorphBuildResult",
+    "PluralRulesOptions",
     "PointAttachment2D",
+    "RelativeTimeFormatOptions",
+    "ShapeJsonFormatOptions",
+    "ShapeJsonParseOptions",
     "Skeleton2DClippingAttachmentSlotRange",
     "Skeleton2DGuardState",
     "StrokePathGeometry",
+    "TextLayoutContext",
     "TextMarkupGuardState",
+    "Transform2DRuntimeMethods",
+    "Uint8Array",
     "Value",
 ];
 
@@ -215,6 +226,16 @@ pub enum ParamKind {
     RefConst(String),
     RefMut(String),
     OptionF32,
+    OptionF64,
+    OptionI32,
+    OptionBool,
+    StrRef,
+    OptionStr,
+    OptionStringParam,
+    OptionRefConst(String),
+    OptionRefMut(String),
+    ArcRef,
+    ArcRefMut,
 }
 
 #[derive(Debug, Clone)]
@@ -223,10 +244,76 @@ pub enum ReturnKind {
     Scalar(String),
     Struct(String),
     StringReturn,
+    OptionString,
+    ArcRefReturn,
+    OptionArcRefReturn,
 }
 
 pub fn classify_param(ty: &str) -> Option<ParamKind> {
     let ty = ty.trim();
+
+    if ty == "&str" {
+        return Some(ParamKind::StrRef);
+    }
+    if ty == "Option<f64>" {
+        return Some(ParamKind::OptionF64);
+    }
+    if ty == "Option<i32>" {
+        return Some(ParamKind::OptionI32);
+    }
+    if ty == "Option<bool>" {
+        return Some(ParamKind::OptionBool);
+    }
+    if ty == "Option<&str>" {
+        return Some(ParamKind::OptionStr);
+    }
+    if ty == "Option<String>" {
+        return Some(ParamKind::OptionStringParam);
+    }
+
+    if let Some(inner) = ty.strip_prefix("Option<&mut ") {
+        if let Some(inner) = inner.strip_suffix('>') {
+            let inner = inner.trim();
+            if !inner.starts_with('[') && !is_ffi_incompatible(inner) && !is_scalar(inner) {
+                return Some(ParamKind::OptionRefMut(inner.to_string()));
+            }
+        }
+    }
+    if let Some(inner) = ty.strip_prefix("Option<&") {
+        if let Some(inner) = inner.strip_suffix('>') {
+            let inner = inner.trim();
+            if inner != "str"
+                && !inner.starts_with('[')
+                && !is_ffi_incompatible(inner)
+                && !is_scalar(inner)
+            {
+                return Some(ParamKind::OptionRefConst(inner.to_string()));
+            }
+        }
+    }
+
+    if let Some(inner) = ty.strip_prefix("&mut Ref<") {
+        if let Some(inner) = inner.strip_suffix('>') {
+            let inner = inner.trim();
+            if !inner.contains('<')
+                && !inner.contains("::")
+                && !SKIP_TYPES.iter().any(|s| inner.contains(s))
+            {
+                return Some(ParamKind::ArcRefMut);
+            }
+        }
+    }
+    if let Some(inner) = ty.strip_prefix("&Ref<") {
+        if let Some(inner) = inner.strip_suffix('>') {
+            let inner = inner.trim();
+            if !inner.contains('<')
+                && !inner.contains("::")
+                && !SKIP_TYPES.iter().any(|s| inner.contains(s))
+            {
+                return Some(ParamKind::ArcRef);
+            }
+        }
+    }
 
     if is_ffi_incompatible(ty) {
         return None;
@@ -261,6 +348,33 @@ pub fn classify_param(ty: &str) -> Option<ParamKind> {
 
 pub fn classify_return(ty: &str) -> Option<ReturnKind> {
     let ty = ty.trim();
+
+    if ty == "Option<String>" {
+        return Some(ReturnKind::OptionString);
+    }
+
+    if let Some(inner) = ty.strip_prefix("Ref<") {
+        if let Some(inner) = inner.strip_suffix('>') {
+            let inner = inner.trim();
+            if !inner.contains('<')
+                && !inner.contains("::")
+                && !SKIP_TYPES.iter().any(|s| inner.contains(s))
+            {
+                return Some(ReturnKind::ArcRefReturn);
+            }
+        }
+    }
+    if let Some(inner) = ty.strip_prefix("Option<Ref<") {
+        if let Some(inner) = inner.strip_suffix(">>") {
+            let inner = inner.trim();
+            if !inner.contains('<')
+                && !inner.contains("::")
+                && !SKIP_TYPES.iter().any(|s| inner.contains(s))
+            {
+                return Some(ReturnKind::OptionArcRefReturn);
+            }
+        }
+    }
 
     if ty.starts_with('&') || is_ffi_incompatible(ty) {
         return None;

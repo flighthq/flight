@@ -153,11 +153,19 @@ fn emit_dispatch_function(module_name: &str, func: &ParsedFn) -> Option<(String,
 
     let mut haxe_params = Vec::new();
     let mut call_args = Vec::new();
+    let mut native_call_args = Vec::new();
+    let mut has_str_params = false;
     for param in &func.params {
         let kind = classify_param(&param.ty)?;
         let haxe_ty = param_kind_to_haxe(&kind);
         let param_name = to_camel_case(&param.name);
         haxe_params.push(format!("{param_name}:{haxe_ty}"));
+        if needs_native_str_cast(&kind) {
+            has_str_params = true;
+            native_call_args.push(format!("cast {param_name}"));
+        } else {
+            native_call_args.push(param_name.clone());
+        }
         call_args.push(param_name);
     }
 
@@ -167,11 +175,19 @@ fn emit_dispatch_function(module_name: &str, func: &ParsedFn) -> Option<(String,
     };
     let haxe_ret = return_kind_to_haxe(&ret_kind);
     let has_return = !matches!(ret_kind, ReturnKind::Void);
-    let needs_cast = matches!(ret_kind, ReturnKind::StringReturn);
+    let needs_ret_cast = matches!(
+        ret_kind,
+        ReturnKind::StringReturn | ReturnKind::OptionString
+    );
 
     let params_str = haxe_params.join(", ");
-    let args_str = call_args.join(", ");
-    let ret_prefix = if needs_cast {
+    let js_args_str = call_args.join(", ");
+    let native_args_str = if has_str_params {
+        native_call_args.join(", ")
+    } else {
+        js_args_str.clone()
+    };
+    let ret_prefix = if needs_ret_cast {
         "return cast "
     } else if has_return {
         "return "
@@ -188,19 +204,19 @@ fn emit_dispatch_function(module_name: &str, func: &ParsedFn) -> Option<(String,
     writeln!(sig, "#if hl").unwrap();
     writeln!(
         sig,
-        "\t{ret_prefix}flight._hl._fn.{module_name}.{haxe_name}({args_str});"
+        "\t{ret_prefix}flight._hl._fn.{module_name}.{haxe_name}({native_args_str});"
     )
     .unwrap();
     writeln!(sig, "#elseif cpp").unwrap();
     writeln!(
         sig,
-        "\t{ret_prefix}flight._cpp._fn.{module_name}.{haxe_name}({args_str});"
+        "\t{ret_prefix}flight._cpp._fn.{module_name}.{haxe_name}({native_args_str});"
     )
     .unwrap();
     writeln!(sig, "#elseif (js && flight_esm)").unwrap();
     writeln!(
         sig,
-        "\t{ret_prefix}flight._js._fn.{module_name}.{haxe_name}({args_str});"
+        "\t{ret_prefix}flight._js._fn.{module_name}.{haxe_name}({js_args_str});"
     )
     .unwrap();
     writeln!(sig, "#else").unwrap();
@@ -218,8 +234,18 @@ fn emit_dispatch_function(module_name: &str, func: &ParsedFn) -> Option<(String,
 fn param_kind_to_haxe(kind: &ParamKind) -> String {
     match kind {
         ParamKind::Scalar(ty) => scalar_to_haxe(ty).to_string(),
-        ParamKind::RefConst(ty) | ParamKind::RefMut(ty) => ty.clone(),
+        ParamKind::RefConst(ty)
+        | ParamKind::RefMut(ty)
+        | ParamKind::OptionRefConst(ty)
+        | ParamKind::OptionRefMut(ty) => ty.clone(),
+        ParamKind::ArcRef | ParamKind::ArcRefMut => "Dynamic".to_string(),
         ParamKind::OptionF32 => "Single".to_string(),
+        ParamKind::OptionF64 => "Float".to_string(),
+        ParamKind::OptionI32 => "Int".to_string(),
+        ParamKind::OptionBool => "Int".to_string(),
+        ParamKind::StrRef | ParamKind::OptionStr | ParamKind::OptionStringParam => {
+            "String".to_string()
+        }
     }
 }
 
@@ -228,8 +254,16 @@ fn return_kind_to_haxe(kind: &ReturnKind) -> String {
         ReturnKind::Void => "Void".to_string(),
         ReturnKind::Scalar(ty) => scalar_to_haxe(ty).to_string(),
         ReturnKind::Struct(ty) => ty.clone(),
-        ReturnKind::StringReturn => "String".to_string(),
+        ReturnKind::StringReturn | ReturnKind::OptionString => "String".to_string(),
+        ReturnKind::ArcRefReturn | ReturnKind::OptionArcRefReturn => "Dynamic".to_string(),
     }
+}
+
+fn needs_native_str_cast(kind: &ParamKind) -> bool {
+    matches!(
+        kind,
+        ParamKind::StrRef | ParamKind::OptionStr | ParamKind::OptionStringParam
+    )
 }
 
 fn scalar_to_haxe(ty: &str) -> &str {
@@ -248,7 +282,10 @@ fn collect_opaque_types(func: &ParsedFn, types: &mut BTreeSet<String>) {
     for param in &func.params {
         if let Some(kind) = classify_param(&param.ty) {
             match kind {
-                ParamKind::RefConst(ty) | ParamKind::RefMut(ty) => {
+                ParamKind::RefConst(ty)
+                | ParamKind::RefMut(ty)
+                | ParamKind::OptionRefConst(ty)
+                | ParamKind::OptionRefMut(ty) => {
                     types.insert(ty);
                 }
                 _ => {}

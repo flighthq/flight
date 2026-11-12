@@ -95,16 +95,27 @@ const SKIP_TYPES: &[&str] = &[
     "AttachmentSkin2D",
     "BidiClassKernel",
     "BidiClassKernelExplanation",
+    "BoundsRectangleRuntimeMethods",
     "ClippingAttachment2D",
+    "DateTimeFormatOptions",
     "Float32Array",
-    "Uint8Array",
     "MarkupTagRegistry",
+    "NodeRef",
+    "NumberFormatOptions",
+    "PathMeshPool",
     "PathMorphBuildResult",
+    "PluralRulesOptions",
     "PointAttachment2D",
+    "RelativeTimeFormatOptions",
+    "ShapeJsonFormatOptions",
+    "ShapeJsonParseOptions",
     "Skeleton2DClippingAttachmentSlotRange",
     "Skeleton2DGuardState",
     "StrokePathGeometry",
+    "TextLayoutContext",
     "TextMarkupGuardState",
+    "Transform2DRuntimeMethods",
+    "Uint8Array",
     "Value",
 ];
 
@@ -751,6 +762,28 @@ fn generate_ffi_wrapper(func: &ParsedFn) -> Option<(String, Option<String>)> {
                      return c_str.into_raw();"
             )
         }
+        FfiReturn::OptionStringReturn => {
+            format!(
+                "    match {call} {{\n        \
+                     Some(s) => std::ffi::CString::new(s).unwrap_or_default().into_raw(),\n        \
+                     None => std::ptr::null_mut(),\n    \
+                     }}"
+            )
+        }
+        FfiReturn::ArcRefReturn => {
+            format!(
+                "    let arc = {call};\n    \
+                     return Box::into_raw(Box::new(arc)) as *mut std::ffi::c_void;"
+            )
+        }
+        FfiReturn::OptionArcRefReturn => {
+            format!(
+                "    match {call} {{\n        \
+                     Some(arc) => Box::into_raw(Box::new(arc)) as *mut std::ffi::c_void,\n        \
+                     None => std::ptr::null_mut(),\n    \
+                     }}"
+            )
+        }
     };
 
     Some((
@@ -767,6 +800,9 @@ enum FfiReturn {
     Direct,
     BoxReturn,
     StringReturn,
+    OptionStringReturn,
+    ArcRefReturn,
+    OptionArcRefReturn,
 }
 
 const SCALARS: &[&str] = &[
@@ -799,6 +835,128 @@ fn qualify_type(ty: &str) -> String {
 
 fn map_param_to_ffi(name: &str, ty: &str) -> Option<(String, String)> {
     let ty = ty.trim();
+
+    // &str -> *const c_char
+    if ty == "&str" {
+        return Some((
+            "*const std::ffi::c_char".to_string(),
+            format!("unsafe {{ std::ffi::CStr::from_ptr({name}) }}.to_str().unwrap_or(\"\")"),
+        ));
+    }
+
+    // Option<f64> -> f64 with NaN sentinel
+    if ty == "Option<f64>" {
+        return Some((
+            "f64".to_string(),
+            format!("if {name}.is_nan() {{ None }} else {{ Some({name}) }}"),
+        ));
+    }
+
+    // Option<bool> -> i32 with -1 sentinel
+    if ty == "Option<bool>" {
+        return Some((
+            "i32".to_string(),
+            format!("if {name} < 0 {{ None }} else {{ Some({name} != 0) }}"),
+        ));
+    }
+
+    // Option<i32> -> i32 with i32::MIN sentinel
+    if ty == "Option<i32>" {
+        return Some((
+            "i32".to_string(),
+            format!("if {name} == i32::MIN {{ None }} else {{ Some({name}) }}"),
+        ));
+    }
+
+    // Option<&str> -> nullable *const c_char
+    if ty == "Option<&str>" {
+        return Some((
+            "*const std::ffi::c_char".to_string(),
+            format!(
+                "if {name}.is_null() {{ None }} else {{ Some(unsafe {{ std::ffi::CStr::from_ptr({name}) }}.to_str().unwrap_or(\"\")) }}"
+            ),
+        ));
+    }
+
+    // Option<String> param -> nullable *const c_char
+    if ty == "Option<String>" {
+        return Some((
+            "*const std::ffi::c_char".to_string(),
+            format!(
+                "if {name}.is_null() {{ None }} else {{ Some(unsafe {{ std::ffi::CStr::from_ptr({name}) }}.to_str().unwrap_or(\"\").to_string()) }}"
+            ),
+        ));
+    }
+
+    // Option<&mut T> -> nullable *mut T
+    if let Some(inner) = ty.strip_prefix("Option<&mut ") {
+        if let Some(inner) = inner.strip_suffix('>') {
+            let inner = inner.trim();
+            if !inner.starts_with('[') && !is_ffi_incompatible(inner) && !is_scalar(inner) {
+                let qualified = qualify_type(inner);
+                return Some((
+                    format!("*mut {qualified}"),
+                    format!(
+                        "if {name}.is_null() {{ None }} else {{ Some(unsafe {{ &mut *{name} }}) }}"
+                    ),
+                ));
+            }
+        }
+    }
+
+    // Option<&T> -> nullable *const T
+    if let Some(inner) = ty.strip_prefix("Option<&") {
+        if let Some(inner) = inner.strip_suffix('>') {
+            let inner = inner.trim();
+            if inner != "str"
+                && !inner.starts_with('[')
+                && !is_ffi_incompatible(inner)
+                && !is_scalar(inner)
+            {
+                let qualified = qualify_type(inner);
+                return Some((
+                    format!("*const {qualified}"),
+                    format!(
+                        "if {name}.is_null() {{ None }} else {{ Some(unsafe {{ &*{name} }}) }}"
+                    ),
+                ));
+            }
+        }
+    }
+
+    // &mut Ref<T> -> *mut c_void (opaque handle to Arc<RwLock<T>>)
+    if let Some(inner) = ty.strip_prefix("&mut Ref<") {
+        if let Some(inner) = inner.strip_suffix('>') {
+            let inner = inner.trim();
+            if !inner.contains('<')
+                && !inner.contains("::")
+                && !SKIP_TYPES.iter().any(|s| inner.contains(s))
+            {
+                let qualified = qualify_type(inner);
+                return Some((
+                    "*mut std::ffi::c_void".to_string(),
+                    format!("unsafe {{ &mut *({name} as *mut flight_sdk::Ref<{qualified}>) }}"),
+                ));
+            }
+        }
+    }
+
+    // &Ref<T> -> *const c_void (opaque handle to Arc<RwLock<T>>)
+    if let Some(inner) = ty.strip_prefix("&Ref<") {
+        if let Some(inner) = inner.strip_suffix('>') {
+            let inner = inner.trim();
+            if !inner.contains('<')
+                && !inner.contains("::")
+                && !SKIP_TYPES.iter().any(|s| inner.contains(s))
+            {
+                let qualified = qualify_type(inner);
+                return Some((
+                    "*const std::ffi::c_void".to_string(),
+                    format!("unsafe {{ &*({name} as *const flight_sdk::Ref<{qualified}>) }}"),
+                ));
+            }
+        }
+    }
 
     if is_ffi_incompatible(ty) {
         return None;
@@ -848,6 +1006,46 @@ fn map_param_to_ffi(name: &str, ty: &str) -> Option<(String, String)> {
 
 fn map_return_to_ffi(ty: &str) -> Option<(String, FfiReturn)> {
     let ty = ty.trim();
+
+    // Option<String> -> nullable *mut c_char
+    if ty == "Option<String>" {
+        return Some((
+            " -> *mut std::ffi::c_char".to_string(),
+            FfiReturn::OptionStringReturn,
+        ));
+    }
+
+    // Ref<T> -> *mut c_void (boxed Arc handle)
+    if let Some(inner) = ty.strip_prefix("Ref<") {
+        if let Some(inner) = inner.strip_suffix('>') {
+            let inner = inner.trim();
+            if !inner.contains('<')
+                && !inner.contains("::")
+                && !SKIP_TYPES.iter().any(|s| inner.contains(s))
+            {
+                return Some((
+                    " -> *mut std::ffi::c_void".to_string(),
+                    FfiReturn::ArcRefReturn,
+                ));
+            }
+        }
+    }
+
+    // Option<Ref<T>> -> nullable *mut c_void
+    if let Some(inner) = ty.strip_prefix("Option<Ref<") {
+        if let Some(inner) = inner.strip_suffix(">>") {
+            let inner = inner.trim();
+            if !inner.contains('<')
+                && !inner.contains("::")
+                && !SKIP_TYPES.iter().any(|s| inner.contains(s))
+            {
+                return Some((
+                    " -> *mut std::ffi::c_void".to_string(),
+                    FfiReturn::OptionArcRefReturn,
+                ));
+            }
+        }
+    }
 
     if ty.starts_with('&') || is_ffi_incompatible(ty) {
         return None;

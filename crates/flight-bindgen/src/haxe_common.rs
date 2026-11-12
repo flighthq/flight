@@ -16,7 +16,10 @@ pub fn collect_opaque_types(func: &ParsedFn, types: &mut BTreeSet<String>) {
     for param in &func.params {
         if let Some(kind) = classify_param(&param.ty) {
             match kind {
-                ParamKind::RefConst(ty) | ParamKind::RefMut(ty) => {
+                ParamKind::RefConst(ty)
+                | ParamKind::RefMut(ty)
+                | ParamKind::OptionRefConst(ty)
+                | ParamKind::OptionRefMut(ty) => {
                     types.insert(ty);
                 }
                 _ => {}
@@ -79,7 +82,10 @@ fn match_function_to_type(
     for param in params {
         if let Some(kind) = classify_param(&param.ty) {
             let ty_name = match &kind {
-                ParamKind::RefConst(ty) | ParamKind::RefMut(ty) => ty,
+                ParamKind::RefConst(ty)
+                | ParamKind::RefMut(ty)
+                | ParamKind::OptionRefConst(ty)
+                | ParamKind::OptionRefMut(ty) => ty,
                 _ => continue,
             };
             if known_types.contains(ty_name)
@@ -140,7 +146,12 @@ pub fn find_self_param(func: &ParsedFn, ty: &str) -> Option<usize> {
     for (i, param) in func.params.iter().enumerate() {
         if let Some(kind) = classify_param(&param.ty) {
             match &kind {
-                ParamKind::RefConst(t) | ParamKind::RefMut(t) if t == ty => {
+                ParamKind::RefConst(t)
+                | ParamKind::RefMut(t)
+                | ParamKind::OptionRefConst(t)
+                | ParamKind::OptionRefMut(t)
+                    if t == ty =>
+                {
                     return Some(i);
                 }
                 _ => {}

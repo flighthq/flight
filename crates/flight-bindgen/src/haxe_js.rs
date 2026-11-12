@@ -264,9 +264,16 @@ fn emit_function(func: &ParsedFn) -> Option<String> {
 fn param_kind_to_haxe(kind: &ParamKind) -> String {
     match kind {
         ParamKind::Scalar(ty) => scalar_to_haxe(ty).to_string(),
-        ParamKind::RefConst(ty) => format!("{PKG}.{ty}"),
-        ParamKind::RefMut(ty) => format!("{PKG}.{ty}"),
+        ParamKind::RefConst(ty) | ParamKind::OptionRefConst(ty) => format!("{PKG}.{ty}"),
+        ParamKind::RefMut(ty) | ParamKind::OptionRefMut(ty) => format!("{PKG}.{ty}"),
+        ParamKind::ArcRef | ParamKind::ArcRefMut => "Dynamic".to_string(),
         ParamKind::OptionF32 => "Single".to_string(),
+        ParamKind::OptionF64 => "Float".to_string(),
+        ParamKind::OptionI32 => "Int".to_string(),
+        ParamKind::OptionBool => "Int".to_string(),
+        ParamKind::StrRef | ParamKind::OptionStr | ParamKind::OptionStringParam => {
+            "String".to_string()
+        }
     }
 }
 
@@ -275,6 +282,7 @@ fn return_kind_to_haxe(kind: &ReturnKind) -> String {
         ReturnKind::Void => "Void".to_string(),
         ReturnKind::Scalar(ty) => scalar_to_haxe(ty).to_string(),
         ReturnKind::Struct(ty) => format!("{PKG}.{ty}"),
-        ReturnKind::StringReturn => "String".to_string(),
+        ReturnKind::StringReturn | ReturnKind::OptionString => "String".to_string(),
+        ReturnKind::ArcRefReturn | ReturnKind::OptionArcRefReturn => "Dynamic".to_string(),
     }
 }
