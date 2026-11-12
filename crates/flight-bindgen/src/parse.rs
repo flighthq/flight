@@ -688,6 +688,7 @@ fn resolve_type_alias(ty: &str) -> String {
         ("SpatialObjectId", "i32"),
         ("SourceId", "u64"),
         ("Kind", "String"),
+        ("EasingFn", "Arc<dyn Fn(f32) -> f32 + Send + Sync>"),
         ("AnimationBlendTreeRef", "Ref<AnimationBlendTree>"),
         ("AnimationPlayerRef", "Ref<AnimationPlayer>"),
         ("AnimationStateMachineRef", "Ref<AnimationStateMachine>"),
@@ -801,6 +802,30 @@ pub fn classify_param(ty: &str) -> Option<ParamKind> {
             let inner = inner.trim();
             if is_scalar(inner) || (!is_ffi_incompatible(inner) && !inner.contains('<')) {
                 return Some(ParamKind::OptionSliceConst(inner.to_string()));
+            }
+        }
+    }
+
+    // Option<&Ref<T>> or Option<&mut Ref<T>> -> ArcRef (nullable opaque handle)
+    if let Some(inner) = ty.strip_prefix("Option<&mut Ref<") {
+        if let Some(inner) = inner.strip_suffix(">>") {
+            let inner = inner.trim();
+            if !inner.contains('<')
+                && !inner.contains("::")
+                && !SKIP_TYPES.iter().any(|s| inner.contains(s))
+            {
+                return Some(ParamKind::ArcRef);
+            }
+        }
+    }
+    if let Some(inner) = ty.strip_prefix("Option<&Ref<") {
+        if let Some(inner) = inner.strip_suffix(">>") {
+            let inner = inner.trim();
+            if !inner.contains('<')
+                && !inner.contains("::")
+                && !SKIP_TYPES.iter().any(|s| inner.contains(s))
+            {
+                return Some(ParamKind::ArcRef);
             }
         }
     }
