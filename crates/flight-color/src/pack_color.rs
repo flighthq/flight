@@ -34,6 +34,7 @@ mod sugar_tests {
 }
 
 #[derive(Debug, Clone, PartialEq, Default)]
+#[repr(C)]
 pub struct LinearColor {
     pub r: f32,
     pub g: f32,

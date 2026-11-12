@@ -33,6 +33,7 @@ pub type SourceId = u64;
 /// edit) contributes a source's screen-space velocity for the current frame,
 /// and any consumer reads it. The accessors are source-agnostic.
 #[derive(Debug, Clone, Default, PartialEq)]
+#[repr(C)]
 pub struct VelocityField {
     pub frame_id: i32,
     pub samples: HashMap<SourceId, VelocitySample>,

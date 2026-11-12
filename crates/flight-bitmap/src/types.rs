@@ -171,6 +171,7 @@ pub struct Bitmap {
 /// carrying a clone depending on context. In the Rust-as-IR pattern we keep
 /// the bitmap inline so that free functions can mutate through the region.
 #[derive(Clone, Debug)]
+#[repr(C)]
 pub struct BitmapRegion {
     pub bitmap: Bitmap,
     pub x: i32,
@@ -192,6 +193,7 @@ pub struct RectangleLike {
 /// Bitmap mismatch summary.
 #[derive(Clone, Debug, Default)]
 // flight-lint: allow(f64) BitmapMismatch.fraction mirrors TS number; pixel-count ratio exceeding f32 exact range
+#[repr(C)]
 pub struct BitmapMismatch {
     pub mismatched_pixels: u32,
     pub total_pixels: u32,
@@ -210,6 +212,7 @@ pub struct BitmapHistogram {
 
 /// Coarse fingerprint for regression gating.
 #[derive(Clone, Debug)]
+#[repr(C)]
 pub struct BitmapFingerprint {
     runtime: EntityRuntimeSlot,
     pub grid_size: u32,

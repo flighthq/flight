@@ -116,6 +116,7 @@ pub struct SignalTimer {
 /// Explicit timer state for debounced and throttled connections (D5): the caller creates it,
 /// injects time through `advance_signal_timers`, and no clock is read inside the contract.
 // flight-lint: allow(f64) D1: current time and fire times are millisecond durations
+#[repr(C)]
 pub struct SignalTimerState {
     pub now_ms: f64,
     pub timers: Vec<SignalTimer>,

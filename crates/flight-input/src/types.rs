@@ -197,6 +197,7 @@ pub struct InputKeyRepeatOptions {
 
 /// The caller-owned output of a radial stick dead zone (TS out object `{ x, y }`).
 #[derive(Clone, Copy, Debug, PartialEq, Default)]
+#[repr(C)]
 pub struct GamepadStickOutput {
     pub x: f32,
     pub y: f32,

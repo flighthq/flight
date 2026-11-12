@@ -39,6 +39,7 @@ pub struct BinPackOptions {
 /// The result of a bin packing operation: the placed rectangles, the bin extents, and the ids of
 /// rectangles that did not fit.
 #[derive(Debug, Clone, PartialEq)]
+#[repr(C)]
 pub struct PackResult {
     pub placements: Vec<PackedRectangle>,
     pub width: f32,

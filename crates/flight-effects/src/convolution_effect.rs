@@ -8,6 +8,7 @@ use flight_render::{EffectPadding, RenderState};
 use std::sync::{Arc, RwLock};
 
 #[derive(Clone, Debug, Default)]
+#[repr(C)]
 pub struct ConvolutionEffect {
     fields: crate::contract::EffectFields,
     pub matrix: Vec<f32>,

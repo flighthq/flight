@@ -17,6 +17,7 @@ mod sugar_tests {
 }
 
 #[derive(Debug, Clone, PartialEq, Default)]
+#[repr(C)]
 pub struct HslColor {
     pub h: f32,
     pub s: f32,

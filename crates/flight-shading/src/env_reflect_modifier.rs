@@ -7,6 +7,7 @@ use crate::contract::{MODIFIER_SLOT_EFFECT, ModifierFields, initialize_modifier}
 pub const ENV_REFLECT_MODIFIER_KIND: &str = "EnvReflectModifier";
 
 #[derive(Clone, Debug)]
+#[repr(C)]
 pub struct EnvReflectModifier {
     fields: ModifierFields,
     pub tint: u32,

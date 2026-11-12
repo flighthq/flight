@@ -17,6 +17,7 @@ pub const PARTICLE_EMITTER_2D_KIND: &str = "ParticleEmitter2D";
 pub const PARTICLE_EMITTER_3D_KIND: &str = "ParticleEmitter3D";
 
 #[derive(Clone, Default)]
+#[repr(C)]
 pub struct ParticleEmitterData {
     runtime: EntityRuntimeSlot,
     pub alphas: Vec<f32>,

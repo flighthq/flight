@@ -345,6 +345,7 @@ pub type LottieMask = LottieRecord;
 pub type LottieShapeItem = LottieRecord;
 
 #[derive(Clone, Debug, Default, PartialEq)]
+#[repr(C)]
 pub struct LottieShapePath {
     pub c: bool,
     pub i: Vec<Vec<f32>>,
@@ -538,6 +539,7 @@ pub enum SvgGradientUnits {
 }
 
 #[derive(Clone, Debug, PartialEq)]
+#[repr(C)]
 pub struct SvgGradient {
     pub cx: f32,
     pub cy: f32,

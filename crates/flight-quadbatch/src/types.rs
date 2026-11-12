@@ -33,6 +33,7 @@ pub struct QuadBatch {
 
 /// Instance buffers and shared resources of a batch (TS `QuadBatchData`). Vector lengths preserve
 /// typed-array allocation lengths, while `instance_count` is the independent logical length.
+#[repr(C)]
 pub struct QuadBatchData {
     runtime: EntityRuntimeSlot,
     pub atlas: Option<Ref<TextureAtlas>>,

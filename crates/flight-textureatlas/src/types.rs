@@ -32,6 +32,7 @@ pub enum TextureAtlasRegionTextureStatus {
 /// The private fields replace the source's module side tables keyed by the atlas: the region-id
 /// high-water mark and the per-region texture cache (keyed weakly by region identity, holding
 /// identity only; every lookup re-derives the window).
+#[repr(C)]
 pub struct TextureAtlas {
     runtime: EntityRuntimeSlot,
     pub image_height: f32,
@@ -50,6 +51,7 @@ pub struct TextureAtlas {
 /// place. `x`/`y`/`width`/`height` are the packed page rectangle; when `rotation` is not `None` the
 /// logical drawn size is height by width.
 #[derive(Clone, Debug, PartialEq)]
+#[repr(C)]
 pub struct TextureAtlasRegion {
     runtime: EntityRuntimeSlot,
     pub height: f32,
@@ -138,6 +140,7 @@ pub type TextureAtlasRegionTextureGuard =
 /// Caller-owned guard state replacing the source module's guard slot and enabled flag (D5). Plain
 /// record.
 #[derive(Clone, Default)]
+#[repr(C)]
 pub struct TextureAtlasGuardState {
     pub enabled: bool,
     pub guard: Option<TextureAtlasRegionTextureGuard>,
@@ -147,6 +150,7 @@ pub struct TextureAtlasGuardState {
 /// size, margins and spacing; margins and spacing default to 0 and `name_prefix` to `"frame_"`. Plain
 /// record.
 #[derive(Clone, Debug, Default, PartialEq)]
+#[repr(C)]
 pub struct GridSliceOptions {
     pub columns: i32,
     pub frame_height: Option<f32>,

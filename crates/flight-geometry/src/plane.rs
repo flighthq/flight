@@ -4,6 +4,7 @@ use crate::Vector3;
 use flight_entity::{EntityRuntimeSlot, allocate_entity};
 
 #[derive(Debug, Clone, PartialEq, Default)]
+#[repr(C)]
 pub struct Plane {
     runtime: EntityRuntimeSlot,
     pub a: f32,

@@ -15,6 +15,7 @@ use std::sync::LazyLock;
 /// [ a c tx ]
 /// [ b d ty ]
 #[derive(Debug, Clone, PartialEq)]
+#[repr(C)]
 pub struct Matrix {
     runtime: EntityRuntimeSlot,
     pub a: f32,

@@ -6,6 +6,7 @@ use crate::{Vector3, create_vector3};
 use flight_entity::{EntityRuntimeSlot, allocate_entity};
 
 #[derive(Debug, Clone, PartialEq)]
+#[repr(C)]
 pub struct BoundingSphere {
     runtime: EntityRuntimeSlot,
     pub center: Vector3,

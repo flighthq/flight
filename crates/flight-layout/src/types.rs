@@ -215,6 +215,7 @@ pub type LayoutResolutionGuard = fn(&LayoutResolutionExplanation);
 // -- Layout state --
 
 #[derive(Default)]
+#[repr(C)]
 pub struct LayoutState {
     runtime: EntityRuntimeSlot,
     pub guard: Option<LayoutResolutionGuard>,

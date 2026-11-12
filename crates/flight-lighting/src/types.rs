@@ -97,6 +97,7 @@ pub trait PhotometricLightLike {
 pub type LightRef = Ref<dyn Light>;
 
 #[derive(Clone, Debug)]
+#[repr(C)]
 pub struct AmbientLight {
     runtime: EntityRuntimeSlot,
     pub color: u32,
@@ -115,6 +116,7 @@ pub struct AmbientLightOptions {
 }
 
 #[derive(Clone, Debug)]
+#[repr(C)]
 pub struct DirectionalLight {
     runtime: EntityRuntimeSlot,
     pub cascade_count: u32,
@@ -155,6 +157,7 @@ pub struct DirectionalLightOptions {
 }
 
 #[derive(Clone, Debug)]
+#[repr(C)]
 pub struct PointLight {
     runtime: EntityRuntimeSlot,
     pub casts_shadow: bool,
@@ -199,6 +202,7 @@ pub struct PointLightOptions {
 }
 
 #[derive(Clone, Debug)]
+#[repr(C)]
 pub struct SpotLight {
     runtime: EntityRuntimeSlot,
     pub casts_shadow: bool,
@@ -251,12 +255,14 @@ pub struct SpotLightOptions {
 }
 
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
+#[repr(C)]
 pub struct SpotLightConeAngles {
     pub inner_degrees: f32,
     pub outer_degrees: f32,
 }
 
 #[derive(Clone, Debug)]
+#[repr(C)]
 pub struct HemisphereLight {
     runtime: EntityRuntimeSlot,
     pub enabled: bool,
@@ -277,6 +283,7 @@ pub struct HemisphereLightOptions {
 }
 
 #[derive(Clone, Debug)]
+#[repr(C)]
 pub struct AreaLight {
     runtime: EntityRuntimeSlot,
     pub casts_shadow: bool,
@@ -323,6 +330,7 @@ pub struct AreaLightOptions {
 }
 
 #[derive(Clone, Debug)]
+#[repr(C)]
 pub struct Environment {
     runtime: EntityRuntimeSlot,
     pub enabled: bool,

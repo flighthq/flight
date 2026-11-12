@@ -13,6 +13,7 @@ pub const SHADED_MATERIAL_KIND: &str = "ShadedMaterial";
 #[derive(Clone, Debug)]
 /// A shaded 3D material (TS `ShadedMaterial`): a member of the open Material3D family, composing
 /// `Material3DFields` and adding the Blinn-Phong inputs plus its ordered modifier stack.
+#[repr(C)]
 pub struct ShadedMaterial {
     fields: Material3DFields,
     pub diffuse: u32,

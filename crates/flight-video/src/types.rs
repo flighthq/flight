@@ -56,6 +56,7 @@ pub struct VideoPlayOptions {
 /// re-fetches on seek), so teardown revokes it. `owns_element` is true when this resource created the
 /// element and teardown should release its decoder; false when the caller supplied it.
 #[derive(Clone)]
+#[repr(C)]
 pub struct VideoResource {
     runtime: EntityRuntimeSlot,
     pub element: Option<Arc<HostImageSource>>,

@@ -194,6 +194,7 @@ pub struct HtmlView {
 /// (D26; TS `HTMLElement | null`, natively a platform view); scene2d never reads it.
 // flight-lint: allow(f64) D1: the element size is a JS number, compared exactly by setHtmlViewSize
 #[derive(Clone, Default)]
+#[repr(C)]
 pub struct HtmlViewData {
     runtime: EntityRuntimeSlot,
     pub element: Option<NativeViewHandle>,
@@ -205,6 +206,7 @@ pub struct HtmlViewData {
 /// owns its display root, the fit context mapping that root into the view, the logical view size
 /// and the background color. The runtime (signals) is allocated on first access.
 // flight-lint: allow(f64) D1: the view size is a JS number, compared exactly by setScene2DSize
+#[repr(C)]
 pub struct Scene2D {
     runtime: EntityRuntimeSlot,
     pub(crate) state: Option<Scene2DRuntime>,

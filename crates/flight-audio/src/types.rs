@@ -179,6 +179,7 @@ pub enum AudioResourceReference {
 
 /// Detached diagnostic view of reference resolution.
 #[derive(Clone)]
+#[repr(C)]
 pub struct AudioResourceReferenceResolutionExplanation {
     pub failure: Option<Ref<AudioResourceFailure>>,
     pub kind: AudioResourceReferenceKind,

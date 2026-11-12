@@ -1,5 +1,6 @@
 /// A two-dimensional velocity value.
 #[derive(Debug, Clone, Copy, PartialEq, Default)]
+#[repr(C)]
 pub struct Velocity2D {
     pub x: f32,
     pub y: f32,

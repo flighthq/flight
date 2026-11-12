@@ -324,6 +324,7 @@ pub struct Scale9Shape {
 
 /// The nine-slice grid rectangle (TS `RectangleLike`), a plain record.
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
+#[repr(C)]
 pub struct ShapeScale9Grid {
     pub x: f32,
     pub y: f32,
@@ -467,6 +468,7 @@ pub enum MorphShapeGradientEndpointReason {
 
 /// The gradient endpoint explanation record.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(C)]
 pub struct MorphShapeGradientEndpointExplanation {
     pub end_stop_count: usize,
     pub reason: MorphShapeGradientEndpointReason,

@@ -15,6 +15,7 @@ use flight_signals::{FrameTick, Signal};
 /// `dispose_clock` breaks the parent/child cycle.
 // flight-lint: allow(f64) clock times are f64 milliseconds: `on_tick` carries flight-signals' `FrameTick` (f64 ms, so it plugs into connect_signal_at_frame_rate as in TS), and `elapsed` accumulates across a session, where f32 stops resolving 1 ms steps after 2^24 ms (about 4.7 hours); `scale` multiplies that f64 delta
 #[derive(Clone, Default)]
+#[repr(C)]
 pub struct Clock {
     runtime: EntityRuntimeSlot,
     /// Local time scale applied to the incoming delta (1 = realtime, 0.5 = half speed, 2 = double).

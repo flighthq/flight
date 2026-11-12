@@ -429,6 +429,7 @@ pub struct Skeleton2DAnimationTarget {
 
 /// A slot appearance animation target (TS `Skeleton2DSlotAnimationTarget`).
 #[derive(Default)]
+#[repr(C)]
 pub struct Skeleton2DSlotAnimationTarget {
     runtime: EntityRuntimeSlot,
     pub attachments: Option<Arc<Vec<Option<Attachment2DRef>>>>,

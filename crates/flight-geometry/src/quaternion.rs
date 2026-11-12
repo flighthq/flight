@@ -15,6 +15,7 @@ pub enum EulerOrder {
 }
 
 #[derive(Debug, Clone, PartialEq)]
+#[repr(C)]
 pub struct Quaternion {
     runtime: EntityRuntimeSlot,
     pub x: f32,

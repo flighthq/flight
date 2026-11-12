@@ -55,6 +55,7 @@ pub enum TextSegmenterKind {
 
 /// Explanation of which segmenter backend is active.
 #[derive(Clone, Debug, PartialEq)]
+#[repr(C)]
 pub struct TextSegmenterExplanation {
     pub available: bool,
     pub backend: TextSegmenterKind,

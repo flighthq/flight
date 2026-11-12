@@ -90,6 +90,7 @@ pub struct BitmapFontKerningData {
 
 /// Out record populated by `unpack_bitmap_font_kerning_key`.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+#[repr(C)]
 pub struct BitmapFontKerningPair {
     pub left: u32,
     pub right: u32,

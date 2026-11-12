@@ -8,6 +8,7 @@ use crate::contract::{MODIFIER_SLOT_EFFECT, ModifierFields, initialize_modifier}
 pub const DISSOLVE_MODIFIER_KIND: &str = "DissolveModifier";
 
 #[derive(Clone, Debug)]
+#[repr(C)]
 pub struct DissolveModifier {
     fields: ModifierFields,
     pub threshold: f32,

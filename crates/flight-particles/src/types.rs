@@ -190,6 +190,7 @@ pub struct ParticleEmitterSignals {
 // ---------------------------------------------------------------------------
 
 #[derive(Clone, Debug)]
+#[repr(C)]
 pub struct ParticleEmitterConfig {
     pub alpha_curve: Option<Vec<f32>>,
     pub alpha_end: f32,
@@ -309,6 +310,7 @@ pub struct ParticleEmitterConfigOptions {
 // ParticleEmitterState (Entity)
 // ---------------------------------------------------------------------------
 
+#[repr(C)]
 pub struct ParticleEmitterState {
     pub burst_timer: f32,
     pub color_birth: Vec<f32>,
@@ -331,6 +333,7 @@ pub struct ParticleEmitterState {
 // ParticleObjectsState (Entity)
 // ---------------------------------------------------------------------------
 
+#[repr(C)]
 pub struct ParticleObjectsState {
     pub burst_timer: f32,
     pub emitter_age: f32,

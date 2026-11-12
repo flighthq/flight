@@ -145,6 +145,7 @@ pub enum ImageResourceReference {
 
 /// Detached diagnostic view of one reference resolution.
 #[derive(Clone)]
+#[repr(C)]
 pub struct ImageResourceReferenceResolutionExplanation {
     pub failure: Option<Ref<ImageResourceFailure>>,
     pub kind: ImageResourceReferenceKind,

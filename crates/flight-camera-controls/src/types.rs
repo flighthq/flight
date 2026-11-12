@@ -12,6 +12,7 @@ use flight_geometry::{Vector3, create_vector3};
 /// Trauma-based camera shake state (TS `CameraShake`, an Entity). `trauma` is clamped to [0, 1] and
 /// decays each update; intensity is `trauma²`. Translation is world units and rotation is degrees.
 #[derive(Default)]
+#[repr(C)]
 pub struct CameraShake {
     runtime: EntityRuntimeSlot,
     pub trauma: f32,
@@ -35,6 +36,7 @@ pub struct CameraShakeOptions {
 /// The additive offset produced by `update_camera_shake` (TS `CameraShakeOffset`, an Entity), applied
 /// after the camera's base transform.
 #[derive(Default)]
+#[repr(C)]
 pub struct CameraShakeOffset {
     runtime: EntityRuntimeSlot,
     pub rotation_x: f32,
@@ -47,6 +49,7 @@ pub struct CameraShakeOffset {
 
 /// A stateful fly / first-person controller (TS `FlyCameraController`, an Entity). `position` retains
 /// the source vector object identity; angle fields are radians.
+#[repr(C)]
 pub struct FlyCameraController {
     runtime: EntityRuntimeSlot,
     pub goal_pitch: f32,
@@ -72,6 +75,7 @@ pub struct FlyCameraControllerOptions {
 
 /// A stateful orbit / arcball controller (TS `OrbitCameraController`, an Entity). `target` retains the
 /// source vector object identity; spherical coordinates are radians.
+#[repr(C)]
 pub struct OrbitCameraController {
     runtime: EntityRuntimeSlot,
     pub azimuth: f32,

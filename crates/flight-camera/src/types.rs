@@ -14,6 +14,7 @@ use flight_geometry::{Matrix4, Plane, Rectangle, Vector2, create_matrix4, create
 /// `near`/`far` are the clip-plane distances; `jitter` is the per-frame sub-pixel NDC offset applied
 /// to every projection; `inverse_view_projection` is the last inverse projection-times-view cache;
 /// `near_clip_plane`, when present, replaces the symmetric near plane via the oblique technique.
+#[repr(C)]
 pub struct Camera3D {
     runtime: EntityRuntimeSlot,
     pub far: f32,
@@ -29,6 +30,7 @@ pub struct Camera3D {
 /// of the viewport; `zoom` > 1 magnifies; `rotation` is in radians. The viewport is not on the
 /// camera — functions that need it take explicit width/height parameters.
 #[derive(Default)]
+#[repr(C)]
 pub struct Camera2D {
     runtime: EntityRuntimeSlot,
     pub rotation: f32,
@@ -49,6 +51,7 @@ pub struct PerspectiveProjection {
 /// An orthographic projection (TS `OrthographicProjection`, an Entity): half-extents of the view
 /// volume in view-space units. Clip planes live on the owning `Camera3D`.
 #[derive(Default)]
+#[repr(C)]
 pub struct OrthographicProjection {
     runtime: EntityRuntimeSlot,
     pub half_height: f32,
@@ -129,6 +132,7 @@ pub struct RawProjectionOptions {
 /// What `explain_camera_3d_view` measured about a camera's view matrix (TS
 /// `Camera3DViewExplanation`). Plain data: the caller decides what a deviation means.
 #[derive(Clone, Copy, Debug, PartialEq)]
+#[repr(C)]
 pub struct Camera3DViewExplanation {
     pub determinant: f32,
     pub is_orthonormal: bool,

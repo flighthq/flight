@@ -85,6 +85,7 @@ pub struct AnimationChannel {
 }
 
 #[derive(Clone, Debug)]
+#[repr(C)]
 pub struct AnimationClip {
     pub channels: Vec<AnimationChannel>,
     pub duration: f32,
@@ -93,6 +94,7 @@ pub struct AnimationClip {
 }
 
 #[derive(Clone, Debug)]
+#[repr(C)]
 pub struct AnimationClipEvent {
     pub name: String,
     pub payload: Payload,
@@ -101,6 +103,7 @@ pub struct AnimationClipEvent {
 }
 
 #[derive(Clone)]
+#[repr(C)]
 pub struct AnimationCrossfade {
     pub channels: Vec<AnimationCrossfadeChannel>,
     pub curve: EasingFn,
@@ -167,6 +170,7 @@ pub struct AnimationLayerStackChannelSource {
 }
 
 #[derive(Clone)]
+#[repr(C)]
 pub struct AnimationPlayer {
     pub clip: Ref<AnimationClip>,
     pub loop_enabled: bool,
@@ -197,6 +201,7 @@ pub struct AnimationRootMotionExtractor {
 }
 
 #[derive(Clone, Debug)]
+#[repr(C)]
 pub struct AnimationSampleAccumulator {
     pub components: usize,
     pub quaternion: bool,
@@ -206,6 +211,7 @@ pub struct AnimationSampleAccumulator {
 }
 
 #[derive(Clone)]
+#[repr(C)]
 pub struct AnimationStateMachine {
     pub advance_scratch: Vec<AnimationPlayerRef>,
     pub channels: Vec<AnimationStateMachineChannel>,
@@ -236,6 +242,7 @@ pub struct AnimationStateMachineState {
 }
 
 #[derive(Clone)]
+#[repr(C)]
 pub struct AnimationTrack {
     pub interpolation: AnimationInterpolation,
     pub times: Vec<f32>,

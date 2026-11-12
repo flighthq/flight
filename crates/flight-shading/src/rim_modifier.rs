@@ -7,6 +7,7 @@ use crate::contract::{MODIFIER_SLOT_EFFECT, ModifierFields, initialize_modifier}
 pub const RIM_MODIFIER_KIND: &str = "RimModifier";
 
 #[derive(Clone, Debug)]
+#[repr(C)]
 pub struct RimModifier {
     fields: ModifierFields,
     pub color: u32,

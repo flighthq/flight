@@ -10,6 +10,7 @@ use crate::contract::{
 pub const EMISSIVE_MODIFIER_KIND: &str = "EmissiveModifier";
 
 #[derive(Clone, Debug)]
+#[repr(C)]
 pub struct EmissiveModifier {
     fields: ModifierFields,
     pub color: u32,

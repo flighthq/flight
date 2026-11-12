@@ -48,6 +48,7 @@ pub enum Physics2DAbiExecutionStatus {
 
 /// Where command application stopped (TS `Physics2DAbiExecutionResult`, an Entity). `command_index`
 /// names the first command that was not applied; `byte_offset` is that record's start.
+#[repr(C)]
 pub struct Physics2DAbiExecutionResult {
     runtime: EntityRuntimeSlot,
     pub byte_offset: usize,
@@ -59,6 +60,7 @@ pub struct Physics2DAbiExecutionResult {
 /// A fixed-capacity, little-endian command stream (TS `Physics2DAbiCommandBuffer`, an Entity).
 /// Writers return false without changing the record when the next command cannot be encoded or does
 /// not fit; capacity growth is explicit.
+#[repr(C)]
 pub struct Physics2DAbiCommandBuffer {
     runtime: EntityRuntimeSlot,
     pub byte_length: usize,
@@ -68,6 +70,7 @@ pub struct Physics2DAbiCommandBuffer {
 
 /// Structure-of-arrays body readback (TS `Physics2DAbiBodyBuffer`, an Entity). `required_count` is
 /// the whole answer and `count` the prefix that fit.
+#[repr(C)]
 pub struct Physics2DAbiBodyBuffer {
     runtime: EntityRuntimeSlot,
     pub count: usize,
@@ -87,6 +90,7 @@ pub enum Physics2DAbiContactSelection {
 
 /// Structure-of-arrays contact readback (TS `Physics2DAbiContactBuffer`, an Entity). Each contact
 /// owns one id/flag row and one value row; `point_starts`/`point_counts` select its points.
+#[repr(C)]
 pub struct Physics2DAbiContactBuffer {
     runtime: EntityRuntimeSlot,
     pub count: usize,
@@ -128,6 +132,7 @@ pub enum Physics2DAbiStepStatus {
 
 /// Joint ids and their latest reaction (TS `Physics2DAbiJointBuffer`, an Entity). `flags` carries
 /// the Broken bit; broken rows are one-read events.
+#[repr(C)]
 pub struct Physics2DAbiJointBuffer {
     runtime: EntityRuntimeSlot,
     pub count: usize,
@@ -139,6 +144,7 @@ pub struct Physics2DAbiJointBuffer {
 
 /// Query output shared by point, region, ray and shape-cast calls (TS `Physics2DAbiQueryBuffer`, an
 /// Entity). Point and region hits leave the geometric row zero.
+#[repr(C)]
 pub struct Physics2DAbiQueryBuffer {
     runtime: EntityRuntimeSlot,
     pub body_ids: Box<Uint32Array>,
@@ -242,6 +248,7 @@ pub type Physics2DAbiQueryShapeCast = Arc<
 /// the callbacks live here so another implementation can replace `create_physics2d_abi` and reuse
 /// every codec and convenience function. Persistent backend state lives in what the callbacks
 /// capture (D5), never in module globals.
+#[repr(C)]
 pub struct Physics2DAbi {
     runtime: EntityRuntimeSlot,
     pub capabilities: u32,

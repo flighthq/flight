@@ -9,6 +9,7 @@
 ///   (fastest no-overshoot), >1 = overdamped
 /// - `frequency`: oscillation frequency in Hz (cycles per second)
 #[derive(Debug, Clone, Copy, PartialEq, Default)]
+#[repr(C)]
 pub struct SpringConfig {
     pub damping_ratio: f32,
     pub frequency: f32,

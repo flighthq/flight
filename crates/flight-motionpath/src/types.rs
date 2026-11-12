@@ -37,6 +37,7 @@ pub enum MotionPathDirection {
 /// creation. `speed` is a magnitude — the travel sign lives in `direction`. The `path` handle is the
 /// source's retained object reference.
 // flight-lint: allow(f64) D1: distance, length, speed and tolerance flow through flight-path's f64 arc-length API; rounding to f32 would change end and loop boundary comparisons
+#[repr(C)]
 pub struct MotionPath {
     runtime: EntityRuntimeSlot,
     pub direction: MotionPathDirection,

@@ -4,6 +4,7 @@ use crate::Vector2;
 use flight_entity::{EntityRuntimeSlot, allocate_entity};
 
 #[derive(Debug, Clone, PartialEq, Default)]
+#[repr(C)]
 pub struct Rectangle {
     runtime: EntityRuntimeSlot,
     pub x: f32,

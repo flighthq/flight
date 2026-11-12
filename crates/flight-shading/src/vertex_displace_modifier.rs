@@ -11,6 +11,7 @@ use crate::contract::{
 pub const VERTEX_DISPLACE_MODIFIER_KIND: &str = "VertexDisplaceModifier";
 
 #[derive(Clone, Debug)]
+#[repr(C)]
 pub struct VertexDisplaceModifier {
     fields: ModifierFields,
     pub source: VertexDisplaceModifierSource,

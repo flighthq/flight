@@ -9,6 +9,7 @@ use crate::contract::{MODIFIER_SLOT_NORMAL, ModifierFields, initialize_modifier}
 pub const ANIMATED_NORMAL_MODIFIER_KIND: &str = "AnimatedNormalModifier";
 
 #[derive(Clone, Debug)]
+#[repr(C)]
 pub struct AnimatedNormalModifier {
     fields: ModifierFields,
     pub map: Option<Ref<Texture>>,

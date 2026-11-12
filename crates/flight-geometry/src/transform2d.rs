@@ -4,6 +4,7 @@ use crate::Matrix;
 use flight_entity::{EntityRuntimeSlot, allocate_entity};
 
 #[derive(Debug, Clone, PartialEq)]
+#[repr(C)]
 pub struct Transform2D {
     runtime: EntityRuntimeSlot,
     pub x: f32,

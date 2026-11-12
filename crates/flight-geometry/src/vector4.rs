@@ -5,6 +5,7 @@ use flight_entity::{EntityRuntimeSlot, Float32Array, allocate_entity};
 use std::sync::LazyLock;
 
 #[derive(Debug, Clone, PartialEq, Default)]
+#[repr(C)]
 pub struct Vector4 {
     runtime: EntityRuntimeSlot,
     pub x: f32,

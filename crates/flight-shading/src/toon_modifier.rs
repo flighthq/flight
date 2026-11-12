@@ -7,6 +7,7 @@ use crate::contract::{MODIFIER_SLOT_EFFECT, ModifierFields, initialize_modifier}
 pub const TOON_MODIFIER_KIND: &str = "ToonModifier";
 
 #[derive(Clone, Debug)]
+#[repr(C)]
 pub struct ToonModifier {
     fields: ModifierFields,
     pub steps: f32,

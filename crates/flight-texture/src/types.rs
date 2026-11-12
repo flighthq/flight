@@ -74,6 +74,7 @@ pub enum TextureWrap {
 }
 
 #[derive(Clone, Debug, PartialEq)]
+#[repr(C)]
 pub struct Sampler {
     runtime: EntityRuntimeSlot,
     pub anisotropy: f32,
@@ -107,6 +108,7 @@ pub type TextureSourceRef = Ref<dyn TextureSource>;
 pub type TextureSourceCubeFaces = [Option<TextureSourceRef>; 6];
 
 #[derive(Clone, Debug)]
+#[repr(C)]
 pub struct VoxelGrid {
     pub(crate) fields: TextureSourceFields,
     pub data: Box<Uint8Array>,

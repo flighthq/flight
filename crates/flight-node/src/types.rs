@@ -166,6 +166,7 @@ pub struct HasAppearance {
 }
 
 /// The shared appearance runtime tier (TS `HasAppearanceRuntime`).
+#[repr(C)]
 pub struct HasAppearanceRuntime {
     pub world_alpha: Option<f32>,
     pub world_alpha_using_appearance_id: i32,
@@ -226,6 +227,7 @@ pub struct HasTransform3D {
 }
 
 /// The 3D transform runtime cache (TS `HasTransform3DRuntime`).
+#[repr(C)]
 pub struct HasTransform3DRuntime {
     pub local_matrix4: Option<Matrix4>,
     pub local_matrix4_detached: bool,
@@ -435,6 +437,7 @@ pub trait MaterialNode: Node {
 /// A reusable ordering list over a node's children (TS `NodeOrderList`). `entry_count` is the valid
 /// window into the two parallel arrays; capacity past it is reused, as in the source.
 // flight-lint: allow(f64) D1: sort keys are arbitrary JS numbers (fractional and negative are legal); ordering and subtraction must match TS
+#[repr(C)]
 pub struct NodeOrderList {
     runtime: EntityRuntimeSlot,
     pub entry_count: usize,
@@ -445,6 +448,7 @@ pub struct NodeOrderList {
 /// The bedrock drawable rectangle a scene renders into (TS `Viewport`). Passive plain data: it does
 /// not own its drawable.
 #[derive(Clone, Debug, PartialEq)]
+#[repr(C)]
 pub struct Viewport {
     runtime: EntityRuntimeSlot,
     pub device_pixel_ratio: f32,

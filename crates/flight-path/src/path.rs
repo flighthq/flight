@@ -295,6 +295,7 @@ pub enum PathMorphCreationReason {
 
 /// Explanation of whether two paths can be morphed.
 #[derive(Debug, Clone, PartialEq)]
+#[repr(C)]
 pub struct PathMorphCreationExplanation {
     pub supported: bool,
     pub reason: PathMorphCreationReason,

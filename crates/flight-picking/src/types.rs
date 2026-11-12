@@ -20,6 +20,7 @@ use flight_scene3d::Mesh;
 /// `point_x/y/z`. `node` is the hit Mesh's own node handle: `None` on a freshly allocated hit and
 /// `Some` after a successful pick fills the result.
 #[derive(Clone, Default)]
+#[repr(C)]
 pub struct Scene3DHit {
     runtime: EntityRuntimeSlot,
     pub node: Option<NodeRef>,

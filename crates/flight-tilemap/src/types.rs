@@ -24,6 +24,7 @@ pub struct Tilemap {
 
 /// Tilemap kind data (TS `TilemapData`): the atlas, grid dimensions and the tile buffer.
 #[derive(Clone)]
+#[repr(C)]
 pub struct TilemapData {
     runtime: EntityRuntimeSlot,
     pub atlas: Option<Ref<TextureAtlas>>,

@@ -130,6 +130,7 @@ pub struct Spritesheet {
 
 /// One authored frame descriptor (TS `SpritesheetFrameData extends Entity`).
 #[derive(Clone, Debug, PartialEq)]
+#[repr(C)]
 pub struct SpritesheetFrameData {
     runtime: EntityRuntimeSlot,
     pub height: f32,
@@ -149,6 +150,7 @@ pub struct SpritesheetFrameData {
 /// One authored animation descriptor (TS `SpritesheetAnimationData extends Entity`).
 // flight-lint: allow(f64) D1: millisecond timings are JS numbers
 #[derive(Clone, Debug, PartialEq)]
+#[repr(C)]
 pub struct SpritesheetAnimationData {
     runtime: EntityRuntimeSlot,
     pub direction: SpritesheetAnimationDirection,
@@ -163,6 +165,7 @@ pub struct SpritesheetAnimationData {
 
 /// A spritesheet descriptor (TS `SpritesheetData extends Entity`).
 #[derive(Clone, Debug, PartialEq)]
+#[repr(C)]
 pub struct SpritesheetData {
     runtime: EntityRuntimeSlot,
     pub animations: Vec<SpritesheetAnimationData>,
@@ -178,6 +181,7 @@ pub struct SpritesheetData {
 /// multiplier, and `frame_index` the displayed index into the animation's frames: JS numbers (the
 /// source can produce a NaN index, which then resolves no frame).
 // flight-lint: allow(f64) D1: elapsed time, speed and the display index are JS numbers
+#[repr(C)]
 pub struct SpritesheetPlayer {
     runtime: EntityRuntimeSlot,
     pub animation: Option<Ref<SpritesheetAnimation>>,

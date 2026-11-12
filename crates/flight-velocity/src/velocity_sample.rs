@@ -9,6 +9,7 @@ use flight_geometry::Matrix;
 /// Per-source velocity sample, storing the current velocity and the previous
 /// world transform for deriving transform-based velocity.
 #[derive(Debug, Clone, PartialEq, Default)]
+#[repr(C)]
 pub struct VelocitySample {
     pub previous_world_transform: Option<Matrix>,
     pub velocity: Velocity2D,

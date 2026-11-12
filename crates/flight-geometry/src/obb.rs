@@ -4,6 +4,7 @@ use crate::{Aabb, BoundingSphere, Matrix4, Ray3D, Vector3};
 use flight_entity::{EntityRuntimeSlot, allocate_entity};
 
 #[derive(Debug, Clone, PartialEq)]
+#[repr(C)]
 pub struct Obb {
     runtime: EntityRuntimeSlot,
     pub center_x: f32,

@@ -17,6 +17,7 @@ mod sugar_tests {
 
 /// A scalar spring state with current value and velocity.
 #[derive(Debug, Clone, PartialEq, Default)]
+#[repr(C)]
 pub struct Spring {
     pub value: f32,
     pub velocity: f32,

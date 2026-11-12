@@ -49,6 +49,7 @@ pub struct Physics2DCollisionFilter {
 
 /// One piece of a body's shape (TS `Physics2DCollider`): its LOCAL-space shape and the world-space
 /// copy the step rewrites. Call `invalidate_physics2d_collider` after mutating the authored fields.
+#[repr(C)]
 pub struct Physics2DCollider {
     runtime: EntityRuntimeSlot,
     /// The owning body's identity token (TS `colliderOwners` WeakMap value). A durable token rather
@@ -65,6 +66,7 @@ pub struct Physics2DCollider {
 
 /// The mass properties derived from a body's colliders (TS `Physics2DMassData`). Plain record.
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
+#[repr(C)]
 pub struct Physics2DMassData {
     pub center_x: f32,
     pub center_y: f32,
@@ -75,6 +77,7 @@ pub struct Physics2DMassData {
 /// A rigid body (TS `RigidBody2D`). `index` is the persistent identity the world assigns (`-1`
 /// until inserted); `angle` is in radians.
 // flight-lint: allow(f64) time accumulation: TS f64 sleep-threshold timing (30 × 1/60 crosses 0.5 differently in f32)
+#[repr(C)]
 pub struct RigidBody2D {
     runtime: EntityRuntimeSlot,
     pub(crate) identity: Arc<Physics2DBodyIdentity>,
@@ -110,6 +113,7 @@ pub struct RigidBody2D {
 /// One point of a persistent contact with its warm-start impulses (TS `Physics2DContactPoint`).
 /// Plain record.
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
+#[repr(C)]
 pub struct Physics2DContactPoint {
     pub bias: f32,
     pub depth: f32,
@@ -129,6 +133,7 @@ pub struct Physics2DContactPoint {
 /// A persistent contact between two colliders (TS `Physics2DContact`). Plain record held by shared
 /// handle: the event lists and hooks see the same contacts the world holds. `body_a < body_b`.
 #[derive(Clone, Debug, PartialEq)]
+#[repr(C)]
 pub struct Physics2DContact {
     pub body_a: i32,
     pub body_b: i32,
@@ -162,6 +167,7 @@ pub struct Physics2DContactHooks {
 
 /// The sequential-impulse solver's tuning (TS `Physics2DSolverConfig`). Plain record.
 #[derive(Clone, Copy, Debug, PartialEq)]
+#[repr(C)]
 pub struct Physics2DSolverConfig {
     pub allow_sleeping: bool,
     pub continuous_collision: bool,
@@ -206,6 +212,7 @@ pub enum Physics2DStepStatus {
 
 /// The step's precondition flags as data (TS `Physics2DStepExplanation`). Plain record.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(C)]
 pub struct Physics2DStepExplanation {
     pub body_state_valid: bool,
     pub contact_state_valid: bool,
@@ -240,6 +247,7 @@ pub struct Physics2DContactEvents {
 
 /// A 2D physics world (TS `Physics2DWorld`), stepped explicitly by `step_physics2d`.
 // flight-lint: allow(f64) time accumulation: TS f64 sleep-threshold timing (30 × 1/60 crosses 0.5 differently in f32)
+#[repr(C)]
 pub struct Physics2DWorld {
     runtime: EntityRuntimeSlot,
     pub(crate) identity: Arc<Physics2DWorldIdentity>,
@@ -634,6 +642,7 @@ pub struct Physics2DQueryHit {
 
 /// A reusable query result (TS `Physics2DQueryResult`). `hit_count` is the valid prefix of `hits`.
 #[derive(Clone, Default)]
+#[repr(C)]
 pub struct Physics2DQueryResult {
     runtime: EntityRuntimeSlot,
     pub hit_count: usize,
@@ -642,6 +651,7 @@ pub struct Physics2DQueryResult {
 
 /// Which bodies and colliders a query accepts (TS `Physics2DQueryFilter`). Plain record.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(C)]
 pub struct Physics2DQueryFilter {
     pub category_bits: u32,
     pub include_dynamic: bool,
@@ -666,6 +676,7 @@ pub struct Physics2DRayHit {
 
 /// A reusable ray query result (TS `Physics2DRayResult`). `hit_count` is the valid prefix.
 #[derive(Clone, Default)]
+#[repr(C)]
 pub struct Physics2DRayResult {
     runtime: EntityRuntimeSlot,
     pub hit_count: usize,
@@ -675,6 +686,7 @@ pub struct Physics2DRayResult {
 /// The first collider a swept shape hits (TS `Physics2DShapeCastResult`). `collider_index` is `-1`
 /// without a hit.
 #[derive(Clone, Default)]
+#[repr(C)]
 pub struct Physics2DShapeCastResult {
     runtime: EntityRuntimeSlot,
     pub body: Option<Ref<RigidBody2D>>,
@@ -735,6 +747,7 @@ pub enum Physics2DJointResolutionExplanationStatus {
 
 /// Every joint's resolution as data (TS `Physics2DJointResolutionExplanation`). Plain record.
 #[derive(Clone, Debug, PartialEq, Eq)]
+#[repr(C)]
 pub struct Physics2DJointResolutionExplanation {
     pub joints: Vec<Physics2DJointResolution>,
     pub ready_count: usize,
@@ -743,6 +756,7 @@ pub struct Physics2DJointResolutionExplanation {
 
 /// A joint's reaction force and torque (TS `Physics2DJointReaction`).
 #[derive(Clone, Debug, Default, PartialEq)]
+#[repr(C)]
 pub struct Physics2DJointReaction {
     runtime: EntityRuntimeSlot,
     pub force_x: f32,
@@ -763,6 +777,7 @@ pub type Physics2DJointResolutionGuard = Arc<dyn Fn(&Physics2DWorld) + Send + Sy
 /// The caller-owned diagnostics guards the step consults (D5: TS step.ts module guards and the
 /// `enablePhysics2DGuards` flag).
 #[derive(Clone, Default)]
+#[repr(C)]
 pub struct Physics2DGuardState {
     pub contact_intake_guard: Option<Physics2DContactIntakeGuard>,
     pub enabled: bool,
@@ -804,6 +819,7 @@ pub struct Physics2DDebugCircle {
 
 /// Reusable debug geometry (TS `Physics2DDebugGeometry`). The counts are the valid prefixes.
 #[derive(Clone, Debug, Default, PartialEq)]
+#[repr(C)]
 pub struct Physics2DDebugGeometry {
     runtime: EntityRuntimeSlot,
     pub circle_count: usize,

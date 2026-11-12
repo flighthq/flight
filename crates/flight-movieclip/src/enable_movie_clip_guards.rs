@@ -20,6 +20,7 @@ pub type MovieClipGuardClock = Arc<dyn Fn() -> f64 + Send + Sync>;
 
 /// Caller-owned replacement for the source package's module flag and guard slot (D5).
 #[derive(Default)]
+#[repr(C)]
 pub struct MovieClipGuardState {
     pub movie_clip_guards_enabled: bool,
     pub spritesheet_timeline_source_guard: Option<SpritesheetTimelineSourceGuard>,

@@ -7,6 +7,7 @@ use crate::contract::{FogModifierMode, MODIFIER_SLOT_EFFECT, ModifierFields, ini
 pub const FOG_MODIFIER_KIND: &str = "FogModifier";
 
 #[derive(Clone, Debug)]
+#[repr(C)]
 pub struct FogModifier {
     fields: ModifierFields,
     pub color: u32,
