@@ -2,6 +2,7 @@ mod dispatch;
 mod haxe_common;
 mod haxe_cpp;
 mod haxe_hl;
+mod haxe_js;
 mod parse;
 
 use std::path::PathBuf;
@@ -33,34 +34,32 @@ fn main() {
         "haxe-hl" => {
             haxe_hl::generate(&exports, &out_dir);
             dispatch::generate(&exports, &out_dir);
-            eprintln!(
-                "{total_fns} functions from {total_crates} crates → {}",
-                out_dir.display()
-            );
         }
         "haxe-cpp" => {
             haxe_cpp::generate(&exports, &out_dir);
             dispatch::generate(&exports, &out_dir);
-            eprintln!(
-                "{total_fns} functions from {total_crates} crates → {}",
-                out_dir.display()
-            );
+        }
+        "haxe-js" => {
+            haxe_js::generate(&exports, &out_dir);
+            dispatch::generate(&exports, &out_dir);
         }
         "haxe" => {
             haxe_hl::generate(&exports, &out_dir);
             haxe_cpp::generate(&exports, &out_dir);
+            haxe_js::generate(&exports, &out_dir);
             dispatch::generate(&exports, &out_dir);
-            eprintln!(
-                "{total_fns} functions from {total_crates} crates → {}",
-                out_dir.display()
-            );
         }
         other => {
             eprintln!("unknown target: {other}");
-            eprintln!("available targets: haxe-hl, haxe-cpp, haxe");
+            eprintln!("available targets: haxe-hl, haxe-cpp, haxe-js, haxe");
             std::process::exit(1);
         }
     }
+
+    eprintln!(
+        "{total_fns} functions from {total_crates} crates → {}",
+        out_dir.display()
+    );
 }
 
 fn find_crates_dir() -> PathBuf {
