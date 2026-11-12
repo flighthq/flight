@@ -3,6 +3,13 @@ use std::env;
 use std::fmt::Write as _;
 use std::fs;
 use std::path::{Path, PathBuf};
+use std::sync::OnceLock;
+
+static KNOWN_ENUMS: OnceLock<BTreeSet<String>> = OnceLock::new();
+
+fn is_known_enum(ty: &str) -> bool {
+    KNOWN_ENUMS.get().map(|s| s.contains(ty)).unwrap_or(false)
+}
 
 const QUALIFIER: &str = "flight_sdk";
 
@@ -103,13 +110,16 @@ const SKIP_TYPES: &[&str] = &[
     "NodeRef",
     "NumberFormatOptions",
     "PathMeshPool",
+    "MeshAttachment2D",
     "PathMorphBuildResult",
+    "RegionAttachment2D",
     "PluralRulesOptions",
     "PointAttachment2D",
     "RelativeTimeFormatOptions",
     "ShapeJsonFormatOptions",
     "ShapeJsonParseOptions",
     "Skeleton2DClippingAttachmentSlotRange",
+    "SpritesheetParseDiagnosticSeverity",
     "Skeleton2DGuardState",
     "StrokePathGeometry",
     "TextLayoutContext",
@@ -127,6 +137,32 @@ fn main() {
     let mut all_output = String::from("use flight_sdk;\n\n");
     let mut boxed_types: BTreeSet<String> = BTreeSet::new();
     let mut seen_names: BTreeSet<String> = BTreeSet::new();
+
+    let mut enum_names = BTreeSet::new();
+    for dir_name in SCAN_CRATES {
+        let src_dir = crates_dir.join(dir_name).join("src");
+        if !src_dir.exists() {
+            continue;
+        }
+        let mut entries: Vec<_> = fs::read_dir(&src_dir)
+            .unwrap()
+            .filter_map(|e| e.ok())
+            .filter(|e| {
+                e.path().extension().is_some_and(|ext| ext == "rs")
+                    && !e.file_name().to_string_lossy().contains("test")
+            })
+            .collect();
+        entries.sort_by_key(|e| e.file_name());
+        for entry in entries {
+            let fname = entry.file_name().to_string_lossy().to_string();
+            if fname == "contract.rs" || fname == "lib.rs" {
+                continue;
+            }
+            let content = fs::read_to_string(entry.path()).unwrap();
+            parse_simple_enums(&content, &mut enum_names);
+        }
+    }
+    let _ = KNOWN_ENUMS.set(enum_names);
 
     for dir_name in SCAN_CRATES {
         let src_dir = crates_dir.join(dir_name).join("src");
@@ -669,6 +705,75 @@ fn parse_struct_field(line: &str) -> Option<StructField> {
     }
 }
 
+fn parse_simple_enums(content: &str, out: &mut BTreeSet<String>) {
+    let lines: Vec<&str> = content.lines().collect();
+    let mut i = 0;
+    while i < lines.len() {
+        let line = lines[i].trim();
+        if !line.starts_with("pub enum ") || !line.contains('{') {
+            i += 1;
+            continue;
+        }
+        let name_part = line.strip_prefix("pub enum ").unwrap();
+        let name_end = name_part.find(|c: char| c == '{' || c == '<' || c == ' ');
+        let name = match name_end {
+            Some(e) => name_part[..e].trim().to_string(),
+            None => {
+                i += 1;
+                continue;
+            }
+        };
+        if name_part.contains('<') {
+            i += 1;
+            continue;
+        }
+        let has_repr_u32 = {
+            let mut k = (i as isize) - 1;
+            let mut found = false;
+            while k >= 0 {
+                let kline = lines[k as usize].trim();
+                if kline == "#[repr(u32)]" {
+                    found = true;
+                    break;
+                }
+                if kline.starts_with("#[") || kline.starts_with("//") || kline.is_empty() {
+                    k -= 1;
+                    continue;
+                }
+                break;
+            }
+            found
+        };
+        if !has_repr_u32 {
+            i += 1;
+            continue;
+        }
+        let mut all_unit = true;
+        let mut variant_count = 0usize;
+        i += 1;
+        while i < lines.len() {
+            let vline = lines[i].trim();
+            if vline == "}" {
+                break;
+            }
+            i += 1;
+            if vline.is_empty() || vline.starts_with("//") || vline.starts_with('#') {
+                continue;
+            }
+            let vline = vline.trim_end_matches(',');
+            if vline.contains('(') || vline.contains('{') {
+                all_unit = false;
+                break;
+            }
+            variant_count += 1;
+        }
+        i += 1;
+        if all_unit && variant_count >= 2 {
+            out.insert(name);
+        }
+    }
+}
+
 fn generate_field_accessors(
     struct_name: &str,
     fields: &[StructField],
@@ -726,9 +831,11 @@ fn generate_ffi_wrapper(func: &ParsedFn) -> Option<(String, Option<String>)> {
     let mut call_args = Vec::new();
 
     for param in &func.params {
-        let (ffi_ty, call_expr) = map_param_to_ffi(&param.name, &param.ty)?;
-        ffi_params.push(format!("{}: {ffi_ty}", param.name));
-        call_args.push(call_expr);
+        let mapped = map_param_to_ffi(&param.name, &param.ty)?;
+        for (pname, pty) in &mapped.ffi_params {
+            ffi_params.push(format!("{pname}: {pty}"));
+        }
+        call_args.push(mapped.call_expr);
     }
 
     let (ret_decl, call_wrap) = match &func.ret {
@@ -784,6 +891,9 @@ fn generate_ffi_wrapper(func: &ParsedFn) -> Option<(String, Option<String>)> {
                      }}"
             )
         }
+        FfiReturn::EnumReturn => {
+            format!("    return {call} as u32;")
+        }
     };
 
     Some((
@@ -803,6 +913,7 @@ enum FfiReturn {
     OptionStringReturn,
     ArcRefReturn,
     OptionArcRefReturn,
+    EnumReturn,
 }
 
 const SCALARS: &[&str] = &[
@@ -833,59 +944,141 @@ fn qualify_type(ty: &str) -> String {
     }
 }
 
-fn map_param_to_ffi(name: &str, ty: &str) -> Option<(String, String)> {
-    let ty = ty.trim();
+fn resolve_type_alias(ty: &str) -> String {
+    let aliases: &[(&str, &str)] = &[
+        ("Physics2DAbiObjectId", "u32"),
+        ("Physics3DAbiObjectId", "u32"),
+        ("Physics2DAbiWorldHandle", "u32"),
+        ("Physics3DAbiWorldHandle", "u32"),
+        ("SpatialObjectId", "i32"),
+        ("SourceId", "u64"),
+        ("Kind", "String"),
+        ("AnimationPlayerRef", "Ref<AnimationPlayer>"),
+        ("LogStateRef", "Ref<LogState>"),
+    ];
+    for &(alias, resolved) in aliases {
+        if ty == alias {
+            return resolved.to_string();
+        }
+        if let Some(rest) = ty.strip_prefix("&mut ") {
+            if rest.trim() == alias {
+                return format!("&mut {resolved}");
+            }
+        }
+        if let Some(rest) = ty.strip_prefix('&') {
+            if rest.trim() == alias {
+                return format!("&{resolved}");
+            }
+        }
+        if let Some(rest) = ty.strip_prefix("Option<&mut ") {
+            if let Some(inner) = rest.strip_suffix('>') {
+                if inner.trim() == alias {
+                    return format!("Option<&mut {resolved}>");
+                }
+            }
+        }
+        if let Some(rest) = ty.strip_prefix("Option<&") {
+            if let Some(inner) = rest.strip_suffix('>') {
+                if inner.trim() == alias {
+                    return format!("Option<&{resolved}>");
+                }
+            }
+        }
+        if let Some(rest) = ty.strip_prefix("Option<") {
+            if let Some(inner) = rest.strip_suffix('>') {
+                if inner.trim() == alias {
+                    return format!("Option<{resolved}>");
+                }
+            }
+        }
+    }
+    ty.to_string()
+}
 
-    // &str -> *const c_char
-    if ty == "&str" {
-        return Some((
-            "*const std::ffi::c_char".to_string(),
+struct MappedParam {
+    ffi_params: Vec<(String, String)>,
+    call_expr: String,
+}
+
+fn mapped_single(name: &str, ffi_ty: &str, call_expr: String) -> Option<MappedParam> {
+    Some(MappedParam {
+        ffi_params: vec![(name.to_string(), ffi_ty.to_string())],
+        call_expr,
+    })
+}
+
+fn strip_lifetimes(ty: &str) -> String {
+    let mut result = ty.to_string();
+    while let Some(start) = result.find('\'') {
+        let end = result[start + 1..]
+            .find(|c: char| !c.is_alphanumeric() && c != '_')
+            .map(|i| start + 1 + i)
+            .unwrap_or(result.len());
+        result = format!("{}{}", &result[..start], result[end..].trim_start());
+    }
+    result
+}
+
+fn map_param_to_ffi(name: &str, ty: &str) -> Option<MappedParam> {
+    let ty = strip_lifetimes(&resolve_type_alias(ty.trim()));
+    let ty = ty.as_str();
+
+    // &str / &'static str -> *const c_char
+    if ty == "&str" || ty == "&'static str" {
+        return mapped_single(
+            name,
+            "*const std::ffi::c_char",
             format!("unsafe {{ std::ffi::CStr::from_ptr({name}) }}.to_str().unwrap_or(\"\")"),
-        ));
+        );
     }
 
     // Option<f64> -> f64 with NaN sentinel
     if ty == "Option<f64>" {
-        return Some((
-            "f64".to_string(),
+        return mapped_single(
+            name,
+            "f64",
             format!("if {name}.is_nan() {{ None }} else {{ Some({name}) }}"),
-        ));
+        );
     }
 
     // Option<bool> -> i32 with -1 sentinel
     if ty == "Option<bool>" {
-        return Some((
-            "i32".to_string(),
+        return mapped_single(
+            name,
+            "i32",
             format!("if {name} < 0 {{ None }} else {{ Some({name} != 0) }}"),
-        ));
+        );
     }
 
     // Option<i32> -> i32 with i32::MIN sentinel
     if ty == "Option<i32>" {
-        return Some((
-            "i32".to_string(),
+        return mapped_single(
+            name,
+            "i32",
             format!("if {name} == i32::MIN {{ None }} else {{ Some({name}) }}"),
-        ));
+        );
     }
 
     // Option<&str> -> nullable *const c_char
     if ty == "Option<&str>" {
-        return Some((
-            "*const std::ffi::c_char".to_string(),
+        return mapped_single(
+            name,
+            "*const std::ffi::c_char",
             format!(
                 "if {name}.is_null() {{ None }} else {{ Some(unsafe {{ std::ffi::CStr::from_ptr({name}) }}.to_str().unwrap_or(\"\")) }}"
             ),
-        ));
+        );
     }
 
     // Option<String> param -> nullable *const c_char
     if ty == "Option<String>" {
-        return Some((
-            "*const std::ffi::c_char".to_string(),
+        return mapped_single(
+            name,
+            "*const std::ffi::c_char",
             format!(
                 "if {name}.is_null() {{ None }} else {{ Some(unsafe {{ std::ffi::CStr::from_ptr({name}) }}.to_str().unwrap_or(\"\").to_string()) }}"
             ),
-        ));
+        );
     }
 
     // Option<&mut T> -> nullable *mut T
@@ -894,12 +1087,13 @@ fn map_param_to_ffi(name: &str, ty: &str) -> Option<(String, String)> {
             let inner = inner.trim();
             if !inner.starts_with('[') && !is_ffi_incompatible(inner) && !is_scalar(inner) {
                 let qualified = qualify_type(inner);
-                return Some((
-                    format!("*mut {qualified}"),
+                return mapped_single(
+                    name,
+                    &format!("*mut {qualified}"),
                     format!(
                         "if {name}.is_null() {{ None }} else {{ Some(unsafe {{ &mut *{name} }}) }}"
                     ),
-                ));
+                );
             }
         }
     }
@@ -914,12 +1108,13 @@ fn map_param_to_ffi(name: &str, ty: &str) -> Option<(String, String)> {
                 && !is_scalar(inner)
             {
                 let qualified = qualify_type(inner);
-                return Some((
-                    format!("*const {qualified}"),
+                return mapped_single(
+                    name,
+                    &format!("*const {qualified}"),
                     format!(
                         "if {name}.is_null() {{ None }} else {{ Some(unsafe {{ &*{name} }}) }}"
                     ),
-                ));
+                );
             }
         }
     }
@@ -933,10 +1128,11 @@ fn map_param_to_ffi(name: &str, ty: &str) -> Option<(String, String)> {
                 && !SKIP_TYPES.iter().any(|s| inner.contains(s))
             {
                 let qualified = qualify_type(inner);
-                return Some((
-                    "*mut std::ffi::c_void".to_string(),
+                return mapped_single(
+                    name,
+                    "*mut std::ffi::c_void",
                     format!("unsafe {{ &mut *({name} as *mut flight_sdk::Ref<{qualified}>) }}"),
-                ));
+                );
             }
         }
     }
@@ -950,10 +1146,51 @@ fn map_param_to_ffi(name: &str, ty: &str) -> Option<(String, String)> {
                 && !SKIP_TYPES.iter().any(|s| inner.contains(s))
             {
                 let qualified = qualify_type(inner);
-                return Some((
-                    "*const std::ffi::c_void".to_string(),
+                return mapped_single(
+                    name,
+                    "*const std::ffi::c_void",
                     format!("unsafe {{ &*({name} as *const flight_sdk::Ref<{qualified}>) }}"),
-                ));
+                );
+            }
+        }
+    }
+
+    // &mut [T] -> (*mut T, usize)
+    if let Some(inner) = ty.strip_prefix("&mut [") {
+        if let Some(inner) = inner.strip_suffix(']') {
+            let inner = inner.trim();
+            if is_scalar(inner) {
+                let ptr_name = format!("{name}_ptr");
+                let len_name = format!("{name}_len");
+                return Some(MappedParam {
+                    ffi_params: vec![
+                        (ptr_name.clone(), format!("*mut {inner}")),
+                        (len_name.clone(), "usize".to_string()),
+                    ],
+                    call_expr: format!(
+                        "unsafe {{ std::slice::from_raw_parts_mut({ptr_name}, {len_name}) }}"
+                    ),
+                });
+            }
+        }
+    }
+
+    // &[T] -> (*const T, usize)
+    if let Some(inner) = ty.strip_prefix("&[") {
+        if let Some(inner) = inner.strip_suffix(']') {
+            let inner = inner.trim();
+            if is_scalar(inner) {
+                let ptr_name = format!("{name}_ptr");
+                let len_name = format!("{name}_len");
+                return Some(MappedParam {
+                    ffi_params: vec![
+                        (ptr_name.clone(), format!("*const {inner}")),
+                        (len_name.clone(), "usize".to_string()),
+                    ],
+                    call_expr: format!(
+                        "unsafe {{ std::slice::from_raw_parts({ptr_name}, {len_name}) }}"
+                    ),
+                });
             }
         }
     }
@@ -969,10 +1206,11 @@ fn map_param_to_ffi(name: &str, ty: &str) -> Option<(String, String)> {
             return None;
         }
         let qualified = qualify_type(inner);
-        return Some((
-            format!("*mut {qualified}"),
+        return mapped_single(
+            name,
+            &format!("*mut {qualified}"),
             format!("unsafe {{ &mut *{name} }}"),
-        ));
+        );
     }
 
     // &T -> *const T
@@ -982,30 +1220,53 @@ fn map_param_to_ffi(name: &str, ty: &str) -> Option<(String, String)> {
             return None;
         }
         let qualified = qualify_type(inner);
-        return Some((
-            format!("*const {qualified}"),
+        return mapped_single(
+            name,
+            &format!("*const {qualified}"),
             format!("unsafe {{ &*{name} }}"),
-        ));
+        );
     }
 
     // Option<f32> -> f32 with NaN sentinel
     if ty == "Option<f32>" {
-        return Some((
-            "f32".to_string(),
+        return mapped_single(
+            name,
+            "f32",
             format!("if {name}.is_nan() {{ None }} else {{ Some({name}) }}"),
-        ));
+        );
+    }
+
+    // String param -> *const c_char
+    if ty == "String" {
+        return mapped_single(
+            name,
+            "*const std::ffi::c_char",
+            format!(
+                "unsafe {{ std::ffi::CStr::from_ptr({name}) }}.to_str().unwrap_or(\"\").to_string()"
+            ),
+        );
     }
 
     // Scalar types pass through
     if is_scalar(ty) {
-        return Some((ty.to_string(), name.to_string()));
+        return mapped_single(name, ty, name.to_string());
+    }
+
+    if is_known_enum(ty) {
+        let qualified = qualify_type(ty);
+        return mapped_single(
+            name,
+            "u32",
+            format!("unsafe {{ std::mem::transmute::<u32, {qualified}>({name}) }}"),
+        );
     }
 
     None
 }
 
 fn map_return_to_ffi(ty: &str) -> Option<(String, FfiReturn)> {
-    let ty = ty.trim();
+    let ty = strip_lifetimes(&resolve_type_alias(ty.trim()));
+    let ty = ty.as_str();
 
     // Option<String> -> nullable *mut c_char
     if ty == "Option<String>" {
@@ -1047,6 +1308,13 @@ fn map_return_to_ffi(ty: &str) -> Option<(String, FfiReturn)> {
         }
     }
 
+    if ty == "&str" {
+        return Some((
+            " -> *mut std::ffi::c_char".to_string(),
+            FfiReturn::StringReturn,
+        ));
+    }
+
     if ty.starts_with('&') || is_ffi_incompatible(ty) {
         return None;
     }
@@ -1062,6 +1330,9 @@ fn map_return_to_ffi(ty: &str) -> Option<(String, FfiReturn)> {
     }
     if ty.starts_with('[') {
         return None;
+    }
+    if is_known_enum(ty) {
+        return Some((" -> u32".to_string(), FfiReturn::EnumReturn));
     }
     let qualified = qualify_type(ty);
     Some((format!(" -> *mut {qualified}"), FfiReturn::BoxReturn))

@@ -1,6 +1,13 @@
 use std::collections::BTreeSet;
 use std::fs;
 use std::path::Path;
+use std::sync::OnceLock;
+
+static KNOWN_ENUMS: OnceLock<BTreeSet<String>> = OnceLock::new();
+
+pub fn is_known_enum(ty: &str) -> bool {
+    KNOWN_ENUMS.get().map(|s| s.contains(ty)).unwrap_or(false)
+}
 
 pub const SCAN_CRATES: &[&str] = &[
     "flight-abc",
@@ -97,17 +104,20 @@ pub const SKIP_TYPES: &[&str] = &[
     "DateTimeFormatOptions",
     "Float32Array",
     "MarkupTagRegistry",
+    "MeshAttachment2D",
     "NodeRef",
     "NumberFormatOptions",
     "PathMeshPool",
     "PathMorphBuildResult",
     "PluralRulesOptions",
     "PointAttachment2D",
+    "RegionAttachment2D",
     "RelativeTimeFormatOptions",
     "ShapeJsonFormatOptions",
     "ShapeJsonParseOptions",
     "Skeleton2DClippingAttachmentSlotRange",
     "Skeleton2DGuardState",
+    "SpritesheetParseDiagnosticSeverity",
     "StrokePathGeometry",
     "TextLayoutContext",
     "TextMarkupGuardState",
@@ -168,6 +178,34 @@ pub fn is_ffi_incompatible(ty: &str) -> bool {
 }
 
 pub fn scan_all_crates(crates_dir: &Path) -> Vec<CrateExports> {
+    let mut enum_names = BTreeSet::new();
+    for dir_name in SCAN_CRATES {
+        let src_dir = crates_dir.join(dir_name).join("src");
+        if !src_dir.exists() {
+            continue;
+        }
+        let mut entries: Vec<_> = fs::read_dir(&src_dir)
+            .unwrap()
+            .filter_map(|e| e.ok())
+            .filter(|e| {
+                e.path().extension().is_some_and(|ext| ext == "rs")
+                    && !e.file_name().to_string_lossy().contains("test")
+            })
+            .collect();
+        entries.sort_by_key(|e| e.file_name());
+        for entry in entries {
+            let fname = entry.file_name().to_string_lossy().to_string();
+            if fname == "contract.rs" || fname == "lib.rs" {
+                continue;
+            }
+            let content = fs::read_to_string(entry.path()).unwrap();
+            parse_simple_enums(&content, &mut enum_names);
+        }
+    }
+    let enum_count = enum_names.len();
+    let _ = KNOWN_ENUMS.set(enum_names);
+    eprintln!("found {enum_count} simple enums");
+
     let mut results = Vec::new();
     let mut seen_names: BTreeSet<String> = BTreeSet::new();
 
@@ -230,12 +268,16 @@ pub enum ParamKind {
     OptionI32,
     OptionBool,
     StrRef,
+    StringParam,
     OptionStr,
     OptionStringParam,
     OptionRefConst(String),
     OptionRefMut(String),
     ArcRef,
     ArcRefMut,
+    SliceConst(String),
+    SliceMut(String),
+    Enum(String),
 }
 
 #[derive(Debug, Clone)]
@@ -247,10 +289,75 @@ pub enum ReturnKind {
     OptionString,
     ArcRefReturn,
     OptionArcRefReturn,
+    Enum(String),
+}
+
+fn strip_lifetimes(ty: &str) -> String {
+    let mut result = ty.to_string();
+    while let Some(start) = result.find('\'') {
+        let end = result[start + 1..]
+            .find(|c: char| !c.is_alphanumeric() && c != '_')
+            .map(|i| start + 1 + i)
+            .unwrap_or(result.len());
+        result = format!("{}{}", &result[..start], result[end..].trim_start());
+    }
+    result
+}
+
+fn resolve_type_alias(ty: &str) -> String {
+    let aliases: &[(&str, &str)] = &[
+        ("Physics2DAbiObjectId", "u32"),
+        ("Physics3DAbiObjectId", "u32"),
+        ("Physics2DAbiWorldHandle", "u32"),
+        ("Physics3DAbiWorldHandle", "u32"),
+        ("SpatialObjectId", "i32"),
+        ("SourceId", "u64"),
+        ("Kind", "String"),
+        ("AnimationPlayerRef", "Ref<AnimationPlayer>"),
+        ("LogStateRef", "Ref<LogState>"),
+    ];
+    for &(alias, resolved) in aliases {
+        if ty == alias {
+            return resolved.to_string();
+        }
+        if let Some(rest) = ty.strip_prefix("&mut ") {
+            if rest.trim() == alias {
+                return format!("&mut {resolved}");
+            }
+        }
+        if let Some(rest) = ty.strip_prefix('&') {
+            if rest.trim() == alias {
+                return format!("&{resolved}");
+            }
+        }
+        if let Some(rest) = ty.strip_prefix("Option<&mut ") {
+            if let Some(inner) = rest.strip_suffix('>') {
+                if inner.trim() == alias {
+                    return format!("Option<&mut {resolved}>");
+                }
+            }
+        }
+        if let Some(rest) = ty.strip_prefix("Option<&") {
+            if let Some(inner) = rest.strip_suffix('>') {
+                if inner.trim() == alias {
+                    return format!("Option<&{resolved}>");
+                }
+            }
+        }
+        if let Some(rest) = ty.strip_prefix("Option<") {
+            if let Some(inner) = rest.strip_suffix('>') {
+                if inner.trim() == alias {
+                    return format!("Option<{resolved}>");
+                }
+            }
+        }
+    }
+    ty.to_string()
 }
 
 pub fn classify_param(ty: &str) -> Option<ParamKind> {
-    let ty = ty.trim();
+    let ty = strip_lifetimes(&resolve_type_alias(ty.trim()));
+    let ty = ty.as_str();
 
     if ty == "&str" {
         return Some(ParamKind::StrRef);
@@ -315,10 +422,31 @@ pub fn classify_param(ty: &str) -> Option<ParamKind> {
         }
     }
 
+    // &mut [T] -> SliceMut(T) for scalar T
+    if let Some(inner) = ty.strip_prefix("&mut [") {
+        if let Some(inner) = inner.strip_suffix(']') {
+            let inner = inner.trim();
+            if is_scalar(inner) {
+                return Some(ParamKind::SliceMut(inner.to_string()));
+            }
+        }
+    }
+
+    // &[T] -> SliceConst(T) for scalar T
+    if let Some(inner) = ty.strip_prefix("&[") {
+        if let Some(inner) = inner.strip_suffix(']') {
+            let inner = inner.trim();
+            if is_scalar(inner) {
+                return Some(ParamKind::SliceConst(inner.to_string()));
+            }
+        }
+    }
+
     if is_ffi_incompatible(ty) {
         return None;
     }
 
+    // &mut T -> RefMut(T)
     if let Some(inner) = ty.strip_prefix("&mut ") {
         let inner = inner.trim();
         if inner == "str" || inner.starts_with('[') || is_ffi_incompatible(inner) {
@@ -327,6 +455,7 @@ pub fn classify_param(ty: &str) -> Option<ParamKind> {
         return Some(ParamKind::RefMut(inner.to_string()));
     }
 
+    // &T -> RefConst(T)
     if let Some(inner) = ty.strip_prefix('&') {
         let inner = inner.trim();
         if inner == "str" || inner.starts_with('[') || is_ffi_incompatible(inner) {
@@ -339,15 +468,25 @@ pub fn classify_param(ty: &str) -> Option<ParamKind> {
         return Some(ParamKind::OptionF32);
     }
 
+    // String param
+    if ty == "String" {
+        return Some(ParamKind::StringParam);
+    }
+
     if is_scalar(ty) {
         return Some(ParamKind::Scalar(ty.to_string()));
+    }
+
+    if is_known_enum(ty) {
+        return Some(ParamKind::Enum(ty.to_string()));
     }
 
     None
 }
 
 pub fn classify_return(ty: &str) -> Option<ReturnKind> {
-    let ty = ty.trim();
+    let ty = strip_lifetimes(&resolve_type_alias(ty.trim()));
+    let ty = ty.as_str();
 
     if ty == "Option<String>" {
         return Some(ReturnKind::OptionString);
@@ -376,6 +515,10 @@ pub fn classify_return(ty: &str) -> Option<ReturnKind> {
         }
     }
 
+    if ty == "&str" {
+        return Some(ReturnKind::StringReturn);
+    }
+
     if ty.starts_with('&') || is_ffi_incompatible(ty) {
         return None;
     }
@@ -388,6 +531,9 @@ pub fn classify_return(ty: &str) -> Option<ReturnKind> {
     }
     if ty.starts_with('[') {
         return None;
+    }
+    if is_known_enum(ty) {
+        return Some(ReturnKind::Enum(ty.to_string()));
     }
     return Some(ReturnKind::Struct(ty.to_string()));
 }
@@ -676,6 +822,81 @@ pub fn parse_pub_structs(content: &str, out: &mut Vec<ParsedStruct>) {
 
         if !fields.is_empty() {
             out.push(ParsedStruct { name, fields });
+        }
+    }
+}
+
+pub fn parse_simple_enums(content: &str, out: &mut BTreeSet<String>) {
+    let lines: Vec<&str> = content.lines().collect();
+    let mut i = 0;
+    while i < lines.len() {
+        let line = lines[i].trim();
+        if !line.starts_with("pub enum ") || !line.contains('{') {
+            i += 1;
+            continue;
+        }
+
+        let name_part = line.strip_prefix("pub enum ").unwrap();
+        let name_end = name_part.find(|c: char| c == '{' || c == '<' || c == ' ');
+        let name = match name_end {
+            Some(e) => name_part[..e].trim().to_string(),
+            None => {
+                i += 1;
+                continue;
+            }
+        };
+
+        if name_part.contains('<') {
+            i += 1;
+            continue;
+        }
+
+        let has_repr_u32 = {
+            let mut k = (i as isize) - 1;
+            let mut found = false;
+            while k >= 0 {
+                let kline = lines[k as usize].trim();
+                if kline == "#[repr(u32)]" {
+                    found = true;
+                    break;
+                }
+                if kline.starts_with("#[") || kline.starts_with("//") || kline.is_empty() {
+                    k -= 1;
+                    continue;
+                }
+                break;
+            }
+            found
+        };
+
+        if !has_repr_u32 {
+            i += 1;
+            continue;
+        }
+
+        let mut all_unit = true;
+        let mut variant_count = 0usize;
+        i += 1;
+        while i < lines.len() {
+            let vline = lines[i].trim();
+            if vline == "}" {
+                break;
+            }
+            i += 1;
+            if vline.is_empty() || vline.starts_with("//") || vline.starts_with('#') {
+                continue;
+            }
+            let vline = vline.trim_end_matches(',');
+            if vline.contains('(') || vline.contains('{') {
+                all_unit = false;
+                break;
+            }
+            variant_count += 1;
+        }
+        i += 1;
+
+        if all_unit && variant_count >= 2 {
+            out.insert(name);
         }
     }
 }

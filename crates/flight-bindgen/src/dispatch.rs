@@ -157,16 +157,28 @@ fn emit_dispatch_function(module_name: &str, func: &ParsedFn) -> Option<(String,
     let mut has_str_params = false;
     for param in &func.params {
         let kind = classify_param(&param.ty)?;
-        let haxe_ty = param_kind_to_haxe(&kind);
         let param_name = to_camel_case(&param.name);
-        haxe_params.push(format!("{param_name}:{haxe_ty}"));
-        if needs_native_str_cast(&kind) {
-            has_str_params = true;
-            native_call_args.push(format!("cast {param_name}"));
-        } else {
-            native_call_args.push(param_name.clone());
+        match &kind {
+            ParamKind::SliceConst(_) | ParamKind::SliceMut(_) => {
+                haxe_params.push(format!("{param_name}:Dynamic"));
+                haxe_params.push(format!("{param_name}Len:Int"));
+                call_args.push(param_name.clone());
+                call_args.push(format!("{param_name}Len"));
+                native_call_args.push(param_name.clone());
+                native_call_args.push(format!("{param_name}Len"));
+            }
+            _ => {
+                let haxe_ty = param_kind_to_haxe(&kind);
+                haxe_params.push(format!("{param_name}:{haxe_ty}"));
+                if needs_native_str_cast(&kind) {
+                    has_str_params = true;
+                    native_call_args.push(format!("cast {param_name}"));
+                } else {
+                    native_call_args.push(param_name.clone());
+                }
+                call_args.push(param_name);
+            }
         }
-        call_args.push(param_name);
     }
 
     let ret_kind = match &func.ret {
@@ -243,9 +255,12 @@ fn param_kind_to_haxe(kind: &ParamKind) -> String {
         ParamKind::OptionF64 => "Float".to_string(),
         ParamKind::OptionI32 => "Int".to_string(),
         ParamKind::OptionBool => "Int".to_string(),
-        ParamKind::StrRef | ParamKind::OptionStr | ParamKind::OptionStringParam => {
-            "String".to_string()
-        }
+        ParamKind::StrRef
+        | ParamKind::StringParam
+        | ParamKind::OptionStr
+        | ParamKind::OptionStringParam => "String".to_string(),
+        ParamKind::SliceConst(_) | ParamKind::SliceMut(_) => "Dynamic".to_string(),
+        ParamKind::Enum(_) => "Int".to_string(),
     }
 }
 
@@ -256,13 +271,17 @@ fn return_kind_to_haxe(kind: &ReturnKind) -> String {
         ReturnKind::Struct(ty) => ty.clone(),
         ReturnKind::StringReturn | ReturnKind::OptionString => "String".to_string(),
         ReturnKind::ArcRefReturn | ReturnKind::OptionArcRefReturn => "Dynamic".to_string(),
+        ReturnKind::Enum(_) => "Int".to_string(),
     }
 }
 
 fn needs_native_str_cast(kind: &ParamKind) -> bool {
     matches!(
         kind,
-        ParamKind::StrRef | ParamKind::OptionStr | ParamKind::OptionStringParam
+        ParamKind::StrRef
+            | ParamKind::StringParam
+            | ParamKind::OptionStr
+            | ParamKind::OptionStringParam
     )
 }
 

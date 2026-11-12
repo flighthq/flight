@@ -180,14 +180,24 @@ fn emit_one_method(ty: &str, tm: &TypeMethod<'_>) -> Option<String> {
 
     for (i, param) in func.params.iter().enumerate() {
         let kind = classify_param(&param.ty)?;
-        let haxe_ty = param_kind_to_haxe(&kind);
 
         if Some(i) == self_index {
             call_args.push("cast this".to_string());
         } else {
             let pname = to_camel_case(&param.name);
-            method_params.push(format!("{pname}:{haxe_ty}"));
-            call_args.push(pname);
+            match &kind {
+                ParamKind::SliceConst(_) | ParamKind::SliceMut(_) => {
+                    method_params.push(format!("{pname}:Dynamic"));
+                    method_params.push(format!("{pname}Len:Int"));
+                    call_args.push(pname.clone());
+                    call_args.push(format!("{pname}Len"));
+                }
+                _ => {
+                    let haxe_ty = param_kind_to_haxe(&kind);
+                    method_params.push(format!("{pname}:{haxe_ty}"));
+                    call_args.push(pname);
+                }
+            }
         }
     }
 
@@ -245,8 +255,17 @@ fn emit_function(func: &ParsedFn) -> Option<String> {
     let mut haxe_params = Vec::new();
     for param in &func.params {
         let kind = classify_param(&param.ty)?;
-        let haxe_ty = param_kind_to_haxe(&kind);
-        haxe_params.push(format!("{}:{}", to_camel_case(&param.name), haxe_ty));
+        let pname = to_camel_case(&param.name);
+        match &kind {
+            ParamKind::SliceConst(_) | ParamKind::SliceMut(_) => {
+                haxe_params.push(format!("{pname}:Dynamic"));
+                haxe_params.push(format!("{pname}Len:Int"));
+            }
+            _ => {
+                let haxe_ty = param_kind_to_haxe(&kind);
+                haxe_params.push(format!("{pname}:{haxe_ty}"));
+            }
+        }
     }
 
     let ret_kind = match &func.ret {
@@ -271,9 +290,12 @@ fn param_kind_to_haxe(kind: &ParamKind) -> String {
         ParamKind::OptionF64 => "Float".to_string(),
         ParamKind::OptionI32 => "Int".to_string(),
         ParamKind::OptionBool => "Int".to_string(),
-        ParamKind::StrRef | ParamKind::OptionStr | ParamKind::OptionStringParam => {
-            "String".to_string()
-        }
+        ParamKind::StrRef
+        | ParamKind::StringParam
+        | ParamKind::OptionStr
+        | ParamKind::OptionStringParam => "String".to_string(),
+        ParamKind::SliceConst(_) | ParamKind::SliceMut(_) => "Dynamic".to_string(),
+        ParamKind::Enum(_) => "Int".to_string(),
     }
 }
 
@@ -284,5 +306,6 @@ fn return_kind_to_haxe(kind: &ReturnKind) -> String {
         ReturnKind::Struct(ty) => format!("{PKG}.{ty}"),
         ReturnKind::StringReturn | ReturnKind::OptionString => "String".to_string(),
         ReturnKind::ArcRefReturn | ReturnKind::OptionArcRefReturn => "Dynamic".to_string(),
+        ReturnKind::Enum(_) => "Int".to_string(),
     }
 }
