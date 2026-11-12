@@ -275,6 +275,9 @@ fn param_kind_to_haxe(kind: &ParamKind) -> String {
         ParamKind::Enum(_) => "Int".to_string(),
         ParamKind::DynOpaque(_) => "Dynamic".to_string(),
         ParamKind::DynMono(ty) => ty.clone(),
+        ParamKind::VecMut(_) | ParamKind::VecConst(_) | ParamKind::VecOwned(_) => {
+            "Dynamic".to_string()
+        }
     }
 }
 
@@ -286,6 +289,7 @@ fn return_kind_to_haxe(kind: &ReturnKind) -> String {
         ReturnKind::StringReturn | ReturnKind::OptionString => "String".to_string(),
         ReturnKind::ArcRefReturn | ReturnKind::OptionArcRefReturn => "Dynamic".to_string(),
         ReturnKind::Enum(_) => "Int".to_string(),
+        ReturnKind::VecReturn(_) | ReturnKind::OptionVecReturn(_) => "Dynamic".to_string(),
     }
 }
 

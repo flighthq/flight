@@ -314,6 +314,9 @@ fn param_kind_to_haxe(kind: &ParamKind) -> String {
         ParamKind::Enum(_) => "Int".to_string(),
         ParamKind::DynOpaque(_) => "cpp.Star<cpp.Void>".to_string(),
         ParamKind::DynMono(ty) => format!("{PKG}.{ty}"),
+        ParamKind::VecMut(_) | ParamKind::VecConst(_) | ParamKind::VecOwned(_) => {
+            "cpp.Star<cpp.Void>".to_string()
+        }
     }
 }
 
@@ -327,5 +330,8 @@ fn return_kind_to_haxe(kind: &ReturnKind) -> String {
             "cpp.Star<cpp.Void>".to_string()
         }
         ReturnKind::Enum(_) => "Int".to_string(),
+        ReturnKind::VecReturn(_) | ReturnKind::OptionVecReturn(_) => {
+            "cpp.Star<cpp.Void>".to_string()
+        }
     }
 }

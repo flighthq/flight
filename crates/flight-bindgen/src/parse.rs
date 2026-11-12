@@ -201,6 +201,7 @@ pub const SKIP_TYPES: &[&str] = &[
     "AttachmentSkin2D",
     "BidiClassKernel",
     "BidiClassKernelExplanation",
+    "Bone2D",
     "BoundsRectangleRuntimeMethods",
     "ClippingAttachment2D",
     "DateTimeFormatOptions",
@@ -213,6 +214,7 @@ pub const SKIP_TYPES: &[&str] = &[
     "PathMorphBuildResult",
     "PluralRulesOptions",
     "PointAttachment2D",
+    "RectangleLike",
     "RegionAttachment2D",
     "RelativeTimeFormatOptions",
     "ShapeJsonFormatOptions",
@@ -297,7 +299,6 @@ pub fn is_ffi_incompatible(ty: &str) -> bool {
         || ty.contains("FnOnce(")
         || ty.contains('<')
         || ty.contains("::")
-        || ty.ends_with("Like")
         || SKIP_TYPES.iter().any(|s| ty.contains(s))
 }
 
@@ -489,6 +490,9 @@ pub enum ParamKind {
     Enum(String),
     DynOpaque(String),
     DynMono(String),
+    VecMut(String),
+    VecConst(String),
+    VecOwned(String),
 }
 
 #[derive(Debug, Clone)]
@@ -502,6 +506,8 @@ pub enum ReturnKind {
     ArcRefReturn,
     OptionArcRefReturn,
     Enum(String),
+    VecReturn(String),
+    OptionVecReturn(String),
 }
 
 fn strip_lifetimes(ty: &str) -> String {
@@ -542,6 +548,24 @@ fn resolve_type_alias(ty: &str) -> String {
                 }
             }
         }
+        if let Some(rest) = ty.strip_prefix("&mut ") {
+            if rest.trim() == alias {
+                return format!("&mut {resolved}");
+            }
+        }
+        if let Some(rest) = ty.strip_prefix('&') {
+            if rest.trim() == alias {
+                return format!("&{resolved}");
+            }
+        }
+    }
+
+    let like_aliases: &[(&str, &str)] = &[
+        ("MatrixLike", "Matrix"),
+        ("Scene3DLightsLike", "Scene3DLights"),
+        ("Vector2Like", "Vector2"),
+    ];
+    for &(alias, resolved) in like_aliases {
         if let Some(rest) = ty.strip_prefix("&mut ") {
             if rest.trim() == alias {
                 return format!("&mut {resolved}");
@@ -752,6 +776,43 @@ pub fn classify_param(ty: &str) -> Option<ParamKind> {
         }
     }
 
+    // &mut Vec<T> -> VecMut
+    if let Some(inner) = ty.strip_prefix("&mut Vec<") {
+        if let Some(inner) = inner.strip_suffix('>') {
+            let inner = inner.trim();
+            if is_scalar(inner)
+                || is_known_enum(inner)
+                || (!is_ffi_incompatible(inner) && !inner.contains('<'))
+            {
+                return Some(ParamKind::VecMut(inner.to_string()));
+            }
+        }
+    }
+    // &Vec<T> -> VecConst
+    if let Some(inner) = ty.strip_prefix("&Vec<") {
+        if let Some(inner) = inner.strip_suffix('>') {
+            let inner = inner.trim();
+            if is_scalar(inner)
+                || is_known_enum(inner)
+                || (!is_ffi_incompatible(inner) && !inner.contains('<'))
+            {
+                return Some(ParamKind::VecConst(inner.to_string()));
+            }
+        }
+    }
+    // Vec<T> owned -> VecOwned
+    if let Some(inner) = ty.strip_prefix("Vec<") {
+        if let Some(inner) = inner.strip_suffix('>') {
+            let inner = inner.trim();
+            if is_scalar(inner)
+                || is_known_enum(inner)
+                || (!is_ffi_incompatible(inner) && !inner.contains('<'))
+            {
+                return Some(ParamKind::VecOwned(inner.to_string()));
+            }
+        }
+    }
+
     if is_ffi_incompatible(ty) {
         return None;
     }
@@ -821,6 +882,31 @@ pub fn classify_return(ty: &str) -> Option<ReturnKind> {
                 && !SKIP_TYPES.iter().any(|s| inner.contains(s))
             {
                 return Some(ReturnKind::OptionArcRefReturn);
+            }
+        }
+    }
+
+    // Vec<T> -> VecReturn
+    if let Some(inner) = ty.strip_prefix("Vec<") {
+        if let Some(inner) = inner.strip_suffix('>') {
+            let inner = inner.trim();
+            if is_scalar(inner)
+                || is_known_enum(inner)
+                || (!is_ffi_incompatible(inner) && !inner.contains('<'))
+            {
+                return Some(ReturnKind::VecReturn(inner.to_string()));
+            }
+        }
+    }
+    // Option<Vec<T>> -> OptionVecReturn
+    if let Some(inner) = ty.strip_prefix("Option<Vec<") {
+        if let Some(inner) = inner.strip_suffix(">>") {
+            let inner = inner.trim();
+            if is_scalar(inner)
+                || is_known_enum(inner)
+                || (!is_ffi_incompatible(inner) && !inner.contains('<'))
+            {
+                return Some(ReturnKind::OptionVecReturn(inner.to_string()));
             }
         }
     }

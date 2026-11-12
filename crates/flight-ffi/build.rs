@@ -204,6 +204,7 @@ const SKIP_TYPES: &[&str] = &[
     "AttachmentSkin2D",
     "BidiClassKernel",
     "BidiClassKernelExplanation",
+    "Bone2D",
     "BoundsRectangleRuntimeMethods",
     "ClippingAttachment2D",
     "DateTimeFormatOptions",
@@ -214,6 +215,7 @@ const SKIP_TYPES: &[&str] = &[
     "PathMeshPool",
     "MeshAttachment2D",
     "PathMorphBuildResult",
+    "RectangleLike",
     "RegionAttachment2D",
     "PluralRulesOptions",
     "PointAttachment2D",
@@ -956,7 +958,6 @@ fn is_ffi_incompatible(ty: &str) -> bool {
         || ty.contains("FnOnce(")
         || ty.contains('<')
         || ty.contains("::")
-        || ty.ends_with("Like")
         || SKIP_TYPES.iter().any(|s| ty.contains(s))
 }
 
@@ -1060,6 +1061,20 @@ fn generate_ffi_wrapper(func: &ParsedFn) -> Option<(String, Option<String>)> {
         }
         FfiReturn::EnumReturn => {
             format!("{preamble}    return {call} as u32;")
+        }
+        FfiReturn::VecReturn => {
+            format!(
+                "{preamble}    let vec = {call};\n    \
+                     return Box::into_raw(Box::new(vec)) as *mut std::ffi::c_void;"
+            )
+        }
+        FfiReturn::OptionVecReturn => {
+            format!(
+                "{preamble}    match {call} {{\n        \
+                     Some(vec) => Box::into_raw(Box::new(vec)) as *mut std::ffi::c_void,\n        \
+                     None => std::ptr::null_mut(),\n    \
+                     }}"
+            )
         }
     };
 
@@ -1218,6 +1233,16 @@ fn generate_mono_wrappers(func: &ParsedFn) -> Vec<(String, String, Option<String
                      }}"
             ),
             FfiReturn::EnumReturn => format!("    return {call} as u32;"),
+            FfiReturn::VecReturn => format!(
+                "    let vec = {call};\n    \
+                     return Box::into_raw(Box::new(vec)) as *mut std::ffi::c_void;"
+            ),
+            FfiReturn::OptionVecReturn => format!(
+                "    match {call} {{\n        \
+                     Some(vec) => Box::into_raw(Box::new(vec)) as *mut std::ffi::c_void,\n        \
+                     None => std::ptr::null_mut(),\n    \
+                     }}"
+            ),
         };
 
         wrappers.push((
@@ -1241,6 +1266,8 @@ enum FfiReturn {
     ArcRefReturn,
     OptionArcRefReturn,
     EnumReturn,
+    VecReturn,
+    OptionVecReturn,
 }
 
 const SCALARS: &[&str] = &[
@@ -1264,7 +1291,7 @@ fn to_snake_case(s: &str) -> String {
 }
 
 fn qualify_type(ty: &str) -> String {
-    if is_scalar(ty) || ty.starts_with('[') || ty.starts_with('(') {
+    if is_scalar(ty) || ty.starts_with('[') || ty.starts_with('(') || ty == "String" {
         ty.to_string()
     } else {
         format!("{QUALIFIER}::{ty}")
@@ -1297,6 +1324,24 @@ fn resolve_type_alias(ty: &str) -> String {
                 }
             }
         }
+        if let Some(rest) = ty.strip_prefix("&mut ") {
+            if rest.trim() == alias {
+                return format!("&mut {resolved}");
+            }
+        }
+        if let Some(rest) = ty.strip_prefix('&') {
+            if rest.trim() == alias {
+                return format!("&{resolved}");
+            }
+        }
+    }
+
+    let like_aliases: &[(&str, &str)] = &[
+        ("MatrixLike", "Matrix"),
+        ("Scene3DLightsLike", "Scene3DLights"),
+        ("Vector2Like", "Vector2"),
+    ];
+    for &(alias, resolved) in like_aliases {
         if let Some(rest) = ty.strip_prefix("&mut ") {
             if rest.trim() == alias {
                 return format!("&mut {resolved}");
@@ -1660,6 +1705,60 @@ fn map_param_to_ffi(name: &str, ty: &str) -> Option<MappedParam> {
         }
     }
 
+    // &mut Vec<T> -> *mut c_void (opaque handle)
+    if let Some(inner) = ty.strip_prefix("&mut Vec<") {
+        if let Some(inner) = inner.strip_suffix('>') {
+            let inner = inner.trim();
+            if is_scalar(inner)
+                || is_known_enum(inner)
+                || (!is_ffi_incompatible(inner) && !inner.contains('<'))
+            {
+                let qualified_inner = qualify_type(inner);
+                return mapped_single(
+                    name,
+                    "*mut std::ffi::c_void",
+                    format!("unsafe {{ &mut *({name} as *mut Vec<{qualified_inner}>) }}"),
+                );
+            }
+        }
+    }
+
+    // &Vec<T> -> *const c_void (opaque handle)
+    if let Some(inner) = ty.strip_prefix("&Vec<") {
+        if let Some(inner) = inner.strip_suffix('>') {
+            let inner = inner.trim();
+            if is_scalar(inner)
+                || is_known_enum(inner)
+                || (!is_ffi_incompatible(inner) && !inner.contains('<'))
+            {
+                let qualified_inner = qualify_type(inner);
+                return mapped_single(
+                    name,
+                    "*const std::ffi::c_void",
+                    format!("unsafe {{ &*({name} as *const Vec<{qualified_inner}>) }}"),
+                );
+            }
+        }
+    }
+
+    // Vec<T> owned param -> *mut c_void (takes ownership of boxed Vec)
+    if let Some(inner) = ty.strip_prefix("Vec<") {
+        if let Some(inner) = inner.strip_suffix('>') {
+            let inner = inner.trim();
+            if is_scalar(inner)
+                || is_known_enum(inner)
+                || (!is_ffi_incompatible(inner) && !inner.contains('<'))
+            {
+                let qualified_inner = qualify_type(inner);
+                return mapped_single(
+                    name,
+                    "*mut std::ffi::c_void",
+                    format!("unsafe {{ *Box::from_raw({name} as *mut Vec<{qualified_inner}>) }}"),
+                );
+            }
+        }
+    }
+
     if is_ffi_incompatible(ty) {
         return None;
     }
@@ -1768,6 +1867,38 @@ fn map_return_to_ffi(ty: &str) -> Option<(String, FfiReturn)> {
                 return Some((
                     " -> *mut std::ffi::c_void".to_string(),
                     FfiReturn::OptionArcRefReturn,
+                ));
+            }
+        }
+    }
+
+    // Vec<T> -> *mut c_void (boxed Vec)
+    if let Some(inner) = ty.strip_prefix("Vec<") {
+        if let Some(inner) = inner.strip_suffix('>') {
+            let inner = inner.trim();
+            if is_scalar(inner)
+                || is_known_enum(inner)
+                || (!is_ffi_incompatible(inner) && !inner.contains('<'))
+            {
+                return Some((
+                    " -> *mut std::ffi::c_void".to_string(),
+                    FfiReturn::VecReturn,
+                ));
+            }
+        }
+    }
+
+    // Option<Vec<T>> -> nullable *mut c_void
+    if let Some(inner) = ty.strip_prefix("Option<Vec<") {
+        if let Some(inner) = inner.strip_suffix(">>") {
+            let inner = inner.trim();
+            if is_scalar(inner)
+                || is_known_enum(inner)
+                || (!is_ffi_incompatible(inner) && !inner.contains('<'))
+            {
+                return Some((
+                    " -> *mut std::ffi::c_void".to_string(),
+                    FfiReturn::OptionVecReturn,
                 ));
             }
         }
