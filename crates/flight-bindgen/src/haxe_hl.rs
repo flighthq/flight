@@ -1,19 +1,19 @@
-use std::collections::{BTreeMap, BTreeSet};
+use std::collections::BTreeSet;
 use std::fmt::Write as _;
 use std::fs;
 use std::path::Path;
 
+use crate::haxe_common::{
+    TypeMethod, build_struct_map, build_type_methods, collect_opaque_types, crate_dir_to_module,
+    derive_method_name, find_self_param, scalar_to_haxe, to_snake_case, write_if_changed,
+};
 use crate::parse::{
     CrateExports, ParamKind, ParsedFn, ParsedStruct, ReturnKind, classify_param, classify_return,
-    to_camel_case, to_pascal_case,
+    to_camel_case,
 };
 
 const LIB_NAME: &str = "flight";
-
-struct TypeMethod<'a> {
-    func: &'a ParsedFn,
-    module: String,
-}
+const PKG: &str = "flight._hl";
 
 pub fn generate(crate_exports: &[CrateExports], out_dir: &Path) {
     let hl_dir = out_dir.join("flight").join("_hl");
@@ -28,13 +28,7 @@ pub fn generate(crate_exports: &[CrateExports], out_dir: &Path) {
         }
     }
 
-    let mut struct_map: BTreeMap<String, &ParsedStruct> = BTreeMap::new();
-    for crate_export in crate_exports {
-        for s in &crate_export.structs {
-            struct_map.entry(s.name.clone()).or_insert(s);
-        }
-    }
-
+    let struct_map = build_struct_map(crate_exports);
     let type_methods = build_type_methods(crate_exports, &all_opaque_types);
 
     let mut total_files = 0usize;
@@ -78,113 +72,13 @@ pub fn generate(crate_exports: &[CrateExports], out_dir: &Path) {
     );
 }
 
-fn build_type_methods<'a>(
-    crate_exports: &'a [CrateExports],
-    known_types: &BTreeSet<String>,
-) -> BTreeMap<String, Vec<TypeMethod<'a>>> {
-    let mut map: BTreeMap<String, Vec<TypeMethod<'a>>> = BTreeMap::new();
-
-    for crate_export in crate_exports {
-        let module = crate_dir_to_module(&crate_export.dir_name);
-        for func in &crate_export.fns {
-            if let Some(ty) =
-                match_function_to_type(&func.name, &func.params, &func.ret, known_types)
-            {
-                map.entry(ty).or_default().push(TypeMethod {
-                    func,
-                    module: module.clone(),
-                });
-            }
-        }
-    }
-    map
-}
-
-fn match_function_to_type(
-    fn_name: &str,
-    params: &[crate::parse::Param],
-    ret: &Option<String>,
-    known_types: &BTreeSet<String>,
-) -> Option<String> {
-    let type_lower_in_name = |ty: &str| -> bool {
-        let tl = ty.to_lowercase();
-        let suffix = format!("_{tl}");
-        let mid = format!("_{tl}_");
-        fn_name.ends_with(&suffix) || fn_name.contains(&mid)
-    };
-
-    for param in params {
-        if let Some(kind) = classify_param(&param.ty) {
-            let ty_name = match &kind {
-                ParamKind::RefConst(ty) | ParamKind::RefMut(ty) => ty,
-                _ => continue,
-            };
-            if known_types.contains(ty_name)
-                && type_lower_in_name(ty_name)
-                && derive_method_name(fn_name, ty_name).is_some()
-            {
-                return Some(ty_name.clone());
-            }
-        }
-    }
-    if let Some(ret_ty) = ret {
-        if let Some(ReturnKind::Struct(ty_name)) = classify_return(ret_ty) {
-            if known_types.contains(&ty_name)
-                && fn_name.starts_with("create_")
-                && type_lower_in_name(&ty_name)
-                && derive_method_name(fn_name, &ty_name).is_some()
-            {
-                return Some(ty_name);
-            }
-        }
-    }
-    None
-}
-
-fn derive_method_name(fn_name: &str, type_name: &str) -> Option<String> {
-    let type_lower = type_name.to_lowercase();
-    let suffix = format!("_{type_lower}");
-
-    if fn_name.ends_with(&suffix) {
-        let prefix = &fn_name[..fn_name.len() - suffix.len()];
-        if prefix.is_empty() {
-            return None;
-        }
-        return Some(to_camel_case(prefix));
-    }
-
-    let mid = format!("_{type_lower}_");
-    if let Some(pos) = fn_name.find(&mid) {
-        let before = &fn_name[..pos];
-        let after = &fn_name[pos + mid.len()..];
-        let combined = if before.is_empty() {
-            after.to_string()
-        } else if after.is_empty() {
-            before.to_string()
-        } else {
-            format!("{before}_{after}")
-        };
-        if combined.is_empty() {
-            return None;
-        }
-        return Some(to_camel_case(&combined));
-    }
-
-    None
-}
-
-fn crate_dir_to_module(dir_name: &str) -> String {
-    let stripped = dir_name.strip_prefix("flight-").unwrap_or(dir_name);
-    to_pascal_case(stripped)
-}
-
 fn emit_type_file(
     ty: &str,
     parsed_struct: Option<&ParsedStruct>,
     methods: Option<&[TypeMethod<'_>]>,
 ) -> String {
     let mut output = String::new();
-    writeln!(output, "package flight._hl;").unwrap();
+    writeln!(output, "package {PKG};").unwrap();
     writeln!(output).unwrap();
 
     let fields = parsed_struct.map(|s| &s.fields[..]).unwrap_or(&[]);
@@ -277,7 +171,7 @@ fn emit_one_method(ty: &str, tm: &TypeMethod<'_>) -> Option<String> {
     let args_str = call_args.join(", ");
     let module = &tm.module;
 
-    let call = format!("flight._hl._fn.{module}.{haxe_fn_name}({args_str})");
+    let call = format!("{PKG}._fn.{module}.{haxe_fn_name}({args_str})");
     let body = if matches!(ret_kind, ReturnKind::Void) {
         call
     } else {
@@ -289,20 +183,6 @@ fn emit_one_method(ty: &str, tm: &TypeMethod<'_>) -> Option<String> {
     Some(format!(
         "\t{static_kw}inline public function {method_name}({params_str}):{haxe_ret} {{\n\t\t{body};\n\t}}"
     ))
-}
-
-fn find_self_param(func: &ParsedFn, ty: &str) -> Option<usize> {
-    for (i, param) in func.params.iter().enumerate() {
-        if let Some(kind) = classify_param(&param.ty) {
-            match &kind {
-                ParamKind::RefConst(t) | ParamKind::RefMut(t) if t == ty => {
-                    return Some(i);
-                }
-                _ => {}
-            }
-        }
-    }
-    None
 }
 
 fn emit_module_file(module_name: &str, fns: &[ParsedFn]) -> String {
@@ -317,7 +197,7 @@ fn emit_module_file(module_name: &str, fns: &[ParsedFn]) -> String {
     }
 
     let mut output = String::new();
-    writeln!(output, "package flight._hl._fn;").unwrap();
+    writeln!(output, "package {PKG}._fn;").unwrap();
     writeln!(output).unwrap();
     writeln!(output, "extern class {module_name} {{").unwrap();
     for decl in &emitted {
@@ -345,16 +225,16 @@ fn emit_function(func: &ParsedFn) -> Option<String> {
     let haxe_ret = return_kind_to_haxe(&ret_kind);
 
     let params_str = haxe_params.join(", ");
-    return Some(format!(
+    Some(format!(
         "\t@:hlNative(\"{LIB_NAME}\", \"{ffi_name}\")\n\tpublic static function {haxe_name}({params_str}):{haxe_ret};"
-    ));
+    ))
 }
 
 fn param_kind_to_haxe(kind: &ParamKind) -> String {
     match kind {
         ParamKind::Scalar(ty) => scalar_to_haxe(ty).to_string(),
-        ParamKind::RefConst(ty) => format!("flight._hl.{ty}"),
-        ParamKind::RefMut(ty) => format!("flight._hl.{ty}"),
+        ParamKind::RefConst(ty) => format!("{PKG}.{ty}"),
+        ParamKind::RefMut(ty) => format!("{PKG}.{ty}"),
         ParamKind::OptionF32 => "Single".to_string(),
     }
 }
@@ -363,58 +243,7 @@ fn return_kind_to_haxe(kind: &ReturnKind) -> String {
     match kind {
         ReturnKind::Void => "Void".to_string(),
         ReturnKind::Scalar(ty) => scalar_to_haxe(ty).to_string(),
-        ReturnKind::Struct(ty) => format!("flight._hl.{ty}"),
+        ReturnKind::Struct(ty) => format!("{PKG}.{ty}"),
         ReturnKind::StringReturn => "hl.Bytes".to_string(),
     }
-}
-
-fn scalar_to_haxe(ty: &str) -> &str {
-    match ty {
-        "f32" => "Single",
-        "f64" => "Float",
-        "bool" => "Bool",
-        "i8" | "i16" | "i32" | "isize" => "Int",
-        "u8" | "u16" | "u32" | "usize" => "Int",
-        "i64" | "u64" => "haxe.Int64",
-        _ => "Dynamic",
-    }
-}
-
-fn collect_opaque_types(func: &ParsedFn, types: &mut BTreeSet<String>) {
-    for param in &func.params {
-        if let Some(kind) = classify_param(&param.ty) {
-            match kind {
-                ParamKind::RefConst(ty) | ParamKind::RefMut(ty) => {
-                    types.insert(ty);
-                }
-                _ => {}
-            }
-        }
-    }
-    if let Some(ref ret) = func.ret {
-        if let Some(ReturnKind::Struct(ty)) = classify_return(ret) {
-            types.insert(ty);
-        }
-    }
-}
-
-fn to_snake_case(s: &str) -> String {
-    let mut out = String::new();
-    let chars: Vec<char> = s.chars().collect();
-    for (i, &c) in chars.iter().enumerate() {
-        if c.is_uppercase() && i > 0 && !chars[i - 1].is_uppercase() && chars[i - 1] != '_' {
-            out.push('_');
-        }
-        out.push(c.to_ascii_lowercase());
-    }
-    out
-}
-
-fn write_if_changed(path: &Path, content: &str) {
-    if let Ok(existing) = fs::read_to_string(path) {
-        if existing == content {
-            return;
-        }
-    }
-    fs::write(path, content).unwrap();
 }

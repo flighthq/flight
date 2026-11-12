@@ -1,4 +1,6 @@
 mod dispatch;
+mod haxe_common;
+mod haxe_cpp;
 mod haxe_hl;
 mod parse;
 
@@ -36,9 +38,26 @@ fn main() {
                 out_dir.display()
             );
         }
+        "haxe-cpp" => {
+            haxe_cpp::generate(&exports, &out_dir);
+            dispatch::generate(&exports, &out_dir);
+            eprintln!(
+                "{total_fns} functions from {total_crates} crates → {}",
+                out_dir.display()
+            );
+        }
+        "haxe" => {
+            haxe_hl::generate(&exports, &out_dir);
+            haxe_cpp::generate(&exports, &out_dir);
+            dispatch::generate(&exports, &out_dir);
+            eprintln!(
+                "{total_fns} functions from {total_crates} crates → {}",
+                out_dir.display()
+            );
+        }
         other => {
             eprintln!("unknown target: {other}");
-            eprintln!("available targets: haxe-hl");
+            eprintln!("available targets: haxe-hl, haxe-cpp, haxe");
             std::process::exit(1);
         }
     }
