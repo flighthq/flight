@@ -122,10 +122,23 @@ pub struct Param {
     pub ty: String,
 }
 
+#[derive(Debug, Clone)]
+pub struct StructField {
+    pub name: String,
+    pub ty: String,
+}
+
+#[derive(Debug, Clone)]
+pub struct ParsedStruct {
+    pub name: String,
+    pub fields: Vec<StructField>,
+}
+
 #[derive(Debug)]
 pub struct CrateExports {
     pub dir_name: String,
     pub fns: Vec<ParsedFn>,
+    pub structs: Vec<ParsedStruct>,
 }
 
 pub fn is_scalar(ty: &str) -> bool {
@@ -154,9 +167,7 @@ pub fn scan_all_crates(crates_dir: &Path) -> Vec<CrateExports> {
         }
 
         let fns = collect_pub_fns(&src_dir);
-        if fns.is_empty() {
-            continue;
-        }
+        let structs = collect_pub_structs(&src_dir);
 
         let mut exported_fns = Vec::new();
         for func in fns {
@@ -173,10 +184,11 @@ pub fn scan_all_crates(crates_dir: &Path) -> Vec<CrateExports> {
             }
         }
 
-        if !exported_fns.is_empty() {
+        if !exported_fns.is_empty() || !structs.is_empty() {
             results.push(CrateExports {
                 dir_name: dir_name.to_string(),
                 fns: exported_fns,
+                structs,
             });
         }
     }
@@ -305,6 +317,105 @@ pub fn collect_pub_fns(src_dir: &Path) -> Vec<ParsedFn> {
     fns
 }
 
+pub fn collect_pub_structs(src_dir: &Path) -> Vec<ParsedStruct> {
+    let lib_path = src_dir.join("lib.rs");
+    if !lib_path.exists() {
+        return Vec::new();
+    }
+
+    let exported_names = collect_exported_type_names(&lib_path, src_dir);
+    if exported_names.is_empty() {
+        return Vec::new();
+    }
+
+    let mut structs = Vec::new();
+    let mut entries: Vec<_> = fs::read_dir(src_dir)
+        .unwrap()
+        .filter_map(|e| e.ok())
+        .filter(|e| {
+            e.path().extension().is_some_and(|ext| ext == "rs")
+                && !e.file_name().to_string_lossy().contains("test")
+        })
+        .collect();
+    entries.sort_by_key(|e| e.file_name());
+
+    for entry in entries {
+        let fname = entry.file_name().to_string_lossy().to_string();
+        if fname == "contract.rs" || fname == "lib.rs" {
+            continue;
+        }
+        let content = fs::read_to_string(entry.path()).unwrap();
+        let mut all_structs = Vec::new();
+        parse_pub_structs(&content, &mut all_structs);
+        for s in all_structs {
+            if exported_names.contains(&s.name) && !SKIP_TYPES.contains(&s.name.as_str()) {
+                structs.push(s);
+            }
+        }
+    }
+    structs
+}
+
+fn collect_exported_type_names(lib_path: &Path, src_dir: &Path) -> BTreeSet<String> {
+    let content = fs::read_to_string(lib_path).unwrap();
+    let mut names = BTreeSet::new();
+
+    for line in content.lines() {
+        let line = line.trim();
+        if line.starts_with("pub use ") {
+            if let Some(rest) = line.strip_prefix("pub use ") {
+                let rest = rest.trim_end_matches(';').trim();
+                if rest.ends_with("::*") {
+                    let mod_path = rest.trim_end_matches("::*");
+                    let mod_name = mod_path.rsplit("::").next().unwrap_or(mod_path);
+                    let mod_file = src_dir.join(format!("{mod_name}.rs"));
+                    if mod_file.exists() {
+                        collect_glob_type_names(&mod_file, src_dir, &mut names);
+                    }
+                } else if let Some(name) = rest.rsplit("::").next() {
+                    if name.chars().next().is_some_and(|c| c.is_uppercase()) {
+                        names.insert(name.to_string());
+                    }
+                }
+            }
+        }
+    }
+    names
+}
+
+fn collect_glob_type_names(file: &Path, src_dir: &Path, names: &mut BTreeSet<String>) {
+    let content = match fs::read_to_string(file) {
+        Ok(c) => c,
+        Err(_) => return,
+    };
+    for line in content.lines() {
+        let line = line.trim();
+        if line.starts_with("pub use super::") && line.ends_with("::*;") {
+            let inner = line
+                .strip_prefix("pub use super::")
+                .unwrap()
+                .strip_suffix("::*;")
+                .unwrap();
+            let mod_file = src_dir.join(format!("{inner}.rs"));
+            if mod_file.exists() {
+                let mod_content = fs::read_to_string(&mod_file).unwrap();
+                let mut mod_structs = Vec::new();
+                parse_pub_structs(&mod_content, &mut mod_structs);
+                for s in mod_structs {
+                    names.insert(s.name);
+                }
+            }
+        }
+        if line.starts_with("pub use super::") && !line.ends_with("::*;") {
+            if let Some(name) = line.trim_end_matches(';').rsplit("::").next() {
+                if name.chars().next().is_some_and(|c| c.is_uppercase()) {
+                    names.insert(name.to_string());
+                }
+            }
+        }
+    }
+}
+
 fn collect_exported_names(lib_path: &Path, src_dir: &Path) -> BTreeSet<String> {
     let content = fs::read_to_string(lib_path).unwrap();
     let mut names = BTreeSet::new();
@@ -408,6 +519,66 @@ pub fn parse_pub_fns(content: &str, out: &mut Vec<ParsedFn>) {
             out.push(parsed);
         }
     }
+}
+
+pub fn parse_pub_structs(content: &str, out: &mut Vec<ParsedStruct>) {
+    let lines: Vec<&str> = content.lines().collect();
+    let mut i = 0;
+    while i < lines.len() {
+        let line = lines[i].trim();
+        if !line.starts_with("pub struct ") || !line.contains('{') {
+            i += 1;
+            continue;
+        }
+
+        let name_part = line.strip_prefix("pub struct ").unwrap();
+        let name_end = name_part.find(|c: char| c == '{' || c == '<' || c == ' ');
+        let name = match name_end {
+            Some(e) => name_part[..e].trim().to_string(),
+            None => {
+                i += 1;
+                continue;
+            }
+        };
+
+        if name_part.contains('<') {
+            i += 1;
+            continue;
+        }
+
+        let mut fields = Vec::new();
+        i += 1;
+        while i < lines.len() {
+            let fline = lines[i].trim();
+            if fline == "}" {
+                break;
+            }
+            if let Some(field) = parse_struct_field(fline) {
+                fields.push(field);
+            }
+            i += 1;
+        }
+        i += 1;
+
+        if !fields.is_empty() {
+            out.push(ParsedStruct { name, fields });
+        }
+    }
+}
+
+fn parse_struct_field(line: &str) -> Option<StructField> {
+    let line = line.trim().trim_end_matches(',');
+    let rest = line.strip_prefix("pub ")?;
+    let colon = rest.find(':')?;
+    let name = rest[..colon].trim().to_string();
+    let ty = rest[colon + 1..].trim().to_string();
+    if is_ffi_incompatible(&ty) {
+        return None;
+    }
+    if !is_scalar(&ty) {
+        return None;
+    }
+    Some(StructField { name, ty })
 }
 
 fn parse_fn_signature(sig: &str) -> Option<ParsedFn> {
