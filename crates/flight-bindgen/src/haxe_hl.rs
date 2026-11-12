@@ -27,6 +27,9 @@ pub fn generate(crate_exports: &[CrateExports], out_dir: &Path, field_offsets: &
         for func in &crate_export.fns {
             collect_opaque_types(func, &mut all_opaque_types);
         }
+        for s in &crate_export.structs {
+            all_opaque_types.insert(s.name.clone());
+        }
     }
 
     let struct_map = build_struct_map(crate_exports);
