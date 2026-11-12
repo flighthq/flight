@@ -587,11 +587,27 @@ fn resolve_type_alias(ty: &str) -> String {
         ("SpatialObjectId", "i32"),
         ("SourceId", "u64"),
         ("Kind", "String"),
+        ("AnimationBlendTreeRef", "Ref<AnimationBlendTree>"),
         ("AnimationPlayerRef", "Ref<AnimationPlayer>"),
+        ("AnimationStateMachineRef", "Ref<AnimationStateMachine>"),
+        ("CameraGuardStateRef", "Ref<CameraGuardState>"),
+        ("DebugStateRef", "Ref<DebugState>"),
+        ("FlowGuardStateRef", "Ref<FlowGuardState>"),
         ("LogStateRef", "Ref<LogState>"),
-        ("NodeRef", "Ref<dyn Node>"),
         ("Node2DRef", "Ref<dyn Node2D>"),
         ("Node3DRef", "Ref<dyn Node3D>"),
+        ("NodeRef", "Ref<dyn Node>"),
+        ("Physics2DContactRef", "Ref<Physics2DContact>"),
+        (
+            "Scene2DResourceFailureGuardStateRef",
+            "Ref<Scene2DResourceFailureGuardState>",
+        ),
+        ("ShapeBoundsStateRef", "Ref<ShapeBoundsState>"),
+        ("ShapeRuntimeRef", "Ref<ShapeRuntime>"),
+        ("Skeleton3DGuardStateRef", "Ref<Skeleton3DGuardState>"),
+        ("SocketGuardStateRef", "Ref<SocketGuardState>"),
+        ("StatechartGuardStateRef", "Ref<StatechartGuardState>"),
+        ("TimelineRef", "Ref<Timeline>"),
     ];
     for &(alias, resolved) in aliases {
         if ty == alias {
