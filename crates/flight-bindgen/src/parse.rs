@@ -369,6 +369,39 @@ pub fn scan_all_crates(crates_dir: &Path) -> Vec<CrateExports> {
             }
         }
 
+        // Synthesize free_* functions for struct/array returns
+        let mut free_fns = Vec::new();
+        let mut free_seen: BTreeSet<String> = BTreeSet::new();
+        for func in &exported_fns {
+            if let Some(ref ret) = func.ret {
+                let ret_kind = classify_return(ret);
+                let free_type = match &ret_kind {
+                    Some(ReturnKind::Struct(ty)) => Some(ty.clone()),
+                    Some(ReturnKind::OptionStruct(ty)) => Some(ty.clone()),
+                    Some(ReturnKind::FixedArrayReturn(_, _)) => None,
+                    Some(ReturnKind::BoxSliceReturn(_)) => None,
+                    _ => None,
+                };
+                if let Some(ty) = free_type {
+                    let snake = to_snake_case(&ty);
+                    let free_name = format!("free_{snake}");
+                    let ffi_name = format!("flight_{free_name}");
+                    if !seen_names.contains(&ffi_name) && free_seen.insert(free_name.clone()) {
+                        seen_names.insert(ffi_name);
+                        free_fns.push(ParsedFn {
+                            name: free_name,
+                            params: vec![Param {
+                                name: "ptr".to_string(),
+                                ty: format!("&mut {ty}"),
+                            }],
+                            ret: None,
+                        });
+                    }
+                }
+            }
+        }
+        exported_fns.extend(free_fns);
+
         if !exported_fns.is_empty() || !structs.is_empty() {
             results.push(CrateExports {
                 dir_name: dir_name.to_string(),
