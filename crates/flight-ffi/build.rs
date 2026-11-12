@@ -200,6 +200,7 @@ const DYN_MONO_TRAITS: &[(&str, &[&str])] = &[
 ];
 
 const SKIP_FN_PREFIXES: &[&str] = &["initialize_"];
+const SKIP_FNS: &[&str] = &["enable_clip_guards", "enable_statechart_guards"];
 const SKIP_TYPES: &[&str] = &[
     "AttachmentSkin2D",
     "BidiClassKernel",
@@ -219,6 +220,7 @@ const SKIP_TYPES: &[&str] = &[
     "PluralRulesOptions",
     "PointAttachment2D",
     "RelativeTimeFormatOptions",
+    "ShapeGeometryEnd",
     "ShapeJsonFormatOptions",
     "ShapeJsonParseOptions",
     "AdjustmentRef",
@@ -665,6 +667,7 @@ fn parse_params(params_str: &str) -> Option<Vec<Param>> {
     for i in 0..bytes.len() {
         match bytes[i] {
             b'<' | b'(' | b'[' => depth += 1,
+            b'>' if i > 0 && bytes[i - 1] == b'-' => {} // `->` arrow, not bracket
             b'>' | b')' | b']' => depth -= 1,
             b',' if depth == 0 => {
                 if let Some(p) = parse_single_param(&params_str[start..i]) {
@@ -966,10 +969,15 @@ fn generate_field_accessors(
     output
 }
 
-fn extract_dyn_trait(ty: &str) -> Option<&str> {
+fn extract_dyn_trait(ty: &str) -> Option<String> {
     let inner = ty.strip_prefix("&mut ").or_else(|| ty.strip_prefix('&'))?;
     let inner = inner.strip_prefix("dyn ")?;
-    Some(inner.trim())
+    let inner = inner.trim();
+    if let Some(pos) = inner.rfind("::") {
+        Some(inner[pos + 2..].to_string())
+    } else {
+        Some(inner.to_string())
+    }
 }
 
 fn is_known_dyn_opaque(ty: &str) -> bool {
@@ -1004,6 +1012,9 @@ fn generate_ffi_wrapper(func: &ParsedFn) -> Option<(String, Option<String>)> {
     if SKIP_FN_PREFIXES.iter().any(|p| func.name.starts_with(p)) {
         return None;
     }
+    if SKIP_FNS.contains(&func.name.as_str()) {
+        return None;
+    }
 
     let mut ffi_params = Vec::new();
     let mut call_args = Vec::new();
@@ -1016,7 +1027,7 @@ fn generate_ffi_wrapper(func: &ParsedFn) -> Option<(String, Option<String>)> {
         }
         call_args.push(mapped.call_expr);
 
-        let ty = strip_lifetimes(&resolve_type_alias(param.ty.trim()));
+        let ty = strip_crate_paths(&strip_lifetimes(&resolve_type_alias(param.ty.trim())));
         if let Some(trait_name) = extract_dyn_trait(&ty) {
             if let Some((_, ref_alias)) = DYN_OPAQUE_TRAITS.iter().find(|(n, _)| *n == trait_name) {
                 let qualified_ref = qualify_type(ref_alias);
@@ -1200,9 +1211,11 @@ fn generate_ffi_wrapper(func: &ParsedFn) -> Option<(String, Option<String>)> {
 }
 
 fn has_mono_dyn_param(func: &ParsedFn) -> bool {
-    func.params
-        .iter()
-        .any(|p| is_known_dyn_mono(&strip_lifetimes(&resolve_type_alias(p.ty.trim()))))
+    func.params.iter().any(|p| {
+        is_known_dyn_mono(&strip_crate_paths(&strip_lifetimes(&resolve_type_alias(
+            p.ty.trim(),
+        ))))
+    })
 }
 
 struct MonoParam {
@@ -1215,7 +1228,7 @@ struct MonoParam {
 fn collect_mono_params(func: &ParsedFn) -> Vec<MonoParam> {
     let mut result = Vec::new();
     for (i, p) in func.params.iter().enumerate() {
-        let ty = strip_lifetimes(&resolve_type_alias(p.ty.trim()));
+        let ty = strip_crate_paths(&strip_lifetimes(&resolve_type_alias(p.ty.trim())));
         if let Some(trait_name) = extract_dyn_trait(&ty) {
             if let Some((_, impls)) = DYN_MONO_TRAITS.iter().find(|(n, _)| *n == trait_name) {
                 result.push(MonoParam {
@@ -1231,6 +1244,9 @@ fn collect_mono_params(func: &ParsedFn) -> Vec<MonoParam> {
 
 fn generate_mono_wrappers(func: &ParsedFn) -> Vec<(String, String, Option<String>)> {
     if SKIP_FN_PREFIXES.iter().any(|p| func.name.starts_with(p)) {
+        return Vec::new();
+    }
+    if SKIP_FNS.contains(&func.name.as_str()) {
         return Vec::new();
     }
 
@@ -1285,7 +1301,7 @@ fn generate_mono_wrappers(func: &ParsedFn) -> Vec<(String, String, Option<String
 
         for (i, param) in func.params.iter().enumerate() {
             if let Some((_, concrete_ty)) = combo.iter().find(|(idx, _)| *idx == i) {
-                let ty = strip_lifetimes(&resolve_type_alias(param.ty.trim()));
+                let ty = strip_crate_paths(&strip_lifetimes(&resolve_type_alias(param.ty.trim())));
                 let qualified = qualify_type(concrete_ty);
                 let trait_name = extract_dyn_trait(&ty).unwrap();
                 if ty.starts_with("&mut ") {
@@ -1450,30 +1466,33 @@ fn categorize_skip(func: &ParsedFn) -> String {
     if func.name.starts_with("initialize_") {
         return "prefix_skip(initialize_)".to_string();
     }
+    if SKIP_FNS.contains(&func.name.as_str()) {
+        return "fn_skip".to_string();
+    }
     for param in &func.params {
         let ty = &param.ty;
-        let resolved = resolve_type_alias(ty);
+        let resolved = strip_crate_paths(&resolve_type_alias(ty));
         if resolved.contains("Fn(") || resolved.contains("FnMut(") || resolved.contains("FnOnce(") {
-            return format!("closure_param({})", ty);
-        }
-        if resolved.contains("dyn ")
-            && !is_known_dyn_opaque(&resolved)
-            && !is_known_dyn_mono(&resolved)
-        {
-            return format!("unknown_dyn_param({})", ty);
-        }
-        if SKIP_TYPES.iter().any(|s| resolved.contains(s)) {
-            return format!("skip_type_param({})", ty);
-        }
-        if resolved.contains("::") {
-            return format!("qualified_param({})", ty);
+            if parse_closure_param(&resolved).is_none() {
+                return format!("closure_param({})", ty);
+            }
+            continue;
         }
         if map_param_to_ffi(&param.name, &resolved).is_none() {
+            if SKIP_TYPES.iter().any(|s| resolved.contains(s)) {
+                return format!("skip_type_param({})", ty);
+            }
+            if resolved.contains("dyn ")
+                && !is_known_dyn_opaque(&resolved)
+                && !is_known_dyn_mono(&resolved)
+            {
+                return format!("unknown_dyn_param({})", ty);
+            }
             return format!("unmapped_param({})", ty);
         }
     }
     if let Some(ret) = &func.ret {
-        let resolved = resolve_type_alias(ret);
+        let resolved = strip_crate_paths(&resolve_type_alias(ret));
         if resolved.contains("Fn(") || resolved.contains("FnMut(") || resolved.contains("FnOnce(") {
             return format!("closure_return({})", ret);
         }
@@ -1568,6 +1587,23 @@ fn resolve_type_alias(ty: &str) -> String {
         }
     }
 
+    for &(alias, resolved) in slice_aliases {
+        if let Some(rest) = ty.strip_prefix("Box<") {
+            if let Some(inner) = rest.strip_suffix('>') {
+                if inner.trim() == alias {
+                    return format!("Box<{resolved}>");
+                }
+            }
+        }
+        if let Some(rest) = ty.strip_prefix("Option<Box<") {
+            if let Some(inner) = rest.strip_suffix(">>") {
+                if inner.trim() == alias {
+                    return format!("Option<Box<{resolved}>>");
+                }
+            }
+        }
+    }
+
     let like_aliases: &[(&str, &str)] = &[
         ("MatrixLike", "Matrix"),
         ("Scene3DLightsLike", "Scene3DLights"),
@@ -1586,6 +1622,7 @@ fn resolve_type_alias(ty: &str) -> String {
         }
     }
 
+    let clock_alias = "Arc<dyn Fn() -> f64 + Send + Sync>";
     let aliases: &[(&str, &str)] = &[
         ("Physics2DAbiObjectId", "u32"),
         ("Physics3DAbiObjectId", "u32"),
@@ -1594,10 +1631,35 @@ fn resolve_type_alias(ty: &str) -> String {
         ("SpatialObjectId", "i32"),
         ("SourceId", "u64"),
         ("Kind", "String"),
+        ("AnimationPlayerRef", "Ref<AnimationPlayer>"),
+        ("AnimationStateMachineRef", "Ref<AnimationStateMachine>"),
+        ("CameraGuardStateRef", "Ref<CameraGuardState>"),
+        ("DebugStateRef", "Ref<DebugState>"),
         ("LogStateRef", "Ref<LogState>"),
-        ("NodeRef", "Ref<dyn Node>"),
         ("Node2DRef", "Ref<dyn Node2D>"),
         ("Node3DRef", "Ref<dyn Node3D>"),
+        ("NodeRef", "Ref<dyn Node>"),
+        ("Physics2DContactRef", "Ref<Physics2DContact>"),
+        (
+            "Scene2DResourceFailureGuardStateRef",
+            "Ref<Scene2DResourceFailureGuardState>",
+        ),
+        ("ShapeBoundsStateRef", "Ref<ShapeBoundsState>"),
+        ("ShapeRuntimeRef", "Ref<ShapeRuntime>"),
+        ("Skeleton3DGuardStateRef", "Ref<Skeleton3DGuardState>"),
+        ("SocketGuardStateRef", "Ref<SocketGuardState>"),
+        ("StatechartGuardStateRef", "Ref<StatechartGuardState>"),
+        ("TimelineRef", "Ref<Timeline>"),
+        ("BitmapTextClock", clock_alias),
+        ("ClockProvider", clock_alias),
+        ("MovieClipGuardClock", clock_alias),
+        ("NodeGuardClock", clock_alias),
+        ("Physics2DGuardClock", clock_alias),
+        ("Scene2DResourceFailureClock", clock_alias),
+        ("Scene3DResourceFailureClock", clock_alias),
+        ("Skeleton3DGuardClock", clock_alias),
+        ("TextGuardClock", clock_alias),
+        ("TextMarkupClock", clock_alias),
     ];
     for &(alias, resolved) in aliases {
         if ty == alias {
@@ -1662,8 +1724,97 @@ fn strip_lifetimes(ty: &str) -> String {
     result
 }
 
+fn strip_crate_paths(ty: &str) -> String {
+    let crate_prefixes: &[&str] = &[
+        "flight_entity::",
+        "flight_xml::",
+        "flight_animation::",
+        "flight_node::",
+        "flight_scene2d::",
+        "flight_scene3d::",
+        "crate::types::",
+        "crate::",
+    ];
+    let mut result = ty.to_string();
+    for prefix in crate_prefixes {
+        result = result.replace(prefix, "");
+    }
+    result
+}
+
+struct ParsedClosure {
+    params: Vec<(String, bool)>,
+    ret: String,
+    is_arc: bool,
+    is_mut: bool,
+}
+
+fn parse_closure_param(ty: &str) -> Option<ParsedClosure> {
+    let is_arc;
+    let is_mut;
+    let fn_part;
+    if let Some(inner) = ty.strip_prefix("&dyn Fn(") {
+        is_arc = false;
+        is_mut = false;
+        fn_part = inner;
+    } else if let Some(inner) = ty.strip_prefix("&mut dyn FnMut(") {
+        is_arc = false;
+        is_mut = true;
+        fn_part = inner;
+    } else if let Some(rest) = ty.strip_prefix("Arc<dyn Fn(") {
+        if let Some(inner) = rest.strip_suffix('>') {
+            let inner = inner
+                .trim_end_matches("+ Send + Sync")
+                .trim_end_matches("+ Send")
+                .trim_end_matches("+ Sync")
+                .trim();
+            is_arc = true;
+            is_mut = false;
+            fn_part = inner;
+        } else {
+            return None;
+        }
+    } else {
+        return None;
+    }
+
+    let paren_end = fn_part.find(')')?;
+    let params_str = &fn_part[..paren_end];
+    let rest = fn_part[paren_end + 1..].trim();
+
+    let ret = if rest.is_empty() {
+        "void".to_string()
+    } else if let Some(ret_ty) = rest.strip_prefix("-> ") {
+        ret_ty.trim().to_string()
+    } else {
+        return None;
+    };
+
+    let mut params = Vec::new();
+    if !params_str.is_empty() {
+        for p in params_str.split(',') {
+            let p = p.trim();
+            if p.is_empty() {
+                continue;
+            }
+            if p.starts_with('&') {
+                params.push((p[1..].trim().to_string(), true));
+            } else {
+                params.push((p.to_string(), false));
+            }
+        }
+    }
+
+    Some(ParsedClosure {
+        params,
+        ret,
+        is_arc,
+        is_mut,
+    })
+}
+
 fn map_param_to_ffi(name: &str, ty: &str) -> Option<MappedParam> {
-    let ty = strip_lifetimes(&resolve_type_alias(ty.trim()));
+    let ty = strip_crate_paths(&strip_lifetimes(&resolve_type_alias(ty.trim())));
     let ty = ty.as_str();
 
     // &str / &'static str -> *const c_char
@@ -1889,14 +2040,19 @@ fn map_param_to_ffi(name: &str, ty: &str) -> Option<MappedParam> {
             if let Some((elem, size_str)) = inner.split_once(';') {
                 let elem = elem.trim();
                 let size_str = size_str.trim();
-                if is_scalar(elem) {
-                    if size_str.parse::<usize>().is_ok() {
-                        return mapped_single(
-                            name,
-                            &format!("*mut {elem}"),
-                            format!("unsafe {{ &mut *({name} as *mut [{elem}; {size_str}]) }}"),
-                        );
-                    }
+                if size_str.parse::<usize>().is_ok()
+                    && (is_scalar(elem)
+                        || (!is_ffi_incompatible(elem)
+                            && !elem.contains('<')
+                            && !elem.starts_with('&')
+                            && !elem.starts_with('[')))
+                {
+                    let qualified = qualify_type(elem);
+                    return mapped_single(
+                        name,
+                        &format!("*mut {qualified}"),
+                        format!("unsafe {{ &mut *({name} as *mut [{qualified}; {size_str}]) }}"),
+                    );
                 }
             }
         }
@@ -1909,14 +2065,19 @@ fn map_param_to_ffi(name: &str, ty: &str) -> Option<MappedParam> {
             if let Some((elem, size_str)) = inner.split_once(';') {
                 let elem = elem.trim();
                 let size_str = size_str.trim();
-                if is_scalar(elem) {
-                    if size_str.parse::<usize>().is_ok() {
-                        return mapped_single(
-                            name,
-                            &format!("*const {elem}"),
-                            format!("unsafe {{ &*({name} as *const [{elem}; {size_str}]) }}"),
-                        );
-                    }
+                if size_str.parse::<usize>().is_ok()
+                    && (is_scalar(elem)
+                        || (!is_ffi_incompatible(elem)
+                            && !elem.contains('<')
+                            && !elem.starts_with('&')
+                            && !elem.starts_with('[')))
+                {
+                    let qualified = qualify_type(elem);
+                    return mapped_single(
+                        name,
+                        &format!("*const {qualified}"),
+                        format!("unsafe {{ &*({name} as *const [{qualified}; {size_str}]) }}"),
+                    );
                 }
             }
         }
@@ -1926,12 +2087,19 @@ fn map_param_to_ffi(name: &str, ty: &str) -> Option<MappedParam> {
     if let Some(inner) = ty.strip_prefix("&mut [") {
         if let Some(inner) = inner.strip_suffix(']') {
             let inner = inner.trim();
-            if is_scalar(inner) {
+            if is_scalar(inner)
+                || (!is_ffi_incompatible(inner)
+                    && !inner.contains('<')
+                    && !inner.contains(';')
+                    && !inner.contains('[')
+                    && !inner.starts_with('&'))
+            {
+                let qualified = qualify_type(inner);
                 let ptr_name = format!("{name}_ptr");
                 let len_name = format!("{name}_len");
                 return Some(MappedParam {
                     ffi_params: vec![
-                        (ptr_name.clone(), format!("*mut {inner}")),
+                        (ptr_name.clone(), format!("*mut {qualified}")),
                         (len_name.clone(), "usize".to_string()),
                     ],
                     call_expr: format!(
@@ -1946,12 +2114,19 @@ fn map_param_to_ffi(name: &str, ty: &str) -> Option<MappedParam> {
     if let Some(inner) = ty.strip_prefix("&[") {
         if let Some(inner) = inner.strip_suffix(']') {
             let inner = inner.trim();
-            if is_scalar(inner) {
+            if is_scalar(inner)
+                || (!is_ffi_incompatible(inner)
+                    && !inner.contains('<')
+                    && !inner.contains(';')
+                    && !inner.contains('[')
+                    && !inner.starts_with('&'))
+            {
+                let qualified = qualify_type(inner);
                 let ptr_name = format!("{name}_ptr");
                 let len_name = format!("{name}_len");
                 return Some(MappedParam {
                     ffi_params: vec![
-                        (ptr_name.clone(), format!("*const {inner}")),
+                        (ptr_name.clone(), format!("*const {qualified}")),
                         (len_name.clone(), "usize".to_string()),
                     ],
                     call_expr: format!(
@@ -2037,6 +2212,206 @@ fn map_param_to_ffi(name: &str, ty: &str) -> Option<MappedParam> {
         }
     }
 
+    // Ref<T> owned -> *const c_void (caller passes a cloned Arc)
+    if let Some(inner) = ty.strip_prefix("Ref<") {
+        if let Some(inner) = inner.strip_suffix('>') {
+            let inner = inner.trim();
+            if !inner.contains("dyn ")
+                && !inner.contains('<')
+                && !inner.contains("::")
+                && !SKIP_TYPES.iter().any(|s| inner.contains(s))
+            {
+                let qualified = qualify_type(inner);
+                return mapped_single(
+                    name,
+                    "*const std::ffi::c_void",
+                    format!(
+                        "unsafe {{ (*({name} as *const flight_sdk::Ref<{qualified}>)).clone() }}"
+                    ),
+                );
+            }
+        }
+    }
+
+    // Option<Ref<T>> -> nullable *const c_void
+    if let Some(inner) = ty.strip_prefix("Option<Ref<") {
+        if let Some(inner) = inner.strip_suffix(">>") {
+            let inner = inner.trim();
+            if !inner.contains("dyn ")
+                && !inner.contains('<')
+                && !inner.contains("::")
+                && !SKIP_TYPES.iter().any(|s| inner.contains(s))
+            {
+                let qualified = qualify_type(inner);
+                return mapped_single(
+                    name,
+                    "*const std::ffi::c_void",
+                    format!(
+                        "if {name}.is_null() {{ None }} else {{ Some(unsafe {{ (*({name} as *const flight_sdk::Ref<{qualified}>)).clone() }}) }}"
+                    ),
+                );
+            }
+        }
+    }
+
+    // Option<&Ref<T>> -> nullable *const c_void
+    if let Some(inner) = ty.strip_prefix("Option<&Ref<") {
+        if let Some(inner) = inner.strip_suffix(">>") {
+            let inner = inner.trim();
+            if !inner.contains("dyn ")
+                && !inner.contains('<')
+                && !inner.contains("::")
+                && !SKIP_TYPES.iter().any(|s| inner.contains(s))
+            {
+                let qualified = qualify_type(inner);
+                return mapped_single(
+                    name,
+                    "*const std::ffi::c_void",
+                    format!(
+                        "if {name}.is_null() {{ None }} else {{ Some(unsafe {{ &*({name} as *const flight_sdk::Ref<{qualified}>) }}) }}"
+                    ),
+                );
+            }
+        }
+    }
+
+    // Box<TypedArray> -> (*mut T, usize) taking ownership
+    if let Some(inner) = ty.strip_prefix("Box<") {
+        if let Some(inner) = inner.strip_suffix('>') {
+            let inner = inner.trim();
+            let resolved_inner = resolve_type_alias(inner);
+            if let Some(slice_inner) = resolved_inner.strip_prefix('[') {
+                if let Some(slice_inner) = slice_inner.strip_suffix(']') {
+                    let elem = slice_inner.trim();
+                    if is_scalar(elem) {
+                        let ptr_name = format!("{name}_ptr");
+                        let len_name = format!("{name}_len");
+                        return Some(MappedParam {
+                            ffi_params: vec![
+                                (ptr_name.clone(), format!("*mut {elem}")),
+                                (len_name.clone(), "usize".to_string()),
+                            ],
+                            call_expr: format!(
+                                "unsafe {{ Vec::from_raw_parts({ptr_name}, {len_name}, {len_name}) }}.into_boxed_slice()"
+                            ),
+                        });
+                    }
+                }
+            }
+        }
+    }
+
+    // Option<&[T]> for non-scalar struct types -> nullable pointer + length
+    if let Some(inner) = ty.strip_prefix("Option<&[") {
+        if let Some(inner) = inner.strip_suffix("]>") {
+            let inner = inner.trim();
+            if !is_scalar(inner)
+                && !is_ffi_incompatible(inner)
+                && !inner.contains('<')
+                && !inner.contains(';')
+                && !inner.contains('[')
+                && !inner.starts_with('&')
+            {
+                let qualified = qualify_type(inner);
+                let ptr_name = format!("{name}_ptr");
+                let len_name = format!("{name}_len");
+                return Some(MappedParam {
+                    ffi_params: vec![
+                        (ptr_name.clone(), format!("*const {qualified}")),
+                        (len_name.clone(), "usize".to_string()),
+                    ],
+                    call_expr: format!(
+                        "if {ptr_name}.is_null() {{ None }} else {{ Some(unsafe {{ std::slice::from_raw_parts({ptr_name}, {len_name}) }}) }}"
+                    ),
+                });
+            }
+        }
+    }
+
+    // Option<&mut [T]> for non-scalar struct types -> nullable pointer + length
+    if let Some(inner) = ty.strip_prefix("Option<&mut [") {
+        if let Some(inner) = inner.strip_suffix("]>") {
+            let inner = inner.trim();
+            if !is_scalar(inner)
+                && !is_ffi_incompatible(inner)
+                && !inner.contains('<')
+                && !inner.contains(';')
+                && !inner.contains('[')
+                && !inner.starts_with('&')
+            {
+                let qualified = qualify_type(inner);
+                let ptr_name = format!("{name}_ptr");
+                let len_name = format!("{name}_len");
+                return Some(MappedParam {
+                    ffi_params: vec![
+                        (ptr_name.clone(), format!("*mut {qualified}")),
+                        (len_name.clone(), "usize".to_string()),
+                    ],
+                    call_expr: format!(
+                        "if {ptr_name}.is_null() {{ None }} else {{ Some(unsafe {{ std::slice::from_raw_parts_mut({ptr_name}, {len_name}) }}) }}"
+                    ),
+                });
+            }
+        }
+    }
+
+    // &dyn Fn(args) -> ret / &mut dyn FnMut(args) -> ret -> extern "C" fn(*mut c_void, args) -> ret + *mut c_void
+    if let Some(parsed) = parse_closure_param(ty) {
+        let fn_name = format!("{name}_fn");
+        let ctx_name = format!("{name}_ctx");
+        let mut ffi_fn_params = vec!["*mut std::ffi::c_void".to_string()];
+        let mut ffi_fn_args_str = Vec::new();
+        let mut outer_closure_params = Vec::new();
+        for (i, (cty, _is_ref)) in parsed.params.iter().enumerate() {
+            if is_scalar(cty) {
+                ffi_fn_params.push(cty.clone());
+                let arg_name = format!("__a{i}");
+                ffi_fn_args_str.push(arg_name.clone());
+                outer_closure_params.push(format!("{arg_name}: {cty}"));
+            } else {
+                return None;
+            }
+        }
+        let ffi_ret = if parsed.ret == "void" {
+            String::new()
+        } else if is_scalar(&parsed.ret) {
+            format!(" -> {}", parsed.ret)
+        } else {
+            return None;
+        };
+        let ffi_fn_sig = format!("extern \"C\" fn({}){ffi_ret}", ffi_fn_params.join(", "));
+        let outer_params_str = outer_closure_params.join(", ");
+        let inner_args = if ffi_fn_args_str.is_empty() {
+            format!("{ctx_name}")
+        } else {
+            format!("{ctx_name}, {}", ffi_fn_args_str.join(", "))
+        };
+        let arc_call_args = if ffi_fn_args_str.is_empty() {
+            "__ctx as *mut std::ffi::c_void".to_string()
+        } else {
+            format!(
+                "__ctx as *mut std::ffi::c_void, {}",
+                ffi_fn_args_str.join(", ")
+            )
+        };
+        let closure_body = if parsed.is_arc {
+            format!(
+                "{{ let __ctx = {ctx_name} as usize; let __f = {fn_name} as usize; std::sync::Arc::new(move |{outer_params_str}| {{ let __fp: {ffi_fn_sig} = unsafe {{ std::mem::transmute(__f) }}; __fp({arc_call_args}) }}) }}"
+            )
+        } else if parsed.is_mut {
+            format!("&mut |{outer_params_str}| ({fn_name})({inner_args})")
+        } else {
+            format!("&|{outer_params_str}| ({fn_name})({inner_args})")
+        };
+        return Some(MappedParam {
+            ffi_params: vec![
+                (fn_name, ffi_fn_sig),
+                (ctx_name, "*mut std::ffi::c_void".to_string()),
+            ],
+            call_expr: closure_body,
+        });
+    }
+
     if is_ffi_incompatible(ty) {
         return None;
     }
@@ -2101,16 +2476,21 @@ fn map_param_to_ffi(name: &str, ty: &str) -> Option<MappedParam> {
                 if let Some((elem, size_str)) = inner.split_once(';') {
                     let elem = elem.trim();
                     let size_str = size_str.trim();
-                    if is_scalar(elem) {
-                        if size_str.parse::<usize>().is_ok() {
-                            return mapped_single(
-                                name,
-                                &format!("*const {elem}"),
-                                format!(
-                                    "unsafe {{ std::ptr::read({name} as *const [{elem}; {size_str}]) }}"
-                                ),
-                            );
-                        }
+                    if size_str.parse::<usize>().is_ok()
+                        && (is_scalar(elem)
+                            || (!is_ffi_incompatible(elem)
+                                && !elem.contains('<')
+                                && !elem.starts_with('&')
+                                && !elem.starts_with('[')))
+                    {
+                        let qualified = qualify_type(elem);
+                        return mapped_single(
+                            name,
+                            &format!("*const {qualified}"),
+                            format!(
+                                "unsafe {{ std::ptr::read({name} as *const [{qualified}; {size_str}]) }}"
+                            ),
+                        );
                     }
                 }
             }
@@ -2131,7 +2511,7 @@ fn map_param_to_ffi(name: &str, ty: &str) -> Option<MappedParam> {
 }
 
 fn map_return_to_ffi(ty: &str) -> Option<(String, FfiReturn)> {
-    let ty = strip_lifetimes(&resolve_type_alias(ty.trim()));
+    let ty = strip_crate_paths(&strip_lifetimes(&resolve_type_alias(ty.trim())));
     let ty = ty.as_str();
 
     // Option<String> -> nullable *mut c_char
@@ -2315,6 +2695,13 @@ fn map_return_to_ffi(ty: &str) -> Option<(String, FfiReturn)> {
                 ));
             }
         }
+    }
+
+    if ty == "Option<&str>" || ty == "Option<&'static str>" {
+        return Some((
+            " -> *mut std::ffi::c_char".to_string(),
+            FfiReturn::OptionStringReturn,
+        ));
     }
 
     if ty == "&str" || ty == "&'static str" {
