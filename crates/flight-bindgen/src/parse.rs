@@ -369,17 +369,20 @@ pub fn scan_all_crates(crates_dir: &Path) -> Vec<CrateExports> {
             }
         }
 
-        // Synthesize free_* functions for struct/array returns
+        // Synthesize free_* functions for struct/array/string returns
         let mut free_fns = Vec::new();
         let mut free_seen: BTreeSet<String> = BTreeSet::new();
+        let mut needs_free_string = false;
         for func in &exported_fns {
             if let Some(ref ret) = func.ret {
                 let ret_kind = classify_return(ret);
                 let free_type = match &ret_kind {
                     Some(ReturnKind::Struct(ty)) => Some(ty.clone()),
                     Some(ReturnKind::OptionStruct(ty)) => Some(ty.clone()),
-                    Some(ReturnKind::FixedArrayReturn(_, _)) => None,
-                    Some(ReturnKind::BoxSliceReturn(_)) => None,
+                    Some(ReturnKind::StringReturn | ReturnKind::OptionString) => {
+                        needs_free_string = true;
+                        None
+                    }
                     _ => None,
                 };
                 if let Some(ty) = free_type {
@@ -398,6 +401,20 @@ pub fn scan_all_crates(crates_dir: &Path) -> Vec<CrateExports> {
                         });
                     }
                 }
+            }
+        }
+        if needs_free_string {
+            let ffi_name = "flight_free_string".to_string();
+            if !seen_names.contains(&ffi_name) && free_seen.insert("free_string".to_string()) {
+                seen_names.insert(ffi_name);
+                free_fns.push(ParsedFn {
+                    name: "free_string".to_string(),
+                    params: vec![Param {
+                        name: "ptr".to_string(),
+                        ty: "Ref<CString>".to_string(),
+                    }],
+                    ret: None,
+                });
             }
         }
         exported_fns.extend(free_fns);
@@ -561,7 +578,31 @@ fn strip_lifetimes(ty: &str) -> String {
     result
 }
 
+fn strip_crate_path(ty: &str) -> String {
+    let mut result = ty.to_string();
+    loop {
+        let prev = result.clone();
+        // Strip crate::types:: prefix
+        result = result.replace("crate::types::", "");
+        // Strip flight_*:: crate qualifiers
+        while let Some(pos) = result.find("flight_") {
+            if let Some(sep) = result[pos..].find("::") {
+                let end = pos + sep + 2;
+                result = format!("{}{}", &result[..pos], &result[end..]);
+            } else {
+                break;
+            }
+        }
+        if result == prev {
+            break;
+        }
+    }
+    result
+}
+
 fn resolve_type_alias(ty: &str) -> String {
+    let ty = &strip_crate_path(ty);
+    let ty = ty.as_str();
     let slice_aliases: &[(&str, &str)] = &[
         ("Uint8Array", "[u8]"),
         ("Int8Array", "[i8]"),
@@ -701,6 +742,7 @@ fn resolve_type_alias(ty: &str) -> String {
 }
 
 pub fn classify_param(ty: &str) -> Option<ParamKind> {
+    let raw_ty = strip_lifetimes(ty.trim());
     let ty = strip_lifetimes(&resolve_type_alias(ty.trim()));
     let ty = ty.as_str();
 
@@ -736,20 +778,20 @@ pub fn classify_param(ty: &str) -> Option<ParamKind> {
         return Some(ParamKind::OptionStringParam);
     }
 
-    // Option<&mut [T]> for scalar T
+    // Option<&mut [T]> for scalar T or struct T
     if let Some(inner) = ty.strip_prefix("Option<&mut [") {
         if let Some(inner) = inner.strip_suffix("]>") {
             let inner = inner.trim();
-            if is_scalar(inner) {
+            if is_scalar(inner) || (!is_ffi_incompatible(inner) && !inner.contains('<')) {
                 return Some(ParamKind::OptionSliceMut(inner.to_string()));
             }
         }
     }
-    // Option<&[T]> for scalar T
+    // Option<&[T]> for scalar T or struct T
     if let Some(inner) = ty.strip_prefix("Option<&[") {
         if let Some(inner) = inner.strip_suffix("]>") {
             let inner = inner.trim();
-            if is_scalar(inner) {
+            if is_scalar(inner) || (!is_ffi_incompatible(inner) && !inner.contains('<')) {
                 return Some(ParamKind::OptionSliceConst(inner.to_string()));
             }
         }
@@ -844,22 +886,40 @@ pub fn classify_param(ty: &str) -> Option<ParamKind> {
         }
     }
 
-    // &mut [T] -> SliceMut(T) for scalar T
+    // &mut [T] -> SliceMut(T) for scalar T or struct T
     if let Some(inner) = ty.strip_prefix("&mut [") {
         if let Some(inner) = inner.strip_suffix(']') {
             let inner = inner.trim();
-            if is_scalar(inner) {
+            if is_scalar(inner) || (!is_ffi_incompatible(inner) && !inner.contains('<')) {
                 return Some(ParamKind::SliceMut(inner.to_string()));
             }
         }
     }
+    // &mut [T] using raw (pre-resolution) type for alias types like NodeRef
+    if let Some(raw_inner) = raw_ty.strip_prefix("&mut [") {
+        if let Some(raw_inner) = raw_inner.strip_suffix(']') {
+            let raw_inner = raw_inner.trim();
+            if !raw_inner.contains('<') && !is_ffi_incompatible(raw_inner) {
+                return Some(ParamKind::SliceMut(raw_inner.to_string()));
+            }
+        }
+    }
 
-    // &[T] -> SliceConst(T) for scalar T
+    // &[T] -> SliceConst(T) for scalar T or struct T
     if let Some(inner) = ty.strip_prefix("&[") {
         if let Some(inner) = inner.strip_suffix(']') {
             let inner = inner.trim();
-            if is_scalar(inner) {
+            if is_scalar(inner) || (!is_ffi_incompatible(inner) && !inner.contains('<')) {
                 return Some(ParamKind::SliceConst(inner.to_string()));
+            }
+        }
+    }
+    // &[T] using raw (pre-resolution) type for alias types like NodeRef
+    if let Some(raw_inner) = raw_ty.strip_prefix("&[") {
+        if let Some(raw_inner) = raw_inner.strip_suffix(']') {
+            let raw_inner = raw_inner.trim();
+            if !raw_inner.contains('<') && !is_ffi_incompatible(raw_inner) {
+                return Some(ParamKind::SliceConst(raw_inner.to_string()));
             }
         }
     }
@@ -1028,6 +1088,20 @@ pub fn classify_return(ty: &str) -> Option<ReturnKind> {
         return Some(ReturnKind::OptionString);
     }
 
+    // Option<scalar> -> Scalar (FFI uses sentinel NaN/-1)
+    // Option<enum> -> Scalar("i32") (FFI uses -1 sentinel)
+    if let Some(inner) = ty.strip_prefix("Option<") {
+        if let Some(inner) = inner.strip_suffix('>') {
+            let inner = inner.trim();
+            if is_scalar(inner) {
+                return Some(ReturnKind::Scalar(inner.to_string()));
+            }
+            if is_known_enum(inner) {
+                return Some(ReturnKind::Scalar("i32".to_string()));
+            }
+        }
+    }
+
     if let Some(inner) = ty.strip_prefix("Ref<") {
         if let Some(inner) = inner.strip_suffix('>') {
             let inner = inner.trim();
@@ -1112,7 +1186,16 @@ pub fn classify_return(ty: &str) -> Option<ReturnKind> {
         }
     }
 
-    if ty.starts_with('&') || is_ffi_incompatible(ty) {
+    // &T (borrowed ref return) -> Struct (FFI returns *const T)
+    if let Some(inner) = ty.strip_prefix('&') {
+        let inner = inner.trim();
+        if !is_ffi_incompatible(inner) && !inner.contains('<') && !is_scalar(inner) {
+            return Some(ReturnKind::Struct(inner.to_string()));
+        }
+        return None;
+    }
+
+    if is_ffi_incompatible(ty) {
         return None;
     }
 
