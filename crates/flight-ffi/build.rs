@@ -221,9 +221,17 @@ const SKIP_TYPES: &[&str] = &[
     "RelativeTimeFormatOptions",
     "ShapeJsonFormatOptions",
     "ShapeJsonParseOptions",
+    "AdjustmentRef",
+    "AnimationPlayerRef",
+    "AnimationStateMachineRef",
+    "FlowGuardStateRef",
     "Skeleton2DClippingAttachmentSlotRange",
+    "Skeleton2DCoercedInterpolation",
+    "Skeleton2DConstraintSolver",
+    "SpreadMethod",
     "SpritesheetParseDiagnosticSeverity",
     "Skeleton2DGuardState",
+    "Slot2D",
     "StrokePathGeometry",
     "TextLayoutContext",
     "TextMarkupGuardState",
@@ -239,6 +247,10 @@ fn main() {
     let mut all_output = String::from("use flight_sdk;\n\n");
     let mut boxed_types: BTreeSet<String> = BTreeSet::new();
     let mut seen_names: BTreeSet<String> = BTreeSet::new();
+    let mut stats_total_fns = 0usize;
+    let mut stats_generated = 0usize;
+    let mut stats_skipped: std::collections::BTreeMap<String, usize> =
+        std::collections::BTreeMap::new();
 
     let mut enum_names = BTreeSet::new();
     for dir_name in SCAN_CRATES {
@@ -279,15 +291,22 @@ fn main() {
         let mut crate_output = String::new();
         let mut crate_used = false;
         for func in &fns {
+            stats_total_fns += 1;
             if has_mono_dyn_param(func) {
                 let wrappers = generate_mono_wrappers(func);
-                for (ffi_name, wrapper, boxed_ty) in wrappers {
-                    if !seen_names.contains(&ffi_name) {
-                        writeln!(crate_output, "{wrapper}").unwrap();
-                        seen_names.insert(ffi_name);
-                        crate_used = true;
-                        if let Some(ty) = boxed_ty {
-                            boxed_types.insert(ty);
+                if wrappers.is_empty() {
+                    let skip_reason = categorize_skip(func);
+                    *stats_skipped.entry(skip_reason).or_insert(0) += 1;
+                } else {
+                    for (ffi_name, wrapper, boxed_ty) in wrappers {
+                        if !seen_names.contains(&ffi_name) {
+                            writeln!(crate_output, "{wrapper}").unwrap();
+                            seen_names.insert(ffi_name);
+                            crate_used = true;
+                            stats_generated += 1;
+                            if let Some(ty) = boxed_ty {
+                                boxed_types.insert(ty);
+                            }
                         }
                     }
                 }
@@ -300,9 +319,13 @@ fn main() {
                     writeln!(crate_output, "{wrapper}").unwrap();
                     seen_names.insert(ffi_name);
                     crate_used = true;
+                    stats_generated += 1;
                     if let Some(ty) = boxed_ty {
                         boxed_types.insert(ty);
                     }
+                } else {
+                    let skip_reason = categorize_skip(func);
+                    *stats_skipped.entry(skip_reason).or_insert(0) += 1;
                 }
             }
         }
@@ -320,6 +343,16 @@ fn main() {
         }
     }
 
+    let stats_skipped_total: usize = stats_skipped.values().sum();
+    let mut stats_file = String::new();
+    writeln!(stats_file, "FFI stats: {stats_total_fns} total, {stats_generated} generated, {stats_skipped_total} skipped").unwrap();
+    let mut sorted_skips: Vec<_> = stats_skipped.iter().collect();
+    sorted_skips.sort_by(|a, b| b.1.cmp(a.1));
+    for (reason, count) in &sorted_skips {
+        writeln!(stats_file, "  skip: {count:>4} {reason}").unwrap();
+    }
+    fs::write(out_dir.join("ffi_stats.txt"), &stats_file).unwrap();
+
     writeln!(all_output, "// free functions").unwrap();
     writeln!(
         all_output,
@@ -328,6 +361,9 @@ fn main() {
     .unwrap();
     for qualified_ty in &boxed_types {
         let type_name = qualified_ty.rsplit("::").next().unwrap_or(qualified_ty);
+        if type_name.starts_with('[') || type_name.starts_with('(') {
+            continue;
+        }
         let snake = to_snake_case(type_name);
         writeln!(
             all_output,
@@ -656,7 +692,10 @@ fn parse_single_param(param: &str) -> Option<Param> {
         return None;
     }
     let colon = param.find(':')?;
-    let name = param[..colon].trim().to_string();
+    let mut name = param[..colon].trim().to_string();
+    if let Some(rest) = name.strip_prefix("mut ") {
+        name = rest.to_string();
+    }
     let ty = param[colon + 1..].trim().to_string();
     Some(Param { name, ty })
 }
@@ -952,7 +991,8 @@ fn is_ffi_incompatible(ty: &str) -> bool {
         }
         return true;
     }
-    ty.contains("Fn(")
+    is_tuple(ty)
+        || ty.contains("Fn(")
         || ty.contains("FnMut(")
         || ty.contains("FnOnce(")
         || ty.contains('<')
@@ -1004,8 +1044,16 @@ fn generate_ffi_wrapper(func: &ParsedFn) -> Option<(String, Option<String>)> {
         Some(ty) => map_return_to_ffi(ty)?,
     };
 
-    let boxed_ty = if matches!(call_wrap, FfiReturn::BoxReturn) {
-        func.ret.as_ref().map(|ty| qualify_type(ty))
+    let boxed_ty = if matches!(call_wrap, FfiReturn::BoxReturn | FfiReturn::OptionBoxReturn) {
+        func.ret.as_ref().map(|ty| {
+            let resolved = resolve_type_alias(ty);
+            if let Some(inner) = resolved.strip_prefix("Option<") {
+                if let Some(inner) = inner.strip_suffix('>') {
+                    return qualify_type(inner.trim());
+                }
+            }
+            qualify_type(&resolved)
+        })
     } else {
         None
     };
@@ -1060,6 +1108,71 @@ fn generate_ffi_wrapper(func: &ParsedFn) -> Option<(String, Option<String>)> {
         }
         FfiReturn::EnumReturn => {
             format!("{preamble}    return {call} as u32;")
+        }
+        FfiReturn::OptionEnumReturn => {
+            format!(
+                "{preamble}    match {call} {{\n        \
+                     Some(v) => v as i32,\n        \
+                     None => -1,\n    \
+                     }}"
+            )
+        }
+        FfiReturn::OptionF32Return => {
+            format!(
+                "{preamble}    match {call} {{\n        \
+                     Some(v) => v,\n        \
+                     None => f32::NAN,\n    \
+                     }}"
+            )
+        }
+        FfiReturn::OptionF64Return => {
+            format!(
+                "{preamble}    match {call} {{\n        \
+                     Some(v) => v,\n        \
+                     None => f64::NAN,\n    \
+                     }}"
+            )
+        }
+        FfiReturn::OptionI32Return => {
+            format!(
+                "{preamble}    match {call} {{\n        \
+                     Some(v) => v as i64,\n        \
+                     None => i64::MIN,\n    \
+                     }}"
+            )
+        }
+        FfiReturn::OptionU32Return => {
+            format!(
+                "{preamble}    match {call} {{\n        \
+                     Some(v) => v as i64,\n        \
+                     None => -1,\n    \
+                     }}"
+            )
+        }
+        FfiReturn::OptionBoxReturn => {
+            format!(
+                "{preamble}    match {call} {{\n        \
+                     Some(v) => Box::into_raw(Box::new(v)),\n        \
+                     None => std::ptr::null_mut(),\n    \
+                     }}"
+            )
+        }
+        FfiReturn::SliceReturn => {
+            format!(
+                "{preamble}    let slice = {call};\n    \
+                     return Box::into_raw(Box::new(slice.to_vec())) as *mut std::ffi::c_void;"
+            )
+        }
+        FfiReturn::RefReturn => {
+            format!("{preamble}    return {call} as *const _;")
+        }
+        FfiReturn::OptionRefReturn => {
+            format!(
+                "{preamble}    match {call} {{\n        \
+                     Some(v) => v.as_ptr(),\n        \
+                     None => std::ptr::null(),\n    \
+                     }}"
+            )
         }
         FfiReturn::VecReturn => {
             format!(
@@ -1134,8 +1247,16 @@ fn generate_mono_wrappers(func: &ParsedFn) -> Vec<(String, String, Option<String
         },
     };
 
-    let boxed_ty = if matches!(call_wrap, FfiReturn::BoxReturn) {
-        func.ret.as_ref().map(|ty| qualify_type(ty))
+    let boxed_ty = if matches!(call_wrap, FfiReturn::BoxReturn | FfiReturn::OptionBoxReturn) {
+        func.ret.as_ref().map(|ty| {
+            let resolved = resolve_type_alias(ty);
+            if let Some(inner) = resolved.strip_prefix("Option<") {
+                if let Some(inner) = inner.strip_suffix('>') {
+                    return qualify_type(inner.trim());
+                }
+            }
+            qualify_type(&resolved)
+        })
     } else {
         None
     };
@@ -1232,6 +1353,53 @@ fn generate_mono_wrappers(func: &ParsedFn) -> Vec<(String, String, Option<String
                      }}"
             ),
             FfiReturn::EnumReturn => format!("    return {call} as u32;"),
+            FfiReturn::OptionEnumReturn => format!(
+                "    match {call} {{\n        \
+                     Some(v) => v as i32,\n        \
+                     None => -1,\n    \
+                     }}"
+            ),
+            FfiReturn::OptionF32Return => format!(
+                "    match {call} {{\n        \
+                     Some(v) => v,\n        \
+                     None => f32::NAN,\n    \
+                     }}"
+            ),
+            FfiReturn::OptionF64Return => format!(
+                "    match {call} {{\n        \
+                     Some(v) => v,\n        \
+                     None => f64::NAN,\n    \
+                     }}"
+            ),
+            FfiReturn::OptionI32Return => format!(
+                "    match {call} {{\n        \
+                     Some(v) => v as i64,\n        \
+                     None => i64::MIN,\n    \
+                     }}"
+            ),
+            FfiReturn::OptionU32Return => format!(
+                "    match {call} {{\n        \
+                     Some(v) => v as i64,\n        \
+                     None => -1,\n    \
+                     }}"
+            ),
+            FfiReturn::OptionBoxReturn => format!(
+                "    match {call} {{\n        \
+                     Some(v) => Box::into_raw(Box::new(v)),\n        \
+                     None => std::ptr::null_mut(),\n    \
+                     }}"
+            ),
+            FfiReturn::SliceReturn => format!(
+                "    let slice = {call};\n    \
+                     return Box::into_raw(Box::new(slice.to_vec())) as *mut std::ffi::c_void;"
+            ),
+            FfiReturn::RefReturn => format!("    return {call} as *const _;"),
+            FfiReturn::OptionRefReturn => format!(
+                "    match {call} {{\n        \
+                     Some(v) => v.as_ptr(),\n        \
+                     None => std::ptr::null(),\n    \
+                     }}"
+            ),
             FfiReturn::VecReturn => format!(
                 "    let vec = {call};\n    \
                      return Box::into_raw(Box::new(vec)) as *mut std::ffi::c_void;"
@@ -1260,13 +1428,72 @@ enum FfiReturn {
     Void,
     Direct,
     BoxReturn,
+    OptionBoxReturn,
     StringReturn,
     OptionStringReturn,
     ArcRefReturn,
     OptionArcRefReturn,
     EnumReturn,
+    OptionEnumReturn,
+    OptionF32Return,
+    OptionF64Return,
+    OptionI32Return,
+    OptionU32Return,
     VecReturn,
     OptionVecReturn,
+    SliceReturn,
+    RefReturn,
+    OptionRefReturn,
+}
+
+fn categorize_skip(func: &ParsedFn) -> String {
+    if func.name.starts_with("initialize_") {
+        return "prefix_skip(initialize_)".to_string();
+    }
+    for param in &func.params {
+        let ty = &param.ty;
+        let resolved = resolve_type_alias(ty);
+        if resolved.contains("Fn(") || resolved.contains("FnMut(") || resolved.contains("FnOnce(") {
+            return format!("closure_param({})", ty);
+        }
+        if resolved.contains("dyn ")
+            && !is_known_dyn_opaque(&resolved)
+            && !is_known_dyn_mono(&resolved)
+        {
+            return format!("unknown_dyn_param({})", ty);
+        }
+        if SKIP_TYPES.iter().any(|s| resolved.contains(s)) {
+            return format!("skip_type_param({})", ty);
+        }
+        if resolved.contains("::") {
+            return format!("qualified_param({})", ty);
+        }
+        if map_param_to_ffi(&param.name, &resolved).is_none() {
+            return format!("unmapped_param({})", ty);
+        }
+    }
+    if let Some(ret) = &func.ret {
+        let resolved = resolve_type_alias(ret);
+        if resolved.contains("Fn(") || resolved.contains("FnMut(") || resolved.contains("FnOnce(") {
+            return format!("closure_return({})", ret);
+        }
+        if resolved.contains("dyn ")
+            && !is_known_dyn_opaque(&resolved)
+            && !is_known_dyn_mono(&resolved)
+        {
+            return format!("unknown_dyn_return({})", ret);
+        }
+        if SKIP_TYPES.iter().any(|s| resolved.contains(s)) {
+            return format!("skip_type_return({})", ret);
+        }
+        if is_tuple(&resolved) {
+            return format!("tuple_return({})", ret);
+        }
+        if map_return_to_ffi(&resolved).is_none() {
+            return format!("unmapped_return({})", ret);
+        }
+    }
+    format!("unknown({})", func.name)
 }
 
 const SCALARS: &[&str] = &[
@@ -1287,6 +1514,10 @@ fn to_snake_case(s: &str) -> String {
         out.push(c.to_ascii_lowercase());
     }
     out
+}
+
+fn is_tuple(ty: &str) -> bool {
+    ty.starts_with('(') && ty.ends_with(')')
 }
 
 fn qualify_type(ty: &str) -> String {
@@ -1363,7 +1594,6 @@ fn resolve_type_alias(ty: &str) -> String {
         ("SpatialObjectId", "i32"),
         ("SourceId", "u64"),
         ("Kind", "String"),
-        ("AnimationPlayerRef", "Ref<AnimationPlayer>"),
         ("LogStateRef", "Ref<LogState>"),
         ("NodeRef", "Ref<dyn Node>"),
         ("Node2DRef", "Ref<dyn Node2D>"),
@@ -1566,6 +1796,50 @@ fn map_param_to_ffi(name: &str, ty: &str) -> Option<MappedParam> {
                     &format!("*const {qualified}"),
                     format!(
                         "if {name}.is_null() {{ None }} else {{ Some(unsafe {{ &*{name} }}) }}"
+                    ),
+                );
+            }
+        }
+    }
+
+    // Option<f32> -> f32 with NaN sentinel
+    if ty == "Option<f32>" {
+        return mapped_single(
+            name,
+            "f32",
+            format!("if {name}.is_nan() {{ None }} else {{ Some({name}) }}"),
+        );
+    }
+
+    // Option<u32> -> i64 with -1 sentinel
+    if ty == "Option<u32>" {
+        return mapped_single(
+            name,
+            "i64",
+            format!("if {name} < 0 {{ None }} else {{ Some({name} as u32) }}"),
+        );
+    }
+
+    // Option<usize> -> i64 with -1 sentinel
+    if ty == "Option<usize>" {
+        return mapped_single(
+            name,
+            "i64",
+            format!("if {name} < 0 {{ None }} else {{ Some({name} as usize) }}"),
+        );
+    }
+
+    // Option<enum> -> i32 with -1 sentinel
+    if let Some(inner) = ty.strip_prefix("Option<") {
+        if let Some(inner) = inner.strip_suffix('>') {
+            let inner = inner.trim();
+            if is_known_enum(inner) && !SKIP_TYPES.iter().any(|s| inner.contains(s)) {
+                let qualified = qualify_type(inner);
+                return mapped_single(
+                    name,
+                    "i32",
+                    format!(
+                        "if {name} < 0 {{ None }} else {{ Some(unsafe {{ std::mem::transmute::<u32, {qualified}>({name} as u32) }}) }}"
                     ),
                 );
             }
@@ -1795,15 +2069,6 @@ fn map_param_to_ffi(name: &str, ty: &str) -> Option<MappedParam> {
         );
     }
 
-    // Option<f32> -> f32 with NaN sentinel
-    if ty == "Option<f32>" {
-        return mapped_single(
-            name,
-            "f32",
-            format!("if {name}.is_nan() {{ None }} else {{ Some({name}) }}"),
-        );
-    }
-
     // String param -> *const c_char
     if ty == "String" {
         return mapped_single(
@@ -1826,6 +2091,39 @@ fn map_param_to_ffi(name: &str, ty: &str) -> Option<MappedParam> {
             name,
             "u32",
             format!("unsafe {{ std::mem::transmute::<u32, {qualified}>({name}) }}"),
+        );
+    }
+
+    // Owned fixed-size array [T; N] -> *const T
+    if ty.starts_with('[') {
+        if let Some(inner) = ty.strip_prefix('[') {
+            if let Some(inner) = inner.strip_suffix(']') {
+                if let Some((elem, size_str)) = inner.split_once(';') {
+                    let elem = elem.trim();
+                    let size_str = size_str.trim();
+                    if is_scalar(elem) {
+                        if size_str.parse::<usize>().is_ok() {
+                            return mapped_single(
+                                name,
+                                &format!("*const {elem}"),
+                                format!(
+                                    "unsafe {{ std::ptr::read({name} as *const [{elem}; {size_str}]) }}"
+                                ),
+                            );
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // Owned struct T -> *const T (read from pointer)
+    if !ty.contains('<') && !ty.contains("::") && !ty.starts_with('[') && !ty.starts_with('(') {
+        let qualified = qualify_type(ty);
+        return mapped_single(
+            name,
+            &format!("*const {qualified}"),
+            format!("unsafe {{ std::ptr::read({name}) }}"),
         );
     }
 
@@ -1908,11 +2206,144 @@ fn map_return_to_ffi(ty: &str) -> Option<(String, FfiReturn)> {
         }
     }
 
-    if ty == "&str" {
+    // Box<[T]> (typed arrays) -> *mut c_void (opaque owned handle)
+    if let Some(inner) = ty.strip_prefix("Box<[") {
+        if let Some(inner) = inner.strip_suffix("]>") {
+            let inner = inner.trim();
+            if is_scalar(inner) {
+                return Some((
+                    " -> *mut std::ffi::c_void".to_string(),
+                    FfiReturn::VecReturn,
+                ));
+            }
+        }
+    }
+
+    // Option<Box<[T]>> -> nullable *mut c_void
+    if let Some(inner) = ty.strip_prefix("Option<Box<[") {
+        if let Some(inner) = inner.strip_suffix("]>>") {
+            let inner = inner.trim();
+            if is_scalar(inner) {
+                return Some((
+                    " -> *mut std::ffi::c_void".to_string(),
+                    FfiReturn::OptionVecReturn,
+                ));
+            }
+        }
+    }
+
+    // [T; N] fixed-size array -> *mut T (box the array)
+    if ty.starts_with('[') {
+        if let Some(inner) = ty.strip_prefix('[') {
+            if let Some(inner) = inner.strip_suffix(']') {
+                if let Some((elem, _size_str)) = inner.split_once(';') {
+                    let elem = elem.trim();
+                    if is_scalar(elem) {
+                        return Some((format!(" -> *mut {ty}"), FfiReturn::BoxReturn));
+                    }
+                }
+            }
+        }
+    }
+
+    // Option<EnumType> -> i32 with -1 sentinel for None
+    if let Some(inner) = ty.strip_prefix("Option<") {
+        if let Some(inner) = inner.strip_suffix('>') {
+            let inner = inner.trim();
+            if is_known_enum(inner) {
+                return Some((" -> i32".to_string(), FfiReturn::OptionEnumReturn));
+            }
+        }
+    }
+
+    // Option<f32> -> f32 with NaN sentinel
+    if ty == "Option<f32>" {
+        return Some((" -> f32".to_string(), FfiReturn::OptionF32Return));
+    }
+
+    // Option<f64> -> f64 with NaN sentinel
+    if ty == "Option<f64>" {
+        return Some((" -> f64".to_string(), FfiReturn::OptionF64Return));
+    }
+
+    // Option<i32> -> i64 with i64::MIN sentinel
+    if ty == "Option<i32>" {
+        return Some((" -> i64".to_string(), FfiReturn::OptionI32Return));
+    }
+
+    // Option<u32> -> i64 with -1 sentinel
+    if ty == "Option<u32>" {
+        return Some((" -> i64".to_string(), FfiReturn::OptionU32Return));
+    }
+
+    // Option<&[T; N]> -> nullable *const T (pointer to caller's fixed array)
+    if let Some(inner) = ty.strip_prefix("Option<&[") {
+        if let Some(inner) = inner.strip_suffix("]>") {
+            if let Some((elem, _size_str)) = inner.split_once(';') {
+                let elem = elem.trim();
+                if is_scalar(elem) {
+                    return Some((format!(" -> *const {elem}"), FfiReturn::OptionRefReturn));
+                }
+            }
+        }
+    }
+
+    // Option<&'static [T]> -> nullable ptr (returned as-is, caller must not free)
+    if let Some(inner) = ty.strip_prefix("Option<&[") {
+        if let Some(inner) = inner.strip_suffix("]>") {
+            let inner = inner.trim();
+            if is_scalar(inner) {
+                return Some((format!(" -> *const {inner}"), FfiReturn::OptionRefReturn));
+            }
+        }
+    }
+
+    // Option<T> where T is a known non-generic struct -> nullable *mut T (boxed)
+    if let Some(inner) = ty.strip_prefix("Option<") {
+        if let Some(inner) = inner.strip_suffix('>') {
+            let inner = inner.trim();
+            if !inner.contains('<')
+                && !inner.contains("::")
+                && !inner.starts_with('&')
+                && !is_scalar(inner)
+                && !SKIP_TYPES.iter().any(|s| inner.contains(s))
+                && !is_ffi_incompatible(inner)
+            {
+                return Some((
+                    format!(" -> *mut {}", qualify_type(inner)),
+                    FfiReturn::OptionBoxReturn,
+                ));
+            }
+        }
+    }
+
+    if ty == "&str" || ty == "&'static str" {
         return Some((
             " -> *mut std::ffi::c_char".to_string(),
             FfiReturn::StringReturn,
         ));
+    }
+
+    // &'static [T] -> boxed copy for FFI boundary
+    if let Some(inner) = ty.strip_prefix("&[") {
+        if let Some(inner) = inner.strip_suffix(']') {
+            let inner = inner.trim();
+            if is_scalar(inner) {
+                return Some((
+                    " -> *mut std::ffi::c_void".to_string(),
+                    FfiReturn::SliceReturn,
+                ));
+            }
+        }
+    }
+
+    // &T reference returns -> *const T (borrowing from input data)
+    if let Some(inner) = ty.strip_prefix('&') {
+        let inner = inner.trim();
+        if !inner.starts_with('[') && !is_ffi_incompatible(inner) && !is_scalar(inner) {
+            let qualified = qualify_type(inner);
+            return Some((format!(" -> *const {qualified}"), FfiReturn::RefReturn));
+        }
     }
 
     if ty.starts_with('&') || is_ffi_incompatible(ty) {
