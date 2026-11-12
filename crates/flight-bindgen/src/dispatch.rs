@@ -162,7 +162,8 @@ fn emit_dispatch_function(module_name: &str, func: &ParsedFn) -> Option<(String,
             ParamKind::SliceConst(_)
             | ParamKind::SliceMut(_)
             | ParamKind::OptionSliceConst(_)
-            | ParamKind::OptionSliceMut(_) => {
+            | ParamKind::OptionSliceMut(_)
+            | ParamKind::BoxSlice(_) => {
                 haxe_params.push(format!("{param_name}:Dynamic"));
                 haxe_params.push(format!("{param_name}Len:Int"));
                 call_args.push(param_name.clone());
@@ -287,6 +288,7 @@ fn param_kind_to_haxe(kind: &ParamKind) -> String {
             "Dynamic".to_string()
         }
         ParamKind::Closure | ParamKind::OptionClosure => "Dynamic".to_string(),
+        ParamKind::BoxSlice(_) => "Dynamic".to_string(),
     }
 }
 
@@ -299,6 +301,9 @@ fn return_kind_to_haxe(kind: &ReturnKind) -> String {
         ReturnKind::ArcRefReturn | ReturnKind::OptionArcRefReturn => "Dynamic".to_string(),
         ReturnKind::Enum(_) => "Int".to_string(),
         ReturnKind::VecReturn(_) | ReturnKind::OptionVecReturn(_) => "Dynamic".to_string(),
+        ReturnKind::BoxSliceReturn(_) | ReturnKind::OptionBoxSliceReturn(_) => {
+            "Dynamic".to_string()
+        }
     }
 }
 

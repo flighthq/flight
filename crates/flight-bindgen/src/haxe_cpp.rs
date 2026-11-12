@@ -187,7 +187,8 @@ fn emit_one_method(ty: &str, tm: &TypeMethod<'_>) -> Option<String> {
                 ParamKind::SliceConst(_)
                 | ParamKind::SliceMut(_)
                 | ParamKind::OptionSliceConst(_)
-                | ParamKind::OptionSliceMut(_) => {
+                | ParamKind::OptionSliceMut(_)
+                | ParamKind::BoxSlice(_) => {
                     method_params.push(format!("{pname}:cpp.Star<cpp.Void>"));
                     method_params.push(format!("{pname}Len:Int"));
                     call_args.push(pname.clone());
@@ -270,7 +271,8 @@ fn emit_function(func: &ParsedFn) -> Option<String> {
             ParamKind::SliceConst(_)
             | ParamKind::SliceMut(_)
             | ParamKind::OptionSliceConst(_)
-            | ParamKind::OptionSliceMut(_) => {
+            | ParamKind::OptionSliceMut(_)
+            | ParamKind::BoxSlice(_) => {
                 haxe_params.push(format!("{pname}:cpp.Star<cpp.Void>"));
                 haxe_params.push(format!("{pname}Len:Int"));
             }
@@ -328,6 +330,7 @@ fn param_kind_to_haxe(kind: &ParamKind) -> String {
             "cpp.Star<cpp.Void>".to_string()
         }
         ParamKind::Closure | ParamKind::OptionClosure => "cpp.Star<cpp.Void>".to_string(),
+        ParamKind::BoxSlice(_) => "cpp.Star<cpp.Void>".to_string(),
     }
 }
 
@@ -342,6 +345,9 @@ fn return_kind_to_haxe(kind: &ReturnKind) -> String {
         }
         ReturnKind::Enum(_) => "Int".to_string(),
         ReturnKind::VecReturn(_) | ReturnKind::OptionVecReturn(_) => {
+            "cpp.Star<cpp.Void>".to_string()
+        }
+        ReturnKind::BoxSliceReturn(_) | ReturnKind::OptionBoxSliceReturn(_) => {
             "cpp.Star<cpp.Void>".to_string()
         }
     }

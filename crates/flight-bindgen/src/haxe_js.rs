@@ -189,7 +189,8 @@ fn emit_one_method(ty: &str, tm: &TypeMethod<'_>) -> Option<String> {
                 ParamKind::SliceConst(_)
                 | ParamKind::SliceMut(_)
                 | ParamKind::OptionSliceConst(_)
-                | ParamKind::OptionSliceMut(_) => {
+                | ParamKind::OptionSliceMut(_)
+                | ParamKind::BoxSlice(_) => {
                     method_params.push(format!("{pname}:Dynamic"));
                     method_params.push(format!("{pname}Len:Int"));
                     call_args.push(pname.clone());
@@ -273,7 +274,8 @@ fn emit_function(func: &ParsedFn) -> Option<String> {
             ParamKind::SliceConst(_)
             | ParamKind::SliceMut(_)
             | ParamKind::OptionSliceConst(_)
-            | ParamKind::OptionSliceMut(_) => {
+            | ParamKind::OptionSliceMut(_)
+            | ParamKind::BoxSlice(_) => {
                 haxe_params.push(format!("{pname}:Dynamic"));
                 haxe_params.push(format!("{pname}Len:Int"));
             }
@@ -329,6 +331,7 @@ fn param_kind_to_haxe(kind: &ParamKind) -> String {
             "Dynamic".to_string()
         }
         ParamKind::Closure | ParamKind::OptionClosure => "Dynamic".to_string(),
+        ParamKind::BoxSlice(_) => "Dynamic".to_string(),
     }
 }
 
@@ -341,5 +344,8 @@ fn return_kind_to_haxe(kind: &ReturnKind) -> String {
         ReturnKind::ArcRefReturn | ReturnKind::OptionArcRefReturn => "Dynamic".to_string(),
         ReturnKind::Enum(_) => "Int".to_string(),
         ReturnKind::VecReturn(_) | ReturnKind::OptionVecReturn(_) => "Dynamic".to_string(),
+        ReturnKind::BoxSliceReturn(_) | ReturnKind::OptionBoxSliceReturn(_) => {
+            "Dynamic".to_string()
+        }
     }
 }

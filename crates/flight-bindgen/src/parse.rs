@@ -494,6 +494,7 @@ pub enum ParamKind {
     VecOwned(String),
     Closure,
     OptionClosure,
+    BoxSlice(String),
 }
 
 #[derive(Debug, Clone)]
@@ -509,6 +510,8 @@ pub enum ReturnKind {
     Enum(String),
     VecReturn(String),
     OptionVecReturn(String),
+    BoxSliceReturn(String),
+    OptionBoxSliceReturn(String),
 }
 
 fn strip_lifetimes(ty: &str) -> String {
@@ -557,6 +560,20 @@ fn resolve_type_alias(ty: &str) -> String {
         if let Some(rest) = ty.strip_prefix('&') {
             if rest.trim() == alias {
                 return format!("&{resolved}");
+            }
+        }
+        if let Some(rest) = ty.strip_prefix("Box<") {
+            if let Some(inner) = rest.strip_suffix('>') {
+                if inner.trim() == alias {
+                    return format!("Box<{resolved}>");
+                }
+            }
+        }
+        if let Some(rest) = ty.strip_prefix("Option<Box<") {
+            if let Some(inner) = rest.strip_suffix(">>") {
+                if inner.trim() == alias {
+                    return format!("Option<Box<{resolved}>>");
+                }
             }
         }
     }
@@ -655,10 +672,23 @@ pub fn classify_param(ty: &str) -> Option<ParamKind> {
     if ty == "&str" {
         return Some(ParamKind::StrRef);
     }
+    if ty == "Option<f32>" {
+        return Some(ParamKind::OptionF32);
+    }
     if ty == "Option<f64>" {
         return Some(ParamKind::OptionF64);
     }
-    if ty == "Option<i32>" {
+    if ty == "Option<i32>"
+        || ty == "Option<u32>"
+        || ty == "Option<usize>"
+        || ty == "Option<i64>"
+        || ty == "Option<u64>"
+        || ty == "Option<u8>"
+        || ty == "Option<u16>"
+        || ty == "Option<i8>"
+        || ty == "Option<i16>"
+        || ty == "Option<isize>"
+    {
         return Some(ParamKind::OptionI32);
     }
     if ty == "Option<bool>" {
@@ -850,6 +880,16 @@ pub fn classify_param(ty: &str) -> Option<ParamKind> {
         }
     }
 
+    // Box<[T]> -> BoxSlice(T) for scalar T
+    if let Some(inner) = ty.strip_prefix("Box<[") {
+        if let Some(inner) = inner.strip_suffix("]>") {
+            let inner = inner.trim();
+            if is_scalar(inner) {
+                return Some(ParamKind::BoxSlice(inner.to_string()));
+            }
+        }
+    }
+
     if is_ffi_incompatible(ty) {
         return None;
     }
@@ -889,6 +929,10 @@ pub fn classify_param(ty: &str) -> Option<ParamKind> {
         return Some(ParamKind::Enum(ty.to_string()));
     }
 
+    if !is_ffi_incompatible(ty) && !ty.starts_with('[') {
+        return Some(ParamKind::RefMut(ty.to_string()));
+    }
+
     None
 }
 
@@ -919,6 +963,25 @@ pub fn classify_return(ty: &str) -> Option<ReturnKind> {
                 && !SKIP_TYPES.iter().any(|s| inner.contains(s))
             {
                 return Some(ReturnKind::OptionArcRefReturn);
+            }
+        }
+    }
+
+    // Box<[T]> -> BoxSliceReturn
+    if let Some(inner) = ty.strip_prefix("Box<[") {
+        if let Some(inner) = inner.strip_suffix("]>") {
+            let inner = inner.trim();
+            if is_scalar(inner) {
+                return Some(ReturnKind::BoxSliceReturn(inner.to_string()));
+            }
+        }
+    }
+    // Option<Box<[T]>> -> OptionBoxSliceReturn
+    if let Some(inner) = ty.strip_prefix("Option<Box<[") {
+        if let Some(inner) = inner.strip_suffix("]>>") {
+            let inner = inner.trim();
+            if is_scalar(inner) {
+                return Some(ReturnKind::OptionBoxSliceReturn(inner.to_string()));
             }
         }
     }
