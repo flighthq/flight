@@ -386,6 +386,14 @@ pub fn scan_all_crates(crates_dir: &Path) -> Vec<CrateExports> {
                     _ => None,
                 };
                 if let Some(ty) = free_type {
+                    if ty.contains('<')
+                        || ty.contains('[')
+                        || ty.contains('(')
+                        || ty.contains('&')
+                        || ty.contains(' ')
+                    {
+                        continue;
+                    }
                     let snake = to_snake_case(&ty);
                     let free_name = format!("free_{snake}");
                     let ffi_name = format!("flight_{free_name}");
