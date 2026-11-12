@@ -347,5 +347,7 @@ fn return_kind_to_haxe(kind: &ReturnKind) -> String {
         ReturnKind::BoxSliceReturn(_) | ReturnKind::OptionBoxSliceReturn(_) => {
             "Dynamic".to_string()
         }
+        ReturnKind::FixedArrayReturn(_, _) => "Dynamic".to_string(),
+        ReturnKind::OptionStruct(_) => "Dynamic".to_string(),
     }
 }

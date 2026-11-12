@@ -512,6 +512,8 @@ pub enum ReturnKind {
     OptionVecReturn(String),
     BoxSliceReturn(String),
     OptionBoxSliceReturn(String),
+    FixedArrayReturn(String, usize),
+    OptionStruct(String),
 }
 
 fn strip_lifetimes(ty: &str) -> String {
@@ -754,6 +756,19 @@ pub fn classify_param(ty: &str) -> Option<ParamKind> {
     }
     if let Some(inner) = ty.strip_prefix("&Ref<") {
         if let Some(inner) = inner.strip_suffix('>') {
+            let inner = inner.trim();
+            if !inner.contains('<')
+                && !inner.contains("::")
+                && !SKIP_TYPES.iter().any(|s| inner.contains(s))
+            {
+                return Some(ParamKind::ArcRef);
+            }
+        }
+    }
+
+    // Option<Ref<T>> -> ArcRef (nullable opaque handle)
+    if let Some(inner) = ty.strip_prefix("Option<Ref<") {
+        if let Some(inner) = inner.strip_suffix(">>") {
             let inner = inner.trim();
             if !inner.contains('<')
                 && !inner.contains("::")
@@ -1015,6 +1030,19 @@ pub fn classify_return(ty: &str) -> Option<ReturnKind> {
         return Some(ReturnKind::StringReturn);
     }
 
+    // Option<T> where T is a struct -> OptionStruct
+    if let Some(inner) = ty.strip_prefix("Option<") {
+        if let Some(inner) = inner.strip_suffix('>') {
+            let inner = inner.trim();
+            if !is_ffi_incompatible(inner) && !inner.contains('<') && !is_scalar(inner) {
+                if is_known_enum(inner) {
+                    return Some(ReturnKind::OptionStruct(inner.to_string()));
+                }
+                return Some(ReturnKind::OptionStruct(inner.to_string()));
+            }
+        }
+    }
+
     if ty.starts_with('&') || is_ffi_incompatible(ty) {
         return None;
     }
@@ -1025,7 +1053,21 @@ pub fn classify_return(ty: &str) -> Option<ReturnKind> {
     if ty == "String" {
         return Some(ReturnKind::StringReturn);
     }
+    // [T; N] -> FixedArrayReturn for scalar T
     if ty.starts_with('[') {
+        if let Some(inner) = ty.strip_prefix('[') {
+            if let Some(inner) = inner.strip_suffix(']') {
+                if let Some((elem, size)) = inner.rsplit_once(';') {
+                    let elem = elem.trim();
+                    let size = size.trim();
+                    if is_scalar(elem) {
+                        if let Ok(n) = size.parse::<usize>() {
+                            return Some(ReturnKind::FixedArrayReturn(elem.to_string(), n));
+                        }
+                    }
+                }
+            }
+        }
         return None;
     }
     if is_known_enum(ty) {
