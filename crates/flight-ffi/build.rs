@@ -2392,12 +2392,13 @@ fn map_param_to_ffi(name: &str, ty: &str) -> Option<MappedParam> {
                             ffi_fn_args_str.join(", ")
                         )
                     };
+                    let option_fn_sig = format!("Option<{ffi_fn_sig}>");
                     let closure_body = format!(
-                        "if ({fn_name} as *const ()).is_null() {{ None }} else {{ let __ctx = {ctx_name} as usize; let __f = {fn_name} as usize; Some(std::sync::Arc::new(move |{outer_params_str}| {{ let __fp: {ffi_fn_sig} = unsafe {{ std::mem::transmute(__f) }}; __fp({arc_call_args}) }})) }}"
+                        "match {fn_name} {{ None => None, Some(__f_inner) => {{ let __ctx = {ctx_name} as usize; let __f = __f_inner as usize; Some(std::sync::Arc::new(move |{outer_params_str}| {{ let __fp: {ffi_fn_sig} = unsafe {{ std::mem::transmute(__f) }}; __fp({arc_call_args}) }})) }} }}"
                     );
                     return Some(MappedParam {
                         ffi_params: vec![
-                            (fn_name, ffi_fn_sig),
+                            (fn_name, option_fn_sig),
                             (ctx_name, "*mut std::ffi::c_void".to_string()),
                         ],
                         call_expr: closure_body,
@@ -2436,7 +2437,22 @@ fn map_param_to_ffi(name: &str, ty: &str) -> Option<MappedParam> {
                 ffi_fn_params.push("*const std::ffi::c_void".to_string());
                 ffi_fn_args_str.push(format!("{arg_name} as *const _ as *const std::ffi::c_void"));
                 outer_closure_params.push(format!("{arg_name}: &{qualified_ref}"));
-            } else if *is_ref && !resolved_cty.contains('<') && !resolved_cty.contains("dyn ") {
+            } else if *is_ref && resolved_cty.starts_with('[') && resolved_cty.ends_with(']') {
+                let elem = resolved_cty[1..resolved_cty.len() - 1].trim();
+                if is_scalar(elem) {
+                    ffi_fn_params.push(format!("*const {elem}"));
+                    ffi_fn_params.push("usize".to_string());
+                    ffi_fn_args_str.push(format!("{arg_name}.as_ptr()"));
+                    ffi_fn_args_str.push(format!("{arg_name}.len()"));
+                    outer_closure_params.push(format!("{arg_name}: &[{elem}]"));
+                } else {
+                    return None;
+                }
+            } else if *is_ref
+                && !resolved_cty.contains('<')
+                && !resolved_cty.contains("dyn ")
+                && !resolved_cty.starts_with('[')
+            {
                 let qualified = qualify_type(&resolved_cty);
                 ffi_fn_params.push(format!("*const {qualified}"));
                 ffi_fn_args_str.push(format!("{arg_name} as *const _ as *const {qualified}"));
