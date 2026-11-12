@@ -174,6 +174,56 @@ fn main() {
     }
 
     fs::write(out_dir.join("ffi_generated.rs"), all_output).unwrap();
+
+    let mut offsets_src = String::new();
+    writeln!(offsets_src, "fn main() {{").unwrap();
+    writeln!(offsets_src, "    let mut out = String::new();").unwrap();
+    writeln!(offsets_src, "    out.push('{{');").unwrap();
+    writeln!(offsets_src, "    out.push('\\n');").unwrap();
+    let mut first_struct = true;
+    for dir_name in SCAN_CRATES {
+        let src_dir = crates_dir.join(dir_name).join("src");
+        if !src_dir.exists() {
+            continue;
+        }
+        let structs = collect_pub_structs(&src_dir);
+        for s in &structs {
+            if SKIP_TYPES.contains(&s.name.as_str()) || s.fields.is_empty() {
+                continue;
+            }
+            let qualified = qualify_type(&s.name);
+            if first_struct {
+                first_struct = false;
+            } else {
+                writeln!(offsets_src, "    out.push_str(\",\\n\");").unwrap();
+            }
+            writeln!(
+                offsets_src,
+                "    out.push_str(\"  \\\"{name}\\\": {{\");",
+                name = s.name
+            )
+            .unwrap();
+            writeln!(
+                offsets_src,
+                "    out.push_str(&format!(\"\\\"_size\\\": {{}}\", std::mem::size_of::<{qualified}>()));"
+            )
+            .unwrap();
+            for field in &s.fields {
+                writeln!(
+                    offsets_src,
+                    "    out.push_str(&format!(\", \\\"{field_name}\\\": {{}}\", std::mem::offset_of!({qualified}, {field_name})));",
+                    field_name = field.name
+                )
+                .unwrap();
+            }
+            writeln!(offsets_src, "    out.push('}}');").unwrap();
+        }
+    }
+    writeln!(offsets_src, "    out.push('\\n');").unwrap();
+    writeln!(offsets_src, "    out.push('}}');").unwrap();
+    writeln!(offsets_src, "    print!(\"{{out}}\");").unwrap();
+    writeln!(offsets_src, "}}").unwrap();
+    fs::write(out_dir.join("offsets_generated.rs"), offsets_src).unwrap();
 }
 
 #[derive(Debug)]

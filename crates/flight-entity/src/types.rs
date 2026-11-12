@@ -23,6 +23,7 @@ pub trait Entity {
 /// undefined`). It is never part of an entity's value: cloning gives a fresh empty slot with a
 /// NEW id (TS cloneEntity allocates), every slot compares equal, and Debug prints an opaque marker.
 // flight-lint: allow(contract-vocabulary) D12 runtime slot: Box keeps it one thin pointer (TS `EntityRuntime | undefined`)
+#[repr(C)]
 pub struct EntityRuntimeSlot {
     pub data: Option<Box<EntityRuntime>>,
     // Private so no caller can write or forge it; read through `get_entity_id`.
