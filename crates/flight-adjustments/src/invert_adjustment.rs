@@ -25,6 +25,7 @@ mod sugar_tests {
 /// Channel invert as a matrix-tier adjustment. `mix(rgb, 1 - rgb, intensity)` is affine per channel.
 /// At intensity 1 this is the classic invert (scale -1, bias 1).
 #[derive(Debug, Clone)]
+#[repr(C)]
 pub struct InvertAdjustment {
     fields: AdjustmentFields,
     pub intensity: f32,

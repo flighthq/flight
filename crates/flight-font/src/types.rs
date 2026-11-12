@@ -129,6 +129,7 @@ pub struct FontUrl {
 
 /// One variable-font axis declared by a font parser.
 #[derive(Clone, Debug, PartialEq)]
+#[repr(C)]
 pub struct FontVariationAxis {
     pub default_value: f32,
     pub max: f32,
@@ -139,6 +140,7 @@ pub struct FontVariationAxis {
 
 /// Shared vertical metrics in pixels at a glyph source's configured size.
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
+#[repr(C)]
 pub struct GlyphMetrics {
     pub ascent: f32,
     pub descent: f32,
@@ -147,6 +149,7 @@ pub struct GlyphMetrics {
 
 /// Font-wide vertical metrics in the design-unit coordinate space of a `GlyphOutlineSource`.
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
+#[repr(C)]
 pub struct GlyphOutlineMetrics {
     pub ascent: f32,
     pub descent: f32,
@@ -167,6 +170,7 @@ pub struct GlyphOutlineSource {
 
 /// Named numeric arm of `GlyphRasterizeOptions.fontWeight`.
 #[derive(Clone, Copy, Debug, PartialEq)]
+#[repr(C)]
 pub struct GlyphRasterizeFontWeightNumber {
     pub value: f32,
 }
@@ -186,6 +190,7 @@ pub enum GlyphRasterizeFontWeight {
 
 /// Per-atlas glyph rasterization options, passed unchanged to the selected host capability.
 #[derive(Clone, Debug, PartialEq)]
+#[repr(C)]
 pub struct GlyphRasterizeOptions {
     pub font_family: String,
     pub font_size: f32,
@@ -195,6 +200,7 @@ pub struct GlyphRasterizeOptions {
 
 /// One RGBA, row-major, straight-alpha glyph bitmap.
 #[derive(Clone, Debug, PartialEq)]
+#[repr(C)]
 pub struct GlyphRasterizedBitmap {
     pub advance: f32,
     pub bearing_x: i32,

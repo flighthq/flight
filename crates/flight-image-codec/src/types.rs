@@ -7,6 +7,7 @@ use std::sync::Arc;
 /// row-major, 4 bytes per pixel, `width * height * 4` bytes long. The IR uses `Box<[u8]>`
 /// (TS `Uint8ClampedArray`) under the approved pixel rule; stores clamp explicitly.
 #[derive(Clone, Debug, PartialEq)]
+#[repr(C)]
 pub struct DecodedImage {
     pub data: Box<[u8]>,
     pub height: usize,

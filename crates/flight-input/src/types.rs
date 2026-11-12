@@ -108,6 +108,7 @@ pub enum PointerType {
 /// One normalized gamepad axis event (TS `InputGamepadAxisData`).
 #[derive(Clone, Copy, Debug, PartialEq, Default)]
 // flight-lint: allow(f64) D1: event timestamps are millisecond values whose fractional precision f32 loses after a few hours of uptime
+#[repr(C)]
 pub struct InputGamepadAxisData {
     pub axis: i32,
     pub gamepad: i32,
@@ -118,6 +119,7 @@ pub struct InputGamepadAxisData {
 /// One normalized gamepad button event (TS `InputGamepadButtonData`).
 #[derive(Clone, Copy, Debug, PartialEq, Default)]
 // flight-lint: allow(f64) D1: event timestamps are millisecond values whose fractional precision f32 loses after a few hours of uptime
+#[repr(C)]
 pub struct InputGamepadButtonData {
     pub button: i32,
     pub gamepad: i32,
@@ -127,6 +129,7 @@ pub struct InputGamepadButtonData {
 
 /// One gamepad connect/disconnect event (TS `InputGamepadConnectData`).
 #[derive(Clone, Debug, PartialEq, Eq, Default)]
+#[repr(C)]
 pub struct InputGamepadConnectData {
     pub gamepad: i32,
     pub id: String,
@@ -136,6 +139,7 @@ pub struct InputGamepadConnectData {
 /// One normalized keyboard event (TS `InputKeyboardData`).
 #[derive(Clone, Debug, PartialEq, Default)]
 // flight-lint: allow(f64) D1: event timestamps are millisecond values whose fractional precision f32 loses after a few hours of uptime
+#[repr(C)]
 pub struct InputKeyboardData {
     pub alt_key: bool,
     pub caps_lock: bool,
@@ -155,6 +159,7 @@ pub struct InputKeyboardData {
 /// One normalized pointer/wheel event (TS `InputPointerData`).
 #[derive(Clone, Debug, PartialEq, Default)]
 // flight-lint: allow(f64) D1: event timestamps are millisecond values whose fractional precision f32 loses after a few hours of uptime
+#[repr(C)]
 pub struct InputPointerData {
     pub alt_key: bool,
     pub button: i32,
@@ -181,6 +186,7 @@ pub struct InputPointerData {
 
 /// One normalized text event (TS `InputTextData`).
 #[derive(Clone, Debug, PartialEq, Eq, Default)]
+#[repr(C)]
 pub struct InputTextData {
     pub is_composing: bool,
     pub text: String,
@@ -195,6 +201,7 @@ pub struct AttachInputOptions {
 /// Key-repeat timing options (TS `InputKeyRepeatOptions`), in milliseconds.
 // flight-lint: allow(f64) D1: repeat delays and intervals are millisecond durations; f32 loses fractional precision for long delays
 #[derive(Clone, Copy, Debug, PartialEq, Default)]
+#[repr(C)]
 pub struct InputKeyRepeatOptions {
     pub delay: f64,
     pub interval: f64,
@@ -384,6 +391,7 @@ pub struct InputSignals {
 /// The input manager (TS `InputManager`, an Entity extending its signals). `enabled` gates every
 /// emission delivered through an attached ingress sink.
 #[derive(Default)]
+#[repr(C)]
 pub struct InputManager {
     runtime: EntityRuntimeSlot,
     pub(crate) registry: InputManagerRuntime,

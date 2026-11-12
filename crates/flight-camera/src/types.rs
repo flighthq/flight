@@ -42,6 +42,7 @@ pub struct Camera2D {
 /// A perspective projection (TS `PerspectiveProjection`, an Entity): vertical field of view in
 /// radians plus the viewport aspect ratio. Clip planes live on the owning `Camera3D`.
 #[derive(Default)]
+#[repr(C)]
 pub struct PerspectiveProjection {
     runtime: EntityRuntimeSlot,
     pub aspect: f32,
@@ -77,6 +78,7 @@ pub enum Projection {
 /// Structural inputs for `create_camera_3d` (TS `Camera3DOptions`). `near_clip_plane` absent and
 /// explicit null both mean no oblique plane.
 #[derive(Clone)]
+#[repr(C)]
 pub struct Camera3DOptions {
     pub far: f32,
     pub near: f32,
@@ -109,6 +111,7 @@ pub struct Camera2DFollowOptions {
 /// Source-compatible orthographic projection field bundle (TS `OrthographicProjectionOptions`).
 /// D23 construction allocates the projection first and assigns these fields afterward.
 #[derive(Clone, Copy, Debug, PartialEq)]
+#[repr(C)]
 pub struct OrthographicProjectionOptions {
     pub half_height: f32,
     pub half_width: f32,
@@ -117,6 +120,7 @@ pub struct OrthographicProjectionOptions {
 /// Source-compatible perspective projection field bundle (TS `PerspectiveProjectionOptions`).
 /// `aspect` defaults to 1 (square viewport) when callers apply the bundle after D23 construction.
 #[derive(Clone, Copy, Debug, PartialEq)]
+#[repr(C)]
 pub struct PerspectiveProjectionOptions {
     pub aspect: Option<f32>,
     pub fov_y: f32,
@@ -150,6 +154,7 @@ pub type Camera2DVisibleBoundsGuard = Arc<dyn Fn(&Camera2D) + Send + Sync>;
 
 /// Caller-owned replacement for the source's module-level guard hooks and enabled flag (D5).
 #[derive(Default)]
+#[repr(C)]
 pub struct CameraGuardState {
     pub enabled: bool,
     pub view_guard: Option<Camera3DViewGuard>,

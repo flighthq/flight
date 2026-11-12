@@ -64,12 +64,14 @@ pub struct AnimationBlendTreeChannel {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq)]
+#[repr(C)]
 pub struct AnimationBlendTreeChannelSource {
     pub channel_index: usize,
     pub input_index: usize,
 }
 
 #[derive(Clone, Debug)]
+#[repr(C)]
 pub struct AnimationBlendTreeInput {
     pub additive: bool,
     pub player: AnimationPlayerRef,
@@ -130,6 +132,7 @@ pub struct AnimationCrossfadeOptions {
 }
 
 #[derive(Clone, Debug)]
+#[repr(C)]
 pub struct AnimationLayer {
     pub additive: bool,
     pub blend_tree: Option<AnimationBlendTreeRef>,
@@ -164,6 +167,7 @@ pub struct AnimationLayerStackChannel {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq)]
+#[repr(C)]
 pub struct AnimationLayerStackChannelSource {
     pub channel_index: usize,
     pub layer_index: usize,
@@ -186,6 +190,7 @@ pub struct AnimationPlayer {
 }
 
 #[derive(Clone, Debug)]
+#[repr(C)]
 pub struct AnimationRootMotionExtractor {
     pub channel: AnimationChannel,
     pub channel_index: usize,

@@ -1,6 +1,7 @@
 //! flight-compiler: rust-only
 
 #[derive(Clone, Debug, PartialEq, Eq)]
+#[repr(C)]
 pub struct TextureContainer {
     pub format: TextureContainerFormat,
     pub width: usize,
@@ -81,6 +82,7 @@ pub enum TextureContainerKind {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(C)]
 pub struct TextureContainerLevel {
     pub byte_offset: usize,
     pub byte_length: usize,
@@ -114,6 +116,7 @@ pub enum TextureContainerSupercompression {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
+#[repr(C)]
 pub struct TextureContainerLevels {
     pub levels: Vec<TextureContainerLevel>,
     pub end_offset: usize,

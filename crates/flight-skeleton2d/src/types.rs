@@ -309,6 +309,7 @@ pub type Skeleton2DConstraintSolver =
 
 /// IK over a one- or two-bone chain (TS `Skeleton2DIkConstraint`).
 #[derive(Clone, Debug, PartialEq)]
+#[repr(C)]
 pub struct Skeleton2DIkConstraint {
     runtime: EntityRuntimeSlot,
     pub bend_positive: bool,
@@ -322,6 +323,7 @@ pub struct Skeleton2DIkConstraint {
 
 /// Lays a bone chain along a path (TS `Skeleton2DPathConstraint`).
 #[derive(Clone, Debug, PartialEq)]
+#[repr(C)]
 pub struct Skeleton2DPathConstraint {
     runtime: EntityRuntimeSlot,
     pub bone_indices: Vec<i32>,
@@ -340,6 +342,7 @@ pub struct Skeleton2DPathConstraint {
 
 /// Copies a target bone's world transform per channel (TS `Skeleton2DTransformConstraint`).
 #[derive(Clone, Debug, PartialEq)]
+#[repr(C)]
 pub struct Skeleton2DTransformConstraint {
     runtime: EntityRuntimeSlot,
     pub bone_indices: Vec<i32>,
@@ -370,6 +373,7 @@ pub struct Skeleton2DCoercedInterpolation {
 
 /// A deform offset stream that does not match what it addresses (TS `Skeleton2DDeformLengthMismatch`).
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
+#[repr(C)]
 pub struct Skeleton2DDeformLengthMismatch {
     pub addressed: usize,
     pub offsets: usize,
@@ -378,6 +382,7 @@ pub struct Skeleton2DDeformLengthMismatch {
 
 /// Why a deform offset stream was applied or ignored (TS `Skeleton2DDeformLengthExplanation`).
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
+#[repr(C)]
 pub struct Skeleton2DDeformLengthExplanation {
     pub accepted: bool,
     pub addressed: usize,
@@ -420,6 +425,7 @@ pub struct Skeleton2DAnimationTargetHandle {
 
 /// A bone transform animation target (TS `Skeleton2DAnimationTarget`).
 #[derive(Default)]
+#[repr(C)]
 pub struct Skeleton2DAnimationTarget {
     runtime: EntityRuntimeSlot,
     pub bone_index: i32,
@@ -440,6 +446,7 @@ pub struct Skeleton2DSlotAnimationTarget {
 
 /// A deform animation target (TS `Skeleton2DDeformAnimationTarget`, a plain record).
 #[derive(Clone)]
+#[repr(C)]
 pub struct Skeleton2DDeformAnimationTarget {
     pub attachment: Option<Attachment2DRef>,
     pub kind: Kind,

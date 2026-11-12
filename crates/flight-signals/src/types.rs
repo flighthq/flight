@@ -12,6 +12,7 @@ use flight_entity::{EntityRuntimeSlot, Ref};
 /// Rust-side handle; it is never transpiled as a TS number.
 // flight-lint: allow(contract-vocabulary) D4 SlotId is an opaque registration handle, not payload data
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+#[repr(C)]
 pub struct SlotId {
     pub value: u32,
 }
@@ -19,6 +20,7 @@ pub struct SlotId {
 /// Identity of one pending signal timer, returned by `set_signal_timeout`.
 // flight-lint: allow(contract-vocabulary) D5 timer handles are opaque, never transpiled as numbers
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+#[repr(C)]
 pub struct TimerId {
     pub value: u64,
 }
@@ -26,6 +28,7 @@ pub struct TimerId {
 /// The payload of `connect_signal_at_frame_rate`: the accumulated delta time in milliseconds.
 // flight-lint: allow(f64) D1: frame deltas are millisecond durations; f32 loses precision in accumulation
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
+#[repr(C)]
 pub struct FrameTick {
     pub delta_time: f64,
 }

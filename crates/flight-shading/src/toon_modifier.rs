@@ -15,6 +15,7 @@ pub struct ToonModifier {
 }
 
 #[derive(Clone, Copy, Debug)]
+#[repr(C)]
 pub struct ToonModifierOptions {
     pub steps: f32,
     pub smoothness: Option<f32>,

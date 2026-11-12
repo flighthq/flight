@@ -174,6 +174,7 @@ pub enum ItemStyle {
 // -- Layout tree types --
 
 #[derive(Clone, Debug)]
+#[repr(C)]
 pub struct LayoutNode {
     pub container_style: ContainerStyle,
     pub item_style: ItemStyle,
@@ -199,6 +200,7 @@ pub type LayoutResolver = fn(
 // -- Layout resolution explanation --
 
 #[derive(Clone, Debug, PartialEq)]
+#[repr(C)]
 pub struct LayoutResolutionExplanation {
     pub actual_length: i32,
     pub kind: LayoutResolutionFailureKind,

@@ -59,6 +59,7 @@ pub type Scale9SpriteRuntime = SpriteRuntime;
 /// 939e24d3): the decomposed 2D transform, appearance, blend mode, clip and material, over
 /// flight-node's common node fields. Kind data lives on the kind's own struct as `data`.
 /// Dereferences to `NodeFields` for `kind`, `name` and `enabled`.
+#[repr(C)]
 pub struct Node2DFields {
     node: NodeFields,
     state: Node2DRuntime,
@@ -163,6 +164,7 @@ pub struct SpriteData {
 /// texture identity and version the cached local bounds were computed from. `-1` means none. A
 /// shared handle because bounds computation stamps it while the node is only read-borrowed.
 #[derive(Clone, Debug)]
+#[repr(C)]
 pub struct SpriteRuntime {
     pub local_bounds_texture: Option<Ref<Texture>>,
     pub local_bounds_texture_version: i64,
@@ -248,6 +250,7 @@ pub struct Scene2DKindUsage {
 /// The per-render-state identity stamp of a sprite's texture (TS `SpriteIdentityRendererData`).
 /// `-1` means no texture.
 #[derive(Default)]
+#[repr(C)]
 pub struct SpriteIdentityRendererData {
     renderer_data: RendererDataFields,
     pub texture_identity: Option<Ref<Texture>>,
@@ -256,6 +259,7 @@ pub struct SpriteIdentityRendererData {
 
 /// A named place in an authored 2D graph where the application supplies content (TS
 /// `Scene2DSlotReference`).
+#[repr(C)]
 pub struct Scene2DSlotReference {
     runtime: EntityRuntimeSlot,
     pub content: Option<Node2DRef>,

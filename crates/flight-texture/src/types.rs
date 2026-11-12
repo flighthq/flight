@@ -94,6 +94,7 @@ pub struct Sampler {
 }
 
 #[derive(Clone, Debug)]
+#[repr(C)]
 pub struct TextureSourceFields {
     runtime: EntityRuntimeSlot,
     pub alpha_type: AlphaType,

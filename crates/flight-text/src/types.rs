@@ -48,6 +48,7 @@ pub struct TextLabel {
     pub(crate) text_label_runtime: Ref<TextLabelRuntime>,
 }
 
+#[repr(C)]
 pub struct TextLabelData {
     runtime: EntityRuntimeSlot,
     pub auto_size: TextAutoSize,
@@ -83,6 +84,7 @@ pub struct NativeText {
     pub(crate) native_text_runtime: Ref<NativeTextRuntime>,
 }
 
+#[repr(C)]
 pub struct NativeTextData {
     runtime: EntityRuntimeSlot,
     pub auto_size: TextAutoSize,
@@ -105,6 +107,7 @@ pub struct RichText {
     pub(crate) rich_text_runtime: Ref<RichTextRuntime>,
 }
 
+#[repr(C)]
 pub struct RichTextData {
     runtime: EntityRuntimeSlot,
     pub auto_size: TextAutoSize,
@@ -140,6 +143,7 @@ pub struct RichTextRuntime {
 }
 
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
+#[repr(C)]
 pub struct TextInputHistoryEntry {
     pub caret_index_after: usize,
     pub caret_index_before: usize,
@@ -151,6 +155,7 @@ pub struct TextInputHistoryEntry {
 }
 
 #[derive(Clone, Debug, Default, PartialEq)]
+#[repr(C)]
 pub struct TextInputState {
     pub always_show_selection: bool,
     pub caret_color: u32,
@@ -189,6 +194,7 @@ pub struct TextFieldChangeEvent {
 }
 
 #[derive(Clone, Debug, Default, PartialEq)]
+#[repr(C)]
 pub struct TextFieldLinkEvent {
     pub url: String,
     pub x: f32,
@@ -196,6 +202,7 @@ pub struct TextFieldLinkEvent {
 }
 
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
+#[repr(C)]
 pub struct TextFieldScrollEvent {
     pub previous_scroll_h: f32,
     pub previous_scroll_v: f32,
@@ -211,6 +218,7 @@ pub struct TextFieldSignals {
 }
 
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
+#[repr(C)]
 pub struct TextLabelContentExplanation {
     pub agreement: bool,
     pub live_string: String,

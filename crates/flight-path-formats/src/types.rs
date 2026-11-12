@@ -10,6 +10,7 @@ pub struct SvgPathDataFormatOptions {
 /// the UTF-16 code-unit index into the input, as in the source; `reason` is the stable source
 /// spelling (e.g. `"expected-moveto"`). Plain record.
 #[derive(Clone, Debug, PartialEq, Eq)]
+#[repr(C)]
 pub struct SvgPathDataExplanation {
     pub position: usize,
     pub reason: String,

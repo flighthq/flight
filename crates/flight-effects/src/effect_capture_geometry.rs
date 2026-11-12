@@ -11,6 +11,7 @@ use flight_render::{
 use crate::contract::{EffectRef, compute_effect_padding};
 
 #[derive(Clone, Debug, PartialEq)]
+#[repr(C)]
 pub struct EffectCaptureGeometry {
     pub bounds: Rectangle,
     pub capture_transform: Matrix,

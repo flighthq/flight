@@ -25,6 +25,7 @@ mod sugar_tests {
 /// Linear exposure as a matrix-tier adjustment: RGB is scaled by `2^exposure`. Alpha is unchanged.
 /// Default exposure 0 is the identity.
 #[derive(Debug, Clone)]
+#[repr(C)]
 pub struct ExposureAdjustment {
     fields: AdjustmentFields,
     pub exposure: f32,

@@ -30,6 +30,7 @@ pub type TexturePackerMeta = TexturePackerAtlasMeta;
 pub type TexturePackerNamedFrame = TexturePackerAtlasNamedFrame;
 
 #[derive(Clone, Debug, PartialEq)]
+#[repr(C)]
 pub struct AsepriteLayer {
     pub blend_mode: String,
     pub name: String,
@@ -50,6 +51,7 @@ pub struct AsepriteMeta {
 }
 
 #[derive(Clone, Debug, PartialEq)]
+#[repr(C)]
 pub struct AsepriteArrayFrame {
     pub duration: f32,
     pub filename: String,
@@ -124,6 +126,7 @@ pub struct TexturePackerSerializeOptions {
 }
 
 #[derive(Clone, Debug, PartialEq)]
+#[repr(C)]
 pub struct CocosPlistFrame {
     pub aliases: Option<Vec<String>>,
     pub frame: String,
@@ -135,6 +138,7 @@ pub struct CocosPlistFrame {
 }
 
 #[derive(Clone, Debug, PartialEq)]
+#[repr(C)]
 pub struct CocosPlistMetadata {
     pub format: i32,
     pub size: String,
@@ -154,6 +158,7 @@ pub struct CocosPlistParsed {
 }
 
 #[derive(Clone, Debug, PartialEq)]
+#[repr(C)]
 pub struct StarlingSubTexture {
     pub frame_height: Option<f32>,
     pub frame_width: Option<f32>,

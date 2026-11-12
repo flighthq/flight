@@ -57,6 +57,7 @@ pub enum SpritesheetTimelineSourceUnsupportedField {
 /// Plain-data answer to which animation semantics the spritesheet adapter cannot preserve (TS
 /// `SpritesheetTimelineSourceExplanation`).
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
+#[repr(C)]
 pub struct SpritesheetTimelineSourceExplanation {
     pub direction_materialized: bool,
     pub unsupported_fields: Vec<SpritesheetTimelineSourceUnsupportedField>,

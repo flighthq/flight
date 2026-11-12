@@ -14,6 +14,7 @@ pub enum VelocityReason {
 /// Diagnostic result from `explain_velocity`, describing why a source has
 /// its current velocity value.
 #[derive(Debug, Clone, Copy, PartialEq, Default)]
+#[repr(C)]
 pub struct VelocityExplanation {
     pub current_frame_id: i32,
     pub explicit: bool,

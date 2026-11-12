@@ -24,6 +24,7 @@ mod sugar_tests {
 
 /// Sepia tone as a matrix-tier adjustment. At intensity 1 this is the standard sepia matrix.
 #[derive(Debug, Clone)]
+#[repr(C)]
 pub struct SepiaAdjustment {
     fields: AdjustmentFields,
     pub intensity: f32,

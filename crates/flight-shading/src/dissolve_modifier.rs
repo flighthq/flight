@@ -19,6 +19,7 @@ pub struct DissolveModifier {
 }
 
 #[derive(Clone, Debug)]
+#[repr(C)]
 pub struct DissolveModifierOptions {
     pub threshold: f32,
     pub edge_color: Option<u32>,

@@ -14,6 +14,7 @@ pub enum TextSegmentGranularity {
 /// A single text segment whose half-open `start..end` range uses UTF-16 code-unit offsets.
 /// The text itself remains UTF-8 in Rust.
 #[derive(Clone, Debug, Default, PartialEq)]
+#[repr(C)]
 pub struct TextSegment {
     pub start: usize,
     pub end: usize,
@@ -23,6 +24,7 @@ pub struct TextSegment {
 
 /// A half-open range within text, measured in UTF-16 code units.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
+#[repr(C)]
 pub struct TextSegmentRange {
     pub start: usize,
     pub end: usize,

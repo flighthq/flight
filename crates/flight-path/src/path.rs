@@ -320,6 +320,7 @@ pub enum StrokePathTessellationReason {
 
 /// Explanation of whether a stroke path could be tessellated.
 #[derive(Debug, Clone, PartialEq)]
+#[repr(C)]
 pub struct StrokePathTessellationExplanation {
     pub supported: bool,
     pub reason: StrokePathTessellationReason,

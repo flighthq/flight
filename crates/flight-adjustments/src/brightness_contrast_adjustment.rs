@@ -27,6 +27,7 @@ mod sugar_tests {
 /// Brightness/contrast as a matrix-tier adjustment. Reproduces the prior full-frame shader
 /// `rgb = (rgb + brightness - 0.5) * contrast + 0.5`. Identity defaults are brightness 0, contrast 1.
 #[derive(Debug, Clone)]
+#[repr(C)]
 pub struct BrightnessContrastAdjustment {
     fields: AdjustmentFields,
     pub brightness: f32,

@@ -15,6 +15,7 @@ use serde_json::Value;
 
 /// A low/high range (TS `SpineRangeValue`).
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
+#[repr(C)]
 pub struct SpineRangeValue {
     pub high: f32,
     pub low: f32,
@@ -22,6 +23,7 @@ pub struct SpineRangeValue {
 
 /// An alpha keyframe (TS `SpineAlphaKeyframe`).
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
+#[repr(C)]
 pub struct SpineAlphaKeyframe {
     pub alpha: f32,
     pub time: f32,
@@ -29,6 +31,7 @@ pub struct SpineAlphaKeyframe {
 
 /// A tint keyframe (TS `SpineTintKeyframe`).
 #[derive(Clone, Debug, Default, PartialEq)]
+#[repr(C)]
 pub struct SpineTintKeyframe {
     pub color: String,
     pub time: f32,
@@ -57,6 +60,7 @@ pub enum SpineSpawnShape {
 
 /// Full Spine particle effect document (TS `SpineParticleDocument`).
 #[derive(Clone, Debug, Default, PartialEq)]
+#[repr(C)]
 pub struct SpineParticleDocument {
     pub alpha: Vec<SpineAlphaKeyframe>,
     pub angle: SpineRangeValue,

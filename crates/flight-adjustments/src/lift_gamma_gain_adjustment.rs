@@ -28,6 +28,7 @@ mod sugar_tests {
 /// Lift/gamma/gain as a LUT-tier adjustment (gamma is the nonlinear part). Packed-RGBA neutrals:
 /// lift 0x000000ff, gamma 0x808080ff, gain 0xffffffff.
 #[derive(Debug, Clone)]
+#[repr(C)]
 pub struct LiftGammaGainAdjustment {
     fields: AdjustmentFields,
     pub lift: u32,

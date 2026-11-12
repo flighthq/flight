@@ -65,6 +65,7 @@ pub struct TweenOptions {
 }
 
 #[derive(Clone, Debug)]
+#[repr(C)]
 pub struct TweenPropertyDetail {
     pub change: f32,
     pub key: String,
@@ -159,6 +160,7 @@ pub struct TweenContext {
 }
 
 // flight-lint: allow(conform-extra) D22 Rust proxy type for RGB component tweening
+#[repr(C)]
 pub struct ColorComponents {
     pub r: f32,
     pub g: f32,

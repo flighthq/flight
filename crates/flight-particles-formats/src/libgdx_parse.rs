@@ -15,6 +15,7 @@ use crate::text::parse_js_float;
 
 /// A scalar range value (TS `LibgdxRangeValue`).
 #[derive(Clone, Debug, Default, PartialEq)]
+#[repr(C)]
 pub struct LibgdxRangeValue {
     pub low_min: f32,
     pub low_max: f32,
@@ -29,6 +30,7 @@ pub struct LibgdxRangeValue {
 
 /// A range value carrying an `active` gate (TS `LibgdxActiveRangeValue`).
 #[derive(Clone, Debug, Default, PartialEq)]
+#[repr(C)]
 pub struct LibgdxActiveRangeValue {
     pub active: bool,
     pub low_min: f32,
@@ -63,6 +65,7 @@ pub enum LibgdxSpawnSide {
 
 /// The spawn shape block (TS `spawnShape`).
 #[derive(Clone, Debug, Default, PartialEq)]
+#[repr(C)]
 pub struct LibgdxSpawnShapeValue {
     pub edges: bool,
     pub shape: LibgdxSpawnShape,
@@ -78,6 +81,7 @@ pub struct LibgdxTint {
 
 /// Full libGDX particle emitter document (TS `LibgdxParticleDocument`).
 #[derive(Clone, Debug, Default, PartialEq)]
+#[repr(C)]
 pub struct LibgdxParticleDocument {
     pub additive: bool,
     pub angle: LibgdxActiveRangeValue,

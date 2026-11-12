@@ -21,6 +21,7 @@ pub(crate) const DEFAULT_GRAVITY: f32 = 9.81;
 
 /// A Unity color (TS `UnityColor`).
 #[derive(Clone, Copy, Debug, PartialEq)]
+#[repr(C)]
 pub struct UnityColor {
     pub a: f32,
     pub b: f32,
@@ -50,6 +51,7 @@ pub struct UnityMinMaxValue {
 
 /// A Unity burst (TS `UnityBurst`).
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
+#[repr(C)]
 pub struct UnityBurst {
     pub count: f32,
     pub cycle_count: f32,
@@ -81,6 +83,7 @@ pub enum UnityParticleShapeType {
 
 /// A Unity vector (TS `scale: {x,y,z}`).
 #[derive(Clone, Copy, Debug, PartialEq)]
+#[repr(C)]
 pub struct UnityVector3 {
     pub x: f32,
     pub y: f32,
@@ -89,6 +92,7 @@ pub struct UnityVector3 {
 
 /// A Unity shape module (TS `UnityShape`).
 #[derive(Clone, Debug, PartialEq)]
+#[repr(C)]
 pub struct UnityShape {
     pub angle: f32,
     pub enabled: bool,
@@ -99,6 +103,7 @@ pub struct UnityShape {
 
 /// A Unity gradient color stop (TS `UnityGradientColorKey`).
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
+#[repr(C)]
 pub struct UnityGradientColorKey {
     pub b: f32,
     pub g: f32,
@@ -108,6 +113,7 @@ pub struct UnityGradientColorKey {
 
 /// A Unity gradient alpha stop (TS `UnityGradientAlphaKey`).
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
+#[repr(C)]
 pub struct UnityGradientAlphaKey {
     pub alpha: f32,
     pub time: f32,
@@ -122,6 +128,7 @@ pub struct UnityGradient {
 
 /// A Unity animation-curve key (TS `UnityCurveKey`).
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
+#[repr(C)]
 pub struct UnityCurveKey {
     pub time: f32,
     pub value: f32,
@@ -135,6 +142,7 @@ pub struct UnityAnimationCurve {
 
 /// A Unity color-over-lifetime module (TS `UnityColorOverLifetime`).
 #[derive(Clone, Debug, PartialEq)]
+#[repr(C)]
 pub struct UnityColorOverLifetime {
     pub color_end: UnityColor,
     pub color_start: UnityColor,
@@ -144,6 +152,7 @@ pub struct UnityColorOverLifetime {
 
 /// A Unity size-over-lifetime module (TS `UnitySizeOverLifetime`).
 #[derive(Clone, Debug, PartialEq)]
+#[repr(C)]
 pub struct UnitySizeOverLifetime {
     pub curve: Option<UnityAnimationCurve>,
     pub enabled: bool,
@@ -153,6 +162,7 @@ pub struct UnitySizeOverLifetime {
 
 /// A Unity rotation-over-lifetime module (TS `UnityRotationOverLifetime`).
 #[derive(Clone, Debug, PartialEq)]
+#[repr(C)]
 pub struct UnityRotationOverLifetime {
     pub angular_velocity: UnityMinMaxValue,
     pub enabled: bool,
@@ -160,6 +170,7 @@ pub struct UnityRotationOverLifetime {
 
 /// Full Unity particle system document (TS `UnityParticleDocument`).
 #[derive(Clone, Debug, PartialEq)]
+#[repr(C)]
 pub struct UnityParticleDocument {
     pub color_over_lifetime: UnityColorOverLifetime,
     pub duration: f32,

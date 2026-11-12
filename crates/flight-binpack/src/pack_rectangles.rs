@@ -50,6 +50,7 @@ pub struct PackResult {
 
 /// A rectangle to be packed: its identity and dimensions.
 #[derive(Debug, Clone)]
+#[repr(C)]
 pub struct PackableRectangle {
     pub id: RectangleId,
     pub width: f32,
@@ -59,6 +60,7 @@ pub struct PackableRectangle {
 /// A placed rectangle in the output: position, dimensions (possibly swapped if rotated), and
 /// whether it was turned 90 degrees.
 #[derive(Debug, Clone, PartialEq)]
+#[repr(C)]
 pub struct PackedRectangle {
     pub id: RectangleId,
     pub x: f32,

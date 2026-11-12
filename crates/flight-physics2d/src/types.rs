@@ -33,6 +33,7 @@ pub enum Physics2DBodyType {
 
 /// The surface properties a contact is resolved with (TS `Physics2DMaterial`). Plain record.
 #[derive(Clone, Copy, Debug, PartialEq)]
+#[repr(C)]
 pub struct Physics2DMaterial {
     pub density: f32,
     pub friction: f32,
@@ -42,6 +43,7 @@ pub struct Physics2DMaterial {
 /// Which other colliders one collider may contact (TS `Physics2DCollisionFilter`). Plain record;
 /// the bits are the source's 32-bit integer masks.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(C)]
 pub struct Physics2DCollisionFilter {
     pub category_bits: u32,
     pub mask_bits: u32,
@@ -289,6 +291,7 @@ pub struct Physics2DWorld {
 /// anchors, the accumulated impulse block, the solve-time lever arms and the break thresholds.
 /// A kind struct composes it as `fields` and dereferences to it.
 #[derive(Clone, Debug)]
+#[repr(C)]
 pub struct Physics2DJointFields {
     runtime: EntityRuntimeSlot,
     pub(crate) owner: Option<Arc<Physics2DWorldIdentity>>,
@@ -334,6 +337,7 @@ pub type Physics2DJointRef = Ref<dyn Physics2DJoint>;
 
 /// A joint that broke on the last step and the load it failed under (TS `Physics2DBrokenJoint`).
 #[derive(Clone)]
+#[repr(C)]
 pub struct Physics2DBrokenJoint {
     pub force_x: f32,
     pub force_y: f32,
@@ -349,6 +353,7 @@ pub struct Physics2DJointEvents {
 
 /// A distance joint (TS `Physics2DDistanceJoint`).
 #[derive(Clone, Debug, Default)]
+#[repr(C)]
 pub struct Physics2DDistanceJoint {
     pub(crate) fields: Physics2DJointFields,
     pub damping_ratio: f32,
@@ -358,6 +363,7 @@ pub struct Physics2DDistanceJoint {
 
 /// A revolute joint (TS `Physics2DRevoluteJoint`).
 #[derive(Clone, Debug, Default)]
+#[repr(C)]
 pub struct Physics2DRevoluteJoint {
     pub(crate) fields: Physics2DJointFields,
     pub enable_limit: bool,
@@ -375,6 +381,7 @@ pub struct Physics2DRevoluteJoint {
 
 /// A weld joint (TS `Physics2DWeldJoint`).
 #[derive(Clone, Debug, Default)]
+#[repr(C)]
 pub struct Physics2DWeldJoint {
     pub(crate) fields: Physics2DJointFields,
     pub reference_angle: f32,
@@ -382,6 +389,7 @@ pub struct Physics2DWeldJoint {
 
 /// A rope joint (TS `Physics2DRopeJoint`).
 #[derive(Clone, Debug, Default)]
+#[repr(C)]
 pub struct Physics2DRopeJoint {
     pub(crate) fields: Physics2DJointFields,
     pub max_length: f32,
@@ -389,6 +397,7 @@ pub struct Physics2DRopeJoint {
 
 /// A pulley joint (TS `Physics2DPulleyJoint`).
 #[derive(Clone, Debug, Default)]
+#[repr(C)]
 pub struct Physics2DPulleyJoint {
     pub(crate) fields: Physics2DJointFields,
     pub constant: f32,
@@ -410,6 +419,7 @@ pub enum Physics2DGearCoordinateKind {
 
 /// A gear joint (TS `Physics2DGearJoint`).
 #[derive(Clone, Debug, Default)]
+#[repr(C)]
 pub struct Physics2DGearJoint {
     pub(crate) fields: Physics2DJointFields,
     pub axis_ax: f32,
@@ -424,6 +434,7 @@ pub struct Physics2DGearJoint {
 
 /// A prismatic joint (TS `Physics2DPrismaticJoint`).
 #[derive(Clone, Debug, Default)]
+#[repr(C)]
 pub struct Physics2DPrismaticJoint {
     pub(crate) fields: Physics2DJointFields,
     pub enable_limit: bool,
@@ -443,6 +454,7 @@ pub struct Physics2DPrismaticJoint {
 
 /// A wheel joint (TS `Physics2DWheelJoint`).
 #[derive(Clone, Debug, Default)]
+#[repr(C)]
 pub struct Physics2DWheelJoint {
     pub(crate) fields: Physics2DJointFields,
     pub damping_ratio: f32,
@@ -458,6 +470,7 @@ pub struct Physics2DWheelJoint {
 
 /// A mouse joint (TS `Physics2DMouseJoint`).
 #[derive(Clone, Debug, Default)]
+#[repr(C)]
 pub struct Physics2DMouseJoint {
     pub(crate) fields: Physics2DJointFields,
     pub damping_ratio: f32,
@@ -469,6 +482,7 @@ pub struct Physics2DMouseJoint {
 
 /// The fields every joint factory reads (TS `Physics2DJointOptions`). Plain record.
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
+#[repr(C)]
 pub struct Physics2DJointOptions {
     pub body_a: i32,
     pub body_b: i32,
@@ -483,6 +497,7 @@ pub struct Physics2DJointOptions {
 
 /// Options for `create_physics2d_distance_joint` (TS `Physics2DDistanceJointOptions`).
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
+#[repr(C)]
 pub struct Physics2DDistanceJointOptions {
     pub base: Physics2DJointOptions,
     pub damping_ratio: Option<f32>,
@@ -515,6 +530,7 @@ pub struct Physics2DWeldJointOptions {
 
 /// Options for `create_physics2d_rope_joint` (TS `Physics2DRopeJointOptions`).
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
+#[repr(C)]
 pub struct Physics2DRopeJointOptions {
     pub base: Physics2DJointOptions,
     pub max_length: f32,
@@ -522,6 +538,7 @@ pub struct Physics2DRopeJointOptions {
 
 /// Options for `create_physics2d_pulley_joint` (TS `Physics2DPulleyJointOptions`).
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
+#[repr(C)]
 pub struct Physics2DPulleyJointOptions {
     pub base: Physics2DJointOptions,
     pub constant: f32,
@@ -534,6 +551,7 @@ pub struct Physics2DPulleyJointOptions {
 
 /// Options for `create_physics2d_gear_joint` (TS `Physics2DGearJointOptions`).
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
+#[repr(C)]
 pub struct Physics2DGearJointOptions {
     pub axis_ax: Option<f32>,
     pub axis_ay: Option<f32>,
@@ -580,6 +598,7 @@ pub struct Physics2DWheelJointOptions {
 
 /// Options for `create_physics2d_mouse_joint` (TS `Physics2DMouseJointOptions`).
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
+#[repr(C)]
 pub struct Physics2DMouseJointOptions {
     pub body: i32,
     pub break_force: Option<f32>,
@@ -637,6 +656,7 @@ pub type Physics2DJointSolverRef = Arc<Physics2DJointSolver>;
 
 /// One collider found by a world query (TS `Physics2DQueryHit`). Plain record.
 #[derive(Clone)]
+#[repr(C)]
 pub struct Physics2DQueryHit {
     pub body: Ref<RigidBody2D>,
     pub collider: Ref<Physics2DCollider>,
@@ -666,6 +686,7 @@ pub struct Physics2DQueryFilter {
 
 /// One collider a ray hit (TS `Physics2DRayHit`, a query hit plus the hit geometry). Plain record.
 #[derive(Clone)]
+#[repr(C)]
 pub struct Physics2DRayHit {
     pub body: Ref<RigidBody2D>,
     pub collider: Ref<Physics2DCollider>,
@@ -731,6 +752,7 @@ pub enum Physics2DJointResolutionStatus {
 
 /// One joint's resolution (TS `Physics2DJointResolution`). Plain record.
 #[derive(Clone, Debug, PartialEq, Eq)]
+#[repr(C)]
 pub struct Physics2DJointResolution {
     pub body_a: i32,
     pub body_a_found: bool,
@@ -803,6 +825,7 @@ pub enum Physics2DDebugFeature {
 
 /// A debug line (TS `Physics2DDebugLine`). Plain record; `-1` marks an absent body.
 #[derive(Clone, Copy, Debug, PartialEq)]
+#[repr(C)]
 pub struct Physics2DDebugLine {
     pub body_a: i32,
     pub body_b: i32,
@@ -815,6 +838,7 @@ pub struct Physics2DDebugLine {
 
 /// A debug circle (TS `Physics2DDebugCircle`). Plain record; `-1` marks an absent body.
 #[derive(Clone, Copy, Debug, PartialEq)]
+#[repr(C)]
 pub struct Physics2DDebugCircle {
     pub body_a: i32,
     pub body_b: i32,

@@ -80,6 +80,7 @@ pub const StatechartNestedStateKind: &str = "Statechart.Nested";
 // ============================================================================
 
 #[derive(Clone, Debug, PartialEq)]
+#[repr(C)]
 pub struct StatechartCondition {
     pub comparison: StatechartComparison,
     pub input_index: i32,
@@ -87,6 +88,7 @@ pub struct StatechartCondition {
 }
 
 #[derive(Clone, Debug, PartialEq)]
+#[repr(C)]
 pub struct StatechartTransition {
     pub conditions: Vec<StatechartCondition>,
     pub duration_ms: f64,
@@ -95,6 +97,7 @@ pub struct StatechartTransition {
 }
 
 #[derive(Clone, Debug, PartialEq)]
+#[repr(C)]
 pub struct StatechartInput {
     pub initial_value: f64,
     pub kind: StatechartInputKind,
@@ -109,6 +112,7 @@ pub struct StatechartState {
 }
 
 #[derive(Clone, Debug, PartialEq)]
+#[repr(C)]
 pub struct StatechartRegion {
     pub initial_state_index: i32,
     pub name: Option<String>,
@@ -138,6 +142,7 @@ pub struct StatechartSignals {
 // ============================================================================
 
 #[derive(Clone, Debug, PartialEq)]
+#[repr(C)]
 pub struct StatechartTransitionExplanation {
     pub blend: f32,
     pub condition_index: i32,

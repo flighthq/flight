@@ -70,6 +70,7 @@ pub enum RiveValue {
 
 #[derive(Clone, Debug, PartialEq)]
 // flight-lint: allow(contract-vocabulary) Rive property keys are source-format varuints
+#[repr(C)]
 pub struct RiveProperty {
     pub key: u64,
     pub r#type: RiveFieldType,
@@ -78,6 +79,7 @@ pub struct RiveProperty {
 
 #[derive(Clone, Debug, PartialEq)]
 // flight-lint: allow(contract-vocabulary) Rive type keys are source-format varuints
+#[repr(C)]
 pub struct RiveCoreObject {
     pub properties: Vec<RiveProperty>,
     pub type_key: u64,
@@ -85,6 +87,7 @@ pub struct RiveCoreObject {
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 // flight-lint: allow(contract-vocabulary) Rive table keys are source-format varuints
+#[repr(C)]
 pub struct RivePropertyFieldType {
     pub key: u64,
     pub r#type: RiveFieldType,
@@ -92,6 +95,7 @@ pub struct RivePropertyFieldType {
 
 #[derive(Clone, Debug, PartialEq)]
 // flight-lint: allow(contract-vocabulary) Rive file ids and versions are source-format varuints
+#[repr(C)]
 pub struct RiveDocumentHeader {
     pub file_id: u64,
     pub major_version: u64,
@@ -106,6 +110,7 @@ pub struct RiveDocument {
 }
 
 #[derive(Clone, Debug, Default, PartialEq)]
+#[repr(C)]
 pub struct RiveArtboardGraph {
     pub objects: Vec<RiveCoreObject>,
     pub parent_indices: Vec<i32>,
@@ -120,6 +125,7 @@ pub struct RiveObjectGraph {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(C)]
 pub struct RiveObjectRange {
     pub end: usize,
     pub start: usize,
@@ -134,6 +140,7 @@ pub enum RiveWeightedPointKind {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq)]
+#[repr(C)]
 pub struct RiveWeightedPoint {
     pub kind: RiveWeightedPointKind,
     pub vertex: usize,
@@ -156,6 +163,7 @@ pub enum RiveAnimationLoop {
 }
 
 #[derive(Clone, Debug)]
+#[repr(C)]
 pub struct RiveAnimationClip {
     pub clip: AnimationClip,
     pub r#loop: RiveAnimationLoop,
@@ -165,6 +173,7 @@ pub struct RiveAnimationClip {
     pub work_area_start: Option<f32>,
 }
 
+#[repr(C)]
 pub struct RiveArtboardImport {
     pub advanced_blends: Vec<RiveAdvancedBlend>,
     pub animations: Vec<RiveAnimationClip>,
@@ -184,6 +193,7 @@ pub struct RiveDocumentImportResult {
 }
 
 #[derive(Clone, Debug, PartialEq)]
+#[repr(C)]
 pub struct RiveFileAsset {
     pub bytes: Option<Box<[u8]>>,
     pub cdn_base_url: String,
@@ -208,6 +218,7 @@ pub struct RiveScene2DDocumentResult {
 }
 
 #[derive(Clone, Debug, PartialEq)]
+#[repr(C)]
 pub struct RivePathRecord {
     pub commands: Vec<u8>,
     pub data: Vec<f32>,
@@ -223,6 +234,7 @@ pub struct RiveSkeleton2DImport {
 }
 
 #[derive(Clone, Debug, PartialEq)]
+#[repr(C)]
 pub struct RiveStateMachineTransition {
     pub duration: f32,
     pub exit_time: f32,
@@ -231,6 +243,7 @@ pub struct RiveStateMachineTransition {
 }
 
 #[derive(Clone, Debug, PartialEq)]
+#[repr(C)]
 pub struct RiveStateMachineState {
     pub animation_id: f32,
     pub kind: String,
@@ -288,6 +301,7 @@ pub struct RiveCoreObjectHandler {
 }
 
 #[derive(Clone)]
+#[repr(C)]
 pub struct RiveCoreObjectHandlerEntry {
     pub handle: Arc<RiveCoreObjectHandler>,
     pub type_key: i32,
@@ -359,6 +373,7 @@ pub struct LottieAdvancedBlend {
     pub node: Node2DRef,
 }
 
+#[repr(C)]
 pub struct LottieDocumentImportResult {
     pub advanced_blends: Vec<LottieAdvancedBlend>,
     pub clip: AnimationClip,
@@ -384,6 +399,7 @@ pub struct LottieGradientPaint {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq)]
+#[repr(C)]
 pub struct LottieGradientOpacityStop {
     pub alpha: f32,
     pub offset: f32,
@@ -494,12 +510,14 @@ pub struct SvgClipContext<'a, 'b> {
 }
 
 #[derive(Clone, Debug, PartialEq)]
+#[repr(C)]
 pub struct SvgColor {
     pub alpha: f32,
     pub rgb: u32,
 }
 
 #[derive(Clone, Debug, PartialEq)]
+#[repr(C)]
 pub struct SvgCssRule {
     pub declarations: HashMap<String, String>,
     pub order: usize,
@@ -560,6 +578,7 @@ pub struct SvgGradient {
 }
 
 #[derive(Clone, Debug, PartialEq)]
+#[repr(C)]
 pub struct SvgGradientStop {
     pub color: SvgColor,
     pub offset: f32,
@@ -589,6 +608,7 @@ pub struct SvgRegistry {
 }
 
 #[derive(Clone, Debug, PartialEq)]
+#[repr(C)]
 pub struct SvgStyle {
     pub clip_rule: PathWinding,
     pub color: String,
@@ -615,6 +635,7 @@ pub struct SvgStyle {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq)]
+#[repr(C)]
 pub struct SvgViewport {
     pub height: f32,
     pub width: f32,

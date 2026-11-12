@@ -3,6 +3,7 @@
 use flight_entity::Uint8Array;
 
 #[derive(Clone, Debug, PartialEq)]
+#[repr(C)]
 pub struct AbcFile {
     pub classes: Vec<AbcClass>,
     pub constant_pool: AbcConstantPool,
@@ -160,6 +161,7 @@ pub enum AbcTraitKind {
 
 // flight-lint: allow(contract-vocabulary) ABC operands share one TS number array across signed 24-bit offsets and unsigned 35-bit decoder values; exact range -8388608..=34359738367 is below 2^53
 #[derive(Clone, Debug, PartialEq, Eq)]
+#[repr(C)]
 pub struct AbcInstruction {
     pub offset: usize,
     pub opcode: u8,

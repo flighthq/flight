@@ -349,6 +349,7 @@ pub struct EnvironmentOptions {
 }
 
 #[derive(Clone, Debug)]
+#[repr(C)]
 pub struct LightProbe {
     runtime: EntityRuntimeSlot,
     pub enabled: bool,
@@ -357,6 +358,7 @@ pub struct LightProbe {
 }
 
 #[derive(Clone, Debug)]
+#[repr(C)]
 pub struct LightProbeGrid {
     runtime: EntityRuntimeSlot,
     pub bounds: Aabb,
@@ -394,6 +396,7 @@ pub struct Scene3DForwardLightSelection {
 }
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+#[repr(C)]
 pub struct Scene3DForwardLightSelectionExplanation {
     pub point_light_count: usize,
     pub reason: Scene3DForwardLightSelectionReason,
@@ -402,6 +405,7 @@ pub struct Scene3DForwardLightSelectionExplanation {
 }
 
 #[derive(Clone, Debug, Default, PartialEq)]
+#[repr(C)]
 pub struct Scene3DLightBlock {
     pub ambient_count: usize,
     pub data: Box<Float32Array>,

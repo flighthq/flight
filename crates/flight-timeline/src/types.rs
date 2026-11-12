@@ -66,6 +66,7 @@ pub enum TimelineFrameEntryCause {
 
 /// A named frame range start (TS `TimelineLabel`). Plain data.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
+#[repr(C)]
 pub struct TimelineLabel {
     pub frame: i32,
     pub name: String,
@@ -74,6 +75,7 @@ pub struct TimelineLabel {
 /// The payload of a timeline's per-frame signals (TS `TimelineFrameEvent`). Plain data;
 /// `previous_frame` is the `-1` sentinel before the first frame is realized.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+#[repr(C)]
 pub struct TimelineFrameEvent {
     pub frame: i32,
     pub previous_frame: i32,
@@ -174,6 +176,7 @@ pub struct TimelineSignals {
 /// What a timeline plays (TS `TimelineSource`): total frames, labels, authored cues, cadence and the
 /// frame-realization callback. Shareable across timelines.
 // flight-lint: allow(f64) D1: frames-per-second participates in the millisecond cadence lane
+#[repr(C)]
 pub struct TimelineSource {
     runtime: EntityRuntimeSlot,
     pub total_frames: i32,
@@ -199,6 +202,7 @@ pub struct TimelineSourceOptions {
 /// Playback state for one timeline: a playhead bound to a shareable source and a construct target
 /// (TS `Timeline`).
 // flight-lint: allow(f64) D1: accumulated milliseconds, the same timing lane as frame_rate
+#[repr(C)]
 pub struct Timeline {
     runtime: EntityRuntimeSlot,
     pub source: Option<TimelineSourceRef>,

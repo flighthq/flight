@@ -79,6 +79,7 @@ pub struct SpritesheetValidationDiagnostic {
 /// player's frame lookups return the sheet's own frame. `id` is the atlas region id; the pivot is
 /// normalized in the untrimmed frame, `None` when not authored.
 #[derive(Clone, Debug, PartialEq)]
+#[repr(C)]
 pub struct SpritesheetFrame {
     runtime: EntityRuntimeSlot,
     pub id: i32,
@@ -97,6 +98,7 @@ pub struct SpritesheetFrame {
 /// The private field replaces the source's module WeakMap of cumulative start times, computed once
 /// on first variable-duration use and kept for the animation's life (as in the source).
 // flight-lint: allow(f64) D1: frame references and millisecond timings are JS numbers; the playhead resolves them with JS array-index and Math semantics
+#[repr(C)]
 pub struct SpritesheetAnimation {
     runtime: EntityRuntimeSlot,
     pub frames: Vec<f64>,

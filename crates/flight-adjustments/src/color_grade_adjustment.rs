@@ -29,6 +29,7 @@ mod sugar_tests {
 /// contrast pipeline is ported faithfully from the old colorGradeEffect shader; a lift/gamma/gain
 /// pipeline follows it. Gamma makes the composite nonlinear, so the whole grade bakes to one LUT.
 #[derive(Debug, Clone)]
+#[repr(C)]
 pub struct ColorGradeAdjustment {
     fields: AdjustmentFields,
     pub exposure: f32,

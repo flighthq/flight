@@ -24,6 +24,7 @@ pub const COLOR_LUT_DEFAULT_SIZE: u32 = 32;
 /// A 3D color lookup table. `samples` is `size^3 * 3` floats, R fastest then G then B: cell
 /// `(ri, gi, bi)` starts at `((bi * size + gi) * size + ri) * 3`.
 #[derive(Debug, Clone)]
+#[repr(C)]
 pub struct ColorLut {
     pub size: u32,
     pub samples: Vec<f32>,

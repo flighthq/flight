@@ -28,6 +28,7 @@ mod sugar_tests {
 
 /// A supplied 3D color grade LUT applied at `strength`. With no `lut` supplied it is identity.
 #[derive(Debug, Clone)]
+#[repr(C)]
 pub struct LookupTableGradeAdjustment {
     fields: AdjustmentFields,
     pub lut: Option<ColorLut>,

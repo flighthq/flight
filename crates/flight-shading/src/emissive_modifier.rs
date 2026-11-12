@@ -21,6 +21,7 @@ pub struct EmissiveModifier {
 }
 
 #[derive(Clone, Debug)]
+#[repr(C)]
 pub struct EmissiveModifierOptions {
     pub color: u32,
     pub strength: Option<f32>,

@@ -26,6 +26,7 @@ pub struct FlowGuardContext {
 
 /// Explicit diagnostics state for the opt-in flow guards (D5). Plain Rust-only dispatch state: the
 /// caller creates it with a literal and shares it with re-entrant transition callbacks.
+#[repr(C)]
 pub struct FlowGuardState {
     pub enabled: bool,
     pub transition_depth: u32,

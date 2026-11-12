@@ -28,6 +28,7 @@ mod sugar_tests {
 /// Hue/saturation/lightness as a LUT-tier adjustment. The transform is the exact HSL round-trip
 /// from the old hueSaturationEffect shader.
 #[derive(Debug, Clone)]
+#[repr(C)]
 pub struct HueSaturationAdjustment {
     fields: AdjustmentFields,
     pub hue: f32,

@@ -19,6 +19,7 @@ pub enum UnpackedRectangleReason {
 
 /// An explanation of why a single rectangle was not placed.
 #[derive(Debug, Clone, PartialEq)]
+#[repr(C)]
 pub struct UnpackedRectangleExplanation {
     pub id: RectangleId,
     pub reason: UnpackedRectangleReason,

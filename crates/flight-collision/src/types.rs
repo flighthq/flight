@@ -137,6 +137,7 @@ pub struct CollisionSegment2D {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Default)]
+#[repr(C)]
 pub struct CollisionPoint2D {
     pub x: f32,
     pub y: f32,
@@ -205,6 +206,7 @@ pub struct CollisionCapsule3D {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Default)]
+#[repr(C)]
 pub struct CollisionCylinder3D {
     pub x0: f32,
     pub y0: f32,
@@ -216,6 +218,7 @@ pub struct CollisionCylinder3D {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Default)]
+#[repr(C)]
 pub struct CollisionCone3D {
     pub x0: f32,
     pub y0: f32,
@@ -290,6 +293,7 @@ pub const MAX_COLLISION_CONTACT_POINTS_3D: usize = 4;
 
 #[derive(Debug, Clone, Copy, PartialEq, Default)]
 // flight-lint: allow(contract-vocabulary) D1 range declaration: 25-bit feature/triangle indices and versions stay below 2^53, exact in TS numbers
+#[repr(C)]
 pub struct CollisionContactPoint2D {
     pub x: f32,
     pub y: f32,
@@ -299,6 +303,7 @@ pub struct CollisionContactPoint2D {
 
 #[derive(Debug, Clone, Copy, PartialEq, Default)]
 // flight-lint: allow(contract-vocabulary) D1 range declaration: 25-bit feature/triangle indices and versions stay below 2^53, exact in TS numbers
+#[repr(C)]
 pub struct CollisionContactPoint3D {
     pub x: f32,
     pub y: f32,
@@ -418,6 +423,7 @@ pub enum CollisionTestStatus {
 // Collision test explanation types
 
 #[derive(Debug, Clone, Copy, PartialEq)]
+#[repr(C)]
 pub struct CollisionTestExplanation2D {
     pub kind: Option<CollisionShapeKind2D>,
     pub overlapping: bool,
@@ -426,6 +432,7 @@ pub struct CollisionTestExplanation2D {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
+#[repr(C)]
 pub struct CollisionTestExplanation3D {
     pub kind: Option<CollisionShapeKind3D>,
     pub overlapping: bool,

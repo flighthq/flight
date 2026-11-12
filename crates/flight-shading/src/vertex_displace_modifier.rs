@@ -24,6 +24,7 @@ pub struct VertexDisplaceModifier {
 }
 
 #[derive(Clone, Debug)]
+#[repr(C)]
 pub struct VertexDisplaceModifierOptions {
     pub source: VertexDisplaceModifierSource,
     pub amplitude: f32,

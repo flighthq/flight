@@ -47,6 +47,7 @@ pub struct ImageResource {
 
 /// Pixel size written by a host-owned source resolver.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+#[repr(C)]
 pub struct HostImageDimensions {
     pub height: u32,
     pub width: u32,

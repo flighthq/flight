@@ -104,6 +104,7 @@ macro_rules! impl_renderer_data {
 /// The fields every node has (TS `NodeTraits`): open kind name, optional name, enabled gate.
 /// The entity runtime slot and the private runtime tier live here too, with the node's own
 /// type-erased weak self-handle, bound once by `publish_node` (typed handle recovery).
+#[repr(C)]
 pub struct NodeFields {
     runtime: EntityRuntimeSlot,
     state: NodeRuntime,
@@ -115,6 +116,7 @@ pub struct NodeFields {
 
 /// The base node runtime tier (TS `NodeRuntime`, minus the owner-pending interaction slots).
 /// Every revision id is a wrapping revision counter; `-1` marks "no value computed for this axis".
+#[repr(C)]
 pub struct NodeRuntime {
     pub appearance_id: u32,
     pub bounds_using_local_bounds_id: i32,
@@ -160,6 +162,7 @@ pub struct NodeSignals {
 
 /// The shared appearance field group (TS `HasAppearance`).
 #[derive(Clone, Debug, PartialEq)]
+#[repr(C)]
 pub struct HasAppearance {
     pub alpha: f32,
     pub visible: bool,
@@ -197,6 +200,7 @@ pub struct HasMaterial {
 
 /// The decomposed 2D local transform field group (TS `HasTransform2D`).
 #[derive(Clone, Debug, PartialEq)]
+#[repr(C)]
 pub struct HasTransform2D {
     pub pivot_x: f32,
     pub pivot_y: f32,
@@ -210,6 +214,7 @@ pub struct HasTransform2D {
 }
 
 /// The 2D transform runtime cache (TS `HasTransform2DRuntime`).
+#[repr(C)]
 pub struct HasTransform2DRuntime {
     pub local_matrix: Option<Matrix>,
     pub rotation_angle: f32,

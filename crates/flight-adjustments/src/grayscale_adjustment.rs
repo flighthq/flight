@@ -25,6 +25,7 @@ mod sugar_tests {
 /// Luma desaturation as a matrix-tier adjustment. BT.709 weights (0.2126/0.7152/0.0722).
 /// At intensity 1 every channel becomes the luma.
 #[derive(Debug, Clone)]
+#[repr(C)]
 pub struct GrayscaleAdjustment {
     fields: AdjustmentFields,
     pub intensity: f32,

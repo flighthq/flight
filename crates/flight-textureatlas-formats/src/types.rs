@@ -25,6 +25,7 @@ pub enum TextureAtlasFrameTagDirection {
 }
 
 #[derive(Clone, Debug, PartialEq)]
+#[repr(C)]
 pub struct TextureAtlasScaleNumber {
     pub value: f32,
 }
@@ -41,6 +42,7 @@ pub enum TextureAtlasScale {
 }
 
 #[derive(Clone, Debug, PartialEq)]
+#[repr(C)]
 pub struct TextureAtlasAsepriteRect {
     pub h: f32,
     pub w: f32,
@@ -49,12 +51,14 @@ pub struct TextureAtlasAsepriteRect {
 }
 
 #[derive(Clone, Debug, PartialEq)]
+#[repr(C)]
 pub struct TextureAtlasAsepriteSize {
     pub h: f32,
     pub w: f32,
 }
 
 #[derive(Clone, Debug, PartialEq)]
+#[repr(C)]
 pub struct TextureAtlasAsepriteFrameTag {
     pub color: Option<String>,
     pub direction: TextureAtlasFrameTagDirection,
@@ -64,6 +68,7 @@ pub struct TextureAtlasAsepriteFrameTag {
 }
 
 #[derive(Clone, Debug, PartialEq)]
+#[repr(C)]
 pub struct TextureAtlasAsepriteBaseFrame {
     pub duration: f32,
     pub frame: TextureAtlasAsepriteRect,
@@ -76,6 +81,7 @@ pub struct TextureAtlasAsepriteBaseFrame {
 pub type TextureAtlasAsepriteHashFrame = TextureAtlasAsepriteBaseFrame;
 
 #[derive(Clone, Debug, PartialEq)]
+#[repr(C)]
 pub struct TextureAtlasAsepriteArrayFrame {
     pub duration: f32,
     pub filename: String,
@@ -132,6 +138,7 @@ pub enum TextureAtlasAsepriteDocument {
 }
 
 #[derive(Clone, Debug, PartialEq)]
+#[repr(C)]
 pub struct TexturePackerAtlasRect {
     pub h: f32,
     pub w: f32,
@@ -140,18 +147,21 @@ pub struct TexturePackerAtlasRect {
 }
 
 #[derive(Clone, Debug, PartialEq)]
+#[repr(C)]
 pub struct TexturePackerAtlasSize {
     pub h: f32,
     pub w: f32,
 }
 
 #[derive(Clone, Debug, PartialEq)]
+#[repr(C)]
 pub struct TexturePackerAtlasPivot {
     pub x: f32,
     pub y: f32,
 }
 
 #[derive(Clone, Debug, PartialEq)]
+#[repr(C)]
 pub struct TexturePackerAtlasFrameTag {
     pub direction: Option<TextureAtlasFrameTagDirection>,
     pub from: i32,
@@ -160,6 +170,7 @@ pub struct TexturePackerAtlasFrameTag {
 }
 
 #[derive(Clone, Debug, PartialEq)]
+#[repr(C)]
 pub struct TexturePackerAtlasHashFrame {
     pub frame: TexturePackerAtlasRect,
     pub pivot: Option<TexturePackerAtlasPivot>,
@@ -170,6 +181,7 @@ pub struct TexturePackerAtlasHashFrame {
 }
 
 #[derive(Clone, Debug, PartialEq)]
+#[repr(C)]
 pub struct TexturePackerAtlasArrayFrame {
     pub filename: String,
     pub frame: TexturePackerAtlasRect,

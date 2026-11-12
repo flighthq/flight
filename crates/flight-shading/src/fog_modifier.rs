@@ -18,6 +18,7 @@ pub struct FogModifier {
 }
 
 #[derive(Clone, Copy, Debug)]
+#[repr(C)]
 pub struct FogModifierOptions {
     pub color: u32,
     pub mode: Option<FogModifierMode>,

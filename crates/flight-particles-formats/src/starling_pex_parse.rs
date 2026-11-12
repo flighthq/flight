@@ -15,6 +15,7 @@ use crate::text::parse_js_float;
 
 /// A PEX color (TS `StarlingPexColor`).
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
+#[repr(C)]
 pub struct StarlingPexColor {
     pub red: f32,
     pub green: f32,
@@ -33,6 +34,7 @@ pub enum StarlingPexEmitterType {
 
 /// Full Starling PEX document (TS `StarlingPexDocument`).
 #[derive(Clone, Debug, Default, PartialEq)]
+#[repr(C)]
 pub struct StarlingPexDocument {
     pub angle: f32,
     pub angle_variance: f32,

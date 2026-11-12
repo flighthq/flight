@@ -21,6 +21,7 @@ pub(crate) type LogState = flight_log::LogStateRef;
 
 // flight-lint: allow(f64) clip contours preserve the source Path.data coordinates and flattened path precision
 #[derive(Debug)]
+#[repr(C)]
 pub struct ClipRegion {
     runtime: EntityRuntimeSlot,
     pub rect: Rectangle,
@@ -37,6 +38,7 @@ pub enum ClipRegionStatus {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
+#[repr(C)]
 pub struct ClipRegionExplanation {
     pub conservative: bool,
     pub status: ClipRegionStatus,
@@ -50,6 +52,7 @@ pub enum ClipRegionContoursReason {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
+#[repr(C)]
 pub struct ClipRegionContoursExplanation {
     pub contour_index: usize,
     pub coordinate_count: usize,

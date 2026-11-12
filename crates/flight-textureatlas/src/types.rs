@@ -76,6 +76,7 @@ pub struct TextureAtlasRegion {
 
 /// A region's fields without its entity runtime (TS `TextureAtlasRegionLike`). Plain record.
 #[derive(Clone, Debug, Default, PartialEq)]
+#[repr(C)]
 pub struct TextureAtlasRegionLike {
     pub height: f32,
     pub id: i32,

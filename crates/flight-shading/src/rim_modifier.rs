@@ -17,6 +17,7 @@ pub struct RimModifier {
 }
 
 #[derive(Clone, Copy, Debug)]
+#[repr(C)]
 pub struct RimModifierOptions {
     pub color: u32,
     pub power: Option<f32>,

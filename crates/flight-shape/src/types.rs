@@ -207,6 +207,7 @@ pub struct Shape {
 
 /// Morph shape kind data (TS `MorphShapeData`): the command stream plus the retained path/paint
 /// morph bindings and the unclamped interpolation progress.
+#[repr(C)]
 pub struct MorphShapeData {
     runtime: EntityRuntimeSlot,
     pub commands: Vec<ShapeCommandToken>,
@@ -220,6 +221,7 @@ pub struct MorphShapeData {
 
 /// One retained path binding: the prepared morph and the live sampled path.
 #[derive(Clone)]
+#[repr(C)]
 pub struct MorphShapePathBinding {
     pub command_index: usize,
     pub morph: Ref<PathMorph>,
@@ -228,6 +230,7 @@ pub struct MorphShapePathBinding {
 
 /// A color paint endpoint (TS `MorphShapeColorEndpoint`): packed RGBA plus optional alpha.
 #[derive(Clone, Debug, PartialEq)]
+#[repr(C)]
 pub struct MorphShapeColorEndpoint {
     pub alpha: Option<f32>,
     pub color: u32,
@@ -245,6 +248,7 @@ pub struct MorphShapeGradientEndpoint {
 
 /// A line paint endpoint (TS `MorphShapeLineEndpoint`).
 #[derive(Clone, Debug, PartialEq)]
+#[repr(C)]
 pub struct MorphShapeLineEndpoint {
     pub alpha: Option<f32>,
     pub color: u32,
@@ -253,6 +257,7 @@ pub struct MorphShapeLineEndpoint {
 
 /// A retained solid-color paint binding (TS `MorphShapeColorPaintBinding`).
 #[derive(Clone, Debug, PartialEq)]
+#[repr(C)]
 pub struct MorphShapeColorPaintBinding {
     pub command_index: usize,
     pub end_alpha: f32,
@@ -263,6 +268,7 @@ pub struct MorphShapeColorPaintBinding {
 
 /// A retained gradient paint binding (TS `MorphShapeGradientPaintBinding`).
 #[derive(Clone, Debug, PartialEq)]
+#[repr(C)]
 pub struct MorphShapeGradientPaintBinding {
     pub command_index: usize,
     pub command_key: String,
@@ -280,6 +286,7 @@ pub struct MorphShapeGradientPaintBinding {
 
 /// A retained line paint binding (TS `MorphShapeLinePaintBinding`).
 #[derive(Clone, Debug, PartialEq)]
+#[repr(C)]
 pub struct MorphShapeLinePaintBinding {
     pub command_index: usize,
     pub end_alpha: f32,
@@ -292,6 +299,7 @@ pub struct MorphShapeLinePaintBinding {
 
 /// A retained texture paint binding (TS `MorphShapeTexturePaintBinding`).
 #[derive(Clone, Debug, PartialEq)]
+#[repr(C)]
 pub struct MorphShapeTexturePaintBinding {
     pub command_index: usize,
     pub command_key: String,
@@ -402,6 +410,7 @@ pub struct ShapeBoundsCommand {
 
 /// Missing-command diagnostics from a bounds traversal (TS `ShapeBoundsExplanation`).
 #[derive(Clone, Debug, PartialEq, Eq)]
+#[repr(C)]
 pub struct ShapeBoundsExplanation {
     pub complete: bool,
     pub missing_command_keys: Vec<String>,
@@ -426,6 +435,7 @@ pub type ShapeBoundsStateRef = Ref<ShapeBoundsState>;
 
 /// One solid-color filled region (TS `ShapeFillRegion`).
 #[derive(Clone)]
+#[repr(C)]
 pub struct ShapeFillRegion {
     pub alpha: f32,
     pub color: u32,
@@ -434,6 +444,7 @@ pub struct ShapeFillRegion {
 
 /// One solid-color stroke region: the authored centerline plus its style (TS `ShapeStrokeRegion`).
 #[derive(Clone)]
+#[repr(C)]
 pub struct ShapeStrokeRegion {
     pub alpha: f32,
     pub color: u32,

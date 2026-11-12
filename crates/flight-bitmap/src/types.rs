@@ -266,6 +266,7 @@ pub struct BitmapBevelOptions {
 
 /// Options for convolution.
 #[derive(Clone, Debug)]
+#[repr(C)]
 pub struct BitmapConvolutionOptions {
     pub matrix: Vec<f32>,
     pub matrix_x: i32,
@@ -378,6 +379,7 @@ pub struct BitmapEncodeFailureExplanation {
 
 /// Readback explanation.
 #[derive(Clone, Debug)]
+#[repr(C)]
 pub struct BitmapReadbackExplanation {
     pub readable: bool,
     pub reason: BitmapReadbackBlockReason,

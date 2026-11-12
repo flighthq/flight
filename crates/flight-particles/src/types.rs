@@ -9,12 +9,14 @@ use flight_signals::Signal;
 // ---------------------------------------------------------------------------
 
 #[derive(Clone, Debug, Default)]
+#[repr(C)]
 pub struct CurveKeyframe {
     pub time: f32,
     pub value: f32,
 }
 
 #[derive(Clone, Debug, Default)]
+#[repr(C)]
 pub struct ColorKeyframe {
     pub time: f32,
     pub r: f32,
@@ -154,6 +156,7 @@ pub enum ParticleForce {
 /// Payload of `on_particle_death` (TS `(x, y, z) => void`): last-known particle position.
 /// 2D emitters pass `z = 0`.
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
+#[repr(C)]
 pub struct ParticleDeathEvent {
     pub x: f32,
     pub y: f32,
@@ -163,6 +166,7 @@ pub struct ParticleDeathEvent {
 /// Payload of `on_particle_spawn` (TS `(x, y, z, vx, vy, vz) => void`): spawn position and
 /// initial velocity. 2D emitters pass `z = vz = 0`.
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
+#[repr(C)]
 pub struct ParticleSpawnEvent {
     pub x: f32,
     pub y: f32,
@@ -364,6 +368,7 @@ pub struct ParticleEmitterCallbacks {
 // ---------------------------------------------------------------------------
 
 #[derive(Clone, Debug)]
+#[repr(C)]
 pub struct ParticleObject {
     pub alpha: f32,
     pub blend_mode: Option<ParticleBlendMode>,
@@ -396,6 +401,7 @@ pub struct ParticleObjectCallbacks {
     pub on_death: Option<fn(f32, f32, f32)>,
 }
 
+#[repr(C)]
 pub struct ParticleObjectsUpdateOptions {
     pub emitter_x: f32,
     pub emitter_y: f32,

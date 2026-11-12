@@ -95,6 +95,7 @@ pub struct AudioResourceUrl {
 /// Web Audio `AudioBuffer` as a plain shared record. Every channel owns one fixed Float32Array
 /// allocation behind a shared mutable handle, so channel-data reads preserve JavaScript identity.
 #[derive(Clone)]
+#[repr(C)]
 pub struct AudioBuffer {
     pub sample_rate: f32,
     pub length: usize,

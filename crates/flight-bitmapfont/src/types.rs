@@ -70,6 +70,7 @@ pub struct BitmapFontData {
 
 /// One authored glyph plus its Unicode codepoint.
 #[derive(Clone, Debug, PartialEq)]
+#[repr(C)]
 pub struct BitmapFontGlyphData {
     pub advance: f32,
     pub bearing_x: i32,
@@ -84,6 +85,7 @@ pub struct BitmapFontGlyphData {
 
 /// One authored kerning adjustment.
 #[derive(Clone, Copy, Debug, PartialEq)]
+#[repr(C)]
 pub struct BitmapFontKerningData {
     pub amount: f32,
     pub left: u32,
@@ -100,6 +102,7 @@ pub struct BitmapFontKerningPair {
 
 /// Pull-style explanation for one codepoint.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(C)]
 pub struct BitmapFontGlyphExplanation {
     pub glyph_height: u32,
     pub glyph_width: u32,
@@ -111,6 +114,7 @@ pub struct BitmapFontGlyphExplanation {
 
 /// Size and codepoint-range summary for one font.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(C)]
 pub struct BitmapFontSummary {
     pub byte_size: usize,
     pub glyph_count: usize,

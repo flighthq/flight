@@ -24,6 +24,7 @@ pub enum ParticleDesignerEmitterType {
 
 /// Full Particle Designer document (TS `ParticleDesignerDocument`).
 #[derive(Clone, Debug, Default, PartialEq)]
+#[repr(C)]
 pub struct ParticleDesignerDocument {
     pub angle: f32,
     pub angle_variance: f32,
