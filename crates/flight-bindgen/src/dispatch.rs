@@ -5,8 +5,8 @@ use std::path::Path;
 
 use crate::haxe_common::has_ffi_function;
 use crate::parse::{
-    CrateExports, ParamKind, ParsedFn, ReturnKind, classify_param, classify_return, to_camel_case,
-    to_pascal_case,
+    CrateExports, ParamKind, ParsedEnum, ParsedFn, ReturnKind, classify_param, classify_return,
+    to_camel_case, to_pascal_case,
 };
 
 pub fn generate(
@@ -58,8 +58,28 @@ pub fn generate(
         }
     }
 
+    let mut enum_seen = BTreeSet::new();
+    let mut enum_count = 0usize;
+    for crate_export in crate_exports {
+        for parsed_enum in &crate_export.enums {
+            if all_opaque_types.contains(&parsed_enum.name)
+                || modules.contains_key(parsed_enum.name.as_str())
+            {
+                continue;
+            }
+            if !enum_seen.insert(&parsed_enum.name) {
+                continue;
+            }
+            let output = emit_enum_file(parsed_enum);
+            let path = flight_dir.join(format!("{}.hx", parsed_enum.name));
+            write_if_changed(&path, &output);
+            total_files += 1;
+            enum_count += 1;
+        }
+    }
+
     eprintln!(
-        "wrote {total_files} dispatch files to {}",
+        "wrote {total_files} dispatch files ({enum_count} enum abstracts) to {}",
         flight_dir.display()
     );
 }
@@ -366,6 +386,24 @@ fn collect_opaque_types(func: &ParsedFn, types: &mut BTreeSet<String>) {
             types.insert(ty);
         }
     }
+}
+
+fn emit_enum_file(parsed_enum: &ParsedEnum) -> String {
+    let name = &parsed_enum.name;
+    let mut output = String::new();
+    writeln!(output, "package flight;").unwrap();
+    writeln!(output).unwrap();
+    writeln!(output, "abstract {name}(Int) from Int to Int {{").unwrap();
+    for v in &parsed_enum.variants {
+        writeln!(
+            output,
+            "\tpublic static inline var {}:{name} = {};",
+            v.name, v.value
+        )
+        .unwrap();
+    }
+    writeln!(output, "}}").unwrap();
+    output
 }
 
 fn write_if_changed(path: &Path, content: &str) {

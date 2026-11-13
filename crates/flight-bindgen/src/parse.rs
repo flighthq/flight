@@ -258,10 +258,21 @@ pub struct ParsedStruct {
 }
 
 #[derive(Debug)]
+pub struct ParsedEnumVariant {
+    pub name: String,
+    pub value: u32,
+}
+
+pub struct ParsedEnum {
+    pub name: String,
+    pub variants: Vec<ParsedEnumVariant>,
+}
+
 pub struct CrateExports {
     pub dir_name: String,
     pub fns: Vec<ParsedFn>,
     pub structs: Vec<ParsedStruct>,
+    pub enums: Vec<ParsedEnum>,
 }
 
 pub fn is_scalar(ty: &str) -> bool {
@@ -341,6 +352,7 @@ pub fn scan_all_crates(crates_dir: &Path) -> Vec<CrateExports> {
 
         let fns = collect_pub_fns(&src_dir);
         let structs = collect_pub_structs(&src_dir);
+        let enums = collect_pub_enums(&src_dir);
 
         let mut exported_fns = Vec::new();
         for func in fns {
@@ -427,11 +439,12 @@ pub fn scan_all_crates(crates_dir: &Path) -> Vec<CrateExports> {
         }
         exported_fns.extend(free_fns);
 
-        if !exported_fns.is_empty() || !structs.is_empty() {
+        if !exported_fns.is_empty() || !structs.is_empty() || !enums.is_empty() {
             results.push(CrateExports {
                 dir_name: dir_name.to_string(),
                 fns: exported_fns,
                 structs,
+                enums,
             });
         }
     }
@@ -1339,6 +1352,49 @@ pub fn collect_pub_structs(src_dir: &Path) -> Vec<ParsedStruct> {
     structs
 }
 
+pub fn collect_pub_enums(src_dir: &Path) -> Vec<ParsedEnum> {
+    let lib_path = src_dir.join("lib.rs");
+    if !lib_path.exists() {
+        return Vec::new();
+    }
+
+    let exported_names = collect_exported_type_names(&lib_path, src_dir);
+    if exported_names.is_empty() {
+        return Vec::new();
+    }
+
+    let mut enums = Vec::new();
+    let mut entries: Vec<_> = fs::read_dir(src_dir)
+        .unwrap()
+        .filter_map(|e| e.ok())
+        .filter(|e| {
+            e.path().extension().is_some_and(|ext| ext == "rs")
+                && !e.file_name().to_string_lossy().contains("test")
+        })
+        .collect();
+    entries.sort_by_key(|e| e.file_name());
+
+    let mut seen = BTreeSet::new();
+    for entry in entries {
+        let fname = entry.file_name().to_string_lossy().to_string();
+        if fname == "contract.rs" || fname == "lib.rs" {
+            continue;
+        }
+        let content = fs::read_to_string(entry.path()).unwrap();
+        let mut all_enums = Vec::new();
+        parse_enums_with_variants(&content, &mut all_enums);
+        for e in all_enums {
+            if exported_names.contains(&e.name)
+                && !SKIP_TYPES.contains(&e.name.as_str())
+                && seen.insert(e.name.clone())
+            {
+                enums.push(e);
+            }
+        }
+    }
+    enums
+}
+
 fn collect_exported_type_names(lib_path: &Path, src_dir: &Path) -> BTreeSet<String> {
     let content = fs::read_to_string(lib_path).unwrap();
     let mut names = BTreeSet::new();
@@ -1620,6 +1676,105 @@ pub fn parse_simple_enums(content: &str, out: &mut BTreeSet<String>) {
 
         if all_unit && variant_count >= 2 {
             out.insert(name);
+        }
+    }
+}
+
+pub fn parse_enums_with_variants(content: &str, out: &mut Vec<ParsedEnum>) {
+    let lines: Vec<&str> = content.lines().collect();
+    let mut i = 0;
+    while i < lines.len() {
+        let line = lines[i].trim();
+        if !line.starts_with("pub enum ") || !line.contains('{') {
+            i += 1;
+            continue;
+        }
+
+        let name_part = line.strip_prefix("pub enum ").unwrap();
+        let name_end = name_part.find(|c: char| c == '{' || c == '<' || c == ' ');
+        let name = match name_end {
+            Some(e) => name_part[..e].trim().to_string(),
+            None => {
+                i += 1;
+                continue;
+            }
+        };
+
+        if name_part.contains('<') {
+            i += 1;
+            continue;
+        }
+
+        let has_repr_u32 = {
+            let mut k = (i as isize) - 1;
+            let mut found = false;
+            while k >= 0 {
+                let kline = lines[k as usize].trim();
+                if kline == "#[repr(u32)]" {
+                    found = true;
+                    break;
+                }
+                if kline.starts_with("#[") || kline.starts_with("//") || kline.is_empty() {
+                    k -= 1;
+                    continue;
+                }
+                break;
+            }
+            found
+        };
+
+        if !has_repr_u32 {
+            i += 1;
+            continue;
+        }
+
+        let mut all_unit = true;
+        let mut variants = Vec::new();
+        let mut next_value = 0u32;
+        i += 1;
+        while i < lines.len() {
+            let vline = lines[i].trim();
+            if vline == "}" {
+                break;
+            }
+            i += 1;
+            if vline.is_empty() || vline.starts_with("//") || vline.starts_with('#') {
+                continue;
+            }
+            let vline = vline.trim_end_matches(',');
+            if vline.contains('(') || vline.contains('{') {
+                all_unit = false;
+                break;
+            }
+            if let Some((vname, val_str)) = vline.split_once('=') {
+                let vname = vname.trim().to_string();
+                let val_str = val_str.trim();
+                if let Some(hex) = val_str
+                    .strip_prefix("0x")
+                    .or_else(|| val_str.strip_prefix("0X"))
+                {
+                    if let Ok(v) = u32::from_str_radix(hex, 16) {
+                        next_value = v;
+                    }
+                } else if let Ok(v) = val_str.parse::<u32>() {
+                    next_value = v;
+                }
+                variants.push(ParsedEnumVariant {
+                    name: vname,
+                    value: next_value,
+                });
+            } else {
+                variants.push(ParsedEnumVariant {
+                    name: vline.trim().to_string(),
+                    value: next_value,
+                });
+            }
+            next_value += 1;
+        }
+        i += 1;
+
+        if all_unit && variants.len() >= 2 {
+            out.push(ParsedEnum { name, variants });
         }
     }
 }
