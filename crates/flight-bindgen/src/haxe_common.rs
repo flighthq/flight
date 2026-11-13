@@ -190,6 +190,31 @@ pub fn to_snake_case(s: &str) -> String {
     out
 }
 
+pub fn has_ffi_function(fn_name: &str, ffi_names: Option<&BTreeSet<String>>) -> bool {
+    match ffi_names {
+        None => true,
+        Some(names) => {
+            let ffi_name = format!("flight_{fn_name}");
+            names.contains(&ffi_name)
+        }
+    }
+}
+
+pub fn has_ffi_accessor(
+    type_name: &str,
+    field_name: &str,
+    ffi_names: Option<&BTreeSet<String>>,
+) -> bool {
+    match ffi_names {
+        None => true,
+        Some(names) => {
+            let snake = to_snake_case(type_name);
+            let getter = format!("flight_get_{snake}_{field_name}");
+            names.contains(&getter)
+        }
+    }
+}
+
 pub fn write_if_changed(path: &Path, content: &str) {
     if let Ok(existing) = fs::read_to_string(path) {
         if existing == content {

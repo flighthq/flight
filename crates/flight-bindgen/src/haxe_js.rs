@@ -5,7 +5,8 @@ use std::path::Path;
 
 use crate::haxe_common::{
     TypeMethod, build_struct_map, build_type_methods, collect_opaque_types, crate_dir_to_module,
-    derive_method_name, find_self_param, scalar_to_haxe, to_snake_case, write_if_changed,
+    derive_method_name, find_self_param, has_ffi_accessor, has_ffi_function, scalar_to_haxe,
+    to_snake_case, write_if_changed,
 };
 use crate::parse::{
     CrateExports, ParamKind, ParsedFn, ParsedStruct, ReturnKind, classify_param, classify_return,
@@ -15,7 +16,11 @@ use crate::parse::{
 const PKG: &str = "flight._js";
 const WASM_MODULE: &str = "flight";
 
-pub fn generate(crate_exports: &[CrateExports], out_dir: &Path) {
+pub fn generate(
+    crate_exports: &[CrateExports],
+    out_dir: &Path,
+    ffi_names: Option<&BTreeSet<String>>,
+) {
     let js_dir = out_dir.join("flight").join("_js");
     let fn_dir = js_dir.join("_fn");
     fs::create_dir_all(&js_dir).unwrap();
@@ -41,7 +46,8 @@ pub fn generate(crate_exports: &[CrateExports], out_dir: &Path) {
     for ty in &all_opaque_types {
         let parsed_struct = struct_map.get(ty.as_str()).copied();
         let methods = type_methods.get(ty.as_str());
-        let type_output = emit_type_file(ty, parsed_struct, methods.map(|v| v.as_slice()));
+        let type_output =
+            emit_type_file(ty, parsed_struct, methods.map(|v| v.as_slice()), ffi_names);
         let type_path = js_dir.join(format!("{ty}.hx"));
         write_if_changed(&type_path, &type_output);
         total_files += 1;
@@ -59,7 +65,7 @@ pub fn generate(crate_exports: &[CrateExports], out_dir: &Path) {
     let mut total_fns = 0usize;
     for crate_export in crate_exports {
         let module_name = crate_dir_to_module(&crate_export.dir_name);
-        let module_output = emit_module_file(&module_name, &crate_export.fns);
+        let module_output = emit_module_file(&module_name, &crate_export.fns, ffi_names);
         if !module_output.is_empty() {
             let module_path = fn_dir.join(format!("{module_name}.hx"));
             write_if_changed(&module_path, &module_output);
@@ -79,13 +85,20 @@ fn emit_type_file(
     ty: &str,
     parsed_struct: Option<&ParsedStruct>,
     methods: Option<&[TypeMethod<'_>]>,
+    ffi_names: Option<&BTreeSet<String>>,
 ) -> String {
     let mut output = String::new();
     writeln!(output, "package {PKG};").unwrap();
     writeln!(output).unwrap();
 
-    let fields = parsed_struct.map(|s| &s.fields[..]).unwrap_or(&[]);
-    let method_strs = methods.map(|ms| emit_methods(ty, ms)).unwrap_or_default();
+    let all_fields = parsed_struct.map(|s| &s.fields[..]).unwrap_or(&[]);
+    let fields: Vec<_> = all_fields
+        .iter()
+        .filter(|f| has_ffi_accessor(ty, &f.name, ffi_names))
+        .collect();
+    let method_strs = methods
+        .map(|ms| emit_methods(ty, ms, ffi_names))
+        .unwrap_or_default();
 
     if fields.is_empty() && method_strs.is_empty() {
         writeln!(output, "abstract {ty}(Dynamic) {{}}").unwrap();
@@ -93,13 +106,13 @@ fn emit_type_file(
     }
 
     if !fields.is_empty() {
-        emit_ffi_class(&mut output, ty, fields);
+        emit_ffi_class(&mut output, ty, &fields);
         writeln!(output).unwrap();
     }
 
     writeln!(output, "abstract {ty}(Dynamic) {{").unwrap();
 
-    for field in fields {
+    for field in &fields {
         let haxe_ty = scalar_to_haxe(&field.ty);
         let haxe_name = to_camel_case(&field.name);
         let ffi_class = format!("{ty}_Ffi");
@@ -131,7 +144,7 @@ fn emit_type_file(
     output
 }
 
-fn emit_ffi_class(output: &mut String, ty: &str, fields: &[crate::parse::StructField]) {
+fn emit_ffi_class(output: &mut String, ty: &str, fields: &[&crate::parse::StructField]) {
     let snake = to_snake_case(ty);
     writeln!(output, "@:jsRequire(\"{WASM_MODULE}\")").unwrap();
     writeln!(output, "private extern class {ty}_Ffi {{").unwrap();
@@ -155,11 +168,18 @@ fn emit_ffi_class(output: &mut String, ty: &str, fields: &[crate::parse::StructF
     writeln!(output, "}}").unwrap();
 }
 
-fn emit_methods(ty: &str, methods: &[TypeMethod<'_>]) -> Vec<String> {
+fn emit_methods(
+    ty: &str,
+    methods: &[TypeMethod<'_>],
+    ffi_names: Option<&BTreeSet<String>>,
+) -> Vec<String> {
     let mut out = Vec::new();
     let mut seen_names: BTreeSet<String> = BTreeSet::new();
 
     for tm in methods {
+        if !has_ffi_function(&tm.func.name, ffi_names) {
+            continue;
+        }
         if let Some(method) = emit_one_method(ty, tm) {
             let method_name = derive_method_name(&tm.func.name, ty).unwrap_or_default();
             if seen_names.insert(method_name) {
@@ -242,9 +262,16 @@ fn emit_one_method(ty: &str, tm: &TypeMethod<'_>) -> Option<String> {
     ))
 }
 
-fn emit_module_file(module_name: &str, fns: &[ParsedFn]) -> String {
+fn emit_module_file(
+    module_name: &str,
+    fns: &[ParsedFn],
+    ffi_names: Option<&BTreeSet<String>>,
+) -> String {
     let mut emitted: Vec<String> = Vec::new();
     for func in fns {
+        if !has_ffi_function(&func.name, ffi_names) {
+            continue;
+        }
         if let Some(decl) = emit_function(func) {
             emitted.push(decl);
         }

@@ -6,6 +6,7 @@ mod haxe_js;
 mod offsets;
 mod parse;
 
+use std::collections::BTreeSet;
 use std::path::PathBuf;
 
 fn main() {
@@ -31,6 +32,12 @@ fn main() {
         .and_then(|i| args.get(i + 1))
         .map(PathBuf::from);
 
+    let ffi_names_path = args
+        .iter()
+        .position(|a| a == "--ffi-names")
+        .and_then(|i| args.get(i + 1))
+        .map(PathBuf::from);
+
     let crates_dir = find_crates_dir();
     let exports = parse::scan_all_crates(&crates_dir);
     let field_offsets = offsets_path
@@ -38,27 +45,33 @@ fn main() {
         .map(|p| offsets::load_offsets(p))
         .unwrap_or_default();
 
+    let ffi_names: Option<BTreeSet<String>> = ffi_names_path.map(|p| {
+        let content = std::fs::read_to_string(&p)
+            .unwrap_or_else(|e| panic!("could not read ffi-names file {}: {e}", p.display()));
+        content.lines().map(|l| l.trim().to_string()).collect()
+    });
+
     let total_fns: usize = exports.iter().map(|e| e.fns.len()).sum();
     let total_crates = exports.len();
 
     match target {
         "haxe-hl" => {
-            haxe_hl::generate(&exports, &out_dir, &field_offsets);
-            dispatch::generate(&exports, &out_dir);
+            haxe_hl::generate(&exports, &out_dir, &field_offsets, ffi_names.as_ref());
+            dispatch::generate(&exports, &out_dir, ffi_names.as_ref());
         }
         "haxe-cpp" => {
-            haxe_cpp::generate(&exports, &out_dir);
-            dispatch::generate(&exports, &out_dir);
+            haxe_cpp::generate(&exports, &out_dir, ffi_names.as_ref());
+            dispatch::generate(&exports, &out_dir, ffi_names.as_ref());
         }
         "haxe-js" => {
-            haxe_js::generate(&exports, &out_dir);
-            dispatch::generate(&exports, &out_dir);
+            haxe_js::generate(&exports, &out_dir, ffi_names.as_ref());
+            dispatch::generate(&exports, &out_dir, ffi_names.as_ref());
         }
         "haxe" => {
-            haxe_hl::generate(&exports, &out_dir, &field_offsets);
-            haxe_cpp::generate(&exports, &out_dir);
-            haxe_js::generate(&exports, &out_dir);
-            dispatch::generate(&exports, &out_dir);
+            haxe_hl::generate(&exports, &out_dir, &field_offsets, ffi_names.as_ref());
+            haxe_cpp::generate(&exports, &out_dir, ffi_names.as_ref());
+            haxe_js::generate(&exports, &out_dir, ffi_names.as_ref());
+            dispatch::generate(&exports, &out_dir, ffi_names.as_ref());
         }
         other => {
             eprintln!("unknown target: {other}");

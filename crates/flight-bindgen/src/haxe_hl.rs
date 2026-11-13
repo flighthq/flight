@@ -5,7 +5,8 @@ use std::path::Path;
 
 use crate::haxe_common::{
     TypeMethod, build_struct_map, build_type_methods, collect_opaque_types, crate_dir_to_module,
-    derive_method_name, find_self_param, scalar_to_haxe, to_snake_case, write_if_changed,
+    derive_method_name, find_self_param, has_ffi_accessor, has_ffi_function, scalar_to_haxe,
+    to_snake_case, write_if_changed,
 };
 use crate::offsets::FieldOffsets;
 use crate::parse::{
@@ -16,7 +17,12 @@ use crate::parse::{
 const LIB_NAME: &str = "flight";
 const PKG: &str = "flight._hl";
 
-pub fn generate(crate_exports: &[CrateExports], out_dir: &Path, field_offsets: &FieldOffsets) {
+pub fn generate(
+    crate_exports: &[CrateExports],
+    out_dir: &Path,
+    field_offsets: &FieldOffsets,
+    ffi_names: Option<&BTreeSet<String>>,
+) {
     let hl_dir = out_dir.join("flight").join("_hl");
     let fn_dir = hl_dir.join("_fn");
     fs::create_dir_all(&hl_dir).unwrap();
@@ -48,6 +54,7 @@ pub fn generate(crate_exports: &[CrateExports], out_dir: &Path, field_offsets: &
             parsed_struct,
             methods.map(|v| v.as_slice()),
             struct_offsets,
+            ffi_names,
         );
         let type_path = hl_dir.join(format!("{ty}.hx"));
         write_if_changed(&type_path, &type_output);
@@ -66,7 +73,7 @@ pub fn generate(crate_exports: &[CrateExports], out_dir: &Path, field_offsets: &
     let mut total_fns = 0usize;
     for crate_export in crate_exports {
         let module_name = crate_dir_to_module(&crate_export.dir_name);
-        let module_output = emit_module_file(&module_name, &crate_export.fns);
+        let module_output = emit_module_file(&module_name, &crate_export.fns, ffi_names);
         if !module_output.is_empty() {
             let module_path = fn_dir.join(format!("{module_name}.hx"));
             write_if_changed(&module_path, &module_output);
@@ -87,13 +94,23 @@ fn emit_type_file(
     parsed_struct: Option<&ParsedStruct>,
     methods: Option<&[TypeMethod<'_>]>,
     struct_offsets: Option<&std::collections::BTreeMap<String, usize>>,
+    ffi_names: Option<&BTreeSet<String>>,
 ) -> String {
     let mut output = String::new();
     writeln!(output, "package {PKG};").unwrap();
     writeln!(output).unwrap();
 
-    let fields = parsed_struct.map(|s| &s.fields[..]).unwrap_or(&[]);
-    let method_strs = methods.map(|ms| emit_methods(ty, ms)).unwrap_or_default();
+    let all_fields = parsed_struct.map(|s| &s.fields[..]).unwrap_or(&[]);
+    let fields: Vec<_> = all_fields
+        .iter()
+        .filter(|f| {
+            struct_offsets.and_then(|m| m.get(&f.name)).is_some()
+                || has_ffi_accessor(ty, &f.name, ffi_names)
+        })
+        .collect();
+    let method_strs = methods
+        .map(|ms| emit_methods(ty, ms, ffi_names))
+        .unwrap_or_default();
 
     if fields.is_empty() && method_strs.is_empty() {
         writeln!(output, "abstract {ty}(hl.Bytes) {{}}").unwrap();
@@ -102,7 +119,7 @@ fn emit_type_file(
 
     writeln!(output, "abstract {ty}(hl.Bytes) {{").unwrap();
 
-    for field in fields {
+    for field in &fields {
         let haxe_ty = scalar_to_haxe(&field.ty);
         let haxe_name = to_camel_case(&field.name);
         let offset = struct_offsets.and_then(|m| m.get(&field.name).copied());
@@ -177,11 +194,18 @@ fn hl_bytes_setter(rust_ty: &str, offset: usize) -> String {
     }
 }
 
-fn emit_methods(ty: &str, methods: &[TypeMethod<'_>]) -> Vec<String> {
+fn emit_methods(
+    ty: &str,
+    methods: &[TypeMethod<'_>],
+    ffi_names: Option<&BTreeSet<String>>,
+) -> Vec<String> {
     let mut out = Vec::new();
     let mut seen_names: BTreeSet<String> = BTreeSet::new();
 
     for tm in methods {
+        if !has_ffi_function(&tm.func.name, ffi_names) {
+            continue;
+        }
         if let Some(method) = emit_one_method(ty, tm) {
             let method_name = derive_method_name(&tm.func.name, ty).unwrap_or_default();
             if seen_names.insert(method_name) {
@@ -264,9 +288,16 @@ fn emit_one_method(ty: &str, tm: &TypeMethod<'_>) -> Option<String> {
     ))
 }
 
-fn emit_module_file(module_name: &str, fns: &[ParsedFn]) -> String {
+fn emit_module_file(
+    module_name: &str,
+    fns: &[ParsedFn],
+    ffi_names: Option<&BTreeSet<String>>,
+) -> String {
     let mut emitted: Vec<String> = Vec::new();
     for func in fns {
+        if !has_ffi_function(&func.name, ffi_names) {
+            continue;
+        }
         if let Some(decl) = emit_function(func) {
             emitted.push(decl);
         }

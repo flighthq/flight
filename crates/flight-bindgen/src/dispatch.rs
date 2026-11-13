@@ -3,12 +3,17 @@ use std::fmt::Write as _;
 use std::fs;
 use std::path::Path;
 
+use crate::haxe_common::has_ffi_function;
 use crate::parse::{
     CrateExports, ParamKind, ParsedFn, ReturnKind, classify_param, classify_return, to_camel_case,
     to_pascal_case,
 };
 
-pub fn generate(crate_exports: &[CrateExports], out_dir: &Path) {
+pub fn generate(
+    crate_exports: &[CrateExports],
+    out_dir: &Path,
+    ffi_names: Option<&BTreeSet<String>>,
+) {
     let flight_dir = out_dir.join("flight");
     fs::create_dir_all(&flight_dir).unwrap();
 
@@ -45,7 +50,7 @@ pub fn generate(crate_exports: &[CrateExports], out_dir: &Path) {
 
     for (module_name, fns) in &modules {
         let has_matching_type = types_that_are_modules.contains(module_name);
-        let output = emit_module_dispatch(module_name, fns, has_matching_type);
+        let output = emit_module_dispatch(module_name, fns, has_matching_type, ffi_names);
         if !output.is_empty() {
             let path = flight_dir.join(format!("{module_name}.hx"));
             write_if_changed(&path, &output);
@@ -96,9 +101,17 @@ fn emit_type_dispatch(ty: &str) -> String {
     output
 }
 
-fn emit_module_dispatch(module_name: &str, fns: &[ParsedFn], include_typedef: bool) -> String {
+fn emit_module_dispatch(
+    module_name: &str,
+    fns: &[ParsedFn],
+    include_typedef: bool,
+    ffi_names: Option<&BTreeSet<String>>,
+) -> String {
     let mut emitted: Vec<(String, String)> = Vec::new();
     for func in fns {
+        if !has_ffi_function(&func.name, ffi_names) {
+            continue;
+        }
         if let Some((sig, name)) = emit_dispatch_function(module_name, func) {
             emitted.push((sig, name));
         }
