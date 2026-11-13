@@ -122,6 +122,10 @@ pub use contract::sample_animation_state_machine;
 pub use contract::sample_animation_state_machine_channel;
 pub use contract::transition_animation_state_machine;
 
+// types — payload enum constructors
+pub use contract::create_state_ref_from_index;
+pub use contract::create_state_ref_from_name;
+
 // animation_track
 pub use contract::clone_animation_track;
 pub use contract::create_animation_track;
