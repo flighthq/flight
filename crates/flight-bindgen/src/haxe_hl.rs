@@ -176,7 +176,11 @@ fn hl_bytes_getter(rust_ty: &str, offset: usize) -> String {
         "u8" | "i8" => format!("this.getUI8({offset})"),
         "u16" | "i16" => format!("this.getUI16({offset})"),
         "i32" | "u32" => format!("this.getI32({offset})"),
-        "i64" | "u64" | "isize" | "usize" => format!("this.getI64({offset})"),
+        "isize" | "usize" => format!("this.getI32({offset})"),
+        "i64" | "u64" => {
+            let hi_offset = offset + 4;
+            format!("haxe.Int64.make(this.getI32({hi_offset}), this.getI32({offset}))")
+        }
         _ => format!("this.getI32({offset})"),
     }
 }
@@ -189,7 +193,11 @@ fn hl_bytes_setter(rust_ty: &str, offset: usize) -> String {
         "u8" | "i8" => format!("this.setUI8({offset}, value)"),
         "u16" | "i16" => format!("this.setUI16({offset}, value)"),
         "i32" | "u32" => format!("this.setI32({offset}, value)"),
-        "i64" | "u64" | "isize" | "usize" => format!("this.setI64({offset}, value)"),
+        "isize" | "usize" => format!("this.setI32({offset}, value)"),
+        "i64" | "u64" => {
+            let hi_offset = offset + 4;
+            format!("{{ this.setI32({offset}, value.low); this.setI32({hi_offset}, value.high); }}")
+        }
         _ => format!("this.setI32({offset}, value)"),
     }
 }

@@ -4,9 +4,14 @@ use std::path::Path;
 use std::sync::OnceLock;
 
 static KNOWN_ENUMS: OnceLock<BTreeSet<String>> = OnceLock::new();
+static ALL_ENUMS: OnceLock<BTreeSet<String>> = OnceLock::new();
 
 pub fn is_known_enum(ty: &str) -> bool {
     KNOWN_ENUMS.get().map(|s| s.contains(ty)).unwrap_or(false)
+}
+
+pub fn is_any_enum(ty: &str) -> bool {
+    ALL_ENUMS.get().map(|s| s.contains(ty)).unwrap_or(false)
 }
 
 pub const SCAN_CRATES: &[&str] = &[
@@ -314,6 +319,7 @@ pub fn is_ffi_incompatible(ty: &str) -> bool {
 
 pub fn scan_all_crates(crates_dir: &Path) -> Vec<CrateExports> {
     let mut enum_names = BTreeSet::new();
+    let mut all_enum_names = BTreeSet::new();
     for dir_name in SCAN_CRATES {
         let src_dir = crates_dir.join(dir_name).join("src");
         if !src_dir.exists() {
@@ -335,10 +341,12 @@ pub fn scan_all_crates(crates_dir: &Path) -> Vec<CrateExports> {
             }
             let content = fs::read_to_string(entry.path()).unwrap();
             parse_simple_enums(&content, &mut enum_names);
+            collect_all_pub_enum_names(&content, &mut all_enum_names);
         }
     }
     let enum_count = enum_names.len();
     let _ = KNOWN_ENUMS.set(enum_names);
+    let _ = ALL_ENUMS.set(all_enum_names);
     eprintln!("found {enum_count} simple enums");
 
     let mut results = Vec::new();
@@ -1119,6 +1127,10 @@ pub fn classify_param(ty: &str) -> Option<ParamKind> {
         return Some(ParamKind::Enum(ty.to_string()));
     }
 
+    if is_any_enum(ty) {
+        return Some(ParamKind::Scalar("u32".to_string()));
+    }
+
     if !is_ffi_incompatible(ty) && !ty.starts_with('[') {
         return Some(ParamKind::RefMut(ty.to_string()));
     }
@@ -1130,7 +1142,7 @@ pub fn classify_return(ty: &str) -> Option<ReturnKind> {
     let ty = strip_lifetimes(&resolve_type_alias(ty.trim()));
     let ty = ty.as_str();
 
-    if ty == "Option<String>" {
+    if ty == "Option<String>" || ty == "Option<&str>" {
         return Some(ReturnKind::OptionString);
     }
 
@@ -1223,7 +1235,13 @@ pub fn classify_return(ty: &str) -> Option<ReturnKind> {
     if let Some(inner) = ty.strip_prefix("Option<") {
         if let Some(inner) = inner.strip_suffix('>') {
             let inner = inner.trim();
-            if !is_ffi_incompatible(inner) && !inner.contains('<') && !is_scalar(inner) {
+            if !is_ffi_incompatible(inner)
+                && !inner.contains('<')
+                && !inner.contains('[')
+                && !inner.contains('(')
+                && !inner.starts_with('&')
+                && !is_scalar(inner)
+            {
                 if is_known_enum(inner) {
                     return Some(ReturnKind::OptionStruct(inner.to_string()));
                 }
@@ -1235,7 +1253,12 @@ pub fn classify_return(ty: &str) -> Option<ReturnKind> {
     // &T (borrowed ref return) -> Struct (FFI returns *const T)
     if let Some(inner) = ty.strip_prefix('&') {
         let inner = inner.trim();
-        if !is_ffi_incompatible(inner) && !inner.contains('<') && !is_scalar(inner) {
+        if !is_ffi_incompatible(inner)
+            && !inner.contains('<')
+            && !inner.contains('[')
+            && !inner.contains('(')
+            && !is_scalar(inner)
+        {
             return Some(ReturnKind::Struct(inner.to_string()));
         }
         return None;
@@ -1270,6 +1293,9 @@ pub fn classify_return(ty: &str) -> Option<ReturnKind> {
     }
     if is_known_enum(ty) {
         return Some(ReturnKind::Enum(ty.to_string()));
+    }
+    if is_any_enum(ty) {
+        return Some(ReturnKind::Scalar("u32".to_string()));
     }
     return Some(ReturnKind::Struct(ty.to_string()));
 }
@@ -1429,12 +1455,19 @@ fn collect_glob_type_names(file: &Path, src_dir: &Path, names: &mut BTreeSet<Str
     };
     for line in content.lines() {
         let line = line.trim();
-        if line.starts_with("pub use super::") && line.ends_with("::*;") {
-            let inner = line
-                .strip_prefix("pub use super::")
-                .unwrap()
-                .strip_suffix("::*;")
-                .unwrap();
+        let glob_mod = if line.ends_with("::*;") {
+            if let Some(rest) = line.strip_prefix("pub use super::") {
+                Some(rest.strip_suffix("::*;").unwrap())
+            } else if let Some(rest) = line.strip_prefix("pub use crate::") {
+                let path = rest.strip_suffix("::*;").unwrap();
+                Some(path.rsplit("::").next().unwrap_or(path))
+            } else {
+                None
+            }
+        } else {
+            None
+        };
+        if let Some(inner) = glob_mod {
             let mod_file = src_dir.join(format!("{inner}.rs"));
             if mod_file.exists() {
                 let mod_content = fs::read_to_string(&mod_file).unwrap();
@@ -1450,7 +1483,9 @@ fn collect_glob_type_names(file: &Path, src_dir: &Path, names: &mut BTreeSet<Str
                 }
             }
         }
-        if line.starts_with("pub use super::") && !line.ends_with("::*;") {
+        let named_reexport =
+            line.starts_with("pub use super::") || line.starts_with("pub use crate::");
+        if named_reexport && !line.ends_with("::*;") {
             if let Some(name) = line.trim_end_matches(';').rsplit("::").next() {
                 if name.chars().next().is_some_and(|c| c.is_uppercase()) {
                     names.insert(name.to_string());
@@ -1606,6 +1641,21 @@ pub fn parse_pub_structs(content: &str, out: &mut Vec<ParsedStruct>) {
 
         if !fields.is_empty() {
             out.push(ParsedStruct { name, fields });
+        }
+    }
+}
+
+pub fn collect_all_pub_enum_names(content: &str, out: &mut BTreeSet<String>) {
+    for line in content.lines() {
+        let line = line.trim();
+        if let Some(rest) = line.strip_prefix("pub enum ") {
+            let name_end = rest.find(|c: char| c == '{' || c == '<' || c == ' ' || c == '(');
+            if let Some(end) = name_end {
+                let name = rest[..end].trim();
+                if !name.is_empty() && !rest[..end].contains('<') {
+                    out.insert(name.to_string());
+                }
+            }
         }
     }
 }
@@ -1891,7 +1941,11 @@ fn parse_single_param(param: &str) -> Option<Param> {
         return None;
     }
     let colon = param.find(':')?;
-    let name = param[..colon].trim().to_string();
+    let raw_name = param[..colon].trim();
+    let name = raw_name
+        .strip_prefix("mut ")
+        .unwrap_or(raw_name)
+        .to_string();
     let ty = param[colon + 1..].trim().to_string();
     Some(Param { name, ty })
 }
@@ -1912,11 +1966,65 @@ pub fn to_pascal_case(s: &str) -> String {
     out
 }
 
+const HAXE_KEYWORDS: &[&str] = &[
+    "abstract",
+    "break",
+    "callback",
+    "case",
+    "cast",
+    "catch",
+    "class",
+    "continue",
+    "default",
+    "do",
+    "dynamic",
+    "else",
+    "enum",
+    "extends",
+    "extern",
+    "false",
+    "final",
+    "for",
+    "function",
+    "if",
+    "implements",
+    "import",
+    "in",
+    "inline",
+    "interface",
+    "macro",
+    "new",
+    "null",
+    "operator",
+    "overload",
+    "override",
+    "package",
+    "private",
+    "public",
+    "return",
+    "static",
+    "switch",
+    "this",
+    "throw",
+    "true",
+    "try",
+    "typedef",
+    "untyped",
+    "using",
+    "var",
+    "while",
+];
+
 pub fn to_camel_case(s: &str) -> String {
     let pascal = to_pascal_case(s);
     let mut chars = pascal.chars();
-    match chars.next() {
+    let result = match chars.next() {
         None => String::new(),
         Some(c) => c.to_ascii_lowercase().to_string() + chars.as_str(),
+    };
+    if HAXE_KEYWORDS.contains(&result.as_str()) {
+        format!("{result}_")
+    } else {
+        result
     }
 }

@@ -20,7 +20,7 @@ pub fn collect_opaque_types(func: &ParsedFn, types: &mut BTreeSet<String>) {
                 | ParamKind::RefMut(ty)
                 | ParamKind::OptionRefConst(ty)
                 | ParamKind::OptionRefMut(ty) => {
-                    if !ty.contains('(') {
+                    if !ty.contains('(') && !ty.contains('[') {
                         types.insert(ty);
                     }
                 }
@@ -30,7 +30,7 @@ pub fn collect_opaque_types(func: &ParsedFn, types: &mut BTreeSet<String>) {
     }
     if let Some(ref ret) = func.ret {
         if let Some(ReturnKind::Struct(ty)) = classify_return(ret) {
-            if !ty.contains('(') {
+            if !ty.contains('(') && !ty.contains('[') {
                 types.insert(ty);
             }
         }

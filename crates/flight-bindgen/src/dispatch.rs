@@ -48,17 +48,8 @@ pub fn generate(
         total_files += 1;
     }
 
-    for (module_name, fns) in &modules {
-        let has_matching_type = types_that_are_modules.contains(module_name);
-        let output = emit_module_dispatch(module_name, fns, has_matching_type, ffi_names);
-        if !output.is_empty() {
-            let path = flight_dir.join(format!("{module_name}.hx"));
-            write_if_changed(&path, &output);
-            total_files += 1;
-        }
-    }
-
     let mut enum_seen = BTreeSet::new();
+    let mut emitted_enums: BTreeSet<String> = BTreeSet::new();
     let mut enum_count = 0usize;
     for crate_export in crate_exports {
         for parsed_enum in &crate_export.enums {
@@ -73,8 +64,25 @@ pub fn generate(
             let output = emit_enum_file(parsed_enum);
             let path = flight_dir.join(format!("{}.hx", parsed_enum.name));
             write_if_changed(&path, &output);
+            emitted_enums.insert(parsed_enum.name.clone());
             total_files += 1;
             enum_count += 1;
+        }
+    }
+
+    for (module_name, fns) in &modules {
+        let has_matching_type = types_that_are_modules.contains(module_name);
+        let output = emit_module_dispatch(
+            module_name,
+            fns,
+            has_matching_type,
+            ffi_names,
+            &emitted_enums,
+        );
+        if !output.is_empty() {
+            let path = flight_dir.join(format!("{module_name}.hx"));
+            write_if_changed(&path, &output);
+            total_files += 1;
         }
     }
 
@@ -126,13 +134,14 @@ fn emit_module_dispatch(
     fns: &[ParsedFn],
     include_typedef: bool,
     ffi_names: Option<&BTreeSet<String>>,
+    emitted_enums: &BTreeSet<String>,
 ) -> String {
     let mut emitted: Vec<(String, String)> = Vec::new();
     for func in fns {
         if !has_ffi_function(&func.name, ffi_names) {
             continue;
         }
-        if let Some((sig, name)) = emit_dispatch_function(module_name, func) {
+        if let Some((sig, name)) = emit_dispatch_function(module_name, func, emitted_enums) {
             emitted.push((sig, name));
         }
     }
@@ -184,7 +193,11 @@ fn emit_module_dispatch(
     output
 }
 
-fn emit_dispatch_function(module_name: &str, func: &ParsedFn) -> Option<(String, String)> {
+fn emit_dispatch_function(
+    module_name: &str,
+    func: &ParsedFn,
+    emitted_enums: &BTreeSet<String>,
+) -> Option<(String, String)> {
     let haxe_name = to_camel_case(&func.name);
 
     let mut haxe_params = Vec::new();
@@ -221,7 +234,7 @@ fn emit_dispatch_function(module_name: &str, func: &ParsedFn) -> Option<(String,
                 native_call_args.push(format!("{param_name}Ctx"));
             }
             _ => {
-                let haxe_ty = param_kind_to_haxe(&kind);
+                let haxe_ty = param_kind_to_haxe(&kind, emitted_enums);
                 haxe_params.push(format!("{param_name}:{haxe_ty}"));
                 if needs_native_str_cast(&kind) {
                     has_str_params = true;
@@ -238,7 +251,7 @@ fn emit_dispatch_function(module_name: &str, func: &ParsedFn) -> Option<(String,
         None => ReturnKind::Void,
         Some(ty) => classify_return(ty)?,
     };
-    let haxe_ret = return_kind_to_haxe(&ret_kind);
+    let haxe_ret = return_kind_to_haxe(&ret_kind, emitted_enums);
     let has_return = !matches!(ret_kind, ReturnKind::Void);
     let needs_ret_cast = matches!(
         ret_kind,
@@ -296,7 +309,7 @@ fn emit_dispatch_function(module_name: &str, func: &ParsedFn) -> Option<(String,
     return Some((sig, haxe_name));
 }
 
-fn param_kind_to_haxe(kind: &ParamKind) -> String {
+fn param_kind_to_haxe(kind: &ParamKind, emitted_enums: &BTreeSet<String>) -> String {
     match kind {
         ParamKind::Scalar(ty) => scalar_to_haxe(ty).to_string(),
         ParamKind::RefConst(ty)
@@ -317,7 +330,13 @@ fn param_kind_to_haxe(kind: &ParamKind) -> String {
         | ParamKind::OptionSliceConst(_)
         | ParamKind::OptionSliceMut(_) => "Dynamic".to_string(),
         ParamKind::FixedArrayConst(_, _) | ParamKind::FixedArrayMut(_, _) => "Dynamic".to_string(),
-        ParamKind::Enum(name) => format!("flight.{name}"),
+        ParamKind::Enum(name) => {
+            if emitted_enums.contains(name) {
+                format!("flight.{name}")
+            } else {
+                "Int".to_string()
+            }
+        }
         ParamKind::DynOpaque(_) => "Dynamic".to_string(),
         ParamKind::DynMono(ty) => ty.clone(),
         ParamKind::VecMut(_) | ParamKind::VecConst(_) | ParamKind::VecOwned(_) => {
@@ -328,14 +347,20 @@ fn param_kind_to_haxe(kind: &ParamKind) -> String {
     }
 }
 
-fn return_kind_to_haxe(kind: &ReturnKind) -> String {
+fn return_kind_to_haxe(kind: &ReturnKind, emitted_enums: &BTreeSet<String>) -> String {
     match kind {
         ReturnKind::Void => "Void".to_string(),
         ReturnKind::Scalar(ty) => scalar_to_haxe(ty).to_string(),
         ReturnKind::Struct(ty) => ty.clone(),
         ReturnKind::StringReturn | ReturnKind::OptionString => "String".to_string(),
         ReturnKind::ArcRefReturn | ReturnKind::OptionArcRefReturn => "Dynamic".to_string(),
-        ReturnKind::Enum(name) => format!("flight.{name}"),
+        ReturnKind::Enum(name) => {
+            if emitted_enums.contains(name) {
+                format!("flight.{name}")
+            } else {
+                "Int".to_string()
+            }
+        }
         ReturnKind::VecReturn(_) | ReturnKind::OptionVecReturn(_) => "Dynamic".to_string(),
         ReturnKind::BoxSliceReturn(_) | ReturnKind::OptionBoxSliceReturn(_) => {
             "Dynamic".to_string()
@@ -375,7 +400,7 @@ fn collect_opaque_types(func: &ParsedFn, types: &mut BTreeSet<String>) {
                 | ParamKind::RefMut(ty)
                 | ParamKind::OptionRefConst(ty)
                 | ParamKind::OptionRefMut(ty) => {
-                    if !ty.contains('(') {
+                    if !ty.contains('(') && !ty.contains('[') {
                         types.insert(ty);
                     }
                 }
@@ -385,7 +410,7 @@ fn collect_opaque_types(func: &ParsedFn, types: &mut BTreeSet<String>) {
     }
     if let Some(ref ret) = func.ret {
         if let Some(ReturnKind::Struct(ty)) = classify_return(ret) {
-            if !ty.contains('(') {
+            if !ty.contains('(') && !ty.contains('[') {
                 types.insert(ty);
             }
         }
