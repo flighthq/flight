@@ -317,7 +317,7 @@ fn param_kind_to_haxe(kind: &ParamKind) -> String {
         | ParamKind::OptionSliceConst(_)
         | ParamKind::OptionSliceMut(_) => "Dynamic".to_string(),
         ParamKind::FixedArrayConst(_, _) | ParamKind::FixedArrayMut(_, _) => "Dynamic".to_string(),
-        ParamKind::Enum(_) => "Int".to_string(),
+        ParamKind::Enum(name) => format!("flight.{name}"),
         ParamKind::DynOpaque(_) => "Dynamic".to_string(),
         ParamKind::DynMono(ty) => ty.clone(),
         ParamKind::VecMut(_) | ParamKind::VecConst(_) | ParamKind::VecOwned(_) => {
@@ -335,7 +335,7 @@ fn return_kind_to_haxe(kind: &ReturnKind) -> String {
         ReturnKind::Struct(ty) => ty.clone(),
         ReturnKind::StringReturn | ReturnKind::OptionString => "String".to_string(),
         ReturnKind::ArcRefReturn | ReturnKind::OptionArcRefReturn => "Dynamic".to_string(),
-        ReturnKind::Enum(_) => "Int".to_string(),
+        ReturnKind::Enum(name) => format!("flight.{name}"),
         ReturnKind::VecReturn(_) | ReturnKind::OptionVecReturn(_) => "Dynamic".to_string(),
         ReturnKind::BoxSliceReturn(_) | ReturnKind::OptionBoxSliceReturn(_) => {
             "Dynamic".to_string()
@@ -375,7 +375,9 @@ fn collect_opaque_types(func: &ParsedFn, types: &mut BTreeSet<String>) {
                 | ParamKind::RefMut(ty)
                 | ParamKind::OptionRefConst(ty)
                 | ParamKind::OptionRefMut(ty) => {
-                    types.insert(ty);
+                    if !ty.contains('(') {
+                        types.insert(ty);
+                    }
                 }
                 _ => {}
             }
@@ -383,7 +385,9 @@ fn collect_opaque_types(func: &ParsedFn, types: &mut BTreeSet<String>) {
     }
     if let Some(ref ret) = func.ret {
         if let Some(ReturnKind::Struct(ty)) = classify_return(ret) {
-            types.insert(ty);
+            if !ty.contains('(') {
+                types.insert(ty);
+            }
         }
     }
 }

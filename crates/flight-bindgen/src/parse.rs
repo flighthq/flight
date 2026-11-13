@@ -1443,6 +1443,11 @@ fn collect_glob_type_names(file: &Path, src_dir: &Path, names: &mut BTreeSet<Str
                 for s in mod_structs {
                     names.insert(s.name);
                 }
+                let mut mod_enums = Vec::new();
+                parse_enums_with_variants(&mod_content, &mut mod_enums);
+                for e in mod_enums {
+                    names.insert(e.name);
+                }
             }
         }
         if line.starts_with("pub use super::") && !line.ends_with("::*;") {
