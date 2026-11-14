@@ -317,7 +317,7 @@ fn param_kind_to_haxe(kind: &ParamKind, emitted_enums: &BTreeSet<String>) -> Str
         | ParamKind::OptionRefConst(ty)
         | ParamKind::OptionRefMut(ty) => ty.clone(),
         ParamKind::ArcRef | ParamKind::ArcRefMut => "Dynamic".to_string(),
-        ParamKind::OptionF32 => "Single".to_string(),
+        ParamKind::OptionF32 => "Float".to_string(),
         ParamKind::OptionF64 => "Float".to_string(),
         ParamKind::OptionI32 => "Int".to_string(),
         ParamKind::OptionBool => "Int".to_string(),
@@ -382,8 +382,7 @@ fn needs_native_str_cast(kind: &ParamKind) -> bool {
 
 fn scalar_to_haxe(ty: &str) -> &str {
     match ty {
-        "f32" => "Single",
-        "f64" => "Float",
+        "f32" | "f64" => "Float",
         "bool" => "Bool",
         "i8" | "i16" | "i32" | "isize" => "Int",
         "u8" | "u16" | "u32" | "usize" => "Int",

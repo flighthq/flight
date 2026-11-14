@@ -5,8 +5,8 @@ use std::path::Path;
 
 use crate::haxe_common::{
     TypeMethod, build_struct_map, build_type_methods, collect_opaque_types, crate_dir_to_module,
-    derive_method_name, find_self_param, has_ffi_accessor, has_ffi_function, scalar_to_haxe,
-    to_snake_case, write_if_changed,
+    derive_method_name, find_self_param, has_ffi_accessor, has_ffi_function, to_snake_case,
+    write_if_changed,
 };
 use crate::parse::{
     CrateExports, ParamKind, ParsedFn, ParsedStruct, ReturnKind, classify_param, classify_return,
@@ -15,6 +15,17 @@ use crate::parse::{
 
 const PKG: &str = "flight._js";
 const WASM_MODULE: &str = "flight";
+
+fn scalar_to_haxe(ty: &str) -> &str {
+    match ty {
+        "f32" | "f64" => "Float",
+        "bool" => "Bool",
+        "i8" | "i16" | "i32" | "isize" => "Int",
+        "u8" | "u16" | "u32" | "usize" => "Int",
+        "i64" | "u64" => "haxe.Int64",
+        _ => "Dynamic",
+    }
+}
 
 pub fn generate(
     crate_exports: &[CrateExports],
@@ -341,7 +352,7 @@ fn param_kind_to_haxe(kind: &ParamKind) -> String {
         ParamKind::RefConst(ty) | ParamKind::OptionRefConst(ty) => format!("{PKG}.{ty}"),
         ParamKind::RefMut(ty) | ParamKind::OptionRefMut(ty) => format!("{PKG}.{ty}"),
         ParamKind::ArcRef | ParamKind::ArcRefMut => "Dynamic".to_string(),
-        ParamKind::OptionF32 => "Single".to_string(),
+        ParamKind::OptionF32 => "Float".to_string(),
         ParamKind::OptionF64 => "Float".to_string(),
         ParamKind::OptionI32 => "Int".to_string(),
         ParamKind::OptionBool => "Int".to_string(),

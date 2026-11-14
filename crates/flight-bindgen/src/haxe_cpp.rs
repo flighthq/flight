@@ -381,6 +381,6 @@ fn return_kind_to_haxe(kind: &ReturnKind) -> String {
             "cpp.Star<cpp.Void>".to_string()
         }
         ReturnKind::FixedArrayReturn(_, _) => "cpp.Star<cpp.Void>".to_string(),
-        ReturnKind::OptionStruct(_) => "cpp.Star<cpp.Void>".to_string(),
+        ReturnKind::OptionStruct(ty) => format!("{PKG}.{ty}"),
     }
 }
