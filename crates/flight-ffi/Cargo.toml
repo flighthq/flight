@@ -14,12 +14,19 @@ autotests = false
 crate-type = ["cdylib", "staticlib"]
 doctest = false
 
+[[test]]
+name = "tests"
+path = "tests/main.rs"
+
 [[bin]]
 name = "flight-offsets"
 path = "src/bin/offsets.rs"
 
 [dependencies]
 flight-sdk = { workspace = true }
+
+[dev-dependencies]
+cc = "1.11.2"
 
 [build-dependencies]
 syn = { version = "2", features = ["full"] }
