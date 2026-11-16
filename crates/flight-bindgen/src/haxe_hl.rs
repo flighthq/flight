@@ -72,7 +72,7 @@ pub fn generate(
 
     let mut total_fns = 0usize;
     for crate_export in crate_exports {
-        let module_name = crate_dir_to_module(&crate_export.dir_name);
+        let module_name = crate_dir_to_module(&crate_export.dir_name, &all_opaque_types);
         let module_output = emit_module_file(&module_name, &crate_export.fns, ffi_names);
         if !module_output.is_empty() {
             let module_path = fn_dir.join(format!("{module_name}.hx"));
@@ -258,8 +258,8 @@ fn emit_one_method(ty: &str, tm: &TypeMethod<'_>) -> Option<String> {
                     call_args.push(pname);
                 }
                 ParamKind::Closure | ParamKind::OptionClosure => {
-                    method_params.push(format!("{pname}Fn:Dynamic"));
-                    method_params.push(format!("{pname}Ctx:Dynamic"));
+                    method_params.push(format!("{pname}Fn:hl.Bytes"));
+                    method_params.push(format!("{pname}Ctx:hl.Bytes"));
                     call_args.push(format!("{pname}Fn"));
                     call_args.push(format!("{pname}Ctx"));
                 }
@@ -346,8 +346,8 @@ fn emit_function(func: &ParsedFn) -> Option<String> {
                 haxe_params.push(format!("{pname}:hl.Bytes"));
             }
             ParamKind::Closure | ParamKind::OptionClosure => {
-                haxe_params.push(format!("{pname}Fn:Dynamic"));
-                haxe_params.push(format!("{pname}Ctx:Dynamic"));
+                haxe_params.push(format!("{pname}Fn:hl.Bytes"));
+                haxe_params.push(format!("{pname}Ctx:hl.Bytes"));
             }
             _ => {
                 let haxe_ty = param_kind_to_haxe(&kind);
@@ -373,7 +373,7 @@ fn param_kind_to_haxe(kind: &ParamKind) -> String {
         ParamKind::Scalar(ty) => scalar_to_haxe(ty).to_string(),
         ParamKind::RefConst(ty) | ParamKind::OptionRefConst(ty) => format!("{PKG}.{ty}"),
         ParamKind::RefMut(ty) | ParamKind::OptionRefMut(ty) => format!("{PKG}.{ty}"),
-        ParamKind::ArcRef | ParamKind::ArcRefMut => "Dynamic".to_string(),
+        ParamKind::ArcRef | ParamKind::ArcRefMut => "hl.Bytes".to_string(),
         ParamKind::OptionF32 => "Single".to_string(),
         ParamKind::OptionF64 => "Float".to_string(),
         ParamKind::OptionI32 => "Int".to_string(),
@@ -388,12 +388,12 @@ fn param_kind_to_haxe(kind: &ParamKind) -> String {
         | ParamKind::OptionSliceMut(_) => "hl.Bytes".to_string(),
         ParamKind::FixedArrayConst(_, _) | ParamKind::FixedArrayMut(_, _) => "hl.Bytes".to_string(),
         ParamKind::Enum(_) => "Int".to_string(),
-        ParamKind::DynOpaque(_) => "Dynamic".to_string(),
+        ParamKind::DynOpaque(_) => "hl.Bytes".to_string(),
         ParamKind::DynMono(ty) => format!("{PKG}.{ty}"),
         ParamKind::VecMut(_) | ParamKind::VecConst(_) | ParamKind::VecOwned(_) => {
-            "Dynamic".to_string()
+            "hl.Bytes".to_string()
         }
-        ParamKind::Closure | ParamKind::OptionClosure => "Dynamic".to_string(),
+        ParamKind::Closure | ParamKind::OptionClosure => "hl.Bytes".to_string(),
         ParamKind::BoxSlice(_) => "hl.Bytes".to_string(),
     }
 }
@@ -404,13 +404,13 @@ fn return_kind_to_haxe(kind: &ReturnKind) -> String {
         ReturnKind::Scalar(ty) => scalar_to_haxe(ty).to_string(),
         ReturnKind::Struct(ty) => format!("{PKG}.{ty}"),
         ReturnKind::StringReturn | ReturnKind::OptionString => "hl.Bytes".to_string(),
-        ReturnKind::ArcRefReturn | ReturnKind::OptionArcRefReturn => "Dynamic".to_string(),
+        ReturnKind::ArcRefReturn | ReturnKind::OptionArcRefReturn => "hl.Bytes".to_string(),
         ReturnKind::Enum(_) => "Int".to_string(),
-        ReturnKind::VecReturn(_) | ReturnKind::OptionVecReturn(_) => "Dynamic".to_string(),
+        ReturnKind::VecReturn(_) | ReturnKind::OptionVecReturn(_) => "hl.Bytes".to_string(),
         ReturnKind::BoxSliceReturn(_) | ReturnKind::OptionBoxSliceReturn(_) => {
-            "Dynamic".to_string()
+            "hl.Bytes".to_string()
         }
         ReturnKind::FixedArrayReturn(_, _) => "hl.Bytes".to_string(),
-        ReturnKind::OptionStruct(_) => "Dynamic".to_string(),
+        ReturnKind::OptionStruct(ty) => format!("{PKG}.{ty}"),
     }
 }

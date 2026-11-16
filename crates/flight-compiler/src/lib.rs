@@ -2,6 +2,11 @@ mod model;
 mod typescript;
 mod vitest;
 
+/// Use the same public name conversion for TypeScript output and language bindings.
+pub fn typescript_item_name(rust_name: &str) -> String {
+    typescript::default_item_name(rust_name)
+}
+
 use std::error::Error;
 use std::fmt;
 

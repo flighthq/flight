@@ -1,3 +1,4 @@
+mod native_bindings;
 use std::collections::BTreeSet;
 use std::env;
 use std::fmt::Write as _;
@@ -371,6 +372,7 @@ fn main() {
         .unwrap();
     }
 
+    native_bindings::emit(&all_output, &out_dir);
     fs::write(out_dir.join("ffi_generated.rs"), all_output).unwrap();
 
     let mut offsets_src = String::new();
@@ -942,26 +944,24 @@ fn generate_field_accessors(
         let getter_name = format!("flight_get_{snake}_{}", field.name);
         let setter_name = format!("flight_set_{snake}_{}", field.name);
 
-        if seen_names.contains(&getter_name) || seen_names.contains(&setter_name) {
-            continue;
-        }
-        seen_names.insert(getter_name.clone());
-        seen_names.insert(setter_name.clone());
-
         let ffi_ty = &field.ty;
 
-        writeln!(
+        if seen_names.insert(getter_name.clone()) {
+            writeln!(
             output,
             "#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn {getter_name}(ptr: *const {qualified}) -> {ffi_ty} {{\n    return unsafe {{ &*ptr }}.{};\n}}",
             field.name
         )
         .unwrap();
-        writeln!(
+        }
+        if seen_names.insert(setter_name.clone()) {
+            writeln!(
             output,
             "#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn {setter_name}(ptr: *mut {qualified}, value: {ffi_ty}) -> {ffi_ty} {{\n    unsafe {{ &mut *ptr }}.{} = value;\n    return value;\n}}",
             field.name
         )
         .unwrap();
+        }
     }
     output
 }

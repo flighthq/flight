@@ -240,6 +240,8 @@ pub const SCALARS: &[&str] = &[
 #[derive(Debug, Clone)]
 pub struct ParsedFn {
     pub name: String,
+    // Preserve the logical SDK name before native monomorphization; None marks an ABI-only free.
+    pub source_name: Option<String>,
     pub params: Vec<Param>,
     pub ret: Option<String>,
 }
@@ -421,6 +423,7 @@ pub fn scan_all_crates(crates_dir: &Path) -> Vec<CrateExports> {
                         seen_names.insert(ffi_name);
                         free_fns.push(ParsedFn {
                             name: free_name,
+                            source_name: None,
                             params: vec![Param {
                                 name: "ptr".to_string(),
                                 ty: format!("&mut {ty}"),
@@ -437,6 +440,7 @@ pub fn scan_all_crates(crates_dir: &Path) -> Vec<CrateExports> {
                 seen_names.insert(ffi_name);
                 free_fns.push(ParsedFn {
                     name: "free_string".to_string(),
+                    source_name: None,
                     params: vec![Param {
                         name: "ptr".to_string(),
                         ty: "Ref<CString>".to_string(),
@@ -520,6 +524,7 @@ fn expand_mono_dyn(func: &ParsedFn) -> Vec<ParsedFn> {
         }
         result.push(ParsedFn {
             name: new_name,
+            source_name: func.source_name.clone(),
             params: new_params,
             ret: func.ret.clone(),
         });
@@ -710,6 +715,22 @@ fn resolve_type_alias(ty: &str) -> String {
         ("SourceId", "u64"),
         ("Kind", "String"),
         ("EasingFn", "Arc<dyn Fn(f32) -> f32 + Send + Sync>"),
+        ("BitmapTextClock", "Arc<dyn Fn() -> f64 + Send + Sync>"),
+        ("ClockProvider", "Arc<dyn Fn() -> f64 + Send + Sync>"),
+        ("MovieClipGuardClock", "Arc<dyn Fn() -> f64 + Send + Sync>"),
+        ("NodeGuardClock", "Arc<dyn Fn() -> f64 + Send + Sync>"),
+        ("Physics2DGuardClock", "Arc<dyn Fn() -> f64 + Send + Sync>"),
+        (
+            "Scene2DResourceFailureClock",
+            "Arc<dyn Fn() -> f64 + Send + Sync>",
+        ),
+        (
+            "Scene3DResourceFailureClock",
+            "Arc<dyn Fn() -> f64 + Send + Sync>",
+        ),
+        ("Skeleton3DGuardClock", "Arc<dyn Fn() -> f64 + Send + Sync>"),
+        ("TextGuardClock", "Arc<dyn Fn() -> f64 + Send + Sync>"),
+        ("TextMarkupClock", "Arc<dyn Fn() -> f64 + Send + Sync>"),
         ("AnimationBlendTreeRef", "Ref<AnimationBlendTree>"),
         ("AnimationPlayerRef", "Ref<AnimationPlayer>"),
         ("AnimationStateMachineRef", "Ref<AnimationStateMachine>"),
@@ -784,6 +805,9 @@ pub fn classify_param(ty: &str) -> Option<ParamKind> {
     }
     if ty == "Option<f64>" {
         return Some(ParamKind::OptionF64);
+    }
+    if ty == "Option<u32>" || ty == "Option<usize>" {
+        return Some(ParamKind::Scalar("i64".to_string()));
     }
     if ty == "Option<i32>"
         || ty == "Option<u32>"
@@ -915,7 +939,7 @@ pub fn classify_param(ty: &str) -> Option<ParamKind> {
             if let Some((elem, size_str)) = inner.split_once(';') {
                 let elem = elem.trim();
                 let size_str = size_str.trim();
-                if is_scalar(elem) {
+                if is_scalar(elem) || (!is_ffi_incompatible(elem) && !elem.contains('<')) {
                     if let Ok(size) = size_str.parse::<usize>() {
                         return Some(ParamKind::FixedArrayMut(elem.to_string(), size));
                     }
@@ -931,7 +955,7 @@ pub fn classify_param(ty: &str) -> Option<ParamKind> {
             if let Some((elem, size_str)) = inner.split_once(';') {
                 let elem = elem.trim();
                 let size_str = size_str.trim();
-                if is_scalar(elem) {
+                if is_scalar(elem) || (!is_ffi_incompatible(elem) && !elem.contains('<')) {
                     if let Ok(size) = size_str.parse::<usize>() {
                         return Some(ParamKind::FixedArrayConst(elem.to_string(), size));
                     }
@@ -1127,7 +1151,7 @@ pub fn classify_param(ty: &str) -> Option<ParamKind> {
         return Some(ParamKind::Enum(ty.to_string()));
     }
 
-    if is_any_enum(ty) {
+    if is_known_enum(ty) {
         return Some(ParamKind::Scalar("u32".to_string()));
     }
 
@@ -1151,6 +1175,9 @@ pub fn classify_return(ty: &str) -> Option<ReturnKind> {
     if let Some(inner) = ty.strip_prefix("Option<") {
         if let Some(inner) = inner.strip_suffix('>') {
             let inner = inner.trim();
+            if inner == "i32" || inner == "u32" {
+                return Some(ReturnKind::Scalar("i64".to_string()));
+            }
             if is_scalar(inner) {
                 return Some(ReturnKind::Scalar(inner.to_string()));
             }
@@ -1294,7 +1321,7 @@ pub fn classify_return(ty: &str) -> Option<ReturnKind> {
     if is_known_enum(ty) {
         return Some(ReturnKind::Enum(ty.to_string()));
     }
-    if is_any_enum(ty) {
+    if is_known_enum(ty) {
         return Some(ReturnKind::Scalar("u32".to_string()));
     }
     return Some(ReturnKind::Struct(ty.to_string()));
@@ -1880,7 +1907,12 @@ fn parse_fn_signature(sig: &str) -> Option<ParsedFn> {
         None
     };
 
-    Some(ParsedFn { name, params, ret })
+    Some(ParsedFn {
+        source_name: Some(name.clone()),
+        name,
+        params,
+        ret,
+    })
 }
 
 fn find_matching_paren(s: &str, open: usize) -> Option<usize> {
@@ -1914,6 +1946,7 @@ fn parse_params(params_str: &str) -> Option<Vec<Param>> {
     for i in 0..bytes.len() {
         match bytes[i] {
             b'<' | b'(' | b'[' => depth += 1,
+            b'>' if i > 0 && bytes[i - 1] == b'-' => {}
             b'>' | b')' | b']' => depth -= 1,
             b',' if depth == 0 => {
                 if let Some(p) = parse_single_param(&params_str[start..i]) {
@@ -2026,5 +2059,43 @@ pub fn to_camel_case(s: &str) -> String {
         format!("{result}_")
     } else {
         result
+    }
+}
+
+#[cfg(test)]
+mod native_abi_tests {
+    use super::*;
+    #[test]
+    fn closure_arrow_preserves_following_parameters() {
+        let function = parse_fn_signature(
+            "pub fn random_exponential(random: &dyn Fn() -> f32, rate: Option<f32>) -> f32 {",
+        )
+        .unwrap();
+        assert_eq!(function.params.len(), 2);
+        assert_eq!(function.params[1].name, "rate");
+        assert_eq!(function.params[0].ty, "&dyn Fn() -> f32");
+    }
+    #[test]
+    fn fixed_struct_arrays_have_no_length_carrier() {
+        assert!(matches!(
+            classify_param("&mut [Vector3; 8]"),
+            Some(ParamKind::FixedArrayMut(_, 8))
+        ));
+    }
+    #[test]
+    fn optional_unsigned_input_matches_wide_ffi_sentinel() {
+        assert!(
+            matches!(classify_param("Option<u32>"), Some(ParamKind::Scalar(ref t)) if t == "i64")
+        );
+        assert!(
+            matches!(classify_return("Option<i32>"), Some(ReturnKind::Scalar(ref t)) if t == "i64")
+        );
+    }
+    #[test]
+    fn guard_clock_alias_uses_callback_and_context() {
+        assert!(matches!(
+            classify_param("NodeGuardClock"),
+            Some(ParamKind::Closure)
+        ));
     }
 }

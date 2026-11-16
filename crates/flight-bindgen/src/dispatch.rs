@@ -3,10 +3,10 @@ use std::fmt::Write as _;
 use std::fs;
 use std::path::Path;
 
-use crate::haxe_common::has_ffi_function;
+use crate::haxe_common::{crate_dir_to_module, has_ffi_function};
 use crate::parse::{
     CrateExports, ParamKind, ParsedEnum, ParsedFn, ReturnKind, classify_param, classify_return,
-    to_camel_case, to_pascal_case,
+    to_camel_case,
 };
 
 pub fn generate(
@@ -21,14 +21,17 @@ pub fn generate(
     let mut modules: BTreeMap<String, &[ParsedFn]> = BTreeMap::new();
 
     for crate_export in crate_exports {
-        let module_name = crate_dir_to_module(&crate_export.dir_name);
-        modules.insert(module_name, &crate_export.fns);
         for func in &crate_export.fns {
             collect_opaque_types(func, &mut all_opaque_types);
         }
         for s in &crate_export.structs {
             all_opaque_types.insert(s.name.clone());
         }
+    }
+
+    for crate_export in crate_exports {
+        let module_name = crate_dir_to_module(&crate_export.dir_name, &all_opaque_types);
+        modules.insert(module_name, &crate_export.fns);
     }
 
     let mut total_files = 0usize;
@@ -90,11 +93,6 @@ pub fn generate(
         "wrote {total_files} dispatch files ({enum_count} enum abstracts) to {}",
         flight_dir.display()
     );
-}
-
-fn crate_dir_to_module(dir_name: &str) -> String {
-    let stripped = dir_name.strip_prefix("flight-").unwrap_or(dir_name);
-    to_pascal_case(stripped)
 }
 
 fn emit_type_dispatch(ty: &str) -> String {
@@ -274,9 +272,32 @@ fn emit_dispatch_function(
     };
 
     let mut sig = String::new();
+    // Logical JavaScript SDK signatures differ from native ABI carriers (arrays, callbacks,
+    // options). Keep that difference in the producer instead of requiring a fake C ABI JS module.
+    let (js_params, js_ret) = crate::haxe_js::signature(func, "")?;
+    let js_args = func
+        .params
+        .iter()
+        .map(|p| to_camel_case(&p.name))
+        .collect::<Vec<_>>()
+        .join(", ");
+    let js_ret_prefix = if js_ret == "Void" { "" } else { "return " };
+    writeln!(sig, "#if (js && flight_esm)").unwrap();
     writeln!(
         sig,
-        "inline function {haxe_name}({params_str}):{haxe_ret} {{"
+        "extern inline function {haxe_name}({}):{js_ret} {{",
+        js_params.join(", ")
+    )
+    .unwrap();
+    writeln!(
+        sig,
+        "\t{js_ret_prefix}flight._js._fn.{module_name}.{haxe_name}({js_args});"
+    )
+    .unwrap();
+    writeln!(sig, "}}\n#else").unwrap();
+    writeln!(
+        sig,
+        "extern inline function {haxe_name}({params_str}):{haxe_ret} {{"
     )
     .unwrap();
     writeln!(sig, "#if hl").unwrap();
@@ -305,6 +326,7 @@ fn emit_dispatch_function(
     .unwrap();
     writeln!(sig, "#end").unwrap();
     write!(sig, "}}").unwrap();
+    write!(sig, "\n#end").unwrap();
 
     return Some((sig, haxe_name));
 }
@@ -441,4 +463,42 @@ fn write_if_changed(path: &Path, content: &str) {
         }
     }
     fs::write(path, content).unwrap();
+}
+
+#[cfg(test)]
+mod portable_dispatch_tests {
+    use super::*;
+    use crate::parse::ParsedStruct;
+    #[test]
+    fn texture_atlas_has_one_module_with_type_and_functions() {
+        let directory =
+            std::env::temp_dir().join(format!("flight-dispatch-case-{}", std::process::id()));
+        fs::create_dir_all(&directory).unwrap();
+        let exports = vec![CrateExports {
+            dir_name: "flight-textureatlas".into(),
+            fns: vec![ParsedFn {
+                name: "create_texture_atlas".into(),
+                source_name: Some("create_texture_atlas".into()),
+                params: vec![],
+                ret: Some("TextureAtlas".into()),
+            }],
+            structs: vec![ParsedStruct {
+                name: "TextureAtlas".into(),
+                fields: vec![],
+            }],
+            enums: vec![],
+        }];
+        generate(&exports, &directory, None);
+        let files: Vec<_> = fs::read_dir(directory.join("flight"))
+            .unwrap()
+            .map(|e| e.unwrap().file_name().to_string_lossy().to_string())
+            .collect();
+        assert_eq!(files, ["TextureAtlas.hx"]);
+        let content = fs::read_to_string(directory.join("flight/TextureAtlas.hx")).unwrap();
+        assert!(content.contains("typedef TextureAtlas = flight._hl.TextureAtlas;"));
+        assert!(content.contains("function createTextureAtlas("));
+        assert!(content.contains("flight._cpp._fn.TextureAtlas.createTextureAtlas("));
+        assert!(content.contains("flight._js._fn.TextureAtlas.createTextureAtlas("));
+        fs::remove_dir_all(directory).unwrap();
+    }
 }

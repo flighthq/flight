@@ -5,8 +5,7 @@ use std::path::Path;
 
 use crate::haxe_common::{
     TypeMethod, build_struct_map, build_type_methods, collect_opaque_types, crate_dir_to_module,
-    derive_method_name, find_self_param, has_ffi_accessor, has_ffi_function, to_snake_case,
-    write_if_changed,
+    derive_method_name, find_self_param, has_ffi_accessor, has_ffi_function, write_if_changed,
 };
 use crate::parse::{
     CrateExports, ParamKind, ParsedFn, ParsedStruct, ReturnKind, classify_param, classify_return,
@@ -14,381 +13,254 @@ use crate::parse::{
 };
 
 const PKG: &str = "flight._js";
-const WASM_MODULE: &str = "flight";
 
 fn scalar_to_haxe(ty: &str) -> &str {
     match ty {
-        "f32" | "f64" => "Float",
+        "f32" | "f64" | "i64" | "u64" => "Float",
         "bool" => "Bool",
-        "i8" | "i16" | "i32" | "isize" => "Int",
-        "u8" | "u16" | "u32" | "usize" => "Int",
-        "i64" | "u64" => "haxe.Int64",
+        "i8" | "i16" | "i32" | "isize" | "u8" | "u16" | "u32" | "usize" => "Int",
         _ => "Dynamic",
     }
 }
 
-pub fn generate(
-    crate_exports: &[CrateExports],
-    out_dir: &Path,
-    ffi_names: Option<&BTreeSet<String>>,
-) {
+// JavaScript consumes SDK objects, arrays and callbacks directly. Never lower to C pointer/length,
+// callback/context pairs or numeric Option sentinels on this target.
+fn param_type(ty: &str, prefix: &str) -> Option<String> {
+    let trimmed = ty.trim();
+    if let Some(inner) = trimmed
+        .strip_prefix("Option<")
+        .and_then(|s| s.strip_suffix('>'))
+    {
+        return Some(format!("Null<{}>", param_type(inner, prefix)?));
+    }
+    Some(match classify_param(ty)? {
+        ParamKind::Scalar(t) => scalar_to_haxe(&t).into(),
+        ParamKind::RefConst(t) | ParamKind::RefMut(t) | ParamKind::DynMono(t) => {
+            format!("{prefix}{t}")
+        }
+        ParamKind::StrRef | ParamKind::StringParam => "String".into(),
+        _ => "Dynamic".into(),
+    })
+}
+
+fn return_type(ty: Option<&str>, prefix: &str) -> Option<String> {
+    let Some(ty) = ty else {
+        return Some("Void".into());
+    };
+    let trimmed = ty.trim();
+    if let Some(inner) = trimmed
+        .strip_prefix("Option<")
+        .and_then(|s| s.strip_suffix('>'))
+    {
+        return Some(format!("Null<{}>", return_type(Some(inner), prefix)?));
+    }
+    Some(match classify_return(ty)? {
+        ReturnKind::Void => "Void".into(),
+        ReturnKind::Scalar(t) => scalar_to_haxe(&t).into(),
+        ReturnKind::Struct(t) => format!("{prefix}{t}"),
+        ReturnKind::StringReturn => "String".into(),
+        _ => "Dynamic".into(),
+    })
+}
+
+pub fn signature(func: &ParsedFn, prefix: &str) -> Option<(Vec<String>, String)> {
+    let params = func
+        .params
+        .iter()
+        .map(|p| {
+            Some(format!(
+                "{}:{}",
+                to_camel_case(&p.name),
+                param_type(&p.ty, prefix)?
+            ))
+        })
+        .collect::<Option<Vec<_>>>()?;
+    Some((params, return_type(func.ret.as_deref(), prefix)?))
+}
+
+pub fn generate(exports: &[CrateExports], out_dir: &Path, ffi_names: Option<&BTreeSet<String>>) {
     let js_dir = out_dir.join("flight").join("_js");
     let fn_dir = js_dir.join("_fn");
-    fs::create_dir_all(&js_dir).unwrap();
     fs::create_dir_all(&fn_dir).unwrap();
-
-    let mut all_opaque_types: BTreeSet<String> = BTreeSet::new();
-    for crate_export in crate_exports {
-        for func in &crate_export.fns {
-            collect_opaque_types(func, &mut all_opaque_types);
+    let mut types = BTreeSet::new();
+    for package in exports {
+        for func in &package.fns {
+            collect_opaque_types(func, &mut types);
         }
-        for s in &crate_export.structs {
-            all_opaque_types.insert(s.name.clone());
+        for s in &package.structs {
+            types.insert(s.name.clone());
         }
     }
-
-    let struct_map = build_struct_map(crate_exports);
-    let type_methods = build_type_methods(crate_exports, &all_opaque_types);
-
-    let mut total_files = 0usize;
-    let mut types_with_fields = 0usize;
-    let mut types_with_methods = 0usize;
-    let mut total_methods = 0usize;
-    for ty in &all_opaque_types {
-        let parsed_struct = struct_map.get(ty.as_str()).copied();
-        let methods = type_methods.get(ty.as_str());
-        let type_output =
-            emit_type_file(ty, parsed_struct, methods.map(|v| v.as_slice()), ffi_names);
-        let type_path = js_dir.join(format!("{ty}.hx"));
-        write_if_changed(&type_path, &type_output);
-        total_files += 1;
-        if parsed_struct.is_some_and(|s| !s.fields.is_empty()) {
-            types_with_fields += 1;
-        }
-        if let Some(m) = methods {
-            if !m.is_empty() {
-                types_with_methods += 1;
-                total_methods += m.len();
+    let structs = build_struct_map(exports);
+    let methods = build_type_methods(exports, &types);
+    for ty in &types {
+        let content = emit_type(
+            ty,
+            structs.get(ty.as_str()).copied(),
+            methods.get(ty).map(|v| v.as_slice()).unwrap_or(&[]),
+            ffi_names,
+        );
+        write_if_changed(&js_dir.join(format!("{ty}.hx")), &content);
+    }
+    for package in exports {
+        let module = crate_dir_to_module(&package.dir_name, &types);
+        let mut content = format!(
+            "package {PKG}._fn;\n\n@:jsRequire(\"@flighthq/{}\")\nextern class {module} {{\n",
+            package
+                .dir_name
+                .strip_prefix("flight-")
+                .unwrap_or(&package.dir_name)
+        );
+        let mut count = 0;
+        for func in &package.fns {
+            if !has_ffi_function(&func.name, ffi_names) {
+                continue;
+            }
+            if let Some(decl) = emit_function(func) {
+                content.push_str(&decl);
+                count += 1;
             }
         }
-    }
-
-    let mut total_fns = 0usize;
-    for crate_export in crate_exports {
-        let module_name = crate_dir_to_module(&crate_export.dir_name);
-        let module_output = emit_module_file(&module_name, &crate_export.fns, ffi_names);
-        if !module_output.is_empty() {
-            let module_path = fn_dir.join(format!("{module_name}.hx"));
-            write_if_changed(&module_path, &module_output);
-            total_fns += crate_export.fns.len();
-            total_files += 1;
+        content.push_str("}\n");
+        if count > 0 {
+            write_if_changed(&fn_dir.join(format!("{module}.hx")), &content);
         }
     }
-
     eprintln!(
-        "wrote {total_files} files ({total_fns} functions, {} types, {types_with_fields} with fields, {types_with_methods} with methods, {total_methods} methods) to {}",
-        all_opaque_types.len(),
-        js_dir.display()
+        "wrote JavaScript ESM bindings for {} packages and {} types",
+        exports.len(),
+        types.len()
     );
 }
 
-fn emit_type_file(
-    ty: &str,
-    parsed_struct: Option<&ParsedStruct>,
-    methods: Option<&[TypeMethod<'_>]>,
-    ffi_names: Option<&BTreeSet<String>>,
-) -> String {
-    let mut output = String::new();
-    writeln!(output, "package {PKG};").unwrap();
-    writeln!(output).unwrap();
-
-    let all_fields = parsed_struct.map(|s| &s.fields[..]).unwrap_or(&[]);
-    let fields: Vec<_> = all_fields
-        .iter()
-        .filter(|f| has_ffi_accessor(ty, &f.name, ffi_names))
-        .collect();
-    let method_strs = methods
-        .map(|ms| emit_methods(ty, ms, ffi_names))
-        .unwrap_or_default();
-
-    if fields.is_empty() && method_strs.is_empty() {
-        writeln!(output, "abstract {ty}(Dynamic) {{}}").unwrap();
-        return output;
+fn emit_function(func: &ParsedFn) -> Option<String> {
+    let (params, ret) = signature(func, &format!("{PKG}."))?;
+    let name = to_camel_case(&func.name);
+    let params = params.join(", ");
+    if let Some(source_name) = &func.source_name {
+        let js_name = flight_compiler::typescript_item_name(source_name);
+        Some(format!(
+            "\t@:native(\"{js_name}\")\n\tpublic static function {name}({params}):{ret};\n"
+        ))
+    } else {
+        // Box/CString free helpers exist solely for native ownership. JS objects are GC-managed.
+        Some(format!(
+            "\t/** Native allocation release is unnecessary on JavaScript. */\n\tpublic static inline function {name}({params}):Void {{}}\n"
+        ))
     }
-
-    if !fields.is_empty() {
-        emit_ffi_class(&mut output, ty, &fields);
-        writeln!(output).unwrap();
-    }
-
-    writeln!(output, "abstract {ty}(Dynamic) {{").unwrap();
-
-    for field in &fields {
-        let haxe_ty = scalar_to_haxe(&field.ty);
-        let haxe_name = to_camel_case(&field.name);
-        let ffi_class = format!("{ty}_Ffi");
-
-        writeln!(output, "\tpublic var {haxe_name}(get, set):{haxe_ty};").unwrap();
-        writeln!(output).unwrap();
-        writeln!(
-            output,
-            "\tinline function get_{haxe_name}():{haxe_ty} return {ffi_class}.get_{haxe_name}(this);"
-        )
-        .unwrap();
-        writeln!(output).unwrap();
-        writeln!(
-            output,
-            "\tinline function set_{haxe_name}(value:{haxe_ty}):{haxe_ty} return {ffi_class}.set_{haxe_name}(this, value);"
-        )
-        .unwrap();
-    }
-
-    if !fields.is_empty() && !method_strs.is_empty() {
-        writeln!(output).unwrap();
-    }
-
-    for method_str in &method_strs {
-        writeln!(output, "{method_str}").unwrap();
-    }
-
-    writeln!(output, "}}").unwrap();
-    output
 }
 
-fn emit_ffi_class(output: &mut String, ty: &str, fields: &[&crate::parse::StructField]) {
-    let snake = to_snake_case(ty);
-    writeln!(output, "@:jsRequire(\"{WASM_MODULE}\")").unwrap();
-    writeln!(output, "private extern class {ty}_Ffi {{").unwrap();
-    for field in fields {
-        let haxe_ty = scalar_to_haxe(&field.ty);
-        let haxe_name = to_camel_case(&field.name);
-        let getter_ffi = format!("flight_get_{snake}_{}", field.name);
-        let setter_ffi = format!("flight_set_{snake}_{}", field.name);
-
-        writeln!(
-            output,
-            "\t@:native(\"{getter_ffi}\") static function get_{haxe_name}(ptr:Dynamic):{haxe_ty};"
-        )
-        .unwrap();
-        writeln!(
-            output,
-            "\t@:native(\"{setter_ffi}\") static function set_{haxe_name}(ptr:Dynamic, value:{haxe_ty}):{haxe_ty};"
-        )
-        .unwrap();
-    }
-    writeln!(output, "}}").unwrap();
-}
-
-fn emit_methods(
+fn emit_type(
     ty: &str,
+    parsed: Option<&ParsedStruct>,
     methods: &[TypeMethod<'_>],
     ffi_names: Option<&BTreeSet<String>>,
-) -> Vec<String> {
-    let mut out = Vec::new();
-    let mut seen_names: BTreeSet<String> = BTreeSet::new();
-
+) -> String {
+    let mut out = format!("package {PKG};\n\nabstract {ty}(Dynamic) {{\n");
+    if let Some(parsed) = parsed {
+        for field in &parsed.fields {
+            if !has_ffi_accessor(ty, &field.name, ffi_names) {
+                continue;
+            }
+            let haxe_name = to_camel_case(&field.name);
+            let js_name = flight_compiler::typescript_item_name(&field.name);
+            let t = scalar_to_haxe(&field.ty);
+            writeln!(out, "\tpublic var {haxe_name}(get, set):{t};").unwrap();
+            writeln!(
+                out,
+                "\tinline function get_{haxe_name}():{t} return untyped this.{js_name};"
+            )
+            .unwrap();
+            writeln!(out, "\tinline function set_{haxe_name}(value:{t}):{t} return untyped this.{js_name} = value;").unwrap();
+        }
+    }
+    let mut seen = BTreeSet::new();
     for tm in methods {
         if !has_ffi_function(&tm.func.name, ffi_names) {
             continue;
         }
-        if let Some(method) = emit_one_method(ty, tm) {
-            let method_name = derive_method_name(&tm.func.name, ty).unwrap_or_default();
-            if seen_names.insert(method_name) {
-                out.push(method);
+        let Some(name) = derive_method_name(&tm.func.name, ty) else {
+            continue;
+        };
+        if !seen.insert(name.clone()) {
+            continue;
+        }
+        let Some((params, ret)) = signature(tm.func, &format!("{PKG}.")) else {
+            continue;
+        };
+        let receiver = find_self_param(tm.func, ty);
+        let mut decl = Vec::new();
+        let mut args = Vec::new();
+        for (index, param) in tm.func.params.iter().enumerate() {
+            if Some(index) == receiver {
+                args.push("cast this".to_string());
+            } else {
+                decl.push(params[index].clone());
+                args.push(to_camel_case(&param.name));
             }
         }
+        let static_kw = if receiver.is_none() { "static " } else { "" };
+        let ret_kw = if ret == "Void" { "" } else { "return " };
+        writeln!(
+            out,
+            "\t{static_kw}inline public function {name}({}):{ret} {{",
+            decl.join(", ")
+        )
+        .unwrap();
+        writeln!(
+            out,
+            "\t\t{ret_kw}{PKG}._fn.{}.{}({});",
+            tm.module,
+            to_camel_case(&tm.func.name),
+            args.join(", ")
+        )
+        .unwrap();
+        writeln!(out, "\t}}").unwrap();
     }
+    out.push_str("}\n");
     out
 }
 
-fn emit_one_method(ty: &str, tm: &TypeMethod<'_>) -> Option<String> {
-    let func = tm.func;
-    let method_name = derive_method_name(&func.name, ty)?;
-    let haxe_fn_name = to_camel_case(&func.name);
-
-    let self_index = find_self_param(func, ty);
-    let is_static = self_index.is_none();
-
-    let mut method_params = Vec::new();
-    let mut call_args = Vec::new();
-
-    for (i, param) in func.params.iter().enumerate() {
-        let kind = classify_param(&param.ty)?;
-
-        if Some(i) == self_index {
-            call_args.push("cast this".to_string());
-        } else {
-            let pname = to_camel_case(&param.name);
-            match &kind {
-                ParamKind::SliceConst(_)
-                | ParamKind::SliceMut(_)
-                | ParamKind::OptionSliceConst(_)
-                | ParamKind::OptionSliceMut(_)
-                | ParamKind::BoxSlice(_) => {
-                    method_params.push(format!("{pname}:Dynamic"));
-                    method_params.push(format!("{pname}Len:Int"));
-                    call_args.push(pname.clone());
-                    call_args.push(format!("{pname}Len"));
-                }
-                ParamKind::FixedArrayConst(_, _) | ParamKind::FixedArrayMut(_, _) => {
-                    method_params.push(format!("{pname}:Dynamic"));
-                    call_args.push(pname);
-                }
-                ParamKind::Closure | ParamKind::OptionClosure => {
-                    method_params.push(format!("{pname}Fn:Dynamic"));
-                    method_params.push(format!("{pname}Ctx:Dynamic"));
-                    call_args.push(format!("{pname}Fn"));
-                    call_args.push(format!("{pname}Ctx"));
-                }
-                _ => {
-                    let haxe_ty = param_kind_to_haxe(&kind);
-                    method_params.push(format!("{pname}:{haxe_ty}"));
-                    call_args.push(pname);
-                }
-            }
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::parse::Param;
+    fn sample() -> ParsedFn {
+        ParsedFn {
+            name: "hash_2d".into(),
+            source_name: Some("hash_2d".into()),
+            params: vec![
+                Param {
+                    name: "items".into(),
+                    ty: "&[f32]".into(),
+                },
+                Param {
+                    name: "callback".into(),
+                    ty: "&dyn Fn(f32) -> f32".into(),
+                },
+            ],
+            ret: Some("Option<u32>".into()),
         }
     }
-
-    let ret_kind = match &func.ret {
-        None => ReturnKind::Void,
-        Some(ret_ty) => classify_return(ret_ty)?,
-    };
-    let haxe_ret = return_kind_to_haxe(&ret_kind);
-
-    let params_str = method_params.join(", ");
-    let args_str = call_args.join(", ");
-    let module = &tm.module;
-
-    let call = format!("{PKG}._fn.{module}.{haxe_fn_name}({args_str})");
-    let body = if matches!(ret_kind, ReturnKind::Void) {
-        call
-    } else {
-        format!("return {call}")
-    };
-
-    let static_kw = if is_static { "static " } else { "" };
-
-    Some(format!(
-        "\t{static_kw}inline public function {method_name}({params_str}):{haxe_ret} {{\n\t\t{body};\n\t}}"
-    ))
-}
-
-fn emit_module_file(
-    module_name: &str,
-    fns: &[ParsedFn],
-    ffi_names: Option<&BTreeSet<String>>,
-) -> String {
-    let mut emitted: Vec<String> = Vec::new();
-    for func in fns {
-        if !has_ffi_function(&func.name, ffi_names) {
-            continue;
-        }
-        if let Some(decl) = emit_function(func) {
-            emitted.push(decl);
-        }
+    #[test]
+    fn esm_uses_logical_arrays_callbacks_and_options() {
+        let (params, ret) = signature(&sample(), "").unwrap();
+        assert_eq!(params, ["items:Dynamic", "callback_:Dynamic"]);
+        assert_eq!(ret, "Null<Int>");
     }
-    if emitted.is_empty() {
-        return String::new();
+    #[test]
+    fn esm_uses_compiler_acronym_names_and_preserved_generic_name() {
+        let mut f = sample();
+        f.name = "hash_2d__material".into();
+        let text = emit_function(&f).unwrap();
+        assert!(text.contains("@:native(\"hash2D\")"));
+        assert!(!text.contains("flight_hash"));
     }
-
-    let mut output = String::new();
-    writeln!(output, "package {PKG}._fn;").unwrap();
-    writeln!(output).unwrap();
-    writeln!(output, "@:jsRequire(\"{WASM_MODULE}\")").unwrap();
-    writeln!(output, "extern class {module_name} {{").unwrap();
-    for decl in &emitted {
-        writeln!(output, "{decl}").unwrap();
-    }
-    writeln!(output, "}}").unwrap();
-    output
-}
-
-fn emit_function(func: &ParsedFn) -> Option<String> {
-    let ffi_name = format!("flight_{}", func.name);
-    let haxe_name = to_camel_case(&func.name);
-
-    let mut haxe_params = Vec::new();
-    for param in &func.params {
-        let kind = classify_param(&param.ty)?;
-        let pname = to_camel_case(&param.name);
-        match &kind {
-            ParamKind::SliceConst(_)
-            | ParamKind::SliceMut(_)
-            | ParamKind::OptionSliceConst(_)
-            | ParamKind::OptionSliceMut(_)
-            | ParamKind::BoxSlice(_) => {
-                haxe_params.push(format!("{pname}:Dynamic"));
-                haxe_params.push(format!("{pname}Len:Int"));
-            }
-            ParamKind::FixedArrayConst(_, _) | ParamKind::FixedArrayMut(_, _) => {
-                haxe_params.push(format!("{pname}:Dynamic"));
-            }
-            ParamKind::Closure | ParamKind::OptionClosure => {
-                haxe_params.push(format!("{pname}Fn:Dynamic"));
-                haxe_params.push(format!("{pname}Ctx:Dynamic"));
-            }
-            _ => {
-                let haxe_ty = param_kind_to_haxe(&kind);
-                haxe_params.push(format!("{pname}:{haxe_ty}"));
-            }
-        }
-    }
-
-    let ret_kind = match &func.ret {
-        None => ReturnKind::Void,
-        Some(ty) => classify_return(ty)?,
-    };
-    let haxe_ret = return_kind_to_haxe(&ret_kind);
-
-    let params_str = haxe_params.join(", ");
-    Some(format!(
-        "\t@:native(\"{ffi_name}\")\n\tpublic static function {haxe_name}({params_str}):{haxe_ret};"
-    ))
-}
-
-fn param_kind_to_haxe(kind: &ParamKind) -> String {
-    match kind {
-        ParamKind::Scalar(ty) => scalar_to_haxe(ty).to_string(),
-        ParamKind::RefConst(ty) | ParamKind::OptionRefConst(ty) => format!("{PKG}.{ty}"),
-        ParamKind::RefMut(ty) | ParamKind::OptionRefMut(ty) => format!("{PKG}.{ty}"),
-        ParamKind::ArcRef | ParamKind::ArcRefMut => "Dynamic".to_string(),
-        ParamKind::OptionF32 => "Float".to_string(),
-        ParamKind::OptionF64 => "Float".to_string(),
-        ParamKind::OptionI32 => "Int".to_string(),
-        ParamKind::OptionBool => "Int".to_string(),
-        ParamKind::StrRef
-        | ParamKind::StringParam
-        | ParamKind::OptionStr
-        | ParamKind::OptionStringParam => "String".to_string(),
-        ParamKind::SliceConst(_)
-        | ParamKind::SliceMut(_)
-        | ParamKind::OptionSliceConst(_)
-        | ParamKind::OptionSliceMut(_) => "Dynamic".to_string(),
-        ParamKind::FixedArrayConst(_, _) | ParamKind::FixedArrayMut(_, _) => "Dynamic".to_string(),
-        ParamKind::Enum(_) => "Int".to_string(),
-        ParamKind::DynOpaque(_) => "Dynamic".to_string(),
-        ParamKind::DynMono(ty) => format!("{PKG}.{ty}"),
-        ParamKind::VecMut(_) | ParamKind::VecConst(_) | ParamKind::VecOwned(_) => {
-            "Dynamic".to_string()
-        }
-        ParamKind::Closure | ParamKind::OptionClosure => "Dynamic".to_string(),
-        ParamKind::BoxSlice(_) => "Dynamic".to_string(),
-    }
-}
-
-fn return_kind_to_haxe(kind: &ReturnKind) -> String {
-    match kind {
-        ReturnKind::Void => "Void".to_string(),
-        ReturnKind::Scalar(ty) => scalar_to_haxe(ty).to_string(),
-        ReturnKind::Struct(ty) => format!("{PKG}.{ty}"),
-        ReturnKind::StringReturn | ReturnKind::OptionString => "String".to_string(),
-        ReturnKind::ArcRefReturn | ReturnKind::OptionArcRefReturn => "Dynamic".to_string(),
-        ReturnKind::Enum(_) => "Int".to_string(),
-        ReturnKind::VecReturn(_) | ReturnKind::OptionVecReturn(_) => "Dynamic".to_string(),
-        ReturnKind::BoxSliceReturn(_) | ReturnKind::OptionBoxSliceReturn(_) => {
-            "Dynamic".to_string()
-        }
-        ReturnKind::FixedArrayReturn(_, _) => "Dynamic".to_string(),
-        ReturnKind::OptionStruct(_) => "Dynamic".to_string(),
+    #[test]
+    fn esm_native_free_is_a_gc_noop() {
+        let mut f = sample();
+        f.source_name = None;
+        f.ret = None;
+        assert!(emit_function(&f).unwrap().contains("):Void {}"));
     }
 }

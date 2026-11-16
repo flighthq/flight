@@ -22,6 +22,7 @@ path = "src/bin/offsets.rs"
 flight-sdk = { workspace = true }
 
 [build-dependencies]
+syn = { version = "2", features = ["full"] }
 
 [lints]
 workspace = true

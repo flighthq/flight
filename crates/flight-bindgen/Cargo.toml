@@ -16,6 +16,7 @@ path = "src/main.rs"
 doctest = false
 
 [dependencies]
+flight-compiler = { path = "../flight-compiler" }
 
 [lints]
 workspace = true

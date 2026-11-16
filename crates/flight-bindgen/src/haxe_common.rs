@@ -55,7 +55,7 @@ pub fn build_type_methods<'a>(
 ) -> BTreeMap<String, Vec<TypeMethod<'a>>> {
     let mut map: BTreeMap<String, Vec<TypeMethod<'a>>> = BTreeMap::new();
     for crate_export in crate_exports {
-        let module = crate_dir_to_module(&crate_export.dir_name);
+        let module = crate_dir_to_module(&crate_export.dir_name, known_types);
         for func in &crate_export.fns {
             if let Some(ty) =
                 match_function_to_type(&func.name, &func.params, &func.ret, known_types)
@@ -165,9 +165,17 @@ pub fn find_self_param(func: &ParsedFn, ty: &str) -> Option<usize> {
     None
 }
 
-pub fn crate_dir_to_module(dir_name: &str) -> String {
+pub fn crate_dir_to_module(dir_name: &str, known_types: &BTreeSet<String>) -> String {
     let stripped = dir_name.strip_prefix("flight-").unwrap_or(dir_name);
-    to_pascal_case(stripped)
+    let candidate = to_pascal_case(stripped);
+    // Haxe modules are files. A facade and type differing only in case overwrite one
+    // another on Windows and default macOS filesystems. Reuse the SDK type spelling
+    // so dispatch emits one module containing both its typedef and free functions.
+    known_types
+        .iter()
+        .find(|name| name.eq_ignore_ascii_case(&candidate))
+        .cloned()
+        .unwrap_or(candidate)
 }
 
 pub fn scalar_to_haxe(ty: &str) -> &str {
@@ -226,4 +234,30 @@ pub fn write_if_changed(path: &Path, content: &str) {
         }
     }
     fs::write(path, content).unwrap();
+}
+
+#[cfg(test)]
+mod portable_module_tests {
+    use super::*;
+    #[test]
+    fn facades_use_canonical_sdk_type_case() {
+        for (module, ty) in [
+            ("motionpath", "MotionPath"),
+            ("movieclip", "MovieClip"),
+            ("physics2d-abi", "Physics2DAbi"),
+            ("physics3d-abi", "Physics3DAbi"),
+            ("quadbatch", "QuadBatch"),
+            ("scene2d", "Scene2D"),
+            ("skeleton2d", "Skeleton2D"),
+            ("textsegment", "TextSegment"),
+            ("textureatlas", "TextureAtlas"),
+        ] {
+            let types = BTreeSet::from([ty.to_string()]);
+            assert_eq!(crate_dir_to_module(&format!("flight-{module}"), &types), ty);
+        }
+        assert_eq!(
+            crate_dir_to_module("flight-geometry", &BTreeSet::new()),
+            "Geometry"
+        );
+    }
 }

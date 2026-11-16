@@ -63,7 +63,7 @@ pub fn generate(
 
     let mut total_fns = 0usize;
     for crate_export in crate_exports {
-        let module_name = crate_dir_to_module(&crate_export.dir_name);
+        let module_name = crate_dir_to_module(&crate_export.dir_name, &all_opaque_types);
         let module_output = emit_module_file(&module_name, &crate_export.fns, ffi_names);
         if !module_output.is_empty() {
             let module_path = fn_dir.join(format!("{module_name}.hx"));
@@ -126,7 +126,7 @@ fn emit_type_file(
         writeln!(output).unwrap();
         writeln!(
             output,
-            "\tinline function set_{haxe_name}(value:{haxe_ty}):{haxe_ty} return {ffi_class}.set_{haxe_name}(this, value);"
+            "\tinline function set_{haxe_name}(value:{haxe_ty}):{haxe_ty} {{ {ffi_class}.set_{haxe_name}(this, value); return value; }}"
         )
         .unwrap();
     }
@@ -256,7 +256,7 @@ fn emit_one_method(ty: &str, tm: &TypeMethod<'_>) -> Option<String> {
     let static_kw = if is_static { "static " } else { "" };
 
     Some(format!(
-        "\t{static_kw}inline public function {method_name}({params_str}):{haxe_ret} {{\n\t\t{body};\n\t}}"
+        "\t{static_kw}extern inline public function {method_name}({params_str}):{haxe_ret} {{\n\t\t{body};\n\t}}"
     ))
 }
 
