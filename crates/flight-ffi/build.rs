@@ -240,7 +240,8 @@ const SKIP_TYPES: &[&str] = &[
 ];
 
 fn main() {
-    // The C consumer test compiles its executable for the same target Cargo builds this crate for.
+    // The C consumer test builds and links its executable with the same target and rustc Cargo
+    // builds this crate with.
     println!(
         "cargo::rustc-env=FLIGHT_FFI_TARGET={}",
         env::var("TARGET").unwrap()
@@ -248,6 +249,10 @@ fn main() {
     println!(
         "cargo::rustc-env=FLIGHT_FFI_HOST={}",
         env::var("HOST").unwrap()
+    );
+    println!(
+        "cargo::rustc-env=FLIGHT_FFI_RUSTC={}",
+        env::var("RUSTC").unwrap()
     );
 
     let manifest_dir = PathBuf::from(env::var("CARGO_MANIFEST_DIR").unwrap());
