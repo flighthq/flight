@@ -265,6 +265,17 @@ const DYN_MONO_TRAITS: &[(&str, &[&str])] = &[
     ),
 ];
 
+// Provider future aliases (`Pin<Box<dyn Future<Output = ...> + Send>>`) that cross the ABI as a
+// completion callback. `true` marks an alias whose output is `Result<T, FlightError>`; the callback
+// receives `T` and a null error, or the empty carrier and an owned error string.
+const ASYNC_FUTURE_ALIASES: &[(&str, bool)] = &[
+    ("AppProviderFuture", true),
+    ("DialogProviderFuture", true),
+    ("FileSystemProviderFuture", true),
+    ("TrayFuture", false),
+    ("VideoProviderFuture", true),
+];
+
 const SKIP_FN_PREFIXES: &[&str] = &["initialize_"];
 const SKIP_FNS: &[&str] = &["enable_clip_guards", "enable_statechart_guards"];
 const SKIP_TYPES: &[&str] = &[
@@ -1148,9 +1159,18 @@ fn generate_ffi_wrapper(func: &ParsedFn) -> Option<(String, Option<String>)> {
         Some(ty) => map_return_to_ffi(ty)?,
     };
     append_tuple_out_params(&mut ffi_params, &call_wrap);
+    append_async_callback_params(&mut ffi_params, &call_wrap);
 
-    let boxed_ty = if matches!(call_wrap, FfiReturn::BoxReturn | FfiReturn::OptionBoxReturn) {
-        func.ret.as_ref().map(|ty| {
+    // An async value boxes its own output type, not the future the function returns.
+    let (value_wrap, value_ty) = match &call_wrap {
+        FfiReturn::AsyncCallback(spec) => (&spec.value, Some(spec.value_rust_ty.as_str())),
+        _ => (&call_wrap, func.ret.as_deref()),
+    };
+    let boxed_ty = if matches!(
+        value_wrap,
+        FfiReturn::BoxReturn | FfiReturn::OptionBoxReturn
+    ) {
+        value_ty.map(|ty| {
             let resolved = resolve_type_alias(ty);
             if let Some(inner) = resolved.strip_prefix("Option<") {
                 if let Some(inner) = inner.strip_suffix('>') {
@@ -1177,7 +1197,7 @@ fn generate_ffi_wrapper(func: &ParsedFn) -> Option<(String, Option<String>)> {
     };
 
     let body = generate_return_body(&call_wrap, &call, &preamble);
-    let helpers = generate_vec_result_helpers(&ffi_name, &call_wrap);
+    let helpers = generate_vec_result_helpers(&ffi_name, value_wrap);
 
     Some((
         format!(
@@ -1396,11 +1416,49 @@ enum FfiReturn {
     SliceReturn,
     RefReturn,
     OptionRefReturn,
+    AsyncCallback(Box<AsyncCallbackSpec>),
+}
+
+// A future return lowered to `complete_fn(complete_ctx, value, error)`: `value` is `value_ty`,
+// converted from the future's output exactly as the synchronous `value` return would be.
+struct AsyncCallbackSpec {
+    value: FfiReturn,
+    value_ty: String,
+    value_rust_ty: String,
+    fallible: bool,
 }
 
 struct VecReturnSpec {
     element_ty: String,
     element_is_ref: bool,
+}
+
+fn async_future_output(ty: &str) -> Option<(&str, bool)> {
+    for &(alias, fallible) in ASYNC_FUTURE_ALIASES {
+        if let Some(output) = ty
+            .strip_prefix(alias)
+            .and_then(|rest| rest.strip_prefix('<'))
+            .and_then(|rest| rest.strip_suffix('>'))
+        {
+            return Some((output.trim(), fallible));
+        }
+    }
+    None
+}
+
+// Owned carriers only: a borrowed return cannot outlive the settled future, and
+// tuple out-parameters have no place in a callback.
+fn is_async_callback_value(value: &FfiReturn) -> bool {
+    !matches!(
+        value,
+        FfiReturn::Void
+            | FfiReturn::TupleReturn(_)
+            | FfiReturn::OptionTupleReturn(_)
+            | FfiReturn::SliceReturn
+            | FfiReturn::RefReturn
+            | FfiReturn::OptionRefReturn
+            | FfiReturn::AsyncCallback(_)
+    )
 }
 
 fn append_tuple_out_params(ffi_params: &mut Vec<String>, call_wrap: &FfiReturn) {
@@ -1413,8 +1471,66 @@ fn append_tuple_out_params(ffi_params: &mut Vec<String>, call_wrap: &FfiReturn) 
     }
 }
 
+fn append_async_callback_params(ffi_params: &mut Vec<String>, call_wrap: &FfiReturn) {
+    let FfiReturn::AsyncCallback(spec) = call_wrap else {
+        return;
+    };
+    ffi_params.push(format!(
+        "complete_fn: extern \"C\" fn(*mut std::ffi::c_void, {}, *mut std::ffi::c_char)",
+        spec.value_ty
+    ));
+    ffi_params.push("complete_ctx: *mut std::ffi::c_void".to_string());
+}
+
+// The value a callback receives alongside a non-null error: null for handles, false, NaN, -1 for
+// signed carriers (the `Option<enum>` / `Option<u32>` / `Option<bool>` sentinel), and 0 otherwise.
+fn get_async_callback_empty_value(value_ty: &str) -> &'static str {
+    if value_ty.starts_with("*mut ") {
+        return "std::ptr::null_mut()";
+    }
+    match value_ty {
+        "bool" => "false",
+        "f32" => "f32::NAN",
+        "f64" => "f64::NAN",
+        "i8" | "i16" | "i32" | "i64" | "isize" => "-1",
+        _ => "0",
+    }
+}
+
+// The caller-owned `error` string is null on success; on rejection, or a panic while polling, `value`
+// is the type's empty carrier.
+fn generate_async_callback_body(spec: &AsyncCallbackSpec, call: &str, preamble: &str) -> String {
+    let value_ty = &spec.value_ty;
+    let convert = generate_return_body(&spec.value, "value", "");
+    let empty = get_async_callback_empty_value(value_ty);
+    let settled =
+        format!("((move || -> {value_ty} {{\n{convert}\n            }})(), std::ptr::null_mut())");
+    let arms = if spec.fallible {
+        format!(
+            "            Ok(Ok(value)) => {settled},\n            \
+                 Ok(Err(error)) => ({empty}, crate::async_callback::get_ffi_async_error_string(&error)),\n            \
+                 Err(error) => ({empty}, error),"
+        )
+    } else {
+        format!(
+            "            Ok(value) => {settled},\n            \
+                 Err(error) => ({empty}, error),"
+        )
+    };
+    format!(
+        "{preamble}    let future = {call};\n    \
+             let complete_ctx = crate::async_callback::FfiAsyncContext(complete_ctx);\n    \
+             crate::async_callback::drive_ffi_async(Box::pin(async move {{\n        \
+                 let (value, error) = match crate::async_callback::settle_ffi_async(future).await {{\n{arms}\n        \
+                 }};\n        \
+                 complete_fn(crate::async_callback::get_ffi_async_context(&complete_ctx), value, error);\n    \
+             }}));"
+    )
+}
+
 fn generate_return_body(call_wrap: &FfiReturn, call: &str, preamble: &str) -> String {
     match call_wrap {
+        FfiReturn::AsyncCallback(spec) => generate_async_callback_body(spec, call, preamble),
         FfiReturn::Void => format!("{preamble}    {call};"),
         FfiReturn::Direct => format!("{preamble}    return {call};"),
         FfiReturn::BoxReturn => {
@@ -3000,6 +3116,24 @@ fn map_param_to_ffi(name: &str, ty: &str) -> Option<MappedParam> {
 fn map_return_to_ffi(ty: &str) -> Option<(String, FfiReturn)> {
     let ty = strip_crate_paths(&strip_lifetimes(&resolve_type_alias(ty.trim())));
     let ty = ty.as_str();
+
+    // Provider future -> void return plus trailing `complete_fn` / `complete_ctx` parameters.
+    if let Some((output, fallible)) = async_future_output(ty) {
+        let (value_decl, value) = map_return_to_ffi(output)?;
+        if !is_async_callback_value(&value) {
+            return None;
+        }
+        let value_ty = value_decl.strip_prefix(" -> ")?.to_string();
+        return Some((
+            String::new(),
+            FfiReturn::AsyncCallback(Box::new(AsyncCallbackSpec {
+                value,
+                value_ty,
+                value_rust_ty: output.to_string(),
+                fallible,
+            })),
+        ));
+    }
 
     // Option<String> -> nullable *mut c_char
     if ty == "Option<String>" {

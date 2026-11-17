@@ -11,6 +11,26 @@ struct Carrier {
     signature: &'static str,
 }
 
+// A callback parameter's C function-pointer type, `ret (*)(params)`; `name` places the declarator
+// (`ret (*name)(params)`). HashLink still carries it as bytes and casts at the call.
+fn bare_fn_c_type(function: &syn::TypeBareFn, name: &str) -> String {
+    let inputs: Vec<String> = function
+        .inputs
+        .iter()
+        .map(|input| carrier(&input.ty).c)
+        .collect();
+    let output = match &function.output {
+        ReturnType::Default => "void".to_string(),
+        ReturnType::Type(_, ty) => carrier(ty).c,
+    };
+    let inputs = if inputs.is_empty() {
+        "void".to_string()
+    } else {
+        inputs.join(", ")
+    };
+    return format!("{output} (*{name})({inputs})");
+}
+
 fn carrier(ty: &Type) -> Carrier {
     match ty {
         Type::Ptr(pointer) => {
@@ -454,9 +474,14 @@ pub fn emit(source: &str, out: &Path) {
             let ty = tuple_out_carrier(&parameter_name, &parameter.ty)
                 .unwrap_or_else(|| carrier(&parameter.ty));
             let arg = format!("arg{index}");
-            c_params.push(format!("{} {arg}", ty.c));
+            if let Type::BareFn(function) = &*parameter.ty {
+                c_params.push(bare_fn_c_type(function, &arg));
+                call_args.push(format!("({}){arg}", bare_fn_c_type(function, "")));
+            } else {
+                c_params.push(format!("{} {arg}", ty.c));
+                call_args.push(format!("({}){arg}", ty.c));
+            }
             hl_params.push(format!("{} {arg}", ty.hl));
-            call_args.push(format!("({}){arg}", ty.c));
             signatures.push(ty.signature);
         }
         let ret = result.as_ref().map(|r| r.c.as_str()).unwrap_or("void");

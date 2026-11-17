@@ -34,11 +34,11 @@ fn random_gaussian_pair_outputs_are_typed_hashlink_references() {
     let (header, shim) = generated();
     assert_line(
         &header,
-        "void flight_random_gaussian_pair(void * arg0, void * arg1, float arg2, float arg3, float * arg4, float * arg5);",
+        "void flight_random_gaussian_pair(float (*arg0)(void *), void * arg1, float arg2, float arg3, float * arg4, float * arg5);",
     );
     assert_line(
         &shim,
-        "HL_PRIM void HL_NAME(flight_random_gaussian_pair)(vbyte * arg0, vbyte * arg1, float arg2, float arg3, float * arg4, float * arg5) { flight_random_gaussian_pair((void *)arg0, (void *)arg1, (float)arg2, (float)arg3, (float *)arg4, (float *)arg5); }",
+        "HL_PRIM void HL_NAME(flight_random_gaussian_pair)(vbyte * arg0, vbyte * arg1, float arg2, float arg3, float * arg4, float * arg5) { flight_random_gaussian_pair((float (*)(void *))arg0, (void *)arg1, (float)arg2, (float)arg3, (float *)arg4, (float *)arg5); }",
     );
     assert_line(
         &shim,
@@ -137,6 +137,25 @@ fn optional_bool_return_uses_the_parameter_sentinel_encoding() {
     }
 }";
     assert!(wrappers.contains(expected), "missing:\n{expected}");
+}
+
+// A provider future returns through trailing `complete_fn` / `complete_ctx` parameters. C sees the
+// callback's real function-pointer type; HashLink carries it as bytes and casts at the call.
+#[test]
+fn provider_future_returns_lower_to_typed_completion_callbacks() {
+    let (header, shim) = generated();
+    assert_line(
+        &header,
+        "void flight_file_exists(void * arg0, const char * arg1, void (*arg2)(void *, bool, char *), void * arg3);",
+    );
+    assert_line(
+        &shim,
+        "HL_PRIM void HL_NAME(flight_file_exists)(vbyte * arg0, vbyte * arg1, vbyte * arg2, vbyte * arg3) { flight_file_exists((void *)arg0, (const char *)arg1, (void (*)(void *, bool, char *))arg2, (void *)arg3); }",
+    );
+    assert_line(
+        &shim,
+        "DEFINE_PRIM(_VOID, flight_file_exists, _BYTES _BYTES _BYTES _BYTES);",
+    );
 }
 
 fn assert_line(text: &str, line: &str) {

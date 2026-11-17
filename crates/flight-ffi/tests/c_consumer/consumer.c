@@ -2,7 +2,8 @@
  * Reference C consumer of the flight-ffi C ABI. It includes the header flight-ffi generates,
  * links the flight-ffi static library, and exercises each calling convention the generated surface
  * produces: scalar values, opaque boxed handles with field accessors and out parameters, borrowed
- * input strings, and owned output strings released through the matching flight_free_* function.
+ * input strings, owned output strings released through the matching flight_free_* function, and
+ * async completion callbacks.
  * Entity types are opaque to C; only their `void *` handles cross the boundary.
  */
 #include "flight_ffi.h"
@@ -138,6 +139,29 @@ static void check_unit_signals(void) {
   flight_free_unit_signal(NULL);
 }
 
+struct bool_completion {
+  int calls;
+  bool value;
+  bool had_error;
+};
+
+static void complete_bool(void *ctx, bool value, char *error) {
+  struct bool_completion *completion = ctx;
+  completion->calls += 1;
+  completion->value = value;
+  completion->had_error = error != NULL;
+  flight_free_string(error);
+}
+
+static void check_async_callbacks(void) {
+  /* create_file_symlink resolves `false` immediately, so the callback runs before the call returns. */
+  struct bool_completion completion = {0, true, true};
+  flight_create_file_symlink("/a", "/b", complete_bool, &completion);
+  expect(completion.calls == 1, "a resolved future completes its callback once, before returning");
+  expect(!completion.value, "create_file_symlink settles false");
+  expect(!completion.had_error, "a fulfilled future passes a NULL error");
+}
+
 int main(void) {
   check_scalars();
   check_handles();
@@ -147,6 +171,7 @@ int main(void) {
   check_optional_texture_variants();
   check_optional_tuples();
   check_unit_signals();
+  check_async_callbacks();
   if (failures != 0) {
     fprintf(stderr, "flight-ffi C consumer: %d failure(s)\n", failures);
     return 1;
