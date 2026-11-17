@@ -190,6 +190,33 @@ pub fn scalar_to_haxe(ty: &str) -> &str {
     }
 }
 
+/// The Haxe value a scalar tuple return becomes: an anonymous structure whose `_0`, `_1`, ...
+/// fields mirror Rust's `.0`, `.1`, ... and the native ABI's `out_0`, `out_1`, ... parameters.
+pub fn tuple_struct_type(elements: &[String], scalar: fn(&str) -> &str) -> String {
+    let fields: Vec<String> = elements
+        .iter()
+        .enumerate()
+        .map(|(index, element)| format!("_{index}:{}", scalar(element)))
+        .collect();
+    return format!("{{ {} }}", fields.join(", "));
+}
+
+/// The out-parameter storage types (HashLink, hxcpp) of a tuple element, or `None` when the
+/// element has no exact-width type on both native targets. Every backend declines a tuple with
+/// such an element, so the HL, C++ and JavaScript surfaces stay identical.
+pub fn tuple_element_storage(ty: &str) -> Option<(&'static str, &'static str)> {
+    return match ty {
+        "f32" => Some(("Single", "cpp.Float32")),
+        "f64" => Some(("Float", "cpp.Float64")),
+        "i32" => Some(("Int", "cpp.Int32")),
+        "u32" => Some(("Int", "cpp.UInt32")),
+        "u8" => Some(("hl.UI8", "cpp.UInt8")),
+        "u16" => Some(("hl.UI16", "cpp.UInt16")),
+        "bool" => Some(("Bool", "Bool")),
+        _ => None,
+    };
+}
+
 pub fn to_snake_case(s: &str) -> String {
     let mut out = String::new();
     let chars: Vec<char> = s.chars().collect();

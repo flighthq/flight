@@ -598,6 +598,9 @@ pub enum ReturnKind {
     OptionBoxSliceReturn(String),
     FixedArrayReturn(String, usize),
     OptionStruct(String),
+    /// A tuple of two or more scalars. The native ABI has no return value and writes element `i`
+    /// through a trailing `out_i` pointer parameter; the Haxe value is `{ _0, _1, ... }`.
+    Tuple(Vec<String>),
 }
 
 fn strip_lifetimes(ty: &str) -> String {
@@ -1166,6 +1169,12 @@ pub fn classify_return(ty: &str) -> Option<ReturnKind> {
     let ty = strip_lifetimes(&resolve_type_alias(ty.trim()));
     let ty = ty.as_str();
 
+    // Mirrors flight-ffi's tuple policy: only scalar tuples are bridged, and an optional tuple has
+    // no wrapper, so neither may fall through to the struct arms.
+    if ty.starts_with('(') && ty.ends_with(')') {
+        return scalar_tuple_elements(ty).map(ReturnKind::Tuple);
+    }
+
     if ty == "Option<String>" || ty == "Option<&str>" {
         return Some(ReturnKind::OptionString);
     }
@@ -1325,6 +1334,22 @@ pub fn classify_return(ty: &str) -> Option<ReturnKind> {
         return Some(ReturnKind::Scalar("u32".to_string()));
     }
     return Some(ReturnKind::Struct(ty.to_string()));
+}
+
+/// The element types of a tuple the native ABI returns through `out_0`, `out_1`, ... parameters, or
+/// `None` when flight-ffi does not bridge it (fewer than two elements, or any non-scalar element).
+pub fn scalar_tuple_elements(ty: &str) -> Option<Vec<String>> {
+    let inner = ty.strip_prefix('(')?.strip_suffix(')')?;
+    let elements: Vec<String> = inner
+        .split(',')
+        .map(str::trim)
+        .filter(|element| !element.is_empty())
+        .map(str::to_string)
+        .collect();
+    if elements.len() < 2 || elements.iter().any(|element| !is_scalar(element)) {
+        return None;
+    }
+    return Some(elements);
 }
 
 pub fn collect_pub_fns(src_dir: &Path) -> Vec<ParsedFn> {
@@ -2062,9 +2087,43 @@ pub fn to_camel_case(s: &str) -> String {
     }
 }
 
+/// `flight_math::random_gaussian_pair`, the scalar tuple return flight-ffi bridges through
+/// `out_0`/`out_1`.
+#[cfg(test)]
+pub(crate) fn random_gaussian_pair_fixture() -> ParsedFn {
+    return parse_fn_signature(
+        "pub fn random_gaussian_pair(random: &dyn Fn() -> f32, mean: Option<f32>, standard_deviation: Option<f32>) -> (f32, f32) {",
+    )
+    .unwrap();
+}
+
 #[cfg(test)]
 mod native_abi_tests {
     use super::*;
+    #[test]
+    fn scalar_tuple_return_matches_ffi_out_parameter_policy() {
+        let function = random_gaussian_pair_fixture();
+        assert!(matches!(
+            classify_return(function.ret.as_deref().unwrap()),
+            Some(ReturnKind::Tuple(ref elements)) if elements == &["f32", "f32"]
+        ));
+        assert!(matches!(
+            classify_return("(f64, u32, bool)"),
+            Some(ReturnKind::Tuple(ref elements)) if elements.len() == 3
+        ));
+    }
+    #[test]
+    fn tuples_ffi_does_not_bridge_are_unsupported_not_structs() {
+        for ty in [
+            "(f32,)",
+            "()",
+            "(f32, Vector2)",
+            "(String, f32)",
+            "Option<(f64, f64)>",
+        ] {
+            assert!(classify_return(ty).is_none(), "{ty}");
+        }
+    }
     #[test]
     fn closure_arrow_preserves_following_parameters() {
         let function = parse_fn_signature(

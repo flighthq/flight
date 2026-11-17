@@ -52,6 +52,10 @@ fn return_type(ty: Option<&str>, prefix: &str) -> Option<String> {
         .strip_prefix("Option<")
         .and_then(|s| s.strip_suffix('>'))
     {
+        // flight-ffi bridges no optional tuple, so neither does the logical JS surface.
+        if matches!(classify_return(inner), Some(ReturnKind::Tuple(_))) {
+            return None;
+        }
         return Some(format!("Null<{}>", return_type(Some(inner), prefix)?));
     }
     Some(match classify_return(ty)? {
@@ -59,8 +63,32 @@ fn return_type(ty: Option<&str>, prefix: &str) -> Option<String> {
         ReturnKind::Scalar(t) => scalar_to_haxe(&t).into(),
         ReturnKind::Struct(t) => format!("{prefix}{t}"),
         ReturnKind::StringReturn => "String".into(),
+        ReturnKind::Tuple(elements) => {
+            for element in &elements {
+                crate::haxe_common::tuple_element_storage(element)?;
+            }
+            tuple_array_type(&elements)
+        }
         _ => "Dynamic".into(),
     })
+}
+
+// The TypeScript SDK returns tuples as readonly arrays (`readonly [number, number]`).
+fn tuple_array_type(elements: &[String]) -> String {
+    let first = scalar_to_haxe(&elements[0]);
+    if elements
+        .iter()
+        .all(|element| scalar_to_haxe(element) == first)
+    {
+        return format!("Array<{first}>");
+    }
+    return "Array<Dynamic>".to_string();
+}
+
+/// The structure type the dispatch layer gives a tuple on JavaScript, where every number is a
+/// `Float` and there is no `haxe.Int64`.
+pub fn tuple_struct_type(elements: &[String]) -> String {
+    return crate::haxe_common::tuple_struct_type(elements, scalar_to_haxe);
 }
 
 pub fn signature(func: &ParsedFn, prefix: &str) -> Option<(Vec<String>, String)> {
@@ -255,6 +283,30 @@ mod tests {
         let text = emit_function(&f).unwrap();
         assert!(text.contains("@:native(\"hash2D\")"));
         assert!(!text.contains("flight_hash"));
+    }
+    #[test]
+    fn esm_scalar_tuple_returns_the_typescript_array() {
+        let function = crate::parse::random_gaussian_pair_fixture();
+        let (params, ret) = signature(&function, "").unwrap();
+        assert_eq!(
+            params,
+            [
+                "random:Dynamic",
+                "mean:Null<Float>",
+                "standardDeviation:Null<Float>"
+            ]
+        );
+        assert_eq!(ret, "Array<Float>");
+        assert_eq!(
+            tuple_struct_type(&["f32".into(), "u32".into()]),
+            "{ _0:Float, _1:Int }"
+        );
+    }
+    #[test]
+    fn esm_optional_tuple_is_not_bridged() {
+        let mut function = crate::parse::random_gaussian_pair_fixture();
+        function.ret = Some("Option<(f64, f64)>".into());
+        assert!(signature(&function, "").is_none());
     }
     #[test]
     fn esm_native_free_is_a_gc_noop() {

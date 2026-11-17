@@ -3,7 +3,9 @@ use std::fmt::Write as _;
 use std::fs;
 use std::path::Path;
 
-use crate::haxe_common::{crate_dir_to_module, has_ffi_function};
+use crate::haxe_common::{
+    crate_dir_to_module, has_ffi_function, tuple_element_storage, tuple_struct_type,
+};
 use crate::parse::{
     CrateExports, ParamKind, ParsedEnum, ParsedFn, ReturnKind, classify_param, classify_return,
     to_camel_case,
@@ -249,6 +251,15 @@ fn emit_dispatch_function(
         None => ReturnKind::Void,
         Some(ty) => classify_return(ty)?,
     };
+    let tuple_elements = match &ret_kind {
+        ReturnKind::Tuple(elements) => {
+            for element in elements {
+                tuple_element_storage(element)?;
+            }
+            Some(elements.clone())
+        }
+        _ => None,
+    };
     let haxe_ret = return_kind_to_haxe(&ret_kind, emitted_enums);
     let has_return = !matches!(ret_kind, ReturnKind::Void);
     let needs_ret_cast = matches!(
@@ -274,7 +285,7 @@ fn emit_dispatch_function(
     let mut sig = String::new();
     // Logical JavaScript SDK signatures differ from native ABI carriers (arrays, callbacks,
     // options). Keep that difference in the producer instead of requiring a fake C ABI JS module.
-    let (js_params, js_ret) = crate::haxe_js::signature(func, "")?;
+    let (js_params, mut js_ret) = crate::haxe_js::signature(func, "")?;
     let js_args = func
         .params
         .iter()
@@ -282,42 +293,59 @@ fn emit_dispatch_function(
         .collect::<Vec<_>>()
         .join(", ");
     let js_ret_prefix = if js_ret == "Void" { "" } else { "return " };
+    let js_call = format!("flight._js._fn.{module_name}.{haxe_name}({js_args})");
     writeln!(sig, "#if (js && flight_esm)").unwrap();
+    if let Some(elements) = &tuple_elements {
+        js_ret = crate::haxe_js::tuple_struct_type(elements);
+    }
     writeln!(
         sig,
         "extern inline function {haxe_name}({}):{js_ret} {{",
         js_params.join(", ")
     )
     .unwrap();
-    writeln!(
-        sig,
-        "\t{js_ret_prefix}flight._js._fn.{module_name}.{haxe_name}({js_args});"
-    )
-    .unwrap();
+    if let Some(elements) = &tuple_elements {
+        write!(sig, "{}", js_tuple_body(&js_call, elements.len())).unwrap();
+    } else {
+        writeln!(sig, "\t{js_ret_prefix}{js_call};").unwrap();
+    }
     writeln!(sig, "}}\n#else").unwrap();
     writeln!(
         sig,
         "extern inline function {haxe_name}({params_str}):{haxe_ret} {{"
     )
     .unwrap();
+    let hl_call = format!("flight._hl._fn.{module_name}.{haxe_name}({native_args_str}");
+    let cpp_call = format!("flight._cpp._fn.{module_name}.{haxe_name}({native_args_str}");
+    let inner_js_call = format!("flight._js._fn.{module_name}.{haxe_name}({js_args_str})");
     writeln!(sig, "#if hl").unwrap();
-    writeln!(
-        sig,
-        "\t{ret_prefix}flight._hl._fn.{module_name}.{haxe_name}({native_args_str});"
-    )
-    .unwrap();
+    if let Some(elements) = &tuple_elements {
+        write!(
+            sig,
+            "{}",
+            native_tuple_body(&hl_call, elements, NativeTarget::Hl)
+        )
+        .unwrap();
+    } else {
+        writeln!(sig, "\t{ret_prefix}{hl_call});").unwrap();
+    }
     writeln!(sig, "#elseif cpp").unwrap();
-    writeln!(
-        sig,
-        "\t{ret_prefix}flight._cpp._fn.{module_name}.{haxe_name}({native_args_str});"
-    )
-    .unwrap();
+    if let Some(elements) = &tuple_elements {
+        write!(
+            sig,
+            "{}",
+            native_tuple_body(&cpp_call, elements, NativeTarget::Cpp)
+        )
+        .unwrap();
+    } else {
+        writeln!(sig, "\t{ret_prefix}{cpp_call});").unwrap();
+    }
     writeln!(sig, "#elseif (js && flight_esm)").unwrap();
-    writeln!(
-        sig,
-        "\t{ret_prefix}flight._js._fn.{module_name}.{haxe_name}({js_args_str});"
-    )
-    .unwrap();
+    if let Some(elements) = &tuple_elements {
+        write!(sig, "{}", js_tuple_body(&inner_js_call, elements.len())).unwrap();
+    } else {
+        writeln!(sig, "\t{ret_prefix}{inner_js_call};").unwrap();
+    }
     writeln!(sig, "#else").unwrap();
     writeln!(
         sig,
@@ -329,6 +357,51 @@ fn emit_dispatch_function(
     write!(sig, "\n#end").unwrap();
 
     return Some((sig, haxe_name));
+}
+
+enum NativeTarget {
+    Hl,
+    Cpp,
+}
+
+// The native ABI writes tuple element `i` through a trailing `out_i` pointer. `call` is the extern
+// call still missing its closing parenthesis, so the out-parameter addresses can be appended.
+fn native_tuple_body(call: &str, elements: &[String], target: NativeTarget) -> String {
+    let mut body = String::new();
+    let mut addresses = Vec::new();
+    for (index, element) in elements.iter().enumerate() {
+        let (hl_storage, cpp_storage) = tuple_element_storage(element).unwrap();
+        let (storage, address) = match target {
+            NativeTarget::Hl => (hl_storage, format!("hl.Ref.make(out{index})")),
+            NativeTarget::Cpp => (cpp_storage, format!("cpp.RawPointer.addressOf(out{index})")),
+        };
+        let zero = if element == "bool" { "false" } else { "0" };
+        writeln!(body, "\tvar out{index}:{storage} = {zero};").unwrap();
+        addresses.push(address);
+    }
+    let separator = if call.ends_with('(') { "" } else { ", " };
+    writeln!(body, "\t{call}{separator}{});", addresses.join(", ")).unwrap();
+    writeln!(
+        body,
+        "\treturn {};",
+        tuple_literal(elements.len(), |i| format!("out{i}"))
+    )
+    .unwrap();
+    return body;
+}
+
+// The TypeScript SDK returns a readonly array; the Haxe surface returns the same structure as the
+// native targets.
+fn js_tuple_body(call: &str, arity: usize) -> String {
+    return format!(
+        "\tvar result = {call};\n\treturn {};\n",
+        tuple_literal(arity, |i| format!("result[{i}]"))
+    );
+}
+
+fn tuple_literal(arity: usize, value: impl Fn(usize) -> String) -> String {
+    let fields: Vec<String> = (0..arity).map(|i| format!("_{i}: {}", value(i))).collect();
+    return format!("{{ {} }}", fields.join(", "));
 }
 
 fn param_kind_to_haxe(kind: &ParamKind, emitted_enums: &BTreeSet<String>) -> String {
@@ -389,6 +462,7 @@ fn return_kind_to_haxe(kind: &ReturnKind, emitted_enums: &BTreeSet<String>) -> S
         }
         ReturnKind::FixedArrayReturn(_, _) => "Dynamic".to_string(),
         ReturnKind::OptionStruct(ty) => ty.clone(),
+        ReturnKind::Tuple(elements) => tuple_struct_type(elements, scalar_to_haxe),
     }
 }
 
@@ -469,6 +543,62 @@ fn write_if_changed(path: &Path, content: &str) {
 mod portable_dispatch_tests {
     use super::*;
     use crate::parse::ParsedStruct;
+    #[test]
+    fn random_gaussian_pair_returns_a_tuple_structure_on_every_target() {
+        let directory =
+            std::env::temp_dir().join(format!("flight-dispatch-tuple-{}", std::process::id()));
+        fs::create_dir_all(&directory).unwrap();
+        let mut optional = crate::parse::random_gaussian_pair_fixture();
+        optional.name = "get_last_point".into();
+        optional.source_name = Some("get_last_point".into());
+        optional.ret = Some("Option<(f64, f64)>".into());
+        let exports = vec![CrateExports {
+            dir_name: "flight-math".into(),
+            fns: vec![crate::parse::random_gaussian_pair_fixture(), optional],
+            structs: vec![],
+            enums: vec![],
+        }];
+        let ffi_names = BTreeSet::from([
+            "flight_random_gaussian_pair".to_string(),
+            "flight_get_last_point".to_string(),
+        ]);
+        generate(&exports, &directory, Some(&ffi_names));
+        let content = fs::read_to_string(directory.join("flight/Math.hx")).unwrap();
+        fs::remove_dir_all(&directory).unwrap();
+        let expected = "\
+#if (js && flight_esm)
+extern inline function randomGaussianPair(random:Dynamic, mean:Null<Float>, standardDeviation:Null<Float>):{ _0:Float, _1:Float } {
+	var result = flight._js._fn.Math.randomGaussianPair(random, mean, standardDeviation);
+	return { _0: result[0], _1: result[1] };
+}
+#else
+extern inline function randomGaussianPair(randomFn:Dynamic, randomCtx:Dynamic, mean:Float, standardDeviation:Float):{ _0:Float, _1:Float } {
+#if hl
+	var out0:Single = 0;
+	var out1:Single = 0;
+	flight._hl._fn.Math.randomGaussianPair(randomFn, randomCtx, mean, standardDeviation, hl.Ref.make(out0), hl.Ref.make(out1));
+	return { _0: out0, _1: out1 };
+#elseif cpp
+	var out0:cpp.Float32 = 0;
+	var out1:cpp.Float32 = 0;
+	flight._cpp._fn.Math.randomGaussianPair(randomFn, randomCtx, mean, standardDeviation, cpp.RawPointer.addressOf(out0), cpp.RawPointer.addressOf(out1));
+	return { _0: out0, _1: out1 };
+#elseif (js && flight_esm)
+	var result = flight._js._fn.Math.randomGaussianPair(randomFn, randomCtx, mean, standardDeviation);
+	return { _0: result[0], _1: result[1] };
+#else
+	#error \"flight.Math: no backend for this target.\"
+#end
+}
+#end
+";
+        assert!(content.contains(expected), "{content}");
+        assert!(!content.contains("getLastPoint"), "{content}");
+        assert!(
+            !content.contains("(f32") && !content.contains("(f64"),
+            "{content}"
+        );
+    }
     #[test]
     fn texture_atlas_has_one_module_with_type_and_functions() {
         let directory =

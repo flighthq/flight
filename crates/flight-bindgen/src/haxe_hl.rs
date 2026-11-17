@@ -6,7 +6,7 @@ use std::path::Path;
 use crate::haxe_common::{
     TypeMethod, build_struct_map, build_type_methods, collect_opaque_types, crate_dir_to_module,
     derive_method_name, find_self_param, has_ffi_accessor, has_ffi_function, scalar_to_haxe,
-    to_snake_case, write_if_changed,
+    to_snake_case, tuple_element_storage, write_if_changed,
 };
 use crate::offsets::FieldOffsets;
 use crate::parse::{
@@ -276,6 +276,10 @@ fn emit_one_method(ty: &str, tm: &TypeMethod<'_>) -> Option<String> {
         None => ReturnKind::Void,
         Some(ret_ty) => classify_return(ret_ty)?,
     };
+    // Tuple results need out-parameter locals; the module-level dispatch function provides them.
+    if matches!(ret_kind, ReturnKind::Tuple(_)) {
+        return None;
+    }
     let haxe_ret = return_kind_to_haxe(&ret_kind);
 
     let params_str = method_params.join(", ");
@@ -361,6 +365,12 @@ fn emit_function(func: &ParsedFn) -> Option<String> {
         Some(ty) => classify_return(ty)?,
     };
     let haxe_ret = return_kind_to_haxe(&ret_kind);
+    if let ReturnKind::Tuple(elements) = &ret_kind {
+        for (index, element) in elements.iter().enumerate() {
+            let storage = tuple_element_storage(element)?.0;
+            haxe_params.push(format!("out{index}:hl.Ref<{storage}>"));
+        }
+    }
 
     let params_str = haxe_params.join(", ");
     Some(format!(
@@ -412,5 +422,25 @@ fn return_kind_to_haxe(kind: &ReturnKind) -> String {
         }
         ReturnKind::FixedArrayReturn(_, _) => "hl.Bytes".to_string(),
         ReturnKind::OptionStruct(ty) => format!("{PKG}.{ty}"),
+        ReturnKind::Tuple(_) => "Void".to_string(),
+    }
+}
+
+#[cfg(test)]
+mod hl_tuple_tests {
+    use super::*;
+    use crate::parse::random_gaussian_pair_fixture;
+    #[test]
+    fn scalar_tuple_return_becomes_trailing_out_parameters() {
+        assert_eq!(
+            emit_function(&random_gaussian_pair_fixture()).unwrap(),
+            "\t@:hlNative(\"flight\", \"flight_random_gaussian_pair\")\n\tpublic static function randomGaussianPair(randomFn:hl.Bytes, randomCtx:hl.Bytes, mean:Single, standardDeviation:Single, out0:hl.Ref<Single>, out1:hl.Ref<Single>):Void;"
+        );
+    }
+    #[test]
+    fn tuple_without_exact_width_storage_is_declined() {
+        let mut function = random_gaussian_pair_fixture();
+        function.ret = Some("(i64, i64)".into());
+        assert!(emit_function(&function).is_none());
     }
 }
