@@ -141,6 +141,8 @@
     "format": "oxfmt --write .",
     "format:check": "oxfmt --check --threads=4 .",
     "functional": "npm run dev:functional",
+    "haxe:check": "bash ./scripts/check-haxe-bindings.sh",
+    "haxe:generate": "bash ./scripts/generate-haxe-bindings.sh",
     "hermeticity": "tsx ./scripts/handRolledHermeticity.ts",
     "host-probe": "npm run dev:host-probe",
     "import-diagnostic-origins": "tsx ./scripts/import-diagnostic-origins.ts",
