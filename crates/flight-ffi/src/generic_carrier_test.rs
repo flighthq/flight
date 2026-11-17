@@ -1,6 +1,72 @@
+use std::collections::HashMap;
+use std::ffi::{CStr, CString};
 use std::sync::Arc;
 
 use crate::*;
+
+mod flight_collect_svg_counts {
+    use super::*;
+
+    fn read_string(value: *mut std::ffi::c_char) -> String {
+        let text = unsafe { CStr::from_ptr(value) }
+            .to_str()
+            .unwrap()
+            .to_string();
+        unsafe { flight_free_string(value) };
+        return text;
+    }
+
+    #[test]
+    fn collects_into_a_registered_count_map() {
+        let source = "<svg><rect/><rect/><circle/></svg>";
+        let mut expected = HashMap::new();
+        assert!(flight_sdk::collect_svg_counts(&mut expected, source));
+        let map = unsafe { flight_create_string_count_map() };
+        let svg = CString::new(source).unwrap();
+        assert!(unsafe { flight_collect_svg_counts(map, svg.as_ptr()) });
+        assert_eq!(
+            unsafe { flight_get_string_count_map_length(map) },
+            expected.len()
+        );
+        let mut keys: Vec<&String> = expected.keys().collect();
+        keys.sort();
+        for (index, key) in keys.iter().enumerate() {
+            assert_eq!(
+                read_string(unsafe { flight_get_string_count_map_key(map, index) }),
+                **key
+            );
+            let name = CString::new(key.as_str()).unwrap();
+            assert_eq!(
+                unsafe { flight_get_string_count_map_value(map, name.as_ptr()) },
+                expected[*key] as i64
+            );
+        }
+        assert!(unsafe { flight_get_string_count_map_key(map, keys.len()) }.is_null());
+        let missing = CString::new("missing").unwrap();
+        assert_eq!(
+            unsafe { flight_get_string_count_map_value(map, missing.as_ptr()) },
+            -1
+        );
+        unsafe { flight_clear_string_count_map(map) };
+        assert_eq!(unsafe { flight_get_string_count_map_length(map) }, 0);
+        unsafe { flight_destroy_string_count_map(map) };
+    }
+
+    #[test]
+    fn treats_null_and_another_handle_type_as_no_map() {
+        let svg = CString::new("<svg><rect/></svg>").unwrap();
+        assert!(!unsafe { flight_collect_svg_counts(std::ptr::null_mut(), svg.as_ptr()) });
+        let list = unsafe { flight_create_import_diagnostic_list() };
+        let foreign = list as *mut FfiStringCountMap;
+        assert!(!unsafe { flight_collect_svg_counts(foreign, svg.as_ptr()) });
+        assert_eq!(unsafe { flight_get_string_count_map_length(foreign) }, 0);
+        unsafe { flight_clear_string_count_map(foreign) };
+        unsafe { flight_destroy_string_count_map(foreign) };
+        assert_eq!(unsafe { flight_get_import_diagnostic_list_length(list) }, 0);
+        unsafe { flight_destroy_import_diagnostic_list(list) };
+        unsafe { flight_destroy_string_count_map(std::ptr::null_mut()) };
+    }
+}
 
 mod flight_create_audio_resource_from_samples {
     use super::*;
@@ -304,6 +370,50 @@ mod flight_get_timeline_labels {
         let labels = unsafe { flight_get_timeline_labels(handle) };
         assert_eq!(unsafe { flight_get_timeline_labels_result_len(labels) }, 0);
         unsafe { flight_get_timeline_labels_result_free(labels) };
+    }
+}
+
+mod flight_parse_xml_attributes {
+    use super::*;
+
+    fn take_string(value: *mut std::ffi::c_char) -> Option<String> {
+        if value.is_null() {
+            return None;
+        }
+        let text = unsafe { CStr::from_ptr(value) }
+            .to_str()
+            .unwrap()
+            .to_string();
+        unsafe { flight_free_string(value) };
+        return Some(text);
+    }
+
+    #[test]
+    fn reads_entries_in_order_and_by_key() {
+        let attributes = CString::new("width=\"4\" height=\"2\"").unwrap();
+        let record = unsafe { flight_parse_xml_attributes(attributes.as_ptr()) };
+        assert_eq!(unsafe { flight_parse_xml_attributes_result_len(record) }, 2);
+        let entry = |index| {
+            (
+                take_string(unsafe { flight_parse_xml_attributes_result_get_key(record, index) }),
+                take_string(unsafe { flight_parse_xml_attributes_result_get_value(record, index) }),
+            )
+        };
+        assert_eq!(entry(0), (Some("width".to_string()), Some("4".to_string())));
+        assert_eq!(
+            entry(1),
+            (Some("height".to_string()), Some("2".to_string()))
+        );
+        assert_eq!(entry(2), (None, None));
+        let height = CString::new("height").unwrap();
+        let value = unsafe { flight_parse_xml_attributes_result_get(record, height.as_ptr()) };
+        assert_eq!(take_string(value).as_deref(), Some("2"));
+        let missing = CString::new("depth").unwrap();
+        assert!(
+            unsafe { flight_parse_xml_attributes_result_get(record, missing.as_ptr()) }.is_null()
+        );
+        unsafe { flight_parse_xml_attributes_result_free(record) };
+        unsafe { flight_parse_xml_attributes_result_free(std::ptr::null_mut()) };
     }
 }
 

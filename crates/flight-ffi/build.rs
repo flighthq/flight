@@ -462,6 +462,7 @@ fn main() {
     all_output.push_str(&generate_vec_ref_handle_support(&vec_ref_handle_specs));
     all_output.push_str(&generate_import_diagnostic_list_support());
     all_output.push_str(&generate_typed_array_ref_support());
+    all_output.push_str(generate_string_count_map_support());
 
     writeln!(all_output, "// free functions").unwrap();
     writeln!(
@@ -1491,6 +1492,8 @@ enum FfiReturn {
     // `MidiAccessPortsOutcome<P>`: a boxed outcome read through its `_result_*` helpers, holding the
     // qualified port type P.
     PortsOutcomeReturn(String),
+    // `XmlRecord<String, String>`: a boxed record read by index or key through `_result_*` helpers.
+    StringRecordReturn,
 }
 
 // A future return lowered to `complete_fn(complete_ctx, value, error)`: `value` is `value_ty`,
@@ -1746,6 +1749,10 @@ fn generate_return_body(call_wrap: &FfiReturn, call: &str, preamble: &str) -> St
                  }}\n    \
                  }}"
         ),
+        FfiReturn::StringRecordReturn => format!(
+            "{preamble}    let record = {call};\n    \
+                 return Box::into_raw(Box::new(record)) as *mut std::ffi::c_void;"
+        ),
         FfiReturn::PortsOutcomeReturn(_) => format!(
             "{preamble}    let outcome = {call};\n    \
                  return Box::into_raw(Box::new(outcome)) as *mut std::ffi::c_void;"
@@ -1798,6 +1805,7 @@ fn generate_vec_result_helpers(ffi_name: &str, call_wrap: &FfiReturn) -> String 
         FfiReturn::PortsOutcomeReturn(port) => {
             return generate_ports_outcome_result_helpers(ffi_name, port);
         }
+        FfiReturn::StringRecordReturn => return generate_string_record_result_helpers(ffi_name),
         _ => return String::new(),
     };
     let get_return = if element_is_ref {
@@ -1833,6 +1841,85 @@ fn generate_ports_outcome_result_helpers(ffi_name: &str, port: &str) -> String {
     format!(
         "\n#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn {ffi_name}_result_reason(result: *const std::ffi::c_void) -> i32 {{\n    if result.is_null() {{ return -1; }}\n    return unsafe {{ &*(result as *const {container}) }}.reason as i32;\n}}\n#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn {ffi_name}_result_has_ports(result: *const std::ffi::c_void) -> bool {{\n    if result.is_null() {{ return false; }}\n    return unsafe {{ &*(result as *const {container}) }}.ports.is_some();\n}}\n#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn {ffi_name}_result_len(result: *const std::ffi::c_void) -> usize {{\n    if result.is_null() {{ return 0; }}\n    return unsafe {{ &*(result as *const {container}) }}.ports.as_ref().map_or(0, |ports| ports.len());\n}}\n#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn {ffi_name}_result_get(result: *const std::ffi::c_void, index: usize) -> *const std::ffi::c_void {{\n    if result.is_null() {{ return std::ptr::null(); }}\n    match unsafe {{ &*(result as *const {container}) }}.ports.as_ref().and_then(|ports| ports.get(index)) {{\n        Some(port) => port as *const _ as *const std::ffi::c_void,\n        None => std::ptr::null(),\n    }}\n}}\n#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn {ffi_name}_result_free(result: *mut std::ffi::c_void) {{\n    if !result.is_null() {{ unsafe {{ drop(Box::from_raw(result as *mut {container})); }} }}\n}}"
     )
+}
+
+// A boxed `XmlRecord<String, String>` result: `_result_len` counts entries, `_result_get_key` /
+// `_result_get_value` read one entry in insertion order, and `_result_get` looks a value up by key.
+// Every string is an owned copy freed with `flight_free_string`; missing entries read NULL.
+fn generate_string_record_result_helpers(ffi_name: &str) -> String {
+    // The record type is public through `parse_xml_attributes` but lives in the `xml_native` module.
+    let container = "flight_sdk::xml_native::XmlRecord<String, String>";
+    format!(
+        "\n#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn {ffi_name}_result_len(result: *const std::ffi::c_void) -> usize {{\n    if result.is_null() {{ return 0; }}\n    return unsafe {{ &*(result as *const {container}) }}.len();\n}}\n#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn {ffi_name}_result_get(result: *const std::ffi::c_void, key: *const std::ffi::c_char) -> *mut std::ffi::c_char {{\n    if result.is_null() || key.is_null() {{ return std::ptr::null_mut(); }}\n    let key = unsafe {{ std::ffi::CStr::from_ptr(key) }}.to_str().unwrap_or(\"\");\n    match unsafe {{ &*(result as *const {container}) }}.get(key) {{\n        Some(value) => std::ffi::CString::new(value.as_str()).unwrap_or_default().into_raw(),\n        None => std::ptr::null_mut(),\n    }}\n}}\n#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn {ffi_name}_result_get_key(result: *const std::ffi::c_void, index: usize) -> *mut std::ffi::c_char {{\n    if result.is_null() {{ return std::ptr::null_mut(); }}\n    match unsafe {{ &*(result as *const {container}) }}.keys().nth(index) {{\n        Some(key) => std::ffi::CString::new(key.as_str()).unwrap_or_default().into_raw(),\n        None => std::ptr::null_mut(),\n    }}\n}}\n#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn {ffi_name}_result_get_value(result: *const std::ffi::c_void, index: usize) -> *mut std::ffi::c_char {{\n    if result.is_null() {{ return std::ptr::null_mut(); }}\n    let record = unsafe {{ &*(result as *const {container}) }};\n    match record.keys().nth(index).and_then(|key| record.get(key.as_str())) {{\n        Some(value) => std::ffi::CString::new(value.as_str()).unwrap_or_default().into_raw(),\n        None => std::ptr::null_mut(),\n    }}\n}}\n#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn {ffi_name}_result_free(result: *mut std::ffi::c_void) {{\n    if !result.is_null() {{ unsafe {{ drop(Box::from_raw(result as *mut {container})); }} }}\n}}"
+    )
+}
+
+// The caller-owned map behind every `&mut HashMap<String, usize>` parameter, with the same live
+// registry contract as the import diagnostic list: the registry filters provenance and type for
+// live handles and is not lifetime synchronization. NULL or a live handle of another type makes
+// the wrapper return its empty value without calling the SDK; clear and destroy ignore it, and
+// getters read 0, -1 or NULL. A map pointer is valid from `flight_create_string_count_map` until
+// its single `flight_destroy_string_count_map` call; callers synchronize access and never use it
+// after destroy. Keys are indexed in byte order and returned as owned strings.
+fn generate_string_count_map_support() -> &'static str {
+    r#"pub struct FfiStringCountMap {
+    values: std::collections::HashMap<String, usize>,
+}
+static FFI_STRING_COUNT_MAPS: std::sync::Mutex<std::collections::BTreeSet<usize>> = std::sync::Mutex::new(std::collections::BTreeSet::new());
+fn get_ffi_string_count_maps() -> std::sync::MutexGuard<'static, std::collections::BTreeSet<usize>> {
+    FFI_STRING_COUNT_MAPS.lock().unwrap_or_else(std::sync::PoisonError::into_inner)
+}
+fn is_ffi_string_count_map(map: *const FfiStringCountMap) -> bool {
+    !map.is_null() && get_ffi_string_count_maps().contains(&(map as usize))
+}
+unsafe fn ffi_string_count_map_values<'a>(map: *mut FfiStringCountMap) -> Option<&'a mut std::collections::HashMap<String, usize>> {
+    if !is_ffi_string_count_map(map) { return None; }
+    Some(unsafe { &mut (*map).values })
+}
+unsafe fn ffi_string_count_map_sorted_key<'a>(map: *const FfiStringCountMap, index: usize) -> Option<&'a String> {
+    if !is_ffi_string_count_map(map) { return None; }
+    let mut keys: Vec<&String> = unsafe { &(*map).values }.keys().collect();
+    keys.sort();
+    keys.get(index).copied()
+}
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn flight_clear_string_count_map(map: *mut FfiStringCountMap) {
+    if let Some(values) = unsafe { ffi_string_count_map_values(map) } { values.clear(); }
+}
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn flight_create_string_count_map() -> *mut FfiStringCountMap {
+    let map = Box::into_raw(Box::new(FfiStringCountMap { values: std::collections::HashMap::new() }));
+    get_ffi_string_count_maps().insert(map as usize);
+    map
+}
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn flight_destroy_string_count_map(map: *mut FfiStringCountMap) {
+    if map.is_null() || !get_ffi_string_count_maps().remove(&(map as usize)) { return; }
+    unsafe { drop(Box::from_raw(map)); }
+}
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn flight_get_string_count_map_key(map: *const FfiStringCountMap, index: usize) -> *mut std::ffi::c_char {
+    match unsafe { ffi_string_count_map_sorted_key(map, index) } {
+        Some(key) => std::ffi::CString::new(key.as_str()).unwrap_or_default().into_raw(),
+        None => std::ptr::null_mut(),
+    }
+}
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn flight_get_string_count_map_length(map: *const FfiStringCountMap) -> usize {
+    if !is_ffi_string_count_map(map) { return 0; }
+    unsafe { &(*map).values }.len()
+}
+// The count for `key`, or -1 when the map has no such key.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn flight_get_string_count_map_value(map: *const FfiStringCountMap, key: *const std::ffi::c_char) -> i64 {
+    if key.is_null() || !is_ffi_string_count_map(map) { return -1; }
+    let key = unsafe { std::ffi::CStr::from_ptr(key) }.to_str().unwrap_or("");
+    match unsafe { &(*map).values }.get(key) {
+        Some(count) => *count as i64,
+        None => -1,
+    }
+}
+"#
 }
 
 // The caller-owned list behind every `Option<&mut Vec<ImportDiagnostic>>` parameter. C reads an item
@@ -2209,6 +2296,13 @@ fn map_generic_carrier_return(ty: &str) -> Option<Option<(String, FfiReturn)>> {
             FfiReturn::OptionArcRefReturn,
         )));
     }
+    // XmlRecord<String, String> -> a boxed record with typed index and key reads.
+    if ty == "XmlRecord<String, String>" {
+        return Some(Some((
+            " -> *mut std::ffi::c_void".to_string(),
+            FfiReturn::StringRecordReturn,
+        )));
+    }
     // AccessibilityOperationOutcome<R> over a fieldless reason enum -> bool plus the reason.
     if let Some(reason) = ty
         .strip_prefix("AccessibilityOperationOutcome<")
@@ -2317,6 +2411,18 @@ fn is_plain_struct_type(ty: &str) -> bool {
 
 // Generic slice carriers for parameters. Every element pointer is borrowed for the call only.
 fn map_generic_carrier_param(name: &str, ty: &str) -> Option<Option<MappedParam>> {
+    // &mut HashMap<String, usize> -> a registered caller-owned count map. Without a live map the
+    // wrapper returns its empty value and never calls the SDK.
+    if ty == "&mut HashMap<String, usize>" {
+        let clean = name.trim_start_matches('_');
+        return Some(Some(MappedParam {
+            ffi_params: vec![(name.to_string(), "*mut FfiStringCountMap".to_string())],
+            bindings: vec![format!(
+                "    let Some(counts_{clean}) = (unsafe {{ ffi_string_count_map_values({name}) }}) else {{ return Default::default(); }};"
+            )],
+            call_expr: format!("counts_{clean}"),
+        }));
+    }
     // Ref<Box<TypedArray>> by value -> a typed array Ref handle, cloned for the call.
     if let Some((_, scalar)) = get_typed_array_ref(ty) {
         return Some(mapped_single(

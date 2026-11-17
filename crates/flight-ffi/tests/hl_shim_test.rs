@@ -582,6 +582,48 @@ fn typed_array_refs_share_buffers_through_handle_families() {
     );
 }
 
+// Maps cross only with typed semantics: an XML attribute record is a boxed result read by index or
+// key, and a String -> usize map parameter is a registered caller-owned count map.
+#[test]
+fn string_maps_lower_to_typed_records_and_count_maps() {
+    let (header, shim) = generated();
+    for line in [
+        "void * flight_parse_xml_attributes(const char * arg0);",
+        "size_t flight_parse_xml_attributes_result_len(void * arg0);",
+        "char * flight_parse_xml_attributes_result_get(void * arg0, const char * arg1);",
+        "char * flight_parse_xml_attributes_result_get_key(void * arg0, size_t arg1);",
+        "char * flight_parse_xml_attributes_result_get_value(void * arg0, size_t arg1);",
+        "void flight_parse_xml_attributes_result_free(void * arg0);",
+        "bool flight_collect_lottie_counts(void * arg0, const char * arg1);",
+        "bool flight_collect_svg_counts(void * arg0, const char * arg1);",
+        "void * flight_create_string_count_map(void);",
+        "void flight_destroy_string_count_map(void * arg0);",
+        "void flight_clear_string_count_map(void * arg0);",
+        "size_t flight_get_string_count_map_length(void * arg0);",
+        "char * flight_get_string_count_map_key(void * arg0, size_t arg1);",
+        "int64_t flight_get_string_count_map_value(void * arg0, const char * arg1);",
+    ] {
+        assert_line(&header, line);
+    }
+    assert_line(
+        &shim,
+        "DEFINE_PRIM(_I64, flight_get_string_count_map_value, _BYTES _BYTES);",
+    );
+    assert_line(
+        &generated_wrappers(),
+        "    let Some(counts_out) = (unsafe { ffi_string_count_map_values(out) }) else { return Default::default(); };",
+    );
+
+    let stats = generated_stats();
+    for skip in [
+        "unmapped_param(&mut HashMap<u64, usize>)",
+        "unmapped_param(&mut HashMap<String, Ref<TextureAtlasRegion>>)",
+        "unmapped_return(HashMap<String, String>)",
+    ] {
+        assert!(stats.contains(skip), "{skip} must stay skipped");
+    }
+}
+
 fn assert_line(text: &str, line: &str) {
     assert!(
         text.lines().any(|candidate| candidate == line),

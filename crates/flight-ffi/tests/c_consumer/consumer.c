@@ -236,6 +236,32 @@ static void check_typed_array_refs(void) {
   expect(flight_get_uint8_array_ref_length(NULL) == 0, "a NULL typed array Ref is empty");
 }
 
+static void check_string_maps(void) {
+  void *record = flight_parse_xml_attributes("width=\"4\" height=\"2\"");
+  expect(flight_parse_xml_attributes_result_len(record) == 2, "parse_xml_attributes reads both attributes");
+  char *key = flight_parse_xml_attributes_result_get_key(record, 0);
+  expect(key != NULL && strcmp(key, "width") == 0, "attribute keys keep source order");
+  flight_free_string(key);
+  char *height = flight_parse_xml_attributes_result_get(record, "height");
+  expect(height != NULL && strcmp(height, "2") == 0, "attributes read by key");
+  flight_free_string(height);
+  expect(flight_parse_xml_attributes_result_get(record, "depth") == NULL, "a missing attribute reads NULL");
+  flight_parse_xml_attributes_result_free(record);
+
+  void *counts = flight_create_string_count_map();
+  expect(flight_collect_svg_counts(counts, "<svg><rect/><rect/></svg>"), "collect_svg_counts fills a count map");
+  expect(flight_get_string_count_map_length(counts) > 0, "the count map has element kinds");
+  char *kind = flight_get_string_count_map_key(counts, 0);
+  expect(kind != NULL && flight_get_string_count_map_value(counts, kind) > 0, "each counted kind has a count");
+  flight_free_string(kind);
+  expect(flight_get_string_count_map_value(counts, "missing") == -1, "a missing count reads -1");
+  flight_clear_string_count_map(counts);
+  expect(flight_get_string_count_map_length(counts) == 0, "clear empties the count map");
+  flight_destroy_string_count_map(counts);
+  expect(!flight_collect_svg_counts(NULL, "<svg/>"), "a NULL count map collects nothing");
+  flight_destroy_string_count_map(NULL);
+}
+
 static void check_optional_texture_variants(void) {
   void *texture = flight_create_texture(NULL);
   expect(texture != NULL, "create_texture returns a handle");
@@ -476,6 +502,7 @@ int main(void) {
   check_slice_carriers();
   check_outcome_results();
   check_typed_array_refs();
+  check_string_maps();
   check_optional_texture_variants();
   check_optional_tuples();
   check_unit_signals();
