@@ -12,60 +12,41 @@ macro_rules! succeeding_callback {
 }
 
 succeeding_callback!(close_path(context: *mut c_void));
-succeeding_callback!(cubic_curve_to(
-    context: *mut c_void,
-    control_x1: f64,
-    control_y1: f64,
-    control_x2: f64,
-    control_y2: f64,
-    x: f64,
-    y: f64,
-));
-succeeding_callback!(draw_circle(
-    context: *mut c_void,
-    center_x: f64,
-    center_y: f64,
-    radius: f64,
-));
-succeeding_callback!(draw_ellipse(
-    context: *mut c_void,
-    center_x: f64,
-    center_y: f64,
-    radius_x: f64,
-    radius_y: f64,
-));
-succeeding_callback!(draw_rectangle(
-    context: *mut c_void,
-    x: f64,
-    y: f64,
-    width: f64,
-    height: f64,
-));
-succeeding_callback!(draw_rounded_rectangle(
-    context: *mut c_void,
-    x: f64,
-    y: f64,
-    width: f64,
-    height: f64,
-    radius: f64,
-));
+succeeding_callback!(
+    cubic_curve_to(
+        context: *mut c_void,
+        control_x1: f64,
+        control_y1: f64,
+        control_x2: f64,
+        control_y2: f64,
+        x: f64,
+        y: f64,
+    )
+);
+succeeding_callback!(draw_circle(context: *mut c_void, center_x: f64, center_y: f64, radius: f64));
+succeeding_callback!(
+    draw_ellipse(context: *mut c_void, center_x: f64, center_y: f64, radius_x: f64, radius_y: f64)
+);
+succeeding_callback!(draw_rectangle(context: *mut c_void, x: f64, y: f64, width: f64, height: f64));
+succeeding_callback!(
+    draw_rounded_rectangle(
+        context: *mut c_void,
+        x: f64,
+        y: f64,
+        width: f64,
+        height: f64,
+        radius: f64,
+    )
+);
 succeeding_callback!(expand_point(context: *mut c_void, x: f64, y: f64));
 succeeding_callback!(line_to(context: *mut c_void, x: f64, y: f64));
 succeeding_callback!(move_to(context: *mut c_void, x: f64, y: f64));
-succeeding_callback!(quadratic_curve_to(
-    context: *mut c_void,
-    control_x: f64,
-    control_y: f64,
-    x: f64,
-    y: f64,
-));
-succeeding_callback!(set_stroke_style(
-    context: *mut c_void,
-    width: f64,
-    caps: u32,
-    joints: u32,
-    miter_limit: f64,
-));
+succeeding_callback!(
+    quadratic_curve_to(context: *mut c_void, control_x: f64, control_y: f64, x: f64, y: f64)
+);
+succeeding_callback!(
+    set_stroke_style(context: *mut c_void, width: f64, caps: u32, joints: u32, miter_limit: f64)
+);
 
 #[test]
 fn callback_panic_is_caught_before_it_can_cross_the_c_abi() {
