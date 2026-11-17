@@ -25,17 +25,31 @@ trap 'rm -rf "$WORK_DIR"' EXIT
 cd "$REPO_DIR"
 
 echo "==> Building flight-ffi..."
-cargo build -p flight-ffi 2>&1
+# target/debug/build keeps one flight-ffi-<hash> dir per past build configuration, so the
+# generated-wrapper dir is read from this build's own cargo messages, never globbed.
+cargo build -p flight-ffi --message-format=json-render-diagnostics > "$WORK_DIR/build.jsonl"
+FFI_BUILD_DIR=$(node -e '
+const lines = require("fs").readFileSync(process.argv[1], "utf8").split("\n");
+const dirs = lines
+  .filter((line) => line.startsWith("{"))
+  .map((line) => JSON.parse(line))
+  .filter((m) => m.reason === "build-script-executed" && /[/#]flight-ffi[#@]/.test(m.package_id))
+  .map((m) => m.out_dir);
+if (dirs.length !== 1) {
+  console.error(`expected exactly one flight-ffi build-script output, found ${dirs.length}`);
+  process.exit(1);
+}
+console.log(dirs[0]);
+' "$WORK_DIR/build.jsonl")
+if [ ! -f "$FFI_BUILD_DIR/ffi_generated.rs" ]; then
+    echo "ERROR: flight-ffi build output not found at $FFI_BUILD_DIR" >&2
+    exit 1
+fi
 
 echo "==> Running flight-offsets..."
 cargo run --bin flight-offsets 2>/dev/null > "$WORK_DIR/offsets.json"
 
-echo "==> Extracting FFI names..."
-FFI_BUILD_DIR=$(ls -d target/debug/build/flight-ffi-*/out 2>/dev/null | head -1)
-if [ -z "$FFI_BUILD_DIR" ]; then
-    echo "ERROR: flight-ffi build output not found" >&2
-    exit 1
-fi
+echo "==> Extracting FFI names from $FFI_BUILD_DIR..."
 grep -oP '(?<=fn )(flight_[a-z0-9_]+)' "$FFI_BUILD_DIR/ffi_generated.rs" \
     | sort -u > "$WORK_DIR/ffi-names.txt"
 echo "   $(wc -l < "$WORK_DIR/ffi-names.txt") FFI names"
