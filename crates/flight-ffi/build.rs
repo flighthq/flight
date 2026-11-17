@@ -559,6 +559,9 @@ struct ParsedFn {
     name: String,
     params: Vec<Param>,
     ret: Option<String>,
+    // Reached only through a `pub use <module>::*` crate root and absent from the package's TS
+    // `index.ts`, so the public lane is unconfirmed (agents/ffi-public-lane.md).
+    lacks_public_export: bool,
 }
 
 #[derive(Debug)]
@@ -590,6 +593,8 @@ fn collect_pub_fns(src_dir: &Path) -> Vec<ParsedFn> {
         return Vec::new();
     }
 
+    let named_exports = collect_named_exports(&lib_path);
+    let ts_exports = collect_ts_index_exports(src_dir);
     let mut fns = Vec::new();
     let mut entries: Vec<_> = fs::read_dir(src_dir)
         .unwrap()
@@ -609,13 +614,77 @@ fn collect_pub_fns(src_dir: &Path) -> Vec<ParsedFn> {
         let content = fs::read_to_string(entry.path()).unwrap();
         let mut all_fns = Vec::new();
         parse_pub_fns(&content, &mut all_fns);
-        for f in all_fns {
+        for mut f in all_fns {
             if exported_names.contains(&f.name) {
+                f.lacks_public_export = !named_exports.contains(&f.name)
+                    && !ts_exports.contains(&get_export_key(&f.name));
                 fns.push(f);
             }
         }
     }
     fns
+}
+
+// Functions a crate root names one by one (`pub use contract::foo;`), excluding glob re-exports.
+fn collect_named_exports(lib_path: &Path) -> BTreeSet<String> {
+    let content = fs::read_to_string(lib_path).unwrap();
+    content
+        .lines()
+        .filter_map(|line| line.trim().strip_prefix("pub use "))
+        .map(|rest| rest.trim_end_matches(';').trim())
+        .filter(|rest| !rest.ends_with("::*"))
+        .filter_map(|rest| rest.rsplit("::").next())
+        .filter(|name| name.chars().next().is_some_and(|c| c.is_lowercase()))
+        .map(str::to_string)
+        .collect()
+}
+
+// Identifiers the package's TS root (`packages/<name>/src/index.ts`) mentions, keyed for comparison
+// with Rust names by `get_export_key`. A crate without a TS package yields no keys.
+fn collect_ts_index_exports(src_dir: &Path) -> BTreeSet<String> {
+    let crate_dir = src_dir.parent().unwrap();
+    let crate_name = crate_dir.file_name().unwrap().to_string_lossy();
+    let Some(package) = crate_name.strip_prefix("flight-") else {
+        return BTreeSet::new();
+    };
+    let index = crate_dir
+        .parent()
+        .unwrap()
+        .parent()
+        .unwrap()
+        .join("packages")
+        .join(package)
+        .join("src")
+        .join("index.ts");
+    println!("cargo::rerun-if-changed={}", index.display());
+    let Ok(content) = fs::read_to_string(&index) else {
+        return BTreeSet::new();
+    };
+    content
+        .split(|c: char| !c.is_ascii_alphanumeric() && c != '_')
+        .filter(|word| !word.is_empty())
+        .map(get_export_key)
+        .collect()
+}
+
+// `reveal_scene3d_resources_on_resolve` and `revealScene3DResourcesOnResolve` share one key.
+fn get_export_key(name: &str) -> String {
+    name.chars()
+        .filter(|c| *c != '_')
+        .map(|c| c.to_ascii_lowercase())
+        .collect()
+}
+
+// A generic carrier is new public surface, so it maps only for functions whose public lane is
+// confirmed; legacy non-generic mappings keep their crate-root membership.
+fn uses_generic_carrier(func: &ParsedFn) -> bool {
+    let resolve = |ty: &str| strip_crate_paths(&strip_lifetimes(&resolve_type_alias(ty.trim())));
+    func.params.iter().any(|param| {
+        map_generic_carrier_param(&param.name, &resolve(&param.ty)).is_some_and(|m| m.is_some())
+    }) || func
+        .ret
+        .as_deref()
+        .is_some_and(|ret| map_generic_carrier_return(&resolve(ret)).is_some_and(|m| m.is_some()))
 }
 
 fn collect_exported_names(lib_path: &Path, src_dir: &Path) -> BTreeSet<String> {
@@ -760,7 +829,12 @@ fn parse_fn_signature(sig: &str) -> Option<ParsedFn> {
         None
     };
 
-    Some(ParsedFn { name, params, ret })
+    Some(ParsedFn {
+        name,
+        params,
+        ret,
+        lacks_public_export: false,
+    })
 }
 
 fn find_matching_paren(s: &str, open: usize) -> Option<usize> {
@@ -1151,6 +1225,9 @@ fn generate_ffi_wrapper(func: &ParsedFn) -> Option<(String, Option<String>)> {
         return None;
     }
     if SKIP_FNS.contains(&func.name.as_str()) {
+        return None;
+    }
+    if func.lacks_public_export && uses_generic_carrier(func) {
         return None;
     }
 
@@ -2158,6 +2235,9 @@ fn categorize_skip(func: &ParsedFn) -> String {
     }
     if SKIP_FNS.contains(&func.name.as_str()) {
         return "fn_skip".to_string();
+    }
+    if func.lacks_public_export && uses_generic_carrier(func) {
+        return format!("no_ts_public_export({})", func.name);
     }
     for param in &func.params {
         let ty = &param.ty;

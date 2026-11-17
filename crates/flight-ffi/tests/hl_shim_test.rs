@@ -568,7 +568,6 @@ fn typed_array_refs_share_buffers_through_handle_families() {
         "void * flight_create_audio_resource_from_samples(const void * const * arg0, size_t arg1, float arg2);",
         "void * flight_create_embedded_audio_resource_reference(void * arg0);",
         "void * flight_create_embedded_image_resource_reference(void * arg0);",
-        "void * flight_get_array_buffer_storage(void * arg0);",
     ] {
         assert_line(&header, line);
     }
@@ -576,9 +575,39 @@ fn typed_array_refs_share_buffers_through_handle_families() {
         &shim,
         "DEFINE_PRIM(_I32, flight_write_uint8_array_ref, _BYTES _I32 _BYTES _I32);",
     );
+}
+
+// A generic carrier is new public surface: a function reached only through a crate root's
+// `pub use contract::*` maps only when its package's TS `index.ts` exports it too.
+#[test]
+fn generic_carriers_require_a_public_ts_export() {
+    let (header, shim) = generated();
+    let wrappers = generated_wrappers();
+    for symbol in ["flight_get_array_buffer_storage", "flight_create_blob"] {
+        assert!(
+            !header.contains(&format!(" {symbol}(")),
+            "{symbol} must stay out of the C header"
+        );
+        assert!(
+            !shim.contains(&format!("({symbol})")),
+            "{symbol} must stay out of the HashLink shim"
+        );
+        assert!(
+            !wrappers.contains(&format!("fn {symbol}(")),
+            "{symbol} must stay unwrapped"
+        );
+    }
+    let stats = generated_stats();
+    for skip in [
+        "no_ts_public_export(get_array_buffer_storage)",
+        "no_ts_public_export(create_blob)",
+    ] {
+        assert!(stats.contains(skip), "{skip} must stay skipped");
+    }
+    // Glob-exported functions the TS root does export still map.
     assert_line(
-        &generated_wrappers(),
-        "    let arc = flight_sdk::get_array_buffer_storage(unsafe { &*buffer });",
+        &header,
+        "bool flight_collect_svg_counts(void * arg0, const char * arg1);",
     );
 }
 
