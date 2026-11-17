@@ -1,4 +1,3 @@
-//! flight-compiler: target-native
 
 use std::collections::HashMap;
 use std::sync::Arc;

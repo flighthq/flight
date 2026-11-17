@@ -1,4 +1,3 @@
-//! flight-compiler: target-native
 
 use flight_entity::{Uint8Array, throw_range_error};
 
