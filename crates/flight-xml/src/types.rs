@@ -1,4 +1,3 @@
-//! flight-compiler: target-native
 //! flight-compiler: contract XmlContent XmlElement
 //!
 //! XML owns its public element model. The target-native TypeScript declaration keeps the JavaScript

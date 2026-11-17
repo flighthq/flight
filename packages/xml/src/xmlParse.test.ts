@@ -79,23 +79,23 @@ describe('parseXmlDocument', () => {
     const root = parseXmlDocument(xml)!;
     expect(root.name).toEqual('TextureAtlas');
     expect(root.children.length).toEqual(2);
-    expect(root.children[0]!.name).toEqual('SubTexture');
-    expect(root.children[0]!.attributes['name']).toEqual('a');
-    expect(root.children[1]!.attributes['name']).toEqual('b');
+    expect(root.children[0].name).toEqual('SubTexture');
+    expect(root.children[0].attributes['name']).toEqual('a');
+    expect(root.children[1].attributes['name']).toEqual('b');
   });
   it('treats self closing tags as leaves rather than opening a scope', () => {
     const xml = '<root><leaf/><sibling/></root>';
     const root = parseXmlDocument(xml)!;
-    const names: string[] = root.children.map((c) => c!.name);
+    const names: string[] = root.children.map((c) => c.name);
     expect(names).toEqual(['leaf', 'sibling']);
   });
   it('supports deep nesting across multiple levels', () => {
     const xml = '<a><b><c value="deep"/></b></a>';
     const root = parseXmlDocument(xml)!;
     expect(root.name).toEqual('a');
-    const b = root.children[0]!;
+    const b = root.children[0];
     expect(b.name).toEqual('b');
-    const c = b.children[0]!;
+    const c = b.children[0];
     expect(c.name).toEqual('c');
     expect(c.attributes['value']).toEqual('deep');
   });
@@ -130,7 +130,7 @@ describe('parseXmlDocument', () => {
     const xml = '<root><!-- This is a comment --><child/></root>';
     const doc = parseXmlDocument(xml)!;
     expect(doc.children.length).toEqual(1);
-    expect(doc.children[0]!.name).toEqual('child');
+    expect(doc.children[0].name).toEqual('child');
   });
   it('strips the xml declaration', () => {
     const xml = '<?xml version="1.0" encoding="UTF-8"?><root/>';
@@ -140,7 +140,7 @@ describe('parseXmlDocument', () => {
   it('parses text content', () => {
     const xml = '<root><key>hello</key></root>';
     const doc = parseXmlDocument(xml)!;
-    expect(doc.children[0]!.text).toEqual('hello');
+    expect(doc.children[0].text).toEqual('hello');
   });
   it('keeps a gt inside a quoted attribute value as data not tag end', () => {
     const root = parseXmlDocument('<node attr="a>b"/>')!;
@@ -151,7 +151,7 @@ describe('parseXmlDocument', () => {
   it('keeps a gt inside a single quoted attribute value and still parses children', () => {
     const root = parseXmlDocument("<root><child path='x>y'/></root>")!;
     expect(root.children.length).toEqual(1);
-    expect(root.children[0]!.attributes['path']).toEqual('x>y');
+    expect(root.children[0].attributes['path']).toEqual('x>y');
   });
   it('strips a doctype that carries an internal subset', () => {
     const xml =
@@ -183,8 +183,8 @@ describe('parseXmlDocumentInternalDtdEntities', () => {
     const xml = doctype('<!ENTITY dot "<circle r=\'4\'/>">', '&dot;');
     const root = parseXmlDocument(xml)!;
     expect(root.children.length).toEqual(1);
-    expect(root.children[0]!.name).toEqual('circle');
-    expect(root.children[0]!.attributes['r']).toEqual('4');
+    expect(root.children[0].name).toEqual('circle');
+    expect(root.children[0].attributes['r']).toEqual('4');
   });
   it('expands the same entity at every reference', () => {
     const xml = doctype('<!ENTITY dot "<circle/>">', '&dot;&dot;&dot;');
@@ -194,20 +194,20 @@ describe('parseXmlDocumentInternalDtdEntities', () => {
   it('expands an entity declared with single quotes', () => {
     const xml = doctype("<!ENTITY dot '<circle/>'>", '&dot;');
     const root = parseXmlDocument(xml)!;
-    expect(root.children[0]!.name).toEqual('circle');
+    expect(root.children[0].name).toEqual('circle');
   });
   it('expands an entity that references another entity', () => {
     const subset = '<!ENTITY inner "<circle/>"><!ENTITY outer "<g>&inner;</g>">';
     const xml = doctype(subset, '&outer;');
     const root = parseXmlDocument(xml)!;
-    const outer = root.children[0]!;
+    const outer = root.children[0];
     expect(outer.name).toEqual('g');
-    expect(outer.children[0]!.name).toEqual('circle');
+    expect(outer.children[0].name).toEqual('circle');
   });
   it('expands an entity used as an attribute value', () => {
     const xml = doctype('<!ENTITY w "40">', '<rect width="&w;"/>');
     const root = parseXmlDocument(xml)!;
-    expect(root.children[0]!.attributes['width']).toEqual('40');
+    expect(root.children[0].attributes['width']).toEqual('40');
   });
   it('leaves an undeclared reference alone rather than dropping it', () => {
     const xml = doctype('<!ENTITY dot "<circle/>">', '&missing;');

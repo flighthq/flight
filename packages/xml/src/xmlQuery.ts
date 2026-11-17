@@ -39,7 +39,7 @@ export function getXmlElementAttributeNumber(element: Readonly<XmlElement>, name
  */
 export function getXmlElementChildByName(element: Readonly<XmlElement>, name: string): XmlElement | null {
   for (const child of element.children) {
-    if (child!.name === name) {
+    if (child.name === name) {
       return child;
     }
   }
@@ -53,7 +53,7 @@ export function getXmlElementChildByName(element: Readonly<XmlElement>, name: st
 export function getXmlElementChildrenByName(element: Readonly<XmlElement>, name: string): XmlElement[] {
   let out: XmlElement[] = [];
   for (const child of element.children) {
-    if (child!.name === name) {
+    if (child.name === name) {
       out.push(child);
     }
   }

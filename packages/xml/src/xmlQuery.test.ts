@@ -47,7 +47,7 @@ describe('getXmlElementChildByName', () => {
   it('returns the first matching child element', () => {
     const root = parseXmlDocument('<root><a id="1"/><b/><a id="2"/></root>')!;
     const child = getXmlElementChildByName(root, 'a')!;
-    expect(child!.attributes['id']).toEqual('1');
+    expect(child.attributes['id']).toEqual('1');
   });
   it('returns none when no child matches', () => {
     const root = parseXmlDocument('<root><a/></root>')!;
@@ -59,7 +59,7 @@ describe('getXmlElementChildrenByName', () => {
   it('returns all matching children in document order', () => {
     const root = parseXmlDocument('<root><a id="1"/><b/><a id="2"/></root>')!;
     const matches = getXmlElementChildrenByName(root, 'a');
-    const ids: string[] = matches.map((c) => c!.attributes['id']);
+    const ids: string[] = matches.map((c) => c.attributes['id']);
     expect(ids).toEqual(['1', '2']);
   });
   it('returns an empty vec when no child matches', () => {
