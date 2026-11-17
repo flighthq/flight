@@ -601,6 +601,9 @@ pub enum ReturnKind {
     /// A tuple of two or more scalars. The native ABI has no return value and writes element `i`
     /// through a trailing `out_i` pointer parameter; the Haxe value is `{ _0, _1, ... }`.
     Tuple(Vec<String>),
+    /// An optional scalar tuple. The native ABI returns `bool` presence and, when present, writes
+    /// the same `out_i` parameters as `Tuple`; the Haxe value is `Null<{ _0, _1, ... }>`.
+    OptionTuple(Vec<String>),
 }
 
 fn strip_lifetimes(ty: &str) -> String {
@@ -1169,10 +1172,18 @@ pub fn classify_return(ty: &str) -> Option<ReturnKind> {
     let ty = strip_lifetimes(&resolve_type_alias(ty.trim()));
     let ty = ty.as_str();
 
-    // Mirrors flight-ffi's tuple policy: only scalar tuples are bridged, and an optional tuple has
-    // no wrapper, so neither may fall through to the struct arms.
+    // Mirrors flight-ffi's tuple policy: only scalar tuples (plain or optional) are bridged, and no
+    // tuple may fall through to the struct arms.
     if ty.starts_with('(') && ty.ends_with(')') {
         return scalar_tuple_elements(ty).map(ReturnKind::Tuple);
+    }
+    if let Some(inner) = ty
+        .strip_prefix("Option<")
+        .and_then(|rest| rest.strip_suffix('>'))
+        .map(str::trim)
+        .filter(|inner| inner.starts_with('('))
+    {
+        return scalar_tuple_elements(inner).map(ReturnKind::OptionTuple);
     }
 
     if ty == "Option<String>" || ty == "Option<&str>" {
@@ -2119,10 +2130,18 @@ mod native_abi_tests {
             "()",
             "(f32, Vector2)",
             "(String, f32)",
-            "Option<(f64, f64)>",
+            "Option<(f32,)>",
+            "Option<(f32, Vector2)>",
         ] {
             assert!(classify_return(ty).is_none(), "{ty}");
         }
+    }
+    #[test]
+    fn optional_scalar_tuple_return_matches_ffi_presence_policy() {
+        assert!(matches!(
+            classify_return("Option<(f64, f64)>"),
+            Some(ReturnKind::OptionTuple(ref elements)) if elements == &["f64", "f64"]
+        ));
     }
     #[test]
     fn closure_arrow_preserves_following_parameters() {

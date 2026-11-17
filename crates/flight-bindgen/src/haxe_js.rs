@@ -52,10 +52,8 @@ fn return_type(ty: Option<&str>, prefix: &str) -> Option<String> {
         .strip_prefix("Option<")
         .and_then(|s| s.strip_suffix('>'))
     {
-        // flight-ffi bridges no optional tuple, so neither does the logical JS surface.
-        if matches!(classify_return(inner), Some(ReturnKind::Tuple(_))) {
-            return None;
-        }
+        // TypeScript returns an optional tuple as `readonly [...] | null`; `Null<Array<...>>` covers
+        // it once the element types pass the same native storage policy as a plain tuple.
         return Some(format!("Null<{}>", return_type(Some(inner), prefix)?));
     }
     Some(match classify_return(ty)? {
@@ -213,6 +211,14 @@ fn emit_type(
         if !seen.insert(name.clone()) {
             continue;
         }
+        // As on HashLink and C++, tuple results are exposed only by the module-level dispatch
+        // function, which returns the `{ _0, _1, ... }` structure on every target.
+        if matches!(
+            tm.func.ret.as_deref().and_then(classify_return),
+            Some(ReturnKind::Tuple(_) | ReturnKind::OptionTuple(_))
+        ) {
+            continue;
+        }
         let Some((params, ret)) = signature(tm.func, &format!("{PKG}.")) else {
             continue;
         };
@@ -303,9 +309,11 @@ mod tests {
         );
     }
     #[test]
-    fn esm_optional_tuple_is_not_bridged() {
+    fn esm_optional_tuple_returns_the_nullable_typescript_array() {
         let mut function = crate::parse::random_gaussian_pair_fixture();
         function.ret = Some("Option<(f64, f64)>".into());
+        assert_eq!(signature(&function, "").unwrap().1, "Null<Array<Float>>");
+        function.ret = Some("Option<(i64, i64)>".into());
         assert!(signature(&function, "").is_none());
     }
     #[test]

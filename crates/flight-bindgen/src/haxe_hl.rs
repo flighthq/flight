@@ -277,7 +277,7 @@ fn emit_one_method(ty: &str, tm: &TypeMethod<'_>) -> Option<String> {
         Some(ret_ty) => classify_return(ret_ty)?,
     };
     // Tuple results need out-parameter locals; the module-level dispatch function provides them.
-    if matches!(ret_kind, ReturnKind::Tuple(_)) {
+    if matches!(ret_kind, ReturnKind::Tuple(_) | ReturnKind::OptionTuple(_)) {
         return None;
     }
     let haxe_ret = return_kind_to_haxe(&ret_kind);
@@ -365,7 +365,7 @@ fn emit_function(func: &ParsedFn) -> Option<String> {
         Some(ty) => classify_return(ty)?,
     };
     let haxe_ret = return_kind_to_haxe(&ret_kind);
-    if let ReturnKind::Tuple(elements) = &ret_kind {
+    if let ReturnKind::Tuple(elements) | ReturnKind::OptionTuple(elements) = &ret_kind {
         for (index, element) in elements.iter().enumerate() {
             let storage = tuple_element_storage(element)?.0;
             haxe_params.push(format!("out{index}:hl.Ref<{storage}>"));
@@ -423,6 +423,7 @@ fn return_kind_to_haxe(kind: &ReturnKind) -> String {
         ReturnKind::FixedArrayReturn(_, _) => "hl.Bytes".to_string(),
         ReturnKind::OptionStruct(ty) => format!("{PKG}.{ty}"),
         ReturnKind::Tuple(_) => "Void".to_string(),
+        ReturnKind::OptionTuple(_) => "Bool".to_string(),
     }
 }
 
@@ -435,6 +436,16 @@ mod hl_tuple_tests {
         assert_eq!(
             emit_function(&random_gaussian_pair_fixture()).unwrap(),
             "\t@:hlNative(\"flight\", \"flight_random_gaussian_pair\")\n\tpublic static function randomGaussianPair(randomFn:hl.Bytes, randomCtx:hl.Bytes, mean:Single, standardDeviation:Single, out0:hl.Ref<Single>, out1:hl.Ref<Single>):Void;"
+        );
+    }
+    #[test]
+    fn optional_tuple_returns_presence_with_the_same_out_parameters() {
+        let mut function = random_gaussian_pair_fixture();
+        function.ret = Some("Option<(f64, f64)>".into());
+        let text = emit_function(&function).unwrap();
+        assert!(
+            text.ends_with(", out0:hl.Ref<Float>, out1:hl.Ref<Float>):Bool;"),
+            "{text}"
         );
     }
     #[test]

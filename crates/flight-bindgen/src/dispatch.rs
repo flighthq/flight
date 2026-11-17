@@ -252,7 +252,7 @@ fn emit_dispatch_function(
         Some(ty) => classify_return(ty)?,
     };
     let tuple_elements = match &ret_kind {
-        ReturnKind::Tuple(elements) => {
+        ReturnKind::Tuple(elements) | ReturnKind::OptionTuple(elements) => {
             for element in elements {
                 tuple_element_storage(element)?;
             }
@@ -260,6 +260,7 @@ fn emit_dispatch_function(
         }
         _ => None,
     };
+    let tuple_optional = matches!(ret_kind, ReturnKind::OptionTuple(_));
     let haxe_ret = return_kind_to_haxe(&ret_kind, emitted_enums);
     let has_return = !matches!(ret_kind, ReturnKind::Void);
     let needs_ret_cast = matches!(
@@ -297,6 +298,9 @@ fn emit_dispatch_function(
     writeln!(sig, "#if (js && flight_esm)").unwrap();
     if let Some(elements) = &tuple_elements {
         js_ret = crate::haxe_js::tuple_struct_type(elements);
+        if tuple_optional {
+            js_ret = format!("Null<{js_ret}>");
+        }
     }
     writeln!(
         sig,
@@ -305,7 +309,12 @@ fn emit_dispatch_function(
     )
     .unwrap();
     if let Some(elements) = &tuple_elements {
-        write!(sig, "{}", js_tuple_body(&js_call, elements.len())).unwrap();
+        write!(
+            sig,
+            "{}",
+            js_tuple_body(&js_call, elements.len(), tuple_optional)
+        )
+        .unwrap();
     } else {
         writeln!(sig, "\t{js_ret_prefix}{js_call};").unwrap();
     }
@@ -323,7 +332,7 @@ fn emit_dispatch_function(
         write!(
             sig,
             "{}",
-            native_tuple_body(&hl_call, elements, NativeTarget::Hl)
+            native_tuple_body(&hl_call, elements, tuple_optional, NativeTarget::Hl)
         )
         .unwrap();
     } else {
@@ -334,7 +343,7 @@ fn emit_dispatch_function(
         write!(
             sig,
             "{}",
-            native_tuple_body(&cpp_call, elements, NativeTarget::Cpp)
+            native_tuple_body(&cpp_call, elements, tuple_optional, NativeTarget::Cpp)
         )
         .unwrap();
     } else {
@@ -342,7 +351,12 @@ fn emit_dispatch_function(
     }
     writeln!(sig, "#elseif (js && flight_esm)").unwrap();
     if let Some(elements) = &tuple_elements {
-        write!(sig, "{}", js_tuple_body(&inner_js_call, elements.len())).unwrap();
+        write!(
+            sig,
+            "{}",
+            js_tuple_body(&inner_js_call, elements.len(), tuple_optional)
+        )
+        .unwrap();
     } else {
         writeln!(sig, "\t{ret_prefix}{inner_js_call};").unwrap();
     }
@@ -366,7 +380,12 @@ enum NativeTarget {
 
 // The native ABI writes tuple element `i` through a trailing `out_i` pointer. `call` is the extern
 // call still missing its closing parenthesis, so the out-parameter addresses can be appended.
-fn native_tuple_body(call: &str, elements: &[String], target: NativeTarget) -> String {
+fn native_tuple_body(
+    call: &str,
+    elements: &[String],
+    optional: bool,
+    target: NativeTarget,
+) -> String {
     let mut body = String::new();
     let mut addresses = Vec::new();
     for (index, element) in elements.iter().enumerate() {
@@ -380,7 +399,13 @@ fn native_tuple_body(call: &str, elements: &[String], target: NativeTarget) -> S
         addresses.push(address);
     }
     let separator = if call.ends_with('(') { "" } else { ", " };
-    writeln!(body, "\t{call}{separator}{});", addresses.join(", ")).unwrap();
+    let addresses = addresses.join(", ");
+    if optional {
+        // The native call returns presence; absent leaves the outputs untouched.
+        writeln!(body, "\tif (!{call}{separator}{addresses})) return null;").unwrap();
+    } else {
+        writeln!(body, "\t{call}{separator}{addresses});").unwrap();
+    }
     writeln!(
         body,
         "\treturn {};",
@@ -392,9 +417,14 @@ fn native_tuple_body(call: &str, elements: &[String], target: NativeTarget) -> S
 
 // The TypeScript SDK returns a readonly array; the Haxe surface returns the same structure as the
 // native targets.
-fn js_tuple_body(call: &str, arity: usize) -> String {
+fn js_tuple_body(call: &str, arity: usize, optional: bool) -> String {
+    let absent = if optional {
+        "\tif (result == null) return null;\n"
+    } else {
+        ""
+    };
     return format!(
-        "\tvar result = {call};\n\treturn {};\n",
+        "\tvar result = {call};\n{absent}\treturn {};\n",
         tuple_literal(arity, |i| format!("result[{i}]"))
     );
 }
@@ -463,6 +493,9 @@ fn return_kind_to_haxe(kind: &ReturnKind, emitted_enums: &BTreeSet<String>) -> S
         ReturnKind::FixedArrayReturn(_, _) => "Dynamic".to_string(),
         ReturnKind::OptionStruct(ty) => ty.clone(),
         ReturnKind::Tuple(elements) => tuple_struct_type(elements, scalar_to_haxe),
+        ReturnKind::OptionTuple(elements) => {
+            format!("Null<{}>", tuple_struct_type(elements, scalar_to_haxe))
+        }
     }
 }
 
@@ -544,7 +577,7 @@ mod portable_dispatch_tests {
     use super::*;
     use crate::parse::ParsedStruct;
     #[test]
-    fn random_gaussian_pair_returns_a_tuple_structure_on_every_target() {
+    fn scalar_and_optional_tuples_return_structures_on_every_target() {
         let directory =
             std::env::temp_dir().join(format!("flight-dispatch-tuple-{}", std::process::id()));
         fs::create_dir_all(&directory).unwrap();
@@ -593,7 +626,36 @@ extern inline function randomGaussianPair(randomFn:Dynamic, randomCtx:Dynamic, m
 #end
 ";
         assert!(content.contains(expected), "{content}");
-        assert!(!content.contains("getLastPoint"), "{content}");
+        let expected_optional = "\
+#if (js && flight_esm)
+extern inline function getLastPoint(random:Dynamic, mean:Null<Float>, standardDeviation:Null<Float>):Null<{ _0:Float, _1:Float }> {
+	var result = flight._js._fn.Math.getLastPoint(random, mean, standardDeviation);
+	if (result == null) return null;
+	return { _0: result[0], _1: result[1] };
+}
+#else
+extern inline function getLastPoint(randomFn:Dynamic, randomCtx:Dynamic, mean:Float, standardDeviation:Float):Null<{ _0:Float, _1:Float }> {
+#if hl
+	var out0:Float = 0;
+	var out1:Float = 0;
+	if (!flight._hl._fn.Math.getLastPoint(randomFn, randomCtx, mean, standardDeviation, hl.Ref.make(out0), hl.Ref.make(out1))) return null;
+	return { _0: out0, _1: out1 };
+#elseif cpp
+	var out0:cpp.Float64 = 0;
+	var out1:cpp.Float64 = 0;
+	if (!flight._cpp._fn.Math.getLastPoint(randomFn, randomCtx, mean, standardDeviation, cpp.RawPointer.addressOf(out0), cpp.RawPointer.addressOf(out1))) return null;
+	return { _0: out0, _1: out1 };
+#elseif (js && flight_esm)
+	var result = flight._js._fn.Math.getLastPoint(randomFn, randomCtx, mean, standardDeviation);
+	if (result == null) return null;
+	return { _0: result[0], _1: result[1] };
+#else
+	#error \"flight.Math: no backend for this target.\"
+#end
+}
+#end
+";
+        assert!(content.contains(expected_optional), "{content}");
         assert!(
             !content.contains("(f32") && !content.contains("(f64"),
             "{content}"
