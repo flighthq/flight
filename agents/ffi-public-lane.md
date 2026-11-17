@@ -22,6 +22,18 @@ The FFI generator's current `prefix_skip(initialize_)` rule produces the right r
 
 3. **"Create and decorate" is sufficient.** `create_sprite()` + set fields covers all consumer construction needs. The allocate-initialize split is an internal optimization for pool reuse and clone paths.
 
+## Consequence: extension points are out of scope
+
+FFI exposes the **consumption** API — create, configure, query, render — not the **extension** API. Extension points are functions where the consumer provides behavior _back_ to the SDK: custom node kinds, import pipeline handlers, custom renderers, runtime-method tables. These require lifetime-scoped mutable contexts, trait-object callbacks, or vtable construction that the C ABI cannot enforce safely.
+
+Concretely excluded:
+
+- **Import context handlers** (Lottie/SVG/Rive `&mut Ctx<'_, '_>` params) — C consumers parse a file and get a scene graph; they don't hook individual shape/layer handlers.
+- **Closure/callback extension params** (`Arc<dyn Fn(...)>` construction) — C consumers call into Rust; they don't provide Rust-callable behavior objects.
+- **Runtime-method tables** (`BoundsRectangleRuntimeMethods`, `Transform2DRuntimeMethods`) — internal dispatch tables, not consumer-facing.
+
+This is an alpha-level policy. Extension-point FFI (C vtable adapters, callback bridges) is future work once the consumption surface is complete.
+
 ## Implementation
 
 Replace the prefix-based skip with an export-lane check: a function is generated if and only if it appears in its package's public exports (the root `.` entry). The generator already knows the crate-to-package mapping; it needs an additional input of which functions are public-lane.
