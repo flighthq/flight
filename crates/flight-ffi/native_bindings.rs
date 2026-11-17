@@ -96,6 +96,43 @@ fn carrier(ty: &Type) -> Carrier {
     }
 }
 
+// flight-ffi returns a scalar tuple through trailing `out_0`, `out_1`, ... `*mut scalar` parameters.
+// HashLink passes those as `hl.Ref<T>` (`_REF`), not as `hl.Bytes`, so they need typed pointers.
+// The element set matches flight-bindgen's `tuple_element_storage`; any other element keeps the
+// opaque `_BYTES` carrier, and flight-bindgen declares no Haxe extern for that tuple.
+fn tuple_out_carrier(name: &str, ty: &Type) -> Option<Carrier> {
+    let index = name.strip_prefix("out_")?;
+    if index.is_empty() || !index.bytes().all(|byte| byte.is_ascii_digit()) {
+        return None;
+    }
+    let Type::Ptr(pointer) = ty else {
+        panic!("tuple output {name} must be a pointer");
+    };
+    assert!(
+        pointer.mutability.is_some(),
+        "tuple output {name} must be a mutable pointer"
+    );
+    let Type::Path(path) = &*pointer.elem else {
+        panic!("tuple output {name} must point to a scalar");
+    };
+    let element = path.path.segments.last().unwrap().ident.to_string();
+    let (c, hl, signature) = match element.as_str() {
+        "f32" => ("float *", "float *", "_REF(_F32)"),
+        "f64" => ("double *", "double *", "_REF(_F64)"),
+        "i32" => ("int32_t *", "int *", "_REF(_I32)"),
+        "u32" => ("uint32_t *", "int *", "_REF(_I32)"),
+        "u8" => ("uint8_t *", "unsigned char *", "_REF(_UI8)"),
+        "u16" => ("uint16_t *", "unsigned short *", "_REF(_UI16)"),
+        "bool" => ("bool *", "bool *", "_REF(_BOOL)"),
+        _ => return None,
+    };
+    return Some(Carrier {
+        c: c.into(),
+        hl,
+        signature,
+    });
+}
+
 fn validate_vec_result_helpers(file: &syn::File) {
     let mut groups: BTreeMap<String, u8> = BTreeMap::new();
     for item in &file.items {
@@ -393,7 +430,12 @@ pub fn emit(source: &str, out: &Path) {
             let FnArg::Typed(parameter) = argument else {
                 panic!("C ABI receiver");
             };
-            let ty = carrier(&parameter.ty);
+            let parameter_name = match &*parameter.pat {
+                syn::Pat::Ident(ident) => ident.ident.to_string(),
+                _ => String::new(),
+            };
+            let ty = tuple_out_carrier(&parameter_name, &parameter.ty)
+                .unwrap_or_else(|| carrier(&parameter.ty));
             let arg = format!("arg{index}");
             c_params.push(format!("{} {arg}", ty.c));
             hl_params.push(format!("{} {arg}", ty.hl));
