@@ -1106,6 +1106,7 @@ fn generate_ffi_wrapper(func: &ParsedFn) -> Option<(String, Option<String>)> {
         for (pname, pty) in &mapped.ffi_params {
             ffi_params.push(format!("{pname}: {pty}"));
         }
+        guard_bindings.extend(mapped.bindings);
         call_args.push(mapped.call_expr);
 
         let ty = strip_crate_paths(&strip_lifetimes(&resolve_type_alias(param.ty.trim())));
@@ -1135,6 +1136,7 @@ fn generate_ffi_wrapper(func: &ParsedFn) -> Option<(String, Option<String>)> {
         None => (String::new(), FfiReturn::Void),
         Some(ty) => map_return_to_ffi(ty)?,
     };
+    append_tuple_out_params(&mut ffi_params, &call_wrap);
 
     let boxed_ty = if matches!(call_wrap, FfiReturn::BoxReturn | FfiReturn::OptionBoxReturn) {
         func.ret.as_ref().map(|ty| {
@@ -1163,128 +1165,12 @@ fn generate_ffi_wrapper(func: &ParsedFn) -> Option<(String, Option<String>)> {
         format!("{}\n", guard_bindings.join("\n"))
     };
 
-    let body = match call_wrap {
-        FfiReturn::Void => format!("{preamble}    {call};"),
-        FfiReturn::Direct => format!("{preamble}    return {call};"),
-        FfiReturn::BoxReturn => {
-            format!("{preamble}    return Box::into_raw(Box::new({call}));")
-        }
-        FfiReturn::StringReturn => {
-            format!(
-                "{preamble}    let s = {call};\n    \
-                     let c_str = std::ffi::CString::new(s).unwrap_or_default();\n    \
-                     return c_str.into_raw();"
-            )
-        }
-        FfiReturn::OptionStringReturn => {
-            format!(
-                "{preamble}    match {call} {{\n        \
-                     Some(s) => std::ffi::CString::new(s).unwrap_or_default().into_raw(),\n        \
-                     None => std::ptr::null_mut(),\n    \
-                     }}"
-            )
-        }
-        FfiReturn::ArcRefReturn => {
-            format!(
-                "{preamble}    let arc = {call};\n    \
-                     return Box::into_raw(Box::new(arc)) as *mut std::ffi::c_void;"
-            )
-        }
-        FfiReturn::OptionArcRefReturn => {
-            format!(
-                "{preamble}    match {call} {{\n        \
-                     Some(arc) => Box::into_raw(Box::new(arc)) as *mut std::ffi::c_void,\n        \
-                     None => std::ptr::null_mut(),\n    \
-                     }}"
-            )
-        }
-        FfiReturn::EnumReturn => {
-            format!("{preamble}    return {call} as u32;")
-        }
-        FfiReturn::OptionEnumReturn => {
-            format!(
-                "{preamble}    match {call} {{\n        \
-                     Some(v) => v as i32,\n        \
-                     None => -1,\n    \
-                     }}"
-            )
-        }
-        FfiReturn::OptionF32Return => {
-            format!(
-                "{preamble}    match {call} {{\n        \
-                     Some(v) => v,\n        \
-                     None => f32::NAN,\n    \
-                     }}"
-            )
-        }
-        FfiReturn::OptionF64Return => {
-            format!(
-                "{preamble}    match {call} {{\n        \
-                     Some(v) => v,\n        \
-                     None => f64::NAN,\n    \
-                     }}"
-            )
-        }
-        FfiReturn::OptionI32Return => {
-            format!(
-                "{preamble}    match {call} {{\n        \
-                     Some(v) => v as i64,\n        \
-                     None => i64::MIN,\n    \
-                     }}"
-            )
-        }
-        FfiReturn::OptionU32Return => {
-            format!(
-                "{preamble}    match {call} {{\n        \
-                     Some(v) => v as i64,\n        \
-                     None => -1,\n    \
-                     }}"
-            )
-        }
-        FfiReturn::OptionBoxReturn => {
-            format!(
-                "{preamble}    match {call} {{\n        \
-                     Some(v) => Box::into_raw(Box::new(v)),\n        \
-                     None => std::ptr::null_mut(),\n    \
-                     }}"
-            )
-        }
-        FfiReturn::SliceReturn => {
-            format!(
-                "{preamble}    let slice = {call};\n    \
-                     return Box::into_raw(Box::new(slice.to_vec())) as *mut std::ffi::c_void;"
-            )
-        }
-        FfiReturn::RefReturn => {
-            format!("{preamble}    return {call} as *const _;")
-        }
-        FfiReturn::OptionRefReturn => {
-            format!(
-                "{preamble}    match {call} {{\n        \
-                     Some(v) => v.as_ptr(),\n        \
-                     None => std::ptr::null(),\n    \
-                     }}"
-            )
-        }
-        FfiReturn::VecReturn => {
-            format!(
-                "{preamble}    let vec = {call};\n    \
-                     return Box::into_raw(Box::new(vec)) as *mut std::ffi::c_void;"
-            )
-        }
-        FfiReturn::OptionVecReturn => {
-            format!(
-                "{preamble}    match {call} {{\n        \
-                     Some(vec) => Box::into_raw(Box::new(vec)) as *mut std::ffi::c_void,\n        \
-                     None => std::ptr::null_mut(),\n    \
-                     }}"
-            )
-        }
-    };
+    let body = generate_return_body(&call_wrap, &call, &preamble);
+    let helpers = generate_vec_result_helpers(&ffi_name, &call_wrap);
 
     Some((
         format!(
-            "#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn {ffi_name}({params}){ret_decl} {{\n{body}\n}}",
+            "#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn {ffi_name}({params}){ret_decl} {{\n{body}\n}}{helpers}",
             params = ffi_params.join(", "),
         ),
         boxed_ty,
@@ -1378,6 +1264,7 @@ fn generate_mono_wrappers(func: &ParsedFn) -> Vec<(String, String, Option<String
 
         let mut ffi_params = Vec::new();
         let mut call_args = Vec::new();
+        let mut bindings = Vec::new();
         let mut ok = true;
 
         for (i, param) in func.params.iter().enumerate() {
@@ -1404,6 +1291,7 @@ fn generate_mono_wrappers(func: &ParsedFn) -> Vec<(String, String, Option<String
                         for (pname, pty) in &mapped.ffi_params {
                             ffi_params.push(format!("{pname}: {pty}"));
                         }
+                        bindings.extend(mapped.bindings);
                         call_args.push(mapped.call_expr);
                     }
                     None => {
@@ -1417,6 +1305,7 @@ fn generate_mono_wrappers(func: &ParsedFn) -> Vec<(String, String, Option<String
         if !ok {
             continue;
         }
+        append_tuple_out_params(&mut ffi_params, &call_wrap);
 
         let call = format!(
             "flight_sdk::{name}({args})",
@@ -1424,95 +1313,18 @@ fn generate_mono_wrappers(func: &ParsedFn) -> Vec<(String, String, Option<String
             args = call_args.join(", ")
         );
 
-        let body = match call_wrap {
-            FfiReturn::Void => format!("    {call};"),
-            FfiReturn::Direct => format!("    return {call};"),
-            FfiReturn::BoxReturn => format!("    return Box::into_raw(Box::new({call}));"),
-            FfiReturn::StringReturn => format!(
-                "    let s = {call};\n    \
-                     let c_str = std::ffi::CString::new(s).unwrap_or_default();\n    \
-                     return c_str.into_raw();"
-            ),
-            FfiReturn::OptionStringReturn => format!(
-                "    match {call} {{\n        \
-                     Some(s) => std::ffi::CString::new(s).unwrap_or_default().into_raw(),\n        \
-                     None => std::ptr::null_mut(),\n    \
-                     }}"
-            ),
-            FfiReturn::ArcRefReturn => format!(
-                "    let arc = {call};\n    \
-                     return Box::into_raw(Box::new(arc)) as *mut std::ffi::c_void;"
-            ),
-            FfiReturn::OptionArcRefReturn => format!(
-                "    match {call} {{\n        \
-                     Some(arc) => Box::into_raw(Box::new(arc)) as *mut std::ffi::c_void,\n        \
-                     None => std::ptr::null_mut(),\n    \
-                     }}"
-            ),
-            FfiReturn::EnumReturn => format!("    return {call} as u32;"),
-            FfiReturn::OptionEnumReturn => format!(
-                "    match {call} {{\n        \
-                     Some(v) => v as i32,\n        \
-                     None => -1,\n    \
-                     }}"
-            ),
-            FfiReturn::OptionF32Return => format!(
-                "    match {call} {{\n        \
-                     Some(v) => v,\n        \
-                     None => f32::NAN,\n    \
-                     }}"
-            ),
-            FfiReturn::OptionF64Return => format!(
-                "    match {call} {{\n        \
-                     Some(v) => v,\n        \
-                     None => f64::NAN,\n    \
-                     }}"
-            ),
-            FfiReturn::OptionI32Return => format!(
-                "    match {call} {{\n        \
-                     Some(v) => v as i64,\n        \
-                     None => i64::MIN,\n    \
-                     }}"
-            ),
-            FfiReturn::OptionU32Return => format!(
-                "    match {call} {{\n        \
-                     Some(v) => v as i64,\n        \
-                     None => -1,\n    \
-                     }}"
-            ),
-            FfiReturn::OptionBoxReturn => format!(
-                "    match {call} {{\n        \
-                     Some(v) => Box::into_raw(Box::new(v)),\n        \
-                     None => std::ptr::null_mut(),\n    \
-                     }}"
-            ),
-            FfiReturn::SliceReturn => format!(
-                "    let slice = {call};\n    \
-                     return Box::into_raw(Box::new(slice.to_vec())) as *mut std::ffi::c_void;"
-            ),
-            FfiReturn::RefReturn => format!("    return {call} as *const _;"),
-            FfiReturn::OptionRefReturn => format!(
-                "    match {call} {{\n        \
-                     Some(v) => v.as_ptr(),\n        \
-                     None => std::ptr::null(),\n    \
-                     }}"
-            ),
-            FfiReturn::VecReturn => format!(
-                "    let vec = {call};\n    \
-                     return Box::into_raw(Box::new(vec)) as *mut std::ffi::c_void;"
-            ),
-            FfiReturn::OptionVecReturn => format!(
-                "    match {call} {{\n        \
-                     Some(vec) => Box::into_raw(Box::new(vec)) as *mut std::ffi::c_void,\n        \
-                     None => std::ptr::null_mut(),\n    \
-                     }}"
-            ),
+        let preamble = if bindings.is_empty() {
+            String::new()
+        } else {
+            format!("{}\n", bindings.join("\n"))
         };
+        let body = generate_return_body(&call_wrap, &call, &preamble);
+        let helpers = generate_vec_result_helpers(&ffi_name, &call_wrap);
 
         wrappers.push((
             ffi_name.clone(),
             format!(
-                "#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn {ffi_name}({params}){ret_decl} {{\n{body}\n}}",
+                "#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn {ffi_name}({params}){ret_decl} {{\n{body}\n}}{helpers}",
                 params = ffi_params.join(", "),
             ),
             boxed_ty.clone(),
@@ -1536,11 +1348,149 @@ enum FfiReturn {
     OptionF64Return,
     OptionI32Return,
     OptionU32Return,
-    VecReturn,
-    OptionVecReturn,
+    VecReturn(VecReturnSpec),
+    OptionVecReturn(VecReturnSpec),
+    BoxSliceReturn,
+    OptionBoxSliceReturn,
+    TupleReturn(Vec<String>),
     SliceReturn,
     RefReturn,
     OptionRefReturn,
+}
+
+struct VecReturnSpec {
+    element_ty: String,
+    element_is_ref: bool,
+}
+
+fn append_tuple_out_params(ffi_params: &mut Vec<String>, call_wrap: &FfiReturn) {
+    let FfiReturn::TupleReturn(elements) = call_wrap else {
+        return;
+    };
+    for (index, element) in elements.iter().enumerate() {
+        ffi_params.push(format!("out_{index}: *mut {element}"));
+    }
+}
+
+fn generate_return_body(call_wrap: &FfiReturn, call: &str, preamble: &str) -> String {
+    match call_wrap {
+        FfiReturn::Void => format!("{preamble}    {call};"),
+        FfiReturn::Direct => format!("{preamble}    return {call};"),
+        FfiReturn::BoxReturn => {
+            format!("{preamble}    return Box::into_raw(Box::new({call}));")
+        }
+        FfiReturn::StringReturn => format!(
+            "{preamble}    let s = {call};\n    \
+                 let c_str = std::ffi::CString::new(s).unwrap_or_default();\n    \
+                 return c_str.into_raw();"
+        ),
+        FfiReturn::OptionStringReturn => format!(
+            "{preamble}    match {call} {{\n        \
+                 Some(s) => std::ffi::CString::new(s).unwrap_or_default().into_raw(),\n        \
+                 None => std::ptr::null_mut(),\n    \
+                 }}"
+        ),
+        FfiReturn::ArcRefReturn => format!(
+            "{preamble}    let arc = {call};\n    \
+                 return Box::into_raw(Box::new(arc)) as *mut std::ffi::c_void;"
+        ),
+        FfiReturn::OptionArcRefReturn => format!(
+            "{preamble}    match {call} {{\n        \
+                 Some(arc) => Box::into_raw(Box::new(arc)) as *mut std::ffi::c_void,\n        \
+                 None => std::ptr::null_mut(),\n    \
+                 }}"
+        ),
+        FfiReturn::EnumReturn => format!("{preamble}    return {call} as u32;"),
+        FfiReturn::OptionEnumReturn => format!(
+            "{preamble}    match {call} {{\n        \
+                 Some(v) => v as i32,\n        \
+                 None => -1,\n    \
+                 }}"
+        ),
+        FfiReturn::OptionF32Return => format!(
+            "{preamble}    match {call} {{\n        \
+                 Some(v) => v,\n        \
+                 None => f32::NAN,\n    \
+                 }}"
+        ),
+        FfiReturn::OptionF64Return => format!(
+            "{preamble}    match {call} {{\n        \
+                 Some(v) => v,\n        \
+                 None => f64::NAN,\n    \
+                 }}"
+        ),
+        FfiReturn::OptionI32Return => format!(
+            "{preamble}    match {call} {{\n        \
+                 Some(v) => v as i64,\n        \
+                 None => i64::MIN,\n    \
+                 }}"
+        ),
+        FfiReturn::OptionU32Return => format!(
+            "{preamble}    match {call} {{\n        \
+                 Some(v) => v as i64,\n        \
+                 None => -1,\n    \
+                 }}"
+        ),
+        FfiReturn::OptionBoxReturn => format!(
+            "{preamble}    match {call} {{\n        \
+                 Some(v) => Box::into_raw(Box::new(v)),\n        \
+                 None => std::ptr::null_mut(),\n    \
+                 }}"
+        ),
+        FfiReturn::SliceReturn => format!(
+            "{preamble}    let slice = {call};\n    \
+                 return Box::into_raw(Box::new(slice.to_vec())) as *mut std::ffi::c_void;"
+        ),
+        FfiReturn::RefReturn => format!("{preamble}    return {call} as *const _;"),
+        FfiReturn::OptionRefReturn => format!(
+            "{preamble}    match {call} {{\n        \
+                 Some(v) => v.as_ptr(),\n        \
+                 None => std::ptr::null(),\n    \
+                 }}"
+        ),
+        FfiReturn::VecReturn(_) | FfiReturn::BoxSliceReturn => format!(
+            "{preamble}    let vec = {call};\n    \
+                 return Box::into_raw(Box::new(vec)) as *mut std::ffi::c_void;"
+        ),
+        FfiReturn::OptionVecReturn(_) | FfiReturn::OptionBoxSliceReturn => format!(
+            "{preamble}    match {call} {{\n        \
+                 Some(vec) => Box::into_raw(Box::new(vec)) as *mut std::ffi::c_void,\n        \
+                 None => std::ptr::null_mut(),\n    \
+                 }}"
+        ),
+        FfiReturn::TupleReturn(elements) => {
+            let mut body = format!("{preamble}    let result = {call};");
+            for (index, _) in elements.iter().enumerate() {
+                write!(
+                    body,
+                    "\n    if !out_{index}.is_null() {{ unsafe {{ *out_{index} = result.{index}; }} }}"
+                )
+                .unwrap();
+            }
+            body
+        }
+    }
+}
+
+fn generate_vec_result_helpers(ffi_name: &str, call_wrap: &FfiReturn) -> String {
+    let spec = match call_wrap {
+        FfiReturn::VecReturn(spec) | FfiReturn::OptionVecReturn(spec) => spec,
+        _ => return String::new(),
+    };
+    let element_ty = &spec.element_ty;
+    let get_return = if spec.element_is_ref {
+        "*const std::ffi::c_void".to_string()
+    } else {
+        format!("*const {element_ty}")
+    };
+    let get_value = if spec.element_is_ref {
+        "value as *const _ as *const std::ffi::c_void".to_string()
+    } else {
+        "value as *const _".to_string()
+    };
+    format!(
+        "\n#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn {ffi_name}_result_len(result: *const std::ffi::c_void) -> usize {{\n    if result.is_null() {{ return 0; }}\n    return unsafe {{ &*(result as *const Vec<{element_ty}>) }}.len();\n}}\n#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn {ffi_name}_result_get(result: *const std::ffi::c_void, index: usize) -> {get_return} {{\n    if result.is_null() {{ return std::ptr::null(); }}\n    match unsafe {{ &*(result as *const Vec<{element_ty}>) }}.get(index) {{\n        Some(value) => {get_value},\n        None => std::ptr::null(),\n    }}\n}}\n#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn {ffi_name}_result_free(result: *mut std::ffi::c_void) {{\n    if !result.is_null() {{ unsafe {{ drop(Box::from_raw(result as *mut Vec<{element_ty}>)); }} }}\n}}"
+    )
 }
 
 fn categorize_skip(func: &ParsedFn) -> String {
@@ -1618,6 +1568,46 @@ fn to_snake_case(s: &str) -> String {
 
 fn is_tuple(ty: &str) -> bool {
     ty.starts_with('(') && ty.ends_with(')')
+}
+
+fn scalar_tuple_elements(ty: &str) -> Option<Vec<String>> {
+    if !is_tuple(ty) {
+        return None;
+    }
+    let elements: Vec<String> = ty[1..ty.len() - 1]
+        .split(',')
+        .map(str::trim)
+        .filter(|element| !element.is_empty())
+        .map(str::to_string)
+        .collect();
+    if elements.len() < 2 || elements.iter().any(|element| !is_scalar(element)) {
+        return None;
+    }
+    Some(elements)
+}
+
+fn supported_ref_inner(ty: &str) -> Option<&str> {
+    let inner = ty.strip_prefix("Ref<")?.strip_suffix('>')?.trim();
+    if SKIP_TYPES.iter().any(|skip| inner.contains(skip)) {
+        return None;
+    }
+    if let Some(trait_name) = inner.strip_prefix("dyn ") {
+        let trait_name = trait_name.rsplit("::").next().unwrap_or(trait_name);
+        if DYN_OPAQUE_TRAITS
+            .iter()
+            .any(|(known, _)| *known == trait_name)
+            || DYN_MONO_TRAITS
+                .iter()
+                .any(|(known, _)| *known == trait_name)
+        {
+            return Some(inner);
+        }
+        return None;
+    }
+    if inner.contains('<') || inner.contains("::") {
+        return None;
+    }
+    Some(inner)
 }
 
 fn qualify_type(ty: &str) -> String {
@@ -1790,12 +1780,14 @@ fn resolve_type_alias(ty: &str) -> String {
 
 struct MappedParam {
     ffi_params: Vec<(String, String)>,
+    bindings: Vec<String>,
     call_expr: String,
 }
 
 fn mapped_single(name: &str, ffi_ty: &str, call_expr: String) -> Option<MappedParam> {
     Some(MappedParam {
         ffi_params: vec![(name.to_string(), ffi_ty.to_string())],
+        bindings: Vec::new(),
         call_expr,
     })
 }
@@ -1975,9 +1967,42 @@ fn map_param_to_ffi(name: &str, ty: &str) -> Option<MappedParam> {
                         (ptr_name.clone(), format!("*const {inner}")),
                         (len_name.clone(), "usize".to_string()),
                     ],
+                    bindings: Vec::new(),
                     call_expr: format!(
                         "if {ptr_name}.is_null() {{ None }} else {{ Some(unsafe {{ std::slice::from_raw_parts({ptr_name}, {len_name}) }}) }}"
                     ),
+                });
+            }
+        }
+    }
+
+    // Option<&[Ref<T>]> -> nullable array of opaque Ref handles + length. Each handle points to
+    // the boxed Ref value produced by this FFI, so clone the handles into contiguous Rust Refs
+    // rather than reinterpreting the handle pointers as Arc storage.
+    if let Some(inner) = ty.strip_prefix("Option<&[") {
+        if let Some(inner) = inner.strip_suffix("]>") {
+            if let Some(ref_inner) = supported_ref_inner(inner.trim()) {
+                let ptr_name = format!("{name}_ptr");
+                let len_name = format!("{name}_len");
+                let binding_name = format!("{}_refs", name.trim_start_matches('_'));
+                let element_ty = format!("flight_sdk::Ref<{}>", qualify_type(ref_inner));
+                return Some(MappedParam {
+                    ffi_params: vec![
+                        (
+                            ptr_name.clone(),
+                            "*const *const std::ffi::c_void".to_string(),
+                        ),
+                        (len_name.clone(), "usize".to_string()),
+                    ],
+                    bindings: vec![
+                        format!(
+                            "    assert!(!{ptr_name}.is_null() || {len_name} == 0, \"null Ref slice must have length zero\");"
+                        ),
+                        format!(
+                            "    let {binding_name}: Option<Vec<{element_ty}>> = if {ptr_name}.is_null() {{ None }} else {{ Some(unsafe {{ std::slice::from_raw_parts({ptr_name}, {len_name}) }}.iter().map(|handle| {{ assert!(!(*handle).is_null(), \"Ref slice contains a null handle\"); unsafe {{ &*(*handle as *const {element_ty}) }}.clone() }}).collect()) }};"
+                        ),
+                    ],
+                    call_expr: format!("{binding_name}.as_deref()"),
                 });
             }
         }
@@ -1995,6 +2020,7 @@ fn map_param_to_ffi(name: &str, ty: &str) -> Option<MappedParam> {
                         (ptr_name.clone(), format!("*mut {inner}")),
                         (len_name.clone(), "usize".to_string()),
                     ],
+                    bindings: Vec::new(),
                     call_expr: format!(
                         "if {ptr_name}.is_null() {{ None }} else {{ Some(unsafe {{ std::slice::from_raw_parts_mut({ptr_name}, {len_name}) }}) }}"
                     ),
@@ -2171,6 +2197,40 @@ fn map_param_to_ffi(name: &str, ty: &str) -> Option<MappedParam> {
         }
     }
 
+    // &[Ref<T>] -> array of opaque Ref handles + length. Preserve caller ownership by cloning
+    // each boxed Ref handle for the duration of the SDK call.
+    if let Some(inner) = ty.strip_prefix("&[") {
+        if let Some(inner) = inner.strip_suffix(']') {
+            if let Some(ref_inner) = supported_ref_inner(inner.trim()) {
+                let ptr_name = format!("{name}_ptr");
+                let len_name = format!("{name}_len");
+                let binding_name = format!("{}_refs", name.trim_start_matches('_'));
+                let element_ty = format!("flight_sdk::Ref<{}>", qualify_type(ref_inner));
+                return Some(MappedParam {
+                    ffi_params: vec![
+                        (
+                            ptr_name.clone(),
+                            "*const *const std::ffi::c_void".to_string(),
+                        ),
+                        (len_name.clone(), "usize".to_string()),
+                    ],
+                    bindings: vec![
+                        format!(
+                            "    assert!(!{ptr_name}.is_null() || {len_name} == 0, \"null Ref slice must have length zero\");"
+                        ),
+                        format!(
+                            "    let {binding_name}_handles: &[*const std::ffi::c_void] = if {len_name} == 0 {{ &[] }} else {{ unsafe {{ std::slice::from_raw_parts({ptr_name}, {len_name}) }} }};"
+                        ),
+                        format!(
+                            "    let {binding_name}: Vec<{element_ty}> = {binding_name}_handles.iter().map(|handle| {{ assert!(!(*handle).is_null(), \"Ref slice contains a null handle\"); unsafe {{ &*(*handle as *const {element_ty}) }}.clone() }}).collect();"
+                        ),
+                    ],
+                    call_expr: format!("&{binding_name}"),
+                });
+            }
+        }
+    }
+
     // &mut [T] -> (*mut T, usize)
     if let Some(inner) = ty.strip_prefix("&mut [") {
         if let Some(inner) = inner.strip_suffix(']') {
@@ -2190,6 +2250,7 @@ fn map_param_to_ffi(name: &str, ty: &str) -> Option<MappedParam> {
                         (ptr_name.clone(), format!("*mut {qualified}")),
                         (len_name.clone(), "usize".to_string()),
                     ],
+                    bindings: Vec::new(),
                     call_expr: format!(
                         "unsafe {{ std::slice::from_raw_parts_mut({ptr_name}, {len_name}) }}"
                     ),
@@ -2217,6 +2278,7 @@ fn map_param_to_ffi(name: &str, ty: &str) -> Option<MappedParam> {
                         (ptr_name.clone(), format!("*const {qualified}")),
                         (len_name.clone(), "usize".to_string()),
                     ],
+                    bindings: Vec::new(),
                     call_expr: format!(
                         "unsafe {{ std::slice::from_raw_parts({ptr_name}, {len_name}) }}"
                     ),
@@ -2241,8 +2303,26 @@ fn map_param_to_ffi(name: &str, ty: &str) -> Option<MappedParam> {
                         "*const std::ffi::c_void".to_string()
                     },
                 )],
+                bindings: Vec::new(),
                 call_expr: format!("dyn_{clean}"),
             });
+        }
+    }
+
+    // &mut Vec<Ref<T>> -> *mut c_void (opaque handle created by a Vec result wrapper)
+    if let Some(inner) = ty.strip_prefix("&mut Vec<") {
+        if let Some(inner) = inner.strip_suffix('>') {
+            let inner = inner.trim();
+            if let Some(ref_inner) = supported_ref_inner(inner) {
+                let element_ty = format!("flight_sdk::Ref<{}>", qualify_type(ref_inner));
+                return mapped_single(
+                    name,
+                    "*mut std::ffi::c_void",
+                    format!(
+                        "{{ assert!(!{name}.is_null(), \"null Vec<Ref<_>> handle\"); unsafe {{ &mut *({name} as *mut Vec<{element_ty}>) }} }}"
+                    ),
+                );
+            }
         }
     }
 
@@ -2379,6 +2459,7 @@ fn map_param_to_ffi(name: &str, ty: &str) -> Option<MappedParam> {
                                 (ptr_name.clone(), format!("*mut {elem}")),
                                 (len_name.clone(), "usize".to_string()),
                             ],
+                            bindings: Vec::new(),
                             call_expr: format!(
                                 "unsafe {{ Vec::from_raw_parts({ptr_name}, {len_name}, {len_name}) }}.into_boxed_slice()"
                             ),
@@ -2408,6 +2489,7 @@ fn map_param_to_ffi(name: &str, ty: &str) -> Option<MappedParam> {
                         (ptr_name.clone(), format!("*const {qualified}")),
                         (len_name.clone(), "usize".to_string()),
                     ],
+                    bindings: Vec::new(),
                     call_expr: format!(
                         "if {ptr_name}.is_null() {{ None }} else {{ Some(unsafe {{ std::slice::from_raw_parts({ptr_name}, {len_name}) }}) }}"
                     ),
@@ -2435,6 +2517,7 @@ fn map_param_to_ffi(name: &str, ty: &str) -> Option<MappedParam> {
                         (ptr_name.clone(), format!("*mut {qualified}")),
                         (len_name.clone(), "usize".to_string()),
                     ],
+                    bindings: Vec::new(),
                     call_expr: format!(
                         "if {ptr_name}.is_null() {{ None }} else {{ Some(unsafe {{ std::slice::from_raw_parts_mut({ptr_name}, {len_name}) }}) }}"
                     ),
@@ -2489,6 +2572,7 @@ fn map_param_to_ffi(name: &str, ty: &str) -> Option<MappedParam> {
                             (fn_name, option_fn_sig),
                             (ctx_name, "*mut std::ffi::c_void".to_string()),
                         ],
+                        bindings: Vec::new(),
                         call_expr: closure_body,
                     });
                 }
@@ -2585,6 +2669,7 @@ fn map_param_to_ffi(name: &str, ty: &str) -> Option<MappedParam> {
                 (fn_name, ffi_fn_sig),
                 (ctx_name, "*mut std::ffi::c_void".to_string()),
             ],
+            bindings: Vec::new(),
             call_expr: closure_body,
         });
     }
@@ -2731,7 +2816,23 @@ fn map_return_to_ffi(ty: &str) -> Option<(String, FfiReturn)> {
         }
     }
 
-    // Vec<T> -> *mut c_void (boxed Vec)
+    // Vec<Ref<T>> -> *mut c_void (boxed Vec with result accessors)
+    if let Some(inner) = ty.strip_prefix("Vec<") {
+        if let Some(inner) = inner.strip_suffix('>') {
+            let inner = inner.trim();
+            if let Some(ref_inner) = supported_ref_inner(inner) {
+                return Some((
+                    " -> *mut std::ffi::c_void".to_string(),
+                    FfiReturn::VecReturn(VecReturnSpec {
+                        element_ty: format!("flight_sdk::Ref<{}>", qualify_type(ref_inner)),
+                        element_is_ref: true,
+                    }),
+                ));
+            }
+        }
+    }
+
+    // Vec<T> -> *mut c_void (boxed Vec with result accessors)
     if let Some(inner) = ty.strip_prefix("Vec<") {
         if let Some(inner) = inner.strip_suffix('>') {
             let inner = inner.trim();
@@ -2741,7 +2842,26 @@ fn map_return_to_ffi(ty: &str) -> Option<(String, FfiReturn)> {
             {
                 return Some((
                     " -> *mut std::ffi::c_void".to_string(),
-                    FfiReturn::VecReturn,
+                    FfiReturn::VecReturn(VecReturnSpec {
+                        element_ty: qualify_type(inner),
+                        element_is_ref: false,
+                    }),
+                ));
+            }
+        }
+    }
+
+    // Option<Vec<Ref<T>>> -> nullable *mut c_void
+    if let Some(inner) = ty.strip_prefix("Option<Vec<") {
+        if let Some(inner) = inner.strip_suffix(">>") {
+            let inner = inner.trim();
+            if let Some(ref_inner) = supported_ref_inner(inner) {
+                return Some((
+                    " -> *mut std::ffi::c_void".to_string(),
+                    FfiReturn::OptionVecReturn(VecReturnSpec {
+                        element_ty: format!("flight_sdk::Ref<{}>", qualify_type(ref_inner)),
+                        element_is_ref: true,
+                    }),
                 ));
             }
         }
@@ -2757,10 +2877,18 @@ fn map_return_to_ffi(ty: &str) -> Option<(String, FfiReturn)> {
             {
                 return Some((
                     " -> *mut std::ffi::c_void".to_string(),
-                    FfiReturn::OptionVecReturn,
+                    FfiReturn::OptionVecReturn(VecReturnSpec {
+                        element_ty: qualify_type(inner),
+                        element_is_ref: false,
+                    }),
                 ));
             }
         }
+    }
+
+    // Scalar tuples return through typed out-parameters.
+    if let Some(elements) = scalar_tuple_elements(ty) {
+        return Some((String::new(), FfiReturn::TupleReturn(elements)));
     }
 
     // Box<[T]> (typed arrays) -> *mut c_void (opaque owned handle)
@@ -2770,7 +2898,7 @@ fn map_return_to_ffi(ty: &str) -> Option<(String, FfiReturn)> {
             if is_scalar(inner) {
                 return Some((
                     " -> *mut std::ffi::c_void".to_string(),
-                    FfiReturn::VecReturn,
+                    FfiReturn::BoxSliceReturn,
                 ));
             }
         }
@@ -2783,7 +2911,7 @@ fn map_return_to_ffi(ty: &str) -> Option<(String, FfiReturn)> {
             if is_scalar(inner) {
                 return Some((
                     " -> *mut std::ffi::c_void".to_string(),
-                    FfiReturn::OptionVecReturn,
+                    FfiReturn::OptionBoxSliceReturn,
                 ));
             }
         }
