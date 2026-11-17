@@ -218,6 +218,24 @@ static void check_outcome_results(void) {
   flight_get_midi_access_output_ports_result_free(NULL);
 }
 
+static void check_typed_array_refs(void) {
+  /* A typed array Ref handle shares its buffer: a resource built from it reads the same samples. */
+  const float samples[3] = {0.25f, -0.5f, 1.0f};
+  void *channel = flight_create_float32_array_ref((void *)samples, 3);
+  expect(flight_get_float32_array_ref_length(channel) == 3, "create_float32_array_ref copies every sample");
+  const void *const channels[1] = {channel};
+  void *resource = flight_create_audio_resource_from_samples(channels, 1, 8000.0f);
+  void *data = flight_get_audio_resource_channel_data(resource, 0);
+  float read[3] = {0.0f, 0.0f, 0.0f};
+  expect(flight_read_float32_array_ref(data, 0, read, 3) == 3, "channel data reads every sample");
+  expect(near(read[1], -0.5f), "channel data matches the samples");
+  expect(flight_get_audio_resource_channel_data(resource, -1) == NULL, "a missing channel reads NULL");
+  flight_free_float32_array_ref(data);
+  flight_free_float32_array_ref(channel);
+  flight_free_float32_array_ref(NULL);
+  expect(flight_get_uint8_array_ref_length(NULL) == 0, "a NULL typed array Ref is empty");
+}
+
 static void check_optional_texture_variants(void) {
   void *texture = flight_create_texture(NULL);
   expect(texture != NULL, "create_texture returns a handle");
@@ -457,6 +475,7 @@ int main(void) {
   check_shared_values();
   check_slice_carriers();
   check_outcome_results();
+  check_typed_array_refs();
   check_optional_texture_variants();
   check_optional_tuples();
   check_unit_signals();

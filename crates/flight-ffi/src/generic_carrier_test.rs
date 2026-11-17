@@ -2,6 +2,48 @@ use std::sync::Arc;
 
 use crate::*;
 
+mod flight_create_audio_resource_from_samples {
+    use super::*;
+
+    #[test]
+    fn shares_each_channel_buffer_with_the_resource() {
+        let samples = [0.25f32, -0.5, 1.0];
+        let channel = unsafe { flight_create_float32_array_ref(samples.as_ptr(), samples.len()) };
+        let channels = [channel as *const std::ffi::c_void];
+        let resource =
+            unsafe { flight_create_audio_resource_from_samples(channels.as_ptr(), 1, 8000.0) };
+        let data = unsafe { flight_get_audio_resource_channel_data(resource, 0) };
+        assert!(!data.is_null());
+        let mut read = [0.0f32; 4];
+        assert_eq!(
+            unsafe { flight_read_float32_array_ref(data, 0, read.as_mut_ptr(), 4) },
+            3
+        );
+        assert_eq!(&read[..3], &samples);
+        // The returned handle shares the resource's buffer rather than copying it.
+        let louder = [0.75f32];
+        assert_eq!(
+            unsafe { flight_write_float32_array_ref(data, 1, louder.as_ptr(), 1) },
+            1
+        );
+        let again = unsafe { flight_get_audio_resource_channel_data(resource, 0) };
+        assert_eq!(
+            unsafe { flight_read_float32_array_ref(again, 1, read.as_mut_ptr(), 1) },
+            1
+        );
+        assert_eq!(read[0], 0.75);
+        assert!(unsafe { flight_get_audio_resource_channel_data(resource, 3) }.is_null());
+        unsafe { flight_free_float32_array_ref(again) };
+        unsafe { flight_free_float32_array_ref(data) };
+        unsafe { flight_free_float32_array_ref(channel) };
+        unsafe {
+            drop(Box::from_raw(
+                resource as *mut flight_sdk::Ref<flight_sdk::AudioResource>,
+            ))
+        };
+    }
+}
+
 mod flight_create_clip_region_from_contours {
     use super::*;
 
@@ -33,6 +75,68 @@ mod flight_create_clip_region_from_contours {
                 region as *mut flight_sdk::Ref<flight_sdk::ClipRegion>,
             ))
         };
+    }
+}
+
+mod flight_create_embedded_image_resource_reference {
+    use super::*;
+
+    #[test]
+    fn clones_the_caller_handle_into_the_reference() {
+        let bytes = [7u8, 8];
+        let handle = unsafe { flight_create_uint8_array_ref(bytes.as_ptr(), bytes.len()) };
+        let reference = unsafe { flight_create_embedded_image_resource_reference(handle) };
+        let shared = unsafe { &*(handle as *const flight_sdk::Ref<Box<[u8]>>) };
+        assert_eq!(Arc::strong_count(shared), 2);
+        unsafe { flight_free_uint8_array_ref(handle) };
+        unsafe {
+            drop(Box::from_raw(
+                reference as *mut flight_sdk::Ref<flight_sdk::EmbeddedImageResourceReference>,
+            ))
+        };
+    }
+}
+
+mod flight_create_uint8_array_ref {
+    use super::*;
+
+    #[test]
+    fn copies_the_values_into_a_new_shared_buffer() {
+        let bytes = [1u8, 2, 3];
+        let handle = unsafe { flight_create_uint8_array_ref(bytes.as_ptr(), bytes.len()) };
+        assert_eq!(unsafe { flight_get_uint8_array_ref_length(handle) }, 3);
+        let mut read = [0u8; 2];
+        assert_eq!(
+            unsafe { flight_read_uint8_array_ref(handle, 1, read.as_mut_ptr(), 8) },
+            2
+        );
+        assert_eq!(read, [2, 3]);
+        assert_eq!(
+            unsafe { flight_read_uint8_array_ref(handle, 9, read.as_mut_ptr(), 1) },
+            0
+        );
+        assert_eq!(
+            unsafe { flight_write_uint8_array_ref(handle, 9, bytes.as_ptr(), 1) },
+            0
+        );
+        unsafe { flight_free_uint8_array_ref(handle) };
+    }
+
+    #[test]
+    fn reads_null_handles_as_empty() {
+        let empty = unsafe { flight_create_uint8_array_ref(std::ptr::null(), 0) };
+        assert_eq!(unsafe { flight_get_uint8_array_ref_length(empty) }, 0);
+        unsafe { flight_free_uint8_array_ref(empty) };
+        assert_eq!(
+            unsafe { flight_get_uint8_array_ref_length(std::ptr::null()) },
+            0
+        );
+        let mut read = [0u8; 1];
+        assert_eq!(
+            unsafe { flight_read_uint8_array_ref(std::ptr::null(), 0, read.as_mut_ptr(), 1) },
+            0
+        );
+        unsafe { flight_free_uint8_array_ref(std::ptr::null_mut()) };
     }
 }
 

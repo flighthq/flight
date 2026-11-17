@@ -461,6 +461,7 @@ fn main() {
     validate_required_vec_ref_handle_specs(&vec_ref_handle_specs);
     all_output.push_str(&generate_vec_ref_handle_support(&vec_ref_handle_specs));
     all_output.push_str(&generate_import_diagnostic_list_support());
+    all_output.push_str(&generate_typed_array_ref_support());
 
     writeln!(all_output, "// free functions").unwrap();
     writeln!(
@@ -2191,6 +2192,23 @@ fn map_generic_carrier_return(ty: &str) -> Option<Option<(String, FfiReturn)>> {
     {
         return Some(map_shared_value_return(inner.trim(), true));
     }
+    // Ref<Box<TypedArray>> -> a typed array Ref handle sharing the SDK's buffer.
+    if get_typed_array_ref(ty).is_some() {
+        return Some(Some((
+            " -> *mut std::ffi::c_void".to_string(),
+            FfiReturn::ArcRefReturn,
+        )));
+    }
+    if ty
+        .strip_prefix("Option<")
+        .and_then(|rest| rest.strip_suffix('>'))
+        .is_some_and(|inner| get_typed_array_ref(inner).is_some())
+    {
+        return Some(Some((
+            " -> *mut std::ffi::c_void".to_string(),
+            FfiReturn::OptionArcRefReturn,
+        )));
+    }
     // AccessibilityOperationOutcome<R> over a fieldless reason enum -> bool plus the reason.
     if let Some(reason) = ty
         .strip_prefix("AccessibilityOperationOutcome<")
@@ -2247,6 +2265,44 @@ fn map_generic_carrier_return(ty: &str) -> Option<Option<(String, FfiReturn)>> {
     None
 }
 
+// The typed arrays with a shared-buffer Ref handle family, as (alias, scalar).
+const TYPED_ARRAY_REFS: &[(&str, &str)] = &[("Float32Array", "f32"), ("Uint8Array", "u8")];
+
+// `Ref<Box<Uint8Array>>` or `Ref<Box<[u8]>>` -> ("Uint8Array", "u8").
+fn get_typed_array_ref(ty: &str) -> Option<(&'static str, &'static str)> {
+    let inner = ty
+        .trim()
+        .strip_prefix("Ref<Box<")?
+        .strip_suffix(">>")?
+        .trim();
+    TYPED_ARRAY_REFS
+        .iter()
+        .find(|(alias, scalar)| inner == *alias || inner == format!("[{scalar}]"))
+        .copied()
+}
+
+// A typed array Ref handle is a boxed `Ref<Box<[T]>>` that shares the SDK's buffer: writes through
+// it are visible to every holder, and each handle is released once by its own free. `_read` and
+// `_write` copy up to `count` elements from `offset` and return how many they copied; `_length` and
+// the copies read 0 from NULL. Concurrent access is synchronized by the Ref's lock.
+fn generate_typed_array_ref_support() -> String {
+    let mut output = String::new();
+    for (alias, scalar) in TYPED_ARRAY_REFS {
+        let slug = to_snake_case(alias);
+        let handle = format!("flight_sdk::Ref<Box<[{scalar}]>>");
+        write!(
+            output,
+            "#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn flight_create_{slug}_ref(values: *const {scalar}, count: usize) -> *mut std::ffi::c_void {{\n    assert!(!values.is_null() || count == 0, \"null values must have count zero\");\n    let values: Box<[{scalar}]> = if count == 0 {{ Box::new([]) }} else {{ unsafe {{ std::slice::from_raw_parts(values, count) }}.into() }};\n    let handle: {handle} = std::sync::Arc::new(std::sync::RwLock::new(values));\n    return Box::into_raw(Box::new(handle)) as *mut std::ffi::c_void;\n}}\n\
+             #[unsafe(no_mangle)]\npub unsafe extern \"C\" fn flight_free_{slug}_ref(handle: *mut std::ffi::c_void) {{\n    if !handle.is_null() {{ unsafe {{ drop(Box::from_raw(handle as *mut {handle})); }} }}\n}}\n\
+             #[unsafe(no_mangle)]\npub unsafe extern \"C\" fn flight_get_{slug}_ref_length(handle: *const std::ffi::c_void) -> usize {{\n    if handle.is_null() {{ return 0; }}\n    return unsafe {{ &*(handle as *const {handle}) }}.read().unwrap_or_else(std::sync::PoisonError::into_inner).len();\n}}\n\
+             #[unsafe(no_mangle)]\npub unsafe extern \"C\" fn flight_read_{slug}_ref(handle: *const std::ffi::c_void, offset: usize, out: *mut {scalar}, count: usize) -> usize {{\n    if handle.is_null() || out.is_null() {{ return 0; }}\n    let values = unsafe {{ &*(handle as *const {handle}) }}.read().unwrap_or_else(std::sync::PoisonError::into_inner);\n    let source = values.get(offset..).unwrap_or(&[]);\n    let copied = source.len().min(count);\n    unsafe {{ std::ptr::copy_nonoverlapping(source.as_ptr(), out, copied) }};\n    return copied;\n}}\n\
+             #[unsafe(no_mangle)]\npub unsafe extern \"C\" fn flight_write_{slug}_ref(handle: *const std::ffi::c_void, offset: usize, values: *const {scalar}, count: usize) -> usize {{\n    if handle.is_null() || values.is_null() {{ return 0; }}\n    let mut target = unsafe {{ &*(handle as *const {handle}) }}.write().unwrap_or_else(std::sync::PoisonError::into_inner);\n    let Some(target) = target.get_mut(offset..) else {{ return 0; }};\n    let copied = target.len().min(count);\n    unsafe {{ std::ptr::copy_nonoverlapping(values, target.as_mut_ptr(), copied) }};\n    return copied;\n}}\n"
+        )
+        .unwrap();
+    }
+    output
+}
+
 // A named, non-generic SDK struct that an `&T` / `*const T` carrier can point at directly.
 fn is_plain_struct_type(ty: &str) -> bool {
     !ty.is_empty()
@@ -2261,7 +2317,43 @@ fn is_plain_struct_type(ty: &str) -> bool {
 
 // Generic slice carriers for parameters. Every element pointer is borrowed for the call only.
 fn map_generic_carrier_param(name: &str, ty: &str) -> Option<Option<MappedParam>> {
+    // Ref<Box<TypedArray>> by value -> a typed array Ref handle, cloned for the call.
+    if let Some((_, scalar)) = get_typed_array_ref(ty) {
+        return Some(mapped_single(
+            name,
+            "*const std::ffi::c_void",
+            format!("unsafe {{ (*({name} as *const flight_sdk::Ref<Box<[{scalar}]>>)).clone() }}"),
+        ));
+    }
     let inner = ty.strip_prefix("&[")?.strip_suffix(']')?.trim();
+    // &[Ref<Box<TypedArray>>] -> an array of typed array Ref handles, each cloned for the call.
+    if let Some((_, scalar)) = get_typed_array_ref(inner) {
+        let ptr_name = format!("{name}_ptr");
+        let len_name = format!("{name}_len");
+        let binding = format!("{}_refs", name.trim_start_matches('_'));
+        let element_ty = format!("flight_sdk::Ref<Box<[{scalar}]>>");
+        return Some(Some(MappedParam {
+            ffi_params: vec![
+                (
+                    ptr_name.clone(),
+                    "*const *const std::ffi::c_void".to_string(),
+                ),
+                (len_name.clone(), "usize".to_string()),
+            ],
+            bindings: vec![
+                format!(
+                    "    assert!(!{ptr_name}.is_null() || {len_name} == 0, \"null Ref slice must have length zero\");"
+                ),
+                format!(
+                    "    let {binding}_handles: &[*const std::ffi::c_void] = if {len_name} == 0 {{ &[] }} else {{ unsafe {{ std::slice::from_raw_parts({ptr_name}, {len_name}) }} }};"
+                ),
+                format!(
+                    "    let {binding}: Vec<{element_ty}> = {binding}_handles.iter().map(|handle| {{ assert!(!(*handle).is_null(), \"Ref slice contains a null handle\"); unsafe {{ &*(*handle as *const {element_ty}) }}.clone() }}).collect();"
+                ),
+            ],
+            call_expr: format!("&{binding}"),
+        }));
+    }
     let ptr_name = format!("{name}_ptr");
     let len_name = format!("{name}_len");
     let binding = format!("{}_items", name.trim_start_matches('_'));

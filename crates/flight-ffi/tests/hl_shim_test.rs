@@ -543,6 +543,45 @@ fn outcome_wrappers_lower_to_flags_and_result_handles() {
     }
 }
 
+// `Ref<Box<[T]>>` buffers cross as typed array Ref handles that share the SDK's buffer, with one
+// create/length/read/write/free family per typed array, and are accepted back as cloned handles.
+#[test]
+fn typed_array_refs_share_buffers_through_handle_families() {
+    let (header, shim) = generated();
+    for slug in ["float32_array", "uint8_array"] {
+        for line in [
+            format!("void * flight_create_{slug}_ref(void * arg0, size_t arg1);"),
+            format!("void flight_free_{slug}_ref(void * arg0);"),
+            format!("size_t flight_get_{slug}_ref_length(void * arg0);"),
+            format!(
+                "size_t flight_read_{slug}_ref(void * arg0, size_t arg1, void * arg2, size_t arg3);"
+            ),
+            format!(
+                "size_t flight_write_{slug}_ref(void * arg0, size_t arg1, void * arg2, size_t arg3);"
+            ),
+        ] {
+            assert_line(&header, &line);
+        }
+    }
+    for line in [
+        "void * flight_get_audio_resource_channel_data(void * arg0, int32_t arg1);",
+        "void * flight_create_audio_resource_from_samples(const void * const * arg0, size_t arg1, float arg2);",
+        "void * flight_create_embedded_audio_resource_reference(void * arg0);",
+        "void * flight_create_embedded_image_resource_reference(void * arg0);",
+        "void * flight_get_array_buffer_storage(void * arg0);",
+    ] {
+        assert_line(&header, line);
+    }
+    assert_line(
+        &shim,
+        "DEFINE_PRIM(_I32, flight_write_uint8_array_ref, _BYTES _I32 _BYTES _I32);",
+    );
+    assert_line(
+        &generated_wrappers(),
+        "    let arc = flight_sdk::get_array_buffer_storage(unsafe { &*buffer });",
+    );
+}
+
 fn assert_line(text: &str, line: &str) {
     assert!(
         text.lines().any(|candidate| candidate == line),
