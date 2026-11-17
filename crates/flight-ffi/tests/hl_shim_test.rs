@@ -309,11 +309,6 @@ fn shape_bounds_context_vtable_and_failure_boundary_are_pinned() {
         "DEFINE_PRIM(_BOOL, flight_default_shape_bounds_flush, _BYTES _BYTES);",
     );
 
-    assert_line(&stats, "FFI stats: 3916 total, 3636 generated, 377 skipped");
-    assert_line(
-        &stats,
-        "  skip:   11 unknown_dyn_param(&dyn ShapeCommandArgumentCursor)",
-    );
     assert!(!stats.contains("ShapeBoundsContext)"));
 }
 

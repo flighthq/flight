@@ -327,6 +327,10 @@ static bool shape_bounds_set_stroke_style(void *context, double width, uint32_t 
   return true;
 }
 
+static bool shape_bounds_stateless_flush_path(void *context) {
+  return context == NULL;
+}
+
 static const FlightShapeBoundsContextVTable shape_bounds_vtable = {
     .close_path = shape_bounds_close_path,
     .cubic_curve_to = shape_bounds_cubic_curve_to,
@@ -350,9 +354,11 @@ static void check_shape_bounds_context(void) {
   expect(recording.flush_calls == 1, "ShapeBoundsContext mutation reaches the caller-owned context once");
 
   recording.flush_calls = 0;
-  expect(!flush(NULL, &shape_bounds_vtable), "a NULL ShapeBoundsContext pointer is rejected");
+  FlightShapeBoundsContextVTable stateless = shape_bounds_vtable;
+  stateless.flush_path = shape_bounds_stateless_flush_path;
+  expect(flush(NULL, &stateless), "NULL ShapeBoundsContext user data supports stateless callbacks");
   expect(!flush(&recording, NULL), "a NULL ShapeBoundsContext vtable is rejected");
-  expect(recording.flush_calls == 0, "NULL ShapeBoundsContext inputs cannot invoke a callback");
+  expect(recording.flush_calls == 0, "a NULL ShapeBoundsContext vtable cannot invoke a callback");
 
   FlightShapeBoundsContextVTable incomplete = shape_bounds_vtable;
   incomplete.move_to = NULL;

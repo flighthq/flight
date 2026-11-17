@@ -1814,7 +1814,7 @@ impl FfiShapeBoundsContext {
         context: *mut std::ffi::c_void,
         vtable: *const FfiShapeBoundsContextVTable,
     ) -> Option<Self> {
-        if context.is_null() || vtable.is_null() {
+        if vtable.is_null() {
             return None;
         }
         let vtable = unsafe { *vtable };
