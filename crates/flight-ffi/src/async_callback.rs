@@ -98,6 +98,232 @@ mod tests {
         }
     }
 
+    // What one `complete_fn` call delivered to its `complete_ctx`.
+    struct Completion {
+        calls: u32,
+        value: *mut std::ffi::c_void,
+        error: *mut std::ffi::c_char,
+    }
+
+    extern "C" fn record_completion(
+        ctx: *mut std::ffi::c_void,
+        value: *mut std::ffi::c_void,
+        error: *mut std::ffi::c_char,
+    ) {
+        let completion = unsafe { &mut *(ctx as *mut Completion) };
+        completion.calls += 1;
+        completion.value = value;
+        completion.error = error;
+    }
+
+    fn completion() -> Completion {
+        return Completion {
+            calls: 0,
+            value: std::ptr::null_mut(),
+            error: std::ptr::null_mut(),
+        };
+    }
+
+    fn completion_ctx(completion: &mut Completion) -> *mut std::ffi::c_void {
+        return completion as *mut Completion as *mut std::ffi::c_void;
+    }
+
+    fn file_bytes() -> Box<[u8]> {
+        return vec![10u8, 20, 30, 40, 50].into_boxed_slice();
+    }
+
+    // A file system whose binary reads answer `file_bytes()` (or the requested range of it), except
+    // for `/missing` (absent) and `/panic` (the provider panics before returning a future).
+    fn binary_host() -> flight_sdk::HostFileSystemCapability {
+        return flight_sdk::HostFileSystemCapability {
+            provider: Arc::new(()),
+            append_text_file: None,
+            can_access_file: None,
+            copy: None,
+            directory_exists: None,
+            file_exists: None,
+            get_file_system_usage: None,
+            make_directory: None,
+            open_file_read_stream: None,
+            open_file_write_stream: None,
+            read_binary_file: Some(Arc::new(|path, _signal| {
+                if path == "/panic" {
+                    flight_sdk::throw_type_error("provider failed");
+                }
+                let bytes = (path != "/missing").then(file_bytes);
+                return Box::pin(ready(Ok(bytes)));
+            })),
+            read_binary_file_range: Some(Arc::new(|_path, offset, length, _signal| {
+                let bytes = file_bytes()[offset..offset + length]
+                    .to_vec()
+                    .into_boxed_slice();
+                return Box::pin(ready(Ok(Some(bytes))));
+            })),
+            read_directory: None,
+            read_directory_recursive: None,
+            read_text_file: None,
+            remove_directory: None,
+            remove_file: None,
+            rename: None,
+            stat_file: None,
+            write_binary_file: None,
+            write_file_atomic: None,
+            write_text_file: None,
+        };
+    }
+
+    // Reads a delivered `Box<[u8]>` result through the generated len/get helpers, then frees it.
+    fn take_bytes(
+        result: *mut std::ffi::c_void,
+        len: unsafe extern "C" fn(*const std::ffi::c_void) -> usize,
+        get: unsafe extern "C" fn(*const std::ffi::c_void, usize) -> *const u8,
+        free: unsafe extern "C" fn(*mut std::ffi::c_void),
+    ) -> Vec<u8> {
+        assert!(!result.is_null());
+        let count = unsafe { len(result) };
+        assert!(unsafe { get(result, count) }.is_null());
+        let base = unsafe { get(result, 0) };
+        let bytes = unsafe { std::slice::from_raw_parts(base, count) }.to_vec();
+        unsafe { free(result) };
+        return bytes;
+    }
+
+    mod flight_read_binary_file {
+        use super::*;
+
+        #[test]
+        fn completes_a_construction_panic_once_with_its_error() {
+            let host = binary_host();
+            let mut completion = completion();
+            unsafe {
+                crate::flight_read_binary_file(
+                    &host,
+                    c"/panic".as_ptr(),
+                    std::ptr::null(),
+                    record_completion,
+                    completion_ctx(&mut completion),
+                );
+            }
+            assert_eq!(completion.calls, 1);
+            assert!(completion.value.is_null());
+            assert_eq!(
+                take_c_string(completion.error),
+                "TypeError: provider failed"
+            );
+        }
+
+        #[test]
+        fn delivers_a_null_result_for_an_absent_file() {
+            let host = binary_host();
+            let mut completion = completion();
+            unsafe {
+                crate::flight_read_binary_file(
+                    &host,
+                    c"/missing".as_ptr(),
+                    std::ptr::null(),
+                    record_completion,
+                    completion_ctx(&mut completion),
+                );
+            }
+            assert_eq!(completion.calls, 1);
+            assert!(completion.value.is_null());
+            assert!(completion.error.is_null());
+            assert_eq!(
+                unsafe { crate::flight_read_binary_file_result_len(completion.value) },
+                0
+            );
+        }
+
+        #[test]
+        fn delivers_bytes_readable_through_the_result_helpers() {
+            let host = binary_host();
+            let mut completion = completion();
+            unsafe {
+                crate::flight_read_binary_file(
+                    &host,
+                    c"/a".as_ptr(),
+                    std::ptr::null(),
+                    record_completion,
+                    completion_ctx(&mut completion),
+                );
+            }
+            assert_eq!(completion.calls, 1);
+            assert!(completion.error.is_null());
+            let bytes = take_bytes(
+                completion.value,
+                crate::flight_read_binary_file_result_len,
+                crate::flight_read_binary_file_result_get,
+                crate::flight_read_binary_file_result_free,
+            );
+            assert_eq!(bytes, [10, 20, 30, 40, 50]);
+        }
+    }
+
+    mod flight_read_binary_file_range {
+        use super::*;
+
+        #[test]
+        fn delivers_the_requested_range() {
+            let host = binary_host();
+            let mut completion = completion();
+            unsafe {
+                crate::flight_read_binary_file_range(
+                    &host,
+                    c"/a".as_ptr(),
+                    1,
+                    3,
+                    std::ptr::null(),
+                    record_completion,
+                    completion_ctx(&mut completion),
+                );
+            }
+            assert_eq!(completion.calls, 1);
+            assert!(completion.error.is_null());
+            let bytes = take_bytes(
+                completion.value,
+                crate::flight_read_binary_file_range_result_len,
+                crate::flight_read_binary_file_range_result_get,
+                crate::flight_read_binary_file_range_result_free,
+            );
+            assert_eq!(bytes, [20, 30, 40]);
+        }
+    }
+
+    mod flight_read_dialog_handle_binary_file {
+        use super::*;
+
+        #[test]
+        fn reads_a_path_backed_handle_through_the_host() {
+            let host = binary_host();
+            let handle = flight_sdk::create_file_dialog_handle(
+                flight_sdk::FileDialogHandleKind::File,
+                "a",
+                Some("/a"),
+                None,
+            );
+            let mut completion = completion();
+            unsafe {
+                crate::flight_read_dialog_handle_binary_file(
+                    &host,
+                    &handle as *const flight_sdk::Ref<flight_sdk::FileDialogHandle>
+                        as *const std::ffi::c_void,
+                    std::ptr::null(),
+                    record_completion,
+                    completion_ctx(&mut completion),
+                );
+            }
+            assert_eq!(completion.calls, 1);
+            assert!(completion.error.is_null());
+            let bytes = take_bytes(
+                completion.value,
+                crate::flight_read_dialog_handle_binary_file_result_len,
+                crate::flight_read_dialog_handle_binary_file_result_get,
+                crate::flight_read_dialog_handle_binary_file_result_free,
+            );
+            assert_eq!(bytes, file_bytes().to_vec());
+        }
+    }
+
     mod get_ffi_async_error_string {
         use super::*;
 
@@ -187,7 +413,7 @@ pub(crate) fn get_ffi_async_error_string(error: &flight_sdk::FlightError) -> *mu
     return into_ffi_async_c_string(flight_sdk::unknown_to_js_string(&error));
 }
 
-fn get_ffi_async_panic_string(payload: Box<dyn Any + Send>) -> *mut std::ffi::c_char {
+pub(crate) fn get_ffi_async_panic_string(payload: Box<dyn Any + Send>) -> *mut std::ffi::c_char {
     // A thrown `Unknown` (an abort reason) is the rejection value itself; message panics carry text.
     let payload = match payload.downcast::<flight_sdk::Unknown>() {
         Ok(reason) => return into_ffi_async_c_string(flight_sdk::unknown_to_js_string(&reason)),

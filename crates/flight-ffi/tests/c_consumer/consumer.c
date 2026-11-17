@@ -162,6 +162,19 @@ static void check_async_callbacks(void) {
   expect(!completion.had_error, "a fulfilled future passes a NULL error");
 }
 
+static float ease_identity(void *ctx, float t) {
+  (void)ctx;
+  return t;
+}
+
+static void check_optional_callbacks(void) {
+  /* An optional callback parameter takes a typed function pointer, or NULL for none. */
+  bool (*transition)(void *, void *, float, float (*)(void *, float), void *) =
+      flight_transition_animation_state_machine;
+  float (*ease)(void *, float) = ease_identity;
+  expect(transition != NULL && ease(NULL, 0.5f) == 0.5f, "optional callbacks are typed function pointers");
+}
+
 int main(void) {
   check_scalars();
   check_handles();
@@ -172,6 +185,7 @@ int main(void) {
   check_optional_tuples();
   check_unit_signals();
   check_async_callbacks();
+  check_optional_callbacks();
   if (failures != 0) {
     fprintf(stderr, "flight-ffi C consumer: %d failure(s)\n", failures);
     return 1;

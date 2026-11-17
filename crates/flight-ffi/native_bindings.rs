@@ -31,6 +31,28 @@ fn bare_fn_c_type(function: &syn::TypeBareFn, name: &str) -> String {
     return format!("{output} (*{name})({inputs})");
 }
 
+// A callback parameter: a bare `extern "C" fn`, or an `Option` of one, which C sees as the same
+// function-pointer type where NULL is `None` (Rust guarantees the null-pointer optimization).
+fn callback_parameter(ty: &Type) -> Option<&syn::TypeBareFn> {
+    match ty {
+        Type::BareFn(function) => Some(function),
+        Type::Path(path) => {
+            let last = path.path.segments.last()?;
+            if last.ident != "Option" {
+                return None;
+            }
+            let syn::PathArguments::AngleBracketed(args) = &last.arguments else {
+                return None;
+            };
+            match args.args.first() {
+                Some(syn::GenericArgument::Type(Type::BareFn(function))) => Some(function),
+                _ => None,
+            }
+        }
+        _ => None,
+    }
+}
+
 fn carrier(ty: &Type) -> Carrier {
     match ty {
         Type::Ptr(pointer) => {
@@ -474,7 +496,7 @@ pub fn emit(source: &str, out: &Path) {
             let ty = tuple_out_carrier(&parameter_name, &parameter.ty)
                 .unwrap_or_else(|| carrier(&parameter.ty));
             let arg = format!("arg{index}");
-            if let Type::BareFn(function) = &*parameter.ty {
+            if let Some(function) = callback_parameter(&parameter.ty) {
                 c_params.push(bare_fn_c_type(function, &arg));
                 call_args.push(format!("({}){arg}", bare_fn_c_type(function, "")));
             } else {

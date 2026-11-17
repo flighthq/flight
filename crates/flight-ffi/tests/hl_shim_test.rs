@@ -139,6 +139,24 @@ fn optional_bool_return_uses_the_parameter_sentinel_encoding() {
     assert!(wrappers.contains(expected), "missing:\n{expected}");
 }
 
+// An `Option<extern "C" fn>` parameter is the same C function-pointer type, where NULL is `None`.
+#[test]
+fn optional_callbacks_lower_to_nullable_typed_function_pointers() {
+    let (header, shim) = generated();
+    assert_line(
+        &header,
+        "bool flight_transition_animation_state_machine(void * arg0, void * arg1, float arg2, float (*arg3)(void *, float), void * arg4);",
+    );
+    assert_line(
+        &shim,
+        "HL_PRIM bool HL_NAME(flight_transition_animation_state_machine)(vbyte * arg0, vbyte * arg1, float arg2, vbyte * arg3, vbyte * arg4) { return (bool)flight_transition_animation_state_machine((void *)arg0, (void *)arg1, (float)arg2, (float (*)(void *, float))arg3, (void *)arg4); }",
+    );
+    assert_line(
+        &shim,
+        "DEFINE_PRIM(_BOOL, flight_transition_animation_state_machine, _BYTES _BYTES _F32 _BYTES _BYTES);",
+    );
+}
+
 // A provider future returns through trailing `complete_fn` / `complete_ctx` parameters. C sees the
 // callback's real function-pointer type; HashLink carries it as bytes and casts at the call.
 #[test]

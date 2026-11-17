@@ -1409,8 +1409,9 @@ enum FfiReturn {
     OptionBoolReturn,
     VecReturn(VecReturnSpec),
     OptionVecReturn(VecReturnSpec),
-    BoxSliceReturn,
-    OptionBoxSliceReturn,
+    // The element type of a boxed scalar slice (`Box<[T]>`).
+    BoxSliceReturn(String),
+    OptionBoxSliceReturn(String),
     TupleReturn(Vec<String>),
     OptionTupleReturn(Vec<String>),
     SliceReturn,
@@ -1497,8 +1498,8 @@ fn get_async_callback_empty_value(value_ty: &str) -> &'static str {
     }
 }
 
-// The caller-owned `error` string is null on success; on rejection, or a panic while polling, `value`
-// is the type's empty carrier.
+// The caller-owned `error` string is null on success; on rejection, or a panic while building or
+// polling the future, `value` is the type's empty carrier.
 fn generate_async_callback_body(spec: &AsyncCallbackSpec, call: &str, preamble: &str) -> String {
     let value_ty = &spec.value_ty;
     let convert = generate_return_body(&spec.value, "value", "");
@@ -1517,8 +1518,16 @@ fn generate_async_callback_body(spec: &AsyncCallbackSpec, call: &str, preamble: 
                  Err(error) => ({empty}, error),"
         )
     };
+    // A panic while building the future (a typed throw, or a host provider panicking before it
+    // returns a future) completes the callback once, here, and nothing is driven.
     format!(
-        "{preamble}    let future = {call};\n    \
+        "{preamble}    let future = match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {call})) {{\n        \
+                 Ok(future) => future,\n        \
+                 Err(payload) => {{\n            \
+                     complete_fn(complete_ctx, {empty}, crate::async_callback::get_ffi_async_panic_string(payload));\n            \
+                     return;\n        \
+                 }}\n    \
+             }};\n    \
              let complete_ctx = crate::async_callback::FfiAsyncContext(complete_ctx);\n    \
              crate::async_callback::drive_ffi_async(Box::pin(async move {{\n        \
                  let (value, error) = match crate::async_callback::settle_ffi_async(future).await {{\n{arms}\n        \
@@ -1611,11 +1620,11 @@ fn generate_return_body(call_wrap: &FfiReturn, call: &str, preamble: &str) -> St
                  None => std::ptr::null(),\n    \
                  }}"
         ),
-        FfiReturn::VecReturn(_) | FfiReturn::BoxSliceReturn => format!(
+        FfiReturn::VecReturn(_) | FfiReturn::BoxSliceReturn(_) => format!(
             "{preamble}    let vec = {call};\n    \
                  return Box::into_raw(Box::new(vec)) as *mut std::ffi::c_void;"
         ),
-        FfiReturn::OptionVecReturn(_) | FfiReturn::OptionBoxSliceReturn => format!(
+        FfiReturn::OptionVecReturn(_) | FfiReturn::OptionBoxSliceReturn(_) => format!(
             "{preamble}    match {call} {{\n        \
                  Some(vec) => Box::into_raw(Box::new(vec)) as *mut std::ffi::c_void,\n        \
                  None => std::ptr::null_mut(),\n    \
@@ -1650,24 +1659,33 @@ fn generate_return_body(call_wrap: &FfiReturn, call: &str, preamble: &str) -> St
     }
 }
 
+// A boxed `Vec<T>` or `Box<[T]>` result handle reads through `_result_len` / `_result_get` and is
+// released by `_result_free`. Both are contiguous, so `_result_get(result, 0)` of a scalar slice is
+// the base of `_result_len` elements.
 fn generate_vec_result_helpers(ffi_name: &str, call_wrap: &FfiReturn) -> String {
-    let spec = match call_wrap {
-        FfiReturn::VecReturn(spec) | FfiReturn::OptionVecReturn(spec) => spec,
+    let (element_ty, element_is_ref, container) = match call_wrap {
+        FfiReturn::VecReturn(spec) | FfiReturn::OptionVecReturn(spec) => (
+            spec.element_ty.as_str(),
+            spec.element_is_ref,
+            format!("Vec<{}>", spec.element_ty),
+        ),
+        FfiReturn::BoxSliceReturn(element) | FfiReturn::OptionBoxSliceReturn(element) => {
+            (element.as_str(), false, format!("Box<[{element}]>"))
+        }
         _ => return String::new(),
     };
-    let element_ty = &spec.element_ty;
-    let get_return = if spec.element_is_ref {
+    let get_return = if element_is_ref {
         "*const std::ffi::c_void".to_string()
     } else {
         format!("*const {element_ty}")
     };
-    let get_value = if spec.element_is_ref {
+    let get_value = if element_is_ref {
         "value as *const _ as *const std::ffi::c_void".to_string()
     } else {
         "value as *const _".to_string()
     };
     format!(
-        "\n#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn {ffi_name}_result_len(result: *const std::ffi::c_void) -> usize {{\n    if result.is_null() {{ return 0; }}\n    return unsafe {{ &*(result as *const Vec<{element_ty}>) }}.len();\n}}\n#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn {ffi_name}_result_get(result: *const std::ffi::c_void, index: usize) -> {get_return} {{\n    if result.is_null() {{ return std::ptr::null(); }}\n    match unsafe {{ &*(result as *const Vec<{element_ty}>) }}.get(index) {{\n        Some(value) => {get_value},\n        None => std::ptr::null(),\n    }}\n}}\n#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn {ffi_name}_result_free(result: *mut std::ffi::c_void) {{\n    if !result.is_null() {{ unsafe {{ drop(Box::from_raw(result as *mut Vec<{element_ty}>)); }} }}\n}}"
+        "\n#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn {ffi_name}_result_len(result: *const std::ffi::c_void) -> usize {{\n    if result.is_null() {{ return 0; }}\n    return unsafe {{ &*(result as *const {container}) }}.len();\n}}\n#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn {ffi_name}_result_get(result: *const std::ffi::c_void, index: usize) -> {get_return} {{\n    if result.is_null() {{ return std::ptr::null(); }}\n    match unsafe {{ &*(result as *const {container}) }}.get(index) {{\n        Some(value) => {get_value},\n        None => std::ptr::null(),\n    }}\n}}\n#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn {ffi_name}_result_free(result: *mut std::ffi::c_void) {{\n    if !result.is_null() {{ unsafe {{ drop(Box::from_raw(result as *mut {container})); }} }}\n}}"
     )
 }
 
@@ -3284,7 +3302,7 @@ fn map_return_to_ffi(ty: &str) -> Option<(String, FfiReturn)> {
             if is_scalar(inner) {
                 return Some((
                     " -> *mut std::ffi::c_void".to_string(),
-                    FfiReturn::BoxSliceReturn,
+                    FfiReturn::BoxSliceReturn(inner.to_string()),
                 ));
             }
         }
@@ -3297,7 +3315,7 @@ fn map_return_to_ffi(ty: &str) -> Option<(String, FfiReturn)> {
             if is_scalar(inner) {
                 return Some((
                     " -> *mut std::ffi::c_void".to_string(),
-                    FfiReturn::OptionBoxSliceReturn,
+                    FfiReturn::OptionBoxSliceReturn(inner.to_string()),
                 ));
             }
         }
