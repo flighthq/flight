@@ -1713,10 +1713,14 @@ fn generate_vec_result_helpers(ffi_name: &str, call_wrap: &FfiReturn) -> String 
 
 // The caller-owned list behind every `Option<&mut Vec<ImportDiagnostic>>` parameter. C reads an item
 // by (list, index) on every access, so no pointer into the Vec survives a call that can grow it.
-// A pointer is a list only while its address is in the live-list registry, checked before any
-// reference to the list type exists: NULL, another handle type, or a destroyed list collects
-// nothing, clear and destroy ignore it, and getters return the empty value (-1, NULL, 0, false or
-// NaN), as they do for an index out of range. Strings getters return are owned and freed with
+// The live-list registry is a provenance and type filter for live handles, checked before any
+// reference to the list type exists. It is not lifetime synchronization. NULL, or a live handle of
+// another type, collects nothing, clear and destroy ignore it, and getters return the empty value
+// (-1, NULL, 0, false or NaN), as they do for an index out of range. A list pointer is valid only
+// from `flight_create_import_diagnostic_list` until its single
+// `flight_destroy_import_diagnostic_list` call. Callers synchronize access to a list, never race a
+// read, write or wrapper call against clear or destroy, and never use the pointer after destroy: a
+// freed address can be reused by a later list. Strings getters return are owned and freed with
 // `flight_free_string`.
 fn generate_import_diagnostic_list_support() -> String {
     let mut output = String::from(
