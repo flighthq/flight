@@ -165,6 +165,7 @@ const DYN_OPAQUE_TRAITS: &[(&str, &str)] = &[
     ("Node", "NodeRef"),
     ("Node2D", "Node2DRef"),
     ("Node3D", "Node3DRef"),
+    ("Surface", "SurfaceRef"),
 ];
 
 const DYN_MONO_TRAITS: &[(&str, &[&str])] = &[
@@ -273,18 +274,14 @@ const SKIP_TYPES: &[&str] = &[
     "Bone2D",
     "BoundsRectangleRuntimeMethods",
     "ClippingAttachment2D",
-    "DateTimeFormatOptions",
     "EffectFieldRoles",
     "MarkupTagRegistry",
     "MeshAttachment2D",
-    "NumberFormatOptions",
     "PathMeshPool",
     "PathMorphBuildResult",
-    "PluralRulesOptions",
     "PointAttachment2D",
     "RectangleLike",
     "RegionAttachment2D",
-    "RelativeTimeFormatOptions",
     "ShapeGeometryEnd",
     "ShapeJsonFormatOptions",
     "ShapeJsonParseOptions",
@@ -1060,6 +1057,14 @@ fn is_known_dyn_opaque(ty: &str) -> bool {
     extract_dyn_trait(ty)
         .map(|t| DYN_OPAQUE_TRAITS.iter().any(|(name, _)| *name == t))
         .unwrap_or(false)
+}
+
+// `dyn Trait` named directly, as the inner type of a `Ref<...>` handle, for a trait whose handles
+// are opaque `Ref<dyn Trait>` pointers.
+fn is_opaque_dyn(inner: &str) -> bool {
+    inner
+        .strip_prefix("dyn ")
+        .is_some_and(|t| DYN_OPAQUE_TRAITS.iter().any(|(name, _)| *name == t.trim()))
 }
 
 fn is_known_dyn_mono(ty: &str) -> bool {
@@ -2320,7 +2325,7 @@ fn map_param_to_ffi(name: &str, ty: &str) -> Option<MappedParam> {
     if let Some(inner) = ty.strip_prefix("Option<Ref<") {
         if let Some(inner) = inner.strip_suffix(">>") {
             let inner = inner.trim();
-            if !inner.contains("dyn ")
+            if (!inner.contains("dyn ") || is_opaque_dyn(inner))
                 && !inner.contains('<')
                 && !inner.contains("::")
                 && !SKIP_TYPES.iter().any(|s| inner.contains(s))
@@ -2341,7 +2346,7 @@ fn map_param_to_ffi(name: &str, ty: &str) -> Option<MappedParam> {
     if let Some(inner) = ty.strip_prefix("Option<&Ref<") {
         if let Some(inner) = inner.strip_suffix(">>") {
             let inner = inner.trim();
-            if !inner.contains("dyn ")
+            if (!inner.contains("dyn ") || is_opaque_dyn(inner))
                 && !inner.contains('<')
                 && !inner.contains("::")
                 && !SKIP_TYPES.iter().any(|s| inner.contains(s))
