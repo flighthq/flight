@@ -237,6 +237,7 @@ name = "flight-bitmap"
 version = "0.6.0"
 dependencies = [
  "flight-entity",
+ "flight-geometry",
  "flight-host",
  "flight-materials",
  "flight-texture",

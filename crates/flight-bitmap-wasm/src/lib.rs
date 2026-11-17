@@ -390,7 +390,12 @@ pub fn get_bitmap_color_bounds_rectangle_wasm(
     ) else {
         return false;
     };
-    out.copy_from_slice(&[rectangle.x, rectangle.y, rectangle.width, rectangle.height]);
+    out.copy_from_slice(&[
+        rectangle.x as f64,
+        rectangle.y as f64,
+        rectangle.width as f64,
+        rectangle.height as f64,
+    ]);
     true
 }
 

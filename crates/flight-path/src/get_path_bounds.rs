@@ -1,4 +1,4 @@
-use flight_geometry::RectangleLike;
+use flight_geometry::Rectangle;
 
 use crate::path::{Path, PathCommand};
 
@@ -166,7 +166,7 @@ fn expand_quadratic_bounds(
 /// Writes the result into `out`. Returns `true` if the path contains any geometry;
 /// returns `false` and sets `out` to an empty zero-rectangle for an empty path.
 #[allow(clippy::needless_range_loop)] // indexed loop remains portable to generated TypeScript
-pub fn get_path_bounds(path: &Path, out: &mut RectangleLike) -> bool {
+pub fn get_path_bounds(path: &Path, out: &mut Rectangle) -> bool {
     let commands = &path.commands;
     let data = &path.data;
     let mut bounds = BoundsAccumulator {
@@ -261,7 +261,7 @@ fn quadratic_extremum_t(p0: f64, p1: f64, p2: f64) -> Option<f64> {
 
 #[cfg(feature = "object-api")]
 impl Path {
-    pub fn bounds(&self, out: &mut RectangleLike) -> bool {
+    pub fn bounds(&self, out: &mut Rectangle) -> bool {
         return get_path_bounds(self, out);
     }
 }

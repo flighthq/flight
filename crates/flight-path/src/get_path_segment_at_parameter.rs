@@ -4,7 +4,7 @@
 
 //! flight-compiler: nullable-option get_path_segment_curvature_at_parameter
 
-use flight_geometry::Vector2Like;
+use flight_geometry::Vector2;
 
 use crate::path::{Path, PathCommand};
 
@@ -96,7 +96,7 @@ pub fn get_cubic_bezier_point(
     x1: f64,
     y1: f64,
     t: f64,
-    out: &mut Vector2Like,
+    out: &mut Vector2,
 ) {
     let u = 1.0 - t;
     let u2 = u * u;
@@ -119,7 +119,7 @@ pub fn get_cubic_bezier_tangent(
     x1: f64,
     y1: f64,
     t: f64,
-    out: &mut Vector2Like,
+    out: &mut Vector2,
 ) {
     let u = 1.0 - t;
     let u2 = u * u;
@@ -146,7 +146,7 @@ pub fn get_path_segment_point_at_parameter(
     path: &Path,
     segment_index: usize,
     t: f64,
-    out: &mut Vector2Like,
+    out: &mut Vector2,
 ) -> bool {
     return walk_path_segment(path, segment_index, t, out, false);
 }
@@ -158,7 +158,7 @@ pub fn get_path_segment_tangent_at_parameter(
     path: &Path,
     segment_index: usize,
     t: f64,
-    out: &mut Vector2Like,
+    out: &mut Vector2,
 ) -> bool {
     return walk_path_segment(path, segment_index, t, out, true);
 }
@@ -198,7 +198,7 @@ pub fn get_quadratic_bezier_point(
     x1: f64,
     y1: f64,
     t: f64,
-    out: &mut Vector2Like,
+    out: &mut Vector2,
 ) {
     let u = 1.0 - t;
     out.x = (u * u * x0 + 2.0 * u * t * cx + t * t * x1) as f32;
@@ -215,7 +215,7 @@ pub fn get_quadratic_bezier_tangent(
     x1: f64,
     y1: f64,
     t: f64,
-    out: &mut Vector2Like,
+    out: &mut Vector2,
 ) {
     let u = 1.0 - t;
     out.x = (2.0 * (u * (cx - x0) + t * (x1 - cx))) as f32;
@@ -228,7 +228,7 @@ fn walk_path_segment(
     path: &Path,
     segment_index: usize,
     t: f64,
-    out: &mut Vector2Like,
+    out: &mut Vector2,
     want_tangent: bool,
 ) -> bool {
     let commands = &path.commands;
@@ -402,7 +402,7 @@ impl Path {
         &self,
         segment_index: usize,
         t: f64,
-        out: &mut Vector2Like,
+        out: &mut Vector2,
     ) -> bool {
         return get_path_segment_point_at_parameter(self, segment_index, t, out);
     }
@@ -412,7 +412,7 @@ impl Path {
         &self,
         segment_index: usize,
         t: f64,
-        out: &mut Vector2Like,
+        out: &mut Vector2,
     ) -> bool {
         return get_path_segment_tangent_at_parameter(self, segment_index, t, out);
     }

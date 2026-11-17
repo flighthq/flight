@@ -1,6 +1,7 @@
 //! flight-compiler: target-native
 
 use flight_entity::allocate_entity;
+use flight_geometry::{Rectangle, create_rectangle};
 
 use crate::bitmap_channel::initialize_bitmap;
 use crate::types::*;
@@ -8,6 +9,7 @@ use crate::types::*;
 #[cfg(all(test, feature = "object-api"))]
 mod sugar_tests {
     use crate::contract::*;
+    use flight_geometry::create_rectangle;
 
     fn test_bitmap() -> Bitmap {
         let mut out = create_bitmap(4, 4, Some(0x336699ff));
@@ -19,21 +21,8 @@ mod sugar_tests {
     #[test]
     fn bitmap_crop_matches_crop_bitmap() {
         let s = test_bitmap();
-        let ra = s.crop(&RectangleLike {
-            x: 1.0,
-            y: 1.0,
-            width: 2.0,
-            height: 2.0,
-        });
-        let rb = crop_bitmap(
-            &s,
-            &RectangleLike {
-                x: 1.0,
-                y: 1.0,
-                width: 2.0,
-                height: 2.0,
-            },
-        );
+        let ra = s.crop(&create_rectangle(1.0, 1.0, 2.0, 2.0));
+        let rb = crop_bitmap(&s, &create_rectangle(1.0, 1.0, 2.0, 2.0));
         assert_eq!(format!("{:?}", ra), format!("{:?}", rb));
     }
 
@@ -55,7 +44,7 @@ mod sugar_tests {
 }
 
 /// Crops source to rect, returning a new Bitmap.
-pub fn crop_bitmap(source: &Bitmap, rect: &RectangleLike) -> Bitmap {
+pub fn crop_bitmap(source: &Bitmap, rect: &Rectangle) -> Bitmap {
     let sw = source.width as i32;
     let sh = source.height as i32;
     let rx = rect.x.round() as i32;
@@ -180,7 +169,6 @@ fn resolve_edge_crop(v: i32, size: i32, mode: BitmapEdgeMode) -> Option<i32> {
 }
 
 /// Trims transparent border from source.
-// flight-lint: allow(f64) RectangleLike (number) pixel bounds; D8 candidate for flight-geometry Rectangle
 pub fn trim_bitmap(source: &Bitmap) -> Bitmap {
     let sw = source.width as i32;
     let sh = source.height as i32;
@@ -224,18 +212,18 @@ pub fn trim_bitmap(source: &Bitmap) -> Bitmap {
     }
     crop_bitmap(
         source,
-        &RectangleLike {
-            x: min_x as f64,
-            y: min_y as f64,
-            width: (max_x - min_x + 1) as f64,
-            height: (max_y - min_y + 1) as f64,
-        },
+        &create_rectangle(
+            min_x as f32,
+            min_y as f32,
+            (max_x - min_x + 1) as f32,
+            (max_y - min_y + 1) as f32,
+        ),
     )
 }
 
 #[cfg(feature = "object-api")]
 impl Bitmap {
-    pub fn crop(&self, rect: &RectangleLike) -> Bitmap {
+    pub fn crop(&self, rect: &Rectangle) -> Bitmap {
         return crop_bitmap(self, rect);
     }
 

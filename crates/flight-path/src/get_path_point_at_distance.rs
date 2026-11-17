@@ -1,4 +1,4 @@
-use flight_geometry::Vector2Like;
+use flight_geometry::Vector2;
 
 use crate::flatten_path::flatten_path;
 use crate::path::Path;
@@ -62,7 +62,7 @@ mod sugar_tests {
 pub fn get_path_point_at_distance(
     path: &Path,
     distance: f64,
-    out: &mut Vector2Like,
+    out: &mut Vector2,
     tolerance: Option<f64>,
 ) -> bool {
     let tolerance = tolerance.unwrap_or(0.25);
@@ -75,8 +75,8 @@ pub fn get_path_point_at_distance(
 pub fn get_path_position_at_distance(
     path: &Path,
     distance: f64,
-    point_out: &mut Vector2Like,
-    tangent_out: &mut Vector2Like,
+    point_out: &mut Vector2,
+    tangent_out: &mut Vector2,
     tolerance: Option<f64>,
 ) -> bool {
     let tolerance = tolerance.unwrap_or(0.25);
@@ -91,7 +91,7 @@ pub fn get_path_position_at_distance(
 pub fn get_path_tangent_at_distance(
     path: &Path,
     distance: f64,
-    out: &mut Vector2Like,
+    out: &mut Vector2,
     tolerance: Option<f64>,
 ) -> bool {
     let tolerance = tolerance.unwrap_or(0.25);
@@ -101,7 +101,7 @@ pub fn get_path_tangent_at_distance(
 
 // flight-lint: allow(f64) Bezier evaluation, arc length and flattening over f64 path coordinates with tolerances tuned in double; f32 sufficiency not measured
 #[allow(clippy::needless_range_loop)] // indexed loop remains portable to generated TypeScript
-fn sample_path_point(contours: &[Vec<f64>], distance: f64, out: &mut Vector2Like) -> bool {
+fn sample_path_point(contours: &[Vec<f64>], distance: f64, out: &mut Vector2) -> bool {
     if contours.is_empty() {
         return false;
     }
@@ -143,7 +143,7 @@ fn sample_path_point(contours: &[Vec<f64>], distance: f64, out: &mut Vector2Like
 
 // flight-lint: allow(f64) Bezier evaluation, arc length and flattening over f64 path coordinates with tolerances tuned in double; f32 sufficiency not measured
 #[allow(clippy::needless_range_loop)] // indexed loop remains portable to generated TypeScript
-fn sample_path_tangent(contours: &[Vec<f64>], distance: f64, out: &mut Vector2Like) -> bool {
+fn sample_path_tangent(contours: &[Vec<f64>], distance: f64, out: &mut Vector2) -> bool {
     if contours.is_empty() {
         out.x = 1.0;
         out.y = 0.0;
@@ -187,7 +187,7 @@ impl Path {
     pub fn point_at_distance(
         &self,
         distance: f64,
-        out: &mut Vector2Like,
+        out: &mut Vector2,
         tolerance: Option<f64>,
     ) -> bool {
         return get_path_point_at_distance(self, distance, out, tolerance);
@@ -197,8 +197,8 @@ impl Path {
     pub fn position_at_distance(
         &self,
         distance: f64,
-        point_out: &mut Vector2Like,
-        tangent_out: &mut Vector2Like,
+        point_out: &mut Vector2,
+        tangent_out: &mut Vector2,
         tolerance: Option<f64>,
     ) -> bool {
         return get_path_position_at_distance(self, distance, point_out, tangent_out, tolerance);
@@ -208,7 +208,7 @@ impl Path {
     pub fn tangent_at_distance(
         &self,
         distance: f64,
-        out: &mut Vector2Like,
+        out: &mut Vector2,
         tolerance: Option<f64>,
     ) -> bool {
         return get_path_tangent_at_distance(self, distance, out, tolerance);

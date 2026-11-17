@@ -292,7 +292,6 @@ const SKIP_TYPES: &[&str] = &[
     "PathMeshPool",
     "PathMorphBuildResult",
     "PointAttachment2D",
-    "RectangleLike",
     "RegionAttachment2D",
     "ShapeGeometryEnd",
     "ShapeJsonFormatOptions",
@@ -1997,11 +1996,7 @@ fn resolve_type_alias(ty: &str) -> String {
         }
     }
 
-    let like_aliases: &[(&str, &str)] = &[
-        ("MatrixLike", "Matrix"),
-        ("Scene3DLightsLike", "Scene3DLights"),
-        ("Vector2Like", "Vector2"),
-    ];
+    let like_aliases: &[(&str, &str)] = &[("Scene3DLightsLike", "Scene3DLights")];
     for &(alias, resolved) in like_aliases {
         if let Some(rest) = ty.strip_prefix("&mut ") {
             if rest.trim() == alias {

@@ -191,16 +191,6 @@ pub struct BitmapRegion {
     pub height: i32,
 }
 
-/// Axis-aligned rectangle with floating-point coordinates.
-#[derive(Clone, Debug, Default)]
-// flight-lint: allow(f64) RectangleLike (number) pixel bounds; D8 candidate for flight-geometry Rectangle
-pub struct RectangleLike {
-    pub x: f64,
-    pub y: f64,
-    pub width: f64,
-    pub height: f64,
-}
-
 /// Bitmap mismatch summary.
 #[derive(Clone, Debug, Default)]
 // flight-lint: allow(f64) BitmapMismatch.fraction mirrors TS number; pixel-count ratio exceeding f32 exact range

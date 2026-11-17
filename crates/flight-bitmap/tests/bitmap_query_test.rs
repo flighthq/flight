@@ -1,6 +1,7 @@
 //! flight-compiler: target-native
 
 use flight_bitmap::contract::*;
+use flight_entity::get_entity_id;
 
 fn region(bmp: Bitmap) -> BitmapRegion {
     let w = bmp.width as i32;
@@ -101,5 +102,13 @@ mod get_bitmap_color_bounds_rectangle {
         assert_eq!(rect.y, 5.0);
         assert_eq!(rect.width, 2.0);
         assert_eq!(rect.height, 2.0);
+    }
+
+    #[test]
+    fn returns_an_entity_backed_geometry_rectangle() {
+        let bmp = create_bitmap(2, 2, Some(0xffffffff));
+        let r = region(bmp);
+        let rect = get_bitmap_color_bounds_rectangle(&r, 0xffffffff, 0xffffffff, true).unwrap();
+        assert!(get_entity_id(&rect) > 0);
     }
 }

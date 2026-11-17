@@ -1,5 +1,7 @@
 //! flight-compiler: target-native
 
+use flight_geometry::{Rectangle, create_rectangle};
+
 use crate::types::*;
 
 #[cfg(all(test, feature = "object-api"))]
@@ -29,13 +31,12 @@ mod sugar_tests {
 /// Scans the `source` region for pixels matching `color` under `mask`
 /// (`find_color` true) or not matching it (false), and returns the tightest
 /// bounding rectangle, or None if none match.
-// flight-lint: allow(f64) RectangleLike (number) pixel bounds; D8 candidate for flight-geometry Rectangle
 pub fn get_bitmap_color_bounds_rectangle(
     source: &BitmapRegion,
     mask: u32,
     color: u32,
     find_color: bool,
-) -> Option<RectangleLike> {
+) -> Option<Rectangle> {
     let data = &source.bitmap.data;
     let bitmap_width = source.bitmap.width as i32;
     let masked_color = color & mask;
@@ -81,12 +82,12 @@ pub fn get_bitmap_color_bounds_rectangle(
     if max_x == -1 {
         None
     } else {
-        Some(RectangleLike {
-            x: min_x as f64,
-            y: min_y as f64,
-            width: (max_x - min_x + 1) as f64,
-            height: (max_y - min_y + 1) as f64,
-        })
+        Some(create_rectangle(
+            min_x as f32,
+            min_y as f32,
+            (max_x - min_x + 1) as f32,
+            (max_y - min_y + 1) as f32,
+        ))
     }
 }
 
@@ -97,7 +98,7 @@ impl BitmapRegion {
         mask: u32,
         color: u32,
         find_color: bool,
-    ) -> Option<RectangleLike> {
+    ) -> Option<Rectangle> {
         return get_bitmap_color_bounds_rectangle(self, mask, color, find_color);
     }
 }

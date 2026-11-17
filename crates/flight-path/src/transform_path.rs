@@ -1,4 +1,4 @@
-use flight_geometry::MatrixLike;
+use flight_geometry::Matrix;
 
 use crate::copy_path::copy_path;
 use crate::path::{Path, PathCommand};
@@ -43,7 +43,7 @@ mod sugar_tests {
 // flight-lint: allow(f64) operates on f64 Path.data coordinates (TS number); f32 sufficiency not measured
 /// Applies a 2D affine matrix to all anchor and control-point coordinate pairs in `source`,
 /// writing the result into `out`. Alias-safe. Commands and winding are copied unchanged.
-pub fn transform_path(source: &Path, matrix: &MatrixLike, out: &mut Path) {
+pub fn transform_path(source: &Path, matrix: &Matrix, out: &mut Path) {
     transform_path_coordinates(
         source,
         matrix.a as f64,
@@ -120,7 +120,7 @@ pub fn translate_path(source: &Path, dx: f64, dy: f64, out: &mut Path) {
 
 #[cfg(feature = "object-api")]
 impl Path {
-    pub fn transform(&self, matrix: &MatrixLike, out: &mut Path) {
+    pub fn transform(&self, matrix: &Matrix, out: &mut Path) {
         return transform_path(self, matrix, out);
     }
 

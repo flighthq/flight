@@ -1,4 +1,4 @@
-use flight_geometry::Vector2Like;
+use flight_geometry::Vector2;
 
 use crate::flatten_path::flatten_path;
 use crate::path::Path;
@@ -40,7 +40,7 @@ pub fn get_path_nearest_point(
     path: &Path,
     px: f64,
     py: f64,
-    out: &mut Vector2Like,
+    out: &mut Vector2,
     tolerance: Option<f64>,
 ) -> f64 {
     let tolerance = tolerance.unwrap_or(0.25);
@@ -100,7 +100,7 @@ impl Path {
         &self,
         px: f64,
         py: f64,
-        out: &mut Vector2Like,
+        out: &mut Vector2,
         tolerance: Option<f64>,
     ) -> f64 {
         return get_path_nearest_point(self, px, py, out, tolerance);

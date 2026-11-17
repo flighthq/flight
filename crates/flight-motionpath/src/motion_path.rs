@@ -1,7 +1,7 @@
 //! Arc-length motion-path markers over a `Path` (TS `motionPath.ts`).
 
 use flight_entity::{Ref, allocate_entity};
-use flight_geometry::{Vector2Like, create_vector2};
+use flight_geometry::{Vector2, create_vector2};
 use flight_path::{
     Path, get_path_length, get_path_position_at_distance, get_path_tangent_at_distance,
 };
@@ -107,8 +107,8 @@ pub fn get_motion_path_heading(mp: &MotionPath) -> f64 {
 // flight-lint: allow(f64) D1: the distance is a f64 arc length sampled by flight-path
 pub fn get_motion_path_position(
     mp: &MotionPath,
-    point_out: &mut Vector2Like,
-    tangent_out: &mut Vector2Like,
+    point_out: &mut Vector2,
+    tangent_out: &mut Vector2,
 ) -> bool {
     return get_path_position_at_distance(
         &mp.path.read().unwrap(),
