@@ -273,6 +273,15 @@ static void check_string_maps(void) {
   flight_destroy_optional_texture_atlas_list(pages);
   flight_free_texture_atlas_ref(NULL);
   flight_free_texture_atlas_region_ref(NULL);
+  const uint8_t rive[16] = {0x52, 0x49, 0x56, 0x45, 7, 0, 0, 0, 3, 0, 12, 0, 12, 0, 7, 0};
+  void *type_counts = flight_create_u64_count_map();
+  expect(flight_collect_rive_core_type_counts(type_counts, (void *)rive, 16, NULL), "collect_rive_core_type_counts reads a Rive file");
+  uint64_t first_type = 0;
+  expect(flight_get_u64_count_map_key(type_counts, 0, &first_type) && first_type == 3, "type keys read in ascending order");
+  expect(flight_get_u64_count_map_value(type_counts, 12) == 2, "each core type is counted");
+  expect(!flight_get_u64_count_map_key(type_counts, 3, &first_type), "an out-of-range type key reads false");
+  flight_destroy_u64_count_map(type_counts);
+  flight_destroy_u64_count_map(NULL);
   expect(!flight_call_disposer(NULL), "a NULL disposer does not run");
   flight_free_disposer(NULL);
 

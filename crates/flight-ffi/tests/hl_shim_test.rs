@@ -268,8 +268,9 @@ fn optional_diagnostics_lower_to_a_nullable_import_diagnostic_list() {
                 && line.contains("diagnostics: *mut FfiImportDiagnosticList")
         })
         .count();
+    // Task E's 28 parsers plus Task H's collect_rive_core_type_counts.
     assert_eq!(
-        borrowers, 28,
+        borrowers, 29,
         "the recovered diagnostics-collecting wrapper count changed"
     );
 }
@@ -654,10 +655,7 @@ fn string_maps_lower_to_typed_records_and_count_maps() {
     );
 
     let stats = generated_stats();
-    for skip in [
-        "unmapped_param(&mut HashMap<u64, usize>)",
-        "unmapped_return(HashMap<String, String>)",
-    ] {
+    for skip in ["unmapped_return(HashMap<String, String>)"] {
         assert!(stats.contains(skip), "{skip} must stay skipped");
     }
 }
@@ -708,6 +706,13 @@ fn registered_collectors_return_owned_ref_clones() {
         "char * flight_get_texture_atlas_region_map_key(void * arg0, size_t arg1);",
         "void * flight_get_texture_atlas_region_map_value(void * arg0, const char * arg1);",
         "void flight_free_texture_atlas_region_ref(void * arg0);",
+        "bool flight_collect_rive_core_type_counts(void * arg0, void * arg1, size_t arg2, void * arg3);",
+        "void * flight_create_u64_count_map(void);",
+        "void flight_destroy_u64_count_map(void * arg0);",
+        "void flight_clear_u64_count_map(void * arg0);",
+        "size_t flight_get_u64_count_map_length(void * arg0);",
+        "bool flight_get_u64_count_map_key(void * arg0, size_t arg1, void * arg2);",
+        "int64_t flight_get_u64_count_map_value(void * arg0, uint64_t arg1);",
     ] {
         assert_line(&header, line);
     }
@@ -735,7 +740,20 @@ fn returned_disposers_lower_to_callable_handles() {
         "    return Box::into_raw(Box::new(FfiDisposer { dispose }));",
     );
     assert!(!header.contains(" flight_enable_scene3d_resource_failure_guards("));
+    assert!(!header.contains(" flight_connect_signal_at_frame_rate("));
     assert!(generated_stats().contains("closure_return(Arc<dyn Fn() + Send + Sync>)"));
+    // The disposer lowering is allowlisted by function name: exactly one wrapper returns it.
+    let wrappers = generated_wrappers();
+    let disposer_wrappers: Vec<&str> = wrappers
+        .lines()
+        .filter(|line| line.starts_with("pub unsafe extern \"C\" fn flight_"))
+        .filter(|line| line.ends_with("-> *mut FfiDisposer {"))
+        .map(|line| line.split('(').next().unwrap())
+        .collect();
+    assert_eq!(
+        disposer_wrappers,
+        ["pub unsafe extern \"C\" fn flight_reveal_scene3d_resources_on_resolve"]
+    );
 }
 
 fn assert_line(text: &str, line: &str) {

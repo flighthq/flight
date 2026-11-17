@@ -1,4 +1,5 @@
 mod native_bindings;
+mod public_perimeter;
 use std::collections::BTreeSet;
 use std::env;
 use std::fmt::Write as _;
@@ -620,7 +621,7 @@ fn collect_pub_fns(src_dir: &Path) -> Vec<ParsedFn> {
         for mut f in all_fns {
             if exported_names.contains(&f.name) {
                 f.lacks_public_export = !named_exports.contains(&f.name)
-                    && !ts_exports.contains(&get_export_key(&f.name));
+                    && !ts_exports.contains(&public_perimeter::get_export_key(&f.name));
                 fns.push(f);
             }
         }
@@ -642,39 +643,29 @@ fn collect_named_exports(lib_path: &Path) -> BTreeSet<String> {
         .collect()
 }
 
-// Identifiers the package's TS root (`packages/<name>/src/index.ts`) mentions, keyed for comparison
-// with Rust names by `get_export_key`. A crate without a TS package yields no keys.
+// The value names the package's TS root (`packages/<name>/src/index.ts`) exports through its real
+// export graph, keyed for comparison with Rust names. A crate without a TS package yields no keys.
 fn collect_ts_index_exports(src_dir: &Path) -> BTreeSet<String> {
     let crate_dir = src_dir.parent().unwrap();
     let crate_name = crate_dir.file_name().unwrap().to_string_lossy();
     let Some(package) = crate_name.strip_prefix("flight-") else {
         return BTreeSet::new();
     };
-    let index = crate_dir
+    let package_src = crate_dir
         .parent()
         .unwrap()
         .parent()
         .unwrap()
         .join("packages")
         .join(package)
-        .join("src")
-        .join("index.ts");
-    println!("cargo::rerun-if-changed={}", index.display());
-    let Ok(content) = fs::read_to_string(&index) else {
-        return BTreeSet::new();
-    };
-    content
-        .split(|c: char| !c.is_ascii_alphanumeric() && c != '_')
-        .filter(|word| !word.is_empty())
-        .map(get_export_key)
-        .collect()
-}
-
-// `reveal_scene3d_resources_on_resolve` and `revealScene3DResourcesOnResolve` share one key.
-fn get_export_key(name: &str) -> String {
-    name.chars()
-        .filter(|c| *c != '_')
-        .map(|c| c.to_ascii_lowercase())
+        .join("src");
+    let (names, files) = public_perimeter::collect_ts_module_exports(&package_src.join("index.ts"));
+    for file in files {
+        println!("cargo::rerun-if-changed={}", file.display());
+    }
+    names
+        .iter()
+        .map(|name| public_perimeter::get_export_key(name))
         .collect()
 }
 
@@ -1280,15 +1271,18 @@ fn generate_ffi_wrapper(func: &ParsedFn) -> Option<(String, Option<String>)> {
         (None, None) => (String::new(), FfiReturn::Void),
         (None, Some(ty)) => map_return_to_ffi(ty)?,
     };
-    // A disposer that may capture caller-provided callbacks would tie that callback's context
-    // lifetime to the disposer handle, so only disposers of callback-free calls map.
-    if matches!(call_wrap, FfiReturn::DisposerReturn)
-        && func.params.iter().any(|param| {
-            let ty = strip_crate_paths(&resolve_type_alias(param.ty.trim()));
-            ty.contains("Fn(") || ty.contains("FnMut(") || ty.contains("FnOnce(")
-        })
-    {
-        return None;
+    // A returned disposer maps only for an allowlisted, callback-free call; the type alone is not
+    // consent.
+    if matches!(call_wrap, FfiReturn::DisposerReturn) {
+        let param_types: Vec<String> = func
+            .params
+            .iter()
+            .map(|param| strip_crate_paths(&resolve_type_alias(param.ty.trim())))
+            .collect();
+        let param_types: Vec<&str> = param_types.iter().map(String::as_str).collect();
+        if !public_perimeter::is_disposer_function(&func.name, &param_types) {
+            return None;
+        }
     }
     append_tuple_out_params(&mut ffi_params, &call_wrap);
     append_async_callback_params(&mut ffi_params, &call_wrap);
@@ -2037,6 +2031,12 @@ const REGISTERED_HANDLES: &[(&str, &str, &str, &str)] = &[
         "std::collections::HashMap<String, usize>",
     ),
     (
+        "&mut HashMap<u64, usize>",
+        "FfiU64CountMap",
+        "u64_count_map",
+        "std::collections::HashMap<u64, usize>",
+    ),
+    (
         "&mut Vec<Option<Ref<TextureAtlas>>>",
         "FfiOptionalTextureAtlasList",
         "optional_texture_atlas_list",
@@ -2102,6 +2102,21 @@ pub unsafe extern "C" fn flight_get_string_count_map_key(map: *const FfiStringCo
 pub unsafe extern "C" fn flight_get_string_count_map_value(map: *const FfiStringCountMap, key: *const std::ffi::c_char) -> i64 {
     let (Some(values), Some(key)) = (unsafe { get_ffi_string_count_map(map) }, unsafe { get_ffi_key(key) }) else { return -1; };
     values.get(key).map_or(-1, |count| *count as i64)
+}
+// The key at `index` in ascending order, written to `out_key`; false when out of range.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn flight_get_u64_count_map_key(map: *const FfiU64CountMap, index: usize, out_key: *mut u64) -> bool {
+    let Some(values) = (unsafe { get_ffi_u64_count_map(map) }) else { return false; };
+    let mut keys: Vec<u64> = values.keys().copied().collect();
+    keys.sort_unstable();
+    let Some(key) = keys.get(index) else { return false; };
+    if !out_key.is_null() { unsafe { *out_key = *key; } }
+    true
+}
+// The count for `key`, or -1 when the map has no such key.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn flight_get_u64_count_map_value(map: *const FfiU64CountMap, key: u64) -> i64 {
+    unsafe { get_ffi_u64_count_map(map) }.and_then(|values| values.get(&key)).map_or(-1, |count| *count as i64)
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn flight_get_texture_atlas_region_map_key(map: *const FfiTextureAtlasRegionMap, index: usize) -> *mut std::ffi::c_char {

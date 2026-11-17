@@ -136,6 +136,85 @@ mod flight_call_disposer {
     }
 }
 
+mod flight_collect_rive_core_type_counts {
+    use super::*;
+
+    // A version-7 Rive file declaring Shape (3), Path (12) twice and Rectangle (7).
+    const RIVE: [u8; 16] = [0x52, 0x49, 0x56, 0x45, 7, 0, 0, 0, 3, 0, 12, 0, 12, 0, 7, 0];
+
+    fn read_key(map: *const FfiU64CountMap, index: usize) -> Option<u64> {
+        let mut key = 0u64;
+        return unsafe { flight_get_u64_count_map_key(map, index, &mut key) }.then_some(key);
+    }
+
+    #[test]
+    fn counts_each_core_type_in_ascending_key_order() {
+        let map = unsafe { flight_create_u64_count_map() };
+        assert!(unsafe {
+            flight_collect_rive_core_type_counts(
+                map,
+                RIVE.as_ptr(),
+                RIVE.len(),
+                std::ptr::null_mut(),
+            )
+        });
+        assert_eq!(unsafe { flight_get_u64_count_map_length(map) }, 3);
+        assert_eq!(
+            (0..4).map(|index| read_key(map, index)).collect::<Vec<_>>(),
+            [Some(3), Some(7), Some(12), None]
+        );
+        assert_eq!(unsafe { flight_get_u64_count_map_value(map, 12) }, 2);
+        assert_eq!(unsafe { flight_get_u64_count_map_value(map, 3) }, 1);
+        assert_eq!(unsafe { flight_get_u64_count_map_value(map, 999) }, -1);
+        // A NULL key output still reports presence.
+        assert!(unsafe { flight_get_u64_count_map_key(map, 0, std::ptr::null_mut()) });
+        unsafe { flight_clear_u64_count_map(map) };
+        assert_eq!(unsafe { flight_get_u64_count_map_length(map) }, 0);
+        unsafe { flight_destroy_u64_count_map(map) };
+    }
+
+    #[test]
+    fn reports_an_unreadable_file_through_the_diagnostics_list() {
+        let map = unsafe { flight_create_u64_count_map() };
+        let list = unsafe { flight_create_import_diagnostic_list() };
+        let mut old = RIVE;
+        old[4] = 6;
+        assert!(!unsafe {
+            flight_collect_rive_core_type_counts(map, old.as_ptr(), old.len(), list)
+        });
+        assert_eq!(unsafe { flight_get_u64_count_map_length(map) }, 0);
+        assert!(unsafe { flight_get_import_diagnostic_list_length(list) } > 0);
+        unsafe { flight_destroy_import_diagnostic_list(list) };
+        unsafe { flight_destroy_u64_count_map(map) };
+    }
+
+    #[test]
+    fn treats_null_and_another_handle_type_as_no_map() {
+        let source = RIVE.as_ptr();
+        assert!(!unsafe {
+            flight_collect_rive_core_type_counts(
+                std::ptr::null_mut(),
+                source,
+                RIVE.len(),
+                std::ptr::null_mut(),
+            )
+        });
+        let strings = unsafe { flight_create_string_count_map() };
+        let foreign = strings as *mut FfiU64CountMap;
+        assert!(!unsafe {
+            flight_collect_rive_core_type_counts(foreign, source, RIVE.len(), std::ptr::null_mut())
+        });
+        assert_eq!(unsafe { flight_get_u64_count_map_length(foreign) }, 0);
+        assert!(read_key(foreign, 0).is_none());
+        assert_eq!(unsafe { flight_get_u64_count_map_value(foreign, 3) }, -1);
+        unsafe { flight_clear_u64_count_map(foreign) };
+        unsafe { flight_destroy_u64_count_map(foreign) };
+        assert_eq!(unsafe { flight_get_string_count_map_length(strings) }, 0);
+        unsafe { flight_destroy_string_count_map(strings) };
+        unsafe { flight_destroy_u64_count_map(std::ptr::null_mut()) };
+    }
+}
+
 mod flight_collect_svg_counts {
     use super::*;
 
