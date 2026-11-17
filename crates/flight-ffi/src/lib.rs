@@ -6,6 +6,8 @@ mod async_callback;
 mod import_diagnostic_list;
 
 #[cfg(test)]
+mod generic_carrier_test;
+#[cfg(test)]
 mod shape_bounds_context_test;
 
 include!(concat!(env!("OUT_DIR"), "/ffi_generated.rs"));

@@ -276,6 +276,16 @@ const ASYNC_FUTURE_ALIASES: &[(&str, bool)] = &[
     ("VideoProviderFuture", true),
 ];
 
+// Behavior a consumer would hand back to the SDK: format parsers, import handlers, migrations, and
+// closure-built sources. FFI exposes the consumption API only (agents/ffi-public-lane.md), so no
+// generic carrier maps these even where the outer wrapper has a template.
+const EXTENSION_POINT_TYPES: &[&str] = &[
+    "GlyphOutlineSource",
+    "RiveCoreObjectHandler",
+    "SpritesheetFormatEntry",
+    "StorageMigration",
+    "TextureAtlasFormatEntry",
+];
 const SKIP_FN_PREFIXES: &[&str] = &["initialize_"];
 const SKIP_FNS: &[&str] = &["enable_clip_guards", "enable_statechart_guards"];
 const SKIP_TYPES: &[&str] = &[
@@ -1179,6 +1189,15 @@ fn generate_ffi_wrapper(func: &ParsedFn) -> Option<(String, Option<String>)> {
         FfiReturn::AsyncCallback(spec) => (&spec.value, Some(spec.value_rust_ty.as_str())),
         _ => (&call_wrap, func.ret.as_deref()),
     };
+    // A shared value is boxed, and read through result helpers, as the type it shares.
+    let shared_ty = match value_wrap {
+        FfiReturn::SharedClone(_) => value_ty.and_then(get_shared_value_type),
+        _ => None,
+    };
+    let (value_wrap, value_ty) = match value_wrap {
+        FfiReturn::SharedClone(value) => (&**value, shared_ty.as_deref()),
+        _ => (value_wrap, value_ty),
+    };
     let boxed_ty = if matches!(
         value_wrap,
         FfiReturn::BoxReturn | FfiReturn::OptionBoxReturn
@@ -1439,6 +1458,9 @@ enum FfiReturn {
     RefReturn,
     OptionRefReturn,
     AsyncCallback(Box<AsyncCallbackSpec>),
+    // `Arc<T>` / `Option<Arc<T>>`: the shared value is immutable, so C receives an owned clone of T
+    // through T's own carrier and frees it as it would a T return.
+    SharedClone(Box<FfiReturn>),
 }
 
 // A future return lowered to `complete_fn(complete_ctx, value, error)`: `value` is `value_ty`,
@@ -1562,6 +1584,17 @@ fn generate_async_callback_body(spec: &AsyncCallbackSpec, call: &str, preamble: 
 fn generate_return_body(call_wrap: &FfiReturn, call: &str, preamble: &str) -> String {
     match call_wrap {
         FfiReturn::AsyncCallback(spec) => generate_async_callback_body(spec, call, preamble),
+        FfiReturn::SharedClone(value) => {
+            let call = if matches!(
+                **value,
+                FfiReturn::OptionBoxReturn | FfiReturn::OptionVecReturn(_)
+            ) {
+                format!("{call}.map(|shared| (*shared).clone())")
+            } else {
+                format!("(*{call}).clone()")
+            };
+            generate_return_body(value, &call, preamble)
+        }
         FfiReturn::Void => format!("{preamble}    {call};"),
         FfiReturn::Direct => format!("{preamble}    return {call};"),
         FfiReturn::BoxReturn => {
@@ -2050,6 +2083,70 @@ fn non_entity_ref_boxed_type(ty: &str) -> Option<String> {
         return None;
     }
     Some(format!("flight_sdk::Ref<{}>", qualify_type(inner)))
+}
+
+// Generic carriers. An outer generic wrapper maps only through its own template below, and only
+// when every inner type maps soundly on its own; anything else stays rejected by the non-generic
+// arms. Extension-point inner types never map (agents/ffi-public-lane.md).
+fn map_generic_carrier_return(ty: &str) -> Option<Option<(String, FfiReturn)>> {
+    if let Some(inner) = ty
+        .strip_prefix("Arc<")
+        .and_then(|rest| rest.strip_suffix('>'))
+    {
+        return Some(map_shared_value_return(inner.trim(), false));
+    }
+    if let Some(inner) = ty
+        .strip_prefix("Option<Arc<")
+        .and_then(|rest| rest.strip_suffix(">>"))
+    {
+        return Some(map_shared_value_return(inner.trim(), true));
+    }
+    None
+}
+
+// The shared value's own owned carrier: a boxed struct or a boxed Vec, never a borrow, a Ref
+// handle, or a dyn/closure value whose clone would be a behavior object rather than data.
+fn map_shared_value_return(inner: &str, optional: bool) -> Option<(String, FfiReturn)> {
+    if inner.contains("dyn ") || is_extension_point_type(inner) {
+        return None;
+    }
+    let value_ty = if optional {
+        format!("Option<{inner}>")
+    } else {
+        inner.to_string()
+    };
+    let (decl, value) = map_return_to_ffi(&value_ty)?;
+    let owned = if optional {
+        matches!(
+            value,
+            FfiReturn::OptionBoxReturn | FfiReturn::OptionVecReturn(_)
+        )
+    } else {
+        matches!(value, FfiReturn::BoxReturn | FfiReturn::VecReturn(_))
+    };
+    if !owned {
+        return None;
+    }
+    Some((decl, FfiReturn::SharedClone(Box::new(value))))
+}
+
+fn get_shared_value_type(ty: &str) -> Option<String> {
+    let resolved = strip_crate_paths(&strip_lifetimes(&resolve_type_alias(ty.trim())));
+    if let Some(inner) = resolved
+        .strip_prefix("Option<Arc<")
+        .and_then(|rest| rest.strip_suffix(">>"))
+    {
+        return Some(format!("Option<{}>", inner.trim()));
+    }
+    let inner = resolved.strip_prefix("Arc<")?.strip_suffix('>')?;
+    Some(inner.trim().to_string())
+}
+
+fn is_extension_point_type(ty: &str) -> bool {
+    EXTENSION_POINT_TYPES.iter().any(|extension| {
+        ty.split(|c: char| !c.is_alphanumeric() && c != '_')
+            .any(|word| word == *extension)
+    })
 }
 
 fn is_tuple(ty: &str) -> bool {
@@ -3421,6 +3518,10 @@ fn map_return_to_ffi(ty: &str) -> Option<(String, FfiReturn)> {
                 fallible,
             })),
         ));
+    }
+
+    if let Some(mapped) = map_generic_carrier_return(ty) {
+        return mapped;
     }
 
     // Option<String> -> nullable *mut c_char

@@ -158,6 +158,17 @@ static void check_non_entity_create_results(void) {
   flight_free_menu_item_template_ref(NULL);
 }
 
+static void check_shared_values(void) {
+  /* An Arc<Vec<TimelineLabel>> return is an owned copy read through the Vec result helpers. */
+  void *timeline = flight_create_timeline(NULL);
+  void *labels = flight_get_timeline_labels(timeline);
+  expect(labels != NULL, "get_timeline_labels returns an owned list");
+  expect(flight_get_timeline_labels_result_len(labels) == 0, "a timeline without a source has no labels");
+  expect(flight_get_timeline_labels_result_get(labels, 0) == NULL, "an out-of-range label reads NULL");
+  flight_get_timeline_labels_result_free(labels);
+  flight_get_timeline_labels_result_free(NULL);
+}
+
 static void check_optional_texture_variants(void) {
   void *texture = flight_create_texture(NULL);
   expect(texture != NULL, "create_texture returns a handle");
@@ -394,6 +405,7 @@ int main(void) {
   check_string_arrays();
   check_import_diagnostic_lists();
   check_non_entity_create_results();
+  check_shared_values();
   check_optional_texture_variants();
   check_optional_tuples();
   check_unit_signals();

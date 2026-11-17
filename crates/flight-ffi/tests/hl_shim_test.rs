@@ -401,6 +401,48 @@ fn provider_future_returns_lower_to_typed_completion_callbacks() {
     );
 }
 
+// An `Arc<T>` return hands C an owned clone of the immutable shared value through T's own carrier,
+// freed exactly as a T return is. Extension-point values stay unmapped behind the same wrapper.
+#[test]
+fn shared_arc_returns_lower_to_owned_inner_carriers() {
+    let wrappers = generated_wrappers();
+    let stats = generated_stats();
+    let (header, shim) = generated();
+
+    for name in ["get_bitmap_font_metrics", "get_glyph_atlas_metrics"] {
+        assert!(
+            wrappers.contains(&format!("-> *mut flight_sdk::GlyphMetrics {{\n    return Box::into_raw(Box::new((*flight_sdk::{name}(")),
+            "{name} must return an owned GlyphMetrics clone"
+        );
+        assert_line(&header, &format!("void * flight_{name}(void * arg0);"));
+        assert_line(
+            &shim,
+            &format!("DEFINE_PRIM(_BYTES, flight_{name}, _BYTES);"),
+        );
+    }
+    assert_line(
+        &wrappers,
+        "    let vec = (*flight_sdk::get_timeline_labels(unsafe { &*(timeline as *const flight_sdk::Ref<flight_sdk::Timeline>) })).clone();",
+    );
+    for line in [
+        "void * flight_get_timeline_labels(void * arg0);",
+        "size_t flight_get_timeline_labels_result_len(void * arg0);",
+        "void * flight_get_timeline_labels_result_get(void * arg0, size_t arg1);",
+        "void flight_get_timeline_labels_result_free(void * arg0);",
+    ] {
+        assert_line(&header, line);
+    }
+
+    for skip in [
+        "unmapped_return(Option<Arc<RiveCoreObjectHandler>>)",
+        "unmapped_return(Option<Arc<SpritesheetFormatEntry>>)",
+        "unmapped_return(Option<Arc<TextureAtlasFormatEntry>>)",
+        "closure_return(Arc<dyn Fn() + Send + Sync>)",
+    ] {
+        assert!(stats.contains(skip), "{skip} must stay skipped");
+    }
+}
+
 fn assert_line(text: &str, line: &str) {
     assert!(
         text.lines().any(|candidate| candidate == line),
@@ -413,4 +455,12 @@ fn generated() -> (String, String) {
     let header = fs::read_to_string(out_dir.join("flight_ffi.h")).unwrap();
     let shim = fs::read_to_string(out_dir.join("flight_hl.c")).unwrap();
     return (header, shim);
+}
+
+fn generated_stats() -> String {
+    return fs::read_to_string(Path::new(env!("OUT_DIR")).join("ffi_stats.txt")).unwrap();
+}
+
+fn generated_wrappers() -> String {
+    return fs::read_to_string(Path::new(env!("OUT_DIR")).join("ffi_generated.rs")).unwrap();
 }
