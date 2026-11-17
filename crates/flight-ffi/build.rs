@@ -166,6 +166,7 @@ const DYN_OPAQUE_TRAITS: &[(&str, &str)] = &[
     ("Node2D", "Node2DRef"),
     ("Node3D", "Node3DRef"),
     ("Surface", "SurfaceRef"),
+    ("TextureSource", "TextureSourceRef"),
 ];
 
 const DYN_MONO_TRAITS: &[(&str, &[&str])] = &[
@@ -450,7 +451,7 @@ fn main() {
         if type_name.starts_with('[') || type_name.starts_with('(') {
             continue;
         }
-        let snake = to_snake_case(type_name);
+        let snake = boxed_free_suffix(type_name);
         writeln!(
             all_output,
             "#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn flight_free_{snake}(ptr: *mut {qualified_ty}) {{\n    if !ptr.is_null() {{\n        unsafe {{ drop(Box::from_raw(ptr)); }}\n    }}\n}}"
@@ -1189,10 +1190,26 @@ fn generate_ffi_wrapper(func: &ParsedFn) -> Option<(String, Option<String>)> {
 
 fn has_mono_dyn_param(func: &ParsedFn) -> bool {
     func.params.iter().any(|p| {
-        is_known_dyn_mono(&strip_crate_paths(&strip_lifetimes(&resolve_type_alias(
+        mono_dyn_trait(&strip_crate_paths(&strip_lifetimes(&resolve_type_alias(
             p.ty.trim(),
         ))))
+        .is_some()
     })
+}
+
+// The DYN_MONO trait behind `&dyn T`, `&mut dyn T`, `Option<&dyn T>` or `Option<&mut dyn T>`.
+// Only monomorphized wrappers accept the optional forms: each becomes a nullable pointer to the
+// concrete type. Opaque traits keep `extract_dyn_trait`, whose guard bindings are not optional.
+fn mono_dyn_trait(ty: &str) -> Option<String> {
+    let reference = ty
+        .strip_prefix("Option<")
+        .and_then(|inner| inner.strip_suffix('>'))
+        .unwrap_or(ty);
+    let trait_name = extract_dyn_trait(reference.trim())?;
+    if DYN_MONO_TRAITS.iter().any(|(name, _)| *name == trait_name) {
+        return Some(trait_name);
+    }
+    return None;
 }
 
 struct MonoParam {
@@ -1206,7 +1223,7 @@ fn collect_mono_params(func: &ParsedFn) -> Vec<MonoParam> {
     let mut result = Vec::new();
     for (i, p) in func.params.iter().enumerate() {
         let ty = strip_crate_paths(&strip_lifetimes(&resolve_type_alias(p.ty.trim())));
-        if let Some(trait_name) = extract_dyn_trait(&ty) {
+        if let Some(trait_name) = mono_dyn_trait(&ty) {
             if let Some((_, impls)) = DYN_MONO_TRAITS.iter().find(|(n, _)| *n == trait_name) {
                 result.push(MonoParam {
                     index: i,
@@ -1281,8 +1298,19 @@ fn generate_mono_wrappers(func: &ParsedFn) -> Vec<(String, String, Option<String
             if let Some((_, concrete_ty)) = combo.iter().find(|(idx, _)| *idx == i) {
                 let ty = strip_crate_paths(&strip_lifetimes(&resolve_type_alias(param.ty.trim())));
                 let qualified = qualify_type(concrete_ty);
-                let trait_name = extract_dyn_trait(&ty).unwrap();
-                if ty.starts_with("&mut ") {
+                let trait_name = mono_dyn_trait(&ty).unwrap();
+                let name = &param.name;
+                if ty.starts_with("Option<&mut ") {
+                    ffi_params.push(format!("{name}: *mut {qualified}"));
+                    call_args.push(format!(
+                        "if {name}.is_null() {{ None }} else {{ Some(unsafe {{ &mut *{name} }} as &mut dyn {QUALIFIER}::{trait_name}) }}"
+                    ));
+                } else if ty.starts_with("Option<&") {
+                    ffi_params.push(format!("{name}: *const {qualified}"));
+                    call_args.push(format!(
+                        "if {name}.is_null() {{ None }} else {{ Some(unsafe {{ &*{name} }} as &dyn {QUALIFIER}::{trait_name}) }}"
+                    ));
+                } else if ty.starts_with("&mut ") {
                     ffi_params.push(format!("{}: *mut {qualified}", param.name));
                     call_args.push(format!(
                         "unsafe {{ &mut *{name} }} as &mut dyn {QUALIFIER}::{trait_name}",
@@ -1358,11 +1386,13 @@ enum FfiReturn {
     OptionF64Return,
     OptionI32Return,
     OptionU32Return,
+    OptionBoolReturn,
     VecReturn(VecReturnSpec),
     OptionVecReturn(VecReturnSpec),
     BoxSliceReturn,
     OptionBoxSliceReturn,
     TupleReturn(Vec<String>),
+    OptionTupleReturn(Vec<String>),
     SliceReturn,
     RefReturn,
     OptionRefReturn,
@@ -1374,7 +1404,8 @@ struct VecReturnSpec {
 }
 
 fn append_tuple_out_params(ffi_params: &mut Vec<String>, call_wrap: &FfiReturn) {
-    let FfiReturn::TupleReturn(elements) = call_wrap else {
+    let (FfiReturn::TupleReturn(elements) | FfiReturn::OptionTupleReturn(elements)) = call_wrap
+    else {
         return;
     };
     for (index, element) in elements.iter().enumerate() {
@@ -1441,6 +1472,12 @@ fn generate_return_body(call_wrap: &FfiReturn, call: &str, preamble: &str) -> St
                  None => -1,\n    \
                  }}"
         ),
+        FfiReturn::OptionBoolReturn => format!(
+            "{preamble}    match {call} {{\n        \
+                 Some(v) => v as i32,\n        \
+                 None => -1,\n    \
+                 }}"
+        ),
         FfiReturn::OptionBoxReturn => format!(
             "{preamble}    match {call} {{\n        \
                  Some(v) => Box::into_raw(Box::new(v)),\n        \
@@ -1477,6 +1514,21 @@ fn generate_return_body(call_wrap: &FfiReturn, call: &str, preamble: &str) -> St
                 )
                 .unwrap();
             }
+            body
+        }
+        // Present -> true with every element written; absent -> false with outputs untouched.
+        FfiReturn::OptionTupleReturn(elements) => {
+            let mut body = format!(
+                "{preamble}    let Some(result) = {call} else {{\n        return false;\n    }};"
+            );
+            for (index, _) in elements.iter().enumerate() {
+                write!(
+                    body,
+                    "\n    if !out_{index}.is_null() {{ unsafe {{ *out_{index} = result.{index}; }} }}"
+                )
+                .unwrap();
+            }
+            body.push_str("\n    return true;");
             body
         }
     }
@@ -1609,6 +1661,19 @@ fn to_snake_case(s: &str) -> String {
     out
 }
 
+// The `flight_free_*` suffix for a boxed return type. The only generic boxed type is `Signal<()>`, an
+// owned opaque signal handle whose Rust name has no valid snake-case spelling.
+fn boxed_free_suffix(type_name: &str) -> String {
+    if type_name == "Signal<()>" {
+        return "unit_signal".to_string();
+    }
+    assert!(
+        !type_name.contains('<'),
+        "boxed generic type {type_name} needs an explicit free name"
+    );
+    return to_snake_case(type_name);
+}
+
 fn is_tuple(ty: &str) -> bool {
     ty.starts_with('(') && ty.ends_with(')')
 }
@@ -1733,7 +1798,15 @@ fn qualify_type(ty: &str) -> String {
 fn resolve_type_alias(ty: &str) -> String {
     // Aliases match by bare name, so `&flight_entity::Uint8Array` must lose its path first or it
     // falls through to an opaque pointer to an unsized slice.
-    let unqualified = strip_crate_paths(ty);
+    let mut unqualified = strip_crate_paths(ty);
+    // `NonEntityCreateResult<T>` is `pub type NonEntityCreateResult<T> = T`: an identity alias
+    // that only documents a non-Entity `create*` result, so the ABI sees `T` itself.
+    while let Some(inner) = unqualified
+        .strip_prefix("NonEntityCreateResult<")
+        .and_then(|rest| rest.strip_suffix('>'))
+    {
+        unqualified = inner.trim().to_string();
+    }
     let ty = unqualified.as_str();
     let slice_aliases: &[(&str, &str)] = &[
         ("Uint8Array", "[u8]"),
@@ -2305,6 +2378,54 @@ fn map_param_to_ffi(name: &str, ty: &str) -> Option<MappedParam> {
                 }
             }
         }
+    }
+
+    // Option<XRef> by value, where `XRef = Ref<dyn X>` names an opaque trait handle -> nullable
+    // pointer to the caller's `XRef` (the value `flight_free_x_ref` releases), cloned for the call.
+    if let Some(inner) = ty
+        .strip_prefix("Option<")
+        .and_then(|rest| rest.strip_suffix('>'))
+    {
+        let inner = inner.trim();
+        if DYN_OPAQUE_TRAITS.iter().any(|(_, alias)| *alias == inner) {
+            let qualified = qualify_type(inner);
+            return mapped_single(
+                name,
+                "*const std::ffi::c_void",
+                format!(
+                    "if {name}.is_null() {{ None }} else {{ Some(unsafe {{ (*({name} as *const {qualified})).clone() }}) }}"
+                ),
+            );
+        }
+    }
+
+    // &[&str] -> array of borrowed NUL-terminated C strings + length, decoded like a `&str`
+    // parameter for the duration of the SDK call.
+    if ty == "&[&str]" {
+        let ptr_name = format!("{name}_ptr");
+        let len_name = format!("{name}_len");
+        let binding_name = format!("{}_strs", name.trim_start_matches('_'));
+        return Some(MappedParam {
+            ffi_params: vec![
+                (
+                    ptr_name.clone(),
+                    "*const *const std::ffi::c_char".to_string(),
+                ),
+                (len_name.clone(), "usize".to_string()),
+            ],
+            bindings: vec![
+                format!(
+                    "    assert!(!{ptr_name}.is_null() || {len_name} == 0, \"null string array must have length zero\");"
+                ),
+                format!(
+                    "    let {binding_name}_ptrs: &[*const std::ffi::c_char] = if {len_name} == 0 {{ &[] }} else {{ unsafe {{ std::slice::from_raw_parts({ptr_name}, {len_name}) }} }};"
+                ),
+                format!(
+                    "    let {binding_name}: Vec<&str> = {binding_name}_ptrs.iter().map(|text| {{ assert!(!(*text).is_null(), \"string array contains a null pointer\"); unsafe {{ std::ffi::CStr::from_ptr(*text) }}.to_str().unwrap_or(\"\") }}).collect();"
+                ),
+            ],
+            call_expr: format!("&{binding_name}"),
+        });
     }
 
     // &[Ref<T>] -> array of opaque Ref handles + length. Preserve caller ownership by cloning
@@ -2995,6 +3116,33 @@ fn map_return_to_ffi(ty: &str) -> Option<(String, FfiReturn)> {
         return Some((String::new(), FfiReturn::TupleReturn(elements)));
     }
 
+    // Signal<()> -> owned opaque handle (a cloned signal sharing the source's listeners), released
+    // with flight_free_unit_signal; Option<Signal<()>> -> the same handle or null.
+    if ty == "Signal<()>" {
+        return Some((
+            " -> *mut flight_sdk::Signal<()>".to_string(),
+            FfiReturn::BoxReturn,
+        ));
+    }
+    if ty == "Option<Signal<()>>" {
+        return Some((
+            " -> *mut flight_sdk::Signal<()>".to_string(),
+            FfiReturn::OptionBoxReturn,
+        ));
+    }
+
+    // Optional scalar tuples return a presence flag and write the same out-parameters.
+    if let Some(elements) = ty
+        .strip_prefix("Option<")
+        .and_then(|inner| inner.strip_suffix('>'))
+        .and_then(|inner| scalar_tuple_elements(inner.trim()))
+    {
+        return Some((
+            " -> bool".to_string(),
+            FfiReturn::OptionTupleReturn(elements),
+        ));
+    }
+
     // Box<[T]> (typed arrays) -> *mut c_void (opaque owned handle)
     if let Some(inner) = ty.strip_prefix("Box<[") {
         if let Some(inner) = inner.strip_suffix("]>") {
@@ -3063,6 +3211,11 @@ fn map_return_to_ffi(ty: &str) -> Option<(String, FfiReturn)> {
     // Option<u32> -> i64 with -1 sentinel
     if ty == "Option<u32>" {
         return Some((" -> i64".to_string(), FfiReturn::OptionU32Return));
+    }
+
+    // Option<bool> -> i32 with -1 sentinel (0 false, 1 true), matching the `Option<bool>` parameter
+    if ty == "Option<bool>" {
+        return Some((" -> i32".to_string(), FfiReturn::OptionBoolReturn));
     }
 
     // Option<&[T; N]> -> nullable *const T (pointer to caller's fixed array)

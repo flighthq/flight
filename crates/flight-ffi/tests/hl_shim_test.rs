@@ -45,16 +45,98 @@ fn random_gaussian_pair_outputs_are_typed_hashlink_references() {
         "DEFINE_PRIM(_VOID, flight_random_gaussian_pair, _BYTES _BYTES _F32 _F32 _REF(_F32) _REF(_F32));",
     );
     // Only tuple outputs are references; a new `_REF` carrier must be a deliberate ABI change.
-    let references: Vec<_> = shim
+    let mut references: Vec<_> = shim
         .lines()
         .filter(|line| line.starts_with("DEFINE_PRIM") && line.contains("_REF("))
         .collect();
+    references.sort();
     assert_eq!(
         references,
         [
-            "DEFINE_PRIM(_VOID, flight_random_gaussian_pair, _BYTES _BYTES _F32 _F32 _REF(_F32) _REF(_F32));"
+            "DEFINE_PRIM(_BOOL, flight_get_index_range_for_cluster, _BYTES _I32 _I32 _REF(_I32) _REF(_I32));",
+            "DEFINE_PRIM(_BOOL, flight_get_path_last_point, _BYTES _REF(_F64) _REF(_F64));",
+            "DEFINE_PRIM(_VOID, flight_random_gaussian_pair, _BYTES _BYTES _F32 _F32 _REF(_F32) _REF(_F32));",
         ]
     );
+}
+
+#[test]
+fn skip_reduction_carriers_have_exact_header_and_hashlink_registrations() {
+    let (header, shim) = generated();
+    for (prototype, registration) in [
+        // &[&str] -> borrowed C string array + length.
+        (
+            "char * flight_join_file_path(const char * const * arg0, size_t arg1);",
+            "DEFINE_PRIM(_BYTES, flight_join_file_path, _BYTES _I32);",
+        ),
+        // Option<bool> return -> i32 sentinel.
+        (
+            "int32_t flight_get_connectivity_online(void * arg0);",
+            "DEFINE_PRIM(_I32, flight_get_connectivity_online, _BYTES);",
+        ),
+        // NonEntityCreateResult<T> peeled to T (struct) and to Ref<T>.
+        (
+            "void * flight_create_safe_area_insets(void);",
+            "DEFINE_PRIM(_BYTES, flight_create_safe_area_insets, _NO_ARG);",
+        ),
+        (
+            "void * flight_create_default_edit_menu_template(void);",
+            "DEFINE_PRIM(_BYTES, flight_create_default_edit_menu_template, _NO_ARG);",
+        ),
+        // Option<&dyn TextureVariant> monomorphized to nullable concrete pointers.
+        (
+            "bool flight_equals_texture__texture__texture(void * arg0, void * arg1);",
+            "DEFINE_PRIM(_BOOL, flight_equals_texture__texture__texture, _BYTES _BYTES);",
+        ),
+        // Option<TextureSourceRef> -> nullable opaque handle.
+        (
+            "void flight_set_texture_source__texture(void * arg0, void * arg1);",
+            "DEFINE_PRIM(_VOID, flight_set_texture_source__texture, _BYTES _BYTES);",
+        ),
+        (
+            "void flight_set_cube_texture_face(void * arg0, size_t arg1, void * arg2);",
+            "DEFINE_PRIM(_VOID, flight_set_cube_texture_face, _BYTES _I32 _BYTES);",
+        ),
+        // Option<scalar tuple> -> bool presence + typed out references.
+        (
+            "bool flight_get_path_last_point(void * arg0, double * arg1, double * arg2);",
+            "DEFINE_PRIM(_BOOL, flight_get_path_last_point, _BYTES _REF(_F64) _REF(_F64));",
+        ),
+        (
+            "bool flight_get_index_range_for_cluster(void * arg0, int32_t arg1, int32_t arg2, int32_t * arg3, int32_t * arg4);",
+            "DEFINE_PRIM(_BOOL, flight_get_index_range_for_cluster, _BYTES _I32 _I32 _REF(_I32) _REF(_I32));",
+        ),
+        // Signal<()> and Option<Signal<()>> -> owned opaque handles released by one free.
+        (
+            "void * flight_enable_command_history_signals(void * arg0);",
+            "DEFINE_PRIM(_BYTES, flight_enable_command_history_signals, _BYTES);",
+        ),
+        (
+            "void * flight_get_command_history_signals(void * arg0);",
+            "DEFINE_PRIM(_BYTES, flight_get_command_history_signals, _BYTES);",
+        ),
+        (
+            "void flight_free_unit_signal(void * arg0);",
+            "DEFINE_PRIM(_VOID, flight_free_unit_signal, _BYTES);",
+        ),
+    ] {
+        assert_line(&header, prototype);
+        assert_line(&shim, registration);
+    }
+}
+
+// C cannot construct a HostConnectivityStatusCapability (its callback is an `Arc<dyn Fn>`), so the
+// Option<bool> return sentinel is pinned at the generated wrapper instead of called from C.
+#[test]
+fn optional_bool_return_uses_the_parameter_sentinel_encoding() {
+    let wrappers = fs::read_to_string(Path::new(env!("OUT_DIR")).join("ffi_generated.rs")).unwrap();
+    let expected = "pub unsafe extern \"C\" fn flight_get_connectivity_online(host_connectivity_status: *const flight_sdk::HostConnectivityStatusCapability) -> i32 {
+    match flight_sdk::get_connectivity_online(unsafe { &*host_connectivity_status }) {
+        Some(v) => v as i32,
+        None => -1,
+    }
+}";
+    assert!(wrappers.contains(expected), "missing:\n{expected}");
 }
 
 fn assert_line(text: &str, line: &str) {

@@ -15,8 +15,16 @@ fn carrier(ty: &Type) -> Carrier {
     match ty {
         Type::Ptr(pointer) => {
             if let Type::Ptr(inner) = &*pointer.elem {
-                let is_void = matches!(&*inner.elem, Type::Path(p) if p.path.segments.last().is_some_and(|s| s.ident == "c_void"));
-                assert!(is_void, "unsupported pointer-to-pointer ABI");
+                let pointee = match &*inner.elem {
+                    Type::Path(p) => p.path.segments.last().map(|s| s.ident.to_string()),
+                    _ => None,
+                };
+                // `c_char` pointees are arrays of borrowed C strings (`&[&str]` parameters).
+                let pointee = match pointee.as_deref() {
+                    Some("c_void") => "void",
+                    Some("c_char") => "char",
+                    _ => panic!("unsupported pointer-to-pointer ABI"),
+                };
                 let inner_const = if inner.const_token.is_some() {
                     "const "
                 } else {
@@ -28,7 +36,7 @@ fn carrier(ty: &Type) -> Carrier {
                     ""
                 };
                 return Carrier {
-                    c: format!("{inner_const}void *{pointer_const} *"),
+                    c: format!("{inner_const}{pointee} *{pointer_const} *"),
                     hl: "vbyte *",
                     signature: "_BYTES",
                 };
@@ -206,6 +214,15 @@ fn type_fingerprint(ty: &Type) -> String {
                 "const"
             },
             type_fingerprint(&pointer.elem)
+        ),
+        Type::Tuple(tuple) => format!(
+            "({})",
+            tuple
+                .elems
+                .iter()
+                .map(type_fingerprint)
+                .collect::<Vec<_>>()
+                .join(",")
         ),
         _ => panic!("unsupported generated handle type"),
     }

@@ -66,10 +66,87 @@ static void check_strings(void) {
   flight_free_string(unknown);
 }
 
+static void check_string_arrays(void) {
+  const char *segments[] = {"/a/b", "../c"};
+  char *joined = flight_join_file_path(segments, 2);
+  expect(joined != NULL && strcmp(joined, "/a/c") == 0, "join_file_path reads a C string array");
+  flight_free_string(joined);
+
+  char *empty = flight_join_file_path(NULL, 0);
+  expect(empty != NULL && strcmp(empty, ".") == 0, "join_file_path accepts an empty NULL array");
+  flight_free_string(empty);
+}
+
+static void check_non_entity_create_results(void) {
+  void *insets = flight_create_safe_area_insets();
+  expect(insets != NULL, "create_safe_area_insets returns a struct handle");
+  expect(near(flight_get_safe_area_insets_top(insets), 0.0f), "create_safe_area_insets starts zeroed");
+  expect(near(flight_set_safe_area_insets_left(insets, 12.0f), 12.0f), "set_safe_area_insets_left writes");
+  expect(near(flight_get_safe_area_insets_left(insets), 12.0f), "get_safe_area_insets_left reads back");
+  flight_free_safe_area_insets(insets);
+
+  /* A Ref-returning create: the handle is usable by Ref-accepting functions. Boxed Ref handles have
+     no release export yet, so this one is reclaimed at process exit. */
+  void *edit_menu = flight_create_default_edit_menu_template();
+  expect(edit_menu != NULL, "create_default_edit_menu_template returns a Ref handle");
+  char *problem = flight_validate_menu_item_template(edit_menu);
+  expect(problem == NULL, "the default edit menu template validates");
+  flight_free_string(problem);
+}
+
+static void check_optional_texture_variants(void) {
+  void *texture = flight_create_texture(NULL);
+  expect(texture != NULL, "create_texture returns a handle");
+  expect(flight_equals_texture__texture__texture(texture, texture), "equals_texture compares a present pair");
+  expect(!flight_equals_texture__texture__texture(texture, NULL), "equals_texture treats NULL as an absent texture");
+  expect(!flight_equals_texture__texture__texture(NULL, NULL), "equals_texture never equates two absent textures");
+
+  flight_set_texture_source__texture(texture, NULL);
+  void *source = flight_get_texture_source__texture(texture);
+  expect(source == NULL, "set_texture_source with a NULL source leaves no source");
+  flight_free_texture_source_ref(source);
+  flight_free_texture(texture);
+}
+
+static void check_optional_tuples(void) {
+  void *path = flight_create_path(-1);
+  double x = -1.0;
+  double y = -1.0;
+  expect(!flight_get_path_last_point(path, &x, &y), "an empty path has no last point");
+  expect(x == -1.0 && y == -1.0, "an absent tuple leaves its outputs untouched");
+
+  flight_append_path_move_to(path, 1.5, 2.5);
+  flight_append_path_line_to(path, 3.0, 4.0);
+  expect(flight_get_path_last_point(path, &x, &y), "a drawn path has a last point");
+  expect(x == 3.0 && y == 4.0, "get_path_last_point writes both outputs");
+  expect(flight_get_path_last_point(path, NULL, NULL), "NULL outputs are skipped");
+  flight_free_path(path);
+}
+
+static void check_unit_signals(void) {
+  /* The history is a Ref handle; boxed Ref handles have no release export yet. */
+  void *history = flight_create_command_history();
+  expect(history != NULL, "create_command_history returns a Ref handle");
+  expect(flight_get_command_history_signals(history) == NULL, "a history starts with no change signal");
+
+  void *enabled = flight_enable_command_history_signals(history);
+  expect(enabled != NULL, "enable_command_history_signals returns an owned signal handle");
+  void *present = flight_get_command_history_signals(history);
+  expect(present != NULL && present != enabled, "get_command_history_signals returns its own handle once enabled");
+  flight_free_unit_signal(present);
+  flight_free_unit_signal(enabled);
+  flight_free_unit_signal(NULL);
+}
+
 int main(void) {
   check_scalars();
   check_handles();
   check_strings();
+  check_string_arrays();
+  check_non_entity_create_results();
+  check_optional_texture_variants();
+  check_optional_tuples();
+  check_unit_signals();
   if (failures != 0) {
     fprintf(stderr, "flight-ffi C consumer: %d failure(s)\n", failures);
     return 1;
