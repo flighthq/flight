@@ -34,6 +34,33 @@ Concretely excluded:
 
 This is an alpha-level policy. Extension-point FFI (C vtable adapters, callback bridges) is future work once the consumption surface is complete.
 
+## Ownership convention
+
+The Rust signature is the source of truth for ownership at the FFI boundary. The generator reads the signature and maps it mechanically to C. The generated C header comments non-obvious ownership transitions.
+
+### Parameters
+
+| Rust signature | C convention | Generator action |
+|---|---|---|
+| `&T` / `&mut T` | Borrowed. Caller retains ownership. | `*const T` / `*mut T`. No commentary needed. |
+| `T` by value (non-Copy) | **Ownership transfers.** Caller's handle is consumed. | `Box::from_raw` (not `ptr::read`). Header comment: "ownership transferred, do not use after call." |
+| `Ref<T>` / `Arc<T>` by value | Clone. Caller keeps its handle; Rust gets its own refcount. | `Arc::clone` from the C pointer. No consumption. |
+
+### Returns
+
+| Rust return | C convention | Generator action |
+|---|---|---|
+| `T` by value / `Ref<T>` / `Arc<T>` | **Caller owns.** Must release via generated `_free`. | `Box::into_raw`. Paired `flight_ffi_free_<type>` generated. Header comment: "caller owns; call free when done." |
+| `&T` / `&'static T` | Borrowed. Caller must not free. Valid while source lives. | Raw pointer, no `_free`. Header comment: "borrowed, do not free." |
+
+### Invariant
+
+Every generated function that returns an owned opaque handle has a paired `_free`. The generator enforces this — a return type that would need a `_free` the generator cannot produce is a skip, not a silent leak.
+
+### Pre-existing violations
+
+188 `Ref<T>` returns currently box an Arc handle without a matching `_free` (refcount leak). 71 owned non-Copy params currently use `ptr::read` instead of `Box::from_raw` (double-drop risk). Both are systematic generator defects, not per-function issues. Fixing the generator's ownership handling is prerequisite to — or at minimum concurrent with — expanding the generated surface.
+
 ## Implementation
 
 Replace the prefix-based skip with an export-lane check: a function is generated if and only if it appears in its package's public exports (the root `.` entry). The generator already knows the crate-to-package mapping; it needs an additional input of which functions are public-lane.
