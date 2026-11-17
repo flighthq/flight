@@ -44,7 +44,8 @@ fn random_gaussian_pair_outputs_are_typed_hashlink_references() {
         &shim,
         "DEFINE_PRIM(_VOID, flight_random_gaussian_pair, _BYTES _BYTES _F32 _F32 _REF(_F32) _REF(_F32));",
     );
-    // Only tuple outputs are references; a new `_REF` carrier must be a deliberate ABI change.
+    // Only tuple and outcome-reason outputs are references; a new `_REF` carrier must be a
+    // deliberate ABI change.
     let mut references: Vec<_> = shim
         .lines()
         .filter(|line| line.starts_with("DEFINE_PRIM") && line.contains("_REF("))
@@ -53,8 +54,13 @@ fn random_gaussian_pair_outputs_are_typed_hashlink_references() {
     assert_eq!(
         references,
         [
+            "DEFINE_PRIM(_BOOL, flight_announce_accessibility, _BYTES _BYTES _I32 _REF(_I32));",
+            "DEFINE_PRIM(_BOOL, flight_clear_accessibility_tree, _BYTES _REF(_I32));",
             "DEFINE_PRIM(_BOOL, flight_get_index_range_for_cluster, _BYTES _I32 _I32 _REF(_I32) _REF(_I32));",
             "DEFINE_PRIM(_BOOL, flight_get_path_last_point, _BYTES _REF(_F64) _REF(_F64));",
+            "DEFINE_PRIM(_BOOL, flight_remove_accessibility_node, _BYTES _BYTES _REF(_I32));",
+            "DEFINE_PRIM(_BOOL, flight_set_accessibility_focus, _BYTES _BYTES _REF(_I32));",
+            "DEFINE_PRIM(_BOOL, flight_set_accessibility_node, _BYTES _BYTES _REF(_I32));",
             "DEFINE_PRIM(_VOID, flight_random_gaussian_pair, _BYTES _BYTES _F32 _F32 _REF(_F32) _REF(_F32));",
         ]
     );
@@ -485,6 +491,55 @@ fn slice_and_fixed_array_carriers_have_exact_c_and_hashlink_shapes() {
         "unmapped_param(&[Option<Node2DRef>])",
     ] {
         assert!(stats.contains(skip), "{skip} must stay skipped");
+    }
+}
+
+// Outcome wrappers keep their generic reason types: an accessibility outcome is a success flag
+// plus a typed reason out-parameter, and a MIDI port outcome is a boxed result with its own helpers.
+#[test]
+fn outcome_wrappers_lower_to_flags_and_result_handles() {
+    let wrappers = generated_wrappers();
+    let (header, shim) = generated();
+    for name in [
+        "announce_accessibility",
+        "clear_accessibility_tree",
+        "remove_accessibility_node",
+        "set_accessibility_focus",
+        "set_accessibility_node",
+    ] {
+        let prototype = header
+            .lines()
+            .find(|line| line.starts_with(&format!("bool flight_{name}(")))
+            .unwrap_or_else(|| panic!("missing flight_{name}"));
+        let last = prototype.rsplit(", ").next().unwrap();
+        assert!(
+            last.starts_with("uint32_t * arg"),
+            "{prototype} must end with the reason out-parameter"
+        );
+        assert!(
+            shim.lines().any(|line| line
+                .starts_with(&format!("DEFINE_PRIM(_BOOL, flight_{name}, "))
+                && line.ends_with(" _REF(_I32));")),
+            "flight_{name} must register a typed reason reference"
+        );
+    }
+    assert_line(
+        &wrappers,
+        "            if !out_0.is_null() { unsafe { *out_0 = blocked.reason as u32; } }",
+    );
+
+    for direction in ["input", "output"] {
+        let name = format!("flight_get_midi_access_{direction}_ports");
+        for line in [
+            format!("void * {name}(void * arg0);"),
+            format!("int32_t {name}_result_reason(void * arg0);"),
+            format!("bool {name}_result_has_ports(void * arg0);"),
+            format!("size_t {name}_result_len(void * arg0);"),
+            format!("void * {name}_result_get(void * arg0, size_t arg1);"),
+            format!("void {name}_result_free(void * arg0);"),
+        ] {
+            assert_line(&header, &line);
+        }
     }
 }
 

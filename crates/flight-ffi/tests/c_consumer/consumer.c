@@ -209,6 +209,15 @@ static void check_slice_carriers(void) {
   flight_free_bitmap(bitmap);
 }
 
+static void check_outcome_results(void) {
+  /* A NULL outcome handle reads as no outcome through every helper. */
+  expect(flight_get_midi_access_input_ports_result_reason(NULL) == -1, "a NULL ports outcome has no reason");
+  expect(!flight_get_midi_access_input_ports_result_has_ports(NULL), "a NULL ports outcome has no ports");
+  expect(flight_get_midi_access_input_ports_result_len(NULL) == 0, "a NULL ports outcome is empty");
+  expect(flight_get_midi_access_input_ports_result_get(NULL, 0) == NULL, "a NULL ports outcome reads NULL");
+  flight_get_midi_access_output_ports_result_free(NULL);
+}
+
 static void check_optional_texture_variants(void) {
   void *texture = flight_create_texture(NULL);
   expect(texture != NULL, "create_texture returns a handle");
@@ -447,6 +456,7 @@ int main(void) {
   check_non_entity_create_results();
   check_shared_values();
   check_slice_carriers();
+  check_outcome_results();
   check_optional_texture_variants();
   check_optional_tuples();
   check_unit_signals();

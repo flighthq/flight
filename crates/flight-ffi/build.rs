@@ -1484,6 +1484,12 @@ enum FfiReturn {
     NestedVecReturn(String),
     // A fixed array of owned structs, written as boxed handles into the caller's `out_values` array.
     ArrayOutReturn(String),
+    // `AccessibilityOperationOutcome<R>`: true when the operation ran; otherwise false with the
+    // block reason discriminant written to `out_0`.
+    OperationOutcomeReturn,
+    // `MidiAccessPortsOutcome<P>`: a boxed outcome read through its `_result_*` helpers, holding the
+    // qualified port type P.
+    PortsOutcomeReturn(String),
 }
 
 // A future return lowered to `complete_fn(complete_ctx, value, error)`: `value` is `value_ty`,
@@ -1526,12 +1532,17 @@ fn is_async_callback_value(value: &FfiReturn) -> bool {
             | FfiReturn::OptionRefReturn
             | FfiReturn::AsyncCallback(_)
             | FfiReturn::ArrayOutReturn(_)
+            | FfiReturn::OperationOutcomeReturn
     )
 }
 
 fn append_tuple_out_params(ffi_params: &mut Vec<String>, call_wrap: &FfiReturn) {
     if matches!(call_wrap, FfiReturn::ArrayOutReturn(_)) {
         ffi_params.push("out_values: *mut *mut std::ffi::c_void".to_string());
+        return;
+    }
+    if matches!(call_wrap, FfiReturn::OperationOutcomeReturn) {
+        ffi_params.push("out_0: *mut u32".to_string());
         return;
     }
     let (FfiReturn::TupleReturn(elements) | FfiReturn::OptionTupleReturn(elements)) = call_wrap
@@ -1725,6 +1736,19 @@ fn generate_return_body(call_wrap: &FfiReturn, call: &str, preamble: &str) -> St
                      unsafe {{ *out_values.add(index) = Box::into_raw(Box::new(value)) as *mut std::ffi::c_void; }}\n    \
                  }}"
         ),
+        FfiReturn::OperationOutcomeReturn => format!(
+            "{preamble}    match {call} {{\n        \
+                 flight_sdk::AccessibilityOperationOutcome::Ok(_) => true,\n        \
+                 flight_sdk::AccessibilityOperationOutcome::Blocked(blocked) => {{\n            \
+                     if !out_0.is_null() {{ unsafe {{ *out_0 = blocked.reason as u32; }} }}\n            \
+                     false\n        \
+                 }}\n    \
+                 }}"
+        ),
+        FfiReturn::PortsOutcomeReturn(_) => format!(
+            "{preamble}    let outcome = {call};\n    \
+                 return Box::into_raw(Box::new(outcome)) as *mut std::ffi::c_void;"
+        ),
         FfiReturn::TupleReturn(elements) => {
             let mut body = format!("{preamble}    let result = {call};");
             for (index, _) in elements.iter().enumerate() {
@@ -1770,6 +1794,9 @@ fn generate_vec_result_helpers(ffi_name: &str, call_wrap: &FfiReturn) -> String 
         FfiReturn::NestedVecReturn(element) => {
             return generate_nested_vec_result_helpers(ffi_name, element);
         }
+        FfiReturn::PortsOutcomeReturn(port) => {
+            return generate_ports_outcome_result_helpers(ffi_name, port);
+        }
         _ => return String::new(),
     };
     let get_return = if element_is_ref {
@@ -1794,6 +1821,16 @@ fn generate_nested_vec_result_helpers(ffi_name: &str, element: &str) -> String {
     let container = format!("Vec<Vec<{element}>>");
     format!(
         "\n#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn {ffi_name}_result_len(result: *const std::ffi::c_void) -> usize {{\n    if result.is_null() {{ return 0; }}\n    return unsafe {{ &*(result as *const {container}) }}.len();\n}}\n#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn {ffi_name}_result_get(result: *const std::ffi::c_void, index: usize) -> *const {element} {{\n    if result.is_null() {{ return std::ptr::null(); }}\n    match unsafe {{ &*(result as *const {container}) }}.get(index) {{\n        Some(list) if !list.is_empty() => list.as_ptr(),\n        _ => std::ptr::null(),\n    }}\n}}\n#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn {ffi_name}_result_get_len(result: *const std::ffi::c_void, index: usize) -> usize {{\n    if result.is_null() {{ return 0; }}\n    return unsafe {{ &*(result as *const {container}) }}.get(index).map_or(0, |list| list.len());\n}}\n#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn {ffi_name}_result_free(result: *mut std::ffi::c_void) {{\n    if !result.is_null() {{ unsafe {{ drop(Box::from_raw(result as *mut {container})); }} }}\n}}"
+    )
+}
+
+// A boxed `MidiAccessPortsOutcome<P>` result: `_result_reason` is the reason discriminant (-1 for
+// NULL), `_result_has_ports` tells an absent list from an empty one, `_result_len` / `_result_get`
+// read borrowed port Ref handles that stay valid until `_result_free`.
+fn generate_ports_outcome_result_helpers(ffi_name: &str, port: &str) -> String {
+    let container = format!("flight_sdk::MidiAccessPortsOutcome<{port}>");
+    format!(
+        "\n#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn {ffi_name}_result_reason(result: *const std::ffi::c_void) -> i32 {{\n    if result.is_null() {{ return -1; }}\n    return unsafe {{ &*(result as *const {container}) }}.reason as i32;\n}}\n#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn {ffi_name}_result_has_ports(result: *const std::ffi::c_void) -> bool {{\n    if result.is_null() {{ return false; }}\n    return unsafe {{ &*(result as *const {container}) }}.ports.is_some();\n}}\n#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn {ffi_name}_result_len(result: *const std::ffi::c_void) -> usize {{\n    if result.is_null() {{ return 0; }}\n    return unsafe {{ &*(result as *const {container}) }}.ports.as_ref().map_or(0, |ports| ports.len());\n}}\n#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn {ffi_name}_result_get(result: *const std::ffi::c_void, index: usize) -> *const std::ffi::c_void {{\n    if result.is_null() {{ return std::ptr::null(); }}\n    match unsafe {{ &*(result as *const {container}) }}.ports.as_ref().and_then(|ports| ports.get(index)) {{\n        Some(port) => port as *const _ as *const std::ffi::c_void,\n        None => std::ptr::null(),\n    }}\n}}\n#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn {ffi_name}_result_free(result: *mut std::ffi::c_void) {{\n    if !result.is_null() {{ unsafe {{ drop(Box::from_raw(result as *mut {container})); }} }}\n}}"
     )
 }
 
@@ -2153,6 +2190,29 @@ fn map_generic_carrier_return(ty: &str) -> Option<Option<(String, FfiReturn)>> {
         .and_then(|rest| rest.strip_suffix(">>"))
     {
         return Some(map_shared_value_return(inner.trim(), true));
+    }
+    // AccessibilityOperationOutcome<R> over a fieldless reason enum -> bool plus the reason.
+    if let Some(reason) = ty
+        .strip_prefix("AccessibilityOperationOutcome<")
+        .and_then(|rest| rest.strip_suffix('>'))
+    {
+        return Some(
+            is_known_enum(reason.trim())
+                .then(|| (" -> bool".to_string(), FfiReturn::OperationOutcomeReturn)),
+        );
+    }
+    // MidiAccessPortsOutcome<P> -> a boxed outcome whose ports are Ref handles.
+    if let Some(port) = ty
+        .strip_prefix("MidiAccessPortsOutcome<")
+        .and_then(|rest| rest.strip_suffix('>'))
+    {
+        let port = format!("Ref<{}>", port.trim());
+        return Some(supported_ref_inner(&port).map(|inner| {
+            (
+                " -> *mut std::ffi::c_void".to_string(),
+                FfiReturn::PortsOutcomeReturn(qualify_type(inner)),
+            )
+        }));
     }
     // Vec<Vec<T>> -> boxed nested lists of scalars.
     if let Some(inner) = ty

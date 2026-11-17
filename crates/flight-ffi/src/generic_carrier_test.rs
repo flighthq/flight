@@ -99,6 +99,75 @@ mod flight_fuse_color_matrices {
     }
 }
 
+mod flight_get_midi_access_input_ports_result {
+    use super::*;
+
+    fn box_outcome(
+        ports: Option<Vec<flight_sdk::Ref<flight_sdk::MidiInputPort>>>,
+        reason: flight_sdk::MidiAccessPortsReason,
+    ) -> *mut std::ffi::c_void {
+        let outcome = flight_sdk::MidiAccessPortsOutcome { ports, reason };
+        return Box::into_raw(Box::new(outcome)) as *mut std::ffi::c_void;
+    }
+
+    #[test]
+    fn reads_the_reason_and_borrowed_port_handles() {
+        let mut port = flight_sdk::MidiInputPort::default();
+        port.id = "input".to_string();
+        let port = Arc::new(std::sync::RwLock::new(port));
+        let outcome = box_outcome(
+            Some(vec![port.clone()]),
+            flight_sdk::MidiAccessPortsReason::Ok,
+        );
+        assert_eq!(
+            unsafe { flight_get_midi_access_input_ports_result_reason(outcome) },
+            flight_sdk::MidiAccessPortsReason::Ok as i32
+        );
+        assert!(unsafe { flight_get_midi_access_input_ports_result_has_ports(outcome) });
+        assert_eq!(
+            unsafe { flight_get_midi_access_input_ports_result_len(outcome) },
+            1
+        );
+        let handle = unsafe { flight_get_midi_access_input_ports_result_get(outcome, 0) };
+        let borrowed = unsafe { &*(handle as *const flight_sdk::Ref<flight_sdk::MidiInputPort>) };
+        assert!(Arc::ptr_eq(borrowed, &port));
+        assert!(unsafe { flight_get_midi_access_input_ports_result_get(outcome, 1) }.is_null());
+        unsafe { flight_get_midi_access_input_ports_result_free(outcome) };
+        // Freeing the outcome releases only its own clone of the port.
+        assert_eq!(Arc::strong_count(&port), 1);
+    }
+
+    #[test]
+    fn tells_an_absent_port_list_from_an_empty_one() {
+        let absent = box_outcome(None, flight_sdk::MidiAccessPortsReason::Disposed);
+        assert!(!unsafe { flight_get_midi_access_input_ports_result_has_ports(absent) });
+        assert_eq!(
+            unsafe { flight_get_midi_access_input_ports_result_len(absent) },
+            0
+        );
+        assert_eq!(
+            unsafe { flight_get_midi_access_input_ports_result_reason(absent) },
+            flight_sdk::MidiAccessPortsReason::Disposed as i32
+        );
+        unsafe { flight_get_midi_access_input_ports_result_free(absent) };
+        let empty = box_outcome(Some(Vec::new()), flight_sdk::MidiAccessPortsReason::Ok);
+        assert!(unsafe { flight_get_midi_access_input_ports_result_has_ports(empty) });
+        unsafe { flight_get_midi_access_input_ports_result_free(empty) };
+    }
+
+    #[test]
+    fn reads_null_as_no_outcome() {
+        let null = std::ptr::null();
+        assert_eq!(
+            unsafe { flight_get_midi_access_input_ports_result_reason(null) },
+            -1
+        );
+        assert!(!unsafe { flight_get_midi_access_input_ports_result_has_ports(null) });
+        assert!(unsafe { flight_get_midi_access_input_ports_result_get(null, 0) }.is_null());
+        unsafe { flight_get_midi_access_input_ports_result_free(std::ptr::null_mut()) };
+    }
+}
+
 mod flight_get_timeline_labels {
     use super::*;
 
