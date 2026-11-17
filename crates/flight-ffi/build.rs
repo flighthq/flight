@@ -463,7 +463,7 @@ fn main() {
         if type_name.starts_with('[') || type_name.starts_with('(') {
             continue;
         }
-        let snake = boxed_free_suffix(type_name);
+        let snake = boxed_free_suffix(qualified_ty);
         writeln!(
             all_output,
             "#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn flight_free_{snake}(ptr: *mut {qualified_ty}) {{\n    if !ptr.is_null() {{\n        unsafe {{ drop(Box::from_raw(ptr)); }}\n    }}\n}}"
@@ -1192,6 +1192,8 @@ fn generate_ffi_wrapper(func: &ParsedFn) -> Option<(String, Option<String>)> {
             }
             qualify_type(&resolved)
         })
+    } else if matches!(value_wrap, FfiReturn::ArcRefReturn) {
+        value_ty.and_then(non_entity_ref_boxed_type)
     } else {
         None
     };
@@ -2008,9 +2010,21 @@ fn to_snake_case(s: &str) -> String {
     out
 }
 
-// The `flight_free_*` suffix for a boxed return type. The only generic boxed type is `Signal<()>`, an
-// owned opaque signal handle whose Rust name has no valid snake-case spelling.
-fn boxed_free_suffix(type_name: &str) -> String {
+// The `flight_free_*` suffix for a boxed return type. Ref<T> returns box the Arc handle itself, so
+// their free name distinguishes that handle from a hypothetical boxed T.
+fn boxed_free_suffix(qualified_type: &str) -> String {
+    if let Some(inner) = qualified_type
+        .strip_prefix("flight_sdk::Ref<")
+        .and_then(|rest| rest.strip_suffix('>'))
+    {
+        let inner_name = inner.rsplit("::").next().unwrap_or(inner);
+        assert!(
+            !inner_name.contains('<'),
+            "boxed Ref inner type {inner_name} needs an explicit free name"
+        );
+        return format!("{}_ref", to_snake_case(inner_name));
+    }
+    let type_name = qualified_type.rsplit("::").next().unwrap_or(qualified_type);
     if type_name == "Signal<()>" {
         return "unit_signal".to_string();
     }
@@ -2019,6 +2033,19 @@ fn boxed_free_suffix(type_name: &str) -> String {
         "boxed generic type {type_name} needs an explicit free name"
     );
     return to_snake_case(type_name);
+}
+
+fn non_entity_ref_boxed_type(ty: &str) -> Option<String> {
+    let unqualified = strip_crate_paths(&strip_lifetimes(ty.trim()));
+    if !unqualified.starts_with("NonEntityCreateResult<") {
+        return None;
+    }
+    let resolved = resolve_type_alias(&unqualified);
+    let inner = resolved.strip_prefix("Ref<")?.strip_suffix('>')?.trim();
+    if inner.contains('<') || inner.contains("::") || SKIP_TYPES.iter().any(|s| inner.contains(s)) {
+        return None;
+    }
+    Some(format!("flight_sdk::Ref<{}>", qualify_type(inner)))
 }
 
 fn is_tuple(ty: &str) -> bool {

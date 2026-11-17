@@ -147,13 +147,15 @@ static void check_non_entity_create_results(void) {
   expect(near(flight_get_safe_area_insets_left(insets), 12.0f), "get_safe_area_insets_left reads back");
   flight_free_safe_area_insets(insets);
 
-  /* A Ref-returning create: the handle is usable by Ref-accepting functions. Boxed Ref handles have
-     no release export yet, so this one is reclaimed at process exit. */
+  /* A Ref-returning create owns one boxed Arc handle. It is usable by Ref-accepting functions and
+     released through the Ref-specific free, rather than the free for a boxed MenuItemTemplate. */
   void *edit_menu = flight_create_default_edit_menu_template();
   expect(edit_menu != NULL, "create_default_edit_menu_template returns a Ref handle");
   char *problem = flight_validate_menu_item_template(edit_menu);
   expect(problem == NULL, "the default edit menu template validates");
   flight_free_string(problem);
+  flight_free_menu_item_template_ref(edit_menu);
+  flight_free_menu_item_template_ref(NULL);
 }
 
 static void check_optional_texture_variants(void) {

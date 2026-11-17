@@ -74,15 +74,6 @@ fn skip_reduction_carriers_have_exact_header_and_hashlink_registrations() {
             "int32_t flight_get_connectivity_online(void * arg0);",
             "DEFINE_PRIM(_I32, flight_get_connectivity_online, _BYTES);",
         ),
-        // NonEntityCreateResult<T> peeled to T (struct) and to Ref<T>.
-        (
-            "void * flight_create_safe_area_insets(void);",
-            "DEFINE_PRIM(_BYTES, flight_create_safe_area_insets, _NO_ARG);",
-        ),
-        (
-            "void * flight_create_default_edit_menu_template(void);",
-            "DEFINE_PRIM(_BYTES, flight_create_default_edit_menu_template, _NO_ARG);",
-        ),
         // Option<&dyn TextureVariant> monomorphized to nullable concrete pointers.
         (
             "bool flight_equals_texture__texture__texture(void * arg0, void * arg1);",
@@ -123,6 +114,87 @@ fn skip_reduction_carriers_have_exact_header_and_hashlink_registrations() {
         assert_line(&header, prototype);
         assert_line(&shim, registration);
     }
+}
+
+#[test]
+fn non_entity_create_result_uses_inner_carriers_and_owned_ref_handles() {
+    let out_dir = Path::new(env!("OUT_DIR"));
+    let wrappers = fs::read_to_string(out_dir.join("ffi_generated.rs")).unwrap();
+    let stats = fs::read_to_string(out_dir.join("ffi_stats.txt")).unwrap();
+    let (header, shim) = generated();
+
+    for (name, inner) in [
+        ("create_device_capabilities", "DeviceCapabilities"),
+        ("create_device_display_metrics", "DeviceDisplayMetrics"),
+        ("create_device_info", "DeviceInfo"),
+        ("create_modifier_registry", "ModifierRegistry"),
+        ("create_safe_area_insets", "SafeAreaInsets"),
+    ] {
+        assert_line(
+            &wrappers,
+            &format!("pub unsafe extern \"C\" fn flight_{name}() -> *mut flight_sdk::{inner} {{"),
+        );
+        assert_line(&header, &format!("void * flight_{name}(void);"));
+        assert_line(
+            &shim,
+            &format!("DEFINE_PRIM(_BYTES, flight_{name}, _NO_ARG);"),
+        );
+    }
+
+    for name in [
+        "create_default_edit_menu_template",
+        "create_default_file_menu_template",
+        "create_default_help_menu_template",
+        "create_default_view_menu_template",
+        "create_default_window_menu_template",
+    ] {
+        assert_line(
+            &wrappers,
+            &format!("pub unsafe extern \"C\" fn flight_{name}() -> *mut std::ffi::c_void {{"),
+        );
+        assert_line(&header, &format!("void * flight_{name}(void);"));
+        assert_line(
+            &shim,
+            &format!("DEFINE_PRIM(_BYTES, flight_{name}, _NO_ARG);"),
+        );
+    }
+
+    for line in [
+        "pub unsafe extern \"C\" fn flight_create_menu_item_template(template: *const std::ffi::c_void) -> *mut std::ffi::c_void {",
+        "pub unsafe extern \"C\" fn flight_create_default_app_menu_template(app_name: *const std::ffi::c_char) -> *mut std::ffi::c_void {",
+        "pub unsafe extern \"C\" fn flight_create_tray_animation_state(spawn: *const flight_sdk::HostSpawnCapability, timers: *const std::ffi::c_void) -> *mut flight_sdk::TrayAnimationState {",
+        "pub unsafe extern \"C\" fn flight_free_menu_item_template_ref(ptr: *mut flight_sdk::Ref<flight_sdk::MenuItemTemplate>) {",
+        "    return Box::into_raw(Box::new(flight_sdk::create_safe_area_insets()));",
+    ] {
+        assert_line(&wrappers, line);
+    }
+    let owned_ref = r#"pub unsafe extern "C" fn flight_create_default_edit_menu_template() -> *mut std::ffi::c_void {
+    let arc = flight_sdk::create_default_edit_menu_template();
+    return Box::into_raw(Box::new(arc)) as *mut std::ffi::c_void;
+}"#;
+    assert!(
+        wrappers.contains(owned_ref),
+        "missing owned Ref return:\n{owned_ref}"
+    );
+
+    for line in [
+        "void * flight_create_menu_item_template(void * arg0);",
+        "void * flight_create_default_app_menu_template(const char * arg0);",
+        "void * flight_create_tray_animation_state(void * arg0, void * arg1);",
+        "void flight_free_menu_item_template_ref(void * arg0);",
+    ] {
+        assert_line(&header, line);
+    }
+    for line in [
+        "DEFINE_PRIM(_BYTES, flight_create_menu_item_template, _BYTES);",
+        "DEFINE_PRIM(_BYTES, flight_create_default_app_menu_template, _BYTES);",
+        "DEFINE_PRIM(_BYTES, flight_create_tray_animation_state, _BYTES _BYTES);",
+        "DEFINE_PRIM(_VOID, flight_free_menu_item_template_ref, _BYTES);",
+    ] {
+        assert_line(&shim, line);
+    }
+
+    assert!(!stats.contains("NonEntityCreateResult"));
 }
 
 // C cannot construct a HostConnectivityStatusCapability (its callback is an `Arc<dyn Fn>`), so the
