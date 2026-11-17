@@ -98,6 +98,44 @@ mod flight_build_texture_atlas_region_index {
     }
 }
 
+mod flight_call_disposer {
+    use super::*;
+    use std::sync::atomic::{AtomicUsize, Ordering};
+
+    fn box_disposer(dispose: Arc<dyn Fn() + Send + Sync>) -> *mut FfiDisposer {
+        return Box::into_raw(Box::new(FfiDisposer { dispose }));
+    }
+
+    #[test]
+    fn runs_the_disposer_on_every_call() {
+        let calls = Arc::new(AtomicUsize::new(0));
+        let counted = calls.clone();
+        let disposer = box_disposer(Arc::new(move || {
+            counted.fetch_add(1, Ordering::SeqCst);
+        }));
+        assert!(unsafe { flight_call_disposer(disposer) });
+        assert!(unsafe { flight_call_disposer(disposer) });
+        assert_eq!(calls.load(Ordering::SeqCst), 2);
+        unsafe { flight_free_disposer(disposer) };
+        // Freeing releases the captured state without running the disposer.
+        assert_eq!(calls.load(Ordering::SeqCst), 2);
+        assert_eq!(Arc::strong_count(&calls), 1);
+    }
+
+    #[test]
+    fn contains_a_panicking_disposer() {
+        let disposer = box_disposer(Arc::new(|| panic!("disposer failed")));
+        assert!(!unsafe { flight_call_disposer(disposer) });
+        unsafe { flight_free_disposer(disposer) };
+    }
+
+    #[test]
+    fn reads_null_as_no_disposer() {
+        assert!(!unsafe { flight_call_disposer(std::ptr::null()) });
+        unsafe { flight_free_disposer(std::ptr::null_mut()) };
+    }
+}
+
 mod flight_collect_svg_counts {
     use super::*;
 

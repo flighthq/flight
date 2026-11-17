@@ -273,6 +273,8 @@ static void check_string_maps(void) {
   flight_destroy_optional_texture_atlas_list(pages);
   flight_free_texture_atlas_ref(NULL);
   flight_free_texture_atlas_region_ref(NULL);
+  expect(!flight_call_disposer(NULL), "a NULL disposer does not run");
+  flight_free_disposer(NULL);
 
   /* A NULL storage batch result reads as no result through every typed accessor. */
   expect(!flight_is_storage_set_items_result_ok(NULL), "a NULL storage batch result is not ok");

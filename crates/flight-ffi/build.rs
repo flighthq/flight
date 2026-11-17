@@ -463,6 +463,7 @@ fn main() {
     all_output.push_str(&generate_import_diagnostic_list_support());
     all_output.push_str(&generate_typed_array_ref_support());
     all_output.push_str(&generate_registered_handle_support());
+    all_output.push_str(generate_disposer_support());
     boxed_types.extend(REGISTERED_HANDLE_REFS.iter().map(|ty| ty.to_string()));
     all_output.push_str(generate_storage_set_items_result_support());
 
@@ -1279,6 +1280,16 @@ fn generate_ffi_wrapper(func: &ParsedFn) -> Option<(String, Option<String>)> {
         (None, None) => (String::new(), FfiReturn::Void),
         (None, Some(ty)) => map_return_to_ffi(ty)?,
     };
+    // A disposer that may capture caller-provided callbacks would tie that callback's context
+    // lifetime to the disposer handle, so only disposers of callback-free calls map.
+    if matches!(call_wrap, FfiReturn::DisposerReturn)
+        && func.params.iter().any(|param| {
+            let ty = strip_crate_paths(&resolve_type_alias(param.ty.trim()));
+            ty.contains("Fn(") || ty.contains("FnMut(") || ty.contains("FnOnce(")
+        })
+    {
+        return None;
+    }
     append_tuple_out_params(&mut ffi_params, &call_wrap);
     append_async_callback_params(&mut ffi_params, &call_wrap);
 
@@ -1576,6 +1587,8 @@ enum FfiReturn {
     PortsOutcomeReturn(String),
     // `XmlRecord<String, String>`: a boxed record read by index or key through `_result_*` helpers.
     StringRecordReturn,
+    // `Arc<dyn Fn() + Send + Sync>` returned as a disposer: a boxed `FfiDisposer` handle.
+    DisposerReturn,
 }
 
 // A future return lowered to `complete_fn(complete_ctx, value, error)`: `value` is `value_ty`,
@@ -1831,6 +1844,10 @@ fn generate_return_body(call_wrap: &FfiReturn, call: &str, preamble: &str) -> St
                  }}\n    \
                  }}"
         ),
+        FfiReturn::DisposerReturn => format!(
+            "{preamble}    let dispose = {call};\n    \
+                 return Box::into_raw(Box::new(FfiDisposer {{ dispose }}));"
+        ),
         FfiReturn::StringRecordReturn => format!(
             "{preamble}    let record = {call};\n    \
                  return Box::into_raw(Box::new(record)) as *mut std::ffi::c_void;"
@@ -1935,6 +1952,26 @@ fn generate_string_record_result_helpers(ffi_name: &str) -> String {
     format!(
         "\n#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn {ffi_name}_result_len(result: *const std::ffi::c_void) -> usize {{\n    if result.is_null() {{ return 0; }}\n    return unsafe {{ &*(result as *const {container}) }}.len();\n}}\n#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn {ffi_name}_result_get(result: *const std::ffi::c_void, key: *const std::ffi::c_char) -> *mut std::ffi::c_char {{\n    if result.is_null() || key.is_null() {{ return std::ptr::null_mut(); }}\n    let key = unsafe {{ std::ffi::CStr::from_ptr(key) }}.to_str().unwrap_or(\"\");\n    match unsafe {{ &*(result as *const {container}) }}.get(key) {{\n        Some(value) => std::ffi::CString::new(value.as_str()).unwrap_or_default().into_raw(),\n        None => std::ptr::null_mut(),\n    }}\n}}\n#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn {ffi_name}_result_get_key(result: *const std::ffi::c_void, index: usize) -> *mut std::ffi::c_char {{\n    if result.is_null() {{ return std::ptr::null_mut(); }}\n    match unsafe {{ &*(result as *const {container}) }}.keys().nth(index) {{\n        Some(key) => std::ffi::CString::new(key.as_str()).unwrap_or_default().into_raw(),\n        None => std::ptr::null_mut(),\n    }}\n}}\n#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn {ffi_name}_result_get_value(result: *const std::ffi::c_void, index: usize) -> *mut std::ffi::c_char {{\n    if result.is_null() {{ return std::ptr::null_mut(); }}\n    let record = unsafe {{ &*(result as *const {container}) }};\n    match record.keys().nth(index).and_then(|key| record.get(key.as_str())) {{\n        Some(value) => std::ffi::CString::new(value.as_str()).unwrap_or_default().into_raw(),\n        None => std::ptr::null_mut(),\n    }}\n}}\n#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn {ffi_name}_result_free(result: *mut std::ffi::c_void) {{\n    if !result.is_null() {{ unsafe {{ drop(Box::from_raw(result as *mut {container})); }} }}\n}}"
     )
+}
+
+// A disposer the SDK returned. `flight_call_disposer` runs it and returns false for NULL or when it
+// panicked (the panic stays inside Rust); the SDK's disposers may be called again. Freeing releases
+// the handle without running it, so work it would stop keeps running; free each handle once.
+fn generate_disposer_support() -> &'static str {
+    r#"pub struct FfiDisposer {
+    dispose: std::sync::Arc<dyn Fn() + Send + Sync>,
+}
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn flight_call_disposer(disposer: *const FfiDisposer) -> bool {
+    if disposer.is_null() { return false; }
+    let dispose = unsafe { &(*disposer).dispose };
+    std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| dispose())).is_ok()
+}
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn flight_free_disposer(disposer: *mut FfiDisposer) {
+    if !disposer.is_null() { unsafe { drop(Box::from_raw(disposer)); } }
+}
+"#
 }
 
 // Typed reads of the boxed `StorageSetItemsResult` that `flight_set_storage_items` returns and
@@ -2435,6 +2472,13 @@ fn non_entity_ref_boxed_type(ty: &str) -> Option<String> {
 // when every inner type maps soundly on its own; anything else stays rejected by the non-generic
 // arms. Extension-point inner types never map (agents/ffi-public-lane.md).
 fn map_generic_carrier_return(ty: &str) -> Option<Option<(String, FfiReturn)>> {
+    // A returned no-argument closure is the SDK's disposer for work the call started.
+    if ty == "Arc<dyn Fn() + Send + Sync>" {
+        return Some(Some((
+            " -> *mut FfiDisposer".to_string(),
+            FfiReturn::DisposerReturn,
+        )));
+    }
     if let Some(inner) = ty
         .strip_prefix("Arc<")
         .and_then(|rest| rest.strip_suffix('>'))

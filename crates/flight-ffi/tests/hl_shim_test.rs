@@ -717,6 +717,27 @@ fn registered_collectors_return_owned_ref_clones() {
     );
 }
 
+// A returned no-argument closure crosses as a callable, freeable disposer handle, but only for a
+// call with no caller-provided callback parameter whose context the disposer could capture.
+#[test]
+fn returned_disposers_lower_to_callable_handles() {
+    let (header, shim) = generated();
+    for line in [
+        "void * flight_reveal_scene3d_resources_on_resolve(void * arg0, void * arg1, void * arg2, void * arg3);",
+        "bool flight_call_disposer(void * arg0);",
+        "void flight_free_disposer(void * arg0);",
+    ] {
+        assert_line(&header, line);
+    }
+    assert_line(&shim, "DEFINE_PRIM(_BOOL, flight_call_disposer, _BYTES);");
+    assert_line(
+        &generated_wrappers(),
+        "    return Box::into_raw(Box::new(FfiDisposer { dispose }));",
+    );
+    assert!(!header.contains(" flight_enable_scene3d_resource_failure_guards("));
+    assert!(generated_stats().contains("closure_return(Arc<dyn Fn() + Send + Sync>)"));
+}
+
 fn assert_line(text: &str, line: &str) {
     assert!(
         text.lines().any(|candidate| candidate == line),
