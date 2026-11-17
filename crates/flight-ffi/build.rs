@@ -1312,6 +1312,9 @@ fn generate_ffi_wrapper(func: &ParsedFn) -> Option<(String, Option<String>)> {
         value_ty.and_then(non_entity_ref_boxed_type)
     } else if let FfiReturn::ArrayOutReturn(element) = value_wrap {
         Some(element.clone())
+    } else if let FfiReturn::PortsOutcomeReturn(port) = value_wrap {
+        // `_result_get` hands out boxed port Refs, released by the Ref's own free.
+        Some(format!("flight_sdk::Ref<{port}>"))
     } else {
         None
     };
@@ -1912,12 +1915,13 @@ fn generate_nested_vec_result_helpers(ffi_name: &str, element: &str) -> String {
 }
 
 // A boxed `MidiAccessPortsOutcome<P>` result: `_result_reason` is the reason discriminant (-1 for
-// NULL), `_result_has_ports` tells an absent list from an empty one, `_result_len` / `_result_get`
-// read borrowed port Ref handles that stay valid until `_result_free`.
+// NULL), `_result_has_ports` tells an absent list from an empty one, and `_result_len` counts ports.
+// `_result_get` returns an owned clone of one port's Ref handle (NULL for NULL or out of range) that
+// outlives the outcome and is released once by `flight_free_<port>_ref`.
 fn generate_ports_outcome_result_helpers(ffi_name: &str, port: &str) -> String {
     let container = format!("flight_sdk::MidiAccessPortsOutcome<{port}>");
     format!(
-        "\n#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn {ffi_name}_result_reason(result: *const std::ffi::c_void) -> i32 {{\n    if result.is_null() {{ return -1; }}\n    return unsafe {{ &*(result as *const {container}) }}.reason as i32;\n}}\n#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn {ffi_name}_result_has_ports(result: *const std::ffi::c_void) -> bool {{\n    if result.is_null() {{ return false; }}\n    return unsafe {{ &*(result as *const {container}) }}.ports.is_some();\n}}\n#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn {ffi_name}_result_len(result: *const std::ffi::c_void) -> usize {{\n    if result.is_null() {{ return 0; }}\n    return unsafe {{ &*(result as *const {container}) }}.ports.as_ref().map_or(0, |ports| ports.len());\n}}\n#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn {ffi_name}_result_get(result: *const std::ffi::c_void, index: usize) -> *const std::ffi::c_void {{\n    if result.is_null() {{ return std::ptr::null(); }}\n    match unsafe {{ &*(result as *const {container}) }}.ports.as_ref().and_then(|ports| ports.get(index)) {{\n        Some(port) => port as *const _ as *const std::ffi::c_void,\n        None => std::ptr::null(),\n    }}\n}}\n#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn {ffi_name}_result_free(result: *mut std::ffi::c_void) {{\n    if !result.is_null() {{ unsafe {{ drop(Box::from_raw(result as *mut {container})); }} }}\n}}"
+        "\n#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn {ffi_name}_result_reason(result: *const std::ffi::c_void) -> i32 {{\n    if result.is_null() {{ return -1; }}\n    return unsafe {{ &*(result as *const {container}) }}.reason as i32;\n}}\n#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn {ffi_name}_result_has_ports(result: *const std::ffi::c_void) -> bool {{\n    if result.is_null() {{ return false; }}\n    return unsafe {{ &*(result as *const {container}) }}.ports.is_some();\n}}\n#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn {ffi_name}_result_len(result: *const std::ffi::c_void) -> usize {{\n    if result.is_null() {{ return 0; }}\n    return unsafe {{ &*(result as *const {container}) }}.ports.as_ref().map_or(0, |ports| ports.len());\n}}\n#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn {ffi_name}_result_get(result: *const std::ffi::c_void, index: usize) -> *mut std::ffi::c_void {{\n    if result.is_null() {{ return std::ptr::null_mut(); }}\n    match unsafe {{ &*(result as *const {container}) }}.ports.as_ref().and_then(|ports| ports.get(index)) {{\n        Some(port) => Box::into_raw(Box::new(port.clone())) as *mut std::ffi::c_void,\n        None => std::ptr::null_mut(),\n    }}\n}}\n#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn {ffi_name}_result_free(result: *mut std::ffi::c_void) {{\n    if !result.is_null() {{ unsafe {{ drop(Box::from_raw(result as *mut {container})); }} }}\n}}"
     )
 }
 

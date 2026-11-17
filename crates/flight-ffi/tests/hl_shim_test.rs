@@ -537,10 +537,20 @@ fn outcome_wrappers_lower_to_flags_and_result_handles() {
             format!("size_t {name}_result_len(void * arg0);"),
             format!("void * {name}_result_get(void * arg0, size_t arg1);"),
             format!("void {name}_result_free(void * arg0);"),
+            format!("void flight_free_midi_{direction}_port_ref(void * arg0);"),
         ] {
             assert_line(&header, &line);
         }
+        assert_line(
+            &shim,
+            &format!("DEFINE_PRIM(_VOID, flight_free_midi_{direction}_port_ref, _BYTES);"),
+        );
     }
+    // `_result_get` hands out an owned clone, never a pointer into the outcome.
+    assert_line(
+        &wrappers,
+        "        Some(port) => Box::into_raw(Box::new(port.clone())) as *mut std::ffi::c_void,",
+    );
 }
 
 // `Ref<Box<[T]>>` buffers cross as typed array Ref handles that share the SDK's buffer, with one

@@ -216,6 +216,8 @@ static void check_outcome_results(void) {
   expect(flight_get_midi_access_input_ports_result_len(NULL) == 0, "a NULL ports outcome is empty");
   expect(flight_get_midi_access_input_ports_result_get(NULL, 0) == NULL, "a NULL ports outcome reads NULL");
   flight_get_midi_access_output_ports_result_free(NULL);
+  flight_free_midi_input_port_ref(NULL);
+  flight_free_midi_output_port_ref(NULL);
 }
 
 static void check_typed_array_refs(void) {

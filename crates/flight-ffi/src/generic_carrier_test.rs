@@ -281,7 +281,7 @@ mod flight_get_midi_access_input_ports_result {
     }
 
     #[test]
-    fn reads_the_reason_and_borrowed_port_handles() {
+    fn reads_the_reason_and_owned_port_handles() {
         let mut port = flight_sdk::MidiInputPort::default();
         port.id = "input".to_string();
         let port = Arc::new(std::sync::RwLock::new(port));
@@ -299,12 +299,16 @@ mod flight_get_midi_access_input_ports_result {
             1
         );
         let handle = unsafe { flight_get_midi_access_input_ports_result_get(outcome, 0) };
-        let borrowed = unsafe { &*(handle as *const flight_sdk::Ref<flight_sdk::MidiInputPort>) };
-        assert!(Arc::ptr_eq(borrowed, &port));
         assert!(unsafe { flight_get_midi_access_input_ports_result_get(outcome, 1) }.is_null());
+        // The handle is an owned clone: it shares the port and outlives the outcome.
+        assert_eq!(Arc::strong_count(&port), 3);
         unsafe { flight_get_midi_access_input_ports_result_free(outcome) };
-        // Freeing the outcome releases only its own clone of the port.
+        let owned = unsafe { &*(handle as *const flight_sdk::Ref<flight_sdk::MidiInputPort>) };
+        assert!(Arc::ptr_eq(owned, &port));
+        assert_eq!(owned.read().unwrap().id, "input");
+        unsafe { flight_free_midi_input_port_ref(handle as *mut _) };
         assert_eq!(Arc::strong_count(&port), 1);
+        unsafe { flight_free_midi_input_port_ref(std::ptr::null_mut()) };
     }
 
     #[test]
