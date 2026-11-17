@@ -463,6 +463,7 @@ fn main() {
     all_output.push_str(&generate_import_diagnostic_list_support());
     all_output.push_str(&generate_typed_array_ref_support());
     all_output.push_str(generate_string_count_map_support());
+    all_output.push_str(generate_storage_set_items_result_support());
 
     writeln!(all_output, "// free functions").unwrap();
     writeln!(
@@ -1929,6 +1930,47 @@ fn generate_string_record_result_helpers(ffi_name: &str) -> String {
     format!(
         "\n#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn {ffi_name}_result_len(result: *const std::ffi::c_void) -> usize {{\n    if result.is_null() {{ return 0; }}\n    return unsafe {{ &*(result as *const {container}) }}.len();\n}}\n#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn {ffi_name}_result_get(result: *const std::ffi::c_void, key: *const std::ffi::c_char) -> *mut std::ffi::c_char {{\n    if result.is_null() || key.is_null() {{ return std::ptr::null_mut(); }}\n    let key = unsafe {{ std::ffi::CStr::from_ptr(key) }}.to_str().unwrap_or(\"\");\n    match unsafe {{ &*(result as *const {container}) }}.get(key) {{\n        Some(value) => std::ffi::CString::new(value.as_str()).unwrap_or_default().into_raw(),\n        None => std::ptr::null_mut(),\n    }}\n}}\n#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn {ffi_name}_result_get_key(result: *const std::ffi::c_void, index: usize) -> *mut std::ffi::c_char {{\n    if result.is_null() {{ return std::ptr::null_mut(); }}\n    match unsafe {{ &*(result as *const {container}) }}.keys().nth(index) {{\n        Some(key) => std::ffi::CString::new(key.as_str()).unwrap_or_default().into_raw(),\n        None => std::ptr::null_mut(),\n    }}\n}}\n#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn {ffi_name}_result_get_value(result: *const std::ffi::c_void, index: usize) -> *mut std::ffi::c_char {{\n    if result.is_null() {{ return std::ptr::null_mut(); }}\n    let record = unsafe {{ &*(result as *const {container}) }};\n    match record.keys().nth(index).and_then(|key| record.get(key.as_str())) {{\n        Some(value) => std::ffi::CString::new(value.as_str()).unwrap_or_default().into_raw(),\n        None => std::ptr::null_mut(),\n    }}\n}}\n#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn {ffi_name}_result_free(result: *mut std::ffi::c_void) {{\n    if !result.is_null() {{ unsafe {{ drop(Box::from_raw(result as *mut {container})); }} }}\n}}"
     )
+}
+
+// Typed reads of the boxed `StorageSetItemsResult` that `flight_set_storage_items` returns and
+// `flight_free_storage_set_items_result` releases. `ok` is the outcome discriminant, `completed`
+// counts the items written before any failure, `failed_key` is an owned copy of the failing key
+// (freed with `flight_free_string`; NULL on success), and `reason` is the
+// `StorageSetItemFailureReason` discriminant (-1 on success). NULL reads as false, 0, NULL and -1.
+fn generate_storage_set_items_result_support() -> &'static str {
+    r#"#[unsafe(no_mangle)]
+pub unsafe extern "C" fn flight_get_storage_set_items_result_completed(result: *const flight_sdk::StorageSetItemsResult) -> usize {
+    if result.is_null() { return 0; }
+    match unsafe { &*result } {
+        flight_sdk::StorageBatchMutationOutcome::Ok(ok) => ok.completed,
+        flight_sdk::StorageBatchMutationOutcome::Err(err) => err.completed,
+    }
+}
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn flight_get_storage_set_items_result_failed_key(result: *const flight_sdk::StorageSetItemsResult) -> *mut std::ffi::c_char {
+    if result.is_null() { return std::ptr::null_mut(); }
+    match unsafe { &*result } {
+        flight_sdk::StorageBatchMutationOutcome::Err(err) => match &err.failed_key {
+            Some(key) => std::ffi::CString::new(key.as_str()).unwrap_or_default().into_raw(),
+            None => std::ptr::null_mut(),
+        },
+        flight_sdk::StorageBatchMutationOutcome::Ok(_) => std::ptr::null_mut(),
+    }
+}
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn flight_get_storage_set_items_result_reason(result: *const flight_sdk::StorageSetItemsResult) -> i32 {
+    if result.is_null() { return -1; }
+    match unsafe { &*result } {
+        flight_sdk::StorageBatchMutationOutcome::Err(err) => err.reason as i32,
+        flight_sdk::StorageBatchMutationOutcome::Ok(_) => -1,
+    }
+}
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn flight_is_storage_set_items_result_ok(result: *const flight_sdk::StorageSetItemsResult) -> bool {
+    if result.is_null() { return false; }
+    matches!(unsafe { &*result }, flight_sdk::StorageBatchMutationOutcome::Ok(_))
+}
+"#
 }
 
 // The caller-owned map behind every `&mut HashMap<String, usize>` parameter, with the same live

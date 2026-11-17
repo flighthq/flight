@@ -417,6 +417,107 @@ mod flight_parse_xml_attributes {
     }
 }
 
+mod flight_set_storage_items {
+    use super::*;
+
+    // A preferences capability whose `set_item` rejects the key "blocked" with QuotaExceeded.
+    fn create_preferences() -> flight_sdk::HostPreferencesCapability {
+        return flight_sdk::HostPreferencesCapability {
+            clear: Arc::new(|| -> flight_sdk::StorageClearResult { unreachable!() }),
+            get_item: Arc::new(|_: &str| -> flight_sdk::StorageGetItemResult { unreachable!() }),
+            keys: Arc::new(|| -> flight_sdk::StorageKeysResult { unreachable!() }),
+            provider: Arc::new(()),
+            remove_item: Arc::new(|_: &str| -> flight_sdk::StorageRemoveItemResult {
+                unreachable!()
+            }),
+            set_item: Arc::new(|key: &str, _: &str| {
+                if key == "blocked" {
+                    return flight_sdk::StorageMutationOutcome::Err(
+                        flight_sdk::StorageMutationErr {
+                            reason: flight_sdk::StorageSetItemFailureReason::QuotaExceeded,
+                        },
+                    );
+                }
+                return flight_sdk::StorageMutationOutcome::Ok;
+            }),
+        };
+    }
+
+    fn set_items(entries: &[(&str, &str)]) -> *mut flight_sdk::StorageSetItemsResult {
+        let preferences = create_preferences();
+        let keys: Vec<CString> = entries
+            .iter()
+            .map(|(key, _)| CString::new(*key).unwrap())
+            .collect();
+        let values: Vec<CString> = entries
+            .iter()
+            .map(|(_, value)| CString::new(*value).unwrap())
+            .collect();
+        let key_ptrs: Vec<*const std::ffi::c_char> = keys.iter().map(|key| key.as_ptr()).collect();
+        let value_ptrs: Vec<*const std::ffi::c_char> =
+            values.iter().map(|value| value.as_ptr()).collect();
+        return unsafe {
+            flight_set_storage_items(
+                &preferences,
+                key_ptrs.as_ptr(),
+                value_ptrs.as_ptr(),
+                entries.len(),
+                std::ptr::null(),
+            )
+        };
+    }
+
+    #[test]
+    fn reads_a_completed_batch() {
+        let result = set_items(&[("a", "1"), ("b", "2")]);
+        assert!(unsafe { flight_is_storage_set_items_result_ok(result) });
+        assert_eq!(
+            unsafe { flight_get_storage_set_items_result_completed(result) },
+            2
+        );
+        assert!(unsafe { flight_get_storage_set_items_result_failed_key(result) }.is_null());
+        assert_eq!(
+            unsafe { flight_get_storage_set_items_result_reason(result) },
+            -1
+        );
+        unsafe { flight_free_storage_set_items_result(result) };
+    }
+
+    #[test]
+    fn reads_the_failing_key_and_reason() {
+        let result = set_items(&[("a", "1"), ("blocked", "2"), ("c", "3")]);
+        assert!(!unsafe { flight_is_storage_set_items_result_ok(result) });
+        assert_eq!(
+            unsafe { flight_get_storage_set_items_result_completed(result) },
+            1
+        );
+        let key = unsafe { flight_get_storage_set_items_result_failed_key(result) };
+        assert_eq!(unsafe { CStr::from_ptr(key) }.to_str().unwrap(), "blocked");
+        unsafe { flight_free_string(key) };
+        assert_eq!(
+            unsafe { flight_get_storage_set_items_result_reason(result) },
+            flight_sdk::StorageSetItemFailureReason::QuotaExceeded as i32
+        );
+        unsafe { flight_free_storage_set_items_result(result) };
+    }
+
+    #[test]
+    fn reads_null_as_no_result() {
+        let null = std::ptr::null();
+        assert!(!unsafe { flight_is_storage_set_items_result_ok(null) });
+        assert_eq!(
+            unsafe { flight_get_storage_set_items_result_completed(null) },
+            0
+        );
+        assert!(unsafe { flight_get_storage_set_items_result_failed_key(null) }.is_null());
+        assert_eq!(
+            unsafe { flight_get_storage_set_items_result_reason(null) },
+            -1
+        );
+        unsafe { flight_free_storage_set_items_result(std::ptr::null_mut()) };
+    }
+}
+
 mod flight_split_bitmap_channels {
     use super::*;
 

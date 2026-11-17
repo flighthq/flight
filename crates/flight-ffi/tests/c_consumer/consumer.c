@@ -260,6 +260,13 @@ static void check_string_maps(void) {
   flight_destroy_string_count_map(counts);
   expect(!flight_collect_svg_counts(NULL, "<svg/>"), "a NULL count map collects nothing");
   flight_destroy_string_count_map(NULL);
+
+  /* A NULL storage batch result reads as no result through every typed accessor. */
+  expect(!flight_is_storage_set_items_result_ok(NULL), "a NULL storage batch result is not ok");
+  expect(flight_get_storage_set_items_result_completed(NULL) == 0, "a NULL storage batch result completed nothing");
+  expect(flight_get_storage_set_items_result_failed_key(NULL) == NULL, "a NULL storage batch result has no failed key");
+  expect(flight_get_storage_set_items_result_reason(NULL) == -1, "a NULL storage batch result has no reason");
+  flight_free_storage_set_items_result(NULL);
 }
 
 static void check_optional_texture_variants(void) {

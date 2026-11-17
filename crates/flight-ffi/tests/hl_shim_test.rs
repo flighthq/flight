@@ -653,6 +653,31 @@ fn string_maps_lower_to_typed_records_and_count_maps() {
     }
 }
 
+// `set_storage_items` returns a boxed StorageSetItemsResult with typed reads and its own free; the
+// failing key is an owned string.
+#[test]
+fn storage_set_items_result_has_typed_reads_and_a_free() {
+    let (header, shim) = generated();
+    for line in [
+        "void * flight_set_storage_items(void * arg0, const char * const * arg1, const char * const * arg2, size_t arg3, void * arg4);",
+        "bool flight_is_storage_set_items_result_ok(void * arg0);",
+        "size_t flight_get_storage_set_items_result_completed(void * arg0);",
+        "char * flight_get_storage_set_items_result_failed_key(void * arg0);",
+        "int32_t flight_get_storage_set_items_result_reason(void * arg0);",
+        "void flight_free_storage_set_items_result(void * arg0);",
+    ] {
+        assert_line(&header, line);
+    }
+    for line in [
+        "DEFINE_PRIM(_BOOL, flight_is_storage_set_items_result_ok, _BYTES);",
+        "DEFINE_PRIM(_BYTES, flight_get_storage_set_items_result_failed_key, _BYTES);",
+        "DEFINE_PRIM(_I32, flight_get_storage_set_items_result_reason, _BYTES);",
+        "DEFINE_PRIM(_VOID, flight_free_storage_set_items_result, _BYTES);",
+    ] {
+        assert_line(&shim, line);
+    }
+}
+
 fn assert_line(text: &str, line: &str) {
     assert!(
         text.lines().any(|candidate| candidate == line),
