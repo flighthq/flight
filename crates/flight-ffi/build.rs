@@ -1518,10 +1518,11 @@ fn generate_async_callback_body(spec: &AsyncCallbackSpec, call: &str, preamble: 
                  Err(error) => ({empty}, error),"
         )
     };
-    // A panic while building the future (a typed throw, or a host provider panicking before it
-    // returns a future) completes the callback once, here, and nothing is driven.
+    // A panic while building the future (a parameter binding's assertion, a typed throw, or a host
+    // provider panicking before it returns a future) completes the callback once, here, and nothing
+    // is driven; so the parameter preamble runs inside the same guarded closure as the call.
     format!(
-        "{preamble}    let future = match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {call})) {{\n        \
+        "    let future = match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {{\n{preamble}    {call}\n    }})) {{\n        \
                  Ok(future) => future,\n        \
                  Err(payload) => {{\n            \
                      complete_fn(complete_ctx, {empty}, crate::async_callback::get_ffi_async_panic_string(payload));\n            \

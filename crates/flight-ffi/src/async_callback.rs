@@ -105,14 +105,14 @@ mod tests {
         error: *mut std::ffi::c_char,
     }
 
-    extern "C" fn record_completion(
+    extern "C" fn record_completion<T>(
         ctx: *mut std::ffi::c_void,
-        value: *mut std::ffi::c_void,
+        value: *mut T,
         error: *mut std::ffi::c_char,
     ) {
         let completion = unsafe { &mut *(ctx as *mut Completion) };
         completion.calls += 1;
-        completion.value = value;
+        completion.value = value as *mut std::ffi::c_void;
         completion.error = error;
     }
 
@@ -321,6 +321,43 @@ mod tests {
                 crate::flight_read_dialog_handle_binary_file_result_free,
             );
             assert_eq!(bytes, file_bytes().to_vec());
+        }
+    }
+
+    mod flight_set_tray_icon_context_menu {
+        use super::*;
+
+        #[test]
+        fn completes_an_invalid_ref_slice_once_with_its_error() {
+            let host = flight_sdk::HostTrayMenuCapability {
+                provider: Arc::new(()),
+                set: Arc::new(|_tray, _items| {
+                    unreachable!("an invalid slice never reaches the host")
+                }),
+            };
+            let tray: flight_sdk::Ref<flight_sdk::TrayIcon> =
+                Arc::new(std::sync::RwLock::new(flight_sdk::allocate_entity()));
+            let mut completion = completion();
+            completion.value = std::ptr::dangling_mut::<u8>() as *mut std::ffi::c_void;
+            // A null element array that claims two items: the Ref-slice binding asserts on it.
+            unsafe {
+                crate::flight_set_tray_icon_context_menu(
+                    &host,
+                    &tray as *const flight_sdk::Ref<flight_sdk::TrayIcon>
+                        as *const std::ffi::c_void,
+                    std::ptr::null(),
+                    2,
+                    record_completion,
+                    completion_ctx(&mut completion),
+                );
+            }
+            assert_eq!(completion.calls, 1);
+            assert!(completion.value.is_null());
+            assert!(!completion.error.is_null());
+            assert_eq!(
+                take_c_string(completion.error),
+                "null Ref slice must have length zero"
+            );
         }
     }
 
