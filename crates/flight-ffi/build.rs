@@ -470,13 +470,30 @@ fn main() {
     .unwrap();
     for qualified_ty in &boxed_types {
         let type_name = qualified_ty.rsplit("::").next().unwrap_or(qualified_ty);
-        if type_name.starts_with('[') || type_name.starts_with('(') {
+        if type_name.starts_with('(') {
             continue;
         }
-        let snake = boxed_free_suffix(qualified_ty);
+        // A boxed scalar fixed array is released by its element type and length, `[f32; 20]`
+        // through `flight_free_f32_array_20`.
+        let (snake, boxed_ty) = if type_name.starts_with('[') {
+            let Some((element, length)) = type_name
+                .strip_prefix('[')
+                .and_then(|rest| rest.strip_suffix(']'))
+                .and_then(|array| array.split_once(';'))
+                .filter(|(element, _)| is_scalar(element.trim()))
+            else {
+                continue;
+            };
+            (
+                format!("{}_array_{}", element.trim(), length.trim()),
+                type_name.to_string(),
+            )
+        } else {
+            (boxed_free_suffix(qualified_ty), qualified_ty.clone())
+        };
         writeln!(
             all_output,
-            "#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn flight_free_{snake}(ptr: *mut {qualified_ty}) {{\n    if !ptr.is_null() {{\n        unsafe {{ drop(Box::from_raw(ptr)); }}\n    }}\n}}"
+            "#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn flight_free_{snake}(ptr: *mut {boxed_ty}) {{\n    if !ptr.is_null() {{\n        unsafe {{ drop(Box::from_raw(ptr)); }}\n    }}\n}}"
         )
         .unwrap();
     }
@@ -1213,6 +1230,8 @@ fn generate_ffi_wrapper(func: &ParsedFn) -> Option<(String, Option<String>)> {
         })
     } else if matches!(value_wrap, FfiReturn::ArcRefReturn) {
         value_ty.and_then(non_entity_ref_boxed_type)
+    } else if let FfiReturn::ArrayOutReturn(element) = value_wrap {
+        Some(element.clone())
     } else {
         None
     };
@@ -1461,6 +1480,10 @@ enum FfiReturn {
     // `Arc<T>` / `Option<Arc<T>>`: the shared value is immutable, so C receives an owned clone of T
     // through T's own carrier and frees it as it would a T return.
     SharedClone(Box<FfiReturn>),
+    // The scalar element type of a boxed `Vec<Vec<T>>`, read one inner list at a time.
+    NestedVecReturn(String),
+    // A fixed array of owned structs, written as boxed handles into the caller's `out_values` array.
+    ArrayOutReturn(String),
 }
 
 // A future return lowered to `complete_fn(complete_ctx, value, error)`: `value` is `value_ty`,
@@ -1502,10 +1525,15 @@ fn is_async_callback_value(value: &FfiReturn) -> bool {
             | FfiReturn::RefReturn
             | FfiReturn::OptionRefReturn
             | FfiReturn::AsyncCallback(_)
+            | FfiReturn::ArrayOutReturn(_)
     )
 }
 
 fn append_tuple_out_params(ffi_params: &mut Vec<String>, call_wrap: &FfiReturn) {
+    if matches!(call_wrap, FfiReturn::ArrayOutReturn(_)) {
+        ffi_params.push("out_values: *mut *mut std::ffi::c_void".to_string());
+        return;
+    }
     let (FfiReturn::TupleReturn(elements) | FfiReturn::OptionTupleReturn(elements)) = call_wrap
     else {
         return;
@@ -1685,6 +1713,18 @@ fn generate_return_body(call_wrap: &FfiReturn, call: &str, preamble: &str) -> St
                  None => std::ptr::null_mut(),\n    \
                  }}"
         ),
+        FfiReturn::NestedVecReturn(_) => format!(
+            "{preamble}    let lists = {call};\n    \
+                 return Box::into_raw(Box::new(lists)) as *mut std::ffi::c_void;"
+        ),
+        // Null `out_values` drops the values; otherwise every slot receives an owned handle.
+        FfiReturn::ArrayOutReturn(_) => format!(
+            "{preamble}    let values = {call};\n    \
+                 if out_values.is_null() {{ return; }}\n    \
+                 for (index, value) in values.into_iter().enumerate() {{\n        \
+                     unsafe {{ *out_values.add(index) = Box::into_raw(Box::new(value)) as *mut std::ffi::c_void; }}\n    \
+                 }}"
+        ),
         FfiReturn::TupleReturn(elements) => {
             let mut body = format!("{preamble}    let result = {call};");
             for (index, _) in elements.iter().enumerate() {
@@ -1727,6 +1767,9 @@ fn generate_vec_result_helpers(ffi_name: &str, call_wrap: &FfiReturn) -> String 
         FfiReturn::BoxSliceReturn(element) | FfiReturn::OptionBoxSliceReturn(element) => {
             (element.as_str(), false, format!("Box<[{element}]>"))
         }
+        FfiReturn::NestedVecReturn(element) => {
+            return generate_nested_vec_result_helpers(ffi_name, element);
+        }
         _ => return String::new(),
     };
     let get_return = if element_is_ref {
@@ -1741,6 +1784,16 @@ fn generate_vec_result_helpers(ffi_name: &str, call_wrap: &FfiReturn) -> String 
     };
     format!(
         "\n#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn {ffi_name}_result_len(result: *const std::ffi::c_void) -> usize {{\n    if result.is_null() {{ return 0; }}\n    return unsafe {{ &*(result as *const {container}) }}.len();\n}}\n#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn {ffi_name}_result_get(result: *const std::ffi::c_void, index: usize) -> {get_return} {{\n    if result.is_null() {{ return std::ptr::null(); }}\n    match unsafe {{ &*(result as *const {container}) }}.get(index) {{\n        Some(value) => {get_value},\n        None => std::ptr::null(),\n    }}\n}}\n#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn {ffi_name}_result_free(result: *mut std::ffi::c_void) {{\n    if !result.is_null() {{ unsafe {{ drop(Box::from_raw(result as *mut {container})); }} }}\n}}"
+    )
+}
+
+// A boxed `Vec<Vec<T>>` result: `_result_len` counts the inner lists, `_result_get_len` and
+// `_result_get` give one inner list's length and base (null when out of range or empty), and
+// `_result_free` releases every list. Inner bases stay valid until that free.
+fn generate_nested_vec_result_helpers(ffi_name: &str, element: &str) -> String {
+    let container = format!("Vec<Vec<{element}>>");
+    format!(
+        "\n#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn {ffi_name}_result_len(result: *const std::ffi::c_void) -> usize {{\n    if result.is_null() {{ return 0; }}\n    return unsafe {{ &*(result as *const {container}) }}.len();\n}}\n#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn {ffi_name}_result_get(result: *const std::ffi::c_void, index: usize) -> *const {element} {{\n    if result.is_null() {{ return std::ptr::null(); }}\n    match unsafe {{ &*(result as *const {container}) }}.get(index) {{\n        Some(list) if !list.is_empty() => list.as_ptr(),\n        _ => std::ptr::null(),\n    }}\n}}\n#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn {ffi_name}_result_get_len(result: *const std::ffi::c_void, index: usize) -> usize {{\n    if result.is_null() {{ return 0; }}\n    return unsafe {{ &*(result as *const {container}) }}.get(index).map_or(0, |list| list.len());\n}}\n#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn {ffi_name}_result_free(result: *mut std::ffi::c_void) {{\n    if !result.is_null() {{ unsafe {{ drop(Box::from_raw(result as *mut {container})); }} }}\n}}"
     )
 }
 
@@ -2101,7 +2154,170 @@ fn map_generic_carrier_return(ty: &str) -> Option<Option<(String, FfiReturn)>> {
     {
         return Some(map_shared_value_return(inner.trim(), true));
     }
+    // Vec<Vec<T>> -> boxed nested lists of scalars.
+    if let Some(inner) = ty
+        .strip_prefix("Vec<Vec<")
+        .and_then(|rest| rest.strip_suffix(">>"))
+    {
+        let inner = inner.trim();
+        return Some(is_scalar(inner).then(|| {
+            (
+                " -> *mut std::ffi::c_void".to_string(),
+                FfiReturn::NestedVecReturn(inner.to_string()),
+            )
+        }));
+    }
+    // [T; N] of owned structs -> N boxed handles written to `out_values`.
+    if let Some((element, _length)) = ty
+        .strip_prefix('[')
+        .and_then(|rest| rest.strip_suffix(']'))
+        .and_then(|inner| inner.split_once(';'))
+    {
+        let element = element.trim();
+        if is_scalar(element) {
+            return None;
+        }
+        return Some(is_plain_struct_type(element).then(|| {
+            (
+                String::new(),
+                FfiReturn::ArrayOutReturn(qualify_type(element)),
+            )
+        }));
+    }
     None
+}
+
+// A named, non-generic SDK struct that an `&T` / `*const T` carrier can point at directly.
+fn is_plain_struct_type(ty: &str) -> bool {
+    !ty.is_empty()
+        && ty != "str"
+        && !is_scalar(ty)
+        && !is_known_enum(ty)
+        && !ty.starts_with('&')
+        && !ty.starts_with('[')
+        && !is_ffi_incompatible(ty)
+        && !is_extension_point_type(ty)
+}
+
+// Generic slice carriers for parameters. Every element pointer is borrowed for the call only.
+fn map_generic_carrier_param(name: &str, ty: &str) -> Option<Option<MappedParam>> {
+    let inner = ty.strip_prefix("&[")?.strip_suffix(']')?.trim();
+    let ptr_name = format!("{name}_ptr");
+    let len_name = format!("{name}_len");
+    let binding = format!("{}_items", name.trim_start_matches('_'));
+    let null_check = format!(
+        "    assert!(!{ptr_name}.is_null() || {len_name} == 0, \"null array must have length zero\");"
+    );
+    let pointers = |element_ptr: &str| {
+        format!(
+            "    let {binding}_ptrs: &[*const {element_ptr}] = if {len_name} == 0 {{ &[] }} else {{ unsafe {{ std::slice::from_raw_parts({ptr_name}, {len_name}) }} }};"
+        )
+    };
+
+    // &[Vec<T>] of scalars -> (lists, lengths, count), copied into owned lists for the call.
+    if let Some(element) = inner
+        .strip_prefix("Vec<")
+        .and_then(|rest| rest.strip_suffix('>'))
+    {
+        let element = element.trim();
+        if !is_scalar(element) {
+            return Some(None);
+        }
+        let lengths_name = format!("{name}_lengths");
+        return Some(Some(MappedParam {
+            ffi_params: vec![
+                (
+                    ptr_name.clone(),
+                    "*const *const std::ffi::c_void".to_string(),
+                ),
+                (lengths_name.clone(), "*const usize".to_string()),
+                (len_name.clone(), "usize".to_string()),
+            ],
+            bindings: vec![
+                format!(
+                    "    assert!((!{ptr_name}.is_null() && !{lengths_name}.is_null()) || {len_name} == 0, \"null list array must have length zero\");"
+                ),
+                pointers("std::ffi::c_void"),
+                format!(
+                    "    let {binding}_lengths: &[usize] = if {len_name} == 0 {{ &[] }} else {{ unsafe {{ std::slice::from_raw_parts({lengths_name}, {len_name}) }} }};"
+                ),
+                format!(
+                    "    let {binding}: Vec<Vec<{element}>> = {binding}_ptrs.iter().zip({binding}_lengths).map(|(list, length)| {{ assert!(!(*list).is_null() || *length == 0, \"null list must have length zero\"); if *length == 0 {{ Vec::new() }} else {{ unsafe {{ std::slice::from_raw_parts(*list as *const {element}, *length) }}.to_vec() }} }}).collect();"
+                ),
+            ],
+            call_expr: format!("&{binding}"),
+        }));
+    }
+
+    // &[(&str, &str)] -> parallel key and value C string arrays sharing one count.
+    if inner == "(&str, &str)" {
+        let keys_name = format!("{name}_keys");
+        let values_name = format!("{name}_values");
+        return Some(Some(MappedParam {
+            ffi_params: vec![
+                (
+                    keys_name.clone(),
+                    "*const *const std::ffi::c_char".to_string(),
+                ),
+                (
+                    values_name.clone(),
+                    "*const *const std::ffi::c_char".to_string(),
+                ),
+                (len_name.clone(), "usize".to_string()),
+            ],
+            bindings: vec![
+                format!(
+                    "    assert!((!{keys_name}.is_null() && !{values_name}.is_null()) || {len_name} == 0, \"null string pair arrays must have length zero\");"
+                ),
+                format!(
+                    "    let {binding}_keys: &[*const std::ffi::c_char] = if {len_name} == 0 {{ &[] }} else {{ unsafe {{ std::slice::from_raw_parts({keys_name}, {len_name}) }} }};"
+                ),
+                format!(
+                    "    let {binding}_values: &[*const std::ffi::c_char] = if {len_name} == 0 {{ &[] }} else {{ unsafe {{ std::slice::from_raw_parts({values_name}, {len_name}) }} }};"
+                ),
+                format!(
+                    "    let {binding}: Vec<(&str, &str)> = {binding}_keys.iter().zip({binding}_values).map(|(key, value)| {{ assert!(!(*key).is_null() && !(*value).is_null(), \"string pair arrays contain a null pointer\"); (unsafe {{ std::ffi::CStr::from_ptr(*key) }}.to_str().unwrap_or(\"\"), unsafe {{ std::ffi::CStr::from_ptr(*value) }}.to_str().unwrap_or(\"\")) }}).collect();"
+                ),
+            ],
+            call_expr: format!("&{binding}"),
+        }));
+    }
+
+    let element = inner.strip_prefix('&')?.trim();
+    // &[&[T; N]] of scalars -> an array of fixed-array pointers.
+    let (element_ty, element_ptr) = if let Some((scalar, length)) = element
+        .strip_prefix('[')
+        .and_then(|rest| rest.strip_suffix(']'))
+        .and_then(|array| array.split_once(';'))
+    {
+        let scalar = scalar.trim();
+        if !is_scalar(scalar) {
+            return Some(None);
+        }
+        (
+            format!("[{scalar}; {}]", length.trim()),
+            "std::ffi::c_void".to_string(),
+        )
+    } else if is_plain_struct_type(element) {
+        // &[&T] -> an array of struct pointers.
+        (qualify_type(element), "std::ffi::c_void".to_string())
+    } else {
+        return Some(None);
+    };
+    Some(Some(MappedParam {
+        ffi_params: vec![
+            (ptr_name.clone(), format!("*const *const {element_ptr}")),
+            (len_name.clone(), "usize".to_string()),
+        ],
+        bindings: vec![
+            null_check,
+            pointers(&element_ptr),
+            format!(
+                "    let {binding}: Vec<&{element_ty}> = {binding}_ptrs.iter().map(|item| {{ assert!(!(*item).is_null(), \"array contains a null pointer\"); unsafe {{ &*(*item as *const {element_ty}) }} }}).collect();"
+            ),
+        ],
+        call_expr: format!("&{binding}"),
+    }))
 }
 
 // The shared value's own owned carrier: a boxed struct or a boxed Vec, never a borrow, a Ref
@@ -2961,6 +3177,10 @@ fn map_param_to_ffi(name: &str, ty: &str) -> Option<MappedParam> {
                 });
             }
         }
+    }
+
+    if let Some(mapped) = map_generic_carrier_param(name, ty) {
+        return mapped;
     }
 
     // &mut [T] -> (*mut T, usize)

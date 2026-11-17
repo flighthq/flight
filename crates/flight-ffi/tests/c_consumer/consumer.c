@@ -169,6 +169,46 @@ static void check_shared_values(void) {
   flight_get_timeline_labels_result_free(NULL);
 }
 
+static void check_slice_carriers(void) {
+  /* Scalar lists pass as (lists, lengths, count) and are copied for the call. */
+  const double square[8] = {0.0, 0.0, 10.0, 0.0, 10.0, 10.0, 0.0, 10.0};
+  const void *const contours[1] = {square};
+  const size_t lengths[1] = {8};
+  void *region = flight_create_clip_region_from_contours(contours, (void *)lengths, 1, 0);
+  expect(flight_clip_region_contains_point(region, 5.0, 5.0), "a contour clip region contains its interior");
+  expect(!flight_clip_region_contains_point(region, 15.0, 5.0), "a contour clip region excludes its exterior");
+
+  /* A nested list return is read one inner list at a time and freed once. */
+  void *path = flight_create_path(-1);
+  flight_append_path_rectangle(path, 0.0, 0.0, 4.0, 2.0);
+  void *flattened = flight_flatten_path(path, 0.25);
+  expect(flight_flatten_path_result_len(flattened) == 1, "flatten_path returns one contour for a rectangle");
+  expect(flight_flatten_path_result_get_len(flattened, 0) >= 8, "the flattened rectangle has every corner");
+  expect(flight_flatten_path_result_get(flattened, 0) != NULL, "a non-empty contour has a base pointer");
+  expect(flight_flatten_path_result_get(flattened, 1) == NULL, "an out-of-range contour reads NULL");
+  flight_flatten_path_result_free(flattened);
+  flight_free_path(path);
+
+  /* Fixed-array elements pass as a pointer array; the fixed-array result has a typed free. */
+  float identity[20] = {0};
+  identity[0] = identity[6] = identity[12] = identity[18] = 1.0f;
+  const void *const matrices[2] = {identity, identity};
+  float *fused = flight_fuse_color_matrices(matrices, 2);
+  expect(near(fused[0], 1.0f) && near(fused[1], 0.0f), "fusing identities yields identity");
+  flight_free_f32_array_20(fused);
+
+  /* A fixed array of structs is written into the caller's handle array. */
+  void *bitmap = flight_create_bitmap(1, 1, 0x11223344);
+  void *channels[4] = {NULL, NULL, NULL, NULL};
+  flight_split_bitmap_channels(bitmap, channels);
+  for (int index = 0; index < 4; index++) {
+    expect(channels[index] != NULL, "split_bitmap_channels writes every channel");
+    flight_free_bitmap(channels[index]);
+  }
+  flight_split_bitmap_channels(bitmap, NULL);
+  flight_free_bitmap(bitmap);
+}
+
 static void check_optional_texture_variants(void) {
   void *texture = flight_create_texture(NULL);
   expect(texture != NULL, "create_texture returns a handle");
@@ -406,6 +446,7 @@ int main(void) {
   check_import_diagnostic_lists();
   check_non_entity_create_results();
   check_shared_values();
+  check_slice_carriers();
   check_optional_texture_variants();
   check_optional_tuples();
   check_unit_signals();

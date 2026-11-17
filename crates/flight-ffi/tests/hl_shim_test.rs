@@ -443,6 +443,51 @@ fn shared_arc_returns_lower_to_owned_inner_carriers() {
     }
 }
 
+// Slice carriers borrow every element for one call: scalar lists as (lists, lengths, count), struct
+// and fixed-array elements as pointer arrays, and string pairs as parallel C string arrays. Nested
+// list and fixed-array returns are owned and have their own frees.
+#[test]
+fn slice_and_fixed_array_carriers_have_exact_c_and_hashlink_shapes() {
+    let (header, shim) = generated();
+    for line in [
+        "void * flight_create_clip_region_from_contours(const void * const * arg0, void * arg1, size_t arg2, uint32_t arg3);",
+        "void * flight_explain_clip_region_contours(const void * const * arg0, void * arg1, size_t arg2);",
+        "void flight_set_clip_region_to_contours(void * arg0, const void * const * arg1, void * arg2, size_t arg3, uint32_t arg4);",
+        "void flight_resolve_path_regions(void * arg0, void * arg1, const void * const * arg2, void * arg3, size_t arg4, uint32_t arg5);",
+        "void flight_write_path_boolean_contours(void * arg0, const void * const * arg1, void * arg2, size_t arg3);",
+        "void flight_union_all_paths(void * arg0, void * arg1, const void * const * arg2, size_t arg3, void * arg4);",
+        "void * flight_merge_requirement_sets(const void * const * arg0, size_t arg1);",
+        "void flight_destroy_power_keep_awake(const void * const * arg0, size_t arg1, void * arg2);",
+        "void * flight_fuse_color_matrices(const void * const * arg0, size_t arg1);",
+        "void flight_free_f32_array_20(void * arg0);",
+        "void * flight_set_storage_items(void * arg0, const char * const * arg1, const char * const * arg2, size_t arg3, void * arg4);",
+        "void flight_split_bitmap_channels(void * arg0, void * * arg1);",
+        "void * flight_flatten_path(void * arg0, double arg1);",
+        "size_t flight_flatten_path_result_len(void * arg0);",
+        "void * flight_flatten_path_result_get(void * arg0, size_t arg1);",
+        "size_t flight_flatten_path_result_get_len(void * arg0, size_t arg1);",
+        "void flight_flatten_path_result_free(void * arg0);",
+    ] {
+        assert_line(&header, line);
+    }
+    for line in [
+        "DEFINE_PRIM(_BYTES, flight_create_clip_region_from_contours, _BYTES _BYTES _I32 _I32);",
+        "DEFINE_PRIM(_BYTES, flight_set_storage_items, _BYTES _BYTES _BYTES _I32 _BYTES);",
+        "DEFINE_PRIM(_VOID, flight_split_bitmap_channels, _BYTES _BYTES);",
+        "DEFINE_PRIM(_VOID, flight_free_f32_array_20, _BYTES);",
+    ] {
+        assert_line(&shim, line);
+    }
+
+    let stats = generated_stats();
+    for skip in [
+        "unmapped_param(&[&StorageMigration])",
+        "unmapped_param(&[Option<Node2DRef>])",
+    ] {
+        assert!(stats.contains(skip), "{skip} must stay skipped");
+    }
+}
+
 fn assert_line(text: &str, line: &str) {
     assert!(
         text.lines().any(|candidate| candidate == line),

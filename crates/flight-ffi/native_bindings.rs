@@ -350,6 +350,8 @@ fn type_fingerprint(ty: &Type) -> String {
                 .collect::<Vec<_>>()
                 .join(",")
         ),
+        // Boxed scalar fixed arrays are released by `flight_free_<scalar>_array_<length>`.
+        Type::Array(array) => format!("[{}; _]", type_fingerprint(&array.elem)),
         _ => panic!("unsupported generated handle type"),
     }
 }
