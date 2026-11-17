@@ -322,6 +322,7 @@ fn main() {
 
     let mut all_output = String::from("use flight_sdk;\n\n");
     let mut boxed_types: BTreeSet<String> = BTreeSet::new();
+    let mut vec_ref_handle_specs: BTreeSet<VecRefHandleSpec> = BTreeSet::new();
     let mut seen_names: BTreeSet<String> = BTreeSet::new();
     let mut stats_total_fns = 0usize;
     let mut stats_generated = 0usize;
@@ -374,16 +375,21 @@ fn main() {
                     let skip_reason = categorize_skip(func);
                     *stats_skipped.entry(skip_reason).or_insert(0) += 1;
                 } else {
+                    let mut emitted = false;
                     for (ffi_name, wrapper, boxed_ty) in wrappers {
                         if !seen_names.contains(&ffi_name) {
                             writeln!(crate_output, "{wrapper}").unwrap();
                             seen_names.insert(ffi_name);
                             crate_used = true;
+                            emitted = true;
                             stats_generated += 1;
                             if let Some(ty) = boxed_ty {
                                 boxed_types.insert(ty);
                             }
                         }
+                    }
+                    if emitted {
+                        collect_vec_ref_handle_specs(func, &mut vec_ref_handle_specs);
                     }
                 }
             } else {
@@ -395,6 +401,7 @@ fn main() {
                     writeln!(crate_output, "{wrapper}").unwrap();
                     seen_names.insert(ffi_name);
                     crate_used = true;
+                    collect_vec_ref_handle_specs(func, &mut vec_ref_handle_specs);
                     stats_generated += 1;
                     if let Some(ty) = boxed_ty {
                         boxed_types.insert(ty);
@@ -428,6 +435,9 @@ fn main() {
         writeln!(stats_file, "  skip: {count:>4} {reason}").unwrap();
     }
     fs::write(out_dir.join("ffi_stats.txt"), &stats_file).unwrap();
+
+    validate_required_vec_ref_handle_specs(&vec_ref_handle_specs);
+    all_output.push_str(&generate_vec_ref_handle_support(&vec_ref_handle_specs));
 
     writeln!(all_output, "// free functions").unwrap();
     writeln!(
@@ -1493,6 +1503,39 @@ fn generate_vec_result_helpers(ffi_name: &str, call_wrap: &FfiReturn) -> String 
     )
 }
 
+fn generate_vec_ref_handle_support(specs: &BTreeSet<VecRefHandleSpec>) -> String {
+    if specs.is_empty() {
+        return String::new();
+    }
+    let mut output = String::from(
+        "// Exact, tagged handle families for caller-owned Vec<Ref<T>> output parameters.\n\
+         #[repr(C)]\n\
+         pub struct FfiVecRefHandle<T: ?Sized> {\n\
+             tag: u64,\n\
+             values: Vec<flight_sdk::Ref<T>>,\n\
+         }\n",
+    );
+    for spec in specs {
+        let slug = &spec.slug;
+        let inner_ty = &spec.inner_ty;
+        let tag = spec.tag;
+        writeln!(
+            output,
+            "unsafe fn ffi_vec_ref_{slug}_values<'a>(handle: *mut FfiVecRefHandle<{inner_ty}>) -> &'a mut Vec<flight_sdk::Ref<{inner_ty}>> {{\n    assert!(!handle.is_null(), \"null Vec<Ref<{slug}>> handle\");\n    let handle = unsafe {{ &mut *handle }};\n    assert_eq!(handle.tag, {tag}, \"wrong Vec<Ref<{slug}>> handle type\");\n    &mut handle.values\n}}\n\
+             #[unsafe(no_mangle)]\n\
+             pub unsafe extern \"C\" fn flight_vec_ref_{slug}_create() -> *mut FfiVecRefHandle<{inner_ty}> {{\n    Box::into_raw(Box::new(FfiVecRefHandle {{ tag: {tag}, values: Vec::new() }}))\n}}\n\
+             #[unsafe(no_mangle)]\n\
+             pub unsafe extern \"C\" fn flight_vec_ref_{slug}_len(handle: *const FfiVecRefHandle<{inner_ty}>) -> usize {{\n    if handle.is_null() {{ return 0; }}\n    let handle = unsafe {{ &*handle }};\n    assert_eq!(handle.tag, {tag}, \"wrong Vec<Ref<{slug}>> handle type\");\n    handle.values.len()\n}}\n\
+             #[unsafe(no_mangle)]\n\
+             pub unsafe extern \"C\" fn flight_vec_ref_{slug}_get(handle: *const FfiVecRefHandle<{inner_ty}>, index: usize) -> *const std::ffi::c_void {{\n    if handle.is_null() {{ return std::ptr::null(); }}\n    let handle = unsafe {{ &*handle }};\n    assert_eq!(handle.tag, {tag}, \"wrong Vec<Ref<{slug}>> handle type\");\n    match handle.values.get(index) {{\n        Some(value) => value as *const _ as *const std::ffi::c_void,\n        None => std::ptr::null(),\n    }}\n}}\n\
+             #[unsafe(no_mangle)]\n\
+             pub unsafe extern \"C\" fn flight_vec_ref_{slug}_free(handle: *mut FfiVecRefHandle<{inner_ty}>) {{\n    if handle.is_null() {{ return; }}\n    assert_eq!(unsafe {{ (*handle).tag }}, {tag}, \"wrong Vec<Ref<{slug}>> handle type\");\n    unsafe {{ drop(Box::from_raw(handle)); }}\n}}"
+        )
+        .unwrap();
+    }
+    output
+}
+
 fn categorize_skip(func: &ParsedFn) -> String {
     if func.name.starts_with("initialize_") {
         return "prefix_skip(initialize_)".to_string();
@@ -1608,6 +1651,73 @@ fn supported_ref_inner(ty: &str) -> Option<&str> {
         return None;
     }
     Some(inner)
+}
+
+#[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd)]
+struct VecRefHandleSpec {
+    slug: String,
+    inner_ty: String,
+    tag: u64,
+}
+
+fn vec_ref_handle_spec(ty: &str) -> Option<VecRefHandleSpec> {
+    let ty = strip_crate_paths(&strip_lifetimes(&resolve_type_alias(ty.trim())));
+    let inner = ty.strip_prefix("&mut Vec<")?.strip_suffix('>')?.trim();
+    let ref_inner = supported_ref_inner(inner)?;
+    let (dyn_prefix, bare_inner) = match ref_inner.strip_prefix("dyn ") {
+        Some(inner) => ("dyn_", inner),
+        None => ("", ref_inner),
+    };
+    let bare_inner = bare_inner.rsplit("::").next().unwrap_or(bare_inner);
+    let slug = format!("{dyn_prefix}{}", to_snake_case(bare_inner));
+    let inner_ty = qualify_type(ref_inner);
+    let tag = inner_ty
+        .as_bytes()
+        .iter()
+        .fold(0xcbf29ce484222325, |hash, byte| {
+            (hash ^ u64::from(*byte)).wrapping_mul(0x100000001b3)
+        });
+    Some(VecRefHandleSpec {
+        slug,
+        inner_ty,
+        tag,
+    })
+}
+
+fn collect_vec_ref_handle_specs(func: &ParsedFn, specs: &mut BTreeSet<VecRefHandleSpec>) {
+    specs.extend(
+        func.params
+            .iter()
+            .filter_map(|param| vec_ref_handle_spec(&param.ty)),
+    );
+}
+
+fn validate_required_vec_ref_handle_specs(specs: &BTreeSet<VecRefHandleSpec>) {
+    let actual: BTreeSet<_> = specs
+        .iter()
+        .map(|spec| (spec.slug.as_str(), spec.inner_ty.as_str()))
+        .collect();
+    let expected: BTreeSet<_> = [
+        ("app_window", "flight_sdk::AppWindow"),
+        ("audio_channel", "flight_sdk::AudioChannel"),
+        ("dyn_modifier", "dyn flight_sdk::Modifier"),
+        ("flow_state", "flight_sdk::FlowState"),
+        ("texture", "flight_sdk::Texture"),
+        ("texture_atlas_region", "flight_sdk::TextureAtlasRegion"),
+        ("tray_icon", "flight_sdk::TrayIcon"),
+    ]
+    .into_iter()
+    .collect();
+    assert_eq!(
+        actual, expected,
+        "generated mutable Vec<Ref<_>> handle types changed"
+    );
+    let tags: BTreeSet<_> = specs.iter().map(|spec| spec.tag).collect();
+    assert_eq!(
+        tags.len(),
+        specs.len(),
+        "mutable Vec<Ref<_>> handle tags must be unique"
+    );
 }
 
 fn qualify_type(ty: &str) -> String {
@@ -2309,21 +2419,15 @@ fn map_param_to_ffi(name: &str, ty: &str) -> Option<MappedParam> {
         }
     }
 
-    // &mut Vec<Ref<T>> -> *mut c_void (opaque handle created by a Vec result wrapper)
-    if let Some(inner) = ty.strip_prefix("&mut Vec<") {
-        if let Some(inner) = inner.strip_suffix('>') {
-            let inner = inner.trim();
-            if let Some(ref_inner) = supported_ref_inner(inner) {
-                let element_ty = format!("flight_sdk::Ref<{}>", qualify_type(ref_inner));
-                return mapped_single(
-                    name,
-                    "*mut std::ffi::c_void",
-                    format!(
-                        "{{ assert!(!{name}.is_null(), \"null Vec<Ref<_>> handle\"); unsafe {{ &mut *({name} as *mut Vec<{element_ty}>) }} }}"
-                    ),
-                );
-            }
-        }
+    // &mut Vec<Ref<T>> -> an exact opaque handle family. C sees void*, while the generated Rust
+    // ABI keeps distinct generic pointer types and validates a per-type tag before exposing values.
+    if let Some(spec) = vec_ref_handle_spec(ty) {
+        let handle_ty = format!("FfiVecRefHandle<{}>", spec.inner_ty);
+        return mapped_single(
+            name,
+            &format!("*mut {handle_ty}"),
+            format!("unsafe {{ ffi_vec_ref_{}_values({name}) }}", spec.slug),
+        );
     }
 
     // &mut Vec<T> -> *mut c_void (opaque handle)
