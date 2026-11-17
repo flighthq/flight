@@ -78,6 +78,52 @@ static void check_string_arrays(void) {
   flight_free_string(empty);
 }
 
+static bool take_string_equals(char *text, const char *expected) {
+  bool equal = text != NULL && strcmp(text, expected) == 0;
+  flight_free_string(text);
+  return equal;
+}
+
+static void check_import_diagnostic_lists(void) {
+  const char *cocos = "<plist><dict><key>frames</key><dict><key>a.png</key><dict></dict></dict></dict></plist>";
+  const char *starling = "<TextureAtlas imagePath=\"a.png\"></TextureAtlas>";
+  /* NULL collects nothing; the parse still returns its owned result. */
+  void *data = flight_parse_starling_spritesheet(starling, NULL, NULL);
+  expect(data != NULL, "a NULL diagnostics list still parses");
+  flight_free_spritesheet_data(data);
+
+  void *list = flight_create_import_diagnostic_list();
+  expect(list != NULL && flight_get_import_diagnostic_list_length(list) == 0, "a new list is empty");
+  data = flight_parse_cocos_plist_spritesheet(cocos, list);
+  flight_free_spritesheet_data(data);
+  data = flight_parse_starling_spritesheet(starling, NULL, list);
+  flight_free_spritesheet_data(data);
+  expect(flight_get_import_diagnostic_list_length(list) == 2, "each call appends its diagnostics");
+  expect(flight_get_import_diagnostic_list_severity(list, 0) == 0, "a dropped frame has Drop severity");
+  expect(take_string_equals(flight_get_import_diagnostic_list_kind(list, 0), "spritesheet.cocos-plist.unrecognized-frame"),
+         "kind is an owned string");
+  expect(take_string_equals(flight_get_import_diagnostic_list_origin(list, 0), "parseCocosPlistXml"),
+         "origin is an owned string");
+  expect(take_string_equals(flight_get_import_diagnostic_list_message(list, 0),
+                            "Drop parseCocosPlistXml: spritesheet.cocos-plist.unrecognized-frame frame=a.png"),
+         "message is the formatted diagnostic");
+  expect(flight_get_import_diagnostic_list_detail_length(list, 0) == 1, "the dropped frame carries one detail");
+  expect(take_string_equals(flight_get_import_diagnostic_list_detail_key(list, 0, 0), "frame"), "detail key");
+  expect(flight_get_import_diagnostic_list_detail_kind(list, 0, 0) == 2, "detail kind 2 is a string");
+  expect(take_string_equals(flight_get_import_diagnostic_list_detail_string(list, 0, 0), "a.png"), "detail string");
+  expect(isnan(flight_get_import_diagnostic_list_detail_number(list, 0, 0)), "a non-number detail reads NaN");
+  expect(flight_get_import_diagnostic_list_severity(list, 1) == 1, "missing dimensions has Recover severity");
+  expect(flight_get_import_diagnostic_list_detail_length(list, 1) == 0, "a detail-free diagnostic has no detail");
+  expect(flight_get_import_diagnostic_list_severity(list, 2) == -1, "an index past the end reads -1");
+  expect(flight_get_import_diagnostic_list_kind(list, 2) == NULL, "an index past the end reads NULL");
+
+  flight_clear_import_diagnostic_list(list);
+  expect(flight_get_import_diagnostic_list_length(list) == 0, "clear empties the list for reuse");
+  flight_destroy_import_diagnostic_list(list);
+  flight_destroy_import_diagnostic_list(NULL);
+  expect(flight_get_import_diagnostic_list_length(NULL) == 0, "a NULL list reads empty");
+}
+
 static void check_non_entity_create_results(void) {
   void *insets = flight_create_safe_area_insets();
   expect(insets != NULL, "create_safe_area_insets returns a struct handle");
@@ -180,6 +226,7 @@ int main(void) {
   check_handles();
   check_strings();
   check_string_arrays();
+  check_import_diagnostic_lists();
   check_non_entity_create_results();
   check_optional_texture_variants();
   check_optional_tuples();

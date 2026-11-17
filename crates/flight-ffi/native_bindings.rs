@@ -183,6 +183,77 @@ fn tuple_out_carrier(name: &str, ty: &Type) -> Option<Carrier> {
     });
 }
 
+// Every `FfiImportDiagnosticList` pointer comes from the one constructor: helpers that mutate or
+// release the list take it `*mut`, readers take it `*const`, and a wrapper borrows at most one list.
+fn validate_import_diagnostic_list(file: &syn::File) {
+    let list_type = "FfiImportDiagnosticList";
+    let mut seen = Vec::new();
+    for item in &file.items {
+        let Item::Fn(function) = item else {
+            continue;
+        };
+        let name = function.sig.ident.to_string();
+        if name == "flight_create_import_diagnostic_list" {
+            let pointer = function_return(function)
+                .and_then(pointer_type)
+                .expect("flight_create_import_diagnostic_list must return a list pointer");
+            assert!(
+                pointer.mutability.is_some() && type_fingerprint(&pointer.elem) == list_type,
+                "flight_create_import_diagnostic_list must return an owned *mut {list_type}"
+            );
+            seen.push(name);
+            continue;
+        }
+        let lists: Vec<_> = function
+            .sig
+            .inputs
+            .iter()
+            .filter_map(|argument| match argument {
+                FnArg::Typed(parameter) => pointer_type(&parameter.ty),
+                FnArg::Receiver(_) => None,
+            })
+            .filter(|pointer| type_fingerprint(&pointer.elem) == list_type)
+            .collect();
+        if lists.is_empty() || !name.starts_with("flight_") {
+            continue;
+        }
+        assert_eq!(lists.len(), 1, "{name} borrows more than one {list_type}");
+        let mutable = lists[0].mutability.is_some();
+        if name.contains("_import_diagnostic_list") {
+            let mutates = name == "flight_clear_import_diagnostic_list"
+                || name == "flight_destroy_import_diagnostic_list";
+            assert_eq!(
+                mutable, mutates,
+                "{name} has the wrong {list_type} mutability"
+            );
+            seen.push(name);
+        } else {
+            assert!(mutable, "{name} must borrow its {list_type} as *mut");
+        }
+    }
+    seen.sort();
+    assert_eq!(
+        seen,
+        [
+            "flight_clear_import_diagnostic_list",
+            "flight_create_import_diagnostic_list",
+            "flight_destroy_import_diagnostic_list",
+            "flight_get_import_diagnostic_list_detail_bool",
+            "flight_get_import_diagnostic_list_detail_key",
+            "flight_get_import_diagnostic_list_detail_kind",
+            "flight_get_import_diagnostic_list_detail_length",
+            "flight_get_import_diagnostic_list_detail_number",
+            "flight_get_import_diagnostic_list_detail_string",
+            "flight_get_import_diagnostic_list_kind",
+            "flight_get_import_diagnostic_list_length",
+            "flight_get_import_diagnostic_list_message",
+            "flight_get_import_diagnostic_list_origin",
+            "flight_get_import_diagnostic_list_severity",
+        ],
+        "{list_type} helper ABI changed"
+    );
+}
+
 fn validate_vec_result_helpers(file: &syn::File) {
     let mut groups: BTreeMap<String, u8> = BTreeMap::new();
     for item in &file.items {
@@ -452,6 +523,7 @@ fn validate_vec_ref_handles(file: &syn::File) {
 
 pub fn emit(source: &str, out: &Path) {
     let file = syn::parse_file(source).expect("generated FFI Rust must parse");
+    validate_import_diagnostic_list(&file);
     validate_vec_result_helpers(&file);
     validate_vec_ref_handles(&file);
     let mut header = String::from(

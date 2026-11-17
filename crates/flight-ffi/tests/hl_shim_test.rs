@@ -139,6 +139,65 @@ fn optional_bool_return_uses_the_parameter_sentinel_encoding() {
     assert!(wrappers.contains(expected), "missing:\n{expected}");
 }
 
+// `Option<&mut Vec<ImportDiagnostic>>` lowers to one nullable opaque list carrier, and the list's
+// helpers are plain scalar, string and pointer carriers on both sides.
+#[test]
+fn optional_diagnostics_lower_to_a_nullable_import_diagnostic_list() {
+    let (header, shim) = generated();
+    for (prototype, registration) in [
+        (
+            "void * flight_parse_starling_spritesheet(const char * arg0, void * arg1, void * arg2);",
+            "DEFINE_PRIM(_BYTES, flight_parse_starling_spritesheet, _BYTES _BYTES _BYTES);",
+        ),
+        (
+            "void * flight_create_import_diagnostic_list(void);",
+            "DEFINE_PRIM(_BYTES, flight_create_import_diagnostic_list, _NO_ARG);",
+        ),
+        (
+            "void flight_clear_import_diagnostic_list(void * arg0);",
+            "DEFINE_PRIM(_VOID, flight_clear_import_diagnostic_list, _BYTES);",
+        ),
+        (
+            "void flight_destroy_import_diagnostic_list(void * arg0);",
+            "DEFINE_PRIM(_VOID, flight_destroy_import_diagnostic_list, _BYTES);",
+        ),
+        (
+            "size_t flight_get_import_diagnostic_list_length(void * arg0);",
+            "DEFINE_PRIM(_I32, flight_get_import_diagnostic_list_length, _BYTES);",
+        ),
+        (
+            "int32_t flight_get_import_diagnostic_list_severity(void * arg0, size_t arg1);",
+            "DEFINE_PRIM(_I32, flight_get_import_diagnostic_list_severity, _BYTES _I32);",
+        ),
+        (
+            "char * flight_get_import_diagnostic_list_message(void * arg0, size_t arg1);",
+            "DEFINE_PRIM(_BYTES, flight_get_import_diagnostic_list_message, _BYTES _I32);",
+        ),
+        (
+            "float flight_get_import_diagnostic_list_detail_number(void * arg0, size_t arg1, size_t arg2);",
+            "DEFINE_PRIM(_F32, flight_get_import_diagnostic_list_detail_number, _BYTES _I32 _I32);",
+        ),
+    ] {
+        assert_line(&header, prototype);
+        assert_line(&shim, registration);
+    }
+    let wrappers = fs::read_to_string(Path::new(env!("OUT_DIR")).join("ffi_generated.rs")).unwrap();
+    assert!(wrappers.contains(
+        "if diagnostics.is_null() { None } else { Some(unsafe { ffi_import_diagnostic_list_values(diagnostics) }) }"
+    ));
+    let borrowers = wrappers
+        .lines()
+        .filter(|line| {
+            line.starts_with("pub unsafe extern \"C\" fn flight_")
+                && line.contains("diagnostics: *mut FfiImportDiagnosticList")
+        })
+        .count();
+    assert_eq!(
+        borrowers, 28,
+        "the recovered diagnostics-collecting wrapper count changed"
+    );
+}
+
 // An `Option<extern "C" fn>` parameter is the same C function-pointer type, where NULL is `None`.
 #[test]
 fn optional_callbacks_lower_to_nullable_typed_function_pointers() {
