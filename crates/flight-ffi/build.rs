@@ -332,6 +332,7 @@ fn main() {
     let out_dir = PathBuf::from(env::var("OUT_DIR").unwrap());
 
     let mut all_output = String::from("use flight_sdk;\n\n");
+    all_output.push_str(generate_shape_bounds_context_support());
     let mut boxed_types: BTreeSet<String> = BTreeSet::new();
     let mut vec_ref_handle_specs: BTreeSet<VecRefHandleSpec> = BTreeSet::new();
     let mut seen_names: BTreeSet<String> = BTreeSet::new();
@@ -1111,6 +1112,11 @@ fn is_ffi_incompatible(ty: &str) -> bool {
         || SKIP_TYPES.iter().any(|s| ty.contains(s))
 }
 
+fn is_shape_bounds_context(ty: &str) -> bool {
+    strip_crate_paths(&strip_lifetimes(&resolve_type_alias(ty.trim())))
+        == "&mut dyn ShapeBoundsContext"
+}
+
 fn generate_ffi_wrapper(func: &ParsedFn) -> Option<(String, Option<String>)> {
     if SKIP_FN_PREFIXES.iter().any(|p| func.name.starts_with(p)) {
         return None;
@@ -1122,6 +1128,11 @@ fn generate_ffi_wrapper(func: &ParsedFn) -> Option<(String, Option<String>)> {
     let mut ffi_params = Vec::new();
     let mut call_args = Vec::new();
     let mut guard_bindings = Vec::new();
+    let shape_bounds_context = func
+        .params
+        .iter()
+        .find(|param| is_shape_bounds_context(&param.ty))
+        .map(|param| param.name.trim_start_matches('_').to_string());
 
     for param in &func.params {
         let mapped = map_param_to_ffi(&param.name, &param.ty)?;
@@ -1154,9 +1165,11 @@ fn generate_ffi_wrapper(func: &ParsedFn) -> Option<(String, Option<String>)> {
         }
     }
 
-    let (ret_decl, call_wrap) = match &func.ret {
-        None => (String::new(), FfiReturn::Void),
-        Some(ty) => map_return_to_ffi(ty)?,
+    let (ret_decl, call_wrap) = match (&shape_bounds_context, &func.ret) {
+        (Some(_), None) => (" -> bool".to_string(), FfiReturn::Void),
+        (Some(_), Some(_)) => return None,
+        (None, None) => (String::new(), FfiReturn::Void),
+        (None, Some(ty)) => map_return_to_ffi(ty)?,
     };
     append_tuple_out_params(&mut ffi_params, &call_wrap);
     append_async_callback_params(&mut ffi_params, &call_wrap);
@@ -1196,7 +1209,13 @@ fn generate_ffi_wrapper(func: &ParsedFn) -> Option<(String, Option<String>)> {
         format!("{}\n", guard_bindings.join("\n"))
     };
 
-    let body = generate_return_body(&call_wrap, &call, &preamble);
+    let body = if let Some(context) = shape_bounds_context {
+        format!(
+            "{preamble}    let call_succeeded = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {{\n        {call};\n    }})).is_ok();\n    return call_succeeded && !ffi_{context}.failed;"
+        )
+    } else {
+        generate_return_body(&call_wrap, &call, &preamble)
+    };
     let helpers = generate_vec_result_helpers(&ffi_name, value_wrap);
 
     Some((
@@ -1748,6 +1767,141 @@ fn generate_import_diagnostic_list_support() -> String {
     output
 }
 
+fn generate_shape_bounds_context_support() -> &'static str {
+    r#"// Caller-owned implementation of the open ShapeBoundsContext trait.
+#[derive(Clone, Copy)]
+#[repr(C)]
+pub struct FfiShapeBoundsContextVTable {
+    pub close_path: Option<unsafe extern "C-unwind" fn(*mut std::ffi::c_void) -> bool>,
+    pub cubic_curve_to: Option<unsafe extern "C-unwind" fn(*mut std::ffi::c_void, f64, f64, f64, f64, f64, f64) -> bool>,
+    pub draw_circle: Option<unsafe extern "C-unwind" fn(*mut std::ffi::c_void, f64, f64, f64) -> bool>,
+    pub draw_ellipse: Option<unsafe extern "C-unwind" fn(*mut std::ffi::c_void, f64, f64, f64, f64) -> bool>,
+    pub draw_rectangle: Option<unsafe extern "C-unwind" fn(*mut std::ffi::c_void, f64, f64, f64, f64) -> bool>,
+    pub draw_rounded_rectangle: Option<unsafe extern "C-unwind" fn(*mut std::ffi::c_void, f64, f64, f64, f64, f64) -> bool>,
+    pub expand_point: Option<unsafe extern "C-unwind" fn(*mut std::ffi::c_void, f64, f64) -> bool>,
+    pub flush_path: Option<unsafe extern "C-unwind" fn(*mut std::ffi::c_void) -> bool>,
+    pub line_to: Option<unsafe extern "C-unwind" fn(*mut std::ffi::c_void, f64, f64) -> bool>,
+    pub move_to: Option<unsafe extern "C-unwind" fn(*mut std::ffi::c_void, f64, f64) -> bool>,
+    pub quadratic_curve_to: Option<unsafe extern "C-unwind" fn(*mut std::ffi::c_void, f64, f64, f64, f64) -> bool>,
+    pub set_stroke_style: Option<unsafe extern "C-unwind" fn(*mut std::ffi::c_void, f64, u32, u32, f64) -> bool>,
+}
+
+impl FfiShapeBoundsContextVTable {
+    fn is_complete(&self) -> bool {
+        self.close_path.is_some()
+            && self.cubic_curve_to.is_some()
+            && self.draw_circle.is_some()
+            && self.draw_ellipse.is_some()
+            && self.draw_rectangle.is_some()
+            && self.draw_rounded_rectangle.is_some()
+            && self.expand_point.is_some()
+            && self.flush_path.is_some()
+            && self.line_to.is_some()
+            && self.move_to.is_some()
+            && self.quadratic_curve_to.is_some()
+            && self.set_stroke_style.is_some()
+    }
+}
+
+struct FfiShapeBoundsContext {
+    context: *mut std::ffi::c_void,
+    vtable: FfiShapeBoundsContextVTable,
+    failed: bool,
+}
+
+impl FfiShapeBoundsContext {
+    unsafe fn new(
+        context: *mut std::ffi::c_void,
+        vtable: *const FfiShapeBoundsContextVTable,
+    ) -> Option<Self> {
+        if context.is_null() || vtable.is_null() {
+            return None;
+        }
+        let vtable = unsafe { *vtable };
+        if !vtable.is_complete() {
+            return None;
+        }
+        Some(Self { context, vtable, failed: false })
+    }
+}
+
+impl flight_sdk::ShapeBoundsContext for FfiShapeBoundsContext {
+    fn close_path(&mut self) {
+        if self.failed { return; }
+        let Some(callback) = self.vtable.close_path else { self.failed = true; return; };
+        self.failed = !unsafe { callback(self.context) };
+    }
+
+    fn cubic_curve_to(&mut self, control_x1: f64, control_y1: f64, control_x2: f64, control_y2: f64, x: f64, y: f64) {
+        if self.failed { return; }
+        let Some(callback) = self.vtable.cubic_curve_to else { self.failed = true; return; };
+        self.failed = !unsafe { callback(self.context, control_x1, control_y1, control_x2, control_y2, x, y) };
+    }
+
+    fn draw_circle(&mut self, center_x: f64, center_y: f64, radius: f64) {
+        if self.failed { return; }
+        let Some(callback) = self.vtable.draw_circle else { self.failed = true; return; };
+        self.failed = !unsafe { callback(self.context, center_x, center_y, radius) };
+    }
+
+    fn draw_ellipse(&mut self, center_x: f64, center_y: f64, radius_x: f64, radius_y: f64) {
+        if self.failed { return; }
+        let Some(callback) = self.vtable.draw_ellipse else { self.failed = true; return; };
+        self.failed = !unsafe { callback(self.context, center_x, center_y, radius_x, radius_y) };
+    }
+
+    fn draw_rectangle(&mut self, x: f64, y: f64, width: f64, height: f64) {
+        if self.failed { return; }
+        let Some(callback) = self.vtable.draw_rectangle else { self.failed = true; return; };
+        self.failed = !unsafe { callback(self.context, x, y, width, height) };
+    }
+
+    fn draw_rounded_rectangle(&mut self, x: f64, y: f64, width: f64, height: f64, radius: f64) {
+        if self.failed { return; }
+        let Some(callback) = self.vtable.draw_rounded_rectangle else { self.failed = true; return; };
+        self.failed = !unsafe { callback(self.context, x, y, width, height, radius) };
+    }
+
+    fn expand_point(&mut self, x: f64, y: f64) {
+        if self.failed { return; }
+        let Some(callback) = self.vtable.expand_point else { self.failed = true; return; };
+        self.failed = !unsafe { callback(self.context, x, y) };
+    }
+
+    fn flush_path(&mut self) {
+        if self.failed { return; }
+        let Some(callback) = self.vtable.flush_path else { self.failed = true; return; };
+        self.failed = !unsafe { callback(self.context) };
+    }
+
+    fn line_to(&mut self, x: f64, y: f64) {
+        if self.failed { return; }
+        let Some(callback) = self.vtable.line_to else { self.failed = true; return; };
+        self.failed = !unsafe { callback(self.context, x, y) };
+    }
+
+    fn move_to(&mut self, x: f64, y: f64) {
+        if self.failed { return; }
+        let Some(callback) = self.vtable.move_to else { self.failed = true; return; };
+        self.failed = !unsafe { callback(self.context, x, y) };
+    }
+
+    fn quadratic_curve_to(&mut self, control_x: f64, control_y: f64, x: f64, y: f64) {
+        if self.failed { return; }
+        let Some(callback) = self.vtable.quadratic_curve_to else { self.failed = true; return; };
+        self.failed = !unsafe { callback(self.context, control_x, control_y, x, y) };
+    }
+
+    fn set_stroke_style(&mut self, width: f64, caps: flight_sdk::CapsStyle, joints: flight_sdk::JointStyle, miter_limit: f64) {
+        if self.failed { return; }
+        let Some(callback) = self.vtable.set_stroke_style else { self.failed = true; return; };
+        self.failed = !unsafe { callback(self.context, width, caps as u32, joints as u32, miter_limit) };
+    }
+}
+
+"#
+}
+
 fn generate_vec_ref_handle_support(specs: &BTreeSet<VecRefHandleSpec>) -> String {
     if specs.is_empty() {
         return String::new();
@@ -2278,6 +2432,27 @@ fn map_param_to_ffi(name: &str, ty: &str) -> Option<MappedParam> {
                 "if {name}.is_null() {{ None }} else {{ Some(unsafe {{ ffi_import_diagnostic_list_values({name}) }}) }}"
             ),
         );
+    }
+
+    // ShapeBoundsContext is an open, stateful public trait. Its C carrier is a caller-owned context
+    // pointer plus a complete typed vtable; validation happens before any callback can mutate it.
+    if ty == "&mut dyn ShapeBoundsContext" {
+        let clean = name.trim_start_matches('_');
+        let context_ptr = format!("{name}_ptr");
+        let vtable = format!("{name}_vtable");
+        return Some(MappedParam {
+            ffi_params: vec![
+                (context_ptr.clone(), "*mut std::ffi::c_void".to_string()),
+                (
+                    vtable.clone(),
+                    "*const FfiShapeBoundsContextVTable".to_string(),
+                ),
+            ],
+            bindings: vec![format!(
+                "    let Some(mut ffi_{clean}) = (unsafe {{ FfiShapeBoundsContext::new({context_ptr}, {vtable}) }}) else {{ return false; }};"
+            )],
+            call_expr: format!("&mut ffi_{clean}"),
+        });
     }
 
     // &str / &'static str -> *const c_char

@@ -221,6 +221,149 @@ static void check_optional_callbacks(void) {
   expect(transition != NULL && ease(NULL, 0.5f) == 0.5f, "optional callbacks are typed function pointers");
 }
 
+struct shape_bounds_recording_context {
+  int flush_calls;
+  bool flush_succeeds;
+};
+
+static bool shape_bounds_close_path(void *context) {
+  (void)context;
+  return true;
+}
+
+static bool shape_bounds_cubic_curve_to(void *context, double control_x1, double control_y1, double control_x2,
+                                        double control_y2, double x, double y) {
+  (void)context;
+  (void)control_x1;
+  (void)control_y1;
+  (void)control_x2;
+  (void)control_y2;
+  (void)x;
+  (void)y;
+  return true;
+}
+
+static bool shape_bounds_draw_circle(void *context, double center_x, double center_y, double radius) {
+  (void)context;
+  (void)center_x;
+  (void)center_y;
+  (void)radius;
+  return true;
+}
+
+static bool shape_bounds_draw_ellipse(void *context, double center_x, double center_y, double radius_x,
+                                      double radius_y) {
+  (void)context;
+  (void)center_x;
+  (void)center_y;
+  (void)radius_x;
+  (void)radius_y;
+  return true;
+}
+
+static bool shape_bounds_draw_rectangle(void *context, double x, double y, double width, double height) {
+  (void)context;
+  (void)x;
+  (void)y;
+  (void)width;
+  (void)height;
+  return true;
+}
+
+static bool shape_bounds_draw_rounded_rectangle(void *context, double x, double y, double width, double height,
+                                                 double radius) {
+  (void)context;
+  (void)x;
+  (void)y;
+  (void)width;
+  (void)height;
+  (void)radius;
+  return true;
+}
+
+static bool shape_bounds_expand_point(void *context, double x, double y) {
+  (void)context;
+  (void)x;
+  (void)y;
+  return true;
+}
+
+static bool shape_bounds_flush_path(void *context) {
+  struct shape_bounds_recording_context *recording = context;
+  recording->flush_calls += 1;
+  return recording->flush_succeeds;
+}
+
+static bool shape_bounds_line_to(void *context, double x, double y) {
+  (void)context;
+  (void)x;
+  (void)y;
+  return true;
+}
+
+static bool shape_bounds_move_to(void *context, double x, double y) {
+  (void)context;
+  (void)x;
+  (void)y;
+  return true;
+}
+
+static bool shape_bounds_quadratic_curve_to(void *context, double control_x, double control_y, double x, double y) {
+  (void)context;
+  (void)control_x;
+  (void)control_y;
+  (void)x;
+  (void)y;
+  return true;
+}
+
+static bool shape_bounds_set_stroke_style(void *context, double width, uint32_t caps, uint32_t joints,
+                                           double miter_limit) {
+  (void)context;
+  (void)width;
+  (void)caps;
+  (void)joints;
+  (void)miter_limit;
+  return true;
+}
+
+static const FlightShapeBoundsContextVTable shape_bounds_vtable = {
+    .close_path = shape_bounds_close_path,
+    .cubic_curve_to = shape_bounds_cubic_curve_to,
+    .draw_circle = shape_bounds_draw_circle,
+    .draw_ellipse = shape_bounds_draw_ellipse,
+    .draw_rectangle = shape_bounds_draw_rectangle,
+    .draw_rounded_rectangle = shape_bounds_draw_rounded_rectangle,
+    .expand_point = shape_bounds_expand_point,
+    .flush_path = shape_bounds_flush_path,
+    .line_to = shape_bounds_line_to,
+    .move_to = shape_bounds_move_to,
+    .quadratic_curve_to = shape_bounds_quadratic_curve_to,
+    .set_stroke_style = shape_bounds_set_stroke_style,
+};
+
+static void check_shape_bounds_context(void) {
+  bool (*flush)(void *, const FlightShapeBoundsContextVTable *) = flight_default_shape_bounds_flush;
+  struct shape_bounds_recording_context recording = {0, true};
+
+  expect(flush(&recording, &shape_bounds_vtable), "a complete ShapeBoundsContext vtable succeeds");
+  expect(recording.flush_calls == 1, "ShapeBoundsContext mutation reaches the caller-owned context once");
+
+  recording.flush_calls = 0;
+  expect(!flush(NULL, &shape_bounds_vtable), "a NULL ShapeBoundsContext pointer is rejected");
+  expect(!flush(&recording, NULL), "a NULL ShapeBoundsContext vtable is rejected");
+  expect(recording.flush_calls == 0, "NULL ShapeBoundsContext inputs cannot invoke a callback");
+
+  FlightShapeBoundsContextVTable incomplete = shape_bounds_vtable;
+  incomplete.move_to = NULL;
+  expect(!flush(&recording, &incomplete), "every ShapeBoundsContext callback is required up front");
+  expect(recording.flush_calls == 0, "an incomplete vtable is rejected before context mutation");
+
+  recording.flush_succeeds = false;
+  expect(!flush(&recording, &shape_bounds_vtable), "a ShapeBoundsContext callback can report failure");
+  expect(recording.flush_calls == 1, "a failing ShapeBoundsContext callback still runs exactly once");
+}
+
 int main(void) {
   check_scalars();
   check_handles();
@@ -233,6 +376,7 @@ int main(void) {
   check_unit_signals();
   check_async_callbacks();
   check_optional_callbacks();
+  check_shape_bounds_context();
   if (failures != 0) {
     fprintf(stderr, "flight-ffi C consumer: %d failure(s)\n", failures);
     return 1;

@@ -216,6 +216,107 @@ fn optional_callbacks_lower_to_nullable_typed_function_pointers() {
     );
 }
 
+#[test]
+fn shape_bounds_context_vtable_and_failure_boundary_are_pinned() {
+    let out_dir = Path::new(env!("OUT_DIR"));
+    let wrappers = fs::read_to_string(out_dir.join("ffi_generated.rs")).unwrap();
+    let stats = fs::read_to_string(out_dir.join("ffi_stats.txt")).unwrap();
+    let (header, shim) = generated();
+
+    for (rust_member, c_member) in [
+        (
+            "    pub close_path: Option<unsafe extern \"C-unwind\" fn(*mut std::ffi::c_void) -> bool>,",
+            "bool (*close_path)(void *context);",
+        ),
+        (
+            "    pub cubic_curve_to: Option<unsafe extern \"C-unwind\" fn(*mut std::ffi::c_void, f64, f64, f64, f64, f64, f64) -> bool>,",
+            "bool (*cubic_curve_to)(void *context, double control_x1, double control_y1, double control_x2, double control_y2, double x, double y);",
+        ),
+        (
+            "    pub draw_circle: Option<unsafe extern \"C-unwind\" fn(*mut std::ffi::c_void, f64, f64, f64) -> bool>,",
+            "bool (*draw_circle)(void *context, double center_x, double center_y, double radius);",
+        ),
+        (
+            "    pub draw_ellipse: Option<unsafe extern \"C-unwind\" fn(*mut std::ffi::c_void, f64, f64, f64, f64) -> bool>,",
+            "bool (*draw_ellipse)(void *context, double center_x, double center_y, double radius_x, double radius_y);",
+        ),
+        (
+            "    pub draw_rectangle: Option<unsafe extern \"C-unwind\" fn(*mut std::ffi::c_void, f64, f64, f64, f64) -> bool>,",
+            "bool (*draw_rectangle)(void *context, double x, double y, double width, double height);",
+        ),
+        (
+            "    pub draw_rounded_rectangle: Option<unsafe extern \"C-unwind\" fn(*mut std::ffi::c_void, f64, f64, f64, f64, f64) -> bool>,",
+            "bool (*draw_rounded_rectangle)(void *context, double x, double y, double width, double height, double radius);",
+        ),
+        (
+            "    pub expand_point: Option<unsafe extern \"C-unwind\" fn(*mut std::ffi::c_void, f64, f64) -> bool>,",
+            "bool (*expand_point)(void *context, double x, double y);",
+        ),
+        (
+            "    pub flush_path: Option<unsafe extern \"C-unwind\" fn(*mut std::ffi::c_void) -> bool>,",
+            "bool (*flush_path)(void *context);",
+        ),
+        (
+            "    pub line_to: Option<unsafe extern \"C-unwind\" fn(*mut std::ffi::c_void, f64, f64) -> bool>,",
+            "bool (*line_to)(void *context, double x, double y);",
+        ),
+        (
+            "    pub move_to: Option<unsafe extern \"C-unwind\" fn(*mut std::ffi::c_void, f64, f64) -> bool>,",
+            "bool (*move_to)(void *context, double x, double y);",
+        ),
+        (
+            "    pub quadratic_curve_to: Option<unsafe extern \"C-unwind\" fn(*mut std::ffi::c_void, f64, f64, f64, f64) -> bool>,",
+            "bool (*quadratic_curve_to)(void *context, double control_x, double control_y, double x, double y);",
+        ),
+        (
+            "    pub set_stroke_style: Option<unsafe extern \"C-unwind\" fn(*mut std::ffi::c_void, f64, u32, u32, f64) -> bool>,",
+            "bool (*set_stroke_style)(void *context, double width, uint32_t caps, uint32_t joints, double miter_limit);",
+        ),
+    ] {
+        assert_line(&wrappers, rust_member);
+        assert_line(&header, c_member);
+    }
+
+    for representative in [
+        "        self.failed = !unsafe { callback(self.context) };",
+        "        self.failed = !unsafe { callback(self.context, width, caps as u32, joints as u32, miter_limit) };",
+    ] {
+        assert_line(&wrappers, representative);
+    }
+
+    let wrapper = r#"pub unsafe extern "C" fn flight_default_shape_bounds_flush(context_ptr: *mut std::ffi::c_void, context_vtable: *const FfiShapeBoundsContextVTable) -> bool {
+    let Some(mut ffi_context) = (unsafe { FfiShapeBoundsContext::new(context_ptr, context_vtable) }) else { return false; };
+    let call_succeeded = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        flight_sdk::default_shape_bounds_flush(&mut ffi_context);
+    })).is_ok();
+    return call_succeeded && !ffi_context.failed;
+}"#;
+    assert!(
+        wrappers.contains(wrapper),
+        "missing generated wrapper:\n{wrapper}"
+    );
+
+    assert_line(
+        &header,
+        "bool flight_default_shape_bounds_flush(void * arg0, const FlightShapeBoundsContextVTable * arg1);",
+    );
+    assert_line(
+        &shim,
+        "HL_PRIM bool HL_NAME(flight_default_shape_bounds_flush)(vbyte * arg0, vbyte * arg1) { return (bool)flight_default_shape_bounds_flush((void *)arg0, (const FlightShapeBoundsContextVTable *)arg1); }",
+    );
+    assert_line(
+        &shim,
+        "DEFINE_PRIM(_BOOL, flight_default_shape_bounds_flush, _BYTES _BYTES);",
+    );
+
+    assert_line(&stats, "FFI stats: 3916 total, 3636 generated, 377 skipped");
+    assert_line(
+        &stats,
+        "  skip:   11 unknown_dyn_param(&dyn ShapeCommandArgumentCursor)",
+    );
+    assert!(!stats.contains("ShapeBoundsContext)"));
+}
+
 // A provider future returns through trailing `complete_fn` / `complete_ctx` parameters. C sees the
 // callback's real function-pointer type; HashLink carries it as bytes and casts at the call.
 #[test]
