@@ -1,4 +1,3 @@
-
 use flight_textsegment::*;
 
 struct GraphemeFixture {
