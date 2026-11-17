@@ -4,6 +4,100 @@ use std::sync::Arc;
 
 use crate::*;
 
+mod flight_build_texture_atlas_region_index {
+    use super::*;
+
+    fn take_string(value: *mut std::ffi::c_char) -> String {
+        let text = unsafe { CStr::from_ptr(value) }
+            .to_str()
+            .unwrap()
+            .to_string();
+        unsafe { flight_free_string(value) };
+        return text;
+    }
+
+    #[test]
+    fn fills_a_registered_map_with_owned_region_refs() {
+        let atlas = flight_sdk::create_texture_atlas();
+        for name in ["walk", "idle"] {
+            flight_sdk::add_texture_atlas_region(
+                &mut atlas.write().unwrap(),
+                0.0,
+                0.0,
+                1.0,
+                1.0,
+                None,
+                None,
+                Some(name),
+            );
+        }
+        let map = unsafe { flight_create_texture_atlas_region_map() };
+        unsafe { flight_build_texture_atlas_region_index(map, &*atlas.read().unwrap()) };
+        assert_eq!(
+            unsafe { flight_get_texture_atlas_region_map_length(map) },
+            2
+        );
+        assert_eq!(
+            take_string(unsafe { flight_get_texture_atlas_region_map_key(map, 0) }),
+            "idle"
+        );
+        assert_eq!(
+            take_string(unsafe { flight_get_texture_atlas_region_map_key(map, 1) }),
+            "walk"
+        );
+        assert!(unsafe { flight_get_texture_atlas_region_map_key(map, 2) }.is_null());
+        let walk = CString::new("walk").unwrap();
+        let region = unsafe { flight_get_texture_atlas_region_map_value(map, walk.as_ptr()) };
+        // The region handle is an owned clone that outlives the map.
+        unsafe { flight_destroy_texture_atlas_region_map(map) };
+        let region_ref =
+            unsafe { &*(region as *const flight_sdk::Ref<flight_sdk::TextureAtlasRegion>) };
+        assert!(Arc::ptr_eq(region_ref, &atlas.read().unwrap().regions[0]));
+        assert_eq!(Arc::strong_count(region_ref), 2);
+        unsafe { flight_free_texture_atlas_region_ref(region as *mut _) };
+        assert_eq!(Arc::strong_count(&atlas.read().unwrap().regions[0]), 1);
+    }
+
+    #[test]
+    fn reads_missing_keys_and_null_maps_as_null() {
+        let map = unsafe { flight_create_texture_atlas_region_map() };
+        let missing = CString::new("missing").unwrap();
+        assert!(
+            unsafe { flight_get_texture_atlas_region_map_value(map, missing.as_ptr()) }.is_null()
+        );
+        assert!(
+            unsafe { flight_get_texture_atlas_region_map_value(map, std::ptr::null()) }.is_null()
+        );
+        unsafe { flight_destroy_texture_atlas_region_map(map) };
+        assert!(
+            unsafe {
+                flight_get_texture_atlas_region_map_value(std::ptr::null(), missing.as_ptr())
+            }
+            .is_null()
+        );
+        assert_eq!(
+            unsafe { flight_get_texture_atlas_region_map_length(std::ptr::null()) },
+            0
+        );
+        unsafe { flight_free_texture_atlas_region_ref(std::ptr::null_mut()) };
+    }
+
+    #[test]
+    fn treats_another_handle_type_as_no_map() {
+        let atlas = flight_sdk::create_texture_atlas();
+        let counts = unsafe { flight_create_string_count_map() };
+        let foreign = counts as *mut FfiTextureAtlasRegionMap;
+        unsafe { flight_build_texture_atlas_region_index(foreign, &*atlas.read().unwrap()) };
+        assert_eq!(
+            unsafe { flight_get_texture_atlas_region_map_length(foreign) },
+            0
+        );
+        unsafe { flight_destroy_texture_atlas_region_map(foreign) };
+        assert_eq!(unsafe { flight_get_string_count_map_length(counts) }, 0);
+        unsafe { flight_destroy_string_count_map(counts) };
+    }
+}
+
 mod flight_collect_svg_counts {
     use super::*;
 
@@ -339,6 +433,46 @@ mod flight_get_midi_access_input_ports_result {
         assert!(!unsafe { flight_get_midi_access_input_ports_result_has_ports(null) });
         assert!(unsafe { flight_get_midi_access_input_ports_result_get(null, 0) }.is_null());
         unsafe { flight_get_midi_access_input_ports_result_free(std::ptr::null_mut()) };
+    }
+}
+
+mod flight_get_optional_texture_atlas_list_item {
+    use super::*;
+
+    #[test]
+    fn reads_owned_page_refs_and_empty_slots() {
+        let atlas = flight_sdk::create_texture_atlas();
+        let list = unsafe { flight_create_optional_texture_atlas_list() };
+        unsafe { ffi_optional_texture_atlas_list_values(list) }
+            .unwrap()
+            .extend([Some(atlas.clone()), None]);
+        assert_eq!(
+            unsafe { flight_get_optional_texture_atlas_list_length(list) },
+            2
+        );
+        let page = unsafe { flight_get_optional_texture_atlas_list_item(list, 0) };
+        assert!(unsafe { flight_get_optional_texture_atlas_list_item(list, 1) }.is_null());
+        assert!(unsafe { flight_get_optional_texture_atlas_list_item(list, 2) }.is_null());
+        // The page handle is an owned clone that outlives the list.
+        unsafe { flight_destroy_optional_texture_atlas_list(list) };
+        let page_ref = unsafe { &*(page as *const flight_sdk::Ref<flight_sdk::TextureAtlas>) };
+        assert!(Arc::ptr_eq(page_ref, &atlas));
+        unsafe { flight_free_texture_atlas_ref(page as *mut _) };
+        assert_eq!(Arc::strong_count(&atlas), 1);
+        unsafe { flight_free_texture_atlas_ref(std::ptr::null_mut()) };
+    }
+
+    #[test]
+    fn get_bitmap_font_pages_skips_null_and_foreign_lists() {
+        let font = flight_sdk::create_texture_atlas();
+        let handle =
+            &font as *const flight_sdk::Ref<flight_sdk::TextureAtlas> as *const std::ffi::c_void;
+        // Without a live list the wrapper returns before it reads the font handle.
+        unsafe { flight_get_bitmap_font_pages(std::ptr::null_mut(), handle) };
+        let counts = unsafe { flight_create_string_count_map() };
+        unsafe { flight_get_bitmap_font_pages(counts as *mut FfiOptionalTextureAtlasList, handle) };
+        assert_eq!(unsafe { flight_get_string_count_map_length(counts) }, 0);
+        unsafe { flight_destroy_string_count_map(counts) };
     }
 }
 

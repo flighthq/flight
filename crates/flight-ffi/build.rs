@@ -462,7 +462,8 @@ fn main() {
     all_output.push_str(&generate_vec_ref_handle_support(&vec_ref_handle_specs));
     all_output.push_str(&generate_import_diagnostic_list_support());
     all_output.push_str(&generate_typed_array_ref_support());
-    all_output.push_str(generate_string_count_map_support());
+    all_output.push_str(&generate_registered_handle_support());
+    boxed_types.extend(REGISTERED_HANDLE_REFS.iter().map(|ty| ty.to_string()));
     all_output.push_str(generate_storage_set_items_result_support());
 
     writeln!(all_output, "// free functions").unwrap();
@@ -1977,72 +1978,113 @@ pub unsafe extern "C" fn flight_is_storage_set_items_result_ok(result: *const fl
 "#
 }
 
-// The caller-owned map behind every `&mut HashMap<String, usize>` parameter, with the same live
-// registry contract as the import diagnostic list: the registry filters provenance and type for
-// live handles and is not lifetime synchronization. NULL or a live handle of another type makes
-// the wrapper return its empty value without calling the SDK; clear and destroy ignore it, and
-// getters read 0, -1 or NULL. A map pointer is valid from `flight_create_string_count_map` until
-// its single `flight_destroy_string_count_map` call; callers synchronize access and never use it
-// after destroy. Keys are indexed in byte order and returned as owned strings.
-fn generate_string_count_map_support() -> &'static str {
-    r#"pub struct FfiStringCountMap {
-    values: std::collections::HashMap<String, usize>,
-}
-static FFI_STRING_COUNT_MAPS: std::sync::Mutex<std::collections::BTreeSet<usize>> = std::sync::Mutex::new(std::collections::BTreeSet::new());
-fn get_ffi_string_count_maps() -> std::sync::MutexGuard<'static, std::collections::BTreeSet<usize>> {
-    FFI_STRING_COUNT_MAPS.lock().unwrap_or_else(std::sync::PoisonError::into_inner)
-}
-fn is_ffi_string_count_map(map: *const FfiStringCountMap) -> bool {
-    !map.is_null() && get_ffi_string_count_maps().contains(&(map as usize))
-}
-unsafe fn ffi_string_count_map_values<'a>(map: *mut FfiStringCountMap) -> Option<&'a mut std::collections::HashMap<String, usize>> {
-    if !is_ffi_string_count_map(map) { return None; }
-    Some(unsafe { &mut (*map).values })
-}
-unsafe fn ffi_string_count_map_sorted_key<'a>(map: *const FfiStringCountMap, index: usize) -> Option<&'a String> {
-    if !is_ffi_string_count_map(map) { return None; }
-    let mut keys: Vec<&String> = unsafe { &(*map).values }.keys().collect();
+// Caller-owned collectors behind exact mutable generic parameters, as (parameter type, handle
+// struct, slug, value type). Each keeps the import diagnostic list's live-registry contract: the
+// registry filters provenance and type for live handles and is not lifetime synchronization. NULL
+// or a live handle of another type makes the wrapper return its empty value without calling the
+// SDK; clear and destroy ignore it, and getters read 0, -1 or NULL. A handle is valid from
+// `flight_create_<slug>` until its single `flight_destroy_<slug>` call; callers synchronize access
+// and never use it after destroy. Ref values are read as owned clones released by the Ref's own
+// free, so nothing a getter returns borrows from the collector.
+const REGISTERED_HANDLES: &[(&str, &str, &str, &str)] = &[
+    (
+        "&mut HashMap<String, Ref<TextureAtlasRegion>>",
+        "FfiTextureAtlasRegionMap",
+        "texture_atlas_region_map",
+        "std::collections::HashMap<String, flight_sdk::Ref<flight_sdk::TextureAtlasRegion>>",
+    ),
+    (
+        "&mut HashMap<String, usize>",
+        "FfiStringCountMap",
+        "string_count_map",
+        "std::collections::HashMap<String, usize>",
+    ),
+    (
+        "&mut Vec<Option<Ref<TextureAtlas>>>",
+        "FfiOptionalTextureAtlasList",
+        "optional_texture_atlas_list",
+        "Vec<Option<flight_sdk::Ref<flight_sdk::TextureAtlas>>>",
+    ),
+];
+
+// The Ref types registered-handle getters box, so each gets its `flight_free_<type>_ref`.
+const REGISTERED_HANDLE_REFS: &[&str] = &[
+    "flight_sdk::Ref<flight_sdk::TextureAtlas>",
+    "flight_sdk::Ref<flight_sdk::TextureAtlasRegion>",
+];
+
+fn generate_registered_handle_support() -> String {
+    let mut output = String::new();
+    for (_, handle, slug, value_ty) in REGISTERED_HANDLES {
+        let registry = format!("FFI_{}_REGISTRY", slug.to_uppercase());
+        write!(
+            output,
+            "pub struct {handle} {{\n    values: {value_ty},\n}}\n\
+             static {registry}: std::sync::Mutex<std::collections::BTreeSet<usize>> = std::sync::Mutex::new(std::collections::BTreeSet::new());\n\
+             fn get_ffi_{slug}_registry() -> std::sync::MutexGuard<'static, std::collections::BTreeSet<usize>> {{\n    {registry}.lock().unwrap_or_else(std::sync::PoisonError::into_inner)\n}}\n\
+             fn is_ffi_{slug}(handle: *const {handle}) -> bool {{\n    !handle.is_null() && get_ffi_{slug}_registry().contains(&(handle as usize))\n}}\n\
+             unsafe fn ffi_{slug}_values<'a>(handle: *mut {handle}) -> Option<&'a mut {value_ty}> {{\n    if !is_ffi_{slug}(handle) {{ return None; }}\n    Some(unsafe {{ &mut (*handle).values }})\n}}\n\
+             unsafe fn get_ffi_{slug}<'a>(handle: *const {handle}) -> Option<&'a {value_ty}> {{\n    if !is_ffi_{slug}(handle) {{ return None; }}\n    Some(unsafe {{ &(*handle).values }})\n}}\n\
+             #[unsafe(no_mangle)]\npub unsafe extern \"C\" fn flight_clear_{slug}(handle: *mut {handle}) {{\n    if let Some(values) = unsafe {{ ffi_{slug}_values(handle) }} {{ values.clear(); }}\n}}\n\
+             #[unsafe(no_mangle)]\npub unsafe extern \"C\" fn flight_create_{slug}() -> *mut {handle} {{\n    let handle = Box::into_raw(Box::new({handle} {{ values: Default::default() }}));\n    get_ffi_{slug}_registry().insert(handle as usize);\n    handle\n}}\n\
+             #[unsafe(no_mangle)]\npub unsafe extern \"C\" fn flight_destroy_{slug}(handle: *mut {handle}) {{\n    if handle.is_null() || !get_ffi_{slug}_registry().remove(&(handle as usize)) {{ return; }}\n    unsafe {{ drop(Box::from_raw(handle)); }}\n}}\n\
+             #[unsafe(no_mangle)]\npub unsafe extern \"C\" fn flight_get_{slug}_length(handle: *const {handle}) -> usize {{\n    unsafe {{ get_ffi_{slug}(handle) }}.map_or(0, |values| values.len())\n}}\n"
+        )
+        .unwrap();
+    }
+    // Map keys are indexed in byte order and returned as owned strings.
+    output.push_str(
+        r#"fn get_ffi_sorted_key<V>(values: &std::collections::HashMap<String, V>, index: usize) -> *mut std::ffi::c_char {
+    let mut keys: Vec<&String> = values.keys().collect();
     keys.sort();
-    keys.get(index).copied()
-}
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn flight_clear_string_count_map(map: *mut FfiStringCountMap) {
-    if let Some(values) = unsafe { ffi_string_count_map_values(map) } { values.clear(); }
-}
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn flight_create_string_count_map() -> *mut FfiStringCountMap {
-    let map = Box::into_raw(Box::new(FfiStringCountMap { values: std::collections::HashMap::new() }));
-    get_ffi_string_count_maps().insert(map as usize);
-    map
-}
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn flight_destroy_string_count_map(map: *mut FfiStringCountMap) {
-    if map.is_null() || !get_ffi_string_count_maps().remove(&(map as usize)) { return; }
-    unsafe { drop(Box::from_raw(map)); }
-}
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn flight_get_string_count_map_key(map: *const FfiStringCountMap, index: usize) -> *mut std::ffi::c_char {
-    match unsafe { ffi_string_count_map_sorted_key(map, index) } {
+    match keys.get(index) {
         Some(key) => std::ffi::CString::new(key.as_str()).unwrap_or_default().into_raw(),
         None => std::ptr::null_mut(),
     }
 }
+unsafe fn get_ffi_key<'a>(key: *const std::ffi::c_char) -> Option<&'a str> {
+    if key.is_null() { return None; }
+    Some(unsafe { std::ffi::CStr::from_ptr(key) }.to_str().unwrap_or(""))
+}
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn flight_get_string_count_map_length(map: *const FfiStringCountMap) -> usize {
-    if !is_ffi_string_count_map(map) { return 0; }
-    unsafe { &(*map).values }.len()
+pub unsafe extern "C" fn flight_get_optional_texture_atlas_list_item(list: *const FfiOptionalTextureAtlasList, index: usize) -> *mut std::ffi::c_void {
+    match unsafe { get_ffi_optional_texture_atlas_list(list) }.and_then(|values| values.get(index)) {
+        Some(Some(atlas)) => Box::into_raw(Box::new(atlas.clone())) as *mut std::ffi::c_void,
+        _ => std::ptr::null_mut(),
+    }
+}
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn flight_get_string_count_map_key(map: *const FfiStringCountMap, index: usize) -> *mut std::ffi::c_char {
+    match unsafe { get_ffi_string_count_map(map) } {
+        Some(values) => get_ffi_sorted_key(values, index),
+        None => std::ptr::null_mut(),
+    }
 }
 // The count for `key`, or -1 when the map has no such key.
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn flight_get_string_count_map_value(map: *const FfiStringCountMap, key: *const std::ffi::c_char) -> i64 {
-    if key.is_null() || !is_ffi_string_count_map(map) { return -1; }
-    let key = unsafe { std::ffi::CStr::from_ptr(key) }.to_str().unwrap_or("");
-    match unsafe { &(*map).values }.get(key) {
-        Some(count) => *count as i64,
-        None => -1,
+    let (Some(values), Some(key)) = (unsafe { get_ffi_string_count_map(map) }, unsafe { get_ffi_key(key) }) else { return -1; };
+    values.get(key).map_or(-1, |count| *count as i64)
+}
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn flight_get_texture_atlas_region_map_key(map: *const FfiTextureAtlasRegionMap, index: usize) -> *mut std::ffi::c_char {
+    match unsafe { get_ffi_texture_atlas_region_map(map) } {
+        Some(values) => get_ffi_sorted_key(values, index),
+        None => std::ptr::null_mut(),
     }
 }
-"#
+// An owned clone of the region Ref for `key`, or NULL when the map has no such key.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn flight_get_texture_atlas_region_map_value(map: *const FfiTextureAtlasRegionMap, key: *const std::ffi::c_char) -> *mut std::ffi::c_void {
+    let (Some(values), Some(key)) = (unsafe { get_ffi_texture_atlas_region_map(map) }, unsafe { get_ffi_key(key) }) else { return std::ptr::null_mut(); };
+    match values.get(key) {
+        Some(region) => Box::into_raw(Box::new(region.clone())) as *mut std::ffi::c_void,
+        None => std::ptr::null_mut(),
+    }
+}
+"#,
+    );
+    output
 }
 
 // The caller-owned list behind every `Option<&mut Vec<ImportDiagnostic>>` parameter. C reads an item
@@ -2537,16 +2579,19 @@ fn is_plain_struct_type(ty: &str) -> bool {
 
 // Generic slice carriers for parameters. Every element pointer is borrowed for the call only.
 fn map_generic_carrier_param(name: &str, ty: &str) -> Option<Option<MappedParam>> {
-    // &mut HashMap<String, usize> -> a registered caller-owned count map. Without a live map the
+    // An exact mutable collector -> its registered caller-owned handle. Without a live handle the
     // wrapper returns its empty value and never calls the SDK.
-    if ty == "&mut HashMap<String, usize>" {
+    if let Some((_, handle, slug, _)) = REGISTERED_HANDLES
+        .iter()
+        .find(|(param_ty, ..)| *param_ty == ty)
+    {
         let clean = name.trim_start_matches('_');
         return Some(Some(MappedParam {
-            ffi_params: vec![(name.to_string(), "*mut FfiStringCountMap".to_string())],
+            ffi_params: vec![(name.to_string(), format!("*mut {handle}"))],
             bindings: vec![format!(
-                "    let Some(counts_{clean}) = (unsafe {{ ffi_string_count_map_values({name}) }}) else {{ return Default::default(); }};"
+                "    let Some(values_{clean}) = (unsafe {{ ffi_{slug}_values({name}) }}) else {{ return Default::default(); }};"
             )],
-            call_expr: format!("counts_{clean}"),
+            call_expr: format!("values_{clean}"),
         }));
     }
     // Ref<Box<TypedArray>> by value -> a typed array Ref handle, cloned for the call.

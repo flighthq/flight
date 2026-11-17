@@ -263,6 +263,17 @@ static void check_string_maps(void) {
   expect(!flight_collect_svg_counts(NULL, "<svg/>"), "a NULL count map collects nothing");
   flight_destroy_string_count_map(NULL);
 
+  void *regions = flight_create_texture_atlas_region_map();
+  expect(flight_get_texture_atlas_region_map_length(regions) == 0, "a new region map is empty");
+  expect(flight_get_texture_atlas_region_map_value(regions, "walk") == NULL, "a missing region reads NULL");
+  expect(flight_get_texture_atlas_region_map_key(regions, 0) == NULL, "an out-of-range region key reads NULL");
+  flight_destroy_texture_atlas_region_map(regions);
+  void *pages = flight_create_optional_texture_atlas_list();
+  expect(flight_get_optional_texture_atlas_list_item(pages, 0) == NULL, "an out-of-range page reads NULL");
+  flight_destroy_optional_texture_atlas_list(pages);
+  flight_free_texture_atlas_ref(NULL);
+  flight_free_texture_atlas_region_ref(NULL);
+
   /* A NULL storage batch result reads as no result through every typed accessor. */
   expect(!flight_is_storage_set_items_result_ok(NULL), "a NULL storage batch result is not ok");
   expect(flight_get_storage_set_items_result_completed(NULL) == 0, "a NULL storage batch result completed nothing");

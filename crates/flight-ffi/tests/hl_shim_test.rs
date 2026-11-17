@@ -650,13 +650,12 @@ fn string_maps_lower_to_typed_records_and_count_maps() {
     );
     assert_line(
         &generated_wrappers(),
-        "    let Some(counts_out) = (unsafe { ffi_string_count_map_values(out) }) else { return Default::default(); };",
+        "    let Some(values_out) = (unsafe { ffi_string_count_map_values(out) }) else { return Default::default(); };",
     );
 
     let stats = generated_stats();
     for skip in [
         "unmapped_param(&mut HashMap<u64, usize>)",
-        "unmapped_param(&mut HashMap<String, Ref<TextureAtlasRegion>>)",
         "unmapped_return(HashMap<String, String>)",
     ] {
         assert!(stats.contains(skip), "{skip} must stay skipped");
@@ -686,6 +685,36 @@ fn storage_set_items_result_has_typed_reads_and_a_free() {
     ] {
         assert_line(&shim, line);
     }
+}
+
+// Exact mutable collectors cross as registered caller-owned handles; Ref values come back as owned
+// clones released by the Ref's own free.
+#[test]
+fn registered_collectors_return_owned_ref_clones() {
+    let (header, shim) = generated();
+    for line in [
+        "void flight_get_bitmap_font_pages(void * arg0, void * arg1);",
+        "void * flight_create_optional_texture_atlas_list(void);",
+        "void flight_destroy_optional_texture_atlas_list(void * arg0);",
+        "void flight_clear_optional_texture_atlas_list(void * arg0);",
+        "size_t flight_get_optional_texture_atlas_list_length(void * arg0);",
+        "void * flight_get_optional_texture_atlas_list_item(void * arg0, size_t arg1);",
+        "void flight_free_texture_atlas_ref(void * arg0);",
+        "void flight_build_texture_atlas_region_index(void * arg0, void * arg1);",
+        "void * flight_create_texture_atlas_region_map(void);",
+        "void flight_destroy_texture_atlas_region_map(void * arg0);",
+        "void flight_clear_texture_atlas_region_map(void * arg0);",
+        "size_t flight_get_texture_atlas_region_map_length(void * arg0);",
+        "char * flight_get_texture_atlas_region_map_key(void * arg0, size_t arg1);",
+        "void * flight_get_texture_atlas_region_map_value(void * arg0, const char * arg1);",
+        "void flight_free_texture_atlas_region_ref(void * arg0);",
+    ] {
+        assert_line(&header, line);
+    }
+    assert_line(
+        &shim,
+        "DEFINE_PRIM(_BYTES, flight_get_texture_atlas_region_map_value, _BYTES _BYTES);",
+    );
 }
 
 fn assert_line(text: &str, line: &str) {
