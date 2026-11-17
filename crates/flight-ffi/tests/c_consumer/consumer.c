@@ -119,6 +119,21 @@ static void check_import_diagnostic_lists(void) {
 
   flight_clear_import_diagnostic_list(list);
   expect(flight_get_import_diagnostic_list_length(list) == 0, "clear empties the list for reuse");
+
+  /* A live handle of another type is no list: nothing collects into it, reads are empty, and clear and
+     destroy leave it intact for its own helpers to read and release. */
+  void *windows = flight_vec_ref_app_window_create();
+  data = flight_parse_starling_spritesheet(starling, NULL, windows);
+  expect(data != NULL, "a parse with another handle type as diagnostics still returns its result");
+  flight_free_spritesheet_data(data);
+  flight_clear_import_diagnostic_list(windows);
+  expect(flight_get_import_diagnostic_list_length(windows) == 0, "another handle type reads as an empty list");
+  expect(flight_get_import_diagnostic_list_severity(windows, 0) == -1, "another handle type reads severity -1");
+  expect(flight_get_import_diagnostic_list_message(windows, 0) == NULL, "another handle type reads no message");
+  flight_destroy_import_diagnostic_list(windows);
+  expect(flight_vec_ref_app_window_len(windows) == 0, "another handle type survives list clear and destroy");
+  expect(flight_vec_ref_app_window_get(windows, 0) == NULL, "another handle type keeps its own empty contents");
+  flight_vec_ref_app_window_free(windows);
   flight_destroy_import_diagnostic_list(list);
   flight_destroy_import_diagnostic_list(NULL);
   expect(flight_get_import_diagnostic_list_length(NULL) == 0, "a NULL list reads empty");

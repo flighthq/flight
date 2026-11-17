@@ -182,9 +182,7 @@ fn optional_diagnostics_lower_to_a_nullable_import_diagnostic_list() {
         assert_line(&shim, registration);
     }
     let wrappers = fs::read_to_string(Path::new(env!("OUT_DIR")).join("ffi_generated.rs")).unwrap();
-    assert!(wrappers.contains(
-        "if diagnostics.is_null() { None } else { Some(unsafe { ffi_import_diagnostic_list_values(diagnostics) }) }"
-    ));
+    assert!(wrappers.contains("unsafe { ffi_import_diagnostic_list_values(diagnostics) }"));
     let borrowers = wrappers
         .lines()
         .filter(|line| {

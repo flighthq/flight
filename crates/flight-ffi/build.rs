@@ -1711,33 +1711,33 @@ fn generate_vec_result_helpers(ffi_name: &str, call_wrap: &FfiReturn) -> String 
 
 // The caller-owned list behind every `Option<&mut Vec<ImportDiagnostic>>` parameter. C reads an item
 // by (list, index) on every access, so no pointer into the Vec survives a call that can grow it.
-// Getters return the empty value (-1, NULL, 0, false or NaN) for a NULL list, a list of another
-// type, or an index out of range; strings they return are owned and freed with `flight_free_string`.
+// A pointer is a list only while its address is in the live-list registry, checked before any
+// reference to the list type exists: NULL, another handle type, or a destroyed list collects
+// nothing, clear and destroy ignore it, and getters return the empty value (-1, NULL, 0, false or
+// NaN), as they do for an index out of range. Strings getters return are owned and freed with
+// `flight_free_string`.
 fn generate_import_diagnostic_list_support() -> String {
-    let tag = "FfiImportDiagnosticList"
-        .as_bytes()
-        .iter()
-        .fold(0xcbf29ce484222325u64, |hash, byte| {
-            (hash ^ u64::from(*byte)).wrapping_mul(0x100000001b3)
-        });
     let mut output = String::from(
         "// Caller-owned Vec<ImportDiagnostic> collector; a wrapper borrows it for one call and NULL collects nothing.\n\
-         #[repr(C)]\n\
-         pub struct FfiImportDiagnosticList {\n    tag: u64,\n    values: Vec<flight_sdk::ImportDiagnostic>,\n}\n",
+         pub struct FfiImportDiagnosticList {\n    values: Vec<flight_sdk::ImportDiagnostic>,\n}\n\
+         // Addresses of the live lists `flight_create_import_diagnostic_list` returned. Membership is the\n\
+         // only proof a pointer is a list; insertion and removal bracket the Box's whole lifetime.\n\
+         static FFI_IMPORT_DIAGNOSTIC_LISTS: std::sync::Mutex<std::collections::BTreeSet<usize>> = std::sync::Mutex::new(std::collections::BTreeSet::new());\n",
     );
-    writeln!(output, "const FFI_IMPORT_DIAGNOSTIC_LIST_TAG: u64 = {tag};").unwrap();
     output.push_str(
-        "unsafe fn ffi_import_diagnostic_list_values<'a>(list: *mut FfiImportDiagnosticList) -> &'a mut Vec<flight_sdk::ImportDiagnostic> {\n    let list = unsafe { &mut *list };\n    assert_eq!(list.tag, FFI_IMPORT_DIAGNOSTIC_LIST_TAG, \"wrong ImportDiagnostic list handle type\");\n    &mut list.values\n}\n\
-         unsafe fn ffi_import_diagnostic_list_item<'a>(list: *const FfiImportDiagnosticList, index: usize) -> Option<&'a flight_sdk::ImportDiagnostic> {\n    if list.is_null() { return None; }\n    let list = unsafe { &*list };\n    if list.tag != FFI_IMPORT_DIAGNOSTIC_LIST_TAG { return None; }\n    list.values.get(index)\n}\n\
+        "fn get_ffi_import_diagnostic_lists() -> std::sync::MutexGuard<'static, std::collections::BTreeSet<usize>> {\n    FFI_IMPORT_DIAGNOSTIC_LISTS.lock().unwrap_or_else(std::sync::PoisonError::into_inner)\n}\n\
+         fn is_ffi_import_diagnostic_list(list: *const FfiImportDiagnosticList) -> bool {\n    !list.is_null() && get_ffi_import_diagnostic_lists().contains(&(list as usize))\n}\n\
+         unsafe fn ffi_import_diagnostic_list_values<'a>(list: *mut FfiImportDiagnosticList) -> Option<&'a mut Vec<flight_sdk::ImportDiagnostic>> {\n    if !is_ffi_import_diagnostic_list(list) { return None; }\n    Some(unsafe { &mut (*list).values })\n}\n\
+         unsafe fn ffi_import_diagnostic_list_item<'a>(list: *const FfiImportDiagnosticList, index: usize) -> Option<&'a flight_sdk::ImportDiagnostic> {\n    if !is_ffi_import_diagnostic_list(list) { return None; }\n    unsafe { &(*list).values }.get(index)\n}\n\
          // Detail entries are indexed in the UTF-16 key order `format_import_diagnostic` prints them in.\n\
          unsafe fn ffi_import_diagnostic_list_detail<'a>(list: *const FfiImportDiagnosticList, index: usize, detail_index: usize) -> Option<(&'a String, &'a flight_sdk::ImportDiagnosticDetailValue)> {\n    let detail = unsafe { ffi_import_diagnostic_list_item(list, index) }?.detail.as_ref()?;\n    let mut entries: Vec<_> = detail.iter().collect();\n    entries.sort_by(|left, right| left.0.encode_utf16().cmp(right.0.encode_utf16()));\n    entries.get(detail_index).copied()\n}\n\
          fn ffi_import_diagnostic_c_string(value: &str) -> *mut std::ffi::c_char {\n    std::ffi::CString::new(value).unwrap_or_default().into_raw()\n}\n\
          #[unsafe(no_mangle)]\n\
-         pub unsafe extern \"C\" fn flight_clear_import_diagnostic_list(list: *mut FfiImportDiagnosticList) {\n    if list.is_null() { return; }\n    unsafe { ffi_import_diagnostic_list_values(list) }.clear();\n}\n\
+         pub unsafe extern \"C\" fn flight_clear_import_diagnostic_list(list: *mut FfiImportDiagnosticList) {\n    if let Some(values) = unsafe { ffi_import_diagnostic_list_values(list) } { values.clear(); }\n}\n\
          #[unsafe(no_mangle)]\n\
-         pub unsafe extern \"C\" fn flight_create_import_diagnostic_list() -> *mut FfiImportDiagnosticList {\n    Box::into_raw(Box::new(FfiImportDiagnosticList { tag: FFI_IMPORT_DIAGNOSTIC_LIST_TAG, values: Vec::new() }))\n}\n\
+         pub unsafe extern \"C\" fn flight_create_import_diagnostic_list() -> *mut FfiImportDiagnosticList {\n    let list = Box::into_raw(Box::new(FfiImportDiagnosticList { values: Vec::new() }));\n    get_ffi_import_diagnostic_lists().insert(list as usize);\n    list\n}\n\
          #[unsafe(no_mangle)]\n\
-         pub unsafe extern \"C\" fn flight_destroy_import_diagnostic_list(list: *mut FfiImportDiagnosticList) {\n    if list.is_null() { return; }\n    unsafe { ffi_import_diagnostic_list_values(list) };\n    unsafe { drop(Box::from_raw(list)); }\n}\n\
+         pub unsafe extern \"C\" fn flight_destroy_import_diagnostic_list(list: *mut FfiImportDiagnosticList) {\n    if list.is_null() || !get_ffi_import_diagnostic_lists().remove(&(list as usize)) { return; }\n    unsafe { drop(Box::from_raw(list)); }\n}\n\
          #[unsafe(no_mangle)]\n\
          pub unsafe extern \"C\" fn flight_get_import_diagnostic_list_detail_bool(list: *const FfiImportDiagnosticList, index: usize, detail_index: usize) -> bool {\n    match unsafe { ffi_import_diagnostic_list_detail(list, index, detail_index) } {\n        Some((_, flight_sdk::ImportDiagnosticDetailValue::Bool(value))) => *value,\n        _ => false,\n    }\n}\n\
          #[unsafe(no_mangle)]\n\
@@ -1754,7 +1754,7 @@ fn generate_import_diagnostic_list_support() -> String {
          #[unsafe(no_mangle)]\n\
          pub unsafe extern \"C\" fn flight_get_import_diagnostic_list_kind(list: *const FfiImportDiagnosticList, index: usize) -> *mut std::ffi::c_char {\n    match unsafe { ffi_import_diagnostic_list_item(list, index) } {\n        Some(diagnostic) => ffi_import_diagnostic_c_string(&diagnostic.kind),\n        None => std::ptr::null_mut(),\n    }\n}\n\
          #[unsafe(no_mangle)]\n\
-         pub unsafe extern \"C\" fn flight_get_import_diagnostic_list_length(list: *const FfiImportDiagnosticList) -> usize {\n    if list.is_null() { return 0; }\n    let list = unsafe { &*list };\n    if list.tag != FFI_IMPORT_DIAGNOSTIC_LIST_TAG { return 0; }\n    list.values.len()\n}\n\
+         pub unsafe extern \"C\" fn flight_get_import_diagnostic_list_length(list: *const FfiImportDiagnosticList) -> usize {\n    if !is_ffi_import_diagnostic_list(list) { return 0; }\n    unsafe { &(*list).values }.len()\n}\n\
          // The `format_import_diagnostic` line: severity, origin, kind and sorted detail.\n\
          #[unsafe(no_mangle)]\n\
          pub unsafe extern \"C\" fn flight_get_import_diagnostic_list_message(list: *const FfiImportDiagnosticList, index: usize) -> *mut std::ffi::c_char {\n    match unsafe { ffi_import_diagnostic_list_item(list, index) } {\n        Some(diagnostic) => ffi_import_diagnostic_c_string(&flight_sdk::format_import_diagnostic(diagnostic)),\n        None => std::ptr::null_mut(),\n    }\n}\n\
@@ -2423,14 +2423,12 @@ fn map_param_to_ffi(name: &str, ty: &str) -> Option<MappedParam> {
     let ty = strip_crate_paths(&strip_lifetimes(&resolve_type_alias(ty.trim())));
     let ty = ty.as_str();
 
-    // Option<&mut Vec<ImportDiagnostic>> -> a nullable, tagged diagnostics list. NULL does not collect.
+    // Option<&mut Vec<ImportDiagnostic>> -> a nullable, registered diagnostics list. NULL does not collect.
     if ty == "Option<&mut Vec<ImportDiagnostic>>" {
         return mapped_single(
             name,
             "*mut FfiImportDiagnosticList",
-            format!(
-                "if {name}.is_null() {{ None }} else {{ Some(unsafe {{ ffi_import_diagnostic_list_values({name}) }}) }}"
-            ),
+            format!("unsafe {{ ffi_import_diagnostic_list_values({name}) }}"),
         );
     }
 
