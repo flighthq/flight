@@ -12,3 +12,13 @@ export { getBidiRuns } from './getBidiRuns.ts';
 export { reorderBidiLine } from './reorderBidiLine.ts';
 export { resolveBidiLevels } from './resolveBidiLevels.ts';
 export { reportTextBidiCompactTableMiss, setTextBidiGuard } from './textBidiGuards.ts';
+export type {
+  BidiClass,
+  BidiClassKernel,
+  BidiClassKernelExplanation,
+  BidiClassKernelKind,
+  BidiCodePointRange,
+  BidiDirection,
+  BidiRun,
+  TextBidiGuard,
+} from './types.ts';
