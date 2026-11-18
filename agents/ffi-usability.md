@@ -1,6 +1,6 @@
 # FFI usability: from "generated" to "usable"
 
-_2026-11-18. **Unratified** design proposal. Supersedes the scoping of the dispatched tasks S, U, V and W; does not change K/L/M, the f64 migration (N/P/Q/R), or Task T._
+_**Ratified 2026-11-18.** Supersedes the scoping of the dispatched tasks S, U, V and W; does not change K/L/M, the f64 migration (N/P/Q/R), or Task T._
 
 ## Why this record exists
 
@@ -120,7 +120,7 @@ This moves a lock inside an operation, against the "caller locks once" guidance.
 
 Alternatives considered: a plain rectangle with `(&mut Bitmap, rect)` arguments, and borrowed `BitmapRegion<'a>`. Both make the same-bitmap destination-and-source call impossible to write in safe Rust, change the emitted TypeScript shape, and (for lifetimes) cannot be stored or cross the ABI.
 
-`agents/rust/manifests/flight-bitmap.api` is a frozen manifest; this change needs the owner's approval.
+`agents/rust/manifests/flight-bitmap.api` is a frozen manifest; the owner approved this change on 2026-11-18.
 
 ## 4. Render path
 
@@ -200,17 +200,19 @@ Dependencies only; ordering and staffing are the foreman's.
 | A    | Reachability census + baseline + check; re-confirm the table at the top on a fresh build | —            | —      |
 | B    | Node handle (§2a), handle borrowing (§2b), node fields (§2c)                             | A            | G1     |
 | C    | Signal connect with context release (§2d)                                                | A            | G4     |
-| D    | `BitmapRegion` shared ownership (§3)                                                     | owner ruling | G5     |
+| D    | `BitmapRegion` shared ownership (§3)                                                     | —            | G5     |
 | E    | Render instantiations, registration functions, bracket handles, backend crates in scan   | B            | —      |
 | F    | `flight-host-headless` + FFI feature                                                     | E            | G2     |
 | G    | `flight-host-winit` + FFI feature, `pump` and `run`                                      | E            | G3     |
 | H    | Bindgen: node handle type, byte buffers, signals, HashLink float packing                 | B, C, T      | G6     |
 | I    | `flight-host-sdl`                                                                        | G            | —      |
 
-## Open decisions
+## Rulings
 
-1. **BitmapRegion** — approve `Ref<Bitmap>` and the frozen-manifest change (§3).
-2. **Setters do not invalidate** (§2c) — confirm the mirror-the-SDK rule over patch 0012's behaviour.
-3. **Bracket handles** (§4) — accept borrow-erased `begin`/`end` handles on an allowlist, or require a scoped wrapper instead.
-4. **wgpu-only native alpha** (§5) — accept that the first native host presents through wgpu, with GL arriving with the SDL host.
-5. **Defer Task S** (§5) — withdraw capability constructors from the alpha.
+Decided by the owner on 2026-11-18:
+
+1. **BitmapRegion** holds `Ref<Bitmap>`; the frozen `flight-bitmap` manifest changes accordingly (§3).
+2. **Setters do not invalidate** (§2c). FFI field setters mirror the SDK; the caller names the invalidation.
+3. **Bracket handles** (§4). Borrow-erased `begin`/`end` handles on an allowlist; no scoped convenience wrapper in their place.
+4. **wgpu-only native alpha** (§5). The first native host presents through wgpu; GL arrives with the SDL host.
+5. **Capability constructors from C are deferred** beyond the alpha (§5).
