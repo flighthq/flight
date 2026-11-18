@@ -38,6 +38,10 @@ mod flight_geometry_ray3d_test;
 mod flight_geometry_rectangle_pool_test;
 #[path = "rectangle_test.rs"]
 mod flight_geometry_rectangle_test;
+#[path = "task_n_f64_acceptance_test.rs"]
+mod flight_geometry_task_n_f64_acceptance_test;
+#[path = "task_n_precision_test.rs"]
+mod flight_geometry_task_n_precision_test;
 #[path = "transform2d_test.rs"]
 mod flight_geometry_transform2d_test;
 #[path = "transform3d_test.rs"]

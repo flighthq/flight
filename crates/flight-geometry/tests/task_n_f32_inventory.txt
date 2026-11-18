@@ -1,0 +1,160 @@
+Task N pre-migration f32 inventory
+==================================
+
+This inventory was captured from accepted FFI-alpha base 9f0db2ced. Counts are
+case-sensitive Rust `f32` word tokens; literal suffixes such as `0.0_f32` are
+counted separately. Files omitted from a section contain zero word tokens.
+
+Scope totals
+------------
+
+scope                         files  tokens  lines  f32::  suffix  as f32
+flight-geometry/src              30     789    615     18       1       0
+flight-geometry/tests            30     195    134     42      30      18
+flight-math/src                  17     172     87     13       1       9
+flight-math/tests                16      98     86     21      49      11
+TOTAL                            93    1254    922     94      81      38
+
+The source/test split is 961/293 word tokens. The expected post-N result is
+zero word tokens outside the named Float32 boundary functions and their test
+modules, zero `f32::` namespace calls, and zero f32 literal suffixes or
+`as f32` casts outside those exact boundary bodies/modules.
+
+flight-geometry source tokens by module
+---------------------------------------
+
+aabb 24
+bounding_sphere 14
+capsule 94
+frustum 15
+matrix 75
+matrix3 45
+matrix4 111
+obb 75
+plane 22
+quaternion 43
+ray3d 27
+rectangle 56
+transform2d 38
+vector2 49
+vector3 51
+vector4 50
+
+flight-geometry test tokens by module
+-------------------------------------
+
+aabb 21
+bounding_sphere 10
+capsule 12
+matrix 4
+matrix3 6
+matrix4 30
+matrix_pool 6
+obb 25
+plane 4
+quaternion 11
+ray3d 20
+rectangle 2
+transform2d 12
+transform3d 2
+vector2 14
+vector3 8
+vector4 8
+
+flight-math source tokens by module
+-----------------------------------
+
+angle 15
+clamp 9
+comparison 8
+constants 10
+interpolation 21
+interpolation_advanced 25
+next_power_of_two 3
+number_theory 4
+random 4
+random_distributions 42
+random_range 10
+rounding 14
+scalar 7
+
+flight-math test tokens by module
+---------------------------------
+
+angle 23
+clamp 2
+constants 15
+interpolation 5
+interpolation_advanced 16
+main 2
+random 3
+random_distributions 18
+rounding 6
+scalar 8
+
+Frozen public API inventory
+---------------------------
+
+The accepted frozen manifests are the line-for-line signature inventory.
+Before Task N, `agents/rust/manifests/flight-geometry.api` has 255 entries
+containing an f32 word token and `flight-math.api` has 53. Their per-module
+counts are:
+
+geometry: aabb 3; bounding_sphere 5; capsule 5; matrix 22; matrix3 15;
+matrix4 29; obb 5; plane 7; quaternion 17; ray3d 12; rectangle 35;
+transform2d 4; vector2 38; vector3 30; vector4 28.
+
+math: angle 4; clamp 3; comparison 3; constants 6; interpolation 5;
+interpolation_advanced 6; next_power_of_two 1; number_theory 1; random 1;
+random_distributions 12; random_range 4; rounding 5; scalar 2.
+
+Named geometry type graph
+-------------------------
+
+Direct scalar leaves that must become f64: BoundingSphere, Capsule, Matrix,
+Matrix3, Matrix4, Obb, Plane, Quaternion, Rectangle, Transform2D, Vector2,
+Vector3, Vector4.
+
+Composite types that inherit those f64 leaves: Aabb, Frustum, Ray3D,
+Transform3D.
+
+All 53 currently-f32 math API entries, including RandomSource and all six
+public constants, must become f64. There is no approved flight-math survivor.
+
+Approved Float32 boundary API survivors
+---------------------------------------
+
+These are the complete GPU/native typed-array conversion inventory. No other
+source or API item may retain f32. Ingress reads f32 typed arrays into f64
+spatial values; egress and the bulk transform narrow only at this named edge.
+
+matrix::set_matrix_from_float32_array
+matrix::write_matrix_to_float32_array
+matrix3::set_matrix3_from_float32_array
+matrix3::write_matrix3_to_float32_array
+matrix4::matrix4_transform_vectors
+matrix4::set_matrix4_from_float32_array
+matrix4::write_matrix4_to_float32_array
+typedarray::reserve_float32_array
+vector2::set_vector2_from_float32_array
+vector2::write_vector2_to_float32_array
+vector3::set_vector3_from_float32_array
+vector3::write_vector3_to_float32_array
+vector4::set_vector4_from_float32_array
+vector4::write_vector4_to_float32_array
+
+Seven survivor signatures contain raw `[f32]`; the other seven name the
+existing `Float32Array` IR boundary type. All 14 require reasoned `allow(f32)`
+markers because the precision lint intentionally recognizes the Float32Array
+ingress/reserve names as f32 boundaries too. The acceptance test compares this
+exact item set against the migrated Rust public signatures. The frozen
+manifests remain the read-only pre-N line inventory.
+
+Protected scope
+---------------
+
+Task N may change only flight-geometry, flight-math, their frozen manifests,
+and the minimum cargo-flight-lint precision rule/tests. It must not rewrite
+flight-path's existing 208 `allow(f64)` annotations or any downstream crate.
+That changed-file constraint is audited from the Task N diff because later
+approved migration tasks intentionally change downstream crates.

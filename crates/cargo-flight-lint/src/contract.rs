@@ -1175,6 +1175,34 @@ mod tests {
     }
 
     #[test]
+    fn f64_spatial_default_is_limited_to_core_geometry_and_math() {
+        let double_source = "pub fn spatial_value(x: f64) -> f64 { return x; }";
+        assert!(rules_for_crate(double_source, "flight-geometry").is_empty());
+        assert!(rules_for_crate(double_source, "flight-math").is_empty());
+        assert_eq!(rules_for_crate(double_source, "flight-render"), vec!["f64"]);
+        let single_source = "pub fn spatial_value(x: f32) -> f32 { return x; }";
+        assert_eq!(
+            rules_for_crate(single_source, "flight-geometry"),
+            vec!["f32"]
+        );
+        assert_eq!(rules_for_crate(single_source, "flight-math"), vec!["f32"]);
+        assert!(
+            rules_for_crate(
+                "// flight-lint: allow(f32) explicit GPU upload boundary\npub fn write_vector2_to_float32_array(out: &mut [f32]) {}",
+                "flight-geometry"
+            )
+            .is_empty()
+        );
+        assert!(
+            rules_for_crate(
+                "pub fn gpu_value(x: f32) -> f32 { return x; }",
+                "flight-render"
+            )
+            .is_empty()
+        );
+    }
+
+    #[test]
     fn flags_hidden_state() {
         let src = "thread_local! { static A: Cell<u32> = Cell::new(0); }\nstatic B: Mutex<u8> = Mutex::new(0);\nstatic C: [f32; 2] = [0.0, 1.0];\nfn now() -> u64 { return Instant::now().elapsed().as_secs(); }";
         assert_eq!(

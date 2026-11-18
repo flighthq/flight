@@ -48,3 +48,5 @@ mod flight_math_rounding_test;
 mod flight_math_scalar_test;
 #[path = "statistics_test.rs"]
 mod flight_math_statistics_test;
+#[path = "task_n_precision_test.rs"]
+mod flight_math_task_n_precision_test;
