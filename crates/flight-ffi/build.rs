@@ -2151,6 +2151,22 @@ fn ffi_host_future_error(error: *const std::ffi::c_char) -> flight_sdk::FlightEr
     }
 }
 
+#[doc = "flight-ffi ownership|owned-return|flight_free_string|std::ffi::c_char"]
+#[doc = "flight-ffi contract|Copies a borrowed, NUL-terminated UTF-8 string into a Rust-owned callback-return carrier. NULL or invalid UTF-8 returns NULL."]
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn flight_create_string(
+    value: *const std::ffi::c_char,
+) -> *mut std::ffi::c_char {
+    if value.is_null() {
+        return std::ptr::null_mut();
+    }
+    let value = unsafe { std::ffi::CStr::from_ptr(value) };
+    if value.to_str().is_err() {
+        return std::ptr::null_mut();
+    }
+    value.to_owned().into_raw()
+}
+
 #[doc = "flight-ffi contract|Complete the matching host future exactly once. error is borrowed for this call; NULL means success. value must be a valid ScreenPermissionState discriminant on success."]
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn flight_complete_host_screen_permission_future(
@@ -2574,7 +2590,7 @@ fn generate_host_capability_constructor(
     }
 
     let contract = "The context value identifies one provider across capability constructors and is retained as an integer-backed shared carrier; use distinct stable values for distinct providers. The caller-owned context may outlive the constructor handle when SDK values clone the capability, may be used from any thread allowed by the Rust capability, and must remain valid and thread-safe until both the matching capability free and every SDK value that retained a clone are released; Rust never dereferences or frees it. Required NULL callbacks reject construction; optional NULL callbacks map to capability absence. Callback argument pointers are borrowed only for the dynamic callback call and must not be retained.";
-    let carrier_contract = "Retained nested callback and input-sink handles remain Rust-owned and valid until the callback-returned disposer is freed; do not free them. Owned callback returns transfer exactly one Rust-owned carrier. Produce disposer returns with flight_create_disposer. Complete async contexts exactly once with the helper named by that callback field.";
+    let carrier_contract = "Retained nested callback and input-sink handles remain Rust-owned and valid until the callback-returned disposer is freed; do not free them. Owned callback returns transfer exactly one Rust-owned carrier. Produce owned string returns with flight_create_string and disposer returns with flight_create_disposer. Complete async contexts exactly once with the helper named by that callback field.";
     format!(
         "#[doc = \"flight-ffi ownership|owned-return|{free}|{qualified}\"]\n#[doc = \"flight-ffi contract|{contract}\"]\n#[doc = \"flight-ffi contract|{carrier_contract}\"]\n{callback_contracts}\n#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn {create}({params}) -> *mut {qualified} {{\n    let context = context as usize;\n{required_checks}\n{adapters}\n    Box::into_raw(Box::new({qualified} {{\n        {fields}\n    }}))\n}}\n\n",
         callback_contracts = callback_contracts.join("\n"),
