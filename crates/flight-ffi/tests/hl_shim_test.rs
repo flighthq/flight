@@ -720,15 +720,74 @@ fn every_wrapper_requires_a_public_ts_export() {
         assert_line(&header, line);
     }
 
-    // Avoid a brittle global pin: the generated census itself must account for every discovered
-    // function, and every non-public discovery must have one named lane rejection.
-    let headline = stats.lines().next().unwrap();
-    let census = stats.lines().nth(1).unwrap();
-    let total: usize = headline.split_whitespace().nth(2).unwrap().parse().unwrap();
-    let public: usize = census.split_whitespace().nth(3).unwrap().parse().unwrap();
-    let non_public: usize = census.split_whitespace().nth(5).unwrap().parse().unwrap();
-    assert_eq!(public + non_public, total);
-    assert_eq!(stats.matches("no_ts_public_export(").count(), non_public);
+    // Avoid brittle global pins while keeping source decisions and emitted wrappers in distinct
+    // units. Monomorphization may increase only the wrapper side of the second identity.
+    let mut lines = stats.lines();
+    let source = numeric_fields(lines.next().unwrap(), "FFI source decisions:");
+    let wrappers = numeric_fields(lines.next().unwrap(), "FFI emitted wrappers:");
+    let census = numeric_fields(lines.next().unwrap(), "FFI public census:");
+    let [total, generated_sources, skipped] = source.as_slice() else {
+        panic!("source headline must contain total, generated, and skipped counts")
+    };
+    let [generated_wrappers, wrapper_sources, monomorphized_extras] = wrappers.as_slice() else {
+        panic!("wrapper headline must contain total, source, and monomorphized counts")
+    };
+    let [public, non_public] = census.as_slice() else {
+        panic!("public census must contain public and non-public counts")
+    };
+    assert_eq!(*total, generated_sources + skipped);
+    assert_eq!(*generated_wrappers, wrapper_sources + monomorphized_extras);
+    assert_eq!(generated_sources, wrapper_sources);
+    assert_eq!(public + non_public, *total);
+    assert_eq!(
+        stats.matches("no_ts_public_export(").count()
+            + stats.matches("sdk_internal_contract_export(").count(),
+        *non_public
+    );
+}
+
+#[test]
+fn sdk_font_contract_promotions_have_explicit_decisions() {
+    let (header, shim) = generated();
+    let wrappers = generated_wrappers();
+    let stats = generated_stats();
+
+    assert_line(
+        &header,
+        "void flight_initialize_font_resource(void * arg0);",
+    );
+    assert_line(
+        &shim,
+        "DEFINE_PRIM(_VOID, flight_initialize_font_resource, _BYTES);",
+    );
+    assert!(wrappers.contains(
+        "pub unsafe extern \"C\" fn flight_initialize_font_resource(out: *mut flight_sdk::FontResource)"
+    ));
+    assert!(wrappers.contains("flight_sdk::font::contract::initialize_font_resource"));
+    assert!(
+        stats.contains("SDK contract decision: initialize_font_resource generated: 1 wrapper(s)")
+    );
+
+    let glyph_initializer = "flight_initialize_glyph_rasterizer_backend_from_glyph_outline_source";
+    assert!(!header.contains(&format!(" {glyph_initializer}(")));
+    assert!(!shim.contains(&format!("({glyph_initializer})")));
+    assert!(!wrappers.contains(&format!("fn {glyph_initializer}(")));
+    assert!(stats.contains(
+        "SDK contract decision: initialize_glyph_rasterizer_backend_from_glyph_outline_source skipped: unmapped_param(Arc<GlyphOutlineSource>)"
+    ));
+
+    for name in [
+        "_load_font_face_from_bytes",
+        "_load_font_face_from_url",
+        "_load_font_face_from_urls",
+        "_load_font_faces_from_name",
+    ] {
+        let symbol = format!("flight_{name}");
+        assert!(!header.contains(&format!(" {symbol}(")));
+        assert!(!shim.contains(&format!("({symbol})")));
+        assert!(!wrappers.contains(&format!("fn {symbol}(")));
+        assert!(stats.contains(&format!("sdk_internal_contract_export({name})")));
+    }
 }
 
 #[test]
@@ -1121,6 +1180,16 @@ fn generated() -> (String, String) {
 
 fn generated_stats() -> String {
     return fs::read_to_string(Path::new(env!("OUT_DIR")).join("ffi_stats.txt")).unwrap();
+}
+
+fn numeric_fields(line: &str, prefix: &str) -> Vec<usize> {
+    let fields = line
+        .strip_prefix(prefix)
+        .unwrap_or_else(|| panic!("expected {prefix:?}, got {line:?}"));
+    return fields
+        .split_whitespace()
+        .filter_map(|field| field.trim_end_matches(',').parse().ok())
+        .collect();
 }
 
 fn generated_wrappers() -> String {

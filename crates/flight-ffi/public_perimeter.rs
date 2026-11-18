@@ -34,6 +34,29 @@ pub fn collect_ts_module_exports(entry: &Path) -> (BTreeSet<String>, Vec<PathBuf
     return (names, reader.files);
 }
 
+// The imported value names a barrel explicitly promotes from one external contract. Returning the
+// imported rather than aliased SDK name keeps the result comparable with the owning Rust crate.
+// Star exports stay governed by the package root reader; this function recognizes only deliberate
+// named promotions such as the SDK's font contract additions.
+pub fn collect_ts_external_reexports(entry: &Path, source: &str) -> BTreeSet<String> {
+    let tokens = fs::read_to_string(entry)
+        .map(|text| tokenize(&text))
+        .unwrap_or_default();
+    let module = parse_module(&tokens);
+    return module
+        .exports
+        .into_iter()
+        .filter_map(|statement| match statement {
+            ExportStatement::Named {
+                source: export_source,
+                imported,
+                ..
+            } if export_source == source && imported != "default" => Some(imported),
+            _ => None,
+        })
+        .collect();
+}
+
 // `reveal_scene3d_resources_on_resolve` and `revealScene3DResourcesOnResolve` share one key.
 pub fn get_export_key(name: &str) -> String {
     name.chars()

@@ -9,7 +9,31 @@ use std::collections::BTreeSet;
 use std::fs;
 use std::path::{Path, PathBuf};
 
-use public_perimeter::{collect_ts_module_exports, get_export_key, is_disposer_function};
+use public_perimeter::{
+    collect_ts_external_reexports, collect_ts_module_exports, get_export_key, is_disposer_function,
+};
+
+mod collect_ts_external_reexports {
+    use super::*;
+
+    #[test]
+    fn reads_only_named_values_promoted_from_the_requested_contract() {
+        let root = create_fixture(
+            "external_reexports",
+            &[(
+                "index.ts",
+                "export { initializeFontResource, initializeGlyphRasterizerBackendFromGlyphOutlineSource as initializeGlyphBackend, type FontResource, default as defaultFont } from '@flighthq/font/contract';\nexport { initializeOther } from '@flighthq/other/contract';\nexport * from '@flighthq/font/contract';\n",
+            )],
+        );
+        assert_eq!(
+            collect_ts_external_reexports(&root.join("index.ts"), "@flighthq/font/contract"),
+            names(&[
+                "initializeFontResource",
+                "initializeGlyphRasterizerBackendFromGlyphOutlineSource",
+            ])
+        );
+    }
+}
 
 mod collect_ts_module_exports {
     use super::*;
@@ -162,6 +186,20 @@ mod collect_ts_module_exports {
     #[test]
     fn reads_the_checked_in_package_roots() {
         let packages = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../packages");
+        assert_eq!(
+            collect_ts_external_reexports(
+                &packages.join("sdk/src/index.ts"),
+                "@flighthq/font/contract"
+            ),
+            names(&[
+                "_loadFontFaceFromBytes",
+                "_loadFontFaceFromUrl",
+                "_loadFontFaceFromUrls",
+                "_loadFontFacesFromName",
+                "initializeFontResource",
+                "initializeGlyphRasterizerBackendFromGlyphOutlineSource",
+            ])
+        );
         let scene2d_formats = read_keys(&packages.join("scene2d-formats/src/index.ts"));
         // Public through `export * from './riveCoreTypeCensus.ts'`.
         assert!(scene2d_formats.contains(&get_export_key("collect_rive_core_type_counts")));

@@ -373,6 +373,15 @@ const EXTENSION_POLICY_SKIP_FNS: &[&str] = &[
 // `void *` neither proves where a Vec<LogSink> came from nor gives LogEntry collectors a lifecycle.
 const OWNERSHIP_POLICY_SKIP_FNS: &[&str] =
     &["create_fanout_log_sink", "get_memory_log_sink_entries"];
+// The SDK compatibility barrel deliberately promotes these leading-underscore font helpers for
+// SDK assembly. They remain internal async host plumbing rather than caller-facing ABI. Inventory
+// them as source decisions so the barrel cannot silently enlarge or bypass the public perimeter.
+const SDK_INTERNAL_CONTRACT_EXPORT_FNS: &[&str] = &[
+    "_load_font_face_from_bytes",
+    "_load_font_face_from_url",
+    "_load_font_face_from_urls",
+    "_load_font_faces_from_name",
+];
 
 fn explicit_skip_category(name: &str) -> Option<&'static str> {
     if SAFETY_POLICY_SKIP_FNS.contains(&name) {
@@ -383,6 +392,9 @@ fn explicit_skip_category(name: &str) -> Option<&'static str> {
     }
     if OWNERSHIP_POLICY_SKIP_FNS.contains(&name) {
         return Some("ownership_policy_skip");
+    }
+    if SDK_INTERNAL_CONTRACT_EXPORT_FNS.contains(&name) {
+        return Some("sdk_internal_contract_export");
     }
     None
 }
@@ -454,7 +466,9 @@ fn main() {
     let mut stats_total_fns = 0usize;
     let mut stats_public_fns = 0usize;
     let mut stats_non_public_fns = 0usize;
-    let mut stats_generated = 0usize;
+    let mut stats_generated_sources = 0usize;
+    let mut stats_generated_wrappers = 0usize;
+    let mut stats_sdk_contract_decisions = BTreeMap::new();
     let mut stats_skipped: std::collections::BTreeMap<String, usize> =
         std::collections::BTreeMap::new();
 
@@ -549,28 +563,54 @@ fn main() {
                 let wrappers = generate_mono_wrappers(func);
                 if wrappers.is_empty() {
                     let skip_reason = categorize_skip(func);
+                    if func.sdk_contract_export {
+                        stats_sdk_contract_decisions
+                            .insert(func.name.clone(), format!("skipped: {skip_reason}"));
+                    }
                     *stats_skipped.entry(skip_reason).or_insert(0) += 1;
                 } else {
                     let mut emitted = false;
+                    let mut emitted_wrappers = 0usize;
                     for (ffi_name, wrapper, boxed_ty) in wrappers {
                         if !seen_names.contains(&ffi_name) {
                             writeln!(crate_output, "{wrapper}").unwrap();
                             seen_names.insert(ffi_name);
                             crate_used = true;
                             emitted = true;
-                            stats_generated += 1;
+                            emitted_wrappers += 1;
+                            stats_generated_wrappers += 1;
                             if let Some(ty) = boxed_ty.filter(|ty| needs_generic_boxed_free(ty)) {
                                 boxed_types.insert(ty);
                             }
                         }
                     }
                     if emitted {
+                        stats_generated_sources += 1;
+                        if func.sdk_contract_export {
+                            stats_sdk_contract_decisions.insert(
+                                func.name.clone(),
+                                format!("generated: {emitted_wrappers} wrapper(s)"),
+                            );
+                        }
                         collect_vec_ref_handle_specs(func, &mut vec_ref_handle_specs);
+                    } else {
+                        let skip_reason = format!("duplicate_ffi_symbol({})", func.name);
+                        if func.sdk_contract_export {
+                            stats_sdk_contract_decisions
+                                .insert(func.name.clone(), format!("skipped: {skip_reason}"));
+                        }
+                        *stats_skipped.entry(skip_reason).or_insert(0) += 1;
                     }
                 }
             } else {
                 let ffi_name = format!("flight_{}", func.name);
                 if seen_names.contains(&ffi_name) {
+                    let skip_reason = format!("duplicate_ffi_symbol({})", func.name);
+                    if func.sdk_contract_export {
+                        stats_sdk_contract_decisions
+                            .insert(func.name.clone(), format!("skipped: {skip_reason}"));
+                    }
+                    *stats_skipped.entry(skip_reason).or_insert(0) += 1;
                     continue;
                 }
                 if let Some((wrapper, boxed_ty)) = generate_ffi_wrapper(func) {
@@ -578,12 +618,21 @@ fn main() {
                     seen_names.insert(ffi_name);
                     crate_used = true;
                     collect_vec_ref_handle_specs(func, &mut vec_ref_handle_specs);
-                    stats_generated += 1;
+                    stats_generated_sources += 1;
+                    stats_generated_wrappers += 1;
+                    if func.sdk_contract_export {
+                        stats_sdk_contract_decisions
+                            .insert(func.name.clone(), "generated: 1 wrapper(s)".to_string());
+                    }
                     if let Some(ty) = boxed_ty.filter(|ty| needs_generic_boxed_free(ty)) {
                         boxed_types.insert(ty);
                     }
                 } else {
                     let skip_reason = categorize_skip(func);
+                    if func.sdk_contract_export {
+                        stats_sdk_contract_decisions
+                            .insert(func.name.clone(), format!("skipped: {skip_reason}"));
+                    }
                     *stats_skipped.entry(skip_reason).or_insert(0) += 1;
                 }
             }
@@ -610,8 +659,22 @@ fn main() {
     }
 
     let stats_skipped_total: usize = stats_skipped.values().sum();
+    let stats_monomorphized_extras = stats_generated_wrappers
+        .checked_sub(stats_generated_sources)
+        .expect("every generated source must emit at least one wrapper");
+    assert_eq!(
+        stats_total_fns,
+        stats_generated_sources + stats_skipped_total,
+        "every scanned source function must have exactly one generated-or-skipped decision"
+    );
+    assert_eq!(
+        stats_generated_wrappers,
+        stats_generated_sources + stats_monomorphized_extras,
+        "wrapper totals must separate generated sources from monomorphized extras"
+    );
     let mut stats_file = String::new();
-    writeln!(stats_file, "FFI stats: {stats_total_fns} total, {stats_generated} generated, {stats_skipped_total} skipped").unwrap();
+    writeln!(stats_file, "FFI source decisions: {stats_total_fns} total, {stats_generated_sources} generated, {stats_skipped_total} skipped").unwrap();
+    writeln!(stats_file, "FFI emitted wrappers: {stats_generated_wrappers} total, {stats_generated_sources} generated sources, {stats_monomorphized_extras} monomorphized extras").unwrap();
     writeln!(
         stats_file,
         "FFI public census: {stats_public_fns} TypeScript-public, {stats_non_public_fns} non-public"
@@ -621,6 +684,9 @@ fn main() {
     sorted_skips.sort_by(|a, b| b.1.cmp(a.1));
     for (reason, count) in &sorted_skips {
         writeln!(stats_file, "  skip: {count:>4} {reason}").unwrap();
+    }
+    for (name, decision) in stats_sdk_contract_decisions {
+        writeln!(stats_file, "  SDK contract decision: {name} {decision}").unwrap();
     }
     fs::write(out_dir.join("ffi_stats.txt"), &stats_file).unwrap();
 
@@ -728,9 +794,23 @@ struct ParsedFn {
     name: String,
     params: Vec<Param>,
     ret: Option<String>,
+    // Async functions are normally outside this synchronous generator. The SDK's four explicitly
+    // internal font promotions are still parsed so they receive durable skip decisions.
+    is_async: bool,
+    // Explicitly promoted from the owning package's contract by the SDK barrel.
+    sdk_contract_export: bool,
+    sdk_contract_module: Option<String>,
     // Absent from the package's TypeScript `index.ts` export graph. Rust crate-root visibility is
-    // discovery only and never authorizes a generated public ABI (agents/ffi-public-lane.md).
+    // discovery only and never authorizes a generated public ABI. Explicit SDK contract
+    // promotions join the package root; named internal promotions remain non-public.
     lacks_public_export: bool,
+}
+
+#[derive(Default)]
+struct TsExportPerimeter {
+    public: BTreeSet<String>,
+    internal: BTreeSet<String>,
+    sdk_public: BTreeSet<String>,
 }
 
 #[derive(Debug)]
@@ -757,9 +837,17 @@ fn collect_pub_fns(src_dir: &Path) -> Vec<ParsedFn> {
         return Vec::new();
     }
 
-    let ts_exports = collect_ts_index_exports(src_dir);
-    let exported_names = collect_exported_names(&lib_path, src_dir, &ts_exports);
-    if exported_names.is_empty() {
+    let ts_exports = collect_ts_exports(src_dir);
+    let discoverable_exports: BTreeSet<_> = ts_exports
+        .public
+        .union(&ts_exports.internal)
+        .cloned()
+        .collect();
+    let exported_names = collect_exported_names(&lib_path, src_dir, &discoverable_exports);
+    if exported_names.is_empty()
+        && ts_exports.sdk_public.is_empty()
+        && ts_exports.internal.is_empty()
+    {
         return Vec::new();
     }
 
@@ -783,9 +871,17 @@ fn collect_pub_fns(src_dir: &Path) -> Vec<ParsedFn> {
         let mut all_fns = Vec::new();
         parse_pub_fns(&content, &mut all_fns);
         for mut f in all_fns {
-            if exported_names.contains(&f.name) {
+            let export_key = public_perimeter::get_export_key(&f.name);
+            let internal_sdk_export = ts_exports.internal.contains(&export_key);
+            if (!f.is_async
+                && (exported_names.contains(&f.name)
+                    || ts_exports.sdk_public.contains(&export_key)))
+                || internal_sdk_export
+            {
                 f.lacks_public_export =
-                    !ts_exports.contains(&public_perimeter::get_export_key(&f.name));
+                    internal_sdk_export || !ts_exports.public.contains(&export_key);
+                f.sdk_contract_export = ts_exports.sdk_public.contains(&export_key);
+                f.sdk_contract_module = f.sdk_contract_export.then(|| package_module_name(src_dir));
                 fns.push(f);
             }
         }
@@ -793,30 +889,59 @@ fn collect_pub_fns(src_dir: &Path) -> Vec<ParsedFn> {
     fns
 }
 
-// The value names the package's TS root (`packages/<name>/src/index.ts`) exports through its real
-// export graph, keyed for comparison with Rust names. A crate without a TS package yields no keys.
-fn collect_ts_index_exports(src_dir: &Path) -> BTreeSet<String> {
+fn package_module_name(src_dir: &Path) -> String {
+    return src_dir
+        .parent()
+        .unwrap()
+        .file_name()
+        .unwrap()
+        .to_string_lossy()
+        .trim_start_matches("flight-")
+        .replace('-', "_");
+}
+
+// Public values come from the package root plus deliberate named promotions from its SDK contract.
+// The SDK's leading-underscore font helpers are tracked separately as internal decisions.
+fn collect_ts_exports(src_dir: &Path) -> TsExportPerimeter {
     let crate_dir = src_dir.parent().unwrap();
     let crate_name = crate_dir.file_name().unwrap().to_string_lossy();
     let Some(package) = crate_name.strip_prefix("flight-") else {
-        return BTreeSet::new();
+        return TsExportPerimeter::default();
     };
-    let package_src = crate_dir
+    let packages_dir = crate_dir
         .parent()
         .unwrap()
         .parent()
         .unwrap()
-        .join("packages")
-        .join(package)
-        .join("src");
+        .join("packages");
+    let package_src = packages_dir.join(package).join("src");
     let (names, files) = public_perimeter::collect_ts_module_exports(&package_src.join("index.ts"));
     for file in files {
         println!("cargo::rerun-if-changed={}", file.display());
     }
-    names
-        .iter()
-        .map(|name| public_perimeter::get_export_key(name))
-        .collect()
+    let mut perimeter = TsExportPerimeter::default();
+    perimeter.public.extend(
+        names
+            .iter()
+            .map(|name| public_perimeter::get_export_key(name)),
+    );
+
+    let sdk_index = packages_dir.join("sdk/src/index.ts");
+    println!("cargo::rerun-if-changed={}", sdk_index.display());
+    let contract_source = format!("@flighthq/{package}/contract");
+    for name in public_perimeter::collect_ts_external_reexports(&sdk_index, &contract_source) {
+        let key = public_perimeter::get_export_key(&name);
+        if SDK_INTERNAL_CONTRACT_EXPORT_FNS
+            .iter()
+            .any(|internal| public_perimeter::get_export_key(internal) == key)
+        {
+            perimeter.internal.insert(key);
+        } else {
+            perimeter.public.insert(key.clone());
+            perimeter.sdk_public.insert(key);
+        }
+    }
+    return perimeter;
 }
 
 fn collect_exported_names(
@@ -880,7 +1005,9 @@ fn collect_glob_names(
                 let mut mod_fns = Vec::new();
                 parse_pub_fns(&mod_content, &mut mod_fns);
                 for f in mod_fns {
-                    names.insert(f.name);
+                    if !f.is_async {
+                        names.insert(f.name);
+                    }
                 }
             }
         }
@@ -907,7 +1034,9 @@ fn collect_glob_names(
                 let mut mod_fns = Vec::new();
                 parse_pub_fns(&mod_content, &mut mod_fns);
                 for f in mod_fns {
-                    if ts_exports.contains(&public_perimeter::get_export_key(&f.name)) {
+                    if !f.is_async
+                        && ts_exports.contains(&public_perimeter::get_export_key(&f.name))
+                    {
                         names.insert(f.name);
                     }
                 }
@@ -931,7 +1060,7 @@ fn parse_pub_fns(content: &str, out: &mut Vec<ParsedFn>) {
     while i < lines.len() {
         let line = lines[i].trim();
 
-        if !line.starts_with("pub fn ") || brace_depth > 0 {
+        if (!line.starts_with("pub fn ") && !line.starts_with("pub async fn ")) || brace_depth > 0 {
             for c in line.chars() {
                 match c {
                     '{' => brace_depth += 1,
@@ -970,7 +1099,11 @@ fn parse_pub_fns(content: &str, out: &mut Vec<ParsedFn>) {
 
 fn parse_fn_signature(sig: &str) -> Option<ParsedFn> {
     let sig = sig.trim();
-    let after_pub_fn = sig.strip_prefix("pub fn ")?;
+    let (after_pub_fn, is_async) = if let Some(signature) = sig.strip_prefix("pub fn ") {
+        (signature, false)
+    } else {
+        (sig.strip_prefix("pub async fn ")?, true)
+    };
 
     let name_end = after_pub_fn.find(|c: char| c == '(' || c == '<')?;
     let name = after_pub_fn[..name_end].trim().to_string();
@@ -1014,6 +1147,9 @@ fn parse_fn_signature(sig: &str) -> Option<ParsedFn> {
         name,
         params,
         ret,
+        is_async,
+        sdk_contract_export: false,
+        sdk_contract_module: None,
         lacks_public_export: false,
     })
 }
@@ -1572,6 +1708,13 @@ fn is_shape_bounds_context(ty: &str) -> bool {
         == "&mut dyn ShapeBoundsContext"
 }
 
+fn sdk_function_path(func: &ParsedFn) -> String {
+    return match &func.sdk_contract_module {
+        Some(module) => format!("flight_sdk::{module}::contract::{}", func.name),
+        None => format!("flight_sdk::{}", func.name),
+    };
+}
+
 fn generate_ffi_wrapper(func: &ParsedFn) -> Option<(String, Option<String>)> {
     if explicit_skip_category(&func.name).is_some() {
         return None;
@@ -1680,8 +1823,8 @@ fn generate_ffi_wrapper(func: &ParsedFn) -> Option<(String, Option<String>)> {
 
     let ffi_name = format!("flight_{}", func.name);
     let mut call = format!(
-        "flight_sdk::{name}({args})",
-        name = func.name,
+        "{function}({args})",
+        function = sdk_function_path(func),
         args = call_args.join(", ")
     );
     if !reader_writebacks.is_empty() {
@@ -1907,8 +2050,8 @@ fn generate_mono_wrappers(func: &ParsedFn) -> Vec<(String, String, Option<String
         append_tuple_out_params(&mut ffi_params, &call_wrap);
 
         let call = format!(
-            "flight_sdk::{name}({args})",
-            name = func.name,
+            "{function}({args})",
+            function = sdk_function_path(func),
             args = call_args.join(", ")
         );
 

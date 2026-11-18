@@ -1,6 +1,25 @@
-use std::sync::Arc;
+use std::sync::{Arc, RwLock};
 
 use crate::*;
+
+mod flight_create_animation_player {
+    use super::*;
+
+    #[test]
+    fn retains_then_drops_the_transferred_clips_arc_payload() {
+        let track = Arc::new(RwLock::new(flight_sdk::create_animation_track()));
+        let channel = flight_sdk::create_animation_channel(&track, None);
+        let clip = flight_sdk::create_animation_clip(vec![channel], None, &[]);
+        assert_eq!(Arc::strong_count(&track), 2);
+
+        let player = unsafe { flight_create_animation_player(Box::into_raw(Box::new(clip))) };
+        assert!(!player.is_null());
+        assert_eq!(Arc::strong_count(&track), 2);
+
+        unsafe { flight_free_animation_player(player) };
+        assert_eq!(Arc::strong_count(&track), 1);
+    }
+}
 
 mod flight_create_bitmap_region {
     use super::*;
@@ -31,6 +50,22 @@ mod flight_ease_invert {
         );
         unsafe { flight_free_easing_function(inverted) };
         assert_eq!(Arc::strong_count(&ease), 1);
+    }
+}
+
+mod flight_get_bitmap_pixel_channel {
+    use super::*;
+
+    #[test]
+    fn copies_the_channel_value_without_consuming_the_caller_value() {
+        let bitmap = unsafe { flight_create_bitmap(1, 1, 0x11223344) };
+        let channel = flight_sdk::ImageChannel::Green;
+        assert_eq!(
+            unsafe { flight_get_bitmap_pixel_channel(bitmap, 0, 0, &channel) },
+            0x22
+        );
+        assert_eq!(channel, flight_sdk::ImageChannel::Green);
+        unsafe { flight_free_bitmap(bitmap) };
     }
 }
 
