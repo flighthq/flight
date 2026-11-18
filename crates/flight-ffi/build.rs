@@ -7,6 +7,8 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use std::sync::{Mutex, OnceLock};
 
+use quote::ToTokens;
+
 // `#[repr(u32)]` unit enums by name, each with its owning crate and variants in declaration order.
 // A name two crates both define is not known: an enum's identity is its owning crate plus name, so
 // a same-named enum elsewhere can never stand in for it.
@@ -649,6 +651,23 @@ fn main() {
     let _ = KNOWN_ENUMS.set(known_enums);
     let _ = TYPE_DEFINITIONS.set(type_definitions);
 
+    let mut host_capability_inventory = Vec::new();
+    for dir_name in SCAN_CRATES {
+        let src_dir = crates_dir.join(dir_name).join("src");
+        if src_dir.exists() {
+            host_capability_inventory.extend(collect_host_capability_inventory(
+                dir_name, &src_dir, crates_dir,
+            ));
+        }
+    }
+    host_capability_inventory
+        .sort_by(|a, b| (&a.owner, &a.name, &a.source).cmp(&(&b.owner, &b.name, &b.source)));
+    fs::write(
+        out_dir.join("host_capability_inventory.txt"),
+        generate_host_capability_inventory_report(&host_capability_inventory),
+    )
+    .unwrap();
+
     // Discover owned producers to a fixed point. A wrapper is eligible to produce a handle only
     // after every owned handle it consumes is already producible; consequently a consumer cycle
     // cannot bootstrap an otherwise unconstructible C handle. Policy exclusions run inside the
@@ -1048,6 +1067,28 @@ struct ParsedStruct {
 struct StructField {
     name: String,
     ty: String,
+}
+
+#[derive(Debug)]
+struct HostCapabilityInventory {
+    owner: String,
+    source: PathBuf,
+    name: String,
+    public_reachable: bool,
+    fields: Vec<HostCapabilityInventoryField>,
+}
+
+#[derive(Debug)]
+struct HostCapabilityInventoryField {
+    name: String,
+    ty: String,
+    callback: Option<HostCapabilityCallback>,
+}
+
+#[derive(Debug)]
+struct HostCapabilityCallback {
+    optional: bool,
+    signature: String,
 }
 
 fn collect_pub_fns(src_dir: &Path) -> Vec<ParsedFn> {
@@ -1598,6 +1639,276 @@ fn parse_struct_field(line: &str) -> Option<StructField> {
     } else {
         None
     }
+}
+
+fn collect_host_capability_inventory(
+    owner: &str,
+    src_dir: &Path,
+    crates_dir: &Path,
+) -> Vec<HostCapabilityInventory> {
+    let lib_path = src_dir.join("lib.rs");
+    let public_types = if lib_path.exists() {
+        collect_exported_type_names(&lib_path, src_dir)
+    } else {
+        BTreeSet::new()
+    };
+    let sources = collect_rust_source_files(src_dir);
+    let mut aliases = BTreeMap::new();
+    let mut parsed_files = Vec::new();
+    for source in sources {
+        let content = fs::read_to_string(&source).unwrap();
+        let file = syn::parse_file(&content)
+            .unwrap_or_else(|error| panic!("failed to parse {}: {error}", source.display()));
+        for item in &file.items {
+            if let syn::Item::Type(alias) = item
+                && alias.generics.params.is_empty()
+            {
+                aliases.insert(alias.ident.to_string(), (*alias.ty).clone());
+            }
+        }
+        parsed_files.push((source, file));
+    }
+
+    let mut inventory = Vec::new();
+    for (source, file) in parsed_files {
+        for item in file.items {
+            let syn::Item::Struct(item) = item else {
+                continue;
+            };
+            let name = item.ident.to_string();
+            if !name.starts_with("Host") || !name.contains("Capabilit") {
+                continue;
+            }
+            let fields = match item.fields {
+                syn::Fields::Named(fields) => fields.named,
+                syn::Fields::Unnamed(_) | syn::Fields::Unit => continue,
+            };
+            let fields = fields
+                .into_iter()
+                .filter_map(|field| {
+                    let name = field.ident?.to_string();
+                    let callback = get_host_capability_callback(&field.ty, &aliases, false, 0);
+                    Some(HostCapabilityInventoryField {
+                        name,
+                        ty: rust_type_text(&field.ty),
+                        callback,
+                    })
+                })
+                .collect();
+            inventory.push(HostCapabilityInventory {
+                owner: owner.to_string(),
+                source: source
+                    .strip_prefix(crates_dir)
+                    .unwrap_or(&source)
+                    .to_path_buf(),
+                public_reachable: public_types.contains(&name),
+                name,
+                fields,
+            });
+        }
+    }
+    inventory
+}
+
+fn collect_rust_source_files(dir: &Path) -> Vec<PathBuf> {
+    fn visit(dir: &Path, out: &mut Vec<PathBuf>) {
+        let mut entries: Vec<_> = fs::read_dir(dir).unwrap().filter_map(Result::ok).collect();
+        entries.sort_by_key(|entry| entry.path());
+        for entry in entries {
+            let path = entry.path();
+            if path.is_dir() {
+                visit(&path, out);
+            } else if path.extension().is_some_and(|extension| extension == "rs")
+                && !path
+                    .file_name()
+                    .is_some_and(|name| name.to_string_lossy().contains("test"))
+            {
+                out.push(path);
+            }
+        }
+    }
+
+    let mut sources = Vec::new();
+    visit(dir, &mut sources);
+    sources
+}
+
+fn generate_host_capability_inventory_report(inventory: &[HostCapabilityInventory]) -> String {
+    let field_count: usize = inventory
+        .iter()
+        .map(|capability| capability.fields.len())
+        .sum();
+    let callbacks: Vec<_> = inventory
+        .iter()
+        .flat_map(|capability| {
+            capability
+                .fields
+                .iter()
+                .filter_map(|field| field.callback.as_ref())
+        })
+        .collect();
+    let required_count = callbacks
+        .iter()
+        .filter(|callback| !callback.optional)
+        .count();
+    let optional_count = callbacks.len() - required_count;
+    let mut signature_families = BTreeMap::new();
+    for callback in &callbacks {
+        *signature_families
+            .entry(callback.signature.clone())
+            .or_insert(0usize) += 1;
+    }
+
+    let mut report = String::new();
+    writeln!(
+        report,
+        "Host capability inventory: {} structs, {field_count} fields, {} callback fields ({required_count} required, {optional_count} optional), {} signature families",
+        inventory.len(),
+        callbacks.len(),
+        signature_families.len()
+    )
+    .unwrap();
+    for capability in inventory {
+        writeln!(
+            report,
+            "struct|{}|{}|{}|rust_public={}|ffi_constructor=false|fields={}|callbacks={}",
+            capability.owner,
+            capability.source.display(),
+            capability.name,
+            capability.public_reachable,
+            capability.fields.len(),
+            capability
+                .fields
+                .iter()
+                .filter(|field| field.callback.is_some())
+                .count()
+        )
+        .unwrap();
+        for field in &capability.fields {
+            match &field.callback {
+                Some(callback) => writeln!(
+                    report,
+                    "  field|{}|{}|{}|{}",
+                    field.name,
+                    if callback.optional {
+                        "optional-callback"
+                    } else {
+                        "required-callback"
+                    },
+                    callback.signature,
+                    field.ty
+                ),
+                None => writeln!(report, "  field|{}|data|{}", field.name, field.ty),
+            }
+            .unwrap();
+        }
+    }
+    for (signature, count) in signature_families {
+        writeln!(report, "signature|{count}|{signature}").unwrap();
+    }
+    report
+}
+
+fn get_host_capability_callback(
+    ty: &syn::Type,
+    aliases: &BTreeMap<String, syn::Type>,
+    optional: bool,
+    depth: usize,
+) -> Option<HostCapabilityCallback> {
+    if depth > 16 {
+        return None;
+    }
+    match ty {
+        syn::Type::BareFn(function) => Some(HostCapabilityCallback {
+            optional,
+            signature: bare_fn_signature(function),
+        }),
+        syn::Type::Path(path) if path.qself.is_none() => {
+            let segment = path.path.segments.last()?;
+            if segment.ident == "Option" {
+                let syn::PathArguments::AngleBracketed(arguments) = &segment.arguments else {
+                    return None;
+                };
+                let inner = arguments.args.iter().find_map(|argument| match argument {
+                    syn::GenericArgument::Type(ty) => Some(ty),
+                    _ => None,
+                })?;
+                return get_host_capability_callback(inner, aliases, true, depth + 1);
+            }
+            if segment.ident == "Arc" {
+                let syn::PathArguments::AngleBracketed(arguments) = &segment.arguments else {
+                    return None;
+                };
+                let inner = arguments.args.iter().find_map(|argument| match argument {
+                    syn::GenericArgument::Type(ty) => Some(ty),
+                    _ => None,
+                })?;
+                let syn::Type::TraitObject(object) = inner else {
+                    return None;
+                };
+                return trait_object_callback_signature(object).map(|signature| {
+                    HostCapabilityCallback {
+                        optional,
+                        signature,
+                    }
+                });
+            }
+            if path.path.segments.len() == 1
+                && let Some(alias) = aliases.get(&segment.ident.to_string())
+            {
+                return get_host_capability_callback(alias, aliases, optional, depth + 1);
+            }
+            None
+        }
+        _ => None,
+    }
+}
+
+fn trait_object_callback_signature(object: &syn::TypeTraitObject) -> Option<String> {
+    let function = object.bounds.iter().find_map(|bound| match bound {
+        syn::TypeParamBound::Trait(bound) => {
+            let segment = bound.path.segments.last()?;
+            matches!(
+                segment.ident.to_string().as_str(),
+                "Fn" | "FnMut" | "FnOnce"
+            )
+            .then_some(segment)
+        }
+        _ => None,
+    })?;
+    let syn::PathArguments::Parenthesized(arguments) = &function.arguments else {
+        return None;
+    };
+    let inputs = arguments
+        .inputs
+        .iter()
+        .map(rust_type_text)
+        .collect::<Vec<_>>()
+        .join(", ");
+    let output = return_type_text(&arguments.output);
+    Some(format!("{}({inputs}){output}", function.ident))
+}
+
+fn bare_fn_signature(function: &syn::TypeBareFn) -> String {
+    let inputs = function
+        .inputs
+        .iter()
+        .map(|input| rust_type_text(&input.ty))
+        .collect::<Vec<_>>()
+        .join(", ");
+    let output = return_type_text(&function.output);
+    format!("fn({inputs}){output}")
+}
+
+fn return_type_text(output: &syn::ReturnType) -> String {
+    match output {
+        syn::ReturnType::Default => String::new(),
+        syn::ReturnType::Type(_, ty) => format!(" -> {}", rust_type_text(ty)),
+    }
+}
+
+fn rust_type_text(ty: &syn::Type) -> String {
+    ty.to_token_stream().to_string()
 }
 
 // Records each `pub struct` / `pub enum` with whether its `#[derive(...)]` list (across any
