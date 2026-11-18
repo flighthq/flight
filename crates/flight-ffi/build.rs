@@ -2023,11 +2023,7 @@ pub unsafe extern "C" fn flight_build_particle_color_curve(
                 String::from(
                     r#"#[doc = "The callback receives the caller-owned list handle and may use it only until the callback returns."]
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn flight_collect_import_diagnostics(
-    out: *mut FfiImportDiagnosticList,
-    run_fn: extern "C" fn(*mut std::ffi::c_void, *mut FfiImportDiagnosticList) -> bool,
-    run_ctx: *mut std::ffi::c_void,
-) -> bool {
+pub unsafe extern "C" fn flight_collect_import_diagnostics(out: *mut FfiImportDiagnosticList, run_fn: extern "C" fn(*mut std::ffi::c_void, *mut FfiImportDiagnosticList) -> bool, run_ctx: *mut std::ffi::c_void) -> bool {
     if !is_ffi_import_diagnostic_list(out) { return false; }
     unsafe { (*out).values.clear(); }
     std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| run_fn(run_ctx, out))).unwrap_or(false)
@@ -2072,11 +2068,7 @@ pub unsafe extern "C" fn flight_collect_scene2d_requirements(
                     r#"#[doc = "Segment kinds are 0 move, 1 line, 2 quadratic, 3 cubic and 4 close; unused coordinates are zero."]
 #[doc = "The callback and context are borrowed only until this function returns."]
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn flight_for_each_path_segment(
-    path: *const flight_sdk::Path,
-    visitor_fn: extern "C" fn(*mut std::ffi::c_void, u32, f64, f64, f64, f64, f64, f64) -> bool,
-    visitor_ctx: *mut std::ffi::c_void,
-) -> bool {
+pub unsafe extern "C" fn flight_for_each_path_segment(path: *const flight_sdk::Path, visitor_fn: extern "C" fn(*mut std::ffi::c_void, u32, f64, f64, f64, f64, f64, f64) -> bool, visitor_ctx: *mut std::ffi::c_void) -> bool {
     if path.is_null() { return false; }
     std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
         flight_sdk::for_each_path_segment(unsafe { &*path }, &mut |segment| {
@@ -2231,7 +2223,11 @@ fn generate_ffi_wrapper(func: &ParsedFn) -> Option<(String, Option<String>)> {
         format!("{}\n", guard_bindings.join("\n"))
     };
 
-    let body = if let Some(context) = shape_bounds_context {
+    let body = if func.name == "watch_geolocation_position" {
+        format!(
+            "{preamble}    match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {call})) {{\n        Ok(value) => value,\n        Err(_) => i32::MIN,\n    }}"
+        )
+    } else if let Some(context) = shape_bounds_context {
         format!(
             "{preamble}    let call_succeeded = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {{\n        {call};\n    }})).is_ok();\n    return call_succeeded && !ffi_{context}.failed;"
         )
@@ -5243,8 +5239,8 @@ fn map_param_to_ffi(name: &str, ty: &str) -> Option<MappedParam> {
         _ => None,
     };
     if let Some((data_ty, view_ty, field)) = byte_data {
-        let ptr_name = format!("{name}_ptr");
-        let len_name = format!("{name}_len");
+        let ptr_name = "data_ptr".to_string();
+        let len_name = "data_len".to_string();
         return Some(MappedParam {
             ffi_params: vec![
                 (ptr_name.clone(), "*const u8".to_string()),
@@ -5262,8 +5258,8 @@ fn map_param_to_ffi(name: &str, ty: &str) -> Option<MappedParam> {
     // wrapper's panic boundary before provider code runs.
     if lifetime_data_ty == "FileAtomicWriteData" {
         let kind_name = format!("{name}_kind");
-        let ptr_name = format!("{name}_ptr");
-        let len_name = format!("{name}_len");
+        let ptr_name = "data_ptr".to_string();
+        let len_name = "data_len".to_string();
         return Some(MappedParam {
             ffi_params: vec![
                 (kind_name.clone(), "u32".to_string()),

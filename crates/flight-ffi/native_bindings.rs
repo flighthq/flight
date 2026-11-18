@@ -198,24 +198,51 @@ fn carrier(ty: &Type) -> Carrier {
                     })
             );
             let is_char = matches!(&*pointer.elem, Type::Path(p) if p.path.segments.last().is_some_and(|s| s.ident == "c_char"));
+            let scalar = match &*pointer.elem {
+                Type::Path(path) => path.path.segments.last().and_then(|segment| {
+                    match segment.ident.to_string().as_str() {
+                        "f32" => Some("float"),
+                        "f64" => Some("double"),
+                        "i8" => Some("int8_t"),
+                        "u8" => Some("uint8_t"),
+                        "i16" => Some("int16_t"),
+                        "u16" => Some("uint16_t"),
+                        "i32" => Some("int32_t"),
+                        "u32" => Some("uint32_t"),
+                        "i64" => Some("int64_t"),
+                        "u64" => Some("uint64_t"),
+                        "isize" => Some("intptr_t"),
+                        "usize" => Some("size_t"),
+                        "bool" => Some("bool"),
+                        _ => None,
+                    }
+                }),
+                _ => None,
+            };
             let c = if is_shape_bounds_vtable {
                 if pointer.const_token.is_some() {
-                    "const FlightShapeBoundsContextVTable *"
+                    "const FlightShapeBoundsContextVTable *".to_string()
                 } else {
-                    "FlightShapeBoundsContextVTable *"
+                    "FlightShapeBoundsContextVTable *".to_string()
                 }
             } else if is_char {
                 if pointer.const_token.is_some() {
-                    "const char *"
+                    "const char *".to_string()
                 } else {
-                    "char *"
+                    "char *".to_string()
+                }
+            } else if let Some(scalar) = scalar {
+                if pointer.const_token.is_some() {
+                    format!("const {scalar} *")
+                } else {
+                    format!("{scalar} *")
                 }
             } else {
                 // Expose SDK pointers as opaque C carriers, matching the generated Haxe handles.
-                "void *"
+                "void *".to_string()
             };
             Carrier {
-                c: c.into(),
+                c,
                 hl: "vbyte *",
                 signature: "_BYTES",
             }

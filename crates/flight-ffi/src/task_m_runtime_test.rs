@@ -2,122 +2,9 @@ use std::ffi::{CStr, c_void};
 use std::future::ready;
 use std::sync::{Arc, Mutex};
 
-extern "C" fn append_import_diagnostic(
-    _context: *mut c_void,
-    list: *mut crate::FfiImportDiagnosticList,
-) -> bool {
-    return unsafe {
-        crate::flight_append_import_diagnostic(
-            list,
-            1,
-            c"parse-warning".as_ptr(),
-            c"fixture".as_ptr(),
-        )
-    };
-}
-
-extern "C" fn collect_requirement(
-    _context: *mut c_void,
-    list: *mut crate::FfiRequirementList,
-) -> bool {
-    unsafe {
-        crate::flight_destroy_requirement_list(list);
-        crate::flight_report_requirement(
-            list,
-            flight_sdk::RequirementFacet::SceneNodeKind as u32,
-            c"Shape".as_ptr(),
-        );
-    }
-    return true;
-}
-
-extern "C" fn collect_segment(
-    context: *mut c_void,
-    kind: u32,
-    _a: f64,
-    _b: f64,
-    _c: f64,
-    _d: f64,
-    _e: f64,
-    _f: f64,
-) -> bool {
-    unsafe { &mut *(context as *mut Vec<u32>) }.push(kind);
-    return true;
-}
-
-extern "C" fn collect_signal_delta(context: *mut c_void, delta: f64) {
-    unsafe { &mut *(context as *mut Vec<f64>) }.push(delta);
-}
-
-extern "C" fn geolocation_error(context: *mut c_void, reason: u32) {
-    unsafe { &mut *(context as *mut Vec<u32>) }.push(reason);
-}
-
-extern "C" fn geolocation_position(
-    context: *mut c_void,
-    position: *const flight_sdk::GeolocationPosition,
-) {
-    unsafe { &mut *(context as *mut Vec<f32>) }.push(unsafe { (*position).latitude });
-}
-
-extern "C" fn sample_particle_color(_context: *mut c_void, value: f32, out: *mut f32) -> bool {
-    unsafe {
-        *out = value;
-        *out.add(1) = value + 1.0;
-        *out.add(2) = value + 2.0;
-    }
-    return true;
-}
-
 struct AsyncResult {
     error: bool,
     value: bool,
-}
-
-extern "C" fn settle_bool(context: *mut c_void, value: bool, error: *mut std::ffi::c_char) {
-    let result = unsafe { &mut *(context as *mut AsyncResult) };
-    result.value = value;
-    result.error = !error.is_null();
-    unsafe { crate::flight_free_string(error) };
-}
-
-fn empty_file_system() -> flight_sdk::HostFileSystemCapability {
-    return flight_sdk::HostFileSystemCapability {
-        provider: Arc::new(()),
-        append_text_file: None,
-        can_access_file: None,
-        copy: None,
-        directory_exists: None,
-        file_exists: None,
-        get_file_system_usage: None,
-        make_directory: None,
-        open_file_read_stream: None,
-        open_file_write_stream: None,
-        read_binary_file: None,
-        read_binary_file_range: None,
-        read_directory: None,
-        read_directory_recursive: None,
-        read_text_file: None,
-        remove_directory: None,
-        remove_file: None,
-        rename: None,
-        stat_file: None,
-        write_binary_file: None,
-        write_file_atomic: None,
-        write_text_file: None,
-    };
-}
-
-unsafe fn take_string(value: *mut std::ffi::c_char) -> Option<String> {
-    if value.is_null() {
-        return None;
-    }
-    let text = unsafe { CStr::from_ptr(value) }
-        .to_str()
-        .unwrap()
-        .to_owned();
-    unsafe { crate::flight_free_string(value) };
-    return Some(text);
 }
 
 #[test]
@@ -209,6 +96,7 @@ fn lifetime_data_and_nested_optional_channels_preserve_all_states() {
 }
 
 #[test]
+// flight-lint: allow(f64) signal callback ABI and frame deltas are defined by the SDK
 fn retained_callbacks_have_explicit_signal_and_geolocation_teardown() {
     let signal = flight_sdk::create_signal::<flight_sdk::FrameTick>();
     let mut deltas = Vec::new();
@@ -323,4 +211,119 @@ fn write_file_atomic_checks_the_data_tag_and_borrows_each_payload_for_provider_c
         *calls.lock().unwrap(),
         ["bytes:bytes:[1, 2]", "text:text:hello"]
     );
+}
+
+extern "C" fn append_import_diagnostic(
+    _context: *mut c_void,
+    list: *mut crate::FfiImportDiagnosticList,
+) -> bool {
+    return unsafe {
+        crate::flight_append_import_diagnostic(
+            list,
+            1,
+            c"parse-warning".as_ptr(),
+            c"fixture".as_ptr(),
+        )
+    };
+}
+
+extern "C" fn collect_requirement(
+    _context: *mut c_void,
+    list: *mut crate::FfiRequirementList,
+) -> bool {
+    unsafe {
+        crate::flight_destroy_requirement_list(list);
+        crate::flight_report_requirement(
+            list,
+            flight_sdk::RequirementFacet::SceneNodeKind as u32,
+            c"Shape".as_ptr(),
+        );
+    }
+    return true;
+}
+
+// flight-lint: allow(f64) path-segment callback ABI is defined by the SDK
+extern "C" fn collect_segment(
+    context: *mut c_void,
+    kind: u32,
+    _a: f64,
+    _b: f64,
+    _c: f64,
+    _d: f64,
+    _e: f64,
+    _f: f64,
+) -> bool {
+    unsafe { &mut *(context as *mut Vec<u32>) }.push(kind);
+    return true;
+}
+
+// flight-lint: allow(f64) signal callback ABI and frame deltas are defined by the SDK
+extern "C" fn collect_signal_delta(context: *mut c_void, delta: f64) {
+    unsafe { &mut *(context as *mut Vec<f64>) }.push(delta);
+}
+
+fn empty_file_system() -> flight_sdk::HostFileSystemCapability {
+    return flight_sdk::HostFileSystemCapability {
+        provider: Arc::new(()),
+        append_text_file: None,
+        can_access_file: None,
+        copy: None,
+        directory_exists: None,
+        file_exists: None,
+        get_file_system_usage: None,
+        make_directory: None,
+        open_file_read_stream: None,
+        open_file_write_stream: None,
+        read_binary_file: None,
+        read_binary_file_range: None,
+        read_directory: None,
+        read_directory_recursive: None,
+        read_text_file: None,
+        remove_directory: None,
+        remove_file: None,
+        rename: None,
+        stat_file: None,
+        write_binary_file: None,
+        write_file_atomic: None,
+        write_text_file: None,
+    };
+}
+
+extern "C" fn geolocation_error(context: *mut c_void, reason: u32) {
+    unsafe { &mut *(context as *mut Vec<u32>) }.push(reason);
+}
+
+extern "C" fn geolocation_position(
+    context: *mut c_void,
+    position: *const flight_sdk::GeolocationPosition,
+) {
+    unsafe { &mut *(context as *mut Vec<f32>) }.push(unsafe { (*position).latitude });
+}
+
+extern "C" fn sample_particle_color(_context: *mut c_void, value: f32, out: *mut f32) -> bool {
+    unsafe {
+        *out = value;
+        *out.add(1) = value + 1.0;
+        *out.add(2) = value + 2.0;
+    }
+    return true;
+}
+
+extern "C" fn settle_bool(context: *mut c_void, value: bool, error: *mut std::ffi::c_char) {
+    let result = unsafe { &mut *(context as *mut AsyncResult) };
+    result.value = value;
+    result.error = !error.is_null();
+    unsafe { crate::flight_free_string(error) };
+}
+
+unsafe fn take_string(value: *mut std::ffi::c_char) -> Option<String> {
+    if value.is_null() {
+        return None;
+    }
+    let text = unsafe { CStr::from_ptr(value) }
+        .to_str()
+        .unwrap()
+        .to_owned();
+    unsafe { crate::flight_free_string(value) };
+    return Some(text);
 }
