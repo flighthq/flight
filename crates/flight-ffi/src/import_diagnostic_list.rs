@@ -11,12 +11,9 @@ mod tests {
 
     const COCOS_UNRECOGNIZED_FRAME: &str =
         "<plist><dict><key>frames</key><dict><key>a.png</key><dict></dict></dict></dict></plist>";
-    const STARLING_WITHOUT_DIMENSIONS: &str = "<TextureAtlas imagePath=\"a.png\"></TextureAtlas>";
-
-    fn parse_starling(list: *mut FfiImportDiagnosticList) {
-        let xml = CString::new(STARLING_WITHOUT_DIMENSIONS).unwrap();
-        let data =
-            unsafe { flight_parse_starling_spritesheet(xml.as_ptr(), std::ptr::null(), list) };
+    fn parse_cocos(list: *mut FfiImportDiagnosticList) {
+        let xml = CString::new(COCOS_UNRECOGNIZED_FRAME).unwrap();
+        let data = unsafe { flight_parse_cocos_plist_spritesheet(xml.as_ptr(), list) };
         assert!(!data.is_null());
         unsafe { flight_free_spritesheet_data(data) };
     }
@@ -56,12 +53,12 @@ mod tests {
         #[test]
         fn empties_a_list_for_reuse_and_ignores_null() {
             let list = unsafe { flight_create_import_diagnostic_list() };
-            parse_starling(list);
-            parse_starling(list);
+            parse_cocos(list);
+            parse_cocos(list);
             assert_eq!(unsafe { flight_get_import_diagnostic_list_length(list) }, 2);
             unsafe { flight_clear_import_diagnostic_list(list) };
             assert_eq!(unsafe { flight_get_import_diagnostic_list_length(list) }, 0);
-            parse_starling(list);
+            parse_cocos(list);
             assert_eq!(unsafe { flight_get_import_diagnostic_list_length(list) }, 1);
             unsafe { flight_clear_import_diagnostic_list(std::ptr::null_mut()) };
             unsafe { flight_destroy_import_diagnostic_list(list) };
@@ -197,7 +194,7 @@ mod tests {
         fn treats_another_handle_type_as_no_list() {
             let windows = unsafe { flight_vec_ref_app_window_create() };
             let alternate = windows.cast::<FfiImportDiagnosticList>();
-            parse_starling(alternate);
+            parse_cocos(alternate);
             let xml = CString::new(COCOS_UNRECOGNIZED_FRAME).unwrap();
             let data = unsafe { flight_parse_cocos_plist_spritesheet(xml.as_ptr(), alternate) };
             unsafe { flight_free_spritesheet_data(data) };
@@ -240,7 +237,7 @@ mod tests {
         }
     }
 
-    mod flight_parse_cocos_plist_spritesheet {
+    mod flight_parse_cocos_plist_spritesheet_null_and_kind {
         use super::*;
 
         #[test]
@@ -280,34 +277,34 @@ mod tests {
         }
     }
 
-    mod flight_parse_starling_spritesheet {
+    mod flight_parse_cocos_plist_spritesheet {
         use super::*;
 
         #[test]
         fn collects_nothing_into_a_null_list() {
-            parse_starling(std::ptr::null_mut());
+            parse_cocos(std::ptr::null_mut());
         }
 
         #[test]
-        fn collects_a_detail_free_diagnostic() {
+        fn collects_a_typed_diagnostic() {
             let list = unsafe { flight_create_import_diagnostic_list() };
-            parse_starling(list);
+            parse_cocos(list);
             assert_eq!(unsafe { flight_get_import_diagnostic_list_length(list) }, 1);
             assert_eq!(
                 unsafe { flight_get_import_diagnostic_list_severity(list, 0) },
-                1
-            );
-            assert_eq!(
-                take_c_string(unsafe { flight_get_import_diagnostic_list_kind(list, 0) }),
-                "spritesheet.starling.missing-dimensions"
-            );
-            assert_eq!(
-                unsafe { flight_get_import_diagnostic_list_detail_length(list, 0) },
                 0
             );
             assert_eq!(
+                take_c_string(unsafe { flight_get_import_diagnostic_list_kind(list, 0) }),
+                "spritesheet.cocos-plist.unrecognized-frame"
+            );
+            assert_eq!(
+                unsafe { flight_get_import_diagnostic_list_detail_length(list, 0) },
+                1
+            );
+            assert_eq!(
                 unsafe { flight_get_import_diagnostic_list_detail_kind(list, 0, 0) },
-                -1
+                2
             );
             unsafe { flight_destroy_import_diagnostic_list(list) };
         }

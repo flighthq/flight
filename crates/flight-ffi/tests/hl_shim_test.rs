@@ -322,8 +322,8 @@ fn optional_diagnostics_lower_to_a_nullable_import_diagnostic_list() {
     let (header, shim) = generated();
     for (prototype, registration) in [
         (
-            "void * flight_parse_starling_spritesheet(const char * arg0, void * arg1, void * arg2);",
-            "DEFINE_PRIM(_BYTES, flight_parse_starling_spritesheet, _BYTES _BYTES _BYTES);",
+            "void * flight_parse_cocos_plist_spritesheet(const char * arg0, void * arg1);",
+            "DEFINE_PRIM(_BYTES, flight_parse_cocos_plist_spritesheet, _BYTES _BYTES);",
         ),
         (
             "void * flight_create_import_diagnostic_list(void);",
@@ -362,22 +362,14 @@ fn optional_diagnostics_lower_to_a_nullable_import_diagnostic_list() {
     assert!(wrappers.contains("fn flight_collect_rive_core_type_counts(out: *mut FfiU64CountMap"));
 }
 
-// An `Option<extern "C" fn>` parameter is the same C function-pointer type, where NULL is `None`.
+// The public optional callback remains absent until its independent StateRef transfer has a sound
+// by-value carrier; mapping the callback alone must not weaken that ownership precondition.
 #[test]
 fn optional_callbacks_lower_to_nullable_typed_function_pointers() {
     let (header, shim) = generated();
-    assert_line(
-        &header,
-        "bool flight_transition_animation_state_machine(void * arg0, void * arg1 /* ownership transferred; do not use or free after call */, float arg2, float (*arg3)(void *, float), void * arg4);",
-    );
-    assert_line(
-        &shim,
-        "HL_PRIM bool HL_NAME(flight_transition_animation_state_machine)(vbyte * arg0, vbyte * arg1, float arg2, vbyte * arg3, vbyte * arg4) { return (bool)flight_transition_animation_state_machine((void *)arg0, (void *)arg1, (float)arg2, (float (*)(void *, float))arg3, (void *)arg4); }",
-    );
-    assert_line(
-        &shim,
-        "DEFINE_PRIM(_BOOL, flight_transition_animation_state_machine, _BYTES _BYTES _F32 _BYTES _BYTES);",
-    );
+    assert!(!header.contains(" flight_transition_animation_state_machine("));
+    assert!(!shim.contains("(flight_transition_animation_state_machine)"));
+    assert!(generated_stats().contains("unmapped_param(StateRef)"));
 }
 
 #[test]
@@ -528,7 +520,7 @@ fn shared_arc_returns_lower_to_owned_inner_carriers() {
     }
 
     for skip in [
-        "unmapped_return(Option<Arc<RiveCoreObjectHandler>>)",
+        "no_ts_public_export(get_rive_core_object_handler)",
         "unmapped_return(Option<Arc<SpritesheetFormatEntry>>)",
         "unmapped_return(Option<Arc<TextureAtlasFormatEntry>>)",
         "closure_return(Arc<dyn Fn() + Send + Sync>)",
@@ -675,13 +667,23 @@ fn typed_array_refs_share_buffers_through_handle_families() {
     );
 }
 
-// A generic carrier is new public surface: a function reached only through a crate root's
-// `pub use contract::*` maps only when its package's TS `index.ts` exports it too.
+// The TypeScript root graph is the single admission boundary for every scanned Rust function.
+// Neither a legacy Rust contract glob nor a newly discovered module re-export can bypass it.
 #[test]
-fn generic_carriers_require_a_public_ts_export() {
+fn every_wrapper_requires_a_public_ts_export() {
     let (header, shim) = generated();
     let wrappers = generated_wrappers();
-    for symbol in ["flight_get_array_buffer_storage", "flight_create_blob"] {
+    for symbol in [
+        "flight_get_array_buffer_storage",
+        "flight_create_blob",
+        "flight_initialize_geolocation_position",
+        "flight_svg_attribute",
+        "flight_svg_first_number",
+        "flight_svg_local_name",
+        "flight_svg_number_attribute",
+        "flight_svg_optional_number_attribute",
+        "flight_visit_svg_elements",
+    ] {
         assert!(
             !header.contains(&format!(" {symbol}(")),
             "{symbol} must stay out of the C header"
@@ -696,17 +698,100 @@ fn generic_carriers_require_a_public_ts_export() {
         );
     }
     let stats = generated_stats();
+    assert!(!stats.contains("prefix_skip(initialize_)"));
     for skip in [
         "no_ts_public_export(get_array_buffer_storage)",
         "no_ts_public_export(create_blob)",
+        "no_ts_public_export(initialize_geolocation_position)",
+        "no_ts_public_export(svg_attribute)",
+        "no_ts_public_export(svg_first_number)",
+        "no_ts_public_export(svg_local_name)",
+        "no_ts_public_export(svg_number_attribute)",
+        "no_ts_public_export(svg_optional_number_attribute)",
+        "no_ts_public_export(visit_svg_elements)",
     ] {
         assert!(stats.contains(skip), "{skip} must stay skipped");
     }
-    // Glob-exported functions the TS root does export still map.
+    // A named TS re-export and a star-chain TS re-export both remain admitted.
+    for line in [
+        "void * flight_create_byte_reader(void * arg0, size_t arg1, int64_t arg2);",
+        "bool flight_collect_svg_counts(void * arg0, const char * arg1);",
+    ] {
+        assert_line(&header, line);
+    }
+
+    // Avoid a brittle global pin: the generated census itself must account for every discovered
+    // function, and every non-public discovery must have one named lane rejection.
+    let headline = stats.lines().next().unwrap();
+    let census = stats.lines().nth(1).unwrap();
+    let total: usize = headline.split_whitespace().nth(2).unwrap().parse().unwrap();
+    let public: usize = census.split_whitespace().nth(3).unwrap().parse().unwrap();
+    let non_public: usize = census.split_whitespace().nth(5).unwrap().parse().unwrap();
+    assert_eq!(public + non_public, total);
+    assert_eq!(stats.matches("no_ts_public_export(").count(), non_public);
+}
+
+#[test]
+fn behavior_extensions_and_unowned_log_carriers_are_policy_skips() {
+    let (header, shim) = generated();
+    let wrappers = generated_wrappers();
+    let extension_points = [
+        "create_filter_log_sink",
+        "enable_log_signals",
+        "register_dragon_bones_section_handler",
+        "register_dragon_bones_timeline_handler",
+        "register_log_serializer",
+        "register_spine_binary_section_handler",
+        "register_spine_binary_timeline_handler",
+        "register_spine_json_section_handler",
+        "register_spine_json_timeline_handler",
+        "register_spine_skeleton_binary_parser",
+    ];
+    let ownership_gaps = ["create_fanout_log_sink", "get_memory_log_sink_entries"];
+    for name in extension_points {
+        let symbol = format!("flight_{name}");
+        assert!(!header.contains(&format!(" {symbol}(")));
+        assert!(!shim.contains(&format!("({symbol})")));
+        assert!(!wrappers.contains(&format!("fn {symbol}(")));
+        assert!(generated_stats().contains(&format!("extension_policy_skip({name})")));
+    }
+    for name in ownership_gaps {
+        let symbol = format!("flight_{name}");
+        assert!(!header.contains(&format!(" {symbol}(")));
+        assert!(!shim.contains(&format!("({symbol})")));
+        assert!(!wrappers.contains(&format!("fn {symbol}(")));
+        assert!(generated_stats().contains(&format!("ownership_policy_skip({name})")));
+    }
+    for name in [
+        "register_dragon_bones_section_handlers",
+        "register_dragon_bones_timeline_handlers",
+        "register_spine_binary_section_handlers",
+        "register_spine_binary_timeline_handlers",
+        "register_spine_json_section_handlers",
+        "register_spine_json_timeline_handlers",
+    ] {
+        assert!(wrappers.contains(&format!("fn flight_{name}(")));
+    }
+}
+
+#[test]
+fn owned_string_arrays_have_strict_c_and_hashlink_shapes() {
+    let (header, shim) = generated();
     assert_line(
         &header,
-        "bool flight_collect_svg_counts(void * arg0, const char * arg1);",
+        "void flight_set_log_redaction_paths(void * arg0, const char * const * arg1, size_t arg2);",
     );
+    assert_line(
+        &shim,
+        "HL_PRIM void HL_NAME(flight_set_log_redaction_paths)(vbyte * arg0, vbyte * arg1, int arg2) { flight_set_log_redaction_paths((void *)arg0, (const char * const *)arg1, (size_t)arg2); }",
+    );
+    assert_line(
+        &shim,
+        "DEFINE_PRIM(_VOID, flight_set_log_redaction_paths, _BYTES _BYTES _I32);",
+    );
+    let wrappers = generated_wrappers();
+    assert!(wrappers.contains("paths_ptr: *const *const std::ffi::c_char"));
+    assert!(!wrappers.contains("paths_ptr: *const String"));
 }
 
 // Maps cross only with typed semantics: an XML attribute record is a boxed result read by index or
@@ -742,7 +827,7 @@ fn string_maps_lower_to_typed_records_and_count_maps() {
     );
 
     let stats = generated_stats();
-    for skip in ["unmapped_return(HashMap<String, String>)"] {
+    for skip in ["no_ts_public_export(parse_style_declarations)"] {
         assert!(stats.contains(skip), "{skip} must stay skipped");
     }
 }
@@ -896,7 +981,7 @@ fn by_value_parameters_follow_rust_ownership() {
     assert!(transfers > 0);
     let stats = generated_stats();
     for skip in [
-        "unmapped_param(HostSpawnCapability)",
+        "no_ts_public_export(create_tray_animation_state)",
         "unmapped_param(ParticleFormatCodec)",
         "unmapped_param(IpcArguments)",
         "unmapped_param(TargetRef)",
@@ -923,7 +1008,6 @@ fn contract_lane_enums_cross_as_u32_discriminants() {
     let (header, shim) = generated();
     let wrappers = generated_wrappers();
     for line in [
-        "char * flight_get_spritesheet_parse_diagnostic_severity_string(uint32_t arg0);",
         "bool flight_append_morph_shape_begin_gradient_fill(void * arg0, uint32_t arg1, void * arg2, void * arg3, int32_t arg4, int32_t arg5);",
         "bool flight_append_morph_shape_line_gradient_style(void * arg0, uint32_t arg1, void * arg2, void * arg3, int32_t arg4, int32_t arg5);",
     ] {
@@ -931,21 +1015,16 @@ fn contract_lane_enums_cross_as_u32_discriminants() {
     }
     assert_line(
         &shim,
-        "DEFINE_PRIM(_BYTES, flight_get_spritesheet_parse_diagnostic_severity_string, _I32);",
-    );
-    assert_line(
-        &shim,
         "DEFINE_PRIM(_BOOL, flight_append_morph_shape_begin_gradient_fill, _BYTES _I32 _BYTES _BYTES _I32 _I32);",
     );
     assert!(wrappers.contains(
         "ffi_enum_from_u32!(raw, [flight_sdk::shape::contract::SpreadMethod::Pad, flight_sdk::shape::contract::SpreadMethod::Reflect, flight_sdk::shape::contract::SpreadMethod::Repeat])"
     ));
-    assert!(wrappers.contains(
-        "ffi_enum_from_u32!(value, [flight_sdk::spritesheet::contract::SpritesheetParseDiagnosticSeverity::Error, flight_sdk::spritesheet::contract::SpritesheetParseDiagnosticSeverity::Warning])"
-    ));
     let stats = generated_stats();
     assert!(!stats.contains("SpreadMethod"));
-    assert!(!stats.contains("SpritesheetParseDiagnosticSeverity"));
+    assert!(
+        stats.contains("no_ts_public_export(get_spritesheet_parse_diagnostic_severity_string)")
+    );
 }
 
 #[test]

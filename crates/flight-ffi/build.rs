@@ -348,13 +348,44 @@ const EXTENSION_POINT_TYPES: &[&str] = &[
     "StorageMigration",
     "TextureAtlasFormatEntry",
 ];
-const SKIP_FN_PREFIXES: &[&str] = &["initialize_"];
-const SKIP_FNS: &[&str] = &[
+const SAFETY_POLICY_SKIP_FNS: &[&str] = &[
     "enable_clip_guards",
     "enable_statechart_guards",
     // The capability contains a host-supplied Arc<dyn Fn>; C cannot construct it soundly.
     "get_connectivity_online",
 ];
+// Public extension points whose behavior values cannot be authored by C or HashLink. The plural
+// bulk registration functions are deliberately not here: they consume no caller behavior and
+// install only SDK-owned handlers.
+const EXTENSION_POLICY_SKIP_FNS: &[&str] = &[
+    "create_filter_log_sink",
+    "enable_log_signals",
+    "register_dragon_bones_section_handler",
+    "register_dragon_bones_timeline_handler",
+    "register_log_serializer",
+    "register_spine_binary_section_handler",
+    "register_spine_binary_timeline_handler",
+    "register_spine_json_section_handler",
+    "register_spine_json_timeline_handler",
+    "register_spine_skeleton_binary_parser",
+];
+// These APIs need a complete typed ownership family before they can cross the ABI. A bare
+// `void *` neither proves where a Vec<LogSink> came from nor gives LogEntry collectors a lifecycle.
+const OWNERSHIP_POLICY_SKIP_FNS: &[&str] =
+    &["create_fanout_log_sink", "get_memory_log_sink_entries"];
+
+fn explicit_skip_category(name: &str) -> Option<&'static str> {
+    if SAFETY_POLICY_SKIP_FNS.contains(&name) {
+        return Some("safety_policy_skip");
+    }
+    if EXTENSION_POLICY_SKIP_FNS.contains(&name) {
+        return Some("extension_policy_skip");
+    }
+    if OWNERSHIP_POLICY_SKIP_FNS.contains(&name) {
+        return Some("ownership_policy_skip");
+    }
+    None
+}
 // Public-function `#[repr(u32)]` unit enums that their crate roots do not re-export, as (enum, SDK
 // module). They cross as `u32`, so naming them through the crate's contract module exposes only the
 // discriminant, never a contract-lane handle.
@@ -414,12 +445,15 @@ fn main() {
     let out_dir = PathBuf::from(env::var("OUT_DIR").unwrap());
 
     let mut all_output = String::from("use flight_sdk;\n\n");
+    all_output.push_str(generate_checked_slice_support());
     all_output.push_str(generate_shape_bounds_context_support());
     all_output.push_str(generate_owned_byte_reader_support());
     let mut boxed_types: BTreeSet<String> = BTreeSet::new();
     let mut vec_ref_handle_specs: BTreeSet<VecRefHandleSpec> = BTreeSet::new();
     let mut seen_names: BTreeSet<String> = BTreeSet::new();
     let mut stats_total_fns = 0usize;
+    let mut stats_public_fns = 0usize;
+    let mut stats_non_public_fns = 0usize;
     let mut stats_generated = 0usize;
     let mut stats_skipped: std::collections::BTreeMap<String, usize> =
         std::collections::BTreeMap::new();
@@ -506,6 +540,11 @@ fn main() {
         let mut crate_used = false;
         for func in &fns {
             stats_total_fns += 1;
+            if func.lacks_public_export {
+                stats_non_public_fns += 1;
+            } else {
+                stats_public_fns += 1;
+            }
             if has_mono_dyn_param(func) {
                 let wrappers = generate_mono_wrappers(func);
                 if wrappers.is_empty() {
@@ -573,6 +612,11 @@ fn main() {
     let stats_skipped_total: usize = stats_skipped.values().sum();
     let mut stats_file = String::new();
     writeln!(stats_file, "FFI stats: {stats_total_fns} total, {stats_generated} generated, {stats_skipped_total} skipped").unwrap();
+    writeln!(
+        stats_file,
+        "FFI public census: {stats_public_fns} TypeScript-public, {stats_non_public_fns} non-public"
+    )
+    .unwrap();
     let mut sorted_skips: Vec<_> = stats_skipped.iter().collect();
     sorted_skips.sort_by(|a, b| b.1.cmp(a.1));
     for (reason, count) in &sorted_skips {
@@ -684,8 +728,8 @@ struct ParsedFn {
     name: String,
     params: Vec<Param>,
     ret: Option<String>,
-    // Reached only through a `pub use <module>::*` crate root and absent from the package's TS
-    // `index.ts`, so the public lane is unconfirmed (agents/ffi-public-lane.md).
+    // Absent from the package's TypeScript `index.ts` export graph. Rust crate-root visibility is
+    // discovery only and never authorizes a generated public ABI (agents/ffi-public-lane.md).
     lacks_public_export: bool,
 }
 
@@ -719,7 +763,6 @@ fn collect_pub_fns(src_dir: &Path) -> Vec<ParsedFn> {
         return Vec::new();
     }
 
-    let named_exports = collect_named_exports(&lib_path);
     let mut fns = Vec::new();
     let mut entries: Vec<_> = fs::read_dir(src_dir)
         .unwrap()
@@ -741,27 +784,13 @@ fn collect_pub_fns(src_dir: &Path) -> Vec<ParsedFn> {
         parse_pub_fns(&content, &mut all_fns);
         for mut f in all_fns {
             if exported_names.contains(&f.name) {
-                f.lacks_public_export = !named_exports.contains(&f.name)
-                    && !ts_exports.contains(&public_perimeter::get_export_key(&f.name));
+                f.lacks_public_export =
+                    !ts_exports.contains(&public_perimeter::get_export_key(&f.name));
                 fns.push(f);
             }
         }
     }
     fns
-}
-
-// Functions a crate root names one by one (`pub use contract::foo;`), excluding glob re-exports.
-fn collect_named_exports(lib_path: &Path) -> BTreeSet<String> {
-    let content = fs::read_to_string(lib_path).unwrap();
-    content
-        .lines()
-        .filter_map(|line| line.trim().strip_prefix("pub use "))
-        .map(|rest| rest.trim_end_matches(';').trim())
-        .filter(|rest| !rest.ends_with("::*"))
-        .filter_map(|rest| rest.rsplit("::").next())
-        .filter(|name| name.chars().next().is_some_and(|c| c.is_lowercase()))
-        .map(str::to_string)
-        .collect()
 }
 
 // The value names the package's TS root (`packages/<name>/src/index.ts`) exports through its real
@@ -788,18 +817,6 @@ fn collect_ts_index_exports(src_dir: &Path) -> BTreeSet<String> {
         .iter()
         .map(|name| public_perimeter::get_export_key(name))
         .collect()
-}
-
-// A generic carrier is new public surface, so it maps only for functions whose public lane is
-// confirmed; legacy non-generic mappings keep their crate-root membership.
-fn uses_generic_carrier(func: &ParsedFn) -> bool {
-    let resolve = |ty: &str| strip_crate_paths(&strip_lifetimes(&resolve_type_alias(ty.trim())));
-    func.params.iter().any(|param| {
-        map_generic_carrier_param(&param.name, &resolve(&param.ty)).is_some_and(|m| m.is_some())
-    }) || func
-        .ret
-        .as_deref()
-        .is_some_and(|ret| map_generic_carrier_return(&resolve(ret)).is_some_and(|m| m.is_some()))
 }
 
 fn collect_exported_names(
@@ -1556,13 +1573,10 @@ fn is_shape_bounds_context(ty: &str) -> bool {
 }
 
 fn generate_ffi_wrapper(func: &ParsedFn) -> Option<(String, Option<String>)> {
-    if SKIP_FN_PREFIXES.iter().any(|p| func.name.starts_with(p)) {
+    if explicit_skip_category(&func.name).is_some() {
         return None;
     }
-    if SKIP_FNS.contains(&func.name.as_str()) {
-        return None;
-    }
-    if func.lacks_public_export && uses_generic_carrier(func) {
+    if func.lacks_public_export {
         return None;
     }
 
@@ -1775,10 +1789,7 @@ fn collect_mono_params(func: &ParsedFn) -> Vec<MonoParam> {
 }
 
 fn generate_mono_wrappers(func: &ParsedFn) -> Vec<(String, String, Option<String>)> {
-    if SKIP_FN_PREFIXES.iter().any(|p| func.name.starts_with(p)) {
-        return Vec::new();
-    }
-    if SKIP_FNS.contains(&func.name.as_str()) {
+    if explicit_skip_category(&func.name).is_some() || func.lacks_public_export {
         return Vec::new();
     }
 
@@ -2389,6 +2400,32 @@ fn generate_string_record_result_helpers(ffi_name: &str) -> String {
     )
 }
 
+// All generated borrowed slices route through these helpers. Rust requires even an empty slice's
+// pointer to be non-null and aligned, so a C NULL+zero pair is replaced with a dangling aligned
+// pointer before constructing the empty slice. NULL+nonzero remains a caller contract violation.
+fn generate_checked_slice_support() -> &'static str {
+    r#"unsafe fn ffi_slice_from_raw_parts<'a, T>(values: *const T, count: usize) -> &'a [T] {
+    assert!(!values.is_null() || count == 0, "null slice must have length zero");
+    let values = if values.is_null() { std::ptr::NonNull::<T>::dangling().as_ptr() } else { values };
+    unsafe { std::slice::from_raw_parts(values, count) }
+}
+unsafe fn ffi_slice_from_raw_parts_mut<'a, T>(values: *mut T, count: usize) -> &'a mut [T] {
+    assert!(!values.is_null() || count == 0, "null mutable slice must have length zero");
+    let values = if values.is_null() { std::ptr::NonNull::<T>::dangling().as_ptr() } else { values };
+    unsafe { std::slice::from_raw_parts_mut(values, count) }
+}
+unsafe fn ffi_owned_c_string_array(values: *const *const std::ffi::c_char, count: usize) -> Vec<String> {
+    unsafe { ffi_slice_from_raw_parts(values, count) }.iter().map(|value| {
+        assert!(!value.is_null(), "string array contains a null pointer");
+        unsafe { std::ffi::CStr::from_ptr(*value) }
+            .to_str()
+            .expect("string array contains invalid UTF-8")
+            .to_owned()
+    }).collect()
+}
+"#
+}
+
 // The FFI owns the bytes independently of the caller. Each SDK call constructs a short-lived
 // ByteReader borrowing this allocation, then mutable calls copy only its cursor back. This avoids
 // a self-referential Rust value while retaining the SDK's single ByteReader implementation.
@@ -2869,13 +2906,10 @@ pub unsafe extern "C" fn flight_vec_ref_{slug}_free(handle: *mut FfiVecRefHandle
 }
 
 fn categorize_skip(func: &ParsedFn) -> String {
-    if func.name.starts_with("initialize_") {
-        return "prefix_skip(initialize_)".to_string();
+    if let Some(category) = explicit_skip_category(&func.name) {
+        return format!("{category}({})", func.name);
     }
-    if SKIP_FNS.contains(&func.name.as_str()) {
-        return "fn_skip".to_string();
-    }
-    if func.lacks_public_export && uses_generic_carrier(func) {
+    if func.lacks_public_export {
         return format!("no_ts_public_export({})", func.name);
     }
     for param in &func.params {
@@ -3299,7 +3333,7 @@ fn generate_typed_array_ref_support() -> String {
         let owned = ownership_doc("owned-return", &format!("flight_free_{slug}_ref"), &handle);
         write!(
             output,
-            "{owned}#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn flight_create_{slug}_ref(values: *const {scalar}, count: usize) -> *mut std::ffi::c_void {{\n    assert!(!values.is_null() || count == 0, \"null values must have count zero\");\n    let values: Box<[{scalar}]> = if count == 0 {{ Box::new([]) }} else {{ unsafe {{ std::slice::from_raw_parts(values, count) }}.into() }};\n    let handle: {handle} = std::sync::Arc::new(std::sync::RwLock::new(values));\n    return Box::into_raw(Box::new(handle)) as *mut std::ffi::c_void;\n}}\n\
+            "{owned}#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn flight_create_{slug}_ref(values: *const {scalar}, count: usize) -> *mut std::ffi::c_void {{\n    let values: Box<[{scalar}]> = unsafe {{ ffi_slice_from_raw_parts(values, count) }}.into();\n    let handle: {handle} = std::sync::Arc::new(std::sync::RwLock::new(values));\n    return Box::into_raw(Box::new(handle)) as *mut std::ffi::c_void;\n}}\n\
              #[unsafe(no_mangle)]\npub unsafe extern \"C\" fn flight_free_{slug}_ref(handle: *mut {handle}) {{\n    if !handle.is_null() {{ unsafe {{ drop(Box::from_raw(handle)); }} }}\n}}\n\
              #[unsafe(no_mangle)]\npub unsafe extern \"C\" fn flight_get_{slug}_ref_length(handle: *const std::ffi::c_void) -> usize {{\n    if handle.is_null() {{ return 0; }}\n    return unsafe {{ &*(handle as *const {handle}) }}.read().unwrap_or_else(std::sync::PoisonError::into_inner).len();\n}}\n\
              #[unsafe(no_mangle)]\npub unsafe extern \"C\" fn flight_read_{slug}_ref(handle: *const std::ffi::c_void, offset: usize, out: *mut {scalar}, count: usize) -> usize {{\n    if handle.is_null() || out.is_null() {{ return 0; }}\n    let values = unsafe {{ &*(handle as *const {handle}) }}.read().unwrap_or_else(std::sync::PoisonError::into_inner);\n    let source = values.get(offset..).unwrap_or(&[]);\n    let copied = source.len().min(count);\n    unsafe {{ std::ptr::copy_nonoverlapping(source.as_ptr(), out, copied) }};\n    return copied;\n}}\n\
@@ -3367,7 +3401,7 @@ fn map_generic_carrier_param(name: &str, ty: &str) -> Option<Option<MappedParam>
                     "    assert!(!{ptr_name}.is_null() || {len_name} == 0, \"null Ref slice must have length zero\");"
                 ),
                 format!(
-                    "    let {binding}_handles: &[*const std::ffi::c_void] = if {len_name} == 0 {{ &[] }} else {{ unsafe {{ std::slice::from_raw_parts({ptr_name}, {len_name}) }} }};"
+                    "    let {binding}_handles: &[*const std::ffi::c_void] = unsafe {{ ffi_slice_from_raw_parts({ptr_name}, {len_name}) }};"
                 ),
                 format!(
                     "    let {binding}: Vec<{element_ty}> = {binding}_handles.iter().map(|handle| {{ assert!(!(*handle).is_null(), \"Ref slice contains a null handle\"); unsafe {{ &*(*handle as *const {element_ty}) }}.clone() }}).collect();"
@@ -3384,7 +3418,7 @@ fn map_generic_carrier_param(name: &str, ty: &str) -> Option<Option<MappedParam>
     );
     let pointers = |element_ptr: &str| {
         format!(
-            "    let {binding}_ptrs: &[*const {element_ptr}] = if {len_name} == 0 {{ &[] }} else {{ unsafe {{ std::slice::from_raw_parts({ptr_name}, {len_name}) }} }};"
+            "    let {binding}_ptrs: &[*const {element_ptr}] = unsafe {{ ffi_slice_from_raw_parts({ptr_name}, {len_name}) }};"
         )
     };
 
@@ -3413,10 +3447,10 @@ fn map_generic_carrier_param(name: &str, ty: &str) -> Option<Option<MappedParam>
                 ),
                 pointers("std::ffi::c_void"),
                 format!(
-                    "    let {binding}_lengths: &[usize] = if {len_name} == 0 {{ &[] }} else {{ unsafe {{ std::slice::from_raw_parts({lengths_name}, {len_name}) }} }};"
+                    "    let {binding}_lengths: &[usize] = unsafe {{ ffi_slice_from_raw_parts({lengths_name}, {len_name}) }};"
                 ),
                 format!(
-                    "    let {binding}: Vec<Vec<{element}>> = {binding}_ptrs.iter().zip({binding}_lengths).map(|(list, length)| {{ assert!(!(*list).is_null() || *length == 0, \"null list must have length zero\"); if *length == 0 {{ Vec::new() }} else {{ unsafe {{ std::slice::from_raw_parts(*list as *const {element}, *length) }}.to_vec() }} }}).collect();"
+                    "    let {binding}: Vec<Vec<{element}>> = {binding}_ptrs.iter().zip({binding}_lengths).map(|(list, length)| unsafe {{ ffi_slice_from_raw_parts(*list as *const {element}, *length) }}.to_vec()).collect();"
                 ),
             ],
             call_expr: format!("&{binding}"),
@@ -3444,10 +3478,10 @@ fn map_generic_carrier_param(name: &str, ty: &str) -> Option<Option<MappedParam>
                     "    assert!((!{keys_name}.is_null() && !{values_name}.is_null()) || {len_name} == 0, \"null string pair arrays must have length zero\");"
                 ),
                 format!(
-                    "    let {binding}_keys: &[*const std::ffi::c_char] = if {len_name} == 0 {{ &[] }} else {{ unsafe {{ std::slice::from_raw_parts({keys_name}, {len_name}) }} }};"
+                    "    let {binding}_keys: &[*const std::ffi::c_char] = unsafe {{ ffi_slice_from_raw_parts({keys_name}, {len_name}) }};"
                 ),
                 format!(
-                    "    let {binding}_values: &[*const std::ffi::c_char] = if {len_name} == 0 {{ &[] }} else {{ unsafe {{ std::slice::from_raw_parts({values_name}, {len_name}) }} }};"
+                    "    let {binding}_values: &[*const std::ffi::c_char] = unsafe {{ ffi_slice_from_raw_parts({values_name}, {len_name}) }};"
                 ),
                 format!(
                     "    let {binding}: Vec<(&str, &str)> = {binding}_keys.iter().zip({binding}_values).map(|(key, value)| {{ assert!(!(*key).is_null() && !(*value).is_null(), \"string pair arrays contain a null pointer\"); (unsafe {{ std::ffi::CStr::from_ptr(*key) }}.to_str().unwrap_or(\"\"), unsafe {{ std::ffi::CStr::from_ptr(*value) }}.to_str().unwrap_or(\"\")) }}).collect();"
@@ -4080,7 +4114,7 @@ fn map_param_to_ffi(name: &str, ty: &str) -> Option<MappedParam> {
                     ],
                     bindings: Vec::new(),
                     call_expr: format!(
-                        "if {ptr_name}.is_null() {{ None }} else {{ Some(unsafe {{ std::slice::from_raw_parts({ptr_name}, {len_name}) }}) }}"
+                        "if {ptr_name}.is_null() && {len_name} == 0 {{ None }} else {{ Some(unsafe {{ ffi_slice_from_raw_parts({ptr_name}, {len_name}) }}) }}"
                     ),
                 });
             }
@@ -4110,7 +4144,7 @@ fn map_param_to_ffi(name: &str, ty: &str) -> Option<MappedParam> {
                             "    assert!(!{ptr_name}.is_null() || {len_name} == 0, \"null Ref slice must have length zero\");"
                         ),
                         format!(
-                            "    let {binding_name}: Option<Vec<{element_ty}>> = if {ptr_name}.is_null() {{ None }} else {{ Some(unsafe {{ std::slice::from_raw_parts({ptr_name}, {len_name}) }}.iter().map(|handle| {{ assert!(!(*handle).is_null(), \"Ref slice contains a null handle\"); unsafe {{ &*(*handle as *const {element_ty}) }}.clone() }}).collect()) }};"
+                            "    let {binding_name}: Option<Vec<{element_ty}>> = if {ptr_name}.is_null() {{ None }} else {{ Some(unsafe {{ ffi_slice_from_raw_parts({ptr_name}, {len_name}) }}.iter().map(|handle| {{ assert!(!(*handle).is_null(), \"Ref slice contains a null handle\"); unsafe {{ &*(*handle as *const {element_ty}) }}.clone() }}).collect()) }};"
                         ),
                     ],
                     call_expr: format!("{binding_name}.as_deref()"),
@@ -4133,7 +4167,7 @@ fn map_param_to_ffi(name: &str, ty: &str) -> Option<MappedParam> {
                     ],
                     bindings: Vec::new(),
                     call_expr: format!(
-                        "if {ptr_name}.is_null() {{ None }} else {{ Some(unsafe {{ std::slice::from_raw_parts_mut({ptr_name}, {len_name}) }}) }}"
+                        "if {ptr_name}.is_null() && {len_name} == 0 {{ None }} else {{ Some(unsafe {{ ffi_slice_from_raw_parts_mut({ptr_name}, {len_name}) }}) }}"
                     ),
                 });
             }
@@ -4331,6 +4365,27 @@ fn map_param_to_ffi(name: &str, ty: &str) -> Option<MappedParam> {
         }
     }
 
+    // &[String] -> array of validated NUL-terminated C strings copied into Rust-owned Strings for
+    // the call. Never reinterpret caller memory as Rust String structs.
+    if ty == "&[String]" {
+        let ptr_name = format!("{name}_ptr");
+        let len_name = format!("{name}_len");
+        let binding_name = format!("{}_strings", name.trim_start_matches('_'));
+        return Some(MappedParam {
+            ffi_params: vec![
+                (
+                    ptr_name.clone(),
+                    "*const *const std::ffi::c_char".to_string(),
+                ),
+                (len_name.clone(), "usize".to_string()),
+            ],
+            bindings: vec![format!(
+                "    let {binding_name} = unsafe {{ ffi_owned_c_string_array({ptr_name}, {len_name}) }};"
+            )],
+            call_expr: format!("&{binding_name}"),
+        });
+    }
+
     // &[&str] -> array of borrowed NUL-terminated C strings + length, decoded like a `&str`
     // parameter for the duration of the SDK call.
     if ty == "&[&str]" {
@@ -4347,10 +4402,7 @@ fn map_param_to_ffi(name: &str, ty: &str) -> Option<MappedParam> {
             ],
             bindings: vec![
                 format!(
-                    "    assert!(!{ptr_name}.is_null() || {len_name} == 0, \"null string array must have length zero\");"
-                ),
-                format!(
-                    "    let {binding_name}_ptrs: &[*const std::ffi::c_char] = if {len_name} == 0 {{ &[] }} else {{ unsafe {{ std::slice::from_raw_parts({ptr_name}, {len_name}) }} }};"
+                    "    let {binding_name}_ptrs: &[*const std::ffi::c_char] = unsafe {{ ffi_slice_from_raw_parts({ptr_name}, {len_name}) }};"
                 ),
                 format!(
                     "    let {binding_name}: Vec<&str> = {binding_name}_ptrs.iter().map(|text| {{ assert!(!(*text).is_null(), \"string array contains a null pointer\"); unsafe {{ std::ffi::CStr::from_ptr(*text) }}.to_str().unwrap_or(\"\") }}).collect();"
@@ -4382,7 +4434,7 @@ fn map_param_to_ffi(name: &str, ty: &str) -> Option<MappedParam> {
                             "    assert!(!{ptr_name}.is_null() || {len_name} == 0, \"null Ref slice must have length zero\");"
                         ),
                         format!(
-                            "    let {binding_name}_handles: &[*const std::ffi::c_void] = if {len_name} == 0 {{ &[] }} else {{ unsafe {{ std::slice::from_raw_parts({ptr_name}, {len_name}) }} }};"
+                            "    let {binding_name}_handles: &[*const std::ffi::c_void] = unsafe {{ ffi_slice_from_raw_parts({ptr_name}, {len_name}) }};"
                         ),
                         format!(
                             "    let {binding_name}: Vec<{element_ty}> = {binding_name}_handles.iter().map(|handle| {{ assert!(!(*handle).is_null(), \"Ref slice contains a null handle\"); unsafe {{ &*(*handle as *const {element_ty}) }}.clone() }}).collect();"
@@ -4419,7 +4471,7 @@ fn map_param_to_ffi(name: &str, ty: &str) -> Option<MappedParam> {
                     ],
                     bindings: Vec::new(),
                     call_expr: format!(
-                        "unsafe {{ std::slice::from_raw_parts_mut({ptr_name}, {len_name}) }}"
+                        "unsafe {{ ffi_slice_from_raw_parts_mut({ptr_name}, {len_name}) }}"
                     ),
                 });
             }
@@ -4447,7 +4499,7 @@ fn map_param_to_ffi(name: &str, ty: &str) -> Option<MappedParam> {
                     ],
                     bindings: Vec::new(),
                     call_expr: format!(
-                        "unsafe {{ std::slice::from_raw_parts({ptr_name}, {len_name}) }}"
+                        "unsafe {{ ffi_slice_from_raw_parts({ptr_name}, {len_name}) }}"
                     ),
                 });
             }
@@ -4622,7 +4674,7 @@ fn map_param_to_ffi(name: &str, ty: &str) -> Option<MappedParam> {
                             ],
                             bindings: Vec::new(),
                             call_expr: format!(
-                                "unsafe {{ Vec::from_raw_parts({ptr_name}, {len_name}, {len_name}) }}.into_boxed_slice()"
+                                "if {len_name} == 0 {{ Vec::new().into_boxed_slice() }} else {{ assert!(!{ptr_name}.is_null(), \"null owned slice must have length zero\"); unsafe {{ Vec::from_raw_parts({ptr_name}, {len_name}, {len_name}) }}.into_boxed_slice() }}"
                             ),
                         });
                     }
@@ -4652,7 +4704,7 @@ fn map_param_to_ffi(name: &str, ty: &str) -> Option<MappedParam> {
                     ],
                     bindings: Vec::new(),
                     call_expr: format!(
-                        "if {ptr_name}.is_null() {{ None }} else {{ Some(unsafe {{ std::slice::from_raw_parts({ptr_name}, {len_name}) }}) }}"
+                        "if {ptr_name}.is_null() && {len_name} == 0 {{ None }} else {{ Some(unsafe {{ ffi_slice_from_raw_parts({ptr_name}, {len_name}) }}) }}"
                     ),
                 });
             }
@@ -4680,7 +4732,7 @@ fn map_param_to_ffi(name: &str, ty: &str) -> Option<MappedParam> {
                     ],
                     bindings: Vec::new(),
                     call_expr: format!(
-                        "if {ptr_name}.is_null() {{ None }} else {{ Some(unsafe {{ std::slice::from_raw_parts_mut({ptr_name}, {len_name}) }}) }}"
+                        "if {ptr_name}.is_null() && {len_name} == 0 {{ None }} else {{ Some(unsafe {{ ffi_slice_from_raw_parts_mut({ptr_name}, {len_name}) }}) }}"
                     ),
                 });
             }

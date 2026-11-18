@@ -68,6 +68,11 @@ static void check_strings(void) {
 }
 
 static void check_owned_byte_readers(void) {
+  void *empty = flight_create_byte_reader(NULL, 0, -1);
+  expect(empty != NULL && !flight_has_byte_reader_bytes(empty, 1),
+         "create_byte_reader accepts NULL with zero length");
+  flight_free_owned_byte_reader(empty);
+
   uint8_t bytes[] = {0x11, 0x34, 0x12, 0x12, 0x34, 0x56};
   void *reader = flight_create_byte_reader(bytes, 6, -1);
   expect(reader != NULL, "create_byte_reader returns an owned reader");
@@ -124,6 +129,8 @@ static void check_effect_metadata_snapshots(void) {
 }
 
 static void check_string_arrays(void) {
+  void (*set_redaction_paths)(void *, const char *const *, size_t) = flight_set_log_redaction_paths;
+  (void)set_redaction_paths;
   const char *segments[] = {"/a/b", "../c"};
   char *joined = flight_join_file_path(segments, 2);
   expect(joined != NULL && strcmp(joined, "/a/c") == 0, "join_file_path reads a C string array");
@@ -142,9 +149,8 @@ static bool take_string_equals(char *text, const char *expected) {
 
 static void check_import_diagnostic_lists(void) {
   const char *cocos = "<plist><dict><key>frames</key><dict><key>a.png</key><dict></dict></dict></dict></plist>";
-  const char *starling = "<TextureAtlas imagePath=\"a.png\"></TextureAtlas>";
   /* NULL collects nothing; the parse still returns its owned result. */
-  void *data = flight_parse_starling_spritesheet(starling, NULL, NULL);
+  void *data = flight_parse_cocos_plist_spritesheet(cocos, NULL);
   expect(data != NULL, "a NULL diagnostics list still parses");
   flight_free_spritesheet_data(data);
 
@@ -152,7 +158,7 @@ static void check_import_diagnostic_lists(void) {
   expect(list != NULL && flight_get_import_diagnostic_list_length(list) == 0, "a new list is empty");
   data = flight_parse_cocos_plist_spritesheet(cocos, list);
   flight_free_spritesheet_data(data);
-  data = flight_parse_starling_spritesheet(starling, NULL, list);
+  data = flight_parse_cocos_plist_spritesheet(cocos, list);
   flight_free_spritesheet_data(data);
   expect(flight_get_import_diagnostic_list_length(list) == 2, "each call appends its diagnostics");
   expect(flight_get_import_diagnostic_list_severity(list, 0) == 0, "a dropped frame has Drop severity");
@@ -168,8 +174,8 @@ static void check_import_diagnostic_lists(void) {
   expect(flight_get_import_diagnostic_list_detail_kind(list, 0, 0) == 2, "detail kind 2 is a string");
   expect(take_string_equals(flight_get_import_diagnostic_list_detail_string(list, 0, 0), "a.png"), "detail string");
   expect(isnan(flight_get_import_diagnostic_list_detail_number(list, 0, 0)), "a non-number detail reads NaN");
-  expect(flight_get_import_diagnostic_list_severity(list, 1) == 1, "missing dimensions has Recover severity");
-  expect(flight_get_import_diagnostic_list_detail_length(list, 1) == 0, "a detail-free diagnostic has no detail");
+  expect(flight_get_import_diagnostic_list_severity(list, 1) == 0, "the second dropped frame appends its severity");
+  expect(flight_get_import_diagnostic_list_detail_length(list, 1) == 1, "the second diagnostic keeps its detail");
   expect(flight_get_import_diagnostic_list_severity(list, 2) == -1, "an index past the end reads -1");
   expect(flight_get_import_diagnostic_list_kind(list, 2) == NULL, "an index past the end reads NULL");
 
@@ -179,7 +185,7 @@ static void check_import_diagnostic_lists(void) {
   /* A live handle of another type is no list: nothing collects into it, reads are empty, and clear and
      destroy leave it intact for its own helpers to read and release. */
   void *windows = flight_vec_ref_app_window_create();
-  data = flight_parse_starling_spritesheet(starling, NULL, windows);
+  data = flight_parse_cocos_plist_spritesheet(cocos, windows);
   expect(data != NULL, "a parse with another handle type as diagnostics still returns its result");
   flight_free_spritesheet_data(data);
   flight_clear_import_diagnostic_list(windows);
@@ -372,13 +378,6 @@ static void check_enum_parameters(void) {
     flight_free_path(path);
   }
 }
-
-static void check_contract_lane_enums(void) {
-  char *severity = flight_get_spritesheet_parse_diagnostic_severity_string(1);
-  expect(severity != NULL && strcmp(severity, "warning") == 0, "severity discriminant 1 reads warning");
-  flight_free_string(severity);
-}
-
 static void check_optional_texture_variants(void) {
   void *texture = flight_create_texture(NULL);
   expect(texture != NULL, "create_texture returns a handle");
@@ -446,19 +445,6 @@ static void check_async_callbacks(void) {
   expect(completion.calls == 1, "a resolved future completes its callback once, before returning");
   expect(!completion.value, "create_file_symlink settles false");
   expect(!completion.had_error, "a fulfilled future passes a NULL error");
-}
-
-static float ease_identity(void *ctx, float t) {
-  (void)ctx;
-  return t;
-}
-
-static void check_optional_callbacks(void) {
-  /* An optional callback parameter takes a typed function pointer, or NULL for none. */
-  bool (*transition)(void *, void *, float, float (*)(void *, float), void *) =
-      flight_transition_animation_state_machine;
-  float (*ease)(void *, float) = ease_identity;
-  expect(transition != NULL && ease(NULL, 0.5f) == 0.5f, "optional callbacks are typed function pointers");
 }
 
 struct shape_bounds_recording_context {
@@ -626,13 +612,11 @@ int main(void) {
   check_typed_array_refs();
   check_string_maps();
   check_by_value_ownership();
-  check_contract_lane_enums();
   check_enum_parameters();
   check_optional_texture_variants();
   check_optional_tuples();
   check_unit_signals();
   check_async_callbacks();
-  check_optional_callbacks();
   check_shape_bounds_context();
   if (failures != 0) {
     fprintf(stderr, "flight-ffi C consumer: %d failure(s)\n", failures);

@@ -1,4 +1,3 @@
-use std::ffi::CString;
 use std::sync::Arc;
 
 use crate::*;
@@ -32,56 +31,6 @@ mod flight_ease_invert {
         );
         unsafe { flight_free_easing_function(inverted) };
         assert_eq!(Arc::strong_count(&ease), 1);
-    }
-}
-
-mod flight_register_command_property_access {
-    use super::*;
-
-    // An accessor whose closures each hold one clone of `counter`.
-    fn box_accessor(counter: &Arc<()>) -> *mut flight_sdk::CommandPropertyAccessor {
-        let read_counter = counter.clone();
-        let write_counter = counter.clone();
-        let accessor = flight_sdk::CommandPropertyAccessor {
-            read: Arc::new(move |_| {
-                let _ = &read_counter;
-                None
-            }),
-            write: Arc::new(move |_, _| {
-                let _ = &write_counter;
-            }),
-        };
-        return Box::into_raw(Box::new(accessor));
-    }
-
-    #[test]
-    fn moves_each_accessor_into_the_registry_without_a_second_drop() {
-        let counter = Arc::new(());
-        let access = unsafe { flight_create_command_property_access() };
-        let kind = CString::new("sprite").unwrap();
-        let property = CString::new("alpha").unwrap();
-        unsafe {
-            flight_register_command_property_access(
-                access,
-                kind.as_ptr(),
-                property.as_ptr(),
-                box_accessor(&counter),
-            )
-        };
-        // The registry owns the accessor's two closures; the box itself is gone.
-        assert_eq!(Arc::strong_count(&counter), 3);
-        // Replacing the entry drops the first accessor exactly once.
-        unsafe {
-            flight_register_command_property_access(
-                access,
-                kind.as_ptr(),
-                property.as_ptr(),
-                box_accessor(&counter),
-            )
-        };
-        assert_eq!(Arc::strong_count(&counter), 3);
-        unsafe { flight_free_command_property_access_ref(access) };
-        assert_eq!(Arc::strong_count(&counter), 1);
     }
 }
 

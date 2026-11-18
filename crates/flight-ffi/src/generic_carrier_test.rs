@@ -593,19 +593,6 @@ mod flight_get_optional_texture_atlas_list_item {
     }
 }
 
-mod flight_get_spritesheet_parse_diagnostic_severity_string {
-    use super::*;
-
-    #[test]
-    fn reads_each_severity_discriminant() {
-        for (value, expected) in [(0u32, "error"), (1u32, "warning")] {
-            let text = unsafe { flight_get_spritesheet_parse_diagnostic_severity_string(value) };
-            assert_eq!(unsafe { CStr::from_ptr(text) }.to_str().unwrap(), expected);
-            unsafe { flight_free_string(text) };
-        }
-    }
-}
-
 mod flight_get_timeline_labels {
     use super::*;
 
@@ -835,6 +822,91 @@ mod owned_ref_return_lifecycle {
     }
 }
 
+mod checked_slice_adapters {
+    use super::*;
+
+    #[test]
+    fn null_zero_constructs_empty_borrows_and_owned_strings() {
+        let values: &[u8] = unsafe { ffi_slice_from_raw_parts(std::ptr::null(), 0) };
+        assert!(values.is_empty());
+        let values: &mut [u8] = unsafe { ffi_slice_from_raw_parts_mut(std::ptr::null_mut(), 0) };
+        assert!(values.is_empty());
+        let strings = unsafe { ffi_owned_c_string_array(std::ptr::null(), 0) };
+        assert!(strings.is_empty());
+    }
+
+    #[test]
+    fn null_nonzero_is_a_programmer_error() {
+        assert!(
+            std::panic::catch_unwind(|| unsafe {
+                let _: &[u8] = ffi_slice_from_raw_parts(std::ptr::null(), 1);
+            })
+            .is_err()
+        );
+        assert!(
+            std::panic::catch_unwind(|| unsafe {
+                let _: &mut [u8] = ffi_slice_from_raw_parts_mut(std::ptr::null_mut(), 1);
+            })
+            .is_err()
+        );
+        assert!(
+            std::panic::catch_unwind(|| unsafe {
+                let _ = ffi_owned_c_string_array(std::ptr::null(), 1);
+            })
+            .is_err()
+        );
+    }
+
+    #[test]
+    fn redaction_paths_are_validated_and_copied_for_the_call() {
+        let state: flight_sdk::Ref<flight_sdk::LogState> =
+            Arc::new(std::sync::RwLock::new(flight_sdk::create_log_state()));
+        let first = CString::new("headers.authorization").unwrap();
+        let second = CString::new("user.token").unwrap();
+        let paths = [first.as_ptr(), second.as_ptr()];
+        unsafe {
+            flight_set_log_redaction_paths(
+                &state as *const _ as *const std::ffi::c_void,
+                paths.as_ptr(),
+                paths.len(),
+            )
+        };
+        drop((first, second));
+        assert_eq!(
+            state.read().unwrap().redaction_paths,
+            ["headers.authorization", "user.token"]
+        );
+        unsafe {
+            flight_set_log_redaction_paths(
+                &state as *const _ as *const std::ffi::c_void,
+                std::ptr::null(),
+                0,
+            )
+        };
+        assert!(state.read().unwrap().redaction_paths.is_empty());
+    }
+
+    #[test]
+    fn owned_string_arrays_reject_null_elements_and_invalid_utf8() {
+        let null = [std::ptr::null()];
+        assert!(
+            std::panic::catch_unwind(|| unsafe {
+                let _ = ffi_owned_c_string_array(null.as_ptr(), null.len());
+            })
+            .is_err()
+        );
+
+        let invalid = [0xff_u8, 0];
+        let invalid = [invalid.as_ptr().cast::<std::ffi::c_char>()];
+        assert!(
+            std::panic::catch_unwind(|| unsafe {
+                let _ = ffi_owned_c_string_array(invalid.as_ptr(), invalid.len());
+            })
+            .is_err()
+        );
+    }
+}
+
 mod owned_byte_reader {
     use super::*;
 
@@ -850,6 +922,14 @@ mod owned_byte_reader {
         assert_eq!(unsafe { flight_read_byte_reader_u16(reader) }, 0x1234);
         assert_eq!(unsafe { flight_read_byte_reader_u24(reader) }, 0x123456);
         assert_eq!(unsafe { flight_read_byte_reader_u32(reader) }, 0x12345678);
+        assert!(!unsafe { flight_has_byte_reader_bytes(reader, 1) });
+        unsafe { flight_free_owned_byte_reader(reader) };
+    }
+
+    #[test]
+    fn accepts_null_zero_without_constructing_a_null_rust_slice() {
+        let reader = unsafe { flight_create_byte_reader(std::ptr::null(), 0, -1) };
+        assert!(!reader.is_null());
         assert!(!unsafe { flight_has_byte_reader_bytes(reader, 1) });
         unsafe { flight_free_owned_byte_reader(reader) };
     }
