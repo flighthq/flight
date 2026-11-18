@@ -2188,20 +2188,18 @@ fn ffi_host_disposer_from_raw(
     std::sync::Arc::new(move || (lease.disposer.dispose)())
 }
 
-unsafe fn ffi_host_callback_ref<T: 'static>(
-    callback: *const FfiHostCallback,
-) -> Option<&'static T> {
-    if callback.is_null() {
-        return None;
-    }
-    unsafe { &*callback }.callback.downcast_ref::<T>()
+fn ffi_host_callback_ref<T: 'static>(callback: &FfiHostCallback) -> Option<&T> {
+    callback.callback.downcast_ref::<T>()
 }
 
 #[doc = "flight-ffi contract|The callback handle is borrowed from a host capability adapter, remains valid until the disposer returned by that adapter is freed, and must not be retained beyond or freed by the caller."]
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn flight_call_host_callback_void(callback: *const FfiHostCallback) -> bool {
-    let Some(callback) = (unsafe {
-        ffi_host_callback_ref::<std::sync::Arc<dyn Fn() + Send + Sync>>(callback)
+    if callback.is_null() {
+        return false;
+    }
+    let Some(callback) = ffi_host_callback_ref::<std::sync::Arc<dyn Fn() + Send + Sync>>(unsafe {
+        &*callback
     }) else {
         return false;
     };
@@ -2214,8 +2212,11 @@ pub unsafe extern "C" fn flight_call_host_callback_bool(
     callback: *const FfiHostCallback,
     value: bool,
 ) -> bool {
-    let Some(callback) = (unsafe {
-        ffi_host_callback_ref::<std::sync::Arc<dyn Fn(bool) + Send + Sync>>(callback)
+    if callback.is_null() {
+        return false;
+    }
+    let Some(callback) = ffi_host_callback_ref::<std::sync::Arc<dyn Fn(bool) + Send + Sync>>(unsafe {
+        &*callback
     }) else {
         return false;
     };
@@ -2229,9 +2230,14 @@ pub unsafe extern "C" fn flight_call_host_callback_f32_f32(
     value_0: f32,
     value_1: f32,
 ) -> bool {
-    let Some(callback) = (unsafe {
-        ffi_host_callback_ref::<std::sync::Arc<dyn Fn(f32, f32) + Send + Sync>>(callback)
-    }) else {
+    if callback.is_null() {
+        return false;
+    }
+    let Some(callback) =
+        ffi_host_callback_ref::<std::sync::Arc<dyn Fn(f32, f32) + Send + Sync>>(unsafe {
+            &*callback
+        })
+    else {
         return false;
     };
     std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| callback(value_0, value_1))).is_ok()
@@ -2245,9 +2251,14 @@ pub unsafe extern "C" fn flight_call_host_callback_f32_f32_f32(
     value_1: f32,
     value_2: f32,
 ) -> bool {
-    let Some(callback) = (unsafe {
-        ffi_host_callback_ref::<std::sync::Arc<dyn Fn(f32, f32, f32) + Send + Sync>>(callback)
-    }) else {
+    if callback.is_null() {
+        return false;
+    }
+    let Some(callback) =
+        ffi_host_callback_ref::<std::sync::Arc<dyn Fn(f32, f32, f32) + Send + Sync>>(unsafe {
+            &*callback
+        })
+    else {
         return false;
     };
     std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
@@ -2261,9 +2272,14 @@ pub unsafe extern "C" fn flight_call_host_callback_f32_f32_f32(
 pub unsafe extern "C" fn flight_call_host_callback_bool_result(
     callback: *const FfiHostCallback,
 ) -> bool {
-    let Some(callback) = (unsafe {
-        ffi_host_callback_ref::<std::sync::Arc<dyn Fn() -> bool + Send + Sync>>(callback)
-    }) else {
+    if callback.is_null() {
+        return false;
+    }
+    let Some(callback) =
+        ffi_host_callback_ref::<std::sync::Arc<dyn Fn() -> bool + Send + Sync>>(unsafe {
+            &*callback
+        })
+    else {
         return false;
     };
     std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| callback())).unwrap_or(false)
@@ -2282,10 +2298,13 @@ pub unsafe extern "C" fn flight_call_host_callback_app_memory_pressure(
     ]) else {
         return false;
     };
-    let Some(callback) = (unsafe {
-        ffi_host_callback_ref::<
-            std::sync::Arc<dyn Fn(flight_sdk::AppMemoryPressure) + Send + Sync>,
-        >(callback)
+    if callback.is_null() {
+        return false;
+    }
+    let Some(callback) = ffi_host_callback_ref::<
+        std::sync::Arc<dyn Fn(flight_sdk::AppMemoryPressure) + Send + Sync>,
+    >(unsafe {
+        &*callback
     }) else {
         return false;
     };
@@ -2298,13 +2317,13 @@ pub unsafe extern "C" fn flight_call_host_callback_screen_change_event(
     callback: *const FfiHostCallback,
     event: *const flight_sdk::ScreenChangeEvent,
 ) -> bool {
-    if event.is_null() {
+    if callback.is_null() || event.is_null() {
         return false;
     }
-    let Some(callback) = (unsafe {
-        ffi_host_callback_ref::<
-            std::sync::Arc<dyn Fn(&flight_sdk::ScreenChangeEvent) + Send + Sync>,
-        >(callback)
+    let Some(callback) = ffi_host_callback_ref::<
+        std::sync::Arc<dyn Fn(&flight_sdk::ScreenChangeEvent) + Send + Sync>,
+    >(unsafe {
+        &*callback
     }) else {
         return false;
     };
@@ -2324,10 +2343,13 @@ pub unsafe extern "C" fn flight_call_host_callback_screen_permission_state(
     ]) else {
         return false;
     };
-    let Some(callback) = (unsafe {
-        ffi_host_callback_ref::<
-            std::sync::Arc<dyn Fn(flight_sdk::ScreenPermissionState) + Send + Sync>,
-        >(callback)
+    if callback.is_null() {
+        return false;
+    }
+    let Some(callback) = ffi_host_callback_ref::<
+        std::sync::Arc<dyn Fn(flight_sdk::ScreenPermissionState) + Send + Sync>,
+    >(unsafe {
+        &*callback
     }) else {
         return false;
     };
@@ -2360,13 +2382,13 @@ fn generate_input_ingress_sink_support() -> String {
     for (field, ty) in callbacks {
         writeln!(
             output,
-            "#[doc = \"flight-ffi contract|{contract}\"]\n#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn flight_call_input_ingress_sink_{field}(sink: *const FfiHostCallback, event: *const flight_sdk::{ty}) -> bool {{\n    if event.is_null() {{ return false; }}\n    let Some(sink) = (unsafe {{ ffi_host_callback_ref::<flight_sdk::InputIngressSink>(sink) }}) else {{ return false; }};\n    std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| (sink.{field})(unsafe {{ &*event }}))).is_ok()\n}}"
+            "#[doc = \"flight-ffi contract|{contract}\"]\n#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn flight_call_input_ingress_sink_{field}(sink: *const FfiHostCallback, event: *const flight_sdk::{ty}) -> bool {{\n    if sink.is_null() || event.is_null() {{ return false; }}\n    let Some(sink) = ffi_host_callback_ref::<flight_sdk::InputIngressSink>(unsafe {{ &*sink }}) else {{ return false; }};\n    std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| (sink.{field})(unsafe {{ &*event }}))).is_ok()\n}}"
         )
         .unwrap();
     }
     writeln!(
         output,
-        "#[doc = \"flight-ffi contract|The sink handle is Rust-owned, remains valid until the disposer returned by the attach callback is freed, and must not be retained beyond or freed by the caller. False also reports NULL, a type mismatch, or a contained callback panic.\"]\n#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn flight_call_input_ingress_sink_is_enabled(sink: *const FfiHostCallback) -> bool {{\n    let Some(sink) = (unsafe {{ ffi_host_callback_ref::<flight_sdk::InputIngressSink>(sink) }}) else {{ return false; }};\n    std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| (sink.is_enabled)())).unwrap_or(false)\n}}"
+        "#[doc = \"flight-ffi contract|The sink handle is Rust-owned, remains valid until the disposer returned by the attach callback is freed, and must not be retained beyond or freed by the caller. False also reports NULL, a type mismatch, or a contained callback panic.\"]\n#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn flight_call_input_ingress_sink_is_enabled(sink: *const FfiHostCallback) -> bool {{\n    if sink.is_null() {{ return false; }}\n    let Some(sink) = ffi_host_callback_ref::<flight_sdk::InputIngressSink>(unsafe {{ &*sink }}) else {{ return false; }};\n    std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| (sink.is_enabled)())).unwrap_or(false)\n}}"
     )
     .unwrap();
     output
