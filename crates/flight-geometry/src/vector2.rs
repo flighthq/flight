@@ -8,23 +8,23 @@ use std::sync::LazyLock;
 #[repr(C)]
 pub struct Vector2 {
     runtime: EntityRuntimeSlot,
-    pub x: f32,
-    pub y: f32,
+    pub x: f64,
+    pub y: f64,
 }
 
-pub fn create_vector2(x: f32, y: f32) -> Vector2 {
+pub fn create_vector2(x: f64, y: f64) -> Vector2 {
     let mut out: Vector2 = allocate_entity();
     initialize_vector2(&mut out, x, y);
     return out;
 }
 
-pub fn create_vector2_from_polar(length: f32, angle: f32) -> Vector2 {
+pub fn create_vector2_from_polar(length: f64, angle: f64) -> Vector2 {
     let mut out = create_vector2(0.0, 0.0);
     set_vector2_from_polar(&mut out, length, angle);
     return out;
 }
 
-pub fn initialize_vector2(out: &mut Vector2, x: f32, y: f32) {
+pub fn initialize_vector2(out: &mut Vector2, x: f64, y: f64) {
     out.x = x;
     out.y = y;
 }
@@ -72,7 +72,7 @@ pub fn copy_vector2(out: &mut Vector2, source: &Vector2) {
     out.y = y;
 }
 
-pub fn cross_vector2(a: &Vector2, b: &Vector2) -> f32 {
+pub fn cross_vector2(a: &Vector2, b: &Vector2) -> f64 {
     return a.x * b.y - a.y * b.x;
 }
 
@@ -92,48 +92,48 @@ pub fn equals_vector2(a: Option<&Vector2>, b: Option<&Vector2>) -> bool {
     };
 }
 
-pub fn get_vector2_angle(source: &Vector2) -> f32 {
+pub fn get_vector2_angle(source: &Vector2) -> f64 {
     if source.x == 0.0 && source.y == 0.0 {
         return 0.0;
     }
     return source.y.atan2(source.x);
 }
 
-pub fn get_vector2_angle_between(a: &Vector2, b: &Vector2) -> f32 {
+pub fn get_vector2_angle_between(a: &Vector2, b: &Vector2) -> f64 {
     let la = get_vector2_length(a);
     let lb = get_vector2_length(b);
     if la == 0.0 || lb == 0.0 {
-        return f32::NAN;
+        return f64::NAN;
     }
     let dot = get_vector2_dot(a, b) / (la * lb);
     return dot.clamp(-1.0, 1.0).acos();
 }
 
-pub fn get_vector2_distance(a: &Vector2, b: &Vector2) -> f32 {
+pub fn get_vector2_distance(a: &Vector2, b: &Vector2) -> f64 {
     let dx = a.x - b.x;
     let dy = a.y - b.y;
     return (dx * dx + dy * dy).sqrt();
 }
 
-pub fn get_vector2_distance_squared(a: &Vector2, b: &Vector2) -> f32 {
+pub fn get_vector2_distance_squared(a: &Vector2, b: &Vector2) -> f64 {
     let dx = a.x - b.x;
     let dy = a.y - b.y;
     return dx * dx + dy * dy;
 }
 
-pub fn get_vector2_dot(a: &Vector2, b: &Vector2) -> f32 {
+pub fn get_vector2_dot(a: &Vector2, b: &Vector2) -> f64 {
     return a.x * b.x + a.y * b.y;
 }
 
-pub fn get_vector2_length(source: &Vector2) -> f32 {
+pub fn get_vector2_length(source: &Vector2) -> f64 {
     return (source.x * source.x + source.y * source.y).sqrt();
 }
 
-pub fn get_vector2_length_squared(source: &Vector2) -> f32 {
+pub fn get_vector2_length_squared(source: &Vector2) -> f64 {
     return source.x * source.x + source.y * source.y;
 }
 
-pub fn interpolate_vector2(out: &mut Vector2, a: &Vector2, b: &Vector2, t: f32) {
+pub fn interpolate_vector2(out: &mut Vector2, a: &Vector2, b: &Vector2, t: f64) {
     let ax = a.x;
     let ay = a.y;
     let bx = b.x;
@@ -169,7 +169,7 @@ pub fn multiply_vector2(out: &mut Vector2, a: &Vector2, b: &Vector2) {
     out.y = ay * by;
 }
 
-pub fn near_equals_vector2(a: &Vector2, b: &Vector2, tolerance: f32) -> bool {
+pub fn near_equals_vector2(a: &Vector2, b: &Vector2, tolerance: f64) -> bool {
     return (a.x - b.x).abs() < tolerance && (a.y - b.y).abs() < tolerance;
 }
 
@@ -180,7 +180,7 @@ pub fn negate_vector2(out: &mut Vector2, source: &Vector2) {
     out.y = y * -1.0;
 }
 
-pub fn normalize_vector2(out: &mut Vector2, source: &Vector2) -> f32 {
+pub fn normalize_vector2(out: &mut Vector2, source: &Vector2) -> f64 {
     let x = source.x;
     let y = source.y;
     let l = (x * x + y * y).sqrt();
@@ -194,7 +194,7 @@ pub fn normalize_vector2(out: &mut Vector2, source: &Vector2) -> f32 {
     return l;
 }
 
-pub fn offset_vector2(out: &mut Vector2, source: &Vector2, dx: f32, dy: f32) {
+pub fn offset_vector2(out: &mut Vector2, source: &Vector2, dx: f64, dy: f64) {
     let x = source.x;
     let y = source.y;
     out.x = x + dx;
@@ -211,7 +211,7 @@ pub fn reflect_vector2(out: &mut Vector2, incident: &Vector2, normal: &Vector2) 
     out.y = iy - two_dot * ny;
 }
 
-pub fn rotate_vector2(out: &mut Vector2, source: &Vector2, angle: f32) {
+pub fn rotate_vector2(out: &mut Vector2, source: &Vector2, angle: f64) {
     let c = angle.cos();
     let s = angle.sin();
     let x = source.x;
@@ -220,14 +220,14 @@ pub fn rotate_vector2(out: &mut Vector2, source: &Vector2, angle: f32) {
     out.y = x * s + y * c;
 }
 
-pub fn scale_vector2(out: &mut Vector2, source: &Vector2, scalar: f32) {
+pub fn scale_vector2(out: &mut Vector2, source: &Vector2, scalar: f64) {
     let x = source.x;
     let y = source.y;
     out.x = x * scalar;
     out.y = y * scalar;
 }
 
-pub fn scale_vector2_to_length(out: &mut Vector2, source: &Vector2, length: f32) {
+pub fn scale_vector2_to_length(out: &mut Vector2, source: &Vector2, length: f64) {
     let x = source.x;
     let y = source.y;
     let current_length = (x * x + y * y).sqrt();
@@ -241,17 +241,19 @@ pub fn scale_vector2_to_length(out: &mut Vector2, source: &Vector2, length: f32)
     }
 }
 
-pub fn set_vector2(out: &mut Vector2, x: f32, y: f32) {
+pub fn set_vector2(out: &mut Vector2, x: f64, y: f64) {
     out.x = x;
     out.y = y;
 }
 
+// flight-lint: allow(f32) explicit GPU readback boundary
+/// GPU boundary: widens GPU-ready Float32Array values into authoring-space f64 coordinates.
 pub fn set_vector2_from_float32_array(out: &mut Vector2, offset: usize, source: &Float32Array) {
-    out.x = source[offset];
-    out.y = source[offset + 1];
+    out.x = f64::from(source[offset]);
+    out.y = f64::from(source[offset + 1]);
 }
 
-pub fn set_vector2_from_polar(out: &mut Vector2, length: f32, angle: f32) {
+pub fn set_vector2_from_polar(out: &mut Vector2, length: f64, angle: f64) {
     out.x = length * angle.cos();
     out.y = length * angle.sin();
 }
@@ -270,14 +272,16 @@ pub fn subtract_vector2(out: &mut Vector2, source: &Vector2, other: &Vector2) {
     out.y = sy - oy;
 }
 
+// flight-lint: allow(f32) explicit GPU submission boundary
+/// GPU boundary: narrows authoring-space f64 coordinates into GPU-ready f32 storage.
 pub fn write_vector2_to_float32_array(out: &mut [f32], offset: usize, source: &Vector2) {
-    out[offset] = source.x;
-    out[offset + 1] = source.y;
+    out[offset] = source.x as f32;
+    out[offset + 1] = source.y as f32;
 }
 
 #[cfg(feature = "object-api")]
 impl Vector2 {
-    pub fn new(x: f32, y: f32) -> Self {
+    pub fn new(x: f64, y: f64) -> Self {
         return create_vector2(x, y);
     }
 
@@ -287,11 +291,11 @@ impl Vector2 {
         return out;
     }
 
-    pub fn angle(&self) -> f32 {
+    pub fn angle(&self) -> f64 {
         return get_vector2_angle(self);
     }
 
-    pub fn angle_between(&self, other: &Self) -> f32 {
+    pub fn angle_between(&self, other: &Self) -> f64 {
         return get_vector2_angle_between(self, other);
     }
 
@@ -301,15 +305,15 @@ impl Vector2 {
         return out;
     }
 
-    pub fn cross(&self, other: &Self) -> f32 {
+    pub fn cross(&self, other: &Self) -> f64 {
         return cross_vector2(self, other);
     }
 
-    pub fn distance(&self, other: &Self) -> f32 {
+    pub fn distance(&self, other: &Self) -> f64 {
         return get_vector2_distance(self, other);
     }
 
-    pub fn distance_squared(&self, other: &Self) -> f32 {
+    pub fn distance_squared(&self, other: &Self) -> f64 {
         return get_vector2_distance_squared(self, other);
     }
 
@@ -319,25 +323,25 @@ impl Vector2 {
         return out;
     }
 
-    pub fn dot(&self, other: &Self) -> f32 {
+    pub fn dot(&self, other: &Self) -> f64 {
         return get_vector2_dot(self, other);
     }
 
-    pub fn from_polar(length: f32, angle: f32) -> Self {
+    pub fn from_polar(length: f64, angle: f64) -> Self {
         return create_vector2_from_polar(length, angle);
     }
 
-    pub fn interpolate(&self, other: &Self, t: f32) -> Self {
+    pub fn interpolate(&self, other: &Self, t: f64) -> Self {
         let mut out = Self::default();
         interpolate_vector2(&mut out, self, other, t);
         return out;
     }
 
-    pub fn length(&self) -> f32 {
+    pub fn length(&self) -> f64 {
         return get_vector2_length(self);
     }
 
-    pub fn length_squared(&self) -> f32 {
+    pub fn length_squared(&self) -> f64 {
         return get_vector2_length_squared(self);
     }
 
@@ -359,7 +363,7 @@ impl Vector2 {
         return out;
     }
 
-    pub fn near_equals(&self, other: &Self, tolerance: f32) -> bool {
+    pub fn near_equals(&self, other: &Self, tolerance: f64) -> bool {
         return near_equals_vector2(self, other, tolerance);
     }
 
@@ -375,7 +379,7 @@ impl Vector2 {
         return out;
     }
 
-    pub fn offset(&self, dx: f32, dy: f32) -> Self {
+    pub fn offset(&self, dx: f64, dy: f64) -> Self {
         let mut out = Self::default();
         offset_vector2(&mut out, self, dx, dy);
         return out;
@@ -387,19 +391,19 @@ impl Vector2 {
         return out;
     }
 
-    pub fn rotated(&self, angle: f32) -> Self {
+    pub fn rotated(&self, angle: f64) -> Self {
         let mut out = Self::default();
         rotate_vector2(&mut out, self, angle);
         return out;
     }
 
-    pub fn scaled(&self, scalar: f32) -> Self {
+    pub fn scaled(&self, scalar: f64) -> Self {
         let mut out = Self::default();
         scale_vector2(&mut out, self, scalar);
         return out;
     }
 
-    pub fn scaled_to_length(&self, length: f32) -> Self {
+    pub fn scaled_to_length(&self, length: f64) -> Self {
         let mut out = Self::default();
         scale_vector2_to_length(&mut out, self, length);
         return out;

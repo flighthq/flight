@@ -8,7 +8,7 @@ pub fn is_power_of_two(n: i32) -> bool {
 /// Round `value` up to the nearest multiple of `multiple`.
 ///
 /// `next_multiple_of(7.0, 4.0)` -> `8.0`. When `multiple <= 0` the result is `value`.
-pub fn next_multiple_of(value: f32, multiple: f32) -> f32 {
+pub fn next_multiple_of(value: f64, multiple: f64) -> f64 {
     if multiple <= 0.0 {
         return value;
     }

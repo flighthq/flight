@@ -1,7 +1,7 @@
 /// Clamp `value` to the inclusive range `[min, max]`.
 ///
 /// When `min > max` the result is `min`. NaN propagates unchanged.
-pub fn clamp(value: f32, min: f32, max: f32) -> f32 {
+pub fn clamp(value: f64, min: f64, max: f64) -> f64 {
     return if value < min {
         min
     } else if value > max {
@@ -12,7 +12,7 @@ pub fn clamp(value: f32, min: f32, max: f32) -> f32 {
 }
 
 /// Return `true` if `value` is within the inclusive range `[min, max]`.
-pub fn in_range(value: f32, min: f32, max: f32) -> bool {
+pub fn in_range(value: f64, min: f64, max: f64) -> bool {
     return value >= min && value <= max;
 }
 
@@ -21,7 +21,7 @@ pub fn in_range(value: f32, min: f32, max: f32) -> bool {
 /// Named `saturate` after the GPU HLSL/GLSL convention. Follows GPU semantics:
 /// NaN returns 0 (unlike `clamp`, which propagates NaN). Safe in hot loops,
 /// no allocation.
-pub fn saturate(value: f32) -> f32 {
+pub fn saturate(value: f64) -> f64 {
     if value.is_nan() {
         return 0.0;
     }

@@ -94,7 +94,7 @@ mod hypot2 {
 
     #[test]
     fn matches_hypot_squared() {
-        let h = (5.0_f32 * 5.0 + 12.0 * 12.0).sqrt();
+        let h = (5.0_f64 * 5.0 + 12.0 * 12.0).sqrt();
         assert_approx_f64(hypot2(5.0, 12.0) as f64, (h * h) as f64);
     }
 }

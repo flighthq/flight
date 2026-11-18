@@ -2,7 +2,7 @@
 
 use flight_geometry::contract::*;
 
-fn assert_approx(actual: f32, expected: f32) {
+fn assert_approx(actual: f64, expected: f64) {
     let diff = (actual - expected).abs();
     assert!(
         diff < 1e-4,
@@ -13,16 +13,16 @@ fn assert_approx(actual: f32, expected: f32) {
     );
 }
 
-fn measure_segment_distance(first: &[f32; 6], second: &[f32; 6]) -> f32 {
+fn measure_segment_distance(first: &[f64; 6], second: &[f64; 6]) -> f64 {
     let steps = 600;
-    let mut smallest = f32::INFINITY;
+    let mut smallest = f64::INFINITY;
     for i in 0..=steps {
-        let s = i as f32 / steps as f32;
+        let s = i as f64 / steps as f64;
         let px = first[0] + s * (first[3] - first[0]);
         let py = first[1] + s * (first[4] - first[1]);
         let pz = first[2] + s * (first[5] - first[2]);
         for j in 0..=steps {
-            let t = j as f32 / steps as f32;
+            let t = j as f64 / steps as f64;
             let qx = second[0] + t * (second[3] - second[0]);
             let qy = second[1] + t * (second[4] - second[1]);
             let qz = second[2] + t * (second[5] - second[2]);
@@ -340,7 +340,7 @@ mod is_capsule_intersecting_capsule {
 
     #[test]
     fn switches_over_at_the_true_axis_distance_for_every_segment_arrangement() {
-        let arrangements: &[(&str, [f32; 6], [f32; 6])] = &[
+        let arrangements: &[(&str, [f64; 6], [f64; 6])] = &[
             (
                 "two points",
                 [1.0, 2.0, 3.0, 1.0, 2.0, 3.0],

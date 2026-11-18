@@ -4,7 +4,6 @@ use flight_entity::throw_range_error;
 ///
 /// `factorial(0)` -> `1` by convention. Panics for negative inputs.
 /// Returns positive infinity for `n > 170` (above the IEEE 754 double-precision range).
-// flight-lint: allow(f64) factorials through 170 need double range; f32 overflows at 35!
 pub fn factorial(n: i32) -> f64 {
     if n < 0 {
         throw_range_error("factorial: n must be a non-negative integer");
@@ -44,7 +43,7 @@ pub fn gcd(a: i32, b: i32) -> i32 {
 ///
 /// Allocation-free substitute for squaring `hypot(x, y)` when you only need
 /// to compare distances.
-pub fn hypot2(x: f32, y: f32) -> f32 {
+pub fn hypot2(x: f64, y: f64) -> f64 {
     return x * x + y * y;
 }
 

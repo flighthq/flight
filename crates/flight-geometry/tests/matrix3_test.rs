@@ -1,9 +1,9 @@
 //! flight-compiler: target-native
 
 use flight_geometry::contract::*;
-use std::f32::consts::PI;
+use std::f64::consts::PI;
 
-fn assert_approx(actual: f32, expected: f32) {
+fn assert_approx(actual: f64, expected: f64) {
     let diff = (actual - expected).abs();
     assert!(
         diff < 1e-4,
@@ -589,7 +589,7 @@ mod set_matrix3 {
             for col in 0..3 {
                 assert_eq!(
                     get_matrix3_element(&m, row, col),
-                    (row * 3 + col + 1) as f32
+                    (row * 3 + col + 1) as f64
                 );
             }
         }

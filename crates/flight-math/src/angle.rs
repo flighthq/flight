@@ -3,7 +3,7 @@ use crate::RAD_TO_DEG;
 use crate::TAU;
 
 /// Convert `degrees` to radians.
-pub fn deg_to_rad(degrees: f32) -> f32 {
+pub fn deg_to_rad(degrees: f64) -> f64 {
     return degrees * DEG_TO_RAD;
 }
 
@@ -11,12 +11,12 @@ pub fn deg_to_rad(degrees: f32) -> f32 {
 ///
 /// The result is in `(-pi, pi]`. Useful for rotating a value toward a target by
 /// the minimum arc.
-pub fn delta_angle(from: f32, to: f32) -> f32 {
-    if to - from == std::f32::consts::PI {
-        return std::f32::consts::PI;
+pub fn delta_angle(from: f64, to: f64) -> f64 {
+    if to - from == std::f64::consts::PI {
+        return std::f64::consts::PI;
     }
     let diff = (((to - from) % TAU) + TAU) % TAU;
-    return if diff > std::f32::consts::PI {
+    return if diff > std::f64::consts::PI {
         diff - TAU
     } else {
         diff
@@ -24,12 +24,12 @@ pub fn delta_angle(from: f32, to: f32) -> f32 {
 }
 
 /// Wrap `radians` to the range `[-pi, pi)`.
-pub fn normalize_angle(radians: f32) -> f32 {
-    if radians == std::f32::consts::PI {
-        return -std::f32::consts::PI;
+pub fn normalize_angle(radians: f64) -> f64 {
+    if radians == std::f64::consts::PI {
+        return -std::f64::consts::PI;
     }
     let wrapped = ((radians % TAU) + TAU) % TAU;
-    return if wrapped >= std::f32::consts::PI {
+    return if wrapped >= std::f64::consts::PI {
         wrapped - TAU
     } else {
         wrapped
@@ -37,6 +37,6 @@ pub fn normalize_angle(radians: f32) -> f32 {
 }
 
 /// Convert `radians` to degrees.
-pub fn rad_to_deg(radians: f32) -> f32 {
+pub fn rad_to_deg(radians: f64) -> f64 {
     return radians * RAD_TO_DEG;
 }

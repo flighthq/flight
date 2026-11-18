@@ -1,9 +1,9 @@
 //! flight-compiler: target-native
 
 use flight_geometry::contract::*;
-use std::f32::consts::PI;
+use std::f64::consts::PI;
 
-fn assert_approx(actual: f32, expected: f32) {
+fn assert_approx(actual: f64, expected: f64) {
     let diff = (actual - expected).abs();
     assert!(
         diff < 1e-4,
@@ -11,7 +11,7 @@ fn assert_approx(actual: f32, expected: f32) {
     );
 }
 
-fn assert_approx_tight(actual: f32, expected: f32) {
+fn assert_approx_tight(actual: f64, expected: f64) {
     let diff = (actual - expected).abs();
     assert!(
         diff < 1e-6,
@@ -381,11 +381,11 @@ mod equals_vector2 {
 
     #[test]
     fn holds_a_vector_equal_to_itself_even_with_a_nan_component() {
-        let nan_vec = create_vector2(f32::NAN, 2.0);
+        let nan_vec = create_vector2(f64::NAN, 2.0);
         assert!(equals_vector2(Some(&nan_vec), Some(&nan_vec)));
         assert!(!equals_vector2(
             Some(&nan_vec),
-            Some(&create_vector2(f32::NAN, 2.0))
+            Some(&create_vector2(f64::NAN, 2.0))
         ));
     }
 }
@@ -455,7 +455,7 @@ mod get_vector2_distance {
 
     #[test]
     fn calculates_euclidean_distance_between_vectors() {
-        let cases: &[([f32; 2], [f32; 2], f32)] = &[
+        let cases: &[([f64; 2], [f64; 2], f64)] = &[
             ([100.0, 0.0], [0.0, 0.0], 100.0),
             ([0.0, 100.0], [0.0, 0.0], 100.0),
             ([3.0, 4.0], [0.0, 0.0], 5.0),
@@ -497,7 +497,7 @@ mod get_vector2_length {
 
     #[test]
     fn returns_the_length_of_the_vector() {
-        let cases: &[(f32, f32, f32)] = &[
+        let cases: &[(f64, f64, f64)] = &[
             (100.0, 0.0, 100.0),
             (0.0, 100.0, 100.0),
             (3.0, 4.0, 5.0),
@@ -1180,7 +1180,7 @@ mod set_vector2_from_polar {
     #[test]
     fn handles_arbitrary_angles() {
         let angle = PI / 4.0;
-        let len = 2.0_f32.sqrt();
+        let len = 2.0_f64.sqrt();
         let mut p = create_vector2(0.0, 0.0);
         set_vector2_from_polar(&mut p, len, angle);
         assert_approx(p.x, 1.0);

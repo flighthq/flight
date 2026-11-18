@@ -58,7 +58,7 @@ pub fn initialize_frustum(
 /// If `out` has fewer than 8 elements this function writes only as many as are available.
 pub fn get_frustum_corners(out: &mut [Vector3], inverse_view_projection: &Matrix4) {
     let m = &inverse_view_projection.m;
-    let ndc_corners: [[f32; 3]; 8] = [
+    let ndc_corners: [[f64; 3]; 8] = [
         [-1.0, -1.0, -1.0],
         [1.0, -1.0, -1.0],
         [1.0, 1.0, -1.0],
@@ -251,15 +251,15 @@ fn plane_intersects_aabb(plane: &Plane, aabb: &Aabb) -> bool {
 fn plane_intersects_obb(
     plane: &Plane,
     obb: &Obb,
-    ax0: f32,
-    ay0: f32,
-    az0: f32,
-    ax1: f32,
-    ay1: f32,
-    az1: f32,
-    ax2: f32,
-    ay2: f32,
-    az2: f32,
+    ax0: f64,
+    ay0: f64,
+    az0: f64,
+    ax1: f64,
+    ay1: f64,
+    az1: f64,
+    ax2: f64,
+    ay2: f64,
+    az2: f64,
 ) -> bool {
     let dist = plane.a * obb.center_x + plane.b * obb.center_y + plane.c * obb.center_z + plane.d;
     let r = obb.half_extent_x * (plane.a * ax0 + plane.b * ay0 + plane.c * az0).abs()
@@ -268,11 +268,11 @@ fn plane_intersects_obb(
     return dist >= -r;
 }
 
-fn plane_signed_distance(plane: &Plane, point: &Vector3) -> f32 {
+fn plane_signed_distance(plane: &Plane, point: &Vector3) -> f64 {
     return plane.a * point.x + plane.b * point.y + plane.c * point.z + plane.d;
 }
 
-fn set_and_normalize_plane(out: &mut Plane, a: f32, b: f32, c: f32, d: f32) {
+fn set_and_normalize_plane(out: &mut Plane, a: f64, b: f64, c: f64, d: f64) {
     let l = (a * a + b * b + c * c).sqrt();
     if l != 0.0 {
         let inv = 1.0 / l;

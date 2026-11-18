@@ -10,14 +10,14 @@ use std::sync::LazyLock;
 #[repr(C)]
 pub struct Vector3 {
     runtime: EntityRuntimeSlot,
-    pub x: f32,
-    pub y: f32,
-    pub z: f32,
+    pub x: f64,
+    pub y: f64,
+    pub z: f64,
 }
 
 /// The Vector3 class represents a point or a location in the three-dimensional space using
 /// the Cartesian coordinates x, y, and z.
-pub fn create_vector3(x: f32, y: f32, z: f32) -> Vector3 {
+pub fn create_vector3(x: f64, y: f64, z: f64) -> Vector3 {
     let mut out: Vector3 = allocate_entity();
     initialize_vector3(&mut out, x, y, z);
     return out;
@@ -28,13 +28,13 @@ pub fn create_vector3(x: f32, y: f32, z: f32) -> Vector3 {
 ///
 /// - `theta` is the polar angle measured from the +Y axis (0 = north pole, PI = south pole).
 /// - `phi` is the azimuthal angle measured from the +X axis in the XZ plane.
-pub fn create_vector3_from_spherical(radius: f32, theta: f32, phi: f32) -> Vector3 {
+pub fn create_vector3_from_spherical(radius: f64, theta: f64, phi: f64) -> Vector3 {
     let mut out = create_vector3(0.0, 0.0, 0.0);
     set_vector3_from_spherical(&mut out, radius, theta, phi);
     return out;
 }
 
-pub fn initialize_vector3(out: &mut Vector3, x: f32, y: f32, z: f32) {
+pub fn initialize_vector3(out: &mut Vector3, x: f64, y: f64, z: f64) {
     out.x = x;
     out.y = y;
     out.z = z;
@@ -143,18 +143,18 @@ pub fn equals_vector3(a: Option<&Vector3>, b: Option<&Vector3>) -> bool {
 /// Returns the angle in radians between two vectors. The returned angle is the
 /// smallest radian the first Vector3 object rotates until it aligns with the
 /// second Vector3 object.
-pub fn get_vector3_angle_between(a: &Vector3, b: &Vector3) -> f32 {
+pub fn get_vector3_angle_between(a: &Vector3, b: &Vector3) -> f64 {
     let la = get_vector3_length(a);
     let lb = get_vector3_length(b);
     if la == 0.0 || lb == 0.0 {
-        return f32::NAN;
+        return f64::NAN;
     }
     let dot = get_vector3_dot(a, b) / (la * lb);
     return dot.clamp(-1.0, 1.0).acos();
 }
 
 /// Returns the distance between two Vector3 objects.
-pub fn get_vector3_distance(a: &Vector3, b: &Vector3) -> f32 {
+pub fn get_vector3_distance(a: &Vector3, b: &Vector3) -> f64 {
     let x = b.x - a.x;
     let y = b.y - a.y;
     let z = b.z - a.z;
@@ -164,7 +164,7 @@ pub fn get_vector3_distance(a: &Vector3, b: &Vector3) -> f32 {
 /// Returns the distance (squared) between two Vector3 objects.
 ///
 /// This avoids sqrt for better performance.
-pub fn get_vector3_distance_squared(a: &Vector3, b: &Vector3) -> f32 {
+pub fn get_vector3_distance_squared(a: &Vector3, b: &Vector3) -> f64 {
     let x = b.x - a.x;
     let y = b.y - a.y;
     let z = b.z - a.z;
@@ -176,19 +176,19 @@ pub fn get_vector3_distance_squared(a: &Vector3, b: &Vector3) -> f32 {
 /// Unit vertices are vertices that point to the same direction but their length is
 /// one. They remove the length of the vector as a factor in the result. You can use
 /// the `normalize()` method to convert a vector to a unit vector.
-pub fn get_vector3_dot(a: &Vector3, b: &Vector3) -> f32 {
+pub fn get_vector3_dot(a: &Vector3, b: &Vector3) -> f64 {
     return a.x * b.x + a.y * b.y + a.z * b.z;
 }
 
 /// The length, magnitude, of the current Vector3 object from the origin (0,0,0) to
 /// the object's x, y, and z coordinates. A unit vector has a length or magnitude of one.
-pub fn get_vector3_length(source: &Vector3) -> f32 {
+pub fn get_vector3_length(source: &Vector3) -> f64 {
     return (source.x * source.x + source.y * source.y + source.z * source.z).sqrt();
 }
 
 /// The square of the length of the current Vector3 object, calculated using the `x`,
 /// `y`, and `z` properties.
-pub fn get_vector3_length_squared(source: &Vector3) -> f32 {
+pub fn get_vector3_length_squared(source: &Vector3) -> f64 {
     return source.x * source.x + source.y * source.y + source.z * source.z;
 }
 
@@ -218,7 +218,7 @@ pub fn get_vector3_spherical(out: &mut Vector3, source: &Vector3) {
 /// `t=0` returns `a`; `t=1` returns `b`.
 ///
 /// Safe when `out` aliases `a` or `b` (all inputs are read into locals first).
-pub fn interpolate_vector3(out: &mut Vector3, a: &Vector3, b: &Vector3, t: f32) {
+pub fn interpolate_vector3(out: &mut Vector3, a: &Vector3, b: &Vector3, t: f64) {
     let ax = a.x;
     let ay = a.y;
     let az = a.z;
@@ -280,7 +280,7 @@ pub fn multiply_vector3(out: &mut Vector3, a: &Vector3, b: &Vector3) {
 ///
 /// The two Vector3 objects are nearly equal if the value of all the elements of the two
 /// vertices are equal, or the result of the comparison is within the tolerance range.
-pub fn near_equals_vector3(a: &Vector3, b: &Vector3, tolerance: f32) -> bool {
+pub fn near_equals_vector3(a: &Vector3, b: &Vector3, tolerance: f64) -> bool {
     return (a.x - b.x).abs() < tolerance
         && (a.y - b.y).abs() < tolerance
         && (a.z - b.z).abs() < tolerance;
@@ -302,7 +302,7 @@ pub fn negate_vector3(out: &mut Vector3, source: &Vector3) {
 /// (x, y, z) by the length of the vector.
 ///
 /// Returns the original length.
-pub fn normalize_vector3(out: &mut Vector3, source: &Vector3) -> f32 {
+pub fn normalize_vector3(out: &mut Vector3, source: &Vector3) -> f64 {
     let x = source.x;
     let y = source.y;
     let z = source.z;
@@ -320,7 +320,7 @@ pub fn normalize_vector3(out: &mut Vector3, source: &Vector3) -> f32 {
 }
 
 /// Offsets each component of the current Vector3 object by a scalar per axis.
-pub fn offset_vector3(out: &mut Vector3, source: &Vector3, dx: f32, dy: f32, dz: f32) {
+pub fn offset_vector3(out: &mut Vector3, source: &Vector3, dx: f64, dy: f64, dz: f64) {
     let x = source.x;
     let y = source.y;
     let z = source.z;
@@ -357,7 +357,7 @@ pub fn reflect_vector3(out: &mut Vector3, incident: &Vector3, normal: &Vector3) 
 
 /// Scales the current Vector3 object by a scalar, a magnitude. The Vector3 object's
 /// x, y, and z elements are multiplied by the provided scalar number.
-pub fn scale_vector3(out: &mut Vector3, source: &Vector3, scalar: f32) {
+pub fn scale_vector3(out: &mut Vector3, source: &Vector3, scalar: f64) {
     let x = source.x;
     let y = source.y;
     let z = source.z;
@@ -367,22 +367,23 @@ pub fn scale_vector3(out: &mut Vector3, source: &Vector3, scalar: f32) {
 }
 
 /// Sets the members of Vector3 to the specified values.
-pub fn set_vector3(out: &mut Vector3, x: f32, y: f32, z: f32) {
+pub fn set_vector3(out: &mut Vector3, x: f64, y: f64, z: f64) {
     out.x = x;
     out.y = y;
     out.z = z;
 }
 
-/// Reads a Vector3 from a float32 array at an element offset.
+// flight-lint: allow(f32) explicit GPU readback boundary
+/// GPU boundary: widens GPU-ready Float32Array values into authoring-space f64 coordinates.
 pub fn set_vector3_from_float32_array(out: &mut Vector3, offset: usize, source: &Float32Array) {
-    out.x = source[offset];
-    out.y = source[offset + 1];
-    out.z = source[offset + 2];
+    out.x = f64::from(source[offset]);
+    out.y = f64::from(source[offset + 1]);
+    out.z = f64::from(source[offset + 2]);
 }
 
 /// Writes a Vector3 into spherical coordinates.
 /// Uses the physics convention: theta is polar angle from +Y, phi is azimuthal from +X in XZ.
-pub fn set_vector3_from_spherical(out: &mut Vector3, radius: f32, theta: f32, phi: f32) {
+pub fn set_vector3_from_spherical(out: &mut Vector3, radius: f64, theta: f64, phi: f64) {
     let sin_theta = theta.sin();
     out.x = radius * sin_theta * phi.cos();
     out.y = radius * theta.cos();
@@ -431,16 +432,17 @@ pub fn transform_vector3_by_matrix3(out: &mut Vector3, source: &Vector3, matrix:
     out.z = m[2] * x + m[5] * y + m[8] * z;
 }
 
-/// Writes a Vector3 into a float32 array at an element offset.
+// flight-lint: allow(f32) explicit GPU submission boundary
+/// GPU boundary: narrows authoring-space f64 coordinates into GPU-ready f32 storage.
 pub fn write_vector3_to_float32_array(out: &mut [f32], offset: usize, source: &Vector3) {
-    out[offset] = source.x;
-    out[offset + 1] = source.y;
-    out[offset + 2] = source.z;
+    out[offset] = source.x as f32;
+    out[offset + 1] = source.y as f32;
+    out[offset + 2] = source.z as f32;
 }
 
 #[cfg(feature = "object-api")]
 impl Vector3 {
-    pub fn new(x: f32, y: f32, z: f32) -> Self {
+    pub fn new(x: f64, y: f64, z: f64) -> Self {
         return create_vector3(x, y, z);
     }
 
@@ -450,7 +452,7 @@ impl Vector3 {
         return out;
     }
 
-    pub fn angle_between(&self, other: &Self) -> f32 {
+    pub fn angle_between(&self, other: &Self) -> f64 {
         return get_vector3_angle_between(self, other);
     }
 
@@ -466,11 +468,11 @@ impl Vector3 {
         return out;
     }
 
-    pub fn distance(&self, other: &Self) -> f32 {
+    pub fn distance(&self, other: &Self) -> f64 {
         return get_vector3_distance(self, other);
     }
 
-    pub fn distance_squared(&self, other: &Self) -> f32 {
+    pub fn distance_squared(&self, other: &Self) -> f64 {
         return get_vector3_distance_squared(self, other);
     }
 
@@ -480,25 +482,25 @@ impl Vector3 {
         return out;
     }
 
-    pub fn dot(&self, other: &Self) -> f32 {
+    pub fn dot(&self, other: &Self) -> f64 {
         return get_vector3_dot(self, other);
     }
 
-    pub fn from_spherical(radius: f32, theta: f32, phi: f32) -> Self {
+    pub fn from_spherical(radius: f64, theta: f64, phi: f64) -> Self {
         return create_vector3_from_spherical(radius, theta, phi);
     }
 
-    pub fn interpolate(&self, other: &Self, t: f32) -> Self {
+    pub fn interpolate(&self, other: &Self, t: f64) -> Self {
         let mut out = Self::default();
         interpolate_vector3(&mut out, self, other, t);
         return out;
     }
 
-    pub fn length(&self) -> f32 {
+    pub fn length(&self) -> f64 {
         return get_vector3_length(self);
     }
 
-    pub fn length_squared(&self) -> f32 {
+    pub fn length_squared(&self) -> f64 {
         return get_vector3_length_squared(self);
     }
 
@@ -520,7 +522,7 @@ impl Vector3 {
         return out;
     }
 
-    pub fn near_equals(&self, other: &Self, tolerance: f32) -> bool {
+    pub fn near_equals(&self, other: &Self, tolerance: f64) -> bool {
         return near_equals_vector3(self, other, tolerance);
     }
 
@@ -536,7 +538,7 @@ impl Vector3 {
         return out;
     }
 
-    pub fn offset(&self, dx: f32, dy: f32, dz: f32) -> Self {
+    pub fn offset(&self, dx: f64, dy: f64, dz: f64) -> Self {
         let mut out = Self::default();
         offset_vector3(&mut out, self, dx, dy, dz);
         return out;
@@ -548,7 +550,7 @@ impl Vector3 {
         return out;
     }
 
-    pub fn scaled(&self, scalar: f32) -> Self {
+    pub fn scaled(&self, scalar: f64) -> Self {
         let mut out = Self::default();
         scale_vector3(&mut out, self, scalar);
         return out;

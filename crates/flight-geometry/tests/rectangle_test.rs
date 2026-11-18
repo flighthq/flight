@@ -296,9 +296,9 @@ mod equals_rectangle {
 
     #[test]
     fn holds_a_rectangle_equal_to_itself_even_with_a_nan_field() {
-        let nan_rect = create_rectangle(f32::NAN, 2.0, 3.0, 4.0);
+        let nan_rect = create_rectangle(f64::NAN, 2.0, 3.0, 4.0);
         assert!(equals_rectangle(Some(&nan_rect), Some(&nan_rect)));
-        let nan_rect2 = create_rectangle(f32::NAN, 2.0, 3.0, 4.0);
+        let nan_rect2 = create_rectangle(f64::NAN, 2.0, 3.0, 4.0);
         assert!(!equals_rectangle(Some(&nan_rect), Some(&nan_rect2)));
     }
 

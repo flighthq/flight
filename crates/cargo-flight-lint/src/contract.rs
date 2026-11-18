@@ -106,6 +106,10 @@ pub fn check_contract(
     let empty = HashSet::new();
     let map_names = index.map_names.get(crate_name).unwrap_or(&empty);
     let mut out = Vec::new();
+    // Tier-1 spatial crates use f64 as their authoring scalar. Keep both sides crate-scoped so
+    // bounded/GPU crates still require an item-specific f64 declaration and spatial f32 survives
+    // only at an explicitly declared GPU boundary.
+    let is_spatial_crate = matches!(crate_name, "flight-geometry" | "flight-math");
 
     for item in &file.items {
         let Some((label, line)) = item_label(item) else {
@@ -118,7 +122,11 @@ pub fn check_contract(
                     let m_label = format!("{}::{}", label, m.sig.ident);
                     let m_line = m.sig.fn_token.span.start().line;
                     let lines = [m_line, line];
-                    check_f64(&mut out, path, allows, &m_label, &lines, Node::Method(m));
+                    if is_spatial_crate {
+                        check_f32(&mut out, path, allows, &m_label, &lines, Node::Method(m));
+                    } else {
+                        check_f64(&mut out, path, allows, &m_label, &lines, Node::Method(m));
+                    }
                     check_clock(&mut out, path, allows, &m_label, &lines, Node::Method(m));
                     check_iteration(
                         &mut out,
@@ -136,7 +144,11 @@ pub fn check_contract(
         }
 
         let lines = [line];
-        check_f64(&mut out, path, allows, &label, &lines, Node::Item(item));
+        if is_spatial_crate {
+            check_f32(&mut out, path, allows, &label, &lines, Node::Item(item));
+        } else {
+            check_f64(&mut out, path, allows, &label, &lines, Node::Item(item));
+        }
         check_clock(&mut out, path, allows, &label, &lines, Node::Item(item));
         check_iteration(
             &mut out,
@@ -215,8 +227,70 @@ fn type_name(ty: &Type) -> String {
 }
 
 // ---------------------------------------------------------------------------
-// f64 (D1)
+// Spatial scalar precision (D1)
 // ---------------------------------------------------------------------------
+
+fn check_f32(
+    out: &mut Vec<Violation>,
+    path: &Path,
+    allows: &FileAllows,
+    label: &str,
+    lines: &[usize],
+    node: Node,
+) {
+    let mut finder = F32Finder::default();
+    visit_node(&mut finder, node);
+    if let Some(line) = finder.first
+        && !allows.is_allowed("f32", lines)
+    {
+        out.push(Violation::new(
+            path,
+            line,
+            "f32",
+            format!(
+                "`{}` uses f32 in a spatial crate without an `allow(f32) <reason>` declaration",
+                label
+            ),
+        ));
+    }
+}
+
+#[derive(Default)]
+pub struct F32Finder {
+    first: Option<usize>,
+}
+
+impl<'ast> Visit<'ast> for F32Finder {
+    fn visit_type_path(&mut self, node: &'ast syn::TypePath) {
+        let is_f32_storage = node.qself.is_none()
+            && (node.path.is_ident("f32")
+                || node
+                    .path
+                    .segments
+                    .last()
+                    .is_some_and(|segment| segment.ident == "Float32Array"));
+        if is_f32_storage && self.first.is_none() {
+            self.first = Some(node.span().start().line);
+        }
+        visit::visit_type_path(self, node);
+    }
+
+    fn visit_lit_float(&mut self, node: &'ast syn::LitFloat) {
+        if node.suffix() == "f32" && self.first.is_none() {
+            self.first = Some(node.span().start().line);
+        }
+    }
+
+    fn visit_expr_path(&mut self, node: &'ast syn::ExprPath) {
+        if node.path.segments.len() >= 2
+            && node.path.segments[0].ident == "f32"
+            && self.first.is_none()
+        {
+            self.first = Some(node.span().start().line);
+        }
+        visit::visit_expr_path(self, node);
+    }
+}
 
 fn check_f64(
     out: &mut Vec<Violation>,
@@ -1062,6 +1136,42 @@ mod tests {
         );
         assert!(rules_for("// flight-lint: allow(f64) precision\npub fn f(x: f64) {}").is_empty());
         assert!(rules_for("pub fn f(x: f32) -> f32 { return x; }").is_empty());
+        assert!(
+            rules_for_crate("pub fn f(x: f64) -> f64 { return x; }", "flight-geometry").is_empty()
+        );
+        assert!(rules_for_crate("pub fn f(x: f64) -> f64 { return x; }", "flight-math").is_empty());
+        assert_eq!(
+            rules_for_crate(
+                "pub fn f(x: f64) -> f64 { return x; }",
+                "flight-render-wgpu"
+            ),
+            vec!["f64"]
+        );
+        assert_eq!(
+            rules_for_crate("pub fn f(x: f32) -> f32 { return x; }", "flight-geometry"),
+            vec!["f32"]
+        );
+        assert!(
+            rules_for_crate(
+                "// flight-lint: allow(f32) GPU boundary\npub fn f(x: f32) -> f32 { return x; }",
+                "flight-geometry"
+            )
+            .is_empty()
+        );
+        assert_eq!(
+            rules_for_crate(
+                "pub fn f(values: &Float32Array) { return; }",
+                "flight-geometry"
+            ),
+            vec!["f32"]
+        );
+        assert!(
+            rules_for_crate(
+                "pub fn f(x: f32) -> f32 { return x; }",
+                "flight-render-wgpu"
+            )
+            .is_empty()
+        );
     }
 
     #[test]

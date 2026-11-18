@@ -7,27 +7,27 @@ use flight_entity::{EntityRuntimeSlot, allocate_entity};
 #[repr(C)]
 pub struct Transform2D {
     runtime: EntityRuntimeSlot,
-    pub x: f32,
-    pub y: f32,
-    pub rotation: f32,
-    pub scale_x: f32,
-    pub scale_y: f32,
-    pub skew_x: f32,
-    pub skew_y: f32,
-    pub pivot_x: f32,
-    pub pivot_y: f32,
+    pub x: f64,
+    pub y: f64,
+    pub rotation: f64,
+    pub scale_x: f64,
+    pub scale_y: f64,
+    pub skew_x: f64,
+    pub skew_y: f64,
+    pub pivot_x: f64,
+    pub pivot_y: f64,
 }
 
 pub fn create_transform2d(
-    x: f32,
-    y: f32,
-    rotation: f32,
-    scale_x: f32,
-    scale_y: f32,
-    skew_x: f32,
-    skew_y: f32,
-    pivot_x: f32,
-    pivot_y: f32,
+    x: f64,
+    y: f64,
+    rotation: f64,
+    scale_x: f64,
+    scale_y: f64,
+    skew_x: f64,
+    skew_y: f64,
+    pivot_x: f64,
+    pivot_y: f64,
 ) -> Transform2D {
     let mut out: Transform2D = allocate_entity();
     initialize_transform2d(
@@ -38,15 +38,15 @@ pub fn create_transform2d(
 
 pub fn initialize_transform2d(
     out: &mut Transform2D,
-    x: f32,
-    y: f32,
-    rotation: f32,
-    scale_x: f32,
-    scale_y: f32,
-    skew_x: f32,
-    skew_y: f32,
-    pivot_x: f32,
-    pivot_y: f32,
+    x: f64,
+    y: f64,
+    rotation: f64,
+    scale_x: f64,
+    scale_y: f64,
+    skew_x: f64,
+    skew_y: f64,
+    pivot_x: f64,
+    pivot_y: f64,
 ) {
     out.x = x;
     out.y = y;
@@ -116,15 +116,15 @@ impl Default for Transform2D {
 #[cfg(feature = "object-api")]
 impl Transform2D {
     pub fn new(
-        x: f32,
-        y: f32,
-        rotation: f32,
-        scale_x: f32,
-        scale_y: f32,
-        skew_x: f32,
-        skew_y: f32,
-        pivot_x: f32,
-        pivot_y: f32,
+        x: f64,
+        y: f64,
+        rotation: f64,
+        scale_x: f64,
+        scale_y: f64,
+        skew_x: f64,
+        skew_y: f64,
+        pivot_x: f64,
+        pivot_y: f64,
     ) -> Self {
         return create_transform2d(
             x, y, rotation, scale_x, scale_y, skew_x, skew_y, pivot_x, pivot_y,
@@ -132,6 +132,6 @@ impl Transform2D {
     }
 }
 
-const RAD_TO_DEG: f32 = 180.0 / std::f32::consts::PI;
+const RAD_TO_DEG: f64 = 180.0 / std::f64::consts::PI;
 
 flight_entity::impl_entity!(Transform2D);

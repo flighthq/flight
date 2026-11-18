@@ -1,9 +1,9 @@
 //! flight-compiler: target-native
 
 use flight_geometry::contract::*;
-use std::f32::consts::{FRAC_1_SQRT_2, SQRT_2};
+use std::f64::consts::{FRAC_1_SQRT_2, SQRT_2};
 
-fn assert_approx(actual: f32, expected: f32) {
+fn assert_approx(actual: f64, expected: f64) {
     let diff = (actual - expected).abs();
     assert!(
         diff < 1e-4,
@@ -11,7 +11,7 @@ fn assert_approx(actual: f32, expected: f32) {
     );
 }
 
-fn assert_approx_tight(actual: f32, expected: f32) {
+fn assert_approx_tight(actual: f64, expected: f64) {
     let diff = (actual - expected).abs();
     assert!(
         diff < 1e-6,
@@ -78,15 +78,15 @@ mod create_aabb {
     #[test]
     fn creates_an_empty_box_with_infinity_values() {
         let a = create_aabb(
-            f32::INFINITY,
-            f32::INFINITY,
-            f32::INFINITY,
-            f32::NEG_INFINITY,
-            f32::NEG_INFINITY,
-            f32::NEG_INFINITY,
+            f64::INFINITY,
+            f64::INFINITY,
+            f64::INFINITY,
+            f64::NEG_INFINITY,
+            f64::NEG_INFINITY,
+            f64::NEG_INFINITY,
         );
-        assert_eq!(a.min.x, f32::INFINITY);
-        assert_eq!(a.max.x, f32::NEG_INFINITY);
+        assert_eq!(a.min.x, f64::INFINITY);
+        assert_eq!(a.max.x, f64::NEG_INFINITY);
     }
 
     #[test]
@@ -103,12 +103,12 @@ mod expand_aabb_by_point {
     #[test]
     fn an_empty_box_snaps_exactly_to_the_first_point() {
         let a = create_aabb(
-            f32::INFINITY,
-            f32::INFINITY,
-            f32::INFINITY,
-            f32::NEG_INFINITY,
-            f32::NEG_INFINITY,
-            f32::NEG_INFINITY,
+            f64::INFINITY,
+            f64::INFINITY,
+            f64::INFINITY,
+            f64::NEG_INFINITY,
+            f64::NEG_INFINITY,
+            f64::NEG_INFINITY,
         );
         let mut out = create_aabb(0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
         expand_aabb_by_point(&mut out, &a, &create_vector3(2.0, 3.0, 4.0));
@@ -443,8 +443,8 @@ mod set_aabb_from_points {
     fn empty_list_yields_an_empty_box() {
         let mut a = create_aabb(0.0, 0.0, 0.0, 1.0, 1.0, 1.0);
         set_aabb_from_points(&mut a, &[]);
-        assert_eq!(a.min.x, f32::INFINITY);
-        assert_eq!(a.max.x, f32::NEG_INFINITY);
+        assert_eq!(a.min.x, f64::INFINITY);
+        assert_eq!(a.max.x, f64::NEG_INFINITY);
     }
 }
 

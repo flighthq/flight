@@ -8,7 +8,7 @@ fn assert_range_error(action: impl FnOnce(), message: &str) {
     assert_eq!(error.message, message);
 }
 
-fn sequence_random(values: &[f32]) -> impl Fn() -> f32 + '_ {
+fn sequence_random(values: &[f64]) -> impl Fn() -> f64 + '_ {
     let index = std::cell::Cell::new(0);
     return move || {
         let next = index.get();

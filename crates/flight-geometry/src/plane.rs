@@ -7,21 +7,21 @@ use flight_entity::{EntityRuntimeSlot, allocate_entity};
 #[repr(C)]
 pub struct Plane {
     runtime: EntityRuntimeSlot,
-    pub a: f32,
-    pub b: f32,
-    pub c: f32,
-    pub d: f32,
+    pub a: f64,
+    pub b: f64,
+    pub c: f64,
+    pub d: f64,
 }
 
 /// Creates a plane in the form a*x + b*y + c*z + d = 0, where (a, b, c) is the plane normal
 /// and d is the signed distance from the origin along that normal.
-pub fn create_plane(a: f32, b: f32, c: f32, d: f32) -> Plane {
+pub fn create_plane(a: f64, b: f64, c: f64, d: f64) -> Plane {
     let mut out: Plane = allocate_entity();
     initialize_plane(&mut out, a, b, c, d);
     return out;
 }
 
-pub fn initialize_plane(out: &mut Plane, a: f32, b: f32, c: f32, d: f32) {
+pub fn initialize_plane(out: &mut Plane, a: f64, b: f64, c: f64, d: f64) {
     out.a = a;
     out.b = b;
     out.c = c;
@@ -70,7 +70,7 @@ pub fn get_plane_coplanar_point(out: &mut Vector3, plane: &Plane) {
 
 /// Returns the signed distance from a point to a plane. Positive is the side the normal points
 /// toward; assumes the plane normal (a, b, c) is unit length.
-pub fn get_plane_signed_distance_to_point(plane: &Plane, point: &Vector3) -> f32 {
+pub fn get_plane_signed_distance_to_point(plane: &Plane, point: &Vector3) -> f64 {
     return plane.a * point.x + plane.b * point.y + plane.c * point.z + plane.d;
 }
 
@@ -113,7 +113,7 @@ pub fn project_vector3_onto_plane(out: &mut Vector3, point: &Vector3, plane: &Pl
 }
 
 /// Sets the coefficients of a plane (a, b, c, d).
-pub fn set_plane(out: &mut Plane, a: f32, b: f32, c: f32, d: f32) {
+pub fn set_plane(out: &mut Plane, a: f64, b: f64, c: f64, d: f64) {
     out.a = a;
     out.b = b;
     out.c = c;
@@ -159,7 +159,7 @@ pub fn set_plane_from_points(out: &mut Plane, a: &Vector3, b: &Vector3, c: &Vect
 
 #[cfg(feature = "object-api")]
 impl Plane {
-    pub fn new(a: f32, b: f32, c: f32, d: f32) -> Self {
+    pub fn new(a: f64, b: f64, c: f64, d: f64) -> Self {
         return create_plane(a, b, c, d);
     }
 
@@ -193,7 +193,7 @@ impl Plane {
         return out;
     }
 
-    pub fn signed_distance_to_point(&self, point: &Vector3) -> f32 {
+    pub fn signed_distance_to_point(&self, point: &Vector3) -> f64 {
         return get_plane_signed_distance_to_point(self, point);
     }
 }

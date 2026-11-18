@@ -19,23 +19,23 @@ pub enum EulerOrder {
 #[repr(C)]
 pub struct Quaternion {
     runtime: EntityRuntimeSlot,
-    pub x: f32,
-    pub y: f32,
-    pub z: f32,
-    pub w: f32,
+    pub x: f64,
+    pub y: f64,
+    pub z: f64,
+    pub w: f64,
 }
 
 /// Creates a unit quaternion (x, y, z, w) representing a 3D rotation. Handedness is pinned
 /// across the 3D suite: right-handed coordinates, CCW front-face, glTF tangent w-sign.
 ///
 /// Defaults to the identity rotation (0, 0, 0, 1).
-pub fn create_quaternion(x: f32, y: f32, z: f32, w: f32) -> Quaternion {
+pub fn create_quaternion(x: f64, y: f64, z: f64, w: f64) -> Quaternion {
     let mut out: Quaternion = allocate_entity();
     initialize_quaternion(&mut out, x, y, z, w);
     return out;
 }
 
-pub fn initialize_quaternion(out: &mut Quaternion, x: f32, y: f32, z: f32, w: f32) {
+pub fn initialize_quaternion(out: &mut Quaternion, x: f64, y: f64, z: f64, w: f64) {
     out.x = x;
     out.y = y;
     out.z = z;
@@ -87,7 +87,7 @@ pub fn equals_quaternion(a: Option<&Quaternion>, b: Option<&Quaternion>) -> bool
 
 /// Returns the angle (in radians) between two unit quaternions. Returns 0 for identical
 /// rotations and up to PI for opposite rotations. Takes the shorter arc.
-pub fn get_quaternion_angle_between(a: &Quaternion, b: &Quaternion) -> f32 {
+pub fn get_quaternion_angle_between(a: &Quaternion, b: &Quaternion) -> f64 {
     let dot = get_quaternion_dot(a, b).abs();
     return 2.0 * dot.min(1.0).acos();
 }
@@ -95,7 +95,7 @@ pub fn get_quaternion_angle_between(a: &Quaternion, b: &Quaternion) -> f32 {
 /// Extracts the rotation axis and angle (radians) from a unit quaternion. Writes the unit axis
 /// into `out_axis` and returns the angle in [0, 2*PI). For the identity quaternion (no rotation),
 /// the axis is set to (1, 0, 0) and the angle is 0. Inverse of `set_quaternion_from_axis_angle`.
-pub fn get_quaternion_axis_angle(out_axis: &mut Vector3, source: &Quaternion) -> f32 {
+pub fn get_quaternion_axis_angle(out_axis: &mut Vector3, source: &Quaternion) -> f64 {
     let w = source.w;
     let sin_half_sq = 1.0 - w * w;
     if sin_half_sq <= 0.0 {
@@ -113,7 +113,7 @@ pub fn get_quaternion_axis_angle(out_axis: &mut Vector3, source: &Quaternion) ->
 
 /// Returns the dot product of two quaternions: sum of component-wise products.
 /// Useful for measuring the similarity of two orientations; `|dot| == 1` means identical.
-pub fn get_quaternion_dot(a: &Quaternion, b: &Quaternion) -> f32 {
+pub fn get_quaternion_dot(a: &Quaternion, b: &Quaternion) -> f64 {
     return a.x * b.x + a.y * b.y + a.z * b.z + a.w * b.w;
 }
 
@@ -149,11 +149,11 @@ pub fn get_quaternion_euler(out: &mut Vector3, source: &Quaternion, order: Euler
     let m22 = 1.0 - 2.0 * (xx + yy);
 
     // Threshold for detecting gimbal lock. The original f64 value 0.9999999 is too tight
-    // for f32 arithmetic: products like 2*(x*z + w*y) can land a few ULPs below 1.0,
+    // for f64 arithmetic: products like 2*(x*z + w*y) can land a few ULPs below 1.0,
     // missing the branch and producing atan2(~0, ~0) garbage. 0.99999 gives plenty of
     // margin while staying well within the region where the gimbal-lock decomposition
     // is more accurate than the general path.
-    const GIMBAL_THRESHOLD: f32 = 0.99999;
+    const GIMBAL_THRESHOLD: f64 = 0.99999;
 
     match order {
         EulerOrder::XYZ => {
@@ -268,7 +268,7 @@ pub fn multiply_quaternion(out: &mut Quaternion, a: &Quaternion, b: &Quaternion)
 /// identity rotation (0, 0, 0, 1).
 ///
 /// Returns the original length. Safe when `out` aliases `source`.
-pub fn normalize_quaternion(out: &mut Quaternion, source: &Quaternion) -> f32 {
+pub fn normalize_quaternion(out: &mut Quaternion, source: &Quaternion) -> f64 {
     let x = source.x;
     let y = source.y;
     let z = source.z;
@@ -316,7 +316,7 @@ pub fn rotate_vector3_by_quaternion(out: &mut Vector3, vector: &Vector3, q: &Qua
 }
 
 /// Sets the quaternion components directly without normalization.
-pub fn set_quaternion(out: &mut Quaternion, x: f32, y: f32, z: f32, w: f32) {
+pub fn set_quaternion(out: &mut Quaternion, x: f64, y: f64, z: f64, w: f64) {
     out.x = x;
     out.y = y;
     out.z = z;
@@ -327,7 +327,7 @@ pub fn set_quaternion(out: &mut Quaternion, x: f32, y: f32, z: f32, w: f32) {
 /// radians. The rotation is right-handed (CCW when looking down the axis toward the origin).
 ///
 /// Safe when `out` aliases `axis`.
-pub fn set_quaternion_from_axis_angle(out: &mut Quaternion, axis: &Vector3, angle: f32) {
+pub fn set_quaternion_from_axis_angle(out: &mut Quaternion, axis: &Vector3, angle: f64) {
     let half = angle * 0.5;
     let s = half.sin();
     let ax = axis.x;
@@ -341,7 +341,7 @@ pub fn set_quaternion_from_axis_angle(out: &mut Quaternion, axis: &Vector3, angl
 
 /// Builds a quaternion from Euler angles (in radians) applied in the given `order`.
 /// Intrinsic rotations -- each rotation is about the local, rotated axes.
-pub fn set_quaternion_from_euler(out: &mut Quaternion, x: f32, y: f32, z: f32, order: EulerOrder) {
+pub fn set_quaternion_from_euler(out: &mut Quaternion, x: f64, y: f64, z: f64, order: EulerOrder) {
     let c1 = (x / 2.0).cos();
     let s1 = (x / 2.0).sin();
     let c2 = (y / 2.0).cos();
@@ -454,9 +454,9 @@ pub fn set_quaternion_from_unit_vectors(out: &mut Quaternion, from: &Vector3, to
     }
 
     if dot < -0.999999 {
-        let mut ax: f32 = 1.0;
-        let mut ay: f32 = 0.0;
-        let mut az: f32 = 0.0;
+        let mut ax: f64 = 1.0;
+        let mut ay: f64 = 0.0;
+        let mut az: f64 = 0.0;
         if fx.abs() > 0.9 {
             ax = 0.0;
             ay = 1.0;
@@ -588,7 +588,7 @@ pub fn set_quaternion_look_rotation(out: &mut Quaternion, forward: &Vector3, up:
 /// normalized linear interpolation when the inputs are nearly collinear.
 ///
 /// Safe when `out` aliases `a` and/or `b` (all inputs are read into locals first).
-pub fn slerp_quaternion(out: &mut Quaternion, a: &Quaternion, b: &Quaternion, t: f32) {
+pub fn slerp_quaternion(out: &mut Quaternion, a: &Quaternion, b: &Quaternion, t: f64) {
     let ax = a.x;
     let ay = a.y;
     let az = a.z;
@@ -608,8 +608,8 @@ pub fn slerp_quaternion(out: &mut Quaternion, a: &Quaternion, b: &Quaternion, t:
         bw = -bw;
     }
 
-    let scale_a: f32;
-    let scale_b: f32;
+    let scale_a: f64;
+    let scale_b: f64;
 
     if cos_half_theta < 0.999999 {
         let half_theta = cos_half_theta.acos();
@@ -641,11 +641,11 @@ impl Default for Quaternion {
 
 #[cfg(feature = "object-api")]
 impl Quaternion {
-    pub fn new(x: f32, y: f32, z: f32, w: f32) -> Self {
+    pub fn new(x: f64, y: f64, z: f64, w: f64) -> Self {
         return create_quaternion(x, y, z, w);
     }
 
-    pub fn angle_between(&self, other: &Self) -> f32 {
+    pub fn angle_between(&self, other: &Self) -> f64 {
         return get_quaternion_angle_between(self, other);
     }
 
@@ -655,17 +655,17 @@ impl Quaternion {
         return out;
     }
 
-    pub fn dot(&self, other: &Self) -> f32 {
+    pub fn dot(&self, other: &Self) -> f64 {
         return get_quaternion_dot(self, other);
     }
 
-    pub fn from_axis_angle(axis: &Vector3, angle: f32) -> Self {
+    pub fn from_axis_angle(axis: &Vector3, angle: f64) -> Self {
         let mut out = Self::default();
         set_quaternion_from_axis_angle(&mut out, axis, angle);
         return out;
     }
 
-    pub fn from_euler(x: f32, y: f32, z: f32, order: EulerOrder) -> Self {
+    pub fn from_euler(x: f64, y: f64, z: f64, order: EulerOrder) -> Self {
         let mut out = Self::default();
         set_quaternion_from_euler(&mut out, x, y, z, order);
         return out;
@@ -689,7 +689,7 @@ impl Quaternion {
         return out;
     }
 
-    pub fn slerp(&self, other: &Self, t: f32) -> Self {
+    pub fn slerp(&self, other: &Self, t: f64) -> Self {
         let mut out = Self::default();
         slerp_quaternion(&mut out, self, other, t);
         return out;

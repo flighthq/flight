@@ -11,12 +11,12 @@ pub struct Ray3D {
 }
 
 pub fn create_ray3d(
-    origin_x: f32,
-    origin_y: f32,
-    origin_z: f32,
-    direction_x: f32,
-    direction_y: f32,
-    direction_z: f32,
+    origin_x: f64,
+    origin_y: f64,
+    origin_z: f64,
+    direction_x: f64,
+    direction_y: f64,
+    direction_z: f64,
 ) -> Ray3D {
     let mut out: Ray3D = allocate_entity();
     initialize_ray3d(
@@ -68,8 +68,8 @@ pub fn get_closest_point_between_ray3ds(
     let br = bdx * rx + bdy * ry + bdz * rz;
 
     let denom = aa * bb - ab * ab;
-    let mut ta: f32;
-    let mut tb: f32;
+    let mut ta: f64;
+    let mut tb: f64;
     if denom != 0.0 {
         ta = (ab * br - bb * ar) / denom;
     } else {
@@ -128,7 +128,7 @@ pub fn get_closest_point_on_ray3d(out: &mut Vector3, ray: &Ray3D, point: &Vector
 /// Returns the point on a ray at parameter `t`: `origin + t * direction`.
 ///
 /// Safe when `out` aliases `ray.origin` or `ray.direction`.
-pub fn get_ray3d_point_at(out: &mut Vector3, ray: &Ray3D, t: f32) {
+pub fn get_ray3d_point_at(out: &mut Vector3, ray: &Ray3D, t: f64) {
     let ox = ray.origin.x;
     let oy = ray.origin.y;
     let oz = ray.origin.z;
@@ -141,7 +141,7 @@ pub fn get_ray3d_point_at(out: &mut Vector3, ray: &Ray3D, t: f32) {
 }
 
 /// Tests whether a ray intersects an axis-aligned bounding box (slab method).
-pub fn intersect_ray3d_aabb(ray: &Ray3D, aabb: &Aabb) -> f32 {
+pub fn intersect_ray3d_aabb(ray: &Ray3D, aabb: &Aabb) -> f64 {
     if aabb.min.x > aabb.max.x || aabb.min.y > aabb.max.y || aabb.min.z > aabb.max.z {
         return -1.0;
     }
@@ -157,8 +157,8 @@ pub fn intersect_ray3d_aabb(ray: &Ray3D, aabb: &Aabb) -> f32 {
         return -1.0;
     }
 
-    let mut t_min: f32 = 0.0;
-    let mut t_max: f32 = f32::INFINITY;
+    let mut t_min: f64 = 0.0;
+    let mut t_max: f64 = f64::INFINITY;
 
     // X slab
     if dx != 0.0 {
@@ -221,7 +221,7 @@ pub fn intersect_ray3d_aabb(ray: &Ray3D, aabb: &Aabb) -> f32 {
 }
 
 /// Tests whether a ray intersects a plane (ax + by + cz + d = 0).
-pub fn intersect_ray3d_plane(ray: &Ray3D, plane: &Plane) -> f32 {
+pub fn intersect_ray3d_plane(ray: &Ray3D, plane: &Plane) -> f64 {
     let dx = ray.direction.x;
     let dy = ray.direction.y;
     let dz = ray.direction.z;
@@ -241,7 +241,7 @@ pub fn intersect_ray3d_plane(ray: &Ray3D, plane: &Plane) -> f32 {
 }
 
 /// Tests whether a ray intersects a bounding sphere.
-pub fn intersect_ray3d_sphere(ray: &Ray3D, sphere: &BoundingSphere) -> f32 {
+pub fn intersect_ray3d_sphere(ray: &Ray3D, sphere: &BoundingSphere) -> f64 {
     if sphere.radius < 0.0 {
         return -1.0;
     }
@@ -272,7 +272,7 @@ pub fn intersect_ray3d_sphere(ray: &Ray3D, sphere: &BoundingSphere) -> f32 {
 }
 
 /// Tests whether a ray intersects a triangle (Moller-Trumbore algorithm, no back-face culling).
-pub fn intersect_ray3d_triangle(ray: &Ray3D, a: &Vector3, b: &Vector3, c: &Vector3) -> f32 {
+pub fn intersect_ray3d_triangle(ray: &Ray3D, a: &Vector3, b: &Vector3, c: &Vector3) -> f64 {
     let e1x = b.x - a.x;
     let e1y = b.y - a.y;
     let e1z = b.z - a.z;
@@ -394,12 +394,12 @@ impl Default for Ray3D {
 #[cfg(feature = "object-api")]
 impl Ray3D {
     pub fn new(
-        origin_x: f32,
-        origin_y: f32,
-        origin_z: f32,
-        direction_x: f32,
-        direction_y: f32,
-        direction_z: f32,
+        origin_x: f64,
+        origin_y: f64,
+        origin_z: f64,
+        direction_x: f64,
+        direction_y: f64,
+        direction_z: f64,
     ) -> Self {
         return create_ray3d(
             origin_x,
@@ -417,23 +417,23 @@ impl Ray3D {
         return out;
     }
 
-    pub fn intersect_aabb(&self, aabb: &Aabb) -> f32 {
+    pub fn intersect_aabb(&self, aabb: &Aabb) -> f64 {
         return intersect_ray3d_aabb(self, aabb);
     }
 
-    pub fn intersect_plane(&self, plane: &Plane) -> f32 {
+    pub fn intersect_plane(&self, plane: &Plane) -> f64 {
         return intersect_ray3d_plane(self, plane);
     }
 
-    pub fn intersect_sphere(&self, sphere: &BoundingSphere) -> f32 {
+    pub fn intersect_sphere(&self, sphere: &BoundingSphere) -> f64 {
         return intersect_ray3d_sphere(self, sphere);
     }
 
-    pub fn intersect_triangle(&self, a: &Vector3, b: &Vector3, c: &Vector3) -> f32 {
+    pub fn intersect_triangle(&self, a: &Vector3, b: &Vector3, c: &Vector3) -> f64 {
         return intersect_ray3d_triangle(self, a, b, c);
     }
 
-    pub fn point_at(&self, t: f32) -> Vector3 {
+    pub fn point_at(&self, t: f64) -> Vector3 {
         let mut out = Vector3::default();
         get_ray3d_point_at(&mut out, self, t);
         return out;

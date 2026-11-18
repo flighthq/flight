@@ -16,7 +16,7 @@ use flight_entity::{EntityRuntimeSlot, Float32Array, allocate_entity};
 #[derive(Debug, Clone, PartialEq)]
 pub struct Matrix4 {
     runtime: EntityRuntimeSlot,
-    pub m: [f32; 16],
+    pub m: [f64; 16],
 }
 
 /// Creates an identity matrix.
@@ -30,7 +30,7 @@ pub fn create_matrix4() -> Matrix4 {
 }
 
 /// Creates a matrix using two-dimensional transform values.
-pub fn create_matrix4_from_2d(a: f32, b: f32, c: f32, d: f32, tx: f32, ty: f32) -> Matrix4 {
+pub fn create_matrix4_from_2d(a: f64, b: f64, c: f64, d: f64, tx: f64, ty: f64) -> Matrix4 {
     let mut out = create_matrix4();
     set_matrix4_from_2d(&mut out, a, b, c, d, tx, ty);
     return out;
@@ -38,22 +38,22 @@ pub fn create_matrix4_from_2d(a: f32, b: f32, c: f32, d: f32, tx: f32, ty: f32) 
 
 /// Creates a matrix with all 16 values specified in column-major order.
 pub fn create_matrix4_from_values(
-    m00: f32,
-    m01: f32,
-    m02: f32,
-    m03: f32,
-    m10: f32,
-    m11: f32,
-    m12: f32,
-    m13: f32,
-    m20: f32,
-    m21: f32,
-    m22: f32,
-    m23: f32,
-    m30: f32,
-    m31: f32,
-    m32: f32,
-    m33: f32,
+    m00: f64,
+    m01: f64,
+    m02: f64,
+    m03: f64,
+    m10: f64,
+    m11: f64,
+    m12: f64,
+    m13: f64,
+    m20: f64,
+    m21: f64,
+    m22: f64,
+    m23: f64,
+    m30: f64,
+    m31: f64,
+    m32: f64,
+    m33: f64,
 ) -> Matrix4 {
     let mut out = create_matrix4();
     set_matrix4(
@@ -64,12 +64,12 @@ pub fn create_matrix4_from_values(
 
 /// Initializes this matrix with values for an orthographic projection.
 pub fn create_orthographic_matrix4(
-    left: f32,
-    right: f32,
-    bottom: f32,
-    top: f32,
-    z_near: f32,
-    z_far: f32,
+    left: f64,
+    right: f64,
+    bottom: f64,
+    top: f64,
+    z_near: f64,
+    z_far: f64,
 ) -> Matrix4 {
     let mut out = create_matrix4();
     set_orthographic_matrix4(&mut out, left, right, bottom, top, z_near, z_far);
@@ -78,10 +78,10 @@ pub fn create_orthographic_matrix4(
 
 /// Creates a perspective projection matrix. `tan_half_fov_y` is tan(fovY / 2), not the angle itself.
 pub fn create_perspective_matrix4(
-    tan_half_fov_y: f32,
-    aspect: f32,
-    z_near: f32,
-    z_far: f32,
+    tan_half_fov_y: f64,
+    aspect: f64,
+    z_near: f64,
+    z_far: f64,
 ) -> Matrix4 {
     let mut out = create_matrix4();
     set_perspective_matrix4(&mut out, tan_half_fov_y, aspect, z_near, z_far);
@@ -108,7 +108,7 @@ pub fn append_matrix4(out: &mut Matrix4, source: &Matrix4, other: &Matrix4) {
 pub fn append_rotation_matrix4(
     out: &mut Matrix4,
     source: &Matrix4,
-    radians: f32,
+    radians: f64,
     axis: &Vector4,
     pivot_point: Option<&Vector4>,
 ) {
@@ -141,9 +141,9 @@ pub fn append_rotation_matrix4(
 pub fn append_scale_matrix4(
     out: &mut Matrix4,
     source: &Matrix4,
-    x_scale: f32,
-    y_scale: f32,
-    z_scale: f32,
+    x_scale: f64,
+    y_scale: f64,
+    z_scale: f64,
 ) {
     let mut m = create_matrix4();
     set_matrix4(
@@ -157,7 +157,7 @@ pub fn append_scale_matrix4(
 /// Applies a world-space translation to source matrix.
 ///
 /// Translation is applied after all transformations of source are completed.
-pub fn append_translation_matrix4(out: &mut Matrix4, source: &Matrix4, x: f32, y: f32, z: f32) {
+pub fn append_translation_matrix4(out: &mut Matrix4, source: &Matrix4, x: f64, y: f64, z: f64) {
     let s = source.m;
     out.m = s;
     out.m[12] = s[12] + x;
@@ -443,7 +443,7 @@ pub fn equals_matrix4(a: Option<&Matrix4>, b: Option<&Matrix4>) -> bool {
     };
 }
 
-fn get_axis_rotation(out: &mut Matrix4, x: f32, y: f32, z: f32, radians: f32) {
+fn get_axis_rotation(out: &mut Matrix4, x: f64, y: f64, z: f64, radians: f64) {
     let ax = x;
     let ay = y;
     let az = z;
@@ -470,7 +470,7 @@ fn get_axis_rotation(out: &mut Matrix4, x: f32, y: f32, z: f32, radians: f32) {
     out.m[6] = tmp1 - tmp2;
 }
 
-pub fn get_matrix4_determinant(source: &Matrix4) -> f32 {
+pub fn get_matrix4_determinant(source: &Matrix4) -> f64 {
     let s = source.m;
     return (s[0] * s[5] - s[4] * s[1]) * (s[10] * s[15] - s[14] * s[11])
         - (s[0] * s[9] - s[8] * s[1]) * (s[6] * s[15] - s[14] * s[7])
@@ -480,7 +480,7 @@ pub fn get_matrix4_determinant(source: &Matrix4) -> f32 {
         + (s[8] * s[13] - s[12] * s[9]) * (s[2] * s[7] - s[6] * s[3]);
 }
 
-pub fn get_matrix4_element(source: &Matrix4, row: usize, column: usize) -> f32 {
+pub fn get_matrix4_element(source: &Matrix4, row: usize, column: usize) -> f64 {
     return source.m[column * 4 + row];
 }
 
@@ -492,7 +492,7 @@ pub fn get_matrix4_position(out: &mut Vector3, source: &Matrix4) {
 }
 
 /// Interpolates from one Matrix4 instance to another, given a percentage between the two.
-pub fn interpolate_matrix4(out: &mut Matrix4, a: &Matrix4, b: &Matrix4, t: f32) {
+pub fn interpolate_matrix4(out: &mut Matrix4, a: &Matrix4, b: &Matrix4, t: f64) {
     let am = a.m;
     let bm = b.m;
     for i in 0..16 {
@@ -509,11 +509,11 @@ pub fn inverse_matrix4(out: &mut Matrix4, source: &Matrix4) -> bool {
 
     let mut d = get_matrix4_determinant(source);
 
-    let eps: f32 = 1e-6;
+    let eps: f64 = 1e-6;
     let invertable = d.abs() > eps;
 
     if !invertable {
-        out.m = [f32::NAN; 16];
+        out.m = [f64::NAN; 16];
         return false;
     }
 
@@ -620,17 +620,18 @@ pub fn matrix4_transform_vector(out: &mut Vector4, source: &Matrix4, vector: &Ve
     out.w = x * s[3] + y * s[7] + z * s[11] + w * s[15];
 }
 
-/// Transforms a series of [x, y, z] triples at once.
+// flight-lint: allow(f32) explicit GPU submission boundary
+/// GPU boundary: widens Float32Array inputs, calculates in f64, and narrows GPU-ready outputs.
 pub fn matrix4_transform_vectors(out: &mut [f32], source: &Matrix4, vectors: &Float32Array) {
     let s = source.m;
     let mut i = 0;
     while i + 3 <= vectors.len() {
-        let x = vectors[i];
-        let y = vectors[i + 1];
-        let z = vectors[i + 2];
-        out[i] = x * s[0] + y * s[4] + z * s[8] + s[12];
-        out[i + 1] = x * s[1] + y * s[5] + z * s[9] + s[13];
-        out[i + 2] = x * s[2] + y * s[6] + z * s[10] + s[14];
+        let x = f64::from(vectors[i]);
+        let y = f64::from(vectors[i + 1]);
+        let z = f64::from(vectors[i + 2]);
+        out[i] = (x * s[0] + y * s[4] + z * s[8] + s[12]) as f32;
+        out[i + 1] = (x * s[1] + y * s[5] + z * s[9] + s[13]) as f32;
+        out[i + 2] = (x * s[2] + y * s[6] + z * s[10] + s[14]) as f32;
         i += 3;
     }
 }
@@ -674,7 +675,7 @@ pub fn prepend_matrix4(out: &mut Matrix4, source: &Matrix4, other: &Matrix4) {
 pub fn prepend_rotation_matrix4(
     out: &mut Matrix4,
     source: &Matrix4,
-    radians: f32,
+    radians: f64,
     axis: &Vector4,
     pivot_point: Option<&Vector4>,
 ) {
@@ -705,9 +706,9 @@ pub fn prepend_rotation_matrix4(
 pub fn prepend_scale_matrix4(
     out: &mut Matrix4,
     source: &Matrix4,
-    x_scale: f32,
-    y_scale: f32,
-    z_scale: f32,
+    x_scale: f64,
+    y_scale: f64,
+    z_scale: f64,
 ) {
     let mut m = create_matrix4();
     set_matrix4(
@@ -721,7 +722,7 @@ pub fn prepend_scale_matrix4(
 /// Prepends a translation before all local-space transforms.
 ///
 /// out = source * T(x, y, z)
-pub fn prepend_translation_matrix4(out: &mut Matrix4, source: &Matrix4, x: f32, y: f32, z: f32) {
+pub fn prepend_translation_matrix4(out: &mut Matrix4, source: &Matrix4, x: f64, y: f64, z: f64) {
     let mut m = create_matrix4();
     m.m[12] = x;
     m.m[13] = y;
@@ -735,7 +736,7 @@ pub fn prepend_translation_matrix4(out: &mut Matrix4, source: &Matrix4, x: f32, 
 /// out = source * R
 ///
 /// Translation is preserved.
-pub fn rotate_matrix4(out: &mut Matrix4, source: &Matrix4, axis: &Vector3, radians: f32) {
+pub fn rotate_matrix4(out: &mut Matrix4, source: &Matrix4, axis: &Vector3, radians: f64) {
     let mut m = create_matrix4();
     get_axis_rotation(&mut m, axis.x, axis.y, axis.z, radians);
     let source_copy = source.clone();
@@ -747,7 +748,7 @@ pub fn rotate_matrix4(out: &mut Matrix4, source: &Matrix4, axis: &Vector3, radia
 /// out = source * S
 ///
 /// Translation is preserved.
-pub fn scale_matrix4(out: &mut Matrix4, source: &Matrix4, sx: f32, sy: f32, sz: f32) {
+pub fn scale_matrix4(out: &mut Matrix4, source: &Matrix4, sx: f64, sy: f64, sz: f64) {
     let a = source.m;
     out.m[0] = a[0] * sx;
     out.m[1] = a[1] * sx;
@@ -772,22 +773,22 @@ pub fn scale_matrix4(out: &mut Matrix4, source: &Matrix4, sx: f32, sy: f32, sz: 
 
 pub fn set_matrix4(
     out: &mut Matrix4,
-    m00: f32,
-    m01: f32,
-    m02: f32,
-    m03: f32,
-    m10: f32,
-    m11: f32,
-    m12: f32,
-    m13: f32,
-    m20: f32,
-    m21: f32,
-    m22: f32,
-    m23: f32,
-    m30: f32,
-    m31: f32,
-    m32: f32,
-    m33: f32,
+    m00: f64,
+    m01: f64,
+    m02: f64,
+    m03: f64,
+    m10: f64,
+    m11: f64,
+    m12: f64,
+    m13: f64,
+    m20: f64,
+    m21: f64,
+    m22: f64,
+    m23: f64,
+    m30: f64,
+    m31: f64,
+    m32: f64,
+    m33: f64,
 ) {
     out.m[0] = m00;
     out.m[1] = m01;
@@ -807,12 +808,12 @@ pub fn set_matrix4(
     out.m[15] = m33;
 }
 
-pub fn set_matrix4_element(out: &mut Matrix4, row: usize, column: usize, value: f32) {
+pub fn set_matrix4_element(out: &mut Matrix4, row: usize, column: usize, value: f64) {
     out.m[column * 4 + row] = value;
 }
 
 /// Resets the current matrix using two-dimensional transform values.
-pub fn set_matrix4_from_2d(out: &mut Matrix4, a: f32, b: f32, c: f32, d: f32, tx: f32, ty: f32) {
+pub fn set_matrix4_from_2d(out: &mut Matrix4, a: f64, b: f64, c: f64, d: f64, tx: f64, ty: f64) {
     out.m[0] = a;
     out.m[1] = b;
     out.m[2] = 0.0;
@@ -834,10 +835,11 @@ pub fn set_matrix4_from_2d(out: &mut Matrix4, a: f32, b: f32, c: f32, d: f32, tx
     out.m[15] = 1.0;
 }
 
-/// Reads 16 elements of a column-major f32 slice at `offset` into a Matrix4.
+// flight-lint: allow(f32) explicit GPU readback boundary
+/// GPU boundary: widens GPU-ready Float32Array values into an authoring-space f64 matrix.
 pub fn set_matrix4_from_float32_array(out: &mut Matrix4, offset: usize, source: &Float32Array) {
     for i in 0..16 {
-        out.m[i] = source[offset + i];
+        out.m[i] = f64::from(source[offset + i]);
     }
 }
 
@@ -976,12 +978,12 @@ pub fn set_matrix4_position(out: &mut Matrix4, source: &Vector3) {
 /// Initializes a matrix with values for an orthographic projection.
 pub fn set_orthographic_matrix4(
     out: &mut Matrix4,
-    left: f32,
-    right: f32,
-    bottom: f32,
-    top: f32,
-    z_near: f32,
-    z_far: f32,
+    left: f64,
+    right: f64,
+    bottom: f64,
+    top: f64,
+    z_near: f64,
+    z_far: f64,
 ) {
     let sx = 1.0 / (right - left);
     let sy = 1.0 / (top - bottom);
@@ -1011,10 +1013,10 @@ pub fn set_orthographic_matrix4(
 /// Writes a perspective projection into `out`. `tan_half_fov_y` is tan(fovY / 2), not the angle itself.
 pub fn set_perspective_matrix4(
     out: &mut Matrix4,
-    tan_half_fov_y: f32,
-    aspect: f32,
-    z_near: f32,
-    z_far: f32,
+    tan_half_fov_y: f64,
+    aspect: f64,
+    z_near: f64,
+    z_far: f64,
 ) {
     if aspect > -0.0000001 && aspect < 0.0000001 {
         panic!("Aspect ratio may not be 0");
@@ -1037,7 +1039,7 @@ pub fn set_perspective_matrix4(
 
     out.m[8] = (right + left) / (right - left);
     out.m[9] = (top + bottom) / (top - bottom);
-    out.m[10] = if z_far == f32::INFINITY {
+    out.m[10] = if z_far == f64::INFINITY {
         -1.0
     } else {
         -(z_far + z_near) / (z_far - z_near)
@@ -1046,7 +1048,7 @@ pub fn set_perspective_matrix4(
 
     out.m[12] = 0.0;
     out.m[13] = 0.0;
-    out.m[14] = if z_far == f32::INFINITY {
+    out.m[14] = if z_far == f64::INFINITY {
         -2.0 * z_near
     } else {
         (-2.0 * z_far * z_near) / (z_far - z_near)
@@ -1058,7 +1060,7 @@ pub fn set_perspective_matrix4(
 /// matrix's rotation and scale.
 ///
 /// out = source * T
-pub fn translate_matrix4(out: &mut Matrix4, source: &Matrix4, tx: f32, ty: f32, tz: f32) {
+pub fn translate_matrix4(out: &mut Matrix4, source: &Matrix4, tx: f64, ty: f64, tz: f64) {
     let a = source.m;
     out.m = a;
     out.m[12] = a[0] * tx + a[4] * ty + a[8] * tz + a[12];
@@ -1087,10 +1089,11 @@ pub fn transpose_matrix4(out: &mut Matrix4, source: &Matrix4) {
     out.m[15] = s[15];
 }
 
-/// Writes 16 column-major elements of a Matrix4 into a f32 slice at `offset`.
+// flight-lint: allow(f32) explicit GPU submission boundary
+/// GPU boundary: narrows an authoring-space f64 matrix into GPU-ready f32 storage.
 pub fn write_matrix4_to_float32_array(out: &mut [f32], offset: usize, source: &Matrix4) {
     for i in 0..16 {
-        out[offset + i] = source.m[i];
+        out[offset + i] = source.m[i] as f32;
     }
 }
 
@@ -1111,15 +1114,15 @@ impl Matrix4 {
         return create_matrix4();
     }
 
-    pub fn determinant(&self) -> f32 {
+    pub fn determinant(&self) -> f64 {
         return get_matrix4_determinant(self);
     }
 
-    pub fn element(&self, row: usize, column: usize) -> f32 {
+    pub fn element(&self, row: usize, column: usize) -> f64 {
         return get_matrix4_element(self, row, column);
     }
 
-    pub fn interpolate(&self, other: &Self, t: f32) -> Self {
+    pub fn interpolate(&self, other: &Self, t: f64) -> Self {
         let mut out = Self::default();
         interpolate_matrix4(&mut out, self, other, t);
         return out;
@@ -1141,13 +1144,13 @@ impl Matrix4 {
         return out;
     }
 
-    pub fn scaled(&self, sx: f32, sy: f32, sz: f32) -> Self {
+    pub fn scaled(&self, sx: f64, sy: f64, sz: f64) -> Self {
         let mut out = Self::default();
         scale_matrix4(&mut out, self, sx, sy, sz);
         return out;
     }
 
-    pub fn translated(&self, tx: f32, ty: f32, tz: f32) -> Self {
+    pub fn translated(&self, tx: f64, ty: f64, tz: f64) -> Self {
         let mut out = Self::default();
         translate_matrix4(&mut out, self, tx, ty, tz);
         return out;

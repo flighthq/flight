@@ -90,10 +90,16 @@ pub const RULES: &[Rule] = &[
         description: "Tests must not use `::default()`",
     },
     Rule {
+        name: "f32",
+        level: Level::Error,
+        scope: "Source",
+        description: "f32 in spatial crates only with `allow(f32) <reason>` for an explicit boundary",
+    },
+    Rule {
         name: "f64",
         level: Level::Error,
         scope: "Source",
-        description: "f64 only in items declared with `allow(f64) <reason>` (D1)",
+        description: "f64 by default in spatial crates; elsewhere only with `allow(f64) <reason>`",
     },
     Rule {
         name: "hidden-state",

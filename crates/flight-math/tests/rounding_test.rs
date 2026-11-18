@@ -1,8 +1,8 @@
 use flight_math::*;
 
-fn assert_approx(actual: f32, expected: f32) {
+fn assert_approx(actual: f64, expected: f64) {
     let diff = (actual - expected).abs();
-    let limit = (5e-11_f32).max(4.0 * f32::EPSILON * expected.abs().max(1.0));
+    let limit = (5e-11_f64).max(4.0 * f64::EPSILON * expected.abs().max(1.0));
     assert!(
         diff <= limit,
         "expected {expected}, got {actual} (diff: {diff}, limit: {limit})"
@@ -92,7 +92,7 @@ mod fract {
 
     #[test]
     fn returns_the_fractional_part_of_a_positive_number() {
-        // D1 f32 bound (TS: 5e-11)
+        // D1 f64 bound (TS: 5e-11)
         assert_approx(fract(3.75), 0.75);
     }
 
@@ -103,7 +103,7 @@ mod fract {
 
     #[test]
     fn preserves_sign_for_negative_numbers() {
-        // D1 f32 bound (TS: 5e-11)
+        // D1 f64 bound (TS: 5e-11)
         assert_approx(fract(-1.3), -0.3);
     }
 
@@ -124,7 +124,7 @@ mod round_to {
         let result = round_to(-4.0, 10.0);
         assert_eq!(result, 0.0);
         assert!(
-            result.to_bits() == 0_f32.to_bits(),
+            result.to_bits() == 0_f64.to_bits(),
             "should not be negative zero"
         );
     }
@@ -147,7 +147,7 @@ mod round_to {
 
     #[test]
     fn works_with_floating_point_steps() {
-        // D1 f32 bound (TS: 5e-11)
+        // D1 f64 bound (TS: 5e-11)
         assert_approx(round_to(0.3, 0.1), 0.3);
     }
 

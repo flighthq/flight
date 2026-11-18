@@ -2,7 +2,7 @@
 
 use flight_geometry::contract::*;
 
-fn assert_approx(actual: f32, expected: f32) {
+fn assert_approx(actual: f64, expected: f64) {
     let diff = (actual - expected).abs();
     assert!(
         diff < 1e-4,
@@ -14,11 +14,11 @@ fn assert_approx(actual: f32, expected: f32) {
 }
 
 fn orientation_from_axis_angle(
-    axis_x: f32,
-    axis_y: f32,
-    axis_z: f32,
-    radians: f32,
-) -> (f32, f32, f32, f32) {
+    axis_x: f64,
+    axis_y: f64,
+    axis_z: f64,
+    radians: f64,
+) -> (f64, f64, f64, f64) {
     let length = (axis_x * axis_x + axis_y * axis_y + axis_z * axis_z).sqrt();
     let half = (radians / 2.0).sin();
     return (
@@ -29,7 +29,7 @@ fn orientation_from_axis_angle(
     );
 }
 
-fn rotation_matrix4(axis_x: f32, axis_y: f32, axis_z: f32, radians: f32) -> Matrix4 {
+fn rotation_matrix4(axis_x: f64, axis_y: f64, axis_z: f64, radians: f64) -> Matrix4 {
     let length = (axis_x * axis_x + axis_y * axis_y + axis_z * axis_z).sqrt();
     let nx = axis_x / length;
     let ny = axis_y / length;
@@ -75,14 +75,14 @@ fn create_unit_vector3(axis: usize) -> Vector3 {
 }
 
 fn create_rod_obb(
-    center_x: f32,
-    center_y: f32,
-    center_z: f32,
+    center_x: f64,
+    center_y: f64,
+    center_z: f64,
     long_axis: usize,
-    orientation_x: f32,
-    orientation_y: f32,
-    orientation_z: f32,
-    orientation_w: f32,
+    orientation_x: f64,
+    orientation_y: f64,
+    orientation_z: f64,
+    orientation_w: f64,
 ) -> Obb {
     let thickness = 0.1;
     return create_obb(
@@ -135,8 +135,8 @@ fn normalize_vec3(out: &mut Vector3, source: &Vector3) {
 struct FaceAxisSeparation {
     axis: usize,
     of_turned_box: bool,
-    extents: [f32; 3],
-    clear: f32,
+    extents: [f64; 3],
+    clear: f64,
 }
 
 const FACE_AXIS_SEPARATIONS: &[FaceAxisSeparation] = &[
@@ -186,7 +186,7 @@ fn expect_transformed_obb_matches_rotated_points(m: &Matrix4, obb: &Obb) {
     let mut actual = create_vector3(0.0, 0.0, 0.0);
     let mut probe = create_vector3(0.0, 0.0, 0.0);
 
-    let points: [f32; 18] = [
+    let points: [f64; 18] = [
         10.0, 0.0, 0.0, 0.0, 10.0, 0.0, 0.0, 0.0, 10.0, 4.0, -6.0, 2.0, -5.0, 3.0, 8.0, 7.0, 7.0,
         -7.0,
     ];
@@ -474,7 +474,7 @@ mod is_obb_intersecting_obb {
                 let perp_copy = perpendicular.clone();
                 normalize_vec3(&mut perpendicular, &perp_copy);
 
-                let clear = 0.3_f32;
+                let clear = 0.3_f64;
                 let separated = create_rod_obb(
                     perpendicular.x * clear,
                     perpendicular.y * clear,
@@ -600,7 +600,7 @@ mod transform_obb_by_matrix4 {
 
     #[test]
     fn rotates_correctly_near_half_turn() {
-        let near_half_turn = std::f32::consts::PI - 0.01;
+        let near_half_turn = std::f64::consts::PI - 0.01;
         expect_transformed_obb_matches_rotated_points(
             &rotation_matrix4(1.0, 0.0, 0.0, near_half_turn),
             &create_tilted_obb(),

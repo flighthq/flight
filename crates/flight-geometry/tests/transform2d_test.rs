@@ -2,9 +2,9 @@
 
 use flight_geometry::contract::*;
 
-const DEG_TO_RAD: f32 = std::f32::consts::PI / 180.0;
+const DEG_TO_RAD: f64 = std::f64::consts::PI / 180.0;
 
-fn assert_close(actual: f32, expected: f32) {
+fn assert_close(actual: f64, expected: f64) {
     let diff = (actual - expected).abs();
     assert!(
         diff < 1e-4,
@@ -16,13 +16,13 @@ fn assert_close(actual: f32, expected: f32) {
 }
 
 fn build_matrix(
-    x: f32,
-    y: f32,
-    rotation: f32,
-    scale_x: f32,
-    scale_y: f32,
-    skew_x: f32,
-    skew_y: f32,
+    x: f64,
+    y: f64,
+    rotation: f64,
+    scale_x: f64,
+    scale_y: f64,
+    skew_x: f64,
+    skew_y: f64,
 ) -> Matrix {
     let rad_y = (rotation + skew_y) * DEG_TO_RAD;
     let rad_x = (rotation + skew_x) * DEG_TO_RAD;
@@ -149,7 +149,7 @@ mod decompose_matrix_to_transform2d {
 
     #[test]
     fn round_trips_every_non_degenerate_matrix_in_a_grid_spanning_both_determinant_signs() {
-        let values: &[f32] = &[-2.0, -1.0, -0.5, 0.5, 1.0, 2.0];
+        let values: &[f64] = &[-2.0, -1.0, -0.5, 0.5, 1.0, 2.0];
         let mut negative_determinant_count: i32 = 0;
         for &a in values {
             for &b in values {

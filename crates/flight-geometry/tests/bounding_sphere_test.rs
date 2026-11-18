@@ -2,7 +2,7 @@
 
 use flight_geometry::contract::*;
 
-fn assert_approx(actual: f32, expected: f32) {
+fn assert_approx(actual: f64, expected: f64) {
     let diff = (actual - expected).abs();
     assert!(
         diff < 1e-4,
@@ -10,7 +10,7 @@ fn assert_approx(actual: f32, expected: f32) {
     );
 }
 
-fn assert_approx_tight(actual: f32, expected: f32) {
+fn assert_approx_tight(actual: f64, expected: f64) {
     let diff = (actual - expected).abs();
     assert!(
         diff < 1e-6,
@@ -322,18 +322,18 @@ mod set_bounding_sphere_from_aabb {
         assert_eq!(s.center.x, 0.0);
         assert_eq!(s.center.y, 0.0);
         assert_eq!(s.center.z, 0.0);
-        assert_approx_tight(s.radius, 3.0_f32.sqrt());
+        assert_approx_tight(s.radius, 3.0_f64.sqrt());
     }
 
     #[test]
     fn an_empty_box_yields_an_empty_sphere() {
         let aabb = create_aabb(
-            f32::INFINITY,
-            f32::INFINITY,
-            f32::INFINITY,
-            f32::NEG_INFINITY,
-            f32::NEG_INFINITY,
-            f32::NEG_INFINITY,
+            f64::INFINITY,
+            f64::INFINITY,
+            f64::INFINITY,
+            f64::NEG_INFINITY,
+            f64::NEG_INFINITY,
+            f64::NEG_INFINITY,
         );
         let mut s = create_bounding_sphere(0.0, 0.0, 0.0, 5.0);
         set_bounding_sphere_from_aabb(&mut s, &aabb);

@@ -33,7 +33,7 @@ pub const ENTRIES: &[Entry] = &[
         cpp: "float",
         haxe: "Single",
         status: Status::Established,
-        note: "Default numeric type (D1)",
+        note: "Bounded/GPU scalar; spatial crates require `allow(f32) <reason>`",
     },
     Entry {
         rust: "f64",
@@ -41,7 +41,7 @@ pub const ENTRIES: &[Entry] = &[
         cpp: "double",
         haxe: "Float",
         status: Status::Established,
-        note: "Only with `allow(f64) <reason>` (D1)",
+        note: "Default in spatial crates; otherwise only with `allow(f64) <reason>`",
     },
     Entry {
         rust: "bool",

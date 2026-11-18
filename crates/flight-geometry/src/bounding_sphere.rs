@@ -10,15 +10,15 @@ use flight_entity::{EntityRuntimeSlot, allocate_entity};
 pub struct BoundingSphere {
     runtime: EntityRuntimeSlot,
     pub center: Vector3,
-    pub radius: f32,
+    pub radius: f64,
 }
 
 /// Creates a bounding sphere from an explicit center and radius.
 pub fn create_bounding_sphere(
-    center_x: f32,
-    center_y: f32,
-    center_z: f32,
-    radius: f32,
+    center_x: f64,
+    center_y: f64,
+    center_z: f64,
+    radius: f64,
 ) -> BoundingSphere {
     let mut out: BoundingSphere = allocate_entity();
     initialize_bounding_sphere(
@@ -31,7 +31,7 @@ pub fn create_bounding_sphere(
 
 /// Sets the center and radius of a bounding sphere during construction
 /// (TS `initializeBoundingSphere`).
-pub fn initialize_bounding_sphere(out: &mut BoundingSphere, center: &Vector3, radius: f32) {
+pub fn initialize_bounding_sphere(out: &mut BoundingSphere, center: &Vector3, radius: f64) {
     out.center.x = center.x;
     out.center.y = center.y;
     out.center.z = center.z;
@@ -198,10 +198,10 @@ pub fn merge_bounding_sphere(out: &mut BoundingSphere, a: &BoundingSphere, b: &B
 /// Sets the center and radius of a bounding sphere.
 pub fn set_bounding_sphere(
     out: &mut BoundingSphere,
-    center_x: f32,
-    center_y: f32,
-    center_z: f32,
-    radius: f32,
+    center_x: f64,
+    center_y: f64,
+    center_z: f64,
+    radius: f64,
 ) {
     out.center.x = center_x;
     out.center.y = center_y;
@@ -290,7 +290,7 @@ impl Default for BoundingSphere {
 
 #[cfg(feature = "object-api")]
 impl BoundingSphere {
-    pub fn new(center_x: f32, center_y: f32, center_z: f32, radius: f32) -> Self {
+    pub fn new(center_x: f64, center_y: f64, center_z: f64, radius: f64) -> Self {
         return create_bounding_sphere(center_x, center_y, center_z, radius);
     }
 

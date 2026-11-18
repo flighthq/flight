@@ -30,7 +30,7 @@ mod clamp {
 
     #[test]
     fn propagates_nan() {
-        assert!(clamp(f32::NAN, 0.0, 10.0).is_nan());
+        assert!(clamp(f64::NAN, 0.0, 10.0).is_nan());
     }
 }
 
@@ -93,6 +93,6 @@ mod saturate {
 
     #[test]
     fn returns_0_for_nan_gpu_semantics() {
-        assert_eq!(saturate(f32::NAN), 0.0);
+        assert_eq!(saturate(f64::NAN), 0.0);
     }
 }

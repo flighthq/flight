@@ -3,7 +3,7 @@ use flight_entity::throw_range_error;
 /// Return `value` ceiled to the nearest multiple of `step`.
 ///
 /// `ceil_to(7.0, 5.0)` -> `10.0`. When `step <= 0` the result is `value`.
-pub fn ceil_to(value: f32, step: f32) -> f32 {
+pub fn ceil_to(value: f64, step: f64) -> f64 {
     if step <= 0.0 {
         return value;
     }
@@ -14,7 +14,7 @@ pub fn ceil_to(value: f32, step: f32) -> f32 {
 ///
 /// Unlike the remainder operator, the result is always in `[0, divisor)`
 /// regardless of the sign of `value`. Panics when `divisor == 0`.
-pub fn euclidean_mod(value: f32, divisor: f32) -> f32 {
+pub fn euclidean_mod(value: f64, divisor: f64) -> f64 {
     if divisor == 0.0 {
         throw_range_error("euclideanMod: divisor must not be 0");
     }
@@ -24,7 +24,7 @@ pub fn euclidean_mod(value: f32, divisor: f32) -> f32 {
 /// Return `value` floored to the nearest multiple of `step`.
 ///
 /// `floor_to(7.0, 5.0)` -> `5.0`. When `step <= 0` the result is `value`.
-pub fn floor_to(value: f32, step: f32) -> f32 {
+pub fn floor_to(value: f64, step: f64) -> f64 {
     if step <= 0.0 {
         return value;
     }
@@ -35,7 +35,7 @@ pub fn floor_to(value: f32, step: f32) -> f32 {
 ///
 /// Always returns a value in `[0, 1)` for positive inputs. For negative inputs
 /// the sign is preserved (e.g. `fract(-1.3)` -> `-0.3`), mirroring GLSL `fract`.
-pub fn fract(value: f32) -> f32 {
+pub fn fract(value: f64) -> f64 {
     return value - value.trunc();
 }
 
@@ -43,7 +43,7 @@ pub fn fract(value: f32) -> f32 {
 ///
 /// `round_to(7.0, 5.0)` -> `5.0`; `round_to(8.0, 5.0)` -> `10.0`. When `step <= 0`
 /// the result is `value`.
-pub fn round_to(value: f32, step: f32) -> f32 {
+pub fn round_to(value: f64, step: f64) -> f64 {
     if step <= 0.0 {
         return value;
     }

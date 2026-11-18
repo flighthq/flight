@@ -2,7 +2,7 @@
 
 use flight_geometry::contract::*;
 
-fn assert_approx(actual: f32, expected: f32) {
+fn assert_approx(actual: f64, expected: f64) {
     let diff = (actual - expected).abs();
     assert!(
         diff < 1e-4,
@@ -13,7 +13,7 @@ fn assert_approx(actual: f32, expected: f32) {
     );
 }
 
-fn assert_approx_tight(actual: f32, expected: f32) {
+fn assert_approx_tight(actual: f64, expected: f64) {
     let diff = (actual - expected).abs();
     assert!(
         diff < 1e-6,
@@ -322,7 +322,7 @@ mod intersect_ray3d_aabb {
     #[test]
     fn enters_each_of_the_six_sides_at_the_correct_distance() {
         let lopsided = create_aabb(-1.0, -4.0, -6.0, 2.0, 3.0, 5.0);
-        let rays_into_lopsided_box: &[(f32, f32, f32, f32, f32, f32, f32)] = &[
+        let rays_into_lopsided_box: &[(f64, f64, f64, f64, f64, f64, f64)] = &[
             (-10.0, 0.0, 0.0, 1.0, 0.0, 0.0, 9.0),
             (10.0, 0.0, 0.0, -1.0, 0.0, 0.0, 8.0),
             (0.0, -10.0, 0.0, 0.0, 1.0, 0.0, 6.0),
@@ -341,7 +341,7 @@ mod intersect_ray3d_aabb {
     #[test]
     fn returns_negative_one_for_ray_aimed_away_along_any_axis() {
         let lopsided = create_aabb(-1.0, -4.0, -6.0, 2.0, 3.0, 5.0);
-        let rays: &[(f32, f32, f32, f32, f32, f32)] = &[
+        let rays: &[(f64, f64, f64, f64, f64, f64)] = &[
             (-10.0, 0.0, 0.0, 1.0, 0.0, 0.0),
             (10.0, 0.0, 0.0, -1.0, 0.0, 0.0),
             (0.0, -10.0, 0.0, 0.0, 1.0, 0.0),
@@ -401,7 +401,7 @@ mod intersect_ray3d_plane {
 
     #[test]
     fn is_invariant_when_plane_equation_is_scaled() {
-        for &scale in &[1.0_f32, 1e-6, 1e-12] {
+        for &scale in &[1.0_f64, 1e-6, 1e-12] {
             let plane = create_plane(0.0, 0.0, scale, 3.0 * scale);
             let ray = create_ray3d(0.0, 0.0, -6.0, 0.0, 0.0, 2.0);
             assert_approx(intersect_ray3d_plane(&ray, &plane), 1.5);
@@ -535,7 +535,7 @@ mod intersect_ray3d_triangle {
 
     #[test]
     fn accepts_non_normalized_direction() {
-        for &scale in &[1.0_f32, 1e-6, 1e-12] {
+        for &scale in &[1.0_f64, 1e-6, 1e-12] {
             let ray = create_ray3d(0.0, 0.3, -3.0, 0.0, 0.0, scale);
             assert_approx(
                 intersect_ray3d_triangle(&ray, &tri_a(), &tri_b(), &tri_c()) * scale,
@@ -546,7 +546,7 @@ mod intersect_ray3d_triangle {
 
     #[test]
     fn does_not_treat_small_triangle_as_degenerate() {
-        for &scale in &[1.0_f32, 1e-3, 1e-6] {
+        for &scale in &[1.0_f64, 1e-3, 1e-6] {
             let sa = create_vector3(-scale, 0.0, 0.0);
             let sb = create_vector3(scale, 0.0, 0.0);
             let sc = create_vector3(0.0, scale, 0.0);
@@ -623,7 +623,7 @@ mod ray_shape_direction_scale_parity {
 
     #[test]
     fn preserves_the_hit_point_across_all_six_shapes() {
-        for &scale in &[1.0_f32, 1e-6, 1e-12] {
+        for &scale in &[1.0_f64, 1e-6, 1e-12] {
             let ray = create_ray3d(5.0, 0.0, 0.0, -scale, 0.0, 0.0);
             let hits = [
                 intersect_ray3d_aabb(&ray, &create_aabb(-1.0, -1.0, -1.0, 1.0, 1.0, 1.0)),
@@ -697,7 +697,7 @@ mod set_ray3d {
 mod transform_ray3d_by_matrix4 {
     use super::*;
 
-    fn translate_matrix4(m: &mut Matrix4, tx: f32, ty: f32, tz: f32) {
+    fn translate_matrix4(m: &mut Matrix4, tx: f64, ty: f64, tz: f64) {
         let m00 = m.m[0];
         let m01 = m.m[1];
         let m02 = m.m[2];

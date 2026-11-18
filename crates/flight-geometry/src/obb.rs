@@ -7,29 +7,29 @@ use flight_entity::{EntityRuntimeSlot, allocate_entity};
 #[repr(C)]
 pub struct Obb {
     runtime: EntityRuntimeSlot,
-    pub center_x: f32,
-    pub center_y: f32,
-    pub center_z: f32,
-    pub half_extent_x: f32,
-    pub half_extent_y: f32,
-    pub half_extent_z: f32,
-    pub orientation_x: f32,
-    pub orientation_y: f32,
-    pub orientation_z: f32,
-    pub orientation_w: f32,
+    pub center_x: f64,
+    pub center_y: f64,
+    pub center_z: f64,
+    pub half_extent_x: f64,
+    pub half_extent_y: f64,
+    pub half_extent_z: f64,
+    pub orientation_x: f64,
+    pub orientation_y: f64,
+    pub orientation_z: f64,
+    pub orientation_w: f64,
 }
 
 pub fn create_obb(
-    center_x: f32,
-    center_y: f32,
-    center_z: f32,
-    half_extent_x: f32,
-    half_extent_y: f32,
-    half_extent_z: f32,
-    orientation_x: f32,
-    orientation_y: f32,
-    orientation_z: f32,
-    orientation_w: f32,
+    center_x: f64,
+    center_y: f64,
+    center_z: f64,
+    half_extent_x: f64,
+    half_extent_y: f64,
+    half_extent_z: f64,
+    orientation_x: f64,
+    orientation_y: f64,
+    orientation_z: f64,
+    orientation_w: f64,
 ) -> Obb {
     let mut out: Obb = allocate_entity();
     initialize_obb(
@@ -50,16 +50,16 @@ pub fn create_obb(
 
 pub fn initialize_obb(
     out: &mut Obb,
-    center_x: f32,
-    center_y: f32,
-    center_z: f32,
-    half_extent_x: f32,
-    half_extent_y: f32,
-    half_extent_z: f32,
-    orientation_x: f32,
-    orientation_y: f32,
-    orientation_z: f32,
-    orientation_w: f32,
+    center_x: f64,
+    center_y: f64,
+    center_z: f64,
+    half_extent_x: f64,
+    half_extent_y: f64,
+    half_extent_z: f64,
+    orientation_x: f64,
+    orientation_y: f64,
+    orientation_z: f64,
+    orientation_w: f64,
 ) {
     out.center_x = center_x;
     out.center_y = center_y;
@@ -124,7 +124,7 @@ pub fn get_closest_point_on_obb(out: &mut Vector3, obb: &Obb, point: &Vector3) {
 }
 
 /// Tests whether a ray intersects an oriented bounding box using the slab method in OBB local space.
-pub fn intersect_ray3d_obb(ray: &Ray3D, obb: &Obb) -> f32 {
+pub fn intersect_ray3d_obb(ray: &Ray3D, obb: &Obb) -> f64 {
     let ox = ray.origin.x - obb.center_x;
     let oy = ray.origin.y - obb.center_y;
     let oz = ray.origin.z - obb.center_z;
@@ -170,8 +170,8 @@ pub fn intersect_ray3d_obb(ray: &Ray3D, obb: &Obb) -> f32 {
     let direction1 = dx * ax1 + dy * ay1 + dz * az1;
     let direction2 = dx * ax2 + dy * ay2 + dz * az2;
 
-    let mut t_min: f32 = 0.0;
-    let mut t_max: f32 = f32::INFINITY;
+    let mut t_min: f64 = 0.0;
+    let mut t_max: f64 = f64::INFINITY;
 
     if direction0 != 0.0 {
         let inv_d = 1.0 / direction0;
@@ -429,33 +429,33 @@ pub fn is_obb_intersecting_sphere(obb: &Obb, sphere: &BoundingSphere) -> bool {
 
 #[allow(clippy::too_many_arguments)]
 fn obb_sat_separated(
-    tx: f32,
-    ty: f32,
-    tz: f32,
-    ax0: f32,
-    ay0: f32,
-    az0: f32,
-    ax1: f32,
-    ay1: f32,
-    az1: f32,
-    ax2: f32,
-    ay2: f32,
-    az2: f32,
-    hax: f32,
-    hay: f32,
-    haz: f32,
-    bx0: f32,
-    by0: f32,
-    bz0: f32,
-    bx1: f32,
-    by1: f32,
-    bz1: f32,
-    bx2: f32,
-    by2: f32,
-    bz2: f32,
-    hbx: f32,
-    hby: f32,
-    hbz: f32,
+    tx: f64,
+    ty: f64,
+    tz: f64,
+    ax0: f64,
+    ay0: f64,
+    az0: f64,
+    ax1: f64,
+    ay1: f64,
+    az1: f64,
+    ax2: f64,
+    ay2: f64,
+    az2: f64,
+    hax: f64,
+    hay: f64,
+    haz: f64,
+    bx0: f64,
+    by0: f64,
+    bz0: f64,
+    bx1: f64,
+    by1: f64,
+    bz1: f64,
+    bx2: f64,
+    by2: f64,
+    bz2: f64,
+    hbx: f64,
+    hby: f64,
+    hbz: f64,
 ) -> bool {
     for axis in 0..15_u32 {
         let (lx, ly, lz) = match axis {
@@ -533,16 +533,16 @@ fn obb_sat_separated(
 /// Sets all fields of an oriented bounding box in place.
 pub fn set_obb(
     out: &mut Obb,
-    center_x: f32,
-    center_y: f32,
-    center_z: f32,
-    half_extent_x: f32,
-    half_extent_y: f32,
-    half_extent_z: f32,
-    orientation_x: f32,
-    orientation_y: f32,
-    orientation_z: f32,
-    orientation_w: f32,
+    center_x: f64,
+    center_y: f64,
+    center_z: f64,
+    half_extent_x: f64,
+    half_extent_y: f64,
+    half_extent_z: f64,
+    orientation_x: f64,
+    orientation_y: f64,
+    orientation_z: f64,
+    orientation_w: f64,
 ) {
     out.center_x = center_x;
     out.center_y = center_y;
@@ -588,10 +588,10 @@ pub fn transform_obb_by_matrix4(out: &mut Obb, obb: &Obb, m: &Matrix4) {
     let r12 = if sz > 0.0 { mm[9] / sz } else { 0.0 };
     let r22 = if sz > 0.0 { mm[10] / sz } else { 1.0 };
 
-    let mqw: f32;
-    let mqx: f32;
-    let mqy: f32;
-    let mqz: f32;
+    let mqw: f64;
+    let mqx: f64;
+    let mqy: f64;
+    let mqz: f64;
     let trace = r00 + r11 + r22;
     if trace > 0.0 {
         let s = 0.5 / (trace + 1.0).sqrt();

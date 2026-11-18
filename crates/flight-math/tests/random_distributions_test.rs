@@ -1,8 +1,8 @@
 use flight_math::*;
 
-fn assert_approx(actual: f32, expected: f32) {
+fn assert_approx(actual: f64, expected: f64) {
     let diff = (actual - expected).abs();
-    let limit = (5e-9_f32).max(4.0 * f32::EPSILON * expected.abs().max(1.0));
+    let limit = (5e-9_f64).max(4.0 * f64::EPSILON * expected.abs().max(1.0));
     assert!(
         diff <= limit,
         "expected {expected}, got {actual} (diff: {diff}, limit: {limit})"
@@ -78,24 +78,24 @@ mod random_exponential {
     #[test]
     fn mean_approximates_1_over_rate_for_rate_1() {
         let random = create_random_source(0xabcdef);
-        let mut sum = 0.0_f32;
+        let mut sum = 0.0_f64;
         let n = 5000;
         for _ in 0..n {
             sum += random_exponential(random.as_ref(), None);
         }
-        let avg = sum / n as f32;
+        let avg = sum / n as f64;
         assert!((avg - 1.0).abs() < 0.2);
     }
 
     #[test]
     fn mean_approximates_1_over_rate_for_rate_2() {
         let random = create_random_source(0xabcdef);
-        let mut sum = 0.0_f32;
+        let mut sum = 0.0_f64;
         let n = 5000;
         for _ in 0..n {
             sum += random_exponential(random.as_ref(), Some(2.0));
         }
-        let avg = sum / n as f32;
+        let avg = sum / n as f64;
         assert!((avg - 0.5).abs() < 0.2);
     }
 
@@ -123,7 +123,7 @@ mod random_exponential {
     fn rejects_nan_rate() {
         crate::assert_range_error(
             || {
-                random_exponential(create_random_source(0xabcdef).as_ref(), Some(f32::NAN));
+                random_exponential(create_random_source(0xabcdef).as_ref(), Some(f64::NAN));
             },
             "randomExponential: rate must be finite and > 0",
         );
@@ -133,7 +133,7 @@ mod random_exponential {
     fn rejects_infinite_rate() {
         crate::assert_range_error(
             || {
-                random_exponential(create_random_source(0xabcdef).as_ref(), Some(f32::INFINITY));
+                random_exponential(create_random_source(0xabcdef).as_ref(), Some(f64::INFINITY));
             },
             "randomExponential: rate must be finite and > 0",
         );
@@ -155,7 +155,7 @@ mod random_exponential {
     fn substitutes_epsilon_when_the_random_source_returns_zero() {
         assert_eq!(
             random_exponential(&|| 0.0, None),
-            -(2.220446049250313e-16_f32).ln()
+            -(2.220446049250313e-16_f64).ln()
         );
     }
 }
@@ -174,12 +174,12 @@ mod random_gaussian {
     #[test]
     fn centers_around_the_mean() {
         let random = create_random_source(0xabcdef);
-        let mut sum = 0.0_f32;
+        let mut sum = 0.0_f64;
         let n = 2000;
         for _ in 0..n {
             sum += random_gaussian(random.as_ref(), Some(5.0), None);
         }
-        let avg = sum / n as f32;
+        let avg = sum / n as f64;
         assert!((avg - 5.0).abs() < 0.5);
     }
 
@@ -207,7 +207,7 @@ mod random_gaussian {
 
     #[test]
     fn matches_a_deterministic_box_muller_vector_with_mean_and_scale() {
-        let standard = (-2.0 * 0.5_f32.ln()).sqrt();
+        let standard = (-2.0 * 0.5_f64.ln()).sqrt();
         let random = crate::sequence_random(&[0.5, 0.0]);
         let actual = random_gaussian(&random, Some(10.0), Some(2.0));
         let expected = 10.0 + standard * 2.0;
@@ -229,14 +229,14 @@ mod random_gaussian_pair {
     #[test]
     fn produces_values_matching_the_requested_mean() {
         let random = create_random_source(0xabcdef);
-        let mut sum = 0.0_f32;
+        let mut sum = 0.0_f64;
         let n = 2000;
         for _ in 0..n {
             let (z0, z1) = random_gaussian_pair(random.as_ref(), Some(10.0), None);
             sum += z0 + z1;
         }
         let sample_count = n * 2;
-        let avg = sum / sample_count as f32;
+        let avg = sum / sample_count as f64;
         assert!((avg - 10.0).abs() < 0.5);
     }
 
@@ -248,12 +248,12 @@ mod random_gaussian_pair {
             z0.abs() < 5e-11,
             "TS zero-sample first component should be close to 0 at 10 digits, got {z0}"
         );
-        assert!((z1 - (-2.0 * (2.220446049250313e-16_f32).ln()).sqrt()).abs() < 5e-11);
+        assert!((z1 - (-2.0 * (2.220446049250313e-16_f64).ln()).sqrt()).abs() < 5e-11);
     }
 
     #[test]
     fn matches_both_values_of_a_deterministic_box_muller_pair() {
-        let component = (-2.0 * 0.5_f32.ln()).sqrt() * std::f32::consts::FRAC_1_SQRT_2;
+        let component = (-2.0 * 0.5_f64.ln()).sqrt() * std::f64::consts::FRAC_1_SQRT_2;
         let random = crate::sequence_random(&[0.5, 0.125]);
         assert_eq!(
             random_gaussian_pair(&random, Some(3.0), Some(2.0)),
@@ -268,7 +268,7 @@ mod random_inside_unit_disc {
     #[test]
     fn produces_points_inside_the_unit_disc() {
         let random = create_random_source(0xabcdef);
-        let mut out = [0.0_f32; 2];
+        let mut out = [0.0_f64; 2];
         for _ in 0..200 {
             random_inside_unit_disc(&mut out, random.as_ref());
             assert!(out[0] * out[0] + out[1] * out[1] <= 1.0 + 1e-9);
@@ -279,8 +279,8 @@ mod random_inside_unit_disc {
     fn is_deterministic_for_the_same_seed() {
         let a = create_random_source(0xabcdef);
         let b = create_random_source(0xabcdef);
-        let mut out_a = [0.0_f32; 2];
-        let mut out_b = [0.0_f32; 2];
+        let mut out_a = [0.0_f64; 2];
+        let mut out_b = [0.0_f64; 2];
         for _ in 0..20 {
             random_inside_unit_disc(&mut out_a, a.as_ref());
             random_inside_unit_disc(&mut out_b, b.as_ref());
@@ -292,7 +292,7 @@ mod random_inside_unit_disc {
     #[test]
     fn is_alias_safe_when_out_is_the_same_object_as_input() {
         let random = create_random_source(0xabcdef);
-        let mut out = [0.0_f32; 2];
+        let mut out = [0.0_f64; 2];
         random_inside_unit_disc(&mut out, random.as_ref());
         assert!(out[0].is_finite());
         assert!(out[1].is_finite());
@@ -301,7 +301,7 @@ mod random_inside_unit_disc {
     #[test]
     fn accepts_and_preserves_a_deterministic_boundary_point() {
         let random = crate::sequence_random(&[1.0, 0.5, 0.5, 0.5]);
-        let mut out = [0.0_f32; 2];
+        let mut out = [0.0_f64; 2];
         random_inside_unit_disc(&mut out, &random);
         assert_eq!(out, [1.0, 0.0]);
     }
@@ -313,7 +313,7 @@ mod random_inside_unit_sphere {
     #[test]
     fn produces_points_with_radius_less_than_or_equal_to_1() {
         let random = create_random_source(0xabcdef);
-        let mut out = [0.0_f32; 3];
+        let mut out = [0.0_f64; 3];
         for _ in 0..200 {
             random_inside_unit_sphere(&mut out, random.as_ref());
             assert!(out[0] * out[0] + out[1] * out[1] + out[2] * out[2] <= 1.0 + 1e-9);
@@ -324,8 +324,8 @@ mod random_inside_unit_sphere {
     fn is_deterministic_for_the_same_seed() {
         let a = create_random_source(0xabcdef);
         let b = create_random_source(0xabcdef);
-        let mut out_a = [0.0_f32; 3];
-        let mut out_b = [0.0_f32; 3];
+        let mut out_a = [0.0_f64; 3];
+        let mut out_b = [0.0_f64; 3];
         for _ in 0..20 {
             random_inside_unit_sphere(&mut out_a, a.as_ref());
             random_inside_unit_sphere(&mut out_b, b.as_ref());
@@ -338,7 +338,7 @@ mod random_inside_unit_sphere {
     #[test]
     fn is_alias_safe_when_out_is_the_same_object_as_input() {
         let random = create_random_source(0xabcdef);
-        let mut out = [0.0_f32; 3];
+        let mut out = [0.0_f64; 3];
         random_inside_unit_sphere(&mut out, random.as_ref());
         assert!(out[0].is_finite());
         assert!(out[1].is_finite());
@@ -348,7 +348,7 @@ mod random_inside_unit_sphere {
     #[test]
     fn accepts_and_preserves_a_deterministic_boundary_point() {
         let random = crate::sequence_random(&[1.0, 0.5, 0.5, 0.5, 0.5, 0.5]);
-        let mut out = [0.0_f32; 3];
+        let mut out = [0.0_f64; 3];
         random_inside_unit_sphere(&mut out, &random);
         assert_eq!(out, [1.0, 0.0, 0.0]);
     }
@@ -360,10 +360,10 @@ mod random_on_unit_circle {
     #[test]
     fn produces_points_on_the_unit_circle() {
         let random = create_random_source(0xabcdef);
-        let mut out = [0.0_f32; 2];
+        let mut out = [0.0_f64; 2];
         for _ in 0..100 {
             random_on_unit_circle(&mut out, random.as_ref());
-            // D1 f32 bound (TS: 5e-9)
+            // D1 f64 bound (TS: 5e-9)
             assert_approx(out[0] * out[0] + out[1] * out[1], 1.0);
         }
     }
@@ -372,8 +372,8 @@ mod random_on_unit_circle {
     fn is_deterministic_for_the_same_seed() {
         let a = create_random_source(0xabcdef);
         let b = create_random_source(0xabcdef);
-        let mut out_a = [0.0_f32; 2];
-        let mut out_b = [0.0_f32; 2];
+        let mut out_a = [0.0_f64; 2];
+        let mut out_b = [0.0_f64; 2];
         for _ in 0..20 {
             random_on_unit_circle(&mut out_a, a.as_ref());
             random_on_unit_circle(&mut out_b, b.as_ref());
@@ -385,7 +385,7 @@ mod random_on_unit_circle {
     #[test]
     fn is_alias_safe_when_out_is_the_same_object_as_input() {
         let random = create_random_source(0xabcdef);
-        let mut out = [0.0_f32; 2];
+        let mut out = [0.0_f64; 2];
         random_on_unit_circle(&mut out, random.as_ref());
         assert!(out[0].is_finite());
         assert!(out[1].is_finite());
@@ -393,7 +393,7 @@ mod random_on_unit_circle {
 
     #[test]
     fn maps_a_quarter_turn_sample_to_the_top_of_the_circle() {
-        let mut out = [0.0_f32; 2];
+        let mut out = [0.0_f64; 2];
         random_on_unit_circle(&mut out, &|| 0.25);
         assert!(
             out[0].abs() < 5e-13,
@@ -410,11 +410,11 @@ mod random_on_unit_sphere {
     #[test]
     fn produces_points_on_the_unit_sphere() {
         let random = create_random_source(0xabcdef);
-        let mut out = [0.0_f32; 3];
+        let mut out = [0.0_f64; 3];
         for _ in 0..100 {
             random_on_unit_sphere(&mut out, random.as_ref());
             let len2 = out[0] * out[0] + out[1] * out[1] + out[2] * out[2];
-            // D1 f32 bound (TS: 5e-9)
+            // D1 f64 bound (TS: 5e-9)
             assert_approx(len2, 1.0);
         }
     }
@@ -423,8 +423,8 @@ mod random_on_unit_sphere {
     fn is_deterministic_for_the_same_seed() {
         let a = create_random_source(0xabcdef);
         let b = create_random_source(0xabcdef);
-        let mut out_a = [0.0_f32; 3];
-        let mut out_b = [0.0_f32; 3];
+        let mut out_a = [0.0_f64; 3];
+        let mut out_b = [0.0_f64; 3];
         for _ in 0..20 {
             random_on_unit_sphere(&mut out_a, a.as_ref());
             random_on_unit_sphere(&mut out_b, b.as_ref());
@@ -437,7 +437,7 @@ mod random_on_unit_sphere {
     #[test]
     fn is_alias_safe_when_out_is_the_same_object_as_input() {
         let random = create_random_source(0xabcdef);
-        let mut out = [0.0_f32; 3];
+        let mut out = [0.0_f64; 3];
         random_on_unit_sphere(&mut out, random.as_ref());
         assert!(out[0].is_finite());
         assert!(out[1].is_finite());
@@ -446,17 +446,17 @@ mod random_on_unit_sphere {
 
     #[test]
     fn projects_a_deterministic_disc_sample_onto_the_sphere() {
-        let mut out = [0.0_f32; 3];
+        let mut out = [0.0_f64; 3];
         let random = crate::sequence_random(&[0.75, 0.5]);
         random_on_unit_sphere(&mut out, &random);
-        assert!((out[0] - 3.0_f32.sqrt() / 2.0).abs() < 5e-13);
+        assert!((out[0] - 3.0_f64.sqrt() / 2.0).abs() < 5e-13);
         assert_eq!(out[1], 0.0);
         assert_eq!(out[2], 0.5);
     }
 
     #[test]
     fn rejects_a_disc_boundary_sample_before_projecting() {
-        let mut out = [0.0_f32; 3];
+        let mut out = [0.0_f64; 3];
         let random = crate::sequence_random(&[1.0, 0.5, 0.5, 0.5]);
         random_on_unit_sphere(&mut out, &random);
         assert_eq!(out, [0.0, 0.0, 1.0]);
@@ -483,7 +483,7 @@ mod random_poisson {
         for _ in 0..n {
             sum += random_poisson(random.as_ref(), None);
         }
-        let avg = sum as f32 / n as f32;
+        let avg = sum as f64 / n as f64;
         assert!((avg - 1.0).abs() < 0.2);
     }
 
@@ -495,7 +495,7 @@ mod random_poisson {
         for _ in 0..n {
             sum += random_poisson(random.as_ref(), Some(5.0));
         }
-        let avg = sum as f32 / n as f32;
+        let avg = sum as f64 / n as f64;
         assert!((avg - 5.0).abs() < 0.5);
     }
 
@@ -523,7 +523,7 @@ mod random_poisson {
     fn rejects_nan_lambda() {
         crate::assert_range_error(
             || {
-                random_poisson(create_random_source(0xabcdef).as_ref(), Some(f32::NAN));
+                random_poisson(create_random_source(0xabcdef).as_ref(), Some(f64::NAN));
             },
             "randomPoisson: lambda must be finite and > 0",
         );
@@ -533,7 +533,7 @@ mod random_poisson {
     fn rejects_infinite_lambda() {
         crate::assert_range_error(
             || {
-                random_poisson(create_random_source(0xabcdef).as_ref(), Some(f32::INFINITY));
+                random_poisson(create_random_source(0xabcdef).as_ref(), Some(f64::INFINITY));
             },
             "randomPoisson: lambda must be finite and > 0",
         );
@@ -554,7 +554,7 @@ mod random_poisson {
     #[test]
     fn stops_when_the_product_exactly_reaches_the_limit() {
         let random = crate::sequence_random(&[0.5, 0.5]);
-        assert_eq!(random_poisson(&random, Some(2.0_f32.ln())), 0);
+        assert_eq!(random_poisson(&random, Some(2.0_f64.ln())), 0);
     }
 }
 
@@ -564,7 +564,7 @@ mod random_weighted {
     #[test]
     fn returns_indices_within_the_weights_slice() {
         let random = create_random_source(0xabcdef);
-        let weights = [1.0_f32, 2.0, 3.0];
+        let weights = [1.0_f64, 2.0, 3.0];
         for _ in 0..100 {
             let idx = random_weighted(random.as_ref(), &weights);
             assert!(idx >= 0);
@@ -600,7 +600,7 @@ mod random_weighted {
     fn is_deterministic_for_the_same_seed() {
         let a = create_random_source(0xabcdef);
         let b = create_random_source(0xabcdef);
-        let weights = [1.0_f32, 2.0, 3.0, 4.0];
+        let weights = [1.0_f64, 2.0, 3.0, 4.0];
         for _ in 0..20 {
             assert_eq!(
                 random_weighted(a.as_ref(), &weights),

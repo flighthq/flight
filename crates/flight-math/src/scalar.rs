@@ -22,7 +22,7 @@ pub fn floor_power_of_two(n: i32) -> u32 {
 /// Returns a value snapped to one of `steps + 1` evenly-spaced values between
 /// `min` and `max`. When `steps <= 0` the result is `min`. When `min == max`
 /// the result is `min`.
-pub fn quantize(value: f32, steps: f32, min: f32, max: f32) -> f32 {
+pub fn quantize(value: f64, steps: f64, min: f64, max: f64) -> f64 {
     if steps <= 0.0 || min == max {
         return min;
     }
@@ -38,7 +38,7 @@ pub fn quantize(value: f32, steps: f32, min: f32, max: f32) -> f32 {
 }
 
 /// Zero-aware sign: returns `1` for positive, `-1` for negative, `0` for zero.
-pub fn sign(value: f32) -> f32 {
+pub fn sign(value: f64) -> f64 {
     return if value > 0.0 {
         1.0
     } else if value < 0.0 {

@@ -12,7 +12,7 @@ use flight_entity::{EntityRuntimeSlot, Float32Array, allocate_entity};
 #[derive(Debug, Clone, PartialEq)]
 pub struct Matrix3 {
     runtime: EntityRuntimeSlot,
-    pub m: [f32; 9],
+    pub m: [f64; 9],
 }
 
 // flight-lint: allow(conform-params) D24: matrix3/4 create returns identity; values via set_matrix3/4 (user-approved)
@@ -23,15 +23,15 @@ pub fn create_matrix3() -> Matrix3 {
 }
 
 pub fn create_matrix3_from_values(
-    m00: f32,
-    m01: f32,
-    m02: f32,
-    m10: f32,
-    m11: f32,
-    m12: f32,
-    m20: f32,
-    m21: f32,
-    m22: f32,
+    m00: f64,
+    m01: f64,
+    m02: f64,
+    m10: f64,
+    m11: f64,
+    m12: f64,
+    m20: f64,
+    m21: f64,
+    m22: f64,
 ) -> Matrix3 {
     let mut out = create_matrix3();
     set_matrix3(&mut out, m00, m01, m02, m10, m11, m12, m20, m21, m22);
@@ -131,7 +131,7 @@ pub fn equals_matrix3(a: Option<&Matrix3>, b: Option<&Matrix3>) -> bool {
 
 /// Returns the determinant of a 3x3 matrix. The determinant is transpose-invariant,
 /// so this flat-index form is independent of row/column-major storage.
-pub fn get_matrix3_determinant(source: &Matrix3) -> f32 {
+pub fn get_matrix3_determinant(source: &Matrix3) -> f64 {
     let m = &source.m;
     return m[0] * m[4] * m[8] + m[1] * m[5] * m[6] + m[2] * m[3] * m[7]
         - m[2] * m[4] * m[6]
@@ -139,7 +139,7 @@ pub fn get_matrix3_determinant(source: &Matrix3) -> f32 {
         - m[0] * m[5] * m[7];
 }
 
-pub fn get_matrix3_element(source: &Matrix3, row: usize, column: usize) -> f32 {
+pub fn get_matrix3_element(source: &Matrix3, row: usize, column: usize) -> f64 {
     return source.m[column * 3 + row];
 }
 
@@ -163,7 +163,7 @@ pub fn inverse_matrix3(out: &mut Matrix3, source: &Matrix3) -> bool {
         let det = a00 * a11 - a01 * a10;
 
         if det == 0.0 {
-            out.m.fill(f32::NAN);
+            out.m.fill(f64::NAN);
             return false;
         }
 
@@ -189,7 +189,7 @@ pub fn inverse_matrix3(out: &mut Matrix3, source: &Matrix3) -> bool {
         + a02 * (a10 * a21 - a11 * a20);
 
     if det == 0.0 {
-        out.m.fill(f32::NAN);
+        out.m.fill(f64::NAN);
         return false;
     }
 
@@ -267,7 +267,7 @@ pub fn multiply_matrix3(out: &mut Matrix3, a: &Matrix3, b: &Matrix3) {
 /// Applies a local-space rotation in the (0,1) plane. The translation column is preserved.
 ///
 /// `out = source * R`
-pub fn rotate_matrix3(out: &mut Matrix3, source: &Matrix3, theta: f32) {
+pub fn rotate_matrix3(out: &mut Matrix3, source: &Matrix3, theta: f64) {
     let c = theta.cos();
     let s = theta.sin();
 
@@ -297,7 +297,7 @@ pub fn rotate_matrix3(out: &mut Matrix3, source: &Matrix3, theta: f32) {
 /// Applies a local-space scale in the (0,1) plane. The translation column is preserved.
 ///
 /// `out = source * S`
-pub fn scale_matrix3(out: &mut Matrix3, source: &Matrix3, sx: f32, sy: f32) {
+pub fn scale_matrix3(out: &mut Matrix3, source: &Matrix3, sx: f64, sy: f64) {
     let a0 = source.m[0];
     let a1 = source.m[1];
     let a2 = source.m[2];
@@ -325,15 +325,15 @@ pub fn scale_matrix3(out: &mut Matrix3, source: &Matrix3, sx: f32, sy: f32) {
 /// stored column-major at 3 * col + row.
 pub fn set_matrix3(
     out: &mut Matrix3,
-    m00: f32,
-    m01: f32,
-    m02: f32,
-    m10: f32,
-    m11: f32,
-    m12: f32,
-    m20: f32,
-    m21: f32,
-    m22: f32,
+    m00: f64,
+    m01: f64,
+    m02: f64,
+    m10: f64,
+    m11: f64,
+    m12: f64,
+    m20: f64,
+    m21: f64,
+    m22: f64,
 ) {
     out.m[0] = m00;
     out.m[3] = m01;
@@ -346,15 +346,16 @@ pub fn set_matrix3(
     out.m[8] = m22;
 }
 
-pub fn set_matrix3_element(out: &mut Matrix3, row: usize, column: usize, value: f32) {
+pub fn set_matrix3_element(out: &mut Matrix3, row: usize, column: usize, value: f64) {
     out.m[column * 3 + row] = value;
 }
 
-/// Reads a Matrix3 from a float slice at an element offset (column-major, 9 floats).
+// flight-lint: allow(f32) explicit GPU readback boundary
+/// GPU boundary: widens GPU-ready Float32Array values into an authoring-space f64 matrix.
 pub fn set_matrix3_from_float32_array(out: &mut Matrix3, offset: usize, source: &Float32Array) {
     let mut i = 0;
     while i < 9 {
-        out.m[i] = source[offset + i];
+        out.m[i] = f64::from(source[offset + i]);
         i += 1;
     }
 }
@@ -416,7 +417,7 @@ pub fn set_matrix3_normal_from_matrix4(out: &mut Matrix3, source: &Matrix4) {
 /// Applies a local-space translation mapped through the source basis.
 ///
 /// `out = source * T`
-pub fn translate_matrix3(out: &mut Matrix3, source: &Matrix3, tx: f32, ty: f32) {
+pub fn translate_matrix3(out: &mut Matrix3, source: &Matrix3, tx: f64, ty: f64) {
     let a0 = source.m[0];
     let a1 = source.m[1];
     let a2 = source.m[2];
@@ -461,11 +462,12 @@ pub fn transpose_matrix3(out: &mut Matrix3, source: &Matrix3) {
     out.m[8] = source.m[8];
 }
 
-/// Writes a Matrix3 into a float slice at an element offset (column-major, 9 floats).
+// flight-lint: allow(f32) explicit GPU submission boundary
+/// GPU boundary: narrows an authoring-space f64 matrix into GPU-ready f32 storage.
 pub fn write_matrix3_to_float32_array(out: &mut [f32], offset: usize, source: &Matrix3) {
     let mut i = 0;
     while i < 9 {
-        out[offset + i] = source.m[i];
+        out[offset + i] = source.m[i] as f32;
         i += 1;
     }
 }
@@ -485,20 +487,20 @@ impl Matrix3 {
         return create_matrix3();
     }
 
-    pub fn determinant(&self) -> f32 {
+    pub fn determinant(&self) -> f64 {
         return get_matrix3_determinant(self);
     }
 
     pub fn from_values(
-        m00: f32,
-        m01: f32,
-        m02: f32,
-        m10: f32,
-        m11: f32,
-        m12: f32,
-        m20: f32,
-        m21: f32,
-        m22: f32,
+        m00: f64,
+        m01: f64,
+        m02: f64,
+        m10: f64,
+        m11: f64,
+        m12: f64,
+        m20: f64,
+        m21: f64,
+        m22: f64,
     ) -> Self {
         return create_matrix3_from_values(m00, m01, m02, m10, m11, m12, m20, m21, m22);
     }
@@ -519,19 +521,19 @@ impl Matrix3 {
         return out;
     }
 
-    pub fn rotated(&self, theta: f32) -> Self {
+    pub fn rotated(&self, theta: f64) -> Self {
         let mut out = Self::default();
         rotate_matrix3(&mut out, self, theta);
         return out;
     }
 
-    pub fn scaled(&self, sx: f32, sy: f32) -> Self {
+    pub fn scaled(&self, sx: f64, sy: f64) -> Self {
         let mut out = Self::default();
         scale_matrix3(&mut out, self, sx, sy);
         return out;
     }
 
-    pub fn translated(&self, tx: f32, ty: f32) -> Self {
+    pub fn translated(&self, tx: f64, ty: f64) -> Self {
         let mut out = Self::default();
         translate_matrix3(&mut out, self, tx, ty);
         return out;

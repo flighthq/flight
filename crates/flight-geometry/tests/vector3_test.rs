@@ -1,9 +1,9 @@
 //! flight-compiler: target-native
 
 use flight_geometry::contract::*;
-use std::f32::consts::PI;
+use std::f64::consts::PI;
 
-fn assert_approx(actual: f32, expected: f32) {
+fn assert_approx(actual: f64, expected: f64) {
     let diff = (actual - expected).abs();
     assert!(
         diff < 1e-4,
@@ -11,7 +11,7 @@ fn assert_approx(actual: f32, expected: f32) {
     );
 }
 
-fn assert_approx_tight(actual: f32, expected: f32) {
+fn assert_approx_tight(actual: f64, expected: f64) {
     let diff = (actual - expected).abs();
     assert!(
         diff < 1e-6,
@@ -446,11 +446,11 @@ mod equals_vector3 {
 
     #[test]
     fn holds_a_vector_equal_to_itself_even_with_a_nan_component() {
-        let nan_vec = create_vector3(f32::NAN, 2.0, 3.0);
+        let nan_vec = create_vector3(f64::NAN, 2.0, 3.0);
         assert!(equals_vector3(Some(&nan_vec), Some(&nan_vec)));
         assert!(!equals_vector3(
             Some(&nan_vec),
-            Some(&create_vector3(f32::NAN, 2.0, 3.0))
+            Some(&create_vector3(f64::NAN, 2.0, 3.0))
         ));
     }
 }

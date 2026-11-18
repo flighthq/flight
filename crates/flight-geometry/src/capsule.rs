@@ -7,25 +7,25 @@ use flight_entity::{EntityRuntimeSlot, allocate_entity};
 #[repr(C)]
 pub struct Capsule {
     runtime: EntityRuntimeSlot,
-    pub start_x: f32,
-    pub start_y: f32,
-    pub start_z: f32,
-    pub end_x: f32,
-    pub end_y: f32,
-    pub end_z: f32,
-    pub radius: f32,
+    pub start_x: f64,
+    pub start_y: f64,
+    pub start_z: f64,
+    pub end_x: f64,
+    pub end_y: f64,
+    pub end_z: f64,
+    pub radius: f64,
 }
 
 /// Creates a capsule from a start point, end point, and radius. A negative radius conventionally
 /// marks an empty capsule.
 pub fn create_capsule(
-    start_x: f32,
-    start_y: f32,
-    start_z: f32,
-    end_x: f32,
-    end_y: f32,
-    end_z: f32,
-    radius: f32,
+    start_x: f64,
+    start_y: f64,
+    start_z: f64,
+    end_x: f64,
+    end_y: f64,
+    end_z: f64,
+    radius: f64,
 ) -> Capsule {
     let mut out: Capsule = allocate_entity();
     initialize_capsule(
@@ -36,13 +36,13 @@ pub fn create_capsule(
 
 pub fn initialize_capsule(
     out: &mut Capsule,
-    start_x: f32,
-    start_y: f32,
-    start_z: f32,
-    end_x: f32,
-    end_y: f32,
-    end_z: f32,
-    radius: f32,
+    start_x: f64,
+    start_y: f64,
+    start_z: f64,
+    end_x: f64,
+    end_y: f64,
+    end_z: f64,
+    radius: f64,
 ) {
     out.start_x = start_x;
     out.start_y = start_y;
@@ -53,7 +53,7 @@ pub fn initialize_capsule(
     out.radius = radius;
 }
 
-fn axis_perpendicular(abx: f32, aby: f32, abz: f32, ab_len2: f32) -> (f32, f32, f32) {
+fn axis_perpendicular(abx: f64, aby: f64, abz: f64, ab_len2: f64) -> (f64, f64, f64) {
     if ab_len2 < 1e-20 {
         return (1.0, 0.0, 0.0);
     }
@@ -61,17 +61,17 @@ fn axis_perpendicular(abx: f32, aby: f32, abz: f32, ab_len2: f32) -> (f32, f32, 
     let abs_x = abx.abs();
     let abs_y = aby.abs();
     let abs_z = abz.abs();
-    let least_aligned_x: f32 = if abs_x <= abs_y && abs_x <= abs_z {
+    let least_aligned_x: f64 = if abs_x <= abs_y && abs_x <= abs_z {
         1.0
     } else {
         0.0
     };
-    let least_aligned_y: f32 = if least_aligned_x == 0.0 && abs_y <= abs_z {
+    let least_aligned_y: f64 = if least_aligned_x == 0.0 && abs_y <= abs_z {
         1.0
     } else {
         0.0
     };
-    let least_aligned_z: f32 = if least_aligned_x == 0.0 && least_aligned_y == 0.0 {
+    let least_aligned_z: f64 = if least_aligned_x == 0.0 && least_aligned_y == 0.0 {
         1.0
     } else {
         0.0
@@ -105,9 +105,9 @@ pub fn get_closest_point_on_capsule(out: &mut Vector3, capsule: &Capsule, point:
     let abz = bz - az;
     let ab_len2 = abx * abx + aby * aby + abz * abz;
 
-    let closest_x: f32;
-    let closest_y: f32;
-    let closest_z: f32;
+    let closest_x: f64;
+    let closest_y: f64;
+    let closest_z: f64;
     if ab_len2 < 1e-20 {
         closest_x = ax;
         closest_y = ay;
@@ -140,7 +140,7 @@ pub fn get_closest_point_on_capsule(out: &mut Vector3, capsule: &Capsule, point:
 /// Tests whether a ray intersects a capsule. Returns the entry parameter `t` (>= 0) on hit,
 /// or `-1` on miss. A ray starting inside the capsule returns `t = 0`. An empty capsule
 /// (negative radius) always returns `-1`.
-pub fn intersect_ray3d_capsule(ray: &Ray3D, capsule: &Capsule) -> f32 {
+pub fn intersect_ray3d_capsule(ray: &Ray3D, capsule: &Capsule) -> f64 {
     let ox = ray.origin.x;
     let oy = ray.origin.y;
     let oz = ray.origin.z;
@@ -171,7 +171,7 @@ pub fn intersect_ray3d_capsule(ray: &Ray3D, capsule: &Capsule) -> f32 {
         return ray_sphere_hit(ox, oy, oz, dx, dy, dz, r, direction_length_sq, ax, ay, az);
     }
 
-    let mut t_best: f32 = -1.0;
+    let mut t_best: f64 = -1.0;
 
     let inv_ab2 = 1.0 / ab_len2;
     let aox = ox - ax;
@@ -285,16 +285,16 @@ pub fn is_capsule_intersecting_sphere(capsule: &Capsule, sphere: &BoundingSphere
 }
 
 fn point_to_segment_distance_sq(
-    px: f32,
-    py: f32,
-    pz: f32,
-    ax: f32,
-    ay: f32,
-    az: f32,
-    bx: f32,
-    by: f32,
-    bz: f32,
-) -> f32 {
+    px: f64,
+    py: f64,
+    pz: f64,
+    ax: f64,
+    ay: f64,
+    az: f64,
+    bx: f64,
+    by: f64,
+    bz: f64,
+) -> f64 {
     let abx = bx - ax;
     let aby = by - ay;
     let abz = bz - az;
@@ -314,18 +314,18 @@ fn point_to_segment_distance_sq(
 }
 
 fn ray_sphere_hit(
-    ox: f32,
-    oy: f32,
-    oz: f32,
-    dx: f32,
-    dy: f32,
-    dz: f32,
-    r: f32,
-    direction_length_sq: f32,
-    cx: f32,
-    cy: f32,
-    cz: f32,
-) -> f32 {
+    ox: f64,
+    oy: f64,
+    oz: f64,
+    dx: f64,
+    dy: f64,
+    dz: f64,
+    r: f64,
+    direction_length_sq: f64,
+    cx: f64,
+    cy: f64,
+    cz: f64,
+) -> f64 {
     let mx = ox - cx;
     let my = oy - cy;
     let mz = oz - cz;
@@ -348,19 +348,19 @@ fn ray_sphere_hit(
 }
 
 fn segment_to_aabb_distance_sq(
-    ax: f32,
-    ay: f32,
-    az: f32,
-    bx: f32,
-    by: f32,
-    bz: f32,
-    min_x: f32,
-    min_y: f32,
-    min_z: f32,
-    max_x: f32,
-    max_y: f32,
-    max_z: f32,
-) -> f32 {
+    ax: f64,
+    ay: f64,
+    az: f64,
+    bx: f64,
+    by: f64,
+    bz: f64,
+    min_x: f64,
+    min_y: f64,
+    min_z: f64,
+    max_x: f64,
+    max_y: f64,
+    max_z: f64,
+) -> f64 {
     let dx = bx - ax;
     let dy = by - ay;
     let dz = bz - az;
@@ -372,8 +372,8 @@ fn segment_to_aabb_distance_sq(
         return ex * ex + ey * ey + ez * ez;
     }
 
-    let mut best_dist2 = f32::INFINITY;
-    let mut candidates = [0.0_f32; 8];
+    let mut best_dist2 = f64::INFINITY;
+    let mut candidates = [0.0_f64; 8];
     let mut count: usize = 2;
     candidates[0] = 0.0;
     candidates[1] = 1.0;
@@ -432,19 +432,19 @@ fn segment_to_aabb_distance_sq(
 }
 
 fn segment_to_segment_distance_sq(
-    ax: f32,
-    ay: f32,
-    az: f32,
-    bx: f32,
-    by: f32,
-    bz: f32,
-    cx: f32,
-    cy: f32,
-    cz: f32,
-    dx: f32,
-    dy: f32,
-    dz: f32,
-) -> f32 {
+    ax: f64,
+    ay: f64,
+    az: f64,
+    bx: f64,
+    by: f64,
+    bz: f64,
+    cx: f64,
+    cy: f64,
+    cz: f64,
+    dx: f64,
+    dy: f64,
+    dz: f64,
+) -> f64 {
     let d1x = bx - ax;
     let d1y = by - ay;
     let d1z = bz - az;
@@ -459,8 +459,8 @@ fn segment_to_segment_distance_sq(
     let e = d2x * d2x + d2y * d2y + d2z * d2z;
     let f = d2x * rx + d2y * ry + d2z * rz;
 
-    let mut s: f32 = 0.0;
-    let mut t: f32 = 0.0;
+    let mut s: f64 = 0.0;
+    let mut t: f64 = 0.0;
 
     if a < 1e-20 && e < 1e-20 {
         // both degenerate
@@ -496,13 +496,13 @@ fn segment_to_segment_distance_sq(
 /// Sets all fields of a capsule in place.
 pub fn set_capsule(
     out: &mut Capsule,
-    start_x: f32,
-    start_y: f32,
-    start_z: f32,
-    end_x: f32,
-    end_y: f32,
-    end_z: f32,
-    radius: f32,
+    start_x: f64,
+    start_y: f64,
+    start_z: f64,
+    end_x: f64,
+    end_y: f64,
+    end_z: f64,
+    radius: f64,
 ) {
     out.start_x = start_x;
     out.start_y = start_y;

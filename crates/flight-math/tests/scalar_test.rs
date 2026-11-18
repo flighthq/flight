@@ -1,8 +1,8 @@
 use flight_math::*;
 
-fn assert_approx(actual: f32, expected: f32) {
+fn assert_approx(actual: f64, expected: f64) {
     let diff = (actual - expected).abs();
-    let limit = (5e-11_f32).max(4.0 * f32::EPSILON * expected.abs().max(1.0));
+    let limit = (5e-11_f64).max(4.0 * f64::EPSILON * expected.abs().max(1.0));
     assert!(
         diff <= limit,
         "expected {expected}, got {actual} (diff: {diff}, limit: {limit})"
@@ -45,19 +45,19 @@ mod quantize {
 
     #[test]
     fn quantizes_to_the_nearest_step() {
-        // D1 f32 bound (TS: 5e-11)
+        // D1 f64 bound (TS: 5e-11)
         assert_approx(quantize(0.7, 4.0, 0.0, 1.0), 0.75);
     }
 
     #[test]
     fn returns_min_at_the_lower_bound() {
-        // D1 f32 bound (TS: 5e-11)
+        // D1 f64 bound (TS: 5e-11)
         assert_approx(quantize(0.0, 4.0, 0.0, 1.0), 0.0);
     }
 
     #[test]
     fn returns_max_at_the_upper_bound() {
-        // D1 f32 bound (TS: 5e-11)
+        // D1 f64 bound (TS: 5e-11)
         assert_approx(quantize(1.0, 4.0, 0.0, 1.0), 1.0);
     }
 
@@ -73,9 +73,9 @@ mod quantize {
 
     #[test]
     fn clamps_values_outside_the_range() {
-        // D1 f32 bound (TS: 5e-11)
+        // D1 f64 bound (TS: 5e-11)
         assert_approx(quantize(-1.0, 4.0, 0.0, 1.0), 0.0);
-        // D1 f32 bound (TS: 5e-11)
+        // D1 f64 bound (TS: 5e-11)
         assert_approx(quantize(2.0, 4.0, 0.0, 1.0), 1.0);
     }
 }

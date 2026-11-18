@@ -4,10 +4,10 @@ mod create_random_source {
     use super::*;
 
     #[test]
-    fn keeps_the_half_open_endpoint_when_a_seeded_sample_rounds_up() {
+    fn keeps_high_seeded_samples_below_the_half_open_endpoint() {
         let random = create_random_source(52078625);
         let sample = random();
-        assert_eq!(sample, 1.0 - f32::EPSILON / 2.0);
+        assert_eq!(sample, 0.9999999951105565);
         assert!(sample < 1.0);
     }
 
@@ -49,10 +49,10 @@ mod create_random_source {
         assert_eq!(
             [random(), random(), random(), random()],
             [
-                0.021141508361324668_f32,
-                0.6661099966149777_f32,
-                0.7799714196007699_f32,
-                0.7395844468846917_f32
+                0.021141508361324668_f64,
+                0.6661099966149777_f64,
+                0.7799714196007699_f64,
+                0.7395844468846917_f64
             ],
         );
     }
@@ -100,8 +100,8 @@ mod create_random_source {
             .collect();
         let expected = create_random_source(42);
         let mut expected: Vec<_> = (0..256).map(|_| expected()).collect();
-        actual.sort_by(f32::total_cmp);
-        expected.sort_by(f32::total_cmp);
+        actual.sort_by(f64::total_cmp);
+        expected.sort_by(f64::total_cmp);
         assert_eq!(actual, expected);
     }
 }

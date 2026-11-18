@@ -18,45 +18,45 @@ use std::sync::LazyLock;
 #[repr(C)]
 pub struct Matrix {
     runtime: EntityRuntimeSlot,
-    pub a: f32,
-    pub b: f32,
-    pub c: f32,
-    pub d: f32,
-    pub tx: f32,
-    pub ty: f32,
+    pub a: f64,
+    pub b: f64,
+    pub c: f64,
+    pub d: f64,
+    pub tx: f64,
+    pub ty: f64,
 }
 
 pub fn create_gradient_transform_matrix(
-    width: f32,
-    height: f32,
-    rotation: f32,
-    tx: f32,
-    ty: f32,
+    width: f64,
+    height: f64,
+    rotation: f64,
+    tx: f64,
+    ty: f64,
 ) -> Matrix {
     let mut out = create_matrix(1.0, 0.0, 0.0, 1.0, 0.0, 0.0);
     set_gradient_transform_matrix(&mut out, width, height, rotation, tx, ty);
     return out;
 }
 
-pub fn create_matrix(a: f32, b: f32, c: f32, d: f32, tx: f32, ty: f32) -> Matrix {
+pub fn create_matrix(a: f64, b: f64, c: f64, d: f64, tx: f64, ty: f64) -> Matrix {
     let mut out: Matrix = allocate_entity();
     initialize_matrix(&mut out, a, b, c, d, tx, ty);
     return out;
 }
 
 pub fn create_transform_matrix(
-    scale_x: f32,
-    scale_y: f32,
-    rotation: f32,
-    tx: f32,
-    ty: f32,
+    scale_x: f64,
+    scale_y: f64,
+    rotation: f64,
+    tx: f64,
+    ty: f64,
 ) -> Matrix {
     let mut out = create_matrix(1.0, 0.0, 0.0, 1.0, 0.0, 0.0);
     set_transform_matrix(&mut out, scale_x, scale_y, rotation, tx, ty);
     return out;
 }
 
-pub fn initialize_matrix(out: &mut Matrix, a: f32, b: f32, c: f32, d: f32, tx: f32, ty: f32) {
+pub fn initialize_matrix(out: &mut Matrix, a: f64, b: f64, c: f64, d: f64, tx: f64, ty: f64) {
     out.a = a;
     out.b = b;
     out.c = c;
@@ -239,7 +239,7 @@ pub fn inverse_matrix_transform_point(out: &mut Vector2, matrix: &Matrix, point:
     inverse_matrix_transform_point_xy(out, matrix, px, py);
 }
 
-pub fn inverse_matrix_transform_point_xy(out: &mut Vector2, source: &Matrix, x: f32, y: f32) {
+pub fn inverse_matrix_transform_point_xy(out: &mut Vector2, source: &Matrix, x: f64, y: f64) {
     let a = source.a;
     let b = source.b;
     let c = source.c;
@@ -265,7 +265,7 @@ pub fn inverse_matrix_transform_vector(out: &mut Vector2, matrix: &Matrix, vecto
     inverse_matrix_transform_vector_xy(out, matrix, vx, vy);
 }
 
-pub fn inverse_matrix_transform_vector_xy(out: &mut Vector2, source: &Matrix, x: f32, y: f32) {
+pub fn inverse_matrix_transform_vector_xy(out: &mut Vector2, source: &Matrix, x: f64, y: f64) {
     let a = source.a;
     let b = source.b;
     let c = source.c;
@@ -291,10 +291,10 @@ pub fn inverse_matrix_transform_vector_xy(out: &mut Vector2, source: &Matrix, x:
 pub fn matrix_transform_bounds(
     out: &mut Rectangle,
     source: &Matrix,
-    ax: f32,
-    ay: f32,
-    bx: f32,
-    by: f32,
+    ax: f64,
+    ay: f64,
+    bx: f64,
+    by: f64,
 ) {
     let a = source.a;
     let b = source.b;
@@ -391,7 +391,7 @@ pub fn matrix_transform_point(out: &mut Vector2, matrix: &Matrix, point: &Vector
 }
 
 /// Transforms an (x, y) point using the given matrix.
-pub fn matrix_transform_point_xy(out: &mut Vector2, source: &Matrix, x: f32, y: f32) {
+pub fn matrix_transform_point_xy(out: &mut Vector2, source: &Matrix, x: f64, y: f64) {
     let a = source.a;
     let b = source.b;
     let c = source.c;
@@ -426,7 +426,7 @@ pub fn matrix_transform_vector(out: &mut Vector2, matrix: &Matrix, vector: &Vect
     matrix_transform_vector_xy(out, matrix, vx, vy);
 }
 
-pub fn matrix_transform_vector_xy(out: &mut Vector2, source: &Matrix, x: f32, y: f32) {
+pub fn matrix_transform_vector_xy(out: &mut Vector2, source: &Matrix, x: f64, y: f64) {
     let a = source.a;
     let b = source.b;
     let c = source.c;
@@ -464,7 +464,7 @@ pub fn multiply_matrix(out: &mut Matrix, a: &Matrix, b: &Matrix) {
 /// Applies a world-space rotation to the complete 2D affine transform, including its translation.
 ///
 /// `out = R * source`
-pub fn rotate_matrix(out: &mut Matrix, source: &Matrix, theta: f32) {
+pub fn rotate_matrix(out: &mut Matrix, source: &Matrix, theta: f64) {
     let cos = theta.cos();
     let sin = theta.sin();
     let a = source.a;
@@ -491,7 +491,7 @@ pub fn rotate_matrix(out: &mut Matrix, source: &Matrix, theta: f32) {
 /// The _x_ axis is multiplied by `sx`, and the _y_ axis is multiplied by `sy`.
 ///
 /// `out = S * source`
-pub fn scale_matrix(out: &mut Matrix, source: &Matrix, sx: f32, sy: f32) {
+pub fn scale_matrix(out: &mut Matrix, source: &Matrix, sx: f64, sy: f64) {
     let a = source.a;
     let b = source.b;
     let c = source.c;
@@ -512,11 +512,11 @@ pub fn scale_matrix(out: &mut Matrix, source: &Matrix, sx: f32, sy: f32) {
 /// pair and the `tx`/`ty` values are offset by half the width and height.
 pub fn set_gradient_transform_matrix(
     out: &mut Matrix,
-    width: f32,
-    height: f32,
-    rotation: f32,
-    tx: f32,
-    ty: f32,
+    width: f64,
+    height: f64,
+    rotation: f64,
+    tx: f64,
+    ty: f64,
 ) {
     out.a = width / 1638.4;
     out.d = height / 1638.4;
@@ -538,7 +538,7 @@ pub fn set_gradient_transform_matrix(
     out.ty = ty + height / 2.0;
 }
 
-pub fn set_matrix(out: &mut Matrix, a: f32, b: f32, c: f32, d: f32, tx: f32, ty: f32) {
+pub fn set_matrix(out: &mut Matrix, a: f64, b: f64, c: f64, d: f64, tx: f64, ty: f64) {
     out.a = a;
     out.b = b;
     out.c = c;
@@ -547,13 +547,15 @@ pub fn set_matrix(out: &mut Matrix, a: f32, b: f32, c: f32, d: f32, tx: f32, ty:
     out.ty = ty;
 }
 
+// flight-lint: allow(f32) explicit GPU readback boundary
+/// GPU boundary: widens GPU-ready Float32Array values into an authoring-space f64 matrix.
 pub fn set_matrix_from_float32_array(out: &mut Matrix, offset: usize, source: &Float32Array) {
-    out.a = source[offset];
-    out.b = source[offset + 1];
-    out.c = source[offset + 2];
-    out.d = source[offset + 3];
-    out.tx = source[offset + 4];
-    out.ty = source[offset + 5];
+    out.a = f64::from(source[offset]);
+    out.b = f64::from(source[offset + 1]);
+    out.c = f64::from(source[offset + 2]);
+    out.d = f64::from(source[offset + 3]);
+    out.tx = f64::from(source[offset + 4]);
+    out.ty = f64::from(source[offset + 5]);
 }
 
 pub fn set_matrix_from_matrix3(out: &mut Matrix, source: &Matrix3) {
@@ -585,11 +587,11 @@ pub fn set_matrix_identity(out: &mut Matrix) {
 /// `translate_matrix()` in succession.
 pub fn set_transform_matrix(
     out: &mut Matrix,
-    scale_x: f32,
-    scale_y: f32,
-    rotation: f32,
-    tx: f32,
-    ty: f32,
+    scale_x: f64,
+    scale_y: f64,
+    rotation: f64,
+    tx: f64,
+    ty: f64,
 ) {
     if rotation != 0.0 {
         let cos = rotation.cos();
@@ -614,7 +616,7 @@ pub fn set_transform_matrix(
 /// the existing translation, independently of the source basis.
 ///
 /// `out = T * source`
-pub fn translate_matrix(out: &mut Matrix, source: &Matrix, dx: f32, dy: f32) {
+pub fn translate_matrix(out: &mut Matrix, source: &Matrix, dx: f64, dy: f64) {
     let a = source.a;
     let b = source.b;
     let c = source.c;
@@ -631,7 +633,7 @@ pub fn translate_matrix_by_vector(out: &mut Matrix, matrix: &Matrix, vector: &Ve
     translate_matrix_by_vector_xy(out, matrix, vx, vy);
 }
 
-pub fn translate_matrix_by_vector_xy(out: &mut Matrix, source: &Matrix, x: f32, y: f32) {
+pub fn translate_matrix_by_vector_xy(out: &mut Matrix, source: &Matrix, x: f64, y: f64) {
     let a = source.a;
     let b = source.b;
     let c = source.c;
@@ -641,13 +643,15 @@ pub fn translate_matrix_by_vector_xy(out: &mut Matrix, source: &Matrix, x: f32, 
     set_matrix(out, a, b, c, d, tx + a * x + c * y, ty + b * x + d * y);
 }
 
+// flight-lint: allow(f32) explicit GPU submission boundary
+/// GPU boundary: narrows an authoring-space f64 matrix into GPU-ready f32 storage.
 pub fn write_matrix_to_float32_array(out: &mut [f32], offset: usize, source: &Matrix) {
-    out[offset] = source.a;
-    out[offset + 1] = source.b;
-    out[offset + 2] = source.c;
-    out[offset + 3] = source.d;
-    out[offset + 4] = source.tx;
-    out[offset + 5] = source.ty;
+    out[offset] = source.a as f32;
+    out[offset + 1] = source.b as f32;
+    out[offset + 2] = source.c as f32;
+    out[offset + 3] = source.d as f32;
+    out[offset + 4] = source.tx as f32;
+    out[offset + 5] = source.ty as f32;
 }
 
 impl Default for Matrix {
@@ -666,7 +670,7 @@ impl Default for Matrix {
 
 #[cfg(feature = "object-api")]
 impl Matrix {
-    pub fn new(a: f32, b: f32, c: f32, d: f32, tx: f32, ty: f32) -> Self {
+    pub fn new(a: f64, b: f64, c: f64, d: f64, tx: f64, ty: f64) -> Self {
         return create_matrix(a, b, c, d, tx, ty);
     }
 
@@ -694,19 +698,19 @@ impl Matrix {
         return out;
     }
 
-    pub fn rotated(&self, theta: f32) -> Self {
+    pub fn rotated(&self, theta: f64) -> Self {
         let mut out = Self::default();
         rotate_matrix(&mut out, self, theta);
         return out;
     }
 
-    pub fn scaled(&self, sx: f32, sy: f32) -> Self {
+    pub fn scaled(&self, sx: f64, sy: f64) -> Self {
         let mut out = Self::default();
         scale_matrix(&mut out, self, sx, sy);
         return out;
     }
 
-    pub fn translated(&self, dx: f32, dy: f32) -> Self {
+    pub fn translated(&self, dx: f64, dy: f64) -> Self {
         let mut out = Self::default();
         translate_matrix(&mut out, self, dx, dy);
         return out;

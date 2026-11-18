@@ -118,7 +118,6 @@ pub fn disable_geometry_pool_guards() {
 /// unreachable through the typed release functions. The installed callback
 /// nevertheless preserves the source diagnostic contract for lowerings that
 /// can establish that condition.
-// flight-lint: allow(f64) D1: the injected flight-log clock returns millisecond timestamps
 // flight-lint: allow(conform-params) D5: caller-owned log state and clock replace hidden process state
 pub fn enable_geometry_pool_guards(
     log_state: &LogStateRef,
@@ -131,7 +130,6 @@ pub fn enable_geometry_pool_guards(
     set_geometry_pool_release_guard(Some(guard));
 }
 
-// flight-lint: allow(f64) D1: operation time is a millisecond timestamp
 fn warn_on_double_release(
     log_state: &LogStateRef,
     now_ms: f64,

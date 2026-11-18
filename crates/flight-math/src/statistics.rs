@@ -1,6 +1,5 @@
 use flight_entity::throw_range_error;
 
-// flight-lint: allow(f64) normalization must represent the full finite double input range
 fn finite_absolute_scale(values: &[f64]) -> f64 {
     let mut scale = 0.0_f64;
     let mut i = 0;
@@ -20,7 +19,6 @@ fn finite_absolute_scale(values: &[f64]) -> f64 {
 /// Return the arithmetic mean of `values`.
 ///
 /// Returns `NaN` for empty input. No allocation beyond the accumulator.
-// flight-lint: allow(f64) preserve double inputs and compensated cancellation residuals, including f64::EPSILON / 6
 // flight-lint: allow(conform-array) read-only statistic input widened to ArrayLike (negotiated)
 pub fn mean(values: &[f64]) -> f64 {
     if values.is_empty() {
@@ -40,7 +38,6 @@ pub fn mean(values: &[f64]) -> f64 {
 ///
 /// Allocates a sorted copy — does not mutate the input. Returns `NaN` for an
 /// empty input.
-// flight-lint: allow(f64) preserve double middle values and avoid overflow at f64::MAX or premature underflow
 // flight-lint: allow(conform-array) read-only statistic input widened to ArrayLike (negotiated)
 pub fn median(values: &[f64]) -> f64 {
     if values.is_empty() {
@@ -56,7 +53,6 @@ pub fn median(values: &[f64]) -> f64 {
     };
 }
 
-// flight-lint: allow(f64) double midpoint arithmetic avoids overflow and premature underflow for double inputs
 fn midpoint(a: f64, b: f64) -> f64 {
     if !a.is_finite() || !b.is_finite() {
         return (a + b) / 2.0;
@@ -70,7 +66,6 @@ fn midpoint(a: f64, b: f64) -> f64 {
     return a / 2.0 + b / 2.0;
 }
 
-// flight-lint: allow(f64) compensated accumulation must retain double cancellation residuals
 fn scaled_sum(values: &[f64], scale: f64) -> f64 {
     let mut sum = 0.0_f64;
     let mut correction = 0.0_f64;
@@ -85,7 +80,6 @@ fn scaled_sum(values: &[f64], scale: f64) -> f64 {
     return sum;
 }
 
-// flight-lint: allow(f64) normalized squared deviations require double compensated accumulation
 fn scaled_variance(values: &[f64], scale: f64) -> f64 {
     let normalized_mean = scaled_sum(values, scale) / values.len() as f64;
     let mut sum = 0.0_f64;
@@ -109,7 +103,6 @@ fn scaled_variance(values: &[f64], scale: f64) -> f64 {
 /// Return the population standard deviation of `values`.
 ///
 /// Returns `NaN` for empty input.
-// flight-lint: allow(f64) preserve double input range and normalized squared-deviation precision
 // flight-lint: allow(conform-array) read-only statistic input widened to ArrayLike (negotiated)
 pub fn standard_deviation(values: &[f64]) -> f64 {
     if values.is_empty() {
@@ -125,7 +118,6 @@ pub fn standard_deviation(values: &[f64]) -> f64 {
     return scaled_variance(values, scale).sqrt() * scale;
 }
 
-// flight-lint: allow(f64) fallback retains double NaN and infinity propagation from double inputs
 fn unscaled_mean(values: &[f64]) -> f64 {
     let mut sum = 0.0_f64;
     let mut i = 0;
@@ -136,7 +128,6 @@ fn unscaled_mean(values: &[f64]) -> f64 {
     return sum / values.len() as f64;
 }
 
-// flight-lint: allow(f64) fallback retains double NaN and infinity propagation in squared deviations
 fn unscaled_variance(values: &[f64]) -> f64 {
     let average = unscaled_mean(values);
     let mut sum = 0.0_f64;
@@ -149,7 +140,6 @@ fn unscaled_variance(values: &[f64]) -> f64 {
     return sum / values.len() as f64;
 }
 
-// flight-lint: allow(f64) fallback retains double NaN and infinity propagation for values and weights
 fn unscaled_weighted_average(values: &[f64], weights: &[f64]) -> f64 {
     let mut sum_weights = 0.0_f64;
     let mut sum_product = 0.0_f64;
@@ -169,7 +159,6 @@ fn unscaled_weighted_average(values: &[f64], weights: &[f64]) -> f64 {
 /// Return the population variance of `values`.
 ///
 /// Returns `NaN` for empty input, `0` for a single element.
-// flight-lint: allow(f64) preserve double input range and compensated squared-deviation accumulation
 // flight-lint: allow(conform-array) read-only statistic input widened to ArrayLike (negotiated)
 pub fn variance(values: &[f64]) -> f64 {
     if values.is_empty() {
@@ -194,7 +183,6 @@ pub fn variance(values: &[f64]) -> f64 {
 /// Each `values[i]` is weighted by `weights[i]`. The inputs must have the same
 /// length. Returns `NaN` for empty input or if total weight is `0`. Panics
 /// if `values.len() != weights.len()`.
-// flight-lint: allow(f64) preserve double values and weights through normalized compensated accumulation
 // flight-lint: allow(conform-array) read-only statistic input widened to ArrayLike (negotiated)
 pub fn weighted_average(values: &[f64], weights: &[f64]) -> f64 {
     if values.len() != weights.len() {

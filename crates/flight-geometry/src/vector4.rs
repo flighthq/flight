@@ -8,10 +8,10 @@ use std::sync::LazyLock;
 #[repr(C)]
 pub struct Vector4 {
     runtime: EntityRuntimeSlot,
-    pub x: f32,
-    pub y: f32,
-    pub z: f32,
-    pub w: f32,
+    pub x: f64,
+    pub y: f64,
+    pub z: f64,
+    pub w: f64,
 }
 
 /// The Vector4 class represents a vector or point in four-dimensional space using the
@@ -21,13 +21,13 @@ pub struct Vector4 {
 /// for three-dimensional graphics or homogeneous coordinates, the x, y, and z components
 /// typically represent spatial position, while the w component may be used for perspective
 /// projection or other higher-dimensional calculations.
-pub fn create_vector4(x: f32, y: f32, z: f32, w: f32) -> Vector4 {
+pub fn create_vector4(x: f64, y: f64, z: f64, w: f64) -> Vector4 {
     let mut out: Vector4 = allocate_entity();
     initialize_vector4(&mut out, x, y, z, w);
     return out;
 }
 
-pub fn initialize_vector4(out: &mut Vector4, x: f32, y: f32, z: f32, w: f32) {
+pub fn initialize_vector4(out: &mut Vector4, x: f64, y: f64, z: f64, w: f64) {
     out.x = x;
     out.y = y;
     out.z = z;
@@ -143,18 +143,18 @@ pub fn equals_vector4(a: Option<&Vector4>, b: Option<&Vector4>) -> bool {
 /// Returns the angle in radians between two vectors. The returned angle is the
 /// smallest radian the first Vector4 object rotates until it aligns with the
 /// second Vector4 object.
-pub fn get_vector4_angle_between(a: &Vector4, b: &Vector4) -> f32 {
+pub fn get_vector4_angle_between(a: &Vector4, b: &Vector4) -> f64 {
     let la = get_vector4_length(a);
     let lb = get_vector4_length(b);
     if la == 0.0 || lb == 0.0 {
-        return f32::NAN;
+        return f64::NAN;
     }
     let dot = get_vector4_dot(a, b) / (la * lb);
     return dot.clamp(-1.0, 1.0).acos();
 }
 
 /// Returns the distance between two Vector4 objects.
-pub fn get_vector4_distance(a: &Vector4, b: &Vector4) -> f32 {
+pub fn get_vector4_distance(a: &Vector4, b: &Vector4) -> f64 {
     let dx = b.x - a.x;
     let dy = b.y - a.y;
     let dz = b.z - a.z;
@@ -165,7 +165,7 @@ pub fn get_vector4_distance(a: &Vector4, b: &Vector4) -> f32 {
 /// Returns the distance (squared) between two Vector4 objects.
 ///
 /// This avoids sqrt for better performance.
-pub fn get_vector4_distance_squared(a: &Vector4, b: &Vector4) -> f32 {
+pub fn get_vector4_distance_squared(a: &Vector4, b: &Vector4) -> f64 {
     let dx = b.x - a.x;
     let dy = b.y - a.y;
     let dz = b.z - a.z;
@@ -178,14 +178,14 @@ pub fn get_vector4_distance_squared(a: &Vector4, b: &Vector4) -> f32 {
 /// Unit vertices are vertices that point to the same direction but their length is
 /// one. They remove the length of the vector as a factor in the result. You can use
 /// the `normalize()` method to convert a vector to a unit vector.
-pub fn get_vector4_dot(a: &Vector4, b: &Vector4) -> f32 {
+pub fn get_vector4_dot(a: &Vector4, b: &Vector4) -> f64 {
     return a.x * b.x + a.y * b.y + a.z * b.z + a.w * b.w;
 }
 
 /// The length, magnitude, of the current Vector4 object from the origin (0,0,0,0) to
 /// the object's x, y, z and w coordinates. A unit vector has
 /// a length or magnitude of one.
-pub fn get_vector4_length(source: &Vector4) -> f32 {
+pub fn get_vector4_length(source: &Vector4) -> f64 {
     return (source.x * source.x + source.y * source.y + source.z * source.z + source.w * source.w)
         .sqrt();
 }
@@ -194,7 +194,7 @@ pub fn get_vector4_length(source: &Vector4) -> f32 {
 /// `y`, `z`, and `w` properties. Use the `length_squared()`
 /// method whenever possible instead of the slower `sqrt()` method call of the
 /// `get_vector4_length()` function.
-pub fn get_vector4_length_squared(source: &Vector4) -> f32 {
+pub fn get_vector4_length_squared(source: &Vector4) -> f64 {
     return source.x * source.x + source.y * source.y + source.z * source.z + source.w * source.w;
 }
 
@@ -202,7 +202,7 @@ pub fn get_vector4_length_squared(source: &Vector4) -> f32 {
 /// `t=0` returns `a`; `t=1` returns `b`.
 ///
 /// Safe when `out` aliases `a` or `b` (all inputs are read into locals first).
-pub fn interpolate_vector4(out: &mut Vector4, a: &Vector4, b: &Vector4, t: f32) {
+pub fn interpolate_vector4(out: &mut Vector4, a: &Vector4, b: &Vector4, t: f64) {
     let ax = a.x;
     let ay = a.y;
     let az = a.z;
@@ -276,7 +276,7 @@ pub fn multiply_vector4(out: &mut Vector4, a: &Vector4, b: &Vector4) {
 ///
 /// The two Vector4 objects are nearly equal if the value of all the elements of the two
 /// vertices are equal, or the result of the comparison is within the tolerance range.
-pub fn near_equals_vector4(a: &Vector4, b: &Vector4, tolerance: f32) -> bool {
+pub fn near_equals_vector4(a: &Vector4, b: &Vector4, tolerance: f64) -> bool {
     return (a.x - b.x).abs() < tolerance
         && (a.y - b.y).abs() < tolerance
         && (a.z - b.z).abs() < tolerance
@@ -301,7 +301,7 @@ pub fn negate_vector4(out: &mut Vector4, source: &Vector4) {
 /// (x, y, z and w) by the length of the vector.
 ///
 /// Returns the original length.
-pub fn normalize_vector4(out: &mut Vector4, source: &Vector4) -> f32 {
+pub fn normalize_vector4(out: &mut Vector4, source: &Vector4) -> f64 {
     let x = source.x;
     let y = source.y;
     let z = source.z;
@@ -322,7 +322,7 @@ pub fn normalize_vector4(out: &mut Vector4, source: &Vector4) -> f32 {
 }
 
 /// Offsets each component of the current Vector4 object by a scalar per axis.
-pub fn offset_vector4(out: &mut Vector4, source: &Vector4, dx: f32, dy: f32, dz: f32, dw: f32) {
+pub fn offset_vector4(out: &mut Vector4, source: &Vector4, dx: f64, dy: f64, dz: f64, dw: f64) {
     let x = source.x;
     let y = source.y;
     let z = source.z;
@@ -369,7 +369,7 @@ pub fn reflect_vector4(out: &mut Vector4, incident: &Vector4, normal: &Vector4) 
 
 /// Scales the current Vector4 object by a scalar, a magnitude. The Vector4 object's
 /// x, y, z and w elements are multiplied by the provided scalar number.
-pub fn scale_vector4(out: &mut Vector4, source: &Vector4, scalar: f32) {
+pub fn scale_vector4(out: &mut Vector4, source: &Vector4, scalar: f64) {
     let x = source.x;
     let y = source.y;
     let z = source.z;
@@ -381,26 +381,27 @@ pub fn scale_vector4(out: &mut Vector4, source: &Vector4, scalar: f32) {
 }
 
 /// Sets the members of Vector4 to the specified values.
-pub fn set_vector4(out: &mut Vector4, x: f32, y: f32, z: f32, w: f32) {
+pub fn set_vector4(out: &mut Vector4, x: f64, y: f64, z: f64, w: f64) {
     out.x = x;
     out.y = y;
     out.z = z;
     out.w = w;
 }
 
-/// Reads a Vector4 from a float slice at an element offset.
+// flight-lint: allow(f32) explicit GPU readback boundary
+/// GPU boundary: widens GPU-ready Float32Array values into authoring-space f64 coordinates.
 pub fn set_vector4_from_float32_array(out: &mut Vector4, offset: usize, source: &Float32Array) {
-    out.x = source[offset];
-    out.y = source[offset + 1];
-    out.z = source[offset + 2];
-    out.w = source[offset + 3];
+    out.x = f64::from(source[offset]);
+    out.y = f64::from(source[offset + 1]);
+    out.z = f64::from(source[offset + 2]);
+    out.w = f64::from(source[offset + 3]);
 }
 
 /// Copies the x, y, and z components of a Vector3 into a Vector4, setting w to the
 /// given value. Use `w = 1.0` for a position, `w = 0.0` for a direction.
 ///
 /// Safe when `out` aliases any part of `source`.
-pub fn set_vector4_from_vector3(out: &mut Vector4, source: &Vector3, w: f32) {
+pub fn set_vector4_from_vector3(out: &mut Vector4, source: &Vector3, w: f64) {
     let x = source.x;
     let y = source.y;
     let z = source.z;
@@ -427,17 +428,18 @@ pub fn subtract_vector4(out: &mut Vector4, source: &Vector4, other: &Vector4) {
     out.w = sw - ow;
 }
 
-/// Writes a Vector4 into a float slice at an element offset.
+// flight-lint: allow(f32) explicit GPU submission boundary
+/// GPU boundary: narrows authoring-space f64 coordinates into GPU-ready f32 storage.
 pub fn write_vector4_to_float32_array(out: &mut [f32], offset: usize, source: &Vector4) {
-    out[offset] = source.x;
-    out[offset + 1] = source.y;
-    out[offset + 2] = source.z;
-    out[offset + 3] = source.w;
+    out[offset] = source.x as f32;
+    out[offset + 1] = source.y as f32;
+    out[offset + 2] = source.z as f32;
+    out[offset + 3] = source.w as f32;
 }
 
 #[cfg(feature = "object-api")]
 impl Vector4 {
-    pub fn new(x: f32, y: f32, z: f32, w: f32) -> Self {
+    pub fn new(x: f64, y: f64, z: f64, w: f64) -> Self {
         return create_vector4(x, y, z, w);
     }
 
@@ -447,7 +449,7 @@ impl Vector4 {
         return out;
     }
 
-    pub fn angle_between(&self, other: &Self) -> f32 {
+    pub fn angle_between(&self, other: &Self) -> f64 {
         return get_vector4_angle_between(self, other);
     }
 
@@ -457,11 +459,11 @@ impl Vector4 {
         return out;
     }
 
-    pub fn distance(&self, other: &Self) -> f32 {
+    pub fn distance(&self, other: &Self) -> f64 {
         return get_vector4_distance(self, other);
     }
 
-    pub fn distance_squared(&self, other: &Self) -> f32 {
+    pub fn distance_squared(&self, other: &Self) -> f64 {
         return get_vector4_distance_squared(self, other);
     }
 
@@ -471,21 +473,21 @@ impl Vector4 {
         return out;
     }
 
-    pub fn dot(&self, other: &Self) -> f32 {
+    pub fn dot(&self, other: &Self) -> f64 {
         return get_vector4_dot(self, other);
     }
 
-    pub fn interpolate(&self, other: &Self, t: f32) -> Self {
+    pub fn interpolate(&self, other: &Self, t: f64) -> Self {
         let mut out = Self::default();
         interpolate_vector4(&mut out, self, other, t);
         return out;
     }
 
-    pub fn length(&self) -> f32 {
+    pub fn length(&self) -> f64 {
         return get_vector4_length(self);
     }
 
-    pub fn length_squared(&self) -> f32 {
+    pub fn length_squared(&self) -> f64 {
         return get_vector4_length_squared(self);
     }
 
@@ -507,7 +509,7 @@ impl Vector4 {
         return out;
     }
 
-    pub fn near_equals(&self, other: &Self, tolerance: f32) -> bool {
+    pub fn near_equals(&self, other: &Self, tolerance: f64) -> bool {
         return near_equals_vector4(self, other, tolerance);
     }
 
@@ -523,7 +525,7 @@ impl Vector4 {
         return out;
     }
 
-    pub fn offset(&self, dx: f32, dy: f32, dz: f32, dw: f32) -> Self {
+    pub fn offset(&self, dx: f64, dy: f64, dz: f64, dw: f64) -> Self {
         let mut out = Self::default();
         offset_vector4(&mut out, self, dx, dy, dz, dw);
         return out;
@@ -541,7 +543,7 @@ impl Vector4 {
         return out;
     }
 
-    pub fn scaled(&self, scalar: f32) -> Self {
+    pub fn scaled(&self, scalar: f64) -> Self {
         let mut out = Self::default();
         scale_vector4(&mut out, self, scalar);
         return out;

@@ -7,7 +7,7 @@ use flight_entity::{
 };
 use flight_geometry::contract::*;
 
-fn components(m: &Matrix) -> (f32, f32, f32, f32, f32, f32) {
+fn components(m: &Matrix) -> (f64, f64, f64, f64, f64, f64) {
     return (m.a, m.b, m.c, m.d, m.tx, m.ty);
 }
 

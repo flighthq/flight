@@ -1,9 +1,9 @@
 //! flight-compiler: target-native
 
 use flight_geometry::contract::*;
-use std::f32::consts::PI;
+use std::f64::consts::PI;
 
-fn assert_approx(actual: f32, expected: f32) {
+fn assert_approx(actual: f64, expected: f64) {
     let diff = (actual - expected).abs();
     assert!(
         diff < 1e-4,
@@ -11,7 +11,7 @@ fn assert_approx(actual: f32, expected: f32) {
     );
 }
 
-fn assert_approx_tight(actual: f32, expected: f32) {
+fn assert_approx_tight(actual: f64, expected: f64) {
     let diff = (actual - expected).abs();
     assert!(
         diff < 1e-6,
@@ -296,7 +296,7 @@ mod append_translation_matrix4 {
     #[test]
     fn copies_the_whole_source_matrix_when_out_is_a_distinct_object() {
         let source = discriminating_matrix4();
-        let before: [f32; 16] = source.m;
+        let before: [f64; 16] = source.m;
         let mut out = create_matrix4_from_values(
             9.0, 9.0, 9.0, 9.0, 9.0, 9.0, 9.0, 9.0, 9.0, 9.0, 9.0, 9.0, 9.0, 9.0, 9.0, 9.0,
         );
@@ -420,7 +420,7 @@ mod copy_matrix4 {
         set_matrix4(
             &mut m, 0.0, 1.0, 0.0, 0.0, -1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 7.0, 8.0, 9.0, 1.0,
         );
-        let expected: [f32; 16] = m.m;
+        let expected: [f64; 16] = m.m;
 
         let m_copy = clone_matrix4(&m);
         copy_matrix4(&mut m, &m_copy);
@@ -475,7 +475,7 @@ mod copy_matrix4_column_from_vector4 {
 
             copy_matrix4_column_from_vector4(&mut m, column, &create_vector4(1.0, 2.0, 3.0, 4.0));
 
-            let mut expected = [0.0f32; 16];
+            let mut expected = [0.0f64; 16];
             expected[column * 4] = 1.0;
             expected[column * 4 + 1] = 2.0;
             expected[column * 4 + 2] = 3.0;
@@ -521,10 +521,10 @@ mod copy_matrix4_column_to_vector4 {
             let mut out = create_vector4(0.0, 0.0, 0.0, 0.0);
             copy_matrix4_column_to_vector4(&mut out, column, &m);
 
-            assert_eq!(out.x, (column * 4 + 1) as f32);
-            assert_eq!(out.y, (column * 4 + 2) as f32);
-            assert_eq!(out.z, (column * 4 + 3) as f32);
-            assert_eq!(out.w, (column * 4 + 4) as f32);
+            assert_eq!(out.x, (column * 4 + 1) as f64);
+            assert_eq!(out.y, (column * 4 + 2) as f64);
+            assert_eq!(out.z, (column * 4 + 3) as f64);
+            assert_eq!(out.w, (column * 4 + 4) as f64);
         }
     }
 }
@@ -575,7 +575,7 @@ mod copy_matrix4_row_from_vector4 {
 
             copy_matrix4_row_from_vector4(&mut m, row, &create_vector4(1.0, 2.0, 3.0, 4.0));
 
-            let mut expected = [0.0f32; 16];
+            let mut expected = [0.0f64; 16];
             expected[row] = 1.0;
             expected[row + 4] = 2.0;
             expected[row + 8] = 3.0;
@@ -621,10 +621,10 @@ mod copy_matrix4_row_to_vector4 {
             let mut out = create_vector4(0.0, 0.0, 0.0, 0.0);
             copy_matrix4_row_to_vector4(&mut out, row, &m);
 
-            assert_eq!(out.x, (row + 1) as f32);
-            assert_eq!(out.y, (row + 5) as f32);
-            assert_eq!(out.z, (row + 9) as f32);
-            assert_eq!(out.w, (row + 13) as f32);
+            assert_eq!(out.x, (row + 1) as f64);
+            assert_eq!(out.y, (row + 5) as f64);
+            assert_eq!(out.z, (row + 9) as f64);
+            assert_eq!(out.w, (row + 13) as f64);
         }
     }
 }
@@ -966,7 +966,7 @@ mod get_matrix4_position {
     #[test]
     fn does_not_mutate_the_source_matrix() {
         let m = create_matrix4();
-        let snapshot: [f32; 16] = m.m;
+        let snapshot: [f64; 16] = m.m;
 
         let mut out = create_vector3(0.0, 0.0, 0.0);
         get_matrix4_position(&mut out, &m);
@@ -1313,12 +1313,12 @@ mod matrix4_transform_vectors {
         let vectors: [f32; 6] = [0.0, 0.0, 0.0, 1.0, 0.0, 0.0];
         let mut out = [0.0f32; 6];
         matrix4_transform_vectors(&mut out, &m, &vectors);
-        assert_approx(out[0], 1.0);
-        assert_approx(out[1], 2.0);
-        assert_approx(out[2], 3.0);
-        assert_approx(out[3], 2.0);
-        assert_approx(out[4], 2.0);
-        assert_approx(out[5], 3.0);
+        assert_approx(f64::from(out[0]), 1.0);
+        assert_approx(f64::from(out[1]), 2.0);
+        assert_approx(f64::from(out[2]), 3.0);
+        assert_approx(f64::from(out[3]), 2.0);
+        assert_approx(f64::from(out[4]), 2.0);
+        assert_approx(f64::from(out[5]), 3.0);
     }
 
     #[test]
@@ -1423,8 +1423,8 @@ mod multiply_matrix4 {
         let b_copy = clone_matrix4(&b);
         scale_matrix4(&mut b, &b_copy, 2.0, 2.0, 2.0);
 
-        let a_before: [f32; 16] = a.m;
-        let b_before: [f32; 16] = b.m;
+        let a_before: [f64; 16] = a.m;
+        let b_before: [f64; 16] = b.m;
 
         let mut result = create_matrix4();
         multiply_matrix4(&mut result, &a, &b);
@@ -1759,7 +1759,7 @@ mod rotate_matrix4 {
 
     #[test]
     fn matches_the_quaternion_rotation_path_for_an_asymmetric_unit_axis() {
-        let inverse_length = 1.0 / 14.0f32.sqrt();
+        let inverse_length = 1.0 / 14.0f64.sqrt();
         let axis = create_vector3(2.0 * inverse_length, inverse_length, 3.0 * inverse_length);
         let radians = PI / 3.0;
         let mut quaternion = create_quaternion(0.0, 0.0, 0.0, 1.0);
@@ -2102,7 +2102,7 @@ mod set_matrix4_from_float32_array {
         let mut m = create_matrix4();
         set_matrix4_from_float32_array(&mut m, 0, &arr);
         for i in 0..16 {
-            assert_eq!(m.m[i], (i + 1) as f32);
+            assert_eq!(m.m[i], (i + 1) as f64);
         }
     }
 
@@ -2115,7 +2115,7 @@ mod set_matrix4_from_float32_array {
         let mut m = create_matrix4();
         set_matrix4_from_float32_array(&mut m, 4, &arr);
         for i in 0..16 {
-            assert_eq!(m.m[i], (i + 5) as f32);
+            assert_eq!(m.m[i], (i + 5) as f64);
         }
     }
 
@@ -2140,7 +2140,7 @@ mod set_matrix4_from_matrix {
         let mat2d = create_matrix(1.0, 0.0, 0.0, 1.0, 0.0, 0.0);
         let mut mat = create_matrix4();
         set_matrix4_from_matrix(&mut mat, &mat2d);
-        let expected: [f32; 16] = [
+        let expected: [f64; 16] = [
             1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0,
         ];
         assert_eq!(mat.m, expected);
@@ -2171,7 +2171,7 @@ mod set_matrix4_from_matrix3 {
         let mat3 = create_matrix3();
         let mut mat = create_matrix4();
         set_matrix4_from_matrix3(&mut mat, &mat3);
-        let expected: [f32; 16] = [
+        let expected: [f64; 16] = [
             1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0,
         ];
         assert_eq!(mat.m, expected);
@@ -2350,7 +2350,7 @@ mod set_matrix4_position {
     #[test]
     fn does_not_modify_other_matrix_values() {
         let mut m = create_matrix4();
-        let before: [f32; 16] = m.m;
+        let before: [f64; 16] = m.m;
         set_matrix4_position(&mut m, &create_vector3(1.0, 2.0, 3.0));
 
         assert_eq!(m.m[0], before[0]);
@@ -2402,7 +2402,7 @@ mod set_perspective_matrix4 {
     #[test]
     fn evaluates_the_infinite_far_projection_limit_without_nan() {
         let mut m = create_matrix4();
-        set_perspective_matrix4(&mut m, 0.5, 1.6, 0.1, f32::INFINITY);
+        set_perspective_matrix4(&mut m, 0.5, 1.6, 0.1, f64::INFINITY);
         assert!(m.m.iter().all(|v| v.is_finite()));
         assert_eq!(m.m[10], -1.0);
         assert_approx(m.m[14], -0.2);
@@ -2426,7 +2426,7 @@ mod set_perspective_matrix4 {
     fn projects_a_point_to_clip_w_equals_negative_z_eye() {
         let mut m = create_matrix4();
         set_perspective_matrix4(&mut m, 0.5, 1.6, 0.1, 1000.0);
-        let z_eye: f32 = -5.0;
+        let z_eye: f64 = -5.0;
         let w_clip = m.m[3] * 2.0 + m.m[7] * 3.0 + m.m[11] * z_eye + m.m[15] * 1.0;
         assert_eq!(w_clip, 5.0);
     }
@@ -2630,7 +2630,7 @@ mod write_matrix4_to_float32_array {
         let mut arr = [0.0f32; 16];
         write_matrix4_to_float32_array(&mut arr, 0, &m);
         for i in 0..16 {
-            assert_eq!(arr[i], m.m[i]);
+            assert_eq!(arr[i], m.m[i] as f32);
         }
     }
 
@@ -2642,7 +2642,7 @@ mod write_matrix4_to_float32_array {
         let mut arr = [0.0f32; 20];
         write_matrix4_to_float32_array(&mut arr, 4, &m);
         for i in 0..16 {
-            assert_eq!(arr[4 + i], m.m[i]);
+            assert_eq!(arr[4 + i], m.m[i] as f32);
         }
         assert_eq!(arr[0], 0.0);
         assert_eq!(arr[3], 0.0);

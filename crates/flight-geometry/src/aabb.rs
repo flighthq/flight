@@ -13,7 +13,7 @@ pub struct Aabb {
 }
 
 /// Creates an axis-aligned bounding box from explicit min/max corner components.
-pub fn create_aabb(min_x: f32, min_y: f32, min_z: f32, max_x: f32, max_y: f32, max_z: f32) -> Aabb {
+pub fn create_aabb(min_x: f64, min_y: f64, min_z: f64, max_x: f64, max_y: f64, max_z: f64) -> Aabb {
     let mut out: Aabb = allocate_entity();
     initialize_aabb(
         &mut out,
@@ -245,12 +245,12 @@ pub fn is_aabb_intersecting_sphere(aabb: &Aabb, sphere: &BoundingSphere) -> bool
 /// Sets the min and max corners of an axis-aligned bounding box from explicit components.
 pub fn set_aabb(
     out: &mut Aabb,
-    min_x: f32,
-    min_y: f32,
-    min_z: f32,
-    max_x: f32,
-    max_y: f32,
-    max_z: f32,
+    min_x: f64,
+    min_y: f64,
+    min_z: f64,
+    max_x: f64,
+    max_y: f64,
+    max_z: f64,
 ) {
     out.min.x = min_x;
     out.min.y = min_y;
@@ -263,12 +263,12 @@ pub fn set_aabb(
 /// Computes the tight axis-aligned bounding box of a set of points. An empty list yields an
 /// empty box (min = +Infinity, max = -Infinity).
 pub fn set_aabb_from_points(out: &mut Aabb, points: &[Vector3]) {
-    let mut min_x = f32::INFINITY;
-    let mut min_y = f32::INFINITY;
-    let mut min_z = f32::INFINITY;
-    let mut max_x = f32::NEG_INFINITY;
-    let mut max_y = f32::NEG_INFINITY;
-    let mut max_z = f32::NEG_INFINITY;
+    let mut min_x = f64::INFINITY;
+    let mut min_y = f64::INFINITY;
+    let mut min_z = f64::INFINITY;
+    let mut max_x = f64::NEG_INFINITY;
+    let mut max_y = f64::NEG_INFINITY;
+    let mut max_z = f64::NEG_INFINITY;
 
     for i in 0..points.len() {
         let p = &points[i];
@@ -364,7 +364,7 @@ pub fn union_aabb(out: &mut Aabb, a: &Aabb, b: &Aabb) {
 
 #[cfg(feature = "object-api")]
 impl Aabb {
-    pub fn new(min_x: f32, min_y: f32, min_z: f32, max_x: f32, max_y: f32, max_z: f32) -> Self {
+    pub fn new(min_x: f64, min_y: f64, min_z: f64, max_x: f64, max_y: f64, max_z: f64) -> Self {
         return create_aabb(min_x, min_y, min_z, max_x, max_y, max_z);
     }
 

@@ -4,6 +4,8 @@
 
 use flight_entity::{Float32Array, Int16Array, Uint16Array};
 
+// flight-lint: allow(f32) explicit GPU storage boundary
+/// GPU boundary: preserves Float32Array storage used for vertex and uniform submission.
 pub fn reserve_float32_array(array: Box<Float32Array>, capacity: usize) -> Box<Float32Array> {
     if array.len() >= capacity {
         return array;

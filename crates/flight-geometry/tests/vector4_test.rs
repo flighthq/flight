@@ -1,9 +1,9 @@
 //! flight-compiler: target-native
 
 use flight_geometry::contract::*;
-use std::f32::consts::PI;
+use std::f64::consts::PI;
 
-fn assert_approx(actual: f32, expected: f32) {
+fn assert_approx(actual: f64, expected: f64) {
     let diff = (actual - expected).abs();
     assert!(
         diff < 1e-4,
@@ -11,7 +11,7 @@ fn assert_approx(actual: f32, expected: f32) {
     );
 }
 
-fn assert_approx_tight(actual: f32, expected: f32) {
+fn assert_approx_tight(actual: f64, expected: f64) {
     let diff = (actual - expected).abs();
     assert!(
         diff < 1e-6,
@@ -453,11 +453,11 @@ mod equals_vector4 {
 
     #[test]
     fn holds_a_vector_equal_to_itself_even_with_a_nan_component() {
-        let nan_vec = create_vector4(f32::NAN, 2.0, 3.0, 4.0);
+        let nan_vec = create_vector4(f64::NAN, 2.0, 3.0, 4.0);
         assert!(equals_vector4(Some(&nan_vec), Some(&nan_vec)));
         assert!(!equals_vector4(
             Some(&nan_vec),
-            Some(&create_vector4(f32::NAN, 2.0, 3.0, 4.0))
+            Some(&create_vector4(f64::NAN, 2.0, 3.0, 4.0))
         ));
     }
 }
@@ -493,7 +493,7 @@ mod get_vector4_distance {
     fn returns_the_distance_between_two_vectors() {
         let a = create_vector4(1.0, 1.0, 1.0, 1.0);
         let b = create_vector4(4.0, 5.0, 6.0, 5.0);
-        assert_approx(get_vector4_distance(&a, &b), 66.0_f32.sqrt());
+        assert_approx(get_vector4_distance(&a, &b), 66.0_f64.sqrt());
     }
 }
 

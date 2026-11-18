@@ -1,9 +1,9 @@
 //! flight-compiler: target-native
 
 use flight_geometry::contract::*;
-use std::f32::consts::PI;
+use std::f64::consts::PI;
 
-fn assert_approx(actual: f32, expected: f32) {
+fn assert_approx(actual: f64, expected: f64) {
     let diff = (actual - expected).abs();
     assert!(
         diff < 1e-4,
@@ -11,7 +11,7 @@ fn assert_approx(actual: f32, expected: f32) {
     );
 }
 
-fn assert_approx_tight(actual: f32, expected: f32) {
+fn assert_approx_tight(actual: f64, expected: f64) {
     let diff = (actual - expected).abs();
     assert!(
         diff < 1e-6,
@@ -19,7 +19,7 @@ fn assert_approx_tight(actual: f32, expected: f32) {
     );
 }
 
-fn assert_quaternion_close(q: &Quaternion, x: f32, y: f32, z: f32, w: f32) {
+fn assert_quaternion_close(q: &Quaternion, x: f64, y: f64, z: f64, w: f64) {
     assert_approx_tight(q.x, x);
     assert_approx_tight(q.y, y);
     assert_approx_tight(q.z, z);
@@ -183,7 +183,7 @@ mod get_quaternion_axis_angle {
     #[test]
     fn extracts_a_diagonal_axis_correctly() {
         let mut q = create_quaternion(0.0, 0.0, 0.0, 1.0);
-        let inv_sqrt3 = 1.0_f32 / 3.0_f32.sqrt();
+        let inv_sqrt3 = 1.0_f64 / 3.0_f64.sqrt();
         let in_axis = create_vector3(inv_sqrt3, inv_sqrt3, inv_sqrt3);
         set_quaternion_from_axis_angle(&mut q, &in_axis, 1.5);
         let mut out_axis = create_vector3(0.0, 0.0, 0.0);
@@ -324,9 +324,9 @@ mod get_quaternion_euler {
 
     fn run_fuzz_test(order: EulerOrder, order_char: u8) {
         let mut seed: i32 = 0x9e3779b9_u32 as i32 ^ (order_char as i32);
-        let mut next = || -> f32 {
+        let mut next = || -> f64 {
             seed = seed.wrapping_mul(1664525).wrapping_add(1013904223);
-            return ((seed as u32) as f64 / 0xFFFFFFFF_u64 as f64) as f32 * 2.0 - 1.0;
+            return (seed as u32) as f64 / 0xFFFFFFFF_u64 as f64 * 2.0 - 1.0;
         };
         let mut q = create_quaternion(0.0, 0.0, 0.0, 1.0);
         let mut back = create_quaternion(0.0, 0.0, 0.0, 1.0);
@@ -944,7 +944,7 @@ mod slerp_quaternion {
 
     #[test]
     fn halfway_interpolates_about_a_tilted_axis() {
-        let inv_sqrt14 = 1.0_f32 / 14.0_f32.sqrt();
+        let inv_sqrt14 = 1.0_f64 / 14.0_f64.sqrt();
         let axis = create_vector3(1.0 * inv_sqrt14, 2.0 * inv_sqrt14, 3.0 * inv_sqrt14);
         let a = create_quaternion(0.0, 0.0, 0.0, 1.0);
         let mut b = create_quaternion(0.0, 0.0, 0.0, 1.0);
@@ -960,7 +960,7 @@ mod slerp_quaternion {
 
     #[test]
     fn takes_the_shortest_path_when_inputs_face_opposite_hemispheres() {
-        let inv_sqrt14 = 1.0_f32 / 14.0_f32.sqrt();
+        let inv_sqrt14 = 1.0_f64 / 14.0_f64.sqrt();
         let axis = create_vector3(1.0 * inv_sqrt14, 2.0 * inv_sqrt14, 3.0 * inv_sqrt14);
         let a = create_quaternion(0.0, 0.0, 0.0, 1.0);
         let mut far = create_quaternion(0.0, 0.0, 0.0, 1.0);
