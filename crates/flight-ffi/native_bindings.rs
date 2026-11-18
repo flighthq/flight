@@ -288,6 +288,35 @@ fn validate_vec_result_helpers(file: &syn::File) {
     }
 }
 
+// `#[doc = "ffi-param <name>: <note>"]` attributes the generator writes for parameters whose
+// ownership is not obvious from the pointer shape (a transferred box, a cloned Ref handle).
+fn get_param_ownership_notes(function: &syn::ItemFn) -> BTreeMap<String, String> {
+    let mut notes = BTreeMap::new();
+    for attribute in &function.attrs {
+        let syn::Meta::NameValue(meta) = &attribute.meta else {
+            continue;
+        };
+        if !meta.path.is_ident("doc") {
+            continue;
+        }
+        let syn::Expr::Lit(syn::ExprLit {
+            lit: syn::Lit::Str(text),
+            ..
+        }) = &meta.value
+        else {
+            continue;
+        };
+        let text = text.value();
+        if let Some((name, note)) = text
+            .strip_prefix("ffi-param ")
+            .and_then(|rest| rest.split_once(": "))
+        {
+            notes.insert(name.to_string(), note.to_string());
+        }
+    }
+    return notes;
+}
+
 fn type_fingerprint(ty: &Type) -> String {
     match ty {
         Type::Path(path) => path
@@ -579,6 +608,7 @@ typedef struct FlightShapeBoundsContextVTable {\n\
         if !name.starts_with("flight_") {
             continue;
         }
+        let notes = get_param_ownership_notes(&function);
         let result = match &function.sig.output {
             ReturnType::Default => None,
             ReturnType::Type(_, ty) => Some(carrier(ty)),
@@ -602,7 +632,11 @@ typedef struct FlightShapeBoundsContextVTable {\n\
                 c_params.push(bare_fn_c_type(function, &arg));
                 call_args.push(format!("({}){arg}", bare_fn_c_type(function, "")));
             } else {
-                c_params.push(format!("{} {arg}", ty.c));
+                let note = notes
+                    .get(&parameter_name)
+                    .map(|note| format!(" /* {note} */"))
+                    .unwrap_or_default();
+                c_params.push(format!("{} {arg}{note}", ty.c));
                 call_args.push(format!("({}){arg}", ty.c));
             }
             hl_params.push(format!("{} {arg}", ty.hl));

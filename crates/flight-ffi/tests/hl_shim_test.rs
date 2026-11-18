@@ -91,7 +91,7 @@ fn skip_reduction_carriers_have_exact_header_and_hashlink_registrations() {
             "DEFINE_PRIM(_VOID, flight_set_texture_source__texture, _BYTES _BYTES);",
         ),
         (
-            "void flight_set_cube_texture_face(void * arg0, size_t arg1, void * arg2);",
+            "void flight_set_cube_texture_face(void * arg0, size_t arg1, void * arg2 /* cloned; caller retains its handle */);",
             "DEFINE_PRIM(_VOID, flight_set_cube_texture_face, _BYTES _I32 _BYTES);",
         ),
         // Option<scalar tuple> -> bool presence + typed out references.
@@ -168,7 +168,6 @@ fn non_entity_create_result_uses_inner_carriers_and_owned_ref_handles() {
     for line in [
         "pub unsafe extern \"C\" fn flight_create_menu_item_template(template: *const std::ffi::c_void) -> *mut std::ffi::c_void {",
         "pub unsafe extern \"C\" fn flight_create_default_app_menu_template(app_name: *const std::ffi::c_char) -> *mut std::ffi::c_void {",
-        "pub unsafe extern \"C\" fn flight_create_tray_animation_state(spawn: *const flight_sdk::HostSpawnCapability, timers: *const std::ffi::c_void) -> *mut flight_sdk::TrayAnimationState {",
         "pub unsafe extern \"C\" fn flight_free_menu_item_template_ref(ptr: *mut flight_sdk::Ref<flight_sdk::MenuItemTemplate>) {",
         "    return Box::into_raw(Box::new(flight_sdk::create_safe_area_insets()));",
     ] {
@@ -186,7 +185,6 @@ fn non_entity_create_result_uses_inner_carriers_and_owned_ref_handles() {
     for line in [
         "void * flight_create_menu_item_template(void * arg0);",
         "void * flight_create_default_app_menu_template(const char * arg0);",
-        "void * flight_create_tray_animation_state(void * arg0, void * arg1);",
         "void flight_free_menu_item_template_ref(void * arg0);",
     ] {
         assert_line(&header, line);
@@ -194,7 +192,6 @@ fn non_entity_create_result_uses_inner_carriers_and_owned_ref_handles() {
     for line in [
         "DEFINE_PRIM(_BYTES, flight_create_menu_item_template, _BYTES);",
         "DEFINE_PRIM(_BYTES, flight_create_default_app_menu_template, _BYTES);",
-        "DEFINE_PRIM(_BYTES, flight_create_tray_animation_state, _BYTES _BYTES);",
         "DEFINE_PRIM(_VOID, flight_free_menu_item_template_ref, _BYTES);",
     ] {
         assert_line(&shim, line);
@@ -281,7 +278,7 @@ fn optional_callbacks_lower_to_nullable_typed_function_pointers() {
     let (header, shim) = generated();
     assert_line(
         &header,
-        "bool flight_transition_animation_state_machine(void * arg0, void * arg1, float arg2, float (*arg3)(void *, float), void * arg4);",
+        "bool flight_transition_animation_state_machine(void * arg0, void * arg1 /* ownership transferred; do not use or free after call */, float arg2, float (*arg3)(void *, float), void * arg4);",
     );
     assert_line(
         &shim,
@@ -577,8 +574,8 @@ fn typed_array_refs_share_buffers_through_handle_families() {
     for line in [
         "void * flight_get_audio_resource_channel_data(void * arg0, int32_t arg1);",
         "void * flight_create_audio_resource_from_samples(const void * const * arg0, size_t arg1, float arg2);",
-        "void * flight_create_embedded_audio_resource_reference(void * arg0);",
-        "void * flight_create_embedded_image_resource_reference(void * arg0);",
+        "void * flight_create_embedded_audio_resource_reference(void * arg0 /* cloned; caller retains its handle */);",
+        "void * flight_create_embedded_image_resource_reference(void * arg0 /* cloned; caller retains its handle */);",
     ] {
         assert_line(&header, line);
     }
@@ -754,6 +751,79 @@ fn returned_disposers_lower_to_callable_handles() {
         disposer_wrappers,
         ["pub unsafe extern \"C\" fn flight_reveal_scene3d_resources_on_resolve"]
     );
+}
+
+// By-value ownership follows the Rust signature: a `Copy` value is copied, a Ref/Arc handle is
+// cloned from the caller's borrowed handle, and any other value consumes an FFI-owned box. The C
+// header notes each non-obvious transfer. A by-value type whose ownership cannot be proven (a
+// generic container, or a type no generated function returns owned) is a skip, never a `ptr::read`.
+#[test]
+fn by_value_parameters_follow_rust_ownership() {
+    let (header, shim) = generated();
+    let wrappers = generated_wrappers();
+    assert!(!wrappers.contains("std::ptr::read("));
+    for line in [
+        "void flight_release_vector2(void * arg0 /* ownership transferred; do not use or free after call */);",
+        "void * flight_create_bitmap_region(void * arg0 /* ownership transferred; do not use or free after call */, int32_t arg1, int32_t arg2, int32_t arg3, int32_t arg4);",
+        "void * flight_ease_invert(void * arg0 /* cloned; caller retains its handle */);",
+    ] {
+        assert_line(&header, line);
+    }
+    // Notes never reach the HashLink shim's registrations.
+    assert_line(&shim, "DEFINE_PRIM(_VOID, flight_release_vector2, _BYTES);");
+    assert_line(
+        &wrappers,
+        "    assert!(!v.is_null(), \"v must be an owned Vector2 handle\");",
+    );
+    assert_line(
+        &wrappers,
+        "    flight_sdk::release_vector2(*unsafe { Box::from_raw(v) });",
+    );
+    assert_line(
+        &wrappers,
+        "pub unsafe extern \"C\" fn flight_get_bitmap_pixel_channel(source: *const flight_sdk::Bitmap, x: u32, y: u32, channel: *const flight_sdk::ImageChannel) -> u8 {",
+    );
+    // Every consumed parameter carries a transfer note on its wrapper.
+    let mut notes: Vec<&str> = Vec::new();
+    let mut current_notes: Vec<&str> = Vec::new();
+    let mut transfers = 0;
+    for line in wrappers.lines() {
+        if let Some(note) = line.strip_prefix("#[doc = \"ffi-param ") {
+            notes.push(note);
+        } else if line.starts_with("pub unsafe extern \"C\" fn flight_") {
+            current_notes = std::mem::take(&mut notes);
+        } else if let Some(rest) = line.split("*unsafe { Box::from_raw(").nth(1) {
+            let parameter = rest.split(')').next().unwrap();
+            transfers += 1;
+            assert!(
+                current_notes
+                    .iter()
+                    .any(|note| note.starts_with(&format!("{parameter}: ownership transferred"))),
+                "{parameter} is consumed without a transfer note"
+            );
+        }
+    }
+    assert!(transfers > 0);
+    let stats = generated_stats();
+    for skip in [
+        "unmapped_param(HostSpawnCapability)",
+        "unmapped_param(ParticleFormatCodec)",
+        "unmapped_param(IpcArguments)",
+        "unmapped_param(TargetRef)",
+        "unmapped_param(ByteChunkStream)",
+    ] {
+        assert!(stats.contains(skip), "{skip} must stay skipped");
+    }
+    for symbol in [
+        "flight_create_tray_animation_state",
+        "flight_register_particle_format",
+        "flight_send_ipc_message",
+    ] {
+        assert!(
+            !header.contains(&format!(" {symbol}(")),
+            "{symbol} must stay unwrapped"
+        );
+    }
 }
 
 fn assert_line(text: &str, line: &str) {

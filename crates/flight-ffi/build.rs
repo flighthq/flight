@@ -1,6 +1,6 @@
 mod native_bindings;
 mod public_perimeter;
-use std::collections::BTreeSet;
+use std::collections::{BTreeMap, BTreeSet};
 use std::env;
 use std::fmt::Write as _;
 use std::fs;
@@ -11,6 +11,37 @@ static KNOWN_ENUMS: OnceLock<BTreeSet<String>> = OnceLock::new();
 
 fn is_known_enum(ty: &str) -> bool {
     KNOWN_ENUMS.get().map(|s| s.contains(ty)).unwrap_or(false)
+}
+
+// Every named type's definitions, from source, for by-value ownership; each is flagged with whether
+// its crate root re-exports it by name, which picks the SDK's meaning when two crates share a name.
+static TYPE_DEFINITIONS: OnceLock<BTreeMap<String, Vec<(bool, TypeDefinition)>>> = OnceLock::new();
+
+#[derive(Clone, Debug, PartialEq)]
+enum TypeDefinition {
+    // A struct or enum and whether its derive list includes `Copy`.
+    Nominal { copy: bool },
+    // A non-generic `pub type` alias and its target.
+    Alias(String),
+    // A generic alias, whose by-value ownership the generator does not reason about.
+    GenericAlias,
+}
+
+// Qualified types some generated function returns as an owned box, set before the main pass.
+static PRODUCIBLE_TYPES: OnceLock<BTreeSet<String>> = OnceLock::new();
+// Qualified types a main-pass wrapper consumes by value.
+static TRANSFERRED_TYPES: std::sync::Mutex<BTreeSet<String>> =
+    std::sync::Mutex::new(BTreeSet::new());
+
+// How a by-value parameter of a named type crosses the C ABI (agents/ffi-public-lane.md).
+#[derive(Clone, Copy, Debug, PartialEq)]
+enum OwnedParam {
+    // `Copy`: read from the caller's pointer; the caller keeps its value.
+    Copied,
+    // A `Ref`/`Arc` handle: cloned from the caller's borrowed handle; the caller keeps its handle.
+    Cloned,
+    // Non-`Copy`: the caller's FFI-owned box is consumed and must not be used again.
+    Transferred,
 }
 
 const QUALIFIER: &str = "flight_sdk";
@@ -353,11 +384,18 @@ fn main() {
         std::collections::BTreeMap::new();
 
     let mut enum_names = BTreeSet::new();
+    let mut type_definitions = BTreeMap::new();
     for dir_name in SCAN_CRATES {
         let src_dir = crates_dir.join(dir_name).join("src");
         if !src_dir.exists() {
             continue;
         }
+        let lib_path = src_dir.join("lib.rs");
+        let exported_types = if lib_path.exists() {
+            collect_exported_type_names(&lib_path, &src_dir)
+        } else {
+            BTreeSet::new()
+        };
         let mut entries: Vec<_> = fs::read_dir(&src_dir)
             .unwrap()
             .filter_map(|e| e.ok())
@@ -374,9 +412,30 @@ fn main() {
             }
             let content = fs::read_to_string(entry.path()).unwrap();
             parse_simple_enums(&content, &mut enum_names);
+            parse_type_definitions(&content, &exported_types, &mut type_definitions);
         }
     }
     let _ = KNOWN_ENUMS.set(enum_names);
+    let _ = TYPE_DEFINITIONS.set(type_definitions);
+
+    // A by-value transfer consumes an FFI-owned box, so it maps only for types some generated
+    // function hands C as an owned box. The pre-pass finds those producers; the main pass then
+    // records every transferred type, and the free list must cover each one.
+    let mut producible_types = BTreeSet::new();
+    for dir_name in SCAN_CRATES {
+        let src_dir = crates_dir.join(dir_name).join("src");
+        if !src_dir.exists() {
+            continue;
+        }
+        for func in collect_pub_fns(&src_dir) {
+            if !has_mono_dyn_param(&func) {
+                if let Some((_, Some(boxed_ty))) = generate_ffi_wrapper(&func) {
+                    producible_types.insert(boxed_ty);
+                }
+            }
+        }
+    }
+    let _ = PRODUCIBLE_TYPES.set(producible_types);
 
     for dir_name in SCAN_CRATES {
         let src_dir = crates_dir.join(dir_name).join("src");
@@ -447,6 +506,13 @@ fn main() {
             all_output.push_str(&crate_output);
             writeln!(all_output).unwrap();
         }
+    }
+
+    for transferred in TRANSFERRED_TYPES.lock().unwrap().iter() {
+        assert!(
+            boxed_types.contains(transferred),
+            "{transferred} is transferred by value but no generated function returns it owned"
+        );
     }
 
     let stats_skipped_total: usize = stats_skipped.values().sum();
@@ -1058,6 +1124,164 @@ fn parse_struct_field(line: &str) -> Option<StructField> {
     }
 }
 
+// Records each `pub struct` / `pub enum` with whether its `#[derive(...)]` list (across any
+// attribute and doc lines before it) includes `Copy`, and each `pub type` alias.
+fn parse_type_definitions(
+    content: &str,
+    exported: &BTreeSet<String>,
+    out: &mut BTreeMap<String, Vec<(bool, TypeDefinition)>>,
+) {
+    let mut derives = String::new();
+    let mut in_derive = false;
+    let mut alias: Option<(String, String)> = None;
+    for line in content.lines() {
+        let line = line.trim();
+        if let Some((name, mut target)) = alias.take() {
+            target.push(' ');
+            target.push_str(line);
+            if target.contains(';') {
+                record_alias(&name, &target, exported, out);
+            } else {
+                alias = Some((name, target));
+            }
+            continue;
+        }
+        if in_derive || line.starts_with("#[derive(") {
+            derives.push_str(line);
+            in_derive = !line.contains(")]");
+            continue;
+        }
+        if line.starts_with("#[") || line.starts_with("//") || line.is_empty() {
+            continue;
+        }
+        let declaration = line
+            .strip_prefix("pub struct ")
+            .or_else(|| line.strip_prefix("pub enum "));
+        if let Some(rest) = declaration {
+            let name: String = rest
+                .chars()
+                .take_while(|c| c.is_alphanumeric() || *c == '_')
+                .collect();
+            let copy = derives
+                .split(|c: char| !c.is_alphanumeric())
+                .any(|word| word == "Copy");
+            let is_exported = exported.contains(&name);
+            out.entry(name)
+                .or_default()
+                .push((is_exported, TypeDefinition::Nominal { copy }));
+        } else if let Some(rest) = line.strip_prefix("pub type ") {
+            let name: String = rest
+                .chars()
+                .take_while(|c| c.is_alphanumeric() || *c == '_')
+                .collect();
+            let after_name = &rest[name.len()..];
+            if after_name.trim_start().starts_with('<') {
+                let is_exported = exported.contains(&name);
+                out.entry(name)
+                    .or_default()
+                    .push((is_exported, TypeDefinition::GenericAlias));
+            } else if let Some((_, target)) = after_name.split_once('=') {
+                if target.contains(';') {
+                    record_alias(&name, target, exported, out);
+                } else {
+                    alias = Some((name, target.to_string()));
+                }
+            }
+        }
+        derives.clear();
+    }
+}
+
+fn record_alias(
+    name: &str,
+    target: &str,
+    exported: &BTreeSet<String>,
+    out: &mut BTreeMap<String, Vec<(bool, TypeDefinition)>>,
+) {
+    let target = target.split(';').next().unwrap_or("").trim();
+    let target = strip_crate_paths(&target.split_whitespace().collect::<Vec<_>>().join(" "));
+    out.entry(name.to_string())
+        .or_default()
+        .push((exported.contains(name), TypeDefinition::Alias(target)));
+}
+
+// The by-value ownership of a named, non-generic type, proven from its definitions, or None when
+// it cannot be proven (no exported definition, conflicting definitions, or a generic container).
+fn get_owned_param(ty: &str) -> Option<OwnedParam> {
+    get_owned_param_at_depth(ty.trim(), 0)
+}
+
+fn get_owned_param_at_depth(ty: &str, depth: usize) -> Option<OwnedParam> {
+    if depth > 8 {
+        return None;
+    }
+    if is_scalar(ty) || ty.starts_with("fn(") {
+        return Some(OwnedParam::Copied);
+    }
+    if ty.starts_with("Arc<") || ty.starts_with("Ref<") {
+        return Some(OwnedParam::Cloned);
+    }
+    if let Some((element, length)) = ty
+        .strip_prefix('[')
+        .and_then(|rest| rest.strip_suffix(']'))
+        .and_then(|array| array.split_once(';'))
+    {
+        let copied = length.trim().parse::<usize>().is_ok()
+            && get_owned_param_at_depth(element.trim(), depth + 1) == Some(OwnedParam::Copied);
+        return copied.then_some(OwnedParam::Copied);
+    }
+    if !ty.chars().all(|c| c.is_alphanumeric() || c == '_') {
+        return None;
+    }
+    let definitions = TYPE_DEFINITIONS.get()?.get(ty)?;
+    // Root-exported definitions decide a shared name; otherwise every definition must agree.
+    let exported_only = definitions.iter().any(|(exported, _)| *exported);
+    let mut owned = definitions
+        .iter()
+        .filter(|(exported, _)| *exported || !exported_only)
+        .map(|(_, definition)| match definition {
+            TypeDefinition::Nominal { copy: true } => Some(OwnedParam::Copied),
+            TypeDefinition::Nominal { copy: false } => Some(OwnedParam::Transferred),
+            TypeDefinition::Alias(target) => get_owned_param_at_depth(target, depth + 1),
+            TypeDefinition::GenericAlias => None,
+        });
+    let first = owned.next()??;
+    owned.all(|other| other == Some(first)).then_some(first)
+}
+
+// The C header note for a parameter whose ownership is not obvious from its pointer shape.
+fn get_param_ownership_note(ty: &str) -> Option<&'static str> {
+    const CLONED: &str = "cloned; caller retains its handle";
+    const TRANSFERRED: &str = "ownership transferred; do not use or free after call";
+    let ty = strip_crate_paths(&strip_lifetimes(&resolve_type_alias(ty.trim())));
+    if ty.starts_with('&') {
+        return None;
+    }
+    if ty.starts_with("Ref<") || ty.starts_with("Option<Ref<") {
+        return Some(CLONED);
+    }
+    if let Some(inner) = ty
+        .strip_prefix("Option<")
+        .and_then(|rest| rest.strip_suffix('>'))
+    {
+        if DYN_OPAQUE_TRAITS
+            .iter()
+            .any(|(_, alias)| *alias == inner.trim())
+        {
+            return Some(CLONED);
+        }
+        return None;
+    }
+    if ty.contains('<') || is_scalar(&ty) || is_known_enum(&ty) {
+        return None;
+    }
+    match get_owned_param(&ty)? {
+        OwnedParam::Cloned => Some(CLONED),
+        OwnedParam::Transferred => Some(TRANSFERRED),
+        OwnedParam::Copied => None,
+    }
+}
+
 fn parse_simple_enums(content: &str, out: &mut BTreeSet<String>) {
     let lines: Vec<&str> = content.lines().collect();
     let mut i = 0;
@@ -1347,9 +1571,26 @@ fn generate_ffi_wrapper(func: &ParsedFn) -> Option<(String, Option<String>)> {
     };
     let helpers = generate_vec_result_helpers(&ffi_name, value_wrap);
 
+    if PRODUCIBLE_TYPES.get().is_some() {
+        for param in &func.params {
+            let ty = strip_crate_paths(&strip_lifetimes(&resolve_type_alias(param.ty.trim())));
+            if !ty.contains('<') && get_owned_param(&ty) == Some(OwnedParam::Transferred) {
+                TRANSFERRED_TYPES.lock().unwrap().insert(qualify_type(&ty));
+            }
+        }
+    }
+    // Parameter ownership notes travel as doc attributes into the C header.
+    let notes: String = func
+        .params
+        .iter()
+        .filter_map(|param| {
+            get_param_ownership_note(&param.ty)
+                .map(|note| format!("#[doc = \"ffi-param {}: {note}\"]\n", param.name))
+        })
+        .collect();
     Some((
         format!(
-            "#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn {ffi_name}({params}){ret_decl} {{\n{body}\n}}{helpers}",
+            "{notes}#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn {ffi_name}({params}){ret_decl} {{\n{body}\n}}{helpers}",
             params = ffi_params.join(", "),
         ),
         boxed_ty,
@@ -4179,13 +4420,15 @@ fn map_param_to_ffi(name: &str, ty: &str) -> Option<MappedParam> {
                                 && !elem.starts_with('&')
                                 && !elem.starts_with('[')))
                     {
+                        // Only a `Copy` element type makes the array a plain copy.
+                        if get_owned_param(elem) != Some(OwnedParam::Copied) {
+                            return None;
+                        }
                         let qualified = qualify_type(elem);
                         return mapped_single(
                             name,
                             &format!("*const {qualified}"),
-                            format!(
-                                "unsafe {{ std::ptr::read({name} as *const [{qualified}; {size_str}]) }}"
-                            ),
+                            format!("unsafe {{ *({name} as *const [{qualified}; {size_str}]) }}"),
                         );
                     }
                 }
@@ -4193,14 +4436,39 @@ fn map_param_to_ffi(name: &str, ty: &str) -> Option<MappedParam> {
         }
     }
 
-    // Owned struct T -> *const T (read from pointer)
+    // Owned named T, by its proven ownership: a `Copy` value is copied from `*const T`, a
+    // `Ref`/`Arc` alias is cloned from the caller's borrowed handle, and any other value consumes
+    // the caller's FFI-owned box (`*mut T`, never NULL). Unprovable ownership is a skip.
     if !ty.contains('<') && !ty.contains("::") && !ty.starts_with('[') && !ty.starts_with('(') {
         let qualified = qualify_type(ty);
-        return mapped_single(
-            name,
-            &format!("*const {qualified}"),
-            format!("unsafe {{ std::ptr::read({name}) }}"),
-        );
+        return match get_owned_param(ty)? {
+            OwnedParam::Copied => mapped_single(
+                name,
+                &format!("*const {qualified}"),
+                format!("unsafe {{ *{name} }}"),
+            ),
+            OwnedParam::Cloned => mapped_single(
+                name,
+                &format!("*const {qualified}"),
+                format!("unsafe {{ (*{name}).clone() }}"),
+            ),
+            OwnedParam::Transferred => {
+                // In the pre-pass every transfer is provisional; in the main pass only a type C can
+                // hold as an owned box may be consumed.
+                if let Some(producible) = PRODUCIBLE_TYPES.get() {
+                    if !producible.contains(&qualified) {
+                        return None;
+                    }
+                }
+                Some(MappedParam {
+                    ffi_params: vec![(name.to_string(), format!("*mut {qualified}"))],
+                    bindings: vec![format!(
+                        "    assert!(!{name}.is_null(), \"{name} must be an owned {ty} handle\");"
+                    )],
+                    call_expr: format!("*unsafe {{ Box::from_raw({name}) }}"),
+                })
+            }
+        };
     }
 
     None

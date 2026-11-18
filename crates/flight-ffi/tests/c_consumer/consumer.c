@@ -293,6 +293,20 @@ static void check_string_maps(void) {
   flight_free_storage_set_items_result(NULL);
 }
 
+static void check_by_value_ownership(void) {
+  /* A transferred box belongs to the SDK after the call: the caller neither uses nor frees it. */
+  void *vector = flight_create_vector2(1.0f, 2.0f);
+  flight_release_vector2(vector);
+  void *reused = flight_acquire_vector2();
+  expect(reused != NULL, "acquire_vector2 returns a vector after a release");
+  flight_free_vector2(reused);
+
+  void *bitmap = flight_create_bitmap(2, 2, 0x11223344);
+  void *region = flight_create_bitmap_region(bitmap, 0, 0, 1, 1);
+  expect(region != NULL, "create_bitmap_region takes ownership of the bitmap");
+  flight_free_bitmap_region(region);
+}
+
 static void check_optional_texture_variants(void) {
   void *texture = flight_create_texture(NULL);
   expect(texture != NULL, "create_texture returns a handle");
@@ -534,6 +548,7 @@ int main(void) {
   check_outcome_results();
   check_typed_array_refs();
   check_string_maps();
+  check_by_value_ownership();
   check_optional_texture_variants();
   check_optional_tuples();
   check_unit_signals();
