@@ -116,8 +116,24 @@ fn retained_callbacks_have_explicit_signal_and_geolocation_teardown() {
     assert_eq!(deltas, [100.0]);
     unsafe { crate::flight_free_disposer(disposer) };
 
+    type PositionCallback = Arc<dyn Fn(&flight_sdk::GeolocationPosition) + Send + Sync + 'static>;
+    type ErrorCallback = Arc<dyn Fn(flight_sdk::GeolocationErrorReason) + Send + Sync + 'static>;
+    let retained_position: Arc<Mutex<Option<PositionCallback>>> = Arc::new(Mutex::new(None));
+    let retained_error: Arc<Mutex<Option<ErrorCallback>>> = Arc::new(Mutex::new(None));
+    let weak_position = Arc::new(Mutex::new(None));
+    let weak_error = Arc::new(Mutex::new(None));
+    let clear_position = retained_position.clone();
+    let clear_error = retained_error.clone();
+    let watch_position = retained_position.clone();
+    let watch_error = retained_error.clone();
+    let watch_weak_position = weak_position.clone();
+    let watch_weak_error = weak_error.clone();
     let host = flight_sdk::HostGeolocationCapability {
-        clear_watch: Arc::new(|_| {}),
+        clear_watch: Arc::new(move |id| {
+            assert_eq!(id, 7);
+            clear_position.lock().unwrap().take();
+            clear_error.lock().unwrap().take();
+        }),
         get_current_position: Arc::new(|_| Box::pin(ready(None))),
         get_current_position_result: Arc::new(|_| {
             Box::pin(ready(flight_sdk::GeolocationPositionResult {
@@ -126,11 +142,12 @@ fn retained_callbacks_have_explicit_signal_and_geolocation_teardown() {
             }))
         }),
         is_available: Arc::new(|| true),
-        watch_position: Arc::new(|handler, _, on_error| {
-            let mut position = flight_sdk::GeolocationPosition::default();
-            position.latitude = 51.5;
-            handler(&position);
-            on_error.unwrap()(flight_sdk::GeolocationErrorReason::Denied);
+        watch_position: Arc::new(move |handler, _, on_error| {
+            *watch_weak_position.lock().unwrap() = Some(Arc::downgrade(&handler));
+            *watch_position.lock().unwrap() = Some(handler);
+            let on_error = on_error.unwrap();
+            *watch_weak_error.lock().unwrap() = Some(Arc::downgrade(&on_error));
+            *watch_error.lock().unwrap() = Some(on_error);
             return 7;
         }),
         prompt_for_access: None,
@@ -148,6 +165,35 @@ fn retained_callbacks_have_explicit_signal_and_geolocation_teardown() {
         )
     };
     assert_eq!(id, 7);
+    assert!(positions.is_empty());
+    assert!(errors.is_empty());
+    let mut position = flight_sdk::GeolocationPosition::default();
+    position.latitude = 51.5;
+    retained_position.lock().unwrap().as_ref().unwrap()(&position);
+    retained_error.lock().unwrap().as_ref().unwrap()(flight_sdk::GeolocationErrorReason::Denied);
+    assert_eq!(positions, [51.5_f32]);
+    assert_eq!(errors, [flight_sdk::GeolocationErrorReason::Denied as u32]);
+    unsafe { crate::flight_clear_geolocation_watch(&host, id) };
+    assert!(retained_position.lock().unwrap().is_none());
+    assert!(retained_error.lock().unwrap().is_none());
+    assert!(
+        weak_position
+            .lock()
+            .unwrap()
+            .as_ref()
+            .unwrap()
+            .upgrade()
+            .is_none()
+    );
+    assert!(
+        weak_error
+            .lock()
+            .unwrap()
+            .as_ref()
+            .unwrap()
+            .upgrade()
+            .is_none()
+    );
     assert_eq!(positions, [51.5_f32]);
     assert_eq!(errors, [flight_sdk::GeolocationErrorReason::Denied as u32]);
 }

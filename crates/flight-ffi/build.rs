@@ -1982,7 +1982,7 @@ fn generate_task_m_wrapper(func: &ParsedFn) -> Option<(String, Option<String>)> 
                 element_is_ref: false,
             });
             let mut wrapper = String::from(
-                r#"#[doc = "The callback and context are borrowed only until this function returns."]
+                r#"#[doc = "flight-ffi contract|Callback and context are valid only until this function returns and must not be retained. The callback output buffer is valid only for the callback duration and must not be retained."]
 #[doc = "flight-ffi ownership|owned-return|flight_build_particle_color_curve_result_free|Vec<f32>"]
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn flight_build_particle_color_curve(
@@ -2021,7 +2021,7 @@ pub unsafe extern "C" fn flight_build_particle_color_curve(
             assert_eq!(func.params[1].ty, "&dyn Fn(&mut Vec<ImportDiagnostic>)");
             return Some((
                 String::from(
-                    r#"#[doc = "The callback receives the caller-owned list handle and may use it only until the callback returns."]
+                    r#"#[doc = "flight-ffi contract|Callback and context are valid only until this function returns and must not be retained. The borrowed diagnostic-list handle is valid only for the callback duration and must not be retained or destroyed."]
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn flight_collect_import_diagnostics(out: *mut FfiImportDiagnosticList, run_fn: extern "C" fn(*mut std::ffi::c_void, *mut FfiImportDiagnosticList) -> bool, run_ctx: *mut std::ffi::c_void) -> bool {
     if !is_ffi_import_diagnostic_list(out) { return false; }
@@ -2037,7 +2037,7 @@ pub unsafe extern "C" fn flight_collect_import_diagnostics(out: *mut FfiImportDi
             assert_eq!(func.params[0].ty, "&dyn Fn(&mut Vec<Requirement>)");
             return Some((
                 String::from(
-                    r#"#[doc = "The callback receives a borrowed requirement-list handle valid only until the callback returns."]
+                    r#"#[doc = "flight-ffi contract|Callback and context are valid only until this function returns and must not be retained. The borrowed requirement-list handle is valid only for the callback duration and must not be retained or destroyed."]
 #[doc = "flight-ffi ownership|owned-return|flight_free_requirement_set|flight_sdk::RequirementSet"]
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn flight_collect_scene2d_requirements(
@@ -2065,8 +2065,7 @@ pub unsafe extern "C" fn flight_collect_scene2d_requirements(
             assert_eq!(func.params[1].ty, "&mut dyn FnMut(PathSegment)");
             return Some((
                 String::from(
-                    r#"#[doc = "Segment kinds are 0 move, 1 line, 2 quadratic, 3 cubic and 4 close; unused coordinates are zero."]
-#[doc = "The callback and context are borrowed only until this function returns."]
+                    r#"#[doc = "flight-ffi contract|Segment kind: 0 move, 1 line, 2 quadratic, 3 cubic, 4 close; unused coordinates are zero. Callback and context are valid only until this function returns and must not be retained."]
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn flight_for_each_path_segment(path: *const flight_sdk::Path, visitor_fn: extern "C" fn(*mut std::ffi::c_void, u32, f64, f64, f64, f64, f64, f64) -> bool, visitor_ctx: *mut std::ffi::c_void) -> bool {
     if path.is_null() { return false; }
@@ -2254,10 +2253,13 @@ fn generate_ffi_wrapper(func: &ParsedFn) -> Option<(String, Option<String>)> {
         })
         .collect();
     if func.name == "connect_signal_at_frame_rate" {
-        notes.push_str("#[doc = \"The slot callback and context are retained until flight_call_disposer disconnects them; call it before releasing the context, then free the disposer handle.\"]\n");
+        notes.push_str("#[doc = \"flight-ffi contract|Callback and context are retained until flight_call_disposer disconnects them; call flight_call_disposer before releasing the context, then call flight_free_disposer. Calling flight_free_disposer without first calling flight_call_disposer does not disconnect.\"]\n");
     }
     if func.name == "watch_geolocation_position" {
-        notes.push_str("#[doc = \"The position and optional error callback contexts are retained until flight_clear_geolocation_watch is called for the returned id.\"]\n");
+        notes.push_str("#[doc = \"flight-ffi contract|Handler and error contexts are retained until flight_clear_geolocation_watch(id); caller must keep them alive through the clear call.\"]\n");
+    }
+    if func.name == "write_file_atomic" {
+        notes.push_str("#[doc = \"flight-ffi contract|data_kind tag: 0 means bytes; 1 means UTF-8 text; all other tags are invalid.\"]\n");
     }
     Some((
         format!(

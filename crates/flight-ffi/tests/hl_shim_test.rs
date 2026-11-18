@@ -1051,6 +1051,72 @@ fn returned_disposers_lower_to_callable_handles() {
     );
 }
 
+#[test]
+fn task_m_contract_docs_stay_attached_to_native_symbols() {
+    let (header, shim) = generated();
+    for (comment, ownership, prototype, hl_prim) in [
+        (
+            "Callback and context are retained until flight_call_disposer disconnects them; call flight_call_disposer before releasing the context, then call flight_free_disposer. Calling flight_free_disposer without first calling flight_call_disposer does not disconnect.",
+            Some("Caller owns the return value; call flight_free_disposer when done."),
+            "void * flight_connect_signal_at_frame_rate(void * arg0, double arg1, void (*arg2)(void *, double), void * arg3);",
+            "HL_PRIM vbyte * HL_NAME(flight_connect_signal_at_frame_rate)(vbyte * arg0, double arg1, vbyte * arg2, vbyte * arg3) { return (vbyte *)flight_connect_signal_at_frame_rate((void *)arg0, (double)arg1, (void (*)(void *, double))arg2, (void *)arg3); }",
+        ),
+        (
+            "Handler and error contexts are retained until flight_clear_geolocation_watch(id); caller must keep them alive through the clear call.",
+            None,
+            "int32_t flight_watch_geolocation_position(void * arg0, void (*arg1)(void *, void *), void * arg2, void * arg3, void (*arg4)(void *, uint32_t), void * arg5);",
+            "HL_PRIM int HL_NAME(flight_watch_geolocation_position)(vbyte * arg0, vbyte * arg1, vbyte * arg2, vbyte * arg3, vbyte * arg4, vbyte * arg5) { return (int)flight_watch_geolocation_position((void *)arg0, (void (*)(void *, void *))arg1, (void *)arg2, (void *)arg3, (void (*)(void *, uint32_t))arg4, (void *)arg5); }",
+        ),
+        (
+            "data_kind tag: 0 means bytes; 1 means UTF-8 text; all other tags are invalid.",
+            None,
+            "void flight_write_file_atomic(void * arg0, const char * arg1, uint32_t arg2, const uint8_t * arg3, size_t arg4, void * arg5, void (*arg6)(void *, bool, char *), void * arg7);",
+            "HL_PRIM void HL_NAME(flight_write_file_atomic)(vbyte * arg0, vbyte * arg1, int arg2, vbyte * arg3, int arg4, vbyte * arg5, vbyte * arg6, vbyte * arg7) { flight_write_file_atomic((void *)arg0, (const char *)arg1, (uint32_t)arg2, (const uint8_t *)arg3, (size_t)arg4, (void *)arg5, (void (*)(void *, bool, char *))arg6, (void *)arg7); }",
+        ),
+        (
+            "Segment kind: 0 move, 1 line, 2 quadratic, 3 cubic, 4 close; unused coordinates are zero. Callback and context are valid only until this function returns and must not be retained.",
+            None,
+            "bool flight_for_each_path_segment(void * arg0, bool (*arg1)(void *, uint32_t, double, double, double, double, double, double), void * arg2);",
+            "HL_PRIM bool HL_NAME(flight_for_each_path_segment)(vbyte * arg0, vbyte * arg1, vbyte * arg2) { return (bool)flight_for_each_path_segment((void *)arg0, (bool (*)(void *, uint32_t, double, double, double, double, double, double))arg1, (void *)arg2); }",
+        ),
+        (
+            "Callback and context are valid only until this function returns and must not be retained. The callback output buffer is valid only for the callback duration and must not be retained.",
+            Some(
+                "Caller owns the return value; call flight_build_particle_color_curve_result_free when done.",
+            ),
+            "void * flight_build_particle_color_curve(bool (*arg0)(void *, float, float *), void * arg1, int32_t arg2);",
+            "HL_PRIM vbyte * HL_NAME(flight_build_particle_color_curve)(vbyte * arg0, vbyte * arg1, int arg2) { return (vbyte *)flight_build_particle_color_curve((bool (*)(void *, float, float *))arg0, (void *)arg1, (int32_t)arg2); }",
+        ),
+        (
+            "Callback and context are valid only until this function returns and must not be retained. The borrowed diagnostic-list handle is valid only for the callback duration and must not be retained or destroyed.",
+            None,
+            "bool flight_collect_import_diagnostics(void * arg0, bool (*arg1)(void *, void *), void * arg2);",
+            "HL_PRIM bool HL_NAME(flight_collect_import_diagnostics)(vbyte * arg0, vbyte * arg1, vbyte * arg2) { return (bool)flight_collect_import_diagnostics((void *)arg0, (bool (*)(void *, void *))arg1, (void *)arg2); }",
+        ),
+        (
+            "Callback and context are valid only until this function returns and must not be retained. The borrowed requirement-list handle is valid only for the callback duration and must not be retained or destroyed.",
+            Some("Caller owns the return value; call flight_free_requirement_set when done."),
+            "void * flight_collect_scene2d_requirements(bool (*arg0)(void *, void *), void * arg1);",
+            "HL_PRIM vbyte * HL_NAME(flight_collect_scene2d_requirements)(vbyte * arg0, vbyte * arg1) { return (vbyte *)flight_collect_scene2d_requirements((bool (*)(void *, void *))arg0, (void *)arg1); }",
+        ),
+    ] {
+        let comment = format!("/* {comment} */");
+        let header_contract = match ownership {
+            Some(ownership) => format!("{comment}\n/* {ownership} */\n{prototype}"),
+            None => format!("{comment}\n{prototype}"),
+        };
+        assert!(
+            header.contains(&header_contract),
+            "contract comment drifted from C prototype:\n{header_contract}"
+        );
+        let shim_contract = format!("{comment}\n{hl_prim}");
+        assert!(
+            shim.contains(&shim_contract),
+            "contract comment drifted from HashLink primitive:\n{shim_contract}"
+        );
+    }
+}
+
 // By-value ownership follows the Rust signature: a `Copy` value is copied, a Ref/Arc handle is
 // cloned from the caller's borrowed handle, and any other value consumes an FFI-owned box. The C
 // header notes each non-obvious transfer. A by-value type whose ownership cannot be proven (a

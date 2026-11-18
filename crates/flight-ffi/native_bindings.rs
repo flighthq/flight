@@ -13,6 +13,7 @@ struct Carrier {
 }
 
 const OWNERSHIP_DOC_PREFIX: &str = "flight-ffi ownership|";
+const CONTRACT_DOC_PREFIX: &str = "flight-ffi contract|";
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 enum OwnershipKind {
@@ -471,6 +472,38 @@ fn get_param_ownership_notes(function: &syn::ItemFn) -> BTreeMap<String, String>
         }
     }
     return notes;
+}
+
+// Contract docs use an explicit prefix so ordinary implementation prose never leaks into the
+// consumer ABI. Attribute order is source order, which keeps multiple contract lines stable.
+fn get_function_contracts(function: &syn::ItemFn) -> Vec<String> {
+    let mut contracts = Vec::new();
+    for attribute in &function.attrs {
+        let syn::Meta::NameValue(meta) = &attribute.meta else {
+            continue;
+        };
+        if !meta.path.is_ident("doc") {
+            continue;
+        }
+        let syn::Expr::Lit(syn::ExprLit {
+            lit: syn::Lit::Str(text),
+            ..
+        }) = &meta.value
+        else {
+            continue;
+        };
+        let value = text.value();
+        let Some(contract) = value.strip_prefix(CONTRACT_DOC_PREFIX) else {
+            continue;
+        };
+        assert!(
+            !contract.contains('\n') && !contract.contains("*/"),
+            "{} has a contract doc that cannot be emitted as one C comment",
+            function.sig.ident
+        );
+        contracts.push(contract.to_string());
+    }
+    return contracts;
 }
 
 fn type_fingerprint(ty: &Type) -> String {
@@ -943,6 +976,7 @@ typedef struct FlightShapeBoundsContextVTable {\n\
             continue;
         }
         let notes = get_param_ownership_notes(&function);
+        let contracts = get_function_contracts(&function);
         let result = match &function.sig.output {
             ReturnType::Default => None,
             ReturnType::Type(_, ty) => Some(carrier(ty)),
@@ -997,6 +1031,9 @@ typedef struct FlightShapeBoundsContextVTable {\n\
         } else {
             hl_params.join(", ")
         };
+        for contract in &contracts {
+            writeln!(header, "/* {contract} */").unwrap();
+        }
         if let Some(ownership) = function_ownership(&function) {
             match ownership.kind {
                 OwnershipKind::OwnedReturn => writeln!(
@@ -1032,6 +1069,9 @@ typedef struct FlightShapeBoundsContextVTable {\n\
         } else {
             format!("{call};")
         };
+        for contract in &contracts {
+            writeln!(shim, "/* {contract} */").unwrap();
+        }
         writeln!(
             shim,
             "HL_PRIM {hl_ret} HL_NAME({name})({hl_params}) {{ {body} }}"
