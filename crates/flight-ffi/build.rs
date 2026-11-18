@@ -2042,6 +2042,49 @@ fn ffi_host_callback_or_abort<T>(callback: impl FnOnce() -> T) -> T {
     }
 }
 
+struct FfiHostProviderIdentity {
+    context: usize,
+}
+
+type FfiHostProviderWeak = std::sync::Weak<dyn std::any::Any + Send + Sync>;
+
+static FFI_HOST_PROVIDERS: std::sync::OnceLock<
+    std::sync::Mutex<std::collections::HashMap<usize, FfiHostProviderWeak>>,
+> = std::sync::OnceLock::new();
+
+fn ffi_host_providers(
+) -> &'static std::sync::Mutex<std::collections::HashMap<usize, FfiHostProviderWeak>> {
+    FFI_HOST_PROVIDERS.get_or_init(|| std::sync::Mutex::new(std::collections::HashMap::new()))
+}
+
+impl Drop for FfiHostProviderIdentity {
+    fn drop(&mut self) {
+        let mut providers = ffi_host_providers()
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
+        let this = self as *const Self as *const ();
+        if providers
+            .get(&self.context)
+            .is_some_and(|provider| provider.as_ptr() as *const () == this)
+        {
+            providers.remove(&self.context);
+        }
+    }
+}
+
+fn ffi_host_provider(context: usize) -> flight_sdk::ProviderRef {
+    let mut providers = ffi_host_providers()
+        .lock()
+        .unwrap_or_else(|poisoned| poisoned.into_inner());
+    if let Some(provider) = providers.get(&context).and_then(std::sync::Weak::upgrade) {
+        return provider;
+    }
+    let provider: flight_sdk::ProviderRef =
+        std::sync::Arc::new(FfiHostProviderIdentity { context });
+    providers.insert(context, std::sync::Arc::downgrade(&provider));
+    provider
+}
+
 struct FfiHostFutureState<T> {
     result: Option<Result<T, flight_sdk::FlightError>>,
     waker: Option<std::task::Waker>,
@@ -2494,7 +2537,7 @@ fn generate_host_capability_constructor(
 
     for field in &capability.fields {
         if field.name == "provider" && field.callback.is_none() {
-            fields.push("provider: std::sync::Arc::new(context)".to_string());
+            fields.push("provider: ffi_host_provider(context)".to_string());
             continue;
         }
         let mapping = callbacks
@@ -2530,7 +2573,7 @@ fn generate_host_capability_constructor(
         fields.push(field.name.clone());
     }
 
-    let contract = "The caller-owned context is retained as an integer-backed shared carrier and may outlive the constructor handle when SDK values clone the capability. It may be used from any thread allowed by the Rust capability and must remain valid and thread-safe until both the matching capability free and every SDK value that retained a clone are released; Rust never frees it. Required NULL callbacks reject construction; optional NULL callbacks map to capability absence. Callback argument pointers are borrowed only for the dynamic callback call and must not be retained.";
+    let contract = "The context value identifies one provider across capability constructors and is retained as an integer-backed shared carrier; use distinct stable values for distinct providers. The caller-owned context may outlive the constructor handle when SDK values clone the capability, may be used from any thread allowed by the Rust capability, and must remain valid and thread-safe until both the matching capability free and every SDK value that retained a clone are released; Rust never dereferences or frees it. Required NULL callbacks reject construction; optional NULL callbacks map to capability absence. Callback argument pointers are borrowed only for the dynamic callback call and must not be retained.";
     let carrier_contract = "Retained nested callback and input-sink handles remain Rust-owned and valid until the callback-returned disposer is freed; do not free them. Owned callback returns transfer exactly one Rust-owned carrier. Produce disposer returns with flight_create_disposer. Complete async contexts exactly once with the helper named by that callback field.";
     format!(
         "#[doc = \"flight-ffi ownership|owned-return|{free}|{qualified}\"]\n#[doc = \"flight-ffi contract|{contract}\"]\n#[doc = \"flight-ffi contract|{carrier_contract}\"]\n{callback_contracts}\n#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn {create}({params}) -> *mut {qualified} {{\n    let context = context as usize;\n{required_checks}\n{adapters}\n    Box::into_raw(Box::new({qualified} {{\n        {fields}\n    }}))\n}}\n\n",
