@@ -10,7 +10,7 @@ struct AsyncResult {
 #[test]
 fn callback_collections_and_path_segments_execute_with_bounded_contexts() {
     let curve = unsafe {
-        crate::flight_build_particle_color_curve(sample_particle_color, std::ptr::null_mut(), 2)
+        crate::flight_build_particle_color_curve(z_sample_particle_color, std::ptr::null_mut(), 2)
     };
     assert_eq!(
         unsafe { crate::flight_build_particle_color_curve_result_len(curve) },
@@ -26,7 +26,7 @@ fn callback_collections_and_path_segments_execute_with_bounded_contexts() {
     assert!(unsafe {
         crate::flight_collect_import_diagnostics(
             diagnostics,
-            append_import_diagnostic,
+            z_append_import_diagnostic,
             std::ptr::null_mut(),
         )
     });
@@ -36,13 +36,13 @@ fn callback_collections_and_path_segments_execute_with_bounded_contexts() {
     );
     let kind = unsafe { crate::flight_get_import_diagnostic_list_kind(diagnostics, 0) };
     assert_eq!(
-        unsafe { take_string(kind) }.as_deref(),
+        unsafe { z_take_string(kind) }.as_deref(),
         Some("parse-warning")
     );
     unsafe { crate::flight_destroy_import_diagnostic_list(diagnostics) };
 
     let requirements = unsafe {
-        crate::flight_collect_scene2d_requirements(collect_requirement, std::ptr::null_mut())
+        crate::flight_collect_scene2d_requirements(z_collect_requirement, std::ptr::null_mut())
     };
     assert!(!requirements.is_null());
     assert_eq!(unsafe { &*requirements }.requirements.len(), 1);
@@ -57,7 +57,7 @@ fn callback_collections_and_path_segments_execute_with_bounded_contexts() {
     assert!(unsafe {
         crate::flight_for_each_path_segment(
             &path,
-            collect_segment,
+            z_collect_segment,
             (&mut kinds as *mut Vec<u32>).cast(),
         )
     });
@@ -66,13 +66,13 @@ fn callback_collections_and_path_segments_execute_with_bounded_contexts() {
 
 #[test]
 fn lifetime_data_and_nested_optional_channels_preserve_all_states() {
-    let audio = unsafe { take_string(crate::flight_detect_audio_mime_type(b"fLaC".as_ptr(), 4)) };
+    let audio = unsafe { z_take_string(crate::flight_detect_audio_mime_type(b"fLaC".as_ptr(), 4)) };
     assert_eq!(audio.as_deref(), Some("audio/flac"));
-    let font = unsafe { take_string(crate::flight_detect_font_format(b"wOF2".as_ptr(), 4)) };
+    let font = unsafe { z_take_string(crate::flight_detect_font_format(b"wOF2".as_ptr(), 4)) };
     assert_eq!(font.as_deref(), Some("woff2"));
     let video_bytes = [0x1a, 0x45, 0xdf, 0xa3];
     let video = unsafe {
-        take_string(crate::flight_detect_video_mime_type(
+        z_take_string(crate::flight_detect_video_mime_type(
             video_bytes.as_ptr(),
             video_bytes.len(),
         ))
@@ -104,7 +104,7 @@ fn retained_callbacks_have_explicit_signal_and_geolocation_teardown() {
         crate::flight_connect_signal_at_frame_rate(
             (&signal as *const flight_sdk::Signal<flight_sdk::FrameTick>).cast(),
             10.0,
-            collect_signal_delta,
+            z_collect_signal_delta,
             (&mut deltas as *mut Vec<f64>).cast(),
         )
     };
@@ -140,10 +140,10 @@ fn retained_callbacks_have_explicit_signal_and_geolocation_teardown() {
     let id = unsafe {
         crate::flight_watch_geolocation_position(
             &host,
-            geolocation_position,
+            z_geolocation_position,
             (&mut positions as *mut Vec<f32>).cast(),
             std::ptr::null(),
-            Some(geolocation_error),
+            Some(z_geolocation_error),
             (&mut errors as *mut Vec<u32>).cast(),
         )
     };
@@ -156,7 +156,7 @@ fn retained_callbacks_have_explicit_signal_and_geolocation_teardown() {
 fn write_file_atomic_checks_the_data_tag_and_borrows_each_payload_for_provider_copy() {
     let calls = Arc::new(Mutex::new(Vec::new()));
     let record = calls.clone();
-    let mut host = empty_file_system();
+    let mut host = z_empty_file_system();
     host.write_file_atomic = Some(Arc::new(move |path, data, _| {
         let payload = match data {
             flight_sdk::FileAtomicWriteData::Bytes(value) => {
@@ -182,7 +182,7 @@ fn write_file_atomic_checks_the_data_tag_and_borrows_each_payload_for_provider_c
             [1_u8, 2].as_ptr(),
             2,
             std::ptr::null(),
-            settle_bool,
+            z_settle_bool,
             (&mut bytes_result as *mut AsyncResult).cast(),
         );
     }
@@ -201,7 +201,7 @@ fn write_file_atomic_checks_the_data_tag_and_borrows_each_payload_for_provider_c
             b"hello".as_ptr(),
             5,
             std::ptr::null(),
-            settle_bool,
+            z_settle_bool,
             (&mut text_result as *mut AsyncResult).cast(),
         );
     }
@@ -213,7 +213,7 @@ fn write_file_atomic_checks_the_data_tag_and_borrows_each_payload_for_provider_c
     );
 }
 
-extern "C" fn append_import_diagnostic(
+extern "C" fn z_append_import_diagnostic(
     _context: *mut c_void,
     list: *mut crate::FfiImportDiagnosticList,
 ) -> bool {
@@ -227,7 +227,7 @@ extern "C" fn append_import_diagnostic(
     };
 }
 
-extern "C" fn collect_requirement(
+extern "C" fn z_collect_requirement(
     _context: *mut c_void,
     list: *mut crate::FfiRequirementList,
 ) -> bool {
@@ -243,7 +243,7 @@ extern "C" fn collect_requirement(
 }
 
 // flight-lint: allow(f64) path-segment callback ABI is defined by the SDK
-extern "C" fn collect_segment(
+extern "C" fn z_collect_segment(
     context: *mut c_void,
     kind: u32,
     _a: f64,
@@ -258,11 +258,11 @@ extern "C" fn collect_segment(
 }
 
 // flight-lint: allow(f64) signal callback ABI and frame deltas are defined by the SDK
-extern "C" fn collect_signal_delta(context: *mut c_void, delta: f64) {
+extern "C" fn z_collect_signal_delta(context: *mut c_void, delta: f64) {
     unsafe { &mut *(context as *mut Vec<f64>) }.push(delta);
 }
 
-fn empty_file_system() -> flight_sdk::HostFileSystemCapability {
+fn z_empty_file_system() -> flight_sdk::HostFileSystemCapability {
     return flight_sdk::HostFileSystemCapability {
         provider: Arc::new(()),
         append_text_file: None,
@@ -289,18 +289,18 @@ fn empty_file_system() -> flight_sdk::HostFileSystemCapability {
     };
 }
 
-extern "C" fn geolocation_error(context: *mut c_void, reason: u32) {
+extern "C" fn z_geolocation_error(context: *mut c_void, reason: u32) {
     unsafe { &mut *(context as *mut Vec<u32>) }.push(reason);
 }
 
-extern "C" fn geolocation_position(
+extern "C" fn z_geolocation_position(
     context: *mut c_void,
     position: *const flight_sdk::GeolocationPosition,
 ) {
     unsafe { &mut *(context as *mut Vec<f32>) }.push(unsafe { (*position).latitude });
 }
 
-extern "C" fn sample_particle_color(_context: *mut c_void, value: f32, out: *mut f32) -> bool {
+extern "C" fn z_sample_particle_color(_context: *mut c_void, value: f32, out: *mut f32) -> bool {
     unsafe {
         *out = value;
         *out.add(1) = value + 1.0;
@@ -309,14 +309,14 @@ extern "C" fn sample_particle_color(_context: *mut c_void, value: f32, out: *mut
     return true;
 }
 
-extern "C" fn settle_bool(context: *mut c_void, value: bool, error: *mut std::ffi::c_char) {
+extern "C" fn z_settle_bool(context: *mut c_void, value: bool, error: *mut std::ffi::c_char) {
     let result = unsafe { &mut *(context as *mut AsyncResult) };
     result.value = value;
     result.error = !error.is_null();
     unsafe { crate::flight_free_string(error) };
 }
 
-unsafe fn take_string(value: *mut std::ffi::c_char) -> Option<String> {
+unsafe fn z_take_string(value: *mut std::ffi::c_char) -> Option<String> {
     if value.is_null() {
         return None;
     }

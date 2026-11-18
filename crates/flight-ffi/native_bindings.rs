@@ -120,11 +120,17 @@ impl<'ast> Visit<'ast> for RawOwnerVisitor {
 
 // A callback parameter's C function-pointer type, `ret (*)(params)`; `name` places the declarator
 // (`ret (*name)(params)`). HashLink still carries it as bytes and casts at the call.
-fn bare_fn_c_type(function: &syn::TypeBareFn, name: &str) -> String {
+fn bare_fn_c_type(function: &syn::TypeBareFn, name: &str, typed_scalar_pointers: bool) -> String {
     let inputs: Vec<String> = function
         .inputs
         .iter()
-        .map(|input| carrier(&input.ty).c)
+        .map(|input| {
+            if typed_scalar_pointers {
+                scalar_pointer_c_type(&input.ty).unwrap_or_else(|| carrier(&input.ty).c)
+            } else {
+                carrier(&input.ty).c
+            }
+        })
         .collect();
     let output = match &function.output {
         ReturnType::Default => "void".to_string(),
@@ -198,27 +204,6 @@ fn carrier(ty: &Type) -> Carrier {
                     })
             );
             let is_char = matches!(&*pointer.elem, Type::Path(p) if p.path.segments.last().is_some_and(|s| s.ident == "c_char"));
-            let scalar = match &*pointer.elem {
-                Type::Path(path) => path.path.segments.last().and_then(|segment| {
-                    match segment.ident.to_string().as_str() {
-                        "f32" => Some("float"),
-                        "f64" => Some("double"),
-                        "i8" => Some("int8_t"),
-                        "u8" => Some("uint8_t"),
-                        "i16" => Some("int16_t"),
-                        "u16" => Some("uint16_t"),
-                        "i32" => Some("int32_t"),
-                        "u32" => Some("uint32_t"),
-                        "i64" => Some("int64_t"),
-                        "u64" => Some("uint64_t"),
-                        "isize" => Some("intptr_t"),
-                        "usize" => Some("size_t"),
-                        "bool" => Some("bool"),
-                        _ => None,
-                    }
-                }),
-                _ => None,
-            };
             let c = if is_shape_bounds_vtable {
                 if pointer.const_token.is_some() {
                     "const FlightShapeBoundsContextVTable *".to_string()
@@ -230,12 +215,6 @@ fn carrier(ty: &Type) -> Carrier {
                     "const char *".to_string()
                 } else {
                     "char *".to_string()
-                }
-            } else if let Some(scalar) = scalar {
-                if pointer.const_token.is_some() {
-                    format!("const {scalar} *")
-                } else {
-                    format!("{scalar} *")
                 }
             } else {
                 // Expose SDK pointers as opaque C carriers, matching the generated Haxe handles.
@@ -291,6 +270,49 @@ fn carrier(ty: &Type) -> Carrier {
         }
         _ => panic!("unsupported generated ABI type"),
     }
+}
+
+fn scalar_pointer_c_type(ty: &Type) -> Option<String> {
+    let Type::Ptr(pointer) = ty else {
+        return None;
+    };
+    let Type::Path(path) = &*pointer.elem else {
+        return None;
+    };
+    let scalar = match path.path.segments.last()?.ident.to_string().as_str() {
+        "f32" => "float",
+        "f64" => "double",
+        "i8" => "int8_t",
+        "u8" => "uint8_t",
+        "i16" => "int16_t",
+        "u16" => "uint16_t",
+        "i32" => "int32_t",
+        "u32" => "uint32_t",
+        "i64" => "int64_t",
+        "u64" => "uint64_t",
+        "isize" => "intptr_t",
+        "usize" => "size_t",
+        "bool" => "bool",
+        _ => return None,
+    };
+    return Some(if pointer.const_token.is_some() {
+        format!("const {scalar} *")
+    } else {
+        format!("{scalar} *")
+    });
+}
+
+fn uses_typed_scalar_pointer(function: &str, parameter: &str) -> bool {
+    return matches!(
+        (function, parameter),
+        (
+            "flight_detect_audio_mime_type"
+                | "flight_detect_font_format"
+                | "flight_detect_video_mime_type"
+                | "flight_write_file_atomic",
+            "data_ptr"
+        )
+    );
 }
 
 // flight-ffi returns a scalar tuple through trailing `out_0`, `out_1`, ... `*mut scalar` parameters.
@@ -937,12 +959,20 @@ typedef struct FlightShapeBoundsContextVTable {\n\
                 syn::Pat::Ident(ident) => ident.ident.to_string(),
                 _ => String::new(),
             };
-            let ty = tuple_out_carrier(&parameter_name, &parameter.ty)
+            let mut ty = tuple_out_carrier(&parameter_name, &parameter.ty)
                 .unwrap_or_else(|| carrier(&parameter.ty));
+            if uses_typed_scalar_pointer(&name, &parameter_name) {
+                ty.c = scalar_pointer_c_type(&parameter.ty)
+                    .unwrap_or_else(|| panic!("{name}.{parameter_name} must be a scalar pointer"));
+            }
             let arg = format!("arg{index}");
             if let Some(function) = callback_parameter(&parameter.ty) {
-                c_params.push(bare_fn_c_type(function, &arg));
-                call_args.push(format!("({}){arg}", bare_fn_c_type(function, "")));
+                let typed_scalar_pointers = name == "flight_build_particle_color_curve";
+                c_params.push(bare_fn_c_type(function, &arg, typed_scalar_pointers));
+                call_args.push(format!(
+                    "({}){arg}",
+                    bare_fn_c_type(function, "", typed_scalar_pointers)
+                ));
             } else {
                 let note = notes
                     .get(&parameter_name)

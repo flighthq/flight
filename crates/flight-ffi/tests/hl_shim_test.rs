@@ -531,12 +531,10 @@ fn shared_arc_returns_lower_to_owned_inner_carriers() {
     ] {
         assert_line(&header, line);
     }
-    for skip in [
-        "no_ts_public_export(get_rive_core_object_handler)",
-        "closure_return(Arc<dyn Fn() + Send + Sync>)",
-    ] {
+    for skip in ["no_ts_public_export(get_rive_core_object_handler)"] {
         assert!(stats.contains(skip), "{skip} must stay skipped");
     }
+    assert!(stats.contains("safety_policy_skip(enable_scene3d_resource_failure_guards)"));
 }
 
 // Slice carriers borrow every element for one call: scalar lists as (lists, lengths, count), struct
@@ -1010,13 +1008,14 @@ fn registered_collectors_return_owned_ref_clones() {
     );
 }
 
-// The one approved callback-free returned closure crosses as a callable, freeable disposer handle.
-// Callback-retaining connections remain deferred to the complete closure-carrier work.
+// Approved returned closures cross as callable, independently freeable disposer handles. A
+// callback-retaining connection documents that its context remains live until the disposer runs.
 #[test]
 fn returned_disposers_lower_to_callable_handles() {
     let (header, shim) = generated();
     for line in [
         "void * flight_reveal_scene3d_resources_on_resolve(void * arg0, void * arg1, void * arg2, void * arg3);",
+        "void * flight_connect_signal_at_frame_rate(void * arg0, double arg1, void (*arg2)(void *, double), void * arg3);",
         "bool flight_call_disposer(void * arg0);",
         "void flight_free_disposer(void * arg0);",
     ] {
@@ -1028,9 +1027,14 @@ fn returned_disposers_lower_to_callable_handles() {
         "    return Box::into_raw(Box::new(FfiDisposer { dispose }));",
     );
     assert!(!header.contains(" flight_enable_scene3d_resource_failure_guards("));
-    assert!(!header.contains(" flight_connect_signal_at_frame_rate("));
-    assert!(generated_stats().contains("closure_return(Arc<dyn Fn() + Send + Sync>)"));
-    // The disposer lowering is allowlisted by function name: exactly one wrapper returns it.
+    assert_line(
+        &shim,
+        "DEFINE_PRIM(_BYTES, flight_connect_signal_at_frame_rate, _BYTES _F64 _BYTES _BYTES);",
+    );
+    assert!(
+        generated_stats().contains("safety_policy_skip(enable_scene3d_resource_failure_guards)")
+    );
+    // The disposer lowering is allowlisted by function name: exactly these wrappers return it.
     let wrappers = generated_wrappers();
     let disposer_wrappers: Vec<&str> = wrappers
         .lines()
@@ -1040,7 +1044,10 @@ fn returned_disposers_lower_to_callable_handles() {
         .collect();
     assert_eq!(
         disposer_wrappers,
-        ["pub unsafe extern \"C\" fn flight_reveal_scene3d_resources_on_resolve"]
+        [
+            "pub unsafe extern \"C\" fn flight_reveal_scene3d_resources_on_resolve",
+            "pub unsafe extern \"C\" fn flight_connect_signal_at_frame_rate",
+        ]
     );
 }
 
