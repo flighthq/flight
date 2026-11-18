@@ -48,25 +48,24 @@ mod flight_create_path {
     }
 }
 
-mod flight_get_spritesheet_parse_diagnostic_severity_string {
+mod flight_trigger_haptic_notification {
     use super::*;
 
     #[test]
     fn rejects_values_outside_the_declared_variants() {
         for (probe, value) in [
             (
-                "flight_get_spritesheet_parse_diagnostic_severity_string::just_above_range_probe",
-                "2",
+                "flight_trigger_haptic_notification::just_above_range_probe",
+                "3",
             ),
             (
-                "flight_get_spritesheet_parse_diagnostic_severity_string::large_probe",
+                "flight_trigger_haptic_notification::large_probe",
                 "4294967295",
             ),
         ] {
             let stderr = run_aborting_probe(probe);
-            let message = format!(
-                "value must be a SpritesheetParseDiagnosticSeverity discriminant, got {value}"
-            );
+            let message =
+                format!("type must be a HapticNotificationType discriminant, got {value}");
             assert!(stderr.contains(&message), "{stderr}");
         }
     }
@@ -74,13 +73,13 @@ mod flight_get_spritesheet_parse_diagnostic_severity_string {
     #[test]
     #[ignore = "aborts by design; run by rejects_values_outside_the_declared_variants"]
     fn just_above_range_probe() {
-        unsafe { flight_get_spritesheet_parse_diagnostic_severity_string(2) };
+        unsafe { flight_trigger_haptic_notification(std::ptr::null(), 3) };
     }
 
     #[test]
     #[ignore = "aborts by design; run by rejects_values_outside_the_declared_variants"]
     fn large_probe() {
-        unsafe { flight_get_spritesheet_parse_diagnostic_severity_string(u32::MAX) };
+        unsafe { flight_trigger_haptic_notification(std::ptr::null(), u32::MAX) };
     }
 }
 
