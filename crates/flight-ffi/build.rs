@@ -662,11 +662,25 @@ fn main() {
     }
     host_capability_inventory
         .sort_by(|a, b| (&a.owner, &a.name, &a.source).cmp(&(&b.owner, &b.name, &b.source)));
+    let host_capability_generation =
+        generate_host_capability_support(&host_capability_inventory);
     fs::write(
         out_dir.join("host_capability_inventory.txt"),
-        generate_host_capability_inventory_report(&host_capability_inventory),
+        generate_host_capability_inventory_report(
+            &host_capability_inventory,
+            &host_capability_generation,
+        ),
     )
     .unwrap();
+    all_output.push_str(generate_host_capability_runtime_support());
+    all_output.push_str(&generate_input_ingress_sink_support());
+    all_output.push_str(&host_capability_generation.output);
+    boxed_types.extend(
+        host_capability_generation
+            .supported
+            .iter()
+            .map(|name| format!("flight_sdk::{name}")),
+    );
 
     // Discover owned producers to a fixed point. A wrapper is eligible to produce a handle only
     // after every owned handle it consumes is already producible; consequently a consumer cycle
@@ -1069,7 +1083,6 @@ struct StructField {
     ty: String,
 }
 
-#[derive(Debug)]
 struct HostCapabilityInventory {
     owner: String,
     source: PathBuf,
@@ -1078,17 +1091,24 @@ struct HostCapabilityInventory {
     fields: Vec<HostCapabilityInventoryField>,
 }
 
-#[derive(Debug)]
 struct HostCapabilityInventoryField {
     name: String,
     ty: String,
     callback: Option<HostCapabilityCallback>,
 }
 
-#[derive(Debug)]
 struct HostCapabilityCallback {
     optional: bool,
     signature: String,
+    params: Vec<syn::Type>,
+    output: Option<syn::Type>,
+}
+
+#[derive(Default)]
+struct HostCapabilityGeneration {
+    output: String,
+    supported: BTreeSet<String>,
+    field_decisions: BTreeMap<(String, String, String), String>,
 }
 
 fn collect_pub_fns(src_dir: &Path) -> Vec<ParsedFn> {
@@ -1733,7 +1753,10 @@ fn collect_rust_source_files(dir: &Path) -> Vec<PathBuf> {
     sources
 }
 
-fn generate_host_capability_inventory_report(inventory: &[HostCapabilityInventory]) -> String {
+fn generate_host_capability_inventory_report(
+    inventory: &[HostCapabilityInventory],
+    generation: &HostCapabilityGeneration,
+) -> String {
     let field_count: usize = inventory
         .iter()
         .map(|capability| capability.fields.len())
@@ -1771,11 +1794,12 @@ fn generate_host_capability_inventory_report(inventory: &[HostCapabilityInventor
     for capability in inventory {
         writeln!(
             report,
-            "struct|{}|{}|{}|rust_public={}|ffi_constructor=false|fields={}|callbacks={}",
+            "struct|{}|{}|{}|rust_public={}|ffi_constructor={}|fields={}|callbacks={}",
             capability.owner,
             capability.source.display(),
             capability.name,
             capability.public_reachable,
+            generation.supported.contains(&capability.name),
             capability.fields.len(),
             capability
                 .fields
@@ -1801,6 +1825,16 @@ fn generate_host_capability_inventory_report(inventory: &[HostCapabilityInventor
                 None => writeln!(report, "  field|{}|data|{}", field.name, field.ty),
             }
             .unwrap();
+            let decision = generation
+                .field_decisions
+                .get(&(
+                    capability.owner.clone(),
+                    capability.name.clone(),
+                    field.name.clone(),
+                ))
+                .map(String::as_str)
+                .unwrap_or("unsupported|not-prioritized");
+            writeln!(report, "  decision|{}|{decision}", field.name).unwrap();
         }
     }
     for (signature, count) in signature_families {
@@ -1822,6 +1856,12 @@ fn get_host_capability_callback(
         syn::Type::BareFn(function) => Some(HostCapabilityCallback {
             optional,
             signature: bare_fn_signature(function),
+            params: function
+                .inputs
+                .iter()
+                .map(|input| input.ty.clone())
+                .collect(),
+            output: return_type_value(&function.output),
         }),
         syn::Type::Path(path) if path.qself.is_none() => {
             let segment = path.path.segments.last()?;
@@ -1846,10 +1886,13 @@ fn get_host_capability_callback(
                 let syn::Type::TraitObject(object) = inner else {
                     return None;
                 };
+                let (params, output) = trait_object_callback_parts(object)?;
                 return trait_object_callback_signature(object).map(|signature| {
                     HostCapabilityCallback {
                         optional,
                         signature,
+                        params,
+                        output,
                     }
                 });
             }
@@ -1865,6 +1908,7 @@ fn get_host_capability_callback(
 }
 
 fn trait_object_callback_signature(object: &syn::TypeTraitObject) -> Option<String> {
+    let (inputs, output) = trait_object_callback_parts(object)?;
     let function = object.bounds.iter().find_map(|bound| match bound {
         syn::TypeParamBound::Trait(bound) => {
             let segment = bound.path.segments.last()?;
@@ -1876,17 +1920,36 @@ fn trait_object_callback_signature(object: &syn::TypeTraitObject) -> Option<Stri
         }
         _ => None,
     })?;
-    let syn::PathArguments::Parenthesized(arguments) = &function.arguments else {
-        return None;
-    };
-    let inputs = arguments
-        .inputs
+    let inputs = inputs
         .iter()
         .map(rust_type_text)
         .collect::<Vec<_>>()
         .join(", ");
-    let output = return_type_text(&arguments.output);
+    let output = output
+        .as_ref()
+        .map(|ty| format!(" -> {}", rust_type_text(ty)))
+        .unwrap_or_default();
     Some(format!("{}({inputs}){output}", function.ident))
+}
+
+fn trait_object_callback_parts(
+    object: &syn::TypeTraitObject,
+) -> Option<(Vec<syn::Type>, Option<syn::Type>)> {
+    let function = object.bounds.iter().find_map(|bound| match bound {
+        syn::TypeParamBound::Trait(bound) => {
+            let segment = bound.path.segments.last()?;
+            matches!(segment.ident.to_string().as_str(), "Fn" | "FnMut" | "FnOnce")
+                .then_some(segment)
+        }
+        _ => None,
+    })?;
+    let syn::PathArguments::Parenthesized(arguments) = &function.arguments else {
+        return None;
+    };
+    Some((
+        arguments.inputs.iter().cloned().collect(),
+        return_type_value(&arguments.output),
+    ))
 }
 
 fn bare_fn_signature(function: &syn::TypeBareFn) -> String {
@@ -1905,6 +1968,1132 @@ fn return_type_text(output: &syn::ReturnType) -> String {
         syn::ReturnType::Default => String::new(),
         syn::ReturnType::Type(_, ty) => format!(" -> {}", rust_type_text(ty)),
     }
+}
+
+fn return_type_value(output: &syn::ReturnType) -> Option<syn::Type> {
+    match output {
+        syn::ReturnType::Default => None,
+        syn::ReturnType::Type(_, ty) => Some((**ty).clone()),
+    }
+}
+
+const PRIORITIZED_HOST_CAPABILITIES: &[&str] = &[
+    "HostCanvasCapability",
+    "HostDeviceCapability",
+    "HostGlCapability",
+    "HostInputIngressCapability",
+    "HostLifecycleCapability",
+    "HostScreenChangeCapability",
+    "HostScreenDetailsCapability",
+    "HostScreenPermissionChangeCapability",
+    "HostScreenQueryCapability",
+    "HostSurfaceDisplayCapability",
+    "HostSurfaceResizeCapability",
+    "HostTimerCapability",
+    "HostWgpuCapability",
+    "HostWindowAppearanceCapability",
+    "HostWindowAttachCapability",
+    "HostWindowAttentionCapability",
+    "HostWindowContentProtectionCapability",
+    "HostWindowFocusCapability",
+    "HostWindowFullscreenCapability",
+    "HostWindowGeometryCapability",
+    "HostWindowHierarchyCapability",
+    "HostWindowLifecycleCapability",
+    "HostWindowProgressCapability",
+    "HostWindowShadowCapability",
+    "HostWindowShellCapability",
+    "HostWindowSizeConstraintsCapability",
+    "HostWindowStateCapability",
+    "HostWindowVisibilityCapability",
+    "HostWindowZOrderCapability",
+];
+
+struct HostCallbackParamMapping {
+    ffi_params: Vec<(String, String)>,
+    setup: Vec<String>,
+    call_args: Vec<String>,
+    retained_handles: Vec<String>,
+    decision: String,
+}
+
+struct HostCallbackReturnMapping {
+    extra_ffi_params: Vec<String>,
+    ffi_return: String,
+    body: String,
+    decision: String,
+}
+
+struct HostCallbackMapping {
+    ffi_type: String,
+    trait_type: String,
+    body: String,
+    decision: String,
+}
+
+fn generate_host_capability_runtime_support() -> &'static str {
+    r#"// Host callbacks are foreign boundaries even though Rust invokes them through stored
+// closures. No panic from argument/result conversion may cross that boundary or leave a partially
+// converted Rust value behind.
+fn ffi_host_callback_or_abort<T>(callback: impl FnOnce() -> T) -> T {
+    match std::panic::catch_unwind(std::panic::AssertUnwindSafe(callback)) {
+        Ok(value) => value,
+        Err(_) => std::process::abort(),
+    }
+}
+
+struct FfiHostFutureState<T> {
+    result: Option<Result<T, flight_sdk::FlightError>>,
+    waker: Option<std::task::Waker>,
+}
+
+struct FfiHostFuture<T> {
+    state: std::sync::Arc<std::sync::Mutex<FfiHostFutureState<T>>>,
+}
+
+impl<T> std::future::Future for FfiHostFuture<T> {
+    type Output = Result<T, flight_sdk::FlightError>;
+
+    fn poll(
+        self: std::pin::Pin<&mut Self>,
+        context: &mut std::task::Context<'_>,
+    ) -> std::task::Poll<Self::Output> {
+        let mut state = self.state.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
+        if let Some(result) = state.result.take() {
+            return std::task::Poll::Ready(result);
+        }
+        state.waker = Some(context.waker().clone());
+        std::task::Poll::Pending
+    }
+}
+
+fn ffi_host_future_new<T>() -> (FfiHostFuture<T>, *mut std::ffi::c_void) {
+    let state = std::sync::Arc::new(std::sync::Mutex::new(FfiHostFutureState {
+        result: None,
+        waker: None,
+    }));
+    let completion = std::sync::Arc::into_raw(state.clone()) as *mut std::ffi::c_void;
+    (FfiHostFuture { state }, completion)
+}
+
+unsafe fn ffi_complete_host_future<T>(
+    completion: *mut std::ffi::c_void,
+    result: Result<T, flight_sdk::FlightError>,
+) {
+    assert!(!completion.is_null(), "host future completion context is NULL");
+    let state = unsafe {
+        std::sync::Arc::from_raw(
+            completion as *const std::sync::Mutex<FfiHostFutureState<T>>,
+        )
+    };
+    let waker = {
+        let mut state = state.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
+        assert!(state.result.is_none(), "host future completed more than once");
+        state.result = Some(result);
+        state.waker.take()
+    };
+    if let Some(waker) = waker {
+        waker.wake();
+    }
+}
+
+fn ffi_host_future_error(error: *const std::ffi::c_char) -> flight_sdk::FlightError {
+    assert!(!error.is_null(), "host future error is NULL");
+    flight_sdk::FlightError {
+        kind: flight_sdk::FlightErrorKind::Error,
+        message: unsafe { std::ffi::CStr::from_ptr(error) }
+            .to_str()
+            .expect("host future error must be valid UTF-8")
+            .to_owned(),
+    }
+}
+
+#[doc = "flight-ffi contract|Complete the matching host future exactly once. error is borrowed for this call; NULL means success. value must be a valid ScreenPermissionState discriminant on success."]
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn flight_complete_host_screen_permission_future(
+    completion: *mut std::ffi::c_void,
+    value: u32,
+    error: *const std::ffi::c_char,
+) {
+    ffi_host_callback_or_abort(|| {
+        let result = if error.is_null() {
+            let value = ffi_enum_from_u32!(value, [
+                flight_sdk::ScreenPermissionState::Denied,
+                flight_sdk::ScreenPermissionState::Granted,
+                flight_sdk::ScreenPermissionState::Prompt,
+            ])
+            .expect("host future returned an invalid ScreenPermissionState discriminant");
+            Ok(value)
+        } else {
+            Err(ffi_host_future_error(error))
+        };
+        unsafe { ffi_complete_host_future(completion, result) };
+    });
+}
+
+#[doc = "flight-ffi contract|Complete the matching host future exactly once. error is borrowed for this call; NULL means success."]
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn flight_complete_host_screen_details_request_future(
+    completion: *mut std::ffi::c_void,
+    value: bool,
+    error: *const std::ffi::c_char,
+) {
+    ffi_host_callback_or_abort(|| {
+        let result = if error.is_null() {
+            Ok(value)
+        } else {
+            Err(ffi_host_future_error(error))
+        };
+        unsafe { ffi_complete_host_future(completion, result) };
+    });
+}
+
+#[doc = "flight-ffi contract|Complete the matching host future exactly once. On success value transfers one WgpuHostAcquisition owner to Rust and error is NULL. On failure value is NULL and error is borrowed for this call."]
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn flight_complete_host_wgpu_acquisition_future(
+    completion: *mut std::ffi::c_void,
+    value: *mut flight_sdk::WgpuHostAcquisition,
+    error: *const std::ffi::c_char,
+) {
+    ffi_host_callback_or_abort(|| {
+        let result = if error.is_null() {
+            assert!(!value.is_null(), "successful WGPU completion has no acquisition");
+            Ok(*unsafe { Box::from_raw(value) })
+        } else {
+            assert!(value.is_null(), "failed WGPU completion also supplied an acquisition");
+            Err(ffi_host_future_error(error))
+        };
+        unsafe { ffi_complete_host_future(completion, result) };
+    });
+}
+
+pub struct FfiHostCallback {
+    callback: Box<dyn std::any::Any + Send + Sync>,
+}
+
+struct FfiHostCallbackLease {
+    _callbacks: Vec<Box<FfiHostCallback>>,
+    disposer: Box<FfiDisposer>,
+}
+
+fn ffi_host_disposer_from_raw(
+    disposer: *mut FfiDisposer,
+    callbacks: Vec<Box<FfiHostCallback>>,
+) -> std::sync::Arc<dyn Fn() + Send + Sync> {
+    assert!(!disposer.is_null(), "host callback returned a null disposer");
+    let lease = std::sync::Arc::new(FfiHostCallbackLease {
+        _callbacks: callbacks,
+        disposer: unsafe { Box::from_raw(disposer) },
+    });
+    std::sync::Arc::new(move || (lease.disposer.dispose)())
+}
+
+unsafe fn ffi_host_callback_ref<T: 'static>(
+    callback: *const FfiHostCallback,
+) -> Option<&'static T> {
+    if callback.is_null() {
+        return None;
+    }
+    unsafe { &*callback }.callback.downcast_ref::<T>()
+}
+
+#[doc = "flight-ffi contract|The callback handle is borrowed from a host capability adapter, remains valid until the disposer returned by that adapter is freed, and must not be retained beyond or freed by the caller."]
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn flight_call_host_callback_void(callback: *const FfiHostCallback) -> bool {
+    let Some(callback) = (unsafe {
+        ffi_host_callback_ref::<std::sync::Arc<dyn Fn() + Send + Sync>>(callback)
+    }) else {
+        return false;
+    };
+    std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| callback())).is_ok()
+}
+
+#[doc = "flight-ffi contract|The callback handle is borrowed from a host capability adapter, remains valid until the disposer returned by that adapter is freed, and must not be retained beyond or freed by the caller."]
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn flight_call_host_callback_bool(
+    callback: *const FfiHostCallback,
+    value: bool,
+) -> bool {
+    let Some(callback) = (unsafe {
+        ffi_host_callback_ref::<std::sync::Arc<dyn Fn(bool) + Send + Sync>>(callback)
+    }) else {
+        return false;
+    };
+    std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| callback(value))).is_ok()
+}
+
+#[doc = "flight-ffi contract|The callback handle is borrowed from a host capability adapter, remains valid until the disposer returned by that adapter is freed, and must not be retained beyond or freed by the caller."]
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn flight_call_host_callback_f32_f32(
+    callback: *const FfiHostCallback,
+    value_0: f32,
+    value_1: f32,
+) -> bool {
+    let Some(callback) = (unsafe {
+        ffi_host_callback_ref::<std::sync::Arc<dyn Fn(f32, f32) + Send + Sync>>(callback)
+    }) else {
+        return false;
+    };
+    std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| callback(value_0, value_1))).is_ok()
+}
+
+#[doc = "flight-ffi contract|The callback handle is borrowed from a host capability adapter, remains valid until the disposer returned by that adapter is freed, and must not be retained beyond or freed by the caller."]
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn flight_call_host_callback_f32_f32_f32(
+    callback: *const FfiHostCallback,
+    value_0: f32,
+    value_1: f32,
+    value_2: f32,
+) -> bool {
+    let Some(callback) = (unsafe {
+        ffi_host_callback_ref::<std::sync::Arc<dyn Fn(f32, f32, f32) + Send + Sync>>(callback)
+    }) else {
+        return false;
+    };
+    std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        callback(value_0, value_1, value_2)
+    }))
+    .is_ok()
+}
+
+#[doc = "flight-ffi contract|The callback handle is borrowed from a host capability adapter, remains valid until the disposer returned by that adapter is freed, and must not be retained beyond or freed by the caller. The return value is false for NULL, a type mismatch, or a contained callback panic."]
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn flight_call_host_callback_bool_result(
+    callback: *const FfiHostCallback,
+) -> bool {
+    let Some(callback) = (unsafe {
+        ffi_host_callback_ref::<std::sync::Arc<dyn Fn() -> bool + Send + Sync>>(callback)
+    }) else {
+        return false;
+    };
+    std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| callback())).unwrap_or(false)
+}
+
+#[doc = "flight-ffi contract|The callback handle is borrowed from a host capability adapter, remains valid until the disposer returned by that adapter is freed, and must not be retained beyond or freed by the caller. value must be a valid AppMemoryPressure discriminant."]
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn flight_call_host_callback_app_memory_pressure(
+    callback: *const FfiHostCallback,
+    value: u32,
+) -> bool {
+    let Some(value) = ffi_enum_from_u32!(value, [
+        flight_sdk::AppMemoryPressure::Normal,
+        flight_sdk::AppMemoryPressure::Moderate,
+        flight_sdk::AppMemoryPressure::Critical,
+    ]) else {
+        return false;
+    };
+    let Some(callback) = (unsafe {
+        ffi_host_callback_ref::<
+            std::sync::Arc<dyn Fn(flight_sdk::AppMemoryPressure) + Send + Sync>,
+        >(callback)
+    }) else {
+        return false;
+    };
+    std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| callback(value))).is_ok()
+}
+
+#[doc = "flight-ffi contract|The callback handle is borrowed from a host capability adapter, remains valid until the disposer returned by that adapter is freed, and must not be retained beyond or freed by the caller. event is borrowed only for this call."]
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn flight_call_host_callback_screen_change_event(
+    callback: *const FfiHostCallback,
+    event: *const flight_sdk::ScreenChangeEvent,
+) -> bool {
+    if event.is_null() {
+        return false;
+    }
+    let Some(callback) = (unsafe {
+        ffi_host_callback_ref::<
+            std::sync::Arc<dyn Fn(&flight_sdk::ScreenChangeEvent) + Send + Sync>,
+        >(callback)
+    }) else {
+        return false;
+    };
+    std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| callback(unsafe { &*event }))).is_ok()
+}
+
+#[doc = "flight-ffi contract|The callback handle is borrowed from a host capability adapter, remains valid until the disposer returned by that adapter is freed, and must not be retained beyond or freed by the caller. value must be a valid ScreenPermissionState discriminant."]
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn flight_call_host_callback_screen_permission_state(
+    callback: *const FfiHostCallback,
+    value: u32,
+) -> bool {
+    let Some(value) = ffi_enum_from_u32!(value, [
+        flight_sdk::ScreenPermissionState::Denied,
+        flight_sdk::ScreenPermissionState::Granted,
+        flight_sdk::ScreenPermissionState::Prompt,
+    ]) else {
+        return false;
+    };
+    let Some(callback) = (unsafe {
+        ffi_host_callback_ref::<
+            std::sync::Arc<dyn Fn(flight_sdk::ScreenPermissionState) + Send + Sync>,
+        >(callback)
+    }) else {
+        return false;
+    };
+    std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| callback(value))).is_ok()
+}
+
+"#
+}
+
+fn generate_input_ingress_sink_support() -> String {
+    let callbacks = [
+        ("gamepad_axis_move", "InputGamepadAxisData"),
+        ("gamepad_button_down", "InputGamepadButtonData"),
+        ("gamepad_button_up", "InputGamepadButtonData"),
+        ("gamepad_connect", "InputGamepadConnectData"),
+        ("gamepad_disconnect", "InputGamepadConnectData"),
+        ("key_down", "InputKeyboardData"),
+        ("key_up", "InputKeyboardData"),
+        ("pointer_cancel", "InputPointerData"),
+        ("pointer_down", "InputPointerData"),
+        ("pointer_move", "InputPointerData"),
+        ("pointer_move_relative", "InputPointerData"),
+        ("pointer_up", "InputPointerData"),
+        ("text_edit", "InputTextData"),
+        ("text_input", "InputTextData"),
+        ("wheel", "InputPointerData"),
+    ];
+    let contract = "The sink handle is Rust-owned, remains valid until the disposer returned by the attach callback is freed, and must not be retained beyond or freed by the caller. The event pointer is borrowed only for this call.";
+    let mut output = String::new();
+    for (field, ty) in callbacks {
+        writeln!(
+            output,
+            "#[doc = \"flight-ffi contract|{contract}\"]\n#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn flight_call_input_ingress_sink_{field}(sink: *const FfiHostCallback, event: *const flight_sdk::{ty}) -> bool {{\n    if event.is_null() {{ return false; }}\n    let Some(sink) = (unsafe {{ ffi_host_callback_ref::<flight_sdk::InputIngressSink>(sink) }}) else {{ return false; }};\n    std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| (sink.{field})(unsafe {{ &*event }}))).is_ok()\n}}"
+        )
+        .unwrap();
+    }
+    writeln!(
+        output,
+        "#[doc = \"flight-ffi contract|The sink handle is Rust-owned, remains valid until the disposer returned by the attach callback is freed, and must not be retained beyond or freed by the caller. False also reports NULL, a type mismatch, or a contained callback panic.\"]\n#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn flight_call_input_ingress_sink_is_enabled(sink: *const FfiHostCallback) -> bool {{\n    let Some(sink) = (unsafe {{ ffi_host_callback_ref::<flight_sdk::InputIngressSink>(sink) }}) else {{ return false; }};\n    std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| (sink.is_enabled)())).unwrap_or(false)\n}}"
+    )
+    .unwrap();
+    output
+}
+
+fn generate_host_capability_support(
+    inventory: &[HostCapabilityInventory],
+) -> HostCapabilityGeneration {
+    let mut generation = HostCapabilityGeneration::default();
+    let prioritized: BTreeSet<_> = PRIORITIZED_HOST_CAPABILITIES.iter().copied().collect();
+    assert_eq!(
+        prioritized.len(),
+        PRIORITIZED_HOST_CAPABILITIES.len(),
+        "duplicate prioritized host capability"
+    );
+
+    for capability in inventory {
+        if !prioritized.contains(capability.name.as_str()) {
+            for field in &capability.fields {
+                generation.field_decisions.insert(
+                    (
+                        capability.owner.clone(),
+                        capability.name.clone(),
+                        field.name.clone(),
+                    ),
+                    "unsupported|not-prioritized".to_string(),
+                );
+            }
+            continue;
+        }
+
+        let mut callback_mappings = BTreeMap::new();
+        let mut supported = true;
+        for field in &capability.fields {
+            let decision = if field.name == "provider" && field.callback.is_none() {
+                "supported|shared-context-provider".to_string()
+            } else if let Some(callback) = &field.callback {
+                match map_host_capability_callback(callback) {
+                    Ok(mapping) => {
+                        let decision = format!("supported|{}", mapping.decision);
+                        callback_mappings.insert(field.name.clone(), mapping);
+                        decision
+                    }
+                    Err(reason) => {
+                        supported = false;
+                        format!("unsupported|{reason}")
+                    }
+                }
+            } else {
+                supported = false;
+                "unsupported|non-provider-data-field".to_string()
+            };
+            generation.field_decisions.insert(
+                (
+                    capability.owner.clone(),
+                    capability.name.clone(),
+                    field.name.clone(),
+                ),
+                decision,
+            );
+        }
+
+        if supported {
+            generation.supported.insert(capability.name.clone());
+            generation.output.push_str(&generate_host_capability_constructor(
+                capability,
+                &callback_mappings,
+            ));
+        }
+    }
+
+    for name in prioritized {
+        assert!(
+            inventory.iter().any(|capability| capability.name == name),
+            "prioritized host capability {name} disappeared"
+        );
+        assert!(
+            generation.supported.contains(name),
+            "prioritized host capability {name} has an unsupported structural field"
+        );
+    }
+    assert_eq!(
+        generation.supported.len(),
+        PRIORITIZED_HOST_CAPABILITIES.len(),
+        "constructor generation must cover every prioritized host capability exactly once"
+    );
+    generation
+}
+
+fn generate_host_capability_constructor(
+    capability: &HostCapabilityInventory,
+    callbacks: &BTreeMap<String, HostCallbackMapping>,
+) -> String {
+    let qualified = format!("flight_sdk::{}", capability.name);
+    let slug = to_snake_case(&capability.name);
+    let create = format!("flight_create_{slug}");
+    let free = format!("flight_free_{slug}");
+    let mut params = vec!["context: *mut std::ffi::c_void".to_string()];
+    let mut required_checks = Vec::new();
+    let mut adapters = Vec::new();
+    let mut fields = Vec::new();
+    let mut callback_contracts = Vec::new();
+
+    for field in &capability.fields {
+        if field.name == "provider" && field.callback.is_none() {
+            fields.push("provider: std::sync::Arc::new(context)".to_string());
+            continue;
+        }
+        let mapping = callbacks
+            .get(&field.name)
+            .expect("supported capability callback must have a mapping");
+        let callback_name = format!("{}_fn", field.name);
+        params.push(format!("{callback_name}: {}", mapping.ffi_type));
+        callback_contracts.push(format!(
+            "#[doc = \"flight-ffi contract|Callback field {} maps as {}.\"]",
+            field.name, mapping.decision
+        ));
+        if field.callback.as_ref().unwrap().optional {
+            adapters.push(format!(
+                "    let {field}: Option<{trait_type}> = {callback_name}.map(|callback| {{\n        let context = context;\n        std::sync::Arc::new(move |{closure_params}| {{\n{body}\n        }}) as {trait_type}\n    }});",
+                field = field.name,
+                trait_type = mapping.trait_type,
+                closure_params = host_callback_closure_params(field.callback.as_ref().unwrap()),
+                body = indent_lines(&mapping.body, 12),
+            ));
+        } else {
+            required_checks.push(format!(
+                "    let Some({field}_callback) = {callback_name} else {{ return std::ptr::null_mut(); }};",
+                field = field.name,
+            ));
+            adapters.push(format!(
+                "    let {field}: {trait_type} = {{\n        let context = context;\n        let callback = {field}_callback;\n        std::sync::Arc::new(move |{closure_params}| {{\n{body}\n        }})\n    }};",
+                field = field.name,
+                trait_type = mapping.trait_type,
+                closure_params = host_callback_closure_params(field.callback.as_ref().unwrap()),
+                body = indent_lines(&mapping.body, 12),
+            ));
+        }
+        fields.push(field.name.clone());
+    }
+
+    let contract = "The caller-owned context is retained as an integer-backed shared carrier until the matching capability free, may be used from any thread allowed by the Rust capability, must remain valid and thread-safe for that lifetime, and is never freed by Rust. Required NULL callbacks reject construction; optional NULL callbacks map to capability absence. Callback argument pointers are borrowed only for the dynamic callback call and must not be retained.";
+    let carrier_contract = "Retained nested callback and input-sink handles remain Rust-owned and valid until the callback-returned disposer is freed; do not free them. Owned callback returns transfer exactly one Rust-owned carrier. Produce disposer returns with flight_create_disposer. Complete async contexts exactly once with the helper named by that callback field.";
+    format!(
+        "#[doc = \"flight-ffi ownership|owned-return|{free}|{qualified}\"]\n#[doc = \"flight-ffi contract|{contract}\"]\n#[doc = \"flight-ffi contract|{carrier_contract}\"]\n{callback_contracts}\n#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn {create}({params}) -> *mut {qualified} {{\n    let context = context as usize;\n{required_checks}\n{adapters}\n    Box::into_raw(Box::new({qualified} {{\n        {fields}\n    }}))\n}}\n\n",
+        callback_contracts = callback_contracts.join("\n"),
+        params = params.join(", "),
+        required_checks = required_checks.join("\n"),
+        adapters = adapters.join("\n"),
+        fields = fields.join(",\n        "),
+    )
+}
+
+fn host_callback_closure_params(callback: &HostCapabilityCallback) -> String {
+    callback
+        .params
+        .iter()
+        .enumerate()
+        .map(|(index, ty)| format!("arg{index}: {}", host_generated_rust_type(ty)))
+        .collect::<Vec<_>>()
+        .join(", ")
+}
+
+fn map_host_capability_callback(
+    callback: &HostCapabilityCallback,
+) -> Result<HostCallbackMapping, String> {
+    let mut ffi_params = vec![(
+        "context".to_string(),
+        "*mut std::ffi::c_void".to_string(),
+    )];
+    let mut setup = Vec::new();
+    let mut call_args = vec!["context as *mut std::ffi::c_void".to_string()];
+    let mut retained_handles = Vec::new();
+    let mut decisions = Vec::new();
+    for (index, ty) in callback.params.iter().enumerate() {
+        let mapping = map_host_callback_param(index, ty)?;
+        ffi_params.extend(mapping.ffi_params);
+        setup.extend(mapping.setup);
+        call_args.extend(mapping.call_args);
+        retained_handles.extend(mapping.retained_handles);
+        decisions.push(mapping.decision);
+    }
+    let return_mapping =
+        map_host_callback_return(callback.output.as_ref(), &call_args, &retained_handles)?;
+    ffi_params.extend(
+        return_mapping
+            .extra_ffi_params
+            .iter()
+            .enumerate()
+            .map(|(index, ty)| (format!("completion_{index}"), ty.clone())),
+    );
+    decisions.push(return_mapping.decision.clone());
+    let ffi_return = if return_mapping.ffi_return.is_empty() {
+        String::new()
+    } else {
+        format!(" -> {}", return_mapping.ffi_return)
+    };
+    let ffi_type = format!(
+        "Option<unsafe extern \"C\" fn({}){ffi_return}>",
+        ffi_params
+            .iter()
+            .map(|(_, ty)| ty.as_str())
+            .collect::<Vec<_>>()
+            .join(", ")
+    );
+    let body = format!(
+        "ffi_host_callback_or_abort(|| {{\n{setup}\n{body}\n}})",
+        setup = indent_lines(&setup.join("\n"), 4),
+        body = indent_lines(&return_mapping.body, 4),
+    );
+    Ok(HostCallbackMapping {
+        ffi_type,
+        trait_type: host_callback_trait_type(callback),
+        body,
+        decision: decisions.join(","),
+    })
+}
+
+fn map_host_callback_param(
+    index: usize,
+    ty: &syn::Type,
+) -> Result<HostCallbackParamMapping, String> {
+    let argument = format!("arg{index}");
+    if host_type_is_scalar(ty) {
+        return Ok(HostCallbackParamMapping {
+            ffi_params: vec![(argument.clone(), host_generated_rust_type(ty))],
+            setup: Vec::new(),
+            call_args: vec![argument],
+            retained_handles: Vec::new(),
+            decision: "scalar-parameter".to_string(),
+        });
+    }
+    if let Some(name) = host_named_type(ty)
+        && is_known_enum(&name)
+    {
+        return Ok(HostCallbackParamMapping {
+            ffi_params: vec![(argument.clone(), "u32".to_string())],
+            setup: Vec::new(),
+            call_args: vec![format!("{argument} as u32")],
+            retained_handles: Vec::new(),
+            decision: "checked-enum-parameter".to_string(),
+        });
+    }
+    if host_type_is_str_reference(ty) {
+        let binding = format!("ffi_arg{index}");
+        return Ok(HostCallbackParamMapping {
+            ffi_params: vec![
+                (argument.clone(), "*const std::ffi::c_char".to_string()),
+            ],
+            setup: vec![format!(
+                "let {binding} = std::ffi::CString::new({argument}).expect(\"host callback string contains an interior NUL\");"
+            )],
+            call_args: vec![format!("{binding}.as_ptr()")],
+            retained_handles: Vec::new(),
+            decision: "borrowed-string-parameter".to_string(),
+        });
+    }
+    if let syn::Type::Reference(reference) = ty {
+        let mutable = reference.mutability.is_some();
+        let pointer = if mutable { "*mut" } else { "*const" };
+        return Ok(HostCallbackParamMapping {
+            ffi_params: vec![(
+                argument.clone(),
+                format!("{pointer} std::ffi::c_void"),
+            )],
+            setup: Vec::new(),
+            call_args: vec![format!(
+                "{argument} as {pointer} _ as {pointer} std::ffi::c_void"
+            )],
+            retained_handles: Vec::new(),
+            decision: if mutable {
+                "borrowed-mutable-handle-parameter".to_string()
+            } else {
+                "borrowed-handle-parameter".to_string()
+            },
+        });
+    }
+    if let Some(reference) = host_optional_reference(ty) {
+        let mutable = reference.mutability.is_some();
+        let pointer = if mutable { "*mut" } else { "*const" };
+        let null = if mutable {
+            "std::ptr::null_mut()"
+        } else {
+            "std::ptr::null()"
+        };
+        return Ok(HostCallbackParamMapping {
+            ffi_params: vec![(
+                argument.clone(),
+                format!("{pointer} std::ffi::c_void"),
+            )],
+            setup: Vec::new(),
+            call_args: vec![format!(
+                "{argument}.map_or({null}, |value| value as {pointer} _ as {pointer} std::ffi::c_void)"
+            )],
+            retained_handles: Vec::new(),
+            decision: "nullable-borrowed-handle-parameter".to_string(),
+        });
+    }
+    if host_named_type(ty).as_deref() == Some("InputIngressSink") {
+        let binding = format!("ffi_arg{index}");
+        return Ok(HostCallbackParamMapping {
+            ffi_params: vec![(argument, "*mut FfiHostCallback".to_string())],
+            setup: vec![format!(
+                "let {binding} = Box::into_raw(Box::new(FfiHostCallback {{ callback: Box::new(arg{index}) }}));"
+            )],
+            call_args: vec![binding.clone()],
+            retained_handles: vec![binding],
+            decision: "retained-input-ingress-sink".to_string(),
+        });
+    }
+    if host_callback_parts(ty).is_some() {
+        let binding = format!("ffi_arg{index}");
+        let helper = host_callback_helper_name(ty)
+            .ok_or_else(|| format!("unsupported-retained-callback({})", rust_type_text(ty)))?;
+        return Ok(HostCallbackParamMapping {
+            ffi_params: vec![(argument, "*mut FfiHostCallback".to_string())],
+            setup: vec![format!(
+                "let {binding} = Box::into_raw(Box::new(FfiHostCallback {{ callback: Box::new(arg{index}.clone()) }}));"
+            )],
+            call_args: vec![binding.clone()],
+            retained_handles: vec![binding],
+            decision: format!(
+                "retained-callback-handle-parameter({})",
+                helper
+            ),
+        });
+    }
+    Err(format!(
+        "unmapped-owned-parameter({})",
+        rust_type_text(ty)
+    ))
+}
+
+fn map_host_callback_return(
+    output: Option<&syn::Type>,
+    call_args: &[String],
+    retained_handles: &[String],
+) -> Result<HostCallbackReturnMapping, String> {
+    let call = format!("unsafe {{ callback({}) }}", call_args.join(", "));
+    let Some(output) = output else {
+        return Ok(HostCallbackReturnMapping {
+            extra_ffi_params: Vec::new(),
+            ffi_return: String::new(),
+            body: format!("{call};"),
+            decision: "void-return".to_string(),
+        });
+    };
+    if let Some((value_type, completion_name)) = host_async_future_mapping(output) {
+        let callback_args = call_args.join(", ");
+        return Ok(HostCallbackReturnMapping {
+            extra_ffi_params: vec!["*mut std::ffi::c_void".to_string()],
+            ffi_return: String::new(),
+            body: format!(
+                "let (future, completion) = ffi_host_future_new::<{value_type}>();\nunsafe {{ callback({callback_args}, completion) }};\nBox::pin(future)"
+            ),
+            decision: format!("async-completion({completion_name})"),
+        });
+    }
+    if host_type_is_scalar(output) {
+        return Ok(HostCallbackReturnMapping {
+            extra_ffi_params: Vec::new(),
+            ffi_return: host_generated_rust_type(output),
+            body: call,
+            decision: "scalar-return".to_string(),
+        });
+    }
+    if let Some(name) = host_named_type(output)
+        && is_known_enum(&name)
+    {
+        let conversion = get_enum_conversion(&name, "value");
+        return Ok(HostCallbackReturnMapping {
+            extra_ffi_params: Vec::new(),
+            ffi_return: "u32".to_string(),
+            body: format!(
+                "let value = {call};\nmatch {conversion} {{ Some(value) => value, None => panic!(\"host callback returned invalid {name} discriminant\") }}"
+            ),
+            decision: "checked-enum-return".to_string(),
+        });
+    }
+    if host_named_type(output).as_deref() == Some("String") {
+        return Ok(HostCallbackReturnMapping {
+            extra_ffi_params: Vec::new(),
+            ffi_return: "*mut std::ffi::c_char".to_string(),
+            body: format!(
+                "let value = {call};\nassert!(!value.is_null(), \"host callback returned a null owned string\");\nunsafe {{ std::ffi::CString::from_raw(value) }}.into_string().expect(\"host callback returned invalid UTF-8\")"
+            ),
+            decision: "owned-string-return".to_string(),
+        });
+    }
+    if let Some(inner) = host_option_inner(output) {
+        if host_callback_parts(inner).is_some() {
+            return Err("retained-callback-return".to_string());
+        }
+        let qualified = host_generated_rust_type(inner);
+        return Ok(HostCallbackReturnMapping {
+            extra_ffi_params: Vec::new(),
+            ffi_return: "*mut std::ffi::c_void".to_string(),
+            body: format!(
+                "let value = {call};\nif value.is_null() {{ None }} else {{ Some(*unsafe {{ Box::from_raw(value as *mut {qualified}) }}) }}"
+            ),
+            decision: format!("nullable-owned-handle-return({qualified})"),
+        });
+    }
+    if host_callback_parts(output).is_some() {
+        let callbacks = host_retained_callback_boxes(retained_handles);
+        return Ok(HostCallbackReturnMapping {
+            extra_ffi_params: Vec::new(),
+            ffi_return: "*mut FfiDisposer".to_string(),
+            body: format!(
+                "let disposer = {call};\nffi_host_disposer_from_raw(disposer, {callbacks})"
+            ),
+            decision: "owned-disposer-return".to_string(),
+        });
+    }
+    if host_named_type(output).as_deref() == Some("TimerHandle") {
+        let callbacks = host_retained_callback_boxes(retained_handles);
+        return Ok(HostCallbackReturnMapping {
+            extra_ffi_params: Vec::new(),
+            ffi_return: "*mut FfiDisposer".to_string(),
+            body: format!(
+                "let disposer = {call};\nflight_sdk::TimerHandle {{ cancel: ffi_host_disposer_from_raw(disposer, {callbacks}) }}"
+            ),
+            decision: "owned-timer-disposer-return".to_string(),
+        });
+    }
+    Err(format!(
+        "unmapped-return({})",
+        rust_type_text(output)
+    ))
+}
+
+fn host_callback_trait_type(callback: &HostCapabilityCallback) -> String {
+    let params = callback
+        .params
+        .iter()
+        .map(host_generated_rust_type)
+        .collect::<Vec<_>>()
+        .join(", ");
+    let output = callback
+        .output
+        .as_ref()
+        .map(|ty| format!(" -> {}", host_generated_rust_type(ty)))
+        .unwrap_or_default();
+    format!("std::sync::Arc<dyn Fn({params}){output} + Send + Sync>")
+}
+
+fn host_async_future_mapping(output: &syn::Type) -> Option<(String, &'static str)> {
+    let syn::Type::Path(path) = output else {
+        return None;
+    };
+    let segment = path.path.segments.last()?;
+    match segment.ident.to_string().as_str() {
+        "ScreenPermissionFuture" => Some((
+            "flight_sdk::ScreenPermissionState".to_string(),
+            "flight_complete_host_screen_permission_future",
+        )),
+        "ScreenDetailsRequestFuture" => Some((
+            "bool".to_string(),
+            "flight_complete_host_screen_details_request_future",
+        )),
+        "WgpuProviderFuture" => {
+            let syn::PathArguments::AngleBracketed(arguments) = &segment.arguments else {
+                return None;
+            };
+            let value = arguments.args.iter().find_map(|argument| match argument {
+                syn::GenericArgument::Type(ty) => Some(host_generated_rust_type(ty)),
+                _ => None,
+            })?;
+            (value == "flight_sdk::WgpuHostAcquisition").then_some((
+                value,
+                "flight_complete_host_wgpu_acquisition_future",
+            ))
+        }
+        _ => None,
+    }
+}
+
+fn host_generated_rust_type(ty: &syn::Type) -> String {
+    match ty {
+        syn::Type::Reference(reference) => format!(
+            "&{}{}",
+            if reference.mutability.is_some() {
+                "mut "
+            } else {
+                ""
+            },
+            host_generated_rust_type(&reference.elem)
+        ),
+        syn::Type::Path(path) if path.qself.is_none() => {
+            let segment = path.path.segments.last().unwrap();
+            let name = segment.ident.to_string();
+            let base = match name.as_str() {
+                "Arc" => "std::sync::Arc".to_string(),
+                "Box" | "Option" | "Pin" | "Result" | "String" | "Vec" => name.clone(),
+                "str" => "str".to_string(),
+                _ if is_scalar(&name) => name.clone(),
+                _ => format!("flight_sdk::{name}"),
+            };
+            match &segment.arguments {
+                syn::PathArguments::None => base,
+                syn::PathArguments::AngleBracketed(arguments) => {
+                    let arguments = arguments
+                        .args
+                        .iter()
+                        .filter_map(|argument| match argument {
+                            syn::GenericArgument::Type(ty) => {
+                                Some(host_generated_rust_type(ty))
+                            }
+                            _ => None,
+                        })
+                        .collect::<Vec<_>>()
+                        .join(", ");
+                    format!("{base}<{arguments}>")
+                }
+                syn::PathArguments::Parenthesized(arguments) => {
+                    let inputs = arguments
+                        .inputs
+                        .iter()
+                        .map(host_generated_rust_type)
+                        .collect::<Vec<_>>()
+                        .join(", ");
+                    let output = return_type_value(&arguments.output)
+                        .as_ref()
+                        .map(|ty| format!(" -> {}", host_generated_rust_type(ty)))
+                        .unwrap_or_default();
+                    format!("{base}({inputs}){output}")
+                }
+            }
+        }
+        syn::Type::TraitObject(object) => {
+            let bounds = object
+                .bounds
+                .iter()
+                .filter_map(|bound| match bound {
+                    syn::TypeParamBound::Trait(bound) => {
+                        let segment = bound.path.segments.last()?;
+                        let name = segment.ident.to_string();
+                        let base = match name.as_str() {
+                            "Fn" | "FnMut" | "FnOnce" | "Send" | "Sync" => name,
+                            _ => format!("flight_sdk::{name}"),
+                        };
+                        match &segment.arguments {
+                            syn::PathArguments::Parenthesized(arguments) => {
+                                let inputs = arguments
+                                    .inputs
+                                    .iter()
+                                    .map(host_generated_rust_type)
+                                    .collect::<Vec<_>>()
+                                    .join(", ");
+                                let output = return_type_value(&arguments.output)
+                                    .as_ref()
+                                    .map(|ty| {
+                                        format!(" -> {}", host_generated_rust_type(ty))
+                                    })
+                                    .unwrap_or_default();
+                                Some(format!("{base}({inputs}){output}"))
+                            }
+                            syn::PathArguments::None => Some(base),
+                            syn::PathArguments::AngleBracketed(_) => None,
+                        }
+                    }
+                    _ => None,
+                })
+                .collect::<Vec<_>>()
+                .join(" + ");
+            format!("dyn {bounds}")
+        }
+        syn::Type::Tuple(tuple) => format!(
+            "({})",
+            tuple
+                .elems
+                .iter()
+                .map(host_generated_rust_type)
+                .collect::<Vec<_>>()
+                .join(", ")
+        ),
+        _ => rust_type_text(ty),
+    }
+}
+
+fn host_type_is_scalar(ty: &syn::Type) -> bool {
+    host_named_type(ty).is_some_and(|name| is_scalar(&name))
+}
+
+fn host_named_type(ty: &syn::Type) -> Option<String> {
+    let syn::Type::Path(path) = ty else {
+        return None;
+    };
+    (path.qself.is_none() && path.path.segments.last()?.arguments.is_empty())
+        .then(|| path.path.segments.last().unwrap().ident.to_string())
+}
+
+fn host_type_is_str_reference(ty: &syn::Type) -> bool {
+    let syn::Type::Reference(reference) = ty else {
+        return false;
+    };
+    reference.mutability.is_none() && host_named_type(&reference.elem).as_deref() == Some("str")
+}
+
+fn host_option_inner(ty: &syn::Type) -> Option<&syn::Type> {
+    let syn::Type::Path(path) = ty else {
+        return None;
+    };
+    let segment = path.path.segments.last()?;
+    if segment.ident != "Option" {
+        return None;
+    }
+    let syn::PathArguments::AngleBracketed(arguments) = &segment.arguments else {
+        return None;
+    };
+    arguments.args.iter().find_map(|argument| match argument {
+        syn::GenericArgument::Type(ty) => Some(ty),
+        _ => None,
+    })
+}
+
+fn host_optional_reference(ty: &syn::Type) -> Option<&syn::TypeReference> {
+    let inner = host_option_inner(ty)?;
+    let syn::Type::Reference(reference) = inner else {
+        return None;
+    };
+    Some(reference)
+}
+
+fn host_callback_parts(ty: &syn::Type) -> Option<(Vec<syn::Type>, Option<syn::Type>)> {
+    match ty {
+        syn::Type::Path(path) if path.qself.is_none() => {
+            let segment = path.path.segments.last()?;
+            if segment.ident == "Arc" {
+                let syn::PathArguments::AngleBracketed(arguments) = &segment.arguments else {
+                    return None;
+                };
+                let object = arguments.args.iter().find_map(|argument| match argument {
+                    syn::GenericArgument::Type(syn::Type::TraitObject(object)) => Some(object),
+                    _ => None,
+                })?;
+                return trait_object_callback_parts(object);
+            }
+            let alias = host_alias_target(&segment.ident.to_string())?;
+            host_callback_parts(&alias)
+        }
+        _ => None,
+    }
+}
+
+fn host_callback_helper_name(ty: &syn::Type) -> Option<String> {
+    let (params, output) = host_callback_parts(ty)?;
+    let parameter_names = params
+        .iter()
+        .map(|param| {
+            if let syn::Type::Reference(reference) = param {
+                return host_named_type(&reference.elem).map(|name| format!("&{name}"));
+            }
+            host_named_type(param)
+        })
+        .collect::<Option<Vec<_>>>()?;
+    let output_name = output.as_ref().and_then(host_named_type);
+    let helper = match (parameter_names.as_slice(), output_name.as_deref()) {
+        ([], None) => "flight_call_host_callback_void",
+        ([], Some("bool")) => "flight_call_host_callback_bool_result",
+        ([value], None) if value == "bool" => "flight_call_host_callback_bool",
+        ([first, second], None) if first == "f32" && second == "f32" => {
+            "flight_call_host_callback_f32_f32"
+        }
+        ([first, second, third], None)
+            if first == "f32" && second == "f32" && third == "f32" =>
+        {
+            "flight_call_host_callback_f32_f32_f32"
+        }
+        ([value], None) if value == "AppMemoryPressure" => {
+            "flight_call_host_callback_app_memory_pressure"
+        }
+        ([value], None) if value == "&ScreenChangeEvent" => {
+            "flight_call_host_callback_screen_change_event"
+        }
+        ([value], None) if value == "ScreenPermissionState" => {
+            "flight_call_host_callback_screen_permission_state"
+        }
+        _ => return None,
+    };
+    Some(helper.to_string())
+}
+
+fn host_retained_callback_boxes(handles: &[String]) -> String {
+    if handles.is_empty() {
+        return "Vec::new()".to_string();
+    }
+    format!(
+        "vec![{}]",
+        handles
+            .iter()
+            .map(|handle| format!("unsafe {{ Box::from_raw({handle}) }}"))
+            .collect::<Vec<_>>()
+            .join(", ")
+    )
+}
+
+fn host_alias_target(name: &str) -> Option<syn::Type> {
+    let definitions = TYPE_DEFINITIONS.get()?.get(name)?;
+    let exported_only = definitions.iter().any(|(exported, _)| *exported);
+    let mut targets = definitions
+        .iter()
+        .filter(|(exported, _)| *exported || !exported_only)
+        .filter_map(|(_, definition)| match definition {
+            TypeDefinition::Alias(target) => syn::parse_str::<syn::Type>(target).ok(),
+            TypeDefinition::Nominal { .. } | TypeDefinition::GenericAlias => None,
+        });
+    let first = targets.next()?;
+    let first_text = rust_type_text(&first);
+    targets
+        .all(|target| rust_type_text(&target) == first_text)
+        .then_some(first)
+}
+
+fn indent_lines(value: &str, spaces: usize) -> String {
+    let indent = " ".repeat(spaces);
+    value
+        .lines()
+        .map(|line| {
+            if line.is_empty() {
+                String::new()
+            } else {
+                format!("{indent}{line}")
+            }
+        })
+        .collect::<Vec<_>>()
+        .join("\n")
 }
 
 fn rust_type_text(ty: &syn::Type) -> String {
@@ -3344,6 +4533,23 @@ pub unsafe extern "C" fn flight_free_owned_byte_reader(reader: *mut FfiOwnedByte
 fn generate_disposer_support() -> &'static str {
     r#"pub struct FfiDisposer {
     dispose: std::sync::Arc<dyn Fn() + Send + Sync>,
+}
+#[doc = "flight-ffi ownership|owned-return|flight_free_disposer|FfiDisposer"]
+#[doc = "flight-ffi contract|The caller-owned context is retained as an integer-backed shared carrier until flight_free_disposer, may be called from any thread allowed by its host capability, must remain valid and thread-safe for that lifetime, and is never freed by Rust. NULL callback returns NULL."]
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn flight_create_disposer(
+    context: *mut std::ffi::c_void,
+    dispose_fn: Option<unsafe extern "C" fn(*mut std::ffi::c_void)>,
+) -> *mut FfiDisposer {
+    let Some(dispose_fn) = dispose_fn else { return std::ptr::null_mut(); };
+    let context = context as usize;
+    Box::into_raw(Box::new(FfiDisposer {
+        dispose: std::sync::Arc::new(move || {
+            ffi_host_callback_or_abort(|| unsafe {
+                dispose_fn(context as *mut std::ffi::c_void)
+            });
+        }),
+    }))
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn flight_call_disposer(disposer: *const FfiDisposer) -> bool {
