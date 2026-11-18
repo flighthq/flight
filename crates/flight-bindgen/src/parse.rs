@@ -14,77 +14,139 @@ pub fn is_any_enum(ty: &str) -> bool {
     ALL_ENUMS.get().map(|s| s.contains(ty)).unwrap_or(false)
 }
 
+// Mirrors flight-ffi's `SCAN_CRATES` exactly, minus `SCAN_EXCLUDED_CRATES`: every crate that
+// crosses the C ABI is scanned here so each generated wrapper can receive a Haxe extern. Both
+// lists iterate in the same order, so first-seen name deduplication resolves identically.
 pub const SCAN_CRATES: &[&str] = &[
     "flight-abc",
+    "flight-accessibility",
     "flight-adjustments",
     "flight-animation",
+    "flight-app",
+    "flight-assets",
     "flight-audio",
     "flight-binpack",
     "flight-bitmap",
     "flight-bitmapfont",
     "flight-bitmapfont-formats",
+    "flight-bitmaptext",
+    "flight-buffer",
     "flight-camera",
     "flight-camera-controls",
+    "flight-capture",
     "flight-clip",
+    "flight-clipboard",
     "flight-clock",
     "flight-collision",
     "flight-color",
+    "flight-command",
     "flight-compression",
+    "flight-connectivity",
+    "flight-debug",
+    "flight-device",
+    "flight-dialog",
     "flight-easing",
     "flight-effects",
     "flight-encoding",
     "flight-entity",
+    "flight-filesystem",
     "flight-flow",
     "flight-font",
     "flight-font-formats",
+    "flight-geolocation",
     "flight-geometry",
+    "flight-gizmo",
+    "flight-glyphatlas",
+    "flight-gui",
+    "flight-haptics",
+    "flight-host",
     "flight-image",
     "flight-image-codec",
+    "flight-importdiagnostics",
     "flight-input",
     "flight-intl",
+    "flight-ipc",
+    "flight-keyboard",
     "flight-layout",
+    "flight-lifecycle",
     "flight-lighting",
+    "flight-loader",
     "flight-log",
     "flight-materials",
     "flight-math",
+    "flight-media",
+    "flight-mediasession",
+    "flight-menu",
     "flight-meshgeometry",
+    "flight-midi",
     "flight-motionpath",
     "flight-movieclip",
+    "flight-net",
     "flight-node",
+    "flight-notification",
+    "flight-particleemitter",
     "flight-particles",
     "flight-particles-formats",
-    "flight-particleemitter",
     "flight-path",
     "flight-path-boolean",
     "flight-path-formats",
+    "flight-permissions",
     "flight-physics2d",
     "flight-physics2d-abi",
     "flight-physics3d",
     "flight-physics3d-abi",
     "flight-picking",
+    "flight-platform",
+    "flight-power",
+    "flight-preferences",
+    "flight-protocol",
     "flight-quadbatch",
+    "flight-regexp",
+    "flight-registry",
     "flight-render",
+    "flight-requirement",
+    "flight-requirement-catalog",
+    "flight-requirement-codegen",
+    "flight-resource",
+    "flight-scene-document",
     "flight-scene2d",
     "flight-scene2d-formats",
+    "flight-scene2d-resources",
     "flight-scene3d",
     "flight-scene3d-formats",
+    "flight-scene3d-resources",
+    "flight-screen",
+    "flight-selection",
+    "flight-sensors",
     "flight-shading",
     "flight-shape",
     "flight-shape-formats",
+    "flight-share",
+    "flight-shell",
+    "flight-shortcut",
     "flight-signals",
     "flight-skeleton2d",
     "flight-skeleton2d-formats",
     "flight-skeleton3d",
     "flight-snapshot",
+    "flight-socket",
     "flight-spatial",
     "flight-spring",
     "flight-spritesheet",
     "flight-spritesheet-formats",
     "flight-statechart",
+    "flight-statusbar",
+    "flight-stream",
+    "flight-surface",
+    "flight-swf",
     "flight-text",
     "flight-text-markup",
     "flight-textbidi",
+    "flight-textformat",
+    "flight-textinput",
+    "flight-textlayout",
     "flight-textsegment",
+    "flight-textshaper",
     "flight-texture",
     "flight-texture-formats",
     "flight-textureatlas",
@@ -92,11 +154,20 @@ pub const SCAN_CRATES: &[&str] = &[
     "flight-tilemap",
     "flight-tilemap-formats",
     "flight-timeline",
+    "flight-tokens",
+    "flight-tray",
     "flight-tween",
+    "flight-updater",
+    "flight-useragent",
     "flight-velocity",
     "flight-video",
     "flight-xml",
 ];
+
+// flight-ffi crates deliberately absent from `SCAN_CRATES`, each with the reason. Empty: every
+// crate the C ABI scans is also scanned for Haxe externs.
+#[cfg(test)]
+pub const SCAN_EXCLUDED_CRATES: &[(&str, &str)] = &[];
 
 pub const DYN_OPAQUE_TRAITS: &[(&str, &str)] = &[
     ("Node", "NodeRef"),
@@ -1901,7 +1972,8 @@ fn parse_struct_field(line: &str) -> Option<StructField> {
     let line = line.trim().trim_end_matches(',');
     let rest = line.strip_prefix("pub ")?;
     let colon = rest.find(':')?;
-    let name = rest[..colon].trim().to_string();
+    let name = rest[..colon].trim();
+    let name = name.strip_prefix("r#").unwrap_or(name).to_string();
     let ty = rest[colon + 1..].trim().to_string();
     if is_ffi_incompatible(&ty) {
         return None;
@@ -2011,10 +2083,9 @@ fn parse_single_param(param: &str) -> Option<Param> {
     }
     let colon = param.find(':')?;
     let raw_name = param[..colon].trim();
-    let name = raw_name
-        .strip_prefix("mut ")
-        .unwrap_or(raw_name)
-        .to_string();
+    let name = raw_name.strip_prefix("mut ").unwrap_or(raw_name);
+    // A raw identifier (`r#type`) is Rust spelling only; the target-language name is `type`.
+    let name = name.strip_prefix("r#").unwrap_or(name).to_string();
     let ty = param[colon + 1..].trim().to_string();
     Some(Param { name, ty })
 }
@@ -2144,6 +2215,18 @@ mod native_abi_tests {
         ));
     }
     #[test]
+    fn raw_identifier_parameters_drop_the_rust_prefix() {
+        let function = parse_fn_signature(
+            "pub fn trigger_haptic_notification(host: &HostHapticsCapability, r#type: HapticNotificationType) -> bool {",
+        )
+        .unwrap();
+        assert_eq!(function.params[1].name, "type");
+        assert_eq!(
+            parse_struct_field("pub r#type: u32,").map(|field| field.name),
+            Some("type".to_string())
+        );
+    }
+    #[test]
     fn closure_arrow_preserves_following_parameters() {
         let function = parse_fn_signature(
             "pub fn random_exponential(random: &dyn Fn() -> f32, rate: Option<f32>) -> f32 {",
@@ -2175,5 +2258,140 @@ mod native_abi_tests {
             classify_param("NodeGuardClock"),
             Some(ParamKind::Closure)
         ));
+    }
+}
+
+#[cfg(test)]
+mod scan_crate_tests {
+    use super::*;
+
+    const FFI_BUILD_SOURCE: &str = include_str!("../../flight-ffi/build.rs");
+
+    #[test]
+    fn every_host_capability_crate_is_scanned() {
+        let crates_dir = Path::new(env!("CARGO_MANIFEST_DIR")).parent().unwrap();
+        let unscanned: Vec<String> = host_capability_types_by_crate(crates_dir)
+            .into_keys()
+            .filter(|dir_name| !SCAN_CRATES.contains(&dir_name.as_str()))
+            .collect();
+        assert_eq!(unscanned, Vec::<String>::new());
+    }
+    #[test]
+    fn every_scan_crate_has_a_source_directory() {
+        let crates_dir = Path::new(env!("CARGO_MANIFEST_DIR")).parent().unwrap();
+        let missing: Vec<&str> = SCAN_CRATES
+            .iter()
+            .copied()
+            .filter(|dir_name| !crates_dir.join(dir_name).join("src").is_dir())
+            .collect();
+        assert_eq!(missing, Vec::<&str>::new());
+    }
+    #[test]
+    fn scan_crates_are_strictly_ascending() {
+        for pair in SCAN_CRATES.windows(2) {
+            assert!(pair[0] < pair[1], "{} must precede {}", pair[0], pair[1]);
+        }
+    }
+    #[test]
+    fn scan_crates_match_ffi_scan_crates_exactly() {
+        let ffi_crates = ffi_scan_crates();
+        assert!(
+            !ffi_crates.is_empty(),
+            "flight-ffi SCAN_CRATES block not found"
+        );
+        let expected: Vec<&str> = ffi_crates
+            .iter()
+            .copied()
+            .filter(|dir_name| {
+                !SCAN_EXCLUDED_CRATES
+                    .iter()
+                    .any(|(name, _)| name == dir_name)
+            })
+            .collect();
+        assert_eq!(SCAN_CRATES, expected.as_slice());
+    }
+    #[test]
+    fn scan_exclusions_are_exact_and_reasoned() {
+        let ffi_crates = ffi_scan_crates();
+        let names: Vec<&str> = SCAN_EXCLUDED_CRATES.iter().map(|(name, _)| *name).collect();
+        assert_eq!(names, Vec::<&str>::new());
+        for (name, reason) in SCAN_EXCLUDED_CRATES {
+            assert!(
+                !reason.trim().is_empty(),
+                "{name} needs an exclusion reason"
+            );
+            assert!(
+                ffi_crates.contains(name),
+                "{name} is not scanned by flight-ffi"
+            );
+            assert!(
+                !SCAN_CRATES.contains(name),
+                "{name} is both scanned and excluded"
+            );
+        }
+    }
+
+    fn ffi_scan_crates() -> Vec<&'static str> {
+        let Some(start) = FFI_BUILD_SOURCE.find("const SCAN_CRATES: &[&str] = &[") else {
+            return Vec::new();
+        };
+        let block = &FFI_BUILD_SOURCE[start..];
+        let block = &block[..block.find("];").unwrap()];
+        block
+            .lines()
+            .skip(1)
+            .map(|line| line.trim().trim_end_matches(',').trim_matches('"'))
+            .filter(|line| !line.is_empty())
+            .collect()
+    }
+
+    // Every `pub struct Host*Capability` declared in a crate's non-test sources, keyed by crate.
+    pub(super) fn host_capability_types_by_crate(
+        crates_dir: &Path,
+    ) -> std::collections::BTreeMap<String, BTreeSet<String>> {
+        let mut by_crate = std::collections::BTreeMap::new();
+        let mut entries: Vec<_> = fs::read_dir(crates_dir)
+            .unwrap()
+            .filter_map(|e| e.ok())
+            .collect();
+        entries.sort_by_key(|e| e.file_name());
+        for entry in entries {
+            let src_dir = entry.path().join("src");
+            if !src_dir.is_dir() {
+                continue;
+            }
+            let mut names = BTreeSet::new();
+            collect_host_capability_names(&src_dir, &mut names);
+            if !names.is_empty() {
+                by_crate.insert(entry.file_name().to_string_lossy().to_string(), names);
+            }
+        }
+        by_crate
+    }
+
+    fn collect_host_capability_names(dir: &Path, out: &mut BTreeSet<String>) {
+        for entry in fs::read_dir(dir).unwrap().filter_map(|e| e.ok()) {
+            let path = entry.path();
+            if path.is_dir() {
+                collect_host_capability_names(&path, out);
+                continue;
+            }
+            let file_name = entry.file_name().to_string_lossy().to_string();
+            if !file_name.ends_with(".rs") || file_name.contains("test") {
+                continue;
+            }
+            for line in fs::read_to_string(&path).unwrap().lines() {
+                let Some(rest) = line.trim().strip_prefix("pub struct Host") else {
+                    continue;
+                };
+                let end = rest
+                    .find(|c: char| !c.is_ascii_alphanumeric() && c != '_')
+                    .unwrap_or(rest.len());
+                let name = format!("Host{}", &rest[..end]);
+                if name.ends_with("Capability") {
+                    out.insert(name);
+                }
+            }
+        }
     }
 }
