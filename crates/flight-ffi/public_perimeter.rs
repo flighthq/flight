@@ -22,14 +22,10 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::fs;
 use std::path::{Path, PathBuf};
 
-// The only functions whose `Arc<dyn Fn() + Send + Sync>` return lowers to a callable disposer
-// handle. A matching type alone is not consent: each entry returns the cancellation side of work
-// the call itself started. The frame-rate connection deliberately retains its typed callback until
-// that disposer is called; the callback context therefore has the same lifetime as the connection.
-pub const DISPOSER_FUNCTIONS: &[&str] = &[
-    "connect_signal_at_frame_rate",
-    "reveal_scene3d_resources_on_resolve",
-];
+// The only function whose `Arc<dyn Fn() + Send + Sync>` return lowers to a callable disposer
+// handle. A matching type alone is not consent, and callback-retaining connections remain outside
+// this pre-M carrier.
+pub const DISPOSER_FUNCTIONS: &[&str] = &["reveal_scene3d_resources_on_resolve"];
 
 // The value names `entry` exports, and every module file read while resolving them.
 pub fn collect_ts_module_exports(entry: &Path) -> (BTreeSet<String>, Vec<PathBuf>) {
@@ -69,14 +65,12 @@ pub fn get_export_key(name: &str) -> String {
         .collect()
 }
 
-// A returned disposer maps only for an allowlisted function. The frame-rate connection is the one
-// approved callback-retaining entry; every other entry must remain callback-free.
+// A returned disposer maps only for an allowlisted, callback-free function.
 pub fn is_disposer_function(name: &str, param_types: &[&str]) -> bool {
     DISPOSER_FUNCTIONS.contains(&name)
-        && (name == "connect_signal_at_frame_rate"
-            || !param_types
-                .iter()
-                .any(|ty| ty.contains("Fn(") || ty.contains("FnMut(") || ty.contains("FnOnce(")))
+        && !param_types
+            .iter()
+            .any(|ty| ty.contains("Fn(") || ty.contains("FnMut(") || ty.contains("FnOnce("))
 }
 
 #[derive(Debug, PartialEq)]

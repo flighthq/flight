@@ -5,7 +5,7 @@ use std::env;
 use std::fmt::Write as _;
 use std::fs;
 use std::path::{Path, PathBuf};
-use std::sync::OnceLock;
+use std::sync::{Mutex, OnceLock};
 
 // `#[repr(u32)]` unit enums by name, each with its owning crate and variants in declaration order.
 // A name two crates both define is not known: an enum's identity is its owning crate plus name, so
@@ -70,6 +70,11 @@ fn get_binding_name(name: &str) -> String {
 // Every named type's definitions, from source, for by-value ownership; each is flagged with whether
 // its crate root re-exports it by name, which picks the SDK's meaning when two crates share a name.
 static TYPE_DEFINITIONS: OnceLock<BTreeMap<String, Vec<(bool, TypeDefinition)>>> = OnceLock::new();
+
+// Exact Rust types C can hold as an owned box because some generated wrapper produces that box.
+// The set is discovered to a fixed point before emission: a consumer can depend on a producer, but
+// a cycle of consumers can never invent its own initial handle.
+static PRODUCIBLE_TYPES: OnceLock<Mutex<BTreeSet<String>>> = OnceLock::new();
 
 #[derive(Clone, Debug, PartialEq)]
 enum TypeDefinition {
@@ -372,6 +377,9 @@ const OPAQUE_FALLBACK_EXCLUDED_TYPES: &[&str] = &[
     "LogDataOrProvider",
     "TextInputCopyCallback",
 ];
+// Plain Clone data handles whose visible producer is borrowed. These cross by cloning from a
+// caller-retained pointer, never by reconstructing ownership with Box::from_raw.
+const CALLER_RETAINED_CLONE_TYPES: &[&str] = &["ParticleFormatCodec"];
 const SAFETY_POLICY_SKIP_FNS: &[&str] = &[
     "enable_clip_guards",
     "enable_statechart_guards",
@@ -382,19 +390,25 @@ const SAFETY_POLICY_SKIP_FNS: &[&str] = &[
 // bulk registration functions are deliberately not here: they consume no caller behavior and
 // install only SDK-owned handlers.
 const EXTENSION_POLICY_SKIP_FNS: &[&str] = &[
+    "allocate_glyph_rasterizer_backend_from_glyph_outline_source",
     "create_filter_log_sink",
     "enable_log_signals",
     "init_bounds_rectangle_runtime_trait",
     "init_transform2d_runtime_trait",
+    "initialize_glyph_rasterizer_backend_from_glyph_outline_source",
     "lerp_effect",
+    "migrate_storage",
     "register_dragon_bones_section_handler",
     "register_dragon_bones_timeline_handler",
     "register_log_serializer",
+    "register_rive_core_object_handler",
+    "register_skeleton_2d_json_analyzer",
     "register_spine_binary_section_handler",
     "register_spine_binary_timeline_handler",
     "register_spine_json_section_handler",
     "register_spine_json_timeline_handler",
     "register_spine_skeleton_binary_parser",
+    "set_log_sink",
 ];
 // The default shape-bounds handler values: each decodes one command's arguments from a
 // `&dyn ShapeCommandArgumentCursor` into calls on a `&mut dyn ShapeBoundsContext`. Their purpose is
@@ -574,7 +588,40 @@ fn main() {
     let _ = KNOWN_ENUMS.set(known_enums);
     let _ = TYPE_DEFINITIONS.set(type_definitions);
 
+    // Discover owned producers to a fixed point. A wrapper is eligible to produce a handle only
+    // after every owned handle it consumes is already producible; consequently a consumer cycle
+    // cannot bootstrap an otherwise unconstructible C handle. Policy exclusions run inside the
+    // normal generators and therefore cannot become producers through this pre-pass.
+    let _ = PRODUCIBLE_TYPES.set(Mutex::new(BTreeSet::new()));
+    loop {
+        let mut discovered = BTreeSet::new();
+        for dir_name in SCAN_CRATES {
+            let src_dir = crates_dir.join(dir_name).join("src");
+            if !src_dir.exists() {
+                continue;
+            }
+            for func in collect_pub_fns(&src_dir) {
+                let generated = if has_mono_dyn_param(&func) {
+                    !generate_mono_wrappers(&func).is_empty()
+                } else {
+                    generate_ffi_wrapper(&func).is_some()
+                };
+                if generated {
+                    discovered.extend(owned_producer_types(&func));
+                }
+            }
+        }
+        let mut producible = PRODUCIBLE_TYPES.get().unwrap().lock().unwrap();
+        let previous_len = producible.len();
+        producible.extend(discovered);
+        if producible.len() == previous_len {
+            break;
+        }
+    }
+
     let mut shape_bounds_handlers_seen = BTreeSet::new();
+    let mut actual_produced_types = BTreeSet::new();
+    let mut actual_consumed_types = BTreeSet::new();
     for dir_name in SCAN_CRATES {
         let src_dir = crates_dir.join(dir_name).join("src");
         if !src_dir.exists() {
@@ -629,6 +676,8 @@ fn main() {
                         }
                     }
                     if emitted {
+                        actual_produced_types.extend(owned_producer_types(func));
+                        actual_consumed_types.extend(owned_consumed_types(func));
                         stats_generated_sources += 1;
                         if func.sdk_contract_export {
                             stats_sdk_contract_decisions.insert(
@@ -662,6 +711,8 @@ fn main() {
                     seen_names.insert(ffi_name);
                     crate_used = true;
                     collect_vec_ref_handle_specs(func, &mut vec_ref_handle_specs);
+                    actual_produced_types.extend(owned_producer_types(func));
+                    actual_consumed_types.extend(owned_consumed_types(func));
                     stats_generated_sources += 1;
                     stats_generated_wrappers += 1;
                     if func.sdk_contract_export {
@@ -699,6 +750,15 @@ fn main() {
         shape_bounds_handlers_seen.len(),
         SHAPE_BOUNDS_HANDLER_FNS.len(),
         "every SHAPE_BOUNDS_HANDLER_FNS entry must name a scanned cursor-taking function"
+    );
+
+    let missing_producers: Vec<_> = actual_consumed_types
+        .difference(&actual_produced_types)
+        .cloned()
+        .collect();
+    assert!(
+        missing_producers.is_empty(),
+        "generated wrappers consume owned handles without a generated producer: {missing_producers:?}"
     );
 
     let stats_skipped_total: usize = stats_skipped.values().sum();
@@ -1566,7 +1626,10 @@ fn get_param_ownership_note(ty: &str) -> Option<&'static str> {
     if ty.starts_with("Ref<") || ty.starts_with("Arc<") || ty.starts_with("SignalSlot<") {
         return Some(CLONED);
     }
-    if opaque_clone_handle_type(&ty).is_some() || get_owned_param(&ty) == Some(OwnedParam::Cloned) {
+    if is_caller_retained_clone_type(&ty)
+        || opaque_clone_handle_type(&ty).is_some()
+        || get_owned_param(&ty) == Some(OwnedParam::Cloned)
+    {
         return Some(CLONED);
     }
     if let Some(inner) = ty
@@ -1577,7 +1640,7 @@ fn get_param_ownership_note(ty: &str) -> Option<&'static str> {
         if inner.starts_with('&') || is_opaque_fallback_excluded(inner) {
             return None;
         }
-        if opaque_clone_handle_type(inner).is_some() {
+        if is_caller_retained_clone_type(inner) || opaque_clone_handle_type(inner).is_some() {
             return Some(CLONED);
         }
         if is_opaque_transferred_generic(inner) || can_transfer_named_opaque(inner) {
@@ -3177,6 +3240,12 @@ fn categorize_skip(func: &ParsedFn) -> String {
     if func.lacks_public_export {
         return format!("no_ts_public_export({})", func.name);
     }
+    if owned_consumed_types(func)
+        .iter()
+        .any(|consumed| !has_owned_producer(consumed))
+    {
+        return format!("ownership_policy_skip({})", func.name);
+    }
     for param in &func.params {
         let ty = &param.ty;
         let resolved = strip_crate_paths(&resolve_type_alias(ty));
@@ -3368,6 +3437,113 @@ fn result_container_type(value: &FfiReturn) -> Option<String> {
         }
         _ => None,
     }
+}
+
+// Every exact Rust type for which this source function emits an owned carrier. Result helper
+// handles (Vec/HashMap/etc.) are producers just as direct `Box<T>` returns are.
+fn owned_producer_types(func: &ParsedFn) -> BTreeSet<String> {
+    let Some(ret) = &func.ret else {
+        return BTreeSet::new();
+    };
+    let Some((_, call_wrap)) = map_return_to_ffi(ret) else {
+        return BTreeSet::new();
+    };
+    let (value_wrap, value_ty) = match &call_wrap {
+        FfiReturn::AsyncCallback(spec) => (&spec.value, Some(spec.value_rust_ty.as_str())),
+        _ => (&call_wrap, Some(ret.as_str())),
+    };
+    let shared_ty = match value_wrap {
+        FfiReturn::SharedClone(_) => value_ty.and_then(get_shared_value_type),
+        _ => None,
+    };
+    let (value_wrap, value_ty) = match value_wrap {
+        FfiReturn::SharedClone(value) => (&**value, shared_ty.as_deref()),
+        _ => (value_wrap, value_ty),
+    };
+    let mut produced = BTreeSet::new();
+    produced.extend(boxed_type_for_return(value_wrap, value_ty));
+    produced.extend(result_container_type(value_wrap));
+    return produced;
+}
+
+fn is_caller_retained_clone_type(ty: &str) -> bool {
+    let name = ty.rsplit("::").next().unwrap_or(ty).trim();
+    CALLER_RETAINED_CLONE_TYPES.contains(&name)
+}
+
+fn has_owned_producer(qualified: &str) -> bool {
+    PRODUCIBLE_TYPES
+        .get()
+        .is_some_and(|types| types.lock().unwrap().contains(qualified))
+}
+
+// The exact owned box consumed by one parameter, including boxes returned by a callback. This is
+// deliberately the same structural predicate used by the mappers below; generated wrappers are
+// checked against generated producers after duplicate-symbol filtering.
+fn owned_consumed_type(ty: &str) -> Option<String> {
+    let ty = strip_crate_paths(&strip_lifetimes(&resolve_type_alias(ty.trim())));
+    let ty = ty.as_str();
+
+    if let Some(parsed) = parse_closure_param(ty) {
+        let inner = parsed
+            .ret
+            .strip_prefix("Option<")
+            .and_then(|rest| rest.strip_suffix('>'))
+            .map(str::trim)
+            .filter(|inner| {
+                !inner.contains('<')
+                    && !inner.contains("::")
+                    && !is_scalar(inner)
+                    && !is_known_enum(inner)
+            })?;
+        return qualify_opaque_type(inner);
+    }
+
+    if let Some(inner) = ty
+        .strip_prefix("Option<")
+        .and_then(|rest| rest.strip_suffix('>'))
+    {
+        let inner = inner.trim();
+        if is_caller_retained_clone_type(inner)
+            || opaque_clone_handle_type(inner).is_some()
+            || matches!(
+                get_owned_param(inner),
+                Some(OwnedParam::Copied | OwnedParam::Cloned)
+            )
+        {
+            return None;
+        }
+        if is_opaque_transferred_generic(inner) || can_transfer_named_opaque(inner) {
+            return qualify_opaque_type(inner);
+        }
+        return None;
+    }
+
+    if is_opaque_transferred_generic(ty) {
+        return qualify_opaque_type(ty);
+    }
+    if !ty.contains('<')
+        && !ty.contains("::")
+        && !ty.starts_with('[')
+        && !ty.starts_with('(')
+        && !is_caller_retained_clone_type(ty)
+        && get_owned_param(ty).or_else(|| {
+            TYPE_DEFINITIONS
+                .get()
+                .is_some_and(|definitions| definitions.contains_key(ty))
+                .then_some(OwnedParam::Transferred)
+        }) == Some(OwnedParam::Transferred)
+    {
+        return Some(qualify_type(ty));
+    }
+    return None;
+}
+
+fn owned_consumed_types(func: &ParsedFn) -> BTreeSet<String> {
+    func.params
+        .iter()
+        .filter_map(|param| owned_consumed_type(&param.ty))
+        .collect()
 }
 
 fn ownership_doc(kind: &str, free: &str, owned_type: &str) -> String {
@@ -4559,6 +4735,16 @@ fn map_opaque_fallback_param(name: &str, ty: &str) -> Option<MappedParam> {
         .and_then(|rest| rest.strip_suffix('>'))
     {
         let inner = inner.trim();
+        if is_caller_retained_clone_type(inner) {
+            let qualified = qualify_opaque_type(inner)?;
+            return mapped_single(
+                name,
+                "*const std::ffi::c_void",
+                format!(
+                    "if {name}.is_null() {{ None }} else {{ Some(unsafe {{ (*({name} as *const {qualified})).clone() }}) }}"
+                ),
+            );
+        }
         if let Some(qualified) = opaque_clone_handle_type(inner) {
             return mapped_single(
                 name,
@@ -4584,14 +4770,20 @@ fn map_opaque_fallback_param(name: &str, ty: &str) -> Option<MappedParam> {
                     "if {name}.is_null() {{ None }} else {{ Some(unsafe {{ (*({name} as *const {qualified})).clone() }}) }}"
                 ),
             ),
-            Some(OwnedParam::Transferred) if can_transfer_named_opaque(inner) => mapped_single(
-                name,
-                "*mut std::ffi::c_void",
-                format!(
-                    "if {name}.is_null() {{ None }} else {{ Some(*unsafe {{ Box::from_raw({name} as *mut {qualified}) }}) }}"
-                ),
-            ),
-            None if is_opaque_transferred_generic(inner) || can_transfer_named_opaque(inner) => {
+            Some(OwnedParam::Transferred)
+                if can_transfer_named_opaque(inner) && has_owned_producer(&qualified) =>
+            {
+                mapped_single(
+                    name,
+                    "*mut std::ffi::c_void",
+                    format!(
+                        "if {name}.is_null() {{ None }} else {{ Some(*unsafe {{ Box::from_raw({name} as *mut {qualified}) }}) }}"
+                    ),
+                )
+            }
+            None if (is_opaque_transferred_generic(inner) || can_transfer_named_opaque(inner))
+                && has_owned_producer(&qualified) =>
+            {
                 mapped_single(
                     name,
                     "*mut std::ffi::c_void",
@@ -4613,6 +4805,9 @@ fn map_opaque_fallback_param(name: &str, ty: &str) -> Option<MappedParam> {
     }
     if is_opaque_transferred_generic(ty) {
         let qualified = qualify_opaque_type(ty)?;
+        if !has_owned_producer(&qualified) {
+            return None;
+        }
         return Some(MappedParam {
             ffi_params: vec![(name.to_string(), "*mut std::ffi::c_void".to_string())],
             bindings: vec![format!(
@@ -5228,6 +5423,10 @@ fn map_param_to_ffi(name: &str, ty: &str) -> Option<MappedParam> {
                 || (!is_ffi_incompatible(inner) && !inner.contains('<'))
             {
                 let qualified_inner = qualify_type(inner);
+                let qualified = format!("Vec<{qualified_inner}>");
+                if !has_owned_producer(&qualified) {
+                    return None;
+                }
                 return mapped_single(
                     name,
                     "*mut std::ffi::c_void",
@@ -5498,7 +5697,8 @@ fn map_param_to_ffi(name: &str, ty: &str) -> Option<MappedParam> {
                     && !is_scalar(inner)
                     && !is_known_enum(inner)
             })
-            .and_then(qualify_opaque_type);
+            .and_then(qualify_opaque_type)
+            .filter(|qualified| has_owned_producer(qualified));
         let ffi_ret = if parsed.ret == "void" {
             String::new()
         } else if is_scalar(&parsed.ret) {
@@ -5657,10 +5857,21 @@ fn map_param_to_ffi(name: &str, ty: &str) -> Option<MappedParam> {
         }
     }
 
+    // A small, evidence-backed set of Clone data values has only a borrowed public producer. Clone
+    // from a caller-retained typed pointer instead of inventing an owned box for it.
+    if is_caller_retained_clone_type(ty) {
+        let qualified = qualify_type(ty);
+        return mapped_single(
+            name,
+            &format!("*const {qualified}"),
+            format!("unsafe {{ (*{name}).clone() }}"),
+        );
+    }
+
     // Owned named T, by its proven ownership: a `Copy` value is copied from `*const T`, a
     // `Ref`/`Arc` alias is cloned from the caller's borrowed handle, and any other value consumes
-    // the caller's FFI-owned box (`*mut T`, never NULL). An exported alias whose internals are not
-    // inspectable is conservatively non-Copy and therefore transfers as the same opaque box.
+    // a non-null box produced by another generated wrapper. A definition alone proves the Rust
+    // ownership shape, never that C can construct the box.
     if !ty.contains('<') && !ty.contains("::") && !ty.starts_with('[') && !ty.starts_with('(') {
         let qualified = qualify_type(ty);
         let ownership = get_owned_param(ty).or_else(|| {
@@ -5680,13 +5891,18 @@ fn map_param_to_ffi(name: &str, ty: &str) -> Option<MappedParam> {
                 &format!("*const {qualified}"),
                 format!("unsafe {{ (*{name}).clone() }}"),
             ),
-            OwnedParam::Transferred => Some(MappedParam {
-                ffi_params: vec![(name.to_string(), format!("*mut {qualified}"))],
-                bindings: vec![format!(
-                    "    assert!(!{name}.is_null(), \"{name} must be an owned {ty} handle\");"
-                )],
-                call_expr: format!("*unsafe {{ Box::from_raw({name}) }}"),
-            }),
+            OwnedParam::Transferred => {
+                if !has_owned_producer(&qualified) {
+                    return None;
+                }
+                Some(MappedParam {
+                    ffi_params: vec![(name.to_string(), format!("*mut {qualified}"))],
+                    bindings: vec![format!(
+                        "    assert!(!{name}.is_null(), \"{name} must be an owned {ty} handle\");"
+                    )],
+                    call_expr: format!("*unsafe {{ Box::from_raw({name}) }}"),
+                })
+            }
         };
     }
 
