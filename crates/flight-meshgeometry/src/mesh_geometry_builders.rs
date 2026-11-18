@@ -10,13 +10,13 @@ use crate::create_mesh_geometry;
 use crate::refresh_mesh_geometry_bounds;
 
 const CANONICAL_FLOATS_PER_VERTEX: usize = 12;
-const POLE_EPSILON: f32 = 1e-6;
+const POLE_EPSILON: f64 = 1e-6;
 
 /// Builds an axis-aligned box centered at the origin.
 pub fn create_box_mesh_geometry(
-    width: Option<f32>,
-    height: Option<f32>,
-    depth: Option<f32>,
+    width: Option<f64>,
+    height: Option<f64>,
+    depth: Option<f64>,
 ) -> MeshGeometry {
     let width = width.unwrap_or(1.0);
     let height = height.unwrap_or(1.0);
@@ -26,34 +26,34 @@ pub fn create_box_mesh_geometry(
     let hy = height * 0.5;
     let hz = depth * 0.5;
 
-    let mut positions: Vec<f32> = Vec::new();
-    let mut normals: Vec<f32> = Vec::new();
-    let mut uvs: Vec<f32> = Vec::new();
+    let mut positions: Vec<f64> = Vec::new();
+    let mut normals: Vec<f64> = Vec::new();
+    let mut uvs: Vec<f64> = Vec::new();
     let mut indices: Vec<u32> = Vec::new();
 
-    let mut add_face = |ox: f32,
-                        oy: f32,
-                        oz: f32,
-                        ux: f32,
-                        uy: f32,
-                        uz: f32,
-                        vx: f32,
-                        vy: f32,
-                        vz: f32,
-                        nx: f32,
-                        ny: f32,
-                        nz: f32| {
+    let mut add_face = |ox: f64,
+                        oy: f64,
+                        oz: f64,
+                        ux: f64,
+                        uy: f64,
+                        uz: f64,
+                        vx: f64,
+                        vy: f64,
+                        vz: f64,
+                        nx: f64,
+                        ny: f64,
+                        nz: f64| {
         let start = positions.len() / 3;
         for iv in 0..2u32 {
             for iu in 0..2u32 {
-                positions.push(ox + ux * iu as f32 + vx * iv as f32);
-                positions.push(oy + uy * iu as f32 + vy * iv as f32);
-                positions.push(oz + uz * iu as f32 + vz * iv as f32);
+                positions.push(ox + ux * iu as f64 + vx * iv as f64);
+                positions.push(oy + uy * iu as f64 + vy * iv as f64);
+                positions.push(oz + uz * iu as f64 + vz * iv as f64);
                 normals.push(nx);
                 normals.push(ny);
                 normals.push(nz);
-                uvs.push(iu as f32);
-                uvs.push(iv as f32);
+                uvs.push(iu as f64);
+                uvs.push(iv as f64);
             }
         }
         let s = start as u32;
@@ -84,8 +84,8 @@ pub fn create_box_mesh_geometry(
 
 /// Builds a capsule centered at the origin.
 pub fn create_capsule_mesh_geometry(
-    radius: Option<f32>,
-    height: Option<f32>,
+    radius: Option<f64>,
+    height: Option<f64>,
     radial_segments: Option<i32>,
     cap_segments: Option<i32>,
 ) -> MeshGeometry {
@@ -97,20 +97,20 @@ pub fn create_capsule_mesh_geometry(
     let r_seg = normalize_mesh_count(radial_segments, 3, u32::MAX);
     let c_seg = normalize_mesh_count(cap_segments, 1, u32::MAX);
     let half_h = height * 0.5;
-    let mut positions: Vec<f32> = Vec::new();
-    let mut normals: Vec<f32> = Vec::new();
-    let mut uvs: Vec<f32> = Vec::new();
+    let mut positions: Vec<f64> = Vec::new();
+    let mut normals: Vec<f64> = Vec::new();
+    let mut uvs: Vec<f64> = Vec::new();
     let mut indices: Vec<u32> = Vec::new();
 
     let ring_vertex_count = r_seg + 1;
     let ring_count = 2 * c_seg + 2;
     let v_divisor = ring_count - 1;
 
-    let mut add_ring = |phi: f32, y_offset: f32| {
+    let mut add_ring = |phi: f64, y_offset: f64| {
         let sin_phi = phi.sin();
         let cos_phi = phi.cos();
         for i in 0..=r_seg {
-            let theta = (i as f32 / r_seg as f32) * std::f32::consts::PI * 2.0;
+            let theta = (i as f64 / r_seg as f64) * std::f64::consts::PI * 2.0;
             let cos_theta = theta.cos();
             let sin_theta = theta.sin();
             let nx = sin_phi * cos_theta;
@@ -122,28 +122,28 @@ pub fn create_capsule_mesh_geometry(
             normals.push(nx);
             normals.push(ny);
             normals.push(nz);
-            uvs.push(i as f32 / r_seg as f32);
+            uvs.push(i as f64 / r_seg as f64);
             uvs.push(0.0);
         }
     };
 
     for j in 0..=c_seg {
         add_ring(
-            (j as f32 / c_seg as f32) * (std::f32::consts::PI * 0.5),
+            (j as f64 / c_seg as f64) * (std::f64::consts::PI * 0.5),
             half_h,
         );
     }
-    add_ring(std::f32::consts::PI * 0.5, -half_h);
+    add_ring(std::f64::consts::PI * 0.5, -half_h);
     for j in 1..=c_seg {
         add_ring(
-            std::f32::consts::PI * 0.5 + (j as f32 / c_seg as f32) * (std::f32::consts::PI * 0.5),
+            std::f64::consts::PI * 0.5 + (j as f64 / c_seg as f64) * (std::f64::consts::PI * 0.5),
             -half_h,
         );
     }
 
     // Fix up v UVs
     for j in 0..ring_count {
-        let v = j as f32 / v_divisor as f32;
+        let v = j as f64 / v_divisor as f64;
         for i in 0..=r_seg {
             uvs[((j * ring_vertex_count + i) * 2 + 1) as usize] = v;
         }
@@ -163,14 +163,14 @@ pub fn create_capsule_mesh_geometry(
 }
 
 /// Builds a flat filled circle (disc) in the XZ plane centered at the origin.
-pub fn create_circle_mesh_geometry(radius: Option<f32>, segments: Option<i32>) -> MeshGeometry {
+pub fn create_circle_mesh_geometry(radius: Option<f64>, segments: Option<i32>) -> MeshGeometry {
     let radius = radius.unwrap_or(0.5);
     let segments = segments.unwrap_or(32);
 
     let segs = normalize_mesh_count(segments, 3, u32::MAX);
-    let mut positions: Vec<f32> = Vec::new();
-    let mut normals: Vec<f32> = Vec::new();
-    let mut uvs: Vec<f32> = Vec::new();
+    let mut positions: Vec<f64> = Vec::new();
+    let mut normals: Vec<f64> = Vec::new();
+    let mut uvs: Vec<f64> = Vec::new();
     let mut indices: Vec<u32> = Vec::new();
     add_disc(
         &mut positions,
@@ -187,8 +187,8 @@ pub fn create_circle_mesh_geometry(radius: Option<f32>, segments: Option<i32>) -
 
 /// Builds a right circular cone.
 pub fn create_cone_mesh_geometry(
-    radius: Option<f32>,
-    height: Option<f32>,
+    radius: Option<f64>,
+    height: Option<f64>,
     radial_segments: Option<i32>,
     capped: Option<bool>,
 ) -> MeshGeometry {
@@ -208,9 +208,9 @@ pub fn create_cone_mesh_geometry(
 
 /// Builds a right circular cylinder (or truncated cone).
 pub fn create_cylinder_mesh_geometry(
-    top_radius: Option<f32>,
-    bottom_radius: Option<f32>,
-    height: Option<f32>,
+    top_radius: Option<f64>,
+    bottom_radius: Option<f64>,
+    height: Option<f64>,
     radial_segments: Option<i32>,
     capped: Option<bool>,
 ) -> MeshGeometry {
@@ -222,9 +222,9 @@ pub fn create_cylinder_mesh_geometry(
 
     let segments = normalize_mesh_count(radial_segments, 3, u32::MAX);
     let half_height = height * 0.5;
-    let mut positions: Vec<f32> = Vec::new();
-    let mut normals: Vec<f32> = Vec::new();
-    let mut uvs: Vec<f32> = Vec::new();
+    let mut positions: Vec<f64> = Vec::new();
+    let mut normals: Vec<f64> = Vec::new();
+    let mut uvs: Vec<f64> = Vec::new();
     let mut indices: Vec<u32> = Vec::new();
 
     let slope = if height != 0.0 {
@@ -238,7 +238,7 @@ pub fn create_cylinder_mesh_geometry(
         let radius = if y == 0 { bottom_radius } else { top_radius };
         let py = if y == 0 { -half_height } else { half_height };
         for s in 0..=segments {
-            let theta = (s as f32 / segments as f32) * std::f32::consts::PI * 2.0;
+            let theta = (s as f64 / segments as f64) * std::f64::consts::PI * 2.0;
             let cos = theta.cos();
             let sin = theta.sin();
             positions.push(radius * cos);
@@ -247,15 +247,15 @@ pub fn create_cylinder_mesh_geometry(
             let mut nx = cos;
             let mut ny = slope;
             let mut nz = sin;
-            let len = (nx * nx + ny * ny + nz * nz).sqrt().max(f32::EPSILON);
+            let len = (nx * nx + ny * ny + nz * nz).sqrt().max(f64::EPSILON);
             nx /= len;
             ny /= len;
             nz /= len;
             normals.push(nx);
             normals.push(ny);
             normals.push(nz);
-            uvs.push(s as f32 / segments as f32);
-            uvs.push(y as f32);
+            uvs.push(s as f64 / segments as f64);
+            uvs.push(y as f64);
         }
     }
 
@@ -305,7 +305,7 @@ pub fn create_cylinder_mesh_geometry(
 }
 
 /// Builds a regular dodecahedron inscribed in a sphere of `radius`.
-pub fn create_dodecahedron_mesh_geometry(radius: Option<f32>, detail: Option<i32>) -> MeshGeometry {
+pub fn create_dodecahedron_mesh_geometry(radius: Option<f64>, detail: Option<i32>) -> MeshGeometry {
     let radius = radius.unwrap_or(0.5);
     let detail = detail.unwrap_or(0);
 
@@ -318,7 +318,7 @@ pub fn create_dodecahedron_mesh_geometry(radius: Option<f32>, detail: Option<i32
 }
 
 /// Builds a regular icosahedron inscribed in a sphere of `radius`.
-pub fn create_icosahedron_mesh_geometry(radius: Option<f32>, detail: Option<i32>) -> MeshGeometry {
+pub fn create_icosahedron_mesh_geometry(radius: Option<f64>, detail: Option<i32>) -> MeshGeometry {
     let radius = radius.unwrap_or(0.5);
     let detail = detail.unwrap_or(0);
 
@@ -332,7 +332,7 @@ pub fn create_icosahedron_mesh_geometry(radius: Option<f32>, detail: Option<i32>
 
 /// Builds a geodesic icosphere of `radius` centered at the origin.
 pub fn create_icosphere_mesh_geometry(
-    radius: Option<f32>,
+    radius: Option<f64>,
     subdivisions: Option<i32>,
 ) -> MeshGeometry {
     let radius = radius.unwrap_or(0.5);
@@ -340,9 +340,9 @@ pub fn create_icosphere_mesh_geometry(
 
     let subs = normalize_mesh_count(subdivisions, 0, 6);
 
-    let phi = (1.0 + 5.0f32.sqrt()) * 0.5;
+    let phi = (1.0 + 5.0f64.sqrt()) * 0.5;
     let scale = 1.0 / (1.0 + phi * phi).sqrt();
-    let base_verts_raw: Vec<[f32; 3]> = vec![
+    let base_verts_raw: Vec<[f64; 3]> = vec![
         [-1.0, phi, 0.0],
         [1.0, phi, 0.0],
         [-1.0, -phi, 0.0],
@@ -356,7 +356,7 @@ pub fn create_icosphere_mesh_geometry(
         [-phi, 0.0, -1.0],
         [-phi, 0.0, 1.0],
     ];
-    let mut verts: Vec<[f32; 3]> = base_verts_raw
+    let mut verts: Vec<[f64; 3]> = base_verts_raw
         .iter()
         .map(|v| [v[0] * scale, v[1] * scale, v[2] * scale])
         .collect();
@@ -400,9 +400,9 @@ pub fn create_icosphere_mesh_geometry(
         midpoint_cache.clear();
     }
 
-    let mut positions: Vec<f32> = Vec::new();
-    let mut normals: Vec<f32> = Vec::new();
-    let mut uvs: Vec<f32> = Vec::new();
+    let mut positions: Vec<f64> = Vec::new();
+    let mut normals: Vec<f64> = Vec::new();
+    let mut uvs: Vec<f64> = Vec::new();
     let mut face_indices: Vec<u32> = Vec::new();
 
     for face in &faces {
@@ -431,7 +431,7 @@ pub fn create_icosphere_mesh_geometry(
 }
 
 /// Builds a regular octahedron inscribed in a sphere of `radius`.
-pub fn create_octahedron_mesh_geometry(radius: Option<f32>, detail: Option<i32>) -> MeshGeometry {
+pub fn create_octahedron_mesh_geometry(radius: Option<f64>, detail: Option<i32>) -> MeshGeometry {
     let radius = radius.unwrap_or(0.5);
     let detail = detail.unwrap_or(0);
 
@@ -445,8 +445,8 @@ pub fn create_octahedron_mesh_geometry(radius: Option<f32>, detail: Option<i32>)
 
 /// Builds a flat plane in the XZ plane centered at the origin.
 pub fn create_plane_mesh_geometry(
-    width: Option<f32>,
-    depth: Option<f32>,
+    width: Option<f64>,
+    depth: Option<f64>,
     width_segments: Option<i32>,
     depth_segments: Option<i32>,
 ) -> MeshGeometry {
@@ -460,16 +460,16 @@ pub fn create_plane_mesh_geometry(
     let hw = width * 0.5;
     let hd = depth * 0.5;
 
-    let mut positions: Vec<f32> = Vec::new();
-    let mut normals: Vec<f32> = Vec::new();
-    let mut uvs: Vec<f32> = Vec::new();
+    let mut positions: Vec<f64> = Vec::new();
+    let mut normals: Vec<f64> = Vec::new();
+    let mut uvs: Vec<f64> = Vec::new();
     let mut indices: Vec<u32> = Vec::new();
 
     for iz in 0..=d_seg {
-        let v = iz as f32 / d_seg as f32;
+        let v = iz as f64 / d_seg as f64;
         let z = -hd + v * depth;
         for ix in 0..=w_seg {
-            let u = ix as f32 / w_seg as f32;
+            let u = ix as f64 / w_seg as f64;
             let x = -hw + u * width;
             positions.extend_from_slice(&[x, 0.0, z]);
             normals.extend_from_slice(&[0.0, 1.0, 0.0]);
@@ -493,16 +493,16 @@ pub fn create_plane_mesh_geometry(
 
 /// Builds a polyhedron from vertex positions and face triplets.
 pub fn create_polyhedron_mesh_geometry(
-    vertex_positions: &[[f32; 3]],
+    vertex_positions: &[[f64; 3]],
     face_indices: &[[u32; 3]],
-    radius: Option<f32>,
+    radius: Option<f64>,
     detail: Option<i32>,
 ) -> MeshGeometry {
     let radius = radius.unwrap_or(0.5);
     let detail = detail.unwrap_or(0);
 
     let subs = normalize_mesh_count(detail, 0, 5);
-    let mut verts: Vec<[f32; 3]> = vertex_positions
+    let mut verts: Vec<[f64; 3]> = vertex_positions
         .iter()
         .map(|v| {
             let len = (v[0] * v[0] + v[1] * v[1] + v[2] * v[2]).sqrt();
@@ -529,9 +529,9 @@ pub fn create_polyhedron_mesh_geometry(
         }
     }
 
-    let mut positions: Vec<f32> = Vec::new();
-    let mut normals: Vec<f32> = Vec::new();
-    let mut uvs: Vec<f32> = Vec::new();
+    let mut positions: Vec<f64> = Vec::new();
+    let mut normals: Vec<f64> = Vec::new();
+    let mut uvs: Vec<f64> = Vec::new();
     let mut flat_indices: Vec<u32> = Vec::new();
 
     for face in &faces {
@@ -560,7 +560,7 @@ pub fn create_polyhedron_mesh_geometry(
 }
 
 /// Builds a single unit quad in the XY plane centered at the origin.
-pub fn create_quad_mesh_geometry(width: Option<f32>, height: Option<f32>) -> MeshGeometry {
+pub fn create_quad_mesh_geometry(width: Option<f64>, height: Option<f64>) -> MeshGeometry {
     let width = width.unwrap_or(1.0);
     let height = height.unwrap_or(1.0);
 
@@ -575,8 +575,8 @@ pub fn create_quad_mesh_geometry(width: Option<f32>, height: Option<f32>) -> Mes
 
 /// Builds a flat ring (annulus) in the XZ plane centered at the origin.
 pub fn create_ring_mesh_geometry(
-    inner_radius: Option<f32>,
-    outer_radius: Option<f32>,
+    inner_radius: Option<f64>,
+    outer_radius: Option<f64>,
     segments: Option<i32>,
 ) -> MeshGeometry {
     let inner_radius = inner_radius.unwrap_or(0.25);
@@ -584,21 +584,21 @@ pub fn create_ring_mesh_geometry(
     let segments = segments.unwrap_or(32);
 
     let segs = normalize_mesh_count(segments, 3, u32::MAX);
-    let mut positions: Vec<f32> = Vec::new();
-    let mut normals: Vec<f32> = Vec::new();
-    let mut uvs: Vec<f32> = Vec::new();
+    let mut positions: Vec<f64> = Vec::new();
+    let mut normals: Vec<f64> = Vec::new();
+    let mut uvs: Vec<f64> = Vec::new();
     let mut indices: Vec<u32> = Vec::new();
 
     for i in 0..=segs {
-        let theta = (i as f32 / segs as f32) * std::f32::consts::PI * 2.0;
+        let theta = (i as f64 / segs as f64) * std::f64::consts::PI * 2.0;
         let cos = theta.cos();
         let sin = theta.sin();
         positions.extend_from_slice(&[inner_radius * cos, 0.0, inner_radius * sin]);
         normals.extend_from_slice(&[0.0, 1.0, 0.0]);
-        uvs.extend_from_slice(&[0.0, i as f32 / segs as f32]);
+        uvs.extend_from_slice(&[0.0, i as f64 / segs as f64]);
         positions.extend_from_slice(&[outer_radius * cos, 0.0, outer_radius * sin]);
         normals.extend_from_slice(&[0.0, 1.0, 0.0]);
-        uvs.extend_from_slice(&[1.0, i as f32 / segs as f32]);
+        uvs.extend_from_slice(&[1.0, i as f64 / segs as f64]);
     }
 
     for i in 0..segs {
@@ -614,7 +614,7 @@ pub fn create_ring_mesh_geometry(
 
 /// Builds a UV sphere.
 pub fn create_sphere_mesh_geometry(
-    radius: Option<f32>,
+    radius: Option<f64>,
     width_segments: Option<i32>,
     height_segments: Option<i32>,
 ) -> MeshGeometry {
@@ -625,19 +625,19 @@ pub fn create_sphere_mesh_geometry(
     let w_seg = normalize_mesh_count(width_segments, 3, u32::MAX);
     let h_seg = normalize_mesh_count(height_segments, 2, u32::MAX);
 
-    let mut positions: Vec<f32> = Vec::new();
-    let mut normals: Vec<f32> = Vec::new();
-    let mut uvs: Vec<f32> = Vec::new();
+    let mut positions: Vec<f64> = Vec::new();
+    let mut normals: Vec<f64> = Vec::new();
+    let mut uvs: Vec<f64> = Vec::new();
     let mut indices: Vec<u32> = Vec::new();
 
     for iy in 0..=h_seg {
-        let v = iy as f32 / h_seg as f32;
-        let phi_val = v * std::f32::consts::PI;
+        let v = iy as f64 / h_seg as f64;
+        let phi_val = v * std::f64::consts::PI;
         let sin_phi = phi_val.sin();
         let cos_phi = phi_val.cos();
         for ix in 0..=w_seg {
-            let u = ix as f32 / w_seg as f32;
-            let theta = u * std::f32::consts::PI * 2.0;
+            let u = ix as f64 / w_seg as f64;
+            let theta = u * std::f64::consts::PI * 2.0;
             let sin_theta = theta.sin();
             let cos_theta = theta.cos();
             let nx = -sin_phi * cos_theta;
@@ -664,7 +664,7 @@ pub fn create_sphere_mesh_geometry(
 }
 
 /// Builds a regular tetrahedron inscribed in a sphere of `radius`.
-pub fn create_tetrahedron_mesh_geometry(radius: Option<f32>, detail: Option<i32>) -> MeshGeometry {
+pub fn create_tetrahedron_mesh_geometry(radius: Option<f64>, detail: Option<i32>) -> MeshGeometry {
     let radius = radius.unwrap_or(0.5);
     let detail = detail.unwrap_or(0);
 
@@ -678,12 +678,12 @@ pub fn create_tetrahedron_mesh_geometry(radius: Option<f32>, detail: Option<i32>
 
 /// Builds a torus knot.
 pub fn create_torus_knot_mesh_geometry(
-    radius: Option<f32>,
-    tube: Option<f32>,
+    radius: Option<f64>,
+    tube: Option<f64>,
     tubular_segments: Option<i32>,
     radial_segments: Option<i32>,
-    p: Option<f32>,
-    q: Option<f32>,
+    p: Option<f64>,
+    q: Option<f64>,
 ) -> MeshGeometry {
     let radius = radius.unwrap_or(0.5);
     let tube = tube.unwrap_or(0.15);
@@ -694,13 +694,13 @@ pub fn create_torus_knot_mesh_geometry(
 
     let t_seg = normalize_mesh_count(tubular_segments, 3, u32::MAX);
     let r_seg = normalize_mesh_count(radial_segments, 3, u32::MAX);
-    let mut positions: Vec<f32> = Vec::new();
-    let mut normals: Vec<f32> = Vec::new();
-    let mut uvs: Vec<f32> = Vec::new();
+    let mut positions: Vec<f64> = Vec::new();
+    let mut normals: Vec<f64> = Vec::new();
+    let mut uvs: Vec<f64> = Vec::new();
     let mut indices: Vec<u32> = Vec::new();
 
-    let curve_point = |t: f32| -> [f32; 3] {
-        let angle = t * std::f32::consts::PI * 2.0;
+    let curve_point = |t: f64| -> [f64; 3] {
+        let angle = t * std::f64::consts::PI * 2.0;
         let x = (radius + tube) * (p * angle).cos() * (q * angle).cos();
         let y = (radius + tube) * (p * angle).cos() * (q * angle).sin();
         let z = (radius + tube) * (p * angle).sin();
@@ -708,14 +708,14 @@ pub fn create_torus_knot_mesh_geometry(
     };
 
     for i in 0..=t_seg {
-        let u = i as f32 / t_seg as f32;
+        let u = i as f64 / t_seg as f64;
         let c = curve_point(u);
         let t1 = curve_point(u + 0.001);
         let t0 = curve_point(u - 0.001);
         let mut tgx = t1[0] - t0[0];
         let mut tgy = t1[1] - t0[1];
         let mut tgz = t1[2] - t0[2];
-        let tg_len = (tgx * tgx + tgy * tgy + tgz * tgz).sqrt().max(f32::EPSILON);
+        let tg_len = (tgx * tgx + tgy * tgy + tgz * tgz).sqrt().max(f64::EPSILON);
         tgx /= tg_len;
         tgy /= tg_len;
         tgz /= tg_len;
@@ -723,7 +723,7 @@ pub fn create_torus_knot_mesh_geometry(
         let mut bx = tgx + c[0];
         let mut by = tgy + c[1];
         let mut bz = tgz + c[2];
-        let b_len = (bx * bx + by * by + bz * bz).sqrt().max(f32::EPSILON);
+        let b_len = (bx * bx + by * by + bz * bz).sqrt().max(f64::EPSILON);
         bx /= b_len;
         by /= b_len;
         bz /= b_len;
@@ -731,7 +731,7 @@ pub fn create_torus_knot_mesh_geometry(
         let mut nnx = tgy * bz - tgz * by;
         let mut nny = tgz * bx - tgx * bz;
         let mut nnz = tgx * by - tgy * bx;
-        let n_len = (nnx * nnx + nny * nny + nnz * nnz).sqrt().max(f32::EPSILON);
+        let n_len = (nnx * nnx + nny * nny + nnz * nnz).sqrt().max(f64::EPSILON);
         nnx /= n_len;
         nny /= n_len;
         nnz /= n_len;
@@ -741,8 +741,8 @@ pub fn create_torus_knot_mesh_geometry(
         let bnz = tgx * nny - tgy * nnx;
 
         for j in 0..=r_seg {
-            let v = j as f32 / r_seg as f32;
-            let phi_val = v * std::f32::consts::PI * 2.0;
+            let v = j as f64 / r_seg as f64;
+            let phi_val = v * std::f64::consts::PI * 2.0;
             let cos_phi = phi_val.cos();
             let sin_phi = phi_val.sin();
             let px = c[0] + tube * (cos_phi * nnx + sin_phi * bnx);
@@ -772,8 +772,8 @@ pub fn create_torus_knot_mesh_geometry(
 
 /// Builds a torus in the XY plane.
 pub fn create_torus_mesh_geometry(
-    radius: Option<f32>,
-    tube: Option<f32>,
+    radius: Option<f64>,
+    tube: Option<f64>,
     radial_segments: Option<i32>,
     tubular_segments: Option<i32>,
 ) -> MeshGeometry {
@@ -785,17 +785,17 @@ pub fn create_torus_mesh_geometry(
     let r_seg = normalize_mesh_count(radial_segments, 3, u32::MAX);
     let t_seg = normalize_mesh_count(tubular_segments, 3, u32::MAX);
 
-    let mut positions: Vec<f32> = Vec::new();
-    let mut normals: Vec<f32> = Vec::new();
-    let mut uvs: Vec<f32> = Vec::new();
+    let mut positions: Vec<f64> = Vec::new();
+    let mut normals: Vec<f64> = Vec::new();
+    let mut uvs: Vec<f64> = Vec::new();
     let mut indices: Vec<u32> = Vec::new();
 
     for j in 0..=r_seg {
-        let v = (j as f32 / r_seg as f32) * std::f32::consts::PI * 2.0;
+        let v = (j as f64 / r_seg as f64) * std::f64::consts::PI * 2.0;
         let cos_v = v.cos();
         let sin_v = v.sin();
         for i in 0..=t_seg {
-            let u = (i as f32 / t_seg as f32) * std::f32::consts::PI * 2.0;
+            let u = (i as f64 / t_seg as f64) * std::f64::consts::PI * 2.0;
             let cos_u = u.cos();
             let sin_u = u.sin();
             let cx = radius * cos_u;
@@ -807,13 +807,13 @@ pub fn create_torus_mesh_geometry(
             let mut nx = px - cx;
             let mut ny = py - cy;
             let nz = pz;
-            let len = (nx * nx + ny * ny + nz * nz).sqrt().max(f32::EPSILON);
+            let len = (nx * nx + ny * ny + nz * nz).sqrt().max(f64::EPSILON);
             nx /= len;
             ny /= len;
             normals.push(nx);
             normals.push(ny);
             normals.push(nz / len);
-            uvs.extend_from_slice(&[i as f32 / t_seg as f32, j as f32 / r_seg as f32]);
+            uvs.extend_from_slice(&[i as f64 / t_seg as f64, j as f64 / r_seg as f64]);
         }
     }
 
@@ -832,14 +832,14 @@ pub fn create_torus_mesh_geometry(
 }
 
 fn add_disc(
-    positions: &mut Vec<f32>,
-    normals: &mut Vec<f32>,
-    uvs: &mut Vec<f32>,
+    positions: &mut Vec<f64>,
+    normals: &mut Vec<f64>,
+    uvs: &mut Vec<f64>,
     indices: &mut Vec<u32>,
     segments: u32,
-    radius: f32,
-    y: f32,
-    direction: f32,
+    radius: f64,
+    y: f64,
+    direction: f64,
 ) {
     let center = (positions.len() / 3) as u32;
     positions.extend_from_slice(&[0.0, y, 0.0]);
@@ -848,7 +848,7 @@ fn add_disc(
 
     let ring_start = (positions.len() / 3) as u32;
     for s in 0..=segments {
-        let theta = (s as f32 / segments as f32) * std::f32::consts::PI * 2.0;
+        let theta = (s as f64 / segments as f64) * std::f64::consts::PI * 2.0;
         let cos = theta.cos();
         let sin = theta.sin();
         positions.extend_from_slice(&[radius * cos, y, radius * sin]);
@@ -867,10 +867,11 @@ fn add_disc(
     }
 }
 
+// flight-lint: allow(f32) generated f64 attributes narrow once at the canonical interleaved GPU vertex seam
 fn build_canonical_mesh_geometry(
-    positions: &[f32],
-    normals: &[f32],
-    uvs: &[f32],
+    positions: &[f64],
+    normals: &[f64],
+    uvs: &[f64],
     indices: &[u32],
 ) -> MeshGeometry {
     let vertex_count = positions.len() / 3;
@@ -878,15 +879,16 @@ fn build_canonical_mesh_geometry(
 
     for i in 0..vertex_count {
         let base = i * CANONICAL_FLOATS_PER_VERTEX;
-        vertices[base] = positions[i * 3];
-        vertices[base + 1] = positions[i * 3 + 1];
-        vertices[base + 2] = positions[i * 3 + 2];
-        vertices[base + 3] = normals[i * 3];
-        vertices[base + 4] = normals[i * 3 + 1];
-        vertices[base + 5] = normals[i * 3 + 2];
+        // This is the single authoring-to-GPU seam for generated mesh data.
+        vertices[base] = positions[i * 3] as f32;
+        vertices[base + 1] = positions[i * 3 + 1] as f32;
+        vertices[base + 2] = positions[i * 3 + 2] as f32;
+        vertices[base + 3] = normals[i * 3] as f32;
+        vertices[base + 4] = normals[i * 3 + 1] as f32;
+        vertices[base + 5] = normals[i * 3 + 2] as f32;
         // tangent (base+6..9) filled by compute_mesh_geometry_tangents
-        vertices[base + 10] = uvs[i * 2];
-        vertices[base + 11] = uvs[i * 2 + 1];
+        vertices[base + 10] = uvs[i * 2] as f32;
+        vertices[base + 11] = uvs[i * 2 + 1] as f32;
     }
 
     let index_array: Vec<u32> = indices.to_vec();
@@ -953,8 +955,8 @@ fn dodecahedron_faces() -> Vec<[u32; 3]> {
     ];
 }
 
-fn dodecahedron_verts() -> Vec<[f32; 3]> {
-    let phi = (1.0 + 5.0f32.sqrt()) * 0.5;
+fn dodecahedron_verts() -> Vec<[f64; 3]> {
+    let phi = (1.0 + 5.0f64.sqrt()) * 0.5;
     let d = 1.0 / phi;
     return vec![
         [-1.0, -1.0, -1.0],
@@ -980,7 +982,7 @@ fn dodecahedron_verts() -> Vec<[f32; 3]> {
     ];
 }
 
-fn face_spherical_u(a: &[f32; 3], b: &[f32; 3], c: &[f32; 3]) -> [f32; 3] {
+fn face_spherical_u(a: &[f64; 3], b: &[f64; 3], c: &[f64; 3]) -> [f64; 3] {
     let _directions = [a, b, c];
     let is_pole: [bool; 3] = [
         (a[0].hypot(a[2])) <= POLE_EPSILON,
@@ -995,11 +997,11 @@ fn face_spherical_u(a: &[f32; 3], b: &[f32; 3], c: &[f32; 3]) -> [f32; 3] {
 
     let defined: Vec<usize> = (0..3).filter(|&i| !is_pole[i]).collect();
     if !defined.is_empty() {
-        let min_val = defined.iter().map(|&i| u[i]).fold(f32::INFINITY, f32::min);
+        let min_val = defined.iter().map(|&i| u[i]).fold(f64::INFINITY, f64::min);
         let max_val = defined
             .iter()
             .map(|&i| u[i])
-            .fold(f32::NEG_INFINITY, f32::max);
+            .fold(f64::NEG_INFINITY, f64::max);
         if max_val - min_val > 0.5 {
             for &i in &defined {
                 if u[i] < 0.5 {
@@ -1007,7 +1009,7 @@ fn face_spherical_u(a: &[f32; 3], b: &[f32; 3], c: &[f32; 3]) -> [f32; 3] {
                 }
             }
         }
-        let mean = defined.iter().map(|&i| u[i]).sum::<f32>() / defined.len() as f32;
+        let mean = defined.iter().map(|&i| u[i]).sum::<f64>() / defined.len() as f64;
         for i in 0..3 {
             if is_pole[i] {
                 u[i] = mean;
@@ -1018,7 +1020,7 @@ fn face_spherical_u(a: &[f32; 3], b: &[f32; 3], c: &[f32; 3]) -> [f32; 3] {
 }
 
 fn get_midpoint(
-    verts: &mut Vec<[f32; 3]>,
+    verts: &mut Vec<[f64; 3]>,
     cache: &mut std::collections::HashMap<u64, u32>,
     a: u32,
     b: u32,
@@ -1072,8 +1074,8 @@ fn icosahedron_faces() -> Vec<[u32; 3]> {
     ];
 }
 
-fn icosahedron_verts() -> Vec<[f32; 3]> {
-    let phi = (1.0 + 5.0f32.sqrt()) * 0.5;
+fn icosahedron_verts() -> Vec<[f64; 3]> {
+    let phi = (1.0 + 5.0f64.sqrt()) * 0.5;
     return vec![
         [-1.0, phi, 0.0],
         [1.0, phi, 0.0],
@@ -1107,7 +1109,7 @@ fn octahedron_faces() -> Vec<[u32; 3]> {
     ];
 }
 
-fn octahedron_verts() -> Vec<[f32; 3]> {
+fn octahedron_verts() -> Vec<[f64; 3]> {
     return vec![
         [1.0, 0.0, 0.0],
         [-1.0, 0.0, 0.0],
@@ -1118,19 +1120,19 @@ fn octahedron_verts() -> Vec<[f32; 3]> {
     ];
 }
 
-fn spherical_u(nx: f32, nz: f32) -> f32 {
-    return 0.5 + nz.atan2(nx) / (std::f32::consts::PI * 2.0);
+fn spherical_u(nx: f64, nz: f64) -> f64 {
+    return 0.5 + nz.atan2(nx) / (std::f64::consts::PI * 2.0);
 }
 
-fn spherical_v(ny: f32) -> f32 {
-    return 0.5 - ny.clamp(-1.0, 1.0).asin() / std::f32::consts::PI;
+fn spherical_v(ny: f64) -> f64 {
+    return 0.5 - ny.clamp(-1.0, 1.0).asin() / std::f64::consts::PI;
 }
 
 fn tetrahedron_faces() -> Vec<[u32; 3]> {
     return vec![[2, 1, 0], [0, 3, 2], [1, 3, 0], [2, 3, 1]];
 }
 
-fn tetrahedron_verts() -> Vec<[f32; 3]> {
+fn tetrahedron_verts() -> Vec<[f64; 3]> {
     return vec![
         [1.0, 1.0, 1.0],
         [-1.0, -1.0, 1.0],

@@ -97,6 +97,7 @@ pub static CANONICAL_SKINNED_MESH_GEOMETRY_LAYOUT: std::sync::LazyLock<
     }));
 });
 
+// flight-lint: allow(f32) layout conversion decodes the canonical interleaved GPU vertex carrier
 fn bytes_to_f32_vec(bytes: &[u8]) -> Vec<f32> {
     let count = bytes.len() / 4;
     let mut result = vec![0.0f32; count];
@@ -116,6 +117,7 @@ fn bytes_to_f32_vec(bytes: &[u8]) -> Vec<f32> {
 /// Re-packs a geometry's interleaved vertex stream into a new layout. Attributes present
 /// in both layouts are copied by semantic; absent attributes are zero-filled. Returns a
 /// new MeshGeometry. Bounds are set to None.
+// flight-lint: allow(f32) layout conversion produces canonical interleaved GPU vertex storage
 pub fn convert_mesh_geometry_layout(
     source: &MeshGeometry,
     target_layout: &flight_entity::Ref<VertexAttributeLayout>,

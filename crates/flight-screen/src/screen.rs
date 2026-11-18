@@ -29,7 +29,7 @@ mod sugar_tests {
         }
     }
 
-    fn screen(id: f64, x: f32, width: f32) -> ScreenInfo {
+    fn screen(id: f64, x: f64, width: f64) -> ScreenInfo {
         let mut out = create_screen_info();
         out.id = id;
         out.x = x;
@@ -594,7 +594,6 @@ pub fn get_screen_bounds(out: &mut Rectangle, screen: &ScreenInfo) {
 /// Copies the first screen whose id equals `id` into `out` (its data fields only; `out` keeps its own
 /// runtime) and returns true, or returns false without touching `out` (TS returns null).
 // flight-lint: allow(conform-params) D5/D9b: explicit caller-owned scratch replaces the source module array; `out` first with a found status instead of `out | null`
-// flight-lint: allow(f64) `id` is the exact-match display id (see `ScreenInfo`)
 pub fn get_screen_by_id(
     out: &mut ScreenInfo,
     scratch: &mut ScreenQueryScratch,
@@ -642,11 +641,11 @@ pub fn get_screen_containing_rect(
         return;
     }
     let mut best = 0;
-    let mut best_overlap = -1.0_f32;
+    let mut best_overlap = -1.0_f64;
     for (index, screen) in scratch.screens.iter().enumerate() {
         let overlap_x =
-            0.0_f32.max((rect.x + rect.width).min(screen.x + screen.width) - rect.x.max(screen.x));
-        let overlap_y = 0.0_f32
+            0.0_f64.max((rect.x + rect.width).min(screen.x + screen.width) - rect.x.max(screen.x));
+        let overlap_y = 0.0_f64
             .max((rect.y + rect.height).min(screen.y + screen.height) - rect.y.max(screen.y));
         let overlap = overlap_x * overlap_y;
         if overlap > best_overlap {
@@ -726,7 +725,7 @@ pub fn get_screen_nearest_point(
         return;
     }
     let mut best = 0;
-    let mut best_distance = f32::INFINITY;
+    let mut best_distance = f64::INFINITY;
     for (index, screen) in scratch.screens.iter().enumerate() {
         let dx = point.x - (screen.x + screen.width / 2.0);
         let dy = point.y - (screen.y + screen.height / 2.0);
@@ -895,7 +894,6 @@ impl HostScreenPermissionChangeCapability {
 
 #[cfg(feature = "object-api")]
 impl HostScreenQueryCapability {
-    // flight-lint: allow(f64) `id` is the exact-match display id (see `ScreenInfo`)
     pub fn by_id(&self, out: &mut ScreenInfo, scratch: &mut ScreenQueryScratch, id: f64) -> bool {
         return get_screen_by_id(out, scratch, self, id);
     }

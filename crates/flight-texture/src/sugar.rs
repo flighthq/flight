@@ -441,6 +441,7 @@ mod sugar_tests {
     }
 }
 
+// flight-lint: allow(f32) UV offset and scale methods expose bounded texture-coordinate channels
 pub trait TextureExt: TextureVariant + Sized {
     fn clone_texture(&self) -> Texture {
         return clone_texture(self);
@@ -482,7 +483,7 @@ pub trait TextureExt: TextureVariant + Sized {
         return set_texture_source(self, source);
     }
 
-    fn set_uv_from_pixel_rect(&mut self, x: f32, y: f32, width: f32, height: f32) {
+    fn set_uv_from_pixel_rect(&mut self, x: f64, y: f64, width: f64, height: f64) {
         return set_texture_uv_from_pixel_rect(self, x, y, width, height);
     }
 
@@ -490,7 +491,7 @@ pub trait TextureExt: TextureVariant + Sized {
         return set_texture_uv_offset(self, x, y);
     }
 
-    fn set_uv_rotation(&mut self, radians: f32) {
+    fn set_uv_rotation(&mut self, radians: f64) {
         return set_texture_uv_rotation(self, radians);
     }
 
@@ -583,6 +584,7 @@ impl Sampler {
         return create_sampler();
     }
 
+    // flight-lint: allow(f32) anisotropy is bounded GPU sampler state submitted unchanged to native graphics APIs
     pub fn anisotropic(level: f32) -> Self {
         return create_anisotropic_sampler(level);
     }

@@ -83,6 +83,7 @@ pub enum TextureWrap {
 
 #[derive(Clone, Debug, PartialEq)]
 #[repr(C)]
+// flight-lint: allow(f32) anisotropy is bounded GPU sampler state submitted unchanged to native graphics APIs
 pub struct Sampler {
     runtime: EntityRuntimeSlot,
     pub anisotropy: f32,
@@ -133,7 +134,7 @@ pub struct TextureFields {
     pub flip_y: bool,
     pub sampler: Sampler,
     pub uv_offset: Vector2,
-    pub uv_rotation: f32,
+    pub uv_rotation: f64,
     pub uv_scale: Vector2,
     pub version: u32,
 }
@@ -214,7 +215,7 @@ pub struct CreateTextureCommonOptions {
     pub flip_y: Option<bool>,
     pub sampler: Option<Sampler>,
     pub uv_offset: Option<Vector2>,
-    pub uv_rotation: Option<f32>,
+    pub uv_rotation: Option<f64>,
     pub uv_scale: Option<Vector2>,
     pub version: Option<u32>,
 }

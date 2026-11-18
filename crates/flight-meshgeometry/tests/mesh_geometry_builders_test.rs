@@ -368,7 +368,7 @@ mod create_plane_mesh_geometry {
 mod create_polyhedron_mesh_geometry {
     use super::*;
 
-    const TRIANGLE_VERTS: [[f32; 3]; 3] = [[0.0, 1.0, 0.0], [-1.0, -1.0, 0.0], [1.0, -1.0, 0.0]];
+    const TRIANGLE_VERTS: [[f64; 3]; 3] = [[0.0, 1.0, 0.0], [-1.0, -1.0, 0.0], [1.0, -1.0, 0.0]];
     const ONE_FACE: [[u32; 3]; 1] = [[0, 1, 2]];
 
     #[test]
@@ -422,7 +422,7 @@ mod create_polyhedron_mesh_geometry {
     #[test]
     fn produces_different_geometry_for_different_seed_vertices() {
         let a = create_polyhedron_mesh_geometry(&TRIANGLE_VERTS, &ONE_FACE, Some(1.0), Some(0));
-        let other_verts: [[f32; 3]; 3] = [[0.0, 0.0, 1.0], [0.0, 1.0, 0.0], [1.0, 0.0, 0.0]];
+        let other_verts: [[f64; 3]; 3] = [[0.0, 0.0, 1.0], [0.0, 1.0, 0.0], [1.0, 0.0, 0.0]];
         let b = create_polyhedron_mesh_geometry(&other_verts, &ONE_FACE, Some(1.0), Some(0));
         assert_ne!(a.vertices, b.vertices);
     }

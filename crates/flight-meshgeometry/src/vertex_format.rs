@@ -159,6 +159,7 @@ pub fn parse_vertex_semantic(s: &str) -> Option<VertexSemantic> {
 
 /// Reads a single component from the vertex view at the given byte offset and format.
 /// Uses little-endian byte order.
+// flight-lint: allow(f32) vertex-format decoding operates on GPU storage and normalized bounded channels
 pub fn read_vertex_format_component(
     view: &[u8],
     byte_offset: usize,
@@ -188,6 +189,7 @@ pub fn read_vertex_format_component(
 /// Writes a single component to the vertex view at the given byte offset and format.
 /// Uses little-endian byte order. Values are clamped to the representable range for
 /// integer formats.
+// flight-lint: allow(f32) vertex-format encoding operates on GPU storage and normalized bounded channels
 pub fn write_vertex_format_component(
     view: &mut [u8],
     byte_offset: usize,

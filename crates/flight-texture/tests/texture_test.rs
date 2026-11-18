@@ -57,7 +57,7 @@ fn texture_2d_with_common(
     return texture;
 }
 
-fn multiply_uv(matrix: &flight_geometry::Matrix3, u: f32, v: f32) -> (f32, f32) {
+fn multiply_uv(matrix: &flight_geometry::Matrix3, u: f64, v: f64) -> (f64, f64) {
     return (
         matrix.m[0] * u + matrix.m[3] * v + matrix.m[6],
         matrix.m[1] * u + matrix.m[4] * v + matrix.m[7],
@@ -200,6 +200,19 @@ mod equals_texture {
     }
 }
 
+mod f64_precision_bridge {
+    use super::*;
+
+    #[test]
+    fn preserves_large_rotation_angles_without_an_early_f32_narrow() {
+        let large = 16_777_217.0_f64;
+        let mut texture = texture_2d(None);
+        set_texture_uv_rotation(&mut texture, large);
+        assert_eq!(texture.uv_rotation, large);
+        assert_ne!(large, large as f32 as f64);
+    }
+}
+
 mod get_texture_height {
     use super::*;
 
@@ -220,7 +233,7 @@ mod get_texture_inverse_uv_matrix {
     fn matches_geometry_inversion_of_the_forward_matrix() {
         let mut texture = texture_2d(None);
         set_texture_uv_offset(&mut texture, 0.1, 0.2);
-        set_texture_uv_rotation(&mut texture, std::f32::consts::PI / 6.0);
+        set_texture_uv_rotation(&mut texture, std::f64::consts::PI / 6.0);
         set_texture_uv_scale(&mut texture, 2.0, 3.0);
         let mut expected = create_matrix3();
         get_texture_uv_matrix(&mut expected, &texture);
@@ -297,7 +310,7 @@ mod get_texture_view_size {
     fn measures_rotated_scaled_axes_and_handles_unbound_sources() {
         let mut texture = texture_2d(Some(source("image", 100, 50)));
         set_texture_uv_scale(&mut texture, 0.3, 0.2);
-        set_texture_uv_rotation(&mut texture, -std::f32::consts::FRAC_PI_2);
+        set_texture_uv_rotation(&mut texture, -std::f64::consts::FRAC_PI_2);
         let mut out = create_vector2(0.0, 0.0);
         get_texture_view_size(&mut out, &texture);
         assert!((out.x - 15.0).abs() < 1e-6);
@@ -393,7 +406,7 @@ mod reset_texture_uv_transform {
         let sampler_address = std::ptr::from_ref(&texture.sampler);
         set_texture_flip(&mut texture, true, true);
         set_texture_uv_offset(&mut texture, 0.4, 0.6);
-        set_texture_uv_rotation(&mut texture, std::f32::consts::PI);
+        set_texture_uv_rotation(&mut texture, std::f64::consts::PI);
         set_texture_uv_scale(&mut texture, 5.0, 7.0);
         reset_texture_uv_transform(&mut texture);
         assert!(!has_texture_uv_transform(&texture));
@@ -457,7 +470,10 @@ mod set_texture_uv_offset {
         let mut texture = texture_2d(None);
         let address = std::ptr::from_ref(&texture.uv_offset);
         set_texture_uv_offset(&mut texture, 0.3, 0.7);
-        assert_eq!(texture.uv_offset, create_vector2(0.3, 0.7));
+        assert_eq!(
+            texture.uv_offset,
+            create_vector2(f64::from(0.3_f32), f64::from(0.7_f32))
+        );
         assert_eq!(std::ptr::from_ref(&texture.uv_offset), address);
     }
 }
@@ -468,8 +484,8 @@ mod set_texture_uv_rotation {
     #[test]
     fn updates_rotation_in_place() {
         let mut texture = texture_2d(None);
-        set_texture_uv_rotation(&mut texture, std::f32::consts::PI);
-        assert_eq!(texture.uv_rotation, std::f32::consts::PI);
+        set_texture_uv_rotation(&mut texture, std::f64::consts::PI);
+        assert_eq!(texture.uv_rotation, std::f64::consts::PI);
     }
 }
 

@@ -18,6 +18,7 @@ const UINT32_UNMAPPED: u32 = 0xFFFFFFFF;
 /// Removes vertex records not referenced by an indexed geometry and remaps the element
 /// stream to the compact records. Non-indexed input is deep-cloned. Invalid stride
 /// alignment or out-of-range source indices likewise return an unchanged deep clone.
+// flight-lint: allow(f32) compaction copies canonical interleaved GPU vertex records without numeric conversion
 pub fn compact_mesh_geometry_vertices(geometry: &MeshGeometry) -> MeshGeometry {
     let stride = geometry.layout.read().unwrap().stride;
     let byte_length = (geometry.vertices.len() as u32) * 4;
@@ -215,6 +216,7 @@ fn equal_vertex_record(
 
 /// De-indexes the geometry into a flat non-indexed stream: each index entry expands
 /// into its own copy of the referenced vertex record. Non-indexed geometry is deep-copied.
+// flight-lint: allow(f32) expansion copies canonical interleaved GPU vertex records without numeric conversion
 pub fn expand_mesh_geometry_indices(geometry: &MeshGeometry) -> MeshGeometry {
     let has_indices = match &geometry.indices {
         IndexBuffer::None => false,
@@ -312,6 +314,7 @@ pub fn index_mesh_geometry_vertices(geometry: &MeshGeometry) -> MeshGeometry {
     return out;
 }
 
+// flight-lint: allow(f32) byte comparison views the canonical interleaved GPU vertex carrier without conversion
 fn vertices_as_bytes_readonly(vertices: &[f32]) -> &[u8] {
     let ptr = vertices.as_ptr() as *const u8;
     let len = vertices.len() * 4;
@@ -320,6 +323,7 @@ fn vertices_as_bytes_readonly(vertices: &[f32]) -> &[u8] {
 
 /// Welds byte-identical interleaved vertex records and remaps the element stream to the
 /// unique records. Invalid stride alignment returns an unchanged deep clone.
+// flight-lint: allow(f32) welding preserves canonical interleaved GPU vertex records bit-for-bit
 pub fn weld_mesh_geometry_vertices(geometry: &MeshGeometry) -> MeshGeometry {
     let stride = geometry.layout.read().unwrap().stride;
     let byte_length = (geometry.vertices.len() as u32) * 4;

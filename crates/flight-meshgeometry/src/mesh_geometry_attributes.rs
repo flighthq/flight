@@ -74,8 +74,8 @@ fn get_float2_attribute(
         return false;
     }
     let base = (vertex_index * floats_per_vertex + float_offset as u32) as usize;
-    out.x = geometry.vertices[base];
-    out.y = geometry.vertices[base + 1];
+    out.x = geometry.vertices[base] as f64;
+    out.y = geometry.vertices[base + 1] as f64;
     return true;
 }
 
@@ -100,9 +100,9 @@ fn get_float3_attribute(
         return false;
     }
     let base = (vertex_index * floats_per_vertex + float_offset as u32) as usize;
-    out.x = geometry.vertices[base];
-    out.y = geometry.vertices[base + 1];
-    out.z = geometry.vertices[base + 2];
+    out.x = geometry.vertices[base] as f64;
+    out.y = geometry.vertices[base + 1] as f64;
+    out.z = geometry.vertices[base + 2] as f64;
     return true;
 }
 
@@ -138,10 +138,10 @@ fn get_four_component_attribute(
     } else {
         1.0
     };
-    out.x = x;
-    out.y = y;
-    out.z = z;
-    out.w = w;
+    out.x = x as f64;
+    out.y = y as f64;
+    out.z = z as f64;
+    out.w = w as f64;
     return true;
 }
 
@@ -213,10 +213,10 @@ pub fn get_mesh_geometry_vertex_tangent(
         return false;
     }
     let base = (vertex_index * floats_per_vertex + float_offset as u32) as usize;
-    out.x = geometry.vertices[base];
-    out.y = geometry.vertices[base + 1];
-    out.z = geometry.vertices[base + 2];
-    out.w = geometry.vertices[base + 3];
+    out.x = geometry.vertices[base] as f64;
+    out.y = geometry.vertices[base + 1] as f64;
+    out.z = geometry.vertices[base + 2] as f64;
+    out.w = geometry.vertices[base + 3] as f64;
     return true;
 }
 
@@ -242,8 +242,8 @@ pub fn get_mesh_geometry_vertex_uv0(
         return false;
     }
     let base = (vertex_index * floats_per_vertex + float_offset as u32) as usize;
-    out.x = geometry.vertices[base];
-    out.y = geometry.vertices[base + 1];
+    out.x = geometry.vertices[base] as f64;
+    out.y = geometry.vertices[base + 1] as f64;
     return true;
 }
 
@@ -304,6 +304,7 @@ pub fn get_vertex_attribute_float_offset(
     return -1;
 }
 
+// flight-lint: allow(f32) UV components are bounded values written directly to GPU vertex storage
 fn set_float2_attribute(
     geometry: &mut MeshGeometry,
     vertex_index: u32,
@@ -335,13 +336,14 @@ fn set_float2_attribute(
     return true;
 }
 
+// flight-lint: allow(f32) f64 spatial inputs narrow only when written to interleaved GPU vertex storage
 fn set_float3_attribute(
     geometry: &mut MeshGeometry,
     vertex_index: u32,
     semantic: VertexSemantic,
-    x: f32,
-    y: f32,
-    z: f32,
+    x: f64,
+    y: f64,
+    z: f64,
 ) -> bool {
     let float_offset =
         get_vertex_attribute_float_offset(&geometry.layout.read().unwrap(), semantic);
@@ -358,13 +360,14 @@ fn set_float3_attribute(
         return false;
     }
     let base = (vertex_index * floats_per_vertex + float_offset as u32) as usize;
-    geometry.vertices[base] = x;
-    geometry.vertices[base + 1] = y;
-    geometry.vertices[base + 2] = z;
+    geometry.vertices[base] = x as f32;
+    geometry.vertices[base + 1] = y as f32;
+    geometry.vertices[base + 2] = z as f32;
     geometry.version += 1;
     return true;
 }
 
+// flight-lint: allow(f32) color joint and weight components are bounded GPU vertex channels
 fn set_four_component_attribute(
     geometry: &mut MeshGeometry,
     vertex_index: u32,
@@ -403,6 +406,7 @@ fn set_four_component_attribute(
 }
 
 /// Writes color0 through its declared storage format. Bumps geometry.version on success.
+// flight-lint: allow(f32) color components are bounded GPU vertex channels
 pub fn set_mesh_geometry_vertex_color0(
     geometry: &mut MeshGeometry,
     vertex_index: u32,
@@ -424,6 +428,7 @@ pub fn set_mesh_geometry_vertex_color0(
 }
 
 /// Writes the four primary joint indices.
+// flight-lint: allow(f32) joint indices mirror the numeric GPU vertex channel
 pub fn set_mesh_geometry_vertex_joints0(
     geometry: &mut MeshGeometry,
     vertex_index: u32,
@@ -448,9 +453,9 @@ pub fn set_mesh_geometry_vertex_joints0(
 pub fn set_mesh_geometry_vertex_normal(
     geometry: &mut MeshGeometry,
     vertex_index: u32,
-    x: f32,
-    y: f32,
-    z: f32,
+    x: f64,
+    y: f64,
+    z: f64,
 ) -> bool {
     return set_float3_attribute(geometry, vertex_index, VertexSemantic::Normal, x, y, z);
 }
@@ -459,21 +464,22 @@ pub fn set_mesh_geometry_vertex_normal(
 pub fn set_mesh_geometry_vertex_position(
     geometry: &mut MeshGeometry,
     vertex_index: u32,
-    x: f32,
-    y: f32,
-    z: f32,
+    x: f64,
+    y: f64,
+    z: f64,
 ) -> bool {
     return set_float3_attribute(geometry, vertex_index, VertexSemantic::Position, x, y, z);
 }
 
 /// Writes the tangent (x, y, z, w) for vertex `vertex_index`. Bumps geometry.version.
+// flight-lint: allow(f32) f64 tangent authoring values narrow only at interleaved GPU vertex storage
 pub fn set_mesh_geometry_vertex_tangent(
     geometry: &mut MeshGeometry,
     vertex_index: u32,
-    x: f32,
-    y: f32,
-    z: f32,
-    w: f32,
+    x: f64,
+    y: f64,
+    z: f64,
+    w: f64,
 ) -> bool {
     let float_offset = get_vertex_attribute_float_offset(
         &geometry.layout.read().unwrap(),
@@ -492,15 +498,16 @@ pub fn set_mesh_geometry_vertex_tangent(
         return false;
     }
     let base = (vertex_index * floats_per_vertex + float_offset as u32) as usize;
-    geometry.vertices[base] = x;
-    geometry.vertices[base + 1] = y;
-    geometry.vertices[base + 2] = z;
-    geometry.vertices[base + 3] = w;
+    geometry.vertices[base] = x as f32;
+    geometry.vertices[base + 1] = y as f32;
+    geometry.vertices[base + 2] = z as f32;
+    geometry.vertices[base + 3] = w as f32;
     geometry.version += 1;
     return true;
 }
 
 /// Writes the uv0 (u, v) for vertex `vertex_index`. Bumps geometry.version.
+// flight-lint: allow(f32) UV components are bounded GPU vertex channels
 pub fn set_mesh_geometry_vertex_uv0(
     geometry: &mut MeshGeometry,
     vertex_index: u32,
@@ -529,6 +536,7 @@ pub fn set_mesh_geometry_vertex_uv0(
 }
 
 /// Writes the secondary texture coordinate channel.
+// flight-lint: allow(f32) UV components are bounded GPU vertex channels
 pub fn set_mesh_geometry_vertex_uv1(
     geometry: &mut MeshGeometry,
     vertex_index: u32,
@@ -539,6 +547,7 @@ pub fn set_mesh_geometry_vertex_uv1(
 }
 
 /// Writes the four primary skin weights.
+// flight-lint: allow(f32) skin weights are normalized bounded GPU vertex channels
 pub fn set_mesh_geometry_vertex_weights0(
     geometry: &mut MeshGeometry,
     vertex_index: u32,
@@ -561,6 +570,7 @@ pub fn set_mesh_geometry_vertex_weights0(
 
 /// Reinterprets a slice of f32 as a slice of u8 (read-only). This is the Rust equivalent
 /// of constructing a DataView over the same ArrayBuffer in TS.
+// flight-lint: allow(f32) byte views expose the canonical interleaved GPU vertex carrier without conversion
 pub(crate) fn vertices_as_bytes(vertices: &[f32]) -> &[u8] {
     let ptr = vertices.as_ptr() as *const u8;
     let len = vertices.len() * 4;
@@ -568,6 +578,7 @@ pub(crate) fn vertices_as_bytes(vertices: &[f32]) -> &[u8] {
 }
 
 /// Reinterprets a mutable slice of f32 as a mutable slice of u8.
+// flight-lint: allow(f32) byte views expose the canonical interleaved GPU vertex carrier without conversion
 pub(crate) fn vertices_as_bytes_mut(vertices: &mut [f32]) -> &mut [u8] {
     let ptr = vertices.as_mut_ptr() as *mut u8;
     let len = vertices.len() * 4;

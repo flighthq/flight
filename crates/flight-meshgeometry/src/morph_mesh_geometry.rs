@@ -6,7 +6,7 @@ use crate::MeshMorphBindPose;
 use crate::VertexSemantic;
 use crate::get_vertex_attribute_float_offset;
 
-fn accumulate_deltas(accumulator: &mut [f32], deltas: &[f32], weight: f32, count: usize) {
+fn accumulate_deltas(accumulator: &mut [f64], deltas: &[f64], weight: f64, count: usize) {
     let n = count.min(deltas.len());
     for i in 0..n {
         accumulator[i] += weight * deltas[i];
@@ -17,6 +17,7 @@ fn accumulate_deltas(accumulator: &mut [f32], deltas: &[f32], weight: f32, count
 /// base + sum(wi * target_i) for position, and where the base carries them, normal and
 /// tangent, into the bind pose scratch, then writes back into geometry.vertices.
 /// Bumps geometry.version.
+// flight-lint: allow(f32) f64 animated morph results narrow only when stored in the interleaved GPU vertex carrier
 pub fn blend_mesh_geometry_morph(
     geometry: &mut MeshGeometry,
     morph: &MeshMorph,
@@ -82,24 +83,24 @@ pub fn blend_mesh_geometry_morph(
         let s = v * 3;
         if position_offset >= 0 {
             let po = position_offset as usize;
-            geometry.vertices[dst + po] = bind_pose.blended_positions[s];
-            geometry.vertices[dst + po + 1] = bind_pose.blended_positions[s + 1];
-            geometry.vertices[dst + po + 2] = bind_pose.blended_positions[s + 2];
+            geometry.vertices[dst + po] = bind_pose.blended_positions[s] as f32;
+            geometry.vertices[dst + po + 1] = bind_pose.blended_positions[s + 1] as f32;
+            geometry.vertices[dst + po + 2] = bind_pose.blended_positions[s + 2] as f32;
         }
         if let Some(ref blended_normals) = bind_pose.blended_normals {
             if normal_offset >= 0 {
                 let no = normal_offset as usize;
-                geometry.vertices[dst + no] = blended_normals[s];
-                geometry.vertices[dst + no + 1] = blended_normals[s + 1];
-                geometry.vertices[dst + no + 2] = blended_normals[s + 2];
+                geometry.vertices[dst + no] = blended_normals[s] as f32;
+                geometry.vertices[dst + no + 1] = blended_normals[s + 1] as f32;
+                geometry.vertices[dst + no + 2] = blended_normals[s + 2] as f32;
             }
         }
         if let Some(ref blended_tangents) = bind_pose.blended_tangents {
             if tangent_offset >= 0 {
                 let to = tangent_offset as usize;
-                geometry.vertices[dst + to] = blended_tangents[s];
-                geometry.vertices[dst + to + 1] = blended_tangents[s + 1];
-                geometry.vertices[dst + to + 2] = blended_tangents[s + 2];
+                geometry.vertices[dst + to] = blended_tangents[s] as f32;
+                geometry.vertices[dst + to + 1] = blended_tangents[s + 1] as f32;
+                geometry.vertices[dst + to + 2] = blended_tangents[s + 2] as f32;
             }
         }
     }
@@ -128,14 +129,14 @@ pub fn capture_mesh_morph_bind_pose(geometry: &MeshGeometry) -> MeshMorphBindPos
         VertexSemantic::Tangent,
     );
 
-    let mut positions = vec![0.0f32; vertex_count * 3];
+    let mut positions = vec![0.0f64; vertex_count * 3];
     let mut normals = if normal_offset >= 0 {
-        Some(vec![0.0f32; vertex_count * 3])
+        Some(vec![0.0f64; vertex_count * 3])
     } else {
         None
     };
     let mut tangents = if tangent_offset >= 0 {
-        Some(vec![0.0f32; vertex_count * 3])
+        Some(vec![0.0f64; vertex_count * 3])
     } else {
         None
     };
@@ -145,34 +146,34 @@ pub fn capture_mesh_morph_bind_pose(geometry: &MeshGeometry) -> MeshMorphBindPos
         let p = v * 3;
         if position_offset >= 0 {
             let po = position_offset as usize;
-            positions[p] = geometry.vertices[base + po];
-            positions[p + 1] = geometry.vertices[base + po + 1];
-            positions[p + 2] = geometry.vertices[base + po + 2];
+            positions[p] = geometry.vertices[base + po] as f64;
+            positions[p + 1] = geometry.vertices[base + po + 1] as f64;
+            positions[p + 2] = geometry.vertices[base + po + 2] as f64;
         }
         if let Some(ref mut n) = normals {
             let no = normal_offset as usize;
-            n[p] = geometry.vertices[base + no];
-            n[p + 1] = geometry.vertices[base + no + 1];
-            n[p + 2] = geometry.vertices[base + no + 2];
+            n[p] = geometry.vertices[base + no] as f64;
+            n[p + 1] = geometry.vertices[base + no + 1] as f64;
+            n[p + 2] = geometry.vertices[base + no + 2] as f64;
         }
         if let Some(ref mut t) = tangents {
             let to = tangent_offset as usize;
-            t[p] = geometry.vertices[base + to];
-            t[p + 1] = geometry.vertices[base + to + 1];
-            t[p + 2] = geometry.vertices[base + to + 2];
+            t[p] = geometry.vertices[base + to] as f64;
+            t[p + 1] = geometry.vertices[base + to + 1] as f64;
+            t[p + 2] = geometry.vertices[base + to + 2] as f64;
         }
     }
 
     return MeshMorphBindPose {
         blended_normals: (if normals.is_some() {
-            Some(vec![0.0f32; vertex_count * 3])
+            Some(vec![0.0f64; vertex_count * 3])
         } else {
             None
         })
         .map(Into::into),
-        blended_positions: (vec![0.0f32; vertex_count * 3]).into(),
+        blended_positions: (vec![0.0f64; vertex_count * 3]).into(),
         blended_tangents: (if tangents.is_some() {
-            Some(vec![0.0f32; vertex_count * 3])
+            Some(vec![0.0f64; vertex_count * 3])
         } else {
             None
         })

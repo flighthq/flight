@@ -16,21 +16,6 @@ use crate::types::{
 #[cfg(all(test, feature = "object-api"))]
 use crate::types::{ProviderRef, SensorUnsubscribe, SensorsPermissionState};
 
-/// Exact releases held by one attached Sensors entity. The field order follows unsubscribe order.
-#[derive(Clone)]
-struct SensorsSubscription {
-    absolute_orientation: Arc<dyn Fn() + Send + Sync>,
-    ambient_light: Arc<dyn Fn() + Send + Sync>,
-    barometer: Arc<dyn Fn() + Send + Sync>,
-    gravity: Arc<dyn Fn() + Send + Sync>,
-    linear_acceleration: Arc<dyn Fn() + Send + Sync>,
-    magnetometer: Arc<dyn Fn() + Send + Sync>,
-    motion: Arc<dyn Fn() + Send + Sync>,
-    orientation: Arc<dyn Fn() + Send + Sync>,
-    proximity: Arc<dyn Fn() + Send + Sync>,
-    quaternion: Arc<dyn Fn() + Send + Sync>,
-}
-
 #[cfg(all(test, feature = "object-api"))]
 mod sugar_tests {
     use std::sync::{Arc, Mutex};
@@ -289,6 +274,21 @@ mod sugar_tests {
     }
 }
 
+/// Exact releases held by one attached Sensors entity. The field order follows unsubscribe order.
+#[derive(Clone)]
+struct SensorsSubscription {
+    absolute_orientation: Arc<dyn Fn() + Send + Sync>,
+    ambient_light: Arc<dyn Fn() + Send + Sync>,
+    barometer: Arc<dyn Fn() + Send + Sync>,
+    gravity: Arc<dyn Fn() + Send + Sync>,
+    linear_acceleration: Arc<dyn Fn() + Send + Sync>,
+    magnetometer: Arc<dyn Fn() + Send + Sync>,
+    motion: Arc<dyn Fn() + Send + Sync>,
+    orientation: Arc<dyn Fn() + Send + Sync>,
+    proximity: Arc<dyn Fn() + Send + Sync>,
+    quaternion: Arc<dyn Fn() + Send + Sync>,
+}
+
 /// Allocates an ambient-light reading with source sentinel values.
 pub fn create_ambient_light_reading() -> AmbientLightReading {
     let mut out: AmbientLightReading = allocate_entity();
@@ -529,16 +529,16 @@ pub fn attach_sensors(host_sensors: &HostSensorsCapability, sensors: &mut Sensor
 
 /// Extracts ZXY Euler angles in degrees and propagates interval, timestamp and accuracy.
 pub fn compute_euler_from_quaternion(out: &mut OrientationReading, quaternion: &QuaternionReading) {
-    let x = quaternion.x;
-    let y = quaternion.y;
-    let z = quaternion.z;
-    let w = quaternion.w;
+    let x = quaternion.x as f64;
+    let y = quaternion.y as f64;
+    let z = quaternion.z as f64;
+    let w = quaternion.w as f64;
     let interval = quaternion.interval;
     let timestamp = quaternion.timestamp;
     let accuracy = quaternion.accuracy;
     let sin_beta = 2.0 * (w * x - y * z);
     let beta = if sin_beta.abs() >= 1.0 {
-        sin_beta.signum() * std::f32::consts::FRAC_PI_2
+        sin_beta.signum() * std::f64::consts::FRAC_PI_2
     } else {
         sin_beta.asin()
     };
@@ -563,7 +563,7 @@ pub fn compute_gravity_from_orientation(out: &mut MotionReading, orientation: &O
     let cos_gamma = gamma.cos();
     let sin_beta = beta.sin();
     let cos_beta = beta.cos();
-    const STANDARD_GRAVITY: f32 = 9.80665;
+    const STANDARD_GRAVITY: f64 = 9.80665;
     out.x = STANDARD_GRAVITY * cos_beta * sin_gamma;
     out.y = -STANDARD_GRAVITY * sin_beta;
     out.z = STANDARD_GRAVITY * cos_beta * cos_gamma;
@@ -573,6 +573,7 @@ pub fn compute_gravity_from_orientation(out: &mut MotionReading, orientation: &O
 }
 
 /// Computes a ZXY quaternion from Euler angles and propagates reading metadata.
+// flight-lint: allow(f32) unit-quaternion results narrow at the normalized bounded host sensor carrier
 pub fn compute_quaternion_from_orientation_reading(
     out: &mut QuaternionReading,
     orientation: &OrientationReading,
@@ -589,21 +590,25 @@ pub fn compute_quaternion_from_orientation_reading(
     let sin_beta = beta.sin();
     let cos_gamma = gamma.cos();
     let sin_gamma = gamma.sin();
-    out.x = sin_alpha * sin_beta * cos_gamma - cos_alpha * cos_beta * sin_gamma;
-    out.y = sin_alpha * cos_beta * sin_gamma + cos_alpha * sin_beta * cos_gamma;
-    out.z = cos_alpha * cos_beta * sin_gamma - sin_alpha * sin_beta * cos_gamma;
-    out.w = cos_alpha * cos_beta * cos_gamma + sin_alpha * sin_beta * sin_gamma;
+    out.x =
+        (sin_alpha * sin_beta * cos_gamma - cos_alpha * cos_beta * sin_gamma) as f32;
+    out.y =
+        (sin_alpha * cos_beta * sin_gamma + cos_alpha * sin_beta * cos_gamma) as f32;
+    out.z =
+        (cos_alpha * cos_beta * sin_gamma - sin_alpha * sin_beta * cos_gamma) as f32;
+    out.w =
+        (cos_alpha * cos_beta * cos_gamma + sin_alpha * sin_beta * sin_gamma) as f32;
     out.interval = interval;
     out.timestamp = timestamp;
     out.accuracy = accuracy;
 }
 
 /// Writes a column-major 3x3 rotation matrix. A short source `number[]` grows to nine entries.
-pub fn compute_rotation_matrix_from_quaternion(out: &mut Vec<f32>, quaternion: &QuaternionReading) {
-    let x = quaternion.x;
-    let y = quaternion.y;
-    let z = quaternion.z;
-    let w = quaternion.w;
+pub fn compute_rotation_matrix_from_quaternion(out: &mut Vec<f64>, quaternion: &QuaternionReading) {
+    let x = quaternion.x as f64;
+    let y = quaternion.y as f64;
+    let z = quaternion.z as f64;
+    let w = quaternion.w as f64;
     let x2 = x + x;
     let y2 = y + y;
     let z2 = z + z;
@@ -634,7 +639,7 @@ pub fn compute_rotation_matrix_from_quaternion(out: &mut Vec<f32>, quaternion: &
 pub fn compute_screen_relative_orientation(
     out: &mut OrientationReading,
     orientation: &OrientationReading,
-    screen_angle: f32,
+    screen_angle: f64,
 ) {
     let alpha = orientation.alpha;
     let beta = orientation.beta;
@@ -669,10 +674,10 @@ pub fn compute_world_acceleration_from_device_acceleration(
     let interval = acceleration.interval;
     let timestamp = acceleration.timestamp;
     let accuracy = acceleration.accuracy;
-    let quaternion_x = quaternion.x;
-    let quaternion_y = quaternion.y;
-    let quaternion_z = quaternion.z;
-    let quaternion_w = quaternion.w;
+    let quaternion_x = quaternion.x as f64;
+    let quaternion_y = quaternion.y as f64;
+    let quaternion_z = quaternion.z as f64;
+    let quaternion_w = quaternion.w as f64;
     let twice_w = 2.0 * quaternion_w;
     let cross_x = quaternion_y * acceleration_z - quaternion_z * acceleration_y;
     let cross_y = quaternion_z * acceleration_x - quaternion_x * acceleration_z;

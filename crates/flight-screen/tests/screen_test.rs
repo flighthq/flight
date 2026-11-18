@@ -24,7 +24,7 @@ fn provider() -> ProviderRef {
     return Arc::new(());
 }
 
-fn test_screen(id: f64, x: f32, y: f32, width: f32, height: f32) -> ScreenInfo {
+fn test_screen(id: f64, x: f64, y: f64, width: f64, height: f64) -> ScreenInfo {
     let mut out = create_screen_info();
     out.id = id;
     out.x = x;
@@ -56,7 +56,7 @@ type ScreensCalls = Arc<Mutex<Vec<usize>>>;
 /// buffers it is handed.
 fn query_host(
     screens: Vec<ScreenInfo>,
-    cursor: (f32, f32),
+    cursor: (f64, f64),
 ) -> (HostScreenQueryCapability, ScreensCalls) {
     let calls: ScreensCalls = Arc::new(Mutex::new(Vec::new()));
     let (record, all, primary_source) = (calls.clone(), screens.clone(), screens);
@@ -158,7 +158,7 @@ fn details_host(
     return (host, calls);
 }
 
-fn nearest_point(host: &HostScreenQueryCapability, x: f32, y: f32) -> f64 {
+fn nearest_point(host: &HostScreenQueryCapability, x: f64, y: f64) -> f64 {
     let mut out = create_screen_info();
     get_screen_nearest_point(
         &mut out,
@@ -511,6 +511,21 @@ mod dispose_screen_signals {
         assert!(!has_signal_slots(&s.on_screen_added));
         assert!(!has_signal_slots(&s.on_screen_metrics_changed));
         assert!(!has_signal_slots(&s.on_screen_removed));
+    }
+}
+
+mod f64_precision_bridge {
+    use super::*;
+
+    #[test]
+    fn preserves_virtual_desktop_coordinates_beyond_f32_integer_precision() {
+        let large = 16_777_217.0_f64;
+        let screen = test_screen(large, large, -large, 1.0, 1.0);
+        let mut out = create_vector2(0.0, 0.0);
+        screen_to_dip_point(&mut out, &screen, &create_vector2(0.0, 0.0));
+        assert_eq!(screen.id, large);
+        assert_eq!((out.x, out.y), (large, -large));
+        assert_ne!(large, large as f32 as f64);
     }
 }
 

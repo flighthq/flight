@@ -45,6 +45,32 @@ mod create_mesh_geometry_from_attributes {
     use super::*;
 
     #[test]
+    fn narrows_large_f64_authoring_positions_only_at_the_gpu_vertex_seam() {
+        let large = 16_777_217.0_f64;
+        let geometry =
+            create_mesh_geometry_from_attributes(MeshGeometryFromAttributesOptions {
+                positions: vec![
+                    large,
+                    0.0,
+                    0.0,
+                    large + 1.0,
+                    0.0,
+                    0.0,
+                    large,
+                    1.0,
+                    0.0,
+                ],
+                normals: Some(vec![0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0]),
+                uvs: Some(vec![0.0, 0.0, 1.0, 0.0, 0.0, 1.0]),
+                indices: Some(MeshAttributeIndices::Values(vec![0, 1, 2])),
+            });
+        assert_ne!(large, large as f32 as f64);
+        assert_eq!(geometry.vertices[0], large as f32);
+        assert_eq!(geometry.vertices[12], (large + 1.0) as f32);
+        assert_eq!(geometry.vertices[10..12], [0.0_f32, 0.0_f32]);
+    }
+
+    #[test]
     fn accepts_numeric_u16_and_u32_index_inputs_without_reusing_typed_input_storage() {
         let typed_u16 = vec![0u16, 1, 2].into_boxed_slice();
         let typed_u32 = vec![0u32, 1, 2].into_boxed_slice();

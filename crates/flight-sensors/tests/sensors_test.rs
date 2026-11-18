@@ -373,9 +373,9 @@ fn rejected(message: &str) -> FlightError {
     };
 }
 
-fn assert_close(actual: f32, expected: f64, tolerance: f64) {
+fn assert_close(actual: f64, expected: f64, tolerance: f64) {
     assert!(
-        (f64::from(actual) - expected).abs() <= tolerance,
+        (actual - expected).abs() <= tolerance,
         "{actual} != {expected}"
     );
 }
@@ -637,22 +637,22 @@ mod compute_quaternion_from_orientation_reading {
         let beta = f64::from(orientation.beta).to_radians() * 0.5;
         let gamma = f64::from(orientation.gamma).to_radians() * 0.5;
         assert_close(
-            out.x,
+            f64::from(out.x),
             alpha.sin() * beta.sin() * gamma.cos() - alpha.cos() * beta.cos() * gamma.sin(),
             0.000001,
         );
         assert_close(
-            out.y,
+            f64::from(out.y),
             alpha.sin() * beta.cos() * gamma.sin() + alpha.cos() * beta.sin() * gamma.cos(),
             0.000001,
         );
         assert_close(
-            out.z,
+            f64::from(out.z),
             alpha.cos() * beta.cos() * gamma.sin() - alpha.sin() * beta.sin() * gamma.cos(),
             0.000001,
         );
         assert_close(
-            out.w,
+            f64::from(out.w),
             alpha.cos() * beta.cos() * gamma.cos() + alpha.sin() * beta.sin() * gamma.sin(),
             0.000001,
         );
@@ -1007,6 +1007,30 @@ mod dispose_sensors {
         dispose_sensors(&mut sensors);
         assert_eq!(state.unsubscribe_order.lock().unwrap().len(), 10);
         assert!(has_signal_slots(&sensors.on_accelerometer));
+    }
+}
+
+mod f64_precision_bridge {
+    use super::*;
+
+    #[test]
+    fn preserves_large_angles_and_timestamps_until_the_normalized_quaternion_seam() {
+        let large = 16_777_217.0_f64;
+        let mut orientation = create_orientation_reading();
+        orientation.alpha = large;
+        orientation.beta = -large;
+        orientation.gamma = large + 2.0;
+        orientation.interval = large + 4.0;
+        orientation.timestamp = large + 6.0;
+        let mut quaternion = create_quaternion_reading();
+        compute_quaternion_from_orientation_reading(&mut quaternion, &orientation);
+        assert_eq!(quaternion.interval, large + 4.0);
+        assert_eq!(quaternion.timestamp, large + 6.0);
+        assert!(quaternion.w.is_finite());
+        assert!(quaternion.x.is_finite());
+        assert!(quaternion.y.is_finite());
+        assert!(quaternion.z.is_finite());
+        assert_ne!(large, large as f32 as f64);
     }
 }
 

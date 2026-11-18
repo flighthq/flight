@@ -43,7 +43,7 @@ pub enum SensorsPermissionSensor {
 /// Options for one provider subscription. `frequency` is requested hertz when supported.
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub struct SensorSubscribeOptions {
-    pub frequency: Option<f32>,
+    pub frequency: Option<f64>,
 }
 
 /// Fields shared by every reading. This source base interface is plain data; concrete reading
@@ -51,8 +51,8 @@ pub struct SensorSubscribeOptions {
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub struct SensorReading {
     pub accuracy: SensorAccuracy,
-    pub interval: f32,
-    pub timestamp: f32,
+    pub interval: f64,
+    pub timestamp: f64,
 }
 
 /// Ambient illuminance in lux (TS `AmbientLightReading`, an Entity).
@@ -60,9 +60,9 @@ pub struct SensorReading {
 pub struct AmbientLightReading {
     runtime: EntityRuntimeSlot,
     pub accuracy: SensorAccuracy,
-    pub illuminance: f32,
-    pub interval: f32,
-    pub timestamp: f32,
+    pub illuminance: f64,
+    pub interval: f64,
+    pub timestamp: f64,
 }
 
 /// A three-axis acceleration, gravity or magnetic-field reading (TS `MotionReading`, an Entity).
@@ -70,11 +70,11 @@ pub struct AmbientLightReading {
 pub struct MotionReading {
     runtime: EntityRuntimeSlot,
     pub accuracy: SensorAccuracy,
-    pub interval: f32,
-    pub timestamp: f32,
-    pub x: f32,
-    pub y: f32,
-    pub z: f32,
+    pub interval: f64,
+    pub timestamp: f64,
+    pub x: f64,
+    pub y: f64,
+    pub z: f64,
 }
 
 /// Device orientation as ZXY Euler angles in degrees (TS `OrientationReading`, an Entity).
@@ -83,12 +83,12 @@ pub struct OrientationReading {
     runtime: EntityRuntimeSlot,
     pub absolute: bool,
     pub accuracy: SensorAccuracy,
-    pub alpha: f32,
-    pub beta: f32,
-    pub gamma: f32,
-    pub heading: f32,
-    pub interval: f32,
-    pub timestamp: f32,
+    pub alpha: f64,
+    pub beta: f64,
+    pub gamma: f64,
+    pub heading: f64,
+    pub interval: f64,
+    pub timestamp: f64,
 }
 
 /// Barometric pressure and its derived altitude (TS `PressureReading`, an Entity).
@@ -96,10 +96,10 @@ pub struct OrientationReading {
 pub struct PressureReading {
     runtime: EntityRuntimeSlot,
     pub accuracy: SensorAccuracy,
-    pub altitude: f32,
-    pub interval: f32,
-    pub pressure: f32,
-    pub timestamp: f32,
+    pub altitude: f64,
+    pub interval: f64,
+    pub pressure: f64,
+    pub timestamp: f64,
 }
 
 /// Near/far proximity plus optional distances in centimeters (TS `ProximityReading`, an Entity).
@@ -107,20 +107,21 @@ pub struct PressureReading {
 pub struct ProximityReading {
     runtime: EntityRuntimeSlot,
     pub accuracy: SensorAccuracy,
-    pub distance: f32,
-    pub interval: f32,
-    pub max: f32,
+    pub distance: f64,
+    pub interval: f64,
+    pub max: f64,
     pub near: bool,
-    pub timestamp: f32,
+    pub timestamp: f64,
 }
 
 /// Device orientation as a unit quaternion (TS `QuaternionReading`, an Entity).
 #[derive(Clone, Debug, Default, PartialEq)]
+// flight-lint: allow(f32) unit-quaternion components are normalized bounded sensor channels retained at the host carrier boundary
 pub struct QuaternionReading {
     runtime: EntityRuntimeSlot,
     pub accuracy: SensorAccuracy,
-    pub interval: f32,
-    pub timestamp: f32,
+    pub interval: f64,
+    pub timestamp: f64,
     pub w: f32,
     pub x: f32,
     pub y: f32,
@@ -132,11 +133,11 @@ pub struct QuaternionReading {
 pub struct RotationRateReading {
     runtime: EntityRuntimeSlot,
     pub accuracy: SensorAccuracy,
-    pub alpha: f32,
-    pub beta: f32,
-    pub gamma: f32,
-    pub interval: f32,
-    pub timestamp: f32,
+    pub alpha: f64,
+    pub beta: f64,
+    pub gamma: f64,
+    pub interval: f64,
+    pub timestamp: f64,
 }
 
 /// The exact release returned by one provider subscription.

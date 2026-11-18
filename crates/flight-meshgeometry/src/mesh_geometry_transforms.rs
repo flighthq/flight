@@ -30,7 +30,7 @@ pub fn center_mesh_geometry(geometry: &mut MeshGeometry) {
     translate_mesh_geometry(geometry, -cx, -cy, -cz);
 }
 
-fn compute_matrix3x3_inverse_transpose(matrix: &Matrix4) -> Option<[f32; 9]> {
+fn compute_matrix3x3_inverse_transpose(matrix: &Matrix4) -> Option<[f64; 9]> {
     let m = &matrix.m;
     let a00 = m[0];
     let a01 = m[1];
@@ -68,7 +68,8 @@ fn compute_matrix3x3_inverse_transpose(matrix: &Matrix4) -> Option<[f32; 9]> {
     ]);
 }
 
-fn restore_mirrored_winding_and_handedness(geometry: &mut MeshGeometry, determinant: f32) {
+// flight-lint: allow(f32) mirrored winding copies canonical interleaved GPU vertex records without numeric conversion
+fn restore_mirrored_winding_and_handedness(geometry: &mut MeshGeometry, determinant: f64) {
     if determinant >= 0.0 {
         return;
     }
@@ -135,7 +136,7 @@ fn restore_mirrored_winding_and_handedness(geometry: &mut MeshGeometry, determin
 /// inverse-transpose of the scale and tangents by the scale itself, both re-normalized.
 /// A negative-determinant scale mirrors the mesh, reversing triangle winding and negating
 /// tangent.w. Bumps geometry.version.
-pub fn scale_mesh_geometry(geometry: &mut MeshGeometry, sx: f32, sy: f32, sz: f32) {
+pub fn scale_mesh_geometry(geometry: &mut MeshGeometry, sx: f64, sy: f64, sz: f64) {
     transform_mesh_geometry_positions(geometry, sx, sy, sz, 0.0, 0.0, 0.0);
     restore_mirrored_winding_and_handedness(geometry, sx * sy * sz);
 }
@@ -153,6 +154,7 @@ pub fn transform_mesh_geometry(geometry: &mut MeshGeometry, matrix: &Matrix4) ->
 /// is singular. Bumps geometry.version.
 ///
 /// Reads source fields before writing the caller-provided output.
+// flight-lint: allow(f32) f64 transform math narrows only when stored in the interleaved GPU vertex carrier
 pub fn transform_mesh_geometry_into(
     out: &mut MeshGeometry,
     source: &MeshGeometry,
@@ -183,18 +185,18 @@ pub fn transform_mesh_geometry_into(
         let vert_base = (i * floats_per_vertex) as usize;
         if pos_float_offset >= 0 {
             let pb = vert_base + pos_float_offset as usize;
-            let px = source.vertices[pb];
-            let py = source.vertices[pb + 1];
-            let pz = source.vertices[pb + 2];
-            out.vertices[pb] = m[0] * px + m[4] * py + m[8] * pz + m[12];
-            out.vertices[pb + 1] = m[1] * px + m[5] * py + m[9] * pz + m[13];
-            out.vertices[pb + 2] = m[2] * px + m[6] * py + m[10] * pz + m[14];
+            let px = source.vertices[pb] as f64;
+            let py = source.vertices[pb + 1] as f64;
+            let pz = source.vertices[pb + 2] as f64;
+            out.vertices[pb] = (m[0] * px + m[4] * py + m[8] * pz + m[12]) as f32;
+            out.vertices[pb + 1] = (m[1] * px + m[5] * py + m[9] * pz + m[13]) as f32;
+            out.vertices[pb + 2] = (m[2] * px + m[6] * py + m[10] * pz + m[14]) as f32;
         }
         if norm_float_offset >= 0 {
             let nb = vert_base + norm_float_offset as usize;
-            let nx = source.vertices[nb];
-            let ny = source.vertices[nb + 1];
-            let nz = source.vertices[nb + 2];
+            let nx = source.vertices[nb] as f64;
+            let ny = source.vertices[nb + 1] as f64;
+            let nz = source.vertices[nb + 2] as f64;
             let mut tnx = inv_t[0] * nx + inv_t[3] * ny + inv_t[6] * nz;
             let mut tny = inv_t[1] * nx + inv_t[4] * ny + inv_t[7] * nz;
             let mut tnz = inv_t[2] * nx + inv_t[5] * ny + inv_t[8] * nz;
@@ -204,15 +206,15 @@ pub fn transform_mesh_geometry_into(
                 tny /= len;
                 tnz /= len;
             }
-            out.vertices[nb] = tnx;
-            out.vertices[nb + 1] = tny;
-            out.vertices[nb + 2] = tnz;
+            out.vertices[nb] = tnx as f32;
+            out.vertices[nb + 1] = tny as f32;
+            out.vertices[nb + 2] = tnz as f32;
         }
         if tan_float_offset >= 0 {
             let tb = vert_base + tan_float_offset as usize;
-            let tx = source.vertices[tb];
-            let ty = source.vertices[tb + 1];
-            let tz = source.vertices[tb + 2];
+            let tx = source.vertices[tb] as f64;
+            let ty = source.vertices[tb + 1] as f64;
+            let tz = source.vertices[tb + 2] as f64;
             let tw = source.vertices[tb + 3];
             let mut ttx = m[0] * tx + m[4] * ty + m[8] * tz;
             let mut tty = m[1] * tx + m[5] * ty + m[9] * tz;
@@ -223,9 +225,9 @@ pub fn transform_mesh_geometry_into(
                 tty /= len;
                 ttz /= len;
             }
-            out.vertices[tb] = ttx;
-            out.vertices[tb + 1] = tty;
-            out.vertices[tb + 2] = ttz;
+            out.vertices[tb] = ttx as f32;
+            out.vertices[tb + 1] = tty as f32;
+            out.vertices[tb + 2] = ttz as f32;
             out.vertices[tb + 3] = tw;
         }
     }
@@ -242,14 +244,15 @@ pub fn transform_mesh_geometry_into(
     return true;
 }
 
+// flight-lint: allow(f32) f64 transform math narrows only when stored in the interleaved GPU vertex carrier
 fn transform_mesh_geometry_positions(
     geometry: &mut MeshGeometry,
-    sx: f32,
-    sy: f32,
-    sz: f32,
-    tx: f32,
-    ty: f32,
-    tz: f32,
+    sx: f64,
+    sy: f64,
+    sz: f64,
+    tx: f64,
+    ty: f64,
+    tz: f64,
 ) {
     let pos_float_offset = get_vertex_attribute_float_offset(
         &geometry.layout.read().unwrap(),
@@ -276,18 +279,18 @@ fn transform_mesh_geometry_positions(
         let vert_base = (i * floats_per_vertex) as usize;
         if pos_float_offset >= 0 {
             let pb = vert_base + pos_float_offset as usize;
-            let px = geometry.vertices[pb];
-            let py = geometry.vertices[pb + 1];
-            let pz = geometry.vertices[pb + 2];
-            geometry.vertices[pb] = px * sx + tx;
-            geometry.vertices[pb + 1] = py * sy + ty;
-            geometry.vertices[pb + 2] = pz * sz + tz;
+            let px = geometry.vertices[pb] as f64;
+            let py = geometry.vertices[pb + 1] as f64;
+            let pz = geometry.vertices[pb + 2] as f64;
+            geometry.vertices[pb] = (px * sx + tx) as f32;
+            geometry.vertices[pb + 1] = (py * sy + ty) as f32;
+            geometry.vertices[pb + 2] = (pz * sz + tz) as f32;
         }
         if norm_float_offset >= 0 {
             let nb = vert_base + norm_float_offset as usize;
-            let nx = geometry.vertices[nb];
-            let ny = geometry.vertices[nb + 1];
-            let nz = geometry.vertices[nb + 2];
+            let nx = geometry.vertices[nb] as f64;
+            let ny = geometry.vertices[nb + 1] as f64;
+            let nz = geometry.vertices[nb + 2] as f64;
             let mut nnx = nx * inv_sx;
             let mut nny = ny * inv_sy;
             let mut nnz = nz * inv_sz;
@@ -297,15 +300,15 @@ fn transform_mesh_geometry_positions(
                 nny /= len;
                 nnz /= len;
             }
-            geometry.vertices[nb] = nnx;
-            geometry.vertices[nb + 1] = nny;
-            geometry.vertices[nb + 2] = nnz;
+            geometry.vertices[nb] = nnx as f32;
+            geometry.vertices[nb + 1] = nny as f32;
+            geometry.vertices[nb + 2] = nnz as f32;
         }
         if tan_float_offset >= 0 {
             let tb = vert_base + tan_float_offset as usize;
-            let ttx = geometry.vertices[tb];
-            let tty = geometry.vertices[tb + 1];
-            let ttz = geometry.vertices[tb + 2];
+            let ttx = geometry.vertices[tb] as f64;
+            let tty = geometry.vertices[tb + 1] as f64;
+            let ttz = geometry.vertices[tb + 2] as f64;
             let tw = geometry.vertices[tb + 3];
             let mut ntx = ttx * sx;
             let mut nty = tty * sy;
@@ -316,9 +319,9 @@ fn transform_mesh_geometry_positions(
                 nty /= len;
                 ntz /= len;
             }
-            geometry.vertices[tb] = ntx;
-            geometry.vertices[tb + 1] = nty;
-            geometry.vertices[tb + 2] = ntz;
+            geometry.vertices[tb] = ntx as f32;
+            geometry.vertices[tb + 1] = nty as f32;
+            geometry.vertices[tb + 2] = ntz as f32;
             geometry.vertices[tb + 3] = tw;
         }
     }
@@ -331,7 +334,8 @@ fn transform_mesh_geometry_positions(
 
 /// Translates all vertex positions in-place by (x, y, z). Normals and tangents are
 /// unaffected. Bumps geometry.version.
-pub fn translate_mesh_geometry(geometry: &mut MeshGeometry, x: f32, y: f32, z: f32) {
+// flight-lint: allow(f32) f64 translation math narrows only when stored in the interleaved GPU vertex carrier
+pub fn translate_mesh_geometry(geometry: &mut MeshGeometry, x: f64, y: f64, z: f64) {
     let pos_float_offset = get_vertex_attribute_float_offset(
         &geometry.layout.read().unwrap(),
         VertexSemantic::Position,
@@ -347,9 +351,9 @@ pub fn translate_mesh_geometry(geometry: &mut MeshGeometry, x: f32, y: f32, z: f
     };
     for i in 0..vertex_count {
         let base = (i * floats_per_vertex + pos_float_offset as u32) as usize;
-        geometry.vertices[base] += x;
-        geometry.vertices[base + 1] += y;
-        geometry.vertices[base + 2] += z;
+        geometry.vertices[base] = (geometry.vertices[base] as f64 + x) as f32;
+        geometry.vertices[base + 1] = (geometry.vertices[base + 1] as f64 + y) as f32;
+        geometry.vertices[base + 2] = (geometry.vertices[base + 2] as f64 + z) as f32;
     }
     geometry.version += 1;
     if let Some(ref mut bounds) = geometry.bounds {

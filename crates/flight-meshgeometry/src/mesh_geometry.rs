@@ -81,40 +81,41 @@ pub struct MeshSubset {
 /// base layout omits that channel.
 #[derive(Debug, Clone)]
 pub struct MeshMorphBindPose {
-    pub blended_normals: Option<Box<[f32]>>,
-    pub blended_positions: Box<[f32]>,
-    pub blended_tangents: Option<Box<[f32]>>,
-    pub normals: Option<Box<[f32]>>,
-    pub positions: Box<[f32]>,
-    pub tangents: Option<Box<[f32]>>,
+    pub blended_normals: Option<Box<[f64]>>,
+    pub blended_positions: Box<[f64]>,
+    pub blended_tangents: Option<Box<[f64]>>,
+    pub normals: Option<Box<[f64]>>,
+    pub positions: Box<[f64]>,
+    pub tangents: Option<Box<[f64]>>,
 }
 
 /// The skinning bind-pose capture.
+// flight-lint: allow(f32) joint indices and normalized skin weights mirror bounded GPU vertex channels
 #[derive(Debug, Clone)]
 pub struct MeshSkinBindPose {
     pub joints: Box<[f32]>,
-    pub normals: Box<[f32]>,
-    pub positions: Box<[f32]>,
-    pub skinned_normals: Box<[f32]>,
-    pub skinned_positions: Box<[f32]>,
-    pub skinned_tangents: Box<[f32]>,
-    pub tangents: Box<[f32]>,
+    pub normals: Box<[f64]>,
+    pub positions: Box<[f64]>,
+    pub skinned_normals: Box<[f64]>,
+    pub skinned_positions: Box<[f64]>,
+    pub skinned_tangents: Box<[f64]>,
+    pub tangents: Box<[f64]>,
     pub weights: Box<[f32]>,
 }
 
 /// A morph target: additive deltas for position (and optionally normal/tangent).
 #[derive(Debug, Clone)]
 pub struct MeshMorphTarget {
-    pub position_deltas: Box<[f32]>,
-    pub normal_deltas: Option<Box<[f32]>>,
-    pub tangent_deltas: Option<Box<[f32]>>,
+    pub position_deltas: Box<[f64]>,
+    pub normal_deltas: Option<Box<[f64]>>,
+    pub tangent_deltas: Option<Box<[f64]>>,
 }
 
 /// A morph definition: a set of targets and their blend weights.
 #[derive(Debug, Clone)]
 pub struct MeshMorph {
     pub targets: std::sync::Arc<Vec<MeshMorphTarget>>,
-    pub weights: Box<[f32]>,
+    pub weights: Box<[f64]>,
 }
 
 /// Runtime data cached on a MeshGeometry for GPU backends and deformation subsystems.
@@ -122,13 +123,14 @@ pub struct MeshMorph {
 pub struct MeshGeometryRuntime {
     pub bounds_version: i32,
     pub morph_bind_pose: Option<flight_entity::Ref<MeshMorphBindPose>>,
-    pub morph_blended_weights: Option<Box<[f32]>>,
+    pub morph_blended_weights: Option<Box<[f64]>>,
     pub skin_bind_pose: Option<flight_entity::Ref<MeshSkinBindPose>>,
     pub webgl_data: Option<()>,
     pub webgpu_data: Option<()>,
 }
 
 /// Complete construction fields, mirroring Omit<MeshGeometry, EntityRuntimeKey>.
+// flight-lint: allow(f32) vertices are the canonical interleaved GPU upload carrier
 pub struct MeshGeometryFields {
     pub bounds: Option<Aabb>,
     pub indices: IndexBuffer,
@@ -140,6 +142,7 @@ pub struct MeshGeometryFields {
 }
 
 /// Options for creating a MeshGeometry.
+// flight-lint: allow(f32) vertices are the canonical interleaved GPU upload carrier
 pub struct MeshGeometryOptions {
     pub vertices: Box<[f32]>,
     pub layout: flight_entity::Ref<VertexAttributeLayout>,
@@ -158,9 +161,10 @@ pub enum MeshAttributeIndices {
 }
 
 /// Options for building a MeshGeometry from separate attribute arrays.
+// flight-lint: allow(f32) UVs are bounded texture coordinates retained at the GPU vertex boundary
 pub struct MeshGeometryFromAttributesOptions {
-    pub positions: Vec<f32>,
-    pub normals: Option<Vec<f32>>,
+    pub positions: Vec<f64>,
+    pub normals: Option<Vec<f64>>,
     pub uvs: Option<Vec<f32>>,
     pub indices: Option<MeshAttributeIndices>,
 }
@@ -175,6 +179,7 @@ pub struct MeshTriangleVertexIndices {
 
 /// The core mesh geometry data: interleaved vertex stream, optional index buffer,
 /// layout, topology, subsets, optional bounds, a version counter, and runtime data.
+// flight-lint: allow(f32) vertices are the canonical interleaved GPU upload carrier
 #[derive(Debug, Clone)]
 pub struct MeshGeometry {
     pub vertices: Box<[f32]>,
@@ -409,6 +414,7 @@ pub fn get_primitive_topology_string(value: PrimitiveTopology) -> &'static str {
     };
 }
 
+// flight-lint: allow(f32) vertex count reads the canonical interleaved GPU upload carrier
 fn get_vertex_count_from_layout(vertices: &[f32], layout: &VertexAttributeLayout) -> u32 {
     let floats_per_vertex = layout.stride / 4;
     if floats_per_vertex == 0 {

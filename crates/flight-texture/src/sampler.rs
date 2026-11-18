@@ -4,6 +4,7 @@ use flight_entity::allocate_entity;
 
 use crate::types::*;
 
+// flight-lint: allow(f32) anisotropy is bounded GPU sampler state submitted unchanged to native graphics APIs
 pub fn create_anisotropic_sampler(level: f32) -> Sampler {
     let mut out = create_sampler();
     out.anisotropy = level;

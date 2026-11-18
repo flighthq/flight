@@ -10,7 +10,7 @@ use crate::types::*;
 
 // flight-lint: allow-file(contract-vocabulary) D16 general closed-family traits preserve the Texture union without a second runtime or flattened payload
 
-const HALF_PI: f32 = std::f32::consts::FRAC_PI_2;
+const HALF_PI: f64 = std::f64::consts::FRAC_PI_2;
 
 enum CapturedTextureSources {
     Texture2D(Option<TextureSourceRef>),
@@ -295,7 +295,7 @@ pub fn get_texture_uv_matrix(out: &mut Matrix3, texture: &dyn TextureUvTransform
         (0.0, 1.0)
     } else if r == -HALF_PI {
         (0.0, -1.0)
-    } else if r == std::f32::consts::PI || r == -std::f32::consts::PI {
+    } else if r == std::f64::consts::PI || r == -std::f64::consts::PI {
         (-1.0, 0.0)
     } else {
         (r.cos(), r.sin())
@@ -325,8 +325,8 @@ pub fn get_texture_view_size(out: &mut Vector2, texture: &dyn TextureVariant) {
         }
     };
     let source = source.read().unwrap();
-    let width = source.texture_source_fields().width as f32;
-    let height = source.texture_source_fields().height as f32;
+    let width = source.texture_source_fields().width as f64;
+    let height = source.texture_source_fields().height as f64;
     if width <= 0.0 || height <= 0.0 {
         out.x = 0.0;
         out.y = 0.0;
@@ -334,7 +334,7 @@ pub fn get_texture_view_size(out: &mut Vector2, texture: &dyn TextureVariant) {
     }
     let fields = texture.texture_fields();
     let rotation = fields.uv_rotation;
-    if rotation == 0.0 || rotation == std::f32::consts::PI || rotation == -std::f32::consts::PI {
+    if rotation == 0.0 || rotation == std::f64::consts::PI || rotation == -std::f64::consts::PI {
         out.x = (width * fields.uv_scale.x).abs();
         out.y = (height * fields.uv_scale.y).abs();
         return;
@@ -408,10 +408,10 @@ pub fn set_texture_source(texture: &mut dyn TextureVariant, source: Option<Textu
 
 pub fn set_texture_uv_from_pixel_rect(
     texture: &mut dyn TextureVariant,
-    x: f32,
-    y: f32,
-    width: f32,
-    height: f32,
+    x: f64,
+    y: f64,
+    width: f64,
+    height: f64,
 ) {
     let texture_width = get_texture_width(texture);
     let texture_height = get_texture_height(texture);
@@ -423,26 +423,28 @@ pub fn set_texture_uv_from_pixel_rect(
         fields.uv_scale.y = 0.0;
         return;
     }
-    fields.uv_offset.x = x / texture_width as f32;
-    fields.uv_offset.y = y / texture_height as f32;
-    fields.uv_scale.x = width / texture_width as f32;
-    fields.uv_scale.y = height / texture_height as f32;
+    fields.uv_offset.x = x / texture_width as f64;
+    fields.uv_offset.y = y / texture_height as f64;
+    fields.uv_scale.x = width / texture_width as f64;
+    fields.uv_scale.y = height / texture_height as f64;
 }
 
+// flight-lint: allow(f32) UV offsets are bounded texture coordinates widened only for shared f64 vector storage
 pub fn set_texture_uv_offset(texture: &mut dyn TextureUvTransform, x: f32, y: f32) {
     let texture = texture.texture_fields_mut();
-    texture.uv_offset.x = x;
-    texture.uv_offset.y = y;
+    texture.uv_offset.x = f64::from(x);
+    texture.uv_offset.y = f64::from(y);
 }
 
-pub fn set_texture_uv_rotation(texture: &mut dyn TextureUvTransform, radians: f32) {
+pub fn set_texture_uv_rotation(texture: &mut dyn TextureUvTransform, radians: f64) {
     texture.texture_fields_mut().uv_rotation = radians;
 }
 
+// flight-lint: allow(f32) UV scales are bounded texture coordinates widened only for shared f64 vector storage
 pub fn set_texture_uv_scale(texture: &mut dyn TextureUvTransform, x: f32, y: f32) {
     let texture = texture.texture_fields_mut();
-    texture.uv_scale.x = x;
-    texture.uv_scale.y = y;
+    texture.uv_scale.x = f64::from(x);
+    texture.uv_scale.y = f64::from(y);
 }
 
 fn source_option_ptr_eq<T: ?Sized>(
@@ -463,8 +465,11 @@ fn source_slice_ptr_eq(a: &[Option<TextureSourceRef>], b: &[Option<TextureSource
             .all(|(a, b)| source_option_ptr_eq(a, b));
 }
 
+// flight-lint: allow(f32) UV inputs are bounded texture coordinates widened for f64 transform math
 pub fn transform_texture_uv(out: &mut Vector2, texture: &dyn TextureUvTransform, u: f32, v: f32) {
     let texture = texture.texture_fields();
+    let u = f64::from(u);
+    let v = f64::from(v);
     let fu = if texture.flip_x { 1.0 - u } else { u };
     let fv = if texture.flip_y { 1.0 - v } else { v };
     let cos_r = texture.uv_rotation.cos();

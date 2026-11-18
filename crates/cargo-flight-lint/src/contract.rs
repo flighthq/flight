@@ -114,7 +114,11 @@ pub fn check_contract(
         "flight-animation"
             | "flight-geometry"
             | "flight-math"
+            | "flight-meshgeometry"
+            | "flight-screen"
+            | "flight-sensors"
             | "flight-spring"
+            | "flight-texture"
             | "flight-tween"
     );
 

@@ -12,7 +12,7 @@ fn geometry() -> MeshGeometry {
     });
 }
 
-fn morph(weight: f32) -> MeshMorph {
+fn morph(weight: f64) -> MeshMorph {
     return MeshMorph {
         targets: std::sync::Arc::new(vec![MeshMorphTarget {
             position_deltas: vec![8.0, 0.0, 0.0].into_boxed_slice(),
@@ -52,7 +52,7 @@ mod update_mesh_geometry_morph {
     #[test]
     fn treats_nan_as_changed_without_comparing_only_the_array_length() {
         let mut target = geometry();
-        let weights = morph(f32::NAN);
+        let weights = morph(f64::NAN);
         update_mesh_geometry_morph(&mut target, &weights);
         let first = target.version;
         update_mesh_geometry_morph(&mut target, &weights);

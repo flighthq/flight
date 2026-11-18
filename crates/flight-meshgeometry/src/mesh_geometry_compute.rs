@@ -24,7 +24,6 @@ const BOTH_TANGENT_ORIENTATIONS: i8 = 2;
 const UINT16_MAX: u32 = 65535;
 const UINT32_UNMAPPED: u32 = 0xFFFFFFFF;
 
-// flight-lint: allow(f64) meshGeometryCompute.ts:295 writes the explicit Float64Array normal accumulator
 fn accumulate_normal(accum: &mut [f64], vertex: u32, nx: f64, ny: f64, nz: f64) {
     let base = vertex as usize * 3;
     accum[base] += nx;
@@ -32,7 +31,6 @@ fn accumulate_normal(accum: &mut [f64], vertex: u32, nx: f64, ny: f64, nz: f64) 
     accum[base + 2] += nz;
 }
 
-// flight-lint: allow(f64) meshGeometryCompute.ts:624-625 writes the explicit Float64Array tangent and bitangent accumulators
 fn accumulate_tangent(
     tangents: &mut [f64],
     bitangents: &mut [f64],
@@ -73,18 +71,18 @@ pub fn compute_mesh_geometry_bounding_sphere(out: &mut BoundingSphere, geometry:
         return;
     }
 
-    let mut min_x = f32::INFINITY;
-    let mut min_y = f32::INFINITY;
-    let mut min_z = f32::INFINITY;
-    let mut max_x = f32::NEG_INFINITY;
-    let mut max_y = f32::NEG_INFINITY;
-    let mut max_z = f32::NEG_INFINITY;
+    let mut min_x = f64::INFINITY;
+    let mut min_y = f64::INFINITY;
+    let mut min_z = f64::INFINITY;
+    let mut max_x = f64::NEG_INFINITY;
+    let mut max_y = f64::NEG_INFINITY;
+    let mut max_z = f64::NEG_INFINITY;
 
     for i in 0..vertex_count {
         let base = (i * floats_per_vertex + POSITION_OFFSET) as usize;
-        let px = vertices[base];
-        let py = vertices[base + 1];
-        let pz = vertices[base + 2];
+        let px = vertices[base] as f64;
+        let py = vertices[base + 1] as f64;
+        let pz = vertices[base + 2] as f64;
         if px < min_x {
             min_x = px;
         }
@@ -109,12 +107,12 @@ pub fn compute_mesh_geometry_bounding_sphere(out: &mut BoundingSphere, geometry:
     let cy = (min_y + max_y) * 0.5;
     let cz = (min_z + max_z) * 0.5;
 
-    let mut radius_sq: f32 = 0.0;
+    let mut radius_sq: f64 = 0.0;
     for i in 0..vertex_count {
         let base = (i * floats_per_vertex + POSITION_OFFSET) as usize;
-        let dx = vertices[base] - cx;
-        let dy = vertices[base + 1] - cy;
-        let dz = vertices[base + 2] - cz;
+        let dx = vertices[base] as f64 - cx;
+        let dy = vertices[base + 1] as f64 - cy;
+        let dz = vertices[base + 2] as f64 - cz;
         let d_sq = dx * dx + dy * dy + dz * dz;
         if d_sq > radius_sq {
             radius_sq = d_sq;
@@ -137,18 +135,18 @@ pub fn compute_mesh_geometry_bounds(out: &mut Aabb, geometry: &MeshGeometry) {
         0
     };
 
-    let mut min_x = f32::INFINITY;
-    let mut min_y = f32::INFINITY;
-    let mut min_z = f32::INFINITY;
-    let mut max_x = f32::NEG_INFINITY;
-    let mut max_y = f32::NEG_INFINITY;
-    let mut max_z = f32::NEG_INFINITY;
+    let mut min_x = f64::INFINITY;
+    let mut min_y = f64::INFINITY;
+    let mut min_z = f64::INFINITY;
+    let mut max_x = f64::NEG_INFINITY;
+    let mut max_y = f64::NEG_INFINITY;
+    let mut max_z = f64::NEG_INFINITY;
 
     for i in 0..vertex_count {
         let base = (i * floats_per_vertex + POSITION_OFFSET) as usize;
-        let px = vertices[base];
-        let py = vertices[base + 1];
-        let pz = vertices[base + 2];
+        let px = vertices[base] as f64;
+        let py = vertices[base + 1] as f64;
+        let pz = vertices[base + 2] as f64;
         if px < min_x {
             min_x = px;
         }
@@ -179,6 +177,7 @@ pub fn compute_mesh_geometry_bounds(out: &mut Aabb, geometry: &MeshGeometry) {
 
 /// Recomputes per-face (flat) normals and writes them into the normal slot of
 /// `out.vertices`. Each triangle's face normal is assigned to all three corners.
+// flight-lint: allow(f32) f64 normal calculations narrow only when stored in the GPU vertex carrier
 pub fn compute_mesh_geometry_flat_normals(out: &mut MeshGeometry, geometry: &MeshGeometry) {
     let floats_per_vertex = geometry.layout.read().unwrap().stride / 4;
     let triangle_count = get_mesh_geometry_triangle_count(geometry);
@@ -203,15 +202,15 @@ pub fn compute_mesh_geometry_flat_normals(out: &mut MeshGeometry, geometry: &Mes
         let p1 = (i1 * floats_per_vertex + POSITION_OFFSET) as usize;
         let p2 = (i2 * floats_per_vertex + POSITION_OFFSET) as usize;
 
-        let x0 = src_verts[p0];
-        let y0 = src_verts[p0 + 1];
-        let z0 = src_verts[p0 + 2];
-        let x1 = src_verts[p1];
-        let y1 = src_verts[p1 + 1];
-        let z1 = src_verts[p1 + 2];
-        let x2 = src_verts[p2];
-        let y2 = src_verts[p2 + 1];
-        let z2 = src_verts[p2 + 2];
+        let x0 = src_verts[p0] as f64;
+        let y0 = src_verts[p0 + 1] as f64;
+        let z0 = src_verts[p0 + 2] as f64;
+        let x1 = src_verts[p1] as f64;
+        let y1 = src_verts[p1 + 1] as f64;
+        let z1 = src_verts[p1 + 2] as f64;
+        let x2 = src_verts[p2] as f64;
+        let y2 = src_verts[p2 + 1] as f64;
+        let z2 = src_verts[p2 + 2] as f64;
 
         let ex1 = x1 - x0;
         let ey1 = y1 - y0;
@@ -232,22 +231,22 @@ pub fn compute_mesh_geometry_flat_normals(out: &mut MeshGeometry, geometry: &Mes
         let n0 = (i0 * floats_per_vertex + NORMAL_OFFSET) as usize;
         let n1 = (i1 * floats_per_vertex + NORMAL_OFFSET) as usize;
         let n2 = (i2 * floats_per_vertex + NORMAL_OFFSET) as usize;
-        out.vertices[n0] = nx;
-        out.vertices[n0 + 1] = ny;
-        out.vertices[n0 + 2] = nz;
-        out.vertices[n1] = nx;
-        out.vertices[n1 + 1] = ny;
-        out.vertices[n1 + 2] = nz;
-        out.vertices[n2] = nx;
-        out.vertices[n2 + 1] = ny;
-        out.vertices[n2 + 2] = nz;
+        out.vertices[n0] = nx as f32;
+        out.vertices[n0 + 1] = ny as f32;
+        out.vertices[n0 + 2] = nz as f32;
+        out.vertices[n1] = nx as f32;
+        out.vertices[n1 + 1] = ny as f32;
+        out.vertices[n1 + 2] = nz as f32;
+        out.vertices[n2] = nx as f32;
+        out.vertices[n2 + 1] = ny as f32;
+        out.vertices[n2 + 2] = nz as f32;
     }
     out.version += 1;
 }
 
 /// Recomputes per-vertex smooth normals by area-weighted accumulation of triangle face normals.
 /// When `position_groups` is provided, face normals accumulate into those groups.
-// flight-lint: allow(f64) meshGeometryCompute.ts:203 explicitly allocates Float64Array for area-weighted normal accumulation; preserve that storage, keep vertex arithmetic f32
+// flight-lint: allow(f32) f64 normal calculations narrow only when stored in the GPU vertex carrier
 pub fn compute_mesh_geometry_normals(
     out: &mut MeshGeometry,
     geometry: &MeshGeometry,
@@ -281,16 +280,16 @@ pub fn compute_mesh_geometry_normals(
         let b1 = (i1 * floats_per_vertex + POSITION_OFFSET) as usize;
         let b2 = (i2 * floats_per_vertex + POSITION_OFFSET) as usize;
 
-        let e1x = vertices[b1] - vertices[b0];
-        let e1y = vertices[b1 + 1] - vertices[b0 + 1];
-        let e1z = vertices[b1 + 2] - vertices[b0 + 2];
-        let e2x = vertices[b2] - vertices[b0];
-        let e2y = vertices[b2 + 1] - vertices[b0 + 1];
-        let e2z = vertices[b2 + 2] - vertices[b0 + 2];
+        let e1x = vertices[b1] as f64 - vertices[b0] as f64;
+        let e1y = vertices[b1 + 1] as f64 - vertices[b0 + 1] as f64;
+        let e1z = vertices[b1 + 2] as f64 - vertices[b0 + 2] as f64;
+        let e2x = vertices[b2] as f64 - vertices[b0] as f64;
+        let e2y = vertices[b2 + 1] as f64 - vertices[b0 + 1] as f64;
+        let e2z = vertices[b2 + 2] as f64 - vertices[b0 + 2] as f64;
 
-        let nx = (e1y * e2z - e1z * e2y) as f64;
-        let ny = (e1z * e2x - e1x * e2z) as f64;
-        let nz = (e1x * e2y - e1y * e2x) as f64;
+        let nx = e1y * e2z - e1z * e2y;
+        let ny = e1z * e2x - e1x * e2z;
+        let nz = e1x * e2y - e1y * e2x;
 
         let g0 = if let Some(groups) = position_groups {
             groups[i0 as usize]
@@ -320,9 +319,9 @@ pub fn compute_mesh_geometry_normals(
             i
         };
         let acc_base = accumulated as usize * 3;
-        let mut nx = accum[acc_base] as f32;
-        let mut ny = accum[acc_base + 1] as f32;
-        let mut nz = accum[acc_base + 2] as f32;
+        let mut nx = accum[acc_base];
+        let mut ny = accum[acc_base + 1];
+        let mut nz = accum[acc_base + 2];
         let len = (nx * nx + ny * ny + nz * nz).sqrt();
         if len > 0.0 {
             nx /= len;
@@ -330,9 +329,9 @@ pub fn compute_mesh_geometry_normals(
             nz /= len;
         }
         let base = (i * floats_per_vertex + NORMAL_OFFSET) as usize;
-        out.vertices[base] = nx;
-        out.vertices[base + 1] = ny;
-        out.vertices[base + 2] = nz;
+        out.vertices[base] = nx as f32;
+        out.vertices[base + 1] = ny as f32;
+        out.vertices[base + 2] = nz as f32;
     }
     out.version += 1;
 }
@@ -341,6 +340,7 @@ pub fn compute_mesh_geometry_normals(
 /// position components are bit-identical (TS `computeMeshGeometryPositionGroups`). `out` is cleared
 /// and refilled to the vertex count, keeping its capacity across calls (D24).
 // flight-lint: allow(conform-params) D24: computed output is the required first caller-owned out
+// flight-lint: allow(f32) grouping compares the exact bit pattern of canonical GPU vertex positions
 pub fn compute_mesh_geometry_position_groups(out: &mut Vec<u32>, geometry: &MeshGeometry) {
     let vertices = &geometry.vertices;
     let floats_per_vertex = geometry.layout.read().unwrap().stride / 4;
@@ -386,7 +386,7 @@ pub fn compute_mesh_geometry_position_groups(out: &mut Vec<u32>, geometry: &Mesh
 /// Recomputes tangents from positions, normals, and uv0 using the Lengyel method, then
 /// Gram-Schmidt-orthogonalizes each tangent against its normal and stores it with the glTF
 /// handedness sign. Handles mirrored-UV seam splitting for indexed geometry.
-// flight-lint: allow(f64) meshGeometryCompute.ts:432-433 explicitly allocates Float64Array tangent and bitangent accumulators; other geometry arithmetic remains f32
+// flight-lint: allow(f32) tangent seam splitting copies canonical GPU records before f64 math and final narrowing
 pub fn compute_mesh_geometry_tangents(
     out: &mut MeshGeometry,
     geometry: &MeshGeometry,
@@ -437,10 +437,10 @@ pub fn compute_mesh_geometry_tangents(
             let u0 = (i0 * source_floats_per_vertex + UV0_OFFSET) as usize;
             let u1 = (i1 * source_floats_per_vertex + UV0_OFFSET) as usize;
             let u2 = (i2 * source_floats_per_vertex + UV0_OFFSET) as usize;
-            let du1 = source_vertices[u1] - source_vertices[u0];
-            let dv1 = source_vertices[u1 + 1] - source_vertices[u0 + 1];
-            let du2 = source_vertices[u2] - source_vertices[u0];
-            let dv2 = source_vertices[u2 + 1] - source_vertices[u0 + 1];
+            let du1 = source_vertices[u1] as f64 - source_vertices[u0] as f64;
+            let dv1 = source_vertices[u1 + 1] as f64 - source_vertices[u0 + 1] as f64;
+            let du2 = source_vertices[u2] as f64 - source_vertices[u0] as f64;
+            let dv2 = source_vertices[u2 + 1] as f64 - source_vertices[u0 + 1] as f64;
             let determinant = du1 * dv2 - du2 * dv1;
             let sign: i8 = if determinant < 0.0 {
                 -1
@@ -584,20 +584,20 @@ pub fn compute_mesh_geometry_tangents(
         let p0 = (i0 * source_floats_per_vertex + POSITION_OFFSET) as usize;
         let p1 = (i1 * source_floats_per_vertex + POSITION_OFFSET) as usize;
         let p2 = (i2 * source_floats_per_vertex + POSITION_OFFSET) as usize;
-        let e1x = source_vertices[p1] - source_vertices[p0];
-        let e1y = source_vertices[p1 + 1] - source_vertices[p0 + 1];
-        let e1z = source_vertices[p1 + 2] - source_vertices[p0 + 2];
-        let e2x = source_vertices[p2] - source_vertices[p0];
-        let e2y = source_vertices[p2 + 1] - source_vertices[p0 + 1];
-        let e2z = source_vertices[p2 + 2] - source_vertices[p0 + 2];
+        let e1x = source_vertices[p1] as f64 - source_vertices[p0] as f64;
+        let e1y = source_vertices[p1 + 1] as f64 - source_vertices[p0 + 1] as f64;
+        let e1z = source_vertices[p1 + 2] as f64 - source_vertices[p0 + 2] as f64;
+        let e2x = source_vertices[p2] as f64 - source_vertices[p0] as f64;
+        let e2y = source_vertices[p2 + 1] as f64 - source_vertices[p0 + 1] as f64;
+        let e2z = source_vertices[p2 + 2] as f64 - source_vertices[p0 + 2] as f64;
 
         let uv0 = (i0 * source_floats_per_vertex + UV0_OFFSET) as usize;
         let uv1 = (i1 * source_floats_per_vertex + UV0_OFFSET) as usize;
         let uv2 = (i2 * source_floats_per_vertex + UV0_OFFSET) as usize;
-        let du1 = source_vertices[uv1] - source_vertices[uv0];
-        let dv1 = source_vertices[uv1 + 1] - source_vertices[uv0 + 1];
-        let du2 = source_vertices[uv2] - source_vertices[uv0];
-        let dv2 = source_vertices[uv2 + 1] - source_vertices[uv0 + 1];
+        let du1 = source_vertices[uv1] as f64 - source_vertices[uv0] as f64;
+        let dv1 = source_vertices[uv1 + 1] as f64 - source_vertices[uv0 + 1] as f64;
+        let du2 = source_vertices[uv2] as f64 - source_vertices[uv0] as f64;
+        let dv2 = source_vertices[uv2 + 1] as f64 - source_vertices[uv0 + 1] as f64;
         let determinant = du1 * dv2 - du2 * dv1;
         let reciprocal = if determinant != 0.0 {
             1.0 / determinant
@@ -612,7 +612,7 @@ pub fn compute_mesh_geometry_tangents(
         let by = (du1 * e2y - du2 * e1y) * reciprocal;
         let bz = (du1 * e2z - du2 * e1z) * reciprocal;
 
-        let tangent_sign: f32 = if position_groups.is_some() && determinant < 0.0 {
+        let tangent_sign: f64 = if position_groups.is_some() && determinant < 0.0 {
             -1.0
         } else {
             1.0
@@ -638,34 +638,34 @@ pub fn compute_mesh_geometry_tangents(
             &mut tan,
             &mut bitan,
             g0,
-            (tx * tangent_sign) as f64,
-            (ty * tangent_sign) as f64,
-            (tz * tangent_sign) as f64,
-            bx as f64,
-            by as f64,
-            bz as f64,
+            tx * tangent_sign,
+            ty * tangent_sign,
+            tz * tangent_sign,
+            bx,
+            by,
+            bz,
         );
         accumulate_tangent(
             &mut tan,
             &mut bitan,
             g1,
-            (tx * tangent_sign) as f64,
-            (ty * tangent_sign) as f64,
-            (tz * tangent_sign) as f64,
-            bx as f64,
-            by as f64,
-            bz as f64,
+            tx * tangent_sign,
+            ty * tangent_sign,
+            tz * tangent_sign,
+            bx,
+            by,
+            bz,
         );
         accumulate_tangent(
             &mut tan,
             &mut bitan,
             g2,
-            (tx * tangent_sign) as f64,
-            (ty * tangent_sign) as f64,
-            (tz * tangent_sign) as f64,
-            bx as f64,
-            by as f64,
-            bz as f64,
+            tx * tangent_sign,
+            ty * tangent_sign,
+            tz * tangent_sign,
+            bx,
+            by,
+            bz,
         );
     }
 
@@ -702,7 +702,7 @@ pub fn compute_mesh_geometry_tangents(
         let groups = position_groups.unwrap();
         let o_states = orientation_states.as_ref();
         for source in 0..source_vertex_count {
-            let sign: f32 = if let Some(states) = o_states {
+            let sign: f64 = if let Some(states) = o_states {
                 if states[source as usize] < 0 {
                     -1.0
                 } else {
@@ -730,7 +730,7 @@ pub fn compute_mesh_geometry_tangents(
                     continue;
                 }
                 let source_idx = split_reverse[output as usize];
-                let sign: f32 = if t_signs[element / 3] < 0 { -1.0 } else { 1.0 };
+                let sign: f64 = if t_signs[element / 3] < 0 { -1.0 } else { 1.0 };
                 write_accumulated_tangent(
                     target_verts,
                     target_floats_per_vertex,
@@ -793,7 +793,7 @@ pub fn refresh_mesh_geometry_bounds(geometry: &mut MeshGeometry) {
     geometry.geometry_runtime.bounds_version = geometry.version as i32;
 }
 
-// flight-lint: allow(f64) meshGeometryCompute.ts:543-544 reads the explicit Float64Array tangent and bitangent accumulators, then writes f32 vertices
+// flight-lint: allow(f32) f64 tangent calculations narrow only when stored in the GPU vertex carrier
 fn write_accumulated_tangent(
     target_vertices: &mut [f32],
     target_floats_per_vertex: u32,
@@ -801,17 +801,17 @@ fn write_accumulated_tangent(
     tangents: &[f64],
     bitangents: &[f64],
     accumulated_vertex: u32,
-    tangent_sign: f32,
+    tangent_sign: f64,
 ) {
     let n_base = (output_vertex * target_floats_per_vertex + NORMAL_OFFSET) as usize;
-    let nx = target_vertices[n_base];
-    let ny = target_vertices[n_base + 1];
-    let nz = target_vertices[n_base + 2];
+    let nx = target_vertices[n_base] as f64;
+    let ny = target_vertices[n_base + 1] as f64;
+    let nz = target_vertices[n_base + 2] as f64;
 
     let acc_base = accumulated_vertex as usize * 3;
-    let mut tx = tangents[acc_base] as f32 * tangent_sign;
-    let mut ty = tangents[acc_base + 1] as f32 * tangent_sign;
-    let mut tz = tangents[acc_base + 2] as f32 * tangent_sign;
+    let mut tx = tangents[acc_base] * tangent_sign;
+    let mut ty = tangents[acc_base + 1] * tangent_sign;
+    let mut tz = tangents[acc_base + 2] * tangent_sign;
 
     // Gram-Schmidt
     let ndt = nx * tx + ny * ty + nz * tz;
@@ -854,9 +854,9 @@ fn write_accumulated_tangent(
     let cx = ny * tz - nz * ty;
     let cy = nz * tx - nx * tz;
     let cz = nx * ty - ny * tx;
-    let w = if cx * (bitangents[acc_base] as f32)
-        + cy * (bitangents[acc_base + 1] as f32)
-        + cz * (bitangents[acc_base + 2] as f32)
+    let w = if cx * bitangents[acc_base]
+        + cy * bitangents[acc_base + 1]
+        + cz * bitangents[acc_base + 2]
         < 0.0
     {
         -1.0
@@ -865,8 +865,8 @@ fn write_accumulated_tangent(
     };
 
     let base = (output_vertex * target_floats_per_vertex + TANGENT_OFFSET) as usize;
-    target_vertices[base] = tx;
-    target_vertices[base + 1] = ty;
-    target_vertices[base + 2] = tz;
-    target_vertices[base + 3] = w;
+    target_vertices[base] = tx as f32;
+    target_vertices[base + 1] = ty as f32;
+    target_vertices[base + 2] = tz as f32;
+    target_vertices[base + 3] = w as f32;
 }

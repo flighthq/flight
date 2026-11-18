@@ -932,32 +932,32 @@ impl MeshGeometry {
     pub fn from_attributes(options: MeshGeometryFromAttributesOptions) -> MeshGeometry {
         return create_mesh_geometry_from_attributes(options);
     }
-    pub fn from_box(width: Option<f32>, height: Option<f32>, depth: Option<f32>) -> MeshGeometry {
+    pub fn from_box(width: Option<f64>, height: Option<f64>, depth: Option<f64>) -> MeshGeometry {
         return create_box_mesh_geometry(width, height, depth);
     }
     pub fn from_capsule(
-        radius: Option<f32>,
-        height: Option<f32>,
+        radius: Option<f64>,
+        height: Option<f64>,
         radial_segments: Option<i32>,
         cap_segments: Option<i32>,
     ) -> MeshGeometry {
         return create_capsule_mesh_geometry(radius, height, radial_segments, cap_segments);
     }
-    pub fn from_circle(radius: Option<f32>, segments: Option<i32>) -> MeshGeometry {
+    pub fn from_circle(radius: Option<f64>, segments: Option<i32>) -> MeshGeometry {
         return create_circle_mesh_geometry(radius, segments);
     }
     pub fn from_cone(
-        radius: Option<f32>,
-        height: Option<f32>,
+        radius: Option<f64>,
+        height: Option<f64>,
         radial_segments: Option<i32>,
         capped: Option<bool>,
     ) -> MeshGeometry {
         return create_cone_mesh_geometry(radius, height, radial_segments, capped);
     }
     pub fn from_cylinder(
-        top_radius: Option<f32>,
-        bottom_radius: Option<f32>,
-        height: Option<f32>,
+        top_radius: Option<f64>,
+        bottom_radius: Option<f64>,
+        height: Option<f64>,
         radial_segments: Option<i32>,
         capped: Option<bool>,
     ) -> MeshGeometry {
@@ -969,69 +969,69 @@ impl MeshGeometry {
             capped,
         );
     }
-    pub fn from_dodecahedron(radius: Option<f32>, detail: Option<i32>) -> MeshGeometry {
+    pub fn from_dodecahedron(radius: Option<f64>, detail: Option<i32>) -> MeshGeometry {
         return create_dodecahedron_mesh_geometry(radius, detail);
     }
-    pub fn from_icosahedron(radius: Option<f32>, detail: Option<i32>) -> MeshGeometry {
+    pub fn from_icosahedron(radius: Option<f64>, detail: Option<i32>) -> MeshGeometry {
         return create_icosahedron_mesh_geometry(radius, detail);
     }
-    pub fn from_icosphere(radius: Option<f32>, subdivisions: Option<i32>) -> MeshGeometry {
+    pub fn from_icosphere(radius: Option<f64>, subdivisions: Option<i32>) -> MeshGeometry {
         return create_icosphere_mesh_geometry(radius, subdivisions);
     }
-    pub fn from_octahedron(radius: Option<f32>, detail: Option<i32>) -> MeshGeometry {
+    pub fn from_octahedron(radius: Option<f64>, detail: Option<i32>) -> MeshGeometry {
         return create_octahedron_mesh_geometry(radius, detail);
     }
     pub fn from_plane(
-        width: Option<f32>,
-        depth: Option<f32>,
+        width: Option<f64>,
+        depth: Option<f64>,
         width_segments: Option<i32>,
         depth_segments: Option<i32>,
     ) -> MeshGeometry {
         return create_plane_mesh_geometry(width, depth, width_segments, depth_segments);
     }
     pub fn from_polyhedron(
-        vertex_positions: &[[f32; 3]],
+        vertex_positions: &[[f64; 3]],
         face_indices: &[[u32; 3]],
-        radius: Option<f32>,
+        radius: Option<f64>,
         detail: Option<i32>,
     ) -> MeshGeometry {
         return create_polyhedron_mesh_geometry(vertex_positions, face_indices, radius, detail);
     }
-    pub fn from_quad(width: Option<f32>, height: Option<f32>) -> MeshGeometry {
+    pub fn from_quad(width: Option<f64>, height: Option<f64>) -> MeshGeometry {
         return create_quad_mesh_geometry(width, height);
     }
     pub fn from_ring(
-        inner_radius: Option<f32>,
-        outer_radius: Option<f32>,
+        inner_radius: Option<f64>,
+        outer_radius: Option<f64>,
         segments: Option<i32>,
     ) -> MeshGeometry {
         return create_ring_mesh_geometry(inner_radius, outer_radius, segments);
     }
     pub fn from_sphere(
-        radius: Option<f32>,
+        radius: Option<f64>,
         width_segments: Option<i32>,
         height_segments: Option<i32>,
     ) -> MeshGeometry {
         return create_sphere_mesh_geometry(radius, width_segments, height_segments);
     }
-    pub fn from_tetrahedron(radius: Option<f32>, detail: Option<i32>) -> MeshGeometry {
+    pub fn from_tetrahedron(radius: Option<f64>, detail: Option<i32>) -> MeshGeometry {
         return create_tetrahedron_mesh_geometry(radius, detail);
     }
     pub fn from_torus(
-        radius: Option<f32>,
-        tube: Option<f32>,
+        radius: Option<f64>,
+        tube: Option<f64>,
         radial_segments: Option<i32>,
         tubular_segments: Option<i32>,
     ) -> MeshGeometry {
         return create_torus_mesh_geometry(radius, tube, radial_segments, tubular_segments);
     }
     pub fn from_torus_knot(
-        radius: Option<f32>,
-        tube: Option<f32>,
+        radius: Option<f64>,
+        tube: Option<f64>,
         tubular_segments: Option<i32>,
         radial_segments: Option<i32>,
-        p: Option<f32>,
-        q: Option<f32>,
+        p: Option<f64>,
+        q: Option<f64>,
     ) -> MeshGeometry {
         return create_torus_knot_mesh_geometry(
             radius,
@@ -1057,15 +1057,17 @@ impl MeshGeometry {
     pub fn morph_bind_pose(&self) -> Option<&flight_entity::Ref<MeshMorphBindPose>> {
         return get_mesh_geometry_morph_bind_pose(self);
     }
+    // flight-lint: allow(f32) UV offsets operate on bounded GPU texture-coordinate channels
     pub fn offset_uvs(&mut self, du: f32, dv: f32) {
         return offset_mesh_geometry_uvs(self, du, dv);
     }
     pub fn refresh_bounds(&mut self) {
         return refresh_mesh_geometry_bounds(self);
     }
-    pub fn scale(&mut self, sx: f32, sy: f32, sz: f32) {
+    pub fn scale(&mut self, sx: f64, sy: f64, sz: f64) {
         return scale_mesh_geometry(self, sx, sy, sz);
     }
+    // flight-lint: allow(f32) UV scales operate on bounded GPU texture-coordinate channels
     pub fn scale_uvs(&mut self, su: f32, sv: f32) {
         return scale_mesh_geometry_uvs(self, su, sv);
     }
@@ -1081,9 +1083,11 @@ impl MeshGeometry {
     pub fn set_subsets(&mut self, subsets: &[MeshSubset]) {
         return set_mesh_geometry_subsets(self, subsets);
     }
+    // flight-lint: allow(f32) color components are bounded GPU vertex channels
     pub fn set_vertex_color0(&mut self, vertex_index: u32, r: f32, g: f32, b: f32, a: f32) -> bool {
         return set_mesh_geometry_vertex_color0(self, vertex_index, r, g, b, a);
     }
+    // flight-lint: allow(f32) joint indices mirror the numeric GPU vertex channel
     pub fn set_vertex_joints0(
         &mut self,
         vertex_index: u32,
@@ -1094,28 +1098,31 @@ impl MeshGeometry {
     ) -> bool {
         return set_mesh_geometry_vertex_joints0(self, vertex_index, x, y, z, w);
     }
-    pub fn set_vertex_normal(&mut self, vertex_index: u32, x: f32, y: f32, z: f32) -> bool {
+    pub fn set_vertex_normal(&mut self, vertex_index: u32, x: f64, y: f64, z: f64) -> bool {
         return set_mesh_geometry_vertex_normal(self, vertex_index, x, y, z);
     }
-    pub fn set_vertex_position(&mut self, vertex_index: u32, x: f32, y: f32, z: f32) -> bool {
+    pub fn set_vertex_position(&mut self, vertex_index: u32, x: f64, y: f64, z: f64) -> bool {
         return set_mesh_geometry_vertex_position(self, vertex_index, x, y, z);
     }
     pub fn set_vertex_tangent(
         &mut self,
         vertex_index: u32,
-        x: f32,
-        y: f32,
-        z: f32,
-        w: f32,
+        x: f64,
+        y: f64,
+        z: f64,
+        w: f64,
     ) -> bool {
         return set_mesh_geometry_vertex_tangent(self, vertex_index, x, y, z, w);
     }
+    // flight-lint: allow(f32) UV components are bounded GPU vertex channels
     pub fn set_vertex_uv0(&mut self, vertex_index: u32, u: f32, v: f32) -> bool {
         return set_mesh_geometry_vertex_uv0(self, vertex_index, u, v);
     }
+    // flight-lint: allow(f32) UV components are bounded GPU vertex channels
     pub fn set_vertex_uv1(&mut self, vertex_index: u32, u: f32, v: f32) -> bool {
         return set_mesh_geometry_vertex_uv1(self, vertex_index, u, v);
     }
+    // flight-lint: allow(f32) skin weights are normalized bounded GPU vertex channels
     pub fn set_vertex_weights0(
         &mut self,
         vertex_index: u32,
@@ -1138,7 +1145,7 @@ impl MeshGeometry {
     pub fn transform_into(&mut self, source: &MeshGeometry, matrix: &Matrix4) -> bool {
         return transform_mesh_geometry_into(self, source, matrix);
     }
-    pub fn translate(&mut self, x: f32, y: f32, z: f32) {
+    pub fn translate(&mut self, x: f64, y: f64, z: f64) {
         return translate_mesh_geometry(self, x, y, z);
     }
     pub fn triangle_count(&self) -> u32 {

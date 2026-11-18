@@ -54,39 +54,39 @@ pub enum ScreenChangeKind {
 /// A single display's geometry in OS virtual-desktop coordinates (TS `ScreenInfo extends Entity`).
 /// `work_*` excludes OS chrome; `scale_factor` is the device-pixel ratio. Unsupplied fields carry
 /// sentinels: numeric metrics -1, `label` "", `touch_support` "unknown" (an open string, as in TS).
-/// Geometry and metrics are f32 (desktop pixels, Hz, nits, dpi: reported values, never accumulated).
-// flight-lint: allow(f64) `id` is an arbitrary TS number that is matched exactly (get_screen_by_id); real display ids (e.g. Electron's 2528732444) exceed f32's exact-integer range, and TS declares no integer domain to lower to
+/// Geometry and reported metrics use the authoring scalar so virtual-desktop conversions preserve
+/// large coordinates and fractional scale factors.
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct ScreenInfo {
     pub(crate) runtime: EntityRuntimeSlot,
     pub id: f64,
-    pub x: f32,
-    pub y: f32,
-    pub width: f32,
-    pub height: f32,
-    pub work_width: f32,
-    pub work_height: f32,
-    pub scale_factor: f32,
+    pub x: f64,
+    pub y: f64,
+    pub width: f64,
+    pub height: f64,
+    pub work_width: f64,
+    pub work_height: f64,
+    pub scale_factor: f64,
     pub is_primary: bool,
     /// Clockwise rotation in degrees, or -1 when unreported.
-    pub rotation: f32,
+    pub rotation: f64,
     pub orientation: ScreenOrientation,
     /// Refresh rate in Hz, or -1.
-    pub refresh_rate: f32,
+    pub refresh_rate: f64,
     /// Bits per pixel, or -1.
-    pub color_depth: f32,
-    pub pixel_depth: f32,
+    pub color_depth: f64,
+    pub pixel_depth: f64,
     /// Resolution in physical device pixels, or -1.
-    pub physical_width: f32,
-    pub physical_height: f32,
+    pub physical_width: f64,
+    pub physical_height: f64,
     pub is_hdr: bool,
     pub color_space: ScreenColorSpace,
     /// Peak luminance in nits for HDR displays, or -1.
-    pub max_luminance: f32,
+    pub max_luminance: f64,
     /// Bits per color component, or -1.
-    pub depth_per_component: f32,
+    pub depth_per_component: f64,
     /// Dots per inch, or -1.
-    pub dpi: f32,
+    pub dpi: f64,
     /// Host-provided display name, or "".
     pub label: String,
     /// True for built-in displays.
@@ -101,10 +101,10 @@ pub struct ScreenInfo {
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct ScreenMode {
     runtime: EntityRuntimeSlot,
-    pub width: f32,
-    pub height: f32,
-    pub refresh_rate: f32,
-    pub color_depth: f32,
+    pub width: f64,
+    pub height: f64,
+    pub refresh_rate: f64,
+    pub color_depth: f64,
     /// Host-specific pixel format identifier, or "".
     pub pixel_format: String,
 }

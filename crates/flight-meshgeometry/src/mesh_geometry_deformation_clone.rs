@@ -30,7 +30,8 @@ pub fn clone_mesh_geometry_for_deformation(source: &MeshGeometry) -> MeshGeometr
     return clone;
 }
 
-fn restore_float3(geometry: &mut MeshGeometry, semantic: VertexSemantic, source: &[f32]) {
+// flight-lint: allow(f32) restoration narrows f64 animated spatial data only at the interleaved GPU vertex carrier
+fn restore_float3(geometry: &mut MeshGeometry, semantic: VertexSemantic, source: &[f64]) {
     let offset = get_vertex_attribute_float_offset(&geometry.layout.read().unwrap(), semantic);
     if offset < 0 {
         return;
@@ -46,9 +47,9 @@ fn restore_float3(geometry: &mut MeshGeometry, semantic: VertexSemantic, source:
     for vertex in 0..vertex_count {
         let target = vertex * floats_per_vertex + offset as usize;
         let from = vertex * 3;
-        geometry.vertices[target] = source[from];
-        geometry.vertices[target + 1] = source[from + 1];
-        geometry.vertices[target + 2] = source[from + 2];
+        geometry.vertices[target] = source[from] as f32;
+        geometry.vertices[target + 1] = source[from + 1] as f32;
+        geometry.vertices[target + 2] = source[from + 2] as f32;
     }
 }
 

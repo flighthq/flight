@@ -23,6 +23,7 @@ const UINT16_INDEX_CEILING: u32 = 65535;
 
 /// Builds a MeshGeometry from separate position/normal/uv arrays using the canonical
 /// 12-float PBR record. Normals are computed when omitted; tangents are always computed.
+// flight-lint: allow(f32) f64 authoring attributes narrow once at the canonical interleaved GPU vertex seam while UV stays bounded f32
 pub fn create_mesh_geometry_from_attributes(
     options: MeshGeometryFromAttributesOptions,
 ) -> MeshGeometry {
@@ -34,13 +35,14 @@ pub fn create_mesh_geometry_from_attributes(
 
     for i in 0..vertex_count {
         let base = i * CANONICAL_FLOATS_PER_VERTEX as usize;
-        vertices[base] = positions[i * 3];
-        vertices[base + 1] = positions[i * 3 + 1];
-        vertices[base + 2] = positions[i * 3 + 2];
+        // Positions and normals remain f64 until this final interleaved GPU-data seam.
+        vertices[base] = positions[i * 3] as f32;
+        vertices[base + 1] = positions[i * 3 + 1] as f32;
+        vertices[base + 2] = positions[i * 3 + 2] as f32;
         if let Some(n) = normals {
-            vertices[base + 3] = n[i * 3];
-            vertices[base + 4] = n[i * 3 + 1];
-            vertices[base + 5] = n[i * 3 + 2];
+            vertices[base + 3] = n[i * 3] as f32;
+            vertices[base + 4] = n[i * 3 + 1] as f32;
+            vertices[base + 5] = n[i * 3 + 2] as f32;
         }
         if let Some(u) = uvs {
             vertices[base + 10] = u[i * 2];
@@ -282,6 +284,7 @@ fn layouts_match(a: &VertexAttributeLayout, b: &VertexAttributeLayout) -> bool {
 
 /// Concatenates multiple geometries into a single MeshGeometry. All must share the same
 /// layout and topology. Returns None on mismatch or empty input.
+// flight-lint: allow(f32) merging copies canonical interleaved GPU vertex records without numeric conversion
 pub fn merge_mesh_geometries(geometries: &[&MeshGeometry]) -> Option<MeshGeometry> {
     if geometries.is_empty() {
         return None;

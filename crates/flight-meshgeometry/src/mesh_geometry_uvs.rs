@@ -5,6 +5,7 @@ use crate::VertexSemantic;
 use crate::get_vertex_attribute_float_offset;
 
 /// Offsets every uv0 coordinate by (du, dv): u' = u + du, v' = v + dv.
+// flight-lint: allow(f32) UV offsets operate on bounded texture coordinates in GPU vertex storage
 pub fn offset_mesh_geometry_uvs(geometry: &mut MeshGeometry, du: f32, dv: f32) {
     let float_offset =
         get_vertex_attribute_float_offset(&geometry.layout.read().unwrap(), VertexSemantic::Uv0);
@@ -28,6 +29,7 @@ pub fn offset_mesh_geometry_uvs(geometry: &mut MeshGeometry, du: f32, dv: f32) {
 }
 
 /// Scales every uv0 coordinate by (su, sv) around the origin: u' = u * su, v' = v * sv.
+// flight-lint: allow(f32) UV scales operate on bounded texture coordinates in GPU vertex storage
 pub fn scale_mesh_geometry_uvs(geometry: &mut MeshGeometry, su: f32, sv: f32) {
     let float_offset =
         get_vertex_attribute_float_offset(&geometry.layout.read().unwrap(), VertexSemantic::Uv0);

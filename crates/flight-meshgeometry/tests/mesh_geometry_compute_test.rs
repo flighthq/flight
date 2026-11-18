@@ -129,9 +129,9 @@ mod compute_mesh_geometry_bounding_sphere {
         let center = &sphere.center;
         let stride = 12usize;
         for i in 0..3 {
-            let dx = geometry.vertices[i * stride] - center.x;
-            let dy = geometry.vertices[i * stride + 1] - center.y;
-            let dz = geometry.vertices[i * stride + 2] - center.z;
+            let dx = geometry.vertices[i * stride] as f64 - center.x;
+            let dy = geometry.vertices[i * stride + 1] as f64 - center.y;
+            let dz = geometry.vertices[i * stride + 2] as f64 - center.z;
             let dist = (dx * dx + dy * dy + dz * dz).sqrt();
             assert!(dist <= r + 1e-6);
         }
@@ -225,8 +225,8 @@ mod compute_mesh_geometry_bounds {
         bounds.min.x = 1.0;
         bounds.max.x = 4.0;
         compute_mesh_geometry_bounds(&mut bounds, &geometry);
-        assert_eq!(bounds.min.x, f32::INFINITY);
-        assert_eq!(bounds.max.x, f32::NEG_INFINITY);
+        assert_eq!(bounds.min.x, f64::INFINITY);
+        assert_eq!(bounds.max.x, f64::NEG_INFINITY);
     }
 }
 
