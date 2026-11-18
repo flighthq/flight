@@ -319,7 +319,12 @@ const EXTENSION_POINT_TYPES: &[&str] = &[
     "TextureAtlasFormatEntry",
 ];
 const SKIP_FN_PREFIXES: &[&str] = &["initialize_"];
-const SKIP_FNS: &[&str] = &["enable_clip_guards", "enable_statechart_guards"];
+const SKIP_FNS: &[&str] = &[
+    "enable_clip_guards",
+    "enable_statechart_guards",
+    // The capability contains a host-supplied Arc<dyn Fn>; C cannot construct it soundly.
+    "get_connectivity_online",
+];
 // Public-function `#[repr(u32)]` unit enums that their crate roots do not re-export, as (enum, SDK
 // module). They cross as `u32`, so naming them through the crate's contract module exposes only the
 // discriminant, never a contract-lane handle.
@@ -380,6 +385,7 @@ fn main() {
 
     let mut all_output = String::from("use flight_sdk;\n\n");
     all_output.push_str(generate_shape_bounds_context_support());
+    all_output.push_str(generate_owned_byte_reader_support());
     let mut boxed_types: BTreeSet<String> = BTreeSet::new();
     let mut vec_ref_handle_specs: BTreeSet<VecRefHandleSpec> = BTreeSet::new();
     let mut seen_names: BTreeSet<String> = BTreeSet::new();
@@ -669,13 +675,13 @@ fn collect_pub_fns(src_dir: &Path) -> Vec<ParsedFn> {
         return Vec::new();
     }
 
-    let exported_names = collect_exported_names(&lib_path, src_dir);
+    let ts_exports = collect_ts_index_exports(src_dir);
+    let exported_names = collect_exported_names(&lib_path, src_dir, &ts_exports);
     if exported_names.is_empty() {
         return Vec::new();
     }
 
     let named_exports = collect_named_exports(&lib_path);
-    let ts_exports = collect_ts_index_exports(src_dir);
     let mut fns = Vec::new();
     let mut entries: Vec<_> = fs::read_dir(src_dir)
         .unwrap()
@@ -758,7 +764,11 @@ fn uses_generic_carrier(func: &ParsedFn) -> bool {
         .is_some_and(|ret| map_generic_carrier_return(&resolve(ret)).is_some_and(|m| m.is_some()))
 }
 
-fn collect_exported_names(lib_path: &Path, src_dir: &Path) -> BTreeSet<String> {
+fn collect_exported_names(
+    lib_path: &Path,
+    src_dir: &Path,
+    ts_exports: &BTreeSet<String>,
+) -> BTreeSet<String> {
     let content = fs::read_to_string(lib_path).unwrap();
     let mut names = BTreeSet::new();
 
@@ -776,7 +786,7 @@ fn collect_exported_names(lib_path: &Path, src_dir: &Path) -> BTreeSet<String> {
                     let mod_name = mod_path.rsplit("::").next().unwrap_or(mod_path);
                     let mod_file = src_dir.join(format!("{mod_name}.rs"));
                     if mod_file.exists() {
-                        collect_glob_names(&mod_file, src_dir, &mut names);
+                        collect_glob_names(&mod_file, src_dir, ts_exports, &mut names);
                     }
                 } else if let Some(name) = rest.rsplit("::").next() {
                     // named re-export
@@ -790,7 +800,12 @@ fn collect_exported_names(lib_path: &Path, src_dir: &Path) -> BTreeSet<String> {
     names
 }
 
-fn collect_glob_names(file: &Path, src_dir: &Path, names: &mut BTreeSet<String>) {
+fn collect_glob_names(
+    file: &Path,
+    src_dir: &Path,
+    ts_exports: &BTreeSet<String>,
+    names: &mut BTreeSet<String>,
+) {
     let content = match fs::read_to_string(file) {
         Ok(c) => c,
         Err(_) => return,
@@ -818,6 +833,36 @@ fn collect_glob_names(file: &Path, src_dir: &Path, names: &mut BTreeSet<String>)
         if line.starts_with("pub use super::") && !line.ends_with("::*;") {
             if let Some(name) = line.trim_end_matches(';').rsplit("::").next() {
                 if name.chars().next().is_some_and(|c| c.is_lowercase()) {
+                    names.insert(name.to_string());
+                }
+            }
+        }
+        // Newer contracts use crate-root module re-exports. Unlike the legacy `super` contract
+        // lane, admit these functions only when the package's real TypeScript root exports the
+        // same public name; a broad Rust contract glob must not enlarge the FFI perimeter.
+        if line.starts_with("pub use crate::") && line.ends_with("::*;") {
+            let inner = line
+                .strip_prefix("pub use crate::")
+                .unwrap()
+                .strip_suffix("::*;")
+                .unwrap();
+            let mod_file = src_dir.join(format!("{inner}.rs"));
+            if mod_file.exists() {
+                let mod_content = fs::read_to_string(&mod_file).unwrap();
+                let mut mod_fns = Vec::new();
+                parse_pub_fns(&mod_content, &mut mod_fns);
+                for f in mod_fns {
+                    if ts_exports.contains(&public_perimeter::get_export_key(&f.name)) {
+                        names.insert(f.name);
+                    }
+                }
+            }
+        }
+        if line.starts_with("pub use crate::") && !line.ends_with("::*;") {
+            if let Some(name) = line.trim_end_matches(';').rsplit("::").next() {
+                if name.chars().next().is_some_and(|c| c.is_lowercase())
+                    && ts_exports.contains(&public_perimeter::get_export_key(name))
+                {
                     names.insert(name.to_string());
                 }
             }
@@ -877,7 +922,18 @@ fn parse_fn_signature(sig: &str) -> Option<ParsedFn> {
     let name = after_pub_fn[..name_end].trim().to_string();
 
     if after_pub_fn.as_bytes().get(name_end) == Some(&b'<') {
-        return None;
+        let params_start = after_pub_fn.find('(')?;
+        let generic_end = after_pub_fn[..params_start].rfind('>')?;
+        let generics = &after_pub_fn[name_end + 1..generic_end];
+        // Lifetime-only generics do not change the ABI after references are lowered. Type and
+        // const generics still require explicit monomorphization and remain outside this scanner.
+        if generics
+            .split(',')
+            .map(str::trim)
+            .any(|generic| generic.is_empty() || !generic.starts_with('\''))
+        {
+            return None;
+        }
     }
 
     let params_start = after_pub_fn.find('(')?;
@@ -1463,6 +1519,7 @@ fn generate_ffi_wrapper(func: &ParsedFn) -> Option<(String, Option<String>)> {
     let mut ffi_params = Vec::new();
     let mut call_args = Vec::new();
     let mut guard_bindings = Vec::new();
+    let mut reader_writebacks = Vec::new();
     let shape_bounds_context = func
         .params
         .iter()
@@ -1470,14 +1527,21 @@ fn generate_ffi_wrapper(func: &ParsedFn) -> Option<(String, Option<String>)> {
         .map(|param| param.name.trim_start_matches('_').to_string());
 
     for param in &func.params {
+        let resolved_ty = strip_crate_paths(&strip_lifetimes(&resolve_type_alias(param.ty.trim())));
         let mapped = map_param_to_ffi(&param.name, &param.ty)?;
         for (pname, pty) in &mapped.ffi_params {
             ffi_params.push(format!("{pname}: {pty}"));
         }
         guard_bindings.extend(mapped.bindings);
         call_args.push(mapped.call_expr);
+        if resolved_ty == "&mut ByteReader<>" || resolved_ty == "&mut ByteReader" {
+            let clean = param.name.trim_start_matches('_');
+            reader_writebacks.push(format!(
+                "        ffi_owned_{clean}.offset = sdk_{clean}.offset;"
+            ));
+        }
 
-        let ty = strip_crate_paths(&strip_lifetimes(&resolve_type_alias(param.ty.trim())));
+        let ty = resolved_ty;
         if let Some(trait_name) = extract_dyn_trait(&ty) {
             if let Some((_, ref_alias)) = DYN_OPAQUE_TRAITS.iter().find(|(n, _)| *n == trait_name) {
                 let qualified_ref = qualify_type(ref_alias);
@@ -1551,11 +1615,17 @@ fn generate_ffi_wrapper(func: &ParsedFn) -> Option<(String, Option<String>)> {
     }
 
     let ffi_name = format!("flight_{}", func.name);
-    let call = format!(
+    let mut call = format!(
         "flight_sdk::{name}({args})",
         name = func.name,
         args = call_args.join(", ")
     );
+    if !reader_writebacks.is_empty() {
+        call = format!(
+            "{{\n        let ffi_result = {call};\n{}\n        ffi_result\n    }}",
+            reader_writebacks.join("\n")
+        );
+    }
 
     let preamble = if guard_bindings.is_empty() {
         String::new()
@@ -1825,6 +1895,11 @@ enum FfiReturn {
     OptionI32Return,
     OptionU32Return,
     OptionBoolReturn,
+    // A copied byte buffer plus cursor. SDK ByteReader values borrow transient views of this data.
+    OwnedByteReaderReturn,
+    // Owned snapshots of the two public process-static effect metadata slices.
+    EffectInputSliceReturn,
+    EffectKindSliceReturn,
     VecReturn(VecReturnSpec),
     OptionVecReturn(VecReturnSpec),
     // The element type of a boxed scalar slice (`Box<[T]>`).
@@ -2061,6 +2136,18 @@ fn generate_return_body(call_wrap: &FfiReturn, call: &str, preamble: &str) -> St
                  None => -1,\n    \
                  }}"
         ),
+        FfiReturn::OwnedByteReaderReturn => format!(
+            "{preamble}    let reader = {call};\n    \
+                 return Box::into_raw(Box::new(FfiOwnedByteReader {{ bytes: reader.view.to_vec().into_boxed_slice(), offset: reader.offset }}));"
+        ),
+        FfiReturn::EffectInputSliceReturn => format!(
+            "{preamble}    let values = {call};\n    \
+                 return Box::into_raw(Box::new(values.to_vec())) as *mut std::ffi::c_void;"
+        ),
+        FfiReturn::EffectKindSliceReturn => format!(
+            "{preamble}    let values: Vec<String> = {call}.iter().map(|value| (*value).to_owned()).collect();\n    \
+                 return Box::into_raw(Box::new(values)) as *mut std::ffi::c_void;"
+        ),
         FfiReturn::OptionBoxReturn => format!(
             "{preamble}    match {call} {{\n        \
                  Some(v) => Box::into_raw(Box::new(v)),\n        \
@@ -2154,6 +2241,12 @@ fn generate_return_body(call_wrap: &FfiReturn, call: &str, preamble: &str) -> St
 // released by `_result_free`. Both are contiguous, so `_result_get(result, 0)` of a scalar slice is
 // the base of `_result_len` elements.
 fn generate_vec_result_helpers(ffi_name: &str, call_wrap: &FfiReturn) -> String {
+    if matches!(call_wrap, FfiReturn::EffectInputSliceReturn) {
+        return generate_effect_input_result_helpers(ffi_name);
+    }
+    if matches!(call_wrap, FfiReturn::EffectKindSliceReturn) {
+        return generate_effect_kind_result_helpers(ffi_name);
+    }
     let (element_ty, element_is_ref, container) = match call_wrap {
         FfiReturn::VecReturn(spec) | FfiReturn::OptionVecReturn(spec) => (
             spec.element_ty.as_str(),
@@ -2186,6 +2279,23 @@ fn generate_vec_result_helpers(ffi_name: &str, call_wrap: &FfiReturn) -> String 
     let borrowed = borrowed_ownership_doc(&format!("the {ffi_name} result handle remains alive"));
     format!(
         "\n#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn {ffi_name}_result_len(result: *const std::ffi::c_void) -> usize {{\n    if result.is_null() {{ return 0; }}\n    return unsafe {{ &*(result as *const {container}) }}.len();\n}}\n{borrowed}#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn {ffi_name}_result_get(result: *const std::ffi::c_void, index: usize) -> {get_return} {{\n    if result.is_null() {{ return std::ptr::null(); }}\n    match unsafe {{ &*(result as *const {container}) }}.get(index) {{\n        Some(value) => {get_value},\n        None => std::ptr::null(),\n    }}\n}}\n#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn {ffi_name}_result_free(result: *mut {container}) {{\n    if !result.is_null() {{ unsafe {{ drop(Box::from_raw(result)); }} }}\n}}"
+    )
+}
+
+// Process-static effect metadata crosses the ABI as an owned snapshot. Enum reads use -1 for a
+// null handle or out-of-range index; kind reads return independent owned strings.
+fn generate_effect_input_result_helpers(ffi_name: &str) -> String {
+    let container = "Vec<flight_sdk::EffectInput>";
+    format!(
+        "\n#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn {ffi_name}_result_len(result: *const std::ffi::c_void) -> usize {{\n    if result.is_null() {{ return 0; }}\n    return unsafe {{ &*(result as *const {container}) }}.len();\n}}\n#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn {ffi_name}_result_get(result: *const std::ffi::c_void, index: usize) -> i32 {{\n    if result.is_null() {{ return -1; }}\n    return unsafe {{ &*(result as *const {container}) }}.get(index).map_or(-1, |value| *value as i32);\n}}\n#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn {ffi_name}_result_free(result: *mut {container}) {{\n    if !result.is_null() {{ unsafe {{ drop(Box::from_raw(result)); }} }}\n}}"
+    )
+}
+
+fn generate_effect_kind_result_helpers(ffi_name: &str) -> String {
+    let container = "Vec<String>";
+    let owned = ownership_doc("owned-return", "flight_free_string", "std::ffi::c_char");
+    format!(
+        "\n#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn {ffi_name}_result_len(result: *const std::ffi::c_void) -> usize {{\n    if result.is_null() {{ return 0; }}\n    return unsafe {{ &*(result as *const {container}) }}.len();\n}}\n{owned}#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn {ffi_name}_result_get(result: *const std::ffi::c_void, index: usize) -> *mut std::ffi::c_char {{\n    if result.is_null() {{ return std::ptr::null_mut(); }}\n    match unsafe {{ &*(result as *const {container}) }}.get(index) {{\n        Some(value) => std::ffi::CString::new(value.as_str()).unwrap_or_default().into_raw(),\n        None => std::ptr::null_mut(),\n    }}\n}}\n#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn {ffi_name}_result_free(result: *mut {container}) {{\n    if !result.is_null() {{ unsafe {{ drop(Box::from_raw(result)); }} }}\n}}"
     )
 }
 
@@ -2227,6 +2337,21 @@ fn generate_string_record_result_helpers(ffi_name: &str) -> String {
     format!(
         "\n#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn {ffi_name}_result_len(result: *const std::ffi::c_void) -> usize {{\n    if result.is_null() {{ return 0; }}\n    return unsafe {{ &*(result as *const {container}) }}.len();\n}}\n{owned}#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn {ffi_name}_result_get(result: *const std::ffi::c_void, key: *const std::ffi::c_char) -> *mut std::ffi::c_char {{\n    if result.is_null() || key.is_null() {{ return std::ptr::null_mut(); }}\n    let key = unsafe {{ std::ffi::CStr::from_ptr(key) }}.to_str().unwrap_or(\"\");\n    match unsafe {{ &*(result as *const {container}) }}.get(key) {{\n        Some(value) => std::ffi::CString::new(value.as_str()).unwrap_or_default().into_raw(),\n        None => std::ptr::null_mut(),\n    }}\n}}\n{owned}#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn {ffi_name}_result_get_key(result: *const std::ffi::c_void, index: usize) -> *mut std::ffi::c_char {{\n    if result.is_null() {{ return std::ptr::null_mut(); }}\n    match unsafe {{ &*(result as *const {container}) }}.keys().nth(index) {{\n        Some(key) => std::ffi::CString::new(key.as_str()).unwrap_or_default().into_raw(),\n        None => std::ptr::null_mut(),\n    }}\n}}\n{owned}#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn {ffi_name}_result_get_value(result: *const std::ffi::c_void, index: usize) -> *mut std::ffi::c_char {{\n    if result.is_null() {{ return std::ptr::null_mut(); }}\n    let record = unsafe {{ &*(result as *const {container}) }};\n    match record.keys().nth(index).and_then(|key| record.get(key.as_str())) {{\n        Some(value) => std::ffi::CString::new(value.as_str()).unwrap_or_default().into_raw(),\n        None => std::ptr::null_mut(),\n    }}\n}}\n#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn {ffi_name}_result_free(result: *mut {container}) {{\n    if !result.is_null() {{ unsafe {{ drop(Box::from_raw(result)); }} }}\n}}"
     )
+}
+
+// The FFI owns the bytes independently of the caller. Each SDK call constructs a short-lived
+// ByteReader borrowing this allocation, then mutable calls copy only its cursor back. This avoids
+// a self-referential Rust value while retaining the SDK's single ByteReader implementation.
+fn generate_owned_byte_reader_support() -> &'static str {
+    r#"pub struct FfiOwnedByteReader {
+    bytes: Box<[u8]>,
+    offset: usize,
+}
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn flight_free_owned_byte_reader(reader: *mut FfiOwnedByteReader) {
+    if !reader.is_null() { unsafe { drop(Box::from_raw(reader)); } }
+}
+"#
 }
 
 // A disposer the SDK returned. `flight_call_disposer` runs it and returns false for NULL or when it
@@ -2855,6 +2980,8 @@ fn boxed_type_for_return(value: &FfiReturn, value_ty: Option<&str>) -> Option<St
 
 fn result_container_type(value: &FfiReturn) -> Option<String> {
     match value {
+        FfiReturn::EffectInputSliceReturn => Some("Vec<flight_sdk::EffectInput>".to_string()),
+        FfiReturn::EffectKindSliceReturn => Some("Vec<String>".to_string()),
         FfiReturn::VecReturn(spec) | FfiReturn::OptionVecReturn(spec) => {
             Some(format!("Vec<{}>", spec.element_ty))
         }
@@ -2964,6 +3091,18 @@ fn wrapper_ownership_doc(
             "flight_free_disposer",
             "FfiDisposer",
         )),
+        FfiReturn::OwnedByteReaderReturn => Some(ownership_doc(
+            delivery,
+            "flight_free_owned_byte_reader",
+            "FfiOwnedByteReader",
+        )),
+        FfiReturn::EffectInputSliceReturn | FfiReturn::EffectKindSliceReturn => {
+            Some(ownership_doc(
+                delivery,
+                &format!("{ffi_name}_result_free"),
+                &result_container_type(value)?,
+            ))
+        }
         FfiReturn::ArrayOutReturn(_) => {
             let owned_type = boxed_type?;
             Some(ownership_doc(
@@ -3753,7 +3892,41 @@ fn parse_closure_param(ty: &str) -> Option<ParsedClosure> {
 
 fn map_param_to_ffi(name: &str, ty: &str) -> Option<MappedParam> {
     let ty = strip_crate_paths(&strip_lifetimes(&resolve_type_alias(ty.trim())));
+    // An explicit reference lifetime can sit between `&` and a typed-array alias, so run the alias
+    // resolver once more after removing lifetimes (`&'a Uint8Array` -> `&[u8]`).
+    let ty = resolve_type_alias(&ty);
     let ty = ty.as_str();
+
+    // The handle owns bytes and cursor, but never an SDK ByteReader. Borrow its bytes into a
+    // transient view for exactly one call; mutable wrappers write the resulting cursor back.
+    if ty == "&ByteReader<>" || ty == "&ByteReader" {
+        let clean = name.trim_start_matches('_');
+        return Some(MappedParam {
+            ffi_params: vec![(name.to_string(), "*const FfiOwnedByteReader".to_string())],
+            bindings: vec![
+                format!("    assert!(!{name}.is_null(), \"{name} must be a byte-reader handle\");"),
+                format!("    let ffi_owned_{clean} = unsafe {{ &*{name} }};"),
+                format!(
+                    "    let sdk_{clean} = flight_sdk::ByteReader {{ view: &ffi_owned_{clean}.bytes, offset: ffi_owned_{clean}.offset }};"
+                ),
+            ],
+            call_expr: format!("&sdk_{clean}"),
+        });
+    }
+    if ty == "&mut ByteReader<>" || ty == "&mut ByteReader" {
+        let clean = name.trim_start_matches('_');
+        return Some(MappedParam {
+            ffi_params: vec![(name.to_string(), "*mut FfiOwnedByteReader".to_string())],
+            bindings: vec![
+                format!("    assert!(!{name}.is_null(), \"{name} must be a byte-reader handle\");"),
+                format!("    let ffi_owned_{clean} = unsafe {{ &mut *{name} }};"),
+                format!(
+                    "    let mut sdk_{clean} = flight_sdk::ByteReader {{ view: &ffi_owned_{clean}.bytes, offset: ffi_owned_{clean}.offset }};"
+                ),
+            ],
+            call_expr: format!("&mut sdk_{clean}"),
+        });
+    }
 
     // Option<&mut Vec<ImportDiagnostic>> -> a nullable, registered diagnostics list. NULL does not collect.
     if ty == "Option<&mut Vec<ImportDiagnostic>>" {
@@ -4736,6 +4909,25 @@ fn map_param_to_ffi(name: &str, ty: &str) -> Option<MappedParam> {
 fn map_return_to_ffi(ty: &str) -> Option<(String, FfiReturn)> {
     let ty = strip_crate_paths(&strip_lifetimes(&resolve_type_alias(ty.trim())));
     let ty = ty.as_str();
+
+    if ty == "ByteReader" || ty == "ByteReader<>" {
+        return Some((
+            " -> *mut FfiOwnedByteReader".to_string(),
+            FfiReturn::OwnedByteReaderReturn,
+        ));
+    }
+    if ty == "&[EffectInput]" {
+        return Some((
+            " -> *mut std::ffi::c_void".to_string(),
+            FfiReturn::EffectInputSliceReturn,
+        ));
+    }
+    if ty == "&[&str]" {
+        return Some((
+            " -> *mut std::ffi::c_void".to_string(),
+            FfiReturn::EffectKindSliceReturn,
+        ));
+    }
 
     // Provider future -> void return plus trailing `complete_fn` / `complete_ctx` parameters.
     if let Some((output, fallible)) = async_future_output(ty) {

@@ -75,11 +75,6 @@ fn skip_reduction_carriers_have_exact_header_and_hashlink_registrations() {
             "char * flight_join_file_path(const char * const * arg0, size_t arg1);",
             "DEFINE_PRIM(_BYTES, flight_join_file_path, _BYTES _I32);",
         ),
-        // Option<bool> return -> i32 sentinel.
-        (
-            "int32_t flight_get_connectivity_online(void * arg0);",
-            "DEFINE_PRIM(_I32, flight_get_connectivity_online, _BYTES);",
-        ),
         // Option<&dyn TextureVariant> monomorphized to nullable concrete pointers.
         (
             "bool flight_equals_texture__texture__texture(void * arg0, void * arg1);",
@@ -269,18 +264,55 @@ fn non_entity_create_result_uses_inner_carriers_and_owned_ref_handles() {
     assert!(!stats.contains("NonEntityCreateResult"));
 }
 
-// C cannot construct a HostConnectivityStatusCapability (its callback is an `Arc<dyn Fn>`), so the
-// Option<bool> return sentinel is pinned at the generated wrapper instead of called from C.
+// C cannot construct a HostConnectivityStatusCapability because it contains an `Arc<dyn Fn>`.
 #[test]
-fn optional_bool_return_uses_the_parameter_sentinel_encoding() {
-    let wrappers = fs::read_to_string(Path::new(env!("OUT_DIR")).join("ffi_generated.rs")).unwrap();
-    let expected = "pub unsafe extern \"C\" fn flight_get_connectivity_online(host_connectivity_status: *const flight_sdk::HostConnectivityStatusCapability) -> i32 {
-    match flight_sdk::get_connectivity_online(unsafe { &*host_connectivity_status }) {
-        Some(v) => v as i32,
-        None => -1,
+fn connectivity_callback_capability_stays_outside_the_ffi_perimeter() {
+    let wrappers = generated_wrappers();
+    let (header, shim) = generated();
+    for output in [&wrappers, &header, &shim] {
+        assert!(!output.contains("flight_get_connectivity_online"));
     }
-}";
-    assert!(wrappers.contains(expected), "missing:\n{expected}");
+}
+
+#[test]
+fn owned_readers_and_effect_snapshots_have_exact_c_and_hashlink_shapes() {
+    let (header, shim) = generated();
+    for line in [
+        "void flight_free_owned_byte_reader(void * arg0);",
+        "void * flight_create_byte_reader(void * arg0, size_t arg1, int64_t arg2);",
+        "bool flight_has_byte_reader_bytes(void * arg0, size_t arg1);",
+        "uint32_t flight_read_byte_reader_u24_big_endian(void * arg0);",
+        "void * flight_create_spine_binary_reader(void * arg0, size_t arg1);",
+        "char * flight_read_spine_binary_string(void * arg0);",
+        "bool flight_is_spine_binary_reader_overrun(void * arg0);",
+        "void * flight_get_effect_inputs(void * arg0);",
+        "size_t flight_get_effect_inputs_result_len(void * arg0);",
+        "int32_t flight_get_effect_inputs_result_get(void * arg0, size_t arg1);",
+        "void flight_get_effect_inputs_result_free(void * arg0);",
+        "void * flight_get_effect_kinds(void);",
+        "char * flight_get_effect_kinds_result_get(void * arg0, size_t arg1);",
+        "void flight_get_effect_kinds_result_free(void * arg0);",
+    ] {
+        assert_line(&header, line);
+    }
+    for line in [
+        "DEFINE_PRIM(_VOID, flight_free_owned_byte_reader, _BYTES);",
+        "DEFINE_PRIM(_BYTES, flight_create_byte_reader, _BYTES _I32 _I64);",
+        "DEFINE_PRIM(_BOOL, flight_has_byte_reader_bytes, _BYTES _I32);",
+        "DEFINE_PRIM(_I32, flight_read_byte_reader_u24_big_endian, _BYTES);",
+        "DEFINE_PRIM(_BYTES, flight_create_spine_binary_reader, _BYTES _I32);",
+        "DEFINE_PRIM(_BYTES, flight_read_spine_binary_string, _BYTES);",
+        "DEFINE_PRIM(_BOOL, flight_is_spine_binary_reader_overrun, _BYTES);",
+        "DEFINE_PRIM(_BYTES, flight_get_effect_inputs, _BYTES);",
+        "DEFINE_PRIM(_I32, flight_get_effect_inputs_result_len, _BYTES);",
+        "DEFINE_PRIM(_I32, flight_get_effect_inputs_result_get, _BYTES _I32);",
+        "DEFINE_PRIM(_VOID, flight_get_effect_inputs_result_free, _BYTES);",
+        "DEFINE_PRIM(_BYTES, flight_get_effect_kinds, _NO_ARG);",
+        "DEFINE_PRIM(_BYTES, flight_get_effect_kinds_result_get, _BYTES _I32);",
+        "DEFINE_PRIM(_VOID, flight_get_effect_kinds_result_free, _BYTES);",
+    ] {
+        assert_line(&shim, line);
+    }
 }
 
 // `Option<&mut Vec<ImportDiagnostic>>` lowers to one nullable opaque list carrier, and the list's
@@ -327,18 +359,7 @@ fn optional_diagnostics_lower_to_a_nullable_import_diagnostic_list() {
     }
     let wrappers = fs::read_to_string(Path::new(env!("OUT_DIR")).join("ffi_generated.rs")).unwrap();
     assert!(wrappers.contains("unsafe { ffi_import_diagnostic_list_values(diagnostics) }"));
-    let borrowers = wrappers
-        .lines()
-        .filter(|line| {
-            line.starts_with("pub unsafe extern \"C\" fn flight_")
-                && line.contains("diagnostics: *mut FfiImportDiagnosticList")
-        })
-        .count();
-    // Task E's 28 parsers plus Task H's collect_rive_core_type_counts.
-    assert_eq!(
-        borrowers, 29,
-        "the recovered diagnostics-collecting wrapper count changed"
-    );
+    assert!(wrappers.contains("fn flight_collect_rive_core_type_counts(out: *mut FfiU64CountMap"));
 }
 
 // An `Option<extern "C" fn>` parameter is the same C function-pointer type, where NULL is `None`.
@@ -925,6 +946,55 @@ fn contract_lane_enums_cross_as_u32_discriminants() {
     let stats = generated_stats();
     assert!(!stats.contains("SpreadMethod"));
     assert!(!stats.contains("SpritesheetParseDiagnosticSeverity"));
+}
+
+#[test]
+fn byte_reader_inventory_is_complete_and_ts_gated() {
+    let wrappers = generated_wrappers();
+    let header = generated().0;
+    for symbol in [
+        "flight_create_byte_reader",
+        "flight_has_byte_reader_bytes",
+        "flight_read_byte_reader_u8",
+        "flight_read_byte_reader_u16",
+        "flight_read_byte_reader_u24",
+        "flight_read_byte_reader_u24_big_endian",
+        "flight_read_byte_reader_u32",
+        "flight_read_byte_reader_u32_big_endian",
+        "flight_read_byte_reader_u64",
+        "flight_skip_byte_reader",
+        "flight_create_spine_binary_reader",
+        "flight_has_spine_binary_bytes",
+        "flight_is_spine_binary_reader_overrun",
+        "flight_read_spine_binary_boolean",
+        "flight_read_spine_binary_byte",
+        "flight_read_spine_binary_float",
+        "flight_read_spine_binary_int",
+        "flight_read_spine_binary_signed_varint",
+        "flight_read_spine_binary_string",
+        "flight_read_spine_binary_unsigned_short",
+        "flight_read_spine_binary_varint",
+        "flight_skip_spine_binary_bytes",
+        "flight_skip_spine_binary_curve_frames",
+        "flight_skip_spine_binary_curve_tag",
+    ] {
+        assert!(
+            wrappers.contains(&format!("fn {symbol}(")),
+            "missing {symbol}"
+        );
+        assert!(header.contains(&format!(" {symbol}(")), "missing {symbol}");
+    }
+    // This Rust contract member is deliberately absent from the package's TypeScript root.
+    assert!(!wrappers.contains("flight_report_spine_binary_crumb"));
+    // This public function is discovered, but its independent optional-string-list carrier remains
+    // unsupported; the byte-reader carrier does not erase that blocker.
+    assert!(!wrappers.contains("flight_read_spine_binary_string_reference"));
+    let stats = generated_stats();
+    assert!(!stats.contains("unmapped_param(&mut ByteReader"));
+    assert!(!stats.contains("unmapped_param(&ByteReader"));
+    assert!(!stats.contains("unmapped_return(&'static [EffectInput])"));
+    assert!(!stats.contains("unmapped_return(&'static [&'static str])"));
+    assert!(stats.contains("unmapped_param(&[Option<String>])"));
 }
 
 fn assert_line(text: &str, line: &str) {

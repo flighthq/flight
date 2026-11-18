@@ -172,6 +172,10 @@ mod collect_ts_module_exports {
         assert!(!buffer.contains(&get_export_key("create_blob")));
         let scene3d_resources = read_keys(&packages.join("scene3d-resources/src/index.ts"));
         assert!(scene3d_resources.contains(&get_export_key("reveal_scene3d_resources_on_resolve")));
+        let skeleton2d_formats = read_keys(&packages.join("skeleton2d-formats/src/index.ts"));
+        assert!(skeleton2d_formats.contains(&get_export_key("create_spine_binary_reader")));
+        assert!(skeleton2d_formats.contains(&get_export_key("skip_spine_binary_curve_tag")));
+        assert!(!skeleton2d_formats.contains(&get_export_key("report_spine_binary_crumb")));
     }
 
     fn read_keys(index: &Path) -> BTreeSet<String> {

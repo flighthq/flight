@@ -67,6 +67,62 @@ static void check_strings(void) {
   flight_free_string(unknown);
 }
 
+static void check_owned_byte_readers(void) {
+  uint8_t bytes[] = {0x11, 0x34, 0x12, 0x12, 0x34, 0x56};
+  void *reader = flight_create_byte_reader(bytes, 6, -1);
+  expect(reader != NULL, "create_byte_reader returns an owned reader");
+  bytes[0] = 0xff;
+  expect(flight_read_byte_reader_u8(reader) == 0x11, "the reader copied its source bytes");
+  expect(flight_read_byte_reader_u16(reader) == 0x1234, "mutable reads write the little-endian cursor back");
+  expect(flight_read_byte_reader_u24_big_endian(reader) == 0x123456, "the reader preserves big-endian reads");
+  expect(!flight_has_byte_reader_bytes(reader, 1), "successive reads share one cursor");
+  flight_free_owned_byte_reader(reader);
+
+  uint8_t string_bytes[] = {4, 'c', 'a', 't'};
+  reader = flight_create_spine_binary_reader(string_bytes, 4);
+  string_bytes[1] = 'r';
+  char *text = flight_read_spine_binary_string(reader);
+  expect(text != NULL && strcmp(text, "cat") == 0, "the Spine reader returns an owned string from copied bytes");
+  flight_free_string(text);
+  expect(flight_read_spine_binary_int(reader) == 0, "a Spine overrun reads the documented sentinel");
+  expect(flight_is_spine_binary_reader_overrun(reader), "a Spine overrun survives cursor writeback");
+  flight_free_owned_byte_reader(reader);
+  flight_free_owned_byte_reader(NULL);
+}
+
+struct gaussian_samples {
+  float values[2];
+  int index;
+};
+
+static float gaussian_sample(void *context) {
+  struct gaussian_samples *samples = context;
+  float sample = samples->values[samples->index];
+  samples->index = (samples->index + 1) % 2;
+  return sample;
+}
+
+static void check_tuple_execution(void) {
+  struct gaussian_samples samples = {{0.60653066f, 0.0f}, 0};
+  float first = -1.0f;
+  float second = -1.0f;
+  flight_random_gaussian_pair(gaussian_sample, &samples, 0.0f, 1.0f, &first, &second);
+  expect(near(first, 1.0f) && near(second, 0.0f), "random_gaussian_pair writes both tuple outputs");
+}
+
+static void check_effect_metadata_snapshots(void) {
+  void *kinds = flight_get_effect_kinds();
+  size_t count = flight_get_effect_kinds_result_len(kinds);
+  expect(count > 1, "get_effect_kinds returns an owned ordered snapshot");
+  char *first = flight_get_effect_kinds_result_get(kinds, 0);
+  expect(first != NULL && strcmp(first, "AutoExposureEffect") == 0, "the effect kind snapshot preserves source order");
+  expect(flight_get_effect_kinds_result_get(kinds, count) == NULL, "an out-of-range effect kind reads NULL");
+  flight_get_effect_kinds_result_free(kinds);
+  expect(first != NULL && strcmp(first, "AutoExposureEffect") == 0, "an effect kind string outlives its snapshot");
+  flight_free_string(first);
+  flight_get_effect_kinds_result_free(NULL);
+}
+
 static void check_string_arrays(void) {
   const char *segments[] = {"/a/b", "../c"};
   char *joined = flight_join_file_path(segments, 2);
@@ -548,6 +604,9 @@ int main(void) {
   check_scalars();
   check_handles();
   check_strings();
+  check_owned_byte_readers();
+  check_tuple_execution();
+  check_effect_metadata_snapshots();
   check_string_arrays();
   check_import_diagnostic_lists();
   check_non_entity_create_results();

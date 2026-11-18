@@ -834,3 +834,123 @@ mod owned_ref_return_lifecycle {
         unsafe { flight_free_command_history_ref(std::ptr::null_mut()) };
     }
 }
+
+mod owned_byte_reader {
+    use super::*;
+
+    #[test]
+    fn copies_input_and_writes_each_mutable_cursor_back() {
+        let mut bytes = [0x11, 0x34, 0x12, 0x56, 0x34, 0x12, 0x78, 0x56, 0x34, 0x12];
+        let reader = unsafe { flight_create_byte_reader(bytes.as_ptr(), bytes.len(), -1) };
+        bytes[0] = 0xff;
+        assert_eq!(bytes[0], 0xff);
+
+        assert_eq!(unsafe { flight_read_byte_reader_u8(reader) }, 0x11);
+        assert!(unsafe { flight_has_byte_reader_bytes(reader, 9) });
+        assert_eq!(unsafe { flight_read_byte_reader_u16(reader) }, 0x1234);
+        assert_eq!(unsafe { flight_read_byte_reader_u24(reader) }, 0x123456);
+        assert_eq!(unsafe { flight_read_byte_reader_u32(reader) }, 0x12345678);
+        assert!(!unsafe { flight_has_byte_reader_bytes(reader, 1) });
+        unsafe { flight_free_owned_byte_reader(reader) };
+    }
+
+    #[test]
+    fn preserves_offsets_and_both_endian_orders() {
+        let bytes = [0, 0x12, 0x34, 0x56, 0x78, 0, 0x10, 0, 0, 2, 0, 0, 0];
+        let reader = unsafe { flight_create_byte_reader(bytes.as_ptr(), bytes.len(), 1) };
+        assert_eq!(
+            unsafe { flight_read_byte_reader_u24_big_endian(reader) },
+            0x123456
+        );
+        assert_eq!(
+            unsafe { flight_read_byte_reader_u32_big_endian(reader) },
+            0x78001000
+        );
+        unsafe { flight_free_owned_byte_reader(reader) };
+
+        let reader = unsafe { flight_create_byte_reader(bytes[5..].as_ptr(), 8, -1) };
+        assert_eq!(
+            unsafe { flight_read_byte_reader_u64(reader) },
+            0x0000_0002_0000_1000
+        );
+        unsafe { flight_skip_byte_reader(reader, 0) };
+        unsafe { flight_free_owned_byte_reader(reader) };
+    }
+
+    #[test]
+    fn spine_reads_strings_and_marks_overrun_without_borrowing_input() {
+        let mut encoded = [4, b'c', b'a', b't'];
+        let reader = unsafe { flight_create_spine_binary_reader(encoded.as_ptr(), encoded.len()) };
+        encoded[1] = b'r';
+        assert_eq!(encoded[1], b'r');
+        let string = unsafe { flight_read_spine_binary_string(reader) };
+        assert_eq!(unsafe { CStr::from_ptr(string) }.to_str().unwrap(), "cat");
+        unsafe { flight_free_string(string) };
+        assert!(!unsafe { flight_is_spine_binary_reader_overrun(reader) });
+        assert!(!unsafe { flight_has_spine_binary_bytes(reader, 1) });
+        assert_eq!(unsafe { flight_read_spine_binary_int(reader) }, 0);
+        assert!(unsafe { flight_is_spine_binary_reader_overrun(reader) });
+        unsafe { flight_free_owned_byte_reader(reader) };
+        unsafe { flight_free_owned_byte_reader(std::ptr::null_mut()) };
+    }
+}
+
+mod static_effect_slice_snapshots {
+    use super::*;
+
+    #[test]
+    fn effect_input_snapshot_has_order_lifetime_and_sentinels() {
+        let effect: flight_sdk::EffectRef = flight_sdk::create_bloom_effect();
+        let result = unsafe { flight_get_effect_inputs(&effect) };
+        assert_eq!(unsafe { flight_get_effect_inputs_result_len(result) }, 1);
+        assert_eq!(
+            unsafe { flight_get_effect_inputs_result_get(result, 0) },
+            flight_sdk::EffectInput::Hdr as i32
+        );
+        drop(effect);
+        assert_eq!(
+            unsafe { flight_get_effect_inputs_result_get(result, 0) },
+            flight_sdk::EffectInput::Hdr as i32
+        );
+        assert_eq!(
+            unsafe { flight_get_effect_inputs_result_get(result, 1) },
+            -1
+        );
+        assert_eq!(
+            unsafe { flight_get_effect_inputs_result_get(std::ptr::null(), 0) },
+            -1
+        );
+        unsafe { flight_get_effect_inputs_result_free(result.cast()) };
+        unsafe { flight_get_effect_inputs_result_free(std::ptr::null_mut()) };
+    }
+
+    #[test]
+    fn effect_kind_snapshot_returns_independent_owned_strings() {
+        let expected = flight_sdk::get_effect_kinds();
+        let result = unsafe { flight_get_effect_kinds() };
+        let len = unsafe { flight_get_effect_kinds_result_len(result) };
+        assert_eq!(len, expected.len());
+        let first = unsafe { flight_get_effect_kinds_result_get(result, 0) };
+        let first_again = unsafe { flight_get_effect_kinds_result_get(result, 0) };
+        let last = unsafe { flight_get_effect_kinds_result_get(result, len - 1) };
+        assert_ne!(first, first_again);
+        assert_eq!(
+            unsafe { CStr::from_ptr(first) }.to_str().unwrap(),
+            expected[0]
+        );
+        assert_eq!(
+            unsafe { CStr::from_ptr(last) }.to_str().unwrap(),
+            expected[len - 1]
+        );
+        assert!(unsafe { flight_get_effect_kinds_result_get(result, len) }.is_null());
+        unsafe { flight_get_effect_kinds_result_free(result.cast()) };
+        assert_eq!(
+            unsafe { CStr::from_ptr(first) }.to_str().unwrap(),
+            expected[0]
+        );
+        unsafe { flight_free_string(first) };
+        unsafe { flight_free_string(first_again) };
+        unsafe { flight_free_string(last) };
+        unsafe { flight_get_effect_kinds_result_free(std::ptr::null_mut()) };
+    }
+}
