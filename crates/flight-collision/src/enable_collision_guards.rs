@@ -36,7 +36,6 @@ pub fn disable_collision_guards(
 
 /// Installs the opt-in 2D and 3D diagnostics with caller-owned log state and a clock sampled only
 /// when an operation reports a warnable shape.
-// flight-lint: allow(f64) D1: the injected clock returns a millisecond operation timestamp
 // flight-lint: allow(conform-params) D5: caller-owned registries, log state and live clock replace hidden process state
 pub fn enable_collision_guards(
     registry2d: &mut CollisionRegistry2D,
@@ -88,7 +87,6 @@ fn get_guard_status2d(shape: &CollisionShape2D) -> Option<CollisionTestStatus> {
     };
 }
 
-// flight-lint: allow(f64) collision polygon validation preserves the source relative-area boundary
 fn get_guard_status2d_polygon(points: &[f64]) -> Option<CollisionTestStatus> {
     if points.len() < 6 || points.len() % 2 != 0 {
         return Some(CollisionTestStatus::DegenerateShape);
@@ -168,16 +166,16 @@ fn get_guard_status3d(shape: &CollisionShape3D) -> Option<CollisionTestStatus> {
     };
 }
 
-fn get_guard_status3d_convex(points: &[f32]) -> Option<CollisionTestStatus> {
+fn get_guard_status3d_convex(points: &[f64]) -> Option<CollisionTestStatus> {
     if points.len() < 9 || points.len() % 3 != 0 {
         return Some(CollisionTestStatus::DegenerateShape);
     }
-    let mut min_x = f32::INFINITY;
-    let mut min_y = f32::INFINITY;
-    let mut min_z = f32::INFINITY;
-    let mut max_x = f32::NEG_INFINITY;
-    let mut max_y = f32::NEG_INFINITY;
-    let mut max_z = f32::NEG_INFINITY;
+    let mut min_x = f64::INFINITY;
+    let mut min_y = f64::INFINITY;
+    let mut min_z = f64::INFINITY;
+    let mut max_x = f64::NEG_INFINITY;
+    let mut max_y = f64::NEG_INFINITY;
+    let mut max_z = f64::NEG_INFINITY;
     for point in points.chunks_exact(3) {
         let x = point[0];
         let y = point[1];
@@ -208,7 +206,6 @@ fn get_status_string(status: CollisionTestStatus) -> &'static str {
     };
 }
 
-// flight-lint: allow(f64) the injected live clock is sampled only for a warnable 2D operation
 fn warn_on_invalid_collision_shapes2d(
     log_state: &LogStateRef,
     clock: &Arc<dyn Fn() -> f64 + Send + Sync>,
@@ -238,7 +235,6 @@ fn warn_on_invalid_collision_shapes2d(
     }
 }
 
-// flight-lint: allow(f64) the injected live clock is sampled only for a warnable 3D operation
 fn warn_on_invalid_collision_shapes3d(
     log_state: &LogStateRef,
     clock: &Arc<dyn Fn() -> f64 + Send + Sync>,
@@ -268,7 +264,6 @@ fn warn_on_invalid_collision_shapes3d(
     }
 }
 
-// flight-lint: allow(f64) D1: operation time is an injected millisecond timestamp
 fn warn_on_invalid_collision_status(
     log_state: &LogStateRef,
     now_ms: f64,

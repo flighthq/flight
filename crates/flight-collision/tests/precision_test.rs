@@ -1,5 +1,9 @@
 //! flight-compiler: rust-only
 
+// Large-coordinate/small-delta coverage for the f64 collision lane. Every case places geometry far
+// from the origin where single precision cannot represent the tested separation (the single-precision spacing
+// is 64 at 1e9 and 8 at 1e8), so these results hold only because coordinates stay f64 end to end.
+
 use flight_collision::*;
 
 fn polygon_square(origin: f64, x: f64) -> CollisionPolygon2D {
@@ -17,144 +21,149 @@ fn polygon_square(origin: f64, x: f64) -> CollisionPolygon2D {
     };
 }
 
-fn round_f32(value: f64) -> f64 {
-    return value as f32 as f64;
+fn sphere3d(x: f64, y: f64, z: f64, radius: f64) -> CollisionShape3D {
+    return CollisionShape3D::Sphere(CollisionSphere3D { x, y, z, radius });
 }
 
-fn round_polygon_f32(polygon: &CollisionPolygon2D) -> CollisionPolygon2D {
-    return CollisionPolygon2D {
-        points: polygon
-            .points
-            .iter()
-            .map(|value| round_f32(*value))
-            .collect(),
+#[test]
+fn circle_circle_resolves_a_sub_millimetre_overlap_at_one_billion() {
+    let centre = 1e9;
+    let a = CollisionCircle2D {
+        x: centre,
+        y: -centre,
+        radius: 1.0,
     };
+    let b = CollisionCircle2D {
+        x: centre + 2.0 - 1e-4,
+        y: -centre,
+        radius: 1.0,
+    };
+    let mut out = create_collision_manifold2d();
+    assert!(test_circle_circle_collision2d(&a, &b, &mut out));
+    assert!((out.depth - 1e-4).abs() < 1e-6, "depth {}", out.depth);
+    assert!((out.normal_x.abs() - 1.0).abs() < 1e-12);
+
+    let apart = CollisionCircle2D {
+        x: centre + 2.0 + 1e-4,
+        ..b
+    };
+    assert!(!test_circle_circle_collision2d(&a, &apart, &mut out));
 }
 
 #[test]
-fn polygon_sat_f32_is_sufficient_locally_but_collapses_large_world_extents() {
-    let local_a = polygon_square(0.0, 0.0);
-    let local_b = polygon_square(0.0, 8.0);
-    let mut local_f64 = create_collision_manifold2d();
-    let mut local_f32 = create_collision_manifold2d();
-    assert!(test_polygon_polygon_collision2d(
-        &local_a,
-        &local_b,
-        &mut local_f64,
+fn circle_raycast_hits_at_one_billion() {
+    let centre = 1e9;
+    let circle = CollisionShape2D::Circle(CollisionCircle2D {
+        x: centre,
+        y: 0.0,
+        radius: 1.0,
+    });
+    let mut hit = create_collision_raycast_hit2d();
+    assert!(raycast_collision_shape2d(
+        &mut hit,
+        &circle,
+        centre - 2.0,
+        0.0,
+        1.0,
+        0.0,
+        Some(5.0)
     ));
-    assert!(test_polygon_polygon_collision2d(
-        &round_polygon_f32(&local_a),
-        &round_polygon_f32(&local_b),
-        &mut local_f32,
-    ));
-    assert_eq!(
-        (local_f64.depth, local_f64.normal_x, local_f64.normal_y),
-        (local_f32.depth, local_f32.normal_x, local_f32.normal_y),
-    );
-
-    let world_origin = 1e15;
-    let world_a = polygon_square(world_origin, 0.0);
-    let world_b = polygon_square(world_origin, 8.0);
-    let mut world_f64 = create_collision_manifold2d();
-    let mut world_f32 = create_collision_manifold2d();
-    assert!(test_polygon_polygon_collision2d(
-        &world_a,
-        &world_b,
-        &mut world_f64,
-    ));
-    assert_eq!(
-        (world_f64.depth, world_f64.normal_x, world_f64.normal_y),
-        (2.0, -1.0, 0.0),
-    );
-
-    let rounded_a = round_polygon_f32(&world_a);
-    let rounded_b = round_polygon_f32(&world_b);
-    assert!(rounded_a.points.windows(2).all(|pair| pair[0] == pair[1]));
-    assert!(rounded_b.points.windows(2).all(|pair| pair[0] == pair[1]));
-    assert!(!test_polygon_polygon_collision2d(
-        &rounded_a,
-        &rounded_b,
-        &mut world_f32,
-    ));
+    assert_eq!((hit.fraction, hit.x), (1.0, centre - 1.0));
+    assert_eq!((hit.normal_x, hit.normal_y), (-1.0, 0.0));
 }
 
 #[test]
-fn circle_raycast_f32_is_sufficient_locally_but_aliases_high_coordinates() {
-    let local_circle = CollisionShape2D::Circle(CollisionCircle2D {
-        x: 0.0,
-        y: 0.0,
-        radius: 1.0,
-    });
-    let mut local_f64 = create_collision_raycast_hit2d();
-    let mut local_f32 = create_collision_raycast_hit2d();
-    assert!(raycast_collision_shape2d(
-        &mut local_f64,
-        &local_circle,
-        -2.0,
-        0.0,
-        1.0,
-        0.0,
-        Some(5.0)
-    ));
-    assert!(raycast_collision_shape2d(
-        &mut local_f32,
-        &local_circle,
-        round_f32(-2.0),
-        0.0,
-        1.0,
-        0.0,
-        Some(5.0)
-    ));
-    assert_eq!(
-        (local_f64.fraction, local_f64.x, local_f64.normal_x),
-        (local_f32.fraction, local_f32.x, local_f32.normal_x),
-    );
-
-    let center = 1e9;
-    let world_circle = CollisionShape2D::Circle(CollisionCircle2D {
-        x: center,
-        y: 0.0,
-        radius: 1.0,
-    });
-    let mut world_f64 = create_collision_raycast_hit2d();
-    assert!(raycast_collision_shape2d(
-        &mut world_f64,
-        &world_circle,
-        center - 2.0,
-        0.0,
-        1.0,
-        0.0,
-        Some(5.0)
-    ));
-    assert_eq!((world_f64.fraction, world_f64.x), (1.0, center - 1.0));
-
-    let rounded_center = round_f32(center);
-    let rounded_origin = round_f32(center - 2.0);
-    assert_eq!(rounded_origin, rounded_center);
-    let rounded_circle = CollisionShape2D::Circle(CollisionCircle2D {
-        x: rounded_center,
-        y: 0.0,
-        radius: 1.0,
-    });
-    let mut world_f32 = create_collision_raycast_hit2d();
-    // Pinned raycastCollisionShape2D.ts:35-51 reports an origin inside the shape at fraction zero, so
-    // the f32-rounded origin aliasing onto the centre is a fraction-0 inside hit rather than a miss.
-    // The aliasing itself is the documented expectation: the f64 query reports fraction 1.
-    assert!(raycast_collision_shape2d(
-        &mut world_f32,
-        &rounded_circle,
-        rounded_origin,
-        0.0,
-        1.0,
-        0.0,
-        Some(5.0)
-    ));
-    assert_eq!((world_f32.fraction, world_f32.x), (0.0, rounded_center));
+fn polygon_sat_keeps_penetration_at_one_quadrillion() {
+    let origin = 1e15;
+    let a = polygon_square(origin, 0.0);
+    let b = polygon_square(origin, 8.0);
+    let mut out = create_collision_manifold2d();
+    assert!(test_polygon_polygon_collision2d(&a, &b, &mut out));
+    assert_eq!((out.depth, out.normal_x, out.normal_y), (2.0, -1.0, 0.0));
 }
 
 #[test]
-fn guard_clock_needs_f64_to_distinguish_one_millisecond_after_two_to_the_24() {
-    let timestamp = 16_777_216.0_f64;
-    assert_ne!(timestamp, timestamp + 1.0);
-    assert_eq!(round_f32(timestamp), round_f32(timestamp + 1.0));
+fn sphere_aabb_resolves_a_ten_micrometre_penetration_at_one_hundred_million() {
+    let origin = 1e8;
+    let sphere = CollisionSphere3D {
+        x: origin + 1.0 - 1e-5,
+        y: origin + 0.5,
+        z: -origin + 0.5,
+        radius: 1.0,
+    };
+    let aabb = CollisionAabb3D {
+        min_x: origin - 1.0,
+        min_y: origin,
+        min_z: -origin,
+        max_x: origin,
+        max_y: origin + 1.0,
+        max_z: -origin + 1.0,
+    };
+    let mut out = create_collision_manifold3d();
+    assert!(test_sphere_aabb_collision3d(&sphere, &aabb, &mut out));
+    assert!((out.depth - 1e-5).abs() < 1e-7, "depth {}", out.depth);
+}
+
+#[test]
+fn sphere_raycast_hits_at_one_billion() {
+    let centre = 1e9;
+    let sphere = sphere3d(centre, -centre, centre, 0.5);
+    let mut hit = create_collision_raycast_hit3d();
+    assert!(raycast_collision_shape3d(
+        &mut hit,
+        &sphere,
+        centre,
+        -centre,
+        centre - 2.0,
+        0.0,
+        0.0,
+        1.0,
+        Some(5.0)
+    ));
+    assert!(
+        (hit.fraction - 1.5).abs() < 1e-9,
+        "fraction {}",
+        hit.fraction
+    );
+    assert!((hit.z - (centre - 0.5)).abs() < 1e-6);
+    assert!((hit.normal_z + 1.0).abs() < 1e-12);
+}
+
+#[test]
+fn sphere_sphere_resolves_a_ten_micrometre_overlap_at_one_billion() {
+    let centre = 1e9;
+    let a = CollisionSphere3D {
+        x: centre,
+        y: centre,
+        z: -centre,
+        radius: 0.5,
+    };
+    let b = CollisionSphere3D {
+        x: centre,
+        y: centre + 1.0 - 1e-5,
+        z: -centre,
+        radius: 0.5,
+    };
+    let mut out = create_collision_manifold3d();
+    assert!(test_sphere_sphere_collision3d(&a, &b, &mut out));
+    assert!((out.depth - 1e-5).abs() < 1e-6, "depth {}", out.depth);
+    assert!((out.normal_y.abs() - 1.0).abs() < 1e-12);
+}
+
+#[test]
+fn support_distance_measures_a_millimetre_gap_at_one_billion() {
+    let centre = 1e9;
+    let registry = crate::collision_registry3d_with_supports();
+    let a = sphere3d(centre, centre, centre, 1.0);
+    let b = sphere3d(centre + 2.0 + 1e-3, centre, centre, 1.0);
+    let mut out = create_collision_distance3d();
+    assert!(write_collision_distance3d(
+        &mut out, &registry, &a, &b, None, None, None
+    ));
+    assert!(!out.overlapping);
+    assert!(
+        (out.distance - 1e-3).abs() < 1e-6,
+        "distance {}",
+        out.distance
+    );
 }

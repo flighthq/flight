@@ -3,9 +3,9 @@
 use crate::collision_shape_validation2d::get_collision_polygon_validation_status2d;
 use crate::types::*;
 
-const RELATIVE_EPSILON: f32 = 1e-9;
+const RELATIVE_EPSILON: f64 = 1e-9;
 
-fn clip_segment_slab(p: f32, q: f32, epsilon: f32, t0: &mut f32, t1: &mut f32) -> bool {
+fn clip_segment_slab(p: f64, q: f64, epsilon: f64, t0: &mut f64, t1: &mut f64) -> bool {
     if p.abs() <= epsilon {
         return q >= -epsilon;
     }
@@ -28,11 +28,11 @@ fn clip_segment_slab(p: f32, q: f32, epsilon: f32, t0: &mut f32, t1: &mut f32) -
     return true;
 }
 
-fn get_polygon_extent(points: &[f32], count: usize) -> f32 {
-    let mut min_x = f32::INFINITY;
-    let mut min_y = f32::INFINITY;
-    let mut max_x = f32::NEG_INFINITY;
-    let mut max_y = f32::NEG_INFINITY;
+fn get_polygon_extent(points: &[f64], count: usize) -> f64 {
+    let mut min_x = f64::INFINITY;
+    let mut min_y = f64::INFINITY;
+    let mut max_x = f64::NEG_INFINITY;
+    let mut max_y = f64::NEG_INFINITY;
     for index in 0..count {
         let x = points[index * 2];
         let y = points[index * 2 + 1];
@@ -52,7 +52,7 @@ fn get_polygon_extent(points: &[f32], count: usize) -> f32 {
     return (max_x - min_x).max(max_y - min_y);
 }
 
-fn is_point_in_convex_polygon(x: f32, y: f32, points: &[f32], count: usize) -> bool {
+fn is_point_in_convex_polygon(x: f64, y: f64, points: &[f64], count: usize) -> bool {
     let epsilon = relative_epsilon(get_polygon_extent(points, count));
     let mut positive = false;
     let mut negative = false;
@@ -76,7 +76,7 @@ fn is_point_in_convex_polygon(x: f32, y: f32, points: &[f32], count: usize) -> b
     return true;
 }
 
-fn is_point_on_segment(x: f32, y: f32, x0: f32, y0: f32, x1: f32, y1: f32) -> bool {
+fn is_point_on_segment(x: f64, y: f64, x0: f64, y0: f64, x1: f64, y1: f64) -> bool {
     let dx = x1 - x0;
     let dy = y1 - y0;
     let length_squared = dx * dx + dy * dy;
@@ -91,14 +91,14 @@ fn is_point_on_segment(x: f32, y: f32, x0: f32, y0: f32, x1: f32, y1: f32) -> bo
 }
 
 fn is_segment_overlapping_box(
-    x0: f32,
-    y0: f32,
-    x1: f32,
-    y1: f32,
-    min_x: f32,
-    min_y: f32,
-    max_x: f32,
-    max_y: f32,
+    x0: f64,
+    y0: f64,
+    x1: f64,
+    y1: f64,
+    min_x: f64,
+    min_y: f64,
+    max_x: f64,
+    max_y: f64,
 ) -> bool {
     let dx = x1 - x0;
     let dy = y1 - y0;
@@ -121,14 +121,14 @@ fn is_segment_overlapping_box(
 }
 
 fn is_segments_intersecting(
-    ax0: f32,
-    ay0: f32,
-    ax1: f32,
-    ay1: f32,
-    bx0: f32,
-    by0: f32,
-    bx1: f32,
-    by1: f32,
+    ax0: f64,
+    ay0: f64,
+    ax1: f64,
+    ay1: f64,
+    bx0: f64,
+    by0: f64,
+    bx1: f64,
+    by1: f64,
 ) -> bool {
     let direction_a_x = ax1 - ax0;
     let direction_a_y = ay1 - ay0;
@@ -203,13 +203,13 @@ fn is_valid_obb(shape: &CollisionObb2D) -> bool {
 }
 
 fn point_segment_distance_squared(
-    point_x: f32,
-    point_y: f32,
-    x0: f32,
-    y0: f32,
-    x1: f32,
-    y1: f32,
-) -> f32 {
+    point_x: f64,
+    point_y: f64,
+    x0: f64,
+    y0: f64,
+    x1: f64,
+    y1: f64,
+) -> f64 {
     let dx = x1 - x0;
     let dy = y1 - y0;
     let length_squared = dx * dx + dy * dy;
@@ -222,24 +222,24 @@ fn point_segment_distance_squared(
     return closest_x * closest_x + closest_y * closest_y;
 }
 
-fn relative_epsilon(extent: f32) -> f32 {
+fn relative_epsilon(extent: f64) -> f64 {
     return if extent > 0.0 {
         extent * RELATIVE_EPSILON
     } else {
-        f32::EPSILON
+        f64::EPSILON
     };
 }
 
 fn segment_segment_distance_squared(
-    ax0: f32,
-    ay0: f32,
-    ax1: f32,
-    ay1: f32,
-    bx0: f32,
-    by0: f32,
-    bx1: f32,
-    by1: f32,
-) -> f32 {
+    ax0: f64,
+    ay0: f64,
+    ax1: f64,
+    ay1: f64,
+    bx0: f64,
+    by0: f64,
+    bx1: f64,
+    by1: f64,
+) -> f64 {
     if is_segments_intersecting(ax0, ay0, ax1, ay1, bx0, by0, bx1, by1) {
         return 0.0;
     }
@@ -254,16 +254,7 @@ pub fn test_segment_aabb_collision2d(a: &CollisionSegment2D, b: &CollisionAabb2D
     if !is_valid_aabb(b) {
         return false;
     }
-    return is_segment_overlapping_box(
-        a.x0 as f32,
-        a.y0 as f32,
-        a.x1 as f32,
-        a.y1 as f32,
-        b.min_x as f32,
-        b.min_y as f32,
-        b.max_x as f32,
-        b.max_y as f32,
-    );
+    return is_segment_overlapping_box(a.x0, a.y0, a.x1, a.y1, b.min_x, b.min_y, b.max_x, b.max_y);
 }
 
 /// Whether a segment comes within the radius of a capsule axis, boundary-inclusive.
@@ -271,17 +262,9 @@ pub fn test_segment_capsule_collision2d(a: &CollisionSegment2D, b: &CollisionCap
     if !is_valid_capsule(b) {
         return false;
     }
-    let distance_squared = segment_segment_distance_squared(
-        a.x0 as f32,
-        a.y0 as f32,
-        a.x1 as f32,
-        a.y1 as f32,
-        b.x0 as f32,
-        b.y0 as f32,
-        b.x1 as f32,
-        b.y1 as f32,
-    );
-    let radius = b.radius as f32;
+    let distance_squared =
+        segment_segment_distance_squared(a.x0, a.y0, a.x1, a.y1, b.x0, b.y0, b.x1, b.y1);
+    let radius = b.radius;
     return distance_squared <= radius * radius;
 }
 
@@ -290,13 +273,13 @@ pub fn test_segment_circle_collision2d(a: &CollisionSegment2D, b: &CollisionCirc
     if !is_valid_circle(b) {
         return false;
     }
-    let x0 = a.x0 as f32;
-    let y0 = a.y0 as f32;
-    let dx = a.x1 as f32 - x0;
-    let dy = a.y1 as f32 - y0;
-    let circle_x = b.x as f32;
-    let circle_y = b.y as f32;
-    let radius = b.radius as f32;
+    let x0 = a.x0;
+    let y0 = a.y0;
+    let dx = a.x1 - x0;
+    let dy = a.y1 - y0;
+    let circle_x = b.x;
+    let circle_y = b.y;
+    let radius = b.radius;
     let length_squared = dx * dx + dy * dy;
     let mut t = 0.0;
     if length_squared > 0.0 {
@@ -314,26 +297,19 @@ pub fn test_segment_obb_collision2d(a: &CollisionSegment2D, b: &CollisionObb2D) 
     if !is_valid_obb(b) {
         return false;
     }
-    let rotation = b.rotation as f32;
+    let rotation = b.rotation;
     let cos = rotation.cos();
     let sin = rotation.sin();
-    let delta0_x = a.x0 as f32 - b.x as f32;
-    let delta0_y = a.y0 as f32 - b.y as f32;
-    let delta1_x = a.x1 as f32 - b.x as f32;
-    let delta1_y = a.y1 as f32 - b.y as f32;
+    let delta0_x = a.x0 - b.x;
+    let delta0_y = a.y0 - b.y;
+    let delta1_x = a.x1 - b.x;
+    let delta1_y = a.y1 - b.y;
     let local_x0 = delta0_x * cos + delta0_y * sin;
     let local_y0 = -delta0_x * sin + delta0_y * cos;
     let local_x1 = delta1_x * cos + delta1_y * sin;
     let local_y1 = -delta1_x * sin + delta1_y * cos;
     return is_segment_overlapping_box(
-        local_x0,
-        local_y0,
-        local_x1,
-        local_y1,
-        -(b.half_w as f32),
-        -(b.half_h as f32),
-        b.half_w as f32,
-        b.half_h as f32,
+        local_x0, local_y0, local_x1, local_y1, -b.half_w, -b.half_h, b.half_w, b.half_h,
     );
 }
 
@@ -342,20 +318,20 @@ pub fn test_segment_polygon_collision2d(a: &CollisionSegment2D, b: &CollisionPol
     if get_collision_polygon_validation_status2d(&b.points).is_some() {
         return false;
     }
-    let points: Vec<_> = b.points.iter().map(|value| *value as f32).collect();
+    let points: Vec<_> = b.points.iter().copied().collect();
     let count = points.len() / 2;
-    if is_point_in_convex_polygon(a.x0 as f32, a.y0 as f32, &points, count)
-        || is_point_in_convex_polygon(a.x1 as f32, a.y1 as f32, &points, count)
+    if is_point_in_convex_polygon(a.x0, a.y0, &points, count)
+        || is_point_in_convex_polygon(a.x1, a.y1, &points, count)
     {
         return true;
     }
     for index in 0..count {
         let next = (index + 1) % count;
         if is_segments_intersecting(
-            a.x0 as f32,
-            a.y0 as f32,
-            a.x1 as f32,
-            a.y1 as f32,
+            a.x0,
+            a.y0,
+            a.x1,
+            a.y1,
             points[index * 2],
             points[index * 2 + 1],
             points[next * 2],
@@ -369,14 +345,5 @@ pub fn test_segment_polygon_collision2d(a: &CollisionSegment2D, b: &CollisionPol
 
 /// Whether two segments cross, touch or overlap collinearly.
 pub fn test_segment_segment_collision2d(a: &CollisionSegment2D, b: &CollisionSegment2D) -> bool {
-    return is_segments_intersecting(
-        a.x0 as f32,
-        a.y0 as f32,
-        a.x1 as f32,
-        a.y1 as f32,
-        b.x0 as f32,
-        b.y0 as f32,
-        b.x1 as f32,
-        b.y1 as f32,
-    );
+    return is_segments_intersecting(a.x0, a.y0, a.x1, a.y1, b.x0, b.y0, b.x1, b.y1);
 }

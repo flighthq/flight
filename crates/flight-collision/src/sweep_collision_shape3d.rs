@@ -3,7 +3,7 @@
 use crate::gjk_distance3d::*;
 use crate::types::*;
 
-const SWEEP_TOUCH_TOLERANCE: f32 = 1e-6;
+const SWEEP_TOUCH_TOLERANCE: f64 = 1e-6;
 const MAX_SWEEP_ITERATIONS: usize = 32;
 
 pub fn create_collision_time_of_impact3d() -> CollisionTimeOfImpact3D {
@@ -27,14 +27,14 @@ pub fn sweep_collision_shape3d(
     out: &mut CollisionTimeOfImpact3D,
     registry: &CollisionRegistry3D,
     shape_a: &CollisionShape3D,
-    translation_ax: f32,
-    translation_ay: f32,
-    translation_az: f32,
+    translation_ax: f64,
+    translation_ay: f64,
+    translation_az: f64,
     shape_b: &CollisionShape3D,
-    translation_bx: f32,
-    translation_by: f32,
-    translation_bz: f32,
-    max_fraction: Option<f32>,
+    translation_bx: f64,
+    translation_by: f64,
+    translation_bz: f64,
+    max_fraction: Option<f64>,
 ) -> bool {
     initialize_collision_time_of_impact3d(out);
     let max_fraction = max_fraction.unwrap_or(1.0);
@@ -58,18 +58,18 @@ pub fn sweep_collision_shape3d(
     let mut distance = create_collision_distance3d();
 
     // The last measurement taken while the pair was measurably apart.
-    let mut normal_x = 0.0_f32;
-    let mut normal_y = 0.0_f32;
-    let mut normal_z = 0.0_f32;
-    let mut point_a_x = 0.0_f32;
-    let mut point_a_y = 0.0_f32;
-    let mut point_a_z = 0.0_f32;
-    let mut point_b_x = 0.0_f32;
-    let mut point_b_y = 0.0_f32;
-    let mut point_b_z = 0.0_f32;
-    let mut measured_fraction = 0.0_f32;
+    let mut normal_x = 0.0_f64;
+    let mut normal_y = 0.0_f64;
+    let mut normal_z = 0.0_f64;
+    let mut point_a_x = 0.0_f64;
+    let mut point_a_y = 0.0_f64;
+    let mut point_a_z = 0.0_f64;
+    let mut point_b_x = 0.0_f64;
+    let mut point_b_y = 0.0_f64;
+    let mut point_b_z = 0.0_f64;
+    let mut measured_fraction = 0.0_f64;
     let mut impacted = false;
-    let mut fraction = 0.0_f32;
+    let mut fraction = 0.0_f64;
 
     for _iteration in 0..MAX_SWEEP_ITERATIONS {
         let separated = write_collision_distance3d(

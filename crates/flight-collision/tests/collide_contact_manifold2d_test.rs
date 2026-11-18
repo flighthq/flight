@@ -426,7 +426,7 @@ mod collide_contact_manifold2d {
             min_y: 1.0,
         });
         assert_eq!(collide_contact_manifold2d(&a, &b, &mut out), true);
-        let populated: Vec<(f32, f32)> = out.points.iter().map(|p| (p.x, p.y)).collect();
+        let populated: Vec<(f64, f64)> = out.points.iter().map(|p| (p.x, p.y)).collect();
 
         let c = CollisionShape2D::Aabb(CollisionAabb2D {
             max_x: 1.0,
@@ -443,7 +443,7 @@ mod collide_contact_manifold2d {
         assert_eq!(collide_contact_manifold2d(&c, &d, &mut out), false);
 
         assert_eq!(out.point_count, 0);
-        let after: Vec<(f32, f32)> = out.points.iter().map(|p| (p.x, p.y)).collect();
+        let after: Vec<(f64, f64)> = out.points.iter().map(|p| (p.x, p.y)).collect();
         assert_eq!(after, populated);
     }
 }

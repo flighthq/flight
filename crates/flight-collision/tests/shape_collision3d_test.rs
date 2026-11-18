@@ -2,8 +2,8 @@
 
 use flight_collision::contract::*;
 
-fn d1_single_evaluation_bound(expected: f32, ts_bound: f32) -> f32 {
-    ts_bound.max(4.0 * f32::EPSILON * expected.abs().max(1.0))
+fn d1_single_evaluation_bound(expected: f64, ts_bound: f64) -> f64 {
+    ts_bound.max(4.0 * f64::EPSILON * expected.abs().max(1.0))
 }
 
 struct Xorshift {
@@ -16,25 +16,25 @@ impl Xorshift {
         Self { state }
     }
 
-    fn next(&mut self) -> f32 {
+    fn next(&mut self) -> f64 {
         self.state ^= self.state.wrapping_shl(13);
         self.state ^= self.state >> 17;
         self.state ^= self.state.wrapping_shl(5);
-        (self.state % 100000) as f32 / 100000.0
+        (self.state % 100000) as f64 / 100000.0
     }
 }
 
 fn create_box3d(
-    x: f32,
-    y: f32,
-    z: f32,
-    half_x: f32,
-    half_y: f32,
-    half_z: f32,
-    rotation_x: f32,
-    rotation_y: f32,
-    rotation_z: f32,
-    rotation_w: f32,
+    x: f64,
+    y: f64,
+    z: f64,
+    half_x: f64,
+    half_y: f64,
+    half_z: f64,
+    rotation_x: f64,
+    rotation_y: f64,
+    rotation_z: f64,
+    rotation_w: f64,
 ) -> CollisionBox3D {
     CollisionBox3D {
         x,
@@ -96,7 +96,7 @@ mod shape_collision3d_agreement_with_the_generic_support_floor {
     use super::*;
 
     #[test]
-    fn preserves_the_exact_seeded_sphere_sphere_penetration_that_f32_scratch_mismeasured() {
+    fn preserves_the_exact_seeded_sphere_sphere_penetration() {
         let a = CollisionSphere3D {
             x: 0.0,
             y: 0.0,
@@ -121,7 +121,7 @@ mod shape_collision3d_agreement_with_the_generic_support_floor {
     }
 
     #[test]
-    fn preserves_the_exact_seeded_sphere_capsule_penetration_that_f32_scratch_mismeasured() {
+    fn preserves_the_exact_seeded_sphere_capsule_penetration() {
         let a = CollisionSphere3D {
             x: -0.370_739_94,
             y: 0.136_980_06,
@@ -149,7 +149,7 @@ mod shape_collision3d_agreement_with_the_generic_support_floor {
     }
 
     #[test]
-    fn preserves_the_exact_seeded_sphere_aabb_penetration_that_f32_scratch_mismeasured() {
+    fn preserves_the_exact_seeded_sphere_aabb_penetration() {
         let a = CollisionSphere3D {
             x: -2.023_98,
             y: 1.656_97,
@@ -209,7 +209,7 @@ mod shape_collision3d_agreement_with_the_generic_support_floor {
 
             if out.overlapping {
                 let expected_depth = radius_a + radius_b - distance;
-                // D1 f32 bound (TS: 1e-10)
+                // TS bound: 1e-10
                 assert!(
                     (out.depth - expected_depth).abs()
                         <= d1_single_evaluation_bound(expected_depth, 1e-10),
@@ -264,7 +264,7 @@ mod shape_collision3d_agreement_with_the_generic_support_floor {
             test_sphere_capsule_collision3d(&a_sphere, &b_capsule, &mut out);
             if out.overlapping {
                 let expected_depth = a_sphere.radius + b_capsule.radius - distance;
-                // D1 f32 bound (TS: 1e-10)
+                // TS bound: 1e-10
                 assert!(
                     (out.depth - expected_depth).abs()
                         <= d1_single_evaluation_bound(expected_depth, 1e-10),
@@ -327,7 +327,7 @@ mod shape_collision3d_agreement_with_the_generic_support_floor {
             test_sphere_aabb_collision3d(&a_sphere, &b_aabb, &mut out);
             if out.overlapping {
                 let expected_depth = a_sphere.radius - distance;
-                // D1 f32 bound (TS: 1e-10)
+                // TS bound: 1e-10
                 assert!(
                     (out.depth - expected_depth).abs()
                         <= d1_single_evaluation_bound(expected_depth, 1e-10),
@@ -484,7 +484,7 @@ mod test_box_box_collision3d {
 
     #[test]
     fn measures_a_rotated_face_in_world_space() {
-        let half = std::f32::consts::FRAC_1_SQRT_2;
+        let half = std::f64::consts::FRAC_1_SQRT_2;
         let mut out = create_collision_manifold3d();
         let a = CollisionBox3D {
             half_x: 2.0,
@@ -573,8 +573,8 @@ mod test_box_box_collision3d {
         let mut direct = create_collision_manifold3d();
         let mut floor = create_collision_manifold3d();
         for i in 0..400 {
-            let angle_a = (random.next() - 0.5) * std::f32::consts::PI * 2.0;
-            let angle_b = (random.next() - 0.5) * std::f32::consts::PI * 2.0;
+            let angle_a = (random.next() - 0.5) * std::f64::consts::PI * 2.0;
+            let angle_b = (random.next() - 0.5) * std::f64::consts::PI * 2.0;
             let a = CollisionBox3D {
                 half_x: 0.25 + random.next() * 1.75,
                 half_y: 0.25 + random.next() * 1.75,
@@ -697,10 +697,10 @@ mod test_capsule_capsule_collision3d {
             + out.normal_y * out.normal_y
             + out.normal_z * out.normal_z)
             .sqrt();
-        // D1 f32 bound (TS: 5e-11)
-        assert!(out.normal_x.abs() <= 4.0 * f32::EPSILON);
-        // D1 f32 bound (TS: 5e-11)
-        assert!((len - 1.0).abs() <= 4.0 * f32::EPSILON);
+        // TS bound: 5e-11
+        assert!(out.normal_x.abs() <= 4.0 * f64::EPSILON);
+        // TS bound: 5e-11
+        assert!((len - 1.0).abs() <= 4.0 * f64::EPSILON);
     }
 
     #[test]
@@ -815,7 +815,7 @@ mod test_sphere_box_collision3d {
 
     #[test]
     fn measures_in_the_rotated_frame() {
-        let half = std::f32::consts::FRAC_1_SQRT_2;
+        let half = std::f64::consts::FRAC_1_SQRT_2;
         let mut out = create_collision_manifold3d();
         assert!(test_sphere_box_collision3d(
             &CollisionSphere3D {

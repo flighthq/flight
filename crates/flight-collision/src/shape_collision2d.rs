@@ -5,10 +5,8 @@ use crate::convex_vertices2d::*;
 use crate::manifold2d::*;
 use crate::types::*;
 
-// flight-lint: allow(f64) measured 1e15 translated-polygon SAT needs double-precision relative tolerance
 const RELATIVE_EPSILON: f64 = 1e-9;
 
-// flight-lint: allow(f64) measured 1e15 translated-polygon SAT needs double-precision axes and projections
 fn accumulate_polygon_axes(
     sx: &[f64],
     sn: usize,
@@ -53,7 +51,6 @@ fn accumulate_polygon_axes(
     return true;
 }
 
-// flight-lint: allow(f64) measured 1e15 translated-polygon SAT needs double-precision axis canonicalization
 fn canonicalize_axis(ax: &mut f64, ay: &mut f64) {
     if *ax < -RELATIVE_EPSILON || ((*ax).abs() <= RELATIVE_EPSILON && *ay < 0.0) {
         *ax = -*ax;
@@ -62,13 +59,13 @@ fn canonicalize_axis(ax: &mut f64, ay: &mut f64) {
 }
 
 fn circle_aabb_overlap(
-    cx: f32,
-    cy: f32,
-    radius: f32,
-    min_x: f32,
-    min_y: f32,
-    max_x: f32,
-    max_y: f32,
+    cx: f64,
+    cy: f64,
+    radius: f64,
+    min_x: f64,
+    min_y: f64,
+    max_x: f64,
+    max_y: f64,
     out: &mut CollisionManifold2D,
 ) -> bool {
     let closest_x = if cx < min_x {
@@ -88,11 +85,11 @@ fn circle_aabb_overlap(
     let dx = cx - closest_x;
     let dy = cy - closest_y;
     let dist_squared = dx * dx + dy * dy;
-    let extent = f32::max(f32::max(max_x - min_x, max_y - min_y), radius);
+    let extent = f64::max(f64::max(max_x - min_x, max_y - min_y), radius);
     let epsilon = if extent > 0.0 {
         extent * 1e-6
     } else {
-        f32::EPSILON
+        f64::EPSILON
     };
 
     if dist_squared > epsilon * epsilon {
@@ -114,8 +111,8 @@ fn circle_aabb_overlap(
     let bottom = cy - min_y;
     let top = max_y - cy;
     let mut min_dist = right;
-    let mut normal_x = 1.0_f32;
-    let mut normal_y = 0.0_f32;
+    let mut normal_x = 1.0_f64;
+    let mut normal_y = 0.0_f64;
     if left < min_dist {
         min_dist = left;
         normal_x = -1.0;
@@ -138,7 +135,6 @@ fn circle_aabb_overlap(
     return true;
 }
 
-// flight-lint: allow(f64) measured 1e15 translated-polygon SAT needs double-precision circle projections
 fn circle_polygon_axis_overlap(
     axis_x: f64,
     axis_y: f64,
@@ -172,7 +168,6 @@ fn circle_polygon_axis_overlap(
     return (pen_positive, 1.0);
 }
 
-// flight-lint: allow(f64) measured 1e15 polygon storage needs double-precision SAT extents
 fn get_polygon_extent(points: &[f64], count: usize) -> f64 {
     let mut min_x = f64::INFINITY;
     let mut min_y = f64::INFINITY;
@@ -197,7 +192,6 @@ fn get_polygon_extent(points: &[f64], count: usize) -> f64 {
     return f64::max(max_x - min_x, max_y - min_y);
 }
 
-// flight-lint: allow(f64) measured 1e15 translated-polygon SAT needs stable double-precision tie breaking
 fn is_preferred_axis(
     overlap: f64,
     axis_x: f64,
@@ -245,7 +239,6 @@ fn is_valid_obb(shape: &CollisionObb2D) -> bool {
         && shape.half_h > 0.0;
 }
 
-// flight-lint: allow(f64) measured 1e15 translated-polygon SAT needs double-precision projections
 fn polygon_axis_overlap(
     axis_x: f64,
     axis_y: f64,
@@ -286,7 +279,6 @@ fn polygon_axis_overlap(
     return (pen_positive, 1.0);
 }
 
-// flight-lint: allow(f64) measured 1e15 translated-polygon SAT needs double-precision relative tolerance
 fn relative_epsilon(extent: f64) -> f64 {
     if extent > 0.0 {
         return extent * RELATIVE_EPSILON;
@@ -294,7 +286,6 @@ fn relative_epsilon(extent: f64) -> f64 {
     return f64::EPSILON;
 }
 
-// flight-lint: allow(f64) measured 1e15 polygon SAT retains a coherent double-precision circle-axis domain
 fn sat_circle_convex_overlap(
     cx: f64,
     cy: f64,
@@ -380,22 +371,13 @@ fn sat_circle_convex_overlap(
 
     normal_x *= min_overlap_sign;
     normal_y *= min_overlap_sign;
-    out.normal_x = if normal_x == 0.0 {
-        0.0
-    } else {
-        normal_x as f32
-    };
-    out.normal_y = if normal_y == 0.0 {
-        0.0
-    } else {
-        normal_y as f32
-    };
-    out.depth = min_overlap as f32;
+    out.normal_x = if normal_x == 0.0 { 0.0 } else { normal_x };
+    out.normal_y = if normal_y == 0.0 { 0.0 } else { normal_y };
+    out.depth = min_overlap;
     out.overlapping = true;
     return true;
 }
 
-// flight-lint: allow(f64) measured 1e15 translated-polygon SAT needs double-precision axes and projections
 fn sat_convex_overlap(
     ax: &[f64],
     an: usize,
@@ -449,9 +431,9 @@ fn sat_convex_overlap(
 
     let nx = best_x * best_sign;
     let ny = best_y * best_sign;
-    out.normal_x = if nx == 0.0 { 0.0 } else { nx as f32 };
-    out.normal_y = if ny == 0.0 { 0.0 } else { ny as f32 };
-    out.depth = best_overlap as f32;
+    out.normal_x = if nx == 0.0 { 0.0 } else { nx };
+    out.normal_y = if ny == 0.0 { 0.0 } else { ny };
+    out.depth = best_overlap;
     out.overlapping = true;
     return true;
 }
@@ -507,7 +489,6 @@ pub fn test_aabb_aabb_collision2d(
     return true;
 }
 
-// flight-lint: allow(f64) this SAT entry shares the measured 1e15 double-precision polygon kernel
 pub fn test_aabb_obb_collision2d(
     a: &CollisionAabb2D,
     b: &CollisionObb2D,
@@ -517,16 +498,13 @@ pub fn test_aabb_obb_collision2d(
         clear_collision_manifold2d(out);
         return false;
     }
-    let mut vertices_a_f32 = [0.0_f32; 8];
-    let mut vertices_b_f32 = [0.0_f32; 8];
-    write_aabb_vertices(a, &mut vertices_a_f32);
-    write_obb_vertices(b, &mut vertices_b_f32);
-    let vertices_a = vertices_a_f32.map(f64::from);
-    let vertices_b = vertices_b_f32.map(f64::from);
+    let mut vertices_a = [0.0_f64; 8];
+    let mut vertices_b = [0.0_f64; 8];
+    write_aabb_vertices(a, &mut vertices_a);
+    write_obb_vertices(b, &mut vertices_b);
     return sat_convex_overlap(&vertices_a, 4, &vertices_b, 4, out);
 }
 
-// flight-lint: allow(f64) measured 1e15 polygon SAT widens AABB vertices into the retained domain
 pub fn test_aabb_polygon_collision2d(
     a: &CollisionAabb2D,
     b: &CollisionPolygon2D,
@@ -536,9 +514,8 @@ pub fn test_aabb_polygon_collision2d(
         clear_collision_manifold2d(out);
         return false;
     }
-    let mut vertices_a_f32 = [0.0_f32; 8];
-    write_aabb_vertices(a, &mut vertices_a_f32);
-    let vertices_a = vertices_a_f32.map(f64::from);
+    let mut vertices_a = [0.0_f64; 8];
+    write_aabb_vertices(a, &mut vertices_a);
     return sat_convex_overlap(&vertices_a, 4, &b.points, b.points.len() / 2, out);
 }
 
@@ -551,16 +528,7 @@ pub fn test_circle_aabb_collision2d(
         clear_collision_manifold2d(out);
         return false;
     }
-    return circle_aabb_overlap(
-        a.x as f32,
-        a.y as f32,
-        a.radius as f32,
-        b.min_x,
-        b.min_y,
-        b.max_x,
-        b.max_y,
-        out,
-    );
+    return circle_aabb_overlap(a.x, a.y, a.radius, b.min_x, b.min_y, b.max_x, b.max_y, out);
 }
 
 pub fn test_circle_circle_collision2d(
@@ -572,11 +540,11 @@ pub fn test_circle_circle_collision2d(
         clear_collision_manifold2d(out);
         return false;
     }
-    let ax = a.x as f32;
-    let ay = a.y as f32;
-    let bx = b.x as f32;
-    let by = b.y as f32;
-    let radius_sum = a.radius as f32 + b.radius as f32;
+    let ax = a.x;
+    let ay = a.y;
+    let bx = b.x;
+    let by = b.y;
+    let radius_sum = a.radius + b.radius;
 
     let dx = ax - bx;
     let dy = ay - by;
@@ -590,7 +558,7 @@ pub fn test_circle_circle_collision2d(
     let epsilon = if radius_sum > 0.0 {
         radius_sum * 1e-6
     } else {
-        f32::EPSILON
+        f64::EPSILON
     };
     if dist > epsilon {
         let inv = 1.0 / dist;
@@ -615,9 +583,9 @@ pub fn test_circle_obb_collision2d(
         clear_collision_manifold2d(out);
         return false;
     }
-    let cx = a.x as f32;
-    let cy = a.y as f32;
-    let radius = a.radius as f32;
+    let cx = a.x;
+    let cy = a.y;
+    let radius = a.radius;
     let half_w = b.half_w;
     let half_h = b.half_h;
     let cos = b.rotation.cos();
@@ -652,7 +620,6 @@ pub fn test_circle_polygon_collision2d(
     return sat_circle_convex_overlap(a.x, a.y, a.radius, &b.points, b.points.len() / 2, out);
 }
 
-// flight-lint: allow(f64) this SAT entry shares the measured 1e15 double-precision polygon kernel
 pub fn test_obb_obb_collision2d(
     a: &CollisionObb2D,
     b: &CollisionObb2D,
@@ -662,16 +629,13 @@ pub fn test_obb_obb_collision2d(
         clear_collision_manifold2d(out);
         return false;
     }
-    let mut vertices_a_f32 = [0.0_f32; 8];
-    let mut vertices_b_f32 = [0.0_f32; 8];
-    write_obb_vertices(a, &mut vertices_a_f32);
-    write_obb_vertices(b, &mut vertices_b_f32);
-    let vertices_a = vertices_a_f32.map(f64::from);
-    let vertices_b = vertices_b_f32.map(f64::from);
+    let mut vertices_a = [0.0_f64; 8];
+    let mut vertices_b = [0.0_f64; 8];
+    write_obb_vertices(a, &mut vertices_a);
+    write_obb_vertices(b, &mut vertices_b);
     return sat_convex_overlap(&vertices_a, 4, &vertices_b, 4, out);
 }
 
-// flight-lint: allow(f64) measured 1e15 polygon SAT widens OBB vertices into the retained domain
 pub fn test_obb_polygon_collision2d(
     a: &CollisionObb2D,
     b: &CollisionPolygon2D,
@@ -681,13 +645,11 @@ pub fn test_obb_polygon_collision2d(
         clear_collision_manifold2d(out);
         return false;
     }
-    let mut vertices_a_f32 = [0.0_f32; 8];
-    write_obb_vertices(a, &mut vertices_a_f32);
-    let vertices_a = vertices_a_f32.map(f64::from);
+    let mut vertices_a = [0.0_f64; 8];
+    write_obb_vertices(a, &mut vertices_a);
     return sat_convex_overlap(&vertices_a, 4, &b.points, b.points.len() / 2, out);
 }
 
-// flight-lint: allow(f64) measured 1e15 translation: f32 collapses both 10-unit polygons; f64 reports the expected 2-unit overlap
 pub fn test_polygon_polygon_collision2d(
     a: &CollisionPolygon2D,
     b: &CollisionPolygon2D,

@@ -1230,7 +1230,7 @@ impl CollisionAabb2D {
         return collide_aabb_polygon_contact_manifold2d(self, other, out);
     }
 
-    pub fn support(&self, direction_x: f32, direction_y: f32, out: &mut [f32; 2]) {
+    pub fn support(&self, direction_x: f64, direction_y: f64, out: &mut [f64; 2]) {
         support_collision_aabb2d(self, direction_x, direction_y, out);
     }
 
@@ -1246,7 +1246,7 @@ impl CollisionAabb2D {
         return test_aabb_polygon_collision2d(self, other, out);
     }
 
-    pub fn write_vertices(&self, out: &mut [f32; 8]) {
+    pub fn write_vertices(&self, out: &mut [f64; 8]) {
         write_aabb_vertices(self, out);
     }
 }
@@ -1255,10 +1255,10 @@ impl CollisionAabb2D {
 impl CollisionAabb3D {
     pub fn support(
         &self,
-        direction_x: f32,
-        direction_y: f32,
-        direction_z: f32,
-        out: &mut [f32; 3],
+        direction_x: f64,
+        direction_y: f64,
+        direction_z: f64,
+        out: &mut [f64; 3],
     ) {
         support_collision_aabb3d(self, direction_x, direction_y, direction_z, out);
     }
@@ -1272,10 +1272,10 @@ impl CollisionAabb3D {
 impl CollisionBox3D {
     pub fn support(
         &self,
-        direction_x: f32,
-        direction_y: f32,
-        direction_z: f32,
-        out: &mut [f32; 3],
+        direction_x: f64,
+        direction_y: f64,
+        direction_z: f64,
+        out: &mut [f64; 3],
     ) {
         support_collision_box3d(self, direction_x, direction_y, direction_z, out);
     }
@@ -1321,7 +1321,7 @@ impl CollisionCapsule2D {
 }
 
 impl CollisionCapsule2D {
-    pub fn support(&self, direction_x: f32, direction_y: f32, out: &mut [f32; 2]) {
+    pub fn support(&self, direction_x: f64, direction_y: f64, out: &mut [f64; 2]) {
         support_collision_capsule2d(self, direction_x, direction_y, out);
     }
 }
@@ -1330,10 +1330,10 @@ impl CollisionCapsule2D {
 impl CollisionCapsule3D {
     pub fn support(
         &self,
-        direction_x: f32,
-        direction_y: f32,
-        direction_z: f32,
-        out: &mut [f32; 3],
+        direction_x: f64,
+        direction_y: f64,
+        direction_z: f64,
+        out: &mut [f64; 3],
     ) {
         support_collision_capsule3d(self, direction_x, direction_y, direction_z, out);
     }
@@ -1385,7 +1385,7 @@ impl CollisionCircle2D {
         return collide_circle_polygon_contact_manifold2d(self, other, out);
     }
 
-    pub fn support(&self, direction_x: f32, direction_y: f32, out: &mut [f32; 2]) {
+    pub fn support(&self, direction_x: f64, direction_y: f64, out: &mut [f64; 2]) {
         support_collision_circle2d(self, direction_x, direction_y, out);
     }
 
@@ -1410,10 +1410,10 @@ impl CollisionCircle2D {
 impl CollisionCone3D {
     pub fn support(
         &self,
-        direction_x: f32,
-        direction_y: f32,
-        direction_z: f32,
-        out: &mut [f32; 3],
+        direction_x: f64,
+        direction_y: f64,
+        direction_z: f64,
+        out: &mut [f64; 3],
     ) {
         support_collision_cone3d(self, direction_x, direction_y, direction_z, out);
     }
@@ -1445,10 +1445,10 @@ impl CollisionContactManifold3D {
 impl CollisionConvex3D {
     pub fn support(
         &self,
-        direction_x: f32,
-        direction_y: f32,
-        direction_z: f32,
-        out: &mut [f32; 3],
+        direction_x: f64,
+        direction_y: f64,
+        direction_z: f64,
+        out: &mut [f64; 3],
     ) {
         support_collision_convex3d(self, direction_x, direction_y, direction_z, out);
     }
@@ -1458,10 +1458,10 @@ impl CollisionConvex3D {
 impl CollisionCylinder3D {
     pub fn support(
         &self,
-        direction_x: f32,
-        direction_y: f32,
-        direction_z: f32,
-        out: &mut [f32; 3],
+        direction_x: f64,
+        direction_y: f64,
+        direction_z: f64,
+        out: &mut [f64; 3],
     ) {
         support_collision_cylinder3d(self, direction_x, direction_y, direction_z, out);
     }
@@ -1487,13 +1487,13 @@ impl CollisionHeightfield3D {
     pub fn raycast(
         &self,
         out: &mut CollisionRaycastHit3D,
-        origin_x: f32,
-        origin_y: f32,
-        origin_z: f32,
-        direction_x: f32,
-        direction_y: f32,
-        direction_z: f32,
-        max_fraction: Option<f32>,
+        origin_x: f64,
+        origin_y: f64,
+        origin_z: f64,
+        direction_x: f64,
+        direction_y: f64,
+        direction_z: f64,
+        max_fraction: Option<f64>,
     ) -> bool {
         return raycast_collision_heightfield3d(
             out,
@@ -1557,7 +1557,7 @@ impl CollisionObb2D {
         return collide_obb_polygon_contact_manifold2d(self, other, out);
     }
 
-    pub fn support(&self, direction_x: f32, direction_y: f32, out: &mut [f32; 2]) {
+    pub fn support(&self, direction_x: f64, direction_y: f64, out: &mut [f64; 2]) {
         support_collision_obb2d(self, direction_x, direction_y, out);
     }
 
@@ -1569,7 +1569,7 @@ impl CollisionObb2D {
         return test_obb_polygon_collision2d(self, other, out);
     }
 
-    pub fn write_vertices(&self, out: &mut [f32; 8]) {
+    pub fn write_vertices(&self, out: &mut [f64; 8]) {
         write_obb_vertices(self, out);
     }
 }
@@ -1584,7 +1584,7 @@ impl CollisionPolygon2D {
         return collide_polygon_polygon_contact_manifold2d(self, other, out);
     }
 
-    pub fn support(&self, direction_x: f32, direction_y: f32, out: &mut [f32; 2]) {
+    pub fn support(&self, direction_x: f64, direction_y: f64, out: &mut [f64; 2]) {
         support_collision_polygon2d(self, direction_x, direction_y, out);
     }
 
@@ -1644,7 +1644,7 @@ impl CollisionShape2D {
         return collide_contact_manifold2d(self, other, out);
     }
 
-    pub fn contains_point(&self, x: f32, y: f32) -> bool {
+    pub fn contains_point(&self, x: f64, y: f64) -> bool {
         return get_collision_shape_contains_point2d(self, x, y);
     }
 
@@ -1656,7 +1656,6 @@ impl CollisionShape2D {
         return explain_collision_test2d(registry, self, other);
     }
 
-    // flight-lint: allow(f64) measured 1e9 raycast delegate preserves the double-precision query domain
     pub fn raycast(
         &self,
         out: &mut CollisionRaycastHit2D,
@@ -1681,12 +1680,12 @@ impl CollisionShape2D {
         &self,
         out: &mut CollisionTimeOfImpact2D,
         registry: &CollisionRegistry2D,
-        translation_ax: f32,
-        translation_ay: f32,
+        translation_ax: f64,
+        translation_ay: f64,
         other: &CollisionShape2D,
-        translation_bx: f32,
-        translation_by: f32,
-        max_fraction: Option<f32>,
+        translation_bx: f64,
+        translation_by: f64,
+        max_fraction: Option<f64>,
     ) -> bool {
         return sweep_collision_shape2d(
             out,
@@ -1761,7 +1760,7 @@ impl CollisionShape3D {
         return collide_collision_triangle_mesh3d(out, registry, self, mesh);
     }
 
-    pub fn contains_point(&self, x: f32, y: f32, z: f32) -> bool {
+    pub fn contains_point(&self, x: f64, y: f64, z: f64) -> bool {
         return get_collision_shape_contains_point3d(self, x, y, z);
     }
 
@@ -1775,40 +1774,40 @@ impl CollisionShape3D {
 
     pub fn query_aabb_face(
         &self,
-        direction_x: f32,
-        direction_y: f32,
-        direction_z: f32,
-        out: &mut Vec<f32>,
+        direction_x: f64,
+        direction_y: f64,
+        direction_z: f64,
+        out: &mut Vec<f64>,
     ) -> usize {
         return query_collision_aabb_face3d(self, direction_x, direction_y, direction_z, out);
     }
 
     pub fn query_box_face(
         &self,
-        direction_x: f32,
-        direction_y: f32,
-        direction_z: f32,
-        out: &mut Vec<f32>,
+        direction_x: f64,
+        direction_y: f64,
+        direction_z: f64,
+        out: &mut Vec<f64>,
     ) -> usize {
         return query_collision_box_face3d(self, direction_x, direction_y, direction_z, out);
     }
 
     pub fn query_capsule_face(
         &self,
-        direction_x: f32,
-        direction_y: f32,
-        direction_z: f32,
-        out: &mut Vec<f32>,
+        direction_x: f64,
+        direction_y: f64,
+        direction_z: f64,
+        out: &mut Vec<f64>,
     ) -> usize {
         return query_collision_capsule_face3d(self, direction_x, direction_y, direction_z, out);
     }
 
     pub fn query_convex_face(
         &self,
-        direction_x: f32,
-        direction_y: f32,
-        direction_z: f32,
-        out: &mut Vec<f32>,
+        direction_x: f64,
+        direction_y: f64,
+        direction_z: f64,
+        out: &mut Vec<f64>,
     ) -> usize {
         return query_collision_convex_face3d(self, direction_x, direction_y, direction_z, out);
     }
@@ -1816,13 +1815,13 @@ impl CollisionShape3D {
     pub fn raycast(
         &self,
         out: &mut CollisionRaycastHit3D,
-        origin_x: f32,
-        origin_y: f32,
-        origin_z: f32,
-        direction_x: f32,
-        direction_y: f32,
-        direction_z: f32,
-        max_fraction: Option<f32>,
+        origin_x: f64,
+        origin_y: f64,
+        origin_z: f64,
+        direction_x: f64,
+        direction_y: f64,
+        direction_z: f64,
+        max_fraction: Option<f64>,
     ) -> bool {
         return raycast_collision_shape3d(
             out,
@@ -1841,14 +1840,14 @@ impl CollisionShape3D {
         &self,
         out: &mut CollisionTimeOfImpact3D,
         registry: &CollisionRegistry3D,
-        translation_ax: f32,
-        translation_ay: f32,
-        translation_az: f32,
+        translation_ax: f64,
+        translation_ay: f64,
+        translation_az: f64,
         other: &CollisionShape3D,
-        translation_bx: f32,
-        translation_by: f32,
-        translation_bz: f32,
-        max_fraction: Option<f32>,
+        translation_bx: f64,
+        translation_by: f64,
+        translation_bz: f64,
+        max_fraction: Option<f64>,
     ) -> bool {
         return sweep_collision_shape3d(
             out,
@@ -1869,11 +1868,11 @@ impl CollisionShape3D {
         &self,
         out: &mut CollisionTimeOfImpact3D,
         registry: &CollisionRegistry3D,
-        delta_x: f32,
-        delta_y: f32,
-        delta_z: f32,
+        delta_x: f64,
+        delta_y: f64,
+        delta_z: f64,
         heightfield: &CollisionHeightfield3D,
-        max_fraction: Option<f32>,
+        max_fraction: Option<f64>,
     ) -> bool {
         return sweep_collision_heightfield3d(
             out,
@@ -1891,11 +1890,11 @@ impl CollisionShape3D {
         &self,
         out: &mut CollisionTimeOfImpact3D,
         registry: &CollisionRegistry3D,
-        delta_x: f32,
-        delta_y: f32,
-        delta_z: f32,
+        delta_x: f64,
+        delta_y: f64,
+        delta_z: f64,
         mesh: &CollisionTriangleMesh3D,
-        max_fraction: Option<f32>,
+        max_fraction: Option<f64>,
     ) -> bool {
         return sweep_collision_triangle_mesh3d(
             out,
@@ -1944,9 +1943,9 @@ impl CollisionShape3D {
         out: &mut CollisionDistance3D,
         registry: &CollisionRegistry3D,
         other: &CollisionShape3D,
-        offset_x: Option<f32>,
-        offset_y: Option<f32>,
-        offset_z: Option<f32>,
+        offset_x: Option<f64>,
+        offset_y: Option<f64>,
+        offset_z: Option<f64>,
     ) -> bool {
         return write_collision_distance3d(
             out, registry, self, other, offset_x, offset_y, offset_z,
@@ -1958,10 +1957,10 @@ impl CollisionShape3D {
 impl CollisionSphere3D {
     pub fn support(
         &self,
-        direction_x: f32,
-        direction_y: f32,
-        direction_z: f32,
-        out: &mut [f32; 3],
+        direction_x: f64,
+        direction_y: f64,
+        direction_z: f64,
+        out: &mut [f64; 3],
     ) {
         support_collision_sphere3d(self, direction_x, direction_y, direction_z, out);
     }
@@ -2010,13 +2009,13 @@ impl CollisionTriangleMesh3D {
     pub fn raycast(
         &self,
         out: &mut CollisionRaycastHit3D,
-        origin_x: f32,
-        origin_y: f32,
-        origin_z: f32,
-        direction_x: f32,
-        direction_y: f32,
-        direction_z: f32,
-        max_fraction: Option<f32>,
+        origin_x: f64,
+        origin_y: f64,
+        origin_z: f64,
+        direction_x: f64,
+        direction_y: f64,
+        direction_z: f64,
+        max_fraction: Option<f64>,
     ) -> bool {
         return raycast_collision_triangle_mesh3d(
             out,

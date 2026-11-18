@@ -5,34 +5,34 @@ use std::sync::{Arc, RwLock};
 use crate::types::*;
 
 const BVH_LEAF_SIZE: usize = 4;
-const CONTACT_DEPTH_EPSILON: f32 = 1e-7;
-const CONTACT_NORMAL_ALIGNMENT: f32 = 0.98;
-const CONTACT_POINT_EPSILON_SQUARED: f32 = 1e-12;
-const EPSILON: f32 = 1e-12;
+const CONTACT_DEPTH_EPSILON: f64 = 1e-7;
+const CONTACT_NORMAL_ALIGNMENT: f64 = 0.98;
+const CONTACT_POINT_EPSILON_SQUARED: f64 = 1e-12;
+const EPSILON: f64 = 1e-12;
 
 #[derive(Clone, Copy)]
 struct CollisionTriangleContactCandidate3D {
-    x: f32,
-    y: f32,
-    z: f32,
-    depth: f32,
+    x: f64,
+    y: f64,
+    z: f64,
+    depth: f64,
     feature_id: i64,
 }
 
 struct CollisionTriangleContactAccumulator3D {
     candidates: Vec<CollisionTriangleContactCandidate3D>,
-    best_depth: f32,
-    best_normal: [f32; 3],
+    best_depth: f64,
+    best_normal: [f64; 3],
 }
 
 #[derive(Debug, Clone)]
 struct BvhNode {
-    min_x: f32,
-    min_y: f32,
-    min_z: f32,
-    max_x: f32,
-    max_y: f32,
-    max_z: f32,
+    min_x: f64,
+    min_y: f64,
+    min_z: f64,
+    max_x: f64,
+    max_y: f64,
+    max_z: f64,
     left: Option<Box<BvhNode>>,
     right: Option<Box<BvhNode>>,
     triangles: Vec<usize>,
@@ -46,15 +46,15 @@ struct BvhCacheEntry {
 
 struct TriangleAabb {
     index: usize,
-    min_x: f32,
-    min_y: f32,
-    min_z: f32,
-    max_x: f32,
-    max_y: f32,
-    max_z: f32,
-    cx: f32,
-    cy: f32,
-    cz: f32,
+    min_x: f64,
+    min_y: f64,
+    min_z: f64,
+    max_x: f64,
+    max_y: f64,
+    max_z: f64,
+    cx: f64,
+    cy: f64,
+    cz: f64,
 }
 
 // --- Triangle Mesh functions ---
@@ -69,7 +69,7 @@ pub fn create_collision_heightfield3d() -> CollisionHeightfield3D {
 fn create_collision_triangle_contact_accumulator3d() -> CollisionTriangleContactAccumulator3D {
     CollisionTriangleContactAccumulator3D {
         candidates: Vec::new(),
-        best_depth: f32::NEG_INFINITY,
+        best_depth: f64::NEG_INFINITY,
         best_normal: [0.0; 3],
     }
 }
@@ -85,7 +85,7 @@ pub fn create_collision_triangle_mesh3d() -> CollisionTriangleMesh3D {
 pub fn initialize_collision_heightfield3d(out: &mut CollisionHeightfield3D) {
     out.columns = 0;
     out.rows = 0;
-    let heights: &mut Vec<f32> = &mut out.heights;
+    let heights: &mut Vec<f64> = &mut out.heights;
     heights.clear();
     out.cell_size_x = 1.0;
     out.cell_size_z = 1.0;
@@ -102,7 +102,7 @@ pub fn initialize_collision_heightfield3d(out: &mut CollisionHeightfield3D) {
 
 // flight-lint: allow(conform-params) Principal D23 B: construction initialization owns only canonical zero-field defaults
 pub fn initialize_collision_triangle_mesh3d(out: &mut CollisionTriangleMesh3D) {
-    let points: &mut Vec<f32> = &mut out.points;
+    let points: &mut Vec<f64> = &mut out.points;
     points.clear();
     let indices: &mut Vec<usize> = &mut out.indices;
     indices.clear();
@@ -142,12 +142,12 @@ fn build_bvh(aabbs: &mut [TriangleAabb]) -> Option<BvhNode> {
     if aabbs.is_empty() {
         return None;
     }
-    let mut node_min_x = f32::INFINITY;
-    let mut node_min_y = f32::INFINITY;
-    let mut node_min_z = f32::INFINITY;
-    let mut node_max_x = f32::NEG_INFINITY;
-    let mut node_max_y = f32::NEG_INFINITY;
-    let mut node_max_z = f32::NEG_INFINITY;
+    let mut node_min_x = f64::INFINITY;
+    let mut node_min_y = f64::INFINITY;
+    let mut node_min_z = f64::INFINITY;
+    let mut node_max_x = f64::NEG_INFINITY;
+    let mut node_max_y = f64::NEG_INFINITY;
+    let mut node_max_z = f64::NEG_INFINITY;
     for aabb in aabbs.iter() {
         if aabb.min_x < node_min_x {
             node_min_x = aabb.min_x;
@@ -214,10 +214,10 @@ fn build_heightfield_bvh(heightfield: &CollisionHeightfield3D) -> Option<BvhNode
     let mut triangle = 0usize;
     for row in 0..(heightfield.rows - 1) {
         for col in 0..(heightfield.columns - 1) {
-            let x0 = col as f32 * heightfield.cell_size_x;
-            let x1 = (col + 1) as f32 * heightfield.cell_size_x;
-            let z0 = row as f32 * heightfield.cell_size_z;
-            let z1 = (row + 1) as f32 * heightfield.cell_size_z;
+            let x0 = col as f64 * heightfield.cell_size_x;
+            let x1 = (col + 1) as f64 * heightfield.cell_size_x;
+            let z0 = row as f64 * heightfield.cell_size_z;
+            let z1 = (row + 1) as f64 * heightfield.cell_size_z;
             let h00 = heightfield.heights[row * heightfield.columns + col];
             let h10 = heightfield.heights[row * heightfield.columns + col + 1];
             let h01 = heightfield.heights[(row + 1) * heightfield.columns + col];
@@ -493,7 +493,7 @@ pub fn get_collision_triangle_mesh_validation_status3d(
         let scale_squared = ab_length_squared.max(ac_length_squared);
         if !cross_length_squared.is_finite()
             || !scale_squared.is_finite()
-            || cross_length_squared <= f32::EPSILON * f32::EPSILON * scale_squared * scale_squared
+            || cross_length_squared <= f64::EPSILON * f64::EPSILON * scale_squared * scale_squared
         {
             return Some(CollisionTestStatus::DegenerateShape);
         }
@@ -567,11 +567,11 @@ fn heightfield_cell_triangles(
     heightfield: &CollisionHeightfield3D,
     col: usize,
     row: usize,
-) -> [[f32; 9]; 2] {
-    let x0 = col as f32 * heightfield.cell_size_x;
-    let x1 = (col + 1) as f32 * heightfield.cell_size_x;
-    let z0 = row as f32 * heightfield.cell_size_z;
-    let z1 = (row + 1) as f32 * heightfield.cell_size_z;
+) -> [[f64; 9]; 2] {
+    let x0 = col as f64 * heightfield.cell_size_x;
+    let x1 = (col + 1) as f64 * heightfield.cell_size_x;
+    let z0 = row as f64 * heightfield.cell_size_z;
+    let z1 = (row + 1) as f64 * heightfield.cell_size_z;
     let h00 = heightfield.heights[row * heightfield.columns + col];
     let h10 = heightfield.heights[row * heightfield.columns + col + 1];
     let h01 = heightfield.heights[(row + 1) * heightfield.columns + col];
@@ -590,13 +590,13 @@ fn heightfield_cell_triangles(
 
 fn heightfield_ray_candidate_triangles(
     heightfield: &CollisionHeightfield3D,
-    origin_x: f32,
-    origin_y: f32,
-    origin_z: f32,
-    direction_x: f32,
-    direction_y: f32,
-    direction_z: f32,
-    max_fraction: f32,
+    origin_x: f64,
+    origin_y: f64,
+    origin_z: f64,
+    direction_x: f64,
+    direction_y: f64,
+    direction_z: f64,
+    max_fraction: f64,
 ) -> Vec<usize> {
     let bvh = get_or_build_heightfield_bvh(heightfield);
     let bvh = match bvh {
@@ -644,10 +644,10 @@ fn heightfield_ray_candidate_triangles(
 fn heightfield_sweep_candidate_triangles(
     heightfield: &CollisionHeightfield3D,
     convex: &CollisionShape3D,
-    delta_x: f32,
-    delta_y: f32,
-    delta_z: f32,
-    max_fraction: f32,
+    delta_x: f64,
+    delta_y: f64,
+    delta_z: f64,
+    max_fraction: f64,
 ) -> Vec<usize> {
     let bvh = get_or_build_heightfield_bvh(heightfield);
     let bvh = match bvh {
@@ -704,14 +704,14 @@ fn include_collision_triangle_contact_manifold3d(
     triangle: usize,
     manifold: &CollisionContactManifold3D,
 ) {
-    let mut depth = 0.0_f32;
+    let mut depth = 0.0_f64;
     for point in &manifold.points[..manifold.point_count] {
         depth = depth.max(point.depth);
     }
     let alignment = manifold.normal_x * accumulator.best_normal[0]
         + manifold.normal_y * accumulator.best_normal[1]
         + manifold.normal_z * accumulator.best_normal[2];
-    if accumulator.best_depth == f32::NEG_INFINITY
+    if accumulator.best_depth == f64::NEG_INFINITY
         || (depth > accumulator.best_depth + CONTACT_DEPTH_EPSILON
             && alignment < CONTACT_NORMAL_ALIGNMENT)
     {
@@ -751,13 +751,13 @@ pub fn invalidate_collision_triangle_mesh3d(mesh: &mut CollisionTriangleMesh3D) 
 
 fn inverse_transform_aabb_to_local(
     aabb: &CollisionAabb3D,
-    tx: f32,
-    ty: f32,
-    tz: f32,
-    qx: f32,
-    qy: f32,
-    qz: f32,
-    qw: f32,
+    tx: f64,
+    ty: f64,
+    tz: f64,
+    qx: f64,
+    qy: f64,
+    qz: f64,
+    qw: f64,
 ) -> CollisionAabb3D {
     let corners = [
         (aabb.min_x, aabb.min_y, aabb.min_z),
@@ -773,13 +773,13 @@ fn inverse_transform_aabb_to_local(
     let inv_qy = -qy;
     let inv_qz = -qz;
     let inv_qw = qw;
-    let mut local_min_x = f32::INFINITY;
-    let mut local_min_y = f32::INFINITY;
-    let mut local_min_z = f32::INFINITY;
-    let mut local_max_x = f32::NEG_INFINITY;
-    let mut local_max_y = f32::NEG_INFINITY;
-    let mut local_max_z = f32::NEG_INFINITY;
-    let mut out = [0.0f32; 3];
+    let mut local_min_x = f64::INFINITY;
+    let mut local_min_y = f64::INFINITY;
+    let mut local_min_z = f64::INFINITY;
+    let mut local_max_x = f64::NEG_INFINITY;
+    let mut local_max_y = f64::NEG_INFINITY;
+    let mut local_max_z = f64::NEG_INFINITY;
+    let mut out = [0.0f64; 3];
     for &(cx, cy, cz) in &corners {
         let dx = cx - tx;
         let dy = cy - ty;
@@ -850,13 +850,13 @@ fn mesh_candidate_triangles(
 
 fn mesh_ray_candidate_triangles(
     mesh: &CollisionTriangleMesh3D,
-    origin_x: f32,
-    origin_y: f32,
-    origin_z: f32,
-    direction_x: f32,
-    direction_y: f32,
-    direction_z: f32,
-    max_fraction: f32,
+    origin_x: f64,
+    origin_y: f64,
+    origin_z: f64,
+    direction_x: f64,
+    direction_y: f64,
+    direction_z: f64,
+    max_fraction: f64,
 ) -> Vec<usize> {
     let bvh = get_or_build_mesh_bvh(mesh);
     let bvh = match bvh {
@@ -904,10 +904,10 @@ fn mesh_ray_candidate_triangles(
 fn mesh_sweep_candidate_triangles(
     mesh: &CollisionTriangleMesh3D,
     convex: &CollisionShape3D,
-    delta_x: f32,
-    delta_y: f32,
-    delta_z: f32,
-    max_fraction: f32,
+    delta_x: f64,
+    delta_y: f64,
+    delta_z: f64,
+    max_fraction: f64,
 ) -> Vec<usize> {
     let bvh = get_or_build_mesh_bvh(mesh);
     let bvh = match bvh {
@@ -949,12 +949,12 @@ fn mesh_sweep_candidate_triangles(
 
 fn query_bvh(
     node: &BvhNode,
-    qmin_x: f32,
-    qmin_y: f32,
-    qmin_z: f32,
-    qmax_x: f32,
-    qmax_y: f32,
-    qmax_z: f32,
+    qmin_x: f64,
+    qmin_y: f64,
+    qmin_z: f64,
+    qmax_x: f64,
+    qmax_y: f64,
+    qmax_z: f64,
     out: &mut Vec<usize>,
 ) {
     if qmax_x < node.min_x
@@ -992,13 +992,13 @@ fn query_bvh_all(node: &BvhNode, out: &mut Vec<usize>) {
 }
 
 fn ray_aabb(
-    origin_x: f32,
-    origin_y: f32,
-    origin_z: f32,
-    direction_x: f32,
-    direction_y: f32,
-    direction_z: f32,
-    max_fraction: f32,
+    origin_x: f64,
+    origin_y: f64,
+    origin_z: f64,
+    direction_x: f64,
+    direction_y: f64,
+    direction_z: f64,
+    max_fraction: f64,
 ) -> CollisionAabb3D {
     let end_x = origin_x + direction_x * max_fraction;
     let end_y = origin_y + direction_y * max_fraction;
@@ -1016,22 +1016,22 @@ fn ray_aabb(
 /// Moller-Trumbore ray-triangle intersection.
 /// Returns Some((t, nx, ny, nz)) or None.
 fn ray_triangle_intersection(
-    ox: f32,
-    oy: f32,
-    oz: f32,
-    dx: f32,
-    dy: f32,
-    dz: f32,
-    v0x: f32,
-    v0y: f32,
-    v0z: f32,
-    v1x: f32,
-    v1y: f32,
-    v1z: f32,
-    v2x: f32,
-    v2y: f32,
-    v2z: f32,
-) -> Option<(f32, f32, f32, f32)> {
+    ox: f64,
+    oy: f64,
+    oz: f64,
+    dx: f64,
+    dy: f64,
+    dz: f64,
+    v0x: f64,
+    v0y: f64,
+    v0z: f64,
+    v1x: f64,
+    v1y: f64,
+    v1z: f64,
+    v2x: f64,
+    v2y: f64,
+    v2z: f64,
+) -> Option<(f64, f64, f64, f64)> {
     let e1x = v1x - v0x;
     let e1y = v1y - v0y;
     let e1z = v1z - v0z;
@@ -1090,15 +1090,15 @@ fn ray_triangle_intersection(
 pub fn raycast_collision_heightfield3d(
     out: &mut CollisionRaycastHit3D,
     heightfield: &CollisionHeightfield3D,
-    origin_x: f32,
-    origin_y: f32,
-    origin_z: f32,
-    direction_x: f32,
-    direction_y: f32,
-    direction_z: f32,
-    max_fraction: Option<f32>,
+    origin_x: f64,
+    origin_y: f64,
+    origin_z: f64,
+    direction_x: f64,
+    direction_y: f64,
+    direction_z: f64,
+    max_fraction: Option<f64>,
 ) -> bool {
-    let max_fraction = max_fraction.unwrap_or(f32::INFINITY);
+    let max_fraction = max_fraction.unwrap_or(f64::INFINITY);
     if heightfield.columns < 2 || heightfield.rows < 2 {
         return false;
     }
@@ -1167,15 +1167,15 @@ pub fn raycast_collision_heightfield3d(
 pub fn raycast_collision_triangle_mesh3d(
     out: &mut CollisionRaycastHit3D,
     mesh: &CollisionTriangleMesh3D,
-    origin_x: f32,
-    origin_y: f32,
-    origin_z: f32,
-    direction_x: f32,
-    direction_y: f32,
-    direction_z: f32,
-    max_fraction: Option<f32>,
+    origin_x: f64,
+    origin_y: f64,
+    origin_z: f64,
+    direction_x: f64,
+    direction_y: f64,
+    direction_z: f64,
+    max_fraction: Option<f64>,
 ) -> bool {
-    let max_fraction = max_fraction.unwrap_or(f32::INFINITY);
+    let max_fraction = max_fraction.unwrap_or(f64::INFINITY);
     let tri_count = mesh.indices.len() / 3;
     if tri_count == 0 {
         return false;
@@ -1252,14 +1252,14 @@ pub fn raycast_collision_triangle_mesh3d(
 }
 
 fn rotate_by_quat(
-    vx: f32,
-    vy: f32,
-    vz: f32,
-    qx: f32,
-    qy: f32,
-    qz: f32,
-    qw: f32,
-    out: &mut [f32; 3],
+    vx: f64,
+    vy: f64,
+    vz: f64,
+    qx: f64,
+    qy: f64,
+    qz: f64,
+    qw: f64,
+    out: &mut [f64; 3],
 ) {
     let tx = qy * vz - qz * vy + qw * vx;
     let ty = qz * vx - qx * vz + qw * vy;
@@ -1341,12 +1341,12 @@ fn shape_aabb3d(shape: &CollisionShape3D) -> CollisionAabb3D {
         }
         CollisionShape3D::Convex(c) => {
             let mut aabb = CollisionAabb3D {
-                min_x: f32::INFINITY,
-                min_y: f32::INFINITY,
-                min_z: f32::INFINITY,
-                max_x: f32::NEG_INFINITY,
-                max_y: f32::NEG_INFINITY,
-                max_z: f32::NEG_INFINITY,
+                min_x: f64::INFINITY,
+                min_y: f64::INFINITY,
+                min_z: f64::INFINITY,
+                max_x: f64::NEG_INFINITY,
+                max_y: f64::NEG_INFINITY,
+                max_z: f64::NEG_INFINITY,
             };
             let count = c.points.len() / 3;
             for i in 0..count {
@@ -1382,11 +1382,11 @@ pub fn sweep_collision_heightfield3d(
     out: &mut CollisionTimeOfImpact3D,
     registry: &CollisionRegistry3D,
     convex: &CollisionShape3D,
-    delta_x: f32,
-    delta_y: f32,
-    delta_z: f32,
+    delta_x: f64,
+    delta_y: f64,
+    delta_z: f64,
     heightfield: &CollisionHeightfield3D,
-    max_fraction: Option<f32>,
+    max_fraction: Option<f64>,
 ) -> bool {
     crate::sweep_collision_shape3d::initialize_collision_time_of_impact3d(out);
     let max_fraction = max_fraction.unwrap_or(1.0);
@@ -1442,11 +1442,11 @@ pub fn sweep_collision_triangle_mesh3d(
     out: &mut CollisionTimeOfImpact3D,
     registry: &CollisionRegistry3D,
     convex: &CollisionShape3D,
-    delta_x: f32,
-    delta_y: f32,
-    delta_z: f32,
+    delta_x: f64,
+    delta_y: f64,
+    delta_z: f64,
     mesh: &CollisionTriangleMesh3D,
-    max_fraction: Option<f32>,
+    max_fraction: Option<f64>,
 ) -> bool {
     crate::sweep_collision_shape3d::initialize_collision_time_of_impact3d(out);
     let max_fraction = max_fraction.unwrap_or(1.0);
@@ -1512,8 +1512,8 @@ pub fn sweep_collision_triangle_mesh3d(
     return hit;
 }
 
-fn transform_point(px: f32, py: f32, pz: f32, mesh: &CollisionTriangleMesh3D) -> (f32, f32, f32) {
-    let mut out = [0.0_f32; 3];
+fn transform_point(px: f64, py: f64, pz: f64, mesh: &CollisionTriangleMesh3D) -> (f64, f64, f64) {
+    let mut out = [0.0_f64; 3];
     rotate_by_quat(
         px,
         py,
@@ -1528,12 +1528,12 @@ fn transform_point(px: f32, py: f32, pz: f32, mesh: &CollisionTriangleMesh3D) ->
 }
 
 fn transform_point_hf(
-    px: f32,
-    py: f32,
-    pz: f32,
+    px: f64,
+    py: f64,
+    pz: f64,
     heightfield: &CollisionHeightfield3D,
-) -> (f32, f32, f32) {
-    let mut out = [0.0_f32; 3];
+) -> (f64, f64, f64) {
+    let mut out = [0.0_f64; 3];
     rotate_by_quat(
         px,
         py,
@@ -1559,8 +1559,8 @@ pub fn write_collision_heightfield_bounds3d(
         *out = CollisionAabb3D::default();
         return;
     }
-    let mut min_h = f32::INFINITY;
-    let mut max_h = f32::NEG_INFINITY;
+    let mut min_h = f64::INFINITY;
+    let mut max_h = f64::NEG_INFINITY;
     for &h in &heightfield.heights {
         if h < min_h {
             min_h = h;
@@ -1569,8 +1569,8 @@ pub fn write_collision_heightfield_bounds3d(
             max_h = h;
         }
     }
-    let width = (heightfield.columns - 1) as f32 * heightfield.cell_size_x;
-    let depth = (heightfield.rows - 1) as f32 * heightfield.cell_size_z;
+    let width = (heightfield.columns - 1) as f64 * heightfield.cell_size_x;
+    let depth = (heightfield.rows - 1) as f64 * heightfield.cell_size_z;
 
     // Transform corners to get world-space bounds
     let corners = [
@@ -1584,12 +1584,12 @@ pub fn write_collision_heightfield_bounds3d(
         (width, max_h, depth),
     ];
 
-    let mut min_x = f32::INFINITY;
-    let mut min_y = f32::INFINITY;
-    let mut min_z = f32::INFINITY;
-    let mut max_x = f32::NEG_INFINITY;
-    let mut max_y = f32::NEG_INFINITY;
-    let mut max_z = f32::NEG_INFINITY;
+    let mut min_x = f64::INFINITY;
+    let mut min_y = f64::INFINITY;
+    let mut min_z = f64::INFINITY;
+    let mut max_x = f64::NEG_INFINITY;
+    let mut max_y = f64::NEG_INFINITY;
+    let mut max_z = f64::NEG_INFINITY;
 
     for &(px, py, pz) in &corners {
         let (wx, wy, wz) = transform_point_hf(px, py, pz, heightfield);
@@ -1630,12 +1630,12 @@ pub fn write_collision_triangle_mesh_bounds3d(
         *out = CollisionAabb3D::default();
         return;
     }
-    let mut min_x = f32::INFINITY;
-    let mut min_y = f32::INFINITY;
-    let mut min_z = f32::INFINITY;
-    let mut max_x = f32::NEG_INFINITY;
-    let mut max_y = f32::NEG_INFINITY;
-    let mut max_z = f32::NEG_INFINITY;
+    let mut min_x = f64::INFINITY;
+    let mut min_y = f64::INFINITY;
+    let mut min_z = f64::INFINITY;
+    let mut max_x = f64::NEG_INFINITY;
+    let mut max_y = f64::NEG_INFINITY;
+    let mut max_z = f64::NEG_INFINITY;
 
     for i in 0..count {
         // Transform point by mesh's position and rotation
@@ -1674,7 +1674,7 @@ fn write_reduced_collision_triangle_contacts3d(
     accumulator: CollisionTriangleContactAccumulator3D,
     out: &mut CollisionContactManifold3D,
 ) -> bool {
-    if accumulator.best_depth == f32::NEG_INFINITY {
+    if accumulator.best_depth == f64::NEG_INFINITY {
         return false;
     }
     out.overlapping = true;
@@ -1700,12 +1700,12 @@ fn write_reduced_collision_triangle_contacts3d(
     selected.push(first);
     while selected.len() < MAX_COLLISION_CONTACT_POINTS_3D.min(accumulator.candidates.len()) {
         let mut best = None;
-        let mut best_distance = -1.0_f32;
+        let mut best_distance = -1.0_f64;
         for index in 0..accumulator.candidates.len() {
             if selected.contains(&index) {
                 continue;
             }
-            let mut minimum_distance = f32::INFINITY;
+            let mut minimum_distance = f64::INFINITY;
             for &chosen in &selected {
                 let dx = accumulator.candidates[index].x - accumulator.candidates[chosen].x;
                 let dy = accumulator.candidates[index].y - accumulator.candidates[chosen].y;

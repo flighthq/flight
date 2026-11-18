@@ -1,6 +1,5 @@
 //! flight-compiler: rust-only
 
-// flight-lint: allow-file(f64) source-number GJK2D/EPA scratch is required by the restored seeded differential corpus; public supports and manifolds remain f32
 use crate::collision_support2d::*;
 use crate::manifold2d::*;
 use crate::types::*;
@@ -259,10 +258,10 @@ fn write_epa2d_penetration(
             break;
         };
 
-        // Expanding a convex polytope cannot move its closest boundary toward the origin. Public
-        // f32 support points can nevertheless introduce a sub-ulp non-convexity once the private f64
-        // EPA scratch has converged beyond their precision. Stop at the last valid boundary instead
-        // of exhausting the iteration budget and returning a later regressed edge.
+        // Expanding a convex polytope cannot move its closest boundary toward the origin. Rounded
+        // support points can nevertheless introduce a sub-ulp non-convexity once EPA has converged
+        // to their precision. Stop at the last valid boundary instead of exhausting the iteration
+        // budget and returning a later regressed edge.
         if previous_distance.is_finite() && best_distance < previous_distance - EPA_TOLERANCE {
             best_distance = previous_distance;
             best_axis_x = previous_axis_x;
@@ -331,9 +330,9 @@ fn write_epa2d_penetration(
     }
 
     out.overlapping = true;
-    out.normal_x = (-normal_x) as f32;
-    out.normal_y = (-normal_y) as f32;
-    out.depth = best_distance as f32;
+    out.normal_x = -normal_x;
+    out.normal_y = -normal_y;
+    out.depth = best_distance;
     return true;
 }
 
@@ -373,20 +372,10 @@ fn write_minkowski_support2d(
     direction_y: f64,
     out: &mut [f64; 2],
 ) {
-    let mut support_point_a = [0.0_f32; 2];
-    let mut support_point_b = [0.0_f32; 2];
-    support_a(
-        a,
-        direction_x as f32,
-        direction_y as f32,
-        &mut support_point_a,
-    );
-    support_b(
-        b,
-        -direction_x as f32,
-        -direction_y as f32,
-        &mut support_point_b,
-    );
-    out[0] = f64::from(support_point_a[0]) - f64::from(support_point_b[0]);
-    out[1] = f64::from(support_point_a[1]) - f64::from(support_point_b[1]);
+    let mut support_point_a = [0.0_f64; 2];
+    let mut support_point_b = [0.0_f64; 2];
+    support_a(a, direction_x, direction_y, &mut support_point_a);
+    support_b(b, -direction_x, -direction_y, &mut support_point_b);
+    out[0] = support_point_a[0] - support_point_b[0];
+    out[1] = support_point_a[1] - support_point_b[1];
 }

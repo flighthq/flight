@@ -2,17 +2,17 @@
 
 use flight_collision::contract::*;
 
-fn sphere(x: f32, y: f32, z: f32, radius: f32) -> CollisionShape3D {
+fn sphere(x: f64, y: f64, z: f64, radius: f64) -> CollisionShape3D {
     CollisionShape3D::Sphere(CollisionSphere3D { x, y, z, radius })
 }
 
 fn aabb3(
-    min_x: f32,
-    min_y: f32,
-    min_z: f32,
-    max_x: f32,
-    max_y: f32,
-    max_z: f32,
+    min_x: f64,
+    min_y: f64,
+    min_z: f64,
+    max_x: f64,
+    max_y: f64,
+    max_z: f64,
 ) -> CollisionShape3D {
     CollisionShape3D::Aabb(CollisionAabb3D {
         min_x,
@@ -24,8 +24,8 @@ fn aabb3(
     })
 }
 
-fn d1_bound(expected: f32, ts_bound: f32) -> f32 {
-    ts_bound.max(4.0 * f32::EPSILON * expected.abs().max(1.0))
+fn d1_bound(expected: f64, ts_bound: f64) -> f64 {
+    ts_bound.max(4.0 * f64::EPSILON * expected.abs().max(1.0))
 }
 
 mod create_collision_time_of_impact3d {
@@ -75,9 +75,9 @@ mod sweep_collision_shape3d {
         registry: &CollisionRegistry3D,
         shape_a: &CollisionShape3D,
         shape_b: &CollisionShape3D,
-        translation_x: f32,
-        translation_y: f32,
-        translation_z: f32,
+        translation_x: f64,
+        translation_y: f64,
+        translation_z: f64,
         out: &mut CollisionTimeOfImpact3D,
     ) -> bool {
         return flight_collision::sweep_collision_shape3d(
@@ -110,7 +110,7 @@ mod sweep_collision_shape3d {
             &mut out,
         );
         assert!(hit, "sweep should detect the impact");
-        // D1 f32 bound (TS: 5e-6)
+        // TS bound: 5e-6
         assert!((out.fraction - 0.8).abs() <= d1_bound(0.8, 5e-6));
     }
 
@@ -140,10 +140,10 @@ mod sweep_collision_shape3d {
         );
         assert!(hit, "conservative advancement must catch the bullet");
         // Bullet surface at -49.9, wall starts at -0.05. Gap = 49.85. fraction = 49.85/100 ~ 0.4985.
-        // D1 f32 bound (TS: 5e-5)
+        // TS bound: 5e-5
         assert!(
             (out.fraction - 0.4985).abs()
-                <= 5e-5_f32.max(4.0 * f32::EPSILON * 0.4985_f32.abs().max(1.0)),
+                <= 5e-5_f64.max(4.0 * f64::EPSILON * 0.4985_f64.abs().max(1.0)),
             "fraction {} should be near 0.4985",
             out.fraction
         );
@@ -209,7 +209,7 @@ mod sweep_collision_shape3d {
             None,
         );
         assert!(hit);
-        // D1 f32 bound (TS: 5e-6)
+        // TS bound: 5e-6
         assert!((out.fraction - 0.8).abs() <= d1_bound(0.8, 5e-6));
     }
 
@@ -244,13 +244,13 @@ mod sweep_collision_shape3d {
             &mut out,
         );
         assert!(hit);
-        // D1 f32 bound (TS: 5e-6)
+        // TS bound: 5e-6
         assert!((out.normal_x - -1.0).abs() <= d1_bound(-1.0, 5e-6));
         let normal_length = (out.normal_x * out.normal_x
             + out.normal_y * out.normal_y
             + out.normal_z * out.normal_z)
             .sqrt();
-        // D1 f32 bound (TS: 5e-7)
+        // TS bound: 5e-7
         assert!((normal_length - 1.0).abs() <= d1_bound(1.0, 5e-7));
     }
 
@@ -270,11 +270,11 @@ mod sweep_collision_shape3d {
             &mut out,
         );
         assert!(hit);
-        // D1 f32 bound (TS: 5e-5)
+        // TS bound: 5e-5
         assert!((out.x - 9.0).abs() <= d1_bound(9.0, 5e-5));
-        // D1 f32 bound (TS: 5e-5)
+        // TS bound: 5e-5
         assert!(out.y.abs() <= d1_bound(0.0, 5e-5));
-        // D1 f32 bound (TS: 5e-5)
+        // TS bound: 5e-5
         assert!(out.z.abs() <= d1_bound(0.0, 5e-5));
         assert!((out.x - 1.0).abs() > 0.05);
         assert!((out.x - 5.0).abs() > 0.05);
@@ -296,9 +296,9 @@ mod sweep_collision_shape3d {
             0.0,
             None,
         ));
-        // D1 f32 bound (TS: 5e-6)
+        // TS bound: 5e-6
         assert!((out.fraction - 0.8).abs() <= d1_bound(0.8, 5e-6));
-        // D1 f32 bound (TS: 5e-5)
+        // TS bound: 5e-5
         assert!((out.x - 1.0).abs() <= d1_bound(1.0, 5e-5));
     }
 
@@ -336,13 +336,13 @@ mod sweep_collision_shape3d {
             &mut out,
         );
         assert!(hit, "capsule sweep should find the impact");
-        // D1 f32 bound (TS: 5e-5)
+        // TS bound: 5e-5
         assert!((out.fraction - 0.4).abs() <= d1_bound(0.4, 5e-5));
-        // D1 f32 bound (TS: 5e-4)
+        // TS bound: 5e-4
         assert!(out.x.abs() <= d1_bound(0.0, 5e-4));
-        // D1 f32 bound (TS: 5e-4)
+        // TS bound: 5e-4
         assert!(out.y.abs() <= d1_bound(0.0, 5e-4));
-        // D1 f32 bound (TS: 5e-4)
+        // TS bound: 5e-4
         assert!((out.z - 4.5).abs() <= d1_bound(4.5, 5e-4));
     }
 
@@ -404,7 +404,7 @@ mod sweep_collision_shape3d {
             &mut out,
         );
         assert!(hit, "box-box sweep should find the impact");
-        // D1 f32 bound (TS: 5e-5)
+        // TS bound: 5e-5
         assert!((out.fraction - 0.8).abs() <= d1_bound(0.8, 5e-5));
     }
 
@@ -422,9 +422,9 @@ mod sweep_collision_shape3d {
             &mut out,
         );
         assert!(hit);
-        // D1 f32 bound (TS: 5e-6)
+        // TS bound: 5e-6
         assert!((out.fraction - 0.8).abs() <= d1_bound(0.8, 5e-6));
-        // D1 f32 bound (TS: 5e-6)
+        // TS bound: 5e-6
         assert!((out.normal_z - -1.0).abs() <= d1_bound(-1.0, 5e-6));
     }
 
@@ -435,7 +435,7 @@ mod sweep_collision_shape3d {
             &crate::collision_registry3d_with_supports(),
             &sphere(0.0, 0.0, 0.0, 1.0),
             &sphere(10.0, 0.0, 0.0, 1.0),
-            f32::NAN,
+            f64::NAN,
             0.0,
             0.0,
             &mut out,

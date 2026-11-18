@@ -113,6 +113,7 @@ pub fn check_contract(
         crate_name,
         "flight-animation"
             | "flight-camera"
+            | "flight-collision"
             | "flight-geometry"
             | "flight-math"
             | "flight-meshgeometry"
@@ -1153,6 +1154,13 @@ mod tests {
             rules_for_crate("pub fn f(x: f64) -> f64 { return x; }", "flight-geometry").is_empty()
         );
         assert!(rules_for_crate("pub fn f(x: f64) -> f64 { return x; }", "flight-math").is_empty());
+        assert!(
+            rules_for_crate("pub fn f(x: f64) -> f64 { return x; }", "flight-collision").is_empty()
+        );
+        assert_eq!(
+            rules_for_crate("pub fn f(x: f32) -> f32 { return x; }", "flight-collision"),
+            vec!["f32"]
+        );
         assert_eq!(
             rules_for_crate(
                 "pub fn f(x: f64) -> f64 { return x; }",

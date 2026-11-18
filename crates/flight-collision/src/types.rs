@@ -47,15 +47,15 @@ pub type CollisionPairTest3D = Arc<
 >;
 
 /// A registered 2D support mapping.
-pub type CollisionSupport2D = Arc<dyn Fn(&CollisionShape2D, f32, f32, &mut [f32; 2]) + Send + Sync>;
+pub type CollisionSupport2D = Arc<dyn Fn(&CollisionShape2D, f64, f64, &mut [f64; 2]) + Send + Sync>;
 
 /// A registered 3D support mapping.
 pub type CollisionSupport3D =
-    Arc<dyn Fn(&CollisionShape3D, f32, f32, f32, &mut [f32; 3]) + Send + Sync>;
+    Arc<dyn Fn(&CollisionShape3D, f64, f64, f64, &mut [f64; 3]) + Send + Sync>;
 
 /// A registered query for the supporting face of a 3D shape.
 pub type CollisionFaceQuery3D =
-    Arc<dyn Fn(&CollisionShape3D, f32, f32, f32, &mut Vec<f32>) -> usize + Send + Sync>;
+    Arc<dyn Fn(&CollisionShape3D, f64, f64, f64, &mut Vec<f64>) -> usize + Send + Sync>;
 
 /// An optional diagnostic invoked before generic 2D collision dispatch (D9 stored form).
 pub type CollisionTestGuard2D = Arc<dyn Fn(&CollisionShape2D, &CollisionShape2D) + Send + Sync>;
@@ -83,7 +83,6 @@ pub struct CollisionRegistry3D {
 
 // 2D shape structs
 
-// flight-lint: allow(f64) measured 1e9 raycast: f32 aliases a center and origin two units apart and changes hit to miss
 #[derive(Debug, Clone, Copy, PartialEq, Default)]
 #[repr(C)]
 pub struct CollisionCircle2D {
@@ -95,23 +94,22 @@ pub struct CollisionCircle2D {
 #[derive(Debug, Clone, Copy, PartialEq, Default)]
 #[repr(C)]
 pub struct CollisionAabb2D {
-    pub min_x: f32,
-    pub min_y: f32,
-    pub max_x: f32,
-    pub max_y: f32,
+    pub min_x: f64,
+    pub min_y: f64,
+    pub max_x: f64,
+    pub max_y: f64,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Default)]
 #[repr(C)]
 pub struct CollisionObb2D {
-    pub x: f32,
-    pub y: f32,
-    pub half_w: f32,
-    pub half_h: f32,
-    pub rotation: f32,
+    pub x: f64,
+    pub y: f64,
+    pub half_w: f64,
+    pub half_h: f64,
+    pub rotation: f64,
 }
 
-// flight-lint: allow(f64) measured 1e15 SAT: f32 collapses a translated 10-unit square while f64 retains its 2-unit overlap
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct CollisionPolygon2D {
     pub points: Vec<f64>,
@@ -120,27 +118,27 @@ pub struct CollisionPolygon2D {
 #[derive(Debug, Clone, Copy, PartialEq, Default)]
 #[repr(C)]
 pub struct CollisionCapsule2D {
-    pub x0: f32,
-    pub y0: f32,
-    pub x1: f32,
-    pub y1: f32,
-    pub radius: f32,
+    pub x0: f64,
+    pub y0: f64,
+    pub x1: f64,
+    pub y1: f64,
+    pub radius: f64,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Default)]
 #[repr(C)]
 pub struct CollisionSegment2D {
-    pub x0: f32,
-    pub y0: f32,
-    pub x1: f32,
-    pub y1: f32,
+    pub x0: f64,
+    pub y0: f64,
+    pub x1: f64,
+    pub y1: f64,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Default)]
 #[repr(C)]
 pub struct CollisionPoint2D {
-    pub x: f32,
-    pub y: f32,
+    pub x: f64,
+    pub y: f64,
 }
 
 // 2D shape enum for polymorphic dispatch
@@ -161,77 +159,77 @@ pub enum CollisionShape2D {
 #[derive(Debug, Clone, Copy, PartialEq, Default)]
 #[repr(C)]
 pub struct CollisionSphere3D {
-    pub x: f32,
-    pub y: f32,
-    pub z: f32,
-    pub radius: f32,
+    pub x: f64,
+    pub y: f64,
+    pub z: f64,
+    pub radius: f64,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Default)]
 #[repr(C)]
 pub struct CollisionAabb3D {
-    pub min_x: f32,
-    pub min_y: f32,
-    pub min_z: f32,
-    pub max_x: f32,
-    pub max_y: f32,
-    pub max_z: f32,
+    pub min_x: f64,
+    pub min_y: f64,
+    pub min_z: f64,
+    pub max_x: f64,
+    pub max_y: f64,
+    pub max_z: f64,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Default)]
 #[repr(C)]
 pub struct CollisionBox3D {
-    pub x: f32,
-    pub y: f32,
-    pub z: f32,
-    pub half_x: f32,
-    pub half_y: f32,
-    pub half_z: f32,
-    pub rotation_x: f32,
-    pub rotation_y: f32,
-    pub rotation_z: f32,
-    pub rotation_w: f32,
+    pub x: f64,
+    pub y: f64,
+    pub z: f64,
+    pub half_x: f64,
+    pub half_y: f64,
+    pub half_z: f64,
+    pub rotation_x: f64,
+    pub rotation_y: f64,
+    pub rotation_z: f64,
+    pub rotation_w: f64,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Default)]
 #[repr(C)]
 pub struct CollisionCapsule3D {
-    pub x0: f32,
-    pub y0: f32,
-    pub z0: f32,
-    pub x1: f32,
-    pub y1: f32,
-    pub z1: f32,
-    pub radius: f32,
+    pub x0: f64,
+    pub y0: f64,
+    pub z0: f64,
+    pub x1: f64,
+    pub y1: f64,
+    pub z1: f64,
+    pub radius: f64,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Default)]
 #[repr(C)]
 pub struct CollisionCylinder3D {
-    pub x0: f32,
-    pub y0: f32,
-    pub z0: f32,
-    pub x1: f32,
-    pub y1: f32,
-    pub z1: f32,
-    pub radius: f32,
+    pub x0: f64,
+    pub y0: f64,
+    pub z0: f64,
+    pub x1: f64,
+    pub y1: f64,
+    pub z1: f64,
+    pub radius: f64,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Default)]
 #[repr(C)]
 pub struct CollisionCone3D {
-    pub x0: f32,
-    pub y0: f32,
-    pub z0: f32,
-    pub x1: f32,
-    pub y1: f32,
-    pub z1: f32,
-    pub radius: f32,
+    pub x0: f64,
+    pub y0: f64,
+    pub z0: f64,
+    pub x1: f64,
+    pub y1: f64,
+    pub z1: f64,
+    pub radius: f64,
 }
 
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct CollisionConvex3D {
-    pub points: Vec<f32>,
+    pub points: Vec<f64>,
 }
 
 // 3D shape enum for polymorphic dispatch
@@ -269,9 +267,9 @@ pub enum CollisionColliderShape3D {
 #[repr(C)]
 pub struct CollisionManifold2D {
     pub overlapping: bool,
-    pub normal_x: f32,
-    pub normal_y: f32,
-    pub depth: f32,
+    pub normal_x: f64,
+    pub normal_y: f64,
+    pub depth: f64,
     runtime: EntityRuntimeSlot,
 }
 
@@ -279,10 +277,10 @@ pub struct CollisionManifold2D {
 #[repr(C)]
 pub struct CollisionManifold3D {
     pub overlapping: bool,
-    pub normal_x: f32,
-    pub normal_y: f32,
-    pub normal_z: f32,
-    pub depth: f32,
+    pub normal_x: f64,
+    pub normal_y: f64,
+    pub normal_z: f64,
+    pub depth: f64,
     runtime: EntityRuntimeSlot,
 }
 
@@ -295,9 +293,9 @@ pub const MAX_COLLISION_CONTACT_POINTS_3D: usize = 4;
 // flight-lint: allow(contract-vocabulary) D1 range declaration: 25-bit feature/triangle indices and versions stay below 2^53, exact in TS numbers
 #[repr(C)]
 pub struct CollisionContactPoint2D {
-    pub x: f32,
-    pub y: f32,
-    pub depth: f32,
+    pub x: f64,
+    pub y: f64,
+    pub depth: f64,
     pub feature_id: i64,
 }
 
@@ -305,10 +303,10 @@ pub struct CollisionContactPoint2D {
 // flight-lint: allow(contract-vocabulary) D1 range declaration: 25-bit feature/triangle indices and versions stay below 2^53, exact in TS numbers
 #[repr(C)]
 pub struct CollisionContactPoint3D {
-    pub x: f32,
-    pub y: f32,
-    pub z: f32,
-    pub depth: f32,
+    pub x: f64,
+    pub y: f64,
+    pub z: f64,
+    pub depth: f64,
     pub feature_id: i64,
 }
 
@@ -316,9 +314,9 @@ pub struct CollisionContactPoint3D {
 #[repr(C)]
 pub struct CollisionContactManifold2D {
     pub overlapping: bool,
-    pub normal_x: f32,
-    pub normal_y: f32,
-    pub depth: f32,
+    pub normal_x: f64,
+    pub normal_y: f64,
+    pub depth: f64,
     pub point_count: usize,
     pub points: [CollisionContactPoint2D; MAX_COLLISION_CONTACT_POINTS_2D],
     runtime: EntityRuntimeSlot,
@@ -328,9 +326,9 @@ pub struct CollisionContactManifold2D {
 #[repr(C)]
 pub struct CollisionContactManifold3D {
     pub overlapping: bool,
-    pub normal_x: f32,
-    pub normal_y: f32,
-    pub normal_z: f32,
+    pub normal_x: f64,
+    pub normal_y: f64,
+    pub normal_z: f64,
     pub point_count: usize,
     pub points: [CollisionContactPoint3D; MAX_COLLISION_CONTACT_POINTS_3D],
     runtime: EntityRuntimeSlot,
@@ -338,7 +336,6 @@ pub struct CollisionContactManifold3D {
 
 // Raycast hit types
 
-// flight-lint: allow(f64) measured 1e9 raycast hit position is lost by f32 and the rounded query changes hit to miss
 #[derive(Debug, Clone, PartialEq, Default)]
 #[repr(C)]
 pub struct CollisionRaycastHit2D {
@@ -353,13 +350,13 @@ pub struct CollisionRaycastHit2D {
 #[derive(Debug, Clone, PartialEq, Default)]
 #[repr(C)]
 pub struct CollisionRaycastHit3D {
-    pub fraction: f32,
-    pub x: f32,
-    pub y: f32,
-    pub z: f32,
-    pub normal_x: f32,
-    pub normal_y: f32,
-    pub normal_z: f32,
+    pub fraction: f64,
+    pub x: f64,
+    pub y: f64,
+    pub z: f64,
+    pub normal_x: f64,
+    pub normal_y: f64,
+    pub normal_z: f64,
     runtime: EntityRuntimeSlot,
 }
 
@@ -368,24 +365,24 @@ pub struct CollisionRaycastHit3D {
 #[derive(Debug, Clone, PartialEq, Default)]
 #[repr(C)]
 pub struct CollisionTimeOfImpact2D {
-    pub fraction: f32,
-    pub x: f32,
-    pub y: f32,
-    pub normal_x: f32,
-    pub normal_y: f32,
+    pub fraction: f64,
+    pub x: f64,
+    pub y: f64,
+    pub normal_x: f64,
+    pub normal_y: f64,
     runtime: EntityRuntimeSlot,
 }
 
 #[derive(Debug, Clone, PartialEq, Default)]
 #[repr(C)]
 pub struct CollisionTimeOfImpact3D {
-    pub fraction: f32,
-    pub x: f32,
-    pub y: f32,
-    pub z: f32,
-    pub normal_x: f32,
-    pub normal_y: f32,
-    pub normal_z: f32,
+    pub fraction: f64,
+    pub x: f64,
+    pub y: f64,
+    pub z: f64,
+    pub normal_x: f64,
+    pub normal_y: f64,
+    pub normal_z: f64,
     runtime: EntityRuntimeSlot,
 }
 
@@ -394,16 +391,16 @@ pub struct CollisionTimeOfImpact3D {
 #[derive(Debug, Clone, PartialEq, Default)]
 #[repr(C)]
 pub struct CollisionDistance3D {
-    pub distance: f32,
-    pub direction_x: f32,
-    pub direction_y: f32,
-    pub direction_z: f32,
-    pub point_a_x: f32,
-    pub point_a_y: f32,
-    pub point_a_z: f32,
-    pub point_b_x: f32,
-    pub point_b_y: f32,
-    pub point_b_z: f32,
+    pub distance: f64,
+    pub direction_x: f64,
+    pub direction_y: f64,
+    pub direction_z: f64,
+    pub point_a_x: f64,
+    pub point_a_y: f64,
+    pub point_a_z: f64,
+    pub point_b_x: f64,
+    pub point_b_y: f64,
+    pub point_b_z: f64,
     pub overlapping: bool,
     runtime: EntityRuntimeSlot,
 }
@@ -446,16 +443,16 @@ pub struct CollisionTestExplanation3D {
 // flight-lint: allow(contract-vocabulary) D1 range declaration: 25-bit feature/triangle indices and versions stay below 2^53, exact in TS numbers
 #[repr(C)]
 pub struct CollisionTriangleMesh3D {
-    pub points: Vec<f32>,
+    pub points: Vec<f64>,
     pub indices: Vec<usize>,
     pub version: i64,
-    pub x: f32,
-    pub y: f32,
-    pub z: f32,
-    pub rotation_x: f32,
-    pub rotation_y: f32,
-    pub rotation_z: f32,
-    pub rotation_w: f32,
+    pub x: f64,
+    pub y: f64,
+    pub z: f64,
+    pub rotation_x: f64,
+    pub rotation_y: f64,
+    pub rotation_z: f64,
+    pub rotation_w: f64,
     pub(crate) bvh_cache: DerivedCache,
     runtime: EntityRuntimeSlot,
 }
@@ -466,17 +463,17 @@ pub struct CollisionTriangleMesh3D {
 pub struct CollisionHeightfield3D {
     pub columns: usize,
     pub rows: usize,
-    pub heights: Vec<f32>,
-    pub cell_size_x: f32,
-    pub cell_size_z: f32,
+    pub heights: Vec<f64>,
+    pub cell_size_x: f64,
+    pub cell_size_z: f64,
     pub version: i64,
-    pub x: f32,
-    pub y: f32,
-    pub z: f32,
-    pub rotation_x: f32,
-    pub rotation_y: f32,
-    pub rotation_z: f32,
-    pub rotation_w: f32,
+    pub x: f64,
+    pub y: f64,
+    pub z: f64,
+    pub rotation_x: f64,
+    pub rotation_y: f64,
+    pub rotation_z: f64,
+    pub rotation_w: f64,
     pub(crate) bvh_cache: DerivedCache,
     runtime: EntityRuntimeSlot,
 }

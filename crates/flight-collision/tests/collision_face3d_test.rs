@@ -4,7 +4,7 @@ use flight_collision::contract::*;
 use std::sync::Arc;
 
 /// Every vertex of a face must share one coordinate along the face's axis.
-fn expect_coplanar_along(vertices: &[f32], count: usize, axis: usize, value: f32) {
+fn expect_coplanar_along(vertices: &[f64], count: usize, axis: usize, value: f64) {
     for i in 0..count {
         assert!(
             (vertices[i * 3 + axis] - value).abs() < 1e-9,

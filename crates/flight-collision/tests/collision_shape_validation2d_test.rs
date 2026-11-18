@@ -84,7 +84,7 @@ mod get_collision_shape_validation_status2d {
         assert_eq!(
             get_collision_shape_validation_status2d(&CollisionShape2D::Capsule(
                 CollisionCapsule2D {
-                    x0: f32::NAN,
+                    x0: f64::NAN,
                     y0: 0.0,
                     x1: 3.0,
                     y1: 0.0,
@@ -100,7 +100,7 @@ mod get_collision_shape_validation_status2d {
                     y0: 0.0,
                     x1: 3.0,
                     y1: 0.0,
-                    radius: f32::INFINITY,
+                    radius: f64::INFINITY,
                 }
             )),
             Some(CollisionTestStatus::DegenerateShape)

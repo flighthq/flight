@@ -2,7 +2,6 @@
 
 use crate::types::*;
 
-// flight-lint: allow(f64) validated input is the measured 1e15 polygon storage domain retained for SAT
 pub fn get_collision_polygon_validation_status2d(points: &Vec<f64>) -> Option<CollisionTestStatus> {
     if points.len() < 6 || points.len() % 2 != 0 {
         return Some(CollisionTestStatus::DegenerateShape);

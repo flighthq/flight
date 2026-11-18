@@ -4,16 +4,16 @@ use crate::convex_hull3d::write_collision_convex_hull_faces3d;
 use crate::types::*;
 
 fn closest_point_on_segment(
-    sx: f32,
-    sy: f32,
-    sz: f32,
-    ex: f32,
-    ey: f32,
-    ez: f32,
-    x: f32,
-    y: f32,
-    z: f32,
-) -> (f32, f32, f32) {
+    sx: f64,
+    sy: f64,
+    sz: f64,
+    ex: f64,
+    ey: f64,
+    ez: f64,
+    x: f64,
+    y: f64,
+    z: f64,
+) -> (f64, f64, f64) {
     let dx = ex - sx;
     let dy = ey - sy;
     let dz = ez - sz;
@@ -31,7 +31,7 @@ fn closest_point_on_segment(
     return (sx + dx * t, sy + dy * t, sz + dz * t);
 }
 
-fn contains_aabb3d(a: &CollisionAabb3D, x: f32, y: f32, z: f32) -> bool {
+fn contains_aabb3d(a: &CollisionAabb3D, x: f64, y: f64, z: f64) -> bool {
     return x >= a.min_x
         && x <= a.max_x
         && y >= a.min_y
@@ -40,11 +40,11 @@ fn contains_aabb3d(a: &CollisionAabb3D, x: f32, y: f32, z: f32) -> bool {
         && z <= a.max_z;
 }
 
-fn contains_box3d(b: &CollisionBox3D, x: f32, y: f32, z: f32) -> bool {
+fn contains_box3d(b: &CollisionBox3D, x: f64, y: f64, z: f64) -> bool {
     let dx = x - b.x;
     let dy = y - b.y;
     let dz = z - b.z;
-    let mut local = [0.0_f32; 3];
+    let mut local = [0.0_f64; 3];
     rotate_by_conjugate(
         dx,
         dy,
@@ -58,7 +58,7 @@ fn contains_box3d(b: &CollisionBox3D, x: f32, y: f32, z: f32) -> bool {
     return local[0].abs() <= b.half_x && local[1].abs() <= b.half_y && local[2].abs() <= b.half_z;
 }
 
-fn contains_capsule3d(c: &CollisionCapsule3D, x: f32, y: f32, z: f32) -> bool {
+fn contains_capsule3d(c: &CollisionCapsule3D, x: f64, y: f64, z: f64) -> bool {
     let (cx, cy, cz) = closest_point_on_segment(c.x0, c.y0, c.z0, c.x1, c.y1, c.z1, x, y, z);
     let dx = x - cx;
     let dy = y - cy;
@@ -66,7 +66,7 @@ fn contains_capsule3d(c: &CollisionCapsule3D, x: f32, y: f32, z: f32) -> bool {
     return dx * dx + dy * dy + dz * dz <= c.radius * c.radius;
 }
 
-fn contains_cone3d(c: &CollisionCone3D, x: f32, y: f32, z: f32) -> bool {
+fn contains_cone3d(c: &CollisionCone3D, x: f64, y: f64, z: f64) -> bool {
     let ax = c.x1 - c.x0;
     let ay = c.y1 - c.y0;
     let az = c.z1 - c.z0;
@@ -91,7 +91,7 @@ fn contains_cone3d(c: &CollisionCone3D, x: f32, y: f32, z: f32) -> bool {
     return rx * rx + ry * ry + rz * rz <= cone_radius * cone_radius;
 }
 
-fn contains_convex3d(c: &CollisionConvex3D, x: f32, y: f32, z: f32) -> bool {
+fn contains_convex3d(c: &CollisionConvex3D, x: f64, y: f64, z: f64) -> bool {
     let mut faces = Vec::new();
     let triangle_count = write_collision_convex_hull_faces3d(&mut faces, &c.points);
     if triangle_count == 0 {
@@ -120,7 +120,7 @@ fn contains_convex3d(c: &CollisionConvex3D, x: f32, y: f32, z: f32) -> bool {
     return true;
 }
 
-fn contains_cylinder3d(c: &CollisionCylinder3D, x: f32, y: f32, z: f32) -> bool {
+fn contains_cylinder3d(c: &CollisionCylinder3D, x: f64, y: f64, z: f64) -> bool {
     let ax = c.x1 - c.x0;
     let ay = c.y1 - c.y0;
     let az = c.z1 - c.z0;
@@ -144,7 +144,7 @@ fn contains_cylinder3d(c: &CollisionCylinder3D, x: f32, y: f32, z: f32) -> bool 
     return rx * rx + ry * ry + rz * rz <= c.radius * c.radius;
 }
 
-fn contains_sphere3d(s: &CollisionSphere3D, x: f32, y: f32, z: f32) -> bool {
+fn contains_sphere3d(s: &CollisionSphere3D, x: f64, y: f64, z: f64) -> bool {
     let dx = x - s.x;
     let dy = y - s.y;
     let dz = z - s.z;
@@ -153,9 +153,9 @@ fn contains_sphere3d(s: &CollisionSphere3D, x: f32, y: f32, z: f32) -> bool {
 
 pub fn get_collision_shape_contains_point3d(
     shape: &CollisionShape3D,
-    x: f32,
-    y: f32,
-    z: f32,
+    x: f64,
+    y: f64,
+    z: f64,
 ) -> bool {
     match shape {
         CollisionShape3D::Sphere(s) => contains_sphere3d(s, x, y, z),
@@ -169,14 +169,14 @@ pub fn get_collision_shape_contains_point3d(
 }
 
 fn rotate_by_conjugate(
-    vx: f32,
-    vy: f32,
-    vz: f32,
-    qx: f32,
-    qy: f32,
-    qz: f32,
-    qw: f32,
-    out: &mut [f32; 3],
+    vx: f64,
+    vy: f64,
+    vz: f64,
+    qx: f64,
+    qy: f64,
+    qz: f64,
+    qw: f64,
+    out: &mut [f64; 3],
 ) {
     let rx = -qx;
     let ry = -qy;

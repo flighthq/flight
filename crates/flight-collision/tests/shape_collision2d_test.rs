@@ -295,7 +295,7 @@ mod test_aabb_obb_collision2d {
             &CollisionObb2D {
                 x: 6.0,
                 y: 5.0,
-                half_w: f32::NAN,
+                half_w: f64::NAN,
                 half_h: 3.0,
                 rotation: 0.0
             },
@@ -324,7 +324,7 @@ mod test_aabb_obb_collision2d {
                 x: 6.0,
                 y: 5.0,
                 half_w: 3.0,
-                half_h: f32::INFINITY,
+                half_h: f64::INFINITY,
                 rotation: 0.0
             },
             &mut out,
@@ -353,7 +353,7 @@ mod test_aabb_obb_collision2d {
                 y: 5.0,
                 half_w: 3.0,
                 half_h: 3.0,
-                rotation: f32::NAN
+                rotation: f64::NAN
             },
             &mut out,
         ));
@@ -377,7 +377,7 @@ mod test_aabb_obb_collision2d {
                 max_y: 10.0
             },
             &CollisionObb2D {
-                x: f32::NAN,
+                x: f64::NAN,
                 y: 5.0,
                 half_w: 3.0,
                 half_h: 3.0,
@@ -727,7 +727,7 @@ mod test_circle_obb_collision2d {
             y: 0.0,
             half_w: 5.0,
             half_h: 1.0,
-            rotation: std::f32::consts::FRAC_PI_2,
+            rotation: std::f64::consts::FRAC_PI_2,
         };
         assert!(test_circle_obb_collision2d(&a, &b, &mut out));
         assert!((out.normal_x - 1.0).abs() < 1e-5); // world +X face at x=1, circle center x=3 r=2.5
@@ -874,7 +874,7 @@ mod test_obb_obb_collision2d {
             y: 0.0,
             half_w: 2.0,
             half_h: 2.0,
-            rotation: std::f32::consts::FRAC_PI_4,
+            rotation: std::f64::consts::FRAC_PI_4,
         };
         assert!(test_obb_obb_collision2d(&a, &b, &mut out));
         assert!((out.normal_x - (-1.0)).abs() < 1e-5); // pushes A (left) off the diamond

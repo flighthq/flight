@@ -5,7 +5,7 @@ use flight_collision::contract::*;
 /// The widest gap between the generic core's normal and the incumbent's over this corpus, measured
 /// rather than chosen: 3.3e-3, entirely from EPA's angular resolution on a curved boundary. Set just
 /// above it so the bound is a real ceiling and a genuine regression cannot hide under a round number.
-const MAX_NORMAL_DEVIATION: f32 = 4e-3;
+const MAX_NORMAL_DEVIATION: f64 = 4e-3;
 
 /// A small deterministic generator. Reproducibility is the point: a differential test that shuffles
 /// differently each run reports a failure nobody can reproduce from the output.
@@ -18,7 +18,6 @@ impl SeededRandom {
         Self { state: seed }
     }
 
-    // flight-lint: allow(f64) the pinned TS generator divides uint32 state as a Number before shapes narrow at their public fields
     fn next(&mut self) -> f64 {
         self.state = self.state.wrapping_mul(1664525).wrapping_add(1013904223);
         self.state as f64 / 0x1_0000_0000_u64 as f64
@@ -39,18 +38,18 @@ fn create_random_shape(random: &mut SeededRandom) -> CollisionShape2D {
             let half_w = 0.25 + random.next() * 1.25;
             let half_h = 0.25 + random.next() * 1.25;
             CollisionShape2D::Aabb(CollisionAabb2D {
-                min_x: (x - half_w) as f32,
-                min_y: (y - half_h) as f32,
-                max_x: (x + half_w) as f32,
-                max_y: (y + half_h) as f32,
+                min_x: (x - half_w),
+                min_y: (y - half_h),
+                max_x: (x + half_w),
+                max_y: (y + half_h),
             })
         }
         2 => CollisionShape2D::Obb(CollisionObb2D {
-            x: x as f32,
-            y: y as f32,
-            half_w: (0.25 + random.next() * 1.25) as f32,
-            half_h: (0.25 + random.next() * 1.25) as f32,
-            rotation: (random.next() * std::f64::consts::PI * 2.0) as f32,
+            x,
+            y,
+            half_w: (0.25 + random.next() * 1.25),
+            half_h: (0.25 + random.next() * 1.25),
+            rotation: (random.next() * std::f64::consts::PI * 2.0),
         }),
         _ => {
             // A convex polygon by construction: vertices on an ellipse at angles that advance by random but
@@ -134,7 +133,7 @@ mod test_collision_support2d {
     }
 
     #[test]
-    fn stops_at_the_last_monotonic_epa_boundary_after_f32_support_quantization() {
+    fn stops_at_the_last_monotonic_epa_boundary_after_support_quantization() {
         let a = CollisionShape2D::Circle(CollisionCircle2D {
             x: -1.8606867864727974,
             y: 1.2710182582959533,

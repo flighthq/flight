@@ -73,7 +73,7 @@ mod get_collision_shape_contains_point2d {
             y: 0.0,
             half_w: 2.0,
             half_h: 2.0,
-            rotation: std::f32::consts::PI / 4.0,
+            rotation: std::f64::consts::PI / 4.0,
         });
         assert!(get_collision_shape_contains_point2d(&obb, 0.0, 0.0));
         assert!(get_collision_shape_contains_point2d(&obb, 2.8, 0.0)); // toward a rotated corner
@@ -163,11 +163,11 @@ mod get_collision_shape_contains_point2d {
 mod source_number_epsilon_containment {
     use super::*;
 
-    // Pinned pointContainment2D.ts uses Number.EPSILON (2^-52) scaled by the coordinate extent,
-    // not Rust's f32 machine epsilon. A nearby point must stay outside at 1e-8 but inside at 1e-20:
+    // Pinned pointContainment2D.ts uses Number.EPSILON (2^-52, equal to f64::EPSILON) scaled by the
+    // coordinate extent. A nearby point must stay outside at 1e-8 but inside at 1e-20:
     // epsilon = 2.220446049250313e-16, so 1e-8^2 > epsilon^2 and 1e-20^2 < epsilon^2.
     #[test]
-    fn point_containment_uses_the_source_number_epsilon_not_f32_machine_epsilon() {
+    fn point_containment_uses_the_source_number_epsilon_scaled_by_extent() {
         let point = CollisionShape2D::Point(CollisionPoint2D { x: 0.0, y: 0.0 });
         assert!(get_collision_shape_contains_point2d(&point, 0.0, 0.0));
         assert!(!get_collision_shape_contains_point2d(&point, 1e-8, 0.0));

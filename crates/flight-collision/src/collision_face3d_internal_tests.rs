@@ -2,7 +2,7 @@
 
 use super::*;
 
-fn expect_coplanar_along(vertices: &[f32], count: usize, axis: usize, value: f32) {
+fn expect_coplanar_along(vertices: &[f64], count: usize, axis: usize, value: f64) {
     for i in 0..count {
         assert!(
             (vertices[i * 3 + axis] - value).abs() < 1e-9,
@@ -99,13 +99,13 @@ fn write_collision_aabb_face3d_spans_the_whole_face_extent_on_the_other_two_axes
 
     write_collision_aabb_face3d(&aabb, 1.0, 0.0, 0.0, &mut face);
 
-    let ys: Vec<f32> = (0..4).map(|i| face[i * 3 + 1]).collect();
-    let zs: Vec<f32> = (0..4).map(|i| face[i * 3 + 2]).collect();
+    let ys: Vec<f64> = (0..4).map(|i| face[i * 3 + 1]).collect();
+    let zs: Vec<f64> = (0..4).map(|i| face[i * 3 + 2]).collect();
 
-    let y_range = ys.iter().cloned().fold(f32::NEG_INFINITY, f32::max)
-        - ys.iter().cloned().fold(f32::INFINITY, f32::min);
-    let z_range = zs.iter().cloned().fold(f32::NEG_INFINITY, f32::max)
-        - zs.iter().cloned().fold(f32::INFINITY, f32::min);
+    let y_range = ys.iter().cloned().fold(f64::NEG_INFINITY, f64::max)
+        - ys.iter().cloned().fold(f64::INFINITY, f64::min);
+    let z_range = zs.iter().cloned().fold(f64::NEG_INFINITY, f64::max)
+        - zs.iter().cloned().fold(f64::INFINITY, f64::min);
 
     assert!((y_range - 4.0).abs() < 1e-9);
     assert!((z_range - 6.0).abs() < 1e-9);
@@ -148,7 +148,7 @@ fn write_collision_box_face3d_matches_the_aabb_query_when_rotation_is_identity()
 
 #[test]
 fn write_collision_box_face3d_returns_the_spun_face_for_a_rotated_box() {
-    let angle = std::f32::consts::PI / 8.0;
+    let angle = std::f64::consts::PI / 8.0;
     let b = CollisionBox3D {
         x: 0.0,
         y: 0.0,
@@ -166,9 +166,9 @@ fn write_collision_box_face3d_returns_the_spun_face_for_a_rotated_box() {
     assert_eq!(write_collision_box_face3d(&b, 0.0, 1.0, 0.0, &mut face), 4);
     expect_coplanar_along(&face, 4, 1, 1.0);
 
-    let xs: Vec<f32> = (0..4).map(|i| face[i * 3]).collect();
-    let max_x = xs.iter().cloned().fold(f32::NEG_INFINITY, f32::max);
-    assert!((max_x - std::f32::consts::SQRT_2).abs() < 1e-6);
+    let xs: Vec<f64> = (0..4).map(|i| face[i * 3]).collect();
+    let max_x = xs.iter().cloned().fold(f64::NEG_INFINITY, f64::max);
+    assert!((max_x - std::f64::consts::SQRT_2).abs() < 1e-6);
 }
 
 #[test]

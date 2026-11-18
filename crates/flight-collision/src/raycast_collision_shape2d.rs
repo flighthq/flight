@@ -2,12 +2,9 @@
 
 use crate::types::*;
 
-// flight-lint: allow(f64) measured 1e9 raycast domain needs double precision to distinguish origin from shape
 const EPSILON: f64 = 1e-12;
-// flight-lint: allow(f64) raycast adapter lane is double precision; segment/point tolerances follow it
 const RELATIVE_EPSILON: f64 = 1e-9;
 
-// flight-lint: allow(f64) measured 1e9 raycast adapter preserves double-precision query arithmetic
 #[derive(Clone, Copy)]
 struct RaycastAabb2D {
     min_x: f64,
@@ -16,7 +13,6 @@ struct RaycastAabb2D {
     max_y: f64,
 }
 
-// flight-lint: allow(f64) measured 1e9 raycast adapter preserves double-precision query arithmetic
 #[derive(Clone, Copy)]
 struct RaycastObb2D {
     x: f64,
@@ -26,7 +22,6 @@ struct RaycastObb2D {
     rotation: f64,
 }
 
-// flight-lint: allow(f64) measured 1e9 raycast adapter preserves double-precision query arithmetic
 #[derive(Clone, Copy)]
 struct RaycastCapsule2D {
     x0: f64,
@@ -58,7 +53,6 @@ fn clear_raycast_hit2d(out: &mut CollisionRaycastHit2D) {
     out.normal_y = 0.0;
 }
 
-// flight-lint: allow(f64) measured 1e9 raycast query changes hit to miss under f32 aliasing
 fn raycast_aabb2d(
     aabb: &RaycastAabb2D,
     ox: f64,
@@ -137,7 +131,6 @@ fn raycast_aabb2d(
     return true;
 }
 
-// flight-lint: allow(f64) measured 1e9 raycast query changes hit to miss under f32 aliasing
 fn raycast_capsule2d(
     capsule: &RaycastCapsule2D,
     ox: f64,
@@ -221,7 +214,6 @@ fn raycast_capsule2d(
     return hit;
 }
 
-// flight-lint: allow(f64) measured 1e9 circle raycast changes hit to miss under f32 aliasing
 fn raycast_circle2d(
     circle: &CollisionCircle2D,
     ox: f64,
@@ -275,7 +267,6 @@ fn raycast_circle2d(
     return true;
 }
 
-// flight-lint: allow(f64) measured 1e9 center: f32 aliases the ray origin two units away and changes hit to miss
 // flight-lint: allow(conform-params) D9 requires caller-owned outputs first; max_fraction remains optional after source inputs
 pub fn raycast_collision_shape2d(
     out: &mut CollisionRaycastHit2D,
@@ -288,9 +279,7 @@ pub fn raycast_collision_shape2d(
 ) -> bool {
     // Pinned dispatcher preamble (raycastCollisionShape2D.ts:35-51): clear the output first, reject
     // non-finite or impossible queries, report an origin inside the shape at fraction zero with no
-    // entry normal, and only then require a non-degenerate direction. Containment is evaluated in the
-    // adapter's f64 lane over the promoted stored shape values, so a world-space origin keeps its
-    // double-precision separation from a large f32 centre.
+    // entry normal, and only then require a non-degenerate direction.
     clear_raycast_hit2d(out);
     let max_fraction = max_fraction.unwrap_or(f64::INFINITY);
     if !origin_x.is_finite()
@@ -331,10 +320,10 @@ pub fn raycast_collision_shape2d(
         ),
         CollisionShape2D::Aabb(a) => {
             let aabb = RaycastAabb2D {
-                min_x: a.min_x as f64,
-                min_y: a.min_y as f64,
-                max_x: a.max_x as f64,
-                max_y: a.max_y as f64,
+                min_x: a.min_x,
+                min_y: a.min_y,
+                max_x: a.max_x,
+                max_y: a.max_y,
             };
             raycast_aabb2d(
                 &aabb,
@@ -348,11 +337,11 @@ pub fn raycast_collision_shape2d(
         }
         CollisionShape2D::Obb(o) => {
             let obb = RaycastObb2D {
-                x: o.x as f64,
-                y: o.y as f64,
-                half_w: o.half_w as f64,
-                half_h: o.half_h as f64,
-                rotation: o.rotation as f64,
+                x: o.x,
+                y: o.y,
+                half_w: o.half_w,
+                half_h: o.half_h,
+                rotation: o.rotation,
             };
             raycast_obb2d(
                 &obb,
@@ -375,11 +364,11 @@ pub fn raycast_collision_shape2d(
         ),
         CollisionShape2D::Capsule(c) => {
             let capsule = RaycastCapsule2D {
-                x0: c.x0 as f64,
-                y0: c.y0 as f64,
-                x1: c.x1 as f64,
-                y1: c.y1 as f64,
-                radius: c.radius as f64,
+                x0: c.x0,
+                y0: c.y0,
+                x1: c.x1,
+                y1: c.y1,
+                radius: c.radius,
             };
             raycast_capsule2d(
                 &capsule,
@@ -392,10 +381,10 @@ pub fn raycast_collision_shape2d(
             )
         }
         CollisionShape2D::Segment(s) => raycast_segment2d(
-            s.x0 as f64,
-            s.y0 as f64,
-            s.x1 as f64,
-            s.y1 as f64,
+            s.x0,
+            s.y0,
+            s.x1,
+            s.y1,
             origin_x,
             origin_y,
             direction_x,
@@ -404,8 +393,8 @@ pub fn raycast_collision_shape2d(
             out,
         ),
         CollisionShape2D::Point(p) => raycast_point2d(
-            p.x as f64,
-            p.y as f64,
+            p.x,
+            p.y,
             origin_x,
             origin_y,
             direction_x,
@@ -416,7 +405,6 @@ pub fn raycast_collision_shape2d(
     }
 }
 
-// flight-lint: allow(f64) measured 1e9 raycast query changes hit to miss under f32 aliasing
 fn raycast_obb2d(
     obb: &RaycastObb2D,
     ox: f64,
@@ -463,7 +451,6 @@ fn raycast_obb2d(
     return true;
 }
 
-// flight-lint: allow(f64) measured 1e9 raycast query changes hit to miss under f32 aliasing
 fn raycast_point2d(
     point_x: f64,
     point_y: f64,
@@ -507,7 +494,6 @@ fn raycast_point2d(
     return true;
 }
 
-// flight-lint: allow(f64) measured polygon storage stays coherent with the retained raycast query domain
 fn raycast_polygon2d(
     poly: &CollisionPolygon2D,
     ox: f64,
@@ -563,7 +549,6 @@ fn raycast_polygon2d(
     return hit;
 }
 
-// flight-lint: allow(f64) measured 1e9 raycast query changes hit to miss under f32 aliasing
 fn raycast_segment2d(
     x0: f64,
     y0: f64,
@@ -624,7 +609,6 @@ fn raycast_segment2d(
     return true;
 }
 
-// flight-lint: allow(f64) measured 1e9 raycast query changes hit to miss under f32 aliasing
 #[allow(clippy::too_many_arguments)]
 fn write_ray_segment_fraction(
     x0: f64,
@@ -671,7 +655,6 @@ fn write_ray_segment_fraction(
     return Some(if fraction < 0.0 { 0.0 } else { fraction });
 }
 
-// flight-lint: allow(f64) raycast hit record is the adapter's double-precision output lane
 fn write_raycast_hit2d(
     out: &mut CollisionRaycastHit2D,
     origin_x: f64,

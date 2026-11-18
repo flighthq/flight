@@ -8,9 +8,9 @@ mod collision_collider_shape3d {
     fn collision_heightfield3d(
         columns: usize,
         rows: usize,
-        heights: Vec<f32>,
-        cell_size_x: f32,
-        cell_size_z: f32,
+        heights: Vec<f64>,
+        cell_size_x: f64,
+        cell_size_z: f64,
     ) -> CollisionHeightfield3D {
         let mut out = create_collision_heightfield3d();
         out.columns = columns;
@@ -21,7 +21,7 @@ mod collision_collider_shape3d {
         return out;
     }
 
-    fn collision_triangle_mesh3d(points: Vec<f32>, indices: Vec<usize>) -> CollisionTriangleMesh3D {
+    fn collision_triangle_mesh3d(points: Vec<f64>, indices: Vec<usize>) -> CollisionTriangleMesh3D {
         let mut out = create_collision_triangle_mesh3d();
         out.points = points;
         out.indices = indices;

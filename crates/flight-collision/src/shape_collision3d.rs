@@ -3,15 +3,11 @@
 use crate::manifold3d::*;
 use crate::types::*;
 
-// flight-lint: allow(f64) Principal c2e26ae9: private Collision3D narrow-phase threshold retains source-number precision
 const RELATIVE_EPSILON: f64 = 1e-12;
-// flight-lint: allow(f64) Principal c2e26ae9: private Collision3D narrow-phase threshold retains source-number precision
 const BOX_PARALLEL_AXIS_EPSILON: f64 = 1e-12;
-// flight-lint: allow(f64) Principal c2e26ae9: private Collision3D feature-selection bias retains source-number precision
 const BOX_EDGE_BIAS: f64 = 5e-3;
 
 // flight-lint: allow(fn-order) source validation helpers stay grouped before narrow-phase math helpers
-// flight-lint: allow(f64) Principal c2e26ae9: private Collision3D narrow-phase scratch
 fn clamp(value: f64, min: f64, max: f64) -> f64 {
     if value < min {
         min
@@ -22,7 +18,6 @@ fn clamp(value: f64, min: f64, max: f64) -> f64 {
     }
 }
 
-// flight-lint: allow(f64) Principal c2e26ae9: private Collision3D narrow-phase scratch
 fn clamp01(value: f64) -> f64 {
     if value < 0.0 {
         0.0
@@ -33,7 +28,6 @@ fn clamp01(value: f64) -> f64 {
     }
 }
 
-// flight-lint: allow(f64) Principal c2e26ae9: private Collision3D closest-feature scratch
 fn closest_point_on_segment3d(
     sx: f64,
     sy: f64,
@@ -62,7 +56,6 @@ fn closest_point_on_segment3d(
     return (sx + dx * t, sy + dy * t, sz + dz * t);
 }
 
-// flight-lint: allow(f64) Principal c2e26ae9: private Collision3D closest-feature scratch
 fn closest_points_between_segments3d(
     a0x: f64,
     a0y: f64,
@@ -165,7 +158,6 @@ fn is_valid_box3d(shape: &CollisionBox3D) -> bool {
             || shape.rotation_w != 0.0);
 }
 
-// flight-lint: allow(f64) Principal c2e26ae9: private Collision3D transform scratch
 fn rotate_by_quaternion3d(
     vx: f64,
     vy: f64,
@@ -189,7 +181,6 @@ fn rotate_by_quaternion3d(
     out[2] = vz + 2.0 * (rx * ty - ry * tx);
 }
 
-// flight-lint: allow(f64) Principal c2e26ae9: private Collision3D sphere-box feature scratch
 #[allow(clippy::too_many_arguments)]
 fn sphere_aabb_manifold_values3d(
     sphere_x: f64,
@@ -243,7 +234,6 @@ fn sphere_aabb_manifold_values3d(
     return Some((best_nx, best_ny, best_nz, min_dist + radius));
 }
 
-// flight-lint: allow(f64) Principal c2e26ae9: public f32 shapes are losslessly promoted for private Collision3D narrow phase
 pub fn test_aabb_aabb_collision3d(
     a: &CollisionAabb3D,
     b: &CollisionAabb3D,
@@ -254,27 +244,9 @@ pub fn test_aabb_aabb_collision3d(
         return false;
     }
     let pen_axes = [
-        (
-            f64::from(a.max_x) - f64::from(b.min_x),
-            f64::from(b.max_x) - f64::from(a.min_x),
-            1.0,
-            0.0,
-            0.0,
-        ),
-        (
-            f64::from(a.max_y) - f64::from(b.min_y),
-            f64::from(b.max_y) - f64::from(a.min_y),
-            0.0,
-            1.0,
-            0.0,
-        ),
-        (
-            f64::from(a.max_z) - f64::from(b.min_z),
-            f64::from(b.max_z) - f64::from(a.min_z),
-            0.0,
-            0.0,
-            1.0,
-        ),
+        (a.max_x - b.min_x, b.max_x - a.min_x, 1.0, 0.0, 0.0),
+        (a.max_y - b.min_y, b.max_y - a.min_y, 0.0, 1.0, 0.0),
+        (a.max_z - b.min_z, b.max_z - a.min_z, 0.0, 0.0, 1.0),
     ];
 
     let mut min_pen = f64::INFINITY;
@@ -305,14 +277,13 @@ pub fn test_aabb_aabb_collision3d(
     }
 
     out.overlapping = true;
-    out.normal_x = best_nx as f32;
-    out.normal_y = best_ny as f32;
-    out.normal_z = best_nz as f32;
-    out.depth = min_pen as f32;
+    out.normal_x = best_nx;
+    out.normal_y = best_ny;
+    out.normal_z = best_nz;
+    out.depth = min_pen;
     return true;
 }
 
-// flight-lint: allow(f64) Principal c2e26ae9: private Collision3D SAT and feature-selection scratch
 fn test_box_axis(
     nx: f64,
     ny: f64,
@@ -369,7 +340,6 @@ fn test_box_axis(
     return true;
 }
 
-// flight-lint: allow(f64) Principal c2e26ae9: public f32 boxes are losslessly promoted for private Collision3D SAT
 pub fn test_box_box_collision3d(
     a: &CollisionBox3D,
     b: &CollisionBox3D,
@@ -384,19 +354,11 @@ pub fn test_box_box_collision3d(
     write_box_axes3d(a, &mut axes_a);
     write_box_axes3d(b, &mut axes_b);
 
-    let halves_a = [
-        f64::from(a.half_x),
-        f64::from(a.half_y),
-        f64::from(a.half_z),
-    ];
-    let halves_b = [
-        f64::from(b.half_x),
-        f64::from(b.half_y),
-        f64::from(b.half_z),
-    ];
-    let tx = f64::from(a.x) - f64::from(b.x);
-    let ty = f64::from(a.y) - f64::from(b.y);
-    let tz = f64::from(a.z) - f64::from(b.z);
+    let halves_a = [a.half_x, a.half_y, a.half_z];
+    let halves_b = [b.half_x, b.half_y, b.half_z];
+    let tx = a.x - b.x;
+    let ty = a.y - b.y;
+    let tz = a.z - b.z;
 
     let mut min_pen = f64::INFINITY;
     let mut best_nx = 0.0_f64;
@@ -493,32 +455,20 @@ pub fn test_box_box_collision3d(
     }
 
     out.overlapping = true;
-    out.normal_x = best_nx as f32;
-    out.normal_y = best_ny as f32;
-    out.normal_z = best_nz as f32;
-    out.depth = min_pen as f32;
+    out.normal_x = best_nx;
+    out.normal_y = best_ny;
+    out.normal_z = best_nz;
+    out.depth = min_pen;
     return true;
 }
 
-// flight-lint: allow(f64) Principal c2e26ae9: public f32 capsules are losslessly promoted for private Collision3D closest-feature scratch
 pub fn test_capsule_capsule_collision3d(
     a: &CollisionCapsule3D,
     b: &CollisionCapsule3D,
     out: &mut CollisionManifold3D,
 ) -> bool {
     let (ca_x, ca_y, ca_z, cb_x, cb_y, cb_z) = closest_points_between_segments3d(
-        f64::from(a.x0),
-        f64::from(a.y0),
-        f64::from(a.z0),
-        f64::from(a.x1),
-        f64::from(a.y1),
-        f64::from(a.z1),
-        f64::from(b.x0),
-        f64::from(b.y0),
-        f64::from(b.z0),
-        f64::from(b.x1),
-        f64::from(b.y1),
-        f64::from(b.z1),
+        a.x0, a.y0, a.z0, a.x1, a.y1, a.z1, b.x0, b.y0, b.z0, b.x1, b.y1, b.z1,
     );
     let dx = ca_x - cb_x;
     let dy = ca_y - cb_y;
@@ -527,76 +477,57 @@ pub fn test_capsule_capsule_collision3d(
         dx,
         dy,
         dz,
-        f64::from(a.radius) + f64::from(b.radius),
-        f64::from(a.x1) - f64::from(a.x0),
-        f64::from(a.y1) - f64::from(a.y0),
-        f64::from(a.z1) - f64::from(a.z0),
+        a.radius + b.radius,
+        a.x1 - a.x0,
+        a.y1 - a.y0,
+        a.z1 - a.z0,
         out,
     );
 }
 
-// flight-lint: allow(f64) Principal c2e26ae9: public f32 shapes are losslessly promoted for private Collision3D closest-feature scratch
 pub fn test_sphere_aabb_collision3d(
     a: &CollisionSphere3D,
     b: &CollisionAabb3D,
     out: &mut CollisionManifold3D,
 ) -> bool {
     let Some((normal_x, normal_y, normal_z, depth)) = sphere_aabb_manifold_values3d(
-        f64::from(a.x),
-        f64::from(a.y),
-        f64::from(a.z),
-        f64::from(a.radius),
-        f64::from(b.min_x),
-        f64::from(b.min_y),
-        f64::from(b.min_z),
-        f64::from(b.max_x),
-        f64::from(b.max_y),
-        f64::from(b.max_z),
+        a.x, a.y, a.z, a.radius, b.min_x, b.min_y, b.min_z, b.max_x, b.max_y, b.max_z,
     ) else {
         clear_collision_manifold3d(out);
         return false;
     };
-    out.normal_x = normal_x as f32;
-    out.normal_y = normal_y as f32;
-    out.normal_z = normal_z as f32;
-    out.depth = depth as f32;
+    out.normal_x = normal_x;
+    out.normal_y = normal_y;
+    out.normal_z = normal_z;
+    out.depth = depth;
     out.overlapping = true;
     return true;
 }
 
-// flight-lint: allow(f64) Principal c2e26ae9: public f32 shapes are losslessly promoted for private Collision3D transform and feature scratch
 pub fn test_sphere_box_collision3d(
     a: &CollisionSphere3D,
     b: &CollisionBox3D,
     out: &mut CollisionManifold3D,
 ) -> bool {
-    let dx = f64::from(a.x) - f64::from(b.x);
-    let dy = f64::from(a.y) - f64::from(b.y);
-    let dz = f64::from(a.z) - f64::from(b.z);
+    let dx = a.x - b.x;
+    let dy = a.y - b.y;
+    let dz = a.z - b.z;
     let mut local = [0.0_f64; 3];
     rotate_by_quaternion3d(
         dx,
         dy,
         dz,
-        f64::from(b.rotation_x),
-        f64::from(b.rotation_y),
-        f64::from(b.rotation_z),
-        f64::from(b.rotation_w),
+        b.rotation_x,
+        b.rotation_y,
+        b.rotation_z,
+        b.rotation_w,
         true,
         &mut local,
     );
 
     let Some((local_nx, local_ny, local_nz, depth)) = sphere_aabb_manifold_values3d(
-        local[0],
-        local[1],
-        local[2],
-        f64::from(a.radius),
-        -f64::from(b.half_x),
-        -f64::from(b.half_y),
-        -f64::from(b.half_z),
-        f64::from(b.half_x),
-        f64::from(b.half_y),
-        f64::from(b.half_z),
+        local[0], local[1], local[2], a.radius, -b.half_x, -b.half_y, -b.half_z, b.half_x,
+        b.half_y, b.half_z,
     ) else {
         clear_collision_manifold3d(out);
         return false;
@@ -607,85 +538,64 @@ pub fn test_sphere_box_collision3d(
         local_nx,
         local_ny,
         local_nz,
-        f64::from(b.rotation_x),
-        f64::from(b.rotation_y),
-        f64::from(b.rotation_z),
-        f64::from(b.rotation_w),
+        b.rotation_x,
+        b.rotation_y,
+        b.rotation_z,
+        b.rotation_w,
         false,
         &mut world_normal,
     );
-    out.normal_x = world_normal[0] as f32;
-    out.normal_y = world_normal[1] as f32;
-    out.normal_z = world_normal[2] as f32;
-    out.depth = depth as f32;
+    out.normal_x = world_normal[0];
+    out.normal_y = world_normal[1];
+    out.normal_z = world_normal[2];
+    out.depth = depth;
     out.overlapping = true;
     return true;
 }
 
-// flight-lint: allow(f64) Principal c2e26ae9: public f32 shapes are losslessly promoted for private Collision3D closest-feature scratch
 pub fn test_sphere_capsule_collision3d(
     a: &CollisionSphere3D,
     b: &CollisionCapsule3D,
     out: &mut CollisionManifold3D,
 ) -> bool {
-    let (closest_x, closest_y, closest_z) = closest_point_on_segment3d(
-        f64::from(b.x0),
-        f64::from(b.y0),
-        f64::from(b.z0),
-        f64::from(b.x1),
-        f64::from(b.y1),
-        f64::from(b.z1),
-        f64::from(a.x),
-        f64::from(a.y),
-        f64::from(a.z),
-    );
-    let dx = f64::from(a.x) - closest_x;
-    let dy = f64::from(a.y) - closest_y;
-    let dz = f64::from(a.z) - closest_z;
+    let (closest_x, closest_y, closest_z) =
+        closest_point_on_segment3d(b.x0, b.y0, b.z0, b.x1, b.y1, b.z1, a.x, a.y, a.z);
+    let dx = a.x - closest_x;
+    let dy = a.y - closest_y;
+    let dz = a.z - closest_z;
     return write_radial_manifold3d(
         dx,
         dy,
         dz,
-        f64::from(a.radius) + f64::from(b.radius),
-        f64::from(b.x1) - f64::from(b.x0),
-        f64::from(b.y1) - f64::from(b.y0),
-        f64::from(b.z1) - f64::from(b.z0),
+        a.radius + b.radius,
+        b.x1 - b.x0,
+        b.y1 - b.y0,
+        b.z1 - b.z0,
         out,
     );
 }
 
-// flight-lint: allow(f64) Principal c2e26ae9: public f32 spheres are losslessly promoted for private Collision3D narrow phase
 pub fn test_sphere_sphere_collision3d(
     a: &CollisionSphere3D,
     b: &CollisionSphere3D,
     out: &mut CollisionManifold3D,
 ) -> bool {
-    let dx = f64::from(a.x) - f64::from(b.x);
-    let dy = f64::from(a.y) - f64::from(b.y);
-    let dz = f64::from(a.z) - f64::from(b.z);
-    return write_radial_manifold3d(
-        dx,
-        dy,
-        dz,
-        f64::from(a.radius) + f64::from(b.radius),
-        0.0,
-        0.0,
-        0.0,
-        out,
-    );
+    let dx = a.x - b.x;
+    let dy = a.y - b.y;
+    let dz = a.z - b.z;
+    return write_radial_manifold3d(dx, dy, dz, a.radius + b.radius, 0.0, 0.0, 0.0, out);
 }
 
-// flight-lint: allow(f64) Principal c2e26ae9: public f32 box transforms are losslessly promoted for private Collision3D SAT scratch
 fn write_box_axes3d(b: &CollisionBox3D, out: &mut [f64; 9]) {
     let mut axis = [0.0_f64; 3];
     rotate_by_quaternion3d(
         1.0,
         0.0,
         0.0,
-        f64::from(b.rotation_x),
-        f64::from(b.rotation_y),
-        f64::from(b.rotation_z),
-        f64::from(b.rotation_w),
+        b.rotation_x,
+        b.rotation_y,
+        b.rotation_z,
+        b.rotation_w,
         false,
         &mut axis,
     );
@@ -696,10 +606,10 @@ fn write_box_axes3d(b: &CollisionBox3D, out: &mut [f64; 9]) {
         0.0,
         1.0,
         0.0,
-        f64::from(b.rotation_x),
-        f64::from(b.rotation_y),
-        f64::from(b.rotation_z),
-        f64::from(b.rotation_w),
+        b.rotation_x,
+        b.rotation_y,
+        b.rotation_z,
+        b.rotation_w,
         false,
         &mut axis,
     );
@@ -710,10 +620,10 @@ fn write_box_axes3d(b: &CollisionBox3D, out: &mut [f64; 9]) {
         0.0,
         0.0,
         1.0,
-        f64::from(b.rotation_x),
-        f64::from(b.rotation_y),
-        f64::from(b.rotation_z),
-        f64::from(b.rotation_w),
+        b.rotation_x,
+        b.rotation_y,
+        b.rotation_z,
+        b.rotation_w,
         false,
         &mut axis,
     );
@@ -722,7 +632,6 @@ fn write_box_axes3d(b: &CollisionBox3D, out: &mut [f64; 9]) {
     out[8] = axis[2];
 }
 
-// flight-lint: allow(f64) Principal c2e26ae9: private Collision3D fallback-feature scratch
 fn write_perpendicular_axis3d(x: f64, y: f64, z: f64) -> (f64, f64, f64) {
     if x == 0.0 && y == 0.0 && z == 0.0 {
         return (1.0, 0.0, 0.0);
@@ -749,7 +658,6 @@ fn write_perpendicular_axis3d(x: f64, y: f64, z: f64) -> (f64, f64, f64) {
     return (1.0, 0.0, 0.0);
 }
 
-// flight-lint: allow(f64) Principal c2e26ae9: private Collision3D radial manifold scratch narrows only final public fields
 fn write_radial_manifold3d(
     delta_x: f64,
     delta_y: f64,
@@ -769,17 +677,17 @@ fn write_radial_manifold3d(
     let distance = distance_squared.sqrt();
     if distance > radius_sum * RELATIVE_EPSILON {
         let inverse = 1.0 / distance;
-        out.normal_x = (delta_x * inverse) as f32;
-        out.normal_y = (delta_y * inverse) as f32;
-        out.normal_z = (delta_z * inverse) as f32;
-        out.depth = (radius_sum - distance) as f32;
+        out.normal_x = delta_x * inverse;
+        out.normal_y = delta_y * inverse;
+        out.normal_z = delta_z * inverse;
+        out.depth = radius_sum - distance;
     } else {
         let (normal_x, normal_y, normal_z) =
             write_perpendicular_axis3d(fallback_axis_x, fallback_axis_y, fallback_axis_z);
-        out.normal_x = normal_x as f32;
-        out.normal_y = normal_y as f32;
-        out.normal_z = normal_z as f32;
-        out.depth = radius_sum as f32;
+        out.normal_x = normal_x;
+        out.normal_y = normal_y;
+        out.normal_z = normal_z;
+        out.depth = radius_sum;
     }
     out.overlapping = true;
     return true;

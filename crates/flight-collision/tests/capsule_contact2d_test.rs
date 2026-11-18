@@ -6,7 +6,7 @@ fn manifold() -> CollisionContactManifold2D {
     create_collision_contact_manifold2d()
 }
 
-fn distance_to_capsule_axis(x0: f32, y0: f32, x1: f32, y1: f32, px: f32, py: f32) -> f32 {
+fn distance_to_capsule_axis(x0: f64, y0: f64, x1: f64, y1: f64, px: f64, py: f64) -> f64 {
     let dx = x1 - x0;
     let dy = y1 - y0;
     let length_squared = dx * dx + dy * dy;
@@ -50,7 +50,7 @@ mod collide_capsule_aabb_contact_manifold2d {
         // Pinned capsuleContact2D.test.ts:74: a capsule lying along a face produces a TWO-point
         // span (one under each cap end), which is what keeps it from rocking. Principal 6cbf7f43.
         assert_eq!(out.point_count, 2);
-        let mut xs: Vec<f32> = out.points[..out.point_count].iter().map(|p| p.x).collect();
+        let mut xs: Vec<f64> = out.points[..out.point_count].iter().map(|p| p.x).collect();
         xs.sort_by(|a, b| a.partial_cmp(b).unwrap());
         assert!((xs[0] - (-1.0)).abs() < 1e-6, "xs: {:?}", xs);
         assert!((xs[1] - 1.0).abs() < 1e-6, "xs: {:?}", xs);
@@ -315,7 +315,7 @@ mod collide_capsule_obb_contact_manifold2d {
             collide_capsule_obb_contact_manifold2d(&capsule, &obb, &mut out),
             true
         );
-        let sqrt1_2: f32 = std::f32::consts::FRAC_1_SQRT_2;
+        let sqrt1_2: f64 = std::f64::consts::FRAC_1_SQRT_2;
         assert!(
             (out.normal_x - sqrt1_2).abs() < 1e-6,
             "normal_x: {} vs {}",

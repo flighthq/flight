@@ -9,16 +9,12 @@ const MAX_EPA_ITERATIONS: usize = 64;
 const MAX_POLYTOPE_VERTICES: usize = 64;
 const MAX_EPA_FACES: usize = 128;
 const MAX_EPA_HORIZON_EDGES: usize = 128;
-// flight-lint: allow(f64) source Float64Array EPA scratch and 1e-9 convergence preserve all 1,400 seeded f32-support comparisons; f32 produced three gross depth failures
 const EPA_TOLERANCE: f64 = 1e-9;
-// flight-lint: allow(f64) source Float64Array GJK/EPA predicates use the 1e-12 degeneracy boundary; f32 produced three gross depth failures
 const EPSILON: f64 = 1e-12;
 
-// flight-lint: allow(f64) private source Float64Array simplex/polytope scratch preserves all 1,400 seeded f32-support comparisons; f32 produced three gross depth failures
 type Vector3 = [f64; 3];
 
 #[derive(Clone, Copy, Default)]
-// flight-lint: allow(f64) private source Float64Array EPA face normals/distances preserve all 1,400 seeded f32-support comparisons; f32 produced three gross depth failures
 struct EpaFace {
     vertices: [usize; 3],
     normal: Vector3,
@@ -70,7 +66,6 @@ fn cross(a: Vector3, b: Vector3) -> Vector3 {
     ]
 }
 
-// flight-lint: allow(f64) private source Float64Array GJK/EPA predicate arithmetic preserves all 1,400 seeded f32-support comparisons; f32 produced three gross depth failures
 fn dot(a: Vector3, b: Vector3) -> f64 {
     a[0] * b[0] + a[1] * b[1] + a[2] * b[2]
 }
@@ -79,7 +74,6 @@ fn is_near_zero(vector: Vector3) -> bool {
     vector[0].abs() <= EPSILON && vector[1].abs() <= EPSILON && vector[2].abs() <= EPSILON
 }
 
-// flight-lint: allow(f64) private source Float64Array EPA normal arithmetic preserves all 1,400 seeded f32-support comparisons; f32 produced three gross depth failures
 fn length(vector: Vector3) -> f64 {
     dot(vector, vector).sqrt()
 }
@@ -150,7 +144,6 @@ fn run_gjk3d(
     return None;
 }
 
-// flight-lint: allow(f64) private source Float64Array simplex/polytope arithmetic preserves all 1,400 seeded f32-support comparisons; f32 produced three gross depth failures
 fn scale(vector: Vector3, factor: f64) -> Vector3 {
     [vector[0] * factor, vector[1] * factor, vector[2] * factor]
 }
@@ -318,7 +311,6 @@ fn write_any_perpendicular(vector: Vector3) -> Vector3 {
     cross(vector, axis)
 }
 
-// flight-lint: allow(f64) private source Float64Array EPA orientation/distance scratch preserves all 1,400 seeded f32-support comparisons; public manifold output remains f32
 fn write_epa3d_penetration(
     a: &CollisionShape3D,
     support_a: &CollisionSupport3D,
@@ -424,14 +416,13 @@ fn write_epa3d_penetration(
         return false;
     }
     out.overlapping = true;
-    out.normal_x = -best_normal[0] as f32;
-    out.normal_y = -best_normal[1] as f32;
-    out.normal_z = -best_normal[2] as f32;
-    out.depth = best_distance as f32;
+    out.normal_x = -best_normal[0];
+    out.normal_y = -best_normal[1];
+    out.normal_z = -best_normal[2];
+    out.depth = best_distance;
     return true;
 }
 
-// flight-lint: allow(f64) f32 support results are promoted losslessly into private source Float64Array GJK/EPA scratch; public callbacks remain f32
 fn write_minkowski_support3d(
     a: &CollisionShape3D,
     support_a: &CollisionSupport3D,
@@ -440,24 +431,12 @@ fn write_minkowski_support3d(
     direction: Vector3,
     out: &mut Vector3,
 ) {
-    let (mut point_a, mut point_b) = ([0.0_f32; 3], [0.0_f32; 3]);
-    support_a(
-        a,
-        direction[0] as f32,
-        direction[1] as f32,
-        direction[2] as f32,
-        &mut point_a,
-    );
-    support_b(
-        b,
-        -direction[0] as f32,
-        -direction[1] as f32,
-        -direction[2] as f32,
-        &mut point_b,
-    );
+    let (mut point_a, mut point_b) = ([0.0_f64; 3], [0.0_f64; 3]);
+    support_a(a, direction[0], direction[1], direction[2], &mut point_a);
+    support_b(b, -direction[0], -direction[1], -direction[2], &mut point_b);
     *out = [
-        point_a[0] as f64 - point_b[0] as f64,
-        point_a[1] as f64 - point_b[1] as f64,
-        point_a[2] as f64 - point_b[2] as f64,
+        point_a[0] - point_b[0],
+        point_a[1] - point_b[1],
+        point_a[2] - point_b[2],
     ];
 }

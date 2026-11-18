@@ -2,20 +2,20 @@
 
 use flight_collision::contract::*;
 
-const CLOSE_TO_SIX_DIGITS: f32 = 5e-7;
-const CLOSE_TO_NINE_DIGITS: f32 = 5e-10;
+const CLOSE_TO_SIX_DIGITS: f64 = 5e-7;
+const CLOSE_TO_NINE_DIGITS: f64 = 5e-10;
 
-fn sphere(x: f32, y: f32, z: f32, radius: f32) -> CollisionShape3D {
+fn sphere(x: f64, y: f64, z: f64, radius: f64) -> CollisionShape3D {
     CollisionShape3D::Sphere(CollisionSphere3D { x, y, z, radius })
 }
 
 fn aabb(
-    min_x: f32,
-    min_y: f32,
-    min_z: f32,
-    max_x: f32,
-    max_y: f32,
-    max_z: f32,
+    min_x: f64,
+    min_y: f64,
+    min_z: f64,
+    max_x: f64,
+    max_y: f64,
+    max_z: f64,
 ) -> CollisionShape3D {
     CollisionShape3D::Aabb(CollisionAabb3D {
         min_x,
@@ -36,7 +36,7 @@ fn write_distance_default(
     write_collision_distance3d(out, registry, a, b, None, None, None)
 }
 
-fn assert_close(actual: f32, expected: f32, tolerance: f32) {
+fn assert_close(actual: f64, expected: f64, tolerance: f64) {
     assert!(
         (actual - expected).abs() <= tolerance,
         "expected {actual} to be within {tolerance} of {expected}"
@@ -197,7 +197,7 @@ mod write_collision_distance3d {
             &aabb(4.0, 4.0, 4.0, 5.0, 5.0, 5.0),
             &mut out,
         ));
-        assert_close(out.distance, 27.0_f32.sqrt(), CLOSE_TO_NINE_DIGITS);
+        assert_close(out.distance, 27.0_f64.sqrt(), CLOSE_TO_NINE_DIGITS);
     }
 
     #[test]
@@ -209,7 +209,7 @@ mod write_collision_distance3d {
             &aabb(4.0, 4.0, 0.0, 5.0, 5.0, 1.0),
             &mut out,
         ));
-        assert_close(out.distance, 18.0_f32.sqrt(), CLOSE_TO_NINE_DIGITS);
+        assert_close(out.distance, 18.0_f64.sqrt(), CLOSE_TO_NINE_DIGITS);
         assert_close(out.direction_z, 0.0, CLOSE_TO_SIX_DIGITS);
     }
 
@@ -290,7 +290,7 @@ mod write_collision_distance3d {
 
     #[test]
     fn agrees_with_the_overlap_test_about_which_side_of_touching_a_pair_is_on() {
-        for gap in [-0.1_f32, -0.001, 0.001, 0.1, 1.0] {
+        for gap in [-0.1_f64, -0.001, 0.001, 0.1, 1.0] {
             let mut out = create_collision_distance3d();
             let separated = write_distance_default(
                 &crate::collision_registry3d_with_supports(),
@@ -322,7 +322,7 @@ mod write_collision_distance3d {
 
     #[test]
     fn stays_accurate_over_a_wide_range_of_scales() {
-        for scale in [0.001_f32, 1.0, 1000.0] {
+        for scale in [0.001_f64, 1.0, 1000.0] {
             let mut out = create_collision_distance3d();
             assert!(write_distance_default(
                 &crate::collision_registry3d_with_supports(),
@@ -408,10 +408,8 @@ mod write_collision_distance3d {
             &mut out,
         ));
         assert_close(out.distance, 4.0, CLOSE_TO_SIX_DIGITS);
-        // D1: f32 support quantization; TS asserts 6 digits (api-drift)
-        assert_close(out.point_a_x, 0.0, 1e-4);
-        // D1: f32 support quantization; TS asserts 6 digits (api-drift)
-        assert_close(out.point_a_y, 0.0, 1e-4);
+        assert_close(out.point_a_x, 0.0, CLOSE_TO_SIX_DIGITS);
+        assert_close(out.point_a_y, 0.0, CLOSE_TO_SIX_DIGITS);
         assert_close(out.point_a_z, 0.5, CLOSE_TO_SIX_DIGITS);
         assert_close(out.point_b_z, 4.5, CLOSE_TO_SIX_DIGITS);
     }

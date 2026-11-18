@@ -43,8 +43,8 @@ mod sweep_collision_shape2d {
         registry: &CollisionRegistry2D,
         shape_a: &CollisionShape2D,
         shape_b: &CollisionShape2D,
-        translation_x: f32,
-        translation_y: f32,
+        translation_x: f64,
+        translation_y: f64,
         out: &mut CollisionTimeOfImpact2D,
     ) -> bool {
         return flight_collision::sweep_collision_shape2d(
@@ -151,21 +151,21 @@ mod sweep_collision_shape2d {
             10.0,
             &mut corner,
         ));
-        let expected_fraction = (5.0 - std::f32::consts::FRAC_1_SQRT_2) / 10.0;
-        // D1 f32 bound (TS: 0.005)
+        let expected_fraction = (5.0 - std::f64::consts::FRAC_1_SQRT_2) / 10.0;
+        // TS bound: 0.005
         assert!(
             (corner.fraction - expected_fraction).abs()
-                <= 0.005_f32.max(4.0 * f32::EPSILON * expected_fraction.abs().max(1.0),)
+                <= 0.005_f64.max(4.0 * f64::EPSILON * expected_fraction.abs().max(1.0),)
         );
-        // D1 f32 bound (TS: 0.005)
+        // TS bound: 0.005
         assert!(
-            (corner.normal_x - -std::f32::consts::FRAC_1_SQRT_2).abs()
-                <= 0.005_f32.max(4.0 * f32::EPSILON)
+            (corner.normal_x - -std::f64::consts::FRAC_1_SQRT_2).abs()
+                <= 0.005_f64.max(4.0 * f64::EPSILON)
         );
-        // D1 f32 bound (TS: 0.005)
+        // TS bound: 0.005
         assert!(
-            (corner.normal_y - -std::f32::consts::FRAC_1_SQRT_2).abs()
-                <= 0.005_f32.max(4.0 * f32::EPSILON)
+            (corner.normal_y - -std::f64::consts::FRAC_1_SQRT_2).abs()
+                <= 0.005_f64.max(4.0 * f64::EPSILON)
         );
     }
 
@@ -233,25 +233,25 @@ mod sweep_collision_shape2d {
         assert!(hit);
         // Pinned sweepCollisionShape2D.test.ts:104: exact rounded-corner fraction and radial
         // normal. Principal 6cbf7f43 restores them.
-        let expected_fraction = (5.0 - std::f32::consts::FRAC_1_SQRT_2) / 10.0;
-        // D1 f32 bound (TS: 0.005)
+        let expected_fraction = (5.0 - std::f64::consts::FRAC_1_SQRT_2) / 10.0;
+        // TS bound: 0.005
         assert!(
             (corner.fraction - expected_fraction).abs()
-                <= 5e-3_f32.max(4.0 * f32::EPSILON * expected_fraction.abs().max(1.0)),
+                <= 5e-3_f64.max(4.0 * f64::EPSILON * expected_fraction.abs().max(1.0)),
             "corner fraction {} vs {}",
             corner.fraction,
             expected_fraction
         );
-        let expected_normal = -std::f32::consts::FRAC_1_SQRT_2;
-        // D1 f32 bound (TS: 0.005)
+        let expected_normal = -std::f64::consts::FRAC_1_SQRT_2;
+        // TS bound: 0.005
         assert!(
             (corner.normal_x - expected_normal).abs()
-                <= 5e-3_f32.max(4.0 * f32::EPSILON * expected_normal.abs().max(1.0))
+                <= 5e-3_f64.max(4.0 * f64::EPSILON * expected_normal.abs().max(1.0))
         );
-        // D1 f32 bound (TS: 0.005)
+        // TS bound: 0.005
         assert!(
             (corner.normal_y - expected_normal).abs()
-                <= 5e-3_f32.max(4.0 * f32::EPSILON * expected_normal.abs().max(1.0))
+                <= 5e-3_f64.max(4.0 * f64::EPSILON * expected_normal.abs().max(1.0))
         );
     }
 
@@ -456,11 +456,11 @@ mod sweep_collision_shape2d {
     // --- Seeded capsule sweep batches ---
     // Cross-validation: compare continuous sweep against a brute-force discrete march.
 
-    fn xorshift_next(state: &mut u32) -> f32 {
+    fn xorshift_next(state: &mut u32) -> f64 {
         *state ^= state.wrapping_shl(13);
         *state ^= *state >> 17;
         *state ^= state.wrapping_shl(5);
-        (*state % 100000) as f32 / 100000.0
+        (*state % 100000) as f64 / 100000.0
     }
 
     fn run_seeded_capsule_sweep_batch(start_trial: usize, end_trial: usize) {
@@ -473,7 +473,7 @@ mod sweep_collision_shape2d {
         let mut compared_aabb: usize = 0;
         let mut compared_obb: usize = 0;
         let mut compared_capsule: usize = 0;
-        let mut worst: f32 = 0.0;
+        let mut worst: f64 = 0.0;
         let mut mismatches: usize = 0;
 
         for trial in 0..end_trial {
@@ -491,9 +491,9 @@ mod sweep_collision_shape2d {
             let (other, other_kind): (CollisionShape2D, usize) = match pick {
                 0 => (
                     CollisionShape2D::Circle(CollisionCircle2D {
-                        x: cx as f64,
-                        y: cy as f64,
-                        radius: (0.3 + xorshift_next(&mut state) * 1.0) as f64,
+                        x: cx,
+                        y: cy,
+                        radius: (0.3 + xorshift_next(&mut state) * 1.0),
                     }),
                     0,
                 ),
@@ -512,7 +512,7 @@ mod sweep_collision_shape2d {
                         y: cy,
                         half_w: 1.0,
                         half_h: 0.6,
-                        rotation: xorshift_next(&mut state) * std::f32::consts::PI,
+                        rotation: xorshift_next(&mut state) * std::f64::consts::PI,
                     }),
                     2,
                 ),
@@ -550,9 +550,9 @@ mod sweep_collision_shape2d {
                 &mut toi,
             );
 
-            let mut marched: f32 = -1.0;
+            let mut marched: f64 = -1.0;
             for sample in 0..=samples {
-                let fraction = sample as f32 / samples as f32;
+                let fraction = sample as f64 / samples as f64;
                 let marched_capsule = CollisionShape2D::Capsule(CollisionCapsule2D {
                     x0: capsule.x0 + dx * fraction,
                     y0: capsule.y0 + dy * fraction,
@@ -651,7 +651,7 @@ mod sweep_collision_shape2d {
                 y: 0.0,
                 radius: 1.0,
             }),
-            f32::NAN,
+            f64::NAN,
             0.0,
             &mut out,
         );

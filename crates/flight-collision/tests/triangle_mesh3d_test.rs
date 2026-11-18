@@ -11,9 +11,9 @@ fn collision_registry3d_with_supports_and_faces() -> CollisionRegistry3D {
 fn create_collision_heightfield3d(
     columns: usize,
     rows: usize,
-    heights: Vec<f32>,
-    cell_size_x: f32,
-    cell_size_z: f32,
+    heights: Vec<f64>,
+    cell_size_x: f64,
+    cell_size_z: f64,
 ) -> CollisionHeightfield3D {
     let mut out = flight_collision::create_collision_heightfield3d();
     out.columns = columns;
@@ -25,7 +25,7 @@ fn create_collision_heightfield3d(
 }
 
 fn create_collision_triangle_mesh3d(
-    points: Vec<f32>,
+    points: Vec<f64>,
     indices: Vec<usize>,
 ) -> CollisionTriangleMesh3D {
     let mut out = flight_collision::create_collision_triangle_mesh3d();
@@ -251,8 +251,8 @@ mod collide_collision_triangle_mesh3d {
     #[test]
     fn keeps_the_acceleration_local_while_the_mesh_pose_rotates() {
         let mut mesh = create_floor_mesh();
-        mesh.rotation_z = std::f32::consts::FRAC_1_SQRT_2;
-        mesh.rotation_w = std::f32::consts::FRAC_1_SQRT_2;
+        mesh.rotation_z = std::f64::consts::FRAC_1_SQRT_2;
+        mesh.rotation_w = std::f64::consts::FRAC_1_SQRT_2;
         mesh.x = 2.0;
 
         let sphere = CollisionShape3D::Sphere(CollisionSphere3D {
@@ -450,7 +450,7 @@ mod get_collision_heightfield_validation_status3d {
             get_collision_heightfield_validation_status3d(&create_collision_heightfield3d(
                 2,
                 2,
-                vec![0.0, f32::NAN, 0.0, 0.0],
+                vec![0.0, f64::NAN, 0.0, 0.0],
                 1.0,
                 1.0
             )),
@@ -635,10 +635,10 @@ mod sweep_collision_heightfield3d {
             &heightfield,
             None,
         ));
-        // D1 f32 bound (TS: 5e-6)
+        // TS bound: 5e-6
         assert!(
             (hit.fraction - 0.475).abs()
-                <= 5e-6_f32.max(4.0 * f32::EPSILON * 0.475_f32.abs().max(1.0)),
+                <= 5e-6_f64.max(4.0 * f64::EPSILON * 0.475_f64.abs().max(1.0)),
             "fraction: {}",
             hit.fraction
         );
@@ -670,10 +670,10 @@ mod sweep_collision_triangle_mesh3d {
             &mesh,
             None,
         ));
-        // D1 f32 bound (TS: 5e-6)
+        // TS bound: 5e-6
         assert!(
             (hit.fraction - 0.475).abs()
-                <= 5e-6_f32.max(4.0 * f32::EPSILON * 0.475_f32.abs().max(1.0)),
+                <= 5e-6_f64.max(4.0 * f64::EPSILON * 0.475_f64.abs().max(1.0)),
             "fraction: {}",
             hit.fraction
         );
@@ -712,8 +712,8 @@ mod write_collision_triangle_mesh_bounds3d {
     #[test]
     fn transforms_local_acceleration_bounds_into_world_space() {
         let mut mesh = create_floor_mesh();
-        mesh.rotation_z = std::f32::consts::FRAC_1_SQRT_2;
-        mesh.rotation_w = std::f32::consts::FRAC_1_SQRT_2;
+        mesh.rotation_z = std::f64::consts::FRAC_1_SQRT_2;
+        mesh.rotation_w = std::f64::consts::FRAC_1_SQRT_2;
         mesh.x = 2.0;
 
         let mut bounds = CollisionAabb3D {

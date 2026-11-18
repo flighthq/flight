@@ -4,17 +4,17 @@ use flight_collision::contract::*;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicUsize, Ordering};
 
-fn d1_single_evaluation_bound(expected: f32, ts_bound: f32) -> f32 {
-    ts_bound.max(4.0 * f32::EPSILON * expected.abs().max(1.0))
+fn d1_single_evaluation_bound(expected: f64, ts_bound: f64) -> f64 {
+    ts_bound.max(4.0 * f64::EPSILON * expected.abs().max(1.0))
 }
 
 fn aabb3d(
-    min_x: f32,
-    min_y: f32,
-    min_z: f32,
-    max_x: f32,
-    max_y: f32,
-    max_z: f32,
+    min_x: f64,
+    min_y: f64,
+    min_z: f64,
+    max_x: f64,
+    max_y: f64,
+    max_z: f64,
 ) -> CollisionShape3D {
     CollisionShape3D::Aabb(CollisionAabb3D {
         min_x,
@@ -69,19 +69,19 @@ mod collide_contact_manifold3d {
         let min_x = points
             .iter()
             .map(|point| point.x)
-            .fold(f32::INFINITY, f32::min);
+            .fold(f64::INFINITY, f64::min);
         let max_x = points
             .iter()
             .map(|point| point.x)
-            .fold(f32::NEG_INFINITY, f32::max);
+            .fold(f64::NEG_INFINITY, f64::max);
         let min_z = points
             .iter()
             .map(|point| point.z)
-            .fold(f32::INFINITY, f32::min);
+            .fold(f64::INFINITY, f64::min);
         let max_z = points
             .iter()
             .map(|point| point.z)
-            .fold(f32::NEG_INFINITY, f32::max);
+            .fold(f64::NEG_INFINITY, f64::max);
         assert!((max_x - min_x - 2.0).abs() < 5e-3);
         assert!((max_z - min_z - 2.0).abs() < 5e-3);
     }
@@ -150,19 +150,19 @@ mod collide_contact_manifold3d {
             true
         );
         assert_eq!(out.point_count, 1);
-        // D1 f32 bound (TS: 0.005)
+        // TS bound: 0.005
         assert!(
             (out.points[0].y - (-0.05)).abs() <= d1_single_evaluation_bound(-0.05, 0.005),
             "point.y: {}",
             out.points[0].y
         );
-        // D1 f32 bound (TS: 5e-13)
+        // TS bound: 5e-13
         assert!(
             (out.points[0].x - 0.0).abs() <= d1_single_evaluation_bound(0.0, 5e-13),
             "point.x: {}",
             out.points[0].x
         );
-        // D1 f32 bound (TS: 5e-13)
+        // TS bound: 5e-13
         assert!(
             (out.points[0].z - 0.0).abs() <= d1_single_evaluation_bound(0.0, 5e-13),
             "point.z: {}",
@@ -224,9 +224,9 @@ mod collide_contact_manifold3d {
             true
         );
         assert_eq!(out.point_count, 2);
-        let xs: Vec<f32> = (0..2).map(|i| out.points[i].x).collect();
-        let x_span = xs.iter().cloned().fold(f32::NEG_INFINITY, f32::max)
-            - xs.iter().cloned().fold(f32::INFINITY, f32::min);
+        let xs: Vec<f64> = (0..2).map(|i| out.points[i].x).collect();
+        let x_span = xs.iter().cloned().fold(f64::NEG_INFINITY, f64::max)
+            - xs.iter().cloned().fold(f64::INFINITY, f64::min);
         assert!(x_span > 1.0, "x span: {} should be > 1.0", x_span);
     }
 
@@ -331,7 +331,7 @@ mod collide_contact_manifold3d {
     fn handles_a_rotated_box_resting_on_a_floor() {
         let mut out = create_collision_contact_manifold3d();
         let floor = aabb3d(-10.0, -1.0, -10.0, 10.0, 0.0, 10.0);
-        let angle = std::f32::consts::PI / 8.0;
+        let angle = std::f64::consts::PI / 8.0;
         let crate_box = CollisionShape3D::Box(CollisionBox3D {
             x: 0.0,
             y: 0.95,
@@ -354,7 +354,7 @@ mod collide_contact_manifold3d {
             true
         );
         assert_eq!(out.point_count, 4);
-        // D1 f32 bound (TS: 5e-5)
+        // TS bound: 5e-5
         assert!(
             (out.normal_y - 1.0).abs() <= d1_single_evaluation_bound(1.0, 5e-5),
             "normal_y: {} vs 1.0",
@@ -418,7 +418,7 @@ mod collide_contact_manifold3d {
 
     #[test]
     fn keeps_a_translated_sphere_box_contact_in_world_space() {
-        let angle = -0.025_f32;
+        let angle = -0.025_f64;
         let sphere = CollisionShape3D::Sphere(CollisionSphere3D {
             x: 14.0,
             y: -3.0,

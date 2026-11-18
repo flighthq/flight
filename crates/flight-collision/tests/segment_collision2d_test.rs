@@ -2,7 +2,7 @@
 
 use flight_collision::contract::*;
 
-fn segment(x0: f32, y0: f32, x1: f32, y1: f32) -> CollisionSegment2D {
+fn segment(x0: f64, y0: f64, x1: f64, y1: f64) -> CollisionSegment2D {
     CollisionSegment2D { x0, y0, x1, y1 }
 }
 
@@ -247,7 +247,7 @@ mod test_segment_obb_collision2d {
             y: 0.0,
             half_w: 3.0,
             half_h: 3.0,
-            rotation: std::f32::consts::PI / 4.0,
+            rotation: std::f64::consts::PI / 4.0,
         };
         assert!(check(segment(-10.0, 0.0, 10.0, 0.0), &obb));
     }
@@ -259,7 +259,7 @@ mod test_segment_obb_collision2d {
             y: 0.0,
             half_w: 3.0,
             half_h: 3.0,
-            rotation: std::f32::consts::PI / 4.0,
+            rotation: std::f64::consts::PI / 4.0,
         };
         assert!(!check(segment(-10.0, 10.0, 10.0, 10.0), &obb));
     }

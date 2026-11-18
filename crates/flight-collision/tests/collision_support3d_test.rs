@@ -13,11 +13,11 @@ impl Xorshift {
         Self { state }
     }
 
-    fn next(&mut self) -> f32 {
+    fn next(&mut self) -> f64 {
         self.state ^= self.state.wrapping_shl(13);
         self.state ^= self.state >> 17;
         self.state ^= self.state.wrapping_shl(5);
-        (self.state % 100000) as f32 / 100000.0
+        (self.state % 100000) as f64 / 100000.0
     }
 }
 
@@ -110,7 +110,7 @@ mod get_collision_support3d {
             z: 0.0,
             radius: 2.0,
         });
-        let mut out = [0.0_f32; 3];
+        let mut out = [0.0_f64; 3];
         get_collision_support3d(&registry, "sphere").unwrap()(&sphere, 0.0, 0.0, 1.0, &mut out);
         assert_eq!(out, [0.0, 0.0, 2.0]);
         assert!(get_collision_support3d(&registry, "acme.unknown").is_none());
@@ -205,7 +205,7 @@ mod register_collision_support3d {
             z: 0.0,
             radius: 1.0,
         });
-        let mut out = [0.0_f32; 3];
+        let mut out = [0.0_f64; 3];
         get_collision_support3d(&registry, "acme.shape").unwrap()(&shape, 0.0, 0.0, 0.0, &mut out);
         assert_eq!(out[0], 2.0);
         assert_eq!(registry.supports.len(), 1);
@@ -225,7 +225,7 @@ mod support_collision_aabb3d {
             max_y: 2.0,
             max_z: 3.0,
         };
-        let mut out = [0.0_f32; 3];
+        let mut out = [0.0_f64; 3];
 
         support_collision_aabb3d(&aabb, 1.0, 1.0, 1.0, &mut out);
         assert_eq!(out, [1.0, 2.0, 3.0]);
@@ -255,7 +255,7 @@ mod support_collision_box3d {
             rotation_z: 0.0,
             rotation_w: 1.0,
         };
-        let mut out = [0.0_f32; 3];
+        let mut out = [0.0_f64; 3];
         support_collision_box3d(&b, 1.0, 1.0, 1.0, &mut out);
         assert!((out[0] - 1.0).abs() < 5e-13);
         assert!((out[1] - 2.0).abs() < 5e-13);
@@ -273,12 +273,12 @@ mod support_collision_box3d {
             half_z: 1.0,
             rotation_x: 0.0,
             rotation_y: 0.0,
-            rotation_z: (std::f32::consts::PI / 8.0).sin(),
-            rotation_w: (std::f32::consts::PI / 8.0).cos(),
+            rotation_z: (std::f64::consts::PI / 8.0).sin(),
+            rotation_w: (std::f64::consts::PI / 8.0).cos(),
         };
-        let mut out = [0.0_f32; 3];
+        let mut out = [0.0_f64; 3];
         support_collision_box3d(&b, 1.0, 0.0, 0.0, &mut out);
-        assert!((out[0] - std::f32::consts::SQRT_2).abs() < 1e-10);
+        assert!((out[0] - std::f64::consts::SQRT_2).abs() < 1e-10);
     }
 
     #[test]
@@ -295,7 +295,7 @@ mod support_collision_box3d {
             rotation_z: 0.0,
             rotation_w: 1.0,
         };
-        let mut out = [0.0_f32; 3];
+        let mut out = [0.0_f64; 3];
         support_collision_box3d(&b, 1.0, 1.0, 1.0, &mut out);
         assert!((out[0] - 11.0).abs() < 5e-13);
         assert!((out[1] - 21.0).abs() < 5e-13);
@@ -317,7 +317,7 @@ mod support_collision_capsule3d {
             z1: 0.0,
             radius: 0.5,
         };
-        let mut out = [0.0_f32; 3];
+        let mut out = [0.0_f64; 3];
         support_collision_capsule3d(&capsule, 0.0, 1.0, 0.0, &mut out);
         assert_eq!(out, [0.0, 4.5, 0.0]);
         support_collision_capsule3d(&capsule, 0.0, -1.0, 0.0, &mut out);
@@ -335,7 +335,7 @@ mod support_collision_capsule3d {
             z1: 1.0,
             radius: 2.0,
         };
-        let mut out = [0.0_f32; 3];
+        let mut out = [0.0_f64; 3];
         support_collision_capsule3d(&capsule, 1.0, 0.0, 0.0, &mut out);
         assert_eq!(out, [3.0, 1.0, 1.0]);
     }
@@ -351,7 +351,7 @@ mod support_collision_capsule3d {
             z1: 10.0,
             radius: 1.0,
         };
-        let mut out = [0.0_f32; 3];
+        let mut out = [0.0_f64; 3];
         support_collision_capsule3d(&capsule, 0.0, 0.0, 0.0, &mut out);
         assert!(out.iter().all(|v| v.is_finite()));
     }
@@ -363,7 +363,7 @@ mod support_collision_cone3d {
     #[test]
     fn returns_the_apex_when_the_direction_favours_it_and_a_rim_point_otherwise() {
         let cone = cone_inner();
-        let mut out = [0.0_f32; 3];
+        let mut out = [0.0_f64; 3];
 
         support_collision_cone3d(&cone, 0.0, 1.0, 0.0, &mut out);
         assert_eq!(out, [0.0, 3.0, 0.0]);
@@ -378,7 +378,7 @@ mod support_collision_cone3d {
         let cone = cone_inner();
         let shape = cone_shape();
         let mut random = Xorshift::new(4242);
-        let mut out = [0.0_f32; 3];
+        let mut out = [0.0_f64; 3];
         for i in 0..300 {
             support_collision_cone3d(
                 &cone,
@@ -416,7 +416,7 @@ mod support_collision_convex3d {
         let hull = CollisionConvex3D {
             points: vec![0.0, 0.0, 0.0, 5.0, 0.0, 0.0, 0.0, 5.0, 0.0, 0.0, 0.0, 5.0],
         };
-        let mut out = [0.0_f32; 3];
+        let mut out = [0.0_f64; 3];
         support_collision_convex3d(&hull, 1.0, 0.0, 0.0, &mut out);
         assert_eq!(out, [5.0, 0.0, 0.0]);
         support_collision_convex3d(&hull, 0.0, 0.0, 1.0, &mut out);
@@ -430,7 +430,7 @@ mod support_collision_cylinder3d {
     #[test]
     fn returns_a_flat_cap_rim_rather_than_a_rounded_offset() {
         let cyl = cylinder_inner();
-        let mut out = [0.0_f32; 3];
+        let mut out = [0.0_f64; 3];
         support_collision_cylinder3d(&cyl, 1.0, 1.0, 0.0, &mut out);
         assert!((out[1] - 2.0).abs() < 1e-10);
         assert!((out[0] - 1.0).abs() < 1e-10);
@@ -439,7 +439,7 @@ mod support_collision_cylinder3d {
     #[test]
     fn returns_the_cap_centre_when_the_direction_is_along_the_axis() {
         let cyl = cylinder_inner();
-        let mut out = [0.0_f32; 3];
+        let mut out = [0.0_f64; 3];
         support_collision_cylinder3d(&cyl, 0.0, 1.0, 0.0, &mut out);
         assert_eq!(out, [0.0, 2.0, 0.0]);
     }
@@ -456,7 +456,7 @@ mod support_collision_sphere3d {
             z: 3.0,
             radius: 2.0,
         };
-        let mut out = [0.0_f32; 3];
+        let mut out = [0.0_f64; 3];
         support_collision_sphere3d(&ball, 1.0, 0.0, 0.0, &mut out);
         assert_eq!(out, [3.0, 2.0, 3.0]);
     }
@@ -469,7 +469,7 @@ mod support_collision_sphere3d {
             z: 0.0,
             radius: 1.0,
         };
-        let mut out = [0.0_f32; 3];
+        let mut out = [0.0_f64; 3];
         support_collision_sphere3d(&ball, 100.0, 0.0, 0.0, &mut out);
         assert_eq!(out, [1.0, 0.0, 0.0]);
     }
@@ -482,7 +482,7 @@ mod support_collision_sphere3d {
             z: 6.0,
             radius: 1.0,
         };
-        let mut out = [0.0_f32; 3];
+        let mut out = [0.0_f64; 3];
         support_collision_sphere3d(&ball, 0.0, 0.0, 0.0, &mut out);
         assert_eq!(out, [4.0, 5.0, 6.0]);
     }
@@ -494,7 +494,7 @@ mod write_vertex_list_support3d {
     #[test]
     fn reads_a_flat_triple_list_and_returns_the_furthest_point() {
         let vertices = [0.0, 0.0, 0.0, 1.0, 1.0, 1.0, -1.0, -1.0, -1.0];
-        let mut out = [0.0_f32; 3];
+        let mut out = [0.0_f64; 3];
         write_vertex_list_support3d(&vertices, 3, 1.0, 1.0, 1.0, &mut out);
         assert_eq!(out, [1.0, 1.0, 1.0]);
         write_vertex_list_support3d(&vertices, 3, -1.0, -1.0, -1.0, &mut out);
@@ -504,7 +504,7 @@ mod write_vertex_list_support3d {
     #[test]
     fn returns_the_first_vertex_when_a_single_one_is_offered() {
         let vertices = [7.0, 8.0, 9.0];
-        let mut out = [0.0_f32; 3];
+        let mut out = [0.0_f64; 3];
         write_vertex_list_support3d(&vertices, 1, 1.0, 0.0, 0.0, &mut out);
         assert_eq!(out, [7.0, 8.0, 9.0]);
     }

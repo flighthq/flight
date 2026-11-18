@@ -6,14 +6,14 @@ use crate::contact_manifold2d::*;
 use crate::convex_vertices2d::*;
 use crate::types::*;
 
-const SWEEP_EPSILON: f32 = 1e-9;
+const SWEEP_EPSILON: f64 = 1e-9;
 
 /// One convex piece of a swept shape.
 struct SweepPiece {
-    x: f32,
-    y: f32,
-    radius: f32,
-    vertices: Option<Vec<f32>>,
+    x: f64,
+    y: f64,
+    radius: f64,
+    vertices: Option<Vec<f64>>,
 }
 
 pub fn create_collision_time_of_impact2d() -> CollisionTimeOfImpact2D {
@@ -30,12 +30,12 @@ pub fn initialize_collision_time_of_impact2d(out: &mut CollisionTimeOfImpact2D) 
     out.normal_y = 0.0;
 }
 
-fn canonical_zero(value: f32) -> f32 {
+fn canonical_zero(value: f64) -> f64 {
     return if value == 0.0 { 0.0 } else { value };
 }
 
-fn polygon_area_twice(vertices: &[f32]) -> f32 {
-    let mut area = 0.0_f32;
+fn polygon_area_twice(vertices: &[f64]) -> f64 {
+    let mut area = 0.0_f64;
     let count = vertices.len() / 2;
     for i in 0..count {
         let next = (i + 1) % count;
@@ -44,9 +44,9 @@ fn polygon_area_twice(vertices: &[f32]) -> f32 {
     return area;
 }
 
-fn project_vertices(vertices: &[f32], axis_x: f32, axis_y: f32) -> (f32, f32) {
-    let mut min = f32::INFINITY;
-    let mut max = f32::NEG_INFINITY;
+fn project_vertices(vertices: &[f64], axis_x: f64, axis_y: f64) -> (f64, f64) {
+    let mut min = f64::INFINITY;
+    let mut max = f64::NEG_INFINITY;
     let mut i = 0;
     while i < vertices.len() {
         let projection = vertices[i] * axis_x + vertices[i + 1] * axis_y;
@@ -62,14 +62,14 @@ fn project_vertices(vertices: &[f32], axis_x: f32, axis_y: f32) -> (f32, f32) {
 }
 
 fn ray_circle_fraction(
-    origin_x: f32,
-    origin_y: f32,
-    direction_x: f32,
-    direction_y: f32,
-    center_x: f32,
-    center_y: f32,
-    radius: f32,
-) -> f32 {
+    origin_x: f64,
+    origin_y: f64,
+    direction_x: f64,
+    direction_y: f64,
+    center_x: f64,
+    center_y: f64,
+    radius: f64,
+) -> f64 {
     let quadratic_a = direction_x * direction_x + direction_y * direction_y;
     if !(quadratic_a > 0.0) {
         return -1.0;
@@ -88,9 +88,9 @@ fn ray_circle_fraction(
 fn sweep_capsule_pair(
     shape_a: &CollisionShape2D,
     shape_b: &CollisionShape2D,
-    velocity_x: f32,
-    velocity_y: f32,
-    max_fraction: f32,
+    velocity_x: f64,
+    velocity_y: f64,
+    max_fraction: f64,
     out: &mut CollisionTimeOfImpact2D,
 ) -> bool {
     let pieces_a = write_capsule_pieces(shape_a);
@@ -99,7 +99,7 @@ fn sweep_capsule_pair(
         return false;
     }
     let mut hit = false;
-    let mut best_fraction = f32::INFINITY;
+    let mut best_fraction = f64::INFINITY;
     for piece_a in &pieces_a {
         for piece_b in &pieces_b {
             let mut piece_hit = create_collision_time_of_impact2d();
@@ -131,13 +131,13 @@ fn sweep_capsule_pair(
 fn sweep_circle_circle(
     a: &CollisionCircle2D,
     b: &CollisionCircle2D,
-    velocity_x: f32,
-    velocity_y: f32,
+    velocity_x: f64,
+    velocity_y: f64,
     out: &mut CollisionTimeOfImpact2D,
 ) -> bool {
-    let offset_x = a.x as f32 - b.x as f32;
-    let offset_y = a.y as f32 - b.y as f32;
-    let radius = a.radius as f32 + b.radius as f32;
+    let offset_x = a.x - b.x;
+    let offset_y = a.y - b.y;
+    let radius = a.radius + b.radius;
     let quadratic_a = velocity_x * velocity_x + velocity_y * velocity_y;
     if !(quadratic_a > 0.0) {
         return false;
@@ -166,22 +166,22 @@ fn sweep_circle_circle(
 
 fn sweep_circle_polygon(
     circle: &CollisionCircle2D,
-    vertices: &[f32],
-    velocity_x: f32,
-    velocity_y: f32,
+    vertices: &[f64],
+    velocity_x: f64,
+    velocity_y: f64,
     out: &mut CollisionTimeOfImpact2D,
 ) -> bool {
-    let center_x = circle.x as f32;
-    let center_y = circle.y as f32;
-    let radius = circle.radius as f32;
-    let mut best_fraction = f32::INFINITY;
-    let mut best_normal_x = 0.0_f32;
-    let mut best_normal_y = 0.0_f32;
+    let center_x = circle.x;
+    let center_y = circle.y;
+    let radius = circle.radius;
+    let mut best_fraction = f64::INFINITY;
+    let mut best_normal_x = 0.0_f64;
+    let mut best_normal_y = 0.0_f64;
     let count = vertices.len() / 2;
     let winding = if polygon_area_twice(vertices) >= 0.0 {
-        1.0_f32
+        1.0_f64
     } else {
-        -1.0_f32
+        -1.0_f64
     };
 
     for i in 0..count {
@@ -250,12 +250,12 @@ pub fn sweep_collision_shape2d(
     out: &mut CollisionTimeOfImpact2D,
     _registry: &CollisionRegistry2D,
     shape_a: &CollisionShape2D,
-    translation_ax: f32,
-    translation_ay: f32,
+    translation_ax: f64,
+    translation_ay: f64,
     shape_b: &CollisionShape2D,
-    translation_bx: f32,
-    translation_by: f32,
-    max_fraction: Option<f32>,
+    translation_bx: f64,
+    translation_by: f64,
+    max_fraction: Option<f64>,
 ) -> bool {
     initialize_collision_time_of_impact2d(out);
     let max_fraction = max_fraction.unwrap_or(1.0);
@@ -333,42 +333,41 @@ pub fn sweep_collision_shape2d(
     return true;
 }
 
-// flight-lint: allow(f64) canonical circle storage is f64; the capsule piece boundary converts through it
 fn sweep_piece_pair(
     a: &SweepPiece,
     b: &SweepPiece,
-    velocity_x: f32,
-    velocity_y: f32,
-    max_fraction: f32,
+    velocity_x: f64,
+    velocity_y: f64,
+    max_fraction: f64,
     out: &mut CollisionTimeOfImpact2D,
 ) -> bool {
     match (&a.vertices, &b.vertices) {
         (None, None) => {
             let circle_a = CollisionCircle2D {
-                x: a.x as f64,
-                y: a.y as f64,
-                radius: a.radius as f64,
+                x: a.x,
+                y: a.y,
+                radius: a.radius,
             };
             let circle_b = CollisionCircle2D {
-                x: b.x as f64,
-                y: b.y as f64,
-                radius: b.radius as f64,
+                x: b.x,
+                y: b.y,
+                radius: b.radius,
             };
             return sweep_circle_circle(&circle_a, &circle_b, velocity_x, velocity_y, out);
         }
         (None, Some(vertices_b)) => {
             let circle_a = CollisionCircle2D {
-                x: a.x as f64,
-                y: a.y as f64,
-                radius: a.radius as f64,
+                x: a.x,
+                y: a.y,
+                radius: a.radius,
             };
             return sweep_circle_polygon(&circle_a, vertices_b, velocity_x, velocity_y, out);
         }
         (Some(vertices_a), None) => {
             let circle_b = CollisionCircle2D {
-                x: b.x as f64,
-                y: b.y as f64,
-                radius: b.radius as f64,
+                x: b.x,
+                y: b.y,
+                radius: b.radius,
             };
             if !sweep_circle_polygon(&circle_b, vertices_a, -velocity_x, -velocity_y, out) {
                 return false;
@@ -392,15 +391,15 @@ fn sweep_piece_pair(
 
 #[allow(clippy::too_many_arguments)]
 fn sweep_polygon_axes(
-    axes: &[f32],
-    vertices_a: &[f32],
-    vertices_b: &[f32],
-    velocity_x: f32,
-    velocity_y: f32,
-    entry_out: &mut f32,
-    exit_out: &mut f32,
-    normal_out_x: &mut f32,
-    normal_out_y: &mut f32,
+    axes: &[f64],
+    vertices_a: &[f64],
+    vertices_b: &[f64],
+    velocity_x: f64,
+    velocity_y: f64,
+    entry_out: &mut f64,
+    exit_out: &mut f64,
+    normal_out_x: &mut f64,
+    normal_out_y: &mut f64,
 ) -> bool {
     let count = axes.len() / 2;
     for i in 0..count {
@@ -449,17 +448,17 @@ fn sweep_polygon_axes(
 }
 
 fn sweep_polygon_polygon(
-    vertices_a: &[f32],
-    vertices_b: &[f32],
-    velocity_x: f32,
-    velocity_y: f32,
-    max_fraction: f32,
+    vertices_a: &[f64],
+    vertices_b: &[f64],
+    velocity_x: f64,
+    velocity_y: f64,
+    max_fraction: f64,
     out: &mut CollisionTimeOfImpact2D,
 ) -> bool {
-    let mut entry = f32::NEG_INFINITY;
+    let mut entry = f64::NEG_INFINITY;
     let mut exit = max_fraction;
-    let mut normal_x = 0.0_f32;
-    let mut normal_y = 0.0_f32;
+    let mut normal_x = 0.0_f64;
+    let mut normal_y = 0.0_f64;
     if !sweep_polygon_axes(
         vertices_a,
         vertices_a,
@@ -502,9 +501,9 @@ fn write_capsule_pieces(shape: &CollisionShape2D) -> Vec<SweepPiece> {
     }
     if let CollisionShape2D::Circle(circle) = shape {
         return vec![SweepPiece {
-            x: circle.x as f32,
-            y: circle.y as f32,
-            radius: circle.radius as f32,
+            x: circle.x,
+            y: circle.y,
+            radius: circle.radius,
             vertices: None,
         }];
     }
@@ -560,13 +559,13 @@ fn write_capsule_shape_pieces(capsule: &CollisionCapsule2D) -> Vec<SweepPiece> {
 
 fn write_shape_a_support(
     shape: &CollisionShape2D,
-    translation_x: f32,
-    translation_y: f32,
+    translation_x: f64,
+    translation_y: f64,
     out: &mut CollisionTimeOfImpact2D,
 ) {
     if let CollisionShape2D::Circle(circle) = shape {
-        out.x = circle.x as f32 + translation_x - out.normal_x * circle.radius as f32;
-        out.y = circle.y as f32 + translation_y - out.normal_y * circle.radius as f32;
+        out.x = circle.x + translation_x - out.normal_x * circle.radius;
+        out.y = circle.y + translation_y - out.normal_y * circle.radius;
         return;
     }
     if let CollisionShape2D::Capsule(capsule) = shape {
@@ -584,7 +583,7 @@ fn write_shape_a_support(
     let Some(vertices) = write_shape_vertices(shape) else {
         return;
     };
-    let mut best = f32::NEG_INFINITY;
+    let mut best = f64::NEG_INFINITY;
     let mut i = 0;
     while i < vertices.len() {
         let projection = -out.normal_x * vertices[i] - out.normal_y * vertices[i + 1];
@@ -597,8 +596,8 @@ fn write_shape_a_support(
     // impact into its midpoint instead of an arbitrary corner (a fictitious lever arm).
     let epsilon = 1e-9 * if best.abs() > 1.0 { best.abs() } else { 1.0 };
     let mut count = 0_u32;
-    let mut x = 0.0_f32;
-    let mut y = 0.0_f32;
+    let mut x = 0.0_f64;
+    let mut y = 0.0_f64;
     let mut index = 0;
     while index < vertices.len() {
         let projection = -out.normal_x * vertices[index] - out.normal_y * vertices[index + 1];
@@ -612,25 +611,25 @@ fn write_shape_a_support(
         index += 2;
     }
     if count > 0 {
-        out.x = x / count as f32 + translation_x;
-        out.y = y / count as f32 + translation_y;
+        out.x = x / count as f64 + translation_x;
+        out.y = y / count as f64 + translation_y;
     }
 }
 
-fn write_shape_vertices(shape: &CollisionShape2D) -> Option<Vec<f32>> {
+fn write_shape_vertices(shape: &CollisionShape2D) -> Option<Vec<f64>> {
     match shape {
         CollisionShape2D::Aabb(aabb) => {
-            let mut out = [0.0_f32; 8];
+            let mut out = [0.0_f64; 8];
             write_aabb_vertices(aabb, &mut out);
             return Some(out.to_vec());
         }
         CollisionShape2D::Obb(obb) => {
-            let mut out = [0.0_f32; 8];
+            let mut out = [0.0_f64; 8];
             write_obb_vertices(obb, &mut out);
             return Some(out.to_vec());
         }
         CollisionShape2D::Polygon(polygon) => {
-            return Some(polygon.points.iter().map(|value| *value as f32).collect());
+            return Some(polygon.points.iter().copied().collect());
         }
         _ => return None,
     }

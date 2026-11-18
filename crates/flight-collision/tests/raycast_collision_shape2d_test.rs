@@ -190,7 +190,7 @@ mod raycast_collision_shape2d {
             y: 0.0,
             half_w: 1.0,
             half_h: 0.5,
-            rotation: std::f32::consts::PI / 4.0,
+            rotation: std::f64::consts::PI / 4.0,
         });
         let mut out = create_collision_raycast_hit2d();
         assert!(raycast_collision_shape2d(
@@ -328,11 +328,11 @@ mod raycast_collision_shape2d {
         // It shares no algebra with the raycast -- a different function, a different derivation
         // -- so agreement is evidence.
         let mut state: u32 = 20260821;
-        let mut next = || -> f32 {
+        let mut next = || -> f64 {
             state ^= state << 13;
             state ^= state >> 17;
             state ^= state << 5;
-            (state % 100000) as f32 / 100000.0
+            (state % 100000) as f64 / 100000.0
         };
 
         let mut out = create_collision_raycast_hit2d();
@@ -365,16 +365,16 @@ mod raycast_collision_shape2d {
             let found = raycast_collision_shape2d(
                 &mut out,
                 &capsule,
-                origin_x as f64,
-                origin_y as f64,
-                direction_x as f64,
-                direction_y as f64,
+                origin_x,
+                origin_y,
+                direction_x,
+                direction_y,
                 Some(1.0),
             );
 
-            let mut marched = -1.0_f32;
+            let mut marched = -1.0_f64;
             for sample in 0..=samples {
-                let fraction = sample as f32 / samples as f32;
+                let fraction = sample as f64 / samples as f64;
                 if get_collision_shape_contains_point2d(
                     &capsule,
                     origin_x + direction_x * fraction,
@@ -390,15 +390,15 @@ mod raycast_collision_shape2d {
                 continue;
             }
             compared += 1;
-            worst_fraction = worst_fraction.max((out.fraction - marched as f64).abs());
+            worst_fraction = worst_fraction.max((out.fraction - marched).abs());
 
             // Stepping OUT along the reported normal must leave the capsule and stepping IN
             // must stay inside, which pins the normal's direction without recomputing it.
             assert!(
                 !get_collision_shape_contains_point2d(
                     &capsule,
-                    (out.x + out.normal_x * 1e-4) as f32,
-                    (out.y + out.normal_y * 1e-4) as f32,
+                    (out.x + out.normal_x * 1e-4) as f64,
+                    (out.y + out.normal_y * 1e-4) as f64,
                 ),
                 "trial {} normal points outward",
                 trial
@@ -406,8 +406,8 @@ mod raycast_collision_shape2d {
             assert!(
                 get_collision_shape_contains_point2d(
                     &capsule,
-                    (out.x - out.normal_x * 1e-4) as f32,
-                    (out.y - out.normal_y * 1e-4) as f32,
+                    (out.x - out.normal_x * 1e-4) as f64,
+                    (out.y - out.normal_y * 1e-4) as f64,
                 ),
                 "trial {} normal points inward",
                 trial

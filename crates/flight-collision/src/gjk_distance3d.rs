@@ -3,18 +3,14 @@
 use crate::collision_support3d::*;
 use crate::types::*;
 
-// flight-lint: allow(f64) measured crossing-capsule witness: f32 reports pointAX 0.00003552442 instead of source six-digit zero
 const DISTANCE_TOLERANCE: f64 = 1e-12;
-// flight-lint: allow(f64) the measured private distance simplex keeps the source 1e-12 touching boundary
 const DISTANCE_EPSILON: f64 = 1e-12;
 const MAX_DISTANCE_ITERATIONS: usize = 32;
 
 const TETRAHEDRON_FACES: [[usize; 4]; 4] = [[0, 1, 2, 3], [0, 2, 3, 1], [0, 3, 1, 2], [1, 3, 2, 0]];
 
-// flight-lint: allow(f64) private simplex coordinates preserve the measured crossing-capsule interior witness; public shapes/results remain f32
 type DistanceVector3 = [f64; 3];
 
-// flight-lint: allow(f64) private simplex coordinates and barycentric weights preserve the measured crossing-capsule interior witness
 struct CollisionDistanceSimplex3D {
     simplex: [DistanceVector3; 4],
     simplex_a: [DistanceVector3; 4],
@@ -30,7 +26,6 @@ pub fn create_collision_distance3d() -> CollisionDistance3D {
     return out;
 }
 
-// flight-lint: allow(f64) constructs only the measured private distance-simplex scratch
 fn create_collision_distance_simplex3d() -> CollisionDistanceSimplex3D {
     CollisionDistanceSimplex3D {
         simplex: [[0.0; 3]; 4],
@@ -56,7 +51,6 @@ pub fn initialize_collision_distance3d(out: &mut CollisionDistance3D) {
     out.overlapping = false;
 }
 
-// flight-lint: allow(f64) compacts the measured private simplex, paired supports, and barycentric ordering together
 fn compact_collision_distance_simplex3d(simplex: &mut CollisionDistanceSimplex3D) {
     let mut compact = [[0.0_f64; 3]; 3];
     let mut compact_a = [[0.0_f64; 3]; 3];
@@ -75,7 +69,6 @@ fn compact_collision_distance_simplex3d(simplex: &mut CollisionDistanceSimplex3D
     }
 }
 
-// flight-lint: allow(f64) duplicate detection stays in the measured private distance-simplex domain
 fn contains_collision_distance_simplex_point3d(
     simplex: &CollisionDistanceSimplex3D,
     count: usize,
@@ -91,7 +84,6 @@ fn contains_collision_distance_simplex_point3d(
     return false;
 }
 
-// flight-lint: allow(f64) face-side predicates stay in the measured private distance-simplex domain
 fn is_collision_distance_origin_outside_face3d(
     simplex: &CollisionDistanceSimplex3D,
     i0: usize,
@@ -116,7 +108,6 @@ fn is_collision_distance_origin_outside_face3d(
     return toward_origin * toward_opposite < 0.0;
 }
 
-// flight-lint: allow(f64) segment projection preserves the measured private distance-simplex reduction domain
 fn reduce_collision_distance_segment3d(
     simplex: &mut CollisionDistanceSimplex3D,
     out: &mut DistanceVector3,
@@ -144,7 +135,6 @@ fn reduce_collision_distance_segment3d(
     return write_collision_distance_reduction3d(simplex, 2, 0, 1, 0, 1.0 - t, t, 0.0);
 }
 
-// flight-lint: allow(f64) dispatches only the measured private distance-simplex reductions
 fn reduce_collision_distance_simplex3d(
     simplex: &mut CollisionDistanceSimplex3D,
     count: usize,
@@ -163,7 +153,6 @@ fn reduce_collision_distance_simplex3d(
     return reduce_collision_distance_tetrahedron3d(simplex, out);
 }
 
-// flight-lint: allow(f64) tetrahedron face selection preserves the measured private closest-point predicates and barycentric weights
 fn reduce_collision_distance_tetrahedron3d(
     simplex: &mut CollisionDistanceSimplex3D,
     out: &mut DistanceVector3,
@@ -207,7 +196,6 @@ fn reduce_collision_distance_tetrahedron3d(
     return simplex.reduced_count;
 }
 
-// flight-lint: allow(f64) triangle Voronoi reduction preserves the measured private barycentric witness domain
 fn reduce_collision_distance_triangle3d(
     simplex: &mut CollisionDistanceSimplex3D,
     i0: usize,
@@ -287,21 +275,20 @@ fn reduce_collision_distance_triangle3d(
     return write_collision_distance_reduction3d(simplex, 3, i0, i1, i2, 1.0 - v - w, v, w);
 }
 
-// flight-lint: allow(f64) measured crossing-capsule failure requires private simplex arithmetic before narrowing final public f32 results
 // flight-lint: allow(conform-params) D5/D9: caller-owned output stays first and registry is explicit
 pub fn write_collision_distance3d(
     out: &mut CollisionDistance3D,
     registry: &CollisionRegistry3D,
     a: &CollisionShape3D,
     b: &CollisionShape3D,
-    offset_x: Option<f32>,
-    offset_y: Option<f32>,
-    offset_z: Option<f32>,
+    offset_x: Option<f64>,
+    offset_y: Option<f64>,
+    offset_z: Option<f64>,
 ) -> bool {
     initialize_collision_distance3d(out);
-    let offset_x = offset_x.unwrap_or(0.0) as f64;
-    let offset_y = offset_y.unwrap_or(0.0) as f64;
-    let offset_z = offset_z.unwrap_or(0.0) as f64;
+    let offset_x = offset_x.unwrap_or(0.0);
+    let offset_y = offset_y.unwrap_or(0.0);
+    let offset_z = offset_z.unwrap_or(0.0);
     let Some(support_a) = get_collision_support3d(registry, get_collision_shape3d_kind_key(a))
     else {
         return false;
@@ -311,8 +298,8 @@ pub fn write_collision_distance3d(
         return false;
     };
 
-    let mut scratch_support_a = [0.0_f32; 3];
-    let mut scratch_support_b = [0.0_f32; 3];
+    let mut scratch_support_a = [0.0_f64; 3];
+    let mut scratch_support_b = [0.0_f64; 3];
     support_a(a, 1.0, 0.0, 0.0, &mut scratch_support_a);
     support_b(b, -1.0, 0.0, 0.0, &mut scratch_support_b);
     let mut simplex = create_collision_distance_simplex3d();
@@ -340,21 +327,15 @@ pub fn write_collision_distance3d(
 
         support_a(
             a,
-            -closest_x as f32,
-            -closest_y as f32,
-            -closest_z as f32,
+            -closest_x,
+            -closest_y,
+            -closest_z,
             &mut scratch_support_a,
         );
-        support_b(
-            b,
-            closest_x as f32,
-            closest_y as f32,
-            closest_z as f32,
-            &mut scratch_support_b,
-        );
-        let next_x = scratch_support_a[0] as f64 + offset_x - scratch_support_b[0] as f64;
-        let next_y = scratch_support_a[1] as f64 + offset_y - scratch_support_b[1] as f64;
-        let next_z = scratch_support_a[2] as f64 + offset_z - scratch_support_b[2] as f64;
+        support_b(b, closest_x, closest_y, closest_z, &mut scratch_support_b);
+        let next_x = scratch_support_a[0] + offset_x - scratch_support_b[0];
+        let next_y = scratch_support_a[1] + offset_y - scratch_support_b[1];
+        let next_z = scratch_support_a[2] + offset_z - scratch_support_b[2];
         let progress =
             closest_length_squared - (next_x * closest_x + next_y * closest_y + next_z * closest_z);
         if progress <= DISTANCE_TOLERANCE * closest_length_squared {
@@ -391,15 +372,14 @@ pub fn write_collision_distance3d(
         out.overlapping = true;
         return false;
     }
-    out.distance = distance as f32;
-    out.direction_x = (closest_x / distance) as f32;
-    out.direction_y = (closest_y / distance) as f32;
-    out.direction_z = (closest_z / distance) as f32;
+    out.distance = distance;
+    out.direction_x = closest_x / distance;
+    out.direction_y = closest_y / distance;
+    out.direction_z = closest_z / distance;
     write_collision_distance_witness_points3d(&simplex, out);
     return true;
 }
 
-// flight-lint: allow(f64) records the measured private simplex reduction indices and barycentric weights
 #[allow(clippy::too_many_arguments)]
 fn write_collision_distance_reduction3d(
     simplex: &mut CollisionDistanceSimplex3D,
@@ -417,35 +397,29 @@ fn write_collision_distance_reduction3d(
     return count;
 }
 
-// flight-lint: allow(f64) promotes canonical f32 supports losslessly into the measured private simplex scratch
 #[allow(clippy::too_many_arguments)]
 fn write_collision_distance_simplex_vertex3d(
     simplex: &mut CollisionDistanceSimplex3D,
     slot: usize,
-    support_a: [f32; 3],
-    support_b: [f32; 3],
+    support_a: [f64; 3],
+    support_b: [f64; 3],
     offset_x: f64,
     offset_y: f64,
     offset_z: f64,
 ) {
     simplex.simplex_a[slot] = [
-        support_a[0] as f64 + offset_x,
-        support_a[1] as f64 + offset_y,
-        support_a[2] as f64 + offset_z,
+        support_a[0] + offset_x,
+        support_a[1] + offset_y,
+        support_a[2] + offset_z,
     ];
-    simplex.simplex_b[slot] = [
-        support_b[0] as f64,
-        support_b[1] as f64,
-        support_b[2] as f64,
-    ];
+    simplex.simplex_b[slot] = [support_b[0], support_b[1], support_b[2]];
     simplex.simplex[slot] = [
-        simplex.simplex_a[slot][0] - support_b[0] as f64,
-        simplex.simplex_a[slot][1] - support_b[1] as f64,
-        simplex.simplex_a[slot][2] - support_b[2] as f64,
+        simplex.simplex_a[slot][0] - support_b[0],
+        simplex.simplex_a[slot][1] - support_b[1],
+        simplex.simplex_a[slot][2] - support_b[2],
     ];
 }
 
-// flight-lint: allow(f64) writes an edge-owned result in the measured private simplex reduction domain
 #[allow(clippy::too_many_arguments)]
 fn write_collision_distance_triangle_edge3d(
     simplex: &mut CollisionDistanceSimplex3D,
@@ -477,7 +451,6 @@ fn write_collision_distance_triangle_edge3d(
     );
 }
 
-// flight-lint: allow(f64) writes a vertex-owned result in the measured private simplex reduction domain
 fn write_collision_distance_triangle_vertex3d(
     simplex: &mut CollisionDistanceSimplex3D,
     x: f64,
@@ -490,7 +463,6 @@ fn write_collision_distance_triangle_vertex3d(
     return write_collision_distance_reduction3d(simplex, 1, keep, 0, 0, 1.0, 0.0, 0.0);
 }
 
-// flight-lint: allow(f64) accumulates measured private barycentric witnesses before narrowing final public f32 fields
 fn write_collision_distance_witness_points3d(
     simplex: &CollisionDistanceSimplex3D,
     out: &mut CollisionDistance3D,
@@ -510,10 +482,10 @@ fn write_collision_distance_witness_points3d(
         point_b_y += simplex.simplex_b[slot][1] * weight;
         point_b_z += simplex.simplex_b[slot][2] * weight;
     }
-    out.point_a_x = point_a_x as f32;
-    out.point_a_y = point_a_y as f32;
-    out.point_a_z = point_a_z as f32;
-    out.point_b_x = point_b_x as f32;
-    out.point_b_y = point_b_y as f32;
-    out.point_b_z = point_b_z as f32;
+    out.point_a_x = point_a_x;
+    out.point_a_y = point_a_y;
+    out.point_a_z = point_a_z;
+    out.point_b_x = point_b_x;
+    out.point_b_y = point_b_y;
+    out.point_b_z = point_b_z;
 }

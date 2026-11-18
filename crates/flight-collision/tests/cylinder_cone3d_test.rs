@@ -12,11 +12,11 @@ impl Xorshift {
         Self { state }
     }
 
-    fn next(&mut self) -> f32 {
+    fn next(&mut self) -> f64 {
         self.state ^= self.state.wrapping_shl(13);
         self.state ^= self.state >> 17;
         self.state ^= self.state.wrapping_shl(5);
-        (self.state % 100000) as f32 / 100000.0
+        (self.state % 100000) as f64 / 100000.0
     }
 }
 
@@ -45,25 +45,25 @@ fn cone_shape() -> CollisionShape3D {
     })
 }
 
-fn d1_single_evaluation_bound(expected: f32, ts_bound: f32) -> f32 {
-    ts_bound.max(4.0 * f32::EPSILON * expected.abs().max(1.0))
+fn d1_single_evaluation_bound(expected: f64, ts_bound: f64) -> f64 {
+    ts_bound.max(4.0 * f64::EPSILON * expected.abs().max(1.0))
 }
 
 /// Walk the ray in small steps and report the first parameter at which the point is inside.
 /// Slow and obvious; shares no code with the analytic raycast.
 fn find_first_entry_by_scanning(
     shape: &CollisionShape3D,
-    ox: f32,
-    oy: f32,
-    oz: f32,
-    dx: f32,
-    dy: f32,
-    dz: f32,
-    limit: f32,
-) -> f32 {
+    ox: f64,
+    oy: f64,
+    oz: f64,
+    dx: f64,
+    dy: f64,
+    dz: f64,
+    limit: f64,
+) -> f64 {
     let steps = 20000;
     for i in 0..=steps {
-        let t = (i as f32 / steps as f32) * limit;
+        let t = (i as f64 / steps as f64) * limit;
         if get_collision_shape_contains_point3d(shape, ox + dx * t, oy + dy * t, oz + dz * t) {
             return t;
         }
@@ -221,9 +221,9 @@ mod raycast_collision_shape3d_for_cylinder_and_cone {
             1.0,
             0.0,
             0.0,
-            Some(f32::INFINITY)
+            Some(f64::INFINITY)
         ));
-        // D1 f32 bound (TS: 5e-11)
+        // TS bound: 5e-11
         assert!((hit.fraction - 4.0).abs() <= d1_single_evaluation_bound(4.0, 5e-11));
         assert_eq!(hit.normal_x, -1.0);
         assert_eq!(hit.normal_y, 0.0);
@@ -243,9 +243,9 @@ mod raycast_collision_shape3d_for_cylinder_and_cone {
             0.0,
             -1.0,
             0.0,
-            Some(f32::INFINITY)
+            Some(f64::INFINITY)
         ));
-        // D1 f32 bound (TS: 5e-11)
+        // TS bound: 5e-11
         assert!((hit.fraction - 4.0).abs() <= d1_single_evaluation_bound(4.0, 5e-11));
         assert_eq!(hit.normal_x, 0.0);
         assert_eq!(hit.normal_y, 1.0);
@@ -265,7 +265,7 @@ mod raycast_collision_shape3d_for_cylinder_and_cone {
             1.0,
             0.0,
             0.0,
-            Some(f32::INFINITY)
+            Some(f64::INFINITY)
         ));
     }
 
@@ -282,10 +282,10 @@ mod raycast_collision_shape3d_for_cylinder_and_cone {
             1.0,
             0.0,
             0.0,
-            Some(f32::INFINITY)
+            Some(f64::INFINITY)
         ));
         let expected_fraction = 5.0 - 0.75;
-        // D1 f32 bound (TS: 5e-11)
+        // TS bound: 5e-11
         assert!(
             (hit.fraction - expected_fraction).abs()
                 <= d1_single_evaluation_bound(expected_fraction, 5e-11)
@@ -295,7 +295,7 @@ mod raycast_collision_shape3d_for_cylinder_and_cone {
             + hit.normal_y * hit.normal_y
             + hit.normal_z * hit.normal_z)
             .sqrt();
-        // D1 f32 bound (TS: 5e-11)
+        // TS bound: 5e-11
         assert!(
             (len - 1.0).abs() <= d1_single_evaluation_bound(1.0, 5e-11),
             "normal=({}, {}, {}), length={}, error={}",
@@ -320,7 +320,7 @@ mod raycast_collision_shape3d_for_cylinder_and_cone {
             1.0,
             0.0,
             0.0,
-            Some(f32::INFINITY)
+            Some(f64::INFINITY)
         ));
     }
 
@@ -337,9 +337,9 @@ mod raycast_collision_shape3d_for_cylinder_and_cone {
             0.0,
             1.0,
             0.0,
-            Some(f32::INFINITY)
+            Some(f64::INFINITY)
         ));
-        // D1 f32 bound (TS: 5e-11)
+        // TS bound: 5e-11
         assert!((hit.fraction - 4.0).abs() <= d1_single_evaluation_bound(4.0, 5e-11));
         assert_eq!(hit.normal_x, 0.0);
         assert_eq!(hit.normal_y, -1.0);

@@ -2,11 +2,11 @@
 
 use flight_collision::contract::*;
 
-fn sphere(x: f32, y: f32, z: f32, radius: f32) -> CollisionShape3D {
+fn sphere(x: f64, y: f64, z: f64, radius: f64) -> CollisionShape3D {
     CollisionShape3D::Sphere(CollisionSphere3D { x, y, z, radius })
 }
 
-fn aabb(min_x: f32, min_y: f32, min_z: f32, size: f32) -> CollisionShape3D {
+fn aabb(min_x: f64, min_y: f64, min_z: f64, size: f64) -> CollisionShape3D {
     CollisionShape3D::Aabb(CollisionAabb3D {
         min_x,
         min_y,
@@ -17,7 +17,7 @@ fn aabb(min_x: f32, min_y: f32, min_z: f32, size: f32) -> CollisionShape3D {
     })
 }
 
-fn translate_shape(shape: &CollisionShape3D, dx: f32, dy: f32, dz: f32) -> CollisionShape3D {
+fn translate_shape(shape: &CollisionShape3D, dx: f64, dy: f64, dz: f64) -> CollisionShape3D {
     match shape {
         CollisionShape3D::Sphere(s) => CollisionShape3D::Sphere(CollisionSphere3D {
             x: s.x + dx,
@@ -67,7 +67,7 @@ fn expect_minimum_translation_separates(
     a: &CollisionShape3D,
     b: &CollisionShape3D,
     manifold: &CollisionManifold3D,
-    margin: f32,
+    margin: f64,
 ) {
     let clear_by = manifold.depth + margin;
     let clear = translate_shape(
@@ -220,7 +220,7 @@ mod test_collision_support3d {
     fn writes_a_minimum_translation_that_actually_separates_each_overlapping_pair() {
         let flat = 1e-6;
         let curved = 1e-4;
-        let cases: Vec<(CollisionShape3D, CollisionShape3D, f32)> = vec![
+        let cases: Vec<(CollisionShape3D, CollisionShape3D, f64)> = vec![
             (
                 sphere(0.0, 0.0, 0.0, 1.0),
                 sphere(1.5, 0.0, 0.0, 1.0),
@@ -309,7 +309,7 @@ mod test_collision_support3d {
     #[test]
     fn handles_a_box_rotated_about_z_using_its_oriented_corners() {
         let mut out = create_collision_manifold3d();
-        let half_turn = std::f32::consts::FRAC_1_SQRT_2;
+        let half_turn = std::f64::consts::FRAC_1_SQRT_2;
         let rotated = CollisionShape3D::Box(CollisionBox3D {
             x: 0.0,
             y: 0.0,
@@ -319,8 +319,8 @@ mod test_collision_support3d {
             half_z: 0.5,
             rotation_x: 0.0,
             rotation_y: 0.0,
-            rotation_z: (std::f32::consts::PI / 8.0).sin(),
-            rotation_w: (std::f32::consts::PI / 8.0).cos(),
+            rotation_z: (std::f64::consts::PI / 8.0).sin(),
+            rotation_w: (std::f64::consts::PI / 8.0).cos(),
         });
         assert!(test_collision_support3d(
             &crate::collision_registry3d_with_supports(),

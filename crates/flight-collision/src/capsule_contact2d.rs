@@ -5,9 +5,9 @@ use crate::contact_manifold2d::*;
 use crate::convex_vertices2d::*;
 use crate::types::*;
 
-const EPSILON: f32 = 1e-9;
-const CONTACT_SPAN_EPSILON: f32 = 1e-6;
-const PARALLEL_EPSILON: f32 = 1e-3;
+const EPSILON: f64 = 1e-9;
+const CONTACT_SPAN_EPSILON: f64 = 1e-6;
+const PARALLEL_EPSILON: f64 = 1e-3;
 const SOURCE_POLYGON_FACE: u8 = 0;
 const SOURCE_CAPSULE_SIDE: u8 = 1;
 const SOURCE_VERTEX: u8 = 2;
@@ -15,9 +15,9 @@ const SOURCE_VERTEX: u8 = 2;
 fn capsule_capsule_separation(
     a: &CollisionCapsule2D,
     b: &CollisionCapsule2D,
-    normal_x: f32,
-    normal_y: f32,
-) -> f32 {
+    normal_x: f64,
+    normal_y: f64,
+) -> f64 {
     let minimum_a =
         (a.x0 * normal_x + a.y0 * normal_y).min(a.x1 * normal_x + a.y1 * normal_y) - a.radius;
     let maximum_b =
@@ -27,7 +27,7 @@ fn capsule_capsule_separation(
 
 fn capsule_polygon_contact(
     a: &CollisionCapsule2D,
-    vertices: &[f32],
+    vertices: &[f64],
     count: usize,
     out: &mut CollisionContactManifold2D,
 ) -> bool {
@@ -36,9 +36,9 @@ fn capsule_polygon_contact(
         return false;
     }
 
-    let mut best_separation = f32::NEG_INFINITY;
-    let mut best_normal_x = 0.0_f32;
-    let mut best_normal_y = 0.0_f32;
+    let mut best_separation = f64::NEG_INFINITY;
+    let mut best_normal_x = 0.0_f64;
+    let mut best_normal_y = 0.0_f64;
     let mut best_face: i64 = -1;
     let mut best_source = SOURCE_VERTEX;
     let mut best_index: i64 = 0;
@@ -107,7 +107,7 @@ fn capsule_polygon_contact(
         }
     }
 
-    if best_separation >= 0.0 || best_separation == f32::NEG_INFINITY {
+    if best_separation >= 0.0 || best_separation == f64::NEG_INFINITY {
         return false;
     }
     let depth = -best_separation;
@@ -163,14 +163,14 @@ fn capsule_polygon_contact(
 
 fn capsule_separation(
     a: &CollisionCapsule2D,
-    vertices: &[f32],
+    vertices: &[f64],
     count: usize,
-    normal_x: f32,
-    normal_y: f32,
-) -> f32 {
+    normal_x: f64,
+    normal_y: f64,
+) -> f64 {
     let axis_minimum =
         (a.x0 * normal_x + a.y0 * normal_y).min(a.x1 * normal_x + a.y1 * normal_y) - a.radius;
-    let mut polygon_maximum = f32::NEG_INFINITY;
+    let mut polygon_maximum = f64::NEG_INFINITY;
     for vertex in 0..count {
         let projection = vertices[vertex * 2] * normal_x + vertices[vertex * 2 + 1] * normal_y;
         if projection > polygon_maximum {
@@ -180,7 +180,7 @@ fn capsule_separation(
     return axis_minimum - polygon_maximum;
 }
 
-fn clamp01(value: f32) -> f32 {
+fn clamp01(value: f64) -> f64 {
     if value < 0.0 {
         return 0.0;
     }
@@ -196,7 +196,7 @@ pub(crate) fn collide_capsule_aabb(
     out: &mut CollisionContactManifold2D,
 ) -> bool {
     clear_collision_contact_manifold2d(out);
-    let mut vertices = [0.0_f32; 8];
+    let mut vertices = [0.0_f64; 8];
     write_aabb_vertices(aabb, &mut vertices);
     return capsule_polygon_contact(capsule, &vertices, 4, out);
 }
@@ -219,9 +219,9 @@ pub(crate) fn collide_capsule_capsule(
         return false;
     }
 
-    let mut best_separation = f32::NEG_INFINITY;
-    let mut best_normal_x = 0.0_f32;
-    let mut best_normal_y = 0.0_f32;
+    let mut best_separation = f64::NEG_INFINITY;
+    let mut best_normal_x = 0.0_f64;
+    let mut best_normal_y = 0.0_f64;
 
     let (perp_ax, perp_ay) = write_perpendicular(a.x1 - a.x0, a.y1 - a.y0);
     let (perp_bx, perp_by) = write_perpendicular(b.x1 - b.x0, b.y1 - b.y0);
@@ -259,7 +259,7 @@ pub(crate) fn collide_capsule_capsule(
         }
     }
 
-    if best_separation >= 0.0 || best_separation == f32::NEG_INFINITY {
+    if best_separation >= 0.0 || best_separation == f64::NEG_INFINITY {
         return false;
     }
     let depth = -best_separation;
@@ -325,7 +325,7 @@ pub(crate) fn collide_capsule_obb(
     out: &mut CollisionContactManifold2D,
 ) -> bool {
     clear_collision_contact_manifold2d(out);
-    let mut vertices = [0.0_f32; 8];
+    let mut vertices = [0.0_f64; 8];
     write_obb_vertices(obb, &mut vertices);
     return capsule_polygon_contact(capsule, &vertices, 4, out);
 }
@@ -344,7 +344,7 @@ pub(crate) fn collide_capsule_polygon(
     out: &mut CollisionContactManifold2D,
 ) -> bool {
     clear_collision_contact_manifold2d(out);
-    let vertices = polygon_vertices_f32(poly);
+    let vertices = polygon_vertices(poly);
     let count = vertices.len() / 2;
     return capsule_polygon_contact(capsule, &vertices, count, out);
 }
@@ -363,9 +363,9 @@ pub(crate) fn collide_circle_capsule(
     out: &mut CollisionContactManifold2D,
 ) -> bool {
     clear_collision_contact_manifold2d(out);
-    let circle_x = circle.x as f32;
-    let circle_y = circle.y as f32;
-    let circle_radius = circle.radius as f32;
+    let circle_x = circle.x;
+    let circle_y = circle.y;
+    let circle_radius = circle.radius;
     let (closest_x, closest_y) = write_closest_point_on_segment(
         capsule.x0, capsule.y0, capsule.x1, capsule.y1, circle_x, circle_y,
     );
@@ -406,12 +406,12 @@ pub fn collide_circle_capsule_contact_manifold2d(
 }
 
 fn is_outward_from_polygon(
-    vertices: &[f32],
+    vertices: &[f64],
     count: usize,
-    x: f32,
-    y: f32,
-    normal_x: f32,
-    normal_y: f32,
+    x: f64,
+    y: f64,
+    normal_x: f64,
+    normal_y: f64,
 ) -> bool {
     for vertex in 0..count {
         let projection =
@@ -423,22 +423,22 @@ fn is_outward_from_polygon(
     return true;
 }
 
-fn polygon_vertices_f32(poly: &CollisionPolygon2D) -> Vec<f32> {
-    return poly.points.iter().map(|value| *value as f32).collect();
+fn polygon_vertices(poly: &CollisionPolygon2D) -> Vec<f64> {
+    return poly.points.iter().copied().collect();
 }
 
 fn write_closest_point_on_segment(
-    x0: f32,
-    y0: f32,
-    x1: f32,
-    y1: f32,
-    px: f32,
-    py: f32,
-) -> (f32, f32) {
+    x0: f64,
+    y0: f64,
+    x1: f64,
+    y1: f64,
+    px: f64,
+    py: f64,
+) -> (f64, f64) {
     let dx = x1 - x0;
     let dy = y1 - y0;
     let length_squared = dx * dx + dy * dy;
-    let mut t = 0.0_f32;
+    let mut t = 0.0_f64;
     if length_squared > 0.0 {
         t = ((px - x0) * dx + (py - y0) * dy) / length_squared;
         t = if t < 0.0 {
@@ -453,15 +453,15 @@ fn write_closest_point_on_segment(
 }
 
 fn write_closest_points_between_segments(
-    ax0: f32,
-    ay0: f32,
-    ax1: f32,
-    ay1: f32,
-    bx0: f32,
-    by0: f32,
-    bx1: f32,
-    by1: f32,
-) -> (f32, f32, f32, f32) {
+    ax0: f64,
+    ay0: f64,
+    ax1: f64,
+    ay1: f64,
+    bx0: f64,
+    by0: f64,
+    bx1: f64,
+    by1: f64,
+) -> (f64, f64, f64, f64) {
     let dax = ax1 - ax0;
     let day = ay1 - ay0;
     let dbx = bx1 - bx0;
@@ -472,8 +472,8 @@ fn write_closest_points_between_segments(
     let bb = dbx * dbx + dby * dby;
     let f = dbx * rx + dby * ry;
 
-    let mut s = 0.0_f32;
-    let mut t = 0.0_f32;
+    let mut s = 0.0_f64;
+    let mut t = 0.0_f64;
     if aa <= EPSILON && bb <= EPSILON {
         s = 0.0;
         t = 0.0;
@@ -506,13 +506,13 @@ fn write_closest_points_between_segments(
 
 fn write_deepest_axis_point(
     a: &CollisionCapsule2D,
-    normal_x: f32,
-    normal_y: f32,
-    vertices: &[f32],
+    normal_x: f64,
+    normal_y: f64,
+    vertices: &[f64],
     count: usize,
     source: u8,
     index: i64,
-) -> (f32, f32) {
+) -> (f64, f64) {
     if source == SOURCE_VERTEX {
         return write_closest_point_on_segment(
             a.x0,
@@ -527,7 +527,7 @@ fn write_deepest_axis_point(
     let projection_1 = a.x1 * normal_x + a.y1 * normal_y;
     if source == SOURCE_CAPSULE_SIDE {
         let mut deepest = 0_usize;
-        let mut deepest_projection = f32::NEG_INFINITY;
+        let mut deepest_projection = f64::NEG_INFINITY;
         for vertex in 0..count {
             let value = vertices[vertex * 2] * normal_x + vertices[vertex * 2 + 1] * normal_y;
             if value > deepest_projection {
@@ -552,12 +552,12 @@ fn write_deepest_axis_point(
 
 fn write_face_span(
     a: &CollisionCapsule2D,
-    vertices: &[f32],
+    vertices: &[f64],
     count: usize,
     face: usize,
-    normal_x: f32,
-    normal_y: f32,
-) -> Option<(f32, f32, f32, f32, f32, f32)> {
+    normal_x: f64,
+    normal_y: f64,
+) -> Option<(f64, f64, f64, f64, f64, f64)> {
     let axis_x = a.x1 - a.x0;
     let axis_y = a.y1 - a.y0;
     let axis_length = (axis_x * axis_x + axis_y * axis_y).sqrt();
@@ -592,7 +592,7 @@ fn write_face_span(
         return None;
     }
 
-    let mut span = [0.0_f32; 6];
+    let mut span = [0.0_f64; 6];
     for at in 0..2 {
         let along = if at == 0 { low } else { high };
         let fraction = (along - start) / (end - start);
@@ -611,9 +611,9 @@ fn write_face_span(
 fn write_parallel_axis_overlap(
     a: &CollisionCapsule2D,
     b: &CollisionCapsule2D,
-    normal_x: f32,
-    normal_y: f32,
-) -> Option<(f32, f32, f32, f32)> {
+    normal_x: f64,
+    normal_y: f64,
+) -> Option<(f64, f64, f64, f64)> {
     let axis_ax = a.x1 - a.x0;
     let axis_ay = a.y1 - a.y0;
     let length_a = (axis_ax * axis_ax + axis_ay * axis_ay).sqrt();
@@ -647,7 +647,7 @@ fn write_parallel_axis_overlap(
     ));
 }
 
-fn write_perpendicular(dx: f32, dy: f32) -> (f32, f32) {
+fn write_perpendicular(dx: f64, dy: f64) -> (f64, f64) {
     let length = (dx * dx + dy * dy).sqrt();
     if length <= EPSILON {
         return (1.0, 0.0);
@@ -656,12 +656,12 @@ fn write_perpendicular(dx: f32, dy: f32) -> (f32, f32) {
 }
 
 fn write_single_capsule_point(
-    axis_x: f32,
-    axis_y: f32,
-    radius: f32,
-    normal_x: f32,
-    normal_y: f32,
-    depth: f32,
+    axis_x: f64,
+    axis_y: f64,
+    radius: f64,
+    normal_x: f64,
+    normal_y: f64,
+    depth: f64,
     feature_id: i64,
     out: &mut CollisionContactManifold2D,
 ) -> bool {
