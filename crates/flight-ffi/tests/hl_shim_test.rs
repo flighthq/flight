@@ -362,17 +362,16 @@ fn optional_diagnostics_lower_to_a_nullable_import_diagnostic_list() {
     assert!(wrappers.contains("fn flight_collect_rive_core_type_counts(out: *mut FfiU64CountMap"));
 }
 
-// A StateRef now crosses through the universal transferred opaque carrier, while the optional
-// scalar callback keeps its typed nullable function-pointer ABI.
+// A Clone Rust type still needs a genuine public producer before C may transfer it. StateRef has
+// none, so its callback-bearing transition remains outside the ABI.
 #[test]
 fn optional_callbacks_lower_to_nullable_typed_function_pointers() {
     let (header, shim) = generated();
-    assert_line(
-        &header,
-        "bool flight_transition_animation_state_machine(void * arg0, void * arg1 /* ownership transferred; do not use or free after call */, float arg2, float (*arg3)(void *, float), void * arg4);",
+    assert!(!header.contains(" flight_transition_animation_state_machine("));
+    assert!(!shim.contains("(flight_transition_animation_state_machine)"));
+    assert!(
+        generated_stats().contains("ownership_policy_skip(transition_animation_state_machine)")
     );
-    assert!(shim.contains("(flight_transition_animation_state_machine)"));
-    assert!(!generated_stats().contains("unmapped_param(StateRef)"));
 }
 
 #[test]
@@ -576,12 +575,9 @@ fn slice_and_fixed_array_carriers_have_exact_c_and_hashlink_shapes() {
         assert_line(&shim, line);
     }
 
-    assert_line(
-        &header,
-        "void * flight_migrate_storage(void * arg0, void * arg1, const void * const * arg2, size_t arg3, void * arg4);",
-    );
     let stats = generated_stats();
-    assert!(!stats.contains("unmapped_param(&[&StorageMigration])"));
+    assert!(!header.contains(" flight_migrate_storage("));
+    assert!(stats.contains("extension_policy_skip(migrate_storage)"));
     assert!(!stats.contains("unmapped_param(&[Option<Node2DRef>])"));
 }
 
@@ -780,11 +776,11 @@ fn sdk_font_contract_promotions_have_explicit_decisions() {
     );
 
     let glyph_initializer = "flight_initialize_glyph_rasterizer_backend_from_glyph_outline_source";
-    assert!(header.contains(&format!(" {glyph_initializer}(")));
-    assert!(shim.contains(&format!("({glyph_initializer})")));
-    assert!(wrappers.contains(&format!("fn {glyph_initializer}(")));
+    assert!(!header.contains(&format!(" {glyph_initializer}(")));
+    assert!(!shim.contains(&format!("({glyph_initializer})")));
+    assert!(!wrappers.contains(&format!("fn {glyph_initializer}(")));
     assert!(stats.contains(
-        "SDK contract decision: initialize_glyph_rasterizer_backend_from_glyph_outline_source generated: 1 wrapper(s)"
+        "SDK contract decision: initialize_glyph_rasterizer_backend_from_glyph_outline_source skipped: extension_policy_skip(initialize_glyph_rasterizer_backend_from_glyph_outline_source)"
     ));
 
     for name in [
@@ -806,18 +802,38 @@ fn behavior_extensions_and_unowned_log_carriers_are_policy_skips() {
     let (header, shim) = generated();
     let wrappers = generated_wrappers();
     let extension_points = [
+        "allocate_glyph_rasterizer_backend_from_glyph_outline_source",
         "create_filter_log_sink",
         "enable_log_signals",
+        "initialize_glyph_rasterizer_backend_from_glyph_outline_source",
+        "migrate_storage",
         "register_dragon_bones_section_handler",
         "register_dragon_bones_timeline_handler",
         "register_log_serializer",
+        "register_rive_core_object_handler",
+        "register_skeleton_2d_json_analyzer",
         "register_spine_binary_section_handler",
         "register_spine_binary_timeline_handler",
         "register_spine_json_section_handler",
         "register_spine_json_timeline_handler",
         "register_spine_skeleton_binary_parser",
+        "set_log_sink",
     ];
-    let ownership_gaps = ["create_fanout_log_sink", "get_memory_log_sink_entries"];
+    let ownership_gaps = [
+        "build_tilemap_layers_from_tiled",
+        "create_animation_clip",
+        "create_animation_state_machine",
+        "create_canvas_surface_from_native_handle",
+        "create_fanout_log_sink",
+        "create_skeleton_2d",
+        "create_skin_2d",
+        "explain_host_capability_slot",
+        "get_memory_log_sink_entries",
+        "report_import_diagnostic",
+        "send_ipc_message",
+        "transition_animation_state_machine",
+        "write_binary_file_chunks",
+    ];
     for name in extension_points {
         let symbol = format!("flight_{name}");
         assert!(!header.contains(&format!(" {symbol}(")));
@@ -994,14 +1010,13 @@ fn registered_collectors_return_owned_ref_clones() {
     );
 }
 
-// An approved returned no-argument closure crosses as a callable, freeable disposer handle. The
-// frame-rate connection retains its typed callback context until that disposer is called.
+// The one approved callback-free returned closure crosses as a callable, freeable disposer handle.
+// Callback-retaining connections remain deferred to the complete closure-carrier work.
 #[test]
 fn returned_disposers_lower_to_callable_handles() {
     let (header, shim) = generated();
     for line in [
         "void * flight_reveal_scene3d_resources_on_resolve(void * arg0, void * arg1, void * arg2, void * arg3);",
-        "void * flight_connect_signal_at_frame_rate(void * arg0, double arg1, void (*arg2)(void *, double), void * arg3);",
         "bool flight_call_disposer(void * arg0);",
         "void flight_free_disposer(void * arg0);",
     ] {
@@ -1009,16 +1024,13 @@ fn returned_disposers_lower_to_callable_handles() {
     }
     assert_line(&shim, "DEFINE_PRIM(_BOOL, flight_call_disposer, _BYTES);");
     assert_line(
-        &shim,
-        "DEFINE_PRIM(_BYTES, flight_connect_signal_at_frame_rate, _BYTES _F64 _BYTES _BYTES);",
-    );
-    assert_line(
         &generated_wrappers(),
         "    return Box::into_raw(Box::new(FfiDisposer { dispose }));",
     );
     assert!(!header.contains(" flight_enable_scene3d_resource_failure_guards("));
+    assert!(!header.contains(" flight_connect_signal_at_frame_rate("));
     assert!(generated_stats().contains("closure_return(Arc<dyn Fn() + Send + Sync>)"));
-    // The disposer lowering is allowlisted by function name: exactly these wrappers return it.
+    // The disposer lowering is allowlisted by function name: exactly one wrapper returns it.
     let wrappers = generated_wrappers();
     let disposer_wrappers: Vec<&str> = wrappers
         .lines()
@@ -1028,10 +1040,7 @@ fn returned_disposers_lower_to_callable_handles() {
         .collect();
     assert_eq!(
         disposer_wrappers,
-        [
-            "pub unsafe extern \"C\" fn flight_reveal_scene3d_resources_on_resolve",
-            "pub unsafe extern \"C\" fn flight_connect_signal_at_frame_rate",
-        ]
+        ["pub unsafe extern \"C\" fn flight_reveal_scene3d_resources_on_resolve"]
     );
 }
 
@@ -1048,6 +1057,7 @@ fn by_value_parameters_follow_rust_ownership() {
         "void flight_release_vector2(void * arg0 /* ownership transferred; do not use or free after call */);",
         "void * flight_create_bitmap_region(void * arg0 /* ownership transferred; do not use or free after call */, int32_t arg1, int32_t arg2, int32_t arg3, int32_t arg4);",
         "void * flight_ease_invert(void * arg0 /* cloned; caller retains its handle */);",
+        "void flight_register_particle_format(void * arg0, const char * arg1, void * arg2 /* cloned; caller retains its handle */);",
     ] {
         assert_line(&header, line);
     }
@@ -1099,17 +1109,17 @@ fn by_value_parameters_follow_rust_ownership() {
     assert!(stats.contains("no_ts_public_export(create_tray_animation_state)"));
     for recovered in [
         "unmapped_param(ParticleFormatCodec)",
-        "unmapped_param(IpcArguments)",
         "unmapped_param(TargetRef)",
-        "unmapped_param(ByteChunkStream)",
     ] {
         assert!(!stats.contains(recovered), "{recovered} must be recovered");
     }
-    for symbol in ["flight_register_particle_format", "flight_send_ipc_message"] {
-        assert!(
-            header.contains(&format!(" {symbol}(")),
-            "{symbol} must have an opaque wrapper"
-        );
+    assert!(header.contains(" flight_register_particle_format("));
+    assert!(wrappers.contains("codec: *const flight_sdk::ParticleFormatCodec"));
+    assert!(wrappers.contains("unsafe { (*codec).clone() }"));
+    for name in ["send_ipc_message", "write_binary_file_chunks"] {
+        let symbol = format!("flight_{name}");
+        assert!(!header.contains(&format!(" {symbol}(")));
+        assert!(stats.contains(&format!("ownership_policy_skip({name})")));
     }
 }
 

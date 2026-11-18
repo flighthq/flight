@@ -243,7 +243,7 @@ mod is_disposer_function {
     use super::*;
 
     #[test]
-    fn requires_an_allowlisted_name_and_rejects_unapproved_callback_capture() {
+    fn requires_an_allowlisted_name_without_callback_parameters() {
         let mappable = ["&Ref<Scene3DResourceResolver>", "&Scene3D", "&TweenManager"];
         assert!(is_disposer_function(
             "reveal_scene3d_resources_on_resolve",
@@ -255,7 +255,7 @@ mod is_disposer_function {
             "reveal_scene3d_resources_on_resolve",
             &["&Scene3D", "Arc<dyn Fn() -> f64 + Send + Sync>"]
         ));
-        assert!(is_disposer_function(
+        assert!(!is_disposer_function(
             "connect_signal_at_frame_rate",
             &[
                 "&Signal<FrameTick>",
