@@ -17,8 +17,8 @@ enum Outcome {
     Generated,
     ExtensionPolicySkip,
     OwnershipPolicySkip,
-    ClosurePolicySkip,
-    UnmappedSkip,
+    ClosureDeferred,
+    UnmappedCarrier,
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -43,6 +43,9 @@ enum Contract {
     },
     VecReturn,
     ExtensionPolicySkip,
+    OwnershipPolicySkip,
+    ClosureDeferred,
+    UnmappedCarrier,
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -97,38 +100,38 @@ macro_rules! ownership_skip {
             carrier: $carrier,
             group: Group::$group,
             outcome: Outcome::OwnershipPolicySkip,
-            contract: Contract::ExtensionPolicySkip,
+            contract: Contract::OwnershipPolicySkip,
         }
     };
 }
 
-macro_rules! closure_skip {
+macro_rules! closure_deferred {
     ($function:literal, $carrier:literal, $group:ident) => {
         Candidate {
             function: $function,
             carrier: $carrier,
             group: Group::$group,
-            outcome: Outcome::ClosurePolicySkip,
-            contract: Contract::ExtensionPolicySkip,
+            outcome: Outcome::ClosureDeferred,
+            contract: Contract::ClosureDeferred,
         }
     };
 }
 
-macro_rules! unmapped_skip {
+macro_rules! unmapped_carrier {
     ($function:literal, $carrier:literal, $group:ident) => {
         Candidate {
             function: $function,
             carrier: $carrier,
             group: Group::$group,
-            outcome: Outcome::UnmappedSkip,
-            contract: Contract::ExtensionPolicySkip,
+            outcome: Outcome::UnmappedCarrier,
+            contract: Contract::UnmappedCarrier,
         }
     };
 }
 
-// This is the repaired Task K inventory: the original 116 entries, create_child_log_context, and
-// the three owned-Vec consumers the original oracle omitted. Every decision is pinned, including
-// policy reclassifications where the universal fallback cannot establish an owned producer.
+// This is the ratified Task K baseline inventory. Its group counts are part of the acceptance
+// contract: 37 + 29 + 20 + 8 + 6 + 6 + 8 + 6 = 120 source functions. Each entry records the
+// foreman-ratified decision, including policy exclusions and the pre-M closure/disposer deferral.
 const TASK_K_CANDIDATES: &[Candidate] = &[
     // Borrowed refs, borrowed returns, and the three by-design runtime method tables (37).
     generated!(
@@ -580,6 +583,7 @@ const TASK_K_CANDIDATES: &[Candidate] = &[
         Contract::OwnedReturn
     ),
     ownership_skip!("write_binary_file_chunks", "ByteChunkStream", Owned),
+    extension_skip_group!("set_log_sink", "Option<LogSink>", Owned),
     extension_skip_group!("register_skeleton_2d_json_analyzer", "Detector", Owned),
     ownership_skip!("send_ipc_message", "IpcArguments", Owned),
     generated!(
@@ -847,7 +851,7 @@ const TASK_K_CANDIDATES: &[Candidate] = &[
         }
     ),
     // Signal and SignalSlot carriers (6).
-    closure_skip!("connect_signal_at_frame_rate", "&Signal<FrameTick>", Signal),
+    closure_deferred!("connect_signal_at_frame_rate", "&Signal<FrameTick>", Signal),
     generated!(
         "enable_clock_signals",
         "Signal<FrameTick>",
@@ -878,17 +882,19 @@ const TASK_K_CANDIDATES: &[Candidate] = &[
         Signal,
         Contract::ClonedParam("listener")
     ),
-    // HashMap carriers (4).
+    // HashMap carriers (6).
     ownership_skip!(
         "report_import_diagnostic",
         "Option<HashMap<String, ImportDiagnosticDetailValue>>",
         Map
     ),
-    unmapped_skip!(
-        "create_child_log_context",
-        "HashMap<String, LogValue> + Option<Option<String>>",
-        Map
+    generated!(
+        "serialize_log_error",
+        "HashMap<String, LogValue>",
+        Map,
+        Contract::MapReturn
     ),
+    unmapped_carrier!("create_child_log_context", "HashMap<String, LogValue>", Map),
     generated!(
         "collect_dragon_bones_section_counts",
         "Option<HashMap<String, usize>>",
@@ -951,7 +957,7 @@ const TASK_K_CANDIDATES: &[Candidate] = &[
         Slice,
         Contract::SliceReturn
     ),
-    // Vec carriers (5).
+    // Vec carriers (6).
     generated!(
         "read_swf_filter_list",
         "&mut Vec<SwfAdjustmentRef>",
@@ -979,18 +985,82 @@ const TASK_K_CANDIDATES: &[Candidate] = &[
         Vec,
         Contract::VecReturn
     ),
+    generated!(
+        "build_spine_binary_segment_easings",
+        "Option<Vec<EasingFn>>",
+        Vec,
+        Contract::VecReturn
+    ),
     ownership_skip!(
         "build_tilemap_layers_from_tiled",
-        "callback Option<TiledTilesetLayout>",
+        "Option<Vec<TilemapData>>",
         Vec
     ),
-    ownership_skip!("create_animation_clip", "Vec<AnimationChannel>", Vec),
-    ownership_skip!("create_skin_2d", "Vec<u16> + Vec<f32>", Vec),
-    ownership_skip!(
-        "explain_host_capability_slot",
-        "Vec<HostCapabilityBackend>",
-        Vec
-    ),
+];
+
+const PRE_K_GENERATED_SOURCES: usize = 3278;
+const PRE_K_SKIPPED_SOURCES: usize = 805;
+const PRE_K_TOTAL_SOURCES: usize = 4083;
+
+// The producer fixed point also finds three pre-K wrappers that consumed boxes no public wrapper
+// could produce. They are removals from the baseline generated set, not members of the original
+// opaque-fallback skip inventory.
+const TASK_K_BASELINE_GENERATED_OWNERSHIP_SKIPS: &[&str] = &[
+    "create_animation_clip",
+    "create_skin_2d",
+    "explain_host_capability_slot",
+];
+
+// These LogDataOrProvider functions were already skipped before Task K. The producer audit changes
+// their reason from an incidental unmapped type to the durable ownership policy.
+const TASK_K_ADDITIONAL_OWNERSHIP_RECLASSIFICATIONS: &[&str] = &[
+    "log",
+    "log_assert",
+    "log_debug",
+    "log_debug_with",
+    "log_error",
+    "log_error_with",
+    "log_info",
+    "log_info_with",
+    "log_once",
+    "log_verbose",
+    "log_verbose_with",
+    "log_warn",
+    "log_warn_with",
+    "log_with",
+];
+
+const PRE_K_EXTENSION_POLICY_SKIPS: &[&str] = &[
+    "create_filter_log_sink",
+    "enable_log_signals",
+    "register_dragon_bones_section_handler",
+    "register_dragon_bones_timeline_handler",
+    "register_log_serializer",
+    "register_spine_binary_section_handler",
+    "register_spine_binary_timeline_handler",
+    "register_spine_json_section_handler",
+    "register_spine_json_timeline_handler",
+    "register_spine_skeleton_binary_parser",
+];
+const PRE_K_OWNERSHIP_POLICY_SKIPS: &[&str] =
+    &["create_fanout_log_sink", "get_memory_log_sink_entries"];
+const PRE_K_SAFETY_POLICY_SKIPS: &[&str] = &[
+    "enable_clip_guards",
+    "enable_statechart_guards",
+    "get_connectivity_online",
+];
+const TASK_L_EXTENSION_POLICY_SKIPS: &[&str] = &[
+    "default_shape_bounds_cubic_curve_to",
+    "default_shape_bounds_draw_circle",
+    "default_shape_bounds_draw_ellipse",
+    "default_shape_bounds_draw_path",
+    "default_shape_bounds_draw_rectangle",
+    "default_shape_bounds_draw_rounded_rectangle",
+    "default_shape_bounds_expand_point_pairs",
+    "default_shape_bounds_line_style",
+    "default_shape_bounds_line_to",
+    "default_shape_bounds_move_to",
+    "default_shape_bounds_quadratic_curve_to",
 ];
 
 fn generated_wrappers() -> &'static str {
@@ -1005,8 +1075,94 @@ fn generated_stats() -> &'static str {
     include_str!(concat!(env!("OUT_DIR"), "/ffi_stats.txt"))
 }
 
+fn source_census(stats: &str) -> (usize, usize, usize) {
+    let line = stats.lines().next().expect("FFI source census line");
+    let line = line
+        .strip_prefix("FFI source decisions: ")
+        .expect("FFI source census prefix");
+    let (total, line) = line.split_once(" total, ").expect("total source census");
+    let (generated, skipped) = line
+        .split_once(" generated, ")
+        .expect("generated source census");
+    let skipped = skipped
+        .strip_suffix(" skipped")
+        .expect("skipped source census");
+    return (
+        total.parse().unwrap(),
+        generated.parse().unwrap(),
+        skipped.parse().unwrap(),
+    );
+}
+
+fn wrapper_census(stats: &str) -> (usize, usize, usize) {
+    let line = stats.lines().nth(1).expect("FFI wrapper census line");
+    let line = line
+        .strip_prefix("FFI emitted wrappers: ")
+        .expect("FFI wrapper census prefix");
+    let (total, line) = line.split_once(" total, ").expect("total wrapper census");
+    let (sources, extras) = line
+        .split_once(" generated sources, ")
+        .expect("source wrapper census");
+    let extras = extras
+        .strip_suffix(" monomorphized extras")
+        .expect("extra wrapper census");
+    return (
+        total.parse().unwrap(),
+        sources.parse().unwrap(),
+        extras.parse().unwrap(),
+    );
+}
+
+fn policy_decisions(stats: &str) -> Vec<String> {
+    let mut decisions = Vec::new();
+    for line in stats.lines() {
+        let Some(rest) = line.strip_prefix("  skip:") else {
+            continue;
+        };
+        let start = [
+            "extension_policy_skip(",
+            "ownership_policy_skip(",
+            "safety_policy_skip(",
+        ]
+        .into_iter()
+        .find_map(|needle| rest.find(needle));
+        let Some(start) = start else {
+            continue;
+        };
+        let count: usize = rest[..start].trim().parse().expect("policy decision count");
+        assert_eq!(
+            count, 1,
+            "policy decisions must identify one source: {line}"
+        );
+        decisions.push(rest[start..].to_string());
+    }
+    return decisions;
+}
+
+fn insert_policy(expected: &mut BTreeSet<String>, category: &str, names: &[&str]) {
+    for name in names {
+        assert!(
+            expected.insert(format!("{category}({name})")),
+            "duplicate declared policy decision {category}({name})"
+        );
+    }
+}
+
 fn generator_source() -> &'static str {
     include_str!("../build.rs")
+}
+
+fn task_k_failure_heading(source: &str, stats: &str) -> &'static str {
+    if source.contains("const SKIP_TYPES:")
+        || stats.contains("skip_type_param(")
+        || stats.contains("skip_type_return(")
+    {
+        return "EXPECTED PRE-K TASK K ACCEPTANCE FAILURE";
+    }
+    if !source.contains("static PRODUCIBLE_TYPES:") {
+        return "EXPECTED TASK K SAFETY REPAIR FAILURE";
+    }
+    return "TASK K ACCEPTANCE FAILURE";
 }
 
 fn wrapper_block<'a>(wrappers: &'a str, symbol: &str) -> Option<&'a str> {
@@ -1033,10 +1189,18 @@ fn push_error(errors: &mut Vec<String>, condition: bool, message: impl FnOnce() 
     }
 }
 
-fn parameter_is_cloned(block: &str, parameter: &str) -> bool {
-    block
-        .match_indices(parameter)
-        .any(|(index, _)| block[index..block.len().min(index + 160)].contains(".clone()"))
+fn parameter_clone_count(block: &str, parameter: &str) -> usize {
+    let direct = format!("(*{parameter}).clone()");
+    let cast = format!("(*({parameter} as *const ");
+    return block
+        .lines()
+        .filter(|line| {
+            line.contains(&direct)
+                || line
+                    .find(&cast)
+                    .is_some_and(|start| line[start..].contains(")).clone()"))
+        })
+        .count();
 }
 
 fn assert_owned_return(candidate: &Candidate, block: &str, header: &str, errors: &mut Vec<String>) {
@@ -1103,38 +1267,6 @@ fn assert_result_accessors(function: &str, require_key: bool, errors: &mut Vec<S
 }
 
 #[test]
-fn owned_consumer_generation_is_guarded_by_the_fixed_point_invariant() {
-    let source = generator_source();
-    assert!(source.contains("PRODUCIBLE_TYPES.set(Mutex::new(BTreeSet::new()))"));
-    assert!(source.contains("discovered.extend(owned_producer_types(&func))"));
-    assert!(source.contains("actual_consumed_types.extend(owned_consumed_types(func))"));
-    assert!(source.contains("actual_consumed_types\n        .difference(&actual_produced_types)"));
-    assert!(
-        source.contains("generated wrappers consume owned handles without a generated producer")
-    );
-    assert!(source.matches("has_owned_producer(").count() >= 7);
-}
-
-#[test]
-fn separately_exposed_owned_results_have_sound_lifecycles() {
-    let wrappers = generated_wrappers();
-    let header = generated_header();
-    for function in ["build_spine_binary_segment_easings", "serialize_log_error"] {
-        let symbol = format!("flight_{function}");
-        let block = wrapper_block(wrappers, &symbol)
-            .unwrap_or_else(|| panic!("{function} must remain generated"));
-        assert!(block.contains("Box::into_raw(Box::new("));
-        let mut errors = Vec::new();
-        assert_result_accessors(function, function == "serialize_log_error", &mut errors);
-        assert!(errors.is_empty(), "{}", errors.join("\n"));
-        let (_, ownership) = header_entry(header, &symbol).unwrap();
-        assert!(ownership.is_some_and(|line| line.contains("Caller owns the return value")));
-    }
-    assert!(generated_stats().contains("unmapped_param(Option<Option<String>>)"));
-    assert!(wrapper_block(wrappers, "flight_create_child_log_context").is_none());
-}
-
-#[test]
 fn task_k_inventory_is_exact_unique_and_complete() {
     assert_eq!(TASK_K_CANDIDATES.len(), 120, "Task K inventory omission");
 
@@ -1159,13 +1291,13 @@ fn task_k_inventory_is_exact_unique_and_complete() {
         counts,
         BTreeMap::from([
             (Group::Borrowed, 37),
-            (Group::Owned, 28),
+            (Group::Owned, 29),
             (Group::Shared, 20),
             (Group::Guard, 8),
             (Group::Signal, 6),
-            (Group::Map, 5),
+            (Group::Map, 6),
             (Group::Slice, 8),
-            (Group::Vec, 8),
+            (Group::Vec, 6),
         ])
     );
     assert_eq!(
@@ -1173,36 +1305,156 @@ fn task_k_inventory_is_exact_unique_and_complete() {
             .iter()
             .filter(|candidate| candidate.outcome == Outcome::Generated)
             .count(),
-        99
+        101
     );
     assert_eq!(
         TASK_K_CANDIDATES
             .iter()
             .filter(|candidate| candidate.outcome == Outcome::ExtensionPolicySkip)
             .count(),
-        8
+        9
     );
     assert_eq!(
         TASK_K_CANDIDATES
             .iter()
             .filter(|candidate| candidate.outcome == Outcome::OwnershipPolicySkip)
             .count(),
-        11
+        8
     );
     assert_eq!(
         TASK_K_CANDIDATES
             .iter()
-            .filter(|candidate| candidate.outcome == Outcome::ClosurePolicySkip)
+            .filter(|candidate| candidate.outcome == Outcome::ClosureDeferred)
             .count(),
         1
     );
     assert_eq!(
         TASK_K_CANDIDATES
             .iter()
-            .filter(|candidate| candidate.outcome == Outcome::UnmappedSkip)
+            .filter(|candidate| candidate.outcome == Outcome::UnmappedCarrier)
             .count(),
         1
     );
+}
+
+#[test]
+fn task_k_source_decision_delta_from_pre_k_baseline_is_exact() {
+    let stats = generated_stats();
+    let heading = task_k_failure_heading(generator_source(), stats);
+    let generated_additions = TASK_K_CANDIDATES
+        .iter()
+        .filter(|candidate| candidate.outcome == Outcome::Generated)
+        .count();
+    let generated_removals = TASK_K_BASELINE_GENERATED_OWNERSHIP_SKIPS.len();
+    let expected_generated = PRE_K_GENERATED_SOURCES + generated_additions - generated_removals;
+    let expected_skipped = PRE_K_SKIPPED_SOURCES - generated_additions + generated_removals;
+    assert_eq!(
+        source_census(stats),
+        (PRE_K_TOTAL_SOURCES, expected_generated, expected_skipped),
+        "{heading}: source-decision delta must have no undeclared addition or omission"
+    );
+    assert_eq!(
+        wrapper_census(stats),
+        (expected_generated + 97, expected_generated, 97),
+        "{heading}: Task K must not change the pre-K monomorphized wrapper extras"
+    );
+
+    let mut changed_names = BTreeSet::new();
+    for candidate in TASK_K_CANDIDATES
+        .iter()
+        .filter(|candidate| candidate.outcome != Outcome::ClosureDeferred)
+    {
+        assert!(
+            changed_names.insert(candidate.function),
+            "duplicate Task K changed source {}",
+            candidate.function
+        );
+    }
+    for name in TASK_K_BASELINE_GENERATED_OWNERSHIP_SKIPS
+        .iter()
+        .chain(TASK_K_ADDITIONAL_OWNERSHIP_RECLASSIFICATIONS)
+    {
+        assert!(
+            changed_names.insert(name),
+            "duplicate Task K changed source {name}"
+        );
+    }
+    assert_eq!(
+        changed_names.len(),
+        136,
+        "complete Task K changed-source inventory"
+    );
+
+    let mut expected_policy = BTreeSet::new();
+    insert_policy(
+        &mut expected_policy,
+        "extension_policy_skip",
+        PRE_K_EXTENSION_POLICY_SKIPS,
+    );
+    insert_policy(
+        &mut expected_policy,
+        "ownership_policy_skip",
+        PRE_K_OWNERSHIP_POLICY_SKIPS,
+    );
+    insert_policy(
+        &mut expected_policy,
+        "safety_policy_skip",
+        PRE_K_SAFETY_POLICY_SKIPS,
+    );
+    insert_policy(
+        &mut expected_policy,
+        "extension_policy_skip",
+        TASK_L_EXTENSION_POLICY_SKIPS,
+    );
+    for candidate in TASK_K_CANDIDATES {
+        match candidate.outcome {
+            Outcome::ExtensionPolicySkip => insert_policy(
+                &mut expected_policy,
+                "extension_policy_skip",
+                &[candidate.function],
+            ),
+            Outcome::OwnershipPolicySkip => insert_policy(
+                &mut expected_policy,
+                "ownership_policy_skip",
+                &[candidate.function],
+            ),
+            Outcome::Generated | Outcome::ClosureDeferred | Outcome::UnmappedCarrier => {}
+        }
+    }
+    insert_policy(
+        &mut expected_policy,
+        "ownership_policy_skip",
+        TASK_K_BASELINE_GENERATED_OWNERSHIP_SKIPS,
+    );
+    insert_policy(
+        &mut expected_policy,
+        "ownership_policy_skip",
+        TASK_K_ADDITIONAL_OWNERSHIP_RECLASSIFICATIONS,
+    );
+
+    let actual_policy = policy_decisions(stats);
+    let actual_unique: BTreeSet<_> = actual_policy.iter().cloned().collect();
+    assert_eq!(
+        actual_policy.len(),
+        actual_unique.len(),
+        "duplicate source policy decision"
+    );
+    assert_eq!(
+        actual_unique, expected_policy,
+        "{heading}: complete policy-decision set must equal the declared baseline delta"
+    );
+
+    let wrappers = generated_wrappers();
+    let header = generated_header();
+    for function in TASK_K_BASELINE_GENERATED_OWNERSHIP_SKIPS {
+        let symbol = format!("flight_{function}");
+        assert!(wrapper_block(wrappers, &symbol).is_none());
+        assert!(header_entry(header, &symbol).is_none());
+        assert!(stats.contains(&format!("ownership_policy_skip({function})")));
+    }
+    for function in TASK_K_ADDITIONAL_OWNERSHIP_RECLASSIFICATIONS {
+        assert!(stats.contains(&format!("ownership_policy_skip({function})")));
+    }
 }
 
 // Before Task K lands this test intentionally fails with an "expected pre-K" prefix. Inventory
@@ -1214,9 +1466,6 @@ fn task_k_generated_surface_satisfies_every_inventory_contract() {
     let header = generated_header();
     let stats = generated_stats();
     let source = generator_source();
-    let pre_k = source.contains("const SKIP_TYPES:")
-        || stats.contains("skip_type_param(")
-        || stats.contains("skip_type_return(");
     let mut errors = Vec::new();
 
     push_error(&mut errors, !source.contains("const SKIP_TYPES:"), || {
@@ -1231,34 +1480,71 @@ fn task_k_generated_surface_satisfies_every_inventory_contract() {
 
     for candidate in TASK_K_CANDIDATES {
         let symbol = format!("flight_{}", candidate.function);
+        let marker = format!("fn {symbol}(");
+        let expected_occurrences = usize::from(candidate.outcome == Outcome::Generated);
+        push_error(
+            &mut errors,
+            wrappers.matches(&marker).count() == expected_occurrences,
+            || {
+                format!(
+                    "{} must emit exactly {expected_occurrences} source wrapper(s)",
+                    candidate.function
+                )
+            },
+        );
         if candidate.outcome != Outcome::Generated {
             push_error(
                 &mut errors,
                 wrapper_block(wrappers, &symbol).is_none(),
-                || format!("{} must remain {:?}", candidate.function, candidate.outcome),
+                || format!("{} must remain a by-design Task K skip", candidate.function),
             );
             push_error(&mut errors, header_entry(header, &symbol).is_none(), || {
                 format!("{} leaked into the C header", candidate.function)
             });
-            let classified = match candidate.outcome {
-                Outcome::ExtensionPolicySkip => {
-                    stats.contains(&format!("extension_policy_skip({})", candidate.function))
-                }
-                Outcome::OwnershipPolicySkip => {
-                    stats.contains(&format!("ownership_policy_skip({})", candidate.function))
-                }
-                Outcome::ClosurePolicySkip => {
-                    stats.contains("closure_return(Arc<dyn Fn() + Send + Sync>)")
-                }
-                Outcome::UnmappedSkip => stats.contains("unmapped_param(Option<Option<String>>)"),
+            match candidate.outcome {
+                Outcome::ExtensionPolicySkip => push_error(
+                    &mut errors,
+                    stats.contains(&format!("extension_policy_skip({})", candidate.function)),
+                    || {
+                        format!(
+                            "{} is not classified extension_policy_skip",
+                            candidate.function
+                        )
+                    },
+                ),
+                Outcome::OwnershipPolicySkip => push_error(
+                    &mut errors,
+                    stats.contains(&format!("ownership_policy_skip({})", candidate.function)),
+                    || {
+                        format!(
+                            "{} is not classified ownership_policy_skip",
+                            candidate.function
+                        )
+                    },
+                ),
+                Outcome::ClosureDeferred => push_error(
+                    &mut errors,
+                    stats.contains("closure_return(Arc<dyn Fn() + Send + Sync>)"),
+                    || {
+                        format!(
+                            "{} is not deferred to the ordinary pre-M closure-return skip",
+                            candidate.function
+                        )
+                    },
+                ),
+                Outcome::UnmappedCarrier => push_error(
+                    &mut errors,
+                    stats.contains("unmapped_param(Option<Option<String>>)")
+                        && candidate.function == "create_child_log_context",
+                    || {
+                        format!(
+                            "{} is not pinned to its remaining nested-optional carrier gap",
+                            candidate.function
+                        )
+                    },
+                ),
                 Outcome::Generated => unreachable!(),
-            };
-            push_error(&mut errors, classified, || {
-                format!(
-                    "{} lacks its {:?} stats decision",
-                    candidate.function, candidate.outcome
-                )
-            });
+            }
             continue;
         }
 
@@ -1310,7 +1596,7 @@ fn task_k_generated_surface_satisfies_every_inventory_contract() {
             Contract::ClonedParam(parameter) => {
                 push_error(
                     &mut errors,
-                    parameter_is_cloned(block, parameter)
+                    parameter_clone_count(block, parameter) == 1
                         && !block.contains(&format!("Box::from_raw({parameter}")),
                     || {
                         format!(
@@ -1452,16 +1738,15 @@ fn task_k_generated_surface_satisfies_every_inventory_contract() {
                 assert_owned_return(candidate, block, header, &mut errors);
                 assert_result_accessors(candidate.function, false, &mut errors);
             }
-            Contract::ExtensionPolicySkip => unreachable!(),
+            Contract::ExtensionPolicySkip
+            | Contract::OwnershipPolicySkip
+            | Contract::ClosureDeferred
+            | Contract::UnmappedCarrier => unreachable!(),
         }
     }
 
     if !errors.is_empty() {
-        let heading = if pre_k {
-            "EXPECTED PRE-K TASK K ACCEPTANCE FAILURE"
-        } else {
-            "TASK K GENERATED-CONTRACT FAILURE"
-        };
+        let heading = task_k_failure_heading(source, stats);
         panic!(
             "{heading} ({} issue(s)):\n{}",
             errors.len(),

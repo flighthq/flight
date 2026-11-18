@@ -355,6 +355,35 @@ static void check_string_maps(void) {
   flight_free_storage_set_items_result(NULL);
 }
 
+static void check_task_k_opaque_ownership(void) {
+  /* Task K transfers an owned opaque map to C with typed accessors and one paired free. */
+  void *record = flight_serialize_log_error("task-k-error");
+  expect(record != NULL, "serialize_log_error transfers an owned map handle");
+  expect(flight_serialize_log_error_result_len(record) == 1, "the serialized error map has one entry");
+  char *key = flight_serialize_log_error_result_get_key(record, 0);
+  expect(key != NULL && strcmp(key, "value") == 0, "the serialized error map exposes an owned key");
+  expect(flight_serialize_log_error_result_get(record, "value") != NULL,
+         "the serialized error map exposes its borrowed value");
+  expect(flight_serialize_log_error_result_get(record, "missing") == NULL,
+         "a missing serialized error field reads NULL");
+  flight_serialize_log_error_result_free(record);
+  expect(key != NULL && strcmp(key, "value") == 0, "an owned map key outlives its result handle");
+  flight_free_string(key);
+  expect(flight_serialize_log_error_result_len(NULL) == 0, "a NULL serialized error map is empty");
+  expect(flight_serialize_log_error_result_get(NULL, "value") == NULL,
+         "a NULL serialized error map has no values");
+  expect(flight_serialize_log_error_result_get_key(NULL, 0) == NULL,
+         "a NULL serialized error map has no keys");
+  flight_serialize_log_error_result_free(NULL);
+
+  /* A producer-created Task K handle belongs to C until its named paired free. */
+  void *registry = flight_create_markup_tag_registry();
+  expect(registry != NULL, "create_markup_tag_registry transfers an owned handle");
+  flight_register_standard_markup_tags(registry);
+  flight_free_markup_tag_registry(registry);
+  flight_free_markup_tag_registry(NULL);
+}
+
 static void check_by_value_ownership(void) {
   /* A transferred box belongs to the SDK after the call: the caller neither uses nor frees it. */
   void *vector = flight_create_vector2(1.0f, 2.0f);
@@ -611,6 +640,7 @@ int main(void) {
   check_outcome_results();
   check_typed_array_refs();
   check_string_maps();
+  check_task_k_opaque_ownership();
   check_by_value_ownership();
   check_enum_parameters();
   check_optional_texture_variants();
