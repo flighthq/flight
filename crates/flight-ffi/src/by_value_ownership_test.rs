@@ -69,6 +69,29 @@ mod flight_get_bitmap_pixel_channel {
     }
 }
 
+mod flight_register_particle_format {
+    use super::*;
+
+    #[test]
+    fn clones_the_borrowed_codec_and_retains_the_callers_value() {
+        let descriptor = flight_sdk::get_libgdx_particle_format();
+        let codec = descriptor.codec.as_ref();
+        let mut registry = flight_sdk::create_particle_format_registry();
+        let kind = std::ffi::CString::new("borrowed-clone").unwrap();
+        let detect_count = Arc::strong_count(&codec.detect);
+
+        unsafe { flight_register_particle_format(&mut registry, kind.as_ptr(), codec) };
+
+        assert_eq!(Arc::strong_count(&codec.detect), detect_count + 1);
+        assert!((codec.detect)("Particle Effect\n- Duration -"));
+        let registered = flight_sdk::get_particle_format_codec(&registry, "borrowed-clone")
+            .expect("the cloned codec must be registered");
+        assert!((registered.detect)("Particle Effect\n- Duration -"));
+        drop(registry);
+        assert_eq!(Arc::strong_count(&codec.detect), detect_count);
+    }
+}
+
 mod flight_release_vector2 {
     use super::*;
 

@@ -16,6 +16,9 @@ enum Group {
 enum Outcome {
     Generated,
     ExtensionPolicySkip,
+    OwnershipPolicySkip,
+    ClosurePolicySkip,
+    UnmappedSkip,
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -25,13 +28,11 @@ enum Contract {
         mutable: bool,
         nullable: bool,
     },
-    OwnedParam(&'static str),
     ClonedParam(&'static str),
     CopiedParam(&'static str),
     CheckedEnumParam(&'static str),
     BorrowedReturn,
     OwnedReturn,
-    MapParam(&'static str),
     MapReturn,
     SliceParam(&'static str),
     SliceReturn,
@@ -77,9 +78,57 @@ macro_rules! extension_skip {
     };
 }
 
-// This is the ratified Task K baseline inventory. Its group counts are part of the acceptance
-// contract: 37 + 28 + 20 + 8 + 6 + 4 + 8 + 5 = 116 source functions. The three method-table
-// entries are deliberately skipped; all other entries must generate exactly their source symbol.
+macro_rules! extension_skip_group {
+    ($function:literal, $carrier:literal, $group:ident) => {
+        Candidate {
+            function: $function,
+            carrier: $carrier,
+            group: Group::$group,
+            outcome: Outcome::ExtensionPolicySkip,
+            contract: Contract::ExtensionPolicySkip,
+        }
+    };
+}
+
+macro_rules! ownership_skip {
+    ($function:literal, $carrier:literal, $group:ident) => {
+        Candidate {
+            function: $function,
+            carrier: $carrier,
+            group: Group::$group,
+            outcome: Outcome::OwnershipPolicySkip,
+            contract: Contract::ExtensionPolicySkip,
+        }
+    };
+}
+
+macro_rules! closure_skip {
+    ($function:literal, $carrier:literal, $group:ident) => {
+        Candidate {
+            function: $function,
+            carrier: $carrier,
+            group: Group::$group,
+            outcome: Outcome::ClosurePolicySkip,
+            contract: Contract::ExtensionPolicySkip,
+        }
+    };
+}
+
+macro_rules! unmapped_skip {
+    ($function:literal, $carrier:literal, $group:ident) => {
+        Candidate {
+            function: $function,
+            carrier: $carrier,
+            group: Group::$group,
+            outcome: Outcome::UnmappedSkip,
+            contract: Contract::ExtensionPolicySkip,
+        }
+    };
+}
+
+// This is the repaired Task K inventory: the original 116 entries, create_child_log_context, and
+// the three owned-Vec consumers the original oracle omitted. Every decision is pinned, including
+// policy reclassifications where the universal fallback cannot establish an owned producer.
 const TASK_K_CANDIDATES: &[Candidate] = &[
     // Borrowed refs, borrowed returns, and the three by-design runtime method tables (37).
     generated!(
@@ -530,53 +579,27 @@ const TASK_K_CANDIDATES: &[Candidate] = &[
         Owned,
         Contract::OwnedReturn
     ),
-    generated!(
-        "write_binary_file_chunks",
-        "ByteChunkStream",
-        Owned,
-        Contract::OwnedParam("chunks")
-    ),
-    generated!(
-        "register_skeleton_2d_json_analyzer",
-        "Detector",
-        Owned,
-        Contract::ClonedParam("detect")
-    ),
-    generated!(
-        "send_ipc_message",
-        "IpcArguments",
-        Owned,
-        Contract::OwnedParam("args")
-    ),
+    ownership_skip!("write_binary_file_chunks", "ByteChunkStream", Owned),
+    extension_skip_group!("register_skeleton_2d_json_analyzer", "Detector", Owned),
+    ownership_skip!("send_ipc_message", "IpcArguments", Owned),
     generated!(
         "find_nodes_in_marquee_selection",
         "Option<MarqueeSelectionMode>",
         Owned,
         Contract::CheckedEnumParam("mode")
     ),
-    generated!(
+    ownership_skip!(
         "create_canvas_surface_from_native_handle",
         "Option<NativeSurfaceHandle>",
-        Owned,
-        Contract::OwnedParam("handle")
+        Owned
     ),
-    generated!(
-        "create_animation_state_machine",
-        "Option<StateRef>",
-        Owned,
-        Contract::OwnedParam("initial_state")
-    ),
-    generated!(
-        "transition_animation_state_machine",
-        "StateRef",
-        Owned,
-        Contract::OwnedParam("to_state")
-    ),
+    ownership_skip!("create_animation_state_machine", "Option<StateRef>", Owned),
+    ownership_skip!("transition_animation_state_machine", "StateRef", Owned),
     generated!(
         "register_particle_format",
         "ParticleFormatCodec",
         Owned,
-        Contract::OwnedParam("codec")
+        Contract::ClonedParam("codec")
     ),
     generated!(
         "create_animation_channel",
@@ -655,17 +678,15 @@ const TASK_K_CANDIDATES: &[Candidate] = &[
         Shared,
         Contract::ClonedParam("image")
     ),
-    generated!(
+    extension_skip_group!(
         "initialize_glyph_rasterizer_backend_from_glyph_outline_source",
         "Arc<GlyphOutlineSource>",
-        Shared,
-        Contract::ClonedParam("source")
+        Shared
     ),
-    generated!(
+    extension_skip_group!(
         "allocate_glyph_rasterizer_backend_from_glyph_outline_source",
         "Arc<GlyphOutlineSource>",
-        Shared,
-        Contract::ClonedParam("source")
+        Shared
     ),
     generated!(
         "create_skeleton_2d_draw_order_animation_target",
@@ -715,11 +736,10 @@ const TASK_K_CANDIDATES: &[Candidate] = &[
         Shared,
         Contract::ClonedParam("compressed")
     ),
-    generated!(
+    extension_skip_group!(
         "register_rive_core_object_handler",
         "Arc<RiveCoreObjectHandler>",
-        Shared,
-        Contract::ClonedParam("handler")
+        Shared
     ),
     generated!(
         "register_spritesheet_format",
@@ -827,16 +847,7 @@ const TASK_K_CANDIDATES: &[Candidate] = &[
         }
     ),
     // Signal and SignalSlot carriers (6).
-    generated!(
-        "connect_signal_at_frame_rate",
-        "&Signal<FrameTick>",
-        Signal,
-        Contract::BorrowedParam {
-            parameter: "source",
-            mutable: false,
-            nullable: false,
-        }
-    ),
+    closure_skip!("connect_signal_at_frame_rate", "&Signal<FrameTick>", Signal),
     generated!(
         "enable_clock_signals",
         "Signal<FrameTick>",
@@ -868,11 +879,15 @@ const TASK_K_CANDIDATES: &[Candidate] = &[
         Contract::ClonedParam("listener")
     ),
     // HashMap carriers (4).
-    generated!(
+    ownership_skip!(
         "report_import_diagnostic",
         "Option<HashMap<String, ImportDiagnosticDetailValue>>",
-        Map,
-        Contract::MapParam("detail")
+        Map
+    ),
+    unmapped_skip!(
+        "create_child_log_context",
+        "HashMap<String, LogValue> + Option<Option<String>>",
+        Map
     ),
     generated!(
         "collect_dragon_bones_section_counts",
@@ -905,12 +920,7 @@ const TASK_K_CANDIDATES: &[Candidate] = &[
         Slice,
         Contract::SliceParam("slots")
     ),
-    generated!(
-        "migrate_storage",
-        "&[&StorageMigration]",
-        Slice,
-        Contract::SliceParam("migrations")
-    ),
+    extension_skip_group!("migrate_storage", "&[&StorageMigration]", Slice),
     generated!(
         "create_rive_animation_clips",
         "&[Option<Node2DRef>]",
@@ -952,16 +962,7 @@ const TASK_K_CANDIDATES: &[Candidate] = &[
             nullable: false,
         }
     ),
-    generated!(
-        "create_skeleton_2d",
-        "Vec<Bone2D>",
-        Vec,
-        Contract::VecParam {
-            parameter: "bones",
-            owned: true,
-            nullable: false,
-        }
-    ),
+    ownership_skip!("create_skeleton_2d", "Vec<Bone2D>", Vec),
     generated!(
         "report_requirement",
         "Option<&mut Vec<Requirement>>",
@@ -978,11 +979,17 @@ const TASK_K_CANDIDATES: &[Candidate] = &[
         Vec,
         Contract::VecReturn
     ),
-    generated!(
+    ownership_skip!(
         "build_tilemap_layers_from_tiled",
-        "Option<Vec<TilemapData>>",
-        Vec,
-        Contract::VecReturn
+        "callback Option<TiledTilesetLayout>",
+        Vec
+    ),
+    ownership_skip!("create_animation_clip", "Vec<AnimationChannel>", Vec),
+    ownership_skip!("create_skin_2d", "Vec<u16> + Vec<f32>", Vec),
+    ownership_skip!(
+        "explain_host_capability_slot",
+        "Vec<HostCapabilityBackend>",
+        Vec
     ),
 ];
 
@@ -1096,8 +1103,40 @@ fn assert_result_accessors(function: &str, require_key: bool, errors: &mut Vec<S
 }
 
 #[test]
+fn owned_consumer_generation_is_guarded_by_the_fixed_point_invariant() {
+    let source = generator_source();
+    assert!(source.contains("PRODUCIBLE_TYPES.set(Mutex::new(BTreeSet::new()))"));
+    assert!(source.contains("discovered.extend(owned_producer_types(&func))"));
+    assert!(source.contains("actual_consumed_types.extend(owned_consumed_types(func))"));
+    assert!(source.contains("actual_consumed_types\n        .difference(&actual_produced_types)"));
+    assert!(
+        source.contains("generated wrappers consume owned handles without a generated producer")
+    );
+    assert!(source.matches("has_owned_producer(").count() >= 7);
+}
+
+#[test]
+fn separately_exposed_owned_results_have_sound_lifecycles() {
+    let wrappers = generated_wrappers();
+    let header = generated_header();
+    for function in ["build_spine_binary_segment_easings", "serialize_log_error"] {
+        let symbol = format!("flight_{function}");
+        let block = wrapper_block(wrappers, &symbol)
+            .unwrap_or_else(|| panic!("{function} must remain generated"));
+        assert!(block.contains("Box::into_raw(Box::new("));
+        let mut errors = Vec::new();
+        assert_result_accessors(function, function == "serialize_log_error", &mut errors);
+        assert!(errors.is_empty(), "{}", errors.join("\n"));
+        let (_, ownership) = header_entry(header, &symbol).unwrap();
+        assert!(ownership.is_some_and(|line| line.contains("Caller owns the return value")));
+    }
+    assert!(generated_stats().contains("unmapped_param(Option<Option<String>>)"));
+    assert!(wrapper_block(wrappers, "flight_create_child_log_context").is_none());
+}
+
+#[test]
 fn task_k_inventory_is_exact_unique_and_complete() {
-    assert_eq!(TASK_K_CANDIDATES.len(), 116, "Task K inventory omission");
+    assert_eq!(TASK_K_CANDIDATES.len(), 120, "Task K inventory omission");
 
     let mut names = BTreeSet::new();
     for candidate in TASK_K_CANDIDATES {
@@ -1124,9 +1163,9 @@ fn task_k_inventory_is_exact_unique_and_complete() {
             (Group::Shared, 20),
             (Group::Guard, 8),
             (Group::Signal, 6),
-            (Group::Map, 4),
+            (Group::Map, 5),
             (Group::Slice, 8),
-            (Group::Vec, 5),
+            (Group::Vec, 8),
         ])
     );
     assert_eq!(
@@ -1134,14 +1173,35 @@ fn task_k_inventory_is_exact_unique_and_complete() {
             .iter()
             .filter(|candidate| candidate.outcome == Outcome::Generated)
             .count(),
-        113
+        99
     );
     assert_eq!(
         TASK_K_CANDIDATES
             .iter()
             .filter(|candidate| candidate.outcome == Outcome::ExtensionPolicySkip)
             .count(),
-        3
+        8
+    );
+    assert_eq!(
+        TASK_K_CANDIDATES
+            .iter()
+            .filter(|candidate| candidate.outcome == Outcome::OwnershipPolicySkip)
+            .count(),
+        11
+    );
+    assert_eq!(
+        TASK_K_CANDIDATES
+            .iter()
+            .filter(|candidate| candidate.outcome == Outcome::ClosurePolicySkip)
+            .count(),
+        1
+    );
+    assert_eq!(
+        TASK_K_CANDIDATES
+            .iter()
+            .filter(|candidate| candidate.outcome == Outcome::UnmappedSkip)
+            .count(),
+        1
     );
 }
 
@@ -1171,30 +1231,34 @@ fn task_k_generated_surface_satisfies_every_inventory_contract() {
 
     for candidate in TASK_K_CANDIDATES {
         let symbol = format!("flight_{}", candidate.function);
-        if candidate.outcome == Outcome::ExtensionPolicySkip {
+        if candidate.outcome != Outcome::Generated {
             push_error(
                 &mut errors,
                 wrapper_block(wrappers, &symbol).is_none(),
-                || {
-                    format!(
-                        "{} must remain a by-design extension skip",
-                        candidate.function
-                    )
-                },
+                || format!("{} must remain {:?}", candidate.function, candidate.outcome),
             );
             push_error(&mut errors, header_entry(header, &symbol).is_none(), || {
                 format!("{} leaked into the C header", candidate.function)
             });
-            push_error(
-                &mut errors,
-                stats.contains(&format!("extension_policy_skip({})", candidate.function)),
-                || {
-                    format!(
-                        "{} is not classified extension_policy_skip",
-                        candidate.function
-                    )
-                },
-            );
+            let classified = match candidate.outcome {
+                Outcome::ExtensionPolicySkip => {
+                    stats.contains(&format!("extension_policy_skip({})", candidate.function))
+                }
+                Outcome::OwnershipPolicySkip => {
+                    stats.contains(&format!("ownership_policy_skip({})", candidate.function))
+                }
+                Outcome::ClosurePolicySkip => {
+                    stats.contains("closure_return(Arc<dyn Fn() + Send + Sync>)")
+                }
+                Outcome::UnmappedSkip => stats.contains("unmapped_param(Option<Option<String>>)"),
+                Outcome::Generated => unreachable!(),
+            };
+            push_error(&mut errors, classified, || {
+                format!(
+                    "{} lacks its {:?} stats decision",
+                    candidate.function, candidate.outcome
+                )
+            });
             continue;
         }
 
@@ -1242,28 +1306,6 @@ fn task_k_generated_surface_satisfies_every_inventory_contract() {
                         || format!("{} loses nullable {parameter}", candidate.function),
                     );
                 }
-            }
-            Contract::OwnedParam(parameter) | Contract::MapParam(parameter) => {
-                push_error(
-                    &mut errors,
-                    block.contains(&format!("Box::from_raw({parameter}")),
-                    || {
-                        format!(
-                            "{} does not consume owned parameter {parameter} with Box::from_raw",
-                            candidate.function
-                        )
-                    },
-                );
-                push_error(
-                    &mut errors,
-                    prototype.contains("ownership transferred; do not use or free after call"),
-                    || {
-                        format!(
-                            "{} lacks the ownership-transfer header comment",
-                            candidate.function
-                        )
-                    },
-                );
             }
             Contract::ClonedParam(parameter) => {
                 push_error(
