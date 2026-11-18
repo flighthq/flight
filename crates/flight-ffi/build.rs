@@ -396,6 +396,24 @@ const EXTENSION_POLICY_SKIP_FNS: &[&str] = &[
     "register_spine_json_timeline_handler",
     "register_spine_skeleton_binary_parser",
 ];
+// The default shape-bounds handler values: each decodes one command's arguments from a
+// `&dyn ShapeCommandArgumentCursor` into calls on a `&mut dyn ShapeBoundsContext`. Their purpose is
+// to compose `ShapeBoundsCommand` registrations, an extension point. The only cursor implementation
+// is private to flight-shape and no wrapper yields `ShapeCommandToken` storage, so C could supply a
+// cursor only as its own behavior object, and the call would route caller data to caller callbacks.
+const SHAPE_BOUNDS_HANDLER_FNS: &[&str] = &[
+    "default_shape_bounds_cubic_curve_to",
+    "default_shape_bounds_draw_circle",
+    "default_shape_bounds_draw_ellipse",
+    "default_shape_bounds_draw_path",
+    "default_shape_bounds_draw_rectangle",
+    "default_shape_bounds_draw_rounded_rectangle",
+    "default_shape_bounds_expand_point_pairs",
+    "default_shape_bounds_line_style",
+    "default_shape_bounds_line_to",
+    "default_shape_bounds_move_to",
+    "default_shape_bounds_quadratic_curve_to",
+];
 // These APIs need a complete typed ownership family before they can cross the ABI. A bare
 // `void *` neither proves where a Vec<LogSink> came from nor gives LogEntry collectors a lifecycle.
 const OWNERSHIP_POLICY_SKIP_FNS: &[&str] =
@@ -414,7 +432,7 @@ fn explicit_skip_category(name: &str) -> Option<&'static str> {
     if SAFETY_POLICY_SKIP_FNS.contains(&name) {
         return Some("safety_policy_skip");
     }
-    if EXTENSION_POLICY_SKIP_FNS.contains(&name) {
+    if EXTENSION_POLICY_SKIP_FNS.contains(&name) || SHAPE_BOUNDS_HANDLER_FNS.contains(&name) {
         return Some("extension_policy_skip");
     }
     if OWNERSHIP_POLICY_SKIP_FNS.contains(&name) {
@@ -556,6 +574,7 @@ fn main() {
     let _ = KNOWN_ENUMS.set(known_enums);
     let _ = TYPE_DEFINITIONS.set(type_definitions);
 
+    let mut shape_bounds_handlers_seen = BTreeSet::new();
     for dir_name in SCAN_CRATES {
         let src_dir = crates_dir.join(dir_name).join("src");
         if !src_dir.exists() {
@@ -570,6 +589,15 @@ fn main() {
         let mut crate_used = false;
         for func in &fns {
             stats_total_fns += 1;
+            assert_eq!(
+                takes_shape_command_argument_cursor(func),
+                SHAPE_BOUNDS_HANDLER_FNS.contains(&func.name.as_str()),
+                "{} must be listed in SHAPE_BOUNDS_HANDLER_FNS exactly when it takes a ShapeCommandArgumentCursor",
+                func.name
+            );
+            if takes_shape_command_argument_cursor(func) {
+                shape_bounds_handlers_seen.insert(func.name.clone());
+            }
             if func.lacks_public_export {
                 stats_non_public_fns += 1;
             } else {
@@ -666,6 +694,12 @@ fn main() {
             writeln!(all_output).unwrap();
         }
     }
+
+    assert_eq!(
+        shape_bounds_handlers_seen.len(),
+        SHAPE_BOUNDS_HANDLER_FNS.len(),
+        "every SHAPE_BOUNDS_HANDLER_FNS entry must name a scanned cursor-taking function"
+    );
 
     let stats_skipped_total: usize = stats_skipped.values().sum();
     let stats_monomorphized_extras = stats_generated_wrappers
@@ -1738,6 +1772,13 @@ fn is_ffi_incompatible(ty: &str) -> bool {
 fn is_shape_bounds_context(ty: &str) -> bool {
     strip_crate_paths(&strip_lifetimes(&resolve_type_alias(ty.trim())))
         == "&mut dyn ShapeBoundsContext"
+}
+
+fn takes_shape_command_argument_cursor(func: &ParsedFn) -> bool {
+    return func.params.iter().any(|param| {
+        strip_crate_paths(&strip_lifetimes(&resolve_type_alias(param.ty.trim())))
+            == "&dyn ShapeCommandArgumentCursor"
+    });
 }
 
 fn sdk_function_path(func: &ParsedFn) -> String {

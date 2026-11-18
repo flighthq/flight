@@ -844,6 +844,37 @@ fn behavior_extensions_and_unowned_log_carriers_are_policy_skips() {
     }
 }
 
+// Default shape-bounds handler values compose ShapeBoundsCommand registrations: an extension point
+// whose cursor C cannot obtain, so all eleven are policy skips rather than unknown trait objects.
+#[test]
+fn shape_bounds_handler_values_are_extension_policy_skips() {
+    let (header, shim) = generated();
+    let wrappers = generated_wrappers();
+    let stats = generated_stats();
+    let handlers = [
+        "default_shape_bounds_cubic_curve_to",
+        "default_shape_bounds_draw_circle",
+        "default_shape_bounds_draw_ellipse",
+        "default_shape_bounds_draw_path",
+        "default_shape_bounds_draw_rectangle",
+        "default_shape_bounds_draw_rounded_rectangle",
+        "default_shape_bounds_expand_point_pairs",
+        "default_shape_bounds_line_style",
+        "default_shape_bounds_line_to",
+        "default_shape_bounds_move_to",
+        "default_shape_bounds_quadratic_curve_to",
+    ];
+    for name in handlers {
+        let symbol = format!("flight_{name}");
+        assert!(!header.contains(&format!(" {symbol}(")));
+        assert!(!shim.contains(&format!("({symbol})")));
+        assert!(!wrappers.contains(&format!("fn {symbol}(")));
+        assert!(stats.contains(&format!("extension_policy_skip({name})")));
+    }
+    assert!(!stats.contains("ShapeCommandArgumentCursor"));
+    assert!(!wrappers.contains("ShapeCommandArgumentCursor"));
+}
+
 #[test]
 fn owned_string_arrays_have_strict_c_and_hashlink_shapes() {
     let (header, shim) = generated();
