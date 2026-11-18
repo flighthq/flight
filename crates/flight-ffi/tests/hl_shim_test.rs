@@ -963,13 +963,14 @@ fn registered_collectors_return_owned_ref_clones() {
     );
 }
 
-// A returned no-argument closure crosses as a callable, freeable disposer handle, but only for a
-// call with no caller-provided callback parameter whose context the disposer could capture.
+// An approved returned no-argument closure crosses as a callable, freeable disposer handle. The
+// frame-rate connection retains its typed callback context until that disposer is called.
 #[test]
 fn returned_disposers_lower_to_callable_handles() {
     let (header, shim) = generated();
     for line in [
         "void * flight_reveal_scene3d_resources_on_resolve(void * arg0, void * arg1, void * arg2, void * arg3);",
+        "void * flight_connect_signal_at_frame_rate(void * arg0, double arg1, void (*arg2)(void *, double), void * arg3);",
         "bool flight_call_disposer(void * arg0);",
         "void flight_free_disposer(void * arg0);",
     ] {
@@ -977,13 +978,16 @@ fn returned_disposers_lower_to_callable_handles() {
     }
     assert_line(&shim, "DEFINE_PRIM(_BOOL, flight_call_disposer, _BYTES);");
     assert_line(
+        &shim,
+        "DEFINE_PRIM(_BYTES, flight_connect_signal_at_frame_rate, _BYTES _F64 _BYTES _BYTES);",
+    );
+    assert_line(
         &generated_wrappers(),
         "    return Box::into_raw(Box::new(FfiDisposer { dispose }));",
     );
     assert!(!header.contains(" flight_enable_scene3d_resource_failure_guards("));
-    assert!(!header.contains(" flight_connect_signal_at_frame_rate("));
     assert!(generated_stats().contains("closure_return(Arc<dyn Fn() + Send + Sync>)"));
-    // The disposer lowering is allowlisted by function name: exactly one wrapper returns it.
+    // The disposer lowering is allowlisted by function name: exactly these wrappers return it.
     let wrappers = generated_wrappers();
     let disposer_wrappers: Vec<&str> = wrappers
         .lines()
@@ -993,7 +997,10 @@ fn returned_disposers_lower_to_callable_handles() {
         .collect();
     assert_eq!(
         disposer_wrappers,
-        ["pub unsafe extern \"C\" fn flight_reveal_scene3d_resources_on_resolve"]
+        [
+            "pub unsafe extern \"C\" fn flight_reveal_scene3d_resources_on_resolve",
+            "pub unsafe extern \"C\" fn flight_connect_signal_at_frame_rate",
+        ]
     );
 }
 
@@ -1044,6 +1051,9 @@ fn by_value_parameters_follow_rust_ownership() {
                 .split(" as ")
                 .next()
                 .unwrap();
+            if parameter.starts_with("__") {
+                continue;
+            }
             transfers += 1;
             assert!(
                 current_notes

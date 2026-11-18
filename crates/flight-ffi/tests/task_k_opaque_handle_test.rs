@@ -713,7 +713,7 @@ const TASK_K_CANDIDATES: &[Candidate] = &[
         "create_compressed_image_resource",
         "Arc<CompressedImageData>",
         Shared,
-        Contract::ClonedParam("data")
+        Contract::ClonedParam("compressed")
     ),
     generated!(
         "register_rive_core_object_handler",
@@ -947,7 +947,7 @@ const TASK_K_CANDIDATES: &[Candidate] = &[
         "&mut Vec<SwfAdjustmentRef>",
         Vec,
         Contract::VecParam {
-            parameter: "out",
+            parameter: "out_adjustments",
             owned: false,
             nullable: false,
         }
@@ -967,7 +967,7 @@ const TASK_K_CANDIDATES: &[Candidate] = &[
         "Option<&mut Vec<Requirement>>",
         Vec,
         Contract::VecParam {
-            parameter: "out",
+            parameter: "sink",
             owned: false,
             nullable: true,
         }

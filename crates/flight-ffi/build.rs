@@ -18,15 +18,39 @@ struct KnownEnum {
     variants: Vec<String>,
 }
 
+fn known_enum_name(ty: &str) -> Option<String> {
+    fn resolve(ty: &str, depth: usize) -> Option<String> {
+        if depth > 8 {
+            return None;
+        }
+        if KNOWN_ENUMS
+            .get()
+            .is_some_and(|enums| enums.contains_key(ty))
+        {
+            return Some(ty.to_string());
+        }
+        let definitions = TYPE_DEFINITIONS.get()?.get(ty)?;
+        let mut names = definitions.iter().map(|(_, definition)| match definition {
+            TypeDefinition::Alias(target) => resolve(target, depth + 1),
+            TypeDefinition::Nominal { .. } | TypeDefinition::GenericAlias => None,
+        });
+        let first = names.next()??;
+        names
+            .all(|name| name.as_ref() == Some(&first))
+            .then_some(first)
+    }
+
+    resolve(ty, 0)
+}
+
 fn is_known_enum(ty: &str) -> bool {
-    KNOWN_ENUMS
-        .get()
-        .is_some_and(|enums| enums.contains_key(ty))
+    known_enum_name(ty).is_some()
 }
 
 // `ffi_enum_from_u32!(value, [Enum::A, Enum::B])` over every variant of the known enum `ty`.
 fn get_enum_conversion(ty: &str, value: &str) -> String {
-    let known = &KNOWN_ENUMS.get().unwrap()[ty];
+    let known_name = known_enum_name(ty).unwrap();
+    let known = &KNOWN_ENUMS.get().unwrap()[&known_name];
     let qualified = qualify_type(ty);
     let variants: Vec<String> = known
         .variants
@@ -332,9 +356,8 @@ const ASYNC_FUTURE_ALIASES: &[(&str, bool)] = &[
     ("VideoProviderFuture", true),
 ];
 
-// Behavior a consumer would hand back to the SDK: format parsers, import handlers, migrations, and
-// closure-built sources. FFI exposes the consumption API only (agents/ffi-public-lane.md), so no
-// generic carrier maps these even where the outer wrapper has a template.
+// Behavior-bearing values with established Arc or borrowed-slice carriers. The outer carrier owns
+// the lifetime contract; bare callback/guard wrappers remain excluded below.
 const EXTENSION_POINT_TYPES: &[&str] = &[
     "GlyphOutlineSource",
     "RiveCoreObjectHandler",
@@ -1464,6 +1487,12 @@ fn get_owned_param_at_depth(ty: &str, depth: usize) -> Option<OwnedParam> {
     if ty.starts_with("Arc<") || ty.starts_with("Ref<") {
         return Some(OwnedParam::Cloned);
     }
+    if let Some(inner) = ty
+        .strip_prefix("Option<")
+        .and_then(|rest| rest.strip_suffix('>'))
+    {
+        return get_owned_param_at_depth(inner.trim(), depth + 1);
+    }
     if let Some((element, length)) = ty
         .strip_prefix('[')
         .and_then(|rest| rest.strip_suffix(']'))
@@ -1503,6 +1532,11 @@ fn get_param_ownership_note(ty: &str) -> Option<&'static str> {
     if ty.starts_with("Ref<")
         || ty.starts_with("Arc<")
         || ty.starts_with("SignalSlot<")
+    {
+        return Some(CLONED);
+    }
+    if opaque_clone_handle_type(&ty).is_some()
+        || get_owned_param(&ty) == Some(OwnedParam::Cloned)
     {
         return Some(CLONED);
     }
@@ -5413,10 +5447,27 @@ fn map_param_to_ffi(name: &str, ty: &str) -> Option<MappedParam> {
                 return None;
             }
         }
+        // A callback may return an optional opaque value through a nullable owned box. The
+        // callback transfers a non-null box to this wrapper, which consumes it before calling the
+        // SDK. This is the callback-side counterpart of an owned opaque parameter.
+        let opaque_option_return = parsed
+            .ret
+            .strip_prefix("Option<")
+            .and_then(|rest| rest.strip_suffix('>'))
+            .map(str::trim)
+            .filter(|inner| {
+                !inner.contains('<')
+                    && !inner.contains("::")
+                    && !is_scalar(inner)
+                    && !is_known_enum(inner)
+            })
+            .and_then(qualify_opaque_type);
         let ffi_ret = if parsed.ret == "void" {
             String::new()
         } else if is_scalar(&parsed.ret) {
             format!(" -> {}", parsed.ret)
+        } else if let Some(qualified) = &opaque_option_return {
+            format!(" -> *mut {qualified}")
         } else {
             return None;
         };
@@ -5435,14 +5486,28 @@ fn map_param_to_ffi(name: &str, ty: &str) -> Option<MappedParam> {
                 ffi_fn_args_str.join(", ")
             )
         };
+        let direct_callback_call = if let Some(qualified) = &opaque_option_return {
+            format!(
+                "{{ let __value = ({fn_name})({inner_args}); if __value.is_null() {{ None }} else {{ Some(*unsafe {{ Box::from_raw(__value as *mut {qualified}) }}) }} }}"
+            )
+        } else {
+            format!("({fn_name})({inner_args})")
+        };
+        let arc_callback_call = if let Some(qualified) = &opaque_option_return {
+            format!(
+                "{{ let __value = __fp({arc_call_args}); if __value.is_null() {{ None }} else {{ Some(*unsafe {{ Box::from_raw(__value as *mut {qualified}) }}) }} }}"
+            )
+        } else {
+            format!("__fp({arc_call_args})")
+        };
         let closure_body = if parsed.is_arc {
             format!(
-                "{{ let __ctx = {ctx_name} as usize; let __f = {fn_name} as usize; std::sync::Arc::new(move |{outer_params_str}| {{ let __fp: {ffi_fn_sig} = unsafe {{ std::mem::transmute(__f) }}; __fp({arc_call_args}) }}) }}"
+                "{{ let __ctx = {ctx_name} as usize; let __f = {fn_name} as usize; std::sync::Arc::new(move |{outer_params_str}| {{ let __fp: {ffi_fn_sig} = unsafe {{ std::mem::transmute(__f) }}; {arc_callback_call} }}) }}"
             )
         } else if parsed.is_mut {
-            format!("&mut |{outer_params_str}| ({fn_name})({inner_args})")
+            format!("&mut |{outer_params_str}| {direct_callback_call}")
         } else {
-            format!("&|{outer_params_str}| ({fn_name})({inner_args})")
+            format!("&|{outer_params_str}| {direct_callback_call}")
         };
         return Some(MappedParam {
             ffi_params: vec![
