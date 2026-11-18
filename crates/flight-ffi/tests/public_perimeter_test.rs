@@ -257,7 +257,11 @@ mod is_disposer_function {
         ));
         assert!(is_disposer_function(
             "connect_signal_at_frame_rate",
-            &["&Signal<FrameTick>", "f64", "Arc<dyn Fn(f64) + Send + Sync>"]
+            &[
+                "&Signal<FrameTick>",
+                "f64",
+                "Arc<dyn Fn(f64) + Send + Sync>"
+            ]
         ));
     }
 }

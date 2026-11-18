@@ -1529,15 +1529,10 @@ fn get_param_ownership_note(ty: &str) -> Option<&'static str> {
     if ty.starts_with('&') || is_opaque_fallback_excluded(&ty) {
         return None;
     }
-    if ty.starts_with("Ref<")
-        || ty.starts_with("Arc<")
-        || ty.starts_with("SignalSlot<")
-    {
+    if ty.starts_with("Ref<") || ty.starts_with("Arc<") || ty.starts_with("SignalSlot<") {
         return Some(CLONED);
     }
-    if opaque_clone_handle_type(&ty).is_some()
-        || get_owned_param(&ty) == Some(OwnedParam::Cloned)
-    {
+    if opaque_clone_handle_type(&ty).is_some() || get_owned_param(&ty) == Some(OwnedParam::Cloned) {
         return Some(CLONED);
     }
     if let Some(inner) = ty
@@ -1554,10 +1549,7 @@ fn get_param_ownership_note(ty: &str) -> Option<&'static str> {
         if is_opaque_transferred_generic(inner) || can_transfer_named_opaque(inner) {
             return Some(TRANSFERRED);
         }
-        if DYN_OPAQUE_TRAITS
-            .iter()
-            .any(|(_, alias)| *alias == inner)
-        {
+        if DYN_OPAQUE_TRAITS.iter().any(|(_, alias)| *alias == inner) {
             return Some(CLONED);
         }
         return None;
@@ -2439,12 +2431,12 @@ fn generate_return_body(call_wrap: &FfiReturn, call: &str, preamble: &str) -> St
                  None => std::ptr::null(),\n    \
                  }}"
         ),
-        FfiReturn::VecReturn(_)
-        | FfiReturn::HashMapReturn(_)
-        | FfiReturn::BoxSliceReturn(_) => format!(
-            "{preamble}    let vec = {call};\n    \
+        FfiReturn::VecReturn(_) | FfiReturn::HashMapReturn(_) | FfiReturn::BoxSliceReturn(_) => {
+            format!(
+                "{preamble}    let vec = {call};\n    \
                  return Box::into_raw(Box::new(vec)) as *mut std::ffi::c_void;"
-        ),
+            )
+        }
         FfiReturn::OptionVecReturn(_)
         | FfiReturn::OptionHashMapReturn(_)
         | FfiReturn::OptionBoxSliceReturn(_) => format!(
@@ -3278,7 +3270,10 @@ fn arc_ref_boxed_type(ty: &str) -> Option<String> {
     if let Some((_, scalar)) = get_typed_array_ref(resolved) {
         return Some(format!("flight_sdk::Ref<Box<[{scalar}]>>"));
     }
-    if let Some(inner) = resolved.strip_prefix("Arc<").and_then(|rest| rest.strip_suffix('>')) {
+    if let Some(inner) = resolved
+        .strip_prefix("Arc<")
+        .and_then(|rest| rest.strip_suffix('>'))
+    {
         return Some(format!("std::sync::Arc<{}>", qualify_opaque_type(inner)?));
     }
     let inner = resolved.strip_prefix("Ref<")?.strip_suffix('>')?.trim();
@@ -4033,7 +4028,9 @@ fn qualify_opaque_type(ty: &str) -> Option<String> {
         if DYN_OPAQUE_TRAITS
             .iter()
             .any(|(known, _)| *known == trait_name)
-            || DYN_MONO_TRAITS.iter().any(|(known, _)| *known == trait_name)
+            || DYN_MONO_TRAITS
+                .iter()
+                .any(|(known, _)| *known == trait_name)
         {
             return Some(format!("dyn {QUALIFIER}::{trait_name}"));
         }
@@ -4055,8 +4052,8 @@ fn qualify_opaque_type(ty: &str) -> Option<String> {
             .map(qualify_opaque_type)
             .collect::<Option<Vec<_>>>()?;
         let expected_arguments = match outer {
-            "Vec" | "Option" | "Box" | "Arc" | "Ref" | "Signal" | "SignalSlot"
-            | "Tween" | "Record" => 1,
+            "Vec" | "Option" | "Box" | "Arc" | "Ref" | "Signal" | "SignalSlot" | "Tween"
+            | "Record" => 1,
             "HashMap" => 2,
             _ => arguments.len(),
         };
@@ -4546,7 +4543,14 @@ fn map_opaque_fallback_param(name: &str, ty: &str) -> Option<MappedParam> {
                     "if {name}.is_null() {{ None }} else {{ Some(unsafe {{ (*({name} as *const {qualified})).clone() }}) }}"
                 ),
             ),
-            Some(OwnedParam::Transferred) if can_transfer_named_opaque(inner) => {
+            Some(OwnedParam::Transferred) if can_transfer_named_opaque(inner) => mapped_single(
+                name,
+                "*mut std::ffi::c_void",
+                format!(
+                    "if {name}.is_null() {{ None }} else {{ Some(*unsafe {{ Box::from_raw({name} as *mut {qualified}) }}) }}"
+                ),
+            ),
+            None if is_opaque_transferred_generic(inner) || can_transfer_named_opaque(inner) => {
                 mapped_single(
                     name,
                     "*mut std::ffi::c_void",
@@ -4555,14 +4559,6 @@ fn map_opaque_fallback_param(name: &str, ty: &str) -> Option<MappedParam> {
                     ),
                 )
             }
-            None if is_opaque_transferred_generic(inner)
-                || can_transfer_named_opaque(inner) => mapped_single(
-                name,
-                "*mut std::ffi::c_void",
-                format!(
-                    "if {name}.is_null() {{ None }} else {{ Some(*unsafe {{ Box::from_raw({name} as *mut {qualified}) }}) }}"
-                ),
-            ),
             _ => None,
         };
     }
@@ -5643,15 +5639,13 @@ fn map_param_to_ffi(name: &str, ty: &str) -> Option<MappedParam> {
                 &format!("*const {qualified}"),
                 format!("unsafe {{ (*{name}).clone() }}"),
             ),
-            OwnedParam::Transferred => {
-                Some(MappedParam {
-                    ffi_params: vec![(name.to_string(), format!("*mut {qualified}"))],
-                    bindings: vec![format!(
-                        "    assert!(!{name}.is_null(), \"{name} must be an owned {ty} handle\");"
-                    )],
-                    call_expr: format!("*unsafe {{ Box::from_raw({name}) }}"),
-                })
-            }
+            OwnedParam::Transferred => Some(MappedParam {
+                ffi_params: vec![(name.to_string(), format!("*mut {qualified}"))],
+                bindings: vec![format!(
+                    "    assert!(!{name}.is_null(), \"{name} must be an owned {ty} handle\");"
+                )],
+                call_expr: format!("*unsafe {{ Box::from_raw({name}) }}"),
+            }),
         };
     }
 
@@ -5960,8 +5954,7 @@ fn map_return_to_ffi(ty: &str) -> Option<(String, FfiReturn)> {
             let inner = inner.trim();
             if let Some(borrowed) = inner.strip_prefix('&') {
                 let borrowed = borrowed.trim();
-                if !borrowed.starts_with('[') && !is_scalar(borrowed) && borrowed != "str"
-                {
+                if !borrowed.starts_with('[') && !is_scalar(borrowed) && borrowed != "str" {
                     let qualified = qualify_opaque_type(borrowed)?;
                     return Some((
                         format!(" -> *const {qualified}"),
