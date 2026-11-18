@@ -33,7 +33,8 @@ unsafe extern "C" fn device_get_display_metrics(context: *mut c_void, out: *mut 
 unsafe extern "C" fn device_get_id(context: *mut c_void) -> *mut std::ffi::c_char {
     let context = unsafe { device_context(context) };
     context.calls.fetch_add(1, Ordering::SeqCst);
-    return CString::new("task-s-device").unwrap().into_raw();
+    let value = CString::new("task-s-device").unwrap();
+    return unsafe { crate::flight_create_string(value.as_ptr()) };
 }
 
 unsafe extern "C" fn device_get_info(context: *mut c_void, _out: *mut c_void) {
@@ -135,6 +136,22 @@ fn device_constructor_round_trips_out_string_optional_context_thread_and_free() 
         "optional Some invokes once"
     );
     unsafe { crate::flight_free_host_device_capability(with_refresh) };
+}
+
+#[test]
+fn owned_string_producer_copies_utf8_and_shares_the_standard_free() {
+    let value = CString::new("task-s-owned").unwrap();
+    let owned = unsafe { crate::flight_create_string(value.as_ptr()) };
+    assert!(!owned.is_null());
+    assert_eq!(
+        unsafe { std::ffi::CStr::from_ptr(owned) }.to_str().unwrap(),
+        "task-s-owned"
+    );
+    unsafe { crate::flight_free_string(owned) };
+
+    let invalid = CString::from_vec_with_nul(vec![0xff, 0]).unwrap();
+    assert!(unsafe { crate::flight_create_string(invalid.as_ptr()) }.is_null());
+    assert!(unsafe { crate::flight_create_string(ptr::null()) }.is_null());
 }
 
 #[derive(Default)]

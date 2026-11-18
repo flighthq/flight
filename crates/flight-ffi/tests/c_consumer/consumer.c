@@ -531,7 +531,7 @@ static void task_s_get_device_display_metrics(void *context, void *out) {
 static char *task_s_get_device_id(void *context) {
   struct task_s_device_context *device = context;
   device->calls += 1;
-  return flight_compute_rgb_hex_string(0x00000000u);
+  return flight_create_string("task-s-device");
 }
 
 static void task_s_get_device_info(void *context, void *out) {
@@ -571,7 +571,7 @@ static void check_task_s_host_capability_constructor(void) {
          "Task S mutable out carrier round-trips callback writes");
 
   char *id = flight_get_device_id(capability);
-  expect(id != NULL && strcmp(id, "#000000") == 0, "Task S owned string callback return round-trips");
+  expect(id != NULL && strcmp(id, "task-s-device") == 0, "Task S owned string callback return round-trips");
   flight_free_string(id);
 
   void *insets = flight_create_safe_area_insets();

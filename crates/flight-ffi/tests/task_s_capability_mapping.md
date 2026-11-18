@@ -70,14 +70,17 @@ For every supported public leaf:
    optional NULL becomes `None` and a present optional callback becomes `Some`.
 4. Borrowed pointer arguments exist only for the dynamic callback invocation. Mutable out handles
    preserve identity. Checked enums reject invalid discriminants inside the unwind boundary.
-5. Owned callback returns transfer one owner. Nested callbacks/sinks remain Rust-owned through the
-   returned disposer lease. Async completions settle exactly once through their typed helper.
+5. Owned callback returns transfer one owner. UTF-8 callback strings are produced with
+   `flight_create_string` and consumed by the adapter or released with `flight_free_string`.
+   Nested callbacks/sinks remain Rust-owned through the returned disposer lease. Async completions
+   settle exactly once through their typed helper.
 6. Free accepts NULL and drops exactly the constructor-owned box. It never releases caller context.
 
 ## Executable and structural coverage
 
 - The Rust runtime fixture constructs `HostDeviceCapability` and `HostTimerCapability`, exercises
-  mutable out handles, owned strings, scalar returns, optional None/Some, context identity,
+  mutable out handles, owned strings and their producer/free pair, scalar returns, optional
+  None/Some, context identity,
   cross-thread Send+Sync use, retained nested callbacks, disposer cancellation, and exact free.
 - The strict-C consumer constructs and invokes `HostDeviceCapability` under C11 with
   `-Wall -Wextra -Wpedantic -Werror`, including required/optional NULL and owned-string behavior.

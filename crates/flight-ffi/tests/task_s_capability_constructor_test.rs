@@ -936,6 +936,23 @@ fn constructor_free_c_and_hashlink_surfaces_are_exact_and_owned() {
     let distinct_context_contract = "use distinct stable values for distinct providers";
     let cloned_context_contract = "must remain valid and thread-safe until both the matching capability free and every sdk value that retained a clone are released";
 
+    let string_create = generated_function_block(&wrappers, "flight_create_string");
+    assert!(string_create.contains("std::ffi::CStr::from_ptr(value)"));
+    assert!(string_create.contains("if value.to_str().is_err()"));
+    assert!(string_create.contains("value.to_owned().into_raw()"));
+    assert_eq!(
+        occurrence_count(&header, "char * flight_create_string(const char * arg0);"),
+        1
+    );
+    assert!(header.contains(
+        "Copies a borrowed, NUL-terminated UTF-8 string into a Rust-owned callback-return carrier. NULL or invalid UTF-8 returns NULL."
+    ));
+    assert!(header.contains("Caller owns the return value; call flight_free_string when done."));
+    assert_eq!(
+        occurrence_count(&shim, "DEFINE_PRIM(_BYTES, flight_create_string, _BYTES);"),
+        1
+    );
+
     for capability in inventory
         .capabilities
         .iter()
@@ -1060,6 +1077,9 @@ fn constructor_free_c_and_hashlink_surfaces_are_exact_and_owned() {
             "{create} must document context lifetime through retained SDK clones"
         );
         assert!(comments.contains(&format!("call {free} when done")));
+        assert!(comments.contains(
+            "Produce owned string returns with flight_create_string and disposer returns with flight_create_disposer."
+        ));
         let mut prior_comment = 0;
         for field in capability
             .fields
