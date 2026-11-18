@@ -465,7 +465,7 @@ fn main() {
                             crate_used = true;
                             emitted = true;
                             stats_generated += 1;
-                            if let Some(ty) = boxed_ty {
+                            if let Some(ty) = boxed_ty.filter(|ty| needs_generic_boxed_free(ty)) {
                                 boxed_types.insert(ty);
                             }
                         }
@@ -485,7 +485,7 @@ fn main() {
                     crate_used = true;
                     collect_vec_ref_handle_specs(func, &mut vec_ref_handle_specs);
                     stats_generated += 1;
-                    if let Some(ty) = boxed_ty {
+                    if let Some(ty) = boxed_ty.filter(|ty| needs_generic_boxed_free(ty)) {
                         boxed_types.insert(ty);
                     }
                 } else {
@@ -1525,29 +1525,19 @@ fn generate_ffi_wrapper(func: &ParsedFn) -> Option<(String, Option<String>)> {
         FfiReturn::SharedClone(value) => (&**value, shared_ty.as_deref()),
         _ => (value_wrap, value_ty),
     };
-    let boxed_ty = if matches!(
+    let boxed_ty = boxed_type_for_return(value_wrap, value_ty);
+    if matches!(
         value_wrap,
-        FfiReturn::BoxReturn | FfiReturn::OptionBoxReturn
-    ) {
-        value_ty.map(|ty| {
-            let resolved = resolve_type_alias(ty);
-            if let Some(inner) = resolved.strip_prefix("Option<") {
-                if let Some(inner) = inner.strip_suffix('>') {
-                    return qualify_type(inner.trim());
-                }
-            }
-            qualify_type(&resolved)
-        })
-    } else if matches!(value_wrap, FfiReturn::ArcRefReturn) {
-        value_ty.and_then(non_entity_ref_boxed_type)
-    } else if let FfiReturn::ArrayOutReturn(element) = value_wrap {
-        Some(element.clone())
-    } else if let FfiReturn::PortsOutcomeReturn(port) = value_wrap {
-        // `_result_get` hands out boxed port Refs, released by the Ref's own free.
-        Some(format!("flight_sdk::Ref<{port}>"))
-    } else {
-        None
-    };
+        FfiReturn::BoxReturn
+            | FfiReturn::OptionBoxReturn
+            | FfiReturn::ArcRefReturn
+            | FfiReturn::OptionArcRefReturn
+            | FfiReturn::ArrayOutReturn(_)
+            | FfiReturn::PortsOutcomeReturn(_)
+    ) && boxed_ty.is_none()
+    {
+        return None;
+    }
 
     let ffi_name = format!("flight_{}", func.name);
     let call = format!(
@@ -1570,6 +1560,14 @@ fn generate_ffi_wrapper(func: &ParsedFn) -> Option<(String, Option<String>)> {
         generate_return_body(&call_wrap, &call, &preamble)
     };
     let helpers = generate_vec_result_helpers(&ffi_name, value_wrap);
+    let ownership = wrapper_ownership_doc(
+        func,
+        &ffi_name,
+        value_wrap,
+        boxed_ty.as_deref(),
+        matches!(call_wrap, FfiReturn::AsyncCallback(_)),
+    )
+    .unwrap_or_default();
 
     if PRODUCIBLE_TYPES.get().is_some() {
         for param in &func.params {
@@ -1590,7 +1588,7 @@ fn generate_ffi_wrapper(func: &ParsedFn) -> Option<(String, Option<String>)> {
         .collect();
     Some((
         format!(
-            "{notes}#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn {ffi_name}({params}){ret_decl} {{\n{body}\n}}{helpers}",
+            "{notes}{ownership}#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn {ffi_name}({params}){ret_decl} {{\n{body}\n}}{helpers}",
             params = ffi_params.join(", "),
         ),
         boxed_ty,
@@ -1666,19 +1664,31 @@ fn generate_mono_wrappers(func: &ParsedFn) -> Vec<(String, String, Option<String
         },
     };
 
-    let boxed_ty = if matches!(call_wrap, FfiReturn::BoxReturn | FfiReturn::OptionBoxReturn) {
-        func.ret.as_ref().map(|ty| {
-            let resolved = resolve_type_alias(ty);
-            if let Some(inner) = resolved.strip_prefix("Option<") {
-                if let Some(inner) = inner.strip_suffix('>') {
-                    return qualify_type(inner.trim());
-                }
-            }
-            qualify_type(&resolved)
-        })
-    } else {
-        None
+    let (value_wrap, value_ty) = match &call_wrap {
+        FfiReturn::AsyncCallback(spec) => (&spec.value, Some(spec.value_rust_ty.as_str())),
+        _ => (&call_wrap, func.ret.as_deref()),
     };
+    let shared_ty = match value_wrap {
+        FfiReturn::SharedClone(_) => value_ty.and_then(get_shared_value_type),
+        _ => None,
+    };
+    let (value_wrap, value_ty) = match value_wrap {
+        FfiReturn::SharedClone(value) => (&**value, shared_ty.as_deref()),
+        _ => (value_wrap, value_ty),
+    };
+    let boxed_ty = boxed_type_for_return(value_wrap, value_ty);
+    if matches!(
+        value_wrap,
+        FfiReturn::BoxReturn
+            | FfiReturn::OptionBoxReturn
+            | FfiReturn::ArcRefReturn
+            | FfiReturn::OptionArcRefReturn
+            | FfiReturn::ArrayOutReturn(_)
+            | FfiReturn::PortsOutcomeReturn(_)
+    ) && boxed_ty.is_none()
+    {
+        return Vec::new();
+    }
 
     let mut combos: Vec<Vec<(usize, &str)>> = vec![vec![]];
     for mp in &mono_params {
@@ -1766,12 +1776,20 @@ fn generate_mono_wrappers(func: &ParsedFn) -> Vec<(String, String, Option<String
             format!("{}\n", bindings.join("\n"))
         };
         let body = generate_return_body(&call_wrap, &call, &preamble);
-        let helpers = generate_vec_result_helpers(&ffi_name, &call_wrap);
+        let helpers = generate_vec_result_helpers(&ffi_name, value_wrap);
+        let ownership = wrapper_ownership_doc(
+            func,
+            &ffi_name,
+            value_wrap,
+            boxed_ty.as_deref(),
+            matches!(call_wrap, FfiReturn::AsyncCallback(_)),
+        )
+        .unwrap_or_default();
 
         wrappers.push((
             ffi_name.clone(),
             format!(
-                "#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn {ffi_name}({params}){ret_decl} {{\n{body}\n}}{helpers}",
+                "{ownership}#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn {ffi_name}({params}){ret_decl} {{\n{body}\n}}{helpers}",
                 params = ffi_params.join(", "),
             ),
             boxed_ty.clone(),
@@ -1803,7 +1821,8 @@ enum FfiReturn {
     OptionBoxSliceReturn(String),
     TupleReturn(Vec<String>),
     OptionTupleReturn(Vec<String>),
-    SliceReturn,
+    // The scalar element type of a copied borrowed slice. The FFI owns the copied Vec.
+    SliceReturn(String),
     RefReturn,
     OptionRefReturn,
     AsyncCallback(Box<AsyncCallbackSpec>),
@@ -1861,7 +1880,7 @@ fn is_async_callback_value(value: &FfiReturn) -> bool {
         FfiReturn::Void
             | FfiReturn::TupleReturn(_)
             | FfiReturn::OptionTupleReturn(_)
-            | FfiReturn::SliceReturn
+            | FfiReturn::SliceReturn(_)
             | FfiReturn::RefReturn
             | FfiReturn::OptionRefReturn
             | FfiReturn::AsyncCallback(_)
@@ -2037,7 +2056,7 @@ fn generate_return_body(call_wrap: &FfiReturn, call: &str, preamble: &str) -> St
                  None => std::ptr::null_mut(),\n    \
                  }}"
         ),
-        FfiReturn::SliceReturn => format!(
+        FfiReturn::SliceReturn(_) => format!(
             "{preamble}    let slice = {call};\n    \
                  return Box::into_raw(Box::new(slice.to_vec())) as *mut std::ffi::c_void;"
         ),
@@ -2133,6 +2152,7 @@ fn generate_vec_result_helpers(ffi_name: &str, call_wrap: &FfiReturn) -> String 
         FfiReturn::BoxSliceReturn(element) | FfiReturn::OptionBoxSliceReturn(element) => {
             (element.as_str(), false, format!("Box<[{element}]>"))
         }
+        FfiReturn::SliceReturn(element) => (element.as_str(), false, format!("Vec<{element}>")),
         FfiReturn::NestedVecReturn(element) => {
             return generate_nested_vec_result_helpers(ffi_name, element);
         }
@@ -2152,8 +2172,9 @@ fn generate_vec_result_helpers(ffi_name: &str, call_wrap: &FfiReturn) -> String 
     } else {
         "value as *const _".to_string()
     };
+    let borrowed = borrowed_ownership_doc(&format!("the {ffi_name} result handle remains alive"));
     format!(
-        "\n#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn {ffi_name}_result_len(result: *const std::ffi::c_void) -> usize {{\n    if result.is_null() {{ return 0; }}\n    return unsafe {{ &*(result as *const {container}) }}.len();\n}}\n#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn {ffi_name}_result_get(result: *const std::ffi::c_void, index: usize) -> {get_return} {{\n    if result.is_null() {{ return std::ptr::null(); }}\n    match unsafe {{ &*(result as *const {container}) }}.get(index) {{\n        Some(value) => {get_value},\n        None => std::ptr::null(),\n    }}\n}}\n#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn {ffi_name}_result_free(result: *mut std::ffi::c_void) {{\n    if !result.is_null() {{ unsafe {{ drop(Box::from_raw(result as *mut {container})); }} }}\n}}"
+        "\n#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn {ffi_name}_result_len(result: *const std::ffi::c_void) -> usize {{\n    if result.is_null() {{ return 0; }}\n    return unsafe {{ &*(result as *const {container}) }}.len();\n}}\n{borrowed}#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn {ffi_name}_result_get(result: *const std::ffi::c_void, index: usize) -> {get_return} {{\n    if result.is_null() {{ return std::ptr::null(); }}\n    match unsafe {{ &*(result as *const {container}) }}.get(index) {{\n        Some(value) => {get_value},\n        None => std::ptr::null(),\n    }}\n}}\n#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn {ffi_name}_result_free(result: *mut {container}) {{\n    if !result.is_null() {{ unsafe {{ drop(Box::from_raw(result)); }} }}\n}}"
     )
 }
 
@@ -2162,8 +2183,9 @@ fn generate_vec_result_helpers(ffi_name: &str, call_wrap: &FfiReturn) -> String 
 // `_result_free` releases every list. Inner bases stay valid until that free.
 fn generate_nested_vec_result_helpers(ffi_name: &str, element: &str) -> String {
     let container = format!("Vec<Vec<{element}>>");
+    let borrowed = borrowed_ownership_doc(&format!("the {ffi_name} result handle remains alive"));
     format!(
-        "\n#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn {ffi_name}_result_len(result: *const std::ffi::c_void) -> usize {{\n    if result.is_null() {{ return 0; }}\n    return unsafe {{ &*(result as *const {container}) }}.len();\n}}\n#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn {ffi_name}_result_get(result: *const std::ffi::c_void, index: usize) -> *const {element} {{\n    if result.is_null() {{ return std::ptr::null(); }}\n    match unsafe {{ &*(result as *const {container}) }}.get(index) {{\n        Some(list) if !list.is_empty() => list.as_ptr(),\n        _ => std::ptr::null(),\n    }}\n}}\n#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn {ffi_name}_result_get_len(result: *const std::ffi::c_void, index: usize) -> usize {{\n    if result.is_null() {{ return 0; }}\n    return unsafe {{ &*(result as *const {container}) }}.get(index).map_or(0, |list| list.len());\n}}\n#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn {ffi_name}_result_free(result: *mut std::ffi::c_void) {{\n    if !result.is_null() {{ unsafe {{ drop(Box::from_raw(result as *mut {container})); }} }}\n}}"
+        "\n#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn {ffi_name}_result_len(result: *const std::ffi::c_void) -> usize {{\n    if result.is_null() {{ return 0; }}\n    return unsafe {{ &*(result as *const {container}) }}.len();\n}}\n{borrowed}#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn {ffi_name}_result_get(result: *const std::ffi::c_void, index: usize) -> *const {element} {{\n    if result.is_null() {{ return std::ptr::null(); }}\n    match unsafe {{ &*(result as *const {container}) }}.get(index) {{\n        Some(list) if !list.is_empty() => list.as_ptr(),\n        _ => std::ptr::null(),\n    }}\n}}\n#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn {ffi_name}_result_get_len(result: *const std::ffi::c_void, index: usize) -> usize {{\n    if result.is_null() {{ return 0; }}\n    return unsafe {{ &*(result as *const {container}) }}.get(index).map_or(0, |list| list.len());\n}}\n#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn {ffi_name}_result_free(result: *mut {container}) {{\n    if !result.is_null() {{ unsafe {{ drop(Box::from_raw(result)); }} }}\n}}"
     )
 }
 
@@ -2173,8 +2195,14 @@ fn generate_nested_vec_result_helpers(ffi_name: &str, element: &str) -> String {
 // outlives the outcome and is released once by `flight_free_<port>_ref`.
 fn generate_ports_outcome_result_helpers(ffi_name: &str, port: &str) -> String {
     let container = format!("flight_sdk::MidiAccessPortsOutcome<{port}>");
+    let owned_port = format!("flight_sdk::Ref<{port}>");
+    let owned = ownership_doc(
+        "owned-return",
+        &format!("flight_free_{}", boxed_free_suffix(&owned_port)),
+        &owned_port,
+    );
     format!(
-        "\n#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn {ffi_name}_result_reason(result: *const std::ffi::c_void) -> i32 {{\n    if result.is_null() {{ return -1; }}\n    return unsafe {{ &*(result as *const {container}) }}.reason as i32;\n}}\n#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn {ffi_name}_result_has_ports(result: *const std::ffi::c_void) -> bool {{\n    if result.is_null() {{ return false; }}\n    return unsafe {{ &*(result as *const {container}) }}.ports.is_some();\n}}\n#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn {ffi_name}_result_len(result: *const std::ffi::c_void) -> usize {{\n    if result.is_null() {{ return 0; }}\n    return unsafe {{ &*(result as *const {container}) }}.ports.as_ref().map_or(0, |ports| ports.len());\n}}\n#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn {ffi_name}_result_get(result: *const std::ffi::c_void, index: usize) -> *mut std::ffi::c_void {{\n    if result.is_null() {{ return std::ptr::null_mut(); }}\n    match unsafe {{ &*(result as *const {container}) }}.ports.as_ref().and_then(|ports| ports.get(index)) {{\n        Some(port) => Box::into_raw(Box::new(port.clone())) as *mut std::ffi::c_void,\n        None => std::ptr::null_mut(),\n    }}\n}}\n#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn {ffi_name}_result_free(result: *mut std::ffi::c_void) {{\n    if !result.is_null() {{ unsafe {{ drop(Box::from_raw(result as *mut {container})); }} }}\n}}"
+        "\n#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn {ffi_name}_result_reason(result: *const std::ffi::c_void) -> i32 {{\n    if result.is_null() {{ return -1; }}\n    return unsafe {{ &*(result as *const {container}) }}.reason as i32;\n}}\n#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn {ffi_name}_result_has_ports(result: *const std::ffi::c_void) -> bool {{\n    if result.is_null() {{ return false; }}\n    return unsafe {{ &*(result as *const {container}) }}.ports.is_some();\n}}\n#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn {ffi_name}_result_len(result: *const std::ffi::c_void) -> usize {{\n    if result.is_null() {{ return 0; }}\n    return unsafe {{ &*(result as *const {container}) }}.ports.as_ref().map_or(0, |ports| ports.len());\n}}\n{owned}#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn {ffi_name}_result_get(result: *const std::ffi::c_void, index: usize) -> *mut std::ffi::c_void {{\n    if result.is_null() {{ return std::ptr::null_mut(); }}\n    match unsafe {{ &*(result as *const {container}) }}.ports.as_ref().and_then(|ports| ports.get(index)) {{\n        Some(port) => Box::into_raw(Box::new(port.clone())) as *mut std::ffi::c_void,\n        None => std::ptr::null_mut(),\n    }}\n}}\n#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn {ffi_name}_result_free(result: *mut {container}) {{\n    if !result.is_null() {{ unsafe {{ drop(Box::from_raw(result)); }} }}\n}}"
     )
 }
 
@@ -2184,8 +2212,9 @@ fn generate_ports_outcome_result_helpers(ffi_name: &str, port: &str) -> String {
 fn generate_string_record_result_helpers(ffi_name: &str) -> String {
     // The record type is public through `parse_xml_attributes` but lives in the `xml_native` module.
     let container = "flight_sdk::xml_native::XmlRecord<String, String>";
+    let owned = ownership_doc("owned-return", "flight_free_string", "std::ffi::c_char");
     format!(
-        "\n#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn {ffi_name}_result_len(result: *const std::ffi::c_void) -> usize {{\n    if result.is_null() {{ return 0; }}\n    return unsafe {{ &*(result as *const {container}) }}.len();\n}}\n#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn {ffi_name}_result_get(result: *const std::ffi::c_void, key: *const std::ffi::c_char) -> *mut std::ffi::c_char {{\n    if result.is_null() || key.is_null() {{ return std::ptr::null_mut(); }}\n    let key = unsafe {{ std::ffi::CStr::from_ptr(key) }}.to_str().unwrap_or(\"\");\n    match unsafe {{ &*(result as *const {container}) }}.get(key) {{\n        Some(value) => std::ffi::CString::new(value.as_str()).unwrap_or_default().into_raw(),\n        None => std::ptr::null_mut(),\n    }}\n}}\n#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn {ffi_name}_result_get_key(result: *const std::ffi::c_void, index: usize) -> *mut std::ffi::c_char {{\n    if result.is_null() {{ return std::ptr::null_mut(); }}\n    match unsafe {{ &*(result as *const {container}) }}.keys().nth(index) {{\n        Some(key) => std::ffi::CString::new(key.as_str()).unwrap_or_default().into_raw(),\n        None => std::ptr::null_mut(),\n    }}\n}}\n#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn {ffi_name}_result_get_value(result: *const std::ffi::c_void, index: usize) -> *mut std::ffi::c_char {{\n    if result.is_null() {{ return std::ptr::null_mut(); }}\n    let record = unsafe {{ &*(result as *const {container}) }};\n    match record.keys().nth(index).and_then(|key| record.get(key.as_str())) {{\n        Some(value) => std::ffi::CString::new(value.as_str()).unwrap_or_default().into_raw(),\n        None => std::ptr::null_mut(),\n    }}\n}}\n#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn {ffi_name}_result_free(result: *mut std::ffi::c_void) {{\n    if !result.is_null() {{ unsafe {{ drop(Box::from_raw(result as *mut {container})); }} }}\n}}"
+        "\n#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn {ffi_name}_result_len(result: *const std::ffi::c_void) -> usize {{\n    if result.is_null() {{ return 0; }}\n    return unsafe {{ &*(result as *const {container}) }}.len();\n}}\n{owned}#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn {ffi_name}_result_get(result: *const std::ffi::c_void, key: *const std::ffi::c_char) -> *mut std::ffi::c_char {{\n    if result.is_null() || key.is_null() {{ return std::ptr::null_mut(); }}\n    let key = unsafe {{ std::ffi::CStr::from_ptr(key) }}.to_str().unwrap_or(\"\");\n    match unsafe {{ &*(result as *const {container}) }}.get(key) {{\n        Some(value) => std::ffi::CString::new(value.as_str()).unwrap_or_default().into_raw(),\n        None => std::ptr::null_mut(),\n    }}\n}}\n{owned}#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn {ffi_name}_result_get_key(result: *const std::ffi::c_void, index: usize) -> *mut std::ffi::c_char {{\n    if result.is_null() {{ return std::ptr::null_mut(); }}\n    match unsafe {{ &*(result as *const {container}) }}.keys().nth(index) {{\n        Some(key) => std::ffi::CString::new(key.as_str()).unwrap_or_default().into_raw(),\n        None => std::ptr::null_mut(),\n    }}\n}}\n{owned}#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn {ffi_name}_result_get_value(result: *const std::ffi::c_void, index: usize) -> *mut std::ffi::c_char {{\n    if result.is_null() {{ return std::ptr::null_mut(); }}\n    let record = unsafe {{ &*(result as *const {container}) }};\n    match record.keys().nth(index).and_then(|key| record.get(key.as_str())) {{\n        Some(value) => std::ffi::CString::new(value.as_str()).unwrap_or_default().into_raw(),\n        None => std::ptr::null_mut(),\n    }}\n}}\n#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn {ffi_name}_result_free(result: *mut {container}) {{\n    if !result.is_null() {{ unsafe {{ drop(Box::from_raw(result)); }} }}\n}}"
     )
 }
 
@@ -2224,6 +2253,7 @@ pub unsafe extern "C" fn flight_get_storage_set_items_result_completed(result: *
     }
 }
 #[unsafe(no_mangle)]
+#[doc = "flight-ffi ownership|owned-return|flight_free_string|std::ffi::c_char"]
 pub unsafe extern "C" fn flight_get_storage_set_items_result_failed_key(result: *const flight_sdk::StorageSetItemsResult) -> *mut std::ffi::c_char {
     if result.is_null() { return std::ptr::null_mut(); }
     match unsafe { &*result } {
@@ -2304,7 +2334,7 @@ fn generate_registered_handle_support() -> String {
              unsafe fn ffi_{slug}_values<'a>(handle: *mut {handle}) -> Option<&'a mut {value_ty}> {{\n    if !is_ffi_{slug}(handle) {{ return None; }}\n    Some(unsafe {{ &mut (*handle).values }})\n}}\n\
              unsafe fn get_ffi_{slug}<'a>(handle: *const {handle}) -> Option<&'a {value_ty}> {{\n    if !is_ffi_{slug}(handle) {{ return None; }}\n    Some(unsafe {{ &(*handle).values }})\n}}\n\
              #[unsafe(no_mangle)]\npub unsafe extern \"C\" fn flight_clear_{slug}(handle: *mut {handle}) {{\n    if let Some(values) = unsafe {{ ffi_{slug}_values(handle) }} {{ values.clear(); }}\n}}\n\
-             #[unsafe(no_mangle)]\npub unsafe extern \"C\" fn flight_create_{slug}() -> *mut {handle} {{\n    let handle = Box::into_raw(Box::new({handle} {{ values: Default::default() }}));\n    get_ffi_{slug}_registry().insert(handle as usize);\n    handle\n}}\n\
+             #[doc = \"flight-ffi ownership|owned-return|flight_destroy_{slug}|{handle}\"]\n#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn flight_create_{slug}() -> *mut {handle} {{\n    let handle = Box::into_raw(Box::new({handle} {{ values: Default::default() }}));\n    get_ffi_{slug}_registry().insert(handle as usize);\n    handle\n}}\n\
              #[unsafe(no_mangle)]\npub unsafe extern \"C\" fn flight_destroy_{slug}(handle: *mut {handle}) {{\n    if handle.is_null() || !get_ffi_{slug}_registry().remove(&(handle as usize)) {{ return; }}\n    unsafe {{ drop(Box::from_raw(handle)); }}\n}}\n\
              #[unsafe(no_mangle)]\npub unsafe extern \"C\" fn flight_get_{slug}_length(handle: *const {handle}) -> usize {{\n    unsafe {{ get_ffi_{slug}(handle) }}.map_or(0, |values| values.len())\n}}\n"
         )
@@ -2325,6 +2355,7 @@ unsafe fn get_ffi_key<'a>(key: *const std::ffi::c_char) -> Option<&'a str> {
     Some(unsafe { std::ffi::CStr::from_ptr(key) }.to_str().unwrap_or(""))
 }
 #[unsafe(no_mangle)]
+#[doc = "flight-ffi ownership|owned-return|flight_free_texture_atlas_ref|flight_sdk::Ref<flight_sdk::TextureAtlas>"]
 pub unsafe extern "C" fn flight_get_optional_texture_atlas_list_item(list: *const FfiOptionalTextureAtlasList, index: usize) -> *mut std::ffi::c_void {
     match unsafe { get_ffi_optional_texture_atlas_list(list) }.and_then(|values| values.get(index)) {
         Some(Some(atlas)) => Box::into_raw(Box::new(atlas.clone())) as *mut std::ffi::c_void,
@@ -2332,6 +2363,7 @@ pub unsafe extern "C" fn flight_get_optional_texture_atlas_list_item(list: *cons
     }
 }
 #[unsafe(no_mangle)]
+#[doc = "flight-ffi ownership|owned-return|flight_free_string|std::ffi::c_char"]
 pub unsafe extern "C" fn flight_get_string_count_map_key(map: *const FfiStringCountMap, index: usize) -> *mut std::ffi::c_char {
     match unsafe { get_ffi_string_count_map(map) } {
         Some(values) => get_ffi_sorted_key(values, index),
@@ -2360,6 +2392,7 @@ pub unsafe extern "C" fn flight_get_u64_count_map_value(map: *const FfiU64CountM
     unsafe { get_ffi_u64_count_map(map) }.and_then(|values| values.get(&key)).map_or(-1, |count| *count as i64)
 }
 #[unsafe(no_mangle)]
+#[doc = "flight-ffi ownership|owned-return|flight_free_string|std::ffi::c_char"]
 pub unsafe extern "C" fn flight_get_texture_atlas_region_map_key(map: *const FfiTextureAtlasRegionMap, index: usize) -> *mut std::ffi::c_char {
     match unsafe { get_ffi_texture_atlas_region_map(map) } {
         Some(values) => get_ffi_sorted_key(values, index),
@@ -2368,6 +2401,7 @@ pub unsafe extern "C" fn flight_get_texture_atlas_region_map_key(map: *const Ffi
 }
 // An owned clone of the region Ref for `key`, or NULL when the map has no such key.
 #[unsafe(no_mangle)]
+#[doc = "flight-ffi ownership|owned-return|flight_free_texture_atlas_region_ref|flight_sdk::Ref<flight_sdk::TextureAtlasRegion>"]
 pub unsafe extern "C" fn flight_get_texture_atlas_region_map_value(map: *const FfiTextureAtlasRegionMap, key: *const std::ffi::c_char) -> *mut std::ffi::c_void {
     let (Some(values), Some(key)) = (unsafe { get_ffi_texture_atlas_region_map(map) }, unsafe { get_ffi_key(key) }) else { return std::ptr::null_mut(); };
     match values.get(key) {
@@ -2409,12 +2443,14 @@ fn generate_import_diagnostic_list_support() -> String {
          fn ffi_import_diagnostic_c_string(value: &str) -> *mut std::ffi::c_char {\n    std::ffi::CString::new(value).unwrap_or_default().into_raw()\n}\n\
          #[unsafe(no_mangle)]\n\
          pub unsafe extern \"C\" fn flight_clear_import_diagnostic_list(list: *mut FfiImportDiagnosticList) {\n    if let Some(values) = unsafe { ffi_import_diagnostic_list_values(list) } { values.clear(); }\n}\n\
+         #[doc = \"flight-ffi ownership|owned-return|flight_destroy_import_diagnostic_list|FfiImportDiagnosticList\"]\n\
          #[unsafe(no_mangle)]\n\
          pub unsafe extern \"C\" fn flight_create_import_diagnostic_list() -> *mut FfiImportDiagnosticList {\n    let list = Box::into_raw(Box::new(FfiImportDiagnosticList { values: Vec::new() }));\n    get_ffi_import_diagnostic_lists().insert(list as usize);\n    list\n}\n\
          #[unsafe(no_mangle)]\n\
          pub unsafe extern \"C\" fn flight_destroy_import_diagnostic_list(list: *mut FfiImportDiagnosticList) {\n    if list.is_null() || !get_ffi_import_diagnostic_lists().remove(&(list as usize)) { return; }\n    unsafe { drop(Box::from_raw(list)); }\n}\n\
          #[unsafe(no_mangle)]\n\
          pub unsafe extern \"C\" fn flight_get_import_diagnostic_list_detail_bool(list: *const FfiImportDiagnosticList, index: usize, detail_index: usize) -> bool {\n    match unsafe { ffi_import_diagnostic_list_detail(list, index, detail_index) } {\n        Some((_, flight_sdk::ImportDiagnosticDetailValue::Bool(value))) => *value,\n        _ => false,\n    }\n}\n\
+         #[doc = \"flight-ffi ownership|owned-return|flight_free_string|std::ffi::c_char\"]\n\
          #[unsafe(no_mangle)]\n\
          pub unsafe extern \"C\" fn flight_get_import_diagnostic_list_detail_key(list: *const FfiImportDiagnosticList, index: usize, detail_index: usize) -> *mut std::ffi::c_char {\n    match unsafe { ffi_import_diagnostic_list_detail(list, index, detail_index) } {\n        Some((key, _)) => ffi_import_diagnostic_c_string(key),\n        None => std::ptr::null_mut(),\n    }\n}\n\
          // 0 is Bool, 1 is Number and 2 is String.\n\
@@ -2424,15 +2460,19 @@ fn generate_import_diagnostic_list_support() -> String {
          pub unsafe extern \"C\" fn flight_get_import_diagnostic_list_detail_length(list: *const FfiImportDiagnosticList, index: usize) -> usize {\n    match unsafe { ffi_import_diagnostic_list_item(list, index) } {\n        Some(diagnostic) => diagnostic.detail.as_ref().map_or(0, |detail| detail.len()),\n        None => 0,\n    }\n}\n\
          #[unsafe(no_mangle)]\n\
          pub unsafe extern \"C\" fn flight_get_import_diagnostic_list_detail_number(list: *const FfiImportDiagnosticList, index: usize, detail_index: usize) -> f32 {\n    match unsafe { ffi_import_diagnostic_list_detail(list, index, detail_index) } {\n        Some((_, flight_sdk::ImportDiagnosticDetailValue::Number(value))) => *value,\n        _ => f32::NAN,\n    }\n}\n\
+         #[doc = \"flight-ffi ownership|owned-return|flight_free_string|std::ffi::c_char\"]\n\
          #[unsafe(no_mangle)]\n\
          pub unsafe extern \"C\" fn flight_get_import_diagnostic_list_detail_string(list: *const FfiImportDiagnosticList, index: usize, detail_index: usize) -> *mut std::ffi::c_char {\n    match unsafe { ffi_import_diagnostic_list_detail(list, index, detail_index) } {\n        Some((_, flight_sdk::ImportDiagnosticDetailValue::String(value))) => ffi_import_diagnostic_c_string(value),\n        _ => std::ptr::null_mut(),\n    }\n}\n\
+         #[doc = \"flight-ffi ownership|owned-return|flight_free_string|std::ffi::c_char\"]\n\
          #[unsafe(no_mangle)]\n\
          pub unsafe extern \"C\" fn flight_get_import_diagnostic_list_kind(list: *const FfiImportDiagnosticList, index: usize) -> *mut std::ffi::c_char {\n    match unsafe { ffi_import_diagnostic_list_item(list, index) } {\n        Some(diagnostic) => ffi_import_diagnostic_c_string(&diagnostic.kind),\n        None => std::ptr::null_mut(),\n    }\n}\n\
          #[unsafe(no_mangle)]\n\
          pub unsafe extern \"C\" fn flight_get_import_diagnostic_list_length(list: *const FfiImportDiagnosticList) -> usize {\n    if !is_ffi_import_diagnostic_list(list) { return 0; }\n    unsafe { &(*list).values }.len()\n}\n\
          // The `format_import_diagnostic` line: severity, origin, kind and sorted detail.\n\
+         #[doc = \"flight-ffi ownership|owned-return|flight_free_string|std::ffi::c_char\"]\n\
          #[unsafe(no_mangle)]\n\
          pub unsafe extern \"C\" fn flight_get_import_diagnostic_list_message(list: *const FfiImportDiagnosticList, index: usize) -> *mut std::ffi::c_char {\n    match unsafe { ffi_import_diagnostic_list_item(list, index) } {\n        Some(diagnostic) => ffi_import_diagnostic_c_string(&flight_sdk::format_import_diagnostic(diagnostic)),\n        None => std::ptr::null_mut(),\n    }\n}\n\
+         #[doc = \"flight-ffi ownership|owned-return|flight_free_string|std::ffi::c_char\"]\n\
          #[unsafe(no_mangle)]\n\
          pub unsafe extern \"C\" fn flight_get_import_diagnostic_list_origin(list: *const FfiImportDiagnosticList, index: usize) -> *mut std::ffi::c_char {\n    match unsafe { ffi_import_diagnostic_list_item(list, index) } {\n        Some(diagnostic) => ffi_import_diagnostic_c_string(&diagnostic.origin),\n        None => std::ptr::null_mut(),\n    }\n}\n\
          // ImportDiagnosticSeverity discriminant: 0 Drop, 1 Recover, 2 Reject, 3 Skip.\n\
@@ -2593,17 +2633,49 @@ fn generate_vec_ref_handle_support(specs: &BTreeSet<VecRefHandleSpec>) -> String
         let slug = &spec.slug;
         let inner_ty = &spec.inner_ty;
         let tag = spec.tag;
+        let handle_ty = format!("FfiVecRefHandle<{inner_ty}>");
+        let owned = ownership_doc(
+            "owned-return",
+            &format!("flight_vec_ref_{slug}_free"),
+            &handle_ty,
+        );
+        let borrowed =
+            borrowed_ownership_doc(&format!("the flight_vec_ref_{slug} handle remains alive"));
         writeln!(
             output,
-            "unsafe fn ffi_vec_ref_{slug}_values<'a>(handle: *mut FfiVecRefHandle<{inner_ty}>) -> &'a mut Vec<flight_sdk::Ref<{inner_ty}>> {{\n    assert!(!handle.is_null(), \"null Vec<Ref<{slug}>> handle\");\n    let handle = unsafe {{ &mut *handle }};\n    assert_eq!(handle.tag, {tag}, \"wrong Vec<Ref<{slug}>> handle type\");\n    &mut handle.values\n}}\n\
-             #[unsafe(no_mangle)]\n\
-             pub unsafe extern \"C\" fn flight_vec_ref_{slug}_create() -> *mut FfiVecRefHandle<{inner_ty}> {{\n    Box::into_raw(Box::new(FfiVecRefHandle {{ tag: {tag}, values: Vec::new() }}))\n}}\n\
-             #[unsafe(no_mangle)]\n\
-             pub unsafe extern \"C\" fn flight_vec_ref_{slug}_len(handle: *const FfiVecRefHandle<{inner_ty}>) -> usize {{\n    if handle.is_null() {{ return 0; }}\n    let handle = unsafe {{ &*handle }};\n    assert_eq!(handle.tag, {tag}, \"wrong Vec<Ref<{slug}>> handle type\");\n    handle.values.len()\n}}\n\
-             #[unsafe(no_mangle)]\n\
-             pub unsafe extern \"C\" fn flight_vec_ref_{slug}_get(handle: *const FfiVecRefHandle<{inner_ty}>, index: usize) -> *const std::ffi::c_void {{\n    if handle.is_null() {{ return std::ptr::null(); }}\n    let handle = unsafe {{ &*handle }};\n    assert_eq!(handle.tag, {tag}, \"wrong Vec<Ref<{slug}>> handle type\");\n    match handle.values.get(index) {{\n        Some(value) => value as *const _ as *const std::ffi::c_void,\n        None => std::ptr::null(),\n    }}\n}}\n\
-             #[unsafe(no_mangle)]\n\
-             pub unsafe extern \"C\" fn flight_vec_ref_{slug}_free(handle: *mut FfiVecRefHandle<{inner_ty}>) {{\n    if handle.is_null() {{ return; }}\n    assert_eq!(unsafe {{ (*handle).tag }}, {tag}, \"wrong Vec<Ref<{slug}>> handle type\");\n    unsafe {{ drop(Box::from_raw(handle)); }}\n}}"
+            r#"unsafe fn ffi_vec_ref_{slug}_values<'a>(handle: *mut FfiVecRefHandle<{inner_ty}>) -> &'a mut Vec<flight_sdk::Ref<{inner_ty}>> {{
+    assert!(!handle.is_null(), "null Vec<Ref<{slug}>> handle");
+    let handle = unsafe {{ &mut *handle }};
+    assert_eq!(handle.tag, {tag}, "wrong Vec<Ref<{slug}>> handle type");
+    &mut handle.values
+}}
+{owned}#[unsafe(no_mangle)]
+pub unsafe extern "C" fn flight_vec_ref_{slug}_create() -> *mut FfiVecRefHandle<{inner_ty}> {{
+    Box::into_raw(Box::new(FfiVecRefHandle {{ tag: {tag}, values: Vec::new() }}))
+}}
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn flight_vec_ref_{slug}_len(handle: *const FfiVecRefHandle<{inner_ty}>) -> usize {{
+    if handle.is_null() {{ return 0; }}
+    let handle = unsafe {{ &*handle }};
+    assert_eq!(handle.tag, {tag}, "wrong Vec<Ref<{slug}>> handle type");
+    handle.values.len()
+}}
+{borrowed}#[unsafe(no_mangle)]
+pub unsafe extern "C" fn flight_vec_ref_{slug}_get(handle: *const FfiVecRefHandle<{inner_ty}>, index: usize) -> *const std::ffi::c_void {{
+    if handle.is_null() {{ return std::ptr::null(); }}
+    let handle = unsafe {{ &*handle }};
+    assert_eq!(handle.tag, {tag}, "wrong Vec<Ref<{slug}>> handle type");
+    match handle.values.get(index) {{
+        Some(value) => value as *const _ as *const std::ffi::c_void,
+        None => std::ptr::null(),
+    }}
+}}
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn flight_vec_ref_{slug}_free(handle: *mut FfiVecRefHandle<{inner_ty}>) {{
+    if handle.is_null() {{ return; }}
+    assert_eq!(unsafe {{ (*handle).tag }}, {tag}, "wrong Vec<Ref<{slug}>> handle type");
+    unsafe {{ drop(Box::from_raw(handle)); }}
+}}"#
         )
         .unwrap();
     }
@@ -2689,6 +2761,19 @@ fn to_snake_case(s: &str) -> String {
 // The `flight_free_*` suffix for a boxed return type. Ref<T> returns box the Arc handle itself, so
 // their free name distinguishes that handle from a hypothetical boxed T.
 fn boxed_free_suffix(qualified_type: &str) -> String {
+    if let Some((element, length)) = qualified_type
+        .strip_prefix('[')
+        .and_then(|rest| rest.strip_suffix(']'))
+        .and_then(|array| array.split_once(';'))
+        .filter(|(element, _)| is_scalar(element.trim()))
+    {
+        return format!("{}_array_{}", element.trim(), length.trim());
+    }
+    for (alias, scalar) in TYPED_ARRAY_REFS {
+        if qualified_type == format!("flight_sdk::Ref<Box<[{scalar}]>>") {
+            return format!("{}_ref", to_snake_case(alias));
+        }
+    }
     if let Some(inner) = qualified_type
         .strip_prefix("flight_sdk::Ref<")
         .and_then(|rest| rest.strip_suffix('>'))
@@ -2711,17 +2796,176 @@ fn boxed_free_suffix(qualified_type: &str) -> String {
     return to_snake_case(type_name);
 }
 
-fn non_entity_ref_boxed_type(ty: &str) -> Option<String> {
-    let unqualified = strip_crate_paths(&strip_lifetimes(ty.trim()));
-    if !unqualified.starts_with("NonEntityCreateResult<") {
-        return None;
+fn needs_generic_boxed_free(qualified_type: &str) -> bool {
+    !TYPED_ARRAY_REFS
+        .iter()
+        .any(|(_, scalar)| qualified_type == format!("flight_sdk::Ref<Box<[{scalar}]>>"))
+}
+
+fn arc_ref_boxed_type(ty: &str) -> Option<String> {
+    let resolved = strip_crate_paths(&strip_lifetimes(&resolve_type_alias(ty.trim())));
+    let resolved = resolved
+        .strip_prefix("Option<")
+        .and_then(|inner| inner.strip_suffix('>'))
+        .unwrap_or(&resolved)
+        .trim();
+    if let Some((_, scalar)) = get_typed_array_ref(resolved) {
+        return Some(format!("flight_sdk::Ref<Box<[{scalar}]>>"));
     }
-    let resolved = resolve_type_alias(&unqualified);
     let inner = resolved.strip_prefix("Ref<")?.strip_suffix('>')?.trim();
-    if inner.contains('<') || inner.contains("::") || SKIP_TYPES.iter().any(|s| inner.contains(s)) {
+    if inner.contains('<') || SKIP_TYPES.iter().any(|skip| inner.contains(skip)) {
         return None;
     }
     Some(format!("flight_sdk::Ref<{}>", qualify_type(inner)))
+}
+
+fn boxed_value_type(ty: &str) -> Option<String> {
+    let resolved = strip_crate_paths(&strip_lifetimes(&resolve_type_alias(ty.trim())));
+    let value = resolved
+        .strip_prefix("Option<")
+        .and_then(|inner| inner.strip_suffix('>'))
+        .unwrap_or(&resolved)
+        .trim();
+    if value.is_empty() || value.starts_with('&') || value.contains("dyn ") {
+        return None;
+    }
+    Some(qualify_type(value))
+}
+
+fn boxed_type_for_return(value: &FfiReturn, value_ty: Option<&str>) -> Option<String> {
+    match value {
+        FfiReturn::BoxReturn | FfiReturn::OptionBoxReturn => boxed_value_type(value_ty?),
+        FfiReturn::ArcRefReturn | FfiReturn::OptionArcRefReturn => arc_ref_boxed_type(value_ty?),
+        FfiReturn::ArrayOutReturn(element) => Some(element.clone()),
+        FfiReturn::PortsOutcomeReturn(port) => Some(format!("flight_sdk::Ref<{port}>")),
+        _ => None,
+    }
+}
+
+fn result_container_type(value: &FfiReturn) -> Option<String> {
+    match value {
+        FfiReturn::VecReturn(spec) | FfiReturn::OptionVecReturn(spec) => {
+            Some(format!("Vec<{}>", spec.element_ty))
+        }
+        FfiReturn::BoxSliceReturn(element) | FfiReturn::OptionBoxSliceReturn(element) => {
+            Some(format!("Box<[{element}]>"))
+        }
+        FfiReturn::SliceReturn(element) => Some(format!("Vec<{element}>")),
+        FfiReturn::NestedVecReturn(element) => Some(format!("Vec<Vec<{element}>>")),
+        FfiReturn::PortsOutcomeReturn(port) => {
+            Some(format!("flight_sdk::MidiAccessPortsOutcome<{port}>"))
+        }
+        FfiReturn::StringRecordReturn => {
+            Some("flight_sdk::xml_native::XmlRecord<String,String>".to_string())
+        }
+        _ => None,
+    }
+}
+
+fn ownership_doc(kind: &str, free: &str, owned_type: &str) -> String {
+    format!("#[doc = \"flight-ffi ownership|{kind}|{free}|{owned_type}\"]\n")
+}
+
+fn borrowed_ownership_doc(anchor: &str) -> String {
+    format!("#[doc = \"flight-ffi ownership|borrowed|{anchor}\"]\n")
+}
+
+fn explicit_lifetime(ty: &str) -> Option<&str> {
+    let start = ty.find('\'')?;
+    let end = ty[start + 1..]
+        .find(|character: char| !character.is_ascii_alphanumeric() && character != '_')
+        .map_or(ty.len(), |end| start + 1 + end);
+    return Some(&ty[start..end]);
+}
+
+fn borrowed_return_anchor(function: &ParsedFn) -> String {
+    let return_ty = function.ret.as_deref().unwrap_or_default();
+    if return_ty.contains("'static") {
+        return "the process remains alive".to_string();
+    }
+
+    let return_lifetime = explicit_lifetime(return_ty);
+    let mut inputs: Vec<_> = function
+        .params
+        .iter()
+        .filter(|parameter| {
+            if let Some(lifetime) = return_lifetime {
+                parameter.ty.contains(lifetime)
+            } else {
+                let ty = strip_crate_paths(&resolve_type_alias(parameter.ty.trim()));
+                ty.starts_with('&') || ty.starts_with("Option<&")
+            }
+        })
+        .map(|parameter| parameter.name.trim_start_matches('_'))
+        .collect();
+    inputs.sort_unstable();
+    inputs.dedup();
+    return match inputs.as_slice() {
+        [] => "the originating SDK value remains alive".to_string(),
+        [input] => format!("the {input} input handle remains alive"),
+        _ => format!("the {} input handles remain alive", inputs.join(", ")),
+    };
+}
+
+fn wrapper_ownership_doc(
+    function: &ParsedFn,
+    ffi_name: &str,
+    value: &FfiReturn,
+    boxed_type: Option<&str>,
+    callback: bool,
+) -> Option<String> {
+    let delivery = if callback {
+        "owned-callback"
+    } else {
+        "owned-return"
+    };
+    match value {
+        FfiReturn::StringReturn | FfiReturn::OptionStringReturn => Some(ownership_doc(
+            delivery,
+            "flight_free_string",
+            "std::ffi::c_char",
+        )),
+        FfiReturn::BoxReturn
+        | FfiReturn::OptionBoxReturn
+        | FfiReturn::ArcRefReturn
+        | FfiReturn::OptionArcRefReturn => {
+            let owned_type = boxed_type?;
+            Some(ownership_doc(
+                delivery,
+                &format!("flight_free_{}", boxed_free_suffix(owned_type)),
+                owned_type,
+            ))
+        }
+        FfiReturn::VecReturn(_)
+        | FfiReturn::OptionVecReturn(_)
+        | FfiReturn::BoxSliceReturn(_)
+        | FfiReturn::OptionBoxSliceReturn(_)
+        | FfiReturn::SliceReturn(_)
+        | FfiReturn::NestedVecReturn(_)
+        | FfiReturn::PortsOutcomeReturn(_)
+        | FfiReturn::StringRecordReturn => Some(ownership_doc(
+            delivery,
+            &format!("{ffi_name}_result_free"),
+            &result_container_type(value)?,
+        )),
+        FfiReturn::DisposerReturn => Some(ownership_doc(
+            delivery,
+            "flight_free_disposer",
+            "FfiDisposer",
+        )),
+        FfiReturn::ArrayOutReturn(_) => {
+            let owned_type = boxed_type?;
+            Some(ownership_doc(
+                "owned-output",
+                &format!("flight_free_{}", boxed_free_suffix(owned_type)),
+                owned_type,
+            ))
+        }
+        FfiReturn::RefReturn | FfiReturn::OptionRefReturn => {
+            Some(borrowed_ownership_doc(&borrowed_return_anchor(function)))
+        }
+        _ => None,
+    }
 }
 
 // Generic carriers. An outer generic wrapper maps only through its own template below, and only
@@ -2852,10 +3096,11 @@ fn generate_typed_array_ref_support() -> String {
     for (alias, scalar) in TYPED_ARRAY_REFS {
         let slug = to_snake_case(alias);
         let handle = format!("flight_sdk::Ref<Box<[{scalar}]>>");
+        let owned = ownership_doc("owned-return", &format!("flight_free_{slug}_ref"), &handle);
         write!(
             output,
-            "#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn flight_create_{slug}_ref(values: *const {scalar}, count: usize) -> *mut std::ffi::c_void {{\n    assert!(!values.is_null() || count == 0, \"null values must have count zero\");\n    let values: Box<[{scalar}]> = if count == 0 {{ Box::new([]) }} else {{ unsafe {{ std::slice::from_raw_parts(values, count) }}.into() }};\n    let handle: {handle} = std::sync::Arc::new(std::sync::RwLock::new(values));\n    return Box::into_raw(Box::new(handle)) as *mut std::ffi::c_void;\n}}\n\
-             #[unsafe(no_mangle)]\npub unsafe extern \"C\" fn flight_free_{slug}_ref(handle: *mut std::ffi::c_void) {{\n    if !handle.is_null() {{ unsafe {{ drop(Box::from_raw(handle as *mut {handle})); }} }}\n}}\n\
+            "{owned}#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn flight_create_{slug}_ref(values: *const {scalar}, count: usize) -> *mut std::ffi::c_void {{\n    assert!(!values.is_null() || count == 0, \"null values must have count zero\");\n    let values: Box<[{scalar}]> = if count == 0 {{ Box::new([]) }} else {{ unsafe {{ std::slice::from_raw_parts(values, count) }}.into() }};\n    let handle: {handle} = std::sync::Arc::new(std::sync::RwLock::new(values));\n    return Box::into_raw(Box::new(handle)) as *mut std::ffi::c_void;\n}}\n\
+             #[unsafe(no_mangle)]\npub unsafe extern \"C\" fn flight_free_{slug}_ref(handle: *mut {handle}) {{\n    if !handle.is_null() {{ unsafe {{ drop(Box::from_raw(handle)); }} }}\n}}\n\
              #[unsafe(no_mangle)]\npub unsafe extern \"C\" fn flight_get_{slug}_ref_length(handle: *const std::ffi::c_void) -> usize {{\n    if handle.is_null() {{ return 0; }}\n    return unsafe {{ &*(handle as *const {handle}) }}.read().unwrap_or_else(std::sync::PoisonError::into_inner).len();\n}}\n\
              #[unsafe(no_mangle)]\npub unsafe extern \"C\" fn flight_read_{slug}_ref(handle: *const std::ffi::c_void, offset: usize, out: *mut {scalar}, count: usize) -> usize {{\n    if handle.is_null() || out.is_null() {{ return 0; }}\n    let values = unsafe {{ &*(handle as *const {handle}) }}.read().unwrap_or_else(std::sync::PoisonError::into_inner);\n    let source = values.get(offset..).unwrap_or(&[]);\n    let copied = source.len().min(count);\n    unsafe {{ std::ptr::copy_nonoverlapping(source.as_ptr(), out, copied) }};\n    return copied;\n}}\n\
              #[unsafe(no_mangle)]\npub unsafe extern \"C\" fn flight_write_{slug}_ref(handle: *const std::ffi::c_void, offset: usize, values: *const {scalar}, count: usize) -> usize {{\n    if handle.is_null() || values.is_null() {{ return 0; }}\n    let mut target = unsafe {{ &*(handle as *const {handle}) }}.write().unwrap_or_else(std::sync::PoisonError::into_inner);\n    let Some(target) = target.get_mut(offset..) else {{ return 0; }};\n    let copied = target.len().min(count);\n    unsafe {{ std::ptr::copy_nonoverlapping(values, target.as_mut_ptr(), copied) }};\n    return copied;\n}}\n"
@@ -4779,7 +5024,7 @@ fn map_return_to_ffi(ty: &str) -> Option<(String, FfiReturn)> {
             if is_scalar(inner) {
                 return Some((
                     " -> *mut std::ffi::c_void".to_string(),
-                    FfiReturn::SliceReturn,
+                    FfiReturn::SliceReturn(inner.to_string()),
                 ));
             }
         }

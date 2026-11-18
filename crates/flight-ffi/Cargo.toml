@@ -29,7 +29,7 @@ flight-sdk = { workspace = true }
 cc = "1.11.2"
 
 [build-dependencies]
-syn = { version = "2", features = ["full"] }
+syn = { version = "2", features = ["full", "visit"] }
 
 [lints]
 workspace = true

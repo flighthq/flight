@@ -173,18 +173,18 @@ mod tests {
     }
 
     // Reads a delivered `Box<[u8]>` result through the generated len/get helpers, then frees it.
-    fn take_bytes(
+    fn take_bytes<T>(
         result: *mut std::ffi::c_void,
         len: unsafe extern "C" fn(*const std::ffi::c_void) -> usize,
         get: unsafe extern "C" fn(*const std::ffi::c_void, usize) -> *const u8,
-        free: unsafe extern "C" fn(*mut std::ffi::c_void),
+        free: unsafe extern "C" fn(*mut T),
     ) -> Vec<u8> {
         assert!(!result.is_null());
         let count = unsafe { len(result) };
         assert!(unsafe { get(result, count) }.is_null());
         let base = unsafe { get(result, 0) };
         let bytes = unsafe { std::slice::from_raw_parts(base, count) }.to_vec();
-        unsafe { free(result) };
+        unsafe { free(result.cast()) };
         return bytes;
     }
 

@@ -123,6 +123,75 @@ fn skip_reduction_carriers_have_exact_header_and_hashlink_registrations() {
 }
 
 #[test]
+fn ownership_contracts_name_real_frees_and_borrow_anchors() {
+    let wrappers = generated_wrappers();
+    let (header, shim) = generated();
+
+    let mut ownership_comments = 0usize;
+    for line in header.lines().filter(|line| line.contains(" owns ")) {
+        let named_free = line
+            .split_once("; call ")
+            .and_then(|(_, rest)| rest.strip_suffix(" when done. */"))
+            .unwrap_or_else(|| panic!("malformed ownership comment: {line}"));
+        let free = named_free.strip_suffix(" for each").unwrap_or(named_free);
+        assert!(
+            header.lines().any(|prototype| {
+                prototype.starts_with("void ")
+                    && prototype
+                        .strip_prefix("void ")
+                        .is_some_and(|prototype| prototype.starts_with(&format!("{free}(")))
+            }),
+            "ownership comment names missing free {free}"
+        );
+        ownership_comments += 1;
+    }
+    assert!(
+        ownership_comments > 0,
+        "generated header has no ownership contracts"
+    );
+
+    for line in header
+        .lines()
+        .filter(|line| line.starts_with("/* Borrowed return;"))
+    {
+        assert!(line.contains("do not free; valid while "), "{line}");
+        assert!(!line.contains("all originating input handles"), "{line}");
+    }
+
+    for line in [
+        "/* Caller owns the return value; call flight_free_command_history_ref when done. */",
+        "void * flight_create_command_history(void);",
+        "void flight_free_command_history_ref(void * arg0);",
+        "void flight_free_bitmap(void * arg0);",
+        "void flight_free_bitmap_ref(void * arg0);",
+        "/* Borrowed return; do not free; valid while the machine input handle remains alive. */",
+    ] {
+        assert_line(&header, line);
+    }
+    for line in [
+        "pub unsafe extern \"C\" fn flight_free_bitmap(ptr: *mut flight_sdk::Bitmap) {",
+        "pub unsafe extern \"C\" fn flight_free_bitmap_ref(ptr: *mut flight_sdk::Ref<flight_sdk::Bitmap>) {",
+    ] {
+        assert_line(&wrappers, line);
+    }
+    for line in [
+        "DEFINE_PRIM(_BYTES, flight_create_command_history, _NO_ARG);",
+        "DEFINE_PRIM(_VOID, flight_free_command_history_ref, _BYTES);",
+    ] {
+        assert_line(&shim, line);
+    }
+
+    let borrowed = wrappers
+        .split("pub unsafe extern \"C\" fn flight_get_animation_state_machine_current_state")
+        .nth(1)
+        .expect("missing representative borrowed return")
+        .split("#[unsafe(no_mangle)]")
+        .next()
+        .unwrap();
+    assert!(!borrowed.contains("Box::into_raw"));
+}
+
+#[test]
 fn non_entity_create_result_uses_inner_carriers_and_owned_ref_handles() {
     let out_dir = Path::new(env!("OUT_DIR"));
     let wrappers = fs::read_to_string(out_dir.join("ffi_generated.rs")).unwrap();

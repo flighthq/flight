@@ -3,12 +3,119 @@
 use std::collections::BTreeMap;
 use std::fmt::Write;
 use std::path::Path;
-use syn::{FnArg, Item, ReturnType, Type};
+use syn::visit::Visit;
+use syn::{Expr, ExprCall, ExprMethodCall, FnArg, Item, ReturnType, Type};
 
 struct Carrier {
     c: String,
     hl: &'static str,
     signature: &'static str,
+}
+
+const OWNERSHIP_DOC_PREFIX: &str = "flight-ffi ownership|";
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum OwnershipKind {
+    OwnedReturn,
+    OwnedCallback,
+    OwnedOutput,
+    Borrowed,
+}
+
+#[derive(Debug)]
+struct Ownership {
+    kind: OwnershipKind,
+    free: Option<String>,
+    owned_type: Option<String>,
+    anchor: Option<String>,
+}
+
+fn function_ownership(function: &syn::ItemFn) -> Option<Ownership> {
+    let mut ownership = None;
+    for attribute in &function.attrs {
+        if !attribute.path().is_ident("doc") {
+            continue;
+        }
+        let syn::Meta::NameValue(meta) = &attribute.meta else {
+            continue;
+        };
+        let Expr::Lit(literal) = &meta.value else {
+            continue;
+        };
+        let syn::Lit::Str(value) = &literal.lit else {
+            continue;
+        };
+        let value = value.value();
+        let Some(payload) = value.strip_prefix(OWNERSHIP_DOC_PREFIX) else {
+            continue;
+        };
+        assert!(
+            ownership.is_none(),
+            "duplicate ownership metadata on {}",
+            function.sig.ident
+        );
+        let fields: Vec<_> = payload.split('|').collect();
+        let parsed = match fields.as_slice() {
+            ["owned-return", free, owned_type] => Ownership {
+                kind: OwnershipKind::OwnedReturn,
+                free: Some((*free).to_string()),
+                owned_type: Some((*owned_type).to_string()),
+                anchor: None,
+            },
+            ["owned-callback", free, owned_type] => Ownership {
+                kind: OwnershipKind::OwnedCallback,
+                free: Some((*free).to_string()),
+                owned_type: Some((*owned_type).to_string()),
+                anchor: None,
+            },
+            ["owned-output", free, owned_type] => Ownership {
+                kind: OwnershipKind::OwnedOutput,
+                free: Some((*free).to_string()),
+                owned_type: Some((*owned_type).to_string()),
+                anchor: None,
+            },
+            ["borrowed", anchor] => Ownership {
+                kind: OwnershipKind::Borrowed,
+                free: None,
+                owned_type: None,
+                anchor: Some((*anchor).to_string()),
+            },
+            _ => panic!(
+                "malformed ownership metadata on {}: {value}",
+                function.sig.ident
+            ),
+        };
+        ownership = Some(parsed);
+    }
+    ownership
+}
+
+#[derive(Default)]
+struct RawOwnerVisitor {
+    allocations: usize,
+}
+
+impl<'ast> Visit<'ast> for RawOwnerVisitor {
+    fn visit_expr_call(&mut self, call: &'ast ExprCall) {
+        if let Expr::Path(path) = &*call.func {
+            if path
+                .path
+                .segments
+                .last()
+                .is_some_and(|segment| segment.ident == "into_raw")
+            {
+                self.allocations += 1;
+            }
+        }
+        syn::visit::visit_expr_call(self, call);
+    }
+
+    fn visit_expr_method_call(&mut self, call: &'ast ExprMethodCall) {
+        if call.method == "into_raw" {
+            self.allocations += 1;
+        }
+        syn::visit::visit_expr_method_call(self, call);
+    }
 }
 
 // A callback parameter's C function-pointer type, `ret (*)(params)`; `name` places the declarator
@@ -381,6 +488,7 @@ fn type_fingerprint(ty: &Type) -> String {
         ),
         // Boxed scalar fixed arrays are released by `flight_free_<scalar>_array_<length>`.
         Type::Array(array) => format!("[{}; _]", type_fingerprint(&array.elem)),
+        Type::Slice(slice) => format!("[{}]", type_fingerprint(&slice.elem)),
         _ => panic!("unsupported generated handle type"),
     }
 }
@@ -403,11 +511,187 @@ fn function_param(function: &syn::ItemFn, index: usize) -> &Type {
     &parameter.ty
 }
 
+fn function_named_param<'a>(function: &'a syn::ItemFn, name: &str) -> Option<&'a Type> {
+    function.sig.inputs.iter().find_map(|argument| {
+        let FnArg::Typed(parameter) = argument else {
+            return None;
+        };
+        let syn::Pat::Ident(ident) = &*parameter.pat else {
+            return None;
+        };
+        (ident.ident == name).then_some(&*parameter.ty)
+    })
+}
+
 fn function_return(function: &syn::ItemFn) -> Option<&Type> {
     match &function.sig.output {
         ReturnType::Default => None,
         ReturnType::Type(_, ty) => Some(ty),
     }
+}
+
+fn owned_delivery_pointer<'a>(
+    function: &'a syn::ItemFn,
+    kind: OwnershipKind,
+) -> Option<&'a syn::TypePtr> {
+    match kind {
+        OwnershipKind::OwnedReturn => function_return(function).and_then(pointer_type),
+        OwnershipKind::OwnedCallback => {
+            let Type::BareFn(callback) = function_named_param(function, "complete_fn")? else {
+                return None;
+            };
+            callback
+                .inputs
+                .iter()
+                .nth(1)
+                .and_then(|argument| pointer_type(&argument.ty))
+        }
+        OwnershipKind::OwnedOutput => function_named_param(function, "out_values")
+            .and_then(pointer_type)
+            .and_then(|outer| pointer_type(&outer.elem)),
+        OwnershipKind::Borrowed => None,
+    }
+}
+
+fn is_generated_ffi_function(function: &syn::ItemFn) -> bool {
+    function.sig.ident.to_string().starts_with("flight_")
+        && function
+            .sig
+            .abi
+            .as_ref()
+            .and_then(|abi| abi.name.as_ref())
+            .is_some_and(|name| name.value() == "C")
+}
+
+fn canonical_type(source: &str) -> String {
+    let ty: Type = syn::parse_str(source)
+        .unwrap_or_else(|error| panic!("invalid ownership type {source}: {error}"));
+    type_fingerprint(&ty)
+}
+
+fn validate_return_ownership(file: &syn::File) {
+    let mut functions = BTreeMap::new();
+    for item in &file.items {
+        let Item::Fn(function) = item else {
+            continue;
+        };
+        if !is_generated_ffi_function(function) {
+            continue;
+        }
+        let name = function.sig.ident.to_string();
+        assert!(
+            functions.insert(name.clone(), function).is_none(),
+            "duplicate generated FFI function {name}"
+        );
+    }
+
+    let mut errors = Vec::new();
+    for (name, function) in &functions {
+        let ownership = function_ownership(function);
+        let pointer_return = function_return(function).and_then(pointer_type);
+        let mut visitor = RawOwnerVisitor::default();
+        visitor.visit_block(&function.block);
+
+        if pointer_return.is_some() && ownership.is_none() {
+            errors.push(format!(
+                "{name} returns a pointer without ownership metadata"
+            ));
+            continue;
+        }
+        if visitor.allocations > 0 && ownership.is_none() {
+            errors.push(format!(
+                "{name} creates {} raw owner(s) without ownership metadata",
+                visitor.allocations
+            ));
+            continue;
+        }
+        let Some(ownership) = ownership else {
+            continue;
+        };
+        match ownership.kind {
+            OwnershipKind::Borrowed => {
+                if pointer_return.is_none() {
+                    errors.push(format!("{name} marks a non-pointer return as borrowed"));
+                }
+                if visitor.allocations > 0 {
+                    errors.push(format!("{name} marks a raw owner as borrowed"));
+                }
+                if ownership.anchor.as_deref().is_none_or(str::is_empty) {
+                    errors.push(format!("{name} has no borrowed lifetime anchor"));
+                }
+            }
+            OwnershipKind::OwnedReturn
+            | OwnershipKind::OwnedCallback
+            | OwnershipKind::OwnedOutput => {
+                if ownership.kind == OwnershipKind::OwnedReturn && pointer_return.is_none() {
+                    errors.push(format!("{name} marks a non-pointer return as owned"));
+                }
+                if ownership.kind != OwnershipKind::OwnedReturn && pointer_return.is_some() {
+                    errors.push(format!(
+                        "{name} uses {:?} metadata for a pointer return",
+                        ownership.kind
+                    ));
+                }
+                let Some(free_name) = ownership.free.as_deref() else {
+                    errors.push(format!("{name} has no paired free name"));
+                    continue;
+                };
+                let Some(owned_type) = ownership.owned_type.as_deref() else {
+                    errors.push(format!("{name} has no owned Rust type"));
+                    continue;
+                };
+                let Some(free) = functions.get(free_name) else {
+                    errors.push(format!("{name} names missing paired free {free_name}"));
+                    continue;
+                };
+                if free.sig.inputs.len() != 1 || function_return(free).is_some() {
+                    errors.push(format!(
+                        "{name} paired free {free_name} must take one pointer and return void"
+                    ));
+                    continue;
+                }
+                let Some(pointer) = pointer_type(function_param(free, 0)) else {
+                    errors.push(format!(
+                        "{name} paired free {free_name} does not take a pointer"
+                    ));
+                    continue;
+                };
+                if pointer.mutability.is_none() {
+                    errors.push(format!(
+                        "{name} paired free {free_name} does not take a mutable owner pointer"
+                    ));
+                }
+                let expected = canonical_type(owned_type);
+                let actual = type_fingerprint(&pointer.elem);
+                if expected != actual {
+                    errors.push(format!(
+                        "{name} owns {expected}, but {free_name} releases {actual}"
+                    ));
+                }
+                let Some(delivery) = owned_delivery_pointer(function, ownership.kind) else {
+                    errors.push(format!(
+                        "{name} has no {:?} delivery pointer",
+                        ownership.kind
+                    ));
+                    continue;
+                };
+                if delivery.mutability.is_none() {
+                    errors.push(format!("{name} delivers an immutable owned pointer"));
+                }
+                let delivered = type_fingerprint(&delivery.elem);
+                if delivered != "std::ffi::c_void" && delivered != expected {
+                    errors.push(format!(
+                        "{name} declares {expected} ownership but delivers {delivered}"
+                    ));
+                }
+            }
+        }
+    }
+    assert!(
+        errors.is_empty(),
+        "generated return ownership invariant failed:\n{}",
+        errors.join("\n")
+    );
 }
 
 fn validate_vec_ref_handles(file: &syn::File) {
@@ -570,6 +854,7 @@ pub fn emit(source: &str, out: &Path) {
     validate_import_diagnostic_list(&file);
     validate_vec_result_helpers(&file);
     validate_vec_ref_handles(&file);
+    validate_return_ownership(&file);
     let mut header = String::from(
         "/* Generated by flight-ffi. Opaque pointers preserve ABI without exposing Rust layouts. */\n#ifndef FLIGHT_FFI_H\n#define FLIGHT_FFI_H\n#include <stdbool.h>\n#include <stdint.h>\n#include <stddef.h>\n\
 typedef struct FlightShapeBoundsContextVTable {\n\
@@ -655,6 +940,34 @@ typedef struct FlightShapeBoundsContextVTable {\n\
         } else {
             hl_params.join(", ")
         };
+        if let Some(ownership) = function_ownership(&function) {
+            match ownership.kind {
+                OwnershipKind::OwnedReturn => writeln!(
+                    header,
+                    "/* Caller owns the return value; call {} when done. */",
+                    ownership.free.as_deref().unwrap()
+                )
+                .unwrap(),
+                OwnershipKind::OwnedCallback => writeln!(
+                    header,
+                    "/* On successful completion, caller owns the callback value; call {} when done. */",
+                    ownership.free.as_deref().unwrap()
+                )
+                .unwrap(),
+                OwnershipKind::OwnedOutput => writeln!(
+                    header,
+                    "/* Caller owns each handle written to the output; call {} for each when done. */",
+                    ownership.free.as_deref().unwrap()
+                )
+                .unwrap(),
+                OwnershipKind::Borrowed => writeln!(
+                    header,
+                    "/* Borrowed return; do not free; valid while {}. */",
+                    ownership.anchor.as_deref().unwrap()
+                )
+                .unwrap(),
+            }
+        }
         writeln!(header, "{ret} {name}({c_params});").unwrap();
         let call = format!("{name}({})", call_args.join(", "));
         let body = if result.is_some() {

@@ -4,6 +4,29 @@ use std::sync::Arc;
 
 use crate::*;
 
+mod owned_ref_return_lifecycle {
+    use super::*;
+
+    #[test]
+    fn paired_free_releases_exactly_the_returned_arc_owner() {
+        let handle = unsafe { flight_create_command_history() };
+        assert!(!handle.is_null());
+        let history = unsafe {
+            &*handle
+                .cast::<flight_sdk::Ref<flight_sdk::CommandHistory>>()
+                .cast_const()
+        };
+        assert_eq!(Arc::strong_count(history), 1);
+
+        let observer = Arc::clone(history);
+        assert_eq!(Arc::strong_count(&observer), 2);
+        unsafe { flight_free_command_history_ref(handle.cast()) };
+        assert_eq!(Arc::strong_count(&observer), 1);
+
+        unsafe { flight_free_command_history_ref(std::ptr::null_mut()) };
+    }
+}
+
 mod flight_build_texture_atlas_region_index {
     use super::*;
 
@@ -310,9 +333,9 @@ mod flight_create_audio_resource_from_samples {
         );
         assert_eq!(read[0], 0.75);
         assert!(unsafe { flight_get_audio_resource_channel_data(resource, 3) }.is_null());
-        unsafe { flight_free_float32_array_ref(again) };
-        unsafe { flight_free_float32_array_ref(data) };
-        unsafe { flight_free_float32_array_ref(channel) };
+        unsafe { flight_free_float32_array_ref(again.cast()) };
+        unsafe { flight_free_float32_array_ref(data.cast()) };
+        unsafe { flight_free_float32_array_ref(channel.cast()) };
         unsafe {
             drop(Box::from_raw(
                 resource as *mut flight_sdk::Ref<flight_sdk::AudioResource>,
@@ -365,7 +388,7 @@ mod flight_create_embedded_image_resource_reference {
         let reference = unsafe { flight_create_embedded_image_resource_reference(handle) };
         let shared = unsafe { &*(handle as *const flight_sdk::Ref<Box<[u8]>>) };
         assert_eq!(Arc::strong_count(shared), 2);
-        unsafe { flight_free_uint8_array_ref(handle) };
+        unsafe { flight_free_uint8_array_ref(handle.cast()) };
         unsafe {
             drop(Box::from_raw(
                 reference as *mut flight_sdk::Ref<flight_sdk::EmbeddedImageResourceReference>,
@@ -396,14 +419,14 @@ mod flight_create_uint8_array_ref {
             unsafe { flight_write_uint8_array_ref(handle, 9, bytes.as_ptr(), 1) },
             0
         );
-        unsafe { flight_free_uint8_array_ref(handle) };
+        unsafe { flight_free_uint8_array_ref(handle.cast()) };
     }
 
     #[test]
     fn reads_null_handles_as_empty() {
         let empty = unsafe { flight_create_uint8_array_ref(std::ptr::null(), 0) };
         assert_eq!(unsafe { flight_get_uint8_array_ref_length(empty) }, 0);
-        unsafe { flight_free_uint8_array_ref(empty) };
+        unsafe { flight_free_uint8_array_ref(empty.cast()) };
         assert_eq!(
             unsafe { flight_get_uint8_array_ref_length(std::ptr::null()) },
             0
@@ -435,7 +458,7 @@ mod flight_flatten_path {
             unsafe { flight_flatten_path_result_get_len(contours, 1) },
             0
         );
-        unsafe { flight_flatten_path_result_free(contours) };
+        unsafe { flight_flatten_path_result_free(contours.cast()) };
     }
 
     #[test]
@@ -513,7 +536,7 @@ mod flight_get_midi_access_input_ports_result {
         assert!(unsafe { flight_get_midi_access_input_ports_result_get(outcome, 1) }.is_null());
         // The handle is an owned clone: it shares the port and outlives the outcome.
         assert_eq!(Arc::strong_count(&port), 3);
-        unsafe { flight_get_midi_access_input_ports_result_free(outcome) };
+        unsafe { flight_get_midi_access_input_ports_result_free(outcome.cast()) };
         let owned = unsafe { &*(handle as *const flight_sdk::Ref<flight_sdk::MidiInputPort>) };
         assert!(Arc::ptr_eq(owned, &port));
         assert_eq!(owned.read().unwrap().id, "input");
@@ -534,10 +557,10 @@ mod flight_get_midi_access_input_ports_result {
             unsafe { flight_get_midi_access_input_ports_result_reason(absent) },
             flight_sdk::MidiAccessPortsReason::Disposed as i32
         );
-        unsafe { flight_get_midi_access_input_ports_result_free(absent) };
+        unsafe { flight_get_midi_access_input_ports_result_free(absent.cast()) };
         let empty = box_outcome(Some(Vec::new()), flight_sdk::MidiAccessPortsReason::Ok);
         assert!(unsafe { flight_get_midi_access_input_ports_result_has_ports(empty) });
-        unsafe { flight_get_midi_access_input_ports_result_free(empty) };
+        unsafe { flight_get_midi_access_input_ports_result_free(empty.cast()) };
     }
 
     #[test]
@@ -615,7 +638,7 @@ mod flight_get_timeline_labels {
         let label = unsafe { &*flight_get_timeline_labels_result_get(labels, 0) };
         assert_eq!((label.frame, label.name.as_str()), (3, "intro"));
         assert!(unsafe { flight_get_timeline_labels_result_get(labels, 1) }.is_null());
-        unsafe { flight_get_timeline_labels_result_free(labels) };
+        unsafe { flight_get_timeline_labels_result_free(labels.cast()) };
     }
 
     #[test]
@@ -624,7 +647,7 @@ mod flight_get_timeline_labels {
         let handle = &timeline as *const flight_sdk::TimelineRef as *const std::ffi::c_void;
         let labels = unsafe { flight_get_timeline_labels(handle) };
         assert_eq!(unsafe { flight_get_timeline_labels_result_len(labels) }, 0);
-        unsafe { flight_get_timeline_labels_result_free(labels) };
+        unsafe { flight_get_timeline_labels_result_free(labels.cast()) };
     }
 }
 
@@ -667,7 +690,7 @@ mod flight_parse_xml_attributes {
         assert!(
             unsafe { flight_parse_xml_attributes_result_get(record, missing.as_ptr()) }.is_null()
         );
-        unsafe { flight_parse_xml_attributes_result_free(record) };
+        unsafe { flight_parse_xml_attributes_result_free(record.cast()) };
         unsafe { flight_parse_xml_attributes_result_free(std::ptr::null_mut()) };
     }
 }

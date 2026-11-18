@@ -337,7 +337,7 @@ static void check_optional_tuples(void) {
 }
 
 static void check_unit_signals(void) {
-  /* The history is a Ref handle; boxed Ref handles have no release export yet. */
+  /* The history and signal values are independent owned Ref handles. */
   void *history = flight_create_command_history();
   expect(history != NULL, "create_command_history returns a Ref handle");
   expect(flight_get_command_history_signals(history) == NULL, "a history starts with no change signal");
@@ -349,6 +349,8 @@ static void check_unit_signals(void) {
   flight_free_unit_signal(present);
   flight_free_unit_signal(enabled);
   flight_free_unit_signal(NULL);
+  flight_free_command_history_ref(history);
+  flight_free_command_history_ref(NULL);
 }
 
 struct bool_completion {
