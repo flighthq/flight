@@ -476,6 +476,40 @@ static void check_async_callbacks(void) {
   expect(!completion.had_error, "a fulfilled future passes a NULL error");
 }
 
+struct task_m_color_context {
+  int calls;
+};
+
+static bool task_m_sample_color(void *context, float t, float *out_rgb) {
+  struct task_m_color_context *color = context;
+  color->calls += 1;
+  out_rgb[0] = t;
+  out_rgb[1] = t + 1.0f;
+  out_rgb[2] = t + 2.0f;
+  return true;
+}
+
+static void check_task_m_carriers(void) {
+  const uint8_t wav[] = {0x52, 0x49, 0x46, 0x46, 0, 0, 0, 0, 0x57, 0x41, 0x56, 0x45};
+  char *mime = flight_detect_audio_mime_type(wav, sizeof(wav));
+  expect(mime != NULL && strcmp(mime, "audio/wav") == 0,
+         "Task M lifetime-data carrier borrows an explicitly bounded byte view");
+  flight_free_string(mime);
+
+  struct task_m_color_context color = {0};
+  void *curve = flight_build_particle_color_curve(task_m_sample_color, &color, 2);
+  expect(curve != NULL, "Task M color callback returns an owned collection");
+  expect(color.calls == 2, "Task M color callback retains and passes its caller context");
+  expect(flight_build_particle_color_curve_result_len(curve) == 6,
+         "Task M color collection contains three channels per sample");
+  const float *last = flight_build_particle_color_curve_result_get(curve, 5);
+  expect(last != NULL && near(*last, 3.0f), "Task M color collection exposes callback output");
+  expect(flight_build_particle_color_curve_result_get(curve, 6) == NULL,
+         "Task M color collection bounds-checks reads");
+  flight_build_particle_color_curve_result_free(curve);
+  flight_build_particle_color_curve_result_free(NULL);
+}
+
 struct shape_bounds_recording_context {
   int flush_calls;
   bool flush_succeeds;
@@ -647,6 +681,7 @@ int main(void) {
   check_optional_tuples();
   check_unit_signals();
   check_async_callbacks();
+  check_task_m_carriers();
   check_shape_bounds_context();
   if (failures != 0) {
     fprintf(stderr, "flight-ffi C consumer: %d failure(s)\n", failures);
