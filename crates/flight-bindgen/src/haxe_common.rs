@@ -2,6 +2,10 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::fs;
 use std::path::Path;
 
+use crate::ffi_surface::{
+    FfiSurface, FieldAccess, contains_ffi_symbol, declaration_matches_ffi_surface,
+    get_ffi_field_access,
+};
 use crate::parse::{
     CrateExports, ParamKind, ParsedFn, ParsedStruct, ReturnKind, classify_param, classify_return,
     to_camel_case, to_pascal_case,
@@ -146,6 +150,45 @@ pub fn derive_method_name(fn_name: &str, type_name: &str) -> Option<String> {
     None
 }
 
+// Removes, from every target at once, each function whose generic HashLink or hxcpp extern would
+// disagree with the wrapper flight-ffi actually generated, so no backend binds a wrong-arity call
+// and the dispatch layer never names a function one backend lacks. Returns the removed names.
+pub fn drop_native_shape_mismatches(
+    exports: &mut [CrateExports],
+    surface: &FfiSurface,
+) -> Vec<String> {
+    let mut dropped = Vec::new();
+    for crate_export in exports.iter_mut() {
+        crate_export.fns.retain(|func| {
+            if !contains_ffi_symbol(surface, &format!("flight_{}", func.name)) {
+                return true;
+            }
+            let agrees = [
+                ("_hl", crate::haxe_hl::emit_function(func)),
+                ("_cpp", crate::haxe_cpp::emit_function(func)),
+            ]
+            .iter()
+            .all(|(backend, declaration)| {
+                return declaration
+                    .as_deref()
+                    .is_none_or(|text| declaration_matches_ffi_surface(surface, backend, text));
+            });
+            if !agrees {
+                dropped.push(func.name.clone());
+            }
+            return agrees;
+        });
+    }
+    return dropped;
+}
+
+// `public var name(get, set):T;` with `never` for a direction that has no binding.
+pub fn field_property_declaration(haxe_name: &str, haxe_ty: &str, access: FieldAccess) -> String {
+    let get = if access.get { "get" } else { "never" };
+    let set = if access.set { "set" } else { "never" };
+    return format!("public var {haxe_name}({get}, {set}):{haxe_ty};");
+}
+
 pub fn find_self_param(func: &ParsedFn, ty: &str) -> Option<usize> {
     for (i, param) in func.params.iter().enumerate() {
         if let Some(kind) = classify_param(&param.ty) {
@@ -229,29 +272,32 @@ pub fn to_snake_case(s: &str) -> String {
     out
 }
 
-pub fn has_ffi_function(fn_name: &str, ffi_names: Option<&BTreeSet<String>>) -> bool {
-    match ffi_names {
+pub fn has_ffi_function(fn_name: &str, ffi_surface: Option<&FfiSurface>) -> bool {
+    return match ffi_surface {
         None => true,
-        Some(names) => {
-            let ffi_name = format!("flight_{fn_name}");
-            names.contains(&ffi_name)
-        }
-    }
+        Some(surface) => contains_ffi_symbol(surface, &format!("flight_{fn_name}")),
+    };
 }
-
-pub fn has_ffi_accessor(
+// Which directions of a struct field may bind to a native accessor; with no FFI surface every
+// parsed field is assumed to have both.
+pub fn resolve_ffi_field_access(
     type_name: &str,
-    field_name: &str,
-    ffi_names: Option<&BTreeSet<String>>,
-) -> bool {
-    match ffi_names {
-        None => true,
-        Some(names) => {
-            let snake = to_snake_case(type_name);
-            let getter = format!("flight_get_{snake}_{field_name}");
-            names.contains(&getter)
-        }
-    }
+    field: &crate::parse::StructField,
+    ffi_surface: Option<&FfiSurface>,
+) -> FieldAccess {
+    let Some(surface) = ffi_surface else {
+        return FieldAccess {
+            get: true,
+            set: true,
+        };
+    };
+    let snake = to_snake_case(type_name);
+    return get_ffi_field_access(
+        surface,
+        &format!("flight_get_{snake}_{}", field.name),
+        &format!("flight_set_{snake}_{}", field.name),
+        &field.ty,
+    );
 }
 
 pub fn write_if_changed(path: &Path, content: &str) {
@@ -286,5 +332,47 @@ mod portable_module_tests {
             crate_dir_to_module("flight-geometry", &BTreeSet::new()),
             "Geometry"
         );
+    }
+    #[test]
+    fn native_shape_mismatches_are_dropped_from_every_target() {
+        let surface = FfiSurface {
+            c: crate::ffi_surface::parse_ffi_header(
+                "float flight_get_audio_bus_gain(void * arg0);\n\
+                 float flight_set_audio_bus_gain(void * arg0, void * arg1, void * arg2, float arg3);",
+            ),
+            hl: crate::ffi_surface::parse_hl_primitives(
+                "DEFINE_PRIM(_F32, flight_get_audio_bus_gain, _BYTES);\n\
+                 DEFINE_PRIM(_F32, flight_set_audio_bus_gain, _BYTES _BYTES _BYTES _F32);",
+            ),
+        };
+        let function = |name: &str, params: &[(&str, &str)]| ParsedFn {
+            name: name.into(),
+            source_name: Some(name.into()),
+            params: params
+                .iter()
+                .map(|(name, ty)| crate::parse::Param {
+                    name: name.to_string(),
+                    ty: ty.to_string(),
+                })
+                .collect(),
+            ret: Some("f32".into()),
+        };
+        let mut exports = vec![CrateExports {
+            dir_name: "flight-audio".into(),
+            fns: vec![
+                function("get_audio_bus_gain", &[("bus", "&AudioBus")]),
+                function(
+                    "set_audio_bus_gain",
+                    &[("bus", "&AudioBus"), ("gain", "f32")],
+                ),
+                function("get_audio_bus_pan", &[("bus", "&AudioBus")]),
+            ],
+            structs: vec![],
+            enums: vec![],
+        }];
+        let dropped = drop_native_shape_mismatches(&mut exports, &surface);
+        assert_eq!(dropped, ["set_audio_bus_gain"]);
+        let kept: Vec<&str> = exports[0].fns.iter().map(|f| f.name.as_str()).collect();
+        assert_eq!(kept, ["get_audio_bus_gain", "get_audio_bus_pan"]);
     }
 }

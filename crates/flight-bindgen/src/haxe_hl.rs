@@ -3,10 +3,12 @@ use std::fmt::Write as _;
 use std::fs;
 use std::path::Path;
 
+use crate::ffi_surface::{FfiSurface, FieldAccess};
 use crate::haxe_common::{
     TypeMethod, build_struct_map, build_type_methods, collect_opaque_types, crate_dir_to_module,
-    derive_method_name, find_self_param, has_ffi_accessor, has_ffi_function, scalar_to_haxe,
-    to_snake_case, tuple_element_storage, write_if_changed,
+    derive_method_name, field_property_declaration, find_self_param, has_ffi_function,
+    resolve_ffi_field_access, scalar_to_haxe, to_snake_case, tuple_element_storage,
+    write_if_changed,
 };
 use crate::offsets::FieldOffsets;
 use crate::parse::{
@@ -21,7 +23,7 @@ pub fn generate(
     crate_exports: &[CrateExports],
     out_dir: &Path,
     field_offsets: &FieldOffsets,
-    ffi_names: Option<&BTreeSet<String>>,
+    ffi_surface: Option<&FfiSurface>,
 ) {
     let hl_dir = out_dir.join("flight").join("_hl");
     let fn_dir = hl_dir.join("_fn");
@@ -54,7 +56,7 @@ pub fn generate(
             parsed_struct,
             methods.map(|v| v.as_slice()),
             struct_offsets,
-            ffi_names,
+            ffi_surface,
         );
         let type_path = hl_dir.join(format!("{ty}.hx"));
         write_if_changed(&type_path, &type_output);
@@ -73,7 +75,7 @@ pub fn generate(
     let mut total_fns = 0usize;
     for crate_export in crate_exports {
         let module_name = crate_dir_to_module(&crate_export.dir_name, &all_opaque_types);
-        let module_output = emit_module_file(&module_name, &crate_export.fns, ffi_names);
+        let module_output = emit_module_file(&module_name, &crate_export.fns, ffi_surface);
         if !module_output.is_empty() {
             let module_path = fn_dir.join(format!("{module_name}.hx"));
             write_if_changed(&module_path, &module_output);
@@ -94,7 +96,7 @@ fn emit_type_file(
     parsed_struct: Option<&ParsedStruct>,
     methods: Option<&[TypeMethod<'_>]>,
     struct_offsets: Option<&std::collections::BTreeMap<String, usize>>,
-    ffi_names: Option<&BTreeSet<String>>,
+    ffi_surface: Option<&FfiSurface>,
 ) -> String {
     let mut output = String::new();
     writeln!(output, "package {PKG};").unwrap();
@@ -103,13 +105,20 @@ fn emit_type_file(
     let all_fields = parsed_struct.map(|s| &s.fields[..]).unwrap_or(&[]);
     let fields: Vec<_> = all_fields
         .iter()
-        .filter(|f| {
-            struct_offsets.and_then(|m| m.get(&f.name)).is_some()
-                || has_ffi_accessor(ty, &f.name, ffi_names)
+        .filter_map(|f| {
+            let access = if struct_offsets.and_then(|m| m.get(&f.name)).is_some() {
+                FieldAccess {
+                    get: true,
+                    set: true,
+                }
+            } else {
+                resolve_ffi_field_access(ty, f, ffi_surface)
+            };
+            return (access.get || access.set).then_some((f, access));
         })
         .collect();
     let method_strs = methods
-        .map(|ms| emit_methods(ty, ms, ffi_names))
+        .map(|ms| emit_methods(ty, ms, ffi_surface))
         .unwrap_or_default();
 
     if fields.is_empty() && method_strs.is_empty() {
@@ -117,14 +126,62 @@ fn emit_type_file(
         return output;
     }
 
+    // HashLink natives must be static externs, so fields without a layout offset bind through a
+    // private extern class that takes the handle explicitly, mirroring the hxcpp `_Ffi` class.
+    let native_fields: Vec<_> = fields
+        .iter()
+        .filter(|(f, _)| struct_offsets.and_then(|m| m.get(&f.name)).is_none())
+        .collect();
+    if !native_fields.is_empty() {
+        let snake = to_snake_case(ty);
+        writeln!(output, "private extern class {ty}_Ffi {{").unwrap();
+        for (field, access) in &native_fields {
+            let haxe_ty = scalar_to_haxe(&field.ty);
+            let haxe_name = to_camel_case(&field.name);
+            if access.get {
+                writeln!(
+                    output,
+                    "\t@:hlNative(\"{LIB_NAME}\", \"flight_get_{snake}_{}\")",
+                    field.name
+                )
+                .unwrap();
+                writeln!(
+                    output,
+                    "\tstatic function get_{haxe_name}(ptr:hl.Bytes):{haxe_ty};"
+                )
+                .unwrap();
+            }
+            if access.set {
+                writeln!(
+                    output,
+                    "\t@:hlNative(\"{LIB_NAME}\", \"flight_set_{snake}_{}\")",
+                    field.name
+                )
+                .unwrap();
+                writeln!(
+                    output,
+                    "\tstatic function set_{haxe_name}(ptr:hl.Bytes, value:{haxe_ty}):{haxe_ty};"
+                )
+                .unwrap();
+            }
+        }
+        writeln!(output, "}}").unwrap();
+        writeln!(output).unwrap();
+    }
+
     writeln!(output, "abstract {ty}(hl.Bytes) {{").unwrap();
 
-    for field in &fields {
+    for (field, access) in &fields {
         let haxe_ty = scalar_to_haxe(&field.ty);
         let haxe_name = to_camel_case(&field.name);
         let offset = struct_offsets.and_then(|m| m.get(&field.name).copied());
 
-        writeln!(output, "\tpublic var {haxe_name}(get, set):{haxe_ty};").unwrap();
+        writeln!(
+            output,
+            "\t{}",
+            field_property_declaration(&haxe_name, haxe_ty, *access)
+        )
+        .unwrap();
         writeln!(output).unwrap();
 
         if let Some(off) = offset {
@@ -142,17 +199,22 @@ fn emit_type_file(
             )
             .unwrap();
         } else {
-            let getter_ffi = format!("flight_get_{}_{}", to_snake_case(ty), field.name);
-            let setter_ffi = format!("flight_set_{}_{}", to_snake_case(ty), field.name);
-            writeln!(output, "\t@:hlNative(\"{LIB_NAME}\", \"{getter_ffi}\")").unwrap();
-            writeln!(output, "\tfunction get_{haxe_name}():{haxe_ty};").unwrap();
-            writeln!(output).unwrap();
-            writeln!(output, "\t@:hlNative(\"{LIB_NAME}\", \"{setter_ffi}\")").unwrap();
-            writeln!(
-                output,
-                "\tfunction set_{haxe_name}(value:{haxe_ty}):{haxe_ty};"
-            )
-            .unwrap();
+            let ffi_class = format!("{ty}_Ffi");
+            if access.get {
+                writeln!(
+                    output,
+                    "\tinline function get_{haxe_name}():{haxe_ty} return {ffi_class}.get_{haxe_name}(this);"
+                )
+                .unwrap();
+                writeln!(output).unwrap();
+            }
+            if access.set {
+                writeln!(
+                    output,
+                    "\tinline function set_{haxe_name}(value:{haxe_ty}):{haxe_ty} {{ {ffi_class}.set_{haxe_name}(this, value); return value; }}"
+                )
+                .unwrap();
+            }
         }
     }
 
@@ -205,13 +267,13 @@ fn hl_bytes_setter(rust_ty: &str, offset: usize) -> String {
 fn emit_methods(
     ty: &str,
     methods: &[TypeMethod<'_>],
-    ffi_names: Option<&BTreeSet<String>>,
+    ffi_surface: Option<&FfiSurface>,
 ) -> Vec<String> {
     let mut out = Vec::new();
     let mut seen_names: BTreeSet<String> = BTreeSet::new();
 
     for tm in methods {
-        if !has_ffi_function(&tm.func.name, ffi_names) {
+        if !has_ffi_function(&tm.func.name, ffi_surface) {
             continue;
         }
         if let Some(method) = emit_one_method(ty, tm) {
@@ -303,11 +365,11 @@ fn emit_one_method(ty: &str, tm: &TypeMethod<'_>) -> Option<String> {
 fn emit_module_file(
     module_name: &str,
     fns: &[ParsedFn],
-    ffi_names: Option<&BTreeSet<String>>,
+    ffi_surface: Option<&FfiSurface>,
 ) -> String {
     let mut emitted: Vec<String> = Vec::new();
     for func in fns {
-        if !has_ffi_function(&func.name, ffi_names) {
+        if !has_ffi_function(&func.name, ffi_surface) {
             continue;
         }
         if let Some(decl) = emit_function(func) {
@@ -329,7 +391,7 @@ fn emit_module_file(
     output
 }
 
-fn emit_function(func: &ParsedFn) -> Option<String> {
+pub(crate) fn emit_function(func: &ParsedFn) -> Option<String> {
     let ffi_name = format!("flight_{}", func.name);
     let haxe_name = to_camel_case(&func.name);
 
@@ -453,5 +515,44 @@ mod hl_tuple_tests {
         let mut function = random_gaussian_pair_fixture();
         function.ret = Some("(i64, i64)".into());
         assert!(emit_function(&function).is_none());
+    }
+    #[test]
+    fn native_accessors_bind_only_directions_with_accessor_shape() {
+        let surface = crate::ffi_surface::FfiSurface {
+            c: crate::ffi_surface::parse_ffi_header(
+                "float flight_get_audio_bus_gain(void * arg0);\n\
+                 float flight_set_audio_bus_gain(void * arg0, void * arg1, void * arg2, float arg3);\n\
+                 bool flight_get_audio_bus_muted(void * arg0);\n\
+                 bool flight_set_audio_bus_muted(void * arg0, bool arg1);\n\
+                 float flight_get_audio_bus_pan(void * arg0, void * arg1);",
+            ),
+            hl: crate::ffi_surface::parse_hl_primitives(
+                "DEFINE_PRIM(_F32, flight_get_audio_bus_gain, _BYTES);\n\
+                 DEFINE_PRIM(_F32, flight_set_audio_bus_gain, _BYTES _BYTES _BYTES _F32);\n\
+                 DEFINE_PRIM(_BOOL, flight_get_audio_bus_muted, _BYTES);\n\
+                 DEFINE_PRIM(_BOOL, flight_set_audio_bus_muted, _BYTES _BOOL);\n\
+                 DEFINE_PRIM(_F32, flight_get_audio_bus_pan, _BYTES _BYTES);",
+            ),
+        };
+        let audio_bus = ParsedStruct {
+            name: "AudioBus".into(),
+            fields: ["gain", "muted", "pan"]
+                .iter()
+                .map(|name| crate::parse::StructField {
+                    name: name.to_string(),
+                    ty: if *name == "muted" { "bool" } else { "f32" }.into(),
+                })
+                .collect(),
+        };
+        let text = emit_type_file("AudioBus", Some(&audio_bus), None, None, Some(&surface));
+        assert!(
+            text.contains("public var gain(get, never):Single;"),
+            "{text}"
+        );
+        assert!(text.contains("\"flight_get_audio_bus_gain\""), "{text}");
+        assert!(!text.contains("flight_set_audio_bus_gain"), "{text}");
+        assert!(text.contains("public var muted(get, set):Bool;"), "{text}");
+        assert!(text.contains("\"flight_set_audio_bus_muted\""), "{text}");
+        assert!(!text.contains("pan"), "{text}");
     }
 }

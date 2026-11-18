@@ -2259,12 +2259,6 @@ mod native_abi_tests {
             Some(ParamKind::Closure)
         ));
     }
-}
-
-#[cfg(test)]
-mod scan_crate_tests {
-    use super::*;
-
     const FFI_BUILD_SOURCE: &str = include_str!("../../flight-ffi/build.rs");
 
     #[test]
@@ -2346,7 +2340,7 @@ mod scan_crate_tests {
     }
 
     // Every `pub struct Host*Capability` declared in a crate's non-test sources, keyed by crate.
-    pub(super) fn host_capability_types_by_crate(
+    fn host_capability_types_by_crate(
         crates_dir: &Path,
     ) -> std::collections::BTreeMap<String, BTreeSet<String>> {
         let mut by_crate = std::collections::BTreeMap::new();

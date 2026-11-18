@@ -8,8 +8,8 @@ set -euo pipefail
 # Pipeline:
 #   1. cargo build -p flight-ffi       (generates FFI wrappers + offsets binary)
 #   2. cargo run --bin flight-offsets   (emits struct layout JSON)
-#   3. extract ffi-names from build output
-#   4. cargo run -p flight-bindgen      (emits Haxe files)
+#   3. cargo run -p flight-bindgen      (emits Haxe files filtered by, and verified against,
+#                                        the generated flight_ffi.h and flight_hl.c)
 
 if [ $# -lt 1 ]; then
     echo "Usage: $0 <output-dir>" >&2
@@ -41,7 +41,7 @@ if (dirs.length !== 1) {
 }
 console.log(dirs[0]);
 ' "$WORK_DIR/build.jsonl")
-if [ ! -f "$FFI_BUILD_DIR/ffi_generated.rs" ]; then
+if [ ! -f "$FFI_BUILD_DIR/flight_ffi.h" ] || [ ! -f "$FFI_BUILD_DIR/flight_hl.c" ]; then
     echo "ERROR: flight-ffi build output not found at $FFI_BUILD_DIR" >&2
     exit 1
 fi
@@ -49,17 +49,12 @@ fi
 echo "==> Running flight-offsets..."
 cargo run --bin flight-offsets 2>/dev/null > "$WORK_DIR/offsets.json"
 
-echo "==> Extracting FFI names from $FFI_BUILD_DIR..."
-grep -oP '(?<=fn )(flight_[a-z0-9_]+)' "$FFI_BUILD_DIR/ffi_generated.rs" \
-    | sort -u > "$WORK_DIR/ffi-names.txt"
-echo "   $(wc -l < "$WORK_DIR/ffi-names.txt") FFI names"
-
 echo "==> Generating Haxe bindings to $OUT_DIR..."
 cargo run -p flight-bindgen -- \
     --target haxe \
     --out "$OUT_DIR" \
     --offsets "$WORK_DIR/offsets.json" \
-    --ffi-names "$WORK_DIR/ffi-names.txt" \
+    --ffi-dir "$FFI_BUILD_DIR" \
     2>&1
 
 echo "==> Done."

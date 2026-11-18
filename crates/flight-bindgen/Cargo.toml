@@ -10,6 +10,10 @@ description = "Binding generator for Flight SDK — emits language-specific exte
 publish = false
 autotests = false
 
+[[test]]
+name = "tests"
+path = "tests/main.rs"
+
 [[bin]]
 name = "flight-bindgen"
 path = "src/main.rs"

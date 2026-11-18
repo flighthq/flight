@@ -3,6 +3,7 @@ use std::fmt::Write as _;
 use std::fs;
 use std::path::Path;
 
+use crate::ffi_surface::FfiSurface;
 use crate::haxe_common::{
     crate_dir_to_module, has_ffi_function, tuple_element_storage, tuple_struct_type,
 };
@@ -11,11 +12,7 @@ use crate::parse::{
     to_camel_case,
 };
 
-pub fn generate(
-    crate_exports: &[CrateExports],
-    out_dir: &Path,
-    ffi_names: Option<&BTreeSet<String>>,
-) {
+pub fn generate(crate_exports: &[CrateExports], out_dir: &Path, ffi_surface: Option<&FfiSurface>) {
     let flight_dir = out_dir.join("flight");
     fs::create_dir_all(&flight_dir).unwrap();
 
@@ -81,7 +78,7 @@ pub fn generate(
             module_name,
             fns,
             has_matching_type,
-            ffi_names,
+            ffi_surface,
             &emitted_enums,
         );
         if !output.is_empty() {
@@ -133,12 +130,12 @@ fn emit_module_dispatch(
     module_name: &str,
     fns: &[ParsedFn],
     include_typedef: bool,
-    ffi_names: Option<&BTreeSet<String>>,
+    ffi_surface: Option<&FfiSurface>,
     emitted_enums: &BTreeSet<String>,
 ) -> String {
     let mut emitted: Vec<(String, String)> = Vec::new();
     for func in fns {
-        if !has_ffi_function(&func.name, ffi_names) {
+        if !has_ffi_function(&func.name, ffi_surface) {
             continue;
         }
         if let Some((sig, name)) = emit_dispatch_function(module_name, func, emitted_enums) {
@@ -591,11 +588,14 @@ mod portable_dispatch_tests {
             structs: vec![],
             enums: vec![],
         }];
-        let ffi_names = BTreeSet::from([
-            "flight_random_gaussian_pair".to_string(),
-            "flight_get_last_point".to_string(),
-        ]);
-        generate(&exports, &directory, Some(&ffi_names));
+        let ffi_surface = FfiSurface {
+            c: crate::ffi_surface::parse_ffi_header(
+                "void flight_random_gaussian_pair(void (*arg0)(void *), void * arg1, double arg2, double arg3, double * arg4, double * arg5);\n\
+                 bool flight_get_last_point(double * arg0, double * arg1);",
+            ),
+            hl: BTreeMap::new(),
+        };
+        generate(&exports, &directory, Some(&ffi_surface));
         let content = fs::read_to_string(directory.join("flight/Math.hx")).unwrap();
         fs::remove_dir_all(&directory).unwrap();
         let expected = "\

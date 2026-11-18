@@ -1,4 +1,5 @@
 mod dispatch;
+mod ffi_surface;
 mod haxe_common;
 mod haxe_cpp;
 mod haxe_hl;
@@ -6,7 +7,6 @@ mod haxe_js;
 mod offsets;
 mod parse;
 
-use std::collections::BTreeSet;
 use std::path::PathBuf;
 
 fn main() {
@@ -32,46 +32,58 @@ fn main() {
         .and_then(|i| args.get(i + 1))
         .map(PathBuf::from);
 
-    let ffi_names_path = args
+    // flight-ffi's build output directory: `flight_ffi.h` and `flight_hl.c` are the native
+    // surface every generated extern is filtered by and verified against.
+    let ffi_dir = args
         .iter()
-        .position(|a| a == "--ffi-names")
+        .position(|a| a == "--ffi-dir")
         .and_then(|i| args.get(i + 1))
         .map(PathBuf::from);
 
     let crates_dir = find_crates_dir();
-    let exports = parse::scan_all_crates(&crates_dir);
+    let mut exports = parse::scan_all_crates(&crates_dir);
     let field_offsets = offsets_path
         .as_ref()
         .map(|p| offsets::load_offsets(p))
         .unwrap_or_default();
 
-    let ffi_names: Option<BTreeSet<String>> = ffi_names_path.map(|p| {
-        let content = std::fs::read_to_string(&p)
-            .unwrap_or_else(|e| panic!("could not read ffi-names file {}: {e}", p.display()));
-        content.lines().map(|l| l.trim().to_string()).collect()
-    });
+    let ffi_surface = ffi_dir
+        .as_ref()
+        .map(|dir| ffi_surface::load_ffi_surface(dir));
+    if let Some(surface) = &ffi_surface {
+        let dropped = haxe_common::drop_native_shape_mismatches(&mut exports, surface);
+        for name in &dropped {
+            eprintln!(
+                "skipped flight_{name}: generic lowering disagrees with its flight-ffi wrapper"
+            );
+        }
+        eprintln!(
+            "{} functions skipped for native shape disagreement",
+            dropped.len()
+        );
+    }
 
     let total_fns: usize = exports.iter().map(|e| e.fns.len()).sum();
     let total_crates = exports.len();
 
     match target {
         "haxe-hl" => {
-            haxe_hl::generate(&exports, &out_dir, &field_offsets, ffi_names.as_ref());
-            dispatch::generate(&exports, &out_dir, ffi_names.as_ref());
+            haxe_hl::generate(&exports, &out_dir, &field_offsets, ffi_surface.as_ref());
+            dispatch::generate(&exports, &out_dir, ffi_surface.as_ref());
         }
         "haxe-cpp" => {
-            haxe_cpp::generate(&exports, &out_dir, ffi_names.as_ref());
-            dispatch::generate(&exports, &out_dir, ffi_names.as_ref());
+            haxe_cpp::generate(&exports, &out_dir, ffi_surface.as_ref());
+            dispatch::generate(&exports, &out_dir, ffi_surface.as_ref());
         }
         "haxe-js" => {
-            haxe_js::generate(&exports, &out_dir, ffi_names.as_ref());
-            dispatch::generate(&exports, &out_dir, ffi_names.as_ref());
+            haxe_js::generate(&exports, &out_dir, ffi_surface.as_ref());
+            dispatch::generate(&exports, &out_dir, ffi_surface.as_ref());
         }
         "haxe" => {
-            haxe_hl::generate(&exports, &out_dir, &field_offsets, ffi_names.as_ref());
-            haxe_cpp::generate(&exports, &out_dir, ffi_names.as_ref());
-            haxe_js::generate(&exports, &out_dir, ffi_names.as_ref());
-            dispatch::generate(&exports, &out_dir, ffi_names.as_ref());
+            haxe_hl::generate(&exports, &out_dir, &field_offsets, ffi_surface.as_ref());
+            haxe_cpp::generate(&exports, &out_dir, ffi_surface.as_ref());
+            haxe_js::generate(&exports, &out_dir, ffi_surface.as_ref());
+            dispatch::generate(&exports, &out_dir, ffi_surface.as_ref());
         }
         other => {
             eprintln!("unknown target: {other}");
@@ -84,6 +96,25 @@ fn main() {
         "{total_fns} functions from {total_crates} crates → {}",
         out_dir.display()
     );
+
+    if let Some(surface) = &ffi_surface {
+        let verification = ffi_surface::verify_generated_externs(&out_dir, surface);
+        if !verification.mismatches.is_empty() {
+            for mismatch in &verification.mismatches {
+                eprintln!("extern mismatch: {mismatch}");
+            }
+            eprintln!(
+                "{} of {} native externs disagree with the flight-ffi surface",
+                verification.mismatches.len(),
+                verification.checked
+            );
+            std::process::exit(1);
+        }
+        eprintln!(
+            "verified {} native externs against the flight-ffi surface",
+            verification.checked
+        );
+    }
 }
 
 fn find_crates_dir() -> PathBuf {

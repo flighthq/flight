@@ -3,9 +3,11 @@ use std::fmt::Write as _;
 use std::fs;
 use std::path::Path;
 
+use crate::ffi_surface::FfiSurface;
 use crate::haxe_common::{
     TypeMethod, build_struct_map, build_type_methods, collect_opaque_types, crate_dir_to_module,
-    derive_method_name, find_self_param, has_ffi_accessor, has_ffi_function, write_if_changed,
+    derive_method_name, field_property_declaration, find_self_param, has_ffi_function,
+    resolve_ffi_field_access, write_if_changed,
 };
 use crate::parse::{
     CrateExports, ParamKind, ParsedFn, ParsedStruct, ReturnKind, classify_param, classify_return,
@@ -104,7 +106,7 @@ pub fn signature(func: &ParsedFn, prefix: &str) -> Option<(Vec<String>, String)>
     Some((params, return_type(func.ret.as_deref(), prefix)?))
 }
 
-pub fn generate(exports: &[CrateExports], out_dir: &Path, ffi_names: Option<&BTreeSet<String>>) {
+pub fn generate(exports: &[CrateExports], out_dir: &Path, ffi_surface: Option<&FfiSurface>) {
     let js_dir = out_dir.join("flight").join("_js");
     let fn_dir = js_dir.join("_fn");
     fs::create_dir_all(&fn_dir).unwrap();
@@ -124,7 +126,7 @@ pub fn generate(exports: &[CrateExports], out_dir: &Path, ffi_names: Option<&BTr
             ty,
             structs.get(ty.as_str()).copied(),
             methods.get(ty).map(|v| v.as_slice()).unwrap_or(&[]),
-            ffi_names,
+            ffi_surface,
         );
         write_if_changed(&js_dir.join(format!("{ty}.hx")), &content);
     }
@@ -139,7 +141,7 @@ pub fn generate(exports: &[CrateExports], out_dir: &Path, ffi_names: Option<&BTr
         );
         let mut count = 0;
         for func in &package.fns {
-            if !has_ffi_function(&func.name, ffi_names) {
+            if !has_ffi_function(&func.name, ffi_surface) {
                 continue;
             }
             if let Some(decl) = emit_function(func) {
@@ -180,29 +182,39 @@ fn emit_type(
     ty: &str,
     parsed: Option<&ParsedStruct>,
     methods: &[TypeMethod<'_>],
-    ffi_names: Option<&BTreeSet<String>>,
+    ffi_surface: Option<&FfiSurface>,
 ) -> String {
     let mut out = format!("package {PKG};\n\nabstract {ty}(Dynamic) {{\n");
     if let Some(parsed) = parsed {
         for field in &parsed.fields {
-            if !has_ffi_accessor(ty, &field.name, ffi_names) {
+            let access = resolve_ffi_field_access(ty, field, ffi_surface);
+            if !access.get && !access.set {
                 continue;
             }
             let haxe_name = to_camel_case(&field.name);
             let js_name = flight_compiler::typescript_item_name(&field.name);
             let t = scalar_to_haxe(&field.ty);
-            writeln!(out, "\tpublic var {haxe_name}(get, set):{t};").unwrap();
             writeln!(
                 out,
-                "\tinline function get_{haxe_name}():{t} return untyped this.{js_name};"
+                "\t{}",
+                field_property_declaration(&haxe_name, t, access)
             )
             .unwrap();
-            writeln!(out, "\tinline function set_{haxe_name}(value:{t}):{t} return untyped this.{js_name} = value;").unwrap();
+            if access.get {
+                writeln!(
+                    out,
+                    "\tinline function get_{haxe_name}():{t} return untyped this.{js_name};"
+                )
+                .unwrap();
+            }
+            if access.set {
+                writeln!(out, "\tinline function set_{haxe_name}(value:{t}):{t} return untyped this.{js_name} = value;").unwrap();
+            }
         }
     }
     let mut seen = BTreeSet::new();
     for tm in methods {
-        if !has_ffi_function(&tm.func.name, ffi_names) {
+        if !has_ffi_function(&tm.func.name, ffi_surface) {
             continue;
         }
         let Some(name) = derive_method_name(&tm.func.name, ty) else {
