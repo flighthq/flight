@@ -14,9 +14,13 @@ GPU submission stays `f32`. The conversion boundary is `prepareScene2DRender` / 
 
 **f64 — spatial:** Any value that represents a position, distance, size, angle, or transform in world or local coordinate space. This includes geometry primitives, scene graph transforms, collision volumes, path control points, layout positions, bone transforms, physics positions and velocities.
 
-**f32 — bounded/normalized:** Color channels (0–1), easing `t` parameters (0–1), blend weights, opacity, audio sample data, GPU vertex attributes, texture coordinates, uniform floats.
+**f64 — time:** Any value that represents elapsed time, duration, or a time delta in seconds. Time accumulates unboundedly — f32 loses sub-millisecond precision after ~2 hours. `flight-clock`, `flight-timeline`, and `flight-movieclip` already use f64 for time with lint-allow annotations explaining this. Tween and animation durations, elapsed times, and delta-time params follow.
 
-The test: *can this value grow unboundedly in world space?* f64. *Is it inherently bounded (a ratio, a weight, a normalized coordinate)?* f32.
+**f64 — animated values:** Any value that stores or interpolates a quantity that may be a spatial coordinate. Tween target values (`to`, `start`, `change`), spring value/velocity/target fields, and animation keyframe sample buffers must match the precision of the fields they write into. A tween animating `position.x` must carry f64 to avoid narrowing the f64 coordinate back to f32 through the animation system.
+
+**f32 — bounded/normalized:** Easing functions (0–1 → 0–1 input/output), interpolation progress/weight (0–1), color channels (0–1), opacity, blend weights, audio sample data, GPU vertex attributes, texture coordinates, uniform floats.
+
+The test: *can this value grow unboundedly, or does it write into a field that can?* f64. *Is it inherently bounded and never stored into a spatial or time field?* f32.
 
 ## Rationale
 
@@ -71,24 +75,26 @@ Audited 2026-11-18. Line counts are f32-bearing source lines (not tests).
 | `flight-interaction` | 61 | Hit test x/y, coord_scale |
 | `flight-clip` | 15 | Clip region bounds (already uses f64, casts go away) |
 
-### Tier 2b: Mixed spatial + bounded — line-by-line triage
+### Tier 2b: Mixed spatial/time/animated-value + bounded — line-by-line triage
 
-| Crate | f32 lines | Spatial | Bounded (stays f32) |
-|-------|----------:|---------|---------------------|
-| `flight-shape` | 71 | Path geometry | `alpha`, morph `time` |
-| `flight-particles` | 310 | Positions | `time`, color r/g/b/a |
-| `flight-particleemitter` | 182 | Transforms, velocities, positions_z | `alphas`, `colors` |
-| `flight-scene2d` | 14 | width/height | `alpha` |
-| `flight-scene3d` | 32 | Transforms | `alpha` |
-| `flight-animation` | 181 | — | Keyframe samples/weights, dt |
-| `flight-spring` | 118 | 3D spring value x/y/z (if spatial) | 1D spring value/velocity |
+| Crate | f32 lines | →f64 | Stays f32 |
+|-------|----------:|------|-----------|
+| `flight-tween` | 72 | duration, delay, elapsed (time); to, start, change, `get` accessor (animated values) | progress, eased_t (0–1 weight) |
+| `flight-spring` | 118 | delta_time (time); value_x/y/z, velocity_x/y/z, target_x/y/z (animated values) | — |
+| `flight-animation` | 181 | time, dt, duration, elapsed (time); keyframe sample `Vec` / `&mut [f32]` (animated values) | alpha, weight (0–1 blend) |
+| `flight-particles` | 310 | Positions, velocities (spatial) | lifetime ratio (0–1), color r/g/b/a |
+| `flight-particleemitter` | 182 | Transforms, velocities, positions_z (spatial) | `alphas`, `colors` |
+| `flight-shape` | 71 | Path geometry coordinates (spatial) | `alpha`, morph `time` (0–1) |
+| `flight-scene2d` | 14 | width/height (spatial) | `alpha` |
+| `flight-scene3d` | 32 | Transforms (spatial) | `alpha` |
+
+Note: `flight-clock`, `flight-timeline`, `flight-movieclip` already use f64 for time — no changes needed. Their lint-allow annotations go away with the convention flip.
 
 ### Tier 3: Stays f32 — no changes
 
 | Crate | f32 lines | Reason |
 |-------|----------:|--------|
-| `flight-easing` | 108 | Normalized t values (0–1) |
-| `flight-tween` | 72 | Interpolation weights, EasingFunction |
+| `flight-easing` | 108 | Purely `fn(f32) -> f32` on 0–1 range |
 | `flight-bitmap` | 287 | Pixel color values |
 | `flight-color` | — | Color channels |
 | `flight-audio` | — | Sample data |
