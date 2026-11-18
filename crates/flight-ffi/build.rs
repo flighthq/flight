@@ -7,10 +7,40 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use std::sync::OnceLock;
 
-static KNOWN_ENUMS: OnceLock<BTreeSet<String>> = OnceLock::new();
+// `#[repr(u32)]` unit enums by name, each with its owning crate and variants in declaration order.
+// A name two crates both define is not known: an enum's identity is its owning crate plus name, so
+// a same-named enum elsewhere can never stand in for it.
+static KNOWN_ENUMS: OnceLock<BTreeMap<String, KnownEnum>> = OnceLock::new();
+
+#[derive(Debug)]
+struct KnownEnum {
+    owner: String,
+    variants: Vec<String>,
+}
 
 fn is_known_enum(ty: &str) -> bool {
-    KNOWN_ENUMS.get().map(|s| s.contains(ty)).unwrap_or(false)
+    KNOWN_ENUMS
+        .get()
+        .is_some_and(|enums| enums.contains_key(ty))
+}
+
+// `ffi_enum_from_u32!(value, [Enum::A, Enum::B])` over every variant of the known enum `ty`.
+fn get_enum_conversion(ty: &str, value: &str) -> String {
+    let known = &KNOWN_ENUMS.get().unwrap()[ty];
+    let qualified = qualify_type(ty);
+    let variants: Vec<String> = known
+        .variants
+        .iter()
+        .map(|variant| format!("{qualified}::{variant}"))
+        .collect();
+    format!("ffi_enum_from_u32!({value}, [{}])", variants.join(", "))
+}
+
+// A Rust binding name for a parameter, without the raw-identifier prefix (`r#type` -> `type`).
+fn get_binding_name(name: &str) -> String {
+    name.trim_start_matches("r#")
+        .trim_start_matches('_')
+        .to_string()
 }
 
 // Every named type's definitions, from source, for by-value ownership; each is flagged with whether
@@ -394,7 +424,7 @@ fn main() {
     let mut stats_skipped: std::collections::BTreeMap<String, usize> =
         std::collections::BTreeMap::new();
 
-    let mut enum_names = BTreeSet::new();
+    let mut enum_definitions: BTreeMap<String, Vec<KnownEnum>> = BTreeMap::new();
     let mut type_definitions = BTreeMap::new();
     for dir_name in SCAN_CRATES {
         let src_dir = crates_dir.join(dir_name).join("src");
@@ -422,17 +452,25 @@ fn main() {
                 continue;
             }
             let content = fs::read_to_string(entry.path()).unwrap();
-            parse_simple_enums(&content, &mut enum_names);
+            parse_simple_enums(&content, dir_name, &mut enum_definitions);
             parse_type_definitions(&content, &exported_types, &mut type_definitions);
         }
     }
-    for (name, _) in CONTRACT_LANE_ENUMS {
-        assert!(
-            enum_names.contains(*name),
-            "{name} must stay a #[repr(u32)] unit enum to cross as u32"
+    let known_enums: BTreeMap<String, KnownEnum> = enum_definitions
+        .into_iter()
+        .filter_map(|(name, mut definitions)| {
+            (definitions.len() == 1).then(|| (name, definitions.remove(0)))
+        })
+        .collect();
+    for (name, module) in CONTRACT_LANE_ENUMS {
+        let owner = known_enums.get(*name).map(|known| known.owner.as_str());
+        assert_eq!(
+            owner.map(|owner| owner.trim_start_matches("flight-").replace('-', "_")),
+            Some(module.to_string()),
+            "{name} must stay a #[repr(u32)] unit enum owned by the {module} crate"
         );
     }
-    let _ = KNOWN_ENUMS.set(enum_names);
+    let _ = KNOWN_ENUMS.set(known_enums);
     let _ = TYPE_DEFINITIONS.set(type_definitions);
 
     // A by-value transfer consumes an FFI-owned box, so it maps only for types some generated
@@ -1348,7 +1386,7 @@ fn get_param_ownership_note(ty: &str) -> Option<&'static str> {
     }
 }
 
-fn parse_simple_enums(content: &str, out: &mut BTreeSet<String>) {
+fn parse_simple_enums(content: &str, owner: &str, out: &mut BTreeMap<String, Vec<KnownEnum>>) {
     let lines: Vec<&str> = content.lines().collect();
     let mut i = 0;
     while i < lines.len() {
@@ -1392,7 +1430,7 @@ fn parse_simple_enums(content: &str, out: &mut BTreeSet<String>) {
             continue;
         }
         let mut all_unit = true;
-        let mut variant_count = 0usize;
+        let mut variants = Vec::new();
         i += 1;
         while i < lines.len() {
             let vline = lines[i].trim();
@@ -1408,11 +1446,24 @@ fn parse_simple_enums(content: &str, out: &mut BTreeSet<String>) {
                 all_unit = false;
                 break;
             }
-            variant_count += 1;
+            // Each comma-separated variant, named before any explicit `= discriminant`.
+            for part in vline.split(',') {
+                let variant: String = part
+                    .trim()
+                    .chars()
+                    .take_while(|c| c.is_alphanumeric() || *c == '_')
+                    .collect();
+                if !variant.is_empty() {
+                    variants.push(variant);
+                }
+            }
         }
         i += 1;
-        if all_unit && variant_count >= 2 {
-            out.insert(name);
+        if all_unit && variants.len() >= 2 {
+            out.entry(name).or_default().push(KnownEnum {
+                owner: owner.to_string(),
+                variants,
+            });
         }
     }
 }
@@ -4159,14 +4210,18 @@ fn map_param_to_ffi(name: &str, ty: &str) -> Option<MappedParam> {
         if let Some(inner) = inner.strip_suffix('>') {
             let inner = inner.trim();
             if is_known_enum(inner) && !SKIP_TYPES.iter().any(|s| inner.contains(s)) {
-                let qualified = qualify_type(inner);
-                return mapped_single(
-                    name,
-                    "i32",
-                    format!(
-                        "if {name} < 0 {{ None }} else {{ Some(unsafe {{ std::mem::transmute::<u32, {qualified}>({name} as u32) }}) }}"
-                    ),
-                );
+                // -1 is None; any other value must be a real discriminant, checked before the enum
+                // exists. A caller passing anything else has violated the ABI.
+                let label = name.trim_start_matches("r#");
+                let binding = format!("{}_enum", get_binding_name(name));
+                let conversion = get_enum_conversion(inner, "raw");
+                return Some(MappedParam {
+                    ffi_params: vec![(name.to_string(), "i32".to_string())],
+                    bindings: vec![format!(
+                        "    let {binding} = match {name} {{ -1 => None, raw => match u32::try_from(raw).ok().and_then(|raw| {conversion}) {{ Some(value) => Some(value), None => panic!(\"{label} must be -1 or a {inner} discriminant, got {{}}\", {name}) }} }};"
+                    )],
+                    call_expr: binding,
+                });
             }
         }
     }
@@ -4828,13 +4883,19 @@ fn map_param_to_ffi(name: &str, ty: &str) -> Option<MappedParam> {
         return mapped_single(name, ty, name.to_string());
     }
 
+    // A direct enum is checked against its variants before it exists; any other value is a
+    // programmer error.
     if is_known_enum(ty) {
-        let qualified = qualify_type(ty);
-        return mapped_single(
-            name,
-            "u32",
-            format!("unsafe {{ std::mem::transmute::<u32, {qualified}>({name}) }}"),
-        );
+        let label = name.trim_start_matches("r#");
+        let binding = format!("{}_enum", get_binding_name(name));
+        let conversion = get_enum_conversion(ty, name);
+        return Some(MappedParam {
+            ffi_params: vec![(name.to_string(), "u32".to_string())],
+            bindings: vec![format!(
+                "    let {binding} = match {conversion} {{ Some(value) => value, None => panic!(\"{label} must be a {ty} discriminant, got {{}}\", {name}) }};"
+            )],
+            call_expr: binding,
+        });
     }
 
     // Owned fixed-size array [T; N] -> *const T

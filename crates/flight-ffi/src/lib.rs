@@ -3,10 +3,14 @@
 #![allow(clippy::redundant_closure_call)]
 
 mod async_callback;
+#[macro_use]
+mod enum_conversion;
 mod import_diagnostic_list;
 
 #[cfg(test)]
 mod by_value_ownership_test;
+#[cfg(test)]
+mod enum_parameter_test;
 #[cfg(test)]
 mod generic_carrier_test;
 #[cfg(test)]

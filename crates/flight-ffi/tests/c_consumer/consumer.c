@@ -363,6 +363,16 @@ static void check_by_value_ownership(void) {
   flight_free_bitmap_region(region);
 }
 
+static void check_enum_parameters(void) {
+  /* -1 is None for an optional enum; every declared discriminant converts to its variant. */
+  const int32_t windings[3] = {-1, 0, 1};
+  for (int index = 0; index < 3; index++) {
+    void *path = flight_create_path(windings[index]);
+    expect(path != NULL, "create_path accepts -1 and each PathWinding discriminant");
+    flight_free_path(path);
+  }
+}
+
 static void check_contract_lane_enums(void) {
   char *severity = flight_get_spritesheet_parse_diagnostic_severity_string(1);
   expect(severity != NULL && strcmp(severity, "warning") == 0, "severity discriminant 1 reads warning");
@@ -617,6 +627,7 @@ int main(void) {
   check_string_maps();
   check_by_value_ownership();
   check_contract_lane_enums();
+  check_enum_parameters();
   check_optional_texture_variants();
   check_optional_tuples();
   check_unit_signals();

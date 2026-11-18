@@ -938,10 +938,10 @@ fn contract_lane_enums_cross_as_u32_discriminants() {
         "DEFINE_PRIM(_BOOL, flight_append_morph_shape_begin_gradient_fill, _BYTES _I32 _BYTES _BYTES _I32 _I32);",
     );
     assert!(wrappers.contains(
-        "Some(unsafe { std::mem::transmute::<u32, flight_sdk::shape::contract::SpreadMethod>(spread_method as u32) })"
+        "ffi_enum_from_u32!(raw, [flight_sdk::shape::contract::SpreadMethod::Pad, flight_sdk::shape::contract::SpreadMethod::Reflect, flight_sdk::shape::contract::SpreadMethod::Repeat])"
     ));
     assert!(wrappers.contains(
-        "std::mem::transmute::<u32, flight_sdk::spritesheet::contract::SpritesheetParseDiagnosticSeverity>(value)"
+        "ffi_enum_from_u32!(value, [flight_sdk::spritesheet::contract::SpritesheetParseDiagnosticSeverity::Error, flight_sdk::spritesheet::contract::SpritesheetParseDiagnosticSeverity::Warning])"
     ));
     let stats = generated_stats();
     assert!(!stats.contains("SpreadMethod"));
@@ -995,6 +995,36 @@ fn byte_reader_inventory_is_complete_and_ts_gated() {
     assert!(!stats.contains("unmapped_return(&'static [EffectInput])"));
     assert!(!stats.contains("unmapped_return(&'static [&'static str])"));
     assert!(stats.contains("unmapped_param(&[Option<String>])"));
+}
+
+// Every caller-supplied enum is checked against its own variants before the enum exists: a direct
+// enum rejects any other value, and `Option<enum>` reads only -1 as None. No wrapper transmutes a C
+// integer into an enum, and an async wrapper checks inside its existing panic boundary.
+#[test]
+fn enum_parameters_are_checked_before_conversion() {
+    let wrappers = generated_wrappers();
+    assert!(!wrappers.contains("transmute::<u32"));
+    assert!(!wrappers.contains("transmute::<i32"));
+    assert_line(
+        &wrappers,
+        "    let winding_enum = match winding { -1 => None, raw => match u32::try_from(raw).ok().and_then(|raw| ffi_enum_from_u32!(raw, [flight_sdk::PathWinding::NonZero, flight_sdk::PathWinding::EvenOdd])) { Some(value) => Some(value), None => panic!(\"winding must be -1 or a PathWinding discriminant, got {}\", winding) } };",
+    );
+    assert_line(
+        &wrappers,
+        "    let type_enum = match ffi_enum_from_u32!(r#type, [flight_sdk::HapticNotificationType::Success, flight_sdk::HapticNotificationType::Warning, flight_sdk::HapticNotificationType::Error]) { Some(value) => value, None => panic!(\"type must be a HapticNotificationType discriminant, got {}\", r#type) };",
+    );
+    let async_wrapper = wrappers
+        .split("pub unsafe extern \"C\" fn flight_can_access_file(")
+        .nth(1)
+        .unwrap();
+    let boundary = async_wrapper.find("catch_unwind").unwrap();
+    let conversion = async_wrapper.find("let mode_enum = ").unwrap();
+    assert!(
+        boundary < conversion,
+        "the async enum check must run inside catch_unwind"
+    );
+    let (header, _) = generated();
+    assert_line(&header, "void * flight_create_path(int32_t arg0);");
 }
 
 fn assert_line(text: &str, line: &str) {
