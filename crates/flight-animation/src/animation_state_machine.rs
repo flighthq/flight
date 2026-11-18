@@ -139,7 +139,7 @@ pub fn initialize_animation_state_machine_state(
     out.name = String::new();
 }
 
-pub fn advance_animation_state_machine(machine: &mut AnimationStateMachine, dt: f32) {
+pub fn advance_animation_state_machine(machine: &mut AnimationStateMachine, dt: f64) {
     let mut advanced: Vec<AnimationPlayerRef> = Vec::new();
     std::mem::swap(&mut machine.advance_scratch, &mut advanced);
     advanced.clear();
@@ -192,32 +192,29 @@ pub fn get_animation_state_machine_current_state(
     return &machine.states[machine.current_state_index];
 }
 
-fn get_linear_animation_state_machine_transition_weight(elapsed: f32, duration: f32) -> f32 {
+// flight-lint: allow(f32) transition weight is a bounded 0-1 blend weight
+fn get_linear_animation_state_machine_transition_weight(elapsed: f64, duration: f64) -> f32 {
     if duration <= 0.0 {
         return 1.0;
     }
     let normalized = elapsed / duration;
-    return if normalized < 0.0 {
-        0.0
-    } else if normalized > 1.0 {
-        1.0
-    } else {
-        normalized
-    };
+    // f64 time narrows only here, once clamped to the bounded 0-1 weight range.
+    return normalized.clamp(0.0, 1.0) as f32;
 }
 
 pub fn is_animation_state_machine_transitioning(machine: &AnimationStateMachine) -> bool {
     return machine.transition_to_state_index.is_some();
 }
 
+// flight-lint: allow(f32) easing over bounded 0-1 progress (flight-easing contract)
 fn linear_animation_state_machine_curve(t: f32) -> f32 {
     return t;
 }
 
 pub fn sample_animation_state_machine(
-    out: &mut [f32],
+    out: &mut [f64],
     machine: &mut AnimationStateMachine,
-    visit: &mut dyn FnMut(&[f32], &AnimationChannel, usize),
+    visit: &mut dyn FnMut(&[f64], &AnimationChannel, usize),
 ) {
     for index in 0..machine.channels.len() {
         let sampled = sample_animation_state_machine_channel(out, machine, index);
@@ -229,7 +226,7 @@ pub fn sample_animation_state_machine(
 }
 
 pub fn sample_animation_state_machine_channel(
-    out: &mut [f32],
+    out: &mut [f64],
     machine: &mut AnimationStateMachine,
     channel_index: usize,
 ) -> bool {
@@ -276,8 +273,8 @@ pub fn sample_animation_state_machine_channel(
         return false;
     }
     if has_from && has_to {
-        let from_copy: Vec<f32> = machine.from_sample.clone();
-        let to_copy: Vec<f32> = machine.to_sample.clone();
+        let from_copy: Vec<f64> = machine.from_sample.clone();
+        let to_copy: Vec<f64> = machine.to_sample.clone();
         let quaternion = machine.channels[channel_index]
             .channel
             .track
@@ -314,7 +311,7 @@ pub fn sample_animation_state_machine_channel(
 pub fn transition_animation_state_machine(
     machine: &mut AnimationStateMachine,
     to_state: StateRef,
-    duration: f32,
+    duration: f64,
     curve: Option<EasingFn>,
 ) -> bool {
     if machine.transition_to_state_index.is_some() {
@@ -328,7 +325,7 @@ pub fn transition_animation_state_machine(
     let curve_fn =
         curve.unwrap_or_else(|| std::sync::Arc::new(linear_animation_state_machine_curve));
     machine.transition_curve = curve_fn.clone();
-    machine.transition_duration = f32::max(0.0, duration);
+    machine.transition_duration = f64::max(0.0, duration);
     machine.transition_elapsed = 0.0;
     machine.transition_from_state_index = Some(machine.current_state_index);
     machine.transition_to_state_index = Some(to_idx);

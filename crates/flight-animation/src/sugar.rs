@@ -602,11 +602,12 @@ impl AnimationSampleAccumulator {
         return create_animation_sample_accumulator(components, quaternion);
     }
 
-    pub fn accumulate(&mut self, sample: &[f32], weight: f32) {
+    // flight-lint: allow(f32) blend weight is a bounded input
+    pub fn accumulate(&mut self, sample: &[f64], weight: f32) {
         accumulate_animation_sample(self, sample, weight);
     }
 
-    pub fn finish(&self, out: &mut [f32]) {
+    pub fn finish(&self, out: &mut [f64]) {
         finish_animation_sample(out, self);
     }
 
@@ -621,22 +622,23 @@ impl AnimationBlendTree {
         return create_animation_blend_tree(inputs);
     }
 
-    pub fn advance(&self, dt: f32) {
+    pub fn advance(&self, dt: f64) {
         advance_animation_blend_tree(self, dt);
     }
 
     pub fn sample(
         &mut self,
-        out: &mut [f32],
-        visit: &mut dyn FnMut(&[f32], &AnimationChannel, usize),
+        out: &mut [f64],
+        visit: &mut dyn FnMut(&[f64], &AnimationChannel, usize),
     ) {
         sample_animation_blend_tree(out, self, visit);
     }
 
-    pub fn sample_channel(&mut self, out: &mut [f32], channel_index: usize) -> bool {
+    pub fn sample_channel(&mut self, out: &mut [f64], channel_index: usize) -> bool {
         return sample_animation_blend_tree_channel(out, self, channel_index);
     }
 
+    // flight-lint: allow(f32) blend weight is a bounded input
     pub fn set_input_weight(&mut self, input_index: usize, weight: f32) {
         set_animation_blend_tree_input_weight(self, input_index, weight);
     }
@@ -646,7 +648,7 @@ impl AnimationBlendTree {
 impl AnimationClip {
     pub fn new(
         channels: Vec<AnimationChannel>,
-        duration: Option<f32>,
+        duration: Option<f64>,
         events: &[AnimationClipEvent],
     ) -> Self {
         return create_animation_clip(channels, duration, events);
@@ -656,15 +658,15 @@ impl AnimationClip {
         return clone_animation_clip(self);
     }
 
-    pub fn duration(&self) -> f32 {
+    pub fn duration(&self) -> f64 {
         return get_animation_clip_duration(self);
     }
 
     pub fn sample(
         &self,
-        out: &mut [f32],
-        time: f32,
-        visit: &mut dyn FnMut(&[f32], &AnimationChannel, usize),
+        out: &mut [f64],
+        time: f64,
+        visit: &mut dyn FnMut(&[f64], &AnimationChannel, usize),
     ) {
         sample_animation_clip(out, self, time, visit);
     }
@@ -675,13 +677,13 @@ impl AnimationCrossfade {
     pub fn new(
         from: AnimationPlayerRef,
         to: AnimationPlayerRef,
-        duration: f32,
+        duration: f64,
         opts: Option<&AnimationCrossfadeOptions>,
     ) -> Self {
         return create_animation_crossfade(from, to, duration, opts);
     }
 
-    pub fn advance(&mut self, dt: f32) {
+    pub fn advance(&mut self, dt: f64) {
         advance_animation_crossfade(self, dt);
     }
 
@@ -691,8 +693,8 @@ impl AnimationCrossfade {
 
     pub fn sample(
         &mut self,
-        out: &mut [f32],
-        visit: &mut dyn FnMut(&[f32], &AnimationChannel, usize),
+        out: &mut [f64],
+        visit: &mut dyn FnMut(&[f64], &AnimationChannel, usize),
     ) {
         sample_animation_crossfade(out, self, visit);
     }
@@ -704,22 +706,23 @@ impl AnimationLayerStack {
         return create_animation_layer_stack(layers);
     }
 
-    pub fn advance(&mut self, dt: f32) {
+    pub fn advance(&mut self, dt: f64) {
         advance_animation_layer_stack(self, dt);
     }
 
     pub fn sample(
         &mut self,
-        out: &mut [f32],
-        visit: &mut dyn FnMut(&[f32], &AnimationChannel, usize),
+        out: &mut [f64],
+        visit: &mut dyn FnMut(&[f64], &AnimationChannel, usize),
     ) {
         sample_animation_layer_stack(out, self, visit);
     }
 
-    pub fn sample_channel(&mut self, out: &mut [f32], channel_index: usize) -> bool {
+    pub fn sample_channel(&mut self, out: &mut [f64], channel_index: usize) -> bool {
         return sample_animation_layer_stack_channel(out, self, channel_index);
     }
 
+    // flight-lint: allow(f32) blend weight is a bounded input
     pub fn set_layer_weight(&mut self, layer_index: usize, weight: f32) {
         set_animation_layer_weight(self, layer_index, weight);
     }
@@ -731,7 +734,7 @@ impl AnimationPlayer {
         return create_animation_player(clip);
     }
 
-    pub fn advance(&mut self, dt: f32) {
+    pub fn advance(&mut self, dt: f64) {
         advance_animation_player(self, dt);
     }
 
@@ -743,6 +746,7 @@ impl AnimationPlayer {
         enable_animation_player_signals(self);
     }
 
+    // flight-lint: allow(f32) normalized 0-1 playback progress (bounded)
     pub fn normalized_time(&self) -> f32 {
         return get_animation_player_normalized_time(self);
     }
@@ -751,7 +755,7 @@ impl AnimationPlayer {
         play_animation_player(self);
     }
 
-    pub fn seek(&mut self, time: f32) {
+    pub fn seek(&mut self, time: f64) {
         seek_animation_player(self, time);
     }
 
@@ -766,7 +770,7 @@ impl AnimationRootMotionExtractor {
         return create_animation_root_motion_extractor(clip, channel_index);
     }
 
-    pub fn extract(&mut self, out: &mut [f32], start_time: f32, end_time: f32) -> bool {
+    pub fn extract(&mut self, out: &mut [f64], start_time: f64, end_time: f64) -> bool {
         return extract_animation_root_motion(out, self, start_time, end_time);
     }
 }
@@ -777,7 +781,7 @@ impl AnimationStateMachine {
         return create_animation_state_machine(states, initial_state);
     }
 
-    pub fn advance(&mut self, dt: f32) {
+    pub fn advance(&mut self, dt: f64) {
         advance_animation_state_machine(self, dt);
     }
 
@@ -791,20 +795,20 @@ impl AnimationStateMachine {
 
     pub fn sample(
         &mut self,
-        out: &mut [f32],
-        visit: &mut dyn FnMut(&[f32], &AnimationChannel, usize),
+        out: &mut [f64],
+        visit: &mut dyn FnMut(&[f64], &AnimationChannel, usize),
     ) {
         sample_animation_state_machine(out, self, visit);
     }
 
-    pub fn sample_channel(&mut self, out: &mut [f32], channel_index: usize) -> bool {
+    pub fn sample_channel(&mut self, out: &mut [f64], channel_index: usize) -> bool {
         return sample_animation_state_machine_channel(out, self, channel_index);
     }
 
     pub fn transition(
         &mut self,
         to_state: StateRef,
-        duration: f32,
+        duration: f64,
         curve: Option<EasingFn>,
     ) -> bool {
         return transition_animation_state_machine(self, to_state, duration, curve);
@@ -821,11 +825,11 @@ impl AnimationTrack {
         return clone_animation_track(self);
     }
 
-    pub fn sample(&self, out: &mut [f32], t: f32) {
+    pub fn sample(&self, out: &mut [f64], t: f64) {
         sample_animation_track(out, self, t);
     }
 
-    pub fn trim(&self, start_time: f32, end_time: f32) -> Self {
+    pub fn trim(&self, start_time: f64, end_time: f64) -> Self {
         return trim_animation_track(self, start_time, end_time);
     }
 

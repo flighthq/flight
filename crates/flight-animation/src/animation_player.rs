@@ -43,7 +43,7 @@ pub fn initialize_animation_player(out: &mut AnimationPlayer, clip: AnimationCli
     out.time = 0.0;
 }
 
-pub fn advance_animation_player(player: &mut AnimationPlayer, dt: f32) {
+pub fn advance_animation_player(player: &mut AnimationPlayer, dt: f64) {
     if !player.playing {
         return;
     }
@@ -172,8 +172,8 @@ fn consume_animation_player_loop(player: &mut AnimationPlayer) -> bool {
 
 fn emit_animation_player_events(
     player: &AnimationPlayer,
-    from_time: f32,
-    to_time: f32,
+    from_time: f64,
+    to_time: f64,
     include_from: bool,
 ) {
     let signal = match &player.on_event {
@@ -244,32 +244,28 @@ pub fn enable_animation_player_signals(player: &mut AnimationPlayer) {
     }
 }
 
-fn finish_animation_player_at(player: &mut AnimationPlayer, time: f32) {
+fn finish_animation_player_at(player: &mut AnimationPlayer, time: f64) {
     player.time = time;
     player.playing = false;
     emit_animation_player_finished(player);
 }
 
+// flight-lint: allow(f32) normalized 0-1 playback progress (bounded)
 pub fn get_animation_player_normalized_time(player: &AnimationPlayer) -> f32 {
     let duration = player.clip.read().unwrap().duration;
     if duration <= 0.0 {
         return 0.0;
     }
     let n = player.time / duration;
-    return if n < 0.0 {
-        0.0
-    } else if n > 1.0 {
-        1.0
-    } else {
-        n
-    };
+    // f64 time narrows only here, once clamped to the bounded 0-1 progress range.
+    return n.clamp(0.0, 1.0) as f32;
 }
 
 pub fn play_animation_player(player: &mut AnimationPlayer) {
     player.playing = true;
 }
 
-pub fn seek_animation_player(player: &mut AnimationPlayer, time: f32) {
+pub fn seek_animation_player(player: &mut AnimationPlayer, time: f64) {
     let duration = player.clip.read().unwrap().duration;
     player.time = if time < 0.0 {
         0.0

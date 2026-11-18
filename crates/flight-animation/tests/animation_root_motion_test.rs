@@ -121,7 +121,7 @@ mod extract_animation_root_motion {
 
     #[test]
     fn composes_quaternion_rotation_across_loop_boundaries() {
-        let sqrt1_2 = std::f32::consts::FRAC_1_SQRT_2;
+        let sqrt1_2 = std::f64::consts::FRAC_1_SQRT_2;
         let clip = Arc::new(RwLock::new(create_animation_clip(
             vec![create_animation_channel(
                 &Arc::new(RwLock::new({
@@ -186,7 +186,7 @@ mod extract_animation_root_motion {
 
     #[test]
     fn rejects_non_finite_ranges_before_mutating_output() {
-        let sqrt1_2 = std::f32::consts::FRAC_1_SQRT_2;
+        let sqrt1_2 = std::f64::consts::FRAC_1_SQRT_2;
         let clip = Arc::new(RwLock::new(create_animation_clip(
             vec![create_animation_channel(
                 &Arc::new(RwLock::new({
@@ -205,13 +205,13 @@ mod extract_animation_root_motion {
         let mut extractor = create_animation_root_motion_extractor(&clip, 0);
         let mut out = [1.0, 2.0, 3.0, 4.0];
         let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-            extract_animation_root_motion(&mut out, &mut extractor, 0.0, f32::INFINITY);
+            extract_animation_root_motion(&mut out, &mut extractor, 0.0, f64::INFINITY);
         }));
         let err = result.unwrap_err();
         let msg = err.downcast_ref::<&str>().copied().unwrap();
         assert!(msg.contains("finite"));
         let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-            extract_animation_root_motion(&mut out, &mut extractor, f32::NEG_INFINITY, 0.0);
+            extract_animation_root_motion(&mut out, &mut extractor, f64::NEG_INFINITY, 0.0);
         }));
         let err = result.unwrap_err();
         let msg = err.downcast_ref::<&str>().copied().unwrap();

@@ -4,7 +4,7 @@ use std::sync::{Arc, RwLock};
 
 use flight_animation::contract::*;
 
-fn make_player(duration: f32) -> AnimationPlayerRef {
+fn make_player(duration: f64) -> AnimationPlayerRef {
     let clip = create_animation_clip(
         vec![create_animation_channel(
             &Arc::new(RwLock::new({

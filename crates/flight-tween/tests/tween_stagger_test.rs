@@ -10,7 +10,7 @@ fn linear_ease(t: f32) -> f32 {
 }
 
 struct Obj {
-    x: f32,
+    x: f64,
 }
 
 mod create_tween_stagger {
@@ -115,9 +115,9 @@ mod create_tween_stagger {
             }),
             None,
         );
-        assert!((get_tween_delay(&tweens[0]) - 0.0).abs() < 0.005); // D1 f32 bound (TS: 0.005)
-        assert!((get_tween_delay(&tweens[1]) - 200.0).abs() < 0.005); // D1 f32 bound (TS: 0.005)
-        assert!((get_tween_delay(&tweens[2]) - 400.0).abs() < 0.005); // D1 f32 bound (TS: 0.005)
+        assert!((get_tween_delay(&tweens[0]) - 0.0).abs() < 0.005); // TS bound: 0.005
+        assert!((get_tween_delay(&tweens[1]) - 200.0).abs() < 0.005); // TS bound: 0.005
+        assert!((get_tween_delay(&tweens[2]) - 400.0).abs() < 0.005); // TS bound: 0.005
     }
 
     #[test]
@@ -144,8 +144,8 @@ mod create_tween_stagger {
             }),
             None,
         );
-        assert!((get_tween_delay(&tweens[2]) - 0.0).abs() < 0.005); // D1 f32 bound (TS: 0.005)
-        assert!((get_tween_delay(&tweens[0]) - 200.0).abs() < 0.005); // D1 f32 bound (TS: 0.005)
+        assert!((get_tween_delay(&tweens[2]) - 0.0).abs() < 0.005); // TS bound: 0.005
+        assert!((get_tween_delay(&tweens[0]) - 200.0).abs() < 0.005); // TS bound: 0.005
     }
 
     #[test]
@@ -174,9 +174,9 @@ mod create_tween_stagger {
             }),
             None,
         );
-        assert!((get_tween_delay(&tweens[2]) - 0.0).abs() < 0.005); // D1 f32 bound (TS: 0.005)
-        assert!((get_tween_delay(&tweens[0]) - 400.0).abs() < 0.005); // D1 f32 bound (TS: 0.005)
-        assert!((get_tween_delay(&tweens[4]) - 400.0).abs() < 0.005); // D1 f32 bound (TS: 0.005)
+        assert!((get_tween_delay(&tweens[2]) - 0.0).abs() < 0.005); // TS bound: 0.005
+        assert!((get_tween_delay(&tweens[0]) - 400.0).abs() < 0.005); // TS bound: 0.005
+        assert!((get_tween_delay(&tweens[4]) - 400.0).abs() < 0.005); // TS bound: 0.005
     }
 
     #[test]
@@ -203,9 +203,9 @@ mod create_tween_stagger {
             }),
             None,
         );
-        assert!((get_tween_delay(&tweens[0]) - 0.0).abs() < 0.005); // D1 f32 bound (TS: 0.005)
-        assert!((get_tween_delay(&tweens[1]) - 100.0).abs() < 0.005); // D1 f32 bound (TS: 0.005)
-        assert!((get_tween_delay(&tweens[2]) - 200.0).abs() < 0.005); // D1 f32 bound (TS: 0.005)
+        assert!((get_tween_delay(&tweens[0]) - 0.0).abs() < 0.005); // TS bound: 0.005
+        assert!((get_tween_delay(&tweens[1]) - 100.0).abs() < 0.005); // TS bound: 0.005
+        assert!((get_tween_delay(&tweens[2]) - 200.0).abs() < 0.005); // TS bound: 0.005
     }
 
     #[test]
@@ -240,8 +240,8 @@ mod create_tween_stagger {
                 snapping: None,
             }),
         );
-        assert!((get_tween_delay(&tweens[0]) - 500.0).abs() < 0.005); // D1 f32 bound (TS: 0.005)
-        assert!((get_tween_delay(&tweens[1]) - 600.0).abs() < 0.005); // D1 f32 bound (TS: 0.005)
+        assert!((get_tween_delay(&tweens[0]) - 500.0).abs() < 0.005); // TS bound: 0.005
+        assert!((get_tween_delay(&tweens[1]) - 600.0).abs() < 0.005); // TS bound: 0.005
     }
 
     #[test]
@@ -277,7 +277,7 @@ mod create_tween_stagger {
             }),
         );
         update_tweens(&manager, 100.0);
-        assert!((targets[0].read().unwrap().x - 10.0).abs() < 0.005); // D1 f32 bound (TS: 0.005)
+        assert!((targets[0].read().unwrap().x - 10.0).abs() < 0.005); // TS bound: 0.005
         assert_eq!(targets[1].read().unwrap().x, 0.0); // still in delay
     }
 

@@ -139,7 +139,7 @@ pub fn initialize_animation_state_machine_layer(
     initialize_animation_layer(out, channel_count, None, Some(state_machine), options);
 }
 
-pub fn advance_animation_layer_stack(stack: &mut AnimationLayerStack, dt: f32) {
+pub fn advance_animation_layer_stack(stack: &mut AnimationLayerStack, dt: f64) {
     let mut advanced: Vec<AnimationPlayerRef> = Vec::new();
     std::mem::swap(&mut stack.advance_scratch, &mut advanced);
     advanced.clear();
@@ -201,7 +201,7 @@ fn copy_animation_layer_channel_indices(
     return Some(copied);
 }
 
-fn copy_animation_layer_sample(out: &mut [f32], sample: &[f32], components: usize) {
+fn copy_animation_layer_sample(out: &mut [f64], sample: &[f64], components: usize) {
     let width = out.len().min(sample.len()).min(components);
     for component in 0..width {
         out[component] = sample[component];
@@ -220,7 +220,7 @@ fn get_animation_layer_channels(layer: &AnimationLayer) -> Vec<AnimationChannel>
     return Vec::new();
 }
 
-fn sample_animation_layer(out: &mut [f32], layer: &AnimationLayer, channel_index: usize) -> bool {
+fn sample_animation_layer(out: &mut [f64], layer: &AnimationLayer, channel_index: usize) -> bool {
     if let Some(ref bt) = layer.blend_tree {
         return sample_animation_blend_tree_channel(out, &mut bt.write().unwrap(), channel_index);
     }
@@ -235,9 +235,9 @@ fn sample_animation_layer(out: &mut [f32], layer: &AnimationLayer, channel_index
 }
 
 pub fn sample_animation_layer_stack(
-    out: &mut [f32],
+    out: &mut [f64],
     stack: &mut AnimationLayerStack,
-    visit: &mut dyn FnMut(&[f32], &AnimationChannel, usize),
+    visit: &mut dyn FnMut(&[f64], &AnimationChannel, usize),
 ) {
     for index in 0..stack.channels.len() {
         let sampled = sample_animation_layer_stack_channel(out, stack, index);
@@ -249,7 +249,7 @@ pub fn sample_animation_layer_stack(
 }
 
 pub fn sample_animation_layer_stack_channel(
-    out: &mut [f32],
+    out: &mut [f64],
     stack: &mut AnimationLayerStack,
     channel_index: usize,
 ) -> bool {
@@ -283,12 +283,12 @@ pub fn sample_animation_layer_stack_channel(
                 write_animation_layer_identity(out, components, quaternion);
                 has_pose = true;
             }
-            let scratch_copy: Vec<f32> = stack.sample_scratch.clone();
-            let out_copy: Vec<f32> = out[..components.min(out.len())].to_vec();
+            let scratch_copy: Vec<f64> = stack.sample_scratch.clone();
+            let out_copy: Vec<f64> = out[..components.min(out.len())].to_vec();
             add_animation_sample(out, &out_copy, &scratch_copy, layer_weight, quaternion);
         } else if has_pose {
-            let scratch_copy: Vec<f32> = stack.sample_scratch.clone();
-            let out_copy: Vec<f32> = out[..components.min(out.len())].to_vec();
+            let scratch_copy: Vec<f64> = stack.sample_scratch.clone();
+            let out_copy: Vec<f64> = out[..components.min(out.len())].to_vec();
             blend_animation_samples(out, &out_copy, &scratch_copy, layer_weight, quaternion);
         } else {
             copy_animation_layer_sample(out, &stack.sample_scratch, components);
@@ -298,6 +298,7 @@ pub fn sample_animation_layer_stack_channel(
     return has_pose;
 }
 
+// flight-lint: allow(f32) blend weight is a bounded input
 pub fn set_animation_layer_weight(
     stack: &mut AnimationLayerStack,
     layer_index: usize,
@@ -310,7 +311,7 @@ pub fn set_animation_layer_weight(
     return true;
 }
 
-fn write_animation_layer_identity(out: &mut [f32], components: usize, quaternion: bool) {
+fn write_animation_layer_identity(out: &mut [f64], components: usize, quaternion: bool) {
     let width = out.len().min(components);
     for component in 0..width {
         out[component] = 0.0;

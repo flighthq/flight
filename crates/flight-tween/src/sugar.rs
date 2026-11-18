@@ -16,10 +16,10 @@ mod sugar_tests {
     }
 
     struct Obj {
-        x: f32,
+        x: f64,
     }
 
-    fn prop_x(to: f32) -> TweenProp<Obj> {
+    fn prop_x(to: f64) -> TweenProp<Obj> {
         return TweenProp {
             get: |t: &mut Obj| &mut t.x,
             key: "x",
@@ -312,7 +312,7 @@ impl TweenContext {
     pub fn create_tween_default<T: ?Sized + Send + Sync + 'static>(
         &self,
         target: &Ref<T>,
-        duration: f32,
+        duration: f64,
         props: &[TweenProp<T>],
         options: Option<&TweenOptions>,
     ) -> Tween<T> {
@@ -334,15 +334,15 @@ impl<T: ?Sized + Send + Sync + 'static> Tween<T> {
         complete_tween(self);
     }
 
-    pub fn delay(&self) -> f32 {
+    pub fn delay(&self) -> f64 {
         return get_tween_delay(self);
     }
 
-    pub fn duration(&self) -> f32 {
+    pub fn duration(&self) -> f64 {
         return get_tween_duration(self);
     }
 
-    pub fn elapsed(&self) -> f32 {
+    pub fn elapsed(&self) -> f64 {
         return get_tween_elapsed(self);
     }
 
@@ -382,6 +382,7 @@ impl<T: ?Sized + Send + Sync + 'static> Tween<T> {
         pause_tween(self);
     }
 
+    // flight-lint: allow(f32) normalized 0-1 tween progress (bounded)
     pub fn progress(&self) -> f32 {
         return get_tween_progress(self);
     }
@@ -410,10 +411,11 @@ impl<T: ?Sized + Send + Sync + 'static> Tween<T> {
         return is_tween_reverse(self);
     }
 
-    pub fn seek(&self, time_seconds: f32) {
+    pub fn seek(&self, time_seconds: f64) {
         seek_tween(self, time_seconds);
     }
 
+    // flight-lint: allow(f32) normalized 0-1 tween progress (bounded)
     pub fn set_progress(&self, progress: f32) {
         set_tween_progress(self, progress);
     }
@@ -433,12 +435,13 @@ impl<T: ?Sized + Send + Sync + 'static> Tween<T> {
 
 #[cfg(feature = "object-api")]
 impl TweenManager {
+    // flight-lint: allow(f32) packed 24-bit RGB color target, exact in f32 (bounded color)
     pub fn create_color_tween<T: ?Sized + Send + Sync + 'static>(
         &self,
         target: &Ref<T>,
         get_color: fn(&mut T) -> &mut f32,
         color_key: &str,
-        duration: f32,
+        duration: f64,
         to_color: u32,
         options: Option<&TweenOptions>,
     ) -> Tween<ColorComponents> {
@@ -450,7 +453,7 @@ impl TweenManager {
     pub fn create_stagger<T: ?Sized + Send + Sync + 'static>(
         &self,
         targets: &[Ref<T>],
-        duration: f32,
+        duration: f64,
         props: &[TweenProp<T>],
         stagger_options: Option<&TweenStaggerOptions>,
         options: Option<&TweenOptions>,
@@ -460,7 +463,7 @@ impl TweenManager {
 
     pub fn create_timer(
         &self,
-        duration: f32,
+        duration: f64,
         options: Option<&TweenOptions>,
     ) -> Tween<TimerTarget> {
         return create_tween_timer(self, duration, options);
@@ -469,7 +472,7 @@ impl TweenManager {
     pub fn create_tween<T: ?Sized + Send + Sync + 'static>(
         &self,
         target: &Ref<T>,
-        duration: f32,
+        duration: f64,
         props: &[TweenProp<T>],
         options: Option<&TweenOptions>,
     ) -> Tween<T> {
@@ -541,7 +544,7 @@ impl TweenManager {
         get_tweens_of(out, self, target);
     }
 
-    pub fn update(&self, delta_time: f32) {
+    pub fn update(&self, delta_time: f64) {
         update_tweens(self, delta_time);
     }
 }

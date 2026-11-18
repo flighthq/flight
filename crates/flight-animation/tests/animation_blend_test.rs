@@ -16,7 +16,7 @@ mod accumulate_animation_sample {
 
     #[test]
     fn aligns_equivalent_quaternion_hemispheres() {
-        let sqrt1_2: f32 = std::f32::consts::FRAC_1_SQRT_2;
+        let sqrt1_2: f64 = std::f64::consts::FRAC_1_SQRT_2;
         let mut accumulator = create_animation_sample_accumulator(4, true);
         accumulate_animation_sample(&mut accumulator, &[0.0, 0.0, sqrt1_2, sqrt1_2], 1.0);
         accumulate_animation_sample(&mut accumulator, &[0.0, 0.0, -sqrt1_2, -sqrt1_2], 1.0);
@@ -43,7 +43,7 @@ mod add_animation_sample {
         let half_turn_z = [0.0, 0.0, 1.0, 0.0];
         let mut out = [0.0, 0.0, 0.0, 0.0];
         add_animation_sample(&mut out, &[0.0, 0.0, 0.0, 1.0], &half_turn_z, 0.5, true);
-        let sqrt1_2: f32 = std::f32::consts::FRAC_1_SQRT_2;
+        let sqrt1_2: f64 = std::f64::consts::FRAC_1_SQRT_2;
         assert!((out[2] - sqrt1_2).abs() < 1e-5);
         assert!((out[3] - sqrt1_2).abs() < 1e-5);
     }
@@ -63,12 +63,12 @@ mod blend_animation_samples {
 
     #[test]
     fn supports_output_aliasing_either_input() {
-        let mut a = [0.0_f32, 10.0];
+        let mut a = [0.0_f64, 10.0];
         let a_copy = a;
         blend_animation_samples(&mut a, &a_copy, &[10.0, 20.0], 0.25, false);
         assert_eq!(a, [2.5, 12.5]);
 
-        let mut b = [10.0_f32, 20.0];
+        let mut b = [10.0_f64, 20.0];
         let b_copy = b;
         blend_animation_samples(&mut b, &[0.0, 10.0], &b_copy, 0.25, false);
         assert_eq!(b, [2.5, 12.5]);
@@ -84,7 +84,7 @@ mod blend_animation_samples {
             0.5,
             true,
         );
-        let sqrt1_2: f32 = std::f32::consts::FRAC_1_SQRT_2;
+        let sqrt1_2: f64 = std::f64::consts::FRAC_1_SQRT_2;
         assert!((out[2].abs() - sqrt1_2).abs() < 1e-5);
         assert!((out[3].abs() - sqrt1_2).abs() < 1e-5);
     }

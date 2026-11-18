@@ -1,3 +1,7 @@
+#[path = "f32_boundary_inventory_test.rs"]
+mod flight_spring_f32_boundary_inventory_test;
+#[path = "f64_precision_test.rs"]
+mod flight_spring_f64_precision_test;
 #[path = "spring2d_test.rs"]
 mod flight_spring_spring2d_test;
 #[path = "spring3d_test.rs"]

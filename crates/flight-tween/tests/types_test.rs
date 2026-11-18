@@ -6,8 +6,8 @@ use flight_entity::Ref;
 use flight_tween::*;
 
 struct Obj {
-    x: f32,
-    y: f32,
+    x: f64,
+    y: f64,
 }
 
 mod create_tween_context {
@@ -85,9 +85,9 @@ mod external_user_struct {
     use super::*;
 
     struct GameEntity {
-        health: f32,
-        speed: f32,
-        rotation: f32,
+        health: f64,
+        speed: f64,
+        rotation: f64,
     }
 
     #[test]
@@ -150,7 +150,7 @@ mod external_user_struct {
         );
         update_tweens(&manager, 1000.0);
         let t = target.read().unwrap();
-        assert!((t.speed - 100.0).abs() < 0.005); // D1 f32 bound (TS: 0.005)
+        assert!((t.speed - 100.0).abs() < 0.005); // TS bound: 0.005
     }
 
     #[test]
@@ -163,7 +163,7 @@ mod external_user_struct {
         }));
         apply_tween(&manager, &target, &[tween_prop!(rotation, 90.0)]);
         let t = target.read().unwrap();
-        assert!((t.rotation - 90.0).abs() < 0.005); // D1 f32 bound (TS: 0.005)
+        assert!((t.rotation - 90.0).abs() < 0.005); // TS bound: 0.005
     }
 }
 

@@ -21,7 +21,7 @@ pub fn create_animation_channel(
 
 pub fn create_animation_clip(
     channels: Vec<AnimationChannel>,
-    duration: Option<f32>,
+    duration: Option<f64>,
     events: &[AnimationClipEvent],
 ) -> AnimationClip {
     let mut out = AnimationClip::default();
@@ -50,7 +50,7 @@ pub fn initialize_animation_channel(
 pub fn initialize_animation_clip(
     out: &mut AnimationClip,
     channels: Vec<AnimationChannel>,
-    duration: Option<f32>,
+    duration: Option<f64>,
     events: &[AnimationClipEvent],
 ) {
     let mut copied_events: Vec<AnimationClipEvent> = events.to_vec();
@@ -62,7 +62,7 @@ pub fn initialize_animation_clip(
     });
     validate_animation_clip_events(&copied_events);
 
-    let computed_duration = f32::max(
+    let computed_duration = f64::max(
         compute_channels_duration(&channels),
         compute_animation_clip_events_duration(&copied_events),
     );
@@ -112,15 +112,15 @@ pub fn clone_animation_clip(clip: &AnimationClip) -> AnimationClip {
     return create_animation_clip(channels, Some(clip.duration), &events);
 }
 
-fn compute_animation_clip_events_duration(events: &[AnimationClipEvent]) -> f32 {
+fn compute_animation_clip_events_duration(events: &[AnimationClipEvent]) -> f64 {
     if events.is_empty() {
         return 0.0;
     }
     return events[events.len() - 1].time;
 }
 
-fn compute_channels_duration(channels: &[AnimationChannel]) -> f32 {
-    let mut max: f32 = 0.0;
+fn compute_channels_duration(channels: &[AnimationChannel]) -> f64 {
+    let mut max: f64 = 0.0;
     for channel in channels {
         let track = channel.track.read().unwrap();
         let times = &track.times;
@@ -132,15 +132,15 @@ fn compute_channels_duration(channels: &[AnimationChannel]) -> f32 {
     return max;
 }
 
-pub fn get_animation_clip_duration(clip: &AnimationClip) -> f32 {
+pub fn get_animation_clip_duration(clip: &AnimationClip) -> f64 {
     return clip.duration;
 }
 
 pub fn sample_animation_clip(
-    out: &mut [f32],
+    out: &mut [f64],
     clip: &AnimationClip,
-    time: f32,
-    visit: &mut dyn FnMut(&[f32], &AnimationChannel, usize),
+    time: f64,
+    visit: &mut dyn FnMut(&[f64], &AnimationChannel, usize),
 ) {
     let channels = &clip.channels;
     for i in 0..channels.len() {

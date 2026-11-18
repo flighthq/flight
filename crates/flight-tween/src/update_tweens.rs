@@ -2,7 +2,7 @@
 
 use flight_signals::emit_signal;
 
-use crate::internal::initialize_tween;
+use crate::internal::{get_tween_normalized_progress, initialize_tween};
 use crate::types::{
     ErasedTweenHandle, Tween, TweenManager, erase_tween_handle, write_tween_ops_values,
 };
@@ -32,7 +32,7 @@ pub(crate) fn complete_tween_erased(handle: &ErasedTweenHandle) {
     emit_signal(&on_complete, &());
 }
 
-fn update_tween(handle: &ErasedTweenHandle, delta_time: f32) {
+fn update_tween(handle: &ErasedTweenHandle, delta_time: f64) {
     if handle.data.read().unwrap().common.paused || handle.data.read().unwrap().common.complete {
         return;
     }
@@ -54,7 +54,7 @@ fn update_tween(handle: &ErasedTweenHandle, delta_time: f32) {
 
     let (t, on_update, on_complete, on_yoyo, on_repeat, repeat, reflect, reverse) = {
         let inner = handle.data.read().unwrap();
-        let t = (active_elapsed / inner.common.duration).min(1.0);
+        let t = get_tween_normalized_progress(active_elapsed, inner.common.duration);
         let effective_t = if inner.common.reverse { 1.0 - t } else { t };
         let eased_t = (inner.common.ease)(effective_t);
         write_tween_ops_values(&inner, eased_t, inner.common.snapping);
@@ -93,7 +93,7 @@ fn update_tween(handle: &ErasedTweenHandle, delta_time: f32) {
     }
 }
 
-pub fn update_tweens(manager: &TweenManager, delta_time: f32) {
+pub fn update_tweens(manager: &TweenManager, delta_time: f64) {
     let target_keys: Vec<usize> = manager
         .data
         .read()

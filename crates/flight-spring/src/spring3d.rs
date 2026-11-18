@@ -33,12 +33,12 @@ pub struct Spring3D {
 /// Allocate a 3D spring as three scalar springs: each axis starts at its `value_*` with its
 /// `velocity_*`.
 pub fn create_spring3d(
-    value_x: f32,
-    value_y: f32,
-    value_z: f32,
-    velocity_x: f32,
-    velocity_y: f32,
-    velocity_z: f32,
+    value_x: f64,
+    value_y: f64,
+    value_z: f64,
+    velocity_x: f64,
+    velocity_y: f64,
+    velocity_z: f64,
 ) -> Spring3D {
     let mut out: Spring3D = allocate_entity();
     initialize_spring3d(
@@ -50,12 +50,12 @@ pub fn create_spring3d(
 /// Writes per-axis values and velocities into all existing axes of a pre-allocated `Spring3D`.
 pub fn initialize_spring3d(
     out: &mut Spring3D,
-    value_x: f32,
-    value_y: f32,
-    value_z: f32,
-    velocity_x: f32,
-    velocity_y: f32,
-    velocity_z: f32,
+    value_x: f64,
+    value_y: f64,
+    value_z: f64,
+    velocity_x: f64,
+    velocity_y: f64,
+    velocity_z: f64,
 ) {
     initialize_spring(&mut out.x, value_x, velocity_x);
     initialize_spring(&mut out.y, value_y, velocity_y);
@@ -65,9 +65,9 @@ pub fn initialize_spring3d(
 /// Add independent velocity impulses to all three axes without changing their values.
 pub fn add_spring_impulse_3d(
     spring3d: &mut Spring3D,
-    velocity_x: f32,
-    velocity_y: f32,
-    velocity_z: f32,
+    velocity_x: f64,
+    velocity_y: f64,
+    velocity_z: f64,
 ) {
     add_spring_impulse(&mut spring3d.x, velocity_x);
     add_spring_impulse(&mut spring3d.y, velocity_y);
@@ -78,11 +78,11 @@ pub fn add_spring_impulse_3d(
 /// — the per-component `is_spring_settled` on each axis, combined with AND.
 pub fn is_spring3d_settled(
     spring3d: &Spring3D,
-    target_x: f32,
-    target_y: f32,
-    target_z: f32,
-    position_epsilon: Option<f32>,
-    velocity_epsilon: Option<f32>,
+    target_x: f64,
+    target_y: f64,
+    target_z: f64,
+    position_epsilon: Option<f64>,
+    velocity_epsilon: Option<f64>,
 ) -> bool {
     return is_spring_settled(&spring3d.x, target_x, position_epsilon, velocity_epsilon)
         && is_spring_settled(&spring3d.y, target_y, position_epsilon, velocity_epsilon)
@@ -93,12 +93,12 @@ pub fn is_spring3d_settled(
 /// existing axis objects.
 pub fn reset_spring3d(
     spring3d: &mut Spring3D,
-    value_x: f32,
-    value_y: f32,
-    value_z: f32,
-    velocity_x: Option<f32>,
-    velocity_y: Option<f32>,
-    velocity_z: Option<f32>,
+    value_x: f64,
+    value_y: f64,
+    value_z: f64,
+    velocity_x: Option<f64>,
+    velocity_y: Option<f64>,
+    velocity_z: Option<f64>,
 ) {
     reset_spring(&mut spring3d.x, value_x, velocity_x);
     reset_spring(&mut spring3d.y, value_y, velocity_y);
@@ -109,11 +109,11 @@ pub fn reset_spring3d(
 /// `target_z`) under the same `config`, applying the scalar `update_spring` per component.
 pub fn update_spring3d(
     spring3d: &mut Spring3D,
-    target_x: f32,
-    target_y: f32,
-    target_z: f32,
+    target_x: f64,
+    target_y: f64,
+    target_z: f64,
     config: &SpringConfig,
-    delta_time: f32,
+    delta_time: f64,
 ) {
     update_spring(&mut spring3d.x, target_x, config, delta_time);
     update_spring(&mut spring3d.y, target_y, config, delta_time);
@@ -123,29 +123,29 @@ pub fn update_spring3d(
 #[cfg(feature = "object-api")]
 impl Spring3D {
     pub fn new(
-        value_x: f32,
-        value_y: f32,
-        value_z: f32,
-        velocity_x: f32,
-        velocity_y: f32,
-        velocity_z: f32,
+        value_x: f64,
+        value_y: f64,
+        value_z: f64,
+        velocity_x: f64,
+        velocity_y: f64,
+        velocity_z: f64,
     ) -> Self {
         return create_spring3d(
             value_x, value_y, value_z, velocity_x, velocity_y, velocity_z,
         );
     }
 
-    pub fn add_impulse(&mut self, velocity_x: f32, velocity_y: f32, velocity_z: f32) {
+    pub fn add_impulse(&mut self, velocity_x: f64, velocity_y: f64, velocity_z: f64) {
         add_spring_impulse_3d(self, velocity_x, velocity_y, velocity_z);
     }
 
     pub fn is_settled(
         &self,
-        target_x: f32,
-        target_y: f32,
-        target_z: f32,
-        position_epsilon: Option<f32>,
-        velocity_epsilon: Option<f32>,
+        target_x: f64,
+        target_y: f64,
+        target_z: f64,
+        position_epsilon: Option<f64>,
+        velocity_epsilon: Option<f64>,
     ) -> bool {
         return is_spring3d_settled(
             self,
@@ -159,12 +159,12 @@ impl Spring3D {
 
     pub fn reset(
         &mut self,
-        value_x: f32,
-        value_y: f32,
-        value_z: f32,
-        velocity_x: Option<f32>,
-        velocity_y: Option<f32>,
-        velocity_z: Option<f32>,
+        value_x: f64,
+        value_y: f64,
+        value_z: f64,
+        velocity_x: Option<f64>,
+        velocity_y: Option<f64>,
+        velocity_z: Option<f64>,
     ) {
         reset_spring3d(
             self, value_x, value_y, value_z, velocity_x, velocity_y, velocity_z,
@@ -173,11 +173,11 @@ impl Spring3D {
 
     pub fn update(
         &mut self,
-        target_x: f32,
-        target_y: f32,
-        target_z: f32,
+        target_x: f64,
+        target_y: f64,
+        target_z: f64,
         config: &SpringConfig,
-        delta_time: f32,
+        delta_time: f64,
     ) {
         update_spring3d(self, target_x, target_y, target_z, config, delta_time);
     }

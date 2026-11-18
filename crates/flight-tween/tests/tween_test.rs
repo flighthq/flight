@@ -11,19 +11,19 @@ fn linear_ease(t: f32) -> f32 {
 }
 
 struct Obj {
-    x: f32,
-    y: f32,
+    x: f64,
+    y: f64,
 }
 
-fn get_x(target: &Ref<Obj>) -> f32 {
+fn get_x(target: &Ref<Obj>) -> f64 {
     return target.read().unwrap().x;
 }
 
-fn _get_y(target: &Ref<Obj>) -> f32 {
+fn _get_y(target: &Ref<Obj>) -> f64 {
     return target.read().unwrap().y;
 }
 
-fn prop_x(to: f32) -> TweenProp<Obj> {
+fn prop_x(to: f64) -> TweenProp<Obj> {
     return TweenProp {
         get: |t: &mut Obj| &mut t.x,
         key: "x",
@@ -31,7 +31,7 @@ fn prop_x(to: f32) -> TweenProp<Obj> {
     };
 }
 
-fn prop_y(to: f32) -> TweenProp<Obj> {
+fn prop_y(to: f64) -> TweenProp<Obj> {
     return TweenProp {
         get: |t: &mut Obj| &mut t.y,
         key: "y",
@@ -39,11 +39,11 @@ fn prop_y(to: f32) -> TweenProp<Obj> {
     };
 }
 
-fn target_x(x: f32) -> Ref<Obj> {
+fn target_x(x: f64) -> Ref<Obj> {
     return Ref::new(RwLock::new(Obj { x, y: 0.0 }));
 }
 
-fn target_xy(x: f32, y: f32) -> Ref<Obj> {
+fn target_xy(x: f64, y: f64) -> Ref<Obj> {
     return Ref::new(RwLock::new(Obj { x, y }));
 }
 
@@ -283,7 +283,7 @@ mod get_tween_elapsed {
         let target = target_x(0.0);
         let tween = create_tween(&manager, &target, 1000.0, &[prop_x(100.0)], None);
         update_tweens(&manager, 300.0);
-        assert!((get_tween_elapsed(&tween) - 300.0).abs() < 0.005); // D1 f32 bound (TS: 0.005)
+        assert!((get_tween_elapsed(&tween) - 300.0).abs() < 0.005); // TS bound: 0.005
     }
 }
 
@@ -1015,9 +1015,9 @@ mod stop_tween {
             }),
         );
         update_tweens(&manager, 500.0);
-        assert!((get_x(&target) - 50.0).abs() < 0.005); // D1 f32 bound (TS: 0.005)
+        assert!((get_x(&target) - 50.0).abs() < 0.005); // TS bound: 0.005
         stop_tween(&tween, None);
-        assert!((get_x(&target) - 50.0).abs() < 0.005); // D1 f32 bound (TS: 0.005)
+        assert!((get_x(&target) - 50.0).abs() < 0.005); // TS bound: 0.005
     }
 
     #[test]
@@ -1177,9 +1177,9 @@ mod stop_tweens {
             }),
         );
         update_tweens(&manager, 500.0);
-        assert!((get_x(&target) - 50.0).abs() < 0.005); // D1 f32 bound (TS: 0.005)
+        assert!((get_x(&target) - 50.0).abs() < 0.005); // TS bound: 0.005
         stop_tweens(&manager, &target, None, None);
-        assert!((get_x(&target) - 50.0).abs() < 0.005); // D1 f32 bound (TS: 0.005)
+        assert!((get_x(&target) - 50.0).abs() < 0.005); // TS bound: 0.005
     }
 
     #[test]

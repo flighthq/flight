@@ -7,7 +7,7 @@ use crate::types::*;
 
 pub fn advance_animation_players(
     players: &[AnimationPlayerRef],
-    dt: f32,
+    dt: f64,
     advanced: &mut Vec<AnimationPlayerRef>,
 ) {
     for player in players {

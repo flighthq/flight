@@ -11,6 +11,7 @@ pub type TargetRef = Unknown;
 
 pub type Payload = usize;
 
+// flight-lint: allow(f32) easing over bounded 0-1 progress (flight-easing contract)
 pub type EasingFn = Arc<dyn Fn(f32) -> f32 + Send + Sync>;
 
 pub type AnimationPlayerRef = Ref<AnimationPlayer>;
@@ -52,7 +53,7 @@ pub struct AnimationBlendTree {
     pub channels: Vec<AnimationBlendTreeChannel>,
     pub inputs: Vec<AnimationBlendTreeInput>,
     pub players: Vec<AnimationPlayerRef>,
-    pub sample_scratch: Vec<f32>,
+    pub sample_scratch: Vec<f64>,
     runtime: EntityRuntimeSlot,
 }
 
@@ -72,6 +73,7 @@ pub struct AnimationBlendTreeChannelSource {
 
 #[derive(Clone, Debug)]
 #[repr(C)]
+// flight-lint: allow(f32) blend weight is a bounded input
 pub struct AnimationBlendTreeInput {
     pub additive: bool,
     pub player: AnimationPlayerRef,
@@ -90,7 +92,7 @@ pub struct AnimationChannel {
 #[repr(C)]
 pub struct AnimationClip {
     pub channels: Vec<AnimationChannel>,
-    pub duration: f32,
+    pub duration: f64,
     pub events: Vec<AnimationClipEvent>,
     runtime: EntityRuntimeSlot,
 }
@@ -100,21 +102,22 @@ pub struct AnimationClip {
 pub struct AnimationClipEvent {
     pub name: String,
     pub payload: Payload,
-    pub time: f32,
+    pub time: f64,
     runtime: EntityRuntimeSlot,
 }
 
 #[derive(Clone)]
 #[repr(C)]
+// flight-lint: allow(f32) transition weight is a bounded 0-1 blend weight
 pub struct AnimationCrossfade {
     pub channels: Vec<AnimationCrossfadeChannel>,
     pub curve: EasingFn,
-    pub duration: f32,
-    pub elapsed: f32,
+    pub duration: f64,
+    pub elapsed: f64,
     pub from: AnimationPlayerRef,
-    pub from_sample: Vec<f32>,
+    pub from_sample: Vec<f64>,
     pub to: AnimationPlayerRef,
-    pub to_sample: Vec<f32>,
+    pub to_sample: Vec<f64>,
     pub weight: f32,
     runtime: EntityRuntimeSlot,
 }
@@ -133,6 +136,7 @@ pub struct AnimationCrossfadeOptions {
 
 #[derive(Clone, Debug)]
 #[repr(C)]
+// flight-lint: allow(f32) blend weight is a bounded input
 pub struct AnimationLayer {
     pub additive: bool,
     pub blend_tree: Option<AnimationBlendTreeRef>,
@@ -143,6 +147,7 @@ pub struct AnimationLayer {
 }
 
 #[derive(Clone, Debug, Default)]
+// flight-lint: allow(f32) blend weight is a bounded input
 pub struct AnimationLayerOptions {
     pub additive: Option<bool>,
     pub channel_indices: Option<Vec<usize>>,
@@ -155,7 +160,7 @@ pub struct AnimationLayerStack {
     pub blend_trees: Vec<AnimationBlendTreeRef>,
     pub channels: Vec<AnimationLayerStackChannel>,
     pub layers: Vec<AnimationLayer>,
-    pub sample_scratch: Vec<f32>,
+    pub sample_scratch: Vec<f64>,
     pub state_machines: Vec<AnimationStateMachineRef>,
     runtime: EntityRuntimeSlot,
 }
@@ -184,8 +189,8 @@ pub struct AnimationPlayer {
     pub on_looped: Option<Signal<()>>,
     pub playing: bool,
     pub repeat_count: i32,
-    pub speed: f32,
-    pub time: f32,
+    pub speed: f64,
+    pub time: f64,
     pub(crate) runtime: EntityRuntimeSlot,
 }
 
@@ -195,38 +200,40 @@ pub struct AnimationRootMotionExtractor {
     pub channel: AnimationChannel,
     pub channel_index: usize,
     pub clip: Ref<AnimationClip>,
-    pub cycle_delta: Vec<f32>,
-    pub from_motion: Vec<f32>,
-    pub from_sample: Vec<f32>,
-    pub power_scratch: Vec<f32>,
-    pub start_sample: Vec<f32>,
-    pub to_motion: Vec<f32>,
-    pub to_sample: Vec<f32>,
+    pub cycle_delta: Vec<f64>,
+    pub from_motion: Vec<f64>,
+    pub from_sample: Vec<f64>,
+    pub power_scratch: Vec<f64>,
+    pub start_sample: Vec<f64>,
+    pub to_motion: Vec<f64>,
+    pub to_sample: Vec<f64>,
     runtime: EntityRuntimeSlot,
 }
 
 #[derive(Clone, Debug)]
 #[repr(C)]
+// flight-lint: allow(f32) blend weight is a bounded input
 pub struct AnimationSampleAccumulator {
     pub components: usize,
     pub quaternion: bool,
-    pub values: Vec<f32>,
+    pub values: Vec<f64>,
     pub weight: f32,
     runtime: EntityRuntimeSlot,
 }
 
 #[derive(Clone)]
 #[repr(C)]
+// flight-lint: allow(f32) transition weight is a bounded 0-1 blend weight
 pub struct AnimationStateMachine {
     pub advance_scratch: Vec<AnimationPlayerRef>,
     pub channels: Vec<AnimationStateMachineChannel>,
     pub current_state_index: usize,
-    pub from_sample: Vec<f32>,
+    pub from_sample: Vec<f64>,
     pub states: Vec<AnimationStateMachineState>,
-    pub to_sample: Vec<f32>,
+    pub to_sample: Vec<f64>,
     pub transition_curve: EasingFn,
-    pub transition_duration: f32,
-    pub transition_elapsed: f32,
+    pub transition_duration: f64,
+    pub transition_elapsed: f64,
     pub transition_from_state_index: Option<usize>,
     pub transition_to_state_index: Option<usize>,
     pub transition_weight: f32,
@@ -250,8 +257,8 @@ pub struct AnimationStateMachineState {
 #[repr(C)]
 pub struct AnimationTrack {
     pub interpolation: AnimationInterpolation,
-    pub times: Vec<f32>,
-    pub values: Vec<f32>,
+    pub times: Vec<f64>,
+    pub values: Vec<f64>,
     pub components: usize,
     pub quaternion: bool,
     pub easing: Option<EasingFn>,
@@ -277,6 +284,7 @@ pub fn create_state_ref_from_name(name: &str) -> StateRef {
 }
 
 // flight-lint: allow(conform-extra) internal easing identity used as default curve value
+// flight-lint: allow(f32) easing over bounded 0-1 progress (flight-easing contract)
 pub fn linear_easing_identity(t: f32) -> f32 {
     return t;
 }

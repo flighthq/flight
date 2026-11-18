@@ -6,8 +6,8 @@ use std::sync::{Arc, Mutex, OnceLock, RwLock};
 use flight_animation::contract::*;
 use flight_entity::Ref;
 
-fn track(times: Vec<f32>) -> Ref<AnimationTrack> {
-    let values: Vec<f32> = times.iter().map(|_| 0.0).collect();
+fn track(times: Vec<f64>) -> Ref<AnimationTrack> {
+    let values: Vec<f64> = times.iter().map(|_| 0.0).collect();
     return Arc::new(RwLock::new({
         let mut track = create_animation_track();
         track.times = times;
@@ -339,7 +339,7 @@ mod sample_animation_clip {
             &[],
         );
         let mut out = [0.0];
-        let mut seen: Vec<(usize, f32)> = Vec::new();
+        let mut seen: Vec<(usize, f64)> = Vec::new();
         let mut seen_targets: Vec<TargetRef> = Vec::new();
         sample_animation_clip(&mut out, &clip, 0.5, &mut |sampled, channel, index| {
             seen.push((index, sampled[0]));

@@ -1,5 +1,6 @@
 //! flight-compiler: rust-only
 
+use crate::internal::interpolate_tween_value;
 use std::marker::PhantomData;
 use std::sync::{Arc, Mutex, RwLock};
 
@@ -8,14 +9,15 @@ use flight_signals::Signal;
 
 // ── Types ────────────────────────────────────────────────────────────
 
+// flight-lint: allow(f32) easing over bounded 0-1 progress (flight-easing contract)
 pub type EasingFunction = fn(f32) -> f32;
 
 // flight-lint: allow(conform-extra) D22 Rust fn-pointer property accessor replacing TS NumericProps<T>
 // flight-lint: allow(contract-vocabulary) D22 native fn-pointer property accessors support Ref<dyn Trait> targets through relaxed generic bounds
 pub struct TweenProp<T: ?Sized> {
-    pub get: fn(&mut T) -> &mut f32,
+    pub get: fn(&mut T) -> &mut f64,
     pub key: &'static str,
-    pub to: f32,
+    pub to: f64,
 }
 
 /// Constructs a [`TweenProp`] from a field name and target value.
@@ -23,7 +25,7 @@ pub struct TweenProp<T: ?Sized> {
 /// A misspelled or non-existent field is a compile error:
 ///
 /// ```compile_fail
-/// struct Pos { x: f32, y: f32 }
+/// struct Pos { x: f64, y: f64 }
 /// let _bad = flight_tween::tween_prop!(zz, 1.0);
 /// let _: flight_tween::TweenProp<Pos> = _bad;
 /// ```
@@ -43,7 +45,7 @@ pub enum StaggerFrom {
     Start,
     End,
     Center,
-    Index(f32),
+    Index(f64),
 }
 
 #[derive(Clone, Debug, Default)]
@@ -54,7 +56,7 @@ pub struct StopTweenOptions {
 
 #[derive(Clone, Debug, Default)]
 pub struct TweenOptions {
-    pub delay: Option<f32>,
+    pub delay: Option<f64>,
     pub ease: Option<EasingFunction>,
     pub overwrite: Option<bool>,
     pub reflect: Option<bool>,
@@ -67,14 +69,14 @@ pub struct TweenOptions {
 #[derive(Clone, Debug)]
 #[repr(C)]
 pub struct TweenPropertyDetail {
-    pub change: f32,
+    pub change: f64,
     pub key: String,
-    pub start: f32,
+    pub start: f64,
 }
 
 #[derive(Clone, Debug, Default)]
 pub struct TweenStaggerOptions {
-    pub each: Option<f32>,
+    pub each: Option<f64>,
     pub from: Option<StaggerFrom>,
     pub stagger_ease: Option<EasingFunction>,
 }
@@ -86,10 +88,10 @@ pub struct TweenManagerOptions {
 
 pub struct TweenCommon {
     pub complete: bool,
-    pub delay: f32,
-    pub duration: f32,
+    pub delay: f64,
+    pub duration: f64,
     pub ease: EasingFunction,
-    pub elapsed: f32,
+    pub elapsed: f64,
     pub initialized: bool,
     pub on_complete: Signal<()>,
     pub on_repeat: Signal<()>,
@@ -124,11 +126,11 @@ pub(crate) struct ErasedTweenHandle {
 }
 
 pub(crate) struct PropertyState<T: ?Sized> {
-    pub get: fn(&mut T) -> &mut f32,
+    pub get: fn(&mut T) -> &mut f64,
     pub key: String,
-    pub to: f32,
-    pub start: f32,
-    pub change: f32,
+    pub to: f64,
+    pub start: f64,
+    pub change: f64,
 }
 
 pub(crate) struct TypedTweenOps<T: ?Sized + Send + Sync + 'static> {
@@ -162,9 +164,9 @@ pub struct TweenContext {
 // flight-lint: allow(conform-extra) D22 Rust proxy type for RGB component tweening
 #[repr(C)]
 pub struct ColorComponents {
-    pub r: f32,
-    pub g: f32,
-    pub b: f32,
+    pub r: f64,
+    pub g: f64,
+    pub b: f64,
 }
 
 // flight-lint: allow(conform-extra) D22 Rust empty target replacing TS empty property map
@@ -183,6 +185,7 @@ pub(crate) fn initialize_tween_ops(inner: &mut ErasedTweenInner, smart_rotation:
     TweenOps::initialize(&mut *inner.ops, smart_rotation);
 }
 
+// flight-lint: allow(f32) easing over bounded 0-1 progress (flight-easing contract)
 fn default_ease(t: f32) -> f32 {
     return t;
 }
@@ -224,13 +227,14 @@ pub(crate) fn target_key_from_ref<T: ?Sized>(target: &Ref<T>) -> usize {
 // flight-lint: allow(conform-extra) D22 escape hatch for nested/computed property paths
 // flight-lint: allow(contract-vocabulary) D22 native fn-pointer property accessors support Ref<dyn Trait> targets through relaxed generic bounds
 pub fn tween_with<T: ?Sized>(
-    get: fn(&mut T) -> &mut f32,
+    get: fn(&mut T) -> &mut f64,
     key: &'static str,
-    to: f32,
+    to: f64,
 ) -> TweenProp<T> {
     return TweenProp { get, key, to };
 }
 
+// flight-lint: allow(f32) eased_t is the bounded f32 easing output
 pub(crate) fn write_tween_ops_values(inner: &ErasedTweenInner, eased_t: f32, snapping: bool) {
     TweenOps::write_values(&*inner.ops, eased_t, snapping);
 }
@@ -284,10 +288,11 @@ impl<T: ?Sized + Send + Sync + 'static> TweenOps for TypedTweenOps<T> {
         return Arc::as_ptr(&self.target) as *const () as usize;
     }
 
+    // flight-lint: allow(f32) eased_t is the bounded f32 easing output
     fn write_values(&self, eased_t: f32, snapping: bool) {
         let mut target = self.target.write().unwrap();
         for prop in self.properties.iter() {
-            let mut value = prop.start + prop.change * eased_t;
+            let mut value = interpolate_tween_value(prop.start, prop.change, eased_t);
             if snapping {
                 value = value.round();
             }

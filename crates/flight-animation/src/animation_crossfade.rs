@@ -10,7 +10,7 @@ use crate::types::*;
 pub fn create_animation_crossfade(
     from: AnimationPlayerRef,
     to: AnimationPlayerRef,
-    duration: f32,
+    duration: f64,
     opts: Option<&AnimationCrossfadeOptions>,
 ) -> AnimationCrossfade {
     let mut out = AnimationCrossfade::default();
@@ -103,10 +103,10 @@ pub fn initialize_animation_crossfade(
     out: &mut AnimationCrossfade,
     from: AnimationPlayerRef,
     to: AnimationPlayerRef,
-    duration: f32,
+    duration: f64,
     opts: Option<&AnimationCrossfadeOptions>,
 ) {
-    let resolved_duration = f32::max(0.0, duration);
+    let resolved_duration = f64::max(0.0, duration);
     let curve = opts
         .and_then(|o| o.curve.clone())
         .unwrap_or_else(|| std::sync::Arc::new(linear_animation_crossfade_curve));
@@ -129,7 +129,7 @@ pub fn initialize_animation_crossfade(
     ));
 }
 
-pub fn advance_animation_crossfade(state: &mut AnimationCrossfade, dt: f32) {
+pub fn advance_animation_crossfade(state: &mut AnimationCrossfade, dt: f64) {
     advance_animation_player(&mut state.from.write().unwrap(), dt);
     advance_animation_player(&mut state.to.write().unwrap(), dt);
     state.elapsed += dt;
@@ -155,32 +155,29 @@ fn assert_unique_animation_crossfade_targets(channels: &[AnimationChannel], clip
     }
 }
 
-fn get_linear_animation_crossfade_weight(elapsed: f32, duration: f32) -> f32 {
+// flight-lint: allow(f32) transition weight is a bounded 0-1 blend weight
+fn get_linear_animation_crossfade_weight(elapsed: f64, duration: f64) -> f32 {
     if duration <= 0.0 {
         return 1.0;
     }
     let normalized = elapsed / duration;
-    return if normalized < 0.0 {
-        0.0
-    } else if normalized > 1.0 {
-        1.0
-    } else {
-        normalized
-    };
+    // f64 time narrows only here, once clamped to the bounded 0-1 weight range.
+    return normalized.clamp(0.0, 1.0) as f32;
 }
 
 pub fn is_animation_crossfade_complete(state: &AnimationCrossfade) -> bool {
     return state.duration <= 0.0 || state.elapsed >= state.duration;
 }
 
+// flight-lint: allow(f32) easing over bounded 0-1 progress (flight-easing contract)
 fn linear_animation_crossfade_curve(t: f32) -> f32 {
     return t;
 }
 
 pub fn sample_animation_crossfade(
-    out: &mut [f32],
+    out: &mut [f64],
     state: &mut AnimationCrossfade,
-    visit: &mut dyn FnMut(&[f32], &AnimationChannel, usize),
+    visit: &mut dyn FnMut(&[f64], &AnimationChannel, usize),
 ) {
     let from_player = state.from.read().unwrap();
     let to_player = state.to.read().unwrap();
@@ -204,8 +201,8 @@ pub fn sample_animation_crossfade(
             let to_track = &to_channels[to_idx].track;
             sample_animation_track_ref(&mut state.from_sample, from_track, from_player.time);
             sample_animation_track_ref(&mut state.to_sample, to_track, to_player.time);
-            let from_sample_copy: Vec<f32> = state.from_sample.clone();
-            let to_sample_copy: Vec<f32> = state.to_sample.clone();
+            let from_sample_copy: Vec<f64> = state.from_sample.clone();
+            let to_sample_copy: Vec<f64> = state.to_sample.clone();
             blend_animation_samples(
                 out,
                 &from_sample_copy,

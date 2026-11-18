@@ -11,7 +11,7 @@ fn linear_ease(t: f32) -> f32 {
 }
 
 struct Obj {
-    x: f32,
+    x: f64,
 }
 
 mod get_tween_progress {
@@ -88,7 +88,7 @@ mod get_tween_progress {
             }),
         );
         update_tweens(&manager, 500.0);
-        assert!((get_tween_progress(&tween) - 0.5).abs() < 0.005); // D1 f32 bound (TS: 0.005)
+        assert!((get_tween_progress(&tween) - 0.5).abs() < 0.005); // TS bound: 0.005
     }
 
     #[test]
@@ -291,7 +291,7 @@ mod seek_tween {
             }),
         );
         seek_tween(&tween, 500.0);
-        assert!((target.read().unwrap().x - 50.0).abs() < 0.005); // D1 f32 bound (TS: 0.005)
+        assert!((target.read().unwrap().x - 50.0).abs() < 0.005); // TS bound: 0.005
     }
 
     #[test]
@@ -376,7 +376,7 @@ mod seek_tween {
             }),
         );
         seek_tween(&tween, 1000.0); // delay=500 + 500ms active = 50%
-        assert!((target.read().unwrap().x - 50.0).abs() < 0.005); // D1 f32 bound (TS: 0.005)
+        assert!((target.read().unwrap().x - 50.0).abs() < 0.005); // TS bound: 0.005
     }
 
     #[test]
@@ -508,10 +508,10 @@ mod seek_tween {
             }),
         );
         seek_tween(&tween, 500.0);
-        assert!((target.read().unwrap().x - 50.0).abs() < 0.005); // D1 f32 bound (TS: 0.005)
+        assert!((target.read().unwrap().x - 50.0).abs() < 0.005); // TS bound: 0.005
         // Calling again should be consistent
         seek_tween(&tween, 750.0);
-        assert!((target.read().unwrap().x - 75.0).abs() < 0.005); // D1 f32 bound (TS: 0.005)
+        assert!((target.read().unwrap().x - 75.0).abs() < 0.005); // TS bound: 0.005
     }
 }
 
@@ -543,7 +543,7 @@ mod set_tween_progress {
             }),
         );
         set_tween_progress(&tween, 0.5);
-        assert!((target.read().unwrap().x - 50.0).abs() < 0.005); // D1 f32 bound (TS: 0.005)
+        assert!((target.read().unwrap().x - 50.0).abs() < 0.005); // TS bound: 0.005
     }
 
     #[test]
@@ -666,8 +666,8 @@ mod set_tween_progress {
             }),
         );
         set_tween_progress(&tween, 0.25);
-        assert!((target.read().unwrap().x - 25.0).abs() < 0.005); // D1 f32 bound (TS: 0.005)
+        assert!((target.read().unwrap().x - 25.0).abs() < 0.005); // TS bound: 0.005
         set_tween_progress(&tween, 0.75);
-        assert!((target.read().unwrap().x - 75.0).abs() < 0.005); // D1 f32 bound (TS: 0.005)
+        assert!((target.read().unwrap().x - 75.0).abs() < 0.005); // TS bound: 0.005
     }
 }

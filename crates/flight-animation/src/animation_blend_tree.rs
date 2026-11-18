@@ -104,7 +104,7 @@ pub fn initialize_animation_blend_tree_input(
     out.weight = 1.0;
 }
 
-pub fn advance_animation_blend_tree(tree: &AnimationBlendTree, dt: f32) {
+pub fn advance_animation_blend_tree(tree: &AnimationBlendTree, dt: f64) {
     for player_ref in &tree.players {
         advance_animation_player(&mut player_ref.write().unwrap(), dt);
     }
@@ -150,9 +150,9 @@ fn assert_unique_animation_blend_tree_targets(channels: &[AnimationChannel], inp
 }
 
 pub fn sample_animation_blend_tree(
-    out: &mut [f32],
+    out: &mut [f64],
     tree: &mut AnimationBlendTree,
-    visit: &mut dyn FnMut(&[f32], &AnimationChannel, usize),
+    visit: &mut dyn FnMut(&[f64], &AnimationChannel, usize),
 ) {
     for index in 0..tree.channels.len() {
         let sampled = sample_animation_blend_tree_channel(out, tree, index);
@@ -164,7 +164,7 @@ pub fn sample_animation_blend_tree(
 }
 
 pub fn sample_animation_blend_tree_channel(
-    out: &mut [f32],
+    out: &mut [f64],
     tree: &mut AnimationBlendTree,
     channel_index: usize,
 ) -> bool {
@@ -190,7 +190,7 @@ pub fn sample_animation_blend_tree_channel(
         let clip = player.clip.read().unwrap();
         let channel = &clip.channels[source.channel_index];
         sample_animation_track_ref(&mut tree.sample_scratch, &channel.track, player.time);
-        let scratch_copy: Vec<f32> = tree.sample_scratch.clone();
+        let scratch_copy: Vec<f64> = tree.sample_scratch.clone();
         accumulate_animation_sample(
             &mut tree.channels[channel_index].accumulator,
             &scratch_copy,
@@ -220,7 +220,7 @@ pub fn sample_animation_blend_tree_channel(
         let clip = player.clip.read().unwrap();
         let channel = &clip.channels[source.channel_index];
         sample_animation_track_ref(&mut tree.sample_scratch, &channel.track, player.time);
-        let scratch_copy: Vec<f32> = tree.sample_scratch.clone();
+        let scratch_copy: Vec<f64> = tree.sample_scratch.clone();
         let quaternion = channel.track.read().unwrap().quaternion;
         add_animation_sample(out, &out.to_vec(), &scratch_copy, input_weight, quaternion);
     }
@@ -228,6 +228,7 @@ pub fn sample_animation_blend_tree_channel(
     return true;
 }
 
+// flight-lint: allow(f32) blend weight is a bounded input
 pub fn set_animation_blend_tree_input_weight(
     tree: &mut AnimationBlendTree,
     input_index: usize,
@@ -240,7 +241,7 @@ pub fn set_animation_blend_tree_input_weight(
     return true;
 }
 
-fn write_animation_blend_tree_identity(out: &mut [f32], components: usize, quaternion: bool) {
+fn write_animation_blend_tree_identity(out: &mut [f64], components: usize, quaternion: bool) {
     let width = out.len().min(components);
     for component in 0..width {
         out[component] = 0.0;

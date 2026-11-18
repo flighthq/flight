@@ -3,13 +3,15 @@
 // flight-lint: allow-file(contract-vocabulary) D22 Tween<T> requires T: ?Sized + Send + Sync + 'static for Arc<RwLock<>> thread-safety
 use flight_signals::emit_signal;
 
-use crate::internal::initialize_tween;
+use crate::internal::{get_tween_normalized_progress, initialize_tween};
 use crate::types::{ErasedTweenHandle, Tween, erase_tween_handle, write_tween_ops_values};
 
+// flight-lint: allow(f32) normalized 0-1 tween progress (bounded)
 pub fn get_tween_progress<T: ?Sized + Send + Sync + 'static>(tween: &Tween<T>) -> f32 {
     return get_tween_progress_erased(&erase_tween_handle(tween));
 }
 
+// flight-lint: allow(f32) normalized 0-1 tween progress (bounded)
 pub(crate) fn get_tween_progress_erased(handle: &ErasedTweenHandle) -> f32 {
     let inner = handle.data.read().unwrap();
     if inner.common.complete {
@@ -19,7 +21,7 @@ pub(crate) fn get_tween_progress_erased(handle: &ErasedTweenHandle) -> f32 {
     if active_elapsed <= 0.0 {
         return 0.0;
     }
-    return (active_elapsed / inner.common.duration).min(1.0);
+    return get_tween_normalized_progress(active_elapsed, inner.common.duration);
 }
 
 pub fn invalidate_tween<T: ?Sized + Send + Sync + 'static>(tween: &Tween<T>) {
@@ -48,11 +50,11 @@ pub(crate) fn restart_tween_erased(handle: &ErasedTweenHandle, include_delay: bo
     };
 }
 
-pub fn seek_tween<T: ?Sized + Send + Sync + 'static>(tween: &Tween<T>, time_seconds: f32) {
+pub fn seek_tween<T: ?Sized + Send + Sync + 'static>(tween: &Tween<T>, time_seconds: f64) {
     seek_tween_erased(&erase_tween_handle(tween), time_seconds);
 }
 
-pub(crate) fn seek_tween_erased(handle: &ErasedTweenHandle, time_seconds: f32) {
+pub(crate) fn seek_tween_erased(handle: &ErasedTweenHandle, time_seconds: f64) {
     if !handle.data.read().unwrap().common.initialized {
         initialize_tween(handle);
     }
@@ -79,7 +81,7 @@ pub(crate) fn seek_tween_erased(handle: &ErasedTweenHandle, time_seconds: f32) {
         return;
     }
 
-    let t = (active_elapsed / duration).min(1.0);
+    let t = get_tween_normalized_progress(active_elapsed, duration);
     let effective_t = if reverse { 1.0 - t } else { t };
     let eased_t = ease(effective_t);
 
@@ -96,16 +98,18 @@ pub(crate) fn seek_tween_erased(handle: &ErasedTweenHandle, time_seconds: f32) {
     }
 }
 
+// flight-lint: allow(f32) normalized 0-1 tween progress (bounded)
 pub fn set_tween_progress<T: ?Sized + Send + Sync + 'static>(tween: &Tween<T>, progress: f32) {
     set_tween_progress_erased(&erase_tween_handle(tween), progress);
 }
 
+// flight-lint: allow(f32) normalized 0-1 tween progress (bounded)
 pub(crate) fn set_tween_progress_erased(handle: &ErasedTweenHandle, progress: f32) {
     let clamped = progress.max(0.0).min(1.0);
     let (delay, duration) = {
         let inner = handle.data.read().unwrap();
         (inner.common.delay, inner.common.duration)
     };
-    let target_elapsed = delay + clamped * duration;
+    let target_elapsed = delay + f64::from(clamped) * duration;
     seek_tween_erased(handle, target_elapsed);
 }

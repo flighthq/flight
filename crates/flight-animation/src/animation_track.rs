@@ -7,8 +7,8 @@ use flight_entity::Ref;
 
 #[derive(Clone)]
 struct AnimationTrackSamplePoint {
-    alpha: f32,
-    dt: f32,
+    alpha: f64,
+    dt: f64,
     easing: Option<EasingFn>,
     index: usize,
 }
@@ -53,16 +53,23 @@ pub fn clone_animation_track(track: &AnimationTrack) -> AnimationTrack {
     return out;
 }
 
-fn copy_keyframe_value(out: &mut [f32], track: &AnimationTrack, k: usize) {
+fn copy_keyframe_value(out: &mut [f64], track: &AnimationTrack, k: usize) {
     let off = keyframe_value_offset(track, k);
     for c in 0..track.components {
         out[c] = track.values[off + c];
     }
 }
 
+// The keyframe segment fraction is f64 because it is derived from f64 time; only a per-keyframe
+// `EasingFn` (bounded f32 easing, matching flight-easing) narrows it, and the result widens back.
+// flight-lint: allow(f32) easing seam: per-keyframe easing takes and returns bounded f32 progress
+fn ease_animation_track_alpha(easing: &EasingFn, alpha: f64) -> f64 {
+    return f64::from(easing(alpha as f32));
+}
+
 fn find_animation_track_sample_position(
     track: &AnimationTrack,
-    time: f32,
+    time: f64,
 ) -> AnimationTrackSamplePosition {
     let times = &track.times;
     let count = times.len();
@@ -118,7 +125,7 @@ fn keyframe_value_offset(track: &AnimationTrack, k: usize) -> usize {
     return k * stride;
 }
 
-fn normalize_flat_quaternion(out: &mut [f32]) {
+fn normalize_flat_quaternion(out: &mut [f64]) {
     let x = out[0];
     let y = out[1];
     let z = out[2];
@@ -148,12 +155,12 @@ fn same_animation_track_sample_point(
         && same_easing;
 }
 
-pub fn sample_animation_track(out: &mut [f32], track: &AnimationTrack, t: f32) {
+pub fn sample_animation_track(out: &mut [f64], track: &AnimationTrack, t: f64) {
     sample_animation_track_value(out, track, t);
 }
 
 fn sample_animation_track_at_position(
-    out: &mut [f32],
+    out: &mut [f64],
     track: &AnimationTrack,
     position: AnimationTrackSamplePosition,
 ) {
@@ -202,7 +209,7 @@ fn sample_animation_track_at_position(
 /// position is revalidated after easing, so a callback may safely mutate the original track (Rust
 /// contract-only counterpart to the TS value sampler used by Ref-owning D16 consumers).
 // flight-lint: allow(conform-extra) D16 Ref-owning consumers need a guard-safe sampler; TS object reads do not hold a lock
-pub fn sample_animation_track_ref(out: &mut [f32], track_ref: &Ref<AnimationTrack>, t: f32) {
+pub fn sample_animation_track_ref(out: &mut [f64], track_ref: &Ref<AnimationTrack>, t: f64) {
     loop {
         let track = track_ref.read().unwrap();
         let position = find_animation_track_sample_position(&track, t);
@@ -216,7 +223,7 @@ pub fn sample_animation_track_ref(out: &mut [f32], track_ref: &Ref<AnimationTrac
         };
         drop(track);
 
-        let eased_alpha = easing(point.alpha);
+        let eased_alpha = ease_animation_track_alpha(easing, point.alpha);
 
         let track = track_ref.read().unwrap();
         let AnimationTrackSamplePosition::Segment(current_point) =
@@ -241,17 +248,17 @@ pub fn sample_animation_track_ref(out: &mut [f32], track_ref: &Ref<AnimationTrac
     }
 }
 
-pub(crate) fn sample_animation_track_value(out: &mut [f32], track: &AnimationTrack, t: f32) {
+pub(crate) fn sample_animation_track_value(out: &mut [f64], track: &AnimationTrack, t: f64) {
     let mut position = find_animation_track_sample_position(track, t);
     if let AnimationTrackSamplePosition::Segment(ref mut point) = position {
         if let Some(ref easing) = point.easing {
-            point.alpha = easing(point.alpha);
+            point.alpha = ease_animation_track_alpha(easing, point.alpha);
         }
     }
     sample_animation_track_at_position(out, track, position);
 }
 
-fn sample_cubic_segment(out: &mut [f32], track: &AnimationTrack, i: usize, alpha: f32, dt: f32) {
+fn sample_cubic_segment(out: &mut [f64], track: &AnimationTrack, i: usize, alpha: f64, dt: f64) {
     let components = track.components;
     let values = &track.values;
     let stride = components * 3;
@@ -275,7 +282,7 @@ fn sample_cubic_segment(out: &mut [f32], track: &AnimationTrack, i: usize, alpha
     }
 }
 
-fn slerp_flat_quaternion(out: &mut [f32], values: &[f32], oa: usize, ob: usize, alpha: f32) {
+fn slerp_flat_quaternion(out: &mut [f64], values: &[f64], oa: usize, ob: usize, alpha: f64) {
     let ax = values[oa];
     let ay = values[oa + 1];
     let az = values[oa + 2];
@@ -292,8 +299,8 @@ fn slerp_flat_quaternion(out: &mut [f32], values: &[f32], oa: usize, ob: usize, 
         bz = -bz;
         bw = -bw;
     }
-    let scale0: f32;
-    let scale1: f32;
+    let scale0: f64;
+    let scale1: f64;
     if 1.0 - cosom > 1e-6 {
         let omega = cosom.min(1.0).acos();
         let sinom = omega.sin();
@@ -311,15 +318,15 @@ fn slerp_flat_quaternion(out: &mut [f32], values: &[f32], oa: usize, ob: usize, 
 
 pub fn trim_animation_track(
     track: &AnimationTrack,
-    start_time: f32,
-    end_time: f32,
+    start_time: f64,
+    end_time: f64,
 ) -> AnimationTrack {
     let components = track.components;
     let times = &track.times;
     let count = times.len();
     let stride = keyframe_stride(track);
-    let mut out_times: Vec<f32> = Vec::new();
-    let mut out_values: Vec<f32> = Vec::new();
+    let mut out_times: Vec<f64> = Vec::new();
+    let mut out_values: Vec<f64> = Vec::new();
     let mut source_keyframes: Vec<usize> = Vec::new();
 
     for k in 0..count {

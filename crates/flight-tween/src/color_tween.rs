@@ -14,12 +14,13 @@ use crate::types::{
 // flight-lint: allow(conform-extra) D22 generic color tween using ColorComponents proxy
 // flight-lint: allow(conform-params) D22 color tween decomposes TS property into get_color + color_key accessors
 // flight-lint: allow(contract-vocabulary) D22 Tween<T> requires T: Send + Sync + 'static for Arc<RwLock<>> thread-safety
+// flight-lint: allow(f32) packed 24-bit RGB color target, exact in f32 (bounded color)
 pub fn create_color_tween<T: ?Sized + Send + Sync + 'static>(
     manager: &TweenManager,
     target: &Ref<T>,
     get_color: fn(&mut T) -> &mut f32,
     color_key: &str,
-    duration: f32,
+    duration: f64,
     to_color: u32,
     options: Option<&TweenOptions>,
 ) -> Tween<ColorComponents> {
@@ -29,26 +30,26 @@ pub fn create_color_tween<T: ?Sized + Send + Sync + 'static>(
     };
 
     let components: Ref<ColorComponents> = Ref::new(std::sync::RwLock::new(ColorComponents {
-        r: ((from_color >> 16) & 0xff) as f32,
-        g: ((from_color >> 8) & 0xff) as f32,
-        b: (from_color & 0xff) as f32,
+        r: ((from_color >> 16) & 0xff) as f64,
+        g: ((from_color >> 8) & 0xff) as f64,
+        b: (from_color & 0xff) as f64,
     }));
 
     let props = [
         TweenProp {
             get: |c: &mut ColorComponents| &mut c.r,
             key: "r",
-            to: ((to_color >> 16) & 0xff) as f32,
+            to: ((to_color >> 16) & 0xff) as f64,
         },
         TweenProp {
             get: |c: &mut ColorComponents| &mut c.g,
             key: "g",
-            to: ((to_color >> 8) & 0xff) as f32,
+            to: ((to_color >> 8) & 0xff) as f64,
         },
         TweenProp {
             get: |c: &mut ColorComponents| &mut c.b,
             key: "b",
-            to: (to_color & 0xff) as f32,
+            to: (to_color & 0xff) as f64,
         },
     ];
 

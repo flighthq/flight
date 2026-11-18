@@ -1,7 +1,7 @@
 use flight_entity::get_entity_id;
 use flight_spring::*;
 
-fn spring_config(frequency: f32, damping_ratio: f32) -> SpringConfig {
+fn spring_config(frequency: f64, damping_ratio: f64) -> SpringConfig {
     return create_spring_config(frequency, damping_ratio);
 }
 

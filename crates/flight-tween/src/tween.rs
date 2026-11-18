@@ -15,7 +15,7 @@ use crate::types::{
 pub fn create_tween<T: ?Sized + Send + Sync + 'static>(
     manager: &TweenManager,
     target: &Ref<T>,
-    duration: f32,
+    duration: f64,
     props: &[TweenProp<T>],
     options: Option<&TweenOptions>,
 ) -> Tween<T> {
@@ -31,7 +31,7 @@ pub fn create_tween<T: ?Sized + Send + Sync + 'static>(
 pub fn create_tween_default<T: ?Sized + Send + Sync + 'static>(
     context: &TweenContext,
     target: &Ref<T>,
-    duration: f32,
+    duration: f64,
     props: &[TweenProp<T>],
     options: Option<&TweenOptions>,
 ) -> Tween<T> {
@@ -63,17 +63,17 @@ pub fn get_active_tween_count(manager: &TweenManager) -> usize {
 }
 
 // flight-lint: allow(conform-extra) D18 free-function accessor backing Tween<T> sugar method
-pub fn get_tween_delay<T: ?Sized + Send + Sync + 'static>(tween: &Tween<T>) -> f32 {
+pub fn get_tween_delay<T: ?Sized + Send + Sync + 'static>(tween: &Tween<T>) -> f64 {
     return tween.data.read().unwrap().common.delay;
 }
 
 // flight-lint: allow(conform-extra) D18 free-function accessor backing Tween<T> sugar method
-pub fn get_tween_duration<T: ?Sized + Send + Sync + 'static>(tween: &Tween<T>) -> f32 {
+pub fn get_tween_duration<T: ?Sized + Send + Sync + 'static>(tween: &Tween<T>) -> f64 {
     return tween.data.read().unwrap().common.duration;
 }
 
 // flight-lint: allow(conform-extra) D18 free-function accessor backing Tween<T> sugar method
-pub fn get_tween_elapsed<T: ?Sized + Send + Sync + 'static>(tween: &Tween<T>) -> f32 {
+pub fn get_tween_elapsed<T: ?Sized + Send + Sync + 'static>(tween: &Tween<T>) -> f64 {
     return tween.data.read().unwrap().common.elapsed;
 }
 

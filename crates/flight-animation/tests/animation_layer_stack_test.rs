@@ -9,7 +9,7 @@ fn test_target() -> TargetRef {
     return Some(Arc::new(0_usize));
 }
 
-fn player(target: TargetRef, value: f32, duration: f32) -> AnimationPlayerRef {
+fn player(target: TargetRef, value: f64, duration: f64) -> AnimationPlayerRef {
     let times = if duration > 0.0 {
         vec![0.0, duration]
     } else {
@@ -220,7 +220,7 @@ mod create_animation_layer_stack {
 
     #[test]
     fn coalesces_nan_from_mixed_f32_and_f64_targets_across_layers() {
-        let nan_f32: TargetRef = Some(Arc::new(f32::NAN));
+        let nan_f32: TargetRef = Some(Arc::new(f64::NAN));
         let nan_f64: TargetRef = Some(Arc::new(f64::NAN));
         let layer_a = tree(&[player(nan_f32, 1.0, 0.0)]);
         let layer_b = tree(&[player(nan_f64, 2.0, 0.0)]);
@@ -364,7 +364,7 @@ mod sample_animation_layer_stack {
                 }),
             ),
         ]);
-        let mut seen: Vec<(usize, f32)> = Vec::new();
+        let mut seen: Vec<(usize, f64)> = Vec::new();
         sample_animation_layer_stack(&mut [0.0], &mut stack, &mut |sampled, _channel, index| {
             seen.push((index, sampled[0]));
         });
@@ -404,7 +404,7 @@ mod sample_animation_layer_stack {
         }
         let mut stack =
             create_animation_layer_stack(&[create_animation_state_machine_layer(machine, None)]);
-        let mut seen: Vec<f32> = Vec::new();
+        let mut seen: Vec<f64> = Vec::new();
         sample_animation_layer_stack(&mut [0.0], &mut stack, &mut |sampled, _, _| {
             seen.push(sampled[0]);
         });
@@ -428,7 +428,7 @@ mod sample_animation_layer_stack {
                 }),
             ),
         ]);
-        let mut seen: Vec<f32> = Vec::new();
+        let mut seen: Vec<f64> = Vec::new();
         sample_animation_layer_stack(&mut [0.0], &mut stack, &mut |sampled, _, _| {
             seen.push(sampled[0]);
         });

@@ -9,7 +9,7 @@ fn test_target() -> TargetRef {
     return Some(Arc::new(0_usize));
 }
 
-fn player(target: TargetRef, value: f32, duration: f32) -> AnimationPlayerRef {
+fn player(target: TargetRef, value: f64, duration: f64) -> AnimationPlayerRef {
     let times = if duration > 0.0 {
         vec![0.0, duration]
     } else {
@@ -36,7 +36,7 @@ fn player(target: TargetRef, value: f32, duration: f32) -> AnimationPlayerRef {
     return Arc::new(RwLock::new(create_animation_player(clip)));
 }
 
-fn quaternion_player(target: TargetRef, values: &[f32]) -> AnimationPlayerRef {
+fn quaternion_player(target: TargetRef, values: &[f64]) -> AnimationPlayerRef {
     let clip = create_animation_clip(
         vec![create_animation_channel(
             &Arc::new(RwLock::new({
@@ -190,7 +190,7 @@ mod create_animation_blend_tree {
     #[test]
     fn coalesces_nan_from_f32_and_f64_representations() {
         let nan_f64: TargetRef = Some(Arc::new(f64::NAN));
-        let nan_f32: TargetRef = Some(Arc::new(f32::NAN));
+        let nan_f32: TargetRef = Some(Arc::new(f64::NAN));
         let tree = create_animation_blend_tree(&[
             create_animation_blend_tree_input(player(nan_f64, 1.0, 0.0)),
             create_animation_blend_tree_input(player(nan_f32, 2.0, 0.0)),
@@ -329,7 +329,7 @@ mod sample_animation_blend_tree {
             },
             create_animation_blend_tree_input(player(target, 20.0, 0.0)),
         ]);
-        let mut seen_values: Vec<f32> = Vec::new();
+        let mut seen_values: Vec<f64> = Vec::new();
         let mut seen_targets: Vec<TargetRef> = Vec::new();
         sample_animation_blend_tree(&mut [0.0], &mut tree, &mut |sampled, channel, _| {
             seen_values.push(sampled[0]);
@@ -353,7 +353,7 @@ mod sample_animation_blend_tree {
             create_animation_blend_tree_input(player(a, 3.0, 0.0)),
             create_animation_blend_tree_input(player(b, 7.0, 0.0)),
         ]);
-        let mut seen: Vec<f32> = Vec::new();
+        let mut seen: Vec<f64> = Vec::new();
         let mut seen_targets: Vec<TargetRef> = Vec::new();
         sample_animation_blend_tree(&mut [0.0], &mut tree, &mut |sampled, channel, _| {
             seen.push(sampled[0]);
@@ -382,7 +382,7 @@ mod sample_animation_blend_tree {
                 created
             },
         ]);
-        let mut seen: Vec<f32> = Vec::new();
+        let mut seen: Vec<f64> = Vec::new();
         sample_animation_blend_tree(&mut [0.0], &mut tree, &mut |sampled, _, _| {
             seen.push(sampled[0]);
         });
@@ -392,7 +392,7 @@ mod sample_animation_blend_tree {
     #[test]
     fn hemisphere_aligns_override_quaternions_and_composes_additive_rotation() {
         let target = test_target();
-        let sqrt1_2 = std::f32::consts::FRAC_1_SQRT_2;
+        let sqrt1_2 = std::f64::consts::FRAC_1_SQRT_2;
         let quarter_turn = [0.0, 0.0, sqrt1_2, sqrt1_2];
         let neg_quarter_turn = [0.0, 0.0, -sqrt1_2, -sqrt1_2];
         let half_turn = [0.0, 0.0, 1.0, 0.0];
@@ -407,7 +407,7 @@ mod sample_animation_blend_tree {
                 created
             },
         ]);
-        let mut seen: Vec<[f32; 4]> = Vec::new();
+        let mut seen: Vec<[f64; 4]> = Vec::new();
         sample_animation_blend_tree(
             &mut [0.0, 0.0, 0.0, 0.0],
             &mut tree,
@@ -431,7 +431,7 @@ mod sample_animation_blend_tree {
             created.additive = true;
             created
         }]);
-        let mut seen: Vec<f32> = Vec::new();
+        let mut seen: Vec<f64> = Vec::new();
         sample_animation_blend_tree(&mut [99.0], &mut tree, &mut |sampled, _, _| {
             seen.push(sampled[0]);
         });
@@ -446,7 +446,7 @@ mod sample_animation_blend_tree {
             create_animation_blend_tree_input(player(nan_a, 0.0, 0.0)),
             create_animation_blend_tree_input(player(nan_b, 10.0, 0.0)),
         ]);
-        let mut seen: Vec<f32> = Vec::new();
+        let mut seen: Vec<f64> = Vec::new();
         sample_animation_blend_tree(&mut [0.0], &mut tree, &mut |sampled, _, _| {
             seen.push(sampled[0]);
         });

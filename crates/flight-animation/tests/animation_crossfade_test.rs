@@ -6,7 +6,7 @@ use flight_animation::contract::*;
 
 fn player(
     target: TargetRef,
-    values: &[f32],
+    values: &[f64],
     components: Option<usize>,
     quaternion: Option<bool>,
 ) -> AnimationPlayerRef {
@@ -26,7 +26,7 @@ fn player(
     return Arc::new(RwLock::new(create_animation_player(clip)));
 }
 
-fn scalar_player(target: TargetRef, values: &[f32]) -> AnimationPlayerRef {
+fn scalar_player(target: TargetRef, values: &[f64]) -> AnimationPlayerRef {
     return player(target, values, None, None);
 }
 
@@ -280,7 +280,7 @@ mod create_animation_crossfade {
 
     #[test]
     fn matches_nan_from_different_numeric_representations() {
-        let from_nan: TargetRef = Some(Arc::new(f32::NAN));
+        let from_nan: TargetRef = Some(Arc::new(f64::NAN));
         let to_nan: TargetRef = Some(Arc::new(f64::NAN));
         let from = scalar_player(from_nan, &[0.0, 10.0]);
         let to = scalar_player(to_nan, &[20.0, 30.0]);
@@ -361,7 +361,7 @@ mod sample_animation_crossfade {
         );
         advance_animation_crossfade(&mut state, 0.5);
         let mut out = [0.0];
-        let mut seen: Vec<f32> = Vec::new();
+        let mut seen: Vec<f64> = Vec::new();
         sample_animation_crossfade(&mut out, &mut state, &mut |sampled, _, _| {
             seen.push(sampled[0]);
         });
@@ -425,7 +425,7 @@ mod sample_animation_crossfade {
         let to = Arc::new(RwLock::new(create_animation_player(to_clip)));
         let mut state = create_animation_crossfade(from, to, 2.0, None);
         advance_animation_crossfade(&mut state, 1.0);
-        let mut seen: Vec<(usize, f32)> = Vec::new();
+        let mut seen: Vec<(usize, f64)> = Vec::new();
         sample_animation_crossfade(&mut [0.0], &mut state, &mut |sampled, _channel, index| {
             seen.push((index, sampled[0]));
         });
@@ -446,7 +446,7 @@ mod sample_animation_crossfade {
         );
         let from_ptr = state.from_sample.as_ptr();
         let to_ptr = state.to_sample.as_ptr();
-        let mut values: Vec<f32> = Vec::new();
+        let mut values: Vec<f64> = Vec::new();
         sample_animation_crossfade(&mut [0.0], &mut state, &mut |sampled, _, _| {
             values.push(sampled[0]);
         });
@@ -464,7 +464,7 @@ mod sample_animation_crossfade {
     #[test]
     fn uses_shortest_arc_quaternion_slerp() {
         let target = test_target();
-        let sqrt1_2 = std::f32::consts::FRAC_1_SQRT_2;
+        let sqrt1_2 = std::f64::consts::FRAC_1_SQRT_2;
         let from = player(
             target.clone(),
             &[0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0],
@@ -500,7 +500,7 @@ mod sample_animation_crossfade {
             None,
         );
         advance_animation_crossfade(&mut state, 0.5);
-        let mut seen: Vec<f32> = Vec::new();
+        let mut seen: Vec<f64> = Vec::new();
         sample_animation_crossfade(&mut [0.0], &mut state, &mut |sampled, _, _| {
             seen.push(sampled[0]);
         });

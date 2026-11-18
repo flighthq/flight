@@ -2,6 +2,7 @@
 
 use flight_entity::Ref;
 
+use crate::internal::apply_tween_easing;
 use crate::tween::create_tween;
 use crate::types::{
     EasingFunction, StaggerFrom, Tween, TweenManager, TweenOptions, TweenProp, TweenStaggerOptions,
@@ -12,7 +13,7 @@ use crate::types::{
 pub fn create_tween_stagger<T: ?Sized + Send + Sync + 'static>(
     manager: &TweenManager,
     targets: &[Ref<T>],
-    duration: f32,
+    duration: f64,
     props: &[TweenProp<T>],
     stagger: Option<&TweenStaggerOptions>,
     options: Option<&TweenOptions>,
@@ -49,15 +50,15 @@ pub fn create_tween_stagger<T: ?Sized + Send + Sync + 'static>(
 fn compute_stagger_delay(
     index: usize,
     count: usize,
-    each: f32,
+    each: f64,
     from: &StaggerFrom,
     stagger_ease: Option<EasingFunction>,
-) -> f32 {
+) -> f64 {
     if count <= 1 {
         return 0.0;
     }
-    let index_f = index as f32;
-    let count_f = count as f32;
+    let index_f = index as f64;
+    let count_f = count as f64;
     let normalized_position = match from {
         StaggerFrom::Start => index_f / (count_f - 1.0),
         StaggerFrom::End => (count_f - 1.0 - index_f) / (count_f - 1.0),
@@ -76,7 +77,7 @@ fn compute_stagger_delay(
         }
     };
     let eased = match stagger_ease {
-        Some(ease) => ease(normalized_position),
+        Some(ease) => apply_tween_easing(ease, normalized_position),
         None => normalized_position,
     };
     return eased * each * (count_f - 1.0);

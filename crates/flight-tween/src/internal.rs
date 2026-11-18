@@ -67,11 +67,29 @@ pub(crate) fn add_tween_to_manager(
     list.push(handle.clone());
 }
 
+// flight-lint: allow(f32) easing seam: a normalized 0-1 position is eased in f32, then widened
+pub(crate) fn apply_tween_easing(ease: EasingFunction, normalized: f64) -> f64 {
+    return f64::from(ease(normalized as f32));
+}
+
+// The f64 time/value <-> f32 easing seam. Tween time and animated values stay f64; only the
+// normalized 0-1 progress crosses into f32 for `EasingFunction`, and the eased factor widens back
+// losslessly before it scales an f64 start/change.
+// flight-lint: allow(f32) easing seam: normalized progress is the bounded f32 easing input
+pub(crate) fn get_tween_normalized_progress(active_elapsed: f64, duration: f64) -> f32 {
+    return (active_elapsed / duration).min(1.0) as f32;
+}
+
+// flight-lint: allow(f32) easing seam: the bounded f32 eased factor widens losslessly into f64
+pub(crate) fn interpolate_tween_value(start: f64, change: f64, eased_t: f32) -> f64 {
+    return start + change * f64::from(eased_t);
+}
+
 // flight-lint: allow(conform-params) D22 TweenProp<T> fn-pointer accessors replace TS NumericProps<T> property_map
 // flight-lint: allow(contract-vocabulary) D22 Tween<T> requires T: Send + Sync + 'static for Arc<RwLock<>> thread-safety
 pub fn make_tween<T: ?Sized + Send + Sync + 'static>(
     target: &Ref<T>,
-    duration: f32,
+    duration: f64,
     props: &[TweenProp<T>],
     options: Option<&TweenOptions>,
     default_ease: EasingFunction,

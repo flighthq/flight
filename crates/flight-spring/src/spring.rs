@@ -19,22 +19,22 @@ mod sugar_tests {
 #[derive(Debug, Clone, PartialEq, Default)]
 #[repr(C)]
 pub struct Spring {
-    pub value: f32,
-    pub velocity: f32,
+    pub value: f64,
+    pub velocity: f64,
     runtime: EntityRuntimeSlot,
 }
 
 /// Allocate a scalar spring at `value` with `velocity`. This is the only allocating function for
 /// scalar springs; `update_spring`, `reset_spring`, and the settle query all write into or read an
 /// existing spring.
-pub fn create_spring(value: f32, velocity: f32) -> Spring {
+pub fn create_spring(value: f64, velocity: f64) -> Spring {
     let mut out: Spring = allocate_entity();
     initialize_spring(&mut out, value, velocity);
     return out;
 }
 
 /// Writes `value` and `velocity` into a pre-allocated `Spring`.
-pub fn initialize_spring(out: &mut Spring, value: f32, velocity: f32) {
+pub fn initialize_spring(out: &mut Spring, value: f64, velocity: f64) {
     out.value = value;
     out.velocity = velocity;
 }
@@ -42,7 +42,7 @@ pub fn initialize_spring(out: &mut Spring, value: f32, velocity: f32) {
 /// Add `velocity` to the spring's current velocity without changing its position. This is the
 /// allocation-free flick/throw control: repeated impulses compose additively, and the next analytic
 /// step carries their combined velocity into the motion.
-pub fn add_spring_impulse(spring: &mut Spring, velocity: f32) {
+pub fn add_spring_impulse(spring: &mut Spring, velocity: f64) {
     spring.velocity += velocity;
 }
 
@@ -54,9 +54,9 @@ pub fn add_spring_impulse(spring: &mut Spring, velocity: f32) {
 /// the motion. An undamped spring with nonzero oscillation energy never settles.
 pub fn is_spring_settled(
     spring: &Spring,
-    target: f32,
-    position_epsilon: Option<f32>,
-    velocity_epsilon: Option<f32>,
+    target: f64,
+    position_epsilon: Option<f64>,
+    velocity_epsilon: Option<f64>,
 ) -> bool {
     let position_epsilon = position_epsilon.unwrap_or(SPRING_SETTLE_EPSILON);
     let velocity_epsilon = velocity_epsilon.unwrap_or(SPRING_SETTLE_EPSILON);
@@ -67,7 +67,7 @@ pub fn is_spring_settled(
 /// Snap `spring` to `value` with `velocity`, discarding its current motion. Use this to teleport a
 /// spring to a new state — e.g. initializing it at a target, or cutting a running spring dead.
 /// Unlike `update_spring`, this applies no dynamics; the spring simply becomes what is passed.
-pub fn reset_spring(spring: &mut Spring, value: f32, velocity: Option<f32>) {
+pub fn reset_spring(spring: &mut Spring, value: f64, velocity: Option<f64>) {
     spring.value = value;
     spring.velocity = velocity.unwrap_or(0.0);
 }
@@ -85,7 +85,7 @@ pub fn reset_spring(spring: &mut Spring, value: f32, velocity: Option<f32>) {
 /// `delta_time <= 0` is a no-op. A non-positive `frequency` is an inert spring (no force, no change);
 /// `damping_ratio` is clamped to `>= 0`. Inputs are read into locals before any write, so passing a
 /// `spring` that also appears elsewhere is safe.
-pub fn update_spring(spring: &mut Spring, target: f32, config: &SpringConfig, delta_time: f32) {
+pub fn update_spring(spring: &mut Spring, target: f64, config: &SpringConfig, delta_time: f64) {
     if delta_time <= 0.0 {
         return;
     }
@@ -103,15 +103,15 @@ pub fn update_spring(spring: &mut Spring, target: f32, config: &SpringConfig, de
     } else {
         config.damping_ratio
     };
-    let omega = std::f32::consts::TAU * frequency;
+    let omega = std::f64::consts::TAU * frequency;
 
     // Offset from equilibrium; the analytic solution is in terms of this displacement.
     let c0 = value - target;
 
-    let pos_pos_coef: f32;
-    let pos_vel_coef: f32;
-    let vel_pos_coef: f32;
-    let vel_vel_coef: f32;
+    let pos_pos_coef: f64;
+    let pos_vel_coef: f64;
+    let vel_pos_coef: f64;
+    let vel_vel_coef: f64;
 
     if damping_ratio > 1.0 + CRITICAL_BAND {
         // Overdamped: two distinct real roots z1 < z2 < 0 of s^2 + 2*zeta*omega*s + omega^2.
@@ -167,10 +167,10 @@ pub fn update_spring(spring: &mut Spring, target: f32, config: &SpringConfig, de
 /// presentation. A non-positive or non-finite `full_turn` is an inert sentinel.
 pub fn update_spring_angle(
     spring: &mut Spring,
-    target: f32,
-    full_turn: f32,
+    target: f64,
+    full_turn: f64,
     config: &SpringConfig,
-    delta_time: f32,
+    delta_time: f64,
 ) {
     if !(full_turn > 0.0) || !full_turn.is_finite() {
         return;
@@ -189,37 +189,37 @@ pub fn update_spring_angle(
 
 #[cfg(feature = "object-api")]
 impl Spring {
-    pub fn new(value: f32, velocity: f32) -> Self {
+    pub fn new(value: f64, velocity: f64) -> Self {
         return create_spring(value, velocity);
     }
 
-    pub fn add_impulse(&mut self, velocity: f32) {
+    pub fn add_impulse(&mut self, velocity: f64) {
         add_spring_impulse(self, velocity);
     }
 
     pub fn is_settled(
         &self,
-        target: f32,
-        position_epsilon: Option<f32>,
-        velocity_epsilon: Option<f32>,
+        target: f64,
+        position_epsilon: Option<f64>,
+        velocity_epsilon: Option<f64>,
     ) -> bool {
         return is_spring_settled(self, target, position_epsilon, velocity_epsilon);
     }
 
-    pub fn reset(&mut self, value: f32, velocity: Option<f32>) {
+    pub fn reset(&mut self, value: f64, velocity: Option<f64>) {
         reset_spring(self, value, velocity);
     }
 
-    pub fn update(&mut self, target: f32, config: &SpringConfig, delta_time: f32) {
+    pub fn update(&mut self, target: f64, config: &SpringConfig, delta_time: f64) {
         update_spring(self, target, config, delta_time);
     }
 
     pub fn update_angle(
         &mut self,
-        target: f32,
-        full_turn: f32,
+        target: f64,
+        full_turn: f64,
         config: &SpringConfig,
-        delta_time: f32,
+        delta_time: f64,
     ) {
         update_spring_angle(self, target, full_turn, config, delta_time);
     }
@@ -227,11 +227,11 @@ impl Spring {
 
 /// Default position/velocity tolerance for settle detection: fine enough that motion has visually
 /// stopped for typical pixel/normalized values, loose enough not to wait on floating-point tails.
-const SPRING_SETTLE_EPSILON: f32 = 1e-3;
+const SPRING_SETTLE_EPSILON: f64 = 1e-3;
 
 /// Half-width of the damping-ratio band around 1 treated as critically damped. Inside it the
 /// over/under-damped closed forms divide by a vanishing root separation, so the critical form is both
 /// numerically safer and physically indistinguishable this close to 1.
-const CRITICAL_BAND: f32 = 1e-4;
+const CRITICAL_BAND: f64 = 1e-4;
 
 flight_entity::impl_entity!(Spring);

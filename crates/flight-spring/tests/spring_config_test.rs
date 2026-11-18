@@ -61,14 +61,14 @@ mod create_spring_config_from_physical {
     #[test]
     fn maps_k100_c20_m1_to_critical_damping() {
         let config = create_spring_config_from_physical(100.0, 20.0, 1.0);
-        assert_eq!(config.frequency, 10.0 / std::f32::consts::TAU);
+        assert_eq!(config.frequency, 10.0 / std::f64::consts::TAU);
         assert_eq!(config.damping_ratio, 1.0);
     }
 
     #[test]
     fn accounts_for_mass_in_both_frequency_and_damping_ratio() {
         let config = create_spring_config_from_physical(100.0, 20.0, 4.0);
-        assert_eq!(config.frequency, 5.0 / std::f32::consts::TAU);
+        assert_eq!(config.frequency, 5.0 / std::f64::consts::TAU);
         assert_eq!(config.damping_ratio, 0.5);
     }
 }

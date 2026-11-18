@@ -22,9 +22,10 @@ pub fn initialize_animation_sample_accumulator(
     out.weight = 0.0;
 }
 
+// flight-lint: allow(f32) blend weight is a bounded input
 pub fn accumulate_animation_sample(
     accumulator: &mut AnimationSampleAccumulator,
-    sample: &[f32],
+    sample: &[f64],
     weight: f32,
 ) {
     if !(weight > 0.0) {
@@ -34,7 +35,7 @@ pub fn accumulate_animation_sample(
         .components
         .min(accumulator.values.len())
         .min(sample.len());
-    let mut sign: f32 = 1.0;
+    let mut sign: f64 = 1.0;
     if accumulator.quaternion && components >= 4 && accumulator.weight > 0.0 {
         let values = &accumulator.values;
         let dot = values[0] * sample[0]
@@ -46,20 +47,23 @@ pub fn accumulate_animation_sample(
         }
     }
     for component in 0..components {
-        accumulator.values[component] += sample[component] * weight * sign;
+        accumulator.values[component] += sample[component] * f64::from(weight) * sign;
     }
     accumulator.weight += weight;
 }
 
+// flight-lint: allow(f32) blend weight is a bounded input
 pub fn add_animation_sample(
-    out: &mut [f32],
-    base: &[f32],
-    delta: &[f32],
+    out: &mut [f64],
+    base: &[f64],
+    delta: &[f64],
     weight: f32,
     quaternion: bool,
 ) {
+    // Blend weights are bounded f32 inputs; widen once so sample arithmetic stays f64.
+    let weight = f64::from(weight);
     if quaternion && out.len() >= 4 && base.len() >= 4 && delta.len() >= 4 {
-        let mut q = [0.0f32; 4];
+        let mut q = [0.0f64; 4];
         write_weighted_quaternion(&mut q, delta, weight);
         let ax = base[0];
         let ay = base[1];
@@ -85,13 +89,16 @@ pub fn add_animation_sample(
     }
 }
 
+// flight-lint: allow(f32) blend alpha is a bounded 0-1 input
 pub fn blend_animation_samples(
-    out: &mut [f32],
-    a: &[f32],
-    b: &[f32],
+    out: &mut [f64],
+    a: &[f64],
+    b: &[f64],
     alpha: f32,
     quaternion: bool,
 ) {
+    // The blend alpha is a bounded f32 input; widen once so sample arithmetic stays f64.
+    let alpha = f64::from(alpha);
     let t = if alpha < 0.0 {
         0.0
     } else if alpha > 1.0 {
@@ -109,7 +116,7 @@ pub fn blend_animation_samples(
     }
 }
 
-pub fn finish_animation_sample(out: &mut [f32], accumulator: &AnimationSampleAccumulator) -> bool {
+pub fn finish_animation_sample(out: &mut [f64], accumulator: &AnimationSampleAccumulator) -> bool {
     if !(accumulator.weight > 0.0) {
         return false;
     }
@@ -122,7 +129,7 @@ pub fn finish_animation_sample(out: &mut [f32], accumulator: &AnimationSampleAcc
         write_normalized_quaternion(out, values[0], values[1], values[2], values[3]);
         return true;
     }
-    let inverse_weight = 1.0 / accumulator.weight;
+    let inverse_weight = 1.0 / f64::from(accumulator.weight);
     for component in 0..components {
         out[component] = accumulator.values[component] * inverse_weight;
     }
@@ -136,7 +143,7 @@ pub fn reset_animation_sample_accumulator(accumulator: &mut AnimationSampleAccum
     accumulator.weight = 0.0;
 }
 
-fn slerp_quaternion(out: &mut [f32], a: &[f32], b: &[f32], alpha: f32) {
+fn slerp_quaternion(out: &mut [f64], a: &[f64], b: &[f64], alpha: f64) {
     let ax = a[0];
     let ay = a[1];
     let az = a[2];
@@ -153,8 +160,8 @@ fn slerp_quaternion(out: &mut [f32], a: &[f32], b: &[f32], alpha: f32) {
         bz = -bz;
         bw = -bw;
     }
-    let scale_a: f32;
-    let scale_b: f32;
+    let scale_a: f64;
+    let scale_b: f64;
     if 1.0 - dot > 1e-6 {
         let angle = dot.min(1.0).acos();
         let inverse_sin = 1.0 / angle.sin();
@@ -173,7 +180,7 @@ fn slerp_quaternion(out: &mut [f32], a: &[f32], b: &[f32], alpha: f32) {
     );
 }
 
-fn write_normalized_quaternion(out: &mut [f32], x: f32, y: f32, z: f32, w: f32) {
+fn write_normalized_quaternion(out: &mut [f64], x: f64, y: f64, z: f64, w: f64) {
     let length = (x * x + y * y + z * z + w * w).sqrt();
     if length == 0.0 {
         out[0] = 0.0;
@@ -189,7 +196,7 @@ fn write_normalized_quaternion(out: &mut [f32], x: f32, y: f32, z: f32, w: f32) 
     out[3] = w * inverse_length;
 }
 
-fn write_weighted_quaternion(out: &mut [f32], delta: &[f32], weight: f32) {
-    let identity: [f32; 4] = [0.0, 0.0, 0.0, 1.0];
+fn write_weighted_quaternion(out: &mut [f64], delta: &[f64], weight: f64) {
+    let identity: [f64; 4] = [0.0, 0.0, 0.0, 1.0];
     slerp_quaternion(out, &identity, delta, weight);
 }

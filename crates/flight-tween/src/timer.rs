@@ -9,7 +9,7 @@ use crate::types::{TimerTarget, Tween, TweenManager, TweenOptions};
 
 pub fn create_tween_timer(
     manager: &TweenManager,
-    duration: f32,
+    duration: f64,
     options: Option<&TweenOptions>,
 ) -> Tween<TimerTarget> {
     let target: Ref<TimerTarget> = Ref::new(RwLock::new(TimerTarget));

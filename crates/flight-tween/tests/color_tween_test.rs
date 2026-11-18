@@ -11,6 +11,8 @@ fn linear_ease(t: f32) -> f32 {
 
 struct ColorObj {
     color: f32,
+    // A plain numeric property registered under the same "color" key, for key-based overwrite.
+    color_number: f64,
 }
 
 mod create_color_tween {
@@ -21,6 +23,7 @@ mod create_color_tween {
         let manager = create_tween_manager(None);
         let target: Ref<ColorObj> = Ref::new(RwLock::new(ColorObj {
             color: 0xff0000_u32 as f32,
+            color_number: 0.0,
         }));
         create_color_tween(
             &manager,
@@ -40,6 +43,7 @@ mod create_color_tween {
         let manager = create_tween_manager(None);
         let target: Ref<ColorObj> = Ref::new(RwLock::new(ColorObj {
             color: 0x00ff00_u32 as f32,
+            color_number: 0.0,
         }));
         create_color_tween(
             &manager,
@@ -68,6 +72,7 @@ mod create_color_tween {
         let manager = create_tween_manager(None);
         let target: Ref<ColorObj> = Ref::new(RwLock::new(ColorObj {
             color: 0x000000_u32 as f32,
+            color_number: 0.0,
         }));
         create_color_tween(
             &manager,
@@ -97,6 +102,7 @@ mod create_color_tween {
         let manager = create_tween_manager(None);
         let target: Ref<ColorObj> = Ref::new(RwLock::new(ColorObj {
             color: 0xff0000_u32 as f32,
+            color_number: 0.0,
         }));
         create_color_tween(
             &manager,
@@ -120,8 +126,8 @@ mod create_color_tween {
         let color = target.read().unwrap().color as u32;
         let r = (color >> 16) & 0xff;
         let b = color & 0xff;
-        assert!((r as f32 - 128.0).abs() < 0.5); // D1 f32 bound (TS: 0.5)
-        assert!((b as f32 - 128.0).abs() < 0.5); // D1 f32 bound (TS: 0.5)
+        assert!((r as f64 - 128.0).abs() < 0.5); // TS bound: 0.5
+        assert!((b as f64 - 128.0).abs() < 0.5); // TS bound: 0.5
     }
 
     #[test]
@@ -129,6 +135,7 @@ mod create_color_tween {
         let manager = create_tween_manager(None);
         let target: Ref<ColorObj> = Ref::new(RwLock::new(ColorObj {
             color: 0xff0000_u32 as f32,
+            color_number: 0.0,
         }));
         let tween = create_color_tween(
             &manager,
@@ -152,15 +159,16 @@ mod create_color_tween {
         let manager = create_tween_manager(None);
         let target: Ref<ColorObj> = Ref::new(RwLock::new(ColorObj {
             color: 0xff0000_u32 as f32,
+            color_number: 0.0,
         }));
         let numeric_tween = create_tween(
             &manager,
             &target,
             1000.0,
             &[TweenProp {
-                get: |t: &mut ColorObj| &mut t.color,
+                get: |t: &mut ColorObj| &mut t.color_number,
                 key: "color",
-                to: 0x00ff00 as f32,
+                to: 0x00ff00 as f64,
             }],
             None,
         );
@@ -182,7 +190,7 @@ mod create_color_tween {
             &manager,
             &target,
             Some(&[TweenProp {
-                get: |t: &mut ColorObj| &mut t.color,
+                get: |t: &mut ColorObj| &mut t.color_number,
                 key: "color",
                 to: 0.0,
             }]),
@@ -209,6 +217,7 @@ mod create_color_tween {
         let manager = create_tween_manager(None);
         let target: Ref<ColorObj> = Ref::new(RwLock::new(ColorObj {
             color: 0xabcdef_u32 as f32,
+            color_number: 0.0,
         }));
         create_color_tween(
             &manager,

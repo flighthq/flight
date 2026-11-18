@@ -6,16 +6,16 @@ use flight_entity::Ref;
 use flight_tween::*;
 
 trait Animatable: Send + Sync {
-    fn alpha_mut(&mut self) -> &mut f32;
+    fn alpha_mut(&mut self) -> &mut f64;
 }
 
 struct ConcreteNode {
-    alpha: f32,
-    scale: f32,
+    alpha: f64,
+    scale: f64,
 }
 
 impl Animatable for ConcreteNode {
-    fn alpha_mut(&mut self) -> &mut f32 {
+    fn alpha_mut(&mut self) -> &mut f64 {
         return &mut self.alpha;
     }
 }

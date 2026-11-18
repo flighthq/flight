@@ -20,5 +20,9 @@ mod flight_animation_animation_state_machine_advance_test;
 mod flight_animation_animation_state_machine_test;
 #[path = "animation_track_test.rs"]
 mod flight_animation_animation_track_test;
+#[path = "f32_boundary_inventory_test.rs"]
+mod flight_animation_f32_boundary_inventory_test;
+#[path = "f64_precision_test.rs"]
+mod flight_animation_f64_precision_test;
 #[path = "types_test.rs"]
 mod flight_animation_types_test;

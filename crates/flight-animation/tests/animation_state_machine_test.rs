@@ -9,7 +9,7 @@ fn test_target() -> TargetRef {
     return Some(Arc::new(0_usize));
 }
 
-fn player(target: TargetRef, value: f32, duration: f32) -> AnimationPlayerRef {
+fn player(target: TargetRef, value: f64, duration: f64) -> AnimationPlayerRef {
     let times = if duration > 0.0 {
         vec![0.0, duration]
     } else {
@@ -208,7 +208,7 @@ mod create_animation_state_machine {
 
     #[test]
     fn coalesces_nan_from_mixed_f32_and_f64_across_states() {
-        let nan_f32: TargetRef = Some(Arc::new(f32::NAN));
+        let nan_f32: TargetRef = Some(Arc::new(f64::NAN));
         let nan_f64: TargetRef = Some(Arc::new(f64::NAN));
         let machine = create_animation_state_machine(
             &[
@@ -372,7 +372,7 @@ mod sample_animation_state_machine {
             }],
             None,
         );
-        let mut seen: Vec<f32> = Vec::new();
+        let mut seen: Vec<f64> = Vec::new();
         sample_animation_state_machine(&mut [0.0], &mut machine, &mut |sampled, _, _| {
             seen.push(sampled[0]);
         });
@@ -407,7 +407,7 @@ mod sample_animation_state_machine {
             None,
         );
         advance_animation_state_machine(&mut machine, 1.0);
-        let mut seen: Vec<(usize, f32)> = Vec::new();
+        let mut seen: Vec<(usize, f64)> = Vec::new();
         sample_animation_state_machine(
             &mut [0.0],
             &mut machine,
@@ -439,7 +439,7 @@ mod sample_animation_state_machine {
             None,
         );
         advance_animation_state_machine(&mut machine, 1.0);
-        let mut seen: Vec<f32> = Vec::new();
+        let mut seen: Vec<f64> = Vec::new();
         sample_animation_state_machine(&mut [0.0], &mut machine, &mut |sampled, _, _| {
             seen.push(sampled[0]);
         });

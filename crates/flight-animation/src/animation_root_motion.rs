@@ -61,7 +61,7 @@ pub fn initialize_animation_root_motion_extractor(
     );
 }
 
-fn compute_animation_root_motion_at_from(extractor: &mut AnimationRootMotionExtractor, time: f32) {
+fn compute_animation_root_motion_at_from(extractor: &mut AnimationRootMotionExtractor, time: f64) {
     let duration = extractor.clip.read().unwrap().duration;
     let track = extractor.channel.track.clone();
     let (components, quaternion) = {
@@ -73,7 +73,7 @@ fn compute_animation_root_motion_at_from(extractor: &mut AnimationRootMotionExtr
         return;
     }
     let cycle = (time / duration).floor() as i32;
-    let local_time = time - (cycle as f32) * duration;
+    let local_time = time - (cycle as f64) * duration;
     sample_animation_track_ref(&mut extractor.from_sample, &track, local_time);
 
     if quaternion {
@@ -84,7 +84,7 @@ fn compute_animation_root_motion_at_from(extractor: &mut AnimationRootMotionExtr
         );
         let start_copy = extractor.start_sample.clone();
         let sample_copy = extractor.from_sample.clone();
-        let mut partial = vec![0.0f32; 4];
+        let mut partial = vec![0.0f64; 4];
         write_animation_root_motion_delta(&mut partial, &start_copy, &sample_copy, true);
         let motion_copy = extractor.from_motion.clone();
         multiply_animation_root_motion_quaternion(
@@ -97,11 +97,11 @@ fn compute_animation_root_motion_at_from(extractor: &mut AnimationRootMotionExtr
     for component in 0..components {
         extractor.from_motion[component] = extractor.from_sample[component]
             - extractor.start_sample[component]
-            + extractor.cycle_delta[component] * (cycle as f32);
+            + extractor.cycle_delta[component] * (cycle as f64);
     }
 }
 
-fn compute_animation_root_motion_at_to(extractor: &mut AnimationRootMotionExtractor, time: f32) {
+fn compute_animation_root_motion_at_to(extractor: &mut AnimationRootMotionExtractor, time: f64) {
     let duration = extractor.clip.read().unwrap().duration;
     let track = extractor.channel.track.clone();
     let (components, quaternion) = {
@@ -113,7 +113,7 @@ fn compute_animation_root_motion_at_to(extractor: &mut AnimationRootMotionExtrac
         return;
     }
     let cycle = (time / duration).floor() as i32;
-    let local_time = time - (cycle as f32) * duration;
+    let local_time = time - (cycle as f64) * duration;
     sample_animation_track_ref(&mut extractor.to_sample, &track, local_time);
 
     if quaternion {
@@ -124,7 +124,7 @@ fn compute_animation_root_motion_at_to(extractor: &mut AnimationRootMotionExtrac
         );
         let start_copy = extractor.start_sample.clone();
         let sample_copy = extractor.to_sample.clone();
-        let mut partial = vec![0.0f32; 4];
+        let mut partial = vec![0.0f64; 4];
         write_animation_root_motion_delta(&mut partial, &start_copy, &sample_copy, true);
         let motion_copy = extractor.to_motion.clone();
         multiply_animation_root_motion_quaternion(&mut extractor.to_motion, &motion_copy, &partial);
@@ -133,15 +133,15 @@ fn compute_animation_root_motion_at_to(extractor: &mut AnimationRootMotionExtrac
     for component in 0..components {
         extractor.to_motion[component] = extractor.to_sample[component]
             - extractor.start_sample[component]
-            + extractor.cycle_delta[component] * (cycle as f32);
+            + extractor.cycle_delta[component] * (cycle as f64);
     }
 }
 
 pub fn extract_animation_root_motion(
-    out: &mut [f32],
+    out: &mut [f64],
     extractor: &mut AnimationRootMotionExtractor,
-    start_time: f32,
-    end_time: f32,
+    start_time: f64,
+    end_time: f64,
 ) -> bool {
     if !start_time.is_finite() || !end_time.is_finite() {
         panic!("AnimationRootMotionExtractor time range must contain only finite numbers.");
@@ -161,7 +161,7 @@ pub fn extract_animation_root_motion(
     return true;
 }
 
-fn multiply_animation_root_motion_quaternion(out: &mut [f32], a: &[f32], b: &[f32]) {
+fn multiply_animation_root_motion_quaternion(out: &mut [f64], a: &[f64], b: &[f64]) {
     let ax = a[0];
     let ay = a[1];
     let az = a[2];
@@ -179,7 +179,7 @@ fn multiply_animation_root_motion_quaternion(out: &mut [f32], a: &[f32], b: &[f3
     );
 }
 
-fn write_animation_root_motion_delta(out: &mut [f32], from: &[f32], to: &[f32], quaternion: bool) {
+fn write_animation_root_motion_delta(out: &mut [f64], from: &[f64], to: &[f64], quaternion: bool) {
     if !quaternion {
         let width = out.len().min(from.len()).min(to.len());
         for component in 0..width {
@@ -196,7 +196,7 @@ fn write_animation_root_motion_delta(out: &mut [f32], from: &[f32], to: &[f32], 
     );
 }
 
-fn write_animation_root_motion_identity(out: &mut [f32], components: usize, quaternion: bool) {
+fn write_animation_root_motion_identity(out: &mut [f64], components: usize, quaternion: bool) {
     let width = out.len().min(components);
     for component in 0..width {
         out[component] = 0.0;
@@ -207,15 +207,15 @@ fn write_animation_root_motion_identity(out: &mut [f32], components: usize, quat
 }
 
 fn write_animation_root_motion_quaternion_power(
-    out: &mut [f32],
-    cycle_delta: &[f32],
+    out: &mut [f64],
+    cycle_delta: &[f64],
     exponent: i32,
 ) {
     write_animation_root_motion_identity(out, 4, true);
     if exponent == 0 {
         return;
     }
-    let mut base = vec![0.0f32; 4];
+    let mut base = vec![0.0f64; 4];
     if exponent > 0 {
         base[..4].copy_from_slice(&cycle_delta[..4]);
     } else {
@@ -239,11 +239,11 @@ fn write_animation_root_motion_quaternion_power(
 }
 
 fn write_normalized_animation_root_motion_quaternion(
-    out: &mut [f32],
-    x: f32,
-    y: f32,
-    z: f32,
-    w: f32,
+    out: &mut [f64],
+    x: f64,
+    y: f64,
+    z: f64,
+    w: f64,
 ) {
     let length = (x * x + y * y + z * z + w * w).sqrt();
     if !(length > 0.0) {

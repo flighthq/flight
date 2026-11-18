@@ -3,21 +3,21 @@
 use flight_entity::get_entity_id;
 use flight_spring::contract::*;
 
-fn spring_config(frequency: f32, damping_ratio: f32) -> SpringConfig {
+fn spring_config(frequency: f64, damping_ratio: f64) -> SpringConfig {
     return create_spring_config(frequency, damping_ratio);
 }
 
-fn assert_close(actual: f32, expected: f32, digits: i32) {
+fn assert_close(actual: f64, expected: f64, digits: i32) {
     let diff = (actual - expected).abs();
-    let ts_bound = 0.5 * 10.0_f32.powi(-digits);
-    let limit = ts_bound.max(4.0 * f32::EPSILON * expected.abs().max(1.0));
+    let ts_bound = 0.5 * 10.0_f64.powi(-digits);
+    let limit = ts_bound.max(4.0 * f64::EPSILON * expected.abs().max(1.0));
     assert!(
         diff <= limit,
         "expected {expected}, got {actual} (diff: {diff}, limit: {limit})"
     );
 }
 
-fn step_critical_band_spring(damping_ratio: f32) -> Spring {
+fn step_critical_band_spring(damping_ratio: f64) -> Spring {
     let mut spring = create_spring(4.0, -3.0);
     update_spring(&mut spring, -2.0, &spring_config(3.0, damping_ratio), 0.2);
     return spring;
@@ -146,7 +146,7 @@ mod update_spring {
 
     #[test]
     fn uses_the_critical_solution_exactly_at_and_inside_critical_band() {
-        let critical_band: f32 = 1e-4;
+        let critical_band: f64 = 1e-4;
 
         let critical = step_critical_band_spring(1.0);
         let lower_edge = step_critical_band_spring(1.0 - critical_band);
@@ -176,7 +176,7 @@ mod update_spring {
     fn converges_monotonically_to_the_target_with_no_overshoot_when_critically_damped() {
         let mut spring = create_spring(0.0, 0.0);
         let config = spring_config(1.0, 1.0);
-        let target: f32 = 10.0;
+        let target: f64 = 10.0;
 
         let mut previous = spring.value;
         for _ in 0..600 {
@@ -203,7 +203,7 @@ mod update_spring {
     fn overshoots_the_target_at_least_once_then_settles_when_underdamped() {
         let mut spring = create_spring(0.0, 0.0);
         let config = spring_config(1.0, 0.3);
-        let target: f32 = 10.0;
+        let target: f64 = 10.0;
 
         let mut overshot = false;
         for _ in 0..2000 {
@@ -220,7 +220,7 @@ mod update_spring {
     fn converges_slowly_without_overshoot_when_overdamped() {
         let mut under_target = create_spring(0.0, 0.0);
         let config = spring_config(1.0, 2.0);
-        let target: f32 = 10.0;
+        let target: f64 = 10.0;
 
         let mut previous = under_target.value;
         for _ in 0..120 {
@@ -252,7 +252,7 @@ mod update_spring {
     fn stays_finite_and_bounded_for_a_stiff_spring_stepped_at_a_huge_delta_time() {
         let mut spring = create_spring(0.0, 0.0);
         let config = spring_config(1000.0, 1.0);
-        let target: f32 = 10.0;
+        let target: f64 = 10.0;
 
         update_spring(&mut spring, target, &config, 1.0);
         assert!(spring.value.is_finite());
@@ -265,7 +265,7 @@ mod update_spring {
     fn stays_finite_for_a_stiff_underdamped_spring_stepped_repeatedly_at_a_huge_delta_time() {
         let mut spring = create_spring(0.0, 0.0);
         let config = spring_config(1000.0, 0.5);
-        let target: f32 = 10.0;
+        let target: f64 = 10.0;
 
         for _ in 0..50 {
             update_spring(&mut spring, target, &config, 1.0);
@@ -279,7 +279,7 @@ mod update_spring {
     #[test]
     fn is_frame_rate_independent_for_a_constant_target() {
         let config = spring_config(2.0, 0.5);
-        let target: f32 = 7.0;
+        let target: f64 = 7.0;
 
         let mut fine = create_spring(0.0, 3.0);
         for _ in 0..60 {

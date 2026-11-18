@@ -12,8 +12,8 @@ struct PlayerFields {
     loop_mode: Option<AnimationLoopMode>,
     playing: Option<bool>,
     repeat_count: Option<i32>,
-    speed: Option<f32>,
-    time: Option<f32>,
+    speed: Option<f64>,
+    time: Option<f64>,
 }
 
 fn apply_player_fields(player: &mut AnimationPlayer, opts: Option<PlayerFields>) {
@@ -40,13 +40,13 @@ fn apply_player_fields(player: &mut AnimationPlayer, opts: Option<PlayerFields>)
     }
 }
 
-fn player(duration: f32, opts: Option<PlayerFields>) -> AnimationPlayer {
+fn player(duration: f64, opts: Option<PlayerFields>) -> AnimationPlayer {
     let mut out = create_animation_player(create_animation_clip(vec![], Some(duration), &[]));
     apply_player_fields(&mut out, opts);
     return out;
 }
 
-fn event_player(duration: f32, times: &[f32], opts: Option<PlayerFields>) -> AnimationPlayer {
+fn event_player(duration: f64, times: &[f64], opts: Option<PlayerFields>) -> AnimationPlayer {
     let events: Vec<AnimationClipEvent> = times
         .iter()
         .map(|&time| {
@@ -344,7 +344,7 @@ mod advance_animation_player {
             }),
         );
         enable_animation_player_signals(&mut p);
-        let crossed = Arc::new(Mutex::new(Vec::<f32>::new()));
+        let crossed = Arc::new(Mutex::new(Vec::<f64>::new()));
         let crossed_clone = crossed.clone();
         let slot = Arc::new(move |event: &AnimationClipEvent| {
             crossed_clone.lock().unwrap().push(event.time);
@@ -369,7 +369,7 @@ mod advance_animation_player {
             }),
         );
         enable_animation_player_signals(&mut p);
-        let crossed = Arc::new(Mutex::new(Vec::<f32>::new()));
+        let crossed = Arc::new(Mutex::new(Vec::<f64>::new()));
         let crossed_clone = crossed.clone();
         let slot = Arc::new(move |event: &AnimationClipEvent| {
             crossed_clone.lock().unwrap().push(event.time);
@@ -397,7 +397,7 @@ mod advance_animation_player {
             }),
         );
         enable_animation_player_signals(&mut p);
-        let crossed = Arc::new(Mutex::new(Vec::<f32>::new()));
+        let crossed = Arc::new(Mutex::new(Vec::<f64>::new()));
         let crossed_clone = crossed.clone();
         let slot = Arc::new(move |event: &AnimationClipEvent| {
             crossed_clone.lock().unwrap().push(event.time);
@@ -422,7 +422,7 @@ mod advance_animation_player {
             }),
         );
         enable_animation_player_signals(&mut p);
-        let crossed = Arc::new(Mutex::new(Vec::<f32>::new()));
+        let crossed = Arc::new(Mutex::new(Vec::<f64>::new()));
         let crossed_clone = crossed.clone();
         let slot = Arc::new(move |event: &AnimationClipEvent| {
             crossed_clone.lock().unwrap().push(event.time);

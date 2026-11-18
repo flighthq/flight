@@ -5,7 +5,7 @@ use crate::types::*;
 
 pub fn advance_animation_state_machine_with_scratch(
     machine: &mut AnimationStateMachine,
-    dt: f32,
+    dt: f64,
     advanced: &mut Vec<AnimationPlayerRef>,
 ) {
     {
@@ -42,16 +42,12 @@ pub fn advance_animation_state_machine_with_scratch(
     }
 }
 
-fn get_linear_animation_state_machine_transition_weight(elapsed: f32, duration: f32) -> f32 {
+// flight-lint: allow(f32) transition weight is a bounded 0-1 blend weight
+fn get_linear_animation_state_machine_transition_weight(elapsed: f64, duration: f64) -> f32 {
     if duration <= 0.0 {
         return 1.0;
     }
     let normalized = elapsed / duration;
-    return if normalized < 0.0 {
-        0.0
-    } else if normalized > 1.0 {
-        1.0
-    } else {
-        normalized
-    };
+    // f64 time narrows only here, once clamped to the bounded 0-1 weight range.
+    return normalized.clamp(0.0, 1.0) as f32;
 }
