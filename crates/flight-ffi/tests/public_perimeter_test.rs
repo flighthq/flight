@@ -21,17 +21,25 @@ mod collect_ts_module_exports {
             &[
                 (
                     "index.ts",
-                    "export * from './first.ts';\nexport * from './second';\nexport * from './nested';\n",
+                    "export * from './first.ts';\nexport * from './second';\nexport * from './nested';\nexport * from './view.tsx';\nexport * from './widget';\n",
                 ),
                 ("first.ts", "export function firstValue() {}\n"),
                 ("second.ts", "export * from './third.js';\n"),
                 ("third.ts", "export const thirdValue = 1;\n"),
                 ("nested/index.ts", "export class NestedValue {}\n"),
+                ("view.tsx", "export function viewValue() {}\n"),
+                ("widget.tsx", "export function widgetValue() {}\n"),
             ],
         );
         assert_eq!(
             read_names(&root),
-            names(&["NestedValue", "firstValue", "thirdValue"])
+            names(&[
+                "NestedValue",
+                "firstValue",
+                "thirdValue",
+                "viewValue",
+                "widgetValue"
+            ])
         );
     }
 
@@ -39,21 +47,24 @@ mod collect_ts_module_exports {
     fn ignores_comments_strings_and_module_paths_as_identifiers() {
         let root = create_fixture(
             "comments_and_paths",
-            &[(
-                "index.ts",
-                "// export function ghostLine() {}\n/* export { ghostBlock } */\nconst label = 'export function ghostString';\nconst flag = settings.export;\nexport * from './getMissingModule.ts';\nexport { realValue } from './realValue.ts';\n",
-            )],
+            &[
+                (
+                    "index.ts",
+                    "// export function ghostLine() {}\n/* export { ghostBlock } */\nconst label = 'export function ghostString';\nconst flag = settings.export;\nexport * from './getMissingModule.ts';\nexport { realValue } from './realValue.ts';\n",
+                ),
+                ("realValue.ts", "export function realValue() {}\n"),
+            ],
         );
         assert_eq!(read_names(&root), names(&["realValue"]));
     }
 
     #[test]
-    fn reads_declarations_and_skips_type_and_default_exports() {
+    fn reads_every_declared_value_and_skips_type_and_default_exports() {
         let root = create_fixture(
             "declarations",
             &[(
                 "index.ts",
-                "export function plainFunction() {}\nexport async function asyncFunction() {}\nexport function* generatorFunction() {}\nexport declare function declaredFunction(): void;\nexport const constant = 1;\nexport let variable = 2;\nexport const enum ConstKind { A }\nexport enum Kind { B }\nexport class Shape {}\nexport interface ShapeLike {}\nexport type ShapeAlias = Shape;\nexport type { HiddenType } from './types.ts';\nexport default function defaultFunction() {}\n",
+                "export function plainFunction() {}\nexport async function asyncFunction() {}\nexport function* generatorFunction() {}\nexport declare function declaredFunction(): void;\nexport const first = 1, second = (a: number, b: number) => a < b, third: Map<string, number> = new Map();\nexport let variable = 2;\nexport const { left, right: renamed, nested: [deep] } = pair;\nexport const enum ConstKind { A }\nexport enum Kind { B }\nexport class Shape {}\nexport interface ShapeLike {}\nexport type ShapeAlias = Shape;\nexport type { HiddenType } from './types.ts';\nexport default function defaultFunction() {}\n",
             )],
         );
         assert_eq!(
@@ -63,34 +74,65 @@ mod collect_ts_module_exports {
                 "Kind",
                 "Shape",
                 "asyncFunction",
-                "constant",
                 "declaredFunction",
+                "deep",
+                "first",
                 "generatorFunction",
+                "left",
                 "plainFunction",
+                "renamed",
+                "second",
+                "third",
                 "variable",
             ])
         );
     }
 
     #[test]
-    fn reads_the_exported_spelling_of_aliased_specifiers() {
+    fn applies_relative_aliases_only_to_real_value_exports() {
         let root = create_fixture(
-            "aliases",
-            &[(
-                "index.ts",
-                "const local = 1;\nexport { local as publicName, type TypeOnly, kept };\nexport { innerName as outerName } from './inner.ts';\nexport { PackageKind } from '@flighthq/other/contract';\nexport * as namespaceName from './inner.ts';\nexport * from '@flighthq/other';\n",
-            )],
+            "relative_aliases",
+            &[
+                (
+                    "index.ts",
+                    "import { inner as importedInner, type InnerType } from './inner.ts';\nimport type { innerToo } from './inner.ts';\nimport { createBlob } from './inner';\nconst local = 1;\nexport { local as publicName, undeclared, importedInner as reexported, InnerType, innerToo };\nexport { inner as outer, InnerType as visibleType, missing as ghost, default as defaulted, type inner as typedInner } from './inner.ts';\nexport * as innerNamespace from './inner.ts';\nexport { createBlob };\n",
+                ),
+                (
+                    "inner.ts",
+                    "export function inner() {}\nexport function innerToo() {}\nexport type InnerType = number;\nexport default function defaultInner() {}\n",
+                ),
+            ],
         );
+        // `innerToo` is re-exported through `import type`, so it is a type export here.
         assert_eq!(
             read_names(&root),
-            names(&[
-                "PackageKind",
-                "kept",
-                "namespaceName",
-                "outerName",
-                "publicName"
-            ])
+            names(&["innerNamespace", "outer", "publicName", "reexported"])
         );
+        let (_, files) = collect_ts_module_exports(&root.join("index.ts"));
+        assert!(files.iter().any(|file| file.ends_with("inner.ts")));
+    }
+
+    #[test]
+    fn ignores_every_name_from_another_package() {
+        // Each external name normalizes to a real Rust function key, so a leak would authorize it.
+        let root = create_fixture(
+            "external_sources",
+            &[(
+                "index.ts",
+                "import { getArrayBufferStorage } from '@flighthq/buffer';\nimport * as rive from '@flighthq/scene2d-formats';\nexport { getArrayBufferStorage, rive };\nexport { createBlob, other as collectRiveCoreTypeCounts } from '@flighthq/buffer/contract';\nexport * as revealScene3DResourcesOnResolve from '@flighthq/scene3d-resources';\nexport * from '@flighthq/importdiagnostics';\n",
+            )],
+        );
+        let exports = read_names(&root);
+        assert!(exports.is_empty(), "{exports:?}");
+        let keys: BTreeSet<String> = exports.iter().map(|name| get_export_key(name)).collect();
+        for rust_name in [
+            "get_array_buffer_storage",
+            "create_blob",
+            "collect_rive_core_type_counts",
+            "reveal_scene3d_resources_on_resolve",
+        ] {
+            assert!(!keys.contains(&get_export_key(rust_name)));
+        }
     }
 
     #[test]
@@ -98,7 +140,10 @@ mod collect_ts_module_exports {
         let root = create_fixture(
             "cycles",
             &[
-                ("index.ts", "export * from './a.ts';\n"),
+                (
+                    "index.ts",
+                    "export * from './a.ts';\nexport { fromB as aliasB } from './b.ts';\n",
+                ),
                 (
                     "a.ts",
                     "export * from './b.ts';\nexport function fromA() {}\n",
@@ -110,7 +155,7 @@ mod collect_ts_module_exports {
             ],
         );
         let (exports, files) = collect_ts_module_exports(&root.join("index.ts"));
-        assert_eq!(exports, names(&["fromA", "fromB"]));
+        assert_eq!(exports, names(&["aliasB", "fromA", "fromB"]));
         assert_eq!(files.len(), 3);
     }
 
@@ -120,10 +165,13 @@ mod collect_ts_module_exports {
         let scene2d_formats = read_keys(&packages.join("scene2d-formats/src/index.ts"));
         // Public through `export * from './riveCoreTypeCensus.ts'`.
         assert!(scene2d_formats.contains(&get_export_key("collect_rive_core_type_counts")));
+        assert!(scene2d_formats.contains(&get_export_key("collect_svg_counts")));
         let buffer = read_keys(&packages.join("buffer/src/index.ts"));
         assert!(buffer.contains(&get_export_key("create_byte_reader")));
         assert!(!buffer.contains(&get_export_key("get_array_buffer_storage")));
         assert!(!buffer.contains(&get_export_key("create_blob")));
+        let scene3d_resources = read_keys(&packages.join("scene3d-resources/src/index.ts"));
+        assert!(scene3d_resources.contains(&get_export_key("reveal_scene3d_resources_on_resolve")));
     }
 
     fn read_keys(index: &Path) -> BTreeSet<String> {
