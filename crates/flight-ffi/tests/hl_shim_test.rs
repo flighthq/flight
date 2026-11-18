@@ -82,7 +82,7 @@ fn skip_reduction_carriers_have_exact_header_and_hashlink_registrations() {
         ),
         // Option<TextureSourceRef> -> nullable opaque handle.
         (
-            "void flight_set_texture_source__texture(void * arg0, void * arg1);",
+            "void flight_set_texture_source__texture(void * arg0, void * arg1 /* cloned; caller retains its handle */);",
             "DEFINE_PRIM(_VOID, flight_set_texture_source__texture, _BYTES _BYTES);",
         ),
         (
@@ -362,14 +362,17 @@ fn optional_diagnostics_lower_to_a_nullable_import_diagnostic_list() {
     assert!(wrappers.contains("fn flight_collect_rive_core_type_counts(out: *mut FfiU64CountMap"));
 }
 
-// The public optional callback remains absent until its independent StateRef transfer has a sound
-// by-value carrier; mapping the callback alone must not weaken that ownership precondition.
+// A StateRef now crosses through the universal transferred opaque carrier, while the optional
+// scalar callback keeps its typed nullable function-pointer ABI.
 #[test]
 fn optional_callbacks_lower_to_nullable_typed_function_pointers() {
     let (header, shim) = generated();
-    assert!(!header.contains(" flight_transition_animation_state_machine("));
-    assert!(!shim.contains("(flight_transition_animation_state_machine)"));
-    assert!(generated_stats().contains("unmapped_param(StateRef)"));
+    assert_line(
+        &header,
+        "bool flight_transition_animation_state_machine(void * arg0, void * arg1 /* ownership transferred; do not use or free after call */, float arg2, float (*arg3)(void *, float), void * arg4);",
+    );
+    assert!(shim.contains("(flight_transition_animation_state_machine)"));
+    assert!(!generated_stats().contains("unmapped_param(StateRef)"));
 }
 
 #[test]
@@ -487,8 +490,8 @@ fn provider_future_returns_lower_to_typed_completion_callbacks() {
     );
 }
 
-// An `Arc<T>` return hands C an owned clone of the immutable shared value through T's own carrier,
-// freed exactly as a T return is. Extension-point values stay unmapped behind the same wrapper.
+// An `Arc<T>` return hands C an owned clone. Data values use T's carrier, while opaque extension
+// entries retain the Arc itself and receive an exact paired free.
 #[test]
 fn shared_arc_returns_lower_to_owned_inner_carriers() {
     let wrappers = generated_wrappers();
@@ -519,10 +522,18 @@ fn shared_arc_returns_lower_to_owned_inner_carriers() {
         assert_line(&header, line);
     }
 
+    for line in [
+        "/* Caller owns the return value; call flight_free_spritesheet_format_entry_arc when done. */",
+        "void * flight_get_spritesheet_format(void * arg0, void * arg1);",
+        "void flight_free_spritesheet_format_entry_arc(void * arg0);",
+        "/* Caller owns the return value; call flight_free_texture_atlas_format_entry_arc when done. */",
+        "void * flight_get_texture_atlas_format(void * arg0, void * arg1);",
+        "void flight_free_texture_atlas_format_entry_arc(void * arg0);",
+    ] {
+        assert_line(&header, line);
+    }
     for skip in [
         "no_ts_public_export(get_rive_core_object_handler)",
-        "unmapped_return(Option<Arc<SpritesheetFormatEntry>>)",
-        "unmapped_return(Option<Arc<TextureAtlasFormatEntry>>)",
         "closure_return(Arc<dyn Fn() + Send + Sync>)",
     ] {
         assert!(stats.contains(skip), "{skip} must stay skipped");
@@ -565,13 +576,13 @@ fn slice_and_fixed_array_carriers_have_exact_c_and_hashlink_shapes() {
         assert_line(&shim, line);
     }
 
+    assert_line(
+        &header,
+        "void * flight_migrate_storage(void * arg0, void * arg1, const void * const * arg2, size_t arg3, void * arg4);",
+    );
     let stats = generated_stats();
-    for skip in [
-        "unmapped_param(&[&StorageMigration])",
-        "unmapped_param(&[Option<Node2DRef>])",
-    ] {
-        assert!(stats.contains(skip), "{skip} must stay skipped");
-    }
+    assert!(!stats.contains("unmapped_param(&[&StorageMigration])"));
+    assert!(!stats.contains("unmapped_param(&[Option<Node2DRef>])"));
 }
 
 // Outcome wrappers keep their generic reason types: an accessibility outcome is a success flag
@@ -769,11 +780,11 @@ fn sdk_font_contract_promotions_have_explicit_decisions() {
     );
 
     let glyph_initializer = "flight_initialize_glyph_rasterizer_backend_from_glyph_outline_source";
-    assert!(!header.contains(&format!(" {glyph_initializer}(")));
-    assert!(!shim.contains(&format!("({glyph_initializer})")));
-    assert!(!wrappers.contains(&format!("fn {glyph_initializer}(")));
+    assert!(header.contains(&format!(" {glyph_initializer}(")));
+    assert!(shim.contains(&format!("({glyph_initializer})")));
+    assert!(wrappers.contains(&format!("fn {glyph_initializer}(")));
     assert!(stats.contains(
-        "SDK contract decision: initialize_glyph_rasterizer_backend_from_glyph_outline_source skipped: unmapped_param(Arc<GlyphOutlineSource>)"
+        "SDK contract decision: initialize_glyph_rasterizer_backend_from_glyph_outline_source generated: 1 wrapper(s)"
     ));
 
     for name in [
@@ -1026,7 +1037,13 @@ fn by_value_parameters_follow_rust_ownership() {
         } else if line.starts_with("pub unsafe extern \"C\" fn flight_") {
             current_notes = std::mem::take(&mut notes);
         } else if let Some(rest) = line.split("*unsafe { Box::from_raw(").nth(1) {
-            let parameter = rest.split(')').next().unwrap();
+            let parameter = rest
+                .split(')')
+                .next()
+                .unwrap()
+                .split(" as ")
+                .next()
+                .unwrap();
             transfers += 1;
             assert!(
                 current_notes
@@ -1038,23 +1055,19 @@ fn by_value_parameters_follow_rust_ownership() {
     }
     assert!(transfers > 0);
     let stats = generated_stats();
-    for skip in [
-        "no_ts_public_export(create_tray_animation_state)",
+    assert!(stats.contains("no_ts_public_export(create_tray_animation_state)"));
+    for recovered in [
         "unmapped_param(ParticleFormatCodec)",
         "unmapped_param(IpcArguments)",
         "unmapped_param(TargetRef)",
         "unmapped_param(ByteChunkStream)",
     ] {
-        assert!(stats.contains(skip), "{skip} must stay skipped");
+        assert!(!stats.contains(recovered), "{recovered} must be recovered");
     }
-    for symbol in [
-        "flight_create_tray_animation_state",
-        "flight_register_particle_format",
-        "flight_send_ipc_message",
-    ] {
+    for symbol in ["flight_register_particle_format", "flight_send_ipc_message"] {
         assert!(
-            !header.contains(&format!(" {symbol}(")),
-            "{symbol} must stay unwrapped"
+            header.contains(&format!(" {symbol}(")),
+            "{symbol} must have an opaque wrapper"
         );
     }
 }
@@ -1123,15 +1136,13 @@ fn byte_reader_inventory_is_complete_and_ts_gated() {
     }
     // This Rust contract member is deliberately absent from the package's TypeScript root.
     assert!(!wrappers.contains("flight_report_spine_binary_crumb"));
-    // This public function is discovered, but its independent optional-string-list carrier remains
-    // unsupported; the byte-reader carrier does not erase that blocker.
-    assert!(!wrappers.contains("flight_read_spine_binary_string_reference"));
+    assert!(wrappers.contains("flight_read_spine_binary_string_reference"));
     let stats = generated_stats();
     assert!(!stats.contains("unmapped_param(&mut ByteReader"));
     assert!(!stats.contains("unmapped_param(&ByteReader"));
     assert!(!stats.contains("unmapped_return(&'static [EffectInput])"));
     assert!(!stats.contains("unmapped_return(&'static [&'static str])"));
-    assert!(stats.contains("unmapped_param(&[Option<String>])"));
+    assert!(!stats.contains("unmapped_param(&[Option<String>])"));
 }
 
 // Every caller-supplied enum is checked against its own variants before the enum exists: a direct

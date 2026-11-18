@@ -57,12 +57,6 @@ enum TypeDefinition {
     GenericAlias,
 }
 
-// Qualified types some generated function returns as an owned box, set before the main pass.
-static PRODUCIBLE_TYPES: OnceLock<BTreeSet<String>> = OnceLock::new();
-// Qualified types a main-pass wrapper consumes by value.
-static TRANSFERRED_TYPES: std::sync::Mutex<BTreeSet<String>> =
-    std::sync::Mutex::new(BTreeSet::new());
-
 // How a by-value parameter of a named type crosses the C ABI (agents/ffi-public-lane.md).
 #[derive(Clone, Copy, Debug, PartialEq)]
 enum OwnedParam {
@@ -348,6 +342,13 @@ const EXTENSION_POINT_TYPES: &[&str] = &[
     "StorageMigration",
     "TextureAtlasFormatEntry",
 ];
+const OPAQUE_FALLBACK_EXCLUDED_TYPES: &[&str] = &[
+    "BitmapTextMissingGlyphGuard",
+    "FileDialogHandleOperations",
+    "LayoutResolver",
+    "LogDataOrProvider",
+    "TextInputCopyCallback",
+];
 const SAFETY_POLICY_SKIP_FNS: &[&str] = &[
     "enable_clip_guards",
     "enable_statechart_guards",
@@ -360,6 +361,9 @@ const SAFETY_POLICY_SKIP_FNS: &[&str] = &[
 const EXTENSION_POLICY_SKIP_FNS: &[&str] = &[
     "create_filter_log_sink",
     "enable_log_signals",
+    "init_bounds_rectangle_runtime_trait",
+    "init_transform2d_runtime_trait",
+    "lerp_effect",
     "register_dragon_bones_section_handler",
     "register_dragon_bones_timeline_handler",
     "register_log_serializer",
@@ -405,37 +409,45 @@ const CONTRACT_LANE_ENUMS: &[(&str, &str)] = &[
     ("SpreadMethod", "shape"),
     ("SpritesheetParseDiagnosticSeverity", "spritesheet"),
 ];
-const SKIP_TYPES: &[&str] = &[
-    "AdjustmentRef",
-    "AttachmentSkin2D",
-    "BidiClassKernel",
-    "BidiClassKernelExplanation",
-    "Bone2D",
-    "BoundsRectangleRuntimeMethods",
-    "ClippingAttachment2D",
-    "EffectFieldRoles",
-    "MarkupTagRegistry",
-    "MeshAttachment2D",
-    "PathMeshPool",
-    "PathMorphBuildResult",
-    "PointAttachment2D",
-    "RegionAttachment2D",
-    "ShapeGeometryEnd",
-    "ShapeJsonFormatOptions",
-    "ShapeJsonParseOptions",
-    "Skeleton2DClippingAttachmentSlotRange",
-    "Skeleton2DCoercedInterpolation",
-    "Skeleton2DConstraintSolver",
-    "Skeleton2DGuardState",
-    "Slot2D",
-    "StrokePathGeometry",
-    "TextLayoutContext",
-    "TextLayoutMeasureState",
-    "TextMarkupGuardState",
-    "Transform2DRuntimeMethods",
-    "Value",
+// Public package functions can mention contract-lane types that their package root intentionally
+// does not re-export. The SDK mirrors every package as a module, so these types remain nameable
+// without widening the SDK root lane.
+const CONTRACT_LANE_TYPES: &[(&str, &str)] = &[
+    ("AdjustmentRef", "node"),
+    ("Attachment2DRef", "skeleton2d"),
+    ("AttachmentSkin2D", "skeleton2d"),
+    ("BidiClassKernel", "textbidi"),
+    ("BidiClassKernelExplanation", "textbidi"),
+    ("BidiDirection", "textbidi"),
+    ("BidiRun", "textbidi"),
+    ("Bone2D", "skeleton2d"),
+    ("BoundingBoxAttachment2D", "skeleton2d"),
+    ("ClippingAttachment2D", "skeleton2d"),
+    ("MarkupTagHandler", "text_markup"),
+    ("MarkupTagRegistry", "text_markup"),
+    ("MeshAttachment2D", "skeleton2d"),
+    ("PathAttachment2D", "skeleton2d"),
+    ("PathMeshPool", "path"),
+    ("PathMorphBuildResult", "path"),
+    ("PointAttachment2D", "skeleton2d"),
+    ("RegionAttachment2D", "skeleton2d"),
+    ("ShapeGeometryEnd", "shape"),
+    ("ShapeJsonFormatOptions", "shape_formats"),
+    ("ShapeJsonParseOptions", "shape_formats"),
+    ("Skeleton2DClippingAttachmentSlotRange", "skeleton2d"),
+    ("Skeleton2DCoercedInterpolation", "skeleton2d"),
+    ("Skeleton2DConstraintSolver", "skeleton2d"),
+    ("Skeleton2DGuardState", "skeleton2d"),
+    ("Slot2D", "skeleton2d"),
+    ("StrokePathGeometry", "path"),
+    ("SwfAdjustmentRef", "swf"),
+    ("SwfGuardStateRef", "swf"),
+    ("SwfReader", "swf"),
+    ("TextLayoutContext", "text"),
+    ("TextLayoutMeasureState", "textlayout"),
+    ("TextMarkupExplanation", "text_markup"),
+    ("TextMarkupGuardState", "text_markup"),
 ];
-
 fn main() {
     // The C consumer test builds and links its executable with the same target and rustc Cargo
     // builds this crate with.
@@ -520,25 +532,6 @@ fn main() {
     }
     let _ = KNOWN_ENUMS.set(known_enums);
     let _ = TYPE_DEFINITIONS.set(type_definitions);
-
-    // A by-value transfer consumes an FFI-owned box, so it maps only for types some generated
-    // function hands C as an owned box. The pre-pass finds those producers; the main pass then
-    // records every transferred type, and the free list must cover each one.
-    let mut producible_types = BTreeSet::new();
-    for dir_name in SCAN_CRATES {
-        let src_dir = crates_dir.join(dir_name).join("src");
-        if !src_dir.exists() {
-            continue;
-        }
-        for func in collect_pub_fns(&src_dir) {
-            if !has_mono_dyn_param(&func) {
-                if let Some((_, Some(boxed_ty))) = generate_ffi_wrapper(&func) {
-                    producible_types.insert(boxed_ty);
-                }
-            }
-        }
-    }
-    let _ = PRODUCIBLE_TYPES.set(producible_types);
 
     for dir_name in SCAN_CRATES {
         let src_dir = crates_dir.join(dir_name).join("src");
@@ -651,13 +644,6 @@ fn main() {
         }
     }
 
-    for transferred in TRANSFERRED_TYPES.lock().unwrap().iter() {
-        assert!(
-            boxed_types.contains(transferred),
-            "{transferred} is transferred by value but no generated function returns it owned"
-        );
-    }
-
     let stats_skipped_total: usize = stats_skipped.values().sum();
     let stats_monomorphized_extras = stats_generated_wrappers
         .checked_sub(stats_generated_sources)
@@ -751,7 +737,7 @@ fn main() {
         }
         let structs = collect_pub_structs(&src_dir);
         for s in &structs {
-            if SKIP_TYPES.contains(&s.name.as_str()) || s.fields.is_empty() {
+            if s.fields.is_empty() {
                 continue;
             }
             let qualified = qualify_type(&s.name);
@@ -1511,28 +1497,49 @@ fn get_param_ownership_note(ty: &str) -> Option<&'static str> {
     const CLONED: &str = "cloned; caller retains its handle";
     const TRANSFERRED: &str = "ownership transferred; do not use or free after call";
     let ty = strip_crate_paths(&strip_lifetimes(&resolve_type_alias(ty.trim())));
-    if ty.starts_with('&') {
+    if ty.starts_with('&') || is_opaque_fallback_excluded(&ty) {
         return None;
     }
-    if ty.starts_with("Ref<") || ty.starts_with("Option<Ref<") {
+    if ty.starts_with("Ref<")
+        || ty.starts_with("Arc<")
+        || ty.starts_with("SignalSlot<")
+    {
         return Some(CLONED);
     }
     if let Some(inner) = ty
         .strip_prefix("Option<")
         .and_then(|rest| rest.strip_suffix('>'))
     {
+        let inner = inner.trim();
+        if inner.starts_with('&') || is_opaque_fallback_excluded(inner) {
+            return None;
+        }
+        if opaque_clone_handle_type(inner).is_some() {
+            return Some(CLONED);
+        }
+        if is_opaque_transferred_generic(inner) || can_transfer_named_opaque(inner) {
+            return Some(TRANSFERRED);
+        }
         if DYN_OPAQUE_TRAITS
             .iter()
-            .any(|(_, alias)| *alias == inner.trim())
+            .any(|(_, alias)| *alias == inner)
         {
             return Some(CLONED);
         }
         return None;
     }
+    if is_opaque_transferred_generic(&ty) {
+        return Some(TRANSFERRED);
+    }
     if ty.contains('<') || is_scalar(&ty) || is_known_enum(&ty) {
         return None;
     }
-    match get_owned_param(&ty)? {
+    match get_owned_param(&ty).or_else(|| {
+        TYPE_DEFINITIONS
+            .get()
+            .is_some_and(|definitions| definitions.contains_key(&ty))
+            .then_some(OwnedParam::Transferred)
+    })? {
         OwnedParam::Cloned => Some(CLONED),
         OwnedParam::Transferred => Some(TRANSFERRED),
         OwnedParam::Copied => None,
@@ -1700,7 +1707,6 @@ fn is_ffi_incompatible(ty: &str) -> bool {
         || ty.contains("FnOnce(")
         || ty.contains('<')
         || ty.contains("::")
-        || SKIP_TYPES.iter().any(|s| ty.contains(s))
 }
 
 fn is_shape_bounds_context(ty: &str) -> bool {
@@ -1791,6 +1797,7 @@ fn generate_ffi_wrapper(func: &ParsedFn) -> Option<(String, Option<String>)> {
         }
     }
     append_tuple_out_params(&mut ffi_params, &call_wrap);
+    append_borrowed_slice_out_param(&mut ffi_params, &call_wrap);
     append_async_callback_params(&mut ffi_params, &call_wrap);
 
     // An async value boxes its own output type, not the future the function returns.
@@ -1857,14 +1864,6 @@ fn generate_ffi_wrapper(func: &ParsedFn) -> Option<(String, Option<String>)> {
     )
     .unwrap_or_default();
 
-    if PRODUCIBLE_TYPES.get().is_some() {
-        for param in &func.params {
-            let ty = strip_crate_paths(&strip_lifetimes(&resolve_type_alias(param.ty.trim())));
-            if !ty.contains('<') && get_owned_param(&ty) == Some(OwnedParam::Transferred) {
-                TRANSFERRED_TYPES.lock().unwrap().insert(qualify_type(&ty));
-            }
-        }
-    }
     // Parameter ownership notes travel as doc attributes into the C header.
     let notes: String = func
         .params
@@ -2048,6 +2047,7 @@ fn generate_mono_wrappers(func: &ParsedFn) -> Vec<(String, String, Option<String
             continue;
         }
         append_tuple_out_params(&mut ffi_params, &call_wrap);
+        append_borrowed_slice_out_param(&mut ffi_params, &call_wrap);
 
         let call = format!(
             "{function}({args})",
@@ -2070,11 +2070,19 @@ fn generate_mono_wrappers(func: &ParsedFn) -> Vec<(String, String, Option<String
             matches!(call_wrap, FfiReturn::AsyncCallback(_)),
         )
         .unwrap_or_default();
+        let notes: String = func
+            .params
+            .iter()
+            .filter_map(|param| {
+                get_param_ownership_note(&param.ty)
+                    .map(|note| format!("#[doc = \"ffi-param {}: {note}\"]\n", param.name))
+            })
+            .collect();
 
         wrappers.push((
             ffi_name.clone(),
             format!(
-                "{ownership}#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn {ffi_name}({params}){ret_decl} {{\n{body}\n}}{helpers}",
+                "{notes}{ownership}#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn {ffi_name}({params}){ret_decl} {{\n{body}\n}}{helpers}",
                 params = ffi_params.join(", "),
             ),
             boxed_ty.clone(),
@@ -2106,6 +2114,8 @@ enum FfiReturn {
     EffectKindSliceReturn,
     VecReturn(VecReturnSpec),
     OptionVecReturn(VecReturnSpec),
+    HashMapReturn(HashMapReturnSpec),
+    OptionHashMapReturn(HashMapReturnSpec),
     // The element type of a boxed scalar slice (`Box<[T]>`).
     BoxSliceReturn(String),
     OptionBoxSliceReturn(String),
@@ -2113,8 +2123,11 @@ enum FfiReturn {
     OptionTupleReturn(Vec<String>),
     // The scalar element type of a copied borrowed slice. The FFI owns the copied Vec.
     SliceReturn(String),
+    // A borrowed non-scalar slice returns its base and writes its length to `out_len`.
+    BorrowedSliceReturn,
     RefReturn,
     OptionRefReturn,
+    OptionBorrowedRefReturn,
     AsyncCallback(Box<AsyncCallbackSpec>),
     // `Arc<T>` / `Option<Arc<T>>`: the shared value is immutable, so C receives an owned clone of T
     // through T's own carrier and frees it as it would a T return.
@@ -2149,6 +2162,10 @@ struct VecReturnSpec {
     element_is_ref: bool,
 }
 
+struct HashMapReturnSpec {
+    value_ty: String,
+}
+
 fn async_future_output(ty: &str) -> Option<(&str, bool)> {
     for &(alias, fallible) in ASYNC_FUTURE_ALIASES {
         if let Some(output) = ty
@@ -2171,8 +2188,10 @@ fn is_async_callback_value(value: &FfiReturn) -> bool {
             | FfiReturn::TupleReturn(_)
             | FfiReturn::OptionTupleReturn(_)
             | FfiReturn::SliceReturn(_)
+            | FfiReturn::BorrowedSliceReturn
             | FfiReturn::RefReturn
             | FfiReturn::OptionRefReturn
+            | FfiReturn::OptionBorrowedRefReturn
             | FfiReturn::AsyncCallback(_)
             | FfiReturn::ArrayOutReturn(_)
             | FfiReturn::OperationOutcomeReturn
@@ -2194,6 +2213,12 @@ fn append_tuple_out_params(ffi_params: &mut Vec<String>, call_wrap: &FfiReturn) 
     };
     for (index, element) in elements.iter().enumerate() {
         ffi_params.push(format!("out_{index}: *mut {element}"));
+    }
+}
+
+fn append_borrowed_slice_out_param(ffi_params: &mut Vec<String>, call_wrap: &FfiReturn) {
+    if matches!(call_wrap, FfiReturn::BorrowedSliceReturn) {
+        ffi_params.push("out_len: *mut usize".to_string());
     }
 }
 
@@ -2362,6 +2387,11 @@ fn generate_return_body(call_wrap: &FfiReturn, call: &str, preamble: &str) -> St
             "{preamble}    let slice = {call};\n    \
                  return Box::into_raw(Box::new(slice.to_vec())) as *mut std::ffi::c_void;"
         ),
+        FfiReturn::BorrowedSliceReturn => format!(
+            "{preamble}    let slice = {call};\n    \
+                 if !out_len.is_null() {{ unsafe {{ *out_len = slice.len(); }} }}\n    \
+                 return slice.as_ptr();"
+        ),
         FfiReturn::RefReturn => format!("{preamble}    return {call} as *const _;"),
         FfiReturn::OptionRefReturn => format!(
             "{preamble}    match {call} {{\n        \
@@ -2369,11 +2399,21 @@ fn generate_return_body(call_wrap: &FfiReturn, call: &str, preamble: &str) -> St
                  None => std::ptr::null(),\n    \
                  }}"
         ),
-        FfiReturn::VecReturn(_) | FfiReturn::BoxSliceReturn(_) => format!(
+        FfiReturn::OptionBorrowedRefReturn => format!(
+            "{preamble}    match {call} {{\n        \
+                 Some(v) => v as *const _,\n        \
+                 None => std::ptr::null(),\n    \
+                 }}"
+        ),
+        FfiReturn::VecReturn(_)
+        | FfiReturn::HashMapReturn(_)
+        | FfiReturn::BoxSliceReturn(_) => format!(
             "{preamble}    let vec = {call};\n    \
                  return Box::into_raw(Box::new(vec)) as *mut std::ffi::c_void;"
         ),
-        FfiReturn::OptionVecReturn(_) | FfiReturn::OptionBoxSliceReturn(_) => format!(
+        FfiReturn::OptionVecReturn(_)
+        | FfiReturn::OptionHashMapReturn(_)
+        | FfiReturn::OptionBoxSliceReturn(_) => format!(
             "{preamble}    match {call} {{\n        \
                  Some(vec) => Box::into_raw(Box::new(vec)) as *mut std::ffi::c_void,\n        \
                  None => std::ptr::null_mut(),\n    \
@@ -2451,6 +2491,9 @@ fn generate_vec_result_helpers(ffi_name: &str, call_wrap: &FfiReturn) -> String 
     if matches!(call_wrap, FfiReturn::EffectKindSliceReturn) {
         return generate_effect_kind_result_helpers(ffi_name);
     }
+    if let FfiReturn::HashMapReturn(spec) | FfiReturn::OptionHashMapReturn(spec) = call_wrap {
+        return generate_hash_map_result_helpers(ffi_name, spec);
+    }
     let (element_ty, element_is_ref, container) = match call_wrap {
         FfiReturn::VecReturn(spec) | FfiReturn::OptionVecReturn(spec) => (
             spec.element_ty.as_str(),
@@ -2483,6 +2526,18 @@ fn generate_vec_result_helpers(ffi_name: &str, call_wrap: &FfiReturn) -> String 
     let borrowed = borrowed_ownership_doc(&format!("the {ffi_name} result handle remains alive"));
     format!(
         "\n#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn {ffi_name}_result_len(result: *const std::ffi::c_void) -> usize {{\n    if result.is_null() {{ return 0; }}\n    return unsafe {{ &*(result as *const {container}) }}.len();\n}}\n{borrowed}#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn {ffi_name}_result_get(result: *const std::ffi::c_void, index: usize) -> {get_return} {{\n    if result.is_null() {{ return std::ptr::null(); }}\n    match unsafe {{ &*(result as *const {container}) }}.get(index) {{\n        Some(value) => {get_value},\n        None => std::ptr::null(),\n    }}\n}}\n#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn {ffi_name}_result_free(result: *mut {container}) {{\n    if !result.is_null() {{ unsafe {{ drop(Box::from_raw(result)); }} }}\n}}"
+    )
+}
+
+// A boxed `HashMap<String, V>` result exposes borrowed value pointers and independently owned key
+// strings. The map owns every value until `_result_free`; each key copy uses `flight_free_string`.
+fn generate_hash_map_result_helpers(ffi_name: &str, spec: &HashMapReturnSpec) -> String {
+    let value = &spec.value_ty;
+    let container = format!("std::collections::HashMap<String, {value}>");
+    let borrowed = borrowed_ownership_doc(&format!("the {ffi_name} result handle remains alive"));
+    let owned_key = ownership_doc("owned-return", "flight_free_string", "std::ffi::c_char");
+    format!(
+        "\n#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn {ffi_name}_result_len(result: *const std::ffi::c_void) -> usize {{\n    if result.is_null() {{ return 0; }}\n    return unsafe {{ &*(result as *const {container}) }}.len();\n}}\n{borrowed}#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn {ffi_name}_result_get(result: *const std::ffi::c_void, key: *const std::ffi::c_char) -> *const {value} {{\n    if result.is_null() || key.is_null() {{ return std::ptr::null(); }}\n    let key = unsafe {{ std::ffi::CStr::from_ptr(key) }}.to_str().unwrap_or(\"\");\n    match unsafe {{ &*(result as *const {container}) }}.get(key) {{\n        Some(value) => value as *const _,\n        None => std::ptr::null(),\n    }}\n}}\n{owned_key}#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn {ffi_name}_result_get_key(result: *const std::ffi::c_void, index: usize) -> *mut std::ffi::c_char {{\n    if result.is_null() {{ return std::ptr::null_mut(); }}\n    match unsafe {{ &*(result as *const {container}) }}.keys().nth(index) {{\n        Some(key) => std::ffi::CString::new(key.as_str()).unwrap_or_default().into_raw(),\n        None => std::ptr::null_mut(),\n    }}\n}}\n#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn {ffi_name}_result_free(result: *mut {container}) {{\n    if !result.is_null() {{ unsafe {{ drop(Box::from_raw(result)); }} }}\n}}"
     )
 }
 
@@ -3065,9 +3120,6 @@ fn categorize_skip(func: &ParsedFn) -> String {
             continue;
         }
         if map_param_to_ffi(&param.name, &resolved).is_none() {
-            if SKIP_TYPES.iter().any(|s| resolved.contains(s)) {
-                return format!("skip_type_param({})", ty);
-            }
             if resolved.contains("dyn ")
                 && !is_known_dyn_opaque(&resolved)
                 && !is_known_dyn_mono(&resolved)
@@ -3087,9 +3139,6 @@ fn categorize_skip(func: &ParsedFn) -> String {
             && !is_known_dyn_mono(&resolved)
         {
             return format!("unknown_dyn_return({})", ret);
-        }
-        if SKIP_TYPES.iter().any(|s| resolved.contains(s)) {
-            return format!("skip_type_return({})", ret);
         }
         if is_tuple(&resolved) {
             return format!("tuple_return({})", ret);
@@ -3123,6 +3172,35 @@ fn to_snake_case(s: &str) -> String {
 
 // The `flight_free_*` suffix for a boxed return type. Ref<T> returns box the Arc handle itself, so
 // their free name distinguishes that handle from a hypothetical boxed T.
+fn opaque_type_slug(ty: &str) -> String {
+    let ty = ty.trim();
+    if ty == "()" {
+        return "unit".to_string();
+    }
+    if let Some((outer, arguments)) = outer_generic_parts(ty) {
+        let outer = outer.rsplit("::").next().unwrap_or(outer);
+        let arguments = split_generic_arguments(arguments).unwrap_or_default();
+        let arguments = arguments
+            .into_iter()
+            .map(opaque_type_slug)
+            .collect::<Vec<_>>()
+            .join("_");
+        return match outer {
+            "Ref" => format!("{arguments}_ref"),
+            "Arc" => format!("{arguments}_arc"),
+            "Signal" => format!("{arguments}_signal"),
+            "SignalSlot" => format!("{arguments}_signal_slot"),
+            "Tween" => format!("{arguments}_tween"),
+            "Vec" => format!("{arguments}_vec"),
+            "HashMap" => format!("{arguments}_hash_map"),
+            "Option" => format!("optional_{arguments}"),
+            _ => format!("{arguments}_{}", to_snake_case(outer)),
+        };
+    }
+    let ty = ty.strip_prefix("dyn ").unwrap_or(ty);
+    to_snake_case(ty.rsplit("::").next().unwrap_or(ty))
+}
+
 fn boxed_free_suffix(qualified_type: &str) -> String {
     if let Some((element, length)) = qualified_type
         .strip_prefix('[')
@@ -3141,22 +3219,13 @@ fn boxed_free_suffix(qualified_type: &str) -> String {
         .strip_prefix("flight_sdk::Ref<")
         .and_then(|rest| rest.strip_suffix('>'))
     {
-        let inner_name = inner.rsplit("::").next().unwrap_or(inner);
-        assert!(
-            !inner_name.contains('<'),
-            "boxed Ref inner type {inner_name} needs an explicit free name"
-        );
-        return format!("{}_ref", to_snake_case(inner_name));
+        return format!("{}_ref", opaque_type_slug(inner));
     }
     let type_name = qualified_type.rsplit("::").next().unwrap_or(qualified_type);
     if type_name == "Signal<()>" {
         return "unit_signal".to_string();
     }
-    assert!(
-        !type_name.contains('<'),
-        "boxed generic type {type_name} needs an explicit free name"
-    );
-    return to_snake_case(type_name);
+    return opaque_type_slug(qualified_type);
 }
 
 fn needs_generic_boxed_free(qualified_type: &str) -> bool {
@@ -3175,11 +3244,11 @@ fn arc_ref_boxed_type(ty: &str) -> Option<String> {
     if let Some((_, scalar)) = get_typed_array_ref(resolved) {
         return Some(format!("flight_sdk::Ref<Box<[{scalar}]>>"));
     }
-    let inner = resolved.strip_prefix("Ref<")?.strip_suffix('>')?.trim();
-    if inner.contains('<') || SKIP_TYPES.iter().any(|skip| inner.contains(skip)) {
-        return None;
+    if let Some(inner) = resolved.strip_prefix("Arc<").and_then(|rest| rest.strip_suffix('>')) {
+        return Some(format!("std::sync::Arc<{}>", qualify_opaque_type(inner)?));
     }
-    Some(format!("flight_sdk::Ref<{}>", qualify_type(inner)))
+    let inner = resolved.strip_prefix("Ref<")?.strip_suffix('>')?.trim();
+    Some(format!("flight_sdk::Ref<{}>", qualify_opaque_type(inner)?))
 }
 
 fn boxed_value_type(ty: &str) -> Option<String> {
@@ -3212,6 +3281,10 @@ fn result_container_type(value: &FfiReturn) -> Option<String> {
         FfiReturn::VecReturn(spec) | FfiReturn::OptionVecReturn(spec) => {
             Some(format!("Vec<{}>", spec.element_ty))
         }
+        FfiReturn::HashMapReturn(spec) | FfiReturn::OptionHashMapReturn(spec) => Some(format!(
+            "std::collections::HashMap<String, {}>",
+            spec.value_ty
+        )),
         FfiReturn::BoxSliceReturn(element) | FfiReturn::OptionBoxSliceReturn(element) => {
             Some(format!("Box<[{element}]>"))
         }
@@ -3303,6 +3376,8 @@ fn wrapper_ownership_doc(
         }
         FfiReturn::VecReturn(_)
         | FfiReturn::OptionVecReturn(_)
+        | FfiReturn::HashMapReturn(_)
+        | FfiReturn::OptionHashMapReturn(_)
         | FfiReturn::BoxSliceReturn(_)
         | FfiReturn::OptionBoxSliceReturn(_)
         | FfiReturn::SliceReturn(_)
@@ -3338,7 +3413,10 @@ fn wrapper_ownership_doc(
                 owned_type,
             ))
         }
-        FfiReturn::RefReturn | FfiReturn::OptionRefReturn => {
+        FfiReturn::RefReturn
+        | FfiReturn::OptionRefReturn
+        | FfiReturn::OptionBorrowedRefReturn
+        | FfiReturn::BorrowedSliceReturn => {
             Some(borrowed_ownership_doc(&borrowed_return_anchor(function)))
         }
         _ => None,
@@ -3360,12 +3438,24 @@ fn map_generic_carrier_return(ty: &str) -> Option<Option<(String, FfiReturn)>> {
         .strip_prefix("Arc<")
         .and_then(|rest| rest.strip_suffix('>'))
     {
+        if is_extension_point_type(inner) {
+            return Some(Some((
+                " -> *mut std::ffi::c_void".to_string(),
+                FfiReturn::ArcRefReturn,
+            )));
+        }
         return Some(map_shared_value_return(inner.trim(), false));
     }
     if let Some(inner) = ty
         .strip_prefix("Option<Arc<")
         .and_then(|rest| rest.strip_suffix(">>"))
     {
+        if is_extension_point_type(inner) {
+            return Some(Some((
+                " -> *mut std::ffi::c_void".to_string(),
+                FfiReturn::OptionArcRefReturn,
+            )));
+        }
         return Some(map_shared_value_return(inner.trim(), true));
     }
     // Ref<Box<TypedArray>> -> a typed array Ref handle sharing the SDK's buffer.
@@ -3649,9 +3739,12 @@ fn map_generic_carrier_param(name: &str, ty: &str) -> Option<Option<MappedParam>
             format!("[{scalar}; {}]", length.trim()),
             "std::ffi::c_void".to_string(),
         )
-    } else if is_plain_struct_type(element) {
+    } else if is_plain_struct_type(element) || qualify_opaque_type(element).is_some() {
         // &[&T] -> an array of struct pointers.
-        (qualify_type(element), "std::ffi::c_void".to_string())
+        (
+            qualify_opaque_type(element).unwrap(),
+            "std::ffi::c_void".to_string(),
+        )
     } else {
         return Some(None);
     };
@@ -3738,9 +3831,6 @@ fn scalar_tuple_elements(ty: &str) -> Option<Vec<String>> {
 
 fn supported_ref_inner(ty: &str) -> Option<&str> {
     let inner = ty.strip_prefix("Ref<")?.strip_suffix('>')?.trim();
-    if SKIP_TYPES.iter().any(|skip| inner.contains(skip)) {
-        return None;
-    }
     if let Some(trait_name) = inner.strip_prefix("dyn ") {
         let trait_name = trait_name.rsplit("::").next().unwrap_or(trait_name);
         if DYN_OPAQUE_TRAITS
@@ -3827,7 +3917,146 @@ fn validate_required_vec_ref_handle_specs(specs: &BTreeSet<VecRefHandleSpec>) {
     );
 }
 
+fn outer_generic_parts(ty: &str) -> Option<(&str, &str)> {
+    let start = ty.find('<')?;
+    if !ty.ends_with('>') {
+        return None;
+    }
+    let mut depth = 0usize;
+    for (index, character) in ty.char_indices().skip_while(|(index, _)| *index < start) {
+        match character {
+            '<' => depth += 1,
+            '>' => {
+                depth = depth.checked_sub(1)?;
+                if depth == 0 && index != ty.len() - 1 {
+                    return None;
+                }
+            }
+            _ => {}
+        }
+    }
+    (depth == 0).then(|| (ty[..start].trim(), ty[start + 1..ty.len() - 1].trim()))
+}
+
+fn split_generic_arguments(arguments: &str) -> Option<Vec<&str>> {
+    let mut result = Vec::new();
+    let mut depth = 0usize;
+    let mut start = 0usize;
+    for (index, character) in arguments.char_indices() {
+        match character {
+            '<' | '[' | '(' => depth += 1,
+            '>' | ']' | ')' => depth = depth.checked_sub(1)?,
+            ',' if depth == 0 => {
+                let argument = arguments[start..index].trim();
+                if argument.is_empty() {
+                    return None;
+                }
+                result.push(argument);
+                start = index + 1;
+            }
+            _ => {}
+        }
+    }
+    if depth != 0 {
+        return None;
+    }
+    let argument = arguments[start..].trim();
+    if argument.is_empty() {
+        return None;
+    }
+    result.push(argument);
+    Some(result)
+}
+
+// A Rust type used only behind an opaque pointer. Generic arguments still have to be exact in the
+// generated Rust cast, even though C and HashLink see only `void *`.
+fn qualify_opaque_type(ty: &str) -> Option<String> {
+    let ty = ty.trim();
+    if ty == "Detector" {
+        return Some(format!(
+            "std::sync::Arc<dyn Fn(&{QUALIFIER}::skeleton2d_formats::contract::JsonRecord) -> bool + Send + Sync>"
+        ));
+    }
+    if ty == "Census" {
+        return Some(format!(
+            "std::sync::Arc<dyn Fn(&{QUALIFIER}::skeleton2d_formats::contract::JsonRecord) -> std::collections::HashMap<String, usize> + Send + Sync>"
+        ));
+    }
+    if ty.is_empty()
+        || ty.as_bytes().contains(&39)
+        || ty.starts_with('&')
+        || ty.contains("Fn(")
+        || ty.contains("FnMut(")
+        || ty.contains("FnOnce(")
+    {
+        return None;
+    }
+    if ty == "()" || is_scalar(ty) || ty == "String" {
+        return Some(ty.to_string());
+    }
+    if let Some(inner) = ty.strip_prefix("dyn ") {
+        let trait_name = inner.rsplit("::").next().unwrap_or(inner).trim();
+        if DYN_OPAQUE_TRAITS
+            .iter()
+            .any(|(known, _)| *known == trait_name)
+            || DYN_MONO_TRAITS.iter().any(|(known, _)| *known == trait_name)
+        {
+            return Some(format!("dyn {QUALIFIER}::{trait_name}"));
+        }
+        return None;
+    }
+    if let Some(inner) = ty.strip_prefix('[').and_then(|rest| rest.strip_suffix(']')) {
+        let (element, length) = inner.split_once(';')?;
+        length.trim().parse::<usize>().ok()?;
+        return Some(format!(
+            "[{}; {}]",
+            qualify_opaque_type(element.trim())?,
+            length.trim()
+        ));
+    }
+    if let Some((outer, arguments)) = outer_generic_parts(ty) {
+        let outer = outer.rsplit("::").next().unwrap_or(outer);
+        let arguments = split_generic_arguments(arguments)?
+            .into_iter()
+            .map(qualify_opaque_type)
+            .collect::<Option<Vec<_>>>()?;
+        let expected_arguments = match outer {
+            "Vec" | "Option" | "Box" | "Arc" | "Ref" | "Signal" | "SignalSlot"
+            | "Tween" | "Record" => 1,
+            "HashMap" => 2,
+            _ => arguments.len(),
+        };
+        if arguments.len() != expected_arguments {
+            return None;
+        }
+        let qualified_outer = match outer {
+            "Vec" | "Option" | "Box" => outer.to_string(),
+            "Arc" => "std::sync::Arc".to_string(),
+            "HashMap" => "std::collections::HashMap".to_string(),
+            _ => format!("{QUALIFIER}::{outer}"),
+        };
+        return Some(format!("{qualified_outer}<{}>", arguments.join(", ")));
+    }
+    if ty.contains('<') || ty.contains('>') || ty.starts_with('(') || ty == "str" {
+        return None;
+    }
+    let name = ty.rsplit("::").next().unwrap_or(ty);
+    if name == "Value" {
+        return Some("serde_json::Value".to_string());
+    }
+    if let Some((_, module)) = CONTRACT_LANE_ENUMS.iter().find(|(known, _)| *known == name) {
+        return Some(format!("{QUALIFIER}::{module}::contract::{name}"));
+    }
+    if let Some((_, module)) = CONTRACT_LANE_TYPES.iter().find(|(known, _)| *known == name) {
+        return Some(format!("{QUALIFIER}::{module}::contract::{name}"));
+    }
+    (!name.is_empty()).then(|| format!("{QUALIFIER}::{name}"))
+}
+
 fn qualify_type(ty: &str) -> String {
+    if let Some(qualified) = qualify_opaque_type(ty) {
+        return qualified;
+    }
     if let Some((_, module)) = CONTRACT_LANE_ENUMS.iter().find(|(name, _)| *name == ty) {
         return format!("{QUALIFIER}::{module}::contract::{ty}");
     }
@@ -4034,6 +4263,7 @@ fn strip_crate_paths(ty: &str) -> String {
         "flight_xml::",
         "flight_animation::",
         "flight_node::",
+        "flight_requirement::",
         "flight_scene2d::",
         "flight_scene3d::",
         "crate::types::",
@@ -4115,6 +4345,212 @@ fn parse_closure_param(ty: &str) -> Option<ParsedClosure> {
         is_arc,
         is_mut,
     })
+}
+
+fn opaque_clone_handle_type(ty: &str) -> Option<String> {
+    if matches!(ty, "Census" | "Detector") {
+        return qualify_opaque_type(ty);
+    }
+    let (outer, _) = outer_generic_parts(ty)?;
+    let outer = outer.rsplit("::").next().unwrap_or(outer);
+    matches!(outer, "Arc" | "Ref" | "SignalSlot").then(|| qualify_opaque_type(ty))?
+}
+
+fn is_opaque_transferred_generic(ty: &str) -> bool {
+    outer_generic_parts(ty).is_some_and(|(outer, _)| {
+        matches!(
+            outer.rsplit("::").next().unwrap_or(outer),
+            "HashMap" | "Signal" | "Tween" | "Vec"
+        )
+    })
+}
+
+fn can_transfer_named_opaque(ty: &str) -> bool {
+    if ty.contains('<') || ty.contains("::") {
+        return false;
+    }
+    get_owned_param(ty) == Some(OwnedParam::Transferred)
+        || (get_owned_param(ty).is_none()
+            && TYPE_DEFINITIONS
+                .get()
+                .is_some_and(|definitions| definitions.contains_key(ty)))
+}
+
+fn is_opaque_fallback_excluded(ty: &str) -> bool {
+    OPAQUE_FALLBACK_EXCLUDED_TYPES.iter().any(|excluded| {
+        ty.split(|character: char| !character.is_alphanumeric() && character != '_')
+            .any(|word| word == *excluded)
+    })
+}
+
+// Last-resort carrier for data types whose layout is deliberately hidden from C. Policy checks
+// have already run before this mapper: this function never turns a dyn behavior extension into a
+// data handle.
+fn map_opaque_fallback_param(name: &str, ty: &str) -> Option<MappedParam> {
+    if is_opaque_fallback_excluded(ty) {
+        return None;
+    }
+
+    for (prefix, mutable) in [("Option<&mut [", true), ("Option<&[", false)] {
+        if let Some(element) = ty
+            .strip_prefix(prefix)
+            .and_then(|rest| rest.strip_suffix("]>"))
+        {
+            let element = qualify_opaque_type(element.trim())?;
+            let ptr_name = format!("{name}_ptr");
+            let len_name = format!("{name}_len");
+            let pointer = if mutable { "*mut" } else { "*const" };
+            let adapter = if mutable {
+                "ffi_slice_from_raw_parts_mut"
+            } else {
+                "ffi_slice_from_raw_parts"
+            };
+            return Some(MappedParam {
+                ffi_params: vec![
+                    (ptr_name.clone(), format!("{pointer} std::ffi::c_void")),
+                    (len_name.clone(), "usize".to_string()),
+                ],
+                bindings: Vec::new(),
+                call_expr: format!(
+                    "if {ptr_name}.is_null() && {len_name} == 0 {{ None }} else {{ Some(unsafe {{ {adapter}({ptr_name} as {pointer} {element}, {len_name}) }}) }}"
+                ),
+            });
+        }
+    }
+
+    for (prefix, mutable) in [("&mut [", true), ("&[", false)] {
+        if let Some(element) = ty
+            .strip_prefix(prefix)
+            .and_then(|rest| rest.strip_suffix(']'))
+        {
+            let element = qualify_opaque_type(element.trim())?;
+            let ptr_name = format!("{name}_ptr");
+            let len_name = format!("{name}_len");
+            let pointer = if mutable { "*mut" } else { "*const" };
+            let adapter = if mutable {
+                "ffi_slice_from_raw_parts_mut"
+            } else {
+                "ffi_slice_from_raw_parts"
+            };
+            return Some(MappedParam {
+                ffi_params: vec![
+                    (ptr_name.clone(), format!("{pointer} std::ffi::c_void")),
+                    (len_name.clone(), "usize".to_string()),
+                ],
+                bindings: Vec::new(),
+                call_expr: format!(
+                    "unsafe {{ {adapter}({ptr_name} as {pointer} {element}, {len_name}) }}"
+                ),
+            });
+        }
+    }
+
+    for (prefix, mutable) in [("Option<&mut ", true), ("Option<&", false)] {
+        if let Some(inner) = ty
+            .strip_prefix(prefix)
+            .and_then(|rest| rest.strip_suffix('>'))
+        {
+            if !is_ffi_incompatible(inner.trim()) {
+                return None;
+            }
+            let qualified = qualify_opaque_type(inner.trim())?;
+            let pointer = if mutable { "*mut" } else { "*const" };
+            let borrow = if mutable { "&mut *" } else { "&*" };
+            return mapped_single(
+                name,
+                &format!("{pointer} std::ffi::c_void"),
+                format!(
+                    "if {name}.is_null() {{ None }} else {{ Some(unsafe {{ {borrow}({name} as {pointer} {qualified}) }}) }}"
+                ),
+            );
+        }
+    }
+
+    for (prefix, mutable) in [("&mut ", true), ("&", false)] {
+        if let Some(inner) = ty.strip_prefix(prefix) {
+            if !is_ffi_incompatible(inner.trim()) {
+                return None;
+            }
+            let qualified = qualify_opaque_type(inner.trim())?;
+            let pointer = if mutable { "*mut" } else { "*const" };
+            let borrow = if mutable { "&mut *" } else { "&*" };
+            return mapped_single(
+                name,
+                &format!("{pointer} std::ffi::c_void"),
+                format!("unsafe {{ {borrow}({name} as {pointer} {qualified}) }}"),
+            );
+        }
+    }
+
+    if let Some(inner) = ty
+        .strip_prefix("Option<")
+        .and_then(|rest| rest.strip_suffix('>'))
+    {
+        let inner = inner.trim();
+        if let Some(qualified) = opaque_clone_handle_type(inner) {
+            return mapped_single(
+                name,
+                "*const std::ffi::c_void",
+                format!(
+                    "if {name}.is_null() {{ None }} else {{ Some(unsafe {{ (*({name} as *const {qualified})).clone() }}) }}"
+                ),
+            );
+        }
+        let qualified = qualify_opaque_type(inner)?;
+        return match get_owned_param(inner) {
+            Some(OwnedParam::Copied) => mapped_single(
+                name,
+                "*const std::ffi::c_void",
+                format!(
+                    "if {name}.is_null() {{ None }} else {{ Some(unsafe {{ *({name} as *const {qualified}) }}) }}"
+                ),
+            ),
+            Some(OwnedParam::Cloned) => mapped_single(
+                name,
+                "*const std::ffi::c_void",
+                format!(
+                    "if {name}.is_null() {{ None }} else {{ Some(unsafe {{ (*({name} as *const {qualified})).clone() }}) }}"
+                ),
+            ),
+            Some(OwnedParam::Transferred) if can_transfer_named_opaque(inner) => {
+                mapped_single(
+                    name,
+                    "*mut std::ffi::c_void",
+                    format!(
+                        "if {name}.is_null() {{ None }} else {{ Some(*unsafe {{ Box::from_raw({name} as *mut {qualified}) }}) }}"
+                    ),
+                )
+            }
+            None if is_opaque_transferred_generic(inner)
+                || can_transfer_named_opaque(inner) => mapped_single(
+                name,
+                "*mut std::ffi::c_void",
+                format!(
+                    "if {name}.is_null() {{ None }} else {{ Some(*unsafe {{ Box::from_raw({name} as *mut {qualified}) }}) }}"
+                ),
+            ),
+            _ => None,
+        };
+    }
+
+    if let Some(qualified) = opaque_clone_handle_type(ty) {
+        return mapped_single(
+            name,
+            "*const std::ffi::c_void",
+            format!("unsafe {{ (*({name} as *const {qualified})).clone() }}"),
+        );
+    }
+    if is_opaque_transferred_generic(ty) {
+        let qualified = qualify_opaque_type(ty)?;
+        return Some(MappedParam {
+            ffi_params: vec![(name.to_string(), "*mut std::ffi::c_void".to_string())],
+            bindings: vec![format!(
+                "    assert!(!{name}.is_null(), \"{name} must be an owned {ty} handle\");"
+            )],
+            call_expr: format!("*unsafe {{ Box::from_raw({name} as *mut {qualified}) }}"),
+        });
+    }
+    None
 }
 
 fn map_param_to_ffi(name: &str, ty: &str) -> Option<MappedParam> {
@@ -4386,7 +4822,7 @@ fn map_param_to_ffi(name: &str, ty: &str) -> Option<MappedParam> {
     if let Some(inner) = ty.strip_prefix("Option<") {
         if let Some(inner) = inner.strip_suffix('>') {
             let inner = inner.trim();
-            if is_known_enum(inner) && !SKIP_TYPES.iter().any(|s| inner.contains(s)) {
+            if is_known_enum(inner) {
                 // -1 is None; any other value must be a real discriminant, checked before the enum
                 // exists. A caller passing anything else has violated the ABI.
                 let label = name.trim_start_matches("r#");
@@ -4407,10 +4843,7 @@ fn map_param_to_ffi(name: &str, ty: &str) -> Option<MappedParam> {
     if let Some(inner) = ty.strip_prefix("&mut Ref<") {
         if let Some(inner) = inner.strip_suffix('>') {
             let inner = inner.trim();
-            if !inner.contains('<')
-                && !inner.contains("::")
-                && !SKIP_TYPES.iter().any(|s| inner.contains(s))
-            {
+            if !inner.contains('<') && !inner.contains("::") {
                 let qualified = qualify_type(inner);
                 return mapped_single(
                     name,
@@ -4425,10 +4858,7 @@ fn map_param_to_ffi(name: &str, ty: &str) -> Option<MappedParam> {
     if let Some(inner) = ty.strip_prefix("&Ref<") {
         if let Some(inner) = inner.strip_suffix('>') {
             let inner = inner.trim();
-            if !inner.contains('<')
-                && !inner.contains("::")
-                && !SKIP_TYPES.iter().any(|s| inner.contains(s))
-            {
+            if !inner.contains('<') && !inner.contains("::") {
                 let qualified = qualify_type(inner);
                 return mapped_single(
                     name,
@@ -4589,8 +5019,8 @@ fn map_param_to_ffi(name: &str, ty: &str) -> Option<MappedParam> {
         }
     }
 
-    if let Some(mapped) = map_generic_carrier_param(name, ty) {
-        return mapped;
+    if let Some(Some(mapped)) = map_generic_carrier_param(name, ty) {
+        return Some(mapped);
     }
 
     // &mut [T] -> (*mut T, usize)
@@ -4740,11 +5170,7 @@ fn map_param_to_ffi(name: &str, ty: &str) -> Option<MappedParam> {
     if let Some(inner) = ty.strip_prefix("Ref<") {
         if let Some(inner) = inner.strip_suffix('>') {
             let inner = inner.trim();
-            if !inner.contains("dyn ")
-                && !inner.contains('<')
-                && !inner.contains("::")
-                && !SKIP_TYPES.iter().any(|s| inner.contains(s))
-            {
+            if !inner.contains("dyn ") && !inner.contains('<') && !inner.contains("::") {
                 let qualified = qualify_type(inner);
                 return mapped_single(
                     name,
@@ -4764,7 +5190,6 @@ fn map_param_to_ffi(name: &str, ty: &str) -> Option<MappedParam> {
             if (!inner.contains("dyn ") || is_opaque_dyn(inner))
                 && !inner.contains('<')
                 && !inner.contains("::")
-                && !SKIP_TYPES.iter().any(|s| inner.contains(s))
             {
                 let qualified = qualify_type(inner);
                 return mapped_single(
@@ -4785,7 +5210,6 @@ fn map_param_to_ffi(name: &str, ty: &str) -> Option<MappedParam> {
             if (!inner.contains("dyn ") || is_opaque_dyn(inner))
                 && !inner.contains('<')
                 && !inner.contains("::")
-                && !SKIP_TYPES.iter().any(|s| inner.contains(s))
             {
                 let qualified = qualify_type(inner);
                 return mapped_single(
@@ -5030,6 +5454,14 @@ fn map_param_to_ffi(name: &str, ty: &str) -> Option<MappedParam> {
         });
     }
 
+    if let Some(mapped) = map_opaque_fallback_param(name, ty) {
+        return Some(mapped);
+    }
+
+    if is_opaque_fallback_excluded(ty) {
+        return None;
+    }
+
     if is_ffi_incompatible(ty) {
         return None;
     }
@@ -5125,10 +5557,17 @@ fn map_param_to_ffi(name: &str, ty: &str) -> Option<MappedParam> {
 
     // Owned named T, by its proven ownership: a `Copy` value is copied from `*const T`, a
     // `Ref`/`Arc` alias is cloned from the caller's borrowed handle, and any other value consumes
-    // the caller's FFI-owned box (`*mut T`, never NULL). Unprovable ownership is a skip.
+    // the caller's FFI-owned box (`*mut T`, never NULL). An exported alias whose internals are not
+    // inspectable is conservatively non-Copy and therefore transfers as the same opaque box.
     if !ty.contains('<') && !ty.contains("::") && !ty.starts_with('[') && !ty.starts_with('(') {
         let qualified = qualify_type(ty);
-        return match get_owned_param(ty)? {
+        let ownership = get_owned_param(ty).or_else(|| {
+            TYPE_DEFINITIONS
+                .get()
+                .is_some_and(|definitions| definitions.contains_key(ty))
+                .then_some(OwnedParam::Transferred)
+        })?;
+        return match ownership {
             OwnedParam::Copied => mapped_single(
                 name,
                 &format!("*const {qualified}"),
@@ -5140,13 +5579,6 @@ fn map_param_to_ffi(name: &str, ty: &str) -> Option<MappedParam> {
                 format!("unsafe {{ (*{name}).clone() }}"),
             ),
             OwnedParam::Transferred => {
-                // In the pre-pass every transfer is provisional; in the main pass only a type C can
-                // hold as an owned box may be consumed.
-                if let Some(producible) = PRODUCIBLE_TYPES.get() {
-                    if !producible.contains(&qualified) {
-                        return None;
-                    }
-                }
                 Some(MappedParam {
                     ffi_params: vec![(name.to_string(), format!("*mut {qualified}"))],
                     bindings: vec![format!(
@@ -5206,6 +5638,30 @@ fn map_return_to_ffi(ty: &str) -> Option<(String, FfiReturn)> {
         return mapped;
     }
 
+    let optional_hash_map = ty
+        .strip_prefix("Option<")
+        .and_then(|rest| rest.strip_suffix('>'));
+    let hash_map_ty = optional_hash_map.unwrap_or(ty).trim();
+    if let Some((outer, arguments)) = outer_generic_parts(hash_map_ty) {
+        if outer.rsplit("::").next().unwrap_or(outer) == "HashMap" {
+            let arguments = split_generic_arguments(arguments)?;
+            if arguments.len() == 2 && arguments[0].trim() == "String" {
+                let value_ty = arguments[1].trim();
+                let spec = HashMapReturnSpec {
+                    value_ty: qualify_opaque_type(value_ty)?,
+                };
+                return Some((
+                    " -> *mut std::ffi::c_void".to_string(),
+                    if optional_hash_map.is_some() {
+                        FfiReturn::OptionHashMapReturn(spec)
+                    } else {
+                        FfiReturn::HashMapReturn(spec)
+                    },
+                ));
+            }
+        }
+    }
+
     // Option<String> -> nullable *mut c_char
     if ty == "Option<String>" {
         return Some((
@@ -5218,10 +5674,7 @@ fn map_return_to_ffi(ty: &str) -> Option<(String, FfiReturn)> {
     if let Some(inner) = ty.strip_prefix("Ref<") {
         if let Some(inner) = inner.strip_suffix('>') {
             let inner = inner.trim();
-            if !inner.contains('<')
-                && !inner.contains("::")
-                && !SKIP_TYPES.iter().any(|s| inner.contains(s))
-            {
+            if qualify_opaque_type(inner).is_some() {
                 return Some((
                     " -> *mut std::ffi::c_void".to_string(),
                     FfiReturn::ArcRefReturn,
@@ -5234,10 +5687,7 @@ fn map_return_to_ffi(ty: &str) -> Option<(String, FfiReturn)> {
     if let Some(inner) = ty.strip_prefix("Option<Ref<") {
         if let Some(inner) = inner.strip_suffix(">>") {
             let inner = inner.trim();
-            if !inner.contains('<')
-                && !inner.contains("::")
-                && !SKIP_TYPES.iter().any(|s| inner.contains(s))
-            {
+            if qualify_opaque_type(inner).is_some() {
                 return Some((
                     " -> *mut std::ffi::c_void".to_string(),
                     FfiReturn::OptionArcRefReturn,
@@ -5266,14 +5716,11 @@ fn map_return_to_ffi(ty: &str) -> Option<(String, FfiReturn)> {
     if let Some(inner) = ty.strip_prefix("Vec<") {
         if let Some(inner) = inner.strip_suffix('>') {
             let inner = inner.trim();
-            if is_scalar(inner)
-                || is_known_enum(inner)
-                || (!is_ffi_incompatible(inner) && !inner.contains('<'))
-            {
+            if qualify_opaque_type(inner).is_some() {
                 return Some((
                     " -> *mut std::ffi::c_void".to_string(),
                     FfiReturn::VecReturn(VecReturnSpec {
-                        element_ty: qualify_type(inner),
+                        element_ty: qualify_opaque_type(inner).unwrap(),
                         element_is_ref: false,
                     }),
                 ));
@@ -5301,14 +5748,11 @@ fn map_return_to_ffi(ty: &str) -> Option<(String, FfiReturn)> {
     if let Some(inner) = ty.strip_prefix("Option<Vec<") {
         if let Some(inner) = inner.strip_suffix(">>") {
             let inner = inner.trim();
-            if is_scalar(inner)
-                || is_known_enum(inner)
-                || (!is_ffi_incompatible(inner) && !inner.contains('<'))
-            {
+            if qualify_opaque_type(inner).is_some() {
                 return Some((
                     " -> *mut std::ffi::c_void".to_string(),
                     FfiReturn::OptionVecReturn(VecReturnSpec {
-                        element_ty: qualify_type(inner),
+                        element_ty: qualify_opaque_type(inner).unwrap(),
                         element_is_ref: false,
                     }),
                 ));
@@ -5449,11 +5893,21 @@ fn map_return_to_ffi(ty: &str) -> Option<(String, FfiReturn)> {
     if let Some(inner) = ty.strip_prefix("Option<") {
         if let Some(inner) = inner.strip_suffix('>') {
             let inner = inner.trim();
+            if let Some(borrowed) = inner.strip_prefix('&') {
+                let borrowed = borrowed.trim();
+                if !borrowed.starts_with('[') && !is_scalar(borrowed) && borrowed != "str"
+                {
+                    let qualified = qualify_opaque_type(borrowed)?;
+                    return Some((
+                        format!(" -> *const {qualified}"),
+                        FfiReturn::OptionBorrowedRefReturn,
+                    ));
+                }
+            }
             if !inner.contains('<')
                 && !inner.contains("::")
                 && !inner.starts_with('&')
                 && !is_scalar(inner)
-                && !SKIP_TYPES.iter().any(|s| inner.contains(s))
                 && !is_ffi_incompatible(inner)
             {
                 return Some((
@@ -5488,6 +5942,11 @@ fn map_return_to_ffi(ty: &str) -> Option<(String, FfiReturn)> {
                     FfiReturn::SliceReturn(inner.to_string()),
                 ));
             }
+            let qualified = qualify_opaque_type(inner)?;
+            return Some((
+                format!(" -> *const {qualified}"),
+                FfiReturn::BorrowedSliceReturn,
+            ));
         }
     }
 
@@ -5500,7 +5959,7 @@ fn map_return_to_ffi(ty: &str) -> Option<(String, FfiReturn)> {
         }
     }
 
-    if ty.starts_with('&') || is_ffi_incompatible(ty) {
+    if ty.starts_with('&') {
         return None;
     }
 
@@ -5519,6 +5978,6 @@ fn map_return_to_ffi(ty: &str) -> Option<(String, FfiReturn)> {
     if is_known_enum(ty) {
         return Some((" -> u32".to_string(), FfiReturn::EnumReturn));
     }
-    let qualified = qualify_type(ty);
+    let qualified = qualify_opaque_type(ty)?;
     Some((format!(" -> *mut {qualified}"), FfiReturn::BoxReturn))
 }
