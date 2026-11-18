@@ -858,14 +858,13 @@ fn collect_glob_names(
                 }
             }
         }
-        if line.starts_with("pub use crate::") && !line.ends_with("::*;") {
-            if let Some(name) = line.trim_end_matches(';').rsplit("::").next() {
-                if name.chars().next().is_some_and(|c| c.is_lowercase())
-                    && ts_exports.contains(&public_perimeter::get_export_key(name))
-                {
-                    names.insert(name.to_string());
-                }
-            }
+        if line.starts_with("pub use crate::")
+            && !line.ends_with("::*;")
+            && let Some(name) = line.trim_end_matches(';').rsplit("::").next()
+            && name.chars().next().is_some_and(|c| c.is_lowercase())
+            && ts_exports.contains(&public_perimeter::get_export_key(name))
+        {
+            names.insert(name.to_string());
         }
     }
 }
