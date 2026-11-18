@@ -827,9 +827,8 @@ fn string_maps_lower_to_typed_records_and_count_maps() {
     );
 
     let stats = generated_stats();
-    for skip in ["no_ts_public_export(parse_style_declarations)"] {
-        assert!(stats.contains(skip), "{skip} must stay skipped");
-    }
+    let skip = "no_ts_public_export(parse_style_declarations)";
+    assert!(stats.contains(skip), "{skip} must stay skipped");
 }
 
 // `set_storage_items` returns a boxed StorageSetItemsResult with typed reads and its own free; the
