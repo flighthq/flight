@@ -895,6 +895,38 @@ fn by_value_parameters_follow_rust_ownership() {
     }
 }
 
+// Public-function enums whose crate roots do not re-export them cross as exact `u32`
+// discriminants named through the crate's contract module; `Option<enum>` keeps the -1 sentinel.
+#[test]
+fn contract_lane_enums_cross_as_u32_discriminants() {
+    let (header, shim) = generated();
+    let wrappers = generated_wrappers();
+    for line in [
+        "char * flight_get_spritesheet_parse_diagnostic_severity_string(uint32_t arg0);",
+        "bool flight_append_morph_shape_begin_gradient_fill(void * arg0, uint32_t arg1, void * arg2, void * arg3, int32_t arg4, int32_t arg5);",
+        "bool flight_append_morph_shape_line_gradient_style(void * arg0, uint32_t arg1, void * arg2, void * arg3, int32_t arg4, int32_t arg5);",
+    ] {
+        assert_line(&header, line);
+    }
+    assert_line(
+        &shim,
+        "DEFINE_PRIM(_BYTES, flight_get_spritesheet_parse_diagnostic_severity_string, _I32);",
+    );
+    assert_line(
+        &shim,
+        "DEFINE_PRIM(_BOOL, flight_append_morph_shape_begin_gradient_fill, _BYTES _I32 _BYTES _BYTES _I32 _I32);",
+    );
+    assert!(wrappers.contains(
+        "Some(unsafe { std::mem::transmute::<u32, flight_sdk::shape::contract::SpreadMethod>(spread_method as u32) })"
+    ));
+    assert!(wrappers.contains(
+        "std::mem::transmute::<u32, flight_sdk::spritesheet::contract::SpritesheetParseDiagnosticSeverity>(value)"
+    ));
+    let stats = generated_stats();
+    assert!(!stats.contains("SpreadMethod"));
+    assert!(!stats.contains("SpritesheetParseDiagnosticSeverity"));
+}
+
 fn assert_line(text: &str, line: &str) {
     assert!(
         text.lines().any(|candidate| candidate == line),

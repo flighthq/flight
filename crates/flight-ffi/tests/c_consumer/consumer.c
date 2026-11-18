@@ -307,6 +307,12 @@ static void check_by_value_ownership(void) {
   flight_free_bitmap_region(region);
 }
 
+static void check_contract_lane_enums(void) {
+  char *severity = flight_get_spritesheet_parse_diagnostic_severity_string(1);
+  expect(severity != NULL && strcmp(severity, "warning") == 0, "severity discriminant 1 reads warning");
+  flight_free_string(severity);
+}
+
 static void check_optional_texture_variants(void) {
   void *texture = flight_create_texture(NULL);
   expect(texture != NULL, "create_texture returns a handle");
@@ -551,6 +557,7 @@ int main(void) {
   check_typed_array_refs();
   check_string_maps();
   check_by_value_ownership();
+  check_contract_lane_enums();
   check_optional_texture_variants();
   check_optional_tuples();
   check_unit_signals();

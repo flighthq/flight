@@ -4,29 +4,6 @@ use std::sync::Arc;
 
 use crate::*;
 
-mod owned_ref_return_lifecycle {
-    use super::*;
-
-    #[test]
-    fn paired_free_releases_exactly_the_returned_arc_owner() {
-        let handle = unsafe { flight_create_command_history() };
-        assert!(!handle.is_null());
-        let history = unsafe {
-            &*handle
-                .cast::<flight_sdk::Ref<flight_sdk::CommandHistory>>()
-                .cast_const()
-        };
-        assert_eq!(Arc::strong_count(history), 1);
-
-        let observer = Arc::clone(history);
-        assert_eq!(Arc::strong_count(&observer), 2);
-        unsafe { flight_free_command_history_ref(handle.cast()) };
-        assert_eq!(Arc::strong_count(&observer), 1);
-
-        unsafe { flight_free_command_history_ref(std::ptr::null_mut()) };
-    }
-}
-
 mod flight_build_texture_atlas_region_index {
     use super::*;
 
@@ -616,6 +593,19 @@ mod flight_get_optional_texture_atlas_list_item {
     }
 }
 
+mod flight_get_spritesheet_parse_diagnostic_severity_string {
+    use super::*;
+
+    #[test]
+    fn reads_each_severity_discriminant() {
+        for (value, expected) in [(0u32, "error"), (1u32, "warning")] {
+            let text = unsafe { flight_get_spritesheet_parse_diagnostic_severity_string(value) };
+            assert_eq!(unsafe { CStr::from_ptr(text) }.to_str().unwrap(), expected);
+            unsafe { flight_free_string(text) };
+        }
+    }
+}
+
 mod flight_get_timeline_labels {
     use super::*;
 
@@ -819,5 +809,28 @@ mod flight_split_bitmap_channels {
         let source = unsafe { flight_create_bitmap(1, 1, 0) };
         unsafe { flight_split_bitmap_channels(source, std::ptr::null_mut()) };
         unsafe { flight_free_bitmap(source) };
+    }
+}
+
+mod owned_ref_return_lifecycle {
+    use super::*;
+
+    #[test]
+    fn paired_free_releases_exactly_the_returned_arc_owner() {
+        let handle = unsafe { flight_create_command_history() };
+        assert!(!handle.is_null());
+        let history = unsafe {
+            &*handle
+                .cast::<flight_sdk::Ref<flight_sdk::CommandHistory>>()
+                .cast_const()
+        };
+        assert_eq!(Arc::strong_count(history), 1);
+
+        let observer = Arc::clone(history);
+        assert_eq!(Arc::strong_count(&observer), 2);
+        unsafe { flight_free_command_history_ref(handle.cast()) };
+        assert_eq!(Arc::strong_count(&observer), 1);
+
+        unsafe { flight_free_command_history_ref(std::ptr::null_mut()) };
     }
 }

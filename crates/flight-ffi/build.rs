@@ -320,6 +320,13 @@ const EXTENSION_POINT_TYPES: &[&str] = &[
 ];
 const SKIP_FN_PREFIXES: &[&str] = &["initialize_"];
 const SKIP_FNS: &[&str] = &["enable_clip_guards", "enable_statechart_guards"];
+// Public-function `#[repr(u32)]` unit enums that their crate roots do not re-export, as (enum, SDK
+// module). They cross as `u32`, so naming them through the crate's contract module exposes only the
+// discriminant, never a contract-lane handle.
+const CONTRACT_LANE_ENUMS: &[(&str, &str)] = &[
+    ("SpreadMethod", "shape"),
+    ("SpritesheetParseDiagnosticSeverity", "spritesheet"),
+];
 const SKIP_TYPES: &[&str] = &[
     "AdjustmentRef",
     "AttachmentSkin2D",
@@ -343,8 +350,6 @@ const SKIP_TYPES: &[&str] = &[
     "Skeleton2DConstraintSolver",
     "Skeleton2DGuardState",
     "Slot2D",
-    "SpreadMethod",
-    "SpritesheetParseDiagnosticSeverity",
     "StrokePathGeometry",
     "TextLayoutContext",
     "TextLayoutMeasureState",
@@ -414,6 +419,12 @@ fn main() {
             parse_simple_enums(&content, &mut enum_names);
             parse_type_definitions(&content, &exported_types, &mut type_definitions);
         }
+    }
+    for (name, _) in CONTRACT_LANE_ENUMS {
+        assert!(
+            enum_names.contains(*name),
+            "{name} must stay a #[repr(u32)] unit enum to cross as u32"
+        );
     }
     let _ = KNOWN_ENUMS.set(enum_names);
     let _ = TYPE_DEFINITIONS.set(type_definitions);
@@ -3451,6 +3462,9 @@ fn validate_required_vec_ref_handle_specs(specs: &BTreeSet<VecRefHandleSpec>) {
 }
 
 fn qualify_type(ty: &str) -> String {
+    if let Some((_, module)) = CONTRACT_LANE_ENUMS.iter().find(|(name, _)| *name == ty) {
+        return format!("{QUALIFIER}::{module}::contract::{ty}");
+    }
     if is_scalar(ty) || ty.starts_with('[') || ty.starts_with('(') || ty == "String" {
         ty.to_string()
     } else if let Some(inner) = ty.strip_prefix("dyn ") {
