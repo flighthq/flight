@@ -410,6 +410,62 @@ const EXTENSION_POLICY_SKIP_FNS: &[&str] = &[
     "register_spine_skeleton_binary_parser",
     "set_log_sink",
 ];
+// Import handler functions receive parser-owned mutable contexts whose lifetimes, invariants and
+// private backing state never cross the public ABI. They are behavior registrations used by the
+// SDK's built-in import pipelines, not standalone data transformations C can invoke safely.
+const IMPORT_HANDLER_POLICY_SKIP_FNS: &[&str] = &[
+    "lottie_additive_mask_handler",
+    "lottie_ellipse_shape_item_handler",
+    "lottie_fill_shape_item_handler",
+    "lottie_gradient_fill_shape_item_handler",
+    "lottie_gradient_stroke_shape_item_handler",
+    "lottie_image_layer_handler",
+    "lottie_null_layer_handler",
+    "lottie_path_shape_item_handler",
+    "lottie_polystar_shape_item_handler",
+    "lottie_precomposition_layer_handler",
+    "lottie_rectangle_shape_item_handler",
+    "lottie_shape_layer_handler",
+    "lottie_solid_layer_handler",
+    "lottie_stroke_shape_item_handler",
+    "lottie_text_layer_handler",
+    "lottie_trim_path_shape_item_handler",
+    "skip_spine_binary_animations_section",
+    "skip_spine_binary_bone_timelines",
+    "skip_spine_binary_deform_timelines",
+    "skip_spine_binary_draw_order_timeline",
+    "skip_spine_binary_event_timelines",
+    "skip_spine_binary_events_section",
+    "skip_spine_binary_ik_constraints_section",
+    "skip_spine_binary_ik_timelines",
+    "skip_spine_binary_path_constraints_section",
+    "skip_spine_binary_path_timelines",
+    "skip_spine_binary_slot_timelines",
+    "skip_spine_binary_transform_constraints_section",
+    "skip_spine_binary_transform_timelines",
+    "svg_container_element_handler",
+    "svg_geometry_element_handler",
+    "svg_image_element_handler",
+    "svg_path_clip_handler",
+    "svg_text_element_handler",
+    "svg_use_element_handler",
+];
+// These public functions install or retain caller-authored behavior objects. Their surrounding
+// data handles do not turn those callbacks, provider operations or function pointers into plain
+// data, so a generic opaque fallback would erase the lifetime and teardown contract.
+const BEHAVIOR_POLICY_SKIP_FNS: &[&str] = &[
+    "create_file_dialog_handle",
+    "dispatch_selectable_rich_text_key_down",
+    "dispatch_text_input_key_down",
+    "register_layout_resolver",
+    "set_bitmap_text_missing_glyph_guard",
+];
+// This opt-in diagnostic guard retains a caller-supplied live clock and returns guard teardown.
+// It is an extension boundary, unlike the immediate consumption callbacks Task M lowers below.
+const GUARD_POLICY_SKIP_FNS: &[&str] = &["enable_scene3d_resource_failure_guards"];
+// Task M's retained callback has an explicit teardown path: its returned disposer disconnects the
+// signal slot, after which C may release the callback context and free the disposer handle.
+const RETAINED_CALLBACK_DISPOSER_FNS: &[&str] = &["connect_signal_at_frame_rate"];
 // The default shape-bounds handler values: each decodes one command's arguments from a
 // `&dyn ShapeCommandArgumentCursor` into calls on a `&mut dyn ShapeBoundsContext`. Their purpose is
 // to compose `ShapeBoundsCommand` registrations, an extension point. The only cursor implementation
@@ -443,10 +499,14 @@ const SDK_INTERNAL_CONTRACT_EXPORT_FNS: &[&str] = &[
 ];
 
 fn explicit_skip_category(name: &str) -> Option<&'static str> {
-    if SAFETY_POLICY_SKIP_FNS.contains(&name) {
+    if SAFETY_POLICY_SKIP_FNS.contains(&name) || GUARD_POLICY_SKIP_FNS.contains(&name) {
         return Some("safety_policy_skip");
     }
-    if EXTENSION_POLICY_SKIP_FNS.contains(&name) || SHAPE_BOUNDS_HANDLER_FNS.contains(&name) {
+    if EXTENSION_POLICY_SKIP_FNS.contains(&name)
+        || SHAPE_BOUNDS_HANDLER_FNS.contains(&name)
+        || IMPORT_HANDLER_POLICY_SKIP_FNS.contains(&name)
+        || BEHAVIOR_POLICY_SKIP_FNS.contains(&name)
+    {
         return Some("extension_policy_skip");
     }
     if OWNERSHIP_POLICY_SKIP_FNS.contains(&name) {
@@ -536,6 +596,7 @@ fn main() {
     let mut stats_generated_sources = 0usize;
     let mut stats_generated_wrappers = 0usize;
     let mut stats_sdk_contract_decisions = BTreeMap::new();
+    let mut stats_public_skips = BTreeMap::new();
     let mut stats_skipped: std::collections::BTreeMap<String, usize> =
         std::collections::BTreeMap::new();
 
@@ -654,6 +715,9 @@ fn main() {
                 let wrappers = generate_mono_wrappers(func);
                 if wrappers.is_empty() {
                     let skip_reason = categorize_skip(func);
+                    if !func.lacks_public_export {
+                        stats_public_skips.insert(func.name.clone(), skip_reason.clone());
+                    }
                     if func.sdk_contract_export {
                         stats_sdk_contract_decisions
                             .insert(func.name.clone(), format!("skipped: {skip_reason}"));
@@ -688,6 +752,9 @@ fn main() {
                         collect_vec_ref_handle_specs(func, &mut vec_ref_handle_specs);
                     } else {
                         let skip_reason = format!("duplicate_ffi_symbol({})", func.name);
+                        if !func.lacks_public_export {
+                            stats_public_skips.insert(func.name.clone(), skip_reason.clone());
+                        }
                         if func.sdk_contract_export {
                             stats_sdk_contract_decisions
                                 .insert(func.name.clone(), format!("skipped: {skip_reason}"));
@@ -699,6 +766,9 @@ fn main() {
                 let ffi_name = format!("flight_{}", func.name);
                 if seen_names.contains(&ffi_name) {
                     let skip_reason = format!("duplicate_ffi_symbol({})", func.name);
+                    if !func.lacks_public_export {
+                        stats_public_skips.insert(func.name.clone(), skip_reason.clone());
+                    }
                     if func.sdk_contract_export {
                         stats_sdk_contract_decisions
                             .insert(func.name.clone(), format!("skipped: {skip_reason}"));
@@ -724,6 +794,9 @@ fn main() {
                     }
                 } else {
                     let skip_reason = categorize_skip(func);
+                    if !func.lacks_public_export {
+                        stats_public_skips.insert(func.name.clone(), skip_reason.clone());
+                    }
                     if func.sdk_contract_export {
                         stats_sdk_contract_decisions
                             .insert(func.name.clone(), format!("skipped: {skip_reason}"));
@@ -761,6 +834,31 @@ fn main() {
         "generated wrappers consume owned handles without a generated producer: {missing_producers:?}"
     );
 
+    for (names, category) in [
+        (IMPORT_HANDLER_POLICY_SKIP_FNS, "extension_policy_skip"),
+        (BEHAVIOR_POLICY_SKIP_FNS, "extension_policy_skip"),
+        (GUARD_POLICY_SKIP_FNS, "safety_policy_skip"),
+    ] {
+        let unique: BTreeSet<_> = names.iter().copied().collect();
+        assert_eq!(unique.len(), names.len(), "duplicate {category} entry");
+        for name in names {
+            assert_eq!(
+                stats_public_skips.get(*name).map(String::as_str),
+                Some(format!("{category}({name})").as_str()),
+                "{name} must remain an exact public {category} decision"
+            );
+        }
+    }
+    let actionable_public_skips: Vec<_> = stats_public_skips
+        .iter()
+        .filter(|(_, reason)| !is_by_design_public_skip(reason))
+        .map(|(name, reason)| format!("{name}: {reason}"))
+        .collect();
+    assert!(
+        actionable_public_skips.is_empty(),
+        "public FFI skips remain actionable: {actionable_public_skips:?}"
+    );
+
     let stats_skipped_total: usize = stats_skipped.values().sum();
     let stats_monomorphized_extras = stats_generated_wrappers
         .checked_sub(stats_generated_sources)
@@ -783,6 +881,19 @@ fn main() {
         "FFI public census: {stats_public_fns} TypeScript-public, {stats_non_public_fns} non-public"
     )
     .unwrap();
+    writeln!(
+        stats_file,
+        "FFI public skip decisions: {} total",
+        stats_public_skips.len()
+    )
+    .unwrap();
+    writeln!(
+        stats_file,
+        "FFI public skip partition: {} by-design, {} actionable",
+        stats_public_skips.len() - actionable_public_skips.len(),
+        actionable_public_skips.len()
+    )
+    .unwrap();
     let mut sorted_skips: Vec<_> = stats_skipped.iter().collect();
     sorted_skips.sort_by(|a, b| b.1.cmp(a.1));
     for (reason, count) in &sorted_skips {
@@ -791,11 +902,16 @@ fn main() {
     for (name, decision) in stats_sdk_contract_decisions {
         writeln!(stats_file, "  SDK contract decision: {name} {decision}").unwrap();
     }
+    for (name, reason) in &stats_public_skips {
+        writeln!(stats_file, "  public skip: {name}: {reason}").unwrap();
+    }
     fs::write(out_dir.join("ffi_stats.txt"), &stats_file).unwrap();
 
     validate_required_vec_ref_handle_specs(&vec_ref_handle_specs);
     all_output.push_str(&generate_vec_ref_handle_support(&vec_ref_handle_specs));
+    all_output.push_str(generate_requirement_list_support());
     all_output.push_str(&generate_import_diagnostic_list_support());
+    all_output.push_str(generate_import_diagnostic_append_support());
     all_output.push_str(&generate_typed_array_ref_support());
     all_output.push_str(&generate_registered_handle_support());
     all_output.push_str(generate_disposer_support());
@@ -1851,12 +1967,148 @@ fn sdk_function_path(func: &ParsedFn) -> String {
     };
 }
 
+// Immediate Task M callback seams use purpose-built carriers instead of pretending their data
+// unions or callback payloads are layout-compatible with C. Every callback is valid only for the
+// dynamic extent documented by its wrapper, and every Rust panic is contained at the ABI.
+fn generate_task_m_wrapper(func: &ParsedFn) -> Option<(String, Option<String>)> {
+    match func.name.as_str() {
+        "build_particle_color_curve" => {
+            assert_eq!(func.params.len(), 3);
+            assert_eq!(func.params[0].ty, "&mut Vec<f32>");
+            assert_eq!(func.params[1].ty, "&dyn Fn(f32) -> [f32; 3]");
+            assert_eq!(func.params[2].ty, "i32");
+            let value = FfiReturn::VecReturn(VecReturnSpec {
+                element_ty: "f32".to_string(),
+                element_is_ref: false,
+            });
+            let mut wrapper = String::from(
+                r#"#[doc = "The callback and context are borrowed only until this function returns."]
+#[doc = "flight-ffi ownership|owned-return|flight_build_particle_color_curve_result_free|Vec<f32>"]
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn flight_build_particle_color_curve(
+    sample_fn: extern "C" fn(*mut std::ffi::c_void, f32, *mut f32) -> bool,
+    sample_ctx: *mut std::ffi::c_void,
+    samples: i32,
+) -> *mut std::ffi::c_void {
+    let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        let mut values = Vec::new();
+        flight_sdk::build_particle_color_curve(
+            &mut values,
+            &|value| {
+                let mut color = [0.0_f32; 3];
+                assert!(sample_fn(sample_ctx, value, color.as_mut_ptr()), "particle color callback failed");
+                color
+            },
+            samples,
+        );
+        values
+    }));
+    match result {
+        Ok(values) => Box::into_raw(Box::new(values)) as *mut std::ffi::c_void,
+        Err(_) => std::ptr::null_mut(),
+    }
+}"#,
+            );
+            wrapper.push_str(&generate_vec_result_helpers(
+                "flight_build_particle_color_curve",
+                &value,
+            ));
+            return Some((wrapper, None));
+        }
+        "collect_import_diagnostics" => {
+            assert_eq!(func.params.len(), 2);
+            assert_eq!(func.params[0].ty, "&mut Vec<ImportDiagnostic>");
+            assert_eq!(func.params[1].ty, "&dyn Fn(&mut Vec<ImportDiagnostic>)");
+            return Some((
+                String::from(
+                    r#"#[doc = "The callback receives the caller-owned list handle and may use it only until the callback returns."]
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn flight_collect_import_diagnostics(
+    out: *mut FfiImportDiagnosticList,
+    run_fn: extern "C" fn(*mut std::ffi::c_void, *mut FfiImportDiagnosticList) -> bool,
+    run_ctx: *mut std::ffi::c_void,
+) -> bool {
+    if !is_ffi_import_diagnostic_list(out) { return false; }
+    unsafe { (*out).values.clear(); }
+    std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| run_fn(run_ctx, out))).unwrap_or(false)
+}"#,
+                ),
+                None,
+            ));
+        }
+        "collect_scene2d_requirements" => {
+            assert_eq!(func.params.len(), 1);
+            assert_eq!(func.params[0].ty, "&dyn Fn(&mut Vec<Requirement>)");
+            return Some((
+                String::from(
+                    r#"#[doc = "The callback receives a borrowed requirement-list handle valid only until the callback returns."]
+#[doc = "flight-ffi ownership|owned-return|flight_free_requirement_set|flight_sdk::RequirementSet"]
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn flight_collect_scene2d_requirements(
+    run_fn: extern "C" fn(*mut std::ffi::c_void, *mut FfiRequirementList) -> bool,
+    run_ctx: *mut std::ffi::c_void,
+) -> *mut flight_sdk::RequirementSet {
+    let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        flight_sdk::collect_scene2d_requirements(&|requirements| {
+            let succeeded = ffi_with_requirement_list(requirements, |list| run_fn(run_ctx, list));
+            assert!(succeeded, "requirement collector callback failed");
+        })
+    }));
+    match result {
+        Ok(requirements) => Box::into_raw(Box::new(requirements)),
+        Err(_) => std::ptr::null_mut(),
+    }
+}"#,
+                ),
+                Some("flight_sdk::RequirementSet".to_string()),
+            ));
+        }
+        "for_each_path_segment" => {
+            assert_eq!(func.params.len(), 2);
+            assert_eq!(func.params[0].ty, "&Path");
+            assert_eq!(func.params[1].ty, "&mut dyn FnMut(PathSegment)");
+            return Some((
+                String::from(
+                    r#"#[doc = "Segment kinds are 0 move, 1 line, 2 quadratic, 3 cubic and 4 close; unused coordinates are zero."]
+#[doc = "The callback and context are borrowed only until this function returns."]
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn flight_for_each_path_segment(
+    path: *const flight_sdk::Path,
+    visitor_fn: extern "C" fn(*mut std::ffi::c_void, u32, f64, f64, f64, f64, f64, f64) -> bool,
+    visitor_ctx: *mut std::ffi::c_void,
+) -> bool {
+    if path.is_null() { return false; }
+    std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        flight_sdk::for_each_path_segment(unsafe { &*path }, &mut |segment| {
+            let (kind, a, b, c, d, e, f) = match segment {
+                flight_sdk::PathSegment::MoveTo { x, y } => (0, x, y, 0.0, 0.0, 0.0, 0.0),
+                flight_sdk::PathSegment::LineTo { x, y } => (1, x, y, 0.0, 0.0, 0.0, 0.0),
+                flight_sdk::PathSegment::QuadraticCurveTo { control_x, control_y, x, y } => (2, control_x, control_y, x, y, 0.0, 0.0),
+                flight_sdk::PathSegment::CubicCurveTo { control_x1, control_y1, control_x2, control_y2, x, y } => (3, control_x1, control_y1, control_x2, control_y2, x, y),
+                flight_sdk::PathSegment::Close => (4, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0),
+            };
+            assert!(visitor_fn(visitor_ctx, kind, a, b, c, d, e, f), "path segment callback failed");
+        });
+    }))
+    .is_ok()
+}"#,
+                ),
+                None,
+            ));
+        }
+        _ => None,
+    }
+}
+
 fn generate_ffi_wrapper(func: &ParsedFn) -> Option<(String, Option<String>)> {
     if explicit_skip_category(&func.name).is_some() {
         return None;
     }
     if func.lacks_public_export {
         return None;
+    }
+    if let Some(wrapper) = generate_task_m_wrapper(func) {
+        return Some(wrapper);
     }
 
     let mut ffi_params = Vec::new();
@@ -1922,7 +2174,9 @@ fn generate_ffi_wrapper(func: &ParsedFn) -> Option<(String, Option<String>)> {
             .map(|param| strip_crate_paths(&resolve_type_alias(param.ty.trim())))
             .collect();
         let param_types: Vec<&str> = param_types.iter().map(String::as_str).collect();
-        if !public_perimeter::is_disposer_function(&func.name, &param_types) {
+        if !public_perimeter::is_disposer_function(&func.name, &param_types)
+            && !RETAINED_CALLBACK_DISPOSER_FNS.contains(&func.name.as_str())
+        {
             return None;
         }
     }
@@ -1995,7 +2249,7 @@ fn generate_ffi_wrapper(func: &ParsedFn) -> Option<(String, Option<String>)> {
     .unwrap_or_default();
 
     // Parameter ownership notes travel as doc attributes into the C header.
-    let notes: String = func
+    let mut notes: String = func
         .params
         .iter()
         .filter_map(|param| {
@@ -2003,6 +2257,12 @@ fn generate_ffi_wrapper(func: &ParsedFn) -> Option<(String, Option<String>)> {
                 .map(|note| format!("#[doc = \"ffi-param {}: {note}\"]\n", param.name))
         })
         .collect();
+    if func.name == "connect_signal_at_frame_rate" {
+        notes.push_str("#[doc = \"The slot callback and context are retained until flight_call_disposer disconnects them; call it before releasing the context, then free the disposer handle.\"]\n");
+    }
+    if func.name == "watch_geolocation_position" {
+        notes.push_str("#[doc = \"The position and optional error callback contexts are retained until flight_clear_geolocation_watch is called for the returned id.\"]\n");
+    }
     Some((
         format!(
             "{notes}{ownership}#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn {ffi_name}({params}){ret_decl} {{\n{body}\n}}{helpers}",
@@ -2831,6 +3091,108 @@ pub unsafe extern "C" fn flight_is_storage_set_items_result_ok(result: *const fl
 "#
 }
 
+// A requirement collector is either caller-owned (`create`/`destroy`) or a callback-scoped view
+// installed by `collect_scene2d_requirements`. The registry makes both forms type/provenance
+// checked; the scoped form unregisters on unwind and never owns the SDK Vec it views.
+fn generate_requirement_list_support() -> &'static str {
+    r#"pub struct FfiRequirementList {
+    values: *mut Vec<flight_sdk::Requirement>,
+    owned: bool,
+}
+static FFI_REQUIREMENT_LISTS: std::sync::Mutex<std::collections::BTreeSet<usize>> = std::sync::Mutex::new(std::collections::BTreeSet::new());
+fn get_ffi_requirement_lists() -> std::sync::MutexGuard<'static, std::collections::BTreeSet<usize>> {
+    FFI_REQUIREMENT_LISTS.lock().unwrap_or_else(std::sync::PoisonError::into_inner)
+}
+fn is_ffi_requirement_list(list: *const FfiRequirementList) -> bool {
+    !list.is_null() && get_ffi_requirement_lists().contains(&(list as usize))
+}
+unsafe fn ffi_requirement_list_values<'a>(list: *mut FfiRequirementList) -> Option<&'a mut Vec<flight_sdk::Requirement>> {
+    if !is_ffi_requirement_list(list) { return None; }
+    let values = unsafe { (*list).values };
+    if values.is_null() { return None; }
+    Some(unsafe { &mut *values })
+}
+struct FfiRequirementListRegistration(usize);
+impl Drop for FfiRequirementListRegistration {
+    fn drop(&mut self) { get_ffi_requirement_lists().remove(&self.0); }
+}
+fn ffi_with_requirement_list<R>(values: &mut Vec<flight_sdk::Requirement>, run: impl FnOnce(*mut FfiRequirementList) -> R) -> R {
+    let mut list = FfiRequirementList { values, owned: false };
+    let list_ptr = &mut list as *mut FfiRequirementList;
+    get_ffi_requirement_lists().insert(list_ptr as usize);
+    let _registration = FfiRequirementListRegistration(list_ptr as usize);
+    run(list_ptr)
+}
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn flight_clear_requirement_list(list: *mut FfiRequirementList) {
+    if let Some(values) = unsafe { ffi_requirement_list_values(list) } { values.clear(); }
+}
+#[doc = "flight-ffi ownership|owned-return|flight_destroy_requirement_list|FfiRequirementList"]
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn flight_create_requirement_list() -> *mut FfiRequirementList {
+    let values = Box::into_raw(Box::new(Vec::new()));
+    let list = Box::into_raw(Box::new(FfiRequirementList { values, owned: true }));
+    get_ffi_requirement_lists().insert(list as usize);
+    list
+}
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn flight_destroy_requirement_list(list: *mut FfiRequirementList) {
+    if !is_ffi_requirement_list(list) || !unsafe { (*list).owned } { return; }
+    get_ffi_requirement_lists().remove(&(list as usize));
+    let list = unsafe { Box::from_raw(list) };
+    if list.owned && !list.values.is_null() { unsafe { drop(Box::from_raw(list.values)); } }
+}
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn flight_get_requirement_list_facet(list: *const FfiRequirementList, index: usize) -> i32 {
+    if !is_ffi_requirement_list(list) { return -1; }
+    let values = unsafe { &*(*list).values };
+    values.get(index).map_or(-1, |requirement| requirement.facet as i32)
+}
+#[doc = "flight-ffi ownership|owned-return|flight_free_string|std::ffi::c_char"]
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn flight_get_requirement_list_key(list: *const FfiRequirementList, index: usize) -> *mut std::ffi::c_char {
+    if !is_ffi_requirement_list(list) { return std::ptr::null_mut(); }
+    let values = unsafe { &*(*list).values };
+    match values.get(index) {
+        Some(requirement) => std::ffi::CString::new(requirement.key.as_str()).unwrap_or_default().into_raw(),
+        None => std::ptr::null_mut(),
+    }
+}
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn flight_get_requirement_list_length(list: *const FfiRequirementList) -> usize {
+    if !is_ffi_requirement_list(list) { return 0; }
+    unsafe { &*(*list).values }.len()
+}
+"#
+}
+
+// Immediate collector callbacks need one detail-free append primitive. Structured detail maps stay
+// on the ownership-policy side until C has a typed ImportDiagnosticDetailValue map producer.
+fn generate_import_diagnostic_append_support() -> &'static str {
+    r#"#[unsafe(no_mangle)]
+pub unsafe extern "C" fn flight_append_import_diagnostic(
+    list: *mut FfiImportDiagnosticList,
+    severity: u32,
+    kind: *const std::ffi::c_char,
+    origin: *const std::ffi::c_char,
+) -> bool {
+    let Some(values) = (unsafe { ffi_import_diagnostic_list_values(list) }) else { return false; };
+    if kind.is_null() || origin.is_null() { return false; }
+    let severity = match severity {
+        0 => flight_sdk::ImportDiagnosticSeverity::Drop,
+        1 => flight_sdk::ImportDiagnosticSeverity::Recover,
+        2 => flight_sdk::ImportDiagnosticSeverity::Reject,
+        3 => flight_sdk::ImportDiagnosticSeverity::Skip,
+        _ => return false,
+    };
+    let kind = unsafe { std::ffi::CStr::from_ptr(kind) }.to_str().unwrap_or("").to_owned();
+    let origin = unsafe { std::ffi::CStr::from_ptr(origin) }.to_str().unwrap_or("").to_owned();
+    values.push(flight_sdk::ImportDiagnostic { detail: None, kind, origin, severity });
+    true
+}
+"#
+}
+
 // Caller-owned collectors behind exact mutable generic parameters, as (parameter type, handle
 // struct, slug, value type). Each keeps the import diagnostic list's live-registry contract: the
 // registry filters provenance and type for live handles and is not lifetime synchronization. NULL
@@ -3284,6 +3646,19 @@ fn categorize_skip(func: &ParsedFn) -> String {
         }
     }
     format!("unknown({})", func.name)
+}
+
+fn is_by_design_public_skip(reason: &str) -> bool {
+    [
+        "behavior_policy_skip(",
+        "extension_policy_skip(",
+        "guard_policy_skip(",
+        "import_handler_policy_skip(",
+        "ownership_policy_skip(",
+        "safety_policy_skip(",
+    ]
+    .iter()
+    .any(|prefix| reason.starts_with(prefix))
 }
 
 const SCALARS: &[&str] = &[
@@ -4825,6 +5200,7 @@ fn map_param_to_ffi(name: &str, ty: &str) -> Option<MappedParam> {
     // resolver once more after removing lifetimes (`&'a Uint8Array` -> `&[u8]`).
     let ty = resolve_type_alias(&ty);
     let ty = ty.as_str();
+    let lifetime_data_ty = ty.strip_suffix("<>").unwrap_or(ty);
 
     // The handle owns bytes and cursor, but never an SDK ByteReader. Borrow its bytes into a
     // transient view for exactly one call; mutable wrappers write the resulting cursor back.
@@ -4857,12 +5233,94 @@ fn map_param_to_ffi(name: &str, ty: &str) -> Option<MappedParam> {
         });
     }
 
+    // The three public format detectors consume a byte view synchronously. C supplies one
+    // borrowed pointer/length pair; using the typed-array arm preserves the exact view window and
+    // never constructs or retains an SDK ArrayBuffer identity.
+    let byte_data = match lifetime_data_ty {
+        "AudioMimeTypeData" => Some(("AudioMimeTypeData", "AudioMimeTypeUint8Array", "data")),
+        "FontFormatData" => Some(("FontFormatData", "FontFormatUint8Array", "bytes")),
+        "VideoMimeTypeData" => Some(("VideoMimeTypeData", "VideoMimeTypeUint8Array", "data")),
+        _ => None,
+    };
+    if let Some((data_ty, view_ty, field)) = byte_data {
+        let ptr_name = format!("{name}_ptr");
+        let len_name = format!("{name}_len");
+        return Some(MappedParam {
+            ffi_params: vec![
+                (ptr_name.clone(), "*const u8".to_string()),
+                (len_name.clone(), "usize".to_string()),
+            ],
+            bindings: Vec::new(),
+            call_expr: format!(
+                "flight_sdk::{data_ty}::Uint8Array(flight_sdk::{view_ty} {{ {field}: unsafe {{ ffi_slice_from_raw_parts({ptr_name}, {len_name}) }} }})"
+            ),
+        });
+    }
+
+    // FileAtomicWriteData is consumed only while the provider future is constructed. Kind 0 is a
+    // byte view and kind 1 is UTF-8 text; every other discriminant is rejected inside the async
+    // wrapper's panic boundary before provider code runs.
+    if lifetime_data_ty == "FileAtomicWriteData" {
+        let kind_name = format!("{name}_kind");
+        let ptr_name = format!("{name}_ptr");
+        let len_name = format!("{name}_len");
+        return Some(MappedParam {
+            ffi_params: vec![
+                (kind_name.clone(), "u32".to_string()),
+                (ptr_name.clone(), "*const u8".to_string()),
+                (len_name.clone(), "usize".to_string()),
+            ],
+            bindings: Vec::new(),
+            call_expr: format!(
+                "match {kind_name} {{ 0 => flight_sdk::FileAtomicWriteData::Bytes(flight_sdk::FileAtomicWriteBytes {{ data: unsafe {{ ffi_slice_from_raw_parts({ptr_name}, {len_name}) }} }}), 1 => flight_sdk::FileAtomicWriteData::Text(flight_sdk::FileAtomicWriteText {{ data: std::str::from_utf8(unsafe {{ ffi_slice_from_raw_parts({ptr_name}, {len_name}) }}).expect(\"atomic text data must be valid UTF-8\") }}), _ => panic!(\"invalid FileAtomicWriteData kind\") }}"
+            ),
+        });
+    }
+
+    // `None` inherits the parent channel, `Some(None)` clears it and `Some(Some(text))` replaces
+    // it. The explicit outer flag plus nullable text pointer preserves all three states.
+    if ty == "Option<Option<String>>" {
+        let present_name = format!("{name}_present");
+        return Some(MappedParam {
+            ffi_params: vec![
+                (present_name.clone(), "bool".to_string()),
+                (name.to_string(), "*const std::ffi::c_char".to_string()),
+            ],
+            bindings: Vec::new(),
+            call_expr: format!(
+                "if !{present_name} {{ None }} else if {name}.is_null() {{ Some(None) }} else {{ Some(Some(unsafe {{ std::ffi::CStr::from_ptr({name}) }}.to_str().expect(\"nested optional string must be valid UTF-8\").to_owned())) }}"
+            ),
+        });
+    }
+
+    // RequirementFacet is repr(u8) in the Rust IR, while every C enum lane is a checked u32.
+    if ty == "RequirementFacet" {
+        let binding = format!("{}_enum", get_binding_name(name));
+        return Some(MappedParam {
+            ffi_params: vec![(name.to_string(), "u32".to_string())],
+            bindings: vec![format!(
+                "    let {binding} = match ffi_enum_from_u32!({name}, [flight_sdk::RequirementFacet::CompressionKind, flight_sdk::RequirementFacet::DocumentFormat, flight_sdk::RequirementFacet::Physics2DJointKind, flight_sdk::RequirementFacet::SceneBlendMode, flight_sdk::RequirementFacet::SceneMaterialKind, flight_sdk::RequirementFacet::SceneModifierKind, flight_sdk::RequirementFacet::SceneNodeKind, flight_sdk::RequirementFacet::SceneResourceMimeType, flight_sdk::RequirementFacet::SceneShapeCommand, flight_sdk::RequirementFacet::SceneTextureSourceKind]) {{ Some(value) => value, None => panic!(\"{name} must be a RequirementFacet discriminant, got {{}}\", {name}) }};"
+            )],
+            call_expr: binding,
+        });
+    }
+
     // Option<&mut Vec<ImportDiagnostic>> -> a nullable, registered diagnostics list. NULL does not collect.
     if ty == "Option<&mut Vec<ImportDiagnostic>>" {
         return mapped_single(
             name,
             "*mut FfiImportDiagnosticList",
             format!("unsafe {{ ffi_import_diagnostic_list_values({name}) }}"),
+        );
+    }
+
+    // Requirement callbacks receive a provenance-checked list handle. NULL preserves the SDK's
+    // optional no-op sink, while callback-scoped handles are invalidated on return.
+    if ty == "Option<&mut Vec<Requirement>>" {
+        return mapped_single(
+            name,
+            "*mut FfiRequirementList",
+            format!("unsafe {{ ffi_requirement_list_values({name}) }}"),
         );
     }
 
@@ -5583,7 +6041,10 @@ fn map_param_to_ffi(name: &str, ty: &str) -> Option<MappedParam> {
                 strip_crate_paths(&strip_lifetimes(&resolve_type_alias(inner.trim())));
             if let Some(parsed) = parse_closure_param(&resolved_inner) {
                 if parsed.is_arc
-                    && parsed.params.iter().all(|(cty, _)| is_scalar(cty))
+                    && parsed.params.iter().all(|(cty, _)| {
+                        let resolved = strip_crate_paths(&resolve_type_alias(cty));
+                        is_scalar(&resolved) || is_known_enum(&resolved)
+                    })
                     && (parsed.ret == "void" || is_scalar(&parsed.ret))
                 {
                     let fn_name = format!("{name}_fn");
@@ -5592,10 +6053,18 @@ fn map_param_to_ffi(name: &str, ty: &str) -> Option<MappedParam> {
                     let mut ffi_fn_args_str = Vec::new();
                     let mut outer_closure_params = Vec::new();
                     for (i, (cty, _)) in parsed.params.iter().enumerate() {
+                        let resolved_cty = strip_crate_paths(&resolve_type_alias(cty));
                         let arg_name = format!("__a{i}");
-                        ffi_fn_params.push(cty.clone());
-                        ffi_fn_args_str.push(arg_name.clone());
-                        outer_closure_params.push(format!("{arg_name}: {cty}"));
+                        if is_known_enum(&resolved_cty) {
+                            ffi_fn_params.push("u32".to_string());
+                            ffi_fn_args_str.push(format!("{arg_name} as u32"));
+                            outer_closure_params
+                                .push(format!("{arg_name}: {}", qualify_type(&resolved_cty)));
+                        } else {
+                            ffi_fn_params.push(resolved_cty.clone());
+                            ffi_fn_args_str.push(arg_name.clone());
+                            outer_closure_params.push(format!("{arg_name}: {resolved_cty}"));
+                        }
                     }
                     let ffi_ret = if parsed.ret == "void" {
                         String::new()
