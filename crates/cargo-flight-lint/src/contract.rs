@@ -109,7 +109,14 @@ pub fn check_contract(
     // Tier-1 spatial crates use f64 as their authoring scalar. Keep both sides crate-scoped so
     // bounded/GPU crates still require an item-specific f64 declaration and spatial f32 survives
     // only at an explicitly declared GPU boundary.
-    let is_spatial_crate = matches!(crate_name, "flight-geometry" | "flight-math");
+    let is_spatial_crate = matches!(
+        crate_name,
+        "flight-animation"
+            | "flight-geometry"
+            | "flight-math"
+            | "flight-spring"
+            | "flight-tween"
+    );
 
     for item in &file.items {
         let Some((label, line)) = item_label(item) else {
@@ -1158,6 +1165,22 @@ mod tests {
             )
             .is_empty()
         );
+        for crate_name in ["flight-animation", "flight-spring", "flight-tween"] {
+            assert!(
+                rules_for_crate("pub fn f(x: f64) -> f64 { return x; }", crate_name).is_empty()
+            );
+            assert_eq!(
+                rules_for_crate("pub fn f(x: f32) -> f32 { return x; }", crate_name),
+                vec!["f32"]
+            );
+            assert!(
+                rules_for_crate(
+                    "// flight-lint: allow(f32) bounded blend weight\npub fn f(weight: f32) {}",
+                    crate_name
+                )
+                .is_empty()
+            );
+        }
         assert_eq!(
             rules_for_crate(
                 "pub fn f(values: &Float32Array) { return; }",
