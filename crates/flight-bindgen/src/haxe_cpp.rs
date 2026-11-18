@@ -6,7 +6,7 @@ use std::path::Path;
 use crate::ffi_surface::{FfiSurface, FieldAccess};
 use crate::haxe_common::{
     TypeMethod, build_struct_map, build_type_methods, collect_opaque_types, crate_dir_to_module,
-    derive_method_name, field_property_declaration, find_self_param, has_ffi_function,
+    derive_method_name, field_property_declaration, find_self_param, has_native_ffi_function,
     resolve_ffi_field_access, scalar_to_haxe, to_snake_case, tuple_element_storage,
     write_if_changed,
 };
@@ -193,7 +193,7 @@ fn emit_methods(
     let mut seen_names: BTreeSet<String> = BTreeSet::new();
 
     for tm in methods {
-        if !has_ffi_function(&tm.func.name, ffi_surface) {
+        if !has_native_ffi_function(&tm.func.name, ffi_surface) {
             continue;
         }
         if let Some(method) = emit_one_method(ty, tm) {
@@ -289,7 +289,7 @@ fn emit_module_file(
 ) -> String {
     let mut emitted: Vec<String> = Vec::new();
     for func in fns {
-        if !has_ffi_function(&func.name, ffi_surface) {
+        if !has_native_ffi_function(&func.name, ffi_surface) {
             continue;
         }
         if let Some(decl) = emit_function(func) {
@@ -466,6 +466,7 @@ mod cpp_tuple_tests {
                  DEFINE_PRIM(_BOOL, flight_set_audio_bus_muted, _BYTES _BOOL);\n\
                  DEFINE_PRIM(_F32, flight_get_audio_bus_pan, _BYTES _BYTES);",
             ),
+            native_skips: BTreeSet::new(),
         };
         let audio_bus = ParsedStruct {
             name: "AudioBus".into(),

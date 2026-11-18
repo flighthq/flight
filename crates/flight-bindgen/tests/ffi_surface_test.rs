@@ -3,6 +3,7 @@
 #[path = "../src/ffi_surface.rs"]
 mod ffi_surface;
 
+use std::collections::BTreeSet;
 use std::fs;
 use std::path::{Path, PathBuf};
 
@@ -144,6 +145,25 @@ mod get_ffi_field_access {
     }
 }
 
+mod has_native_ffi_symbol {
+    use super::*;
+
+    #[test]
+    fn excludes_reviewed_native_skips_and_absent_symbols() {
+        let surface = fixture_surface();
+        assert!(has_native_ffi_symbol(&surface, "flight_get_audio_bus_gain"));
+        assert!(!has_native_ffi_symbol(
+            &surface,
+            "flight_for_each_path_segment"
+        ));
+        assert!(contains_ffi_symbol(
+            &surface,
+            "flight_for_each_path_segment"
+        ));
+        assert!(!has_native_ffi_symbol(&surface, "flight_missing"));
+    }
+}
+
 mod load_ffi_surface {
     use super::*;
 
@@ -156,6 +176,7 @@ mod load_ffi_surface {
         fs::remove_dir_all(&dir).unwrap();
         assert_eq!(surface.c.len(), 9);
         assert_eq!(surface.hl.len(), 10);
+        assert!(surface.native_skips.is_empty());
     }
 }
 
@@ -249,6 +270,7 @@ fn fixture_surface() -> FfiSurface {
     return FfiSurface {
         c: parse_ffi_header(HEADER),
         hl: parse_hl_primitives(HL_SHIM),
+        native_skips: BTreeSet::from(["flight_for_each_path_segment".to_string()]),
     };
 }
 

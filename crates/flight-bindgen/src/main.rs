@@ -1,3 +1,4 @@
+mod cli;
 mod dispatch;
 mod ffi_surface;
 mod haxe_common;
@@ -10,56 +11,54 @@ mod parse;
 use std::path::PathBuf;
 
 fn main() {
-    let args: Vec<String> = std::env::args().collect();
-
-    let target = args
-        .iter()
-        .position(|a| a == "--target")
-        .and_then(|i| args.get(i + 1))
-        .map(|s| s.as_str())
-        .unwrap_or("haxe-hl");
-
-    let out_dir = args
-        .iter()
-        .position(|a| a == "--out")
-        .and_then(|i| args.get(i + 1))
-        .map(PathBuf::from)
-        .unwrap_or_else(|| PathBuf::from("generated").join(target));
-
-    let offsets_path = args
-        .iter()
-        .position(|a| a == "--offsets")
-        .and_then(|i| args.get(i + 1))
-        .map(PathBuf::from);
-
-    // flight-ffi's build output directory: `flight_ffi.h` and `flight_hl.c` are the native
-    // surface every generated extern is filtered by and verified against.
-    let ffi_dir = args
-        .iter()
-        .position(|a| a == "--ffi-dir")
-        .and_then(|i| args.get(i + 1))
-        .map(PathBuf::from);
+    let args: Vec<String> = std::env::args().skip(1).collect();
+    let options = match cli::parse_bindgen_args(&args) {
+        Ok(options) => options,
+        Err(error) => {
+            eprintln!("flight-bindgen: {error}");
+            eprintln!("{}", cli::BINDGEN_USAGE);
+            std::process::exit(2);
+        }
+    };
+    if options.help {
+        println!("{}", cli::BINDGEN_USAGE);
+        return;
+    }
+    let target = options.target.as_str();
+    let out_dir = options.out_dir.clone();
+    let offsets_path = options.offsets.clone();
+    let ffi_dir = options.ffi_dir.clone();
 
     let crates_dir = find_crates_dir();
-    let mut exports = parse::scan_all_crates(&crates_dir);
+    let exports = parse::scan_all_crates(&crates_dir);
     let field_offsets = offsets_path
         .as_ref()
         .map(|p| offsets::load_offsets(p))
         .unwrap_or_default();
 
-    let ffi_surface = ffi_dir
+    let mut ffi_surface = ffi_dir
         .as_ref()
         .map(|dir| ffi_surface::load_ffi_surface(dir));
-    if let Some(surface) = &ffi_surface {
-        let dropped = haxe_common::drop_native_shape_mismatches(&mut exports, surface);
-        for name in &dropped {
+    if let Some(surface) = ffi_surface.as_mut() {
+        if let Err(errors) = haxe_common::enforce_native_binding_policy(
+            &exports,
+            surface,
+            haxe_common::NATIVE_SKIPS,
+            haxe_common::NATIVE_NEVER_ACCESSORS,
+        ) {
+            for error in &errors {
+                eprintln!("native binding policy: {error}");
+            }
             eprintln!(
-                "skipped flight_{name}: generic lowering disagrees with its flight-ffi wrapper"
+                "{} native binding policy violation(s); generation refused",
+                errors.len()
             );
+            std::process::exit(1);
         }
         eprintln!(
-            "{} functions skipped for native shape disagreement",
-            dropped.len()
+            "native binding policy: {} reviewed skips, {} reviewed never accessors",
+            haxe_common::NATIVE_SKIPS.len(),
+            haxe_common::NATIVE_NEVER_ACCESSORS.len()
         );
     }
 
@@ -85,11 +84,7 @@ fn main() {
             haxe_js::generate(&exports, &out_dir, ffi_surface.as_ref());
             dispatch::generate(&exports, &out_dir, ffi_surface.as_ref());
         }
-        other => {
-            eprintln!("unknown target: {other}");
-            eprintln!("available targets: haxe-hl, haxe-cpp, haxe-js, haxe");
-            std::process::exit(1);
-        }
+        other => unreachable!("cli accepted unknown target {other}"),
     }
 
     eprintln!(

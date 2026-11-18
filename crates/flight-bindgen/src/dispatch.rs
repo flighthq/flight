@@ -5,7 +5,8 @@ use std::path::Path;
 
 use crate::ffi_surface::FfiSurface;
 use crate::haxe_common::{
-    crate_dir_to_module, has_ffi_function, tuple_element_storage, tuple_struct_type,
+    crate_dir_to_module, has_ffi_function, has_native_ffi_function, tuple_element_storage,
+    tuple_struct_type,
 };
 use crate::parse::{
     CrateExports, ParamKind, ParsedEnum, ParsedFn, ReturnKind, classify_param, classify_return,
@@ -138,7 +139,9 @@ fn emit_module_dispatch(
         if !has_ffi_function(&func.name, ffi_surface) {
             continue;
         }
-        if let Some((sig, name)) = emit_dispatch_function(module_name, func, emitted_enums) {
+        let native = has_native_ffi_function(&func.name, ffi_surface);
+        if let Some((sig, name)) = emit_dispatch_function(module_name, func, emitted_enums, native)
+        {
             emitted.push((sig, name));
         }
     }
@@ -190,10 +193,13 @@ fn emit_module_dispatch(
     output
 }
 
+// `native` is false for a reviewed native skip: the function then exists only for JS/ESM, whose
+// binding is the TypeScript SDK export rather than the C ABI.
 fn emit_dispatch_function(
     module_name: &str,
     func: &ParsedFn,
     emitted_enums: &BTreeSet<String>,
+    native: bool,
 ) -> Option<(String, String)> {
     let haxe_name = to_camel_case(&func.name);
 
@@ -314,6 +320,10 @@ fn emit_dispatch_function(
         .unwrap();
     } else {
         writeln!(sig, "\t{js_ret_prefix}{js_call};").unwrap();
+    }
+    if !native {
+        write!(sig, "}}\n#end").unwrap();
+        return Some((sig, haxe_name));
     }
     writeln!(sig, "}}\n#else").unwrap();
     writeln!(
@@ -594,6 +604,7 @@ mod portable_dispatch_tests {
                  bool flight_get_last_point(double * arg0, double * arg1);",
             ),
             hl: BTreeMap::new(),
+            native_skips: BTreeSet::new(),
         };
         generate(&exports, &directory, Some(&ffi_surface));
         let content = fs::read_to_string(directory.join("flight/Math.hx")).unwrap();
@@ -692,5 +703,19 @@ extern inline function getLastPoint(randomFn:Dynamic, randomCtx:Dynamic, mean:Fl
         assert!(content.contains("flight._cpp._fn.TextureAtlas.createTextureAtlas("));
         assert!(content.contains("flight._js._fn.TextureAtlas.createTextureAtlas("));
         fs::remove_dir_all(directory).unwrap();
+    }
+    #[test]
+    fn native_skip_keeps_only_the_js_esm_branch() {
+        let function = crate::parse::random_gaussian_pair_fixture();
+        let (native, _) =
+            emit_dispatch_function("Math", &function, &BTreeSet::new(), true).unwrap();
+        assert!(native.contains("flight._hl._fn.Math.randomGaussianPair("));
+        let (js_only, _) =
+            emit_dispatch_function("Math", &function, &BTreeSet::new(), false).unwrap();
+        assert!(js_only.starts_with("#if (js && flight_esm)\n"), "{js_only}");
+        assert!(js_only.contains("flight._js._fn.Math.randomGaussianPair("));
+        assert!(!js_only.contains("flight._hl"), "{js_only}");
+        assert!(!js_only.contains("flight._cpp"), "{js_only}");
+        assert!(js_only.ends_with("}\n#end"), "{js_only}");
     }
 }

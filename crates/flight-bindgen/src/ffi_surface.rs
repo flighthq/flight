@@ -1,4 +1,4 @@
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 use std::fs;
 use std::path::Path;
 
@@ -9,6 +9,10 @@ use std::path::Path;
 pub struct FfiSurface {
     pub c: BTreeMap<String, FfiSignature>,
     pub hl: BTreeMap<String, FfiSignature>,
+    // Symbols present on the C surface whose generic HashLink/hxcpp lowering is known to disagree
+    // with the hand-lowered flight-ffi wrapper. Native backends skip them; JS/ESM never consults
+    // this set because it binds the TypeScript SDK, not the C ABI.
+    pub native_skips: BTreeSet<String>,
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -163,6 +167,12 @@ pub fn get_ffi_field_access(
     };
 }
 
+// True when a native (HashLink/hxcpp) backend may bind `symbol`: it is on the C surface and not a
+// reviewed native skip.
+pub fn has_native_ffi_symbol(surface: &FfiSurface, symbol: &str) -> bool {
+    return surface.c.contains_key(symbol) && !surface.native_skips.contains(symbol);
+}
+
 fn haxe_signature_to_c_class(ext: &NativeExtern) -> Option<FfiSignature> {
     Some(FfiSignature {
         ret: haxe_type_to_c_class(&ext.ret)?,
@@ -231,6 +241,7 @@ pub fn load_ffi_surface(ffi_dir: &Path) -> FfiSurface {
     FfiSurface {
         c: parse_ffi_header(&read("flight_ffi.h")),
         hl: parse_hl_primitives(&read("flight_hl.c")),
+        native_skips: BTreeSet::new(),
     }
 }
 

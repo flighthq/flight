@@ -4,7 +4,7 @@ use std::path::Path;
 
 use crate::ffi_surface::{
     FfiSurface, FieldAccess, contains_ffi_symbol, declaration_matches_ffi_surface,
-    get_ffi_field_access,
+    get_ffi_field_access, has_native_ffi_symbol,
 };
 use crate::parse::{
     CrateExports, ParamKind, ParsedFn, ParsedStruct, ReturnKind, classify_param, classify_return,
@@ -150,36 +150,99 @@ pub fn derive_method_name(fn_name: &str, type_name: &str) -> Option<String> {
     None
 }
 
-// Removes, from every target at once, each function whose generic HashLink or hxcpp extern would
-// disagree with the wrapper flight-ffi actually generated, so no backend binds a wrong-arity call
-// and the dispatch layer never names a function one backend lacks. Returns the removed names.
-pub fn drop_native_shape_mismatches(
-    exports: &mut [CrateExports],
-    surface: &FfiSurface,
-) -> Vec<String> {
-    let mut dropped = Vec::new();
-    for crate_export in exports.iter_mut() {
-        crate_export.fns.retain(|func| {
+// Checks the native (HashLink/hxcpp) binding policy against the reviewed tables and, only when
+// the actual surface matches them exactly, records the native skips on `surface`. A function is a
+// native skip when its generic extern on either native backend disagrees with the wrapper
+// flight-ffi generated; an accessor direction is `never` when a symbol with the accessor's name
+// exists without accessor shape. Any difference from the tables, added or removed, is an error:
+// a carrier change must never silently delete a binding. JS/ESM is unaffected by both.
+pub fn enforce_native_binding_policy(
+    exports: &[CrateExports],
+    surface: &mut FfiSurface,
+    expected_skips: &[(&str, &str)],
+    expected_never_accessors: &[(&str, &str)],
+) -> Result<(), Vec<String>> {
+    let mut errors = Vec::new();
+
+    let mut actual_skips: BTreeMap<String, Vec<&str>> = BTreeMap::new();
+    for crate_export in exports {
+        for func in &crate_export.fns {
             if !contains_ffi_symbol(surface, &format!("flight_{}", func.name)) {
-                return true;
+                continue;
             }
-            let agrees = [
+            for (backend, declaration) in [
                 ("_hl", crate::haxe_hl::emit_function(func)),
                 ("_cpp", crate::haxe_cpp::emit_function(func)),
-            ]
-            .iter()
-            .all(|(backend, declaration)| {
-                return declaration
-                    .as_deref()
-                    .is_none_or(|text| declaration_matches_ffi_surface(surface, backend, text));
-            });
-            if !agrees {
-                dropped.push(func.name.clone());
+            ] {
+                let agrees = declaration.as_deref().is_none_or(|text| {
+                    return declaration_matches_ffi_surface(surface, backend, text);
+                });
+                if !agrees {
+                    actual_skips
+                        .entry(func.name.clone())
+                        .or_default()
+                        .push(backend);
+                }
             }
-            return agrees;
-        });
+        }
     }
-    return dropped;
+    let expected: BTreeSet<&str> = expected_skips.iter().map(|(name, _)| *name).collect();
+    for (name, backends) in &actual_skips {
+        if !expected.contains(name.as_str()) {
+            errors.push(format!(
+                "unexpected native skip flight_{name}: generic {} extern disagrees with flight-ffi",
+                backends.join("+")
+            ));
+        }
+    }
+    for name in &expected {
+        if !actual_skips.contains_key(*name) {
+            errors.push(format!(
+                "reviewed native skip flight_{name} no longer disagrees (or is gone); update the table"
+            ));
+        }
+    }
+
+    let mut actual_never = BTreeSet::new();
+    for crate_export in exports {
+        for parsed in &crate_export.structs {
+            let snake = to_snake_case(&parsed.name);
+            for field in &parsed.fields {
+                let getter = format!("flight_get_{snake}_{}", field.name);
+                let setter = format!("flight_set_{snake}_{}", field.name);
+                let access = get_ffi_field_access(surface, &getter, &setter, &field.ty);
+                if contains_ffi_symbol(surface, &getter) && !access.get {
+                    actual_never.insert(format!("{}.{}:get", parsed.name, field.name));
+                }
+                if contains_ffi_symbol(surface, &setter) && !access.set {
+                    actual_never.insert(format!("{}.{}:set", parsed.name, field.name));
+                }
+            }
+        }
+    }
+    let expected_never: BTreeSet<String> = expected_never_accessors
+        .iter()
+        .map(|(key, _)| key.to_string())
+        .collect();
+    for key in actual_never.difference(&expected_never) {
+        errors.push(format!(
+            "unexpected never accessor {key}: native symbol exists without accessor shape"
+        ));
+    }
+    for key in expected_never.difference(&actual_never) {
+        errors.push(format!(
+            "reviewed never accessor {key} no longer applies; update the table"
+        ));
+    }
+
+    if !errors.is_empty() {
+        return Err(errors);
+    }
+    surface.native_skips = actual_skips
+        .keys()
+        .map(|name| format!("flight_{name}"))
+        .collect();
+    return Ok(());
 }
 
 // `public var name(get, set):T;` with `never` for a direction that has no binding.
@@ -278,6 +341,13 @@ pub fn has_ffi_function(fn_name: &str, ffi_surface: Option<&FfiSurface>) -> bool
         Some(surface) => contains_ffi_symbol(surface, &format!("flight_{fn_name}")),
     };
 }
+// Native (HashLink/hxcpp) presence: the symbol exists and is not a reviewed native skip.
+pub fn has_native_ffi_function(fn_name: &str, ffi_surface: Option<&FfiSurface>) -> bool {
+    return match ffi_surface {
+        None => true,
+        Some(surface) => has_native_ffi_symbol(surface, &format!("flight_{fn_name}")),
+    };
+}
 // Which directions of a struct field may bind to a native accessor; with no FFI surface every
 // parsed field is assumed to have both.
 pub fn resolve_ffi_field_access(
@@ -309,6 +379,96 @@ pub fn write_if_changed(path: &Path, content: &str) {
     fs::write(path, content).unwrap();
 }
 
+// Reviewed HashLink/hxcpp module-function skips: flight-ffi hand-lowers these wrappers, so their
+// generic native externs would bind the wrong ABI. JS/ESM still exports each one.
+pub const NATIVE_SKIPS: &[(&str, &str)] = &[
+    (
+        "build_particle_color_curve",
+        "flight-ffi returns the `&mut Vec<f32>` output as an owned pointer and drops the out parameter",
+    ),
+    (
+        "collect_import_diagnostics",
+        "flight-ffi wraps the callback in a `bool` completion status; the generic extern returns Void",
+    ),
+    (
+        "find_requirement_catalog_entries",
+        "the cross-crate `flight_requirement::RequirementFacet` enum crosses as `uint32_t`, not an opaque handle",
+    ),
+    (
+        "for_each_path_segment",
+        "flight-ffi flattens PathSegment into scalar callback arguments and returns a `bool` status",
+    ),
+    (
+        "set_storage_items",
+        "flight-ffi lowers the `&[(&str, &str)]` record to parallel key/value string arrays plus one length",
+    ),
+];
+
+// Reviewed accessor directions bound as `never`: a symbol with the accessor's name exists but is an
+// SDK function without `T get(handle)` / `T set(handle, T)` shape.
+pub const NATIVE_NEVER_ACCESSORS: &[(&str, &str)] = &[
+    (
+        "AnimationBlendTreeInput.weight:set",
+        "C (void *tree, size_t index, float) -> bool: an indexed SDK setter, not an accessor",
+    ),
+    (
+        "AnimationLayer.weight:set",
+        "C (void *player, size_t index, float) -> bool: an indexed SDK setter, not an accessor",
+    ),
+    (
+        "AudioBus.gain:set",
+        "C (mixer capability, guard state, bus, float) -> float: an SDK setter through the host mixer",
+    ),
+    (
+        "AudioBus.muted:set",
+        "C (mixer capability, guard state, bus, bool) -> bool: an SDK setter through the host mixer",
+    ),
+    (
+        "AudioBus.pan:set",
+        "C (mixer capability, guard state, bus, float) -> float: an SDK setter through the host mixer",
+    ),
+    (
+        "AudioMixer.master_gain:set",
+        "C (mixer capability, mixer, float) -> float: an SDK setter through the host mixer",
+    ),
+    (
+        "AudioMixer.master_muted:set",
+        "C (mixer capability, mixer, bool) -> bool: an SDK setter through the host mixer",
+    ),
+    (
+        "Clock.scale:set",
+        "C (void *clock, double) -> void: the SDK setter returns nothing, an accessor returns the value",
+    ),
+    (
+        "MotionPath.distance:set",
+        "C (void *path, double) -> void: the SDK setter returns nothing, an accessor returns the value",
+    ),
+    (
+        "TextureContainerLevel.byte_length:get",
+        "C (uint32_t format, size_t width, size_t height) -> int64_t: a size computation, not a getter",
+    ),
+    (
+        "VideoChannel.current_time:get",
+        "C (video capability, channel) -> float: an SDK query through the host video capability",
+    ),
+    (
+        "VideoChannel.current_time:set",
+        "C (video capability, channel, float) -> float: an SDK setter through the host video capability",
+    ),
+    (
+        "VideoChannel.gain:set",
+        "C (video capability, channel, float) -> float: an SDK setter through the host video capability",
+    ),
+    (
+        "VideoChannel.muted:set",
+        "C (video capability, channel, bool) -> bool: an SDK setter through the host video capability",
+    ),
+    (
+        "VideoChannel.playback_rate:set",
+        "C (video capability, channel, float) -> float: an SDK setter through the host video capability",
+    ),
+];
+
 #[cfg(test)]
 mod portable_module_tests {
     use super::*;
@@ -333,46 +493,206 @@ mod portable_module_tests {
             "Geometry"
         );
     }
-    #[test]
-    fn native_shape_mismatches_are_dropped_from_every_target() {
-        let surface = FfiSurface {
-            c: crate::ffi_surface::parse_ffi_header(
-                "float flight_get_audio_bus_gain(void * arg0);\n\
-                 float flight_set_audio_bus_gain(void * arg0, void * arg1, void * arg2, float arg3);",
-            ),
-            hl: crate::ffi_surface::parse_hl_primitives(
-                "DEFINE_PRIM(_F32, flight_get_audio_bus_gain, _BYTES);\n\
-                 DEFINE_PRIM(_F32, flight_set_audio_bus_gain, _BYTES _BYTES _BYTES _F32);",
-            ),
+    // A correct getter, plus one function the fixture header lowers differently (a status bool).
+    const POLICY_HEADER: &str = "float flight_get_audio_bus_gain(void * arg0);\n\
+        bool flight_visit_audio_bus(void * arg0);\n\
+        float flight_set_audio_bus_gain(void * arg0, void * arg1, void * arg2, float arg3);";
+    const POLICY_HL: &str = "DEFINE_PRIM(_F32, flight_get_audio_bus_gain, _BYTES);\n\
+        DEFINE_PRIM(_BOOL, flight_visit_audio_bus, _BYTES);\n\
+        DEFINE_PRIM(_F32, flight_set_audio_bus_gain, _BYTES _BYTES _BYTES _F32);";
+
+    fn policy_surface(header: &str, hl: &str) -> FfiSurface {
+        return FfiSurface {
+            c: crate::ffi_surface::parse_ffi_header(header),
+            hl: crate::ffi_surface::parse_hl_primitives(hl),
+            native_skips: BTreeSet::new(),
         };
-        let function = |name: &str, params: &[(&str, &str)]| ParsedFn {
+    }
+
+    fn policy_exports() -> Vec<CrateExports> {
+        let function = |name: &str, ret: Option<&str>| ParsedFn {
             name: name.into(),
             source_name: Some(name.into()),
-            params: params
-                .iter()
-                .map(|(name, ty)| crate::parse::Param {
-                    name: name.to_string(),
-                    ty: ty.to_string(),
-                })
-                .collect(),
-            ret: Some("f32".into()),
+            params: vec![crate::parse::Param {
+                name: "bus".into(),
+                ty: "&AudioBus".into(),
+            }],
+            ret: ret.map(str::to_string),
         };
-        let mut exports = vec![CrateExports {
+        return vec![CrateExports {
             dir_name: "flight-audio".into(),
             fns: vec![
-                function("get_audio_bus_gain", &[("bus", "&AudioBus")]),
-                function(
-                    "set_audio_bus_gain",
-                    &[("bus", "&AudioBus"), ("gain", "f32")],
-                ),
-                function("get_audio_bus_pan", &[("bus", "&AudioBus")]),
+                function("get_audio_bus_gain", Some("f32")),
+                function("visit_audio_bus", None),
             ],
-            structs: vec![],
+            structs: vec![ParsedStruct {
+                name: "AudioBus".into(),
+                fields: vec![crate::parse::StructField {
+                    name: "gain".into(),
+                    ty: "f32".into(),
+                }],
+            }],
             enums: vec![],
         }];
-        let dropped = drop_native_shape_mismatches(&mut exports, &surface);
-        assert_eq!(dropped, ["set_audio_bus_gain"]);
-        let kept: Vec<&str> = exports[0].fns.iter().map(|f| f.name.as_str()).collect();
-        assert_eq!(kept, ["get_audio_bus_gain", "get_audio_bus_pan"]);
+    }
+
+    const POLICY_SKIPS: &[(&str, &str)] = &[("visit_audio_bus", "status bool around the visit")];
+    const POLICY_NEVER: &[(&str, &str)] = &[("AudioBus.gain:set", "mixer SDK setter")];
+
+    #[test]
+    fn native_binding_policy_accepts_exactly_the_reviewed_tables() {
+        let mut surface = policy_surface(POLICY_HEADER, POLICY_HL);
+        let result = enforce_native_binding_policy(
+            &policy_exports(),
+            &mut surface,
+            POLICY_SKIPS,
+            POLICY_NEVER,
+        );
+        assert_eq!(result, Ok(()));
+        assert_eq!(
+            surface.native_skips,
+            BTreeSet::from(["flight_visit_audio_bus".to_string()])
+        );
+        assert!(has_native_ffi_function(
+            "get_audio_bus_gain",
+            Some(&surface)
+        ));
+        assert!(!has_native_ffi_function("visit_audio_bus", Some(&surface)));
+        assert!(has_ffi_function("visit_audio_bus", Some(&surface)));
+    }
+    #[test]
+    fn native_binding_policy_fails_when_c_and_hl_carriers_change() {
+        let header = POLICY_HEADER.replace(
+            "float flight_get_audio_bus_gain(void * arg0);",
+            "double flight_get_audio_bus_gain(void * arg0, void * arg1);",
+        );
+        let hl = POLICY_HL.replace(
+            "DEFINE_PRIM(_F32, flight_get_audio_bus_gain, _BYTES);",
+            "DEFINE_PRIM(_F64, flight_get_audio_bus_gain, _BYTES _BYTES);",
+        );
+        let mut surface = policy_surface(&header, &hl);
+        let errors = enforce_native_binding_policy(
+            &policy_exports(),
+            &mut surface,
+            POLICY_SKIPS,
+            POLICY_NEVER,
+        )
+        .unwrap_err();
+        assert!(
+            errors.iter().any(|e| e
+                .starts_with("unexpected native skip flight_get_audio_bus_gain: generic _hl+_cpp")),
+            "{errors:?}"
+        );
+        assert!(surface.native_skips.is_empty());
+    }
+    #[test]
+    fn native_binding_policy_fails_when_only_the_hl_carrier_changes() {
+        let hl = POLICY_HL.replace(
+            "DEFINE_PRIM(_F32, flight_get_audio_bus_gain, _BYTES);",
+            "DEFINE_PRIM(_F64, flight_get_audio_bus_gain, _BYTES);",
+        );
+        let mut surface = policy_surface(POLICY_HEADER, &hl);
+        let errors = enforce_native_binding_policy(
+            &policy_exports(),
+            &mut surface,
+            POLICY_SKIPS,
+            POLICY_NEVER,
+        )
+        .unwrap_err();
+        assert_eq!(
+            errors,
+            [
+                "unexpected native skip flight_get_audio_bus_gain: generic _hl extern disagrees with flight-ffi"
+            ]
+        );
+    }
+    #[test]
+    fn native_binding_policy_fails_when_a_reviewed_skip_stops_applying() {
+        let header = POLICY_HEADER.replace(
+            "bool flight_visit_audio_bus(void * arg0);",
+            "void flight_visit_audio_bus(void * arg0);",
+        );
+        let hl = POLICY_HL.replace(
+            "DEFINE_PRIM(_BOOL, flight_visit_audio_bus, _BYTES);",
+            "DEFINE_PRIM(_VOID, flight_visit_audio_bus, _BYTES);",
+        );
+        let mut surface = policy_surface(&header, &hl);
+        let errors = enforce_native_binding_policy(
+            &policy_exports(),
+            &mut surface,
+            POLICY_SKIPS,
+            POLICY_NEVER,
+        )
+        .unwrap_err();
+        assert_eq!(errors.len(), 1, "{errors:?}");
+        assert!(errors[0].starts_with("reviewed native skip flight_visit_audio_bus no longer"));
+    }
+    #[test]
+    fn native_binding_policy_fails_on_unexpected_or_stale_never_accessors() {
+        let mut surface = policy_surface(POLICY_HEADER, POLICY_HL);
+        let unexpected =
+            enforce_native_binding_policy(&policy_exports(), &mut surface, POLICY_SKIPS, &[])
+                .unwrap_err();
+        assert_eq!(
+            unexpected,
+            [
+                "unexpected never accessor AudioBus.gain:set: native symbol exists without accessor shape"
+            ]
+        );
+        let stale_header = POLICY_HEADER.replace(
+            "float flight_set_audio_bus_gain(void * arg0, void * arg1, void * arg2, float arg3);",
+            "float flight_set_audio_bus_gain(void * arg0, float arg1);",
+        );
+        let stale_hl = POLICY_HL.replace("_BYTES _BYTES _BYTES _F32", "_BYTES _F32");
+        let mut surface = policy_surface(&stale_header, &stale_hl);
+        let stale = enforce_native_binding_policy(
+            &policy_exports(),
+            &mut surface,
+            POLICY_SKIPS,
+            POLICY_NEVER,
+        )
+        .unwrap_err();
+        assert_eq!(
+            stale,
+            ["reviewed never accessor AudioBus.gain:set no longer applies; update the table"]
+        );
+    }
+    #[test]
+    fn reviewed_native_tables_are_exact_sorted_and_reasoned() {
+        let skips: Vec<&str> = NATIVE_SKIPS.iter().map(|(name, _)| *name).collect();
+        assert_eq!(
+            skips,
+            [
+                "build_particle_color_curve",
+                "collect_import_diagnostics",
+                "find_requirement_catalog_entries",
+                "for_each_path_segment",
+                "set_storage_items",
+            ]
+        );
+        let never: Vec<&str> = NATIVE_NEVER_ACCESSORS.iter().map(|(key, _)| *key).collect();
+        assert_eq!(
+            never,
+            [
+                "AnimationBlendTreeInput.weight:set",
+                "AnimationLayer.weight:set",
+                "AudioBus.gain:set",
+                "AudioBus.muted:set",
+                "AudioBus.pan:set",
+                "AudioMixer.master_gain:set",
+                "AudioMixer.master_muted:set",
+                "Clock.scale:set",
+                "MotionPath.distance:set",
+                "TextureContainerLevel.byte_length:get",
+                "VideoChannel.current_time:get",
+                "VideoChannel.current_time:set",
+                "VideoChannel.gain:set",
+                "VideoChannel.muted:set",
+                "VideoChannel.playback_rate:set",
+            ]
+        );
+        for (name, reason) in NATIVE_SKIPS.iter().chain(NATIVE_NEVER_ACCESSORS) {
+            assert!(!reason.trim().is_empty(), "{name} needs a reason");
+        }
     }
 }
