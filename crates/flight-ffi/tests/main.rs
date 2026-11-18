@@ -9,3 +9,5 @@ mod flight_ffi_public_perimeter_test;
 mod flight_ffi_task_k_opaque_handle_test;
 #[path = "task_m_residual_skip_test.rs"]
 mod flight_ffi_task_m_residual_skip_test;
+#[path = "task_s_capability_constructor_test.rs"]
+mod flight_ffi_task_s_capability_constructor_test;

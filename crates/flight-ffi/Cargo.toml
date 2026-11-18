@@ -28,6 +28,8 @@ serde_json = { version = "1", default-features = false, features = ["std"] }
 
 [dev-dependencies]
 cc = "1.11.2"
+quote = "1"
+syn = { version = "2", features = ["full"] }
 
 [build-dependencies]
 syn = { version = "2", features = ["full", "visit"] }

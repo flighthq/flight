@@ -532,6 +532,7 @@ version = "0.6.0"
 dependencies = [
  "cc",
  "flight-sdk",
+ "quote",
  "serde_json",
  "syn 2.0.119",
 ]

@@ -510,6 +510,92 @@ static void check_task_m_carriers(void) {
   flight_build_particle_color_curve_result_free(NULL);
 }
 
+struct task_s_device_context {
+  int calls;
+  int refreshes;
+};
+
+static void task_s_get_device_capabilities(void *context, void *out) {
+  struct task_s_device_context *device = context;
+  device->calls += 1;
+  flight_set_device_capabilities_has_keyboard(out, true);
+  flight_set_device_capabilities_has_mouse(out, true);
+}
+
+static void task_s_get_device_display_metrics(void *context, void *out) {
+  struct task_s_device_context *device = context;
+  device->calls += 1;
+  flight_set_device_display_metrics_pixel_ratio(out, 2.0f);
+}
+
+static char *task_s_get_device_id(void *context) {
+  struct task_s_device_context *device = context;
+  device->calls += 1;
+  return flight_compute_rgb_hex_string(0x00000000u);
+}
+
+static void task_s_get_device_info(void *context, void *out) {
+  struct task_s_device_context *device = context;
+  device->calls += 1;
+  (void)out;
+}
+
+static void task_s_get_safe_area_insets(void *context, void *out) {
+  struct task_s_device_context *device = context;
+  device->calls += 1;
+  flight_set_safe_area_insets_top(out, 11.0f);
+  flight_set_safe_area_insets_bottom(out, 22.0f);
+}
+
+static void task_s_refresh_device(void *context) {
+  struct task_s_device_context *device = context;
+  device->calls += 1;
+  device->refreshes += 1;
+}
+
+static void check_task_s_host_capability_constructor(void) {
+  struct task_s_device_context context = {0};
+  void *rejected = flight_create_host_device_capability(
+      &context, NULL, task_s_get_device_display_metrics, task_s_get_device_id, task_s_get_device_info,
+      task_s_get_safe_area_insets, NULL);
+  expect(rejected == NULL && context.calls == 0, "Task S rejects a required NULL callback before construction");
+
+  void *capability = flight_create_host_device_capability(
+      &context, task_s_get_device_capabilities, task_s_get_device_display_metrics, task_s_get_device_id,
+      task_s_get_device_info, task_s_get_safe_area_insets, NULL);
+  expect(capability != NULL, "Task S constructs a capability from strict-C callbacks");
+
+  void *flags = flight_create_device_capabilities();
+  flight_get_device_capabilities(flags, capability);
+  expect(flight_get_device_capabilities_has_keyboard(flags) && flight_get_device_capabilities_has_mouse(flags),
+         "Task S mutable out carrier round-trips callback writes");
+
+  char *id = flight_get_device_id(capability);
+  expect(id != NULL && strcmp(id, "#000000") == 0, "Task S owned string callback return round-trips");
+  flight_free_string(id);
+
+  void *insets = flight_create_safe_area_insets();
+  flight_get_safe_area_insets(insets, capability);
+  expect(near(flight_get_safe_area_insets_top(insets), 11.0f) &&
+             near(flight_get_safe_area_insets_bottom(insets), 22.0f),
+         "Task S borrowed mutable handle preserves argument identity");
+  flight_refresh_device_info(capability);
+  expect(context.refreshes == 0, "Task S optional NULL callback maps to None");
+
+  flight_free_device_capabilities(flags);
+  flight_free_safe_area_insets(insets);
+  flight_free_host_device_capability(capability);
+  context.calls += 1;
+  expect(context.calls == 4, "Task S free never frees the caller-owned context");
+
+  capability = flight_create_host_device_capability(
+      &context, task_s_get_device_capabilities, task_s_get_device_display_metrics, task_s_get_device_id,
+      task_s_get_device_info, task_s_get_safe_area_insets, task_s_refresh_device);
+  flight_refresh_device_info(capability);
+  expect(context.refreshes == 1, "Task S optional callback maps Some and runs exactly once");
+  flight_free_host_device_capability(capability);
+}
+
 struct shape_bounds_recording_context {
   int flush_calls;
   bool flush_succeeds;
@@ -682,6 +768,7 @@ int main(void) {
   check_unit_signals();
   check_async_callbacks();
   check_task_m_carriers();
+  check_task_s_host_capability_constructor();
   check_shape_bounds_context();
   if (failures != 0) {
     fprintf(stderr, "flight-ffi C consumer: %d failure(s)\n", failures);
