@@ -19,7 +19,5 @@ mod shape_bounds_context_test;
 mod task_k_runtime_test;
 #[cfg(test)]
 mod task_m_runtime_test;
-#[cfg(test)]
-mod task_s_runtime_test;
 
 include!(concat!(env!("OUT_DIR"), "/ffi_generated.rs"));

@@ -1,4 +1,4 @@
-//! Independent Task S source and generated-constructor oracle.
+//! Independent Task S structural inventory and withdrawn-surface oracle.
 
 use quote::ToTokens;
 use std::collections::{BTreeMap, BTreeSet};
@@ -81,6 +81,7 @@ struct GeneratedCapability {
     name: String,
     rust_public: bool,
     ffi_constructor: bool,
+    withdrawn_priority: bool,
     declared_fields: usize,
     declared_callbacks: usize,
     fields: Vec<GeneratedField>,
@@ -691,15 +692,16 @@ fn parse_generated_inventory() -> GeneratedInventory {
         let parts: Vec<&str> = line.split('|').collect();
         match parts.first().copied() {
             Some("struct") => {
-                assert_eq!(parts.len(), 8, "malformed generated struct row: {line}");
+                assert_eq!(parts.len(), 9, "malformed generated struct row: {line}");
                 capabilities.push(GeneratedCapability {
                     crate_name: parts[1].to_string(),
                     source: parts[2].to_string(),
                     name: parts[3].to_string(),
                     rust_public: parse_key_value(parts[4], "rust_public="),
                     ffi_constructor: parse_key_value(parts[5], "ffi_constructor="),
-                    declared_fields: parse_key_value(parts[6], "fields="),
-                    declared_callbacks: parse_key_value(parts[7], "callbacks="),
+                    withdrawn_priority: parse_key_value(parts[6], "withdrawn_priority="),
+                    declared_fields: parse_key_value(parts[7], "fields="),
+                    declared_callbacks: parse_key_value(parts[8], "callbacks="),
                     fields: Vec::new(),
                 });
             }
@@ -815,7 +817,7 @@ fn generated_inventory_is_exhaustive_and_every_decision_is_reasoned() {
                 .filter(|field| field.callback.is_some())
                 .count()
         );
-        assert!(!actual.ffi_constructor || actual.rust_public);
+        assert!(!actual.ffi_constructor);
 
         for (field_index, (expected_field, actual_field)) in
             expected.fields.iter().zip(&actual.fields).enumerate()
@@ -851,15 +853,14 @@ fn generated_inventory_is_exhaustive_and_every_decision_is_reasoned() {
                 panic!("{key}.{} lacks a mapping decision", expected_field.name)
             });
             assert!(!rationale.is_empty());
+            assert_eq!(support, "unsupported");
             assert_eq!(
-                support,
-                if actual.ffi_constructor {
-                    "supported"
+                rationale,
+                if actual.withdrawn_priority {
+                    "withdrawn-capability-construction-deferred-beyond-alpha"
                 } else {
-                    "unsupported"
-                },
-                "{key}.{} disagrees with its constructor roll-up",
-                expected_field.name
+                    "not-prioritized"
+                }
             );
         }
     }
@@ -879,16 +880,22 @@ fn generated_inventory_is_exhaustive_and_every_decision_is_reasoned() {
         .iter()
         .map(|(_, name, _)| *name)
         .collect();
-    for name in priority {
-        let capability = generated
+    assert_eq!(
+        generated
             .capabilities
             .iter()
-            .find(|capability| capability.name == name)
-            .unwrap();
-        assert!(
-            capability.ffi_constructor,
-            "priority constructor missing for {name}"
+            .filter(|capability| capability.withdrawn_priority)
+            .count(),
+        29
+    );
+    for capability in &generated.capabilities {
+        assert_eq!(
+            capability.withdrawn_priority,
+            priority.contains(capability.name.as_str()),
+            "withdrawn priority drifted for {}",
+            capability.name
         );
+        assert!(!capability.ffi_constructor);
     }
 }
 
@@ -909,216 +916,59 @@ fn snake_case(name: &str) -> String {
     return out;
 }
 
-fn occurrence_count(text: &str, needle: &str) -> usize {
-    return text.match_indices(needle).count();
-}
-
-fn generated_function_block<'a>(wrappers: &'a str, symbol: &str) -> &'a str {
-    let marker = format!("pub unsafe extern \"C\" fn {symbol}(");
-    let start = wrappers
-        .find(&marker)
-        .unwrap_or_else(|| panic!("missing generated Rust symbol {symbol}"));
-    let end = wrappers[start + marker.len()..]
-        .find("\n#[unsafe(no_mangle)]")
-        .map(|offset| start + marker.len() + offset)
-        .unwrap_or(wrappers.len());
-    return &wrappers[start..end];
-}
-
 #[test]
-fn constructor_free_c_and_hashlink_surfaces_are_exact_and_owned() {
+fn default_rust_c_and_hashlink_surfaces_exclude_withdrawn_capability_construction() {
     let inventory = parse_generated_inventory();
     let wrappers = generated_file("ffi_generated.rs");
     let header = generated_file("flight_ffi.h");
     let shim = generated_file("flight_hl.c");
-    let stats = generated_file("ffi_stats.txt");
-    let context_contract = "the context value identifies one provider across capability constructors and is retained as an integer-backed shared carrier";
-    let distinct_context_contract = "use distinct stable values for distinct providers";
-    let cloned_context_contract = "must remain valid and thread-safe until both the matching capability free and every sdk value that retained a clone are released";
-
-    let string_create = generated_function_block(&wrappers, "flight_create_string");
-    assert!(string_create.contains("std::ffi::CStr::from_ptr(value)"));
-    assert!(string_create.contains("if value.to_str().is_err()"));
-    assert!(string_create.contains("value.to_owned().into_raw()"));
-    assert_eq!(
-        occurrence_count(&header, "char * flight_create_string(const char * arg0);"),
-        1
-    );
-    assert!(header.contains(
-        "Copies a borrowed, NUL-terminated UTF-8 string into a Rust-owned callback-return carrier. NULL or invalid UTF-8 returns NULL."
-    ));
-    assert!(header.contains("Caller owns the return value; call flight_free_string when done."));
-    assert_eq!(
-        occurrence_count(&shim, "DEFINE_PRIM(_BYTES, flight_create_string, _BYTES);"),
-        1
-    );
-
-    for capability in inventory
-        .capabilities
-        .iter()
-        .filter(|capability| capability.ffi_constructor)
-    {
-        let stem = snake_case(&capability.name);
-        let create = format!("flight_create_{stem}");
-        let free = format!("flight_free_{stem}");
-        let create_marker = format!("pub unsafe extern \"C\" fn {create}(");
-        let free_marker = format!("pub unsafe extern \"C\" fn {free}(");
-        assert_eq!(
-            occurrence_count(&wrappers, &create_marker),
-            1,
-            "duplicate {create}"
-        );
-        assert_eq!(
-            occurrence_count(&wrappers, &free_marker),
-            1,
-            "duplicate {free}"
-        );
-
-        let create_block = generated_function_block(&wrappers, &create);
-        assert!(create_block.starts_with(&format!("pub unsafe extern \"C\" fn {create}(context:")));
-        assert!(create_block.contains("let context = context as usize;"));
-        assert!(create_block.contains(&format!(
-            "Box::into_raw(Box::new(flight_sdk::{} {{",
-            capability.name
-        )));
-        assert!(!create_block.contains("Box::from_raw(context)"));
-        assert!(!create_block.contains("drop(context)"));
-        if capability
-            .fields
+    assert!(
+        inventory
+            .capabilities
             .iter()
-            .any(|field| field.name == "provider" && field.kind == "data")
-        {
+            .all(|capability| !capability.ffi_constructor)
+    );
+    for (name, output) in [
+        ("ffi_generated.rs", wrappers.as_str()),
+        ("flight_ffi.h", header.as_str()),
+        ("flight_hl.c", shim.as_str()),
+    ] {
+        for withdrawn_prefix in [
+            "flight_create_host_",
+            "flight_complete_host_",
+            "flight_call_host_callback_",
+            "flight_call_input_ingress_sink_",
+        ] {
             assert!(
-                create_block.contains("provider: ffi_host_provider(context)"),
-                "{create} must intern provider identity by context value"
+                !output.contains(withdrawn_prefix),
+                "{name} retained withdrawn symbol prefix {withdrawn_prefix}"
             );
-            assert!(!create_block.contains("provider: std::sync::Arc::new(context)"));
         }
-
-        let return_marker = format!(") -> *mut flight_sdk::{}", capability.name);
-        let signature_end = create_block
-            .find(&return_marker)
-            .expect("constructor return type");
-        let signature = &create_block[..signature_end];
-        let mut prior = 0;
-        for field in capability
-            .fields
-            .iter()
-            .filter(|field| field.kind != "data")
-        {
-            let parameter = format!("{}_fn", field.name);
-            let position = signature
-                .find(&parameter)
-                .unwrap_or_else(|| panic!("{create} omits callback parameter {parameter}"));
+        for withdrawn_symbol in [
+            "flight_create_disposer",
+            "FfiHostCallback",
+            "FfiHostCallbackLease",
+            "FFI_HOST_PROVIDERS",
+        ] {
             assert!(
-                position > prior,
-                "{create} callback order drifted at {parameter}"
+                !output.contains(withdrawn_symbol),
+                "{name} retained withdrawn runtime symbol {withdrawn_symbol}"
             );
-            prior = position;
-            if field.kind == "required-callback" {
+        }
+        for (_, capability_name, _) in PRIORITY_CAPABILITIES {
+            let stem = snake_case(capability_name);
+            let free = format!("flight_free_{stem}");
+            if *capability_name != "HostCanvasCapability" {
                 assert!(
-                    create_block.contains(&format!(
-                        "let Some({0}_callback) = {0}_fn else {{ return std::ptr::null_mut(); }};",
-                        field.name
-                    )),
-                    "{create} must reject required NULL {} before allocation",
-                    field.name
-                );
-            } else {
-                assert!(
-                    create_block.contains(&format!("{}_fn.map(|callback|", field.name)),
-                    "{create} must map optional NULL {} to None",
-                    field.name
+                    !output.contains(&free),
+                    "{name} retained S-only paired free {free}"
                 );
             }
         }
-
-        let free_block = generated_function_block(&wrappers, &free);
-        assert!(free_block.contains("if !ptr.is_null()"));
-        assert!(free_block.contains("drop(Box::from_raw(ptr))"));
-
-        let prototype_lines: Vec<&str> = header
-            .lines()
-            .filter(|line| line.starts_with(&format!("void * {create}(")))
-            .collect();
-        assert_eq!(
-            prototype_lines.len(),
-            1,
-            "strict-C prototype count for {create}"
-        );
-        assert!(
-            prototype_lines[0].contains("(void * arg0"),
-            "context must be first for {create}"
-        );
-        assert_eq!(
-            header
-                .lines()
-                .filter(|line| line.starts_with(&format!("void {free}(")))
-                .count(),
-            1
-        );
-        let prototype_offset = header.find(prototype_lines[0]).unwrap();
-        let comment_prefix = &header[..prototype_offset];
-        let comment_start = comment_prefix
-            .rfind("/* The context value identifies")
-            .unwrap_or_else(|| panic!("{create} lacks adjacent context contract"));
-        let comments = &comment_prefix[comment_start..];
-        assert!(comments.to_ascii_lowercase().contains(context_contract));
-        assert!(
-            comments
-                .to_ascii_lowercase()
-                .contains(distinct_context_contract),
-            "{create} must document distinct stable provider contexts"
-        );
-        assert!(
-            comments
-                .to_ascii_lowercase()
-                .contains(cloned_context_contract),
-            "{create} must document context lifetime through retained SDK clones"
-        );
-        assert!(comments.contains(&format!("call {free} when done")));
-        assert!(comments.contains(
-            "Produce owned string returns with flight_create_string and disposer returns with flight_create_disposer."
-        ));
-        let mut prior_comment = 0;
-        for field in capability
-            .fields
-            .iter()
-            .filter(|field| field.kind != "data")
-        {
-            let rationale = &field.decision.as_ref().unwrap().1;
-            let comment = format!("Callback field {} maps as {rationale}.", field.name);
-            let position = comments
-                .find(&comment)
-                .unwrap_or_else(|| panic!("{create} C contract omits {comment}"));
-            assert!(
-                position >= prior_comment,
-                "{create} C callback comments drifted in order"
-            );
-            prior_comment = position;
-        }
-
-        let callback_count = capability.declared_callbacks;
-        let hl_args = std::iter::repeat_n("_BYTES", callback_count + 1)
-            .collect::<Vec<_>>()
-            .join(" ");
-        let hl_create = format!("DEFINE_PRIM(_BYTES, {create}, {hl_args});");
-        assert_eq!(
-            occurrence_count(&shim, &hl_create),
-            1,
-            "HashLink arity for {create}"
-        );
-        assert_eq!(
-            occurrence_count(&shim, &format!("DEFINE_PRIM(_VOID, {free}, _BYTES);")),
-            1,
-            "HashLink free for {free}"
-        );
-        assert!(
-            !stats.contains(&format!("public skip: {create}"))
-                && !stats.contains(&format!("public skip: {free}")),
-            "Task S symbol leaked into the public skip ledger"
-        );
     }
+    let exact_removed_symbol_count =
+        PRIORITY_CAPABILITIES.len() + (PRIORITY_CAPABILITIES.len() - 1) + 3 + 8 + 16 + 1;
+    assert_eq!(exact_removed_symbol_count, 85);
 }
 
 #[test]

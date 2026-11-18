@@ -1,7 +1,8 @@
-# Task S host-capability mapping report
+# Task S host-capability inventory and withdrawal report
 
-This report freezes the independent source census and the acceptance policy for generated host
-capability constructors. The machine-readable companion is `task_s_capability_inventory.tsv`.
+This report freezes the independent source census while recording that generated host-capability
+construction is withdrawn from the alpha ABI. The machine-readable companion is
+`task_s_capability_inventory.tsv`; neither artifact enables runtime adapters.
 
 ## Census
 
@@ -18,9 +19,10 @@ The callable census includes both closure carriers and three structural bare fun
 bare pointers are `HostCompressDeflateCapability.compress`, `HostCompressLzmaCapability.compress`,
 and `HostTextSegmenterCapability.segment`. Omitting them produces the misleading 435/302 census.
 
-## HostLime priorities
+## Withdrawn HostLime priorities
 
-The seven user-facing priorities resolve to 29 callback-bearing leaf structs and 76 callbacks:
+The seven former implementation priorities resolve to 29 callback-bearing leaf structs and 76 callbacks.
+All 29 are explicitly inventoried as `withdrawn_priority=true`; none has a public FFI constructor:
 
 | Priority | Exact leaf types | Callbacks |
 | --- | --- | ---: |
@@ -32,14 +34,12 @@ The seven user-facing priorities resolve to 29 callback-bearing leaf structs and
 | Timer | `HostTimerCapability` | 3 |
 | Surface / Canvas / GL / WGPU | `HostCanvasCapability`, `HostGlCapability`, `HostSurfaceDisplayCapability`, `HostSurfaceResizeCapability`, `HostWgpuCapability` | 16 |
 
-The plural aggregate structs are routing containers, not constructor leaves. Constructor names use
-the exact leaf type converted to snake case: `flight_create_<leaf>` and `flight_free_<leaf>`.
+The plural aggregate structs remain routing containers. The briefly generated
+`flight_create_host_*_capability` surface and its S-only paired frees are withdrawn.
 
 ## Carrier and support decisions
 
-Every inventory field receives its own decision. A struct-level constructor flag is only a roll-up;
-it never substitutes for field evidence. The independent source inventory groups callbacks into
-these first-pass carrier/risk buckets:
+The independent source inventory groups callbacks into these first-pass carrier/risk buckets:
 
 | Bucket | Fields | Meaning |
 | --- | ---: | --- |
@@ -52,40 +52,24 @@ these first-pass carrier/risk buckets:
 | `unsupported:future` | 136 | A future result needs an explicit one-shot completion context, error carrier, and exactly-once rule before it is eligible. |
 
 These buckets are an audit aid, not permission to infer support from spelling. The generated report
-must emit `decision|field|supported|rationale` or `decision|field|unsupported|rationale` adjacent to
-every field. A generated constructor is valid only when every one of its fields is supported.
+emits an adjacent unsupported decision for every field. Fields on the former 29 priorities use the
+reason `withdrawn-capability-construction-deferred-beyond-alpha`; every other field remains
+`not-prioritized`.
 
-## Constructor contract
+## Withdrawal contract
 
-For every supported public leaf:
-
-1. The Rust, strict-C, and HashLink surfaces contain exactly one deterministic constructor and one
-   exact free.
-2. The shared context is the first argument, is stored only as an integer-backed shared carrier,
-   interns one provider identity across constructors, and requires distinct stable values for
-   distinct providers. It may be used from every thread allowed by the Rust capability, remains
-   caller-owned and valid until both the constructor handle is freed and every SDK value retaining
-   a capability clone is released, and is never dereferenced or freed by Rust.
-3. Callback parameters follow source declaration order. Required NULL rejects before allocation;
-   optional NULL becomes `None` and a present optional callback becomes `Some`.
-4. Borrowed pointer arguments exist only for the dynamic callback invocation. Mutable out handles
-   preserve identity. Checked enums reject invalid discriminants inside the unwind boundary.
-5. Owned callback returns transfer one owner. UTF-8 callback strings are produced with
-   `flight_create_string` and consumed by the adapter or released with `flight_free_string`.
-   Nested callbacks/sinks remain Rust-owned through the returned disposer lease. Async completions
-   settle exactly once through their typed helper.
-6. Free accepts NULL and drops exactly the constructor-owned box. It never releases caller context.
+The default Rust, strict-C, and HashLink outputs contain no `flight_create_host_*_capability`,
+`flight_complete_host_*`, `FfiHostCallback`, callback lease, input-ingress adapter, provider
+registry, or S-only disposer-construction path. This removes the reachable use-after-free in which
+a disposer lease could drop a callback box without cancelling the host callback, as well as the
+async completion double-free/use-after-free risk. Capability construction requires a redesigned
+ownership and cancellation protocol before it can return to a later ABI.
 
 ## Executable and structural coverage
 
-- The Rust runtime fixture constructs `HostDeviceCapability` and `HostTimerCapability`, exercises
-  mutable out handles, owned strings and their producer/free pair, scalar returns, optional
-  None/Some, context identity,
-  cross-thread Send+Sync use, retained nested callbacks, disposer cancellation, and exact free.
-- The strict-C consumer constructs and invokes `HostDeviceCapability` under C11 with
-  `-Wall -Wextra -Wpedantic -Werror`, including required/optional NULL and owned-string behavior.
-- The generated-output oracle checks every supported constructor/free in Rust, C, and HashLink,
-  validates callback order and HashLink arity, and requires the context/ownership/mapping contract
-  immediately adjacent to each C prototype.
+- The unsafe Task S Rust runtime fixture and strict-C constructor round trip are removed.
+- The generated-output oracle requires zero constructors and completion helpers in Rust, C, and
+  HashLink, rejects every S-only callback/runtime symbol, and freezes the exact 85-symbol removal.
 - The source oracle reparses every workspace crate with `syn`, compares a frozen 1,344-line
-  inventory, and independently cross-checks the generated 242-struct/795-field/438-callback report.
+  inventory, and independently cross-checks the generated 242-struct/795-field/438-callback report
+  and the exact 29 withdrawn priorities.
