@@ -28,13 +28,13 @@ fn bounds_overlap(a: &SpatialAabb2D, b: &SpatialAabb2D) -> bool {
     return a.min_x < b.max_x && a.max_x > b.min_x && a.min_y < b.max_y && a.max_y > b.min_y;
 }
 
-fn bounds_contain_point(bounds: &SpatialAabb2D, x: f32, y: f32) -> bool {
+fn bounds_contain_point(bounds: &SpatialAabb2D, x: f64, y: f64) -> bool {
     return x >= bounds.min_x && x <= bounds.max_x && y >= bounds.min_y && y <= bounds.max_y;
 }
 
-fn bounds_intersect_ray(bounds: &SpatialAabb2D, ox: f32, oy: f32, dx: f32, dy: f32) -> bool {
-    let mut t_min = f32::NEG_INFINITY;
-    let mut t_max = f32::INFINITY;
+fn bounds_intersect_ray(bounds: &SpatialAabb2D, ox: f64, oy: f64, dx: f64, dy: f64) -> bool {
+    let mut t_min = f64::NEG_INFINITY;
+    let mut t_max = f64::INFINITY;
     if dx == 0.0 {
         if ox < bounds.min_x || ox > bounds.max_x {
             return false;
@@ -58,7 +58,7 @@ fn bounds_intersect_ray(bounds: &SpatialAabb2D, ox: f32, oy: f32, dx: f32, dy: f
     return t_max >= t_min && t_max >= 0.0;
 }
 
-fn bounds_share_cell(a: &SpatialAabb2D, b: &SpatialAabb2D, cell_size: f32) -> bool {
+fn bounds_share_cell(a: &SpatialAabb2D, b: &SpatialAabb2D, cell_size: f64) -> bool {
     return (a.min_x / cell_size)
         .floor()
         .max((b.min_x / cell_size).floor())
@@ -73,7 +73,7 @@ fn bounds_share_cell(a: &SpatialAabb2D, b: &SpatialAabb2D, cell_size: f32) -> bo
                 .min((b.max_y / cell_size).floor());
 }
 
-fn is_overflow_bounds(bounds: &SpatialAabb2D, cell_size: f32) -> bool {
+fn is_overflow_bounds(bounds: &SpatialAabb2D, cell_size: f64) -> bool {
     let width =
         (bounds.max_x / cell_size).floor() as i64 - (bounds.min_x / cell_size).floor() as i64 + 1;
     let height =
@@ -81,19 +81,19 @@ fn is_overflow_bounds(bounds: &SpatialAabb2D, cell_size: f32) -> bool {
     return width * height > MAX_INDEXED_CELLS_PER_OBJECT as i64;
 }
 
-fn create_test_random(seed: u32) -> impl FnMut() -> f32 {
+fn create_test_random(seed: u32) -> impl FnMut() -> f64 {
     let mut state = seed;
     return move || {
         state ^= state << 13;
         state ^= state >> 17;
         state ^= state << 5;
-        return state as f32 / 0x1_0000_0000_u64 as f32;
+        return state as f64 / 0x1_0000_0000_u64 as f64;
     };
 }
 
 fn brute_force_pair_keys(
     objects: &HashMap<SpatialObjectId, SpatialAabb2D>,
-    cell_size: f32,
+    cell_size: f64,
 ) -> Vec<String> {
     let entries: Vec<_> = objects.iter().collect();
     let mut pairs: Vec<String> = Vec::new();
@@ -122,7 +122,7 @@ mod brute_force_property_coverage {
 
     #[test]
     fn matches_pair_region_point_and_ray_oracles_through_seeded_churn() {
-        let cell_size: f32 = 4.0;
+        let cell_size: f64 = 4.0;
         for &seed in &[0x1357_9bdf_u32, 0x2468_ace0, 0x5eed_f00d, 0xc0ff_ee42] {
             let mut random = create_test_random(seed);
             let mut grid =
@@ -130,7 +130,7 @@ mod brute_force_property_coverage {
             let mut objects: HashMap<SpatialObjectId, SpatialAabb2D> = HashMap::new();
 
             let random_bounds =
-                |random: &mut dyn FnMut() -> f32, overflow: bool| -> SpatialAabb2D {
+                |random: &mut dyn FnMut() -> f64, overflow: bool| -> SpatialAabb2D {
                     let min_x = (random() * 160.0).floor() - 80.0 + random();
                     let min_y = (random() * 160.0).floor() - 80.0 + random();
                     let width = if overflow {
@@ -268,7 +268,7 @@ mod brute_force_property_coverage {
 mod cell_range_across_every_transition {
     use super::*;
 
-    const FAR: f32 = 5_000_000.0;
+    const FAR: f64 = 5_000_000.0;
 
     fn ray_ids(grid: &mut SpatialIndex2D) -> Vec<SpatialObjectId> {
         let mut out: Vec<SpatialObjectId> = Vec::new();
@@ -333,7 +333,7 @@ mod cell_range_across_every_transition {
             &mut grid,
             3,
             &SpatialAabb2D {
-                min_x: f32::NAN,
+                min_x: f64::NAN,
                 min_y: 0.0,
                 max_x: 1.0,
                 max_y: 1.0,
@@ -695,7 +695,7 @@ mod create_uniform_grid_spatial_backend_2d {
             ),
         ];
 
-        let confirmed_pairs = |cell_size: f32| -> Vec<String> {
+        let confirmed_pairs = |cell_size: f64| -> Vec<String> {
             let mut grid =
                 create_spatial_index_2d(Some(create_uniform_grid_spatial_backend_2d(cell_size)));
             for &(id, ref bounds) in &objects {
@@ -770,7 +770,7 @@ mod max_indexed_cells_per_object {
     #[test]
     fn per_object_cell_budget() {
         let mut grid = create_spatial_index_2d(Some(create_uniform_grid_spatial_backend_2d(1.0)));
-        let side = (MAX_INDEXED_CELLS_PER_OBJECT as f32).sqrt();
+        let side = (MAX_INDEXED_CELLS_PER_OBJECT as f64).sqrt();
         assert_eq!(side, side.floor());
         insert_spatial_object_2d(
             &mut grid,
@@ -816,7 +816,7 @@ mod non_finite_bounds {
             &mut grid,
             1,
             &SpatialAabb2D {
-                min_x: f32::NAN,
+                min_x: f64::NAN,
                 min_y: 0.0,
                 max_x: 10.0,
                 max_y: 10.0
@@ -828,7 +828,7 @@ mod non_finite_bounds {
             &SpatialAabb2D {
                 min_x: 0.0,
                 min_y: 0.0,
-                max_x: f32::INFINITY,
+                max_x: f64::INFINITY,
                 max_y: 10.0
             }
         ));
@@ -837,7 +837,7 @@ mod non_finite_bounds {
             3,
             &SpatialAabb2D {
                 min_x: 0.0,
-                min_y: f32::NEG_INFINITY,
+                min_y: f64::NEG_INFINITY,
                 max_x: 10.0,
                 max_y: 10.0
             }
@@ -873,10 +873,10 @@ mod non_finite_bounds {
             &mut grid,
             1,
             &SpatialAabb2D {
-                min_x: f32::NAN,
-                min_y: f32::NAN,
-                max_x: f32::NAN,
-                max_y: f32::NAN,
+                min_x: f64::NAN,
+                min_y: f64::NAN,
+                max_x: f64::NAN,
+                max_y: f64::NAN,
             },
         );
         insert_spatial_object_2d(
@@ -932,10 +932,10 @@ mod non_finite_bounds {
             &mut grid,
             1,
             &SpatialAabb2D {
-                min_x: f32::NAN,
-                min_y: f32::NAN,
-                max_x: f32::NAN,
-                max_y: f32::NAN
+                min_x: f64::NAN,
+                min_y: f64::NAN,
+                max_x: f64::NAN,
+                max_y: f64::NAN
             }
         ));
         assert_eq!(
@@ -954,10 +954,10 @@ mod non_finite_bounds {
             &mut grid,
             1,
             &SpatialAabb2D {
-                min_x: f32::NAN,
-                min_y: f32::NAN,
-                max_x: f32::NAN,
-                max_y: f32::NAN,
+                min_x: f64::NAN,
+                min_y: f64::NAN,
+                max_x: f64::NAN,
+                max_y: f64::NAN,
             },
         );
         assert!(update_spatial_object_2d(
@@ -1334,9 +1334,9 @@ mod oversized_region_query {
                 &mut grid,
                 i,
                 &SpatialAabb2D {
-                    min_x: i as f32,
+                    min_x: i as f64,
                     min_y: 0.0,
-                    max_x: i as f32 + 0.5,
+                    max_x: i as f64 + 0.5,
                     max_y: 1.0,
                 },
             );

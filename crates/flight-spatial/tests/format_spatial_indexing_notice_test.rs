@@ -168,7 +168,7 @@ mod format_spatial_indexing_notice {
         };
         insert_spatial_object_2d(&mut index, 9, &overflow_bounds);
         let nan_bounds = SpatialAabb2D {
-            min_x: f32::NAN,
+            min_x: f64::NAN,
             min_y: 0.0,
             max_x: 1.0,
             max_y: 1.0,

@@ -26,7 +26,7 @@ pub struct GridCell2D {
 /// Mutable state captured by a uniform-grid backend callback record.
 #[derive(Default)]
 pub struct UniformGrid2D {
-    pub cell_size: f32,
+    pub cell_size: f64,
     pub cells: HashMap<(i32, i32), GridCell2D>,
     pub cell_order: Vec<(i32, i32)>,
     pub bounds: HashMap<SpatialObjectId, SpatialAabb2D>,
@@ -58,7 +58,7 @@ pub const MAX_INDEXED_CELLS_PER_OBJECT: u32 = 1024;
 // ---------------------------------------------------------------------------
 
 /// Creates an entity-backed uniform-grid callback record.
-pub fn create_uniform_grid_spatial_backend_2d(cell_size: f32) -> SpatialIndexBackend2D {
+pub fn create_uniform_grid_spatial_backend_2d(cell_size: f64) -> SpatialIndexBackend2D {
     let mut out: SpatialIndexBackend2D = allocate_entity();
     let grid = UniformGrid2D {
         cell_size,
@@ -75,7 +75,7 @@ pub fn initialize_uniform_grid_spatial_backend_2d(
     uniform_grid_backend_2d_callbacks(out, grid);
 }
 
-pub(crate) fn cell_index(coord: f32, cell_size: f32) -> i32 {
+pub(crate) fn cell_index(coord: f64, cell_size: f64) -> i32 {
     return (coord / cell_size).floor() as i32;
 }
 
@@ -255,7 +255,7 @@ fn insert_into_grid(
     return true;
 }
 
-fn is_spatial_aabb_contains_point_2d(aabb: &SpatialAabb2D, x: f32, y: f32) -> bool {
+fn is_spatial_aabb_contains_point_2d(aabb: &SpatialAabb2D, x: f64, y: f64) -> bool {
     let min_x = aabb.min_x;
     let min_y = aabb.min_y;
     let max_x = aabb.max_x;
@@ -345,7 +345,7 @@ fn query_grid_pairs(out: &mut Vec<SpatialPair>, index: &mut UniformGrid2D) {
     }
 }
 
-fn query_grid_point(index: &mut UniformGrid2D, x: f32, y: f32, out: &mut Vec<SpatialObjectId>) {
+fn query_grid_point(index: &mut UniformGrid2D, x: f64, y: f64, out: &mut Vec<SpatialObjectId>) {
     out.clear();
     let cs = index.cell_size;
     let key = (cell_index(x, cs), cell_index(y, cs));
@@ -370,10 +370,10 @@ fn query_grid_point(index: &mut UniformGrid2D, x: f32, y: f32, out: &mut Vec<Spa
 #[allow(clippy::too_many_arguments)]
 fn query_grid_ray(
     index: &mut UniformGrid2D,
-    ox: f32,
-    oy: f32,
-    dx: f32,
-    dy: f32,
+    ox: f64,
+    oy: f64,
+    dx: f64,
+    dy: f64,
     out: &mut Vec<SpatialObjectId>,
 ) {
     out.clear();
@@ -405,10 +405,10 @@ fn query_grid_ray(
     if index.cells.is_empty() {
         return;
     }
-    let box_min_x = index.min_cell_x as f32 * cs;
-    let box_min_y = index.min_cell_y as f32 * cs;
-    let box_max_x = (index.max_cell_x + 1) as f32 * cs;
-    let box_max_y = (index.max_cell_y + 1) as f32 * cs;
+    let box_min_x = index.min_cell_x as f64 * cs;
+    let box_min_y = index.min_cell_y as f64 * cs;
+    let box_max_x = (index.max_cell_x + 1) as f64 * cs;
+    let box_max_y = (index.max_cell_y + 1) as f64 * cs;
     let t_enter = ray_box_entry_t_2d(ox, oy, dx, dy, box_min_x, box_min_y, box_max_x, box_max_y);
     if t_enter < 0.0 {
         return;
@@ -441,24 +441,24 @@ fn query_grid_ray(
     } else {
         0
     };
-    let mut t_max_x = f32::INFINITY;
-    let mut t_delta_x = f32::INFINITY;
+    let mut t_max_x = f64::INFINITY;
+    let mut t_delta_x = f64::INFINITY;
     if step_x != 0 {
         let boundary = if step_x > 0 {
-            (cx + 1) as f32 * cs
+            (cx + 1) as f64 * cs
         } else {
-            cx as f32 * cs
+            cx as f64 * cs
         };
         t_max_x = (boundary - ox) / dx;
         t_delta_x = cs / dx.abs();
     }
-    let mut t_max_y = f32::INFINITY;
-    let mut t_delta_y = f32::INFINITY;
+    let mut t_max_y = f64::INFINITY;
+    let mut t_delta_y = f64::INFINITY;
     if step_y != 0 {
         let boundary = if step_y > 0 {
-            (cy + 1) as f32 * cs
+            (cy + 1) as f64 * cs
         } else {
-            cy as f32 * cs
+            cy as f64 * cs
         };
         t_max_y = (boundary - oy) / dy;
         t_delta_y = cs / dy.abs();
@@ -564,17 +564,17 @@ fn query_grid_region(
 
 #[allow(clippy::too_many_arguments)]
 fn ray_box_entry_t_2d(
-    ox: f32,
-    oy: f32,
-    dx: f32,
-    dy: f32,
-    min_x: f32,
-    min_y: f32,
-    max_x: f32,
-    max_y: f32,
-) -> f32 {
-    let mut tmin = f32::NEG_INFINITY;
-    let mut tmax = f32::INFINITY;
+    ox: f64,
+    oy: f64,
+    dx: f64,
+    dy: f64,
+    min_x: f64,
+    min_y: f64,
+    max_x: f64,
+    max_y: f64,
+) -> f64 {
+    let mut tmin = f64::NEG_INFINITY;
+    let mut tmax = f64::INFINITY;
     if dx != 0.0 {
         let inv = 1.0 / dx;
         let mut t1 = (min_x - ox) * inv;
@@ -691,11 +691,11 @@ fn report_grid_indexing(
 
 /// How many cells an AABB spans, computed as f64 to handle astronomical values.
 // flight-lint: allow(f64) cell span products and the +1 endpoint beyond 2^24 require double precision
-pub(crate) fn spanned_cell_count_2d(cell_size: f32, aabb: &SpatialAabb2D) -> f64 {
-    let cx0 = (aabb.min_x as f64 / cell_size as f64).floor();
-    let cx1 = (aabb.max_x as f64 / cell_size as f64).floor();
-    let cy0 = (aabb.min_y as f64 / cell_size as f64).floor();
-    let cy1 = (aabb.max_y as f64 / cell_size as f64).floor();
+pub(crate) fn spanned_cell_count_2d(cell_size: f64, aabb: &SpatialAabb2D) -> f64 {
+    let cx0 = (aabb.min_x / cell_size).floor();
+    let cx1 = (aabb.max_x / cell_size).floor();
+    let cy0 = (aabb.min_y / cell_size).floor();
+    let cy1 = (aabb.max_y / cell_size).floor();
     return (cx1 - cx0 + 1.0) * (cy1 - cy0 + 1.0);
 }
 

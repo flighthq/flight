@@ -3,7 +3,7 @@
 use flight_spatial::contract::DEFAULT_SPATIAL_CELL_SIZE_3D;
 use flight_spatial::*;
 
-fn box3(min_x: f32, min_y: f32, min_z: f32, size: f32) -> SpatialAabb3D {
+fn box3(min_x: f64, min_y: f64, min_z: f64, size: f64) -> SpatialAabb3D {
     return SpatialAabb3D {
         min_x,
         min_y,
@@ -50,7 +50,7 @@ mod explain_spatial_indexing_3d {
         let nan_bounds = SpatialAabb3D {
             min_x: 0.0,
             min_y: 0.0,
-            min_z: f32::NAN,
+            min_z: f64::NAN,
             max_x: 1.0,
             max_y: 1.0,
             max_z: 1.0,

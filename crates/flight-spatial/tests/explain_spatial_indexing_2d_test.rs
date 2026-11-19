@@ -55,7 +55,7 @@ mod explain_spatial_indexing_2d {
         let bounds = SpatialAabb2D {
             min_x: 0.0,
             min_y: 0.0,
-            max_x: f32::INFINITY,
+            max_x: f64::INFINITY,
             max_y: 10.0,
         };
         insert_spatial_object_2d(&mut index, 1, &bounds);
@@ -112,7 +112,7 @@ mod explain_spatial_indexing_2d {
             SpatialIndexingMode::Overflow
         );
         let nan_bounds = SpatialAabb2D {
-            min_x: f32::NAN,
+            min_x: f64::NAN,
             min_y: 0.0,
             max_x: 2.0,
             max_y: 2.0,
@@ -128,7 +128,7 @@ mod explain_spatial_indexing_2d {
     fn never_exceeds_the_per_object_bucket_budget() {
         let mut index = create_spatial_index_2d(Some(create_uniform_grid_spatial_backend_2d(1.0)));
         for i in 0..8i32 {
-            let extent = 10.0_f32.powi(i as i32);
+            let extent = 10.0_f64.powi(i as i32);
             let bounds = SpatialAabb2D {
                 min_x: 0.0,
                 min_y: 0.0,

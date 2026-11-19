@@ -3,7 +3,7 @@
 use flight_spatial::contract::{DEFAULT_SPATIAL_CELL_SIZE_3D, initialize_spatial_index_3d};
 use flight_spatial::*;
 
-fn box3(min_x: f32, min_y: f32, min_z: f32, size: f32) -> SpatialAabb3D {
+fn box3(min_x: f64, min_y: f64, min_z: f64, size: f64) -> SpatialAabb3D {
     return SpatialAabb3D {
         min_x,
         min_y,
@@ -14,7 +14,7 @@ fn box3(min_x: f32, min_y: f32, min_z: f32, size: f32) -> SpatialAabb3D {
     };
 }
 
-fn view_frustum(near_half: f32, far_half: f32, far_z: f32) -> SpatialFrustum3D {
+fn view_frustum(near_half: f64, far_half: f64, far_z: f64) -> SpatialFrustum3D {
     return SpatialFrustum3D {
         corners: [
             -near_half, -near_half, 0.0, near_half, -near_half, 0.0, near_half, near_half, 0.0,
@@ -126,7 +126,7 @@ mod insert_spatial_object_3d {
             min_z: 0.0,
             max_x: 1.0,
             max_y: 1.0,
-            max_z: f32::INFINITY,
+            max_z: f64::INFINITY,
         };
         assert!(!insert_spatial_object_3d(&mut index, 1, &inf_bounds));
         let mut out: Vec<SpatialObjectId> = Vec::new();
@@ -331,7 +331,7 @@ mod query_spatial_sphere_3d {
         insert_spatial_object_3d(&mut index, 5, &box3(9.0, 9.0, 9.0, 0.5));
         let mut out: Vec<SpatialObjectId> = Vec::new();
         query_spatial_sphere_3d(&mut out, &mut index, 0.0, 0.0, 0.0, 10.0);
-        assert!((9.0_f32.powi(2) * 3.0).sqrt() > 10.0);
+        assert!((9.0_f64.powi(2) * 3.0).sqrt() > 10.0);
         assert!(out.contains(&5));
     }
 
@@ -342,7 +342,7 @@ mod query_spatial_sphere_3d {
         )));
         insert_spatial_object_3d(&mut index, 1, &box3(0.0, 0.0, 0.0, 4.0));
         let mut out: Vec<SpatialObjectId> = Vec::new();
-        query_spatial_sphere_3d(&mut out, &mut index, f32::NAN, 0.0, 0.0, 10.0);
+        query_spatial_sphere_3d(&mut out, &mut index, f64::NAN, 0.0, 0.0, 10.0);
         assert!(out.is_empty());
         query_spatial_sphere_3d(&mut out, &mut index, 0.0, 0.0, 0.0, -1.0);
         assert!(out.is_empty());

@@ -17,7 +17,7 @@ fn take_notices() -> Vec<SpatialIndexingNotice> {
     NOTICES.with(|n| n.borrow_mut().drain(..).collect())
 }
 
-fn box3(x: f32, y: f32, z: f32, size: f32) -> SpatialAabb3D {
+fn box3(x: f64, y: f64, z: f64, size: f64) -> SpatialAabb3D {
     return SpatialAabb3D {
         min_x: x,
         min_y: y,
@@ -47,13 +47,13 @@ fn sorted_pairs(pairs: &[SpatialPair]) -> Vec<String> {
     return v;
 }
 
-fn create_random(seed: i32) -> impl FnMut() -> f32 {
+fn create_random(seed: i32) -> impl FnMut() -> f64 {
     let mut state = if seed == 0 { 1i32 } else { seed };
     move || {
         state ^= state << 13;
         state ^= state >> 17;
         state ^= state << 5;
-        return ((state as u32) % 100000) as f32 / 100000.0;
+        return ((state as u32) % 100000) as f64 / 100000.0;
     }
 }
 
@@ -264,7 +264,7 @@ mod create_bvh_spatial_backend_3d {
         ))));
         let mut grid = create_spatial_index_3d(Some(create_uniform_grid_spatial_backend_3d(16.0)));
         let non_finite = SpatialAabb3D {
-            min_x: f32::NAN,
+            min_x: f64::NAN,
             min_y: 0.0,
             min_z: 0.0,
             max_x: 1.0,
@@ -313,7 +313,7 @@ mod create_bvh_spatial_backend_3d {
         ))));
         insert_spatial_object_3d(&mut bvh, 1, &box3(0.0, 0.0, 0.0, 4.0));
         let inf_bounds = SpatialAabb3D {
-            min_x: f32::INFINITY,
+            min_x: f64::INFINITY,
             min_y: 0.0,
             min_z: 0.0,
             max_x: 1.0,
@@ -357,7 +357,7 @@ mod create_bvh_spatial_backend_3d {
         let mut bvh = create_spatial_index_3d(Some(create_bvh_spatial_backend_3d(Some(0.0))));
         let mut grid = create_spatial_index_3d(Some(create_uniform_grid_spatial_backend_3d(8.0)));
         for id in 0..400i32 {
-            let bounds = box3(id as f32 * 3.0, 0.0, 0.0, 2.0);
+            let bounds = box3(id as f64 * 3.0, 0.0, 0.0, 2.0);
             insert_spatial_object_3d(&mut bvh, id, &bounds);
             insert_spatial_object_3d(&mut grid, id, &bounds);
         }
@@ -403,7 +403,7 @@ mod create_bvh_spatial_backend_3d {
         remove_spatial_object_3d(&mut bvh, 404);
         update_spatial_object_3d(&mut bvh, 505, &box3(0.0, 0.0, 0.0, 1.0));
         let nan_bounds = SpatialAabb3D {
-            min_x: f32::NAN,
+            min_x: f64::NAN,
             min_y: 0.0,
             min_z: 0.0,
             max_x: 1.0,
@@ -463,14 +463,14 @@ mod create_bvh_spatial_backend_3d {
         ))));
         set_spatial_indexing_guard(Some(crate::spatial_guard_for_current_test(test_guard)));
         for id in 0..20i32 {
-            insert_spatial_object_3d(&mut bvh, id, &box3(id as f32 * 4.0, 0.0, 0.0, 1.0));
+            insert_spatial_object_3d(&mut bvh, id, &box3(id as f64 * 4.0, 0.0, 0.0, 1.0));
         }
         for step in 0..100u32 {
             for id in 0..20i32 {
                 update_spatial_object_3d(
                     &mut bvh,
                     id,
-                    &box3(id as f32 * 4.0 + step as f32 * 0.5, 0.0, 0.0, 1.0),
+                    &box3(id as f64 * 4.0 + step as f64 * 0.5, 0.0, 0.0, 1.0),
                 );
             }
         }

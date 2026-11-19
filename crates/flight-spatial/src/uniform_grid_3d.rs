@@ -28,18 +28,18 @@ pub struct GridCell3D {
 /// Axis-aligned bounding box in three dimensions, with flat fields.
 #[derive(Debug, Clone, Copy, PartialEq, Default)]
 pub struct SpatialAabb3D {
-    pub min_x: f32,
-    pub min_y: f32,
-    pub min_z: f32,
-    pub max_x: f32,
-    pub max_y: f32,
-    pub max_z: f32,
+    pub min_x: f64,
+    pub min_y: f64,
+    pub min_z: f64,
+    pub max_x: f64,
+    pub max_y: f64,
+    pub max_z: f64,
 }
 
 /// Mutable state captured by a uniform-grid backend callback record.
 #[derive(Default)]
 pub struct UniformGrid3D {
-    pub cell_size: f32,
+    pub cell_size: f64,
     pub cells: HashMap<(i32, i32, i32), GridCell3D>,
     pub cell_order: Vec<(i32, i32, i32)>,
     pub bounds: HashMap<SpatialObjectId, SpatialAabb3D>,
@@ -62,19 +62,19 @@ pub struct UniformGrid3D {
 // Constants
 // ---------------------------------------------------------------------------
 
-pub const DEFAULT_SPATIAL_CELL_SIZE_3D: f32 = 128.0;
+pub const DEFAULT_SPATIAL_CELL_SIZE_3D: f64 = 128.0;
 
 // ---------------------------------------------------------------------------
 // Free functions -- constructors
 // ---------------------------------------------------------------------------
 
-pub fn create_uniform_grid_spatial_backend_3d(cell_size: f32) -> SpatialIndexBackend3D {
+pub fn create_uniform_grid_spatial_backend_3d(cell_size: f64) -> SpatialIndexBackend3D {
     let mut out: SpatialIndexBackend3D = allocate_entity();
     initialize_uniform_grid_spatial_backend_3d(&mut out, cell_size);
     return out;
 }
 
-pub fn initialize_uniform_grid_spatial_backend_3d(out: &mut SpatialIndexBackend3D, cell_size: f32) {
+pub fn initialize_uniform_grid_spatial_backend_3d(out: &mut SpatialIndexBackend3D, cell_size: f64) {
     uniform_grid_backend_3d_callbacks(
         out,
         UniformGrid3D {
@@ -84,7 +84,7 @@ pub fn initialize_uniform_grid_spatial_backend_3d(out: &mut SpatialIndexBackend3
     );
 }
 
-pub(crate) fn cell_index_3d(coord: f32, cell_size: f32) -> i32 {
+pub(crate) fn cell_index_3d(coord: f64, cell_size: f64) -> i32 {
     return (coord / cell_size).floor() as i32;
 }
 
@@ -275,7 +275,7 @@ pub(crate) fn insert_into_grid_3d(
     return true;
 }
 
-fn is_spatial_aabb_3d_contains_point(aabb: &SpatialAabb3D, x: f32, y: f32, z: f32) -> bool {
+fn is_spatial_aabb_3d_contains_point(aabb: &SpatialAabb3D, x: f64, y: f64, z: f64) -> bool {
     return x >= aabb.min_x
         && x < aabb.max_x
         && y >= aabb.min_y
@@ -372,9 +372,9 @@ pub(crate) fn query_grid_3d_pairs(grid: &mut UniformGrid3D, out: &mut Vec<Spatia
 
 pub(crate) fn query_grid_3d_point(
     grid: &mut UniformGrid3D,
-    x: f32,
-    y: f32,
-    z: f32,
+    x: f64,
+    y: f64,
+    z: f64,
     out: &mut Vec<SpatialObjectId>,
 ) {
     out.clear();
@@ -405,12 +405,12 @@ pub(crate) fn query_grid_3d_point(
 #[allow(clippy::too_many_arguments)]
 pub(crate) fn query_grid_3d_ray(
     grid: &mut UniformGrid3D,
-    ox: f32,
-    oy: f32,
-    oz: f32,
-    dx: f32,
-    dy: f32,
-    dz: f32,
+    ox: f64,
+    oy: f64,
+    oz: f64,
+    dx: f64,
+    dy: f64,
+    dz: f64,
     out: &mut Vec<SpatialObjectId>,
 ) {
     out.clear();
@@ -432,12 +432,12 @@ pub(crate) fn query_grid_3d_ray(
         return;
     }
     let range_bounds = SpatialAabb3D {
-        min_x: grid.min_cell_x as f32 * cs,
-        min_y: grid.min_cell_y as f32 * cs,
-        min_z: grid.min_cell_z as f32 * cs,
-        max_x: (grid.max_cell_x + 1) as f32 * cs,
-        max_y: (grid.max_cell_y + 1) as f32 * cs,
-        max_z: (grid.max_cell_z + 1) as f32 * cs,
+        min_x: grid.min_cell_x as f64 * cs,
+        min_y: grid.min_cell_y as f64 * cs,
+        min_z: grid.min_cell_z as f64 * cs,
+        max_x: (grid.max_cell_x + 1) as f64 * cs,
+        max_y: (grid.max_cell_y + 1) as f64 * cs,
+        max_z: (grid.max_cell_z + 1) as f64 * cs,
     };
     let t_enter = ray_box_3d_entry_t(ox, oy, oz, dx, dy, dz, &range_bounds);
     if t_enter < 0.0 {
@@ -482,35 +482,35 @@ pub(crate) fn query_grid_3d_ray(
     } else {
         0
     };
-    let mut t_max_x = f32::INFINITY;
-    let mut t_delta_x = f32::INFINITY;
+    let mut t_max_x = f64::INFINITY;
+    let mut t_delta_x = f64::INFINITY;
     if step_x != 0 {
         t_max_x = ((if step_x > 0 {
-            (cx + 1) as f32 * cs
+            (cx + 1) as f64 * cs
         } else {
-            cx as f32 * cs
+            cx as f64 * cs
         }) - ox)
             / dx;
         t_delta_x = cs / dx.abs();
     }
-    let mut t_max_y = f32::INFINITY;
-    let mut t_delta_y = f32::INFINITY;
+    let mut t_max_y = f64::INFINITY;
+    let mut t_delta_y = f64::INFINITY;
     if step_y != 0 {
         t_max_y = ((if step_y > 0 {
-            (cy + 1) as f32 * cs
+            (cy + 1) as f64 * cs
         } else {
-            cy as f32 * cs
+            cy as f64 * cs
         }) - oy)
             / dy;
         t_delta_y = cs / dy.abs();
     }
-    let mut t_max_z = f32::INFINITY;
-    let mut t_delta_z = f32::INFINITY;
+    let mut t_max_z = f64::INFINITY;
+    let mut t_delta_z = f64::INFINITY;
     if step_z != 0 {
         t_max_z = ((if step_z > 0 {
-            (cz + 1) as f32 * cs
+            (cz + 1) as f64 * cs
         } else {
-            cz as f32 * cs
+            cz as f64 * cs
         }) - oz)
             / dz;
         t_delta_z = cs / dz.abs();
@@ -614,16 +614,16 @@ pub(crate) fn query_grid_3d_region(
 }
 
 fn ray_box_3d_entry_t(
-    ox: f32,
-    oy: f32,
-    oz: f32,
-    dx: f32,
-    dy: f32,
-    dz: f32,
+    ox: f64,
+    oy: f64,
+    oz: f64,
+    dx: f64,
+    dy: f64,
+    dz: f64,
     b: &SpatialAabb3D,
-) -> f32 {
-    let mut tmin = f32::NEG_INFINITY;
-    let mut tmax = f32::INFINITY;
+) -> f64 {
+    let mut tmin = f64::NEG_INFINITY;
+    let mut tmax = f64::INFINITY;
     if dx != 0.0 {
         let inv = 1.0 / dx;
         let mut t1 = (b.min_x - ox) * inv;
@@ -762,13 +762,13 @@ fn report_grid_3d_indexing(
 }
 
 // flight-lint: allow(f64) cubic cell-span products and endpoint increments require double precision beyond 2^24
-pub(crate) fn spanned_cell_count_3d(cell_size: f32, aabb: &SpatialAabb3D) -> f64 {
-    let cx0 = (aabb.min_x as f64 / cell_size as f64).floor();
-    let cx1 = (aabb.max_x as f64 / cell_size as f64).floor();
-    let cy0 = (aabb.min_y as f64 / cell_size as f64).floor();
-    let cy1 = (aabb.max_y as f64 / cell_size as f64).floor();
-    let cz0 = (aabb.min_z as f64 / cell_size as f64).floor();
-    let cz1 = (aabb.max_z as f64 / cell_size as f64).floor();
+pub(crate) fn spanned_cell_count_3d(cell_size: f64, aabb: &SpatialAabb3D) -> f64 {
+    let cx0 = (aabb.min_x / cell_size).floor();
+    let cx1 = (aabb.max_x / cell_size).floor();
+    let cy0 = (aabb.min_y / cell_size).floor();
+    let cy1 = (aabb.max_y / cell_size).floor();
+    let cz0 = (aabb.min_z / cell_size).floor();
+    let cz1 = (aabb.max_z / cell_size).floor();
     return (cx1 - cx0 + 1.0) * (cy1 - cy0 + 1.0) * (cz1 - cz0 + 1.0);
 }
 

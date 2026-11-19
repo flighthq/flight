@@ -3,7 +3,7 @@
 use flight_spatial::contract::initialize_spatial_index_2d;
 use flight_spatial::*;
 
-fn make_index(cell_size: f32) -> SpatialIndex2D {
+fn make_index(cell_size: f64) -> SpatialIndex2D {
     return create_spatial_index_2d(Some(create_uniform_grid_spatial_backend_2d(cell_size)));
 }
 
@@ -77,7 +77,7 @@ mod create_spatial_index_2d {
     fn dispatches_through_a_custom_callback_backend() {
         let mut backend = create_uniform_grid_spatial_backend_2d(10.0);
         backend.query_spatial_point =
-            std::sync::Arc::new(|out: &mut Vec<SpatialObjectId>, x: f32, y: f32| {
+            std::sync::Arc::new(|out: &mut Vec<SpatialObjectId>, x: f64, y: f64| {
                 assert_eq!((x, y), (2.0, 3.0));
                 *out = vec![-7];
             });
@@ -279,6 +279,28 @@ mod query_spatial_pairs_2d {
 
 mod query_spatial_point_2d {
     use super::*;
+
+    #[test]
+    fn separates_a_point_just_past_a_half_unit_object_at_one_billion() {
+        // f32 spacing at 1e9 is 64: in f32 the object and the query point all collapse onto 1e9.
+        let mut index = make_index(10.0);
+        insert_spatial_object_2d(
+            &mut index,
+            1,
+            &SpatialAabb2D {
+                min_x: 1.0e9,
+                min_y: 0.0,
+                max_x: 1.0e9 + 0.5,
+                max_y: 1.0,
+            },
+        );
+        let mut inside: Vec<SpatialObjectId> = Vec::new();
+        query_spatial_point_2d(&mut inside, &mut index, 1.0e9 + 0.25, 0.5);
+        assert_eq!(inside, vec![1]);
+        let mut past: Vec<SpatialObjectId> = Vec::new();
+        query_spatial_point_2d(&mut past, &mut index, 1.0e9 + 0.75, 0.5);
+        assert_eq!(past.len(), 0);
+    }
 
     #[test]
     fn returns_object_at_interior_point_and_nothing_at_empty_point() {

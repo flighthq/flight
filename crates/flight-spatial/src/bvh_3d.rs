@@ -18,7 +18,7 @@ use crate::{
 
 const BVH_NIL: usize = usize::MAX;
 
-pub const DEFAULT_BVH_MARGIN_3D: f32 = 2.0;
+pub const DEFAULT_BVH_MARGIN_3D: f64 = 2.0;
 
 // ---------------------------------------------------------------------------
 // Structs
@@ -28,14 +28,14 @@ pub const DEFAULT_BVH_MARGIN_3D: f32 = 2.0;
 /// parallel Vec arrays indexed by usize, with BVH_NIL as the "no node" sentinel.
 #[derive(Default)]
 pub struct Bvh3D {
-    pub margin: f32,
+    pub margin: f64,
     pub root: usize,
-    pub min_x: Vec<f32>,
-    pub min_y: Vec<f32>,
-    pub min_z: Vec<f32>,
-    pub max_x: Vec<f32>,
-    pub max_y: Vec<f32>,
-    pub max_z: Vec<f32>,
+    pub min_x: Vec<f64>,
+    pub min_y: Vec<f64>,
+    pub min_z: Vec<f64>,
+    pub max_x: Vec<f64>,
+    pub max_y: Vec<f64>,
+    pub max_z: Vec<f64>,
     pub parent: Vec<usize>,
     pub child1: Vec<usize>,
     pub child2: Vec<usize>,
@@ -54,7 +54,7 @@ pub struct Bvh3D {
 // Free functions -- constructors
 // ---------------------------------------------------------------------------
 
-pub(crate) fn create_bvh_3d(margin: f32) -> Bvh3D {
+pub(crate) fn create_bvh_3d(margin: f64) -> Bvh3D {
     let safe_margin = if margin.is_finite() && margin >= 0.0 {
         margin
     } else {
@@ -67,13 +67,13 @@ pub(crate) fn create_bvh_3d(margin: f32) -> Bvh3D {
     };
 }
 
-pub fn create_bvh_spatial_backend_3d(margin: Option<f32>) -> SpatialIndexBackend3D {
+pub fn create_bvh_spatial_backend_3d(margin: Option<f64>) -> SpatialIndexBackend3D {
     let mut out: SpatialIndexBackend3D = allocate_entity();
     initialize_bvh_spatial_backend_3d(&mut out, margin);
     return out;
 }
 
-pub fn initialize_bvh_spatial_backend_3d(out: &mut SpatialIndexBackend3D, margin: Option<f32>) {
+pub fn initialize_bvh_spatial_backend_3d(out: &mut SpatialIndexBackend3D, margin: Option<f64>) {
     bvh_backend_3d_callbacks(out, create_bvh_3d(margin.unwrap_or(DEFAULT_BVH_MARGIN_3D)));
 }
 
@@ -117,7 +117,7 @@ fn balance_bvh_3d(tree: &mut Bvh3D, index: usize) -> usize {
     return index;
 }
 
-fn bounds_area(tree: &Bvh3D, index: usize) -> f32 {
+fn bounds_area(tree: &Bvh3D, index: usize) -> f64 {
     let dx = tree.max_x[index] - tree.min_x[index];
     let dy = tree.max_y[index] - tree.min_y[index];
     let dz = tree.max_z[index] - tree.min_z[index];
@@ -237,14 +237,14 @@ pub(crate) fn clear_bvh_3d(tree: &mut Bvh3D) {
     tree.declined.clear();
 }
 
-fn combined_area(tree: &Bvh3D, a: usize, b: usize) -> f32 {
+fn combined_area(tree: &Bvh3D, a: usize, b: usize) -> f64 {
     let dx = tree.max_x[a].max(tree.max_x[b]) - tree.min_x[a].min(tree.min_x[b]);
     let dy = tree.max_y[a].max(tree.max_y[b]) - tree.min_y[a].min(tree.min_y[b]);
     let dz = tree.max_z[a].max(tree.max_z[b]) - tree.min_z[a].min(tree.min_z[b]);
     return 2.0 * (dx * dy + dy * dz + dz * dx);
 }
 
-fn descent_cost(tree: &Bvh3D, child: usize, leaf: usize, inheritance_cost: f32) -> f32 {
+fn descent_cost(tree: &Bvh3D, child: usize, leaf: usize, inheritance_cost: f64) -> f64 {
     let combined = combined_area(tree, child, leaf);
     if tree.height[child] == 0 {
         return combined + inheritance_cost;
@@ -471,9 +471,9 @@ pub(crate) fn query_bvh_3d_pairs(tree: &mut Bvh3D, out: &mut Vec<SpatialPair>) {
 
 pub(crate) fn query_bvh_3d_point(
     tree: &mut Bvh3D,
-    x: f32,
-    y: f32,
-    z: f32,
+    x: f64,
+    y: f64,
+    z: f64,
     out: &mut Vec<SpatialObjectId>,
 ) {
     out.clear();
@@ -519,12 +519,12 @@ pub(crate) fn query_bvh_3d_point(
 #[allow(clippy::too_many_arguments)]
 pub(crate) fn query_bvh_3d_ray(
     tree: &mut Bvh3D,
-    x: f32,
-    y: f32,
-    z: f32,
-    dx: f32,
-    dy: f32,
-    dz: f32,
+    x: f64,
+    y: f64,
+    z: f64,
+    dx: f64,
+    dy: f64,
+    dz: f64,
     out: &mut Vec<SpatialObjectId>,
 ) {
     out.clear();
@@ -613,21 +613,21 @@ pub(crate) fn query_bvh_3d_region(
 
 #[allow(clippy::too_many_arguments)]
 fn ray_slabs_hit(
-    x: f32,
-    y: f32,
-    z: f32,
-    dx: f32,
-    dy: f32,
-    dz: f32,
-    min_x: f32,
-    min_y: f32,
-    min_z: f32,
-    max_x: f32,
-    max_y: f32,
-    max_z: f32,
+    x: f64,
+    y: f64,
+    z: f64,
+    dx: f64,
+    dy: f64,
+    dz: f64,
+    min_x: f64,
+    min_y: f64,
+    min_z: f64,
+    max_x: f64,
+    max_y: f64,
+    max_z: f64,
 ) -> bool {
-    let mut near: f32 = 0.0;
-    let mut far: f32 = f32::INFINITY;
+    let mut near: f64 = 0.0;
+    let mut far: f64 = f64::INFINITY;
     let origins = [x, y, z];
     let directions = [dx, dy, dz];
     let lows = [min_x, min_y, min_z];

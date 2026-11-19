@@ -12,7 +12,7 @@ use std::sync::Arc;
 /// Four near-plane xyz corners followed by four corresponding far-plane xyz corners.
 #[derive(Debug, Clone, Default)]
 pub struct SpatialFrustum3D {
-    pub corners: [f32; 24],
+    pub corners: [f64; 24],
 }
 
 /// An open dispatch record, including third-party spatial backend implementations.
@@ -24,9 +24,9 @@ pub struct SpatialIndexBackend3D {
         Arc<dyn Fn(SpatialObjectId) -> SpatialIndexingExplanation + Send + Sync>,
     pub insert_spatial_object: Arc<dyn Fn(SpatialObjectId, &SpatialAabb3D) -> bool + Send + Sync>,
     pub query_spatial_pairs: Arc<dyn Fn(&mut Vec<SpatialPair>) + Send + Sync>,
-    pub query_spatial_point: Arc<dyn Fn(&mut Vec<SpatialObjectId>, f32, f32, f32) + Send + Sync>,
+    pub query_spatial_point: Arc<dyn Fn(&mut Vec<SpatialObjectId>, f64, f64, f64) + Send + Sync>,
     pub query_spatial_ray:
-        Arc<dyn Fn(&mut Vec<SpatialObjectId>, f32, f32, f32, f32, f32, f32) + Send + Sync>,
+        Arc<dyn Fn(&mut Vec<SpatialObjectId>, f64, f64, f64, f64, f64, f64) + Send + Sync>,
     pub query_spatial_region: Arc<dyn Fn(&mut Vec<SpatialObjectId>, &SpatialAabb3D) + Send + Sync>,
     pub remove_spatial_object: Arc<dyn Fn(SpatialObjectId) + Send + Sync>,
     pub update_spatial_object: Arc<dyn Fn(SpatialObjectId, &SpatialAabb3D) -> bool + Send + Sync>,
@@ -140,15 +140,15 @@ pub fn query_spatial_frustum_3d(
     state_frustum_seen.clear();
 
     for slice in 0..steps {
-        let near_t = slice as f32 / steps as f32;
-        let far_t = (slice + 1) as f32 / steps as f32;
+        let near_t = slice as f64 / steps as f64;
+        let far_t = (slice + 1) as f64 / steps as f64;
 
-        let mut min_x = f32::INFINITY;
-        let mut min_y = f32::INFINITY;
-        let mut min_z = f32::INFINITY;
-        let mut max_x = f32::NEG_INFINITY;
-        let mut max_y = f32::NEG_INFINITY;
-        let mut max_z = f32::NEG_INFINITY;
+        let mut min_x = f64::INFINITY;
+        let mut min_y = f64::INFINITY;
+        let mut min_z = f64::INFINITY;
+        let mut max_x = f64::NEG_INFINITY;
+        let mut max_y = f64::NEG_INFINITY;
+        let mut max_z = f64::NEG_INFINITY;
 
         for corner in 0..4u32 {
             let near_idx = (corner * 3) as usize;
@@ -216,9 +216,9 @@ pub fn query_spatial_pairs_3d(index: &mut SpatialIndex3D) -> &[SpatialPair] {
 pub fn query_spatial_point_3d(
     out: &mut Vec<SpatialObjectId>,
     index: &mut SpatialIndex3D,
-    x: f32,
-    y: f32,
-    z: f32,
+    x: f64,
+    y: f64,
+    z: f64,
 ) {
     (index
         .index_runtime
@@ -232,12 +232,12 @@ pub fn query_spatial_point_3d(
 pub fn query_spatial_ray_3d(
     out: &mut Vec<SpatialObjectId>,
     index: &mut SpatialIndex3D,
-    x: f32,
-    y: f32,
-    z: f32,
-    dx: f32,
-    dy: f32,
-    dz: f32,
+    x: f64,
+    y: f64,
+    z: f64,
+    dx: f64,
+    dy: f64,
+    dz: f64,
 ) {
     (index
         .index_runtime
@@ -260,10 +260,10 @@ pub fn query_spatial_region_3d(
 pub fn query_spatial_sphere_3d(
     out: &mut Vec<SpatialObjectId>,
     index: &mut SpatialIndex3D,
-    x: f32,
-    y: f32,
-    z: f32,
-    radius: f32,
+    x: f64,
+    y: f64,
+    z: f64,
+    radius: f64,
 ) {
     out.clear();
     if !x.is_finite() || !y.is_finite() || !z.is_finite() || !(radius >= 0.0) {

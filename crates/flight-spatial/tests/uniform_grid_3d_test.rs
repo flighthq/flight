@@ -17,7 +17,7 @@ fn take_notices() -> Vec<SpatialIndexingNotice> {
     NOTICES.with(|n| n.borrow_mut().drain(..).collect())
 }
 
-fn box3(min_x: f32, min_y: f32, min_z: f32, size: f32) -> SpatialAabb3D {
+fn box3(min_x: f64, min_y: f64, min_z: f64, size: f64) -> SpatialAabb3D {
     return SpatialAabb3D {
         min_x,
         min_y,
@@ -94,7 +94,7 @@ mod create_uniform_grid_spatial_backend_3d {
         let nan_z = SpatialAabb3D {
             min_x: 0.0,
             min_y: 0.0,
-            min_z: f32::NAN,
+            min_z: f64::NAN,
             max_x: 1.0,
             max_y: 1.0,
             max_z: 1.0,
@@ -211,7 +211,7 @@ mod create_uniform_grid_spatial_backend_3d {
         insert_spatial_object_3d(&mut grid, 1, &box3(0.0, 0.0, 0.0, 25.0));
         remove_spatial_object_3d(&mut grid, 1);
         let mut out: Vec<SpatialObjectId> = Vec::new();
-        for c in [1.0_f32, 11.0, 21.0] {
+        for c in [1.0_f64, 11.0, 21.0] {
             query_spatial_point_3d(&mut out, &mut grid, c, c, c);
             assert!(out.is_empty());
         }
@@ -508,7 +508,7 @@ mod update_spatial_object_3d {
         let nan_bounds = SpatialAabb3D {
             min_x: 0.0,
             min_y: 0.0,
-            min_z: f32::NAN,
+            min_z: f64::NAN,
             max_x: 5.0,
             max_y: 5.0,
             max_z: 5.0,

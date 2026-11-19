@@ -322,10 +322,10 @@ impl SpatialIndex2D {
     pub fn query_pairs(&mut self) -> &[SpatialPair] {
         return query_spatial_pairs_2d(self);
     }
-    pub fn query_point(&mut self, out: &mut Vec<SpatialObjectId>, x: f32, y: f32) {
+    pub fn query_point(&mut self, out: &mut Vec<SpatialObjectId>, x: f64, y: f64) {
         query_spatial_point_2d(out, self, x, y);
     }
-    pub fn query_ray(&mut self, out: &mut Vec<SpatialObjectId>, x: f32, y: f32, dx: f32, dy: f32) {
+    pub fn query_ray(&mut self, out: &mut Vec<SpatialObjectId>, x: f64, y: f64, dx: f64, dy: f64) {
         query_spatial_ray_2d(out, self, x, y, dx, dy);
     }
     pub fn query_region(&mut self, out: &mut Vec<SpatialObjectId>, region: &SpatialAabb2D) {
@@ -364,18 +364,18 @@ impl SpatialIndex3D {
     pub fn query_pairs(&mut self) -> &[SpatialPair] {
         return query_spatial_pairs_3d(self);
     }
-    pub fn query_point(&mut self, out: &mut Vec<SpatialObjectId>, x: f32, y: f32, z: f32) {
+    pub fn query_point(&mut self, out: &mut Vec<SpatialObjectId>, x: f64, y: f64, z: f64) {
         query_spatial_point_3d(out, self, x, y, z);
     }
     pub fn query_ray(
         &mut self,
         out: &mut Vec<SpatialObjectId>,
-        x: f32,
-        y: f32,
-        z: f32,
-        dx: f32,
-        dy: f32,
-        dz: f32,
+        x: f64,
+        y: f64,
+        z: f64,
+        dx: f64,
+        dy: f64,
+        dz: f64,
     ) {
         query_spatial_ray_3d(out, self, x, y, z, dx, dy, dz);
     }
@@ -385,10 +385,10 @@ impl SpatialIndex3D {
     pub fn query_sphere(
         &mut self,
         out: &mut Vec<SpatialObjectId>,
-        x: f32,
-        y: f32,
-        z: f32,
-        radius: f32,
+        x: f64,
+        y: f64,
+        z: f64,
+        radius: f64,
     ) {
         query_spatial_sphere_3d(out, self, x, y, z, radius);
     }
@@ -402,17 +402,17 @@ impl SpatialIndex3D {
 
 #[cfg(feature = "object-api")]
 impl SpatialIndexBackend2D {
-    pub fn new(cell_size: f32) -> Self {
+    pub fn new(cell_size: f64) -> Self {
         return create_uniform_grid_spatial_backend_2d(cell_size);
     }
 }
 
 #[cfg(feature = "object-api")]
 impl SpatialIndexBackend3D {
-    pub fn from_bvh(margin: Option<f32>) -> Self {
+    pub fn from_bvh(margin: Option<f64>) -> Self {
         return create_bvh_spatial_backend_3d(margin);
     }
-    pub fn from_uniform_grid(cell_size: f32) -> Self {
+    pub fn from_uniform_grid(cell_size: f64) -> Self {
         return create_uniform_grid_spatial_backend_3d(cell_size);
     }
 }

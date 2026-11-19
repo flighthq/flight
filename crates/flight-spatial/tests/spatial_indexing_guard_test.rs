@@ -62,7 +62,7 @@ mod report_spatial_indexing {
             create_spatial_index_2d(Some(create_uniform_grid_spatial_backend_2d(10.0)));
         set_spatial_indexing_guard(Some(crate::spatial_guard_for_current_test(test_guard)));
         let nan_bounds_2d = SpatialAabb2D {
-            min_x: f32::NAN,
+            min_x: f64::NAN,
             min_y: 0.0,
             max_x: 1.0,
             max_y: 1.0,
@@ -73,7 +73,7 @@ mod report_spatial_indexing {
             create_spatial_index_3d(Some(create_uniform_grid_spatial_backend_3d(10.0)));
         let nan_bounds_3d = SpatialAabb3D {
             min_x: 0.0,
-            min_y: f32::NAN,
+            min_y: f64::NAN,
             min_z: 0.0,
             max_x: 1.0,
             max_y: 1.0,
@@ -103,7 +103,7 @@ mod set_spatial_indexing_guard {
         let mut index = create_spatial_index_2d(Some(create_uniform_grid_spatial_backend_2d(10.0)));
         set_spatial_indexing_guard(Some(crate::spatial_guard_for_current_test(test_guard)));
         let bounds = SpatialAabb2D {
-            min_x: f32::NAN,
+            min_x: f64::NAN,
             min_y: 0.0,
             max_x: 10.0,
             max_y: 10.0,
@@ -149,7 +149,7 @@ mod set_spatial_indexing_guard {
     fn reports_invalid_cell_size_and_keeps_results_correct() {
         let _guard_scope = crate::lock_spatial_guard_tests();
         take_notices();
-        for &cell_size in &[0.0_f32, -1.0] {
+        for &cell_size in &[0.0_f64, -1.0] {
             let mut index =
                 create_spatial_index_2d(Some(create_uniform_grid_spatial_backend_2d(cell_size)));
             set_spatial_indexing_guard(Some(crate::spatial_guard_for_current_test(test_guard)));
@@ -275,7 +275,7 @@ mod set_spatial_indexing_guard {
         set_spatial_indexing_guard(Some(crate::spatial_guard_for_current_test(test_guard)));
         set_spatial_indexing_guard(None);
         let bounds = SpatialAabb2D {
-            min_x: f32::NAN,
+            min_x: f64::NAN,
             min_y: 0.0,
             max_x: 10.0,
             max_y: 10.0,
@@ -292,7 +292,7 @@ mod set_spatial_indexing_guard {
         let mut index = create_spatial_index_2d(Some(create_uniform_grid_spatial_backend_2d(10.0)));
         set_spatial_indexing_guard(Some(crate::spatial_guard_for_current_test(test_guard)));
         let nan_bounds = SpatialAabb2D {
-            min_x: f32::NAN,
+            min_x: f64::NAN,
             min_y: 0.0,
             max_x: 10.0,
             max_y: 10.0,

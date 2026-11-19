@@ -6,10 +6,10 @@ use std::sync::Arc;
 
 #[derive(Debug, Clone, Copy, PartialEq, Default)]
 pub struct SpatialAabb2D {
-    pub min_x: f32,
-    pub min_y: f32,
-    pub max_x: f32,
-    pub max_y: f32,
+    pub min_x: f64,
+    pub min_y: f64,
+    pub max_x: f64,
+    pub max_y: f64,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Default)]
@@ -27,8 +27,8 @@ pub struct SpatialIndexBackend2D {
         Arc<dyn Fn(SpatialObjectId) -> SpatialIndexingExplanation + Send + Sync>,
     pub insert_spatial_object: Arc<dyn Fn(SpatialObjectId, &SpatialAabb2D) -> bool + Send + Sync>,
     pub query_spatial_pairs: Arc<dyn Fn(&mut Vec<SpatialPair>) + Send + Sync>,
-    pub query_spatial_point: Arc<dyn Fn(&mut Vec<SpatialObjectId>, f32, f32) + Send + Sync>,
-    pub query_spatial_ray: Arc<dyn Fn(&mut Vec<SpatialObjectId>, f32, f32, f32, f32) + Send + Sync>,
+    pub query_spatial_point: Arc<dyn Fn(&mut Vec<SpatialObjectId>, f64, f64) + Send + Sync>,
+    pub query_spatial_ray: Arc<dyn Fn(&mut Vec<SpatialObjectId>, f64, f64, f64, f64) + Send + Sync>,
     pub query_spatial_region: Arc<dyn Fn(&mut Vec<SpatialObjectId>, &SpatialAabb2D) + Send + Sync>,
     pub remove_spatial_object: Arc<dyn Fn(SpatialObjectId) + Send + Sync>,
     pub update_spatial_object: Arc<dyn Fn(SpatialObjectId, &SpatialAabb2D) -> bool + Send + Sync>,
@@ -45,7 +45,7 @@ pub struct SpatialIndex2D {
     index_runtime: Option<SpatialIndexRuntime2D>,
 }
 
-pub const DEFAULT_SPATIAL_CELL_SIZE: f32 = 128.0;
+pub const DEFAULT_SPATIAL_CELL_SIZE: f64 = 128.0;
 
 pub fn create_spatial_index_2d(backend: Option<SpatialIndexBackend2D>) -> SpatialIndex2D {
     let mut out: SpatialIndex2D = allocate_entity();
@@ -114,8 +114,8 @@ pub fn query_spatial_pairs_2d(index: &mut SpatialIndex2D) -> &[SpatialPair] {
 pub fn query_spatial_point_2d(
     out: &mut Vec<SpatialObjectId>,
     index: &mut SpatialIndex2D,
-    x: f32,
-    y: f32,
+    x: f64,
+    y: f64,
 ) {
     (index
         .index_runtime
@@ -129,10 +129,10 @@ pub fn query_spatial_point_2d(
 pub fn query_spatial_ray_2d(
     out: &mut Vec<SpatialObjectId>,
     index: &mut SpatialIndex2D,
-    x: f32,
-    y: f32,
-    dx: f32,
-    dy: f32,
+    x: f64,
+    y: f64,
+    dx: f64,
+    dy: f64,
 ) {
     (index
         .index_runtime
