@@ -281,60 +281,53 @@ fn test_virtual_gamepad(host: &mut SdlHost, recorded: &Arc<Mutex<RecordedInput>>
             );
         }
 
+        for axis in [
+            SDL_GAMEPAD_AXIS_LEFT_TRIGGER.0,
+            SDL_GAMEPAD_AXIS_RIGHT_TRIGGER.0,
+        ] {
+            assert!(SDL_SetJoystickVirtualAxis(joystick, axis, i16::MIN));
+        }
+        pump_for(host, Duration::from_millis(100));
         recorded.lock().unwrap().gamepad_buttons.clear();
-        assert!(SDL_SetJoystickVirtualAxis(
-            joystick,
-            SDL_GAMEPAD_AXIS_LEFT_TRIGGER.0,
-            8_000
-        ));
-        pump_for(host, Duration::from_millis(20));
-        assert!(SDL_SetJoystickVirtualAxis(
-            joystick,
-            SDL_GAMEPAD_AXIS_LEFT_TRIGGER.0,
-            20_000
-        ));
-        pump_for(host, Duration::from_millis(20));
-        assert!(SDL_SetJoystickVirtualAxis(
-            joystick,
-            SDL_GAMEPAD_AXIS_LEFT_TRIGGER.0,
-            30_000
-        ));
-        pump_for(host, Duration::from_millis(20));
-        assert!(SDL_SetJoystickVirtualAxis(
-            joystick,
-            SDL_GAMEPAD_AXIS_LEFT_TRIGGER.0,
-            10_000
-        ));
-        pump_for(host, Duration::from_millis(20));
-        assert!(SDL_SetJoystickVirtualAxis(
-            joystick,
-            SDL_GAMEPAD_AXIS_LEFT_TRIGGER.0,
-            0
-        ));
-        pump_for(host, Duration::from_millis(20));
+        let triggers = [
+            (
+                SDL_GAMEPAD_AXIS_LEFT_TRIGGER.0,
+                GamepadButtonKind::TriggerLeft,
+            ),
+            (
+                SDL_GAMEPAD_AXIS_RIGHT_TRIGGER.0,
+                GamepadButtonKind::TriggerRight,
+            ),
+        ];
+        for (axis, _) in triggers {
+            for value in [-16_000, 0, 16_000, 30_000, 10_000, -10_000, i16::MIN] {
+                assert!(SDL_SetJoystickVirtualAxis(joystick, axis, value));
+                pump_for(host, Duration::from_millis(75));
+            }
+        }
 
         let trigger_events = recorded.lock().unwrap().gamepad_buttons.clone();
         assert_eq!(
             trigger_events.len(),
-            2,
+            4,
             "trigger threshold edges: {trigger_events:?}"
         );
-        assert!(trigger_events[0].0);
-        assert!(!trigger_events[1].0);
-        for (_, data) in &trigger_events {
+        for (events, (_, expected)) in trigger_events.chunks_exact(2).zip(triggers) {
             assert_eq!(
-                get_gamepad_button_name(GamepadMapping::Standard, data.button),
-                Some(GamepadButtonKind::TriggerLeft)
+                get_gamepad_button_name(GamepadMapping::Standard, events[0].1.button),
+                Some(expected)
+            );
+            assert!(events[0].0, "one down edge per trigger: {trigger_events:?}");
+            assert!(!events[1].0, "one up edge per trigger: {trigger_events:?}");
+            assert!(
+                (0.5..=1.0).contains(&events[0].1.value),
+                "down retains normalized analog value: {trigger_events:?}"
+            );
+            assert!(
+                (0.0..0.5).contains(&events[1].1.value),
+                "up retains normalized analog value: {trigger_events:?}"
             );
         }
-        assert!(
-            (0.5..=1.0).contains(&trigger_events[0].1.value),
-            "down retains normalized analog value: {trigger_events:?}"
-        );
-        assert!(
-            (0.0..0.5).contains(&trigger_events[1].1.value),
-            "up retains normalized analog value: {trigger_events:?}"
-        );
 
         SDL_CloseJoystick(joystick);
         assert!(SDL_DetachVirtualJoystick(id));
