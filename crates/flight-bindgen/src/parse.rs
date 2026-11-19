@@ -1,4 +1,4 @@
-use std::collections::BTreeSet;
+use std::collections::{BTreeMap, BTreeSet};
 use std::fs;
 use std::path::Path;
 use std::sync::OnceLock;
@@ -391,6 +391,50 @@ pub fn is_ffi_incompatible(ty: &str) -> bool {
         || SKIP_TYPES.iter().any(|s| ty.contains(s))
 }
 
+fn relocate_synthesized_frees(crate_exports: &mut [CrateExports]) {
+    let mut owners: BTreeMap<String, BTreeSet<usize>> = BTreeMap::new();
+    for (crate_index, exports) in crate_exports.iter().enumerate() {
+        for parsed_struct in &exports.structs {
+            owners
+                .entry(parsed_struct.name.clone())
+                .or_default()
+                .insert(crate_index);
+        }
+        for parsed_enum in &exports.enums {
+            owners
+                .entry(parsed_enum.name.clone())
+                .or_default()
+                .insert(crate_index);
+        }
+    }
+
+    let mut relocated: BTreeMap<usize, Vec<ParsedFn>> = BTreeMap::new();
+    for crate_index in 0..crate_exports.len() {
+        let functions = std::mem::take(&mut crate_exports[crate_index].fns);
+        let mut retained = Vec::with_capacity(functions.len());
+        for function in functions {
+            let target = synthesized_free_type(&function)
+                .and_then(|ty| owners.get(ty))
+                .filter(|type_owners| type_owners.len() == 1)
+                .and_then(|type_owners| type_owners.first().copied())
+                .filter(|target_index| *target_index != crate_index);
+            if let Some(target_index) = target {
+                relocated.entry(target_index).or_default().push(function);
+            } else {
+                // No parsed owner or more than one parsed owner is an explicit no-op: the first
+                // returning crate remains authoritative unless ownership becomes unambiguous.
+                retained.push(function);
+            }
+        }
+        crate_exports[crate_index].fns = retained;
+    }
+
+    for (target_index, mut functions) in relocated {
+        functions.sort_by(|a, b| a.name.cmp(&b.name));
+        crate_exports[target_index].fns.extend(functions);
+    }
+}
+
 pub fn scan_all_crates(crates_dir: &Path) -> Vec<CrateExports> {
     let mut enum_names = BTreeSet::new();
     let mut all_enum_names = BTreeSet::new();
@@ -532,7 +576,18 @@ pub fn scan_all_crates(crates_dir: &Path) -> Vec<CrateExports> {
             });
         }
     }
+    relocate_synthesized_frees(&mut results);
     results
+}
+
+fn synthesized_free_type(function: &ParsedFn) -> Option<&str> {
+    if function.source_name.is_some()
+        || !function.name.starts_with("free_")
+        || function.params.len() != 1
+    {
+        return None;
+    }
+    return function.params[0].ty.strip_prefix("&mut ");
 }
 
 fn to_snake_case(s: &str) -> String {
@@ -2184,6 +2239,239 @@ pub(crate) fn random_gaussian_pair_fixture() -> ParsedFn {
 #[cfg(test)]
 mod native_abi_tests {
     use super::*;
+
+    #[test]
+    fn moves_synthesized_frees_to_unique_owner_in_name_order() {
+        let mut exports = vec![
+            crate_exports(
+                "flight-source",
+                vec![
+                    free_function("free_zebra", "Zebra"),
+                    declared_function("keep_first"),
+                    free_function("free_apple", "Apple"),
+                    declared_function("free_declared"),
+                    declared_function("keep_last"),
+                ],
+                vec![],
+            ),
+            crate_exports(
+                "flight-owner",
+                vec![declared_function("owner_function")],
+                vec![parsed_struct("Zebra")],
+            ),
+        ];
+        exports[1].enums.push(parsed_enum("Apple"));
+
+        relocate_synthesized_frees(&mut exports);
+
+        assert_eq!(
+            function_names(&exports[0]),
+            ["keep_first", "free_declared", "keep_last"]
+        );
+        assert_eq!(
+            function_names(&exports[1]),
+            ["owner_function", "free_apple", "free_zebra"]
+        );
+        assert_eq!(
+            exports
+                .iter()
+                .map(|exports| exports.dir_name.as_str())
+                .collect::<Vec<_>>(),
+            ["flight-source", "flight-owner"]
+        );
+    }
+
+    #[test]
+    fn production_inventory_has_exact_owner_placements() {
+        let exports = production_exports();
+        let mut owners: BTreeMap<&str, BTreeSet<&str>> = BTreeMap::new();
+        for item in exports {
+            for parsed_struct in &item.structs {
+                owners
+                    .entry(parsed_struct.name.as_str())
+                    .or_default()
+                    .insert(item.dir_name.as_str());
+            }
+            for parsed_enum in &item.enums {
+                owners
+                    .entry(parsed_enum.name.as_str())
+                    .or_default()
+                    .insert(item.dir_name.as_str());
+            }
+        }
+
+        let mut synthesized_count = 0;
+        let mut unique_owner_count = 0;
+        let mut zero_owner_count = 0;
+        let mut multiple_owner_count = 0;
+        let mut mismatches = Vec::new();
+        for item in exports {
+            for function in &item.fns {
+                if function.source_name.is_some() || !function.name.starts_with("free_") {
+                    continue;
+                }
+                synthesized_count += 1;
+                let Some(ty) = synthesized_free_type(function) else {
+                    zero_owner_count += 1;
+                    continue;
+                };
+                match owners.get(ty) {
+                    None => zero_owner_count += 1,
+                    Some(type_owners) if type_owners.len() == 1 => {
+                        unique_owner_count += 1;
+                        if !type_owners.contains(item.dir_name.as_str()) {
+                            mismatches.push((
+                                function.name.as_str(),
+                                ty,
+                                item.dir_name.as_str(),
+                                type_owners.clone(),
+                            ));
+                        }
+                    }
+                    Some(_) => multiple_owner_count += 1,
+                }
+            }
+        }
+        assert_eq!(synthesized_count, 413);
+        assert_eq!(unique_owner_count, 180);
+        assert_eq!(zero_owner_count, 233);
+        assert_eq!(multiple_owner_count, 0);
+        assert_eq!(mismatches, Vec::new());
+
+        for (function_name, type_name, owner) in [
+            ("free_rectangle", "Rectangle", "flight-geometry"),
+            ("free_log_timer", "LogTimer", "flight-log"),
+            ("free_glyph_metrics", "GlyphMetrics", "flight-font"),
+            ("free_slot_id", "SlotId", "flight-signals"),
+            (
+                "free_backend_operation_explanation",
+                "BackendOperationExplanation",
+                "flight-host",
+            ),
+            ("free_timeline_label", "TimelineLabel", "flight-timeline"),
+            (
+                "free_text_layout_params",
+                "TextLayoutParams",
+                "flight-textlayout",
+            ),
+            (
+                "free_text_line_metrics",
+                "TextLineMetrics",
+                "flight-textlayout",
+            ),
+            (
+                "free_requirement_set",
+                "RequirementSet",
+                "flight-requirement",
+            ),
+        ] {
+            let locations = function_locations(exports, function_name, type_name);
+            assert_eq!(locations, [owner], "{function_name}");
+        }
+    }
+
+    #[test]
+    fn retains_synthesized_frees_without_a_unique_owner() {
+        let mut exports = vec![
+            crate_exports(
+                "flight-source",
+                vec![
+                    free_function("free_missing", "Missing"),
+                    free_function("free_shared", "Shared"),
+                ],
+                vec![],
+            ),
+            crate_exports("flight-owner-a", vec![], vec![parsed_struct("Shared")]),
+            crate_exports("flight-owner-b", vec![], vec![parsed_struct("Shared")]),
+        ];
+
+        relocate_synthesized_frees(&mut exports);
+
+        assert_eq!(function_names(&exports[0]), ["free_missing", "free_shared"]);
+        assert!(exports[1].fns.is_empty());
+        assert!(exports[2].fns.is_empty());
+    }
+
+    fn crate_exports(
+        dir_name: &str,
+        fns: Vec<ParsedFn>,
+        structs: Vec<ParsedStruct>,
+    ) -> CrateExports {
+        return CrateExports {
+            dir_name: dir_name.to_string(),
+            fns,
+            structs,
+            enums: vec![],
+        };
+    }
+
+    fn declared_function(name: &str) -> ParsedFn {
+        return ParsedFn {
+            name: name.to_string(),
+            source_name: Some(name.to_string()),
+            params: vec![],
+            ret: None,
+        };
+    }
+
+    fn free_function(name: &str, ty: &str) -> ParsedFn {
+        return ParsedFn {
+            name: name.to_string(),
+            source_name: None,
+            params: vec![Param {
+                name: "ptr".to_string(),
+                ty: format!("&mut {ty}"),
+            }],
+            ret: None,
+        };
+    }
+
+    fn function_locations<'a>(
+        exports: &'a [CrateExports],
+        function_name: &str,
+        type_name: &str,
+    ) -> Vec<&'a str> {
+        return exports
+            .iter()
+            .filter(|item| {
+                item.fns.iter().any(|function| {
+                    function.name == function_name
+                        && synthesized_free_type(function) == Some(type_name)
+                })
+            })
+            .map(|item| item.dir_name.as_str())
+            .collect();
+    }
+
+    fn function_names(exports: &CrateExports) -> Vec<&str> {
+        return exports
+            .fns
+            .iter()
+            .map(|function| function.name.as_str())
+            .collect();
+    }
+
+    fn parsed_enum(name: &str) -> ParsedEnum {
+        return ParsedEnum {
+            name: name.to_string(),
+            variants: vec![],
+        };
+    }
+
+    fn parsed_struct(name: &str) -> ParsedStruct {
+        return ParsedStruct {
+            name: name.to_string(),
+            fields: vec![],
+        };
+    }
+
+    fn production_exports() -> &'static [CrateExports] {
+        static EXPORTS: OnceLock<Vec<CrateExports>> = OnceLock::new();
+        return EXPORTS.get_or_init(|| {
+            let crates_dir = Path::new(env!("CARGO_MANIFEST_DIR")).parent().unwrap();
+            scan_all_crates(crates_dir)
+        });
+    }
     #[test]
     fn scalar_tuple_return_matches_ffi_out_parameter_policy() {
         let function = random_gaussian_pair_fixture();
