@@ -66,12 +66,12 @@ mod geometry_domain {
 
     #[test]
     fn exports_create_matrix() {
-        let _: fn(f32, f32, f32, f32, f32, f32) -> Matrix = create_matrix;
+        let _: fn(f64, f64, f64, f64, f64, f64) -> Matrix = create_matrix;
     }
 
     #[test]
     fn exports_create_rectangle() {
-        let _: fn(f32, f32, f32, f32) -> Rectangle = create_rectangle;
+        let _: fn(f64, f64, f64, f64) -> Rectangle = create_rectangle;
     }
 }
 
