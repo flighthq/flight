@@ -39,12 +39,12 @@ static REGISTRY: LazyLock<CollisionRegistry2D> = LazyLock::new(|| {
 // A custom joint kind the tests author outside the crate, as the TS `entityJoint` helper does.
 struct TestJoint {
     fields: Physics2DJointFields,
-    motor_impulse: f32,
+    motor_impulse: f64,
 }
 
 flight_physics2d::impl_physics2d_joint!(TestJoint, [motor_impulse]);
 
-fn aabb(min_x: f32, min_y: f32, max_x: f32, max_y: f32) -> CollisionShape2D {
+fn aabb(min_x: f64, min_y: f64, max_x: f64, max_y: f64) -> CollisionShape2D {
     return CollisionShape2D::Aabb(CollisionAabb2D {
         min_x,
         min_y,
@@ -58,20 +58,11 @@ fn add(world: &mut Physics2DWorld, body: Ref<RigidBody2D>) -> Ref<RigidBody2D> {
     return body;
 }
 
-fn assert_close(actual: f32, expected: f32, digits: i32) {
-    let tolerance = 10f32.powi(-digits) / 2.0;
+fn assert_close(actual: f64, expected: f64, digits: i32) {
+    let tolerance = 10f64.powi(-digits) / 2.0;
     assert!(
         (actual - expected).abs() < tolerance,
         "expected {actual} to be close to {expected} ({digits} digits)"
-    );
-}
-
-// An f32 tolerance in place of a TS `toBeCloseTo(_, 12)` the f32 integrator cannot meet; every call
-// site states the error measured against the TS expectation.
-fn assert_close_within(actual: f32, expected: f32, tolerance: f32) {
-    assert!(
-        (actual - expected).abs() <= tolerance,
-        "expected {actual} to be within {tolerance} of {expected}"
     );
 }
 
@@ -84,11 +75,11 @@ fn base_fields(kind: &str, body_a: i32, body_b: i32) -> Physics2DJointFields {
     return fields;
 }
 
-fn box_at(world: &mut Physics2DWorld, x: f32, y: f32) -> Ref<RigidBody2D> {
+fn box_at(world: &mut Physics2DWorld, x: f64, y: f64) -> Ref<RigidBody2D> {
     return box_with_half(world, x, y, 0.5);
 }
 
-fn box_with_half(world: &mut Physics2DWorld, x: f32, y: f32, half: f32) -> Ref<RigidBody2D> {
+fn box_with_half(world: &mut Physics2DWorld, x: f64, y: f64, half: f64) -> Ref<RigidBody2D> {
     let body = rigid_body2d(Physics2DBodyType::Dynamic, x, y, None);
     body.write().unwrap().colliders.push(physics2d_collider(
         &aabb(-half, -half, half, half),
@@ -129,7 +120,7 @@ fn create_swapped_pair_backend() -> SpatialIndexBackend2D {
     return out;
 }
 
-fn distance_joint(body_a: i32, body_b: i32, length: f32) -> Arc<RwLock<Physics2DDistanceJoint>> {
+fn distance_joint(body_a: i32, body_b: i32, length: f64) -> Arc<RwLock<Physics2DDistanceJoint>> {
     let make: fn() -> Physics2DDistanceJoint = Physics2DDistanceJoint::default;
     let mut joint = make();
     *joint.joint_fields_mut() = base_fields(PHYSICS2D_DISTANCE_JOINT_KIND, body_a, body_b);
@@ -233,7 +224,7 @@ fn new_guards() -> Physics2DGuardState {
 mod a_body_the_step_declines_leaves_the_broadphase {
     use super::*;
 
-    fn dynamic_box(world: &mut Physics2DWorld, x: f32) -> Ref<RigidBody2D> {
+    fn dynamic_box(world: &mut Physics2DWorld, x: f64) -> Ref<RigidBody2D> {
         let body = rigid_body2d(Physics2DBodyType::Dynamic, x, 0.0, None);
         body.write().unwrap().colliders.push(physics2d_collider(
             &aabb(-0.5, -0.5, 0.5, 0.5),
@@ -258,7 +249,7 @@ mod a_body_the_step_declines_leaves_the_broadphase {
         return out;
     }
 
-    fn set_local(body: &Ref<RigidBody2D>, min: f32, max: f32) {
+    fn set_local(body: &Ref<RigidBody2D>, min: f64, max: f64) {
         let collider = body.read().unwrap().colliders[0].clone();
         collider.write().unwrap().local = aabb(min, min, max, max);
     }
@@ -362,9 +353,9 @@ mod bullet_continuous_collision_detection {
 
     fn wall(
         world: &mut Physics2DWorld,
-        min_x: f32,
-        max_x: f32,
-        restitution: f32,
+        min_x: f64,
+        max_x: f64,
+        restitution: f64,
         sensor: bool,
     ) -> Ref<RigidBody2D> {
         let body = rigid_body2d(Physics2DBodyType::Static, 0.0, 0.0, None);
@@ -383,8 +374,8 @@ mod bullet_continuous_collision_detection {
 
     fn projectile(
         world: &mut Physics2DWorld,
-        speed: f32,
-        restitution: f32,
+        speed: f64,
+        restitution: f64,
         bullet: bool,
     ) -> Ref<RigidBody2D> {
         let body = rigid_body2d(Physics2DBodyType::Dynamic, 0.0, 0.0, None);
@@ -524,11 +515,9 @@ mod bullet_continuous_collision_detection {
         world.contact_hooks.pre_solve = None;
         world.contact_hooks.post_solve = None;
         step(&mut world, 0.1);
-        // D1 divergence, Principal-approved (8b33bdfb): TS f64 advance 0.045000000000000005
-        // overshoots to x = 4.500000000000001 (inside by about 1e-15, so the contact persists and TS
-        // expects 0 ended); f32 lands at exactly 4.5 (touching, and circleAabbOverlap rejects
-        // dist >= radius), so the contact ends here.
-        assert_eq!(world.events.ended.len(), 1);
+        // As in TS: the f64 advance 0.045000000000000005 overshoots to x = 4.500000000000001, inside
+        // by about 1e-15, so the contact persists and nothing ends.
+        assert_eq!(world.events.ended.len(), 0);
     }
 
     #[test]
@@ -550,7 +539,7 @@ mod bullet_continuous_collision_detection {
         {
             let mut r = rod.write().unwrap();
             r.bullet = true;
-            r.angular_velocity = std::f32::consts::PI / 0.1;
+            r.angular_velocity = std::f64::consts::PI / 0.1;
             r.colliders.push(physics2d_collider(
                 &aabb(-2.0, -0.025, 2.0, 0.025),
                 &slick,
@@ -564,7 +553,7 @@ mod bullet_continuous_collision_detection {
 
         assert_eq!(continuous.events.began.len(), 1);
         assert_eq!(continuous.contacts.len(), 1);
-        assert!(rod.read().unwrap().angular_velocity.abs() < std::f32::consts::PI / 0.1);
+        assert!(rod.read().unwrap().angular_velocity.abs() < std::f64::consts::PI / 0.1);
 
         let mut discrete = physics2d_world(Some(0.0), Some(0.0), None);
         let discrete_obstacle = rigid_body2d(Physics2DBodyType::Static, 0.0, 1.5, None);
@@ -582,7 +571,7 @@ mod bullet_continuous_collision_detection {
         let unchecked = rigid_body2d(Physics2DBodyType::Dynamic, 0.0, 0.0, None);
         {
             let mut u = unchecked.write().unwrap();
-            u.angular_velocity = std::f32::consts::PI / 0.1;
+            u.angular_velocity = std::f64::consts::PI / 0.1;
             u.colliders.push(physics2d_collider(
                 &aabb(-2.0, -0.025, 2.0, 0.025),
                 &slick,
@@ -595,7 +584,7 @@ mod bullet_continuous_collision_detection {
         step(&mut discrete, 0.1);
 
         assert_eq!(discrete.contacts.len(), 0);
-        assert_close(unchecked.read().unwrap().angle, std::f32::consts::PI, 2);
+        assert_close(unchecked.read().unwrap().angle, std::f64::consts::PI, 2);
     }
 
     #[test]
@@ -622,12 +611,12 @@ mod bullet_continuous_collision_detection {
 mod centre_of_mass_integration {
     use super::*;
 
-    fn centre_of_mass_x(body: &Ref<RigidBody2D>) -> f32 {
+    fn centre_of_mass_x(body: &Ref<RigidBody2D>) -> f64 {
         let b = body.read().unwrap();
         return b.x + b.center_x * b.angle.cos() - b.center_y * b.angle.sin();
     }
 
-    fn centre_of_mass_y(body: &Ref<RigidBody2D>) -> f32 {
+    fn centre_of_mass_y(body: &Ref<RigidBody2D>) -> f64 {
         let b = body.read().unwrap();
         return b.y + b.center_x * b.angle.sin() + b.center_y * b.angle.cos();
     }
@@ -661,16 +650,12 @@ mod centre_of_mass_integration {
             step(&mut world, 0.1);
         }
 
-        // f32: measured 1.19e-7 from 1 (TS f64 meets 12 digits).
-        assert_close_within(centre_of_mass_x(&body), 1.0, 1e-6);
+        assert_close(centre_of_mass_x(&body), 1.0, 12);
         assert_close(centre_of_mass_y(&body), 0.0, 12);
         let b = body.read().unwrap();
-        // f32: fifty f32 additions of 0.1 measured 4.9999976 (error 2.38e-6).
-        assert_close_within(b.angle, 5.0, 1e-5);
-        // f32: measured 0.71633995 vs 0.7163378 (error 2.15e-6), carried from the angle error.
-        assert_close_within(b.x, 1.0 - 5f32.cos(), 1e-5);
-        // f32: measured 0.95892495 vs 0.9589243 (error 6.56e-7), carried from the angle error.
-        assert_close_within(b.y, -5f32.sin(), 1e-5);
+        assert_close(b.angle, 5.0, 12);
+        assert_close(b.x, 1.0 - 5f64.cos(), 12);
+        assert_close(b.y, -5f64.sin(), 12);
     }
 
     #[test]
@@ -686,11 +671,10 @@ mod centre_of_mass_integration {
             step(&mut world, DT60);
         }
 
-        // f32: measured 7.15e-7 from the centred body's 0 (TS f64 meets 12 digits).
-        assert_close_within(
+        assert_close(
             centre_of_mass_x(&spinning) - start_x,
             centred.read().unwrap().x,
-            1e-5,
+            12,
         );
         assert_close(
             centre_of_mass_y(&spinning) - start_y,
@@ -1058,7 +1042,7 @@ mod contact_solve_hooks {
         ground(&mut world);
         box_at(&mut world, 0.0, 0.4).write().unwrap().velocity_y = -1.0;
         world.contact_hooks.pre_solve = Some(Arc::new(|_world, contact| {
-            contact.friction = f32::NAN;
+            contact.friction = f64::NAN;
         }));
 
         let message = panic_message(|| step(&mut world, DT60));
@@ -1070,7 +1054,7 @@ mod contact_solve_hooks {
         );
         world.contact_hooks.pre_solve = None;
         world.contact_hooks.post_solve = Some(Arc::new(|_world, contact| {
-            contact.restitution = f32::INFINITY;
+            contact.restitution = f64::INFINITY;
         }));
 
         let message = panic_message(|| step(&mut world, DT60));
@@ -1140,7 +1124,7 @@ mod contact_solve_hooks {
 mod sensor_reporting_between_immovable_bodies {
     use super::*;
 
-    fn immovable(world: &mut Physics2DWorld, x: f32, sensor: bool) -> Ref<RigidBody2D> {
+    fn immovable(world: &mut Physics2DWorld, x: f64, sensor: bool) -> Ref<RigidBody2D> {
         let body = rigid_body2d(Physics2DBodyType::Static, x, 0.0, None);
         body.write().unwrap().colliders.push(physics2d_collider(
             &aabb(-0.5, -0.5, 0.5, 0.5),
@@ -1151,7 +1135,7 @@ mod sensor_reporting_between_immovable_bodies {
         return add(world, body);
     }
 
-    fn immovable_with_sensor_and_solid(world: &mut Physics2DWorld, x: f32) -> Ref<RigidBody2D> {
+    fn immovable_with_sensor_and_solid(world: &mut Physics2DWorld, x: f64) -> Ref<RigidBody2D> {
         let body = rigid_body2d(Physics2DBodyType::Static, x, 0.0, None);
         {
             let mut b = body.write().unwrap();
@@ -1458,7 +1442,7 @@ mod step_physics2d {
         let crate_body = box_at(&mut world, 0.0, 2.0);
         crate_body.write().unwrap().velocity_x = 3.0;
         crate_body.write().unwrap().force_y = 4.0;
-        world.config.position_correction = f32::NAN;
+        world.config.position_correction = f64::NAN;
 
         step(&mut world, DT60);
 
@@ -1778,14 +1762,14 @@ mod step_physics2d_contact_cache_identity {
         box_at(&mut world, 0.0, 0.75);
         step(&mut world, DT60);
         let contact = world.contacts[0].clone();
-        let mut expected: Vec<(i64, f32, f32)> = Vec::new();
+        let mut expected: Vec<(i64, f64, f64)> = Vec::new();
         {
             let mut c = contact.write().unwrap();
             assert_eq!(c.point_count, 2);
             for i in 0..c.point_count {
                 let point = &mut c.points[i];
-                point.normal_impulse = (i + 1) as f32;
-                point.tangent_impulse = -((i + 1) as f32);
+                point.normal_impulse = (i + 1) as f64;
+                point.tangent_impulse = -((i + 1) as f64);
                 expected.push((
                     point.feature_id,
                     point.normal_impulse,
@@ -1921,18 +1905,18 @@ mod step_physics2d_contact_events {
 mod step_physics2d_with_breakable_joints {
     use super::*;
 
-    const GRAVITY: f32 = -10.0;
+    const GRAVITY: f64 = -10.0;
     const DT: f64 = 1.0 / 240.0;
 
     struct Hanging {
         bob: Ref<RigidBody2D>,
         joint: Arc<RwLock<Physics2DDistanceJoint>>,
         joint_ref: Physics2DJointRef,
-        weight: f32,
+        weight: f64,
         world: Physics2DWorld,
     }
 
-    fn hanging_world(break_force: f32) -> Hanging {
+    fn hanging_world(break_force: f64) -> Hanging {
         let mut world = physics2d_world(Some(0.0), Some(GRAVITY), None);
         register_physics2d_joint_solver(
             &mut world,
@@ -2016,8 +2000,8 @@ mod step_physics2d_with_breakable_joints {
     fn never_breaks_a_joint_whose_thresholds_are_both_infinite_which_is_the_default() {
         let Hanging {
             mut world, joint, ..
-        } = hanging_world(f32::INFINITY);
-        assert_eq!(joint.read().unwrap().break_force, f32::INFINITY);
+        } = hanging_world(f64::INFINITY);
+        assert_eq!(joint.read().unwrap().break_force, f64::INFINITY);
 
         for _ in 0..600 {
             step(&mut world, DT);
@@ -2078,7 +2062,7 @@ mod step_physics2d_with_breakable_joints {
                 .unwrap()
                 .joint_fields()
                 .break_force,
-            f32::INFINITY
+            f64::INFINITY
         );
     }
 
@@ -2112,7 +2096,7 @@ mod step_physics2d_with_breakable_joints {
         step(&mut world, DT);
         assert_eq!(world.joints.len(), 0);
 
-        joint.write().unwrap().break_force = f32::INFINITY;
+        joint.write().unwrap().break_force = f64::INFINITY;
         add_physics2d_joint(&mut world, &joint_ref);
         for _ in 0..60 {
             step(&mut world, DT);
@@ -2125,7 +2109,7 @@ mod step_physics2d_with_breakable_joints {
 mod step_physics2d_with_capsule_colliders {
     use super::*;
 
-    fn capsule(x0: f32, x1: f32, radius: f32) -> CollisionShape2D {
+    fn capsule(x0: f64, x1: f64, radius: f64) -> CollisionShape2D {
         return CollisionShape2D::Capsule(CollisionCapsule2D {
             x0,
             y0: 0.0,
@@ -2155,7 +2139,7 @@ mod step_physics2d_with_capsule_colliders {
         ));
         add_physics2d_body(&mut world, &body);
 
-        let mut worst_angle_after_settling: f32 = 0.0;
+        let mut worst_angle_after_settling: f64 = 0.0;
         for step_index in 0..900 {
             step(&mut world, 1.0 / 240.0);
             if step_index > 500 {

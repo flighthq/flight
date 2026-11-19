@@ -2,19 +2,19 @@
 
 //! Soft constraint rows (TS `jointRows.ts`).
 
-const TAU: f32 = 2.0 * std::f32::consts::PI;
+const TAU: f64 = 2.0 * std::f64::consts::PI;
 
 /// Writes `[effectiveMass, biasFactor, gamma]` for a soft row of the given natural frequency and
 /// damping, or the hard row `[mass, hardBiasFactor, 0]` when the spring is off (TS
 /// `writePhysics2DSoftRowParameters`).
 // flight-lint: allow(conform-params) D9b: out-first
 pub fn write_physics2d_soft_row_parameters(
-    out: &mut [f32],
-    mass: f32,
-    frequency_hz: f32,
-    damping_ratio: f32,
-    dt: f32,
-    hard_bias_factor: f32,
+    out: &mut [f64],
+    mass: f64,
+    frequency_hz: f64,
+    damping_ratio: f64,
+    dt: f64,
+    hard_bias_factor: f64,
 ) {
     if !(frequency_hz > 0.0) || !(dt > 0.0) {
         out[0] = mass;

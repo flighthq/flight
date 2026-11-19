@@ -17,12 +17,12 @@ pub fn compute_physics2d_collider_mass_data(
     let density = collider.material.density;
     match &collider.local {
         CollisionShape2D::Circle(shape) => {
-            let radius = shape.radius as f32;
-            let area = std::f32::consts::PI * radius * radius;
+            let radius = shape.radius;
+            let area = std::f64::consts::PI * radius * radius;
             out.mass = area * density;
             out.inertia = 0.5 * out.mass * radius * radius;
-            out.center_x = shape.x as f32;
-            out.center_y = shape.y as f32;
+            out.center_x = shape.x;
+            out.center_y = shape.y;
         }
         CollisionShape2D::Capsule(shape) => {
             let axis_x = shape.x1 - shape.x0;
@@ -30,13 +30,13 @@ pub fn compute_physics2d_collider_mass_data(
             let length = (axis_x * axis_x + axis_y * axis_y).sqrt();
             let radius = shape.radius;
             let rectangle_mass = 2.0 * radius * length * density;
-            let disc_mass = std::f32::consts::PI * radius * radius * density;
+            let disc_mass = std::f64::consts::PI * radius * radius * density;
             out.mass = rectangle_mass + disc_mass;
             out.inertia = (rectangle_mass * (length * length + 4.0 * radius * radius)) / 12.0
                 + disc_mass
                     * ((radius * radius) / 2.0
                         + (length * length) / 4.0
-                        + (4.0 * radius * length) / (3.0 * std::f32::consts::PI));
+                        + (4.0 * radius * length) / (3.0 * std::f64::consts::PI));
             out.center_x = (shape.x0 + shape.x1) / 2.0;
             out.center_y = (shape.y0 + shape.y1) / 2.0;
         }
@@ -112,10 +112,9 @@ pub fn update_rigid_body2d_mass_data(body: &mut RigidBody2D) {
     };
 }
 
-// The polygon's absolute coordinates are f64 in the canonical collision shape (measured there); the
-// signed-area sums run in that width and the derived mass data narrows to the body's f32.
-// flight-lint: allow(f64) D1: canonical collision polygon points are f64; the signed-area sums keep that width
-fn write_polygon_mass_data(out: &mut Physics2DMassData, points: &[f64], density: f32) {
+// The polygon's absolute coordinates come from the canonical collision shape; the signed-area sums
+// and the derived mass data stay f64, matching the TS number math.
+fn write_polygon_mass_data(out: &mut Physics2DMassData, points: &[f64], density: f64) {
     let count = points.len() >> 1;
     if count < 3 {
         out.mass = 0.0;
@@ -151,14 +150,14 @@ fn write_polygon_mass_data(out: &mut Physics2DMassData, points: &[f64], density:
         return;
     }
 
-    let density = density as f64;
+    let density = density;
     let mass = area.abs() * density;
     let center_x = centroid_x / (6.0 * area);
     let center_y = centroid_y / (6.0 * area);
     let origin_moment = (moment.abs() / 12.0) * density;
     let offset_squared = center_x * center_x + center_y * center_y;
-    out.mass = mass as f32;
-    out.center_x = center_x as f32;
-    out.center_y = center_y as f32;
-    out.inertia = (origin_moment - mass * offset_squared) as f32;
+    out.mass = mass;
+    out.center_x = center_x;
+    out.center_y = center_y;
+    out.inertia = origin_moment - mass * offset_squared;
 }

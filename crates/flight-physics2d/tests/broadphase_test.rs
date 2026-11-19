@@ -25,8 +25,8 @@ fn circle(radius: f64) -> CollisionShape2D {
 fn body_with(
     world: &mut Physics2DWorld,
     body_type: Physics2DBodyType,
-    x: f32,
-    y: f32,
+    x: f64,
+    y: f64,
     shape: &CollisionShape2D,
 ) -> flight_entity::Ref<RigidBody2D> {
     let body = rigid_body2d(body_type, x, y, None);
@@ -136,7 +136,7 @@ mod synchronize_physics2d_swept_broadphase {
             max_y: 0.05,
         });
         let rod = body_with(&mut world, Physics2DBodyType::Dynamic, 0.0, 0.0, &rod_shape);
-        rod.write().unwrap().angular_velocity = std::f32::consts::PI;
+        rod.write().unwrap().angular_velocity = std::f64::consts::PI;
         let obstacle = body_with(
             &mut world,
             Physics2DBodyType::Static,

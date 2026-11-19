@@ -35,9 +35,9 @@ pub enum Physics2DBodyType {
 #[derive(Clone, Copy, Debug, PartialEq)]
 #[repr(C)]
 pub struct Physics2DMaterial {
-    pub density: f32,
-    pub friction: f32,
-    pub restitution: f32,
+    pub density: f64,
+    pub friction: f64,
+    pub restitution: f64,
 }
 
 /// Which other colliders one collider may contact (TS `Physics2DCollisionFilter`). Plain record;
@@ -71,46 +71,45 @@ pub struct Physics2DCollider {
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
 #[repr(C)]
 pub struct Physics2DMassData {
-    pub center_x: f32,
-    pub center_y: f32,
-    pub inertia: f32,
-    pub mass: f32,
+    pub center_x: f64,
+    pub center_y: f64,
+    pub inertia: f64,
+    pub mass: f64,
 }
 
 /// A rigid body (TS `RigidBody2D`). `index` is the persistent identity the world assigns (`-1`
 /// until inserted); `angle` is in radians.
-// flight-lint: allow(f64) time accumulation: TS f64 sleep-threshold timing (30 × 1/60 crosses 0.5 differently in f32)
 #[repr(C)]
 pub struct RigidBody2D {
     runtime: EntityRuntimeSlot,
     pub(crate) identity: Arc<Physics2DBodyIdentity>,
     pub(crate) owner: Option<Arc<Physics2DWorldIdentity>>,
-    pub angle: f32,
-    pub angular_damping: f32,
-    pub angular_velocity: f32,
+    pub angle: f64,
+    pub angular_damping: f64,
+    pub angular_velocity: f64,
     pub body_type: Physics2DBodyType,
     pub bullet: bool,
-    pub center_x: f32,
-    pub center_y: f32,
+    pub center_x: f64,
+    pub center_y: f64,
     pub colliders: Vec<Ref<Physics2DCollider>>,
     pub fixed_rotation: bool,
-    pub force_x: f32,
-    pub force_y: f32,
-    pub gravity_scale: f32,
+    pub force_x: f64,
+    pub force_y: f64,
+    pub gravity_scale: f64,
     pub index: i32,
-    pub inertia: f32,
-    pub inverse_inertia: f32,
-    pub inverse_mass: f32,
-    pub linear_damping: f32,
-    pub mass: f32,
+    pub inertia: f64,
+    pub inverse_inertia: f64,
+    pub inverse_mass: f64,
+    pub linear_damping: f64,
+    pub mass: f64,
     pub sleep_enabled: bool,
     pub sleep_timer: f64,
     pub sleeping: bool,
-    pub torque: f32,
-    pub velocity_x: f32,
-    pub velocity_y: f32,
-    pub x: f32,
-    pub y: f32,
+    pub torque: f64,
+    pub velocity_x: f64,
+    pub velocity_y: f64,
+    pub x: f64,
+    pub y: f64,
 }
 
 /// One point of a persistent contact with its warm-start impulses (TS `Physics2DContactPoint`).
@@ -118,19 +117,19 @@ pub struct RigidBody2D {
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
 #[repr(C)]
 pub struct Physics2DContactPoint {
-    pub bias: f32,
-    pub depth: f32,
+    pub bias: f64,
+    pub depth: f64,
     pub feature_id: i64,
-    pub normal_impulse: f32,
-    pub normal_mass: f32,
-    pub r_ax: f32,
-    pub r_ay: f32,
-    pub r_bx: f32,
-    pub r_by: f32,
-    pub tangent_impulse: f32,
-    pub tangent_mass: f32,
-    pub x: f32,
-    pub y: f32,
+    pub normal_impulse: f64,
+    pub normal_mass: f64,
+    pub r_ax: f64,
+    pub r_ay: f64,
+    pub r_bx: f64,
+    pub r_by: f64,
+    pub tangent_impulse: f64,
+    pub tangent_mass: f64,
+    pub x: f64,
+    pub y: f64,
 }
 
 /// A persistent contact between two colliders (TS `Physics2DContact`). Plain record held by shared
@@ -143,12 +142,12 @@ pub struct Physics2DContact {
     pub collider_a: usize,
     pub collider_b: usize,
     pub enabled: bool,
-    pub friction: f32,
-    pub normal_x: f32,
-    pub normal_y: f32,
+    pub friction: f64,
+    pub normal_x: f64,
+    pub normal_y: f64,
     pub point_count: usize,
     pub points: Vec<Physics2DContactPoint>,
-    pub restitution: f32,
+    pub restitution: f64,
     pub sensor: bool,
     pub touching: bool,
 }
@@ -176,13 +175,13 @@ pub struct Physics2DSolverConfig {
     pub continuous_collision: bool,
     pub max_ccd_rotation_substeps: i32,
     pub max_ccd_substeps: i32,
-    pub penetration_slop: f32,
-    pub position_correction: f32,
+    pub penetration_slop: f64,
+    pub position_correction: f64,
     pub position_iterations: i32,
-    pub restitution_threshold: f32,
-    pub sleep_angular_threshold: f32,
-    pub sleep_linear_threshold: f32,
-    pub time_to_sleep: f32,
+    pub restitution_threshold: f64,
+    pub sleep_angular_threshold: f64,
+    pub sleep_linear_threshold: f64,
+    pub time_to_sleep: f64,
     pub velocity_iterations: i32,
     pub warm_starting: bool,
 }
@@ -195,13 +194,13 @@ pub struct Physics2DSolverConfigOptions {
     pub continuous_collision: Option<bool>,
     pub max_ccd_rotation_substeps: Option<i32>,
     pub max_ccd_substeps: Option<i32>,
-    pub penetration_slop: Option<f32>,
-    pub position_correction: Option<f32>,
+    pub penetration_slop: Option<f64>,
+    pub position_correction: Option<f64>,
     pub position_iterations: Option<i32>,
-    pub restitution_threshold: Option<f32>,
-    pub sleep_angular_threshold: Option<f32>,
-    pub sleep_linear_threshold: Option<f32>,
-    pub time_to_sleep: Option<f32>,
+    pub restitution_threshold: Option<f64>,
+    pub sleep_angular_threshold: Option<f64>,
+    pub sleep_linear_threshold: Option<f64>,
+    pub time_to_sleep: Option<f64>,
     pub velocity_iterations: Option<i32>,
     pub warm_starting: Option<bool>,
 }
@@ -250,7 +249,6 @@ pub struct Physics2DContactEvents {
 }
 
 /// A 2D physics world (TS `Physics2DWorld`), stepped explicitly by `step_physics2d`.
-// flight-lint: allow(f64) time accumulation: TS f64 sleep-threshold timing (30 × 1/60 crosses 0.5 differently in f32)
 #[repr(C)]
 pub struct Physics2DWorld {
     runtime: EntityRuntimeSlot,
@@ -261,8 +259,8 @@ pub struct Physics2DWorld {
     pub contact_hooks: Physics2DContactHooks,
     pub contacts: Vec<Physics2DContactRef>,
     pub events: Physics2DContactEvents,
-    pub gravity_x: f32,
-    pub gravity_y: f32,
+    pub gravity_x: f64,
+    pub gravity_y: f64,
     pub index: SpatialIndexBackend2D,
     pub island_parents: HashMap<i32, i32>,
     pub island_sleep_timers: HashMap<i32, f64>,
@@ -296,24 +294,24 @@ pub struct Physics2DJointFields {
     runtime: EntityRuntimeSlot,
     pub(crate) owner: Option<Arc<Physics2DWorldIdentity>>,
     /// Per-joint solve-time scratch (TS module `jointSolveStates`).
-    pub(crate) solve_state: Option<Vec<f32>>,
+    pub(crate) solve_state: Option<Vec<f64>>,
     pub body_a: i32,
     pub body_b: i32,
-    pub break_force: f32,
-    pub break_torque: f32,
+    pub break_force: f64,
+    pub break_torque: f64,
     pub collide_connected: bool,
-    pub impulse0: f32,
-    pub impulse1: f32,
-    pub impulse2: f32,
+    pub impulse0: f64,
+    pub impulse1: f64,
+    pub impulse2: f64,
     pub kind: Kind,
-    pub local_anchor_ax: f32,
-    pub local_anchor_ay: f32,
-    pub local_anchor_bx: f32,
-    pub local_anchor_by: f32,
-    pub r_ax: f32,
-    pub r_ay: f32,
-    pub r_bx: f32,
-    pub r_by: f32,
+    pub local_anchor_ax: f64,
+    pub local_anchor_ay: f64,
+    pub local_anchor_bx: f64,
+    pub local_anchor_by: f64,
+    pub r_ax: f64,
+    pub r_ay: f64,
+    pub r_bx: f64,
+    pub r_by: f64,
 }
 
 /// Any joint (TS `Physics2DJoint`, an open base contract). Implement it for a kind struct with
@@ -327,7 +325,7 @@ pub trait Physics2DJoint: flight_entity::Entity + Any + Send + Sync {
     /// Visits every number field the joint carries except the break thresholds (TS: the
     /// `for (const key in joint)` number scan of joint validation). The default visits the base
     /// fields; a kind adds its own.
-    fn for_each_number_field(&self, visit: &mut dyn FnMut(f32)) {
+    fn for_each_number_field(&self, visit: &mut dyn FnMut(f64)) {
         visit_physics2d_joint_base_number_fields(self.joint_fields(), visit);
     }
 }
@@ -339,10 +337,10 @@ pub type Physics2DJointRef = Ref<dyn Physics2DJoint>;
 #[derive(Clone)]
 #[repr(C)]
 pub struct Physics2DBrokenJoint {
-    pub force_x: f32,
-    pub force_y: f32,
+    pub force_x: f64,
+    pub force_y: f64,
     pub joint: Physics2DJointRef,
-    pub torque: f32,
+    pub torque: f64,
 }
 
 /// The joint events of the last step (TS `Physics2DJointEvents`). Plain record.
@@ -356,9 +354,9 @@ pub struct Physics2DJointEvents {
 #[repr(C)]
 pub struct Physics2DDistanceJoint {
     pub(crate) fields: Physics2DJointFields,
-    pub damping_ratio: f32,
-    pub frequency_hz: f32,
-    pub length: f32,
+    pub damping_ratio: f64,
+    pub frequency_hz: f64,
+    pub length: f64,
 }
 
 /// A revolute joint (TS `Physics2DRevoluteJoint`).
@@ -369,14 +367,14 @@ pub struct Physics2DRevoluteJoint {
     pub enable_limit: bool,
     pub enable_limit_spring: bool,
     pub enable_motor: bool,
-    pub limit_damping_ratio: f32,
-    pub limit_frequency_hz: f32,
-    pub lower_angle: f32,
-    pub max_motor_torque: f32,
-    pub motor_impulse: f32,
-    pub motor_speed: f32,
-    pub reference_angle: f32,
-    pub upper_angle: f32,
+    pub limit_damping_ratio: f64,
+    pub limit_frequency_hz: f64,
+    pub lower_angle: f64,
+    pub max_motor_torque: f64,
+    pub motor_impulse: f64,
+    pub motor_speed: f64,
+    pub reference_angle: f64,
+    pub upper_angle: f64,
 }
 
 /// A weld joint (TS `Physics2DWeldJoint`).
@@ -384,7 +382,7 @@ pub struct Physics2DRevoluteJoint {
 #[repr(C)]
 pub struct Physics2DWeldJoint {
     pub(crate) fields: Physics2DJointFields,
-    pub reference_angle: f32,
+    pub reference_angle: f64,
 }
 
 /// A rope joint (TS `Physics2DRopeJoint`).
@@ -392,7 +390,7 @@ pub struct Physics2DWeldJoint {
 #[repr(C)]
 pub struct Physics2DRopeJoint {
     pub(crate) fields: Physics2DJointFields,
-    pub max_length: f32,
+    pub max_length: f64,
 }
 
 /// A pulley joint (TS `Physics2DPulleyJoint`).
@@ -400,12 +398,12 @@ pub struct Physics2DRopeJoint {
 #[repr(C)]
 pub struct Physics2DPulleyJoint {
     pub(crate) fields: Physics2DJointFields,
-    pub constant: f32,
-    pub ground_anchor_ax: f32,
-    pub ground_anchor_ay: f32,
-    pub ground_anchor_bx: f32,
-    pub ground_anchor_by: f32,
-    pub ratio: f32,
+    pub constant: f64,
+    pub ground_anchor_ax: f64,
+    pub ground_anchor_ay: f64,
+    pub ground_anchor_bx: f64,
+    pub ground_anchor_by: f64,
+    pub ratio: f64,
 }
 
 /// Which coordinate of a body a gear couples (TS `Physics2DGearCoordinateKind`).
@@ -422,14 +420,14 @@ pub enum Physics2DGearCoordinateKind {
 #[repr(C)]
 pub struct Physics2DGearJoint {
     pub(crate) fields: Physics2DJointFields,
-    pub axis_ax: f32,
-    pub axis_ay: f32,
-    pub axis_bx: f32,
-    pub axis_by: f32,
-    pub constant: f32,
+    pub axis_ax: f64,
+    pub axis_ay: f64,
+    pub axis_bx: f64,
+    pub axis_by: f64,
+    pub constant: f64,
     pub coordinate_a: Physics2DGearCoordinateKind,
     pub coordinate_b: Physics2DGearCoordinateKind,
-    pub ratio: f32,
+    pub ratio: f64,
 }
 
 /// A prismatic joint (TS `Physics2DPrismaticJoint`).
@@ -440,16 +438,16 @@ pub struct Physics2DPrismaticJoint {
     pub enable_limit: bool,
     pub enable_limit_spring: bool,
     pub enable_motor: bool,
-    pub limit_damping_ratio: f32,
-    pub limit_frequency_hz: f32,
-    pub local_axis_ax: f32,
-    pub local_axis_ay: f32,
-    pub lower_translation: f32,
-    pub max_motor_force: f32,
-    pub motor_impulse: f32,
-    pub motor_speed: f32,
-    pub reference_angle: f32,
-    pub upper_translation: f32,
+    pub limit_damping_ratio: f64,
+    pub limit_frequency_hz: f64,
+    pub local_axis_ax: f64,
+    pub local_axis_ay: f64,
+    pub lower_translation: f64,
+    pub max_motor_force: f64,
+    pub motor_impulse: f64,
+    pub motor_speed: f64,
+    pub reference_angle: f64,
+    pub upper_translation: f64,
 }
 
 /// A wheel joint (TS `Physics2DWheelJoint`).
@@ -457,15 +455,15 @@ pub struct Physics2DPrismaticJoint {
 #[repr(C)]
 pub struct Physics2DWheelJoint {
     pub(crate) fields: Physics2DJointFields,
-    pub damping_ratio: f32,
+    pub damping_ratio: f64,
     pub enable_motor: bool,
-    pub frequency_hz: f32,
-    pub local_axis_ax: f32,
-    pub local_axis_ay: f32,
-    pub max_motor_torque: f32,
-    pub motor_impulse: f32,
-    pub motor_speed: f32,
-    pub rest_translation: f32,
+    pub frequency_hz: f64,
+    pub local_axis_ax: f64,
+    pub local_axis_ay: f64,
+    pub max_motor_torque: f64,
+    pub motor_impulse: f64,
+    pub motor_speed: f64,
+    pub rest_translation: f64,
 }
 
 /// A mouse joint (TS `Physics2DMouseJoint`).
@@ -473,11 +471,11 @@ pub struct Physics2DWheelJoint {
 #[repr(C)]
 pub struct Physics2DMouseJoint {
     pub(crate) fields: Physics2DJointFields,
-    pub damping_ratio: f32,
-    pub frequency_hz: f32,
-    pub max_force: f32,
-    pub target_x: f32,
-    pub target_y: f32,
+    pub damping_ratio: f64,
+    pub frequency_hz: f64,
+    pub max_force: f64,
+    pub target_x: f64,
+    pub target_y: f64,
 }
 
 /// The fields every joint factory reads (TS `Physics2DJointOptions`). Plain record.
@@ -486,13 +484,13 @@ pub struct Physics2DMouseJoint {
 pub struct Physics2DJointOptions {
     pub body_a: i32,
     pub body_b: i32,
-    pub break_force: Option<f32>,
-    pub break_torque: Option<f32>,
+    pub break_force: Option<f64>,
+    pub break_torque: Option<f64>,
     pub collide_connected: Option<bool>,
-    pub local_anchor_ax: Option<f32>,
-    pub local_anchor_ay: Option<f32>,
-    pub local_anchor_bx: Option<f32>,
-    pub local_anchor_by: Option<f32>,
+    pub local_anchor_ax: Option<f64>,
+    pub local_anchor_ay: Option<f64>,
+    pub local_anchor_bx: Option<f64>,
+    pub local_anchor_by: Option<f64>,
 }
 
 /// Options for `create_physics2d_distance_joint` (TS `Physics2DDistanceJointOptions`).
@@ -500,9 +498,9 @@ pub struct Physics2DJointOptions {
 #[repr(C)]
 pub struct Physics2DDistanceJointOptions {
     pub base: Physics2DJointOptions,
-    pub damping_ratio: Option<f32>,
-    pub frequency_hz: Option<f32>,
-    pub length: f32,
+    pub damping_ratio: Option<f64>,
+    pub frequency_hz: Option<f64>,
+    pub length: f64,
 }
 
 /// Options for `create_physics2d_revolute_joint` (TS `Physics2DRevoluteJointOptions`).
@@ -512,20 +510,20 @@ pub struct Physics2DRevoluteJointOptions {
     pub enable_limit: Option<bool>,
     pub enable_limit_spring: Option<bool>,
     pub enable_motor: Option<bool>,
-    pub limit_damping_ratio: Option<f32>,
-    pub limit_frequency_hz: Option<f32>,
-    pub lower_angle: Option<f32>,
-    pub max_motor_torque: Option<f32>,
-    pub motor_speed: Option<f32>,
-    pub reference_angle: Option<f32>,
-    pub upper_angle: Option<f32>,
+    pub limit_damping_ratio: Option<f64>,
+    pub limit_frequency_hz: Option<f64>,
+    pub lower_angle: Option<f64>,
+    pub max_motor_torque: Option<f64>,
+    pub motor_speed: Option<f64>,
+    pub reference_angle: Option<f64>,
+    pub upper_angle: Option<f64>,
 }
 
 /// Options for `create_physics2d_weld_joint` (TS `Physics2DWeldJointOptions`).
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub struct Physics2DWeldJointOptions {
     pub base: Physics2DJointOptions,
-    pub reference_angle: Option<f32>,
+    pub reference_angle: Option<f64>,
 }
 
 /// Options for `create_physics2d_rope_joint` (TS `Physics2DRopeJointOptions`).
@@ -533,7 +531,7 @@ pub struct Physics2DWeldJointOptions {
 #[repr(C)]
 pub struct Physics2DRopeJointOptions {
     pub base: Physics2DJointOptions,
-    pub max_length: f32,
+    pub max_length: f64,
 }
 
 /// Options for `create_physics2d_pulley_joint` (TS `Physics2DPulleyJointOptions`).
@@ -541,27 +539,27 @@ pub struct Physics2DRopeJointOptions {
 #[repr(C)]
 pub struct Physics2DPulleyJointOptions {
     pub base: Physics2DJointOptions,
-    pub constant: f32,
-    pub ground_anchor_ax: f32,
-    pub ground_anchor_ay: f32,
-    pub ground_anchor_bx: f32,
-    pub ground_anchor_by: f32,
-    pub ratio: Option<f32>,
+    pub constant: f64,
+    pub ground_anchor_ax: f64,
+    pub ground_anchor_ay: f64,
+    pub ground_anchor_bx: f64,
+    pub ground_anchor_by: f64,
+    pub ratio: Option<f64>,
 }
 
 /// Options for `create_physics2d_gear_joint` (TS `Physics2DGearJointOptions`).
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
 #[repr(C)]
 pub struct Physics2DGearJointOptions {
-    pub axis_ax: Option<f32>,
-    pub axis_ay: Option<f32>,
-    pub axis_bx: Option<f32>,
-    pub axis_by: Option<f32>,
+    pub axis_ax: Option<f64>,
+    pub axis_ay: Option<f64>,
+    pub axis_bx: Option<f64>,
+    pub axis_by: Option<f64>,
     pub base: Physics2DJointOptions,
-    pub constant: f32,
+    pub constant: f64,
     pub coordinate_a: Physics2DGearCoordinateKind,
     pub coordinate_b: Physics2DGearCoordinateKind,
-    pub ratio: Option<f32>,
+    pub ratio: Option<f64>,
 }
 
 /// Options for `create_physics2d_prismatic_joint` (TS `Physics2DPrismaticJointOptions`).
@@ -571,29 +569,29 @@ pub struct Physics2DPrismaticJointOptions {
     pub enable_limit: Option<bool>,
     pub enable_limit_spring: Option<bool>,
     pub enable_motor: Option<bool>,
-    pub limit_damping_ratio: Option<f32>,
-    pub limit_frequency_hz: Option<f32>,
-    pub local_axis_ax: Option<f32>,
-    pub local_axis_ay: Option<f32>,
-    pub lower_translation: Option<f32>,
-    pub max_motor_force: Option<f32>,
-    pub motor_speed: Option<f32>,
-    pub reference_angle: Option<f32>,
-    pub upper_translation: Option<f32>,
+    pub limit_damping_ratio: Option<f64>,
+    pub limit_frequency_hz: Option<f64>,
+    pub local_axis_ax: Option<f64>,
+    pub local_axis_ay: Option<f64>,
+    pub lower_translation: Option<f64>,
+    pub max_motor_force: Option<f64>,
+    pub motor_speed: Option<f64>,
+    pub reference_angle: Option<f64>,
+    pub upper_translation: Option<f64>,
 }
 
 /// Options for `create_physics2d_wheel_joint` (TS `Physics2DWheelJointOptions`).
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub struct Physics2DWheelJointOptions {
     pub base: Physics2DJointOptions,
-    pub damping_ratio: Option<f32>,
+    pub damping_ratio: Option<f64>,
     pub enable_motor: Option<bool>,
-    pub frequency_hz: Option<f32>,
-    pub local_axis_ax: Option<f32>,
-    pub local_axis_ay: Option<f32>,
-    pub max_motor_torque: Option<f32>,
-    pub motor_speed: Option<f32>,
-    pub rest_translation: Option<f32>,
+    pub frequency_hz: Option<f64>,
+    pub local_axis_ax: Option<f64>,
+    pub local_axis_ay: Option<f64>,
+    pub max_motor_torque: Option<f64>,
+    pub motor_speed: Option<f64>,
+    pub rest_translation: Option<f64>,
 }
 
 /// Options for `create_physics2d_mouse_joint` (TS `Physics2DMouseJointOptions`).
@@ -601,20 +599,20 @@ pub struct Physics2DWheelJointOptions {
 #[repr(C)]
 pub struct Physics2DMouseJointOptions {
     pub body: i32,
-    pub break_force: Option<f32>,
-    pub break_torque: Option<f32>,
-    pub damping_ratio: Option<f32>,
-    pub frequency_hz: Option<f32>,
-    pub local_anchor_x: Option<f32>,
-    pub local_anchor_y: Option<f32>,
-    pub max_force: f32,
-    pub target_x: f32,
-    pub target_y: f32,
+    pub break_force: Option<f64>,
+    pub break_torque: Option<f64>,
+    pub damping_ratio: Option<f64>,
+    pub frequency_hz: Option<f64>,
+    pub local_anchor_x: Option<f64>,
+    pub local_anchor_y: Option<f64>,
+    pub max_force: f64,
+    pub target_x: f64,
+    pub target_y: f64,
 }
 
 /// Prepares a joint's rows for this step (TS `Physics2DJointSolver.prepare`).
 pub type Physics2DJointPrepare =
-    Arc<dyn Fn(&Physics2DWorld, &mut dyn Physics2DJoint, f32) + Send + Sync>;
+    Arc<dyn Fn(&Physics2DWorld, &mut dyn Physics2DJoint, f64) + Send + Sync>;
 
 /// Solves one velocity iteration of a joint, or warm-starts it (TS `solve` / `warmStart`).
 pub type Physics2DJointSolve = Arc<dyn Fn(&Physics2DWorld, &mut dyn Physics2DJoint) + Send + Sync>;
@@ -625,14 +623,14 @@ pub type Physics2DJointSwapEnds = Arc<dyn Fn(&mut dyn Physics2DJoint) -> bool + 
 
 /// Scales a joint's kind-specific accumulators across a timestep change (TS
 /// `scaleAccumulatedImpulses`).
-pub type Physics2DJointScaleImpulses = Arc<dyn Fn(&mut dyn Physics2DJoint, f32) + Send + Sync>;
+pub type Physics2DJointScaleImpulses = Arc<dyn Fn(&mut dyn Physics2DJoint, f64) + Send + Sync>;
 
 /// Clears a joint's kind-specific accumulators (TS `clearAccumulatedImpulses`).
 pub type Physics2DJointClearImpulses = Arc<dyn Fn(&mut dyn Physics2DJoint) + Send + Sync>;
 
 /// Writes a joint's reaction force and torque, returning whether it has one (TS `writeReaction`).
 pub type Physics2DJointWriteReaction = Arc<
-    dyn Fn(&Physics2DWorld, &dyn Physics2DJoint, f32, &mut Physics2DJointReaction) -> bool
+    dyn Fn(&Physics2DWorld, &dyn Physics2DJoint, f64, &mut Physics2DJointReaction) -> bool
         + Send
         + Sync,
 >;
@@ -691,11 +689,11 @@ pub struct Physics2DRayHit {
     pub body: Ref<RigidBody2D>,
     pub collider: Ref<Physics2DCollider>,
     pub collider_index: usize,
-    pub fraction: f32,
-    pub normal_x: f32,
-    pub normal_y: f32,
-    pub x: f32,
-    pub y: f32,
+    pub fraction: f64,
+    pub normal_x: f64,
+    pub normal_y: f64,
+    pub x: f64,
+    pub y: f64,
 }
 
 /// A reusable ray query result (TS `Physics2DRayResult`). `hit_count` is the valid prefix.
@@ -716,12 +714,12 @@ pub struct Physics2DShapeCastResult {
     pub body: Option<Ref<RigidBody2D>>,
     pub collider: Option<Ref<Physics2DCollider>>,
     pub collider_index: i32,
-    pub fraction: f32,
+    pub fraction: f64,
     pub hit: bool,
-    pub normal_x: f32,
-    pub normal_y: f32,
-    pub x: f32,
-    pub y: f32,
+    pub normal_x: f64,
+    pub normal_y: f64,
+    pub x: f64,
+    pub y: f64,
 }
 
 /// Whether every collider kind generates contacts (TS `Physics2DCollisionExplanation['status']`).
@@ -787,13 +785,12 @@ pub struct Physics2DJointResolutionExplanation {
 #[repr(C)]
 pub struct Physics2DJointReaction {
     runtime: EntityRuntimeSlot,
-    pub force_x: f32,
-    pub force_y: f32,
-    pub torque: f32,
+    pub force_x: f64,
+    pub force_y: f64,
+    pub torque: f64,
 }
 
 /// Consulted when a step declines its preconditions (TS `Physics2DStepGuard`).
-// flight-lint: allow(f64) time accumulation: TS f64 sleep-threshold timing (30 × 1/60 crosses 0.5 differently in f32)
 pub type Physics2DStepGuard = Arc<dyn Fn(&Physics2DWorld, f64) + Send + Sync>;
 
 /// Consulted once per running step before contacts are built (TS `Physics2DContactIntakeGuard`).
@@ -830,10 +827,10 @@ pub struct Physics2DDebugLine {
     pub body_a: i32,
     pub body_b: i32,
     pub feature: Physics2DDebugFeature,
-    pub x0: f32,
-    pub x1: f32,
-    pub y0: f32,
-    pub y1: f32,
+    pub x0: f64,
+    pub x1: f64,
+    pub y0: f64,
+    pub y1: f64,
 }
 
 /// A debug circle (TS `Physics2DDebugCircle`). Plain record; `-1` marks an absent body.
@@ -843,9 +840,9 @@ pub struct Physics2DDebugCircle {
     pub body_a: i32,
     pub body_b: i32,
     pub feature: Physics2DDebugFeature,
-    pub radius: f32,
-    pub x: f32,
-    pub y: f32,
+    pub radius: f64,
+    pub x: f64,
+    pub y: f64,
 }
 
 /// Reusable debug geometry (TS `Physics2DDebugGeometry`). The counts are the valid prefixes.
@@ -863,13 +860,13 @@ pub struct Physics2DDebugGeometry {
 /// keeps the default.
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub struct Physics2DDebugGeometryOptions {
-    pub center_of_mass_radius: Option<f32>,
-    pub contact_normal_length: Option<f32>,
+    pub center_of_mass_radius: Option<f64>,
+    pub contact_normal_length: Option<f64>,
     pub draw_centers_of_mass: Option<bool>,
     pub draw_colliders: Option<bool>,
     pub draw_contacts: Option<bool>,
     pub draw_joints: Option<bool>,
-    pub point_radius: Option<f32>,
+    pub point_radius: Option<f64>,
 }
 
 /// Implements the joint family plumbing for a kind struct with a private
@@ -905,7 +902,7 @@ macro_rules! impl_physics2d_joint {
                 return &mut self.fields;
             }
 
-            fn for_each_number_field(&self, visit: &mut dyn FnMut(f32)) {
+            fn for_each_number_field(&self, visit: &mut dyn FnMut(f64)) {
                 $crate::contract::visit_physics2d_joint_base_number_fields(&self.fields, visit);
                 $(visit(self.$field);)*
             }
@@ -932,10 +929,10 @@ macro_rules! impl_physics2d_joint {
 // flight-lint: allow(conform-extra) D16: the open joint family's structural number scan (TS `for (const key in joint)`)
 pub fn visit_physics2d_joint_base_number_fields(
     fields: &Physics2DJointFields,
-    visit: &mut dyn FnMut(f32),
+    visit: &mut dyn FnMut(f64),
 ) {
-    visit(fields.body_a as f32);
-    visit(fields.body_b as f32);
+    visit(fields.body_a as f64);
+    visit(fields.body_b as f64);
     visit(fields.local_anchor_ax);
     visit(fields.local_anchor_ay);
     visit(fields.local_anchor_bx);
@@ -958,8 +955,8 @@ impl Default for Physics2DJointFields {
             solve_state: None,
             body_a: 0,
             body_b: 0,
-            break_force: f32::INFINITY,
-            break_torque: f32::INFINITY,
+            break_force: f64::INFINITY,
+            break_torque: f64::INFINITY,
             collide_connected: false,
             impulse0: 0.0,
             impulse1: 0.0,
@@ -982,7 +979,7 @@ impl Default for Physics2DSolverConfig {
         return Self {
             allow_sleeping: true,
             sleep_linear_threshold: 0.01,
-            sleep_angular_threshold: (2.0 * std::f32::consts::PI) / 180.0,
+            sleep_angular_threshold: (2.0 * std::f64::consts::PI) / 180.0,
             time_to_sleep: 0.5,
             velocity_iterations: 10,
             position_iterations: 3,

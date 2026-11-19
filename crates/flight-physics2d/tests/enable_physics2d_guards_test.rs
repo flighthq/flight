@@ -32,8 +32,8 @@ struct Harness {
 fn ball(
     world: &mut Physics2DWorld,
     body_type: Physics2DBodyType,
-    x: f32,
-    y: f32,
+    x: f64,
+    y: f64,
 ) -> Ref<RigidBody2D> {
     let local = CollisionShape2D::Circle(CollisionCircle2D {
         x: 0.0,
@@ -46,8 +46,8 @@ fn ball(
 fn body_with(
     world: &mut Physics2DWorld,
     body_type: Physics2DBodyType,
-    x: f32,
-    y: f32,
+    x: f64,
+    y: f64,
     local: CollisionShape2D,
 ) -> Ref<RigidBody2D> {
     let body = rigid_body2d(body_type, x, y, None);
@@ -241,7 +241,7 @@ mod enable_physics2d_guards {
         // reintroduce it.
         let mut harness = harness();
         enabled(&mut harness);
-        let mut world = physics2d_world(Some(f32::NAN), Some(-10.0), None);
+        let mut world = physics2d_world(Some(f64::NAN), Some(-10.0), None);
         world.config.position_iterations = -3;
 
         let entries = capture_log(&harness, || step(&harness, &mut world));

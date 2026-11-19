@@ -39,7 +39,7 @@ fn link(world: &mut Physics2DWorld, a: &Ref<RigidBody2D>, b: &Ref<RigidBody2D>, 
     })));
 }
 
-fn moving(world: &mut Physics2DWorld, x: f32) -> Ref<RigidBody2D> {
+fn moving(world: &mut Physics2DWorld, x: f64) -> Ref<RigidBody2D> {
     let body = add(
         world,
         rigid_body2d(Physics2DBodyType::Dynamic, x, 0.0, None),
@@ -84,7 +84,7 @@ fn static_body(world: &mut Physics2DWorld) -> Ref<RigidBody2D> {
     );
 }
 
-fn still(world: &mut Physics2DWorld, x: f32) -> Ref<RigidBody2D> {
+fn still(world: &mut Physics2DWorld, x: f64) -> Ref<RigidBody2D> {
     return add(
         world,
         rigid_body2d(Physics2DBodyType::Dynamic, x, 0.0, None),
@@ -136,7 +136,7 @@ mod build_physics2d_solve_islands {
         let settled = still(&mut world, 0.0);
         link(&mut world, &ground, &settled, false);
 
-        let dt = world.config.time_to_sleep as f64 + 0.01;
+        let dt = world.config.time_to_sleep + 0.01;
         update_physics2d_sleep(&mut world, dt);
         build_physics2d_solve_islands(&mut world);
 
@@ -191,7 +191,7 @@ mod update_physics2d_sleep {
     use super::*;
 
     fn sleep_dt(world: &Physics2DWorld) -> f64 {
-        return world.config.time_to_sleep as f64 + 0.01;
+        return world.config.time_to_sleep + 0.01;
     }
 
     #[test]
@@ -360,13 +360,12 @@ mod update_physics2d_sleep {
         let mut world = physics2d_world(None, None, None);
         let crate_body = still(&mut world, 0.0);
 
-        let dt = world.config.time_to_sleep as f64 - 0.01;
+        let dt = world.config.time_to_sleep - 0.01;
         update_physics2d_sleep(&mut world, dt);
 
         assert!(!read(&crate_body).sleeping);
         assert!(
-            (read(&crate_body).sleep_timer - (world.config.time_to_sleep as f64 - 0.01)).abs()
-                < 0.005
+            (read(&crate_body).sleep_timer - (world.config.time_to_sleep - 0.01)).abs() < 0.005
         );
     }
 
@@ -505,7 +504,7 @@ mod wake_physics2d_body {
     fn clears_both_the_sleeping_flag_and_the_stillness_timer() {
         let mut world = physics2d_world(None, None, None);
         let crate_body = still(&mut world, 0.0);
-        let dt = world.config.time_to_sleep as f64 + 0.01;
+        let dt = world.config.time_to_sleep + 0.01;
         update_physics2d_sleep(&mut world, dt);
 
         wake_physics2d_body(&mut write(&crate_body));

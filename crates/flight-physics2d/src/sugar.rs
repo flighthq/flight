@@ -79,9 +79,9 @@ mod sugar_tests {
 
     fn authored_rigid_body(
         body_type: Physics2DBodyType,
-        x: f32,
-        y: f32,
-        angle: Option<f32>,
+        x: f64,
+        y: f64,
+        angle: Option<f64>,
     ) -> Ref<RigidBody2D> {
         let out = create_rigid_body2d();
         {
@@ -94,7 +94,7 @@ mod sugar_tests {
         return out;
     }
 
-    fn authored_world(gravity_x: Option<f32>, gravity_y: Option<f32>) -> Physics2DWorld {
+    fn authored_world(gravity_x: Option<f64>, gravity_y: Option<f64>) -> Physics2DWorld {
         let mut out = create_physics2d_world();
         out.gravity_x = gravity_x.unwrap_or(0.0);
         out.gravity_y = gravity_y.unwrap_or(-9.81);
@@ -149,13 +149,13 @@ mod sugar_tests {
         };
     }
 
-    fn signature(world: &Physics2DWorld) -> Vec<f32> {
+    fn signature(world: &Physics2DWorld) -> Vec<f64> {
         let mut out = vec![
-            world.bodies.len() as f32,
-            world.contacts.len() as f32,
-            world.joints.len() as f32,
-            world.joint_solvers.len() as f32,
-            world.solve_island_roots.len() as f32,
+            world.bodies.len() as f64,
+            world.contacts.len() as f64,
+            world.joints.len() as f64,
+            world.joint_solvers.len() as f64,
+            world.solve_island_roots.len() as f64,
         ];
         for body in &world.bodies {
             let body = body.read().unwrap();
@@ -167,18 +167,18 @@ mod sugar_tests {
                 body.velocity_y,
                 body.angular_velocity,
                 body.mass,
-                body.sleep_timer as f32,
-                body.sleeping as u8 as f32,
-                body.bullet as u8 as f32,
-                body.fixed_rotation as u8 as f32,
-                body.sleep_enabled as u8 as f32,
-                body.colliders.len() as f32,
+                body.sleep_timer as f64,
+                body.sleeping as u8 as f64,
+                body.bullet as u8 as f64,
+                body.fixed_rotation as u8 as f64,
+                body.sleep_enabled as u8 as f64,
+                body.colliders.len() as f64,
             ]);
         }
         return out;
     }
 
-    fn body_signature(body: &RigidBody2D) -> Vec<f32> {
+    fn body_signature(body: &RigidBody2D) -> Vec<f64> {
         return vec![
             body.velocity_x,
             body.velocity_y,
@@ -188,8 +188,8 @@ mod sugar_tests {
             body.torque,
             body.mass,
             body.inertia,
-            body.sleeping as u8 as f32,
-            body.sleep_timer as f32,
+            body.sleeping as u8 as f64,
+            body.sleep_timer as f64,
         ];
     }
 
@@ -234,7 +234,7 @@ mod sugar_tests {
             touching: true,
         };
         assert_eq!(contact.is_valid(), is_physics2d_contact_valid(&contact));
-        contact.friction = f32::NAN;
+        contact.friction = f64::NAN;
         assert_eq!(contact.is_valid(), is_physics2d_contact_valid(&contact));
         let mut config = Physics2DSolverConfig::new(None);
         assert_eq!(config, create_physics2d_solver_config(None));
@@ -679,7 +679,7 @@ impl Physics2DGuardState {
 
 #[cfg(feature = "object-api")]
 impl Physics2DJointFields {
-    pub fn visit_base_number_fields(&self, visit: &mut dyn FnMut(f32)) {
+    pub fn visit_base_number_fields(&self, visit: &mut dyn FnMut(f64)) {
         return visit_physics2d_joint_base_number_fields(self, visit);
     }
 }
@@ -690,7 +690,7 @@ impl Physics2DJointReaction {
         return create_physics2d_joint_reaction();
     }
 
-    pub fn write(&mut self, world: &Physics2DWorld, joint: &dyn Physics2DJoint, dt: f32) -> bool {
+    pub fn write(&mut self, world: &Physics2DWorld, joint: &dyn Physics2DJoint, dt: f64) -> bool {
         return write_physics2d_joint_reaction(self, world, joint, dt);
     }
 }
@@ -739,8 +739,8 @@ impl Physics2DQueryResult {
     pub fn query_point(
         &mut self,
         world: &Physics2DWorld,
-        x: f32,
-        y: f32,
+        x: f64,
+        y: f64,
         filter: Option<&Physics2DQueryFilter>,
     ) {
         return query_physics2d_point(self, world, x, y, filter);
@@ -765,11 +765,11 @@ impl Physics2DRayResult {
     pub fn query_ray(
         &mut self,
         world: &Physics2DWorld,
-        origin_x: f32,
-        origin_y: f32,
-        direction_x: f32,
-        direction_y: f32,
-        max_fraction: Option<f32>,
+        origin_x: f64,
+        origin_y: f64,
+        direction_x: f64,
+        direction_y: f64,
+        max_fraction: Option<f64>,
         filter: Option<&Physics2DQueryFilter>,
     ) {
         return query_physics2d_ray(
@@ -787,11 +787,11 @@ impl Physics2DRayResult {
     pub fn query_ray_closest(
         &mut self,
         world: &Physics2DWorld,
-        origin_x: f32,
-        origin_y: f32,
-        direction_x: f32,
-        direction_y: f32,
-        max_fraction: Option<f32>,
+        origin_x: f64,
+        origin_y: f64,
+        direction_x: f64,
+        direction_y: f64,
+        max_fraction: Option<f64>,
         filter: Option<&Physics2DQueryFilter>,
     ) {
         return query_physics2d_ray_closest(
@@ -832,9 +832,9 @@ impl Physics2DShapeCastResult {
         world: &Physics2DWorld,
         registry: &CollisionRegistry2D,
         shape: &CollisionShape2D,
-        dx: f32,
-        dy: f32,
-        max_fraction: Option<f32>,
+        dx: f64,
+        dy: f64,
+        max_fraction: Option<f64>,
         filter: Option<&Physics2DQueryFilter>,
     ) {
         return query_physics2d_shape_cast(
@@ -909,7 +909,6 @@ impl Physics2DWorld {
         return explain_physics2d_joints(self);
     }
 
-    // flight-lint: allow(f64) time accumulation: TS f64 sleep-threshold timing (30 × 1/60 crosses 0.5 differently in f32)
     pub fn explain_step(&self, dt: f64) -> Physics2DStepExplanation {
         return explain_physics2d_step(self, dt);
     }
@@ -1009,9 +1008,9 @@ impl Physics2DWorld {
     pub fn set_body_transform(
         &mut self,
         body: &Ref<RigidBody2D>,
-        x: f32,
-        y: f32,
-        angle: f32,
+        x: f64,
+        y: f64,
+        angle: f64,
     ) -> bool {
         return set_physics2d_body_transform(self, body, x, y, angle);
     }
@@ -1032,7 +1031,6 @@ impl Physics2DWorld {
         return solve_physics2d_contacts_once(self);
     }
 
-    // flight-lint: allow(f64) time accumulation: TS f64 sleep-threshold timing (30 × 1/60 crosses 0.5 differently in f32)
     pub fn step(
         &mut self,
         dt: f64,
@@ -1046,11 +1044,10 @@ impl Physics2DWorld {
         return synchronize_physics2d_broadphase(self);
     }
 
-    pub fn synchronize_swept_broadphase(&self, dt: f32) {
+    pub fn synchronize_swept_broadphase(&self, dt: f64) {
         return synchronize_physics2d_swept_broadphase(self, dt);
     }
 
-    // flight-lint: allow(f64) time accumulation: TS f64 sleep-threshold timing (30 × 1/60 crosses 0.5 differently in f32)
     pub fn update_sleep(&mut self, dt: f64) {
         return update_physics2d_sleep(self, dt);
     }
@@ -1070,16 +1067,16 @@ impl RigidBody2D {
         return create_rigid_body2d();
     }
 
-    pub fn apply_force(&mut self, force_x: f32, force_y: f32) -> bool {
+    pub fn apply_force(&mut self, force_x: f64, force_y: f64) -> bool {
         return apply_physics2d_force(self, force_x, force_y);
     }
 
     pub fn apply_force_at_point(
         &mut self,
-        force_x: f32,
-        force_y: f32,
-        point_x: f32,
-        point_y: f32,
+        force_x: f64,
+        force_y: f64,
+        point_x: f64,
+        point_y: f64,
     ) -> bool {
         return apply_physics2d_force_at_point(self, force_x, force_y, point_x, point_y);
     }
@@ -1087,33 +1084,33 @@ impl RigidBody2D {
     pub fn apply_impulse(
         &mut self,
         body_b: &mut RigidBody2D,
-        r_ax: f32,
-        r_ay: f32,
-        r_bx: f32,
-        r_by: f32,
-        impulse_x: f32,
-        impulse_y: f32,
+        r_ax: f64,
+        r_ay: f64,
+        r_bx: f64,
+        r_by: f64,
+        impulse_x: f64,
+        impulse_y: f64,
     ) {
         return apply_physics2d_impulse(self, body_b, r_ax, r_ay, r_bx, r_by, impulse_x, impulse_y);
     }
 
-    pub fn apply_linear_impulse(&mut self, impulse_x: f32, impulse_y: f32) -> bool {
+    pub fn apply_linear_impulse(&mut self, impulse_x: f64, impulse_y: f64) -> bool {
         return apply_physics2d_linear_impulse(self, impulse_x, impulse_y);
     }
 
     pub fn apply_linear_impulse_at_point(
         &mut self,
-        impulse_x: f32,
-        impulse_y: f32,
-        point_x: f32,
-        point_y: f32,
+        impulse_x: f64,
+        impulse_y: f64,
+        point_x: f64,
+        point_y: f64,
     ) -> bool {
         return apply_physics2d_linear_impulse_at_point(
             self, impulse_x, impulse_y, point_x, point_y,
         );
     }
 
-    pub fn apply_torque(&mut self, torque: f32) -> bool {
+    pub fn apply_torque(&mut self, torque: f64) -> bool {
         return apply_physics2d_torque(self, torque);
     }
 
@@ -1133,9 +1130,9 @@ impl RigidBody2D {
         &self,
         body_b: &RigidBody2D,
         point: &Physics2DContactPoint,
-        normal_x: f32,
-        normal_y: f32,
-    ) -> f32 {
+        normal_x: f64,
+        normal_y: f64,
+    ) -> f64 {
         return relative_normal_velocity(self, body_b, point, normal_x, normal_y);
     }
 

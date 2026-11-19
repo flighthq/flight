@@ -33,9 +33,9 @@ pub const PHYSICS2D_WHEEL_JOINT_KIND: &str = "Wheel";
 /// The kind of a weld joint (TS `Physics2DWeldJointKind`).
 pub const PHYSICS2D_WELD_JOINT_KIND: &str = "Weld";
 
-const BAUMGARTE: f32 = 0.2;
-const DEFAULT_MOUSE_FREQUENCY_HZ: f32 = 5.0;
-const EPSILON: f32 = 1e-9;
+const BAUMGARTE: f64 = 0.2;
+const DEFAULT_MOUSE_FREQUENCY_HZ: f64 = 5.0;
+const EPSILON: f64 = 1e-9;
 
 /// The distance joint solver (TS `physics2DDistanceJointSolver`).
 pub static PHYSICS2D_DISTANCE_JOINT_SOLVER: LazyLock<Physics2DJointSolverRef> =
@@ -1324,26 +1324,26 @@ pub static PHYSICS2D_WELD_JOINT_SOLVER: LazyLock<Physics2DJointSolverRef> = Lazy
 // The axis frame the prismatic and wheel rows share: the world axis and its perpendicular, the
 // anchor separation and the four lever terms.
 struct AxisFrame {
-    a1: f32,
-    a2: f32,
-    axis_x: f32,
-    axis_y: f32,
-    distance_x: f32,
-    distance_y: f32,
-    perpendicular_x: f32,
-    perpendicular_y: f32,
-    s1: f32,
-    s2: f32,
+    a1: f64,
+    a2: f64,
+    axis_x: f64,
+    axis_y: f64,
+    distance_x: f64,
+    distance_y: f64,
+    perpendicular_x: f64,
+    perpendicular_y: f64,
+    s1: f64,
+    s2: f64,
 }
 
-fn apply_angular_impulse(p: &mut Physics2DBodyPair<'_>, impulse: f32) {
+fn apply_angular_impulse(p: &mut Physics2DBodyPair<'_>, impulse: f64) {
     let a = p.a();
     a.angular_velocity -= a.inverse_inertia * impulse;
     let b = p.b();
     b.angular_velocity += b.inverse_inertia * impulse;
 }
 
-fn apply_gear_impulse(p: &mut Physics2DBodyPair<'_>, state: &[f32], impulse: f32) {
+fn apply_gear_impulse(p: &mut Physics2DBodyPair<'_>, state: &[f64], impulse: f64) {
     let a = p.a();
     a.velocity_x += a.inverse_mass * state[0] * impulse;
     a.velocity_y += a.inverse_mass * state[1] * impulse;
@@ -1358,8 +1358,8 @@ fn apply_gear_impulse(p: &mut Physics2DBodyPair<'_>, state: &[f32], impulse: f32
 fn apply_joint_impulse(
     p: &mut Physics2DBodyPair<'_>,
     fields: &Physics2DJointFields,
-    impulse_x: f32,
-    impulse_y: f32,
+    impulse_x: f64,
+    impulse_y: f64,
 ) {
     apply_physics2d_pair_impulse(
         p,
@@ -1375,9 +1375,9 @@ fn apply_joint_impulse(
 fn apply_prismatic_impulse(
     p: &mut Physics2DBodyPair<'_>,
     frame: &AxisFrame,
-    perpendicular_impulse: f32,
-    angular_impulse: f32,
-    axis_impulse: f32,
+    perpendicular_impulse: f64,
+    angular_impulse: f64,
+    axis_impulse: f64,
 ) {
     let impulse_x = perpendicular_impulse * frame.perpendicular_x + axis_impulse * frame.axis_x;
     let impulse_y = perpendicular_impulse * frame.perpendicular_y + axis_impulse * frame.axis_y;
@@ -1396,8 +1396,8 @@ fn apply_prismatic_impulse(
 fn apply_pulley_impulse(
     p: &mut Physics2DBodyPair<'_>,
     fields: &Physics2DJointFields,
-    state: &[f32],
-    impulse: f32,
+    state: &[f64],
+    impulse: f64,
 ) {
     let (unit_ax, unit_ay, unit_bx, unit_by, ratio) =
         (state[0], state[1], state[2], state[3], state[6]);
@@ -1419,9 +1419,9 @@ fn apply_pulley_impulse(
 fn axis_inverse_effective_mass(
     p: &mut Physics2DBodyPair<'_>,
     fields: &Physics2DJointFields,
-    axis_x: f32,
-    axis_y: f32,
-) -> f32 {
+    axis_x: f64,
+    axis_y: f64,
+) -> f64 {
     let cross_a = fields.r_ax * axis_y - fields.r_ay * axis_x;
     let cross_b = fields.r_bx * axis_y - fields.r_by * axis_x;
     let (inv_mass_a, inv_inertia_a) = (p.a().inverse_mass, p.a().inverse_inertia);
@@ -1435,9 +1435,9 @@ fn axis_inverse_effective_mass(
 fn axis_relative_velocity(
     p: &mut Physics2DBodyPair<'_>,
     fields: &Physics2DJointFields,
-    axis_x: f32,
-    axis_y: f32,
-) -> f32 {
+    axis_x: f64,
+    axis_y: f64,
+) -> f64 {
     let (vax, vay) = {
         let a = p.a();
         (
@@ -1455,10 +1455,10 @@ fn axis_relative_velocity(
     return (vbx - vax) * axis_x + (vby - vay) * axis_y;
 }
 
-fn begin_joint_solve(fields: &mut Physics2DJointFields, length: usize) -> &mut Vec<f32> {
+fn begin_joint_solve(fields: &mut Physics2DJointFields, length: usize) -> &mut Vec<f64> {
     let state = fields.solve_state.get_or_insert_with(Vec::new);
     // A grown slot is the source's `undefined`, which arithmetic reads as NaN.
-    state.resize(length, f32::NAN);
+    state.resize(length, f64::NAN);
     return state;
 }
 
@@ -1473,12 +1473,12 @@ fn find_joint_bodies(
 
 fn gear_coordinate(
     body: &RigidBody2D,
-    r_x: f32,
-    r_y: f32,
+    r_x: f64,
+    r_y: f64,
     kind: Physics2DGearCoordinateKind,
-    axis_x: f32,
-    axis_y: f32,
-) -> f32 {
+    axis_x: f64,
+    axis_y: f64,
+) -> f64 {
     if kind == Physics2DGearCoordinateKind::Angular {
         return body.angle;
     }
@@ -1488,7 +1488,7 @@ fn gear_coordinate(
 fn joint_anchor_separation(
     p: &mut Physics2DBodyPair<'_>,
     fields: &Physics2DJointFields,
-) -> (f32, f32) {
+) -> (f64, f64) {
     let (ax, ay) = (p.a().x + fields.r_ax, p.a().y + fields.r_ay);
     let (bx, by) = (p.b().x + fields.r_bx, p.b().y + fields.r_by);
     return (bx - ax, by - ay);
@@ -1496,11 +1496,11 @@ fn joint_anchor_separation(
 
 fn prismatic_axis_velocity(
     p: &mut Physics2DBodyPair<'_>,
-    axis_x: f32,
-    axis_y: f32,
-    a1: f32,
-    a2: f32,
-) -> f32 {
+    axis_x: f64,
+    axis_y: f64,
+    a1: f64,
+    a2: f64,
+) -> f64 {
     let (vax, vay, wa) = {
         let a = p.a();
         (a.velocity_x, a.velocity_y, a.angular_velocity)
@@ -1512,13 +1512,13 @@ fn prismatic_axis_velocity(
     return (vbx - vax) * axis_x + (vby - vay) * axis_y + a2 * wb - a1 * wa;
 }
 
-fn pulley_anchor_velocity(body: &RigidBody2D, r_x: f32, r_y: f32, unit_x: f32, unit_y: f32) -> f32 {
+fn pulley_anchor_velocity(body: &RigidBody2D, r_x: f64, r_y: f64, unit_x: f64, unit_y: f64) -> f64 {
     let velocity_x = body.velocity_x - body.angular_velocity * r_y;
     let velocity_y = body.velocity_y + body.angular_velocity * r_x;
     return velocity_x * unit_x + velocity_y * unit_y;
 }
 
-fn read_frame_state(state: &[f32]) -> AxisFrame {
+fn read_frame_state(state: &[f64]) -> AxisFrame {
     return AxisFrame {
         axis_x: state[0],
         axis_y: state[1],
@@ -1536,8 +1536,8 @@ fn read_frame_state(state: &[f32]) -> AxisFrame {
 fn solve_point_constraint(
     p: &mut Physics2DBodyPair<'_>,
     fields: &mut Physics2DJointFields,
-    bias_x: f32,
-    bias_y: f32,
+    bias_x: f64,
+    bias_y: f64,
 ) {
     let inverse_mass_x = axis_inverse_effective_mass(p, fields, 1.0, 0.0);
     let velocity_x = axis_relative_velocity(p, fields, 1.0, 0.0);
@@ -1563,8 +1563,8 @@ fn solve_point_constraint(
 fn write_axis_frame(
     p: &mut Physics2DBodyPair<'_>,
     fields: &Physics2DJointFields,
-    local_axis_ax: f32,
-    local_axis_ay: f32,
+    local_axis_ax: f64,
+    local_axis_ay: f64,
 ) -> AxisFrame {
     let local_length = (local_axis_ax * local_axis_ax + local_axis_ay * local_axis_ay).sqrt();
     let local_axis_x = if local_length > EPSILON {
@@ -1604,7 +1604,7 @@ fn write_axis_frame(
     };
 }
 
-fn write_frame_state(state: &mut [f32], frame: &AxisFrame) {
+fn write_frame_state(state: &mut [f64], frame: &AxisFrame) {
     state[0] = frame.axis_x;
     state[1] = frame.axis_y;
     state[2] = frame.perpendicular_x;
@@ -1616,13 +1616,13 @@ fn write_frame_state(state: &mut [f32], frame: &AxisFrame) {
 }
 
 fn write_gear_jacobian(
-    state: &mut [f32],
+    state: &mut [f64],
     offset: usize,
     kind: Physics2DGearCoordinateKind,
-    axis_x: f32,
-    axis_y: f32,
-    r_x: f32,
-    r_y: f32,
+    axis_x: f64,
+    axis_y: f64,
+    r_x: f64,
+    r_y: f64,
 ) {
     if kind == Physics2DGearCoordinateKind::Angular {
         state[offset] = 0.0;
@@ -1667,10 +1667,10 @@ fn write_joint_anchors(p: &mut Physics2DBodyPair<'_>, fields: &mut Physics2DJoin
 
 fn write_reaction_from_impulses(
     out: &mut Physics2DJointReaction,
-    linear_x: f32,
-    linear_y: f32,
-    angular: f32,
-    inverse_timestep: f32,
+    linear_x: f64,
+    linear_y: f64,
+    angular: f64,
+    inverse_timestep: f64,
 ) -> bool {
     out.force_x = linear_x * inverse_timestep;
     out.force_y = linear_y * inverse_timestep;

@@ -124,8 +124,8 @@ pub fn initialize_physics2d_mouse_joint(out: &mut Physics2DMouseJoint) {
     fields.local_anchor_bx = 0.0;
     fields.local_anchor_by = 0.0;
     fields.collide_connected = false;
-    fields.break_force = f32::INFINITY;
-    fields.break_torque = f32::INFINITY;
+    fields.break_force = f64::INFINITY;
+    fields.break_torque = f64::INFINITY;
     fields.impulse0 = 0.0;
     fields.impulse1 = 0.0;
     fields.impulse2 = 0.0;
@@ -243,8 +243,8 @@ fn init_joint_base(out: &mut Physics2DJointFields) {
     out.local_anchor_bx = 0.0;
     out.local_anchor_by = 0.0;
     out.collide_connected = false;
-    out.break_force = f32::INFINITY;
-    out.break_torque = f32::INFINITY;
+    out.break_force = f64::INFINITY;
+    out.break_torque = f64::INFINITY;
     out.impulse0 = 0.0;
     out.impulse1 = 0.0;
     out.impulse2 = 0.0;

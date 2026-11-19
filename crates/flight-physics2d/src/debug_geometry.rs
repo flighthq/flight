@@ -9,9 +9,9 @@ use crate::joints::{PHYSICS2D_MOUSE_JOINT_KIND, PHYSICS2D_PULLEY_JOINT_KIND};
 use crate::types::*;
 use crate::world::find_physics2d_body;
 
-const DEFAULT_CENTER_OF_MASS_RADIUS: f32 = 0.08;
-const DEFAULT_CONTACT_NORMAL_LENGTH: f32 = 0.5;
-const DEFAULT_POINT_RADIUS: f32 = 0.04;
+const DEFAULT_CENTER_OF_MASS_RADIUS: f64 = 0.08;
+const DEFAULT_CONTACT_NORMAL_LENGTH: f64 = 0.5;
+const DEFAULT_POINT_RADIUS: f64 = 0.04;
 
 /// An empty reusable debug geometry (TS `createPhysics2DDebugGeometry`).
 pub fn create_physics2d_debug_geometry() -> Physics2DDebugGeometry {
@@ -29,7 +29,7 @@ pub fn initialize_physics2d_debug_geometry(out: &mut Physics2DDebugGeometry) {
     out.line_count = 0;
 }
 
-fn joint_anchor(body: &RigidBody2D, local_x: f32, local_y: f32) -> (f32, f32) {
+fn joint_anchor(body: &RigidBody2D, local_x: f64, local_y: f64) -> (f64, f64) {
     let x = local_x - body.center_x;
     let y = local_y - body.center_y;
     return (
@@ -38,7 +38,7 @@ fn joint_anchor(body: &RigidBody2D, local_x: f32, local_y: f32) -> (f32, f32) {
     );
 }
 
-fn local_to_world(body: &RigidBody2D, cos: f32, sin: f32, x: f32, y: f32) -> (f32, f32) {
+fn local_to_world(body: &RigidBody2D, cos: f64, sin: f64, x: f64, y: f64) -> (f64, f64) {
     return (body.x + x * cos - y * sin, body.y + x * sin + y * cos);
 }
 
@@ -47,9 +47,9 @@ fn write_circle(
     feature: Physics2DDebugFeature,
     body_a: i32,
     body_b: i32,
-    x: f32,
-    y: f32,
-    radius: f32,
+    x: f64,
+    y: f64,
+    radius: f64,
 ) {
     let circle = Physics2DDebugCircle {
         body_a,
@@ -67,7 +67,6 @@ fn write_circle(
     out.circle_count += 1;
 }
 
-// flight-lint: allow(f64) D1: circle and polygon local shapes carry the canonical f64 collision coordinates
 fn write_collider(
     out: &mut Physics2DDebugGeometry,
     shape: &CollisionShape2D,
@@ -78,7 +77,7 @@ fn write_collider(
     let sin = body.angle.sin();
     match shape {
         CollisionShape2D::Circle(shape) => {
-            let (x, y) = local_to_world(body, cos, sin, shape.x as f32, shape.y as f32);
+            let (x, y) = local_to_world(body, cos, sin, shape.x, shape.y);
             write_circle(
                 out,
                 Physics2DDebugFeature::Collider,
@@ -86,7 +85,7 @@ fn write_collider(
                 -1,
                 x,
                 y,
-                shape.radius as f32,
+                shape.radius,
             );
         }
         CollisionShape2D::Aabb(shape) => {
@@ -124,13 +123,13 @@ fn write_collider(
                 body,
                 cos,
                 sin,
-                points[points.len() - 2] as f32,
-                points[points.len() - 1] as f32,
+                points[points.len() - 2],
+                points[points.len() - 1],
             );
             let mut i = 0;
             while i < points.len() {
                 let local_y = points.get(i + 1).copied().unwrap_or(f64::NAN);
-                let (x, y) = local_to_world(body, cos, sin, points[i] as f32, local_y as f32);
+                let (x, y) = local_to_world(body, cos, sin, points[i], local_y);
                 write_line(
                     out,
                     Physics2DDebugFeature::Collider,
@@ -322,10 +321,10 @@ fn write_line(
     feature: Physics2DDebugFeature,
     body_a: i32,
     body_b: i32,
-    x0: f32,
-    y0: f32,
-    x1: f32,
-    y1: f32,
+    x0: f64,
+    y0: f64,
+    x1: f64,
+    y1: f64,
 ) {
     let line = Physics2DDebugLine {
         body_a,
@@ -347,11 +346,11 @@ fn write_line(
 fn write_oriented_box(
     out: &mut Physics2DDebugGeometry,
     body_index: i32,
-    center_x: f32,
-    center_y: f32,
-    half_w: f32,
-    half_h: f32,
-    rotation: f32,
+    center_x: f64,
+    center_y: f64,
+    half_w: f64,
+    half_h: f64,
+    rotation: f64,
 ) {
     let cos = rotation.cos();
     let sin = rotation.sin();

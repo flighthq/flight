@@ -18,13 +18,13 @@ pub(crate) struct Physics2DBodyPair<'a> {
     b: Option<RwLockWriteGuard<'a, RigidBody2D>>,
 }
 
-fn apply_impulse_a(body: &mut RigidBody2D, r_x: f32, r_y: f32, impulse_x: f32, impulse_y: f32) {
+fn apply_impulse_a(body: &mut RigidBody2D, r_x: f64, r_y: f64, impulse_x: f64, impulse_y: f64) {
     body.velocity_x += impulse_x * body.inverse_mass;
     body.velocity_y += impulse_y * body.inverse_mass;
     body.angular_velocity += body.inverse_inertia * (r_x * impulse_y - r_y * impulse_x);
 }
 
-fn apply_impulse_b(body: &mut RigidBody2D, r_x: f32, r_y: f32, impulse_x: f32, impulse_y: f32) {
+fn apply_impulse_b(body: &mut RigidBody2D, r_x: f64, r_y: f64, impulse_x: f64, impulse_y: f64) {
     body.velocity_x -= impulse_x * body.inverse_mass;
     body.velocity_y -= impulse_y * body.inverse_mass;
     body.angular_velocity -= body.inverse_inertia * (r_x * impulse_y - r_y * impulse_x);
@@ -34,12 +34,12 @@ fn apply_impulse_b(body: &mut RigidBody2D, r_x: f32, r_y: f32, impulse_x: f32, i
 pub fn apply_physics2d_impulse(
     body_a: &mut RigidBody2D,
     body_b: &mut RigidBody2D,
-    r_ax: f32,
-    r_ay: f32,
-    r_bx: f32,
-    r_by: f32,
-    impulse_x: f32,
-    impulse_y: f32,
+    r_ax: f64,
+    r_ay: f64,
+    r_bx: f64,
+    r_by: f64,
+    impulse_x: f64,
+    impulse_y: f64,
 ) {
     apply_impulse_a(body_a, r_ax, r_ay, impulse_x, impulse_y);
     apply_impulse_b(body_b, r_bx, r_by, impulse_x, impulse_y);
@@ -47,12 +47,12 @@ pub fn apply_physics2d_impulse(
 
 pub(crate) fn apply_physics2d_pair_impulse(
     pair: &mut Physics2DBodyPair<'_>,
-    r_ax: f32,
-    r_ay: f32,
-    r_bx: f32,
-    r_by: f32,
-    impulse_x: f32,
-    impulse_y: f32,
+    r_ax: f64,
+    r_ay: f64,
+    r_bx: f64,
+    r_by: f64,
+    impulse_x: f64,
+    impulse_y: f64,
 ) {
     apply_impulse_a(pair.a(), r_ax, r_ay, impulse_x, impulse_y);
     apply_impulse_b(pair.b(), r_bx, r_by, impulse_x, impulse_y);
@@ -88,13 +88,13 @@ pub(crate) fn lock_physics2d_body_pair<'a>(
 
 pub(crate) fn pair_relative_axis_velocity(
     pair: &mut Physics2DBodyPair<'_>,
-    r_ax: f32,
-    r_ay: f32,
-    r_bx: f32,
-    r_by: f32,
-    axis_x: f32,
-    axis_y: f32,
-) -> f32 {
+    r_ax: f64,
+    r_ay: f64,
+    r_bx: f64,
+    r_by: f64,
+    axis_x: f64,
+    axis_y: f64,
+) -> f64 {
     let (vax, vay) = {
         let a = pair.a();
         (
@@ -115,13 +115,13 @@ pub(crate) fn pair_relative_axis_velocity(
 fn relative_axis_velocity(
     body_a: &RigidBody2D,
     body_b: &RigidBody2D,
-    r_ax: f32,
-    r_ay: f32,
-    r_bx: f32,
-    r_by: f32,
-    axis_x: f32,
-    axis_y: f32,
-) -> f32 {
+    r_ax: f64,
+    r_ay: f64,
+    r_bx: f64,
+    r_by: f64,
+    axis_x: f64,
+    axis_y: f64,
+) -> f64 {
     let vax = body_a.velocity_x - body_a.angular_velocity * r_ay;
     let vay = body_a.velocity_y + body_a.angular_velocity * r_ax;
     let vbx = body_b.velocity_x - body_b.angular_velocity * r_by;
@@ -134,9 +134,9 @@ pub fn relative_normal_velocity(
     body_a: &RigidBody2D,
     body_b: &RigidBody2D,
     point: &Physics2DContactPoint,
-    normal_x: f32,
-    normal_y: f32,
-) -> f32 {
+    normal_x: f64,
+    normal_y: f64,
+) -> f64 {
     return relative_axis_velocity(
         body_a, body_b, point.r_ax, point.r_ay, point.r_bx, point.r_by, normal_x, normal_y,
     );

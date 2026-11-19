@@ -30,7 +30,7 @@ pub fn write_physics2d_joint_reaction(
     out: &mut Physics2DJointReaction,
     world: &Physics2DWorld,
     joint: &dyn Physics2DJoint,
-    dt: f32,
+    dt: f64,
 ) -> bool {
     out.force_x = 0.0;
     out.force_y = 0.0;

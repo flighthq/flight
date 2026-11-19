@@ -23,12 +23,12 @@ const STONE: Physics2DMaterial = Physics2DMaterial {
 #[derive(Clone, Debug, Default)]
 struct TestJoint {
     fields: Physics2DJointFields,
-    direction: f32,
+    direction: f64,
 }
 
 flight_physics2d::impl_physics2d_joint!(TestJoint, [direction]);
 
-fn body(world: &mut Physics2DWorld, x: f32, y: f32) -> Ref<RigidBody2D> {
+fn body(world: &mut Physics2DWorld, x: f64, y: f64) -> Ref<RigidBody2D> {
     let made = rigid_body2d(Physics2DBodyType::Dynamic, x, y, None);
     let local = CollisionShape2D::Aabb(CollisionAabb2D {
         min_x: -0.5,
@@ -44,7 +44,7 @@ fn body(world: &mut Physics2DWorld, x: f32, y: f32) -> Ref<RigidBody2D> {
     return made;
 }
 
-fn direction_of(joint: &Physics2DJointRef) -> f32 {
+fn direction_of(joint: &Physics2DJointRef) -> f64 {
     return joint
         .read()
         .unwrap()
@@ -66,8 +66,8 @@ fn joint(
     kind: &str,
     body_a: i32,
     body_b: i32,
-    anchor_ax: f32,
-    anchor_bx: f32,
+    anchor_ax: f64,
+    anchor_bx: f64,
 ) -> Physics2DJointRef {
     let mut out: TestJoint = allocate_entity();
     out.kind = kind.to_string();
@@ -78,8 +78,8 @@ fn joint(
     out.local_anchor_bx = anchor_bx;
     out.local_anchor_by = 0.0;
     out.collide_connected = false;
-    out.break_force = f32::INFINITY;
-    out.break_torque = f32::INFINITY;
+    out.break_force = f64::INFINITY;
+    out.break_torque = f64::INFINITY;
     out.impulse0 = 0.0;
     out.impulse1 = 0.0;
     out.impulse2 = 0.0;

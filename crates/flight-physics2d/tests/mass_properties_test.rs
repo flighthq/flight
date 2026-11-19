@@ -2,13 +2,13 @@
 
 use crate::flight_physics2d_support_test::*;
 
-use std::f32::consts::PI;
+use std::f64::consts::PI;
 
 use flight_collision::*;
 use flight_entity::Ref;
 use flight_physics2d::*;
 
-fn collider(local: CollisionShape2D, density: f32) -> Ref<Physics2DCollider> {
+fn collider(local: CollisionShape2D, density: f64) -> Ref<Physics2DCollider> {
     let material = Physics2DMaterial {
         density,
         friction: 0.2,
@@ -29,7 +29,7 @@ fn body(colliders: Vec<Ref<Physics2DCollider>>, body_type: Physics2DBodyType) ->
     return created;
 }
 
-fn aabb(min_x: f32, min_y: f32, max_x: f32, max_y: f32) -> CollisionShape2D {
+fn aabb(min_x: f64, min_y: f64, max_x: f64, max_y: f64) -> CollisionShape2D {
     return CollisionShape2D::Aabb(CollisionAabb2D {
         min_x,
         min_y,
@@ -49,8 +49,8 @@ fn polygon(points: &[f64]) -> CollisionShape2D {
 }
 
 // vitest `toBeCloseTo(expected, digits)`: |actual - expected| < 10^-digits / 2.
-fn close(actual: f32, expected: f32, digits: i32) -> bool {
-    return (actual - expected).abs() < 10f32.powi(-digits) / 2.0;
+fn close(actual: f64, expected: f64, digits: i32) -> bool {
+    return (actual - expected).abs() < 10f64.powi(-digits) / 2.0;
 }
 
 fn compute(out: &mut Physics2DMassData, collider: &Ref<Physics2DCollider>) {
@@ -182,11 +182,11 @@ mod compute_physics2d_collider_mass_data {
         ] {
             let mut out = mass_data();
             let shape = CollisionShape2D::Capsule(CollisionCapsule2D {
-                x0: x0 as f32,
-                y0: y0 as f32,
-                x1: x1 as f32,
-                y1: y1 as f32,
-                radius: radius as f32,
+                x0: x0,
+                y0: y0,
+                x1: x1,
+                y1: y1,
+                radius: radius,
             });
             compute(&mut out, &collider(shape, 1.0));
             let truth = integrate_capsule(x0, y0, x1, y1, radius);
@@ -194,17 +194,17 @@ mod compute_physics2d_collider_mass_data {
             // A tenth of a percent, which is the grid's own resolution rather than a tolerance for the
             // formula.
             assert!(
-                (out.mass as f64 - truth.area).abs() / truth.area < 1e-3,
+                (out.mass - truth.area).abs() / truth.area < 1e-3,
                 "{}",
                 label
             );
             assert!(
-                (out.inertia as f64 - truth.second).abs() / truth.second < 1e-3,
+                (out.inertia - truth.second).abs() / truth.second < 1e-3,
                 "{}",
                 label
             );
-            assert!(close(out.center_x, truth.center_x as f32, 3), "{}", label);
-            assert!(close(out.center_y, truth.center_y as f32, 3), "{}", label);
+            assert!(close(out.center_x, truth.center_x, 3), "{}", label);
+            assert!(close(out.center_y, truth.center_y, 3), "{}", label);
         }
     }
 

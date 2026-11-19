@@ -37,21 +37,21 @@ use crate::types::*;
 use crate::world::{find_physics2d_body, is_physics2d_pair_ordered};
 
 const CCD_ROTATION_BISECTION_ITERATIONS: usize = 12;
-const CCD_ROTATION_INCREMENT: f32 = std::f32::consts::PI / 90.0;
+const CCD_ROTATION_INCREMENT: f64 = std::f64::consts::PI / 90.0;
 
 // The per-step scratch the source leases from its pool.
 struct Physics2DStepScratch {
-    ccd_center_a: (f32, f32),
-    ccd_center_b: (f32, f32),
+    ccd_center_a: (f64, f64),
+    ccd_center_b: (f64, f64),
     ccd_impact_body_a: i32,
     ccd_impact_body_b: i32,
     ccd_impact_collider_a: i32,
     ccd_impact_collider_b: i32,
-    ccd_impact_fraction: f32,
-    ccd_impact_normal_x: f32,
-    ccd_impact_normal_y: f32,
-    ccd_impact_x: f32,
-    ccd_impact_y: f32,
+    ccd_impact_fraction: f64,
+    ccd_impact_normal_x: f64,
+    ccd_impact_normal_y: f64,
+    ccd_impact_x: f64,
+    ccd_impact_y: f64,
     ccd_pairs: Vec<SpatialPair>,
     ccd_rotational_manifold: CollisionContactManifold2D,
     ccd_sweep: CollisionTimeOfImpact2D,
@@ -68,8 +68,8 @@ fn create_physics2d_impact_contact(
     scratch: &mut Physics2DStepScratch,
     body_a: i32,
     body_b: i32,
-    friction: f32,
-    restitution: f32,
+    friction: f64,
+    restitution: f64,
 ) -> Physics2DContactRef {
     scratch.manifold.normal_x = scratch.ccd_impact_normal_x;
     scratch.manifold.normal_y = scratch.ccd_impact_normal_y;
@@ -100,7 +100,7 @@ fn create_physics2d_impact_contact(
     return contact;
 }
 
-fn advance_all_awake_physics2d_bodies(world: &Physics2DWorld, dt: f32) {
+fn advance_all_awake_physics2d_bodies(world: &Physics2DWorld, dt: f64) {
     for body in &world.bodies {
         let mut body = body.write().unwrap();
         if body.body_type == Physics2DBodyType::Static || body.sleeping {
@@ -110,7 +110,7 @@ fn advance_all_awake_physics2d_bodies(world: &Physics2DWorld, dt: f32) {
     }
 }
 
-fn advance_physics2d_body(body: &mut RigidBody2D, dt: f32) {
+fn advance_physics2d_body(body: &mut RigidBody2D, dt: f64) {
     let (dx, dy) = (body.velocity_x * dt, body.velocity_y * dt);
     let angle_delta = if body.fixed_rotation {
         0.0
@@ -123,9 +123,9 @@ fn advance_physics2d_body(body: &mut RigidBody2D, dt: f32) {
 // Moves a body by a displacement of its centre of mass plus a rotation about that centre.
 fn advance_physics2d_body_transform(
     body: &mut RigidBody2D,
-    center_delta_x: f32,
-    center_delta_y: f32,
-    angle_delta: f32,
+    center_delta_x: f64,
+    center_delta_y: f64,
+    angle_delta: f64,
 ) {
     if body.center_x == 0.0 && body.center_y == 0.0 {
         body.x += center_delta_x;
@@ -145,7 +145,7 @@ fn advance_physics2d_body_transform(
     body.angle = angle;
 }
 
-fn advance_physics2d_solve_island_bodies(world: &Physics2DWorld, dt: f32) {
+fn advance_physics2d_solve_island_bodies(world: &Physics2DWorld, dt: f64) {
     for island in 0..world.solve_island_roots.len() {
         let start = world.solve_island_body_starts[island];
         let end = start + world.solve_island_body_counts[island];
@@ -160,7 +160,7 @@ fn advance_physics2d_solve_island_bodies(world: &Physics2DWorld, dt: f32) {
     }
 }
 
-fn body_center(body: &RigidBody2D) -> (f32, f32) {
+fn body_center(body: &RigidBody2D) -> (f64, f64) {
     let cos = body.angle.cos();
     let sin = body.angle.sin();
     return (
@@ -280,13 +280,13 @@ fn build_physics2d_contacts(world: &mut Physics2DWorld, scratch: &mut Physics2DS
 
 fn effective_mass(
     pair: &mut Physics2DBodyPair<'_>,
-    r_ax: f32,
-    r_ay: f32,
-    r_bx: f32,
-    r_by: f32,
-    axis_x: f32,
-    axis_y: f32,
-) -> f32 {
+    r_ax: f64,
+    r_ay: f64,
+    r_bx: f64,
+    r_by: f64,
+    axis_x: f64,
+    axis_y: f64,
+) -> f64 {
     let cross_a = r_ax * axis_y - r_ay * axis_x;
     let cross_b = r_bx * axis_y - r_by * axis_x;
     let (inv_mass_a, inv_inertia_a) = (pair.a().inverse_mass, pair.a().inverse_inertia);
@@ -302,9 +302,9 @@ fn find_earliest_physics2d_impact(
     world: &Physics2DWorld,
     scratch: &mut Physics2DStepScratch,
     registry: &CollisionRegistry2D,
-    dt: f32,
+    dt: f64,
 ) -> bool {
-    scratch.ccd_impact_fraction = f32::INFINITY;
+    scratch.ccd_impact_fraction = f64::INFINITY;
     scratch.ccd_impact_body_a = -1;
     scratch.ccd_impact_body_b = -1;
     scratch.ccd_impact_collider_a = -1;
@@ -393,11 +393,11 @@ fn find_physics2d_collider_impact(
     p: &mut Physics2DBodyPair<'_>,
     collider_a: &Ref<Physics2DCollider>,
     collider_b: &Ref<Physics2DCollider>,
-    tax: f32,
-    tay: f32,
-    tbx: f32,
-    tby: f32,
-    dt: f32,
+    tax: f64,
+    tay: f64,
+    tbx: f64,
+    tby: f64,
+    dt: f64,
 ) -> bool {
     let rotation_a = moving_rotation(p.a(), dt);
     let rotation_b = moving_rotation(p.b(), dt);
@@ -452,19 +452,19 @@ fn find_physics2d_rotational_impact(
     p: &mut Physics2DBodyPair<'_>,
     collider_a: &Ref<Physics2DCollider>,
     collider_b: &Ref<Physics2DCollider>,
-    translations: [f32; 4],
-    rotation_a: f32,
-    rotation_b: f32,
+    translations: [f64; 4],
+    rotation_a: f64,
+    rotation_b: f64,
     max_substeps: i32,
 ) -> bool {
     let angular_travel = js_max(rotation_a.abs(), rotation_b.abs());
     let substeps = js_min(
-        max_substeps as f32,
+        max_substeps as f64,
         js_max(1.0, (angular_travel / CCD_ROTATION_INCREMENT).ceil()),
     ) as i32;
     let mut lower_fraction = 0.0;
     for sample in 1..=substeps {
-        let upper_fraction = sample as f32 / substeps as f32;
+        let upper_fraction = sample as f64 / substeps as f64;
         if !test_physics2d_collider_overlap_at_fraction(
             scratch,
             p,
@@ -539,7 +539,7 @@ fn integrate_physics2d_continuous(
     world: &mut Physics2DWorld,
     scratch: &mut Physics2DStepScratch,
     registry: &CollisionRegistry2D,
-    dt: f32,
+    dt: f64,
 ) {
     let mut remaining = dt;
     let mut substep = 0;
@@ -589,12 +589,12 @@ fn is_physics2d_collider_pair_enabled(
 fn is_physics2d_impact_approaching(
     p: &mut Physics2DBodyPair<'_>,
     impact: &CollisionTimeOfImpact2D,
-    tax: f32,
-    tay: f32,
-    tbx: f32,
-    tby: f32,
-    rotation_a: f32,
-    rotation_b: f32,
+    tax: f64,
+    tay: f64,
+    tbx: f64,
+    tby: f64,
+    rotation_a: f64,
+    rotation_b: f64,
 ) -> bool {
     let center_a = write_physics2d_body_center(
         p.a(),
@@ -631,8 +631,8 @@ fn merge_physics2d_contact(
     collider_b: usize,
     manifold: &CollisionContactManifold2D,
     sensor: bool,
-    friction: f32,
-    restitution: f32,
+    friction: f64,
+    restitution: f64,
 ) -> Physics2DContactRef {
     let existing = find_physics2d_contact(world, body_a, body_b, collider_a, collider_b);
     let contact = match existing {
@@ -706,14 +706,14 @@ fn merge_physics2d_contact(
     return contact;
 }
 
-fn moving_rotation(body: &RigidBody2D, dt: f32) -> f32 {
+fn moving_rotation(body: &RigidBody2D, dt: f64) -> f64 {
     if body.body_type == Physics2DBodyType::Static || body.sleeping {
         return 0.0;
     }
     return body.angular_velocity * dt;
 }
 
-fn moving_translation(body: &RigidBody2D, dt: f32) -> (f32, f32) {
+fn moving_translation(body: &RigidBody2D, dt: f64) -> (f64, f64) {
     if body.body_type == Physics2DBodyType::Static || body.sleeping {
         return (0.0, 0.0);
     }
@@ -773,12 +773,12 @@ fn prepare_physics2d_constraints(
     }
 }
 
-fn record_physics2d_broken_joints(world: &mut Physics2DWorld, dt: f32) {
+fn record_physics2d_broken_joints(world: &mut Physics2DWorld, dt: f64) {
     let mut reaction = create_physics2d_joint_reaction();
     for joint in world.joints.clone() {
         let guard = joint.read().unwrap();
         let fields = guard.joint_fields();
-        if fields.break_force == f32::INFINITY && fields.break_torque == f32::INFINITY {
+        if fields.break_force == f64::INFINITY && fields.break_torque == f64::INFINITY {
             continue;
         }
         if !write_physics2d_joint_reaction(&mut reaction, world, &*guard, dt) {
@@ -908,7 +908,7 @@ fn resolve_earliest_physics2d_impact(
 
 fn restore_physics2d_contact_hook_fields(
     contact: &mut Physics2DContact,
-    saved: (f32, f32, bool, bool),
+    saved: (f64, f64, bool, bool),
 ) {
     contact.friction = saved.0;
     contact.restitution = saved.1;
@@ -944,14 +944,13 @@ fn run_physics2d_contact_hook(
     }
 }
 
-// flight-lint: allow(f64) time accumulation: TS f64 sleep-threshold timing (30 × 1/60 crosses 0.5 differently in f32)
 fn scale_physics2d_warm_start_caches(world: &Physics2DWorld, dt: f64) {
     let previous = world.previous_timestep;
     if !(previous > 0.0) || previous == dt {
         return;
     }
     let divided = dt / previous;
-    let timestep_ratio = (if divided.is_finite() { divided } else { 0.0 }) as f32;
+    let timestep_ratio = if divided.is_finite() { divided } else { 0.0 };
     for contact in &world.contacts {
         let mut contact = contact.write().unwrap();
         for i in 0..contact.point_count {
@@ -1103,7 +1102,6 @@ fn solve_physics2d_positions_once(
 /// that broke are removed after the stepping boundary is released, so a post-solve hook still sees
 /// them.
 // flight-lint: allow(conform-params) D5: the collision registry and the diagnostics guards are explicit caller-owned state
-// flight-lint: allow(f64) time accumulation: TS f64 sleep-threshold timing (30 × 1/60 crosses 0.5 differently in f32)
 pub fn step_physics2d(
     world: &mut Physics2DWorld,
     dt: f64,
@@ -1126,7 +1124,6 @@ pub fn step_physics2d(
     }
 }
 
-// flight-lint: allow(f64) time accumulation: TS f64 sleep-threshold timing (30 × 1/60 crosses 0.5 differently in f32)
 fn step_physics2d_once(
     world: &mut Physics2DWorld,
     dt: f64,
@@ -1207,8 +1204,7 @@ fn step_physics2d_once(
 
     update_physics2d_sleep(world, dt);
     build_physics2d_solve_islands(world);
-    // The step's time input stays f64 for the sleep timers; it enters solver math as f32.
-    let solver_dt = dt as f32;
+    let solver_dt = dt;
 
     for island in 0..world.solve_island_roots.len() {
         let start = world.solve_island_body_starts[island];
@@ -1393,10 +1389,10 @@ fn test_physics2d_collider_overlap_at_fraction(
     p: &mut Physics2DBodyPair<'_>,
     collider_a: &Ref<Physics2DCollider>,
     collider_b: &Ref<Physics2DCollider>,
-    translations: [f32; 4],
-    rotation_a: f32,
-    rotation_b: f32,
-    fraction: f32,
+    translations: [f64; 4],
+    rotation_a: f64,
+    rotation_b: f64,
+    fraction: f64,
 ) -> bool {
     let saved_a = (p.a().x, p.a().y, p.a().angle);
     let saved_b = (p.b().x, p.b().y, p.b().angle);
@@ -1471,10 +1467,10 @@ fn with_island_joint(
 
 fn write_physics2d_body_center(
     body: &RigidBody2D,
-    translation_x: f32,
-    translation_y: f32,
-    rotation: f32,
-) -> (f32, f32) {
+    translation_x: f64,
+    translation_y: f64,
+    rotation: f64,
+) -> (f64, f64) {
     let cos = (body.angle + rotation).cos();
     let sin = (body.angle + rotation).sin();
     return (

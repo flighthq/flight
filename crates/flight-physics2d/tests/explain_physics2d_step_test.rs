@@ -55,10 +55,10 @@ mod explain_physics2d_step {
     #[test]
     fn reports_simultaneous_world_configuration_body_contact_and_joint_state_faults() {
         let mut world = physics2d_world(None, None, None);
-        world.gravity_x = f32::NAN;
+        world.gravity_x = f64::NAN;
         world.previous_timestep = -1.0;
-        world.config.position_correction = f32::NAN;
-        let made = rigid_body2d(Physics2DBodyType::Dynamic, f32::NAN, 0.0, None);
+        world.config.position_correction = f64::NAN;
+        let made = rigid_body2d(Physics2DBodyType::Dynamic, f64::NAN, 0.0, None);
         made.write().unwrap().index = 0;
         world.bodies.push(made.clone());
         world.body_by_index.insert(0, made);
@@ -69,7 +69,7 @@ mod explain_physics2d_step {
             collider_b: 0,
             enabled: true,
             friction: 0.0,
-            normal_x: f32::NAN,
+            normal_x: f64::NAN,
             normal_y: 0.0,
             point_count: 0,
             points: Vec::new(),
@@ -82,7 +82,7 @@ mod explain_physics2d_step {
         {
             let mut guard = joint.write().unwrap();
             let fields = guard.joint_fields_mut();
-            fields.impulse0 = f32::NAN;
+            fields.impulse0 = f64::NAN;
             fields.kind = "Test".to_string();
         }
         world.joints.push(joint);

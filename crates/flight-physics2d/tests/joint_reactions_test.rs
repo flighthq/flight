@@ -21,7 +21,7 @@ use flight_collision::{
 use flight_entity::{Entity, Ref, allocate_entity};
 use flight_physics2d::contract::*;
 
-const GRAVITY: f32 = -10.0;
+const GRAVITY: f64 = -10.0;
 const DT: f64 = 1.0 / 240.0;
 const SETTLE_STEPS: usize = 4000;
 const MATERIAL: Physics2DMaterial = Physics2DMaterial {
@@ -33,8 +33,8 @@ const MATERIAL: Physics2DMaterial = Physics2DMaterial {
 fn ball(
     world: &mut Physics2DWorld,
     body_type: Physics2DBodyType,
-    x: f32,
-    y: f32,
+    x: f64,
+    y: f64,
     offset_x: f64,
 ) -> Ref<RigidBody2D> {
     let body = rigid_body2d(body_type, x, y, None);
@@ -60,8 +60,8 @@ fn base(body_a: i32, body_b: i32) -> Physics2DJointOptions {
 }
 
 // vitest `toBeCloseTo(expected, digits)`: |actual - expected| < 10^-digits / 2.
-fn close(actual: f32, expected: f32, digits: i32) -> bool {
-    return (actual - expected).abs() < 10f32.powi(-digits) / 2.0;
+fn close(actual: f64, expected: f64, digits: i32) -> bool {
+    return (actual - expected).abs() < 10f64.powi(-digits) / 2.0;
 }
 
 fn distance(body_a: i32, body_b: i32) -> Physics2DJointRef {
@@ -77,7 +77,7 @@ fn index_of(body: &Ref<RigidBody2D>) -> i32 {
     return body.read().unwrap().index;
 }
 
-fn mass_of(body: &Ref<RigidBody2D>) -> f32 {
+fn mass_of(body: &Ref<RigidBody2D>) -> f64 {
     return body.read().unwrap().mass;
 }
 
@@ -103,7 +103,7 @@ fn settle(
         step_physics2d(world, DT, &registry, None);
     }
     let mut out = create_physics2d_joint_reaction();
-    assert!(write(&mut out, world, joint, DT as f32));
+    assert!(write(&mut out, world, joint, DT));
     return out;
 }
 
@@ -117,7 +117,7 @@ fn write(
     out: &mut Physics2DJointReaction,
     world: &Physics2DWorld,
     joint: &Physics2DJointRef,
-    dt: f32,
+    dt: f64,
 ) -> bool {
     return write_physics2d_joint_reaction(out, world, &*joint.read().unwrap(), dt);
 }
@@ -171,7 +171,7 @@ mod write_physics2d_joint_reaction {
         add_physics2d_joint(&mut world, &joint);
 
         let mut out = create_physics2d_joint_reaction();
-        assert!(!write(&mut out, &world, &joint, DT as f32));
+        assert!(!write(&mut out, &world, &joint, DT));
         assert_eq!((out.force_x, out.force_y, out.torque), (0.0, 0.0, 0.0));
     }
 
@@ -192,7 +192,7 @@ mod write_physics2d_joint_reaction {
         step_physics2d(&mut world, DT, &registry(), None);
 
         let mut out = create_physics2d_joint_reaction();
-        assert!(!write(&mut out, &world, &joint, DT as f32));
+        assert!(!write(&mut out, &world, &joint, DT));
     }
 
     #[test]
@@ -207,7 +207,7 @@ mod write_physics2d_joint_reaction {
         let mut out = settle(&mut world, &joint, 200);
         assert!(out.force_y > 0.0);
 
-        for bad in [0.0, -1.0, f32::NAN, f32::INFINITY] {
+        for bad in [0.0, -1.0, f64::NAN, f64::INFINITY] {
             assert!(!write(&mut out, &world, &joint, bad));
             assert_eq!((out.force_x, out.force_y, out.torque), (0.0, 0.0, 0.0));
         }
@@ -334,15 +334,13 @@ mod write_physics2d_joint_reaction {
         let reaction = settle(&mut world, &(joint as Physics2DJointRef), SETTLE_STEPS);
 
         let mass = mass_of(&arm);
-        // f32: measured torque 7.539824 vs analytic 7.5398226 (3 ulp at 7.5), so 5 digits, not TS's 6
         assert!(
-            close(reaction.torque, -(mass * GRAVITY * 1.5), 5),
+            close(reaction.torque, -(mass * GRAVITY * 1.5), 6),
             "torque {}",
             reaction.torque
         );
-        // f32: measured force_y 5.0265493 vs weight 5.0265484 (2 ulp at 5), so 5 digits, not TS's 6
         assert!(
-            close(reaction.force_y, mass * -GRAVITY, 5),
+            close(reaction.force_y, mass * -GRAVITY, 6),
             "force_y {}",
             reaction.force_y
         );
@@ -493,9 +491,8 @@ mod write_physics2d_joint_reaction {
         }
 
         let mut out = create_physics2d_joint_reaction();
-        assert!(write(&mut out, &world, &joint, DT as f32));
-        // f32: measured -4.9999914 vs -5 after 200 accumulated f32 steps, so 4 digits, not TS's 6
-        assert!(close(out.torque, -5.0, 4), "torque {}", out.torque);
+        assert!(write(&mut out, &world, &joint, DT));
+        assert!(close(out.torque, -5.0, 6), "torque {}", out.torque);
         assert!(close(out.force_x, 0.0, 9), "force_x {}", out.force_x);
         assert!(close(out.force_y, 0.0, 9), "force_y {}", out.force_y);
         let (driver_spin, driven_spin) = (
@@ -519,7 +516,7 @@ mod write_physics2d_joint_reaction {
         let at_step_size = settle(&mut world, &joint, SETTLE_STEPS);
 
         let mut halved = create_physics2d_joint_reaction();
-        write(&mut halved, &world, &joint, (DT * 2.0) as f32);
+        write(&mut halved, &world, &joint, (DT * 2.0));
         assert!(
             close(halved.force_y, at_step_size.force_y / 2.0, 9),
             "{} vs {}",

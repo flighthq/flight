@@ -2,7 +2,7 @@
 
 use crate::flight_physics2d_support_test::*;
 
-use std::f32::consts::PI;
+use std::f64::consts::PI;
 
 use flight_collision::*;
 use flight_entity::Ref;
@@ -25,8 +25,8 @@ fn bounds() -> SpatialAabb2D {
 }
 
 // vitest `toBeCloseTo(expected, digits)`: |actual - expected| < 10^-digits / 2.
-fn close(actual: f32, expected: f32, digits: i32) -> bool {
-    return (actual - expected).abs() < 10f32.powi(-digits) / 2.0;
+fn close(actual: f64, expected: f64, digits: i32) -> bool {
+    return (actual - expected).abs() < 10f64.powi(-digits) / 2.0;
 }
 
 fn collider(local: CollisionShape2D) -> Ref<Physics2DCollider> {
@@ -268,8 +268,8 @@ mod update_physics2d_collider_world_shape {
         let CollisionShape2D::Circle(world) = &guard.world else {
             panic!("expected a circle");
         };
-        assert!(close(world.x as f32, 10.0, 2));
-        assert!(close(world.y as f32, 6.0, 2));
+        assert!(close(world.x, 10.0, 2));
+        assert!(close(world.y, 6.0, 2));
         assert_eq!(world.radius, 0.5);
     }
 

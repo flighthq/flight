@@ -16,11 +16,9 @@ fn expected_soft_row(mass: f64, frequency_hz: f64, damping_ratio: f64, dt: f64) 
     return [1.0 / (1.0 / mass + gamma), dt * stiffness * gamma, gamma];
 }
 
-// f32: the source compares 12 digits of an f64 derivation; the f32 row agrees to f32 precision, so
-// closeness is relative at 1e-5 (measured worst case 6.3e-8).
-// flight-lint: allow(f64) D1: compares the f32 row against the f64 reference
-fn close(actual: f32, expected: f64) -> bool {
-    return ((actual as f64) - expected).abs() <= 1e-5 * expected.abs().max(1.0);
+// TS `toBeCloseTo(_, 12)` against the f64 derivation.
+fn close(actual: f64, expected: f64) -> bool {
+    return (actual - expected).abs() < 5e-13;
 }
 
 mod write_physics2d_soft_row_parameters {
@@ -52,12 +50,7 @@ mod write_physics2d_soft_row_parameters {
         let mut heavy = [0.0; 3];
         write_physics2d_soft_row_parameters(&mut light, 0.25, 2.0, 0.3, 1.0 / 60.0, 0.0);
         write_physics2d_soft_row_parameters(&mut heavy, 400.0, 2.0, 0.3, 1.0 / 60.0, 0.0);
-        assert!(
-            close(light[1], heavy[1] as f64),
-            "{} vs {}",
-            light[1],
-            heavy[1]
-        );
+        assert!(close(light[1], heavy[1]), "{} vs {}", light[1], heavy[1]);
 
         let omega = TAU * 2.0;
         let closed = (omega * omega) / (2.0 * 0.3 * omega + (omega * omega) / 60.0);
@@ -69,7 +62,7 @@ mod write_physics2d_soft_row_parameters {
         let mut out = [9.0; 3];
         write_physics2d_soft_row_parameters(&mut out, 4.0, -3.0, 0.7, 1.0 / 60.0, 12.0);
         assert_eq!(out, [4.0, 12.0, 0.0]);
-        write_physics2d_soft_row_parameters(&mut out, 4.0, f32::NAN, 0.7, 1.0 / 60.0, 12.0);
+        write_physics2d_soft_row_parameters(&mut out, 4.0, f64::NAN, 0.7, 1.0 / 60.0, 12.0);
         assert_eq!(out, [4.0, 12.0, 0.0]);
     }
 
@@ -94,7 +87,7 @@ mod write_physics2d_soft_row_parameters {
         write_physics2d_soft_row_parameters(&mut light, 1.0, 2.0, 0.3, 1.0 / 60.0, 0.0);
         write_physics2d_soft_row_parameters(&mut heavy, 4.0, 2.0, 0.3, 1.0 / 60.0, 0.0);
         assert!(
-            close(heavy[2], (light[2] / 4.0) as f64),
+            close(heavy[2], (light[2] / 4.0)),
             "{} vs {}",
             heavy[2],
             light[2] / 4.0

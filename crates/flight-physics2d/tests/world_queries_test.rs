@@ -21,7 +21,7 @@ const STONE: Physics2DMaterial = Physics2DMaterial {
     restitution: 0.0,
 };
 
-fn aabb(min_x: f32, min_y: f32, max_x: f32, max_y: f32) -> CollisionShape2D {
+fn aabb(min_x: f64, min_y: f64, max_x: f64, max_y: f64) -> CollisionShape2D {
     return CollisionShape2D::Aabb(CollisionAabb2D {
         min_x,
         min_y,
@@ -35,9 +35,9 @@ fn assert_entity<T: Entity>(_value: &T) {}
 fn body_with(
     world: &mut Physics2DWorld,
     body_type: Physics2DBodyType,
-    x: f32,
-    y: f32,
-    angle: Option<f32>,
+    x: f64,
+    y: f64,
+    angle: Option<f64>,
     shapes: &[CollisionShape2D],
 ) -> Ref<RigidBody2D> {
     let body = rigid_body2d(body_type, x, y, angle);
@@ -72,7 +72,7 @@ fn live_pairs(out: &Physics2DQueryResult) -> Vec<(i32, usize)> {
         .collect();
 }
 
-fn region(min_x: f32, min_y: f32, max_x: f32, max_y: f32) -> SpatialAabb2D {
+fn region(min_x: f64, min_y: f64, max_x: f64, max_y: f64) -> SpatialAabb2D {
     return SpatialAabb2D {
         min_x,
         min_y,
@@ -392,7 +392,7 @@ mod query_physics2d_point {
             Physics2DBodyType::Dynamic,
             3.0,
             4.0,
-            Some(std::f32::consts::FRAC_PI_2),
+            Some(std::f64::consts::FRAC_PI_2),
             &[
                 CollisionShape2D::Point(CollisionPoint2D { x: 2.0, y: 0.0 }),
                 CollisionShape2D::Segment(CollisionSegment2D {
@@ -455,7 +455,7 @@ mod query_physics2d_point {
             Physics2DBodyType::Dynamic,
             0.0,
             0.0,
-            Some(std::f32::consts::FRAC_PI_4),
+            Some(std::f64::consts::FRAC_PI_4),
             &[aabb(-2.0, -0.25, 2.0, 0.25)],
         );
         let mut out = create_physics2d_query_result();
@@ -533,7 +533,7 @@ mod query_physics2d_ray {
             Physics2DBodyType::Dynamic,
             0.0,
             0.0,
-            Some(std::f32::consts::FRAC_PI_4),
+            Some(std::f64::consts::FRAC_PI_4),
             &[aabb(-2.0, -0.25, 2.0, 0.25)],
         );
         let mut out = create_physics2d_ray_result();
@@ -626,7 +626,7 @@ mod query_physics2d_ray_closest {
             0.0,
             1.0,
             0.0,
-            Some(f32::INFINITY),
+            Some(f64::INFINITY),
             Some(&filter),
         );
         assert_eq!(out.hit_count, 1);
@@ -789,10 +789,10 @@ mod query_physics2d_shape_cast {
         );
 
         const SAMPLES: usize = 20000;
-        let mut marched_fraction: f32 = -1.0;
+        let mut marched_fraction: f64 = -1.0;
         let mut sample = 0;
         while sample <= SAMPLES && marched_fraction < 0.0 {
-            let fraction = sample as f32 / SAMPLES as f32;
+            let fraction = sample as f64 / SAMPLES as f64;
             let probe_x = 12.0 * fraction;
             let mut found = create_physics2d_query_result();
             query_physics2d_region(
@@ -806,7 +806,7 @@ mod query_physics2d_shape_cast {
                 let CollisionShape2D::Circle(shape) = &collider.world else {
                     continue;
                 };
-                let dx = shape.x - probe_x as f64;
+                let dx = shape.x - probe_x;
                 let dy = shape.y;
                 if dx * dx + dy * dy <= (shape.radius + 0.3) * (shape.radius + 0.3) {
                     marched_fraction = fraction;
@@ -817,7 +817,7 @@ mod query_physics2d_shape_cast {
 
         assert!(marched_fraction > 0.0);
         assert!(out.hit);
-        assert!((out.fraction - marched_fraction).abs() < 2.0 / SAMPLES as f32);
+        assert!((out.fraction - marched_fraction).abs() < 2.0 / SAMPLES as f64);
     }
 
     #[test]
@@ -916,7 +916,7 @@ mod query_physics2d_shape_cast {
         let world = walled_world();
         let mut out = create_physics2d_shape_cast_result();
 
-        for (dx, dy) in [(f32::NAN, 0.0), (0.0, f32::INFINITY)] {
+        for (dx, dy) in [(f64::NAN, 0.0), (0.0, f64::INFINITY)] {
             query_physics2d_shape_cast(
                 &mut out,
                 &world,
@@ -970,8 +970,7 @@ mod query_physics2d_shape_cast {
             None,
         );
         assert!(out.hit);
-        // f32: measured 0.450000048 vs 0.45; TS's 9 digits are finer than the f32 ulp at 0.45 (2.98e-8)
-        assert!((out.fraction - 0.45).abs() < 6e-8);
+        assert!((out.fraction - 0.45).abs() < 5e-10);
     }
 
     #[test]
@@ -1037,8 +1036,7 @@ mod query_physics2d_shape_cast {
         );
 
         assert!(out.hit);
-        // f32: measured 0.450000048 vs 0.45; TS's 9 digits are finer than the f32 ulp at 0.45 (2.98e-8)
-        assert!((out.fraction - 0.45).abs() < 6e-8);
+        assert!((out.fraction - 0.45).abs() < 5e-10);
         assert!(Arc::ptr_eq(out.body.as_ref().unwrap(), &world.bodies[0]));
         assert_eq!(out.collider_index, 0);
         assert!((out.normal_x - -1.0).abs() < 5e-10);
@@ -1070,8 +1068,7 @@ mod query_physics2d_shape_cast {
         );
 
         assert!(out.hit);
-        // f32: measured 0.450000048 vs 0.45; TS's 9 digits are finer than the f32 ulp at 0.45 (2.98e-8)
-        assert!((out.fraction - 0.45).abs() < 6e-8);
+        assert!((out.fraction - 0.45).abs() < 5e-10);
         assert!((out.normal_x - 1.0).abs() < 5e-10);
     }
 }

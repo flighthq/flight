@@ -45,7 +45,7 @@ fn point() -> CollisionShape2D {
     return CollisionShape2D::Point(CollisionPoint2D { x: 0.0, y: 0.0 });
 }
 
-fn segment(x0: f32, x1: f32) -> CollisionShape2D {
+fn segment(x0: f64, x1: f64) -> CollisionShape2D {
     return CollisionShape2D::Segment(CollisionSegment2D {
         x0,
         y0: 0.0,

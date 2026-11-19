@@ -63,7 +63,7 @@ mod is_physics2d_contact_state_valid {
             collider_b: 0,
             enabled: true,
             friction: 0.0,
-            normal_x: f32::NAN,
+            normal_x: f64::NAN,
             normal_y: 0.0,
             point_count: 0,
             points: Vec::new(),
@@ -96,7 +96,7 @@ mod is_physics2d_contact_valid {
             touching: true,
         };
         assert!(is_physics2d_contact_valid(&contact));
-        contact.friction = f32::NAN;
+        contact.friction = f64::NAN;
         assert!(!is_physics2d_contact_valid(&contact));
     }
 }
@@ -108,7 +108,7 @@ mod is_physics2d_gravity_valid {
     fn requires_finite_world_acceleration() {
         let mut world = physics2d_world(None, None, None);
         assert!(is_physics2d_gravity_valid(&world));
-        world.gravity_y = f32::INFINITY;
+        world.gravity_y = f64::INFINITY;
         assert!(!is_physics2d_gravity_valid(&world));
     }
 }
@@ -128,7 +128,7 @@ mod is_physics2d_joint_state_valid {
         joint.write().unwrap().joint_fields_mut().kind = "Unknown".to_string();
         add_physics2d_joint(&mut world, &joint);
         assert!(is_physics2d_joint_state_valid(&world));
-        joint.write().unwrap().joint_fields_mut().impulse0 = f32::NAN;
+        joint.write().unwrap().joint_fields_mut().impulse0 = f64::NAN;
         assert!(!is_physics2d_joint_state_valid(&world));
     }
 }
@@ -157,7 +157,7 @@ mod is_physics2d_solver_config_valid {
         world.config.position_correction = 2.0;
         assert!(!is_physics2d_solver_config_valid(&world.config));
         world.config.position_correction = 0.2;
-        world.config.penetration_slop = f32::NAN;
+        world.config.penetration_slop = f64::NAN;
         assert!(!is_physics2d_solver_config_valid(&world.config));
         world.config.penetration_slop = 0.005;
         world.config.max_ccd_substeps = -1;

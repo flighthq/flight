@@ -157,7 +157,7 @@ fn is_body_live(body: &RigidBody2D) -> bool {
     return body.body_type != Physics2DBodyType::Static && !body.sleeping;
 }
 
-fn is_body_still(body: &RigidBody2D, linear_threshold: f32, angular_threshold: f32) -> bool {
+fn is_body_still(body: &RigidBody2D, linear_threshold: f64, angular_threshold: f64) -> bool {
     if body.force_x != 0.0 || body.force_y != 0.0 || body.torque != 0.0 {
         return false;
     }
@@ -276,7 +276,6 @@ fn union_dynamic_pair(world: &mut Physics2DWorld, a: i32, b: i32) {
 
 /// Advances every body's sleep state for one step, deciding sleep per island (TS
 /// `updatePhysics2DSleep`).
-// flight-lint: allow(f64) time accumulation: TS f64 sleep-threshold timing (30 × 1/60 crosses 0.5 differently in f32)
 pub fn update_physics2d_sleep(world: &mut Physics2DWorld, dt: f64) {
     let config = world.config;
     let world_island_parents: &mut HashMap<i32, i32> = &mut world.island_parents;
@@ -379,7 +378,7 @@ pub fn update_physics2d_sleep(world: &mut Physics2DWorld, dt: f64) {
             .get(&root)
             .copied()
             .unwrap_or(body.sleep_timer);
-        let should_sleep = body.sleep_enabled && island_timer >= config.time_to_sleep as f64;
+        let should_sleep = body.sleep_enabled && island_timer >= config.time_to_sleep;
         if !should_sleep && body.sleeping {
             body.sleep_timer = 0.0;
         }

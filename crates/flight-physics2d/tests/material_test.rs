@@ -7,9 +7,9 @@ mod mix_physics2d_friction {
 
     #[test]
     fn does_not_overflow_while_the_geometric_mean_remains_finite() {
-        let mixed = mix_physics2d_friction(f32::MAX, f32::MAX);
+        let mixed = mix_physics2d_friction(f64::MAX, f64::MAX);
         assert!(mixed.is_finite());
-        assert!((mixed / f32::MAX - 1.0).abs() < 0.005);
+        assert!((mixed / f64::MAX - 1.0).abs() < 0.005);
     }
 
     #[test]

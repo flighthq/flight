@@ -9,7 +9,6 @@ use flight_collision::CollisionShape2D;
 
 use crate::types::*;
 
-// flight-lint: allow(f64) D1: circle and polygon shape fields are the canonical f64 collision values
 fn is_collision_shape_state_valid(shape: &CollisionShape2D) -> bool {
     return match shape {
         CollisionShape2D::Circle(shape) => {
@@ -81,7 +80,7 @@ pub fn is_physics2d_body_state_valid(world: &Physics2DWorld) -> bool {
     return true;
 }
 
-fn is_physics2d_break_threshold_valid(threshold: f32) -> bool {
+fn is_physics2d_break_threshold_valid(threshold: f64) -> bool {
     return !threshold.is_nan() && threshold >= 0.0;
 }
 
@@ -202,7 +201,6 @@ pub fn is_physics2d_solver_config_valid(config: &Physics2DSolverConfig) -> bool 
 }
 
 /// A timestep is finite and positive (TS `isPhysics2DTimestepValid`).
-// flight-lint: allow(f64) time accumulation: TS f64 sleep-threshold timing (30 × 1/60 crosses 0.5 differently in f32)
 pub fn is_physics2d_timestep_valid(dt: f64) -> bool {
     return dt.is_finite() && dt > 0.0;
 }

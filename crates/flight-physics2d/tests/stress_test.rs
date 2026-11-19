@@ -18,7 +18,7 @@ const MATERIAL: Physics2DMaterial = Physics2DMaterial {
     restitution: 0.0,
 };
 
-fn aabb(min_x: f32, min_y: f32, max_x: f32, max_y: f32) -> CollisionShape2D {
+fn aabb(min_x: f64, min_y: f64, max_x: f64, max_y: f64) -> CollisionShape2D {
     return CollisionShape2D::Aabb(CollisionAabb2D {
         min_x,
         min_y,
@@ -30,9 +30,9 @@ fn aabb(min_x: f32, min_y: f32, max_x: f32, max_y: f32) -> CollisionShape2D {
 fn add_box(
     world: &mut Physics2DWorld,
     body_type: Physics2DBodyType,
-    x: f32,
-    y: f32,
-    half: f32,
+    x: f64,
+    y: f64,
+    half: f64,
 ) -> Ref<RigidBody2D> {
     let body = rigid_body2d(body_type, x, y, None);
     write(&body).colliders.push(physics2d_collider(
@@ -48,8 +48,8 @@ fn add_box(
 fn add_circle(
     world: &mut Physics2DWorld,
     body_type: Physics2DBodyType,
-    x: f32,
-    y: f32,
+    x: f64,
+    y: f64,
     radius: f64,
 ) -> Ref<RigidBody2D> {
     let body = rigid_body2d(body_type, x, y, None);
@@ -67,7 +67,7 @@ fn add_circle(
     return body;
 }
 
-fn add_distance_joint(world: &mut Physics2DWorld, body_a: i32, body_b: i32, length: f32) {
+fn add_distance_joint(world: &mut Physics2DWorld, body_a: i32, body_b: i32, length: f64) {
     let joint: Physics2DJointRef = physics2d_distance_joint(&Physics2DDistanceJointOptions {
         base: Physics2DJointOptions {
             body_a,
@@ -144,12 +144,12 @@ fn snapshot_world(world: &Physics2DWorld) -> Vec<Vec<f64>> {
             let body = read(body);
             return vec![
                 body.index as f64,
-                body.x as f64,
-                body.y as f64,
-                body.angle as f64,
-                body.velocity_x as f64,
-                body.velocity_y as f64,
-                body.angular_velocity as f64,
+                body.x,
+                body.y,
+                body.angle,
+                body.velocity_x,
+                body.velocity_y,
+                body.angular_velocity,
                 if body.sleeping { 1.0 } else { 0.0 },
                 body.sleep_timer,
             ];
@@ -208,7 +208,7 @@ mod physics2d_stress_qualification {
                 &mut world,
                 Physics2DBodyType::Dynamic,
                 0.0,
-                8.0 - i as f32,
+                8.0 - i as f64,
                 0.2,
             );
             let previous = index_of(&links[i - 1]);
@@ -242,7 +242,7 @@ mod physics2d_stress_qualification {
                 &mut world,
                 Physics2DBodyType::Dynamic,
                 0.0,
-                0.5 + i as f32,
+                0.5 + i as f64,
                 0.5,
             ));
         }

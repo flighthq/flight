@@ -2,7 +2,7 @@
 
 use crate::flight_physics2d_support_test::*;
 
-use std::f32::consts::PI;
+use std::f64::consts::PI;
 use std::sync::{Arc, RwLock};
 
 use flight_collision::{
@@ -32,9 +32,9 @@ fn base(body_a: i32, body_b: i32) -> Physics2DJointOptions {
 
 fn body_with(
     body_type: Physics2DBodyType,
-    x: f32,
-    y: f32,
-    angle: Option<f32>,
+    x: f64,
+    y: f64,
+    angle: Option<f64>,
     local: CollisionShape2D,
 ) -> Ref<RigidBody2D> {
     let body = rigid_body2d(body_type, x, y, angle);
@@ -128,14 +128,14 @@ mod write_physics2d_debug_geometry {
 
         assert_eq!(out.circle_count, 2);
         assert_eq!(out.line_count, 2);
-        let circles: Vec<[f32; 3]> = out.circles[..2]
+        let circles: Vec<[f64; 3]> = out.circles[..2]
             .iter()
             .map(|circle| [circle.x, circle.y, circle.radius])
             .collect();
         assert_eq!(circles, vec![[-2.0, 0.0, 1.0], [2.0, 0.0, 1.0]]);
         // The sides sit one radius either side of the axis, which is what makes them tangent to both
         // discs.
-        let mut sides: Vec<f32> = out.lines[..2].iter().map(|line| line.y0).collect();
+        let mut sides: Vec<f64> = out.lines[..2].iter().map(|line| line.y0).collect();
         sides.sort_by(|a, b| a.partial_cmp(b).unwrap());
         assert_eq!(sides, vec![-1.0, 1.0]);
     }

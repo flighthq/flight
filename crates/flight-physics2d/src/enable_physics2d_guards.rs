@@ -19,7 +19,6 @@ use crate::step::{
 use crate::types::*;
 
 /// A caller-supplied millisecond clock for the guard log entries.
-// flight-lint: allow(f64) D1: millisecond timestamps from the caller's clock
 pub type Physics2DGuardClock = Arc<dyn Fn() -> f64 + Send + Sync>;
 
 /// Whether the guards are installed (TS `arePhysics2DGuardsEnabled`).
@@ -123,7 +122,6 @@ fn strings(values: &[String]) -> LogValue {
     );
 }
 
-// flight-lint: allow(f64) D1: millisecond timestamp sampled from the caller's clock
 fn warn(
     log_state: &LogStateRef,
     now_ms: f64,
@@ -147,7 +145,6 @@ fn warn(
     );
 }
 
-// flight-lint: allow(f64) D1: millisecond timestamp sampled from the caller's clock
 fn warn_on_undetectable_physics2d_colliders(
     log_state: &LogStateRef,
     now_ms: f64,
@@ -179,7 +176,6 @@ fn warn_on_undetectable_physics2d_colliders(
     );
 }
 
-// flight-lint: allow(f64) D1: millisecond timestamp sampled from the caller's clock
 fn warn_on_unresolved_physics2d_joints(
     log_state: &LogStateRef,
     now_ms: f64,
@@ -234,7 +230,6 @@ fn warn_on_unresolved_physics2d_joints(
     );
 }
 
-// flight-lint: allow(f64) D1: millisecond timestamp from the caller's clock, and the step's f64 time input (TS f64 sleep-threshold timing)
 fn warn_on_unsteppable_physics2d_world(
     log_state: &LogStateRef,
     now_ms: f64,

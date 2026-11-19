@@ -10,12 +10,12 @@ use crate::collider_transform::{
 use crate::material::{js_max, js_min};
 use crate::types::*;
 
-const MAX_SIMULATED_EXTENT: f32 = 1e7;
+const MAX_SIMULATED_EXTENT: f64 = 1e7;
 
-// One f32 ulp-scale pad (TS `Number.EPSILON * 4`, the same "a few ulps" in the bounds' own width),
-// so a closed upper bound is never lost to rounding.
-fn padded_upper_bound(value: f32) -> f32 {
-    let padded = value + js_max(1.0, value.abs()) * f32::EPSILON * 4.0;
+// Four f64 ulps of padding (TS `Number.EPSILON * 4`), so a closed upper bound is never lost to
+// rounding.
+fn padded_upper_bound(value: f64) -> f64 {
+    let padded = value + js_max(1.0, value.abs()) * f64::EPSILON * 4.0;
     return if padded.is_finite() { padded } else { value };
 }
 
@@ -25,15 +25,15 @@ pub fn synchronize_physics2d_broadphase(world: &Physics2DWorld) {
     synchronize_physics2d_broadphase_bounds(world, 0.0);
 }
 
-fn synchronize_physics2d_broadphase_bounds(world: &Physics2DWorld, dt: f32) {
+fn synchronize_physics2d_broadphase_bounds(world: &Physics2DWorld, dt: f64) {
     let mut bounds = SpatialAabb2D::default();
     let mut body_bounds = SpatialAabb2D::default();
     for body in &world.bodies {
         let body = body.read().unwrap();
-        let mut min_x = f32::INFINITY;
-        let mut min_y = f32::INFINITY;
-        let mut max_x = f32::NEG_INFINITY;
-        let mut max_y = f32::NEG_INFINITY;
+        let mut min_x = f64::INFINITY;
+        let mut min_y = f64::INFINITY;
+        let mut max_x = f64::NEG_INFINITY;
+        let mut max_y = f64::NEG_INFINITY;
         let mut rotation_radius_squared = 0.0;
         for collider in &body.colliders {
             let mut collider = collider.write().unwrap();
@@ -116,6 +116,6 @@ fn synchronize_physics2d_broadphase_bounds(world: &Physics2DWorld, dt: f32) {
 
 /// As `synchronize_physics2d_broadphase`, with each awake moving body's bounds swept over `dt`
 /// (TS `synchronizePhysics2DSweptBroadphase`).
-pub fn synchronize_physics2d_swept_broadphase(world: &Physics2DWorld, dt: f32) {
+pub fn synchronize_physics2d_swept_broadphase(world: &Physics2DWorld, dt: f64) {
     synchronize_physics2d_broadphase_bounds(world, dt);
 }

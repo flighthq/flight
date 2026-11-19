@@ -35,7 +35,7 @@ const POINT: Physics2DContactPoint = Physics2DContactPoint {
     y: 0.0,
 };
 
-fn aabb(min_x: f32, min_y: f32, max_x: f32, max_y: f32) -> CollisionShape2D {
+fn aabb(min_x: f64, min_y: f64, max_x: f64, max_y: f64) -> CollisionShape2D {
     return CollisionShape2D::Aabb(CollisionAabb2D {
         min_x,
         min_y,
@@ -49,7 +49,7 @@ fn add(world: &mut Physics2DWorld, body: Ref<RigidBody2D>) -> Ref<RigidBody2D> {
     return body;
 }
 
-fn body(body_type: Physics2DBodyType, x: f32, y: f32) -> Ref<RigidBody2D> {
+fn body(body_type: Physics2DBodyType, x: f64, y: f64) -> Ref<RigidBody2D> {
     let made = rigid_body2d(body_type, x, y, None);
     write(&made).colliders.push(physics2d_collider(
         &aabb(-0.5, -0.5, 0.5, 0.5),

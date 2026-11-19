@@ -7,7 +7,7 @@ use std::sync::Arc;
 use flight_entity::Ref;
 use flight_physics2d::*;
 
-fn add_body(world: &mut Physics2DWorld, x: f32) -> i32 {
+fn add_body(world: &mut Physics2DWorld, x: f64) -> i32 {
     let body = rigid_body2d(Physics2DBodyType::Dynamic, x, 0.0, None);
     add_physics2d_body(world, &body);
     return body.read().unwrap().index;

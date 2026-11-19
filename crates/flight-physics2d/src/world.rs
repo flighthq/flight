@@ -268,7 +268,7 @@ pub fn add_physics2d_collider(
 
 /// Accumulates a world-space force at the centre of mass for the next step (TS
 /// `applyPhysics2DForce`). `false` for a non-dynamic body or a non-finite force.
-pub fn apply_physics2d_force(body: &mut RigidBody2D, force_x: f32, force_y: f32) -> bool {
+pub fn apply_physics2d_force(body: &mut RigidBody2D, force_x: f64, force_y: f64) -> bool {
     assert_physics2d_body_not_stepping(body);
     if body.body_type != Physics2DBodyType::Dynamic || !force_x.is_finite() || !force_y.is_finite()
     {
@@ -286,10 +286,10 @@ pub fn apply_physics2d_force(body: &mut RigidBody2D, force_x: f32, force_y: f32)
 /// centre of mass (TS `applyPhysics2DForceAtPoint`).
 pub fn apply_physics2d_force_at_point(
     body: &mut RigidBody2D,
-    force_x: f32,
-    force_y: f32,
-    point_x: f32,
-    point_y: f32,
+    force_x: f64,
+    force_y: f64,
+    point_x: f64,
+    point_y: f64,
 ) -> bool {
     assert_physics2d_body_not_stepping(body);
     if body.body_type != Physics2DBodyType::Dynamic
@@ -315,8 +315,8 @@ pub fn apply_physics2d_force_at_point(
 /// `applyPhysics2DLinearImpulse`).
 pub fn apply_physics2d_linear_impulse(
     body: &mut RigidBody2D,
-    impulse_x: f32,
-    impulse_y: f32,
+    impulse_x: f64,
+    impulse_y: f64,
 ) -> bool {
     assert_physics2d_body_not_stepping(body);
     if body.body_type != Physics2DBodyType::Dynamic
@@ -337,10 +337,10 @@ pub fn apply_physics2d_linear_impulse(
 /// `applyPhysics2DLinearImpulseAtPoint`).
 pub fn apply_physics2d_linear_impulse_at_point(
     body: &mut RigidBody2D,
-    impulse_x: f32,
-    impulse_y: f32,
-    point_x: f32,
-    point_y: f32,
+    impulse_x: f64,
+    impulse_y: f64,
+    point_x: f64,
+    point_y: f64,
 ) -> bool {
     assert_physics2d_body_not_stepping(body);
     if body.body_type != Physics2DBodyType::Dynamic
@@ -363,7 +363,7 @@ pub fn apply_physics2d_linear_impulse_at_point(
 }
 
 /// Accumulates torque for the next step (TS `applyPhysics2DTorque`).
-pub fn apply_physics2d_torque(body: &mut RigidBody2D, torque: f32) -> bool {
+pub fn apply_physics2d_torque(body: &mut RigidBody2D, torque: f64) -> bool {
     assert_physics2d_body_not_stepping(body);
     if body.body_type != Physics2DBodyType::Dynamic || body.fixed_rotation || !torque.is_finite() {
         return false;
@@ -377,11 +377,11 @@ pub fn apply_physics2d_torque(body: &mut RigidBody2D, torque: f32) -> bool {
 
 fn cross_physics2d_body_point_vector(
     body: &RigidBody2D,
-    point_x: f32,
-    point_y: f32,
-    vector_x: f32,
-    vector_y: f32,
-) -> f32 {
+    point_x: f64,
+    point_y: f64,
+    vector_x: f64,
+    vector_y: f64,
+) -> f64 {
     let cos = body.angle.cos();
     let sin = body.angle.sin();
     let center_x = body.x + body.center_x * cos - body.center_y * sin;
@@ -713,9 +713,9 @@ pub fn set_physics2d_body_sleep_enabled(
 pub fn set_physics2d_body_transform(
     world: &mut Physics2DWorld,
     body: &Ref<RigidBody2D>,
-    x: f32,
-    y: f32,
-    angle: f32,
+    x: f64,
+    y: f64,
+    angle: f64,
 ) -> bool {
     assert_physics2d_world_not_stepping(world);
     if !is_body_in_world(world, body) || !x.is_finite() || !y.is_finite() || !angle.is_finite() {

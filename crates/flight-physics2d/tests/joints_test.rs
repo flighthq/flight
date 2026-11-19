@@ -55,8 +55,8 @@ fn base(body_a: i32, body_b: i32) -> Physics2DJointOptions {
 fn body_box(
     world: &mut Physics2DWorld,
     body_type: Physics2DBodyType,
-    x: f32,
-    y: f32,
+    x: f64,
+    y: f64,
 ) -> Ref<RigidBody2D> {
     let body = rigid_body2d(body_type, x, y, None);
     let shape = CollisionShape2D::Aabb(CollisionAabb2D {
@@ -75,8 +75,8 @@ fn body_box(
 fn body_circle(
     world: &mut Physics2DWorld,
     body_type: Physics2DBodyType,
-    x: f32,
-    y: f32,
+    x: f64,
+    y: f64,
     local_x: f64,
     radius: f64,
     material: &Physics2DMaterial,
@@ -95,16 +95,16 @@ fn body_circle(
 }
 
 // toBeCloseTo(expected, digits): |actual - expected| < 10^-digits / 2.
-fn close(actual: f32, expected: f32, digits: i32) -> bool {
-    return (actual - expected).abs() < 10f32.powi(-digits) / 2.0;
+fn close(actual: f64, expected: f64, digits: i32) -> bool {
+    return (actual - expected).abs() < 10f64.powi(-digits) / 2.0;
 }
 
 fn distance_joint(
     body_a: i32,
     body_b: i32,
-    length: f32,
-    frequency_hz: f32,
-    damping_ratio: f32,
+    length: f64,
+    frequency_hz: f64,
+    damping_ratio: f64,
 ) -> Ref<Physics2DDistanceJoint> {
     return physics2d_distance_joint(&Physics2DDistanceJointOptions {
         base: base(body_a, body_b),
@@ -135,10 +135,10 @@ fn index_of(body: &Ref<RigidBody2D>) -> i32 {
 fn mouse_joint(
     body_a: i32,
     body_b: i32,
-    target_x: f32,
-    target_y: f32,
-    max_force: f32,
-    frequency_hz: f32,
+    target_x: f64,
+    target_y: f64,
+    max_force: f64,
+    frequency_hz: f64,
 ) -> Ref<Physics2DMouseJoint> {
     let joint = physics2d_mouse_joint(&Physics2DMouseJointOptions {
         body: body_b,
@@ -216,7 +216,7 @@ fn step(world: &mut Physics2DWorld, dt: f64) {
     step_physics2d(world, dt, &REGISTRY, None);
 }
 
-fn weld_joint(body_a: i32, body_b: i32, reference_angle: f32) -> Ref<Physics2DWeldJoint> {
+fn weld_joint(body_a: i32, body_b: i32, reference_angle: f64) -> Ref<Physics2DWeldJoint> {
     return physics2d_weld_joint(&Physics2DWeldJointOptions {
         base: base(body_a, body_b),
         reference_angle: Some(reference_angle),
@@ -237,7 +237,7 @@ fn wheel_options(body_a: i32, body_b: i32) -> Physics2DWheelJointOptions {
     };
 }
 
-fn world(gravity_x: f32, gravity_y: f32) -> Physics2DWorld {
+fn world(gravity_x: f64, gravity_y: f64) -> Physics2DWorld {
     return physics2d_world(Some(gravity_x), Some(gravity_y), None);
 }
 
@@ -287,7 +287,7 @@ mod canonical_end_ordering_and_direction_bearing_joint_state {
     fn holds_the_same_physical_pose_whichever_order_the_weld_ends_were_supplied_in() {
         // The constraint is a fact about the pair, so which end the caller named first must not change
         // where the bodies end up.
-        fn pose_for(supply_reversed: bool) -> f32 {
+        fn pose_for(supply_reversed: bool) -> f64 {
             let mut world = world(0.0, 0.0);
             register(
                 &mut world,
@@ -647,7 +647,7 @@ mod physics2d_distance_joint_solver {
 
     // A hanging spring whose only dynamic body's mass is set by `density`; everything else is identical
     // between instances, so any difference in how it moves is a difference the mass caused.
-    fn spring_world(density: f32) -> (Physics2DWorld, Ref<RigidBody2D>) {
+    fn spring_world(density: f64) -> (Physics2DWorld, Ref<RigidBody2D>) {
         let material = Physics2DMaterial {
             density,
             friction: 0.0,
@@ -910,7 +910,7 @@ mod physics2d_gear_joint_solver {
 mod physics2d_mouse_joint_solver {
     use super::*;
 
-    fn keeps_a_low_frequency_response_directed_toward_the_target_at(frequency_hz: f32) {
+    fn keeps_a_low_frequency_response_directed_toward_the_target_at(frequency_hz: f64) {
         let mut world = world(0.0, 0.0);
         register(
             &mut world,
@@ -1115,14 +1115,12 @@ mod physics2d_mouse_joint_solver {
             &mouse_joint(index, index, 1000.0, 0.0, max_force, 5.0),
         );
 
-        let per_step = (max_force * dt as f32) / (1.0 / dragged.read().unwrap().inverse_mass);
+        let per_step = (max_force * dt) / (1.0 / dragged.read().unwrap().inverse_mass);
         let mut previous = dragged.read().unwrap().velocity_x;
         for _ in 0..20 {
             step(&mut world, dt);
             let velocity_x = dragged.read().unwrap().velocity_x;
-            // f32: the delta of two accumulated f32 velocities measured 0.010000005 against a bound of 0.01
-            // (5e-7 relative); TS's 1e-7 slack is an f64 margin, so the slack is 1e-6 here.
-            assert!((velocity_x - previous).abs() <= per_step * 1.000001);
+            assert!((velocity_x - previous).abs() <= per_step * 1.0000001);
             previous = velocity_x;
         }
         assert!(dragged.read().unwrap().x.is_finite());
@@ -1199,10 +1197,10 @@ mod physics2d_prismatic_joint_solver {
 
     // A vertical rail with a stop below it, so a slider falls onto the stop and how far it sinks past is
     // the compliance.
-    const RAIL_LOWER: f32 = -1.0;
+    const RAIL_LOWER: f64 = -1.0;
     const RAIL_DT: f64 = 1.0 / 480.0;
 
-    fn rail_world(density: f32) -> (Physics2DWorld, Ref<RigidBody2D>, Ref<RigidBody2D>) {
+    fn rail_world(density: f64) -> (Physics2DWorld, Ref<RigidBody2D>, Ref<RigidBody2D>) {
         let material = Physics2DMaterial {
             density,
             friction: 0.0,
@@ -1222,10 +1220,10 @@ mod physics2d_prismatic_joint_solver {
     fn rail_joint(
         rail: &Ref<RigidBody2D>,
         slider: &Ref<RigidBody2D>,
-        lower: f32,
-        upper: f32,
+        lower: f64,
+        upper: f64,
         enable_limit_spring: bool,
-        frequency_hz: f32,
+        frequency_hz: f64,
     ) -> Ref<Physics2DPrismaticJoint> {
         return physics2d_prismatic_joint(&Physics2DPrismaticJointOptions {
             enable_limit: Some(true),
@@ -1242,10 +1240,10 @@ mod physics2d_prismatic_joint_solver {
 
     // Returns (sink, predicted sink, slider).
     fn limited_slider(
-        density: f32,
-        frequency_hz: f32,
+        density: f64,
+        frequency_hz: f64,
         enable_limit_spring: bool,
-    ) -> (f32, f32, Ref<RigidBody2D>) {
+    ) -> (f64, f64, Ref<RigidBody2D>) {
         let (mut world, rail, slider) = rail_world(density);
         add_joint(
             &mut world,
@@ -1262,7 +1260,7 @@ mod physics2d_prismatic_joint_solver {
             step(&mut world, RAIL_DT);
         }
         // Weight over a spring rate of `m * (2*pi*f)^2`, so mass cancels and the sink is `g / omega^2`.
-        let predicted_sink = 10.0 / (2.0 * std::f32::consts::PI * frequency_hz).powi(2);
+        let predicted_sink = 10.0 / (2.0 * std::f64::consts::PI * frequency_hz).powi(2);
         let sink = RAIL_LOWER - slider.read().unwrap().y;
         return (sink, predicted_sink, slider);
     }
@@ -1413,7 +1411,7 @@ mod physics2d_prismatic_joint_solver {
         step(&mut world, dt);
 
         let slider = slider.read().unwrap();
-        let maximum_delta = max_motor_force * dt as f32 * slider.inverse_mass;
+        let maximum_delta = max_motor_force * dt * slider.inverse_mass;
         assert!(slider.velocity_x > 0.0);
         assert!(slider.velocity_x <= maximum_delta * 1.0000001);
     }
@@ -1623,15 +1621,15 @@ mod physics2d_revolute_joint_solver {
 
     // A hinged arm whose mass hangs 1.5 to the side, limited below at LIMIT_ANGLE, so gravity drives it
     // into the lower stop and how far past it settles is the compliance under test.
-    const LIMIT_ANGLE: f32 = -0.05;
+    const LIMIT_ANGLE: f64 = -0.05;
     const LIMIT_DT: f64 = 1.0 / 480.0;
 
     // Returns (sag, predicted sag, arm).
     fn limited_arm(
-        density: f32,
-        frequency_hz: f32,
+        density: f64,
+        frequency_hz: f64,
         enable_limit_spring: bool,
-    ) -> (f32, f32, Ref<RigidBody2D>) {
+    ) -> (f64, f64, Ref<RigidBody2D>) {
         let material = Physics2DMaterial {
             density,
             friction: 0.0,
@@ -1664,7 +1662,7 @@ mod physics2d_revolute_joint_solver {
             (arm.mass, arm.inertia, arm.angle)
         };
         let predicted_sag =
-            (mass * 10.0 * 1.5) / (inertia * (2.0 * std::f32::consts::PI * frequency_hz).powi(2));
+            (mass * 10.0 * 1.5) / (inertia * (2.0 * std::f64::consts::PI * frequency_hz).powi(2));
         return (LIMIT_ANGLE - angle, predicted_sag, arm);
     }
 
@@ -1774,8 +1772,8 @@ mod physics2d_revolute_joint_solver_motor_and_limits {
         anchor: &Ref<RigidBody2D>,
         arm: &Ref<RigidBody2D>,
         enable_motor: bool,
-        max_motor_torque: f32,
-        motor_speed: f32,
+        max_motor_torque: f64,
+        motor_speed: f64,
     ) -> Ref<Physics2DRevoluteJoint> {
         return physics2d_revolute_joint(&Physics2DRevoluteJointOptions {
             enable_motor: Some(enable_motor),
@@ -1788,10 +1786,10 @@ mod physics2d_revolute_joint_solver_motor_and_limits {
     fn limited(
         anchor: &Ref<RigidBody2D>,
         arm: &Ref<RigidBody2D>,
-        lower_angle: f32,
-        upper_angle: f32,
-        max_motor_torque: f32,
-        motor_speed: f32,
+        lower_angle: f64,
+        upper_angle: f64,
+        max_motor_torque: f64,
+        motor_speed: f64,
     ) -> Ref<Physics2DRevoluteJoint> {
         return physics2d_revolute_joint(&Physics2DRevoluteJointOptions {
             enable_limit: Some(true),
@@ -1849,10 +1847,8 @@ mod physics2d_revolute_joint_solver_motor_and_limits {
         for _ in 0..10 {
             step(&mut world, dt);
             let arm = arm.read().unwrap();
-            let per_step = max_motor_torque * dt as f32 * arm.inverse_inertia;
-            // f32: the delta of two accumulated f32 velocities measured 0.0010000002 against a bound of
-            // 0.0009999999 (3e-7 relative); TS's 1e-7 slack is an f64 margin, so the slack is 1e-6 here.
-            assert!((arm.angular_velocity - previous).abs() <= per_step * 1.000001);
+            let per_step = max_motor_torque * dt * arm.inverse_inertia;
+            assert!((arm.angular_velocity - previous).abs() <= per_step * 1.0000001);
             previous = arm.angular_velocity;
         }
         assert!(arm.read().unwrap().angular_velocity < 100.0);
@@ -2225,7 +2221,7 @@ mod physics2d_wheel_joint_solver {
         step(&mut world, dt);
 
         let wheel = wheel.read().unwrap();
-        let maximum_delta = max_motor_torque * dt as f32 * wheel.inverse_inertia;
+        let maximum_delta = max_motor_torque * dt * wheel.inverse_inertia;
         assert!(wheel.angular_velocity > 0.0);
         assert!(wheel.angular_velocity <= maximum_delta * 1.0000001);
     }

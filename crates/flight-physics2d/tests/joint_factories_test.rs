@@ -20,8 +20,8 @@ mod create_physics2d_distance_joint {
         assert_eq!(joint.local_anchor_bx, 0.0);
         assert_eq!(joint.local_anchor_by, 0.0);
         assert!(!joint.collide_connected);
-        assert_eq!(joint.break_force, f32::INFINITY);
-        assert_eq!(joint.break_torque, f32::INFINITY);
+        assert_eq!(joint.break_force, f64::INFINITY);
+        assert_eq!(joint.break_torque, f64::INFINITY);
         assert_eq!(joint.impulse0, 0.0);
         assert_eq!(joint.impulse1, 0.0);
         assert_eq!(joint.impulse2, 0.0);

@@ -55,11 +55,11 @@ pub fn create_physics2d_collider_world_shape(local: &CollisionShape2D) -> Collis
 // flight-lint: allow(conform-params) D12: world shapes are plain collision shapes, so `kind` is the enum variant
 pub fn initialize_collision_capsule2d(
     out: &mut CollisionCapsule2D,
-    radius: f32,
-    x0: f32,
-    x1: f32,
-    y0: f32,
-    y1: f32,
+    radius: f64,
+    x0: f64,
+    x1: f64,
+    y0: f64,
+    y1: f64,
 ) {
     out.radius = radius;
     out.x0 = x0;
@@ -70,7 +70,6 @@ pub fn initialize_collision_capsule2d(
 
 /// The construction initializer of a circle world shape (TS `initializeCollisionCircle2D`).
 // flight-lint: allow(conform-params) D12: world shapes are plain collision shapes, so `kind` is the enum variant
-// flight-lint: allow(f64) D1: the canonical CollisionCircle2D is f64 (measured in flight-collision)
 pub fn initialize_collision_circle2d(out: &mut CollisionCircle2D, radius: f64, x: f64, y: f64) {
     out.radius = radius;
     out.x = x;
@@ -81,11 +80,11 @@ pub fn initialize_collision_circle2d(out: &mut CollisionCircle2D, radius: f64, x
 // flight-lint: allow(conform-params) D12: world shapes are plain collision shapes, so `kind` is the enum variant
 pub fn initialize_collision_obb2d(
     out: &mut CollisionObb2D,
-    half_h: f32,
-    half_w: f32,
-    rotation: f32,
-    x: f32,
-    y: f32,
+    half_h: f64,
+    half_w: f64,
+    rotation: f64,
+    x: f64,
+    y: f64,
 ) {
     out.half_h = half_h;
     out.half_w = half_w;
@@ -96,14 +95,13 @@ pub fn initialize_collision_obb2d(
 
 /// The construction initializer of a point world shape (TS `initializeCollisionPoint2D`).
 // flight-lint: allow(conform-params) D12: world shapes are plain collision shapes, so `kind` is the enum variant
-pub fn initialize_collision_point2d(out: &mut CollisionPoint2D, x: f32, y: f32) {
+pub fn initialize_collision_point2d(out: &mut CollisionPoint2D, x: f64, y: f64) {
     out.x = x;
     out.y = y;
 }
 
 /// The construction initializer of a polygon world shape (TS `initializeCollisionPolygon2D`).
 // flight-lint: allow(conform-params) D12: world shapes are plain collision shapes, so `kind` is the enum variant
-// flight-lint: allow(f64) D1: the canonical CollisionPolygon2D points are f64 (measured in flight-collision)
 pub fn initialize_collision_polygon2d(out: &mut CollisionPolygon2D, points: Vec<f64>) {
     out.points = points;
 }
@@ -112,10 +110,10 @@ pub fn initialize_collision_polygon2d(out: &mut CollisionPolygon2D, points: Vec<
 // flight-lint: allow(conform-params) D12: world shapes are plain collision shapes, so `kind` is the enum variant
 pub fn initialize_collision_segment2d(
     out: &mut CollisionSegment2D,
-    x0: f32,
-    x1: f32,
-    y0: f32,
-    y1: f32,
+    x0: f64,
+    x1: f64,
+    y0: f64,
+    y1: f64,
 ) {
     out.x0 = x0;
     out.x1 = x1;
@@ -125,16 +123,15 @@ pub fn initialize_collision_segment2d(
 
 /// Rewrites the collider's world shape from its local shape and the body's pose (TS
 /// `updatePhysics2DColliderWorldShape`). A world shape of the wrong kind is left untouched.
-// flight-lint: allow(f64) D1: circle and polygon world coordinates are the canonical f64 collision fields
 pub fn update_physics2d_collider_world_shape(collider: &mut Physics2DCollider, body: &RigidBody2D) {
     let cos = body.angle.cos();
     let sin = body.angle.sin();
     let local = &collider.local;
     match (local, &mut collider.world) {
         (CollisionShape2D::Circle(local), CollisionShape2D::Circle(world)) => {
-            let (cos, sin) = ((body.angle as f64).cos(), (body.angle as f64).sin());
-            world.x = body.x as f64 + local.x * cos - local.y * sin;
-            world.y = body.y as f64 + local.x * sin + local.y * cos;
+            let (cos, sin) = (body.angle.cos(), body.angle.sin());
+            world.x = body.x + local.x * cos - local.y * sin;
+            world.y = body.y + local.x * sin + local.y * cos;
             world.radius = local.radius;
         }
         (CollisionShape2D::Aabb(local), CollisionShape2D::Obb(world)) => {
@@ -154,8 +151,8 @@ pub fn update_physics2d_collider_world_shape(collider: &mut Physics2DCollider, b
             world.rotation = body.angle + local.rotation;
         }
         (CollisionShape2D::Polygon(local), CollisionShape2D::Polygon(world)) => {
-            let (cos, sin) = ((body.angle as f64).cos(), (body.angle as f64).sin());
-            let (body_x, body_y) = (body.x as f64, body.y as f64);
+            let (cos, sin) = (body.angle.cos(), body.angle.sin());
+            let (body_x, body_y) = (body.x, body.y);
             let mut i = 0;
             while i + 1 < local.points.len() {
                 let x = local.points[i];
@@ -191,14 +188,13 @@ pub fn update_physics2d_collider_world_shape(collider: &mut Physics2DCollider, b
 
 /// Writes the world shape's axis-aligned bounds (TS `writePhysics2DColliderBounds`).
 // flight-lint: allow(conform-params) D9b: out-first
-// flight-lint: allow(f64) D1: circle and polygon world coordinates are the canonical f64 collision fields
 pub fn write_physics2d_collider_bounds(out: &mut SpatialAabb2D, collider: &Physics2DCollider) {
     match &collider.world {
         CollisionShape2D::Circle(shape) => {
-            out.min_x = (shape.x - shape.radius) as f32;
-            out.min_y = (shape.y - shape.radius) as f32;
-            out.max_x = (shape.x + shape.radius) as f32;
-            out.max_y = (shape.y + shape.radius) as f32;
+            out.min_x = shape.x - shape.radius;
+            out.min_y = shape.y - shape.radius;
+            out.max_x = shape.x + shape.radius;
+            out.max_y = shape.y + shape.radius;
         }
         CollisionShape2D::Aabb(shape) => {
             out.min_x = shape.min_x;
@@ -245,10 +241,10 @@ pub fn write_physics2d_collider_bounds(out: &mut SpatialAabb2D, collider: &Physi
                 }
                 i += 2;
             }
-            out.min_x = min_x as f32;
-            out.min_y = min_y as f32;
-            out.max_x = max_x as f32;
-            out.max_y = max_y as f32;
+            out.min_x = min_x;
+            out.min_y = min_y;
+            out.max_x = max_x;
+            out.max_y = max_y;
         }
         CollisionShape2D::Capsule(shape) => {
             out.min_x = js_min(shape.x0, shape.x1) - shape.radius;

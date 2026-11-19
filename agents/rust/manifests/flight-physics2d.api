@@ -1,12 +1,12 @@
 src/broadphase.rs: pub fn synchronize_physics2d_broadphase(world: &Physics2DWorld)
-src/broadphase.rs: pub fn synchronize_physics2d_swept_broadphase(world: &Physics2DWorld, dt: f32)
+src/broadphase.rs: pub fn synchronize_physics2d_swept_broadphase(world: &Physics2DWorld, dt: f64)
 src/collider_transform.rs: pub fn create_physics2d_collider_world_shape(local: &CollisionShape2D) -> CollisionShape2D
-src/collider_transform.rs: pub fn initialize_collision_capsule2d(out: &mut CollisionCapsule2D, radius: f32, x0: f32, x1: f32, y0: f32, y1: f32,)
+src/collider_transform.rs: pub fn initialize_collision_capsule2d(out: &mut CollisionCapsule2D, radius: f64, x0: f64, x1: f64, y0: f64, y1: f64,)
 src/collider_transform.rs: pub fn initialize_collision_circle2d(out: &mut CollisionCircle2D, radius: f64, x: f64, y: f64)
-src/collider_transform.rs: pub fn initialize_collision_obb2d(out: &mut CollisionObb2D, half_h: f32, half_w: f32, rotation: f32, x: f32, y: f32,)
-src/collider_transform.rs: pub fn initialize_collision_point2d(out: &mut CollisionPoint2D, x: f32, y: f32)
+src/collider_transform.rs: pub fn initialize_collision_obb2d(out: &mut CollisionObb2D, half_h: f64, half_w: f64, rotation: f64, x: f64, y: f64,)
+src/collider_transform.rs: pub fn initialize_collision_point2d(out: &mut CollisionPoint2D, x: f64, y: f64)
 src/collider_transform.rs: pub fn initialize_collision_polygon2d(out: &mut CollisionPolygon2D, points: Vec<f64>)
-src/collider_transform.rs: pub fn initialize_collision_segment2d(out: &mut CollisionSegment2D, x0: f32, x1: f32, y0: f32, y1: f32,)
+src/collider_transform.rs: pub fn initialize_collision_segment2d(out: &mut CollisionSegment2D, x0: f64, x1: f64, y0: f64, y1: f64,)
 src/collider_transform.rs: pub fn update_physics2d_collider_world_shape(collider: &mut Physics2DCollider, body: &RigidBody2D)
 src/collider_transform.rs: pub fn write_physics2d_collider_bounds(out: &mut SpatialAabb2D, collider: &Physics2DCollider)
 src/contract.rs: pub use super::broadphase::*;
@@ -71,13 +71,13 @@ src/joint_factories.rs: pub fn initialize_physics2d_weld_joint(out: &mut Physics
 src/joint_factories.rs: pub fn initialize_physics2d_wheel_joint(out: &mut Physics2DWheelJoint)
 src/joint_reactions.rs: pub fn create_physics2d_joint_reaction() -> Physics2DJointReaction
 src/joint_reactions.rs: pub fn initialize_physics2d_joint_reaction(out: &mut Physics2DJointReaction)
-src/joint_reactions.rs: pub fn write_physics2d_joint_reaction(out: &mut Physics2DJointReaction, world: &Physics2DWorld, joint: &dyn Physics2DJoint, dt: f32,) -> bool
+src/joint_reactions.rs: pub fn write_physics2d_joint_reaction(out: &mut Physics2DJointReaction, world: &Physics2DWorld, joint: &dyn Physics2DJoint, dt: f64,) -> bool
 src/joint_registry.rs: pub fn add_physics2d_joint(world: &mut Physics2DWorld, joint: &Physics2DJointRef)
 src/joint_registry.rs: pub fn get_physics2d_joint_solver(world: &Physics2DWorld, kind: &str,) -> Option<Physics2DJointSolverRef>
 src/joint_registry.rs: pub fn invalidate_physics2d_joint(world: &mut Physics2DWorld, joint: &Physics2DJointRef) -> bool
 src/joint_registry.rs: pub fn register_physics2d_joint_solver(world: &mut Physics2DWorld, kind: Kind, solver: Physics2DJointSolverRef,)
 src/joint_registry.rs: pub fn remove_physics2d_joint(world: &mut Physics2DWorld, joint: &Physics2DJointRef) -> bool
-src/joint_rows.rs: pub fn write_physics2d_soft_row_parameters(out: &mut [f32], mass: f32, frequency_hz: f32, damping_ratio: f32, dt: f32, hard_bias_factor: f32,)
+src/joint_rows.rs: pub fn write_physics2d_soft_row_parameters(out: &mut [f64], mass: f64, frequency_hz: f64, damping_ratio: f64, dt: f64, hard_bias_factor: f64,)
 src/joints.rs: pub const PHYSICS2D_DISTANCE_JOINT_KIND: &str
 src/joints.rs: pub const PHYSICS2D_GEAR_JOINT_KIND: &str
 src/joints.rs: pub const PHYSICS2D_MOUSE_JOINT_KIND: &str
@@ -283,8 +283,8 @@ src/lib.rs: pub use contract::write_physics2d_joint_reaction;
 src/lib.rs: pub use contract::write_physics2d_soft_row_parameters;
 src/mass_properties.rs: pub fn compute_physics2d_collider_mass_data(out: &mut Physics2DMassData, collider: &Physics2DCollider,)
 src/mass_properties.rs: pub fn update_rigid_body2d_mass_data(body: &mut RigidBody2D)
-src/material.rs: pub fn mix_physics2d_friction(first: f32, second: f32) -> f32
-src/material.rs: pub fn mix_physics2d_restitution(first: f32, second: f32) -> f32
+src/material.rs: pub fn mix_physics2d_friction(first: f64, second: f64) -> f64
+src/material.rs: pub fn mix_physics2d_restitution(first: f64, second: f64) -> f64
 src/node_sync.rs: pub fn sync_physics2d_body_to_node2d(body: &RigidBody2D, node: &Node2DRef)
 src/ownership.rs: pub fn assert_physics2d_body_not_stepping(body: &RigidBody2D)
 src/ownership.rs: pub fn assert_physics2d_world_not_stepping(world: &Physics2DWorld)
@@ -303,8 +303,8 @@ src/physics2d_strings.rs: pub fn parse_physics2d_joint_resolution_explanation_st
 src/physics2d_strings.rs: pub fn parse_physics2d_joint_resolution_status(value: &str,) -> Option<Physics2DJointResolutionStatus>
 src/physics2d_strings.rs: pub fn parse_physics2d_step_status(value: &str) -> Option<Physics2DStepStatus>
 src/register_built_in_physics2d_joint_solvers.rs: pub fn register_built_in_physics2d_joint_solvers(world: &mut Physics2DWorld)
-src/solver.rs: pub fn apply_physics2d_impulse(body_a: &mut RigidBody2D, body_b: &mut RigidBody2D, r_ax: f32, r_ay: f32, r_bx: f32, r_by: f32, impulse_x: f32, impulse_y: f32,)
-src/solver.rs: pub fn relative_normal_velocity(body_a: &RigidBody2D, body_b: &RigidBody2D, point: &Physics2DContactPoint, normal_x: f32, normal_y: f32,) -> f32
+src/solver.rs: pub fn apply_physics2d_impulse(body_a: &mut RigidBody2D, body_b: &mut RigidBody2D, r_ax: f64, r_ay: f64, r_bx: f64, r_by: f64, impulse_x: f64, impulse_y: f64,)
+src/solver.rs: pub fn relative_normal_velocity(body_a: &RigidBody2D, body_b: &RigidBody2D, point: &Physics2DContactPoint, normal_x: f64, normal_y: f64,) -> f64
 src/solver.rs: pub fn solve_physics2d_contact_indices_once(world: &Physics2DWorld, indices: &[usize], start: usize, count: usize,)
 src/solver.rs: pub fn solve_physics2d_contacts(world: &Physics2DWorld)
 src/solver.rs: pub fn solve_physics2d_contacts_once(world: &Physics2DWorld)
@@ -332,24 +332,24 @@ src/sugar.rs: impl Physics2DGearJoint :: fn new() -> Ref<Physics2DGearJoint>
 src/sugar.rs: impl Physics2DGuardState :: fn are_enabled(&self) -> bool
 src/sugar.rs: impl Physics2DGuardState :: fn disable(&mut self)
 src/sugar.rs: impl Physics2DGuardState :: fn enable(&mut self, log_state: LogStateRef, clock: Physics2DGuardClock)
-src/sugar.rs: impl Physics2DJointFields :: fn visit_base_number_fields(&self, visit: &mut dyn FnMut(f32))
+src/sugar.rs: impl Physics2DJointFields :: fn visit_base_number_fields(&self, visit: &mut dyn FnMut(f64))
 src/sugar.rs: impl Physics2DJointReaction :: fn new() -> Physics2DJointReaction
-src/sugar.rs: impl Physics2DJointReaction :: fn write(&mut self, world: &Physics2DWorld, joint: &dyn Physics2DJoint, dt: f32) -> bool
+src/sugar.rs: impl Physics2DJointReaction :: fn write(&mut self, world: &Physics2DWorld, joint: &dyn Physics2DJoint, dt: f64) -> bool
 src/sugar.rs: impl Physics2DMassData :: fn compute_collider(&mut self, collider: &Physics2DCollider)
 src/sugar.rs: impl Physics2DMouseJoint :: fn new() -> Ref<Physics2DMouseJoint>
 src/sugar.rs: impl Physics2DPrismaticJoint :: fn new() -> Ref<Physics2DPrismaticJoint>
 src/sugar.rs: impl Physics2DPulleyJoint :: fn new() -> Ref<Physics2DPulleyJoint>
 src/sugar.rs: impl Physics2DQueryFilter :: fn new() -> Physics2DQueryFilter
 src/sugar.rs: impl Physics2DQueryResult :: fn new() -> Physics2DQueryResult
-src/sugar.rs: impl Physics2DQueryResult :: fn query_point(&mut self, world: &Physics2DWorld, x: f32, y: f32, filter: Option<&Physics2DQueryFilter>,)
+src/sugar.rs: impl Physics2DQueryResult :: fn query_point(&mut self, world: &Physics2DWorld, x: f64, y: f64, filter: Option<&Physics2DQueryFilter>,)
 src/sugar.rs: impl Physics2DQueryResult :: fn query_region(&mut self, world: &Physics2DWorld, region: &SpatialAabb2D, filter: Option<&Physics2DQueryFilter>,)
 src/sugar.rs: impl Physics2DRayResult :: fn new() -> Physics2DRayResult
-src/sugar.rs: impl Physics2DRayResult :: fn query_ray(&mut self, world: &Physics2DWorld, origin_x: f32, origin_y: f32, direction_x: f32, direction_y: f32, max_fraction: Option<f32>, filter: Option<&Physics2DQueryFilter>,)
-src/sugar.rs: impl Physics2DRayResult :: fn query_ray_closest(&mut self, world: &Physics2DWorld, origin_x: f32, origin_y: f32, direction_x: f32, direction_y: f32, max_fraction: Option<f32>, filter: Option<&Physics2DQueryFilter>,)
+src/sugar.rs: impl Physics2DRayResult :: fn query_ray(&mut self, world: &Physics2DWorld, origin_x: f64, origin_y: f64, direction_x: f64, direction_y: f64, max_fraction: Option<f64>, filter: Option<&Physics2DQueryFilter>,)
+src/sugar.rs: impl Physics2DRayResult :: fn query_ray_closest(&mut self, world: &Physics2DWorld, origin_x: f64, origin_y: f64, direction_x: f64, direction_y: f64, max_fraction: Option<f64>, filter: Option<&Physics2DQueryFilter>,)
 src/sugar.rs: impl Physics2DRevoluteJoint :: fn new() -> Ref<Physics2DRevoluteJoint>
 src/sugar.rs: impl Physics2DRopeJoint :: fn new() -> Ref<Physics2DRopeJoint>
 src/sugar.rs: impl Physics2DShapeCastResult :: fn new() -> Physics2DShapeCastResult
-src/sugar.rs: impl Physics2DShapeCastResult :: fn query_shape_cast(&mut self, world: &Physics2DWorld, registry: &CollisionRegistry2D, shape: &CollisionShape2D, dx: f32, dy: f32, max_fraction: Option<f32>, filter: Option<&Physics2DQueryFilter>,)
+src/sugar.rs: impl Physics2DShapeCastResult :: fn query_shape_cast(&mut self, world: &Physics2DWorld, registry: &CollisionRegistry2D, shape: &CollisionShape2D, dx: f64, dy: f64, max_fraction: Option<f64>, filter: Option<&Physics2DQueryFilter>,)
 src/sugar.rs: impl Physics2DSolverConfig :: fn is_valid(&self) -> bool
 src/sugar.rs: impl Physics2DSolverConfig :: fn new(options: Option<&Physics2DSolverConfigOptions>) -> Physics2DSolverConfig
 src/sugar.rs: impl Physics2DWeldJoint :: fn new() -> Ref<Physics2DWeldJoint>
@@ -383,86 +383,88 @@ src/sugar.rs: impl Physics2DWorld :: fn remove_joint(&mut self, joint: &Physics2
 src/sugar.rs: impl Physics2DWorld :: fn set_body_bullet(&mut self, body: &Ref<RigidBody2D>, bullet: bool) -> bool
 src/sugar.rs: impl Physics2DWorld :: fn set_body_fixed_rotation(&mut self, body: &Ref<RigidBody2D>, fixed_rotation: bool,) -> bool
 src/sugar.rs: impl Physics2DWorld :: fn set_body_sleep_enabled(&mut self, body: &Ref<RigidBody2D>, sleep_enabled: bool) -> bool
-src/sugar.rs: impl Physics2DWorld :: fn set_body_transform(&mut self, body: &Ref<RigidBody2D>, x: f32, y: f32, angle: f32,) -> bool
+src/sugar.rs: impl Physics2DWorld :: fn set_body_transform(&mut self, body: &Ref<RigidBody2D>, x: f64, y: f64, angle: f64,) -> bool
 src/sugar.rs: impl Physics2DWorld :: fn set_body_type(&mut self, body: &Ref<RigidBody2D>, body_type: Physics2DBodyType) -> bool
 src/sugar.rs: impl Physics2DWorld :: fn solve_contact_indices_once(&self, indices: &[usize], start: usize, count: usize)
 src/sugar.rs: impl Physics2DWorld :: fn solve_contacts(&self)
 src/sugar.rs: impl Physics2DWorld :: fn solve_contacts_once(&self)
 src/sugar.rs: impl Physics2DWorld :: fn step(&mut self, dt: f64, registry: &CollisionRegistry2D, guards: Option<&Physics2DGuardState>,)
 src/sugar.rs: impl Physics2DWorld :: fn synchronize_broadphase(&self)
-src/sugar.rs: impl Physics2DWorld :: fn synchronize_swept_broadphase(&self, dt: f32)
+src/sugar.rs: impl Physics2DWorld :: fn synchronize_swept_broadphase(&self, dt: f64)
 src/sugar.rs: impl Physics2DWorld :: fn update_sleep(&mut self, dt: f64)
 src/sugar.rs: impl Physics2DWorld :: fn warm_start_contact_indices(&self, indices: &[usize], start: usize, count: usize)
 src/sugar.rs: impl Physics2DWorld :: fn warm_start_contacts(&self)
-src/sugar.rs: impl RigidBody2D :: fn apply_force(&mut self, force_x: f32, force_y: f32) -> bool
-src/sugar.rs: impl RigidBody2D :: fn apply_force_at_point(&mut self, force_x: f32, force_y: f32, point_x: f32, point_y: f32,) -> bool
-src/sugar.rs: impl RigidBody2D :: fn apply_impulse(&mut self, body_b: &mut RigidBody2D, r_ax: f32, r_ay: f32, r_bx: f32, r_by: f32, impulse_x: f32, impulse_y: f32,)
-src/sugar.rs: impl RigidBody2D :: fn apply_linear_impulse(&mut self, impulse_x: f32, impulse_y: f32) -> bool
-src/sugar.rs: impl RigidBody2D :: fn apply_linear_impulse_at_point(&mut self, impulse_x: f32, impulse_y: f32, point_x: f32, point_y: f32,) -> bool
-src/sugar.rs: impl RigidBody2D :: fn apply_torque(&mut self, torque: f32) -> bool
+src/sugar.rs: impl RigidBody2D :: fn apply_force(&mut self, force_x: f64, force_y: f64) -> bool
+src/sugar.rs: impl RigidBody2D :: fn apply_force_at_point(&mut self, force_x: f64, force_y: f64, point_x: f64, point_y: f64,) -> bool
+src/sugar.rs: impl RigidBody2D :: fn apply_impulse(&mut self, body_b: &mut RigidBody2D, r_ax: f64, r_ay: f64, r_bx: f64, r_by: f64, impulse_x: f64, impulse_y: f64,)
+src/sugar.rs: impl RigidBody2D :: fn apply_linear_impulse(&mut self, impulse_x: f64, impulse_y: f64) -> bool
+src/sugar.rs: impl RigidBody2D :: fn apply_linear_impulse_at_point(&mut self, impulse_x: f64, impulse_y: f64, point_x: f64, point_y: f64,) -> bool
+src/sugar.rs: impl RigidBody2D :: fn apply_torque(&mut self, torque: f64) -> bool
 src/sugar.rs: impl RigidBody2D :: fn assert_not_stepping(&self)
 src/sugar.rs: impl RigidBody2D :: fn is_pair_awake(&self, b: &RigidBody2D) -> bool
 src/sugar.rs: impl RigidBody2D :: fn is_pair_ordered(&self, b: &RigidBody2D) -> bool
 src/sugar.rs: impl RigidBody2D :: fn new() -> Ref<RigidBody2D>
-src/sugar.rs: impl RigidBody2D :: fn relative_normal_velocity(&self, body_b: &RigidBody2D, point: &Physics2DContactPoint, normal_x: f32, normal_y: f32,) -> f32
+src/sugar.rs: impl RigidBody2D :: fn relative_normal_velocity(&self, body_b: &RigidBody2D, point: &Physics2DContactPoint, normal_x: f64, normal_y: f64,) -> f64
 src/sugar.rs: impl RigidBody2D :: fn sync_to_node2d(&self, node: &Node2DRef)
 src/sugar.rs: impl RigidBody2D :: fn update_mass_data(&mut self)
 src/sugar.rs: impl RigidBody2D :: fn wake(&mut self)
-src/types.rs: #[derive(Clone)] pub struct Physics2DBrokenJoint { pub force_x: f32, pub force_y: f32, pub joint: Physics2DJointRef, pub torque: f32, }
+src/types.rs: #[derive(Clone)] pub struct Physics2DRayHit { pub body: Ref<RigidBody2D>, pub collider: Ref<Physics2DCollider>, pub collider_index: usize, pub fraction: f64, pub normal_x: f64, pub normal_y: f64, pub x: f64, pub y: f64, }
 src/types.rs: #[derive(Clone)] pub struct Physics2DJointSolver { pub clear_accumulated_impulses: Option<Physics2DJointClearImpulses>, pub keeps_bodies_awake: Option<bool>, pub prepare: Physics2DJointPrepare, pub scale_accumulated_impulses: Option<Physics2DJointScaleImpulses>, pub solve: Physics2DJointSolve, pub swap_ends: Option<Physics2DJointSwapEnds>, pub uses_body_a: Option<bool>, pub warm_start: Option<Physics2DJointSolve>, pub write_reaction: Option<Physics2DJointWriteReaction>, }
+src/types.rs: #[derive(Clone)] pub struct Physics2DBrokenJoint { pub force_x: f64, pub force_y: f64, pub joint: Physics2DJointRef, pub torque: f64, }
 src/types.rs: #[derive(Clone)] pub struct Physics2DQueryHit { pub body: Ref<RigidBody2D>, pub collider: Ref<Physics2DCollider>, pub collider_index: usize, }
-src/types.rs: #[derive(Clone)] pub struct Physics2DRayHit { pub body: Ref<RigidBody2D>, pub collider: Ref<Physics2DCollider>, pub collider_index: usize, pub fraction: f32, pub normal_x: f32, pub normal_y: f32, pub x: f32, pub y: f32, }
-src/types.rs: #[derive(Clone, Copy, Debug, Default, PartialEq)] pub struct Physics2DContactPoint { pub bias: f32, pub depth: f32, pub feature_id: i64, pub normal_impulse: f32, pub normal_mass: f32, pub r_ax: f32, pub r_ay: f32, pub r_bx: f32, pub r_by: f32, pub tangent_impulse: f32, pub tangent_mass: f32, pub x: f32, pub y: f32, }
-src/types.rs: #[derive(Clone, Copy, Debug, Default, PartialEq)] pub struct Physics2DDebugGeometryOptions { pub center_of_mass_radius: Option<f32>, pub contact_normal_length: Option<f32>, pub draw_centers_of_mass: Option<bool>, pub draw_colliders: Option<bool>, pub draw_contacts: Option<bool>, pub draw_joints: Option<bool>, pub point_radius: Option<f32>, }
-src/types.rs: #[derive(Clone, Copy, Debug, Default, PartialEq)] pub struct Physics2DDistanceJointOptions { pub base: Physics2DJointOptions, pub damping_ratio: Option<f32>, pub frequency_hz: Option<f32>, pub length: f32, }
-src/types.rs: #[derive(Clone, Copy, Debug, Default, PartialEq)] pub struct Physics2DGearJointOptions { pub axis_ax: Option<f32>, pub axis_ay: Option<f32>, pub axis_bx: Option<f32>, pub axis_by: Option<f32>, pub base: Physics2DJointOptions, pub constant: f32, pub coordinate_a: Physics2DGearCoordinateKind, pub coordinate_b: Physics2DGearCoordinateKind, pub ratio: Option<f32>, }
-src/types.rs: #[derive(Clone, Copy, Debug, Default, PartialEq)] pub struct Physics2DJointOptions { pub body_a: i32, pub body_b: i32, pub break_force: Option<f32>, pub break_torque: Option<f32>, pub collide_connected: Option<bool>, pub local_anchor_ax: Option<f32>, pub local_anchor_ay: Option<f32>, pub local_anchor_bx: Option<f32>, pub local_anchor_by: Option<f32>, }
-src/types.rs: #[derive(Clone, Copy, Debug, Default, PartialEq)] pub struct Physics2DMassData { pub center_x: f32, pub center_y: f32, pub inertia: f32, pub mass: f32, }
-src/types.rs: #[derive(Clone, Copy, Debug, Default, PartialEq)] pub struct Physics2DMouseJointOptions { pub body: i32, pub break_force: Option<f32>, pub break_torque: Option<f32>, pub damping_ratio: Option<f32>, pub frequency_hz: Option<f32>, pub local_anchor_x: Option<f32>, pub local_anchor_y: Option<f32>, pub max_force: f32, pub target_x: f32, pub target_y: f32, }
-src/types.rs: #[derive(Clone, Copy, Debug, Default, PartialEq)] pub struct Physics2DPrismaticJointOptions { pub base: Physics2DJointOptions, pub enable_limit: Option<bool>, pub enable_limit_spring: Option<bool>, pub enable_motor: Option<bool>, pub limit_damping_ratio: Option<f32>, pub limit_frequency_hz: Option<f32>, pub local_axis_ax: Option<f32>, pub local_axis_ay: Option<f32>, pub lower_translation: Option<f32>, pub max_motor_force: Option<f32>, pub motor_speed: Option<f32>, pub reference_angle: Option<f32>, pub upper_translation: Option<f32>, }
-src/types.rs: #[derive(Clone, Copy, Debug, Default, PartialEq)] pub struct Physics2DPulleyJointOptions { pub base: Physics2DJointOptions, pub constant: f32, pub ground_anchor_ax: f32, pub ground_anchor_ay: f32, pub ground_anchor_bx: f32, pub ground_anchor_by: f32, pub ratio: Option<f32>, }
-src/types.rs: #[derive(Clone, Copy, Debug, Default, PartialEq)] pub struct Physics2DRevoluteJointOptions { pub base: Physics2DJointOptions, pub enable_limit: Option<bool>, pub enable_limit_spring: Option<bool>, pub enable_motor: Option<bool>, pub limit_damping_ratio: Option<f32>, pub limit_frequency_hz: Option<f32>, pub lower_angle: Option<f32>, pub max_motor_torque: Option<f32>, pub motor_speed: Option<f32>, pub reference_angle: Option<f32>, pub upper_angle: Option<f32>, }
-src/types.rs: #[derive(Clone, Copy, Debug, Default, PartialEq)] pub struct Physics2DRopeJointOptions { pub base: Physics2DJointOptions, pub max_length: f32, }
-src/types.rs: #[derive(Clone, Copy, Debug, Default, PartialEq)] pub struct Physics2DSolverConfigOptions { pub allow_sleeping: Option<bool>, pub continuous_collision: Option<bool>, pub max_ccd_rotation_substeps: Option<i32>, pub max_ccd_substeps: Option<i32>, pub penetration_slop: Option<f32>, pub position_correction: Option<f32>, pub position_iterations: Option<i32>, pub restitution_threshold: Option<f32>, pub sleep_angular_threshold: Option<f32>, pub sleep_linear_threshold: Option<f32>, pub time_to_sleep: Option<f32>, pub velocity_iterations: Option<i32>, pub warm_starting: Option<bool>, }
-src/types.rs: #[derive(Clone, Copy, Debug, Default, PartialEq)] pub struct Physics2DWeldJointOptions { pub base: Physics2DJointOptions, pub reference_angle: Option<f32>, }
-src/types.rs: #[derive(Clone, Copy, Debug, Default, PartialEq)] pub struct Physics2DWheelJointOptions { pub base: Physics2DJointOptions, pub damping_ratio: Option<f32>, pub enable_motor: Option<bool>, pub frequency_hz: Option<f32>, pub local_axis_ax: Option<f32>, pub local_axis_ay: Option<f32>, pub max_motor_torque: Option<f32>, pub motor_speed: Option<f32>, pub rest_translation: Option<f32>, }
+src/types.rs: #[derive(Clone, Copy, Debug, Default, PartialEq)] pub struct Physics2DContactPoint { pub bias: f64, pub depth: f64, pub feature_id: i64, pub normal_impulse: f64, pub normal_mass: f64, pub r_ax: f64, pub r_ay: f64, pub r_bx: f64, pub r_by: f64, pub tangent_impulse: f64, pub tangent_mass: f64, pub x: f64, pub y: f64, }
+src/types.rs: #[derive(Clone, Copy, Debug, Default, PartialEq)] pub struct Physics2DDistanceJointOptions { pub base: Physics2DJointOptions, pub damping_ratio: Option<f64>, pub frequency_hz: Option<f64>, pub length: f64, }
+src/types.rs: #[derive(Clone, Copy, Debug, Default, PartialEq)] pub struct Physics2DGearJointOptions { pub axis_ax: Option<f64>, pub axis_ay: Option<f64>, pub axis_bx: Option<f64>, pub axis_by: Option<f64>, pub base: Physics2DJointOptions, pub constant: f64, pub coordinate_a: Physics2DGearCoordinateKind, pub coordinate_b: Physics2DGearCoordinateKind, pub ratio: Option<f64>, }
+src/types.rs: #[derive(Clone, Copy, Debug, Default, PartialEq)] pub struct Physics2DJointOptions { pub body_a: i32, pub body_b: i32, pub break_force: Option<f64>, pub break_torque: Option<f64>, pub collide_connected: Option<bool>, pub local_anchor_ax: Option<f64>, pub local_anchor_ay: Option<f64>, pub local_anchor_bx: Option<f64>, pub local_anchor_by: Option<f64>, }
+src/types.rs: #[derive(Clone, Copy, Debug, Default, PartialEq)] pub struct Physics2DMassData { pub center_x: f64, pub center_y: f64, pub inertia: f64, pub mass: f64, }
+src/types.rs: #[derive(Clone, Copy, Debug, Default, PartialEq)] pub struct Physics2DMouseJointOptions { pub body: i32, pub break_force: Option<f64>, pub break_torque: Option<f64>, pub damping_ratio: Option<f64>, pub frequency_hz: Option<f64>, pub local_anchor_x: Option<f64>, pub local_anchor_y: Option<f64>, pub max_force: f64, pub target_x: f64, pub target_y: f64, }
+src/types.rs: #[derive(Clone, Copy, Debug, Default, PartialEq)] pub struct Physics2DPulleyJointOptions { pub base: Physics2DJointOptions, pub constant: f64, pub ground_anchor_ax: f64, pub ground_anchor_ay: f64, pub ground_anchor_bx: f64, pub ground_anchor_by: f64, pub ratio: Option<f64>, }
+src/types.rs: #[derive(Clone, Copy, Debug, Default, PartialEq)] pub struct Physics2DRopeJointOptions { pub base: Physics2DJointOptions, pub max_length: f64, }
+src/types.rs: #[derive(Clone, Copy, Debug, Default, PartialEq)] pub struct Physics2DDebugGeometryOptions { pub center_of_mass_radius: Option<f64>, pub contact_normal_length: Option<f64>, pub draw_centers_of_mass: Option<bool>, pub draw_colliders: Option<bool>, pub draw_contacts: Option<bool>, pub draw_joints: Option<bool>, pub point_radius: Option<f64>, }
+src/types.rs: #[derive(Clone, Copy, Debug, Default, PartialEq)] pub struct Physics2DPrismaticJointOptions { pub base: Physics2DJointOptions, pub enable_limit: Option<bool>, pub enable_limit_spring: Option<bool>, pub enable_motor: Option<bool>, pub limit_damping_ratio: Option<f64>, pub limit_frequency_hz: Option<f64>, pub local_axis_ax: Option<f64>, pub local_axis_ay: Option<f64>, pub lower_translation: Option<f64>, pub max_motor_force: Option<f64>, pub motor_speed: Option<f64>, pub reference_angle: Option<f64>, pub upper_translation: Option<f64>, }
+src/types.rs: #[derive(Clone, Copy, Debug, Default, PartialEq)] pub struct Physics2DRevoluteJointOptions { pub base: Physics2DJointOptions, pub enable_limit: Option<bool>, pub enable_limit_spring: Option<bool>, pub enable_motor: Option<bool>, pub limit_damping_ratio: Option<f64>, pub limit_frequency_hz: Option<f64>, pub lower_angle: Option<f64>, pub max_motor_torque: Option<f64>, pub motor_speed: Option<f64>, pub reference_angle: Option<f64>, pub upper_angle: Option<f64>, }
+src/types.rs: #[derive(Clone, Copy, Debug, Default, PartialEq)] pub struct Physics2DSolverConfigOptions { pub allow_sleeping: Option<bool>, pub continuous_collision: Option<bool>, pub max_ccd_rotation_substeps: Option<i32>, pub max_ccd_substeps: Option<i32>, pub penetration_slop: Option<f64>, pub position_correction: Option<f64>, pub position_iterations: Option<i32>, pub restitution_threshold: Option<f64>, pub sleep_angular_threshold: Option<f64>, pub sleep_linear_threshold: Option<f64>, pub time_to_sleep: Option<f64>, pub velocity_iterations: Option<i32>, pub warm_starting: Option<bool>, }
+src/types.rs: #[derive(Clone, Copy, Debug, Default, PartialEq)] pub struct Physics2DWeldJointOptions { pub base: Physics2DJointOptions, pub reference_angle: Option<f64>, }
+src/types.rs: #[derive(Clone, Copy, Debug, Default, PartialEq)] pub struct Physics2DWheelJointOptions { pub base: Physics2DJointOptions, pub damping_ratio: Option<f64>, pub enable_motor: Option<bool>, pub frequency_hz: Option<f64>, pub local_axis_ax: Option<f64>, pub local_axis_ay: Option<f64>, pub max_motor_torque: Option<f64>, pub motor_speed: Option<f64>, pub rest_translation: Option<f64>, }
 src/types.rs: #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)] pub enum Physics2DGearCoordinateKind { #[default] Angular, Linear, }
-src/types.rs: #[derive(Clone, Copy, Debug, PartialEq)] pub struct Physics2DDebugCircle { pub body_a: i32, pub body_b: i32, pub feature: Physics2DDebugFeature, pub radius: f32, pub x: f32, pub y: f32, }
-src/types.rs: #[derive(Clone, Copy, Debug, PartialEq)] pub struct Physics2DDebugLine { pub body_a: i32, pub body_b: i32, pub feature: Physics2DDebugFeature, pub x0: f32, pub x1: f32, pub y0: f32, pub y1: f32, }
-src/types.rs: #[derive(Clone, Copy, Debug, PartialEq)] pub struct Physics2DMaterial { pub density: f32, pub friction: f32, pub restitution: f32, }
-src/types.rs: #[derive(Clone, Copy, Debug, PartialEq)] pub struct Physics2DSolverConfig { pub allow_sleeping: bool, pub continuous_collision: bool, pub max_ccd_rotation_substeps: i32, pub max_ccd_substeps: i32, pub penetration_slop: f32, pub position_correction: f32, pub position_iterations: i32, pub restitution_threshold: f32, pub sleep_angular_threshold: f32, pub sleep_linear_threshold: f32, pub time_to_sleep: f32, pub velocity_iterations: i32, pub warm_starting: bool, }
 src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum Physics2DBodyType { Dynamic, Kinematic, Static, }
 src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum Physics2DCollisionStatus { MissingContactSupport, Ready, }
 src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum Physics2DDebugFeature { CenterOfMass, Collider, ContactNormal, Joint, }
 src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum Physics2DJointResolutionExplanationStatus { Complete, UnresolvedJoints, }
 src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum Physics2DJointResolutionStatus { BodiesMissing, BodyAMissing, BodyBMissing, Ready, SolverUnregistered, }
 src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum Physics2DStepStatus { InvalidStep, Ready, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq)] pub struct Physics2DDebugCircle { pub body_a: i32, pub body_b: i32, pub feature: Physics2DDebugFeature, pub radius: f64, pub x: f64, pub y: f64, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq)] pub struct Physics2DDebugLine { pub body_a: i32, pub body_b: i32, pub feature: Physics2DDebugFeature, pub x0: f64, pub x1: f64, pub y0: f64, pub y1: f64, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq)] pub struct Physics2DMaterial { pub density: f64, pub friction: f64, pub restitution: f64, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq)] pub struct Physics2DSolverConfig { pub allow_sleeping: bool, pub continuous_collision: bool, pub max_ccd_rotation_substeps: i32, pub max_ccd_substeps: i32, pub penetration_slop: f64, pub position_correction: f64, pub position_iterations: i32, pub restitution_threshold: f64, pub sleep_angular_threshold: f64, pub sleep_linear_threshold: f64, pub time_to_sleep: f64, pub velocity_iterations: i32, pub warm_starting: bool, }
 src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub struct Physics2DCollisionFilter { pub category_bits: u32, pub mask_bits: u32, pub group_index: i32, }
 src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub struct Physics2DQueryFilter { pub category_bits: u32, pub include_dynamic: bool, pub include_kinematic: bool, pub include_sensors: bool, pub include_static: bool, pub mask_bits: u32, }
 src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub struct Physics2DStepExplanation { pub body_state_valid: bool, pub contact_state_valid: bool, pub gravity_valid: bool, pub joint_state_valid: bool, pub position_iterations_valid: bool, pub previous_timestep_valid: bool, pub solver_config_valid: bool, pub status: Physics2DStepStatus, pub timestep_valid: bool, pub velocity_iterations_valid: bool, }
-src/types.rs: #[derive(Clone, Debug)] pub struct Physics2DJointFields { runtime: EntityRuntimeSlot, pub(crate) owner: Option<Arc<Physics2DWorldIdentity>>, pub(crate) solve_state: Option<Vec<f32>>, pub body_a: i32, pub body_b: i32, pub break_force: f32, pub break_torque: f32, pub collide_connected: bool, pub impulse0: f32, pub impulse1: f32, pub impulse2: f32, pub kind: Kind, pub local_anchor_ax: f32, pub local_anchor_ay: f32, pub local_anchor_bx: f32, pub local_anchor_by: f32, pub r_ax: f32, pub r_ay: f32, pub r_bx: f32, pub r_by: f32, }
-src/types.rs: #[derive(Clone, Debug, Default)] pub struct Physics2DDistanceJoint { pub(crate) fields: Physics2DJointFields, pub damping_ratio: f32, pub frequency_hz: f32, pub length: f32, }
-src/types.rs: #[derive(Clone, Debug, Default)] pub struct Physics2DGearJoint { pub(crate) fields: Physics2DJointFields, pub axis_ax: f32, pub axis_ay: f32, pub axis_bx: f32, pub axis_by: f32, pub constant: f32, pub coordinate_a: Physics2DGearCoordinateKind, pub coordinate_b: Physics2DGearCoordinateKind, pub ratio: f32, }
-src/types.rs: #[derive(Clone, Debug, Default)] pub struct Physics2DMouseJoint { pub(crate) fields: Physics2DJointFields, pub damping_ratio: f32, pub frequency_hz: f32, pub max_force: f32, pub target_x: f32, pub target_y: f32, }
-src/types.rs: #[derive(Clone, Debug, Default)] pub struct Physics2DPrismaticJoint { pub(crate) fields: Physics2DJointFields, pub enable_limit: bool, pub enable_limit_spring: bool, pub enable_motor: bool, pub limit_damping_ratio: f32, pub limit_frequency_hz: f32, pub local_axis_ax: f32, pub local_axis_ay: f32, pub lower_translation: f32, pub max_motor_force: f32, pub motor_impulse: f32, pub motor_speed: f32, pub reference_angle: f32, pub upper_translation: f32, }
-src/types.rs: #[derive(Clone, Debug, Default)] pub struct Physics2DPulleyJoint { pub(crate) fields: Physics2DJointFields, pub constant: f32, pub ground_anchor_ax: f32, pub ground_anchor_ay: f32, pub ground_anchor_bx: f32, pub ground_anchor_by: f32, pub ratio: f32, }
-src/types.rs: #[derive(Clone, Debug, Default)] pub struct Physics2DRevoluteJoint { pub(crate) fields: Physics2DJointFields, pub enable_limit: bool, pub enable_limit_spring: bool, pub enable_motor: bool, pub limit_damping_ratio: f32, pub limit_frequency_hz: f32, pub lower_angle: f32, pub max_motor_torque: f32, pub motor_impulse: f32, pub motor_speed: f32, pub reference_angle: f32, pub upper_angle: f32, }
-src/types.rs: #[derive(Clone, Debug, Default)] pub struct Physics2DRopeJoint { pub(crate) fields: Physics2DJointFields, pub max_length: f32, }
-src/types.rs: #[derive(Clone, Debug, Default)] pub struct Physics2DWeldJoint { pub(crate) fields: Physics2DJointFields, pub reference_angle: f32, }
-src/types.rs: #[derive(Clone, Debug, Default)] pub struct Physics2DWheelJoint { pub(crate) fields: Physics2DJointFields, pub damping_ratio: f32, pub enable_motor: bool, pub frequency_hz: f32, pub local_axis_ax: f32, pub local_axis_ay: f32, pub max_motor_torque: f32, pub motor_impulse: f32, pub motor_speed: f32, pub rest_translation: f32, }
+src/types.rs: #[derive(Clone, Debug)] pub struct Physics2DJointFields { runtime: EntityRuntimeSlot, pub(crate) owner: Option<Arc<Physics2DWorldIdentity>>, pub(crate) solve_state: Option<Vec<f64>>, pub body_a: i32, pub body_b: i32, pub break_force: f64, pub break_torque: f64, pub collide_connected: bool, pub impulse0: f64, pub impulse1: f64, pub impulse2: f64, pub kind: Kind, pub local_anchor_ax: f64, pub local_anchor_ay: f64, pub local_anchor_bx: f64, pub local_anchor_by: f64, pub r_ax: f64, pub r_ay: f64, pub r_bx: f64, pub r_by: f64, }
+src/types.rs: #[derive(Clone, Debug, Default)] pub struct Physics2DDistanceJoint { pub(crate) fields: Physics2DJointFields, pub damping_ratio: f64, pub frequency_hz: f64, pub length: f64, }
+src/types.rs: #[derive(Clone, Debug, Default)] pub struct Physics2DGearJoint { pub(crate) fields: Physics2DJointFields, pub axis_ax: f64, pub axis_ay: f64, pub axis_bx: f64, pub axis_by: f64, pub constant: f64, pub coordinate_a: Physics2DGearCoordinateKind, pub coordinate_b: Physics2DGearCoordinateKind, pub ratio: f64, }
+src/types.rs: #[derive(Clone, Debug, Default)] pub struct Physics2DMouseJoint { pub(crate) fields: Physics2DJointFields, pub damping_ratio: f64, pub frequency_hz: f64, pub max_force: f64, pub target_x: f64, pub target_y: f64, }
+src/types.rs: #[derive(Clone, Debug, Default)] pub struct Physics2DPrismaticJoint { pub(crate) fields: Physics2DJointFields, pub enable_limit: bool, pub enable_limit_spring: bool, pub enable_motor: bool, pub limit_damping_ratio: f64, pub limit_frequency_hz: f64, pub local_axis_ax: f64, pub local_axis_ay: f64, pub lower_translation: f64, pub max_motor_force: f64, pub motor_impulse: f64, pub motor_speed: f64, pub reference_angle: f64, pub upper_translation: f64, }
+src/types.rs: #[derive(Clone, Debug, Default)] pub struct Physics2DPulleyJoint { pub(crate) fields: Physics2DJointFields, pub constant: f64, pub ground_anchor_ax: f64, pub ground_anchor_ay: f64, pub ground_anchor_bx: f64, pub ground_anchor_by: f64, pub ratio: f64, }
+src/types.rs: #[derive(Clone, Debug, Default)] pub struct Physics2DRevoluteJoint { pub(crate) fields: Physics2DJointFields, pub enable_limit: bool, pub enable_limit_spring: bool, pub enable_motor: bool, pub limit_damping_ratio: f64, pub limit_frequency_hz: f64, pub lower_angle: f64, pub max_motor_torque: f64, pub motor_impulse: f64, pub motor_speed: f64, pub reference_angle: f64, pub upper_angle: f64, }
+src/types.rs: #[derive(Clone, Debug, Default)] pub struct Physics2DRopeJoint { pub(crate) fields: Physics2DJointFields, pub max_length: f64, }
+src/types.rs: #[derive(Clone, Debug, Default)] pub struct Physics2DWeldJoint { pub(crate) fields: Physics2DJointFields, pub reference_angle: f64, }
+src/types.rs: #[derive(Clone, Debug, Default)] pub struct Physics2DWheelJoint { pub(crate) fields: Physics2DJointFields, pub damping_ratio: f64, pub enable_motor: bool, pub frequency_hz: f64, pub local_axis_ax: f64, pub local_axis_ay: f64, pub max_motor_torque: f64, pub motor_impulse: f64, pub motor_speed: f64, pub rest_translation: f64, }
 src/types.rs: #[derive(Clone, Debug, Default, PartialEq)] pub struct Physics2DDebugGeometry { runtime: EntityRuntimeSlot, pub circle_count: usize, pub circles: Vec<Physics2DDebugCircle>, pub line_count: usize, pub lines: Vec<Physics2DDebugLine>, }
-src/types.rs: #[derive(Clone, Debug, Default, PartialEq)] pub struct Physics2DJointReaction { runtime: EntityRuntimeSlot, pub force_x: f32, pub force_y: f32, pub torque: f32, }
-src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct Physics2DContact { pub body_a: i32, pub body_b: i32, pub collider_a: usize, pub collider_b: usize, pub enabled: bool, pub friction: f32, pub normal_x: f32, pub normal_y: f32, pub point_count: usize, pub points: Vec<Physics2DContactPoint>, pub restitution: f32, pub sensor: bool, pub touching: bool, }
 src/types.rs: #[derive(Clone, Debug, PartialEq, Eq)] pub struct Physics2DCollisionExplanation { pub status: Physics2DCollisionStatus, pub unsupported_kinds: Vec<String>, }
+src/types.rs: #[derive(Clone, Debug, Default, PartialEq)] pub struct Physics2DJointReaction { runtime: EntityRuntimeSlot, pub force_x: f64, pub force_y: f64, pub torque: f64, }
+src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct Physics2DContact { pub body_a: i32, pub body_b: i32, pub collider_a: usize, pub collider_b: usize, pub enabled: bool, pub friction: f64, pub normal_x: f64, pub normal_y: f64, pub point_count: usize, pub points: Vec<Physics2DContactPoint>, pub restitution: f64, pub sensor: bool, pub touching: bool, }
 src/types.rs: #[derive(Clone, Debug, PartialEq, Eq)] pub struct Physics2DJointResolution { pub body_a: i32, pub body_a_found: bool, pub body_a_used: bool, pub body_b: i32, pub body_b_found: bool, pub joint_index: usize, pub kind: Kind, pub solver_registered: bool, pub status: Physics2DJointResolutionStatus, }
 src/types.rs: #[derive(Clone, Debug, PartialEq, Eq)] pub struct Physics2DJointResolutionExplanation { pub joints: Vec<Physics2DJointResolution>, pub ready_count: usize, pub status: Physics2DJointResolutionExplanationStatus, }
+src/types.rs: #[derive(Clone, Default)] pub struct Physics2DShapeCastResult { runtime: EntityRuntimeSlot, pub body: Option<Ref<RigidBody2D>>, pub collider: Option<Ref<Physics2DCollider>>, pub collider_index: i32, pub fraction: f64, pub hit: bool, pub normal_x: f64, pub normal_y: f64, pub x: f64, pub y: f64, }
 src/types.rs: #[derive(Clone, Default)] pub struct Physics2DContactEvents { pub began: Vec<Physics2DContactRef>, pub ended: Vec<Physics2DContactRef>, }
 src/types.rs: #[derive(Clone, Default)] pub struct Physics2DContactHooks { pub post_solve: Option<Physics2DContactCallback>, pub pre_solve: Option<Physics2DContactCallback>, }
 src/types.rs: #[derive(Clone, Default)] pub struct Physics2DGuardState { pub contact_intake_guard: Option<Physics2DContactIntakeGuard>, pub enabled: bool, pub joint_resolution_guard: Option<Physics2DJointResolutionGuard>, pub step_guard: Option<Physics2DStepGuard>, }
 src/types.rs: #[derive(Clone, Default)] pub struct Physics2DJointEvents { pub broke: Vec<Physics2DBrokenJoint>, }
 src/types.rs: #[derive(Clone, Default)] pub struct Physics2DQueryResult { runtime: EntityRuntimeSlot, pub hit_count: usize, pub hits: Vec<Physics2DQueryHit>, }
 src/types.rs: #[derive(Clone, Default)] pub struct Physics2DRayResult { runtime: EntityRuntimeSlot, pub hit_count: usize, pub hits: Vec<Physics2DRayHit>, }
-src/types.rs: #[derive(Clone, Default)] pub struct Physics2DShapeCastResult { runtime: EntityRuntimeSlot, pub body: Option<Ref<RigidBody2D>>, pub collider: Option<Ref<Physics2DCollider>>, pub collider_index: i32, pub fraction: f32, pub hit: bool, pub normal_x: f32, pub normal_y: f32, pub x: f32, pub y: f32, }
+src/types.rs: pub struct Physics2DWorld { runtime: EntityRuntimeSlot, pub(crate) identity: Arc<Physics2DWorldIdentity>, pub bodies: Vec<Ref<RigidBody2D>>, pub body_by_index: HashMap<i32, Ref<RigidBody2D>>, pub config: Physics2DSolverConfig, pub contact_hooks: Physics2DContactHooks, pub contacts: Vec<Physics2DContactRef>, pub events: Physics2DContactEvents, pub gravity_x: f64, pub gravity_y: f64, pub index: SpatialIndexBackend2D, pub island_parents: HashMap<i32, i32>, pub island_sleep_timers: HashMap<i32, f64>, pub joint_collision_suppressions: HashMap<i32, HashMap<i32, u32>>, pub joint_events: Physics2DJointEvents, pub joint_solvers: HashMap<Kind, Physics2DJointSolverRef>, pub joints: Vec<Physics2DJointRef>, pub next_body_index: i32, pub previous_timestep: f64, pub solve_island_body_counts: Vec<usize>, pub solve_island_body_indices: Vec<usize>, pub solve_island_body_starts: Vec<usize>, pub solve_island_by_root: HashMap<i32, usize>, pub solve_island_contact_counts: Vec<usize>, pub solve_island_contact_indices: Vec<usize>, pub solve_island_contact_starts: Vec<usize>, pub solve_island_cursors: Vec<usize>, pub solve_island_joint_counts: Vec<usize>, pub solve_island_joint_indices: Vec<usize>, pub solve_island_joint_starts: Vec<usize>, pub solve_island_roots: Vec<i32>, pub version: u32, }
+src/types.rs: pub struct RigidBody2D { runtime: EntityRuntimeSlot, pub(crate) identity: Arc<Physics2DBodyIdentity>, pub(crate) owner: Option<Arc<Physics2DWorldIdentity>>, pub angle: f64, pub angular_damping: f64, pub angular_velocity: f64, pub body_type: Physics2DBodyType, pub bullet: bool, pub center_x: f64, pub center_y: f64, pub colliders: Vec<Ref<Physics2DCollider>>, pub fixed_rotation: bool, pub force_x: f64, pub force_y: f64, pub gravity_scale: f64, pub index: i32, pub inertia: f64, pub inverse_inertia: f64, pub inverse_mass: f64, pub linear_damping: f64, pub mass: f64, pub sleep_enabled: bool, pub sleep_timer: f64, pub sleeping: bool, pub torque: f64, pub velocity_x: f64, pub velocity_y: f64, pub x: f64, pub y: f64, }
 src/types.rs: impl Default for Physics2DCollider
 src/types.rs: impl Default for Physics2DCollider :: fn default() -> Self
 src/types.rs: impl Default for Physics2DJointFields
@@ -501,31 +503,29 @@ src/types.rs: impl Entity for RigidBody2D
 src/types.rs: impl Entity for RigidBody2D :: fn entity_runtime(&self) -> &EntityRuntimeSlot
 src/types.rs: impl Entity for RigidBody2D :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
 src/types.rs: pub const PHYSICS2D_WORLD_VERSION: u32
-src/types.rs: pub fn visit_physics2d_joint_base_number_fields(fields: &Physics2DJointFields, visit: &mut dyn FnMut(f32),)
 src/types.rs: pub struct Physics2DCollider { runtime: EntityRuntimeSlot, pub(crate) owner: Option<Arc<Physics2DBodyIdentity>>, pub filter: Physics2DCollisionFilter, pub local: CollisionShape2D, pub material: Physics2DMaterial, pub sensor: bool, pub world: CollisionShape2D, }
-src/types.rs: pub struct Physics2DWorld { runtime: EntityRuntimeSlot, pub(crate) identity: Arc<Physics2DWorldIdentity>, pub bodies: Vec<Ref<RigidBody2D>>, pub body_by_index: HashMap<i32, Ref<RigidBody2D>>, pub config: Physics2DSolverConfig, pub contact_hooks: Physics2DContactHooks, pub contacts: Vec<Physics2DContactRef>, pub events: Physics2DContactEvents, pub gravity_x: f32, pub gravity_y: f32, pub index: SpatialIndexBackend2D, pub island_parents: HashMap<i32, i32>, pub island_sleep_timers: HashMap<i32, f64>, pub joint_collision_suppressions: HashMap<i32, HashMap<i32, u32>>, pub joint_events: Physics2DJointEvents, pub joint_solvers: HashMap<Kind, Physics2DJointSolverRef>, pub joints: Vec<Physics2DJointRef>, pub next_body_index: i32, pub previous_timestep: f64, pub solve_island_body_counts: Vec<usize>, pub solve_island_body_indices: Vec<usize>, pub solve_island_body_starts: Vec<usize>, pub solve_island_by_root: HashMap<i32, usize>, pub solve_island_contact_counts: Vec<usize>, pub solve_island_contact_indices: Vec<usize>, pub solve_island_contact_starts: Vec<usize>, pub solve_island_cursors: Vec<usize>, pub solve_island_joint_counts: Vec<usize>, pub solve_island_joint_indices: Vec<usize>, pub solve_island_joint_starts: Vec<usize>, pub solve_island_roots: Vec<i32>, pub version: u32, }
-src/types.rs: pub struct RigidBody2D { runtime: EntityRuntimeSlot, pub(crate) identity: Arc<Physics2DBodyIdentity>, pub(crate) owner: Option<Arc<Physics2DWorldIdentity>>, pub angle: f32, pub angular_damping: f32, pub angular_velocity: f32, pub body_type: Physics2DBodyType, pub bullet: bool, pub center_x: f32, pub center_y: f32, pub colliders: Vec<Ref<Physics2DCollider>>, pub fixed_rotation: bool, pub force_x: f32, pub force_y: f32, pub gravity_scale: f32, pub index: i32, pub inertia: f32, pub inverse_inertia: f32, pub inverse_mass: f32, pub linear_damping: f32, pub mass: f32, pub sleep_enabled: bool, pub sleep_timer: f64, pub sleeping: bool, pub torque: f32, pub velocity_x: f32, pub velocity_y: f32, pub x: f32, pub y: f32, }
-src/types.rs: pub trait Physics2DJoint: flight_entity::Entity + Any + Send + Sync { fn as_any(&self) -> &dyn Any; fn as_any_mut(&mut self) -> &mut dyn Any; fn joint_fields(&self) -> &Physics2DJointFields; fn joint_fields_mut(&mut self) -> &mut Physics2DJointFields; fn for_each_number_field(&self, visit: &mut dyn FnMut(f32)); }
+src/types.rs: pub fn visit_physics2d_joint_base_number_fields(fields: &Physics2DJointFields, visit: &mut dyn FnMut(f64),)
+src/types.rs: pub trait Physics2DJoint: flight_entity::Entity + Any + Send + Sync { fn as_any(&self) -> &dyn Any; fn as_any_mut(&mut self) -> &mut dyn Any; fn joint_fields(&self) -> &Physics2DJointFields; fn joint_fields_mut(&mut self) -> &mut Physics2DJointFields; fn for_each_number_field(&self, visit: &mut dyn FnMut(f64)); }
 src/types.rs: pub type Physics2DContactCallback = Arc<dyn Fn(&Physics2DWorld, &mut Physics2DContact) + Send + Sync>;
 src/types.rs: pub type Physics2DContactIntakeGuard = Arc<dyn Fn(&Physics2DWorld) + Send + Sync>;
 src/types.rs: pub type Physics2DContactRef = Ref<Physics2DContact>;
 src/types.rs: pub type Physics2DJointClearImpulses = Arc<dyn Fn(&mut dyn Physics2DJoint) + Send + Sync>;
-src/types.rs: pub type Physics2DJointPrepare = Arc<dyn Fn(&Physics2DWorld, &mut dyn Physics2DJoint, f32) + Send + Sync>;
+src/types.rs: pub type Physics2DJointPrepare = Arc<dyn Fn(&Physics2DWorld, &mut dyn Physics2DJoint, f64) + Send + Sync>;
 src/types.rs: pub type Physics2DJointRef = Ref<dyn Physics2DJoint>;
 src/types.rs: pub type Physics2DJointResolutionGuard = Arc<dyn Fn(&Physics2DWorld) + Send + Sync>;
-src/types.rs: pub type Physics2DJointScaleImpulses = Arc<dyn Fn(&mut dyn Physics2DJoint, f32) + Send + Sync>;
+src/types.rs: pub type Physics2DJointScaleImpulses = Arc<dyn Fn(&mut dyn Physics2DJoint, f64) + Send + Sync>;
 src/types.rs: pub type Physics2DJointSolve = Arc<dyn Fn(&Physics2DWorld, &mut dyn Physics2DJoint) + Send + Sync>;
 src/types.rs: pub type Physics2DJointSolverRef = Arc<Physics2DJointSolver>;
 src/types.rs: pub type Physics2DJointSwapEnds = Arc<dyn Fn(&mut dyn Physics2DJoint) -> bool + Send + Sync>;
-src/types.rs: pub type Physics2DJointWriteReaction = Arc<dyn Fn(&Physics2DWorld, &dyn Physics2DJoint, f32, &mut Physics2DJointReaction) -> bool + Send + Sync,>;
+src/types.rs: pub type Physics2DJointWriteReaction = Arc<dyn Fn(&Physics2DWorld, &dyn Physics2DJoint, f64, &mut Physics2DJointReaction) -> bool + Send + Sync,>;
 src/types.rs: pub type Physics2DStepGuard = Arc<dyn Fn(&Physics2DWorld, f64) + Send + Sync>;
 src/world.rs: pub fn add_physics2d_body(world: &mut Physics2DWorld, body: &Ref<RigidBody2D>)
 src/world.rs: pub fn add_physics2d_collider(world: &mut Physics2DWorld, body: &Ref<RigidBody2D>, collider: &Ref<Physics2DCollider>,)
-src/world.rs: pub fn apply_physics2d_force(body: &mut RigidBody2D, force_x: f32, force_y: f32) -> bool
-src/world.rs: pub fn apply_physics2d_force_at_point(body: &mut RigidBody2D, force_x: f32, force_y: f32, point_x: f32, point_y: f32,) -> bool
-src/world.rs: pub fn apply_physics2d_linear_impulse(body: &mut RigidBody2D, impulse_x: f32, impulse_y: f32,) -> bool
-src/world.rs: pub fn apply_physics2d_linear_impulse_at_point(body: &mut RigidBody2D, impulse_x: f32, impulse_y: f32, point_x: f32, point_y: f32,) -> bool
-src/world.rs: pub fn apply_physics2d_torque(body: &mut RigidBody2D, torque: f32) -> bool
+src/world.rs: pub fn apply_physics2d_force(body: &mut RigidBody2D, force_x: f64, force_y: f64) -> bool
+src/world.rs: pub fn apply_physics2d_force_at_point(body: &mut RigidBody2D, force_x: f64, force_y: f64, point_x: f64, point_y: f64,) -> bool
+src/world.rs: pub fn apply_physics2d_linear_impulse(body: &mut RigidBody2D, impulse_x: f64, impulse_y: f64,) -> bool
+src/world.rs: pub fn apply_physics2d_linear_impulse_at_point(body: &mut RigidBody2D, impulse_x: f64, impulse_y: f64, point_x: f64, point_y: f64,) -> bool
+src/world.rs: pub fn apply_physics2d_torque(body: &mut RigidBody2D, torque: f64) -> bool
 src/world.rs: pub fn create_physics2d_collider(local: &CollisionShape2D) -> Ref<Physics2DCollider>
 src/world.rs: pub fn create_physics2d_solver_config(options: Option<&Physics2DSolverConfigOptions>,) -> Physics2DSolverConfig
 src/world.rs: pub fn create_physics2d_world() -> Physics2DWorld
@@ -543,7 +543,7 @@ src/world.rs: pub fn remove_physics2d_collider(world: &mut Physics2DWorld, body:
 src/world.rs: pub fn set_physics2d_body_bullet(world: &mut Physics2DWorld, body: &Ref<RigidBody2D>, bullet: bool,) -> bool
 src/world.rs: pub fn set_physics2d_body_fixed_rotation(world: &mut Physics2DWorld, body: &Ref<RigidBody2D>, fixed_rotation: bool,) -> bool
 src/world.rs: pub fn set_physics2d_body_sleep_enabled(world: &mut Physics2DWorld, body: &Ref<RigidBody2D>, sleep_enabled: bool,) -> bool
-src/world.rs: pub fn set_physics2d_body_transform(world: &mut Physics2DWorld, body: &Ref<RigidBody2D>, x: f32, y: f32, angle: f32,) -> bool
+src/world.rs: pub fn set_physics2d_body_transform(world: &mut Physics2DWorld, body: &Ref<RigidBody2D>, x: f64, y: f64, angle: f64,) -> bool
 src/world.rs: pub fn set_physics2d_body_type(world: &mut Physics2DWorld, body: &Ref<RigidBody2D>, body_type: Physics2DBodyType,) -> bool
 src/world_queries.rs: pub fn create_physics2d_query_filter() -> Physics2DQueryFilter
 src/world_queries.rs: pub fn create_physics2d_query_result() -> Physics2DQueryResult
@@ -552,8 +552,8 @@ src/world_queries.rs: pub fn create_physics2d_shape_cast_result() -> Physics2DSh
 src/world_queries.rs: pub fn initialize_physics2d_query_result(out: &mut Physics2DQueryResult)
 src/world_queries.rs: pub fn initialize_physics2d_ray_result(out: &mut Physics2DRayResult)
 src/world_queries.rs: pub fn initialize_physics2d_shape_cast_result(out: &mut Physics2DShapeCastResult)
-src/world_queries.rs: pub fn query_physics2d_point(out: &mut Physics2DQueryResult, world: &Physics2DWorld, x: f32, y: f32, filter: Option<&Physics2DQueryFilter>,)
-src/world_queries.rs: pub fn query_physics2d_ray(out: &mut Physics2DRayResult, world: &Physics2DWorld, origin_x: f32, origin_y: f32, direction_x: f32, direction_y: f32, max_fraction: Option<f32>, filter: Option<&Physics2DQueryFilter>,)
-src/world_queries.rs: pub fn query_physics2d_ray_closest(out: &mut Physics2DRayResult, world: &Physics2DWorld, origin_x: f32, origin_y: f32, direction_x: f32, direction_y: f32, max_fraction: Option<f32>, filter: Option<&Physics2DQueryFilter>,)
+src/world_queries.rs: pub fn query_physics2d_point(out: &mut Physics2DQueryResult, world: &Physics2DWorld, x: f64, y: f64, filter: Option<&Physics2DQueryFilter>,)
+src/world_queries.rs: pub fn query_physics2d_ray(out: &mut Physics2DRayResult, world: &Physics2DWorld, origin_x: f64, origin_y: f64, direction_x: f64, direction_y: f64, max_fraction: Option<f64>, filter: Option<&Physics2DQueryFilter>,)
+src/world_queries.rs: pub fn query_physics2d_ray_closest(out: &mut Physics2DRayResult, world: &Physics2DWorld, origin_x: f64, origin_y: f64, direction_x: f64, direction_y: f64, max_fraction: Option<f64>, filter: Option<&Physics2DQueryFilter>,)
 src/world_queries.rs: pub fn query_physics2d_region(out: &mut Physics2DQueryResult, world: &Physics2DWorld, region: &SpatialAabb2D, filter: Option<&Physics2DQueryFilter>,)
-src/world_queries.rs: pub fn query_physics2d_shape_cast(out: &mut Physics2DShapeCastResult, world: &Physics2DWorld, registry: &CollisionRegistry2D, shape: &CollisionShape2D, dx: f32, dy: f32, max_fraction: Option<f32>, filter: Option<&Physics2DQueryFilter>,)
+src/world_queries.rs: pub fn query_physics2d_shape_cast(out: &mut Physics2DShapeCastResult, world: &Physics2DWorld, registry: &CollisionRegistry2D, shape: &CollisionShape2D, dx: f64, dy: f64, max_fraction: Option<f64>, filter: Option<&Physics2DQueryFilter>,)

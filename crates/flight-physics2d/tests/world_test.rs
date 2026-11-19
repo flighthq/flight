@@ -43,7 +43,7 @@ fn physics2d_solver_config_options() -> Physics2DSolverConfigOptions {
     };
 }
 
-fn aabb(min_x: f32, min_y: f32, max_x: f32, max_y: f32) -> CollisionShape2D {
+fn aabb(min_x: f64, min_y: f64, max_x: f64, max_y: f64) -> CollisionShape2D {
     return CollisionShape2D::Aabb(CollisionAabb2D {
         min_x,
         min_y,
@@ -57,7 +57,7 @@ fn add(world: &mut Physics2DWorld, body: Ref<RigidBody2D>) -> Ref<RigidBody2D> {
     return body;
 }
 
-fn box_body(x: f32, y: f32) -> Ref<RigidBody2D> {
+fn box_body(x: f64, y: f64) -> Ref<RigidBody2D> {
     let body = rigid_body2d(Physics2DBodyType::Dynamic, x, y, None);
     write(&body).colliders.push(physics2d_collider(
         &aabb(-0.5, -0.5, 0.5, 0.5),
@@ -77,7 +77,7 @@ fn entity_joint(
     body_a: i32,
     body_b: i32,
     collide_connected: bool,
-    impulses: [f32; 3],
+    impulses: [f64; 3],
 ) -> Physics2DJointRef {
     let make: fn() -> Physics2DJointFields = Physics2DJointFields::default;
     let mut fields = make();
@@ -106,7 +106,7 @@ fn no_op_solver(uses_body_a: Option<bool>) -> Physics2DJointSolverRef {
     });
 }
 
-fn query_point(world: &Physics2DWorld, x: f32, y: f32) -> Vec<i32> {
+fn query_point(world: &Physics2DWorld, x: f64, y: f64) -> Vec<i32> {
     let mut found = Vec::new();
     (world.index.query_spatial_point)(&mut found, x, y);
     return found;
@@ -127,7 +127,7 @@ fn registry() -> CollisionRegistry2D {
     return registry;
 }
 
-fn static_floor(min_x: f32, max_x: f32) -> Ref<RigidBody2D> {
+fn static_floor(min_x: f64, max_x: f64) -> Ref<RigidBody2D> {
     let floor = rigid_body2d(Physics2DBodyType::Static, 0.0, 0.0, None);
     write(&floor).colliders.push(physics2d_collider(
         &aabb(min_x, -1.0, max_x, 0.0),
@@ -146,7 +146,7 @@ fn throws(action: impl FnOnce()) -> bool {
     return catch_unwind(AssertUnwindSafe(action)).is_err();
 }
 
-fn world_at(gravity_x: f32, gravity_y: f32) -> Physics2DWorld {
+fn world_at(gravity_x: f64, gravity_y: f64) -> Physics2DWorld {
     return physics2d_world(Some(gravity_x), Some(gravity_y), None);
 }
 
@@ -232,7 +232,7 @@ mod add_physics2d_collider {
             &physics2d_collider(&circle(0.0, 0.0, 1.0), &STONE, None, None),
         );
         assert_eq!(read(&body).index, -1);
-        assert!((read(&body).mass - std::f32::consts::PI).abs() < 0.005);
+        assert!((read(&body).mass - std::f64::consts::PI).abs() < 0.005);
         assert_eq!(world.bodies.len(), 0);
     }
 
@@ -277,7 +277,7 @@ mod add_physics2d_collider {
         ));
 
         let found = query_point(&world, 3.0, 4.0);
-        assert!((read(&body).mass - std::f32::consts::PI).abs() < 0.005);
+        assert!((read(&body).mass - std::f64::consts::PI).abs() < 0.005);
         assert!(!read(&body).sleeping);
         assert_eq!(found, vec![read(&body).index]);
     }
@@ -784,7 +784,7 @@ mod invalidate_physics2d_collider {
             collider.read().unwrap().world,
             CollisionShape2D::Circle(_)
         ));
-        assert!((read(&body).mass - 8.0 * std::f32::consts::PI).abs() < 0.005);
+        assert!((read(&body).mass - 8.0 * std::f64::consts::PI).abs() < 0.005);
         assert!(!read(&body).sleeping);
         assert_eq!(read(&body).sleep_timer, 0.0);
         assert_eq!(old_location, Vec::<i32>::new());
@@ -1134,7 +1134,7 @@ mod set_physics2d_body_transform {
         assert!(!set_physics2d_body_transform(
             &mut world,
             &body,
-            f32::NAN,
+            f64::NAN,
             3.0,
             0.0
         ));

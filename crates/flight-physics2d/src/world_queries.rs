@@ -141,8 +141,8 @@ fn passes_collider_filter(
 pub fn query_physics2d_point(
     out: &mut Physics2DQueryResult,
     world: &Physics2DWorld,
-    x: f32,
-    y: f32,
+    x: f64,
+    y: f64,
     filter: Option<&Physics2DQueryFilter>,
 ) {
     out.hit_count = 0;
@@ -180,11 +180,11 @@ pub fn query_physics2d_point(
 pub fn query_physics2d_ray(
     out: &mut Physics2DRayResult,
     world: &Physics2DWorld,
-    origin_x: f32,
-    origin_y: f32,
-    direction_x: f32,
-    direction_y: f32,
-    max_fraction: Option<f32>,
+    origin_x: f64,
+    origin_y: f64,
+    direction_x: f64,
+    direction_y: f64,
+    max_fraction: Option<f64>,
     filter: Option<&Physics2DQueryFilter>,
 ) {
     query_physics2d_ray_internal(
@@ -206,11 +206,11 @@ pub fn query_physics2d_ray(
 pub fn query_physics2d_ray_closest(
     out: &mut Physics2DRayResult,
     world: &Physics2DWorld,
-    origin_x: f32,
-    origin_y: f32,
-    direction_x: f32,
-    direction_y: f32,
-    max_fraction: Option<f32>,
+    origin_x: f64,
+    origin_y: f64,
+    direction_x: f64,
+    direction_y: f64,
+    max_fraction: Option<f64>,
     filter: Option<&Physics2DQueryFilter>,
 ) {
     query_physics2d_ray_internal(
@@ -226,20 +226,19 @@ pub fn query_physics2d_ray_closest(
     );
 }
 
-// flight-lint: allow(f64) D1: the canonical collision raycast is f64 (measured in flight-collision); hits narrow to the query's f32
 fn query_physics2d_ray_internal(
     out: &mut Physics2DRayResult,
     world: &Physics2DWorld,
-    origin_x: f32,
-    origin_y: f32,
-    direction_x: f32,
-    direction_y: f32,
-    max_fraction: Option<f32>,
+    origin_x: f64,
+    origin_y: f64,
+    direction_x: f64,
+    direction_y: f64,
+    max_fraction: Option<f64>,
     filter: Option<&Physics2DQueryFilter>,
     closest_only: bool,
 ) {
     out.hit_count = 0;
-    let max_fraction = max_fraction.unwrap_or(f32::INFINITY);
+    let max_fraction = max_fraction.unwrap_or(f64::INFINITY);
     if !origin_x.is_finite()
         || !origin_y.is_finite()
         || !direction_x.is_finite()
@@ -275,11 +274,11 @@ fn query_physics2d_ray_internal(
                     && raycast_collision_shape2d(
                         &mut raycast_hit,
                         &c.world,
-                        origin_x as f64,
-                        origin_y as f64,
-                        direction_x as f64,
-                        direction_y as f64,
-                        Some(max_fraction as f64),
+                        origin_x,
+                        origin_y,
+                        direction_x,
+                        direction_y,
+                        Some(max_fraction),
                     )
             };
             if !hit {
@@ -346,9 +345,9 @@ pub fn query_physics2d_shape_cast(
     world: &Physics2DWorld,
     registry: &CollisionRegistry2D,
     shape: &CollisionShape2D,
-    dx: f32,
-    dy: f32,
-    max_fraction: Option<f32>,
+    dx: f64,
+    dy: f64,
+    max_fraction: Option<f64>,
     filter: Option<&Physics2DQueryFilter>,
 ) {
     clear_shape_cast_result(out);
@@ -368,7 +367,7 @@ pub fn query_physics2d_shape_cast(
     (world.index.query_spatial_region)(&mut candidates, &swept);
     candidates.sort();
     let mut time_of_impact = create_collision_time_of_impact2d();
-    let mut best_fraction = f32::INFINITY;
+    let mut best_fraction = f64::INFINITY;
     for body_index in candidates {
         let Some(body) = find_physics2d_body(world, body_index) else {
             continue;
@@ -426,7 +425,6 @@ fn sort_live_ray_hits(out: &mut Physics2DRayResult) {
     }
 }
 
-// flight-lint: allow(f64) D1: the canonical collision raycast hit is f64; it narrows to the query's f32
 fn write_closest_ray_hit(
     out: &mut Physics2DRayResult,
     body: &Ref<RigidBody2D>,
@@ -438,7 +436,7 @@ fn write_closest_ray_hit(
         write_ray_hit(out, body, collider, collider_index, source);
         return;
     }
-    let fraction = source.fraction as f32;
+    let fraction = source.fraction;
     let body_index = body.read().unwrap().index;
     let current = &mut out.hits[0];
     let current_index = current.body.read().unwrap().index;
@@ -453,10 +451,10 @@ fn write_closest_ray_hit(
     current.collider = collider.clone();
     current.collider_index = collider_index;
     current.fraction = fraction;
-    current.normal_x = source.normal_x as f32;
-    current.normal_y = source.normal_y as f32;
-    current.x = source.x as f32;
-    current.y = source.y as f32;
+    current.normal_x = source.normal_x;
+    current.normal_y = source.normal_y;
+    current.x = source.x;
+    current.y = source.y;
 }
 
 fn write_query_hit(
@@ -478,7 +476,6 @@ fn write_query_hit(
     out.hit_count += 1;
 }
 
-// flight-lint: allow(f64) D1: the canonical collision raycast hit is f64; it narrows to the query's f32
 fn write_ray_hit(
     out: &mut Physics2DRayResult,
     body: &Ref<RigidBody2D>,
@@ -490,11 +487,11 @@ fn write_ray_hit(
         body: body.clone(),
         collider: collider.clone(),
         collider_index,
-        fraction: source.fraction as f32,
-        normal_x: source.normal_x as f32,
-        normal_y: source.normal_y as f32,
-        x: source.x as f32,
-        y: source.y as f32,
+        fraction: source.fraction,
+        normal_x: source.normal_x,
+        normal_y: source.normal_y,
+        x: source.x,
+        y: source.y,
     };
     if out.hit_count < out.hits.len() {
         out.hits[out.hit_count] = hit;
@@ -507,8 +504,8 @@ fn write_ray_hit(
 fn write_swept_shape_bounds(
     out: &mut SpatialAabb2D,
     shape: &CollisionShape2D,
-    dx: f32,
-    dy: f32,
+    dx: f64,
+    dy: f64,
 ) -> bool {
     let mut probe: Physics2DCollider = allocate_entity();
     probe.world = shape.clone();
