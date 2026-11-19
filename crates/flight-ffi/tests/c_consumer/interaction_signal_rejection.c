@@ -1,6 +1,6 @@
-/* Linked C coverage for flight_connect_interaction_signal's rejections. C cannot build a node
- * handle yet (Item B), so the manager and target are non-NULL dummy storage: a rejected name must
- * return NULL before either is read, and nothing may be called or released. */
+/* Linked C coverage for flight_connect_interaction_signal's rejections. The target is a real
+ * FlightNode handle; the manager is non-NULL dummy storage because every case must return NULL
+ * before it is read. Nothing may be called or released. */
 
 #include <stdint.h>
 #include <stdio.h>
@@ -30,28 +30,30 @@ static int check(int ok, const char *what) {
 
 int main(void) {
   static unsigned char manager_storage[64];
-  static unsigned char target_storage[64];
+  FlightNode *target = flight_create_display_object();
   /* OnFocusIn, OnFocusOut, OnKeyDown, OnKeyUp, one past the last name, and the largest value. */
   const uint32_t rejected[] = {3u, 4u, 5u, 6u, 18u, 0xFFFFFFFFu};
   const uint32_t on_pointer_down = 9u;
   int ok = 1;
+  ok &= check(target != NULL, "create target node");
 
   for (size_t i = 0; i < sizeof rejected / sizeof rejected[0]; i += 1) {
-    void *id = flight_connect_interaction_signal(manager_storage, target_storage, rejected[i],
+    void *id = flight_connect_interaction_signal(manager_storage, target, rejected[i],
                                                  on_event, &calls, on_release, NULL);
     ok &= check(id == NULL, "a non-pointer or invalid name was connected");
   }
-  ok &= check(flight_connect_interaction_signal(NULL, target_storage, on_pointer_down, on_event,
+  ok &= check(flight_connect_interaction_signal(NULL, target, on_pointer_down, on_event,
                                                 &calls, on_release, NULL) == NULL,
               "NULL manager");
   ok &= check(flight_connect_interaction_signal(manager_storage, NULL, on_pointer_down, on_event,
                                                 &calls, on_release, NULL) == NULL,
               "NULL target");
-  ok &= check(flight_connect_interaction_signal(manager_storage, target_storage, on_pointer_down,
+  ok &= check(flight_connect_interaction_signal(manager_storage, target, on_pointer_down,
                                                 NULL, &calls, on_release, NULL) == NULL,
               "NULL slot_fn");
   ok &= check(calls == 0, "a rejected slot was called");
   ok &= check(releases == 0, "a rejected context was released");
+  flight_free_node(target);
   if (!ok) {
     return 1;
   }

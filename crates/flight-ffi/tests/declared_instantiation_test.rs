@@ -20,7 +20,7 @@ fn assert_line(text: &str, line: &str) {
 fn declares_exactly_the_wgpu_scene_2d_render_pair_and_proxy_carrier() {
     let header = generated("flight_ffi.h");
     for line in [
-        "bool flight_prepare_wgpu_scene_2d_render(void * arg0, void * arg1, void * arg2);",
+        "bool flight_prepare_wgpu_scene_2d_render(void * arg0, void * arg1, const FlightNode * arg2);",
         "void flight_destroy_wgpu_scene_2d_render(void * arg0, void * arg1);",
         "/* Caller owns the return value; call flight_free_wgpu_scene_2d_render_proxies when done. */",
         "void * flight_create_wgpu_scene_2d_render_proxies(void);",
