@@ -26,6 +26,7 @@ pub fn is_particle_objects_complete(
     return true;
 }
 
+// flight-lint: allow(f64) spawn draws from the f64 RandomSource are combined in f64 before the f32 state stores
 pub fn update_particle_objects(
     objects: &mut [ParticleObject],
     state: &mut ParticleObjectsState,
@@ -141,7 +142,7 @@ pub fn update_particle_objects(
 
     // Phase 3: spawn into dead slots.
     if to_spawn > 0 {
-        let base_angle = config.direction_y.atan2(config.direction_x);
+        let base_angle = f64::from(config.direction_y).atan2(f64::from(config.direction_x));
         let rot_speed_range = config.rotation_speed_max - config.rotation_speed_min;
         let mut spawn_offset = [0.0f32; 2];
 
@@ -154,36 +155,43 @@ pub fn update_particle_objects(
                 continue;
             }
 
-            let lifetime = config.lifetime_min
-                + (state.random)() * (config.lifetime_max - config.lifetime_min);
+            // Spawn draws are f64 (RandomSource); each value narrows once at its f32 state store.
+            let lifetime = (f64::from(config.lifetime_min)
+                + (state.random)() * f64::from(config.lifetime_max - config.lifetime_min))
+                as f32;
             state.lifetimes[lt] = 0.0;
             state.lifetimes[lt + 1] = lifetime;
 
-            let angle = base_angle + ((state.random)() - 0.5) * 2.0 * config.spread;
-            let speed = config.speed_min + (state.random)() * (config.speed_max - config.speed_min);
+            // Angle, speed, trig and inheritance combine in f64; only the f32 velocity store and
+            // the object's f32 rotation narrow.
+            let angle = base_angle + ((state.random)() - 0.5) * 2.0 * f64::from(config.spread);
+            let speed = f64::from(config.speed_min)
+                + (state.random)() * f64::from(config.speed_max - config.speed_min);
             let vt = i * 2;
-            state.velocities[vt] = angle.cos() * speed
+            state.velocities[vt] = (angle.cos() * speed
                 + if config.velocity_inheritance != 0.0 {
-                    emitter_vel_x * config.velocity_inheritance
+                    f64::from(emitter_vel_x) * f64::from(config.velocity_inheritance)
                 } else {
                     0.0
-                };
-            state.velocities[vt + 1] = angle.sin() * speed
+                }) as f32;
+            state.velocities[vt + 1] = (angle.sin() * speed
                 + if config.velocity_inheritance != 0.0 {
-                    emitter_vel_y * config.velocity_inheritance
+                    f64::from(emitter_vel_y) * f64::from(config.velocity_inheritance)
                 } else {
                     0.0
-                };
+                }) as f32;
 
             write_particle_spawn_offset(&mut spawn_offset, 0, config, state.random.as_ref());
             let spawn_x = spawn_offset[0];
             let spawn_y = spawn_offset[1];
 
-            let spawn_scale =
-                config.scale_min + (state.random)() * (config.scale_max - config.scale_min);
+            let spawn_scale = (f64::from(config.scale_min)
+                + (state.random)() * f64::from(config.scale_max - config.scale_min))
+                as f32;
             state.scales[i] = spawn_scale;
             state.rotation_speeds[i] = if has_rot_speed {
-                config.rotation_speed_min + (state.random)() * rot_speed_range
+                (f64::from(config.rotation_speed_min)
+                    + (state.random)() * f64::from(rot_speed_range)) as f32
             } else {
                 0.0
             };
@@ -191,7 +199,7 @@ pub fn update_particle_objects(
             let obj = &mut objects[i];
             obj.x = spawn_x;
             obj.y = spawn_y;
-            obj.rotation = angle;
+            obj.rotation = angle as f32;
             let spawn_factor = if has_scale_curve {
                 spawn_scale * sample_particle_curve(scale_curve.unwrap(), 0.0)
             } else {

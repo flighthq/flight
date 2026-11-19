@@ -99,6 +99,39 @@ mod update_particle_objects {
     use super::*;
 
     #[test]
+    fn combines_spawn_angle_and_speed_in_f64_before_the_f32_velocity_store() {
+        // Draws: lifetime, angle, speed. Narrowing angle and speed to f32 before the trig gives
+        // 5.81939697265625; keeping them f64 until the velocity store gives 5.819386959075928.
+        let draws = [0.5, 0.23645552527159452, 0.3692706737201661];
+        let index = Arc::new(std::sync::atomic::AtomicUsize::new(0));
+        let mut objects = vec![ParticleObject {
+            alpha: 1.0,
+            blend_mode: None,
+            color_scale_bias: None,
+            rotation: 0.0,
+            scale_x: 1.0,
+            scale_y: 1.0,
+            visible: false,
+            x: 0.0,
+            y: 0.0,
+        }];
+        let mut state = create_particle_objects_state();
+        ensure_particle_objects_state_capacity(&mut state, 1);
+        state.random = Arc::new(move || {
+            let i = index.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+            return draws[i.min(draws.len() - 1)];
+        });
+        let config = create_particle_emitter_config(Some(&ParticleEmitterConfigOptions {
+            spawn_rate: Some(1.0),
+            ..create_particle_emitter_config_options()
+        }));
+        update_particle_objects(&mut objects, &mut state, &config, 1.0, None);
+        assert!(objects[0].visible);
+        assert_eq!(state.velocities[1], 5.819_386_959_075_928_f32);
+        assert_ne!(state.velocities[1], 5.819_396_972_656_25_f32);
+    }
+
+    #[test]
     fn a_finite_non_looping_object_emitter_stops_spawning_after_its_duration() {
         let mut objects: Vec<ParticleObject> = (0..50)
             .map(|_| ParticleObject {
@@ -609,7 +642,7 @@ mod update_particle_objects {
         }];
         let mut state = create_particle_objects_state();
         ensure_particle_objects_state_capacity(&mut state, 1);
-        state.random = Arc::new(|| 0.0_f32);
+        state.random = Arc::new(|| 0.0_f64);
         let config = create_particle_emitter_config(Some(&ParticleEmitterConfigOptions {
             spawn_rate: Some(1.0),
             lifetime_min: Some(10.0),
@@ -835,7 +868,7 @@ mod update_particle_objects {
         }];
         let mut state = create_particle_objects_state();
         ensure_particle_objects_state_capacity(&mut state, 1);
-        state.random = Arc::new(|| 0.0_f32);
+        state.random = Arc::new(|| 0.0_f64);
         let config = create_particle_emitter_config(Some(&ParticleEmitterConfigOptions {
             duration: Some(1.0),
             lifetime_max: Some(0.5),

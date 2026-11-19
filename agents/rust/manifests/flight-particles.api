@@ -85,7 +85,7 @@ src/particle_emitter_state.rs: pub fn initialize_particle_emitter_state(out: &mu
 src/particle_objects_state.rs: pub fn create_particle_objects_state() -> ParticleObjectsState
 src/particle_objects_state.rs: pub fn ensure_particle_objects_state_capacity(state: &mut ParticleObjectsState, capacity: usize,)
 src/particle_objects_state.rs: pub fn initialize_particle_objects_state(out: &mut ParticleObjectsState, capacity: usize, random: RandomSource,)
-src/particle_spawn_offset.rs: pub fn write_particle_spawn_offset(out: &mut [f32], offset: usize, config: &ParticleEmitterConfig, random: &dyn Fn() -> f32,)
+src/particle_spawn_offset.rs: pub fn write_particle_spawn_offset(out: &mut [f32], offset: usize, config: &ParticleEmitterConfig, random: &dyn Fn() -> f64,)
 src/step_particle_objects.rs: pub fn step_particle_objects(objects: &mut [ParticleObject], state: &mut ParticleObjectsState, config: &ParticleEmitterConfig, delta_time: f32, forces: Option<&[ParticleForce]>, colliders: Option<&[ParticleCollider]>, update_options: Option<&ParticleObjectsUpdateOptions>,)
 src/sugar.rs: impl ParticleEmitterConfig :: fn new(overrides: Option<&ParticleEmitterConfigOptions>) -> Self
 src/sugar.rs: impl ParticleEmitterConfig :: fn normalize(&self) -> ParticleEmitterConfig

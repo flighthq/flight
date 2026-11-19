@@ -11,8 +11,8 @@ fn d1_bound_5(expected: f32) -> f32 {
     return 5e-6f32.max(4.0 * f32::EPSILON * 1.0f32.max(expected.abs()));
 }
 
-fn sequence_rng(values: &[f32]) -> RandomSource {
-    let data: Vec<f32> = values.to_vec();
+fn sequence_rng(values: &[f64]) -> RandomSource {
+    let data: Vec<f64> = values.to_vec();
     let index = Arc::new(AtomicUsize::new(0));
     return Arc::new(move || {
         let i = index.fetch_add(1, Ordering::Relaxed);
@@ -24,6 +24,23 @@ mod write_particle_spawn_offset {
     use super::*;
 
     #[test]
+    fn keeps_a_sub_f32_random_offset_from_the_line_center() {
+        // 0.5 + 2^-30 rounds to 0.5 in f32; drawn in f64 the offset survives the final f32 store.
+        let sample = 0.5 + 2.0_f64.powi(-30);
+        assert_eq!(sample as f32, 0.5);
+        let rng = sequence_rng(&[sample]);
+        let mut out = [f32::NAN, f32::NAN];
+        let config = create_particle_emitter_config(Some(&ParticleEmitterConfigOptions {
+            emitter_shape: Some(EmitterShape::Line),
+            emitter_width: Some(20.0),
+            ..create_particle_emitter_config_options()
+        }));
+        write_particle_spawn_offset(&mut out, 0, &config, rng.as_ref());
+        assert_eq!(out[0], (2.0_f64.powi(-30) * 20.0) as f32);
+        assert!(out[0] > 0.0);
+    }
+
+    #[test]
     fn samples_circle_area_and_rectangle_bounds() {
         // Use a known seed and precompute expected values from the random sequence.
         let seed = 42u32;
@@ -32,11 +49,11 @@ mod write_particle_spawn_offset {
         let rng_check = create_random_source(seed);
         let r0 = rng_check(); // radius sample
         let r1 = rng_check(); // angle sample
-        let two_pi = std::f32::consts::PI * 2.0;
+        let two_pi = std::f64::consts::PI * 2.0;
         let radius = r0.sqrt() * 10.0;
         let angle = r1 * two_pi;
-        let expected_cx = angle.cos() * radius;
-        let expected_cy = angle.sin() * radius;
+        let expected_cx = (angle.cos() * radius) as f32;
+        let expected_cy = (angle.sin() * radius) as f32;
 
         let rng = create_random_source(seed);
         let mut out = [f32::NAN, f32::NAN];
@@ -105,8 +122,8 @@ mod write_particle_spawn_offset {
         // -- Rectangle pass (continues the same rng sequence) --
         let r2 = rng_check(); // x sample
         let r3 = rng_check(); // y sample
-        let expected_rx = (r2 - 0.5) * 20.0;
-        let expected_ry = (r3 - 0.5) * 10.0;
+        let expected_rx = ((r2 - 0.5) * 20.0) as f32;
+        let expected_ry = ((r3 - 0.5) * 10.0) as f32;
 
         write_particle_spawn_offset(
             &mut out,
@@ -176,7 +193,7 @@ mod write_particle_spawn_offset {
         let seed = 99u32;
         let rng_check = create_random_source(seed);
         let r = rng_check();
-        let expected_x = (r - 0.5) * 20.0;
+        let expected_x = ((r - 0.5) * 20.0) as f32;
 
         let rng = create_random_source(seed);
         let mut out = [f32::NAN, f32::NAN];
@@ -248,10 +265,10 @@ mod write_particle_spawn_offset {
         let seed = 77u32;
         let rng_check = create_random_source(seed);
         let r = rng_check();
-        let two_pi = std::f32::consts::PI * 2.0;
+        let two_pi = std::f64::consts::PI * 2.0;
         let angle = r * two_pi;
-        let expected_x = angle.cos() * 10.0;
-        let expected_y = angle.sin() * 10.0;
+        let expected_x = (angle.cos() * 10.0) as f32;
+        let expected_y = (angle.sin() * 10.0) as f32;
 
         let rng = create_random_source(seed);
         let mut out = [f32::NAN, f32::NAN];
