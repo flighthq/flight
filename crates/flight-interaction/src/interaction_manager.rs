@@ -3,7 +3,7 @@
 use std::collections::HashMap;
 use std::sync::{Arc, RwLock};
 
-use flight_entity::UnknownValue;
+use flight_entity::{Ref, UnknownValue};
 use flight_input::PointerType;
 
 use flight_node::{NodeRef, get_node_parent};
@@ -170,7 +170,7 @@ fn chain_contains(chain: &[NodeRef], node: &NodeRef) -> bool {
 // flight-lint: allow(hashmap-iteration) D5: pointer state reset on dispose visits all entries; iteration order is irrelevant
 pub fn connect_input_to_interaction(
     input: &crate::types::InteractionInputSource,
-    manager: Arc<RwLock<InteractionManager>>,
+    manager: Ref<InteractionManager>,
     coord_scale: f32,
 ) -> Arc<dyn Fn() + Send + Sync> {
     let sx = move |v: f32| -> f32 {
@@ -868,7 +868,7 @@ fn emit_keyboard_signal(
 }
 
 // flight-lint: allow(contract-vocabulary) D5: InteractionSignals stored in Unknown slot require Arc<RwLock> for shared mutable access
-pub fn enable_interaction_signals(source: &NodeRef) -> Arc<RwLock<InteractionSignals>> {
+pub fn enable_interaction_signals(source: &NodeRef) -> Ref<InteractionSignals> {
     {
         let node = source.read().unwrap();
         let runtime = node.node_runtime();
@@ -930,7 +930,7 @@ fn get_interaction_pointer_state(
 }
 
 // flight-lint: allow(contract-vocabulary) D5: InteractionSignals stored in Unknown slot require Arc<RwLock> for shared mutable access
-pub fn get_interaction_signals(source: &NodeRef) -> Option<Arc<RwLock<InteractionSignals>>> {
+pub fn get_interaction_signals(source: &NodeRef) -> Option<Ref<InteractionSignals>> {
     let node = source.read().unwrap();
     let runtime = node.node_runtime();
     return runtime

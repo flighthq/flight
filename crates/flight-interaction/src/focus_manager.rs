@@ -91,7 +91,7 @@ fn collect_focus_stops(node: &NodeRef, out: &mut Vec<NodeRef>) {
 // flight-lint: allow(contract-vocabulary) D5: RwLock is required for shared mutable access from signal slot callbacks
 pub fn connect_focus_navigation(
     input: &crate::types::FocusNavigationInput,
-    manager: Arc<std::sync::RwLock<FocusManager>>,
+    manager: Ref<FocusManager>,
     options: &crate::types::FocusNavigationOptions,
 ) -> Arc<dyn Fn() + Send + Sync> {
     let arrow_keys = options.arrow_keys.unwrap_or(false);
