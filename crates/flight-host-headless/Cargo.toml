@@ -1,0 +1,36 @@
+[package]
+name = "flight-host-headless"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+authors.workspace = true
+description = "Windowless native host: a real wgpu device, an offscreen presentation surface and pixel read-back through the SDK's own capture path"
+autotests = false
+
+[lib]
+doctest = false
+
+[[test]]
+name = "tests"
+path = "tests/main.rs"
+
+[dependencies]
+flight-bitmap = { workspace = true }
+flight-entity = { workspace = true }
+flight-host = { workspace = true }
+flight-render-wgpu = { workspace = true }
+flight-surface = { workspace = true }
+pollster = "0.4"
+wgpu = { version = "30.0.1", default-features = false, features = ["std", "wgsl", "vulkan", "metal", "dx12"] }
+
+[dev-dependencies]
+flight-node = { workspace = true }
+flight-render = { workspace = true }
+flight-scene2d = { workspace = true }
+flight-scene2d-wgpu = { workspace = true }
+flight-texture = { workspace = true }
+
+[lints]
+workspace = true
