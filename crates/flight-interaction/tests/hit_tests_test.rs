@@ -45,7 +45,7 @@ mod describe_graph_hit {
             .unwrap()
             .node2d_fields_mut()
             .x = 1.0e9;
-        let ctx = flight_interaction::hit_tests::create_hit_test_context();
+        let ctx = flight_interaction::contract::create_hit_test_context();
         let mut result = HitTestResult {
             local_x: 0.0,
             local_y: 0.0,
