@@ -6,6 +6,7 @@ use syn::visit::Visit;
 use syn::{Expr, FnArg, Item, ReturnType, Type};
 
 const OWNERSHIP_DOC_PREFIX: &str = "flight-ffi ownership|";
+const NULLABLE_PARAM_DOC_PREFIX: &str = "flight-ffi nullable|";
 const HOST_CAPABILITY_POLICY: &str = "host_capability";
 const HOST_CAPABILITY_REASON: &str =
     "feature-gated native host crates supply borrowed Host*Capability carriers";
@@ -27,6 +28,9 @@ struct Ownership {
 #[derive(Debug, Default)]
 struct FunctionCarriers {
     consumes: BTreeSet<String>,
+    // Carriers of nullable parameters (Rust `Option` inputs): passing NULL is a valid call, so they
+    // never block reachability. Reported separately as optional coverage.
+    optional: BTreeSet<String>,
     produces: BTreeSet<String>,
 }
 
@@ -34,6 +38,32 @@ struct FunctionCarriers {
 pub struct Reports {
     pub graph: String,
     pub baseline: String,
+}
+
+// The C parameters the generator marked nullable (`#[doc = "flight-ffi nullable|<param>"]`).
+fn function_nullable_params(function: &syn::ItemFn) -> BTreeSet<String> {
+    return function
+        .attrs
+        .iter()
+        .filter_map(|attribute| {
+            let syn::Meta::NameValue(meta) = &attribute.meta else {
+                return None;
+            };
+            if !meta.path.is_ident("doc") {
+                return None;
+            }
+            let Expr::Lit(literal) = &meta.value else {
+                return None;
+            };
+            let syn::Lit::Str(value) = &literal.lit else {
+                return None;
+            };
+            return value
+                .value()
+                .strip_prefix(NULLABLE_PARAM_DOC_PREFIX)
+                .map(str::to_string);
+        })
+        .collect();
 }
 
 fn function_ownership(
@@ -411,6 +441,7 @@ fn collect_function_carriers(
         .to_string()
         .contains("None => std :: ptr :: null");
 
+    let nullable = function_nullable_params(function);
     let mut carriers = FunctionCarriers::default();
     for argument in &function.sig.inputs {
         let FnArg::Typed(parameter) = argument else {
@@ -430,6 +461,11 @@ fn collect_function_carriers(
         {
             continue;
         }
+        let required = if nullable.contains(&name) {
+            &mut carriers.optional
+        } else {
+            &mut carriers.consumes
+        };
         let pointee = type_fingerprint_with_aliases(&pointer.elem, aliases);
         if let Type::Ptr(inner) = &*pointer.elem {
             let inner_pointee = type_fingerprint_with_aliases(&inner.elem, aliases);
@@ -438,13 +474,13 @@ fn collect_function_carriers(
                     if let Some(carrier) =
                         carrier_for_pointer(cast, owned_types, caller_producible, aliases)
                     {
-                        carriers.consumes.insert(carrier);
+                        required.insert(carrier);
                     }
                 }
             } else if let Some(carrier) =
                 carrier_for_pointer(inner, owned_types, caller_producible, aliases)
             {
-                carriers.consumes.insert(carrier);
+                required.insert(carrier);
             }
             continue;
         }
@@ -453,13 +489,13 @@ fn collect_function_carriers(
                 if let Some(carrier) =
                     carrier_for_pointer(cast, owned_types, caller_producible, aliases)
                 {
-                    carriers.consumes.insert(carrier);
+                    required.insert(carrier);
                 }
             }
         } else if let Some(carrier) =
             carrier_for_pointer(pointer, owned_types, caller_producible, aliases)
         {
-            carriers.consumes.insert(carrier);
+            required.insert(carrier);
         }
     }
 
@@ -623,6 +659,9 @@ pub fn generate(
         for carrier in &function.consumes {
             writeln!(graph, "consume|{name}|{carrier}").unwrap();
         }
+        for carrier in &function.optional {
+            writeln!(graph, "optional|{name}|{carrier}").unwrap();
+        }
         for carrier in &function.produces {
             writeln!(graph, "produce|{name}|{carrier}").unwrap();
         }
@@ -783,6 +822,42 @@ mod tests {
             unambiguous_alias_target([Some("String".to_string()), None]),
             None
         );
+    }
+
+    #[test]
+    fn nullable_parameters_do_not_block_a_call_that_accepts_null() {
+        let source = r#"
+            #[doc = "flight-ffi nullable|guard"]
+            pub unsafe extern "C" fn flight_nullable_consumer(
+                guard: *const flight_sdk::Unproducible,
+            ) {
+                unreachable!()
+            }
+            pub unsafe extern "C" fn flight_required_consumer(
+                guard: *const flight_sdk::Unproducible,
+            ) {
+                unreachable!()
+            }
+        "#;
+        let surface = BTreeSet::from([
+            "flight_nullable_consumer".to_string(),
+            "flight_required_consumer".to_string(),
+        ]);
+        let reports = generate(source, &BTreeSet::new(), &BTreeMap::new(), &surface);
+        assert!(
+            reports
+                .graph
+                .contains("function|flight_nullable_consumer|surface|reachable|-")
+        );
+        assert!(
+            reports
+                .graph
+                .contains("optional|flight_nullable_consumer|*const flight_sdk::Unproducible")
+        );
+        assert!(!reports.graph.contains("consume|flight_nullable_consumer|"));
+        assert!(reports.graph.contains(
+            "function|flight_required_consumer|surface|unreachable|*const flight_sdk::Unproducible"
+        ));
     }
 
     #[test]

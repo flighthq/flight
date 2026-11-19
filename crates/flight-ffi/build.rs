@@ -468,6 +468,8 @@ const BEHAVIOR_POLICY_SKIP_FNS: &[&str] = &[
 // This opt-in diagnostic guard retains a caller-supplied live clock and returns guard teardown.
 // It is an extension boundary, unlike the immediate consumption callbacks Task M lowers below.
 const GUARD_POLICY_SKIP_FNS: &[&str] = &["enable_scene3d_resource_failure_guards"];
+// Marks a C pointer parameter that lowers a Rust `Option`; reachability reads it, the header does not.
+const NULLABLE_PARAM_DOC_PREFIX: &str = "flight-ffi nullable|";
 // The header contract every `flight_connect_<payload>_signal` carries.
 const SIGNAL_CONNECT_CONTRACT: &str = "Connects callback_fn(callback_ctx, payload) to signal and returns an owned connection; NULL signal or callback_fn returns NULL without connecting and without calling release_fn. Callbacks run synchronously on the thread that emits the signal; borrowed payload pointers and handles are valid only during the call. release_fn (nullable) receives callback_ctx exactly once, with no signal or scope lock held, when the slot is torn down: flight_free_signal_connection (which disconnects), flight_disconnect_signal_connection, a once connection firing, disconnecting scope, clearing the signal, or dropping the last handle to the signal. The callback never runs after release_fn; a call already running on another thread finishes first, and the connection reports disconnected as soon as it is torn down. release_fn may call back into the signal. Higher priority runs first and equal priorities keep connect order; once disconnects after the first call; scope may be NULL.";
 // Item C: the decision for every `Signal<T>` payload on the public perimeter. `connect` emits one
@@ -3612,11 +3614,17 @@ fn generate_ffi_wrapper(func: &ParsedFn) -> Option<(String, Option<String>)> {
         .find(|param| is_shape_bounds_context(&param.ty))
         .map(|param| param.name.trim_start_matches('_').to_string());
 
+    // C pointers that lower a Rust `Option`: NULL is a valid argument, so reachability must not
+    // treat them as required carriers.
+    let mut nullable_params = Vec::new();
     for param in &func.params {
         let resolved_ty = strip_crate_paths(&strip_lifetimes(&resolve_type_alias(param.ty.trim())));
         let mapped = map_param_to_ffi(&param.name, &param.ty)?;
         for (pname, pty) in &mapped.ffi_params {
             ffi_params.push(format!("{pname}: {pty}"));
+            if resolved_ty.starts_with("Option<") && pty.starts_with('*') {
+                nullable_params.push(pname.clone());
+            }
         }
         guard_bindings.extend(mapped.bindings);
         call_args.push(mapped.call_expr);
@@ -3750,6 +3758,11 @@ fn generate_ffi_wrapper(func: &ParsedFn) -> Option<(String, Option<String>)> {
                 .map(|note| format!("#[doc = \"ffi-param {}: {note}\"]\n", param.name))
         })
         .collect();
+    for param in &nullable_params {
+        notes.push_str(&format!(
+            "#[doc = \"{NULLABLE_PARAM_DOC_PREFIX}{param}\"]\n"
+        ));
+    }
     if func.name == "watch_geolocation_position" {
         notes.push_str("#[doc = \"flight-ffi contract|Handler and error contexts are retained until flight_clear_geolocation_watch(id); caller must keep them alive through the clear call.\"]\n");
     }
@@ -4709,6 +4722,7 @@ fn generate_signal_connect_wrappers() -> String {
             out,
             "#[doc = \"flight-ffi contract|{SIGNAL_CONNECT_CONTRACT}\"]\n\
              #[doc = \"flight-ffi ownership|owned-return|flight_free_signal_connection|flight_sdk::SignalConnection\"]\n\
+             #[doc = \"{NULLABLE_PARAM_DOC_PREFIX}scope\"]\n\
              #[unsafe(no_mangle)]\n\
              pub unsafe extern \"C\" fn flight_connect_{stem}_signal(signal: *const {QUALIFIER}::Signal<{rust_ty}>, callback_fn: Option<extern \"C\" fn(*mut std::ffi::c_void{callback_args})>, callback_ctx: *mut std::ffi::c_void, release_fn: Option<extern \"C\" fn(*mut std::ffi::c_void)>, priority: i32, once: bool, scope: *const {QUALIFIER}::SignalScope) -> *mut {QUALIFIER}::SignalConnection {{\n    \
                  let Some(callback) = callback_fn else {{ return std::ptr::null_mut(); }};\n    \

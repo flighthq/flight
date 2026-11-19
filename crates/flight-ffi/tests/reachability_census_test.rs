@@ -180,6 +180,15 @@ fn carrier_graph_preserves_thin_fat_raw_and_policy_distinctions() {
             .contains("Box<flight_sdk::SignalConnection>")
     );
 
+    // A nullable parameter never blocks: `set_interaction_connect_guard(NULL)` clears the guard,
+    // so the call is reachable while the guard carrier is reported as optional coverage.
+    assert_eq!(
+        functions["flight_set_interaction_connect_guard"].classification,
+        "reachable"
+    );
+    assert!(GENERATED_GRAPH.lines().any(|line| line
+        == "optional|flight_set_interaction_connect_guard|*const flight_sdk::InteractionConnectGuard"));
+
     assert!(GENERATED_BASELINE.contains(
         "policy|host_capability|feature-gated native host crates supply borrowed Host*Capability carriers"
     ));
