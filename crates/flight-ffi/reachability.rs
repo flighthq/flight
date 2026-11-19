@@ -125,8 +125,15 @@ fn alias_name(path: &syn::TypePath) -> Option<String> {
     if !matches!(last.arguments, syn::PathArguments::None) {
         return None;
     }
-    (path.path.segments.len() == 1 || first.ident == "flight_sdk")
-        .then(|| last.ident.to_string())
+    match path.path.segments.len() {
+        1 => Some(last.ident.to_string()),
+        2 if first.ident == "flight_sdk"
+            && matches!(first.arguments, syn::PathArguments::None) =>
+        {
+            Some(last.ident.to_string())
+        }
+        _ => None,
+    }
 }
 
 struct AliasExpander<'a> {
@@ -729,6 +736,21 @@ mod tests {
         assert_eq!(
             canonical_type_with_aliases("other_sdk::Kind", &aliases),
             "other_sdk::Kind"
+        );
+        assert_eq!(
+            canonical_type_with_aliases("flight_sdk::other_module::Kind", &aliases),
+            "flight_sdk::other_module::Kind"
+        );
+        assert_eq!(
+            canonical_type_with_aliases("Vec<Option<flight_sdk::Kind>>", &aliases),
+            "Vec<Option<String>>"
+        );
+        assert_eq!(
+            canonical_type_with_aliases(
+                "Vec<Option<flight_sdk::other_module::Kind>>",
+                &aliases,
+            ),
+            "Vec<Option<flight_sdk::other_module::Kind>>"
         );
         assert_eq!(
             canonical_type_with_aliases("Vec<AmbiguousAlias>", &aliases),
