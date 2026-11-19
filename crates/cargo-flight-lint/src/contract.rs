@@ -116,6 +116,7 @@ pub fn check_contract(
             | "flight-camera-controls"
             | "flight-collision"
             | "flight-geometry"
+            | "flight-lighting"
             | "flight-math"
             | "flight-meshgeometry"
             | "flight-path"
@@ -1207,6 +1208,24 @@ mod tests {
             rules_for_crate(
                 "pub fn f(x: f32) -> f32 { return x; }",
                 "flight-render-wgpu"
+            )
+            .is_empty()
+        );
+    }
+
+    #[test]
+    fn f64_spatial_default_covers_lighting_with_declared_gpu_boundaries() {
+        assert!(
+            rules_for_crate("pub fn f(x: f64) -> f64 { return x; }", "flight-lighting").is_empty()
+        );
+        assert_eq!(
+            rules_for_crate("pub fn f(x: f32) -> f32 { return x; }", "flight-lighting"),
+            vec!["f32"]
+        );
+        assert!(
+            rules_for_crate(
+                "// flight-lint: allow(f32) SH radiance is Float32Array GPU data\npub fn f(values: &Float32Array) { return; }",
+                "flight-lighting"
             )
             .is_empty()
         );

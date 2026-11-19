@@ -70,29 +70,29 @@ pub trait Light: Entity + std::any::Any + fmt::Debug + Send + Sync {
     fn casts_shadow_value(&self) -> Option<bool> {
         return None;
     }
-    fn colored_intensity(&self) -> Option<(u32, f32)> {
+    fn colored_intensity(&self) -> Option<(u32, f64)> {
         return None;
     }
-    fn hemisphere_intensity(&self) -> Option<(u32, u32, f32)> {
+    fn hemisphere_intensity(&self) -> Option<(u32, u32, f64)> {
         return None;
     }
-    fn spatial_influence(&self) -> Option<(&Vector3, f32)> {
+    fn spatial_influence(&self) -> Option<(&Vector3, f64)> {
         return None;
     }
 }
 
 pub trait PunctualLight: Light {
     fn position(&self) -> &Vector3;
-    fn range(&self) -> f32;
-    fn decay(&self) -> f32;
-    fn spot_cone(&self) -> Option<(&Vector3, f32, f32)> {
+    fn range(&self) -> f64;
+    fn decay(&self) -> f64;
+    fn spot_cone(&self) -> Option<(&Vector3, f64, f64)> {
         return None;
     }
 }
 
 pub trait PhotometricLightLike {
-    fn intensity(&self) -> f32;
-    fn intensity_mut(&mut self) -> &mut f32;
+    fn intensity(&self) -> f64;
+    fn intensity_mut(&mut self) -> &mut f64;
     fn intensity_unit(&self) -> LightUnit;
 }
 
@@ -104,7 +104,7 @@ pub struct AmbientLight {
     runtime: EntityRuntimeSlot,
     pub color: u32,
     pub enabled: bool,
-    pub intensity: f32,
+    pub intensity: f64,
     pub intensity_unit: LightUnit,
     pub kind: Kind,
 }
@@ -113,7 +113,7 @@ pub struct AmbientLight {
 pub struct AmbientLightOptions {
     pub color: Option<u32>,
     pub enabled: Option<bool>,
-    pub intensity: Option<f32>,
+    pub intensity: Option<f64>,
     pub intensity_unit: Option<LightUnit>,
 }
 
@@ -122,40 +122,40 @@ pub struct AmbientLightOptions {
 pub struct DirectionalLight {
     runtime: EntityRuntimeSlot,
     pub cascade_count: u32,
-    pub cascade_splits: Vec<f32>,
+    pub cascade_splits: Vec<f64>,
     pub casts_shadow: bool,
     pub color: u32,
     pub direction: Vector3,
     pub enabled: bool,
-    pub intensity: f32,
+    pub intensity: f64,
     pub intensity_unit: LightUnit,
     pub kind: Kind,
-    pub normal_bias: f32,
-    pub pcf_radius: f32,
-    pub shadow_bias: f32,
-    pub shadow_far: f32,
+    pub normal_bias: f64,
+    pub pcf_radius: f64,
+    pub shadow_bias: f64,
+    pub shadow_far: f64,
     pub shadow_map_size: u32,
-    pub shadow_near: f32,
-    pub shadow_strength: f32,
+    pub shadow_near: f64,
+    pub shadow_strength: f64,
 }
 
 #[derive(Clone, Debug, Default)]
 pub struct DirectionalLightOptions {
     pub cascade_count: Option<u32>,
-    pub cascade_splits: Option<Vec<f32>>,
+    pub cascade_splits: Option<Vec<f64>>,
     pub casts_shadow: Option<bool>,
     pub color: Option<u32>,
     pub direction: Option<Vector3>,
     pub enabled: Option<bool>,
-    pub intensity: Option<f32>,
+    pub intensity: Option<f64>,
     pub intensity_unit: Option<LightUnit>,
-    pub normal_bias: Option<f32>,
-    pub pcf_radius: Option<f32>,
-    pub shadow_bias: Option<f32>,
-    pub shadow_far: Option<f32>,
+    pub normal_bias: Option<f64>,
+    pub pcf_radius: Option<f64>,
+    pub shadow_bias: Option<f64>,
+    pub shadow_far: Option<f64>,
     pub shadow_map_size: Option<u32>,
-    pub shadow_near: Option<f32>,
-    pub shadow_strength: Option<f32>,
+    pub shadow_near: Option<f64>,
+    pub shadow_strength: Option<f64>,
 }
 
 #[derive(Clone, Debug)]
@@ -164,43 +164,43 @@ pub struct PointLight {
     runtime: EntityRuntimeSlot,
     pub casts_shadow: bool,
     pub color: u32,
-    pub decay: f32,
+    pub decay: f64,
     pub enabled: bool,
-    pub intensity: f32,
+    pub intensity: f64,
     pub intensity_unit: LightUnit,
     pub layer_mask: i32,
-    pub priority: f32,
+    pub priority: f64,
     pub kind: Kind,
-    pub normal_bias: f32,
-    pub pcf_radius: f32,
+    pub normal_bias: f64,
+    pub pcf_radius: f64,
     pub position: Vector3,
-    pub range: f32,
-    pub shadow_bias: f32,
-    pub shadow_far: f32,
+    pub range: f64,
+    pub shadow_bias: f64,
+    pub shadow_far: f64,
     pub shadow_map_size: u32,
-    pub shadow_near: f32,
-    pub shadow_strength: f32,
+    pub shadow_near: f64,
+    pub shadow_strength: f64,
 }
 
 #[derive(Clone, Debug, Default)]
 pub struct PointLightOptions {
     pub casts_shadow: Option<bool>,
     pub color: Option<u32>,
-    pub decay: Option<f32>,
+    pub decay: Option<f64>,
     pub enabled: Option<bool>,
-    pub intensity: Option<f32>,
+    pub intensity: Option<f64>,
     pub intensity_unit: Option<LightUnit>,
     pub layer_mask: Option<i32>,
-    pub priority: Option<f32>,
-    pub normal_bias: Option<f32>,
-    pub pcf_radius: Option<f32>,
+    pub priority: Option<f64>,
+    pub normal_bias: Option<f64>,
+    pub pcf_radius: Option<f64>,
     pub position: Option<Vector3>,
-    pub range: Option<f32>,
-    pub shadow_bias: Option<f32>,
-    pub shadow_far: Option<f32>,
+    pub range: Option<f64>,
+    pub shadow_bias: Option<f64>,
+    pub shadow_far: Option<f64>,
     pub shadow_map_size: Option<u32>,
-    pub shadow_near: Option<f32>,
-    pub shadow_strength: Option<f32>,
+    pub shadow_near: Option<f64>,
+    pub shadow_strength: Option<f64>,
 }
 
 #[derive(Clone, Debug)]
@@ -209,58 +209,58 @@ pub struct SpotLight {
     runtime: EntityRuntimeSlot,
     pub casts_shadow: bool,
     pub color: u32,
-    pub decay: f32,
+    pub decay: f64,
     pub direction: Vector3,
     pub enabled: bool,
-    pub inner_cone_cos: f32,
-    pub intensity: f32,
+    pub inner_cone_cos: f64,
+    pub intensity: f64,
     pub intensity_unit: LightUnit,
     pub layer_mask: i32,
-    pub priority: f32,
+    pub priority: f64,
     pub kind: Kind,
-    pub normal_bias: f32,
-    pub outer_cone_cos: f32,
-    pub pcf_radius: f32,
+    pub normal_bias: f64,
+    pub outer_cone_cos: f64,
+    pub pcf_radius: f64,
     pub position: Vector3,
-    pub range: f32,
-    pub shadow_bias: f32,
-    pub shadow_far: f32,
+    pub range: f64,
+    pub shadow_bias: f64,
+    pub shadow_far: f64,
     pub shadow_map_size: u32,
-    pub shadow_near: f32,
-    pub shadow_strength: f32,
-    pub spot_blend: f32,
+    pub shadow_near: f64,
+    pub shadow_strength: f64,
+    pub spot_blend: f64,
 }
 
 #[derive(Clone, Debug, Default)]
 pub struct SpotLightOptions {
     pub casts_shadow: Option<bool>,
     pub color: Option<u32>,
-    pub decay: Option<f32>,
+    pub decay: Option<f64>,
     pub direction: Option<Vector3>,
     pub enabled: Option<bool>,
-    pub inner_cone_degrees: Option<f32>,
-    pub intensity: Option<f32>,
+    pub inner_cone_degrees: Option<f64>,
+    pub intensity: Option<f64>,
     pub intensity_unit: Option<LightUnit>,
     pub layer_mask: Option<i32>,
-    pub priority: Option<f32>,
-    pub normal_bias: Option<f32>,
-    pub outer_cone_degrees: Option<f32>,
-    pub pcf_radius: Option<f32>,
+    pub priority: Option<f64>,
+    pub normal_bias: Option<f64>,
+    pub outer_cone_degrees: Option<f64>,
+    pub pcf_radius: Option<f64>,
     pub position: Option<Vector3>,
-    pub range: Option<f32>,
-    pub shadow_bias: Option<f32>,
-    pub shadow_far: Option<f32>,
+    pub range: Option<f64>,
+    pub shadow_bias: Option<f64>,
+    pub shadow_far: Option<f64>,
     pub shadow_map_size: Option<u32>,
-    pub shadow_near: Option<f32>,
-    pub shadow_strength: Option<f32>,
-    pub spot_blend: Option<f32>,
+    pub shadow_near: Option<f64>,
+    pub shadow_strength: Option<f64>,
+    pub spot_blend: Option<f64>,
 }
 
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
 #[repr(C)]
 pub struct SpotLightConeAngles {
-    pub inner_degrees: f32,
-    pub outer_degrees: f32,
+    pub inner_degrees: f64,
+    pub outer_degrees: f64,
 }
 
 #[derive(Clone, Debug)]
@@ -269,7 +269,7 @@ pub struct HemisphereLight {
     runtime: EntityRuntimeSlot,
     pub enabled: bool,
     pub ground_color: u32,
-    pub intensity: f32,
+    pub intensity: f64,
     pub intensity_unit: LightUnit,
     pub kind: Kind,
     pub sky_color: u32,
@@ -279,7 +279,7 @@ pub struct HemisphereLight {
 pub struct HemisphereLightOptions {
     pub enabled: Option<bool>,
     pub ground_color: Option<u32>,
-    pub intensity: Option<f32>,
+    pub intensity: Option<f64>,
     pub intensity_unit: Option<LightUnit>,
     pub sky_color: Option<u32>,
 }
@@ -290,22 +290,22 @@ pub struct AreaLight {
     runtime: EntityRuntimeSlot,
     pub casts_shadow: bool,
     pub color: u32,
-    pub decay: f32,
+    pub decay: f64,
     pub direction: Vector3,
     pub enabled: bool,
-    pub intensity: f32,
+    pub intensity: f64,
     pub intensity_unit: LightUnit,
     pub kind: Kind,
-    pub normal_bias: f32,
-    pub pcf_radius: f32,
+    pub normal_bias: f64,
+    pub pcf_radius: f64,
     pub position: Vector3,
-    pub range: f32,
+    pub range: f64,
     pub right: Vector3,
-    pub shadow_bias: f32,
-    pub shadow_far: f32,
+    pub shadow_bias: f64,
+    pub shadow_far: f64,
     pub shadow_map_size: u32,
-    pub shadow_near: f32,
-    pub shadow_strength: f32,
+    pub shadow_near: f64,
+    pub shadow_strength: f64,
     pub up: Vector3,
 }
 
@@ -313,21 +313,21 @@ pub struct AreaLight {
 pub struct AreaLightOptions {
     pub casts_shadow: Option<bool>,
     pub color: Option<u32>,
-    pub decay: Option<f32>,
+    pub decay: Option<f64>,
     pub direction: Option<Vector3>,
     pub enabled: Option<bool>,
-    pub intensity: Option<f32>,
+    pub intensity: Option<f64>,
     pub intensity_unit: Option<LightUnit>,
-    pub normal_bias: Option<f32>,
-    pub pcf_radius: Option<f32>,
+    pub normal_bias: Option<f64>,
+    pub pcf_radius: Option<f64>,
     pub position: Option<Vector3>,
-    pub range: Option<f32>,
+    pub range: Option<f64>,
     pub right: Option<Vector3>,
-    pub shadow_bias: Option<f32>,
-    pub shadow_far: Option<f32>,
+    pub shadow_bias: Option<f64>,
+    pub shadow_far: Option<f64>,
     pub shadow_map_size: Option<u32>,
-    pub shadow_near: Option<f32>,
-    pub shadow_strength: Option<f32>,
+    pub shadow_near: Option<f64>,
+    pub shadow_strength: Option<f64>,
     pub up: Option<Vector3>,
 }
 
@@ -337,7 +337,7 @@ pub struct Environment {
     runtime: EntityRuntimeSlot,
     pub enabled: bool,
     pub environment: Option<Ref<Texture>>,
-    pub intensity: f32,
+    pub intensity: f64,
     pub kind: Kind,
 }
 
@@ -345,11 +345,12 @@ pub struct Environment {
 pub struct EnvironmentOptions {
     pub enabled: Option<bool>,
     pub environment: Option<Ref<Texture>>,
-    pub intensity: Option<f32>,
+    pub intensity: Option<f64>,
 }
 
 #[derive(Clone, Debug)]
 #[repr(C)]
+// flight-lint: allow(f32) SH coefficients are a Float32Array radiance buffer uploaded to the GPU
 pub struct LightProbe {
     runtime: EntityRuntimeSlot,
     pub enabled: bool,
@@ -406,6 +407,7 @@ pub struct Scene3DForwardLightSelectionExplanation {
 
 #[derive(Clone, Debug, Default, PartialEq)]
 #[repr(C)]
+// flight-lint: allow(f32) the packed light block is the Float32Array GPU uniform payload
 pub struct Scene3DLightBlock {
     pub ambient_count: usize,
     pub data: Box<Float32Array>,
@@ -495,7 +497,7 @@ impl Default for SpotLight {
             priority: 0.0,
             kind: SPOT_LIGHT_KIND.to_string(),
             normal_bias: 0.0,
-            outer_cone_cos: std::f32::consts::FRAC_1_SQRT_2,
+            outer_cone_cos: std::f64::consts::FRAC_1_SQRT_2,
             pcf_radius: 0.0,
             position: create_vector3(0.0, 0.0, 0.0),
             range: -1.0,
@@ -616,18 +618,18 @@ macro_rules! impl_colored_light {
             fn casts_shadow_value(&self) -> Option<bool> {
                 return Some(self.casts_shadow);
             }
-            fn colored_intensity(&self) -> Option<(u32, f32)> {
+            fn colored_intensity(&self) -> Option<(u32, f64)> {
                 return Some((self.color, self.intensity));
             }
-            fn spatial_influence(&self) -> Option<(&Vector3, f32)> {
+            fn spatial_influence(&self) -> Option<(&Vector3, f64)> {
                 return Some((&self.position, self.range));
             }
         }
         impl PhotometricLightLike for $type {
-            fn intensity(&self) -> f32 {
+            fn intensity(&self) -> f64 {
                 return self.intensity;
             }
-            fn intensity_mut(&mut self) -> &mut f32 {
+            fn intensity_mut(&mut self) -> &mut f64 {
                 return &mut self.intensity;
             }
             fn intensity_unit(&self) -> LightUnit {
@@ -638,7 +640,7 @@ macro_rules! impl_colored_light {
 }
 
 impl Light for AmbientLight {
-    fn colored_intensity(&self) -> Option<(u32, f32)> {
+    fn colored_intensity(&self) -> Option<(u32, f64)> {
         return Some((self.color, self.intensity));
     }
     fn enabled_value(&self) -> Option<bool> {
@@ -653,7 +655,7 @@ impl Light for DirectionalLight {
     fn casts_shadow_value(&self) -> Option<bool> {
         return Some(self.casts_shadow);
     }
-    fn colored_intensity(&self) -> Option<(u32, f32)> {
+    fn colored_intensity(&self) -> Option<(u32, f64)> {
         return Some((self.color, self.intensity));
     }
     fn enabled_value(&self) -> Option<bool> {
@@ -672,7 +674,7 @@ impl Light for HemisphereLight {
     fn enabled_value(&self) -> Option<bool> {
         return Some(self.enabled);
     }
-    fn hemisphere_intensity(&self) -> Option<(u32, u32, f32)> {
+    fn hemisphere_intensity(&self) -> Option<(u32, u32, f64)> {
         return Some((self.ground_color, self.sky_color, self.intensity));
     }
     fn kind(&self) -> &str {
@@ -690,28 +692,28 @@ impl Light for Environment {
 }
 
 impl PunctualLight for PointLight {
-    fn decay(&self) -> f32 {
+    fn decay(&self) -> f64 {
         return self.decay;
     }
     fn position(&self) -> &Vector3 {
         return &self.position;
     }
-    fn range(&self) -> f32 {
+    fn range(&self) -> f64 {
         return self.range;
     }
 }
 
 impl PunctualLight for SpotLight {
-    fn decay(&self) -> f32 {
+    fn decay(&self) -> f64 {
         return self.decay;
     }
     fn position(&self) -> &Vector3 {
         return &self.position;
     }
-    fn range(&self) -> f32 {
+    fn range(&self) -> f64 {
         return self.range;
     }
-    fn spot_cone(&self) -> Option<(&Vector3, f32, f32)> {
+    fn spot_cone(&self) -> Option<(&Vector3, f64, f64)> {
         return Some((&self.direction, self.inner_cone_cos, self.outer_cone_cos));
     }
 }
@@ -719,8 +721,8 @@ impl PunctualLight for SpotLight {
 macro_rules! impl_photometric {
     ($($type:ty),+ $(,)?) => {
         $(impl PhotometricLightLike for $type {
-            fn intensity(&self) -> f32 { return self.intensity; }
-            fn intensity_mut(&mut self) -> &mut f32 { return &mut self.intensity; }
+            fn intensity(&self) -> f64 { return self.intensity; }
+            fn intensity_mut(&mut self) -> &mut f64 { return &mut self.intensity; }
             fn intensity_unit(&self) -> LightUnit { return self.intensity_unit; }
         })+
     };

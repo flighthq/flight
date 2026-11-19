@@ -10,7 +10,7 @@ use crate::types::*;
 pub fn get_light_contribution_at_bounding_sphere(
     light: &dyn PunctualLight,
     bounds: &BoundingSphere,
-) -> f32 {
+) -> f64 {
     if !is_light_enabled(light) || bounds.radius < 0.0 {
         return 0.0;
     }
@@ -89,7 +89,7 @@ pub fn get_light_influence_bounds(out: &mut BoundingSphere, light: &dyn Light) {
     write_bound(out, 0.0, 0.0, 0.0, -1.0);
 }
 
-pub fn get_light_luminance(light: &dyn Light) -> f32 {
+pub fn get_light_luminance(light: &dyn Light) -> f64 {
     if !is_light_enabled(light) {
         return 0.0;
     }
@@ -100,7 +100,8 @@ pub fn get_light_luminance(light: &dyn Light) -> f32 {
     if kind == HEMISPHERE_LIGHT_KIND {
         return match light.hemisphere_intensity() {
             Some((ground_color, sky_color, intensity)) => {
-                (get_color_luminance(ground_color) + get_color_luminance(sky_color))
+                (f64::from(get_color_luminance(ground_color))
+                    + f64::from(get_color_luminance(sky_color)))
                     * 0.5
                     * intensity
             }
@@ -114,7 +115,7 @@ pub fn get_light_luminance(light: &dyn Light) -> f32 {
         || kind == SPOT_LIGHT_KIND
     {
         return match light.colored_intensity() {
-            Some((color, intensity)) => get_color_luminance(color) * intensity,
+            Some((color, intensity)) => f64::from(get_color_luminance(color)) * intensity,
             None => 0.0,
         };
     }
@@ -168,21 +169,21 @@ fn is_light_enabled(light: &dyn Light) -> bool {
     return light.enabled_value() != Some(false);
 }
 
-fn js_max(a: f32, b: f32) -> f32 {
+fn js_max(a: f64, b: f64) -> f64 {
     if a.is_nan() || b.is_nan() {
-        return f32::NAN;
+        return f64::NAN;
     }
     return if a > b { a } else { b };
 }
 
-fn js_min(a: f32, b: f32) -> f32 {
+fn js_min(a: f64, b: f64) -> f64 {
     if a.is_nan() || b.is_nan() {
-        return f32::NAN;
+        return f64::NAN;
     }
     return if a < b { a } else { b };
 }
 
-fn smoothstep(edge_0: f32, edge_1: f32, value: f32) -> f32 {
+fn smoothstep(edge_0: f64, edge_1: f64, value: f64) -> f64 {
     if edge_0 == edge_1 {
         return if value < edge_0 { 0.0 } else { 1.0 };
     }
@@ -190,7 +191,7 @@ fn smoothstep(edge_0: f32, edge_1: f32, value: f32) -> f32 {
     return t * t * (3.0 - 2.0 * t);
 }
 
-fn write_bound(out: &mut BoundingSphere, x: f32, y: f32, z: f32, radius: f32) {
+fn write_bound(out: &mut BoundingSphere, x: f64, y: f64, z: f64, radius: f64) {
     out.center.x = x;
     out.center.y = y;
     out.center.z = z;

@@ -3,7 +3,7 @@
 use flight_geometry::create_vector3;
 use flight_lighting::contract::*;
 
-fn close(actual: f32, expected: f32) {
+fn close(actual: f64, expected: f64) {
     assert!(
         (actual - expected).abs() < 0.000_01,
         "{actual} != {expected}"
@@ -94,7 +94,7 @@ mod set_directional_light_direction {
         set_directional_light_direction(&mut light, 0.0, 0.0, 3.0);
         assert_eq!(light.direction, create_vector3(0.0, 0.0, 1.0));
         set_directional_light_direction(&mut light, 0.0, 0.0, 0.0);
-        set_directional_light_direction(&mut light, f32::NAN, 0.0, 0.0);
+        set_directional_light_direction(&mut light, f64::NAN, 0.0, 0.0);
         assert_eq!(light.direction, create_vector3(0.0, 0.0, 1.0));
     }
 }

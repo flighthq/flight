@@ -70,7 +70,7 @@ pub fn clone_directional_light(source: &DirectionalLight) -> DirectionalLight {
     return out;
 }
 
-pub fn set_directional_light_direction(out: &mut DirectionalLight, x: f32, y: f32, z: f32) {
+pub fn set_directional_light_direction(out: &mut DirectionalLight, x: f64, y: f64, z: f64) {
     let length = (x * x + y * y + z * z).sqrt();
     if length > 0.0 {
         set_vector3(&mut out.direction, x / length, y / length, z / length);
@@ -79,12 +79,12 @@ pub fn set_directional_light_direction(out: &mut DirectionalLight, x: f32, y: f3
 
 pub fn set_directional_light_target(
     out: &mut DirectionalLight,
-    from_x: f32,
-    from_y: f32,
-    from_z: f32,
-    to_x: f32,
-    to_y: f32,
-    to_z: f32,
+    from_x: f64,
+    from_y: f64,
+    from_z: f64,
+    to_x: f64,
+    to_y: f64,
+    to_z: f64,
 ) {
     let dx = to_x - from_x;
     let dy = to_y - from_y;

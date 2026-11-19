@@ -2,7 +2,7 @@
 
 use flight_lighting::contract::*;
 
-fn close(actual: f32, expected: f32, tolerance: f32) {
+fn close(actual: f64, expected: f64, tolerance: f64) {
     assert!(
         (actual - expected).abs() <= tolerance,
         "{actual} != {expected}"
@@ -19,7 +19,7 @@ mod apply_light_exposure {
         assert_eq!(apply_light_exposure(3.0, -1.0), 1.5);
         close(
             apply_light_exposure(2.0, 0.5),
-            2.0 * 2.0_f32.sqrt(),
+            2.0 * 2.0_f64.sqrt(),
             0.000_001,
         );
         close(
@@ -40,7 +40,7 @@ mod convert_light_intensity {
             777.0
         );
         let lumen = convert_light_intensity(LightUnit::Candela, LightUnit::Lumen, 1.0);
-        close(lumen, 4.0 * std::f32::consts::PI, 0.000_01);
+        close(lumen, 4.0 * std::f64::consts::PI, 0.000_01);
         let converted = convert_light_intensity(LightUnit::Lux, LightUnit::Lumen, 123.0);
         close(
             convert_light_intensity(LightUnit::Lumen, LightUnit::Lux, converted),
@@ -64,7 +64,7 @@ mod get_light_linear_intensity {
         close(
             get_light_linear_intensity(LightUnit::Candela, 1.0)
                 / get_light_linear_intensity(LightUnit::Lumen, 1.0),
-            4.0 * std::f32::consts::PI,
+            4.0 * std::f64::consts::PI,
             0.000_01,
         );
     }

@@ -99,9 +99,9 @@ pub fn get_spot_light_cone_degrees(out: &mut SpotLightConeAngles, source: &SpotL
     out.outer_degrees = source.outer_cone_cos.acos().to_degrees();
 }
 
-pub fn set_spot_light_blend(out: &mut SpotLight, blend: f32) {
+pub fn set_spot_light_blend(out: &mut SpotLight, blend: f64) {
     out.spot_blend = if blend.is_nan() {
-        f32::NAN
+        f64::NAN
     } else if blend < 0.0 {
         0.0
     } else if blend > 1.0 {
@@ -111,19 +111,19 @@ pub fn set_spot_light_blend(out: &mut SpotLight, blend: f32) {
     };
 }
 
-pub fn set_spot_light_cone(out: &mut SpotLight, inner_degrees: f32, outer_degrees: f32) {
+pub fn set_spot_light_cone(out: &mut SpotLight, inner_degrees: f64, outer_degrees: f64) {
     out.inner_cone_cos = inner_degrees.to_radians().cos();
     out.outer_cone_cos = outer_degrees.to_radians().cos();
 }
 
-pub fn set_spot_light_direction(out: &mut SpotLight, x: f32, y: f32, z: f32) {
+pub fn set_spot_light_direction(out: &mut SpotLight, x: f64, y: f64, z: f64) {
     let length = (x * x + y * y + z * z).sqrt();
     if length > 0.0 {
         set_vector3(&mut out.direction, x / length, y / length, z / length);
     }
 }
 
-pub fn set_spot_light_target(out: &mut SpotLight, target_x: f32, target_y: f32, target_z: f32) {
+pub fn set_spot_light_target(out: &mut SpotLight, target_x: f64, target_y: f64, target_z: f64) {
     let position_x = out.position.x;
     let position_y = out.position.y;
     let position_z = out.position.z;

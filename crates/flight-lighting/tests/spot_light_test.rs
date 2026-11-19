@@ -3,7 +3,7 @@
 use flight_geometry::create_vector3;
 use flight_lighting::contract::*;
 
-fn close(actual: f32, expected: f32) {
+fn close(actual: f64, expected: f64) {
     assert!(
         (actual - expected).abs() < 0.000_01,
         "{actual} != {expected}"
@@ -45,7 +45,7 @@ mod create_spot_light {
         let light = create_spot_light(None);
         assert_eq!(light.direction, create_vector3(0.0, -1.0, 0.0));
         assert_eq!(light.inner_cone_cos, 1.0);
-        close(light.outer_cone_cos, 45.0_f32.to_radians().cos());
+        close(light.outer_cone_cos, 45.0_f64.to_radians().cos());
         assert_eq!(light.range, -1.0);
         assert_eq!(light.spot_blend, 0.0);
         assert_eq!(
@@ -102,7 +102,7 @@ mod set_spot_light_blend {
         assert_eq!(light.spot_blend, 0.0);
         set_spot_light_blend(&mut light, 2.0);
         assert_eq!(light.spot_blend, 1.0);
-        set_spot_light_blend(&mut light, f32::NAN);
+        set_spot_light_blend(&mut light, f64::NAN);
         assert!(light.spot_blend.is_nan());
     }
 }
@@ -114,8 +114,8 @@ mod set_spot_light_cone {
     fn stores_cosines_without_reordering_or_validation() {
         let mut light = create_spot_light(None);
         set_spot_light_cone(&mut light, 60.0, 10.0);
-        close(light.inner_cone_cos, 60.0_f32.to_radians().cos());
-        close(light.outer_cone_cos, 10.0_f32.to_radians().cos());
+        close(light.inner_cone_cos, 60.0_f64.to_radians().cos());
+        close(light.outer_cone_cos, 10.0_f64.to_radians().cos());
         assert!(light.inner_cone_cos < light.outer_cone_cos);
     }
 }

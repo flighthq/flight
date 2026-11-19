@@ -32,7 +32,7 @@ fn unit_cube_grid() -> LightProbeGrid {
     );
 }
 
-fn sample_tag(grid: &LightProbeGrid, x: f32, y: f32, z: f32) -> f32 {
+fn sample_tag(grid: &LightProbeGrid, x: f64, y: f64, z: f64) -> f32 {
     let mut out = [0.0; LIGHT_PROBE_SH_FLOATS];
     assert!(sample_light_probe_grid(
         &mut out,
@@ -207,7 +207,7 @@ mod sample_light_probe_grid {
         close(sample_tag(&grid, 0.5, 0.5, 0.5), 3.5);
         close(sample_tag(&grid, -50.0, -50.0, -50.0), 0.0);
         close(sample_tag(&grid, 50.0, 50.0, 50.0), 7.0);
-        close(sample_tag(&grid, f32::NAN, 0.0, 0.0), 0.0);
+        close(sample_tag(&grid, f64::NAN, 0.0, 0.0), 0.0);
     }
 
     #[test]

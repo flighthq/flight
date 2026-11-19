@@ -9,8 +9,8 @@ use crate::types::*;
 struct Selected<T> {
     light: Ref<T>,
     index: usize,
-    score: f32,
-    priority: f32,
+    score: f64,
+    priority: f64,
 }
 
 fn insert_selected<T>(selected: &mut Vec<Selected<T>>, value: Selected<T>) {

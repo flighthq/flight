@@ -3,7 +3,7 @@
 use flight_geometry::create_vector3;
 use flight_lighting::contract::*;
 
-fn length(vector: &flight_geometry::Vector3) -> f32 {
+fn length(vector: &flight_geometry::Vector3) -> f64 {
     return (vector.x * vector.x + vector.y * vector.y + vector.z * vector.z).sqrt();
 }
 
@@ -105,7 +105,7 @@ mod set_area_light_orientation {
         set_area_light_orientation(
             &mut light,
             &create_vector3(0.0, 0.0, 0.0),
-            &create_vector3(f32::NAN, 0.0, 0.0),
+            &create_vector3(f64::NAN, 0.0, 0.0),
             &create_vector3(0.0, 0.0, 0.0),
         );
         assert_eq!(light.direction, original.0);

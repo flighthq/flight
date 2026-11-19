@@ -10,13 +10,13 @@ fn bounds() -> BoundingSphere {
     return create_bounding_sphere(0.0, 0.0, 0.0, 0.0);
 }
 
-fn point(x: f32) -> Ref<PointLight> {
+fn point(x: f64) -> Ref<PointLight> {
     let mut light = create_point_light();
     light.position = create_vector3(x, 0.0, 0.0);
     return Arc::new(RwLock::new(light));
 }
 
-fn spot(x: f32) -> Ref<SpotLight> {
+fn spot(x: f64) -> Ref<SpotLight> {
     return Arc::new(RwLock::new(create_spot_light(Some(&SpotLightOptions {
         direction: Some(create_vector3(-1.0, 0.0, 0.0)),
         inner_cone_degrees: Some(45.0),
@@ -153,7 +153,7 @@ mod select_scene_3d_forward_lights {
         negative_value.intensity = -1.0;
         let negative = Arc::new(RwLock::new(negative_value));
         let mut nan_value = create_point_light();
-        nan_value.intensity = f32::NAN;
+        nan_value.intensity = f64::NAN;
         let nan = Arc::new(RwLock::new(nan_value));
         let mut outside_value = create_point_light();
         outside_value.position = create_vector3(10.0, 0.0, 0.0);

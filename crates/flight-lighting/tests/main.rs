@@ -76,6 +76,8 @@ mod flight_lighting_light_probe_test;
 mod flight_lighting_lighting_test;
 #[path = "point_light_test.rs"]
 mod flight_lighting_point_light_test;
+#[path = "precision_test.rs"]
+mod flight_lighting_precision_test;
 #[path = "scene_forward_lights_test.rs"]
 mod flight_lighting_scene_forward_lights_test;
 #[path = "scene_lights_test.rs"]

@@ -8,6 +8,7 @@ use crate::types::{LIGHT_PROBE_SH_FLOATS, LightProbe, LightProbeGrid};
 const SH_COEFFICIENT_COUNT: usize = 9;
 
 // D23 (KEEP; Principal c0f9227c): position and coefficients define the probe's owned validated buffers.
+// flight-lint: allow(f32) takes or fills a Float32Array SH radiance buffer, the GPU data boundary
 pub fn create_light_probe(
     position: &Vector3,
     sh_coefficients: Option<&Float32Array>,
@@ -29,6 +30,7 @@ pub fn create_light_probe_grid(
 }
 
 // D23 (KEEP; Principal c0f9227c): initialization validates and copies the defining coefficient buffer.
+// flight-lint: allow(f32) takes or fills a Float32Array SH radiance buffer, the GPU data boundary
 pub fn initialize_light_probe(
     out: &mut LightProbe,
     position: &Vector3,
@@ -58,7 +60,7 @@ pub fn initialize_light_probe_grid(
     resolution: &Vector3,
 ) {
     let expected = resolution.x * resolution.y * resolution.z;
-    if probes.len() as f32 != expected {
+    if probes.len() as f64 != expected {
         throw_error(&format!(
             "LightProbeGrid.probes must hold {expected} probes for resolution {}x{}x{}, got {}",
             resolution.x,
@@ -80,7 +82,7 @@ pub fn initialize_light_probe_grid(
     out.resolution = create_vector3(resolution.x, resolution.y, resolution.z);
 }
 
-fn axis_coordinate(value: f32, min: f32, max: f32, count: f32) -> f32 {
+fn axis_coordinate(value: f64, min: f64, max: f64, count: f64) -> f64 {
     if count <= 1.0 || max <= min {
         return 0.0;
     }
@@ -96,6 +98,7 @@ fn axis_coordinate(value: f32, min: f32, max: f32, count: f32) -> f32 {
     };
 }
 
+// flight-lint: allow(f32) SH radiance is Float32Array GPU data; spatial inputs narrow into it as bounded unit-vector components
 pub fn evaluate_light_probe_sh(
     out: &mut Float32Array,
     normal: &Vector3,
@@ -113,7 +116,7 @@ pub fn evaluate_light_probe_sh(
     let y = normal.y * inverse_length;
     let z = normal.z * inverse_length;
     let mut basis = [0.0; SH_COEFFICIENT_COUNT];
-    write_sh_basis(&mut basis, x, y, z);
+    write_sh_basis(&mut basis, x as f32, y as f32, z as f32);
 
     let mut coefficients = [0.0; LIGHT_PROBE_SH_FLOATS];
     coefficients.copy_from_slice(&sh_coefficients[..LIGHT_PROBE_SH_FLOATS]);
@@ -131,6 +134,7 @@ pub fn evaluate_light_probe_sh(
     out[2] = blue;
 }
 
+// flight-lint: allow(f32) the trilinear blend accumulates in f64 and narrows once into the Float32Array SH output
 pub fn sample_light_probe_grid(
     out: &mut Float32Array,
     position: &Vector3,
@@ -189,7 +193,7 @@ pub fn sample_light_probe_grid(
             continue;
         }
         for (value, coefficient) in sample.iter_mut().zip(probe.sh_coefficients.iter()) {
-            *value += coefficient * weight;
+            *value += f64::from(*coefficient) * weight;
         }
         total_weight += weight;
     }
@@ -199,11 +203,12 @@ pub fn sample_light_probe_grid(
     }
     let inverse_weight = 1.0 / total_weight;
     for (target, value) in out.iter_mut().zip(sample) {
-        *target = value * inverse_weight;
+        *target = (value * inverse_weight) as f32;
     }
     return true;
 }
 
+// flight-lint: allow(f32) SH radiance is Float32Array GPU data; spatial inputs narrow into it as bounded unit-vector components
 pub fn set_light_probe_sh_from_colors(
     target: &mut LightProbe,
     colors: &Float32Array,
@@ -248,6 +253,7 @@ pub fn set_light_probe_sh_from_colors(
     }
 }
 
+// flight-lint: allow(f32) SH radiance is Float32Array GPU data; spatial inputs narrow into it as bounded unit-vector components
 fn write_sh_basis(out: &mut [f32; SH_COEFFICIENT_COUNT], x: f32, y: f32, z: f32) {
     out[0] = 0.282_094_8;
     out[1] = 0.488_602_52 * y;

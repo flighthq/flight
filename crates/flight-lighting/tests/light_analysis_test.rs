@@ -4,11 +4,11 @@ use flight_entity::{Entity, EntityRuntimeSlot};
 use flight_geometry::{BoundingSphere, create_bounding_sphere, create_vector3};
 use flight_lighting::contract::*;
 
-fn sphere(x: f32, y: f32, z: f32, radius: f32) -> BoundingSphere {
+fn sphere(x: f64, y: f64, z: f64, radius: f64) -> BoundingSphere {
     return create_bounding_sphere(x, y, z, radius);
 }
 
-fn close(actual: f32, expected: f32) {
+fn close(actual: f64, expected: f64) {
     assert!(
         (actual - expected).abs() < 0.000_1,
         "{actual} != {expected}"
@@ -28,7 +28,7 @@ struct CustomLight {
     enabled: Option<bool>,
     casts_shadow: Option<bool>,
     color: u32,
-    intensity: f32,
+    intensity: f64,
 }
 
 impl Entity for CustomLight {
@@ -46,7 +46,7 @@ impl Light for CustomLight {
         return self.casts_shadow;
     }
 
-    fn colored_intensity(&self) -> Option<(u32, f32)> {
+    fn colored_intensity(&self) -> Option<(u32, f64)> {
         return Some((self.color, self.intensity));
     }
 
@@ -116,7 +116,7 @@ mod get_light_contribution_at_bounding_sphere {
             0.0
         );
         assert!(
-            get_light_contribution_at_bounding_sphere(&spot, &sphere(f32::NAN, 0.0, 0.0, 0.0))
+            get_light_contribution_at_bounding_sphere(&spot, &sphere(f64::NAN, 0.0, 0.0, 0.0))
                 .is_nan()
         );
     }

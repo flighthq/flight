@@ -48,18 +48,18 @@ impl DirectionalLight {
         return clone_directional_light(self);
     }
 
-    pub fn set_direction(&mut self, x: f32, y: f32, z: f32) {
+    pub fn set_direction(&mut self, x: f64, y: f64, z: f64) {
         set_directional_light_direction(self, x, y, z);
     }
 
     pub fn set_target(
         &mut self,
-        from_x: f32,
-        from_y: f32,
-        from_z: f32,
-        to_x: f32,
-        to_y: f32,
-        to_z: f32,
+        from_x: f64,
+        from_y: f64,
+        from_z: f64,
+        to_x: f64,
+        to_y: f64,
+        to_z: f64,
     ) {
         set_directional_light_target(self, from_x, from_y, from_z, to_x, to_y, to_z);
     }
@@ -90,19 +90,19 @@ impl SpotLight {
         get_spot_light_cone_degrees(out, self);
     }
 
-    pub fn set_blend(&mut self, blend: f32) {
+    pub fn set_blend(&mut self, blend: f64) {
         set_spot_light_blend(self, blend);
     }
 
-    pub fn set_cone(&mut self, inner_degrees: f32, outer_degrees: f32) {
+    pub fn set_cone(&mut self, inner_degrees: f64, outer_degrees: f64) {
         set_spot_light_cone(self, inner_degrees, outer_degrees);
     }
 
-    pub fn set_direction(&mut self, x: f32, y: f32, z: f32) {
+    pub fn set_direction(&mut self, x: f64, y: f64, z: f64) {
         set_spot_light_direction(self, x, y, z);
     }
 
-    pub fn set_target(&mut self, target_x: f32, target_y: f32, target_z: f32) {
+    pub fn set_target(&mut self, target_x: f64, target_y: f64, target_z: f64) {
         set_spot_light_target(self, target_x, target_y, target_z);
     }
 }
@@ -151,6 +151,7 @@ impl Environment {
 
 #[cfg(feature = "object-api")]
 impl LightProbe {
+    // flight-lint: allow(f32) takes or fills a Float32Array SH radiance buffer, the GPU data boundary
     pub fn new(
         position: &flight_geometry::Vector3,
         sh_coefficients: Option<&flight_entity::Float32Array>,
@@ -158,6 +159,7 @@ impl LightProbe {
         return create_light_probe(position, sh_coefficients);
     }
 
+    // flight-lint: allow(f32) takes or fills a Float32Array SH radiance buffer, the GPU data boundary
     pub fn evaluate(
         &self,
         out: &mut flight_entity::Float32Array,
@@ -166,6 +168,7 @@ impl LightProbe {
         evaluate_light_probe_sh(out, normal, &self.sh_coefficients);
     }
 
+    // flight-lint: allow(f32) takes or fills a Float32Array SH radiance buffer, the GPU data boundary
     pub fn set_sh_from_colors(
         &mut self,
         colors: &flight_entity::Float32Array,
@@ -185,6 +188,7 @@ impl LightProbeGrid {
         return create_light_probe_grid(probes, bounds, resolution);
     }
 
+    // flight-lint: allow(f32) takes or fills a Float32Array SH radiance buffer, the GPU data boundary
     pub fn sample(
         &self,
         out: &mut flight_entity::Float32Array,
