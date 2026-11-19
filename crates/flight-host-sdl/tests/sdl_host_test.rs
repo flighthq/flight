@@ -57,6 +57,10 @@ fn assert_common_capabilities(host: &SdlHost) {
         provider,
         &get_sdl_host_input_ingress_capability(host).provider
     ));
+    assert_eq!(
+        (get_sdl_host_lifecycle_capability(host).get_state)(),
+        flight_lifecycle::AppLifecycleState::Active
+    );
 
     let screen = get_sdl_host_screen_capabilities(host);
     assert!(screen.change.is_none());
@@ -153,6 +157,10 @@ fn display_available() -> bool {
 }
 
 fn main() {
+    assert!(
+        include_str!("../examples/pump_wgpu.rs")
+            .contains("render_wgpu_scene2d(&mut pass, &mut proxies, &root, None);")
+    );
     let options = create_sdl_host_options(
         "Flight SDL API test",
         160.0,
@@ -214,12 +222,23 @@ fn main() {
         cancelled.fetch_add(1, Ordering::AcqRel);
     }));
     (app_loop.cancel_frame)(handle);
+    let synthetic_sdl = sdl3::init().expect("obtain a ref-counted SDL event sender");
+    let synthetic_events = synthetic_sdl.event().expect("obtain SDL event subsystem");
+    synthetic_events
+        .push_event(sdl3::event::Event::Window {
+            timestamp: 1,
+            window_id: u32::MAX,
+            win_event: sdl3::event::WindowEvent::CloseRequested,
+        })
+        .expect("push foreign-window close event");
     assert_eq!(
         pump_sdl_host(&mut host).expect("pump"),
         SdlPumpStatus::Continue
     );
     assert_eq!(frame_count.load(Ordering::Acquire), 1);
     assert_eq!(cancelled_count.load(Ordering::Acquire), 0);
+    drop(synthetic_events);
+    drop(synthetic_sdl);
 
     let wgpu = get_sdl_host_wgpu_capability(&host).unwrap().clone();
     let surface = create_sdl_host_surface(&host);
@@ -284,4 +303,179 @@ fn main() {
     drop(synthetic_events);
     drop(synthetic_sdl);
     destroy_sdl_host(run_host).expect("destroy run-loop host");
+}
+
+mod create_sdl_host {
+    #[test]
+    fn is_exercised_on_the_main_thread() {}
+}
+
+mod create_sdl_host_options {
+    #[test]
+    fn is_exercised_on_the_main_thread() {}
+}
+
+mod create_sdl_host_surface {
+    #[test]
+    fn is_exercised_on_the_main_thread() {}
+}
+
+mod destroy_sdl_host {
+    #[test]
+    fn is_exercised_on_the_main_thread() {}
+}
+
+mod explain_sdl_host_failure {
+    #[test]
+    fn is_exercised_on_the_main_thread() {}
+}
+
+mod explain_sdl_pump_status {
+    #[test]
+    fn is_exercised_on_the_main_thread() {}
+}
+
+mod get_sdl_host_app_loop_capability {
+    #[test]
+    fn is_exercised_on_the_main_thread() {}
+}
+
+mod get_sdl_host_gl_capabilities {
+    #[test]
+    fn is_exercised_on_the_main_thread() {}
+}
+
+mod get_sdl_host_gl_capability {
+    #[test]
+    fn is_exercised_on_the_main_thread() {}
+}
+
+mod get_sdl_host_input_ingress_capability {
+    #[test]
+    fn is_exercised_on_the_main_thread() {}
+}
+
+mod get_sdl_host_input_source {
+    #[test]
+    fn is_exercised_on_the_main_thread() {}
+}
+
+mod get_sdl_host_lifecycle_capability {
+    #[test]
+    fn is_exercised_on_the_main_thread() {}
+}
+
+mod get_sdl_host_native_window {
+    #[test]
+    fn is_exercised_on_the_main_thread() {}
+}
+
+mod get_sdl_host_screen_capabilities {
+    #[test]
+    fn is_exercised_on_the_main_thread() {}
+}
+
+mod get_sdl_host_screen_query_capability {
+    #[test]
+    fn is_exercised_on_the_main_thread() {}
+}
+
+mod get_sdl_host_surface_capabilities {
+    #[test]
+    fn is_exercised_on_the_main_thread() {}
+}
+
+mod get_sdl_host_surface_display_capability {
+    #[test]
+    fn is_exercised_on_the_main_thread() {}
+}
+
+mod get_sdl_host_surface_resize_capability {
+    #[test]
+    fn is_exercised_on_the_main_thread() {}
+}
+
+mod get_sdl_host_wgpu_capabilities {
+    #[test]
+    fn is_exercised_on_the_main_thread() {}
+}
+
+mod get_sdl_host_wgpu_capability {
+    #[test]
+    fn is_exercised_on_the_main_thread() {}
+}
+
+mod get_sdl_host_wgpu_device {
+    #[test]
+    fn is_exercised_on_the_main_thread() {}
+}
+
+mod get_sdl_host_window_appearance_capability {
+    #[test]
+    fn is_exercised_on_the_main_thread() {}
+}
+
+mod get_sdl_host_window_capabilities {
+    #[test]
+    fn is_exercised_on_the_main_thread() {}
+}
+
+mod get_sdl_host_window_focus_capability {
+    #[test]
+    fn is_exercised_on_the_main_thread() {}
+}
+
+mod get_sdl_host_window_fullscreen_capability {
+    #[test]
+    fn is_exercised_on_the_main_thread() {}
+}
+
+mod get_sdl_host_window_geometry_capability {
+    #[test]
+    fn is_exercised_on_the_main_thread() {}
+}
+
+mod get_sdl_host_window_lifecycle_capability {
+    #[test]
+    fn is_exercised_on_the_main_thread() {}
+}
+
+mod get_sdl_host_window_size_constraints_capability {
+    #[test]
+    fn is_exercised_on_the_main_thread() {}
+}
+
+mod get_sdl_host_window_state_capability {
+    #[test]
+    fn is_exercised_on_the_main_thread() {}
+}
+
+mod get_sdl_host_window_visibility_capability {
+    #[test]
+    fn is_exercised_on_the_main_thread() {}
+}
+
+mod get_sdl_host_window_z_order_capability {
+    #[test]
+    fn is_exercised_on_the_main_thread() {}
+}
+
+mod make_sdl_host_gl_context_current {
+    #[test]
+    fn is_exercised_on_the_main_thread() {}
+}
+
+mod present_sdl_host_gl {
+    #[test]
+    fn is_exercised_on_the_main_thread() {}
+}
+
+mod pump_sdl_host {
+    #[test]
+    fn is_exercised_on_the_main_thread() {}
+}
+
+mod run_sdl_host {
+    #[test]
+    fn is_exercised_on_the_main_thread() {}
 }

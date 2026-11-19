@@ -65,6 +65,10 @@ names. Modifiers, caps/num locks, persistent pointer-button state, event wheel p
 direction, relative motion, committed/composing text, scaled touch contacts, millisecond timestamps,
 and dense nonnegative gamepad IDs are translated explicitly. Open gamepad handles remain alive until
 disconnect, and devices already open are announced when a gamepad sink attaches.
+Gamepad buttons use the SDK's `GamepadMapping::Standard` indices. Analog triggers use a `0.5`
+pressed threshold, retain the normalized value carried by each threshold-crossing record, and emit
+down/up only when that threshold state changes. SDL text input starts when the first text attachment
+becomes active and stops when the last attachment releases.
 
 ## Renderer ownership and teardown
 
@@ -100,6 +104,12 @@ DRM/GBM, Mesa GL/GLES/EGL, udev, and dbus as appropriate. Display-backed wgpu te
 loader/driver such as Mesa lavapipe. macOS needs Xcode Command Line Tools; Windows needs Visual
 Studio C++ Build Tools and the Windows SDK. Mobile targets and SDL audio are intentionally absent.
 
+The exact Ubuntu review environment was installed with:
+
+```sh
+sudo apt-get install -y cmake ninja-build pkg-config xvfb xauth valgrind xdotool libgl1-mesa-dri libegl1 libegl-dev libgl-dev libgles-dev libx11-dev libxext-dev libxrandr-dev libxcursor-dev libxi-dev libxss-dev libxfixes-dev libxtst-dev libxkbcommon-dev libwayland-dev libdrm-dev libgbm-dev libudev-dev libdbus-1-dev mesa-utils
+```
+
 ## Examples and display gates
 
 Both examples render the same visible bitmap-sprite scene, attach pointer, keyboard, and gamepad
@@ -119,8 +129,11 @@ The display-backed tests report an explicit skip if neither `DISPLAY` nor `WAYLA
 `i3_sdl_wgpu_test` performs real present/capture and resize recovery; `i3_sdl_gl_test` creates the
 token/state/target, renders, reads pixels, and swaps; `i3_sdl_reference_test` renders pixel-aligned
 Scene2D sprites through wgpu capture and a GL texture target. The parity gate compares premultiplied
-RGBA after GL row normalization, excludes one-pixel primitive edges, requires interior/background
-sentinels, and enforces maximum channel delta 8 and mean delta 1.5.
+RGBA after GL row normalization at tolerance zero over every pixel, requires exact
+interior/background sentinels, and carries probes that reject a one-row normalization error, a
+one-pixel sprite shift, and a seven-step channel change. The GL gate also pins the Xvfb fallback's
+default-framebuffer value and verifies that the attachment reports sRGB encoding while
+`FRAMEBUFFER_SRGB` remains disabled.
 
 ## Intentionally duplicated from flight-host-winit
 
@@ -142,3 +155,22 @@ These accepted blocks are duplicated and adapted rather than prematurely extract
 
 SDL-only code remains separate: its command queue, initialization/window/event pump, event and
 gamepad translations, gamepad retention, raw-handle extraction, and GL context/token/present path.
+
+The intentional duplicate inventory below pins the matching implementation entry points after the
+lint-ordered Item I repair. Line numbers are source evidence for review, not a promise of API
+stability.
+
+| Shared block | SDL location | winit location |
+| --- | --- | --- |
+| lifecycle capability builder | `crates/flight-host-sdl/src/sdl_host.rs:496` | `crates/flight-host-winit/src/winit_host.rs:316` |
+| active-listener release | `crates/flight-host-sdl/src/sdl_host.rs:1053` | `crates/flight-host-winit/src/winit_host.rs:760` |
+| app-loop getter | `crates/flight-host-sdl/src/sdl_host.rs:1214` | `crates/flight-host-winit/src/winit_host.rs:836` |
+| input-ingress getter | `crates/flight-host-sdl/src/sdl_host.rs:1229` | `crates/flight-host-winit/src/winit_host.rs:841` |
+| lifecycle getter | `crates/flight-host-sdl/src/sdl_host.rs:1239` | `crates/flight-host-winit/src/winit_host.rs:851` |
+| native-window getter | `crates/flight-host-sdl/src/sdl_host.rs:1244` | `crates/flight-host-winit/src/winit_host.rs:856` |
+| screen aggregate getter | `crates/flight-host-sdl/src/sdl_host.rs:1249` | `crates/flight-host-winit/src/winit_host.rs:861` |
+| surface aggregate getter | `crates/flight-host-sdl/src/sdl_host.rs:1259` | `crates/flight-host-winit/src/winit_host.rs:873` |
+| window aggregate getter | `crates/flight-host-sdl/src/sdl_host.rs:1300` | `crates/flight-host-winit/src/winit_host.rs:909` |
+| live presentation surface | `crates/flight-host-sdl/src/sdl_host.rs:1356` | `crates/flight-host-winit/src/winit_host.rs:973` |
+| enabled input-sink collection | `crates/flight-host-sdl/src/sdl_host.rs:1601` | `crates/flight-host-winit/src/winit_host.rs:1146` |
+| canonical surface identity | `crates/flight-host-sdl/src/sdl_host.rs:1619` | `crates/flight-host-winit/src/winit_host.rs:1164` |

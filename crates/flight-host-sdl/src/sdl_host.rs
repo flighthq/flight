@@ -296,57 +296,6 @@ pub struct SdlHost {
     _not_send: PhantomData<Rc<()>>,
 }
 
-fn active_listener<T: ?Sized + Send + Sync + 'static>(
-    callback: Arc<T>,
-) -> (Arc<Listener<T>>, AppUnsubscribe) {
-    let listener = Arc::new(Listener {
-        active: AtomicBool::new(true),
-        callback,
-    });
-    let release_listener = listener.clone();
-    let release: AppUnsubscribe = Arc::new(move || {
-        release_listener.active.store(false, Ordering::Release);
-    });
-    return (listener, release);
-}
-
-fn attach_input(state: Arc<ProviderState>, kind: InputAttachmentKind) -> InputIngressAttach {
-    return Arc::new(move |source, sink, _options| {
-        if !state.is_our_source(source) {
-            return Arc::new(|| {});
-        }
-        let attachment = Arc::new(InputAttachment {
-            active: AtomicBool::new(true),
-            sink: sink.clone(),
-        });
-        let start_text_input = {
-            let mut input = state.input.lock().unwrap();
-            let start = kind == InputAttachmentKind::Text && !input.has_active(kind);
-            input.list_mut(kind).push(attachment.clone());
-            start
-        };
-        if start_text_input {
-            state.enqueue(SdlWindowCommand::TextInput(true));
-        }
-        if kind == InputAttachmentKind::Gamepad && (sink.is_enabled)() {
-            for data in state.gamepads.lock().unwrap().values() {
-                (sink.gamepad_connect)(data);
-            }
-        }
-        let release_state = state.clone();
-        return Arc::new(move || {
-            if !attachment.active.swap(false, Ordering::AcqRel) {
-                return;
-            }
-            if kind == InputAttachmentKind::Text
-                && !release_state.input.lock().unwrap().has_active(kind)
-            {
-                release_state.enqueue(SdlWindowCommand::TextInput(false));
-            }
-        });
-    });
-}
-
 fn create_app_loop_capability(state: &Arc<ProviderState>) -> HostAppLoopCapability {
     let request_state = state.clone();
     let cancel_state = state.clone();
@@ -372,192 +321,6 @@ fn create_app_loop_capability(state: &Arc<ProviderState>) -> HostAppLoopCapabili
                 .lock()
                 .unwrap()
                 .remove(&handle.0);
-        }),
-    };
-}
-
-fn create_host_spawn(provider: ProviderRef) -> HostSpawnCapability {
-    return HostSpawnCapability {
-        provider,
-        spawn: Arc::new(|future| {
-            std::thread::spawn(move || block_on(future));
-        }),
-    };
-}
-
-fn create_input_ingress_capability(state: &Arc<ProviderState>) -> HostInputIngressCapability {
-    return HostInputIngressCapability {
-        provider: state.provider.clone(),
-        attach_gamepad: attach_input(state.clone(), InputAttachmentKind::Gamepad),
-        attach_keyboard: attach_input(state.clone(), InputAttachmentKind::Keyboard),
-        attach_pointer: attach_input(state.clone(), InputAttachmentKind::Pointer),
-        attach_relative_pointer: attach_input(state.clone(), InputAttachmentKind::RelativePointer),
-        attach_text: attach_input(state.clone(), InputAttachmentKind::Text),
-        attach_wheel: attach_input(state.clone(), InputAttachmentKind::Wheel),
-    };
-}
-
-fn create_lifecycle_capability(state: &Arc<ProviderState>) -> HostLifecycleCapability {
-    let get_state = state.clone();
-    let subscribe_state = state.clone();
-    return HostLifecycleCapability {
-        get_state: Arc::new(move || get_state.lifecycle()),
-        subscribe: Arc::new(move |callback: LifecycleListener| {
-            let listener = Arc::new(Listener {
-                active: AtomicBool::new(true),
-                callback,
-            });
-            subscribe_state
-                .lifecycle_listeners
-                .lock()
-                .unwrap()
-                .push(listener.clone());
-            let release: LifecycleUnsubscribe = Arc::new(move || {
-                listener.active.store(false, Ordering::Release);
-            });
-            release
-        }),
-        get_launch_kind: Some(Arc::new(|| AppLaunchKind::Cold)),
-        subscribe_memory_warning: None,
-    };
-}
-
-fn create_screen_capabilities(state: &Arc<ProviderState>) -> HostScreenCapabilities {
-    let all_state = state.clone();
-    let primary_state = state.clone();
-    let cursor_state = state.clone();
-    return HostScreenCapabilities {
-        query: Some(HostScreenQueryCapability {
-            provider: state.provider.clone(),
-            destroy: None,
-            get_screens: Arc::new(move |out| {
-                *out = all_state.screens.lock().unwrap().clone();
-            }),
-            get_primary_screen: Arc::new(move |out| {
-                *out = primary_state
-                    .screens
-                    .lock()
-                    .unwrap()
-                    .iter()
-                    .find(|screen| screen.is_primary)
-                    .cloned()
-                    .unwrap_or_else(create_screen_info);
-            }),
-            get_cursor_position: Arc::new(move |out: &mut Vector2| {
-                let (x, y) = *cursor_state.pointer_position.lock().unwrap();
-                out.x = f64::from(cursor_state.window_x.load(Ordering::Acquire)) + f64::from(x);
-                out.y = f64::from(cursor_state.window_y.load(Ordering::Acquire)) + f64::from(y);
-            }),
-        }),
-        ..HostScreenCapabilities::default()
-    };
-}
-
-fn create_surface_capabilities(state: &Arc<ProviderState>) -> HostSurfaceCapabilities {
-    let resize_state = state.clone();
-    let display_state = state.clone();
-    return HostSurfaceCapabilities {
-        resize: Some(HostSurfaceResizeCapability {
-            provider: state.provider.clone(),
-            resize: Arc::new(move |surface, width, height| {
-                if resize_state.is_our_surface(surface) {
-                    resize_state.set_physical_size(width.max(0.0) as u32, height.max(0.0) as u32);
-                }
-            }),
-        }),
-        display: Some(HostSurfaceDisplayCapability {
-            provider: state.provider.clone(),
-            set_display_size: Arc::new(move |surface, width, height| {
-                if display_state.is_our_surface(surface) {
-                    display_state.enqueue(SdlWindowCommand::SetSize(
-                        width.max(1.0) as u32,
-                        height.max(1.0) as u32,
-                    ));
-                }
-            }),
-        }),
-    };
-}
-
-fn create_wgpu_capabilities(state: &Arc<ProviderState>) -> HostWgpuCapabilities {
-    let Some(gpu) = &state.gpu else {
-        return HostWgpuCapabilities::default();
-    };
-    let create_state = state.clone();
-    let acquire_state = state.clone();
-    let attach_state = state.clone();
-    let support_state = state.clone();
-    let device = gpu.device.clone();
-    let context = gpu.context.clone();
-    let format = gpu.format;
-    return HostWgpuCapabilities {
-        context: Some(HostWgpuCapability {
-            provider: state.provider.clone(),
-            create: Arc::new(move |_window, width, height| {
-                if !create_state.alive.load(Ordering::Acquire) {
-                    return None;
-                }
-                create_state.set_physical_size(width.max(0.0) as u32, height.max(0.0) as u32);
-                Some(NativeSurfaceHandle {
-                    provider: create_state.provider.clone(),
-                    handle: create_state.source_handle.clone(),
-                })
-            }),
-            acquire: Arc::new(move |surface, options: &WgpuHostAcquisitionOptions| {
-                let result = if !acquire_state.alive.load(Ordering::Acquire)
-                    || acquire_state
-                        .gpu
-                        .as_ref()
-                        .and_then(|gpu| gpu.owner.upgrade())
-                        .is_none()
-                    || !acquire_state.is_our_surface(surface)
-                    || options
-                        .format
-                        .as_ref()
-                        .is_some_and(|requested| get_wgpu_texture_format(requested) != Some(format))
-                {
-                    Err(flight_entity::FlightError {
-                        kind: flight_entity::FlightErrorKind::NotSupportedError,
-                        message: "the surface, format, or live backend does not belong to this SDL wgpu host".to_string(),
-                    })
-                } else {
-                    let mut acquisition = create_wgpu_host_acquisition();
-                    acquisition.context = context.clone();
-                    acquisition.device = device.clone();
-                    acquisition.format = get_wgpu_texture_format_name(format).to_string();
-                    acquisition.ownership = WgpuHostAcquisitionOwnership::Flight;
-                    acquisition.surface = live_presentation_surface(acquire_state.clone());
-                    Ok(acquisition)
-                };
-                let future: WgpuProviderFuture<WgpuHostAcquisition> =
-                    Box::pin(async move { result });
-                future
-            }),
-            attach_surface: Arc::new(move |surface, attachment: &WgpuSurfaceAttachment| {
-                let gpu = attach_state.gpu.as_ref()?;
-                if !attach_state.alive.load(Ordering::Acquire)
-                    || gpu.owner.upgrade().is_none()
-                    || !attach_state.is_our_surface(surface)
-                    || !Arc::ptr_eq(&attachment.device.provider, &attach_state.provider)
-                    || !Arc::ptr_eq(&attachment.device.handle, &gpu.device.handle)
-                    || get_wgpu_texture_format(&attachment.format) != Some(gpu.format)
-                {
-                    return None;
-                }
-                Some(WgpuSurfaceAttachResult {
-                    context: gpu.context.clone(),
-                    surface: live_presentation_surface(attach_state.clone()),
-                })
-            }),
-            is_supported: Arc::new(move || {
-                support_state.alive.load(Ordering::Acquire)
-                    && support_state
-                        .gpu
-                        .as_ref()
-                        .and_then(|gpu| gpu.owner.upgrade())
-                        .is_some()
-            }),
-            release: Arc::new(|_acquisition| {}),
         }),
     };
 }
@@ -622,221 +385,6 @@ fn create_gl_capabilities(state: &Arc<ProviderState>) -> HostGlCapabilities {
             }),
         }),
     };
-}
-
-fn create_window_capabilities(state: &Arc<ProviderState>) -> HostWindowCapabilities {
-    let provider = state.provider.clone();
-    let appearance_state = state.clone();
-    let appearance = HostWindowAppearanceCapability {
-        provider: provider.clone(),
-        set_icon: None,
-        set_opacity: None,
-        set_title: Arc::new(move |_window, title| {
-            appearance_state.enqueue(SdlWindowCommand::SetTitle(title.to_string()));
-        }),
-    };
-
-    let focus_state = state.clone();
-    let focus = HostWindowFocusCapability {
-        provider: provider.clone(),
-        focus: Arc::new(move |_window| focus_state.enqueue(SdlWindowCommand::Focus)),
-    };
-
-    let fullscreen_state = state.clone();
-    let fullscreen = HostWindowFullscreenCapability {
-        provider: provider.clone(),
-        set_fullscreen: Arc::new(move |_window, enabled| {
-            fullscreen_state.enqueue(SdlWindowCommand::Fullscreen(enabled));
-        }),
-    };
-
-    let bounds_state = state.clone();
-    let center_state = state.clone();
-    let position_state = state.clone();
-    let size_state = state.clone();
-    let geometry = HostWindowGeometryCapability {
-        provider: provider.clone(),
-        center: Some(Arc::new(move |_window| {
-            center_state.enqueue(SdlWindowCommand::Center)
-        })),
-        get_bounds: Arc::new(move |out: &mut WindowBounds, _window| {
-            out.x = bounds_state.window_x.load(Ordering::Acquire) as f32;
-            out.y = bounds_state.window_y.load(Ordering::Acquire) as f32;
-            out.width = bounds_state.logical_width() as f32;
-            out.height = bounds_state.logical_height() as f32;
-        }),
-        set_position: Arc::new(move |_window, x, y| {
-            position_state.enqueue(SdlWindowCommand::Position(x as i32, y as i32));
-        }),
-        set_size: Arc::new(move |_window, width, height| {
-            size_state.enqueue(SdlWindowCommand::SetSize(
-                width.max(1.0) as u32,
-                height.max(1.0) as u32,
-            ));
-        }),
-        subscribe_move: Some(Arc::new({
-            let state = state.clone();
-            move |callback: WindowMoveListener| {
-                let (listener, release) = active_listener(callback);
-                state.move_listeners.lock().unwrap().push(listener);
-                release
-            }
-        })),
-        subscribe_resize: Some(Arc::new({
-            let state = state.clone();
-            move |_target, callback: WindowResizeListener| {
-                let (listener, release) = active_listener(callback);
-                state.resize_listeners.lock().unwrap().push(listener);
-                release
-            }
-        })),
-    };
-
-    let close_state = state.clone();
-    let open_state = state.clone();
-    let lifecycle = HostWindowLifecycleCapability {
-        provider: provider.clone(),
-        close: Arc::new(move |_window| close_state.enqueue(SdlWindowCommand::Close)),
-        open: Arc::new(move |window, _options: &WindowOptions| {
-            let window = window.read().unwrap();
-            open_state.enqueue(SdlWindowCommand::Configure {
-                title: window.title.clone(),
-                width: window.width,
-                height: window.height,
-                resizable: window.resizable,
-                fullscreen: window.fullscreen,
-                minimized: window.minimized,
-                maximized: window.maximized,
-                visible: window.visible,
-            });
-            true
-        }),
-        subscribe_close: Some(Arc::new({
-            let state = state.clone();
-            move |request, close| {
-                let subscription = Arc::new(CloseSubscription {
-                    active: AtomicBool::new(true),
-                    close,
-                    request,
-                });
-                state
-                    .close_listeners
-                    .lock()
-                    .unwrap()
-                    .push(subscription.clone());
-                Arc::new(move || subscription.active.store(false, Ordering::Release))
-            }
-        })),
-    };
-
-    let maximum_state = state.clone();
-    let minimum_state = state.clone();
-    let resizable_state = state.clone();
-    let size_constraints = HostWindowSizeConstraintsCapability {
-        provider: provider.clone(),
-        set_maximum_size: Arc::new(move |_window, width, height| {
-            maximum_state.enqueue(SdlWindowCommand::SetMaximumSize(
-                width.max(1.0) as u32,
-                height.max(1.0) as u32,
-            ));
-        }),
-        set_minimum_size: Arc::new(move |_window, width, height| {
-            minimum_state.enqueue(SdlWindowCommand::SetMinimumSize(
-                width.max(1.0) as u32,
-                height.max(1.0) as u32,
-            ));
-        }),
-        set_resizable: Some(Arc::new(move |_window, value| {
-            resizable_state.enqueue(SdlWindowCommand::SetResizable(value));
-        })),
-    };
-
-    let maximize_state = state.clone();
-    let minimize_state = state.clone();
-    let restore_state = state.clone();
-    let window_state = HostWindowStateCapability {
-        provider: provider.clone(),
-        maximize: Arc::new(move |_window| maximize_state.enqueue(SdlWindowCommand::Maximize)),
-        minimize: Arc::new(move |_window| minimize_state.enqueue(SdlWindowCommand::Minimize)),
-        restore: Arc::new(move |_window| restore_state.enqueue(SdlWindowCommand::Restore)),
-    };
-
-    let hide_state = state.clone();
-    let show_state = state.clone();
-    let visibility = HostWindowVisibilityCapability {
-        provider: provider.clone(),
-        hide: Arc::new(move |_window| hide_state.enqueue(SdlWindowCommand::Hide)),
-        show: Arc::new(move |_window| show_state.enqueue(SdlWindowCommand::Show)),
-        subscribe_visibility: None,
-    };
-
-    let z_state = state.clone();
-    let z_order = HostWindowZOrderCapability {
-        provider,
-        set_always_on_top: Arc::new(move |_window, enabled| {
-            z_state.enqueue(SdlWindowCommand::AlwaysOnTop(enabled));
-        }),
-    };
-
-    return HostWindowCapabilities {
-        appearance: Some(appearance),
-        focus: Some(focus),
-        fullscreen: Some(fullscreen),
-        geometry: Some(geometry),
-        lifecycle: Some(lifecycle),
-        size_constraints: Some(size_constraints),
-        state: Some(window_state),
-        visibility: Some(visibility),
-        z_order: Some(z_order),
-        ..HostWindowCapabilities::default()
-    };
-}
-
-fn configure_gl_attributes(
-    video: &VideoSubsystem,
-    options: Option<&GlContextOptions>,
-    request_srgb: bool,
-) {
-    let attributes = options.and_then(|options| options.context_attributes.as_ref());
-    let antialias = options
-        .and_then(|options| options.antialias)
-        .or_else(|| attributes.and_then(|attributes| attributes.antialias))
-        .unwrap_or(false);
-    let alpha = attributes
-        .and_then(|attributes| attributes.alpha)
-        .unwrap_or(false);
-    let depth = attributes
-        .and_then(|attributes| attributes.depth)
-        .unwrap_or(true);
-    let stencil = attributes
-        .and_then(|attributes| attributes.stencil)
-        .unwrap_or(false);
-    let accelerated = attributes
-        .and_then(|attributes| attributes.fail_if_major_performance_caveat)
-        .unwrap_or(false);
-    let gl = video.gl_attr();
-    gl.reset();
-    gl.set_context_profile(GLProfile::Core);
-    #[cfg(target_os = "macos")]
-    {
-        gl.set_context_version(4, 1);
-        gl.set_context_flags().forward_compatible().set();
-    }
-    #[cfg(not(target_os = "macos"))]
-    gl.set_context_version(3, 3);
-    gl.set_red_size(8);
-    gl.set_green_size(8);
-    gl.set_blue_size(8);
-    gl.set_alpha_size(if alpha { 8 } else { 0 });
-    gl.set_depth_size(if depth { 24 } else { 0 });
-    gl.set_stencil_size(if stencil { 8 } else { 0 });
-    gl.set_double_buffer(true);
-    gl.set_framebuffer_srgb_compatible(request_srgb);
-    if accelerated {
-        gl.set_accelerated_visual(true);
-    }
-    gl.set_multisample_buffers(u8::from(antialias));
-    gl.set_multisample_samples(if antialias { 4 } else { 0 });
 }
 
 fn create_gpu_resources(
@@ -922,6 +470,83 @@ fn create_gpu_resources(
         owner,
         shared,
     });
+}
+
+fn create_host_spawn(provider: ProviderRef) -> HostSpawnCapability {
+    return HostSpawnCapability {
+        provider,
+        spawn: Arc::new(|future| {
+            std::thread::spawn(move || block_on(future));
+        }),
+    };
+}
+
+fn create_input_ingress_capability(state: &Arc<ProviderState>) -> HostInputIngressCapability {
+    return HostInputIngressCapability {
+        provider: state.provider.clone(),
+        attach_gamepad: attach_input(state.clone(), InputAttachmentKind::Gamepad),
+        attach_keyboard: attach_input(state.clone(), InputAttachmentKind::Keyboard),
+        attach_pointer: attach_input(state.clone(), InputAttachmentKind::Pointer),
+        attach_relative_pointer: attach_input(state.clone(), InputAttachmentKind::RelativePointer),
+        attach_text: attach_input(state.clone(), InputAttachmentKind::Text),
+        attach_wheel: attach_input(state.clone(), InputAttachmentKind::Wheel),
+    };
+}
+
+fn create_lifecycle_capability(state: &Arc<ProviderState>) -> HostLifecycleCapability {
+    let get_state = state.clone();
+    let subscribe_state = state.clone();
+    return HostLifecycleCapability {
+        get_state: Arc::new(move || get_state.lifecycle()),
+        subscribe: Arc::new(move |callback: LifecycleListener| {
+            let listener = Arc::new(Listener {
+                active: AtomicBool::new(true),
+                callback,
+            });
+            subscribe_state
+                .lifecycle_listeners
+                .lock()
+                .unwrap()
+                .push(listener.clone());
+            let release: LifecycleUnsubscribe = Arc::new(move || {
+                listener.active.store(false, Ordering::Release);
+            });
+            release
+        }),
+        get_launch_kind: Some(Arc::new(|| AppLaunchKind::Cold)),
+        subscribe_memory_warning: None,
+    };
+}
+
+fn create_screen_capabilities(state: &Arc<ProviderState>) -> HostScreenCapabilities {
+    let all_state = state.clone();
+    let primary_state = state.clone();
+    let cursor_state = state.clone();
+    return HostScreenCapabilities {
+        query: Some(HostScreenQueryCapability {
+            provider: state.provider.clone(),
+            destroy: None,
+            get_screens: Arc::new(move |out| {
+                *out = all_state.screens.lock().unwrap().clone();
+            }),
+            get_primary_screen: Arc::new(move |out| {
+                *out = primary_state
+                    .screens
+                    .lock()
+                    .unwrap()
+                    .iter()
+                    .find(|screen| screen.is_primary)
+                    .cloned()
+                    .unwrap_or_else(create_screen_info);
+            }),
+            get_cursor_position: Arc::new(move |out: &mut Vector2| {
+                let (x, y) = *cursor_state.pointer_position.lock().unwrap();
+                out.x = f64::from(cursor_state.window_x.load(Ordering::Acquire)) + f64::from(x);
+                out.y = f64::from(cursor_state.window_y.load(Ordering::Acquire)) + f64::from(y);
+            }),
+        }),
+        ..HostScreenCapabilities::default()
+    };
 }
 
 /// Creates one SDL context, window, event pump, and selected renderer backend.
@@ -1148,14 +773,379 @@ pub fn create_sdl_host_surface(host: &SdlHost) -> SurfaceRef {
     return host.surface.clone();
 }
 
-fn sdl_gl_get_proc_address(name: &str) -> *const c_void {
-    let Ok(name) = CString::new(name) else {
-        return std::ptr::null();
+fn create_surface_capabilities(state: &Arc<ProviderState>) -> HostSurfaceCapabilities {
+    let resize_state = state.clone();
+    let display_state = state.clone();
+    return HostSurfaceCapabilities {
+        resize: Some(HostSurfaceResizeCapability {
+            provider: state.provider.clone(),
+            resize: Arc::new(move |surface, width, height| {
+                if resize_state.is_our_surface(surface) {
+                    resize_state.set_physical_size(width.max(0.0) as u32, height.max(0.0) as u32);
+                }
+            }),
+        }),
+        display: Some(HostSurfaceDisplayCapability {
+            provider: state.provider.clone(),
+            set_display_size: Arc::new(move |surface, width, height| {
+                if display_state.is_our_surface(surface) {
+                    display_state.enqueue(SdlWindowCommand::SetSize(
+                        width.max(1.0) as u32,
+                        height.max(1.0) as u32,
+                    ));
+                }
+            }),
+        }),
     };
-    let pointer = unsafe { sdl3::sys::video::SDL_GL_GetProcAddress(name.as_ptr()) };
-    return pointer.map_or(std::ptr::null(), |function| {
-        function as *const () as *const c_void
+}
+
+fn create_wgpu_capabilities(state: &Arc<ProviderState>) -> HostWgpuCapabilities {
+    let Some(gpu) = &state.gpu else {
+        return HostWgpuCapabilities::default();
+    };
+    let create_state = state.clone();
+    let acquire_state = state.clone();
+    let attach_state = state.clone();
+    let support_state = state.clone();
+    let device = gpu.device.clone();
+    let context = gpu.context.clone();
+    let format = gpu.format;
+    return HostWgpuCapabilities {
+        context: Some(HostWgpuCapability {
+            provider: state.provider.clone(),
+            create: Arc::new(move |_window, width, height| {
+                if !create_state.alive.load(Ordering::Acquire) {
+                    return None;
+                }
+                create_state.set_physical_size(width.max(0.0) as u32, height.max(0.0) as u32);
+                Some(NativeSurfaceHandle {
+                    provider: create_state.provider.clone(),
+                    handle: create_state.source_handle.clone(),
+                })
+            }),
+            acquire: Arc::new(move |surface, options: &WgpuHostAcquisitionOptions| {
+                let result = if !acquire_state.alive.load(Ordering::Acquire)
+                    || acquire_state
+                        .gpu
+                        .as_ref()
+                        .and_then(|gpu| gpu.owner.upgrade())
+                        .is_none()
+                    || !acquire_state.is_our_surface(surface)
+                    || options
+                        .format
+                        .as_ref()
+                        .is_some_and(|requested| get_wgpu_texture_format(requested) != Some(format))
+                {
+                    Err(flight_entity::FlightError {
+                        kind: flight_entity::FlightErrorKind::NotSupportedError,
+                        message: "the surface, format, or live backend does not belong to this SDL wgpu host".to_string(),
+                    })
+                } else {
+                    let mut acquisition = create_wgpu_host_acquisition();
+                    acquisition.context = context.clone();
+                    acquisition.device = device.clone();
+                    acquisition.format = get_wgpu_texture_format_name(format).to_string();
+                    acquisition.ownership = WgpuHostAcquisitionOwnership::Flight;
+                    acquisition.surface = live_presentation_surface(acquire_state.clone());
+                    Ok(acquisition)
+                };
+                let future: WgpuProviderFuture<WgpuHostAcquisition> =
+                    Box::pin(async move { result });
+                future
+            }),
+            attach_surface: Arc::new(move |surface, attachment: &WgpuSurfaceAttachment| {
+                let gpu = attach_state.gpu.as_ref()?;
+                if !attach_state.alive.load(Ordering::Acquire)
+                    || gpu.owner.upgrade().is_none()
+                    || !attach_state.is_our_surface(surface)
+                    || !Arc::ptr_eq(&attachment.device.provider, &attach_state.provider)
+                    || !Arc::ptr_eq(&attachment.device.handle, &gpu.device.handle)
+                    || get_wgpu_texture_format(&attachment.format) != Some(gpu.format)
+                {
+                    return None;
+                }
+                Some(WgpuSurfaceAttachResult {
+                    context: gpu.context.clone(),
+                    surface: live_presentation_surface(attach_state.clone()),
+                })
+            }),
+            is_supported: Arc::new(move || {
+                support_state.alive.load(Ordering::Acquire)
+                    && support_state
+                        .gpu
+                        .as_ref()
+                        .and_then(|gpu| gpu.owner.upgrade())
+                        .is_some()
+            }),
+            release: Arc::new(|_acquisition| {}),
+        }),
+    };
+}
+
+fn create_window_capabilities(state: &Arc<ProviderState>) -> HostWindowCapabilities {
+    let provider = state.provider.clone();
+    let appearance_state = state.clone();
+    let appearance = HostWindowAppearanceCapability {
+        provider: provider.clone(),
+        set_icon: None,
+        set_opacity: None,
+        set_title: Arc::new(move |_window, title| {
+            appearance_state.enqueue(SdlWindowCommand::SetTitle(title.to_string()));
+        }),
+    };
+
+    let focus_state = state.clone();
+    let focus = HostWindowFocusCapability {
+        provider: provider.clone(),
+        focus: Arc::new(move |_window| focus_state.enqueue(SdlWindowCommand::Focus)),
+    };
+
+    let fullscreen_state = state.clone();
+    let fullscreen = HostWindowFullscreenCapability {
+        provider: provider.clone(),
+        set_fullscreen: Arc::new(move |_window, enabled| {
+            fullscreen_state.enqueue(SdlWindowCommand::Fullscreen(enabled));
+        }),
+    };
+
+    let bounds_state = state.clone();
+    let center_state = state.clone();
+    let position_state = state.clone();
+    let size_state = state.clone();
+    let geometry = HostWindowGeometryCapability {
+        provider: provider.clone(),
+        center: Some(Arc::new(move |_window| {
+            center_state.enqueue(SdlWindowCommand::Center)
+        })),
+        get_bounds: Arc::new(move |out: &mut WindowBounds, _window| {
+            out.x = bounds_state.window_x.load(Ordering::Acquire) as f32;
+            out.y = bounds_state.window_y.load(Ordering::Acquire) as f32;
+            out.width = bounds_state.logical_width() as f32;
+            out.height = bounds_state.logical_height() as f32;
+        }),
+        set_position: Arc::new(move |_window, x, y| {
+            position_state.enqueue(SdlWindowCommand::Position(x as i32, y as i32));
+        }),
+        set_size: Arc::new(move |_window, width, height| {
+            size_state.enqueue(SdlWindowCommand::SetSize(
+                width.max(1.0) as u32,
+                height.max(1.0) as u32,
+            ));
+        }),
+        subscribe_move: Some(Arc::new({
+            let state = state.clone();
+            move |callback: WindowMoveListener| {
+                let (listener, release) = active_listener(callback);
+                state.move_listeners.lock().unwrap().push(listener);
+                release
+            }
+        })),
+        subscribe_resize: Some(Arc::new({
+            let state = state.clone();
+            move |_target, callback: WindowResizeListener| {
+                let (listener, release) = active_listener(callback);
+                state.resize_listeners.lock().unwrap().push(listener);
+                release
+            }
+        })),
+    };
+
+    let close_state = state.clone();
+    let open_state = state.clone();
+    let lifecycle = HostWindowLifecycleCapability {
+        provider: provider.clone(),
+        close: Arc::new(move |_window| close_state.enqueue(SdlWindowCommand::Close)),
+        open: Arc::new(move |window, _options: &WindowOptions| {
+            let window = window.read().unwrap();
+            open_state.enqueue(SdlWindowCommand::Configure {
+                title: window.title.clone(),
+                width: window.width,
+                height: window.height,
+                resizable: window.resizable,
+                fullscreen: window.fullscreen,
+                minimized: window.minimized,
+                maximized: window.maximized,
+                visible: window.visible,
+            });
+            true
+        }),
+        subscribe_close: Some(Arc::new({
+            let state = state.clone();
+            move |request, close| {
+                let subscription = Arc::new(CloseSubscription {
+                    active: AtomicBool::new(true),
+                    close,
+                    request,
+                });
+                state
+                    .close_listeners
+                    .lock()
+                    .unwrap()
+                    .push(subscription.clone());
+                Arc::new(move || subscription.active.store(false, Ordering::Release))
+            }
+        })),
+    };
+
+    let maximum_state = state.clone();
+    let minimum_state = state.clone();
+    let resizable_state = state.clone();
+    let size_constraints = HostWindowSizeConstraintsCapability {
+        provider: provider.clone(),
+        set_maximum_size: Arc::new(move |_window, width, height| {
+            maximum_state.enqueue(SdlWindowCommand::SetMaximumSize(
+                width.max(1.0) as u32,
+                height.max(1.0) as u32,
+            ));
+        }),
+        set_minimum_size: Arc::new(move |_window, width, height| {
+            minimum_state.enqueue(SdlWindowCommand::SetMinimumSize(
+                width.max(1.0) as u32,
+                height.max(1.0) as u32,
+            ));
+        }),
+        set_resizable: Some(Arc::new(move |_window, value| {
+            resizable_state.enqueue(SdlWindowCommand::SetResizable(value));
+        })),
+    };
+
+    let maximize_state = state.clone();
+    let minimize_state = state.clone();
+    let restore_state = state.clone();
+    let window_state = HostWindowStateCapability {
+        provider: provider.clone(),
+        maximize: Arc::new(move |_window| maximize_state.enqueue(SdlWindowCommand::Maximize)),
+        minimize: Arc::new(move |_window| minimize_state.enqueue(SdlWindowCommand::Minimize)),
+        restore: Arc::new(move |_window| restore_state.enqueue(SdlWindowCommand::Restore)),
+    };
+
+    let hide_state = state.clone();
+    let show_state = state.clone();
+    let visibility = HostWindowVisibilityCapability {
+        provider: provider.clone(),
+        hide: Arc::new(move |_window| hide_state.enqueue(SdlWindowCommand::Hide)),
+        show: Arc::new(move |_window| show_state.enqueue(SdlWindowCommand::Show)),
+        subscribe_visibility: None,
+    };
+
+    let z_state = state.clone();
+    let z_order = HostWindowZOrderCapability {
+        provider,
+        set_always_on_top: Arc::new(move |_window, enabled| {
+            z_state.enqueue(SdlWindowCommand::AlwaysOnTop(enabled));
+        }),
+    };
+
+    return HostWindowCapabilities {
+        appearance: Some(appearance),
+        focus: Some(focus),
+        fullscreen: Some(fullscreen),
+        geometry: Some(geometry),
+        lifecycle: Some(lifecycle),
+        size_constraints: Some(size_constraints),
+        state: Some(window_state),
+        visibility: Some(visibility),
+        z_order: Some(z_order),
+        ..HostWindowCapabilities::default()
+    };
+}
+
+fn active_listener<T: ?Sized + Send + Sync + 'static>(
+    callback: Arc<T>,
+) -> (Arc<Listener<T>>, AppUnsubscribe) {
+    let listener = Arc::new(Listener {
+        active: AtomicBool::new(true),
+        callback,
     });
+    let release_listener = listener.clone();
+    let release: AppUnsubscribe = Arc::new(move || {
+        release_listener.active.store(false, Ordering::Release);
+    });
+    return (listener, release);
+}
+
+fn attach_input(state: Arc<ProviderState>, kind: InputAttachmentKind) -> InputIngressAttach {
+    return Arc::new(move |source, sink, _options| {
+        if !state.is_our_source(source) {
+            return Arc::new(|| {});
+        }
+        let attachment = Arc::new(InputAttachment {
+            active: AtomicBool::new(true),
+            sink: sink.clone(),
+        });
+        let start_text_input = {
+            let mut input = state.input.lock().unwrap();
+            let start = kind == InputAttachmentKind::Text && !input.has_active(kind);
+            input.list_mut(kind).push(attachment.clone());
+            start
+        };
+        if start_text_input {
+            state.enqueue(SdlWindowCommand::TextInput(true));
+        }
+        if kind == InputAttachmentKind::Gamepad && (sink.is_enabled)() {
+            for data in state.gamepads.lock().unwrap().values() {
+                (sink.gamepad_connect)(data);
+            }
+        }
+        let release_state = state.clone();
+        return Arc::new(move || {
+            if !attachment.active.swap(false, Ordering::AcqRel) {
+                return;
+            }
+            if kind == InputAttachmentKind::Text
+                && !release_state.input.lock().unwrap().has_active(kind)
+            {
+                release_state.enqueue(SdlWindowCommand::TextInput(false));
+            }
+        });
+    });
+}
+
+fn configure_gl_attributes(
+    video: &VideoSubsystem,
+    options: Option<&GlContextOptions>,
+    request_srgb: bool,
+) {
+    let attributes = options.and_then(|options| options.context_attributes.as_ref());
+    let antialias = options
+        .and_then(|options| options.antialias)
+        .or_else(|| attributes.and_then(|attributes| attributes.antialias))
+        .unwrap_or(false);
+    let alpha = attributes
+        .and_then(|attributes| attributes.alpha)
+        .unwrap_or(false);
+    let depth = attributes
+        .and_then(|attributes| attributes.depth)
+        .unwrap_or(true);
+    let stencil = attributes
+        .and_then(|attributes| attributes.stencil)
+        .unwrap_or(false);
+    let accelerated = attributes
+        .and_then(|attributes| attributes.fail_if_major_performance_caveat)
+        .unwrap_or(false);
+    let gl = video.gl_attr();
+    gl.reset();
+    gl.set_context_profile(GLProfile::Core);
+    #[cfg(target_os = "macos")]
+    {
+        gl.set_context_version(4, 1);
+        gl.set_context_flags().forward_compatible().set();
+    }
+    #[cfg(not(target_os = "macos"))]
+    gl.set_context_version(3, 3);
+    gl.set_red_size(8);
+    gl.set_green_size(8);
+    gl.set_blue_size(8);
+    gl.set_alpha_size(if alpha { 8 } else { 0 });
+    gl.set_depth_size(if depth { 24 } else { 0 });
+    gl.set_stencil_size(if stencil { 8 } else { 0 });
+    gl.set_double_buffer(true);
+    gl.set_framebuffer_srgb_compatible(request_srgb);
+    if accelerated {
+        gl.set_accelerated_visual(true);
+    }
+    gl.set_multisample_buffers(u8::from(antialias));
+    gl.set_multisample_samples(if antialias { 4 } else { 0 });
 }
 
 /// Ends the host's lifetime on the creator thread.
@@ -1164,6 +1154,26 @@ pub fn destroy_sdl_host(mut host: SdlHost) -> Result<(), SdlHostFailure> {
     host.shutdown();
     drop(host);
     return Ok(());
+}
+
+fn display_to_screen(display: &Display, primary: bool, index: usize) -> Option<ScreenInfo> {
+    let bounds = display.get_bounds().ok()?;
+    let work = display.get_usable_bounds().unwrap_or(bounds);
+    let scale = f64::from(display.get_content_scale().unwrap_or(1.0).max(f32::EPSILON));
+    let mut screen = create_screen_info();
+    screen.id = index as f64 + 1.0;
+    screen.x = f64::from(bounds.x()) / scale;
+    screen.y = f64::from(bounds.y()) / scale;
+    screen.width = f64::from(bounds.width()) / scale;
+    screen.height = f64::from(bounds.height()) / scale;
+    screen.work_width = f64::from(work.width()) / scale;
+    screen.work_height = f64::from(work.height()) / scale;
+    screen.scale_factor = scale;
+    screen.is_primary = primary;
+    screen.physical_width = f64::from(bounds.width());
+    screen.physical_height = f64::from(bounds.height());
+    screen.label = display.get_name().unwrap_or_default();
+    return Some(screen);
 }
 
 /// Produces a stable creation/run diagnostic without ambient SDL last-error state.
@@ -1343,6 +1353,14 @@ pub fn get_sdl_host_window_z_order_capability(
     return host.window_capabilities.z_order.as_ref();
 }
 
+fn live_presentation_surface(state: Arc<ProviderState>) -> WgpuPresentationSurface {
+    let width_state = state.clone();
+    return WgpuPresentationSurface {
+        width: Arc::new(move || width_state.physical_width.load(Ordering::Acquire) as f32),
+        height: Arc::new(move || state.physical_height.load(Ordering::Acquire) as f32),
+    };
+}
+
 /// Makes the selected SDL OpenGL context current on the creator thread.
 pub fn make_sdl_host_gl_context_current(host: &SdlHost) -> Result<(), SdlHostFailure> {
     require_creator_thread(host)?;
@@ -1368,6 +1386,14 @@ pub fn make_sdl_host_gl_context_current(host: &SdlHost) -> Result<(), SdlHostFai
         .gl_make_current(context)
         .map_err(|error| failure(SdlHostFailureKind::GlContext, error))?;
     return Ok(());
+}
+
+fn mouse_state_to_mask(state: &MouseState) -> u32 {
+    return u32::from(state.left())
+        | (u32::from(state.right()) << 1)
+        | (u32::from(state.middle()) << 2)
+        | (u32::from(state.x1()) << 3)
+        | (u32::from(state.x2()) << 4);
 }
 
 /// Swaps the GL window buffers on the creator thread.
@@ -1452,34 +1478,6 @@ pub fn run_sdl_host(
     }
 }
 
-fn display_to_screen(display: &Display, primary: bool, index: usize) -> Option<ScreenInfo> {
-    let bounds = display.get_bounds().ok()?;
-    let work = display.get_usable_bounds().unwrap_or(bounds);
-    let scale = f64::from(display.get_content_scale().unwrap_or(1.0).max(f32::EPSILON));
-    let mut screen = create_screen_info();
-    screen.id = index as f64 + 1.0;
-    screen.x = f64::from(bounds.x()) / scale;
-    screen.y = f64::from(bounds.y()) / scale;
-    screen.width = f64::from(bounds.width()) / scale;
-    screen.height = f64::from(bounds.height()) / scale;
-    screen.work_width = f64::from(work.width()) / scale;
-    screen.work_height = f64::from(work.height()) / scale;
-    screen.scale_factor = scale;
-    screen.is_primary = primary;
-    screen.physical_width = f64::from(bounds.width());
-    screen.physical_height = f64::from(bounds.height());
-    screen.label = display.get_name().unwrap_or_default();
-    return Some(screen);
-}
-
-fn live_presentation_surface(state: Arc<ProviderState>) -> WgpuPresentationSurface {
-    let width_state = state.clone();
-    return WgpuPresentationSurface {
-        width: Arc::new(move || width_state.physical_width.load(Ordering::Acquire) as f32),
-        height: Arc::new(move || state.physical_height.load(Ordering::Acquire) as f32),
-    };
-}
-
 fn screens_from_video(video: &VideoSubsystem) -> Vec<ScreenInfo> {
     let primary = video.get_primary_display().ok();
     return video
@@ -1491,6 +1489,16 @@ fn screens_from_video(video: &VideoSubsystem) -> Vec<ScreenInfo> {
             display_to_screen(&display, primary.as_ref() == Some(&display), index)
         })
         .collect();
+}
+
+fn sdl_gl_get_proc_address(name: &str) -> *const c_void {
+    let Ok(name) = CString::new(name) else {
+        return std::ptr::null();
+    };
+    let pointer = unsafe { sdl3::sys::video::SDL_GL_GetProcAddress(name.as_ptr()) };
+    return pointer.map_or(std::ptr::null(), |function| {
+        function as *const () as *const c_void
+    });
 }
 
 impl Default for SdlHostOptions {
@@ -2211,6 +2219,19 @@ impl SdlHost {
         }
     }
 
+    fn dispatch_resize_listeners(&self) {
+        let width = self.state.logical_width() as f32;
+        let height = self.state.logical_height() as f32;
+        let scale = f64::from(f32::from_bits(
+            self.state.scale_factor.load(Ordering::Acquire),
+        ));
+        for listener in self.state.resize_listeners.lock().unwrap().clone() {
+            if listener.active.load(Ordering::Acquire) {
+                (listener.callback)(width, height, scale);
+            }
+        }
+    }
+
     #[allow(clippy::too_many_arguments)]
     fn dispatch_touch(
         &self,
@@ -2315,19 +2336,6 @@ impl SdlHost {
             | WindowEvent::EnterFullscreen
             | WindowEvent::LeaveFullscreen => self.refresh_window_snapshot(),
             _ => {}
-        }
-    }
-
-    fn dispatch_resize_listeners(&self) {
-        let width = self.state.logical_width() as f32;
-        let height = self.state.logical_height() as f32;
-        let scale = f64::from(f32::from_bits(
-            self.state.scale_factor.load(Ordering::Acquire),
-        ));
-        for listener in self.state.resize_listeners.lock().unwrap().clone() {
-            if listener.active.load(Ordering::Acquire) {
-                (listener.callback)(width, height, scale);
-            }
         }
     }
 
@@ -2481,12 +2489,4 @@ enum TouchPhase {
     Down,
     Move,
     Up,
-}
-
-fn mouse_state_to_mask(state: &MouseState) -> u32 {
-    return u32::from(state.left())
-        | (u32::from(state.right()) << 1)
-        | (u32::from(state.middle()) << 2)
-        | (u32::from(state.x1()) << 3)
-        | (u32::from(state.x2()) << 4);
 }
