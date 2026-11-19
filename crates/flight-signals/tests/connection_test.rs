@@ -1,6 +1,7 @@
 use std::sync::{Arc, Mutex};
 
 use flight_signals::*;
+use std::sync::atomic::{AtomicUsize, Ordering};
 
 struct ValueEvent {
     value: i32,
@@ -171,6 +172,30 @@ mod connect_signal_tracked {
         assert_eq!(*calls.lock().unwrap(), vec!["first", "later"]);
         assert!(!is_signal_connection_connected(&later));
     }
+
+    #[test]
+    fn dropping_the_only_source_drops_the_slot_and_disconnects_the_handle() {
+        let signal: Signal<()> = create_signal();
+        let dropped = Arc::new(AtomicUsize::new(0));
+        let hook_dropped = dropped.clone();
+        let hook = z_create_drop_hook(move || {
+            hook_dropped.fetch_add(1, Ordering::SeqCst);
+        });
+        let connection = connect_signal_tracked(
+            &signal,
+            Arc::new(move |_: &()| {
+                let _ = &hook;
+            }),
+            None,
+        );
+        drop(signal);
+        assert_eq!(dropped.load(Ordering::SeqCst), 1);
+        assert!(!is_signal_connection_connected(&connection));
+        pause_signal_connection(&connection);
+        resume_signal_connection(&connection);
+        disconnect_signal_connection(&connection);
+        assert_eq!(dropped.load(Ordering::SeqCst), 1);
+    }
 }
 
 mod disconnect_signal_connection {
@@ -193,6 +218,28 @@ mod disconnect_signal_connection {
 
         assert_eq!(*count.lock().unwrap(), 0);
         assert!(!is_signal_connection_connected(&connection));
+    }
+
+    #[test]
+    fn drops_the_slot_after_releasing_the_data_lock() {
+        z_run_within_deadline(|| {
+            let signal: Signal<()> = create_signal();
+            let probe = signal.clone();
+            let hook = z_create_drop_hook(move || {
+                assert!(has_signal_slots(&probe));
+                clear_signal(&probe);
+            });
+            connect_signal(&signal, Arc::new(|_: &()| {}), None);
+            let connection = connect_signal_tracked(
+                &signal,
+                Arc::new(move |_: &()| {
+                    let _ = &hook;
+                }),
+                None,
+            );
+            disconnect_signal_connection(&connection);
+            assert!(!has_signal_slots(&signal));
+        });
     }
 }
 
@@ -336,5 +383,45 @@ mod resume_signal_connection {
         assert_eq!(*calls.lock().unwrap(), vec!["low", "high", "low"]);
         assert!(is_signal_connection_connected(&connection));
         assert!(!is_signal_connection_paused(&connection));
+    }
+}
+
+// Runs `test` on its own thread and fails instead of hanging when it deadlocks.
+fn z_run_within_deadline(test: impl FnOnce() + Send + 'static) {
+    let (done, finished) = std::sync::mpsc::channel();
+    let worker = std::thread::spawn(move || {
+        test();
+        done.send(()).unwrap();
+    });
+    if finished
+        .recv_timeout(std::time::Duration::from_secs(5))
+        .is_err()
+    {
+        panic!("signal teardown deadlocked or panicked");
+    }
+    worker.join().unwrap();
+}
+
+// A value whose drop runs `hook`: slots capture one to observe when, and under which locks, the
+// signal drops them.
+struct DropHook {
+    hook: Mutex<Option<Box<dyn FnOnce() + Send>>>,
+}
+
+fn z_create_drop_hook(hook: impl FnOnce() + Send + 'static) -> DropHook {
+    return DropHook {
+        hook: Mutex::new(Some(Box::new(hook))),
+    };
+}
+
+fn z_run_drop_hook(drop_hook: &DropHook) {
+    if let Some(hook) = drop_hook.hook.lock().unwrap().take() {
+        hook();
+    }
+}
+
+impl Drop for DropHook {
+    fn drop(&mut self) {
+        z_run_drop_hook(self);
     }
 }

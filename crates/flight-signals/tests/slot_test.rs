@@ -2,6 +2,7 @@ use std::sync::{Arc, Barrier, Mutex};
 use std::thread;
 
 use flight_signals::*;
+use std::sync::atomic::{AtomicUsize, Ordering};
 
 #[derive(Clone, Debug, PartialEq)]
 struct PairEvent {
@@ -27,6 +28,30 @@ mod clear_signal {
         clear_signal(&signal);
         emit_signal(&signal, &());
         assert_eq!(*count.lock().unwrap(), 0);
+    }
+
+    #[test]
+    fn drops_cleared_slots_after_releasing_the_data_lock() {
+        z_run_within_deadline(|| {
+            let signal: Signal<()> = create_signal();
+            let probe = signal.clone();
+            let dropped = Arc::new(AtomicUsize::new(0));
+            let hook_dropped = dropped.clone();
+            let hook = z_create_drop_hook(move || {
+                assert!(!has_signal_slots(&probe));
+                clear_signal(&probe);
+                hook_dropped.fetch_add(1, Ordering::SeqCst);
+            });
+            connect_signal(
+                &signal,
+                Arc::new(move |_: &()| {
+                    let _ = &hook;
+                }),
+                None,
+            );
+            clear_signal(&signal);
+            assert_eq!(dropped.load(Ordering::SeqCst), 1);
+        });
     }
 }
 
@@ -276,6 +301,53 @@ mod disconnect_signal {
             assert!(is_slot_connected(&signal, connected));
         }
     }
+
+    #[test]
+    fn drops_the_last_slot_after_releasing_the_data_lock() {
+        z_run_within_deadline(|| {
+            let signal: Signal<()> = create_signal();
+            let probe = signal.clone();
+            let dropped = Arc::new(AtomicUsize::new(0));
+            let hook_dropped = dropped.clone();
+            let hook = z_create_drop_hook(move || {
+                assert!(!has_signal_slots(&probe));
+                connect_signal(&probe, Arc::new(|_: &()| {}), None);
+                hook_dropped.fetch_add(1, Ordering::SeqCst);
+            });
+            let id = connect_signal(
+                &signal,
+                Arc::new(move |_: &()| {
+                    let _ = &hook;
+                }),
+                None,
+            );
+            disconnect_signal(&signal, id);
+            assert_eq!(dropped.load(Ordering::SeqCst), 1);
+            assert!(has_signal_slots(&signal));
+        });
+    }
+
+    #[test]
+    fn drops_the_removed_slot_after_releasing_the_data_lock() {
+        z_run_within_deadline(|| {
+            let signal: Signal<()> = create_signal();
+            let probe = signal.clone();
+            let other = connect_signal(&signal, Arc::new(|_: &()| {}), None);
+            let hook = z_create_drop_hook(move || {
+                assert!(has_signal_slots(&probe));
+                disconnect_signal(&probe, other);
+            });
+            let id = connect_signal(
+                &signal,
+                Arc::new(move |_: &()| {
+                    let _ = &hook;
+                }),
+                None,
+            );
+            disconnect_signal(&signal, id);
+            assert!(!has_signal_slots(&signal));
+        });
+    }
 }
 
 mod has_signal_slots {
@@ -325,5 +397,45 @@ mod is_slot_connected {
         let id = connect_signal(&signal, Arc::new(|_: &()| {}), None);
         disconnect_signal(&signal, id);
         assert!(!is_slot_connected(&signal, id));
+    }
+}
+
+// Runs `test` on its own thread and fails instead of hanging when it deadlocks.
+fn z_run_within_deadline(test: impl FnOnce() + Send + 'static) {
+    let (done, finished) = std::sync::mpsc::channel();
+    let worker = std::thread::spawn(move || {
+        test();
+        done.send(()).unwrap();
+    });
+    if finished
+        .recv_timeout(std::time::Duration::from_secs(5))
+        .is_err()
+    {
+        panic!("signal teardown deadlocked or panicked");
+    }
+    worker.join().unwrap();
+}
+
+// A value whose drop runs `hook`: slots capture one to observe when, and under which locks, the
+// signal drops them.
+struct DropHook {
+    hook: Mutex<Option<Box<dyn FnOnce() + Send>>>,
+}
+
+fn z_create_drop_hook(hook: impl FnOnce() + Send + 'static) -> DropHook {
+    return DropHook {
+        hook: Mutex::new(Some(Box::new(hook))),
+    };
+}
+
+fn z_run_drop_hook(drop_hook: &DropHook) {
+    if let Some(hook) = drop_hook.hook.lock().unwrap().take() {
+        hook();
+    }
+}
+
+impl Drop for DropHook {
+    fn drop(&mut self) {
+        z_run_drop_hook(self);
     }
 }

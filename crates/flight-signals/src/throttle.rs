@@ -3,8 +3,10 @@ use std::sync::{Arc, Mutex};
 use flight_entity::{Ref, allocate_entity};
 
 use crate::slot::{connect_signal, disconnect_signal};
+use crate::connection::{connect_signal_tracked, disconnect_signal_connection};
 use crate::types::{
-    FrameTick, Signal, SignalSlot, SignalThrottleOptions, SignalTimer, SignalTimerState, TimerId,
+    FrameTick, Signal, SignalConnection, SignalSlot, SignalThrottleOptions, SignalTimer,
+    SignalTimerState, SignalTrackedConnectOptions, TimerId,
 };
 
 #[cfg(test)]
@@ -204,27 +206,37 @@ pub fn clear_signal_timeout(state: &Ref<SignalTimerState>, id: TimerId) {
 
 /// Connects a frame-tick signal to a slot at a reduced frame rate (TS
 /// `connectSignalAtFrameRate`). The slot receives the accumulated delta time since the last
-/// fire, not the individual source deltas.
+/// fire, not the individual source deltas. The returned disposer disconnects; it does not keep
+/// the source alive.
 // flight-lint: allow(f64) D1: frame rate and accumulated milliseconds use f64 precision
 pub fn connect_signal_at_frame_rate(
     source: &Signal<FrameTick>,
     fps: f64,
     slot: Arc<dyn Fn(f64) + Send + Sync>,
 ) -> Arc<dyn Fn() + Send + Sync> {
+    let connection = connect_signal_at_frame_rate_tracked(source, fps, slot, None);
+    return Arc::new(move || disconnect_signal_connection(&connection));
+}
+
+/// `connect_signal_at_frame_rate` with a tracked handle: the registration's connected and paused
+/// state, priority, once and scope behave as for `connect_signal_tracked`.
+// flight-lint: allow(f64) D1: frame rate and accumulated milliseconds use f64 precision
+// flight-lint: allow(conform-extra) D4: contract-lane tracked form for hosts that need registration state, as connect_signal_tracked is for connect_signal
+pub fn connect_signal_at_frame_rate_tracked(
+    source: &Signal<FrameTick>,
+    fps: f64,
+    slot: Arc<dyn Fn(f64) + Send + Sync>,
+    options: Option<&SignalTrackedConnectOptions>,
+) -> SignalConnection {
     let period = 1000.0 / fps;
     let elapsed = Arc::new(Mutex::new(0.0_f64));
-
-    let handler_elapsed = elapsed.clone();
     let handler: SignalSlot<FrameTick> = Arc::new(move |tick: &FrameTick| {
-        let fire = advance_frame_elapsed(&handler_elapsed, tick.delta_time, period);
+        let fire = advance_frame_elapsed(&elapsed, tick.delta_time, period);
         if let Some(total) = fire {
             slot(total);
         }
     });
-
-    let slot_id = connect_signal(source, handler, None);
-    let cleanup_source = source.clone();
-    return Arc::new(move || disconnect_signal(&cleanup_source, slot_id));
+    return connect_signal_tracked(source, handler, options);
 }
 
 /// Connects a slot with debounce semantics (TS `connectSignalDebounced`). Timer state and the

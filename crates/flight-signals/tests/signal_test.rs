@@ -1,5 +1,6 @@
 use flight_signals::contract::initialize_signal;
 use flight_signals::*;
+use std::sync::Mutex;
 
 mod create_signal {
     use super::*;
@@ -62,5 +63,65 @@ mod initialize_signal {
         connect_signal(&reset, std::sync::Arc::new(|_| {}), None);
         initialize_signal(&mut reset);
         assert!(!has_signal_slots(&reset));
+    }
+
+    #[test]
+    fn drops_previous_slots_after_releasing_the_data_lock() {
+        z_run_within_deadline(|| {
+            let mut signal: Signal<()> = create_signal();
+            let probe = signal.clone();
+            let hook = z_create_drop_hook(move || {
+                has_signal_slots(&probe);
+            });
+            connect_signal(
+                &signal,
+                std::sync::Arc::new(move |_: &()| {
+                    let _ = &hook;
+                }),
+                None,
+            );
+            initialize_signal(&mut signal);
+            assert!(!has_signal_slots(&signal));
+        });
+    }
+}
+
+// Runs `test` on its own thread and fails instead of hanging when it deadlocks.
+fn z_run_within_deadline(test: impl FnOnce() + Send + 'static) {
+    let (done, finished) = std::sync::mpsc::channel();
+    let worker = std::thread::spawn(move || {
+        test();
+        done.send(()).unwrap();
+    });
+    if finished
+        .recv_timeout(std::time::Duration::from_secs(5))
+        .is_err()
+    {
+        panic!("signal teardown deadlocked or panicked");
+    }
+    worker.join().unwrap();
+}
+
+// A value whose drop runs `hook`: slots capture one to observe when, and under which locks, the
+// signal drops them.
+struct DropHook {
+    hook: Mutex<Option<Box<dyn FnOnce() + Send>>>,
+}
+
+fn z_create_drop_hook(hook: impl FnOnce() + Send + 'static) -> DropHook {
+    return DropHook {
+        hook: Mutex::new(Some(Box::new(hook))),
+    };
+}
+
+fn z_run_drop_hook(drop_hook: &DropHook) {
+    if let Some(hook) = drop_hook.hook.lock().unwrap().take() {
+        hook();
+    }
+}
+
+impl Drop for DropHook {
+    fn drop(&mut self) {
+        z_run_drop_hook(self);
     }
 }

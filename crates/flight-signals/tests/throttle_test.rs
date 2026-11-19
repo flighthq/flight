@@ -1,8 +1,11 @@
 use std::sync::{Arc, Mutex, RwLock};
 
 use flight_entity::Ref;
-use flight_signals::contract::initialize_signal_timer_state;
+use flight_signals::contract::{
+    connect_signal_at_frame_rate_tracked, initialize_signal_timer_state,
+};
 use flight_signals::*;
+use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 
 type TimerRef = Ref<SignalTimerState>;
 
@@ -112,6 +115,89 @@ mod connect_signal_at_frame_rate {
         detach();
         emit_signal(&source, &FrameTick { delta_time: 200.0 });
         assert_eq!(*fired.lock().unwrap(), 0);
+    }
+
+    #[test]
+    fn the_disposer_does_not_keep_the_source_alive() {
+        let source: Signal<FrameTick> = create_signal();
+        let dropped = Arc::new(AtomicUsize::new(0));
+        let hook_dropped = dropped.clone();
+        let hook = z_create_drop_hook(move || {
+            hook_dropped.fetch_add(1, Ordering::SeqCst);
+        });
+        let detach = connect_signal_at_frame_rate(
+            &source,
+            10.0,
+            Arc::new(move |_: f64| {
+                let _ = &hook;
+            }),
+        );
+        drop(source);
+        assert_eq!(dropped.load(Ordering::SeqCst), 1);
+        detach();
+        assert_eq!(dropped.load(Ordering::SeqCst), 1);
+    }
+}
+
+mod connect_signal_at_frame_rate_tracked {
+    use super::*;
+
+    #[test]
+    fn follows_tracked_pause_and_resume() {
+        let source: Signal<FrameTick> = create_signal();
+        let fired = Arc::new(Mutex::new(Vec::new()));
+        let out = fired.clone();
+        let connection = connect_signal_at_frame_rate_tracked(
+            &source,
+            10.0,
+            Arc::new(move |total: f64| out.lock().unwrap().push(total)),
+            None,
+        );
+        pause_signal_connection(&connection);
+        emit_signal(&source, &FrameTick { delta_time: 200.0 });
+        resume_signal_connection(&connection);
+        emit_signal(&source, &FrameTick { delta_time: 100.0 });
+        assert_eq!(*fired.lock().unwrap(), vec![100.0]);
+        assert!(is_signal_connection_connected(&connection));
+    }
+
+    #[test]
+    fn reports_disconnected_on_clear_while_a_callback_is_still_running() {
+        z_run_within_deadline(|| {
+            let source: Signal<FrameTick> = create_signal();
+            let (entered, entered_wait) = std::sync::mpsc::channel();
+            let (resume, resume_wait) = std::sync::mpsc::channel::<()>();
+            let resume_wait = Mutex::new(resume_wait);
+            let returned = Arc::new(AtomicBool::new(false));
+            let dropped = Arc::new(AtomicUsize::new(0));
+            let (hook_returned, hook_dropped) = (returned.clone(), dropped.clone());
+            let hook = z_create_drop_hook(move || {
+                assert!(hook_returned.load(Ordering::SeqCst));
+                hook_dropped.fetch_add(1, Ordering::SeqCst);
+            });
+            let slot_returned = returned.clone();
+            let connection = connect_signal_at_frame_rate_tracked(
+                &source,
+                1000.0,
+                Arc::new(move |_: f64| {
+                    let _ = &hook;
+                    entered.send(()).unwrap();
+                    resume_wait.lock().unwrap().recv().unwrap();
+                    slot_returned.store(true, Ordering::SeqCst);
+                }),
+                None,
+            );
+            let emitter = source.clone();
+            let emission =
+                std::thread::spawn(move || emit_signal(&emitter, &FrameTick { delta_time: 5.0 }));
+            entered_wait.recv().unwrap();
+            clear_signal(&source);
+            assert!(!is_signal_connection_connected(&connection));
+            assert_eq!(dropped.load(Ordering::SeqCst), 0);
+            resume.send(()).unwrap();
+            emission.join().unwrap();
+            assert_eq!(dropped.load(Ordering::SeqCst), 1);
+        });
     }
 }
 
@@ -477,5 +563,45 @@ mod set_signal_timeout {
         }
         advance_signal_timers(&state, 10.0);
         assert_eq!(*order.lock().unwrap(), (0..12).collect::<Vec<_>>());
+    }
+}
+
+// Runs `test` on its own thread and fails instead of hanging when it deadlocks.
+fn z_run_within_deadline(test: impl FnOnce() + Send + 'static) {
+    let (done, finished) = std::sync::mpsc::channel();
+    let worker = std::thread::spawn(move || {
+        test();
+        done.send(()).unwrap();
+    });
+    if finished
+        .recv_timeout(std::time::Duration::from_secs(5))
+        .is_err()
+    {
+        panic!("signal teardown deadlocked or panicked");
+    }
+    worker.join().unwrap();
+}
+
+// A value whose drop runs `hook`: slots capture one to observe when, and under which locks, the
+// signal drops them.
+struct DropHook {
+    hook: Mutex<Option<Box<dyn FnOnce() + Send>>>,
+}
+
+fn z_create_drop_hook(hook: impl FnOnce() + Send + 'static) -> DropHook {
+    return DropHook {
+        hook: Mutex::new(Some(Box::new(hook))),
+    };
+}
+
+fn z_run_drop_hook(drop_hook: &DropHook) {
+    if let Some(hook) = drop_hook.hook.lock().unwrap().take() {
+        hook();
+    }
+}
+
+impl Drop for DropHook {
+    fn drop(&mut self) {
+        z_run_drop_hook(self);
     }
 }

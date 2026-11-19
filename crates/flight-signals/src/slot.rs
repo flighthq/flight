@@ -8,11 +8,14 @@ use crate::types::{Signal, SignalConnectOptions, SignalData, SignalSlot, SlotId}
 
 static NEXT_SIGNAL_SLOT_ID: AtomicU32 = AtomicU32::new(1);
 
+/// Detaches every registration. The detached slots are dropped after the data lock is released,
+/// so a slot's teardown may call back into this signal.
 pub fn clear_signal<T>(signal: &Signal<T>) {
     let mut state = signal.data.write().unwrap();
-    *state = None;
+    let detached = state.take();
     *signal.emit.write().unwrap() = Arc::new(|_| {});
     drop(state);
+    drop(detached);
 }
 
 /// Removes tombstoned entries once the outermost emission exits, and detaches the signal when
@@ -104,41 +107,34 @@ pub(crate) fn count_live_slots<T>(data: &SignalData<T>) -> usize {
     return live;
 }
 
+/// Detaches the registration state once it is empty and no dispatch is walking it, resetting
+/// `emit` (when given) while the data lock is held so a concurrent connect cannot lose its
+/// emitter. The caller drops the returned state after every lock is released.
+pub(crate) fn detach_empty_signal_data<T>(
+    data: &Ref<Option<SignalData<T>>>,
+    emit: Option<&Ref<Arc<dyn Fn(&T) + Send + Sync>>>,
+) -> Option<SignalData<T>> {
+    let mut state = data.write().unwrap();
+    let empty = state
+        .as_ref()
+        .is_some_and(|signal_data| signal_data.depth == 0 && signal_data.slots.is_empty());
+    if !empty {
+        return None;
+    }
+    if let Some(emit) = emit {
+        *emit.write().unwrap() = Arc::new(|_| {});
+    }
+    return state.take();
+}
+
 /// Disconnects a registration by id. During a dispatch the entry is tombstoned instead of
 /// removed, so an emission already walking the arrays keeps its indices; compaction removes it
-/// when the outermost dispatch exits (D4 re-entrancy).
+/// when the outermost dispatch exits (D4 re-entrancy). The removed slot is dropped after the data
+/// lock is released, so its teardown may call back into this signal.
 // flight-lint: allow(conform-params) D4: disconnect takes the SlotId returned by connect_signal
 pub fn disconnect_signal<T>(signal: &Signal<T>, id: SlotId) {
-    let mut state = signal.data.write().unwrap();
-    let Some(signal_data) = state.as_mut() else {
-        return;
-    };
-    let dispatching = signal_data.depth > 0;
-    let mut index = signal_data.slots.len();
-    while index > 0 {
-        index -= 1;
-        if signal_data.ids[index].value != id.value {
-            continue;
-        }
-        if dispatching {
-            signal_data.slots[index] = None;
-        } else {
-            let slots: &mut Vec<Option<SignalSlot<T>>> = &mut signal_data.slots;
-            slots.remove(index);
-            let ids: &mut Vec<SlotId> = &mut signal_data.ids;
-            ids.remove(index);
-            let priorities: &mut Vec<i32> = &mut signal_data.priorities;
-            priorities.remove(index);
-            let repeats: &mut Vec<bool> = &mut signal_data.repeat;
-            repeats.remove(index);
-            let paused: &mut Vec<bool> = &mut signal_data.paused;
-            paused.remove(index);
-        }
-    }
-    if !dispatching && signal_data.slots.is_empty() {
-        *state = None;
-        *signal.emit.write().unwrap() = Arc::new(|_| {});
-    }
+    let removed = remove_signal_slot(&signal.data, Some(&signal.emit), id);
+    drop(removed);
 }
 
 pub fn has_signal_slots<T>(signal: &Signal<T>) -> bool {
@@ -172,7 +168,11 @@ pub(crate) fn init_signal_data<T: 'static>(signal: &Signal<T>) {
 
 // flight-lint: allow(conform-params) D4: connectivity is queried by SlotId, not by function identity
 pub fn is_slot_connected<T>(signal: &Signal<T>, id: SlotId) -> bool {
-    let state = signal.data.read().unwrap();
+    return is_slot_connected_in(&signal.data, id);
+}
+
+pub(crate) fn is_slot_connected_in<T>(data: &Ref<Option<SignalData<T>>>, id: SlotId) -> bool {
+    let state = data.read().unwrap();
     let Some(signal_data) = state.as_ref() else {
         return false;
     };
@@ -184,10 +184,62 @@ pub fn is_slot_connected<T>(signal: &Signal<T>, id: SlotId) -> bool {
     return false;
 }
 
+/// Removes one registration (tombstoning it during a dispatch) and detaches the state when it is
+/// left empty. Nothing is dropped under the lock: the removed slot and any detached state are
+/// returned for the caller to drop once the lock is released, because dropping a slot can run
+/// arbitrary teardown that calls back into the signal.
+pub(crate) fn remove_signal_slot<T>(
+    data: &Ref<Option<SignalData<T>>>,
+    emit: Option<&Ref<Arc<dyn Fn(&T) + Send + Sync>>>,
+    id: SlotId,
+) -> (Vec<SignalSlot<T>>, Option<SignalData<T>>) {
+    let mut removed: Vec<SignalSlot<T>> = Vec::new();
+    let mut state = data.write().unwrap();
+    let Some(signal_data) = state.as_mut() else {
+        return (removed, None);
+    };
+    let dispatching = signal_data.depth > 0;
+    let mut index = signal_data.slots.len();
+    while index > 0 {
+        index -= 1;
+        if signal_data.ids[index].value != id.value {
+            continue;
+        }
+        let slot = if dispatching {
+            signal_data.slots[index].take()
+        } else {
+            let slots: &mut Vec<Option<SignalSlot<T>>> = &mut signal_data.slots;
+            let slot = slots.remove(index);
+            let ids: &mut Vec<SlotId> = &mut signal_data.ids;
+            ids.remove(index);
+            let priorities: &mut Vec<i32> = &mut signal_data.priorities;
+            priorities.remove(index);
+            let repeats: &mut Vec<bool> = &mut signal_data.repeat;
+            repeats.remove(index);
+            let paused: &mut Vec<bool> = &mut signal_data.paused;
+            paused.remove(index);
+            slot
+        };
+        removed.extend(slot);
+    }
+    let mut detached = None;
+    if !dispatching && signal_data.slots.is_empty() {
+        if let Some(emit) = emit {
+            *emit.write().unwrap() = Arc::new(|_| {});
+        }
+        detached = state.take();
+    }
+    return (removed, detached);
+}
+
 /// Pauses or resumes one registration in place (priority order is preserved). Returns false when
 /// the registration no longer exists, so resuming a torn-down connection cannot resurrect it.
-pub(crate) fn set_slot_paused<T>(signal: &Signal<T>, id: SlotId, paused: bool) -> bool {
-    let mut state = signal.data.write().unwrap();
+pub(crate) fn set_slot_paused_in<T>(
+    data: &Ref<Option<SignalData<T>>>,
+    id: SlotId,
+    paused: bool,
+) -> bool {
+    let mut state = data.write().unwrap();
     let Some(signal_data) = state.as_mut() else {
         return false;
     };

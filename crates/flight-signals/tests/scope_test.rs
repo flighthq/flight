@@ -404,6 +404,35 @@ mod disconnect_signal_scope {
         assert_eq!(*calls.lock().unwrap(), 0);
         assert!(!is_signal_connection_connected(&connection));
     }
+
+    #[test]
+    fn drops_scoped_slots_after_releasing_every_lock() {
+        z_run_within_deadline(|| {
+            let signal: Signal<()> = create_signal();
+            let scope = create_signal_scope();
+            let (probe, reentrant_scope) = (signal.clone(), scope.clone());
+            let hook = z_create_drop_hook(move || {
+                has_signal_slots(&probe);
+                disconnect_signal_scope(&reentrant_scope);
+                clear_signal(&probe);
+            });
+            let options = SignalTrackedConnectOptions {
+                priority: None,
+                once: None,
+                scope: Some(scope.clone()),
+            };
+            connect_signal_tracked(
+                &signal,
+                Arc::new(move |_: &()| {
+                    let _ = &hook;
+                }),
+                Some(&options),
+            );
+            connect_signal_tracked(&signal, Arc::new(|_: &()| {}), Some(&options));
+            disconnect_signal_scope(&scope);
+            assert!(!has_signal_slots(&signal));
+        });
+    }
 }
 
 mod initialize_signal_scope {
@@ -422,5 +451,45 @@ mod initialize_signal_scope {
         assert_eq!(scope.connections.read().unwrap().len(), 1);
         initialize_signal_scope(&mut scope);
         assert!(scope.connections.read().unwrap().is_empty());
+    }
+}
+
+// Runs `test` on its own thread and fails instead of hanging when it deadlocks.
+fn z_run_within_deadline(test: impl FnOnce() + Send + 'static) {
+    let (done, finished) = std::sync::mpsc::channel();
+    let worker = std::thread::spawn(move || {
+        test();
+        done.send(()).unwrap();
+    });
+    if finished
+        .recv_timeout(std::time::Duration::from_secs(5))
+        .is_err()
+    {
+        panic!("signal teardown deadlocked or panicked");
+    }
+    worker.join().unwrap();
+}
+
+// A value whose drop runs `hook`: slots capture one to observe when, and under which locks, the
+// signal drops them.
+struct DropHook {
+    hook: Mutex<Option<Box<dyn FnOnce() + Send>>>,
+}
+
+fn z_create_drop_hook(hook: impl FnOnce() + Send + 'static) -> DropHook {
+    return DropHook {
+        hook: Mutex::new(Some(Box::new(hook))),
+    };
+}
+
+fn z_run_drop_hook(drop_hook: &DropHook) {
+    if let Some(hook) = drop_hook.hook.lock().unwrap().take() {
+        hook();
+    }
+}
+
+impl Drop for DropHook {
+    fn drop(&mut self) {
+        z_run_drop_hook(self);
     }
 }

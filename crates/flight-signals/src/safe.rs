@@ -1,7 +1,7 @@
 use flight_entity::Ref;
 
 use crate::emitter::signal_data_cancelled;
-use crate::slot::compact_signal_data;
+use crate::slot::{compact_signal_data, detach_empty_signal_data};
 use crate::types::{Signal, SignalData, SignalSlot, SlotId};
 
 /// Emits to the priority-ordered set captured at emission start (TS `emitSignalSafe`).
@@ -31,8 +31,8 @@ pub fn emit_signal_safe<T>(signal: &Signal<T>, args: &T) {
     }
 
     if end_safe_signal_dispatch(&signal.data) && compact_signal_data(&signal.data) {
-        *signal.data.write().unwrap() = None;
-        *signal.emit.write().unwrap() = std::sync::Arc::new(|_| {});
+        let detached = detach_empty_signal_data(&signal.data, Some(&signal.emit));
+        drop(detached);
     }
 }
 
@@ -88,7 +88,9 @@ fn tombstone_once_slot<T>(data: &Ref<Option<SignalData<T>>>, id: SlotId) {
             && signal_data.ids[index].value == id.value
             && !signal_data.repeat[index]
         {
-            signal_data.slots[index] = None;
+            let removed = signal_data.slots[index].take();
+            drop(state);
+            drop(removed);
             return;
         }
     }

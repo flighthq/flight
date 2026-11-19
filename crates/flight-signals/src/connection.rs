@@ -1,7 +1,7 @@
 use std::sync::Arc;
 use std::sync::RwLock;
 
-use crate::slot::{connect_signal, disconnect_signal, is_slot_connected, set_slot_paused};
+use crate::slot::{connect_signal, is_slot_connected_in, remove_signal_slot, set_slot_paused_in};
 use crate::types::{
     Signal, SignalConnectOptions, SignalConnection, SignalSlot, SignalTrackedConnectOptions,
 };
@@ -21,15 +21,30 @@ pub fn connect_signal_tracked<T: 'static>(
     };
     let id = connect_signal(signal, slot, Some(&connect_options));
 
-    let disconnect_signal_handle = signal.clone();
-    let pause_signal_handle = signal.clone();
-    let connected_signal_handle = signal.clone();
+    // The handle reaches the registration state weakly: a retained connection never keeps the
+    // signal alive, and once the last signal handle drops, every operation is a no-op and
+    // `is_connected` reports false.
+    let disconnect_data = Arc::downgrade(&signal.data);
+    let pause_data = disconnect_data.clone();
+    let connected_data = disconnect_data.clone();
     let connection = SignalConnection {
-        disconnect: Arc::new(move || disconnect_signal(&disconnect_signal_handle, id)),
-        set_paused: Arc::new(move |paused| {
-            set_slot_paused(&pause_signal_handle, id, paused);
+        disconnect: Arc::new(move || {
+            let Some(data) = disconnect_data.upgrade() else {
+                return;
+            };
+            let removed = remove_signal_slot(&data, None, id);
+            drop(removed);
         }),
-        is_connected: Arc::new(move || is_slot_connected(&connected_signal_handle, id)),
+        set_paused: Arc::new(move |paused| {
+            if let Some(data) = pause_data.upgrade() {
+                set_slot_paused_in(&data, id, paused);
+            }
+        }),
+        is_connected: Arc::new(move || {
+            connected_data
+                .upgrade()
+                .is_some_and(|data| is_slot_connected_in(&data, id))
+        }),
         paused: Arc::new(RwLock::new(false)),
     };
 
