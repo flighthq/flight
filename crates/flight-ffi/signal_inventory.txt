@@ -1,4 +1,4 @@
-Signal inventory: 262 occurrences in 48 owning crates (44 named-export, 4 glob-export: flight-assets, flight-loader, flight-net, flight-share; each occurrence counted once under its defining crate) (258 fields, 4 function parameters/returns, 30 Ref-wrapped), 89 payload types
+Signal inventory: 255 occurrences in 48 owning crates (44 named-export, 4 glob-export: flight-assets, flight-loader, flight-net, flight-share; each occurrence counted once under its defining crate) (251 fields, 4 function parameters/returns, 30 Ref-wrapped), 89 payload types
 signal|flight-animation|flight-animation/src/types.rs|AnimationPlayer.on_event|Option<Signal<AnimationClipEvent>>|AnimationClipEvent
 signal|flight-animation|flight-animation/src/types.rs|AnimationPlayer.on_finished|Option<Signal<()>>|()
 signal|flight-animation|flight-animation/src/types.rs|AnimationPlayer.on_looped|Option<Signal<()>>|()
@@ -104,13 +104,6 @@ signal|flight-input|flight-input/src/types.rs|InputSignals.on_text_edit|Signal<I
 signal|flight-input|flight-input/src/types.rs|InputSignals.on_text_input|Signal<InputTextData>|InputTextData
 signal|flight-input|flight-input/src/types.rs|InputSignals.on_wheel|Signal<InputPointerData>|InputPointerData
 signal|flight-interaction|flight-interaction/src/types.rs|FocusNavigationInput.on_key_down|Signal<KeyboardEventData>|KeyboardEventData
-signal|flight-interaction|flight-interaction/src/types.rs|InteractionInputSource.on_key_down|Signal<InputKeyboardData>|InputKeyboardData
-signal|flight-interaction|flight-interaction/src/types.rs|InteractionInputSource.on_key_up|Signal<InputKeyboardData>|InputKeyboardData
-signal|flight-interaction|flight-interaction/src/types.rs|InteractionInputSource.on_pointer_cancel|Signal<InputPointerData>|InputPointerData
-signal|flight-interaction|flight-interaction/src/types.rs|InteractionInputSource.on_pointer_down|Signal<InputPointerData>|InputPointerData
-signal|flight-interaction|flight-interaction/src/types.rs|InteractionInputSource.on_pointer_move|Signal<InputPointerData>|InputPointerData
-signal|flight-interaction|flight-interaction/src/types.rs|InteractionInputSource.on_pointer_up|Signal<InputPointerData>|InputPointerData
-signal|flight-interaction|flight-interaction/src/types.rs|InteractionInputSource.on_wheel|Signal<InputPointerData>|InputPointerData
 signal|flight-interaction|flight-interaction/src/types.rs|InteractionSignals.on_click|Signal<PointerEventData>|PointerEventData
 signal|flight-interaction|flight-interaction/src/types.rs|InteractionSignals.on_context_menu|Signal<PointerEventData>|PointerEventData
 signal|flight-interaction|flight-interaction/src/types.rs|InteractionSignals.on_double_click|Signal<PointerEventData>|PointerEventData
@@ -287,8 +280,8 @@ payload|FrameTick|3
 payload|InputGamepadAxisData|2
 payload|InputGamepadButtonData|4
 payload|InputGamepadConnectData|4
-payload|InputKeyboardData|7
-payload|InputPointerData|17
+payload|InputKeyboardData|5
+payload|InputPointerData|12
 payload|InputTextData|5
 payload|InstancedMeshInstanceRemoved|1
 payload|KeyboardEventData|3
@@ -455,13 +448,6 @@ producer|flight-input|InputSignals.on_text_edit|get
 producer|flight-input|InputSignals.on_text_input|get
 producer|flight-input|InputSignals.on_wheel|get
 producer|flight-interaction|FocusNavigationInput.on_key_down|get
-producer|flight-interaction|InteractionInputSource.on_key_down|get
-producer|flight-interaction|InteractionInputSource.on_key_up|get
-producer|flight-interaction|InteractionInputSource.on_pointer_cancel|get
-producer|flight-interaction|InteractionInputSource.on_pointer_down|get
-producer|flight-interaction|InteractionInputSource.on_pointer_move|get
-producer|flight-interaction|InteractionInputSource.on_pointer_up|get
-producer|flight-interaction|InteractionInputSource.on_wheel|get
 producer|flight-interaction|InteractionSignals.on_click|get
 producer|flight-interaction|InteractionSignals.on_context_menu|get
 producer|flight-interaction|InteractionSignals.on_double_click|get
