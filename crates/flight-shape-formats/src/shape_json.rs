@@ -1,7 +1,7 @@
 //! flight-compiler: target-native
 
 //! Native retained-shape JSON (TS `shapeJson.ts`).
-// flight-lint: allow-file(f64) D1: retained ShapeCommandToken scalars and JSON numbers use the canonical f64 shape/path lane; Matrix remains f32
+// flight-lint: allow-file(f64) D1: retained ShapeCommandToken scalars and JSON numbers use the canonical f64 shape/path lane, as does the f64 geometry Matrix
 
 use flight_entity::{Ref, throw_type_error};
 use flight_geometry::{Matrix, create_matrix};
@@ -505,12 +505,12 @@ fn matrix_argument(arguments: &[ShapeCommandToken], index: usize) -> Option<&Mat
 }
 
 fn matrix_from_json(value: &Map<String, Value>) -> Option<Matrix> {
-    let a = value.get("a")?.as_f64()? as f32;
-    let b = value.get("b")?.as_f64()? as f32;
-    let c = value.get("c")?.as_f64()? as f32;
-    let d = value.get("d")?.as_f64()? as f32;
-    let tx = value.get("tx")?.as_f64()? as f32;
-    let ty = value.get("ty")?.as_f64()? as f32;
+    let a = value.get("a")?.as_f64()?;
+    let b = value.get("b")?.as_f64()?;
+    let c = value.get("c")?.as_f64()?;
+    let d = value.get("d")?.as_f64()?;
+    let tx = value.get("tx")?.as_f64()?;
+    let ty = value.get("ty")?.as_f64()?;
     let matrix = create_matrix(a, b, c, d, tx, ty);
     return is_finite_matrix(&matrix).then_some(matrix);
 }

@@ -106,7 +106,7 @@ fn format_ref(shape: &Ref<Shape>) -> String {
     return format_shape_json(&shape, None);
 }
 
-fn set_matrix_field(matrix: &mut Matrix, field: &str, value: f32) {
+fn set_matrix_field(matrix: &mut Matrix, field: &str, value: f64) {
     match field {
         "a" => matrix.a = value,
         "b" => matrix.b = value,
@@ -177,7 +177,7 @@ mod format_shape_json {
         for field in ["a", "b", "c", "d", "tx", "ty"] {
             let shape = create_shape();
             let mut matrix = create_matrix(2.0, 0.0, 0.0, 3.0, 5.0, 7.0);
-            set_matrix_field(&mut matrix, field, f32::MAX);
+            set_matrix_field(&mut matrix, field, f64::MAX);
             append_shape_begin_gradient_fill(
                 &shape,
                 GradientType::Radial,
@@ -194,7 +194,7 @@ mod format_shape_json {
             assert_eq!(format_ref(&restored), text, "{field}");
 
             let invalid = create_shape();
-            set_matrix_field(&mut matrix, field, f32::INFINITY);
+            set_matrix_field(&mut matrix, field, f64::INFINITY);
             append_shape_begin_gradient_fill(
                 &invalid,
                 GradientType::Radial,
@@ -302,6 +302,21 @@ mod parse_shape_json {
         assert_eq!(shape.data.commands[3].as_number(), Some(0.0));
         assert_eq!(shape.data.commands[4].as_number(), Some(1.0));
         assert_eq!(shape.data.commands[5].as_boolean(), Some(false));
+    }
+
+    #[test]
+    fn keeps_parsed_matrix_fields_as_exact_doubles() {
+        // None of these has an exact f32: an f32 round trip changes every field.
+        let text = document(
+            r#"[{"key":"beginGradientFill","args":["linear",[1],[1],[0],{"a":0.1,"b":0.2,"c":0.3,"d":0.7,"tx":1000000000.5,"ty":-0.1},"pad","rgb",0]}]"#,
+        );
+        let restored = parse_shape_json(&text, None).unwrap();
+        let shape = restored.read().unwrap();
+        let matrix = shape.data.commands[6].as_matrix().unwrap();
+        assert_eq!(
+            (matrix.a, matrix.b, matrix.c, matrix.d, matrix.tx, matrix.ty),
+            (0.1, 0.2, 0.3, 0.7, 1_000_000_000.5, -0.1)
+        );
     }
 
     #[test]
