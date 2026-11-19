@@ -508,8 +508,8 @@ fn parse_points_field(obj: &JsonObject, key: &str) -> Option<Vec<flight_geometry
             .filter_map(|v| v.as_object())
             .map(|point| {
                 flight_geometry::create_vector2(
-                    num_field(point, "x", 0.0) as f32,
-                    num_field(point, "y", 0.0) as f32,
+                    num_field(point, "x", 0.0),
+                    num_field(point, "y", 0.0),
                 )
             })
             .collect(),

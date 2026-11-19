@@ -499,6 +499,7 @@ fn parse_property_value(prop_type: &TiledPropertyType, raw: &str) -> TiledProper
     };
 }
 
+// flight-lint: allow(f64) Tiled point text parses straight into the f64 geometry Vector2
 fn parse_tiled_points(text: &str) -> Vec<flight_geometry::Vector2> {
     let mut points = Vec::new();
     for pair in text.trim().split_whitespace() {
@@ -506,13 +507,13 @@ fn parse_tiled_points(text: &str) -> Vec<flight_geometry::Vector2> {
             continue;
         }
         let parts: Vec<&str> = pair.split(',').collect();
-        let x: f32 = parts
+        let x: f64 = parts
             .first()
-            .and_then(|s| s.parse::<f32>().ok())
+            .and_then(|s| s.parse::<f64>().ok())
             .unwrap_or(0.0);
-        let y: f32 = parts
+        let y: f64 = parts
             .get(1)
-            .and_then(|s| s.parse::<f32>().ok())
+            .and_then(|s| s.parse::<f64>().ok())
             .unwrap_or(0.0);
         points.push(flight_geometry::create_vector2(x, y));
     }

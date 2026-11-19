@@ -118,7 +118,7 @@ src/types.rs: pub fn get_tiled_render_order_str(value: &TiledRenderOrder) -> &'s
 src/types.rs: pub fn get_tiled_stagger_axis_str(value: &TiledStaggerAxis) -> &'static str
 src/types.rs: pub fn get_tiled_stagger_index_str(value: &TiledStaggerIndex) -> &'static str
 src/types.rs: pub struct TiledParseOptions { pub inflate: Option<TiledInflate>, pub guard: Option<crate::tiled_layer_data::TiledGuardState>, }
-src/types.rs: pub struct TiledTilesetLayout { pub atlas: Option<flight_entity::Ref<flight_textureatlas::TextureAtlas>>, pub tile_height: f32, pub tile_width: f32, }
+src/types.rs: pub struct TiledTilesetLayout { pub atlas: Option<flight_entity::Ref<flight_textureatlas::TextureAtlas>>, pub tile_height: f64, pub tile_width: f64, }
 src/types.rs: pub struct TilemapFormatDescriptor { pub kind: TilemapFormatKind, pub entry: TilemapFormatEntry, }
 src/types.rs: pub struct TilemapImportOptions { pub map_formats: Option<Vec<TilemapFormatDescriptor>>, pub tileset_formats: Option<Vec<TilesetFormatDescriptor>>, }
 src/types.rs: pub struct TilesetFormatDescriptor { pub kind: TilemapFormatKind, pub entry: TilesetFormatEntry, }

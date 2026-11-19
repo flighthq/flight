@@ -18,6 +18,7 @@ tests/tiled_gid_test.rs: decode_tiled_gid::decodes_zero
 tests/tiled_gid_test.rs: get_tiled_tileset_ref_for_gid::returns_none_for_empty_map
 tests/tiled_json_parse_test.rs: parse_tiled_tileset_json::returns_none_for_invalid_json
 tests/tiled_json_parse_test.rs: parse_tiled_tmj::parses_empty_object_with_defaults
+tests/tiled_json_parse_test.rs: parse_tiled_tmj::parses_polygon_points_as_exact_doubles
 tests/tiled_json_parse_test.rs: parse_tiled_tmj::returns_none_for_invalid_json
 tests/tiled_layer_data_test.rs: create_tiled_guard_state::returns_empty_guard_state
 tests/tiled_layer_data_test.rs: decode_tiled_base64_layer::decodes_uncompressed
@@ -31,6 +32,7 @@ tests/tiled_tmj_format_test.rs: format_tiled_tmj::formats_minimal_map
 tests/tiled_tmx_format_test.rs: format_tiled_tileset::formats_minimal_tileset
 tests/tiled_tmx_format_test.rs: format_tiled_tmx::formats_minimal_map
 tests/tiled_xml_parse_test.rs: parse_tiled_tileset::returns_none_for_invalid_xml
+tests/tiled_xml_parse_test.rs: parse_tiled_tmx::parses_polyline_points_as_exact_doubles
 tests/tiled_xml_parse_test.rs: parse_tiled_tmx::returns_none_for_invalid_xml
 tests/tiled_xml_parse_test.rs: parse_tiled_tmx::returns_none_for_non_map_xml
 tests/tilemap_detect_test.rs: apply_tilemap_import_options::adds_map_formats

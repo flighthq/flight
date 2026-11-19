@@ -244,10 +244,11 @@ pub struct TiledTileset {
     pub tiles: Vec<TiledTilesetTile>,
 }
 
+// flight-lint: allow(f64) in-memory tile sizes are f64 spatial values parsed from the text format
 pub struct TiledTilesetLayout {
     pub atlas: Option<flight_entity::Ref<flight_textureatlas::TextureAtlas>>,
-    pub tile_height: f32,
-    pub tile_width: f32,
+    pub tile_height: f64,
+    pub tile_width: f64,
 }
 
 #[derive(Clone, Debug, PartialEq)]
