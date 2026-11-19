@@ -16,6 +16,8 @@ mod enum_parameter_test;
 #[cfg(test)]
 mod generic_carrier_test;
 #[cfg(test)]
+mod interaction_reentry_runtime_test;
+#[cfg(test)]
 mod shape_bounds_context_test;
 #[cfg(test)]
 mod signal_connection_runtime_test;
