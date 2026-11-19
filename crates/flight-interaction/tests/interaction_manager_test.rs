@@ -56,6 +56,32 @@ mod connect_input_to_interaction {
         };
     }
 
+    fn test_pointer_data(x: f64, y: f64, delta_y: f64) -> flight_input::InputPointerData {
+        return flight_input::InputPointerData {
+            alt_key: false,
+            button: 0,
+            buttons: 0,
+            ctrl_key: false,
+            delta_x: 0.0,
+            delta_y,
+            height: 0.0,
+            is_primary: true,
+            meta_key: false,
+            pointer_id: 0,
+            pointer_type: flight_input::PointerType::Mouse,
+            pressure: 0.0,
+            shift_key: false,
+            tilt_x: 0.0,
+            tilt_y: 0.0,
+            time_stamp: 0.0,
+            twist: 0.0,
+            wheel_mode: flight_input::MouseWheelMode::Pixels,
+            width: 0.0,
+            x,
+            y,
+        };
+    }
+
     fn test_keyboard_data(key: &str) -> flight_input::InputKeyboardData {
         return flight_input::InputKeyboardData {
             alt_key: false,
@@ -104,6 +130,111 @@ mod connect_input_to_interaction {
         let _dispose = connect_input_to_interaction(&input, mgr, 1.0);
         flight_signals::emit_signal(&input.read().unwrap().on_key_down, &test_keyboard_data("a"));
         assert!(count.load(Ordering::Relaxed) > 0);
+    }
+
+    #[test]
+    fn delivers_exact_double_coordinates_through_every_pointer_bridge() {
+        // Each input closure must carry x = 1e9 + 0.25 (f32 spacing 64) and y = 0.1 (no exact f32).
+        type InputSignal =
+            fn(&InteractionInputSource) -> &flight_signals::Signal<flight_input::InputPointerData>;
+        type NodeSignal =
+            fn(
+                &flight_interaction::types::InteractionSignals,
+            ) -> &flight_signals::Signal<flight_interaction::types::PointerEventData>;
+        let cases: [(InteractionSignalName, InputSignal, NodeSignal); 5] = [
+            (
+                InteractionSignalName::OnPointerCancel,
+                |i| &i.on_pointer_cancel,
+                |s| &s.on_pointer_cancel,
+            ),
+            (
+                InteractionSignalName::OnPointerDown,
+                |i| &i.on_pointer_down,
+                |s| &s.on_pointer_down,
+            ),
+            (
+                InteractionSignalName::OnPointerMove,
+                |i| &i.on_pointer_move,
+                |s| &s.on_pointer_move,
+            ),
+            (
+                InteractionSignalName::OnPointerUp,
+                |i| &i.on_pointer_up,
+                |s| &s.on_pointer_up,
+            ),
+            (
+                InteractionSignalName::OnWheel,
+                |i| &i.on_wheel,
+                |s| &s.on_wheel,
+            ),
+        ];
+        for (name, input_signal, node_signal) in cases {
+            let root = interaction_fixture::node();
+            let sigs = interaction_fixture::signals_for(&root);
+            let seen = Arc::new(RwLock::new(None));
+            let seen2 = seen.clone();
+            flight_signals::connect_signal(
+                node_signal(&sigs.read().unwrap()),
+                Arc::new(move |data: &flight_interaction::types::PointerEventData| {
+                    *seen2.write().unwrap() = Some((data.x, data.y));
+                }),
+                None,
+            );
+            let mut manager = interaction_fixture::manager_for(&root);
+            manager.enabled = true;
+            capture_interaction_pointer(&mut manager, 0, root.clone());
+            let slot: flight_interaction::types::AnyInteractionSignalSlot =
+                Arc::new(|_data: &flight_interaction::types::PointerEventData| {});
+            connect_interaction_signal(&mut manager, &root, name, slot);
+            let input = test_input_source();
+            let _dispose =
+                connect_input_to_interaction(&input, Arc::new(RwLock::new(manager)), 1.0);
+
+            flight_signals::emit_signal(
+                input_signal(&input),
+                &test_pointer_data(1_000_000_000.25, 0.1, 0.0),
+            );
+
+            assert_eq!(
+                *seen.read().unwrap(),
+                Some((1_000_000_000.25, 0.1)),
+                "{name:?}"
+            );
+        }
+    }
+
+    #[test]
+    fn delivers_input_pointer_coordinates_and_wheel_deltas_as_exact_doubles() {
+        // f32 spacing at 1e9 is 64 and 16_777_216.5 has no f32: both survive only as doubles.
+        let root = interaction_fixture::node();
+        let sigs = interaction_fixture::signals_for(&root);
+        let seen = Arc::new(RwLock::new(None));
+        let seen2 = seen.clone();
+        flight_signals::connect_signal(
+            &sigs.read().unwrap().on_wheel,
+            Arc::new(move |data: &flight_interaction::types::PointerEventData| {
+                *seen2.write().unwrap() = Some((data.x, data.delta_y));
+            }),
+            None,
+        );
+        let mut manager = interaction_fixture::manager_for(&root);
+        manager.enabled = true;
+        capture_interaction_pointer(&mut manager, 0, root.clone());
+        let slot: flight_interaction::types::AnyInteractionSignalSlot =
+            Arc::new(|_data: &flight_interaction::types::PointerEventData| {});
+        connect_interaction_signal(&mut manager, &root, InteractionSignalName::OnWheel, slot);
+        let input = test_input_source();
+        let _dispose = connect_input_to_interaction(&input, Arc::new(RwLock::new(manager)), 1.0);
+
+        flight_signals::emit_signal(
+            &input.on_wheel,
+            &test_pointer_data(1_000_000_000.25, 0.0, 16_777_216.5),
+        );
+
+        assert_eq!(
+            *seen.read().unwrap(),
+            Some((1_000_000_000.25, 16_777_216.5))
+        );
     }
 
     #[test]

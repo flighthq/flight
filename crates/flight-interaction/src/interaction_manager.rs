@@ -277,12 +277,7 @@ pub fn connect_input_to_interaction(
     let on_pointer_cancel: Arc<dyn Fn(&flight_input::InputPointerData) + Send + Sync> =
         Arc::new(move |data| {
             let opts = input_pointer_to_options(data);
-            dispatch_interaction_pointer_cancel(
-                &mgr,
-                sx(f64::from(data.x)),
-                sx(f64::from(data.y)),
-                Some(&opts),
-            );
+            dispatch_interaction_pointer_cancel(&mgr, sx(data.x), sx(data.y), Some(&opts));
         });
 
     let mgr = manager.clone();
@@ -291,8 +286,8 @@ pub fn connect_input_to_interaction(
             let opts = input_pointer_to_options(data);
             dispatch_interaction_pointer_down(
                 &mgr,
-                sx(f64::from(data.x)),
-                sx(f64::from(data.y)),
+                sx(data.x),
+                sx(data.y),
                 data.button,
                 Some(&opts),
             );
@@ -304,8 +299,8 @@ pub fn connect_input_to_interaction(
             let opts = input_pointer_to_options(data);
             dispatch_interaction_pointer_move(
                 &mgr,
-                sx(f64::from(data.x)),
-                sx(f64::from(data.y)),
+                sx(data.x),
+                sx(data.y),
                 data.button,
                 Some(&opts),
             );
@@ -317,8 +312,8 @@ pub fn connect_input_to_interaction(
             let opts = input_pointer_to_options(data);
             dispatch_interaction_pointer_up(
                 &mgr,
-                sx(f64::from(data.x)),
-                sx(f64::from(data.y)),
+                sx(data.x),
+                sx(data.y),
                 data.button,
                 Some(data.time_stamp),
                 Some(&opts),
@@ -331,10 +326,10 @@ pub fn connect_input_to_interaction(
             let opts = input_pointer_to_options(data);
             dispatch_interaction_wheel(
                 &mgr,
-                sx(f64::from(data.x)),
-                sx(f64::from(data.y)),
-                f64::from(data.delta_x),
-                f64::from(data.delta_y),
+                sx(data.x),
+                sx(data.y),
+                data.delta_x,
+                data.delta_y,
                 Some(&opts),
             );
         });
