@@ -19,8 +19,8 @@ fn clear_for_test() -> RenderTargetClear {
 
 fn texture_target_for_test(
     state: &WgpuRenderState,
-    width: f32,
-    height: f32,
+    width: f64,
+    height: f64,
     sample_count: Option<u32>,
 ) -> WgpuRenderTarget {
     let target = create_wgpu_texture_render_target(

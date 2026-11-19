@@ -42,6 +42,16 @@ mod create_wgpu_texture_render_target {
     use super::*;
 
     #[test]
+    fn ceils_an_f64_logical_size_that_has_no_exact_f32_value() {
+        // 100.0000001 ceils to 101 in f64; as f32 it is exactly 100.0 and would ceil to 100.
+        let state = create_wgpu_render_state_for_test(None);
+        let target =
+            create_wgpu_texture_render_target(&state, 100.000_000_1, 1.0, None, None, None);
+        assert_eq!(target.width, 101);
+        assert_eq!(target.texture.width(), 101);
+    }
+
+    #[test]
     fn returns_a_target_with_texture_view_binding_cache_and_depth_stencil() {
         let state = create_wgpu_render_state_for_test(None);
         let target = create_wgpu_texture_render_target(&state, 256.0, 256.0, None, None, None);
@@ -260,7 +270,7 @@ mod resize_wgpu_texture_render_target {
             .limits()
             .max_texture_dimension_2d;
         let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-            resize_wgpu_texture_render_target(&state, &mut target, max as f32, 8.0, Some(4));
+            resize_wgpu_texture_render_target(&state, &mut target, f64::from(max), 8.0, Some(4));
         }));
         let payload = result.unwrap_err();
         let message = payload

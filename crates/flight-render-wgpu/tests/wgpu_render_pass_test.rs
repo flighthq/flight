@@ -21,8 +21,8 @@ fn panic_message(payload: Box<dyn std::any::Any + Send>) -> String {
 
 fn texture_target_for_test(
     state: &WgpuRenderState,
-    width: f32,
-    height: f32,
+    width: f64,
+    height: f64,
     color_space: Option<RenderTargetColorSpace>,
     sample_count: Option<u32>,
 ) -> WgpuRenderTarget {

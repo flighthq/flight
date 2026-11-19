@@ -290,6 +290,21 @@ mod set_wgpu_matrix_from_transform {
     use super::*;
 
     #[test]
+    fn computes_in_f64_before_the_single_f32_store() {
+        // tx = 16777217 has no f32: f64 gives 16777217 * 1 - 1 = 16777216; f32 math gives 16777215.
+        let mut m = [0.0f32; 9];
+        set_wgpu_matrix_from_transform(
+            &mut m,
+            &create_matrix(1.0, 0.0, 0.0, 1.0, 16_777_217.0, 0.0),
+            &WgpuRenderPassViewport {
+                height: 2.0,
+                width: 2.0,
+            },
+        );
+        assert_eq!(m[6], 16_777_216.0);
+    }
+
+    #[test]
     fn builds_a_column_major_clip_space_matrix_from_an_identity_transform() {
         let mut m = [0.0f32; 9];
         set_wgpu_matrix_from_transform(

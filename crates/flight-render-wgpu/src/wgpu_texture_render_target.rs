@@ -59,10 +59,11 @@ fn create_wgpu_render_target_depth_texture(
 
 /// Allocates a texture target (TS `createWgpuTextureRenderTarget`). `format` defaults to the
 /// state's; a sample count above 1 allocates 2x per axis (four coverage samples).
+// flight-lint: allow(f64) the logical target size is a CPU spatial value carried in f64 (foreman-e0d2390c); only the resolved u32 texel extent is GPU storage
 pub fn create_wgpu_texture_render_target(
     state: &WgpuRenderState,
-    width: f32,
-    height: f32,
+    width: f64,
+    height: f64,
     format: Option<wgpu::TextureFormat>,
     color_space: Option<RenderTargetColorSpace>,
     sample_count: Option<u32>,
@@ -80,11 +81,12 @@ pub fn create_wgpu_texture_render_target(
 
 /// Reallocates `out` as a texture target (TS `initializeWgpuTextureRenderTarget`), keeping its
 /// entity identity.
+// flight-lint: allow(f64) the logical target size is a CPU spatial value carried in f64 (foreman-e0d2390c); only the resolved u32 texel extent is GPU storage
 pub fn initialize_wgpu_texture_render_target(
     out: &mut WgpuTextureRenderTarget,
     state: &WgpuRenderState,
-    width: f32,
-    height: f32,
+    width: f64,
+    height: f64,
     format: Option<wgpu::TextureFormat>,
     color_space: Option<RenderTargetColorSpace>,
     sample_count: Option<u32>,
@@ -115,10 +117,11 @@ fn assert_wgpu_texture_render_target_extent(
     }
 }
 
+// flight-lint: allow(f64) the logical target size is a CPU spatial value carried in f64 (foreman-e0d2390c); only the resolved u32 texel extent is GPU storage
 fn build_wgpu_texture_render_target(
     state: &WgpuRenderState,
-    width: f32,
-    height: f32,
+    width: f64,
+    height: f64,
     format: Option<wgpu::TextureFormat>,
     color_space: Option<RenderTargetColorSpace>,
     sample_count: Option<u32>,
@@ -238,11 +241,12 @@ fn entry_ref(entry: WgpuTextureEntry) -> flight_entity::Ref<WgpuTextureEntry> {
 /// Resizes a target's storage in place, dropping cached bind groups (TS
 /// `resizeWgpuTextureRenderTarget`). No-op when the resolved extent and samples are unchanged.
 /// Panics when a supersampled extent exceeds the device's 2D texture limit.
+// flight-lint: allow(f64) the logical target size is a CPU spatial value carried in f64 (foreman-e0d2390c); only the resolved u32 texel extent is GPU storage
 pub fn resize_wgpu_texture_render_target(
     state: &WgpuRenderState,
     target: &mut WgpuTextureRenderTarget,
-    width: f32,
-    height: f32,
+    width: f64,
+    height: f64,
     sample_count: Option<u32>,
 ) {
     let native = get_wgpu_render_state_native_device(state);
@@ -272,9 +276,10 @@ pub fn resize_wgpu_texture_render_target(
 
 // The physical extent and effective sample count of a request: four coverage samples are realized
 // as a 2x extent per axis.
+// flight-lint: allow(f64) the logical target size is a CPU spatial value carried in f64 (foreman-e0d2390c); only the resolved u32 texel extent is GPU storage
 pub(crate) fn resolve_wgpu_texture_render_target_extent(
-    width: f32,
-    height: f32,
+    width: f64,
+    height: f64,
     sample_count: u32,
 ) -> (u32, u32, u32) {
     let samples = if sample_count > 1 { 4 } else { 1 };

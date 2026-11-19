@@ -1102,6 +1102,16 @@ mod create_wgpu_offscreen_render_state_from_device_state {
 mod create_wgpu_render_state {
     use super::*;
 
+    #[test]
+    fn keeps_a_non_f32_pixel_ratio_option_exact() {
+        // 1.1 has no exact f32 value: an f32 lane would store 1.100000023841858.
+        let state = create_wgpu_render_state_for_test(Some(WgpuRenderStateOptions {
+            pixel_ratio: Some(1.1),
+            ..test_default()
+        }));
+        assert_eq!(state.render_state().pixel_ratio, 1.1);
+    }
+
     // The state is "how to talk to the GPU" and the screen target is "which surface a frame lands on".
     // Keeping them apart is what lets one state render to several windows, and lets an offscreen state
     // exist without inventing a canvas for it. (The Rust state has no context or surface field at all.)

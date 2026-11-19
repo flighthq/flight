@@ -8,6 +8,8 @@ mod flight_render_wgpu_explain_wgpu_texture_resolution_test;
 mod flight_render_wgpu_explain_wgpu_uniform_endianness_test;
 #[path = "support_test.rs"]
 mod flight_render_wgpu_support_test;
+#[path = "types_test.rs"]
+mod flight_render_wgpu_types_test;
 #[path = "wgpu_adapter_capabilities_test.rs"]
 mod flight_render_wgpu_wgpu_adapter_capabilities_test;
 #[path = "wgpu_canvas_context_test.rs"]

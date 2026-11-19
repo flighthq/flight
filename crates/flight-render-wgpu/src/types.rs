@@ -270,12 +270,13 @@ pub type WgpuColorAdjustmentMaterialFeatureGuard =
 
 /// What a velocity writer draws through (TS `WgpuVelocityContext`): the state, the render-agnostic
 /// velocity field, the target's pixel size and the state's pixel ratio.
+// flight-lint: allow(f64) width/height and pixel_ratio are CPU spatial values in f64 (foreman-e0d2390c, foreman-2c184842): u32 device sizes widen exactly; only GPU extents stay u32
 pub struct WgpuVelocityContext<'a> {
     pub state: &'a mut WgpuRenderState,
     pub field: &'a VelocityField,
-    pub width: f32,
-    pub height: f32,
-    pub pixel_ratio: f32,
+    pub width: f64,
+    pub height: f64,
+    pub pixel_ratio: f64,
 }
 
 /// Draws one renderable kind's velocity into the bound velocity target during the velocity pass (TS
@@ -845,6 +846,7 @@ pub struct WgpuUniformEndiannessExplanation {
 
 /// Options for creating a render state (TS `WgpuRenderStateOptions`: the render options plus the
 /// WGPU registries). `None` keeps each default.
+// flight-lint: allow(f64) pixel_ratio is the f64 render-state device pixel ratio option (foreman-e0d2390c)
 #[derive(Clone, Default)]
 pub struct WgpuRenderStateOptions {
     pub canvas_host: Option<HostCanvasCapability>,
@@ -862,7 +864,7 @@ pub struct WgpuRenderStateOptions {
     pub material_renderers: Option<KindMap<WgpuMaterialRenderer>>,
     pub modifier_snippets: Option<KindMap<&'static WgpuModifierSnippet>>,
     pub passes: Option<Vec<WgpuScene3DPass>>,
-    pub pixel_ratio: Option<f32>,
+    pub pixel_ratio: Option<f64>,
     pub round_pixels: Option<bool>,
     pub scene_graph_sync_policy: Option<flight_render::Scene3DGraphSyncPolicy>,
     pub shape_rasterizer: Option<ShapeRasterizer<WgpuRenderState>>,

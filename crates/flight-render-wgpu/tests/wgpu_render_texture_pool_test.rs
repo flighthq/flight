@@ -8,7 +8,7 @@ use flight_render_wgpu::*;
 
 use crate::support::*;
 
-fn descriptor(width: f32, height: f32) -> RenderTargetDescriptor {
+fn descriptor(width: f64, height: f64) -> RenderTargetDescriptor {
     return RenderTargetDescriptor {
         width,
         height,
@@ -87,7 +87,7 @@ mod acquire_wgpu_render_texture {
             view.flip_y = true;
             view.uv_offset.x = 140.0 / 720.0;
             view.uv_offset.y = 160.0 / 480.0;
-            view.uv_rotation = std::f32::consts::PI / 2.0;
+            view.uv_rotation = std::f64::consts::PI / 2.0;
             view.uv_scale.x = 100.0 / 720.0;
             view.uv_scale.y = 80.0 / 480.0;
         }

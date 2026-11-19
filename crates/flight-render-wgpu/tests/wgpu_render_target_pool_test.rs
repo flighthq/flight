@@ -7,7 +7,7 @@ use flight_texture::RenderTargetColorSpace;
 
 use crate::support::*;
 
-fn descriptor(width: f32, height: f32) -> WgpuTextureRenderTargetDescriptor {
+fn descriptor(width: f64, height: f64) -> WgpuTextureRenderTargetDescriptor {
     return WgpuTextureRenderTargetDescriptor {
         height,
         width,

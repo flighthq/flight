@@ -17,13 +17,14 @@ use crate::wgpu_texture_render_target::{
 
 /// The request `acquire_wgpu_texture_render_target` matches a free target against (TS's inline
 /// descriptor).
+// flight-lint: allow(f64) the logical target size is a CPU spatial value carried in f64 (foreman-e0d2390c); only the resolved u32 texel extent is GPU storage
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub struct WgpuTextureRenderTargetDescriptor {
     pub color_space: Option<RenderTargetColorSpace>,
     pub format: Option<wgpu::TextureFormat>,
-    pub height: f32,
+    pub height: f64,
     pub sample_count: Option<u32>,
-    pub width: f32,
+    pub width: f64,
 }
 
 /// Creates an empty pool (TS `createWgpuRenderTargetPool`).

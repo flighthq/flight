@@ -9,8 +9,8 @@ use crate::support::*;
 
 fn texture_target(
     state: &WgpuRenderState,
-    width: f32,
-    height: f32,
+    width: f64,
+    height: f64,
     sample_count: u32,
 ) -> WgpuRenderTarget {
     return WgpuRenderTarget::Texture(Arc::new(RwLock::new(create_wgpu_texture_render_target(
@@ -120,7 +120,7 @@ mod get_wgpu_render_target_supersample_scale {
     fn inverts_the_allocator_exactly_including_at_an_odd_logical_size() {
         let state = create_wgpu_render_state_for_test(None);
         for (logical, sample_count) in [(801u32, 4u32), (599, 4), (800, 1), (1, 4)] {
-            let target = texture_target(&state, logical as f32, 1.0, sample_count);
+            let target = texture_target(&state, f64::from(logical), 1.0, sample_count);
             let expected = logical.max(1) * if sample_count == 4 { 2 } else { 1 };
             let WgpuRenderTarget::Texture(texture) = &target else {
                 unreachable!();

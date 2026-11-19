@@ -71,6 +71,7 @@ pub fn destroy_wgpu_render_texture(state: &mut WgpuRenderState, render_texture: 
     }
 }
 
+// flight-lint: allow(f64) widens the resolved u32 texel size exactly into the f64 logical target size (foreman-e0d2390c)
 fn ensure_wgpu_render_texture_entry(
     state: &mut WgpuRenderState,
     render_texture: &RenderTexture,
@@ -86,8 +87,8 @@ fn ensure_wgpu_render_texture_entry(
     let Some(mut entry) = existing else {
         let target = create_wgpu_texture_render_target(
             state,
-            requested.width as f32,
-            requested.height as f32,
+            f64::from(requested.width),
+            f64::from(requested.height),
             Some(format),
             Some(color_space),
             Some(requested.sample_count),
@@ -114,8 +115,8 @@ fn ensure_wgpu_render_texture_entry(
         destroy_wgpu_texture_render_target(&entry.target.read().unwrap());
         let target = create_wgpu_texture_render_target(
             state,
-            requested.width as f32,
-            requested.height as f32,
+            f64::from(requested.width),
+            f64::from(requested.height),
             Some(format),
             Some(color_space),
             Some(requested.sample_count),
@@ -128,8 +129,8 @@ fn ensure_wgpu_render_texture_entry(
         resize_wgpu_texture_render_target(
             state,
             &mut target,
-            requested.width as f32,
-            requested.height as f32,
+            f64::from(requested.width),
+            f64::from(requested.height),
             Some(requested.sample_count),
         );
         target.color_space = color_space;
@@ -266,6 +267,7 @@ fn notify_guard(state: &mut WgpuRenderState, render_texture: &dyn TextureVariant
 }
 
 // The RenderTarget source a render texture's constructor guarantees, read as a descriptor.
+// flight-lint: allow(f64) widens the u32 texel size of the texture source exactly into the f64 render-target descriptor (foreman-e0d2390c)
 fn read_render_target_descriptor(render_texture: &RenderTexture) -> RenderTargetDescriptor {
     let source = render_texture
         .source
@@ -276,8 +278,8 @@ fn read_render_target_descriptor(render_texture: &RenderTexture) -> RenderTarget
         .downcast_ref::<RenderTarget>()
         .expect("a render texture carries a RenderTarget source");
     return RenderTargetDescriptor {
-        width: target.width as f32,
-        height: target.height as f32,
+        width: f64::from(target.width),
+        height: f64::from(target.height),
         format: target.format,
         color_attachments: target.color_attachments,
         color_formats: target.color_formats.clone(),

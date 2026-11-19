@@ -447,25 +447,27 @@ pub fn get_wgpu_pipeline(
 
 /// Writes a column-major mat3x3 mapping pixel space to clip space for `t` over `viewport` (TS
 /// `setWgpuMatrixFromTransform`).
+// flight-lint: allow(f64) pixel geometry and clip-matrix math are TS Number values computed in f64 and narrowed once into the f32 GPU uniform/target lanes
 pub fn set_wgpu_matrix_from_transform(
     matrix_array: &mut [f32; 9],
     t: &Matrix,
     viewport: &WgpuRenderPassViewport,
 ) {
-    let iw = 2.0 / viewport.width;
-    let ih = 2.0 / viewport.height;
+    // TS computes the clip matrix in Number and stores it into the f32 uniform array.
+    let iw = 2.0 / f64::from(viewport.width);
+    let ih = 2.0 / f64::from(viewport.height);
     // Column-major mat3x3 with vec3-to-16-byte padding:
     // col0
-    matrix_array[0] = t.a * iw;
-    matrix_array[1] = -t.b * ih;
+    matrix_array[0] = (t.a * iw) as f32;
+    matrix_array[1] = (-t.b * ih) as f32;
     matrix_array[2] = 0.0;
     // col1
-    matrix_array[3] = t.c * iw;
-    matrix_array[4] = -t.d * ih;
+    matrix_array[3] = (t.c * iw) as f32;
+    matrix_array[4] = (-t.d * ih) as f32;
     matrix_array[5] = 0.0;
     // col2
-    matrix_array[6] = t.tx * iw - 1.0;
-    matrix_array[7] = -t.ty * ih + 1.0;
+    matrix_array[6] = (t.tx * iw - 1.0) as f32;
+    matrix_array[7] = (-t.ty * ih + 1.0) as f32;
     matrix_array[8] = 1.0;
 }
 
