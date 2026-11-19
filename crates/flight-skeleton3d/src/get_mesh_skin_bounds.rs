@@ -9,12 +9,12 @@ use flight_scene3d::Skeleton3D;
 fn empty_bounds(out: &mut Aabb) {
     set_aabb(
         out,
-        f32::INFINITY,
-        f32::INFINITY,
-        f32::INFINITY,
-        f32::NEG_INFINITY,
-        f32::NEG_INFINITY,
-        f32::NEG_INFINITY,
+        f64::INFINITY,
+        f64::INFINITY,
+        f64::INFINITY,
+        f64::NEG_INFINITY,
+        f64::NEG_INFINITY,
+        f64::NEG_INFINITY,
     );
 }
 pub fn get_mesh_skin_conservative_bounds(
@@ -23,8 +23,8 @@ pub fn get_mesh_skin_conservative_bounds(
     skeleton: &Skeleton3D,
 ) {
     let count = bind_pose.positions.len() / 3;
-    let mut minimum = [f32::INFINITY; 3];
-    let mut maximum = [f32::NEG_INFINITY; 3];
+    let mut minimum = [f64::INFINITY; 3];
+    let mut maximum = [f64::NEG_INFINITY; 3];
     for v in 0..count {
         for row in 0..3 {
             let p = bind_pose.positions[v * 3 + row];
@@ -67,21 +67,21 @@ pub fn get_mesh_skin_conservative_bounds(
             referenced[j as usize] = true;
         }
     }
-    let mut lo = [f32::INFINITY; 3];
-    let mut hi = [f32::NEG_INFINITY; 3];
+    let mut lo = [f64::INFINITY; 3];
+    let mut hi = [f64::NEG_INFINITY; 3];
     for j in 0..joint_count {
         if !referenced[j] {
             continue;
         }
         let m = j * 16;
         for row in 0..3 {
-            let c = palette[m + row] * center[0]
-                + palette[m + 4 + row] * center[1]
-                + palette[m + 8 + row] * center[2]
-                + palette[m + 12 + row];
-            let e = palette[m + row].abs() * extent[0]
-                + palette[m + 4 + row].abs() * extent[1]
-                + palette[m + 8 + row].abs() * extent[2];
+            let c = f64::from(palette[m + row]) * center[0]
+                + f64::from(palette[m + 4 + row]) * center[1]
+                + f64::from(palette[m + 8 + row]) * center[2]
+                + f64::from(palette[m + 12 + row]);
+            let e = f64::from(palette[m + row]).abs() * extent[0]
+                + f64::from(palette[m + 4 + row]).abs() * extent[1]
+                + f64::from(palette[m + 8 + row]).abs() * extent[2];
             if c - e < lo[row] {
                 lo[row] = c - e;
             }
@@ -107,11 +107,11 @@ pub fn get_mesh_skin_exact_bounds(
         &skeleton.joint_matrices.read().unwrap(),
         &skeleton.normal_matrices.read().unwrap(),
     );
-    let mut lo = [f32::INFINITY; 3];
-    let mut hi = [f32::NEG_INFINITY; 3];
+    let mut lo = [f64::INFINITY; 3];
+    let mut hi = [f64::NEG_INFINITY; 3];
     for v in 0..bind_pose.skinned_positions.len() / 3 {
         for row in 0..3 {
-            let p = read_float_index(&bind_pose.skinned_positions, (v * 3 + row) as f32);
+            let p = read_float_index(&bind_pose.skinned_positions, (v * 3 + row) as f64);
             if p < lo[row] {
                 lo[row] = p;
             }

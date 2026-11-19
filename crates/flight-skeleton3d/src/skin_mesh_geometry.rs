@@ -9,11 +9,12 @@ use flight_meshgeometry::{
 };
 use flight_scene3d::Skeleton3D;
 
+// flight-lint: allow(f32) reads or writes the Float32Array skinning lanes (joint, normal and inverse-bind palettes, joint indices, weights and the interleaved vertex buffer); bind-pose math is f64
 pub fn capture_mesh_skin_bind_pose(geometry: &MeshGeometry) -> MeshSkinBindPose {
     let layout = geometry.layout.read().unwrap();
-    let stride = layout.stride as f32 / 4.0;
+    let stride = layout.stride as f64 / 4.0;
     let count = if stride > 0.0 {
-        (geometry.vertices.len() as f32 / stride) as usize
+        (geometry.vertices.len() as f64 / stride) as usize
     } else {
         0
     };
@@ -35,31 +36,40 @@ pub fn capture_mesh_skin_bind_pose(geometry: &MeshGeometry) -> MeshSkinBindPose 
     let mut joint = create_vector4(0.0, 0.0, 0.0, 0.0);
     let mut weight = create_vector4(0.0, 0.0, 0.0, 0.0);
     for v in 0..count {
-        let base = v as f32 * stride;
+        let base = v as f64 * stride;
         if let Some(offset) = position {
             for i in 0..3 {
                 out.positions[v * 3 + i] =
-                    read_float_index(&geometry.vertices, base + offset + i as f32);
+                    read_float_index(&geometry.vertices, base + offset + i as f64);
             }
         }
         if let Some(offset) = normal {
             for i in 0..3 {
                 out.normals[v * 3 + i] =
-                    read_float_index(&geometry.vertices, base + offset + i as f32);
+                    read_float_index(&geometry.vertices, base + offset + i as f64);
             }
         }
         if let Some(offset) = tangent {
             for i in 0..4 {
                 out.tangents[v * 4 + i] =
-                    read_float_index(&geometry.vertices, base + offset + i as f32);
+                    read_float_index(&geometry.vertices, base + offset + i as f64);
             }
         }
         if get_mesh_geometry_vertex_joints0(&mut joint, geometry, v as u32) {
-            out.joints[v * 4..v * 4 + 4].copy_from_slice(&[joint.x, joint.y, joint.z, joint.w]);
+            out.joints[v * 4..v * 4 + 4].copy_from_slice(&[
+                joint.x as f32,
+                joint.y as f32,
+                joint.z as f32,
+                joint.w as f32,
+            ]);
         }
         if get_mesh_geometry_vertex_weights0(&mut weight, geometry, v as u32) {
-            out.weights[v * 4..v * 4 + 4]
-                .copy_from_slice(&[weight.x, weight.y, weight.z, weight.w]);
+            out.weights[v * 4..v * 4 + 4].copy_from_slice(&[
+                weight.x as f32,
+                weight.y as f32,
+                weight.z as f32,
+                weight.w as f32,
+            ]);
         }
     }
     return out;
@@ -67,13 +77,14 @@ pub fn capture_mesh_skin_bind_pose(geometry: &MeshGeometry) -> MeshSkinBindPose 
 pub(crate) fn float_offset_for_semantic(
     layout: &VertexAttributeLayout,
     semantic: VertexSemantic,
-) -> Option<f32> {
+) -> Option<f64> {
     return layout
         .attributes
         .iter()
         .find(|attribute| attribute.semantic == semantic)
-        .map(|attribute| attribute.byte_offset as f32 / 4.0);
+        .map(|attribute| attribute.byte_offset as f64 / 4.0);
 }
+// flight-lint: allow(f32) reads or writes the Float32Array skinning lanes (joint, normal and inverse-bind palettes, joint indices, weights and the interleaved vertex buffer); bind-pose math is f64
 pub fn skin_mesh_geometry(
     geometry: &mut MeshGeometry,
     skeleton: &Skeleton3D,
@@ -97,7 +108,7 @@ pub fn skin_mesh_geometry(
         &skeleton.joint_matrices.read().unwrap(),
     );
     let layout = geometry.layout.read().unwrap();
-    let stride = layout.stride as f32 / 4.0;
+    let stride = layout.stride as f64 / 4.0;
     let position = float_offset_for_semantic(&layout, VertexSemantic::Position);
     let normal = float_offset_for_semantic(&layout, VertexSemantic::Normal);
     let tangent = if !bind_pose.tangents.is_empty() {
@@ -106,13 +117,13 @@ pub fn skin_mesh_geometry(
         None
     };
     for v in 0..bind_pose.skinned_positions.len() / 3 {
-        let base = v as f32 * stride;
+        let base = v as f64 * stride;
         if let Some(offset) = position {
             for i in 0..3 {
                 write_float_index(
                     &mut geometry.vertices,
-                    base + offset + i as f32,
-                    bind_pose.skinned_positions[v * 3 + i],
+                    base + offset + i as f64,
+                    bind_pose.skinned_positions[v * 3 + i] as f32,
                 );
             }
         }
@@ -120,8 +131,8 @@ pub fn skin_mesh_geometry(
             for i in 0..3 {
                 write_float_index(
                     &mut geometry.vertices,
-                    base + offset + i as f32,
-                    bind_pose.skinned_normals[v * 3 + i],
+                    base + offset + i as f64,
+                    bind_pose.skinned_normals[v * 3 + i] as f32,
                 );
             }
         }
@@ -129,8 +140,8 @@ pub fn skin_mesh_geometry(
             for i in 0..4 {
                 write_float_index(
                     &mut geometry.vertices,
-                    base + offset + i as f32,
-                    bind_pose.skinned_tangents[v * 4 + i],
+                    base + offset + i as f64,
+                    bind_pose.skinned_tangents[v * 4 + i] as f32,
                 );
             }
         }
@@ -142,9 +153,9 @@ pub fn update_mesh_skin_bind_pose_deform_input(
     geometry: &MeshGeometry,
 ) {
     let layout = geometry.layout.read().unwrap();
-    let stride = layout.stride as f32 / 4.0;
+    let stride = layout.stride as f64 / 4.0;
     let count = if stride > 0.0 {
-        (geometry.vertices.len() as f32 / stride) as usize
+        (geometry.vertices.len() as f64 / stride) as usize
     } else {
         0
     };
@@ -152,17 +163,17 @@ pub fn update_mesh_skin_bind_pose_deform_input(
     let position = float_offset_for_semantic(&layout, VertexSemantic::Position);
     let normal = float_offset_for_semantic(&layout, VertexSemantic::Normal);
     for v in 0..count {
-        let base = v as f32 * stride;
+        let base = v as f64 * stride;
         if let Some(offset) = position {
             for i in 0..3 {
                 bind_pose.positions[v * 3 + i] =
-                    read_float_index(&geometry.vertices, base + offset + i as f32);
+                    read_float_index(&geometry.vertices, base + offset + i as f64);
             }
         }
         if let Some(offset) = normal {
             for i in 0..3 {
                 bind_pose.normals[v * 3 + i] =
-                    read_float_index(&geometry.vertices, base + offset + i as f32);
+                    read_float_index(&geometry.vertices, base + offset + i as f64);
             }
         }
     }

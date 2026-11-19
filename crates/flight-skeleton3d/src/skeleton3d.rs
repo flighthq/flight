@@ -17,6 +17,7 @@ use std::sync::{Arc, RwLock};
 
 // D23 KEEP: joints define the skeleton; optional inverse-bind data determines palette allocation and bind-pose capture.
 // flight-lint: allow(conform-params) D23 B: names are assigned after construction; D5 guard is explicit
+// flight-lint: allow(f32) reads or writes the Float32Array skinning lanes (joint, normal and inverse-bind palettes, joint indices, weights and the interleaved vertex buffer); bind-pose math is f64
 pub fn create_skeleton3d(
     joints: Ref<Vec<Node3DRef>>,
     inverse_bind_matrices: Option<Ref<Box<Float32Array>>>,
@@ -40,6 +41,7 @@ pub fn create_skeleton3d(
 }
 // D23 KEEP: required palette and joint Refs are the original defining buffers, including shared/aliased storage.
 // flight-lint: allow(conform-params) D23 B: construction establishes absent names before authored assignment
+// flight-lint: allow(f32) reads or writes the Float32Array skinning lanes (joint, normal and inverse-bind palettes, joint indices, weights and the interleaved vertex buffer); bind-pose math is f64
 pub fn initialize_skeleton3d(
     out: &mut Skeleton3D,
     inverse_bind_matrices: Ref<Box<Float32Array>>,
@@ -139,6 +141,7 @@ pub fn clone_skeleton3d_joint_hierarchy(
     return out;
 }
 // flight-lint: allow(conform-params) D5 caller-owned canonical node revision source replaces TS semantic transform state
+// flight-lint: allow(f32) reads or writes the Float32Array skinning lanes (joint, normal and inverse-bind palettes, joint indices, weights and the interleaved vertex buffer); bind-pose math is f64
 pub fn compute_skeleton3d_joint_matrices(skeleton: &mut Skeleton3D) {
     let mut inverse = create_matrix4();
     let mut result = create_matrix4();
@@ -166,7 +169,7 @@ pub fn compute_skeleton3d_joint_matrices(skeleton: &mut Skeleton3D) {
                 write_array(
                     &mut normal_palette,
                     j * 12 + column * 4 + row,
-                    normal.m[column * 3 + row],
+                    normal.m[column * 3 + row] as f32,
                 );
             }
             write_array(&mut normal_palette, j * 12 + column * 4 + 3, 0.0);
@@ -243,12 +246,19 @@ pub fn get_skeleton3d_joint_world_matrix_by_name(
         get_skeleton3d_joint_index_by_name(skeleton, name),
     );
 }
-fn set_array_from(out: &Ref<Box<Float32Array>>, source: &[f32], offset: usize) {
+// The joint palette is the Float32Array GPU skinning lane: each f64 matrix element narrows once.
+// flight-lint: allow(f32) reads or writes the Float32Array skinning lanes (joint, normal and inverse-bind palettes, joint indices, weights and the interleaved vertex buffer); bind-pose math is f64
+fn set_array_from(out: &Ref<Box<Float32Array>>, source: &[f64], offset: usize) {
     let length = out.read().unwrap().len();
     if offset > length || source.len() > length - offset {
         flight_entity::throw_range_error("offset is out of bounds");
     }
-    out.write().unwrap()[offset..offset + source.len()].copy_from_slice(source);
+    for (target, value) in out.write().unwrap()[offset..offset + source.len()]
+        .iter_mut()
+        .zip(source)
+    {
+        *target = *value as f32;
+    }
 }
 // flight-lint: allow(conform-params) D5 caller-owned guard slot replaces TS module state
 pub fn set_skeleton3d_bind_pose(skeleton: &mut Skeleton3D, guard_state: &Skeleton3DGuardStateRef) {

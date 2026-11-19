@@ -3,7 +3,11 @@
 use flight_geometry::{create_matrix3, create_matrix4, set_matrix3_normal_from_matrix4};
 use flight_skeleton3d::*;
 fn identity() -> Vec<f32> {
-    return create_matrix4().m.to_vec();
+    return create_matrix4()
+        .m
+        .iter()
+        .map(|value| *value as f32)
+        .collect();
 }
 fn translation(x: f32, y: f32, z: f32) -> Vec<f32> {
     let mut m = identity();
@@ -16,11 +20,15 @@ fn normal_palette(palette: &[f32]) -> Vec<f32> {
     let mut out = vec![0.0; palette.len() / 16 * 12];
     for j in 0..palette.len() / 16 {
         let mut m = create_matrix4();
-        m.m.copy_from_slice(&palette[j * 16..j * 16 + 16]);
+        for (target, value) in m.m.iter_mut().zip(&palette[j * 16..j * 16 + 16]) {
+            *target = f64::from(*value);
+        }
         let mut normal = create_matrix3();
         set_matrix3_normal_from_matrix4(&mut normal, &m);
         for c in 0..3 {
-            out[j * 12 + c * 4..j * 12 + c * 4 + 3].copy_from_slice(&normal.m[c * 3..c * 3 + 3]);
+            for r in 0..3 {
+                out[j * 12 + c * 4 + r] = normal.m[c * 3 + r] as f32;
+            }
         }
     }
     return out;
@@ -30,7 +38,8 @@ fn rotate_z() -> Vec<f32> {
         0.0, 1.0, 0.0, 0.0, -1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0,
     ];
 }
-fn close(a: f32, b: f32) {
+fn close(a: impl Into<f64>, b: impl Into<f64>) {
+    let (a, b): (f64, f64) = (a.into(), b.into());
     assert!((a - b).abs() < 0.00001, "{a} != {b}");
 }
 mod skin_tangents {
@@ -125,6 +134,25 @@ mod skin_tangents {
 }
 mod skin_vertices {
     use super::*;
+
+    #[test]
+    fn skins_a_bind_pose_vertex_at_one_billion_without_losing_the_half_unit() {
+        // f32 spacing at 1e9 is 64: skinning in f32 would return 1e9.
+        let palette = identity();
+        let mut p = [0.0; 3];
+        let mut n = [0.0; 3];
+        skin_vertices(
+            &mut p,
+            &mut n,
+            &[1_000_000_000.5, 0.0, 0.0],
+            &[0.0, 1.0, 0.0],
+            &[0.0; 4],
+            &[1.0, 0.0, 0.0, 0.0],
+            &palette,
+            &normal_palette(&palette),
+        );
+        assert_eq!(p[0], 1_000_000_000.5);
+    }
     #[test]
     fn uses_all_four_influence_slots_including_negative_and_unscaled_total_weights() {
         let matrices = [
@@ -310,7 +338,7 @@ mod skin_vertices {
             &m,
             &[0.0, 1.0, 0.0, 0.0, -1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0],
         );
-        assert_eq!(n.map(f32::to_bits), original.map(f32::to_bits));
+        assert_eq!(n.map(f64::to_bits), original.map(f64::to_bits));
     }
     #[test]
     fn retains_tail_and_propagates_invalid_nonzero_influences_as_nan() {

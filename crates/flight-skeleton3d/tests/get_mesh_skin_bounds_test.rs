@@ -4,7 +4,7 @@ use crate::support::*;
 use flight_geometry::create_aabb;
 use flight_meshgeometry::MeshSkinBindPose;
 use flight_skeleton3d::*;
-fn pose(positions: Vec<f32>, indices: &[f32]) -> MeshSkinBindPose {
+fn pose(positions: Vec<f64>, indices: &[f32]) -> MeshSkinBindPose {
     let count = positions.len() / 3;
     let mut joints = vec![0.0; count * 4].into_boxed_slice();
     let mut weights = vec![0.0; count * 4].into_boxed_slice();
@@ -51,8 +51,8 @@ mod get_mesh_skin_conservative_bounds {
         let skeleton = palette_skeleton(translation(0.0, 0.0, 0.0));
         for pose in [pose(Vec::new(), &[]), pose(vec![1.0, 2.0, 3.0], &[99.0])] {
             get_mesh_skin_conservative_bounds(&mut out, &pose, &skeleton);
-            assert_eq!(out.min.x, f32::INFINITY);
-            assert_eq!(out.max.x, f32::NEG_INFINITY);
+            assert_eq!(out.min.x, f64::INFINITY);
+            assert_eq!(out.max.x, f64::NEG_INFINITY);
         }
     }
 }

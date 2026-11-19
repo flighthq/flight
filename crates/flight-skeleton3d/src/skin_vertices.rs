@@ -2,18 +2,24 @@
 
 use flight_entity::Float32Array;
 
-pub(crate) fn read_array(values: &[f32], index: usize) -> f32 {
-    return values.get(index).copied().unwrap_or(f32::NAN);
+// Reads the f64 bind-pose arrays directly and widens the f32 weight, joint and palette lanes exactly.
+pub(crate) fn read_array<T: Copy + Into<f64>>(values: &[T], index: usize) -> f64 {
+    return values
+        .get(index)
+        .map(|value| (*value).into())
+        .unwrap_or(f64::NAN);
 }
-pub(crate) fn read_float_index(values: &[f32], index: f32) -> f32 {
+pub(crate) fn read_float_index<T: Copy + Into<f64>>(values: &[T], index: f64) -> f64 {
     if !index.is_finite() || index < 0.0 || index.fract() != 0.0 {
-        return f32::NAN;
+        return f64::NAN;
     }
     return read_array(values, index as usize);
 }
+// flight-lint: allow(f32) reads or writes the Float32Array skinning lanes (joint, normal and inverse-bind palettes, joint indices, weights and the interleaved vertex buffer); bind-pose math is f64
+// flight-lint: allow(conform-array) bind-pose positions, normals and tangents are f64 in flight-meshgeometry's MeshSkinBindPose (landed Task Q lane); TS stores them in Float32Array
 pub fn skin_tangents(
-    out_tangents: &mut Float32Array,
-    tangents: &Float32Array,
+    out_tangents: &mut [f64],
+    tangents: &[f64],
     joints: &[f32],
     weights: &Float32Array,
     joint_matrices: &Float32Array,
@@ -37,9 +43,9 @@ pub fn skin_tangents(
             let base = read_array(joints, t + k) * 16.0;
             for row in 0..3 {
                 output[row] += weight
-                    * (read_float_index(joint_matrices, base + row as f32) * input[0]
-                        + read_float_index(joint_matrices, base + (4 + row) as f32) * input[1]
-                        + read_float_index(joint_matrices, base + (8 + row) as f32) * input[2]);
+                    * (read_float_index(joint_matrices, base + row as f64) * input[0]
+                        + read_float_index(joint_matrices, base + (4 + row) as f64) * input[1]
+                        + read_float_index(joint_matrices, base + (8 + row) as f64) * input[2]);
             }
         }
         for row in 0..3 {
@@ -52,11 +58,13 @@ pub fn skin_tangents(
         write_array(out_tangents, t + 3, input[3]);
     }
 }
+// flight-lint: allow(f32) reads or writes the Float32Array skinning lanes (joint, normal and inverse-bind palettes, joint indices, weights and the interleaved vertex buffer); bind-pose math is f64
+// flight-lint: allow(conform-array) bind-pose positions, normals and tangents are f64 in flight-meshgeometry's MeshSkinBindPose (landed Task Q lane); TS stores them in Float32Array
 pub fn skin_vertices(
-    out_positions: &mut Float32Array,
-    out_normals: &mut Float32Array,
-    positions: &Float32Array,
-    normals: &Float32Array,
+    out_positions: &mut [f64],
+    out_normals: &mut [f64],
+    positions: &[f64],
+    normals: &[f64],
     joints: &[f32],
     weights: &Float32Array,
     joint_matrices: &Float32Array,
@@ -84,14 +92,14 @@ pub fn skin_vertices(
             let n = joint * 12.0;
             for row in 0..3 {
                 op[row] += weight
-                    * (read_float_index(joint_matrices, m + row as f32) * position[0]
-                        + read_float_index(joint_matrices, m + (4 + row) as f32) * position[1]
-                        + read_float_index(joint_matrices, m + (8 + row) as f32) * position[2]
-                        + read_float_index(joint_matrices, m + (12 + row) as f32));
+                    * (read_float_index(joint_matrices, m + row as f64) * position[0]
+                        + read_float_index(joint_matrices, m + (4 + row) as f64) * position[1]
+                        + read_float_index(joint_matrices, m + (8 + row) as f64) * position[2]
+                        + read_float_index(joint_matrices, m + (12 + row) as f64));
                 on[row] += weight
-                    * (read_float_index(normal_matrices, n + row as f32) * normal[0]
-                        + read_float_index(normal_matrices, n + (4 + row) as f32) * normal[1]
-                        + read_float_index(normal_matrices, n + (8 + row) as f32) * normal[2]);
+                    * (read_float_index(normal_matrices, n + row as f64) * normal[0]
+                        + read_float_index(normal_matrices, n + (4 + row) as f64) * normal[1]
+                        + read_float_index(normal_matrices, n + (8 + row) as f64) * normal[2]);
             }
         }
         for row in 0..3 {
@@ -108,13 +116,13 @@ pub fn skin_vertices(
         }
     }
 }
-pub(crate) fn write_array(values: &mut [f32], index: usize, value: f32) {
+pub(crate) fn write_array<T: Copy>(values: &mut [T], index: usize, value: T) {
     if let Some(out) = values.get_mut(index) {
         *out = value;
     }
 }
 
-pub(crate) fn write_float_index(values: &mut [f32], index: f32, value: f32) {
+pub(crate) fn write_float_index<T: Copy>(values: &mut [T], index: f64, value: T) {
     if index.is_finite() && index >= 0.0 && index.fract() == 0.0 {
         write_array(values, index as usize, value);
     }

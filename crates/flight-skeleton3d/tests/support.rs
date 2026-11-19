@@ -4,7 +4,8 @@ use flight_meshgeometry::{
     CANONICAL_SKINNED_MESH_GEOMETRY_LAYOUT, MeshGeometry, MeshGeometryOptions, create_mesh_geometry,
 };
 use flight_scene3d::Skeleton3D;
-pub fn close(a: f32, b: f32) {
+pub fn close(a: impl Into<f64>, b: impl Into<f64>) {
+    let (a, b): (f64, f64) = (a.into(), b.into());
     assert!((a - b).abs() < 0.00001, "{a} != {b}");
 }
 pub fn geometry(
@@ -41,10 +42,11 @@ pub fn palette_skeleton(palette: Vec<f32>) -> Skeleton3D {
 }
 pub fn translation(x: f32, y: f32, z: f32) -> Vec<f32> {
     let mut m = create_matrix4();
-    m.m[12] = x;
-    m.m[13] = y;
-    m.m[14] = z;
-    return m.m.to_vec();
+    m.m[12] = f64::from(x);
+    m.m[13] = f64::from(y);
+    m.m[14] = f64::from(z);
+    // Palettes are the f32 GPU lane.
+    return m.m.iter().map(|value| *value as f32).collect();
 }
 pub fn guards() -> flight_skeleton3d::Skeleton3DGuardStateRef {
     return std::sync::Arc::new(std::sync::RwLock::new(
@@ -54,7 +56,7 @@ pub fn guards() -> flight_skeleton3d::Skeleton3DGuardStateRef {
         },
     ));
 }
-pub fn joint(x: f32, y: f32, z: f32) -> flight_entity::Ref<flight_scene3d::Node3DFields> {
+pub fn joint(x: f64, y: f64, z: f64) -> flight_entity::Ref<flight_scene3d::Node3DFields> {
     let mut node: flight_scene3d::Node3DFields = flight_scene3d::create_node3d(None);
     node.position = flight_geometry::create_vector3(x, y, z);
     let node = flight_scene3d::publish_node3d(node);

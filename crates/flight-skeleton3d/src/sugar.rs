@@ -287,16 +287,16 @@ pub trait MeshSkinBoundsMethods {
 pub trait SkinBufferMethods {
     fn skin_tangents(
         &mut self,
-        tangents: &Float32Array,
+        tangents: &[f64],
         joints: &[f32],
         weights: &Float32Array,
         joint_matrices: &Float32Array,
     );
     fn skin_vertices(
         &mut self,
-        out_normals: &mut Float32Array,
-        positions: &Float32Array,
-        normals: &Float32Array,
+        out_normals: &mut [f64],
+        positions: &[f64],
+        normals: &[f64],
         joints: &[f32],
         weights: &Float32Array,
         joint_matrices: &Float32Array,
@@ -309,6 +309,7 @@ pub trait Skeleton3DGuardMethods {
     fn enable(&self, log: &LogStateRef, clock: Skeleton3DGuardClock);
 }
 impl Skeleton3DMethods for Skeleton3D {
+    // flight-lint: allow(f32) reads or writes the Float32Array skinning lanes (joint, normal and inverse-bind palettes, joint indices, weights and the interleaved vertex buffer); bind-pose math is f64
     fn new(
         joints: Ref<Vec<Node3DRef>>,
         inverse_bind_matrices: Option<Ref<Box<Float32Array>>>,
@@ -382,21 +383,23 @@ impl MeshSkinBoundsMethods for Aabb {
         get_mesh_skin_exact_bounds(self, bind_pose, skeleton);
     }
 }
-impl SkinBufferMethods for [f32] {
+impl SkinBufferMethods for [f64] {
+    // flight-lint: allow(f32) reads or writes the Float32Array skinning lanes (joint, normal and inverse-bind palettes, joint indices, weights and the interleaved vertex buffer); bind-pose math is f64
     fn skin_tangents(
         &mut self,
-        tangents: &Float32Array,
+        tangents: &[f64],
         joints: &[f32],
         weights: &Float32Array,
         joint_matrices: &Float32Array,
     ) {
         skin_tangents(self, tangents, joints, weights, joint_matrices);
     }
+    // flight-lint: allow(f32) reads or writes the Float32Array skinning lanes (joint, normal and inverse-bind palettes, joint indices, weights and the interleaved vertex buffer); bind-pose math is f64
     fn skin_vertices(
         &mut self,
-        out_normals: &mut Float32Array,
-        positions: &Float32Array,
-        normals: &Float32Array,
+        out_normals: &mut [f64],
+        positions: &[f64],
+        normals: &[f64],
         joints: &[f32],
         weights: &Float32Array,
         joint_matrices: &Float32Array,

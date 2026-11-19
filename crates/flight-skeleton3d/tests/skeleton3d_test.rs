@@ -522,10 +522,11 @@ mod set_skeleton3d_bind_pose {
                 .iter()
                 .all(|v| v.is_finite())
         );
-        assert_eq!(
-            &rig.inverse_bind_matrices.read().unwrap()[..16],
-            &create_matrix4().m
-        );
+        let palette: Vec<f64> = rig.inverse_bind_matrices.read().unwrap()[..16]
+            .iter()
+            .map(|value| f64::from(*value))
+            .collect();
+        assert_eq!(&palette[..], &create_matrix4().m[..]);
         close(rig.inverse_bind_matrices.read().unwrap()[28], -3.0);
     }
     #[test]

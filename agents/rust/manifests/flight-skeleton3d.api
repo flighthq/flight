@@ -44,8 +44,8 @@ src/skeleton3d.rs: pub fn validate_skeleton3d(skeleton: &Skeleton3D) -> Option<S
 src/skin_mesh_geometry.rs: pub fn capture_mesh_skin_bind_pose(geometry: &MeshGeometry) -> MeshSkinBindPose
 src/skin_mesh_geometry.rs: pub fn skin_mesh_geometry(geometry: &mut MeshGeometry, skeleton: &Skeleton3D, bind_pose: &mut MeshSkinBindPose,)
 src/skin_mesh_geometry.rs: pub fn update_mesh_skin_bind_pose_deform_input(bind_pose: &mut MeshSkinBindPose, geometry: &MeshGeometry,)
-src/skin_vertices.rs: pub fn skin_tangents(out_tangents: &mut Float32Array, tangents: &Float32Array, joints: &[f32], weights: &Float32Array, joint_matrices: &Float32Array,)
-src/skin_vertices.rs: pub fn skin_vertices(out_positions: &mut Float32Array, out_normals: &mut Float32Array, positions: &Float32Array, normals: &Float32Array, joints: &[f32], weights: &Float32Array, joint_matrices: &Float32Array, normal_matrices: &Float32Array,)
+src/skin_vertices.rs: pub fn skin_tangents(out_tangents: &mut [f64], tangents: &[f64], joints: &[f32], weights: &Float32Array, joint_matrices: &Float32Array,)
+src/skin_vertices.rs: pub fn skin_vertices(out_positions: &mut [f64], out_normals: &mut [f64], positions: &[f64], normals: &[f64], joints: &[f32], weights: &Float32Array, joint_matrices: &Float32Array, normal_matrices: &Float32Array,)
 src/sugar.rs: impl MeshGeometrySkinMethods for MeshGeometry
 src/sugar.rs: impl MeshGeometrySkinMethods for MeshGeometry :: fn capture_skin_bind_pose(&self) -> MeshSkinBindPose
 src/sugar.rs: impl MeshGeometrySkinMethods for MeshGeometry :: fn skin(&mut self, skeleton: &Skeleton3D, bind_pose: &mut MeshSkinBindPose)
@@ -75,16 +75,16 @@ src/sugar.rs: impl Skeleton3DNodeMethods for NodeRef :: fn prepare_scene_skinnin
 src/sugar.rs: impl Skeleton3DNodeMethods for NodeRef :: fn prepare_skinning(&self, revisions: &mut NodeRevisionState)
 src/sugar.rs: impl Skeleton3DNodeMethods for NodeRef :: fn update_deformation(&self, revisions: &mut NodeRevisionState)
 src/sugar.rs: impl Skeleton3DNodeMethods for NodeRef :: fn update_skin(&self, revisions: &mut NodeRevisionState)
-src/sugar.rs: impl SkinBufferMethods for [f32]
-src/sugar.rs: impl SkinBufferMethods for [f32] :: fn skin_tangents(&mut self, tangents: &Float32Array, joints: &[f32], weights: &Float32Array, joint_matrices: &Float32Array,)
-src/sugar.rs: impl SkinBufferMethods for [f32] :: fn skin_vertices(&mut self, out_normals: &mut Float32Array, positions: &Float32Array, normals: &Float32Array, joints: &[f32], weights: &Float32Array, joint_matrices: &Float32Array, normal_matrices: &Float32Array,)
+src/sugar.rs: impl SkinBufferMethods for [f64]
+src/sugar.rs: impl SkinBufferMethods for [f64] :: fn skin_tangents(&mut self, tangents: &[f64], joints: &[f32], weights: &Float32Array, joint_matrices: &Float32Array,)
+src/sugar.rs: impl SkinBufferMethods for [f64] :: fn skin_vertices(&mut self, out_normals: &mut [f64], positions: &[f64], normals: &[f64], joints: &[f32], weights: &Float32Array, joint_matrices: &Float32Array, normal_matrices: &Float32Array,)
 src/sugar.rs: pub trait MeshGeometrySkinMethods { fn capture_skin_bind_pose(&self) -> MeshSkinBindPose; fn skin(&mut self, skeleton: &Skeleton3D, bind_pose: &mut MeshSkinBindPose); }
 src/sugar.rs: pub trait MeshSkinBindPoseMethods { fn update_deform_input(&mut self, geometry: &MeshGeometry); }
 src/sugar.rs: pub trait MeshSkinBoundsMethods { fn skin_conservative_bounds(&mut self, bind_pose: &MeshSkinBindPose, skeleton: &Skeleton3D); fn skin_exact_bounds(&mut self, bind_pose: &mut MeshSkinBindPose, skeleton: &Skeleton3D); }
 src/sugar.rs: pub trait Skeleton3DGuardMethods { fn are_enabled(&self) -> bool; fn disable(&self); fn enable(&self, log: &LogStateRef, clock: Skeleton3DGuardClock); }
 src/sugar.rs: pub trait Skeleton3DMethods { fn new(joints: Ref<Vec<Node3DRef>>, inverse_bind_matrices: Option<Ref<Box<Float32Array>>>, revisions: &mut NodeRevisionState, guards: &Skeleton3DGuardStateRef,) -> Self; fn clone_joint_hierarchy(&self, clone_joint: Skeleton3DJointCloner) -> Skeleton3D; fn clone_skeleton(&self) -> Skeleton3D; fn compute_joint_matrices(&mut self, revisions: &mut NodeRevisionState); fn dispose(&mut self); fn equals(&self, other: &Skeleton3D) -> bool; fn joint_index_by_name(&self, name: &str) -> i32; fn joint_world_matrix(&self, out: &mut Matrix4, index: i32, revisions: &mut NodeRevisionState,) -> bool; fn joint_world_matrix_by_name(&self, out: &mut Matrix4, name: &str, revisions: &mut NodeRevisionState,) -> bool; fn set_bind_pose(&mut self, revisions: &mut NodeRevisionState, guards: &Skeleton3DGuardStateRef,); fn validate(&self) -> Option<Skeleton3DValidationDiagnostic>; }
 src/sugar.rs: pub trait Skeleton3DNodeMethods { fn prepare_scene_skinning(&self, revisions: &mut NodeRevisionState); fn prepare_skinning(&self, revisions: &mut NodeRevisionState); fn update_deformation(&self, revisions: &mut NodeRevisionState); fn update_skin(&self, revisions: &mut NodeRevisionState); }
-src/sugar.rs: pub trait SkinBufferMethods { fn skin_tangents(&mut self, tangents: &Float32Array, joints: &[f32], weights: &Float32Array, joint_matrices: &Float32Array,); fn skin_vertices(&mut self, out_normals: &mut Float32Array, positions: &Float32Array, normals: &Float32Array, joints: &[f32], weights: &Float32Array, joint_matrices: &Float32Array, normal_matrices: &Float32Array,); }
+src/sugar.rs: pub trait SkinBufferMethods { fn skin_tangents(&mut self, tangents: &[f64], joints: &[f32], weights: &Float32Array, joint_matrices: &Float32Array,); fn skin_vertices(&mut self, out_normals: &mut [f64], positions: &[f64], normals: &[f64], joints: &[f32], weights: &Float32Array, joint_matrices: &Float32Array, normal_matrices: &Float32Array,); }
 src/types.rs: #[derive(Clone, Debug, PartialEq, Eq)] pub struct Skeleton3DValidationDiagnostic { pub joint_count: usize, pub inverse_bind_matrices_length: usize, pub expected_inverse_bind_matrices_length: usize, pub message: String, }
 src/types.rs: #[derive(Default)] pub struct Skeleton3DGuardState { pub enabled: bool, pub bind_pose_guard: Option<Skeleton3DBindPoseGuard>, }
 src/types.rs: pub type Skeleton3DBindPoseGuard = Arc<dyn Fn(&Skeleton3D, usize) + Send + Sync>;

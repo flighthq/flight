@@ -119,8 +119,8 @@ mod skin_mesh_geometry {
         joint.write().unwrap().rotation = flight_geometry::create_quaternion(
             0.0,
             0.0,
-            std::f32::consts::FRAC_1_SQRT_2,
-            std::f32::consts::FRAC_1_SQRT_2,
+            std::f64::consts::FRAC_1_SQRT_2,
+            std::f64::consts::FRAC_1_SQRT_2,
         );
         let node: flight_node::NodeRef = joint;
         flight_node::invalidate_node_local_transform(&node);
