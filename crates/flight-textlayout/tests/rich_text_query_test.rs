@@ -86,6 +86,18 @@ mod get_rich_text_char_boundaries {
     use super::*;
 
     #[test]
+    fn sums_shaped_advances_in_double_precision_like_the_ts_number() {
+        // 0.1f32 + 0.2f32 is 0.30000001192 in f32 but 0.30000000447 once widened and summed in f64.
+        let mut layout = create_layout();
+        layout.groups[0].positions = vec![0.1, 0.2, 10.0];
+        let mut out = create_rectangle(0.0, 0.0, 0.0, 0.0);
+        assert!(get_rich_text_char_boundaries(&mut out, &layout, 2));
+        let expected = f64::from(0.1_f32) + f64::from(0.2_f32);
+        assert_ne!(f64::from(0.1_f32 + 0.2_f32), expected);
+        assert_eq!(out.x, expected);
+    }
+
+    #[test]
     fn fills_out_with_the_bounding_box_of_the_character() {
         let mut out = create_rectangle(0.0, 0.0, 0.0, 0.0);
         assert!(get_rich_text_char_boundaries(&mut out, &create_layout(), 1));

@@ -116,6 +116,7 @@ fn get_f32(values: &[f32], index: usize, fallback: f32) -> f32 {
     };
 }
 
+// flight-lint: allow(f64) f32 shaped positions widen once and accumulate in f64 like the TS number sum
 pub fn get_rich_text_char_boundaries(
     out: &mut Rectangle,
     layout: &TextLayoutResult,
@@ -125,16 +126,20 @@ pub fn get_rich_text_char_boundaries(
         return false;
     };
 
-    let mut x = group.offset_x;
+    let mut x = f64::from(group.offset_x);
     let limit = (char_index - group.start_index).min(group.positions.len());
     for index in 0..limit {
-        x += get_f32(&group.positions, index, 0.0);
+        x += f64::from(get_f32(&group.positions, index, 0.0));
     }
 
     out.x = x;
-    out.y = group.offset_y;
-    out.width = get_f32(&group.positions, char_index - group.start_index, 0.0);
-    out.height = group.height;
+    out.y = f64::from(group.offset_y);
+    out.width = f64::from(get_f32(
+        &group.positions,
+        char_index - group.start_index,
+        0.0,
+    ));
+    out.height = f64::from(group.height);
     return true;
 }
 

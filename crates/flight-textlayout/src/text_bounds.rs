@@ -25,13 +25,14 @@ pub fn compute_text_bounds_offset_x(spec: &TextBoundsSpec, layout: &TextLayoutRe
     return 0.0;
 }
 
+// flight-lint: allow(f64) f32 layout measurements widen once and the bounds are composed in the f64 geometry Rectangle
 pub fn compute_text_bounds_rectangle(
     out: &mut Rectangle,
     spec: &TextBoundsSpec,
     layout: &TextLayoutResult,
 ) {
-    let width = compute_text_bounds_width(spec, layout);
-    let slack = spec.width - width;
+    let width = f64::from(compute_text_bounds_width(spec, layout));
+    let slack = f64::from(spec.width) - width;
     out.x = if spec.auto_size == TextAutoSize::Right {
         slack
     } else if spec.auto_size == TextAutoSize::Center {
@@ -41,7 +42,7 @@ pub fn compute_text_bounds_rectangle(
     };
     out.y = 0.0;
     out.width = width;
-    out.height = compute_text_bounds_height(spec, layout);
+    out.height = f64::from(compute_text_bounds_height(spec, layout));
 }
 
 pub fn compute_text_bounds_width(spec: &TextBoundsSpec, layout: &TextLayoutResult) -> f32 {
