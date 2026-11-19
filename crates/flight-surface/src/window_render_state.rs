@@ -14,6 +14,9 @@ use crate::types::*;
 
 /// Sizes the surface backing store from the window's logical size scaled by its device pixel
 /// ratio. Window sizes are non-negative, so `round` matches `Math.round` for every reachable value.
+/// The product is formed in f64 like the TS number, and only the rounded whole-pixel count narrows
+/// to the f32 surface API, which represents every whole pixel count up to 2^24 exactly.
+// flight-lint: allow(f64) the window device pixel ratio is an f64 scale factor (TS number)
 fn apply_window_render_state(
     capability: &HostSurfaceResizeCapability,
     win: &Ref<AppWindow>,
@@ -26,8 +29,8 @@ fn apply_window_render_state(
     resize_surface(
         capability,
         surface,
-        (width * device_pixel_ratio).round(),
-        (height * device_pixel_ratio).round(),
+        (f64::from(width) * device_pixel_ratio).round() as f32,
+        (f64::from(height) * device_pixel_ratio).round() as f32,
     );
 }
 

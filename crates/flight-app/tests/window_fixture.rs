@@ -368,7 +368,7 @@ impl WindowBackend {
         }
     }
 
-    pub fn emit_resize(&self, width: f32, height: f32, device_pixel_ratio: f32) {
+    pub fn emit_resize(&self, width: f32, height: f32, device_pixel_ratio: f64) {
         let listeners: Vec<WindowResizeListener> = self
             .resizes
             .lock()

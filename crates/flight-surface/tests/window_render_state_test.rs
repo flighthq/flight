@@ -28,6 +28,22 @@ mod attach_window_render_state {
     use super::*;
 
     #[test]
+    fn rounds_the_scaled_size_in_double_precision_like_math_round() {
+        // 5 * 1.3 is 6.5000000000000002 in f64 (TS rounds to 7) but 6.4999998 in f32 (rounds to 6).
+        let calls = Arc::new(Mutex::new(Vec::new()));
+        let capability = resize_capability(calls.clone());
+        let win = create_app_window();
+        {
+            let mut guard = win.write().unwrap();
+            guard.width = 5.0;
+            guard.height = 10.0;
+            guard.device_pixel_ratio = 1.3;
+        }
+        attach_window_render_state(&capability, &win, &surface());
+        assert_eq!(*calls.lock().unwrap(), vec![(7.0, 13.0)]);
+    }
+
+    #[test]
     fn sizes_the_opaque_render_surface_from_the_window() {
         let calls = Arc::new(Mutex::new(Vec::new()));
         let capability = resize_capability(calls.clone());

@@ -502,6 +502,20 @@ mod compute_window_device_transform {
     use super::*;
 
     #[test]
+    fn carries_a_fractional_host_device_pixel_ratio_into_the_transform_without_narrowing() {
+        // 1.1 has no exact f32 form; a round trip through f32 would land on 1.100000023841858.
+        let ratio = 1.1_f64;
+        assert_ne!(ratio as f32 as f64, ratio);
+        let backend = window_backend();
+        let win = create_app_window();
+        attach_window_resize(&backend.geometry(), &win, &resize_target());
+        backend.emit_resize(800.0, 600.0, ratio);
+        let mut out: Matrix = allocate_entity();
+        compute_window_device_transform(&mut out, &win);
+        assert_eq!((out.a, out.d), (ratio, ratio));
+    }
+
+    #[test]
     fn writes_a_uniform_device_pixel_ratio_scale_into_out() {
         let win = create_app_window();
         win.write().unwrap().device_pixel_ratio = 3.0;

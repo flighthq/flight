@@ -18,6 +18,7 @@ use crate::types::{AppProviderFuture, AppUnsubscribe};
 /// The private fields replace the source's module side tables keyed by the window: the attached
 /// host observers (in first-attach order), the terminal-close flag, and the lifecycle provider a
 /// successful open/attach pinned for the eventual close.
+// flight-lint: allow(f64) the device pixel ratio is a scale factor composed into f64 geometry transforms (TS number)
 pub struct AppWindow {
     runtime: EntityRuntimeSlot,
     /// Window title text. Reflected to the host chrome by `set_window_title`.
@@ -27,7 +28,7 @@ pub struct AppWindow {
     pub y: f32,
     pub width: f32,
     pub height: f32,
-    pub device_pixel_ratio: f32,
+    pub device_pixel_ratio: f64,
     pub minimized: bool,
     pub maximized: bool,
     pub fullscreen: bool,
@@ -173,7 +174,8 @@ pub type WindowCloseRequestListener = Arc<dyn Fn() -> bool + Send + Sync>;
 pub type WindowMoveListener = Arc<dyn Fn(f32, f32) + Send + Sync>;
 
 /// A host listener for a content-box resize, with width, height and device pixel ratio.
-pub type WindowResizeListener = Arc<dyn Fn(f32, f32, f32) + Send + Sync>;
+// flight-lint: allow(f64) the device pixel ratio is a scale factor composed into f64 geometry transforms (TS number)
+pub type WindowResizeListener = Arc<dyn Fn(f32, f32, f64) + Send + Sync>;
 
 /// A host listener for visibility changes.
 pub type WindowVisibilityListener = Arc<dyn Fn(bool) + Send + Sync>;

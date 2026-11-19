@@ -950,6 +950,7 @@ pub fn attach_window_orientation(
 
 /// Mirrors the content-box size and device pixel ratio of `target` into the window and emits
 /// `on_resize` on every report.
+// flight-lint: allow(f64) the host reports the device pixel ratio as an f64 scale factor (TS number)
 pub fn attach_window_resize(
     host_window_geometry: &HostWindowGeometryCapability,
     win: &Ref<AppWindow>,
@@ -963,7 +964,7 @@ pub fn attach_window_resize(
         );
         return subscribe_resize(
             target,
-            Arc::new(move |width: f32, height: f32, device_pixel_ratio: f32| {
+            Arc::new(move |width: f32, height: f32, device_pixel_ratio: f64| {
                 let Some(win) = owner.upgrade() else {
                     return;
                 };
