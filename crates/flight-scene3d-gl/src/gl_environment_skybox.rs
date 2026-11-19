@@ -98,11 +98,12 @@ fn link_gl_skybox_program(gl: &glow::Context) -> NativeProgram {
 // opaque scene has not yet covered and never occludes geometry. Call it once, after the color target
 // is bound and cleared and before render_gl_scene3d. A no-op when the environment has no complete
 // source cube. `aspect` is the viewport width / height (matches the camera aspect render_gl_scene3d uses).
+// flight-lint: allow(f64) 3D geometry, matrices, aspect, camera clip distances and light/shadow values are f64 CPU values (Task Q, foreman-536d86b7); they narrow once into f32 GL uniforms and vertex/instance buffers only
 pub fn render_gl_environment_skybox(
     state: &GlRenderState,
     environment: &Environment,
     camera: &Camera3D,
-    aspect: f32,
+    aspect: f64,
 ) {
     let Some(cube) = ensure_gl_environment_source_cube(state, environment) else {
         return;
@@ -131,9 +132,9 @@ pub fn render_gl_environment_skybox(
         gl.uniform_matrix_4_f32_slice(
             sky.loc_inverse_view_projection.as_ref(),
             false,
-            &inverse_view_projection,
+            &inverse_view_projection.map(|value| value as f32),
         );
-        gl.uniform_1_f32(sky.loc_intensity.as_ref(), environment.intensity);
+        gl.uniform_1_f32(sky.loc_intensity.as_ref(), environment.intensity as f32);
         gl.active_texture(glow::TEXTURE0);
         gl.bind_texture(glow::TEXTURE_CUBE_MAP, Some(cube));
         gl.uniform_1_i32(sky.loc_env_cube.as_ref(), 0);

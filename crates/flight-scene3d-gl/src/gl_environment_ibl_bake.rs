@@ -168,10 +168,11 @@ fn bake_gl_brdf_lut(state: &GlRenderState, fbo: NativeFramebuffer) -> NativeText
 // — the capture uses its own GL texture, not the cube the skybox owns. Destroying the source cube
 // forced the skybox to rebuild it (another revision bump), putting the IBL's stored revision behind
 // the runtime's and disabling IBL for the subsequent lit draws.
+// flight-lint: allow(f64) 3D geometry, matrices, aspect, camera clip distances and light/shadow values are f64 CPU values (Task Q, foreman-536d86b7); they narrow once into f32 GL uniforms and vertex/instance buffers only
 pub fn bake_gl_environment_capture_ibl(
     state: &GlRenderState,
     target: &GlCubeRenderTarget,
-    intensity: Option<f32>,
+    intensity: Option<f64>,
 ) {
     let intensity = intensity.unwrap_or(1.0);
     {
@@ -199,10 +200,11 @@ pub fn bake_gl_environment_ibl(state: &GlRenderState, environment: &Environment)
     bake_gl_environment_ibl_from_source(state, source_cube, environment.intensity);
 }
 
+// flight-lint: allow(f64) 3D geometry, matrices, aspect, camera clip distances and light/shadow values are f64 CPU values (Task Q, foreman-536d86b7); they narrow once into f32 GL uniforms and vertex/instance buffers only
 fn bake_gl_environment_ibl_from_source(
     state: &GlRenderState,
     source_cube: NativeTexture,
-    intensity: f32,
+    intensity: f64,
 ) {
     let gl = &state.gl;
     // WebGL's getExtension('EXT_color_buffer_float') / ('OES_texture_float_linear') only enables the

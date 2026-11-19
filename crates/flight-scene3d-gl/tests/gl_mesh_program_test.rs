@@ -523,7 +523,7 @@ mod front_face_selection_under_a_mirroring_world_matrix {
         let mut state = make_gl_scene3d_state();
         let geometry = box_geometry();
         let mut world_matrix = create_matrix4();
-        world_matrix.m[0] = scale_x;
+        world_matrix.m[0] = f64::from(scale_x);
         let mut proxy = make_test_proxy(standard_material(), geometry.subsets[0]);
         proxy.world_matrix = world_matrix;
         let program = make_test_mesh_program(&state);

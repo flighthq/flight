@@ -85,7 +85,11 @@ fn draw_gl_wireframe_mesh_material(
 
     // SAFETY: the program is bound on the owning GL thread.
     unsafe {
-        gl.uniform_matrix_4_f32_slice(program.loc_model.as_ref(), false, &proxy.world_matrix.m)
+        gl.uniform_matrix_4_f32_slice(
+            program.loc_model.as_ref(),
+            false,
+            &proxy.world_matrix.m.map(|value| value as f32),
+        )
     };
     // This family bypasses draw_gl_mesh_subset, so it uploads the per-draw object alpha itself.
     {

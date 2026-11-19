@@ -236,7 +236,13 @@ pub fn bind_gl_uv_transform(
     let mut uv_matrix = create_matrix3();
     get_texture_uv_matrix(&mut uv_matrix, texture);
     // SAFETY: the program is bound on the owning GL thread.
-    unsafe { gl.uniform_matrix_3_f32_slice(Some(&location), false, &uv_matrix.m) };
+    unsafe {
+        gl.uniform_matrix_3_f32_slice(
+            Some(&location),
+            false,
+            &uv_matrix.m.map(|value| value as f32),
+        )
+    };
 }
 
 // Compiles a vertex + fragment source pair into a linked GL program, shared by every family's compile.
@@ -276,12 +282,16 @@ pub fn draw_gl_mesh_subset(
     let gl = state.gl.clone();
     // SAFETY: the program is bound on the owning GL thread.
     unsafe {
-        gl.uniform_matrix_4_f32_slice(program.loc_model.as_ref(), false, &proxy.world_matrix.m);
+        gl.uniform_matrix_4_f32_slice(
+            program.loc_model.as_ref(),
+            false,
+            &proxy.world_matrix.m.map(|value| value as f32),
+        );
         if program.loc_normal_matrix.is_some() {
             gl.uniform_matrix_3_f32_slice(
                 program.loc_normal_matrix.as_ref(),
                 false,
-                &proxy.normal_matrix.m,
+                &proxy.normal_matrix.m.map(|value| value as f32),
             );
         }
         // A world matrix that MIRRORS (negative determinant) flips the triangle winding on the way to
@@ -491,7 +501,8 @@ fn is_gl_mesh_alpha_coverage(material: Option<&dyn Material3D>) -> bool {
 }
 
 // Whether a world matrix flips orientation — the determinant of its upper 3x3 is negative.
-fn is_mirroring_world_matrix(m: &[f32; 16]) -> bool {
+// flight-lint: allow(f64) 3D geometry, matrices, aspect, camera clip distances and light/shadow values are f64 CPU values (Task Q, foreman-536d86b7); they narrow once into f32 GL uniforms and vertex/instance buffers only
+fn is_mirroring_world_matrix(m: &[f64; 16]) -> bool {
     return m[0] * (m[5] * m[10] - m[6] * m[9]) - m[4] * (m[1] * m[10] - m[2] * m[9])
         + m[8] * (m[1] * m[6] - m[2] * m[5])
         < 0.0;
@@ -527,9 +538,9 @@ pub fn set_gl_mesh_camera_position(
     unsafe {
         gl.uniform_3_f32(
             loc_camera_position.as_ref(),
-            position.x,
-            position.y,
-            position.z,
+            position.x as f32,
+            position.y as f32,
+            position.z as f32,
         );
     }
 }
@@ -552,7 +563,7 @@ pub fn set_gl_mesh_view_projection(
         state.gl.uniform_matrix_4_f32_slice(
             loc_view_projection.as_ref(),
             false,
-            &view_projection.m,
+            &view_projection.m.map(|value| value as f32),
         );
     }
 }

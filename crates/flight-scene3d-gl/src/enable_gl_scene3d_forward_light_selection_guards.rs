@@ -29,6 +29,7 @@ pub fn enable_gl_scene3d_forward_light_selection_guards(
         Some(warn_gl_scene3d_forward_light_selection_required);
 }
 
+// flight-lint: allow(f64) 3D geometry, matrices, aspect, camera clip distances and light/shadow values are f64 CPU values (Task Q, foreman-536d86b7); they narrow once into f32 GL uniforms and vertex/instance buffers only
 fn warn_gl_scene3d_forward_light_selection_required(
     state: &GlRenderState,
     lights: &Scene3DLightsLike,

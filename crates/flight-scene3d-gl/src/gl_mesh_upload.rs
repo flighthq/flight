@@ -51,14 +51,14 @@ fn build_skin_bind_vertices(geometry: &MeshGeometry, bind_pose: &MeshSkinBindPos
         let base = v * floats_per_vertex;
         let s = v * 3;
         if let Some(offset) = position_offset {
-            out[base + offset] = positions[s];
-            out[base + offset + 1] = positions[s + 1];
-            out[base + offset + 2] = positions[s + 2];
+            out[base + offset] = positions[s] as f32;
+            out[base + offset + 1] = positions[s + 1] as f32;
+            out[base + offset + 2] = positions[s + 2] as f32;
         }
         if let Some(offset) = normal_offset {
-            out[base + offset] = normals[s];
-            out[base + offset + 1] = normals[s + 1];
-            out[base + offset + 2] = normals[s + 2];
+            out[base + offset] = normals[s] as f32;
+            out[base + offset + 1] = normals[s + 1] as f32;
+            out[base + offset + 2] = normals[s + 2] as f32;
         }
     }
     return out;

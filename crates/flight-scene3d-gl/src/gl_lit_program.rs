@@ -211,7 +211,7 @@ pub fn bind_gl_mesh_light_block(
             Some(shadow) if shadow.enabled => {
                 gl.active_texture(glow::TEXTURE0 + SHADOW_MAP_TEXTURE_UNIT);
                 gl.bind_texture(glow::TEXTURE_2D, Some(shadow.texture));
-                gl.uniform_1_f32(program.loc_shadow_bias.as_ref(), shadow.shadow_bias);
+                gl.uniform_1_f32(program.loc_shadow_bias.as_ref(), shadow.shadow_bias as f32);
                 gl.uniform_1_i32(
                     program.loc_shadow_map.as_ref(),
                     SHADOW_MAP_TEXTURE_UNIT as i32,
@@ -219,11 +219,11 @@ pub fn bind_gl_mesh_light_block(
                 gl.uniform_matrix_4_f32_slice(
                     program.loc_shadow_matrix.as_ref(),
                     false,
-                    &shadow.matrix.m,
+                    &shadow.matrix.m.map(|value| value as f32),
                 );
                 gl.uniform_1_f32(
                     program.loc_shadow_normal_bias_world.as_ref(),
-                    shadow.normal_bias_world,
+                    shadow.normal_bias_world as f32,
                 );
                 gl.uniform_1_i32(
                     program.loc_shadow_pcf_radius.as_ref(),
@@ -257,7 +257,7 @@ pub fn bind_gl_mesh_light_block(
                 gl.bind_texture(glow::TEXTURE_2D, Some(ibl.brdf_lut));
                 gl.uniform_1_i32(program.loc_ibl_brdf.as_ref(), IBL_BRDF_TEXTURE_UNIT as i32);
                 gl.uniform_1_f32(program.loc_ibl_enabled.as_ref(), 1.0);
-                gl.uniform_1_f32(program.loc_ibl_intensity.as_ref(), ibl.intensity);
+                gl.uniform_1_f32(program.loc_ibl_intensity.as_ref(), ibl.intensity as f32);
                 gl.uniform_1_f32(
                     program.loc_ibl_max_mip.as_ref(),
                     ibl.prefiltered_mip_count as f32 - 1.0,

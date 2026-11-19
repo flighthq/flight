@@ -58,7 +58,7 @@ fn bind_gl_depth_mesh_material(
         state.gl.uniform_matrix_4_f32_slice(
             program.loc_view.as_ref(),
             false,
-            &camera.view.read().unwrap().m,
+            &camera.view.read().unwrap().m.map(|value| value as f32),
         );
     }
 

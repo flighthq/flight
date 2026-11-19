@@ -2299,7 +2299,7 @@ pub fn make_test_camera() -> flight_camera::Camera3D {
     {
         let mut value = projection.write().unwrap();
         value.aspect = 1.0;
-        value.fov_y = std::f32::consts::PI / 3.0;
+        value.fov_y = std::f64::consts::PI / 3.0;
     }
     camera.projection = flight_camera::Projection::Perspective(projection);
     return camera;

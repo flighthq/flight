@@ -22,7 +22,7 @@ fn make_camera() -> Camera3D {
     {
         let mut projection = projection.write().unwrap();
         projection.aspect = 1.0;
-        projection.fov_y = std::f32::consts::PI / 3.0;
+        projection.fov_y = std::f64::consts::PI / 3.0;
     }
     camera.projection = Projection::Perspective(projection);
     return camera;
@@ -81,7 +81,14 @@ mod gl_depth_mesh_material_renderer {
         assert!(has_call("enable", glow::DEPTH_TEST));
         let matrix_uploads = calls_with("uniform_matrix_4_f32");
         assert_eq!(matrix_uploads.len(), 2);
-        let view = camera.view.read().unwrap().m.to_vec();
+        // The view uploads narrowed once from the f64 matrix.
+        let view = camera
+            .view
+            .read()
+            .unwrap()
+            .m
+            .map(|value| value as f32)
+            .to_vec();
         assert!(matrix_uploads.iter().any(|call| call.floats == view));
         assert!(count_calls("uniform_1_f32") >= 2);
     }

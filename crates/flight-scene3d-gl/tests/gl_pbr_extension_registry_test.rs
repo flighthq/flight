@@ -196,7 +196,7 @@ mod bind_gl_pbr_extensions {
         let mut texture = create_texture_2d();
         texture.source = Some(source);
         texture.uv_offset = create_vector2(0.25, 0.5);
-        texture.uv_rotation = std::f32::consts::PI / 4.0;
+        texture.uv_rotation = std::f64::consts::PI / 4.0;
         texture.uv_scale = create_vector2(2.0, 3.0);
         let texture: Ref<Texture> = Arc::new(RwLock::new(Texture::Texture2D(texture)));
         BOUND_TEXTURE.with(|bound| *bound.borrow_mut() = Some(texture.clone()));
@@ -219,7 +219,10 @@ mod bind_gl_pbr_extensions {
         let mut expected = create_matrix3();
         get_texture_uv_matrix(&mut expected, &*texture.read().unwrap());
         assert_eq!(uv_set_call.integers[1], 1);
-        assert_eq!(transform_call.floats, expected.m.to_vec());
+        assert_eq!(
+            transform_call.floats,
+            expected.m.map(|value| value as f32).to_vec()
+        );
     }
 }
 

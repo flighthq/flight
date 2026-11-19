@@ -238,7 +238,13 @@ fn flatten_instanced_mesh_matrices(out: &mut Vec<f32>, mesh: &InstancedMesh) {
     out.clear();
     out.resize(count * 16, 0.0);
     for i in 0..count {
-        out[i * 16..i * 16 + 16].copy_from_slice(&mesh.instance_matrices[i].read().unwrap().m);
+        out[i * 16..i * 16 + 16].copy_from_slice(
+            &mesh.instance_matrices[i]
+                .read()
+                .unwrap()
+                .m
+                .map(|value| value as f32),
+        );
     }
 }
 

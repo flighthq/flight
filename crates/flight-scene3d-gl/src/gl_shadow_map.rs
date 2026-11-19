@@ -111,7 +111,13 @@ fn flatten_shadow_instance_matrices(out: &mut Vec<f32>, mesh: &InstancedMesh) {
         out.resize(needed, 0.0);
     }
     for i in 0..count {
-        out[i * 16..i * 16 + 16].copy_from_slice(&mesh.instance_matrices[i].read().unwrap().m);
+        out[i * 16..i * 16 + 16].copy_from_slice(
+            &mesh.instance_matrices[i]
+                .read()
+                .unwrap()
+                .m
+                .map(|value| value as f32),
+        );
     }
 }
 
@@ -122,11 +128,12 @@ fn is_shadow_instanced_mesh(instance_count: Option<i32>) -> bool {
     return instance_count.is_some();
 }
 
-fn normalize_directional_shadow_pcf_radius(radius: f32) -> f32 {
+// flight-lint: allow(f64) 3D geometry, matrices, aspect, camera clip distances and light/shadow values are f64 CPU values (Task Q, foreman-536d86b7); they narrow once into f32 GL uniforms and vertex/instance buffers only
+fn normalize_directional_shadow_pcf_radius(radius: f64) -> f64 {
     if !radius.is_finite() {
         return 0.0;
     }
-    return (MAX_DIRECTIONAL_SHADOW_PCF_RADIUS as f32).min(radius.floor().max(0.0));
+    return f64::from(MAX_DIRECTIONAL_SHADOW_PCF_RADIUS).min(radius.floor().max(0.0));
 }
 
 // The directional shadow recipe's first pass: render scene depth from the light's point of view into a
@@ -139,6 +146,7 @@ fn normalize_directional_shadow_pcf_radius(radius: f32) -> f32 {
 // `directional_light` owns the enable/filter/bias policy. Calling with casts_shadow=false actively
 // disables a previously rendered map without destroying its reusable target. All meshes are drawn (no
 // frustum cull — an off-screen caster can still shadow the visible scene).
+// flight-lint: allow(f64) 3D geometry, matrices, aspect, camera clip distances and light/shadow values are f64 CPU values (Task Q, foreman-536d86b7); they narrow once into f32 GL uniforms and vertex/instance buffers only
 pub fn render_gl_scene3d_shadow_map(
     state: &mut GlRenderState,
     scene: &NodeRef,
@@ -163,8 +171,8 @@ pub fn render_gl_scene3d_shadow_map(
         let target = create_gl_texture_render_target(
             state,
             &RenderTargetDescriptor {
-                width: DIRECTIONAL_SHADOW_MAP_SIZE as f32,
-                height: DIRECTIONAL_SHADOW_MAP_SIZE as f32,
+                width: f64::from(DIRECTIONAL_SHADOW_MAP_SIZE),
+                height: f64::from(DIRECTIONAL_SHADOW_MAP_SIZE),
                 format: None,
                 color_attachments: None,
                 color_formats: None,
@@ -196,8 +204,8 @@ pub fn render_gl_scene3d_shadow_map(
     let normal_bias_world = directional_light.normal_bias
         * get_orthographic_projection_texel_size(
             &orthographic.read().unwrap(),
-            target_width as f32,
-            target_height as f32,
+            f64::from(target_width),
+            f64::from(target_height),
         );
     let mut matrix = previous_matrix.unwrap_or_else(create_matrix4);
     get_camera_3d_view_projection_matrix4(&mut matrix, shadow_camera, 1.0);
@@ -319,7 +327,7 @@ pub fn render_gl_scene3d_shadow_map(
                 gl.uniform_matrix_4_f32_slice(
                     program.loc_view_projection.as_ref(),
                     false,
-                    &matrix.m,
+                    &matrix.m.map(|value| value as f32),
                 );
             }
             bound_program = Some(program.clone());
@@ -327,7 +335,11 @@ pub fn render_gl_scene3d_shadow_map(
         let world_matrix = get_node_world_matrix4(node);
         // SAFETY: the bound program belongs to this context.
         unsafe {
-            gl.uniform_matrix_4_f32_slice(program.loc_model.as_ref(), false, &world_matrix.m)
+            gl.uniform_matrix_4_f32_slice(
+                program.loc_model.as_ref(),
+                false,
+                &world_matrix.m.map(|value| value as f32),
+            )
         };
 
         if skinned {

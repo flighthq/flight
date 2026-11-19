@@ -19,7 +19,7 @@ fn excess_lights() -> Scene3DLightsLike {
     lights.point = (0..5)
         .map(|x| {
             let mut light = create_point_light();
-            light.position = create_vector3(x as f32 - 2.0, 0.0, 2.0);
+            light.position = create_vector3(x as f64 - 2.0, 0.0, 2.0);
             light.range = 10.0;
             return Arc::new(RwLock::new(light));
         })

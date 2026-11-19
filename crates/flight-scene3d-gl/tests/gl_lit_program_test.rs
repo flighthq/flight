@@ -54,7 +54,7 @@ fn make_block(
     };
 }
 
-fn ibl(state: &GlRenderState, revision: u32, intensity: f32) -> GlScene3DIbl {
+fn ibl(state: &GlRenderState, revision: u32, intensity: f64) -> GlScene3DIbl {
     // SAFETY: the mock context allocates names on the test thread.
     unsafe {
         return GlScene3DIbl {

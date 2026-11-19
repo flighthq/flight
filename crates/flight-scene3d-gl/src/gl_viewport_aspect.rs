@@ -7,7 +7,8 @@ use glow::HasContext;
 // internal backend fact: callers provide a camera, while the current destination determines mapping.
 // With no active pass viewport the default framebuffer's current GL viewport stands in for the
 // canvas drawing-buffer size, which native GL does not expose.
-pub fn get_gl_scene3d_viewport_aspect(state: &GlRenderState) -> f32 {
+// flight-lint: allow(f64) 3D geometry, matrices, aspect, camera clip distances and light/shadow values are f64 CPU values (Task Q, foreman-536d86b7); they narrow once into f32 GL uniforms and vertex/instance buffers only
+pub fn get_gl_scene3d_viewport_aspect(state: &GlRenderState) -> f64 {
     let viewport = state.gl_runtime.borrow().render_target_viewport;
     let (width, height) = match viewport {
         Some(viewport) => (viewport.width, viewport.height),
@@ -23,7 +24,7 @@ pub fn get_gl_scene3d_viewport_aspect(state: &GlRenderState) -> f32 {
         }
     };
     return if width > 0 && height > 0 {
-        width as f32 / height as f32
+        f64::from(width) / f64::from(height)
     } else {
         1.0
     };

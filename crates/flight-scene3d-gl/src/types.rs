@@ -328,21 +328,23 @@ pub struct GlMeshUpload {
 
 /// The directional shadow resource for a state (TS `GlScene3DShadow`).
 #[derive(Clone, Debug, PartialEq)]
+// flight-lint: allow(f64) camera clip distances, depth keys, shadow biases and IBL intensity are f64 CPU values (Task Q)
 pub struct GlScene3DShadow {
     pub enabled: bool,
     pub matrix: Matrix4,
-    pub normal_bias_world: f32,
-    pub pcf_radius: f32,
-    pub shadow_bias: f32,
+    pub normal_bias_world: f64,
+    pub pcf_radius: f64,
+    pub shadow_bias: f64,
     pub texture: NativeTexture,
 }
 
 /// The baked image-based-lighting set for a state (TS `GlScene3DIbl`).
 #[derive(Clone, Copy, Debug, PartialEq)]
+// flight-lint: allow(f64) camera clip distances, depth keys, shadow biases and IBL intensity are f64 CPU values (Task Q)
 pub struct GlScene3DIbl {
     pub brdf_lut: NativeTexture,
     pub environment_source_revision: u32,
-    pub intensity: f32,
+    pub intensity: f64,
     pub irradiance_cube: NativeTexture,
     pub prefiltered_cube: NativeTexture,
     pub prefiltered_mip_count: u32,
@@ -379,11 +381,12 @@ pub struct GlScene3DForwardLightList {
 /// One per-subset draw record in the two-pass draw lists (TS `GlScene3DDrawEntry`), pooled on the
 /// scene runtime.
 #[derive(Clone)]
+// flight-lint: allow(f64) camera clip distances, depth keys, shadow biases and IBL intensity are f64 CPU values (Task Q)
 pub struct GlScene3DDrawEntry {
     pub alpha: f32,
     pub color_matrix: Option<[f32; 20]>,
     pub color_scale_bias: Option<flight_materials::ColorScaleBias>,
-    pub depth: f32,
+    pub depth: f64,
     pub light_block: Option<Rc<Scene3DLightBlock>>,
     pub material: Option<Material3DRef>,
     pub mesh: Option<NodeRef>,
@@ -395,11 +398,12 @@ pub struct GlScene3DDrawEntry {
 
 /// TS `GlEnvironmentCaptureOptions`.
 #[derive(Clone, Default)]
+// flight-lint: allow(f64) camera clip distances, depth keys, shadow biases and IBL intensity are f64 CPU values (Task Q)
 pub struct GlEnvironmentCaptureOptions {
     pub environment: Option<Ref<flight_lighting::Environment>>,
     pub exclude_node: Option<NodeRef>,
-    pub far: Option<f32>,
-    pub near: Option<f32>,
+    pub far: Option<f64>,
+    pub near: Option<f64>,
 }
 
 /// TS `GlPbrExtensionIssueCode`.

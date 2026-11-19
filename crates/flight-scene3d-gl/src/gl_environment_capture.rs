@@ -38,7 +38,7 @@ fn get_gl_environment_capture_camera(state: &GlRenderState) -> Camera3D {
     {
         let mut perspective = projection.write().unwrap();
         perspective.aspect = 1.0;
-        perspective.fov_y = std::f32::consts::PI * 0.5;
+        perspective.fov_y = std::f64::consts::PI * 0.5;
     }
     camera.projection = Projection::Perspective(projection);
     return camera;
@@ -123,5 +123,7 @@ pub fn render_gl_environment_capture(
     }
 }
 
-const DEFAULT_ENVIRONMENT_CAPTURE_FAR: f32 = 1000.0;
-const DEFAULT_ENVIRONMENT_CAPTURE_NEAR: f32 = 0.1;
+// flight-lint: allow(f64) 3D geometry, matrices, aspect, camera clip distances and light/shadow values are f64 CPU values (Task Q, foreman-536d86b7); they narrow once into f32 GL uniforms and vertex/instance buffers only
+const DEFAULT_ENVIRONMENT_CAPTURE_FAR: f64 = 1000.0;
+// flight-lint: allow(f64) 3D geometry, matrices, aspect, camera clip distances and light/shadow values are f64 CPU values (Task Q, foreman-536d86b7); they narrow once into f32 GL uniforms and vertex/instance buffers only
+const DEFAULT_ENVIRONMENT_CAPTURE_NEAR: f64 = 0.1;

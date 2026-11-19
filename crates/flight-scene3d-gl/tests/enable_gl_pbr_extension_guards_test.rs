@@ -42,7 +42,7 @@ fn create_camera() -> Camera3D {
     {
         let mut perspective = projection.write().unwrap();
         perspective.aspect = 1.0;
-        perspective.fov_y = std::f32::consts::PI / 3.0;
+        perspective.fov_y = std::f64::consts::PI / 3.0;
     }
     camera.projection = Projection::Perspective(projection);
     return camera;

@@ -59,7 +59,7 @@ fn signature(snippet: &GlModifierSnippet, modifier: &dyn Modifier) -> String {
 fn animated_normal(map: bool, scroll_x: f32, scroll_y: f32) -> AnimatedNormalModifier {
     let mut modifier = create_animated_normal_modifier();
     modifier.map = if map { Some(unloaded_texture()) } else { None };
-    modifier.scroll = create_vector2(scroll_x, scroll_y);
+    modifier.scroll = create_vector2(f64::from(scroll_x), f64::from(scroll_y));
     return modifier;
 }
 

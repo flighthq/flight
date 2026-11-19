@@ -225,9 +225,23 @@ pub fn draw_gl_scene3d_particle_emitter3_ds(
     // SAFETY: the particle program belongs to this context; state changes on its owning thread.
     unsafe {
         gl.use_program(Some(shader.program));
-        gl.uniform_matrix_4_f32_slice(shader.loc_view_projection.as_ref(), false, &view_projection);
-        gl.uniform_3_f32(shader.loc_camera_right.as_ref(), vm[0], vm[4], vm[8]);
-        gl.uniform_3_f32(shader.loc_camera_up.as_ref(), vm[1], vm[5], vm[9]);
+        gl.uniform_matrix_4_f32_slice(
+            shader.loc_view_projection.as_ref(),
+            false,
+            &view_projection.map(|value| value as f32),
+        );
+        gl.uniform_3_f32(
+            shader.loc_camera_right.as_ref(),
+            vm[0] as f32,
+            vm[4] as f32,
+            vm[8] as f32,
+        );
+        gl.uniform_3_f32(
+            shader.loc_camera_up.as_ref(),
+            vm[1] as f32,
+            vm[5] as f32,
+            vm[9] as f32,
+        );
 
         gl.enable(glow::DEPTH_TEST);
         gl.depth_mask(false);
@@ -258,6 +272,7 @@ pub fn draw_gl_scene3d_particle_emitter3_ds(
     invalidate_gl_render_state_cache(state);
 }
 
+// flight-lint: allow(f64) 3D geometry, matrices, aspect, camera clip distances and light/shadow values are f64 CPU values (Task Q, foreman-536d86b7); they narrow once into f32 GL uniforms and vertex/instance buffers only
 fn draw_particle_emitter_3d_node(
     state: &mut GlRenderState,
     shader: &mut GlParticle3DShader,
@@ -336,19 +351,19 @@ fn draw_particle_emitter_3d_node(
         let lz = positions_z[i];
 
         let wx = if world_space {
-            lx
+            f64::from(lx)
         } else {
-            wm[0] * lx + wm[4] * ly + wm[8] * lz + wm[12]
+            wm[0] * f64::from(lx) + wm[4] * f64::from(ly) + wm[8] * f64::from(lz) + wm[12]
         };
         let wy = if world_space {
-            ly
+            f64::from(ly)
         } else {
-            wm[1] * lx + wm[5] * ly + wm[9] * lz + wm[13]
+            wm[1] * f64::from(lx) + wm[5] * f64::from(ly) + wm[9] * f64::from(lz) + wm[13]
         };
         let wz = if world_space {
-            lz
+            f64::from(lz)
         } else {
-            wm[2] * lx + wm[6] * ly + wm[10] * lz + wm[14]
+            wm[2] * f64::from(lx) + wm[6] * f64::from(ly) + wm[10] * f64::from(lz) + wm[14]
         };
 
         let cos_r = rotation.cos() * scale;
@@ -388,9 +403,9 @@ fn draw_particle_emitter_3d_node(
             region_h = if rotated { region.width } else { region.height };
         }
 
-        instance_data[base] = wx;
-        instance_data[base + 1] = wy;
-        instance_data[base + 2] = wz;
+        instance_data[base] = wx as f32;
+        instance_data[base + 1] = wy as f32;
+        instance_data[base + 2] = wz as f32;
         instance_data[base + 3] = cos_r;
         instance_data[base + 4] = sin_r;
         instance_data[base + 5] = r;

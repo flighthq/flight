@@ -36,7 +36,7 @@ fn geometry_from(layout: VertexAttributeLayout, vertices: Vec<f32>) -> MeshGeome
     });
 }
 
-fn skin_bind_pose(positions: Vec<f32>, normals: Vec<f32>) -> flight_entity::Ref<MeshSkinBindPose> {
+fn skin_bind_pose(positions: Vec<f64>, normals: Vec<f64>) -> flight_entity::Ref<MeshSkinBindPose> {
     return Arc::new(RwLock::new(MeshSkinBindPose {
         joints: Box::new([]),
         normals: normals.into_boxed_slice(),
@@ -49,7 +49,7 @@ fn skin_bind_pose(positions: Vec<f32>, normals: Vec<f32>) -> flight_entity::Ref<
     }));
 }
 
-fn morph(deltas: Vec<f32>, weight: f32) -> flight_entity::Ref<MeshMorph> {
+fn morph(deltas: Vec<f64>, weight: f64) -> flight_entity::Ref<MeshMorph> {
     return Arc::new(RwLock::new(MeshMorph {
         targets: Arc::new(vec![MeshMorphTarget {
             position_deltas: deltas.into_boxed_slice(),
@@ -288,16 +288,16 @@ mod ensure_gl_mesh_upload {
         let mut geometry = create_box_mesh_geometry(Some(2.0), Some(2.0), Some(2.0));
         let floats_per_vertex = (geometry.layout.read().unwrap().stride / 4) as usize;
         let vertex_count = geometry.vertices.len() / floats_per_vertex;
-        let mut positions = vec![0.0; vertex_count * 3];
-        let mut normals = vec![0.0; vertex_count * 3];
+        let mut positions = vec![0.0_f64; vertex_count * 3];
+        let mut normals = vec![0.0_f64; vertex_count * 3];
         for v in 0..vertex_count {
             let b = v * floats_per_vertex;
-            positions[v * 3] = geometry.vertices[b];
-            positions[v * 3 + 1] = geometry.vertices[b + 1];
-            positions[v * 3 + 2] = geometry.vertices[b + 2];
-            normals[v * 3] = geometry.vertices[b + 3];
-            normals[v * 3 + 1] = geometry.vertices[b + 4];
-            normals[v * 3 + 2] = geometry.vertices[b + 5];
+            positions[v * 3] = f64::from(geometry.vertices[b]);
+            positions[v * 3 + 1] = f64::from(geometry.vertices[b + 1]);
+            positions[v * 3 + 2] = f64::from(geometry.vertices[b + 2]);
+            normals[v * 3] = f64::from(geometry.vertices[b + 3]);
+            normals[v * 3 + 1] = f64::from(geometry.vertices[b + 4]);
+            normals[v * 3 + 2] = f64::from(geometry.vertices[b + 5]);
         }
         let bind_x = positions[0];
         set_mesh_geometry_skin_bind_pose(&mut geometry, Some(skin_bind_pose(positions, normals)));
@@ -313,8 +313,8 @@ mod ensure_gl_mesh_upload {
         let uploaded = float_buffer_uploads().into_iter().next().unwrap();
         // Vertex 0's uploaded position.x is the bind value, not the +1000 CPU-posed value.
         // D1 f32 bound (TS: toBeCloseTo default 0.005)
-        assert!((uploaded[0] - bind_x).abs() <= 0.005);
-        assert!((uploaded[0] - (bind_x + 1000.0)).abs() > 0.005);
+        assert!((f64::from(uploaded[0]) - bind_x).abs() <= 0.005);
+        assert!((f64::from(uploaded[0]) - (bind_x + 1000.0)).abs() > 0.005);
     }
 
     #[test]
@@ -324,12 +324,12 @@ mod ensure_gl_mesh_upload {
         let mut geometry = create_box_mesh_geometry(Some(2.0), Some(2.0), Some(2.0));
         let floats_per_vertex = (geometry.layout.read().unwrap().stride / 4) as usize;
         let vertex_count = geometry.vertices.len() / floats_per_vertex;
-        let mut positions = vec![0.0; vertex_count * 3];
+        let mut positions = vec![0.0_f64; vertex_count * 3];
         for v in 0..vertex_count {
             let b = v * floats_per_vertex;
-            positions[v * 3] = geometry.vertices[b];
-            positions[v * 3 + 1] = geometry.vertices[b + 1];
-            positions[v * 3 + 2] = geometry.vertices[b + 2];
+            positions[v * 3] = f64::from(geometry.vertices[b]);
+            positions[v * 3 + 1] = f64::from(geometry.vertices[b + 1]);
+            positions[v * 3 + 2] = f64::from(geometry.vertices[b + 2]);
         }
         set_mesh_geometry_skin_bind_pose(
             &mut geometry,

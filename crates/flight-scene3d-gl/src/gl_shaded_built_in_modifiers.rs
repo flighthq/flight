@@ -150,7 +150,7 @@ fn bind_animated_normal_gl_modifier(
         context
             .state
             .gl
-            .uniform_2_f32(scroll_location.as_ref(), scroll.x, scroll.y);
+            .uniform_2_f32(scroll_location.as_ref(), scroll.x as f32, scroll.y as f32);
         context
             .state
             .gl
@@ -167,10 +167,11 @@ fn bind_animated_normal_gl_modifier(
             get_gl_modifier_uniform_location(context, &format!("u_animNormalScroll2{suffix}"));
         // SAFETY: the program is bound on the owning GL thread.
         unsafe {
-            context
-                .state
-                .gl
-                .uniform_2_f32(location.as_ref(), secondary.x, secondary.y)
+            context.state.gl.uniform_2_f32(
+                location.as_ref(),
+                secondary.x as f32,
+                secondary.y as f32,
+            )
         };
     }
 }
@@ -433,10 +434,12 @@ fn bind_vertex_displace_gl_modifier(
             get_gl_modifier_uniform_location(context, &format!("u_vDisplaceAxis{suffix}"));
         // SAFETY: the program is bound on the owning GL thread.
         unsafe {
-            context
-                .state
-                .gl
-                .uniform_3_f32(location.as_ref(), axis.x, axis.y, axis.z)
+            context.state.gl.uniform_3_f32(
+                location.as_ref(),
+                axis.x as f32,
+                axis.y as f32,
+                axis.z as f32,
+            )
         };
     }
     if displace.source == VertexDisplaceModifierSource::HeightMap {
@@ -459,7 +462,7 @@ fn bind_vertex_displace_gl_modifier(
             let gl = &context.state.gl;
             gl.uniform_1_f32(frequency.as_ref(), displace.frequency);
             gl.uniform_1_f32(speed.as_ref(), displace.speed);
-            gl.uniform_3_f32(direction.as_ref(), dir.x, dir.y, dir.z);
+            gl.uniform_3_f32(direction.as_ref(), dir.x as f32, dir.y as f32, dir.z as f32);
         }
     }
 }

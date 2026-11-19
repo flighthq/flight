@@ -275,7 +275,7 @@ impl GlPbrExtensionBindContext for GlPbrExtensionBindContextRecord<'_> {
                 gl.get_uniform_location(self.program, uv_transform_uniform)
                     .as_ref(),
                 false,
-                &uv_matrix.m,
+                &uv_matrix.m.map(|value| value as f32),
             );
         }
         return true;

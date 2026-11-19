@@ -94,7 +94,7 @@ fn last_uploaded_vertices() -> Vec<f32> {
 
 fn shadow_translation(x: f32) -> Matrix4 {
     let mut matrix = create_matrix4();
-    matrix.m[12] = x;
+    matrix.m[12] = f64::from(x);
     return matrix;
 }
 
@@ -105,8 +105,8 @@ fn orthographic_camera(half: f32) -> Camera3D {
     let projection = create_orthographic_projection();
     {
         let mut orthographic = projection.write().unwrap();
-        orthographic.half_height = half;
-        orthographic.half_width = half;
+        orthographic.half_height = f64::from(half);
+        orthographic.half_width = f64::from(half);
     }
     camera.projection = Projection::Orthographic(projection);
     return camera;
@@ -135,8 +135,8 @@ fn add_node(scene: &NodeRef, node: NodeRef) {
 }
 
 // D1 f32 bound (TS: exact toBe on f64 products).
-fn assert_close(actual: f32, expected: f32) {
-    let bound = 4.0 * f32::EPSILON * expected.abs().max(1.0);
+fn assert_close(actual: f64, expected: f64) {
+    let bound = 4.0 * f64::EPSILON * expected.abs().max(1.0);
     assert!((actual - expected).abs() <= bound, "{actual} != {expected}");
 }
 
@@ -246,12 +246,14 @@ mod render_gl_scene3d_shadow_map {
         let runtime = get_gl_scene3d_runtime(&state);
         let shadow = runtime.shadow.as_ref().unwrap();
         assert!(shadow.enabled);
-        assert_close(
+        // The world-space normal bias and the shadow bias are f64 CPU values (an f32 lane would store
+        // 0.01 as 0.009999999776482582); they narrow only at the shadow uniforms.
+        assert_eq!(
             shadow.normal_bias_world,
             0.02 * get_orthographic_projection_texel_size(
                 &orthographic.read().unwrap(),
-                DIRECTIONAL_SHADOW_MAP_SIZE as f32,
-                DIRECTIONAL_SHADOW_MAP_SIZE as f32,
+                f64::from(DIRECTIONAL_SHADOW_MAP_SIZE),
+                f64::from(DIRECTIONAL_SHADOW_MAP_SIZE),
             ),
         );
         assert_eq!(shadow.pcf_radius, 2.0);
@@ -297,7 +299,7 @@ mod render_gl_scene3d_shadow_map {
         {
             let mut perspective = projection.write().unwrap();
             perspective.aspect = 1.0;
-            perspective.fov_y = std::f32::consts::PI / 4.0;
+            perspective.fov_y = std::f64::consts::PI / 4.0;
         }
         camera.projection = Projection::Perspective(projection);
 

@@ -29,11 +29,11 @@ const CAPTURE_MATERIAL_KIND: &str = "test:EnvironmentCapture";
 
 #[derive(Clone, Debug)]
 struct CameraSnapshot {
-    aspect: f32,
-    far: f32,
-    fov_y: f32,
-    near: f32,
-    view: [f32; 16],
+    aspect: f64,
+    far: f64,
+    fov_y: f64,
+    near: f64,
+    view: [f64; 16],
 }
 
 thread_local! {
@@ -196,9 +196,9 @@ mod render_gl_environment_capture {
         assert!(
             cameras
                 .iter()
-                .all(|camera| camera.aspect == 1.0 && camera.fov_y == std::f32::consts::PI * 0.5)
+                .all(|camera| camera.aspect == 1.0 && camera.fov_y == std::f64::consts::PI * 0.5)
         );
-        let mut views: Vec<Vec<u32>> = cameras
+        let mut views: Vec<Vec<u64>> = cameras
             .iter()
             .map(|camera| camera.view.iter().map(|value| value.to_bits()).collect())
             .collect();

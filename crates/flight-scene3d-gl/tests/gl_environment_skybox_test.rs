@@ -138,7 +138,7 @@ mod render_gl_environment_skybox {
         assert!(
             calls_with("uniform_matrix_4_f32")
                 .iter()
-                .any(|call| call.floats == inverse.to_vec())
+                .any(|call| call.floats == inverse.map(|value| value as f32).to_vec())
         );
     }
 }
