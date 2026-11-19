@@ -62,12 +62,12 @@ src/dragon_bones_bones_handler.rs: pub fn dragon_bones_bones_section_handler(con
 src/dragon_bones_full.rs: pub fn parse_dragon_bones_skeleton(json: &str, diagnostics: Option<&mut Vec<ImportDiagnostic>>,) -> Option<Skeleton2DImport>
 src/dragon_bones_handlers.rs: pub fn register_all_dragon_bones_handlers(registry: &mut DragonBonesRegistry)
 src/dragon_bones_parse.rs: pub fn parse_dragon_bones_skeleton_with_registry(json: &str, registry: &DragonBonesRegistry, diagnostics: Option<&mut Vec<ImportDiagnostic>>,) -> Option<Skeleton2DImport>
-src/dragon_bones_parse_helpers.rs: #[derive(Clone, Copy, Debug, PartialEq)] pub struct DragonBonesBoneTransform { pub rotation: f32, pub scale_x: f32, pub scale_y: f32, pub shear_y: f32, pub x: f32, pub y: f32, }
+src/dragon_bones_parse_helpers.rs: #[derive(Clone, Copy, Debug, PartialEq)] pub struct DragonBonesBoneTransform { pub rotation: f64, pub scale_x: f64, pub scale_y: f64, pub shear_y: f64, pub x: f64, pub y: f64, }
 src/dragon_bones_parse_helpers.rs: pub fn build_dragon_bones_segment_easings(frames: &[JsonRecord],) -> Option<Vec<Option<flight_animation::EasingFn>>>
-src/dragon_bones_parse_helpers.rs: pub fn dragon_bones_frame_times(out: &mut Vec<f32>, frames: &[JsonRecord], frame_rate: f32)
+src/dragon_bones_parse_helpers.rs: pub fn dragon_bones_frame_times(out: &mut Vec<f64>, frames: &[JsonRecord], frame_rate: f64)
 src/dragon_bones_parse_helpers.rs: pub fn dragon_bones_frames<T: Serialize>(raw: Option<&T>, diagnostics: Option<&mut Vec<ImportDiagnostic>>,) -> Vec<JsonRecord>
 src/dragon_bones_parse_helpers.rs: pub fn dragon_bones_interpolation(frames: &[JsonRecord], diagnostics: Option<&mut Vec<ImportDiagnostic>>,) -> AnimationInterpolation
-src/dragon_bones_parse_helpers.rs: pub fn number_or<T: Serialize>(value: Option<&T>, fallback: f32) -> f32
+src/dragon_bones_parse_helpers.rs: pub fn number_or<T: Serialize>(value: Option<&T>, fallback: f64) -> f64
 src/dragon_bones_parse_helpers.rs: pub fn parse_dragon_bones_bone_transform<T: Serialize>(raw: Option<&T>,) -> DragonBonesBoneTransform
 src/dragon_bones_parse_helpers.rs: pub fn skip_crumb_dragon_bones_group<T: Serialize>(diagnostics: Option<&mut Vec<ImportDiagnostic>>, raw: Option<&T>, kind: &str,)
 src/dragon_bones_registry.rs: pub fn create_dragon_bones_registry() -> DragonBonesRegistry
@@ -113,7 +113,7 @@ src/spine_binary_animations_handler.rs: pub fn spine_binary_animations_section_h
 src/spine_binary_bone_timeline_handler.rs: pub fn build_spine_binary_segment_easings(timeline: &SpineBinaryValueTimeline, values: usize, diagnostics: Option<&mut Vec<flight_importdiagnostics::ImportDiagnostic>>,) -> Option<Vec<Option<flight_animation::EasingFn>>>
 src/spine_binary_bone_timeline_handler.rs: pub fn skip_spine_binary_bone_timelines(context: &mut SpineBinaryTimelineContext<'_, '_>)
 src/spine_binary_bone_timeline_handler.rs: pub fn spine_binary_bone_timeline_handler(context: &mut SpineBinaryTimelineContext<'_, '_>)
-src/spine_binary_bone_timeline_handler.rs: pub struct SpineBinaryValueTimeline { pub curves: Vec<Option<Vec<f32>>>, pub times: Vec<f32>, pub values: Vec<f32>, }
+src/spine_binary_bone_timeline_handler.rs: pub struct SpineBinaryValueTimeline { pub curves: Vec<Option<Vec<f64>>>, pub times: Vec<f64>, pub values: Vec<f64>, }
 src/spine_binary_bones_handler.rs: pub const SKIP_SPINE_BINARY_BONES_SECTION: for<'a> fn(&mut SpineBinarySectionContext<'a>)
 src/spine_binary_bones_handler.rs: pub fn spine_binary_bones_section_handler(context: &mut SpineBinarySectionContext<'_>)
 src/spine_binary_draw_order_timeline_handler.rs: pub fn skip_spine_binary_draw_order_timeline(context: &mut SpineBinaryTimelineContext<'_, '_>)
@@ -126,7 +126,7 @@ src/spine_binary_parse_helpers.rs: pub const SPINE_BINARY_ATTACHMENT_TYPES: [&st
 src/spine_binary_parse_helpers.rs: pub const SPINE_BINARY_BOUNDS_BYTES: usize
 src/spine_binary_parse_helpers.rs: pub const SPINE_BINARY_COLOR_BYTES: usize
 src/spine_binary_parse_helpers.rs: pub const SPINE_BINARY_CURVE_BEZIER: u8
-src/spine_binary_parse_helpers.rs: pub const SPINE_BINARY_CURVE_EPSILON: f32
+src/spine_binary_parse_helpers.rs: pub const SPINE_BINARY_CURVE_EPSILON: f64
 src/spine_binary_parse_helpers.rs: pub const SPINE_BINARY_DEFAULT_SKIN_NAME: &str
 src/spine_binary_parse_helpers.rs: pub const SPINE_BINARY_FPS_BYTES: usize
 src/spine_binary_parse_helpers.rs: pub const SPINE_BINARY_HASH_BYTES: usize
@@ -138,7 +138,7 @@ src/spine_binary_parse_helpers.rs: pub const SPINE_BINARY_SKIN_REQUIREMENT_LISTS
 src/spine_binary_parse_helpers.rs: pub const SPINE_BINARY_SLOT_ATTACHMENT: u8
 src/spine_binary_parse_helpers.rs: pub const SPINE_BINARY_SLOT_RGBA: u8
 src/spine_binary_parse_helpers.rs: pub const SPINE_BINARY_TRIANGLE_INDEX_BYTES: usize
-src/spine_binary_parse_helpers.rs: pub fn clamp_spine_binary_unit(value: f32) -> f32
+src/spine_binary_parse_helpers.rs: pub fn clamp_spine_binary_unit(value: f64) -> f64
 src/spine_binary_parse_helpers.rs: pub fn read_spine_binary_string_reference(reader: &mut ByteReader<'_>, strings: &[Option<String>],) -> Option<String>
 src/spine_binary_parse_helpers.rs: pub fn report_spine_binary_crumb(diagnostics: Option<&mut Vec<ImportDiagnostic>>, count: usize, kind: &str, origin: &str, unit: &str,)
 src/spine_binary_parse_helpers.rs: pub fn skip_spine_binary_curve_frames(reader: &mut ByteReader<'_>, frame_count: usize, payload_bytes: usize, curve_values: usize,)
@@ -241,11 +241,11 @@ src/spine_parse.rs: pub fn parse_spine_draw_order_timeline<T: Serialize>(raw: Op
 src/spine_parse.rs: pub fn parse_spine_skeleton_with_registry(json: &str, registry: &SpineJsonRegistry, diagnostics: Option<&mut Vec<ImportDiagnostic>>,) -> Option<Skeleton2DImport>
 src/spine_parse_helpers.rs: pub const SPINE_DEFAULT_SKIN_NAME: &str
 src/spine_parse_helpers.rs: pub const SPINE_NO_ATTACHMENT_INDEX: i32
-src/spine_parse_helpers.rs: pub fn build_spine_segment_easings(keys: &[JsonRecord], times: &Vec<f32>, values: &Vec<f32>, components: usize, diagnostics: Option<&mut Vec<ImportDiagnostic>>,) -> Option<Vec<Option<flight_animation::EasingFn>>>
-src/spine_parse_helpers.rs: pub fn clamp_unit(value: f32) -> f32
+src/spine_parse_helpers.rs: pub fn build_spine_segment_easings(keys: &[JsonRecord], times: &Vec<f64>, values: &Vec<f64>, components: usize, diagnostics: Option<&mut Vec<ImportDiagnostic>>,) -> Option<Vec<Option<flight_animation::EasingFn>>>
+src/spine_parse_helpers.rs: pub fn clamp_unit(value: f64) -> f64
 src/spine_parse_helpers.rs: pub fn index_of_bone(bones: &[Bone2D], name: &str) -> i32
 src/spine_parse_helpers.rs: pub fn index_of_spine_slot(slots: &[Slot2D], name: &str) -> i32
-src/spine_parse_helpers.rs: pub fn number_or<T: Serialize>(value: Option<&T>, fallback: f32) -> f32
+src/spine_parse_helpers.rs: pub fn number_or<T: Serialize>(value: Option<&T>, fallback: f64) -> f64
 src/spine_parse_helpers.rs: pub fn parse_spine_color<T: Serialize>(value: Option<&T>) -> u32
 src/spine_parse_helpers.rs: pub fn skip_crumb_spine_timeline_group<T: Serialize>(diagnostics: Option<&mut Vec<ImportDiagnostic>>, raw: Option<&T>, kind: &str,)
 src/types.rs: #[derive(Clone)] pub struct DragonBonesSectionHandlerEntry { pub handle: DragonBonesSectionHandler, pub kind: String, }
@@ -292,7 +292,7 @@ src/types.rs: pub const SPINE_TIMELINE_KIND_IK: &str
 src/types.rs: pub const SPINE_TIMELINE_KIND_PATH: &str
 src/types.rs: pub const SPINE_TIMELINE_KIND_SLOT: &str
 src/types.rs: pub const SPINE_TIMELINE_KIND_TRANSFORM: &str
-src/types.rs: pub struct DragonBonesSectionContext<'a> { pub animations: Vec<Skeleton2DImportAnimation>, pub armature: &'a JsonRecord, pub bone_index_by_name: HashMap<String, usize>, pub bones: Vec<Bone2D>, pub diagnostics: Option<&'a mut Vec<ImportDiagnostic>>, pub display_table: HashMap<String, Vec<Option<Attachment2DRef>>>, pub doc: &'a JsonRecord, pub frame_rate: f32, pub raw_index_to_output: Vec<i32>, pub registry: &'a DragonBonesRegistry, pub skins: Vec<AttachmentSkin2D>, pub slot_order: HashMap<String, usize>, pub slots: Vec<Slot2D>, }
+src/types.rs: pub struct DragonBonesSectionContext<'a> { pub animations: Vec<Skeleton2DImportAnimation>, pub armature: &'a JsonRecord, pub bone_index_by_name: HashMap<String, usize>, pub bones: Vec<Bone2D>, pub diagnostics: Option<&'a mut Vec<ImportDiagnostic>>, pub display_table: HashMap<String, Vec<Option<Attachment2DRef>>>, pub doc: &'a JsonRecord, pub frame_rate: f64, pub raw_index_to_output: Vec<i32>, pub registry: &'a DragonBonesRegistry, pub skins: Vec<AttachmentSkin2D>, pub slot_order: HashMap<String, usize>, pub slots: Vec<Slot2D>, }
 src/types.rs: pub struct DragonBonesTimelineContext<'a, 'b> { pub channels: Vec<AnimationChannel>, pub section: &'a mut DragonBonesSectionContext<'b>, pub unmodeled_timeline_counts: HashMap<String, usize>, pub unresolved_bone_count: usize, pub unregistered_timeline_counts: HashMap<String, usize>, }
 src/types.rs: pub struct Skeleton2DImport { pub animations: Vec<Skeleton2DImportAnimation>, pub skeleton: Skeleton2D, }
 src/types.rs: pub struct Skeleton2DImportAnimation { pub clip: AnimationClip, pub draw_order: Option<Skeleton2DDrawOrderTimeline>, pub name: String, }

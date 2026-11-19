@@ -89,6 +89,7 @@ fn parse_skins(context: &mut SpineBinarySectionContext<'_>, retain: bool) {
     }
 }
 
+// flight-lint: allow(f64) skeleton document values are JSON/TS numbers, decoded and computed in f64 before narrowing into f32 storage lanes
 fn read_attachment(
     context: &mut SpineBinarySectionContext<'_>,
     key: Option<&str>,
@@ -100,13 +101,13 @@ fn read_attachment(
     let kind = SPINE_BINARY_ATTACHMENT_TYPES.get(ordinal).copied();
     if kind == Some("region") {
         read_spine_binary_varint(&mut context.reader);
-        let rotation = read_spine_binary_float(&mut context.reader);
-        let x = read_spine_binary_float(&mut context.reader);
-        let y = read_spine_binary_float(&mut context.reader);
-        let scale_x = read_spine_binary_float(&mut context.reader);
-        let scale_y = read_spine_binary_float(&mut context.reader);
-        let width = read_spine_binary_float(&mut context.reader);
-        let height = read_spine_binary_float(&mut context.reader);
+        let rotation = f64::from(read_spine_binary_float(&mut context.reader));
+        let x = f64::from(read_spine_binary_float(&mut context.reader));
+        let y = f64::from(read_spine_binary_float(&mut context.reader));
+        let scale_x = f64::from(read_spine_binary_float(&mut context.reader));
+        let scale_y = f64::from(read_spine_binary_float(&mut context.reader));
+        let width = f64::from(read_spine_binary_float(&mut context.reader));
+        let height = f64::from(read_spine_binary_float(&mut context.reader));
         skip_spine_binary_bytes(&mut context.reader, SPINE_BINARY_COLOR_BYTES);
         skip_sequence(&mut context.reader);
         let mut attachment: RegionAttachment2D = allocate_entity();

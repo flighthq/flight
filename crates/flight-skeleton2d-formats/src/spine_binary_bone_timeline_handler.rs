@@ -28,12 +28,14 @@ use flight_buffer::ByteReader;
 
 use crate::types::{SPINE_TIMELINE_KIND_BONE, SpineBinaryTimelineContext};
 
+// flight-lint: allow(f64) skeleton document values are JSON/TS numbers held in f64
 pub struct SpineBinaryValueTimeline {
-    pub curves: Vec<Option<Vec<f32>>>,
-    pub times: Vec<f32>,
-    pub values: Vec<f32>,
+    pub curves: Vec<Option<Vec<f64>>>,
+    pub times: Vec<f64>,
+    pub values: Vec<f64>,
 }
 
+// flight-lint: allow(f64) skeleton document values are JSON/TS numbers, decoded and computed in f64 before narrowing into f32 storage lanes
 pub fn build_spine_binary_segment_easings(
     timeline: &SpineBinaryValueTimeline,
     values: usize,
@@ -76,7 +78,7 @@ pub fn build_spine_binary_segment_easings(
                 winner = Some(component);
             }
         }
-        let rebase = |component: usize| -> Option<[f32; 4]> {
+        let rebase = |component: usize| -> Option<[f64; 4]> {
             let from = *timeline.values.get(index * values + component)?;
             let rise = *timeline.values.get((index + 1) * values + component)? - from;
             if rise == 0.0 {
@@ -106,11 +108,12 @@ pub fn build_spine_binary_segment_easings(
                     .count();
             }
             curved = true;
+            // Control points rebase in f64 and narrow into flight-animation's f32 easing lane.
             easings.push(Some(ease_cubic_bezier(
-                clamp_spine_binary_unit(won[0]),
-                won[1],
-                clamp_spine_binary_unit(won[2]),
-                won[3],
+                clamp_spine_binary_unit(won[0]) as f32,
+                won[1] as f32,
+                clamp_spine_binary_unit(won[2]) as f32,
+                won[3] as f32,
             )));
         } else {
             easings.push(None);
@@ -193,6 +196,7 @@ fn consume_bone_timelines(context: &mut SpineBinaryTimelineContext<'_, '_>, reta
     }
 }
 
+// flight-lint: allow(f64) skeleton document values are JSON/TS numbers, decoded and computed in f64 before narrowing into f32 storage lanes
 fn read_value_timeline(
     reader: &mut ByteReader<'_>,
     frame_count: usize,
@@ -206,22 +210,30 @@ fn read_value_timeline(
     if frame_count == 0 {
         return output;
     }
-    output.times.push(read_spine_binary_float(reader));
+    output
+        .times
+        .push(f64::from(read_spine_binary_float(reader)));
     for _ in 0..components {
-        output.values.push(read_spine_binary_float(reader));
+        output
+            .values
+            .push(f64::from(read_spine_binary_float(reader)));
     }
     for _ in 0..frame_count.saturating_sub(1) {
         if is_spine_binary_reader_overrun(reader) {
             break;
         }
-        output.times.push(read_spine_binary_float(reader));
+        output
+            .times
+            .push(f64::from(read_spine_binary_float(reader)));
         for _ in 0..components {
-            output.values.push(read_spine_binary_float(reader));
+            output
+                .values
+                .push(f64::from(read_spine_binary_float(reader)));
         }
         if read_spine_binary_byte(reader) == SPINE_BINARY_CURVE_BEZIER {
             output.curves.push(Some(
                 (0..components * 4)
-                    .map(|_| read_spine_binary_float(reader))
+                    .map(|_| f64::from(read_spine_binary_float(reader)))
                     .collect(),
             ));
         } else {

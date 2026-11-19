@@ -29,6 +29,16 @@ mod parse_dragon_bones_skeleton {
     }
 
     #[test]
+    fn keeps_bone_and_translate_numbers_as_exact_doubles() {
+        // f32 spacing at 1e9 is 64, and 0.1 has no exact f32: both survive only as doubles.
+        let json = r#"{"version":"5.5","armature":[{"bone":[{"name":"root","transform":{"x":1000000000.5}}],"animation":[{"name":"a","bone":[{"name":"root","translateFrame":[{"duration":1,"x":0.1},{"duration":1,"x":1}]}]}]}]}"#;
+        let parsed = parse_dragon_bones_skeleton(json, None).unwrap();
+        assert_eq!(parsed.skeleton.bones[0].x, 1_000_000_000.5);
+        let track = parsed.animations[0].clip.channels[0].track.read().unwrap();
+        assert_eq!(track.values[0], 0.1);
+    }
+
+    #[test]
     fn rejects_unreadable_input() {
         assert!(parse_dragon_bones_skeleton("{ nope", None).is_none());
         assert!(parse_dragon_bones_skeleton("null", None).is_none());

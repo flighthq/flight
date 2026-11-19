@@ -192,6 +192,7 @@ pub struct DragonBonesRegistry {
     pub timeline_handlers: Vec<DragonBonesTimelineHandlerEntry>,
 }
 
+// flight-lint: allow(f64) skeleton document values are JSON/TS numbers held in f64
 pub struct DragonBonesSectionContext<'a> {
     pub animations: Vec<Skeleton2DImportAnimation>,
     pub armature: &'a JsonRecord,
@@ -200,7 +201,7 @@ pub struct DragonBonesSectionContext<'a> {
     pub diagnostics: Option<&'a mut Vec<ImportDiagnostic>>,
     pub display_table: HashMap<String, Vec<Option<Attachment2DRef>>>,
     pub doc: &'a JsonRecord,
-    pub frame_rate: f32,
+    pub frame_rate: f64,
     pub raw_index_to_output: Vec<i32>,
     pub registry: &'a DragonBonesRegistry,
     pub skins: Vec<AttachmentSkin2D>,

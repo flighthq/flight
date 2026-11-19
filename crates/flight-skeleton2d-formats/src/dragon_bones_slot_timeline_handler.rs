@@ -18,6 +18,7 @@ use crate::dragon_bones_parse_helpers::{
 };
 use crate::types::{DragonBonesTimelineContext, JsonRecord};
 
+// flight-lint: allow(f64) skeleton document values are JSON/TS numbers, decoded and computed in f64 before narrowing into f32 storage lanes
 pub fn dragon_bones_slot_timeline_handler(
     context: &mut DragonBonesTimelineContext<'_, '_>,
     _anim_name: &str,
@@ -58,7 +59,7 @@ pub fn dragon_bones_slot_timeline_handler(
                         0.0,
                     ) as i32;
                     if index >= 0 && displays.get(index as usize).is_some_and(Option::is_some) {
-                        index as f32
+                        index as f64
                     } else {
                         -1.0
                     }
@@ -115,10 +116,11 @@ pub fn dragon_bones_slot_timeline_handler(
     }
 }
 
+// flight-lint: allow(f64) skeleton document values are JSON/TS numbers, decoded and computed in f64 before narrowing into f32 storage lanes
 fn push_slot_channel(
     channels: &mut Vec<AnimationChannel>,
-    times: Vec<f32>,
-    values: Vec<f32>,
+    times: Vec<f64>,
+    values: Vec<f64>,
     components: usize,
     interpolation: AnimationInterpolation,
     slot_index: i32,

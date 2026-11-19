@@ -16,10 +16,11 @@ use crate::types::JsonRecord;
 pub const SPINE_DEFAULT_SKIN_NAME: &str = "default";
 pub const SPINE_NO_ATTACHMENT_INDEX: i32 = -1;
 
+// flight-lint: allow(f64) skeleton document values are JSON/TS numbers, decoded and computed in f64 before narrowing into f32 storage lanes
 pub fn build_spine_segment_easings(
     keys: &[JsonRecord],
-    times: &Vec<f32>,
-    values: &Vec<f32>,
+    times: &Vec<f64>,
+    values: &Vec<f64>,
     components: usize,
     diagnostics: Option<&mut Vec<ImportDiagnostic>>,
 ) -> Option<Vec<Option<flight_animation::EasingFn>>> {
@@ -59,7 +60,7 @@ pub fn build_spine_segment_easings(
                 winner = Some(component);
             }
         }
-        let rebase = |component: usize| -> Option<[f32; 4]> {
+        let rebase = |component: usize| -> Option<[f64; 4]> {
             let from = *values.get(index * components + component)?;
             let rise = *values.get((index + 1) * components + component)? - from;
             if rise == 0.0 {
@@ -100,7 +101,13 @@ pub fn build_spine_segment_easings(
                 clamped_segments += 1;
             }
             curved = true;
-            easings.push(Some(ease_cubic_bezier(x1, won[1], x2, won[3])));
+            // Control points rebase in f64 and narrow into flight-animation's f32 easing lane.
+            easings.push(Some(ease_cubic_bezier(
+                x1 as f32,
+                won[1] as f32,
+                x2 as f32,
+                won[3] as f32,
+            )));
         } else {
             easings.push(None);
         }
@@ -137,7 +144,8 @@ pub fn build_spine_segment_easings(
     return curved.then_some(easings);
 }
 
-pub fn clamp_unit(value: f32) -> f32 {
+// flight-lint: allow(f64) skeleton document values are JSON/TS numbers, decoded and computed in f64 before narrowing into f32 storage lanes
+pub fn clamp_unit(value: f64) -> f64 {
     return value.clamp(0.0, 1.0);
 }
 
@@ -157,11 +165,11 @@ pub fn index_of_spine_slot(slots: &[Slot2D], name: &str) -> i32 {
         .unwrap_or(-1);
 }
 
-pub fn number_or<T: Serialize>(value: Option<&T>, fallback: f32) -> f32 {
+// flight-lint: allow(f64) skeleton document values are JSON/TS numbers, decoded and computed in f64 before narrowing into f32 storage lanes
+pub fn number_or<T: Serialize>(value: Option<&T>, fallback: f64) -> f64 {
     return value
         .and_then(|value| serde_json::to_value(value).ok())
         .and_then(|value| value.as_f64())
-        .map(|number| number as f32)
         .unwrap_or(fallback);
 }
 

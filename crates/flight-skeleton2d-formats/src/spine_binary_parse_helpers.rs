@@ -26,7 +26,8 @@ pub const SPINE_BINARY_ATTACHMENT_TYPES: [&str; 7] = [
 pub const SPINE_BINARY_BOUNDS_BYTES: usize = 16;
 pub const SPINE_BINARY_COLOR_BYTES: usize = 4;
 pub const SPINE_BINARY_CURVE_BEZIER: u8 = 2;
-pub const SPINE_BINARY_CURVE_EPSILON: f32 = 1e-6;
+// flight-lint: allow(f64) skeleton document values are JSON/TS numbers, decoded and computed in f64 before narrowing into f32 storage lanes
+pub const SPINE_BINARY_CURVE_EPSILON: f64 = 1e-6;
 pub const SPINE_BINARY_DEFAULT_SKIN_NAME: &str = "default";
 pub const SPINE_BINARY_FPS_BYTES: usize = 4;
 pub const SPINE_BINARY_HASH_BYTES: usize = 8;
@@ -39,7 +40,8 @@ pub const SPINE_BINARY_SLOT_ATTACHMENT: u8 = 0;
 pub const SPINE_BINARY_SLOT_RGBA: u8 = 1;
 pub const SPINE_BINARY_TRIANGLE_INDEX_BYTES: usize = 2;
 
-pub fn clamp_spine_binary_unit(value: f32) -> f32 {
+// flight-lint: allow(f64) skeleton document values are JSON/TS numbers, decoded and computed in f64 before narrowing into f32 storage lanes
+pub fn clamp_spine_binary_unit(value: f64) -> f64 {
     return value.clamp(0.0, 1.0);
 }
 

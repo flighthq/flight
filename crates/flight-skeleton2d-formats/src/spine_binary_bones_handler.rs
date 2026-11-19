@@ -18,6 +18,7 @@ use crate::types::SpineBinarySectionContext;
 pub const SKIP_SPINE_BINARY_BONES_SECTION: for<'a> fn(&mut SpineBinarySectionContext<'a>) =
     skip_spine_binary_bones_section;
 
+// flight-lint: allow(f64) skeleton document values are JSON/TS numbers, decoded and computed in f64 before narrowing into f32 storage lanes
 fn parse_spine_binary_bones(context: &mut SpineBinarySectionContext<'_>, retain: bool) {
     let count = read_spine_binary_varint(&mut context.reader) as usize;
     for index in 0..count {
@@ -55,14 +56,14 @@ fn parse_spine_binary_bones(context: &mut SpineBinarySectionContext<'_>, retain:
             skip_spine_binary_bytes(&mut context.reader, overrun);
             break;
         }
-        let rotation = read_spine_binary_float(&mut context.reader);
-        let x = read_spine_binary_float(&mut context.reader);
-        let y = read_spine_binary_float(&mut context.reader);
-        let scale_x = read_spine_binary_float(&mut context.reader);
-        let scale_y = read_spine_binary_float(&mut context.reader);
-        let shear_x = read_spine_binary_float(&mut context.reader);
-        let shear_y = read_spine_binary_float(&mut context.reader);
-        let length = read_spine_binary_float(&mut context.reader);
+        let rotation = f64::from(read_spine_binary_float(&mut context.reader));
+        let x = f64::from(read_spine_binary_float(&mut context.reader));
+        let y = f64::from(read_spine_binary_float(&mut context.reader));
+        let scale_x = f64::from(read_spine_binary_float(&mut context.reader));
+        let scale_y = f64::from(read_spine_binary_float(&mut context.reader));
+        let shear_x = f64::from(read_spine_binary_float(&mut context.reader));
+        let shear_y = f64::from(read_spine_binary_float(&mut context.reader));
+        let length = f64::from(read_spine_binary_float(&mut context.reader));
         let transform_mode = match read_spine_binary_varint(&mut context.reader) {
             1 => TRANSFORM_MODE_2D_ONLY_TRANSLATION,
             2 => TRANSFORM_MODE_2D_NO_ROTATION_OR_REFLECTION,

@@ -19,11 +19,12 @@ use crate::dragon_bones_parse_helpers::{
 };
 use crate::types::{DragonBonesTimelineContext, JsonRecord};
 
+// flight-lint: allow(f64) skeleton document values are JSON/TS numbers, decoded and computed in f64 before narrowing into f32 storage lanes
 fn add_rotate_channels(
     channels: &mut Vec<AnimationChannel>,
     raw: Option<&Value>,
     bone_index: i32,
-    frame_rate: f32,
+    frame_rate: f64,
     diagnostics: Option<&mut Vec<flight_importdiagnostics::ImportDiagnostic>>,
 ) {
     let mut diagnostics = diagnostics;
@@ -50,7 +51,7 @@ fn add_rotate_channels(
                 {
                     previous_clockwise += if previous_clockwise > 0 { -1 } else { 1 };
                 }
-                rotation += 360.0 * previous_clockwise as f32;
+                rotation += 360.0 * previous_clockwise as f64;
             }
         }
         previous_clockwise = number_or(frame.get("clockwise"), 0.0) as i32;
@@ -85,12 +86,13 @@ fn add_rotate_channels(
     }
 }
 
+// flight-lint: allow(f64) skeleton document values are JSON/TS numbers, decoded and computed in f64 before narrowing into f32 storage lanes
 fn add_vector_channel(
     channels: &mut Vec<AnimationChannel>,
     raw: Option<&Value>,
     bone_index: i32,
     path: &str,
-    frame_rate: f32,
+    frame_rate: f64,
     scale: bool,
     diagnostics: Option<&mut Vec<flight_importdiagnostics::ImportDiagnostic>>,
 ) {
@@ -177,15 +179,17 @@ pub fn dragon_bones_bone_timeline_handler(
     }
 }
 
-fn normalize_degrees(degrees: f32) -> f32 {
+// flight-lint: allow(f64) skeleton document values are JSON/TS numbers, decoded and computed in f64 before narrowing into f32 storage lanes
+fn normalize_degrees(degrees: f64) -> f64 {
     let wrapped = (degrees + 180.0) % 360.0;
     return wrapped + if wrapped > 0.0 { -180.0 } else { 180.0 };
 }
 
+// flight-lint: allow(f64) skeleton document values are JSON/TS numbers, decoded and computed in f64 before narrowing into f32 storage lanes
 fn push_bone_channel(
     channels: &mut Vec<AnimationChannel>,
-    times: Vec<f32>,
-    values: Vec<f32>,
+    times: Vec<f64>,
+    values: Vec<f64>,
     components: usize,
     interpolation: AnimationInterpolation,
     bone_index: i32,

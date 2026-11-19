@@ -18,6 +18,7 @@ use flight_buffer::ByteReader;
 
 use crate::types::{SPINE_TIMELINE_KIND_SLOT, SpineBinaryTimelineContext};
 
+// flight-lint: allow(f64) skeleton document values are JSON/TS numbers, decoded and computed in f64 before narrowing into f32 storage lanes
 fn add_attachment_channel(
     reader: &mut ByteReader<'_>,
     channels: &mut Vec<flight_animation::AnimationChannel>,
@@ -34,9 +35,9 @@ fn add_attachment_channel(
         if is_spine_binary_reader_overrun(reader) {
             break;
         }
-        times.push(read_spine_binary_float(reader));
+        times.push(f64::from(read_spine_binary_float(reader)));
         let Some(name) = read_spine_binary_string_reference(reader, strings) else {
-            values.push(SPINE_BINARY_NO_ATTACHMENT_INDEX as f32);
+            values.push(SPINE_BINARY_NO_ATTACHMENT_INDEX as f64);
             continue;
         };
         let index = *by_name.entry(name.clone()).or_insert_with(|| {
@@ -51,7 +52,7 @@ fn add_attachment_channel(
             attachments.push(Some(found.attachment.clone()));
             return attachments.len() as i32 - 1;
         });
-        values.push(index as f32);
+        values.push(index as f64);
     }
     if times.is_empty() {
         return;
@@ -169,24 +170,25 @@ fn push_slot_channel(
     channels.push(create_animation_channel(&track, Some(Arc::new(handle))));
 }
 
+// flight-lint: allow(f64) skeleton document values are JSON/TS numbers, decoded and computed in f64 before narrowing into f32 storage lanes
 fn read_color_timeline(
     reader: &mut ByteReader<'_>,
     frame_count: usize,
     channel_count: usize,
-) -> (Vec<f32>, Vec<f32>) {
+) -> (Vec<f64>, Vec<f64>) {
     if frame_count == 0 {
         return (Vec::new(), Vec::new());
     }
-    let mut times = vec![read_spine_binary_float(reader)];
+    let mut times = vec![f64::from(read_spine_binary_float(reader))];
     let mut values = (0..channel_count)
-        .map(|_| read_spine_binary_byte(reader) as f32 / 255.0)
+        .map(|_| read_spine_binary_byte(reader) as f64 / 255.0)
         .collect::<Vec<_>>();
     for _ in 0..frame_count.saturating_sub(1) {
         if is_spine_binary_reader_overrun(reader) {
             break;
         }
-        times.push(read_spine_binary_float(reader));
-        values.extend((0..channel_count).map(|_| read_spine_binary_byte(reader) as f32 / 255.0));
+        times.push(f64::from(read_spine_binary_float(reader)));
+        values.extend((0..channel_count).map(|_| read_spine_binary_byte(reader) as f64 / 255.0));
         if read_spine_binary_byte(reader) == SPINE_BINARY_CURVE_BEZIER {
             for _ in 0..channel_count * 4 {
                 read_spine_binary_float(reader);

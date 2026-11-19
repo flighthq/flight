@@ -14,13 +14,14 @@ use serde_json::{Map, Value};
 use crate::types::JsonRecord;
 
 #[derive(Clone, Copy, Debug, PartialEq)]
+// flight-lint: allow(f64) skeleton document values are JSON/TS numbers held in f64
 pub struct DragonBonesBoneTransform {
-    pub rotation: f32,
-    pub scale_x: f32,
-    pub scale_y: f32,
-    pub shear_y: f32,
-    pub x: f32,
-    pub y: f32,
+    pub rotation: f64,
+    pub scale_x: f64,
+    pub scale_y: f64,
+    pub shear_y: f64,
+    pub x: f64,
+    pub y: f64,
 }
 
 pub fn build_dragon_bones_segment_easings(
@@ -42,23 +43,26 @@ pub fn build_dragon_bones_segment_easings(
             continue;
         };
         curved = true;
+        // Curve control points narrow into flight-animation's f32 easing lane.
         easings.push(Some(ease_cubic_bezier(
-            clamp_dragon_bones_unit(number_or(curve.first(), 0.0)),
-            number_or(curve.get(1), 0.0),
-            clamp_dragon_bones_unit(number_or(curve.get(2), 1.0)),
-            number_or(curve.get(3), 1.0),
+            clamp_dragon_bones_unit(number_or(curve.first(), 0.0)) as f32,
+            number_or(curve.get(1), 0.0) as f32,
+            clamp_dragon_bones_unit(number_or(curve.get(2), 1.0)) as f32,
+            number_or(curve.get(3), 1.0) as f32,
         )));
     }
     return curved.then_some(easings);
 }
 
-fn clamp_dragon_bones_unit(value: f32) -> f32 {
+// flight-lint: allow(f64) skeleton document values are JSON/TS numbers, decoded and computed in f64 before narrowing into f32 storage lanes
+fn clamp_dragon_bones_unit(value: f64) -> f64 {
     return value.clamp(0.0, 1.0);
 }
 
 /// Writes frame times into reusable storage using the original elapsed-duration calculation.
 // flight-lint: allow(conform-params) Principal3139d09f D24: required first caller-owned frame-time output clears/fills retained capacity with original f32 evaluation order
-pub fn dragon_bones_frame_times(out: &mut Vec<f32>, frames: &[JsonRecord], frame_rate: f32) {
+// flight-lint: allow(f64) skeleton document values are JSON/TS numbers, decoded and computed in f64 before narrowing into f32 storage lanes
+pub fn dragon_bones_frame_times(out: &mut Vec<f64>, frames: &[JsonRecord], frame_rate: f64) {
     out.clear();
     let mut elapsed = 0.0;
     for frame in frames {
@@ -153,11 +157,11 @@ fn is_dragon_bones_frame_stepped(frame: &JsonRecord) -> bool {
         .is_none_or(|value| value.is_null() || value.as_f64() == Some(100.0));
 }
 
-pub fn number_or<T: Serialize>(value: Option<&T>, fallback: f32) -> f32 {
+// flight-lint: allow(f64) skeleton document values are JSON/TS numbers, decoded and computed in f64 before narrowing into f32 storage lanes
+pub fn number_or<T: Serialize>(value: Option<&T>, fallback: f64) -> f64 {
     return value
         .and_then(|value| serde_json::to_value(value).ok())
         .and_then(|value| value.as_f64())
-        .map(|number| number as f32)
         .unwrap_or(fallback);
 }
 

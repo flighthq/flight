@@ -79,13 +79,21 @@ pub fn dragon_bones_skins_section_handler(context: &mut DragonBonesSectionContex
     }
 }
 
-fn float_array(value: Option<&Value>) -> Vec<f32> {
+fn float32_array(value: Option<&Value>) -> Vec<f32> {
+    return float_array(value)
+        .into_iter()
+        .map(|value| value as f32)
+        .collect();
+}
+
+// flight-lint: allow(f64) skeleton document values are JSON/TS numbers, decoded and computed in f64 before narrowing into f32 storage lanes
+fn float_array(value: Option<&Value>) -> Vec<f64> {
     return value
         .and_then(Value::as_array)
         .map(|values| {
             values
                 .iter()
-                .map(|value| value.as_f64().unwrap_or(0.0) as f32)
+                .map(|value| value.as_f64().unwrap_or(0.0))
                 .collect()
         })
         .unwrap_or_default();
@@ -176,7 +184,7 @@ fn parse_mesh(
         );
         return None;
     }
-    let uvs = float_array(display.get("uvs"));
+    let uvs = float32_array(display.get("uvs"));
     let vertex_count = uvs.len() / 2;
     let (skin, vertices) = if display.contains_key("weights") {
         (
@@ -189,7 +197,7 @@ fn parse_mesh(
             None,
         )
     } else {
-        (None, Some(float_array(display.get("vertices"))))
+        (None, Some(float32_array(display.get("vertices"))))
     };
     let mut attachment: MeshAttachment2D = allocate_entity();
     attachment.kind = MESH_ATTACHMENT_2D_KIND.to_string();
@@ -205,6 +213,7 @@ fn parse_mesh(
     return Some(Arc::new(RwLock::new(attachment)));
 }
 
+// flight-lint: allow(f64) skeleton document values are JSON/TS numbers, decoded and computed in f64 before narrowing into f32 storage lanes
 fn parse_weighted_skin(
     display: &Map<String, Value>,
     vertex_count: usize,
@@ -215,7 +224,7 @@ fn parse_weighted_skin(
     let weights = float_array(display.get("weights"));
     let bone_pose = float_array(display.get("bonePose"));
     let slot_pose = float_array(display.get("slotPose"));
-    let at = |values: &[f32], index: usize, fallback: f32| {
+    let at = |values: &[f64], index: usize, fallback: f64| {
         values.get(index).copied().unwrap_or(fallback)
     };
     let (a, b, c, d, tx, ty) = (
@@ -274,11 +283,12 @@ fn parse_weighted_skin(
             let id = pose[1] * inv;
             let itx = (pose[3] * pose[6] - pose[4] * pose[5]) * inv;
             let ity = (pose[2] * pose[5] - pose[1] * pose[6]) * inv;
+            // The bind-local position resolves in f64 and narrows into the f32 influence lane.
             influences.extend([
                 output_bone as f32,
-                ia * sx + ic * sy + itx,
-                ib * sx + id * sy + ity,
-                weight,
+                (ia * sx + ic * sy + itx) as f32,
+                (ib * sx + id * sy + ity) as f32,
+                weight as f32,
             ]);
             real += 1;
         }

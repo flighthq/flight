@@ -13,7 +13,8 @@ use crate::dragon_bones_parse_helpers::number_or;
 use crate::types::{DragonBonesRegistry, DragonBonesSectionContext, JsonRecord, Skeleton2DImport};
 
 const DRAGON_BONES_COMPATIBLE_VERSION: &str = "5.5";
-const DEFAULT_DRAGON_BONES_FRAME_RATE: f32 = 24.0;
+// flight-lint: allow(f64) skeleton document values are JSON/TS numbers, decoded and computed in f64 before narrowing into f32 storage lanes
+const DEFAULT_DRAGON_BONES_FRAME_RATE: f64 = 24.0;
 
 fn check_dragon_bones_version(
     doc: &serde_json::Map<String, Value>,
@@ -126,7 +127,8 @@ pub fn parse_dragon_bones_skeleton_with_registry(
     });
 }
 
-fn positive_number(value: Option<&Value>) -> Option<f32> {
+// flight-lint: allow(f64) skeleton document values are JSON/TS numbers, decoded and computed in f64 before narrowing into f32 storage lanes
+fn positive_number(value: Option<&Value>) -> Option<f64> {
     let number = number_or(value, 0.0);
     return (number.is_finite() && number > 0.0).then_some(number);
 }

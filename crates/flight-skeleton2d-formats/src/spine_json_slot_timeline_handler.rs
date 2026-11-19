@@ -23,6 +23,7 @@ use crate::spine_parse_helpers::{
 };
 use crate::types::{JsonRecord, SpineJsonTimelineContext, sorted_count_entries};
 
+// flight-lint: allow(f64) skeleton document values are JSON/TS numbers, decoded and computed in f64 before narrowing into f32 storage lanes
 fn add_spine_slot_attachment_channel(
     channels: &mut Vec<AnimationChannel>,
     raw_keys: &[Value],
@@ -40,7 +41,7 @@ fn add_spine_slot_attachment_channel(
     for key in raw_keys.iter().filter_map(Value::as_object) {
         times.push(number_or(key.get("time"), 0.0));
         let Some(name) = key.get("name").and_then(Value::as_str) else {
-            values.push(SPINE_NO_ATTACHMENT_INDEX as f32);
+            values.push(SPINE_NO_ATTACHMENT_INDEX as f64);
             continue;
         };
         let index = *index_by_name.entry(name.to_string()).or_insert_with(|| {
@@ -55,7 +56,7 @@ fn add_spine_slot_attachment_channel(
             attachments.push(Some(found.attachment.clone()));
             return attachments.len() as i32 - 1;
         });
-        values.push(index as f32);
+        values.push(index as f64);
     }
     if times.is_empty() {
         return;
@@ -76,6 +77,7 @@ fn add_spine_slot_attachment_channel(
     );
 }
 
+// flight-lint: allow(f64) skeleton document values are JSON/TS numbers, decoded and computed in f64 before narrowing into f32 storage lanes
 fn add_spine_slot_color_channel(
     channels: &mut Vec<AnimationChannel>,
     raw_keys: &[Value],
@@ -91,10 +93,10 @@ fn add_spine_slot_color_channel(
         times.push(number_or(key.get("time"), 0.0));
         let packed = parse_spine_color(key.get("color"));
         values.extend([
-            ((packed >> 24) & 0xff) as f32 / 255.0,
-            ((packed >> 16) & 0xff) as f32 / 255.0,
-            ((packed >> 8) & 0xff) as f32 / 255.0,
-            (packed & 0xff) as f32 / 255.0,
+            ((packed >> 24) & 0xff) as f64 / 255.0,
+            ((packed >> 16) & 0xff) as f64 / 255.0,
+            ((packed >> 8) & 0xff) as f64 / 255.0,
+            (packed & 0xff) as f64 / 255.0,
         ]);
         if key.get("curve").and_then(Value::as_str) != Some("stepped") {
             all_stepped = false;

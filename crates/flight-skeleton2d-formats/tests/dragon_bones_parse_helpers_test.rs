@@ -67,7 +67,7 @@ mod dragon_bones_frame_times {
         dragon_bones_frame_times(&mut out, &frames[..2], 0.0);
         assert_eq!(out.len(), 2);
         assert!(out[0].is_nan());
-        assert_eq!(out[1], f32::INFINITY);
+        assert_eq!(out[1], f64::INFINITY);
         assert_eq!(out.as_ptr(), pointer);
         assert_eq!(out.capacity(), capacity);
     }

@@ -34,7 +34,7 @@ pub fn parse_spine_draw_order_timeline<T: Serialize>(
             let mut detail = HashMap::new();
             detail.insert(
                 "time".to_string(),
-                ImportDiagnosticDetailValue::Number(number_or(frame.get("time"), 0.0)),
+                ImportDiagnosticDetailValue::Number(number_or(frame.get("time"), 0.0) as f32),
             );
             report_import_diagnostic(
                 diagnostics.as_deref_mut(),
@@ -45,7 +45,7 @@ pub fn parse_spine_draw_order_timeline<T: Serialize>(
             );
             continue;
         };
-        times.push(number_or(frame.get("time"), 0.0));
+        times.push(number_or(frame.get("time"), 0.0) as f32);
         orderings.extend(ordering);
     }
     if times.is_empty() {

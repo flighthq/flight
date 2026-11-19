@@ -20,6 +20,7 @@ use serde_json::Value;
 use crate::spine_parse_helpers::{build_spine_segment_easings, index_of_bone, number_or};
 use crate::types::{JsonRecord, SpineJsonTimelineContext};
 
+// flight-lint: allow(f64) skeleton document values are JSON/TS numbers, decoded and computed in f64 before narrowing into f32 storage lanes
 fn add_spine_bone_channel(
     channels: &mut Vec<AnimationChannel>,
     raw: Option<&Value>,
@@ -27,7 +28,7 @@ fn add_spine_bone_channel(
     path: &str,
     components: usize,
     fields: &[&str],
-    defaults: &[f32],
+    defaults: &[f64],
     diagnostics: Option<&mut Vec<ImportDiagnostic>>,
 ) {
     let Some(raw_keys) = raw
