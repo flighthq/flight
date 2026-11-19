@@ -34,11 +34,11 @@ fn rig(count: usize) -> (NodeRef, Vec<NodeRef>, RefOrderList) {
 fn bind(
     nodes: &[Option<NodeRef>],
     list: &RefOrderList,
-    times: Vec<f32>,
-    values: Vec<f32>,
+    times: Vec<f64>,
+    values: Vec<f64>,
     components: usize,
     interpolation: AnimationInterpolation,
-    time: f32,
+    time: f64,
     guards: &Skeleton2DGuardState,
 ) {
     let mut registry = create_skeleton_2d_animation_target_registry();

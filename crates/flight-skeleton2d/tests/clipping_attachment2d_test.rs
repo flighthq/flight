@@ -90,9 +90,9 @@ mod source_clipping_parity {
             None,
             &empty_guards(),
         );
-        assert!(close(out[0], 4.0));
-        assert!(close(out[2], 6.0));
-        assert!(close(out[3], 2.0));
+        assert!(close(f64::from(out[0]), 4.0));
+        assert!(close(f64::from(out[2]), 6.0));
+        assert!(close(f64::from(out[3]), 2.0));
     }
 
     #[test]

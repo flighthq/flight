@@ -92,7 +92,7 @@ fn bind_skeleton_2d_bone_channel(
     setup: &Skeleton2D,
     pose: &mut Skeleton2D,
     target: &Unknown,
-    time: f32,
+    time: f64,
     _guards: &Skeleton2DGuardState,
 ) {
     let Some(target) = target
@@ -109,7 +109,7 @@ fn bind_skeleton_2d_bone_channel(
         return;
     }
     let components = channel.track.read().unwrap().components;
-    let mut scratch = vec![0.0f32; components.max(4)];
+    let mut scratch = vec![0.0f64; components.max(4)];
     let track = clone_animation_track(&channel.track.read().unwrap());
     sample_animation_track(&mut scratch, &track, time);
     let setup_bone = &setup.bones[bone_index as usize];
@@ -145,7 +145,7 @@ fn bind_skeleton_2d_slot_attachment(
     channel: &AnimationChannel,
     slot: &mut Slot2D,
     target: &Skeleton2DSlotAnimationTarget,
-    time: f32,
+    time: f64,
     guards: &Skeleton2DGuardState,
 ) {
     let Some(table) = target.attachments.as_ref() else {
@@ -185,7 +185,7 @@ fn bind_skeleton_2d_slot_channel(
     _setup: &Skeleton2D,
     pose: &mut Skeleton2D,
     target: &Unknown,
-    time: f32,
+    time: f64,
     guards: &Skeleton2DGuardState,
 ) {
     let Some(target) = target
@@ -210,7 +210,7 @@ fn bind_skeleton_2d_slot_channel(
         return;
     }
     let components = channel.track.read().unwrap().components;
-    let mut scratch = vec![0.0f32; components.max(4)];
+    let mut scratch = vec![0.0f64; components.max(4)];
     let track = clone_animation_track(&channel.track.read().unwrap());
     sample_animation_track(&mut scratch, &track, time);
     slot.color = Some(
@@ -221,7 +221,7 @@ fn bind_skeleton_2d_slot_channel(
     );
 }
 
-fn clamp_color_channel(value: f32) -> u32 {
+fn clamp_color_channel(value: f64) -> u32 {
     if value <= 0.0 {
         return 0;
     }
@@ -233,7 +233,7 @@ fn clamp_color_channel(value: f32) -> u32 {
 
 /// The last keyframe at or before `time`, or `-1` when the track holds none
 /// (TS `findSkeleton2DStepKeyframe`). Before the first keyframe the first value holds.
-pub fn find_skeleton_2d_step_keyframe(times: &[f32], time: f32) -> i32 {
+pub fn find_skeleton_2d_step_keyframe(times: &[f64], time: f64) -> i32 {
     let count = times.len();
     if count == 0 {
         return -1;

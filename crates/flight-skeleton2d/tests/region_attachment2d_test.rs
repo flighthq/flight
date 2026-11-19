@@ -7,7 +7,7 @@ use crate::support::*;
 mod compute_skeleton_2d_region_attachment_vertices {
     use super::*;
 
-    fn translated_skeleton(x: f32, y: f32, rotation: f32) -> Skeleton2D {
+    fn translated_skeleton(x: f64, y: f64, rotation: f64) -> Skeleton2D {
         let mut root = bone();
         root.x = x;
         root.y = y;
@@ -43,8 +43,8 @@ mod compute_skeleton_2d_region_attachment_vertices {
             &translated_skeleton(0.0, 0.0, 90.0),
             0,
         );
-        assert!(close(out[0], 1.0) && close(out[1], -2.0));
-        assert!(close(out[2], -1.0) && close(out[3], -2.0));
+        assert!(close(f64::from(out[0]), 1.0) && close(f64::from(out[1]), -2.0));
+        assert!(close(f64::from(out[2]), -1.0) && close(f64::from(out[3]), -2.0));
     }
 
     #[test]
@@ -59,8 +59,8 @@ mod compute_skeleton_2d_region_attachment_vertices {
             &translated_skeleton(0.0, 0.0, 0.0),
             0,
         );
-        assert!(close(out[0], 3.0) && close(out[1], -1.0));
-        assert!(close(out[4], 7.0) && close(out[5], 1.0));
+        assert!(close(f64::from(out[0]), 3.0) && close(f64::from(out[1]), -1.0));
+        assert!(close(f64::from(out[4]), 7.0) && close(f64::from(out[5]), 1.0));
     }
 
     #[test]

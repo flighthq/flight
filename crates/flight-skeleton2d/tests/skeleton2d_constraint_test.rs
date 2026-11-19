@@ -4,7 +4,7 @@ use std::sync::{Arc, Mutex, RwLock};
 
 use flight_skeleton2d::contract::*;
 
-fn constraint(kind: &str, mix: f32) -> Skeleton2DConstraintRef {
+fn constraint(kind: &str, mix: f64) -> Skeleton2DConstraintRef {
     let mut value: Skeleton2DIkConstraint = flight_entity::allocate_entity();
     value.kind = String::from(kind);
     value.mix = mix;
@@ -119,7 +119,7 @@ mod source_constraint_parity {
     #[test]
     fn hands_the_whole_constraint_to_its_solver() {
         let mut registry = create_skeleton_2d_constraint_registry();
-        let seen_mix = Arc::new(Mutex::new(-1.0f32));
+        let seen_mix = Arc::new(Mutex::new(-1.0f64));
         let seen_kind = Arc::new(Mutex::new(String::new()));
         let mix_sink = seen_mix.clone();
         let kind_sink = seen_kind.clone();

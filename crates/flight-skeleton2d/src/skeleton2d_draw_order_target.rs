@@ -68,8 +68,13 @@ pub fn create_skeleton_2d_draw_order_channel(
     let mut track = create_animation_track();
     track.components = slot_count;
     track.interpolation = AnimationInterpolation::Step;
-    track.times = timeline.times.clone();
-    track.values = timeline.orderings.clone();
+    // The timeline keeps the file's f32 times and orderings; both widen exactly into the f64 track.
+    track.times = timeline.times.iter().map(|time| f64::from(*time)).collect();
+    track.values = timeline
+        .orderings
+        .iter()
+        .map(|ordering| f64::from(*ordering))
+        .collect();
     let target = create_skeleton_2d_draw_order_animation_target(nodes, order_list);
     let handle = Skeleton2DAnimationTargetHandle {
         kind: String::from(SKELETON_2D_ANIMATION_TARGET_KIND_DRAW_ORDER),
@@ -96,7 +101,7 @@ fn bind_skeleton_2d_draw_order_channel(
     _setup: &Skeleton2D,
     _pose: &mut Skeleton2D,
     target: &Unknown,
-    time: f32,
+    time: f64,
     guards: &Skeleton2DGuardState,
 ) {
     let Some(target) = target
@@ -138,7 +143,7 @@ fn bind_skeleton_2d_draw_order_channel(
         let Some(node) = nodes.read().unwrap()[slot].clone() else {
             continue;
         };
-        let sort_key = track.read().unwrap().values[base + slot] as f64;
+        let sort_key = track.read().unwrap().values[base + slot];
         add_node_order_list_entry(&mut list, &node, sort_key);
     }
 }

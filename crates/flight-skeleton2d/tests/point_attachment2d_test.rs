@@ -8,7 +8,7 @@ use crate::support::*;
 mod compute_skeleton_2d_point_attachment_position {
     use super::*;
 
-    fn point(x: f32, y: f32, rotation: f32) -> PointAttachment2D {
+    fn point(x: f64, y: f64, rotation: f64) -> PointAttachment2D {
         let mut out: PointAttachment2D = flight_entity::allocate_entity();
         out.kind = String::from(POINT_ATTACHMENT_2D_KIND);
         out.x = x;
@@ -17,7 +17,7 @@ mod compute_skeleton_2d_point_attachment_position {
         return out;
     }
 
-    fn rig(x: f32, y: f32, rotation: f32, scale_x: f32, scale_y: f32) -> Skeleton2D {
+    fn rig(x: f64, y: f64, rotation: f64, scale_x: f64, scale_y: f64) -> Skeleton2D {
         let mut root = bone();
         root.x = x;
         root.y = y;
@@ -57,13 +57,13 @@ mod compute_skeleton_2d_point_attachment_position {
 mod compute_skeleton_2d_point_attachment_rotation {
     use super::*;
 
-    fn point(rotation: f32) -> PointAttachment2D {
+    fn point(rotation: f64) -> PointAttachment2D {
         let mut out: PointAttachment2D = flight_entity::allocate_entity();
         out.rotation = rotation;
         return out;
     }
 
-    fn rig(rotation: f32, scale_x: f32, scale_y: f32) -> Skeleton2D {
+    fn rig(rotation: f64, scale_x: f64, scale_y: f64) -> Skeleton2D {
         let mut root = bone();
         root.rotation = rotation;
         root.scale_x = scale_x;
@@ -92,7 +92,7 @@ mod compute_skeleton_2d_point_attachment_rotation {
 mod source_point_parity {
     use super::*;
 
-    fn rig_value(rotation: f32, scale_x: f32, scale_y: f32) -> Skeleton2D {
+    fn rig_value(rotation: f64, scale_x: f64, scale_y: f64) -> Skeleton2D {
         let mut root = bone();
         root.x = if rotation == 90.0 { 5.0 } else { 0.0 };
         root.rotation = rotation;
@@ -145,7 +145,7 @@ mod source_point_parity {
             &rig_value(0.0, 1.0, 4.0),
             0,
         );
-        let expected = (4.0f32).atan2(1.0).to_degrees();
+        let expected = (4.0f64).atan2(1.0).to_degrees();
         assert!(
             close(result, expected),
             "rotation {result} expected {expected}"
@@ -153,7 +153,7 @@ mod source_point_parity {
         assert!(!close(result, 45.0));
     }
 
-    fn point_attachment(x: f32, y: f32, rotation: f32) -> PointAttachment2D {
+    fn point_attachment(x: f64, y: f64, rotation: f64) -> PointAttachment2D {
         let mut out: PointAttachment2D = flight_entity::allocate_entity();
         out.kind = String::from(POINT_ATTACHMENT_2D_KIND);
         out.x = x;

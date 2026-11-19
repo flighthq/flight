@@ -37,7 +37,7 @@ pub fn slot(bone_index: i32) -> Slot2D {
     };
 }
 
-pub fn region(width: f32, height: f32) -> RegionAttachment2D {
+pub fn region(width: f64, height: f64) -> RegionAttachment2D {
     let mut out: RegionAttachment2D = allocate_entity();
     out.kind = String::from(REGION_ATTACHMENT_2D_KIND);
     out.width = width;
@@ -47,11 +47,11 @@ pub fn region(width: f32, height: f32) -> RegionAttachment2D {
     return out;
 }
 
-pub fn vertex_at(out: &[f32], vertex: usize) -> (f32, f32) {
-    return (out[vertex * 2], out[vertex * 2 + 1]);
+pub fn vertex_at(out: &[f32], vertex: usize) -> (f64, f64) {
+    return (f64::from(out[vertex * 2]), f64::from(out[vertex * 2 + 1]));
 }
 
-pub fn close(a: f32, b: f32) -> bool {
+pub fn close(a: f64, b: f64) -> bool {
     return (a - b).abs() <= 1e-4;
 }
 

@@ -12,12 +12,13 @@ use crate::skeleton2d_guards::Skeleton2DGuardState;
 use crate::slot_deform2d::set_skeleton_2d_slot_deform;
 use crate::types::*;
 
+// flight-lint: allow(f32) reads or writes the TS Float32Array buffer lane; scalar math is f64 and narrows once at each store
 fn bind_skeleton_2d_deform_channel(
     channel: &AnimationChannel,
     _setup: &Skeleton2D,
     pose: &mut Skeleton2D,
     target: &Unknown,
-    time: f32,
+    time: f64,
     _guards: &Skeleton2DGuardState,
 ) {
     let Some(target) = target
@@ -37,13 +38,15 @@ fn bind_skeleton_2d_deform_channel(
     if components == 0 {
         return;
     }
-    let mut scratch = vec![0.0f32; components];
+    let mut scratch = vec![0.0f64; components];
     let track = clone_animation_track(&channel.track.read().unwrap());
     sample_animation_track(&mut scratch, &track, time);
+    // Deform offsets are the f32 vertex-offset lane: each f64 sample narrows once.
+    let offsets: Vec<f32> = scratch.iter().map(|value| *value as f32).collect();
     set_skeleton_2d_slot_deform(
         &mut slots[slot_index as usize],
         target.attachment.clone(),
-        Some(&scratch[..components]),
+        Some(&offsets[..components]),
     );
 }
 

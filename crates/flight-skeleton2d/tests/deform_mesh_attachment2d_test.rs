@@ -47,7 +47,7 @@ mod deform_skeleton_2d_mesh_attachment {
             None,
             &empty_guards(),
         );
-        assert!(close(out[0], 5.0));
+        assert!(close(f64::from(out[0]), 5.0));
     }
 
     #[test]
@@ -62,7 +62,7 @@ mod deform_skeleton_2d_mesh_attachment {
             Some(&[3.0, 0.0]),
             &empty_guards(),
         );
-        assert!(close(out[0], 3.0));
+        assert!(close(f64::from(out[0]), 3.0));
     }
 
     #[test]
@@ -78,7 +78,7 @@ mod deform_skeleton_2d_mesh_attachment {
             Some(&[1.0, 2.0, 3.0]),
             &guards,
         );
-        assert!(close(out[0], 0.0));
+        assert!(close(f64::from(out[0]), 0.0));
         assert_eq!(reports.lock().unwrap()[0].0, "MeshAttachment2D");
     }
 
@@ -87,14 +87,14 @@ mod deform_skeleton_2d_mesh_attachment {
         let attachment = rigid(vec![1.0, 2.0]);
         let mut out = [0.0f32; 2];
         deform_skeleton_2d_mesh_attachment(&mut out, &attachment, &rig(), 1, None, &empty_guards());
-        assert!(close(out[0], 11.0) && close(out[1], 2.0));
+        assert!(close(f64::from(out[0]), 11.0) && close(f64::from(out[1]), 2.0));
     }
 }
 
 mod source_deform_mesh_parity {
     use super::*;
 
-    fn single_rig(x: f32, rotation: f32) -> Skeleton2D {
+    fn single_rig(x: f64, rotation: f64) -> Skeleton2D {
         let mut value = bone();
         value.x = x;
         value.rotation = rotation;
@@ -115,8 +115,8 @@ mod source_deform_mesh_parity {
             None,
             &empty_guards(),
         );
-        assert!(close(out[0], 5.0));
-        assert!(close(out[1], 1.0));
+        assert!(close(f64::from(out[0]), 5.0));
+        assert!(close(f64::from(out[1]), 1.0));
     }
 
     #[test]
@@ -131,8 +131,8 @@ mod source_deform_mesh_parity {
             Some(&[0.0, 2.0]),
             &empty_guards(),
         );
-        assert!(close(out[0], 3.0), "x {}", out[0]);
-        assert!(close(out[1], 1.0), "y {}", out[1]);
+        assert!(close(f64::from(out[0]), 3.0), "x {}", out[0]);
+        assert!(close(f64::from(out[1]), 1.0), "y {}", out[1]);
     }
 
     #[test]
@@ -147,8 +147,8 @@ mod source_deform_mesh_parity {
             Some(&[0.0, 0.0, 4.0, 0.0]),
             &empty_guards(),
         );
-        assert!(close(out[0], 7.0), "x {}", out[0]);
-        assert!(close(out[1], 0.0));
+        assert!(close(f64::from(out[0]), 7.0), "x {}", out[0]);
+        assert!(close(f64::from(out[1]), 0.0));
     }
 
     #[test]
@@ -163,8 +163,8 @@ mod source_deform_mesh_parity {
             Some(&[4.0, 4.0]),
             &empty_guards(),
         );
-        assert!(close(out[0], 5.0));
-        assert!(close(out[1], 0.0));
+        assert!(close(f64::from(out[0]), 5.0));
+        assert!(close(f64::from(out[1]), 0.0));
     }
 
     #[test]
@@ -179,8 +179,8 @@ mod source_deform_mesh_parity {
             Some(&[1.0, 0.0]),
             &empty_guards(),
         );
-        assert!(close(out[0], 5.0));
-        assert!(close(out[1], 3.0));
+        assert!(close(f64::from(out[0]), 5.0));
+        assert!(close(f64::from(out[1]), 3.0));
     }
 
     #[test]
@@ -213,7 +213,7 @@ mod source_deform_mesh_parity {
             None,
             &empty_guards(),
         );
-        assert!(close(out[0], 5.0));
-        assert!(close(out[1], 2.0));
+        assert!(close(f64::from(out[0]), 5.0));
+        assert!(close(f64::from(out[1]), 2.0));
     }
 }

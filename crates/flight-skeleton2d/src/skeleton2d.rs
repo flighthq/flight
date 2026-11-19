@@ -28,12 +28,13 @@ pub fn create_skeleton_2d(bones: Vec<Bone2D>) -> Skeleton2D {
 /// The construction initializer of `create_skeleton_2d` (TS `initializeSkeleton2D`).
 // flight-lint: allow(conform-array) Rust adopts an owned Vec<f32> where TS passes a shared Float32Array reference
 // flight-lint: allow(conform-params) D23 (Principal c0f9227c): required defining buffers and bones stay positional; skins and slots are assigned afterward
+// flight-lint: allow(f32) reads or writes the TS Float32Array buffer lane; scalar math is f64 and narrows once at each store
 pub fn initialize_skeleton_2d(
     out: &mut Skeleton2D,
     bone_matrices: Vec<f32>,
     bones: Vec<Bone2D>,
     inverse_bind_matrices: Vec<f32>,
-    world_matrices: Vec<f32>,
+    world_matrices: Vec<f64>,
 ) {
     out.bone_matrices = bone_matrices;
     out.bones = bones;
@@ -247,14 +248,16 @@ pub fn get_skeleton_2d_skin<'a>(
     return skins.iter().find(|skin| skin.name == name);
 }
 
-fn read_matrix(buffer: &[f32], offset: usize) -> Matrix {
+// flight-lint: allow(f32) reads or writes the TS Float32Array buffer lane; scalar math is f64 and narrows once at each store
+// Reads the f64 world buffer directly and widens the f32 inverse-bind input exactly.
+fn read_matrix<T: Copy + Into<f64>>(buffer: &[T], offset: usize) -> Matrix {
     return create_matrix(
-        buffer[offset],
-        buffer[offset + 1],
-        buffer[offset + 2],
-        buffer[offset + 3],
-        buffer[offset + 4],
-        buffer[offset + 5],
+        buffer[offset].into(),
+        buffer[offset + 1].into(),
+        buffer[offset + 2].into(),
+        buffer[offset + 3].into(),
+        buffer[offset + 4].into(),
+        buffer[offset + 5].into(),
     );
 }
 
@@ -346,21 +349,25 @@ pub fn validate_skeleton_2d(skeleton: &Skeleton2D) -> Option<String> {
     return None;
 }
 
+// flight-lint: allow(f32) the bone and inverse-bind palettes are the Float32Array skinning lane; each f64 element narrows once here
 fn write_matrix(buffer: &mut [f32], offset: usize, source: &Matrix) {
-    write_matrix_values(
-        buffer, offset, source.a, source.b, source.c, source.d, source.tx, source.ty,
-    );
+    buffer[offset] = source.a as f32;
+    buffer[offset + 1] = source.b as f32;
+    buffer[offset + 2] = source.c as f32;
+    buffer[offset + 3] = source.d as f32;
+    buffer[offset + 4] = source.tx as f32;
+    buffer[offset + 5] = source.ty as f32;
 }
 
 fn write_matrix_values(
-    buffer: &mut [f32],
+    buffer: &mut [f64],
     offset: usize,
-    a: f32,
-    b: f32,
-    c: f32,
-    d: f32,
-    tx: f32,
-    ty: f32,
+    a: f64,
+    b: f64,
+    c: f64,
+    d: f64,
+    tx: f64,
+    ty: f64,
 ) {
     buffer[offset] = a;
     buffer[offset + 1] = b;

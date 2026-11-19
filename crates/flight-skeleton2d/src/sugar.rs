@@ -170,6 +170,7 @@ impl Skeleton2DMethods for Skeleton2D {
 
 #[cfg(feature = "object-api")]
 impl RegionAttachment2D {
+    // flight-lint: allow(f32) reads or writes the TS Float32Array buffer lane; scalar math is f64 and narrows once at each store
     pub fn compute_vertices(&self, out: &mut [f32], skeleton: &Skeleton2D, bone_index: i32) {
         compute_skeleton_2d_region_attachment_vertices(out, self, skeleton, bone_index);
     }
@@ -177,6 +178,7 @@ impl RegionAttachment2D {
 
 #[cfg(feature = "object-api")]
 impl MeshAttachment2D {
+    // flight-lint: allow(f32) reads or writes the TS Float32Array buffer lane; scalar math is f64 and narrows once at each store
     pub fn deform(
         &self,
         out: &mut [f32],
@@ -191,6 +193,7 @@ impl MeshAttachment2D {
 
 #[cfg(feature = "object-api")]
 impl PathAttachment2D {
+    // flight-lint: allow(f32) reads or writes the TS Float32Array buffer lane; scalar math is f64 and narrows once at each store
     pub fn deform(
         &self,
         out: &mut Path,
@@ -209,13 +212,14 @@ impl PointAttachment2D {
         compute_skeleton_2d_point_attachment_position(out, self, skeleton, bone_index);
     }
 
-    pub fn compute_rotation(&self, skeleton: &Skeleton2D, bone_index: i32) -> f32 {
+    pub fn compute_rotation(&self, skeleton: &Skeleton2D, bone_index: i32) -> f64 {
         return compute_skeleton_2d_point_attachment_rotation(self, skeleton, bone_index);
     }
 }
 
 #[cfg(feature = "object-api")]
 impl BoundingBoxAttachment2D {
+    // flight-lint: allow(f32) reads or writes the TS Float32Array buffer lane; scalar math is f64 and narrows once at each store
     pub fn compute_vertices(
         &self,
         out: &mut [f32],
@@ -232,6 +236,7 @@ impl BoundingBoxAttachment2D {
 
 #[cfg(feature = "object-api")]
 impl ClippingAttachment2D {
+    // flight-lint: allow(f32) reads or writes the TS Float32Array buffer lane; scalar math is f64 and narrows once at each store
     pub fn compute_vertices(
         &self,
         out: &mut [f32],

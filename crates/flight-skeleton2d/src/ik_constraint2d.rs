@@ -23,8 +23,8 @@ pub fn register_skeleton_2d_ik_constraint_solver(registry: &mut Skeleton2DConstr
 fn solve_chain1(
     skeleton: &mut Skeleton2D,
     bone_index: i32,
-    target_x: f32,
-    target_y: f32,
+    target_x: f64,
+    target_y: f64,
     ik: &Skeleton2DIkConstraint,
 ) {
     if bone_index < 0 || bone_index as usize >= skeleton.bones.len() {
@@ -65,8 +65,8 @@ fn solve_chain2(
     skeleton: &mut Skeleton2D,
     parent_index: i32,
     child_index: i32,
-    target_x: f32,
-    target_y: f32,
+    target_x: f64,
+    target_y: f64,
     ik: &Skeleton2DIkConstraint,
 ) {
     if parent_index < 0
@@ -113,7 +113,7 @@ fn solve_chain2(
         let cos_joint = (parent_length * parent_length + child_length * child_length
             - reach * reach)
             / (2.0 * parent_length * child_length);
-        std::f32::consts::PI - cos_joint.clamp(-1.0, 1.0).acos()
+        std::f64::consts::PI - cos_joint.clamp(-1.0, 1.0).acos()
     };
     let cos_parent = (parent_length * parent_length + reach * reach - child_length * child_length)
         / (2.0 * parent_length * reach);
@@ -169,8 +169,8 @@ pub fn solve_skeleton_2d_ik_constraint(
 fn to_parent_space(
     skeleton: &Skeleton2D,
     bone_index: i32,
-    x: f32,
-    y: f32,
+    x: f64,
+    y: f64,
 ) -> Option<flight_geometry::Vector2> {
     let parent_index = skeleton.bones[bone_index as usize].parent_index;
     if parent_index < 0 {
@@ -191,7 +191,7 @@ fn to_parent_space(
     ));
 }
 
-fn wrap_angle(degrees: f32) -> f32 {
+fn wrap_angle(degrees: f64) -> f64 {
     let mut value = degrees % 360.0;
     if value > 180.0 {
         value -= 360.0;
@@ -201,4 +201,4 @@ fn wrap_angle(degrees: f32) -> f32 {
     return value;
 }
 
-const MINIMUM_DETERMINANT: f32 = 1e-9;
+const MINIMUM_DETERMINANT: f64 = 1e-9;

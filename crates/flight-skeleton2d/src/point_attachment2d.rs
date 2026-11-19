@@ -31,7 +31,7 @@ pub fn compute_skeleton_2d_point_attachment_rotation(
     attachment: &PointAttachment2D,
     skeleton: &Skeleton2D,
     bone_index: i32,
-) -> f32 {
+) -> f64 {
     let world = &skeleton.world_matrices;
     if bone_index < 0 || bone_index as usize * SKELETON_2D_MATRIX_STRIDE >= world.len() {
         return attachment.rotation;

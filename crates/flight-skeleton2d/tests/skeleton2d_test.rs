@@ -5,13 +5,13 @@ use flight_skeleton2d::contract::*;
 
 use crate::support::*;
 
-fn root_rotated(rotation: f32) -> Bone2D {
+fn root_rotated(rotation: f64) -> Bone2D {
     let mut value = bone();
     value.rotation = rotation;
     return value;
 }
 
-fn child(parent_index: i32, x: f32, y: f32) -> Bone2D {
+fn child(parent_index: i32, x: f64, y: f64) -> Bone2D {
     let mut value = bone();
     value.parent_index = parent_index;
     value.x = x;
@@ -62,15 +62,18 @@ mod compute_skeleton_2d_bone_matrices {
         compute_skeleton_2d_bone_matrices(&mut value);
         for i in 0..value.bones.len() {
             let o = i * SKELETON_2D_MATRIX_STRIDE;
-            assert!(close(value.bone_matrices[o], 1.0));
-            assert!(close(value.bone_matrices[o + 1], 0.0));
-            assert!(close(value.bone_matrices[o + 3], 1.0));
-            assert!(close(value.bone_matrices[o + 4], 0.0));
+            assert!(close(f64::from(value.bone_matrices[o]), 1.0));
+            assert!(close(f64::from(value.bone_matrices[o + 1]), 0.0));
+            assert!(close(f64::from(value.bone_matrices[o + 3]), 1.0));
+            assert!(close(f64::from(value.bone_matrices[o + 4]), 0.0));
         }
         value.bones[0].rotation = 90.0;
         compute_skeleton_2d_world_transforms(&mut value);
         compute_skeleton_2d_bone_matrices(&mut value);
-        assert!((value.bone_matrices[0] - 1.0).abs() > 1e-3 || value.bone_matrices[1].abs() > 1e-3);
+        assert!(
+            (f64::from(value.bone_matrices[0]) - 1.0).abs() > 1e-3
+                || f64::from(value.bone_matrices[1]).abs() > 1e-3
+        );
     }
 }
 
@@ -145,8 +148,8 @@ mod compute_skeleton_2d_world_transforms {
         let mut value = skeleton(vec![root_rotated(0.0)], None);
         value.bones[0].shear_x = 30.0;
         compute_skeleton_2d_world_transforms(&mut value);
-        assert!(close(value.world_matrices[0], 30.0f32.to_radians().cos()));
-        assert!(close(value.world_matrices[1], 30.0f32.to_radians().sin()));
+        assert!(close(value.world_matrices[0], 30.0f64.to_radians().cos()));
+        assert!(close(value.world_matrices[1], 30.0f64.to_radians().sin()));
     }
 }
 
@@ -206,6 +209,23 @@ mod get_skeleton_2d_bone_index_by_name {
 
 mod get_skeleton_2d_bone_world_matrix {
     use super::*;
+
+    #[test]
+    fn keeps_a_half_unit_root_translation_through_the_world_matrices() {
+        // f32 spacing at 1e9 is 64: an f32 world buffer would hold 1e9 for both bones.
+        let mut root = bone();
+        root.x = 1_000_000_000.5;
+        let mut child = bone();
+        child.parent_index = 0;
+        child.x = 0.25;
+        let mut value = skeleton(vec![root, child], None);
+        compute_skeleton_2d_world_transforms(&mut value);
+        let mut out = create_matrix(0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
+        assert!(get_skeleton_2d_bone_world_matrix(&mut out, &value, 0));
+        assert_eq!(out.tx, 1_000_000_000.5);
+        assert!(get_skeleton_2d_bone_world_matrix(&mut out, &value, 1));
+        assert_eq!(out.tx, 1_000_000_000.75);
+    }
 
     #[test]
     fn writes_in_range_and_returns_false_out_of_range() {
@@ -295,7 +315,7 @@ mod initialize_skeleton_2d {
             vec![2.0; 6],
             vec![3.0; 6],
         );
-        assert_eq!(value.bone_matrices[0], 1.0);
+        assert_eq!(f64::from(value.bone_matrices[0]), 1.0);
         assert_eq!(value.inverse_bind_matrices[0], 2.0);
         assert_eq!(value.world_matrices[0], 3.0);
     }
@@ -337,8 +357,8 @@ mod set_skeleton_2d_bind_pose {
         compute_skeleton_2d_world_transforms(&mut value);
         set_skeleton_2d_bind_pose(&mut value);
         compute_skeleton_2d_bone_matrices(&mut value);
-        assert!(close(value.bone_matrices[0], 1.0));
-        assert!(close(value.bone_matrices[3], 1.0));
+        assert!(close(f64::from(value.bone_matrices[0]), 1.0));
+        assert!(close(f64::from(value.bone_matrices[3]), 1.0));
     }
 }
 
@@ -399,7 +419,7 @@ mod source_formula_parity {
     use super::*;
     use std::sync::Arc;
 
-    fn root(x: f32, y: f32, rotation: f32) -> Bone2D {
+    fn root(x: f64, y: f64, rotation: f64) -> Bone2D {
         let mut value = bone();
         value.x = x;
         value.y = y;
@@ -415,12 +435,12 @@ mod source_formula_parity {
         compute_skeleton_2d_bone_matrices(&mut value);
         for index in 0..value.bones.len() {
             let offset = index * SKELETON_2D_MATRIX_STRIDE;
-            assert!(close(value.bone_matrices[offset], 1.0));
-            assert!(close(value.bone_matrices[offset + 1], 0.0));
-            assert!(close(value.bone_matrices[offset + 2], 0.0));
-            assert!(close(value.bone_matrices[offset + 3], 1.0));
-            assert!(close(value.bone_matrices[offset + 4], 0.0));
-            assert!(close(value.bone_matrices[offset + 5], 0.0));
+            assert!(close(f64::from(value.bone_matrices[offset]), 1.0));
+            assert!(close(f64::from(value.bone_matrices[offset + 1]), 0.0));
+            assert!(close(f64::from(value.bone_matrices[offset + 2]), 0.0));
+            assert!(close(f64::from(value.bone_matrices[offset + 3]), 1.0));
+            assert!(close(f64::from(value.bone_matrices[offset + 4]), 0.0));
+            assert!(close(f64::from(value.bone_matrices[offset + 5]), 0.0));
         }
     }
 
@@ -578,7 +598,7 @@ mod source_formula_parity {
         let mut value = skeleton(vec![root(0.0, 0.0, 0.0)], None);
         value.bones[0].shear_x = 45.0;
         compute_skeleton_2d_world_transforms(&mut value);
-        let root2 = std::f32::consts::FRAC_1_SQRT_2;
+        let root2 = std::f64::consts::FRAC_1_SQRT_2;
         assert!(close(value.world_matrices[0], root2));
         assert!(close(value.world_matrices[1], root2));
         assert!(close(value.world_matrices[2], 0.0));
@@ -720,10 +740,10 @@ mod source_formula_parity {
         compute_skeleton_2d_world_transforms(&mut value);
         set_skeleton_2d_bind_pose(&mut value);
         compute_skeleton_2d_bone_matrices(&mut value);
-        assert!(close(value.bone_matrices[0], 1.0));
-        assert!(close(value.bone_matrices[3], 1.0));
-        assert!(close(value.bone_matrices[4], 0.0));
-        assert!(close(value.bone_matrices[5], 0.0));
+        assert!(close(f64::from(value.bone_matrices[0]), 1.0));
+        assert!(close(f64::from(value.bone_matrices[3]), 1.0));
+        assert!(close(f64::from(value.bone_matrices[4]), 0.0));
+        assert!(close(f64::from(value.bone_matrices[5]), 0.0));
     }
 
     #[test]

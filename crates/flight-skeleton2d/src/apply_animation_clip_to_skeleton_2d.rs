@@ -17,7 +17,7 @@ pub fn apply_animation_clip_to_skeleton_2d(
     clip: &AnimationClip,
     setup: &Skeleton2D,
     pose: &mut Skeleton2D,
-    time: f32,
+    time: f64,
     registry: &Skeleton2DAnimationTargetBinderRegistry,
     guards: &Skeleton2DGuardState,
 ) {

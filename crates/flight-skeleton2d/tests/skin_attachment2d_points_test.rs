@@ -37,7 +37,7 @@ mod skin_skeleton_2d_attachment_points {
             "Test",
             &empty_guards(),
         );
-        assert!(close(out[0], 5.0));
+        assert!(close(f64::from(out[0]), 5.0));
     }
 
     #[test]
@@ -54,7 +54,7 @@ mod skin_skeleton_2d_attachment_points {
             "Test",
             &empty_guards(),
         );
-        assert!(close(out[0], 5.0));
+        assert!(close(f64::from(out[0]), 5.0));
     }
 
     #[test]
@@ -72,7 +72,7 @@ mod skin_skeleton_2d_attachment_points {
             "Test",
             &guards,
         );
-        assert!(close(out[0], 5.0));
+        assert!(close(f64::from(out[0]), 5.0));
         assert_eq!(reports.lock().unwrap().len(), 1);
     }
 
@@ -91,7 +91,7 @@ mod skin_skeleton_2d_attachment_points {
             &guards,
         );
         assert_eq!(reports.lock().unwrap().len(), 1);
-        assert!(close(out[0], 1.0));
+        assert!(close(f64::from(out[0]), 1.0));
     }
 
     #[test]
@@ -161,8 +161,8 @@ mod source_skin_points_parity {
             "test",
             &empty_guards(),
         );
-        assert!(close(out[0], -2.0), "x {}", out[0]);
-        assert!(close(out[1], 1.0), "y {}", out[1]);
+        assert!(close(f64::from(out[0]), -2.0), "x {}", out[0]);
+        assert!(close(f64::from(out[1]), 1.0), "y {}", out[1]);
     }
 
     #[test]
@@ -179,7 +179,7 @@ mod source_skin_points_parity {
             "test",
             &empty_guards(),
         );
-        assert!(close(out[0], 5.0));
+        assert!(close(f64::from(out[0]), 5.0));
     }
 
     #[test]
@@ -197,7 +197,7 @@ mod source_skin_points_parity {
             "test",
             &guards,
         );
-        assert!(close(out[0], 5.0));
+        assert!(close(f64::from(out[0]), 5.0));
         let reports = reports.lock().unwrap();
         assert_eq!(reports.len(), 1);
         assert_eq!(reports[0].1, 8);

@@ -141,17 +141,17 @@ pub const TRANSFORM_MODE_2D_NO_SCALE_OR_REFLECTION: TransformInherit2D = Transfo
 /// (degrees), parent link, inherit mode and length.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Bone2D {
-    pub length: f32,
+    pub length: f64,
     pub name: Option<String>,
     pub parent_index: i32,
-    pub rotation: f32,
-    pub scale_x: f32,
-    pub scale_y: f32,
-    pub shear_x: f32,
-    pub shear_y: f32,
+    pub rotation: f64,
+    pub scale_x: f64,
+    pub scale_y: f64,
+    pub shear_x: f64,
+    pub shear_y: f64,
     pub transform_mode: TransformInherit2D,
-    pub x: f32,
-    pub y: f32,
+    pub x: f64,
+    pub y: f64,
 }
 
 /// A draw slot: the bone it follows, the attachment it shows, its tint and its deform offsets.
@@ -166,6 +166,7 @@ pub struct Slot2D {
 
 /// The per-vertex offset stream in effect on a slot, paired with the attachment it was authored for.
 #[derive(Clone)]
+// flight-lint: allow(f32) its buffers are the TS Float32Array lane and stay f32
 pub struct Skeleton2DSlotDeform {
     pub attachment: Option<Ref<dyn Attachment2D>>,
     pub offsets: Vec<f32>,
@@ -173,6 +174,7 @@ pub struct Skeleton2DSlotDeform {
 
 /// The rig: flat bone arrays plus the world, inverse-bind and palette buffers, its wardrobe and slots.
 #[derive(Default)]
+// flight-lint: allow(f32) the bone and inverse-bind palettes are the Float32Array skinning lane; world matrices are f64
 pub struct Skeleton2D {
     runtime: EntityRuntimeSlot,
     pub bone_matrices: Vec<f32>,
@@ -180,12 +182,13 @@ pub struct Skeleton2D {
     pub inverse_bind_matrices: Vec<f32>,
     pub skins: Option<Vec<AttachmentSkin2D>>,
     pub slots: Option<Vec<Slot2D>>,
-    pub world_matrices: Vec<f32>,
+    pub world_matrices: Vec<f64>,
 }
 
 /// A weighted mesh's per-vertex bone binding (TS `Skin2D`): influence counts plus the flat
 /// (boneIndex, localX, localY, weight) stream.
 #[derive(Default)]
+// flight-lint: allow(f32) its buffers are the TS Float32Array lane and stay f32
 pub struct Skin2D {
     runtime: EntityRuntimeSlot,
     pub influence_counts: Vec<u16>,
@@ -207,19 +210,20 @@ pub type Attachment2DRef = Ref<dyn Attachment2D>;
 #[derive(Default)]
 pub struct RegionAttachment2D {
     runtime: EntityRuntimeSlot,
-    pub height: f32,
+    pub height: f64,
     pub kind: Kind,
     pub name: Option<String>,
-    pub rotation: f32,
-    pub scale_x: f32,
-    pub scale_y: f32,
-    pub width: f32,
-    pub x: f32,
-    pub y: f32,
+    pub rotation: f64,
+    pub scale_x: f64,
+    pub scale_y: f64,
+    pub width: f64,
+    pub x: f64,
+    pub y: f64,
 }
 
 /// A deformable triangle mesh (TS `MeshAttachment2D`).
 #[derive(Default)]
+// flight-lint: allow(f32) its buffers are the TS Float32Array lane and stay f32
 pub struct MeshAttachment2D {
     runtime: EntityRuntimeSlot,
     pub kind: Kind,
@@ -233,6 +237,7 @@ pub struct MeshAttachment2D {
 
 /// A deformable vector path (TS `PathAttachment2D`).
 #[derive(Default)]
+// flight-lint: allow(f32) its buffers are the TS Float32Array lane and stay f32
 pub struct PathAttachment2D {
     runtime: EntityRuntimeSlot,
     pub commands: Vec<u8>,
@@ -250,13 +255,14 @@ pub struct PointAttachment2D {
     runtime: EntityRuntimeSlot,
     pub kind: Kind,
     pub name: Option<String>,
-    pub rotation: f32,
-    pub x: f32,
-    pub y: f32,
+    pub rotation: f64,
+    pub x: f64,
+    pub y: f64,
 }
 
 /// A closed polygon for hit testing (TS `BoundingBoxAttachment2D`).
 #[derive(Default)]
+// flight-lint: allow(f32) its buffers are the TS Float32Array lane and stay f32
 pub struct BoundingBoxAttachment2D {
     runtime: EntityRuntimeSlot,
     pub kind: Kind,
@@ -268,6 +274,7 @@ pub struct BoundingBoxAttachment2D {
 
 /// A closed polygon clipping a draw-order range (TS `ClippingAttachment2D`).
 #[derive(Default)]
+// flight-lint: allow(f32) its buffers are the TS Float32Array lane and stay f32
 pub struct ClippingAttachment2D {
     runtime: EntityRuntimeSlot,
     pub end_slot_index: i32,
@@ -296,7 +303,7 @@ pub struct AttachmentSkin2D {
 /// The base contract for a pose constraint (TS `Skeleton2DConstraint`, an open family).
 pub trait Skeleton2DConstraint: Entity + Any + Send + Sync {
     fn kind(&self) -> &str;
-    fn mix(&self) -> f32;
+    fn mix(&self) -> f64;
     fn as_any(&self) -> &dyn Any;
 }
 
@@ -316,7 +323,7 @@ pub struct Skeleton2DIkConstraint {
     pub bone_indices: Vec<i32>,
     pub compress: bool,
     pub kind: Kind,
-    pub mix: f32,
+    pub mix: f64,
     pub stretch: bool,
     pub target_bone_index: i32,
 }
@@ -328,14 +335,14 @@ pub struct Skeleton2DPathConstraint {
     runtime: EntityRuntimeSlot,
     pub bone_indices: Vec<i32>,
     pub kind: Kind,
-    pub mix: f32,
-    pub mix_rotate: f32,
-    pub mix_x: f32,
-    pub mix_y: f32,
-    pub position: f32,
+    pub mix: f64,
+    pub mix_rotate: f64,
+    pub mix_x: f64,
+    pub mix_y: f64,
+    pub position: f64,
     pub position_mode: String,
     pub rotate_mode: String,
-    pub spacing: f32,
+    pub spacing: f64,
     pub spacing_mode: String,
     pub target_slot_index: i32,
 }
@@ -347,19 +354,19 @@ pub struct Skeleton2DTransformConstraint {
     runtime: EntityRuntimeSlot,
     pub bone_indices: Vec<i32>,
     pub kind: Kind,
-    pub mix: f32,
-    pub mix_rotate: f32,
-    pub mix_scale_x: f32,
-    pub mix_scale_y: f32,
-    pub mix_shear_y: f32,
-    pub mix_x: f32,
-    pub mix_y: f32,
-    pub offset_rotation: f32,
-    pub offset_scale_x: f32,
-    pub offset_scale_y: f32,
-    pub offset_shear_y: f32,
-    pub offset_x: f32,
-    pub offset_y: f32,
+    pub mix: f64,
+    pub mix_rotate: f64,
+    pub mix_scale_x: f64,
+    pub mix_scale_y: f64,
+    pub mix_shear_y: f64,
+    pub mix_x: f64,
+    pub mix_y: f64,
+    pub offset_rotation: f64,
+    pub offset_scale_x: f64,
+    pub offset_scale_y: f64,
+    pub offset_shear_y: f64,
+    pub offset_x: f64,
+    pub offset_y: f64,
     pub target_bone_index: i32,
 }
 
@@ -404,7 +411,7 @@ pub type Skeleton2DAnimationTargetBinder = Arc<
             &Skeleton2D,
             &mut Skeleton2D,
             &Unknown,
-            f32,
+            f64,
             &crate::skeleton2d_guards::Skeleton2DGuardState,
         ) + Send
         + Sync,
@@ -455,6 +462,7 @@ pub struct Skeleton2DDeformAnimationTarget {
 
 /// A rig's draw-order timeline as the file states it (TS `Skeleton2DDrawOrderTimeline`).
 #[derive(Clone, Debug, Default, PartialEq)]
+// flight-lint: allow(f32) the draw-order timeline keeps the file's f32 times and orderings
 pub struct Skeleton2DDrawOrderTimeline {
     pub orderings: Vec<f32>,
     pub times: Vec<f32>,
@@ -563,7 +571,7 @@ impl Skeleton2DConstraint for Skeleton2DIkConstraint {
     fn kind(&self) -> &str {
         return &self.kind;
     }
-    fn mix(&self) -> f32 {
+    fn mix(&self) -> f64 {
         return self.mix;
     }
 }
@@ -575,7 +583,7 @@ impl Skeleton2DConstraint for Skeleton2DPathConstraint {
     fn kind(&self) -> &str {
         return &self.kind;
     }
-    fn mix(&self) -> f32 {
+    fn mix(&self) -> f64 {
         return self.mix;
     }
 }
@@ -587,7 +595,7 @@ impl Skeleton2DConstraint for Skeleton2DTransformConstraint {
     fn kind(&self) -> &str {
         return &self.kind;
     }
-    fn mix(&self) -> f32 {
+    fn mix(&self) -> f64 {
         return self.mix;
     }
 }

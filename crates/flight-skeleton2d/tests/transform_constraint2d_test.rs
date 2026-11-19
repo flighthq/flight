@@ -4,7 +4,7 @@ use flight_skeleton2d::contract::*;
 
 use crate::support::*;
 
-fn transform(bones: Vec<i32>, target: i32, mix: f32) -> Skeleton2DTransformConstraint {
+fn transform(bones: Vec<i32>, target: i32, mix: f64) -> Skeleton2DTransformConstraint {
     let mut value: Skeleton2DTransformConstraint = flight_entity::allocate_entity();
     value.kind = String::from(SKELETON_2D_TRANSFORM_CONSTRAINT_KIND);
     value.bone_indices = bones;
@@ -19,7 +19,7 @@ fn transform(bones: Vec<i32>, target: i32, mix: f32) -> Skeleton2DTransformConst
     return value;
 }
 
-fn bone_at(x: f32, rotation: f32, parent: i32) -> Bone2D {
+fn bone_at(x: f64, rotation: f64, parent: i32) -> Bone2D {
     let mut value = bone();
     value.x = x;
     value.rotation = rotation;
@@ -136,7 +136,7 @@ mod source_transform_parity {
 
     #[test]
     fn offsets_each_copied_channel_by_its_own_offset_field() {
-        let cases: [(&str, fn(&mut Skeleton2DTransformConstraint), f32); 6] = [
+        let cases: [(&str, fn(&mut Skeleton2DTransformConstraint), f64); 6] = [
             (
                 "rotation",
                 |c| {

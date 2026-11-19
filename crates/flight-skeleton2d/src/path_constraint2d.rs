@@ -62,14 +62,14 @@ fn resolve_path_attachment(skeleton: &Skeleton2D, slot_index: i32) -> Option<Pat
 }
 
 // flight-lint: allow(f64) arc-length spacing is measured against the flight-path f64 total
-fn resolve_spacing(constraint: &Skeleton2DPathConstraint, bone_length: f32, total: f64) -> f64 {
+fn resolve_spacing(constraint: &Skeleton2DPathConstraint, bone_length: f64, total: f64) -> f64 {
     if constraint.spacing_mode == SKELETON_2D_PATH_SPACING_MODE_PERCENT {
-        return constraint.spacing as f64 * total;
+        return constraint.spacing * total;
     }
     if constraint.spacing_mode == SKELETON_2D_PATH_SPACING_MODE_LENGTH {
-        return constraint.spacing as f64 * bone_length as f64;
+        return constraint.spacing * bone_length;
     }
-    return constraint.spacing as f64;
+    return constraint.spacing;
 }
 
 /// The solver body with the caller-owned guard state (D5) threaded explicitly.
@@ -110,12 +110,12 @@ pub fn solve_path_constraint_with(
     let translate_x_mix = path_constraint.mix_x * mix;
     let translate_y_mix = path_constraint.mix_y * mix;
     let mut distance = if path_constraint.position_mode == SKELETON_2D_PATH_POSITION_MODE_PERCENT {
-        path_constraint.position as f64 * total
+        path_constraint.position * total
     } else {
-        path_constraint.position as f64
+        path_constraint.position
     };
-    let mut positions = vec![0.0f32; count * 2];
-    let mut tangents = vec![0.0f32; count * 2];
+    let mut positions = vec![0.0f64; count * 2];
+    let mut tangents = vec![0.0f64; count * 2];
     for i in 0..count {
         let bone_index = chain[i];
         let bone_length = if bone_index >= 0 && (bone_index as usize) < skeleton.bones.len() {
@@ -199,8 +199,8 @@ pub fn solve_skeleton_2d_path_constraint(
 fn to_parent_space(
     skeleton: &Skeleton2D,
     bone_index: i32,
-    x: f32,
-    y: f32,
+    x: f64,
+    y: f64,
 ) -> Option<flight_geometry::Vector2> {
     let parent_index = skeleton.bones[bone_index as usize].parent_index;
     if parent_index < 0 {
@@ -221,7 +221,7 @@ fn to_parent_space(
     ));
 }
 
-fn wrap_angle(degrees: f32) -> f32 {
+fn wrap_angle(degrees: f64) -> f64 {
     let mut value = degrees % 360.0;
     if value > 180.0 {
         value -= 360.0;
@@ -231,4 +231,4 @@ fn wrap_angle(degrees: f32) -> f32 {
     return value;
 }
 
-const MINIMUM_DETERMINANT: f32 = 1e-9;
+const MINIMUM_DETERMINANT: f64 = 1e-9;

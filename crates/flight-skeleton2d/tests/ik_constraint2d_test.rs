@@ -9,7 +9,7 @@ use crate::support::*;
 fn ik(
     bones: Vec<i32>,
     target: i32,
-    mix: f32,
+    mix: f64,
     stretch: bool,
     compress: bool,
     bend_positive: bool,
@@ -25,7 +25,7 @@ fn ik(
     return value;
 }
 
-fn bone_at(x: f32, y: f32, length: f32, parent: i32) -> Bone2D {
+fn bone_at(x: f64, y: f64, length: f64, parent: i32) -> Bone2D {
     let mut value = bone();
     value.x = x;
     value.y = y;
@@ -34,7 +34,7 @@ fn bone_at(x: f32, y: f32, length: f32, parent: i32) -> Bone2D {
     return value;
 }
 
-fn single_chain(target_x: f32, target_y: f32) -> Skeleton2D {
+fn single_chain(target_x: f64, target_y: f64) -> Skeleton2D {
     let mut value = skeleton(
         vec![
             bone_at(0.0, 0.0, 10.0, -1),
@@ -46,7 +46,7 @@ fn single_chain(target_x: f32, target_y: f32) -> Skeleton2D {
     return value;
 }
 
-fn tip(skeleton: &Skeleton2D, bone_index: i32) -> (f32, f32) {
+fn tip(skeleton: &Skeleton2D, bone_index: i32) -> (f64, f64) {
     let o = bone_index as usize * SKELETON_2D_MATRIX_STRIDE;
     let bone = &skeleton.bones[bone_index as usize];
     return (
@@ -207,7 +207,7 @@ mod source_ik_parity {
         return value;
     }
 
-    fn chain(parent_length: f32, child_length: f32, target_x: f32, target_y: f32) -> Skeleton2D {
+    fn chain(parent_length: f64, child_length: f64, target_x: f64, target_y: f64) -> Skeleton2D {
         let mut value = skeleton(
             vec![
                 bone_at(0.0, 0.0, parent_length, -1),
@@ -421,13 +421,13 @@ mod source_ik_parity {
 
     #[test]
     fn places_the_tip_correctly_across_the_whole_reach_space() {
-        let lengths = [10.0f32, 6.0, 3.0, 12.5];
-        let targets = [-8.0f32, -2.0, -0.5, 0.5, 2.0, 5.0, 9.0, 30.0];
+        let lengths = [10.0f64, 6.0, 3.0, 12.5];
+        let targets = [-8.0f64, -2.0, -0.5, 0.5, 2.0, 5.0, 9.0, 30.0];
         let mut checked = 0;
         for parent_length in lengths {
             for child_length in lengths {
                 for target_x in targets {
-                    for target_y in [0.0f32, -3.0, 4.5] {
+                    for target_y in [0.0f64, -3.0, 4.5] {
                         for bend_positive in [true, false] {
                             let mut value = chain(parent_length, child_length, target_x, target_y);
                             solve_skeleton_2d_ik_constraint(

@@ -30,8 +30,8 @@ fn rig(attachment: Option<Attachment2DRef>) -> (Skeleton2D, Skeleton2D) {
 fn deform_channel(
     attachment: Option<Attachment2DRef>,
     slot_index: i32,
-    times: Vec<f32>,
-    values: Vec<f32>,
+    times: Vec<f64>,
+    values: Vec<f64>,
     components: usize,
 ) -> AnimationChannel {
     let target = Skeleton2DDeformAnimationTarget {

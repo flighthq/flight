@@ -10,6 +10,7 @@ use crate::types::*;
 /// are adopted, not copied, so an importer's final-length buffers are what the deformers read.
 /// Both required defining buffers remain positional under D23 (Principal c0f9227c).
 // flight-lint: allow(conform-array) Rust adopts owned Vec streams where TS passes shared typed-array references
+// flight-lint: allow(f32) reads or writes the TS Float32Array buffer lane; scalar math is f64 and narrows once at each store
 pub fn create_skin_2d(influence_counts: Vec<u16>, influences: Vec<f32>) -> Skin2D {
     let mut out: Skin2D = allocate_entity();
     initialize_skin_2d(&mut out, influence_counts, influences);
@@ -18,6 +19,7 @@ pub fn create_skin_2d(influence_counts: Vec<u16>, influences: Vec<f32>) -> Skin2
 
 /// The construction initializer of `create_skin_2d` (TS `initializeSkin2D`).
 // flight-lint: allow(conform-array) Rust adopts an owned Vec<f32> where TS passes a shared Float32Array reference
+// flight-lint: allow(f32) reads or writes the TS Float32Array buffer lane; scalar math is f64 and narrows once at each store
 pub fn initialize_skin_2d(out: &mut Skin2D, influence_counts: Vec<u16>, influences: Vec<f32>) {
     out.influence_counts = influence_counts;
     out.influences = influences;

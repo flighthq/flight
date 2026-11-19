@@ -21,7 +21,7 @@ fn box_attachment(
 mod compute_skeleton_2d_bounding_box_attachment_vertices {
     use super::*;
 
-    fn translated(x: f32, y: f32) -> Skeleton2D {
+    fn translated(x: f64, y: f64) -> Skeleton2D {
         let mut root = bone();
         root.x = x;
         root.y = y;
@@ -66,7 +66,7 @@ mod compute_skeleton_2d_bounding_box_attachment_vertices {
             None,
             &empty_guards(),
         );
-        assert!(close(out[0], 5.0));
+        assert!(close(f64::from(out[0]), 5.0));
     }
 
     #[test]
@@ -109,10 +109,10 @@ mod source_bounding_box_parity {
             None,
             &empty_guards(),
         );
-        assert!(close(out[0], 5.0));
-        assert!(close(out[1], 2.0));
-        assert!(close(out[2], 2.0));
-        assert!(close(out[3], 0.0));
+        assert!(close(f64::from(out[0]), 5.0));
+        assert!(close(f64::from(out[1]), 2.0));
+        assert!(close(f64::from(out[2]), 2.0));
+        assert!(close(f64::from(out[3]), 0.0));
     }
 
     #[test]
@@ -138,8 +138,8 @@ mod source_bounding_box_parity {
             None,
             &empty_guards(),
         );
-        assert!(close(out[0], 0.0));
-        assert!(close(out[2], 5.0));
+        assert!(close(f64::from(out[0]), 0.0));
+        assert!(close(f64::from(out[2]), 5.0));
     }
 
     #[test]
@@ -158,7 +158,7 @@ mod source_bounding_box_parity {
             Some(&[3.0, 4.0]),
             &empty_guards(),
         );
-        assert!(close(out[0], 4.0));
-        assert!(close(out[1], 5.0));
+        assert!(close(f64::from(out[0]), 4.0));
+        assert!(close(f64::from(out[1]), 5.0));
     }
 }

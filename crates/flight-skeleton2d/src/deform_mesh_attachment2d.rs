@@ -9,6 +9,7 @@ use crate::types::*;
 /// Deforms a mesh's vertices into flat interleaved world positions (TS
 /// `deformSkeleton2DMeshAttachment`).
 // flight-lint: allow(conform-params) D5: the caller-owned guard state is threaded explicitly instead of a module-global slot
+// flight-lint: allow(f32) reads or writes the TS Float32Array buffer lane; scalar math is f64 and narrows once at each store
 pub fn deform_skeleton_2d_mesh_attachment(
     out: &mut [f32],
     attachment: &MeshAttachment2D,

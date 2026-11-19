@@ -112,8 +112,8 @@ pub fn solve_skeleton_2d_transform_constraint(
 fn to_parent_space(
     skeleton: &Skeleton2D,
     bone_index: i32,
-    x: f32,
-    y: f32,
+    x: f64,
+    y: f64,
 ) -> Option<flight_geometry::Vector2> {
     let parent_index = skeleton.bones[bone_index as usize].parent_index;
     if parent_index < 0 {
@@ -134,7 +134,7 @@ fn to_parent_space(
     ));
 }
 
-fn wrap_angle(degrees: f32) -> f32 {
+fn wrap_angle(degrees: f64) -> f64 {
     let mut value = degrees % 360.0;
     if value > 180.0 {
         value -= 360.0;
@@ -144,4 +144,4 @@ fn wrap_angle(degrees: f32) -> f32 {
     return value;
 }
 
-const MINIMUM_DETERMINANT: f32 = 1e-9;
+const MINIMUM_DETERMINANT: f64 = 1e-9;

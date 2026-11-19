@@ -8,6 +8,7 @@ use crate::types::*;
 /// `explainSkeleton2DDeformLength`). Weighted streams are addressed per influence, rigid ones per
 /// vertex.
 // flight-lint: allow(conform-array) typed-array inputs map to slices; no allocation or identity change
+// flight-lint: allow(f32) reads or writes the TS Float32Array buffer lane; scalar math is f64 and narrows once at each store
 pub fn explain_skeleton_2d_deform_length(
     skin: Option<&Skin2D>,
     vertices: Option<&[f32]>,

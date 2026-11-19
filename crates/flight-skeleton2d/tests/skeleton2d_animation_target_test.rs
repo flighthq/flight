@@ -12,8 +12,8 @@ use flight_skeleton2d::contract::*;
 use crate::support::*;
 
 fn handle_channel(
-    times: Vec<f32>,
-    values: Vec<f32>,
+    times: Vec<f64>,
+    values: Vec<f64>,
     components: usize,
     interpolation: AnimationInterpolation,
     kind: &str,

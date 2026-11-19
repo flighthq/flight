@@ -7,6 +7,7 @@ use crate::types::*;
 /// The offsets in effect on a slot, only when authored for the attachment it currently shows (TS
 /// `getSkeleton2DSlotDeformOffsets`).
 // flight-lint: allow(conform-array) Rust adopts an owned Vec<f32> where TS passes a shared Float32Array reference
+// flight-lint: allow(f32) reads or writes the TS Float32Array buffer lane; scalar math is f64 and narrows once at each store
 pub fn get_skeleton_2d_slot_deform_offsets(slot: &Slot2D) -> Option<&[f32]> {
     let deform = slot.deform.as_ref()?;
     let shown = slot.attachment.as_ref();
@@ -22,6 +23,7 @@ pub fn get_skeleton_2d_slot_deform_offsets(slot: &Slot2D) -> Option<&[f32]> {
 /// Writes offsets onto a slot for a named attachment, reusing the existing buffer at the same length
 /// (TS `setSkeleton2DSlotDeform`). Passing `None` clears.
 // flight-lint: allow(conform-array) Rust adopts an owned Vec<f32> where TS passes a shared Float32Array reference
+// flight-lint: allow(f32) reads or writes the TS Float32Array buffer lane; scalar math is f64 and narrows once at each store
 pub fn set_skeleton_2d_slot_deform<'a>(
     slot: &'a mut Slot2D,
     attachment: Option<Attachment2DRef>,

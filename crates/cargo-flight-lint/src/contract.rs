@@ -125,6 +125,7 @@ pub fn check_contract(
             | "flight-scene3d"
             | "flight-screen"
             | "flight-selection"
+            | "flight-skeleton2d"
             | "flight-sensors"
             | "flight-spring"
             | "flight-texture"
@@ -1246,6 +1247,7 @@ mod tests {
         assert!(rules_for_crate(double_source, "flight-velocity").is_empty());
         assert!(rules_for_crate(double_source, "flight-selection").is_empty());
         assert!(rules_for_crate(double_source, "flight-scene3d").is_empty());
+        assert!(rules_for_crate(double_source, "flight-skeleton2d").is_empty());
         assert!(rules_for_crate(double_source, "flight-geometry").is_empty());
         assert!(rules_for_crate(double_source, "flight-math").is_empty());
         assert!(rules_for_crate(double_source, "flight-path").is_empty());
@@ -1271,6 +1273,10 @@ mod tests {
         );
         assert_eq!(
             rules_for_crate(single_source, "flight-scene3d"),
+            vec!["f32"]
+        );
+        assert_eq!(
+            rules_for_crate(single_source, "flight-skeleton2d"),
             vec!["f32"]
         );
         assert_eq!(

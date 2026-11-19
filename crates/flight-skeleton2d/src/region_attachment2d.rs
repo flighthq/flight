@@ -11,6 +11,7 @@ use crate::types::*;
 
 /// Writes a region's four world corners bottom-left, top-left, top-right, bottom-right (TS
 /// `computeSkeleton2DRegionAttachmentVertices`).
+// flight-lint: allow(f32) reads or writes the TS Float32Array buffer lane; scalar math is f64 and narrows once at each store
 pub fn compute_skeleton_2d_region_attachment_vertices(
     out: &mut [f32],
     attachment: &RegionAttachment2D,
@@ -45,15 +46,15 @@ pub fn compute_skeleton_2d_region_attachment_vertices(
     let hh = attachment.height / 2.0;
     let mut corner = flight_geometry::create_vector2(0.0, 0.0);
     matrix_transform_point_xy(&mut corner, &combined, -hw, -hh);
-    out[0] = corner.x;
-    out[1] = corner.y;
+    out[0] = corner.x as f32;
+    out[1] = corner.y as f32;
     matrix_transform_point_xy(&mut corner, &combined, -hw, hh);
-    out[2] = corner.x;
-    out[3] = corner.y;
+    out[2] = corner.x as f32;
+    out[3] = corner.y as f32;
     matrix_transform_point_xy(&mut corner, &combined, hw, hh);
-    out[4] = corner.x;
-    out[5] = corner.y;
+    out[4] = corner.x as f32;
+    out[5] = corner.y as f32;
     matrix_transform_point_xy(&mut corner, &combined, hw, -hh);
-    out[6] = corner.x;
-    out[7] = corner.y;
+    out[6] = corner.x as f32;
+    out[7] = corner.y as f32;
 }

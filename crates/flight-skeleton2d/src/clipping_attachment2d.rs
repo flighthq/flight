@@ -15,6 +15,7 @@ pub struct Skeleton2DClippingAttachmentSlotRange {
 
 /// Produces a clipping polygon's world points (TS `computeSkeleton2DClippingAttachmentVertices`).
 // flight-lint: allow(conform-params) D5: the caller-owned guard state is threaded explicitly instead of a module-global slot
+// flight-lint: allow(f32) reads or writes the TS Float32Array buffer lane; scalar math is f64 and narrows once at each store
 pub fn compute_skeleton_2d_clipping_attachment_vertices(
     out: &mut [f32],
     attachment: &ClippingAttachment2D,

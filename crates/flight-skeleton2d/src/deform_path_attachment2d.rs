@@ -11,8 +11,8 @@ use crate::types::*;
 /// Deforms a path attachment into `out`, writing its command/winding stream and world coordinates
 /// (TS `deformSkeleton2DPathAttachment`). Control points need no special case: an importer gives a
 /// handle its anchor's influence set, so it arrives as an ordinary influence entry.
-// flight-lint: allow(f64) flight-path stores path data as f64; deformed f32 coordinates are widened into that lane (D1 path precedent)
 // flight-lint: allow(conform-params) D5: the caller-owned guard state is threaded explicitly instead of a module-global slot
+// flight-lint: allow(f32) reads or writes the TS Float32Array buffer lane; scalar math is f64 and narrows once at each store
 pub fn deform_skeleton_2d_path_attachment(
     out: &mut Path,
     attachment: &PathAttachment2D,

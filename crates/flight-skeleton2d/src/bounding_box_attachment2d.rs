@@ -9,6 +9,7 @@ use crate::types::*;
 /// Produces a bounding box's world polygon in flat interleaved coordinates (TS
 /// `computeSkeleton2DBoundingBoxAttachmentVertices`).
 // flight-lint: allow(conform-params) D5: the caller-owned guard state is threaded explicitly instead of a module-global slot
+// flight-lint: allow(f32) reads or writes the TS Float32Array buffer lane; scalar math is f64 and narrows once at each store
 pub fn compute_skeleton_2d_bounding_box_attachment_vertices(
     out: &mut [f32],
     attachment: &BoundingBoxAttachment2D,

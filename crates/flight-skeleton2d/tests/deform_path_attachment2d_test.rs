@@ -70,7 +70,7 @@ mod deform_skeleton_2d_path_attachment {
             None,
             &empty_guards(),
         );
-        assert!(close(out.data[0] as f32, 5.0));
+        assert!(close(out.data[0] as f64, 5.0));
     }
 
     #[test]
@@ -84,7 +84,7 @@ mod deform_skeleton_2d_path_attachment {
             Some(&[2.0, 0.0]),
             &empty_guards(),
         );
-        assert!(close(out.data[0] as f32, 3.0));
+        assert!(close(out.data[0] as f64, 3.0));
     }
 
     #[test]
@@ -116,7 +116,7 @@ mod source_deform_path_parity {
         return out;
     }
 
-    fn single_rig(x: f32, rotation: f32) -> Skeleton2D {
+    fn single_rig(x: f64, rotation: f64) -> Skeleton2D {
         let mut value = bone();
         value.x = x;
         value.rotation = rotation;
@@ -139,8 +139,8 @@ mod source_deform_path_parity {
         assert_eq!(out.commands, vec![1]);
         assert_eq!(out.winding, PathWinding::EvenOdd);
         assert_eq!(out.data.len(), 2);
-        assert!(close(out.data[0] as f32, 3.0));
-        assert!(close(out.data[1] as f32, 4.0));
+        assert!(close(out.data[0] as f64, 3.0));
+        assert!(close(out.data[1] as f64, 4.0));
     }
 
     #[test]
@@ -162,7 +162,7 @@ mod source_deform_path_parity {
         );
         let expected = [0.0, 0.0, 0.0, 1.0, 0.0, 2.0];
         for (index, value) in expected.iter().enumerate() {
-            assert!(close(out.data[index] as f32, *value), "index {index}");
+            assert!(close(out.data[index] as f64, *value), "index {index}");
         }
     }
 
@@ -182,8 +182,8 @@ mod source_deform_path_parity {
             None,
             &empty_guards(),
         );
-        assert!(close(out.data[0] as f32, 5.0));
-        assert!(close(out.data[1] as f32, 0.0));
+        assert!(close(out.data[0] as f64, 5.0));
+        assert!(close(out.data[1] as f64, 0.0));
     }
 
     #[test]
@@ -198,8 +198,8 @@ mod source_deform_path_parity {
             Some(&[0.0, 2.0]),
             &empty_guards(),
         );
-        assert!(close(out.data[0] as f32, 3.0), "x {}", out.data[0]);
-        assert!(close(out.data[1] as f32, 1.0), "y {}", out.data[1]);
+        assert!(close(out.data[0] as f64, 3.0), "x {}", out.data[0]);
+        assert!(close(out.data[1] as f64, 1.0), "y {}", out.data[1]);
     }
 
     #[test]
@@ -218,7 +218,7 @@ mod source_deform_path_parity {
             Some(&[4.0, 4.0]),
             &empty_guards(),
         );
-        assert!(close(out.data[0] as f32, 5.0));
+        assert!(close(out.data[0] as f64, 5.0));
     }
 
     #[test]
@@ -261,10 +261,10 @@ mod source_deform_path_parity {
             Some(&[0.0, 0.0, 0.0, 0.0]),
             &empty_guards(),
         );
-        assert!(close(out.data[0] as f32, 5.0));
-        assert!(close(out.data[1] as f32, 2.0));
-        assert!(close(out.data[2] as f32, 2.0));
-        assert!(close(out.data[3] as f32, 0.0));
+        assert!(close(out.data[0] as f64, 5.0));
+        assert!(close(out.data[1] as f64, 2.0));
+        assert!(close(out.data[2] as f64, 2.0));
+        assert!(close(out.data[3] as f64, 0.0));
     }
 
     #[test]

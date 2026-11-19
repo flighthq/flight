@@ -12,8 +12,8 @@ use flight_skeleton2d::contract::*;
 use crate::support::*;
 
 fn track(
-    times: Vec<f32>,
-    values: Vec<f32>,
+    times: Vec<f64>,
+    values: Vec<f64>,
     components: usize,
     interpolation: AnimationInterpolation,
 ) -> Ref<flight_animation::contract::AnimationTrack> {
@@ -39,8 +39,8 @@ fn target_channel(
 fn bone_channel(
     path: &str,
     bone_index: i32,
-    times: Vec<f32>,
-    values: Vec<f32>,
+    times: Vec<f64>,
+    values: Vec<f64>,
     components: usize,
     interpolation: AnimationInterpolation,
 ) -> AnimationChannel {
@@ -57,8 +57,8 @@ fn bone_channel(
 fn slot_channel(
     path: &str,
     slot_index: i32,
-    times: Vec<f32>,
-    values: Vec<f32>,
+    times: Vec<f64>,
+    values: Vec<f64>,
     components: usize,
     interpolation: AnimationInterpolation,
 ) -> AnimationChannel {
@@ -77,20 +77,20 @@ fn apply(
     clip: &flight_animation::contract::AnimationClip,
     setup: &Skeleton2D,
     pose: &mut Skeleton2D,
-    time: f32,
+    time: f64,
 ) {
     let registry = create_skeleton_2d_animation_target_registry();
     apply_animation_clip_to_skeleton_2d(clip, setup, pose, time, &registry, &empty_guards());
 }
 
 fn bone_with(
-    rotation: f32,
-    x: f32,
-    y: f32,
-    scale_x: f32,
-    scale_y: f32,
-    shear_x: f32,
-    shear_y: f32,
+    rotation: f64,
+    x: f64,
+    y: f64,
+    scale_x: f64,
+    scale_y: f64,
+    shear_x: f64,
+    shear_y: f64,
 ) -> Bone2D {
     let mut out = bone();
     out.rotation = rotation;
@@ -103,7 +103,7 @@ fn bone_with(
     return out;
 }
 
-fn field(bone: &Bone2D, name: &str) -> f32 {
+fn field(bone: &Bone2D, name: &str) -> f64 {
     return match name {
         "x" => bone.x,
         "y" => bone.y,
@@ -184,7 +184,7 @@ mod apply_animation_clip_to_skeleton_2d {
 
     #[test]
     fn poses_each_per_axis_path_from_a_one_component_track_touching_only_its_own_axis() {
-        let cases: [(&str, f32, &str, f32, &str, f32); 6] = [
+        let cases: [(&str, f64, &str, f64, &str, f64); 6] = [
             (
                 SKELETON_2D_ANIMATION_PATH_TRANSLATION_X,
                 10.0,
@@ -343,6 +343,27 @@ mod apply_animation_clip_to_skeleton_2d {
         apply(&clip, &setup, &mut pose, 0.0);
         assert!((pose.bones[0].x - 7.0).abs() <= 1e-4);
         assert!((pose.bones[0].y - 5.0).abs() <= 1e-4);
+    }
+
+    #[test]
+    fn keeps_a_half_unit_translation_on_a_bone_at_one_billion() {
+        // f32 spacing at 1e9 is 64, so a narrowed pose x would land back on 1e9.
+        let setup = create_skeleton_2d(vec![bone_with(0.0, 1.0e9, 0.0, 1.0, 1.0, 0.0, 0.0)]);
+        let mut pose = clone_skeleton_2d(&setup);
+        let clip = create_animation_clip(
+            vec![target_channel(
+                SKELETON_2D_ANIMATION_TARGET_KIND_BONE,
+                Some(Arc::new(create_skeleton_2d_bone_animation_target(
+                    0,
+                    SKELETON_2D_ANIMATION_PATH_TRANSLATION_X,
+                ))),
+                track(vec![0.0], vec![0.5], 1, AnimationInterpolation::Linear),
+            )],
+            None,
+            &[],
+        );
+        apply(&clip, &setup, &mut pose, 0.0);
+        assert_eq!(pose.bones[0].x, 1_000_000_000.5);
     }
 
     #[test]
