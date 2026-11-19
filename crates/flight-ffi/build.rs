@@ -2311,9 +2311,6 @@ fn collect_pub_structs(src_dir: &Path) -> Vec<ParsedStruct> {
     }
 
     let exported_types = collect_exported_type_names(&lib_path, src_dir);
-    if exported_types.is_empty() {
-        return Vec::new();
-    }
 
     let mut structs = Vec::new();
     let mut entries: Vec<_> = fs::read_dir(src_dir)
@@ -2335,7 +2332,12 @@ fn collect_pub_structs(src_dir: &Path) -> Vec<ParsedStruct> {
         let mut all_structs = Vec::new();
         parse_pub_structs(&content, &mut all_structs);
         for s in all_structs {
-            if exported_types.contains(&s.name) {
+            if exported_types.contains(&s.name)
+                || matches!(
+                    s.name.as_str(),
+                    "NodeFields" | "Node2DFields" | "Node3DFields"
+                )
+            {
                 structs.push(s);
             }
         }
@@ -3730,6 +3732,7 @@ fn generate_field_accessors(
     }
     let snake = to_snake_case(struct_name);
     let qualified = qualify_type(struct_name);
+    let ref_only = is_ref_only_borrow_type(struct_name);
     let mut output = String::new();
 
     for field in fields {
@@ -3739,20 +3742,38 @@ fn generate_field_accessors(
         let ffi_ty = &field.ty;
 
         if seen_names.insert(getter_name.clone()) {
-            writeln!(
-            output,
-            "#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn {getter_name}(ptr: *const {qualified}) -> {ffi_ty} {{\n    return unsafe {{ &*ptr }}.{};\n}}",
-            field.name
-        )
-        .unwrap();
+            if ref_only {
+                writeln!(
+                    output,
+                    "#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn {getter_name}(ptr: *const std::ffi::c_void) -> {ffi_ty} {{\n    if ptr.is_null() {{ return Default::default(); }}\n    let value = unsafe {{ &*(ptr as *const flight_sdk::Ref<{qualified}>) }}.read().unwrap_or_else(std::sync::PoisonError::into_inner);\n    value.{}\n}}",
+                    field.name
+                )
+                .unwrap();
+            } else {
+                writeln!(
+                    output,
+                    "#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn {getter_name}(ptr: *const {qualified}) -> {ffi_ty} {{\n    return unsafe {{ &*ptr }}.{};\n}}",
+                    field.name
+                )
+                .unwrap();
+            }
         }
         if seen_names.insert(setter_name.clone()) {
-            writeln!(
-            output,
-            "#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn {setter_name}(ptr: *mut {qualified}, value: {ffi_ty}) -> {ffi_ty} {{\n    unsafe {{ &mut *ptr }}.{} = value;\n    return value;\n}}",
-            field.name
-        )
-        .unwrap();
+            if ref_only {
+                writeln!(
+                    output,
+                    "#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn {setter_name}(ptr: *mut std::ffi::c_void, value: {ffi_ty}) -> {ffi_ty} {{\n    if ptr.is_null() {{ return Default::default(); }}\n    unsafe {{ &*(ptr as *const flight_sdk::Ref<{qualified}>) }}.write().unwrap_or_else(std::sync::PoisonError::into_inner).{} = value;\n    value\n}}",
+                    field.name
+                )
+                .unwrap();
+            } else {
+                writeln!(
+                    output,
+                    "#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn {setter_name}(ptr: *mut {qualified}, value: {ffi_ty}) -> {ffi_ty} {{\n    unsafe {{ &mut *ptr }}.{} = value;\n    return value;\n}}",
+                    field.name
+                )
+                .unwrap();
+            }
         }
     }
     output
