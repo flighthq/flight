@@ -731,6 +731,83 @@ mod emit_signal {
             assert_eq!(dropped.load(Ordering::SeqCst), 1);
         });
     }
+
+    #[test]
+    fn concurrent_emitters_invoke_a_once_listener_exactly_once() {
+        z_run_within_deadline(|| {
+            assert_eq!(z_race_once_listener(false, false), (1, 1, true, false));
+        });
+    }
+}
+
+// Two emitters reach one once listener together: a higher-priority repeating slot holds both at
+// a barrier, so each has already captured (safe) or is about to read (native) the once
+// registration before either claims it. Returns (callbacks, releases, released_after_callback,
+// still_connected).
+fn z_race_once_listener(first_safe: bool, second_safe: bool) -> (usize, usize, bool, bool) {
+    let signal: Signal<()> = create_signal();
+    let barrier = Arc::new(std::sync::Barrier::new(2));
+    let gate = barrier.clone();
+    connect_signal(
+        &signal,
+        Arc::new(move |_: &()| {
+            gate.wait();
+        }),
+        Some(&SignalConnectOptions {
+            priority: Some(1),
+            once: None,
+        }),
+    );
+    let calls = Arc::new(AtomicUsize::new(0));
+    let finished = Arc::new(AtomicBool::new(false));
+    let releases = Arc::new(AtomicUsize::new(0));
+    let released_after_callback = Arc::new(AtomicBool::new(false));
+    let (hook_finished, hook_releases, hook_after) = (
+        finished.clone(),
+        releases.clone(),
+        released_after_callback.clone(),
+    );
+    let hook = z_create_drop_hook(move || {
+        hook_after.store(hook_finished.load(Ordering::SeqCst), Ordering::SeqCst);
+        hook_releases.fetch_add(1, Ordering::SeqCst);
+    });
+    let (slot_calls, slot_finished) = (calls.clone(), finished.clone());
+    let connection = connect_signal_tracked(
+        &signal,
+        Arc::new(move |_: &()| {
+            let _ = &hook;
+            slot_calls.fetch_add(1, Ordering::SeqCst);
+            std::thread::sleep(std::time::Duration::from_millis(20));
+            slot_finished.store(true, Ordering::SeqCst);
+        }),
+        Some(&SignalTrackedConnectOptions {
+            priority: None,
+            once: Some(true),
+            scope: None,
+        }),
+    );
+    let emitters: Vec<_> = [first_safe, second_safe]
+        .into_iter()
+        .map(|safe| {
+            let emitter = signal.clone();
+            std::thread::spawn(move || {
+                if safe {
+                    emit_signal_safe(&emitter, &());
+                } else {
+                    emit_signal(&emitter, &());
+                }
+            })
+        })
+        .collect();
+    for emitter in emitters {
+        emitter.join().unwrap();
+    }
+    return (
+        calls.load(Ordering::SeqCst),
+        releases.load(Ordering::SeqCst),
+        released_after_callback.load(Ordering::SeqCst),
+        is_signal_connection_connected(&connection),
+    );
 }
 
 // Runs `test` on its own thread and fails instead of hanging when it deadlocks.

@@ -2,8 +2,8 @@ use std::sync::{Arc, Mutex};
 
 use flight_entity::{Ref, allocate_entity};
 
-use crate::slot::{connect_signal, disconnect_signal};
 use crate::connection::{connect_signal_tracked, disconnect_signal_connection};
+use crate::slot::{connect_signal, disconnect_signal};
 use crate::types::{
     FrameTick, Signal, SignalConnection, SignalSlot, SignalThrottleOptions, SignalTimer,
     SignalTimerState, SignalTrackedConnectOptions, TimerId,

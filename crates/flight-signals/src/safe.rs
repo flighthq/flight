@@ -4,12 +4,36 @@ use crate::emitter::signal_data_cancelled;
 use crate::slot::{compact_signal_data, detach_empty_signal_data};
 use crate::types::{Signal, SignalData, SignalSlot, SlotId};
 
+// Claims a once registration for this emission: the registration is taken out under the data lock,
+// so of several emitters holding it in their snapshots (concurrent or nested, safe or native),
+// exactly one wins and invokes it. The removed handle is dropped after the lock is released; the
+// winner's snapshot keeps its own handle until the emission ends, so release never overlaps the
+// call.
+fn claim_once_slot<T>(data: &Ref<Option<SignalData<T>>>, id: SlotId) -> bool {
+    let mut state = data.write().unwrap();
+    let Some(signal_data) = state.as_mut() else {
+        return false;
+    };
+    for index in 0..signal_data.slots.len() {
+        if signal_data.slots[index].is_some()
+            && signal_data.ids[index].value == id.value
+            && !signal_data.repeat[index]
+        {
+            let removed = signal_data.slots[index].take();
+            drop(state);
+            drop(removed);
+            return true;
+        }
+    }
+    return false;
+}
+
 /// Emits to the priority-ordered set captured at emission start (TS `emitSignalSafe`).
 ///
 /// Connections added while the snapshot runs wait for a later emission; a connection removed
 /// after the snapshot was captured still receives this emission. Nested safe emissions take
-/// their own snapshot. Once registrations are consumed before they are invoked, so a nested
-/// safe emission cannot repeat one.
+/// their own snapshot. A once registration is claimed under the data lock before it is invoked, so
+/// of several emissions holding it (nested or concurrent, safe or native) exactly one calls it.
 pub fn emit_signal_safe<T>(signal: &Signal<T>, args: &T) {
     let Some(snapshot) = take_safe_signal_snapshot(&signal.data) else {
         return;
@@ -19,8 +43,8 @@ pub fn emit_signal_safe<T>(signal: &Signal<T>, args: &T) {
     for index in 0..slots.len() {
         if let Some(slot) = &slots[index] {
             if !paused[index] {
-                if !repeat[index] {
-                    tombstone_once_slot(&signal.data, ids[index]);
+                if !repeat[index] && !claim_once_slot(&signal.data, ids[index]) {
+                    continue;
                 }
                 slot(args);
                 if signal_data_cancelled(&signal.data) {
@@ -76,22 +100,4 @@ fn take_safe_signal_snapshot<T>(
     signal_data.cancelled = false;
     signal_data.depth += 1;
     return Some((slots, ids, repeat, paused));
-}
-
-fn tombstone_once_slot<T>(data: &Ref<Option<SignalData<T>>>, id: SlotId) {
-    let mut state = data.write().unwrap();
-    let Some(signal_data) = state.as_mut() else {
-        return;
-    };
-    for index in 0..signal_data.slots.len() {
-        if signal_data.slots[index].is_some()
-            && signal_data.ids[index].value == id.value
-            && !signal_data.repeat[index]
-        {
-            let removed = signal_data.slots[index].take();
-            drop(state);
-            drop(removed);
-            return;
-        }
-    }
 }

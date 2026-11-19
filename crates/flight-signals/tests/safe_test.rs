@@ -1,3 +1,4 @@
+use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 use std::sync::{Arc, Mutex};
 
 use flight_signals::*;
@@ -233,5 +234,130 @@ mod emit_signal_safe {
     fn does_nothing_when_no_slots_are_connected() {
         let signal: Signal<()> = create_signal();
         emit_signal_safe(&signal, &());
+    }
+
+    #[test]
+    fn concurrent_safe_and_native_emitters_invoke_a_once_listener_exactly_once() {
+        z_run_within_deadline(|| {
+            assert_eq!(z_race_once_listener(true, false), (1, 1, true, false));
+            assert_eq!(z_race_once_listener(false, true), (1, 1, true, false));
+        });
+    }
+
+    #[test]
+    fn concurrent_safe_emitters_invoke_a_once_listener_exactly_once() {
+        z_run_within_deadline(|| {
+            assert_eq!(z_race_once_listener(true, true), (1, 1, true, false));
+        });
+    }
+}
+
+// Two emitters reach one once listener together: a higher-priority repeating slot holds both at
+// a barrier, so each has already captured (safe) or is about to read (native) the once
+// registration before either claims it. Returns (callbacks, releases, released_after_callback,
+// still_connected).
+fn z_race_once_listener(first_safe: bool, second_safe: bool) -> (usize, usize, bool, bool) {
+    let signal: Signal<()> = create_signal();
+    let barrier = Arc::new(std::sync::Barrier::new(2));
+    let gate = barrier.clone();
+    connect_signal(
+        &signal,
+        Arc::new(move |_: &()| {
+            gate.wait();
+        }),
+        Some(&SignalConnectOptions {
+            priority: Some(1),
+            once: None,
+        }),
+    );
+    let calls = Arc::new(AtomicUsize::new(0));
+    let finished = Arc::new(AtomicBool::new(false));
+    let releases = Arc::new(AtomicUsize::new(0));
+    let released_after_callback = Arc::new(AtomicBool::new(false));
+    let (hook_finished, hook_releases, hook_after) = (
+        finished.clone(),
+        releases.clone(),
+        released_after_callback.clone(),
+    );
+    let hook = z_create_drop_hook(move || {
+        hook_after.store(hook_finished.load(Ordering::SeqCst), Ordering::SeqCst);
+        hook_releases.fetch_add(1, Ordering::SeqCst);
+    });
+    let (slot_calls, slot_finished) = (calls.clone(), finished.clone());
+    let connection = connect_signal_tracked(
+        &signal,
+        Arc::new(move |_: &()| {
+            let _ = &hook;
+            slot_calls.fetch_add(1, Ordering::SeqCst);
+            std::thread::sleep(std::time::Duration::from_millis(20));
+            slot_finished.store(true, Ordering::SeqCst);
+        }),
+        Some(&SignalTrackedConnectOptions {
+            priority: None,
+            once: Some(true),
+            scope: None,
+        }),
+    );
+    let emitters: Vec<_> = [first_safe, second_safe]
+        .into_iter()
+        .map(|safe| {
+            let emitter = signal.clone();
+            std::thread::spawn(move || {
+                if safe {
+                    emit_signal_safe(&emitter, &());
+                } else {
+                    emit_signal(&emitter, &());
+                }
+            })
+        })
+        .collect();
+    for emitter in emitters {
+        emitter.join().unwrap();
+    }
+    return (
+        calls.load(Ordering::SeqCst),
+        releases.load(Ordering::SeqCst),
+        released_after_callback.load(Ordering::SeqCst),
+        is_signal_connection_connected(&connection),
+    );
+}
+
+// Runs `test` on its own thread and fails instead of hanging when it deadlocks.
+fn z_run_within_deadline(test: impl FnOnce() + Send + 'static) {
+    let (done, finished) = std::sync::mpsc::channel();
+    let worker = std::thread::spawn(move || {
+        test();
+        done.send(()).unwrap();
+    });
+    if finished
+        .recv_timeout(std::time::Duration::from_secs(5))
+        .is_err()
+    {
+        panic!("signal teardown deadlocked or panicked");
+    }
+    worker.join().unwrap();
+}
+
+// A value whose drop runs `hook`: slots capture one to observe when, and under which locks, the
+// signal drops them.
+struct DropHook {
+    hook: Mutex<Option<Box<dyn FnOnce() + Send>>>,
+}
+
+fn z_create_drop_hook(hook: impl FnOnce() + Send + 'static) -> DropHook {
+    return DropHook {
+        hook: Mutex::new(Some(Box::new(hook))),
+    };
+}
+
+fn z_run_drop_hook(drop_hook: &DropHook) {
+    if let Some(hook) = drop_hook.hook.lock().unwrap().take() {
+        hook();
+    }
+}
+
+impl Drop for DropHook {
+    fn drop(&mut self) {
+        z_run_drop_hook(self);
     }
 }
