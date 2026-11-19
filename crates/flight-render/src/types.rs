@@ -47,11 +47,12 @@ pub enum Scene3DGraphSyncPolicy {
 }
 
 /// Shared public fields composed by every backend state. Backend resources never live here.
+// flight-lint: allow(f64) the device pixel ratio is a CPU logical scale factor held in f64 (foreman-e0d2390c); render_alpha stays the f32 appearance lane
 pub struct RenderStateFields {
     runtime: EntityRuntimeSlot,
     pub allow_smoothing: bool,
     pub current_clip_depth: u32,
-    pub pixel_ratio: f32,
+    pub pixel_ratio: f64,
     pub render_alpha: f32,
     pub render_blend_mode: Option<BlendMode>,
     pub round_pixels: bool,
@@ -236,10 +237,11 @@ pub type RenderSortKey = i32;
 /// such as blur to bleed without clipping at the target edge), and `min_width` / `min_height` the
 /// minimum target size.
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
+// flight-lint: allow(f64) render-target geometry (offsets, padding, sizes, uv rotation) is spatial and held in f64 (Task Q)
 pub struct RenderCacheRefreshOptions {
-    pub padding: Option<f32>,
-    pub min_width: Option<f32>,
-    pub min_height: Option<f32>,
+    pub padding: Option<f64>,
+    pub min_width: Option<f64>,
+    pub min_height: Option<f64>,
 }
 
 /// Replays a shape's command stream into a 2D context, for a backend that cannot express every fill
@@ -301,11 +303,12 @@ pub struct RenderRegistrySignals {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq)]
+// flight-lint: allow(f64) render-target geometry (offsets, padding, sizes, uv rotation) is spatial and held in f64 (Task Q)
 pub struct EffectPadding {
-    pub bottom: f32,
-    pub left: f32,
-    pub right: f32,
-    pub top: f32,
+    pub bottom: f64,
+    pub left: f64,
+    pub right: f64,
+    pub top: f64,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -459,10 +462,11 @@ pub struct RenderTargetClear {
     pub stencil: Option<i32>,
 }
 
+// flight-lint: allow(f64) the logical target size is a CPU spatial value held in f64 (foreman-e0d2390c); only the resolved u32 texel size is fixed storage
 #[derive(Clone, Debug, PartialEq)]
 pub struct RenderTargetDescriptor {
-    pub width: f32,
-    pub height: f32,
+    pub width: f64,
+    pub height: f64,
     pub format: Option<RenderTargetFormat>,
     pub color_attachments: Option<f32>,
     pub color_formats: Option<Vec<RenderTargetFormat>>,
@@ -495,6 +499,7 @@ pub struct ExternalTexture {
 pub type RenderTexture = Texture2D;
 
 #[derive(Clone, Debug, Default)]
+// flight-lint: allow(f64) render-target geometry (offsets, padding, sizes, uv rotation) is spatial and held in f64 (Task Q)
 pub struct CreateRenderTextureOptions {
     pub color_space: Option<TextureColorSpace>,
     pub color_attachments: Option<f32>,
@@ -507,7 +512,7 @@ pub struct CreateRenderTextureOptions {
     pub sample_count: Option<f32>,
     pub sampler: Option<Sampler>,
     pub uv_offset: Option<flight_geometry::Vector2>,
-    pub uv_rotation: Option<f32>,
+    pub uv_rotation: Option<f64>,
     pub uv_scale: Option<flight_geometry::Vector2>,
     pub width: u32,
 }
@@ -523,15 +528,17 @@ pub struct CreateExternalTextureOptions {
 pub type ResolvedRenderTargetDescriptor = RenderTargetAxes;
 
 #[derive(Clone, Copy, Debug, PartialEq)]
+// flight-lint: allow(f64) render-target geometry (offsets, padding, sizes, uv rotation) is spatial and held in f64 (Task Q)
 pub enum RenderTargetPadding {
-    Uniform(f32),
+    Uniform(f64),
     Edges(EffectPadding),
 }
 
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
+// flight-lint: allow(f64) render-target geometry (offsets, padding, sizes, uv rotation) is spatial and held in f64 (Task Q)
 pub struct RenderTargetSize {
-    pub width: f32,
-    pub height: f32,
+    pub width: f64,
+    pub height: f64,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]

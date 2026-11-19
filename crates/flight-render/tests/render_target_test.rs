@@ -7,7 +7,7 @@ use flight_texture::RenderTargetColorSpace;
 
 use crate::support::display_node;
 
-fn descriptor(width: f32, height: f32) -> RenderTargetDescriptor {
+fn descriptor(width: f64, height: f64) -> RenderTargetDescriptor {
     return RenderTargetDescriptor {
         width,
         height,
@@ -22,6 +22,19 @@ fn descriptor(width: f32, height: f32) -> RenderTargetDescriptor {
 
 mod compute_render_cache_transform {
     use super::*;
+
+    #[test]
+    fn subtracts_a_content_offset_as_an_exact_double() {
+        // 0.1 has no exact f32: an f32 content offset would give 0.39999999850988388.
+        let mut out = create_matrix(0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
+        compute_render_cache_transform(
+            &mut out,
+            &create_rectangle(0.5, 0.5, 1.0, 1.0),
+            Some(0.1),
+            Some(0.1),
+        );
+        assert_eq!((out.tx, out.ty), (0.5 - 0.1, 0.5 - 0.1));
+    }
 
     #[test]
     fn compute_render_cache_transform_uses_bounds_origin() {
@@ -232,6 +245,13 @@ mod explain_render_target_axes {
 
 mod resolve_render_target_descriptor {
     use super::*;
+
+    #[test]
+    fn ceils_an_f64_logical_size_beyond_f32_precision() {
+        // 16777216.5 ceils to 16777217; as f32 (16777216) it would ceil to 16777216.
+        let axes = resolve_render_target_descriptor(&descriptor(16_777_216.5, 1.0));
+        assert_eq!(axes.width, 16_777_217);
+    }
 
     #[test]
     fn resolve_render_target_descriptor_defaults_every_axis() {

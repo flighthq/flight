@@ -45,7 +45,8 @@ fn create_prepared_scene_3d() -> PreparedScene3D {
     };
 }
 
-fn apply_scene_3d_projection_jitter(out: &mut Matrix4, x: f32, y: f32) {
+// flight-lint: allow(f64) render-target and scene geometry are spatial JS Number values computed in f64; GPU uniform lanes narrow at their f32 writes (Task Q)
+fn apply_scene_3d_projection_jitter(out: &mut Matrix4, x: f64, y: f64) {
     let m = &mut out.m;
     m[0] += x * m[3];
     m[4] += x * m[7];
@@ -188,48 +189,55 @@ fn linear_color(color: u32) -> LinearColor {
     return out;
 }
 
+// flight-lint: allow(f64) render-target and scene geometry are spatial JS Number values computed in f64; GPU uniform lanes narrow at their f32 writes (Task Q)
 fn pack_ambient_light(data: &mut [f32], ambient: &AmbientLight) {
     let color = linear_color(ambient.color);
-    data[SCENE_LIGHT_AMBIENT_RADIANCE_OFFSET] = color.r * ambient.intensity;
-    data[SCENE_LIGHT_AMBIENT_RADIANCE_OFFSET + 1] = color.g * ambient.intensity;
-    data[SCENE_LIGHT_AMBIENT_RADIANCE_OFFSET + 2] = color.b * ambient.intensity;
+    data[SCENE_LIGHT_AMBIENT_RADIANCE_OFFSET] = (f64::from(color.r) * ambient.intensity) as f32;
+    data[SCENE_LIGHT_AMBIENT_RADIANCE_OFFSET + 1] = (f64::from(color.g) * ambient.intensity) as f32;
+    data[SCENE_LIGHT_AMBIENT_RADIANCE_OFFSET + 2] = (f64::from(color.b) * ambient.intensity) as f32;
 }
 
+// flight-lint: allow(f64) render-target and scene geometry are spatial JS Number values computed in f64; GPU uniform lanes narrow at their f32 writes (Task Q)
 fn pack_directional_light(data: &mut [f32], directional: &DirectionalLight) {
-    data[SCENE_LIGHT_DIRECTIONAL_DIRECTION_OFFSET] = directional.direction.x;
-    data[SCENE_LIGHT_DIRECTIONAL_DIRECTION_OFFSET + 1] = directional.direction.y;
-    data[SCENE_LIGHT_DIRECTIONAL_DIRECTION_OFFSET + 2] = directional.direction.z;
+    data[SCENE_LIGHT_DIRECTIONAL_DIRECTION_OFFSET] = directional.direction.x as f32;
+    data[SCENE_LIGHT_DIRECTIONAL_DIRECTION_OFFSET + 1] = directional.direction.y as f32;
+    data[SCENE_LIGHT_DIRECTIONAL_DIRECTION_OFFSET + 2] = directional.direction.z as f32;
     let color = linear_color(directional.color);
-    data[SCENE_LIGHT_DIRECTIONAL_RADIANCE_OFFSET] = color.r * directional.intensity;
-    data[SCENE_LIGHT_DIRECTIONAL_RADIANCE_OFFSET + 1] = color.g * directional.intensity;
-    data[SCENE_LIGHT_DIRECTIONAL_RADIANCE_OFFSET + 2] = color.b * directional.intensity;
+    data[SCENE_LIGHT_DIRECTIONAL_RADIANCE_OFFSET] =
+        (f64::from(color.r) * directional.intensity) as f32;
+    data[SCENE_LIGHT_DIRECTIONAL_RADIANCE_OFFSET + 1] =
+        (f64::from(color.g) * directional.intensity) as f32;
+    data[SCENE_LIGHT_DIRECTIONAL_RADIANCE_OFFSET + 2] =
+        (f64::from(color.b) * directional.intensity) as f32;
 }
 
+// flight-lint: allow(f64) render-target and scene geometry are spatial JS Number values computed in f64; GPU uniform lanes narrow at their f32 writes (Task Q)
 fn pack_hemisphere_light(data: &mut [f32], offset: usize, light: &HemisphereLight) {
     let sky = linear_color(light.sky_color);
     let ground = linear_color(light.ground_color);
-    data[offset] = sky.r * light.intensity;
-    data[offset + 1] = sky.g * light.intensity;
-    data[offset + 2] = sky.b * light.intensity;
-    data[offset + 4] = ground.r * light.intensity;
-    data[offset + 5] = ground.g * light.intensity;
-    data[offset + 6] = ground.b * light.intensity;
+    data[offset] = (f64::from(sky.r) * light.intensity) as f32;
+    data[offset + 1] = (f64::from(sky.g) * light.intensity) as f32;
+    data[offset + 2] = (f64::from(sky.b) * light.intensity) as f32;
+    data[offset + 4] = (f64::from(ground.r) * light.intensity) as f32;
+    data[offset + 5] = (f64::from(ground.g) * light.intensity) as f32;
+    data[offset + 6] = (f64::from(ground.b) * light.intensity) as f32;
     data[offset + 8] = 0.0;
     data[offset + 9] = 1.0;
     data[offset + 10] = 0.0;
 }
 
+// flight-lint: allow(f64) render-target and scene geometry are spatial JS Number values computed in f64; GPU uniform lanes narrow at their f32 writes (Task Q)
 fn pack_point_light(data: &mut [f32], offset: usize, light: &PointLight) {
-    data[offset] = light.position.x;
-    data[offset + 1] = light.position.y;
-    data[offset + 2] = light.position.z;
-    data[offset + 3] = light.range;
+    data[offset] = light.position.x as f32;
+    data[offset + 1] = light.position.y as f32;
+    data[offset + 2] = light.position.z as f32;
+    data[offset + 3] = light.range as f32;
     let color = linear_color(light.color);
-    data[offset + 4] = color.r * light.intensity;
-    data[offset + 5] = color.g * light.intensity;
-    data[offset + 6] = color.b * light.intensity;
+    data[offset + 4] = (f64::from(color.r) * light.intensity) as f32;
+    data[offset + 5] = (f64::from(color.g) * light.intensity) as f32;
+    data[offset + 6] = (f64::from(color.b) * light.intensity) as f32;
     data[offset + 7] = if light.range > 0.0 {
-        1.0 / (light.range * light.range)
+        (1.0 / (light.range * light.range)) as f32
     } else {
         0.0
     };
@@ -291,33 +299,35 @@ pub fn pack_scene_3d_light_block(out: &mut Scene3DLightBlock, lights: &Scene3DLi
     out.version = out.version.wrapping_add(1);
 }
 
+// flight-lint: allow(f64) render-target and scene geometry are spatial JS Number values computed in f64; GPU uniform lanes narrow at their f32 writes (Task Q)
 fn pack_spot_light(data: &mut [f32], offset: usize, light: &SpotLight) {
-    data[offset] = light.position.x;
-    data[offset + 1] = light.position.y;
-    data[offset + 2] = light.position.z;
-    data[offset + 3] = light.range;
+    data[offset] = light.position.x as f32;
+    data[offset + 1] = light.position.y as f32;
+    data[offset + 2] = light.position.z as f32;
+    data[offset + 3] = light.range as f32;
     let color = linear_color(light.color);
-    data[offset + 4] = color.r * light.intensity;
-    data[offset + 5] = color.g * light.intensity;
-    data[offset + 6] = color.b * light.intensity;
+    data[offset + 4] = (f64::from(color.r) * light.intensity) as f32;
+    data[offset + 5] = (f64::from(color.g) * light.intensity) as f32;
+    data[offset + 6] = (f64::from(color.b) * light.intensity) as f32;
     data[offset + 7] = if light.range > 0.0 {
-        1.0 / (light.range * light.range)
+        (1.0 / (light.range * light.range)) as f32
     } else {
         0.0
     };
-    data[offset + 8] = light.direction.x;
-    data[offset + 9] = light.direction.y;
-    data[offset + 10] = light.direction.z;
-    data[offset + 12] = light.inner_cone_cos;
-    data[offset + 13] = light.outer_cone_cos;
+    data[offset + 8] = light.direction.x as f32;
+    data[offset + 9] = light.direction.y as f32;
+    data[offset + 10] = light.direction.z as f32;
+    data[offset + 12] = light.inner_cone_cos as f32;
+    data[offset + 13] = light.outer_cone_cos as f32;
 }
 
+// flight-lint: allow(f64) render-target and scene geometry are spatial JS Number values computed in f64; GPU uniform lanes narrow at their f32 writes (Task Q)
 pub fn prepare_scene_3d_render<'a, S: RenderState>(
     state: &'a mut S,
     scene: &NodeRef,
     camera: &Camera3D,
     lights: &Scene3DLightsLike,
-    viewport_aspect: Option<f32>,
+    viewport_aspect: Option<f64>,
 ) -> &'a Scene3DRenderList {
     let mut prepared = state
         .render_runtime_mut()
@@ -355,7 +365,8 @@ pub fn prepare_scene_3d_render<'a, S: RenderState>(
         .list;
 }
 
-fn resolve_scene_3d_viewport_aspect(camera: &Camera3D, viewport_aspect: Option<f32>) -> f32 {
+// flight-lint: allow(f64) render-target and scene geometry are spatial JS Number values computed in f64; GPU uniform lanes narrow at their f32 writes (Task Q)
+fn resolve_scene_3d_viewport_aspect(camera: &Camera3D, viewport_aspect: Option<f64>) -> f64 {
     if let Some(value) = viewport_aspect.filter(|value| value.is_finite() && *value > 0.0) {
         return value;
     }
@@ -368,7 +379,8 @@ fn resolve_scene_3d_viewport_aspect(camera: &Camera3D, viewport_aspect: Option<f
     return 1.0;
 }
 
-fn set_scene_3d_view_projection_matrix_4(out: &mut Matrix4, camera: &Camera3D, aspect: f32) {
+// flight-lint: allow(f64) render-target and scene geometry are spatial JS Number values computed in f64; GPU uniform lanes narrow at their f32 writes (Task Q)
+fn set_scene_3d_view_projection_matrix_4(out: &mut Matrix4, camera: &Camera3D, aspect: f64) {
     let mut projection = create_matrix4();
     match &camera.projection {
         Projection::Perspective(value) => {

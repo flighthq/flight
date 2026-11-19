@@ -63,6 +63,6 @@ mod update_render_proxy_2d_transform {
         let child_source: NodeRef = typed_child;
         let mut child = create_render_proxy_2d(&mut state, &child_source);
         update_render_proxy_2d_transform(&state, &mut child, Some(&parent));
-        assert!((child.transform_2d.tx - 15.0).abs() < f32::EPSILON);
+        assert!((child.transform_2d.tx - 15.0).abs() < f64::EPSILON);
     }
 }

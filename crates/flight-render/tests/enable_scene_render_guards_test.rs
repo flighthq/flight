@@ -63,7 +63,7 @@ fn prepare(skinned: bool, state: &mut BaseRenderState) {
     camera.far = 100.0;
     let projection = create_perspective_projection();
     projection.write().unwrap().aspect = 1.0;
-    projection.write().unwrap().fov_y = std::f32::consts::PI / 3.0;
+    projection.write().unwrap().fov_y = std::f64::consts::PI / 3.0;
     camera.projection = Projection::Perspective(projection);
     set_camera_3d_view_matrix4_from_look_at(
         &mut camera,

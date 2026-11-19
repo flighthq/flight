@@ -54,13 +54,13 @@ fn root() -> NodeRef {
     return publish_node3d(create_node3d::<Node3DFields>(None));
 }
 
-fn camera_looking_at_x(x: f32) -> Camera3D {
+fn camera_looking_at_x(x: f64) -> Camera3D {
     let mut camera = create_camera_3d();
     camera.far = 200.0;
     camera.near = 0.1;
     let projection = create_perspective_projection();
     projection.write().unwrap().aspect = 1.0;
-    projection.write().unwrap().fov_y = std::f32::consts::PI / 3.0;
+    projection.write().unwrap().fov_y = std::f64::consts::PI / 3.0;
     camera.projection = Projection::Perspective(projection);
     set_camera_3d_view_matrix4_from_look_at(
         &mut camera,
@@ -117,7 +117,7 @@ fn hemisphere_lights(hemisphere: Vec<Ref<flight_lighting::HemisphereLight>>) -> 
     return lights;
 }
 
-fn translation_matrix(x: f32) -> Matrix4 {
+fn translation_matrix(x: f64) -> Matrix4 {
     let mut matrix = create_matrix4();
     matrix.m[12] = x;
     return matrix;
@@ -152,7 +152,7 @@ fn count_cleared_guard(_state: &mut BaseRenderState, _mesh: &Mesh) {
     CLEARED_GUARD_CALLS.fetch_add(1, Ordering::SeqCst);
 }
 
-fn instanced_scene(instance_xs: &[f32]) -> (NodeRef, Ref<InstancedMesh>, NodeRef) {
+fn instanced_scene(instance_xs: &[f64]) -> (NodeRef, Ref<InstancedMesh>, NodeRef) {
     let scene = root();
     let mesh = create_instanced_mesh(bounded_box(), Arc::new(RwLock::new(vec![None])), Some(4));
     set_instanced_mesh_instance_count(&mesh, instance_xs.len() as i32);
@@ -288,8 +288,8 @@ mod pack_scene_3d_light_block {
         assert_eq!(block.spot_count, 1);
         assert_eq!(block.data[offset], 4.0);
         assert_eq!(&block.data[offset + 8..offset + 11], &[0.0, -1.0, 0.0]);
-        assert_eq!(block.data[offset + 12], inner);
-        assert_eq!(block.data[offset + 13], outer);
+        assert_eq!(block.data[offset + 12], inner as f32);
+        assert_eq!(block.data[offset + 13], outer as f32);
         assert!(block.data[offset + 12] > block.data[offset + 13]);
     }
 

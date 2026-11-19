@@ -9,11 +9,12 @@ use crate::{
     RenderTargetSize, ResolvedRenderTargetDescriptor,
 };
 
+// flight-lint: allow(f64) render-target and scene geometry are spatial JS Number values computed in f64; GPU uniform lanes narrow at their f32 writes (Task Q)
 pub fn compute_render_cache_transform(
     out_cache_transform: &mut Matrix,
     bounds: &Rectangle,
-    content_x: Option<f32>,
-    content_y: Option<f32>,
+    content_x: Option<f64>,
+    content_y: Option<f64>,
 ) {
     out_cache_transform.a = 1.0;
     out_cache_transform.b = 0.0;
@@ -23,12 +24,13 @@ pub fn compute_render_cache_transform(
     out_cache_transform.ty = bounds.y - content_y.unwrap_or(0.0);
 }
 
+// flight-lint: allow(f64) render-target and scene geometry are spatial JS Number values computed in f64; GPU uniform lanes narrow at their f32 writes (Task Q)
 pub fn compute_render_target_size<'a>(
     out: &'a mut RenderTargetSize,
     bounds: &Rectangle,
     padding: Option<RenderTargetPadding>,
-    min_width: Option<f32>,
-    min_height: Option<f32>,
+    min_width: Option<f64>,
+    min_height: Option<f64>,
 ) -> &'a mut RenderTargetSize {
     let (horizontal, vertical) = match padding.unwrap_or(RenderTargetPadding::Uniform(0.0)) {
         RenderTargetPadding::Uniform(value) => (value * 2.0, value * 2.0),
@@ -43,12 +45,13 @@ pub fn compute_render_target_size<'a>(
     return out;
 }
 
+// flight-lint: allow(f64) render-target and scene geometry are spatial JS Number values computed in f64; GPU uniform lanes narrow at their f32 writes (Task Q)
 pub fn compute_scene_2d_render_target_transform(
     out_render_transform: &mut Matrix,
     source: &NodeRef,
     bounds: &Rectangle,
-    content_x: Option<f32>,
-    content_y: Option<f32>,
+    content_x: Option<f64>,
+    content_y: Option<f64>,
 ) {
     let local_transform = get_node_local_matrix(source);
     let mut inverse = flight_geometry::create_matrix(1.0, 0.0, 0.0, 1.0, 0.0, 0.0);

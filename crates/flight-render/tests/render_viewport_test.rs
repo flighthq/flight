@@ -9,7 +9,7 @@ use flight_node::{
 };
 use flight_render::*;
 
-fn object_with_bounds(x: f32, y: f32, width: f32, height: f32) -> NodeRef {
+fn object_with_bounds(x: f64, y: f64, width: f64, height: f64) -> NodeRef {
     let typed = flight_scene2d::create_display_object();
     {
         let mut source = typed.write().unwrap();
@@ -31,7 +31,7 @@ fn object_with_bounds(x: f32, y: f32, width: f32, height: f32) -> NodeRef {
     return source;
 }
 
-fn viewport(x: f32, y: f32, width: f32, height: f32) -> flight_node::Viewport {
+fn viewport(x: f64, y: f64, width: f64, height: f64) -> flight_node::Viewport {
     let mut out = create_viewport();
     out.x = x;
     out.y = y;
