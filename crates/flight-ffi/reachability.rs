@@ -127,9 +127,7 @@ fn alias_name(path: &syn::TypePath) -> Option<String> {
     }
     match path.path.segments.len() {
         1 => Some(last.ident.to_string()),
-        2 if first.ident == "flight_sdk"
-            && matches!(first.arguments, syn::PathArguments::None) =>
-        {
+        2 if first.ident == "flight_sdk" && matches!(first.arguments, syn::PathArguments::None) => {
             Some(last.ident.to_string())
         }
         _ => None,
@@ -156,18 +154,16 @@ impl Fold for AliasExpander<'_> {
         if !self.resolving.insert(name.clone()) {
             return ty;
         }
-        let target: Type = syn::parse_str(target)
-            .unwrap_or_else(|error| panic!("invalid reachability alias {name} = {target}: {error}"));
+        let target: Type = syn::parse_str(target).unwrap_or_else(|error| {
+            panic!("invalid reachability alias {name} = {target}: {error}")
+        });
         let expanded = self.fold_type(target);
         self.resolving.remove(&name);
         expanded
     }
 }
 
-fn type_fingerprint_with_aliases(
-    ty: &Type,
-    aliases: &BTreeMap<String, String>,
-) -> String {
+fn type_fingerprint_with_aliases(ty: &Type, aliases: &BTreeMap<String, String>) -> String {
     let expanded = AliasExpander {
         aliases,
         resolving: BTreeSet::new(),
@@ -701,7 +697,10 @@ mod tests {
                 "NodeRef".to_string(),
                 "flight_sdk::Ref<dyn flight_sdk::Node>".to_string(),
             ),
-            ("NodeRefAlias".to_string(), "flight_sdk::NodeRef".to_string()),
+            (
+                "NodeRefAlias".to_string(),
+                "flight_sdk::NodeRef".to_string(),
+            ),
         ])
     }
 
@@ -746,10 +745,7 @@ mod tests {
             "Vec<Option<String>>"
         );
         assert_eq!(
-            canonical_type_with_aliases(
-                "Vec<Option<flight_sdk::other_module::Kind>>",
-                &aliases,
-            ),
+            canonical_type_with_aliases("Vec<Option<flight_sdk::other_module::Kind>>", &aliases,),
             "Vec<Option<flight_sdk::other_module::Kind>>"
         );
         assert_eq!(
@@ -764,10 +760,7 @@ mod tests {
         let expanded = canonical_type_with_aliases("Vec<Kind>", &aliases);
         let mut mutated = aliases;
         mutated.remove("Kind");
-        assert_ne!(
-            canonical_type_with_aliases("Vec<Kind>", &mutated),
-            expanded
-        );
+        assert_ne!(canonical_type_with_aliases("Vec<Kind>", &mutated), expanded);
     }
 
     #[test]
