@@ -1357,6 +1357,8 @@ struct SignalInventoryEntry {
     item: String,
     declared: String,
     payload: String,
+    // The owning struct reaches the crate root only through `pub use <module>::*`.
+    glob_export: bool,
 }
 
 // These leaves were briefly emitted during Task S. Capability construction is withdrawn from the
@@ -2249,7 +2251,7 @@ fn collect_signal_inventory(
     if !lib_path.exists() {
         return Vec::new();
     }
-    let public_types = collect_root_exported_item_names(&lib_path, src_dir);
+    let (public_types, glob_types) = collect_root_exported_item_names(&lib_path, src_dir);
     let ts_exports = collect_ts_exports(src_dir);
     let mut inventory = Vec::new();
     for source in collect_rust_source_files(src_dir) {
@@ -2260,20 +2262,22 @@ fn collect_signal_inventory(
             .strip_prefix(crates_dir)
             .unwrap_or(&source)
             .to_path_buf();
-        let mut record = |item: String, ty: &syn::Type, generics: &BTreeSet<String>| {
-            for payload in find_signal_payloads(ty) {
-                if generics.contains(&payload) {
-                    continue;
+        let mut record =
+            |item: String, ty: &syn::Type, generics: &BTreeSet<String>, glob_export: bool| {
+                for payload in find_signal_payloads(ty) {
+                    if generics.contains(&payload) {
+                        continue;
+                    }
+                    inventory.push(SignalInventoryEntry {
+                        owner: owner.to_string(),
+                        source: relative.clone(),
+                        item: item.clone(),
+                        declared: compact_type_text(&rust_type_text(ty)),
+                        payload: compact_type_text(&payload),
+                        glob_export,
+                    });
                 }
-                inventory.push(SignalInventoryEntry {
-                    owner: owner.to_string(),
-                    source: relative.clone(),
-                    item: item.clone(),
-                    declared: compact_type_text(&rust_type_text(ty)),
-                    payload: compact_type_text(&payload),
-                });
-            }
-        };
+            };
         for item in &file.items {
             match item {
                 syn::Item::Struct(item) => {
@@ -2291,7 +2295,12 @@ fn collect_signal_inventory(
                             continue;
                         }
                         let field_name = field.ident.as_ref().unwrap().to_string();
-                        record(format!("{name}.{field_name}"), &field.ty, &BTreeSet::new());
+                        record(
+                            format!("{name}.{field_name}"),
+                            &field.ty,
+                            &BTreeSet::new(),
+                            glob_types.contains(&name),
+                        );
                     }
                 }
                 syn::Item::Fn(item) => {
@@ -2312,11 +2321,11 @@ fn collect_signal_inventory(
                     for input in &item.sig.inputs {
                         if let syn::FnArg::Typed(input) = input {
                             let param = input.pat.to_token_stream().to_string();
-                            record(format!("fn {name}({param})"), &input.ty, &generics);
+                            record(format!("fn {name}({param})"), &input.ty, &generics, false);
                         }
                     }
                     if let syn::ReturnType::Type(_, ty) = &item.sig.output {
-                        record(format!("fn {name} -> return"), ty, &generics);
+                        record(format!("fn {name} -> return"), ty, &generics, false);
                     }
                 }
                 _ => {}
@@ -2438,8 +2447,12 @@ fn get_signal_payload_stem(payload: &str) -> String {
 // Every item name a crate root (`lib.rs`) re-exports, read with `syn` so grouped
 // (`pub use contract::{A, B};`), renamed and glob (`pub use contract::*;`, `pub use crate::m::*;`)
 // forms all count. `collect_exported_type_names` predates grouped root exports and feeds wrapper
-// generation, so it is left unchanged; this reader serves the signal inventory only.
-fn collect_root_exported_item_names(lib_path: &Path, src_dir: &Path) -> BTreeSet<String> {
+// generation, so it is left unchanged; this reader serves the signal inventory only. The second
+// set holds the names reached only through a root glob of a module other than `contract`.
+fn collect_root_exported_item_names(
+    lib_path: &Path,
+    src_dir: &Path,
+) -> (BTreeSet<String>, BTreeSet<String>) {
     fn module_file(src_dir: &Path, path: &[String]) -> Option<PathBuf> {
         let module = path
             .iter()
@@ -2447,42 +2460,53 @@ fn collect_root_exported_item_names(lib_path: &Path, src_dir: &Path) -> BTreeSet
         let file = src_dir.join(format!("{module}.rs"));
         return file.exists().then_some(file);
     }
+    // `glob` is true below a crate-root glob of a module other than `contract` (`pub use types::*;`);
+    // `root` marks a tree written in `lib.rs` itself.
     fn visit_tree(
         tree: &syn::UseTree,
         prefix: &mut Vec<String>,
+        root: bool,
+        glob: bool,
         src_dir: &Path,
         seen: &mut BTreeSet<PathBuf>,
-        names: &mut BTreeSet<String>,
+        names: &mut BTreeMap<String, bool>,
     ) {
         match tree {
             syn::UseTree::Path(path) => {
                 prefix.push(path.ident.to_string());
-                visit_tree(&path.tree, prefix, src_dir, seen, names);
+                visit_tree(&path.tree, prefix, root, glob, src_dir, seen, names);
                 prefix.pop();
             }
             syn::UseTree::Name(name) => {
-                names.insert(name.ident.to_string());
+                insert_name(names, name.ident.to_string(), glob);
             }
             syn::UseTree::Rename(rename) => {
-                names.insert(rename.rename.to_string());
+                insert_name(names, rename.rename.to_string(), glob);
             }
             syn::UseTree::Glob(_) => {
+                let glob =
+                    glob || (root && prefix.last().is_some_and(|module| module != "contract"));
                 if let Some(file) = module_file(src_dir, prefix) {
-                    collect_module(&file, src_dir, seen, names);
+                    collect_module(&file, glob, src_dir, seen, names);
                 }
             }
             syn::UseTree::Group(group) => {
                 for item in &group.items {
-                    visit_tree(item, prefix, src_dir, seen, names);
+                    visit_tree(item, prefix, root, glob, src_dir, seen, names);
                 }
             }
         }
     }
+    fn insert_name(names: &mut BTreeMap<String, bool>, name: String, glob: bool) {
+        let entry = names.entry(name).or_insert(glob);
+        *entry = *entry && glob;
+    }
     fn collect_module(
         file: &Path,
+        glob: bool,
         src_dir: &Path,
         seen: &mut BTreeSet<PathBuf>,
-        names: &mut BTreeSet<String>,
+        names: &mut BTreeMap<String, bool>,
     ) {
         if !seen.insert(file.to_path_buf()) {
             return;
@@ -2494,16 +2518,24 @@ fn collect_root_exported_item_names(lib_path: &Path, src_dir: &Path) -> BTreeSet
         for item in &parsed.items {
             match item {
                 syn::Item::Struct(item) if matches!(item.vis, syn::Visibility::Public(_)) => {
-                    names.insert(item.ident.to_string());
+                    insert_name(names, item.ident.to_string(), glob);
                 }
                 syn::Item::Use(item) if matches!(item.vis, syn::Visibility::Public(_)) => {
-                    visit_tree(&item.tree, &mut Vec::new(), src_dir, seen, names);
+                    visit_tree(
+                        &item.tree,
+                        &mut Vec::new(),
+                        false,
+                        glob,
+                        src_dir,
+                        seen,
+                        names,
+                    );
                 }
                 _ => {}
             }
         }
     }
-    let mut names = BTreeSet::new();
+    let mut names = BTreeMap::new();
     let content = fs::read_to_string(lib_path).unwrap();
     if let Ok(parsed) = syn::parse_file(&content) {
         let mut seen = BTreeSet::new();
@@ -2511,11 +2543,24 @@ fn collect_root_exported_item_names(lib_path: &Path, src_dir: &Path) -> BTreeSet
             if let syn::Item::Use(item) = item
                 && matches!(item.vis, syn::Visibility::Public(_))
             {
-                visit_tree(&item.tree, &mut Vec::new(), src_dir, &mut seen, &mut names);
+                visit_tree(
+                    &item.tree,
+                    &mut Vec::new(),
+                    true,
+                    false,
+                    src_dir,
+                    &mut seen,
+                    &mut names,
+                );
             }
         }
     }
-    names
+    let glob_only = names
+        .iter()
+        .filter(|(_, glob)| **glob)
+        .map(|(name, _)| name.clone())
+        .collect();
+    (names.into_keys().collect(), glob_only)
 }
 
 // `Ref < Signal < () > >` -> `Ref<Signal<()>>`: token text without the spacing `quote` inserts.
@@ -2583,12 +2628,28 @@ fn generate_signal_inventory_report(inventory: &[SignalInventoryEntry]) -> Strin
                 || entry.declared.starts_with("Option<Ref<Signal")
         })
         .count();
+    // An owner whose every occurrence is glob-exported is listed by name: those crates define the
+    // fields in their own modules and expose them with `pub use types::*;`, so each occurrence is
+    // counted once, under its defining crate.
+    let glob_owners: Vec<&str> = owners
+        .iter()
+        .copied()
+        .filter(|owner| {
+            inventory
+                .iter()
+                .filter(|entry| entry.owner == *owner)
+                .all(|entry| entry.glob_export)
+        })
+        .collect();
     let mut report = String::new();
     writeln!(
         report,
-        "Signal inventory: {} occurrences in {} crates ({fields} fields, {functions} function parameters/returns, {ref_wrapped} Ref-wrapped), {} payload types",
+        "Signal inventory: {} occurrences in {} owning crates ({} named-export, {} glob-export: {}; each occurrence counted once under its defining crate) ({fields} fields, {functions} function parameters/returns, {ref_wrapped} Ref-wrapped), {} payload types",
         inventory.len(),
         owners.len(),
+        owners.len() - glob_owners.len(),
+        glob_owners.len(),
+        glob_owners.join(", "),
         payloads.len()
     )
     .unwrap();
