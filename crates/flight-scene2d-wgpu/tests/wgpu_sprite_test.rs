@@ -7,6 +7,7 @@ use flight_scene2d_wgpu::contract::*;
 use flight_texture::{TextureUvTransform, set_texture_uv_from_pixel_rect};
 
 use crate::support::*;
+use flight_scene2d::SPRITE_KIND;
 
 const CT_MODE_UNIFORM: u32 = 1;
 
@@ -126,6 +127,18 @@ mod draw_wgpu_sprite {
         assert!(close(data[10], 0.2));
         assert!(close(data[11], 0.0));
         submit_wgpu_frame(&mut state);
+    }
+}
+
+mod register_wgpu_sprite_renderer {
+    use super::*;
+
+    #[test]
+    fn registers_the_sprite_renderer_under_sprite_kind() {
+        let mut state = create_wgpu_render_state_for_test(None);
+        register_wgpu_sprite_renderer(&mut state);
+        let registered = get_registered_node_renderer(&state, SPRITE_KIND).unwrap();
+        assert!(std::ptr::eq(registered, &WGPU_SPRITE_RENDERER));
     }
 }
 

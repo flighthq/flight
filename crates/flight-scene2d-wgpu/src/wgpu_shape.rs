@@ -5,8 +5,11 @@
 //! The GPU mesh path is tried first; a shape with a fill that has no tessellated form falls through
 //! to the canvas replay. Both halves cache into the same per-node renderer data.
 
+use flight_render::register_node_renderer;
 use flight_render::{BatchFormat, NodeRenderer, RenderProxy2D};
 use flight_render_wgpu::WgpuRenderState;
+use flight_shape::contract::MORPH_SHAPE_KIND;
+use flight_shape::contract::SHAPE_KIND;
 
 use crate::wgpu_mesh_shape_renderer::draw_wgpu_mesh_shape;
 use crate::wgpu_raster_shape_renderer::draw_wgpu_raster_shape;
@@ -34,4 +37,20 @@ pub fn draw_wgpu_shape(state: &mut WgpuRenderState, render_proxy: &RenderProxy2D
         return;
     }
     draw_wgpu_raster_shape(state, render_proxy);
+}
+
+/// Registers `WGPU_MORPH_SHAPE_RENDERER` for `MORPH_SHAPE_KIND` on this state (TS
+/// `registerWgpuMorphShapeRenderer`).
+pub fn register_wgpu_morph_shape_renderer(state: &mut WgpuRenderState) {
+    register_node_renderer(
+        state,
+        MORPH_SHAPE_KIND.to_string(),
+        WGPU_MORPH_SHAPE_RENDERER,
+    );
+}
+
+/// Registers `WGPU_SHAPE_RENDERER` for `SHAPE_KIND` on this state (TS `registerWgpuShapeRenderer`).
+/// It is the hybrid strategy: tessellate when a mesh exists, else rasterize.
+pub fn register_wgpu_shape_renderer(state: &mut WgpuRenderState) {
+    register_node_renderer(state, SHAPE_KIND.to_string(), &WGPU_SHAPE_RENDERER);
 }

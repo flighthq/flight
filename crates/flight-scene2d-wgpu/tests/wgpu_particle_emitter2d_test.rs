@@ -7,6 +7,7 @@ use flight_scene2d_wgpu::contract::*;
 use flight_textureatlas::TextureAtlasRotation;
 
 use crate::support::*;
+use flight_particleemitter::PARTICLE_EMITTER_2D_KIND;
 
 fn emitter_with_region(rotation: TextureAtlasRotation) -> NodeRef {
     let emitter = flight_particleemitter::create_particle_emitter_2d();
@@ -102,6 +103,18 @@ mod draw_wgpu_particle_emitter2d {
         assert_eq!(data[12], 40.0);
         assert_eq!(data[13], -20.0);
         submit_wgpu_frame(&mut state);
+    }
+}
+
+mod register_wgpu_particle_emitter2d_renderer {
+    use super::*;
+
+    #[test]
+    fn registers_the_particle_emitter_renderer_under_particle_emitter_2d_kind() {
+        let mut state = create_wgpu_render_state_for_test(None);
+        register_wgpu_particle_emitter2d_renderer(&mut state);
+        let registered = get_registered_node_renderer(&state, PARTICLE_EMITTER_2D_KIND).unwrap();
+        assert!(std::ptr::eq(registered, &WGPU_PARTICLE_EMITTER2D_RENDERER));
     }
 }
 

@@ -1,20 +1,28 @@
+import { EntityRuntimeKey } from '@flighthq/entity/contract';
 import {
   createImageResource,
   registerTestImageDimensionResolver,
   unregisterTestImageDimensionResolver,
 } from '@flighthq/image/contract';
 import type { HostImageCapability, ImageResource } from '@flighthq/image/contract';
-import { beginWgpuScreenRenderPassForTest, submitWgpuFrame } from '@flighthq/render-wgpu/contract';
+import type { WgpuDevice, WgpuRenderState } from '@flighthq/render-wgpu/contract';
+import {
+  beginWgpuScreenRenderPassForTest,
+  submitWgpuFrame,
+  createWgpuDeviceState,
+  createWgpuRenderStateRuntime,
+} from '@flighthq/render-wgpu/contract';
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
 import { createWgpuRenderStateForTest, installWgpuMock } from '@flighthq/render-wgpu/contract';
-import { BatchFormat } from '@flighthq/render/contract';
+import { BatchFormat, getRenderStateRuntime } from '@flighthq/render/contract';
 import type { RenderProxy2D } from '@flighthq/render/contract';
 import type { CanvasSurface, HostCanvasCapability } from '@flighthq/surface/contract';
-import { createTextLabel } from '@flighthq/text/contract';
+import { createTextLabel, TextLabelKind } from '@flighthq/text/contract';
 import * as textlayout from '@flighthq/textlayout/contract';
+import { describe, expect, it } from 'vitest';
 
 import { registerWgpuStandardMaterial } from './wgpuStandardMaterial.ts';
-import { wgpuTextLabelRenderer, drawWgpuTextLabel } from './wgpuTextLabel.ts';
+import { wgpuTextLabelRenderer, drawWgpuTextLabel, registerWgpuTextLabelRenderer } from './wgpuTextLabel.ts';
 
 // A test that wraps a host handle supplies the host: the resource measures through the registered
 // resolver, and clearing after each test keeps this file from covering for another's missing one.
@@ -225,6 +233,14 @@ describe('drawWgpuTextLabel', () => {
   });
 });
 
+describe('registerWgpuTextLabelRenderer', () => {
+  it('registers wgpuTextLabelRenderer under TextLabelKind', () => {
+    const state = createRegistrationTestState();
+    registerWgpuTextLabelRenderer(state);
+    expect(getRenderStateRuntime(state).registries.nodeRenderers.get(TextLabelKind)).toBe(wgpuTextLabelRenderer);
+  });
+});
+
 describe('wgpuTextLabelRenderer', () => {
   it('declares BatchFormat.Quad', () => {
     expect(wgpuTextLabelRenderer.format).toBe(BatchFormat.Quad);
@@ -267,3 +283,9 @@ describe('wgpuTextLabelRenderer', () => {
     expect(order).toEqual(['texture', 'surface']);
   });
 });
+
+function createRegistrationTestState(): WgpuRenderState {
+  const state = {} as WgpuRenderState;
+  state[EntityRuntimeKey] = createWgpuRenderStateRuntime(createWgpuDeviceState({} as WgpuDevice));
+  return state;
+}

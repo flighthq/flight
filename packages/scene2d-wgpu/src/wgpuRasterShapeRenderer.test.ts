@@ -1,3 +1,4 @@
+import { EntityRuntimeKey } from '@flighthq/entity/contract';
 import {
   createImageResource,
   registerTestImageDimensionResolver,
@@ -10,15 +11,35 @@ import {
   createWgpuRenderStateForTest,
   getWgpuRenderStateRuntime,
   installWgpuMock,
+  createWgpuDeviceState,
+  createWgpuRenderStateRuntime,
 } from '@flighthq/render-wgpu/contract';
-import type { WgpuRenderPassEncoder } from '@flighthq/render-wgpu/contract';
-import { enableRenderRegistriesGuards, explainRenderRegistriesMisses, BatchFormat } from '@flighthq/render/contract';
+import type { WgpuRenderPassEncoder, WgpuDevice, WgpuRenderState } from '@flighthq/render-wgpu/contract';
+import {
+  enableRenderRegistriesGuards,
+  explainRenderRegistriesMisses,
+  BatchFormat,
+  getRenderStateRuntime,
+} from '@flighthq/render/contract';
 import { RenderRegistryTable } from '@flighthq/render/contract';
 import type { RenderProxy2D } from '@flighthq/render/contract';
-import { appendShapeBeginFill, appendShapeEndFill, appendShapeRectangle, createShape } from '@flighthq/shape/contract';
+import {
+  appendShapeBeginFill,
+  appendShapeEndFill,
+  appendShapeRectangle,
+  createShape,
+  ShapeKind,
+} from '@flighthq/shape/contract';
 import type { CanvasSurface, HostCanvasCapability } from '@flighthq/surface/contract';
+import { describe, expect, it } from 'vitest';
 
-import { wgpuRasterShapeRenderer, drawWgpuRasterShape } from './wgpuRasterShapeRenderer.ts';
+import { wgpuMeshShapeRenderer } from './wgpuMeshShapeRenderer.ts';
+import {
+  wgpuRasterShapeRenderer,
+  drawWgpuRasterShape,
+  registerWgpuRasterShapeRenderer,
+} from './wgpuRasterShapeRenderer.ts';
+import { registerWgpuShapeRenderer, wgpuShapeRenderer } from './wgpuShape.ts';
 import { registerWgpuShapeRasterizer } from './wgpuShapeRasterizer.ts';
 import { registerWgpuStandardMaterial } from './wgpuStandardMaterial.ts';
 
@@ -235,6 +256,18 @@ describe('drawWgpuRasterShape', () => {
   });
 });
 
+describe('registerWgpuRasterShapeRenderer', () => {
+  it('pins its strategy under ShapeKind, replacing the hybrid shape renderer', () => {
+    const state = createRegistrationTestState();
+    registerWgpuShapeRenderer(state);
+    registerWgpuRasterShapeRenderer(state);
+    const registered = getRenderStateRuntime(state).registries.nodeRenderers.get(ShapeKind);
+    expect(registered).toBe(wgpuRasterShapeRenderer);
+    expect(registered).not.toBe(wgpuShapeRenderer);
+    expect(registered).not.toBe(wgpuMeshShapeRenderer);
+  });
+});
+
 describe('wgpuRasterShapeRenderer', () => {
   it('declares BatchFormat.Quad and the shared shape data lifecycle', () => {
     expect(wgpuRasterShapeRenderer.format).toBe(BatchFormat.Quad);
@@ -243,3 +276,9 @@ describe('wgpuRasterShapeRenderer', () => {
     expect(wgpuRasterShapeRenderer.submit).toBe(drawWgpuRasterShape);
   });
 });
+
+function createRegistrationTestState(): WgpuRenderState {
+  const state = {} as WgpuRenderState;
+  state[EntityRuntimeKey] = createWgpuRenderStateRuntime(createWgpuDeviceState({} as WgpuDevice));
+  return state;
+}

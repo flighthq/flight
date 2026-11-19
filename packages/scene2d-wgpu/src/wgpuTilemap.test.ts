@@ -1,13 +1,29 @@
-import { beginWgpuScreenRenderPassForTest, submitWgpuFrame } from '@flighthq/render-wgpu/contract';
+import { EntityRuntimeKey } from '@flighthq/entity/contract';
+import type { WgpuDevice, WgpuRenderState } from '@flighthq/render-wgpu/contract';
+import {
+  beginWgpuScreenRenderPassForTest,
+  submitWgpuFrame,
+  createWgpuDeviceState,
+  createWgpuRenderStateRuntime,
+} from '@flighthq/render-wgpu/contract';
 import { createWgpuRenderStateForTest, installWgpuMock } from '@flighthq/render-wgpu/contract';
-import { getRenderProxy2D, prepareScene2DRender } from '@flighthq/render/contract';
-import { createTilemap } from '@flighthq/tilemap/contract';
+import { getRenderProxy2D, prepareScene2DRender, getRenderStateRuntime } from '@flighthq/render/contract';
+import { createTilemap, TilemapKind } from '@flighthq/tilemap/contract';
+import { describe, expect, it } from 'vitest';
 
 import { flushWgpuQuadBatchWriter } from './wgpuQuadBatchWriter.ts';
-import { wgpuTilemapRenderer } from './wgpuTilemap.ts';
+import { wgpuTilemapRenderer, registerWgpuTilemapRenderer } from './wgpuTilemap.ts';
 
 beforeAll(() => {
   installWgpuMock();
+});
+
+describe('registerWgpuTilemapRenderer', () => {
+  it('registers wgpuTilemapRenderer under TilemapKind', () => {
+    const state = createRegistrationTestState();
+    registerWgpuTilemapRenderer(state);
+    expect(getRenderStateRuntime(state).registries.nodeRenderers.get(TilemapKind)).toBe(wgpuTilemapRenderer);
+  });
 });
 
 describe('wgpuTilemapRenderer', () => {
@@ -45,3 +61,9 @@ describe('wgpuTilemapRenderer.submit', () => {
     expect(() => wgpuTilemapRenderer.submit(state, renderProxy)).not.toThrow();
   });
 });
+
+function createRegistrationTestState(): WgpuRenderState {
+  const state = {} as WgpuRenderState;
+  state[EntityRuntimeKey] = createWgpuRenderStateRuntime(createWgpuDeviceState({} as WgpuDevice));
+  return state;
+}

@@ -11,10 +11,11 @@ use flight_bitmaptext::BITMAP_TEXT_KIND;
 use flight_materials::STANDARD_MATERIAL_KIND;
 use flight_particleemitter::PARTICLE_EMITTER_2D_KIND;
 use flight_quadbatch::QUAD_BATCH_KIND;
-use flight_registry::{KindMap, with_kind_map_entry};
-use flight_render::{NodeRenderer, RENDER_CACHE_KIND};
+use flight_registry::{KindMap, concat_kind_map, with_kind_map_entry};
+use flight_render::{NodeRenderer, RENDER_CACHE_KIND, register_node_renderer};
 use flight_render_wgpu::{
     WgpuMaterialRenderer, WgpuRenderRegistries, WgpuRenderState, build_wgpu_render_registries,
+    get_wgpu_render_state_runtime_mut,
 };
 use flight_scene2d::{DISPLAY_OBJECT_KIND, SCALE9_SPRITE_KIND, SPRITE_KIND};
 use flight_shape::contract::{MORPH_SHAPE_KIND, SCALE9_SHAPE_KIND, SHAPE_KIND};
@@ -118,4 +119,67 @@ fn empty_kind_map<T>() -> KindMap<T> {
         entries: HashMap::new(),
         key_order: Vec::new(),
     };
+}
+
+/// Registers every table of `preset` on an existing state (TS `registerWgpuRenderPreset`): each node
+/// renderer through `register_node_renderer`, in the preset's key order, and each WGPU registry
+/// table overlaid on the state's own, so a preset entry replaces the same kind and every other
+/// registration the state already holds is kept. A preset slot that is unset leaves the state's
+/// slot untouched.
+pub fn register_wgpu_render_preset(state: &mut WgpuRenderState, preset: &WgpuScene2DRenderPreset) {
+    for kind in &preset.node_renderers.key_order {
+        if let Some(renderer) = preset.node_renderers.entries.get(kind) {
+            register_node_renderer(state, kind.clone(), *renderer);
+        }
+    }
+    let source = &preset.registries;
+    let registries = &mut get_wgpu_render_state_runtime_mut(state).registries;
+    if source.color_adjustment_feature.is_some() {
+        registries.color_adjustment_feature = source.color_adjustment_feature;
+    }
+    if source.color_adjustment_feature_guard.is_some() {
+        registries.color_adjustment_feature_guard = source.color_adjustment_feature_guard;
+    }
+    if source.compressed_texture_decoder.is_some() {
+        registries.compressed_texture_decoder = source.compressed_texture_decoder.clone();
+    }
+    if source.compressed_texture_upload.is_some() {
+        registries.compressed_texture_upload = source.compressed_texture_upload;
+    }
+    registries.custom_material_shaders = Arc::new(concat_kind_map(
+        &registries.custom_material_shaders,
+        &source.custom_material_shaders,
+    ));
+    registries.effects = Arc::new(concat_kind_map(&registries.effects, &source.effects));
+    if source.gpu_skinning.is_some() {
+        registries.gpu_skinning = source.gpu_skinning;
+    }
+    registries.material_renderers = Arc::new(concat_kind_map(
+        &registries.material_renderers,
+        &source.material_renderers,
+    ));
+    registries.modifier_snippets = Arc::new(concat_kind_map(
+        &registries.modifier_snippets,
+        &source.modifier_snippets,
+    ));
+    if source.passes.is_some() {
+        registries.passes = source.passes.clone();
+    }
+    if source.shape_rasterizer.is_some() {
+        registries.shape_rasterizer = source.shape_rasterizer.clone();
+    }
+    registries.texture_resolvers = Arc::new(concat_kind_map(
+        &registries.texture_resolvers,
+        &source.texture_resolvers,
+    ));
+    registries.velocity_writers = Arc::new(concat_kind_map(
+        &registries.velocity_writers,
+        &source.velocity_writers,
+    ));
+}
+
+/// Registers the complete standard 2D WebGPU configuration, `WGPU_SCENE2D_RENDER_PRESET`, on an
+/// existing state (TS `registerWgpuScene2DRenderPreset`).
+pub fn register_wgpu_scene2d_render_preset(state: &mut WgpuRenderState) {
+    register_wgpu_render_preset(state, &WGPU_SCENE2D_RENDER_PRESET);
 }

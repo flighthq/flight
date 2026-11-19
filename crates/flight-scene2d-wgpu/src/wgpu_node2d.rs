@@ -6,11 +6,13 @@
 use flight_entity::get_entity_id;
 use flight_geometry::{Matrix, create_matrix, multiply_matrix};
 use flight_node::NodeRef;
+use flight_render::register_node_renderer;
 use flight_render::{
     NodeRenderer, RenderProxies2D, RenderProxy2D, RenderState, is_render_proxy_visible,
     noop_renderer_data,
 };
 use flight_render_wgpu::{WgpuRenderPass, WgpuRenderState};
+use flight_scene2d::DISPLAY_OBJECT_KIND;
 
 use crate::wgpu_quad_batch_writer::flush_wgpu_quad_batch_writer;
 
@@ -29,6 +31,16 @@ pub fn draw_wgpu_scene2d(
     _state: &mut WgpuRenderState,
     _render_proxy: &RenderProxy2D<WgpuRenderState>,
 ) {
+}
+
+/// Registers `WGPU_SCENE2D_RENDERER` for `DISPLAY_OBJECT_KIND` on this state (TS
+/// `registerWgpuScene2DRenderer`).
+pub fn register_wgpu_scene2d_renderer(state: &mut WgpuRenderState) {
+    register_node_renderer(
+        state,
+        DISPLAY_OBJECT_KIND.to_string(),
+        &WGPU_SCENE2D_RENDERER,
+    );
 }
 
 /// Walks `source`'s prepared subtree in paint order and submits every visible proxy to its renderer

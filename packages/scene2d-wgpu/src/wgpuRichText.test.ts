@@ -1,19 +1,24 @@
+import { EntityRuntimeKey } from '@flighthq/entity/contract';
 import {
   createImageResource,
   registerTestImageDimensionResolver,
   unregisterTestImageDimensionResolver,
 } from '@flighthq/image/contract';
 import type { HostImageCapability, ImageResource } from '@flighthq/image/contract';
+import type { WgpuDevice, WgpuRenderState } from '@flighthq/render-wgpu/contract';
 import {
   beginWgpuScreenRenderPassForTest,
   getWgpuRenderStateRuntime,
   submitWgpuFrame,
+  createWgpuDeviceState,
+  createWgpuRenderStateRuntime,
 } from '@flighthq/render-wgpu/contract';
 import { createWgpuRenderStateForTest, installWgpuMock } from '@flighthq/render-wgpu/contract';
-import { getOrCreateRenderProxy2D, prepareScene2DRender } from '@flighthq/render/contract';
+import { getOrCreateRenderProxy2D, prepareScene2DRender, getRenderStateRuntime } from '@flighthq/render/contract';
 import type { CanvasSurface, HostCanvasCapability } from '@flighthq/surface/contract';
-import { createRichText } from '@flighthq/text/contract';
+import { createRichText, RichTextKind } from '@flighthq/text/contract';
 import { enableTextInput } from '@flighthq/textinput/contract';
+import { describe, expect, it } from 'vitest';
 
 import { getWgpuRendererData } from './wgpuRendererData.ts';
 import {
@@ -23,6 +28,7 @@ import {
   drawWgpuRichText,
   drawWgpuRichTextWithOverlay,
   registerWgpuTextInputOverlay,
+  registerWgpuRichTextRenderer,
 } from './wgpuRichText.ts';
 
 // A test that wraps a host handle supplies the host: the resource measures through the registered
@@ -208,6 +214,14 @@ describe('drawWgpuRichTextWithOverlay', () => {
   });
 });
 
+describe('registerWgpuRichTextRenderer', () => {
+  it('registers wgpuRichTextRenderer under RichTextKind', () => {
+    const state = createRegistrationTestState();
+    registerWgpuRichTextRenderer(state);
+    expect(getRenderStateRuntime(state).registries.nodeRenderers.get(RichTextKind)).toBe(wgpuRichTextRenderer);
+  });
+});
+
 describe('registerWgpuTextInputOverlay', () => {
   it('invokes the registered overlay only for a RichText with an input slot', async () => {
     const overlay = vi.fn();
@@ -246,3 +260,9 @@ describe('wgpuRichTextRenderer', () => {
     expect(typeof wgpuRichTextRenderer.submit).toBe('function');
   });
 });
+
+function createRegistrationTestState(): WgpuRenderState {
+  const state = {} as WgpuRenderState;
+  state[EntityRuntimeKey] = createWgpuRenderStateRuntime(createWgpuDeviceState({} as WgpuDevice));
+  return state;
+}

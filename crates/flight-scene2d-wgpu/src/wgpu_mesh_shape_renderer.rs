@@ -8,6 +8,7 @@
 
 use flight_node::{Node, get_node_local_content_revision};
 use flight_path::{PathMesh, tessellate_path};
+use flight_render::register_node_renderer;
 use flight_render::{
     BatchFormat, NodeRenderer, RenderProxy2D, RenderRegistryTable, RenderState,
     emit_render_registry_miss,
@@ -135,6 +136,13 @@ pub(crate) fn get_wgpu_shape_commands(source: &dyn Node) -> Option<&[ShapeComman
         return Some(&shape.data.commands);
     }
     return None;
+}
+
+/// Registers `WGPU_MESH_SHAPE_RENDERER` for `SHAPE_KIND` on this state (TS
+/// `registerWgpuMeshShapeRenderer`). It pins the tessellated-mesh strategy for `SHAPE_KIND`,
+/// replacing whichever shape renderer was registered.
+pub fn register_wgpu_mesh_shape_renderer(state: &mut WgpuRenderState) {
+    register_node_renderer(state, SHAPE_KIND.to_string(), &WGPU_MESH_SHAPE_RENDERER);
 }
 
 // Resolves every solid fill and solid stroke into one fill-before-stroke source list. The default

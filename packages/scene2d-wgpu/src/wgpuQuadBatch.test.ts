@@ -1,18 +1,33 @@
-import { createQuadBatch, reserveQuadBatch } from '@flighthq/quadbatch/contract';
+import { EntityRuntimeKey } from '@flighthq/entity/contract';
+import { createQuadBatch, reserveQuadBatch, QuadBatchKind } from '@flighthq/quadbatch/contract';
+import type { WgpuDevice, WgpuRenderState } from '@flighthq/render-wgpu/contract';
 import {
   beginWgpuScreenRenderPassForTest,
   getWgpuRenderStateRuntime,
   registerWgpuRenderTextureResolver,
   renderIntoWgpuRenderTexture,
   submitWgpuFrame,
+  createWgpuDeviceState,
+  createWgpuRenderStateRuntime,
 } from '@flighthq/render-wgpu/contract';
 import { createWgpuRenderStateForTest, installWgpuMock } from '@flighthq/render-wgpu/contract';
-import { getOrCreateRenderProxy2D, getRenderProxy2D, prepareScene2DRender } from '@flighthq/render/contract';
+import {
+  getOrCreateRenderProxy2D,
+  getRenderProxy2D,
+  prepareScene2DRender,
+  getRenderStateRuntime,
+} from '@flighthq/render/contract';
 import { createRenderTexture } from '@flighthq/texture/contract';
 import { createTextureAtlas, createTextureAtlasRegion } from '@flighthq/textureatlas/contract';
 import { TextureAtlasRotation } from '@flighthq/textureatlas/contract';
+import { describe, expect, it } from 'vitest';
 
-import { wgpuQuadBatchRenderer, ensureWgpuQuadBatchResources, getWgpuQuadBatchPipeline } from './wgpuQuadBatch.ts';
+import {
+  wgpuQuadBatchRenderer,
+  ensureWgpuQuadBatchResources,
+  getWgpuQuadBatchPipeline,
+  registerWgpuQuadBatchRenderer,
+} from './wgpuQuadBatch.ts';
 import { flushWgpuQuadBatchWriter } from './wgpuQuadBatchWriter.ts';
 import { registerWgpuStandardMaterial } from './wgpuStandardMaterial.ts';
 
@@ -48,6 +63,14 @@ describe('getWgpuQuadBatchPipeline', () => {
     expect(pipeline).toBeDefined();
     const pipeline2 = getWgpuQuadBatchPipeline(state, resources, module, false, null);
     expect(pipeline2).toBe(pipeline);
+  });
+});
+
+describe('registerWgpuQuadBatchRenderer', () => {
+  it('registers wgpuQuadBatchRenderer under QuadBatchKind', () => {
+    const state = createRegistrationTestState();
+    registerWgpuQuadBatchRenderer(state);
+    expect(getRenderStateRuntime(state).registries.nodeRenderers.get(QuadBatchKind)).toBe(wgpuQuadBatchRenderer);
   });
 });
 
@@ -161,3 +184,9 @@ describe('wgpuQuadBatchRenderer.submit', () => {
     submitWgpuFrame(state);
   });
 });
+
+function createRegistrationTestState(): WgpuRenderState {
+  const state = {} as WgpuRenderState;
+  state[EntityRuntimeKey] = createWgpuRenderStateRuntime(createWgpuDeviceState({} as WgpuDevice));
+  return state;
+}

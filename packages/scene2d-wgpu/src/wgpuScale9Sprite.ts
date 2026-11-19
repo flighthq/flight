@@ -5,9 +5,9 @@ import {
   resolveWgpuTexture,
 } from '@flighthq/render-wgpu/contract';
 import type { WgpuRenderState } from '@flighthq/render-wgpu/contract';
-import { SCENE2D_WORKING_COLOR_SPACE, BatchFormat } from '@flighthq/render/contract';
+import { SCENE2D_WORKING_COLOR_SPACE, BatchFormat, registerNodeRenderer } from '@flighthq/render/contract';
 import type { RenderProxy2D, Scene2DRenderer } from '@flighthq/render/contract';
-import { createSpriteRendererData, isSpriteRendererDirty } from '@flighthq/scene2d/contract';
+import { createSpriteRendererData, isSpriteRendererDirty, Scale9SpriteKind } from '@flighthq/scene2d/contract';
 import type { Scale9Sprite } from '@flighthq/scene2d/contract';
 import { getTextureUvMatrix, getTextureViewSize, hasTextureSource } from '@flighthq/texture/contract';
 
@@ -123,3 +123,8 @@ export const wgpuScale9SpriteRenderer: Scene2DRenderer = {
 const scale9UvMatrix = createMatrix3();
 const scale9ViewSize = { x: 0, y: 0 };
 const sliceTransform = { a: 1, b: 0, c: 0, d: 1, tx: 0, ty: 0 };
+
+/** Registers wgpuScale9SpriteRenderer for Scale9SpriteKind on this state. */
+export function registerWgpuScale9SpriteRenderer(state: WgpuRenderState): void {
+  registerNodeRenderer(state, Scale9SpriteKind, wgpuScale9SpriteRenderer);
+}

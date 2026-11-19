@@ -1,3 +1,4 @@
+import { EntityRuntimeKey } from '@flighthq/entity/contract';
 import {
   createImageResource,
   invalidateImageResource,
@@ -5,16 +6,25 @@ import {
   unregisterTestImageDimensionResolver,
 } from '@flighthq/image/contract';
 import type { HostImageCapability } from '@flighthq/image/contract';
+import type { WgpuDevice, WgpuRenderState } from '@flighthq/render-wgpu/contract';
 import {
   beginWgpuScreenRenderPassForTest,
   bindWgpuImageResourceTexture,
   getWgpuRenderStateRuntime,
   submitWgpuFrame,
+  createWgpuDeviceState,
+  createWgpuRenderStateRuntime,
 } from '@flighthq/render-wgpu/contract';
 import { createWgpuRenderStateForTest, installWgpuMock } from '@flighthq/render-wgpu/contract';
-import { getOrCreateRenderProxy2D, prepareScene2DRender } from '@flighthq/render/contract';
-import { appendShapeBeginFill, appendShapeRectangle, createScale9Shape } from '@flighthq/shape/contract';
+import { getOrCreateRenderProxy2D, prepareScene2DRender, getRenderStateRuntime } from '@flighthq/render/contract';
+import {
+  appendShapeBeginFill,
+  appendShapeRectangle,
+  createScale9Shape,
+  Scale9ShapeKind,
+} from '@flighthq/shape/contract';
 import type { CanvasSurface, HostCanvasCapability } from '@flighthq/surface/contract';
+import { describe, expect, it } from 'vitest';
 
 import {
   acquireWgpuScale9ShapeRasterSurface,
@@ -24,6 +34,7 @@ import {
   drawWgpuScale9Shape,
   drawWgpuScale9ShapeMask,
   getWgpuScale9ShapeData,
+  registerWgpuScale9ShapeRenderer,
 } from './wgpuScale9Shape.ts';
 
 // A test that wraps a host handle supplies the host: the resource measures through the registered
@@ -250,6 +261,14 @@ describe('getWgpuScale9ShapeData', () => {
   });
 });
 
+describe('registerWgpuScale9ShapeRenderer', () => {
+  it('registers wgpuScale9ShapeRenderer under Scale9ShapeKind', () => {
+    const state = createRegistrationTestState();
+    registerWgpuScale9ShapeRenderer(state);
+    expect(getRenderStateRuntime(state).registries.nodeRenderers.get(Scale9ShapeKind)).toBe(wgpuScale9ShapeRenderer);
+  });
+});
+
 describe('wgpuScale9ShapeRenderer', () => {
   it('wires createData, destroyData, and submit', () => {
     expect(wgpuScale9ShapeRenderer.createData).toBe(createWgpuScale9ShapeData);
@@ -257,3 +276,9 @@ describe('wgpuScale9ShapeRenderer', () => {
     expect(wgpuScale9ShapeRenderer.submit).toBe(drawWgpuScale9Shape);
   });
 });
+
+function createRegistrationTestState(): WgpuRenderState {
+  const state = {} as WgpuRenderState;
+  state[EntityRuntimeKey] = createWgpuRenderStateRuntime(createWgpuDeviceState({} as WgpuDevice));
+  return state;
+}

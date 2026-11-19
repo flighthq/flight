@@ -1,12 +1,20 @@
+import { EntityRuntimeKey } from '@flighthq/entity/contract';
 import * as flightNode from '@flighthq/node/contract';
 import {
   beginWgpuScreenRenderPassForTest,
   createWgpuRenderStateForTest,
   getWgpuRenderStateRuntime,
   installWgpuMock,
+  createWgpuDeviceState,
+  createWgpuRenderStateRuntime,
 } from '@flighthq/render-wgpu/contract';
-import type { WgpuRenderPassEncoder } from '@flighthq/render-wgpu/contract';
-import { enableRenderRegistriesGuards, explainRenderRegistriesMisses, BatchFormat } from '@flighthq/render/contract';
+import type { WgpuRenderPassEncoder, WgpuDevice, WgpuRenderState } from '@flighthq/render-wgpu/contract';
+import {
+  enableRenderRegistriesGuards,
+  explainRenderRegistriesMisses,
+  BatchFormat,
+  getRenderStateRuntime,
+} from '@flighthq/render/contract';
 import { RenderRegistryTable } from '@flighthq/render/contract';
 import type { RenderProxy2D } from '@flighthq/render/contract';
 import {
@@ -15,9 +23,13 @@ import {
   appendShapeEndFill,
   appendShapeRectangle,
   createShape,
+  ShapeKind,
 } from '@flighthq/shape/contract';
+import { describe, expect, it } from 'vitest';
 
-import { wgpuMeshShapeRenderer, drawWgpuMeshShape } from './wgpuMeshShapeRenderer.ts';
+import { wgpuMeshShapeRenderer, drawWgpuMeshShape, registerWgpuMeshShapeRenderer } from './wgpuMeshShapeRenderer.ts';
+import { wgpuRasterShapeRenderer } from './wgpuRasterShapeRenderer.ts';
+import { registerWgpuShapeRenderer, wgpuShapeRenderer } from './wgpuShape.ts';
 import { registerWgpuShapeRasterizer } from './wgpuShapeRasterizer.ts';
 
 beforeAll(() => installWgpuMock());
@@ -131,6 +143,18 @@ describe('drawWgpuMeshShape', () => {
   });
 });
 
+describe('registerWgpuMeshShapeRenderer', () => {
+  it('pins its strategy under ShapeKind, replacing the hybrid shape renderer', () => {
+    const state = createRegistrationTestState();
+    registerWgpuShapeRenderer(state);
+    registerWgpuMeshShapeRenderer(state);
+    const registered = getRenderStateRuntime(state).registries.nodeRenderers.get(ShapeKind);
+    expect(registered).toBe(wgpuMeshShapeRenderer);
+    expect(registered).not.toBe(wgpuShapeRenderer);
+    expect(registered).not.toBe(wgpuRasterShapeRenderer);
+  });
+});
+
 describe('wgpuMeshShapeRenderer', () => {
   it('declares BatchFormat.Quad and the shared shape data lifecycle', () => {
     expect(wgpuMeshShapeRenderer.format).toBe(BatchFormat.Quad);
@@ -164,3 +188,9 @@ describe('wgpuMeshShapeRenderer', () => {
     });
   });
 });
+
+function createRegistrationTestState(): WgpuRenderState {
+  const state = {} as WgpuRenderState;
+  state[EntityRuntimeKey] = createWgpuRenderStateRuntime(createWgpuDeviceState({} as WgpuDevice));
+  return state;
+}

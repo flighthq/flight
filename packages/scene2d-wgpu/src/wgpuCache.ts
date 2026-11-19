@@ -28,6 +28,8 @@ import {
   noopRendererData,
   prepareScene2DRender,
   registerRenderCacheNodeRenderer,
+  RenderCacheKind,
+  registerNodeRenderer,
 } from '@flighthq/render/contract';
 import type { RenderProxy2D, Scene2DRenderer } from '@flighthq/render/contract';
 import type { RenderCache, RenderCacheRefreshOptions } from '@flighthq/render/contract';
@@ -133,14 +135,9 @@ export function refreshWgpuRenderCache(
   });
 }
 
-export function releaseWgpuRenderCache(state: WgpuRenderState, cache: RenderCache): void {
-  const targets = _renderCacheTargets.get(state);
-  if (targets === undefined) return;
-  const target = targets.get(cache);
-  if (target === undefined) return;
-  // A WgpuTextureRenderTarget owns GPU textures; GC will not free them.
-  destroyWgpuTextureRenderTarget(target);
-  targets.delete(cache);
+/** Registers wgpuRenderCacheRenderer for RenderCacheKind on this state. */
+export function registerWgpuRenderCacheRenderer(state: WgpuRenderState): void {
+  registerNodeRenderer(state, RenderCacheKind, wgpuRenderCacheRenderer);
 }
 
 function drawWgpuRenderCache(state: WgpuRenderState, renderProxy: RenderProxy2D): void {
@@ -190,3 +187,13 @@ const _bakeTransform = createMatrix() as Matrix;
 const _targetSize = { width: 0, height: 0 };
 const _yInvert = createMatrix() as Matrix;
 const _identity = createMatrix() as Matrix;
+
+export function releaseWgpuRenderCache(state: WgpuRenderState, cache: RenderCache): void {
+  const targets = _renderCacheTargets.get(state);
+  if (targets === undefined) return;
+  const target = targets.get(cache);
+  if (target === undefined) return;
+  // A WgpuTextureRenderTarget owns GPU textures; GC will not free them.
+  destroyWgpuTextureRenderTarget(target);
+  targets.delete(cache);
+}

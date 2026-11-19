@@ -9,6 +9,7 @@ use flight_render_wgpu::*;
 use flight_scene2d_wgpu::contract::*;
 
 use crate::support::*;
+use flight_shape::contract::SHAPE_KIND;
 
 fn mesh_count(proxy: &flight_render::RenderProxy2D<WgpuRenderState>) -> usize {
     let data = proxy.renderer_data.clone().unwrap();
@@ -59,6 +60,21 @@ mod draw_wgpu_mesh_shape {
         no_data.renderer_data = None;
         assert!(!draw_wgpu_mesh_shape(&mut state, &no_data));
         submit_wgpu_frame(&mut state);
+    }
+}
+
+mod register_wgpu_mesh_shape_renderer {
+    use super::*;
+
+    #[test]
+    fn pins_the_mesh_strategy_under_shape_kind_replacing_the_hybrid() {
+        let mut state = create_wgpu_render_state_for_test(None);
+        register_wgpu_shape_renderer(&mut state);
+        register_wgpu_mesh_shape_renderer(&mut state);
+        let registered = get_registered_node_renderer(&state, SHAPE_KIND).unwrap();
+        assert!(std::ptr::eq(registered, &WGPU_MESH_SHAPE_RENDERER));
+        assert!(!std::ptr::eq(registered, &WGPU_SHAPE_RENDERER));
+        assert!(!std::ptr::eq(registered, &WGPU_RASTER_SHAPE_RENDERER));
     }
 }
 

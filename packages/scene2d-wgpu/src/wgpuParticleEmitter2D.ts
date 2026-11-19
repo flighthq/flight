@@ -1,4 +1,5 @@
 import type { ParticleEmitter2D } from '@flighthq/particleemitter/contract';
+import { ParticleEmitter2DKind } from '@flighthq/particleemitter/contract';
 import {
   WgpuBufferUsage,
   WgpuShaderStage,
@@ -11,7 +12,7 @@ import {
   retireWgpuBuffer,
 } from '@flighthq/render-wgpu/contract';
 import type { WgpuParticleResources, WgpuRenderPipeline, WgpuRenderState } from '@flighthq/render-wgpu/contract';
-import { SCENE2D_WORKING_COLOR_SPACE } from '@flighthq/render/contract';
+import { SCENE2D_WORKING_COLOR_SPACE, registerNodeRenderer } from '@flighthq/render/contract';
 import { noopRendererData } from '@flighthq/render/contract';
 import type { RenderProxy2D } from '@flighthq/render/contract';
 import type { SpriteRenderer } from '@flighthq/render/contract';
@@ -360,3 +361,8 @@ export const wgpuParticleEmitter2DRenderer: SpriteRenderer = {
     drawWgpuParticleEmitter2D(state, node);
   },
 };
+
+/** Registers wgpuParticleEmitter2DRenderer for ParticleEmitter2DKind on this state. */
+export function registerWgpuParticleEmitter2DRenderer(state: WgpuRenderState): void {
+  registerNodeRenderer(state, ParticleEmitter2DKind, wgpuParticleEmitter2DRenderer);
+}

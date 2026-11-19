@@ -1,5 +1,6 @@
 import { EntityRuntimeKey } from '@flighthq/entity/contract';
 import { createMatrix } from '@flighthq/geometry/contract';
+import { createWgpuDeviceState, createWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
 import * as renderWgpu from '@flighthq/render-wgpu/contract';
 import type {
   WgpuBuffer,
@@ -20,9 +21,11 @@ import {
   getColorAdjustmentUnsupportedGuard,
   RenderCacheKind,
   useRenderCache,
+  getRenderStateRuntime,
 } from '@flighthq/render/contract';
 import type { RenderRootGuard } from '@flighthq/render/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
+import { describe, expect, it } from 'vitest';
 
 import type {
   WgpuColorAdjustmentMaterialFeature,
@@ -36,6 +39,7 @@ import {
   getWgpuRenderCacheTarget,
   refreshWgpuRenderCache,
   releaseWgpuRenderCache,
+  registerWgpuRenderCacheRenderer,
 } from './wgpuCache.ts';
 import * as wgpuNode2D from './wgpuNode2D.ts';
 import * as wgpuQuadBatchWriter from './wgpuQuadBatchWriter.ts';
@@ -418,6 +422,14 @@ describe('refreshWgpuRenderCache', () => {
   });
 });
 
+describe('registerWgpuRenderCacheRenderer', () => {
+  it('registers wgpuRenderCacheRenderer under RenderCacheKind', () => {
+    const state = createRegistrationTestState();
+    registerWgpuRenderCacheRenderer(state);
+    expect(getRenderStateRuntime(state).registries.nodeRenderers.get(RenderCacheKind)).toBe(wgpuRenderCacheRenderer);
+  });
+});
+
 describe('releaseWgpuRenderCache', () => {
   it('destroys and drops the target for the cache', () => {
     const state = fakeScreen();
@@ -467,3 +479,9 @@ describe('wgpuRenderCacheRenderer', () => {
     );
   });
 });
+
+function createRegistrationTestState(): WgpuRenderState {
+  const state = {} as WgpuRenderState;
+  state[EntityRuntimeKey] = createWgpuRenderStateRuntime(createWgpuDeviceState({} as WgpuDevice));
+  return state;
+}

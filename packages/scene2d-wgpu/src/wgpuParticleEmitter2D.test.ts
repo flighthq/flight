@@ -5,7 +5,8 @@ import {
   unregisterTestImageDimensionResolver,
 } from '@flighthq/image/contract';
 import type { CompressedImageResource } from '@flighthq/image/contract';
-import { createParticleEmitter2D } from '@flighthq/particleemitter/contract';
+import { createParticleEmitter2D, ParticleEmitter2DKind } from '@flighthq/particleemitter/contract';
+import type { WgpuDevice, WgpuRenderState } from '@flighthq/render-wgpu/contract';
 import {
   WgpuTextureUsage,
   beginWgpuScreenRenderPassForTest,
@@ -13,15 +14,22 @@ import {
   registerWgpuCompressedImageTextureResolver,
   registerWgpuImageTextureResolver,
   submitWgpuFrame,
+  createWgpuDeviceState,
+  createWgpuRenderStateRuntime,
 } from '@flighthq/render-wgpu/contract';
 import { createWgpuRenderStateForTest, installWgpuMock } from '@flighthq/render-wgpu/contract';
-import { getRenderProxy2D, prepareScene2DRender } from '@flighthq/render/contract';
+import { getRenderProxy2D, prepareScene2DRender, getRenderStateRuntime } from '@flighthq/render/contract';
 import type { RenderProxy2D } from '@flighthq/render/contract';
 import { createTexture } from '@flighthq/texture/contract';
 import { CompressedImageTextureSourceKind } from '@flighthq/texture/contract';
 import { TextureAtlasRotation } from '@flighthq/textureatlas/contract';
+import { describe, expect, it } from 'vitest';
 
-import { wgpuParticleEmitter2DRenderer, drawWgpuParticleEmitter2D } from './wgpuParticleEmitter2D.ts';
+import {
+  wgpuParticleEmitter2DRenderer,
+  drawWgpuParticleEmitter2D,
+  registerWgpuParticleEmitter2DRenderer,
+} from './wgpuParticleEmitter2D.ts';
 
 // A test that wraps a host handle supplies the host: the resource measures through the registered
 // resolver, and clearing after each test keeps this file from covering for another's missing one.
@@ -152,6 +160,16 @@ describe('drawWgpuParticleEmitter2D', () => {
   });
 });
 
+describe('registerWgpuParticleEmitter2DRenderer', () => {
+  it('registers wgpuParticleEmitter2DRenderer under ParticleEmitter2DKind', () => {
+    const state = createRegistrationTestState();
+    registerWgpuParticleEmitter2DRenderer(state);
+    expect(getRenderStateRuntime(state).registries.nodeRenderers.get(ParticleEmitter2DKind)).toBe(
+      wgpuParticleEmitter2DRenderer,
+    );
+  });
+});
+
 describe('wgpuParticleEmitter2DRenderer', () => {
   it('has a createData function', () => {
     expect(typeof wgpuParticleEmitter2DRenderer.createData).toBe('function');
@@ -161,3 +179,9 @@ describe('wgpuParticleEmitter2DRenderer', () => {
     expect(typeof wgpuParticleEmitter2DRenderer.submit).toBe('function');
   });
 });
+
+function createRegistrationTestState(): WgpuRenderState {
+  const state = {} as WgpuRenderState;
+  state[EntityRuntimeKey] = createWgpuRenderStateRuntime(createWgpuDeviceState({} as WgpuDevice));
+  return state;
+}

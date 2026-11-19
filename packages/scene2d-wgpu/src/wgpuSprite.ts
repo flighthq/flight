@@ -7,9 +7,9 @@ import {
   resolveWgpuTexture,
 } from '@flighthq/render-wgpu/contract';
 import type { WgpuRenderState } from '@flighthq/render-wgpu/contract';
-import { SCENE2D_WORKING_COLOR_SPACE, BatchFormat } from '@flighthq/render/contract';
+import { SCENE2D_WORKING_COLOR_SPACE, BatchFormat, registerNodeRenderer } from '@flighthq/render/contract';
 import type { RenderProxy2D, Scene2DRenderer } from '@flighthq/render/contract';
-import { createSpriteRendererData, isSpriteRendererDirty } from '@flighthq/scene2d/contract';
+import { createSpriteRendererData, isSpriteRendererDirty, SpriteKind } from '@flighthq/scene2d/contract';
 import type { Sprite } from '@flighthq/scene2d/contract';
 import { getTextureUvMatrix, getTextureViewSize, hasTextureSource } from '@flighthq/texture/contract';
 
@@ -94,3 +94,8 @@ export const wgpuSpriteRenderer: Scene2DRenderer = {
 
 const spriteUvMatrix = createMatrix3();
 const spriteViewSize = { x: 0, y: 0 };
+
+/** Registers wgpuSpriteRenderer for SpriteKind on this state. */
+export function registerWgpuSpriteRenderer(state: WgpuRenderState): void {
+  registerNodeRenderer(state, SpriteKind, wgpuSpriteRenderer);
+}

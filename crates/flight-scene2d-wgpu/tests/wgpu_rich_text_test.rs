@@ -8,6 +8,7 @@ use flight_render_wgpu::*;
 use flight_scene2d_wgpu::contract::*;
 
 use crate::support::*;
+use flight_text::contract::RICH_TEXT_KIND;
 
 fn rich_data<T>(data: &RendererDataRef, read: impl FnOnce(&WgpuRichTextData) -> T) -> T {
     let guard = data.read().unwrap();
@@ -177,6 +178,18 @@ mod draw_wgpu_rich_text_with_overlay {
         draw_wgpu_rich_text_with_overlay(&mut state, &proxy, Some(stamp_test_overlay));
         assert_eq!(record.last_context().count(TEST_OVERLAY_STAMP), 1);
         submit_wgpu_frame(&mut state);
+    }
+}
+
+mod register_wgpu_rich_text_renderer {
+    use super::*;
+
+    #[test]
+    fn registers_the_rich_text_renderer_under_rich_text_kind() {
+        let mut state = create_wgpu_render_state_for_test(None);
+        register_wgpu_rich_text_renderer(&mut state);
+        let registered = get_registered_node_renderer(&state, RICH_TEXT_KIND).unwrap();
+        assert!(std::ptr::eq(registered, &WGPU_RICH_TEXT_RENDERER));
     }
 }
 

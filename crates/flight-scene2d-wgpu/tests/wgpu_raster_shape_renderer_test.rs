@@ -9,6 +9,7 @@ use flight_render_wgpu::*;
 use flight_scene2d_wgpu::contract::*;
 
 use crate::support::*;
+use flight_shape::contract::SHAPE_KIND;
 
 fn writer_count(state: &WgpuRenderState) -> u32 {
     return get_wgpu_render_state_runtime(state).quad_batch_writer_count;
@@ -119,6 +120,21 @@ mod draw_wgpu_raster_shape {
 
         assert!(calls.lock().unwrap().is_empty());
         submit_wgpu_frame(&mut state);
+    }
+}
+
+mod register_wgpu_raster_shape_renderer {
+    use super::*;
+
+    #[test]
+    fn pins_the_raster_strategy_under_shape_kind_replacing_the_hybrid() {
+        let mut state = create_wgpu_render_state_for_test(None);
+        register_wgpu_shape_renderer(&mut state);
+        register_wgpu_raster_shape_renderer(&mut state);
+        let registered = get_registered_node_renderer(&state, SHAPE_KIND).unwrap();
+        assert!(std::ptr::eq(registered, &WGPU_RASTER_SHAPE_RENDERER));
+        assert!(!std::ptr::eq(registered, &WGPU_SHAPE_RENDERER));
+        assert!(!std::ptr::eq(registered, &WGPU_MESH_SHAPE_RENDERER));
     }
 }
 

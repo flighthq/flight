@@ -8,18 +8,32 @@ import {
   registerWgpuRenderTextureResolver,
   renderIntoWgpuRenderTexture,
   submitWgpuFrame,
+  createWgpuDeviceState,
+  createWgpuRenderStateRuntime,
 } from '@flighthq/render-wgpu/contract';
-import type { WgpuTexture, WgpuTextureEntry, WgpuTextureView } from '@flighthq/render-wgpu/contract';
+import type {
+  WgpuTexture,
+  WgpuTextureEntry,
+  WgpuTextureView,
+  WgpuDevice,
+  WgpuRenderState,
+} from '@flighthq/render-wgpu/contract';
+import { getRenderStateRuntime } from '@flighthq/render/contract';
 import type { RenderProxy2D } from '@flighthq/render/contract';
 import type { Scale9Sprite } from '@flighthq/scene2d/contract';
 import { Scale9SpriteKind } from '@flighthq/scene2d/contract';
 import { createRenderTexture } from '@flighthq/texture/contract';
 import type { Texture2D } from '@flighthq/texture/contract';
+import { describe, expect, it } from 'vitest';
 
 import { wgpuScene2DRenderPreset } from './scene2DWgpuPipeline.ts';
 import { registerWgpuColorAdjustmentMaterialFeature } from './wgpuColorAdjustmentMaterialFeature.ts';
 import { prepareWgpuQuadBatchWrite, QUAD_BATCH_INSTANCE_FLOATS } from './wgpuQuadBatchWriter.ts';
-import { wgpuScale9SpriteRenderer, drawWgpuScale9Sprite } from './wgpuScale9Sprite.ts';
+import {
+  wgpuScale9SpriteRenderer,
+  drawWgpuScale9Sprite,
+  registerWgpuScale9SpriteRenderer,
+} from './wgpuScale9Sprite.ts';
 import { registerWgpuStandardMaterial, standardWgpuQuadMaterialRenderer } from './wgpuStandardMaterial.ts';
 
 beforeAll(() => installWgpuMock());
@@ -80,12 +94,11 @@ describe('drawWgpuScale9Sprite', () => {
   });
 });
 
-describe('wgpuScale9SpriteRenderer', () => {
-  it('is registered separately under Scale9SpriteKind', () => {
-    expect(typeof wgpuScale9SpriteRenderer.createData).toBe('function');
-    expect(typeof wgpuScale9SpriteRenderer.isDirty).toBe('function');
-    expect(wgpuScale9SpriteRenderer.submit).toBe(drawWgpuScale9Sprite);
-    expect(wgpuScene2DRenderPreset.nodeRenderers.get(Scale9SpriteKind)).toEqual(wgpuScale9SpriteRenderer);
+describe('registerWgpuScale9SpriteRenderer', () => {
+  it('registers wgpuScale9SpriteRenderer under Scale9SpriteKind', () => {
+    const state = createRegistrationTestState();
+    registerWgpuScale9SpriteRenderer(state);
+    expect(getRenderStateRuntime(state).registries.nodeRenderers.get(Scale9SpriteKind)).toBe(wgpuScale9SpriteRenderer);
   });
 });
 
@@ -139,4 +152,19 @@ function createTint(): ColorScaleBias {
     redBias: 0,
     redScale: 0.5,
   } as ColorScaleBias;
+}
+
+describe('wgpuScale9SpriteRenderer', () => {
+  it('is registered separately under Scale9SpriteKind', () => {
+    expect(typeof wgpuScale9SpriteRenderer.createData).toBe('function');
+    expect(typeof wgpuScale9SpriteRenderer.isDirty).toBe('function');
+    expect(wgpuScale9SpriteRenderer.submit).toBe(drawWgpuScale9Sprite);
+    expect(wgpuScene2DRenderPreset.nodeRenderers.get(Scale9SpriteKind)).toEqual(wgpuScale9SpriteRenderer);
+  });
+});
+
+function createRegistrationTestState(): WgpuRenderState {
+  const state = {} as WgpuRenderState;
+  state[EntityRuntimeKey] = createWgpuRenderStateRuntime(createWgpuDeviceState({} as WgpuDevice));
+  return state;
 }

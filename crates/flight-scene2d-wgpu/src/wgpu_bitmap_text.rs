@@ -5,8 +5,10 @@
 //! The node's resolved color adjustment folds in as a whole-node tint on every glyph — the same
 //! path a tinted QuadBatch uses.
 
+use flight_bitmaptext::BITMAP_TEXT_KIND;
 use flight_bitmaptext::{BitmapText, get_bitmap_text_pages};
 use flight_geometry::create_matrix;
+use flight_render::register_node_renderer;
 use flight_render::{
     BatchFormat, NodeRenderer, RenderProxy2D, SCENE2D_WORKING_COLOR_SPACE, noop_renderer_data,
 };
@@ -35,6 +37,16 @@ pub static WGPU_BITMAP_TEXT_RENDERER: NodeRenderer<WgpuRenderState> = NodeRender
     is_dirty: None,
     submit: submit_wgpu_bitmap_text,
 };
+
+/// Registers `WGPU_BITMAP_TEXT_RENDERER` for `BITMAP_TEXT_KIND` on this state (TS
+/// `registerWgpuBitmapTextRenderer`).
+pub fn register_wgpu_bitmap_text_renderer(state: &mut WgpuRenderState) {
+    register_node_renderer(
+        state,
+        BITMAP_TEXT_KIND.to_string(),
+        &WGPU_BITMAP_TEXT_RENDERER,
+    );
+}
 
 // Mirrors the QuadBatch vector2 inner loop, sourced from each page's own `ids`/`transforms`.
 fn submit_wgpu_bitmap_text(state: &mut WgpuRenderState, node: &RenderProxy2D<WgpuRenderState>) {

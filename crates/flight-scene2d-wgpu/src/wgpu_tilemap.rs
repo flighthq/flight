@@ -5,6 +5,7 @@
 //! per-tile tints overriding the node-level one.
 
 use flight_geometry::create_matrix;
+use flight_render::register_node_renderer;
 use flight_render::{
     BatchFormat, NodeRenderer, RenderProxy2D, SCENE2D_WORKING_COLOR_SPACE, noop_renderer_data,
 };
@@ -15,6 +16,7 @@ use flight_render_wgpu::{
 use flight_texture::{
     TextureUvTransform, get_texture_height, get_texture_width, has_texture_source,
 };
+use flight_tilemap::TILEMAP_KIND;
 use flight_tilemap::Tilemap;
 
 use crate::wgpu_quad_batch::{to_wgpu_color_adjustment, write_wgpu_atlas_region_instance_sized};
@@ -35,6 +37,12 @@ pub static WGPU_TILEMAP_RENDERER: NodeRenderer<WgpuRenderState> = NodeRenderer {
     is_dirty: None,
     submit: submit_wgpu_tilemap,
 };
+
+/// Registers `WGPU_TILEMAP_RENDERER` for `TILEMAP_KIND` on this state (TS
+/// `registerWgpuTilemapRenderer`).
+pub fn register_wgpu_tilemap_renderer(state: &mut WgpuRenderState) {
+    register_node_renderer(state, TILEMAP_KIND.to_string(), &WGPU_TILEMAP_RENDERER);
+}
 
 fn submit_wgpu_tilemap(state: &mut WgpuRenderState, tilemap_node: &RenderProxy2D<WgpuRenderState>) {
     if get_wgpu_render_state_runtime(state).render_pass.is_none() {

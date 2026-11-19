@@ -1309,3 +1309,17 @@ pub fn stamp_test_overlay(
 }
 
 pub const TEST_OVERLAY_STAMP: &str = "fillRect(-1,-1,-1,-1)";
+
+/// The node renderer registered for `kind` on `state`, read straight from its registries.
+pub fn get_registered_node_renderer(
+    state: &WgpuRenderState,
+    kind: &str,
+) -> Option<&'static flight_render::NodeRenderer<WgpuRenderState>> {
+    use flight_render::RenderState;
+    return state
+        .render_registries()
+        .node_renderers
+        .entries
+        .get(kind)
+        .copied();
+}

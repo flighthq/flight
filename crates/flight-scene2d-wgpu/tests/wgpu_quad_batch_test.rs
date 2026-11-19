@@ -7,6 +7,7 @@ use flight_scene2d_wgpu::contract::*;
 use flight_textureatlas::TextureAtlasRotation;
 
 use crate::support::*;
+use flight_quadbatch::QUAD_BATCH_KIND;
 
 fn rotated_batch(rotation: TextureAtlasRotation) -> NodeRef {
     let batch = flight_quadbatch::create_quad_batch();
@@ -26,6 +27,18 @@ fn rotated_batch(rotation: TextureAtlasRotation) -> NodeRef {
 
 fn close(a: f32, b: f32) -> bool {
     return (a - b).abs() < 1e-5;
+}
+
+mod register_wgpu_quad_batch_renderer {
+    use super::*;
+
+    #[test]
+    fn registers_the_quad_batch_renderer_under_quad_batch_kind() {
+        let mut state = create_wgpu_render_state_for_test(None);
+        register_wgpu_quad_batch_renderer(&mut state);
+        let registered = get_registered_node_renderer(&state, QUAD_BATCH_KIND).unwrap();
+        assert!(std::ptr::eq(registered, &WGPU_QUAD_BATCH_RENDERER));
+    }
 }
 
 mod wgpu_quad_batch_renderer {

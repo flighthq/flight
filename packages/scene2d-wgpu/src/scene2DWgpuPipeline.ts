@@ -2,11 +2,11 @@ import type { Kind } from '@flighthq/entity/contract';
 import { StandardMaterialKind } from '@flighthq/materials/contract';
 import { ParticleEmitter2DKind } from '@flighthq/particleemitter/contract';
 import { QuadBatchKind } from '@flighthq/quadbatch/contract';
-import { withKindMapEntry } from '@flighthq/registry/contract';
-import { buildWgpuRenderRegistries } from '@flighthq/render-wgpu/contract';
-import type { WgpuRenderRegistries } from '@flighthq/render-wgpu/contract';
+import { concatKindMap, withKindMapEntry } from '@flighthq/registry/contract';
+import { buildWgpuRenderRegistries, getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
+import type { WgpuRenderRegistries, WgpuRenderState } from '@flighthq/render-wgpu/contract';
 import type { NodeRenderer } from '@flighthq/render/contract';
-import { RenderCacheKind } from '@flighthq/render/contract';
+import { RenderCacheKind, registerNodeRenderer } from '@flighthq/render/contract';
 import { DisplayObjectKind, Scale9SpriteKind, SpriteKind } from '@flighthq/scene2d/contract';
 import { MorphShapeKind, Scale9ShapeKind, ShapeKind } from '@flighthq/shape/contract';
 import { RichTextKind, TextLabelKind } from '@flighthq/text/contract';
@@ -63,3 +63,34 @@ export const wgpuScene2DRenderPreset: Readonly<WgpuRenderRegistries> = Object.fr
   nodeRenderers: buildScene2dWgpuRenderers(),
 });
 import { BitmapTextKind } from '@flighthq/bitmaptext/contract';
+
+/**
+ * Registers every table of `preset` on an existing state: each node renderer through
+ * registerNodeRenderer, in the preset's key order, and each WGPU registry table overlaid on the
+ * state's own, so a preset entry replaces the same kind and every other registration the state
+ * already holds is kept. A preset slot that is unset leaves the state's slot untouched.
+ */
+export function registerWgpuRenderPreset(state: WgpuRenderState, preset: Readonly<WgpuRenderRegistries>): void {
+  for (const [kind, renderer] of preset.nodeRenderers) registerNodeRenderer(state, kind, renderer);
+  const registries = getWgpuRenderStateRuntime(state).registries;
+  if (preset.colorAdjustmentFeature != null) registries.colorAdjustmentFeature = preset.colorAdjustmentFeature;
+  if (preset.colorAdjustmentFeatureGuard != null) {
+    registries.colorAdjustmentFeatureGuard = preset.colorAdjustmentFeatureGuard;
+  }
+  if (preset.compressedTextureDecoder !== null) registries.compressedTextureDecoder = preset.compressedTextureDecoder;
+  if (preset.compressedTextureUpload !== null) registries.compressedTextureUpload = preset.compressedTextureUpload;
+  registries.customMaterialShaders = concatKindMap(registries.customMaterialShaders, preset.customMaterialShaders);
+  registries.effects = concatKindMap(registries.effects, preset.effects);
+  if (preset.gpuSkinning !== null) registries.gpuSkinning = preset.gpuSkinning;
+  registries.materialRenderers = concatKindMap(registries.materialRenderers, preset.materialRenderers);
+  registries.modifierSnippets = concatKindMap(registries.modifierSnippets, preset.modifierSnippets);
+  if (preset.passes !== null) registries.passes = preset.passes;
+  if (preset.shapeRasterizer !== null) registries.shapeRasterizer = preset.shapeRasterizer;
+  registries.textureResolvers = concatKindMap(registries.textureResolvers, preset.textureResolvers);
+  registries.velocityWriters = concatKindMap(registries.velocityWriters, preset.velocityWriters);
+}
+
+/** Registers the complete standard 2D WebGPU configuration, wgpuScene2DRenderPreset, on an existing state. */
+export function registerWgpuScene2DRenderPreset(state: WgpuRenderState): void {
+  registerWgpuRenderPreset(state, wgpuScene2DRenderPreset);
+}

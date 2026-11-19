@@ -3,13 +3,14 @@ import type { TintMaterialData } from '@flighthq/materials/contract';
 import { resolveWgpuQuadMaterialRenderer, resolveWgpuTexture } from '@flighthq/render-wgpu/contract';
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
 import type { WgpuRenderState } from '@flighthq/render-wgpu/contract';
-import { SCENE2D_WORKING_COLOR_SPACE, BatchFormat } from '@flighthq/render/contract';
+import { SCENE2D_WORKING_COLOR_SPACE, BatchFormat, registerNodeRenderer } from '@flighthq/render/contract';
 import { noopRendererData } from '@flighthq/render/contract';
 import type { RenderProxy2D } from '@flighthq/render/contract';
 import type { SpriteRenderer } from '@flighthq/render/contract';
 import { getTextureHeight, getTextureWidth, hasTextureSource } from '@flighthq/texture/contract';
 import { TextureAtlasRotation } from '@flighthq/textureatlas/contract';
 import type { Tilemap } from '@flighthq/tilemap/contract';
+import { TilemapKind } from '@flighthq/tilemap/contract';
 
 import {
   packWgpuQuadBatchMaterialInstance,
@@ -131,3 +132,8 @@ export const wgpuTilemapRenderer: SpriteRenderer = {
 };
 
 const tileTransform = { a: 1, b: 0, c: 0, d: 1, tx: 0, ty: 0 };
+
+/** Registers wgpuTilemapRenderer for TilemapKind on this state. */
+export function registerWgpuTilemapRenderer(state: WgpuRenderState): void {
+  registerNodeRenderer(state, TilemapKind, wgpuTilemapRenderer);
+}

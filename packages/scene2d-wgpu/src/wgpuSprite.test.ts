@@ -1,3 +1,5 @@
+import { EntityRuntimeKey } from '@flighthq/entity/contract';
+import type { WgpuDevice, WgpuRenderState } from '@flighthq/render-wgpu/contract';
 import {
   beginWgpuScreenRenderPassForTest,
   createWgpuRenderStateForTest,
@@ -6,13 +8,16 @@ import {
   registerWgpuRenderTextureResolver,
   renderIntoWgpuRenderTexture,
   submitWgpuFrame,
+  createWgpuDeviceState,
+  createWgpuRenderStateRuntime,
 } from '@flighthq/render-wgpu/contract';
-import { getOrCreateRenderProxy2D, prepareScene2DRender } from '@flighthq/render/contract';
-import { createSprite } from '@flighthq/scene2d/contract';
+import { getOrCreateRenderProxy2D, prepareScene2DRender, getRenderStateRuntime } from '@flighthq/render/contract';
+import { createSprite, SpriteKind } from '@flighthq/scene2d/contract';
 import { createRenderTexture, setTextureUvFromPixelRect } from '@flighthq/texture/contract';
+import { describe, expect, it } from 'vitest';
 
 import { registerWgpuColorAdjustmentMaterialFeature } from './wgpuColorAdjustmentMaterialFeature.ts';
-import { wgpuSpriteRenderer, drawWgpuSprite } from './wgpuSprite.ts';
+import { wgpuSpriteRenderer, drawWgpuSprite, registerWgpuSpriteRenderer } from './wgpuSprite.ts';
 import { registerWgpuStandardMaterial } from './wgpuStandardMaterial.ts';
 
 const CT_MODE_UNIFORM = 1;
@@ -136,6 +141,14 @@ describe('drawWgpuSprite', () => {
   });
 });
 
+describe('registerWgpuSpriteRenderer', () => {
+  it('registers wgpuSpriteRenderer under SpriteKind', () => {
+    const state = createRegistrationTestState();
+    registerWgpuSpriteRenderer(state);
+    expect(getRenderStateRuntime(state).registries.nodeRenderers.get(SpriteKind)).toBe(wgpuSpriteRenderer);
+  });
+});
+
 describe('wgpuSpriteRenderer', () => {
   it('has createData and submit functions', () => {
     expect(typeof wgpuSpriteRenderer.createData).toBe('function');
@@ -143,3 +156,9 @@ describe('wgpuSpriteRenderer', () => {
     expect(wgpuSpriteRenderer.submit).toBe(drawWgpuSprite);
   });
 });
+
+function createRegistrationTestState(): WgpuRenderState {
+  const state = {} as WgpuRenderState;
+  state[EntityRuntimeKey] = createWgpuRenderStateRuntime(createWgpuDeviceState({} as WgpuDevice));
+  return state;
+}

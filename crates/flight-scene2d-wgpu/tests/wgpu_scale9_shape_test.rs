@@ -10,6 +10,7 @@ use flight_scene2d_wgpu::contract::*;
 use flight_shape::ShapeScale9Grid;
 
 use crate::support::*;
+use flight_shape::contract::SCALE9_SHAPE_KIND;
 
 fn grid() -> ShapeScale9Grid {
     return ShapeScale9Grid {
@@ -307,6 +308,18 @@ mod get_wgpu_scale9_shape_data {
         let data = get_wgpu_scale9_shape_data(&mut *guard).unwrap();
         assert!(data.surface.is_none());
         assert_eq!(data.last_scale_x, -1.0);
+    }
+}
+
+mod register_wgpu_scale9_shape_renderer {
+    use super::*;
+
+    #[test]
+    fn registers_the_scale9_shape_renderer_under_scale9_shape_kind() {
+        let mut state = create_wgpu_render_state_for_test(None);
+        register_wgpu_scale9_shape_renderer(&mut state);
+        let registered = get_registered_node_renderer(&state, SCALE9_SHAPE_KIND).unwrap();
+        assert!(std::ptr::eq(registered, &WGPU_SCALE9_SHAPE_RENDERER));
     }
 }
 

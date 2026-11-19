@@ -409,6 +409,18 @@ mod refresh_wgpu_render_cache {
     }
 }
 
+mod register_wgpu_render_cache_renderer {
+    use super::*;
+
+    #[test]
+    fn registers_the_render_cache_renderer_under_render_cache_kind() {
+        let mut state = create_wgpu_render_state_for_test(None);
+        register_wgpu_render_cache_renderer(&mut state);
+        let registered = get_registered_node_renderer(&state, RENDER_CACHE_KIND).unwrap();
+        assert!(std::ptr::eq(registered, &WGPU_RENDER_CACHE_RENDERER));
+    }
+}
+
 mod release_wgpu_render_cache {
     use super::*;
 

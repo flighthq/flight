@@ -15,6 +15,7 @@ use flight_node::{
     NodeRef, RendererData, RendererDataRef, get_node_local_bounds_rectangle,
     get_node_local_content_revision,
 };
+use flight_render::register_node_renderer;
 use flight_render::{
     CanvasHostSurfaces, NodeRenderer, RenderProxy2D, RenderRegistryTable, RenderState,
     create_canvas_host_surface, destroy_canvas_host_surface, emit_render_registry_miss,
@@ -279,4 +280,14 @@ pub fn draw_wgpu_scale9_shape_mask(
 /// Narrows renderer data to the nine-slice shape scratch (TS `getWgpuScale9ShapeData`).
 pub fn get_wgpu_scale9_shape_data(data: &mut dyn RendererData) -> Option<&mut WgpuScale9ShapeData> {
     return data.as_any_mut().downcast_mut::<WgpuScale9ShapeData>();
+}
+
+/// Registers `WGPU_SCALE9_SHAPE_RENDERER` for `SCALE9_SHAPE_KIND` on this state (TS
+/// `registerWgpuScale9ShapeRenderer`).
+pub fn register_wgpu_scale9_shape_renderer(state: &mut WgpuRenderState) {
+    register_node_renderer(
+        state,
+        SCALE9_SHAPE_KIND.to_string(),
+        &WGPU_SCALE9_SHAPE_RENDERER,
+    );
 }

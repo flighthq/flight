@@ -1,8 +1,17 @@
-import { beginWgpuScreenRenderPassForTest, submitWgpuFrame } from '@flighthq/render-wgpu/contract';
+import { EntityRuntimeKey } from '@flighthq/entity/contract';
+import type { WgpuDevice, WgpuRenderState } from '@flighthq/render-wgpu/contract';
+import {
+  beginWgpuScreenRenderPassForTest,
+  submitWgpuFrame,
+  createWgpuDeviceState,
+  createWgpuRenderStateRuntime,
+} from '@flighthq/render-wgpu/contract';
 import { createWgpuRenderStateForTest, installWgpuMock } from '@flighthq/render-wgpu/contract';
-import { createDisplayObject } from '@flighthq/scene2d/contract';
+import { getRenderStateRuntime } from '@flighthq/render/contract';
+import { createDisplayObject, DisplayObjectKind } from '@flighthq/scene2d/contract';
+import { describe, expect, it } from 'vitest';
 
-import { wgpuScene2DRenderer, drawWgpuScene2D, renderWgpuScene2D } from './wgpuNode2D.ts';
+import { wgpuScene2DRenderer, drawWgpuScene2D, renderWgpuScene2D, registerWgpuScene2DRenderer } from './wgpuNode2D.ts';
 
 beforeAll(() => {
   installWgpuMock();
@@ -15,6 +24,14 @@ describe('drawWgpuScene2D', () => {
     const renderProxy = { source: createDisplayObject() } as never;
     expect(() => drawWgpuScene2D(state, renderProxy)).not.toThrow();
     submitWgpuFrame(state);
+  });
+});
+
+describe('registerWgpuScene2DRenderer', () => {
+  it('registers wgpuScene2DRenderer under DisplayObjectKind', () => {
+    const state = createRegistrationTestState();
+    registerWgpuScene2DRenderer(state);
+    expect(getRenderStateRuntime(state).registries.nodeRenderers.get(DisplayObjectKind)).toBe(wgpuScene2DRenderer);
   });
 });
 
@@ -34,3 +51,9 @@ describe('wgpuScene2DRenderer', () => {
     expect(typeof wgpuScene2DRenderer.submit).toBe('function');
   });
 });
+
+function createRegistrationTestState(): WgpuRenderState {
+  const state = {} as WgpuRenderState;
+  state[EntityRuntimeKey] = createWgpuRenderStateRuntime(createWgpuDeviceState({} as WgpuDevice));
+  return state;
+}

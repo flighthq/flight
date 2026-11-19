@@ -3,7 +3,12 @@ import { getNodeLocalBoundsRectangle, getNodeLocalContentRevision } from '@fligh
 import { bindWgpuImageResourceTexture, resolveWgpuQuadMaterialRenderer } from '@flighthq/render-wgpu/contract';
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
 import type { WgpuRenderState } from '@flighthq/render-wgpu/contract';
-import { createCanvasHostSurface, destroyCanvasHostSurface, BatchFormat } from '@flighthq/render/contract';
+import {
+  createCanvasHostSurface,
+  destroyCanvasHostSurface,
+  BatchFormat,
+  registerNodeRenderer,
+} from '@flighthq/render/contract';
 import { RenderRegistryTable } from '@flighthq/render/contract';
 import type { RenderProxy2D, Scene2DRenderer } from '@flighthq/render/contract';
 import type { Shape } from '@flighthq/shape/contract';
@@ -152,3 +157,8 @@ export const wgpuRasterShapeRenderer: Scene2DRenderer = {
 };
 
 const rasterShapeTransform = { a: 1, b: 0, c: 0, d: 1, tx: 0, ty: 0 };
+
+/** Registers wgpuRasterShapeRenderer for ShapeKind on this state. It pins the canvas-replay raster strategy for ShapeKind, replacing whichever shape renderer was registered. */
+export function registerWgpuRasterShapeRenderer(state: WgpuRenderState): void {
+  registerNodeRenderer(state, ShapeKind, wgpuRasterShapeRenderer);
+}

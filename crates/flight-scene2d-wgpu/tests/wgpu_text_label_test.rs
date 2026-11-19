@@ -11,6 +11,7 @@ use flight_scene2d_wgpu::contract::*;
 use flight_textformat::TextFormat;
 
 use crate::support::*;
+use flight_text::contract::TEXT_LABEL_KIND;
 
 fn text_proxy(
     state: &mut WgpuRenderState,
@@ -196,6 +197,18 @@ mod draw_wgpu_text_label {
         assert_eq!(label_data(&data, |data| data.last_content_id), version);
         assert_eq!(record.last_context().count("fillText("), fills);
         submit_wgpu_frame(&mut state);
+    }
+}
+
+mod register_wgpu_text_label_renderer {
+    use super::*;
+
+    #[test]
+    fn registers_the_text_label_renderer_under_text_label_kind() {
+        let mut state = create_wgpu_render_state_for_test(None);
+        register_wgpu_text_label_renderer(&mut state);
+        let registered = get_registered_node_renderer(&state, TEXT_LABEL_KIND).unwrap();
+        assert!(std::ptr::eq(registered, &WGPU_TEXT_LABEL_RENDERER));
     }
 }
 

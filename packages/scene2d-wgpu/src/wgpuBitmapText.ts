@@ -4,7 +4,7 @@ import {
   resolveWgpuTexture,
 } from '@flighthq/render-wgpu/contract';
 import type { WgpuRenderState } from '@flighthq/render-wgpu/contract';
-import { SCENE2D_WORKING_COLOR_SPACE, BatchFormat } from '@flighthq/render/contract';
+import { SCENE2D_WORKING_COLOR_SPACE, BatchFormat, registerNodeRenderer } from '@flighthq/render/contract';
 import { noopRendererData } from '@flighthq/render/contract';
 import type { RenderProxy2D } from '@flighthq/render/contract';
 import type { SpriteRenderer } from '@flighthq/render/contract';
@@ -129,3 +129,9 @@ export const wgpuBitmapTextRenderer: SpriteRenderer = {
 
 const glyphTransform = { a: 1, b: 0, c: 0, d: 1, tx: 0, ty: 0 };
 import type { BitmapText, BitmapTextRuntime } from '@flighthq/bitmaptext/contract';
+import { BitmapTextKind } from '@flighthq/bitmaptext/contract';
+
+/** Registers wgpuBitmapTextRenderer for BitmapTextKind on this state. */
+export function registerWgpuBitmapTextRenderer(state: WgpuRenderState): void {
+  registerNodeRenderer(state, BitmapTextKind, wgpuBitmapTextRenderer);
+}

@@ -7,6 +7,19 @@ use flight_scene2d_wgpu::contract::*;
 use flight_textureatlas::TextureAtlasRotation;
 
 use crate::support::*;
+use flight_tilemap::TILEMAP_KIND;
+
+mod register_wgpu_tilemap_renderer {
+    use super::*;
+
+    #[test]
+    fn registers_the_tilemap_renderer_under_tilemap_kind() {
+        let mut state = create_wgpu_render_state_for_test(None);
+        register_wgpu_tilemap_renderer(&mut state);
+        let registered = get_registered_node_renderer(&state, TILEMAP_KIND).unwrap();
+        assert!(std::ptr::eq(registered, &WGPU_TILEMAP_RENDERER));
+    }
+}
 
 mod wgpu_tilemap_renderer {
     use super::*;

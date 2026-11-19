@@ -7,6 +7,7 @@ use flight_render_wgpu::*;
 use flight_scene2d_wgpu::contract::*;
 
 use crate::support::*;
+use flight_scene2d::SCALE9_SPRITE_KIND;
 
 fn read_quad_geometry(data: &[f32]) -> Vec<[f32; 4]> {
     return (0..9)
@@ -154,6 +155,18 @@ mod draw_wgpu_scale9_sprite {
         };
         assert_eq!(uniform.red_scale, 0.5);
         submit_wgpu_frame(&mut state);
+    }
+}
+
+mod register_wgpu_scale9_sprite_renderer {
+    use super::*;
+
+    #[test]
+    fn registers_the_scale9_sprite_renderer_under_scale9_sprite_kind() {
+        let mut state = create_wgpu_render_state_for_test(None);
+        register_wgpu_scale9_sprite_renderer(&mut state);
+        let registered = get_registered_node_renderer(&state, SCALE9_SPRITE_KIND).unwrap();
+        assert!(std::ptr::eq(registered, &WGPU_SCALE9_SPRITE_RENDERER));
     }
 }
 

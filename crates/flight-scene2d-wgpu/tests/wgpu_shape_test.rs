@@ -6,6 +6,8 @@ use flight_render_wgpu::*;
 use flight_scene2d_wgpu::contract::*;
 
 use crate::support::*;
+use flight_shape::contract::MORPH_SHAPE_KIND;
+use flight_shape::contract::SHAPE_KIND;
 
 fn setup() -> WgpuRenderState {
     let mut state = create_test_state_in_pass();
@@ -150,6 +152,30 @@ mod draw_wgpu_shape {
         draw_wgpu_shape(&mut state, &proxy);
         assert_eq!(writer_count(&state), 1);
         submit_wgpu_frame(&mut state);
+    }
+}
+
+mod register_wgpu_morph_shape_renderer {
+    use super::*;
+
+    #[test]
+    fn registers_the_morph_shape_renderer_under_morph_shape_kind() {
+        let mut state = create_wgpu_render_state_for_test(None);
+        register_wgpu_morph_shape_renderer(&mut state);
+        let registered = get_registered_node_renderer(&state, MORPH_SHAPE_KIND).unwrap();
+        assert!(std::ptr::eq(registered, WGPU_MORPH_SHAPE_RENDERER));
+    }
+}
+
+mod register_wgpu_shape_renderer {
+    use super::*;
+
+    #[test]
+    fn registers_the_hybrid_shape_renderer_under_shape_kind() {
+        let mut state = create_wgpu_render_state_for_test(None);
+        register_wgpu_shape_renderer(&mut state);
+        let registered = get_registered_node_renderer(&state, SHAPE_KIND).unwrap();
+        assert!(std::ptr::eq(registered, &WGPU_SHAPE_RENDERER));
     }
 }
 

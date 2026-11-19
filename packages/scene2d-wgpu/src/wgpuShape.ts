@@ -1,6 +1,7 @@
 import type { WgpuRenderState } from '@flighthq/render-wgpu/contract';
-import { BatchFormat } from '@flighthq/render/contract';
+import { BatchFormat, registerNodeRenderer } from '@flighthq/render/contract';
 import type { RenderProxy2D, Scene2DRenderer } from '@flighthq/render/contract';
+import { ShapeKind, MorphShapeKind } from '@flighthq/shape/contract';
 
 import { drawWgpuMeshShape } from './wgpuMeshShapeRenderer.ts';
 import { drawWgpuRasterShape } from './wgpuRasterShapeRenderer.ts';
@@ -32,3 +33,13 @@ export const wgpuShapeRenderer: Scene2DRenderer = {
 
 // MorphShape owns a distinct kind while sharing Shape's mesh/raster renderer and cache lifecycle.
 export const wgpuMorphShapeRenderer: Scene2DRenderer = wgpuShapeRenderer;
+
+/** Registers wgpuMorphShapeRenderer for MorphShapeKind on this state. */
+export function registerWgpuMorphShapeRenderer(state: WgpuRenderState): void {
+  registerNodeRenderer(state, MorphShapeKind, wgpuMorphShapeRenderer);
+}
+
+/** Registers wgpuShapeRenderer for ShapeKind on this state. It is the hybrid strategy: tessellate when a mesh exists, else rasterize. */
+export function registerWgpuShapeRenderer(state: WgpuRenderState): void {
+  registerNodeRenderer(state, ShapeKind, wgpuShapeRenderer);
+}
