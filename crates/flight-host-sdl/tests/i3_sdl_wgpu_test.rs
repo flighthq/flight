@@ -80,6 +80,23 @@ fn main() {
     }
     assert_eq!((acquisition.surface.width)(), 200.0);
     assert_eq!((acquisition.surface.height)(), 150.0);
+    let native_context = acquisition
+        .context
+        .handle
+        .downcast_ref::<Arc<dyn flight_render_wgpu::WgpuCanvasContext>>()
+        .expect("native wgpu canvas context")
+        .clone();
+    let resized_frame = native_context
+        .get_current_texture()
+        .expect("first frame after host-driven resize is configured");
+    assert_eq!(
+        (
+            resized_frame.texture.width(),
+            resized_frame.texture.height()
+        ),
+        (200, 150)
+    );
+    drop(resized_frame);
 
     enable_wgpu_screen_render_target_capture(&mut screen.write().unwrap());
     end_wgpu_render_pass(begin_wgpu_render_pass(
