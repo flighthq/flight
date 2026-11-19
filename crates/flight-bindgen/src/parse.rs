@@ -815,6 +815,7 @@ fn resolve_type_alias(ty: &str) -> String {
         ("CameraGuardStateRef", "Ref<CameraGuardState>"),
         ("DebugStateRef", "Ref<DebugState>"),
         ("FlowGuardStateRef", "Ref<FlowGuardState>"),
+        ("InteractionInputSource", "Ref<InputManager>"),
         ("LogStateRef", "Ref<LogState>"),
         ("Node2DRef", "Ref<dyn Node2D>"),
         ("Node3DRef", "Ref<dyn Node3D>"),

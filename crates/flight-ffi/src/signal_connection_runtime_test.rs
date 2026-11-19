@@ -136,24 +136,17 @@ fn dropping_the_only_source_releases_once_and_disconnects() {
 // flight-lint: allow(f64) the clock tick payload carries the SDK's f64 frame delta
 fn field_producers_borrow_the_owner_signal() {
     let clock = flight_sdk::create_clock();
-    let mut owner = clock.write().unwrap();
-    assert!(unsafe { crate::flight_get_clock_on_tick(&*owner) }.is_null());
-    flight_sdk::enable_clock_signals(&mut owner);
-    let signal = unsafe { crate::flight_get_clock_on_tick(&*owner) };
-    assert_eq!(signal, owner.on_tick.as_ref().unwrap() as *const _);
-    drop(owner);
+    let handle = (&clock as *const flight_sdk::Ref<flight_sdk::Clock>).cast::<c_void>();
+    let absent = Probe::default();
+    assert!(z_connect_clock_on_tick(handle, &absent).is_null());
+    assert_eq!(z_get_probe_releases(&absent), 0);
+    flight_sdk::enable_clock_signals(&mut clock.write().unwrap());
     let probe = Probe::default();
-    let connection = unsafe {
-        crate::flight_connect_frame_tick_signal(
-            signal,
-            Some(z_record_frame_tick),
-            z_get_probe_context(&probe),
-            Some(z_release),
-            0,
-            false,
-            std::ptr::null(),
-        )
-    };
+    let connection = z_connect_clock_on_tick(handle, &probe);
+    assert!(
+        clock.try_write().is_ok(),
+        "the owner is locked only while connecting"
+    );
     let tick = flight_sdk::FrameTick { delta_time: 5.0 };
     flight_sdk::emit_signal(clock.read().unwrap().on_tick.as_ref().unwrap(), &tick);
     unsafe { crate::flight_free_signal_connection(connection) };
@@ -191,7 +184,7 @@ fn field_producers_borrow_the_owner_signal() {
     unsafe { crate::flight_free_signal_connection(connection) };
     assert_eq!(*progress_probe.values.lock().unwrap(), [7.0]);
     assert_eq!(z_get_probe_releases(&progress_probe), 1);
-    assert!(unsafe { crate::flight_get_clock_on_tick(std::ptr::null()) }.is_null());
+    assert!(z_connect_clock_on_tick(std::ptr::null(), &progress_probe).is_null());
     assert!(
         unsafe { crate::flight_enable_net_request_options_progress(std::ptr::null_mut()) }
             .is_null()
@@ -531,6 +524,44 @@ fn reentrant_emit_from_a_callback_does_not_deadlock() {
 }
 
 #[test]
+fn ref_connect_locks_only_to_connect_and_releases_when_the_owner_drops() {
+    let owner: flight_sdk::Ref<flight_sdk::InteractionSignals> = Arc::new(RwLock::new(
+        flight_sdk::interaction::contract::create_interaction_signals(),
+    ));
+    let probe = Probe::default();
+    let connection = unsafe {
+        crate::flight_connect_interaction_signals_on_pointer_down(
+            (&owner as *const flight_sdk::Ref<flight_sdk::InteractionSignals>).cast(),
+            Some(z_record_pointer_event),
+            z_get_probe_context(&probe),
+            Some(z_release),
+            0,
+            false,
+            std::ptr::null(),
+        )
+    };
+    assert!(!connection.is_null());
+    assert!(
+        owner.try_write().is_ok(),
+        "the owner is locked only while connecting"
+    );
+    let mut event = flight_sdk::PointerEventData::new();
+    event.x = 12.0;
+    flight_sdk::emit_signal(&owner.read().unwrap().on_pointer_down, &event);
+    assert_eq!(*probe.values.lock().unwrap(), [12.0]);
+    drop(owner);
+    assert_eq!(z_get_probe_releases(&probe), 1);
+    assert!(!flight_sdk::is_signal_connection_connected(unsafe {
+        &*connection
+    }));
+    unsafe { crate::flight_free_signal_connection(connection) };
+    assert_eq!(
+        (z_get_probe_calls(&probe), z_get_probe_releases(&probe)),
+        (1, 1)
+    );
+}
+
+#[test]
 fn release_may_call_back_into_the_signal_on_every_teardown_path() {
     for path in ["free", "disconnect", "clear", "scope", "once", "frame-rate"] {
         z_run_within_deadline(move || {
@@ -645,6 +676,23 @@ fn z_check_probe_released_after_calls(probe: &Probe) {
     }
 }
 
+fn z_connect_clock_on_tick(
+    owner: *const c_void,
+    probe: &Probe,
+) -> *mut flight_sdk::SignalConnection {
+    return unsafe {
+        crate::flight_connect_clock_on_tick(
+            owner,
+            Some(z_record_frame_tick),
+            z_get_probe_context(probe),
+            Some(z_release),
+            0,
+            false,
+            std::ptr::null(),
+        )
+    };
+}
+
 fn z_connect_unit(
     signal: &flight_sdk::Signal<()>,
     probe: &Probe,
@@ -718,6 +766,12 @@ extern "C" fn z_record_net_progress(ctx: *mut c_void, handle: *const c_void) {
     let progress = unsafe { &*(handle as *const flight_sdk::Ref<flight_sdk::NetProgress>) };
     let loaded = progress.read().unwrap().loaded;
     z_enter(ctx).values.lock().unwrap().push(loaded as f64);
+}
+
+// flight-lint: allow(f64) probes record every payload class into one f64 value list
+extern "C" fn z_record_pointer_event(ctx: *mut c_void, event: *const flight_sdk::PointerEventData) {
+    let x = unsafe { &*event }.x;
+    z_enter(ctx).values.lock().unwrap().push(x as f64);
 }
 
 // flight-lint: allow(f64) probes record every payload class into one f64 value list

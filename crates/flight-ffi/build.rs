@@ -79,6 +79,8 @@ static TYPE_DEFINITIONS: OnceLock<BTreeMap<String, Vec<(bool, TypeDefinition)>>>
 // The set is discovered to a fixed point before emission: a consumer can depend on a producer, but
 // a cycle of consumers can never invent its own initial handle.
 static PRODUCIBLE_TYPES: OnceLock<Mutex<BTreeSet<String>>> = OnceLock::new();
+// Signal owners C only holds as a shared `Ref` handle; set once before the signal inventory report.
+static REF_OWNED_SIGNAL_OWNERS: OnceLock<BTreeSet<String>> = OnceLock::new();
 
 #[derive(Clone, Debug, PartialEq)]
 enum TypeDefinition {
@@ -470,6 +472,11 @@ const BEHAVIOR_POLICY_SKIP_FNS: &[&str] = &[
 const GUARD_POLICY_SKIP_FNS: &[&str] = &["enable_scene3d_resource_failure_guards"];
 // Marks a C pointer parameter that lowers a Rust `Option`; reachability reads it, the header does not.
 const NULLABLE_PARAM_DOC_PREFIX: &str = "flight-ffi nullable|";
+// SDK types C only ever receives as a shared `Ref` handle (their factory returns one) but whose
+// functions borrow the value. Their `&T`/`&mut T` parameters lower to that handle, read- or
+// write-locked for the call, as the SDK's own retained connectors lock it. Listed explicitly: the
+// same gap exists for other Ref-produced types and is a separate ABI decision.
+const REF_LOCKED_PARAM_TYPES: &[&str] = &["InteractionManager"];
 // The header contract every `flight_connect_<payload>_signal` carries.
 const SIGNAL_CONNECT_CONTRACT: &str = "Connects callback_fn(callback_ctx, payload) to signal and returns an owned connection; NULL signal or callback_fn returns NULL without connecting and without calling release_fn. Callbacks run synchronously on the thread that emits the signal; borrowed payload pointers and handles are valid only during the call. release_fn (nullable) receives callback_ctx exactly once, with no signal or scope lock held, when the slot is torn down: flight_free_signal_connection (which disconnects), flight_disconnect_signal_connection, a once connection firing, disconnecting scope, clearing the signal, or dropping the last handle to the signal. The callback never runs after release_fn; a call already running on another thread finishes first, and the connection reports disconnected as soon as it is torn down. release_fn may call back into the signal. Higher priority runs first and equal priorities keep connect order; once disconnects after the first call; scope may be NULL.";
 // Item C: the decision for every `Signal<T>` payload on the public perimeter. `connect` emits one
@@ -903,6 +910,7 @@ fn main() {
     signal_inventory.sort_by(|a, b| {
         (&a.owner, &a.source, &a.item, &a.payload).cmp(&(&b.owner, &b.source, &b.item, &b.payload))
     });
+    let _ = REF_OWNED_SIGNAL_OWNERS.set(collect_ref_owned_signal_owners(crates_dir));
     let signal_inventory_report = generate_signal_inventory_report(&signal_inventory);
     fs::write(
         out_dir.join("signal_inventory.txt"),
@@ -2258,6 +2266,40 @@ fn collect_rust_source_files(dir: &Path) -> Vec<PathBuf> {
     sources
 }
 
+// The types a TypeScript-public function returns as a shared handle (`Ref<T>` or
+// `Option<Ref<T>>`). C holds such an owner only as that handle, so its signal fields are reached
+// through lock-scoped connects, never through a raw pointer into the unlocked value.
+fn collect_ref_owned_signal_owners(crates_dir: &Path) -> BTreeSet<String> {
+    let mut owners = BTreeSet::new();
+    for dir_name in SCAN_CRATES {
+        let src_dir = crates_dir.join(dir_name).join("src");
+        if !src_dir.exists() {
+            continue;
+        }
+        for func in collect_pub_fns(&src_dir) {
+            if func.lacks_public_export {
+                continue;
+            }
+            let Some(ret) = &func.ret else {
+                continue;
+            };
+            let ret = strip_crate_paths(&resolve_type_alias(ret.trim()));
+            let ret = ret
+                .strip_prefix("Option<")
+                .and_then(|rest| rest.strip_suffix('>'))
+                .unwrap_or(&ret);
+            if let Some(inner) = ret
+                .strip_prefix("Ref<")
+                .and_then(|rest| rest.strip_suffix('>'))
+                && inner.chars().all(|c| c.is_alphanumeric() || c == '_')
+            {
+                owners.insert(inner.to_string());
+            }
+        }
+    }
+    owners
+}
+
 // The type names every Flight crate defines, keyed by crate directory, so a payload's nominal types
 // resolve to their defining crate.
 fn collect_crate_defined_type_names(crates_dir: &Path) -> BTreeMap<String, BTreeSet<String>> {
@@ -3234,7 +3276,15 @@ fn get_owned_param_at_depth(ty: &str, depth: usize) -> Option<OwnedParam> {
 fn get_param_ownership_note(ty: &str) -> Option<&'static str> {
     const CLONED: &str = "cloned; caller retains its handle";
     const TRANSFERRED: &str = "ownership transferred; do not use or free after call";
+    const LOCKED: &str = "shared Ref handle; locked for the duration of the call";
     let ty = strip_crate_paths(&strip_lifetimes(&resolve_type_alias(ty.trim())));
+    if [ty.strip_prefix("&mut "), ty.strip_prefix('&')]
+        .into_iter()
+        .flatten()
+        .any(|inner| REF_LOCKED_PARAM_TYPES.contains(&inner))
+    {
+        return Some(LOCKED);
+    }
     if ty.starts_with('&') || is_opaque_fallback_excluded(&ty) {
         return None;
     }
@@ -4545,6 +4595,34 @@ pub unsafe extern "C" fn flight_free_owned_byte_reader(reader: *mut FfiOwnedByte
 //   thread keeps the slot alive until it returns, so `release` never overlaps or precedes a call,
 //   and the callback can never run after `release`.
 // - Callbacks run synchronously on the thread that emits the signal.
+// Task M's lowering of one connectable payload into the C callback: the payload's Rust type, the
+// callback's extra C parameters, the call arguments, and the slot closure's payload binding name.
+fn get_signal_callback_lowering(payload: &str) -> (String, String, String, &'static str) {
+    let class = get_signal_payload_class(payload)
+        .unwrap_or_else(|| panic!("connect payload `{payload}` has no Task M class"));
+    let rust_ty = get_signal_payload_rust_type(payload);
+    let (callback_args, call_args) = match class {
+        "unit" => (String::new(), String::new()),
+        "scalar" => (format!(", {payload}"), ", *payload".to_string()),
+        "enum-u32" => (", u32".to_string(), ", *payload as u32".to_string()),
+        "borrowed-struct" => (
+            format!(", *const {rust_ty}"),
+            format!(", payload as *const {rust_ty}"),
+        ),
+        "borrowed-ref-handle" => (
+            ", *const std::ffi::c_void".to_string(),
+            format!(", payload as *const {rust_ty} as *const std::ffi::c_void"),
+        ),
+        other => panic!("unknown signal payload class `{other}`"),
+    };
+    let payload_name = if call_args.is_empty() {
+        "_payload"
+    } else {
+        "payload"
+    };
+    (rust_ty, callback_args, call_args, payload_name)
+}
+
 // The Rust type a connectable payload names inside `flight_sdk::Signal<...>`.
 fn get_signal_payload_rust_type(payload: &str) -> String {
     if payload == "()" || is_scalar(payload) {
@@ -4559,7 +4637,8 @@ fn get_signal_payload_rust_type(payload: &str) -> String {
     qualify_type(payload)
 }
 
-// How C reaches one inventoried signal: `function` (the SDK function itself crosses), `get` (a
+// How C reaches one inventoried signal: `function` (the SDK function itself crosses),
+// `ref-connect` (a lock-scoped connect on an owner C holds as a shared `Ref` handle), `get` (a
 // borrowed field getter), `get+enable` (an optional input signal on an `*Options` struct, which C
 // creates in place before passing the options), or `skip:<reason>`. Producers hand out borrowed
 // pointers to the owner's own field, never `Signal` clones: a clone owns a separate emit cell, so
@@ -4583,6 +4662,19 @@ fn get_signal_producer_decision(entry: &SignalInventoryEntry) -> String {
     }
     let payload = &entry.payload;
     let (owner, _) = entry.item.split_once('.').unwrap();
+    let shapes = [
+        format!("Signal<{payload}>"),
+        format!("Ref<Signal<{payload}>>"),
+        format!("Option<Signal<{payload}>>"),
+        format!("Option<Ref<Signal<{payload}>>>"),
+    ];
+    if REF_OWNED_SIGNAL_OWNERS
+        .get()
+        .is_some_and(|owners| owners.contains(owner))
+        && shapes.contains(&entry.declared)
+    {
+        return "ref-connect".to_string();
+    }
     if [
         format!("Signal<{payload}>"),
         format!("Ref<Signal<{payload}>>"),
@@ -4618,6 +4710,10 @@ fn generate_signal_field_producers(inventory: &[SignalInventoryEntry]) -> String
     let mut names = BTreeSet::new();
     for entry in inventory {
         let decision = get_signal_producer_decision(entry);
+        if decision == "ref-connect" {
+            out.push_str(&generate_signal_ref_connect(entry, &mut names));
+            continue;
+        }
         if decision != "get" && decision != "get+enable" {
             continue;
         }
@@ -4686,6 +4782,59 @@ fn generate_signal_field_producers(inventory: &[SignalInventoryEntry]) -> String
     out
 }
 
+// A lock-scoped connect for one signal field of an owner C holds as a shared `Ref` handle: the
+// handle is read-locked only while the connection is made, and the connection reaches the signal
+// weakly, so dropping the last owner handle drops the signal and releases the context once.
+fn generate_signal_ref_connect(
+    entry: &SignalInventoryEntry,
+    names: &mut BTreeSet<String>,
+) -> String {
+    let (owner, field) = entry.item.split_once('.').unwrap();
+    let owner_ty = qualify_type(owner);
+    let (rust_ty, callback_args, call_args, payload_name) =
+        get_signal_callback_lowering(&entry.payload);
+    let base = format!("{}_{field}", to_snake_case(owner));
+    assert!(
+        names.insert(base.clone()),
+        "two signal producers share flight_connect_{base}"
+    );
+    let optional = entry.declared.starts_with("Option<");
+    let shared = entry.declared.contains("Ref<Signal<");
+    let signal_ty = format!("{QUALIFIER}::Signal<{rust_ty}>");
+    let reach = match (optional, shared) {
+        (false, false) => format!("&guard.{field} as *const {signal_ty}"),
+        (true, false) => format!(
+            "match &guard.{field} {{ Some(signal) => signal as *const {signal_ty}, None => return std::ptr::null_mut() }}"
+        ),
+        (false, true) => format!("&*guard.{field}.read().unwrap() as *const {signal_ty}"),
+        (true, true) => format!(
+            "match &guard.{field} {{ Some(signal) => &*signal.read().unwrap() as *const {signal_ty}, None => return std::ptr::null_mut() }}"
+        ),
+    };
+    let mut out = String::new();
+    writeln!(
+        out,
+        "#[doc = \"flight-ffi contract|Connects callback_fn to the {owner}.{field} signal of a shared {owner} handle, which is read-locked only while the connection is made. NULL owner{absent} returns NULL without calling release_fn. Callback, release and teardown follow flight_connect_{stem}_signal; dropping the last {owner} handle drops the signal and releases the context once.\"]\n\
+         #[doc = \"flight-ffi ownership|owned-return|flight_free_signal_connection|flight_sdk::SignalConnection\"]\n\
+         #[doc = \"{NULLABLE_PARAM_DOC_PREFIX}scope\"]\n\
+         #[unsafe(no_mangle)]\n\
+         pub unsafe extern \"C\" fn flight_connect_{base}(owner: *const std::ffi::c_void, callback_fn: Option<extern \"C\" fn(*mut std::ffi::c_void{callback_args})>, callback_ctx: *mut std::ffi::c_void, release_fn: Option<extern \"C\" fn(*mut std::ffi::c_void)>, priority: i32, once: bool, scope: *const {QUALIFIER}::SignalScope) -> *mut {QUALIFIER}::SignalConnection {{\n    \
+             if owner.is_null() {{ return std::ptr::null_mut(); }}\n    \
+             let Some(callback) = callback_fn else {{ return std::ptr::null_mut(); }};\n    \
+             let owner = unsafe {{ &*(owner as *const {QUALIFIER}::Ref<{owner_ty}>) }};\n    \
+             let guard = owner.read().unwrap();\n    \
+             let signal = {reach};\n    \
+             let connection = ffi_connect_signal(signal, callback_ctx, release_fn, priority, once, scope, move |ctx, {payload_name}: &{rust_ty}| callback(ctx{call_args}));\n    \
+             drop(guard);\n    \
+             return connection;\n\
+         }}",
+        absent = if optional { ", an absent signal," } else { "" },
+        stem = get_signal_payload_stem(&entry.payload),
+    )
+    .unwrap();
+    out
+}
+
 // One `flight_connect_<payload>_signal` per `connect` policy. The callback receives the context
 // first, then the payload lowered by its Task M class; the returned connection is owned by C and
 // freed (which disconnects) with `flight_free_signal_connection`.
@@ -4695,29 +4844,9 @@ fn generate_signal_connect_wrappers() -> String {
         if *decision != "connect" {
             continue;
         }
-        let class = get_signal_payload_class(payload)
-            .unwrap_or_else(|| panic!("connect payload `{payload}` has no Task M class"));
-        let rust_ty = get_signal_payload_rust_type(payload);
-        let (callback_args, call_args) = match class {
-            "unit" => (String::new(), String::new()),
-            "scalar" => (format!(", {payload}"), ", *payload".to_string()),
-            "enum-u32" => (", u32".to_string(), ", *payload as u32".to_string()),
-            "borrowed-struct" => (
-                format!(", *const {rust_ty}"),
-                format!(", payload as *const {rust_ty}"),
-            ),
-            "borrowed-ref-handle" => (
-                ", *const std::ffi::c_void".to_string(),
-                format!(", payload as *const {rust_ty} as *const std::ffi::c_void"),
-            ),
-            other => panic!("unknown signal payload class `{other}`"),
-        };
+        let (rust_ty, callback_args, call_args, payload_name) =
+            get_signal_callback_lowering(payload);
         let stem = get_signal_payload_stem(payload);
-        let payload_name = if call_args.is_empty() {
-            "_payload"
-        } else {
-            "payload"
-        };
         writeln!(
             out,
             "#[doc = \"flight-ffi contract|{SIGNAL_CONNECT_CONTRACT}\"]\n\
@@ -6578,6 +6707,7 @@ fn resolve_type_alias(ty: &str) -> String {
         ("AnimationBlendTreeRef", "Ref<AnimationBlendTree>"),
         ("DebugStateRef", "Ref<DebugState>"),
         ("FlowGuardStateRef", "Ref<FlowGuardState>"),
+        ("InteractionInputSource", "Ref<InputManager>"),
         ("LogStateRef", "Ref<LogState>"),
         ("Node2DRef", "Ref<dyn Node2D>"),
         ("Node3DRef", "Ref<dyn Node3D>"),
@@ -6991,6 +7121,27 @@ fn map_param_to_ffi(name: &str, ty: &str) -> Option<MappedParam> {
     let ty = resolve_type_alias(&ty);
     let ty = ty.as_str();
     let lifetime_data_ty = ty.strip_suffix("<>").unwrap_or(ty);
+
+    // A borrowed SDK type that C only ever holds as its shared `Ref` handle crosses as that
+    // handle, locked for the duration of the call, so no unlocked pointee is ever exposed.
+    for (prefix, write) in [("&mut ", true), ("&", false)] {
+        if let Some(inner) = ty.strip_prefix(prefix)
+            && REF_LOCKED_PARAM_TYPES.contains(&inner)
+        {
+            let clean = name.trim_start_matches('_');
+            let qualified = qualify_type(inner);
+            let lock = if write { "write" } else { "read" };
+            let borrow = if write { "&mut " } else { "&" };
+            return Some(MappedParam {
+                ffi_params: vec![(name.to_string(), "*const std::ffi::c_void".to_string())],
+                bindings: vec![format!(
+                    "    let {borrow_kw}ffi_locked_{clean} = unsafe {{ &*({name} as *const flight_sdk::Ref<{qualified}>) }}.{lock}().unwrap();",
+                    borrow_kw = if write { "mut " } else { "" }
+                )],
+                call_expr: format!("{borrow}ffi_locked_{clean}"),
+            });
+        }
+    }
 
     // The handle owns bytes and cursor, but never an SDK ByteReader. Borrow its bytes into a
     // transient view for exactly one call; mutable wrappers write the resulting cursor back.

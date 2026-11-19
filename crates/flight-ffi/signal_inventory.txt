@@ -346,42 +346,42 @@ payload|usize|1
 producer|flight-animation|AnimationPlayer.on_event|get
 producer|flight-animation|AnimationPlayer.on_finished|get
 producer|flight-animation|AnimationPlayer.on_looped|get
-producer|flight-app|AppLoop.on_activate|get
-producer|flight-app|AppLoop.on_deactivate|get
+producer|flight-app|AppLoop.on_activate|ref-connect
+producer|flight-app|AppLoop.on_deactivate|ref-connect
 producer|flight-app|AppLoop.on_error|skip|payload has no connect wrapper
-producer|flight-app|AppLoop.on_exit|get
-producer|flight-app|AppLoop.on_fixed_update|get
-producer|flight-app|AppLoop.on_render|get
-producer|flight-app|AppLoop.on_update|get
+producer|flight-app|AppLoop.on_exit|ref-connect
+producer|flight-app|AppLoop.on_fixed_update|ref-connect
+producer|flight-app|AppLoop.on_render|ref-connect
+producer|flight-app|AppLoop.on_update|ref-connect
 producer|flight-app|AppEvents.on_activate|get
 producer|flight-app|AppEvents.on_all_windows_closed|get
 producer|flight-app|AppEvents.on_open_file|skip|payload has no connect wrapper
 producer|flight-app|AppEvents.on_quit_request|get
 producer|flight-app|AppEvents.on_ready|get
 producer|flight-app|AppEvents.on_second_instance|skip|payload has no connect wrapper
-producer|flight-app|AppWindow.on_activate|get
-producer|flight-app|AppWindow.on_close|get
-producer|flight-app|AppWindow.on_close_request|get
-producer|flight-app|AppWindow.on_deactivate|get
+producer|flight-app|AppWindow.on_activate|ref-connect
+producer|flight-app|AppWindow.on_close|ref-connect
+producer|flight-app|AppWindow.on_close_request|ref-connect
+producer|flight-app|AppWindow.on_deactivate|ref-connect
 producer|flight-app|AppWindow.on_drop_file|skip|payload has no connect wrapper
-producer|flight-app|AppWindow.on_focus_in|get
-producer|flight-app|AppWindow.on_focus_out|get
-producer|flight-app|AppWindow.on_fullscreen_changed|get
-producer|flight-app|AppWindow.on_maximize|get
-producer|flight-app|AppWindow.on_minimize|get
-producer|flight-app|AppWindow.on_move|get
-producer|flight-app|AppWindow.on_orientation_changed|get
-producer|flight-app|AppWindow.on_render_context_lost|get
-producer|flight-app|AppWindow.on_render_context_restored|get
-producer|flight-app|AppWindow.on_resize|get
-producer|flight-app|AppWindow.on_restore|get
+producer|flight-app|AppWindow.on_focus_in|ref-connect
+producer|flight-app|AppWindow.on_focus_out|ref-connect
+producer|flight-app|AppWindow.on_fullscreen_changed|ref-connect
+producer|flight-app|AppWindow.on_maximize|ref-connect
+producer|flight-app|AppWindow.on_minimize|ref-connect
+producer|flight-app|AppWindow.on_move|ref-connect
+producer|flight-app|AppWindow.on_orientation_changed|ref-connect
+producer|flight-app|AppWindow.on_render_context_lost|ref-connect
+producer|flight-app|AppWindow.on_render_context_restored|ref-connect
+producer|flight-app|AppWindow.on_resize|ref-connect
+producer|flight-app|AppWindow.on_restore|ref-connect
 producer|flight-assets|AssetGroupLoadOptions.progress|get+enable
 producer|flight-clipboard|ClipboardWatch.on_change|get
 producer|flight-clock|fn enable_clock_signals -> return|function
-producer|flight-clock|Clock.on_tick|get
+producer|flight-clock|Clock.on_tick|ref-connect
 producer|flight-command|fn enable_command_history_signals -> return|function
 producer|flight-command|fn get_command_history_signals -> return|function
-producer|flight-command|CommandHistory.on_change|get
+producer|flight-command|CommandHistory.on_change|ref-connect
 producer|flight-connectivity|Connectivity.on_change|get
 producer|flight-connectivity|Connectivity.on_connection_type_change|get
 producer|flight-connectivity|Connectivity.on_metered_change|get
@@ -417,21 +417,21 @@ producer|flight-gui|TreeViewControllerSignals.on_select|skip|payload has no conn
 producer|flight-gui|WindowControllerSignals.on_close|get
 producer|flight-gui|WindowControllerSignals.on_move|skip|payload has no connect wrapper
 producer|flight-gui|WindowControllerSignals.on_resize|skip|payload has no connect wrapper
-producer|flight-input|InputManager.on_gamepad_axis_move|get
-producer|flight-input|InputManager.on_gamepad_button_down|get
-producer|flight-input|InputManager.on_gamepad_button_up|get
-producer|flight-input|InputManager.on_gamepad_connect|get
-producer|flight-input|InputManager.on_gamepad_disconnect|get
-producer|flight-input|InputManager.on_key_down|get
-producer|flight-input|InputManager.on_key_up|get
-producer|flight-input|InputManager.on_pointer_cancel|get
-producer|flight-input|InputManager.on_pointer_down|get
-producer|flight-input|InputManager.on_pointer_move|get
-producer|flight-input|InputManager.on_pointer_move_relative|get
-producer|flight-input|InputManager.on_pointer_up|get
-producer|flight-input|InputManager.on_text_edit|get
-producer|flight-input|InputManager.on_text_input|get
-producer|flight-input|InputManager.on_wheel|get
+producer|flight-input|InputManager.on_gamepad_axis_move|ref-connect
+producer|flight-input|InputManager.on_gamepad_button_down|ref-connect
+producer|flight-input|InputManager.on_gamepad_button_up|ref-connect
+producer|flight-input|InputManager.on_gamepad_connect|ref-connect
+producer|flight-input|InputManager.on_gamepad_disconnect|ref-connect
+producer|flight-input|InputManager.on_key_down|ref-connect
+producer|flight-input|InputManager.on_key_up|ref-connect
+producer|flight-input|InputManager.on_pointer_cancel|ref-connect
+producer|flight-input|InputManager.on_pointer_down|ref-connect
+producer|flight-input|InputManager.on_pointer_move|ref-connect
+producer|flight-input|InputManager.on_pointer_move_relative|ref-connect
+producer|flight-input|InputManager.on_pointer_up|ref-connect
+producer|flight-input|InputManager.on_text_edit|ref-connect
+producer|flight-input|InputManager.on_text_input|ref-connect
+producer|flight-input|InputManager.on_wheel|ref-connect
 producer|flight-input|InputSignals.on_gamepad_axis_move|get
 producer|flight-input|InputSignals.on_gamepad_button_down|get
 producer|flight-input|InputSignals.on_gamepad_button_up|get
@@ -448,24 +448,24 @@ producer|flight-input|InputSignals.on_text_edit|get
 producer|flight-input|InputSignals.on_text_input|get
 producer|flight-input|InputSignals.on_wheel|get
 producer|flight-interaction|FocusNavigationInput.on_key_down|get
-producer|flight-interaction|InteractionSignals.on_click|get
-producer|flight-interaction|InteractionSignals.on_context_menu|get
-producer|flight-interaction|InteractionSignals.on_double_click|get
-producer|flight-interaction|InteractionSignals.on_focus_in|get
-producer|flight-interaction|InteractionSignals.on_focus_out|get
-producer|flight-interaction|InteractionSignals.on_key_down|get
-producer|flight-interaction|InteractionSignals.on_key_up|get
-producer|flight-interaction|InteractionSignals.on_pointer_cancel|get
-producer|flight-interaction|InteractionSignals.on_pointer_double_click|get
-producer|flight-interaction|InteractionSignals.on_pointer_down|get
-producer|flight-interaction|InteractionSignals.on_pointer_move|get
-producer|flight-interaction|InteractionSignals.on_pointer_out|get
-producer|flight-interaction|InteractionSignals.on_pointer_over|get
-producer|flight-interaction|InteractionSignals.on_pointer_roll_out|get
-producer|flight-interaction|InteractionSignals.on_pointer_roll_over|get
-producer|flight-interaction|InteractionSignals.on_pointer_up|get
-producer|flight-interaction|InteractionSignals.on_release_outside|get
-producer|flight-interaction|InteractionSignals.on_wheel|get
+producer|flight-interaction|InteractionSignals.on_click|ref-connect
+producer|flight-interaction|InteractionSignals.on_context_menu|ref-connect
+producer|flight-interaction|InteractionSignals.on_double_click|ref-connect
+producer|flight-interaction|InteractionSignals.on_focus_in|ref-connect
+producer|flight-interaction|InteractionSignals.on_focus_out|ref-connect
+producer|flight-interaction|InteractionSignals.on_key_down|ref-connect
+producer|flight-interaction|InteractionSignals.on_key_up|ref-connect
+producer|flight-interaction|InteractionSignals.on_pointer_cancel|ref-connect
+producer|flight-interaction|InteractionSignals.on_pointer_double_click|ref-connect
+producer|flight-interaction|InteractionSignals.on_pointer_down|ref-connect
+producer|flight-interaction|InteractionSignals.on_pointer_move|ref-connect
+producer|flight-interaction|InteractionSignals.on_pointer_out|ref-connect
+producer|flight-interaction|InteractionSignals.on_pointer_over|ref-connect
+producer|flight-interaction|InteractionSignals.on_pointer_roll_out|ref-connect
+producer|flight-interaction|InteractionSignals.on_pointer_roll_over|ref-connect
+producer|flight-interaction|InteractionSignals.on_pointer_up|ref-connect
+producer|flight-interaction|InteractionSignals.on_release_outside|ref-connect
+producer|flight-interaction|InteractionSignals.on_wheel|ref-connect
 producer|flight-keyboard|SoftKeyboard.on_hide|get
 producer|flight-keyboard|SoftKeyboard.on_resize|get
 producer|flight-keyboard|SoftKeyboard.on_show|get
@@ -489,31 +489,31 @@ producer|flight-loader|ResourceLoaderItemSignals.on_item_retry|skip|payload has 
 producer|flight-loader|ResourceLoaderItemSignals.on_item_start|skip|payload has no connect wrapper
 producer|flight-log|LogSignals.on_log_entry|get
 producer|flight-log|LogSignals.on_log_error|get
-producer|flight-media|AudioChannel.on_complete|get
-producer|flight-media|MediaChannelSignals.on_buffering|get
-producer|flight-media|MediaChannelSignals.on_complete|get
+producer|flight-media|AudioChannel.on_complete|ref-connect
+producer|flight-media|MediaChannelSignals.on_buffering|ref-connect
+producer|flight-media|MediaChannelSignals.on_complete|ref-connect
 producer|flight-media|MediaChannelSignals.on_error|skip|payload has no connect wrapper
-producer|flight-media|MediaChannelSignals.on_loop|get
-producer|flight-media|MediaChannelSignals.on_pause|get
-producer|flight-media|MediaChannelSignals.on_play|get
-producer|flight-media|MediaChannelSignals.on_ready|get
-producer|flight-media|MediaChannelSignals.on_seeked|get
-producer|flight-media|MediaChannelSignals.on_stop|get
-producer|flight-media|VideoChannel.on_complete|get
+producer|flight-media|MediaChannelSignals.on_loop|ref-connect
+producer|flight-media|MediaChannelSignals.on_pause|ref-connect
+producer|flight-media|MediaChannelSignals.on_play|ref-connect
+producer|flight-media|MediaChannelSignals.on_ready|ref-connect
+producer|flight-media|MediaChannelSignals.on_seeked|ref-connect
+producer|flight-media|MediaChannelSignals.on_stop|ref-connect
+producer|flight-media|VideoChannel.on_complete|ref-connect
 producer|flight-mediasession|MediaSessionActionSignal.on_action|get
 producer|flight-menu|MenuHighlight.on_menu_item_highlight|skip|payload has no connect wrapper
 producer|flight-menu|MenuSelect.on_menu_item_select|skip|payload has no connect wrapper
-producer|flight-menu|MenuSignals.on_context_menu_close|get
-producer|flight-menu|MenuSignals.on_context_menu_open|get
-producer|flight-midi|MidiAccessStateSubscription.on_midi_access_state_change|get
-producer|flight-midi|MidiInputMessageSubscription.on_midi_input_message|get
-producer|flight-midi|MidiPortStateSubscription.on_midi_port_state_change|get
+producer|flight-menu|MenuSignals.on_context_menu_close|ref-connect
+producer|flight-menu|MenuSignals.on_context_menu_open|ref-connect
+producer|flight-midi|MidiAccessStateSubscription.on_midi_access_state_change|ref-connect
+producer|flight-midi|MidiInputMessageSubscription.on_midi_input_message|ref-connect
+producer|flight-midi|MidiPortStateSubscription.on_midi_port_state_change|ref-connect
 producer|flight-net|NetRequestOptions.progress|get+enable
 producer|flight-node|NodeSignals.on_child_added|skip|payload has no connect wrapper
 producer|flight-node|NodeSignals.on_child_removed|skip|payload has no connect wrapper
-producer|flight-node|NodeSignals.on_children_changed|get
-producer|flight-node|NodeSignals.on_children_order_changed|get
-producer|flight-node|NodeSignals.on_parent_changed|get
+producer|flight-node|NodeSignals.on_children_changed|ref-connect
+producer|flight-node|NodeSignals.on_children_order_changed|ref-connect
+producer|flight-node|NodeSignals.on_parent_changed|ref-connect
 producer|flight-notification|NotificationActionSubscription.on_notification_action|skip|payload has no connect wrapper
 producer|flight-notification|NotificationClickSubscription.on_notification_click|get
 producer|flight-notification|NotificationDismissSubscription.on_notification_dismiss|get
@@ -533,14 +533,14 @@ producer|flight-power|Power.on_thermal_state_change|get
 producer|flight-power|Power.on_unlock_screen|get
 producer|flight-preferences|StorageSignals.on_change|get
 producer|flight-protocol|ProtocolHandler.on_open_url|skip|payload has no connect wrapper
-producer|flight-quadbatch|QuadBatchSignals.on_cleared|get
-producer|flight-quadbatch|QuadBatchSignals.on_instance_appended|get
+producer|flight-quadbatch|QuadBatchSignals.on_cleared|ref-connect
+producer|flight-quadbatch|QuadBatchSignals.on_instance_appended|ref-connect
 producer|flight-quadbatch|QuadBatchSignals.on_instance_removed|skip|payload has no connect wrapper
 producer|flight-render|RenderCacheAdapterSignals.on_prepare|get
 producer|flight-render|RenderRegistrySignals.on_registry_miss|skip|payload has no connect wrapper
-producer|flight-scene2d|Scene2DSignals.on_fullscreen_changed|get
-producer|flight-scene2d|Scene2DSignals.on_orientation_changed|get
-producer|flight-scene2d|Scene2DSignals.on_resize|get
+producer|flight-scene2d|Scene2DSignals.on_fullscreen_changed|ref-connect
+producer|flight-scene2d|Scene2DSignals.on_orientation_changed|ref-connect
+producer|flight-scene2d|Scene2DSignals.on_resize|ref-connect
 producer|flight-scene2d-resources|LoadScene2DAudioResourcesOptions.progress|get+enable
 producer|flight-scene2d-resources|LoadScene2DImageResourcesOptions.progress|get+enable
 producer|flight-scene2d-resources|Scene2DDocumentLoadOptions.progress|get+enable
@@ -550,8 +550,8 @@ producer|flight-scene3d|InstancedMeshSignals.on_instance_removed|get
 producer|flight-scene3d-resources|GltfScene3DDocumentLoadOptions.progress|get+enable
 producer|flight-scene3d-resources|LoadScene3DResourcesOptions.progress|get+enable
 producer|flight-scene3d-resources|Scene3DDocumentLoadOptions.progress|get+enable
-producer|flight-scene3d-resources|Scene3DResourceSignals.on_resource_failed|get
-producer|flight-scene3d-resources|Scene3DResourceSignals.on_resource_resolved|get
+producer|flight-scene3d-resources|Scene3DResourceSignals.on_resource_failed|ref-connect
+producer|flight-scene3d-resources|Scene3DResourceSignals.on_resource_resolved|ref-connect
 producer|flight-screen|ScreenPermissionChange.on_change|get
 producer|flight-screen|ScreenSignals.on_screen_added|get
 producer|flight-screen|ScreenSignals.on_screen_metrics_changed|get
@@ -572,28 +572,28 @@ producer|flight-sensors|Sensors.on_quaternion|get
 producer|flight-share|ShareSignals.on_share_result|get
 producer|flight-shortcut|GlobalShortcut.on_trigger|get
 producer|flight-signals|fn connect_signal_at_frame_rate(source)|function
-producer|flight-socket|SocketSignals.on_socket_close|get
-producer|flight-socket|SocketSignals.on_socket_error|get
-producer|flight-socket|SocketSignals.on_socket_message|get
-producer|flight-socket|SocketSignals.on_socket_open|get
-producer|flight-spritesheet|SpritesheetPlayer.on_complete|get
-producer|flight-spritesheet|SpritesheetPlayer.on_loop|get
+producer|flight-socket|SocketSignals.on_socket_close|ref-connect
+producer|flight-socket|SocketSignals.on_socket_error|ref-connect
+producer|flight-socket|SocketSignals.on_socket_message|ref-connect
+producer|flight-socket|SocketSignals.on_socket_open|ref-connect
+producer|flight-spritesheet|SpritesheetPlayer.on_complete|ref-connect
+producer|flight-spritesheet|SpritesheetPlayer.on_loop|ref-connect
 producer|flight-statechart|StatechartSignals.on_state_change|skip|payload has no connect wrapper
 producer|flight-statusbar|StatusBar.on_change|get
-producer|flight-text|TextFieldSignals.on_text_field_change|get
-producer|flight-text|TextFieldSignals.on_text_field_link|get
-producer|flight-text|TextFieldSignals.on_text_field_scroll|get
+producer|flight-text|TextFieldSignals.on_text_field_change|ref-connect
+producer|flight-text|TextFieldSignals.on_text_field_link|ref-connect
+producer|flight-text|TextFieldSignals.on_text_field_scroll|ref-connect
 producer|flight-textinput|TextInputSource.on_key_down|get
 producer|flight-textinput|TextInputSource.on_text_input|get
 producer|flight-textshaper|TextShaperSignals.on_backend_changed|skip|payload has no connect wrapper
 producer|flight-tilemap|TilemapSignals.on_cleared|get
 producer|flight-tilemap|TilemapSignals.on_tile_changed|skip|payload has no connect wrapper
 producer|flight-tilemap|TilemapSignals.on_tiles_changed|skip|payload has no connect wrapper
-producer|flight-timeline|TimelineSignals.on_complete|get
-producer|flight-timeline|TimelineSignals.on_enter_frame|get
-producer|flight-timeline|TimelineSignals.on_exit_frame|get
-producer|flight-timeline|TimelineSignals.on_frame_constructed|get
-producer|flight-timeline|TimelineSignals.on_loop|get
+producer|flight-timeline|TimelineSignals.on_complete|ref-connect
+producer|flight-timeline|TimelineSignals.on_enter_frame|ref-connect
+producer|flight-timeline|TimelineSignals.on_exit_frame|ref-connect
+producer|flight-timeline|TimelineSignals.on_frame_constructed|ref-connect
+producer|flight-timeline|TimelineSignals.on_loop|ref-connect
 producer|flight-tray|HostTrayBalloonEventsCapability.get_signal|skip|host capability construction is withdrawn from the alpha ABI (Task S)
 producer|flight-tray|HostTrayDropEventsCapability.get_signal|skip|host capability construction is withdrawn from the alpha ABI (Task S)
 producer|flight-tray|HostTrayInteractionEventsCapability.get_signal|skip|host capability construction is withdrawn from the alpha ABI (Task S)
