@@ -31,7 +31,6 @@ mod sugar_tests {
     }
 }
 
-// flight-lint: allow(f64) Bezier evaluation, arc length and flattening over f64 path coordinates with tolerances tuned in double; f32 sufficiency not measured
 /// Finds the closest point on `path` to (px, py), writing the result into `out`.
 /// Returns the distance from (px, py) to the nearest point. Returns -1 and leaves
 /// `out` unchanged for an empty path.
@@ -88,14 +87,13 @@ pub fn get_path_nearest_point(
     if best_dist_sq == f64::INFINITY {
         return -1.0;
     }
-    out.x = best_x as f32;
-    out.y = best_y as f32;
+    out.x = best_x;
+    out.y = best_y;
     return best_dist_sq.sqrt();
 }
 
 #[cfg(feature = "object-api")]
 impl Path {
-    // flight-lint: allow(f64) operates on f64 Path.data coordinates (TS number); f32 sufficiency not measured
     pub fn nearest_point(
         &self,
         px: f64,

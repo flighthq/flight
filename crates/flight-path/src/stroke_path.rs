@@ -38,7 +38,6 @@ mod sugar_tests {
     }
 }
 
-// flight-lint: allow(f64) orientation/area/winding/intersection predicates over f64 path coordinates (D1 path candidate: signed area, tessellation); f32 sufficiency not measured
 fn append_contour(
     path: &mut Path,
     primary: &[f64],
@@ -66,7 +65,6 @@ fn append_contour(
     append_path_close(path);
 }
 
-// flight-lint: allow(f64) orientation/area/winding/intersection predicates over f64 path coordinates (D1 path candidate: signed area, tessellation); f32 sufficiency not measured
 fn append_piece_outline(path: &mut Path, piece: &StrokePathPieceGeometry) {
     if piece.left.len() < 4 || piece.right.len() < 4 {
         return;
@@ -89,7 +87,6 @@ fn append_piece_outline(path: &mut Path, piece: &StrokePathPieceGeometry) {
     }
 }
 
-// flight-lint: allow(f64) orientation/area/winding/intersection predicates over f64 path coordinates (D1 path candidate: signed area, tessellation); f32 sufficiency not measured
 fn append_points(path: &mut Path, points: &[f64], start: usize, step: usize) {
     let mut i = start;
     while i < points.len() {
@@ -98,7 +95,6 @@ fn append_points(path: &mut Path, points: &[f64], start: usize, step: usize) {
     }
 }
 
-// flight-lint: allow(f64) orientation/area/winding/intersection predicates over f64 path coordinates (D1 path candidate: signed area, tessellation); f32 sufficiency not measured
 fn append_points_reverse(path: &mut Path, points: &[f64]) {
     let mut i = points.len() as isize - 2;
     while i >= 0 {
@@ -107,7 +103,6 @@ fn append_points_reverse(path: &mut Path, points: &[f64]) {
     }
 }
 
-// flight-lint: allow(f64) orientation/area/winding/intersection predicates over f64 path coordinates (D1 path candidate: signed area, tessellation); f32 sufficiency not measured
 /// Converts a centerline Path into its fill outline.
 pub fn stroke_path(path: &Path, style: &StrokeStyle, tolerance: Option<f64>) -> Path {
     let tolerance = tolerance.unwrap_or(0.25);
@@ -121,7 +116,6 @@ pub fn stroke_path(path: &Path, style: &StrokeStyle, tolerance: Option<f64>) -> 
 
 #[cfg(feature = "object-api")]
 impl Path {
-    // flight-lint: allow(f64) operates on f64 Path.data coordinates (TS number); f32 sufficiency not measured
     pub fn stroke(&self, style: &StrokeStyle, tolerance: Option<f64>) -> Path {
         return stroke_path(self, style, tolerance);
     }

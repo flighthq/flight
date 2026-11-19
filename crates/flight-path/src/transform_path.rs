@@ -40,23 +40,14 @@ mod sugar_tests {
     }
 }
 
-// flight-lint: allow(f64) operates on f64 Path.data coordinates (TS number); f32 sufficiency not measured
 /// Applies a 2D affine matrix to all anchor and control-point coordinate pairs in `source`,
 /// writing the result into `out`. Alias-safe. Commands and winding are copied unchanged.
 pub fn transform_path(source: &Path, matrix: &Matrix, out: &mut Path) {
     transform_path_coordinates(
-        source,
-        matrix.a as f64,
-        matrix.b as f64,
-        matrix.c as f64,
-        matrix.d as f64,
-        matrix.tx as f64,
-        matrix.ty as f64,
-        out,
+        source, matrix.a, matrix.b, matrix.c, matrix.d, matrix.tx, matrix.ty, out,
     );
 }
 
-// flight-lint: allow(f64) operates on f64 Path.data coordinates (TS number); f32 sufficiency not measured
 // The affine map as plain coefficients, so translation needs no `Matrix` entity and the path runtime
 // keeps no value dependency on geometry.
 #[allow(clippy::needless_range_loop)] // indexed loop remains portable to generated TypeScript
@@ -112,7 +103,6 @@ fn transform_path_coordinates(
     }
 }
 
-// flight-lint: allow(f64) operates on f64 Path.data coordinates (TS number); f32 sufficiency not measured
 /// Translates all points in `source` by (dx, dy). Alias-safe.
 pub fn translate_path(source: &Path, dx: f64, dy: f64, out: &mut Path) {
     transform_path_coordinates(source, 1.0, 0.0, 0.0, 1.0, dx, dy, out);
@@ -124,7 +114,6 @@ impl Path {
         return transform_path(self, matrix, out);
     }
 
-    // flight-lint: allow(f64) operates on f64 Path.data coordinates (TS number); f32 sufficiency not measured
     pub fn translate(&self, dx: f64, dy: f64, out: &mut Path) {
         return translate_path(self, dx, dy, out);
     }

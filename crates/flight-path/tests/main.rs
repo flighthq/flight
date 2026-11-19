@@ -12,6 +12,8 @@ mod flight_path_decimate_path_test;
 mod flight_path_explain_path_morph_creation_test;
 #[path = "explain_stroke_path_tessellation_test.rs"]
 mod flight_path_explain_stroke_path_tessellation_test;
+#[path = "f64_bridge_test.rs"]
+mod flight_path_f64_bridge_test;
 #[path = "fit_path_curves_test.rs"]
 mod flight_path_fit_path_curves_test;
 #[path = "flatten_path_test.rs"]

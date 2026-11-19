@@ -29,6 +29,21 @@ mod tessellate_path_typed {
     }
 
     #[test]
+    fn narrows_only_at_the_explicit_float32_upload_store() {
+        let coordinate = 16_777_217.0_f64;
+        let path = rectangle_path(coordinate, coordinate, 2.0, 2.0);
+        let plain = tessellate_path(&path, None);
+        let typed = tessellate_path_typed(&path, None);
+        let index = plain
+            .vertices
+            .iter()
+            .position(|value| *value == coordinate)
+            .expect("plain f64 mesh must preserve the authored coordinate");
+        assert_eq!(typed.vertices[index], coordinate as f32);
+        assert_ne!(f64::from(typed.vertices[index]), coordinate);
+    }
+
+    #[test]
     fn returns_empty_typed_arrays_for_an_empty_path() {
         let mesh = tessellate_path_typed(&create_path(Some(PathWinding::NonZero)), None);
         assert_eq!(mesh.vertices.len(), 0);

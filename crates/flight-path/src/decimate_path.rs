@@ -26,7 +26,6 @@ mod sugar_tests {
     }
 }
 
-// flight-lint: allow(f64) operates on f64 Path.data coordinates (TS number); f32 sufficiency not measured
 /// Decimates `source` by flattening curves and applying Douglas-Peucker point reduction.
 /// Removes points that deviate less than `tolerance` from the decimated line.
 /// Alias-safe: `out` may be the same object as `source`.
@@ -79,7 +78,6 @@ pub fn decimate_path(
     }
 }
 
-// flight-lint: allow(f64) operates on f64 Path.data coordinates (TS number); f32 sufficiency not measured
 fn douglas_peucker(pts: &[f64], first: usize, last: usize, tolerance_sq: f64, keep: &mut Vec<u8>) {
     if last - first < 2 {
         return;
@@ -122,7 +120,6 @@ fn douglas_peucker(pts: &[f64], first: usize, last: usize, tolerance_sq: f64, ke
 
 #[cfg(feature = "object-api")]
 impl Path {
-    // flight-lint: allow(f64) operates on f64 Path.data coordinates (TS number); f32 sufficiency not measured
     pub fn decimate(&self, tolerance: f64, out: &mut Path, flatten_tolerance: Option<f64>) {
         return decimate_path(self, tolerance, out, flatten_tolerance);
     }

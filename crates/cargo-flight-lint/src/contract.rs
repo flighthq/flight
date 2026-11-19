@@ -115,6 +115,7 @@ pub fn check_contract(
             | "flight-geometry"
             | "flight-math"
             | "flight-meshgeometry"
+            | "flight-path"
             | "flight-screen"
             | "flight-sensors"
             | "flight-spring"
@@ -1206,6 +1207,7 @@ mod tests {
         let double_source = "pub fn spatial_value(x: f64) -> f64 { return x; }";
         assert!(rules_for_crate(double_source, "flight-geometry").is_empty());
         assert!(rules_for_crate(double_source, "flight-math").is_empty());
+        assert!(rules_for_crate(double_source, "flight-path").is_empty());
         assert_eq!(rules_for_crate(double_source, "flight-render"), vec!["f64"]);
         let single_source = "pub fn spatial_value(x: f32) -> f32 { return x; }";
         assert_eq!(
@@ -1213,6 +1215,7 @@ mod tests {
             vec!["f32"]
         );
         assert_eq!(rules_for_crate(single_source, "flight-math"), vec!["f32"]);
+        assert_eq!(rules_for_crate(single_source, "flight-path"), vec!["f32"]);
         assert!(
             rules_for_crate(
                 "// flight-lint: allow(f32) explicit GPU upload boundary\npub fn write_vector2_to_float32_array(out: &mut [f32]) {}",

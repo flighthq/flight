@@ -24,7 +24,6 @@ mod sugar_tests {
     }
 }
 
-// flight-lint: allow(f64) Bezier evaluation, arc length and flattening over f64 path coordinates with tolerances tuned in double; f32 sufficiency not measured
 fn contour_length(contour: &[f64]) -> f64 {
     let mut len: f64 = 0.0;
     let mut i = 2;
@@ -37,7 +36,6 @@ fn contour_length(contour: &[f64]) -> f64 {
     return len;
 }
 
-// flight-lint: allow(f64) Bezier evaluation, arc length and flattening over f64 path coordinates with tolerances tuned in double; f32 sufficiency not measured
 /// Returns an array of arc lengths, one per contour in the path.
 #[allow(clippy::needless_range_loop)] // indexed loop remains portable to generated TypeScript
 pub fn get_path_contour_lengths(path: &Path, tolerance: Option<f64>) -> Vec<f64> {
@@ -52,7 +50,6 @@ pub fn get_path_contour_lengths(path: &Path, tolerance: Option<f64>) -> Vec<f64>
 
 #[cfg(feature = "object-api")]
 impl Path {
-    // flight-lint: allow(f64) operates on f64 Path.data coordinates (TS number); f32 sufficiency not measured
     pub fn contour_lengths(&self, tolerance: Option<f64>) -> Vec<f64> {
         return get_path_contour_lengths(self, tolerance);
     }

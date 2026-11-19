@@ -24,7 +24,6 @@ mod sugar_tests {
     }
 }
 
-// flight-lint: allow(f64) Bezier evaluation, arc length and flattening over f64 path coordinates with tolerances tuned in double; f32 sufficiency not measured
 fn curvature_at_vertex(contour: &[f64], count: usize, vertex: usize) -> f64 {
     if count < 3 {
         return 0.0;
@@ -40,7 +39,6 @@ fn curvature_at_vertex(contour: &[f64], count: usize, vertex: usize) -> f64 {
     );
 }
 
-// flight-lint: allow(f64) Bezier evaluation, arc length and flattening over f64 path coordinates with tolerances tuned in double; f32 sufficiency not measured
 /// Returns the signed curvature of the path at `distance` arc-length units from the start.
 /// Positive curvature is a left turn in screen space (y-down). Returns 0 for empty paths,
 /// straight segments, or degenerate geometry.
@@ -50,7 +48,6 @@ pub fn get_path_curvature_at_distance(path: &Path, distance: f64, tolerance: Opt
     return sample_path_curvature(&contours, distance);
 }
 
-// flight-lint: allow(f64) Bezier evaluation, arc length and flattening over f64 path coordinates with tolerances tuned in double; f32 sufficiency not measured
 fn menger_curvature(x0: f64, y0: f64, x1: f64, y1: f64, x2: f64, y2: f64) -> f64 {
     let ax = x1 - x0;
     let ay = y1 - y0;
@@ -69,7 +66,6 @@ fn menger_curvature(x0: f64, y0: f64, x1: f64, y1: f64, x2: f64, y2: f64) -> f64
     return (2.0 * cross) / denom;
 }
 
-// flight-lint: allow(f64) Bezier evaluation, arc length and flattening over f64 path coordinates with tolerances tuned in double; f32 sufficiency not measured
 #[allow(clippy::needless_range_loop)] // indexed loop remains portable to generated TypeScript
 fn sample_path_curvature(contours: &[Vec<f64>], distance: f64) -> f64 {
     if contours.is_empty() {
@@ -122,7 +118,6 @@ fn sample_path_curvature(contours: &[Vec<f64>], distance: f64) -> f64 {
 
 #[cfg(feature = "object-api")]
 impl Path {
-    // flight-lint: allow(f64) operates on f64 Path.data coordinates (TS number); f32 sufficiency not measured
     pub fn curvature_at_distance(&self, distance: f64, tolerance: Option<f64>) -> f64 {
         return get_path_curvature_at_distance(self, distance, tolerance);
     }

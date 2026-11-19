@@ -28,7 +28,6 @@ mod sugar_tests {
     }
 }
 
-// flight-lint: allow(f64) operates on f64 Path.data coordinates (TS number); f32 sufficiency not measured
 #[derive(Debug, Clone, Copy)]
 enum SubpathPointKind {
     Move,
@@ -45,7 +44,6 @@ enum SubpathPointKind {
     },
 }
 
-// flight-lint: allow(f64) operates on f64 Path.data coordinates (TS number); f32 sufficiency not measured
 #[derive(Debug, Clone, Copy)]
 struct SubpathPoint {
     x: f64,

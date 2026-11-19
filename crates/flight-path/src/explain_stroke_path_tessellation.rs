@@ -37,7 +37,6 @@ mod sugar_tests {
     }
 }
 
-// flight-lint: allow(f64) orientation/area/winding/intersection predicates over f64 path coordinates (D1 path candidate: signed area, tessellation); f32 sufficiency not measured
 /// Pure diagnostic twin of tessellate_stroke_path. Re-runs the shared validation, retains
 /// and mutates nothing, and returns detached plain data explaining a null mesh.
 pub fn explain_stroke_path_tessellation(
@@ -56,7 +55,6 @@ pub fn explain_stroke_path_tessellation(
 
 #[cfg(feature = "object-api")]
 impl Path {
-    // flight-lint: allow(f64) operates on f64 Path.data coordinates (TS number); f32 sufficiency not measured
     pub fn explain_stroke_tessellation(
         &self,
         style: &StrokeStyle,

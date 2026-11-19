@@ -55,7 +55,6 @@ mod sugar_tests {
     }
 }
 
-// flight-lint: allow(f64) Bezier evaluation, arc length and flattening over f64 path coordinates with tolerances tuned in double; f32 sufficiency not measured
 /// Returns the signed curvature at parameter `t` on a cubic bezier.
 pub fn get_cubic_bezier_curvature(
     x0: f64,
@@ -84,7 +83,6 @@ pub fn get_cubic_bezier_curvature(
     return cross / (speed2 * speed);
 }
 
-// flight-lint: allow(f64) Bezier evaluation, arc length and flattening over f64 path coordinates with tolerances tuned in double; f32 sufficiency not measured
 /// Returns the point at parameter `t` on a cubic bezier. Writes into `out`.
 pub fn get_cubic_bezier_point(
     x0: f64,
@@ -103,11 +101,10 @@ pub fn get_cubic_bezier_point(
     let u3 = u2 * u;
     let t2 = t * t;
     let t3 = t2 * t;
-    out.x = (u3 * x0 + 3.0 * u2 * t * c1x + 3.0 * u * t2 * c2x + t3 * x1) as f32;
-    out.y = (u3 * y0 + 3.0 * u2 * t * c1y + 3.0 * u * t2 * c2y + t3 * y1) as f32;
+    out.x = u3 * x0 + 3.0 * u2 * t * c1x + 3.0 * u * t2 * c2x + t3 * x1;
+    out.y = u3 * y0 + 3.0 * u2 * t * c1y + 3.0 * u * t2 * c2y + t3 * y1;
 }
 
-// flight-lint: allow(f64) Bezier evaluation, arc length and flattening over f64 path coordinates with tolerances tuned in double; f32 sufficiency not measured
 /// Returns the tangent direction at parameter `t` on a cubic bezier. Writes into `out`.
 pub fn get_cubic_bezier_tangent(
     x0: f64,
@@ -124,11 +121,10 @@ pub fn get_cubic_bezier_tangent(
     let u = 1.0 - t;
     let u2 = u * u;
     let t2 = t * t;
-    out.x = (3.0 * (u2 * (c1x - x0) + 2.0 * u * t * (c2x - c1x) + t2 * (x1 - c2x))) as f32;
-    out.y = (3.0 * (u2 * (c1y - y0) + 2.0 * u * t * (c2y - c1y) + t2 * (y1 - c2y))) as f32;
+    out.x = 3.0 * (u2 * (c1x - x0) + 2.0 * u * t * (c2x - c1x) + t2 * (x1 - c2x));
+    out.y = 3.0 * (u2 * (c1y - y0) + 2.0 * u * t * (c2y - c1y) + t2 * (y1 - c2y));
 }
 
-// flight-lint: allow(f64) Bezier evaluation, arc length and flattening over f64 path coordinates with tolerances tuned in double; f32 sufficiency not measured
 /// Returns the signed curvature at parameter `t` on the n-th segment of `path`.
 /// Returns `None` if `segment_index` is out of range.
 pub fn get_path_segment_curvature_at_parameter(
@@ -139,7 +135,6 @@ pub fn get_path_segment_curvature_at_parameter(
     return walk_path_segment_curvature(path, segment_index, t);
 }
 
-// flight-lint: allow(f64) Bezier evaluation, arc length and flattening over f64 path coordinates with tolerances tuned in double; f32 sufficiency not measured
 /// Evaluates the point at parameter `t` on the n-th segment of `path`.
 /// Returns `true` on success; `false` if `segment_index` is out of range.
 pub fn get_path_segment_point_at_parameter(
@@ -151,7 +146,6 @@ pub fn get_path_segment_point_at_parameter(
     return walk_path_segment(path, segment_index, t, out, false);
 }
 
-// flight-lint: allow(f64) Bezier evaluation, arc length and flattening over f64 path coordinates with tolerances tuned in double; f32 sufficiency not measured
 /// Evaluates the tangent direction at parameter `t` on the n-th segment of `path`.
 /// Returns `true` on success; `false` if `segment_index` is out of range.
 pub fn get_path_segment_tangent_at_parameter(
@@ -163,7 +157,6 @@ pub fn get_path_segment_tangent_at_parameter(
     return walk_path_segment(path, segment_index, t, out, true);
 }
 
-// flight-lint: allow(f64) Bezier evaluation, arc length and flattening over f64 path coordinates with tolerances tuned in double; f32 sufficiency not measured
 /// Returns the signed curvature at parameter `t` on a quadratic bezier.
 pub fn get_quadratic_bezier_curvature(
     x0: f64,
@@ -188,7 +181,6 @@ pub fn get_quadratic_bezier_curvature(
     return cross / (speed2 * speed);
 }
 
-// flight-lint: allow(f64) Bezier evaluation, arc length and flattening over f64 path coordinates with tolerances tuned in double; f32 sufficiency not measured
 /// Returns the point at parameter `t` on a quadratic bezier. Writes into `out`.
 pub fn get_quadratic_bezier_point(
     x0: f64,
@@ -201,11 +193,10 @@ pub fn get_quadratic_bezier_point(
     out: &mut Vector2,
 ) {
     let u = 1.0 - t;
-    out.x = (u * u * x0 + 2.0 * u * t * cx + t * t * x1) as f32;
-    out.y = (u * u * y0 + 2.0 * u * t * cy + t * t * y1) as f32;
+    out.x = u * u * x0 + 2.0 * u * t * cx + t * t * x1;
+    out.y = u * u * y0 + 2.0 * u * t * cy + t * t * y1;
 }
 
-// flight-lint: allow(f64) Bezier evaluation, arc length and flattening over f64 path coordinates with tolerances tuned in double; f32 sufficiency not measured
 /// Returns the tangent direction at parameter `t` on a quadratic bezier. Writes into `out`.
 pub fn get_quadratic_bezier_tangent(
     x0: f64,
@@ -218,11 +209,10 @@ pub fn get_quadratic_bezier_tangent(
     out: &mut Vector2,
 ) {
     let u = 1.0 - t;
-    out.x = (2.0 * (u * (cx - x0) + t * (x1 - cx))) as f32;
-    out.y = (2.0 * (u * (cy - y0) + t * (y1 - cy))) as f32;
+    out.x = 2.0 * (u * (cx - x0) + t * (x1 - cx));
+    out.y = 2.0 * (u * (cy - y0) + t * (y1 - cy));
 }
 
-// flight-lint: allow(f64) Bezier evaluation, arc length and flattening over f64 path coordinates with tolerances tuned in double; f32 sufficiency not measured
 #[allow(clippy::needless_range_loop)] // indexed loop remains portable to generated TypeScript
 fn walk_path_segment(
     path: &Path,
@@ -253,11 +243,11 @@ fn walk_path_segment(
             di += 2;
             if current_segment == segment_index {
                 if want_tangent {
-                    out.x = (x1 - x) as f32;
-                    out.y = (y1 - y) as f32;
+                    out.x = x1 - x;
+                    out.y = y1 - y;
                 } else {
-                    out.x = (x + t * (x1 - x)) as f32;
-                    out.y = (y + t * (y1 - y)) as f32;
+                    out.x = x + t * (x1 - x);
+                    out.y = y + t * (y1 - y);
                 }
                 return true;
             }
@@ -270,11 +260,11 @@ fn walk_path_segment(
             di += 4;
             if current_segment == segment_index {
                 if want_tangent {
-                    out.x = (x1 - x) as f32;
-                    out.y = (y1 - y) as f32;
+                    out.x = x1 - x;
+                    out.y = y1 - y;
                 } else {
-                    out.x = (x + t * (x1 - x)) as f32;
-                    out.y = (y + t * (y1 - y)) as f32;
+                    out.x = x + t * (x1 - x);
+                    out.y = y + t * (y1 - y);
                 }
                 return true;
             }
@@ -322,7 +312,6 @@ fn walk_path_segment(
     return false;
 }
 
-// flight-lint: allow(f64) Bezier evaluation, arc length and flattening over f64 path coordinates with tolerances tuned in double; f32 sufficiency not measured
 #[allow(clippy::needless_range_loop)] // indexed loop remains portable to generated TypeScript
 fn walk_path_segment_curvature(path: &Path, segment_index: usize, t: f64) -> Option<f64> {
     let commands = &path.commands;
@@ -392,12 +381,10 @@ fn walk_path_segment_curvature(path: &Path, segment_index: usize, t: f64) -> Opt
 
 #[cfg(feature = "object-api")]
 impl Path {
-    // flight-lint: allow(f64) operates on f64 Path.data coordinates (TS number); f32 sufficiency not measured
     pub fn segment_curvature_at_parameter(&self, segment_index: usize, t: f64) -> Option<f64> {
         return get_path_segment_curvature_at_parameter(self, segment_index, t);
     }
 
-    // flight-lint: allow(f64) operates on f64 Path.data coordinates (TS number); f32 sufficiency not measured
     pub fn segment_point_at_parameter(
         &self,
         segment_index: usize,
@@ -407,7 +394,6 @@ impl Path {
         return get_path_segment_point_at_parameter(self, segment_index, t, out);
     }
 
-    // flight-lint: allow(f64) operates on f64 Path.data coordinates (TS number); f32 sufficiency not measured
     pub fn segment_tangent_at_parameter(
         &self,
         segment_index: usize,

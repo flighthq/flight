@@ -30,7 +30,6 @@ mod sugar_tests {
     }
 }
 
-// flight-lint: allow(f64) Bezier evaluation, arc length and flattening over f64 path coordinates with tolerances tuned in double; f32 sufficiency not measured
 /// The running min/max extent of the points visited by the bounds pass.
 struct BoundsAccumulator {
     min_x: f64,
@@ -39,7 +38,6 @@ struct BoundsAccumulator {
     max_y: f64,
 }
 
-// flight-lint: allow(f64) Bezier evaluation, arc length and flattening over f64 path coordinates with tolerances tuned in double; f32 sufficiency not measured
 /// The parameters in (0, 1) where one axis of a cubic bezier has a local extremum, in the order the
 /// bounds pass visits them.
 fn cubic_extremum_roots(p0: f64, p1: f64, p2: f64, p3: f64) -> Vec<f64> {
@@ -73,19 +71,16 @@ fn cubic_extremum_roots(p0: f64, p1: f64, p2: f64, p3: f64) -> Vec<f64> {
     return roots;
 }
 
-// flight-lint: allow(f64) Bezier evaluation, arc length and flattening over f64 path coordinates with tolerances tuned in double; f32 sufficiency not measured
 fn eval_cubic(p0: f64, p1: f64, p2: f64, p3: f64, t: f64) -> f64 {
     let mt = 1.0 - t;
     return mt * mt * mt * p0 + 3.0 * mt * mt * t * p1 + 3.0 * mt * t * t * p2 + t * t * t * p3;
 }
 
-// flight-lint: allow(f64) Bezier evaluation, arc length and flattening over f64 path coordinates with tolerances tuned in double; f32 sufficiency not measured
 fn eval_quadratic(p0: f64, p1: f64, p2: f64, t: f64) -> f64 {
     let mt = 1.0 - t;
     return mt * mt * p0 + 2.0 * mt * t * p1 + t * t * p2;
 }
 
-// flight-lint: allow(f64) Bezier evaluation, arc length and flattening over f64 path coordinates with tolerances tuned in double; f32 sufficiency not measured
 fn expand_bounds(bounds: &mut BoundsAccumulator, px: f64, py: f64) {
     if px < bounds.min_x {
         bounds.min_x = px;
@@ -101,7 +96,6 @@ fn expand_bounds(bounds: &mut BoundsAccumulator, px: f64, py: f64) {
     }
 }
 
-// flight-lint: allow(f64) Bezier evaluation, arc length and flattening over f64 path coordinates with tolerances tuned in double; f32 sufficiency not measured
 fn expand_cubic_bounds(
     x0: f64,
     y0: f64,
@@ -132,7 +126,6 @@ fn expand_cubic_bounds(
     }
 }
 
-// flight-lint: allow(f64) Bezier evaluation, arc length and flattening over f64 path coordinates with tolerances tuned in double; f32 sufficiency not measured
 fn expand_quadratic_bounds(
     x0: f64,
     y0: f64,
@@ -161,7 +154,6 @@ fn expand_quadratic_bounds(
     }
 }
 
-// flight-lint: allow(f64) Bezier evaluation, arc length and flattening over f64 path coordinates with tolerances tuned in double; f32 sufficiency not measured
 /// Computes the axis-aligned bounding rectangle of `path` including true bezier extrema.
 /// Writes the result into `out`. Returns `true` if the path contains any geometry;
 /// returns `false` and sets `out` to an empty zero-rectangle for an empty path.
@@ -239,14 +231,13 @@ pub fn get_path_bounds(path: &Path, out: &mut Rectangle) -> bool {
         out.height = 0.0;
         return false;
     }
-    out.x = bounds.min_x as f32;
-    out.y = bounds.min_y as f32;
-    out.width = (bounds.max_x - bounds.min_x) as f32;
-    out.height = (bounds.max_y - bounds.min_y) as f32;
+    out.x = bounds.min_x;
+    out.y = bounds.min_y;
+    out.width = bounds.max_x - bounds.min_x;
+    out.height = bounds.max_y - bounds.min_y;
     return true;
 }
 
-// flight-lint: allow(f64) Bezier evaluation, arc length and flattening over f64 path coordinates with tolerances tuned in double; f32 sufficiency not measured
 fn quadratic_extremum_t(p0: f64, p1: f64, p2: f64) -> Option<f64> {
     let denom = p0 - 2.0 * p1 + p2;
     if denom == 0.0 {

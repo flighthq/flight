@@ -115,7 +115,6 @@ pub fn create_path_mesh_pool() -> PathMeshPool {
     };
 }
 
-// flight-lint: allow(f64) operates on f64 Path.data coordinates (TS number); f32 sufficiency not measured
 /// Retrieves a PathMesh from the pool, tessellates the given path into it, and returns it.
 // flight-lint: allow(conform-params) D5: TS keeps the mesh pool as module state; Rust takes the explicit pool first
 pub fn acquire_path_mesh(pool: &mut PathMeshPool, path: &Path, tolerance: Option<f64>) -> PathMesh {
@@ -134,7 +133,6 @@ pub fn acquire_path_mesh(pool: &mut PathMeshPool, path: &Path, tolerance: Option
 
 /// Acquires a typed mesh from the pool (TS `acquirePathMeshTyped`, whose pool is module state; here it
 /// is the explicit `pool`, D5) and tessellates `path` into it. `tolerance` defaults to 0.25.
-// flight-lint: allow(f64) operates on f64 Path.data coordinates (TS number); f32 sufficiency not measured
 // flight-lint: allow(conform-params) D5: TS keeps the mesh pool as module state; Rust takes the explicit pool first
 pub fn acquire_path_mesh_typed(
     pool: &mut PathMeshPool,
@@ -174,12 +172,10 @@ impl PathMeshPool {
         return create_path_mesh_pool();
     }
 
-    // flight-lint: allow(f64) operates on f64 Path.data coordinates (TS number); f32 sufficiency not measured
     pub fn acquire_mesh(&mut self, path: &Path, tolerance: Option<f64>) -> PathMesh {
         return acquire_path_mesh(self, path, tolerance);
     }
 
-    // flight-lint: allow(f64) operates on f64 Path.data coordinates (TS number); f32 sufficiency not measured
     pub fn acquire_mesh_typed(&mut self, path: &Path, tolerance: Option<f64>) -> PathMeshTyped {
         return acquire_path_mesh_typed(self, path, tolerance);
     }

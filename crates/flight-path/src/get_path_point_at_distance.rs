@@ -56,7 +56,6 @@ mod sugar_tests {
     }
 }
 
-// flight-lint: allow(f64) Bezier evaluation, arc length and flattening over f64 path coordinates with tolerances tuned in double; f32 sufficiency not measured
 /// Evaluates the point on the path at `distance` arc-length units from the start.
 /// Returns `true` if the path has geometry; `false` for an empty path.
 pub fn get_path_point_at_distance(
@@ -70,7 +69,6 @@ pub fn get_path_point_at_distance(
     return sample_path_point(&contours, distance, out);
 }
 
-// flight-lint: allow(f64) Bezier evaluation, arc length and flattening over f64 path coordinates with tolerances tuned in double; f32 sufficiency not measured
 /// Evaluates both the point and the unit tangent at `distance`.
 pub fn get_path_position_at_distance(
     path: &Path,
@@ -86,7 +84,6 @@ pub fn get_path_position_at_distance(
     return has_point;
 }
 
-// flight-lint: allow(f64) Bezier evaluation, arc length and flattening over f64 path coordinates with tolerances tuned in double; f32 sufficiency not measured
 /// Evaluates the unit tangent direction of the path at `distance` arc-length units.
 pub fn get_path_tangent_at_distance(
     path: &Path,
@@ -99,7 +96,6 @@ pub fn get_path_tangent_at_distance(
     return sample_path_tangent(&contours, distance, out);
 }
 
-// flight-lint: allow(f64) Bezier evaluation, arc length and flattening over f64 path coordinates with tolerances tuned in double; f32 sufficiency not measured
 #[allow(clippy::needless_range_loop)] // indexed loop remains portable to generated TypeScript
 fn sample_path_point(contours: &[Vec<f64>], distance: f64, out: &mut Vector2) -> bool {
     if contours.is_empty() {
@@ -112,8 +108,8 @@ fn sample_path_point(contours: &[Vec<f64>], distance: f64, out: &mut Vector2) ->
             continue;
         }
         if remaining <= 0.0 {
-            out.x = contour[0] as f32;
-            out.y = contour[1] as f32;
+            out.x = contour[0];
+            out.y = contour[1];
             return true;
         }
         let mut i = 2;
@@ -127,8 +123,8 @@ fn sample_path_point(contours: &[Vec<f64>], distance: f64, out: &mut Vector2) ->
                 } else {
                     0.0
                 };
-                out.x = (contour[i - 2] + t * dx) as f32;
-                out.y = (contour[i - 1] + t * dy) as f32;
+                out.x = contour[i - 2] + t * dx;
+                out.y = contour[i - 1] + t * dy;
                 return true;
             }
             remaining -= seg_len;
@@ -136,12 +132,11 @@ fn sample_path_point(contours: &[Vec<f64>], distance: f64, out: &mut Vector2) ->
         }
     }
     let last = &contours[contours.len() - 1];
-    out.x = last[last.len() - 2] as f32;
-    out.y = last[last.len() - 1] as f32;
+    out.x = last[last.len() - 2];
+    out.y = last[last.len() - 1];
     return true;
 }
 
-// flight-lint: allow(f64) Bezier evaluation, arc length and flattening over f64 path coordinates with tolerances tuned in double; f32 sufficiency not measured
 #[allow(clippy::needless_range_loop)] // indexed loop remains portable to generated TypeScript
 fn sample_path_tangent(contours: &[Vec<f64>], distance: f64, out: &mut Vector2) -> bool {
     if contours.is_empty() {
@@ -168,22 +163,21 @@ fn sample_path_tangent(contours: &[Vec<f64>], distance: f64, out: &mut Vector2) 
                 last_ty = dy * inv_len;
             }
             if remaining <= seg_len {
-                out.x = last_tx as f32;
-                out.y = last_ty as f32;
+                out.x = last_tx;
+                out.y = last_ty;
                 return true;
             }
             remaining -= seg_len;
             i += 2;
         }
     }
-    out.x = last_tx as f32;
-    out.y = last_ty as f32;
+    out.x = last_tx;
+    out.y = last_ty;
     return true;
 }
 
 #[cfg(feature = "object-api")]
 impl Path {
-    // flight-lint: allow(f64) operates on f64 Path.data coordinates (TS number); f32 sufficiency not measured
     pub fn point_at_distance(
         &self,
         distance: f64,
@@ -193,7 +187,6 @@ impl Path {
         return get_path_point_at_distance(self, distance, out, tolerance);
     }
 
-    // flight-lint: allow(f64) operates on f64 Path.data coordinates (TS number); f32 sufficiency not measured
     pub fn position_at_distance(
         &self,
         distance: f64,
@@ -204,7 +197,6 @@ impl Path {
         return get_path_position_at_distance(self, distance, point_out, tangent_out, tolerance);
     }
 
-    // flight-lint: allow(f64) operates on f64 Path.data coordinates (TS number); f32 sufficiency not measured
     pub fn tangent_at_distance(
         &self,
         distance: f64,

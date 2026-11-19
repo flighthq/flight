@@ -25,7 +25,6 @@ mod sugar_tests {
 
 const MAX_SUBDIVISION_DEPTH: usize = 16;
 
-// flight-lint: allow(f64) Bezier evaluation, arc length and flattening over f64 path coordinates with tolerances tuned in double; f32 sufficiency not measured
 fn distance_to_chord_sq(px: f64, py: f64, x0: f64, y0: f64, x1: f64, y1: f64) -> f64 {
     let dx = x1 - x0;
     let dy = y1 - y0;
@@ -39,7 +38,6 @@ fn distance_to_chord_sq(px: f64, py: f64, x0: f64, y0: f64, x1: f64, y1: f64) ->
     return (cross * cross) / length_sq;
 }
 
-// flight-lint: allow(f64) Bezier evaluation, arc length and flattening over f64 path coordinates with tolerances tuned in double; f32 sufficiency not measured
 fn ensure_contour(contours: &mut Vec<Vec<f64>>, contour: Option<usize>) -> Option<usize> {
     if contour.is_some() {
         return contour;
@@ -48,7 +46,6 @@ fn ensure_contour(contours: &mut Vec<Vec<f64>>, contour: Option<usize>) -> Optio
     return Some(contours.len() - 1);
 }
 
-// flight-lint: allow(f64) Bezier evaluation, arc length and flattening over f64 path coordinates with tolerances tuned in double; f32 sufficiency not measured
 fn flatten_cubic(
     out: &mut Vec<f64>,
     x0: f64,
@@ -109,7 +106,6 @@ fn flatten_cubic(
     );
 }
 
-// flight-lint: allow(f64) Bezier evaluation, arc length and flattening over f64 path coordinates with tolerances tuned in double; f32 sufficiency not measured
 /// Flattens a Path's curves into straight-line contours. Each contour is a flat
 /// [x0, y0, x1, y1, ...] polyline. Quadratic and cubic segments are adaptively subdivided
 /// until their deviation from a chord is within `tolerance` (path units).
@@ -120,7 +116,6 @@ pub fn flatten_path(path: &Path, tolerance: Option<f64>) -> Vec<Vec<f64>> {
     return out;
 }
 
-// flight-lint: allow(f64) Bezier evaluation, arc length and flattening over f64 path coordinates with tolerances tuned in double; f32 sufficiency not measured
 #[allow(clippy::needless_range_loop)] // indexed loop remains portable to generated TypeScript
 fn flatten_path_into(out: &mut Vec<Vec<f64>>, path: &Path, tolerance: Option<f64>) {
     let tolerance = tolerance.unwrap_or(0.25);
@@ -216,7 +211,6 @@ fn flatten_path_into(out: &mut Vec<Vec<f64>>, path: &Path, tolerance: Option<f64
     }
 }
 
-// flight-lint: allow(f64) Bezier evaluation, arc length and flattening over f64 path coordinates with tolerances tuned in double; f32 sufficiency not measured
 fn flatten_quadratic(
     out: &mut Vec<f64>,
     x0: f64,
@@ -247,7 +241,6 @@ fn flatten_quadratic(
 
 #[cfg(feature = "object-api")]
 impl Path {
-    // flight-lint: allow(f64) operates on f64 Path.data coordinates (TS number); f32 sufficiency not measured
     pub fn flatten(&self, tolerance: Option<f64>) -> Vec<Vec<f64>> {
         return flatten_path(self, tolerance);
     }

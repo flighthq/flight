@@ -26,7 +26,6 @@ mod sugar_tests {
     }
 }
 
-// flight-lint: allow(f64) Bezier evaluation, arc length and flattening over f64 path coordinates with tolerances tuned in double; f32 sufficiency not measured
 #[allow(clippy::needless_range_loop)] // indexed loop remains portable to generated TypeScript
 fn chord_length_parameterize(pts: &[f64], first: usize, last: usize) -> Vec<f64> {
     let mut u = vec![0.0f64];
@@ -44,7 +43,6 @@ fn chord_length_parameterize(pts: &[f64], first: usize, last: usize) -> Vec<f64>
     return u;
 }
 
-// flight-lint: allow(f64) Bezier evaluation, arc length and flattening over f64 path coordinates with tolerances tuned in double; f32 sufficiency not measured
 fn compute_center_tangent(pts: &[f64], idx: usize) -> (f64, f64) {
     let dx = pts[(idx - 1) * 2] - pts[(idx + 1) * 2];
     let dy = pts[(idx - 1) * 2 + 1] - pts[(idx + 1) * 2 + 1];
@@ -55,7 +53,6 @@ fn compute_center_tangent(pts: &[f64], idx: usize) -> (f64, f64) {
     return (1.0, 0.0);
 }
 
-// flight-lint: allow(f64) Bezier evaluation, arc length and flattening over f64 path coordinates with tolerances tuned in double; f32 sufficiency not measured
 fn compute_left_tangent(pts: &[f64], idx: usize) -> (f64, f64) {
     let dx = pts[(idx + 1) * 2] - pts[idx * 2];
     let dy = pts[(idx + 1) * 2 + 1] - pts[idx * 2 + 1];
@@ -66,7 +63,6 @@ fn compute_left_tangent(pts: &[f64], idx: usize) -> (f64, f64) {
     return (1.0, 0.0);
 }
 
-// flight-lint: allow(f64) Bezier evaluation, arc length and flattening over f64 path coordinates with tolerances tuned in double; f32 sufficiency not measured
 fn compute_max_error(
     pts: &[f64],
     first: usize,
@@ -100,7 +96,6 @@ fn compute_max_error(
     return (max_dist, split_point);
 }
 
-// flight-lint: allow(f64) Bezier evaluation, arc length and flattening over f64 path coordinates with tolerances tuned in double; f32 sufficiency not measured
 fn compute_right_tangent(pts: &[f64], idx: usize) -> (f64, f64) {
     let dx = pts[(idx - 1) * 2] - pts[idx * 2];
     let dy = pts[(idx - 1) * 2 + 1] - pts[idx * 2 + 1];
@@ -111,7 +106,6 @@ fn compute_right_tangent(pts: &[f64], idx: usize) -> (f64, f64) {
     return (-1.0, 0.0);
 }
 
-// flight-lint: allow(f64) Bezier evaluation, arc length and flattening over f64 path coordinates with tolerances tuned in double; f32 sufficiency not measured
 fn find_corners(pts: &[f64], n: usize) -> Vec<usize> {
     let mut corners = vec![0usize];
     for i in 1..n - 1 {
@@ -133,7 +127,6 @@ fn find_corners(pts: &[f64], n: usize) -> Vec<usize> {
     return corners;
 }
 
-// flight-lint: allow(f64) Bezier evaluation, arc length and flattening over f64 path coordinates with tolerances tuned in double; f32 sufficiency not measured
 fn fit_cubic(
     pts: &[f64],
     first: usize,
@@ -202,7 +195,6 @@ fn fit_cubic(
     }
 }
 
-// flight-lint: allow(f64) Bezier evaluation, arc length and flattening over f64 path coordinates with tolerances tuned in double; f32 sufficiency not measured
 /// Re-curves a polyline (or any flattened path) into smooth cubic bezier segments using
 /// Schneider's algorithm. Alias-safe.
 pub fn fit_path_curves(
@@ -277,7 +269,6 @@ pub fn fit_path_curves(
     }
 }
 
-// flight-lint: allow(f64) Bezier evaluation, arc length and flattening over f64 path coordinates with tolerances tuned in double; f32 sufficiency not measured
 fn generate_bezier(
     pts: &[f64],
     first: usize,
@@ -359,7 +350,6 @@ fn generate_bezier(
     ];
 }
 
-// flight-lint: allow(f64) Bezier evaluation, arc length and flattening over f64 path coordinates with tolerances tuned in double; f32 sufficiency not measured
 fn newton_raphson_root_find(bezier: &[f64], px: f64, py: f64, u: f64) -> f64 {
     let mt = 1.0 - u;
     let qx = mt * mt * mt * bezier[0]
@@ -391,7 +381,6 @@ fn newton_raphson_root_find(bezier: &[f64], px: f64, py: f64, u: f64) -> f64 {
     return (u - num / den).max(0.0).min(1.0);
 }
 
-// flight-lint: allow(f64) Bezier evaluation, arc length and flattening over f64 path coordinates with tolerances tuned in double; f32 sufficiency not measured
 fn reparameterize(pts: &[f64], first: usize, last: usize, u: &[f64], bezier: &[f64]) -> Vec<f64> {
     let mut u_prime: Vec<f64> = Vec::new();
     for i in 0..=(last - first) {
@@ -407,7 +396,6 @@ fn reparameterize(pts: &[f64], first: usize, last: usize, u: &[f64], bezier: &[f
 
 #[cfg(feature = "object-api")]
 impl Path {
-    // flight-lint: allow(f64) operates on f64 Path.data coordinates (TS number); f32 sufficiency not measured
     pub fn fit_curves(&self, tolerance: f64, out: &mut Path, flatten_tolerance: Option<f64>) {
         return fit_path_curves(self, tolerance, out, flatten_tolerance);
     }

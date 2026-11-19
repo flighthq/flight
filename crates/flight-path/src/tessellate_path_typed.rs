@@ -45,7 +45,7 @@ mod sugar_tests {
 
 /// Tessellates `path` into a typed-array mesh (TS `tessellatePathTyped`); `tolerance` defaults to
 /// 0.25. Vertices narrow to f32 exactly as a TS `Float32Array` store rounds.
-// flight-lint: allow(f64) operates on f64 Path.data coordinates (TS number); f32 sufficiency not measured
+// flight-lint: allow(f32) explicit final GPU vertex-upload boundary matching TS Float32Array stores
 pub fn tessellate_path_typed(path: &Path, tolerance: Option<f64>) -> PathMeshTyped {
     let mesh = tessellate_path(path, tolerance);
     let vertices: Vec<f32> = mesh.vertices.iter().map(|v| *v as f32).collect();
@@ -58,7 +58,7 @@ pub fn tessellate_path_typed(path: &Path, tolerance: Option<f64>) -> PathMeshTyp
 /// Tessellates `path` into `out`, growing either buffer only when it is too short and otherwise
 /// reusing it (TS `tessellatePathTypedInto`); entries past the new mesh keep their old values, as in
 /// TS. `tolerance` defaults to 0.25.
-// flight-lint: allow(f64) operates on f64 Path.data coordinates (TS number); f32 sufficiency not measured
+// flight-lint: allow(f32) explicit final GPU vertex-upload boundary matching TS Float32Array stores
 pub fn tessellate_path_typed_into(path: &Path, out: &mut PathMeshTyped, tolerance: Option<f64>) {
     let mesh = tessellate_path(path, tolerance);
     let v_len = mesh.vertices.len();
@@ -79,12 +79,10 @@ pub fn tessellate_path_typed_into(path: &Path, out: &mut PathMeshTyped, toleranc
 
 #[cfg(feature = "object-api")]
 impl Path {
-    // flight-lint: allow(f64) operates on f64 Path.data coordinates (TS number); f32 sufficiency not measured
     pub fn tessellate_typed(&self, tolerance: Option<f64>) -> PathMeshTyped {
         return tessellate_path_typed(self, tolerance);
     }
 
-    // flight-lint: allow(f64) operates on f64 Path.data coordinates (TS number); f32 sufficiency not measured
     pub fn tessellate_typed_into(&self, out: &mut PathMeshTyped, tolerance: Option<f64>) {
         return tessellate_path_typed_into(self, out, tolerance);
     }

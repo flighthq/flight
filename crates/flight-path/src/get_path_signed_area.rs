@@ -43,7 +43,6 @@ pub enum ContourOrientation {
     Degenerate,
 }
 
-// flight-lint: allow(f64) orientation/area/winding/intersection predicates over f64 path coordinates (D1 path candidate: signed area, tessellation); f32 sufficiency not measured
 /// Returns the orientation of the path's primary (first) contour.
 pub fn get_path_contour_orientation(path: &Path, tolerance: Option<f64>) -> ContourOrientation {
     let tolerance = tolerance.unwrap_or(0.25);
@@ -61,7 +60,6 @@ pub fn get_path_contour_orientation(path: &Path, tolerance: Option<f64>) -> Cont
     return ContourOrientation::Degenerate;
 }
 
-// flight-lint: allow(f64) orientation/area/winding/intersection predicates over f64 path coordinates (D1 path candidate: signed area, tessellation); f32 sufficiency not measured
 /// Returns the signed area of the path (summed across all contours) by applying the shoelace
 /// formula to the flattened contours.
 #[allow(clippy::needless_range_loop)] // indexed loop remains portable to generated TypeScript
@@ -75,7 +73,6 @@ pub fn get_path_signed_area(path: &Path, tolerance: Option<f64>) -> f64 {
     return total;
 }
 
-// flight-lint: allow(f64) orientation/area/winding/intersection predicates over f64 path coordinates (D1 path candidate: signed area, tessellation); f32 sufficiency not measured
 fn shoelace_area(contour: &[f64]) -> f64 {
     let n = contour.len() / 2;
     if n < 3 {
@@ -92,12 +89,10 @@ fn shoelace_area(contour: &[f64]) -> f64 {
 
 #[cfg(feature = "object-api")]
 impl Path {
-    // flight-lint: allow(f64) operates on f64 Path.data coordinates (TS number); f32 sufficiency not measured
     pub fn contour_orientation(&self, tolerance: Option<f64>) -> ContourOrientation {
         return get_path_contour_orientation(self, tolerance);
     }
 
-    // flight-lint: allow(f64) operates on f64 Path.data coordinates (TS number); f32 sufficiency not measured
     pub fn signed_area(&self, tolerance: Option<f64>) -> f64 {
         return get_path_signed_area(self, tolerance);
     }

@@ -61,7 +61,6 @@ pub fn create_path_morph(start: &Path, end: &Path) -> Option<PathMorph> {
     return Some(allocate_path_morph(preparation, start.winding));
 }
 
-// flight-lint: allow(f64) operates on f64 Path.data coordinates (TS number); f32 sufficiency not measured
 /// Samples a prepared morph into `out`. Progress is not clamped: 0 and 1 are the endpoints,
 /// while values outside that range permit deliberate easing overshoot.
 #[allow(clippy::needless_range_loop)] // indexed loop remains portable to generated TypeScript
@@ -102,7 +101,6 @@ pub fn sample_path_morph(out: &mut Path, morph: &PathMorph, progress: f64) {
 
 #[cfg(feature = "object-api")]
 impl Path {
-    // flight-lint: allow(f64) operates on f64 Path.data coordinates (TS number); f32 sufficiency not measured
     pub fn sample_morph(&mut self, morph: &PathMorph, progress: f64) {
         return sample_path_morph(self, morph, progress);
     }

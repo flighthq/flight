@@ -179,7 +179,6 @@ mod sugar_tests {
     }
 }
 
-// flight-lint: allow(f64) path coordinates are f64 (Path.data, TS number); D1 names path as an f64 candidate; f32 sufficiency not measured
 /// The CIRCLE_KAPPA constant: 4*(sqrt(2)-1)/3.
 /// Optimal cubic Bezier arc approximation constant.
 /// Maximum radial error is less than 0.03% of the radius.
@@ -214,7 +213,6 @@ pub enum PathWinding {
     EvenOdd,
 }
 
-// flight-lint: allow(f64) path coordinates are f64 (Path.data, TS number); D1 names path as an f64 candidate; f32 sufficiency not measured
 /// A 2D vector path: a command stream paired with a flat coordinate data array.
 /// Commands encode the verb (move, line, curve, close); data holds the coordinate
 /// pairs consumed by each verb. Winding rule determines fill behavior.
@@ -228,13 +226,13 @@ pub struct Path {
 
 /// A triangulated fill in typed arrays for zero-copy GPU upload (TS `PathMeshTyped`): x,y vertex pairs
 /// as `Float32Array` and triangle indices as `Uint32Array`. Plain data.
+// flight-lint: allow(f32) Float32Array is the explicit final GPU vertex-upload boundary
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct PathMeshTyped {
     pub vertices: Box<Float32Array>,
     pub indices: Box<Uint32Array>,
 }
 
-// flight-lint: allow(f64) path coordinates are f64 (Path.data, TS number); D1 names path as an f64 candidate; f32 sufficiency not measured
 /// A triangulated mesh: flat (x,y) vertex pairs and triangle index triples.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct PathMesh {
@@ -262,7 +260,6 @@ pub enum StrokeJoin {
     Round,
 }
 
-// flight-lint: allow(f64) path coordinates are f64 (Path.data, TS number); D1 names path as an f64 candidate; f32 sufficiency not measured
 /// Stroke style parameters. Every field is optional; stroking applies the defaults `width` 1,
 /// `cap` butt, `join` miter, `miter_limit` 4, no `dash`, and `dash_offset` 0.
 #[derive(Debug, Clone, PartialEq, Default)]
@@ -275,7 +272,6 @@ pub struct StrokeStyle {
     pub dash_offset: Option<f64>,
 }
 
-// flight-lint: allow(f64) path coordinates are f64 (Path.data, TS number); D1 names path as an f64 candidate; f32 sufficiency not measured
 /// Prepared interpolation between two paths for morphing.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct PathMorph {
@@ -327,7 +323,6 @@ pub struct StrokePathTessellationExplanation {
     pub subpath: Option<usize>,
 }
 
-// flight-lint: allow(f64) path coordinates are f64 (Path.data, TS number); D1 names path as an f64 candidate; f32 sufficiency not measured
 /// Decoded path segment for iteration.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum PathSegment {
@@ -372,7 +367,6 @@ pub fn initialize_path(out: &mut Path, winding: Option<PathWinding>) {
     out.winding = winding.unwrap_or(PathWinding::NonZero);
 }
 
-// flight-lint: allow(f64) path coordinates are f64 (Path.data, TS number); D1 names path as an f64 candidate; f32 sufficiency not measured
 fn append_arc_cubics(
     path: &mut Path,
     cx: f64,
@@ -414,7 +408,6 @@ fn append_arc_cubics(
     }
 }
 
-// flight-lint: allow(f64) path coordinates are f64 (Path.data, TS number); D1 names path as an f64 candidate; f32 sufficiency not measured
 fn append_corner_arc(
     path: &mut Path,
     cx: f64,
@@ -442,7 +435,6 @@ fn append_corner_arc(
     );
 }
 
-// flight-lint: allow(f64) path coordinates are f64 (Path.data, TS number); D1 names path as an f64 candidate; f32 sufficiency not measured
 /// Approximates an arc centered at (center_x, center_y) from start_angle to end_angle with the
 /// given radius. Uses one or more cubic bezier segments spanning at most pi/2 each.
 pub fn append_path_arc(
@@ -489,7 +481,6 @@ pub fn append_path_arc(
     );
 }
 
-// flight-lint: allow(f64) path coordinates are f64 (Path.data, TS number); D1 names path as an f64 candidate; f32 sufficiency not measured
 /// Approximates a circle centered at (center_x, center_y) with the given radius using four cubic
 /// bezier segments. Appends a MOVE_TO before the circle and a CLOSE at the end.
 pub fn append_path_circle(path: &mut Path, center_x: f64, center_y: f64, radius: f64) {
@@ -501,7 +492,6 @@ pub fn append_path_close(path: &mut Path) {
     path.commands.push(PathCommand::CLOSE as u8);
 }
 
-// flight-lint: allow(f64) path coordinates are f64 (Path.data, TS number); D1 names path as an f64 candidate; f32 sufficiency not measured
 /// Appends a CUBIC_CURVE_TO command with two control points and an anchor.
 pub fn append_path_cubic_curve_to(
     path: &mut Path,
@@ -521,7 +511,6 @@ pub fn append_path_cubic_curve_to(
     path.data.push(y);
 }
 
-// flight-lint: allow(f64) path coordinates are f64 (Path.data, TS number); D1 names path as an f64 candidate; f32 sufficiency not measured
 /// Approximates an axis-aligned ellipse using four cubic bezier segments.
 pub fn append_path_ellipse(
     path: &mut Path,
@@ -572,7 +561,6 @@ pub fn append_path_ellipse(
     append_path_close(path);
 }
 
-// flight-lint: allow(f64) path coordinates are f64 (Path.data, TS number); D1 names path as an f64 candidate; f32 sufficiency not measured
 /// Appends an SVG-style elliptic arc from the current point to (end_x, end_y).
 pub fn append_path_elliptical_arc_to(
     path: &mut Path,
@@ -647,7 +635,6 @@ pub fn append_path_elliptical_arc_to(
     append_arc_cubics(path, cx, cy, rx, ry, x_axis_rotation, theta1, dtheta);
 }
 
-// flight-lint: allow(f64) path coordinates are f64 (Path.data, TS number); D1 names path as an f64 candidate; f32 sufficiency not measured
 /// Appends a LINE_TO command and its point to the path.
 pub fn append_path_line_to(path: &mut Path, x: f64, y: f64) {
     path.commands.push(PathCommand::LINE_TO as u8);
@@ -655,7 +642,6 @@ pub fn append_path_line_to(path: &mut Path, x: f64, y: f64) {
     path.data.push(y);
 }
 
-// flight-lint: allow(f64) path coordinates are f64 (Path.data, TS number); D1 names path as an f64 candidate; f32 sufficiency not measured
 /// Appends a MOVE_TO command and its point to the path.
 pub fn append_path_move_to(path: &mut Path, x: f64, y: f64) {
     path.commands.push(PathCommand::MOVE_TO as u8);
@@ -663,7 +649,6 @@ pub fn append_path_move_to(path: &mut Path, x: f64, y: f64) {
     path.data.push(y);
 }
 
-// flight-lint: allow(f64) path coordinates are f64 (Path.data, TS number); D1 names path as an f64 candidate; f32 sufficiency not measured
 /// Appends a closed polygon from a flat array of coordinate pairs.
 pub fn append_path_polygon(path: &mut Path, points: &[f64]) {
     if points.len() < 6 {
@@ -678,7 +663,6 @@ pub fn append_path_polygon(path: &mut Path, points: &[f64]) {
     append_path_close(path);
 }
 
-// flight-lint: allow(f64) path coordinates are f64 (Path.data, TS number); D1 names path as an f64 candidate; f32 sufficiency not measured
 /// Appends an open polyline from a flat array of coordinate pairs.
 pub fn append_path_polyline(path: &mut Path, points: &[f64]) {
     if points.len() < 4 {
@@ -692,7 +676,6 @@ pub fn append_path_polyline(path: &mut Path, points: &[f64]) {
     }
 }
 
-// flight-lint: allow(f64) path coordinates are f64 (Path.data, TS number); D1 names path as an f64 candidate; f32 sufficiency not measured
 /// Appends a QUADRATIC_CURVE_TO command with its control point and anchor.
 pub fn append_path_quadratic_curve_to(
     path: &mut Path,
@@ -708,7 +691,6 @@ pub fn append_path_quadratic_curve_to(
     path.data.push(y);
 }
 
-// flight-lint: allow(f64) path coordinates are f64 (Path.data, TS number); D1 names path as an f64 candidate; f32 sufficiency not measured
 /// Appends a closed axis-aligned rectangle.
 pub fn append_path_rectangle(path: &mut Path, x: f64, y: f64, width: f64, height: f64) {
     append_path_move_to(path, x, y);
@@ -718,7 +700,6 @@ pub fn append_path_rectangle(path: &mut Path, x: f64, y: f64, width: f64, height
     append_path_close(path);
 }
 
-// flight-lint: allow(f64) path coordinates are f64 (Path.data, TS number); D1 names path as an f64 candidate; f32 sufficiency not measured
 /// Appends a closed rounded rectangle with uniform corner radius.
 pub fn append_path_rounded_rectangle(
     path: &mut Path,
@@ -733,7 +714,6 @@ pub fn append_path_rounded_rectangle(
     );
 }
 
-// flight-lint: allow(f64) path coordinates are f64 (Path.data, TS number); D1 names path as an f64 candidate; f32 sufficiency not measured
 /// Appends a closed rounded rectangle with per-corner radii.
 pub fn append_path_rounded_rectangle_with_corner_radii(
     path: &mut Path,
@@ -794,7 +774,6 @@ pub fn append_path_rounded_rectangle_with_corner_radii(
     append_path_close(path);
 }
 
-// flight-lint: allow(f64) path coordinates are f64 (Path.data, TS number); D1 names path as an f64 candidate; f32 sufficiency not measured
 /// Appends an arc tangent to the two lines (pen, x1, y1) and (x1, y1, x2, y2).
 pub fn append_path_tangent_arc_to(
     path: &mut Path,
@@ -861,7 +840,6 @@ pub fn append_path_tangent_arc_to(
     append_arc_cubics(path, ocx, ocy, radius, radius, 0.0, start_a, arc_sweep);
 }
 
-// flight-lint: allow(f64) path coordinates are f64 (Path.data, TS number); D1 names path as an f64 candidate; f32 sufficiency not measured
 /// Returns the current pen position after the last command, or None for an empty path.
 pub fn get_path_last_point(path: &Path) -> Option<(f64, f64)> {
     if path.data.len() < 2 {
@@ -945,7 +923,6 @@ pub fn get_stroke_path_tessellation_reason_string(
     };
 }
 
-// flight-lint: allow(f64) path coordinates are f64 (Path.data, TS number); D1 names path as an f64 candidate; f32 sufficiency not measured
 fn normalize_corner_radii(
     top_left: f64,
     top_right: f64,
@@ -1048,7 +1025,6 @@ fn path_command_data_count(cmd: u8) -> usize {
     return 0;
 }
 
-// flight-lint: allow(f64) path coordinates are f64 (Path.data, TS number); D1 names path as an f64 candidate; f32 sufficiency not measured
 fn vector_angle(ux: f64, uy: f64, vx: f64, vy: f64) -> f64 {
     let dot = ux * vx + uy * vy;
     let len_u = (ux * ux + uy * uy).sqrt();
@@ -1071,7 +1047,6 @@ impl Path {
         return create_path(Some(PathWinding::NonZero));
     }
 
-    // flight-lint: allow(f64) operates on f64 Path.data coordinates (TS number); f32 sufficiency not measured
     pub fn append_arc(
         &mut self,
         center_x: f64,
@@ -1094,7 +1069,6 @@ impl Path {
         );
     }
 
-    // flight-lint: allow(f64) operates on f64 Path.data coordinates (TS number); f32 sufficiency not measured
     pub fn append_circle(&mut self, center_x: f64, center_y: f64, radius: f64) {
         return append_path_circle(self, center_x, center_y, radius);
     }
@@ -1103,7 +1077,6 @@ impl Path {
         return append_path_close(self);
     }
 
-    // flight-lint: allow(f64) operates on f64 Path.data coordinates (TS number); f32 sufficiency not measured
     pub fn append_cubic_curve_to(
         &mut self,
         control_x1: f64,
@@ -1118,12 +1091,10 @@ impl Path {
         );
     }
 
-    // flight-lint: allow(f64) operates on f64 Path.data coordinates (TS number); f32 sufficiency not measured
     pub fn append_ellipse(&mut self, center_x: f64, center_y: f64, radius_x: f64, radius_y: f64) {
         return append_path_ellipse(self, center_x, center_y, radius_x, radius_y);
     }
 
-    // flight-lint: allow(f64) operates on f64 Path.data coordinates (TS number); f32 sufficiency not measured
     pub fn append_elliptical_arc_to(
         &mut self,
         radius_x: f64,
@@ -1146,37 +1117,30 @@ impl Path {
         );
     }
 
-    // flight-lint: allow(f64) operates on f64 Path.data coordinates (TS number); f32 sufficiency not measured
     pub fn append_line_to(&mut self, x: f64, y: f64) {
         return append_path_line_to(self, x, y);
     }
 
-    // flight-lint: allow(f64) operates on f64 Path.data coordinates (TS number); f32 sufficiency not measured
     pub fn append_move_to(&mut self, x: f64, y: f64) {
         return append_path_move_to(self, x, y);
     }
 
-    // flight-lint: allow(f64) operates on f64 Path.data coordinates (TS number); f32 sufficiency not measured
     pub fn append_polygon(&mut self, points: &[f64]) {
         return append_path_polygon(self, points);
     }
 
-    // flight-lint: allow(f64) operates on f64 Path.data coordinates (TS number); f32 sufficiency not measured
     pub fn append_polyline(&mut self, points: &[f64]) {
         return append_path_polyline(self, points);
     }
 
-    // flight-lint: allow(f64) operates on f64 Path.data coordinates (TS number); f32 sufficiency not measured
     pub fn append_quadratic_curve_to(&mut self, control_x: f64, control_y: f64, x: f64, y: f64) {
         return append_path_quadratic_curve_to(self, control_x, control_y, x, y);
     }
 
-    // flight-lint: allow(f64) operates on f64 Path.data coordinates (TS number); f32 sufficiency not measured
     pub fn append_rectangle(&mut self, x: f64, y: f64, width: f64, height: f64) {
         return append_path_rectangle(self, x, y, width, height);
     }
 
-    // flight-lint: allow(f64) operates on f64 Path.data coordinates (TS number); f32 sufficiency not measured
     pub fn append_rounded_rectangle(
         &mut self,
         x: f64,
@@ -1188,7 +1152,6 @@ impl Path {
         return append_path_rounded_rectangle(self, x, y, width, height, radius);
     }
 
-    // flight-lint: allow(f64) operates on f64 Path.data coordinates (TS number); f32 sufficiency not measured
     pub fn append_rounded_rectangle_with_corner_radii(
         &mut self,
         x: f64,
@@ -1213,12 +1176,10 @@ impl Path {
         );
     }
 
-    // flight-lint: allow(f64) operates on f64 Path.data coordinates (TS number); f32 sufficiency not measured
     pub fn append_tangent_arc_to(&mut self, x1: f64, y1: f64, x2: f64, y2: f64, radius: f64) {
         return append_path_tangent_arc_to(self, x1, y1, x2, y2, radius);
     }
 
-    // flight-lint: allow(f64) operates on f64 Path.data coordinates (TS number); f32 sufficiency not measured
     pub fn last_point(&self) -> Option<(f64, f64)> {
         return get_path_last_point(self);
     }

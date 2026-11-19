@@ -40,7 +40,6 @@ mod sugar_tests {
     }
 }
 
-// flight-lint: allow(f64) orientation/area/winding/intersection predicates over f64 path coordinates (D1 path candidate: signed area, tessellation); f32 sufficiency not measured
 #[allow(clippy::needless_range_loop)] // indexed loop remains portable to generated TypeScript
 fn is_ear(contour: &[f64], ring: &[usize], a: usize, b: usize, c: usize) -> bool {
     let ax = contour[a * 2];
@@ -64,7 +63,6 @@ fn is_ear(contour: &[f64], ring: &[usize], a: usize, b: usize, c: usize) -> bool
     return true;
 }
 
-// flight-lint: allow(f64) orientation/area/winding/intersection predicates over f64 path coordinates (D1 path candidate: signed area, tessellation); f32 sufficiency not measured
 fn is_point_in_triangle(
     px: f64,
     py: f64,
@@ -83,7 +81,6 @@ fn is_point_in_triangle(
     return !(has_negative && has_positive);
 }
 
-// flight-lint: allow(f64) orientation/area/winding/intersection predicates over f64 path coordinates (D1 path candidate: signed area, tessellation); f32 sufficiency not measured
 fn tessellate_contour(source: &[f64], vertices: &mut Vec<f64>, indices: &mut Vec<u32>) {
     let mut pts: Vec<f64> = Vec::new();
     let mut i = 0;
@@ -162,7 +159,6 @@ fn tessellate_contour(source: &[f64], vertices: &mut Vec<f64>, indices: &mut Vec
     }
 }
 
-// flight-lint: allow(f64) orientation/area/winding/intersection predicates over f64 path coordinates (D1 path candidate: signed area, tessellation); f32 sufficiency not measured
 /// Triangulates a path's fill into a PathMesh by flattening its curves, then ear-clipping each contour.
 #[allow(clippy::needless_range_loop)] // indexed loop remains portable to generated TypeScript
 pub fn tessellate_path(path: &Path, tolerance: Option<f64>) -> PathMesh {
@@ -176,7 +172,6 @@ pub fn tessellate_path(path: &Path, tolerance: Option<f64>) -> PathMesh {
     return PathMesh { vertices, indices };
 }
 
-// flight-lint: allow(f64) orientation/area/winding/intersection predicates over f64 path coordinates (D1 path candidate: signed area, tessellation); f32 sufficiency not measured
 /// Tessellates into an existing `PathMesh`, clearing and reusing its backing arrays.
 #[allow(clippy::needless_range_loop)] // indexed loop remains portable to generated TypeScript
 pub fn tessellate_path_into(path: &Path, out: &mut PathMesh, tolerance: Option<f64>) {
@@ -193,12 +188,10 @@ pub fn tessellate_path_into(path: &Path, out: &mut PathMesh, tolerance: Option<f
 
 #[cfg(feature = "object-api")]
 impl Path {
-    // flight-lint: allow(f64) operates on f64 Path.data coordinates (TS number); f32 sufficiency not measured
     pub fn tessellate(&self, tolerance: Option<f64>) -> PathMesh {
         return tessellate_path(self, tolerance);
     }
 
-    // flight-lint: allow(f64) operates on f64 Path.data coordinates (TS number); f32 sufficiency not measured
     pub fn tessellate_into(&self, out: &mut PathMesh, tolerance: Option<f64>) {
         return tessellate_path_into(self, out, tolerance);
     }
