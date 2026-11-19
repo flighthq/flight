@@ -151,15 +151,17 @@ fn carrier_graph_preserves_thin_fat_raw_and_policy_distinctions() {
     let node2d_accessors: Vec<_> = functions
         .iter()
         .filter(|(name, _)| {
-            name.starts_with("flight_get_node2_dfields_")
-                || name.starts_with("flight_set_node2_dfields_")
+            (name.starts_with("flight_get_node2d_")
+                || name.starts_with("flight_set_node2d_")
+                || **name == "flight_has_node2d_blend_mode")
+                && **name != "flight_get_node2d_overlap_rectangle"
         })
         .collect();
-    assert_eq!(node2d_accessors.len(), 30);
+    assert_eq!(node2d_accessors.len(), 31);
     assert!(node2d_accessors.iter().all(|(name, row)| {
         if matches!(
             **name,
-            "flight_set_node2_dfields_material" | "flight_set_node2_dfields_material_data"
+            "flight_set_node2d_material" | "flight_set_node2d_material_data"
         ) {
             row.kind == "surface"
                 && row.classification == "unreachable"
@@ -176,8 +178,7 @@ fn carrier_graph_preserves_thin_fat_raw_and_policy_distinctions() {
     let node3d_accessors: Vec<_> = functions
         .iter()
         .filter(|(name, _)| {
-            name.starts_with("flight_get_node3_dfields_")
-                || name.starts_with("flight_set_node3_dfields_")
+            name.starts_with("flight_get_node3d_") || name.starts_with("flight_set_node3d_")
         })
         .collect();
     assert_eq!(node3d_accessors.len(), 24);

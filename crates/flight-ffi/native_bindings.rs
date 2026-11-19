@@ -179,6 +179,7 @@ fn carrier(ty: &Type) -> Carrier {
                 let pointee = match pointee.as_deref() {
                     Some("c_void") => "void",
                     Some("c_char") => "char",
+                    Some("FlightNode") => "FlightNode",
                     _ => panic!("unsupported pointer-to-pointer ABI"),
                 };
                 let inner_const = if inner.const_token.is_some() {

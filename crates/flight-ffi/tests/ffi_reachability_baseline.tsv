@@ -1,8 +1,7 @@
 format|ffi-reachability-baseline|1
 policy|host_capability|feature-gated native host crates supply borrowed Host*Capability carriers
-summary|policy-exempt|278|unreachable|2345|blocking-carriers|700
+summary|policy-exempt|278|unreachable|2345|blocking-carriers|699
 carrier|1|*const Option<String>
-carrier|1|*const Option<flight_sdk::Ref<dyn flight_sdk::Node2D>>
 carrier|2|*const flight_sdk::AbcInstruction
 carrier|1|*const flight_sdk::AccessibilityNode
 carrier|3|*const flight_sdk::AmbientLightReading
@@ -196,7 +195,7 @@ carrier|15|*const flight_sdk::RichTextData
 carrier|1|*const flight_sdk::RigidBody3D
 carrier|1|*const flight_sdk::RimModifierOptions
 carrier|1|*const flight_sdk::RiveAnimationClip
-carrier|7|*const flight_sdk::RiveArtboardGraph
+carrier|8|*const flight_sdk::RiveArtboardGraph
 carrier|2|*const flight_sdk::RiveArtboardImport
 carrier|1|*const flight_sdk::RiveCoreObject
 carrier|1|*const flight_sdk::RiveCoreObjectHandlerEntry
@@ -1164,7 +1163,7 @@ unreachable|flight_create_rate_limited_log_sink|*const flight_sdk::RateLimitedLo
 unreachable|flight_create_requirement_catalog|*const flight_sdk::RequirementCatalogEntry
 unreachable|flight_create_requirement_codegen_plan|Box<flight_sdk::RequirementCatalog>
 unreachable|flight_create_requirement_set|*const flight_sdk::Requirement
-unreachable|flight_create_rive_animation_clips|*const Option<flight_sdk::Ref<dyn flight_sdk::Node2D>>
+unreachable|flight_create_rive_animation_clips|*const flight_sdk::RiveArtboardGraph
 unreachable|flight_create_rive_import_registry_from_options|*const flight_sdk::RiveImportOptions
 unreachable|flight_create_rive_object_graph|Box<flight_sdk::RiveDocument>
 unreachable|flight_create_rive_path|*const flight_sdk::RiveArtboardGraph
@@ -2723,8 +2722,8 @@ unreachable|flight_set_movie_clip_guard_state_movie_clip_guards_enabled|*mut fli
 unreachable|flight_set_namespaced_storage_item|*const flight_sdk::StorageNamespace
 unreachable|flight_set_native_text_data_height|*mut flight_sdk::NativeTextData
 unreachable|flight_set_native_text_data_width|*mut flight_sdk::NativeTextData
-unreachable|flight_set_node2_dfields_material|Box<flight_sdk::Ref<dyn flight_sdk::Material2D>>
-unreachable|flight_set_node2_dfields_material_data|Box<flight_sdk::Ref<dyn flight_sdk::MaterialData>>
+unreachable|flight_set_node2d_material|Box<flight_sdk::Ref<dyn flight_sdk::Material2D>>
+unreachable|flight_set_node2d_material_data|Box<flight_sdk::Ref<dyn flight_sdk::MaterialData>>
 unreachable|flight_set_node_guard_state_enabled|*mut flight_sdk::NodeGuardState
 unreachable|flight_set_node_runtime_appearance_id|*mut flight_sdk::NodeRuntime
 unreachable|flight_set_node_runtime_bounds_using_local_bounds_id|*mut flight_sdk::NodeRuntime

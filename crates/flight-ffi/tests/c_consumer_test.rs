@@ -75,8 +75,26 @@ fn thin_node_pointer_is_rejected_by_typed_flight_node_parameters() {
 
 #[test]
 fn c_consumer_links_static_library_and_runs() {
-    if let Some(stdout) = z_compile_link_and_run("consumer.c", "consumer", true) {
-        assert_eq!(stdout.trim(), "flight-ffi C consumer: ok");
+    if let Some(output) = z_compile_link_and_run("consumer.c", "consumer", true, false) {
+        assert_eq!(
+            String::from_utf8_lossy(&output.stdout).trim(),
+            "flight-ffi C consumer: ok"
+        );
+    }
+}
+
+#[test]
+fn sanitizer_probe_proves_a_live_flight_node_leak_is_detected() {
+    if let Some(output) = z_compile_link_and_run("consumer.c", "consumer-leak-probe", true, true) {
+        let diagnostics = String::from_utf8_lossy(&output.stderr);
+        assert!(
+            !output.status.success(),
+            "LeakSanitizer accepted a deliberately leaked FlightNode"
+        );
+        assert!(
+            diagnostics.contains("LeakSanitizer") && diagnostics.contains("detected memory leaks"),
+            "deliberate FlightNode leak did not produce a live LeakSanitizer report:\n{diagnostics}"
+        );
     }
 }
 
@@ -86,8 +104,12 @@ fn interaction_signal_rejection_links_static_library_and_runs() {
         "interaction_signal_rejection.c",
         "interaction_signal_rejection",
         false,
+        false,
     ) {
-        assert_eq!(stdout.trim(), "flight-ffi interaction rejection: ok");
+        assert_eq!(
+            String::from_utf8_lossy(&stdout.stdout).trim(),
+            "flight-ffi interaction rejection: ok"
+        );
     }
 }
 
@@ -141,8 +163,9 @@ fn run(command: &mut Command, purpose: &str) -> std::process::Output {
 fn z_compile_link_and_run(
     source_name: &str,
     stem: &str,
-    address_sanitizer: bool,
-) -> Option<String> {
+    sanitizers: bool,
+    deliberate_leak: bool,
+) -> Option<std::process::Output> {
     if env!("FLIGHT_FFI_TARGET") != env!("FLIGHT_FFI_HOST") {
         eprintln!(
             "skipping the flight-ffi C consumer: it is built for {} and cannot run on host {}",
@@ -176,22 +199,30 @@ fn z_compile_link_and_run(
         .debug(false)
         .out_dir(&work_dir)
         .get_compiler();
-    let asan_runtime = address_sanitizer.then(|| {
-        let mut locate = compiler.to_command();
-        locate.arg("-print-file-name=libasan.so");
-        let located = run(&mut locate, "locate the address sanitizer runtime");
-        let path = String::from_utf8(located.stdout).unwrap();
-        let path = path.trim();
-        assert_ne!(path, "libasan.so", "compiler did not locate libasan.so");
-        assert!(Path::new(path).is_file(), "missing {path}");
-        path.to_owned()
+    let sanitizer_runtimes = sanitizers.then(|| {
+        ["libasan.so", "libubsan.so"]
+            .into_iter()
+            .map(|runtime| {
+                let mut locate = compiler.to_command();
+                locate.arg(format!("-print-file-name={runtime}"));
+                let located = run(&mut locate, "locate a sanitizer runtime");
+                let path = String::from_utf8(located.stdout).unwrap();
+                let path = path.trim();
+                assert_ne!(path, runtime, "compiler did not locate {runtime}");
+                assert!(Path::new(path).is_file(), "missing {path}");
+                path.to_owned()
+            })
+            .collect::<Vec<_>>()
     });
     let mut compile = compiler.to_command();
     compile
         .args(["-std=c11", "-Wall", "-Wextra", "-Wpedantic", "-Werror"])
         .arg(format!("-I{}", env!("OUT_DIR")));
-    if address_sanitizer {
-        compile.args(["-fsanitize=address", "-fno-omit-frame-pointer"]);
+    if sanitizers {
+        compile.args(["-fsanitize=address,undefined", "-fno-omit-frame-pointer"]);
+    }
+    if deliberate_leak {
+        compile.arg("-DFLIGHT_FFI_DELIBERATE_LEAK=1");
     }
     compile.arg("-c").arg(&source).arg("-o").arg(&object);
     let compiled = run(&mut compile, "compile the C consumer");
@@ -212,16 +243,22 @@ fn z_compile_link_and_run(
         .arg(format!("link-arg={}", library.display()))
         .arg("-o")
         .arg(&executable);
-    if address_sanitizer {
-        link.arg("-C").arg("link-arg=-lasan");
+    if sanitizers {
+        link.arg("-C")
+            .arg("link-arg=-lasan")
+            .arg("-C")
+            .arg("link-arg=-lubsan");
     }
     run(&mut link, "link the C consumer");
 
     let mut executable_command = Command::new(&executable);
-    if let Some(asan_runtime) = asan_runtime {
-        executable_command.env("LD_PRELOAD", asan_runtime);
+    if let Some(sanitizer_runtimes) = sanitizer_runtimes {
+        executable_command.env("LD_PRELOAD", sanitizer_runtimes.join(":"));
         executable_command.env("ASAN_OPTIONS", "detect_leaks=1:halt_on_error=1");
+        executable_command.env("UBSAN_OPTIONS", "halt_on_error=1:print_stacktrace=1");
     }
-    let ran = run(&mut executable_command, "run the C consumer");
-    return Some(String::from_utf8_lossy(&ran.stdout).into_owned());
+    if deliberate_leak {
+        return Some(executable_command.output().unwrap());
+    }
+    return Some(run(&mut executable_command, "run the C consumer"));
 }

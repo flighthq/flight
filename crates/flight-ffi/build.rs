@@ -1506,7 +1506,7 @@ fn main() {
     writeln!(all_output, "// free functions").unwrap();
     writeln!(
         all_output,
-        "#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn flight_free_string(ptr: *mut std::ffi::c_char) {{\n    if !ptr.is_null() {{\n        unsafe {{ drop(std::ffi::CString::from_raw(ptr)); }}\n    }}\n}}"
+        "#[doc = \"flight-ffi contract|Releases a non-NULL owned string returned by flight-ffi. Pass each returned string exactly once; NULL is a no-op.\"]\n#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn flight_free_string(ptr: *mut std::ffi::c_char) {{\n    if !ptr.is_null() {{\n        unsafe {{ drop(std::ffi::CString::from_raw(ptr)); }}\n    }}\n}}"
     )
     .unwrap();
     for qualified_ty in &boxed_types {
@@ -1532,9 +1532,16 @@ fn main() {
         } else {
             (boxed_free_suffix(qualified_ty), qualified_ty.clone())
         };
+        let contract = if boxed_ty == "FlightNode" {
+            "#[doc = \"flight-ffi contract|Releases only this owned FlightNode handle and its shared reference. The node remains alive while its graph or another handle retains it. NULL is a no-op.\"]\n"
+        } else if boxed_ty == "FlightNodeArray" {
+            "#[doc = \"flight-ffi contract|Releases this owned FlightNodeArray and its stored shared references. Handles and graph references outside the array remain valid. NULL is a no-op.\"]\n"
+        } else {
+            ""
+        };
         writeln!(
             all_output,
-            "#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn flight_free_{snake}(ptr: *mut {boxed_ty}) {{\n    if !ptr.is_null() {{\n        unsafe {{ drop(Box::from_raw(ptr)); }}\n    }}\n}}"
+            "{contract}#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn flight_free_{snake}(ptr: *mut {boxed_ty}) {{\n    if !ptr.is_null() {{\n        unsafe {{ drop(Box::from_raw(ptr)); }}\n    }}\n}}"
         )
         .unwrap();
     }
@@ -3786,20 +3793,22 @@ fn generate_node_field_accessors(
     fields: &[StructField],
     seen_names: &mut BTreeSet<String>,
 ) -> String {
-    let snake = to_snake_case(struct_name);
     let mut output = String::new();
-    let (view, field_read, field_write) = match struct_name {
+    let (stem, view, field_read, field_write) = match struct_name {
         "NodeFields" => (
+            "node",
             "Some(&node.node)",
             "guard.node_fields()",
             "guard.node_fields_mut()",
         ),
         "Node2DFields" => (
+            "node2d",
             "node.node2d.as_ref()",
             "guard.node2d_fields()",
             "guard.node2d_fields_mut()",
         ),
         "Node3DFields" => (
+            "node3d",
             "node.node3d.as_ref()",
             "guard.node3d_fields()",
             "guard.node3d_fields_mut()",
@@ -3808,13 +3817,14 @@ fn generate_node_field_accessors(
     };
 
     for field in fields {
-        let getter_name = format!("flight_get_{snake}_{}", field.name);
-        let setter_name = format!("flight_set_{snake}_{}", field.name);
+        let getter_name = format!("flight_get_{stem}_{}", field.name);
+        let setter_name = format!("flight_set_{stem}_{}", field.name);
         let ffi_ty = &field.ty;
         if seen_names.insert(getter_name.clone()) {
             writeln!(
                 output,
-                "#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn {getter_name}(node: *const FlightNode) -> {ffi_ty} {{\n    let Some(node) = (unsafe {{ ffi_node_handle(node) }}) else {{ return Default::default(); }};\n    let Some(view) = {view} else {{ return Default::default(); }};\n    let guard = view.read().unwrap_or_else(std::sync::PoisonError::into_inner);\n    {field_read}.{}\n}}",
+                "#[doc = \"flight-ffi contract|Reads {stem}.{} through the handle's read lock. NULL or a handle without the required node view returns the field type's default value (0, 0.0, or false).\"]\n#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn {getter_name}(node: *const FlightNode) -> {ffi_ty} {{\n    let Some(node) = (unsafe {{ ffi_node_handle(node) }}) else {{ return Default::default(); }};\n    let Some(view) = {view} else {{ return Default::default(); }};\n    let guard = view.read().unwrap_or_else(std::sync::PoisonError::into_inner);\n    {field_read}.{}\n}}",
+                field.name,
                 field.name
             )
             .unwrap();
@@ -3822,7 +3832,8 @@ fn generate_node_field_accessors(
         if seen_names.insert(setter_name.clone()) {
             writeln!(
                 output,
-                "#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn {setter_name}(node: *mut FlightNode, value: {ffi_ty}) -> {ffi_ty} {{\n    let Some(node) = (unsafe {{ ffi_node_handle(node) }}) else {{ return Default::default(); }};\n    let Some(view) = {view} else {{ return Default::default(); }};\n    let mut guard = view.write().unwrap_or_else(std::sync::PoisonError::into_inner);\n    {field_write}.{} = value;\n    value\n}}",
+                "#[doc = \"flight-ffi contract|Assigns {stem}.{} through the handle's write lock without implicit invalidation. Returns true after assignment; NULL or a handle without the required node view returns false and changes nothing.\"]\n#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn {setter_name}(node: *mut FlightNode, value: {ffi_ty}) -> bool {{\n    let Some(node) = (unsafe {{ ffi_node_handle(node) }}) else {{ return false; }};\n    let Some(view) = {view} else {{ return false; }};\n    let mut guard = view.write().unwrap_or_else(std::sync::PoisonError::into_inner);\n    {field_write}.{} = value;\n    true\n}}",
+                field.name,
                 field.name
             )
             .unwrap();
@@ -3831,42 +3842,46 @@ fn generate_node_field_accessors(
 
     if struct_name == "NodeFields" {
         let extras = [
-            "flight_get_node_fields_kind",
-            "flight_set_node_fields_kind",
-            "flight_get_node_fields_name",
-            "flight_set_node_fields_name",
+            "flight_get_node_kind",
+            "flight_set_node_kind",
+            "flight_get_node_name",
+            "flight_set_node_name",
         ];
         if extras
             .iter()
             .all(|name| seen_names.insert((*name).to_string()))
         {
             output.push_str(
-                r#"#[doc = "flight-ffi ownership|owned-return|flight_free_string|std::ffi::c_char"]
+                r#"#[doc = "flight-ffi contract|Returns an owned copy of node.kind; the caller must call flight_free_string. NULL handles or an interior-NUL value return NULL."]
+#[doc = "flight-ffi ownership|owned-return|flight_free_string|std::ffi::c_char"]
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn flight_get_node_fields_kind(node: *const FlightNode) -> *mut std::ffi::c_char {
+pub unsafe extern "C" fn flight_get_node_kind(node: *const FlightNode) -> *mut std::ffi::c_char {
     let Some(node) = (unsafe { ffi_node_handle(node) }) else { return std::ptr::null_mut(); };
     let guard = node.node.read().unwrap_or_else(std::sync::PoisonError::into_inner);
-    std::ffi::CString::new(guard.node_fields().kind.as_str()).unwrap_or_default().into_raw()
+    match std::ffi::CString::new(guard.node_fields().kind.as_str()) { Ok(value) => value.into_raw(), Err(_) => std::ptr::null_mut() }
 }
+#[doc = "flight-ffi contract|Assigns node.kind without implicit invalidation. NULL sets the kind to an empty string; invalid UTF-8 returns false and leaves the value unchanged; true means assigned. This mutability is intentional because kind is a public SDK field."]
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn flight_set_node_fields_kind(node: *mut FlightNode, value: *const std::ffi::c_char) -> bool {
+pub unsafe extern "C" fn flight_set_node_kind(node: *mut FlightNode, value: *const std::ffi::c_char) -> bool {
     let Some(node) = (unsafe { ffi_node_handle(node) }) else { return false; };
     let value = if value.is_null() { String::new() } else { match unsafe { std::ffi::CStr::from_ptr(value) }.to_str() { Ok(value) => value.to_owned(), Err(_) => return false } };
     node.node.write().unwrap_or_else(std::sync::PoisonError::into_inner).node_fields_mut().kind = value;
     true
 }
+#[doc = "flight-ffi contract|Returns an owned copy of node.name; the caller must call flight_free_string. NULL means no name, a NULL handle, or an interior-NUL stored name."]
 #[doc = "flight-ffi ownership|owned-return|flight_free_string|std::ffi::c_char"]
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn flight_get_node_fields_name(node: *const FlightNode) -> *mut std::ffi::c_char {
+pub unsafe extern "C" fn flight_get_node_name(node: *const FlightNode) -> *mut std::ffi::c_char {
     let Some(node) = (unsafe { ffi_node_handle(node) }) else { return std::ptr::null_mut(); };
     let guard = node.node.read().unwrap_or_else(std::sync::PoisonError::into_inner);
     match guard.node_fields().name.as_deref() {
-        Some(value) => std::ffi::CString::new(value).unwrap_or_default().into_raw(),
+        Some(value) => match std::ffi::CString::new(value) { Ok(value) => value.into_raw(), Err(_) => std::ptr::null_mut() },
         None => std::ptr::null_mut(),
     }
 }
+#[doc = "flight-ffi contract|Assigns a UTF-8 node.name without implicit invalidation. NULL clears the optional name; invalid UTF-8 returns false and leaves the value unchanged; true means assigned or cleared."]
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn flight_set_node_fields_name(node: *mut FlightNode, value: *const std::ffi::c_char) -> bool {
+pub unsafe extern "C" fn flight_set_node_name(node: *mut FlightNode, value: *const std::ffi::c_char) -> bool {
     let Some(node) = (unsafe { ffi_node_handle(node) }) else { return false; };
     let value = if value.is_null() { None } else { match unsafe { std::ffi::CStr::from_ptr(value) }.to_str() { Ok(value) => Some(value.to_owned()), Err(_) => return false } };
     node.node.write().unwrap_or_else(std::sync::PoisonError::into_inner).node_fields_mut().name = value;
@@ -3879,15 +3894,14 @@ pub unsafe extern "C" fn flight_set_node_fields_name(node: *mut FlightNode, valu
 
     if struct_name == "Node2DFields" {
         let extras = [
-            "flight_has_node2_dfields_blend_mode",
-            "flight_get_node2_dfields_blend_mode",
-            "flight_set_node2_dfields_blend_mode",
-            "flight_get_node2_dfields_clip",
-            "flight_set_node2_dfields_clip",
-            "flight_get_node2_dfields_material",
-            "flight_set_node2_dfields_material",
-            "flight_get_node2_dfields_material_data",
-            "flight_set_node2_dfields_material_data",
+            "flight_has_node2d_blend_mode",
+            "flight_get_node2d_blend_mode",
+            "flight_set_node2d_blend_mode",
+            "flight_get_node2d_clip",
+            "flight_get_node2d_material",
+            "flight_set_node2d_material",
+            "flight_get_node2d_material_data",
+            "flight_set_node2d_material_data",
             "flight_free_material2_d_ref",
             "flight_free_material_data_ref",
         ];
@@ -3906,13 +3920,13 @@ pub unsafe extern "C" fn flight_set_node_fields_name(node: *mut FlightNode, valu
             ("scale", &["x", "y", "z"][..]),
         ] {
             for component in components {
-                let getter = format!("flight_get_node3_dfields_{field}_{component}");
-                let setter = format!("flight_set_node3_dfields_{field}_{component}");
+                let getter = format!("flight_get_node3d_{field}_{component}");
+                let setter = format!("flight_set_node3d_{field}_{component}");
                 if seen_names.insert(getter.clone()) {
-                    writeln!(output, "#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn {getter}(node: *const FlightNode) -> f64 {{\n    let Some(node) = (unsafe {{ ffi_node_handle(node) }}) else {{ return 0.0; }};\n    let Some(view) = node.node3d.as_ref() else {{ return 0.0; }};\n    view.read().unwrap_or_else(std::sync::PoisonError::into_inner).node3d_fields().{field}.{component}\n}}").unwrap();
+                    writeln!(output, "#[doc = \"flight-ffi contract|Reads node3d.{field}.{component} through the handle's read lock. NULL or a non-3D handle returns 0.0.\"]\n#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn {getter}(node: *const FlightNode) -> f64 {{\n    let Some(node) = (unsafe {{ ffi_node_handle(node) }}) else {{ return 0.0; }};\n    let Some(view) = node.node3d.as_ref() else {{ return 0.0; }};\n    view.read().unwrap_or_else(std::sync::PoisonError::into_inner).node3d_fields().{field}.{component}\n}}").unwrap();
                 }
                 if seen_names.insert(setter.clone()) {
-                    writeln!(output, "#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn {setter}(node: *mut FlightNode, value: f64) -> f64 {{\n    let Some(node) = (unsafe {{ ffi_node_handle(node) }}) else {{ return 0.0; }};\n    let Some(view) = node.node3d.as_ref() else {{ return 0.0; }};\n    view.write().unwrap_or_else(std::sync::PoisonError::into_inner).node3d_fields_mut().{field}.{component} = value;\n    value\n}}").unwrap();
+                    writeln!(output, "#[doc = \"flight-ffi contract|Assigns node3d.{field}.{component} through the handle's write lock without implicit invalidation. Returns true after assignment; NULL or a non-3D handle returns false and changes nothing.\"]\n#[unsafe(no_mangle)]\npub unsafe extern \"C\" fn {setter}(node: *mut FlightNode, value: f64) -> bool {{\n    let Some(node) = (unsafe {{ ffi_node_handle(node) }}) else {{ return false; }};\n    let Some(view) = node.node3d.as_ref() else {{ return false; }};\n    view.write().unwrap_or_else(std::sync::PoisonError::into_inner).node3d_fields_mut().{field}.{component} = value;\n    true\n}}").unwrap();
                 }
             }
         }
@@ -3921,14 +3935,16 @@ pub unsafe extern "C" fn flight_set_node_fields_name(node: *mut FlightNode, valu
 }
 
 fn generate_node2d_field_extras() -> &'static str {
-    r#"#[unsafe(no_mangle)]
-pub unsafe extern "C" fn flight_has_node2_dfields_blend_mode(node: *const FlightNode) -> bool {
+    r#"#[doc = "flight-ffi contract|Returns whether node2d.blend_mode is present. NULL or a non-2D handle returns false."]
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn flight_has_node2d_blend_mode(node: *const FlightNode) -> bool {
     let Some(node) = (unsafe { ffi_node_handle(node) }) else { return false; };
     let Some(view) = node.node2d.as_ref() else { return false; };
     view.read().unwrap_or_else(std::sync::PoisonError::into_inner).node2d_fields().blend_mode.is_some()
 }
+#[doc = "flight-ffi contract|Reads node2d.blend_mode as 0 ADD, 1 DARKEN, 2 LIGHTEN, 3 MULTIPLY, 4 NORMAL, or 5 SCREEN. Returns -1 when absent, NULL, or wrong-kind; returns -2 for an unknown SDK value."]
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn flight_get_node2_dfields_blend_mode(node: *const FlightNode) -> i32 {
+pub unsafe extern "C" fn flight_get_node2d_blend_mode(node: *const FlightNode) -> i32 {
     let Some(node) = (unsafe { ffi_node_handle(node) }) else { return -1; };
     let Some(view) = node.node2d.as_ref() else { return -1; };
     let guard = view.read().unwrap_or_else(std::sync::PoisonError::into_inner);
@@ -3943,8 +3959,9 @@ pub unsafe extern "C" fn flight_get_node2_dfields_blend_mode(node: *const Flight
         Some(_) => -2,
     }
 }
+#[doc = "flight-ffi contract|Assigns node2d.blend_mode without implicit invalidation. present=false clears it and ignores value. With present=true, values 0..5 select ADD, DARKEN, LIGHTEN, MULTIPLY, NORMAL, SCREEN; any other value returns false and changes nothing. NULL or wrong-kind returns false; true means assigned or cleared."]
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn flight_set_node2_dfields_blend_mode(node: *mut FlightNode, value: i32, present: bool) -> bool {
+pub unsafe extern "C" fn flight_set_node2d_blend_mode(node: *mut FlightNode, value: i32, present: bool) -> bool {
     let Some(node) = (unsafe { ffi_node_handle(node) }) else { return false; };
     let Some(view) = node.node2d.as_ref() else { return false; };
     let value = if !present { None } else { Some(match value {
@@ -3959,9 +3976,10 @@ pub unsafe extern "C" fn flight_set_node2_dfields_blend_mode(node: *mut FlightNo
     view.write().unwrap_or_else(std::sync::PoisonError::into_inner).node2d_fields_mut().blend_mode = value;
     true
 }
+#[doc = "flight-ffi contract|Returns an owned clone of node2d.clip, or NULL when absent, NULL, or wrong-kind. Release a non-NULL result with flight_free_clip_region_ref."]
 #[doc = "flight-ffi ownership|owned-return|flight_free_clip_region_ref|flight_sdk::Ref<flight_sdk::ClipRegion>"]
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn flight_get_node2_dfields_clip(node: *const FlightNode) -> *mut std::ffi::c_void {
+pub unsafe extern "C" fn flight_get_node2d_clip(node: *const FlightNode) -> *mut std::ffi::c_void {
     let Some(node) = (unsafe { ffi_node_handle(node) }) else { return std::ptr::null_mut(); };
     let Some(view) = node.node2d.as_ref() else { return std::ptr::null_mut(); };
     let guard = view.read().unwrap_or_else(std::sync::PoisonError::into_inner);
@@ -3970,40 +3988,36 @@ pub unsafe extern "C" fn flight_get_node2_dfields_clip(node: *const FlightNode) 
         None => std::ptr::null_mut(),
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn flight_set_node2_dfields_clip(node: *mut FlightNode, value: *const std::ffi::c_void) -> bool {
-    let Some(node) = (unsafe { ffi_node_handle(node) }) else { return false; };
-    let Some(view) = node.node2d.as_ref() else { return false; };
-    let value = if value.is_null() { None } else { Some(unsafe { &*(value as *const flight_sdk::Ref<flight_sdk::ClipRegion>) }.clone()) };
-    view.write().unwrap_or_else(std::sync::PoisonError::into_inner).node2d_fields_mut().clip = value;
-    true
-}
+#[doc = "flight-ffi contract|Returns an owned clone of node2d.material, or NULL when absent, NULL, or wrong-kind. Release a non-NULL result with flight_free_material2_d_ref."]
 #[doc = "flight-ffi ownership|owned-return|flight_free_material2_d_ref|flight_sdk::Ref<dyn flight_sdk::Material2D>"]
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn flight_get_node2_dfields_material(node: *const FlightNode) -> *mut std::ffi::c_void {
+pub unsafe extern "C" fn flight_get_node2d_material(node: *const FlightNode) -> *mut std::ffi::c_void {
     let Some(node) = (unsafe { ffi_node_handle(node) }) else { return std::ptr::null_mut(); };
     let Some(view) = node.node2d.as_ref() else { return std::ptr::null_mut(); };
     let guard = view.read().unwrap_or_else(std::sync::PoisonError::into_inner);
     match guard.node2d_fields().material.clone() { Some(value) => Box::into_raw(Box::new(value)) as *mut std::ffi::c_void, None => std::ptr::null_mut() }
 }
+#[doc = "flight-ffi contract|Assigns node2d.material without implicit invalidation. NULL clears it; a non-NULL value is cloned. NULL or wrong-kind node handles return false; true means assigned or cleared."]
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn flight_set_node2_dfields_material(node: *mut FlightNode, value: *const std::ffi::c_void) -> bool {
+pub unsafe extern "C" fn flight_set_node2d_material(node: *mut FlightNode, value: *const std::ffi::c_void) -> bool {
     let Some(node) = (unsafe { ffi_node_handle(node) }) else { return false; };
     let Some(view) = node.node2d.as_ref() else { return false; };
     let value = if value.is_null() { None } else { Some(unsafe { &*(value as *const flight_sdk::Ref<dyn flight_sdk::Material2D>) }.clone()) };
     view.write().unwrap_or_else(std::sync::PoisonError::into_inner).node2d_fields_mut().material = value;
     true
 }
+#[doc = "flight-ffi contract|Returns an owned clone of node2d.material_data, or NULL when absent, NULL, or wrong-kind. Release a non-NULL result with flight_free_material_data_ref."]
 #[doc = "flight-ffi ownership|owned-return|flight_free_material_data_ref|flight_sdk::Ref<dyn flight_sdk::MaterialData>"]
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn flight_get_node2_dfields_material_data(node: *const FlightNode) -> *mut std::ffi::c_void {
+pub unsafe extern "C" fn flight_get_node2d_material_data(node: *const FlightNode) -> *mut std::ffi::c_void {
     let Some(node) = (unsafe { ffi_node_handle(node) }) else { return std::ptr::null_mut(); };
     let Some(view) = node.node2d.as_ref() else { return std::ptr::null_mut(); };
     let guard = view.read().unwrap_or_else(std::sync::PoisonError::into_inner);
     match guard.node2d_fields().material_data.clone() { Some(value) => Box::into_raw(Box::new(value)) as *mut std::ffi::c_void, None => std::ptr::null_mut() }
 }
+#[doc = "flight-ffi contract|Assigns node2d.material_data without implicit invalidation. NULL clears it; a non-NULL value is cloned. NULL or wrong-kind node handles return false; true means assigned or cleared."]
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn flight_set_node2_dfields_material_data(node: *mut FlightNode, value: *const std::ffi::c_void) -> bool {
+pub unsafe extern "C" fn flight_set_node2d_material_data(node: *mut FlightNode, value: *const std::ffi::c_void) -> bool {
     let Some(node) = (unsafe { ffi_node_handle(node) }) else { return false; };
     let Some(view) = node.node2d.as_ref() else { return false; };
     let value = if value.is_null() { None } else { Some(unsafe { &*(value as *const flight_sdk::Ref<dyn flight_sdk::MaterialData>) }.clone()) };
@@ -4015,6 +4029,28 @@ pub unsafe extern "C" fn flight_free_material2_d_ref(value: *mut flight_sdk::Ref
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn flight_free_material_data_ref(value: *mut flight_sdk::Ref<dyn flight_sdk::MaterialData>) { if !value.is_null() { unsafe { drop(Box::from_raw(value)); } } }
 "#
+}
+
+fn generate_node2d_clip_setter_wrapper() -> &'static str {
+    r#"#[doc = "flight-ffi contract|Assigns node2d.clip without implicit invalidation. NULL clears it; a non-NULL value is cloned. NULL or wrong-kind node handles return false; true means assigned or cleared."]
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn flight_set_node2d_clip(node: *mut FlightNode, value: *const std::ffi::c_void) -> bool {
+    let Some(node) = (unsafe { ffi_node_handle(node) }) else { return false; };
+    let Some(node2d) = node.node2d.clone() else { return false; };
+    let value = if value.is_null() { None } else { Some(unsafe { &*(value as *const flight_sdk::Ref<flight_sdk::ClipRegion>) }.clone()) };
+    flight_sdk::set_node2d_clip(&node2d, value);
+    true
+}"#
+}
+
+fn generate_node_enabled_setter_wrapper() -> &'static str {
+    r#"#[doc = "flight-ffi contract|Assigns node.enabled through the handle's write lock without implicit invalidation. Returns true after assignment; NULL returns false and changes nothing."]
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn flight_set_node_enabled(node: *mut FlightNode, value: bool) -> bool {
+    let Some(node) = (unsafe { ffi_node_handle(node) }) else { return false; };
+    node.node.write().unwrap_or_else(std::sync::PoisonError::into_inner).node_fields_mut().enabled = value;
+    true
+}"#
 }
 
 fn extract_dyn_trait(ty: &str) -> Option<String> {
@@ -4222,6 +4258,12 @@ fn generate_ffi_wrapper(func: &ParsedFn) -> Option<(String, Option<String>)> {
             boxed_value_type("Option<SlotId>"),
         ));
     }
+    if func.name == "set_node2d_clip" {
+        return Some((generate_node2d_clip_setter_wrapper().to_string(), None));
+    }
+    if func.name == "set_node_enabled" {
+        return Some((generate_node_enabled_setter_wrapper().to_string(), None));
+    }
     if let Some(wrapper) = generate_task_m_wrapper(func) {
         return Some(wrapper);
     }
@@ -4239,8 +4281,25 @@ fn generate_ffi_wrapper(func: &ParsedFn) -> Option<(String, Option<String>)> {
     // C pointers that lower a Rust `Option`: NULL is a valid argument, so reachability must not
     // treat them as required carriers.
     let mut nullable_params = Vec::new();
-    for param in &func.params {
+    let alias_borrow_pairs = collect_alias_borrow_pairs(func);
+    for (index, param) in func.params.iter().enumerate() {
         let resolved_ty = strip_crate_paths(&strip_lifetimes(&resolve_type_alias(param.ty.trim())));
+        if let Some(pair) = alias_borrow_pairs
+            .iter()
+            .find(|pair| pair.first.index == index || pair.second.index == index)
+        {
+            let paired = if pair.first.index == index {
+                &pair.first
+            } else {
+                &pair.second
+            };
+            ffi_params.push(format!("{}: {}", param.name, paired.pointer));
+            if pair.first.index == index {
+                guard_bindings.extend(alias_borrow_pair_bindings(pair));
+            }
+            call_args.push(alias_borrow_call_expr(pair, index));
+            continue;
+        }
         let mapped = map_param_to_ffi(&param.name, &param.ty)?;
         for (pname, pty) in &mapped.ffi_params {
             ffi_params.push(format!("{pname}: {pty}"));
@@ -4394,6 +4453,9 @@ fn generate_ffi_wrapper(func: &ParsedFn) -> Option<(String, Option<String>)> {
         notes.push_str(&format!(
             "#[doc = \"{NULLABLE_PARAM_DOC_PREFIX}{param}\"]\n"
         ));
+    }
+    if !alias_borrow_pairs.is_empty() {
+        notes.push_str("#[doc = \"flight-ffi contract|Borrowed handles are compared by allocation before locking. Shared aliases take one read lock; any pair containing a mutable borrow returns this function's ordinary invalid-parameter sentinel when both handles refer to one allocation. Distinct allocations are locked in allocation order.\"]\n");
     }
     if func.name == "watch_geolocation_position" {
         notes.push_str("#[doc = \"flight-ffi contract|Handler and error contexts are retained until flight_clear_geolocation_watch(id); each nullable release callback then receives its context exactly once, when the host drops that callback, and the caller must keep a context alive until it is released.\"]\n");
@@ -5846,16 +5908,19 @@ fn ffi_node_concrete<T: flight_sdk::Node + 'static>(node: &FlightNode) -> Option
         .cloned()
         .or_else(|| flight_sdk::downcast_node_ref::<T>(&node.node))
 }
+#[doc = "flight-ffi contract|FlightNode is an owned handle containing one shared reference, not the node allocation itself. The node remains alive while its graph or any handle retains it. flight_node_equals compares the underlying allocation, not handle addresses; NULL compares false."]
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn flight_node_equals(a: *const FlightNode, b: *const FlightNode) -> bool {
     let (Some(a), Some(b)) = (unsafe { ffi_node_handle(a) }, unsafe { ffi_node_handle(b) }) else { return false; };
     std::sync::Arc::ptr_eq(&a.node, &b.node)
 }
+#[doc = "flight-ffi contract|FlightNodeArray is the owned node-slice carrier. It stores shared node references; array get returns a new owned FlightNode handle, and clearing or freeing the array releases only its stored references."]
 #[doc = "flight-ffi ownership|owned-return|flight_free_node_array|FlightNodeArray"]
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn flight_node_array_create() -> *mut FlightNodeArray {
     Box::into_raw(Box::new(FlightNodeArray { values: Vec::new() }))
 }
+#[doc = "flight-ffi contract|Returns 0 for NULL; otherwise returns the exact number of stored node references."]
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn flight_node_array_len(nodes: *const FlightNodeArray) -> usize {
     if nodes.is_null() { return 0; }
@@ -5868,6 +5933,7 @@ pub unsafe extern "C" fn flight_node_array_get(nodes: *const FlightNodeArray, in
     let Some(node) = unsafe { &*nodes }.values.get(index) else { return std::ptr::null_mut(); };
     Box::into_raw(Box::new(ffi_node_from_node_ref(node.clone())))
 }
+#[doc = "flight-ffi contract|Appends exactly one shared node reference. NULL array or node handles return false and do not change the array."]
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn flight_node_array_push(nodes: *mut FlightNodeArray, node: *const FlightNode) -> bool {
     if nodes.is_null() { return false; }
@@ -7672,6 +7738,200 @@ struct MappedParam {
     call_expr: String,
 }
 
+#[derive(Clone)]
+enum AliasBorrowSource {
+    Node(NodeKind),
+    RefOnly(String),
+}
+
+#[derive(Clone)]
+struct AliasBorrowParam {
+    index: usize,
+    name: String,
+    group: String,
+    pointer: String,
+    mutable: bool,
+    source: AliasBorrowSource,
+}
+
+struct AliasBorrowPair {
+    first: AliasBorrowParam,
+    second: AliasBorrowParam,
+}
+
+fn alias_borrow_param(index: usize, param: &Param) -> Option<AliasBorrowParam> {
+    let ty = strip_crate_paths(&strip_lifetimes(&resolve_type_alias(param.ty.trim())));
+    let ty = resolve_type_alias(&ty);
+    let (mutable, inner) = if let Some(inner) = ty.strip_prefix("&mut ") {
+        (true, inner.trim())
+    } else if let Some(inner) = ty.strip_prefix('&') {
+        (false, inner.trim())
+    } else {
+        return None;
+    };
+
+    if is_ref_only_borrow_type(inner) {
+        let qualified = qualify_type(inner);
+        return Some(AliasBorrowParam {
+            index,
+            name: param.name.clone(),
+            group: format!("ref:{qualified}"),
+            pointer: if mutable {
+                "*mut std::ffi::c_void"
+            } else {
+                "*const std::ffi::c_void"
+            }
+            .to_string(),
+            mutable,
+            source: AliasBorrowSource::RefOnly(qualified),
+        });
+    }
+
+    let kind = match inner {
+        "dyn Node" => NodeKind::Node,
+        "dyn Node2D" => NodeKind::Node2D,
+        "dyn Node3D" => NodeKind::Node3D,
+        _ => return None,
+    };
+    return Some(AliasBorrowParam {
+        index,
+        name: param.name.clone(),
+        group: format!("node:{kind:?}"),
+        pointer: if mutable {
+            "*mut FlightNode"
+        } else {
+            "*const FlightNode"
+        }
+        .to_string(),
+        mutable,
+        source: AliasBorrowSource::Node(kind),
+    });
+}
+
+fn collect_alias_borrow_pairs(func: &ParsedFn) -> Vec<AliasBorrowPair> {
+    let mut groups: BTreeMap<String, Vec<AliasBorrowParam>> = BTreeMap::new();
+    for (index, param) in func.params.iter().enumerate() {
+        if let Some(param) = alias_borrow_param(index, param) {
+            groups.entry(param.group.clone()).or_default().push(param);
+        }
+    }
+
+    let mut pairs = Vec::new();
+    for group in groups.into_values().filter(|group| group.len() >= 2) {
+        assert_eq!(
+            group.len(),
+            2,
+            "{} has more than two aliasable borrows of one allocation type; extend the grouped lowering before emitting it",
+            func.name
+        );
+        pairs.push(AliasBorrowPair {
+            first: group[0].clone(),
+            second: group[1].clone(),
+        });
+    }
+    return pairs;
+}
+
+fn alias_borrow_arc_binding(param: &AliasBorrowParam) -> Vec<String> {
+    let clean = param.name.trim_start_matches('_');
+    match &param.source {
+        AliasBorrowSource::RefOnly(qualified) => vec![
+            format!(
+                "    if {}.is_null() {{ {INVALID_NODE_RETURN} }}",
+                param.name
+            ),
+            format!(
+                "    let arc_{clean} = unsafe {{ &*({} as *const flight_sdk::Ref<{qualified}>) }};",
+                param.name
+            ),
+        ],
+        AliasBorrowSource::Node(kind) => {
+            let (arc_ty, selected) = match kind {
+                NodeKind::Node => (
+                    "flight_sdk::NodeRef",
+                    format!("Some(ffi_node_{clean}.node.clone())"),
+                ),
+                NodeKind::Node2D => (
+                    "flight_sdk::Node2DRef",
+                    format!("ffi_node_{clean}.node2d.clone()"),
+                ),
+                NodeKind::Node3D => (
+                    "flight_sdk::Node3DRef",
+                    format!("ffi_node_{clean}.node3d.clone()"),
+                ),
+            };
+            vec![
+                format!(
+                    "    let Some(ffi_node_{clean}) = (unsafe {{ ffi_node_handle({}) }}) else {{ {INVALID_NODE_RETURN} }};",
+                    param.name
+                ),
+                format!(
+                    "    let Some(owned_arc_{clean}): Option<{arc_ty}> = {selected} else {{ {INVALID_NODE_RETURN} }};"
+                ),
+                format!("    let arc_{clean} = &owned_arc_{clean};"),
+            ]
+        }
+    }
+}
+
+fn alias_borrow_pair_bindings(pair: &AliasBorrowPair) -> Vec<String> {
+    let first = pair.first.name.trim_start_matches('_');
+    let second = pair.second.name.trim_start_matches('_');
+    let mut bindings = alias_borrow_arc_binding(&pair.first);
+    bindings.extend(alias_borrow_arc_binding(&pair.second));
+    let aliases = format!("std::sync::Arc::ptr_eq(arc_{first}, arc_{second})");
+
+    match (pair.first.mutable, pair.second.mutable) {
+        (false, false) => {
+            bindings.push(format!(
+                "    let guard_{first} = arc_{first}.read().unwrap_or_else(std::sync::PoisonError::into_inner);"
+            ));
+            bindings.push(format!(
+                "    let guard_{second} = if {aliases} {{ None }} else {{ Some(arc_{second}.read().unwrap_or_else(std::sync::PoisonError::into_inner)) }};"
+            ));
+        }
+        (true, true) => {
+            bindings.push(format!("    if {aliases} {{ {INVALID_NODE_RETURN} }}"));
+            bindings.push(format!(
+                "    let (mut guard_{first}, mut guard_{second}) = if (std::sync::Arc::as_ptr(arc_{first}) as *const () as usize) < (std::sync::Arc::as_ptr(arc_{second}) as *const () as usize) {{ (arc_{first}.write().unwrap_or_else(std::sync::PoisonError::into_inner), arc_{second}.write().unwrap_or_else(std::sync::PoisonError::into_inner)) }} else {{ let guard_{second} = arc_{second}.write().unwrap_or_else(std::sync::PoisonError::into_inner); let guard_{first} = arc_{first}.write().unwrap_or_else(std::sync::PoisonError::into_inner); (guard_{first}, guard_{second}) }};"
+            ));
+        }
+        (true, false) => {
+            bindings.push(format!("    if {aliases} {{ {INVALID_NODE_RETURN} }}"));
+            bindings.push(format!(
+                "    let (mut guard_{first}, guard_{second}) = if (std::sync::Arc::as_ptr(arc_{first}) as *const () as usize) < (std::sync::Arc::as_ptr(arc_{second}) as *const () as usize) {{ (arc_{first}.write().unwrap_or_else(std::sync::PoisonError::into_inner), arc_{second}.read().unwrap_or_else(std::sync::PoisonError::into_inner)) }} else {{ let guard_{second} = arc_{second}.read().unwrap_or_else(std::sync::PoisonError::into_inner); let guard_{first} = arc_{first}.write().unwrap_or_else(std::sync::PoisonError::into_inner); (guard_{first}, guard_{second}) }};"
+            ));
+        }
+        (false, true) => {
+            bindings.push(format!("    if {aliases} {{ {INVALID_NODE_RETURN} }}"));
+            bindings.push(format!(
+                "    let (guard_{first}, mut guard_{second}) = if (std::sync::Arc::as_ptr(arc_{first}) as *const () as usize) < (std::sync::Arc::as_ptr(arc_{second}) as *const () as usize) {{ (arc_{first}.read().unwrap_or_else(std::sync::PoisonError::into_inner), arc_{second}.write().unwrap_or_else(std::sync::PoisonError::into_inner)) }} else {{ let guard_{second} = arc_{second}.write().unwrap_or_else(std::sync::PoisonError::into_inner); let guard_{first} = arc_{first}.read().unwrap_or_else(std::sync::PoisonError::into_inner); (guard_{first}, guard_{second}) }};"
+            ));
+        }
+    }
+    return bindings;
+}
+
+fn alias_borrow_call_expr(pair: &AliasBorrowPair, index: usize) -> String {
+    let first = pair.first.name.trim_start_matches('_');
+    let second = pair.second.name.trim_start_matches('_');
+    if index == pair.first.index {
+        return if pair.first.mutable {
+            format!("&mut *guard_{first}")
+        } else {
+            format!("&*guard_{first}")
+        };
+    }
+    assert_eq!(index, pair.second.index);
+    if pair.second.mutable {
+        return format!("&mut *guard_{second}");
+    }
+    if !pair.first.mutable {
+        return format!("guard_{second}.as_deref().unwrap_or(&*guard_{first})");
+    }
+    return format!("&*guard_{second}");
+}
+
 fn mapped_single(name: &str, ffi_ty: &str, call_expr: String) -> Option<MappedParam> {
     Some(MappedParam {
         ffi_params: vec![(name.to_string(), ffi_ty.to_string())],
@@ -8211,6 +8471,46 @@ fn map_node_param(name: &str, ty: &str) -> Option<Option<MappedParam>> {
             } else {
                 format!("&*guard_{clean}")
             },
+        }));
+    }
+
+    if let Some(inner) = ty
+        .strip_prefix("&[Option<")
+        .and_then(|rest| rest.strip_suffix(">]"))
+        && let Some(kind) = node_ref_kind(inner.trim())
+    {
+        let ptr_name = format!("{name}_ptr");
+        let len_name = format!("{name}_len");
+        let view_ty = match kind {
+            NodeKind::Node => "flight_sdk::NodeRef",
+            NodeKind::Node2D => "flight_sdk::Node2DRef",
+            NodeKind::Node3D => "flight_sdk::Node3DRef",
+        };
+        let selected = match kind {
+            NodeKind::Node => format!("Some(ffi_node_{clean}.node.clone())"),
+            NodeKind::Node2D => format!("ffi_node_{clean}.node2d.clone()"),
+            NodeKind::Node3D => format!("ffi_node_{clean}.node3d.clone()"),
+        };
+        return Some(Some(MappedParam {
+            ffi_params: vec![
+                (ptr_name.clone(), "*const *const FlightNode".to_string()),
+                (len_name.clone(), "usize".to_string()),
+            ],
+            bindings: vec![
+                format!(
+                    "    if {ptr_name}.is_null() && {len_name} != 0 {{ {INVALID_NODE_RETURN} }}"
+                ),
+                format!(
+                    "    let node_handles_{clean}: &[*const FlightNode] = unsafe {{ ffi_slice_from_raw_parts({ptr_name}, {len_name}) }};"
+                ),
+                format!(
+                    "    let mut node_views_{clean}: Vec<Option<{view_ty}>> = Vec::with_capacity({len_name});"
+                ),
+                format!(
+                    "    for handle in node_handles_{clean} {{ if handle.is_null() {{ node_views_{clean}.push(None); }} else {{ let Some(ffi_node_{clean}) = (unsafe {{ ffi_node_handle(*handle) }}) else {{ {INVALID_NODE_RETURN} }}; let Some(view) = {selected} else {{ {INVALID_NODE_RETURN} }}; node_views_{clean}.push(Some(view)); }} }}"
+                ),
+            ],
+            call_expr: format!("node_views_{clean}.as_slice()"),
         }));
     }
 

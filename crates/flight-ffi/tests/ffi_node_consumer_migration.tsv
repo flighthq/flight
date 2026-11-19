@@ -31,7 +31,7 @@ consumer|flight_create_interaction_manager|Box<flight_sdk::Ref<dyn flight_sdk::N
 consumer|flight_create_node_interactive_state_binding|Box<flight_sdk::Ref<dyn flight_sdk::Node>>|FlightNode
 consumer|flight_create_remove_node_child_command|Box<flight_sdk::Ref<dyn flight_sdk::Node>>|FlightNode
 consumer|flight_create_reorder_node_child_command|Box<flight_sdk::Ref<dyn flight_sdk::Node>>|FlightNode
-consumer|flight_create_rive_animation_clips|*const Option<flight_sdk::Ref<dyn flight_sdk::Node2D>>|unreachable-optional
+consumer|flight_create_rive_animation_clips|*const Option<flight_sdk::Ref<dyn flight_sdk::Node2D>>|FlightNodeOptionalArray
 consumer|flight_default_compute_local_bounds_rectangle|Box<flight_sdk::Ref<dyn flight_sdk::Node>>|FlightNode
 consumer|flight_default_node_runtime_can_add_child|Box<flight_sdk::Ref<dyn flight_sdk::Node>>|FlightNode
 consumer|flight_disconnect_interaction_signal|Box<flight_sdk::Ref<dyn flight_sdk::Node>>|FlightNode
