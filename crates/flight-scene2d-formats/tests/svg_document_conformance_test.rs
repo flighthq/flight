@@ -14,8 +14,8 @@ use flight_shape::contract::{SHAPE_KIND, Shape, ShapeCommandToken, get_shape_bou
 use flight_text::contract::RichText;
 
 pub(crate) struct NodePosition {
-    pub x: f32,
-    pub y: f32,
+    pub x: f64,
+    pub y: f64,
 }
 
 mod svg_conformance_matrix {
@@ -70,12 +70,12 @@ mod svg_conformance_matrix {
             let target = child(&root, 0);
             let fields = node_fields(&target);
             if matches!(kind, "image" | "text" | "use" | "symbol" | "nested-use") {
-                assert_f32_eq(fields.x, 13.0);
+                assert_number_eq(fields.x, 13.0);
             } else {
                 let shape = find_first_shape(&target).unwrap();
-                assert_f32_eq(fields.x + shape_local_x(&shape), 13.0);
+                assert_number_eq(fields.x + shape_local_x(&shape), 13.0);
             }
-            assert_f32_eq(fields.y, expected_y);
+            assert_number_eq(fields.y, expected_y);
         }
     }
 
@@ -103,8 +103,8 @@ mod svg_conformance_matrix {
             None,
         );
         let rect = clip_rect(&child(&root, 0));
-        assert_f32_eq(rect.height, 0.0);
-        assert_f32_eq(rect.width, 0.0);
+        assert_number_eq(rect.height, 0.0);
+        assert_number_eq(rect.width, 0.0);
         assert!(has_diagnostic(&diagnostics, "svg.unsupported-clip-text"));
         assert!(!has_diagnostic(
             &diagnostics,
@@ -159,8 +159,8 @@ mod svg_conformance_matrix {
             None,
             None,
         );
-        assert_f32_eq(clip_rect(&child(&root, 0)).width, 10.0);
-        assert_f32_eq(clip_rect(&child(&root, 1)).width, 10.0);
+        assert_number_eq(clip_rect(&child(&root, 0)).width, 10.0);
+        assert_number_eq(clip_rect(&child(&root, 1)).width, 10.0);
     }
 
     #[test]
@@ -172,8 +172,8 @@ mod svg_conformance_matrix {
             None,
         );
         let rect = clip_rect(&child(&root, 0));
-        assert_f32_eq(rect.height, 0.0);
-        assert_f32_eq(rect.width, 0.0);
+        assert_number_eq(rect.height, 0.0);
+        assert_number_eq(rect.width, 0.0);
         assert!(has_diagnostic(&diagnostics, "svg.mask-as-hard-clip"));
         assert!(!has_diagnostic(
             &diagnostics,
@@ -231,7 +231,7 @@ mod svg_conformance_matrix {
                 "<svg><defs><clipPath id=\"half\" clipPathUnits=\"objectBoundingBox\"><rect width=\".5\" height=\"1\"/></clipPath><symbol id=\"panel\" viewBox=\"0 0 20 10\" preserveAspectRatio=\"none\"><rect width=\"20\" height=\"10\"/></symbol><g id=\"panelGeometry\"><rect width=\"200\" height=\"100\"/></g><g id=\"nestedPanel\"><use href=\"#panelGeometry\"/></g></defs>{target}</svg>"
             );
             let root = create_scene2d_from_svg_document(&source, None, Some(&options));
-            assert_f32_eq(clip_rect(&child(&root, 0)).width, width);
+            assert_number_eq(clip_rect(&child(&root, 0)).width, width);
         }
     }
 
@@ -264,7 +264,7 @@ mod svg_conformance_matrix {
             );
             let root =
                 create_scene2d_from_svg_document(&source, Some(&mut diagnostics), Some(&options));
-            assert_f32_eq(clip_rect(&child(&root, 0)).width, width);
+            assert_number_eq(clip_rect(&child(&root, 0)).width, width);
             assert!(has_diagnostic(&diagnostics, "svg.mask-as-hard-clip"));
         }
     }
@@ -288,8 +288,8 @@ mod svg_conformance_matrix {
             None,
         );
         let rect = clip_rect(&child(&root, 0));
-        assert_f32_eq(rect.height, 0.0);
-        assert_f32_eq(rect.width, 0.0);
+        assert_number_eq(rect.height, 0.0);
+        assert_number_eq(rect.width, 0.0);
         assert!(!has_diagnostic(
             &diagnostics,
             "svg.unresolved-clip-reference"
@@ -449,9 +449,9 @@ mod svg_conformance_matrix {
                 _ => get_node_child_at(&child(&root, 0), 0).unwrap(),
             };
             let transform = node_transform(&node);
-            assert_f32_eq(transform.0, scale_x);
-            assert_f32_eq(transform.1, scale_y);
-            assert_f32_eq(transform.2, x);
+            assert_number_eq(transform.0, scale_x);
+            assert_number_eq(transform.1, scale_y);
+            assert_number_eq(transform.2, x);
         }
     }
 
@@ -522,7 +522,7 @@ mod svg_inherit_keyword {
         let shape = first_shape(
             "<svg xmlns=\"http://www.w3.org/2000/svg\"><rect width=\"10\" height=\"10\" opacity=\"inherit\"/></svg>",
         );
-        assert_f32_eq(node_appearance(&shape).0, 1.0);
+        assert_number_eq(node_appearance(&shape).0, 1.0);
         assert!(!shape_commands(&shape).is_empty());
     }
 
@@ -559,7 +559,7 @@ mod svg_inherit_keyword {
         let shape = first_shape(
             "<svg xmlns=\"http://www.w3.org/2000/svg\"><g opacity=\"0.5\"><rect width=\"10\" height=\"10\" fill=\"#ff0000\" opacity=\"inherit\"/></g></svg>",
         );
-        assert_f32_eq(node_appearance(&shape).0, 0.5);
+        assert_number_eq(node_appearance(&shape).0, 0.5);
     }
 }
 
@@ -582,23 +582,23 @@ mod svg_internal_dtd_entities {
     }
 }
 
-pub(crate) fn assert_f32_eq(actual: f32, expected: f32) {
-    // D1 f32 bound (TS: 0)
-    let bound = 4.0 * f32::EPSILON * expected.abs().max(1.0);
+pub(crate) fn assert_number_eq(actual: impl Into<f64>, expected: f64) {
+    // TS: exact (bound 0).
+    let actual: f64 = actual.into();
+    assert_eq!(actual, expected);
+}
+
+fn assert_f32_close_default(actual: f64, expected: f64) {
+    // TS: 0.005
+    let bound = 0.005;
     assert!((actual - expected).abs() <= bound, "{actual} != {expected}");
 }
 
-fn assert_f32_close_default(actual: f32, expected: f32) {
-    // D1 f32 bound (TS: 0.005)
-    let bound = 0.005_f32.max(4.0 * f32::EPSILON * expected.abs().max(1.0));
-    assert!((actual - expected).abs() <= bound, "{actual} != {expected}");
-}
-
-pub(crate) fn assert_rectangle(actual: &Rectangle, x: f32, y: f32, width: f32, height: f32) {
-    assert_f32_eq(actual.x, x);
-    assert_f32_eq(actual.y, y);
-    assert_f32_eq(actual.width, width);
-    assert_f32_eq(actual.height, height);
+pub(crate) fn assert_rectangle(actual: &Rectangle, x: f64, y: f64, width: f64, height: f64) {
+    assert_number_eq(actual.x, x);
+    assert_number_eq(actual.y, y);
+    assert_number_eq(actual.width, width);
+    assert_number_eq(actual.height, height);
 }
 
 pub(crate) fn child(root: &Ref<flight_scene2d::DisplayObject>, index: i32) -> NodeRef {
@@ -684,13 +684,16 @@ pub(crate) fn node_fields(node: &NodeRef) -> NodePosition {
     };
 }
 
-pub(crate) fn node_appearance(node: &NodeRef) -> (f32, bool) {
+pub(crate) fn node_appearance(node: &NodeRef) -> (f64, bool) {
     let node = as_node2d_ref(node).unwrap();
     let node = node.read().unwrap();
-    return (node.node2d_fields().alpha, node.node2d_fields().visible);
+    return (
+        f64::from(node.node2d_fields().alpha),
+        node.node2d_fields().visible,
+    );
 }
 
-pub(crate) fn node_transform(node: &NodeRef) -> (f32, f32, f32) {
+pub(crate) fn node_transform(node: &NodeRef) -> (f64, f64, f64) {
     let node = as_node2d_ref(node).unwrap();
     let node = node.read().unwrap();
     let fields = node.node2d_fields();
@@ -714,7 +717,7 @@ pub(crate) fn shape_fill_color(node: &NodeRef) -> Option<u32> {
     };
 }
 
-pub(crate) fn shape_local_x(node: &NodeRef) -> f32 {
+pub(crate) fn shape_local_x(node: &NodeRef) -> f64 {
     let node = node.read().unwrap();
     let shape = node.as_any().downcast_ref::<Shape>().unwrap();
     let mut bounds = flight_geometry::create_rectangle(0.0, 0.0, 0.0, 0.0);

@@ -10,17 +10,17 @@ use flight_scene2d_formats::contract::*;
 use crate::rive_test_bytes::{TestObject, build_rive, float, object, text, uint};
 
 struct NodeSnapshot {
-    alpha: f32,
+    alpha: f64,
     blend_mode: Option<String>,
     kind: String,
     name: Option<String>,
-    pivot_x: f32,
-    pivot_y: f32,
-    rotation: f32,
-    scale_x: f32,
-    scale_y: f32,
-    x: f32,
-    y: f32,
+    pivot_x: f64,
+    pivot_y: f64,
+    rotation: f64,
+    scale_x: f64,
+    scale_y: f64,
+    x: f64,
+    y: f64,
 }
 
 const ARTBOARD: u64 = 1;
@@ -59,7 +59,7 @@ mod create_scene2d_from_rive_document {
             board("Board", 10.0, 10.0),
             object(NODE, vec![uint(PARENT_ID, 0), float(X_LEGACY, 33.0)]),
         ]);
-        assert_f32_eq(fields(&child(&result.artboards[0].root, 0)).x, 33.0, 0.0);
+        assert_number_eq(fields(&child(&result.artboards[0].root, 0)).x, 33.0, 0.0);
     }
 
     #[test]
@@ -70,12 +70,12 @@ mod create_scene2d_from_rive_document {
         ]);
         let node = child(&result.artboards[0].root, 0);
         let node = fields(&node);
-        assert_f32_eq(node.alpha, 1.0, 0.0);
-        assert_f32_eq(node.rotation, 0.0, 0.0);
-        assert_f32_eq(node.scale_x, 1.0, 0.0);
-        assert_f32_eq(node.scale_y, 1.0, 0.0);
-        assert_f32_eq(node.x, 0.0, 0.0);
-        assert_f32_eq(node.y, 0.0, 0.0);
+        assert_number_eq(node.alpha, 1.0, 0.0);
+        assert_number_eq(node.rotation, 0.0, 0.0);
+        assert_number_eq(node.scale_x, 1.0, 0.0);
+        assert_number_eq(node.scale_y, 1.0, 0.0);
+        assert_number_eq(node.x, 0.0, 0.0);
+        assert_number_eq(node.y, 0.0, 0.0);
     }
 
     #[test]
@@ -182,8 +182,8 @@ mod create_scene2d_from_rive_document {
             ],
         )]);
         let root = fields(&result.artboards[0].root);
-        assert_f32_eq(root.pivot_x, 200.0, 0.0);
-        assert_f32_eq(root.pivot_y, 300.0, 0.0);
+        assert_number_eq(root.pivot_x, 200.0, 0.0);
+        assert_number_eq(root.pivot_y, 300.0, 0.0);
     }
 
     #[test]
@@ -194,8 +194,8 @@ mod create_scene2d_from_rive_document {
         ]);
         assert_eq!(result.artboards.len(), 2);
         assert_eq!(result.artboards[0].name, "First");
-        assert_f32_eq(result.artboards[0].width, 400.0, 0.0);
-        assert_f32_eq(result.artboards[0].height, 300.0, 0.0);
+        assert_number_eq(result.artboards[0].width, 400.0, 0.0);
+        assert_number_eq(result.artboards[0].height, 300.0, 0.0);
         assert_eq!(
             fields(&result.artboards[0].root).name.as_deref(),
             Some("First")
@@ -275,11 +275,11 @@ mod create_scene2d_from_rive_document {
         let node = child(&result.artboards[0].root, 0);
         let node = fields(&node);
         assert_eq!(node.name.as_deref(), Some("moved"));
-        assert_f32_eq(node.x, 12.0, 0.0);
-        assert_f32_eq(node.y, -7.0, 0.0);
-        assert_f32_eq(node.scale_x, 2.0, 0.0);
-        assert_f32_eq(node.scale_y, 0.5, 0.0);
-        assert_f32_eq(node.alpha, 0.25, 0.0);
+        assert_number_eq(node.x, 12.0, 0.0);
+        assert_number_eq(node.y, -7.0, 0.0);
+        assert_number_eq(node.scale_x, 2.0, 0.0);
+        assert_number_eq(node.scale_y, 0.5, 0.0);
+        assert_number_eq(node.alpha, 0.25, 0.0);
     }
 
     #[test]
@@ -427,22 +427,19 @@ mod create_scene2d_from_rive_document {
     }
 }
 
-fn assert_f32_close4(actual: f32, expected: f32) {
-    // D1 f32 bound (TS: 0.00005)
-    let bound = 0.00005_f32.max(4.0 * f32::EPSILON * expected.abs().max(1.0));
+fn assert_f32_close4(actual: f64, expected: f64) {
+    // TS: 0.00005
+    let bound = 0.00005;
     assert!(
         (actual - expected).abs() <= bound,
         "{actual} != {expected} within {bound}"
     );
 }
 
-fn assert_f32_eq(actual: f32, expected: f32, _original_bound: f32) {
-    // D1 f32 bound (TS: 0)
-    let bound = 4.0 * f32::EPSILON * expected.abs().max(1.0);
-    assert!(
-        (actual - expected).abs() <= bound,
-        "{actual} != {expected} within {bound}"
-    );
+fn assert_number_eq(actual: impl Into<f64>, expected: f64, _original_bound: f64) {
+    // TS: exact (bound 0).
+    let actual: f64 = actual.into();
+    assert_eq!(actual, expected);
 }
 
 fn board(name: &str, width: f32, height: f32) -> TestObject {
@@ -466,7 +463,7 @@ fn fields(node: &Node2DRef) -> NodeSnapshot {
     let guard = node.read().unwrap();
     let fields = guard.node2d_fields();
     return NodeSnapshot {
-        alpha: fields.alpha,
+        alpha: f64::from(fields.alpha),
         blend_mode: fields.blend_mode.clone(),
         kind: fields.kind.clone(),
         name: fields.name.clone(),

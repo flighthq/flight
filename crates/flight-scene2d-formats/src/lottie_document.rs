@@ -1,5 +1,7 @@
 //! flight-compiler: target-native
 
+// flight-lint: allow-file(f64) Task Q format numbers: Lottie JSON and SVG text numbers are JS Numbers held in f64, and Rive binary float32 fields widen exactly at decode; easing, text-format, color, skin and diagnostic lanes stay f32
+
 use std::collections::{HashMap, HashSet};
 use std::sync::{Arc, RwLock};
 
@@ -31,9 +33,9 @@ use crate::types::*;
 #[derive(Clone)]
 struct LottiePositionSampler {
     carrier: Ref<AnimationTrack>,
-    first_time: f32,
-    last_time: f32,
-    sample: Arc<dyn Fn(&mut [f32], f32) + Send + Sync>,
+    first_time: f64,
+    last_time: f64,
+    sample: Arc<dyn Fn(&mut [f64], f64) + Send + Sync>,
     separated: bool,
 }
 
@@ -129,11 +131,11 @@ fn create_lottie_position_sampler(
         let first_time = populated
             .iter()
             .map(|(first, _last)| *first)
-            .reduce(f32::min)?;
+            .reduce(f64::min)?;
         let last_time = populated
             .iter()
             .map(|(_first, last)| *last)
-            .reduce(f32::max)?;
+            .reduce(f64::max)?;
         return Some(LottiePositionSampler {
             carrier,
             first_time,
@@ -193,20 +195,21 @@ fn create_lottie_segment_easing(
 ) -> Option<flight_animation::EasingFn> {
     let outgoing = outgoing?.as_object()?;
     let incoming = incoming?.as_object()?;
+    // Bezier handles narrow into flight-animation's f32 easing lane.
     return Some(ease_cubic_bezier(
-        handle_component(outgoing.get("x"), component),
-        handle_component(outgoing.get("y"), component),
-        handle_component(incoming.get("x"), component),
-        handle_component(incoming.get("y"), component),
+        handle_component(outgoing.get("x"), component) as f32,
+        handle_component(outgoing.get("y"), component) as f32,
+        handle_component(incoming.get("x"), component) as f32,
+        handle_component(incoming.get("y"), component) as f32,
     ));
 }
 
 fn create_lottie_spatial_segment_easing(
     temporal: Option<flight_animation::EasingFn>,
-    start: &[f32],
-    end: &[f32],
-    outgoing: &[f32],
-    incoming: &[f32],
+    start: &[f64],
+    end: &[f64],
+    outgoing: &[f64],
+    incoming: &[f64],
 ) -> flight_animation::EasingFn {
     const SAMPLES: usize = 150;
     let mut lengths = vec![0.0; SAMPLES];
@@ -217,13 +220,13 @@ fn create_lottie_spatial_segment_easing(
             end,
             outgoing,
             incoming,
-            index as f32 / (SAMPLES - 1) as f32,
+            index as f64 / (SAMPLES - 1) as f64,
         );
         let distance = point
             .iter()
             .zip(&previous)
             .map(|(point, previous)| (point - previous).powi(2))
-            .sum::<f32>()
+            .sum::<f64>()
             .sqrt();
         lengths[index] = lengths[index - 1] + distance;
         previous = point;
@@ -237,7 +240,7 @@ fn create_lottie_spatial_segment_easing(
         if distance_fraction >= 1.0 {
             return 1.0;
         }
-        let distance = total * distance_fraction;
+        let distance = total * f64::from(distance_fraction);
         let mut low = 0;
         let mut high = lengths.len() - 1;
         while low + 1 < high {
@@ -254,17 +257,17 @@ fn create_lottie_spatial_segment_easing(
         } else {
             0.0
         };
-        return (low as f32 + fraction) / (SAMPLES - 1) as f32;
+        return ((low as f64 + fraction) / (SAMPLES - 1) as f64) as f32;
     });
 }
 
 fn create_lottie_spatial_track_values(
     keyframes: &[Value],
-    samples: &[Vec<f32>],
-    times: &[f32],
+    samples: &[Vec<f64>],
+    times: &[f64],
     components: usize,
     tangent_of: &LottieTangentOf,
-) -> Vec<f32> {
+) -> Vec<f64> {
     let mut incoming = vec![vec![0.0; components]; samples.len()];
     let mut outgoing = vec![vec![0.0; components]; samples.len()];
     for index in 0..samples.len().saturating_sub(1) {
@@ -305,7 +308,7 @@ pub fn create_lottie_track(
     let mut samples = Vec::new();
     let mut retained = Vec::new();
     for (index, keyframe) in keyframes.iter().enumerate() {
-        let time = frame_to_seconds(value_f32(keyframe.get("t"), 0.0), context);
+        let time = frame_to_seconds(value_number(keyframe.get("t"), 0.0), context);
         if times.last().is_some_and(|previous| time <= *previous) {
             continue;
         }
@@ -424,9 +427,9 @@ pub fn create_scene2d_from_lottie_document_with_registry(
         .collect::<Vec<_>>();
     let root_node: Node2DRef = root.clone();
     append_lottie_layers(&root_node, &layers, &mut context);
-    let frame_rate = record_f32(&document, "fr", 0.0);
-    let first_frame = record_f32(&document, "ip", 0.0);
-    let last_frame = record_f32(&document, "op", first_frame);
+    let frame_rate = record_number(&document, "fr", 0.0);
+    let first_frame = record_number(&document, "ip", 0.0);
+    let last_frame = record_number(&document, "op", first_frame);
     let duration = ((last_frame - first_frame) / frame_rate).max(0.0);
     let events = record_array(&document, "markers")
         .iter()
@@ -434,7 +437,7 @@ pub fn create_scene2d_from_lottie_document_with_registry(
             let marker = marker.as_object()?;
             let name = marker.get("cm")?.as_str()?;
             let time = lottie_clamp(
-                (value_f32(marker.get("tm"), first_frame) - first_frame) / frame_rate,
+                (value_number(marker.get("tm"), first_frame) - first_frame) / frame_rate,
                 0.0,
                 duration,
             );
@@ -466,8 +469,8 @@ pub fn initialize_lottie_document_import_result(
     root: Ref<DisplayObject>,
     advanced_blends: Vec<LottieAdvancedBlend>,
     clip: AnimationClip,
-    duration: f32,
-    frame_rate: f32,
+    duration: f64,
+    frame_rate: f64,
 ) {
     out.advanced_blends = advanced_blends;
     out.clip = clip;
@@ -497,9 +500,9 @@ fn append_lottie_auto_orientation(
             let tangent_of: LottieTangentOf = Arc::new(|value, _component| value);
             return create_lottie_track(keyframes, 1, context, &value_of, 0, false, &tangent_of);
         });
-    let frame_step = context.frame_scale.abs() / record_f32(context.document, "fr", 1.0);
+    let frame_step = context.frame_scale.abs() / record_number(context.document, "fr", 1.0);
     let target_node = target.clone();
-    let apply_orientation = Arc::new(move |time: f32| {
+    let apply_orientation = Arc::new(move |time: f64| {
         let (previous_time, current_time) = if time <= sampler.first_time {
             (sampler.first_time, sampler.first_time + frame_step * 0.01)
         } else if time >= sampler.last_time {
@@ -515,7 +518,7 @@ fn append_lottie_auto_orientation(
         (sampler.sample)(&mut previous, previous_time);
         (sampler.sample)(&mut current, current_time);
         let orientation = (current[1] - previous[1]).atan2(current[0] - previous[0]) * 180.0
-            / std::f32::consts::PI;
+            / std::f64::consts::PI;
         let rotation = rotation_track.as_ref().map_or(base_rotation, |track| {
             let mut sample = [0.0];
             sample_animation_track(&mut sample, &track.read().unwrap(), time);
@@ -630,7 +633,7 @@ fn append_numeric_property_channels(
         .push(create_animation_channel(&track, target(None)));
 }
 
-pub fn apply_animation_clip_to_lottie_document(clip: &AnimationClip, time: f32) {
+pub fn apply_animation_clip_to_lottie_document(clip: &AnimationClip, time: f64) {
     apply_animation_clip_to_node2d(clip, time);
     for channel in &clip.channels {
         let Some(target) = channel
@@ -648,7 +651,7 @@ pub fn apply_animation_clip_to_lottie_document(clip: &AnimationClip, time: f32) 
     }
 }
 
-fn apply_display_sample(target: &Node2DRef, path: Node2DAnimationPath, sample: &[f32]) {
+fn apply_display_sample(target: &Node2DRef, path: Node2DAnimationPath, sample: &[f64]) {
     let mut node = target.write().unwrap();
     let fields = node.node2d_fields_mut();
     match path {
@@ -672,7 +675,7 @@ fn apply_display_sample(target: &Node2DRef, path: Node2DAnimationPath, sample: &
         Node2DAnimationPath::ScaleY => fields.scale_y = sample[0],
         Node2DAnimationPath::Rotation => fields.rotation = sample[0],
         Node2DAnimationPath::SkewX => fields.skew_x = sample[0],
-        Node2DAnimationPath::Alpha => fields.alpha = sample[0],
+        Node2DAnimationPath::Alpha => fields.alpha = (sample[0]) as f32,
         _ => {}
     }
 }
@@ -724,17 +727,17 @@ fn apply_lottie_layer_visibility(
     context: &mut LottieImportContext<'_>,
 ) {
     let start = frame_to_seconds(
-        record_f32(layer, "ip", record_f32(context.document, "ip", 0.0)),
+        record_number(layer, "ip", record_number(context.document, "ip", 0.0)),
         context,
     );
     let end = frame_to_seconds(
-        record_f32(layer, "op", record_f32(context.document, "op", 0.0)),
+        record_number(layer, "op", record_number(context.document, "op", 0.0)),
         context,
     );
     target.write().unwrap().node2d_fields_mut().visible = start <= 0.0 && end > 0.0;
-    let duration = ((record_f32(context.document, "op", 0.0)
-        - record_f32(context.document, "ip", 0.0))
-        / record_f32(context.document, "fr", 1.0))
+    let duration = ((record_number(context.document, "op", 0.0)
+        - record_number(context.document, "ip", 0.0))
+        / record_number(context.document, "fr", 1.0))
     .max(0.0);
     let candidates = [
         0.0,
@@ -807,7 +810,7 @@ fn apply_lottie_scalar_property(
     target: &Node2DRef,
     property: Option<&Value>,
     path: Node2DAnimationPath,
-    scale: f32,
+    scale: f64,
     context: &mut LottieImportContext<'_>,
 ) {
     let Some(property) = property else {
@@ -931,7 +934,7 @@ fn apply_lottie_vector_property(
     vector_path: Node2DAnimationPath,
     scalar_paths: &[Node2DAnimationPath],
     components: usize,
-    scale: f32,
+    scale: f64,
     context: &mut LottieImportContext<'_>,
     spatial_tangents: bool,
 ) {
@@ -969,7 +972,7 @@ fn apply_lottie_vector_property(
 // flight-lint: allow(conform-params, contract-vocabulary) D24: caller-owned shared numeric state replaces the retained JS array; Value preserves its animatable union
 pub fn bind_mutable_lottie_numeric_property(
     property: &Value,
-    current: &Arc<RwLock<Vec<f32>>>,
+    current: &Arc<RwLock<Vec<f64>>>,
     convert: &LottieNumericConverter,
     on_change: &LottieRerender,
     context: &mut LottieImportContext<'_>,
@@ -1000,20 +1003,20 @@ pub fn bind_mutable_lottie_numeric_property(
     append_numeric_property_channels(property, components, &target, convert, context, false);
 }
 
-fn frame_to_seconds(frame: f32, context: &LottieImportContext<'_>) -> f32 {
+fn frame_to_seconds(frame: f64, context: &LottieImportContext<'_>) -> f64 {
     return (context.frame_offset + frame * context.frame_scale
-        - record_f32(context.document, "ip", 0.0))
-        / record_f32(context.document, "fr", 1.0);
+        - record_number(context.document, "ip", 0.0))
+        / record_number(context.document, "fr", 1.0);
 }
 
-fn handle_component(value: Option<&Value>, component: usize) -> f32 {
+fn handle_component(value: Option<&Value>, component: usize) -> f64 {
     let Some(value) = value else {
         return 0.0;
     };
     if let Some(values) = value.as_array() {
-        return value_f32(values.get(component).or_else(|| values.first()), 0.0);
+        return value_number(values.get(component).or_else(|| values.first()), 0.0);
     }
-    return value_f32(Some(value), 0.0);
+    return value_number(Some(value), 0.0);
 }
 
 fn handle_varies(value: Option<&Value>, components: usize) -> bool {
@@ -1023,9 +1026,9 @@ fn handle_varies(value: Option<&Value>, components: usize) -> bool {
     if values.len() < 2 {
         return false;
     }
-    let first = value_f32(values.first(), 0.0);
+    let first = value_number(values.first(), 0.0);
     return (1..components).any(|component| {
-        return value_f32(values.get(component).or_else(|| values.first()), 0.0) != first;
+        return value_number(values.get(component).or_else(|| values.first()), 0.0) != first;
     });
 }
 
@@ -1085,11 +1088,11 @@ fn is_separated_position(property: Option<&Value>) -> bool {
 }
 
 fn is_valid_lottie_document(document: &LottieDocument) -> bool {
-    let frame_rate = record_f32(document, "fr", f32::NAN);
-    let first_frame = record_f32(document, "ip", f32::NAN);
-    let last_frame = record_f32(document, "op", f32::NAN);
-    let width = record_f32(document, "w", f32::NAN);
-    let height = record_f32(document, "h", f32::NAN);
+    let frame_rate = record_number(document, "fr", f64::NAN);
+    let first_frame = record_number(document, "ip", f64::NAN);
+    let last_frame = record_number(document, "op", f64::NAN);
+    let width = record_number(document, "w", f64::NAN);
+    let height = record_number(document, "h", f64::NAN);
     return frame_rate.is_finite()
         && frame_rate > 0.0
         && first_frame.is_finite()
@@ -1100,18 +1103,18 @@ fn is_valid_lottie_document(document: &LottieDocument) -> bool {
         && document.get("layers").is_some_and(Value::is_array);
 }
 
-pub fn lottie_clamp(value: f32, minimum: f32, maximum: f32) -> f32 {
+pub fn lottie_clamp(value: f64, minimum: f64, maximum: f64) -> f64 {
     if value.is_nan() || minimum.is_nan() || maximum.is_nan() {
-        return f32::NAN;
+        return f64::NAN;
     }
     return value.max(minimum).min(maximum);
 }
 
-pub fn lottie_degrees_to_radians(value: f32) -> f32 {
-    return value * std::f32::consts::PI / 180.0;
+pub fn lottie_degrees_to_radians(value: f64) -> f64 {
+    return value * std::f64::consts::PI / 180.0;
 }
 
-pub(crate) fn lottie_numeric_json_value(value: Option<&Value>, components: usize) -> Vec<f32> {
+pub(crate) fn lottie_numeric_json_value(value: Option<&Value>, components: usize) -> Vec<f64> {
     let source = value.and_then(Value::as_array);
     let first = source
         .and_then(|source| source.first())
@@ -1136,7 +1139,7 @@ pub(crate) fn lottie_numeric_json_value(value: Option<&Value>, components: usize
 }
 
 // flight-lint: allow(conform-params) D24: caller-owned vector replaces the structured number-array return (user-approved)
-pub fn lottie_numeric_value(out: &mut Vec<f32>, value: &Unknown, components: usize) {
+pub fn lottie_numeric_value(out: &mut Vec<f64>, value: &Unknown, components: usize) {
     out.clear();
     let source = unknown_number_array(value);
     let first = source.first().copied().flatten().unwrap_or(0.0);
@@ -1150,8 +1153,8 @@ pub fn lottie_numeric_value(out: &mut Vec<f32>, value: &Unknown, components: usi
     }));
 }
 
-// flight-lint: allow(conform-array) D9 array negotiation: TS readonly number[] maps to the canonical &[f32] slice lane
-pub fn lottie_rgba(color: &[f32]) -> u32 {
+// flight-lint: allow(conform-array) D9 array negotiation: TS readonly number[] maps to the canonical &[f64] slice lane
+pub fn lottie_rgba(color: &[f64]) -> u32 {
     let component = |index: usize| -> u32 {
         return (lottie_clamp(color.get(index).copied().unwrap_or(0.0), 0.0, 1.0) * 255.0).round()
             as u32;
@@ -1159,8 +1162,8 @@ pub fn lottie_rgba(color: &[f32]) -> u32 {
     return (component(0) << 24) | (component(1) << 16) | (component(2) << 8) | 0xff;
 }
 
-// flight-lint: allow(f64) serde_json exposes authored JSON numbers as f64 before the approved D1 f32 conversion
-fn number_from_json(value: &Value) -> f32 {
+// flight-lint: allow(f64) serde_json exposes authored JSON numbers as f64, held as f64 document numbers (Task Q)
+fn number_from_json(value: &Value) -> f64 {
     return match value {
         Value::Bool(value) => {
             if *value {
@@ -1170,20 +1173,20 @@ fn number_from_json(value: &Value) -> f32 {
             }
         }
         Value::Null => 0.0,
-        Value::Number(value) => value.as_f64().unwrap_or(f64::NAN) as f32,
+        Value::Number(value) => value.as_f64().unwrap_or(f64::NAN),
         Value::String(value) => number_from_text(value),
         Value::Array(values) if values.is_empty() => 0.0,
         Value::Array(values) if values.len() == 1 => number_from_json(&values[0]),
-        _ => f32::NAN,
+        _ => f64::NAN,
     };
 }
 
-fn number_from_text(value: &str) -> f32 {
+fn number_from_text(value: &str) -> f64 {
     let value = value.trim();
     if value.is_empty() {
         return 0.0;
     }
-    return value.parse::<f32>().unwrap_or(f32::NAN);
+    return value.parse::<f64>().unwrap_or(f64::NAN);
 }
 
 fn parse_lottie_document(source: &Value) -> Option<LottieDocument> {
@@ -1203,16 +1206,16 @@ fn record_array<'a>(record: &'a LottieRecord, key: &str) -> &'a [Value] {
         .unwrap_or(&[]);
 }
 
-fn record_f32(record: &LottieRecord, key: &str, fallback: f32) -> f32 {
-    return value_f32(record.get(key), fallback);
-}
-
 fn record_i32(record: &LottieRecord, key: &str, fallback: i32) -> i32 {
     return record
         .get(key)
         .and_then(Value::as_i64)
         .map(|value| value as i32)
         .unwrap_or(fallback);
+}
+
+fn record_number(record: &LottieRecord, key: &str, fallback: f64) -> f64 {
+    return value_number(record.get(key), fallback);
 }
 
 pub fn report_lottie_drop(
@@ -1274,12 +1277,12 @@ pub fn report_lottie_skip(
 }
 
 fn sample_lottie_spatial_bezier(
-    start: &[f32],
-    end: &[f32],
-    outgoing: &[f32],
-    incoming: &[f32],
-    time: f32,
-) -> Vec<f32> {
+    start: &[f64],
+    end: &[f64],
+    outgoing: &[f64],
+    incoming: &[f64],
+    time: f64,
+) -> Vec<f64> {
     let inverse = 1.0 - time;
     return start
         .iter()
@@ -1297,7 +1300,7 @@ fn spatial_tangent(
     value: Option<&Value>,
     components: usize,
     tangent_of: &LottieTangentOf,
-) -> Option<Vec<f32>> {
+) -> Option<Vec<f64>> {
     value?.as_array()?;
     return Some(
         lottie_numeric_json_value(value, components)
@@ -1308,19 +1311,19 @@ fn spatial_tangent(
     );
 }
 
-// flight-lint: allow(f64) Unknown can carry authored JSON and Rust f64 values before the approved D1 f32 conversion
-fn unknown_number(value: &UnknownValue) -> Option<f32> {
+// flight-lint: allow(f64) Unknown can carry authored JSON and Rust f64 values, held as f64 document numbers (Task Q)
+fn unknown_number(value: &UnknownValue) -> Option<f64> {
     if let Some(value) = value.downcast_ref::<f32>() {
-        return Some(*value);
+        return Some(f64::from(*value));
     }
     if let Some(value) = value.downcast_ref::<f64>() {
-        return Some(*value as f32);
+        return Some(*value);
     }
     if let Some(value) = value.downcast_ref::<i32>() {
-        return Some(*value as f32);
+        return Some(*value as f64);
     }
     if let Some(value) = value.downcast_ref::<u32>() {
-        return Some(*value as f32);
+        return Some(*value as f64);
     }
     if let Some(value) = value.downcast_ref::<bool>() {
         return Some(if *value { 1.0 } else { 0.0 });
@@ -1334,15 +1337,18 @@ fn unknown_number(value: &UnknownValue) -> Option<f32> {
     return None;
 }
 
-fn unknown_number_array(value: &Unknown) -> Vec<Option<f32>> {
+fn unknown_number_array(value: &Unknown) -> Vec<Option<f64>> {
     let Some(value) = value else {
         return Vec::new();
     };
     if let Some(values) = value.downcast_ref::<Vec<f32>>() {
+        return values.iter().map(|value| Some(f64::from(*value))).collect();
+    }
+    if let Some(values) = value.downcast_ref::<Vec<f64>>() {
         return values.iter().copied().map(Some).collect();
     }
     if let Some(values) = value.downcast_ref::<Vec<i32>>() {
-        return values.iter().map(|value| Some(*value as f32)).collect();
+        return values.iter().map(|value| Some(*value as f64)).collect();
     }
     if let Some(values) = value.downcast_ref::<Value>().and_then(Value::as_array) {
         return values
@@ -1359,12 +1365,9 @@ fn unknown_number_array(value: &Unknown) -> Vec<Option<f32>> {
     return vec![unknown_number(value)];
 }
 
-// flight-lint: allow(f64) serde_json exposes authored JSON numbers as f64 before the approved D1 f32 conversion
-fn value_f32(value: Option<&Value>, fallback: f32) -> f32 {
-    return value
-        .and_then(Value::as_f64)
-        .map(|value| value as f32)
-        .unwrap_or(fallback);
+// flight-lint: allow(f64) serde_json exposes authored JSON numbers as f64, held as f64 document numbers (Task Q)
+fn value_number(value: Option<&Value>, fallback: f64) -> f64 {
+    return value.and_then(Value::as_f64).unwrap_or(fallback);
 }
 
 fn value_to_lottie_record(value: &Value) -> Option<LottieRecord> {

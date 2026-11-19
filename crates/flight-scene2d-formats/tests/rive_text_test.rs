@@ -499,7 +499,7 @@ mod register_rive_text_handlers {
     }
 }
 
-fn axis_object(tag: u32, value: f32) -> RiveCoreObject {
+fn axis_object(tag: u32, value: f64) -> RiveCoreObject {
     return RiveCoreObject {
         properties: vec![
             RiveProperty {
@@ -551,7 +551,7 @@ fn graph(objects: Vec<RiveCoreObject>, parent_indices: Vec<i32>) -> RiveArtboard
     };
 }
 
-fn object(type_key: u64, properties: &[(u64, f32)]) -> RiveCoreObject {
+fn object(type_key: u64, properties: &[(u64, f64)]) -> RiveCoreObject {
     return RiveCoreObject {
         properties: properties
             .iter()

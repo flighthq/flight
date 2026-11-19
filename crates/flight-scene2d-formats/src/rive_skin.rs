@@ -1,5 +1,7 @@
 //! flight-compiler: target-native
 
+// flight-lint: allow-file(f64) Task Q format numbers: Lottie JSON and SVG text numbers are JS Numbers held in f64, and Rive binary float32 fields widen exactly at decode; easing, text-format, color, skin and diagnostic lanes stay f32
+
 use flight_geometry::{
     Matrix, create_matrix, create_vector2, inverse_matrix_transform_point_xy,
     matrix_transform_point_xy,
@@ -67,7 +69,7 @@ pub fn create_rive_skin_2d(
                     Some(std::collections::HashMap::from([
                         (
                             "index".to_string(),
-                            ImportDiagnosticDetailValue::Number(f32::from(tendon)),
+                            ImportDiagnosticDetailValue::Number((f64::from(tendon)) as f32),
                         ),
                         (
                             "vertex".to_string(),
@@ -84,11 +86,12 @@ pub fn create_rive_skin_2d(
                 bind_space.x,
                 bind_space.y,
             );
+            // Bone-space positions resolve in f64 and narrow into skeleton2d's f32 influence lane.
             influences.extend_from_slice(&[
                 resolved.bone_index as f32,
-                bone_space.x,
-                bone_space.y,
-                f32::from(amount) / RIVE_WEIGHT_SCALE,
+                bone_space.x as f32,
+                bone_space.y as f32,
+                (f64::from(amount) / RIVE_WEIGHT_SCALE) as f32,
             ]);
             written += 1;
         }
@@ -177,7 +180,7 @@ fn read_rive_matrix(
     );
 }
 
-fn read_rive_number(source: &RiveCoreObject, key: u64, fallback: f32) -> f32 {
+fn read_rive_number(source: &RiveCoreObject, key: u64, fallback: f64) -> f64 {
     let Some(property) = source
         .properties
         .iter()
@@ -186,8 +189,8 @@ fn read_rive_number(source: &RiveCoreObject, key: u64, fallback: f32) -> f32 {
         return fallback;
     };
     return match property.value {
-        RiveValue::Uint(value) => value as f32,
-        RiveValue::Color(value) => value as f32,
+        RiveValue::Uint(value) => value as f64,
+        RiveValue::Color(value) => value as f64,
         RiveValue::Double(value) => value,
         _ => fallback,
     };
@@ -262,5 +265,5 @@ const RIVE_WEIGHT_IN_VALUES: u64 = 110;
 const RIVE_WEIGHT_INDICES: u64 = 103;
 const RIVE_WEIGHT_OUT_INDICES: u64 = 113;
 const RIVE_WEIGHT_OUT_VALUES: u64 = 112;
-const RIVE_WEIGHT_SCALE: f32 = 255.0;
+const RIVE_WEIGHT_SCALE: f64 = 255.0;
 const RIVE_WEIGHT_VALUES: u64 = 102;

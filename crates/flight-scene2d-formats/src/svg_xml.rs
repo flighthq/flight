@@ -1,11 +1,13 @@
 //! flight-compiler: target-native
 
+// flight-lint: allow-file(f64) Task Q format numbers: Lottie JSON and SVG text numbers are JS Numbers held in f64, and Rive binary float32 fields widen exactly at decode; easing, text-format, color, skin and diagnostic lanes stay f32
+
 use std::sync::OnceLock;
 
 use flight_xml::XmlElement;
 use regex::Regex;
 
-pub fn parse_svg_coordinate(value: Option<&str>, fallback: f32) -> f32 {
+pub fn parse_svg_coordinate(value: Option<&str>, fallback: f64) -> f64 {
     let Some(value) = value else {
         return fallback;
     };
@@ -19,32 +21,32 @@ pub fn parse_svg_coordinate(value: Option<&str>, fallback: f32) -> f32 {
     };
 }
 
-pub fn parse_svg_css_number(value: Option<&str>, fallback: f32) -> f32 {
+pub fn parse_svg_css_number(value: Option<&str>, fallback: f64) -> f64 {
     return value
         .and_then(parse_svg_float)
         .filter(|number| number.is_finite())
         .unwrap_or(fallback);
 }
 
-fn parse_svg_float(value: &str) -> Option<f32> {
+fn parse_svg_float(value: &str) -> Option<f64> {
     let capture = svg_number_expression().find(value.trim_start())?;
     if capture.start() != 0 {
         return None;
     }
-    return capture.as_str().parse::<f32>().ok();
+    return capture.as_str().parse::<f64>().ok();
 }
 
-pub fn parse_svg_length(value: Option<&str>, fallback: f32) -> f32 {
+pub fn parse_svg_length(value: Option<&str>, fallback: f64) -> f64 {
     return value
         .and_then(parse_svg_float)
         .filter(|number| number.is_finite())
         .unwrap_or(fallback);
 }
 
-pub fn parse_svg_number_list(value: &str) -> Vec<f32> {
+pub fn parse_svg_number_list(value: &str) -> Vec<f64> {
     return svg_number_expression()
         .find_iter(value)
-        .filter_map(|capture| capture.as_str().parse::<f32>().ok())
+        .filter_map(|capture| capture.as_str().parse::<f64>().ok())
         .collect();
 }
 
@@ -63,7 +65,7 @@ pub fn svg_attribute<'a>(element: &'a XmlElement, name: &str) -> Option<&'a str>
         .map(String::as_str);
 }
 
-pub fn svg_first_number(value: Option<&str>, fallback: f32) -> f32 {
+pub fn svg_first_number(value: Option<&str>, fallback: f64) -> f64 {
     return parse_svg_number_list(value.unwrap_or(""))
         .first()
         .copied()
@@ -74,7 +76,7 @@ pub fn svg_local_name(name: &str) -> &str {
     return name.split_once(':').map(|(_, local)| local).unwrap_or(name);
 }
 
-pub fn svg_number_attribute(element: &XmlElement, name: &str, fallback: f32) -> f32 {
+pub fn svg_number_attribute(element: &XmlElement, name: &str, fallback: f64) -> f64 {
     return parse_svg_length(svg_attribute(element, name), fallback);
 }
 
@@ -86,7 +88,7 @@ fn svg_number_expression() -> &'static Regex {
     });
 }
 
-pub fn svg_optional_number_attribute(element: &XmlElement, name: &str) -> Option<f32> {
+pub fn svg_optional_number_attribute(element: &XmlElement, name: &str) -> Option<f64> {
     return parse_svg_float(svg_attribute(element, name)?).filter(|number| number.is_finite());
 }
 

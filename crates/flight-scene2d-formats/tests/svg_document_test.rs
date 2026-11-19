@@ -46,7 +46,7 @@ mod apply_svg_element_appearance {
             true,
         );
         let target = target.read().unwrap();
-        assert_f32_eq(target.node2d_fields().alpha, 0.5);
+        assert_number_eq(target.node2d_fields().alpha, 0.5);
         assert_eq!(target.node2d_fields().name.as_deref(), Some("group"));
     }
 }
@@ -152,10 +152,10 @@ mod report_remaining_unsupported_svg_elements {
     }
 }
 
-fn assert_f32_eq(actual: f32, expected: f32) {
-    // D1 f32 bound (TS: 0)
-    let bound = 4.0 * f32::EPSILON * expected.abs().max(1.0);
-    assert!((actual - expected).abs() <= bound);
+fn assert_number_eq(actual: impl Into<f64>, expected: f64) {
+    // TS: exact (bound 0).
+    let actual: f64 = actual.into();
+    assert_eq!(actual, expected);
 }
 
 fn child_kinds(root: &flight_entity::Ref<flight_scene2d::DisplayObject>) -> Vec<String> {

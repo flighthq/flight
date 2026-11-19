@@ -1,5 +1,7 @@
 //! flight-compiler: target-native
 
+// flight-lint: allow-file(f64) Task Q format numbers: Lottie JSON and SVG text numbers are JS Numbers held in f64, and Rive binary float32 fields widen exactly at decode; easing, text-format, color, skin and diagnostic lanes stay f32
+
 use std::cmp::Ordering;
 use std::collections::HashMap;
 
@@ -27,14 +29,14 @@ use crate::types::{
 pub fn create_svg_gradient_matrix(gradient: &SvgGradient, path: &Path) -> Matrix {
     let mut bounds = create_rectangle(0.0, 0.0, 0.0, 0.0);
     get_path_bounds(path, &mut bounds);
-    let map_x = |value: f32| -> f32 {
+    let map_x = |value: f64| -> f64 {
         if gradient.units == SvgGradientUnits::ObjectBoundingBox {
             return bounds.x + value * bounds.width;
         } else {
             return value;
         }
     };
-    let map_y = |value: f32| -> f32 {
+    let map_y = |value: f64| -> f64 {
         if gradient.units == SvgGradientUnits::ObjectBoundingBox {
             return bounds.y + value * bounds.height;
         } else {

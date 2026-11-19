@@ -14,8 +14,8 @@ use crate::types::{LottieNumericConverter, LottieRerender, LottieShapeItemContex
 
 // flight-lint: allow(f64) Flight path coordinates use the approved D1 f64 path lane
 fn build_ellipse(
-    position: &Arc<RwLock<Vec<f32>>>,
-    size: &Arc<RwLock<Vec<f32>>>,
+    position: &Arc<RwLock<Vec<f64>>>,
+    size: &Arc<RwLock<Vec<f64>>>,
     direction: Option<i32>,
 ) -> Ref<Path> {
     let position = position.read().unwrap();
@@ -23,10 +23,10 @@ fn build_ellipse(
     let mut path = create_path(Some(flight_path::PathWinding::NonZero));
     append_path_ellipse(
         &mut path,
-        f64::from(position[0]),
-        f64::from(position[1]),
-        f64::from(size[0]) / 2.0,
-        f64::from(size[1]) / 2.0,
+        position[0],
+        position[1],
+        size[0] / 2.0,
+        size[1] / 2.0,
     );
     return apply_lottie_shape_direction(Arc::new(RwLock::new(path)), direction);
 }

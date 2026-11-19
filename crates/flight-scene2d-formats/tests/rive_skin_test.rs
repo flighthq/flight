@@ -184,7 +184,7 @@ fn object(type_key: u64, properties: &[(u64, u32)]) -> RiveCoreObject {
             .map(|(key, value)| RiveProperty {
                 key: *key,
                 r#type: RiveFieldType::Double,
-                value: RiveValue::Double(*value as f32),
+                value: RiveValue::Double(*value as f64),
             })
             .collect(),
         type_key,
@@ -204,7 +204,7 @@ fn run_skin(
     );
 }
 
-fn skinned_path(weight: &[(u64, u32)], x: f32, y: f32) -> SkinFixture {
+fn skinned_path(weight: &[(u64, u32)], x: f64, y: f64) -> SkinFixture {
     return SkinFixture {
         artboard: graph(
             vec![
@@ -223,6 +223,6 @@ fn skinned_path(weight: &[(u64, u32)], x: f32, y: f32) -> SkinFixture {
     };
 }
 
-fn weighted_point(kind: RiveWeightedPointKind, vertex: usize, x: f32, y: f32) -> RiveWeightedPoint {
+fn weighted_point(kind: RiveWeightedPointKind, vertex: usize, x: f64, y: f64) -> RiveWeightedPoint {
     return RiveWeightedPoint { kind, vertex, x, y };
 }

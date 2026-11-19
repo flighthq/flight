@@ -75,7 +75,7 @@ pub fn apply_svg_element_appearance(
     {
         let mut target = target.write().unwrap();
         let fields = target.node2d_fields_mut();
-        fields.alpha = style.opacity;
+        fields.alpha = style.opacity as f32;
         fields.visible = style.display != "none"
             && (has_visual_descendants
                 || (style.visibility != "hidden" && style.visibility != "collapse"));

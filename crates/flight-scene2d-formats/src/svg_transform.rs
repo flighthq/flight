@@ -1,5 +1,7 @@
 //! flight-compiler: target-native
 
+// flight-lint: allow-file(f64) Task Q format numbers: Lottie JSON and SVG text numbers are JS Numbers held in f64, and Rive binary float32 fields widen exactly at decode; easing, text-format, color, skin and diagnostic lanes stay f32
+
 use std::sync::OnceLock;
 
 use flight_geometry::contract::{
@@ -15,9 +17,9 @@ use crate::svg_xml::{
 };
 use crate::types::{SvgViewport, SvgViewportOptions};
 
-// flight-lint: allow(conform-array) D9 array negotiation: TS readonly number[] maps to the canonical &[f32] slice lane
+// flight-lint: allow(conform-array) D9 array negotiation: TS readonly number[] maps to the canonical &[f64] slice lane
 pub fn create_svg_view_box_matrix(
-    view_box: &[f32],
+    view_box: &[f64],
     viewport: &SvgViewport,
     preserve_aspect_ratio_value: &str,
 ) -> Matrix {
@@ -182,7 +184,7 @@ pub fn parse_svg_transform(value: Option<&str>) -> Option<Matrix> {
                 .or_else(|| values.first().copied())
                 .unwrap_or(1.0);
         } else if name == "rotate" {
-            let radians = values.first().copied().unwrap_or(0.0) * std::f32::consts::PI / 180.0;
+            let radians = values.first().copied().unwrap_or(0.0) * std::f64::consts::PI / 180.0;
             let cosine = radians.cos();
             let sine = radians.sin();
             let rotation = create_matrix(cosine, sine, -sine, cosine, 0.0, 0.0);
@@ -197,10 +199,10 @@ pub fn parse_svg_transform(value: Option<&str>) -> Option<Matrix> {
             }
         } else if name == "skewX" {
             operation.c =
-                (values.first().copied().unwrap_or(0.0) * std::f32::consts::PI / 180.0).tan();
+                (values.first().copied().unwrap_or(0.0) * std::f64::consts::PI / 180.0).tan();
         } else if name == "skewY" {
             operation.b =
-                (values.first().copied().unwrap_or(0.0) * std::f32::consts::PI / 180.0).tan();
+                (values.first().copied().unwrap_or(0.0) * std::f64::consts::PI / 180.0).tan();
         } else {
             continue;
         }

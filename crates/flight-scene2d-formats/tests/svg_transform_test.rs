@@ -91,6 +91,13 @@ mod parse_svg_transform {
     use super::*;
 
     #[test]
+    fn reads_translation_numbers_as_exact_doubles() {
+        // 0.1 has no exact f32 and f32 spacing at 1e9 is 64: both survive only as doubles.
+        let matrix = parse_svg_transform(Some("translate(0.1 1000000000.5)")).expect("translation");
+        assert_eq!((matrix.tx, matrix.ty), (0.1, 1_000_000_000.5));
+    }
+
+    #[test]
     fn reads_the_transform_functions_and_answers_none_for_an_absent_attribute() {
         expect_matrix(
             &parse_svg_transform(Some("translate(3,4)")).expect("translation"),
@@ -116,7 +123,7 @@ fn element(xml: &str) -> XmlElement {
     return parse_xml_document(xml).expect("valid test XML");
 }
 
-fn expect_matrix(matrix: &Matrix, expected: &[f32]) {
+fn expect_matrix(matrix: &Matrix, expected: &[f64]) {
     assert_eq!(
         [matrix.a, matrix.b, matrix.c, matrix.d, matrix.tx, matrix.ty,],
         expected

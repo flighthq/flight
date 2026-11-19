@@ -1,5 +1,7 @@
 //! flight-compiler: target-native
 
+// flight-lint: allow-file(f64) Task Q format numbers: Lottie JSON and SVG text numbers are JS Numbers held in f64, and Rive binary float32 fields widen exactly at decode; easing, text-format, color, skin and diagnostic lanes stay f32
+
 use std::collections::HashMap;
 use std::sync::{Arc, RwLock};
 
@@ -56,7 +58,7 @@ fn create_svg_image_node(context: &mut SvgElementContext<'_, '_>) -> Option<Node
 
     let (image_width, image_height) = {
         let image = image.read().unwrap();
-        (image.width as f32, image.height as f32)
+        (image.width as f64, image.height as f64)
     };
     let (width, height, x, y, preserve_aspect_ratio) = {
         let element = context.element.read().unwrap();

@@ -164,7 +164,7 @@ pub fn create_rive_path_record(
     }
     return Some(RivePathRecord {
         commands: path.commands,
-        data: data.into_iter().map(|value| value as f32).collect(),
+        data: data,
         path_index: index,
         winding: path.winding,
     });
@@ -291,7 +291,7 @@ fn append_rive_per_corner_rectangle(
         radii.map(|radius| radius.max(0.0).min(limit));
     let right = left + width;
     let bottom = top + height;
-    let kappa = f64::from(CIRCLE_KAPPA);
+    let kappa = CIRCLE_KAPPA;
     append_path_move_to(path, left + top_left, top);
     append_path_line_to(path, right - top_right, top);
     if top_right > 0.0 {
@@ -560,7 +560,7 @@ fn read_rive_double(source: &RiveCoreObject, key: u64, fallback: f64) -> f64 {
         .find(|candidate| candidate.key == key)
         .map_or(fallback, |property| match property.value {
             RiveValue::Uint(value) => return value as f64,
-            RiveValue::Double(value) => return f64::from(value),
+            RiveValue::Double(value) => return value,
             RiveValue::Color(value) => return f64::from(value),
             _ => return fallback,
         });

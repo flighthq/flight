@@ -15,9 +15,9 @@ mod animated_lottie_test_scalar {
         assert_eq!(property.get("a").and_then(Value::as_i64), Some(1));
         let keyframes = property.get("k").and_then(Value::as_array).unwrap();
         assert_eq!(keyframes.len(), 2);
-        assert_f32_eq(keyframes[0].get("s").unwrap().as_f64().unwrap() as f32, 0.0);
-        assert_f32_eq(
-            keyframes[1].get("s").unwrap().as_f64().unwrap() as f32,
+        assert_number_eq(keyframes[0].get("s").unwrap().as_f64().unwrap() as f64, 0.0);
+        assert_number_eq(
+            keyframes[1].get("s").unwrap().as_f64().unwrap() as f64,
             10.0,
         );
     }
@@ -128,26 +128,26 @@ fn add(parent: &Node2DRef, child: &Node2DRef) {
     add_node_child(&parent, &child);
 }
 
-fn assert_f32_eq(actual: f32, expected: f32) {
-    // D1 f32 bound (TS: 0)
-    let bound = 4.0 * f32::EPSILON * expected.abs().max(1.0);
-    assert!((actual - expected).abs() <= bound);
+fn assert_number_eq(actual: impl Into<f64>, expected: f64) {
+    // TS: exact (bound 0).
+    let actual: f64 = actual.into();
+    assert_eq!(actual, expected);
 }
 
-fn assert_f32_slice_eq(actual: &[f32], expected: &[f32]) {
+fn assert_f32_slice_eq(actual: &[f64], expected: &[f64]) {
     assert_eq!(actual.len(), expected.len());
     for (actual, expected) in actual.iter().zip(expected) {
-        assert_f32_eq(*actual, *expected);
+        assert_number_eq(*actual, *expected);
     }
 }
 
 // flight-lint: allow(f64) serde_json exposes the authored fixture number as f64 before the D1 f32 assertion boundary
-fn assert_json_f32_array(actual: &Value, expected: &[f32]) {
+fn assert_json_f32_array(actual: &Value, expected: &[f64]) {
     let actual = actual
         .as_array()
         .unwrap()
         .iter()
-        .map(|value| value.as_f64().unwrap() as f32)
+        .map(|value| value.as_f64().unwrap())
         .collect::<Vec<_>>();
     assert_f32_slice_eq(&actual, expected);
 }

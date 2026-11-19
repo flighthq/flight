@@ -69,8 +69,8 @@ mod create_scene2d_from_lottie_document {
             shape_item_handlers: Some(registry.shape_item_handlers),
         };
         let registry_result = create_scene2d_from_lottie_document(&document, None, Some(&options));
-        assert_f32_eq(registry_result.duration, default_result.duration);
-        assert_f32_eq(registry_result.frame_rate, default_result.frame_rate);
+        assert_number_eq(registry_result.duration, default_result.duration);
+        assert_number_eq(registry_result.frame_rate, default_result.frame_rate);
         assert_eq!(
             registry_result.clip.channels.len(),
             default_result.clip.channels.len()
@@ -95,14 +95,14 @@ mod create_scene2d_from_lottie_document {
         let result = create_scene2d_from_lottie_document(&document, None, None);
         let root: Node2DRef = result.root.clone();
         assert!(find_lottie_test_node_by_name(&root, "shape").is_some());
-        assert_f32_eq(result.clip.duration, 2.0);
+        assert_number_eq(result.clip.duration, 2.0);
     }
 }
 
-fn assert_f32_eq(actual: f32, expected: f32) {
-    // D1 f32 bound (TS: 0)
-    let bound = 4.0 * f32::EPSILON * expected.abs().max(1.0);
-    assert!((actual - expected).abs() <= bound);
+fn assert_number_eq(actual: impl Into<f64>, expected: f64) {
+    // TS: exact (bound 0).
+    let actual: f64 = actual.into();
+    assert_eq!(actual, expected);
 }
 
 fn document_value(document: &LottieDocument) -> Value {

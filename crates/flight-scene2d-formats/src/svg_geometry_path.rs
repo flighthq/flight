@@ -32,59 +32,52 @@ pub fn create_svg_geometry_path(element: &XmlElement, winding: PathWinding) -> O
         if radius_x > 0.0 || radius_y > 0.0 {
             append_path_rounded_rectangle(
                 &mut path,
-                f64::from(x),
-                f64::from(y),
-                f64::from(width),
-                f64::from(height),
-                f64::from(radius_x.max(radius_y).min(width / 2.0).min(height / 2.0)),
+                x,
+                y,
+                width,
+                height,
+                radius_x.max(radius_y).min(width / 2.0).min(height / 2.0),
             );
         } else {
-            append_path_rectangle(
-                &mut path,
-                f64::from(x),
-                f64::from(y),
-                f64::from(width),
-                f64::from(height),
-            );
+            append_path_rectangle(&mut path, x, y, width, height);
         }
         return Some(path);
     }
     if name == "circle" {
         append_path_circle(
             &mut path,
-            f64::from(svg_number_attribute(element, "cx", 0.0)),
-            f64::from(svg_number_attribute(element, "cy", 0.0)),
-            f64::from(svg_number_attribute(element, "r", 0.0).max(0.0)),
+            svg_number_attribute(element, "cx", 0.0),
+            svg_number_attribute(element, "cy", 0.0),
+            svg_number_attribute(element, "r", 0.0).max(0.0),
         );
         return Some(path);
     }
     if name == "ellipse" {
         append_path_ellipse(
             &mut path,
-            f64::from(svg_number_attribute(element, "cx", 0.0)),
-            f64::from(svg_number_attribute(element, "cy", 0.0)),
-            f64::from(svg_number_attribute(element, "rx", 0.0).max(0.0)),
-            f64::from(svg_number_attribute(element, "ry", 0.0).max(0.0)),
+            svg_number_attribute(element, "cx", 0.0),
+            svg_number_attribute(element, "cy", 0.0),
+            svg_number_attribute(element, "rx", 0.0).max(0.0),
+            svg_number_attribute(element, "ry", 0.0).max(0.0),
         );
         return Some(path);
     }
     if name == "line" {
         append_path_move_to(
             &mut path,
-            f64::from(svg_number_attribute(element, "x1", 0.0)),
-            f64::from(svg_number_attribute(element, "y1", 0.0)),
+            svg_number_attribute(element, "x1", 0.0),
+            svg_number_attribute(element, "y1", 0.0),
         );
         append_path_line_to(
             &mut path,
-            f64::from(svg_number_attribute(element, "x2", 0.0)),
-            f64::from(svg_number_attribute(element, "y2", 0.0)),
+            svg_number_attribute(element, "x2", 0.0),
+            svg_number_attribute(element, "y2", 0.0),
         );
         return Some(path);
     }
     if name == "polygon" || name == "polyline" {
         let points = parse_svg_number_list(svg_attribute(element, "points").unwrap_or(""))
             .into_iter()
-            .map(f64::from)
             .collect::<Vec<_>>();
         if name == "polygon" {
             append_path_polygon(&mut path, &points);

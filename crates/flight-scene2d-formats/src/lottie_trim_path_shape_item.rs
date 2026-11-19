@@ -70,11 +70,8 @@ pub fn lottie_trim_path_shape_item_handler(context: &mut LottieShapeItemContext<
                 if length > 0.0 && visible > 0.0 {
                     dash_path(
                         &path,
-                        &[
-                            f64::from(visible) * length,
-                            f64::from(1.0 - visible) * length,
-                        ],
-                        f64::from(start + offset) * length,
+                        &[visible * length, (1.0 - visible) * length],
+                        (start + offset) * length,
                         &mut trimmed,
                         None,
                     );

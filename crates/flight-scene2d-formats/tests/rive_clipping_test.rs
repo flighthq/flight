@@ -40,7 +40,7 @@ mod apply_rive_clipping {
     fn accounts_for_rotation_in_either_chain_not_only_translation() {
         let mut scene = build(vec![
             object(ARTBOARD, &[]),
-            object(SHAPE, &[(ROTATION, std::f32::consts::PI / 2.0)]),
+            object(SHAPE, &[(ROTATION, std::f64::consts::PI / 2.0)]),
             object(CLIPPING_SHAPE, &[(SOURCE_ID, 3.0)]),
             object(SHAPE, &[(X, 10.0)]),
         ]);
@@ -379,7 +379,7 @@ fn square() -> RivePathRecord {
     };
 }
 
-fn rectangle(x: f32, y: f32, width: f32, height: f32) -> RivePathRecord {
+fn rectangle(x: f64, y: f64, width: f64, height: f64) -> RivePathRecord {
     return RivePathRecord {
         commands: vec![
             PathCommand::MOVE_TO as u8,
@@ -394,7 +394,7 @@ fn rectangle(x: f32, y: f32, width: f32, height: f32) -> RivePathRecord {
     };
 }
 
-fn object(type_key: u64, properties: &[(u64, f32)]) -> RiveCoreObject {
+fn object(type_key: u64, properties: &[(u64, f64)]) -> RiveCoreObject {
     return RiveCoreObject {
         properties: properties
             .iter()

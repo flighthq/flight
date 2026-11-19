@@ -1,5 +1,7 @@
 //! flight-compiler: target-native
 
+// flight-lint: allow-file(f64) Task Q format numbers: Lottie JSON and SVG text numbers are JS Numbers held in f64, and Rive binary float32 fields widen exactly at decode; easing, text-format, color, skin and diagnostic lanes stay f32
+
 use std::collections::HashMap;
 use std::sync::Arc;
 
@@ -20,7 +22,7 @@ use crate::rive_import_registry::{
 };
 use crate::types::*;
 
-// flight-lint: allow(f64) Flight Path.data is the canonical f64 geometry lane; Rive's f32 component transforms are losslessly promoted when writing it
+// flight-lint: allow(f64) Flight Path.data is the canonical f64 geometry lane; Rive float32 wire values widen exactly at decode (Task Q)
 fn create_rive_clip_path(
     path_boolean_kernel: &PathBooleanKernel,
     paths: &[RivePathRecord],
@@ -185,7 +187,7 @@ pub fn apply_rive_clipping(
             );
             detail.insert(
                 "source".to_string(),
-                ImportDiagnosticDetailValue::Number(source_number),
+                ImportDiagnosticDetailValue::Number(source_number as f32),
             );
             report_import_diagnostic(
                 diagnostics.as_deref_mut(),
@@ -255,7 +257,7 @@ fn read_rive_index(source: &RiveCoreObject, key: u64) -> Option<usize> {
     };
 }
 
-fn read_rive_number(source: &RiveCoreObject, key: u64, fallback: f32) -> f32 {
+fn read_rive_number(source: &RiveCoreObject, key: u64, fallback: f64) -> f64 {
     let Some(property) = source
         .properties
         .iter()
@@ -264,9 +266,9 @@ fn read_rive_number(source: &RiveCoreObject, key: u64, fallback: f32) -> f32 {
         return fallback;
     };
     return match property.value {
-        RiveValue::Uint(value) => value as f32,
+        RiveValue::Uint(value) => value as f64,
         RiveValue::Double(value) => value,
-        RiveValue::Color(value) => value as f32,
+        RiveValue::Color(value) => value as f64,
         _ => fallback,
     };
 }

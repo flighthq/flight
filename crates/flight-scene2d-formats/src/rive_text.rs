@@ -1,5 +1,7 @@
 //! flight-compiler: target-native
 
+// flight-lint: allow-file(f64) Task Q format numbers: Lottie JSON and SVG text numbers are JS Numbers held in f64, and Rive binary float32 fields widen exactly at decode; easing, text-format, color, skin and diagnostic lanes stay f32
+
 use std::collections::{HashMap, HashSet};
 use std::sync::{Arc, RwLock};
 
@@ -43,7 +45,7 @@ pub fn create_rive_rich_text(
             Some(HashMap::from([
                 (
                     "alignValue".to_string(),
-                    ImportDiagnosticDetailValue::Number(align),
+                    ImportDiagnosticDetailValue::Number(align as f32),
                 ),
                 (
                     "substitutedAs".to_string(),
@@ -108,7 +110,7 @@ pub fn create_rive_rich_text(
 fn create_rive_text_format(
     artboard: &RiveArtboardGraph,
     style_index: i32,
-    align: f32,
+    align: f64,
     font_names: &[String],
     mut diagnostics: Option<&mut Vec<ImportDiagnostic>>,
     unresolved_styles: &mut HashSet<i32>,
@@ -140,13 +142,10 @@ fn create_rive_text_format(
         }
         return Arc::new(RwLock::new(format));
     };
-    format.leading = Some(read_rive_number(style, RIVE_STYLE_LINE_HEIGHT, -1.0));
-    format.letter_spacing = Some(read_rive_number(style, RIVE_STYLE_LETTER_SPACING, 0.0));
-    format.size = Some(read_rive_number(
-        style,
-        RIVE_STYLE_FONT_SIZE,
-        RIVE_DEFAULT_FONT_SIZE,
-    ));
+    format.leading = Some(read_rive_number(style, RIVE_STYLE_LINE_HEIGHT, -1.0) as f32);
+    format.letter_spacing = Some(read_rive_number(style, RIVE_STYLE_LETTER_SPACING, 0.0) as f32);
+    format.size =
+        Some(read_rive_number(style, RIVE_STYLE_FONT_SIZE, RIVE_DEFAULT_FONT_SIZE) as f32);
     let font_asset = read_rive_number(style, RIVE_STYLE_FONT_ASSET_ID, RIVE_MISSING_ASSET_ID);
     if let Some(name) = usize_from_rive_number(font_asset)
         .and_then(|index| font_names.get(index))
@@ -192,15 +191,15 @@ fn is_rive_descendant_of(artboard: &RiveArtboardGraph, index: usize, ancestor: u
     return false;
 }
 
-fn read_rive_number(source: &RiveCoreObject, key: u64, fallback: f32) -> f32 {
+fn read_rive_number(source: &RiveCoreObject, key: u64, fallback: f64) -> f64 {
     return source
         .properties
         .iter()
         .find(|candidate| candidate.key == key)
         .map_or(fallback, |property| match property.value {
-            RiveValue::Uint(value) => return value as f32,
+            RiveValue::Uint(value) => return value as f64,
             RiveValue::Double(value) => return value,
-            RiveValue::Color(value) => return value as f32,
+            RiveValue::Color(value) => return value as f64,
             _ => return fallback,
         });
 }
@@ -216,7 +215,7 @@ fn read_rive_style_axes(artboard: &RiveArtboardGraph, style_index: i32) -> Vec<F
         })
         .map(|index| FontVariation {
             axis: to_rive_open_type_tag(read_rive_u32(&artboard.objects[index], RIVE_AXIS_TAG, 0)),
-            value: read_rive_number(&artboard.objects[index], RIVE_AXIS_VALUE, 0.0),
+            value: (read_rive_number(&artboard.objects[index], RIVE_AXIS_VALUE, 0.0)) as f32,
         })
         .collect();
 }
@@ -302,7 +301,7 @@ fn to_rive_open_type_tag(packed: u32) -> String {
     .collect();
 }
 
-fn usize_from_rive_number(value: f32) -> Option<usize> {
+fn usize_from_rive_number(value: f64) -> Option<usize> {
     if !value.is_finite() || value < 0.0 || value.fract() != 0.0 {
         return None;
     }
@@ -327,9 +326,9 @@ const RIVE_AXIS_TAG: u64 = 289;
 const RIVE_STYLE_LINE_HEIGHT: u64 = 370;
 const RIVE_STYLE_LETTER_SPACING: u64 = 390;
 const RIVE_SOLID_COLOR_VALUE: u64 = 37;
-const RIVE_ALIGN_LEFT: f32 = 0.0;
-const RIVE_ALIGN_RIGHT: f32 = 1.0;
-const RIVE_ALIGN_CENTER: f32 = 2.0;
-const RIVE_DEFAULT_FONT_SIZE: f32 = 12.0;
-const RIVE_MISSING_ASSET_ID: f32 = -1.0;
+const RIVE_ALIGN_LEFT: f64 = 0.0;
+const RIVE_ALIGN_RIGHT: f64 = 1.0;
+const RIVE_ALIGN_CENTER: f64 = 2.0;
+const RIVE_DEFAULT_FONT_SIZE: f64 = 12.0;
+const RIVE_MISSING_ASSET_ID: f64 = -1.0;
 const RIVE_DEFAULT_TEXT_COLOR: u32 = 0x000000ff;

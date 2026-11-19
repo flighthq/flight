@@ -1,5 +1,7 @@
 //! flight-compiler: target-native
 
+// flight-lint: allow-file(f64) Task Q format numbers: Lottie JSON and SVG text numbers are JS Numbers held in f64, and Rive binary float32 fields widen exactly at decode; easing, text-format, color, skin and diagnostic lanes stay f32
+
 use std::collections::HashMap;
 
 use flight_entity::{Uint8Array, allocate_entity};
@@ -199,7 +201,7 @@ fn apply_rive_transform(target: &Node2DRef, source: &RiveCoreObject) {
     fields.rotation = read_rive_number(source, RIVE_ROTATION, 0.0) * RAD_TO_DEG;
     fields.scale_x = read_rive_number(source, RIVE_SCALE_X, 1.0);
     fields.scale_y = read_rive_number(source, RIVE_SCALE_Y, 1.0);
-    fields.alpha = read_rive_number(source, RIVE_OPACITY, 1.0);
+    fields.alpha = (read_rive_number(source, RIVE_OPACITY, 1.0)) as f32;
 }
 
 fn find_rive_display_parent(
@@ -261,7 +263,7 @@ fn is_rive_type(type_key: u64, ancestor: i32) -> bool {
         .is_ok_and(|type_key| is_rive_core_type_derived_from(type_key, ancestor));
 }
 
-fn read_rive_number(source: &RiveCoreObject, key: u64, fallback: f32) -> f32 {
+fn read_rive_number(source: &RiveCoreObject, key: u64, fallback: f64) -> f64 {
     let Some(property) = source
         .properties
         .iter()
@@ -270,9 +272,9 @@ fn read_rive_number(source: &RiveCoreObject, key: u64, fallback: f32) -> f32 {
         return fallback;
     };
     return match property.value {
-        RiveValue::Uint(value) => value as f32,
+        RiveValue::Uint(value) => value as f64,
         RiveValue::Double(value) => value,
-        RiveValue::Color(value) => value as f32,
+        RiveValue::Color(value) => value as f64,
         _ => fallback,
     };
 }
@@ -308,4 +310,4 @@ const RIVE_SCALE_X: u64 = 16;
 const RIVE_SCALE_Y: u64 = 17;
 const RIVE_OPACITY: u64 = 18;
 const RIVE_BLEND_MODE: u64 = 23;
-const RIVE_BLEND_SRC_OVER: f32 = 3.0;
+const RIVE_BLEND_SRC_OVER: f64 = 3.0;

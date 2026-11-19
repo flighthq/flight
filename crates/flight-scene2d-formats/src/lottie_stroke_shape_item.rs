@@ -41,7 +41,7 @@ pub fn lottie_stroke_shape_item_handler(context: &mut LottieShapeItemContext<'_,
                     .item
                     .get("ml")
                     .and_then(Value::as_f64)
-                    .unwrap_or(4.0) as f32
+                    .unwrap_or(4.0)
             }),
     ]));
     let dash_entries = context
@@ -60,10 +60,9 @@ pub fn lottie_stroke_shape_item_handler(context: &mut LottieShapeItemContext<'_,
             .iter()
             .filter(|entry| entry.get("n").and_then(Value::as_str) != Some("o"))
             .map(|entry| {
-                return f64::from(
-                    lottie_numeric_json_value(initial_lottie_value(entry.get("v")).as_ref(), 1)[0]
-                        .max(0.0),
-                );
+                return lottie_numeric_json_value(initial_lottie_value(entry.get("v")).as_ref(), 1)
+                    [0]
+                .max(0.0);
             })
             .collect::<Vec<_>>()
     };
@@ -79,9 +78,8 @@ pub fn lottie_stroke_shape_item_handler(context: &mut LottieShapeItemContext<'_,
             .iter()
             .find(|entry| entry.get("n").and_then(Value::as_str) == Some("o"))
             .map(|entry| {
-                return f64::from(
-                    lottie_numeric_json_value(initial_lottie_value(entry.get("v")).as_ref(), 1)[0],
-                );
+                return lottie_numeric_json_value(initial_lottie_value(entry.get("v")).as_ref(), 1)
+                    [0];
             })
             .unwrap_or(0.0)
     };
@@ -117,14 +115,14 @@ pub fn lottie_stroke_shape_item_handler(context: &mut LottieShapeItemContext<'_,
     let painter: LottieShapePainter = Arc::new(move |shape, paths| {
         append_shape_line_style(
             shape,
-            Some(f64::from(paint_width.read().unwrap()[0])),
+            Some(paint_width.read().unwrap()[0]),
             lottie_rgba(&paint_color.read().unwrap()),
-            Some(f64::from(paint_opacity.read().unwrap()[0])),
+            Some(paint_opacity.read().unwrap()[0]),
             Some(false),
             Some(LineScaleMode::Normal),
             Some(caps),
             Some(joints),
-            Some(f64::from(paint_miter_limit.read().unwrap()[0])),
+            Some(paint_miter_limit.read().unwrap()[0]),
         );
         append_lottie_dashed_shape_paths(paths, shape, None, &dash, dash_offset);
     });

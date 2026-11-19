@@ -1,5 +1,7 @@
 //! flight-compiler: target-native
 
+// flight-lint: allow-file(f64) Task Q format numbers: Lottie JSON and SVG text numbers are JS Numbers held in f64, and Rive binary float32 fields widen exactly at decode; easing, text-format, color, skin and diagnostic lanes stay f32
+
 use std::sync::{Arc, RwLock};
 
 use flight_entity::Ref;
@@ -17,17 +19,17 @@ use crate::types::{LottieNumericConverter, LottieRerender, LottieShapeItemContex
 // flight-lint: allow(f64) polystar trigonometry produces coordinates in the approved D1 f64 path lane
 fn create_lottie_polystar_path(
     kind: i32,
-    center: &[f32],
-    point_count: f32,
-    outer: f32,
-    inner: f32,
-    rotation_degrees: f32,
-    outer_roundness: f32,
-    inner_roundness: f32,
+    center: &[f64],
+    point_count: f64,
+    outer: f64,
+    inner: f64,
+    rotation_degrees: f64,
+    outer_roundness: f64,
+    inner_roundness: f64,
 ) -> Ref<Path> {
     let mut path = create_path(Some(flight_path::PathWinding::NonZero));
     let points = point_count.round().max(2.0) as usize;
-    let rotation = f64::from(rotation_degrees - 90.0).to_radians();
+    let rotation = (rotation_degrees - 90.0).to_radians();
     let count = if kind == 1 { points * 2 } else { points };
     let step = std::f64::consts::TAU / count as f64;
     let handle_scale = (4.0 / 3.0) * (step / 4.0).tan();
@@ -36,17 +38,17 @@ fn create_lottie_polystar_path(
     let mut vertices = Vec::with_capacity(count * 2);
     for index in 0..count {
         let is_inner = kind == 1 && index % 2 == 1;
-        let radius = f64::from(if is_inner { inner } else { outer });
-        let roundness = f64::from(if is_inner {
+        let radius = if is_inner { inner } else { outer };
+        let roundness = if is_inner {
             inner_roundness
         } else {
             outer_roundness
-        });
+        };
         let angle = rotation + index as f64 * step;
         angles.push(angle);
         handles.push(radius * handle_scale * roundness / 100.0);
-        vertices.push(f64::from(center[0]) + angle.cos() * radius);
-        vertices.push(f64::from(center[1]) + angle.sin() * radius);
+        vertices.push(center[0] + angle.cos() * radius);
+        vertices.push(center[1] + angle.sin() * radius);
     }
     if handles.iter().all(|handle| *handle == 0.0) {
         append_path_polygon(&mut path, &vertices);
@@ -104,13 +106,13 @@ pub fn lottie_polystar_shape_item_handler(context: &mut LottieShapeItemContext<'
         .get("d")
         .and_then(Value::as_i64)
         .map(|value| value as i32);
-    let build = |center: &Arc<RwLock<Vec<f32>>>,
-                 points: &Arc<RwLock<Vec<f32>>>,
-                 outer: &Arc<RwLock<Vec<f32>>>,
-                 inner: &Arc<RwLock<Vec<f32>>>,
-                 rotation: &Arc<RwLock<Vec<f32>>>,
-                 outer_roundness: &Arc<RwLock<Vec<f32>>>,
-                 inner_roundness: &Arc<RwLock<Vec<f32>>>| {
+    let build = |center: &Arc<RwLock<Vec<f64>>>,
+                 points: &Arc<RwLock<Vec<f64>>>,
+                 outer: &Arc<RwLock<Vec<f64>>>,
+                 inner: &Arc<RwLock<Vec<f64>>>,
+                 rotation: &Arc<RwLock<Vec<f64>>>,
+                 outer_roundness: &Arc<RwLock<Vec<f64>>>,
+                 inner_roundness: &Arc<RwLock<Vec<f64>>>| {
         let path = create_lottie_polystar_path(
             kind,
             &center.read().unwrap(),

@@ -1,5 +1,7 @@
 //! flight-compiler: target-native
 
+// flight-lint: allow-file(f64) Task Q format numbers: Lottie JSON and SVG text numbers are JS Numbers held in f64, and Rive binary float32 fields widen exactly at decode; easing, text-format, color, skin and diagnostic lanes stay f32
+
 use std::collections::{BTreeMap, HashMap};
 use std::sync::Arc;
 
@@ -46,12 +48,12 @@ struct RiveLayoutContext<'a> {
 }
 
 struct RiveSizingValues {
-    fractional_height: f32,
-    fractional_width: f32,
-    height: f32,
+    fractional_height: f64,
+    fractional_width: f64,
+    height: f64,
     height_scale: i32,
     height_units: i32,
-    width: f32,
+    width: f64,
     width_scale: i32,
     width_units: i32,
 }
@@ -62,7 +64,7 @@ fn create_rive_flex_container_style(
     mut diagnostics: Option<&mut Vec<ImportDiagnostic>>,
 ) -> FlexLayoutContainerStyle {
     let raw_direction =
-        read_rive_number(style, RIVE_FLEX_DIRECTION, RIVE_FLEX_DIRECTION_ROW as f32);
+        read_rive_number(style, RIVE_FLEX_DIRECTION, RIVE_FLEX_DIRECTION_ROW as f64);
     let direction = map_rive_flex_direction(
         raw_direction as i32,
         context.rtl,
@@ -293,14 +295,14 @@ fn create_rive_layout_context<'a>(
     child_count: usize,
 ) -> RiveLayoutContext<'a> {
     let raw_direction =
-        read_rive_number(style, RIVE_DIRECTION, RIVE_DIRECTION_INHERIT as f32) as i32;
+        read_rive_number(style, RIVE_DIRECTION, RIVE_DIRECTION_INHERIT as f64) as i32;
     let rtl = raw_direction == RIVE_DIRECTION_RTL
         || (raw_direction == RIVE_DIRECTION_INHERIT && inherited_rtl);
     let flex_direction =
-        read_rive_number(style, RIVE_FLEX_DIRECTION, RIVE_FLEX_DIRECTION_ROW as f32) as i32;
+        read_rive_number(style, RIVE_FLEX_DIRECTION, RIVE_FLEX_DIRECTION_ROW as f64) as i32;
     return RiveLayoutContext {
         child_count,
-        layout_type: read_rive_number(style, RIVE_LAYOUT_TYPE, RIVE_LAYOUT_TYPE_FLEX as f32) as i32,
+        layout_type: read_rive_number(style, RIVE_LAYOUT_TYPE, RIVE_LAYOUT_TYPE_FLEX as f64) as i32,
         row: matches!(
             flex_direction,
             RIVE_FLEX_DIRECTION_ROW | RIVE_FLEX_DIRECTION_ROW_REVERSE
@@ -537,7 +539,7 @@ fn append_rive_layout_provider(
 fn apply_rive_insets(
     style: &RiveCoreObject,
     rtl: bool,
-) -> (Option<f32>, Option<f32>, Option<f32>, Option<f32>) {
+) -> (Option<f64>, Option<f64>, Option<f64>, Option<f64>) {
     let logical_left = read_rive_point_length(style, RIVE_PADDING_LEFT, RIVE_PADDING_LEFT_UNITS)
         + read_rive_point_length(style, RIVE_BORDER_LEFT, RIVE_BORDER_LEFT_UNITS);
     let logical_right = read_rive_point_length(style, RIVE_PADDING_RIGHT, RIVE_PADDING_RIGHT_UNITS)
@@ -665,7 +667,7 @@ fn find_rive_layout_parent(
     return RIVE_NO_PARENT;
 }
 
-fn finite_non_negative(value: f32) -> f32 {
+fn finite_non_negative(value: f64) -> f64 {
     return if value.is_finite() && value > 0.0 {
         value
     } else {
@@ -806,7 +808,7 @@ fn map_rive_grid_track(
     diagnostics: Option<&mut Vec<ImportDiagnostic>>,
 ) -> GridLayoutTrack {
     let track_type =
-        read_rive_number(source, RIVE_GRID_TRACK_TYPE, RIVE_GRID_TRACK_AUTO as f32) as i32;
+        read_rive_number(source, RIVE_GRID_TRACK_TYPE, RIVE_GRID_TRACK_AUTO as f64) as i32;
     let value = finite_non_negative(read_rive_number(source, RIVE_GRID_TRACK_VALUE, 0.0));
     if track_type == RIVE_GRID_TRACK_POINTS {
         return GridLayoutTrack::Fixed { size: value };
@@ -831,7 +833,7 @@ fn map_rive_grid_track(
                 ),
                 (
                     "trackValue".to_string(),
-                    ImportDiagnosticDetailValue::Number(value),
+                    ImportDiagnosticDetailValue::Number(value as f32),
                 ),
             ])),
         );
@@ -839,7 +841,7 @@ fn map_rive_grid_track(
     return GridLayoutTrack::Auto;
 }
 
-fn positive_integer(value: f32) -> usize {
+fn positive_integer(value: f64) -> usize {
     return if value.is_finite() && value > 0.0 && value.fract() == 0.0 {
         value as usize
     } else {
@@ -848,7 +850,7 @@ fn positive_integer(value: f32) -> usize {
 }
 
 fn read_rive_flex_basis(style: &RiveCoreObject) -> FlexBasis {
-    let units = read_rive_number(style, RIVE_FLEX_BASIS_UNITS, RIVE_UNIT_AUTO as f32) as i32;
+    let units = read_rive_number(style, RIVE_FLEX_BASIS_UNITS, RIVE_UNIT_AUTO as f64) as i32;
     return if units == RIVE_UNIT_POINT {
         FlexBasis::Fixed(finite_non_negative(read_rive_number(
             style,
@@ -872,7 +874,7 @@ fn read_rive_layout_name(source: &RiveCoreObject) -> String {
         .unwrap_or_default();
 }
 
-fn read_rive_number(source: &RiveCoreObject, key: u64, fallback: f32) -> f32 {
+fn read_rive_number(source: &RiveCoreObject, key: u64, fallback: f64) -> f64 {
     return source
         .properties
         .iter()
@@ -882,9 +884,9 @@ fn read_rive_number(source: &RiveCoreObject, key: u64, fallback: f32) -> f32 {
         });
 }
 
-fn read_rive_point_length(source: &RiveCoreObject, value_key: u64, units_key: u64) -> f32 {
+fn read_rive_point_length(source: &RiveCoreObject, value_key: u64, units_key: u64) -> f64 {
     let value = read_rive_number(source, value_key, 0.0);
-    let units = read_rive_number(source, units_key, RIVE_UNIT_UNDEFINED as f32) as i32;
+    let units = read_rive_number(source, units_key, RIVE_UNIT_UNDEFINED as f64) as i32;
     return if units == RIVE_UNIT_POINT {
         finite_non_negative(value)
     } else {
@@ -892,11 +894,11 @@ fn read_rive_point_length(source: &RiveCoreObject, value_key: u64, units_key: u6
     };
 }
 
-fn read_rive_property_number(property: &RiveProperty, fallback: f32) -> f32 {
+fn read_rive_property_number(property: &RiveProperty, fallback: f64) -> f64 {
     return match property.value {
-        RiveValue::Uint(value) => value as f32,
+        RiveValue::Uint(value) => value as f64,
         RiveValue::Double(value) => value,
-        RiveValue::Color(value) => value as f32,
+        RiveValue::Color(value) => value as f64,
         _ => fallback,
     };
 }
@@ -915,12 +917,12 @@ fn read_rive_sizing_values(
             ),
             fractional_width: read_rive_number(source, RIVE_LAYOUT_COMPONENT_FRACTIONAL_WIDTH, 1.0),
             height: read_rive_number(source, RIVE_HEIGHT, 0.0),
-            height_scale: read_rive_number(style, RIVE_HEIGHT_SCALE, RIVE_SCALE_FIXED as f32)
+            height_scale: read_rive_number(style, RIVE_HEIGHT_SCALE, RIVE_SCALE_FIXED as f64)
                 as i32,
-            height_units: read_rive_number(style, RIVE_HEIGHT_UNITS, RIVE_UNIT_POINT as f32) as i32,
+            height_units: read_rive_number(style, RIVE_HEIGHT_UNITS, RIVE_UNIT_POINT as f64) as i32,
             width: read_rive_number(source, RIVE_WIDTH, 0.0),
-            width_scale: read_rive_number(style, RIVE_WIDTH_SCALE, RIVE_SCALE_FIXED as f32) as i32,
-            width_units: read_rive_number(style, RIVE_WIDTH_UNITS, RIVE_UNIT_POINT as f32) as i32,
+            width_scale: read_rive_number(style, RIVE_WIDTH_SCALE, RIVE_SCALE_FIXED as f64) as i32,
+            width_units: read_rive_number(style, RIVE_WIDTH_UNITS, RIVE_UNIT_POINT as f64) as i32,
         },
         RiveLayoutProviderType::Nested => RiveSizingValues {
             fractional_height: 1.0,
@@ -929,26 +931,26 @@ fn read_rive_sizing_values(
             height_scale: read_rive_number(
                 source,
                 RIVE_NESTED_HEIGHT_SCALE,
-                RIVE_SCALE_FIXED as f32,
+                RIVE_SCALE_FIXED as f64,
             ) as i32,
-            height_units: read_rive_number(source, RIVE_NESTED_HEIGHT_UNITS, RIVE_UNIT_POINT as f32)
+            height_units: read_rive_number(source, RIVE_NESTED_HEIGHT_UNITS, RIVE_UNIT_POINT as f64)
                 as i32,
             width: read_rive_number(source, RIVE_NESTED_WIDTH, -1.0),
-            width_scale: read_rive_number(source, RIVE_NESTED_WIDTH_SCALE, RIVE_SCALE_FIXED as f32)
+            width_scale: read_rive_number(source, RIVE_NESTED_WIDTH_SCALE, RIVE_SCALE_FIXED as f64)
                 as i32,
-            width_units: read_rive_number(source, RIVE_NESTED_WIDTH_UNITS, RIVE_UNIT_POINT as f32)
+            width_units: read_rive_number(source, RIVE_NESTED_WIDTH_UNITS, RIVE_UNIT_POINT as f64)
                 as i32,
         },
         RiveLayoutProviderType::Participant => RiveSizingValues {
             fractional_height: read_rive_number(style, RIVE_PARTICIPANT_FRACTIONAL_HEIGHT, 1.0),
             fractional_width: read_rive_number(style, RIVE_PARTICIPANT_FRACTIONAL_WIDTH, 1.0),
             height: read_rive_number(style, RIVE_PARTICIPANT_HEIGHT, 0.0),
-            height_scale: read_rive_number(style, RIVE_HEIGHT_SCALE, RIVE_SCALE_FIXED as f32)
+            height_scale: read_rive_number(style, RIVE_HEIGHT_SCALE, RIVE_SCALE_FIXED as f64)
                 as i32,
-            height_units: read_rive_number(style, RIVE_HEIGHT_UNITS, RIVE_UNIT_POINT as f32) as i32,
+            height_units: read_rive_number(style, RIVE_HEIGHT_UNITS, RIVE_UNIT_POINT as f64) as i32,
             width: read_rive_number(style, RIVE_PARTICIPANT_WIDTH, 0.0),
-            width_scale: read_rive_number(style, RIVE_WIDTH_SCALE, RIVE_SCALE_FIXED as f32) as i32,
-            width_units: read_rive_number(style, RIVE_WIDTH_UNITS, RIVE_UNIT_POINT as f32) as i32,
+            width_scale: read_rive_number(style, RIVE_WIDTH_SCALE, RIVE_SCALE_FIXED as f64) as i32,
+            width_units: read_rive_number(style, RIVE_WIDTH_UNITS, RIVE_UNIT_POINT as f64) as i32,
         },
     };
 }

@@ -49,7 +49,7 @@ pub fn lottie_text_layer_handler(context: &mut LottieLayerContext<'_, '_>) {
         .map(Vec::as_slice)
         .unwrap_or(&[]);
     let component = |index: usize| {
-        return color.get(index).and_then(Value::as_f64).unwrap_or(0.0) as f32;
+        return color.get(index).and_then(Value::as_f64).unwrap_or(0.0);
     };
     let size = lottie_text_number(first, "s").unwrap_or(16.0);
     let text_format = Arc::new(RwLock::new(TextFormat {
@@ -58,11 +58,17 @@ pub fn lottie_text_layer_handler(context: &mut LottieLayerContext<'_, '_>) {
             Some(2) => TextFormatAlign::Center,
             _ => TextFormatAlign::Left,
         }),
-        color: Some(pack_color(component(0), component(1), component(2), 1.0)),
+        color: Some(pack_color(
+            component(0) as f32,
+            component(1) as f32,
+            component(2) as f32,
+            1.0,
+        )),
         font: first.get("f").and_then(Value::as_str).map(str::to_string),
-        leading: lottie_text_number(first, "lh"),
-        letter_spacing: lottie_text_number(first, "tr"),
-        size: lottie_text_number(first, "s"),
+        // Font metrics narrow into flight-textformat's f32 lane.
+        leading: lottie_text_number(first, "lh").map(|value| value as f32),
+        letter_spacing: lottie_text_number(first, "tr").map(|value| value as f32),
+        size: lottie_text_number(first, "s").map(|value| value as f32),
         ..TextFormat::default()
     }));
     let width = context
@@ -70,7 +76,7 @@ pub fn lottie_text_layer_handler(context: &mut LottieLayerContext<'_, '_>) {
         .document
         .get("w")
         .and_then(Value::as_f64)
-        .unwrap_or(0.0) as f32;
+        .unwrap_or(0.0);
     let label = create_text_label(None);
     {
         let mut guard = label.write().unwrap();
@@ -89,10 +95,7 @@ pub fn lottie_text_layer_handler(context: &mut LottieLayerContext<'_, '_>) {
     add_node_child(&parent, &child);
 }
 
-// flight-lint: allow(f64) serde_json exposes authored Lottie text numbers as f64 before the approved D1 f32 conversion
-fn lottie_text_number(document: &Map<String, Value>, key: &str) -> Option<f32> {
-    return document
-        .get(key)
-        .and_then(Value::as_f64)
-        .map(|value| value as f32);
+// flight-lint: allow(f64) serde_json exposes authored Lottie text numbers as f64, held as f64 document numbers (Task Q)
+fn lottie_text_number(document: &Map<String, Value>, key: &str) -> Option<f64> {
+    return document.get(key).and_then(Value::as_f64);
 }

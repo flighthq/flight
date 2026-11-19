@@ -16,7 +16,7 @@ use flight_text::contract::{RICH_TEXT_KIND, RichText, TEXT_LABEL_KIND, TextLabel
 use flight_texture::contract::{TextureSourceRef, get_texture_source};
 
 use crate::flight_scene2d_formats_svg_document_conformance_test::{
-    assert_f32_eq, assert_rectangle, child, clip, clip_rect, has_diagnostic, image_options,
+    assert_number_eq, assert_rectangle, child, clip, clip_rect, has_diagnostic, image_options,
     node_appearance, node_fields, shape_commands, shape_fill_color, shape_local_x, shape_winding,
 };
 
@@ -44,8 +44,8 @@ mod create_scene2d_from_svg_document {
         let bitmap = child(&root, 0);
         assert_rectangle(&clip_rect(&bitmap), 0.0, 0.0, 10.0, 10.0);
         let transform = node_transform_full(&bitmap);
-        assert_f32_eq(transform.0 * clip_rect(&bitmap).width, 100.0);
-        assert_f32_eq(transform.1 * clip_rect(&bitmap).height, 100.0);
+        assert_number_eq(transform.0 * clip_rect(&bitmap).width, 100.0);
+        assert_number_eq(transform.1 * clip_rect(&bitmap).height, 100.0);
         assert_rectangle(&clip_rect(&child(&root, 1)), 0.0, 0.0, 100.0, 100.0);
         assert_rectangle(&clip_rect(&child(&root, 2)), 0.0, 0.0, 100.0, 100.0);
         assert!(clip(&child(&root, 3)).is_none());
@@ -70,9 +70,9 @@ mod create_scene2d_from_svg_document {
             Some(&options),
         );
         let shape = child(&root, 0);
-        assert_f32_eq(node_fields(&shape).x + shape_local_x(&shape), 13.0);
+        assert_number_eq(node_fields(&shape).x + shape_local_x(&shape), 13.0);
         for index in 1..4 {
-            assert_f32_eq(node_fields(&child(&root, index)).x, 13.0);
+            assert_number_eq(node_fields(&child(&root, index)).x, 13.0);
         }
     }
 
@@ -92,8 +92,8 @@ mod create_scene2d_from_svg_document {
         let root = import(
             "<svg><text x=\"3\" y=\"20\" font-size=\"10\" transform=\"translate(10 5)\">Hello</text></svg>",
         );
-        assert_f32_eq(node_fields(&child(&root, 0)).x, 13.0);
-        assert_f32_eq(node_fields(&child(&root, 0)).y, 15.0);
+        assert_number_eq(node_fields(&child(&root, 0)).x, 13.0);
+        assert_number_eq(node_fields(&child(&root, 0)).y, 15.0);
     }
 
     #[test]
@@ -193,9 +193,9 @@ mod create_scene2d_from_svg_document {
         );
         let root_node: NodeRef = root.clone();
         let transform = node_transform_full(&root_node);
-        assert_f32_eq(transform.0, 2.0);
-        assert_f32_eq(transform.1, 2.0);
-        assert_f32_eq(transform.2, 50.0);
+        assert_number_eq(transform.0, 2.0);
+        assert_number_eq(transform.1, 2.0);
+        assert_number_eq(transform.2, 50.0);
         assert_eq!(
             gradient_colors(&child(&root, 0)),
             vec![0xff0000ff, 0x0000ffff]
@@ -205,9 +205,9 @@ mod create_scene2d_from_svg_document {
         );
         let stretched: NodeRef = stretched;
         let transform = node_transform_full(&stretched);
-        assert_f32_eq(transform.0, 4.0);
-        assert_f32_eq(transform.1, 2.0);
-        assert_f32_eq(transform.2, 0.0);
+        assert_number_eq(transform.0, 4.0);
+        assert_number_eq(transform.1, 2.0);
+        assert_number_eq(transform.2, 0.0);
     }
 
     #[test]
@@ -217,13 +217,13 @@ mod create_scene2d_from_svg_document {
         );
         let root_node: NodeRef = root.clone();
         assert_eq!(node_name(&root_node).as_deref(), Some("art"));
-        assert_f32_eq(node_transform_full(&root_node).0, 2.0);
-        assert_f32_eq(node_transform_full(&root_node).1, 2.0);
+        assert_number_eq(node_transform_full(&root_node).0, 2.0);
+        assert_number_eq(node_transform_full(&root_node).1, 2.0);
         let group = child(&root, 0);
         assert_eq!(node_name(&group).as_deref(), Some("layer"));
-        assert_f32_eq(node_appearance(&group).0, 0.5);
-        assert_f32_eq(node_fields(&group).x, 4.0);
-        assert_f32_eq(node_fields(&group).y, 5.0);
+        assert_number_eq(node_appearance(&group).0, 0.5);
+        assert_number_eq(node_fields(&group).x, 4.0);
+        assert_number_eq(node_fields(&group).y, 5.0);
         let shape = get_node_child_at(&group, 0).unwrap();
         assert_eq!(node_name(&shape).as_deref(), Some("mark"));
         assert!(has_command(&shape, "beginFill"));
@@ -305,8 +305,8 @@ mod create_scene2d_from_svg_document {
         );
         let used = child(&root, 0);
         assert_eq!(node_name(&used).as_deref(), Some("first"));
-        assert_f32_eq(node_fields(&used).x, 7.0);
-        assert_f32_eq(node_fields(&used).y, 9.0);
+        assert_number_eq(node_fields(&used).x, 7.0);
+        assert_number_eq(node_fields(&used).y, 9.0);
         assert!(clip(&used).is_some());
         let symbol = get_node_child_at(&used, 0).unwrap();
         assert_eq!(
@@ -325,8 +325,8 @@ mod create_scene2d_from_svg_document {
         );
         assert_eq!(label.data.text_format.read().unwrap().size, Some(14.0));
         drop(text_guard);
-        assert_f32_eq(node_fields(&text).x, 12.0);
-        assert_f32_eq(node_fields(&text).y, 16.0);
+        assert_number_eq(node_fields(&text).x, 12.0);
+        assert_number_eq(node_fields(&text).y, 16.0);
         assert!(clip(&child(&root, 2)).is_some());
         assert!(has_diagnostic(&diagnostics, "svg.mask-as-hard-clip"));
     }
@@ -574,8 +574,8 @@ mod create_scene2d_from_svg_document {
             Some(true)
         );
         drop(text_guard);
-        assert_f32_eq(node_fields(&text).x, 4.0);
-        assert_f32_eq(node_fields(&text).y, 8.0);
+        assert_number_eq(node_fields(&text).x, 4.0);
+        assert_number_eq(node_fields(&text).y, 8.0);
         assert!(has_diagnostic(&diagnostics, "svg.tspan-position-flattened"));
     }
 
@@ -602,8 +602,8 @@ mod create_scene2d_from_svg_document {
             "<svg><defs><symbol id=\"icon\" viewBox=\"0 0 10 10\" preserveAspectRatio=\"none\"><rect width=\"10\" height=\"10\"/></symbol></defs><use href=\"#icon\" width=\"20\" height=\"30\"/></svg>",
         );
         let symbol = get_node_child_at(&child(&root, 0), 0).unwrap();
-        assert_f32_eq(node_transform_full(&symbol).0, 2.0);
-        assert_f32_eq(node_transform_full(&symbol).1, 3.0);
+        assert_number_eq(node_transform_full(&symbol).0, 2.0);
+        assert_number_eq(node_transform_full(&symbol).1, 3.0);
     }
 }
 
@@ -613,21 +613,21 @@ struct NodeSignature {
     commands: Option<String>,
     kind: String,
     name: Option<String>,
-    transform: (u32, u32, u32, u32),
+    transform: (u64, u64, u64, u64),
 }
 
-fn assert_f32_close_4(actual: f32, expected: f32) {
-    // D1 f32 bound (TS: 0.00005)
-    let bound = 0.00005_f32.max(4.0 * f32::EPSILON * expected.abs().max(1.0));
+fn assert_f32_close_4(actual: f64, expected: f64) {
+    // TS: 0.00005
+    let bound = 0.00005;
     assert!((actual - expected).abs() <= bound, "{actual} != {expected}");
 }
 
-fn assert_transform(node: &NodeRef, scale_x: f32, scale_y: f32, x: f32, y: f32) {
+fn assert_transform(node: &NodeRef, scale_x: f64, scale_y: f64, x: f64, y: f64) {
     let actual = node_transform_full(node);
-    assert_f32_eq(actual.0, scale_x);
-    assert_f32_eq(actual.1, scale_y);
-    assert_f32_eq(actual.2, x);
-    assert_f32_eq(actual.3, y);
+    assert_number_eq(actual.0, scale_x);
+    assert_number_eq(actual.1, scale_y);
+    assert_number_eq(actual.2, x);
+    assert_number_eq(actual.3, y);
 }
 
 fn command_index(commands: &[ShapeCommandToken], key: &str) -> usize {
@@ -711,7 +711,7 @@ fn node_signature(node: &NodeRef) -> NodeSignature {
     };
 }
 
-fn node_transform_full(node: &NodeRef) -> (f32, f32, f32, f32) {
+fn node_transform_full(node: &NodeRef) -> (f64, f64, f64, f64) {
     let node = as_node2d_ref(node).unwrap();
     let node = node.read().unwrap();
     let fields = node.node2d_fields();

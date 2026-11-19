@@ -106,9 +106,9 @@ mod create_rive_layout_imports {
         };
         assert_eq!(style.align, Some(FlexLayoutAlign::Center));
         assert_eq!(style.direction, Some(FlexLayoutDirection::Row));
-        assert_f32(style.gap.unwrap(), 12.0);
+        assert_number_eq(style.gap.unwrap(), 12.0);
         assert_eq!(style.justify, Some(FlexLayoutJustify::Center));
-        assert_f32(style.padding_left.unwrap(), 7.0);
+        assert_number_eq(style.padding_left.unwrap(), 7.0);
         assert_eq!(style.wrap, Some(FlexLayoutWrap::NoWrap));
         let child = &layout.tree.nodes[1];
         assert!(matches!(child.container_style, ContainerStyle::None));
@@ -122,8 +122,8 @@ mod create_rive_layout_imports {
             Some(FlexAlignSelf::Align(FlexLayoutAlign::Stretch)),
         );
         assert_flex_basis(style.basis, 0.0);
-        assert_f32(style.grow.unwrap(), 2.5);
-        assert_f32(style.shrink.unwrap(), 2.5);
+        assert_number_eq(style.grow.unwrap(), 2.5);
+        assert_number_eq(style.shrink.unwrap(), 2.5);
     }
 
     #[test]
@@ -176,8 +176,8 @@ mod create_rive_layout_imports {
         };
         assert_eq!(item.align_self, Some(FlexAlignSelf::Auto));
         assert_flex_basis(item.basis, 40.0);
-        assert_f32(item.grow.unwrap(), 3.0);
-        assert_f32(item.shrink.unwrap(), 3.0);
+        assert_number_eq(item.grow.unwrap(), 3.0);
+        assert_number_eq(item.shrink.unwrap(), 3.0);
         let child = &layout.tree.nodes[2];
         assert!(matches!(child.container_style, ContainerStyle::None));
         assert_eq!(child.kind, FLEX_LAYOUT_KIND);
@@ -187,8 +187,8 @@ mod create_rive_layout_imports {
         };
         assert_eq!(item.align_self, Some(FlexAlignSelf::Auto));
         assert_flex_basis(item.basis, 24.0);
-        assert_f32(item.grow.unwrap(), 0.0);
-        assert_f32(item.shrink.unwrap(), 0.0);
+        assert_number_eq(item.grow.unwrap(), 0.0);
+        assert_number_eq(item.shrink.unwrap(), 0.0);
     }
 
     #[test]
@@ -526,7 +526,7 @@ fn assert_diagnostic_number(diagnostic: &ImportDiagnostic, key: &str, expected: 
     else {
         panic!("expected diagnostic number {key}");
     };
-    assert_f32(*actual, expected);
+    assert_eq!(*actual, expected);
 }
 
 fn assert_diagnostic_string(diagnostic: &ImportDiagnostic, key: &str, expected: &str) {
@@ -540,31 +540,31 @@ fn assert_diagnostic_string(diagnostic: &ImportDiagnostic, key: &str, expected: 
     assert_eq!(actual, expected);
 }
 
-fn assert_f32(actual: f32, expected: f32) {
-    // D1 f32 bound (TS: 0)
-    let bound = 4.0 * f32::EPSILON * expected.abs().max(1.0);
-    assert!((actual - expected).abs() <= bound);
+fn assert_number_eq(actual: impl Into<f64>, expected: f64) {
+    // TS: exact (bound 0).
+    let actual: f64 = actual.into();
+    assert_eq!(actual, expected);
 }
 
-fn assert_fixed_track(track: &GridLayoutTrack, expected: f32) {
+fn assert_fixed_track(track: &GridLayoutTrack, expected: f64) {
     let GridLayoutTrack::Fixed { size } = track else {
         panic!("expected fixed track");
     };
-    assert_f32(*size, expected);
+    assert_number_eq(*size, expected);
 }
 
-fn assert_flex_basis(basis: Option<FlexBasis>, expected: f32) {
+fn assert_flex_basis(basis: Option<FlexBasis>, expected: f64) {
     let Some(FlexBasis::Fixed(actual)) = basis else {
         panic!("expected fixed flex basis");
     };
-    assert_f32(actual, expected);
+    assert_number_eq(actual, expected);
 }
 
-fn assert_fraction_track(track: &GridLayoutTrack, expected: f32) {
+fn assert_fraction_track(track: &GridLayoutTrack, expected: f64) {
     let GridLayoutTrack::Fraction { fraction } = track else {
         panic!("expected fractional track");
     };
-    assert_f32(*fraction, expected);
+    assert_number_eq(*fraction, expected);
 }
 
 fn assert_target(actual: &Node2DRef, expected: &Option<Node2DRef>) {
@@ -619,7 +619,7 @@ fn object(type_key: u64, properties: &[(u64, f32)]) -> RiveCoreObject {
             .map(|(key, value)| RiveProperty {
                 key: *key,
                 r#type: RiveFieldType::Double,
-                value: RiveValue::Double(*value),
+                value: RiveValue::Double(f64::from(*value)),
             })
             .collect(),
         type_key,

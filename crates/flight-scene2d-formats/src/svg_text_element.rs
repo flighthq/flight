@@ -1,5 +1,7 @@
 //! flight-compiler: target-native
 
+// flight-lint: allow-file(f64) Task Q format numbers: Lottie JSON and SVG text numbers are JS Numbers held in f64, and Rive binary float32 fields widen exactly at decode; easing, text-format, color, skin and diagnostic lanes stay f32
+
 use std::collections::HashMap;
 use std::sync::{Arc, RwLock};
 
@@ -24,12 +26,12 @@ use crate::types::*;
 
 struct SvgTextRun {
     is_root_style: bool,
-    opacity: f32,
+    opacity: f64,
     style: SvgStyle,
     text: String,
 }
 
-fn create_svg_text_format(style: &SvgStyle, opacity: f32) -> Ref<TextFormat> {
+fn create_svg_text_format(style: &SvgStyle, opacity: f64) -> Ref<TextFormat> {
     let color =
         resolve_svg_color(&style.fill, &style.color).unwrap_or(SvgColor { alpha: 0.0, rgb: 0 });
     let mut font: String = style.font_family.clone();
@@ -49,18 +51,18 @@ fn create_svg_text_format(style: &SvgStyle, opacity: f32) -> Ref<TextFormat> {
             style.font_weight == "bold"
                 || style
                     .font_weight
-                    .parse::<f32>()
+                    .parse::<f64>()
                     .is_ok_and(|weight| weight >= 600.0),
         ),
         color: Some(pack_color(
             ((color.rgb >> 16) & 0xff) as f32 / 255.0,
             ((color.rgb >> 8) & 0xff) as f32 / 255.0,
             (color.rgb & 0xff) as f32 / 255.0,
-            color.alpha * style.fill_opacity * opacity,
+            (color.alpha * style.fill_opacity * opacity) as f32,
         )),
         font: Some(font),
         italic: Some(matches!(style.font_style.as_str(), "italic" | "oblique")),
-        size: Some(style.font_size),
+        size: Some(style.font_size as f32),
         ..TextFormat::default()
     }));
 }
@@ -166,7 +168,7 @@ fn create_svg_text_node(context: &mut SvgElementContext<'_, '_>) -> Node2DRef {
         guard.node_fields_mut().name =
             svg_attribute(&context.element.read().unwrap(), "id").map(str::to_string);
         let fields = guard.node2d_fields_mut();
-        fields.alpha = style.opacity;
+        fields.alpha = style.opacity as f32;
         fields.visible = style.display != "none" && style.visibility == "visible";
     }
     if has_flattened_svg_text_position(&tspans, first_tspan) {
@@ -198,7 +200,7 @@ fn append_svg_text_run(
     out: &mut Vec<SvgTextRun>,
     style: &SvgStyle,
     source: &str,
-    opacity: f32,
+    opacity: f64,
     is_root_style: bool,
 ) {
     let source = source.replace(['\n', '\r'], "").replace('\t', " ");
@@ -239,7 +241,7 @@ fn collect_svg_text_runs(
     style: &SvgStyle,
     context: &SvgImportContext<'_>,
     out: &mut Vec<SvgTextRun>,
-    opacity: f32,
+    opacity: f64,
     is_root_style: bool,
 ) {
     if style.display == "none" {

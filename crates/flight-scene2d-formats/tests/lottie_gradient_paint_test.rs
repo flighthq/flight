@@ -7,8 +7,8 @@ mod create_lottie_gradient_matrix {
 
     #[test]
     fn anchors_the_gradient_one_span_past_the_start_point_on_both_axes() {
-        let start: [f32; 2] = [10.0, 20.0];
-        let end: [f32; 2] = [40.0, 20.0];
+        let start: [f64; 2] = [10.0, 20.0];
+        let end: [f64; 2] = [40.0, 20.0];
         let span = (end[0] - start[0]).hypot(end[1] - start[1]);
         let matrix = create_lottie_gradient_matrix(&start, &end);
         assert!((matrix.tx - (start[0] + span)).abs() < 1e-5);

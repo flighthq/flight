@@ -26,14 +26,14 @@ struct GradientState {
     count: usize,
     dash: Vec<f64>,
     dash_offset: f64,
-    end: Arc<RwLock<Vec<f32>>>,
+    end: Arc<RwLock<Vec<f64>>>,
     gradient_type: GradientType,
     joints: JointStyle,
-    miter_limit: Arc<RwLock<Vec<f32>>>,
-    opacity: Arc<RwLock<Vec<f32>>>,
-    start: Arc<RwLock<Vec<f32>>>,
-    values: Arc<RwLock<Vec<f32>>>,
-    width: Arc<RwLock<Vec<f32>>>,
+    miter_limit: Arc<RwLock<Vec<f64>>>,
+    opacity: Arc<RwLock<Vec<f64>>>,
+    start: Arc<RwLock<Vec<f64>>>,
+    values: Arc<RwLock<Vec<f64>>>,
+    width: Arc<RwLock<Vec<f64>>>,
     winding: PathWinding,
 }
 
@@ -45,12 +45,7 @@ fn gradient_fill_painter(state: Arc<GradientState>) -> LottieShapePainter {
             state.count,
             state.opacity.read().unwrap()[0] / 100.0,
         );
-        let alphas = gradient
-            .alphas
-            .iter()
-            .copied()
-            .map(f64::from)
-            .collect::<Vec<_>>();
+        let alphas = gradient.alphas.iter().copied().collect::<Vec<_>>();
         let ratios = gradient
             .ratios
             .iter()
@@ -83,12 +78,7 @@ fn gradient_stroke_painter(state: Arc<GradientState>) -> LottieShapePainter {
             state.count,
             state.opacity.read().unwrap()[0] / 100.0,
         );
-        let alphas = gradient
-            .alphas
-            .iter()
-            .copied()
-            .map(f64::from)
-            .collect::<Vec<_>>();
+        let alphas = gradient.alphas.iter().copied().collect::<Vec<_>>();
         let ratios = gradient
             .ratios
             .iter()
@@ -99,14 +89,14 @@ fn gradient_stroke_painter(state: Arc<GradientState>) -> LottieShapePainter {
             create_lottie_gradient_matrix(&state.start.read().unwrap(), &state.end.read().unwrap());
         append_shape_line_style(
             shape,
-            Some(f64::from(state.width.read().unwrap()[0])),
+            Some(state.width.read().unwrap()[0]),
             0x000000ff,
             Some(1.0),
             Some(false),
             Some(LineScaleMode::Normal),
             Some(state.caps),
             Some(state.joints),
-            Some(f64::from(state.miter_limit.read().unwrap()[0])),
+            Some(state.miter_limit.read().unwrap()[0]),
         );
         append_shape_line_gradient_style(
             shape,
@@ -174,7 +164,7 @@ fn handle_lottie_gradient_item(context: &mut LottieShapeItemContext<'_, '_>, str
                     .item
                     .get("ml")
                     .and_then(Value::as_f64)
-                    .unwrap_or(4.0) as f32
+                    .unwrap_or(4.0)
             }),
     ]));
     let dash_entries = context
@@ -193,10 +183,9 @@ fn handle_lottie_gradient_item(context: &mut LottieShapeItemContext<'_, '_>, str
             .iter()
             .filter(|entry| entry.get("n").and_then(Value::as_str) != Some("o"))
             .map(|entry| {
-                return f64::from(
-                    lottie_numeric_json_value(initial_lottie_value(entry.get("v")).as_ref(), 1)[0]
-                        .max(0.0),
-                );
+                return lottie_numeric_json_value(initial_lottie_value(entry.get("v")).as_ref(), 1)
+                    [0]
+                .max(0.0);
             })
             .collect::<Vec<_>>()
     };
@@ -212,9 +201,8 @@ fn handle_lottie_gradient_item(context: &mut LottieShapeItemContext<'_, '_>, str
             .iter()
             .find(|entry| entry.get("n").and_then(Value::as_str) == Some("o"))
             .map(|entry| {
-                return f64::from(
-                    lottie_numeric_json_value(initial_lottie_value(entry.get("v")).as_ref(), 1)[0],
-                );
+                return lottie_numeric_json_value(initial_lottie_value(entry.get("v")).as_ref(), 1)
+                    [0];
             })
             .unwrap_or(0.0)
     };

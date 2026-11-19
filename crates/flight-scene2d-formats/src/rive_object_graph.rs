@@ -1,5 +1,7 @@
 //! flight-compiler: target-native
 
+// flight-lint: allow-file(f64) Task Q format numbers: Lottie JSON and SVG text numbers are JS Numbers held in f64, and Rive binary float32 fields widen exactly at decode; easing, text-format, color, skin and diagnostic lanes stay f32
+
 use flight_entity::allocate_entity;
 use flight_importdiagnostics::{
     ImportDiagnostic, ImportDiagnosticDetailValue, ImportDiagnosticSeverity,
@@ -99,8 +101,8 @@ fn read_rive_parent_index(
         RiveValue::Double(value)
             if value.is_finite()
                 && value.fract() == 0.0
-                && value >= i32::MIN as f32
-                && value <= i32::MAX as f32 =>
+                && value >= i32::MIN as f64
+                && value <= i32::MAX as f64 =>
         {
             Some(value as i32)
         }

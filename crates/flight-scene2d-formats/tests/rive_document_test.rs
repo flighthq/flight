@@ -124,7 +124,7 @@ mod parse_rive_document {
             ([0x00, 0x00, 0x00, 0x00], 0.0),
             ([0x00, 0x00, 0x80, 0xbf], -1.0),
             ([0x00, 0x00, 0x20, 0x41], 10.0),
-            ([0xdb, 0x0f, 0x49, 0x40], std::f32::consts::PI),
+            ([0xdb, 0x0f, 0x49, 0x40], std::f64::consts::PI),
         ] {
             let document = parse_rive_document(
                 &build_rive_file(

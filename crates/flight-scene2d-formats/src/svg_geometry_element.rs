@@ -50,12 +50,12 @@ fn append_svg_shape_paint(
         let alphas = gradient
             .stops
             .iter()
-            .map(|stop| f64::from(stop.color.alpha * style.fill_opacity))
+            .map(|stop| stop.color.alpha * style.fill_opacity)
             .collect::<Vec<_>>();
         let ratios = gradient
             .stops
             .iter()
-            .map(|stop| f64::from((stop.offset * 255.0).round()))
+            .map(|stop| (stop.offset * 255.0).round())
             .collect::<Vec<_>>();
         let matrix = create_svg_gradient_matrix(gradient, path);
         append_shape_begin_gradient_fill(
@@ -73,7 +73,7 @@ fn append_svg_shape_paint(
         append_shape_begin_fill(
             shape,
             (color.rgb << 8) | 0xff,
-            Some(f64::from(color.alpha * style.fill_opacity)),
+            Some(color.alpha * style.fill_opacity),
         );
     }
     if fill_gradient.is_some() || fill_color.is_some() {
@@ -102,18 +102,16 @@ fn append_svg_shape_paint(
 
     append_shape_line_style(
         shape,
-        Some(f64::from(style.stroke_width)),
+        Some(style.stroke_width),
         stroke_color
             .as_ref()
             .map_or(0x000000ff, |color| (color.rgb << 8) | 0xff),
-        Some(f64::from(
-            stroke_color.as_ref().map_or(1.0, |color| color.alpha) * style.stroke_opacity,
-        )),
+        Some(stroke_color.as_ref().map_or(1.0, |color| color.alpha) * style.stroke_opacity),
         Some(false),
         Some(LineScaleMode::Normal),
         Some(map_svg_line_cap(&style.stroke_linecap)),
         Some(map_svg_line_join(&style.stroke_linejoin)),
-        Some(f64::from(style.stroke_miterlimit)),
+        Some(style.stroke_miterlimit),
     );
     if let Some(gradient) = &stroke_gradient {
         let colors = gradient
@@ -124,12 +122,12 @@ fn append_svg_shape_paint(
         let alphas = gradient
             .stops
             .iter()
-            .map(|stop| f64::from(stop.color.alpha * style.stroke_opacity))
+            .map(|stop| stop.color.alpha * style.stroke_opacity)
             .collect::<Vec<_>>();
         let ratios = gradient
             .stops
             .iter()
-            .map(|stop| f64::from((stop.offset * 255.0).round()))
+            .map(|stop| (stop.offset * 255.0).round())
             .collect::<Vec<_>>();
         let matrix = create_svg_gradient_matrix(gradient, path);
         append_shape_line_gradient_style(
@@ -151,7 +149,6 @@ fn append_svg_shape_paint(
     let mut dash: Vec<f64> = parse_svg_number_list(&style.stroke_dasharray)
         .into_iter()
         .filter(|value| *value >= 0.0)
-        .map(f64::from)
         .collect::<Vec<_>>();
     if dash.is_empty() {
         append_shape_path(shape, &path.commands, &path.data, Some(path.winding));
@@ -162,13 +159,7 @@ fn append_svg_shape_paint(
     }
     let mut dashed = create_path(Some(flight_path::PathWinding::NonZero));
     dashed.winding = path.winding;
-    dash_path(
-        path,
-        &dash,
-        f64::from(style.stroke_dashoffset),
-        &mut dashed,
-        None,
-    );
+    dash_path(path, &dash, style.stroke_dashoffset, &mut dashed, None);
     append_shape_path(shape, &dashed.commands, &dashed.data, Some(dashed.winding));
 }
 

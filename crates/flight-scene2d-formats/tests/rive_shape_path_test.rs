@@ -137,8 +137,8 @@ mod create_rive_path {
 
     #[test]
     fn places_a_mirrored_vertex_handle_opposite_its_outgoing_one_at_the_same_distance() {
-        let rotation = 0.7_f32;
-        let distance = 4.0_f32;
+        let rotation = 0.7_f64;
+        let distance = 4.0_f64;
         let path = points_path(
             false,
             vec![
@@ -162,17 +162,17 @@ mod create_rive_path {
         assert_points(
             &path.data[2..6],
             &[
-                f64::from(rotation.cos() * distance),
-                f64::from(rotation.sin() * distance),
-                f64::from(20.0 - rotation.cos() * distance),
-                f64::from(-rotation.sin() * distance),
+                (rotation.cos() * distance),
+                (rotation.sin() * distance),
+                (20.0 - rotation.cos() * distance),
+                (-rotation.sin() * distance),
             ],
         );
     }
 
     #[test]
     fn gives_an_asymmetric_vertex_one_angle_and_two_lengths() {
-        let rotation = 1.2_f32;
+        let rotation = 1.2_f64;
         let path = points_path(
             false,
             vec![
@@ -189,18 +189,18 @@ mod create_rive_path {
         assert_points(
             &path.data[2..6],
             &[
-                f64::from(rotation.cos() * 9.0),
-                f64::from(rotation.sin() * 9.0),
-                f64::from(30.0 - rotation.cos() * 3.0),
-                f64::from(-rotation.sin() * 3.0),
+                (rotation.cos() * 9.0),
+                (rotation.sin() * 9.0),
+                (30.0 - rotation.cos() * 3.0),
+                (-rotation.sin() * 3.0),
             ],
         );
     }
 
     #[test]
     fn adds_a_detached_vertex_handle_rather_than_subtracting_it() {
-        let in_rotation = 2.5_f32;
-        let out_rotation = 0.4_f32;
+        let in_rotation = 2.5_f64;
+        let out_rotation = 0.4_f64;
         let properties = |x| {
             vec![
                 (24, x),
@@ -221,10 +221,10 @@ mod create_rive_path {
         assert_points(
             &path.data[2..6],
             &[
-                f64::from(out_rotation.cos() * 6.0),
-                f64::from(out_rotation.sin() * 6.0),
-                f64::from(40.0 + in_rotation.cos() * 2.0),
-                f64::from(in_rotation.sin() * 2.0),
+                (out_rotation.cos() * 6.0),
+                (out_rotation.sin() * 6.0),
+                (40.0 + in_rotation.cos() * 2.0),
+                (in_rotation.sin() * 2.0),
             ],
         );
     }
@@ -347,7 +347,7 @@ mod create_rive_path {
     fn collapses_to_the_circle_ratio_at_a_right_angle() {
         let path = rounded_triangle(10.0, true);
         let cubic = cubic_after(&path, [90.0, 0.0]).unwrap();
-        assert_f64_close_4(cubic[0], 90.0 + 10.0 * f64::from(CIRCLE_KAPPA));
+        assert_f64_close_4(cubic[0], 90.0 + 10.0 * CIRCLE_KAPPA);
         assert_f64_close_6(cubic[1], 0.0);
     }
 
@@ -374,8 +374,8 @@ mod create_rive_path {
         assert!(points.contains(&[90.0, 0.0]));
         assert!(points.contains(&[100.0, 10.0]));
         assert_f64_close_6(cubic[0], 90.0);
-        assert_f64_close_4(cubic[1], 10.0 * f64::from(CIRCLE_KAPPA));
-        assert_f64_close_4(cubic[2], 100.0 - 10.0 * f64::from(CIRCLE_KAPPA));
+        assert_f64_close_4(cubic[1], 10.0 * CIRCLE_KAPPA);
+        assert_f64_close_4(cubic[2], 100.0 - 10.0 * CIRCLE_KAPPA);
         assert_f64_close_6(cubic[3], 10.0);
     }
 
@@ -434,7 +434,7 @@ mod create_rive_path_record {
                 .iter()
                 .step_by(2)
                 .copied()
-                .fold(f32::INFINITY, f32::min)
+                .fold(f64::INFINITY, f64::min)
                 > 50.0,
         );
     }
@@ -510,14 +510,14 @@ fn artboard_of(objects: Vec<RiveCoreObject>) -> RiveArtboardGraph {
 }
 
 fn assert_f64_close_4(actual: f64, expected: f64) {
-    // D1 f32 bound (TS: 0.00005)
-    let bound = 0.00005_f64.max(4.0 * f64::from(f32::EPSILON) * expected.abs().max(1.0));
+    // TS: 0.00005
+    let bound = 0.00005;
     assert!((actual - expected).abs() <= bound);
 }
 
 fn assert_f64_close_6(actual: f64, expected: f64) {
-    // D1 f32 bound (TS: 0.0000005)
-    let bound = 0.0000005_f64.max(4.0 * f64::from(f32::EPSILON) * expected.abs().max(1.0));
+    // TS: 0.0000005
+    let bound = 0.0000005;
     assert!((actual - expected).abs() <= bound);
 }
 
@@ -574,7 +574,7 @@ fn cubic_after(path: &Path, from: [f64; 2]) -> Option<[f64; 4]> {
     return None;
 }
 
-fn object(type_key: u64, properties: &[(u64, f32)]) -> RiveCoreObject {
+fn object(type_key: u64, properties: &[(u64, f64)]) -> RiveCoreObject {
     return RiveCoreObject {
         properties: properties
             .iter()
@@ -588,7 +588,7 @@ fn object(type_key: u64, properties: &[(u64, f32)]) -> RiveCoreObject {
     };
 }
 
-fn path_of(type_key: u64, properties: &[(u64, f32)]) -> Path {
+fn path_of(type_key: u64, properties: &[(u64, f64)]) -> Path {
     let source = object(type_key, properties);
     return create_rive_path(&source, &artboard_of(Vec::new()), 0, None).unwrap();
 }
@@ -623,7 +623,7 @@ fn points_path(closed: bool, vertices: Vec<RiveCoreObject>) -> Path {
     return create_rive_path(&path, &graph, 0, None).unwrap();
 }
 
-fn rounded_triangle(radius: f32, closed: bool) -> Path {
+fn rounded_triangle(radius: f64, closed: bool) -> Path {
     return points_path(
         closed,
         vec![

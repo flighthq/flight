@@ -1,5 +1,7 @@
 //! flight-compiler: target-native
 
+// flight-lint: allow-file(f64) Task Q format numbers: Lottie JSON and SVG text numbers are JS Numbers held in f64, and Rive binary float32 fields widen exactly at decode; easing, text-format, color, skin and diagnostic lanes stay f32
+
 use std::collections::HashMap;
 use std::sync::{Arc, RwLock};
 
@@ -241,7 +243,7 @@ fn create_rive_bone_channel(
     objects: &[RiveCoreObject],
     property_index: usize,
     limit: usize,
-    fps: f32,
+    fps: f64,
     interpolators: &HashMap<usize, EasingFn>,
     skeleton: Option<&RiveSkeleton2DImport>,
     keyed_index: i32,
@@ -294,9 +296,9 @@ fn create_rive_channel(
     objects: &[RiveCoreObject],
     property_index: usize,
     limit: usize,
-    fps: f32,
+    fps: f64,
     interpolators: &HashMap<usize, EasingFn>,
-    convert: Arc<dyn Fn(f32) -> f32 + Send + Sync>,
+    convert: Arc<dyn Fn(f64) -> f64 + Send + Sync>,
     target_ref: flight_entity::Unknown,
     diagnostics: Option<&mut Vec<ImportDiagnostic>>,
 ) -> Option<AnimationChannel> {
@@ -325,7 +327,7 @@ fn create_rive_mutable_channel(
     objects: &[RiveCoreObject],
     property_index: usize,
     limit: usize,
-    fps: f32,
+    fps: f64,
     interpolators: &HashMap<usize, EasingFn>,
     target: RiveMutableTarget,
     diagnostics: Option<&mut Vec<ImportDiagnostic>>,
@@ -384,10 +386,10 @@ fn create_rive_typed_channel(
     objects: &[RiveCoreObject],
     property_index: usize,
     limit: usize,
-    fps: f32,
+    fps: f64,
     interpolators: &HashMap<usize, EasingFn>,
     components: usize,
-    read_value: &dyn Fn(&RiveCoreObject) -> Option<Vec<f32>>,
+    read_value: &dyn Fn(&RiveCoreObject) -> Option<Vec<f64>>,
     target_ref: flight_entity::Unknown,
     mut diagnostics: Option<&mut Vec<ImportDiagnostic>>,
 ) -> Option<AnimationChannel> {
@@ -433,7 +435,7 @@ fn create_rive_typed_channel(
     return Some(create_animation_channel(&track, target_ref));
 }
 
-pub fn apply_animation_clip_to_rive_document(clip: &flight_animation::AnimationClip, time: f32) {
+pub fn apply_animation_clip_to_rive_document(clip: &flight_animation::AnimationClip, time: f64) {
     apply_animation_clip_to_node2d(clip, time);
     let mut pending = Vec::<RiveRebuild>::new();
     for channel in &clip.channels {
@@ -445,7 +447,7 @@ pub fn apply_animation_clip_to_rive_document(clip: &flight_animation::AnimationC
             continue;
         };
         let components = channel.track.read().unwrap().components;
-        let mut sample = vec![0.0_f32; components.max(4)];
+        let mut sample = vec![0.0_f64; components.max(4)];
         sample_animation_track(&mut sample, &channel.track.read().unwrap(), time);
         target.apply(&sample);
         if !pending
@@ -508,11 +510,12 @@ fn collect_rive_interpolators(
         if is_rive_type(source.type_key, RIVE_CUBIC_INTERPOLATOR) {
             interpolators.insert(
                 index,
+                // Control points narrow into flight-animation's f32 easing lane.
                 ease_cubic_bezier(
-                    read_rive_number(source, RIVE_INTERPOLATOR_X1, 0.42),
-                    read_rive_number(source, RIVE_INTERPOLATOR_Y1, 0.0),
-                    read_rive_number(source, RIVE_INTERPOLATOR_X2, 0.58),
-                    read_rive_number(source, RIVE_INTERPOLATOR_Y2, 1.0),
+                    read_rive_number(source, RIVE_INTERPOLATOR_X1, 0.42) as f32,
+                    read_rive_number(source, RIVE_INTERPOLATOR_Y1, 0.0) as f32,
+                    read_rive_number(source, RIVE_INTERPOLATOR_X2, 0.58) as f32,
+                    read_rive_number(source, RIVE_INTERPOLATOR_Y2, 1.0) as f32,
                 ),
             );
         } else if is_rive_type(source.type_key, RIVE_ELASTIC_INTERPOLATOR) {
@@ -566,7 +569,7 @@ fn is_rive_type(type_key: u64, base: u64) -> bool {
     return is_rive_core_type_derived_from(type_key, base);
 }
 
-fn pack_rive_color_sample(sample: &[f32]) -> u32 {
+fn pack_rive_color_sample(sample: &[f64]) -> u32 {
     let alpha = to_rive_color_byte(sample[0]);
     let red = to_rive_color_byte(sample[1]);
     let green = to_rive_color_byte(sample[2]);
@@ -589,20 +592,20 @@ fn read_rive_color(source: &RiveCoreObject, key: u64, fallback: u32) -> u32 {
     };
 }
 
-fn read_rive_color_keyframe(keyframe: &RiveCoreObject) -> Option<Vec<f32>> {
+fn read_rive_color_keyframe(keyframe: &RiveCoreObject) -> Option<Vec<f64>> {
     if keyframe.type_key != RIVE_KEYFRAME_COLOR {
         return None;
     }
     let packed = read_rive_color(keyframe, RIVE_KEYFRAME_COLOR_VALUE, 0);
     return Some(vec![
-        ((packed >> 24) & 0xff) as f32,
-        ((packed >> 16) & 0xff) as f32,
-        ((packed >> 8) & 0xff) as f32,
-        (packed & 0xff) as f32,
+        ((packed >> 24) & 0xff) as f64,
+        ((packed >> 16) & 0xff) as f64,
+        ((packed >> 8) & 0xff) as f64,
+        (packed & 0xff) as f64,
     ]);
 }
 
-fn read_rive_number(source: &RiveCoreObject, key: u64, fallback: f32) -> f32 {
+fn read_rive_number(source: &RiveCoreObject, key: u64, fallback: f64) -> f64 {
     let Some(property) = source
         .properties
         .iter()
@@ -611,9 +614,9 @@ fn read_rive_number(source: &RiveCoreObject, key: u64, fallback: f32) -> f32 {
         return fallback;
     };
     return match property.value {
-        RiveValue::Uint(value) => value as f32,
+        RiveValue::Uint(value) => value as f64,
         RiveValue::Double(value) => value,
-        RiveValue::Color(value) => value as f32,
+        RiveValue::Color(value) => value as f64,
         _ => fallback,
     };
 }
@@ -683,7 +686,7 @@ fn report_keyframe_kind(
 }
 
 fn to_rive_animation_loop(
-    value: f32,
+    value: f64,
     diagnostics: Option<&mut Vec<ImportDiagnostic>>,
 ) -> RiveAnimationLoop {
     if value == RIVE_LOOP_LOOP {
@@ -701,7 +704,7 @@ fn to_rive_animation_loop(
             Some(HashMap::from([
                 (
                     "loopValue".to_string(),
-                    ImportDiagnosticDetailValue::Number(value),
+                    ImportDiagnosticDetailValue::Number(value as f32),
                 ),
                 (
                     "substitutedAs".to_string(),
@@ -739,7 +742,7 @@ fn to_rive_bone_animation_path(property_key: i64) -> Option<&'static str> {
 fn to_rive_bone_value_conversion(
     path: &str,
     setup: &Bone2D,
-) -> Option<Arc<dyn Fn(f32) -> f32 + Send + Sync>> {
+) -> Option<Arc<dyn Fn(f64) -> f64 + Send + Sync>> {
     if path == SKELETON_2D_ANIMATION_PATH_TRANSLATION_X {
         let setup = setup.x;
         return Some(Arc::new(move |value| value - setup));
@@ -763,7 +766,7 @@ fn to_rive_bone_value_conversion(
     return Some(Arc::new(move |value| value / setup_scale));
 }
 
-fn to_rive_color_byte(value: f32) -> u32 {
+fn to_rive_color_byte(value: f64) -> u32 {
     return value.clamp(0.0, 255.0).round() as u32;
 }
 
@@ -779,10 +782,10 @@ fn to_rive_elastic_easing(
     );
     let easing = read_rive_number(source, RIVE_INTERPOLATOR_EASING, RIVE_ELASTIC_EASE_OUT);
     if easing == RIVE_ELASTIC_EASE_IN {
-        return ease_in_damped_sine(amplitude, period);
+        return ease_in_damped_sine(amplitude as f32, period as f32);
     }
     if easing == RIVE_ELASTIC_EASE_IN_OUT {
-        return ease_in_out_damped_sine(amplitude, period);
+        return ease_in_out_damped_sine(amplitude as f32, period as f32);
     }
     if easing != RIVE_ELASTIC_EASE_OUT {
         report_import_diagnostic(
@@ -793,7 +796,7 @@ fn to_rive_elastic_easing(
             Some(HashMap::from([
                 (
                     "easingValue".to_string(),
-                    ImportDiagnosticDetailValue::Number(easing),
+                    ImportDiagnosticDetailValue::Number(easing as f32),
                 ),
                 (
                     "substitutedAs".to_string(),
@@ -802,7 +805,7 @@ fn to_rive_elastic_easing(
             ])),
         );
     }
-    return ease_out_damped_sine(amplitude, period);
+    return ease_out_damped_sine(amplitude as f32, period as f32);
 }
 
 fn to_rive_segment_easing(
@@ -835,7 +838,7 @@ fn to_rive_segment_easing(
             Some(HashMap::from([
                 (
                     "interpolationType".to_string(),
-                    ImportDiagnosticDetailValue::Number(r#type),
+                    ImportDiagnosticDetailValue::Number((r#type) as f32),
                 ),
                 (
                     "interpolatorId".to_string(),
@@ -851,7 +854,7 @@ fn to_rive_segment_easing(
     return easing;
 }
 
-fn to_rive_value_conversion(path: Node2DAnimationPath) -> Arc<dyn Fn(f32) -> f32 + Send + Sync> {
+fn to_rive_value_conversion(path: Node2DAnimationPath) -> Arc<dyn Fn(f64) -> f64 + Send + Sync> {
     if path == Node2DAnimationPath::Rotation {
         return Arc::new(|value| value * RAD_TO_DEG);
     }
@@ -901,21 +904,21 @@ const RIVE_INTERPOLATOR_EASING: u64 = 405;
 const RIVE_INTERPOLATOR_AMPLITUDE: u64 = 406;
 const RIVE_INTERPOLATOR_PERIOD: u64 = 407;
 
-const RIVE_LOOP_ONE_SHOT: f32 = 0.0;
-const RIVE_LOOP_LOOP: f32 = 1.0;
-const RIVE_LOOP_PING_PONG: f32 = 2.0;
-const RIVE_UNSET_FRAME: f32 = -1.0;
+const RIVE_LOOP_ONE_SHOT: f64 = 0.0;
+const RIVE_LOOP_LOOP: f64 = 1.0;
+const RIVE_LOOP_PING_PONG: f64 = 2.0;
+const RIVE_UNSET_FRAME: f64 = -1.0;
 
-const RIVE_ELASTIC_EASE_IN: f32 = 0.0;
-const RIVE_ELASTIC_EASE_OUT: f32 = 1.0;
-const RIVE_ELASTIC_EASE_IN_OUT: f32 = 2.0;
-const RIVE_DEFAULT_ELASTIC_PERIOD: f32 = 1.0;
+const RIVE_ELASTIC_EASE_IN: f64 = 0.0;
+const RIVE_ELASTIC_EASE_OUT: f64 = 1.0;
+const RIVE_ELASTIC_EASE_IN_OUT: f64 = 2.0;
+const RIVE_DEFAULT_ELASTIC_PERIOD: f64 = 1.0;
 
-const RIVE_INTERPOLATION_HOLD: f32 = 0.0;
-const RIVE_INTERPOLATION_LINEAR: f32 = 1.0;
+const RIVE_INTERPOLATION_HOLD: f64 = 0.0;
+const RIVE_INTERPOLATION_LINEAR: f64 = 1.0;
 
 impl RiveMutableTarget {
-    fn apply(&self, sample: &[f32]) {
+    fn apply(&self, sample: &[f64]) {
         let mut artboard = self.artboard.write().unwrap();
         let Some(object) = artboard.objects.get_mut(self.object_index) else {
             return;

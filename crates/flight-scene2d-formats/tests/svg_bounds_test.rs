@@ -26,10 +26,10 @@ mod create_svg_node2d_bounds {
             .push((child.clone(), create_rectangle(0.0, 0.0, 4.0, 3.0)));
         add(&root, &child);
         let bounds = create_svg_node2d_bounds(&root, &context).unwrap();
-        assert_f32_eq(bounds.x, 5.0);
-        assert_f32_eq(bounds.y, 0.0);
-        assert_f32_eq(bounds.width, 4.0);
-        assert_f32_eq(bounds.height, 3.0);
+        assert_number_eq(bounds.x, 5.0);
+        assert_number_eq(bounds.y, 0.0);
+        assert_number_eq(bounds.width, 4.0);
+        assert_number_eq(bounds.height, 3.0);
     }
 }
 
@@ -54,10 +54,10 @@ fn add(parent: &Node2DRef, child: &Node2DRef) {
     add_node_child(&parent, &child);
 }
 
-fn assert_f32_eq(actual: f32, expected: f32) {
-    // D1 f32 bound (TS: 0)
-    let bound = 4.0 * f32::EPSILON * expected.abs().max(1.0);
-    assert!((actual - expected).abs() <= bound);
+fn assert_number_eq(actual: impl Into<f64>, expected: f64) {
+    // TS: exact (bound 0).
+    let actual: f64 = actual.into();
+    assert_eq!(actual, expected);
 }
 
 fn import_context(registry: &SvgRegistry) -> SvgImportContext<'_> {

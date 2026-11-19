@@ -167,7 +167,7 @@ fn context_for(
     );
 }
 
-fn double(key: u64, value: f32) -> RiveProperty {
+fn double(key: u64, value: f64) -> RiveProperty {
     return RiveProperty {
         key,
         r#type: RiveFieldType::Double,

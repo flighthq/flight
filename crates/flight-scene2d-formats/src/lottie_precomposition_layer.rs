@@ -48,8 +48,8 @@ pub fn lottie_precomposition_layer_handler(context: &mut LottieLayerContext<'_, 
     let frame_offset = context.import.frame_offset;
     let frame_scale = context.import.frame_scale;
     context.import.frame_offset =
-        frame_offset + value_f32(context.layer.get("st"), 0.0) * frame_scale;
-    context.import.frame_scale = frame_scale * value_f32(context.layer.get("sr"), 1.0);
+        frame_offset + value_number(context.layer.get("st"), 0.0) * frame_scale;
+    context.import.frame_scale = frame_scale * value_number(context.layer.get("sr"), 1.0);
     append_lottie_layers(&context.container, &layers, context.import);
     context.import.frame_offset = frame_offset;
     context.import.frame_scale = frame_scale;
@@ -65,10 +65,7 @@ fn report_unresolved(context: &mut LottieLayerContext<'_, '_>, id: &str) {
     );
 }
 
-// flight-lint: allow(f64) serde_json exposes authored Lottie timing numbers as f64 before the approved D1 f32 conversion
-fn value_f32(value: Option<&Value>, fallback: f32) -> f32 {
-    return value
-        .and_then(Value::as_f64)
-        .map(|value| value as f32)
-        .unwrap_or(fallback);
+// flight-lint: allow(f64) serde_json exposes authored Lottie timing numbers as f64, held as f64 document numbers (Task Q)
+fn value_number(value: Option<&Value>, fallback: f64) -> f64 {
+    return value.and_then(Value::as_f64).unwrap_or(fallback);
 }

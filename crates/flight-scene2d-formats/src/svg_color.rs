@@ -1,8 +1,10 @@
 //! flight-compiler: target-native
 
+// flight-lint: allow-file(f64) Task Q format numbers: Lottie JSON and SVG text numbers are JS Numbers held in f64, and Rive binary float32 fields widen exactly at decode; easing, text-format, color, skin and diagnostic lanes stay f32
+
 use crate::types::SvgColor;
 
-fn hsl_to_rgb(hue: f32, saturation: f32, lightness: f32) -> u32 {
+fn hsl_to_rgb(hue: f64, saturation: f64, lightness: f64) -> u32 {
     let normalized_hue = hue.rem_euclid(360.0) / 60.0;
     let chroma = (1.0 - (2.0 * lightness - 1.0).abs()) * saturation;
     let secondary = chroma * (1.0 - (normalized_hue.rem_euclid(2.0) - 1.0).abs());
@@ -38,7 +40,7 @@ fn parse_color_function(value: &str) -> Option<(&str, &str)> {
     return Some((name, &value[open + 1..value.len() - 1]));
 }
 
-fn parse_css_alpha(value: &str) -> Option<f32> {
+fn parse_css_alpha(value: &str) -> Option<f64> {
     let parsed = parse_float_prefix(value)?;
     return Some(if value.ends_with('%') {
         (parsed / 100.0).clamp(0.0, 1.0)
@@ -47,24 +49,24 @@ fn parse_css_alpha(value: &str) -> Option<f32> {
     });
 }
 
-fn parse_css_fraction(value: &str) -> Option<f32> {
+fn parse_css_fraction(value: &str) -> Option<f64> {
     return parse_css_alpha(value);
 }
 
-fn parse_css_hue(value: &str) -> Option<f32> {
+fn parse_css_hue(value: &str) -> Option<f64> {
     let parsed = parse_float_prefix(value)?;
     return Some(if value.ends_with("turn") {
         parsed * 360.0
     } else if value.ends_with("grad") {
         parsed * 0.9
     } else if value.ends_with("rad") {
-        parsed * 180.0 / std::f32::consts::PI
+        parsed * 180.0 / std::f64::consts::PI
     } else {
         parsed
     });
 }
 
-fn parse_float_prefix(value: &str) -> Option<f32> {
+fn parse_float_prefix(value: &str) -> Option<f64> {
     let bytes = value.trim_start().as_bytes();
     let mut index = 0;
     if bytes
@@ -109,7 +111,7 @@ fn parse_float_prefix(value: &str) -> Option<f32> {
         }
     }
     return value.trim_start()[..index]
-        .parse::<f32>()
+        .parse::<f64>()
         .ok()
         .filter(|number| number.is_finite());
 }
@@ -153,7 +155,7 @@ pub fn parse_svg_color(value: &str) -> Option<SvgColor> {
             let green = parse_repeated_hex_digit(hex, 1)?;
             let blue = parse_repeated_hex_digit(hex, 2)?;
             let alpha = if hex.len() == 4 {
-                f32::from(parse_repeated_hex_digit(hex, 3)?) / 255.0
+                f64::from(parse_repeated_hex_digit(hex, 3)?) / 255.0
             } else {
                 1.0
             };
@@ -165,7 +167,7 @@ pub fn parse_svg_color(value: &str) -> Option<SvgColor> {
         if hex.len() == 6 || hex.len() == 8 {
             let rgb = parse_hex_prefix(&hex[..6])?;
             let alpha = if hex.len() == 8 {
-                parse_hex_prefix(&hex[6..])? as f32 / 255.0
+                parse_hex_prefix(&hex[6..])? as f64 / 255.0
             } else {
                 1.0
             };

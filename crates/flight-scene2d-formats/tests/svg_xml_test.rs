@@ -45,7 +45,7 @@ mod parse_svg_number_list {
             parse_svg_number_list("1 2,3  -4"),
             vec![1.0, 2.0, 3.0, -4.0]
         );
-        assert_eq!(parse_svg_number_list(""), Vec::<f32>::new());
+        assert_eq!(parse_svg_number_list(""), Vec::<f64>::new());
     }
 }
 

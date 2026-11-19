@@ -1,5 +1,7 @@
 //! flight-compiler: rust-only
 
+// flight-lint: allow-file(f64) Task Q format numbers: Lottie JSON and SVG text numbers are JS Numbers held in f64, and Rive binary float32 fields widen exactly at decode; easing, text-format, color, skin and diagnostic lanes stay f32
+
 use std::collections::{HashMap, HashSet};
 use std::sync::{Arc, RwLock};
 
@@ -63,7 +65,7 @@ pub enum RiveFieldType {
 pub enum RiveValue {
     Uint(u64),
     String(String),
-    Double(f32),
+    Double(f64),
     Color(u32),
     Bytes(Box<[u8]>),
 }
@@ -144,8 +146,8 @@ pub enum RiveWeightedPointKind {
 pub struct RiveWeightedPoint {
     pub kind: RiveWeightedPointKind,
     pub vertex: usize,
-    pub x: f32,
-    pub y: f32,
+    pub x: f64,
+    pub y: f64,
 }
 
 #[derive(Clone)]
@@ -168,22 +170,22 @@ pub struct RiveAnimationClip {
     pub clip: AnimationClip,
     pub r#loop: RiveAnimationLoop,
     pub name: String,
-    pub speed: f32,
-    pub work_area_end: Option<f32>,
-    pub work_area_start: Option<f32>,
+    pub speed: f64,
+    pub work_area_end: Option<f64>,
+    pub work_area_start: Option<f64>,
 }
 
 #[repr(C)]
 pub struct RiveArtboardImport {
     pub advanced_blends: Vec<RiveAdvancedBlend>,
     pub animations: Vec<RiveAnimationClip>,
-    pub height: f32,
+    pub height: f64,
     pub layouts: Vec<RiveLayoutImport>,
     pub name: String,
     pub root: Node2DRef,
     pub skeleton: Option<RiveSkeleton2DImport>,
     pub state_machines: Vec<RiveStateMachineDescriptor>,
-    pub width: f32,
+    pub width: f64,
 }
 
 pub struct RiveDocumentImportResult {
@@ -197,10 +199,10 @@ pub struct RiveDocumentImportResult {
 pub struct RiveFileAsset {
     pub bytes: Option<Box<[u8]>>,
     pub cdn_base_url: String,
-    pub height: f32,
+    pub height: f64,
     pub kind: String,
     pub name: String,
-    pub width: f32,
+    pub width: f64,
 }
 
 #[derive(Clone)]
@@ -221,7 +223,7 @@ pub struct RiveScene2DDocumentResult {
 #[repr(C)]
 pub struct RivePathRecord {
     pub commands: Vec<u8>,
-    pub data: Vec<f32>,
+    pub data: Vec<f64>,
     pub path_index: usize,
     pub winding: PathWinding,
 }
@@ -236,16 +238,16 @@ pub struct RiveSkeleton2DImport {
 #[derive(Clone, Debug, PartialEq)]
 #[repr(C)]
 pub struct RiveStateMachineTransition {
-    pub duration: f32,
-    pub exit_time: f32,
-    pub flags: f32,
-    pub to_state_id: f32,
+    pub duration: f64,
+    pub exit_time: f64,
+    pub flags: f64,
+    pub to_state_id: f64,
 }
 
 #[derive(Clone, Debug, PartialEq)]
 #[repr(C)]
 pub struct RiveStateMachineState {
-    pub animation_id: f32,
+    pub animation_id: f64,
     pub kind: String,
     pub transitions: Vec<RiveStateMachineTransition>,
 }
@@ -259,7 +261,7 @@ pub struct RiveStateMachineLayer {
 #[derive(Clone, Debug, PartialEq)]
 pub enum RiveStateMachineInputValue {
     Bool(bool),
-    Number(f32),
+    Number(f64),
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -362,9 +364,9 @@ pub type LottieShapeItem = LottieRecord;
 #[repr(C)]
 pub struct LottieShapePath {
     pub c: bool,
-    pub i: Vec<Vec<f32>>,
-    pub o: Vec<Vec<f32>>,
-    pub v: Vec<Vec<f32>>,
+    pub i: Vec<Vec<f64>>,
+    pub o: Vec<Vec<f64>>,
+    pub v: Vec<Vec<f64>>,
 }
 
 #[derive(Clone)]
@@ -377,8 +379,8 @@ pub struct LottieAdvancedBlend {
 pub struct LottieDocumentImportResult {
     pub advanced_blends: Vec<LottieAdvancedBlend>,
     pub clip: AnimationClip,
-    pub duration: f32,
-    pub frame_rate: f32,
+    pub duration: f64,
+    pub frame_rate: f64,
     pub root: Ref<DisplayObject>,
     runtime: EntityRuntimeSlot,
 }
@@ -393,7 +395,7 @@ pub struct LottieDocumentImportOptions {
 
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct LottieGradientPaint {
-    pub alphas: Vec<f32>,
+    pub alphas: Vec<f64>,
     pub colors: Vec<u32>,
     pub ratios: Vec<u32>,
 }
@@ -401,20 +403,20 @@ pub struct LottieGradientPaint {
 #[derive(Clone, Copy, Debug, PartialEq)]
 #[repr(C)]
 pub struct LottieGradientOpacityStop {
-    pub alpha: f32,
-    pub offset: f32,
+    pub alpha: f64,
+    pub offset: f64,
 }
 
 pub type LottieImageResourceResolver =
     Arc<dyn Fn(&LottieImageAsset) -> Option<Ref<ImageResource>> + Send + Sync>;
 
-pub type LottieNumericConverter = Arc<dyn Fn(f32, usize) -> f32 + Send + Sync>;
+pub type LottieNumericConverter = Arc<dyn Fn(f64, usize) -> f64 + Send + Sync>;
 pub type LottieShapeModifier = Arc<dyn Fn(&mut Vec<Ref<flight_path::Path>>) + Send + Sync>;
 pub type LottieShapePainter = Arc<dyn Fn(&Ref<Shape>, &[Ref<flight_path::Path>]) + Send + Sync>;
-pub type LottieTangentOf = Arc<dyn Fn(f32, usize) -> f32 + Send + Sync>;
+pub type LottieTangentOf = Arc<dyn Fn(f64, usize) -> f64 + Send + Sync>;
 // flight-lint: allow(contract-vocabulary) serde_json::Value preserves the generic Lottie keyframe value union until a caller-supplied converter reads it
 pub type LottieTrackValueOf =
-    Arc<dyn for<'a> Fn(Option<&'a Value>, usize) -> Vec<f32> + Send + Sync>;
+    Arc<dyn for<'a> Fn(Option<&'a Value>, usize) -> Vec<f64> + Send + Sync>;
 pub type LottieRerender = Arc<dyn Fn() + Send + Sync>;
 
 pub struct LottieImportContext<'a> {
@@ -423,8 +425,8 @@ pub struct LottieImportContext<'a> {
     pub channels: Vec<AnimationChannel>,
     pub diagnostics: Option<&'a mut Vec<ImportDiagnostic>>,
     pub document: &'a LottieDocument,
-    pub frame_offset: f32,
-    pub frame_scale: f32,
+    pub frame_offset: f64,
+    pub frame_scale: f64,
     pub registry: &'a LottieRegistry,
     pub resolve_image_resource: Option<LottieImageResourceResolver>,
     pub resolving_precompositions: HashSet<String>,
@@ -444,7 +446,7 @@ pub struct LottieMaskContext<'a, 'b> {
 
 #[derive(Clone)]
 pub struct LottieMutableAnimationTarget {
-    pub apply: Arc<dyn Fn(&[f32], f32) + Send + Sync>,
+    pub apply: Arc<dyn Fn(&[f64], f64) + Send + Sync>,
 }
 
 // flight-lint: allow(contract-vocabulary) Rust shared handles retain the mutable group collections used by animation callbacks after dispatch returns
@@ -512,7 +514,7 @@ pub struct SvgClipContext<'a, 'b> {
 #[derive(Clone, Debug, PartialEq)]
 #[repr(C)]
 pub struct SvgColor {
-    pub alpha: f32,
+    pub alpha: f64,
     pub rgb: u32,
 }
 
@@ -561,27 +563,27 @@ pub enum SvgGradientUnits {
 #[derive(Clone, Debug, PartialEq)]
 #[repr(C)]
 pub struct SvgGradient {
-    pub cx: f32,
-    pub cy: f32,
-    pub fx: f32,
-    pub fy: f32,
+    pub cx: f64,
+    pub cy: f64,
+    pub fx: f64,
+    pub fy: f64,
     pub kind: SvgGradientKind,
-    pub radius: f32,
+    pub radius: f64,
     pub spread_method: SpreadMethod,
     pub stops: Vec<SvgGradientStop>,
     pub transform: Option<Matrix>,
     pub units: SvgGradientUnits,
-    pub x1: f32,
-    pub x2: f32,
-    pub y1: f32,
-    pub y2: f32,
+    pub x1: f64,
+    pub x2: f64,
+    pub y1: f64,
+    pub y2: f64,
 }
 
 #[derive(Clone, Debug, PartialEq)]
 #[repr(C)]
 pub struct SvgGradientStop {
     pub color: SvgColor,
-    pub offset: f32,
+    pub offset: f64,
 }
 
 pub struct SvgImportContext<'a> {
@@ -614,22 +616,22 @@ pub struct SvgStyle {
     pub color: String,
     pub display: String,
     pub fill: String,
-    pub fill_opacity: f32,
+    pub fill_opacity: f64,
     pub fill_rule: PathWinding,
     pub filter: String,
     pub font_family: String,
-    pub font_size: f32,
+    pub font_size: f64,
     pub font_style: String,
     pub font_weight: String,
-    pub opacity: f32,
+    pub opacity: f64,
     pub stroke: String,
     pub stroke_dasharray: String,
-    pub stroke_dashoffset: f32,
+    pub stroke_dashoffset: f64,
     pub stroke_linecap: String,
     pub stroke_linejoin: String,
-    pub stroke_miterlimit: f32,
-    pub stroke_opacity: f32,
-    pub stroke_width: f32,
+    pub stroke_miterlimit: f64,
+    pub stroke_opacity: f64,
+    pub stroke_width: f64,
     pub text_anchor: String,
     pub visibility: String,
 }
@@ -637,18 +639,18 @@ pub struct SvgStyle {
 #[derive(Clone, Copy, Debug, PartialEq)]
 #[repr(C)]
 pub struct SvgViewport {
-    pub height: f32,
-    pub width: f32,
-    pub x: f32,
-    pub y: f32,
+    pub height: f64,
+    pub width: f64,
+    pub x: f64,
+    pub y: f64,
 }
 
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub struct SvgViewportOptions {
-    pub height: Option<f32>,
-    pub width: Option<f32>,
-    pub x: Option<f32>,
-    pub y: Option<f32>,
+    pub height: Option<f64>,
+    pub width: Option<f64>,
+    pub x: Option<f64>,
+    pub y: Option<f64>,
 }
 
 fn lottie_record_from_map(value: Map<String, Value>) -> LottieRecord {

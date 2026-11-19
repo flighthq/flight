@@ -1,5 +1,7 @@
 //! flight-compiler: target-native
 
+// flight-lint: allow-file(f64) Task Q format numbers: Lottie JSON and SVG text numbers are JS Numbers held in f64, and Rive binary float32 fields widen exactly at decode; easing, text-format, color, skin and diagnostic lanes stay f32
+
 use flight_node::contract::{NodeRef, get_node_child_at, get_node_child_count};
 use flight_scene2d::contract::{Node2DRef, as_node2d_ref};
 use serde_json::{Map, Value, json};
@@ -26,7 +28,7 @@ pub fn create_lottie_test_document(layers: Vec<LottieLayer>) -> LottieDocument {
 }
 
 // flight-lint: allow(contract-vocabulary) serde_json::Value preserves the scalar animatable record used by the shared source fixtures
-pub fn animated_lottie_test_scalar(start: f32, end: f32) -> Value {
+pub fn animated_lottie_test_scalar(start: f64, end: f64) -> Value {
     return json!({
         "a": 1,
         "k": [
@@ -38,12 +40,12 @@ pub fn animated_lottie_test_scalar(start: f32, end: f32) -> Value {
 
 // flight-lint: allow(contract-vocabulary) serde_json::Value preserves the vector animatable and per-component easing-handle unions
 pub fn animated_lottie_test_vector(
-    start: Vec<f32>,
-    end: Vec<f32>,
-    ox: Option<Vec<f32>>,
-    oy: Option<Vec<f32>>,
-    ix: Option<Vec<f32>>,
-    iy: Option<Vec<f32>>,
+    start: Vec<f64>,
+    end: Vec<f64>,
+    ox: Option<Vec<f64>>,
+    oy: Option<Vec<f64>>,
+    ix: Option<Vec<f64>>,
+    iy: Option<Vec<f64>>,
 ) -> Value {
     return json!({
         "a": 1,
@@ -125,7 +127,7 @@ pub fn lottie_test_shape_layer(ind: i32, name: &str) -> LottieLayer {
     );
 }
 
-pub fn lottie_test_square_path(x: f32, y: f32, size: f32) -> LottieShapePath {
+pub fn lottie_test_square_path(x: f64, y: f64, size: f64) -> LottieShapePath {
     return LottieShapePath {
         c: true,
         i: vec![vec![0.0, 0.0]; 4],

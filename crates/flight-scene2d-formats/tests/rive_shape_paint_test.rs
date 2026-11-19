@@ -396,7 +396,7 @@ mod append_rive_shape_paint {
                 &[line(100.0)],
                 None,
             );
-            assert_path_close_1(stroked_length(&shape), expected * 100.0, 1);
+            assert_path_close_1(stroked_length(&shape), expected * 100.0);
         }
     }
 
@@ -412,11 +412,7 @@ mod append_rive_shape_paint {
         );
         let lengths = stroked_lengths(&shape);
         assert_eq!(lengths.iter().filter(|value| **value > 0.001).count(), 1);
-        assert_path_close_0(
-            lengths.into_iter().fold(f64::NEG_INFINITY, f64::max),
-            100.0,
-            2,
-        );
+        assert_path_close_0(lengths.into_iter().fold(f64::NEG_INFINITY, f64::max), 100.0);
     }
 
     #[test]
@@ -435,8 +431,8 @@ mod append_rive_shape_paint {
             .collect::<Vec<_>>();
         lengths.sort_by(f64::total_cmp);
         assert_eq!(lengths.len(), 2);
-        assert_path_close_0(lengths[0], 25.0, 1);
-        assert_path_close_0(lengths[1], 75.0, 1);
+        assert_path_close_0(lengths[0], 25.0);
+        assert_path_close_0(lengths[1], 75.0);
     }
 
     #[test]
@@ -449,7 +445,7 @@ mod append_rive_shape_paint {
             &[line(100.0)],
             None,
         );
-        assert_path_close_0(stroked_length(&shape), 30.0, 2);
+        assert_path_close_0(stroked_length(&shape), 30.0);
         assert_eq!(
             stroked_lengths(&shape)
                 .into_iter()
@@ -469,7 +465,7 @@ mod append_rive_shape_paint {
             &[line(100.0)],
             None,
         );
-        assert_path_close_3(stroked_length(&shape), 0.0, 1);
+        assert_path_close_3(stroked_length(&shape), 0.0);
     }
 
     #[test]
@@ -486,7 +482,7 @@ mod append_rive_shape_paint {
             Some(vec![-1, 0, 1, 0, 3]),
         );
         append_rive_shape_paint(&shape, &graph_with_both, 0, &[line(100.0)], None);
-        assert_path_close_0(stroked_length(&shape), 150.0, 2);
+        assert_path_close_0(stroked_length(&shape), 150.0);
     }
 
     #[test]
@@ -499,7 +495,7 @@ mod append_rive_shape_paint {
             &[line(40.0)],
             None,
         );
-        assert_path_close_3(stroked_length(&shape), 30.0, 3);
+        assert_path_close_3(stroked_length(&shape), 30.0);
     }
 
     #[test]
@@ -512,7 +508,7 @@ mod append_rive_shape_paint {
             &[line(100.0)],
             None,
         );
-        assert_path_close_3(stroked_length(&shape), 70.0, 7);
+        assert_path_close_3(stroked_length(&shape), 70.0);
     }
 
     #[test]
@@ -540,7 +536,7 @@ mod append_rive_shape_paint {
             &[line(40.0)],
             None,
         );
-        assert_path_close_3(stroked_length(&shape), 20.0, 2);
+        assert_path_close_3(stroked_length(&shape), 20.0);
     }
 
     #[test]
@@ -575,7 +571,7 @@ mod append_rive_shape_paint {
             &[line(40.0)],
             None,
         );
-        assert_path_close_3(stroked_length(&shape), 40.0, 1);
+        assert_path_close_3(stroked_length(&shape), 40.0);
     }
 
     #[test]
@@ -634,29 +630,26 @@ mod register_rive_paint_handlers {
 }
 
 fn assert_f32_close_6(actual: f64, expected: f64) {
-    // D1 f32 bound (TS: 0.0000005)
-    let bound = 0.0000005_f64.max(4.0 * f64::from(f32::EPSILON) * expected.abs().max(1.0));
+    // TS: 0.0000005
+    let bound = 0.0000005;
     assert!((actual - expected).abs() <= bound);
 }
 
-fn assert_path_close_0(actual: f64, expected: f64, accumulation_count: usize) {
-    // D1 f32 bound (TS: 0.5)
-    let bound =
-        0.5_f64.max(accumulation_count as f64 * f64::from(f32::EPSILON) * expected.abs().max(1.0));
+fn assert_path_close_0(actual: f64, expected: f64) {
+    // TS: 0.5
+    let bound = 0.5;
     assert!((actual - expected).abs() <= bound);
 }
 
-fn assert_path_close_1(actual: f64, expected: f64, accumulation_count: usize) {
-    // D1 f32 bound (TS: 0.05)
-    let bound =
-        0.05_f64.max(accumulation_count as f64 * f64::from(f32::EPSILON) * expected.abs().max(1.0));
+fn assert_path_close_1(actual: f64, expected: f64) {
+    // TS: 0.05
+    let bound = 0.05;
     assert!((actual - expected).abs() <= bound);
 }
 
-fn assert_path_close_3(actual: f64, expected: f64, accumulation_count: usize) {
-    // D1 f32 bound (TS: 0.0005)
-    let bound = 0.0005_f64
-        .max(accumulation_count as f64 * f64::from(f32::EPSILON) * expected.abs().max(1.0));
+fn assert_path_close_3(actual: f64, expected: f64) {
+    // TS: 0.0005
+    let bound = 0.0005;
     assert!((actual - expected).abs() <= bound);
 }
 
@@ -670,7 +663,7 @@ fn color_number_object(
     type_key: u64,
     color_key: u64,
     color: u32,
-    numbers: &[(u64, f32)],
+    numbers: &[(u64, f64)],
 ) -> RiveCoreObject {
     let mut source = object(type_key, numbers);
     source.properties.push(RiveProperty {
@@ -693,8 +686,8 @@ fn command_index(commands: &[ShapeCommandToken], key: &str) -> usize {
 }
 
 fn dashed_stroke(
-    lengths: &[(f32, bool)],
-    offset: f32,
+    lengths: &[(f64, bool)],
+    offset: f64,
     offset_is_percentage: bool,
 ) -> RiveArtboardGraph {
     let mut objects = vec![
@@ -703,14 +696,14 @@ fn dashed_stroke(
         object(SOLID_COLOR, &[]),
         object(
             DASH_PATH,
-            &[(690, offset), (691, u8::from(offset_is_percentage) as f32)],
+            &[(690, offset), (691, u8::from(offset_is_percentage) as f64)],
         ),
     ];
     let mut parents = vec![-1, 0, 1, 1];
     for (value, percentage) in lengths {
         objects.push(object(
             DASH,
-            &[(692, *value), (693, u8::from(*percentage) as f32)],
+            &[(692, *value), (693, u8::from(*percentage) as f64)],
         ));
         parents.push(3);
     }
@@ -751,7 +744,7 @@ fn join_of(shape: &Ref<Shape>) -> String {
     return string_at(&commands, at + 8).to_string();
 }
 
-fn line(length: f32) -> RivePathRecord {
+fn line(length: f64) -> RivePathRecord {
     return RivePathRecord {
         commands: vec![PathCommand::MOVE_TO as u8, PathCommand::LINE_TO as u8],
         data: vec![0.0, 0.0, length, 0.0],
@@ -768,7 +761,7 @@ fn numbers_at(commands: &[ShapeCommandToken], index: usize) -> &[f64] {
     return commands[index].as_numbers().unwrap();
 }
 
-fn object(type_key: u64, properties: &[(u64, f32)]) -> RiveCoreObject {
+fn object(type_key: u64, properties: &[(u64, f64)]) -> RiveCoreObject {
     return RiveCoreObject {
         properties: properties
             .iter()
@@ -823,7 +816,7 @@ fn string_at(commands: &[ShapeCommandToken], index: usize) -> &str {
     return commands[index].as_str().unwrap();
 }
 
-fn stroke_with(properties: &[(u64, f32)]) -> RiveArtboardGraph {
+fn stroke_with(properties: &[(u64, f64)]) -> RiveArtboardGraph {
     return graph(
         vec![
             object(SHAPE, &[]),
@@ -856,7 +849,7 @@ fn stroked_lengths(shape: &Ref<Shape>) -> Vec<f64> {
     return lengths;
 }
 
-fn trimmed_stroke(start: f32, end: f32, mode: f32) -> RiveArtboardGraph {
+fn trimmed_stroke(start: f64, end: f64, mode: f64) -> RiveArtboardGraph {
     return graph(
         vec![
             object(SHAPE, &[]),

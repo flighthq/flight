@@ -1,5 +1,7 @@
 //! flight-compiler: target-native
 
+// flight-lint: allow-file(f64) Task Q format numbers: Lottie JSON and SVG text numbers are JS Numbers held in f64, and Rive binary float32 fields widen exactly at decode; easing, text-format, color, skin and diagnostic lanes stay f32
+
 use std::cmp::Ordering;
 
 use flight_geometry::{Matrix, create_gradient_transform_matrix};
@@ -7,8 +9,8 @@ use flight_geometry::{Matrix, create_gradient_transform_matrix};
 use crate::lottie_document::{lottie_clamp, lottie_rgba};
 use crate::types::{LottieGradientOpacityStop, LottieGradientPaint};
 
-// flight-lint: allow(conform-array) D9 array negotiation: TS readonly number[] maps to the canonical &[f32] slice lane
-pub fn create_lottie_gradient_matrix(start: &[f32], end: &[f32]) -> Matrix {
+// flight-lint: allow(conform-array) D9 array negotiation: TS readonly number[] maps to the canonical &[f64] slice lane
+pub fn create_lottie_gradient_matrix(start: &[f64], end: &[f64]) -> Matrix {
     let delta_x = end[0] - start[0];
     let delta_y = end[1] - start[1];
     let span = delta_x.hypot(delta_y);
@@ -23,8 +25,8 @@ pub fn create_lottie_gradient_matrix(start: &[f32], end: &[f32]) -> Matrix {
 
 pub fn interpolate_lottie_gradient_opacity(
     stops: &[LottieGradientOpacityStop],
-    offset: f32,
-) -> f32 {
+    offset: f64,
+) -> f64 {
     if stops.is_empty() {
         return 1.0;
     }
@@ -47,8 +49,8 @@ pub fn interpolate_lottie_gradient_opacity(
     return stops[stops.len() - 1].alpha;
 }
 
-// flight-lint: allow(conform-array) D9 array negotiation: TS readonly number[] maps to the canonical &[f32] slice lane
-pub fn parse_lottie_gradient(values: &[f32], count: usize, opacity: f32) -> LottieGradientPaint {
+// flight-lint: allow(conform-array) D9 array negotiation: TS readonly number[] maps to the canonical &[f64] slice lane
+pub fn parse_lottie_gradient(values: &[f64], count: usize, opacity: f64) -> LottieGradientPaint {
     let mut opacity_stops = Vec::new();
     for index in (count * 4..values.len().saturating_sub(1)).step_by(2) {
         opacity_stops.push(LottieGradientOpacityStop {

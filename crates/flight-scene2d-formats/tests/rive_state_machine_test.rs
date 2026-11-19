@@ -261,7 +261,7 @@ mod register_rive_state_machine_handlers {
     }
 }
 
-fn number_property(key: u64, value: f32) -> RiveProperty {
+fn number_property(key: u64, value: f64) -> RiveProperty {
     return RiveProperty {
         key,
         r#type: RiveFieldType::Double,
@@ -269,7 +269,7 @@ fn number_property(key: u64, value: f32) -> RiveProperty {
     };
 }
 
-fn object(type_key: u64, properties: &[(u64, f32)]) -> RiveCoreObject {
+fn object(type_key: u64, properties: &[(u64, f64)]) -> RiveCoreObject {
     return RiveCoreObject {
         properties: properties
             .iter()

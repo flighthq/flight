@@ -30,12 +30,12 @@ use crate::types::*;
 struct RiveGradientPaint {
     alphas: Vec<f64>,
     colors: Vec<u32>,
-    end_x: f32,
-    end_y: f32,
+    end_x: f64,
+    end_y: f64,
     radial: bool,
     ratios: Vec<f64>,
-    start_x: f32,
-    start_y: f32,
+    start_x: f64,
+    start_y: f64,
 }
 
 #[derive(Clone, Copy)]
@@ -90,14 +90,14 @@ fn create_rive_gradient(
     let mut gradient = RiveGradientPaint {
         alphas: Vec::new(),
         colors: Vec::new(),
-        end_x: read_rive_number(source, RIVE_GRADIENT_END_X, 0.0) as f32,
-        end_y: read_rive_number(source, RIVE_GRADIENT_END_Y, 0.0) as f32,
+        end_x: read_rive_number(source, RIVE_GRADIENT_END_X, 0.0),
+        end_y: read_rive_number(source, RIVE_GRADIENT_END_Y, 0.0),
         radial: i32::try_from(source.type_key)
             .ok()
             .is_some_and(|key| is_rive_core_type_derived_from(key, RIVE_RADIAL_GRADIENT)),
         ratios: Vec::new(),
-        start_x: read_rive_number(source, RIVE_GRADIENT_START_X, 0.0) as f32,
-        start_y: read_rive_number(source, RIVE_GRADIENT_START_Y, 0.0) as f32,
+        start_x: read_rive_number(source, RIVE_GRADIENT_START_X, 0.0),
+        start_y: read_rive_number(source, RIVE_GRADIENT_START_Y, 0.0),
     };
     for stop in index + 1..artboard.objects.len() {
         if artboard.parent_indices.get(stop).copied() != Some(index as i32) {
@@ -303,7 +303,7 @@ fn append_rive_fill_style(shape: &Ref<Shape>, paint: &RivePaint) {
 
 fn append_rive_paths(shape: &Ref<Shape>, paths: &[RivePathRecord], winding: Option<PathWinding>) {
     for path in paths {
-        let data = path.data.iter().copied().map(f64::from).collect::<Vec<_>>();
+        let data = path.data.iter().copied().collect::<Vec<_>>();
         append_shape_path(
             shape,
             &path.commands,
@@ -466,7 +466,7 @@ fn dash_rive_paths(paths: &[RivePathRecord], dash: &RiveDash) -> Vec<RivePathRec
         if !commands.is_empty() {
             results.push(RivePathRecord {
                 commands,
-                data: data.into_iter().map(|value| value as f32).collect(),
+                data: data,
                 path_index: record.path_index,
                 winding: record.winding,
             });
@@ -503,7 +503,7 @@ fn read_rive_number(source: &RiveCoreObject, key: u64, fallback: f64) -> f64 {
         .find(|candidate| candidate.key == key)
         .map_or(fallback, |property| match property.value {
             RiveValue::Uint(value) => return value as f64,
-            RiveValue::Double(value) => return f64::from(value),
+            RiveValue::Double(value) => return value,
             RiveValue::Color(value) => return f64::from(value),
             _ => return fallback,
         });
@@ -646,7 +646,7 @@ fn to_rive_path(record: &RivePathRecord) -> Path {
     let mut path = create_path(Some(flight_path::PathWinding::NonZero));
     path.winding = record.winding;
     path.commands.clone_from(&record.commands);
-    path.data = record.data.iter().copied().map(f64::from).collect();
+    path.data = record.data.iter().copied().collect();
     return path;
 }
 
@@ -691,7 +691,7 @@ fn trim_rive_path_to_windows(
         );
         results.push(RivePathRecord {
             commands: trimmed.commands,
-            data: trimmed.data.into_iter().map(|value| value as f32).collect(),
+            data: trimmed.data,
             path_index: record.path_index,
             winding: trimmed.winding,
         });

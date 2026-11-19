@@ -16,9 +16,9 @@ use crate::types::{LottieNumericConverter, LottieRerender, LottieShapeItemContex
 
 // flight-lint: allow(f64) Flight path coordinates use the approved D1 f64 path lane
 fn build_rectangle(
-    position: &Arc<RwLock<Vec<f32>>>,
-    size: &Arc<RwLock<Vec<f32>>>,
-    radius: &Arc<RwLock<Vec<f32>>>,
+    position: &Arc<RwLock<Vec<f64>>>,
+    size: &Arc<RwLock<Vec<f64>>>,
+    radius: &Arc<RwLock<Vec<f64>>>,
     direction: Option<i32>,
 ) -> Ref<Path> {
     let position = position.read().unwrap();
@@ -28,22 +28,9 @@ fn build_rectangle(
     let y = position[1] - size[1] / 2.0;
     let mut path = create_path(Some(flight_path::PathWinding::NonZero));
     if radius > 0.0 {
-        append_path_rounded_rectangle(
-            &mut path,
-            f64::from(x),
-            f64::from(y),
-            f64::from(size[0]),
-            f64::from(size[1]),
-            f64::from(radius),
-        );
+        append_path_rounded_rectangle(&mut path, x, y, size[0], size[1], radius);
     } else {
-        append_path_rectangle(
-            &mut path,
-            f64::from(x),
-            f64::from(y),
-            f64::from(size[0]),
-            f64::from(size[1]),
-        );
+        append_path_rectangle(&mut path, x, y, size[0], size[1]);
     }
     return apply_lottie_shape_direction(Arc::new(RwLock::new(path)), direction);
 }

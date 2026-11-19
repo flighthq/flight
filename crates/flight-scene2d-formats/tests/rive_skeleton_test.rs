@@ -97,7 +97,7 @@ mod create_rive_skeleton_2d {
                 object(ARTBOARD, &[], None),
                 object(
                     ROOT_BONE,
-                    &[(ROTATION, std::f32::consts::FRAC_PI_2)],
+                    &[(ROTATION, std::f64::consts::FRAC_PI_2)],
                     Some("root"),
                 ),
             ],
@@ -220,7 +220,7 @@ fn bone_names(result: &RiveSkeleton2DImport) -> Vec<&str> {
         .collect();
 }
 
-fn object(type_key: u64, values: &[(u64, f32)], name: Option<&str>) -> RiveCoreObject {
+fn object(type_key: u64, values: &[(u64, f64)], name: Option<&str>) -> RiveCoreObject {
     let mut properties = values
         .iter()
         .map(|(key, value)| RiveProperty {

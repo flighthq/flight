@@ -71,7 +71,7 @@ mod lottie_path_shape_item_handler {
     }
 }
 
-fn square_value(size: f32) -> Value {
+fn square_value(size: f64) -> Value {
     return json!({
         "c": true,
         "i": [[0, 0], [0, 0], [0, 0], [0, 0]],

@@ -32,7 +32,7 @@ pub fn lottie_fill_shape_item_handler(context: &mut LottieShapeItemContext<'_, '
     let painter: LottieShapePainter = Arc::new(move |shape, paths| {
         let color = paint_color.read().unwrap();
         let opacity = paint_opacity.read().unwrap()[0];
-        append_shape_begin_fill(shape, lottie_rgba(&color), Some(f64::from(opacity)));
+        append_shape_begin_fill(shape, lottie_rgba(&color), Some(opacity));
         append_lottie_shape_paths(paths, shape, Some(winding));
         append_shape_end_fill(shape);
     });

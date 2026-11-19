@@ -67,7 +67,7 @@ mod apply_animation_clip_to_rive_document {
                 15,
                 Node2DAnimationPath::Rotation,
                 0.0,
-                std::f32::consts::PI,
+                std::f64::consts::PI,
                 90.0,
             ),
             (16, Node2DAnimationPath::ScaleX, 1.0, 3.0, 2.0),
@@ -92,10 +92,10 @@ mod apply_animation_clip_to_rive_document {
                 Node2DAnimationPath::Rotation => node.node2d_fields().rotation,
                 Node2DAnimationPath::ScaleX => node.node2d_fields().scale_x,
                 Node2DAnimationPath::ScaleY => node.node2d_fields().scale_y,
-                Node2DAnimationPath::Alpha => node.node2d_fields().alpha,
+                Node2DAnimationPath::Alpha => f64::from(node.node2d_fields().alpha),
                 _ => unreachable!(),
             };
-            assert_f32(actual, expected);
+            assert_number_eq(actual, expected);
         }
     }
 }
@@ -147,8 +147,8 @@ mod create_rive_animation_clips {
                 .collect::<Vec<_>>(),
             vec!["walk", "blink"]
         );
-        assert_f32(clips[0].clip.duration, 2.0);
-        assert_f32(clips[1].clip.duration, 0.5);
+        assert_number_eq(clips[0].clip.duration, 2.0);
+        assert_number_eq(clips[1].clip.duration, 0.5);
     }
 
     #[test]
@@ -207,9 +207,9 @@ mod create_rive_animation_clips {
             ],
         )];
         let result = clips(&objects, &[], None, None);
-        assert_f32(result[0].speed, 2.5);
-        assert_f32(result[0].work_area_start.unwrap(), 0.5);
-        assert_f32(result[0].work_area_end.unwrap(), 2.0);
+        assert_number_eq(result[0].speed, 2.5);
+        assert_number_eq(result[0].work_area_start.unwrap(), 0.5);
+        assert_number_eq(result[0].work_area_end.unwrap(), 2.0);
 
         let disabled = vec![object(
             LINEAR_ANIMATION,
@@ -220,7 +220,7 @@ mod create_rive_animation_clips {
             ],
         )];
         let result = clips(&disabled, &[], None, None);
-        assert_f32(result[0].speed, 1.0);
+        assert_number_eq(result[0].speed, 1.0);
         assert_eq!(result[0].work_area_start, None);
         assert_eq!(result[0].work_area_end, None);
     }
@@ -237,7 +237,7 @@ mod create_rive_animation_clips {
         )];
         let result = clips(&objects, &[], None, None);
         assert_eq!(result[0].work_area_start, None);
-        assert_f32(result[0].work_area_end.unwrap(), 2.0);
+        assert_number_eq(result[0].work_area_end.unwrap(), 2.0);
     }
 
     #[test]
@@ -251,7 +251,7 @@ mod create_rive_animation_clips {
             ],
             None,
         );
-        assert_f32(sampled(&result[0], 0.5), 100.0);
+        assert_number_eq(sampled(&result[0], 0.5), 100.0);
     }
 
     #[test]
@@ -285,7 +285,7 @@ mod create_rive_animation_clips {
             0,
             Some(&mut diagnostics),
         );
-        assert_f32(sampled(&held[0], 0.5), 0.0);
+        assert_number_eq(sampled(&held[0], 0.5), 0.0);
         assert!(diagnostics.is_empty());
         let linear = build(
             1.0,
@@ -295,7 +295,7 @@ mod create_rive_animation_clips {
             0,
             Some(&mut diagnostics),
         );
-        assert_f32(sampled(&linear[0], 0.5), 50.0);
+        assert_number_eq(sampled(&linear[0], 0.5), 50.0);
         assert!(diagnostics.is_empty());
     }
 
@@ -357,13 +357,13 @@ mod create_rive_animation_clips {
     #[test]
     fn falls_back_to_linear_for_a_scripted_interpolator() {
         let result = build_with_interpolator(SCRIPTED_INTERPOLATOR, vec![], None);
-        assert_f32(sampled(&result[0], 0.5), 50.0);
+        assert_number_eq(sampled(&result[0], 0.5), 50.0);
     }
 
     #[test]
     fn binds_a_bone_rotation_channel_against_the_flattened_rig() {
         let (clips, skeleton) =
-            build_bone_property(ROTATION, std::f32::consts::FRAC_PI_2, 0.0, 0.0, 1.0, None);
+            build_bone_property(ROTATION, std::f64::consts::FRAC_PI_2, 0.0, 0.0, 1.0, None);
         let target = skeleton_target(&clips[0]);
         assert_eq!(target.bone_index, skeleton.bone_indices[1]);
         assert_eq!(target.path, SKELETON_2D_ANIMATION_PATH_ROTATION);
@@ -373,17 +373,17 @@ mod create_rive_animation_clips {
     fn converts_absolute_bone_values_into_relative_binder_values() {
         let (rotation, _) = build_bone_property(
             ROTATION,
-            std::f32::consts::PI,
-            std::f32::consts::FRAC_PI_2,
+            std::f64::consts::PI,
+            std::f64::consts::FRAC_PI_2,
             0.0,
             1.0,
             None,
         );
-        assert_f32(sampled(&rotation[0], 1.0), 90.0);
+        assert_number_eq(sampled(&rotation[0], 1.0), 90.0);
         let (translation, _) = build_bone_property(13, 30.0, 0.0, 12.0, 1.0, None);
-        assert_f32(sampled(&translation[0], 1.0), 18.0);
+        assert_number_eq(sampled(&translation[0], 1.0), 18.0);
         let (scale, _) = build_bone_property(SCALE_X, 3.0, 0.0, 0.0, 2.0, None);
-        assert_f32(sampled(&scale[0], 1.0), 1.5);
+        assert_number_eq(sampled(&scale[0], 1.0), 1.5);
     }
 
     #[test]
@@ -485,12 +485,12 @@ mod create_rive_animation_clips {
         let result = build(
             30.0,
             ROTATION,
-            &[(0.0, 1.0, 0.0), (30.0, 1.0, std::f32::consts::PI)],
+            &[(0.0, 1.0, 0.0), (30.0, 1.0, std::f64::consts::PI)],
             one_node(),
             0,
             None,
         );
-        assert_f32(
+        assert_number_eq(
             result[0].clip.channels[0].track.read().unwrap().values[1],
             180.0,
         );
@@ -683,13 +683,13 @@ mod register_rive_animation_handlers {
     }
 }
 
-fn assert_detail_number(diagnostic: &ImportDiagnostic, key: &str, expected: f32) {
+fn assert_detail_number(diagnostic: &ImportDiagnostic, key: &str, expected: f64) {
     let Some(ImportDiagnosticDetailValue::Number(actual)) =
         diagnostic.detail.as_ref().unwrap().get(key)
     else {
         panic!("expected numeric diagnostic detail {key}");
     };
-    assert_f32(*actual, expected);
+    assert_number_eq(*actual, expected);
 }
 
 fn assert_detail_string(diagnostic: &ImportDiagnostic, key: &str, expected: &str) {
@@ -711,19 +711,16 @@ fn assert_diagnostic(
     assert_eq!(diagnostics[index].severity, severity);
 }
 
-fn assert_f32(actual: f32, expected: f32) {
-    // D1 f32 bound (TS: 0)
-    let bound = 4.0 * f32::EPSILON * expected.abs().max(1.0);
-    assert!(
-        (actual - expected).abs() <= bound,
-        "expected {expected}, got {actual} (bound {bound})"
-    );
+fn assert_number_eq(actual: impl Into<f64>, expected: f64) {
+    // TS: exact (bound 0).
+    let actual: f64 = actual.into();
+    assert_eq!(actual, expected, "expected {expected}, got {actual}");
 }
 
 fn build(
-    fps: f32,
+    fps: f64,
     property_key: u64,
-    frames: &[(f32, f32, f32)],
+    frames: &[(f64, f64, f64)],
     nodes: Vec<Option<Node2DRef>>,
     object_id: i32,
     diagnostics: Option<&mut Vec<ImportDiagnostic>>,
@@ -733,10 +730,10 @@ fn build(
             LINEAR_ANIMATION,
             vec![number(FPS, fps), number(DURATION, 60.0)],
         ),
-        object(KEYED_OBJECT, vec![number(OBJECT_ID, object_id as f32)]),
+        object(KEYED_OBJECT, vec![number(OBJECT_ID, object_id as f64)]),
         object(
             KEYED_PROPERTY,
-            vec![number(PROPERTY_KEY, property_key as f32)],
+            vec![number(PROPERTY_KEY, property_key as f64)],
         ),
     ];
     objects.extend(
@@ -749,10 +746,10 @@ fn build(
 
 fn build_bone_property<'a>(
     property_key: u64,
-    value: f32,
-    setup_rotation: f32,
-    setup_x: f32,
-    setup_scale_x: f32,
+    value: f64,
+    setup_rotation: f64,
+    setup_x: f64,
+    setup_scale_x: f64,
     diagnostics: Option<&'a mut Vec<ImportDiagnostic>>,
 ) -> (Vec<RiveAnimationClip>, RiveSkeleton2DImport) {
     let objects = vec![
@@ -772,7 +769,7 @@ fn build_bone_property<'a>(
         object(KEYED_OBJECT, vec![number(OBJECT_ID, 1.0)]),
         object(
             KEYED_PROPERTY,
-            vec![number(PROPERTY_KEY, property_key as f32)],
+            vec![number(PROPERTY_KEY, property_key as f64)],
         ),
         keyframe(0.0, 1.0, value, None),
         keyframe(1.0, 1.0, value, None),
@@ -846,7 +843,7 @@ fn color(key: u64, value: u32) -> RiveProperty {
     };
 }
 
-fn color_keyframe(frame: f32, value: u32) -> RiveCoreObject {
+fn color_keyframe(frame: f64, value: u32) -> RiveCoreObject {
     return object(
         KEYFRAME_COLOR,
         vec![
@@ -867,10 +864,10 @@ fn empty_artboard() -> RiveArtboardGraph {
 }
 
 fn keyframe(
-    frame: f32,
-    interpolation: f32,
-    value: f32,
-    interpolator: Option<f32>,
+    frame: f64,
+    interpolation: f64,
+    value: f64,
+    interpolator: Option<f64>,
 ) -> RiveCoreObject {
     let mut properties = vec![
         number(FRAME, frame),
@@ -883,7 +880,7 @@ fn keyframe(
     return object(KEYFRAME_DOUBLE, properties);
 }
 
-fn number(key: u64, value: f32) -> RiveProperty {
+fn number(key: u64, value: f64) -> RiveProperty {
     return RiveProperty {
         key,
         r#type: RiveFieldType::Double,
@@ -902,8 +899,8 @@ fn one_node() -> Vec<Option<Node2DRef>> {
     return vec![Some(create_display_object())];
 }
 
-fn sampled(clip: &RiveAnimationClip, time: f32) -> f32 {
-    let mut sample = [0.0_f32; 8];
+fn sampled(clip: &RiveAnimationClip, time: f64) -> f64 {
+    let mut sample = [0.0_f64; 8];
     sample_animation_track(
         &mut sample,
         &clip.clip.channels[0].track.read().unwrap(),

@@ -1,5 +1,7 @@
 //! flight-compiler: target-native
 
+// flight-lint: allow-file(f64) Task Q format numbers: Lottie JSON and SVG text numbers are JS Numbers held in f64, and Rive binary float32 fields widen exactly at decode; easing, text-format, color, skin and diagnostic lanes stay f32
+
 use std::collections::HashMap;
 
 use flight_entity::Uint8Array;
@@ -178,7 +180,7 @@ fn read_rive_core_object(
     }
 }
 
-fn read_rive_float32(cursor: &mut RiveCursor<'_>) -> f32 {
+fn read_rive_float32(cursor: &mut RiveCursor<'_>) -> f64 {
     let Some(end) = cursor.position.checked_add(4) else {
         cursor.overflowed = true;
         return 0.0;
@@ -189,7 +191,8 @@ fn read_rive_float32(cursor: &mut RiveCursor<'_>) -> f32 {
     }
     let bytes = &cursor.bytes[cursor.position..end];
     cursor.position = end;
-    return f32::from_le_bytes([bytes[0], bytes[1], bytes[2], bytes[3]]);
+    // Rive stores 32-bit floats; the value widens exactly into the f64 document.
+    return f64::from(f32::from_le_bytes([bytes[0], bytes[1], bytes[2], bytes[3]]));
 }
 
 fn read_rive_header(cursor: &mut RiveCursor<'_>) -> Option<RiveDocumentHeader> {

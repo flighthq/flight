@@ -253,7 +253,7 @@ fn context_of<'a>(objects: &'a [RiveCoreObject]) -> RiveArtboardImportContext<'a
     return create_rive_artboard_import_context(registry, graph, objects, root, &[], None);
 }
 
-fn object(type_key: u64, properties: &[(u64, f32)]) -> RiveCoreObject {
+fn object(type_key: u64, properties: &[(u64, f64)]) -> RiveCoreObject {
     return RiveCoreObject {
         properties: properties
             .iter()
@@ -267,7 +267,7 @@ fn object(type_key: u64, properties: &[(u64, f32)]) -> RiveCoreObject {
     };
 }
 
-fn object_with_name(type_key: u64, properties: &[(u64, f32)], name: &str) -> RiveCoreObject {
+fn object_with_name(type_key: u64, properties: &[(u64, f64)], name: &str) -> RiveCoreObject {
     let mut object = object(type_key, properties);
     object.properties.push(RiveProperty {
         key: 4,

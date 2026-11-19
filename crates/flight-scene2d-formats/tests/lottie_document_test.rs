@@ -66,8 +66,8 @@ mod apply_animation_clip_to_lottie_document {
         apply_animation_clip_to_lottie_document(&result.clip, 0.5);
         let node = named_child(&result.root, "node");
         let node = node.read().unwrap();
-        assert_f32_eq(node.node2d_fields().x, 5.0);
-        assert_f32_eq(node.node2d_fields().y, 10.0);
+        assert_number_eq(node.node2d_fields().x, 5.0);
+        assert_number_eq(node.node2d_fields().y, 10.0);
     }
 }
 
@@ -127,6 +127,20 @@ mod apply_lottie_transform {
     use super::*;
 
     #[test]
+    fn writes_a_static_position_as_exact_doubles() {
+        // 0.1 has no exact f32 and f32 spacing at 1e9 is 64: both survive only as doubles.
+        let document = test_document();
+        let registry = create_lottie_registry();
+        let mut context = import_context(&document, &registry, None);
+        let target: Node2DRef = create_display_object();
+        let transform = json!({ "p": { "a": 0, "k": [0.1, 1000000000.5] } });
+        apply_lottie_transform(&target, Some(&transform), &mut context, None, None);
+        let target = target.read().unwrap();
+        assert_number_eq(target.node2d_fields().x, 0.1);
+        assert_number_eq(target.node2d_fields().y, 1_000_000_000.5);
+    }
+
+    #[test]
     fn writes_position_and_rotation_in_authoring_degrees() {
         let document = test_document();
         let registry = create_lottie_registry();
@@ -138,9 +152,9 @@ mod apply_lottie_transform {
         });
         apply_lottie_transform(&target, Some(&transform), &mut context, None, None);
         let target = target.read().unwrap();
-        assert_f32_eq(target.node2d_fields().x, 12.0);
-        assert_f32_eq(target.node2d_fields().y, 34.0);
-        assert_f32_eq(target.node2d_fields().rotation, 90.0);
+        assert_number_eq(target.node2d_fields().x, 12.0);
+        assert_number_eq(target.node2d_fields().y, 34.0);
+        assert_number_eq(target.node2d_fields().rotation, 90.0);
     }
 
     #[test]
@@ -152,8 +166,8 @@ mod apply_lottie_transform {
         let transform = json!({ "p": { "a": 0, "k": [12, null] } });
         apply_lottie_transform(&target, Some(&transform), &mut context, None, None);
         let target = target.read().unwrap();
-        assert_f32_eq(target.node2d_fields().x, 12.0);
-        assert_f32_eq(target.node2d_fields().y, 12.0);
+        assert_number_eq(target.node2d_fields().x, 12.0);
+        assert_number_eq(target.node2d_fields().y, 12.0);
     }
 
     #[test]
@@ -167,7 +181,7 @@ mod apply_lottie_transform {
             "r": { "a": 0, "k": 5 }
         });
         apply_lottie_transform(&target, Some(&transform), &mut context, None, Some(true));
-        assert_f32_eq(target.read().unwrap().node2d_fields().rotation, 50.0);
+        assert_number_eq(target.read().unwrap().node2d_fields().rotation, 50.0);
     }
 }
 
@@ -211,8 +225,8 @@ mod bind_mutable_lottie_numeric_property {
         let clip = create_animation_clip(context.channels, Some(1.0), &[]);
         apply_animation_clip_to_lottie_document(&clip, 0.5);
         let current = current.read().unwrap();
-        assert_f32_eq(current[0], 5.0);
-        assert_f32_eq(current[1], 10.0);
+        assert_number_eq(current[0], 5.0);
+        assert_number_eq(current[1], 10.0);
         assert_eq!(changes.load(Ordering::SeqCst), 1);
         assert!(callback_can_read.load(Ordering::SeqCst));
     }
@@ -236,15 +250,15 @@ mod create_lottie_track {
                 .and_then(Value::as_array)
                 .unwrap()
                 .iter()
-                .map(|value| value.as_i64().unwrap() as f32)
+                .map(|value| value.as_i64().unwrap() as f64)
                 .collect();
         });
         let tangent_of: LottieTangentOf = Arc::new(|value, _component| value);
         let track = create_lottie_track(&keyframes, 2, &context, &value_of, 0, false, &tangent_of);
         let mut sample = [0.0, 0.0];
         sample_animation_track(&mut sample, &track.read().unwrap(), 0.5);
-        assert_f32_eq(sample[0], 5.0);
-        assert_f32_eq(sample[1], 10.0);
+        assert_number_eq(sample[0], 5.0);
+        assert_number_eq(sample[1], 10.0);
     }
 }
 
@@ -261,7 +275,7 @@ mod create_scene2d_from_lottie_document_with_registry {
             "op": 60,
             "w": 100
         }));
-        assert_f32_eq(result.duration, 2.0);
+        assert_number_eq(result.duration, 2.0);
         let root: NodeRef = result.root;
         assert_eq!(get_node_child_count(&root), 1);
         let layer = get_node_child_at(&root, 0).unwrap();
@@ -284,7 +298,7 @@ mod create_scene2d_from_lottie_document_with_registry {
         assert_eq!(diagnostics.len(), 1);
         assert_eq!(diagnostics[0].kind, "lottie.invalid-document");
         assert_eq!(diagnostics[0].severity, ImportDiagnosticSeverity::Reject);
-        assert_f32_eq(result.duration, 0.0);
+        assert_number_eq(result.duration, 0.0);
     }
 }
 
@@ -344,9 +358,9 @@ mod initialize_lottie_document_import_result {
             30.0,
         );
         assert!(Arc::ptr_eq(&result.root, &root));
-        assert_f32_eq(result.clip.duration, 2.0);
-        assert_f32_eq(result.duration, 2.0);
-        assert_f32_eq(result.frame_rate, 30.0);
+        assert_number_eq(result.clip.duration, 2.0);
+        assert_number_eq(result.duration, 2.0);
+        assert_number_eq(result.frame_rate, 30.0);
         assert!(result.advanced_blends.is_empty());
     }
 }
@@ -372,9 +386,9 @@ mod lottie_clamp {
 
     #[test]
     fn bounds_a_value_into_the_range_ends_included() {
-        assert_f32_eq(lottie_clamp(-1.0, 0.0, 1.0), 0.0);
-        assert_f32_eq(lottie_clamp(2.0, 0.0, 1.0), 1.0);
-        assert_f32_eq(lottie_clamp(0.5, 0.0, 1.0), 0.5);
+        assert_number_eq(lottie_clamp(-1.0, 0.0, 1.0), 0.0);
+        assert_number_eq(lottie_clamp(2.0, 0.0, 1.0), 1.0);
+        assert_number_eq(lottie_clamp(0.5, 0.0, 1.0), 0.5);
     }
 }
 
@@ -383,10 +397,10 @@ mod lottie_degrees_to_radians {
 
     #[test]
     fn converts_at_the_authoring_layer_boundary_where_lottie_states_degrees() {
-        // D1 f32 bound (TS: 5e-11)
-        let bound = 5e-11_f32.max(4.0 * f32::EPSILON * std::f32::consts::PI.max(1.0));
-        assert!((lottie_degrees_to_radians(180.0) - std::f32::consts::PI).abs() <= bound);
-        assert_f32_eq(lottie_degrees_to_radians(0.0), 0.0);
+        // TS: 5e-11
+        let bound = 5e-11;
+        assert!((lottie_degrees_to_radians(180.0) - std::f64::consts::PI).abs() <= bound);
+        assert_number_eq(lottie_degrees_to_radians(0.0), 0.0);
     }
 }
 
@@ -394,11 +408,27 @@ mod lottie_numeric_value {
     use super::*;
 
     #[test]
+    fn widens_a_legacy_f32_scalar_unknown_exactly() {
+        let mut out = Vec::new();
+        let value: flight_entity::UnknownValue = std::sync::Arc::new(0.1_f32);
+        lottie_numeric_value(&mut out, &Some(value), 2);
+        assert_eq!(out, vec![f64::from(0.1_f32), f64::from(0.1_f32)]);
+    }
+
+    #[test]
+    fn widens_a_legacy_f32_vector_unknown_exactly() {
+        let mut out = Vec::new();
+        let value: flight_entity::UnknownValue = std::sync::Arc::new(vec![0.1_f32, 2.5_f32]);
+        lottie_numeric_value(&mut out, &Some(value), 2);
+        assert_eq!(out, vec![f64::from(0.1_f32), 2.5]);
+    }
+
+    #[test]
     fn answers_zeros_for_an_absent_or_non_finite_value() {
         let mut out = Vec::new();
         lottie_numeric_value(&mut out, &None, 2);
         assert_f32_slice_eq(&out, &[0.0, 0.0]);
-        lottie_numeric_value(&mut out, &number(f32::NAN), 2);
+        lottie_numeric_value(&mut out, &number(f64::NAN), 2);
         assert_f32_slice_eq(&out, &[0.0, 0.0]);
     }
 
@@ -495,19 +525,16 @@ fn animated_vector(start: [i32; 2], end: [i32; 2]) -> Value {
     });
 }
 
-fn assert_f32_eq(actual: f32, expected: f32) {
-    // D1 f32 bound (TS: 0)
-    let bound = 4.0 * f32::EPSILON * expected.abs().max(1.0);
-    assert!(
-        (actual - expected).abs() <= bound,
-        "{actual} != {expected} within {bound}"
-    );
+fn assert_number_eq(actual: impl Into<f64>, expected: f64) {
+    // TS: exact (bound 0).
+    let actual: f64 = actual.into();
+    assert_eq!(actual, expected);
 }
 
-fn assert_f32_slice_eq(actual: &[f32], expected: &[f32]) {
+fn assert_f32_slice_eq(actual: &[f64], expected: &[f64]) {
     assert_eq!(actual.len(), expected.len());
     for (actual, expected) in actual.iter().zip(expected) {
-        assert_f32_eq(*actual, *expected);
+        assert_number_eq(*actual, *expected);
     }
 }
 
@@ -568,11 +595,11 @@ fn named_child(
     panic!("missing child {name}");
 }
 
-fn number(value: f32) -> Unknown {
+fn number(value: f64) -> Unknown {
     return Some(Arc::new(value));
 }
 
-fn numbers(values: Vec<f32>) -> Unknown {
+fn numbers(values: Vec<f64>) -> Unknown {
     return Some(Arc::new(values));
 }
 

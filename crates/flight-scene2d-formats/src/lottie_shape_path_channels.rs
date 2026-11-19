@@ -1,5 +1,7 @@
 //! flight-compiler: target-native
 
+// flight-lint: allow-file(f64) Task Q format numbers: Lottie JSON and SVG text numbers are JS Numbers held in f64, and Rive binary float32 fields widen exactly at decode; easing, text-format, color, skin and diagnostic lanes stay f32
+
 use std::sync::{Arc, RwLock};
 
 use flight_animation::contract::create_animation_channel;
@@ -17,7 +19,7 @@ use crate::types::{
 // flight-lint: allow(conform-params, contract-vocabulary) D24: shared caller-owned mutable values and callback handles replace JS mutable arrays and closures
 pub fn append_lottie_shape_path_channels(
     keyframes: &[Value],
-    current: &Arc<RwLock<Vec<f32>>>,
+    current: &Arc<RwLock<Vec<f64>>>,
     apply: &LottieRerender,
     context: &mut LottieImportContext<'_>,
 ) {
@@ -104,7 +106,7 @@ pub fn append_lottie_shape_path_channels(
     ));
 }
 
-fn flattened_value(value: Option<&Value>, fallback: &Arc<RwLock<Vec<f32>>>) -> Vec<f32> {
+fn flattened_value(value: Option<&Value>, fallback: &Arc<RwLock<Vec<f64>>>) -> Vec<f64> {
     let Some(path) = lottie_shape_path_from_json(value) else {
         return fallback.read().unwrap().clone();
     };
