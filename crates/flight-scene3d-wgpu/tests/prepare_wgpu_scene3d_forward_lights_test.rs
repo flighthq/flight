@@ -24,7 +24,7 @@ fn camera() -> flight_camera::Camera3D {
 
 fn point_light(x: f32, y: f32) -> flight_entity::Ref<flight_lighting::PointLight> {
     let mut light = create_point_light();
-    light.position = create_vector3(x, y, 0.0);
+    light.position = create_vector3(f64::from(x), f64::from(y), 0.0);
     light.range = -1.0;
     return Arc::new(RwLock::new(light));
 }
@@ -60,7 +60,7 @@ mod prepare_wgpu_scene3d_forward_lights {
                     direction: Some(create_vector3(-1.0, 0.0, 0.0)),
                     inner_cone_degrees: Some(45.0),
                     outer_cone_degrees: Some(60.0),
-                    position: Some(create_vector3(index as f32 + 1.0, 0.0, 0.0)),
+                    position: Some(create_vector3(index as f64 + 1.0, 0.0, 0.0)),
                     range: Some(-1.0),
                     ..test_default()
                 }))))

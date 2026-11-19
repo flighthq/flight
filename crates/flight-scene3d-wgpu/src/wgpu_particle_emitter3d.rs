@@ -135,6 +135,7 @@ pub fn destroy_wgpu_particle_emitter3d_resources(state: &mut WgpuRenderState) {
     scene.particle_dummy_view = None;
 }
 
+// flight-lint: allow(f64) 3D matrices, aspect, clip distances, positions and light/shadow values are f64 CPU values (Task Q, foreman-536d86b7); they narrow once into f32 WGPU uniform, vertex and instance buffers only
 fn draw_particle_emitter3d_node(state: &mut WgpuRenderState, node: &NodeRef) {
     let world_matrix = get_node_world_matrix4(node);
     let guard = node.read().unwrap();
@@ -201,19 +202,19 @@ fn draw_particle_emitter3d_node(state: &mut WgpuRenderState, node: &NodeRef) {
         let lz = data.positions_z[i];
 
         let wx = if world_space {
-            lx
+            f64::from(lx)
         } else {
-            wm[0] * lx + wm[4] * ly + wm[8] * lz + wm[12]
+            wm[0] * f64::from(lx) + wm[4] * f64::from(ly) + wm[8] * f64::from(lz) + wm[12]
         };
         let wy = if world_space {
-            ly
+            f64::from(ly)
         } else {
-            wm[1] * lx + wm[5] * ly + wm[9] * lz + wm[13]
+            wm[1] * f64::from(lx) + wm[5] * f64::from(ly) + wm[9] * f64::from(lz) + wm[13]
         };
         let wz = if world_space {
-            lz
+            f64::from(lz)
         } else {
-            wm[2] * lx + wm[6] * ly + wm[10] * lz + wm[14]
+            wm[2] * f64::from(lx) + wm[6] * f64::from(ly) + wm[10] * f64::from(lz) + wm[14]
         };
 
         let cos_r = rotation.cos() * scale;
@@ -253,9 +254,9 @@ fn draw_particle_emitter3d_node(state: &mut WgpuRenderState, node: &NodeRef) {
             region_h = if rotated { region.width } else { region.height };
         }
 
-        instance_data[base] = wx;
-        instance_data[base + 1] = wy;
-        instance_data[base + 2] = wz;
+        instance_data[base] = wx as f32;
+        instance_data[base + 1] = wy as f32;
+        instance_data[base + 2] = wz as f32;
         instance_data[base + 3] = cos_r;
         instance_data[base + 4] = sin_r;
         instance_data[base + 5] = r;
@@ -383,14 +384,14 @@ pub fn draw_wgpu_scene3d_particle_emitter3_ds(
     // The frame uniform: view-projection plus the camera right/up axes from the view matrix rows,
     // written once for every emitter this call.
     let mut f = [0.0_f32; (FRAME_UNIFORM_BYTES / 4) as usize];
-    f[..16].copy_from_slice(&view_projection);
+    f[..16].copy_from_slice(&view_projection.map(|value| value as f32));
     let vm = camera.view.read().unwrap().m;
-    f[16] = vm[0];
-    f[17] = vm[4];
-    f[18] = vm[8];
-    f[20] = vm[1];
-    f[21] = vm[5];
-    f[22] = vm[9];
+    f[16] = vm[0] as f32;
+    f[17] = vm[4] as f32;
+    f[18] = vm[8] as f32;
+    f[20] = vm[1] as f32;
+    f[21] = vm[5] as f32;
+    f[22] = vm[9] as f32;
     let native = get_wgpu_render_state_native_device(state);
     write_wgpu_buffer(
         &native,

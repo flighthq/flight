@@ -427,8 +427,13 @@ fn flatten_instanced_mesh_matrices(state: &mut WgpuRenderState, mesh: &Instanced
     let mut color = allocate_linear_color();
     for index in 0..count {
         let offset = index * INSTANCE_RECORD_FLOATS;
-        scratch[offset..offset + 16]
-            .copy_from_slice(&mesh.instance_matrices[index].read().unwrap().m);
+        scratch[offset..offset + 16].copy_from_slice(
+            &mesh.instance_matrices[index]
+                .read()
+                .unwrap()
+                .m
+                .map(|value| value as f32),
+        );
         match &mesh.instance_colors {
             None => scratch[offset + 16..offset + 20].fill(1.0),
             Some(colors) => {

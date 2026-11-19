@@ -172,6 +172,7 @@ pub struct WgpuWireframeUpload {
 
 /// The active directional shadow for one state (TS `WgpuScene3DShadow`).
 #[derive(Clone, Debug)]
+// flight-lint: allow(f64) shadow biases, depth keys and IBL intensity are f64 CPU values (Task Q)
 pub struct WgpuScene3DShadow {
     pub depth_texture: wgpu::Texture,
     pub depth_view: wgpu::TextureView,
@@ -179,17 +180,18 @@ pub struct WgpuScene3DShadow {
     pub map_height: u32,
     pub map_width: u32,
     pub matrix: Matrix4,
-    pub normal_bias_world: f32,
-    pub pcf_radius: f32,
-    pub shadow_bias: f32,
+    pub normal_bias_world: f64,
+    pub pcf_radius: f64,
+    pub shadow_bias: f64,
 }
 
 /// The baked image-based-lighting set for one state (TS `WgpuScene3DIbl`).
 #[derive(Clone, Debug)]
+// flight-lint: allow(f64) shadow biases, depth keys and IBL intensity are f64 CPU values (Task Q)
 pub struct WgpuScene3DIbl {
     pub brdf_lut: wgpu::Texture,
     pub brdf_lut_view: wgpu::TextureView,
-    pub intensity: f32,
+    pub intensity: f64,
     pub irradiance_cube: wgpu::Texture,
     pub irradiance_cube_view: wgpu::TextureView,
     pub prefiltered_cube: wgpu::Texture,
@@ -208,11 +210,12 @@ pub struct WgpuScene3DFrameBinding {
 /// the runtime so rebuilding the two passes does not allocate each frame. `light_block` is the mesh's
 /// prepared forward-light block, or `None` for the prepared render list's shared block.
 #[derive(Clone)]
+// flight-lint: allow(f64) shadow biases, depth keys and IBL intensity are f64 CPU values (Task Q)
 pub struct WgpuScene3DDrawEntry {
     pub alpha: f32,
     pub color_matrix: Option<[f32; 20]>,
     pub color_scale_bias: Option<ColorScaleBias>,
-    pub depth: f32,
+    pub depth: f64,
     pub light_block: Option<Ref<Scene3DLightBlock>>,
     pub material: Option<Material3DRef>,
     pub mesh: Option<NodeRef>,

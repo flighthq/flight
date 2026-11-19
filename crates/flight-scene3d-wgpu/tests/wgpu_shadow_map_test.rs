@@ -63,7 +63,7 @@ fn make_shadow_camera() -> Camera3D {
 
 fn shadow_translation(x: f32) -> Matrix4 {
     let mut matrix = create_matrix4();
-    matrix.m[12] = x;
+    matrix.m[12] = f64::from(x);
     return matrix;
 }
 
@@ -98,7 +98,7 @@ fn depth_creates(test: &WgpuScene3DTestState) -> usize {
         .count();
 }
 
-fn orthographic_half_extent(camera: &Camera3D) -> (f32, f32) {
+fn orthographic_half_extent(camera: &Camera3D) -> (f64, f64) {
     let Projection::Orthographic(projection) = &camera.projection else {
         panic!("the shadow camera is orthographic");
     };
@@ -219,14 +219,16 @@ mod render_wgpu_scene3d_shadow_map {
         };
         let texel = get_orthographic_projection_texel_size(
             &projection.read().unwrap(),
-            DIRECTIONAL_SHADOW_MAP_SIZE as f32,
-            DIRECTIONAL_SHADOW_MAP_SIZE as f32,
+            f64::from(DIRECTIONAL_SHADOW_MAP_SIZE),
+            f64::from(DIRECTIONAL_SHADOW_MAP_SIZE),
         );
         let shadow = shadow(&mut test).unwrap();
         assert!(shadow.enabled);
-        assert!((shadow.normal_bias_world - 0.02 * texel).abs() < 1e-7);
+        // The biases are f64 CPU values (an f32 lane would store 0.01 as 0.009999999776482582);
+        // they narrow only at the shadow uniform.
+        assert_eq!(shadow.normal_bias_world, 0.02 * texel);
         assert_eq!(shadow.pcf_radius, 2.0);
-        assert!((shadow.shadow_bias - 0.01).abs() < 1e-7);
+        assert_eq!(shadow.shadow_bias, 0.01);
     }
 
     #[test]
@@ -242,8 +244,8 @@ mod render_wgpu_scene3d_shadow_map {
         let projection = create_orthographic_projection();
         {
             let mut projection = projection.write().unwrap();
-            projection.half_height = half_height * 2.0;
-            projection.half_width = half_width * 2.0;
+            projection.half_height = f64::from(half_height * 2.0);
+            projection.half_width = f64::from(half_width * 2.0);
         }
         wide_camera.projection = Projection::Orthographic(projection);
         let mut first = make_shadow_state();

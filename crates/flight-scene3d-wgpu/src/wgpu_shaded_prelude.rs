@@ -301,17 +301,17 @@ fn bind_animated_normal_modifier(modifier: &dyn Modifier, out: &mut [f32], base:
     let Some(value) = narrow::<AnimatedNormalModifier>(modifier) else {
         return;
     };
-    out[base] = value.scroll.x;
-    out[base + 1] = value.scroll.y;
+    out[base] = value.scroll.x as f32;
+    out[base + 1] = value.scroll.y as f32;
     out[base + 2] = value.strength;
     out[base + 4] = value
         .secondary_scroll
         .as_ref()
-        .map_or(0.0, |scroll| scroll.x);
+        .map_or(0.0, |scroll| scroll.x) as f32;
     out[base + 5] = value
         .secondary_scroll
         .as_ref()
-        .map_or(0.0, |scroll| scroll.y);
+        .map_or(0.0, |scroll| scroll.y) as f32;
 }
 
 fn bind_dissolve_modifier(modifier: &dyn Modifier, out: &mut [f32], base: usize) {
@@ -383,12 +383,12 @@ fn bind_vertex_displace_modifier(modifier: &dyn Modifier, out: &mut [f32], base:
     out[base] = value.amplitude;
     out[base + 1] = value.frequency;
     out[base + 2] = value.speed;
-    out[base + 4] = value.axis.as_ref().map_or(0.0, |axis| axis.x);
-    out[base + 5] = value.axis.as_ref().map_or(0.0, |axis| axis.y);
-    out[base + 6] = value.axis.as_ref().map_or(0.0, |axis| axis.z);
-    out[base + 8] = value.direction.x;
-    out[base + 9] = value.direction.y;
-    out[base + 10] = value.direction.z;
+    out[base + 4] = value.axis.as_ref().map_or(0.0, |axis| axis.x) as f32;
+    out[base + 5] = value.axis.as_ref().map_or(0.0, |axis| axis.y) as f32;
+    out[base + 6] = value.axis.as_ref().map_or(0.0, |axis| axis.z) as f32;
+    out[base + 8] = value.direction.x as f32;
+    out[base + 9] = value.direction.y as f32;
+    out[base + 10] = value.direction.z as f32;
 }
 
 /// Writes the base surface plus every ordered modifier into one uniform allocation and binds the

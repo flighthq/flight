@@ -1612,10 +1612,10 @@ mod write_wgpu_frame_uniform {
 
         let frame = bytes_to_f32(&test.buffer_writes()[0].data);
         // With identity view, z = -near maps to NDC 0 and z = -far maps to NDC 1.
-        let near_clip_z = frame[10] * -camera.near + frame[14];
-        let near_clip_w = frame[11] * -camera.near + frame[15];
-        let far_clip_z = frame[10] * -camera.far + frame[14];
-        let far_clip_w = frame[11] * -camera.far + frame[15];
+        let near_clip_z = f64::from(frame[10]) * -camera.near + f64::from(frame[14]);
+        let near_clip_w = f64::from(frame[11]) * -camera.near + f64::from(frame[15]);
+        let far_clip_z = f64::from(frame[10]) * -camera.far + f64::from(frame[14]);
+        let far_clip_w = f64::from(frame[11]) * -camera.far + f64::from(frame[15]);
         assert!((near_clip_z / near_clip_w).abs() < 1e-5);
         assert!((far_clip_z / far_clip_w - 1.0).abs() < 1e-5);
     }

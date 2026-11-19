@@ -35,6 +35,7 @@ pub fn enable_wgpu_scene3d_forward_light_selection_guards(
         Some(warn_wgpu_scene3d_forward_light_selection_required);
 }
 
+// flight-lint: allow(f64) 3D matrices, aspect, clip distances, positions and light/shadow values are f64 CPU values (Task Q, foreman-536d86b7); they narrow once into f32 WGPU uniform, vertex and instance buffers only
 fn warn_wgpu_scene3d_forward_light_selection_required(
     state: &WgpuRenderState,
     lights: &Scene3DLightsLike,

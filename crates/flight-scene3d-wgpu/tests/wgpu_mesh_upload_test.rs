@@ -38,7 +38,7 @@ fn last_uploaded_vertices(test: &WgpuScene3DTestState) -> Vec<f32> {
     return bytes_to_f32(&writes[writes.len() - 2].data);
 }
 
-fn make_skin_bind_pose(positions: [f32; 3]) -> MeshSkinBindPose {
+fn make_skin_bind_pose(positions: [f64; 3]) -> MeshSkinBindPose {
     return MeshSkinBindPose {
         joints: vec![0.0, 0.0, 0.0, 0.0].into_boxed_slice(),
         normals: vec![0.0, 1.0, 0.0].into_boxed_slice(),
@@ -61,7 +61,7 @@ fn make_skinned_geometry(vertices: Vec<f32>) -> MeshGeometry {
     });
 }
 
-fn make_morph(weight: f32) -> flight_entity::Ref<MeshMorph> {
+fn make_morph(weight: f64) -> flight_entity::Ref<MeshMorph> {
     return Arc::new(RwLock::new(MeshMorph {
         targets: Arc::new(vec![MeshMorphTarget {
             position_deltas: vec![4.0, 0.0, 0.0].into_boxed_slice(),

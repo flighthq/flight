@@ -393,7 +393,7 @@ pub fn make_test_camera() -> flight_camera::Camera3D {
     {
         let mut projection = projection.write().unwrap();
         projection.aspect = 1.0;
-        projection.fov_y = std::f32::consts::PI / 3.0;
+        projection.fov_y = std::f64::consts::PI / 3.0;
     }
     camera.projection = flight_camera::Projection::Perspective(projection);
     return camera;
@@ -408,12 +408,16 @@ pub fn make_test_look_at_camera(
 ) -> flight_camera::Camera3D {
     let mut camera = make_test_camera();
     if let flight_camera::Projection::Perspective(projection) = &camera.projection {
-        projection.write().unwrap().fov_y = fov_y;
+        projection.write().unwrap().fov_y = f64::from(fov_y);
     }
     flight_camera::set_camera_3d_view_matrix4_from_look_at(
         &mut camera,
-        &flight_geometry::create_vector3(eye[0], eye[1], eye[2]),
-        &flight_geometry::create_vector3(target[0], target[1], target[2]),
+        &flight_geometry::create_vector3(f64::from(eye[0]), f64::from(eye[1]), f64::from(eye[2])),
+        &flight_geometry::create_vector3(
+            f64::from(target[0]),
+            f64::from(target[1]),
+            f64::from(target[2]),
+        ),
         &flight_geometry::create_vector3(0.0, 1.0, 0.0),
     );
     return camera;

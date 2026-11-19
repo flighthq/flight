@@ -36,7 +36,7 @@ fn blended_pbr() -> Material3DRef {
 
 fn instance_translation(x: f32) -> Matrix4 {
     let mut matrix = create_matrix4();
-    matrix.m[12] = x;
+    matrix.m[12] = f64::from(x);
     return matrix;
 }
 
@@ -514,7 +514,7 @@ mod render_wgpu_scene3d {
             );
             {
                 let mut mesh = mesh.write().unwrap();
-                mesh.position.x = index as f32 * 0.1 - 0.7;
+                mesh.position.x = index as f64 * 0.1 - 0.7;
                 if index % 3 == 0 {
                     mesh.scale.x = -1.0;
                 }

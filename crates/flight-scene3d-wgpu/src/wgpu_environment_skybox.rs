@@ -174,11 +174,12 @@ fn get_wgpu_skybox_sampler(state: &mut WgpuRenderState) -> wgpu::Sampler {
 /// Draws the environment cube as a fullscreen backdrop into the pass (TS
 /// `renderWgpuEnvironmentSkybox`); a no-op without a complete source cube or an open pass encoder.
 /// `aspect` is the viewport width / height.
+// flight-lint: allow(f64) 3D matrices, aspect, clip distances, positions and light/shadow values are f64 CPU values (Task Q, foreman-536d86b7); they narrow once into f32 WGPU uniform, vertex and instance buffers only
 pub fn render_wgpu_environment_skybox(
     render_pass: &mut WgpuRenderPass<'_>,
     environment: &Environment,
     camera: &Camera3D,
-    aspect: f32,
+    aspect: f64,
 ) {
     let state = &mut *render_pass.state;
     let Some(cube_view) = ensure_wgpu_environment_source_cube(state, environment) else {
@@ -196,8 +197,15 @@ pub fn render_wgpu_environment_skybox(
         return;
     }
     let mut u = [0.0_f32; (SKYBOX_UNIFORM_BYTES / 4) as usize];
-    u[..16].copy_from_slice(&camera.inverse_view_projection.read().unwrap().m);
-    u[16] = environment.intensity;
+    u[..16].copy_from_slice(
+        &camera
+            .inverse_view_projection
+            .read()
+            .unwrap()
+            .m
+            .map(|value| value as f32),
+    );
+    u[16] = environment.intensity as f32;
     let native = get_wgpu_render_state_native_device(state);
     write_wgpu_buffer(&native, &sky.uniform_buffer, 0, bytemuck::cast_slice(&u));
 

@@ -235,17 +235,23 @@ fn flatten_shadow_instance_matrices(mesh: &InstancedMesh) -> Vec<f32> {
     let mut records = vec![0.0_f32; count * INSTANCE_RECORD_FLOATS];
     for index in 0..count {
         let offset = index * INSTANCE_RECORD_FLOATS;
-        records[offset..offset + 16]
-            .copy_from_slice(&mesh.instance_matrices[index].read().unwrap().m);
+        records[offset..offset + 16].copy_from_slice(
+            &mesh.instance_matrices[index]
+                .read()
+                .unwrap()
+                .m
+                .map(|value| value as f32),
+        );
     }
     return records;
 }
 
-fn normalize_directional_shadow_pcf_radius(radius: f32) -> f32 {
+// flight-lint: allow(f64) 3D matrices, aspect, clip distances, positions and light/shadow values are f64 CPU values (Task Q, foreman-536d86b7); they narrow once into f32 WGPU uniform, vertex and instance buffers only
+fn normalize_directional_shadow_pcf_radius(radius: f64) -> f64 {
     if !radius.is_finite() {
         return 0.0;
     }
-    return (MAX_DIRECTIONAL_SHADOW_PCF_RADIUS as f32).min(radius.floor().max(0.0));
+    return f64::from(MAX_DIRECTIONAL_SHADOW_PCF_RADIUS).min(radius.floor().max(0.0));
 }
 
 /// The directional shadow recipe's first pass (TS `renderWgpuScene3DShadowMap`): renders every
@@ -254,6 +260,7 @@ fn normalize_directional_shadow_pcf_radius(radius: f32) -> f32 {
 /// Shadows are opt-in; a light with `casts_shadow` false (or none) disables a retained map. Must run
 /// before the main scene pass opens: it drives its own depth-only pass on the frame's encoder, and
 /// is a no-op with no encoder. Front faces are culled to suppress self-shadow acne.
+// flight-lint: allow(f64) 3D matrices, aspect, clip distances, positions and light/shadow values are f64 CPU values (Task Q, foreman-536d86b7); they narrow once into f32 WGPU uniform, vertex and instance buffers only
 pub fn render_wgpu_scene3d_shadow_map(
     state: &mut WgpuRenderState,
     scene: &NodeRef,
@@ -319,8 +326,8 @@ pub fn render_wgpu_scene3d_shadow_map(
     let normal_bias_world = directional_light.normal_bias
         * get_orthographic_projection_texel_size(
             &orthographic.read().unwrap(),
-            map_width as f32,
-            map_height as f32,
+            f64::from(map_width),
+            f64::from(map_height),
         );
     let mut light_matrix = create_matrix4();
     get_camera_3d_view_projection_matrix4(&mut light_matrix, shadow_camera, 1.0);

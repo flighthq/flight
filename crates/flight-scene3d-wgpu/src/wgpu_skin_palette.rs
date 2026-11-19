@@ -143,12 +143,21 @@ fn build_skin_bind_vertices(geometry: &MeshGeometry, bind_pose: &MeshSkinBindPos
         let base = vertex * floats_per_vertex;
         let source = vertex * 3;
         if let Some(offset) = position_offset {
-            out[base + offset..base + offset + 3]
-                .copy_from_slice(&bind_pose.positions[source..source + 3]);
+            // The f64 bind pose narrows once into the f32 vertex buffer.
+            for (target, value) in out[base + offset..base + offset + 3]
+                .iter_mut()
+                .zip(&bind_pose.positions[source..source + 3])
+            {
+                *target = *value as f32;
+            }
         }
         if let Some(offset) = normal_offset {
-            out[base + offset..base + offset + 3]
-                .copy_from_slice(&bind_pose.normals[source..source + 3]);
+            for (target, value) in out[base + offset..base + offset + 3]
+                .iter_mut()
+                .zip(&bind_pose.normals[source..source + 3])
+            {
+                *target = *value as f32;
+            }
         }
     }
     return out;

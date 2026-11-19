@@ -1336,7 +1336,7 @@ pub fn stash_wgpu_uv_transform(state: &mut WgpuRenderState, texture: Option<&Tex
     }
     let mut matrix = create_matrix3();
     get_texture_uv_matrix(&mut matrix, texture);
-    out.copy_from_slice(&matrix.m);
+    out.copy_from_slice(&matrix.m.map(|value| value as f32));
 }
 
 fn texture_layout_entry(
@@ -1439,20 +1439,20 @@ pub fn write_wgpu_draw_uniform(
     let base = (offset / 4) as usize;
     let u = &mut state_runtime.uniform_data;
     let world = &proxy.world_matrix.m;
-    u[base..base + 16].copy_from_slice(world);
+    u[base..base + 16].copy_from_slice(&world.map(|value| value as f32));
     // mat3x3f normal matrix: three vec3 columns each padded to vec4 -> floats 16..27.
     let n = &proxy.normal_matrix.m;
-    u[base + 16] = n[0];
-    u[base + 17] = n[1];
-    u[base + 18] = n[2];
+    u[base + 16] = n[0] as f32;
+    u[base + 17] = n[1] as f32;
+    u[base + 18] = n[2] as f32;
     u[base + 19] = 0.0;
-    u[base + 20] = n[3];
-    u[base + 21] = n[4];
-    u[base + 22] = n[5];
+    u[base + 20] = n[3] as f32;
+    u[base + 21] = n[4] as f32;
+    u[base + 22] = n[5] as f32;
     u[base + 23] = 0.0;
-    u[base + 24] = n[6];
-    u[base + 25] = n[7];
-    u[base + 26] = n[8];
+    u[base + 24] = n[6] as f32;
+    u[base + 25] = n[7] as f32;
+    u[base + 26] = n[8] as f32;
     u[base + 27] = 0.0;
     // mat3x3f uv transform (persistent stash, column-major) -> floats 28..39.
     u[base + 28] = uv[0];
@@ -1573,13 +1573,13 @@ pub fn write_wgpu_frame_uniform(
     vp[6] = 0.5 * (source[6] + source[7]);
     vp[10] = 0.5 * (source[10] + source[11]);
     vp[14] = 0.5 * (source[14] + source[15]);
-    f[..16].copy_from_slice(&vp);
+    f[..16].copy_from_slice(&vp.map(|value| value as f32));
 
     let mut position = create_vector3(0.0, 0.0, 0.0);
     get_camera_3d_position(&mut position, camera);
-    f[16] = position.x;
-    f[17] = position.y;
-    f[18] = position.z;
+    f[16] = position.x as f32;
+    f[17] = position.y as f32;
+    f[18] = position.z as f32;
     f[19] = 0.0;
 
     let data = &lights.data;
@@ -1598,7 +1598,7 @@ pub fn write_wgpu_frame_uniform(
 
     // The camera view matrix (floats 32..47), used by matcap.
     let view = camera.view.read().unwrap();
-    f[32..48].copy_from_slice(&view.m);
+    f[32..48].copy_from_slice(&view.m.map(|value| value as f32));
 
     let point_floats = SCENE_LIGHT_POINT_STRIDE * MAX_FORWARD_LIGHTS;
     f[FRAME_POINT_OFFSET..FRAME_POINT_OFFSET + point_floats]
@@ -1621,13 +1621,14 @@ pub fn write_wgpu_frame_uniform(
 // Writes the IBL sample uniform: x = enabled, y = intensity, z = max mip (roughness 1.0).
 fn write_wgpu_ibl_sample_uniform(scene: &mut WgpuScene3DRuntime, native: &WgpuNativeDevice) {
     let values = match &scene.ibl {
+        // The f32 uniform layout: the f64 IBL intensity narrows once here.
         Some(ibl) => [
-            1.0,
-            ibl.intensity,
+            1.0_f32,
+            ibl.intensity as f32,
             ibl.prefiltered_mip_count as f32 - 1.0,
             0.0,
         ],
-        None => [0.0, 1.0, 0.0, 0.0],
+        None => [0.0_f32, 1.0, 0.0, 0.0],
     };
     write_wgpu_buffer(
         native,
@@ -1647,11 +1648,11 @@ fn write_wgpu_shadow_sample_uniform(
     let mut values = [0.0_f32; 20];
     match &shadow {
         Some(shadow) => {
-            values[..16].copy_from_slice(&shadow.matrix.m);
+            values[..16].copy_from_slice(&shadow.matrix.m.map(|value| value as f32));
             values[16] = if shadow.enabled { 1.0 } else { 0.0 };
-            values[17] = shadow.pcf_radius;
-            values[18] = shadow.shadow_bias;
-            values[19] = shadow.normal_bias_world;
+            values[17] = shadow.pcf_radius as f32;
+            values[18] = shadow.shadow_bias as f32;
+            values[19] = shadow.normal_bias_world as f32;
         }
         None => {
             values[0] = 1.0;
