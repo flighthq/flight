@@ -10,11 +10,12 @@ use crate::surface::allocate_surface;
 use crate::types::*;
 
 /// Allocates a drawable in the given window and acquires a 2D context (TS `createCanvasSurface`).
+// flight-lint: allow(f64) the canvas size is a TS Number logical size carried as f64 to the host, which converts it to its own device extent (foreman-536d86b7)
 pub fn create_canvas_surface(
     capability: &HostCanvasCapability,
     window: &Ref<AppWindow>,
-    width: f32,
-    height: f32,
+    width: f64,
+    height: f64,
     options: Option<&CanvasRenderingContext2DSettings>,
 ) -> Option<Ref<CanvasSurface>> {
     let handle = (capability.create)(window, width, height, options);

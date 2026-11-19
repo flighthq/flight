@@ -36,7 +36,7 @@ src/explain_scene2d_coverage.rs: pub fn has_scene_2d_coverage<S: RenderState>(st
 src/explain_scene2d_pipeline_coverage.rs: pub fn explain_scene_2d_pipeline_coverage<S: RenderState>(state: &S, scene: &NodeRef,) -> Scene2DPipelineCoverageExplanation
 src/explain_scene2d_render.rs: pub fn explain_scene_2d_render<S: RenderState>(state: &S, proxies: &RenderProxies2D<S>, source: &NodeRef,) -> Scene2DRenderExplanation
 src/explain_scene3d_pipeline_coverage.rs: pub fn explain_scene_3d_pipeline_coverage<S: RenderState, T>(state: &S, scene: &NodeRef, material_renderers: Option<&KindMap<T>>,) -> Scene3DPipelineCoverageExplanation
-src/image_surface.rs: pub fn create_canvas_host_surface(surfaces: &mut CanvasHostSurfaces, host: &HostCanvasCapability, width: f32, height: f32,) -> Option<Ref<CanvasSurface>>
+src/image_surface.rs: pub fn create_canvas_host_surface(surfaces: &mut CanvasHostSurfaces, host: &HostCanvasCapability, width: f64, height: f64,) -> Option<Ref<CanvasSurface>>
 src/image_surface.rs: pub fn destroy_canvas_host_surface(surfaces: &mut CanvasHostSurfaces, surface: &Ref<CanvasSurface>,)
 src/image_surface.rs: pub fn get_canvas_host_surface(surfaces: &CanvasHostSurfaces, surface: &Ref<CanvasSurface>,) -> Option<HostCanvasCapability>
 src/lib.rs: pub mod contract

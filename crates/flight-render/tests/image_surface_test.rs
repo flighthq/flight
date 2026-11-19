@@ -11,7 +11,7 @@ fn surface() -> Ref<CanvasSurface> {
 }
 
 fn host(
-    create_surface: Arc<dyn Fn(f32, f32) -> Option<Ref<CanvasSurface>> + Send + Sync>,
+    create_surface: Arc<dyn Fn(f64, f64) -> Option<Ref<CanvasSurface>> + Send + Sync>,
     destroy_surface: Arc<dyn Fn(&Ref<CanvasSurface>) + Send + Sync>,
 ) -> HostCanvasCapability {
     return HostCanvasCapability {
@@ -26,6 +26,23 @@ fn host(
 
 mod create_canvas_host_surface {
     use super::*;
+
+    #[test]
+    fn passes_a_non_f32_logical_size_to_the_host_exactly() {
+        // 100.1 and 16777217 have no f32 values: an f32 lane would pass 100.0999984741211 and 16777216.
+        let dimensions = Arc::new(Mutex::new(Vec::new()));
+        let calls = dimensions.clone();
+        let host = host(
+            Arc::new(move |width, height| {
+                calls.lock().unwrap().push((width, height));
+                return None;
+            }),
+            Arc::new(|_| {}),
+        );
+        let mut surfaces = crate::support::test_default::<CanvasHostSurfaces>();
+        create_canvas_host_surface(&mut surfaces, &host, 100.1, 16_777_217.0);
+        assert_eq!(*dimensions.lock().unwrap(), vec![(100.1, 16_777_217.0)]);
+    }
 
     #[test]
     fn create_canvas_host_surface_passes_dimensions_and_preserves_result() {

@@ -107,6 +107,7 @@ pub struct HostSurfaceCapabilities {
 }
 
 /// Canvas 2D drawable lifecycle (TS `HostCanvasCapability`); context and handles stay opaque.
+// flight-lint: allow(f64) the canvas size is a TS Number logical size carried as f64 to the host, which converts it to its own device extent (foreman-536d86b7)
 #[derive(Clone)]
 pub struct HostCanvasCapability {
     pub provider: ProviderRef,
@@ -121,14 +122,14 @@ pub struct HostCanvasCapability {
     pub create: Arc<
         dyn Fn(
                 &Ref<AppWindow>,
-                f32,
-                f32,
+                f64,
+                f64,
                 Option<&CanvasRenderingContext2DSettings>,
             ) -> Option<NativeSurfaceHandle>
             + Send
             + Sync,
     >,
-    pub create_surface: Arc<dyn Fn(f32, f32) -> Option<Ref<CanvasSurface>> + Send + Sync>,
+    pub create_surface: Arc<dyn Fn(f64, f64) -> Option<Ref<CanvasSurface>> + Send + Sync>,
     pub destroy_surface: Arc<dyn Fn(&Ref<CanvasSurface>) + Send + Sync>,
     pub release: Arc<dyn Fn(&SurfaceRef) + Send + Sync>,
 }

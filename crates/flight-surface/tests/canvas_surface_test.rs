@@ -60,7 +60,7 @@ fn app_window() -> Ref<AppWindow> {
 fn capability(
     create_handle: Option<NativeSurfaceHandle>,
     acquired_context: Option<CanvasRenderingContext2D>,
-    created: Arc<Mutex<Vec<(Ref<AppWindow>, f32, f32)>>>,
+    created: Arc<Mutex<Vec<(Ref<AppWindow>, f64, f64)>>>,
     acquired: Arc<Mutex<Vec<SurfaceRef>>>,
     released: Arc<Mutex<Vec<SurfaceRef>>>,
 ) -> HostCanvasCapability {
@@ -76,8 +76,8 @@ fn capability(
         ),
         create: Arc::new(
             move |window: &Ref<AppWindow>,
-                  width: f32,
-                  height: f32,
+                  width: f64,
+                  height: f64,
                   _options: Option<&CanvasRenderingContext2DSettings>| {
                 create_recorded
                     .lock()
@@ -86,7 +86,7 @@ fn capability(
                 return create_handle.clone();
             },
         ),
-        create_surface: Arc::new(|_width: f32, _height: f32| None),
+        create_surface: Arc::new(|_width: f64, _height: f64| None),
         destroy_surface: Arc::new(|_surface: &Ref<CanvasSurface>| {}),
         release: Arc::new(move |surface: &SurfaceRef| {
             released.lock().unwrap().push(surface.clone());
@@ -96,6 +96,23 @@ fn capability(
 
 mod create_canvas_surface {
     use super::*;
+
+    #[test]
+    fn passes_a_non_f32_logical_size_to_the_host_exactly() {
+        // 100.1 and 16777217 have no f32 values: an f32 lane would pass 100.0999984741211 and 16777216.
+        let created = Arc::new(Mutex::new(Vec::new()));
+        let capability = capability(
+            native("canvas"),
+            Some(context()),
+            created.clone(),
+            Arc::new(Mutex::new(Vec::new())),
+            Arc::new(Mutex::new(Vec::new())),
+        );
+        let window = app_window();
+        create_canvas_surface(&capability, &window, 100.1, 16_777_217.0, None);
+        let created = created.lock().unwrap();
+        assert_eq!((created[0].1, created[0].2), (100.1, 16_777_217.0));
+    }
 
     #[test]
     fn allocates_a_drawable_in_the_window_and_acquires_a_2d_context() {
