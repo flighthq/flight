@@ -4,11 +4,11 @@ use std::sync::{Arc, RwLock};
 
 use flight_entity::Ref;
 use flight_host::{HostImageSource, HostSpawnCapability};
-use flight_math::clamp;
 use flight_signals::{create_signal, emit_signal};
 use flight_video::{HostVideoCapability, VideoChannelState, VideoPlayOptions, VideoResource};
 
 use crate::media_channel_signals::get_video_channel_signals;
+use crate::media_clamp::clamp_media_value;
 use crate::types::*;
 use crate::video_channel_runtime::*;
 
@@ -305,7 +305,7 @@ pub fn set_video_channel_current_time(
 ) -> f32 {
     let (value, element) = {
         let mut channel = channel.write().unwrap();
-        channel.current_time = clamp(value, 0.0, channel.length);
+        channel.current_time = clamp_media_value(value, 0.0, channel.length);
         (channel.current_time, current_video_element(&channel))
     };
     if let (Some(element), Some(set_current_time)) = (element, &host_video.set_current_time) {

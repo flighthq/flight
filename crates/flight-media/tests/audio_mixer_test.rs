@@ -510,6 +510,18 @@ mod set_audio_bus_pan {
     use super::*;
 
     #[test]
+    fn passes_signaling_nan_through_with_its_payload_bits() {
+        let (_, _, _, host, _, bus, _) = routed();
+        let guards = create_audio_mixer_guard_state();
+        let signaling = f32::from_bits(0x7fa0_0001);
+        assert_eq!(
+            set_audio_bus_pan(&host, &guards, &bus, signaling).to_bits(),
+            0x7fa0_0001
+        );
+        assert_eq!(bus.read().unwrap().pan.to_bits(), 0x7fa0_0001);
+    }
+
+    #[test]
     fn clamps_and_pushes_pan_to_each_node() {
         let (_, _, state, host, _, bus, _) = routed();
         let guards = create_audio_mixer_guard_state();

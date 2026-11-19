@@ -4,12 +4,12 @@ use std::sync::{Arc, RwLock};
 
 use flight_entity::{Ref, allocate_entity};
 use flight_host::AudioDeviceHandle;
-use flight_math::clamp;
 
 use crate::audio_channel::{
     get_audio_channel_source_handle, pause_audio_channel, resume_audio_channel,
     set_audio_channel_source_route, stop_audio_channel,
 };
+use crate::media_clamp::clamp_media_value;
 use crate::types::*;
 
 // flight-lint: allow(conform-params) D23 (B) zero-field create (foreman-f2e28724): callers assign gain, muted, name and pan after create
@@ -327,7 +327,7 @@ pub fn set_audio_bus_pan(
     bus: &Ref<AudioBus>,
     value: f32,
 ) -> f32 {
-    let value = clamp(value, -1.0, 1.0);
+    let value = clamp_media_value(value, -1.0, 1.0);
     let memberships = {
         let mut bus_value = bus.write().unwrap();
         bus_value.pan = value;

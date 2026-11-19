@@ -5,6 +5,7 @@ mod audio_mixer;
 mod enable_audio_mixer_guards;
 mod host_explain;
 mod media_channel_signals;
+mod media_clamp;
 mod sugar;
 mod types;
 mod video_channel;

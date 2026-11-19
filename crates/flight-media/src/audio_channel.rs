@@ -5,10 +5,10 @@ use std::sync::{Arc, RwLock};
 use flight_audio::{AudioChannelState, AudioPlayOptions, AudioResource};
 use flight_entity::Ref;
 use flight_host::{AudioBufferHandle, AudioDeviceHandle, AudioSourceHandle};
-use flight_math::clamp;
 use flight_signals::{create_signal, emit_signal};
 
 use crate::media_channel_signals::get_audio_channel_signals;
+use crate::media_clamp::clamp_media_value;
 use crate::types::*;
 
 const INVALID_BUFFER: AudioBufferHandle = AudioBufferHandle(0);
@@ -265,7 +265,7 @@ pub fn resume_audio_channel(channel: &Ref<AudioChannel>) {
 pub fn set_audio_channel_current_time(channel: &Ref<AudioChannel>, value: f32) -> f32 {
     let (value, playing) = {
         let mut channel = channel.write().unwrap();
-        channel.current_time = clamp(value, 0.0, channel.length);
+        channel.current_time = clamp_media_value(value, 0.0, channel.length);
         (
             channel.current_time,
             channel.state == AudioChannelState::Playing,
@@ -303,8 +303,8 @@ pub fn set_audio_channel_loop_region(
     end_ms: f32,
 ) -> bool {
     let mut channel = channel.write().unwrap();
-    let start = clamp(start_ms, 0.0, channel.length);
-    let end = clamp(end_ms, 0.0, channel.length);
+    let start = clamp_media_value(start_ms, 0.0, channel.length);
+    let end = clamp_media_value(end_ms, 0.0, channel.length);
     if end <= start {
         return false;
     }
@@ -336,7 +336,7 @@ pub fn set_audio_channel_muted(channel: &Ref<AudioChannel>, value: bool) -> bool
 pub fn set_audio_channel_pan(channel: &Ref<AudioChannel>, value: f32) -> f32 {
     let (value, live) = {
         let mut channel = channel.write().unwrap();
-        channel.pan = clamp(value, -1.0, 1.0);
+        channel.pan = clamp_media_value(value, -1.0, 1.0);
         (
             channel.pan,
             channel.channel_runtime.as_ref().and_then(|runtime| {
@@ -414,7 +414,7 @@ fn start_audio_channel(channel: &Ref<AudioChannel>) {
         current
     };
     let length = channel.read().unwrap().length;
-    let current = clamp(
+    let current = clamp_media_value(
         region_floor,
         0.0,
         if has_region { loop_end } else { length },

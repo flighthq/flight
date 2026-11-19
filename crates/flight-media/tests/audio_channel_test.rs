@@ -282,6 +282,16 @@ mod set_audio_channel_current_time {
     use super::*;
 
     #[test]
+    fn passes_signaling_nan_through_with_its_payload_bits() {
+        let (_, _, channel) = channel();
+        let signaling = f32::from_bits(0x7fa0_0001);
+        assert_eq!(
+            set_audio_channel_current_time(&channel, signaling).to_bits(),
+            0x7fa0_0001
+        );
+    }
+
+    #[test]
     fn clamps_and_replaces_a_playing_source() {
         let (_, _, channel) = channel();
         assert_eq!(set_audio_channel_current_time(&channel, 2_000.0), 1_000.0);
@@ -401,6 +411,45 @@ mod set_audio_channel_muted {
 
 mod set_audio_channel_pan {
     use super::*;
+
+    #[test]
+    fn keeps_finite_pans_inside_the_range_bit_for_bit() {
+        let (_, _, channel) = channel();
+        assert_eq!(
+            set_audio_channel_pan(&channel, -4.0).to_bits(),
+            (-1.0_f32).to_bits()
+        );
+        assert_eq!(
+            set_audio_channel_pan(&channel, 0.1).to_bits(),
+            0.1_f32.to_bits()
+        );
+        assert_eq!(
+            set_audio_channel_pan(&channel, f32::INFINITY).to_bits(),
+            1.0_f32.to_bits()
+        );
+    }
+
+    #[test]
+    fn passes_quiet_nan_through_unchanged() {
+        let (_, _, channel) = channel();
+        let quiet = f32::from_bits(0x7fc0_0123);
+        assert_eq!(
+            set_audio_channel_pan(&channel, quiet).to_bits(),
+            0x7fc0_0123
+        );
+        assert_eq!(channel.read().unwrap().pan.to_bits(), 0x7fc0_0123);
+    }
+
+    #[test]
+    fn passes_signaling_nan_through_with_its_payload_bits() {
+        let (_, _, channel) = channel();
+        let signaling = f32::from_bits(0x7fa0_0001);
+        assert_eq!(
+            set_audio_channel_pan(&channel, signaling).to_bits(),
+            0x7fa0_0001
+        );
+        assert_eq!(channel.read().unwrap().pan.to_bits(), 0x7fa0_0001);
+    }
 
     #[test]
     fn clamps_and_pushes_stereo_pan() {
