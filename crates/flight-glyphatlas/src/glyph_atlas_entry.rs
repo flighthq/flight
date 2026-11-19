@@ -59,27 +59,19 @@ mod source_runtime_tests {
         assert_eq!(runtime.occupied_area, area);
     }
 }
-use flight_bitmap::invalidate_bitmap;
+use flight_bitmap::{create_bitmap_region, write_bitmap_pixels};
 use flight_entity::Ref;
 
 fn blit_glyph_into_atlas_bitmap(runtime: &mut GlyphAtlasRuntime, codepoint: u32, x: u32, y: u32) {
     let rasterized = runtime.bitmaps.get(&codepoint).unwrap();
-    let mut bitmap = runtime.bitmap.write().unwrap();
-    let mut py = 0;
-    while py < rasterized.height {
-        let mut px = 0;
-        while px < rasterized.width {
-            let source_index = (py as usize * rasterized.width as usize + px as usize) * 4;
-            let dest_index = ((y + py) as usize * bitmap.width as usize + (x + px) as usize) * 4;
-            bitmap.data[dest_index] = rasterized.pixels[source_index];
-            bitmap.data[dest_index + 1] = rasterized.pixels[source_index + 1];
-            bitmap.data[dest_index + 2] = rasterized.pixels[source_index + 2];
-            bitmap.data[dest_index + 3] = rasterized.pixels[source_index + 3];
-            px += 1;
-        }
-        py += 1;
-    }
-    invalidate_bitmap(&mut bitmap);
+    let mut region = create_bitmap_region(
+        &runtime.bitmap,
+        x as i32,
+        y as i32,
+        rasterized.width as i32,
+        rasterized.height as i32,
+    );
+    write_bitmap_pixels(&mut region, &rasterized.pixels);
 }
 
 fn evict_least_recently_used_glyph(runtime: &mut GlyphAtlasRuntime) -> bool {
