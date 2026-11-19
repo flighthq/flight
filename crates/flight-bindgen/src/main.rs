@@ -135,6 +135,22 @@ fn main() {
             "verified {} native externs against the flight-ffi surface",
             verification.checked
         );
+        let node_verification = ffi_surface::verify_generated_node_externs(&out_dir, surface);
+        if !node_verification.mismatches.is_empty() {
+            for mismatch in &node_verification.mismatches {
+                eprintln!("node carrier: {mismatch}");
+            }
+            eprintln!(
+                "{} of {} native node externs use an untyped or wrong carrier",
+                node_verification.mismatches.len(),
+                node_verification.checked
+            );
+            std::process::exit(1);
+        }
+        eprintln!(
+            "verified {} native node externs use exact typed carriers",
+            node_verification.checked
+        );
         let byte_errors = byte_result::verify_byte_result_modules(&out_dir, &byte_results);
         if !byte_errors.is_empty() {
             for error in &byte_errors {

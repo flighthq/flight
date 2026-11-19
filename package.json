@@ -144,6 +144,7 @@
     "haxe:check": "bash ./scripts/check-haxe-bindings.sh",
     "haxe:generate": "bash ./scripts/generate-haxe-bindings.sh",
     "haxe:native-byte-result": "bash ./scripts/check-haxe-native-byte-result.sh",
+    "haxe:native-node-handle": "bash ./scripts/check-haxe-native-node-handle.sh",
     "hermeticity": "tsx ./scripts/handRolledHermeticity.ts",
     "host-probe": "npm run dev:host-probe",
     "import-diagnostic-origins": "tsx ./scripts/import-diagnostic-origins.ts",

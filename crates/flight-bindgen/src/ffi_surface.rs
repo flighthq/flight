@@ -21,6 +21,13 @@ pub struct FfiSignature {
     pub params: Vec<String>,
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum NativeNodeCarrier {
+    Node,
+    NodeArray,
+    NodePointerArray,
+}
+
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub struct FieldAccess {
     pub get: bool,
@@ -29,6 +36,12 @@ pub struct FieldAccess {
 
 #[derive(Debug, Default)]
 pub struct ExternVerification {
+    pub checked: usize,
+    pub mismatches: Vec<String>,
+}
+
+#[derive(Debug, Default)]
+pub struct NodeExternVerification {
     pub checked: usize,
     pub mismatches: Vec<String>,
 }
@@ -146,6 +159,15 @@ pub fn declaration_matches_ffi_surface(
         .all(|ext| check_native_extern(ext, backend, surface).is_ok());
 }
 
+fn exact_node_haxe_type(backend: &str, carrier: NativeNodeCarrier) -> String {
+    let name = match carrier {
+        NativeNodeCarrier::Node => "FlightNode",
+        NativeNodeCarrier::NodeArray => "FlightNodeArray",
+        NativeNodeCarrier::NodePointerArray => "FlightNodePointerArray",
+    };
+    return format!("flight.{backend}.{name}");
+}
+
 // A field accessor is only bound when the symbol named like one also has accessor shape on BOTH
 // native surfaces: `T get(handle)` and `T set(handle, T)` in flight_ffi.h, and the matching
 // `DEFINE_PRIM` carriers in flight_hl.c. An SDK function may share the name with different
@@ -220,6 +242,10 @@ fn haxe_signature_to_hl(ext: &NativeExtern) -> Option<FfiSignature> {
 }
 
 fn haxe_type_to_c_class(ty: &str) -> Option<String> {
+    let ty = ty
+        .strip_prefix("Null<")
+        .and_then(|inner| inner.strip_suffix('>'))
+        .unwrap_or(ty);
     let class = match ty {
         "Void" => "void",
         "Bool" => "bool",
@@ -227,7 +253,7 @@ fn haxe_type_to_c_class(ty: &str) -> Option<String> {
         "Float" => "f64",
         "Int" => "int",
         "haxe.Int64" => "i64",
-        "cpp.ConstCharStar" => "cstr",
+        "cpp.ConstCharStar" | "cpp.RawPointer<cpp.Char>" => "cstr",
         "cpp.RawPointer<cpp.Float32>" => "f32 *",
         "cpp.RawPointer<cpp.Float64>" => "f64 *",
         "cpp.RawPointer<cpp.Int32>" => "int *",
@@ -239,6 +265,10 @@ fn haxe_type_to_c_class(ty: &str) -> Option<String> {
 }
 
 fn haxe_type_to_hl(ty: &str) -> Option<String> {
+    let ty = ty
+        .strip_prefix("Null<")
+        .and_then(|inner| inner.strip_suffix('>'))
+        .unwrap_or(ty);
     let code = match ty {
         "Void" => "_VOID",
         "Bool" => "_BOOL",
@@ -268,6 +298,15 @@ pub fn load_ffi_surface(ffi_dir: &Path) -> FfiSurface {
         hl: parse_hl_primitives(&read("flight_hl.c")),
         native_skips: BTreeSet::new(),
     }
+}
+
+pub fn native_node_carrier(c_ty: &str) -> Option<NativeNodeCarrier> {
+    return match c_ty {
+        "FlightNode *" | "const FlightNode *" => Some(NativeNodeCarrier::Node),
+        "FlightNodeArray *" | "const FlightNodeArray *" => Some(NativeNodeCarrier::NodeArray),
+        "const FlightNode * const *" => Some(NativeNodeCarrier::NodePointerArray),
+        _ => None,
+    };
 }
 
 fn normalize_c_type(ty: &str) -> String {
@@ -421,6 +460,14 @@ fn rust_scalar_to_hl(rust_ty: &str) -> Option<&'static str> {
     });
 }
 
+pub fn signature_has_native_node(signature: &FfiSignature) -> bool {
+    return native_node_carrier(&signature.ret).is_some()
+        || signature
+            .params
+            .iter()
+            .any(|param| native_node_carrier(param).is_some());
+}
+
 fn split_top_level(list: &str) -> Vec<String> {
     let mut parts = Vec::new();
     let mut depth = 0i32;
@@ -465,6 +512,10 @@ fn strip_c_comments(line: &str) -> String {
     return out;
 }
 
+pub fn symbol_has_native_node(surface: &FfiSurface, symbol: &str) -> bool {
+    return surface.c.get(symbol).is_some_and(signature_has_native_node);
+}
+
 pub fn verify_generated_externs(out_dir: &Path, surface: &FfiSurface) -> ExternVerification {
     let mut report = ExternVerification::default();
     let mut module_symbols: BTreeMap<String, Vec<String>> = BTreeMap::new();
@@ -500,4 +551,75 @@ pub fn verify_generated_externs(out_dir: &Path, surface: &FfiSurface) -> ExternV
         }
     }
     return report;
+}
+
+pub fn verify_generated_node_externs(
+    out_dir: &Path,
+    surface: &FfiSurface,
+) -> NodeExternVerification {
+    let mut result = NodeExternVerification::default();
+    for backend in ["_hl", "_cpp"] {
+        let backend_dir = out_dir.join("flight").join(backend);
+        if !backend_dir.exists() {
+            continue;
+        }
+        for path in collect_hx_files(&backend_dir) {
+            let content = fs::read_to_string(&path).unwrap();
+            for ext in parse_native_externs(&content, backend) {
+                let Some(signature) = surface.c.get(&ext.symbol) else {
+                    continue;
+                };
+                if !signature_has_native_node(signature) {
+                    continue;
+                }
+                result.checked += 1;
+                if ext.params.len() != signature.params.len() {
+                    result.mismatches.push(format!(
+                        "{} in {} cannot type-check node carriers across arity {} != {}",
+                        ext.symbol,
+                        path.display(),
+                        ext.params.len(),
+                        signature.params.len()
+                    ));
+                    continue;
+                }
+                if let Some(carrier) = native_node_carrier(&signature.ret) {
+                    let expected = exact_node_haxe_type(backend, carrier);
+                    if without_null(&ext.ret) != expected {
+                        result.mismatches.push(format!(
+                            "{} return in {} uses {} instead of {}",
+                            ext.symbol,
+                            path.display(),
+                            ext.ret,
+                            expected
+                        ));
+                    }
+                }
+                for (index, c_ty) in signature.params.iter().enumerate() {
+                    let Some(carrier) = native_node_carrier(c_ty) else {
+                        continue;
+                    };
+                    let expected = exact_node_haxe_type(backend, carrier);
+                    if without_null(&ext.params[index]) != expected {
+                        result.mismatches.push(format!(
+                            "{} parameter {} in {} uses {} instead of {}",
+                            ext.symbol,
+                            index,
+                            path.display(),
+                            ext.params[index],
+                            expected
+                        ));
+                    }
+                }
+            }
+        }
+    }
+    return result;
+}
+
+fn without_null(ty: &str) -> &str {
+    return ty
+        .strip_prefix("Null<")
+        .and_then(|inner| inner.strip_suffix('>'))
+        .unwrap_or(ty);
 }

@@ -9,10 +9,13 @@ use crate::byte_result::{
 };
 use crate::ffi_surface::{FfiSurface, FieldAccess};
 use crate::haxe_common::{
+    FLIGHT_NODE_ARRAY_TYPE, FLIGHT_NODE_POINTER_ARRAY_TYPE, FLIGHT_NODE_TYPE, NativeNodeTarget,
     TypeMethod, build_struct_map, build_type_methods, collect_opaque_types, crate_dir_to_module,
-    derive_method_name, field_property_declaration, find_self_param, has_native_ffi_function,
-    resolve_ffi_field_access, scalar_to_haxe, to_snake_case, tuple_element_storage,
-    write_if_changed,
+    derive_method_name, field_property_declaration, find_self_param, flight_node_array_source,
+    flight_node_source, function_has_native_node, has_native_ffi_function,
+    native_node_function_return, native_node_parameter, native_node_return, native_node_type,
+    native_signature_for, resolve_ffi_field_access, scalar_to_haxe, to_snake_case,
+    tuple_element_storage, write_if_changed,
 };
 use crate::offsets::FieldOffsets;
 use crate::parse::{
@@ -44,40 +47,49 @@ mod packed_float_tests {
 
     #[test]
     fn threshold_is_strictly_more_than_six_for_both_single_and_float_lanes() {
-        let six = emit_function(&function(
-            "six_lanes",
-            &["f32", "f64", "f32", "f64", "f32", "f64"],
+        let six = emit_function(
+            &function(
+                "six_lanes",
+                &["f32", "f64", "f32", "f64", "f32", "f64"],
+                None,
+            ),
             None,
-        ))
+        )
         .unwrap();
         assert!(!six.contains("__flightPacked"), "{six}");
 
-        let seven = emit_function(&function(
-            "seven_lanes",
-            &["f32", "f64", "f32", "f64", "f32", "f64", "f32"],
+        let seven = emit_function(
+            &function(
+                "seven_lanes",
+                &["f32", "f64", "f32", "f64", "f32", "f64", "f32"],
+                None,
+            ),
             None,
-        ))
+        )
         .unwrap();
         assert!(seven.contains("new hl.NativeArray<Float>(7)"), "{seven}");
     }
 
     #[test]
     fn mixed_lanes_keep_the_public_signature_native_symbol_parameter_order_and_values() {
-        let output = emit_function(&function(
-            "mixed_lanes",
-            &[
-                "&mut Matrix4",
-                "f32",
-                "i32",
-                "f64",
-                "f32",
-                "f64",
-                "f32",
-                "f64",
-                "f32",
-            ],
-            Some("f64"),
-        ))
+        let output = emit_function(
+            &function(
+                "mixed_lanes",
+                &[
+                    "&mut Matrix4",
+                    "f32",
+                    "i32",
+                    "f64",
+                    "f32",
+                    "f64",
+                    "f32",
+                    "f64",
+                    "f32",
+                ],
+                Some("f64"),
+            ),
+            None,
+        )
         .unwrap();
         assert!(
             output.contains("@:hlNative(\"flight\", \"flight_mixed_lanes\")"),
@@ -199,6 +211,16 @@ pub fn generate(
             all_opaque_types.insert(s.name.clone());
         }
     }
+    if ffi_surface.is_some_and(|surface| {
+        surface
+            .c
+            .values()
+            .any(crate::ffi_surface::signature_has_native_node)
+    }) {
+        all_opaque_types.insert(FLIGHT_NODE_TYPE.to_string());
+        all_opaque_types.insert(FLIGHT_NODE_ARRAY_TYPE.to_string());
+        all_opaque_types.insert(FLIGHT_NODE_POINTER_ARRAY_TYPE.to_string());
+    }
 
     let struct_map = build_struct_map(crate_exports);
     let type_methods = build_type_methods(crate_exports, &all_opaque_types);
@@ -258,6 +280,18 @@ fn emit_type_file(
     struct_offsets: Option<&std::collections::BTreeMap<String, usize>>,
     ffi_surface: Option<&FfiSurface>,
 ) -> String {
+    if matches!(ty, "NodeFields" | "Node2DFields" | "Node3DFields") && ffi_surface.is_some() {
+        return format!("package {PKG};\n\ntypedef {ty} = {FLIGHT_NODE_TYPE};\n");
+    }
+    if ty == FLIGHT_NODE_TYPE {
+        return flight_node_source(PKG, NativeNodeTarget::Hl);
+    }
+    if ty == FLIGHT_NODE_ARRAY_TYPE {
+        return flight_node_array_source(PKG, NativeNodeTarget::Hl);
+    }
+    if ty == FLIGHT_NODE_POINTER_ARRAY_TYPE {
+        return format!("package {PKG};\n\nabstract {ty}(hl.Bytes) {{}}\n");
+    }
     let mut output = String::new();
     writeln!(output, "package {PKG};").unwrap();
     writeln!(output).unwrap();
@@ -436,6 +470,9 @@ fn emit_methods(
         if !has_native_ffi_function(&tm.func.name, ffi_surface) {
             continue;
         }
+        if function_has_native_node(tm.func, ffi_surface) {
+            continue;
+        }
         if let Some(method) = emit_one_method(ty, tm) {
             let method_name = derive_method_name(&tm.func.name, ty).unwrap_or_default();
             if seen_names.insert(method_name) {
@@ -543,7 +580,7 @@ fn emit_module_file(
         if !has_native_ffi_function(&func.name, ffi_surface) {
             continue;
         }
-        if let Some(decl) = emit_function(func) {
+        if let Some(decl) = emit_function(func, ffi_surface) {
             emitted.push(decl);
             if let Some(optional) = get_byte_result_optional(func) {
                 emitted.push(byte_result_accessor_externs(func, NativeByteTarget::Hl));
@@ -575,14 +612,26 @@ fn emit_module_file(
     output
 }
 
-pub(crate) fn emit_function(func: &ParsedFn) -> Option<String> {
+pub(crate) fn emit_function(func: &ParsedFn, ffi_surface: Option<&FfiSurface>) -> Option<String> {
     let ffi_name = format!("flight_{}", func.name);
     let haxe_name = to_camel_case(&func.name);
 
     let mut haxe_params = Vec::new();
+    let signature = native_signature_for(ffi_surface, func);
+    let mut c_index = 0usize;
     for param in &func.params {
         let kind = classify_param(&param.ty)?;
         let pname = to_camel_case(&param.name);
+        if let Some(node) = native_node_parameter(signature, &mut c_index, &kind, &param.ty) {
+            haxe_params.push(format!(
+                "{pname}:{}",
+                native_node_type(PKG, node.carrier, node.optional)
+            ));
+            if node.includes_len {
+                haxe_params.push(format!("{pname}Len:Int"));
+            }
+            continue;
+        }
         match &kind {
             ParamKind::SliceConst(_)
             | ParamKind::SliceMut(_)
@@ -610,7 +659,10 @@ pub(crate) fn emit_function(func: &ParsedFn) -> Option<String> {
         None => ReturnKind::Void,
         Some(ty) => classify_return(ty)?,
     };
-    let haxe_ret = return_kind_to_haxe(&ret_kind);
+    let haxe_ret = native_node_return(signature, func.ret.as_deref())
+        .map(|(carrier, optional)| native_node_type(PKG, carrier, optional))
+        .or_else(|| native_node_function_return(signature))
+        .unwrap_or_else(|| return_kind_to_haxe(&ret_kind));
     if let ReturnKind::Tuple(elements) | ReturnKind::OptionTuple(elements) = &ret_kind {
         for (index, element) in elements.iter().enumerate() {
             let storage = tuple_element_storage(element)?.0;
@@ -727,7 +779,7 @@ mod hl_tuple_tests {
     #[test]
     fn scalar_tuple_return_becomes_trailing_out_parameters() {
         assert_eq!(
-            emit_function(&random_gaussian_pair_fixture()).unwrap(),
+            emit_function(&random_gaussian_pair_fixture(), None).unwrap(),
             "\t@:hlNative(\"flight\", \"flight_random_gaussian_pair\")\n\tpublic static function randomGaussianPair(randomFn:hl.Bytes, randomCtx:hl.Bytes, mean:Single, standardDeviation:Single, out0:hl.Ref<Single>, out1:hl.Ref<Single>):Void;"
         );
     }
@@ -735,7 +787,7 @@ mod hl_tuple_tests {
     fn optional_tuple_returns_presence_with_the_same_out_parameters() {
         let mut function = random_gaussian_pair_fixture();
         function.ret = Some("Option<(f64, f64)>".into());
-        let text = emit_function(&function).unwrap();
+        let text = emit_function(&function, None).unwrap();
         assert!(
             text.ends_with(", out0:hl.Ref<Float>, out1:hl.Ref<Float>):Bool;"),
             "{text}"
@@ -745,7 +797,7 @@ mod hl_tuple_tests {
     fn tuple_without_exact_width_storage_is_declined() {
         let mut function = random_gaussian_pair_fixture();
         function.ret = Some("(i64, i64)".into());
-        assert!(emit_function(&function).is_none());
+        assert!(emit_function(&function, None).is_none());
     }
     #[test]
     fn native_accessors_bind_only_directions_with_accessor_shape() {
@@ -786,5 +838,64 @@ mod hl_tuple_tests {
         assert!(text.contains("public var muted(get, set):Bool;"), "{text}");
         assert!(text.contains("\"flight_set_audio_bus_muted\""), "{text}");
         assert!(!text.contains("pan"), "{text}");
+    }
+
+    #[test]
+    fn native_node_field_views_alias_the_typed_handle_instead_of_layout_offsets() {
+        let surface = crate::ffi_surface::FfiSurface {
+            c: Default::default(),
+            hl: Default::default(),
+            native_skips: Default::default(),
+        };
+        for (type_name, fields) in [
+            (
+                "Node2DFields",
+                vec![
+                    ("alpha", "f32"),
+                    ("pivot_x", "f64"),
+                    ("pivot_y", "f64"),
+                    ("rotation", "f64"),
+                    ("scale_x", "f64"),
+                    ("scale_y", "f64"),
+                    ("skew_x", "f64"),
+                    ("skew_y", "f64"),
+                    ("visible", "bool"),
+                    ("x", "f64"),
+                    ("y", "f64"),
+                ],
+            ),
+            ("NodeFields", vec![("enabled", "bool")]),
+        ] {
+            let parsed = ParsedStruct {
+                name: type_name.into(),
+                fields: fields
+                    .iter()
+                    .map(|(name, ty)| crate::parse::StructField {
+                        name: (*name).into(),
+                        ty: (*ty).into(),
+                    })
+                    .collect(),
+            };
+            let offsets = fields
+                .iter()
+                .enumerate()
+                .map(|(index, (name, _))| ((*name).to_string(), index * 8))
+                .collect();
+            let text = emit_type_file(
+                type_name,
+                Some(&parsed),
+                None,
+                Some(&offsets),
+                Some(&surface),
+            );
+            assert_eq!(
+                text,
+                format!("package {PKG};\n\ntypedef {type_name} = FlightNode;\n")
+            );
+            assert!(
+                !text.contains("Dynamic") && !text.contains("getF") && !text.contains("setF"),
+                "{text}"
+            );
+        }
     }
 }

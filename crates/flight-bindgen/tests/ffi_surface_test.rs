@@ -308,6 +308,31 @@ mod load_ffi_surface {
     }
 }
 
+mod native_node_carrier {
+    use super::*;
+
+    #[test]
+    fn recognizes_only_the_typed_node_handle_and_collection_carriers() {
+        assert_eq!(
+            native_node_carrier("FlightNode *"),
+            Some(NativeNodeCarrier::Node)
+        );
+        assert_eq!(
+            native_node_carrier("const FlightNode *"),
+            Some(NativeNodeCarrier::Node)
+        );
+        assert_eq!(
+            native_node_carrier("FlightNodeArray *"),
+            Some(NativeNodeCarrier::NodeArray)
+        );
+        assert_eq!(
+            native_node_carrier("const FlightNode * const *"),
+            Some(NativeNodeCarrier::NodePointerArray)
+        );
+        assert_eq!(native_node_carrier("void *"), None);
+    }
+}
+
 mod parse_ffi_header {
     use super::*;
 
@@ -346,6 +371,47 @@ mod parse_hl_primitives {
             }
         );
         assert!(primitives["flight_get_answer"].params.is_empty());
+    }
+}
+
+mod signature_has_native_node {
+    use super::*;
+
+    #[test]
+    fn detects_node_handles_in_returns_and_parameters() {
+        assert!(signature_has_native_node(&FfiSignature {
+            ret: "FlightNode *".to_string(),
+            params: vec![],
+        }));
+        assert!(signature_has_native_node(&FfiSignature {
+            ret: "void".to_string(),
+            params: vec!["FlightNodeArray *".to_string()],
+        }));
+        assert!(!signature_has_native_node(&FfiSignature {
+            ret: "bool".to_string(),
+            params: vec!["void *".to_string()],
+        }));
+    }
+}
+
+mod symbol_has_native_node {
+    use super::*;
+
+    #[test]
+    fn consults_the_exact_c_signature() {
+        let surface = FfiSurface {
+            c: BTreeMap::from([(
+                "flight_make_node".to_string(),
+                FfiSignature {
+                    ret: "FlightNode *".to_string(),
+                    params: vec![],
+                },
+            )]),
+            hl: BTreeMap::new(),
+            native_skips: BTreeSet::new(),
+        };
+        assert!(symbol_has_native_node(&surface, "flight_make_node"));
+        assert!(!symbol_has_native_node(&surface, "flight_missing"));
     }
 }
 
@@ -391,6 +457,84 @@ mod verify_generated_externs {
         fs::remove_dir_all(&dir).unwrap();
         assert_eq!(report.mismatches.len(), 1, "{:?}", report.mismatches);
         assert!(report.mismatches[0].contains("declared by 2 modules"));
+    }
+}
+
+mod verify_generated_node_externs {
+    use super::*;
+
+    fn node_surface() -> FfiSurface {
+        return FfiSurface {
+            c: parse_ffi_header(
+                "FlightNode * flight_make_node(const FlightNode * arg0);\n\
+                 void flight_fill_nodes(FlightNodeArray * arg0, const FlightNode * const * arg1, size_t arg2);",
+            ),
+            hl: parse_hl_primitives(
+                "DEFINE_PRIM(_BYTES, flight_make_node, _BYTES);\n\
+                 DEFINE_PRIM(_VOID, flight_fill_nodes, _BYTES _BYTES _I32);",
+            ),
+            native_skips: BTreeSet::new(),
+        };
+    }
+
+    #[test]
+    fn accepts_only_exact_node_handle_array_and_pointer_array_types() {
+        let dir = scratch_dir("node-types-ok");
+        let hl = dir.join("flight/_hl");
+        let cpp = dir.join("flight/_cpp");
+        fs::create_dir_all(&hl).unwrap();
+        fs::create_dir_all(&cpp).unwrap();
+        fs::write(
+            hl.join("Nodes.hx"),
+            "@:hlNative(\"flight\", \"flight_make_node\")\nstatic function make(node:flight._hl.FlightNode):flight._hl.FlightNode;\n\
+             @:hlNative(\"flight\", \"flight_fill_nodes\")\nstatic function fill(out:flight._hl.FlightNodeArray, nodes:flight._hl.FlightNodePointerArray, count:Int):Void;\n",
+        )
+        .unwrap();
+        fs::write(
+            cpp.join("Nodes.hx"),
+            "@:native(\"flight_make_node\") static function make(node:flight._cpp.FlightNode):flight._cpp.FlightNode;\n\
+             @:native(\"flight_fill_nodes\") static function fill(out:flight._cpp.FlightNodeArray, nodes:flight._cpp.FlightNodePointerArray, count:Int):Void;\n",
+        )
+        .unwrap();
+        let report = verify_generated_node_externs(&dir, &node_surface());
+        fs::remove_dir_all(&dir).unwrap();
+        assert_eq!(report.checked, 4);
+        assert_eq!(report.mismatches, Vec::<String>::new());
+    }
+
+    #[test]
+    fn rejects_raw_and_old_per_kind_node_carriers_even_when_the_physical_abi_matches() {
+        let dir = scratch_dir("node-types-wrong");
+        let hl = dir.join("flight/_hl");
+        let cpp = dir.join("flight/_cpp");
+        fs::create_dir_all(&hl).unwrap();
+        fs::create_dir_all(&cpp).unwrap();
+        fs::write(
+            hl.join("Nodes.hx"),
+            "@:hlNative(\"flight\", \"flight_make_node\")\nstatic function make(node:hl.Bytes):hl.Bytes;\n",
+        )
+        .unwrap();
+        fs::write(
+            cpp.join("Nodes.hx"),
+            "@:native(\"flight_make_node\") static function make(node:flight._cpp.Node2DFields):flight._cpp.Node2DFields;\n",
+        )
+        .unwrap();
+        let report = verify_generated_node_externs(&dir, &node_surface());
+        fs::remove_dir_all(&dir).unwrap();
+        assert_eq!(report.checked, 2);
+        assert_eq!(report.mismatches.len(), 4, "{:?}", report.mismatches);
+        assert!(
+            report
+                .mismatches
+                .iter()
+                .any(|error| error.contains("hl.Bytes"))
+        );
+        assert!(
+            report
+                .mismatches
+                .iter()
+                .any(|error| error.contains("Node2DFields"))
+        );
     }
 }
 

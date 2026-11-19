@@ -8,7 +8,9 @@ use crate::byte_result::{
 };
 use crate::ffi_surface::FfiSurface;
 use crate::haxe_common::{
-    crate_dir_to_module, has_ffi_function, has_native_ffi_function, tuple_element_storage,
+    FLIGHT_NODE_ARRAY_TYPE, FLIGHT_NODE_POINTER_ARRAY_TYPE, FLIGHT_NODE_TYPE, crate_dir_to_module,
+    has_ffi_function, has_native_ffi_function, native_node_function_return, native_node_parameter,
+    native_node_return, native_node_type, native_signature_for, tuple_element_storage,
     tuple_struct_type,
 };
 use crate::parse::{
@@ -30,6 +32,16 @@ pub fn generate(crate_exports: &[CrateExports], out_dir: &Path, ffi_surface: Opt
         for s in &crate_export.structs {
             all_opaque_types.insert(s.name.clone());
         }
+    }
+    if ffi_surface.is_some_and(|surface| {
+        surface
+            .c
+            .values()
+            .any(crate::ffi_surface::signature_has_native_node)
+    }) {
+        all_opaque_types.insert(FLIGHT_NODE_TYPE.to_string());
+        all_opaque_types.insert(FLIGHT_NODE_ARRAY_TYPE.to_string());
+        all_opaque_types.insert(FLIGHT_NODE_POINTER_ARRAY_TYPE.to_string());
     }
 
     for crate_export in crate_exports {
@@ -120,7 +132,14 @@ fn emit_type_dispatch(ty: &str) -> String {
     writeln!(output).unwrap();
     writeln!(output, "#elseif (js && flight_esm)").unwrap();
     writeln!(output).unwrap();
-    writeln!(output, "typedef {ty} = flight._js.{ty};").unwrap();
+    if matches!(
+        ty,
+        FLIGHT_NODE_TYPE | FLIGHT_NODE_ARRAY_TYPE | FLIGHT_NODE_POINTER_ARRAY_TYPE
+    ) {
+        writeln!(output, "extern class {ty} {{}}").unwrap();
+    } else {
+        writeln!(output, "typedef {ty} = flight._js.{ty};").unwrap();
+    }
     writeln!(output).unwrap();
     writeln!(output, "#elseif js").unwrap();
     writeln!(output).unwrap();
@@ -151,7 +170,8 @@ fn emit_module_dispatch(
             continue;
         }
         let native = has_native_ffi_function(&func.name, ffi_surface);
-        if let Some((sig, name)) = emit_dispatch_function(module_name, func, emitted_enums, native)
+        if let Some((sig, name)) =
+            emit_dispatch_function(module_name, func, emitted_enums, native, ffi_surface)
         {
             emitted.push((sig, name));
         }
@@ -211,6 +231,7 @@ fn emit_dispatch_function(
     func: &ParsedFn,
     emitted_enums: &BTreeSet<String>,
     native: bool,
+    ffi_surface: Option<&FfiSurface>,
 ) -> Option<(String, String)> {
     let haxe_name = to_camel_case(&func.name);
 
@@ -218,9 +239,25 @@ fn emit_dispatch_function(
     let mut call_args = Vec::new();
     let mut native_call_args = Vec::new();
     let mut has_str_params = false;
+    let signature = native_signature_for(ffi_surface, func);
+    let mut c_index = 0usize;
     for param in &func.params {
         let kind = classify_param(&param.ty)?;
         let param_name = to_camel_case(&param.name);
+        if let Some(node) = native_node_parameter(signature, &mut c_index, &kind, &param.ty) {
+            haxe_params.push(format!(
+                "{param_name}:{}",
+                native_node_type("flight", node.carrier, node.optional)
+            ));
+            call_args.push(param_name.clone());
+            native_call_args.push(param_name.clone());
+            if node.includes_len {
+                haxe_params.push(format!("{param_name}Len:Int"));
+                call_args.push(format!("{param_name}Len"));
+                native_call_args.push(format!("{param_name}Len"));
+            }
+            continue;
+        }
         match &kind {
             ParamKind::SliceConst(_)
             | ParamKind::SliceMut(_)
@@ -276,8 +313,11 @@ fn emit_dispatch_function(
     };
     let tuple_optional = matches!(ret_kind, ReturnKind::OptionTuple(_));
     let byte_result = get_byte_result_optional(func);
-    let haxe_ret = return_kind_to_haxe(&ret_kind, emitted_enums);
-    let has_return = !matches!(ret_kind, ReturnKind::Void);
+    let haxe_ret = native_node_return(signature, func.ret.as_deref())
+        .map(|(carrier, optional)| native_node_type("flight", carrier, optional))
+        .or_else(|| native_node_function_return(signature))
+        .unwrap_or_else(|| return_kind_to_haxe(&ret_kind, emitted_enums));
+    let has_return = haxe_ret != "Void";
     let needs_ret_cast = matches!(
         ret_kind,
         ReturnKind::StringReturn | ReturnKind::OptionString
@@ -820,10 +860,10 @@ extern inline function getLastPoint(randomFn:Dynamic, randomCtx:Dynamic, mean:Fl
     fn native_skip_keeps_only_the_js_esm_branch() {
         let function = crate::parse::random_gaussian_pair_fixture();
         let (native, _) =
-            emit_dispatch_function("Math", &function, &BTreeSet::new(), true).unwrap();
+            emit_dispatch_function("Math", &function, &BTreeSet::new(), true, None).unwrap();
         assert!(native.contains("flight._hl._fn.Math.randomGaussianPair("));
         let (js_only, _) =
-            emit_dispatch_function("Math", &function, &BTreeSet::new(), false).unwrap();
+            emit_dispatch_function("Math", &function, &BTreeSet::new(), false, None).unwrap();
         assert!(js_only.starts_with("#if (js && flight_esm)\n"), "{js_only}");
         assert!(js_only.contains("flight._js._fn.Math.randomGaussianPair("));
         assert!(!js_only.contains("flight._hl"), "{js_only}");

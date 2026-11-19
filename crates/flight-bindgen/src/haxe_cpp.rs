@@ -9,10 +9,13 @@ use crate::byte_result::{
 };
 use crate::ffi_surface::{FfiSurface, FieldAccess};
 use crate::haxe_common::{
+    FLIGHT_NODE_ARRAY_TYPE, FLIGHT_NODE_POINTER_ARRAY_TYPE, FLIGHT_NODE_TYPE, NativeNodeTarget,
     TypeMethod, build_struct_map, build_type_methods, collect_opaque_types, crate_dir_to_module,
-    derive_method_name, field_property_declaration, find_self_param, has_native_ffi_function,
-    resolve_ffi_field_access, scalar_to_haxe, to_snake_case, tuple_element_storage,
-    write_if_changed,
+    derive_method_name, field_property_declaration, find_self_param, flight_node_array_source,
+    flight_node_source, function_has_native_node, has_native_ffi_function,
+    native_node_function_return, native_node_parameter, native_node_return, native_node_type,
+    native_signature_for, resolve_ffi_field_access, scalar_to_haxe, to_snake_case,
+    tuple_element_storage, write_if_changed,
 };
 use crate::parse::{
     CrateExports, ParamKind, ParsedFn, ParsedStruct, ReturnKind, StructField, classify_param,
@@ -41,6 +44,16 @@ pub fn generate(crate_exports: &[CrateExports], out_dir: &Path, ffi_surface: Opt
         for s in &crate_export.structs {
             all_opaque_types.insert(s.name.clone());
         }
+    }
+    if ffi_surface.is_some_and(|surface| {
+        surface
+            .c
+            .values()
+            .any(crate::ffi_surface::signature_has_native_node)
+    }) {
+        all_opaque_types.insert(FLIGHT_NODE_TYPE.to_string());
+        all_opaque_types.insert(FLIGHT_NODE_ARRAY_TYPE.to_string());
+        all_opaque_types.insert(FLIGHT_NODE_POINTER_ARRAY_TYPE.to_string());
     }
 
     let struct_map = build_struct_map(crate_exports);
@@ -98,6 +111,20 @@ fn emit_type_file(
     methods: Option<&[TypeMethod<'_>]>,
     ffi_surface: Option<&FfiSurface>,
 ) -> String {
+    if matches!(ty, "NodeFields" | "Node2DFields" | "Node3DFields") && ffi_surface.is_some() {
+        return format!("package {PKG};\n\ntypedef {ty} = {FLIGHT_NODE_TYPE};\n");
+    }
+    if ty == FLIGHT_NODE_TYPE {
+        return flight_node_source(PKG, NativeNodeTarget::Cpp);
+    }
+    if ty == FLIGHT_NODE_ARRAY_TYPE {
+        return flight_node_array_source(PKG, NativeNodeTarget::Cpp);
+    }
+    if ty == FLIGHT_NODE_POINTER_ARRAY_TYPE {
+        return format!(
+            "package {PKG};\n\n@:unreflective\n@:native(\"FlightNode\")\nprivate extern class FlightNodePointerNative {{}}\n\nabstract {ty}(cpp.RawConstPointer<cpp.ConstStar<FlightNodePointerNative>>) {{}}\n"
+        );
+    }
     let mut output = String::new();
     writeln!(output, "package {PKG};").unwrap();
     writeln!(output).unwrap();
@@ -204,6 +231,9 @@ fn emit_methods(
 
     for tm in methods {
         if !has_native_ffi_function(&tm.func.name, ffi_surface) {
+            continue;
+        }
+        if function_has_native_node(tm.func, ffi_surface) {
             continue;
         }
         if let Some(method) = emit_one_method(ty, tm) {
@@ -313,7 +343,7 @@ fn emit_module_file(
         if !has_native_ffi_function(&func.name, ffi_surface) {
             continue;
         }
-        if let Some(decl) = emit_function(func) {
+        if let Some(decl) = emit_function(func, ffi_surface) {
             emitted.push(decl);
             if let Some(optional) = get_byte_result_optional(func) {
                 emitted.push(byte_result_accessor_externs(func, NativeByteTarget::Cpp));
@@ -345,14 +375,26 @@ fn emit_module_file(
     output
 }
 
-pub(crate) fn emit_function(func: &ParsedFn) -> Option<String> {
+pub(crate) fn emit_function(func: &ParsedFn, ffi_surface: Option<&FfiSurface>) -> Option<String> {
     let ffi_name = format!("flight_{}", func.name);
     let haxe_name = to_camel_case(&func.name);
 
     let mut haxe_params = Vec::new();
+    let signature = native_signature_for(ffi_surface, func);
+    let mut c_index = 0usize;
     for param in &func.params {
         let kind = classify_param(&param.ty)?;
         let pname = to_camel_case(&param.name);
+        if let Some(node) = native_node_parameter(signature, &mut c_index, &kind, &param.ty) {
+            haxe_params.push(format!(
+                "{pname}:{}",
+                native_node_type(PKG, node.carrier, node.optional)
+            ));
+            if node.includes_len {
+                haxe_params.push(format!("{pname}Len:Int"));
+            }
+            continue;
+        }
         match &kind {
             ParamKind::SliceConst(_)
             | ParamKind::SliceMut(_)
@@ -385,7 +427,10 @@ pub(crate) fn emit_function(func: &ParsedFn) -> Option<String> {
         None => ReturnKind::Void,
         Some(ty) => classify_return(ty)?,
     };
-    let haxe_ret = return_kind_to_haxe(&ret_kind);
+    let haxe_ret = native_node_return(signature, func.ret.as_deref())
+        .map(|(carrier, optional)| native_node_type(PKG, carrier, optional))
+        .or_else(|| native_node_function_return(signature))
+        .unwrap_or_else(|| return_kind_to_haxe(&ret_kind));
     if let ReturnKind::Tuple(elements) | ReturnKind::OptionTuple(elements) = &ret_kind {
         for (index, element) in elements.iter().enumerate() {
             let storage = tuple_element_storage(element)?.1;
@@ -461,7 +506,7 @@ mod cpp_tuple_tests {
     #[test]
     fn scalar_tuple_return_becomes_trailing_out_parameters() {
         assert_eq!(
-            emit_function(&random_gaussian_pair_fixture()).unwrap(),
+            emit_function(&random_gaussian_pair_fixture(), None).unwrap(),
             "\t@:native(\"flight_random_gaussian_pair\")\n\tpublic static function randomGaussianPair(randomFn:cpp.Star<cpp.Void>, randomCtx:cpp.Star<cpp.Void>, mean:Single, standardDeviation:Single, out0:cpp.RawPointer<cpp.Float32>, out1:cpp.RawPointer<cpp.Float32>):Void;"
         );
     }
@@ -469,7 +514,7 @@ mod cpp_tuple_tests {
     fn optional_tuple_returns_presence_with_the_same_out_parameters() {
         let mut function = random_gaussian_pair_fixture();
         function.ret = Some("Option<(f64, f64)>".into());
-        let text = emit_function(&function).unwrap();
+        let text = emit_function(&function, None).unwrap();
         assert!(
             text.ends_with(
                 ", out0:cpp.RawPointer<cpp.Float64>, out1:cpp.RawPointer<cpp.Float64>):Bool;"
@@ -481,7 +526,7 @@ mod cpp_tuple_tests {
     fn tuple_without_exact_width_storage_is_declined() {
         let mut function = random_gaussian_pair_fixture();
         function.ret = Some("(i64, i64)".into());
-        assert!(emit_function(&function).is_none());
+        assert!(emit_function(&function, None).is_none());
     }
     #[test]
     fn native_accessors_bind_only_directions_with_accessor_shape() {
@@ -542,7 +587,7 @@ mod cpp_tuple_tests {
             ret: None,
         };
         assert!(
-            emit_function(&free)
+            emit_function(&free, None)
                 .unwrap()
                 .ends_with("freeString(ptr:cpp.ConstCharStar):Void;")
         );
