@@ -236,7 +236,7 @@ fn one_pixel_sprite_shift(pixels: &[u8]) -> Vec<u8> {
 fn seven_step_channel_change(pixels: &[u8]) -> Vec<u8> {
     let mut changed = pixels.to_vec();
     let offset = (16 * WIDTH as usize + 16) * 4;
-    changed[offset] = changed[offset].saturating_sub(7);
+    changed[offset] = changed[offset].saturating_add(7);
     return changed;
 }
 
@@ -246,7 +246,15 @@ fn main() {
         return;
     }
     let wgpu = render_wgpu_reference();
-    let gl = render_gl_reference();
+    let mut gl = render_gl_reference();
+    if let Ok(probe) = std::env::var("FLIGHT_SDL_PARITY_PROBE") {
+        gl = match probe.as_str() {
+            "row-normalization" => one_row_normalization_error(&gl),
+            "sprite-shift" => one_pixel_sprite_shift(&gl),
+            "channel-plus-seven" => seven_step_channel_change(&gl),
+            _ => panic!("unknown FLIGHT_SDL_PARITY_PROBE={probe}"),
+        };
+    }
     assert_eq!(wgpu.len(), gl.len());
     assert_sentinel(&wgpu, 2, 2, [10, 15, 23, 255]);
     assert_sentinel(&gl, 2, 2, [10, 15, 23, 255]);
