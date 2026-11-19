@@ -195,6 +195,7 @@ enum SdlWindowCommand {
     SetResizable(bool),
     SetSize(u32, u32),
     SetTitle(String),
+    TextInput(bool),
     Show,
 }
 
@@ -248,6 +249,7 @@ struct ProviderState {
     touch_ids: Mutex<BTreeMap<u64, i32>>,
     primary_touch: Mutex<Option<u64>>,
     gamepads: Mutex<BTreeMap<i32, InputGamepadConnectData>>,
+    trigger_buttons: Mutex<BTreeMap<(i32, i32), bool>>,
     commands: Mutex<Vec<SdlWindowCommand>>,
     screens: Mutex<Vec<ScreenInfo>>,
     close_listeners: Mutex<Vec<Arc<CloseSubscription>>>,
@@ -317,19 +319,30 @@ fn attach_input(state: Arc<ProviderState>, kind: InputAttachmentKind) -> InputIn
             active: AtomicBool::new(true),
             sink: sink.clone(),
         });
-        state
-            .input
-            .lock()
-            .unwrap()
-            .list_mut(kind)
-            .push(attachment.clone());
+        let start_text_input = {
+            let mut input = state.input.lock().unwrap();
+            let start = kind == InputAttachmentKind::Text && !input.has_active(kind);
+            input.list_mut(kind).push(attachment.clone());
+            start
+        };
+        if start_text_input {
+            state.enqueue(SdlWindowCommand::TextInput(true));
+        }
         if kind == InputAttachmentKind::Gamepad && (sink.is_enabled)() {
             for data in state.gamepads.lock().unwrap().values() {
                 (sink.gamepad_connect)(data);
             }
         }
+        let release_state = state.clone();
         return Arc::new(move || {
-            attachment.active.store(false, Ordering::Release);
+            if !attachment.active.swap(false, Ordering::AcqRel) {
+                return;
+            }
+            if kind == InputAttachmentKind::Text
+                && !release_state.input.lock().unwrap().has_active(kind)
+            {
+                release_state.enqueue(SdlWindowCommand::TextInput(false));
+            }
         });
     });
 }
@@ -1047,6 +1060,7 @@ fn create_sdl_host_claimed(options: &SdlHostOptions) -> Result<SdlHost, SdlHostF
         touch_ids: Mutex::new(BTreeMap::new()),
         primary_touch: Mutex::new(None),
         gamepads: Mutex::new(BTreeMap::new()),
+        trigger_buttons: Mutex::new(BTreeMap::new()),
         commands: Mutex::new(Vec::new()),
         screens: Mutex::new(screens_from_video(&video)),
         close_listeners: Mutex::new(Vec::new()),
@@ -1501,6 +1515,13 @@ impl fmt::Display for SdlHostFailure {
 impl std::error::Error for SdlHostFailure {}
 
 impl InputAttachments {
+    fn has_active(&self, kind: InputAttachmentKind) -> bool {
+        return self
+            .list(kind)
+            .iter()
+            .any(|attachment| attachment.active.load(Ordering::Acquire));
+    }
+
     fn list(&self, kind: InputAttachmentKind) -> Vec<Arc<InputAttachment>> {
         return match kind {
             InputAttachmentKind::Gamepad => self.gamepad.clone(),
@@ -1682,6 +1703,12 @@ impl SdlNativeState {
         }
         self.gamepads.clear();
         self.event_pump.take();
+        if let (Some(video), Some(window)) = (&self.video, &self.window) {
+            let text_input = video.text_input();
+            if text_input.is_active(window) {
+                text_input.stop(window);
+            }
+        }
         self.window.take();
         self.gamepad.take();
         self.video.take();
@@ -1710,6 +1737,17 @@ impl SdlHost {
                 self.state.alive.store(false, Ordering::Release);
                 if let Some(window) = &mut self.native.window {
                     window.hide();
+                }
+                return;
+            }
+            SdlWindowCommand::TextInput(enabled) => {
+                if let (Some(video), Some(window)) = (&self.native.video, &self.native.window) {
+                    let text_input = video.text_input();
+                    if enabled && !text_input.is_active(window) {
+                        text_input.start(window);
+                    } else if !enabled && text_input.is_active(window) {
+                        text_input.stop(window);
+                    }
                 }
                 return;
             }
@@ -1793,7 +1831,9 @@ impl SdlHost {
             SdlWindowCommand::Show => {
                 window.show();
             }
-            SdlWindowCommand::Close | SdlWindowCommand::ReconfigureWgpu(_, _) => {}
+            SdlWindowCommand::Close
+            | SdlWindowCommand::ReconfigureWgpu(_, _)
+            | SdlWindowCommand::TextInput(_) => {}
         }
         self.refresh_window_snapshot();
     }
@@ -2049,11 +2089,31 @@ impl SdlHost {
                 (sink.gamepad_axis_move)(&data);
             }
         } else if let Some(data) = build_sdl_trigger_data(gamepad, axis, value, timestamp) {
-            for sink in self.state.input_sinks(InputAttachmentKind::Gamepad) {
-                if data.value == 0.0 {
-                    (sink.gamepad_button_up)(&data);
+            const TRIGGER_PRESS_THRESHOLD: f32 = 0.5;
+            let pressed = data.value >= TRIGGER_PRESS_THRESHOLD;
+            let key = (gamepad, data.button);
+            let transitioned = {
+                let mut trigger_buttons = self.state.trigger_buttons.lock().unwrap();
+                let previous = trigger_buttons.get(&key).copied().unwrap_or(false);
+                if previous == pressed {
+                    false
                 } else {
+                    if pressed {
+                        trigger_buttons.insert(key, true);
+                    } else {
+                        trigger_buttons.remove(&key);
+                    }
+                    true
+                }
+            };
+            if !transitioned {
+                return;
+            }
+            for sink in self.state.input_sinks(InputAttachmentKind::Gamepad) {
+                if pressed {
                     (sink.gamepad_button_down)(&data);
+                } else {
+                    (sink.gamepad_button_up)(&data);
                 }
             }
         }
@@ -2393,6 +2453,11 @@ impl SdlHost {
         let Some(data) = self.state.gamepads.lock().unwrap().remove(&id) else {
             return;
         };
+        self.state
+            .trigger_buttons
+            .lock()
+            .unwrap()
+            .retain(|(gamepad, _), _| *gamepad != id);
         for sink in self.state.input_sinks(InputAttachmentKind::Gamepad) {
             (sink.gamepad_disconnect)(&data);
         }

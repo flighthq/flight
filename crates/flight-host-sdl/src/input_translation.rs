@@ -77,7 +77,7 @@ pub fn build_sdl_gamepad_button_data(
 ) -> Option<InputGamepadButtonData> {
     let button = translate_sdl_gamepad_button(button)?;
     return Some(InputGamepadButtonData {
-        button: button as i32,
+        button: standard_gamepad_button_index(button),
         gamepad,
         time_stamp: sdl_timestamp_milliseconds(timestamp_ns),
         value: if pressed { 1.0 } else { 0.0 },
@@ -198,11 +198,34 @@ pub fn build_sdl_trigger_data(
         _ => return None,
     };
     return Some(InputGamepadButtonData {
-        button: button as i32,
+        button: standard_gamepad_button_index(button),
         gamepad,
         time_stamp: sdl_timestamp_milliseconds(timestamp_ns),
         value: normalize_sdl_gamepad_trigger(value),
     });
+}
+
+fn standard_gamepad_button_index(button: GamepadButtonKind) -> i32 {
+    return match button {
+        GamepadButtonKind::ButtonSouth => 0,
+        GamepadButtonKind::ButtonEast => 1,
+        GamepadButtonKind::ButtonWest => 2,
+        GamepadButtonKind::ButtonNorth => 3,
+        GamepadButtonKind::ShoulderLeft => 4,
+        GamepadButtonKind::ShoulderRight => 5,
+        GamepadButtonKind::TriggerLeft => 6,
+        GamepadButtonKind::TriggerRight => 7,
+        GamepadButtonKind::Select => 8,
+        GamepadButtonKind::Start => 9,
+        GamepadButtonKind::StickLeft => 10,
+        GamepadButtonKind::StickRight => 11,
+        GamepadButtonKind::DpadUp => 12,
+        GamepadButtonKind::DpadDown => 13,
+        GamepadButtonKind::DpadLeft => 14,
+        GamepadButtonKind::DpadRight => 15,
+        GamepadButtonKind::Home => 16,
+        GamepadButtonKind::Touchpad => 17,
+    };
 }
 
 /// Builds a line-mode wheel record at SDL's event-provided pointer position.

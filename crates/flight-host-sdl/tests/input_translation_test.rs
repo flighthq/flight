@@ -1,5 +1,8 @@
 use flight_host_sdl::*;
-use flight_input::{GamepadAxisKind, GamepadButtonKind, MouseWheelMode, PointerType};
+use flight_input::{
+    GamepadAxisKind, GamepadButtonKind, GamepadMapping, MouseWheelMode, PointerType,
+    get_gamepad_button_name,
+};
 use sdl3::gamepad::{Axis, Button};
 use sdl3::joystick::JoystickId;
 use sdl3::keyboard::{Keycode, Mod, Scancode};
@@ -24,19 +27,45 @@ mod build_sdl_gamepad_button_data {
     use super::*;
 
     #[test]
-    fn maps_pressed_and_released_values() {
-        let pressed =
-            build_sdl_gamepad_button_data(4, Button::South, true, 2_000_000).expect("named button");
-        assert_eq!(pressed.button, GamepadButtonKind::ButtonSouth as i32);
-        assert_eq!(pressed.gamepad, 4);
-        assert_eq!(pressed.time_stamp, 2.0);
-        assert_eq!(pressed.value, 1.0);
-        assert_eq!(
-            build_sdl_gamepad_button_data(4, Button::South, false, 0)
-                .expect("named button")
-                .value,
-            0.0
-        );
+    fn maps_all_buttons_to_independently_named_standard_indices() {
+        let cases = [
+            Button::South,
+            Button::East,
+            Button::West,
+            Button::North,
+            Button::Back,
+            Button::Guide,
+            Button::Start,
+            Button::LeftStick,
+            Button::RightStick,
+            Button::LeftShoulder,
+            Button::RightShoulder,
+            Button::DPadUp,
+            Button::DPadDown,
+            Button::DPadLeft,
+            Button::DPadRight,
+            Button::Touchpad,
+        ];
+        for button in cases {
+            let expected = translate_sdl_gamepad_button(button).expect("mapped SDL button");
+            let pressed =
+                build_sdl_gamepad_button_data(4, button, true, 2_000_000).expect("named button");
+            assert_eq!(
+                get_gamepad_button_name(GamepadMapping::Standard, pressed.button),
+                Some(expected),
+                "{button:?} emitted Standard index {}",
+                pressed.button
+            );
+            assert_eq!(pressed.gamepad, 4);
+            assert_eq!(pressed.time_stamp, 2.0);
+            assert_eq!(pressed.value, 1.0);
+            assert_eq!(
+                build_sdl_gamepad_button_data(4, button, false, 0)
+                    .expect("named button")
+                    .value,
+                0.0
+            );
+        }
         assert!(build_sdl_gamepad_button_data(4, Button::Misc1, true, 0).is_none());
     }
 }
@@ -133,12 +162,19 @@ mod build_sdl_trigger_data {
     use super::*;
 
     #[test]
-    fn maps_trigger_axes_to_button_values() {
-        let data =
-            build_sdl_trigger_data(1, Axis::TriggerRight, i16::MAX, 3_000_000).expect("trigger");
-        assert_eq!(data.button, GamepadButtonKind::TriggerRight as i32);
-        assert_eq!(data.value, 1.0);
-        assert_eq!(data.time_stamp, 3.0);
+    fn maps_trigger_axes_to_independently_named_standard_indices() {
+        for (axis, expected) in [
+            (Axis::TriggerLeft, GamepadButtonKind::TriggerLeft),
+            (Axis::TriggerRight, GamepadButtonKind::TriggerRight),
+        ] {
+            let data = build_sdl_trigger_data(1, axis, i16::MAX, 3_000_000).expect("trigger");
+            assert_eq!(
+                get_gamepad_button_name(GamepadMapping::Standard, data.button),
+                Some(expected)
+            );
+            assert_eq!(data.value, 1.0);
+            assert_eq!(data.time_stamp, 3.0);
+        }
         assert!(build_sdl_trigger_data(1, Axis::LeftX, 1, 0).is_none());
     }
 }
