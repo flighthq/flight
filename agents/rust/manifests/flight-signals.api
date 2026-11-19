@@ -67,6 +67,7 @@ src/slot.rs: pub fn is_slot_connected<T>(signal: &Signal<T>, id: SlotId) -> bool
 src/throttle.rs: pub fn advance_signal_timers(state: &Ref<SignalTimerState>, now_ms: f64)
 src/throttle.rs: pub fn clear_signal_timeout(state: &Ref<SignalTimerState>, id: TimerId)
 src/throttle.rs: pub fn connect_signal_at_frame_rate(source: &Signal<FrameTick>, fps: f64, slot: Arc<dyn Fn(f64) + Send + Sync>,) -> Arc<dyn Fn() + Send + Sync>
+src/throttle.rs: pub fn connect_signal_at_frame_rate_tracked(source: &Signal<FrameTick>, fps: f64, slot: Arc<dyn Fn(f64) + Send + Sync>, options: Option<&SignalTrackedConnectOptions>,) -> SignalConnection
 src/throttle.rs: pub fn connect_signal_debounced<T: Clone + Send + 'static>(source: &Signal<T>, delay_ms: f64, slot: SignalSlot<T>, options: Option<&SignalThrottleOptions>, state: &Ref<SignalTimerState>,) -> Arc<dyn Fn() + Send + Sync>
 src/throttle.rs: pub fn connect_signal_throttled<T: Clone + Send + 'static>(source: &Signal<T>, interval_ms: f64, slot: SignalSlot<T>, options: Option<&SignalThrottleOptions>, state: &Ref<SignalTimerState>,) -> Arc<dyn Fn() + Send + Sync>
 src/throttle.rs: pub fn create_signal_timer_state() -> SignalTimerState
