@@ -57,7 +57,7 @@ pub fn apply_film_grain_effect_to_wgpu(
         &mut pipeline.write().unwrap(),
         &mut |f32, _| {
             f32[0] = intensity;
-            f32[1] = 0.0001_f32.max(size);
+            f32[1] = 0.0001_f32.max(size as f32);
             f32[2] = seed;
         },
     );

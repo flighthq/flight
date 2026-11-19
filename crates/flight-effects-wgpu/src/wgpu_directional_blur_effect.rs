@@ -50,7 +50,7 @@ pub fn apply_directional_blur_effect_to_wgpu(
     dest: &WgpuTextureRenderTarget,
     effect: &DirectionalBlurEffect,
 ) {
-    let angle = (effect.angle.unwrap_or(0.0) * std::f32::consts::PI) / 180.0;
+    let angle = (effect.angle.unwrap_or(0.0) * std::f64::consts::PI) / 180.0;
     let length = effect.length.unwrap_or(8.0);
     let samples = effect.samples.unwrap_or(16.0);
     let resolution = get_wgpu_effect_logical_resolution(state, source);
@@ -66,8 +66,8 @@ pub fn apply_directional_blur_effect_to_wgpu(
         Some(dest),
         &mut pipeline.write().unwrap(),
         &mut |f32, _| {
-            f32[0] = angle;
-            f32[1] = length;
+            f32[0] = angle as f32;
+            f32[1] = length as f32;
             f32[2] = samples;
             f32[4] = resolution.width;
             f32[5] = resolution.height;

@@ -118,6 +118,7 @@ pub fn create_wgpu_effect_state(
 /// `beginWgpuEffectPass`). The scene target is allocated on first begin and resized afterwards.
 /// `clear` is the scene target's clear, given explicitly per pass; it defaults to transparent black
 /// with depth 1. `color_space` defaults to sRGB; a linear scene target linearizes the clear color.
+// flight-lint: allow(f64) widens integer pixel sizes exactly into the f64 logical render-target size (foreman-e0d2390c)
 pub fn begin_wgpu_effect_pass<'a>(
     pass: &'a mut WgpuRenderPass<'_>,
     pipeline: &mut WgpuEffectState,
@@ -127,7 +128,7 @@ pub fn begin_wgpu_effect_pass<'a>(
     let index = pass.index;
     let state: &'a mut WgpuRenderState = &mut *pass.state;
     let viewport = get_wgpu_render_state_runtime(state).pass_stack[index].viewport;
-    let (w, h) = (viewport.width, viewport.height);
+    let (w, h) = (f64::from(viewport.width), f64::from(viewport.height));
     let color_space = color_space.unwrap_or(RenderTargetColorSpace::Srgb);
     let format = if pipeline.options.format == Some(RenderTargetFormat::Rgba16F) {
         wgpu::TextureFormat::Rgba16Float
@@ -197,6 +198,7 @@ pub fn destroy_wgpu_effect_state(_state: &WgpuRenderState, pipeline: &mut WgpuEf
 /// fuses into ONE pass: all matrix-tier into one 4x5 matrix, any LUT-tier member bakes the whole
 /// run into one color LUT. An effect (or the end of the list) breaks the run and flushes it first,
 /// preserving order. Returns without touching anything when no scene target was begun.
+// flight-lint: allow(f64) widens integer pixel sizes exactly into the f64 logical render-target size (foreman-e0d2390c)
 pub fn end_wgpu_effect_pass(
     scene_pass: WgpuRenderPass<'_>,
     pipeline: &mut WgpuEffectState,
@@ -219,9 +221,9 @@ pub fn end_wgpu_effect_pass(
         WgpuTextureRenderTargetDescriptor {
             color_space: Some(scene.color_space),
             format: Some(scene.format),
-            height: scene.height as f32,
+            height: f64::from(scene.height),
             sample_count: None,
-            width: scene.width as f32,
+            width: f64::from(scene.width),
         }
     };
     let mut run = WgpuEffectChainRun {

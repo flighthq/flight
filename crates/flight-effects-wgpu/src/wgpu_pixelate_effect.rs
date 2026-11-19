@@ -52,7 +52,7 @@ pub fn apply_pixelate_effect_to_wgpu(
         Some(dest),
         &mut pipeline.write().unwrap(),
         &mut |f32, _| {
-            f32[0] = 1.0_f32.max(size);
+            f32[0] = 1.0_f32.max(size as f32);
             // u_resolution (vec2f) aligns to slot [2].
             f32[2] = resolution.width;
             f32[3] = resolution.height;

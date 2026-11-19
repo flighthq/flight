@@ -84,6 +84,7 @@ const LENS_DIRT_BLUR_SIGMA: f32 = 8.0;
 
 /// Spreads `source`'s bright energy through the dirt mask into `dest` (TS
 /// `applyLensDirtEffectToWgpu`).
+// flight-lint: allow(f64) widens integer pixel sizes exactly into the f64 logical render-target size (foreman-e0d2390c)
 pub fn apply_lens_dirt_effect_to_wgpu(
     state: &mut WgpuRenderState,
     source: &WgpuTextureRenderTarget,
@@ -97,9 +98,9 @@ pub fn apply_lens_dirt_effect_to_wgpu(
     let descriptor = WgpuTextureRenderTargetDescriptor {
         color_space: None,
         format: Some(source.format),
-        height: source.height as f32,
+        height: f64::from(source.height),
         sample_count: None,
-        width: source.width as f32,
+        width: f64::from(source.width),
     };
     let bright = acquire_wgpu_texture_render_target(state, pool, &descriptor);
     let blurred = acquire_wgpu_texture_render_target(state, pool, &descriptor);

@@ -41,6 +41,32 @@ mod apply_directional_blur_effect_to_wgpu {
         assert_eq!(uniforms[0][4], 32.0);
         assert_eq!(uniforms[0][5], 16.0);
     }
+
+    #[test]
+    fn uploads_the_f64_angle_narrowed_once_into_the_uniform_buffer() {
+        // At 10.1 degrees, f32 arithmetic uploads 0.1762782633304596 instead of 0.1762782484292984.
+        let mut state = create_wgpu_render_state_for_test(None);
+        let source = create_test_target(&state, 32, 16);
+        let dest = create_test_target(&state, 32, 16);
+        let effect = create_directional_blur_effect();
+        effect.write().unwrap().angle = Some(10.1);
+        let records = record_test_commands(&state);
+
+        with_test_frame(&mut state, |state| {
+            apply_directional_blur_effect_to_wgpu(
+                state,
+                &source.read().unwrap(),
+                &dest.read().unwrap(),
+                &effect.read().unwrap(),
+            );
+        });
+
+        let uniforms = recorded_effect_uniforms(&records);
+        assert_eq!(
+            uniforms[0][0],
+            (10.1_f64 * std::f64::consts::PI / 180.0) as f32
+        );
+    }
 }
 
 mod register_wgpu_directional_blur_effect {

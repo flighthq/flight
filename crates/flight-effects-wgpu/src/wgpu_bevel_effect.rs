@@ -78,6 +78,7 @@ struct BevelCompositeParams {
 
 /// Applies a `BevelEffect` from `source` into `dest`, borrowing three scratch targets from `pool`
 /// (TS `applyBevelEffectToWgpu`).
+// flight-lint: allow(f64) pixel-valued effect parameters are f64 CPU values (foreman-66f8c2c6), computed in f64 and narrowed once into the f32 uniform buffer or pass
 pub fn apply_bevel_effect_to_wgpu(
     state: &mut WgpuRenderState,
     source: &WgpuTextureRenderTarget,
@@ -88,15 +89,15 @@ pub fn apply_bevel_effect_to_wgpu(
     let descriptor = WgpuTextureRenderTargetDescriptor {
         color_space: None,
         format: Some(source.format),
-        height: source.height as f32,
+        height: f64::from(source.height),
         sample_count: None,
-        width: source.width as f32,
+        width: f64::from(source.width),
     };
     let tinted = acquire_wgpu_texture_render_target(state, pool, &descriptor);
     let blurred = acquire_wgpu_texture_render_target(state, pool, &descriptor);
     let blur_temp = acquire_wgpu_texture_render_target(state, pool, &descriptor);
 
-    let angle = effect.angle.unwrap_or(45.0) * std::f32::consts::PI / 180.0;
+    let angle = effect.angle.unwrap_or(45.0) * std::f64::consts::PI / 180.0;
     let distance = effect.distance.unwrap_or(4.0);
     // Match the surface reference, which snaps the light offset to whole pixels.
     let offset_x = (angle.cos() * distance + 0.5).floor();
@@ -128,8 +129,8 @@ pub fn apply_bevel_effect_to_wgpu(
             &blurred,
             &blur_temp,
             &WgpuEffectBoxBlurOptions {
-                blur_x: Some(effect.blur_x.unwrap_or(4.0)),
-                blur_y: Some(effect.blur_y.unwrap_or(4.0)),
+                blur_x: Some((effect.blur_x.unwrap_or(4.0)) as f32),
+                blur_y: Some((effect.blur_y.unwrap_or(4.0)) as f32),
                 passes: Some(quality),
                 edge_color: None,
             },
@@ -146,8 +147,8 @@ pub fn apply_bevel_effect_to_wgpu(
             source,
             dest,
             &BevelCompositeParams {
-                offset_x: offset_x / source.width as f32,
-                offset_y: offset_y / source.height as f32,
+                offset_x: (offset_x / f64::from(source.width)) as f32,
+                offset_y: (offset_y / f64::from(source.height)) as f32,
                 highlight_color,
                 highlight_alpha,
                 shadow_color,

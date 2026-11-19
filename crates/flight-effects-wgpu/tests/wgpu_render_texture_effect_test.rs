@@ -10,7 +10,7 @@ use flight_render_wgpu::*;
 
 use crate::support::*;
 
-fn descriptor(width: f32, height: f32) -> RenderTargetDescriptor {
+fn descriptor(width: f64, height: f64) -> RenderTargetDescriptor {
     return RenderTargetDescriptor {
         width,
         height,
@@ -29,7 +29,11 @@ fn lease(
     width: f32,
     height: f32,
 ) -> Ref<RenderTexture> {
-    return acquire_wgpu_render_texture(state, pool, &descriptor(width, height));
+    return acquire_wgpu_render_texture(
+        state,
+        pool,
+        &descriptor(f64::from(width), f64::from(height)),
+    );
 }
 
 // Realizes the source so `source-unavailable` is not what is being measured.

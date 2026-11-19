@@ -58,7 +58,7 @@ pub fn apply_displacement_effect_to_wgpu(
         Some(dest),
         &mut pipeline.write().unwrap(),
         &mut |f32, _| {
-            f32[0] = intensity;
+            f32[0] = intensity as f32;
             f32[1] = frequency;
             f32[2] = seed;
             f32[4] = resolution.width;

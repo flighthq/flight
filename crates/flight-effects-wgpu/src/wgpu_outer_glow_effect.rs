@@ -22,6 +22,7 @@ use crate::wgpu_effect_tint_shader::apply_wgpu_effect_tint_pass;
 
 /// Applies an `OuterGlowEffect` from `source` into `dest`, borrowing three scratch targets from
 /// `pool` (TS `applyOuterGlowEffectToWgpu`).
+// flight-lint: allow(f64) widens integer pixel sizes exactly into the f64 logical render-target size (foreman-e0d2390c)
 pub fn apply_outer_glow_effect_to_wgpu(
     state: &mut WgpuRenderState,
     source: &WgpuTextureRenderTarget,
@@ -32,9 +33,9 @@ pub fn apply_outer_glow_effect_to_wgpu(
     let descriptor = WgpuTextureRenderTargetDescriptor {
         color_space: None,
         format: Some(source.format),
-        height: source.height as f32,
+        height: f64::from(source.height),
         sample_count: None,
-        width: source.width as f32,
+        width: f64::from(source.width),
     };
     let mask = acquire_wgpu_texture_render_target(state, pool, &descriptor);
     let blurred = acquire_wgpu_texture_render_target(state, pool, &descriptor);
@@ -60,8 +61,8 @@ pub fn apply_outer_glow_effect_to_wgpu(
             &blurred,
             &blur_temp,
             &WgpuEffectBoxBlurOptions {
-                blur_x: Some(effect.blur_x.unwrap_or(6.0)),
-                blur_y: Some(effect.blur_y.unwrap_or(6.0)),
+                blur_x: Some((effect.blur_x.unwrap_or(6.0)) as f32),
+                blur_y: Some((effect.blur_y.unwrap_or(6.0)) as f32),
                 passes: Some(quality),
                 edge_color: None,
             },

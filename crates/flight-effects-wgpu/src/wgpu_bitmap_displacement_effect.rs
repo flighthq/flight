@@ -162,8 +162,8 @@ pub fn apply_bitmap_displacement_effect_to_wgpu(
     };
     let slot_offset = (fs.acquire_slot)(state);
     (fs.write_slot)(state, slot_offset, &mut |f32, i32| {
-        f32[0] = scale_x;
-        f32[1] = scale_y;
+        f32[0] = scale_x as f32;
+        f32[1] = scale_y as f32;
         f32[2] = width;
         f32[3] = height;
         i32[4] = component_x;

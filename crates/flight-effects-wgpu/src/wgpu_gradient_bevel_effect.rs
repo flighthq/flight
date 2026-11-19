@@ -145,6 +145,7 @@ fn create_unblended_pipeline(
 
 /// Applies a `GradientBevelEffect` from `source` into `dest`, borrowing three scratch targets from
 /// `pool` (TS `applyGradientBevelEffectToWgpu`).
+// flight-lint: allow(f64) pixel-valued effect parameters are f64 CPU values (foreman-66f8c2c6), computed in f64 and narrowed once into the f32 uniform buffer or pass
 pub fn apply_gradient_bevel_effect_to_wgpu(
     state: &mut WgpuRenderState,
     source: &WgpuTextureRenderTarget,
@@ -155,15 +156,15 @@ pub fn apply_gradient_bevel_effect_to_wgpu(
     let descriptor = WgpuTextureRenderTargetDescriptor {
         color_space: None,
         format: Some(source.format),
-        height: source.height as f32,
+        height: f64::from(source.height),
         sample_count: None,
-        width: source.width as f32,
+        width: f64::from(source.width),
     };
     let s0 = acquire_wgpu_texture_render_target(state, pool, &descriptor);
     let s1 = acquire_wgpu_texture_render_target(state, pool, &descriptor);
     let s2 = acquire_wgpu_texture_render_target(state, pool, &descriptor);
 
-    let angle = effect.angle.unwrap_or(45.0) * std::f32::consts::PI / 180.0;
+    let angle = effect.angle.unwrap_or(45.0) * std::f64::consts::PI / 180.0;
     let distance = effect.distance.unwrap_or(4.0);
     let quality = 1.0_f32.max((effect.quality.unwrap_or(1.0) + 0.5).floor());
     let strength = effect.strength.unwrap_or(1.0);
@@ -185,22 +186,22 @@ pub fn apply_gradient_bevel_effect_to_wgpu(
             &t1,
             &t2,
             &WgpuEffectBoxBlurOptions {
-                blur_x: Some(effect.blur_x.unwrap_or(4.0)),
-                blur_y: Some(effect.blur_y.unwrap_or(4.0)),
+                blur_x: Some((effect.blur_x.unwrap_or(4.0)) as f32),
+                blur_y: Some((effect.blur_y.unwrap_or(4.0)) as f32),
                 passes: Some(quality),
                 edge_color: None,
             },
         );
 
         // Encode bevel value from blurred alpha offset samples → s0
-        let dx = angle.cos() * distance / t1.width as f32;
-        let dy = angle.sin() * distance / t1.height as f32;
+        let dx = angle.cos() * distance / f64::from(t1.width);
+        let dy = angle.sin() * distance / f64::from(t1.height);
 
         let encode_pipeline = get_encode_pipeline(state);
         let encode_slot = (fs.acquire_slot)(state);
         (fs.write_slot)(state, encode_slot, &mut |f32, _| {
-            f32[0] = dx;
-            f32[1] = dy;
+            f32[0] = dx as f32;
+            f32[1] = dy as f32;
         });
 
         let blurred_bind_group = create_wgpu_effect_texture_bind_group(

@@ -6,7 +6,7 @@ use flight_render_wgpu::*;
 
 use crate::support::*;
 
-fn uploaded_radius(radius: Option<f32>) -> i32 {
+fn uploaded_radius(radius: Option<f64>) -> i32 {
     let mut state = create_wgpu_render_state_for_test(None);
     let source = create_test_target(&state, 32, 16);
     let dest = create_test_target(&state, 32, 16);

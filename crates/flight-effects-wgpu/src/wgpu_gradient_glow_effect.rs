@@ -99,6 +99,7 @@ fn create_unblended_pipeline(
 
 /// Applies a `GradientGlowEffect` from `source` into `dest`, borrowing three scratch targets from
 /// `pool` (TS `applyGradientGlowEffectToWgpu`).
+// flight-lint: allow(f64) widens integer pixel sizes exactly into the f64 logical render-target size (foreman-e0d2390c)
 pub fn apply_gradient_glow_effect_to_wgpu(
     state: &mut WgpuRenderState,
     source: &WgpuTextureRenderTarget,
@@ -109,9 +110,9 @@ pub fn apply_gradient_glow_effect_to_wgpu(
     let descriptor = WgpuTextureRenderTargetDescriptor {
         color_space: None,
         format: Some(source.format),
-        height: source.height as f32,
+        height: f64::from(source.height),
         sample_count: None,
-        width: source.width as f32,
+        width: f64::from(source.width),
     };
     let s0 = acquire_wgpu_texture_render_target(state, pool, &descriptor);
     let s1 = acquire_wgpu_texture_render_target(state, pool, &descriptor);
@@ -135,8 +136,8 @@ pub fn apply_gradient_glow_effect_to_wgpu(
             &t1,
             &t2,
             &WgpuEffectBoxBlurOptions {
-                blur_x: Some(effect.blur_x.unwrap_or(6.0)),
-                blur_y: Some(effect.blur_y.unwrap_or(6.0)),
+                blur_x: Some((effect.blur_x.unwrap_or(6.0)) as f32),
+                blur_y: Some((effect.blur_y.unwrap_or(6.0)) as f32),
                 passes: Some(quality),
                 edge_color: None,
             },

@@ -65,8 +65,8 @@ pub fn apply_blur_effect_to_wgpu(
         dest,
         temp,
         &WgpuGaussianBlurOptions {
-            blur_x: effect.blur_x,
-            blur_y: effect.blur_y,
+            blur_x: effect.blur_x.map(|value| value as f32),
+            blur_y: effect.blur_y.map(|value| value as f32),
         },
     );
 }
@@ -142,6 +142,7 @@ pub fn register_wgpu_blur_effect(state: &mut WgpuRenderState) {
 
 /// The default `BlurEffect` runner (TS `wgpuBlurEffectRunner`): borrows one scratch target from
 /// the pool for the horizontal pass.
+// flight-lint: allow(f64) widens integer pixel sizes exactly into the f64 logical render-target size (foreman-e0d2390c)
 pub fn wgpu_blur_effect_runner(ctx: &mut WgpuEffectContext<'_>, effect: &dyn Effect) {
     let effect = downcast_wgpu_effect::<BlurEffect>(effect, "wgpuBlurEffectRunner");
     let source = ctx.source.read().unwrap();
@@ -149,9 +150,9 @@ pub fn wgpu_blur_effect_runner(ctx: &mut WgpuEffectContext<'_>, effect: &dyn Eff
     let descriptor = WgpuTextureRenderTargetDescriptor {
         color_space: None,
         format: Some(source.format),
-        height: source.height as f32,
+        height: f64::from(source.height),
         sample_count: None,
-        width: source.width as f32,
+        width: f64::from(source.width),
     };
     let temp = acquire_wgpu_texture_render_target(ctx.state, ctx.pool, &descriptor);
     apply_blur_effect_to_wgpu(ctx.state, &source, &dest, &temp.read().unwrap(), effect);

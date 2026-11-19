@@ -107,6 +107,7 @@ fn get_wgpu_effect_application_message(explanation: &WgpuEffectApplicationExplan
     };
 }
 
+// flight-lint: allow(f64) pixel-valued effect parameters are f64 CPU values (foreman-66f8c2c6), computed in f64 and narrowed once into the f32 uniform buffer or pass
 fn warn_wgpu_effect_application(
     log_state: &LogStateRef,
     explanation: &WgpuEffectApplicationExplanation,

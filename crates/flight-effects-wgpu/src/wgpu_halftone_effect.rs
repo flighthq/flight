@@ -49,7 +49,7 @@ pub fn apply_halftone_effect_to_wgpu(
     effect: &HalftoneEffect,
 ) {
     let scale = effect.scale.unwrap_or(6.0);
-    let angle = (effect.angle.unwrap_or(22.92) * std::f32::consts::PI) / 180.0;
+    let angle = (effect.angle.unwrap_or(22.92) * std::f64::consts::PI) / 180.0;
     let width = source.width as f32;
     let height = source.height as f32;
     let pipeline = get_wgpu_effect_pipeline(
@@ -64,8 +64,8 @@ pub fn apply_halftone_effect_to_wgpu(
         Some(dest),
         &mut pipeline.write().unwrap(),
         &mut |f32, _| {
-            f32[0] = 1.0_f32.max(scale);
-            f32[1] = angle;
+            f32[0] = 1.0_f32.max(scale as f32);
+            f32[1] = angle as f32;
             f32[2] = width;
             f32[3] = height;
         },

@@ -180,10 +180,16 @@ pub(crate) fn draw_wgpu_effect_fullscreen_quad(
     drop(pass);
 }
 
-/// Formats a number the way JS template strings print it (integers without a fraction).
-pub(crate) fn format_wgpu_effect_number(value: f32) -> String {
-    if value.is_finite() && value.fract() == 0.0 {
-        return format!("{}", value as i64);
+/// Formats a number the way JS template strings print it (integers without a fraction). The
+/// integer test runs on the exact f64 widening, so an f64 value such as 16777217 prints in full,
+/// while a fraction prints through the value's own lane (an f32 keeps its shortest f32 digits).
+// flight-lint: allow(f64) formats f64 diagnostics (convolution kernel size) exactly; the integer test widens any lane exactly (foreman-220feeb2)
+pub(crate) fn format_wgpu_effect_number<T: Copy + Into<f64> + std::fmt::Display>(
+    value: T,
+) -> String {
+    let wide: f64 = value.into();
+    if wide.is_finite() && wide.fract() == 0.0 {
+        return format!("{}", wide as i64);
     }
     return format!("{value}");
 }

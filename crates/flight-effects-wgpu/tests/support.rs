@@ -290,8 +290,8 @@ pub fn create_test_target(
 ) -> Ref<WgpuTextureRenderTarget> {
     return Arc::new(RwLock::new(create_wgpu_texture_render_target(
         state,
-        width as f32,
-        height as f32,
+        f64::from(width),
+        f64::from(height),
         None,
         None,
         None,

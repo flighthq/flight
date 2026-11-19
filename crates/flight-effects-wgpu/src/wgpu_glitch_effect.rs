@@ -74,8 +74,8 @@ pub fn apply_glitch_effect_to_wgpu(
         &mut pipeline.write().unwrap(),
         &mut |f32, _| {
             f32[0] = intensity;
-            f32[1] = block_size;
-            f32[2] = color_shift;
+            f32[1] = block_size as f32;
+            f32[2] = color_shift as f32;
             f32[3] = seed;
             f32[4] = resolution.width;
             f32[5] = resolution.height;

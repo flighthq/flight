@@ -90,7 +90,7 @@ pub fn apply_kuwahara_effect_to_wgpu(
         Some(dest),
         &mut pipeline.write().unwrap(),
         &mut |f32, _| {
-            f32[0] = 1.0_f32.max(radius);
+            f32[0] = 1.0_f32.max(radius as f32);
             f32[2] = resolution.width;
             f32[3] = resolution.height;
         },

@@ -83,7 +83,8 @@ pub fn apply_median_effect_to_wgpu(
     effect: &MedianEffect,
 ) {
     let radius = (MAX_MEDIAN_EFFECT_WGPU_RADIUS as f32)
-        .min(0.0_f32.max((effect.radius.unwrap_or(1.0) + 0.5).floor())) as i32;
+        .min(0.0_f32.max(((effect.radius.unwrap_or(1.0) + 0.5).floor()) as f32))
+        as i32;
     let width = source.width as f32;
     let height = source.height as f32;
     let pipeline = get_wgpu_effect_pipeline(

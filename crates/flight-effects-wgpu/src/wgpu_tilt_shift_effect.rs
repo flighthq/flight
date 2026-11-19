@@ -68,7 +68,7 @@ pub fn apply_tilt_shift_effect_to_wgpu(
         &mut |f32, _| {
             f32[0] = center;
             f32[1] = width;
-            f32[2] = blur;
+            f32[2] = blur as f32;
             f32[4] = resolution.width;
             f32[5] = resolution.height;
         },

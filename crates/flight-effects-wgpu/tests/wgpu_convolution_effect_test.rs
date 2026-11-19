@@ -80,6 +80,27 @@ mod apply_convolution_effect_to_wgpu {
 
         assert!(result.is_err());
     }
+
+    #[test]
+    fn reports_an_f64_kernel_size_beyond_f32_precision_exactly() {
+        // 16777217 has no f32 value: narrowing for the message would report 16777216.
+        let result = catch_unwind(AssertUnwindSafe(|| {
+            apply_convolution(|effect| {
+                effect.matrix = vec![1.0; 1];
+                effect.matrix_x = 16_777_217.0;
+                effect.matrix_y = 1.0;
+            });
+        }));
+        let payload = result.unwrap_err();
+        let message = payload
+            .downcast_ref::<flight_entity::FlightError>()
+            .map(|error| error.message.clone())
+            .unwrap_or_default();
+        assert_eq!(
+            message,
+            "Convolution kernel exceeds the WebGPU maximum of 7×7 (16777217×1 given)"
+        );
+    }
 }
 
 mod register_wgpu_convolution_effect {

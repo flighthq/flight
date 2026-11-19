@@ -78,7 +78,7 @@ pub fn apply_outline_effect_to_wgpu(
         &mut pipeline.write().unwrap(),
         &mut |f32, _| {
             f32[0] = threshold;
-            f32[1] = thickness;
+            f32[1] = thickness as f32;
             // u_resolution (vec2f) aligns to slot [2].
             f32[2] = width;
             f32[3] = height;

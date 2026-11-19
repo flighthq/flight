@@ -83,6 +83,7 @@ fn fs_main(@location(0) uv : vec2f) -> @location(0) vec4f {
 
 /// Applies a `ConvolutionEffect` from `source` into `dest` (TS `applyConvolutionEffectToWgpu`).
 /// Panics (TS throws) when the dimensions are not positive, exceed 7x7, or outrun the matrix.
+// flight-lint: allow(f64) pixel-valued effect parameters are f64 CPU values (foreman-66f8c2c6), computed in f64 and narrowed once into the f32 uniform buffer or pass
 pub fn apply_convolution_effect_to_wgpu(
     state: &mut WgpuRenderState,
     source: &WgpuTextureRenderTarget,
@@ -94,7 +95,7 @@ pub fn apply_convolution_effect_to_wgpu(
     if matrix_x <= 0.0 || matrix_y <= 0.0 {
         throw_error("Convolution matrix dimensions must be positive");
     }
-    if matrix_x * matrix_y > MAX_CONVOLUTION_EFFECT_WGPU_KERNEL_SIZE as f32 {
+    if matrix_x * matrix_y > MAX_CONVOLUTION_EFFECT_WGPU_KERNEL_SIZE as f64 {
         throw_error(&format!(
             "Convolution kernel exceeds the WebGPU maximum of 7×7 ({}×{} given)",
             crate::wgpu_effect_runtime::format_wgpu_effect_number(matrix_x),

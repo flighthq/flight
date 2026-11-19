@@ -66,7 +66,7 @@ pub fn apply_ssao_effect_to_wgpu(
         Some(dest),
         &mut pipeline.write().unwrap(),
         &mut |f32, _| {
-            f32[0] = radius;
+            f32[0] = radius as f32;
             f32[1] = intensity;
             f32[2] = resolution.width;
             f32[3] = resolution.height;
