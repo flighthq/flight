@@ -21,8 +21,8 @@ mod create_bitmap_from_headless_screen_render_target {
             return;
         };
         let screen = render_known_scene(&host);
-        let actual =
-            create_bitmap_from_headless_screen_render_target(&screen, Some(10_000)).unwrap();
+        let actual = create_bitmap_from_headless_screen_render_target(&screen, Some(10_000))
+            .expect("a captured frame reads back");
         let expected = create_known_scene_expected_bitmap();
         assert_eq!((actual.width, actual.height), (SCENE_WIDTH, SCENE_HEIGHT));
         let mismatches: Vec<(u32, u32, &[u8], &[u8])> = (0..SCENE_HEIGHT)
@@ -48,9 +48,9 @@ mod create_bitmap_from_headless_screen_render_target {
     }
 
     #[test]
-    fn rejects_a_target_that_never_enabled_capture() {
+    fn returns_none_for_a_target_that_never_enabled_capture() {
         let Some(mut host) =
-            create_test_headless_host("rejects_a_target_that_never_enabled_capture")
+            create_test_headless_host("returns_none_for_a_target_that_never_enabled_capture")
         else {
             return;
         };
@@ -62,15 +62,7 @@ mod create_bitmap_from_headless_screen_render_target {
             None,
         );
         let screen = Arc::new(RwLock::new(screen));
-        let error = create_bitmap_from_headless_screen_render_target(&screen, Some(1_000))
-            .expect_err("a rejection");
-        assert!(
-            error
-                .message
-                .contains("enableWgpuScreenRenderTargetCapture"),
-            "{}",
-            error.message
-        );
+        assert!(create_bitmap_from_headless_screen_render_target(&screen, Some(1_000)).is_none());
         drop(screen);
         destroy_headless_host(&mut host);
     }
@@ -108,13 +100,37 @@ mod create_headless_host {
     }
 
     #[test]
+    fn opens_an_adapter_only_on_an_allowed_backend() {
+        let Some(mut host) =
+            create_test_headless_host("opens_an_adapter_only_on_an_allowed_backend")
+        else {
+            return;
+        };
+        let backend = get_headless_host_adapter_backend(&host).to_string();
+        destroy_headless_host(&mut host);
+        let mut only = create_headless_host_options();
+        only.allow_dx12 = backend == "dx12";
+        only.allow_metal = backend == "metal";
+        only.allow_vulkan = backend == "vulkan";
+        let mut same = create_headless_host(Some(&only)).expect("the same backend opens again");
+        assert_eq!(get_headless_host_adapter_backend(&same), backend);
+        destroy_headless_host(&mut same);
+        let mut without = create_headless_host_options();
+        without.allow_dx12 = backend != "dx12";
+        without.allow_metal = backend != "metal";
+        without.allow_vulkan = backend != "vulkan";
+        if let Some(mut other) = create_headless_host(Some(&without)) {
+            assert_ne!(get_headless_host_adapter_backend(&other), backend);
+            destroy_headless_host(&mut other);
+        }
+    }
+
+    #[test]
     fn returns_none_when_no_backend_is_selected() {
         let mut options = create_headless_host_options();
-        options.backends = HeadlessHostBackends {
-            dx12: false,
-            metal: false,
-            vulkan: false,
-        };
+        options.allow_dx12 = false;
+        options.allow_metal = false;
+        options.allow_vulkan = false;
         assert!(create_headless_host(Some(&options)).is_none());
     }
 }
@@ -126,14 +142,7 @@ mod create_headless_host_options {
     fn accepts_every_backend_and_a_software_adapter_with_no_power_preference() {
         let options = create_headless_host_options();
         assert!(options.allow_software_adapter);
-        assert_eq!(
-            options.backends,
-            HeadlessHostBackends {
-                dx12: true,
-                metal: true,
-                vulkan: true,
-            }
-        );
+        assert!(options.allow_dx12 && options.allow_metal && options.allow_vulkan);
         assert_eq!(options.power_preference, HeadlessHostPowerPreference::None);
     }
 }

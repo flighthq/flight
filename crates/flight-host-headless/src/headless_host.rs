@@ -25,14 +25,16 @@ use crate::types::*;
 
 /// Reads a captured screen target back to an RGBA Bitmap, blocking until the SDK's capture read-back
 /// settles (`create_bitmap_from_wgpu_screen_render_target`, which this only drives to completion).
-/// The target must have had `enable_wgpu_screen_render_target_capture` before a submitted frame.
+/// `None` when the target has no captured frame to read or the map fails or outlives `timeout_ms`;
+/// `explain_headless_screen_render_target_read_back` says which.
 pub fn create_bitmap_from_headless_screen_render_target(
     target: &Ref<WgpuScreenRenderTarget>,
     timeout_ms: Option<u32>,
-) -> Result<Bitmap, FlightError> {
+) -> Option<Bitmap> {
     return pollster::block_on(create_bitmap_from_wgpu_screen_render_target(
         target, timeout_ms,
-    ));
+    ))
+    .ok();
 }
 
 /// Opens a real wgpu device on the adapter `options` choose (defaults from
@@ -68,12 +70,10 @@ pub fn create_headless_host(options: Option<&HeadlessHostOptions>) -> Option<Hea
 /// accepted when no hardware adapter exists (the CI case).
 pub fn create_headless_host_options() -> HeadlessHostOptions {
     return HeadlessHostOptions {
+        allow_dx12: true,
+        allow_metal: true,
         allow_software_adapter: true,
-        backends: HeadlessHostBackends {
-            dx12: true,
-            metal: true,
-            vulkan: true,
-        },
+        allow_vulkan: true,
         power_preference: HeadlessHostPowerPreference::None,
     };
 }

@@ -57,26 +57,26 @@ fn choose_headless_adapter(
     return ranked.into_iter().next().map(|(_, _, adapter)| adapter);
 }
 
-fn get_wgpu_backends(backends: &HeadlessHostBackends) -> wgpu::Backends {
+fn get_wgpu_backends(options: &HeadlessHostOptions) -> wgpu::Backends {
     let mut out = wgpu::Backends::empty();
-    if backends.dx12 {
+    if options.allow_dx12 {
         out |= wgpu::Backends::DX12;
     }
-    if backends.metal {
+    if options.allow_metal {
         out |= wgpu::Backends::METAL;
     }
-    if backends.vulkan {
+    if options.allow_vulkan {
         out |= wgpu::Backends::VULKAN;
     }
     return out;
 }
 
-/// Opens an instance on the selected backends, chooses an adapter by `options`, and requests a
+/// Opens an instance on the allowed backends, chooses an adapter by `options`, and requests a
 /// device enabling the texture-compression families that adapter offers.
 pub(crate) fn request_headless_device(
     options: &HeadlessHostOptions,
 ) -> Result<HeadlessDevice, HeadlessHostExplanation> {
-    let backends = get_wgpu_backends(&options.backends);
+    let backends = get_wgpu_backends(options);
     let mut descriptor = wgpu::InstanceDescriptor::new_without_display_handle();
     descriptor.backends = backends;
     // The release-build instance flags in every build: debug object naming and validation layers
@@ -90,7 +90,7 @@ pub(crate) fn request_headless_device(
         return Err(create_failure(
             HeadlessHostExplanationReason::NoAdapter,
             None,
-            "no adapter is available on the selected backends",
+            "no adapter is available on the allowed backends",
         ));
     }
     let first = adapters[0].get_info();

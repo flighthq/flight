@@ -4,16 +4,6 @@ use flight_host::{ProviderRef, WgpuDevice};
 use flight_render_wgpu::WgpuNativeDevice;
 use flight_surface::HostWgpuCapability;
 
-/// The graphics APIs a headless host may open an adapter on. Each is also gated by the platform:
-/// Vulkan on Linux and Windows (and through a portability layer on Apple platforms), Metal on Apple
-/// platforms, DirectX 12 on Windows.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub struct HeadlessHostBackends {
-    pub dx12: bool,
-    pub metal: bool,
-    pub vulkan: bool,
-}
-
 /// Why `create_headless_host` would return `None`, or `Ready` when it would succeed.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 #[repr(u32)]
@@ -50,14 +40,37 @@ pub struct HeadlessHost {
     pub(crate) wgpu: HostWgpuCapability,
 }
 
-/// How a headless host chooses its adapter.
+/// How a headless host chooses its adapter. The `allow_*` backend flags name the graphics APIs it
+/// may open an adapter on; each is also gated by the platform: DirectX 12 on Windows, Metal on
+/// Apple platforms, Vulkan on Linux and Windows (and through a portability layer on Apple).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct HeadlessHostOptions {
+    pub allow_dx12: bool,
+    pub allow_metal: bool,
     /// Whether a CPU (software) adapter such as Mesa lavapipe or WARP is acceptable. It is chosen
-    /// only when no hardware adapter is available on the selected backends.
+    /// only when no hardware adapter is available on the allowed backends.
     pub allow_software_adapter: bool,
-    pub backends: HeadlessHostBackends,
+    pub allow_vulkan: bool,
     pub power_preference: HeadlessHostPowerPreference,
+}
+
+/// Why `create_bitmap_from_headless_screen_render_target` would return `None` for a target, or
+/// `Ready` when it would return a Bitmap.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
+pub enum HeadlessReadBackExplanationReason {
+    Ready = 0,
+    CaptureNotEnabled = 1,
+    NoCapturedFrame = 2,
+    MapFailed = 3,
+}
+
+/// Plain-data answer to "why did reading a headless screen target back fail?". `message` carries
+/// the SDK's own words for a failed map (a driver error or the timeout); it is empty otherwise.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct HeadlessReadBackExplanation {
+    pub message: String,
+    pub reason: HeadlessReadBackExplanationReason,
 }
 
 /// Which hardware adapter to prefer when several are available.

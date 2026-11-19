@@ -29,11 +29,9 @@ mod explain_headless_host {
     #[test]
     fn reports_no_adapter_when_no_backend_is_selected() {
         let mut options = create_headless_host_options();
-        options.backends = HeadlessHostBackends {
-            dx12: false,
-            metal: false,
-            vulkan: false,
-        };
+        options.allow_dx12 = false;
+        options.allow_metal = false;
+        options.allow_vulkan = false;
         let explanation = explain_headless_host(Some(&options));
         assert_eq!(explanation.reason, HeadlessHostExplanationReason::NoAdapter);
         assert!(explanation.adapter_name.is_empty());
