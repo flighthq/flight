@@ -48,8 +48,16 @@ pub fn tree_with_children(count: usize) -> (NodeRef, Vec<NodeRef>) {
     return (root, children);
 }
 
+// Most tests drive a manager they own outright, so the fixture takes the single shared handle the
+// factory returns apart; tests of the shared handle itself call the factory directly.
 pub fn manager_for(root: &NodeRef) -> InteractionManager {
-    return create_interaction_manager(root.clone(), &create_interaction_manager_options());
+    let manager =
+        create_interaction_manager(root.clone(), Some(&create_interaction_manager_options()));
+    return std::sync::Arc::try_unwrap(manager)
+        .ok()
+        .expect("a fresh manager has one handle")
+        .into_inner()
+        .unwrap();
 }
 
 pub fn manager_with_hit_tests(root: &NodeRef) -> InteractionManager {

@@ -17,7 +17,7 @@ use crate::types::{
     AnyInteractionSignalSlot, InteractionDispatchLayer, InteractionDispatchLayerEntry,
     InteractionDispatchLayerOptions, InteractionManager, InteractionManagerOptions,
     InteractionPointerOptions, InteractionPointerState, InteractionSignalName, InteractionSignals,
-    KeyboardEventData, PointerEventData,
+    KeyboardEventData, PointerEventData, create_interaction_manager_options,
 };
 
 const CANCEL_SIGNAL_NAMES: &[InteractionSignalName] = &[
@@ -52,10 +52,14 @@ const UP_SIGNAL_NAMES: &[InteractionSignalName] = &[
     InteractionSignalName::OnReleaseOutside,
 ];
 
+/// Creates a manager for `root` (TS `createInteractionManager`). `None` selects the default
+/// options. The manager is returned as the shared handle the input and focus connectors retain.
 pub fn create_interaction_manager(
     root: NodeRef,
-    options: &InteractionManagerOptions,
-) -> InteractionManager {
+    options: Option<&InteractionManagerOptions>,
+) -> Ref<InteractionManager> {
+    let defaults = create_interaction_manager_options();
+    let options = options.unwrap_or(&defaults);
     let mut out = InteractionManager {
         cursor_backend: None,
         cursor_target: None,
@@ -75,7 +79,7 @@ pub fn create_interaction_manager(
         tracked_subscribers_only: false,
     };
     initialize_interaction_manager(&mut out, root, options);
-    return out;
+    return Arc::new(RwLock::new(out));
 }
 
 pub fn create_interaction_signals() -> InteractionSignals {

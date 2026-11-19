@@ -144,11 +144,25 @@ mod create_interaction_manager {
     #[test]
     fn defaults() {
         let root = interaction_fixture::node();
-        let mgr = create_interaction_manager(root, &create_interaction_manager_options());
+        let mgr = create_interaction_manager(root, None);
+        let mgr = mgr.read().unwrap();
         assert!(mgr.enabled);
         assert_eq!(mgr.double_click_delay, 500.0);
         assert_eq!(mgr.double_click_distance, 4.0);
         assert!(mgr.suppress_touch_hover);
+    }
+
+    #[test]
+    fn applies_given_options_and_returns_one_shared_handle() {
+        let root = interaction_fixture::node();
+        let mut options = create_interaction_manager_options();
+        options.enabled = Some(false);
+        options.double_click_delay = Some(250.0);
+        let manager = create_interaction_manager(root, Some(&options));
+        assert_eq!(std::sync::Arc::strong_count(&manager), 1);
+        let manager = manager.read().unwrap();
+        assert!(!manager.enabled);
+        assert_eq!(manager.double_click_delay, 250.0);
     }
 }
 
