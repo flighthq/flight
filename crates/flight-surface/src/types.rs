@@ -172,13 +172,14 @@ pub struct GlContextOptions {
 /// exists. `acquire` returns `None` when the drawable cannot yield a context; `release` drops the
 /// host's record without forcing context loss, which the driver owns and `subscribe` reports; the
 /// returned closure unsubscribes.
+// flight-lint: allow(f64) `create` width and height are the TS Number device-pixel extent, carried as f64 for exact transport; the host narrows and validates them once where it writes its device extent (foreman-2c989291, foreman-36006344)
 #[derive(Clone)]
 pub struct HostGlCapability {
     pub provider: ProviderRef,
     pub acquire:
         Arc<dyn Fn(&SurfaceRef, Option<&GlContextOptions>) -> Option<GlContext> + Send + Sync>,
     pub create: Arc<
-        dyn Fn(&Ref<AppWindow>, f32, f32, Option<&GlContextOptions>) -> Option<NativeSurfaceHandle>
+        dyn Fn(&Ref<AppWindow>, f64, f64, Option<&GlContextOptions>) -> Option<NativeSurfaceHandle>
             + Send
             + Sync,
     >,

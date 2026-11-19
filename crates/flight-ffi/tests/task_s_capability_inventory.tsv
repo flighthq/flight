@@ -900,7 +900,7 @@ field	flight-surface	crates/flight-surface/src/types.rs	HostGlCapabilities	publi
 struct	flight-surface	crates/flight-surface/src/types.rs	HostGlCapability	public				5 fields
 field	flight-surface	crates/flight-surface/src/types.rs	HostGlCapability	public	0	provider	non-callback	ProviderRef
 callback	flight-surface	crates/flight-surface/src/types.rs	HostGlCapability	public	1	acquire	required	fn(& SurfaceRef, Option < & GlContextOptions >) -> Option < GlContext >	& SurfaceRef, Option < & GlContextOptions >	Option < GlContext >	no	shared	mapped:pointer
-callback	flight-surface	crates/flight-surface/src/types.rs	HostGlCapability	public	2	create	required	fn(& Ref < AppWindow >, f32, f32, Option < & GlContextOptions >) -> Option < NativeSurfaceHandle >	& Ref < AppWindow >, f32, f32, Option < & GlContextOptions >	Option < NativeSurfaceHandle >	no	shared	mapped:pointer
+callback	flight-surface	crates/flight-surface/src/types.rs	HostGlCapability	public	2	create	required	fn(& Ref < AppWindow >, f64, f64, Option < & GlContextOptions >) -> Option < NativeSurfaceHandle >	& Ref < AppWindow >, f64, f64, Option < & GlContextOptions >	Option < NativeSurfaceHandle >	no	shared	mapped:pointer
 callback	flight-surface	crates/flight-surface/src/types.rs	HostGlCapability	public	3	release	required	fn(& SurfaceRef) -> ()	& SurfaceRef	()	no	shared	mapped:pointer
 callback	flight-surface	crates/flight-surface/src/types.rs	HostGlCapability	public	4	subscribe	required	fn(& SurfaceRef, Arc < dyn Fn () + Send + Sync >, Arc < dyn Fn () + Send + Sync >) -> Arc < dyn Fn () + Send + Sync >	& SurfaceRef, Arc < dyn Fn () + Send + Sync >, Arc < dyn Fn () + Send + Sync >	Arc < dyn Fn () + Send + Sync >	no	shared	needs:nested-callback
 struct	flight-surface	crates/flight-surface/src/types.rs	HostSurfaceCapabilities	public				2 fields
@@ -1087,8 +1087,8 @@ family			F046				8 uses	fn(& Ref < AppWindow >, bool) -> ()
 family			F047				2 uses	fn(& Ref < AppWindow >, f32) -> ()
 family			F048				4 uses	fn(& Ref < AppWindow >, f32, f32) -> ()
 family			F049				1 uses	fn(& Ref < AppWindow >, f32, f32) -> Option < NativeSurfaceHandle >
-family			F050				1 uses	fn(& Ref < AppWindow >, f32, f32, Option < & GlContextOptions >) -> Option < NativeSurfaceHandle >
-family			F051				1 uses	fn(& Ref < AppWindow >, f64, f64, Option < & CanvasRenderingContext2DSettings >) -> Option < NativeSurfaceHandle >
+family			F050				1 uses	fn(& Ref < AppWindow >, f64, f64, Option < & CanvasRenderingContext2DSettings >) -> Option < NativeSurfaceHandle >
+family			F051				1 uses	fn(& Ref < AppWindow >, f64, f64, Option < & GlContextOptions >) -> Option < NativeSurfaceHandle >
 family			F052				1 uses	fn(& Ref < CanvasSurface >) -> ()
 family			F053				1 uses	fn(& Ref < FullscreenTargetHandle >) -> AppProviderFuture < bool >
 family			F054				1 uses	fn(& Ref < ShortcutTriggerSubscription >) -> ShortcutTriggerUnsubscribeFuture

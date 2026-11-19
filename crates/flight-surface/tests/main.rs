@@ -17,6 +17,8 @@ mod flight_surface_host_explain_test;
 mod flight_surface_surface_display_test;
 #[path = "surface_test.rs"]
 mod flight_surface_surface_test;
+#[path = "types_test.rs"]
+mod flight_surface_types_test;
 #[path = "wgpu_host_acquisition_test.rs"]
 mod flight_surface_wgpu_host_acquisition_test;
 #[path = "window_render_state_test.rs"]
