@@ -979,6 +979,7 @@ dependencies = [
  "flight-surface",
  "flight-texture",
  "futures",
+ "glow 0.18.0",
  "raw-window-handle",
  "sdl3",
  "wgpu",
