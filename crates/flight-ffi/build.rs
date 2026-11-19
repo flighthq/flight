@@ -2302,7 +2302,9 @@ fn collect_ref_owned_signal_owners(crates_dir: &Path) -> BTreeSet<String> {
 
 // The type names every Flight crate defines, keyed by crate directory, so a payload's nominal types
 // resolve to their defining crate.
-fn collect_crate_defined_type_names(crates_dir: &Path) -> BTreeMap<String, BTreeSet<String>> {
+fn collect_crate_defined_type_names(
+    crates_dir: &Path,
+) -> BTreeMap<String, signal_identity::CrateTypes> {
     let mut defined = BTreeMap::new();
     let mut crates: Vec<_> = fs::read_dir(crates_dir)
         .unwrap()
@@ -2316,13 +2318,34 @@ fn collect_crate_defined_type_names(crates_dir: &Path) -> BTreeMap<String, BTree
         if !src_dir.exists() {
             continue;
         }
-        let files: Vec<syn::File> = collect_rust_source_files(&src_dir)
+        let files: Vec<(String, syn::File)> = collect_rust_source_files(&src_dir)
             .iter()
-            .filter_map(|path| syn::parse_file(&fs::read_to_string(path).ok()?).ok())
+            .filter_map(|path| {
+                let file = syn::parse_file(&fs::read_to_string(path).ok()?).ok()?;
+                Some((get_source_module_path(&src_dir, path), file))
+            })
             .collect();
-        defined.insert(name, signal_identity::collect_defined_type_names(&files));
+        defined.insert(name, signal_identity::collect_crate_types(&files));
     }
     defined
+}
+
+// The module path of one source file: `lib.rs` is the root (`""`), `types.rs` is `types`, and
+// `a/b.rs` or `a/b/mod.rs` is `a::b`.
+fn get_source_module_path(src_dir: &Path, source: &Path) -> String {
+    let relative = source.strip_prefix(src_dir).unwrap_or(source);
+    let mut segments: Vec<String> = relative
+        .with_extension("")
+        .components()
+        .map(|component| component.as_os_str().to_string_lossy().to_string())
+        .collect();
+    if segments
+        .last()
+        .is_some_and(|last| last == "lib" || last == "mod")
+    {
+        segments.pop();
+    }
+    segments.join("::")
 }
 
 // Every `Signal<T>` on the public perimeter of one crate: pub fields of root-exported structs and
@@ -2332,7 +2355,7 @@ fn collect_signal_inventory(
     owner: &str,
     src_dir: &Path,
     crates_dir: &Path,
-    defined: &BTreeMap<String, BTreeSet<String>>,
+    defined: &BTreeMap<String, signal_identity::CrateTypes>,
 ) -> Vec<SignalInventoryEntry> {
     let lib_path = src_dir.join("lib.rs");
     if !lib_path.exists() {
@@ -2349,11 +2372,13 @@ fn collect_signal_inventory(
             .strip_prefix(crates_dir)
             .unwrap_or(&source)
             .to_path_buf();
-        let (imports, glob_crates) = signal_identity::collect_file_imports(&file, owner);
+        let module = get_source_module_path(src_dir, &source);
+        let (imports, globs) = signal_identity::collect_file_imports(&file, owner, &module);
         let scope = signal_identity::TypeScope {
             owner,
+            module: &module,
             imports: &imports,
-            glob_crates: &glob_crates,
+            globs: &globs,
             defined,
         };
         let mut record = |item: String,
@@ -2371,7 +2396,8 @@ fn collect_signal_inventory(
                     owner: owner.to_string(),
                     source: relative.clone(),
                     item: item.clone(),
-                    declared: signal_identity::display_type_text(ty),
+                    declared: signal_identity::display_type_text(ty)
+                        .unwrap_or_else(|error| panic!("{}: {item}: {error}", relative.display())),
                     payload: payload_text,
                     identities,
                     glob_export,
@@ -2390,6 +2416,7 @@ fn collect_signal_inventory(
                     let syn::Fields::Named(fields) = &item.fields else {
                         continue;
                     };
+                    let struct_generics = signal_identity::type_parameter_names(&item.generics);
                     for field in &fields.named {
                         if !matches!(field.vis, syn::Visibility::Public(_)) {
                             continue;
@@ -2398,7 +2425,7 @@ fn collect_signal_inventory(
                         record(
                             format!("{name}.{field_name}"),
                             &field.ty,
-                            &BTreeSet::new(),
+                            &struct_generics,
                             glob_types.contains(&name),
                         );
                     }
@@ -2412,12 +2439,7 @@ fn collect_signal_inventory(
                     {
                         continue;
                     }
-                    let generics: BTreeSet<String> = item
-                        .sig
-                        .generics
-                        .type_params()
-                        .map(|param| param.ident.to_string())
-                        .collect();
+                    let generics = signal_identity::type_parameter_names(&item.sig.generics);
                     for input in &item.sig.inputs {
                         if let syn::FnArg::Typed(input) = input {
                             let param = input.pat.to_token_stream().to_string();

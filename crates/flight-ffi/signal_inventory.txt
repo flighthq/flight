@@ -250,10 +250,10 @@ signal|flight-timeline|flight-timeline/src/types.rs|TimelineSignals.on_enter_fra
 signal|flight-timeline|flight-timeline/src/types.rs|TimelineSignals.on_exit_frame|Signal<TimelineFrameEvent>|TimelineFrameEvent
 signal|flight-timeline|flight-timeline/src/types.rs|TimelineSignals.on_frame_constructed|Signal<TimelineFrameEvent>|TimelineFrameEvent
 signal|flight-timeline|flight-timeline/src/types.rs|TimelineSignals.on_loop|Signal<()>|()
-signal|flight-tray|flight-tray/src/types.rs|HostTrayBalloonEventsCapability.get_signal|Arc<dyn Fn (&Ref<TrayIcon>) -> Option<Signal<TrayBalloonEvent>> + Send + Sync>|TrayBalloonEvent
-signal|flight-tray|flight-tray/src/types.rs|HostTrayDropEventsCapability.get_signal|Arc<dyn Fn (&Ref<TrayIcon>) -> Option<Signal<TrayDropEvent>> + Send + Sync>|TrayDropEvent
-signal|flight-tray|flight-tray/src/types.rs|HostTrayInteractionEventsCapability.get_signal|Arc<dyn Fn (&Ref<TrayIcon>) -> Option<Signal<TrayInteractionEvent>> + Send + Sync>|TrayInteractionEvent
-signal|flight-tray|flight-tray/src/types.rs|HostTrayMenuSelectionEventsCapability.get_signal|Arc<dyn Fn (&Ref<TrayIcon>) -> Option<Signal<TrayMenuSelectionEvent>> + Send + Sync>|TrayMenuSelectionEvent
+signal|flight-tray|flight-tray/src/types.rs|HostTrayBalloonEventsCapability.get_signal|Arc<dyn Fn(&Ref<TrayIcon>) -> Option<Signal<TrayBalloonEvent>> + Send + Sync>|TrayBalloonEvent
+signal|flight-tray|flight-tray/src/types.rs|HostTrayDropEventsCapability.get_signal|Arc<dyn Fn(&Ref<TrayIcon>) -> Option<Signal<TrayDropEvent>> + Send + Sync>|TrayDropEvent
+signal|flight-tray|flight-tray/src/types.rs|HostTrayInteractionEventsCapability.get_signal|Arc<dyn Fn(&Ref<TrayIcon>) -> Option<Signal<TrayInteractionEvent>> + Send + Sync>|TrayInteractionEvent
+signal|flight-tray|flight-tray/src/types.rs|HostTrayMenuSelectionEventsCapability.get_signal|Arc<dyn Fn(&Ref<TrayIcon>) -> Option<Signal<TrayMenuSelectionEvent>> + Send + Sync>|TrayMenuSelectionEvent
 payload|()|82
 payload|(Notification, String)|1
 payload|(Notification, String, String)|1
