@@ -3,7 +3,7 @@ use std::ffi::{CStr, CString};
 use std::sync::mpsc;
 use std::time::Duration;
 
-fn watchdog<T: Send + 'static>(operation: impl FnOnce() -> T + Send + 'static) -> T {
+fn aliased_borrow_watchdog<T: Send + 'static>(operation: impl FnOnce() -> T + Send + 'static) -> T {
     let (sender, receiver) = mpsc::channel();
     let worker = std::thread::spawn(move || sender.send(operation()).unwrap());
     let value = receiver
@@ -108,7 +108,8 @@ fn node_carriers_preserve_identity_hierarchy_and_free_order() {
 }
 
 #[test]
-fn aliased_ref_only_wrappers_finish_for_identical_cloned_and_distinct_handles() {
+fn node_carriers_watchdog_aliased_ref_only_wrappers_finish_for_identical_cloned_and_distinct_handles()
+ {
     unsafe {
         let body_a = flight_create_rigid_body2d();
         let body_b = flight_create_rigid_body2d();
@@ -122,7 +123,7 @@ fn aliased_ref_only_wrappers_finish_for_identical_cloned_and_distinct_handles() 
             (body_a as usize, same_allocation as usize),
             (body_a as usize, body_b as usize),
         ] {
-            watchdog(move || {
+            aliased_borrow_watchdog(move || {
                 flight_apply_physics2d_impulse(
                     left as *mut std::ffi::c_void,
                     right as *mut std::ffi::c_void,
@@ -134,7 +135,7 @@ fn aliased_ref_only_wrappers_finish_for_identical_cloned_and_distinct_handles() 
                     0.0,
                 );
             });
-            watchdog(move || {
+            aliased_borrow_watchdog(move || {
                 let left = left as *const std::ffi::c_void;
                 let right = right as *const std::ffi::c_void;
                 let point = flight_sdk::Physics2DContactPoint::default();
@@ -155,7 +156,7 @@ fn aliased_ref_only_wrappers_finish_for_identical_cloned_and_distinct_handles() 
             (node_a as usize, node_a_alias as usize),
             (node_a as usize, node_b as usize),
         ] {
-            watchdog(move || {
+            aliased_borrow_watchdog(move || {
                 let _ = flight_default_node_runtime_can_add_child(
                     parent as *const FlightNode,
                     child as *const FlightNode,
@@ -197,7 +198,7 @@ fn node_field_access_recovers_from_a_poisoned_view_lock() {
 }
 
 #[test]
-fn optional_node2d_slice_rejects_a_non_2d_handle_before_calling_the_sdk() {
+fn node_field_malformed_optional_node2d_slice_is_rejected_before_calling_the_sdk() {
     unsafe {
         let node3d = flight_create_particle_emitter_3d();
         let nodes = [node3d as *const FlightNode];
